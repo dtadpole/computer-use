@@ -105,7 +105,7 @@ import { makePng } from './png.mjs'
  * leaves it out, the deviation CU-215 reads as unreadable; CU-190),
  * `sheet` (a sheet or alert where focus is, sent as given; CU-148),
  * `menuKeys` (`[{ keyCode, flags, reply }]`: menuKey's answer for that exact keyDown) and `menuKeyDefault` (else; default
- * `{ none: true }`; CU-236),
+ * `{ none: true, bundleId: <frontmost> }`, as helper 0.2.52 answers; CU-236),
  * `focusedApp` (sent as the 'focused' reply's `app`: the app whose window was read when no element has focus; CU-148),
  * `changeCount` (the pasteboard change count beside the focused element and the hit-tested one, phased; CU-151),
  * `textEntered` (whether the target's window holds typed text, beside the same two, sent as given and phased; CU-157),
@@ -707,7 +707,7 @@ function handle(message) {
       if (quirks.noMenuKey) return refuse(id, 'unknown_request', `unknown request '${String(type)}'`)
       if (scope === null) return refuse(id, 'no_scope', 'no scope is set')
       const bound = (config.menuKeys ?? []).find((entry) => entry.keyCode === fields.keyCode && entry.flags === fields.flags)
-      return send({ id, ok: true, ...(bound ? bound.reply : (config.menuKeyDefault ?? { none: true })) })
+      return send({ id, ok: true, ...(bound ? bound.reply : (config.menuKeyDefault ?? { none: true, bundleId: config.frontmost ?? null })) })
     }
     case 'selection':
       // CU-187: config.selection {role, caption, bundleId, pid} or null - the element holding the selection.

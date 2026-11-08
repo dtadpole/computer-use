@@ -69,7 +69,7 @@ test('Shift-Command-D bound to Send: the request is the chord\'s own keyDown, an
 })
 
 test('none only for the exact answer; unreadable for the helper\'s unreadable, an older helper and every malformed reply', async () => {
-  await withDriver({ menuKeyDefault: { none: true } }, async (env) => {
+  await withDriver({ menuKeyDefault: { none: true, bundleId: FIXTURE } }, async (env) => {
     assert.deepEqual(await env.menuItemForChord({ type: 'keypress', keys: ['META', 'SHIFT', 'K'] }), { none: true })
   })
   await withDriver({ menuKeyDefault: { unreadable: true } }, async (env) => {
@@ -80,7 +80,7 @@ test('none only for the exact answer; unreadable for the helper\'s unreadable, a
   })
   const scope = [FIXTURE]
   for (const [label, reply] of [
-    ['empty', {}], ['null', null], ['none false', { none: false }], ['none and items', { none: true, items: [SEND] }], ['none and truncated', { none: true, truncated: true }],
+    ['empty', {}], ['null', null], ['none false', { none: false }], ['none naming no app (cu-verifier)', { none: true }], ['none with a bundle id that is no string', { none: true, bundleId: 7 }], ['none and items', { none: true, items: [SEND] }], ['none and truncated', { none: true, truncated: true }],
     ['items and unreadable', { items: [SEND], unreadable: true }], ['truncated', { ...list(SEND), truncated: true }], ['truncated not a boolean', { ...list(SEND), truncated: 'no' }],
     ['a single item, not a list', { item: SEND }], ['an empty list', list()], ['over the cap', list(...Array.from({ length: MAX_BOUND_ITEMS + 1 }, (_, i) => ({ ...SEND, title: `Item ${i}` })))],
     ['an entry that is a string', list(SEND, 'Send')], ['an untitled entry beside a good one', list(SEND, { ...SEND, title: undefined })],

@@ -682,7 +682,7 @@ function distinctEntries(entries) {
  * CU-236: one menuKey reply as the driver passes it on, failing closed. The helper answers every item whose key
  * equivalent matches (a disabled benign first match must not hide a consequential one), so the answer is a list:
  * `{ items: [{ role: 'AXMenuItem', name, keyEquivalent, path, enabled, appleMenu? }] }` with 1 to MAX_BOUND_ITEMS
- * distinct entries; `{ none: true }` only for that exact answer; `{ unreadable: true }` for everything else - the
+ * distinct entries; `{ none: true }` only for that exact answer naming an app in `scope`; `{ unreadable: true }` for everything else - the
  * helper's own unreadable (its `reason` is not passed on), `truncated` or `incomplete`, an empty or over-long list, any malformed or untitled entry, a bundle id outside
  * `scope` (the reply's or an entry's), a malformed reply. Never a value: only titles, the path of titles, the key
  * equivalent (CU-154's integer modifier mask), whether the item is enabled (context only: disabled items still count),
@@ -693,7 +693,8 @@ export function boundMenuItemOf(reply, scope = []) {
   if (reply === null || typeof reply !== 'object') return unreadable
   if (reply.bundleId !== undefined && (typeof reply.bundleId !== 'string' || !scope.includes(reply.bundleId))) return unreadable
   const flagged = (field) => reply[field] !== undefined && reply[field] !== false
-  if (reply.none === true && reply.items === undefined && reply.unreadable === undefined && !flagged('truncated') && !flagged('incomplete')) return { none: true }
+  // none must name the app whose bar was read (helper 0.2.52 always does; cu-verifier): a none naming no app is unreadable.
+  if (reply.none === true && typeof reply.bundleId === 'string' && reply.items === undefined && reply.unreadable === undefined && !flagged('truncated') && !flagged('incomplete')) return { none: true }
   // incomplete (helper 0.2.52): a lazily filled top-level menu showed no items, so a match may be missing - unreadable,
   // like truncated (cu-developer-one's decision); found items are not judged alone.
   if (reply.none !== undefined || reply.unreadable !== undefined || flagged('truncated') || flagged('incomplete')) return unreadable
