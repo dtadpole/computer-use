@@ -584,6 +584,7 @@ const SYS_A = {
   cmdShiftL: key('META', 'SHIFT', 'L'), cmdShift8: key('META', 'SHIFT', '8'), cmdShiftA: key('META', 'SHIFT', 'A'), cmdOptD: key('META', 'ALT', 'D'),
   ctrlF1: key('CTRL', 'F1'), ctrlSpace: key('CTRL', 'SPACE'), click: { type: 'click', x: 1, y: 1 },
   holdLogOut: { type: 'hold_key', keys: ['META', 'ALT', 'SHIFT', 'Q'], duration_ms: 300 },
+  optCmdJ: key('META', 'ALT', 'J'),
 }
 const SYS_T = {
   field: { role: 'AXTextField', name: 'Notes', editable: true },
@@ -616,6 +617,9 @@ const SYSTEM_ROWS = [
   ['appstore-get', 'click', 'getButton', 'not:allow', 'CU-254 (an approved App Store installs software)', 'no live row yet', 'todo CU-254', { app: APP_STORE_ID }],
   ['appstore-price-button', 'click', 'priceButton', 'purchase', "CU-254 (a paid app's button shows its price, not 'Buy')", 'no live row yet', 'todo CU-254', { app: APP_STORE_ID }],
   ['appstore-try-free', 'click', 'tryFreeButton', 'purchase', 'CU-254 (a free trial starts a renewing subscription)', 'no live row yet', 'todo CU-254', { app: APP_STORE_ID }],
+  // CU-232: a menu read the helper answers unreadable - a hidden duplicate key equivalent, a lazily filled menu, only
+  // disabled matches (#36's rules) - asks; the loop spares editing chords before this call (CU-238's screen: Option-Command-J).
+  ['menu-key-unreadable', 'optCmdJ', 'field', 'unknown_target', 'menu-key.test.mjs (#26: an unreadable bar asks)', 'no live row yet', 'open CU-232', { boundMenuItem: { unreadable: true } }],
   ['system-chord-held-log-out', 'holdLogOut', 'field', 'block:system_shortcut', 'desktop-consent P9 (#39), loop.mjs hold-as-keypress', 'no live row yet', 'open CU-244'],
   // CU-252: P10's launch_code reads the clicked target's name only, so File > Open or a context menu's Open on a
   // selected install.command is not judged. 'selection' is the proposed context field (the fix may rename it).
