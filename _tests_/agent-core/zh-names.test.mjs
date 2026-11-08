@@ -75,3 +75,12 @@ test('CU-293 on cu-researcher\'s review: Chinese Reply follows CU-157 - free whe
     assert.equal(web.classify(click, { url: 'https://mail.example/', target: { role: 'button', name, textEntered: false } }).decision, 'allow', name)
   }
 })
+
+test('CU-294: renewals and memberships, joining or starting a meeting, a call, and closing an account - in a web page\'s Chinese', () => {
+  for (const [name, cls] of [['续费', 'purchase'], ['續費', 'purchase'], ['开通会员', 'purchase'], ['立即开通', 'purchase'], ['入会', 'submit'], ['发起会议', 'submit'],
+    ['拨打', 'submit'], ['撥打', 'submit'], ['注销账号', 'delete'], ['註銷帳號', 'delete']]) {
+    assert.equal(judged(onWeb(name)), cls, `web ${name}`)
+    assert.equal(judged(onDesktop(name)), cls, `desktop ${name}`)
+  }
+  for (const name of ['会员中心', '会议记录', '账号设置', '加入购物车', '收藏']) assert.equal(judged(onWeb(name)), 'allow', name)
+})
