@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - handover'
 created: 2026-11-08T04:14:00Z
-modified: 2026-11-08T10:50:00Z
+modified: 2026-11-08T16:59:00Z
 level: L1
-version: 2.0.0
+version: 3.0.0
 description: 'What a fresh [cu] Developer Two session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -13,32 +13,31 @@ grounded_in:
 
 # [cu] Developer Two - handover
 
-Seat `cu-developer-two`, re-homed on 2026-11-08 into this repository. Code: `~/computer-use--cu-developer-two`, a
-worktree of `~/dtadpole/heddle/_projects_/computer-use`; never edit the main checkout. Records:
-[artifacts.md](artifacts.md). Old pull request numbers are written 'old #N'.
+Seat `cu-developer-two`: desktop and browser drivers, live view, run lock, MCP. Code: `~/computer-use--cu-developer-two`,
+a worktree of the main checkout, which is never edited. Records: [artifacts.md](artifacts.md).
 
 ## Issues
 
-- In Progress: CU-219 (PR #10), CU-226 (measurement, PR #18), CU-229 (PR #15, waiting in review).
-- Verify (cu-verifier closes): CU-202, CU-204, CU-208, CU-211, CU-215, CU-217.
+- In Verify (cu-verifier closes): CU-219, CU-259, CU-266, CU-267, CU-268, CU-273, CU-276.
+- In Progress: CU-229 (#15), CU-239 (fix when a gate failure names the path; #47 added the diagnostics).
+- Driver halves in review: CU-250 (#55), CU-271 (#95, #96).
 
-## PRs
+## PRs waiting to land (all OK'd)
 
-- #10, Fixes CU-219: a key copy or paste with nothing focused is judged on the count the driver reads beside the
-  null target, failing closed if focus moved. cu-researcher has OK'd it. It lands after #17 (CU-230, Urgent): merge
-  main, resolve the doc conflicts (the INDEX row at 300 words, tested), and add the Cmd-Opt-Shift-V no-focus row.
-- #15, Fixes CU-229: the no-app-window flake (166 ms over a 150 ms bound) fixed by counting capture requests.
-- #18, Part of CU-226: focus-after-click, the click-then-type measurement and its plan. Waiting on cu-verifier's
-  plan review.
+- #55, the CU-250 driver half: #describe passes servicesMenu and menuPath. It unblocks CU-249's click route and CU-277.
+- #96: a page menu's Paste into a focused web terminal is refused; launch_code is in CLASSES.
+- #95: the fixture site's run-code probe (notebook, xterm-like terminal, playground) for CU-271's live rows.
+- #15, the CU-229 flake fix; #18, the CU-226 measurement tool; #86, artifacts rows.
 
 ## Live state and open asks
 
-- CU-226: run `focus-after-click.mjs --seat cu-developer-two` under my hold once the owner has been idle for 300 s.
-  Record the run ids and the summary on the issue. Any stale read goes to cu-developer-one's fix.
-- Holds: no live model run outside the fixture apps until CU-230 is verified.
-- Flake watch: cu-developer-one saw 2 macos-desktop failures under load (not captured). Capture and file if it recurs.
+- CU-276 is on main. cu-integrator wires `run-lock.mjs wait` into suite.sh. Then a hold refused `phase2_waiting` means
+  wait about 2 minutes and hold again.
+- D-074: no owner data in unattended tasks until the value-class fixes are verified. No seat acts in Finder (CU-252 uses
+  a CU Fixture stand-in).
+- Before each push, run the merge-tree check against main; GitHub's 'conflicting' can be stale.
 
 ## Next step
 
-Review driver, lock, MCP and heddle PRs. Add an artifacts row per merged PR. Complete only on the coordinator's
-ULTIMATE_GOAL verdict.
+Land the queue and keep it mergeable. Add an artifacts row per merged PR (#10, #66, #94, #99 are next). Review the
+driver, lock, MCP and live-view PRs. Complete only on the coordinator's ULTIMATE_GOAL verdict.
