@@ -215,6 +215,8 @@ export function isTextEntry(target) {
   return target.editable === true || TEXT_ENTRY_ROLES.has(target.role)
 }
 const PASSWORD_NAMES = Object.freeze(['password', 'passcode', 'passphrase', 'pin', 'pin code'])
+// CU-265: the schemes a page navigates itself; any other hands the link to another app.
+const WEB_SCHEMES = new Set(['http', 'https', 'javascript', 'about'])
 // CU-253: chat apps that send on a plain Return from the compose field, and the names of compose fields.
 const CHAT_APPS = new Set(['com.apple.MobileSMS', 'com.apple.iChat', 'com.tinyspeck.slackmacgap', 'net.whatsapp.WhatsApp', 'desktop.WhatsApp',
   'ru.keepcoder.Telegram', 'org.telegram.desktop', 'com.hnc.Discord', 'org.whispersystems.signal-desktop', 'com.microsoft.teams',
@@ -462,6 +464,13 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       classes.push('page_dialog')
       for (const cls of ['purchase', 'delete', 'permission']) if (namesWord(context.dialog.message, WORDS[cls])) classes.push(cls)
     }
+    // CU-265 (cu-researcher; cu-coordinator: ask): a link whose scheme is not the web's - facetime:, tel:, zoommtg:,
+    // mailto:, file:, an app's own - hands the click to another app, outside the run. The browser driver reports the
+    // clicked link's scheme only (target.linkScheme, lower case, no colon); a click or a Return on it asks permission,
+    // never pre-approved. No scheme reported keeps today's judgement (a named limit until the driver sends it).
+    const scheme = typeof target?.linkScheme === 'string' ? target.linkScheme.trim().toLowerCase().replace(/:$/, '') : ''
+    const pressesLink = ['click', 'double_click', 'triple_click'].includes(action.type) || keysOf(action).has('ENTER')
+    if (scheme !== '' && !WEB_SCHEMES.has(scheme) && pressesLink) classes.push('permission')
     const keyboard = keyboardActivation(action, target, context)
     if (keyboard.deletes) classes.push('delete')
     // CU-140 (press-and-drop.md): a drag pressed on a control - a long press, or any drag starting there - is judged like
