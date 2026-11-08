@@ -68,6 +68,10 @@ export const MAX_HOLD_CHAIN_MINUTES = 60
 /** A gap at least this long between one seat's holds ends its chain - time when another seat could take the Mac. */
 export const HOLD_CHAIN_GAP_MINUTES = 10
 export const HOLD_LOG_NAME = 'hold.log'
+/** CU-276 (D-073): a waiting phase 2's registration - its seat, process and start - so a new hold lets it go first. */
+export const WAITING_NAME = 'waiting.json'
+/** CU-276: a registration older than this, or whose process is gone, is stale and ignored. */
+export const WAITER_MAX_MS = 30 * 60_000
 /** Past this size the hold log keeps its newer half (thousands of lines either way), so it never grows without bound. */
 export const HOLD_LOG_MAX_BYTES = 256 * 1024
 export const LOCK_TIMEOUT_MS = 10_000
@@ -224,6 +228,17 @@ function liveHold(parsed, at) {
   if (!Number.isFinite(until) || until <= at) return null
   // CU-120: since is the chain's start (CU-75's hour cap), heldAt this hold's own; an older checkout's hold has no heldAt.
   return { seat: parsed.seat, until: new Date(until).toISOString(), reason: safeText(parsed.reason, 200), since: isoOrNull(parsed.since), heldAt: isoOrNull(parsed.heldAt) }
+}
+
+/**
+ * CU-276: a registered waiter that still counts - a [cu] seat, a live process, registered at most WAITER_MAX_MS ago -
+ * as `{ seat, pid, since, reason }`, else null.
+ */
+function liveWaiter(parsed, at, isAlive) {
+  if (parsed === null || parsed === undefined || typeof parsed.seat !== 'string' || !SEAT_PATTERN.test(parsed.seat)) return null
+  const since = Date.parse(parsed.since)
+  if (!Number.isInteger(parsed.pid) || !isAlive(parsed.pid) || !Number.isFinite(since) || at - since > WAITER_MAX_MS || since > at + 60_000) return null
+  return { seat: parsed.seat, pid: parsed.pid, since: new Date(since).toISOString(), reason: safeText(parsed.reason, 200) }
 }
 
 /** A time from a hold file as ISO text, or null when it is missing or not a time. */
@@ -611,6 +626,15 @@ export async function holdDesktop({ seat, minutes, reason = '', dir = RUN_LOCK_D
     const at = now()
     const current = liveHold(parsed, at)
     if (current !== null && current.seat !== seat) throw heldError(current)
+    // CU-276 (D-073): a phase 2 waiting for the lock goes first - no fresh hold, re-hold or extension by another seat
+    // while it waits. The live hold itself is never cut short; the waiter's runs start when it ends.
+    const waiter = liveWaiter(readEntry(join(root, WAITING_NAME)), at, isAlive)
+    if (waiter !== null && waiter.seat !== seat) {
+      const waited = Math.max(0, Math.round((at - Date.parse(waiter.since)) / 1000))
+      throw new EnvironmentError('resource_refused',
+        `seat ${waiter.seat} has waited ${waited} s for this Mac${waiter.reason ? ` (${waiter.reason})` : ''}; it goes first (D-073) - hold again once it has run`,
+        { reason: 'phase2_waiting', waiter: { seat: waiter.seat, since: waiter.since, reason: waiter.reason } })
+    }
     // CU-191: a fresh hold waits for an idle Mac - local input in the last minIdleSeconds means the owner may be at it
     // (cu-coordinator), and an idle time that cannot be read is no proof he is not. Extending one's own live hold is
     // not checked: the helper's posted input resets the same counter, so mid-hold it no longer tells the owner apart.
@@ -779,6 +803,58 @@ export function ownerIdleReader(dir) {
 export { takeMutex as takeLockMutex, dropMutex as dropLockMutex }
 
 /** The live hold, or null: for a status line and for callers that would rather wait than be refused. */
+/**
+ * CU-276 (D-073): register `seat`'s waiting phase 2, under the mutex - `waiting.json` with this process's pid, so a
+ * new hold by another seat is refused until it is cleared (clearWaiter), the process ends, or WAITER_MAX_MS passes. One
+ * waiter at a time: another seat's live registration refuses `waiter_present`; the same seat's is replaced.
+ */
+export async function registerWaiter({ seat, reason = '', dir = RUN_LOCK_DIR, pid = process.pid, now = Date.now, sleep = sleepMs, lockTimeoutMs = LOCK_TIMEOUT_MS, staleLockMs = STALE_LOCK_MS, isAlive = pidAlive } = {}) {
+  const root = holdRoot(seat, dir)
+  if (typeof reason !== 'string' || reason.length > 200) throw invalid('a wait\'s reason is text of at most 200 characters', { field: 'reason' })
+  const lock = join(root, '.lock')
+  await takeMutex(lock, { now, sleep, lockTimeoutMs, staleLockMs, isAlive })
+  try {
+    const at = now()
+    const other = liveWaiter(readEntry(join(root, WAITING_NAME)), at, isAlive)
+    if (other !== null && other.seat !== seat) {
+      throw new EnvironmentError('resource_refused', `seat ${other.seat} is already waiting for this Mac (since ${other.since})`, { reason: 'waiter_present', waiter: other })
+    }
+    const waiter = Object.freeze({ seat, pid, since: new Date(at).toISOString(), reason: safeText(reason, 200) })
+    writeFileSync(join(root, WAITING_NAME), `${JSON.stringify(waiter)}\n`, { mode: 0o644 })
+    logHold(root, { at: waiter.since, action: 'wait', ...waiter })
+    return waiter
+  } finally {
+    dropMutex(lock)
+  }
+}
+
+/** CU-276: end `seat`'s waiting registration (this pid's, unless `pid` is null); resolves to whether one was removed. */
+export async function clearWaiter({ seat, dir = RUN_LOCK_DIR, pid = process.pid, now = Date.now, sleep = sleepMs, lockTimeoutMs = LOCK_TIMEOUT_MS, staleLockMs = STALE_LOCK_MS, isAlive = pidAlive } = {}) {
+  const root = holdRoot(seat, dir)
+  const lock = join(root, '.lock')
+  await takeMutex(lock, { now, sleep, lockTimeoutMs, staleLockMs, isAlive })
+  try {
+    const path = join(root, WAITING_NAME)
+    const parsed = readEntry(path)
+    if (parsed === null || parsed === undefined || parsed.seat !== seat || (pid !== null && parsed.pid !== pid)) return false
+    try {
+      unlinkSync(path)
+    } catch {
+      // already gone
+    }
+    logHold(root, { at: new Date(now()).toISOString(), action: 'wait_end', seat, pid: parsed.pid })
+    return true
+  } finally {
+    dropMutex(lock)
+  }
+}
+
+/** CU-276: the live waiting registration, or null. */
+export function readWaiter({ dir = RUN_LOCK_DIR, now = Date.now, isAlive = pidAlive } = {}) {
+  if (typeof dir !== 'string' || !isAbsolute(dir)) throw invalid('the desktop-run lock needs an absolute dir')
+  return liveWaiter(readEntry(join(resolve(dir), WAITING_NAME)), now(), isAlive)
+}
+
 export function readHold({ dir = RUN_LOCK_DIR, now = Date.now } = {}) {
   if (typeof dir !== 'string' || !isAbsolute(dir)) throw invalid('the desktop-run lock needs an absolute dir')
   return liveHold(readEntry(join(resolve(dir), HOLD_NAME)), now())
@@ -799,7 +875,7 @@ export async function main(argv, { write = (line) => process.stdout.write(`${lin
   for (let i = 0; i < rest.length; i += 2) {
     const key = rest[i]
     if (!['--seat', '--minutes', '--reason', '--dir', '--wait-free'].includes(key) || rest[i + 1] === undefined) {
-      write(JSON.stringify({ error: `usage: run-lock.mjs hold --seat S --minutes N [--reason R] [--wait-free SECONDS] | release --seat S | status [--dir D] (exit 3 = held, a run still active: release it if you give up); bad '${String(key)}'` }))
+      write(JSON.stringify({ error: `usage: run-lock.mjs hold --seat S --minutes N [--reason R] [--wait-free SECONDS] | release --seat S | wait --seat S [--reason R] | status [--dir D] (exit 3 = held, a run still active: release it if you give up); bad '${String(key)}'` }))
       return 2
     }
     options[key.slice(2)] = rest[i + 1]
@@ -817,6 +893,13 @@ export async function main(argv, { write = (line) => process.stdout.write(`${lin
         write(JSON.stringify({ held, free }))
         if (!free) return 3
       }
+    } else if (command === 'wait') {
+      // CU-276: registers this process as the waiting phase 2 and stays until signalled or WAITER_MAX_MS passes; its
+      // registration ends with it (suite.sh: start it in the background before polling, kill it once admitted).
+      const waiter = await registerWaiter({ seat: options.seat, reason: options.reason ?? '', dir })
+      write(JSON.stringify({ waiting: waiter }))
+      await (seams.waitUntilDone ?? waitUntilSignalled)(WAITER_MAX_MS)
+      await clearWaiter({ seat: options.seat, dir })
     } else if (command === 'keep') {
       await keepHold({ seat: options.seat, dir })
     } else if (command === 'release') {
@@ -824,9 +907,9 @@ export async function main(argv, { write = (line) => process.stdout.write(`${lin
     } else if (command === 'status') {
       const current = readEntry(join(resolve(dir), ENTRY_NAME)) ?? undefined
       const run = isSentinel(current) ? null : (({ seat, runId, startedAt, commit } = {}) => (seat ? { seat, runId, startedAt, commit: commit ?? null } : null))(current)
-      write(JSON.stringify({ hold: readHold({ dir }), run, sentinel: isSentinel(current) }))
+      write(JSON.stringify({ hold: readHold({ dir }), run, sentinel: isSentinel(current), waiter: readWaiter({ dir }) }))
     } else {
-      write(JSON.stringify({ error: 'usage: run-lock.mjs hold --seat S --minutes N [--reason R] [--wait-free SECONDS] | release --seat S | status [--dir D] (exit 3 = held, a run still active: release it if you give up)' }))
+      write(JSON.stringify({ error: 'usage: run-lock.mjs hold --seat S --minutes N [--reason R] [--wait-free SECONDS] | release --seat S | wait --seat S [--reason R] | status [--dir D] (exit 3 = held, a run still active: release it if you give up)' }))
       return 2
     }
     return 0
@@ -834,6 +917,16 @@ export async function main(argv, { write = (line) => process.stdout.write(`${lin
     write(JSON.stringify({ error: error.message, code: error.code ?? null, reason: error.details?.reason ?? null }))
     return error.code === 'invalid_argument' ? 2 : 1
   }
+}
+
+/** Resolves on SIGTERM, SIGINT or after `ms`, whichever comes first. */
+function waitUntilSignalled(ms) {
+  return new Promise((done) => {
+    const finish = () => { clearTimeout(timer); process.off('SIGTERM', finish); process.off('SIGINT', finish); done() }
+    const timer = setTimeout(finish, ms)
+    process.once('SIGTERM', finish)
+    process.once('SIGINT', finish)
+  })
 }
 
 /**

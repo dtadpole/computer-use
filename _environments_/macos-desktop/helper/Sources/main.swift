@@ -67,7 +67,8 @@ do {
 
 // D-029: the boundary applies to a run that holds a grant at its start (or is told to enforce it). A run that starts
 // with none serves with every grant forced off to its end, so a grant given mid-run never reaches an unchecked peer.
-let grantsAtStart = Grants.preflight()
+// CU-240: a transient TCC false at launch is re-read (only when some grant reads true, so the boundary is unchanged).
+let grantsAtStart = GrantRecheck.settled(read: { Grants.preflight() }, sleep: { Thread.sleep(forTimeInterval: $0) })
 let boundary = options.boundaryApplies(grantsAtStart: grantsAtStart)
 let forcedUngranted = options.simulateUngranted || (options.mayHoldGrants && !boundary)
 if options.lockPath != nil && grantsAtStart.any {
