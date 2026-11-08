@@ -237,7 +237,9 @@ const API_TOKEN = new RegExp([
 ].map((one) => `\\b${one}\\b`).join('|'))
 const PASSWORD_NAMES = Object.freeze(['password', 'passcode', 'passphrase', 'pin', 'pin code'])
 // CU-265: the schemes a page navigates itself; any other hands the link to another app.
-const WEB_SCHEMES = new Set(['http', 'https', 'javascript', 'about'])
+// cu-researcher on #112: data: and blob: stay in the browser (blob: is how sites serve a generated 'Download CSV'); a
+// download they start still meets the page's download handling.
+const WEB_SCHEMES = new Set(['http', 'https', 'javascript', 'about', 'data', 'blob'])
 // CU-253: chat apps that send on a plain Return from the compose field, and the names of compose fields.
 const CHAT_APPS = new Set(['com.apple.MobileSMS', 'com.apple.iChat', 'com.tinyspeck.slackmacgap', 'net.whatsapp.WhatsApp', 'desktop.WhatsApp',
   'ru.keepcoder.Telegram', 'org.telegram.desktop', 'com.hnc.Discord', 'org.whispersystems.signal-desktop', 'com.microsoft.teams',
