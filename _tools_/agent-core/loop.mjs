@@ -17,7 +17,7 @@ import { MODIFIER_KEYS, normalizeKey } from './keys.mjs'
 import { composePresses, expandResults } from './press.mjs'
 import { joinSplitResults, splitTypesAtTabs } from './type-split.mjs'
 import { answerLinePattern } from './answer-line.mjs'
-import { RETRY, transientCapture, transientFront, transientInput } from './retry.mjs'
+import { RETRY, transientCapture, transientFront, transientGrant, transientInput } from './retry.mjs'
 
 /**
  * The agent loop (design: agent-loop.md, run-outcomes.md). Observe, ask the model, validate the whole batch, settle
@@ -407,11 +407,19 @@ export async function runTask(options) {
     interruptsAtObservation = interrupts
     // CU-56: a capture dropped for a transient out-of-scope window is retried a bounded number of times.
     const captureRetries = []
+    let grantRetried = false
     const capture = async () => {
       for (let attempt = 0; ; attempt += 1) {
         try {
           return await environment.screenshot()
         } catch (error) {
+          // CU-240: a grant re-read false after reading true earlier in the run gets one retry of its own.
+          if (desktop && transientGrant(error) && !grantRetried) {
+            grantRetried = true
+            captureRetries.push({ reason: 'grant_reread', grant: String(error.details.grant ?? ''), delayMs: RETRY.captureDelaysMs[0] })
+            await pause(RETRY.captureDelaysMs[0])
+            continue
+          }
           if (!desktop || !transientCapture(error) || attempt >= RETRY.captureDelaysMs.length) throw error
           captureRetries.push({ reason: error.details.reason, ...(typeof error.details.bundleId === 'string' ? { bundleId: error.details.bundleId } : {}), delayMs: RETRY.captureDelaysMs[attempt] })
           await pause(RETRY.captureDelaysMs[attempt])
