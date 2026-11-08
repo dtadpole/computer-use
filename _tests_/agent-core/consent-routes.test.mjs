@@ -65,6 +65,17 @@ const T = {
   // CU-261: actions that reach other people or commit work.
   joinMeetingButton: { role: 'AXButton', name: 'Join Meeting' },
   askToJoinButton: { role: 'AXButton', name: 'Ask to join' },
+  zhSendHans: { role: 'AXButton', name: '发送' },
+  zhSendHant: { role: 'AXButton', name: '傳送' },
+  zhTrashHans: { role: 'AXButton', name: '移到废纸篓' },
+  zhTrashHant: { role: 'AXButton', name: '丟到垃圾桶' },
+  zhEmptyTrashHant: { role: 'AXButton', name: '清空垃圾桶' },
+  zhBuyHans: { role: 'AXButton', name: '购买' },
+  zhBuyHant: { role: 'AXButton', name: '購買' },
+  zhNeverSaveHans: { role: 'AXButton', name: '永不保存' },
+  zhNeverSaveHant: { role: 'AXButton', name: '永不儲存' },
+  zhChangePasswordHans: { role: 'AXButton', name: '更改密码' },
+  zhRememberMeHans: { role: 'AXButton', name: '记住我' },
   chatDmArea: { role: 'AXTextArea', name: 'Message Ann Smith', editable: true, defaultButtonRead: true },
   chatToArea: { role: 'AXTextArea', name: 'Write a message to Ann', editable: true, defaultButtonRead: true },
   messageSubjectArea: { role: 'AXTextArea', name: 'Message subject', editable: true, defaultButtonRead: true },
@@ -282,6 +293,18 @@ const ROWS = [
   ['outward-join-meeting', 'desktop', 'click', 'joinMeetingButton', 'submit', 'CU-261 (contacts others)', 'cu-verifier, main with #98, helper 0.2.56, CU Fixture named controls: Join Meeting declined submit (20261108T184215Z-460cb2)', null],
   ['outward-ask-to-join', 'desktop', 'click', 'askToJoinButton', 'submit', 'CU-286 (Google Meet: a join request to the host)', 'no live row yet', 'open CU-286'],
   ['outward-start-huddle', 'desktop', 'click', 'startHuddleButton', 'submit', 'CU-286 (Slack: an audio call that notifies the channel)', 'no live row yet', 'open CU-286'],
+  // CU-293 (Urgent): Apple's own zh-cn / zh-tw labels (user-guide pages on the issue); Traditional differs in words, not glyphs.
+  ['zh-send-hans', 'desktop', 'click', 'zhSendHans', 'submit', 'CU-293 (Apple zh label)', 'no live row yet', 'todo CU-293'],
+  ['zh-send-hant', 'desktop', 'click', 'zhSendHant', 'submit', 'CU-293 (Apple zh label)', 'no live row yet', 'todo CU-293'],
+  ['zh-move-to-trash-hans', 'desktop', 'click', 'zhTrashHans', 'delete', 'CU-293 (Apple zh label)', 'no live row yet', 'todo CU-293'],
+  ['zh-move-to-trash-hant', 'desktop', 'click', 'zhTrashHant', 'delete', 'CU-293 (Apple zh label)', 'no live row yet', 'todo CU-293'],
+  ['zh-empty-trash-hant', 'desktop', 'click', 'zhEmptyTrashHant', 'delete', 'CU-293 (Apple zh label)', 'no live row yet', 'todo CU-293'],
+  ['zh-buy-hans', 'desktop', 'click', 'zhBuyHans', 'purchase', 'CU-293 (Apple zh label)', 'no live row yet', 'todo CU-293'],
+  ['zh-buy-hant', 'desktop', 'click', 'zhBuyHant', 'purchase', 'CU-293 (Apple zh label)', 'no live row yet', 'todo CU-293'],
+  ['zh-never-save-hans', 'desktop', 'click', 'zhNeverSaveHans', 'permission', 'CU-293 (Apple zh label)', 'no live row yet', 'todo CU-293'],
+  ['zh-never-save-hant', 'desktop', 'click', 'zhNeverSaveHant', 'permission', 'CU-293 (Apple zh label)', 'no live row yet', 'todo CU-293'],
+  ['zh-change-password-hans', 'desktop', 'click', 'zhChangePasswordHans', 'handoff', 'CU-293 (Apple zh label)', 'no live row yet', 'todo CU-293'],
+  ['zh-remember-me-hans', 'desktop', 'click', 'zhRememberMeHans', 'allow', 'CU-293 negative (stay signed in)', 'no live row yet', 'open CU-293'],
   // CU-287 (after #131): a compose field named for its recipient - Slack's DM placeholder - still escapes the chat rule.
   // In a known messaging app any compose field asks, whatever its name (#52's CHAT_APPS, kept by CU-287's app-kinds);
   // CU-287 adds Telegram Desktop's id; outside a messaging app the same name falls back to the name rules (named limit).
