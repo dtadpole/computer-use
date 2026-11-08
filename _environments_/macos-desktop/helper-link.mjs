@@ -64,7 +64,7 @@ export const CORE_REQUEST_FIELDS = Object.freeze({
   panelSelection: Object.freeze([]),
   // CU-235 (helper 0.2.52): the frontmost approved app's menu items a key down fires - title, path, key equivalent, enabled.
   menuKey: Object.freeze(['keyCode', 'flags']),
-  // CU-252/CU-259: the focused collection's selected items in the frontmost approved app - names and kinds only.
+  // CU-262 (helper 0.2.54): the focused collection's selected item names and kinds - never a path.
   selectedItems: Object.freeze([]),
   watch: Object.freeze(['fps', 'maxSize', 'region']),
   cursor: Object.freeze([]),

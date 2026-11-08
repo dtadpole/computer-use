@@ -150,6 +150,93 @@ func testMenuKey() {
   check(elsewhere.ask("menuKey", ["keyCode": 2, "flags": .int(Int(cmd | shift))])["unreadable"] == true, "another app in front: unreadable, its menus are not read")
 }
 
+func testServicesMenu() {
+  // CU-250: a menu item says where it sits, and a submenu that is the Services menu flags every item under it.
+  let english = ServicesMenu.english
+  check(english.isServices(itemTitle: "Services", childTitles: []), "the Services item counts by its title")
+  check(english.isServices(itemTitle: "Dienste", childTitles: ["Text", "Services Settings\u{2026}"]), "or by AppKit's marker item in its submenu, whatever the holder's title")
+  check(!english.isServices(itemTitle: "Edit", childTitles: ["Copy", "Paste"]), "an ordinary submenu does not")
+  let german = ServicesMenu(titles: ["Services", "Dienste"], markers: english.markers.union(["Dienste-Einstellungen\u{2026}"]))
+  check(german.isServices(itemTitle: "Dienste", childTitles: []), "the current language's title, read from AppKit, counts too")
+  let services = MenuContext.Level(holderTitle: "Services", childTitles: ["Make New Sticky Note", "Weekly Report Uploader", "Services Settings\u{2026}"])
+  let inApp = MenuContext.of(itemTitle: "Weekly Report Uploader", levels: [services, MenuContext.Level(holderTitle: "CU Fixture", childTitles: ["About CU Fixture", "Services", "Quit CU Fixture"])], services: english)
+  check(inApp == MenuContext(path: ["CU Fixture", "Services", "Weekly Report Uploader"], servicesMenu: true), "an owner-installed service under the app menu's Services: flagged, with its path")
+  let inContext = MenuContext.of(itemTitle: "Make New Sticky Note", levels: [services, MenuContext.Level(holderTitle: nil, childTitles: ["Cut", "Copy", "Paste", "Services"])], services: english)
+  check(inContext == MenuContext(path: ["Services", "Make New Sticky Note"], servicesMenu: true), "a context menu's Services item: flagged, its path from the context menu's top")
+  let plain = MenuContext.of(itemTitle: "Copy", levels: [MenuContext.Level(holderTitle: "Edit", childTitles: ["Cut", "Copy", "Paste"])], services: english)
+  check(plain == MenuContext(path: ["Edit", "Copy"], servicesMenu: false) && plain.json["servicesMenu"] == nil, "an ordinary item: its path, no flag")
+  let deep = Array(repeating: MenuContext.Level(holderTitle: "More", childTitles: []), count: 14)
+  check(MenuContext.of(itemTitle: "Leaf", levels: deep, services: english).path.count == MenuContext.maxDepth + 1, "the path is capped at \(MenuContext.maxDepth) levels")
+  // Dry run: a declared menu item gets the same context on hitTest; menuKey items under Services are flagged.
+  let display: JSON = [["id": 1, "main": true, "originPt": ["x": 0, "y": 0], "sizePt": ["width": 800, "height": 600], "scale": 1]]
+  let rect: JSON = ["x": 100, "y": 100, "width": 400, "height": 300]
+  let serviceItem: JSON = ["bundleId": "ai.reflection.cu.fixture", "pid": 501, "role": "AXMenuItem", "title": "Weekly Report Uploader",
+                           "menuLevels": [["holderTitle": "Services", "childTitles": ["Weekly Report Uploader", "Services Settings\u{2026}"]], ["holderTitle": "CU Fixture", "childTitles": ["Services"]]]]
+  let editItem: JSON = ["bundleId": "ai.reflection.cu.fixture", "pid": 501, "role": "AXMenuItem", "title": "Copy", "menuLevels": [["holderTitle": "Edit", "childTitles": ["Copy"]]]]
+  let world: JSON = ["displays": display, "frontmost": "ai.reflection.cu.fixture", "apps": [["bundleId": "ai.reflection.cu.fixture", "pid": 501, "rect": rect]],
+                     "elements": [["rect": ["x": 110, "y": 110, "width": 50, "height": 20], "element": serviceItem], ["rect": ["x": 200, "y": 110, "width": 50, "height": 20], "element": editItem]],
+                     "menuKeyBar": [["title": "Apple", "items": []], ["title": "CU Fixture", "items": [["title": "Services", "items": [["title": "Search With Google", "char": "L", "modifiers": 1], ["title": "Services Settings\u{2026}"]]]]],
+                                    ["title": "Edit", "items": [["title": "Copy", "char": "C", "modifiers": 0]]]]]
+  let h = Harness(world)
+  _ = h.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
+  let hit = h.ask("hitTest", ["xPt": 120, "yPt": 115])["element"]?.object
+  check(hit?["servicesMenu"] == true && hit?["menuPath"] == ["CU Fixture", "Services", "Weekly Report Uploader"], "hitTest on a service: servicesMenu with its path")
+  check(hit?["menuLevels"] == nil, "the declared levels never reach the wire")
+  let copy = h.ask("hitTest", ["xPt": 210, "yPt": 115])["element"]?.object
+  check(copy?["servicesMenu"] == nil && copy?["menuPath"] == ["Edit", "Copy"], "hitTest on Edit > Copy: its path, no flag")
+  let cmd: UInt64 = 0x100000, shift: UInt64 = 0x20000
+  let google = h.ask("menuKey", ["keyCode": 37, "flags": .int(Int(cmd | shift))])["items"]?.array?.first?.object
+  check(google?["servicesMenu"] == true && google?["path"] == ["CU Fixture", "Services", "Search With Google"], "menuKey: a service's item carries servicesMenu")
+  check(h.ask("menuKey", ["keyCode": 8, "flags": .int(Int(cmd))])["items"]?.array?.first?.object?["servicesMenu"] == nil, "menuKey: Edit > Copy does not")
+}
+
+func testSelectedItems() {
+  // CU-262: the focused collection's selected items - names and kinds from Accessibility only, never a path.
+  typealias Raw = SelectedItems.Raw
+  check(SelectedItems.kind(url: "file:///tmp/sandbox/Payload.app/") == "folder" && SelectedItems.kind(url: "file:///tmp/sandbox/install.command") == "file"
+        && SelectedItems.kind(url: nil) == "unknown" && SelectedItems.kind(url: "https://example.com/a") == "unknown", "kind from the URL string: folder slash, file, none")
+  check(SelectedItems.name(Raw(filename: "notes.txt", url: "file:///tmp/sandbox/other.txt", text: "x")) == "notes.txt", "AXFilename first")
+  check(SelectedItems.name(Raw(filename: nil, url: "file:///tmp/sandbox/Payload.app/", text: "Payload")) == "Payload.app", "else the URL's leaf - a hidden extension shows")
+  check(SelectedItems.name(Raw(filename: nil, url: "file:///tmp/sandbox/my%20script.command", text: nil)) == "my script.command", "the leaf percent-decoded")
+  check(SelectedItems.name(Raw(filename: nil, url: nil, text: "Recents item")) == "Recents item" && SelectedItems.name(Raw(filename: "", url: nil, text: nil)) == nil, "else the text; nothing gives no name")
+  let script = Raw(filename: nil, url: "file:///tmp/sandbox/install.command", text: "install.command")
+  check(SelectedItems.read(bundleId: "a.b", focusedRole: "AXOutline", selection: [script]) == .items(bundleId: "a.b", items: [SelectedItems.Item(name: "install.command", kind: "file")], truncated: false),
+        "a list view's selected row: its name and kind")
+  check(SelectedItems.read(bundleId: "a.b", focusedRole: "AXOutline", selection: []) == .none(bundleId: "a.b"), "nothing selected: none")
+  check(SelectedItems.read(bundleId: "a.b", focusedRole: "AXTextArea", selection: [script]) == .notCollection(bundleId: "a.b"), "a focus that is no collection: notCollection")
+  check(SelectedItems.read(bundleId: "a.b", focusedRole: nil, selection: nil) == .notCollection(bundleId: "a.b"), "no focused role: notCollection")
+  check(SelectedItems.read(bundleId: "a.b", focusedRole: "AXGroup", selection: nil) == .unreadable("the selection could not be read"), "a selection that cannot be read: unreadable, never none")
+  check(SelectedItems.read(bundleId: "a.b", focusedRole: "AXList", selection: [script, Raw(filename: nil, url: nil, text: nil)]) == .unreadable("a selected item has no name"),
+        "an unnamed item: unreadable")
+  if case .items(_, let items, let truncated) = SelectedItems.read(bundleId: "a.b", focusedRole: "AXTable", selection: Array(repeating: script, count: 33)) {
+    check(items.count == SelectedItems.maxItems && truncated, "at most 32 items, then truncated (the driver reads it as unreadable)")
+  } else { check(false, "33 selected items answer items, truncated") }
+  check(SelectedItems.Read.items(bundleId: "a.b", items: [SelectedItems.Item(name: "Payload.app", kind: "folder")], truncated: false).json
+        == ["bundleId": "a.b", "items": [["name": "Payload.app", "kind": "folder"]]], "the wire: names and kinds, no path, no URL")
+  // Through the dispatcher on a dry-run world.
+  let display: JSON = [["id": 1, "main": true, "originPt": ["x": 0, "y": 0], "sizePt": ["width": 800, "height": 600], "scale": 1]]
+  let rect: JSON = ["x": 100, "y": 100, "width": 400, "height": 300]
+  let apps: JSON = [["bundleId": "ai.reflection.cu.fixture", "pid": 501, "rect": rect]]
+  let h = Harness(["displays": display, "frontmost": "ai.reflection.cu.fixture", "apps": apps,
+                   "selectedItems": ["role": "AXOutline", "items": [["url": "file:///tmp/sandbox/install.command"], ["filename": "notes.txt", "url": "file:///tmp/sandbox/notes.txt"]]]])
+  check(h.ask("selectedItems")["code"] == "no_scope", "selectedItems needs a scope")
+  _ = h.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
+  let reply = h.ask("selectedItems")
+  check(reply["items"] == [["name": "install.command", "kind": "file"], ["name": "notes.txt", "kind": "file"]] && reply["bundleId"] == "ai.reflection.cu.fixture",
+        "the dry run answers the declared selection, names and kinds only")
+  check(reply.object?.keys.contains("path") == false && reply.object?.keys.contains("url") == false, "no path or URL on the wire")
+  let plain = Harness(["displays": display, "frontmost": "ai.reflection.cu.fixture", "apps": apps])
+  _ = plain.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
+  check(plain.ask("selectedItems")["notCollection"] == true, "no declared collection: notCollection")
+  let blind = Harness(["displays": display, "frontmost": "ai.reflection.cu.fixture", "apps": apps, "selectedItems": ["role": "AXGroup", "unreadable": true]])
+  _ = blind.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
+  check(blind.ask("selectedItems")["unreadable"] == true, "an unreadable selection: unreadable")
+  let other = Harness(["displays": display, "frontmost": "com.example.other", "apps": [["bundleId": "com.example.other", "pid": 600, "rect": rect]],
+                       "selectedItems": ["role": "AXOutline", "items": [["filename": "secret.txt"]]]])
+  _ = other.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
+  check(other.ask("selectedItems")["unreadable"] == true, "another app in front: unreadable, its selection is not read")
+}
+
 func testJSON() {
   let parsed = JSONCoding.decode(Data(#"{"a":true,"b":1,"c":1.5,"d":"x\ny","e":[null,false],"f":{"g":2}}"#.utf8))
   check(parsed?["a"] == .bool(true), "a boolean stays a boolean")
@@ -180,7 +267,7 @@ func testParser() {
   check(code(["id": 1, "type": "capture", "maxSize": ["width": 1, "height": 1], "simulateScale": 2]) == nil, "simulateScale 2 parses")
   check(code(["id": 1, "type": "capture", "maxSize": ["width": 1, "height": 1], "simulateScale": 1]) == "invalid_argument", "simulateScale is above 1")
   check(code(["id": 1, "type": "capture", "maxSize": ["width": 1, "height": 1], "simulateScale": 4.5]) == "invalid_argument", "simulateScale is at most 4")
-  check(Set(HelperProtocol.fields.keys) == ["scope", "capture", "input", "hitTest", "focused", "selection", "cursor", "panelSelection", "menuKey", "screenText", "watch", "unwatch", "pauseOnLocalInput", "simulateLocalInput", "confirmPhysical", "bye"], "the request set")
+  check(Set(HelperProtocol.fields.keys) == ["scope", "capture", "input", "hitTest", "focused", "selection", "cursor", "panelSelection", "menuKey", "selectedItems", "screenText", "watch", "unwatch", "pauseOnLocalInput", "simulateLocalInput", "confirmPhysical", "bye"], "the request set")
   // CU-64: the hold step - 1..10000 ms each, at most 10 s in one request, and allowed in pid (keyboard) mode.
   let down: JSON = ["kind": "keyDown", "keyCode": 56, "flags": 0]
   let up: JSON = ["kind": "keyUp", "keyCode": 56, "flags": 0]
@@ -447,7 +534,7 @@ func button(_ kind: String, _ x: Int, _ y: Int) -> JSON { ["kind": .string(kind)
 func testDispatcherBasics() {
   let h = Harness(fixtureWorld)
   let hello = h.dispatcher.hello(token: "t0k")
-  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.52", "the hello opens the run")
+  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.54", "the hello opens the run")
   check(hello["mode"] == "dry-run" && hello["grants"] == ["screen": true, "accessibility": true, "postEvents": true, "listenEvents": false], "a dry-run hello says so, with all four grants")
   check(h.ask("capture", ["maxSize": size800])["code"] == "no_scope", "capture needs a scope")
   check(h.ask("input", ["events": [key("keyDown", 1)], "mode": "global"])["code"] == "no_scope", "input needs a scope")
@@ -487,7 +574,7 @@ func testDispatcherGrants() {
   check(h.dispatcher.hello(token: "x")["grants"] == ["screen": false, "accessibility": false, "postEvents": false, "listenEvents": false], "an ungranted hello says so")
   let gated: [(String, [String: JSON], String)] = [("capture", ["maxSize": size800], "screen"), ("watch", ["fps": 1], "screen"),
     ("input", ["events": [key("keyDown", 1)], "mode": "global"], "accessibility"), ("hitTest", ["xPt": 1, "yPt": 1], "accessibility"),
-    ("focused", [:], "accessibility"), ("panelSelection", [:], "accessibility"), ("menuKey", ["keyCode": 2, "flags": 0x120000], "accessibility"),
+    ("focused", [:], "accessibility"), ("panelSelection", [:], "accessibility"), ("menuKey", ["keyCode": 2, "flags": 0x120000], "accessibility"), ("selectedItems", [:], "accessibility"),
     ("screenText", ["maxChars": 5], "accessibility")]
   for (type, fields, grant) in gated {
     let reply = h.ask(type, fields)
@@ -1683,6 +1770,8 @@ struct UnitTests {
     testArguments()
     testPeerCheck()
     testMenuKey()
+    testServicesMenu()
+    testSelectedItems()
     // Informational: whether the process that ran these tests is genuine node (true for Node.js Foundation builds).
     let parentIsNode = PeerCheck.satisfiesNodeRequirement(pid: getppid(), token: nil)
     print(JSON.object(["passed": .int(passed), "failed": .int(failures.count), "failures": .array(failures.map { .string($0) }), "parentIsGenuineNode": .bool(parentIsNode)]).text)
