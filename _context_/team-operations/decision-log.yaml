@@ -421,3 +421,8 @@ decisions:
     topic: worktree-exception-ends
     decision: 'D-077''s worktree exception ends: CUHelper 0.2.58 (#150, Fixes CU-292 and CU-295) was installed at 23:37Z from main aca5a2a (READBACK OK, self-test 40/40), and its peer check admits the main checkout ~/dtadpole/computer-use and the session worktrees ~/dtadpole/computer-use-wt/* named in the local configuration, and refused unlisted folders in cu-developer-three''s noInput proof. Every seat edits and starts its CUHelper runs from its session worktree; the old ~/computer-use--<seat> paths stay admitted (compiled in) until a later helper retires them and are no longer edited.'
     rationale: 'The exception existed only because the installed helper admitted no convention path; with the allowlist installed and proven, the 8 Nov local folder layout applies in full.'
+  - id: D-081
+    date: 2026-11-08
+    topic: urgent-keypress-hole-run-hold
+    decision: 'CU-301 (cu-researcher, 23:49Z: every field-name rule - the password field, credential names, D-061 names - runs only for a type action, so a password, CVV, SSN or recovery phrase pressed key by key is typed unasked on both drivers; runTask on main 2c0bacb) is an Urgent consent hole under CU-145 and D-063, the same kind of route hole as CU-230. As under D-071: until cu-verifier verifies it live, no live model run operates an app other than the team''s fixture apps and no browser run leaves the fixture site; scripted fixture runs go on. cu-developer-one fixes it ahead of every other item; cu-integrator lands it under D-073.'
+    rationale: 'An injected screen only has to say press the keys one at a time; a hold costs nothing while no owner-app model run is planned, and the fix jumps every queue.'
