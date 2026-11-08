@@ -69,6 +69,11 @@ function startServer(script, { args = ['--seat', 'cu-test-seat'], env = {}, node
   }
 }
 
+/** stderr is its own pipe and may trail the exit: wait up to 2 s for `pattern` to show. */
+async function settledStderr(server, pattern) {
+  for (let i = 0; i < 100 && !pattern.test(server.stderr()); i += 1) await new Promise((resolve) => setTimeout(resolve, 20))
+}
+
 function alive(pid) {
   try {
     process.kill(pid, 0)
@@ -219,7 +224,12 @@ test('SIGTERM to the parent is forwarded: both processes end promptly, with the 
     const { pid } = assertCleanChild(server)
     const began = Date.now()
     server.child.kill('SIGTERM')
-    assert.deepEqual(await server.exited, { code: 0, signal: null })
+    // CU-239: once under gate load the parent ended by SIGTERM itself; the message carries the parent's own account of its path.
+    const exited = await server.exited
+    assert.deepEqual(exited, { code: 0, signal: null }, `parent ended ${JSON.stringify(exited)}; serving child ${pid}; stderr: ${server.stderr().slice(-600)}`)
+    await settledStderr(server, /forwarding SIGTERM to the serving child/)
+    assert.match(server.stderr(), new RegExp(`forwarding SIGTERM to the serving child \\(pid ${pid}\\)`), 'the parent says it forwarded')
+    assert.doesNotMatch(server.stderr(), /ended by SIGTERM/, 'the child stopped in order, not by the signal')
     assert.ok(await gone(pid), 'the serving child is gone')
     assert.ok(Date.now() - began < 3000, `ended in ${Date.now() - began} ms`)
   } finally {
@@ -248,6 +258,10 @@ test('a child ended by a signal ends the parent by the same signal', { timeout: 
     const { pid } = assertCleanChild(server)
     process.kill(pid, 'SIGKILL')
     assert.deepEqual(await server.exited, { code: null, signal: 'SIGKILL' })
+    // CU-239: the parent names the path it took before it re-raises.
+    await settledStderr(server, /ended by SIGKILL/)
+    assert.match(server.stderr(), new RegExp(`the serving child \\(pid ${pid}\\) ended by SIGKILL; ending the same way`))
+    assert.doesNotMatch(server.stderr(), /forwarding/, 'nothing was forwarded: the parent got no signal')
   } finally {
     server.cleanup()
   }
