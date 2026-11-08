@@ -14,7 +14,7 @@ after(() => rmSync(tmp, { recursive: true, force: true }))
 const store = createAppApprovals({ path: join(tmp, 'a.json') })
 store.grantAlways(FIXTURE, { by: 'api' })
 const policy = createAppPolicy({ scope: [FIXTURE], approvals: store })
-const field = (extra, role = 'AXTextField') => ({ origin: FIXTURE, role, name: 'Message', editable: true, fingerprint: 'm', ...extra })
+const field = (extra, role = 'AXTextField') => ({ origin: FIXTURE, role, name: 'Subject', editable: true, fingerprint: 'm', ...extra })
 const judge = (action, target) => policy.classify(action, { frontmostBundleId: FIXTURE, target })
 const NEWLINE = { type: 'type', text: 'ok\n' }
 const ENTER = { type: 'keypress', keys: ['ENTER'] }
