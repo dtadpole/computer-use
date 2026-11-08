@@ -114,6 +114,9 @@ const T = {
   readonlyTextViewNotes: { role: 'AXTextArea', name: 'Bring the blue folder', caption: 'Notes', editable: false },
   webNotesEntry: { role: 'textbox', name: 'Notes', editable: true },
   notesEntry: { role: 'AXTextField', name: 'Notes', editable: true },
+  // CU-249: Services items as a click finds them (role and title only - a menu item carries no menu path).
+  servicesSearchItem: { role: 'AXMenuItem', name: 'Search With Google' },
+  servicesAppleScriptItem: { role: 'AXMenuItem', name: 'Get Result of AppleScript' },
   webOnclickDelete: { tag: 'div', role: 'generic', name: 'Delete' },
   webPointerIconDelete: { tag: 'div', role: 'generic', name: 'Delete' },
   webReadingText: { tag: 'span', role: 'generic', name: '' },
@@ -231,6 +234,8 @@ const ROWS = [
   ['service-run-applescript', 'desktop', 'cmdShift8', 'notesEntry', 'unknown_target', 'CU-249 (Get Result of AppleScript runs the selection)', 'no live row yet', 'todo CU-249', { boundMenuItem: { none: true } }],
   ['service-terminal-man', 'desktop', 'cmdShiftM', 'notesEntry', 'unknown_target', 'CU-249 (Terminal, an excluded app)', 'no live row yet', 'todo CU-249', { boundMenuItem: { none: true } }],
   ['service-chord-app-bound', 'desktop', 'cmdShiftL', 'notesEntry', 'allow', 'CU-249 negative (an app item on the chord is judged by its name)', 'no live row yet', 'open CU-249', { boundMenuItem: { role: 'AXMenuItem', name: 'Show Sidebar', keyEquivalent: { char: 'L', modifiers: 1 } } }],
+  ['service-click-search-with', 'desktop', 'click', 'servicesSearchItem', 'unknown_target', 'CU-249 (a Services item clicked: the selection to a web search)', 'no live row yet', 'todo CU-249'],
+  ['service-click-run-applescript', 'desktop', 'click', 'servicesAppleScriptItem', 'unknown_target', 'CU-249 (a Services item clicked: runs the selection as AppleScript)', 'no live row yet', 'todo CU-249'],
   ['paste-no-own-copy', 'desktop', 'cmdV', 'searchField', 'sensitive_data', 'paste-consent tests (#349)', '20261107T052454Z-bed1eb; count half on 0.2.40 (cu-verifier 10:13Z, no-alert proof)', null, { paste: { fromOwner: true } }],
   ['paste-after-own-copy', 'desktop', 'cmdV', 'searchField', 'allow', 'CU-151 (#349)', "0.2.42 P2: own copy allowed (20261107T173939Z-f03c80)", null, { paste: { fromOwner: false } }],
   // CU-187 desktop half: an own copy of shown text carries its caption's class to a paste into an unnamed entry (the
