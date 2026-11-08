@@ -386,3 +386,8 @@ decisions:
     topic: urgent-landing-and-holds
     decision: 'While another seat holds the desktop-run lock, cu-integrator may land an Urgent pull request whose diff touches no CUHelper, desktop driver or fixture-app code through phase 1 alone, then runs the full two-phase check on main as soon as the lock frees and reverts at once by PR if it is red. Every holder releases the moment its series ends, reads the inbox before a hold, between series and before each series, and before a new hold lets a waiting phase 2 take the lock first (about 2 minutes); cu-integrator announces PHASE 2 WAITING after 5 minutes.'
     rationale: 'Back-to-back holds kept main from moving for half an hour while Urgent fixes waited; the post-check keeps the gate''s guarantee without starving it.'
+  - id: D-074
+    date: 2026-11-08
+    topic: run-hold-lifted
+    decision: 'D-071''s hold ends: CU-230 (verified live 12:30Z) and CU-232 (verified live 14:26Z on helper 0.2.52 with the driver''s menu read) close both chord holes. Live model runs may again use apps beyond the fixture apps and fixture site under the standing rules - per-app approval, the desktop-run lock, the owner-idle rule (D-066, D-068) - with one limit while the High value-class under-asks CU-257, CU-260, CU-266, CU-267 and CU-268 are open: no unattended task that types, pastes or sends the owner''s own data.'
+    rationale: 'The hold was tied to two verified holes; the remaining open under-asks block the verdict row (D-063) but are bounded by keeping owner data out of unattended tasks until they close.'
