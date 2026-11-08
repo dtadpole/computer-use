@@ -52,15 +52,15 @@ test('CU-261 with cu-researcher\'s 13:23Z sweep: unsubscribe, report spam and le
 })
 
 test('CU-286 (real-app wordings): Ask to join and Start huddle submit; Allow always and Remember this decision ask permission - desktop and web; the deliberate exclusions stay free', () => {
-  for (const name of ['Ask to join', 'Ask to Join', 'Start huddle', 'Start a huddle']) {
+  for (const name of ['Ask to join', 'Ask to Join', 'Start huddle', 'Start a huddle', 'Join huddle']) {
     assert.equal(onDesktop(name), 'submit', `desktop ${name}`)
     assert.equal(onWeb(name), 'submit', `web ${name}`)
   }
-  for (const name of ['Allow always', 'Allow Always', 'Remember this decision']) {
+  for (const name of ['Allow always', 'Allow Always', 'Remember this decision', 'Remember decision']) {
     assert.equal(onDesktop(name), 'permission', `desktop ${name}`)
     assert.equal(onWeb(name), 'permission', `web ${name}`)
   }
-  for (const name of ['Join', "Don't show again", 'Trust this computer', 'Allow', 'Huddle notes', 'Ask a question']) assert.equal(onDesktop(name), 'allow', `${name} stays free (a deliberate exclusion or no match)`)
+  for (const name of ['Join', "Don't show again", 'Trust this computer', 'Allow', 'Huddles', 'Huddle notes', 'Remember me', 'Ask a question']) assert.equal(onDesktop(name), 'allow', `${name} stays free (a deliberate exclusion or no match)`)
 })
 
 test('CU-261 named limits: a bare Accept, Connect, Join or Follow, and Call or Merge inside a longer name, stay free', () => {
