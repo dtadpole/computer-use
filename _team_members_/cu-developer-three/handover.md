@@ -31,7 +31,7 @@ A fresh session re-reads them before use.
   half verified live, closes with the D-059 cell PR); CU-216, PR #7 (a verifier build is staged, so an aborted build
   cannot poison its hash; taken past the WIP limit with a note).
 - Triage: CU-224, PR #11 (the no-release mutant deadlocked its helper; two orphans since 6-7 Nov wait for cu-verifier).
-- In Review: CU-193 (cu-verifier closes it).
+- Verify: CU-193 (cu-verifier closes it).
 
 ## Next step
 
