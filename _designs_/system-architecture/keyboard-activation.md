@@ -25,7 +25,7 @@ sheet and a save panel's Replace went unasked.
 |---|---|
 | SPACE, alone or with Shift, Option or Control (CU-234), on a focused control a click activates (button, checkbox, radio, pop-up, menu item, link, disclosure) | a click on it: its name against every word list; in a text input it types a space and is not judged |
 | ENTER or RETURN, a key hold, a typed newline anywhere, a typed space on a focused control | as those keys pressed: the focused element's name, a held dialog, and the window's default button, if reported, for a single-line input or non-text focus; in a text area a Return is text, Command-Return presses it (CU-142) |
-| plain RETURN in a chat compose field, by app or name (CU-253) | `submit`, text areas too; Shift- or Option-Return is text |
+| RETURN in a chat app (Command-Return too) or a Message, Reply or Chat field (CU-253) | `submit`, text areas too; Shift-Return is text |
 | CMD+BACKSPACE or CMD+DELETE, any modifiers | `delete` (Move to Trash, Empty Trash, a dialog's Delete), in a text input too: the menu sees the chord before the field (CU-143) |
 | CMD+D, any extra modifier too (CU-234), the focused element a button | `delete`: with a sheet or alert focused it presses Don't Save or Delete |
 | words | `delete` adds replace, overwrite and don't save; a save panel's Replace names the file |

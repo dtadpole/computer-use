@@ -29,6 +29,17 @@ const entry = (app, role, name) => ({ origin: app, role, name, editable: true, f
 const onDesktop = (app, action, target) => desktop.classify(action, { frontmostBundleId: app, target })
 const judged = (v) => (v.decision === 'allow' ? 'allow' : v.class)
 
+test('CU-253 (cu-coordinator): a bare Message, Reply or Chat field asks too, in any app - the named over-ask is a form\'s multi-line Message box', () => {
+  for (const name of ['Message', 'Reply', 'Chat']) assert.equal(judged(onDesktop(FIXTURE, key('ENTER'), entry(FIXTURE, 'AXTextField', name))), 'submit', name)
+  assert.equal(judged(onDesktop(FIXTURE, key('ENTER'), entry(FIXTURE, 'AXTextArea', 'Message'))), 'submit', 'the named over-ask')
+  assert.equal(judged(onDesktop(FIXTURE, key('ENTER'), entry(FIXTURE, 'AXTextField', 'Message subject'))), 'allow', 'whole name only')
+})
+
+test('CU-253 (cu-coordinator): in a chat app Command- or Control-Return asks too; Shift- and Option-Return stay line breaks', () => {
+  for (const mod of ['META', 'CTRL']) assert.equal(judged(onDesktop(SLACK, key(mod, 'ENTER'), entry(SLACK, 'AXTextArea', ''))), 'submit', mod)
+  assert.equal(judged(onDesktop(FIXTURE, key('CTRL', 'ENTER'), entry(FIXTURE, 'AXTextArea', 'Notes'))), 'allow', 'Control-Return in another app\'s text area')
+})
+
 test('CU-253: a plain Return or typed line break in a chat app\'s compose field asks submit - a text area too', () => {
   for (const action of [key('ENTER'), { type: 'type', text: 'see you soon\n' }]) {
     assert.equal(judged(onDesktop(MESSAGES, action, entry(MESSAGES, 'AXTextArea', 'iMessage'))), 'submit', `Messages ${action.type}`)
@@ -40,7 +51,7 @@ test('CU-253: a plain Return or typed line break in a chat app\'s compose field 
 test('CU-253: Shift- or Option-Return types a line break and stays allowed; other apps\' text areas keep their line break', () => {
   for (const mod of ['SHIFT', 'ALT']) assert.equal(judged(onDesktop(MESSAGES, key(mod, 'ENTER'), entry(MESSAGES, 'AXTextArea', 'iMessage'))), 'allow', mod)
   assert.equal(judged(onDesktop(FIXTURE, key('ENTER'), entry(FIXTURE, 'AXTextArea', 'Notes'))), 'allow', 'a text area elsewhere')
-  assert.equal(judged(onDesktop(FIXTURE, key('ENTER'), entry(FIXTURE, 'AXTextField', 'Message'))), 'allow', 'a bare Message field with a read of no default button')
+  assert.equal(judged(onDesktop(FIXTURE, key('ENTER'), entry(FIXTURE, 'AXTextField', 'Subject'))), 'allow', 'another field with a read of no default button')
   assert.equal(judged(onDesktop(MESSAGES, key('ENTER'), { origin: MESSAGES, role: 'AXButton', name: 'Info', fingerprint: 'b', defaultButtonRead: true })), 'allow', 'not a text entry')
 })
 
@@ -49,7 +60,8 @@ test('CU-253 in the browser: a compose field named like Slack\'s or WhatsApp\'s 
   assert.equal(at({ tag: 'div', role: 'textbox', name: 'Message #general' }), 'submit')
   assert.equal(at({ tag: 'div', role: 'textbox', name: 'Type a message' }), 'submit')
   assert.equal(at({ tag: 'textarea', role: 'textbox', name: 'Type a message' }), 'allow', 'a textarea: the web\'s send is Command-Enter (CU-241)')
-  assert.equal(at({ tag: 'input', role: 'textbox', name: 'Message' }), 'allow', 'a bare Message input')
+  assert.equal(at({ tag: 'input', role: 'textbox', name: 'Message' }), 'submit', 'a bare Message input (cu-coordinator)')
+  assert.equal(at({ tag: 'textarea', role: 'textbox', name: 'Message' }), 'allow', 'a contact form\'s Message textarea keeps its line break')
 })
 
 test('CU-253 through the loop: Return in Messages\' iMessage field is declined unattended, nothing sent', async () => {
