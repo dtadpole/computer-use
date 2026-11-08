@@ -1,8 +1,8 @@
 ---
 title: What it does, approvals and known limits
 created: 2026-11-07T21:18:46Z
-modified: 2026-11-08T21:36:58Z
-version: 0.1.10
+modified: 2026-11-08T22:11:45Z
+version: 0.1.11
 level: L1
 status: unverified
 description: What the agent can and cannot do on your Mac, what it asks you, and its known limits.
@@ -24,13 +24,13 @@ keychains, shell start-up files, login items or `/Applications`. A password fiel
 
 ## Approvals
 
-It asks before using a new app (once, this run, or always), running code (opening an app, script or installer; Run in an IDE or notebook), sending, calling or joining a meeting, opening a link to another app (tel:, FaceTime), buying, deleting or overwriting, granting a permission or switching off account protection,
-entering credentials or sensitive data in a field (street address, e-mail, phone; not city or postcode) or in a web address (a card, key, e-mail, passport or tax id), pasting your own clipboard, pasting into a field named for a bank account, tax id or secret, copying a sensitive field's text, or text shown beside a label such as Passport or IBAN, into another field, and choosing a file (asked every time). Buying, deleting, permissions and
+It asks before using a new app (once, this run, or always), running code (opening an app, script or installer; Run in an IDE or notebook), sending, calling or joining a meeting, opening a link to another app (tel:, FaceTime), buying (free trials too), deleting or overwriting, granting a permission or switching off account protection,
+entering credentials or sensitive data in a field (street address, e-mail, phone; not city or postcode) or in a web address (a card, key, e-mail, phone, street address, passport, tax id or bank account), pasting your own clipboard, pasting into a field named for a bank account, tax id or secret, copying a sensitive field's text, or text shown beside a label such as Passport or IBAN, into another field, and choosing a file (asked every time). Buying, deleting, permissions and
 file choices are never pre-approved. Typed sensitive text stays out of run files. Unattended (`--consent unattended`), every question is declined. Manage "always" apps: `cli.mjs apps list`, `cli.mjs apps revoke <bundle id>`.
 
 ## Known limits
 
-- Names are read in English; secure fields, shortcuts, file types and excluded apps do not depend on it. Until CU-293 adds Chinese, approve apps running in English.
+- Names are read in English and Chinese (Simplified and Traditional); for other languages approve only apps running in one of those.
 - A file panel's question names the folder only if the agent opened it; otherwise check first.
 - One display: your first app's, at its starting size; moving display ends the run.
 - A leftover notification blocks clicks beneath it.
