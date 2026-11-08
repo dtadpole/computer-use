@@ -13,6 +13,9 @@ import AppKit
 //     by the disabled first item and fires nothing. What a real keystroke fires is the live row's question;
 //   - Message > Delete on a plain Backspace, enabled only while the Outbox list has the focus - Mail's case: with the
 //     focus in the draft body Backspace edits the text, on the list it deletes the selected row (acceptance 2f);
+//   - CU Fixture > Services, a stand-in for the Services menu (CU-250's live row): 'Weekly Report Uploader', named like
+//     an owner-installed service rather than a default one, and AppKit's marker 'Services Settings…'. It is the
+//     fixture's own submenu, not NSApp.servicesMenu, so no real service is listed or can run; each item only records.
 //   - Later > Send Later on Option-Command-L (not Shift-Command-L, the default 'Search With Google' service shortcut)
 //     in a menu filled lazily by its delegate: empty until AppKit asks it to
 //     update, while the delegate answers the chord itself (menuHasKeyEquivalent) without filling it, as apps with lazy
@@ -60,6 +63,7 @@ final class MenuCompose: NSObject, NSMenuDelegate, NSMenuItemValidation, NSTable
   let preview = PreviewPane(frame: NSRect(x: 20, y: 334, width: 380, height: 40))
   var outboxNames = ["Weekly summary", "Room booking", "Follow-up notes"]
   private var installed: [NSMenuItem] = []
+  private var servicesHolder: NSMenuItem?
   private(set) var sent: [String] = []
   private(set) var deleted: [String] = []
   /// Whether AppKit asked the lazy menu to fill itself, and why the first time (`update`: it was about to open, or a key
@@ -181,12 +185,31 @@ final class MenuCompose: NSObject, NSMenuDelegate, NSMenuItemValidation, NSTable
       main.addItem(top)
       installed.append(top)
     }
+    // The stand-in Services submenu goes into the app menu, where AppKit puts the real one.
+    if let appMenu = main.items.first?.submenu {
+      let services = NSMenu(title: "Services")
+      services.addItem(item("Weekly Report Uploader", "", [], #selector(serviceChosen(_:))))
+      services.addItem(NSMenuItem.separator())
+      services.addItem(item("Services Settings\u{2026}", "", [], #selector(serviceChosen(_:))))
+      let holder = NSMenuItem(title: "Services", action: nil, keyEquivalent: "")
+      holder.submenu = services
+      appMenu.addItem(holder)
+      servicesHolder = holder
+    }
+  }
+
+  /// A stand-in service ran: only the fact is recorded (a refused click never reaches here).
+  @objc func serviceChosen(_ sender: NSMenuItem) {
+    Fixture.shared.record("service-ran", ["item": sender.title])
+    status.stringValue = "Service: \(sender.title) (nothing left the fixture)"
   }
 
   static func uninstallMenus() {
     guard let screen = shared, let main = NSApp.mainMenu else { return }
     for top in screen.installed where main.items.contains(top) { main.removeItem(top) }
     screen.installed = []
+    if let holder = screen.servicesHolder, let appMenu = holder.menu { appMenu.removeItem(holder) }
+    screen.servicesHolder = nil
   }
 
   /// The lazy menu fills itself only when AppKit asks - before it opens, or while a key equivalent is matched.
@@ -248,6 +271,7 @@ final class MenuCompose: NSObject, NSMenuDelegate, NSMenuItemValidation, NSTable
   static func accessibilityMenus() -> [[String: Any]] {
     guard let screen = shared, let bar = NSApp.accessibilityAttributeValue(NSAccessibility.Attribute.menuBar) as AnyObject? else { return [] }
     let titles = Set(screen.installed.compactMap { $0.submenu?.title })
+    let servicesTitle = screen.servicesHolder?.title
     func value(_ element: AnyObject, _ name: String) -> Any? { element.accessibilityAttributeValue(NSAccessibility.Attribute(rawValue: name)) }
     func kids(_ element: AnyObject) -> [AnyObject] { (value(element, "AXChildren") as? [AnyObject]) ?? [] }
     return kids(bar).compactMap { top -> [String: Any]? in
@@ -260,7 +284,22 @@ final class MenuCompose: NSObject, NSMenuDelegate, NSMenuItemValidation, NSTable
                 "virtualKey": (value(item, "AXMenuItemCmdVirtualKey") as? NSNumber)?.intValue ?? NSNull()]
       }
       return ["title": title, "items": items]
+    } + servicesAX(bar: bar, holderTitle: servicesTitle, value: value, kids: kids)
+  }
+
+  /// The stand-in Services submenu as Accessibility shows it: [{title: 'Services', items: [{title}]}] - found under the
+  /// app menu by its holder's title.
+  private static func servicesAX(bar: AnyObject, holderTitle: String?, value: (AnyObject, String) -> Any?, kids: (AnyObject) -> [AnyObject]) -> [[String: Any]] {
+    guard let holderTitle else { return [] }
+    for top in kids(bar) {
+      for menu in kids(top) {
+        for item in kids(menu) where value(item, "AXRole") as? String == "AXMenuItem" && value(item, "AXTitle") as? String == holderTitle && !kids(item).isEmpty {
+          let titles = kids(item).flatMap(kids).compactMap { value($0, "AXTitle") as? String }.filter { !$0.isEmpty }
+          return [["title": holderTitle, "items": titles.map { ["title": $0] }]]
+        }
+      }
     }
+    return []
   }
 
   // MARK: State and seams
@@ -293,6 +332,12 @@ final class MenuCompose: NSObject, NSMenuDelegate, NSMenuItemValidation, NSTable
       } else {
         window.makeFirstResponder(screen.body)
       }
+      return true
+    }
+    // `composeService 'Weekly Report Uploader'`: what a click on that stand-in service runs, in process.
+    if let title = step["composeService"] as? String {
+      guard let entry = screen.servicesHolder?.submenu?.items.first(where: { $0.title == title }) else { return false }
+      screen.serviceChosen(entry)
       return true
     }
     guard let spec = step["composeKey"] as? [String: Any], let name = spec["key"] as? String else { return false }
