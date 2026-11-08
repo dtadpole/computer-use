@@ -1,9 +1,9 @@
 ---
 title: Consent limits - the routes the consent rules leave unjudged, named for the verdict
 created: 2026-11-08T11:23:17Z
-modified: 2026-11-08T17:43:41Z
+modified: 2026-11-08T18:29:05Z
 level: L1
-version: 0.2.8
+version: 0.2.9
 description: The D-059 table's named limits (D-063) - routes the consent rules do not judge, on purpose or by parity, each with its issue; split out of consent-routes.md so the route table keeps its budget.
 status: unverified
 grounded_in:
@@ -37,5 +37,5 @@ row. The routes the rules do judge are in [consent-routes.md](consent-routes.md)
 - A link to a non-web scheme - facetime:, tel:, mailto:, file:, an app's own - asks permission (CU-265); data: and
   blob: links ask too (accepted over-ask until they count as web schemes).
 - A standing choice in an approved app's own dialog - 'Always Allow', 'Always Trust', "Don't ask again", 'Never for
-  This Website', 'Set as Default' - asks permission (CU-258); 'Always use this app', 'Do not ask me again' and Finder's
-  'Change All…' are not yet asked. System prompts are refused (CU-76).
+  This Website', 'Set as Default', 'Always use this app', 'Do not ask me again', Finder's 'Change All…' - asks
+  permission (CU-258). System prompts are refused (CU-76).
