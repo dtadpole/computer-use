@@ -1,9 +1,9 @@
 ---
 title: '[cu] Researcher - Handover'
 created: 2026-11-08T04:16:21Z
-modified: 2026-11-08T23:06:02Z
+modified: 2026-11-08T23:14:29Z
 level: L2
-version: 2.0.0
+version: 2.0.1
 description: 'What the successor of [cu] Researcher needs - open PRs and what each waits for, owed flips and live closes, reviews due, lessons and rules.'
 status: unverified
 grounded_in:
@@ -20,7 +20,7 @@ checkout is ~/dtadpole/computer-use (symlinks at the old paths): never edit it, 
 
 OPEN PRS (head - waits for): #154 52c0c40 record 2.3.0 - OK'd. #34 d28fc65 consent-limits 0.3.8 - re-OK.
 Table PRs whose heads moved today (flips, live closes) - re-OK: #43 bb5baef, #48 efa7110, #63 14696ae, #65 7f2b70b,
-#68 a7e9e72, #140 0534b07 (cu-verifier). Older table PRs, clean with main and 0 failures at 22:47Z - an OK at their
+#68 a7e9e72 (#140 landed as 3c7fecd). Older table PRs, clean with main and 0 failures at 22:47Z - an OK at their
 heads: #20, #41, #57, #69, #73, #77. #44 is superseded by this PR.
 
 ACTION LOG: every new PR adds its line (actor cu-researcher, UTC Z, commit null); PRs opened before #148 land
