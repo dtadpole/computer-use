@@ -342,7 +342,7 @@ const ROWS = [
   // CU-258 (cu-researcher): a standing choice in an approved app's own dialog outlives the run, yet none of its
   // wordings is a permission word (runTask probe on main: allowed and posted; 'Grant access' asks).
   ['standing-always-allow', 'desktop', 'click', 'alwaysAllowButton', 'permission', 'CU-258', 'cu-verifier, main 900e251, CU Fixture named controls: Always Allow declined permission (20261108T180735Z-10a7db)', null],
-  ['standing-allow-always', 'desktop', 'click', 'allowAlwaysButton', 'permission', 'CU-286 (the reversed word order)', 'no live row yet', 'open CU-286'],
+  ['standing-allow-always', 'desktop', 'click', 'allowAlwaysButton', 'permission', 'CU-286 (the reversed word order)', 'cu-verifier CU Fixture named-controls, declined permission and not pressed: 20261108T214828Z-f2f9dc', null],
   ['standing-remember-decision', 'desktop', 'click', 'rememberDecisionBox', 'permission', 'CU-286 (Firefox permission prompt checkbox)', 'no live row yet', 'open CU-286'],
   // CU-289 (cu-developer-one 20:07Z): storing a credential is a standing choice; staying signed in and a plain save are not.
   ['standing-save-password', 'desktop', 'click', 'savePasswordButton', 'permission', 'CU-289 (stores a credential)', 'no live row yet', 'open CU-289'],
