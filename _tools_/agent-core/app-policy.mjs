@@ -1,3 +1,4 @@
+import { isIdeApp } from './app-kinds.mjs'
 import { normaliseForPolicy } from './normalise.mjs'
 import { homedir } from 'node:os'
 import { posix } from 'node:path'
@@ -134,14 +135,8 @@ function dropsOntoApp(target) {
 }
 const appNameOf = (target) => String(target?.filename ?? target?.name ?? '').trim().replace(/\.app\/?$/i, '')
 
-// CU-271: IDEs (kind ide) - a bundle id or a prefix ending in '.'; Cursor by its exact id (cu-developer-three's read: the
-// com.todesktop. prefix is every ToDesktop-built app).
-const IDE_BUNDLES = ['com.microsoft.VSCode', 'com.microsoft.VSCodeInsiders', 'com.visualstudio.code.oss', 'com.vscodium', 'com.todesktop.230313mzl4w4u92',
-  'com.apple.dt.Xcode', 'com.jetbrains.', 'com.google.android.studio', 'com.sublimetext.', 'com.panic.nova', 'dev.zed.Zed']
-function isIde(bundleId) {
-  const id = String(bundleId ?? '').toLowerCase()
-  return id !== '' && IDE_BUNDLES.some((entry) => (entry.endsWith('.') ? id.startsWith(entry.toLowerCase()) : id === entry.toLowerCase() || id.startsWith(`${entry.toLowerCase()}.`)))
-}
+// CU-271: IDEs are a kind in app-kinds.mjs (ids and family prefixes with their sources).
+const isIde = isIdeApp
 // cu-researcher on #119: Build (a build system runs the file) and Test (runs test code) run code too.
 const RUN_NAME = /(^|[^a-z])(run|runs|debug|debugging|execute|build and run|build|test|tests)([^a-z]|$)/i
 const RUN_CLICKS = new Set(['click', 'double_click', 'triple_click'])
@@ -210,7 +205,7 @@ function selectsFiles(selection) {
 export function selectionRunsCode(selection) {
   if (!selection || typeof selection !== 'object') return true
   if (selection.none === true) return false
-  if (!Array.isArray(selection.items)) return true
+  if (!Array.isArray(selection.items) || selection.items.length === 0) return true
   return selection.truncated === true || selection.items.some((item) => {
     const name = String(item?.name ?? '').trim()
     if (item?.kind === 'unknown' || name === '') return true
@@ -368,7 +363,22 @@ export function panelDestination(selection, home = homedir()) {
 // design Q-D9): clicking there is fine, typing is refused.
 // Also REPLs and notebook cells, where Enter or Shift+Enter runs code (red-team retest of E5).
 const TERMINAL_VIEW = /\b(terminal|console|shell|command prompt|zsh|bash|repl|notebook|code cell|interactive|ipython|irb|jupyter)\b/i
-const isTerminalView = (target) => target !== null && TERMINAL_VIEW.test([target?.name, target?.description, target?.roleDescription].filter(Boolean).join(' '))
+// CU-279 (the owner works in Chinese): the terminal's word in other languages, as a second net in any app - CJK by
+// substring, German, Spanish and Italian as whole words. Cyrillic is a named limit: normalise folds its look-alike letters
+// to Latin before any rule reads the name.
+const TERMINAL_WORD_CJK = /(终端|終端|ターミナル|터미널)/u
+const TERMINAL_WORD_OTHER = /(?<!\p{L})(konsole|consola|terminale)(?!\p{L})/iu
+const isTerminalView = (target) => {
+  if (target === null || target === undefined) return false
+  const said = [target?.name, target?.description, target?.roleDescription].filter(Boolean).join(' ')
+  return TERMINAL_VIEW.test(said) || TERMINAL_WORD_CJK.test(said) || TERMINAL_WORD_OTHER.test(said)
+}
+// CU-279: in an IDE an integrated terminal's input is named '<word> <number>, <title>' ('Terminal 1, node' in VS Code's
+// xterm.js, '终端 1, node' in its Chinese build) - a shape, whatever the language. Only in an IDE, by kind: elsewhere the
+// same shape ('Tab 1, notes') is a named limit.
+const IDE_TERMINAL_SHAPE = /^\S+ \d+, \S/u
+const ideTerminal = (target, app) => isIdeApp(app) && target !== null && target !== undefined && (target.editable === true || ['AXTextArea', 'AXTextField'].includes(target.role))
+  && IDE_TERMINAL_SHAPE.test(String(target.name ?? '').trim())
 
 // No pre-approval covers these on the desktop, scoped to an app or not: a credential (P4), opening code (P10), and the
 // browser's always-confirm classes.
@@ -511,7 +521,7 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
       const secure = into.secure === true || into.isPassword === true
       return { decision: 'handoff', class: null, rule: secure ? 'secure_field' : 'password_field', reason: 'pasting into a secure or password field is the person\'s' }
     }
-    if (isKeyAction(action) && isTerminalView(target)) {
+    if (isKeyAction(action) && (isTerminalView(target) || ideTerminal(target, context.frontmostBundleId ?? target?.origin))) {
       return { decision: 'block', class: null, rule: 'terminal_view', reason: 'typing into a terminal panel is refused, as in a terminal app' }
     }
     const apps = [['frontmost', context.frontmostBundleId], ['target', targetApp]].filter(([, id]) => id !== null)
@@ -541,7 +551,15 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     if (isIde(app) && verdict.decision !== 'handoff' && runsInIde(action, target, context.boundMenuItem)) {
       return { decision: 'confirm', class: 'launch_code', classes: ['launch_code', ...(verdict.classes ?? [])], rule: 'ide:run', reason: `run code in ${app}`, app }
     }
-    const opensFiles = opensUnreadSelection(action, target, app) || (opensSelection(action, target) && selectsFiles(context.selection))
+    // CU-252 (cu-verifier 221022Z on #104's stand-in; rows read AXStaticText with empty names): in any app, an open whose
+    // selection read came back unreadable - the helper could not name the rows - asks, as Finder's unread does; { none },
+    // a named non-launchable selection and no read at all (an older driver) stay as before.
+    // cu-researcher on #153: rows the helper could not name reach here as items with empty names, or as an empty list
+    // without { none } - the same unreadable read.
+    const items = context.selection?.items
+    const unreadableRead = context.selection?.unreadable === true
+      || (Array.isArray(items) && (items.length === 0 || items.some((item) => String(item?.name ?? '').trim() === '')))
+    const opensFiles = opensUnreadSelection(action, target, app) || (opensSelection(action, target) && (selectsFiles(context.selection) || unreadableRead))
     if (opensFiles && selectionRunsCode(context.selection) && verdict.decision !== 'handoff') {
       return { decision: 'confirm', class: 'launch_code', classes: ['launch_code', ...(verdict.classes ?? [])], rule: 'selection:launch_code', reason: 'open the selection, which this run cannot read - it may run code', app }
     }
