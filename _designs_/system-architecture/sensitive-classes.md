@@ -1,9 +1,9 @@
 ---
 title: Sensitive classes - everything the agent must never type unasked
 created: 2026-11-07T14:34:22Z
-modified: 2026-11-08T14:16:00Z
+modified: 2026-11-08T03:56:04Z
 level: L1
-version: 0.3.3
+version: 0.3.2
 description: The D-061 table - every sensitive class with its value rule, its field-name rule, the asserting test and the live row; rows live in an executable matrix, gaps are children of CU-145.
 status: unverified
 grounded_in:
@@ -29,17 +29,17 @@ name (on a text entry only, never a button). Each class has one row per value ru
 ## Limits
 
 - Too broad to judge by value: a 9-digit SIN or plain SSN, a 3-digit CVV, an MM/YY expiry, a passport or licence
-  number, a date, a street address. The name rule carries them, unseen when pasted into an unnamed box.
-- A digest of 40 or more hex characters asks (accepted over-ask, D-061).
-- Words match whole: 'Panel' never asks. A bare six-digit number never asks by value: a one-time code is
+  number, a date, a street address. The name rule carries them; a date or street address pasted into an unnamed box is not seen.
+- A digest of 40 or more hex characters asks (an accepted over-ask, D-061 keeps it).
+- Words match whole: 'Panel' and 'Classname' never ask. A bare six-digit number never asks by value: a one-time code is
   judged by its field's name and autocomplete.
-- Text typed into a sensitive field (Email and Phone too) is redacted from run files (D-062).
+- Text typed into a sensitive field, an Email or Phone box included, is redacted from run files (D-062).
 - Not judged by value: an unbroken national run (07700900123) and the 00 international prefix; a grouped
   reference such as 01-2345-6789 asks (CU-185).
 - Names compare normalised (case, curly apostrophes, licence as license, # as number, no dots, a hyphen as a
-  space). Acronyms match case-sensitively as whole words: 'Pan size' never asks. 'Mobile' alone asks, so 'Mobile app
-  name' does too (accepted over-ask). A bare 'Account', 'Token', 'ID number', 'Address', 'City' or 'Postcode' never asks.
-- Pieces typed into one field are judged whole (CU-267); a desktop paste adds no text to them (D-031).
+  space). Acronyms match case-sensitively as whole words: 'Pan size' and 'Sin City' never ask. 'Mobile' alone asks, so
+  a 'Mobile app name' field asks too (an accepted over-ask). A bare
+  'Account', 'Token', 'ID number', 'Address', 'City' or 'Postcode' never asks.
 
 ## Sign-off
 
