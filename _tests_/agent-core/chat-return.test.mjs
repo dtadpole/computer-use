@@ -36,11 +36,11 @@ test('CU-253 (cu-coordinator): a bare Message, Reply or Chat field asks too, in 
 })
 
 test('CU-253 (cu-researcher): a compose field in its own words - Teams\' \'Type a new message\' and its kin - asks, on the desktop and the web; search fields stay free', () => {
-  for (const name of ['Type a new message', 'Write a new message', 'Send a new message', 'Type a message', 'Write a message']) {
+  for (const name of ['Type a new message', 'Write a new message', 'Send a new message', 'Type a message', 'Write a message', 'Write a message\u2026', 'Write a message...', 'Type a new message\u2026', 'Type a message here', 'Type a message here...', 'Message #general\u2026']) {
     for (const role of ['AXTextArea', 'AXTextField']) assert.equal(judged(onDesktop(FIXTURE, key('ENTER'), entry(FIXTURE, role, name))), 'submit', `${role} '${name}'`)
     assert.equal(judged(web.classify(key('ENTER'), { url: 'https://chat.example/', target: { tag: 'div', role: 'textbox', name, editable: true } })), 'submit', `web '${name}'`)
   }
-  for (const name of ['Search messages', 'Find in conversation', 'New message', 'Type a new message here and more']) {
+  for (const name of ['Search messages', 'Search messages\u2026', 'Search new messages', 'Find in conversation', 'New message', 'New message subject', 'Type a new message here and more', 'Type a message there']) {
     assert.equal(judged(onDesktop(FIXTURE, key('ENTER'), entry(FIXTURE, 'AXTextField', name))), 'allow', `'${name}' is no compose field`)
     assert.equal(judged(web.classify(key('ENTER'), { url: 'https://chat.example/', target: { tag: 'input', role: 'searchbox', name, editable: true } })), 'allow', `web '${name}'`)
   }
