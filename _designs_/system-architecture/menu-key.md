@@ -48,5 +48,7 @@ is judged by its name ([action-classes](action-classes.md)), so the chord must b
   incomplete, which reads as unreadable (CU-235). Services, a lazily filled submenu acting in another app, is
   measured before it is judged or named.
 - A Dvorak - QWERTY Command layout can miss a character match; virtual-key items still match.
+- AppKit hides a later duplicate's key character from AX (CU-238). Only disabled matches, or a key-less item with the
+  chord's modifiers, read as unreadable (CU-235); an enabled benign first match on Command alone hiding one stays unseen.
 - Named over-asks: a Control editing chord (Control-K) and every menu chord in an app with a lazily filled menu ask
   when the bar cannot be read. The D-069 floor rises to the helper.
