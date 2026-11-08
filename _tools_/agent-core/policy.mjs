@@ -28,6 +28,8 @@ const WORDS = Object.freeze({
     'always allow', 'always trust', 'always open', 'allow access', "don't ask again", 'don\u2019t ask again', 'do not ask again',
     'remember my choice', 'remember this choice', 'remember my decision', 'never for this website', 'never for this site',
     'set as default', 'make default',
+    // cu-coordinator 14:17Z (with CU-258): Finder's Get Info 'Change All...' sets the default app for every file of a type.
+    'change all',
     // CU-261 (cu-researcher): a camera or microphone switched on reaches other people.
     'turn on camera', 'turn on microphone', 'turn on video', 'start video', 'unmute',
     // cu-researcher's 13:23Z sweep: an account-wide sign-out.
@@ -35,7 +37,7 @@ const WORDS = Object.freeze({
     // CU-270 (cu-researcher): switching an account's protection off - every verb with every protection, as whole phrases
     // ('Turn off notifications' stays free). ChatGPT confirms any change to account permissions.
     ...['turn off', 'disable', 'remove', 'allow'].flatMap((verb) => ['2 step', 'two step', 'two factor', '2fa', 'mfa', 'multi factor',
-      'passkey', 'passkeys', 'security key', 'security keys', 'login alerts', 'sign in alerts', 'account recovery', 'find my',
+      'password', 'passkey', 'passkeys', 'security key', 'security keys', 'login alerts', 'sign in alerts', 'account recovery', 'find my',
       'less secure apps', 'less secure app access'].map((what) => `${verb} ${what}`))],
   submit: ['send', 'post', 'submit', 'publish', 'reply', 'sign up', 'register',
     // CU-261 (cu-researcher; cu-coordinator: High): actions that reach other people or commit shared work, as whole
