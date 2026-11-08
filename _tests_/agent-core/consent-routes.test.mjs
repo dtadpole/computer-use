@@ -183,7 +183,7 @@ const ROWS = [
   ['newline-default-send', 'desktop', 'typeNewline', 'fieldDefaultSend', 'submit', '#325 tests', "helper 0.2.44, main 5548a7fd7: K1 asked submit, nothing sent (20261107T213026Z-8a665e); the 0.2.42 post-install send (173854Z-3f1e69) was the unread state, now its own cell", null],
   ['newline-default-unread', 'desktop', 'typeNewline', 'fieldDefaultUnread', 'submit', 'CU-190 (defaultButtonRead false asks submit)', "D-065 (asserted, not live): the guard asks; the unread state is not producible on demand - seen once, the 0.2.42 post-install transient (20261107T173854Z-3f1e69); unit rows and mutants in default-button-unread.test.mjs", null],
   ['newline-no-default', 'desktop', 'typeNewline', 'fieldNoDefault', 'allow', 'CU-190 negative: read, no default button', "helper 0.2.44: a newline in a window with no default button (read true, none) allowed (20261107T213028Z-2f5e64)", null],
-  ['newline-default-absent', 'desktop', 'typeNewline', 'fieldDefaultAbsent', 'submit', 'D-069: no read state asks on the desktop (fail closed)', 'D-069: decided, not run - a helper before 0.2.44 is refused at the handshake, so this state reaches the policy only by a bug, and then it asks (D-065)', null],
+  ['newline-default-absent', 'desktop', 'typeNewline', 'fieldDefaultAbsent', 'submit', 'D-069: no read state asks on the desktop (fail closed)', 'D-069: decided, not run - a helper before 0.2.44 is refused at the handshake, so this state reaches the policy only by a bug, and then it asks (D-065); on the real path the guard is dead until CU-243', 'todo CU-243'],
   ['newline-nothing-focused', 'desktop', 'typeNewline', 'nothingFocused', 'allow', 'D-069 negative: no target is the driver\'s good read of nothing focused and no default button', 'D-069: decided - environment.mjs returns null only for a successful read of nothing there, so it keeps the rule (D-065)', null],
   ['newline-text-area', 'desktop', 'typeLines', 'areaDefaultSend', 'allow', '#325 tests', "0.2.42 K2: allowed, both lines in Notes (20261107T173901Z-98cd24)", null],
   ['cmd-enter-text-area', 'desktop', 'cmdEnter', 'areaDefaultSend', 'submit', '#325 tests', "0.2.42 K3: asked (20261107T173905Z-734ddf)", null],
@@ -305,7 +305,9 @@ const ROWS = [
 ]
 
 const decide = (action, target, env, extra = {}) => {
-  const url = env === 'browser' ? 'https://other.example/form' : 'app://ai.reflection.cu.fixture'
+  // CU-243: the desktop cells are judged with the url app-policy passes on every real desktop run (desktop://), so a
+  // rule keyed on a context the real path never builds fails here instead of passing (CU-152's lesson).
+  const url = env === 'browser' ? 'https://other.example/form' : 'desktop://'
   const r = policy.classify(A[action], { url, target: T[target], ...extra })
   return r.decision === 'allow' ? 'allow' : r.decision === 'handoff' ? 'handoff' : r.class
 }
