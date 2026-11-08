@@ -45,5 +45,5 @@ name (on a text entry only, never a button). Each class has one row per value ru
 
 Live rows run on the fixture site's secret-fields pages (browser, no model), each paired against main before its fix.
 Re-signed by cu-verifier, 8 November (main 309c60328): every closed row cites cu-verifier's run or a decision (D-064).
-Open since: CU-245's seven todo rows. An open under-ask is an open or todo row naming its issue (D-063: team CU, not
+Open since: CU-245's nine todo rows. An open under-ask is an open or todo row naming its issue (D-063: team CU, not
 done).
