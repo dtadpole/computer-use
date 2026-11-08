@@ -106,8 +106,9 @@ const activates = (action) => CLICKS.has(action.type) ||
 // Code, packages, and bundles that install into the system (.prefPane, .mobileconfig) or open locations (.webloc).
 const LAUNCHABLE = /\.(app|command|sh|zsh|bash|pkg|mpkg|dmg|tool|workflow|scpt|scptd|applescript|terminal|jar|py|rb|pl|prefpane|mobileconfig|webloc|inetloc|fileloc|action|saver|qlgenerator|kext|plugin)\/?$/i
 
-// CU-271: IDEs (kind ide) - a bundle id or a prefix ending in '.'; a run-config may add more through its exclusions-style list later.
-const IDE_BUNDLES = ['com.microsoft.VSCode', 'com.microsoft.VSCodeInsiders', 'com.visualstudio.code.oss', 'com.vscodium', 'com.todesktop.',
+// CU-271: IDEs (kind ide) - a bundle id or a prefix ending in '.'; Cursor by its exact id (cu-developer-three's read: the
+// com.todesktop. prefix is every ToDesktop-built app).
+const IDE_BUNDLES = ['com.microsoft.VSCode', 'com.microsoft.VSCodeInsiders', 'com.visualstudio.code.oss', 'com.vscodium', 'com.todesktop.230313mzl4w4u92',
   'com.apple.dt.Xcode', 'com.jetbrains.', 'com.google.android.studio', 'com.sublimetext.', 'com.panic.nova', 'dev.zed.Zed']
 function isIde(bundleId) {
   const id = String(bundleId ?? '').toLowerCase()
