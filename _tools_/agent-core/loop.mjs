@@ -265,11 +265,9 @@ export async function runTask(options) {
   const start = now()
   let inactiveMs = 0
   let inactiveSince = null
-  // CU-274 (cu-developer-two's and cu-researcher's reviews): pauses and take-overs counted as they happen, so any pause or
-  // take-over since the observation a batch was planned on - during the model's turn, an earlier action or the judgement,
-  // even one already resumed - is seen before each perform (a single state sample would read 'running' again).
+  // CU-274 (cu-developer-two's review): pauses and take-overs counted as they happen, so a pause and a resume both served
+  // while a judgement ran are still seen before the perform (a single state sample would read 'running' again).
   let interrupts = 0
-  let interruptsAtObservation = 0
   const unsubscribeTime = control.subscribe((event) => {
     if (event.type !== 'state') return
     if (event.state === 'paused' || event.state === 'taken_over') interrupts += 1
@@ -387,8 +385,6 @@ export async function runTask(options) {
   const digest = (data) => createHash('sha256').update(typeof data === 'string' ? data : Buffer.from(data ?? '')).digest('hex')
   const observe = async (step, notes = [], { settle = false } = {}) => {
     const observeStarted = now()
-    // CU-274 (cu-researcher): the next batch is planned on this observation - a pause or take-over after it voids the batch.
-    interruptsAtObservation = interrupts
     // CU-56: a capture dropped for a transient out-of-scope window is retried a bounded number of times.
     const captureRetries = []
     const capture = async () => {
@@ -972,6 +968,7 @@ export async function runTask(options) {
         logEvent('action', step, { index, action: redactAction(action), site: environment.site, status: 'failed', code, detail: String(error?.message ?? error).slice(0, 300), attempted: false, completed: false })
         continue
       }
+      const interruptsAtJudgement = interrupts
       let decision = policy.classify(judged, context)
       // CU-182: the site filter's verdict on the browser target's own origin at the moment the action is judged - so a
       // new_site approval later in this step, or later in the run, never names a target recorded before it.
@@ -1164,7 +1161,7 @@ export async function runTask(options) {
       // request), then the check phase - whichever phase this step resumed in.
       await new Promise((resolve) => setTimeout(resolve, 0))
       await new Promise((resolve) => setImmediate(resolve))
-      const waitedBeforePerform = !control.agentMayAct() || interrupts !== interruptsAtObservation
+      const waitedBeforePerform = !control.agentMayAct() || interrupts !== interruptsAtJudgement
       if (!(await control.checkpoint())) {
         halt = 'cancelled'
         Object.assign(result, { status: 'skipped', message: 'Not executed: the run was stopped.' })
