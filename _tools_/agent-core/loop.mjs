@@ -558,8 +558,9 @@ export async function runTask(options) {
     pasteboard.own += 1
     pasteboard.sources.push(source)
   }
-  // At a paste of the run's own copy: proven by the count, the last copy wrote what is pasted; with no count, every
-  // source since the last proven count is passed and the policy takes the strongest.
+  // At a paste of the run's own copy: proven by the count, the last copy wrote what is pasted. With no count ownCopy is
+  // false since CU-220, so no paste reaches the fallback; were one to, every source since the last proven count would be
+  // passed and the policy would take the strongest.
   const pastedSource = (target) => {
     const known = pasteboard.sources.filter(Boolean)
     if (known.length === 0) return null
