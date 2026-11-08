@@ -99,6 +99,22 @@ describe('menu-compose (CU-238)', () => {
     })
   })
 
+  test('the message preview (neither a text entry nor a list) takes the focus; there a plain Backspace deletes the previewed message, by the menu item and by the key itself (Mail\'s viewer)', async () => {
+    await withCompose({}, async (fixture) => {
+      const audit = await fixture.axAudit()
+      assert.deepEqual([audit.preview.role, audit.preview.name], ['AXGroup', 'Message preview'])
+      await fixture.act({ composeFocus: 'preview' })
+      assert.equal((await fixture.state()).fields.composeFocus, 'preview')
+      const { menus } = await fixture.call('menuAX')
+      const del = menus.find((menu) => menu.title === 'Message').items.find((item) => item.title === 'Delete')
+      assert.equal(del.enabled, true, 'Delete is enabled while the preview has the focus')
+      await fixture.act({ composeKey: { key: 'backspace' } })
+      const after = (await fixture.state()).fields
+      assert.deepEqual(after.composeDeleted, ['Weekly summary'])
+      assert.deepEqual(after.outbox, ['Room booking', 'Follow-up notes'])
+    })
+  })
+
   test('Option-Command-L fires Send Later through the lazy menu\'s delegate, without filling the menu', async () => {
     await withCompose({}, async (fixture) => {
       await fixture.act({ composeKey: { key: 'l', modifiers: ['cmd', 'alt'] } })
