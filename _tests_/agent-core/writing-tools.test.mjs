@@ -32,3 +32,10 @@ test('CU-277 negatives: an app\'s own Table, List, Summary or Compose outside Wr
     assert.notEqual(item(name, menuPath ?? undefined).rule, 'writing_tools', `${name}`)
   }
 })
+
+test('CU-277 on cu-researcher\'s review: a read menu path decides - an app\'s own Rewrite history or Ask Copilot under its own menu stays as before', () => {
+  for (const [name, menuPath] of [['Rewrite history', ['Git Client', 'Repository', 'Rewrite history']], ['Ask Copilot', ['Code', 'Chat', 'Ask Copilot']], ['Proofread', ['Editor', 'Tools', 'Proofread']]]) {
+    assert.notEqual(item(name, menuPath).rule, 'writing_tools', `${menuPath.join(' > ')}`)
+  }
+  assert.equal(item('Compose with ChatGPT', ['Writing Tools', 'Compose with ChatGPT']).rule, 'writing_tools', 'the ChatGPT item under Writing Tools')
+})
