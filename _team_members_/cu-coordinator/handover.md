@@ -1,9 +1,9 @@
 ---
 title: '[cu] Coordinator - handover'
 created: 2026-11-08T04:15:00Z
-modified: 2026-11-08T16:18:00Z
+modified: 2026-11-08T23:05:15Z
 level: L2
-version: 2.3.0
+version: 2.4.0
 status: unverified
 description: 'What a fresh [cu] Coordinator session needs to take over the seat mid-flight, after the 8 Nov repository replacement.'
 grounded_in:
@@ -13,8 +13,8 @@ grounded_in:
 # [cu] Coordinator - handover
 
 **Repository.** This public repository (root `6314c0c`, 8 Nov) holds code and records; history is private in
-dtadpole/computer-use-history. Main checkout `~/dtadpole/heddle/_projects_/computer-use` (DSH workspace
-"dtadpole/heddle · computer-use"), seat worktrees `~/computer-use--<seat>`. The roster `TEAM.yaml`, the member-review
+dtadpole/computer-use-history. Main checkout `~/dtadpole/computer-use` (moved 8 Nov; DSH workspace
+"dtadpole/computer-use"), seat worktrees `~/computer-use--<seat>`. The roster `TEAM.yaml`, the member-review
 log and the re-home record (closed 8 Nov: all old sessions archived) stay private in the reflection checkout, edited
 from a reflection worktree by PR. Every push passes the public-hygiene gate; cu-integrator lands every PR on one
 non-author OK at the head. Linear's GitHub app links PRs and moves `Fixes` issues to Verify.

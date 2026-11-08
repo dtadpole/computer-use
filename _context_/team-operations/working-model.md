@@ -1,9 +1,9 @@
 ---
 title: '[cu] working model'
 created: 2026-11-01T09:06:25Z
-modified: 2026-11-06T11:23:46Z
+modified: 2026-11-08T23:05:15Z
 level: L2
-version: 3.1.0
+version: 3.2.0
 description: How every [cu] seat works - its two worktrees, Linear, how records and code land, code rules, the Mac's limits, the inbox and the milestones.
 status: unverified
 grounded_in:
@@ -18,9 +18,8 @@ Seats: TEAM.yaml (the private roster) and `_team_members_/<seat>/responsibilitie
 ## Where you work
 
 Records: `~/reflection--<seat>` (branch `cu/<seat>`), project folder `_projects_/computer-use/`. Code:
-`~/computer-use--<seat>` (branch `cu/<seat>`), a worktree of `github.com/dtadpole/computer-use` cloned at
-`~/computer-use` (D-039). Never edit or commit in `~/reflection` (D-004); pass `workdir` to every shell call. Until
-the cutover (Linear CU-7) live desktop runs still start from the frozen copy at ``.
+`~/computer-use--<seat>` (branch `cu/<seat>`), a worktree of the main checkout `~/dtadpole/computer-use`
+(D-039, D-077). Never edit or commit in `~/reflection` (D-004); pass `workdir` to every shell call.
 Write only your scope; another seat's files change through a message to it.
 
 ## Linear
