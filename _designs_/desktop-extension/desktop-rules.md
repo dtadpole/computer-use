@@ -1,9 +1,9 @@
 ---
 title: Desktop block and confirm rules
 created: 2026-11-02T09:53:32Z
-modified: 2026-11-08T12:14:30Z
+modified: 2026-11-08T12:16:22Z
 level: L1
-version: 0.4.5
+version: 0.4.6
 description: The rules behind the desktop order of checks - what is blocked by name (system shortcuts, excluded or unknown targets; copy and paste are allowed, D-031), the desktop confirm classes and their pre-approval, and what happens when an excluded app comes to the front.
 status: unverified
 grounded_in:
@@ -40,6 +40,7 @@ Detail for [app policy](app-policy.md)'s order of checks; rule names are what `c
 | a default Service (CU-249) | exactly `META+SHIFT+` L, Y, B, 8, M or A |
 | focus to the menu bar, Dock, status menus | `CTRL+F2`, `CTRL+F3`, `CTRL+F8` |
 | input source, Character Viewer, Look Up (CU-242) | `CTRL+SPACE`, `CTRL+META+SPACE`, `CTRL+META+D` |
+| Dock hiding, keyboard access, Tab focus, Zoom, Invert | `META+ALT+D`, `CTRL+F1`, `CTRL+F7`, `ALT+META+` 8 = -, `CTRL` too |
 
 ## Confirm classes on the desktop
 
@@ -50,7 +51,7 @@ Detail for [app policy](app-policy.md)'s order of checks; rule names are what `c
 | `launch_code` (P10) | opening code, a package or an installer bundle: a double or triple click, `META+O` or `META+DOWN` on a target whose name, AX file name or AX URL ends `.app`, `.sh`, `.pkg`, `.dmg`, `.prefPane` and similar - the file name or URL catches extensions Finder hides | never; only a hand-off outranks it |
 | `unknown_target` (R92) | a click, an Enter or Space chord, or typed text with a newline on an `opaque` target ([input and targets](input-and-targets.md)) | per app |
 
-Known gaps of `launch_code` are [Q-D10](open-questions.md).
+`launch_code` gaps: [Q-D10](open-questions.md).
 
 ## Secure and password fields (R83, CU-184)
 
@@ -64,9 +65,8 @@ until labels are read (CU-187).
 
 ## Foreground changes
 
-If an excluded app comes to the front mid-run, the next action is handed to the person (the run is `taken_over`
-until they hand back) and the frame shows black where it is; if it is still in front after the hand-back, the run
-ends `refused_by_policy`.
+If an excluded app comes to the front, the next action is handed to the person (`taken_over`) and the frame shows
+black there; still in front after the hand-back, the run ends `refused_by_policy`.
 
 `terminal_view` (block, E5): keys into a target whose name, description or role description names a terminal,
 console or shell (an IDE's terminal panel); clicks stay allowed.
