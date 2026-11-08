@@ -119,3 +119,44 @@ test('CU-183 browser: an empty copy keeps the carried class; a newer copy from N
   assert.equal((await browserRun([COPY, COPY, PASTE], { sources: ['Passport', 'Notes'], writes: ['X1234567', null] })).class, 'sensitive_data', 'the empty copy did not clear it')
   assert.equal((await browserRun([COPY, COPY, PASTE], { sources: ['Passport', 'Notes'], writes: ['X1234567', 'see you at noon'] })).decision, 'allow')
 })
+
+// CU-223 (red team of CU-209): since helper 0.2.51 a read-only text view (AXTextArea whose value cannot be set) is
+// captioned like shown text, so a COPY out of it - Command-C or Edit > Copy - carries the caption's class to a paste into
+// an unnamed entry, as its drag does. Before 0.2.51 it was an uncaptioned entry and the paste ran unasked. No
+// pre-approval: the paste must ask. `selection` models the helper's selectionSource reply (role and caption only).
+const MENU_COPY = { type: 'click', x: 10, y: 10, button: 'left' }
+async function readonlyViewCopy(caption, { copy = COPY, selection = true } = {}) {
+  const dir = mkdtempSync(join(tmpdir(), 'cu-copysrc-ro-'))
+  try {
+    const control = createRunControl()
+    const environment = createFakeEnvironment({ kind: 'desktop', control })
+    const copies = () => environment.log.filter((a) => isCopy(a) || a.type === 'click').length
+    const withCount = (fields) => ({ origin: FIXTURE, ...fields, pasteboardChangeCount: 41 + copies() })
+    environment.focusedElement = async () => withCount(copies() === 0
+      ? { role: 'AXTextArea', name: '', caption, editable: false, fingerprint: 'v' }
+      : { role: 'AXTextField', name: '', editable: true, fingerprint: 'u' })
+    if (selection) environment.selectionSource = async () => (copies() === 0 ? { role: 'AXTextArea', tag: null, origin: FIXTURE, caption } : null)
+    environment.inspectPoint = async () => withCount({ role: 'AXMenuItem', name: 'Copy', keyEquivalent: { char: 'C', modifiers: 0 }, fingerprint: 'c' })
+    const store = createAppApprovals({ path: join(dir, 'a.json') })
+    store.grantAlways(FIXTURE, { by: 'api' })
+    const model = createScriptedAdapter({ frame, turns: [{ actions: [copy, PASTE] }, { final: 'done' }] })
+    const result = await runTask({ task: 'fill', environment, model, control, runsDirectory: join(dir, 'runs'), build: { commit: 'test', dirty: false }, apps: [FIXTURE], appApprovals: store })
+    const events = [...new Map(readRun(result.trajectoryDir).events.filter((e) => e.kind === 'action').map((e) => [`${e.step}:${e.index}`, e])).values()]
+    return events[events.length - 1]
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+}
+
+test('CU-223 desktop: a copy from the IBAN-captioned read-only text view asks at the paste - Command-C, with or without a selection read, and Edit > Copy', async () => {
+  for (const [label, options] of [['Command-C', {}], ['Command-C, no selection read', { selection: false }], ['Edit > Copy', { copy: MENU_COPY }]]) {
+    const paste = await readonlyViewCopy('IBAN', options)
+    assert.deepEqual([paste.decision, paste.class], ['confirm', 'sensitive_data'], label)
+    assert.equal(paste.pasteboard?.own, true, `${label}: judged as the run's own copy, proven by the count`)
+  }
+})
+
+test('CU-223 desktop negative: the same copy from the Notes-captioned read-only text view pastes unasked', async () => {
+  assert.equal((await readonlyViewCopy('Notes')).decision, 'allow')
+  assert.equal((await readonlyViewCopy('Notes', { copy: MENU_COPY })).decision, 'allow')
+})

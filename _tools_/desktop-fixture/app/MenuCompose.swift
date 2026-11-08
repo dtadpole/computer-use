@@ -7,12 +7,14 @@ import AppKit
 // The menus exist only while this screen is open:
 //   - Message > Send on Shift-Command-D - the plain case (cu-verifier's acceptance 1a-c);
 //   - Message > Mark as Read (disabled, benign) and later Message > Send Now (enabled, consequential), both on
-//     Option-Command-D - the duplicate case (acceptance 2d). Measured in process on 8 Nov: Accessibility reports no
+//     Option-Command-J - the duplicate case (acceptance 2d). Not Option-Command-D: that is macOS's default 'Turn Dock
+//     hiding on/off' hotkey, which a real keystroke would reach instead, changing an owner setting (cu-researcher). Measured in process on 8 Nov: Accessibility reports no
 //     key character for the later duplicate (Send Now reads modifiers 2, char none), and a synthetic chord is taken
 //     by the disabled first item and fires nothing. What a real keystroke fires is the live row's question;
 //   - Message > Delete on a plain Backspace, enabled only while the Outbox list has the focus - Mail's case: with the
 //     focus in the draft body Backspace edits the text, on the list it deletes the selected row (acceptance 2f);
-//   - Later > Send Later on Shift-Command-L in a menu filled lazily by its delegate: empty until AppKit asks it to
+//   - Later > Send Later on Option-Command-L (not Shift-Command-L, the default 'Search With Google' service shortcut)
+//     in a menu filled lazily by its delegate: empty until AppKit asks it to
 //     update, while the delegate answers the chord itself (menuHasKeyEquivalent) without filling it, as apps with lazy
 //     menus do. Measured in process on 8 Nov: an Accessibility read of the menu's children fills it; whether the
 //     helper's read across processes does too is what the live row measures (acceptance 2e).
@@ -38,10 +40,10 @@ final class MenuCompose: NSObject, NSMenuDelegate, NSMenuItemValidation, NSTable
   /// The declared chords, for the tests: title, menu, key, modifiers, enabled by design.
   static let chords: [(title: String, menu: String, key: String, modifiers: NSEvent.ModifierFlags)] = [
     ("Send", "Message", "d", [.command, .shift]),
-    ("Mark as Read", "Message", "d", [.command, .option]),
-    ("Send Now", "Message", "d", [.command, .option]),
+    ("Mark as Read", "Message", "j", [.command, .option]),
+    ("Send Now", "Message", "j", [.command, .option]),
     ("Delete", "Message", String(Character(UnicodeScalar(NSBackspaceCharacter)!)), []),
-    ("Send Later", "Later", "l", [.command, .shift]),
+    ("Send Later", "Later", "l", [.command, .option]),
   ]
 
   static func open(title: String) -> Bool {
@@ -129,12 +131,12 @@ final class MenuCompose: NSObject, NSMenuDelegate, NSMenuItemValidation, NSTable
     guard let main = NSApp.mainMenu else { return }
     let message = NSMenu(title: "Message")
     message.addItem(item("Send", "d", [.command, .shift], #selector(sendChosen(_:))))
-    let markRead = item("Mark as Read", "d", [.command, .option], #selector(markRead(_:)))
+    let markRead = item("Mark as Read", "j", [.command, .option], #selector(markRead(_:)))
     // Disabled from the start, so Accessibility reports it disabled before any menu update validates it.
     markRead.isEnabled = false
     message.addItem(markRead)
     message.addItem(NSMenuItem.separator())
-    message.addItem(item("Send Now", "d", [.command, .option], #selector(sendChosen(_:))))
+    message.addItem(item("Send Now", "j", [.command, .option], #selector(sendChosen(_:))))
     message.addItem(item("Delete", String(Character(UnicodeScalar(NSBackspaceCharacter)!)), [], #selector(deleteChosen(_:))))
     let messageItem = NSMenuItem()
     messageItem.submenu = message
@@ -158,13 +160,13 @@ final class MenuCompose: NSObject, NSMenuDelegate, NSMenuItemValidation, NSTable
     guard menu === lazyMenu, menu.items.isEmpty else { return }
     lazyFilled = true
     Fixture.shared.record("lazy-menu-filled", [:])
-    menu.addItem(item("Send Later", "l", [.command, .shift], #selector(sendLater(_:))))
+    menu.addItem(item("Send Later", "l", [.command, .option], #selector(sendLater(_:))))
   }
 
   /// The lazy menu answers its chord without filling itself, as apps whose menus fill only on open do.
   func menuHasKeyEquivalent(_ menu: NSMenu, for event: NSEvent, target: AutoreleasingUnsafeMutablePointer<AnyObject?>, action: UnsafeMutablePointer<Selector?>) -> Bool {
     guard menu === lazyMenu, menu.items.isEmpty, event.charactersIgnoringModifiers?.lowercased() == "l",
-          event.modifierFlags.intersection(.deviceIndependentFlagsMask).intersection([.command, .shift, .option, .control]) == [.command, .shift] else { return false }
+          event.modifierFlags.intersection(.deviceIndependentFlagsMask).intersection([.command, .shift, .option, .control]) == [.command, .option] else { return false }
     target.pointee = self
     action.pointee = #selector(sendLater(_:))
     return true
@@ -241,7 +243,7 @@ final class MenuCompose: NSObject, NSMenuDelegate, NSMenuItemValidation, NSTable
 
   /// Seams, in-process models only (which item a real keystroke reaches is the live row's question):
   /// `composeFocus 'outbox' | 'body'` moves the focus (the list's first row selected); `composeKey {key, modifiers}`
-  /// offers a key down to the main menu's key equivalents, as AppKit does for a chord - key 'd', 'l' or 'backspace'.
+  /// offers a key down to the main menu's key equivalents, as AppKit does for a chord - key 'd', 'j', 'l' or 'backspace'.
   static func act(_ step: [String: Any]) -> Bool {
     guard Screens.current == task, let screen = shared, let window = screen.body.window else { return false }
     if let target = step["composeFocus"] as? String {
@@ -260,7 +262,8 @@ final class MenuCompose: NSObject, NSMenuDelegate, NSMenuItemValidation, NSTable
     }
     let backspace = String(Character(UnicodeScalar(NSBackspaceCharacter)!))
     let key = name == "backspace" ? backspace : name
-    let code: UInt16 = name == "backspace" ? 51 : (name == "d" ? 2 : 37)
+    let codes: [String: UInt16] = ["backspace": 51, "d": 2, "j": 38, "l": 37]
+    guard let code = codes[name] else { return false }
     // In process, AppKit matches a lower-case equivalent with a Shift mask only when charactersIgnoringModifiers is
     // lower case (measured 2026-11-08); `characters` carries the shifted form.
     let shown = flags.contains(.shift) && name != "backspace" ? key.uppercased() : key
