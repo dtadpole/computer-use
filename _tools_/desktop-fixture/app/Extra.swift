@@ -251,6 +251,8 @@ enum Extra {
       return MenuCompose.open(title: title)
     case NamedControls.task:
       return NamedControls.open(title: title)
+    case OpenSelection.task:
+      return OpenSelection.open(title: title)
     default:
       return Evidence.open(task, title: title)
     }
@@ -363,6 +365,7 @@ enum Extra {
     if WebButtons.act(step) { return true }
     if ConsentCells.act(step) { return true }
     if MenuCompose.act(step) { return true }
+    if OpenSelection.act(step) { return true }
     if let row = step["doubleClick"] as? String {
       guard let list = fixture.controls[step["list"] as? String ?? ""] as? RowList, list.rows.contains(row) else { throw ChannelError.message("no row \(row)") }
       fixture.record("click", ["row": row, "count": 2])

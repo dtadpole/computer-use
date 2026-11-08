@@ -93,9 +93,10 @@ const serviceItem = (action, target) => CLICKS.has(action.type) && /^(ax)?menuit
 // refused by title where no path is read. Named limits: localised titles where no path is read; an app's own AI item
 // under its own menu (VS Code's Ask Copilot) is the approved app's feature and stays as before.
 // cu-verifier on #108: Writing Tools' own verb phrases are unambiguous too.
-const WRITING_TOOLS_TITLE = /^(proofread|rewrite|show writing tools|writing tools|make (friendly|professional|concise)|create key points)\b/i
+// CU-293: Writing Tools in Chinese too (校对, 重写, 写作工具 / 校對, 重寫, 寫作工具).
+const WRITING_TOOLS_TITLE = /^((proofread|rewrite|show writing tools|writing tools|make (friendly|professional|concise)|create key points)\b|(校对|校對|重写|重寫|显示写作工具|顯示寫作工具|写作工具|寫作工具)(\s|$))/i
 const OTHER_AI = /\b(chatgpt|openai|gemini|claude|copilot)\b/i
-const underWritingTools = (target) => Array.isArray(target?.menuPath) && target.menuPath.slice(0, -1).some((part) => /^writing tools$/i.test(String(part ?? '').trim()))
+const underWritingTools = (target) => Array.isArray(target?.menuPath) && target.menuPath.slice(0, -1).some((part) => /^(writing tools|写作工具|寫作工具)$/i.test(String(part ?? '').trim()))
 // cu-researcher on #108: a menu path, when read, decides - so an app's own 'Rewrite history' (a git client) or 'Ask
 // Copilot' under its own menu stays as before; the title fallback applies only where no path is read.
 const hasMenuPath = (target) => Array.isArray(target?.menuPath) && target.menuPath.length > 0
@@ -172,8 +173,8 @@ function launchesCode(action, target) {
 // opening a document that way. (2) A menu item titled as an excluded runner (Open With > Terminal, Script Editor ...)
 // is refused anywhere: opening anything with it runs it outside the approved app.
 const FILE_BROWSERS = new Set(['com.apple.finder'])
-const OPEN_ITEM = /^open$/i
-const RUNNER_TITLES = /^(terminal|iterm2?|warp|ghostty|kitty|alacritty|hyper|wezterm|script editor|automator|shortcuts|alfred|raycast)$/i
+const OPEN_ITEM = /^(open|打开|打開)$/i
+const RUNNER_TITLES = /^(terminal|iterm2?|warp|ghostty|kitty|alacritty|hyper|wezterm|script editor|automator|shortcuts|alfred|raycast|终端|終端機|脚本编辑器|工序指令編寫程式|自动操作|自動操作|快捷指令|捷徑)$/i
 const isMenuItem = (target) => /^(ax)?menuitem$/i.test(String(target?.role ?? ''))
 /**
  * CU-252: an open that acts on the selection, in any app - a click on a menu item named Open, or Command-O or
@@ -196,7 +197,10 @@ export function opensUnreadSelection(action, target, app) {
  * read reports a file or folder item - a list of messages or notes (kinds unknown) is not a file list and stays unjudged.
  */
 function selectsFiles(selection) {
-  return Array.isArray(selection?.items) && selection.items.some((item) => item?.kind === 'file' || item?.kind === 'folder')
+  // CU-252 reopen (cu-verifier, 202258Z on #104's stand-in): a list whose rows carry no file URL reports kind 'unknown';
+  // an item whose own name is launchable ('install.command', 'Payload.app') still counts - the open runs it all the same.
+  return Array.isArray(selection?.items) && selection.items.some((item) => item?.kind === 'file' || item?.kind === 'folder'
+    || (item?.kind === 'unknown' && LAUNCHABLE.test(String(item?.name ?? '').trim().replace(/\/$/, ''))))
 }
 /**
  * CU-252 rule 3 (the driver's selectedItems, CU-259): whether the selection an open acts on may run code. A launchable
@@ -206,7 +210,7 @@ function selectsFiles(selection) {
 export function selectionRunsCode(selection) {
   if (!selection || typeof selection !== 'object') return true
   if (selection.none === true) return false
-  if (!Array.isArray(selection.items)) return true
+  if (!Array.isArray(selection.items) || selection.items.length === 0) return true
   return selection.truncated === true || selection.items.some((item) => {
     const name = String(item?.name ?? '').trim()
     if (item?.kind === 'unknown' || name === '') return true
@@ -230,12 +234,14 @@ const runnerItem = (action, target, context) => {
 // focused, asks install - app-policy's own verdict, so no pre-approval covers it (as launch_code). Browsing stays
 // free. Named limit: third-party stores and updaters (Setapp, MacUpdater).
 const APP_STORE = 'com.apple.AppStore'
-const STORE_INSTALL = /^(get|install|update|update all|download|redownload|reinstall)\b/i
+// CU-293: the App Store's 获取 / 安装 / 更新 (Traditional 取得 / 安裝 / 更新).
+const STORE_INSTALL = /^((get|install|update|update all|download|redownload|reinstall)\b|(获取|取得|安装|安裝|更新|全部更新|下载|下載|重新下载|重新下載)([,，\s]|$))/i
 // cu-verifier on #58: a button titled with a price ('$4.99', '¥30', '4,99 €', 'Price, 4.99 dollars') starts a purchase.
 const STORE_PRICE = /^(price\b|[$€£¥₩₹]\s?\d|\d+(?:[.,]\d+)?\s?[$€£¥₩₹])/i
 // CU-280 (cu-researcher; cu-coordinator: Medium): a free trial starts a renewing subscription, and a price may be written
 // with its currency code ('USD 4.99', '4,99 EUR') - both are purchases.
-const STORE_TRIAL = /^(try (it )?free|start (a |your )?free trial|free trial|try free for)\b/i
+// CU-288: a trial with its length ('Start 7-day free trial', 'Try 1 month free', 'Try 3 months free').
+const STORE_TRIAL = /^(try (it )?free|start (a |your )?(\d+[- ]?(day|week|month|year)s? )?free trial|(\d+[- ]?(day|week|month|year)s? )?free trial|try free for .*|try \d+ (day|week|month|year)s? free)\s*[.!\u2026]?$/i
 const STORE_CODE_PRICE = /^((usd|eur|gbp|jpy|cny|rmb|krw|inr|cad|aud|chf|sek|nok|dkk|hkd|sgd|nzd|brl|mxn)\s?\d|\d+(?:[.,]\d+)?\s?(usd|eur|gbp|jpy|cny|rmb|krw|inr|cad|aud|chf|sek|nok|dkk|hkd|sgd|nzd|brl|mxn)\b)/i
 /** 'install' or 'purchase' for an App Store button that installs or buys, pressed by a click, Space or Return; else null. */
 function storeInstall(action, target, app) {
@@ -535,7 +541,15 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     if (isIde(app) && verdict.decision !== 'handoff' && runsInIde(action, target, context.boundMenuItem)) {
       return { decision: 'confirm', class: 'launch_code', classes: ['launch_code', ...(verdict.classes ?? [])], rule: 'ide:run', reason: `run code in ${app}`, app }
     }
-    const opensFiles = opensUnreadSelection(action, target, app) || (opensSelection(action, target) && selectsFiles(context.selection))
+    // CU-252 (cu-verifier 221022Z on #104's stand-in; rows read AXStaticText with empty names): in any app, an open whose
+    // selection read came back unreadable - the helper could not name the rows - asks, as Finder's unread does; { none },
+    // a named non-launchable selection and no read at all (an older driver) stay as before.
+    // cu-researcher on #153: rows the helper could not name reach here as items with empty names, or as an empty list
+    // without { none } - the same unreadable read.
+    const items = context.selection?.items
+    const unreadableRead = context.selection?.unreadable === true
+      || (Array.isArray(items) && (items.length === 0 || items.some((item) => String(item?.name ?? '').trim() === '')))
+    const opensFiles = opensUnreadSelection(action, target, app) || (opensSelection(action, target) && (selectsFiles(context.selection) || unreadableRead))
     if (opensFiles && selectionRunsCode(context.selection) && verdict.decision !== 'handoff') {
       return { decision: 'confirm', class: 'launch_code', classes: ['launch_code', ...(verdict.classes ?? [])], rule: 'selection:launch_code', reason: 'open the selection, which this run cannot read - it may run code', app }
     }

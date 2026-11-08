@@ -5,7 +5,7 @@ import Foundation
 /// The helper's identity; `build.sh` writes the same bundle id into Info.plist.
 enum HelperIdentity {
   static let bundleId = "com.reflection.cu-helper"
-  static let version = "0.2.56"
+  static let version = "0.2.58"
   /// The value every synthetic event carries in `kCGEventSourceUserData`: 0x43555345, ASCII "CUSE"
   /// (input-and-targets.md, verify-kit's SYNTHETIC_TAG). Not a secret: an event from another process with this tag
   /// could only fail to pause the run, never act.
@@ -61,13 +61,18 @@ struct Exclusions {
     "com.apple.Terminal", "com.googlecode.iterm2", "dev.warp.*", "com.mitchellh.ghostty", "net.kovidgoyal.kitty",
     "org.alacritty", "co.zeit.hyper", "com.github.wez.wezterm", "com.apple.ScriptEditor2", "com.apple.Automator",
     "com.apple.shortcuts", "com.runningwithcrayons.Alfred", "com.raycast.macos",
+    // CU-292: launchers Spotlight and LaunchBar
+    "com.apple.Spotlight", "at.obdev.LaunchBar",
     // our own helper and other agents, and browsers' web-app shims (which can host them)
     HelperIdentity.bundleId, "com.openai.*", "com.anthropic.*", "com.google.Chrome.app.*", "com.microsoft.edgemac.app.*",
+    "ai.perplexity.*",
     // password managers
     "com.1password.*", "com.agilebits.*", "com.bitwarden.desktop", "org.keepassxc.keepassxc", "com.apple.Passwords",
     "com.apple.keychainaccess", "com.dashlane.*", "com.lastpass.*", "com.nordsec.nordpass",
+    // CU-292: Enpass (its maker's family), Proton Pass (the exact id covers me.proton.pass.electron), Keeper
+    "in.sinew.*", "me.proton.pass", "com.keepersecurity.*",
     // clipboard managers (the pasteboard is the owner's, D-025)
-    "org.p0deje.Maccy", "com.clipy-app.Clipy", "com.tapbots.Pastebot2Mac", "com.tapbots.Pastebot3Mac",
+    "org.p0deje.Maccy", "com.clipy-app.Clipy", "com.tapbots.Pastebot2Mac", "com.tapbots.Pastebot3Mac", "com.wiheads.*",
     // OS security: System Settings whole (D-025) and its pane extensions, authentication and alert agents
     "com.apple.systempreferences", "com.apple.settings.*", "com.apple.SecurityAgent",
     "com.apple.LocalAuthentication.UIAgent", "com.apple.loginwindow", "com.apple.UserNotificationCenter",

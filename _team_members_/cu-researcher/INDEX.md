@@ -1,7 +1,7 @@
 ---
 title: '[cu] Researcher - Team Member'
 created: 2026-11-01T09:06:25Z
-modified: 2026-11-08T04:16:40Z
+modified: 2026-11-08T12:51:42Z
 version: 1.4.0
 description: 'The lasting record of [cu] Researcher - its seat, current direction and links to its work.'
 grounded_in:
@@ -29,7 +29,7 @@ its direction changes when the coordinator assigns a new one, and the write scop
 | [`red-team-retest-2.md`](red-team-retest-2.md) | retests after the fixes, offline and live after the grant |
 | [`red-team-live-findings.md`](red-team-live-findings.md) | findings raised on live runs after the grant |
 | [red-team-qd12-qd13](red-team-qd12-qd13.md) | red team of Q-D12 drags and Q-D13 file panels: adopted points, live findings on 0.2.19 (CU-44, CU-45) |
-| [red-team-consent-tables](red-team-consent-tables.md) | red team of the D-059 route and D-061 class tables (M8-M9): gaps filed, fixes re-tested, review lessons |
+| [red-team-consent-tables](red-team-consent-tables.md) | red team of the D-059 route and D-061 class tables (M8-M9): gaps filed, fixes re-tested, methods |
 
 ## Read next
 

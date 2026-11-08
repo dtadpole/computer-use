@@ -113,10 +113,17 @@ test('CU-252 rule 3 through the loop: Finder\'s selectedItems is read for Comman
     const script = await run(async () => ({ bundleId: FINDER, items: [{ name: 'install.command', kind: 'file' }] }))
     assert.deepEqual([script.event.decision, script.event.class, script.sent], ['confirm', 'launch_code', 0])
     assert.ok(!script.json.includes('install.command'), 'no selected name in the run record')
+    // cu-verifier's ask: the judged open records the read's shape, counts by kind only.
+    assert.deepEqual(script.event.selectionRead, { items: 1, kinds: { file: 1 } })
     const doc = await run(async () => ({ bundleId: FINDER, items: [{ name: 'report.pdf', kind: 'file' }] }))
     assert.deepEqual([doc.event.decision, doc.sent], ['allow', 1])
     const older = await run(null)
     assert.deepEqual([older.event.decision, older.event.class, older.sent], ['confirm', 'launch_code', 0], 'a driver without the read asks')
+    assert.equal(older.event.selectionRead, undefined, 'no read, no shape')
+    const unread = await run(async () => null)
+    assert.deepEqual(unread.event.selectionRead, { unreadable: true })
+    const flat = await run(async () => ({ bundleId: FINDER, notCollection: true }))
+    assert.deepEqual([flat.event.decision, flat.event.selectionRead], ['confirm', { notCollection: true }], 'judged as before, recorded apart')
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }
@@ -136,7 +143,8 @@ test('CU-252 in any app (a file manager or the CU Fixture stand-in): an open who
     assert.deepEqual(verdict(open({ items })), ['confirm', 'launch_code', 'selection:launch_code'], JSON.stringify(items))
   }
   assert.deepEqual(verdict(at(FIXTURE, click, { role: 'AXMenuItem', name: 'Open' }, { selection: { items: [{ name: 'install.command', kind: 'file' }] } })).slice(0, 2), ['confirm', 'launch_code'], 'File > Open on a script')
-  for (const selection of [{ items: [{ name: 'notes.txt', kind: 'file' }] }, { items: [{ name: 'Inbox message', kind: 'unknown' }] }, { none: true }, { unreadable: true }, { notCollection: true }, undefined]) {
+  // An unreadable read now asks in any app (the CU-252 stand-in re-run; its own test below).
+  for (const selection of [{ items: [{ name: 'notes.txt', kind: 'file' }] }, { items: [{ name: 'Inbox message', kind: 'unknown' }] }, { none: true }, { notCollection: true }, undefined]) {
     assert.equal(open(selection).decision, 'allow', `outside Finder, unjudged: ${JSON.stringify(selection)}`)
   }
 })
@@ -175,4 +183,28 @@ test('CU-252 through the loop in a non-Finder app: the selection is read for Com
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }
+})
+
+test('CU-252 reopen (cu-verifier 202258Z, #104 stand-in): rows with no file URL read kind unknown - a launchable name still asks in any app; a document or plain name does not', () => {
+  const list = { role: 'AXTable', name: '' }
+  for (const [keys, name] of [[['META', 'O'], 'install.command'], [['META', 'ARROWDOWN'], 'Payload.app'], [['META', 'O'], 'Payload.app/']]) {
+    assert.deepEqual(verdict(at(FIXTURE, key(...keys), list, { selection: { items: [{ name, kind: 'unknown' }] } })), ['confirm', 'launch_code', 'selection:launch_code'], `${keys.join('+')} ${name}`)
+  }
+  for (const name of ['notes.txt', 'Groceries']) {
+    assert.equal(at(FIXTURE, key('META', 'O'), list, { selection: { items: [{ name, kind: 'unknown' }] } }).decision, 'allow', name)
+  }
+})
+
+test('CU-252 stand-in re-run (cu-verifier 221022Z): an unreadable selection read asks in any app; none, a named document and no read stay free', () => {
+  const list = { role: 'AXTable', name: 'Sandbox files' }
+  for (const keys of [['META', 'O'], ['META', 'ARROWDOWN']]) {
+    assert.deepEqual(verdict(at(FIXTURE, key(...keys), list, { selection: { unreadable: true } })), ['confirm', 'launch_code', 'selection:launch_code'], keys.join('+'))
+  }
+  // cu-researcher on #153: nameless rows and an empty list without { none } are the same unreadable read.
+  for (const selection of [{ items: [{ name: '', kind: 'unknown' }] }, { items: [{ name: 'notes.txt', kind: 'unknown' }, { name: ' ', kind: 'unknown' }] }, { items: [] }]) {
+    assert.equal(at(FIXTURE, key('META', 'O'), list, { selection }).class, 'launch_code', JSON.stringify(selection))
+  }
+  assert.equal(at(FIXTURE, key('META', 'O'), list, { selection: { none: true } }).decision, 'allow', 'nothing selected')
+  assert.equal(at(FIXTURE, key('META', 'O'), list, { selection: { items: [{ name: 'notes.txt', kind: 'unknown' }] } }).decision, 'allow', 'a named document')
+  assert.equal(at(FIXTURE, key('META', 'O'), list).decision, 'allow', 'no read (an older driver) as before')
 })
