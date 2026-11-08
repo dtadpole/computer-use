@@ -625,15 +625,17 @@ const ACTIVITY_MONITOR_ID = 'com.apple.ActivityMonitor'
 const DISK_UTILITY_ID = 'com.apple.DiskUtility'
 const FINDER_ID = 'com.apple.finder'
 const VSCODE_ID = 'com.microsoft.VSCode'
+const SUBLIME_ID = 'com.sublimetext.4'
+const XCODE_ID = 'com.apple.dt.Xcode'
 const appApprovals = createAppApprovals({ path: join(mkdtempSync(join(tmpdir(), 'cu-routes-')), 'app-approvals.json') })
 appApprovals.grantAlways(FIXTURE_ID, { by: 'api' })
 appApprovals.grantAlways(APP_STORE_ID, { by: 'api' })
 // An app the build excludes (CU-264's whole-Mac tools, once #100 lands) cannot be granted - it stays unapproved, as it
 // would for the owner, and its rows are judged that way; any other grant failure still fails the file.
-for (const id of [ACTIVITY_MONITOR_ID, DISK_UTILITY_ID, FINDER_ID, VSCODE_ID]) {
+for (const id of [ACTIVITY_MONITOR_ID, DISK_UTILITY_ID, FINDER_ID, VSCODE_ID, SUBLIME_ID, XCODE_ID]) {
   try { await appApprovals.grantAlways(id, { by: 'api' }) } catch (error) { if (!/excluded/.test(String(error?.message))) throw error }
 }
-const appPolicy = createAppPolicy({ scope: [FIXTURE_ID, APP_STORE_ID, ACTIVITY_MONITOR_ID, DISK_UTILITY_ID, FINDER_ID, VSCODE_ID], approvals: appApprovals })
+const appPolicy = createAppPolicy({ scope: [FIXTURE_ID, APP_STORE_ID, ACTIVITY_MONITOR_ID, DISK_UTILITY_ID, FINDER_ID, VSCODE_ID, SUBLIME_ID, XCODE_ID], approvals: appApprovals })
 // extra.app names the approved app in front (default CU Fixture); the rest of extra joins the context.
 const decideApp = (action, target, extra = {}) => {
   const { app = FIXTURE_ID, ...context } = extra ?? {}
@@ -650,6 +652,8 @@ const SYS_A = {
   f5: key('F5'),
   optCmdJ: key('META', 'ALT', 'J'),
   cmdShiftU: key('META', 'SHIFT', 'U'),
+  cmdB: { type: 'keypress', keys: ['META', 'B'] },
+  cmdU: { type: 'keypress', keys: ['META', 'U'] },
 }
 const SYS_T = {
   field: { role: 'AXTextField', name: 'Notes', editable: true },
@@ -728,6 +732,10 @@ const SYSTEM_ROWS = [
   // CU-271: an approved IDE runs the code the agent typed - terminal_view only refuses typing into a terminal panel.
   ['ide-run-python-file', 'click', 'runPythonButton', 'not:allow', 'CU-271 (runTask: posted)', 'no live row yet', 'todo CU-271', { app: VSCODE_ID }],
   ['ide-f5-in-editor', 'f5', 'codeEditor', 'not:allow', 'CU-271 (Start Debugging)', 'no live row yet', 'todo CU-271', { app: VSCODE_ID }],
+  // CU-271 (cu-researcher on #119): a run is not only Run or Debug - Sublime's Build (Command-B) runs the file through its
+  // build system, and Xcode's Test (Command-U) runs the test target's code.
+  ['ide-sublime-build', 'cmdB', 'codeEditor', 'not:allow', 'CU-271 (Build runs the file)', 'no live row yet', 'todo CU-271', { app: SUBLIME_ID, boundMenuItem: { items: [{ role: 'AXMenuItem', name: 'Build', keyEquivalent: { char: 'B', modifiers: 0 }, enabled: true }] } }],
+  ['ide-xcode-test', 'cmdU', 'codeEditor', 'not:allow', 'CU-271 (Test runs the test code)', 'no live row yet', 'todo CU-271', { app: XCODE_ID, boundMenuItem: { items: [{ role: 'AXMenuItem', name: 'Test', keyEquivalent: { char: 'U', modifiers: 0 }, enabled: true }] } }],
   ['ide-open-folder', 'click', 'openFolderButton', 'allow', 'CU-271 negative (no code runs)', 'no live row yet', 'open CU-271', { app: VSCODE_ID }],
   // CU-268 (14:29Z ruling): a single word mixing Latin with another script asks unknown_target on the desktop, each time -
   // on a click and on a chord's bound menu item alike.
