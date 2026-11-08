@@ -114,9 +114,6 @@ const T = {
   readonlyTextViewNotes: { role: 'AXTextArea', name: 'Bring the blue folder', caption: 'Notes', editable: false },
   webNotesEntry: { role: 'textbox', name: 'Notes', editable: true },
   notesEntry: { role: 'AXTextField', name: 'Notes', editable: true },
-  // CU-249: Services items as a click finds them (role and title only - a menu item carries no menu path).
-  servicesSearchItem: { role: 'AXMenuItem', name: 'Search With Google' },
-  servicesAppleScriptItem: { role: 'AXMenuItem', name: 'Get Result of AppleScript' },
   webOnclickDelete: { tag: 'div', role: 'generic', name: 'Delete' },
   webPointerIconDelete: { tag: 'div', role: 'generic', name: 'Delete' },
   webReadingText: { tag: 'span', role: 'generic', name: '' },
@@ -221,12 +218,6 @@ const ROWS = [
   ['long-press-destructive', 'desktop', 'longPress', 'deleteButton', 'delete', 'drag-press.test.mjs', "cu-verifier: a long press on Delete, no travel, declined delete (20261107T033148Z-e6a9d5); earlier cu-researcher run 022946Z-435ad5 (hold-delete)", null],
   ['drag-from-destructive', 'desktop', 'dragAway', 'deleteButton', 'delete', 'drag-press.test.mjs', '20261107T014522Z-727ccc (CU-140)', null],
   ['scroll', 'desktop', 'scroll', 'deleteButton', 'allow', 'not judged by design: no consent class changes on scroll', 'D-059 named limit: scroll is not judged', null],
-  // CU-249 (cu-researcher): a macOS Service acts outside the approved app (web search, Bluetooth send, AppleScript,
-  // Terminal). Its default chords are refused as system shortcuts in app-policy (cu-coordinator, 12:05Z) - pinned
-  // there, not here: this matrix judges the class policy. A click on a Services item is judged by its name alone
-  // (no menu path reaches policy), so these cells wait for the click route's fix; the class follows its decision.
-  ['service-click-search-with', 'desktop', 'click', 'servicesSearchItem', 'unknown_target', 'CU-249 (a Services item clicked: the selection to a web search)', 'no live row yet', 'todo CU-249'],
-  ['service-click-run-applescript', 'desktop', 'click', 'servicesAppleScriptItem', 'unknown_target', 'CU-249 (a Services item clicked: runs the selection as AppleScript)', 'no live row yet', 'todo CU-249'],
   ['paste-no-own-copy', 'desktop', 'cmdV', 'searchField', 'sensitive_data', 'paste-consent tests (#349)', '20261107T052454Z-bed1eb; count half on 0.2.40 (cu-verifier 10:13Z, no-alert proof)', null, { paste: { fromOwner: true } }],
   ['paste-after-own-copy', 'desktop', 'cmdV', 'searchField', 'allow', 'CU-151 (#349)', "0.2.42 P2: own copy allowed (20261107T173939Z-f03c80)", null, { paste: { fromOwner: false } }],
   // CU-187 desktop half: an own copy of shown text carries its caption's class to a paste into an unnamed entry (the
@@ -561,5 +552,67 @@ test('web-content click cells [desktop]: the driver carries the helper\'s lifted
     const element = { ...REPLY, role, title: name === '' ? null : name }
     const [atPoint] = await desktopReplyTarget({ elements: [{ rect: element.frame, element }] })
     assert.deepEqual([atPoint.role, atPoint.name ?? ''], [role, name], r.id)
+  }
+})
+
+// System-level refusals (P9, CU-242, CU-244, CU-249) are app-policy's, not the class policy's, so these rows are judged
+// through createAppPolicy as the loop builds the call: CU Fixture approved and frontmost, url desktop://, the target's
+// origin set, and a hold judged as the same chord pressed (loop.mjs, CU-64 H3). Expected 'block:<rule>' for a refusal.
+const { createAppPolicy } = await import('../../_tools_/agent-core/app-policy.mjs')
+const { createAppApprovals } = await import('../../_tools_/agent-core/app-approvals.mjs')
+const { mkdtempSync } = await import('node:fs')
+const { tmpdir } = await import('node:os')
+const { join } = await import('node:path')
+const FIXTURE_ID = 'ai.reflection.cu.fixture'
+const appApprovals = createAppApprovals({ path: join(mkdtempSync(join(tmpdir(), 'cu-routes-')), 'app-approvals.json') })
+appApprovals.grantAlways(FIXTURE_ID, { by: 'api' })
+const appPolicy = createAppPolicy({ scope: [FIXTURE_ID], approvals: appApprovals })
+const decideApp = (action, target, extra = {}) => {
+  const judged = action.type === 'hold_key' ? { type: 'keypress', keys: action.keys } : action
+  const r = appPolicy.classify(judged, { url: 'desktop://', frontmostBundleId: FIXTURE_ID, target: { ...target, origin: FIXTURE_ID }, ...extra })
+  return r.decision === 'block' ? `block:${r.rule}` : r.decision === 'allow' ? 'allow' : r.class
+}
+const key = (...keys) => ({ type: 'keypress', keys })
+const SYS_A = {
+  cmdShiftL: key('META', 'SHIFT', 'L'), cmdShift8: key('META', 'SHIFT', '8'), cmdOptD: key('META', 'ALT', 'D'),
+  ctrlF1: key('CTRL', 'F1'), ctrlSpace: key('CTRL', 'SPACE'), click: { type: 'click', x: 1, y: 1 },
+  holdLogOut: { type: 'hold_key', keys: ['META', 'ALT', 'SHIFT', 'Q'], duration_ms: 300 },
+}
+const SYS_T = {
+  field: { role: 'AXTextField', name: 'Notes', editable: true },
+  searchWithItem: { role: 'AXMenuItem', name: 'Search With Google' },
+  appleScriptItem: { role: 'AXMenuItem', name: 'Get Result of AppleScript' },
+  desktopPictureItem: { role: 'AXMenuItem', name: 'Set Desktop Picture' },
+  pasteItem: { role: 'AXMenuItem', name: 'Paste' },
+}
+// [id, action, target, expected, pin, live, status]
+const SYSTEM_ROWS = [
+  // CU-249: a macOS Service acts outside the approved app - its default chords and its Services items (clicked).
+  ['service-chord-search-with', 'cmdShiftL', 'field', 'block:system_shortcut', 'CU-249 (#49: the default Services chords refused)', 'no live row yet', 'todo CU-249'],
+  ['service-chord-run-applescript', 'cmdShift8', 'field', 'block:system_shortcut', 'CU-249 (#49; Command-* is Shift-8)', 'no live row yet', 'todo CU-249'],
+  ['service-click-search-with', 'click', 'searchWithItem', 'block:system_service', 'CU-249 (#49: a Services item clicked)', 'no live row yet', 'todo CU-249'],
+  ['service-click-run-applescript', 'click', 'appleScriptItem', 'block:system_service', 'CU-249 (#49)', 'no live row yet', 'todo CU-249'],
+  ['service-click-set-desktop-picture', 'click', 'desktopPictureItem', 'block:system_service', "CU-249 (changes the owner's wallpaper)", 'no live row yet', 'todo CU-249'],
+  ['menu-click-paste', 'click', 'pasteItem', 'allow', 'CU-249 negative (an app menu item)', 'no live row yet', 'open CU-249'],
+  // CU-242: default system hotkeys that change an owner setting.
+  ['owner-setting-dock-hiding', 'cmdOptD', 'field', 'block:system_shortcut', 'CU-242 (Dock hiding on/off)', 'no live row yet', 'todo CU-242'],
+  ['owner-setting-keyboard-access', 'ctrlF1', 'field', 'block:system_shortcut', 'CU-242 (keyboard access on/off)', 'no live row yet', 'todo CU-242'],
+  ['owner-setting-input-source', 'ctrlSpace', 'field', 'block:system_shortcut', 'CU-242 (#35: input source)', 'no live row yet', 'todo CU-242'],
+  // CU-244: a held system chord is refused as the keypress (the loop judges a hold so); pinned live-path by #39.
+  ['system-chord-held-log-out', 'holdLogOut', 'field', 'block:system_shortcut', 'desktop-consent P9 (#39), loop.mjs hold-as-keypress', 'no live row yet', 'open CU-244'],
+]
+for (const [id, action, target, expected, pin, live, status] of SYSTEM_ROWS) {
+  const name = `${id} [desktop, app-policy] ${action} on ${target} -> ${expected} (pin: ${pin}; live: ${live})`
+  if (status?.startsWith('todo ')) test(name, { todo: status }, () => assert.equal(decideApp(SYS_A[action], SYS_T[target]), expected))
+  else test(name, () => assert.equal(decideApp(SYS_A[action], SYS_T[target]), expected))
+}
+test('system rows: named once (apart from the class-policy rows too), every open row names its issue, a todo row still fails', () => {
+  const ids = SYSTEM_ROWS.map((r) => r[0])
+  assert.equal(new Set(ids).size, ids.length)
+  for (const id of ids) assert.ok(!ROWS.some((r) => r[0] === id), `${id} is also a class-policy row`)
+  for (const [id, action, target, expected, , live, status] of SYSTEM_ROWS) {
+    if (status === null) { assert.ok(closingRun(String(live)), `${id} is closed without a closing run or decision (D-064)`); continue }
+    assert.match(status, /^(todo|open) CU-\d+$/, id)
+    if (status.startsWith('todo ')) assert.notEqual(decideApp(SYS_A[action], SYS_T[target]), expected, `${id} passes on main - flip it from todo`)
   }
 })
