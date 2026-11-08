@@ -784,6 +784,23 @@ export function selectedItemsOf(reply, scope = []) {
   return { items }
 }
 
+/**
+ * CU-265: the scheme of a link's URL, what agent core asks about when it is not a web scheme (facetime:, tel:, zoommtg:,
+ * mailto: start another app) - lower case, no colon, the scheme only and never the rest of the URL. Null when there is
+ * no URL or it does not parse.
+ */
+export function linkSchemeOf(url) {
+  if (typeof url !== 'string' || url.trim() === '') return null
+  let parsed
+  try {
+    parsed = new URL(url.trim())
+  } catch {
+    return null
+  }
+  const scheme = parsed.protocol.replace(/:$/, '').toLowerCase()
+  return /^[a-z][a-z0-9+.-]{0,31}$/.test(scheme) ? scheme : null
+}
+
 /** A helper's panel marker: 'save', 'open' or 'unknown' (any other value fails closed to 'unknown'); null when absent. */
 function panelOf(value) {
   if (value === undefined || value === null) return null
@@ -1723,6 +1740,9 @@ class DesktopEnvironment {
       // never in run records (an event's target keeps origin, role and name); the URL's path never leaves the driver.
       filename: fileNameOf(element.filename),
       url: fileUrlLeafOf(element.url),
+      // CU-265: a link's scheme (AXLink's AXURL), so a facetime:, tel: or mailto: link is not a plain click. Links only - a
+      // file browser's items carry file: URLs and are judged by launch_code - and the scheme only, never the URL.
+      linkScheme: element.role === 'AXLink' ? linkSchemeOf(element.url) : null,
       fingerprint,
       ...(fieldKey !== null ? { fieldKey } : {}),
     }
