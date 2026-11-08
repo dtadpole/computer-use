@@ -126,8 +126,12 @@ export const ROWS = [
   // CU-266 (cu-researcher): invisible format characters and fullwidth digits hide a value from every value rule.
   ['value-card number with zero-width spaces', 'pay', 'value', CARD.replace(/\D/g, '').replace(/(\d{4})(?=\d)/g, '$1\u200b'), 'Notes', 'sensitive_data', 'todo CU-266', 'no live row yet'],
   ['value-card number in fullwidth digits', 'pay', 'value', [...CARD.replace(/\D/g, '')].map((d) => String.fromCharCode(0xff10 + Number(d))).join(''), 'Notes', 'sensitive_data', 'todo CU-266', 'no live row yet'],
-  ['value-US SSN with zero-width separators', 'gov', 'value', SSN.replace(/-/g, '\u200b'), 'Notes', 'sensitive_data', 'todo CU-266', 'no live row yet'],
+  // Zero-width spaces INSIDE the dashed form - replacing the dashes would leave a bare 9-digit run, a named D-061 limit.
+  ['value-US SSN with zero-width spaces in its groups', 'gov', 'value', SSN.replace(/-/g, '-\u200b'), 'Notes', 'sensitive_data', 'todo CU-266', 'no live row yet'],
   ['name-Bank account with a zero-width space', 'pay', 'name', 'abc123xyz', 'Bank\u200b account', 'sensitive_data', 'todo CU-266', 'no live row yet'],
+  // CU-268: invisible characters that are not Cf, and another script's digits, slip past CU-266's normalisation.
+  ['value-card number with variation selectors', 'pay', 'value', CARD.replace(/\D/g, '').replace(/(\d{4})(?=\d)/g, '$1\ufe0f'), 'Notes', 'sensitive_data', 'todo CU-268', 'no live row yet'],
+  ['value-card number in Arabic-Indic digits', 'pay', 'value', [...CARD.replace(/\D/g, '')].map((d) => String.fromCharCode(0x0660 + Number(d))).join(''), 'Notes', 'sensitive_data', 'todo CU-268', 'no live row yet'],
   ['name-Card number', 'pay', 'name', 'abc123xyz', 'Card number', 'sensitive_data', null, 'class page (#413): asked, main e7aaacfdb 20261107T151937Z-5856b3; pre-#415 typed unasked 20261107T152139Z-6bb6da'],
   ['name-Credit card number', 'pay', 'name', 'abc123xyz', 'Credit card number', 'sensitive_data', null, 'class page (#413): asked, main e7aaacfdb 20261107T151941Z-97feb9; pre-#415 typed unasked 20261107T152144Z-a9c8b1'],
   ['value-CVV', 'pay', 'value', '123', 'Notes', 'allow', null, 'by design (D-061 limit): too broad to judge by value; its name rows carry it'],
