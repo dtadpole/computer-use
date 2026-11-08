@@ -738,6 +738,11 @@ enum MenuKey {
     return false
   }
 
+  /// kVK codes of keys AppKit serves by virtual key (measured: AXMenuItemCmdVirtualKey present): Return, Tab, Space,
+  /// Delete, Escape, keypad Enter, Help, Home, Page Up, Forward Delete, End, Page Down, the arrows and F1-F20.
+  static let nonCharacterKeys: Set<Int> = [36, 48, 49, 51, 53, 76, 114, 115, 116, 117, 119, 121, 123, 124, 125, 126,
+                                           122, 120, 99, 118, 96, 97, 98, 100, 101, 109, 103, 111, 105, 107, 113, 106, 64, 79, 80, 90]
+
   /// The chord's modifiers as AXMenuItemCmdModifiers bits: Shift 1, Option 2, Control 4, no Command 8.
   static func modifierBits(_ chord: Chord) -> Int {
     (chord.shift ? 1 : 0) | (chord.option ? 2 : 0) | (chord.control ? 4 : 0) | (chord.command ? 0 : 8)
@@ -816,7 +821,9 @@ enum MenuKey {
     if entries.contains(where: { hiddenDuplicate($0, chord) }) { return .unreadable("a hidden duplicate key equivalent") }
     let matches = entries.filter { fires($0, chord) }
     if !matches.isEmpty, matches.allSatisfy({ $0.enabled == false }) { return .unreadable("only disabled items match; a later duplicate may fire") }
-    let layoutUnread = chord.unshifted == nil
+    // A non-character key (Backspace, Escape, Return, F-keys, arrows) matches by virtual key; its layout character
+    // does not matter (cu-developer-two's seam check on #36: Command-Backspace came back incomplete).
+    let layoutUnread = chord.unshifted == nil && !nonCharacterKeys.contains(chord.keyCode)
     if matches.isEmpty {
       if layoutUnread { return .unreadable("the keyboard layout gives no character for this key") }
       return emptyMenus.isEmpty ? .none(bundleId: bundleId, incomplete: false) : .unreadable("a menu had no items to read (filled lazily)")
