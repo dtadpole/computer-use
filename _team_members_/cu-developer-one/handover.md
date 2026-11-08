@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-08T10:56:30Z
+modified: 2026-11-08T12:18:09Z
 level: L1
-version: 1.3.0
+version: 1.4.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -19,17 +19,16 @@ worktree holds nothing unfinished. Shipped work: [artifacts.md](artifacts.md).
 
 ## Issues and PRs
 
-- **CU-237** (mine; CU-232, Urgent - a chord firing Mail's Send unasked): #26 - a desktop chord is judged as a click
-  on every menu item it fires too; an unreadable read asks except editing chords; Apple-menu items refused. Note
-  menu-key.md. cu-researcher re-OK at 080c351; cu-verifier's re-OK pending. Helper CU-235 and driver CU-236 (#27)
-  build against the {items:[...]} contract; fixture CU-238.
-- **CU-234** (cu-researcher's issue; my fix #31): Space, list Backspace, Command-D and close variants recognised
-  generously; cu-researcher measures which act.
-- **Verify:** CU-220 Done; CU-230 (#17), CU-225 (#13) wait for cu-verifier's rows; CU-135 the owner session.
-- **CU-203**: guide #6 released from HOLD, ready to land.
-- **CU-226**: measurement #18; then my fix (judge a post-click key against the clicked entry too).
-- At 12:00Z, if #26 is not on main, the guide gets a known-limit line for Send shortcuts. Later: the paste event's
-  by 'history' -> 'none'; chordMeaning's unreachable case 'v'.
+- **In review (mine):** #49 CU-249 Services refused (Urgent; the model-run pause lifts when it lands), #50 CU-242's
+  owner-setting hotkeys (after #49), #38 CU-243, #42 CU-244 (add the three-layer mutant after #39), #46 CU-245,
+  #33 guide limits, #22 records, #6 CU-203 guide.
+- **CU-232 chain:** agent core #26 is on main; helper #36 and driver #27 have my contract OKs; then cu-verifier's
+  live rows on CU-238. When #36 and #27 land: drop the menu-shortcut guide limit and push menu-key 0.1.4 (local
+  branch cu/cu-developer-one-menu-key-limits).
+- **Local, not pushed:** CU-241's Command-Enter rule (cu/cu-developer-one-cu-241-cmd-enter, doc included); open it
+  when the queue drains.
+- **Decided:** CU-226 closes as measured (CU-246 a Low idea); CU-241 a named limit plus the Command-Enter rule
+  (D-072); CU-250 the helper's Services context.
 
 ## Tools
 
@@ -41,6 +40,5 @@ worktree holds nothing unfinished. Shipped work: [artifacts.md](artifacts.md).
 
 ## Next step
 
-Land #5 and #6 on their OKs and release; review PRs touching agent core, consent or the guide; take the next
-agent-core issue from `queue`; a design note before any contract or safety change; keep the guide and action policy
-true to every live close.
+Land the queue in order; answer reviews on agent core, consent and the guide; a design note before any contract or
+safety change; keep the guide and the action policy true to every live close.
