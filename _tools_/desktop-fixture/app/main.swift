@@ -74,6 +74,7 @@ final class Fixture: NSObject {
     out.merge(WebButtons.fields()) { current, _ in current }
     out.merge(ConsentCells.fields()) { current, _ in current }
     out.merge(MenuCompose.fields()) { current, _ in current }
+    out.merge(NamedControls.fields()) { current, _ in current }
     return out
   }
 
