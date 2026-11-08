@@ -114,6 +114,10 @@ const T = {
   readonlyTextViewNotes: { role: 'AXTextArea', name: 'Bring the blue folder', caption: 'Notes', editable: false },
   webNotesEntry: { role: 'textbox', name: 'Notes', editable: true },
   notesEntry: { role: 'AXTextField', name: 'Notes', editable: true },
+  // CU-253: chat compose fields as the helper reports them - no default button (read, none), Return sends.
+  chatComposeArea: { role: 'AXTextArea', name: 'iMessage', editable: true, defaultButtonRead: true },
+  chatMessageField: { role: 'AXTextField', name: 'Message', editable: true, defaultButtonRead: true },
+  notesArea: { role: 'AXTextArea', name: 'Notes', editable: true, defaultButtonRead: true },
   webOnclickDelete: { tag: 'div', role: 'generic', name: 'Delete' },
   webPointerIconDelete: { tag: 'div', role: 'generic', name: 'Delete' },
   webReadingText: { tag: 'span', role: 'generic', name: '' },
@@ -312,6 +316,12 @@ const ROWS = [
   // carries only the source's class); a paste there is (CU-179).
   ['web-drag-into-password', 'browser', 'dragAway', 'webNotesEntry', 'credential', 'CU-198 (destination name rules)', "main 9a7821b47, real Chrome, #514's drag page: a word dragged onto the Password entry asked credential (20261108T004654Z-448b9d)", null, { dropTarget: { role: 'textbox', name: 'Password', editable: true } }],
   ['drag-into-iban', 'desktop', 'dragAway', 'notesEntry', 'sensitive_data', 'CU-198 (destination name rules)', "helper 0.2.49, CU Fixture consent-cells copyRow, cu-verifier: hello selected in an unnamed entry, dragged with a 400 ms dwell onto the entry named IBAN - declined sensitive_data, the IBAN entry unchanged (20261108T023516Z-a51b2d)", null, { dropTarget: { role: 'AXTextField', name: 'IBAN', editable: true } }],
+  // CU-253 (cu-researcher): a chat app sends on Return in its compose field and has no default button, so the field
+  // name decides - and 'iMessage' or 'Message' is no submit word: the message goes unasked (runTask probe on main).
+  ['chat-return-imessage', 'desktop', 'enter', 'chatComposeArea', 'submit', 'CU-253 (Messages sends on Return)', 'no live row yet', 'todo CU-253'],
+  ['chat-newline-imessage', 'desktop', 'typeNewline', 'chatComposeArea', 'submit', 'CU-253 (a typed newline is the same Return)', 'no live row yet', 'todo CU-253'],
+  ['chat-return-message-field', 'desktop', 'enter', 'chatMessageField', 'submit', 'CU-253', 'no live row yet', 'todo CU-253'],
+  ['notes-area-return-newline', 'desktop', 'enter', 'notesArea', 'allow', 'CU-253 negative (a notes box takes a new line)', 'no live row yet', 'open CU-253'],
 ]
 
 const decide = (action, target, env, extra = {}) => {
