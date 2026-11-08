@@ -56,8 +56,9 @@ name only where none is reported. A copy of shown text carries its caption's cla
   missing count taken as the run's own copy fails three rows.
 - Nothing focused (CU-219): Cmd+C then Cmd+V, the count risen by that copy -> allowed on the count, no target recorded;
   a rise the run did not make -> asked; a copy with nothing focused pasted into a field, and the reverse -> judged on
-  the count; other keys never read it. Mutants: the side read dropped, read for any target, a copy recording another
-  count, a placeholder target made from the count.
+  the count; a selected value captioned Vendor -> allowed, captioned IBAN -> asked, wherever it is pasted; a failed
+  side read -> asked; other keys never read it. Mutants: the side read dropped, read for any target, a copy recording
+  another count, a placeholder target made from the count.
 - Over-ask: none in our trajectories (5 of 5 pastes followed an own copy).
 - Live: consent-keys, unattended - Cmd+V into Message first asks and is declined, nothing pasted.
 
@@ -65,5 +66,6 @@ name only where none is reported. A copy of shown text carries its caption's cla
 
 
 Every admitted helper sends the count (since 0.2.38; the floor is 0.2.44), so a missing one makes the paste the
-owner's - asked (CU-220). A keystroke paste with nothing focused has none, so it asks: a named over-ask (CU-219).
+owner's - asked (CU-220). With nothing focused the count is read beside the null target (CU-219, the event's
+`countRead: 'no-focus'`); only a failed side read leaves none, and then the paste asks.
 

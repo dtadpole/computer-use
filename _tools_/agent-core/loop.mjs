@@ -614,11 +614,13 @@ export async function runTask(options) {
     // CU-219: a key copy, cut or paste with nothing focused has a null target, which carries no count. The driver reads
     // the count beside it (pasteboardChangeCount) - never a placeholder target, which would change how every rule judges
     // a no-focus key - so the target stays null and only the count is judged. A failed read or an environment without
-    // one leaves the count null, as before.
+    // one leaves the count null, so the paste asks (CU-220). The event says when the count came from that read.
     const bareKey = desktop && target === null && (chordOf(action, 'C') || chordOf(action, 'X') || chordOf(action, 'V'))
-    const count = bareKey && typeof environment.pasteboardChangeCount === 'function'
+    const sideRead = bareKey && typeof environment.pasteboardChangeCount === 'function'
+    const count = sideRead
       ? countOf({ pasteboardChangeCount: await Promise.resolve(environment.pasteboardChangeCount()).catch(() => null) })
       : countOf(target)
+    const countRead = sideRead ? { countRead: 'no-focus' } : {}
     const paste = isPaste(action, target)
       ? (desktop
           ? { ...(ownCopy(count) ? { fromOwner: false, ...(pastedSource(count) ? { source: pastedSource(count) } : {}) } : { fromOwner: true }), ...(viaMenu ? { destination } : {}) }
@@ -628,9 +630,9 @@ export async function runTask(options) {
     // copy records the count it was judged on (recordCopy below).
     const pasteboardJudged = paste
       ? (desktop
-        ? { kind: 'paste', count, baseline: pasteboard.baseline, copies: pasteboard.own, own: !paste.fromOwner, by: count !== null && pasteboard.baseline !== null ? 'count' : 'history' }
+        ? { kind: 'paste', count, baseline: pasteboard.baseline, copies: pasteboard.own, own: !paste.fromOwner, by: count !== null && pasteboard.baseline !== null ? 'count' : 'history', ...countRead }
         : { kind: 'paste', by: 'run-clipboard' })
-      : desktop && isCopy(action, target) ? { kind: 'copy', count } : null
+      : desktop && isCopy(action, target) ? { kind: 'copy', count, ...countRead } : null
     return { url: state.url, target: remembered(target), ...(dropTarget ? { dropTarget: remembered(dropTarget) } : {}), ...(dragText !== undefined ? { dragText } : {}), ...(afterClose ? { afterClose: true } : {}), ...(resubmits ? { resubmits: historyMove } : {}), ...(historyJudged ? { historyJudged } : {}), ...(paste ? { paste } : {}), ...(pasteboardJudged ? { pasteboardJudged } : {}), ...(state.interstitial === true ? { interstitial: true } : {}), dialog: state.dialog ?? null, task: task.text, ...app }
   }
 
