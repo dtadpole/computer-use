@@ -124,7 +124,7 @@ const FILE_BROWSERS = new Set(['com.apple.finder'])
 const OPEN_ITEM = /^open$/i
 const RUNNER_TITLES = /^(terminal|iterm2?|warp|ghostty|kitty|alacritty|hyper|wezterm|script editor|automator|shortcuts|alfred|raycast)$/i
 const isMenuItem = (target) => /^(ax)?menuitem$/i.test(String(target?.role ?? ''))
-function opensUnreadSelection(action, target, app) {
+export function opensUnreadSelection(action, target, app) {
   if (!FILE_BROWSERS.has(String(app ?? ''))) return false
   if (CLICKS.has(action.type)) return isMenuItem(target) && OPEN_ITEM.test(String(target?.name ?? '').trim())
   const keys = chord(action)
@@ -132,6 +132,22 @@ function opensUnreadSelection(action, target, app) {
   // A focused element that is itself a named file is judged by launchesCode on its own name.
   const named = String(target?.name ?? '').trim() !== '' && !/^(ax)?(outline|table|browser|list|group|scrollarea|splitgroup|window)$/i.test(String(target?.role ?? ''))
   return !named
+}
+/**
+ * CU-252 rule 3 (the driver's selectedItems, CU-259): whether the selection an open acts on may run code. A launchable
+ * name, a package (a bundle's trailing '/'), or a file with no extension (a script needs none) may; a document or a
+ * folder does not; nothing selected does not. No read, an unreadable one or a non-collection focus asks (rule 1).
+ */
+export function selectionRunsCode(selection) {
+  if (!selection || typeof selection !== 'object') return true
+  if (selection.none === true) return false
+  if (!Array.isArray(selection.items)) return true
+  return selection.truncated === true || selection.items.some((item) => {
+    const name = String(item?.name ?? '').trim()
+    if (item?.kind === 'unknown' || name === '') return true
+    if (LAUNCHABLE.test(name)) return true
+    return item?.kind === 'file' && !name.replace(/^\./, '').includes('.')
+  })
 }
 const runnerItem = (action, target, context) => {
   if (CLICKS.has(action.type) && isMenuItem(target) && RUNNER_TITLES.test(String(target?.name ?? '').trim())) return String(target.name).trim()
@@ -403,7 +419,7 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     if (launchesCode(action, target) && verdict.decision !== 'handoff') {
       return { decision: 'confirm', class: 'launch_code', classes: ['launch_code', ...(verdict.classes ?? [])], rule: 'target:launch_code', reason: `open "${target.name}", which runs code`, app }
     }
-    if (opensUnreadSelection(action, target, app) && verdict.decision !== 'handoff') {
+    if (opensUnreadSelection(action, target, app) && selectionRunsCode(context.selection) && verdict.decision !== 'handoff') {
       return { decision: 'confirm', class: 'launch_code', classes: ['launch_code', ...(verdict.classes ?? [])], rule: 'selection:launch_code', reason: 'open the selection, which this run cannot read - it may run code', app }
     }
     // CU-232 (menu-key.md): a chord whose menu item could not be read may fire whatever the app binds to it (Mail's Send

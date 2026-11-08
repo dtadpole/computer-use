@@ -69,3 +69,55 @@ test('CU-252 through the loop: a click on Open With > Terminal is refused, nothi
     rmSync(dir, { recursive: true, force: true })
   }
 })
+
+test('CU-252 rule 3 (CU-259\'s selectedItems): with the selection read, only a launchable, package or extensionless item asks', () => {
+  const open = (selection) => at(FINDER, key('META', 'O'), { role: 'AXOutline', name: '' }, { selection })
+  for (const items of [[{ name: 'install.command', kind: 'file' }], [{ name: 'Payload.app/', kind: 'folder' }], [{ name: 'setup', kind: 'file' }],
+    [{ name: 'notes.txt', kind: 'file' }, { name: 'run.sh', kind: 'file' }], [{ name: 'thing', kind: 'unknown' }], [{ name: '.profile', kind: 'file' }]]) {
+    assert.deepEqual(verdict(open({ items })), ['confirm', 'launch_code', 'selection:launch_code'], JSON.stringify(items))
+  }
+  for (const selection of [{ items: [{ name: 'report.pdf', kind: 'file' }, { name: 'Photos', kind: 'folder' }] }, { none: true }, { items: [{ name: 'archive.tar.gz', kind: 'file' }] }]) {
+    assert.equal(open(selection).decision, 'allow', JSON.stringify(selection))
+  }
+  for (const selection of [{ unreadable: true }, { notCollection: true }, { items: [{ name: 'a.txt', kind: 'file' }], truncated: true }, undefined]) {
+    assert.equal(open(selection).class, 'launch_code', `asks: ${JSON.stringify(selection)}`)
+  }
+  assert.equal(verdict(at(FINDER, click, { role: 'AXMenuItem', name: 'Open' }, { selection: { items: [{ name: 'report.pdf', kind: 'file' }] } }))[0], 'allow', 'a menu Open on a document')
+})
+
+test('CU-252 rule 3 through the loop: Finder\'s selectedItems is read for Command-O on the list - a script asks, a document runs, no read asks', async () => {
+  const { mkdtempSync, rmSync } = await import('node:fs')
+  const { tmpdir } = await import('node:os')
+  const { join } = await import('node:path')
+  const { createScriptedAdapter } = await import('../../_tools_/agent-core/adapter-scripted.mjs')
+  const { createAppApprovals } = await import('../../_tools_/agent-core/app-approvals.mjs')
+  const { createRunControl } = await import('../../_tools_/agent-core/control.mjs')
+  const { createFakeEnvironment } = await import('../../_tools_/agent-core/fake-env.mjs')
+  const { runTask } = await import('../../_tools_/agent-core/loop.mjs')
+  const { readRun } = await import('../../_tools_/agent-core/trajectory.mjs')
+  const dir = mkdtempSync(join(tmpdir(), 'cu-252-sel-'))
+  try {
+    const run = async (selectedItems) => {
+      const control = createRunControl()
+      const environment = createFakeEnvironment({ kind: 'desktop', control })
+      environment.state = async () => ({ url: `app:${FINDER}`, frontmostBundleId: FINDER, dialog: null })
+      environment.focusedElement = async () => ({ origin: FINDER, role: 'AXOutline', name: '', fingerprint: 'o' })
+      if (selectedItems) environment.selectedItems = selectedItems
+      const store = createAppApprovals({ path: join(dir, `a-${Math.random()}.json`) })
+      store.grantAlways(FINDER, { by: 'api' })
+      const model = createScriptedAdapter({ frame: { width: 1440, height: 900 }, turns: [{ actions: [key('META', 'O')] }, { final: 'done' }] })
+      const result = await runTask({ task: 'open it', environment, model, control, runsDirectory: join(dir, 'runs'), build: { commit: 'test', dirty: false }, apps: [FINDER], appApprovals: store })
+      const event = readRun(result.trajectoryDir).events.find((e) => e.kind === 'action')
+      return { event, sent: environment.log.filter((x) => (x.action ?? x)?.type).length, json: JSON.stringify(readRun(result.trajectoryDir).events) }
+    }
+    const script = await run(async () => ({ bundleId: FINDER, items: [{ name: 'install.command', kind: 'file' }] }))
+    assert.deepEqual([script.event.decision, script.event.class, script.sent], ['confirm', 'launch_code', 0])
+    assert.ok(!script.json.includes('install.command'), 'no selected name in the run record')
+    const doc = await run(async () => ({ bundleId: FINDER, items: [{ name: 'report.pdf', kind: 'file' }] }))
+    assert.deepEqual([doc.event.decision, doc.sent], ['allow', 1])
+    const older = await run(null)
+    assert.deepEqual([older.event.decision, older.event.class, older.sent], ['confirm', 'launch_code', 0], 'a driver without the read asks')
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
