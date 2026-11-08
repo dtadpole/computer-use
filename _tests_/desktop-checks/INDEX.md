@@ -1,7 +1,7 @@
 ---
 title: desktop-checks test suite
 created: 2026-11-06T15:20:00Z
-modified: 2026-11-08T10:40:00Z
+modified: 2026-11-08T10:22:00Z
 version: 0.2.0
 description: Unit tests of the desktop live checks on fakes - the G1 check's guards, kill identity, post-kill checkpoint, release bounds, fallback and alert - with a virtual clock that fails a wait without a bound.
 grounded_in:

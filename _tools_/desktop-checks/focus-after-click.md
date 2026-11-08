@@ -1,7 +1,7 @@
 ---
 title: CU-226 focus after a click - the measurement plan
-created: 2026-11-08T10:40:00Z
-modified: 2026-11-08T10:35:00Z
+created: 2026-11-08T10:22:00Z
+modified: 2026-11-08T10:32:00Z
 level: L1
 version: 0.1.1
 description: The live measurement of whether a key or typed string right after a click is judged on the focus from before the click - guards, steps, what is recorded and how it is read.
