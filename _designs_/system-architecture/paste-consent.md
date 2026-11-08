@@ -1,9 +1,9 @@
 ---
 title: A paste is judged by what it inserts
 created: 2026-11-07T03:33:02Z
-modified: 2026-11-08T10:19:16Z
+modified: 2026-11-08T11:15:00Z
 level: L1
-version: 0.2.11
+version: 0.2.12
 description: How a paste is judged without reading the owner's pasteboard - the browser checks the run's own clipboard text; the desktop asks before a paste that has no copy of the run's own before it.
 status: unverified
 grounded_in:
@@ -11,6 +11,7 @@ grounded_in:
   - source: D-031 (copy, cut and paste allowed; the helper never reads the pasteboard) and D-050 to D-052 (the clipboard guard)
   - source: the CU-145 matrix rows paste-no-own-copy and web-paste-card
   - source: CU-230 (a paste chord with Shift or Option skipped every paste check)
+  - source: CU-219 (with nothing focused the count is read beside the null target - no-focus-count.md)
 ---
 
 # A paste is judged by what it inserts
@@ -56,5 +57,5 @@ name only where none is reported. A copy of shown text carries its caption's cla
 
 
 Every admitted helper sends the count (since 0.2.38; the floor is 0.2.44), so a missing one makes the paste the
-owner's - asked (CU-220). A keystroke paste with nothing focused has none, so it asks: a named over-ask (CU-219).
+owner's - asked (CU-220). With nothing focused it is read beside the null target ([no-focus-count](no-focus-count.md)).
 
