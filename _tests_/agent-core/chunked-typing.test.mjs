@@ -177,18 +177,20 @@ test('CU-273: a detour through another field resumes the first field - Tab away,
   assert.equal(verdicts(elsewhere.events).at(-1), 'allow', 'the other half in another field is still two fields')
 })
 
-test('CU-273: a desktop text area that grows between pieces is still one field - known by its fieldKey, not its fingerprint (cu-researcher)', async () => {
-  const control = createRunControl()
-  const environment = createFakeEnvironment({ kind: 'desktop', control })
-  // The desktop fingerprint holds the frame's size, so a growing text area reports a new one; its fieldKey (CU-194) stays.
-  let height = 30
-  environment.focusedElement = async () => ({ origin: FIXTURE, role: 'AXTextArea', name: 'Notes', editable: true, fingerprint: `notes-${height}`, fieldKey: 'k-notes', defaultButtonRead: true })
-  const perform = environment.perform.bind(environment)
-  environment.perform = async (action) => { const effect = await perform(action); height += 30; return effect }
-  const model = createScriptedAdapter({ frame: { width: 1440, height: 900 }, turns: [{ actions: types(CARD_DIGITS.slice(0, 8), CARD_DIGITS.slice(8)) }, { final: 'done' }] })
-  const result = await runTask({ task: 'fill in the notes', environment, model, control, runsDirectory: join(tmp, `runs-${runs += 1}`), build: { commit: 'test', dirty: false }, apps: [FIXTURE], appApprovals: store })
-  const events = readRun(result.trajectoryDir).events.filter((e) => e.kind === 'action' && e.status !== 'attempted')
-  assert.deepEqual(verdicts(events), ['allow', 'sensitive_data'])
+test('CU-273: a desktop text area that grows between pieces is still one field, downward or upward - known by its column, not its fingerprint (cu-researcher)', async () => {
+  for (const [direction, grow] of [['downward', (box) => ({ ...box, height: box.height + 30 })], ['upward (a bottom-anchored chat box)', (box) => ({ ...box, y: box.y - 30, height: box.height + 30 })]]) {
+    const control = createRunControl()
+    const environment = createFakeEnvironment({ kind: 'desktop', control })
+    // The desktop fingerprint (and fieldKey, CU-194) hold the frame's size or top; the column - left edge and width - holds.
+    let box = { x: 100, y: 400, width: 300, height: 30 }
+    environment.focusedElement = async () => ({ origin: FIXTURE, pid: 601, role: 'AXTextArea', name: 'Message', editable: true, box, fingerprint: `m-${box.y}-${box.height}`, fieldKey: `k-${box.y}`, defaultButtonRead: true })
+    const perform = environment.perform.bind(environment)
+    environment.perform = async (action) => { const effect = await perform(action); box = grow(box); return effect }
+    const model = createScriptedAdapter({ frame: { width: 1440, height: 900 }, turns: [{ actions: types(CARD_DIGITS.slice(0, 8), CARD_DIGITS.slice(8)) }, { final: 'done' }] })
+    const result = await runTask({ task: 'write the message', environment, model, control, runsDirectory: join(tmp, `runs-${runs += 1}`), build: { commit: 'test', dirty: false }, apps: [FIXTURE], appApprovals: store })
+    const events = readRun(result.trajectoryDir).events.filter((e) => e.kind === 'action' && e.status !== 'attempted')
+    assert.deepEqual(verdicts(events), ['allow', 'sensitive_data'], direction)
+  }
 })
 
 test('CU-273: the buffers are capped at 32 fields - the least recently typed field goes first (named limit)', async () => {
