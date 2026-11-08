@@ -1,9 +1,9 @@
 ---
 title: App policy and exclusions
 created: 2026-11-02T08:29:12Z
-modified: 2026-11-08T13:27:46Z
+modified: 2026-11-08T21:34:00Z
 level: L1
-version: 0.4.11
+version: 0.4.12
 description: Per-app approval (once, always, revocable) that replaces the site filter on desktop runs, start apps as candidates only, the hard exclusion table that no approval lifts, and the desktop order of checks.
 status: unverified
 grounded_in:
@@ -46,19 +46,18 @@ answer); `cli.mjs apps list | revoke <bundle-id>` shows and removes them, effect
 
 ## Hard exclusions, never in scope
 
-This table is the source of truth; agent core's `exclusions.mjs` holds it with a test per entry, and the Swift
-helper (`Policy.swift`), the fake helper and verify-kit follow it.
+This table is the source of truth: agent core's `exclusions.mjs` holds it, tested; the helper (`Policy.swift`), the
+fake helper and verify-kit follow it.
 
 | Kind | Bundle ids (`*` = prefix) |
 |---|---|
-| terminals and code runners | `com.apple.Terminal`, `com.googlecode.iterm2`, `dev.warp.*`, `com.mitchellh.ghostty`, `net.kovidgoyal.kitty`, `org.alacritty`, `co.zeit.hyper`, `com.github.wez.wezterm`, `com.apple.ScriptEditor2`, `com.apple.Automator`, `com.apple.shortcuts`, launchers `com.runningwithcrayons.Alfred`, `com.raycast.macos` |
-| agents | `com.reflection.cu-helper`, `com.openai.*`, `com.anthropic.*`, `com.google.Chrome.app.*`, `com.microsoft.edgemac.app.*` (installed web apps can host our UIs) |
-| password managers | `com.1password.*`, `com.agilebits.*`, `com.bitwarden.desktop`, `org.keepassxc.keepassxc`, `com.apple.Passwords`, `com.apple.keychainaccess`, `com.dashlane.*`, `com.lastpass.*`, `com.nordsec.nordpass` |
-| clipboard managers | `org.p0deje.Maccy`, `com.clipy-app.Clipy`, `com.tapbots.Pastebot2Mac`, `com.tapbots.Pastebot3Mac` |
+| terminals and code runners | `com.apple.Terminal`, `com.googlecode.iterm2`, `dev.warp.*`, `com.mitchellh.ghostty`, `net.kovidgoyal.kitty`, `org.alacritty`, `co.zeit.hyper`, `com.github.wez.wezterm`, `com.apple.ScriptEditor2`, `com.apple.Automator`, `com.apple.shortcuts`, launchers `com.runningwithcrayons.Alfred`, `com.raycast.macos`, `com.apple.Spotlight`, `at.obdev.LaunchBar` |
+| agents | `com.reflection.cu-helper`, `com.openai.*`, `com.anthropic.*`, `com.google.Chrome.app.*`, `com.microsoft.edgemac.app.*` (web-app shims can host our UIs), `ai.perplexity.*` |
+| password managers | `com.1password.*`, `com.agilebits.*`, `com.bitwarden.desktop`, `org.keepassxc.keepassxc`, `com.apple.Passwords`, `com.apple.keychainaccess`, `com.dashlane.*`, `com.lastpass.*`, `com.nordsec.nordpass`, `in.sinew.*`, `me.proton.pass`, `com.keepersecurity.*` |
+| clipboard managers | `org.p0deje.Maccy`, `com.clipy-app.Clipy`, `com.tapbots.Pastebot2Mac`, `com.tapbots.Pastebot3Mac`, `com.wiheads.*` |
 | OS security | `com.apple.systempreferences` (whole app, D-025), `com.apple.SecurityAgent`, `com.apple.LocalAuthentication.UIAgent`, `com.apple.loginwindow`, `com.apple.UserNotificationCenter`, `com.apple.coreservices.uiagent`, `com.apple.installer`; CU-264's Disk Utility, Activity Monitor, Time Machine, Boot Camp, Migration Assistant |
 
-An exact id also excludes its children (`id.`). Ids are trimmed and
-matched case-insensitively. Run config may only add entries, recorded in `run.json`.
+An exact id also excludes its children (`id.`); ids match trimmed and case-insensitively. Run config may only add entries, recorded in `run.json`.
 
 Browsers are approvable, but a window showing our live view or DSH's GUI is excluded by window: the live view's fixed title marker (`[cu live view]`) in the window list and AX, or as a fallback a known browser's
 document URL on a loopback port of [the fixed deny list](../system-architecture/site-filter.md).
