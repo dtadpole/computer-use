@@ -678,8 +678,8 @@ const SYSTEM_ROWS = [
   // CU-250 (#56, on main): a chord bound to an owner-installed service - read with its servicesMenu mark - is refused.
   // CU-250: a click on an owner-installed service (helper 0.2.53 marks it servicesMenu, with its menu path) is refused.
   ['service-click-owner-installed', 'click', 'ownerServiceItem', 'block:system_service', 'app-policy.mjs (CU-250: the servicesMenu mark ignored)', 'no live row yet', 'open CU-250'],
-  ['writing-tools-rewrite', 'click', 'writingToolsRewrite', 'not:allow', 'Writing Tools rewrite the owner text outside the app (ask or refuse - undecided)', 'no live row yet', 'todo CU-277'],
-  ['writing-tools-compose', 'click', 'writingToolsCompose', 'not:allow', 'Compose may send the selection to a third-party model', 'no live row yet', 'todo CU-277'],
+  ['writing-tools-rewrite', 'click', 'writingToolsRewrite', 'not:allow', 'Writing Tools rewrite the owner text outside the app (ask or refuse - undecided)', 'no live row yet', 'open CU-277'],
+  ['writing-tools-compose', 'click', 'writingToolsCompose', 'not:allow', 'Compose may send the selection to a third-party model', 'no live row yet', 'open CU-277'],
   ['service-chord-owner-installed', 'cmdShiftU', 'field', 'block:system_service', 'menu-key.test.mjs (#56: mark dropped)', 'no live row yet', 'open CU-250', { boundMenuItem: { items: [{ role: 'AXMenuItem', name: 'Weekly Report Uploader', keyEquivalent: { char: 'U', modifiers: 1 }, enabled: true, servicesMenu: true }] } }],
   ['service-chord-app-bound-over-refusal', 'cmdShiftA', 'field', 'block:system_shortcut', 'service-shortcuts.test.mjs (#49: refused even with an app item bound - a named over-refusal)', 'no live row yet', 'open CU-256', { boundMenuItem: { items: [{ role: 'AXMenuItem', name: 'Applications', keyEquivalent: { char: 'A', modifiers: 1 } }] } }],
   // CU-256's exception needs an ENABLED app item (Apple: the application's shortcut wins - a disabled one cannot fire, so
