@@ -40,6 +40,13 @@ test('CU-261: switching a camera or microphone on asks permission', () => {
   for (const name of ['Turn on camera', 'Turn on microphone', 'Turn On Video', 'Start Video', 'Unmute']) assert.equal(onDesktop(name), 'permission', name)
 })
 
+test('CU-261 with cu-researcher\'s 13:23Z sweep: unsubscribe, report spam and leave group submit; Revert to Saved deletes; signing out everywhere asks permission', () => {
+  for (const name of ['Unsubscribe', 'Report Spam', 'Report Junk', 'Leave Group', 'Leave conversation', 'Leave channel']) assert.equal(onDesktop(name), 'submit', name)
+  for (const name of ['Revert to Saved', 'Revert All Changes']) assert.equal(onDesktop(name), 'delete', name)
+  for (const name of ['Sign Out of All Devices', 'Log out everywhere']) assert.equal(onDesktop(name), 'permission', name)
+  for (const name of ['Revert', 'Sign Out', 'Report', 'Leave']) assert.equal(onDesktop(name), 'allow', `${name} alone`)
+})
+
 test('CU-261 named limits: a bare Accept, Connect, Join or Follow, and Call or Merge inside a longer name, stay free', () => {
   for (const name of ['Accept', 'Accept all cookies', 'Connect', 'Join', 'Follow', 'Call Stack', 'Merge Cells', 'Merge All Windows', 'Approved', 'Recall', 'Answers']) {
     assert.equal(onDesktop(name), 'allow', name)

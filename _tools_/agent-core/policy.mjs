@@ -19,7 +19,9 @@ const WORDS = Object.freeze({
   delete: ['delete', 'remove', 'discard', 'erase', 'empty trash', 'cancel subscription', 'replace', 'overwrite', "don't save", 'don\u2019t save',
     // CU-146 (the CU-145 audit): destructive labels the list missed.
     'move to trash', 'move to bin', 'empty bin', 'clear history', 'clear all', 'reset all', 'reset settings', 'reset to defaults', 'uninstall', 'wipe', 'purge',
-    'deactivate', 'close account', 'forget', 'factory reset'],
+    'deactivate', 'close account', 'forget', 'factory reset',
+    // cu-researcher's 13:23Z sweep: unsaved edits lost, like Discard Changes.
+    'revert to saved', 'revert all changes'],
   permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke',
     // CU-258 (cu-researcher): standing choices an app keeps after the run, as whole phrases. A bare 'Allow' stays free so
     // cookie banners do not ask (named limit).
@@ -27,14 +29,18 @@ const WORDS = Object.freeze({
     'remember my choice', 'remember this choice', 'remember my decision', 'never for this website', 'never for this site',
     'set as default', 'make default',
     // CU-261 (cu-researcher): a camera or microphone switched on reaches other people.
-    'turn on camera', 'turn on microphone', 'turn on video', 'start video', 'unmute'],
+    'turn on camera', 'turn on microphone', 'turn on video', 'start video', 'unmute',
+    // cu-researcher's 13:23Z sweep: an account-wide sign-out.
+    'sign out of all devices', 'sign out everywhere', 'log out of all devices', 'log out everywhere'],
   submit: ['send', 'post', 'submit', 'publish', 'reply', 'sign up', 'register',
     // CU-261 (cu-researcher; cu-coordinator: High): actions that reach other people or commit shared work, as whole
     // phrases. A bare Accept, Connect, Join or Follow stays free (cookie banners, Wi-Fi, generic joins: named limits).
     'facetime', 'video call', 'audio call', 'voice call', 'start call', 'start a call', 'join meeting', 'join call',
     'join with video', 'join with audio', 'join now', 'start meeting', 'start a meeting', 'accept invitation',
     'decline invitation', 'accept invite', 'decline invite', 'rsvp', 'tweet', 'approve', 'merge pull request',
-    'confirm merge', 'squash and merge', 'rebase and merge', 'deploy', 'run workflow'],
+    'confirm merge', 'squash and merge', 'rebase and merge', 'deploy', 'run workflow',
+    // cu-researcher's 13:23Z sweep: messages to the sender or the group.
+    'unsubscribe', 'report spam', 'report junk', 'leave group', 'leave conversation', 'leave channel'],
 })
 const PRECEDENCE = ['purchase', 'delete', 'permission', 'page_dialog', 'credential', 'sensitive_data', 'submit', 'new_site', 'install']
 const POINTER = new Set(['click', 'double_click', 'triple_click'])
