@@ -1,8 +1,8 @@
 ---
 title: Verify kit tests
 created: 2026-11-01T09:33:46Z
-modified: 2026-11-02T11:16:38Z
-version: 1.10.0
+modified: 2026-11-08T10:30:00Z
+version: 1.11.0
 description: The unit suite of the verify kit - the memory gate and guarded profiles, and the CDP input events each canonical action becomes.
 grounded_in:
   - source: shared/_conventions_/core-conventions/working-agreements.md@1.5.1 (key functions carry test cases)
@@ -19,6 +19,7 @@ grounded_in:
 | [prove-failing.test.mjs](prove-failing.test.mjs) | verdict classes, the all-caught rule, leaked-profile detection |
 | [desktop-evidence.test.mjs](desktop-evidence.test.mjs) | landing tolerance, pid and tag, the marker matcher, run-directory scans |
 | [helper-conformance.test.mjs](helper-conformance.test.mjs), [double-helper.mjs](double-helper.mjs) | each conformance check holds on a protocol double, over stdio and a socket, and fails on its breach |
+| [helper-build.test.mjs](helper-build.test.mjs) | `buildCUHelper` on a stand-in helper tree: an aborted build leaves nothing at its cache path, a stale empty skeleton is replaced, a young one or one holding a file is left alone, a race lost to another run uses its build (CU-216) |
 | [driver.test.mjs](driver.test.mjs) | `launchRefusal` names only a refused launch |
 | [mcp-client.test.mjs](mcp-client.test.mjs) | line framing, replies by id, tool results, exit on stdin close |
 | [png.test.mjs](png.test.mjs) | a round trip through every scanline filter, RGB and RGBA, refusals |
