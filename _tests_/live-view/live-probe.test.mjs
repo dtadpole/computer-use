@@ -279,15 +279,15 @@ test('links: the watch URL is the CLI\'s watch line, the control line is dropped
   }
 })
 
-test('the run: lead waits, the one click of the scripted plan, tail waits and a final; the CLI runs it unattended with the live view on, its runs in the private home', () => {
+test('the run: lead waits, the one click of the scripted plan, two tails of waits and a final; the CLI runs it unattended with the live view on, its runs in the private home', () => {
   const click = { type: 'click', button: 'left', x: 1200, y: 640 }
   const plan = probePlan({ frame: { width: 5120, height: 2880 }, turns: [{ actions: [click] }, { final: 'done' }] })
   assert.deepEqual(plan.frame, { width: 5120, height: 2880 })
-  assert.deepEqual(plan.turns.map((turn) => (turn.actions ?? []).map((action) => action.type)), [['wait', 'wait'], ['click'], ['wait', 'wait'], []])
+  assert.deepEqual(plan.turns.map((turn) => (turn.actions ?? []).map((action) => action.type)), [['wait', 'wait'], ['click'], ['wait', 'wait'], ['wait', 'wait'], []])
   assert.deepEqual(plan.turns[1].actions[0], click)
   assert.equal(plan.turns.flatMap((turn) => turn.actions ?? []).filter((action) => action.type !== 'wait').length, 1, 'one synthetic input')
   assert.ok(plan.turns.flatMap((turn) => turn.actions ?? []).every((action) => action.type !== 'wait' || action.duration_ms <= 10_000), 'every wait within agent core\'s limit')
-  assert.equal(typeof plan.turns[3].final, 'string')
+  assert.equal(typeof plan.turns[4].final, 'string', 'CU-275: a second tail of waits outlasts a take-over that voids the first')
   assert.throws(() => probePlan({ turns: [{ actions: [click, click] }] }), /not one click/)
   assert.throws(() => probePlan(null), /not one click/)
   const args = cliArgs({ cli: '/x/cli.mjs', seat: 'cu-verifier', planPath: '/tmp/o/user/.computer-use/plan.json', runsDir: '/tmp/o/user/.computer-use/runs' })
