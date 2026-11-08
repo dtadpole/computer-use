@@ -297,8 +297,8 @@ const ROWS = [
   // CU-261 (cu-researcher): a call, a meeting, an invitation reply, a public post or a merge reaches others or commits
   // work, yet carries no submit word (runTask probe on main: allowed and posted; 'Send' asks).
   ['outward-join-meeting', 'desktop', 'click', 'joinMeetingButton', 'submit', 'CU-261 (contacts others)', 'cu-verifier, main with #98, helper 0.2.56, CU Fixture named controls: Join Meeting declined submit (20261108T184215Z-460cb2)', null],
-  ['outward-ask-to-join', 'desktop', 'click', 'askToJoinButton', 'submit', 'CU-286 (Google Meet: a join request to the host)', 'no live row yet', 'open CU-286'],
-  ['outward-start-huddle', 'desktop', 'click', 'startHuddleButton', 'submit', 'CU-286 (Slack: an audio call that notifies the channel)', 'no live row yet', 'open CU-286'],
+  ['outward-ask-to-join', 'desktop', 'click', 'askToJoinButton', 'submit', 'CU-286 (Google Meet: a join request to the host)', 'cu-verifier CU Fixture named-controls, declined submit and not pressed: 20261108T214824Z-d94258', null],
+  ['outward-start-huddle', 'desktop', 'click', 'startHuddleButton', 'submit', 'CU-286 (Slack: an audio call that notifies the channel)', 'cu-verifier CU Fixture named-controls, declined submit and not pressed: 20261108T214826Z-6e6abb', null],
   // CU-293 (Urgent): Apple's own zh-cn / zh-tw labels (user-guide pages on the issue); Traditional differs in words, not glyphs.
   ['zh-send-hans', 'desktop', 'click', 'zhSendHans', 'submit', 'CU-293 (Apple zh label)', 'no live row yet', 'todo CU-293'],
   ['zh-send-hant', 'desktop', 'click', 'zhSendHant', 'submit', 'CU-293 (Apple zh label)', 'no live row yet', 'todo CU-293'],
