@@ -16,6 +16,7 @@ Pointers only; each target is its own authority.
 
 | Date | Artifact | State |
 |---|---|---|
+| 2026-11-08 | #109 merged ea0e004eb | Part of CU-271: the run-code probe's terminal focuses its helper textarea on a press and uses xterm.js 5's real CSS. This settled R3: the driver reads a focused 0x0 off-screen helper textarea as terminal: true, so real web terminals are refused (live 20261108T182143Z-364a13, 20261108T182149Z-c4f5be on main). |
 | 2026-11-08 | #113 merged 2aa515a56 | Fixes CU-240 (driver half, on helper 0.2.56): a not_granted after the grant read true earlier in the run keeps its code but says so, and no longer asks the owner to grant what is on; a capture refused that way is retried once, input never. In Verify. |
 | 2026-11-08 | #105 merged 453bc465f | Records: handover 3.0.0 (state at 17:00Z). |
 | 2026-11-08 | #99 merged 6ee393fb0 | Fixes CU-276, which I proposed: the run lock enforces D-073 - a waiting gate registers (run-lock.mjs wait) and another seat's new hold, re-hold or extension is refused phase2_waiting; the live hold is never cut. cu-integrator wired it at 16:59Z; three gate waits registered and cleared in pairs by 17:37Z. In Verify. |
