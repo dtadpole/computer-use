@@ -1,9 +1,9 @@
 ---
 title: Desktop block and confirm rules
 created: 2026-11-02T09:53:32Z
-modified: 2026-11-08T16:15:40Z
+modified: 2026-11-08T16:41:59Z
 level: L1
-version: 0.4.8
+version: 0.4.9
 description: The rules behind the desktop order of checks - what is blocked by name (system shortcuts, excluded or unknown targets; copy and paste are allowed, D-031), the desktop confirm classes and their pre-approval, and what happens when an excluded app comes to the front.
 status: unverified
 grounded_in:
@@ -48,7 +48,7 @@ Detail for [app policy](app-policy.md)'s order of checks; rule names are what `c
 |---|---|---|
 | browser classes | `submit`, `purchase`, `delete`, `permission`, `sensitive_data`, `page_dialog` (an AX sheet accepted with Return), from the AX name, role and typed text | as in the browser |
 | `credential` | a typed credential | never on the desktop |
-| `launch_code` (P10) | a double or triple click, `META+O` or `META+DOWN` on a name or AX URL ending `.app`, `.sh`, `.pkg`, `.dmg`; Finder's Open of a runnable or unread selection (CU-252); a drop on an app (CU-269) | never; only a hand-off outranks it |
+| `launch_code` (P10) | a double or triple click, `META+O` or `META+DOWN` on a name or AX URL ending `.app`, `.sh`, `.pkg`, `.dmg`; Open of a runnable selection, unread in Finder (CU-252); a drop on an app (CU-269) | never; only a hand-off outranks it |
 | `install` (CU-254) | App Store install verbs; a price is `purchase` | never |
 | `unknown_target` (R92) | a click, an Enter or Space chord, or typed text with a newline on an `opaque` target ([input and targets](input-and-targets.md)) | per app |
 
