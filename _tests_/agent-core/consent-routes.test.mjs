@@ -136,6 +136,8 @@ const T = {
   alwaysTrustButton: { role: 'AXButton', name: 'Always Trust' },
   allowAllButton: { role: 'AXButton', name: 'Allow all' },
   allowButton: { role: 'AXButton', name: 'Allow' },
+  alwaysUseAppBox: { role: 'AXCheckBox', name: 'Always use this app to open .pdf documents' },
+  doNotAskMeBox: { role: 'AXCheckBox', name: 'Do not ask me again' },
   webDeleteInEditor: { tag: 'button', role: 'button', name: 'Delete', editable: false },
   // CU-157 in a browser (#375's page-wide textEntered): closed live by E8 from main.
   webReplyNoText: { role: 'button', name: 'Reply', textEntered: false },
@@ -274,6 +276,8 @@ const ROWS = [
   ['standing-dont-ask-again', 'desktop', 'click', 'dontAskAgainBox', 'permission', 'CU-258', 'no live row yet', 'todo CU-258'],
   ['standing-never-for-site', 'desktop', 'click', 'neverForSiteButton', 'permission', "CU-258 (Safari's save-password sheet)", 'no live row yet', 'todo CU-258'],
   ['standing-always-trust', 'desktop', 'click', 'alwaysTrustButton', 'permission', 'CU-258 (a certificate)', 'no live row yet', 'todo CU-258'],
+  ['standing-always-use-app', 'desktop', 'click', 'alwaysUseAppBox', 'permission', 'CU-258 (the default app for a file type, an owner setting)', 'no live row yet', 'todo CU-258'],
+  ['standing-do-not-ask-me', 'desktop', 'click', 'doNotAskMeBox', 'permission', 'CU-258 (a wording variant)', 'no live row yet', 'todo CU-258'],
   ['cookie-allow-all', 'desktop', 'click', 'allowAllButton', 'allow', 'CU-258 negative (a cookie banner)', 'no live row yet', 'open CU-258'],
   ['bare-allow', 'desktop', 'click', 'allowButton', 'allow', 'CU-258 negative (a bare Allow stays free; named limit)', 'no live row yet', 'open CU-258'],
   ['web-click-delete-button-in-editor', 'browser', 'click', 'webDeleteInEditor', 'delete', 'text-entry-focus-click.test.mjs (CU-170)', "fixture controls page (#445): asks delete (20261107T175304Z-990ae1)", null],
