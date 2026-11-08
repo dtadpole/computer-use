@@ -53,6 +53,7 @@ final class Fixture: NSObject {
     for (name, view) in controls {
       // Grid cells report from the model below, not from whichever views are on screen.
       if view is GridCellField { continue }
+      if view is NamedField { continue }
       // A secure field's value never leaves the app: only whether it holds anything, and how much.
       if let secure = view as? NSSecureTextField { out[name] = secure.stringValue.isEmpty ? "" : "[secure, \(secure.stringValue.count) chars]" }
       else if let field = view as? NSTextField, field.isEditable { out[name] = field.stringValue }
@@ -74,6 +75,7 @@ final class Fixture: NSObject {
     out.merge(WebButtons.fields()) { current, _ in current }
     out.merge(ConsentCells.fields()) { current, _ in current }
     out.merge(MenuCompose.fields()) { current, _ in current }
+    out.merge(NamedControls.fields()) { current, _ in current }
     return out
   }
 

@@ -1,8 +1,8 @@
 ---
 title: Running it, watching and control
 created: 2026-11-07T21:18:46Z
-modified: 2026-11-08T04:03:34Z
-version: 0.2.0
+modified: 2026-11-08T15:22:30Z
+version: 0.2.1
 level: L1
 status: unverified
 description: Starting a desktop run, watching and stopping it, and what it costs.
@@ -40,7 +40,7 @@ Defaults: 20 steps, 10 minutes, 1.00 USD (`--max-steps`, `--max-minutes`, `--max
 ## Watching and control
 
 The run prints a live-view address. The control link (pause, resume, take over, hand back, stop, answer) prints only in your terminal (or run
-`cli.mjs control-link <run-id>` there). Touching your mouse or keyboard pauses it, and only you resume it (tested; to be shown live with you). To take over, use the Mac; hand back tells the agent the screen may differ. If a window covers its click point, the live view names that app to move or quit.
+`cli.mjs control-link <run-id>` there). Touching your mouse or keyboard pauses it, and only you resume it (tested; to be shown live with you). To take over, use the Mac; hand back tells the agent the screen may differ. After any pause or take-over the agent looks again before acting: what it planned before is dropped (CU-275). If a window covers its click point, the live view names that app to move or quit.
 
 ## Cost
 
