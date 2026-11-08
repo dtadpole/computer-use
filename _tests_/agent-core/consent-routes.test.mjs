@@ -579,7 +579,7 @@ test('web-content click cells [desktop]: the driver carries the helper\'s lifted
 
 // App-policy's verdicts - system-level refusals (P9, CU-242, CU-244, CU-249) and launch_code (P10, CU-252) - are app-policy's, not the class policy's, so these rows are judged
 // through createAppPolicy as the loop builds the call: CU Fixture approved and frontmost, url desktop://, the target's
-// origin set, and a hold judged as the same chord pressed (loop.mjs, CU-64 H3). Expected 'block:<rule>' for a refusal.
+// origin set; a hold goes in as itself (app-policy judges it as the chord pressed since #42, CU-244). Expected 'block:<rule>' for a refusal.
 const { createAppPolicy } = await import('../../_tools_/agent-core/app-policy.mjs')
 const { createAppApprovals } = await import('../../_tools_/agent-core/app-approvals.mjs')
 const { mkdtempSync } = await import('node:fs')
@@ -597,8 +597,8 @@ const appPolicy = createAppPolicy({ scope: [FIXTURE_ID, APP_STORE_ID, ACTIVITY_M
 // extra.app names the approved app in front (default CU Fixture); the rest of extra joins the context.
 const decideApp = (action, target, extra = {}) => {
   const { app = FIXTURE_ID, ...context } = extra ?? {}
-  const judged = action.type === 'hold_key' ? { type: 'keypress', keys: action.keys } : action
-  const r = appPolicy.classify(judged, { url: 'desktop://', frontmostBundleId: app, target: { ...target, origin: app }, ...context })
+  // A hold goes in as itself: since #42 (CU-244) app-policy judges a held chord as the same chord pressed.
+  const r = appPolicy.classify(action, { url: 'desktop://', frontmostBundleId: app, target: { ...target, origin: app }, ...context })
   return r.decision === 'block' ? `block:${r.rule}` : r.decision === 'allow' ? 'allow' : r.class
 }
 const key = (...keys) => ({ type: 'keypress', keys })
