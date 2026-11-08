@@ -19,13 +19,25 @@ final class SandboxFileRow: NSTableRowView {
   override func accessibilityURL() -> URL? { fileURL }
 }
 
-/// A file's cell: its text field shows the name; the cell carries AXFilename, AXURL and the name as its label.
+/// A file's cell: its text field shows the name; the cell carries AXFilename, AXURL and the name as its label, and is an
+/// Accessibility element of its own (AppKit may otherwise skip a plain NSTableCellView and serve its text field alone).
 final class SandboxFileCell: NSTableCellView {
+  var fileName = ""
+  var fileURL: URL?
+  override func isAccessibilityElement() -> Bool { true }
+  override func accessibilityFilename() -> String? { fileName }
+  override func accessibilityURL() -> URL? { fileURL }
+  override func accessibilityLabel() -> String? { fileName }
+}
+
+/// The cell's text field, as in Finder's list rows: it carries the file's AXFilename and AXURL too, so the helper's read
+/// (a row's descendants, depth 3) finds the URL whichever element AppKit serves under the row (CU-252 probe 4: the
+/// name was read, the kind was not).
+final class SandboxFileName: NSTextField {
   var fileName = ""
   var fileURL: URL?
   override func accessibilityFilename() -> String? { fileName }
   override func accessibilityURL() -> URL? { fileURL }
-  override func accessibilityLabel() -> String? { fileName }
 }
 
 /// The list: Command-Down opens the selection, as in Finder.
@@ -147,7 +159,9 @@ final class OpenSelection: NSObject, NSTableViewDataSource, NSTableViewDelegate 
     let cell = SandboxFileCell()
     cell.fileName = files[row]
     cell.fileURL = Self.url(files[row])
-    let label = NSTextField(labelWithString: files[row])
+    let label = SandboxFileName(labelWithString: files[row])
+    label.fileName = files[row]
+    label.fileURL = Self.url(files[row])
     label.font = NSFont.systemFont(ofSize: 13)
     label.translatesAutoresizingMaskIntoConstraints = false
     cell.addSubview(label)
@@ -235,8 +249,11 @@ final class OpenSelection: NSObject, NSTableViewDataSource, NSTableViewDelegate 
     // The selected rows' views are the AXRow elements AppKit serves for a view-based table.
     return screen.table.selectedRowIndexes.compactMap { screen.table.rowView(atRow: $0, makeIfNecessary: true) }.map { row in
       let cell = (row.subviews.first as? SandboxFileCell) ?? (screen.table.view(atColumn: 0, row: screen.table.row(for: row), makeIfNecessary: true) as? SandboxFileCell)
+      let name = cell?.textField as? SandboxFileName
       return ["role": row.accessibilityRole()?.rawValue ?? NSNull(), "filename": row.accessibilityFilename() ?? NSNull(), "url": row.accessibilityURL()?.absoluteString ?? NSNull(),
-              "cellFilename": cell?.accessibilityFilename() ?? NSNull(), "cellURL": cell?.accessibilityURL()?.absoluteString ?? NSNull()]
+              "cellFilename": cell?.accessibilityFilename() ?? NSNull(), "cellURL": cell?.accessibilityURL()?.absoluteString ?? NSNull(),
+              "cellElement": cell?.isAccessibilityElement() ?? NSNull(),
+              "nameFilename": name?.accessibilityFilename() ?? NSNull(), "nameURL": name?.accessibilityURL()?.absoluteString ?? NSNull()]
     }
   }
 
