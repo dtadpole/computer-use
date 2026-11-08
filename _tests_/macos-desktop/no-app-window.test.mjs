@@ -23,6 +23,21 @@ const code = (expected) => (error) => error instanceof EnvironmentError && error
 const MAIN = { id: 1, main: true, originPt: { x: 0, y: 0 }, sizePt: { width: 1920, height: 1080 }, scale: 1 }
 const world = (extra = {}) => ({ displays: [MAIN], apps: [{ bundleId: FIXTURE, pid: 501, rect: { x: 0, y: 0, width: 1512, height: 982 } }], ...extra })
 
+/**
+ * The fake's capture requests so far, once its log has settled: it logs each request on stderr, which can trail the
+ * reply on stdout under load, so the count is read when it has not changed for 100 ms (at most 2 s).
+ */
+async function settledCaptures(child) {
+  const count = () => child.requests.filter((r) => r.type === 'capture').length
+  let last = count()
+  for (const deadline = Date.now() + 2000; Date.now() < deadline;) {
+    await new Promise((done) => setTimeout(done, 100))
+    if (count() === last) return last
+    last = count()
+  }
+  return last
+}
+
 test('no approved window through the start wait: the run ends no_app_window naming the app and the causes - never helper_lost', async () => {
   // The app joins (a blank frame still confirms the frame's geometry); the first screenshot waits, then names the stop.
   const { env, child } = await launchOnFake(world({ quirks: { noAppWindow: ALWAYS } }))
@@ -36,10 +51,12 @@ test('no approved window through the start wait: the run ends no_app_window nami
     })
     assert.ok(Date.now() - started >= 250, 'it waited out the start wait before naming the stop')
     assert.equal(env.link.lost, false, 'the link stays usable')
-    // The wait runs once per run: agent core's final screenshot (or any later capture) fails at once, not after another wait.
-    const again = Date.now()
+    // The wait runs once per run: agent core's final screenshot (or any later capture) fails at once, not after another
+    // wait - proven by what the driver sends, not by time (CU-229: one capture took 166 ms under load). The second
+    // screenshot sends exactly one capture; another wait would re-take it every 20 ms for 300 ms.
+    const captures = await settledCaptures(child)
     await assert.rejects(env.screenshot(), (error) => error.code === 'no_app_window')
-    assert.ok(Date.now() - again < 150, `the second capture failed in ${Date.now() - again} ms, without waiting again`)
+    assert.equal(await settledCaptures(child), captures + 1, 'the second capture failed after one capture, without waiting again')
   } finally {
     // In finally, so a failing assertion cannot leave the fake helper running (a hung test, not a failed one).
     await env.close()

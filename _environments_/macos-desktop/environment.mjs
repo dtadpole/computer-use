@@ -657,6 +657,8 @@ function boundEntryOf(item, scope) {
   if (item === null || typeof item !== 'object' || Array.isArray(item)) return null
   if (item.bundleId !== undefined && (typeof item.bundleId !== 'string' || !scope.includes(item.bundleId))) return null
   if (item.appleMenu !== undefined && typeof item.appleMenu !== 'boolean') return null
+  // CU-250 (helper 0.2.53): an item under the Services menu acts outside the approved app; app-policy refuses it.
+  if (item.servicesMenu !== undefined && typeof item.servicesMenu !== 'boolean') return null
   const name = menuTitleOf(item.title)
   if (name === null) return null
   const path = Array.isArray(item.path) ? item.path.slice(0, 8).map(menuTitleOf).filter((step) => step !== null) : []
@@ -664,6 +666,7 @@ function boundEntryOf(item, scope) {
     role: 'AXMenuItem', name, keyEquivalent: menuKeyEquivalentOf(item.keyEquivalent), path,
     enabled: typeof item.enabled === 'boolean' ? item.enabled : null,
     ...(item.appleMenu === true ? { appleMenu: true } : {}),
+    ...(item.servicesMenu === true ? { servicesMenu: true } : {}),
   }
 }
 
@@ -716,6 +719,26 @@ function combineBound(a, b) {
 }
 
 /**
+ * CU-250 (helper 0.2.53): a menu item's place - the titles from the menu bar down to the item, at most 10, each trimmed
+ * and capped at 80 characters ('' for an untitled level). Null when absent (an older helper, not a menu item) or
+ * malformed. Context for agent core (Open With > Terminal); never in run records.
+ */
+export function menuPathOf(value) {
+  if (!Array.isArray(value) || value.length === 0 || value.length > 10) return null
+  if (!value.every((step) => typeof step === 'string')) return null
+  return value.map((step) => step.trim().slice(0, 80))
+}
+
+/**
+ * CU-250: whether a menu item sits under the Services menu - false when the helper sends nothing, true for its true and
+ * for any other value: a malformed mark fails closed, since app-policy refuses a Services item and a refused menu click
+ * is the safe side.
+ */
+export function servicesMenuOf(value) {
+  return !(value === undefined || value === null || value === false)
+}
+
+/**
  * CU-255: the file an element shows (the helper's `filename`, AXFilename) as launch_code reads it - a bare file name
  * of 1 to 255 characters with no '/' or control character; null otherwise or when absent (an older helper, a non-file
  * element). Finder may hide the extension in the element's title (Payload for Payload.app), never in this.
@@ -749,6 +772,39 @@ export function fileUrlLeafOf(value) {
     return null
   }
   return leaf === null ? null : leaf + (url.pathname.endsWith('/') ? '/' : '')
+}
+
+/** CU-259: the most selected items one answer may carry (design note 0.2 on CU-252). */
+export const MAX_SELECTED_ITEMS = 32
+const SELECTED_KINDS = new Set(['folder', 'file', 'unknown'])
+
+/**
+ * CU-259 (CU-252 rule 3): one selectedItems reply as the driver passes it on, failing closed as menuKey does.
+ * `{ items: [{ name, kind }] }` with 1 to MAX_SELECTED_ITEMS entries - a bare file name (fileNameOf) and a kind the helper
+ * worked out from the AXURL string alone ('folder' for a trailing '/', 'file', 'unknown' without a file URL; never URL
+ * resource values, D-024); `{ none: true }` when the focused collection has nothing selected; `{ notCollection: true }`
+ * when the focus is no collection (the focused target, with its filename and URL leaf, is what Command-O acts on); and
+ * `{ unreadable: true }` for everything else - the helper's own unreadable, `truncated`, an empty or over-long list, any
+ * malformed or unnamed entry, a reply naming no app or one outside `scope`, more than one answer at once. Never a path
+ * or the contents.
+ */
+export function selectedItemsOf(reply, scope = []) {
+  const unreadable = { unreadable: true }
+  if (reply === null || typeof reply !== 'object') return unreadable
+  if (typeof reply.bundleId !== 'string' || !scope.includes(reply.bundleId)) return unreadable
+  const answers = ['items', 'none', 'notCollection', 'unreadable'].filter((key) => reply[key] !== undefined)
+  if (answers.length !== 1 || (reply.truncated !== undefined && reply.truncated !== false)) return unreadable
+  if (reply.none === true) return { none: true }
+  if (reply.notCollection === true) return { notCollection: true }
+  if (!Array.isArray(reply.items) || reply.items.length < 1 || reply.items.length > MAX_SELECTED_ITEMS) return unreadable
+  const items = []
+  for (const item of reply.items) {
+    if (item === null || typeof item !== 'object' || Array.isArray(item)) return unreadable
+    const name = fileNameOf(item.name)
+    if (name === null || !SELECTED_KINDS.has(item.kind)) return unreadable
+    items.push({ name, kind: item.kind })
+  }
+  return { items }
 }
 
 /**
@@ -1698,6 +1754,10 @@ class DesktopEnvironment {
       // keys they are bound to, in any language; null on anything else and from an older helper. Outside the
       // fingerprint: the same item is the same target whatever its shortcut reads.
       keyEquivalent: keyEquivalentOf(element.keyEquivalent),
+      // CU-250 (helper 0.2.53): a menu item under the Services menu, and its menu path - outside the fingerprint, and never in
+      // run records (an event's target keeps origin, role and name).
+      ...(servicesMenuOf(element.servicesMenu) ? { servicesMenu: true } : {}),
+      menuPath: menuPathOf(element.menuPath),
       // CU-187: the label that captions a non-entry element (AXTitleUIElement's title, else its row's or cell's sibling
       // title, as the helper reads it) - never its value or its own title. A string of at most 80 characters, null when
       // absent (an older helper) or malformed. Context, not identity: outside the fingerprint, and never in run records.
@@ -1737,7 +1797,11 @@ class DesktopEnvironment {
    */
   async focusedElement() {
     this.#assertInScope()
-    const reply = await this.link.request('focused', {})
+    return this.#focusedOf(await this.link.request('focused', {}))
+  }
+
+  /** The target focusedElement() makes of a 'focused' reply: the element, the no-focus placeholder, or null. */
+  #focusedOf(reply) {
     const element = this.#describe(reply.element)
     const defaultButton = defaultButtonOf(reply.defaultButton)
     const defaultButtonRead = defaultButtonReadOf(reply.defaultButtonRead)
@@ -1756,6 +1820,24 @@ class DesktopEnvironment {
       return { ...this.#describe(appOf(reply.app)), noFocus: true, defaultButton, defaultButtonRead, sheet, pasteboardChangeCount, textEntered }
     }
     return { ...element, defaultButton, defaultButtonRead, sheet, pasteboardChangeCount, textEntered }
+  }
+
+  /**
+   * CU-219: the pasteboard's change count alone, from a fresh `focused` read (the reply carries it with or without a
+   * focused element) - an integer, or null as changeCountOf reads it. Agent core asks for it at a key copy, cut or paste
+   * when focusedElement() is null, which drops the count with the element. The count travels beside the null target,
+   * never as a placeholder target: app-policy judges every no-focus key by its target - one naming no app is refused,
+   * one with no role makes Return, Space and a typed newline ask each time - so a placeholder here would change every
+   * no-focus key, not only the paste. Never content (D-060), never cached: a copy raises the count after its key event.
+   * Fail closed (cu-developer-one, cu-researcher): the count is given only when this same reply still reads as no focus.
+   * If it now carries an element or a placeholder, focus moved after the null read (a click still landing), so the null
+   * target agent core judges is stale. The answer is then null, and the paste asks as the owner's (CU-220) instead of
+   * skipping the field's own rules.
+   */
+  async pasteboardChangeCount() {
+    this.#assertInScope()
+    const reply = await this.link.request('focused', {})
+    return this.#focusedOf(reply) === null ? changeCountOf(reply.changeCount) : null
   }
 
   /**
@@ -1845,6 +1927,23 @@ class DesktopEnvironment {
       if (bound.unreadable) return bound
     }
     return bound ?? { none: true }
+  }
+
+  /**
+   * CU-259 (CU-252 rule 3): what a menu Open, Command-O or Command-Down acts on - the selected items of the frontmost
+   * approved app's focused collection, names and kinds only (selectedItemsOf). A refusal (an older helper's
+   * unknown_request) or a throw reads as `{ unreadable: true }`, so agent core asks launch_code as rule 1 does. Read
+   * fresh each time, never cached; agent core decides when.
+   */
+  async selectedItems() {
+    this.#assertInScope()
+    let reply
+    try {
+      reply = await this.link.request('selectedItems', {})
+    } catch {
+      return { unreadable: true }
+    }
+    return selectedItemsOf(reply, this.scope)
   }
 
   /** Visible text of the frontmost approved window for the inspector; secure fields are left out by the helper. */

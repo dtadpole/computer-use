@@ -1,8 +1,8 @@
 ---
 title: computer-use system architecture
 created: 2026-11-01T09:24:10Z
-modified: 2026-11-08T10:36:57Z
-version: 0.9.4
+modified: 2026-11-08T11:49:00Z
+version: 0.9.5
 description: Entry point to the M1 contract of our computer-use agent - components, owners and the articles that fix each interface.
 grounded_in:
   - source: ULTIMATE_GOAL.md@1.0.0
@@ -41,7 +41,7 @@ caller (CLI, MCP tool) -> agent core loop <-> model adapter (claude-gateway | re
 | [final-answer-lines](final-answer-lines.md) | the ANSWER (D-057) and OUTCOME lines |
 | [keyboard-activation](keyboard-activation.md), [menu-key](menu-key.md) | a key activating a button or bound menu item, judged like a click |
 | [press-and-drop](press-and-drop.md) | a press or drag judged at control and drop zone |
-| [paste-consent](paste-consent.md), [paste-chords](paste-chords.md) | a paste judged by what it inserts; its chords; no own copy asks |
+| [paste-consent](paste-consent.md), [paste-chords](paste-chords.md), [no-focus-count](no-focus-count.md) | paste judged by what it inserts; its chords; no own copy asks |
 | [copy-source](copy-source.md), [copy-caption](copy-caption.md) | a copy or drag carries its source's or caption's class |
 | [drag-text](drag-text.md) | a text drag onto an entry judged as a paste |
 | [password-memory](password-memory.md) | a seen password field stays one when shown |

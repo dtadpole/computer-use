@@ -6,7 +6,7 @@ import { validateBatch } from './actions.mjs'
 import { unattendedController } from './consent.mjs'
 import { createRunControl } from './control.mjs'
 import { inspectPageText } from './inspect.mjs'
-import { createAppPolicy, panelDestination, panelKind, protectedPath } from './app-policy.mjs'
+import { createAppPolicy, opensSelection, panelDestination, panelKind, protectedPath } from './app-policy.mjs'
 import { normaliseText } from './normalise.mjs'
 import { createPanelFolder } from './panel-folder.mjs'
 import { createExclusions } from './exclusions.mjs'
@@ -17,7 +17,7 @@ import { MODIFIER_KEYS, normalizeKey } from './keys.mjs'
 import { composePresses, expandResults } from './press.mjs'
 import { joinSplitResults, splitTypesAtTabs } from './type-split.mjs'
 import { answerLinePattern } from './answer-line.mjs'
-import { RETRY, transientCapture, transientFront, transientInput } from './retry.mjs'
+import { RETRY, transientCapture, transientFront, transientGrant, transientInput } from './retry.mjs'
 
 /**
  * The agent loop (design: agent-loop.md, run-outcomes.md). Observe, ask the model, validate the whole batch, settle
@@ -174,6 +174,22 @@ export const NO_APP_WINDOW_NOTE = 'No window of an approved app is on screen, so
 // Actions that send no input to the screen: they leave a panel's Go to Folder state as it is (CU-139).
 const NO_INPUT_ACTIONS = new Set(['wait', 'screenshot', 'zoom', 'cursor_position'])
 
+/**
+ * CU-252 (CU-259's reply): the selection an open acts on, as app-policy judges it - at most 32 items of a bare name
+ * (no '/' but a bundle's trailing one, at most 255 characters) and a kind (folder, file, unknown); { none } when nothing
+ * is selected; anything else, or a failed read, is { unreadable }, which asks.
+ */
+function selectedItemsOf(reply) {
+  if (reply && reply.none === true) return { none: true }
+  if (!reply || !Array.isArray(reply.items)) return { unreadable: true }
+  const items = reply.items.slice(0, 32).map((one) => {
+    const name = typeof one?.name === 'string' ? one.name.trim() : ''
+    const bare = name.length > 0 && name.length <= 255 && !name.replace(/\/$/, '').includes('/') ? name : ''
+    return { name: bare, kind: ['folder', 'file'].includes(one?.kind) ? one.kind : 'unknown' }
+  })
+  return { items, ...(reply.truncated === true || reply.items.length > 32 ? { truncated: true } : {}) }
+}
+
 export async function runTask(options) {
   const {
     environment,
@@ -265,9 +281,11 @@ export async function runTask(options) {
   const start = now()
   let inactiveMs = 0
   let inactiveSince = null
-  // CU-274 (cu-developer-two's review): pauses and take-overs counted as they happen, so a pause and a resume both served
-  // while a judgement ran are still seen before the perform (a single state sample would read 'running' again).
+  // CU-274 (cu-developer-two's and cu-researcher's reviews): pauses and take-overs counted as they happen, so any pause or
+  // take-over since the observation a batch was planned on - during the model's turn, an earlier action or the judgement,
+  // even one already resumed - is seen before each perform (a single state sample would read 'running' again).
   let interrupts = 0
+  let interruptsAtObservation = 0
   const unsubscribeTime = control.subscribe((event) => {
     if (event.type !== 'state') return
     if (event.state === 'paused' || event.state === 'taken_over') interrupts += 1
@@ -385,13 +403,23 @@ export async function runTask(options) {
   const digest = (data) => createHash('sha256').update(typeof data === 'string' ? data : Buffer.from(data ?? '')).digest('hex')
   const observe = async (step, notes = [], { settle = false } = {}) => {
     const observeStarted = now()
+    // CU-274 (cu-researcher): the next batch is planned on this observation - a pause or take-over after it voids the batch.
+    interruptsAtObservation = interrupts
     // CU-56: a capture dropped for a transient out-of-scope window is retried a bounded number of times.
     const captureRetries = []
+    let grantRetried = false
     const capture = async () => {
       for (let attempt = 0; ; attempt += 1) {
         try {
           return await environment.screenshot()
         } catch (error) {
+          // CU-240: a grant re-read false after reading true earlier in the run gets one retry of its own.
+          if (desktop && transientGrant(error) && !grantRetried) {
+            grantRetried = true
+            captureRetries.push({ reason: 'grant_reread', grant: String(error.details.grant ?? ''), delayMs: RETRY.captureDelaysMs[0] })
+            await pause(RETRY.captureDelaysMs[0])
+            continue
+          }
           if (!desktop || !transientCapture(error) || attempt >= RETRY.captureDelaysMs.length) throw error
           captureRetries.push({ reason: error.details.reason, ...(typeof error.details.bundleId === 'string' ? { bundleId: error.details.bundleId } : {}), delayMs: RETRY.captureDelaysMs[attempt] })
           await pause(RETRY.captureDelaysMs[attempt])
@@ -586,9 +614,9 @@ export async function runTask(options) {
     && /^(ax)?button$/i.test(String(target?.role ?? '')) && named(target, /^paste( and match style)?$/i)
   const isPaste = (action, target) => pasteChord(action) || menuPaste(action, target) || buttonPaste(action, target)
   const countOf = (target) => (Number.isSafeInteger(target?.pasteboardChangeCount) && target.pasteboardChangeCount >= 0 ? target.pasteboardChangeCount : null)
-  const ownCopy = (target) => {
+  // CU-219: the judging functions take the count itself (the target's, or the driver's read beside a null target).
+  const ownCopy = (count) => {
     if (pasteboard.own === 0) return false
-    const count = countOf(target)
     return count === null || pasteboard.baseline === null ? false : count === pasteboard.baseline + pasteboard.own
   }
   // CU-183 (copy-source.md): a copy's source field is kept by its descriptor - role, name and the flags the name rules
@@ -628,9 +656,8 @@ export async function runTask(options) {
     if (t.isPassword === true || t.secure === true || t.inputType === 'password' || namesPasswordField(t)) { passwordKeys.add(t.fieldKey); return t }
     return passwordKeys.has(t.fieldKey) ? { ...t, seenAsPassword: true } : t
   }
-  const recordCopy = (target, selection = null) => {
+  const recordCopy = (target, selection = null, count = countOf(target)) => {
     const source = sourceOf(selection ?? target)
-    const count = countOf(target)
     if (count === null) { pasteboard.baseline = null; pasteboard.own += 1; pasteboard.sources.push(source); return }
     if (pasteboard.baseline === null || count !== pasteboard.baseline + pasteboard.own) { pasteboard.baseline = count; pasteboard.own = 0; pasteboard.sources = [] }
     pasteboard.own += 1
@@ -639,10 +666,10 @@ export async function runTask(options) {
   // At a paste of the run's own copy: proven by the count, the last copy wrote what is pasted. With no count ownCopy is
   // false since CU-220, so no paste reaches the fallback; were one to, every source since the last proven count would be
   // passed and the policy would take the strongest.
-  const pastedSource = (target) => {
+  const pastedSource = (count) => {
     const known = pasteboard.sources.filter(Boolean)
     if (known.length === 0) return null
-    return countOf(target) !== null && pasteboard.baseline !== null ? pasteboard.sources[pasteboard.sources.length - 1] : known
+    return count !== null && pasteboard.baseline !== null ? pasteboard.sources[pasteboard.sources.length - 1] : known
   }
 
   // CU-267: what this run typed into each field, so the value rules judge a value typed in pieces (sixteen keypresses,
@@ -766,17 +793,33 @@ export async function runTask(options) {
     // read beside it (a descriptor, never a value; null when it could not be read).
     const viaMenu = desktop && isPaste(action, target) && (menuPaste(action, target) || buttonPaste(action, target))
     const destination = viaMenu ? sourceOf(remembered(await environment.focusedElement().catch(() => null))) : undefined
+    // CU-219: a key copy, cut or paste with nothing focused has a null target, which carries no count. The driver reads
+    // the count beside it (pasteboardChangeCount) - never a placeholder target, which would change how every rule judges
+    // a no-focus key - so the target stays null and only the count is judged. A failed read or an environment without
+    // one leaves the count null, so the paste asks (CU-220). The event says when the count came from that read.
+    // The keys are the loop's own copy and paste chords (isCopy, isPaste), so the side read follows them as they change.
+    const bareKey = desktop && target === null && (isCopy(action, null) || isPaste(action, null))
+    const sideRead = bareKey && typeof environment.pasteboardChangeCount === 'function'
+    const count = sideRead
+      ? countOf({ pasteboardChangeCount: await Promise.resolve(environment.pasteboardChangeCount()).catch(() => null) })
+      : countOf(target)
+    const countRead = sideRead ? { countRead: 'no-focus' } : {}
+    // CU-271 (cu-developer-one's follow-up): a page's own menu item named Paste pastes into the focused element - a web
+    // terminal there runs it, so the focus is read for that one fact (the rest of a browser paste is judged as before).
+    const intoTerminal = !desktop && isPaste(action, target) && menuPaste(action, target)
+      && (await environment.focusedElement().catch(() => null))?.terminal === true
     const paste = isPaste(action, target)
       ? (desktop
-          ? { ...(ownCopy(target) ? { fromOwner: false, ...(pastedSource(target) ? { source: pastedSource(target) } : {}) } : { fromOwner: true }), ...(viaMenu ? { destination } : {}) }
-          : { text: String(environment.clipboard?.get?.() ?? ''), ...(runCopySource ? { source: runCopySource } : {}) })
+          ? { ...(ownCopy(count) ? { fromOwner: false, ...(pastedSource(count) ? { source: pastedSource(count) } : {}) } : { fromOwner: true }), ...(viaMenu ? { destination } : {}) }
+          : { text: String(environment.clipboard?.get?.() ?? ''), ...(runCopySource ? { source: runCopySource } : {}), ...(intoTerminal ? { intoTerminal: true } : {}) })
       : null
-    // What a copy or paste was judged on goes on its event - numbers and the verdict, never content (cu-verifier).
+    // What a copy or paste was judged on goes on its event - numbers and the verdict, never content (cu-verifier). A
+    // copy records the count it was judged on (recordCopy below).
     const pasteboardJudged = paste
       ? (desktop
-        ? { kind: 'paste', count: countOf(target), baseline: pasteboard.baseline, copies: pasteboard.own, own: !paste.fromOwner, by: countOf(target) !== null && pasteboard.baseline !== null ? 'count' : 'history' }
+        ? { kind: 'paste', count, baseline: pasteboard.baseline, copies: pasteboard.own, own: !paste.fromOwner, by: count !== null && pasteboard.baseline !== null ? 'count' : 'history', ...countRead }
         : { kind: 'paste', by: 'run-clipboard' })
-      : desktop && isCopy(action, target) ? { kind: 'copy', count: countOf(target) } : null
+      : desktop && isCopy(action, target) ? { kind: 'copy', count, ...countRead } : null
     // CU-232 (menu-key.md): the menu item the chord would fire, read beside the focused target. An environment without the
     // read (the browser, fakes) judges by the keys as before; a read that fails is unreadable, which app-policy asks.
     const read = menuChord(action, target) && typeof environment.menuItemForChord === 'function'
@@ -785,8 +828,14 @@ export async function runTask(options) {
     // An unreadable bar asks for any chord but the editing ones, which the keys already judge (named over-ask: a Control
     // editing chord such as Control-K, unlisted, asks when the bar cannot be read).
     const boundMenuItem = read?.unreadable === true && editingChord(action) ? undefined : read
+    // CU-252 (CU-259's selectedItems): an open that acts on the selection - in any app, an Open menu item, or Command-O or
+    // Command-Down with no named file focused - reads what is selected: names and kinds only, never a path or contents.
+    // No read (an older driver, fakes) leaves it undefined, which app-policy asks as unread.
+    const selection = desktop && opensSelection(action, target) && typeof environment.selectedItems === 'function'
+      ? selectedItemsOf(await Promise.resolve(environment.selectedItems()).catch(() => null))
+      : undefined
     const typed = typedFor(action, target, !desktop && paste ? paste.text : null, state)
-    return { url: state.url, target: remembered(target), ...(typed ? { typed } : {}), ...(boundMenuItem ? { boundMenuItem } : {}), ...(dropTarget ? { dropTarget: remembered(dropTarget) } : {}), ...(dragText !== undefined ? { dragText } : {}), ...(afterClose ? { afterClose: true } : {}), ...(resubmits ? { resubmits: historyMove } : {}), ...(historyJudged ? { historyJudged } : {}), ...(paste ? { paste } : {}), ...(pasteboardJudged ? { pasteboardJudged } : {}), ...(state.interstitial === true ? { interstitial: true } : {}), dialog: state.dialog ?? null, task: task.text, ...app }
+    return { url: state.url, target: remembered(target), ...(typed ? { typed } : {}), ...(boundMenuItem ? { boundMenuItem } : {}), ...(selection ? { selection } : {}), ...(dropTarget ? { dropTarget: remembered(dropTarget) } : {}), ...(dragText !== undefined ? { dragText } : {}), ...(afterClose ? { afterClose: true } : {}), ...(resubmits ? { resubmits: historyMove } : {}), ...(historyJudged ? { historyJudged } : {}), ...(paste ? { paste } : {}), ...(pasteboardJudged ? { pasteboardJudged } : {}), ...(state.interstitial === true ? { interstitial: true } : {}), dialog: state.dialog ?? null, task: task.text, ...app }
   }
 
   let consecutiveBlocks = 0
@@ -985,12 +1034,11 @@ export async function runTask(options) {
         logEvent('action', step, { index, action: redactAction(action), site: environment.site, status: 'failed', code, detail: String(error?.message ?? error).slice(0, 300), attempted: false, completed: false })
         continue
       }
-      const interruptsAtJudgement = interrupts
       let decision = policy.classify(judged, context)
       // CU-182: the site filter's verdict on the browser target's own origin at the moment the action is judged - so a
       // new_site approval later in this step, or later in the run, never names a target recorded before it.
       const judgedSiteAllows = !desktop && typeof context.target?.origin === 'string' && siteAllows(context.target.origin)
-      if (desktop && decision.decision === 'allow' && isCopy(judged, context.target)) recordCopy(context.target, await copySourceOf(judged, context.target))
+      if (desktop && decision.decision === 'allow' && isCopy(judged, context.target)) recordCopy(context.target, await copySourceOf(judged, context.target), context.pasteboardJudged?.count ?? null)
       // CU-139 (panel-folder-source.md 0.3.3): every desktop action judged in a file panel feeds the panel-folder state;
       // any action outside one drops it. The panel's selection is read only when it can matter (cmd-shift-G, a folder
       // being armed or held, a file choice) and reused below.
@@ -1178,7 +1226,7 @@ export async function runTask(options) {
       // request), then the check phase - whichever phase this step resumed in.
       await new Promise((resolve) => setTimeout(resolve, 0))
       await new Promise((resolve) => setImmediate(resolve))
-      const waitedBeforePerform = !control.agentMayAct() || interrupts !== interruptsAtJudgement
+      const waitedBeforePerform = !control.agentMayAct() || interrupts !== interruptsAtObservation
       if (!(await control.checkpoint())) {
         halt = 'cancelled'
         Object.assign(result, { status: 'skipped', message: 'Not executed: the run was stopped.' })
