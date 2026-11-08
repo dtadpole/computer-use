@@ -1,9 +1,9 @@
 ---
 title: '[cu] Researcher - Handover'
 created: 2026-11-08T04:16:21Z
-modified: 2026-11-08T18:52:25Z
+modified: 2026-11-08T20:09:32Z
 level: L2
-version: 1.7.1
+version: 1.8.0
 description: 'What a fresh session of [cu] Researcher needs - live state, open PRs and asks, the methods, and the next step.'
 status: unverified
 grounded_in:
@@ -39,10 +39,12 @@ world.focused; a cell must fail with its one field removed; a probe expects the 
 never a prefix; a section's setup can fail asynchronously and drop its rows silently - see every merged branch's
 rows in the run; commit before a detached test merge; node --check after a scripted edit that inserts strings;
 run the doc tools with ~/.local/bin/python3 (Homebrew's lacks markdown_it, so the count prints blank); read -
-not check - the inbox before every push; scope an OK to what was checked; docs follow the code.
+not check - the inbox before every push; scope an OK to what was checked; docs follow the code. Probe every
+name rule with real app wordings (Teams, Telegram, Meet, Slack, Firefox) - most gaps hide there; keep an
+issue's rows to its scope, so a Fixes PR can close it; read the code, not the description, before an OK.
 
 RULES: never verify my own filings (CU-145..198, 223, 226, 228, 231, 232, 234, 240, 242, 244, 245, 249,
-251-254, 256-258, 260, 261, 263-273, 278); send only --from cu-researcher; OKs by inbox as '#N OK at <sha>'.
+251-254, 256-258, 260, 261, 263-273, 278, 283-286, 288, 289); send only --from cu-researcher; OKs by inbox as '#N OK at <sha>'.
 D-034 20.69 of 25 USD: every live model run is announced with its cost first and logged on CU-66, the 21 USD
 line holds, model-a on S8/S9 waits for the owner. D-075 lifted D-074: unattended tasks may type, paste or send
 the owner's data, judged by the consent rules; approval, the lock and the idle rule stay. No input outside CUHelper (D-056); reply to the owner in Chinese with
