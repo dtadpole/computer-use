@@ -287,6 +287,47 @@ function nationalPhone(value) {
 }
 
 /** Whether text looks like sensitive data being transmitted (R29): card, IBAN, routing + account, national id, tax id, phone, e-mail, key, recovery phrase. */
+// CU-260 (cu-researcher): query parameters that carry a secret by name - a reset or session token, an API key.
+const SECRET_PARAM = /^(token|access_?token|refresh_?token|id_?token|api_?key|apikey|client_?secret|secret|password|passwd)$/i
+
+/**
+ * CU-260: the D-061 value a navigate URL would carry off the page, or null - the value rules over the decoded query
+ * values, fragment and path segments, a password in the address, or a query parameter named for a secret (a value of 8
+ * or more). A path segment's card or phone match is a numeric id (a post or order number), not counted. Named over-ask:
+ * a 40-hex commit hash in a code host's URL (the digest rule; cu-coordinator: keep it).
+ */
+export function urlSecret(raw) {
+  let url
+  try {
+    url = new URL(String(raw ?? ''))
+  } catch {
+    return looksSensitive(String(raw ?? ''))
+  }
+  if (url.password !== '') return 'password'
+  const decode = (part) => {
+    try {
+      return decodeURIComponent(part.replace(/\+/g, ' '))
+    } catch {
+      return part
+    }
+  }
+  const params = [...url.searchParams]
+  const fragment = url.hash.slice(1)
+  if (fragment.includes('=')) params.push(...new URLSearchParams(fragment))
+  for (const [name, value] of params) {
+    if (SECRET_PARAM.test(name.trim()) && value.trim().length >= 8) return 'key'
+    const kind = looksSensitive(value)
+    if (kind !== null) return kind
+  }
+  const loose = looksSensitive(decode(fragment))
+  if (loose !== null) return loose
+  for (const segment of url.pathname.split('/').filter(Boolean)) {
+    const kind = looksSensitive(decode(segment))
+    if (kind !== null && kind !== 'card' && kind !== 'phone') return kind
+  }
+  return null
+}
+
 export function looksSensitive(text) {
   const value = String(text ?? '')
   for (const match of value.matchAll(/(?:\d[ -]?){13,19}/g)) {
@@ -431,12 +472,18 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     }
     if (action.type === 'navigate') {
       const next = sitePolicy(action.url)
-      if (next === 'allow') return { decision: 'allow', class: null, rule: 'site:allowed', reason: '' }
-      if (next.block === 'not_allowed') {
-        if (preApproved('new_site', action.url)) return { decision: 'allow', class: 'new_site', rule: 'pre_approved', reason: '' }
-        return { decision: 'confirm', class: 'new_site', rule: 'site:not_allowed', reason: `open ${originPattern(action.url)}, a site the task did not name` }
+      if (next !== 'allow' && next.block !== 'not_allowed') {
+        return { decision: 'block', class: null, rule: `site:${next.block}`, reason: `${action.url} is refused by the site filter (${next.block})` }
       }
-      return { decision: 'block', class: null, rule: `site:${next.block}`, reason: `${action.url} is refused by the site filter (${next.block})` }
+      // CU-260 (cu-researcher; cu-coordinator: High): a secret in the address leaves with the request, so the D-061 value
+      // rules run over the decoded URL before the site verdict, and a new-site ask that carries one names the class too.
+      const secret = urlSecret(action.url)
+      const asks = [...(secret !== null ? ['sensitive_data'] : []), ...(next !== 'allow' ? ['new_site'] : [])]
+      const needed = asks.filter((cls) => !preApproved(cls, action.url) || NEVER_PRE_APPROVED.includes(cls))
+      if (asks.length === 0) return { decision: 'allow', class: null, rule: 'site:allowed', reason: '' }
+      if (needed.length === 0) return { decision: 'allow', class: asks[0], rule: 'pre_approved', reason: '' }
+      if (needed[0] === 'new_site') return { decision: 'confirm', class: 'new_site', classes: needed, rule: 'site:not_allowed', reason: `open ${originPattern(action.url)}, a site the task did not name` }
+      return { decision: 'confirm', class: 'sensitive_data', classes: needed, rule: 'url:sensitive_data', reason: `open ${originPattern(action.url)} with a ${secret.replace('_', ' ')} in its address` }
     }
     if (url.startsWith('chrome-error:') || context.interstitial === true) {
       return { decision: 'handoff', class: null, rule: 'interstitial', reason: 'a browser safety warning needs the person' }
