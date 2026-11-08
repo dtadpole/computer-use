@@ -20,7 +20,12 @@ const WORDS = Object.freeze({
     // CU-146 (the CU-145 audit): destructive labels the list missed.
     'move to trash', 'move to bin', 'empty bin', 'clear history', 'clear all', 'reset all', 'reset settings', 'reset to defaults', 'uninstall', 'wipe', 'purge',
     'deactivate', 'close account', 'forget', 'factory reset'],
-  permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke'],
+  permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke',
+    // CU-258 (cu-researcher): standing choices an app keeps after the run, as whole phrases. A bare 'Allow' stays free so
+    // cookie banners do not ask (named limit).
+    'always allow', 'always trust', 'always open', 'allow access', "don't ask again", 'don\u2019t ask again', 'do not ask again',
+    'remember my choice', 'remember this choice', 'remember my decision', 'never for this website', 'never for this site',
+    'set as default', 'make default'],
   submit: ['send', 'post', 'submit', 'publish', 'reply', 'sign up', 'register'],
 })
 const PRECEDENCE = ['purchase', 'delete', 'permission', 'page_dialog', 'credential', 'sensitive_data', 'submit', 'new_site', 'install']
