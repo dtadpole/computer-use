@@ -36,6 +36,8 @@ const WORDS = Object.freeze({
     'change all',
     // cu-researcher's CU-258 remainder (#63): more standing-choice wordings.
     'always use this app', 'always use this application', 'do not ask me again', "don't ask me again", 'don\u2019t ask me again',
+    // CU-286 (cu-researcher's real-app wordings): the same standing choices in other words.
+    'allow always', 'remember this decision', 'remember decision',
     // CU-261 (cu-researcher): a camera or microphone switched on reaches other people.
     'turn on camera', 'turn on microphone', 'turn on video', 'start video', 'unmute',
     // cu-researcher's 13:23Z sweep: an account-wide sign-out.
@@ -56,6 +58,8 @@ const WORDS = Object.freeze({
     'unsubscribe', 'report spam', 'report junk', 'leave group', 'leave conversation', 'leave channel',
     // cu-researcher on #98: a cancellation goes to every attendee.
     'cancel meeting', 'cancel event', 'cancel invitation', 'send cancellation',
+    // CU-286 (cu-researcher's real-app wordings): a request to join a meeting, and Slack's huddle (a call to the channel).
+    'ask to join', 'start huddle', 'start a huddle', 'join huddle',
     // CU-288: a tax filing goes to the authority.
     'file return', 'file tax return', 'file your return', 'file my return', 'e-file', 'efile', 'submit return', 'submit tax return'],
 })
@@ -286,7 +290,9 @@ const CHAT_APPS = new Set(['com.apple.MobileSMS', 'com.apple.iChat', 'com.tinysp
 // Compose fields by their usual accessible names (Messages' 'iMessage', WhatsApp and Teams 'Type a message', Slack and
 // Discord 'Message #channel'), and - cu-coordinator's ruling - a bare 'Message', 'Reply' or 'Chat' in any app. Named
 // over-ask: a form's multi-line 'Message' box, whose Return is a line break.
-const CHAT_COMPOSE_NAME = /^(i?message(\s+[#@].*)?|type a message|write a message|text message|send a message|reply|chat)$/i
+// CU-253 (cu-researcher): 'Type a new message' is Microsoft Teams' compose wording - 'new' is optional in the phrases - and a
+// placeholder may end in ' here' or an ellipsis or stop ('Write a message…', Telegram's; 'Type a message here').
+const CHAT_COMPOSE_NAME = /^(i?message(\s+[#@].*)?|(type|write|send) a (new )?message|text message|reply|chat)(\s+here)?\s*(…|\.{3}|[.!])?$/i
 // CU-167 (cu-researcher's probe): a social security number, a card's CVV, a bare Passport field, a driving licence, a
 // birthday and a security question too - typed unasked before; the apostrophe in either form (' and ’).
 const SECRET_NAMES = Object.freeze(['recovery phrase', 'seed phrase', 'secret phrase', 'mnemonic', 'private key', 'secret key',
