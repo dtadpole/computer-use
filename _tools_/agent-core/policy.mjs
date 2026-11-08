@@ -39,6 +39,8 @@ const WORDS = Object.freeze({
     // me' (staying signed in) and a plain or draft Save stay free; 'Update password' already hands off (password_change).
     'save password', 'save passwords', 'remember password', 'remember passwords', 'save login', 'save logins',
     'save login info', 'remember login', 'save credentials', 'save to keychain', 'save in keychain',
+    // cu-researcher on #136: a passkey is a credential too; 'Never save' keeps a standing exception like 'Never for this site'.
+    'save passkey', 'save a passkey', 'save passkeys', 'save this passkey', 'never save',
     // cu-researcher's 13:23Z sweep: an account-wide sign-out.
     'sign out of all devices', 'sign out everywhere', 'log out of all devices', 'log out everywhere',
     // CU-270 (cu-researcher): switching an account's protection off - every verb with every protection, as whole phrases

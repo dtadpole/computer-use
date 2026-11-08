@@ -53,13 +53,13 @@ test('CU-258 through the loop: a click on Always Allow is declined unattended, n
 })
 
 test('CU-289: storing a credential asks permission - desktop button and web page; Update password hands off; staying signed in and plain saves stay free', () => {
-  for (const name of ['Save password', 'Save Passwords', 'Remember password', 'Save login', 'Save login info', 'Remember login', 'Save to Keychain']) {
+  for (const name of ['Save password', 'Save Passwords', 'Remember password', 'Save login', 'Save login info', 'Remember login', 'Save to Keychain', 'Save passkey', 'Save a passkey', 'Never Save']) {
     assert.equal(judged(desktop.classify(click, { frontmostBundleId: FIXTURE, target: button(name) })), 'permission', `desktop ${name}`)
     assert.equal(judged(web.classify(click, { url: 'https://app.example/', target: { role: 'button', name } })), 'permission', `web ${name}`)
   }
   const update = desktop.classify(click, { frontmostBundleId: FIXTURE, target: button('Update password') })
   assert.deepEqual([update.decision, update.rule], ['handoff', 'password_change'], 'Update password: the stricter hand-off stands')
-  for (const name of ['Remember me', 'Save', 'Save draft', 'Save as draft', 'Save changes', 'Password', 'Forgot password?', 'Show password']) {
+  for (const name of ['Remember me', 'Save', 'Save draft', 'Save as draft', 'Save changes', 'Password', 'Forgot password?', 'Show password', 'Not now', 'Passkeys']) {
     assert.equal(judged(desktop.classify(click, { frontmostBundleId: FIXTURE, target: button(name) })), 'allow', name)
   }
 })
