@@ -60,6 +60,14 @@ const SERVICE_SHORTCUTS = Object.freeze([
   ['a Terminal man page service', ['META', 'SHIFT', 'A']],
 ])
 
+// CU-249 (cu-researcher's click route): a Services item clicked in a menu - the app menu's Services submenu or a
+// context menu - acts outside the approved app as its chord does. Known by the helper's servicesMenu flag where it
+// reports one, else by the default services' titles. Named over-ask: an app's own item titled like one (a browser's
+// 'Search With ...' context item); named limit: owner-installed services with other titles.
+const SERVICE_ITEM = /^(search with\b|get result of applescript|run as applescript|make (new )?sticky( note)?|send file to bluetooth device|open man page in terminal|search man page index in terminal|new terminal (tab )?at folder)/i
+const serviceItem = (action, target) => CLICKS.has(action.type) && /^(ax)?menuitem$/i.test(String(target?.role ?? '')) &&
+  (target?.servicesMenu === true || SERVICE_ITEM.test(String(target?.name ?? '').trim()))
+
 /** The default Services shortcut a chord matches exactly, or null (CU-249). */
 export function serviceShortcut(action) {
   const keys = chord(action)
@@ -273,6 +281,9 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
       const panelBlock = panelKind(target) !== null ? panelVerdict(action, target, target?.origin ?? context.frontmostBundleId) : null
       if (panelBlock?.decision === 'block') return panelBlock
       return { decision: 'block', class: null, rule: 'system_shortcut', reason: `${action.keys.join('+')} may run the system service ${service}; it acts beyond the approved app` }
+    }
+    if (serviceItem(action, target)) {
+      return { decision: 'block', class: null, rule: 'system_service', reason: `"${String(target.name).trim()}" is a system service; it acts beyond the approved app` }
     }
     // CU-232 (menu-key.md): a chord bound to an item of the Apple menu (Lock Screen, Log Out, Force Quit) acts beyond the
     // approved app, like the system's own shortcuts.

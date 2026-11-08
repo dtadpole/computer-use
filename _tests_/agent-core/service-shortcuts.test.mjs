@@ -59,3 +59,16 @@ test('CU-249 through the loop: Command-Shift-L in a field with no menu read is r
   assert.deepEqual([action.decision, action.rule], ['block', 'system_shortcut'])
   assert.equal(environment.log.filter((x) => (x.action ?? x)?.type).length, 0, 'nothing posted')
 })
+
+test('CU-249 click route: a Services item clicked in a menu is refused too - by the helper flag or a default service title', () => {
+  const click = { type: 'click', x: 1, y: 1, button: 'left' }
+  const at = (t) => policy.classify(click, { frontmostBundleId: FIXTURE, target: { origin: FIXTURE, fingerprint: 'm', ...t } })
+  for (const name of ['Search With Google', 'Get Result of AppleScript', 'Run as AppleScript', 'Make New Sticky Note', 'Send File To Bluetooth Device', 'Open man Page in Terminal', 'New Terminal at Folder']) {
+    const v = at({ role: 'AXMenuItem', name })
+    assert.deepEqual([v.decision, v.rule], ['block', 'system_service'], name)
+  }
+  assert.equal(at({ role: 'AXMenuItem', name: 'Translate', servicesMenu: true }).rule, 'system_service', 'any title under the helper flag')
+  for (const t of [{ role: 'AXMenuItem', name: 'Search' }, { role: 'AXMenuItem', name: 'Make Plain Text' }, { role: 'AXButton', name: 'Search With Google' }]) {
+    assert.equal(at(t).decision, 'allow', `${t.role} ${t.name}`)
+  }
+})

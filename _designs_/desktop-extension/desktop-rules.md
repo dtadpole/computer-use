@@ -21,6 +21,7 @@ Detail for [app policy](app-policy.md)'s order of checks; rule names are what `c
 |---|---|
 | `desktop:navigate` | `navigate`, browser-only |
 | `system_shortcut` (P9) | a chord that acts on the whole system, below |
+| `system_service` (CU-249) | a click on a Services item (the helper's flag, or a default service's title) |
 | `excluded:<kind>` | a target in an excluded app; `excluded:unknown` for a target, or a frontmost app, without a bundle id (fail closed) |
 
 `system_shortcut` matches when a chord holds every key of an entry, so modifier order and extra modifiers do not
@@ -55,7 +56,7 @@ Known gaps of `launch_code` are [Q-D10](open-questions.md).
 
 A key action - typing, a keypress, a paste - into a secure field (`AXSecureTextField`, or the helper's `secure` or
 `isPassword`) or under secure input is handed to the person, never pre-approvable (R83). So is one into a text entry
-named with a password word (password, passcode, passphrase, PIN; whole words, normalised as CU-178): a "Show password"
+named with a password word (password, passcode, passphrase, PIN): a "Show password"
 toggle makes the secure field an `AXTextField` without changing what it holds. An entry whose name also says "hint"
 stays a `credential` confirm. A click into either only focuses it (CU-170). The browser is unchanged: a password field
 asks `credential`. Not covered: an unnamed shown field labelled by separate static text - neither handed off nor asked
@@ -67,8 +68,8 @@ If an excluded app comes to the front mid-run, the next action is handed to the 
 until they hand back) and the frame shows black where it is; if it is still in front after the hand-back, the run
 ends `refused_by_policy`.
 
-`terminal_view` (block, E5): typing or keypresses into a target whose accessible name, description or role description
-names a terminal, console or shell - an IDE's terminal panel runs commands like a terminal app; clicks stay allowed.
+`terminal_view` (block, E5): keys into a target whose name, description or role description names a terminal,
+console or shell (an IDE's terminal panel); clicks stay allowed.
 
 Copy, cut and paste are not blocked (D-031): they reach approved apps like any input; P9 still refuses the
 screenshot-to-clipboard chords.
