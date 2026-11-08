@@ -1,9 +1,9 @@
 ---
 title: Desktop block and confirm rules
 created: 2026-11-02T09:53:32Z
-modified: 2026-11-08T16:15:40Z
+modified: 2026-11-08T17:09:39Z
 level: L1
-version: 0.4.8
+version: 0.4.9
 description: The rules behind the desktop order of checks - what is blocked by name (system shortcuts, excluded or unknown targets; copy and paste are allowed, D-031), the desktop confirm classes and their pre-approval, and what happens when an excluded app comes to the front.
 status: unverified
 grounded_in:
@@ -21,8 +21,9 @@ Detail for [app policy](app-policy.md)'s order of checks; rule names are what `c
 |---|---|
 | `desktop:navigate` | `navigate`, browser-only |
 | `system_shortcut` (P9) | a chord that acts on the whole system, below |
-| `system_service` (CU-249) | a click on a Services item or a chord bound to one (by the helper's flag or a default title) |
-| `excluded:<kind>` | a target in an excluded app; `excluded:unknown` for a target, or a frontmost app, without a bundle id (fail closed) |
+| `system_service` (CU-249) | a Services item clicked or a chord bound to one (helper flag or default title) |
+| `writing_tools` (CU-277) | a Writing Tools item; Proofread, Rewrite or another AI by title |
+| `excluded:<kind>` | an excluded app's target; `excluded:unknown` with no bundle id (fail closed) |
 
 `system_shortcut` matches a chord holding every key of an entry, in any order, extra modifiers too:
 
