@@ -636,15 +636,17 @@ function menuTitleOf(value) {
 }
 
 /**
- * CU-236: a bound item's key equivalent - `char` (AXMenuItemCmdChar) or `glyph` (AXMenuItemCmdGlyph, an integer code for
- * Delete, Return, arrows, F-keys), and `modifiers` (AXMenuItemCmdModifiers, 0-15 as keyEquivalentOf reads it). Null when
+ * CU-236: a bound item's key equivalent - `char` (AXMenuItemCmdChar), or `glyph` (AXMenuItemCmdGlyph, an integer code for
+ * Delete, Return, arrows, F-keys) and `virtualKey` (AXMenuItemCmdVirtualKey), and `modifiers` (AXMenuItemCmdModifiers, 0-15 as keyEquivalentOf reads it). Null when
  * neither a char nor a glyph is usable.
  */
 function menuKeyEquivalentOf(value) {
   const base = keyEquivalentOf(value)
   const glyph = Number.isSafeInteger(value?.glyph) && value.glyph > 0 && value.glyph < 0x10000 ? value.glyph : null
-  if (base?.char == null && glyph === null) return null
-  return { char: base?.char ?? null, ...(glyph !== null ? { glyph } : {}), modifiers: base?.modifiers ?? null }
+  // AXMenuItemCmdVirtualKey (helper 0.2.52): the kVK code of a non-character key equivalent, 0-127.
+  const virtualKey = Number.isSafeInteger(value?.virtualKey) && value.virtualKey >= 0 && value.virtualKey <= 127 ? value.virtualKey : null
+  if (base?.char == null && glyph === null && virtualKey === null) return null
+  return { char: base?.char ?? null, ...(glyph !== null ? { glyph } : {}), ...(virtualKey !== null ? { virtualKey } : {}), modifiers: base?.modifiers ?? null }
 }
 
 /** CU-236: the most items one answer may carry (cu-developer-one's decision; the helper caps its list there too). */
@@ -681,7 +683,7 @@ function distinctEntries(entries) {
  * equivalent matches (a disabled benign first match must not hide a consequential one), so the answer is a list:
  * `{ items: [{ role: 'AXMenuItem', name, keyEquivalent, path, enabled, appleMenu? }] }` with 1 to MAX_BOUND_ITEMS
  * distinct entries; `{ none: true }` only for that exact answer; `{ unreadable: true }` for everything else - the
- * helper's own unreadable, `truncated`, an empty or over-long list, any malformed or untitled entry, a bundle id outside
+ * helper's own unreadable (its `reason` is not passed on), `truncated` or `incomplete`, an empty or over-long list, any malformed or untitled entry, a bundle id outside
  * `scope` (the reply's or an entry's), a malformed reply. Never a value: only titles, the path of titles, the key
  * equivalent (CU-154's integer modifier mask), whether the item is enabled (context only: disabled items still count),
  * and the helper's mark for the Apple menu.
@@ -689,9 +691,12 @@ function distinctEntries(entries) {
 export function boundMenuItemOf(reply, scope = []) {
   const unreadable = { unreadable: true }
   if (reply === null || typeof reply !== 'object') return unreadable
-  if (reply.none === true && reply.items === undefined && reply.unreadable === undefined && reply.truncated === undefined) return { none: true }
-  if (reply.none !== undefined || reply.unreadable !== undefined || (reply.truncated !== undefined && reply.truncated !== false)) return unreadable
   if (reply.bundleId !== undefined && (typeof reply.bundleId !== 'string' || !scope.includes(reply.bundleId))) return unreadable
+  const flagged = (field) => reply[field] !== undefined && reply[field] !== false
+  if (reply.none === true && reply.items === undefined && reply.unreadable === undefined && !flagged('truncated') && !flagged('incomplete')) return { none: true }
+  // incomplete (helper 0.2.52): a lazily filled top-level menu showed no items, so a match may be missing - unreadable,
+  // like truncated (cu-developer-one's decision); found items are not judged alone.
+  if (reply.none !== undefined || reply.unreadable !== undefined || flagged('truncated') || flagged('incomplete')) return unreadable
   if (!Array.isArray(reply.items) || reply.items.length < 1 || reply.items.length > MAX_BOUND_ITEMS) return unreadable
   const entries = reply.items.map((item) => boundEntryOf(item, scope))
   if (entries.some((entry) => entry === null)) return unreadable

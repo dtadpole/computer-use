@@ -87,6 +87,10 @@ test('none only for the exact answer; unreadable for the helper\'s unreadable, a
     ['a blank title', list({ ...SEND, title: '  ' })], ['a control character', list({ ...SEND, title: 'Se\u0007nd' })],
     ['the reply\'s app outside the scope', { bundleId: 'com.example.other', items: [SEND] }], ['an entry\'s app outside the scope', list({ ...SEND, bundleId: 'com.example.other' })],
     ['a bundle id that is no string', { bundleId: 7, items: [SEND] }], ['appleMenu not a boolean', list({ ...SEND, appleMenu: 'yes' })],
+    // Helper 0.2.52's shapes: incomplete (a lazily filled menu beside the match) fails closed like truncated; unreadable
+    // carries a reason; none names the app whose bar was read.
+    ['incomplete', { ...list(SEND), incomplete: true }], ['incomplete not a boolean', { ...list(SEND), incomplete: 1 }], ['none and incomplete', { none: true, bundleId: FIXTURE, incomplete: true }],
+    ['unreadable with a reason', { unreadable: true, reason: 'zero-children menu' }], ['none for an app outside the scope', { none: true, bundleId: 'com.example.other' }],
   ]) {
     assert.deepEqual(boundMenuItemOf(reply, scope), { unreadable: true }, label)
   }
@@ -99,7 +103,10 @@ test('none only for the exact answer; unreadable for the helper\'s unreadable, a
   // cu-researcher's point 1: every match counts - a disabled benign item first must not hide an enabled consequential one.
   const both = boundMenuItemOf(list({ title: 'Clear Draft', path: ['Edit', 'Clear Draft'], keyEquivalent: { char: 'D', modifiers: 1 }, enabled: false }, SEND, SEND), scope)
   assert.deepEqual(both.items.map((i) => [i.name, i.enabled]), [['Clear Draft', false], ['Send', true]], 'both kept, in order; the duplicate once')
-  assert.equal(boundMenuItemOf({ ...list(SEND), truncated: false }, scope).items.length, 1, 'truncated false is no truncation')
+  assert.equal(boundMenuItemOf({ ...list(SEND), truncated: false, incomplete: false }, scope).items.length, 1, 'false flags are no flags')
+  assert.deepEqual(boundMenuItemOf({ none: true, bundleId: FIXTURE }, scope), { none: true }, 'none naming the app in scope')
+  assert.deepEqual(boundMenuItemOf(list({ title: 'Move to Trash', keyEquivalent: { char: null, glyph: 23, virtualKey: 51, modifiers: 0 } }), scope).items[0].keyEquivalent, { char: null, glyph: 23, virtualKey: 51, modifiers: 0 }, 'a non-character key\'s virtual key passes')
+  assert.equal(boundMenuItemOf(list({ title: 'X', keyEquivalent: { virtualKey: 200, modifiers: 0 } }), scope).items[0].keyEquivalent, null, 'a virtual key out of range is nothing usable')
 })
 
 test('a chord with two keys: one list and a none is that list; two lists join; any unreadable, or more than the cap, is unreadable', async () => {
