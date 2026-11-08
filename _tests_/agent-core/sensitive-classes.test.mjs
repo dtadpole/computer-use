@@ -229,6 +229,107 @@ test('copy-source rows: every todo row still fails (a fixed row cannot stay todo
   for (const r of COPY_SOURCE_ROWS) if (r[4] !== null) assert.notEqual(decideCopySource(r[1], r[2]), r[3], `${r[0]} passes on main - close it`)
 })
 
+// CU-267 (cu-researcher): a value typed in pieces is judged action by action, so no value rule sees it whole. These
+// rows run through the real loop (the desktop-consent harness: CU Fixture approved, its Notes text area focused) and
+// read the first action that is not allowed. [id, pieces, expected, status, live]
+const harness = await import('../../_verifiers_/desktop-consent/harness.mjs')
+const notesArea = { bundleId: harness.FIXTURE, pid: 900, role: 'AXTextArea', title: 'Notes', frame: { x: 100, y: 200, width: 400, height: 200 } }
+// The fake helper reads the focus from the world (world.focused); desktopRun takes no focus of its own. With noFocus the
+// helper answers no focused element, as it does when an app's focus cannot be read.
+// With grows, the focused field answers its frame 30 points taller from the second read on - an auto-growing text area;
+// 'up' keeps its bottom edge (a bottom-anchored chat box, whose top-left moves), 'down' (or true) keeps its top-left.
+async function decideSequence(actions, { noFocus = false, grows = false } = {}) {
+  const up = grows === 'up'
+  const taller = { ...notesArea, frame: { ...notesArea.frame, y: notesArea.frame.y - (up ? 30 : 0), height: notesArea.frame.height + 30 } }
+  const focus = noFocus ? {} : grows ? { focusedReads: [notesArea, taller] } : { focused: notesArea }
+  const world = { ...harness.twoApps('com.example.other', [{ rect: taller.frame, element: notesArea }]), ...focus }
+  const run = await harness.desktopRun({ world, turns: [{ actions }, { final: 'done' }], bounds: { maxSteps: 4 } })
+  const asked = run.events.find((e) => e.kind === 'action' && e.decision !== 'allow')
+  return asked ? asked.class : 'allow'
+}
+const cardDigits = CARD.replace(/\D/g, '')
+const SEQUENCE_ROWS = [
+  ['sequence-card as keypresses', [...cardDigits].map((d) => ({ type: 'keypress', keys: [d] })), 'sensitive_data', 'open CU-267', 'no live row yet'],
+  ['sequence-SSN as keypresses', [...SSN].map((c) => ({ type: 'keypress', keys: [c === '-' ? 'MINUS' : c] })), 'sensitive_data', 'open CU-267', 'no live row yet'],
+  ['sequence-card as four type actions', cardDigits.match(/\d{4}/g).map((g) => ({ type: 'type', text: g })), 'sensitive_data', 'open CU-267', 'no live row yet'],
+  // A no-input action between the pieces must not reset what the fix keeps (cu-researcher's correction on CU-267).
+  ['sequence-card with waits between pieces', cardDigits.match(/\d{4}/g).flatMap((g) => [{ type: 'type', text: g }, { type: 'wait', duration_ms: 100 }]), 'sensitive_data', 'open CU-267', 'no live row yet'],
+  ['sequence-card with a screenshot between pieces', cardDigits.match(/\d{4}/g).flatMap((g) => [{ type: 'type', text: g }, { type: 'screenshot' }]), 'sensitive_data', 'open CU-267', 'no live row yet'],
+  ['sequence-card with a click into the same field between pieces', cardDigits.match(/\d{4}/g).flatMap((g) => [{ type: 'type', text: g }, { type: 'click', button: 'left', x: 200, y: 300 }]), 'sensitive_data', 'open CU-267', 'no live row yet'],
+  // With the focus unreadable the fix has no field to key the buffer by; the app (reset on any pointer action) would do.
+  ['sequence-card as four type actions, focus unreadable', { noFocus: true, actions: cardDigits.match(/\d{4}/g).map((g) => ({ type: 'type', text: g })) }, 'sensitive_data', 'open CU-267', 'no live row yet'],
+  // CU-273 (cu-researcher on #92): the buffer is keyed by the fingerprint, which holds the frame's size, so a text area that
+  // grows as it fills becomes a new field between pieces; the driver's fieldKey (CU-194) leaves the size out.
+  ['sequence-card halves into a field that grows between them', { grows: true, actions: [{ type: 'type', text: cardDigits.slice(0, 8) }, { type: 'type', text: cardDigits.slice(8) }] }, 'sensitive_data', 'open CU-273', 'no live row yet'],
+  ['sequence-card halves into a field that grows upward between them', { grows: 'up', actions: [{ type: 'type', text: cardDigits.slice(0, 8) }, { type: 'type', text: cardDigits.slice(8) }] }, 'sensitive_data', 'open CU-273', 'no live row yet'],
+  ['sequence-plain words in pieces (negative)', [{ type: 'type', text: 'abc' }, { type: 'type', text: 'def' }], 'allow', 'open CU-267', 'no live row yet'],
+]
+for (const [id, pieces, expected, status, live] of SEQUENCE_ROWS) {
+  const title = `${id} -> ${expected} (live: ${live})`
+  const opts = { skip: harness.ready ? false : 'the desktop-consent harness is not built here', ...(status?.startsWith('todo ') ? { todo: status } : {}) }
+  test(title, opts, async () => assert.equal(await decideSequence(pieces.actions ?? pieces, { noFocus: pieces.noFocus === true, grows: pieces.grows ?? false }), expected))
+}
+test('sequence rows: named once; every open row names its issue; a todo row still fails (a fixed row cannot stay todo)', { skip: harness.ready ? false : 'harness not built' }, async () => {
+  assert.equal(new Set(SEQUENCE_ROWS.map((r) => r[0])).size, SEQUENCE_ROWS.length)
+  for (const [id, pieces, expected, status] of SEQUENCE_ROWS) {
+    assert.match(status, /^(todo|open) CU-\d+$/, id)
+    if (status.startsWith('todo ')) assert.notEqual(await decideSequence(pieces.actions ?? pieces, { noFocus: pieces.noFocus === true, grows: pieces.grows ?? false }), expected, `${id} passes on main - flip it from todo`)
+  }
+})
+
+// CU-273 (cu-researcher): a detour through another field must not reset the first field's typed pieces. Through the
+// real loop on the fake browser environment; Tab and Shift-Tab move the focus between Notes and Reference.
+// [id, actions, expected, status, live]
+const detourKit = {
+  scripted: await import('../../_tools_/agent-core/adapter-scripted.mjs'),
+  control: await import('../../_tools_/agent-core/control.mjs'),
+  fake: await import('../../_tools_/agent-core/fake-env.mjs'),
+  loop: await import('../../_tools_/agent-core/loop.mjs'),
+  sites: await import('../../_tools_/agent-core/sites.mjs'),
+  trajectory: await import('../../_tools_/agent-core/trajectory.mjs'),
+}
+async function decideDetour(actions) {
+  const { mkdtempSync, rmSync } = await import('node:fs'); const { tmpdir } = await import('node:os'); const { join } = await import('node:path')
+  const START = 'https://fixture.example/'
+  const notes = { tag: 'textarea', role: 'textbox', name: 'Notes', editable: true, fingerprint: 'fp-notes', origin: 'https://fixture.example' }
+  const reference = { tag: 'input', role: 'textbox', name: 'Reference', editable: true, fingerprint: 'fp-reference', origin: 'https://fixture.example' }
+  const dir = mkdtempSync(join(tmpdir(), 'cu-detour-'))
+  try {
+    const control = detourKit.control.createRunControl()
+    let focus = notes
+    const environment = detourKit.fake.createFakeEnvironment({ url: START, control, targets: () => focus })
+    environment.focusedElement = async () => focus
+    const perform = environment.perform.bind(environment)
+    environment.perform = async (action) => {
+      const effect = await perform(action)
+      const keys = action.type === 'keypress' ? action.keys.join('+') : ''
+      if (keys === 'TAB') focus = reference
+      if (keys === 'SHIFT+TAB') focus = notes
+      return effect
+    }
+    const model = detourKit.scripted.createScriptedAdapter({ frame: { width: 1440, height: 900 }, turns: [{ actions }, { final: 'done' }] })
+    const result = await detourKit.loop.runTask({ task: 'fill the form', environment, model, control, sitePolicy: detourKit.sites.createSitePolicy({ startUrl: START }), runsDirectory: join(dir, 'runs'), build: { commit: 'test', dirty: false } })
+    const asked = detourKit.trajectory.readRun(result.trajectoryDir).events.find((e) => e.kind === 'action' && e.decision !== 'allow')
+    return asked ? asked.class : 'allow'
+  } finally { rmSync(dir, { recursive: true, force: true }) }
+}
+const DETOUR_ROWS = [
+  ['detour-card halves around typing in another field', [{ type: 'type', text: cardDigits.slice(0, 8) }, { type: 'keypress', keys: ['TAB'] }, { type: 'type', text: 'x' }, { type: 'keypress', keys: ['SHIFT', 'TAB'] }, { type: 'type', text: cardDigits.slice(8) }], 'sensitive_data', 'open CU-273', 'no live row yet'],
+  ['detour-plain words around another field (negative)', [{ type: 'type', text: 'abc' }, { type: 'keypress', keys: ['TAB'] }, { type: 'type', text: 'x' }, { type: 'keypress', keys: ['SHIFT', 'TAB'] }, { type: 'type', text: 'def' }], 'allow', 'open CU-273', 'no live row yet'],
+]
+for (const [id, actions, expected, status, live] of DETOUR_ROWS) {
+  const title = `${id} -> ${expected} (live: ${live})`
+  if (status.startsWith('todo ')) test(title, { todo: status }, async () => assert.equal(await decideDetour(actions), expected))
+  else test(title, async () => assert.equal(await decideDetour(actions), expected))
+}
+test('detour rows: named once; every open row names its issue; a todo row still fails (a fixed row cannot stay todo)', async () => {
+  assert.equal(new Set(DETOUR_ROWS.map((r) => r[0])).size, DETOUR_ROWS.length)
+  for (const [id, actions, expected, status] of DETOUR_ROWS) {
+    assert.match(status, /^(todo|open) CU-\d+$/, id)
+    if (status.startsWith('todo ')) assert.notEqual(await decideDetour(actions), expected, `${id} passes on main - flip it from todo`)
+  }
+})
+
 // CU-185: a phone number in national format (a trunk 0, no country code) typed into a neutral entry. Todo until the
 // fix; a bare digit run and a 0-prefixed short code stay allowed by design.
 // [id, text, expected, status]
