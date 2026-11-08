@@ -251,9 +251,9 @@ const ROWS = [
   ['paste-copy-readonly-textview-notes', 'desktop', 'cmdV', 'unnamedEntry', 'allow', 'copy-source.test.mjs (CU-223 negative)', "cu-verifier, main 8d66c53, helper 0.2.51, CU Fixture consent-cells readonlyText + copyRow: the Notes-captioned read-only view's word, Command-C, pasted - allowed by count, 5 chars arrived (20261108T103756Z-2ffe01); by Edit > Copy allowed too (103807Z-047d66)", null, { paste: { fromOwner: false, source: { role: 'AXTextArea', caption: 'Notes', editable: false } } }],
   ['web-click-destructive', 'browser', 'click', 'webDelete', 'delete', 'policy.test.mjs', "main 1de261e91, real Chrome: bulk-delete 'Delete selected' asks delete, 0 POSTs (20261107T192415Z-7e802c)", null],
   // CU-266 (cu-researcher): no Unicode normalisation - an invisible character or a fullwidth form hides the word.
-  ['web-click-delete-zero-width', 'browser', 'click', 'webDeleteZwsp', 'delete', 'CU-266 (runTask: performed)', 'no live row yet', 'todo CU-266'],
-  ['web-click-delete-fullwidth', 'browser', 'click', 'webDeleteFullwidth', 'delete', 'CU-266', 'no live row yet', 'todo CU-266'],
-  ['web-click-buy-zero-width', 'browser', 'click', 'webBuyZwsp', 'purchase', 'CU-266', 'no live row yet', 'todo CU-266'],
+  ['web-click-delete-zero-width', 'browser', 'click', 'webDeleteZwsp', 'delete', 'CU-266 (runTask: performed)', 'no live row yet', 'open CU-266'],
+  ['web-click-delete-fullwidth', 'browser', 'click', 'webDeleteFullwidth', 'delete', 'CU-266', 'no live row yet', 'open CU-266'],
+  ['web-click-buy-zero-width', 'browser', 'click', 'webBuyZwsp', 'purchase', 'CU-266', 'no live row yet', 'open CU-266'],
   // CU-268: default-ignorable characters that are not Cf still split the word after CU-266's normalisation.
   ['web-click-delete-variation-selector', 'browser', 'click', 'webDeleteVs16', 'delete', 'CU-268', 'no live row yet', 'todo CU-268'],
   ['web-click-delete-grapheme-joiner', 'browser', 'click', 'webDeleteCgj', 'delete', 'CU-268', 'no live row yet', 'todo CU-268'],
