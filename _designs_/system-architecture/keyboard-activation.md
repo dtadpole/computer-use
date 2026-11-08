@@ -1,9 +1,9 @@
 ---
 title: Keyboard activation is judged like a click
 created: 2026-11-07T00:07:33Z
-modified: 2026-11-08T10:51:58Z
+modified: 2026-11-08T11:17:15Z
 level: L1
-version: 0.3.1
+version: 0.3.2
 description: How a keypress that activates a button - Space on a focused button, a sheet's key equivalents - is classed like a click on that button, and the destructive words a save panel's Replace sheet needs.
 status: unverified
 grounded_in:
@@ -16,8 +16,8 @@ grounded_in:
 
 # Keyboard activation is judged like a click
 
-Before CU-135 the policy matched destructive words only for a click or ENTER, so Space on a focused Delete, Command-D
-on a Don't Save sheet and Replace in a save panel's "already exists" sheet went unasked.
+Before CU-135 destructive words were matched only for a click or ENTER, so Space on a focused Delete, Command-D on a
+sheet and a save panel's Replace went unasked.
 
 ## Rule
 
@@ -32,9 +32,9 @@ on a Don't Save sheet and Replace in a save panel's "already exists" sheet went 
 A SPACE or ENTER right after Tab, Shift-Tab or an arrow in one batch is judged on the focus the app moved to: agent
 core reads it until two reads 50 ms apart agree (300 ms at most); a focus that never settles is opaque, asked.
 
-A default button the helper could not read (`defaultButtonRead` false: a failed read, an unreadable focus, no
-Accessibility) asks `submit` for every route that presses it - a Return, a typed newline in a single-line input,
-Command-Return in a text area - focused or not; true keeps the rule; no field asks too, and a helper before 0.2.44 is refused (D-069).
+A default button the helper could not read (`defaultButtonRead` false, or no field) asks `submit` for every route that
+presses it - a Return, a newline in a single-line input, Command-Return in a text area; a helper before 0.2.44 is
+refused (D-069).
 
 `delete` is never pre-approved and is declined unattended. A Find bar's Replace asks too: accepted over-ask.
 
@@ -47,10 +47,11 @@ Command-Return in a text area - focused or not; true keeps the rule; no field as
 
 ## Acceptance
 
-- CU-135, met (tests, mutants, live at 01:18Z): every route asks through the real driver and, unattended, nothing
-  happens; text inputs, Cancel, Escape and Keep Both do not. The step-4 Replace row remains, with a new-name control.
-- CU-142: a Return - ENTER or a typed newline - into "Send a message", or into an unnamed field whose window's default
-  button is Send, asks submit, as does Command-Return in a text area there; lines typed into that area, Notes and enter-12-rows'
-  cells do not. A mutant per rule fails. Live on consent-keys.
-- CU-143: from a field, every Command-Backspace asks delete; a plain one fired 'Clear Line' live, so the
-  exemption went. Live on consent-keys, never Finder.
+- CU-135, met (live 01:18Z): every route asks through the real driver, unattended nothing happens; text inputs,
+  Cancel, Escape and Keep Both do not. The step-4 Replace row remains.
+- CU-142: a Return or typed newline into "Send a message", or an unnamed field whose default button is Send, asks
+  submit, as does Command-Return in a text area; lines typed there do not. Mutants fail; live on consent-keys.
+- CU-143: from a field, every Command-Backspace asks delete (a plain one fired 'Clear Line' live). Live on consent-keys.
+- CU-234, measured (cu-researcher, helper 0.2.51): Shift-Space pressed CU Fixture's focused Delete button and checkbox
+  (20261108T105653Z-f6cd2b, 105705Z-baca96). Option-Space, modified Backspace on a stock table and Command-Shift- or
+  Command-Option-D on a stock sheet did nothing: named over-asks, kept for apps with their own key handling.
