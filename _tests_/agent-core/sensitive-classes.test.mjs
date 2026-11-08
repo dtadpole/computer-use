@@ -236,8 +236,11 @@ const harness = await import('../../_verifiers_/desktop-consent/harness.mjs')
 const notesArea = { bundleId: harness.FIXTURE, pid: 900, role: 'AXTextArea', title: 'Notes', frame: { x: 100, y: 200, width: 400, height: 200 } }
 // The fake helper reads the focus from the world (world.focused); desktopRun takes no focus of its own. With noFocus the
 // helper answers no focused element, as it does when an app's focus cannot be read.
-async function decideSequence(actions, { noFocus = false } = {}) {
-  const world = { ...harness.twoApps('com.example.other', [{ rect: notesArea.frame, element: notesArea }]), ...(noFocus ? {} : { focused: notesArea }) }
+// With grows, the focused field answers its frame 30 points taller from the second read on - an auto-growing text area.
+async function decideSequence(actions, { noFocus = false, grows = false } = {}) {
+  const taller = { ...notesArea, frame: { ...notesArea.frame, height: notesArea.frame.height + 30 } }
+  const focus = noFocus ? {} : grows ? { focusedReads: [notesArea, taller] } : { focused: notesArea }
+  const world = { ...harness.twoApps('com.example.other', [{ rect: taller.frame, element: notesArea }]), ...focus }
   const run = await harness.desktopRun({ world, turns: [{ actions }, { final: 'done' }], bounds: { maxSteps: 4 } })
   const asked = run.events.find((e) => e.kind === 'action' && e.decision !== 'allow')
   return asked ? asked.class : 'allow'
@@ -253,18 +256,21 @@ const SEQUENCE_ROWS = [
   ['sequence-card with a click into the same field between pieces', cardDigits.match(/\d{4}/g).flatMap((g) => [{ type: 'type', text: g }, { type: 'click', button: 'left', x: 200, y: 300 }]), 'sensitive_data', 'open CU-267', 'no live row yet'],
   // With the focus unreadable the fix has no field to key the buffer by; the app (reset on any pointer action) would do.
   ['sequence-card as four type actions, focus unreadable', { noFocus: true, actions: cardDigits.match(/\d{4}/g).map((g) => ({ type: 'type', text: g })) }, 'sensitive_data', 'open CU-267', 'no live row yet'],
+  // CU-273 (cu-researcher on #92): the buffer is keyed by the fingerprint, which holds the frame's size, so a text area that
+  // grows as it fills becomes a new field between pieces; the driver's fieldKey (CU-194) leaves the size out.
+  ['sequence-card halves into a field that grows between them', { grows: true, actions: [{ type: 'type', text: cardDigits.slice(0, 8) }, { type: 'type', text: cardDigits.slice(8) }] }, 'sensitive_data', 'todo CU-273', 'no live row yet'],
   ['sequence-plain words in pieces (negative)', [{ type: 'type', text: 'abc' }, { type: 'type', text: 'def' }], 'allow', 'open CU-267', 'no live row yet'],
 ]
 for (const [id, pieces, expected, status, live] of SEQUENCE_ROWS) {
   const title = `${id} -> ${expected} (live: ${live})`
   const opts = { skip: harness.ready ? false : 'the desktop-consent harness is not built here', ...(status?.startsWith('todo ') ? { todo: status } : {}) }
-  test(title, opts, async () => assert.equal(await decideSequence(pieces.actions ?? pieces, { noFocus: pieces.noFocus === true }), expected))
+  test(title, opts, async () => assert.equal(await decideSequence(pieces.actions ?? pieces, { noFocus: pieces.noFocus === true, grows: pieces.grows === true }), expected))
 }
 test('sequence rows: named once; every open row names its issue; a todo row still fails (a fixed row cannot stay todo)', { skip: harness.ready ? false : 'harness not built' }, async () => {
   assert.equal(new Set(SEQUENCE_ROWS.map((r) => r[0])).size, SEQUENCE_ROWS.length)
   for (const [id, pieces, expected, status] of SEQUENCE_ROWS) {
     assert.match(status, /^(todo|open) CU-\d+$/, id)
-    if (status.startsWith('todo ')) assert.notEqual(await decideSequence(pieces.actions ?? pieces, { noFocus: pieces.noFocus === true }), expected, `${id} passes on main - flip it from todo`)
+    if (status.startsWith('todo ')) assert.notEqual(await decideSequence(pieces.actions ?? pieces, { noFocus: pieces.noFocus === true, grows: pieces.grows === true }), expected, `${id} passes on main - flip it from todo`)
   }
 })
 
