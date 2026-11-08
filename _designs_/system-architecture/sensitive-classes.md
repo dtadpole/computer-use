@@ -1,7 +1,7 @@
 ---
 title: Sensitive classes - everything the agent must never type unasked
 created: 2026-11-07T14:34:22Z
-modified: 2026-11-08T12:45:17Z
+modified: 2026-11-08T13:27:59Z
 level: L1
 version: 0.4.0
 description: The D-061 table - every sensitive class with its value rule, its field-name rule, the asserting test and the live row; rows live in an executable matrix, gaps are children of CU-145.
@@ -45,5 +45,5 @@ value rule and name is a row of `_tests_/agent-core/sensitive-classes.test.mjs`;
 
 Live rows run on the fixture site's secret-fields pages, paired against main before each fix.
 Re-signed by cu-verifier, 8 November (main 309c60328): every closed row cites cu-verifier's run or a decision (D-064).
-Open since: CU-245's ten rows (asserted, #46). An open under-ask is an open or todo row naming
+Open since: CU-245's name rows (asserted, #46; its value rows closed live). An open under-ask is an open or todo row naming
 its issue (D-063).
