@@ -1,14 +1,15 @@
 ---
 title: Helper peer boundary
 created: 2026-11-02T09:10:12Z
-modified: 2026-11-05T17:09:27Z
+modified: 2026-11-08T19:42:00Z
 level: L1
-version: 0.3.7
+version: 0.3.8
 description: Why the helper must not lend the owner's grants to any same-user process, and the four rules of D-029 - a peer check against a compiled list of entry points, one-run lifetime, a visible indicator, human-only approvals - with the residual risk the owner is told.
 status: unverified
 grounded_in:
   - source: _context_/team-operations/decision-log.yaml (D-029)
   - source: _team_members_/cu-developer-two/m6-desktop-review.md
+  - source: 'Linear CU-227 and CU-224 (a held dispatcher lock left two dry-run helpers running for good, 2026-11-08)'
 ---
 
 # Helper peer boundary
@@ -20,7 +21,7 @@ as the owner could launch `CUHelper.app` with its own socket and token file and 
 | Rule | How (cu-developer-three, helper) |
 |---|---|
 | (a) peer check | after connecting, the helper reads the peer's uid and pid (`LOCAL_PEERCRED`, `LOCAL_PEERPID`) and refuses unless the peer is node signed by the Node.js Foundation's team and its arguments name, by realpath inside `~/computer-use` or a `~/computer-use--*` checkout (CU-29; reflection paths no longer served), one entry point of a compiled list - `_tools_/agent-core/cli.mjs`, `_tools_/computer-use-mcp/server.mjs`, `_evaluators_/desktop-suite/run.mjs`, and cu-verifier's `_verifiers_/desktop-helper-boundary/stand-in-driver.mjs` (it only awaits `hello` and sends `bye`) - the one `--driver-entry` names; a refusal closes the socket, logged by pid only; and refused if its exec-time environment holds any `DYLD_*`, `LD_*`, `NODE_OPTIONS`, `NODE_PATH`, `NODE_REPL_EXTERNAL_MODULE` or `NODE_ICU_DATA` |
-| (b) one run | the helper serves one run: it exits on `bye`, on socket loss, at the run's wall-time cap, and when no driver connects within 10 seconds of launch; it never listens without a run |
+| (b) one run | the helper serves one run: it exits on `bye`, on socket loss, at the run's wall-time cap, and when no driver connects within 10 seconds of launch; it never listens without a run. Every end but `bye` is bounded (CU-227): the end first arms a watchdog on a thread of its own, which takes none of the dispatcher's locks. If the orderly end (releases posted, tap stopped) has not exited within 5 s, the watchdog reads a copy of what is held (kept under its own tiny lock) and releases it on a second thread: a drag in flight is cancelled first (Escape down and up, then the button-up; an app that ignores Escape still gets the drop where the pointer is, a named residual), then a tagged up goes for every key and button still held. After about 1 s, whether or not the posts returned, it writes `stopped.json` (reason, released count, time) beside the held-keys marker and exits 70; the driver ends the run `helper_lost` with those details and tells the live view. The marker stays as a second net for the next helper (CU-64 G1) |
 | (c) visible indicator | with any grant and a connected driver the helper shows an always-visible status item or small window; with no grant it may show none, since nothing can act; excluded by bundle id, it is never in scope or captured |
 | (d) human approvals | per-app approvals and consent still come only from a human channel ([app policy](app-policy.md)); the helper accepts no approval at all |
 
