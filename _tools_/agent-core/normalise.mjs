@@ -52,13 +52,19 @@ export function normaliseText(value) {
  * fold table would (an Armenian or Cherokee look-alike in 'Delete'). Read before the look-alike fold (NFKC and the
  * invisible characters only), so a word wholly in one script stays one script ('Отправить' would fold into a mix); a
  * name whose words are each in one script ('Save 保存') does not count either. Combining marks belong to their letter.
- * normaliseTarget records it as mixedScriptName; the policies ask on it.
+ * Han, Hiragana, Katakana, Hangul, Thai, Lao, Khmer and Myanmar letters, and letters of no script (Common, as the kana
+ * length mark ー), never count as the other side: they look like no Latin letter, and those UIs mix them with Latin
+ * inside one word all the time ('iCloud云盘', 'Googleで検索'; cu-developer-one).
+ * Named limit: a CJK glyph used as a look-alike (口 for O) is not asked - visibly different. normaliseTarget records it as
+ * mixedScriptName; the policies ask on it.
  */
+const UNLIKE_LATIN_RE = /[\p{Script=Common}\p{Script=Inherited}\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\p{Script=Thai}\p{Script=Lao}\p{Script=Khmer}\p{Script=Myanmar}]/u
+
 export function mixedScriptWord(value) {
   if (typeof value !== 'string' || value === '') return false
   for (const [word] of value.matchAll(/[\p{L}\p{M}]+/gu)) {
     const letters = [...word].filter((ch) => /\p{L}/u.test(ch))
-    if (letters.some((ch) => /\p{Script=Latin}/u.test(ch)) && letters.some((ch) => !/\p{Script=Latin}/u.test(ch))) return true
+    if (letters.some((ch) => /\p{Script=Latin}/u.test(ch)) && letters.some((ch) => !/\p{Script=Latin}/u.test(ch) && !UNLIKE_LATIN_RE.test(ch))) return true
   }
   return false
 }

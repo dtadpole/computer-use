@@ -146,7 +146,8 @@ test('CU-268: a control whose name has one word mixing scripts asks - desktop un
   assert.deepEqual([w.decision, w.class, w.rule], ['confirm', 'permission', 'target:mixed_script'])
   const enter = web.classify({ type: 'keypress', keys: ['ENTER'] }, { url: 'https://fixture.example/', target: { role: 'button', name } })
   assert.equal(enter.class, 'permission', 'Return on it too')
-  for (const plain of ['Отправить', '日本語', 'Save 保存', 'Café', 'Show details']) {
+  // cu-developer-one: CJK and Southeast Asian UIs mix their scripts with Latin inside one word; those letters look like no Latin one.
+  for (const plain of ['Отправить', '日本語', 'Save 保存', 'Café', 'Show details', 'iCloud云盘', '打开Safari', 'Googleで検索', 'Gmail로 보내기', 'เปิดSafari', 'ーSettings']) {
     assert.equal(judged(desktop.classify(click, { frontmostBundleId: FIXTURE, target: button(plain) })), 'allow', `desktop ${plain}`)
     assert.equal(judged(web.classify(click, { url: 'https://fixture.example/', target: { role: 'button', name: plain } })), 'allow', `web ${plain}`)
   }
