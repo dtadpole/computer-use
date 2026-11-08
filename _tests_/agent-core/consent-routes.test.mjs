@@ -594,11 +594,11 @@ const SYS_T = {
 // [id, action, target, expected, pin, live, status, extra context]
 const SYSTEM_ROWS = [
   // CU-249: a macOS Service acts outside the approved app - its default chords and its Services items (clicked).
-  ['service-chord-search-with', 'cmdShiftL', 'field', 'block:system_shortcut', 'CU-249 (#49: the default Services chords refused)', 'no live row yet', 'todo CU-249'],
-  ['service-chord-run-applescript', 'cmdShift8', 'field', 'block:system_shortcut', 'CU-249 (#49; Command-* is Shift-8)', 'no live row yet', 'todo CU-249'],
-  ['service-click-search-with', 'click', 'searchWithItem', 'block:system_service', 'CU-249 (#49: a Services item clicked)', 'no live row yet', 'todo CU-249'],
-  ['service-click-run-applescript', 'click', 'appleScriptItem', 'block:system_service', 'CU-249 (#49)', 'no live row yet', 'todo CU-249'],
-  ['service-click-set-desktop-picture', 'click', 'desktopPictureItem', 'block:system_service', "CU-249 (changes the owner's wallpaper)", 'no live row yet', 'todo CU-249'],
+  ['service-chord-search-with', 'cmdShiftL', 'field', 'block:system_shortcut', 'service-shortcuts.test.mjs (#49, CU-249: the default Services chords refused)', 'no live row yet', 'open CU-249'],
+  ['service-chord-run-applescript', 'cmdShift8', 'field', 'block:system_shortcut', 'service-shortcuts.test.mjs (#49, CU-249; Command-* is Shift-8)', 'no live row yet', 'open CU-249'],
+  ['service-click-search-with', 'click', 'searchWithItem', 'block:system_service', 'service-shortcuts.test.mjs (#49, CU-249: a Services item clicked)', 'no live row yet', 'open CU-249'],
+  ['service-click-run-applescript', 'click', 'appleScriptItem', 'block:system_service', 'service-shortcuts.test.mjs (#49, CU-249)', 'no live row yet', 'open CU-249'],
+  ['service-click-set-desktop-picture', 'click', 'desktopPictureItem', 'block:system_service', "CU-249 (changes the owner's wallpaper)", 'no live row yet', 'open CU-249'],
   ['menu-click-paste', 'click', 'pasteItem', 'allow', 'CU-249 negative (an app menu item)', 'no live row yet', 'open CU-249'],
   // CU-242 (landed, #35) and its follow-up CU-251: default system hotkeys that change an owner setting.
   ['owner-setting-dock-hiding', 'cmdOptD', 'field', 'block:system_shortcut', 'CU-251 (Dock hiding on/off, follow-up to CU-242)', 'no live row yet', 'todo CU-251'],
