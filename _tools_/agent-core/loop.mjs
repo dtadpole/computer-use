@@ -7,6 +7,7 @@ import { unattendedController } from './consent.mjs'
 import { createRunControl } from './control.mjs'
 import { inspectPageText } from './inspect.mjs'
 import { createAppPolicy, panelDestination, panelKind, protectedPath } from './app-policy.mjs'
+import { normaliseText } from './normalise.mjs'
 import { createPanelFolder } from './panel-folder.mjs'
 import { createExclusions } from './exclusions.mjs'
 import { createApprovalStore, createPolicy, isTextEntry, namesPasswordField, screenTask, textNamedSource } from './policy.mjs'
@@ -557,7 +558,9 @@ export async function runTask(options) {
     const key = target?.keyEquivalent
     return key && typeof key.char === 'string' && key.char !== '' && Number.isSafeInteger(key.modifiers) && key.modifiers >= 0 ? { char: key.char.toUpperCase(), modifiers: key.modifiers } : null
   }
-  const named = (target, names) => names.test(String(target?.name ?? '').trim())
+  // CU-266: the loop's own routes read names too (a menu or toolbar Paste, a menu Copy by its English name), so they read
+  // the normalised name as the policies do - a zero-width or look-alike 'Paste' is still a paste.
+  const named = (target, names) => names.test(normaliseText(String(target?.name ?? '')).trim())
   const menuCopy = (action, target) => {
     if (!menuClick(action, target)) return false
     const key = keyEquivalentOf(target)

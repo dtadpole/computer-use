@@ -5,8 +5,10 @@
  *
  * normaliseText: NFKC (fullwidth and compatibility forms to their plain ones), every format character removed (Unicode
  * Cf: zero-width space and joiners, word joiner, BOM, soft hyphen, bidi marks), the common Cyrillic and Greek letters
- * that look Latin folded to Latin, whitespace collapsed. Case is left to each rule (they already fold it). Only the
- * judged copy is normalised - the action the run posts is never changed.
+ * that look Latin folded to Latin, whitespace collapsed, and a letter-spaced word closed up ('S e n d' reads 'Send';
+ * cu-coordinator's ruling - three or more single letters each one space apart). Case is left to each rule (they already
+ * fold it). Only the judged copy is normalised - the action the run posts is never changed. Named limit: a letter-spaced
+ * phrase whose words are one space apart too ('P l a c e o r d e r') closes up into one word.
  */
 
 // Cyrillic and Greek letters drawn like Latin ones (lower and upper case), the usual homoglyph set.
@@ -18,15 +20,19 @@ const HOMOGLYPHS = new Map(Object.entries({
 }))
 const HOMOGLYPH_RE = new RegExp(`[${[...HOMOGLYPHS.keys()].join('')}]`, 'gu')
 
+// Three or more single letters, each one space from the next, standing alone (CU-266: 'S e n d').
+const LETTER_SPACED_RE = /(?<![\p{L}\p{N}])\p{L}(?: \p{L}){2,}(?![\p{L}\p{N}])/gu
+
 export function normaliseText(value) {
   if (typeof value !== 'string') return value
   return value.normalize('NFKC').replace(/\p{Cf}/gu, '').replace(HOMOGLYPH_RE, (ch) => HOMOGLYPHS.get(ch)).replace(/[^\S\r\n]+/g, ' ')
+    .replace(LETTER_SPACED_RE, (run) => run.replaceAll(' ', ''))
 }
 
 // The string fields of a target that a rule reads by name.
 const TARGET_FIELDS = ['name', 'description', 'roleDescription', 'title', 'label', 'placeholder', 'caption', 'captionName', 'filename', 'url', 'autocomplete']
 
-function normaliseTarget(target) {
+export function normaliseTarget(target) {
   if (!target || typeof target !== 'object') return target
   const out = { ...target }
   for (const field of TARGET_FIELDS) if (typeof out[field] === 'string') out[field] = normaliseText(out[field])
@@ -50,5 +56,9 @@ export function normaliseForPolicy(action, context = {}) {
   if (judged.dialog && typeof judged.dialog === 'object') judged.dialog = { ...judged.dialog, message: normaliseText(judged.dialog.message) }
   if (typeof judged.dragText === 'string') judged.dragText = normaliseText(judged.dragText)
   if (judged.paste && typeof judged.paste.text === 'string') judged.paste = { ...judged.paste, text: normaliseText(judged.paste.text) }
+  // The copied-from field lends its name class to the paste (CU-183): its descriptor's name and caption are names too.
+  if (judged.paste && judged.paste.source !== undefined && judged.paste.source !== null) {
+    judged.paste = { ...judged.paste, source: Array.isArray(judged.paste.source) ? judged.paste.source.map(normaliseTarget) : normaliseTarget(judged.paste.source) }
+  }
   return { action: judgedAction, context: judged }
 }

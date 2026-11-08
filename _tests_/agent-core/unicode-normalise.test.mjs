@@ -76,3 +76,34 @@ test('CU-266 through the loop: a click on a zero-width "Send" is declined unatte
   assert.deepEqual([action.decision, action.class], ['confirm', 'submit'])
   assert.equal(environment.log.filter((x) => (x.action ?? x)?.type).length, 0)
 })
+
+test('CU-266: a letter-spaced class word closes up (cu-coordinator\'s ruling) - S e n d asks submit; ordinary spaced text stays as it is', () => {
+  assert.equal(judged(desktop.classify(click, { frontmostBundleId: FIXTURE, target: button('S e n d') })), 'submit')
+  assert.equal(judged(desktop.classify(click, { frontmostBundleId: FIXTURE, target: button('Place o r d e r') })), 'purchase')
+  assert.equal(judged(web.classify(click, { url: 'https://fixture.example/', target: { role: 'button', name: `D e ${ZWSP}l e t e` } })), 'delete', 'with a zero-width space between the letters too')
+  assert.equal(normaliseText('A B'), 'A B', 'two letters are no letter-spaced word')
+  assert.equal(normaliseText('1 2 3 4'), '1 2 3 4', 'digit groups are the value rules\' own')
+  assert.equal(normaliseText('Save as PDF'), 'Save as PDF')
+})
+
+test('CU-266: a copy source whose name hides IBAN with a zero-width space still lends its class to the paste', () => {
+  const into = { origin: FIXTURE, role: 'AXTextField', name: 'Notes', editable: true, fingerprint: 'n', defaultButtonRead: true }
+  const source = { role: 'AXTextField', name: `IB${ZWSP}AN`, editable: true, fingerprint: 's' }
+  const paste = { type: 'keypress', keys: ['META', 'V'] }
+  const verdict = desktop.classify(paste, { frontmostBundleId: FIXTURE, target: into, paste: { fromOwner: false, source } })
+  assert.equal(judged(verdict), 'sensitive_data', JSON.stringify({ decision: verdict.decision, rule: verdict.rule }))
+  const plain = desktop.classify(paste, { frontmostBundleId: FIXTURE, target: into, paste: { fromOwner: false, source: { ...source, name: 'Nickname' } } })
+  assert.equal(judged(plain), 'allow', 'the same paste from a plain field is allowed')
+})
+
+test('CU-266 through the loop: a menu item named Paste with a soft hyphen and no key equivalent is still the loop\'s menu paste - no own copy, asked', async () => {
+  const control = createRunControl()
+  const environment = createFakeEnvironment({ kind: 'desktop', control })
+  environment.inspectPoint = async () => ({ origin: FIXTURE, role: 'AXMenuItem', name: `Pa${SHY}ste`, fingerprint: 'm', defaultButtonRead: true })
+  const model = createScriptedAdapter({ frame: { width: 1440, height: 900 }, turns: [{ actions: [click] }, { final: 'done' }] })
+  const result = await runTask({ task: 'tidy up', environment, model, control, runsDirectory: join(tmp, 'runs'), build: { commit: 'test', dirty: false }, apps: [FIXTURE], appApprovals: store })
+  const action = readRun(result.trajectoryDir).events.find((e) => e.kind === 'action')
+  assert.equal(action.pasteboard?.kind, 'paste', 'the loop built a paste context')
+  assert.deepEqual([action.decision, action.class], ['confirm', 'sensitive_data'])
+  assert.equal(environment.log.filter((x) => (x.action ?? x)?.type).length, 0)
+})
