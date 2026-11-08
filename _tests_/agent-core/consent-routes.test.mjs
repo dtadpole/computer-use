@@ -658,6 +658,7 @@ const SYSTEM_ROWS = [
   // selected install.command is not judged. 'selection' is the proposed context field (the fix may rename it).
   ['menu-open-launchable-selection', 'click', 'openItem', 'launch_code', 'CU-252 (File > Open with a .command selected)', 'no live row yet', 'todo CU-252', { selection: [{ role: 'AXRow', name: 'install.command' }] }],
   ['menu-open-text-selection', 'click', 'openItem', 'allow', 'CU-252 negative (a text file opens in its editor)', 'no live row yet', 'open CU-252', { selection: [{ role: 'AXRow', name: 'notes.txt' }] }],
+  ['menu-open-package-selection', 'click', 'openItem', 'launch_code', "CU-252 (#70 reports an app bundle as kind folder; the name decides)", 'no live row yet', 'todo CU-252', { selection: [{ name: 'Helper.app', kind: 'folder' }] }],
 ]
 // An expected 'not:<v>' holds for any verdict but <v> - for a gap whose fix (refuse or ask) is not decided yet.
 const meets = (got, expected) => (expected.startsWith('not:') ? got !== expected.slice(4) : got === expected)
