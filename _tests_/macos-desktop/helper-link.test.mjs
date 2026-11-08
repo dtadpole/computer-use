@@ -36,6 +36,9 @@ test('requests and fields outside the protocol are refused by name before anythi
   assert.throws(() => checkRequest('screenshot', {}), (e) => code('invalid_argument')(e) && /'screenshot'/.test(e.message))
   assert.throws(() => checkRequest('capture', { quality: 1 }), (e) => code('invalid_argument')(e) && e.details.field === 'quality')
   assert.doesNotThrow(() => checkRequest('hitTest', { xPt: 1, yPt: 2 }))
+  // CU-236: menuKey carries the chord's planned keyDown and nothing else.
+  assert.deepEqual([...CORE_REQUEST_FIELDS.menuKey], ['keyCode', 'flags'])
+  assert.throws(() => checkRequest('menuKey', { key: 'D', modifiers: 1 }), (e) => code('invalid_argument')(e) && e.details.field === 'key')
   // The design's test seams are protocol too, kept in one table apart from the requests a run uses.
   assert.deepEqual(REQUEST_FIELDS.capture, ['display', 'maxSize', 'region', 'simulateScale'])
   assert.deepEqual(REQUEST_FIELDS.simulateLocalInput, ['kind', 'via'])
