@@ -6,7 +6,7 @@ import { validateBatch } from './actions.mjs'
 import { unattendedController } from './consent.mjs'
 import { createRunControl } from './control.mjs'
 import { inspectPageText } from './inspect.mjs'
-import { createAppPolicy, panelDestination, panelKind, protectedPath } from './app-policy.mjs'
+import { createAppPolicy, opensUnreadSelection as opensSelection, panelDestination, panelKind, protectedPath } from './app-policy.mjs'
 import { normaliseText } from './normalise.mjs'
 import { createPanelFolder } from './panel-folder.mjs'
 import { createExclusions } from './exclusions.mjs'
@@ -17,7 +17,7 @@ import { MODIFIER_KEYS, normalizeKey } from './keys.mjs'
 import { composePresses, expandResults } from './press.mjs'
 import { joinSplitResults, splitTypesAtTabs } from './type-split.mjs'
 import { answerLinePattern } from './answer-line.mjs'
-import { RETRY, transientCapture, transientFront, transientInput } from './retry.mjs'
+import { RETRY, transientCapture, transientFront, transientGrant, transientInput } from './retry.mjs'
 
 /**
  * The agent loop (design: agent-loop.md, run-outcomes.md). Observe, ask the model, validate the whole batch, settle
@@ -173,6 +173,22 @@ export const NO_APP_WINDOW_NOTE = 'No window of an approved app is on screen, so
 
 // Actions that send no input to the screen: they leave a panel's Go to Folder state as it is (CU-139).
 const NO_INPUT_ACTIONS = new Set(['wait', 'screenshot', 'zoom', 'cursor_position'])
+
+/**
+ * CU-252 (CU-259's reply): the selection an open acts on, as app-policy judges it - at most 32 items of a bare name
+ * (no '/' but a bundle's trailing one, at most 255 characters) and a kind (folder, file, unknown); { none } when nothing
+ * is selected; anything else, or a failed read, is { unreadable }, which asks.
+ */
+function selectedItemsOf(reply) {
+  if (reply && reply.none === true) return { none: true }
+  if (!reply || !Array.isArray(reply.items)) return { unreadable: true }
+  const items = reply.items.slice(0, 32).map((one) => {
+    const name = typeof one?.name === 'string' ? one.name.trim() : ''
+    const bare = name.length > 0 && name.length <= 255 && !name.replace(/\/$/, '').includes('/') ? name : ''
+    return { name: bare, kind: ['folder', 'file'].includes(one?.kind) ? one.kind : 'unknown' }
+  })
+  return { items, ...(reply.truncated === true || reply.items.length > 32 ? { truncated: true } : {}) }
+}
 
 export async function runTask(options) {
   const {
@@ -391,11 +407,19 @@ export async function runTask(options) {
     interruptsAtObservation = interrupts
     // CU-56: a capture dropped for a transient out-of-scope window is retried a bounded number of times.
     const captureRetries = []
+    let grantRetried = false
     const capture = async () => {
       for (let attempt = 0; ; attempt += 1) {
         try {
           return await environment.screenshot()
         } catch (error) {
+          // CU-240: a grant re-read false after reading true earlier in the run gets one retry of its own.
+          if (desktop && transientGrant(error) && !grantRetried) {
+            grantRetried = true
+            captureRetries.push({ reason: 'grant_reread', grant: String(error.details.grant ?? ''), delayMs: RETRY.captureDelaysMs[0] })
+            await pause(RETRY.captureDelaysMs[0])
+            continue
+          }
           if (!desktop || !transientCapture(error) || attempt >= RETRY.captureDelaysMs.length) throw error
           captureRetries.push({ reason: error.details.reason, ...(typeof error.details.bundleId === 'string' ? { bundleId: error.details.bundleId } : {}), delayMs: RETRY.captureDelaysMs[attempt] })
           await pause(RETRY.captureDelaysMs[attempt])
@@ -780,10 +804,14 @@ export async function runTask(options) {
       ? countOf({ pasteboardChangeCount: await Promise.resolve(environment.pasteboardChangeCount()).catch(() => null) })
       : countOf(target)
     const countRead = sideRead ? { countRead: 'no-focus' } : {}
+    // CU-271 (cu-developer-one's follow-up): a page's own menu item named Paste pastes into the focused element - a web
+    // terminal there runs it, so the focus is read for that one fact (the rest of a browser paste is judged as before).
+    const intoTerminal = !desktop && isPaste(action, target) && menuPaste(action, target)
+      && (await environment.focusedElement().catch(() => null))?.terminal === true
     const paste = isPaste(action, target)
       ? (desktop
           ? { ...(ownCopy(count) ? { fromOwner: false, ...(pastedSource(count) ? { source: pastedSource(count) } : {}) } : { fromOwner: true }), ...(viaMenu ? { destination } : {}) }
-          : { text: String(environment.clipboard?.get?.() ?? ''), ...(runCopySource ? { source: runCopySource } : {}) })
+          : { text: String(environment.clipboard?.get?.() ?? ''), ...(runCopySource ? { source: runCopySource } : {}), ...(intoTerminal ? { intoTerminal: true } : {}) })
       : null
     // What a copy or paste was judged on goes on its event - numbers and the verdict, never content (cu-verifier). A
     // copy records the count it was judged on (recordCopy below).
@@ -800,8 +828,14 @@ export async function runTask(options) {
     // An unreadable bar asks for any chord but the editing ones, which the keys already judge (named over-ask: a Control
     // editing chord such as Control-K, unlisted, asks when the bar cannot be read).
     const boundMenuItem = read?.unreadable === true && editingChord(action) ? undefined : read
+    // CU-252 (CU-259's selectedItems): an open that acts on the selection - in Finder, an Open menu item, or Command-O or
+    // Command-Down with no named file focused - reads what is selected: names and kinds only, never a path or contents.
+    // No read (an older driver, fakes) leaves it undefined, which app-policy asks as unread.
+    const selection = desktop && opensSelection(action, target, app?.frontmostBundleId) && typeof environment.selectedItems === 'function'
+      ? selectedItemsOf(await Promise.resolve(environment.selectedItems()).catch(() => null))
+      : undefined
     const typed = typedFor(action, target, !desktop && paste ? paste.text : null, state)
-    return { url: state.url, target: remembered(target), ...(typed ? { typed } : {}), ...(boundMenuItem ? { boundMenuItem } : {}), ...(dropTarget ? { dropTarget: remembered(dropTarget) } : {}), ...(dragText !== undefined ? { dragText } : {}), ...(afterClose ? { afterClose: true } : {}), ...(resubmits ? { resubmits: historyMove } : {}), ...(historyJudged ? { historyJudged } : {}), ...(paste ? { paste } : {}), ...(pasteboardJudged ? { pasteboardJudged } : {}), ...(state.interstitial === true ? { interstitial: true } : {}), dialog: state.dialog ?? null, task: task.text, ...app }
+    return { url: state.url, target: remembered(target), ...(typed ? { typed } : {}), ...(boundMenuItem ? { boundMenuItem } : {}), ...(selection ? { selection } : {}), ...(dropTarget ? { dropTarget: remembered(dropTarget) } : {}), ...(dragText !== undefined ? { dragText } : {}), ...(afterClose ? { afterClose: true } : {}), ...(resubmits ? { resubmits: historyMove } : {}), ...(historyJudged ? { historyJudged } : {}), ...(paste ? { paste } : {}), ...(pasteboardJudged ? { pasteboardJudged } : {}), ...(state.interstitial === true ? { interstitial: true } : {}), dialog: state.dialog ?? null, task: task.text, ...app }
   }
 
   let consecutiveBlocks = 0

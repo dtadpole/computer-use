@@ -84,6 +84,10 @@ struct Refusal: Error {
   var point: CGPoint? = nil
   /// CU-199: which check refused an out_of_scope - 'front', 'window', 'element', 'covered', 'corner' or 'icon'.
   var check: String? = nil
+  /// CU-240: a not_granted for a grant that read true earlier in this run, after `rechecks` re-reads - a grant lost
+  /// mid-run (or a transient TCC false), not one never given.
+  var wasGranted: Bool? = nil
+  var rechecks: Int? = nil
 
   static func invalid(_ message: String, field: String? = nil) -> Refusal {
     Refusal(code: "invalid_argument", message: message, field: field)
@@ -97,6 +101,8 @@ struct Refusal: Error {
     if let bundleId { object["bundleId"] = .string(bundleId) }
     if let point { object["point"] = .point(point) }
     if let check { object["check"] = .string(check) }
+    if let wasGranted { object["wasGranted"] = .bool(wasGranted) }
+    if let rechecks { object["rechecks"] = .int(rechecks) }
     return .object(object)
   }
 }
