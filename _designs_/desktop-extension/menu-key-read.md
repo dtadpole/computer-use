@@ -1,9 +1,9 @@
 ---
 title: The helper's menu-key read
 created: 2026-11-08T11:55:00Z
-modified: 2026-11-08T12:32:00Z
+modified: 2026-11-08T12:39:00Z
 level: L1
-version: 0.3.0
+version: 0.3.1
 description: How CUHelper answers menuKey - which menu items of the frontmost approved app a key chord fires - from what AppKit serves Accessibility, and what that read cannot see.
 status: unverified
 grounded_in:
@@ -38,4 +38,5 @@ the flag too. With no distinguishing attribute, the Services item counts by AppK
 marker AppKit puts in its submenu ('Services Settings…', 'No Services Apply'), in the current language or English.
 
 **Not seen:** shortcuts in lazily filled submenus below the top level - Services shows Accessibility only 'No Services
-Apply' while its shortcuts stay hidden - and a later duplicate on Command alone behind an enabled first match.
+Apply' while its shortcuts stay hidden - a later duplicate on Command alone behind an enabled first match, and, until measured live, a service a context
+menu lists inline (when few apply) with no Services submenu above it - judged by the default titles alone.
