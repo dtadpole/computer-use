@@ -122,6 +122,8 @@ test('CU-252 rule 3 through the loop: Finder\'s selectedItems is read for Comman
     assert.equal(older.event.selectionRead, undefined, 'no read, no shape')
     const unread = await run(async () => null)
     assert.deepEqual(unread.event.selectionRead, { unreadable: true })
+    const flat = await run(async () => ({ bundleId: FINDER, notCollection: true }))
+    assert.deepEqual([flat.event.decision, flat.event.selectionRead], ['confirm', { notCollection: true }], 'judged as before, recorded apart')
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }

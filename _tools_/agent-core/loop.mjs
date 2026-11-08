@@ -181,6 +181,9 @@ const NO_INPUT_ACTIONS = new Set(['wait', 'screenshot', 'zoom', 'cursor_position
  */
 function selectedItemsOf(reply) {
   if (reply && reply.none === true) return { none: true }
+  // cu-developer-two on #141: a focus that is no collection is its own answer, kept apart from a failed read - judged
+  // the same (no items), recorded apart.
+  if (reply && reply.notCollection === true) return { notCollection: true }
   if (!reply || !Array.isArray(reply.items)) return { unreadable: true }
   const items = reply.items.slice(0, 32).map((one) => {
     const name = typeof one?.name === 'string' ? one.name.trim() : ''
@@ -1114,7 +1117,7 @@ export async function runTask(options) {
       // The app a desktop decision names (bundle id only, trajectory privacy) makes refusals and hand-offs diagnosable.
       // CU-252 (cu-verifier's ask): a judged open records the selection read's shape - counts by kind, or none / unreadable -
       // never a name, so a stand-in miss is diagnosable from the record.
-      const selectionRead = context.selection ? (context.selection.none ? { none: true } : context.selection.unreadable ? { unreadable: true }
+      const selectionRead = context.selection ? (context.selection.none ? { none: true } : context.selection.notCollection ? { notCollection: true } : !Array.isArray(context.selection.items) ? { unreadable: true }
         : { items: context.selection.items.length, kinds: context.selection.items.reduce((acc, item) => ({ ...acc, [item.kind]: (acc[item.kind] ?? 0) + 1 }), {}), ...(context.selection.truncated ? { truncated: true } : {}) }) : null
       const base = { index, action: record, ...(composedOf[index] ? { composedFrom: composedOf[index] } : {}), site: environment.site, decision: decision.decision, class: decision.class, rule: decision.rule, ...(decision.app ? { app: decision.app } : {}), ...(selectionRead ? { selectionRead } : {}), ...(target ? { target } : {}), ...(blind ? { targetUnnamed: true } : {}), ...(dropBlind ? { dropTargetUnnamed: true } : {}), ...(defaultBlind ? { defaultButtonUnnamed: true } : {}), ...(context.historyJudged ? { history: context.historyJudged } : {}), ...(context.pasteboardJudged ? { pasteboard: context.pasteboardJudged } : {}), ...(context.boundMenuItem ? { boundMenuItem: context.boundMenuItem } : {}), ...(context.target && (context.target.textEntered === true || context.target.textEntered === false || context.target.textEntered === null) ? { textEntered: context.target.textEntered } : {}) }
       if (decision.decision !== 'block') consecutiveBlocks = 0
