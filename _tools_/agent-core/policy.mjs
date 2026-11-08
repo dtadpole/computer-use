@@ -21,7 +21,12 @@ const WORDS = Object.freeze({
     // CU-146 (the CU-145 audit): destructive labels the list missed.
     'move to trash', 'move to bin', 'empty bin', 'clear history', 'clear all', 'reset all', 'reset settings', 'reset to defaults', 'uninstall', 'wipe', 'purge',
     'deactivate', 'close account', 'forget', 'factory reset'],
-  permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke'],
+  permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke',
+    // CU-258 (cu-researcher): standing choices an app keeps after the run, as whole phrases. A bare 'Allow' stays free so
+    // cookie banners do not ask (named limit).
+    'always allow', 'always trust', 'always open', 'allow access', "don't ask again", 'don\u2019t ask again', 'do not ask again',
+    'remember my choice', 'remember this choice', 'remember my decision', 'never for this website', 'never for this site',
+    'set as default', 'make default'],
   submit: ['send', 'post', 'submit', 'publish', 'reply', 'sign up', 'register'],
 })
 const PRECEDENCE = ['purchase', 'delete', 'permission', 'page_dialog', 'credential', 'sensitive_data', 'submit', 'new_site', 'install']
@@ -333,7 +338,9 @@ export function looksSensitive(text) {
     if (tfnValid(m[1] + m[2] + m[3])) return 'tax_id'
   }
   if (/(^|[^\d-])\d{2}-\d{7}([^\d-]|$)/.test(value)) return 'tax_id'
-  if (/[\w.+-]+@[\w-]+\.[\w.-]+/.test(value)) return 'email'
+  // CU-272 (cu-researcher): bounded (RFC 5321's 64-character local part, 63-character labels) and only tried when an '@'
+  // is present - the unbounded form was quadratic on a long word run (an 80k paste took seconds in one classify).
+  if (value.includes('@') && /[\w.+-]{1,64}@[\w-]{1,63}\.[\w.-]{1,190}/.test(value)) return 'email'
   if (/\+\d(?:[\s().-]{0,2}\d){8,}/.test(value) || /(^|[^\d])\(?\d{3}\)?[\s.-]?\d{3}[\s.-]\d{4}([^\d]|$)/.test(value)) return 'phone'
   if (nationalPhone(value)) return 'phone'
   if (/\b(?:sk|pk|ghp|xox[bp]|AKIA)[-_A-Za-z0-9]{16,}\b/.test(value) || /\b[A-Fa-f0-9]{40,}\b/.test(value)) return 'key'
@@ -586,12 +593,27 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const inserted = insertedClass(String(action.text ?? ''), target, context)
       if (inserted) classes.push(inserted)
     }
+    // CU-267: a value typed in pieces is judged whole - what this run typed into the field before (the loop's buffer) with
+    // what this type, printable keypress or browser paste (the run clipboard's text) adds; the action that completes a value
+    // asks. One that only extends a value already judged whole does not ask again.
+    if ((action.type === 'type' || action.type === 'keypress') && context.typed && typeof context.typed.before === 'string' && typeof context.typed.next === 'string' && context.typed.next !== '') {
+      const valueIn = (text) => text !== '' && Boolean(looksSensitive(withoutTaskValues(text, context.task)))
+      if (!valueIn(context.typed.before) && valueIn(context.typed.before + context.typed.next)) classes.push('sensitive_data')
+    }
+    // CU-268: in the browser a control whose name has one word mixing scripts asks permission - never pre-approved, so a
+    // pre-approved submit cannot wave a disguised Delete or Pay through (cu-developer-one's ruling) - where no rule found a
+    // class: a folded look-alike already asks by its own ('Sеnd' asks submit). The desktop asks unknown_target in app-policy.
+    const mixedScript = !url.startsWith('desktop:') && classes.length === 0 && (POINTER.has(action.type) || pressesEnter || keyboard.activates) && target?.mixedScriptName === true
+    if (mixedScript) classes.push('permission')
     const unique = [...new Set(classes)].sort((a, b) => PRECEDENCE.indexOf(a) - PRECEDENCE.indexOf(b))
     const needed = unique.filter((cls) => !preApproved(cls, url) || NEVER_PRE_APPROVED.includes(cls))
     if (needed.length === 0) {
       return { decision: 'allow', class: unique[0] ?? null, rule: unique.length > 0 ? 'pre_approved' : 'default', reason: '' }
     }
     const cls = needed[0]
+    if (mixedScript && cls === 'permission') {
+      return { decision: 'confirm', class: cls, classes: needed, rule: 'target:mixed_script', reason: `activate "${name}", whose name mixes scripts in one word (a disguised control?)` }
+    }
     // `class` is the one that ranks first; `classes` lists every class that applied, for the evaluator's records.
     return { decision: 'confirm', class: cls, classes: needed, rule: `class:${cls}`, reason: describe(cls, action, target, url, context?.frontmostBundleId) }
   }

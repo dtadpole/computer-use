@@ -392,6 +392,18 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     if (activates(action) && target && target.origin && !target.role && !target.name && target.opaque !== true) {
       return { decision: 'confirm', class: 'unknown_target', classes: ['unknown_target'], rule: 'target:undescribed', reason: `act on an element ${app} does not describe (it may belong to a system panel)`, app, askEachTime: true }
     }
+    // CU-268: a name with one word mixing scripts may disguise what the control does (cu-developer-one's ruling): an
+    // activation asks each time, never pre-approved - so does a chord whose bound menu item is named so. Only where the
+    // rules would allow it: a folded look-alike already asks by its class ('Dеlete' asks delete).
+    if (verdict.decision === 'allow') {
+      const bound = context.boundMenuItem && !context.boundMenuItem.unreadable && !context.boundMenuItem.none
+        ? (Array.isArray(context.boundMenuItem.items) ? context.boundMenuItem.items : [context.boundMenuItem]) : []
+      const viaKey = (action.type === 'keypress' || action.type === 'hold_key') && bound.find((one) => one?.mixedScriptName === true)
+      if ((activates(action) && target?.mixedScriptName === true) || viaKey) {
+        const shown = viaKey ? viaKey.name : target.name
+        return { decision: 'confirm', class: 'unknown_target', classes: ['unknown_target'], rule: viaKey ? 'menu:mixed_script' : 'target:mixed_script', reason: `activate "${shown}", whose name mixes scripts in one word (a disguised control?)`, app, askEachTime: true }
+      }
+    }
     // Where the accessibility tree says nothing, a click or Return may be anything (R92).
     if (activates(action) && target?.opaque === true && !preApprovedIn('unknown_target', app)) {
       return { decision: 'confirm', class: 'unknown_target', classes: ['unknown_target'], rule: 'target:opaque', reason: `act on an element ${app} does not describe`, app }
