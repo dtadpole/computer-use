@@ -401,3 +401,8 @@ decisions:
     topic: records-only-landing
     decision: 'A pull request whose diff changes only Markdown or YAML records (no .mjs, .swift, .sh, .json or test file) lands after phase 1 and the public-hygiene gate, without the desktop phase 2; the integrator keeps such a PR on the full gate when a record it changes feeds a desktop verifier. Consent-row blockers land first, then records-only batches, then the rest.'
     rationale: 'With about 25 reviewed PRs queued and phase 2 holding the desktop-run lock for each, records that cannot reach a desktop verifier were costing hours of lock time and delaying the fixes the consent row waits on.'
+  - id: D-077
+    date: 2026-11-08
+    topic: conventions-exceptions
+    decision: 'On the owner''s request (through the [hd] Coordinator) the team moves to the 8 Nov reflection conventions, with these declared exceptions: issues stay in Linear team CU instead of a GitHub Project (D-039); the roster, the member-review log, the seat files (bootstrap, duties, launcher header) and the input log stay in the owner''s private records because this repository is public and session ids and home paths must not appear in it; this repository logs its own actions in _logs_/repo-actions/action-log.jsonl without session ids; seat worktrees stay at the paths the installed helper admits until its allowlist covers the convention paths and the main checkout has moved.'
+    rationale: 'A descendant repository may narrow the conventions but never contradict them silently; each deviation is written here, in the private roster and in the setup verification.'
