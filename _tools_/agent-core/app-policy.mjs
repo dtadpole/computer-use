@@ -210,11 +210,15 @@ const APP_STORE = 'com.apple.AppStore'
 const STORE_INSTALL = /^(get|install|update|update all|download|redownload|reinstall)\b/i
 // cu-verifier on #58: a button titled with a price ('$4.99', '¥30', '4,99 €', 'Price, 4.99 dollars') starts a purchase.
 const STORE_PRICE = /^(price\b|[$€£¥₩₹]\s?\d|\d+(?:[.,]\d+)?\s?[$€£¥₩₹])/i
+// CU-280 (cu-researcher; cu-coordinator: Medium): a free trial starts a renewing subscription, and a price may be written
+// with its currency code ('USD 4.99', '4,99 EUR') - both are purchases.
+const STORE_TRIAL = /^(try (it )?free|start (a |your )?free trial|free trial|try free for)\b/i
+const STORE_CODE_PRICE = /^((usd|eur|gbp|jpy|cny|rmb|krw|inr|cad|aud|chf|sek|nok|dkk|hkd|sgd|nzd|brl|mxn)\s?\d|\d+(?:[.,]\d+)?\s?(usd|eur|gbp|jpy|cny|rmb|krw|inr|cad|aud|chf|sek|nok|dkk|hkd|sgd|nzd|brl|mxn)\b)/i
 /** 'install' or 'purchase' for an App Store button that installs or buys, pressed by a click, Space or Return; else null. */
 function storeInstall(action, target, app) {
   if (String(app ?? '') !== APP_STORE || !/^(ax)?button$/i.test(String(target?.role ?? ''))) return null
   const name = String(target?.name ?? '').trim()
-  const cls = STORE_PRICE.test(name) ? 'purchase' : STORE_INSTALL.test(name) ? 'install' : null
+  const cls = STORE_PRICE.test(name) || STORE_CODE_PRICE.test(name) || STORE_TRIAL.test(name) ? 'purchase' : STORE_INSTALL.test(name) ? 'install' : null
   if (cls === null) return null
   if (CLICKS.has(action.type)) return cls
   const keys = chord(action)
