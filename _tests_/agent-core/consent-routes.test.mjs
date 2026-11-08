@@ -843,12 +843,12 @@ const SYSTEM_ROWS = [
   ['menu-open-unreadable-selection', 'click', 'openItem', 'not:allow', 'CU-252 (an unreadable selection fails closed)', 'no live row yet', 'open CU-252', { app: FINDER_ID, selection: { unreadable: true } }],
   // CU-252 (cu-coordinator 22:13Z): in ANY app an open of the selection whose read is unreadable asks launch_code -
   // a Path Finder- or ForkLift-style list that names nothing; nothing selected and a named document stay free.
-  ['any-app-open-unreadable-cmd-o', 'cmdO', 'fixtureFileList', 'launch_code', 'CU-252 (Command-O on a list, read unreadable)', 'no live row yet', 'todo CU-252', { app: FIXTURE_ID, selection: { unreadable: true } }],
-  ['any-app-open-unreadable-cmd-down', 'cmdDown', 'fixtureOutline', 'launch_code', 'CU-252 (Command-Down on an outline, read unreadable)', 'no live row yet', 'todo CU-252', { app: FIXTURE_ID, selection: { unreadable: true } }],
-  ['any-app-open-unreadable-menu', 'click', 'openItem', 'launch_code', 'CU-252 (File > Open, read unreadable)', 'no live row yet', 'todo CU-252', { app: FIXTURE_ID, selection: { unreadable: true } }],
+  ['any-app-open-unreadable-cmd-o', 'cmdO', 'fixtureFileList', 'launch_code', 'CU-252 (Command-O on a list, read unreadable)', 'no live row yet', 'open CU-252', { app: FIXTURE_ID, selection: { unreadable: true } }],
+  ['any-app-open-unreadable-cmd-down', 'cmdDown', 'fixtureOutline', 'launch_code', 'CU-252 (Command-Down on an outline, read unreadable)', 'no live row yet', 'open CU-252', { app: FIXTURE_ID, selection: { unreadable: true } }],
+  ['any-app-open-unreadable-menu', 'click', 'openItem', 'launch_code', 'CU-252 (File > Open, read unreadable)', 'no live row yet', 'open CU-252', { app: FIXTURE_ID, selection: { unreadable: true } }],
   // The loop keeps rows the helper could not name as items with an empty name (loop.mjs selectedItemsOf), not as
   // { unreadable } - the stand-in's rows read as empty AXStaticText; the ruling's 'could not name the rows' asks.
-  ['any-app-open-unnamed-items', 'cmdO', 'fixtureFileList', 'launch_code', 'CU-252 (rows the helper could not name)', 'no live row yet', 'todo CU-252', { app: FIXTURE_ID, selection: { items: [{ name: '', kind: 'unknown' }, { name: '', kind: 'unknown' }] } }],
+  ['any-app-open-unnamed-items', 'cmdO', 'fixtureFileList', 'launch_code', 'CU-252 (rows the helper could not name)', 'no live row yet', 'open CU-252', { app: FIXTURE_ID, selection: { items: [{ name: '', kind: 'unknown' }, { name: '', kind: 'unknown' }] } }],
   ['any-app-open-none', 'cmdO', 'fixtureFileList', 'allow', 'CU-252 negative (nothing selected)', 'no live row yet', 'open CU-252', { app: FIXTURE_ID, selection: { none: true } }],
   ['any-app-open-named-document', 'cmdO', 'fixtureFileList', 'allow', 'CU-252 negative (a named document, kind unknown)', 'no live row yet', 'open CU-252', { app: FIXTURE_ID, selection: { items: [{ name: 'notes.txt', kind: 'unknown' }] } }],
 ]
