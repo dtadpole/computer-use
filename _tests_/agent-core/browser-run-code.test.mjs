@@ -88,3 +88,14 @@ test('CU-271: typing code into a cell and a plain Return (a new line) stay allow
   const policy = createPolicy({ sitePolicy: () => 'allow', preApprovals: [{ class: 'launch_code', origin: 'https://nb.example' }] })
   assert.equal(policy.classify({ type: 'keypress', keys: ['SHIFT', 'ENTER'] }, { url: START, target: cell }).decision, 'confirm')
 })
+
+test('CU-271: a page menu\'s Paste with a web terminal focused is refused; the same Paste into a cell is judged as before; launch_code is a known class', async () => {
+  const pasteItem = { origin: 'https://nb.example', role: 'menuitem', tag: 'div', name: 'Paste', editable: false, fingerprint: 'm-paste' }
+  const into = await run([click], { focused: terminal, hit: pasteItem })
+  assert.equal(verdictOf(into.events[0]), 'block:terminal_view')
+  assert.equal(into.posted, 0)
+  const cellPaste = await run([click], { focused: cell, hit: pasteItem })
+  assert.notEqual(verdictOf(cellPaste.events[0]), 'block:terminal_view')
+  const { CLASSES } = await import('../../_tools_/agent-core/policy.mjs')
+  assert.ok(CLASSES.includes('launch_code'))
+})

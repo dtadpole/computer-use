@@ -745,10 +745,14 @@ export async function runTask(options) {
     // read beside it (a descriptor, never a value; null when it could not be read).
     const viaMenu = desktop && isPaste(action, target) && (menuPaste(action, target) || buttonPaste(action, target))
     const destination = viaMenu ? sourceOf(remembered(await environment.focusedElement().catch(() => null))) : undefined
+    // CU-271 (cu-developer-one's follow-up): a page's own menu item named Paste pastes into the focused element - a web
+    // terminal there runs it, so the focus is read for that one fact (the rest of a browser paste is judged as before).
+    const intoTerminal = !desktop && isPaste(action, target) && menuPaste(action, target)
+      && (await environment.focusedElement().catch(() => null))?.terminal === true
     const paste = isPaste(action, target)
       ? (desktop
           ? { ...(ownCopy(target) ? { fromOwner: false, ...(pastedSource(target) ? { source: pastedSource(target) } : {}) } : { fromOwner: true }), ...(viaMenu ? { destination } : {}) }
-          : { text: String(environment.clipboard?.get?.() ?? ''), ...(runCopySource ? { source: runCopySource } : {}) })
+          : { text: String(environment.clipboard?.get?.() ?? ''), ...(runCopySource ? { source: runCopySource } : {}), ...(intoTerminal ? { intoTerminal: true } : {}) })
       : null
     // What a copy or paste was judged on goes on its event - numbers and the verdict, never content (cu-verifier).
     const pasteboardJudged = paste
