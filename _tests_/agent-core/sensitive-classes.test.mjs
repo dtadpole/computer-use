@@ -178,8 +178,8 @@ export const ROWS = [
   ['name-Recovery key', 'auth', 'name', 'abc123xyz', 'Recovery key', 'sensitive_data', null, 'cu-verifier, main 900e251, CU Fixture named controls: Recovery key declined sensitive_data, entry empty (20261108T180703Z-00358c)'],
   ['name-Backup codes', 'auth', 'name', 'abc123xyz', 'Backup codes', 'sensitive_data', null, 'cu-verifier, main 900e251, CU Fixture named controls: Backup codes declined sensitive_data, entry empty (20261108T180706Z-9983b6)'],
   // CU-288: a one-time code named by its length, as sign-in pages write it ('Enter the 6-digit code we sent').
-  ['name-6-digit code', 'auth', 'name', '482913', '6-digit code', 'sensitive_data', 'todo CU-288', 'no live row yet'],
-  ['name-Enter the six-digit code', 'auth', 'name', '482913', 'Enter the six-digit code', 'sensitive_data', 'todo CU-288', 'no live row yet'],
+  ['name-6-digit code', 'auth', 'name', '482913', '6-digit code', 'sensitive_data', 'open CU-288', 'no live row yet'],
+  ['name-Enter the six-digit code', 'auth', 'name', '482913', 'Enter the six-digit code', 'sensitive_data', 'open CU-288', 'no live row yet'],
   ['name-Seed phrase', 'auth', 'name', 'abc123xyz', 'Seed phrase', 'sensitive_data', null, "main c69f5f665: sensitive_data, declined unattended, server got nothing (20261107T172759Z-fa6b7a, cu-verifier)"],
   ['name-Mnemonic', 'auth', 'name', 'abc123xyz', 'Mnemonic', 'sensitive_data', null, "main c69f5f665: sensitive_data, declined unattended, server got nothing (20261107T172803Z-a360a4, cu-verifier)"],
   ['value-private key 0x', 'auth', 'value', PRIVATE_KEY_0X, 'Notes', 'sensitive_data', null, 'desktop CU Fixture long form, Vendor: 20261107T135708Z-1565ac'],
