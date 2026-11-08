@@ -738,6 +738,42 @@ export function servicesMenuOf(value) {
   return !(value === undefined || value === null || value === false)
 }
 
+/**
+ * CU-255: the file an element shows (the helper's `filename`, AXFilename) as launch_code reads it - a bare file name
+ * of 1 to 255 characters with no '/' or control character; null otherwise or when absent (an older helper, a non-file
+ * element). Finder may hide the extension in the element's title (Payload for Payload.app), never in this.
+ */
+export function fileNameOf(value) {
+  if (typeof value !== 'string') return null
+  const name = value.trim()
+  return name.length > 0 && name.length <= 255 && !name.includes('/') && !/[\u0000-\u001f\u007f]/.test(name) ? name : null
+}
+
+/**
+ * CU-255: an element's `url` (AXURL) reduced to what launch_code reads - a file URL's last path component, decoded, a
+ * directory or bundle keeping its trailing '/' (Payload.app/); never the path, which names the owner's folders. Null for
+ * any other scheme, a malformed URL or a leaf fileNameOf refuses.
+ */
+export function fileUrlLeafOf(value) {
+  if (typeof value !== 'string') return null
+  let url
+  try {
+    url = new URL(value)
+  } catch {
+    return null
+  }
+  if (url.protocol !== 'file:') return null
+  const parts = url.pathname.split('/').filter((part) => part !== '')
+  if (parts.length === 0) return null
+  let leaf
+  try {
+    leaf = fileNameOf(decodeURIComponent(parts[parts.length - 1]))
+  } catch {
+    return null
+  }
+  return leaf === null ? null : leaf + (url.pathname.endsWith('/') ? '/' : '')
+}
+
 /** A helper's panel marker: 'save', 'open' or 'unknown' (any other value fails closed to 'unknown'); null when absent. */
 function panelOf(value) {
   if (value === undefined || value === null) return null
@@ -1676,6 +1712,11 @@ class DesktopEnvironment {
       // title, as the helper reads it) - never its value or its own title. A string of at most 80 characters, null when
       // absent (an older helper) or malformed. Context, not identity: outside the fingerprint, and never in run records.
       caption: typeof element.caption === 'string' && element.caption.trim() !== '' ? element.caption.trim().slice(0, 80) : null,
+      // CU-255: the file the element shows and its URL's last component, what launch_code reads besides the name - Finder
+      // may hide an extension in the title (Payload for Payload.app or install.command). Outside the fingerprint, and
+      // never in run records (an event's target keeps origin, role and name); the URL's path never leaves the driver.
+      filename: fileNameOf(element.filename),
+      url: fileUrlLeafOf(element.url),
       fingerprint,
       ...(fieldKey !== null ? { fieldKey } : {}),
     }

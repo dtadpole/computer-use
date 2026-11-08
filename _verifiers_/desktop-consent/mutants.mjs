@@ -15,5 +15,11 @@ export const MUTANTS = Object.freeze([
   { name: 'start-app-unasked', why: 'every start app joins the helper\'s scope without a person\'s answer', mutations: [{ file: '_tools_/agent-core/loop.mjs', find: '      if (appApprovals?.covers?.(bundleId) === true) {', replace: '      if (true) {' }] },
   { name: 'system-shortcut-allowed', why: 'system-wide chords (the app switcher, Spotlight, log out) pass the policy (P9)', mutations: [{ file: POLICY, find: '    const shortcut = systemShortcut(action)', replace: '    const shortcut = null' }] },
   { name: 'clipboard-reblocked', why: 'copy, cut and paste are blocked again in approved apps, against D-031', mutations: [{ file: POLICY, find: '    const shortcut = systemShortcut(action)', replace: "    if (action.type === 'keypress' && (action.keys ?? []).some((k) => String(k).toUpperCase() === 'META') && (action.keys ?? []).some((k) => ['C', 'X', 'V'].includes(String(k).toUpperCase()))) return { decision: 'block', class: null, rule: 'mutant_reblock', reason: 'mutant' }\n    const shortcut = systemShortcut(action)" }] },
+  { name: 'held-chord-unjudged', why: 'a hold_key is judged as itself, not as the keypress it posts, so a held system chord (log out, lock screen) skips the system-shortcut refusal (CU-244)', mutations: [
+    // Three layers judge a hold as its keypress since #42 (CU-244): the loop, app-policy's classify and its chord reader.
+    { file: LOOP, find: "      const judged = action.type === 'hold_key' ? { type: 'keypress', keys: action.keys } : action", replace: '      const judged = action' },
+    { file: POLICY, find: "    const action = held?.type === 'hold_key' ? { type: 'keypress', keys: held.keys } : held", replace: '    const action = held' },
+    { file: POLICY, find: "  if ((action?.type !== 'keypress' && action?.type !== 'hold_key') || !Array.isArray(action.keys)) return new Set()", replace: "  if (action?.type !== 'keypress' || !Array.isArray(action.keys)) return new Set()" },
+  ] },
   { name: 'paste-without-own-copy-allowed', why: 'a desktop paste is taken as the run\'s own copy, so the owner\'s pasteboard is pasted into a field unasked (CU-151)', mutations: [{ file: LOOP, find: "          ? { ...(ownCopy(target) ? { fromOwner: false,", replace: "          ? { ...(true ? { fromOwner: false," }] },
 ])
