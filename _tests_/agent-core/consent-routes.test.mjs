@@ -109,6 +109,7 @@ const T = {
   webDdValue: { role: 'definition', name: 'X1234567', caption: 'Passport' },
   webListItemValue: { role: 'listitem', name: 'ACCT-REF 7731', caption: 'IBAN' },
   readonlyTextViewValue: { role: 'AXTextArea', name: 'ACCT-REF 7731', caption: 'IBAN', editable: false },
+  readonlyTextViewNotes: { role: 'AXTextArea', name: 'Bring the blue folder', caption: 'Notes', editable: false },
   webNotesEntry: { role: 'textbox', name: 'Notes', editable: true },
   notesEntry: { role: 'AXTextField', name: 'Notes', editable: true },
   webOnclickDelete: { tag: 'div', role: 'generic', name: 'Delete' },
@@ -291,7 +292,8 @@ const ROWS = [
   ['web-drag-captioned-notes', 'browser', 'dragAway', 'webCaptionedNotes', 'allow', 'CU-195 negative', "main b438e0ac1, real Chrome, cu-verifier: the Notes-captioned twins dragged onto the unnamed entry were allowed (20261108T012745Z-3d512f, 012848Z-fe99f7)", null, { dropTarget: { role: 'textbox', name: '', editable: true } }],
   ['web-drag-dd-value', 'browser', 'dragAway', 'webDdValue', 'sensitive_data', 'CU-195 (role definition)', "main b438e0ac1, real Chrome, cu-verifier: a value directly in <dd> under 'Passport' dragged onto the unnamed entry asked sensitive_data, nothing dropped (20261108T012741Z-5a5f14; before #522 allowed, 004357Z-30bbf7)", null, { dropTarget: { role: 'textbox', name: '', editable: true } }],
   ['web-drag-listitem-value', 'browser', 'dragAway', 'webListItemValue', 'sensitive_data', 'CU-195 (role listitem)', "main b438e0ac1, real Chrome, cu-verifier: a labelled list item's value dragged onto the unnamed entry asked sensitive_data, nothing dropped (20261108T012853Z-098e21)", null, { dropTarget: { role: 'textbox', name: '', editable: true } }],
-  ['drag-readonly-textview-value', 'desktop', 'dragAway', 'readonlyTextViewValue', 'sensitive_data', 'CU-195 (a read-only AXTextArea)', 'no live row yet', 'open CU-209', { dropTarget: { role: 'AXTextField', name: '', editable: true } }],
+  ['drag-readonly-textview-value', 'desktop', 'dragAway', 'readonlyTextViewValue', 'sensitive_data', 'CU-195 (a read-only AXTextArea)', "cu-verifier, helper 0.2.51, CU Fixture consent-cells readonlyText: a word selected in the IBAN-captioned read-only text view, dragged with a 600 ms dwell onto the unnamed entry - declined sensitive_data, nothing arrived, the view intact (20261108T092702Z-8a0307, again 092705Z-95bd3d) - CU-209", null, { dropTarget: { role: 'AXTextField', name: '', editable: true } }],
+  ['drag-readonly-textview-notes', 'desktop', 'dragAway', 'readonlyTextViewNotes', 'allow', 'CU-195 negative (a read-only AXTextArea)', "cu-verifier, helper 0.2.51, CU Fixture consent-cells readonlyText: the Notes-captioned read-only text view dragged onto the unnamed entry was allowed (20261108T092707Z-7eefb3; the word did not arrive, so the run pins the verdict only)", null, { dropTarget: { role: 'AXTextField', name: '', editable: true } }],
   // CU-198 (red team of #485): once a browser drag of selected text delivers it, the dragged text meets no value rule;
   // context.dragText: a string, { unknown: true } on a failed read, null when nothing is selected under the press (the drag selects), undefined with no read (the desktop) - #490.
   ['web-drag-card-paragraph', 'browser', 'dragAway', 'webParagraphText', 'sensitive_data', 'CU-198', "main 9a7821b47, real Chrome, #514's drag page: the card number dragged onto the unnamed entry asked sensitive_data, nothing dropped (20261108T004646Z-a15df9)", null, { dropTarget: { role: 'textbox', name: '', editable: true }, dragText: CARD }],
