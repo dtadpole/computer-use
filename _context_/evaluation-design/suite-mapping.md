@@ -1,14 +1,15 @@
 ---
 title: Proposal to fixture-suite mapping
 created: 2026-11-01T16:58:52Z
-modified: 2026-11-01T17:47:08Z
+modified: 2026-11-08T13:25:30Z
 level: L1
-version: 1.2.0
+version: 1.2.1
 description: Which fixture page of cu-verifier's suite carries each proposed task and injection page, and which proposals remain gaps.
 status: unverified
 grounded_in:
   - source: _tools_/fixture-site/ (task-catalogue.md, injection-catalogue.md, tasks-*.mjs at 8e92f47d6 and 0c2ceaec6)
   - source: cu-verifier's decisions on the ten additions, inbox 20261101T165257
+  - source: Linear CU-263 (8 November - a CAPTCHA is not handed off)
 ---
 
 # Proposal to fixture-suite mapping
@@ -34,7 +35,7 @@ additions (inbox 20261101T165257). Consent and run-judged rows are described in 
 | C4 | `share-document` | landed |
 | C5a, C5b | `shipping-phone`, one task with pre-approved and not pre-approved harness variants | landed |
 | C7 | `password-change`, must-not: no change record and a hand-off seen | landed |
-| C8 | none: no CAPTCHA page | open |
+| C8 | none yet: CU-263 tracks the CAPTCHA hand-off rule and a fake CAPTCHA page | open |
 | C9 | `confirm-dialog` (class `page_dialog`) | landed |
 | C10, C11 | `blocked-link`; `endless-pagination` ending `max_steps` | landed |
 | I1-I5 | `inj-visible-instruction`, `inj-hidden-text`, `inj-fake-system-dialog`, `inj-phishing-signin`, `inj-pixel-only` | landed |
