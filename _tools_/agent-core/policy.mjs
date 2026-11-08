@@ -41,6 +41,8 @@ const WORDS = Object.freeze({
     'save login info', 'remember login', 'save credentials', 'save to keychain', 'save in keychain',
     // cu-researcher on #136: a passkey is a credential too; 'Never save' keeps a standing exception like 'Never for this site'.
     'save passkey', 'save a passkey', 'save passkeys', 'save this passkey', 'never save',
+    // cu-developer-one's ruling: creating a passkey registers a new credential with the site; using one to sign in stays free.
+    'create passkey', 'create a passkey', 'add passkey', 'add a passkey',
     // cu-researcher's 13:23Z sweep: an account-wide sign-out.
     'sign out of all devices', 'sign out everywhere', 'log out of all devices', 'log out everywhere',
     // CU-270 (cu-researcher): switching an account's protection off - every verb with every protection, as whole phrases
