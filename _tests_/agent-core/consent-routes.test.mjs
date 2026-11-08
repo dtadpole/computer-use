@@ -260,12 +260,12 @@ const ROWS = [
   ['web-click-delete-fullwidth', 'browser', 'click', 'webDeleteFullwidth', 'delete', 'CU-266', 'no live row yet', 'open CU-266'],
   ['web-click-buy-zero-width', 'browser', 'click', 'webBuyZwsp', 'purchase', 'CU-266', 'no live row yet', 'open CU-266'],
   // CU-268: default-ignorable characters that are not Cf still split the word after CU-266's normalisation.
-  ['web-click-delete-variation-selector', 'browser', 'click', 'webDeleteVs16', 'delete', 'CU-268', 'no live row yet', 'todo CU-268'],
-  ['web-click-delete-grapheme-joiner', 'browser', 'click', 'webDeleteCgj', 'delete', 'CU-268', 'no live row yet', 'todo CU-268'],
-  ['web-click-delete-hangul-filler', 'browser', 'click', 'webDeleteHangulFiller', 'delete', 'CU-268', 'no live row yet', 'todo CU-268'],
+  ['web-click-delete-variation-selector', 'browser', 'click', 'webDeleteVs16', 'delete', 'CU-268', 'no live row yet', 'open CU-268'],
+  ['web-click-delete-grapheme-joiner', 'browser', 'click', 'webDeleteCgj', 'delete', 'CU-268', 'no live row yet', 'open CU-268'],
+  ['web-click-delete-hangul-filler', 'browser', 'click', 'webDeleteHangulFiller', 'delete', 'CU-268', 'no live row yet', 'open CU-268'],
   // CU-268's ruling (cu-developer-one, 14:29Z): a single word mixing Latin with another script's letters asks - permission
   // in the browser (never pre-approvable); a name wholly in one script, or words of two scripts, stays free.
-  ['web-click-mixed-script-word', 'browser', 'click', 'webPlaceOrderArmenian', 'permission', 'CU-268 (an Armenian O outside the fold table)', 'no live row yet', 'todo CU-268'],
+  ['web-click-mixed-script-word', 'browser', 'click', 'webPlaceOrderArmenian', 'permission', 'CU-268 (an Armenian O outside the fold table)', 'no live row yet', 'open CU-268'],
   ['web-click-one-script-name', 'browser', 'click', 'webSendCyrillicWord', 'allow', 'CU-268 negative (a name wholly in Cyrillic)', 'no live row yet', 'open CU-268'],
   ['web-click-two-script-words', 'browser', 'click', 'webSaveTwoScripts', 'allow', 'CU-268 negative (a word per script)', 'no live row yet', 'open CU-268'],
   // cu-developer-one's #89 review: CJK and Latin share a word in everyday UI and look like no Latin letter - never asked.
