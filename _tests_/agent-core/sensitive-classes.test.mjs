@@ -383,6 +383,12 @@ const NAVIGATE_ROWS = [
   ['navigate-date of birth in a dob parameter', 'https://form.example/step2?name=jo&dob=' + ['1990', '04', '12'].join('-'), 'sensitive_data', 'open CU-281', 'no live row yet'],
   ['navigate-empty passport parameter (negative)', 'https://travel.example/apply?passport=&step=1', 'allow', 'open CU-281', 'no live row yet'],
   ['navigate-passport as a search word (negative)', 'https://travel.example/search?q=passport+renewal', 'allow', 'open CU-281', 'no live row yet'],
+  // CU-283 (follow-up to CU-281): contact names are skipped as a named limit, so an unformatted number under phone= or
+  // mobile= navigates; a flag value (mobile=1, phone=yes) is not a number.
+  ['navigate-unformatted phone in a phone parameter', 'https://shop.example/checkout?phone=' + ['555', '123', '4567'].join(''), 'sensitive_data', 'todo CU-283', 'no live row yet'],
+  ['navigate-unformatted phone in a mobile parameter', 'https://shop.example/checkout?mobile=' + ['555', '123', '4567'].join(''), 'sensitive_data', 'todo CU-283', 'no live row yet'],
+  ['navigate-mobile flag (negative)', 'https://shop.example/site?mobile=1', 'allow', 'open CU-283', 'no live row yet'],
+  ['navigate-phone yes flag (negative)', 'https://shop.example/form?phone=yes', 'allow', 'open CU-283', 'no live row yet'],
 ]
 for (const [id, url, expected, status, live] of NAVIGATE_ROWS) {
   const title = `${id} -> ${expected} (live: ${live})`
