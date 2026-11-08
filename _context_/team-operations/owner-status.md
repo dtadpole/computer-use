@@ -21,10 +21,13 @@ State at 8 November 2026, 23:50 UTC.
 Seven of the nine ULTIMATE_GOAL 2.0 rows hold on live evidence (cu-verifier's verdict 0.9.53). Two are open:
 
 - **Consent and safety** holds only when no Urgent or High under-ask is open (D-063; the Linear filter: team CU,
-  parent CU-145 or CU-171, not done). Open now: CU-252 (opening a launchable file from a menu - the fail-closed half
-  holds live, the named read waits on a Finder-shaped fixture), CU-296 (CJK debug consoles, #149 queued), CU-297 (a
-  card code or password typed into a payment or sign-in frame named for it, found today), and CU-292's helper floor
-  (installed in 0.2.58, waiting for verification). CU-279 (an IDE's terminal in any language) landed today.
+  parent CU-145 or CU-171, not done). Open now: CU-301 (Urgent, found tonight: a password, card code or ID number
+  pressed key by key meets no field-name rule - live model runs stay on the fixture apps until it is verified),
+  CU-252 (opening a launchable file from a menu - the fail-closed half holds live, the named read waits on a
+  Finder-shaped fixture), CU-253 (Return in a chat app's compose field - fixed on main, its live rows wait on a
+  fixture), CU-297 (a card code or password typed into a payment or sign-in frame named for it), CU-296 (CJK debug
+  consoles, #149 queued) and CU-292's helper floor (installed in 0.2.58, being verified). CU-279 (an IDE's terminal
+  in any language) landed today.
 - **Human control** needs you once: runbook step 4 (CU-11), with the G2 key-hold row (CU-119), the Replace-sheet
   chain (CU-135) and the physical-confirmation prompt's acceptance (CU-203: your Return or an early click must not
   confirm, a deliberate click must) - in person about 15 minutes, or over Screen Sharing about 25.
