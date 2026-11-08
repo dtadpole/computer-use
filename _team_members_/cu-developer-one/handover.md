@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-08T18:03:25Z
+modified: 2026-11-08T22:25:46Z
 level: L1
-version: 2.0.0
+version: 2.1.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -13,25 +13,29 @@ grounded_in:
 
 # [cu] Developer One - handover
 
-Seat `cu-developer-one`, agent core and design; goal unchanged ([responsibilities](responsibilities.md)). Code and
-records: `~/computer-use--cu-developer-one`, a worktree of `~/dtadpole/heddle/_projects_/computer-use`. Shipped work:
-[artifacts.md](artifacts.md). State at 18:00Z, 8 November.
+Seat `cu-developer-one`, agent core, consent policy and design ([responsibilities](responsibilities.md)). Worktree
+`~/computer-use--cu-developer-one`; shipped work in [artifacts.md](artifacts.md). State at 22:26Z, 8 November.
 
 ## Issues and PRs
 
-- **Ready to land:** #98 (CU-261, CU-270, CU-258's remainder; re-OK from cu-verifier at 3fc74ed), #103 (CU-252 in any
-  app whose selection read reports files; cu-developer-three's re-OK at 73eb224), #110 (Writing Tools verb phrases),
-  #115 (data: and blob: as web schemes), #116 (CU-256, the documented Services exception menu-key 0.1.4 states).
-- **Next, local:** CU-271's desktop half (IDE runs ask launch_code, Cursor by its exact id) opens once #98 lands.
-- **Landed today:** CU-272, CU-274, CU-275 (run control), CU-260, CU-264, CU-265, CU-269, CU-277, the guide (#33, #72).
-- **Named remainders:** App Store 'Try Free' and currency-code prices (CU-254); D-061 field names as URL parameters
-  (passport, ssn, dob; cu-researcher's idea on CU-260).
+- **CU-252 (open selection):** #153 (an unreadable or nameless selection read asks in any app) and #141 (the record
+  names the read) land together; cu-verifier's live stand-in rows then decide 'Fixes'. cu-developer-three makes the
+  stand-in Finder-shaped.
+- **Ready or in review:** #151 (CU-294, Chinese web words), #147 (CU-291, acct= numbers), #152 (guide: English and
+  Chinese, trials, web-address data).
+- **Reviewer of:** #136 (CU-289), #146/#149 (CU-279/CU-296, IDE terminals; CJK console words IDE-only), #150 (helper
+  0.2.58).
+- **Landed today:** CU-293 (every name class in Chinese, #145), CU-288, CU-283/284, CU-285, CU-281, CU-280, CU-271,
+  CU-265, CU-261, CU-256, CU-253, the guide (#127, #144).
+- **Guide next:** passwords and passkeys (#136), the IDE terminal-shape refusal (#146/#149), lists the helper cannot
+  name (#153), acct= (#147).
 
 ## Rules learned
 
-- Run the whole agent-core suite before any push that changes loop behaviour (coordinator, 15:55Z).
-- Search open PRs before filing or alarming (16:37Z).
-- Inbox OKs name the exact head; merging main into a PR in the chain needs fresh OKs.
+- Run the whole agent-core suite before any loop push, and push only when it reports fail 0 (one command).
+- Search open PRs before filing or alarming; check an issue's agent label before starting.
+- Inbox OKs name the exact head; a main merge needs fresh OKs.
+- Code and ruling must agree; amend the ruling or the code, never leave them apart.
 
 ## Tools
 
@@ -41,5 +45,4 @@ records: `~/computer-use--cu-developer-one`, a worktree of `~/dtadpole/heddle/_p
 
 ## Next step
 
-Land the queue; answer reviews on agent core, consent and the guide; a design note before any contract or safety
-change; keep the guide and the action classes true to every live close.
+Land the queue; close CU-252 on live rows; keep the guide true to each landing.
