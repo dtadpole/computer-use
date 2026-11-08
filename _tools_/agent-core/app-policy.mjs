@@ -303,6 +303,12 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     if (launchesCode(action, target) && verdict.decision !== 'handoff') {
       return { decision: 'confirm', class: 'launch_code', classes: ['launch_code', ...(verdict.classes ?? [])], rule: 'target:launch_code', reason: `open "${target.name}", which runs code`, app }
     }
+    // CU-232 (menu-key.md): a chord whose menu item could not be read may fire whatever the app binds to it (Mail's Send
+    // is Shift-Command-D), so it asks each time unless the keys already ask. The loop reads no item for the editing chords
+    // it judges by their meaning (copy, paste, undo, select all, arrows, delete chords), so those never land here.
+    if ((action.type === 'keypress' || action.type === 'hold_key') && context.boundMenuItem?.unreadable === true && verdict.decision === 'allow') {
+      return { decision: 'confirm', class: 'unknown_target', classes: ['unknown_target'], rule: 'menu:unreadable', reason: `press ${(action.keys ?? []).join('+')} in ${app}, whose menu item for it could not be read`, app, askEachTime: true }
+    }
     // An element the helper could not describe: it names the window's owner but no role or title, because Accessibility
     // at the point belongs to another process - for example a sandboxed app's remote open/save panel, whose elements are
     // the panel service's (CU-39). It may be the panel's Save, so it is asked each time and never pre-approved, like

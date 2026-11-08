@@ -445,6 +445,18 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // only opens the folder.
       if (TRASH_ROLE.test(String(target?.role ?? '')) && namesWord(name, CONTROL_DELETE)) classes.push('delete')
     }
+    // CU-232 (menu-key.md): a desktop chord that is a menu item's key equivalent fires that item, so the item's name is
+    // judged as a click on it would be, beside the keys - Shift-Command-D bound to Send asks submit. The loop reads the
+    // item (role, name, key equivalent only); a menu bar it could not read is app-policy's to ask.
+    const bound = context.boundMenuItem
+    if (bound && typeof bound === 'object' && typeof bound.name === 'string' && bound.name.trim() !== '') {
+      for (const cls of ['purchase', 'delete', 'permission']) {
+        if (namesWord(cls === 'purchase' ? withoutOrderReferences(bound.name) : bound.name, WORDS[cls])) classes.push(cls)
+      }
+      // A bound Reply follows CU-157 on the focused window's entries, as the focused target reports them.
+      if (judgesSubmit(bound.name, target)) classes.push('submit')
+      if (namesWord(bound.name, CONTROL_DELETE)) classes.push('delete')
+    }
     // CU-142 (keyboard-activation.md): a Return presses the window's default button, so its name - where the environment
     // reports it - is judged as a second name, from a single-line input or non-text focus; in a text area a Return is
     // text (the area's own name still applies above) and only Command-Return presses the default button.
