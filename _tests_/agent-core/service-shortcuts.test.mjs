@@ -34,11 +34,18 @@ test('CU-249: a default Services chord with no app item bound - none, unreadable
   }
 })
 
-test('CU-249: an app item bound to the chord is judged as a click on it instead - benign allowed, consequential asked', () => {
-  assert.equal(judge(['META', 'SHIFT', 'L'], { role: 'AXMenuItem', name: 'Show Sidebar' }).decision, 'allow')
-  assert.equal(judge(['META', 'SHIFT', 'A'], { items: [{ role: 'AXMenuItem', name: 'Select None' }] }).decision, 'allow')
-  const send = judge(['META', 'SHIFT', 'B'], { role: 'AXMenuItem', name: 'Send' })
-  assert.deepEqual([send.decision, send.class], ['confirm', 'submit'])
+test('CU-249: refused whatever the app binds to the chord - whether an app item beats a Service is unmeasured (cu-coordinator)', () => {
+  for (const bound of [{ role: 'AXMenuItem', name: 'Show Sidebar' }, { items: [{ role: 'AXMenuItem', name: 'Select None' }] }]) {
+    assert.deepEqual([judge(['META', 'SHIFT', 'L'], bound).decision, judge(['META', 'SHIFT', 'L'], bound).rule], ['block', 'system_shortcut'], JSON.stringify(bound))
+  }
+})
+
+test('CU-249: a chord the menu read binds to a Services item is refused as that service', () => {
+  for (const bound of [{ role: 'AXMenuItem', name: 'Search With Google' }, { items: [{ role: 'AXMenuItem', name: 'Copy' }, { role: 'AXMenuItem', name: 'Translate', servicesMenu: true }] }]) {
+    const v = judge(['META', 'ALT', 'J'], bound)
+    assert.deepEqual([v.decision, v.rule], ['block', 'system_service'], JSON.stringify(bound))
+  }
+  assert.equal(judge(['META', 'ALT', 'J'], { role: 'AXMenuItem', name: 'Jump to Selection' }).decision, 'allow', 'an ordinary bound item')
 })
 
 test('CU-249: matched exactly, as key equivalents are - other modifiers or letters are judged as before', () => {
@@ -63,7 +70,7 @@ test('CU-249 through the loop: Command-Shift-L in a field with no menu read is r
 test('CU-249 click route: a Services item clicked in a menu is refused too - by the helper flag or a default service title', () => {
   const click = { type: 'click', x: 1, y: 1, button: 'left' }
   const at = (t) => policy.classify(click, { frontmostBundleId: FIXTURE, target: { origin: FIXTURE, fingerprint: 'm', ...t } })
-  for (const name of ['Search With Google', 'Get Result of AppleScript', 'Run as AppleScript', 'Make New Sticky Note', 'Send File To Bluetooth Device', 'Open man Page in Terminal', 'New Terminal at Folder']) {
+  for (const name of ['Search With Google', 'Get Result of AppleScript', 'Run as AppleScript', 'Make New Sticky Note', 'Send File To Bluetooth Device', 'Open man Page in Terminal', 'New Terminal at Folder', 'New Email With Selection', 'AirDrop']) {
     const v = at({ role: 'AXMenuItem', name })
     assert.deepEqual([v.decision, v.rule], ['block', 'system_service'], name)
   }

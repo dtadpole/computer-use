@@ -21,7 +21,7 @@ Detail for [app policy](app-policy.md)'s order of checks; rule names are what `c
 |---|---|
 | `desktop:navigate` | `navigate`, browser-only |
 | `system_shortcut` (P9) | a chord that acts on the whole system, below |
-| `system_service` (CU-249) | a click on a Services item (the helper's flag, or a default service's title) |
+| `system_service` (CU-249) | a click on a Services item or a chord bound to one (by the helper's flag or a default title) |
 | `excluded:<kind>` | a target in an excluded app; `excluded:unknown` for a target, or a frontmost app, without a bundle id (fail closed) |
 
 `system_shortcut` matches when a chord holds every key of an entry, so modifier order and extra modifiers do not
@@ -38,7 +38,7 @@ matter:
 | Mission Control, Spaces | `CTRL` with an arrow |
 | Show Desktop | `F11` |
 | VoiceOver | `META+F5` |
-| a default Service, unless an app item binds it (CU-249) | exactly `META+SHIFT+` L, Y, B, 8, M or A |
+| a default Service (CU-249) | exactly `META+SHIFT+` L, Y, B, 8, M or A |
 | keyboard focus to the menu bar, Dock, status menus | `CTRL+F2`, `CTRL+F3`, `CTRL+F8` |
 
 ## Confirm classes on the desktop
