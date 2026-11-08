@@ -1,10 +1,8 @@
-import { execFileSync } from 'node:child_process'
-import { createHash } from 'node:crypto'
-import { existsSync, mkdirSync, readdirSync, readFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { existsSync } from 'node:fs'
 import { describe, test } from 'node:test'
 
 import { skipUnless } from '../../_vendor_/browser-use/_tools_/verify-runner/lib.mjs'
+import { buildCUHelper } from '../../_tools_/verify-kit/helper-build.mjs'
 import { startSocketHelper, startStdioHelper } from '../../_tools_/verify-kit/helper-client.mjs'
 import { CONFORMANCE, DESIGN_EXCLUSIONS } from '../../_tools_/verify-kit/helper-conformance.mjs'
 import { loadSut } from '../../_tools_/verify-kit/sut.mjs'
@@ -21,26 +19,6 @@ import { loadSut } from '../../_tools_/verify-kit/sut.mjs'
  */
 
 const sut = await loadSut()
-
-/** Build CUHelper once per source hash under /tmp; resolves the executable, or null when it cannot be built. */
-function buildHelper() {
-  if (!existsSync(sut.helperBuild)) return { executable: null, why: 'no CUHelper sources' }
-  const sources = join(dirname(sut.helperBuild), 'Sources')
-  const hash = createHash('sha256')
-  for (const name of readdirSync(sources).sort()) hash.update(name).update(readFileSync(join(sources, name)))
-  hash.update(readFileSync(sut.helperBuild))
-  const out = `/tmp/cu-verifier-cuhelper-${hash.digest('hex').slice(0, 16)}`
-  const executable = join(out, 'CUHelper.app', 'Contents', 'MacOS', 'CUHelper')
-  if (!existsSync(executable)) {
-    mkdirSync(out, { recursive: true })
-    try {
-      execFileSync('bash', [sut.helperBuild, out], { stdio: ['ignore', 'ignore', 'pipe'], env: { ...process.env, CU_HELPER_IDENTITY: '' } })
-    } catch (error) {
-      return { executable: null, why: `CUHelper did not build: ${String(error.stderr ?? error.message).slice(-300)}` }
-    }
-  }
-  return existsSync(executable) ? { executable } : { executable: null, why: `no executable at ${executable}` }
-}
 
 /** M7 runs the M7 checks only (an M7 acceptance); the default runs every check the design specifies. */
 const milestone = process.env.CU_VERIFY_MILESTONE ?? 'M8'
@@ -67,7 +45,7 @@ describe('the fake helper (stdio)', () => {
 })
 
 describe('CUHelper (socket, before the grant)', () => {
-  const built = buildHelper()
+  const built = buildCUHelper(sut.root)
   for (const check of CONFORMANCE) {
     test(check.name, { timeout: 30_000 }, async (t) => {
       if (!skipUnless(t, inScope(check), `${check.milestone} check, outside ${milestone}`)) return

@@ -28,7 +28,9 @@ test('Backspace or Delete on a focused list, table, outline, row or cell asks de
 test('in a text input Backspace edits text; elsewhere it is not a collection; a modified chord keeps its own rule', () => {
   for (const role of ['AXTextField', 'AXTextArea', 'AXComboBox', 'textbox', 'searchbox']) assert.equal(decide(['BACKSPACE'], role).decision, 'allow', role)
   assert.equal(decide(['BACKSPACE'], 'AXGroup').decision, 'allow', 'a canvas or group')
-  assert.equal(decide(['ALT', 'BACKSPACE'], 'AXTable').decision, 'allow', 'Option-Backspace is not the plain key')
+  // CU-234: with Shift, Option or Control too it removes the selection (Shift-Backspace is deleteBackward:); generous.
+  for (const keys of [['SHIFT', 'BACKSPACE'], ['ALT', 'BACKSPACE'], ['CTRL', 'BACKSPACE'], ['SHIFT', 'DELETE']]) assert.equal(decide(keys, 'AXTable').class, 'delete', keys.join('+'))
+  assert.equal(decide(['ALT', 'BACKSPACE'], 'AXTextField').decision, 'allow', 'in a text input Option-Backspace deletes a word')
 })
 
 test('in the loop: Tab onto the messages table, then Backspace in one batch - judged on the settled focus', async () => {

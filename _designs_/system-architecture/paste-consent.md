@@ -1,15 +1,16 @@
 ---
 title: A paste is judged by what it inserts
 created: 2026-11-07T03:33:02Z
-modified: 2026-11-08T10:03:20Z
+modified: 2026-11-08T10:19:16Z
 level: L1
-version: 0.2.10
+version: 0.2.11
 description: How a paste is judged without reading the owner's pasteboard - the browser checks the run's own clipboard text; the desktop asks before a paste that has no copy of the run's own before it.
 status: unverified
 grounded_in:
   - source: CU-151 (a pasted card number passes where a typed one asks; Cmd+V moves the owner's pasteboard unasked)
   - source: D-031 (copy, cut and paste allowed; the helper never reads the pasteboard) and D-050 to D-052 (the clipboard guard)
   - source: the CU-145 matrix rows paste-no-own-copy and web-paste-card
+  - source: CU-230 (a paste chord with Shift or Option skipped every paste check)
 ---
 
 # A paste is judged by what it inserts
@@ -19,7 +20,7 @@ pasteboard on the desktop, unread by the helper (D-031).
 
 ## Rule
 
-| Environment | Paste (Cmd/Ctrl+V, Edit > Paste, Paste and Match Style) | Judged as |
+| Environment | Paste (Cmd/Ctrl+V [and variants](paste-chords.md), Edit > Paste, Paste and Match Style) | Judged as |
 |---|---|---|
 | browser | the run's clipboard text, known to the run | exactly a typed text: looksSensitive, credential, sensitive_data |
 | desktop, after the run's own copy or cut | the run's own text (unread, but the run put it there) | judged by the copy's source ([copy-source](copy-source.md)) |
