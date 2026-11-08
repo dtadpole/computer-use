@@ -389,6 +389,11 @@ const NAVIGATE_ROWS = [
   ['navigate-unformatted phone in a mobile parameter', 'https://shop.example/checkout?mobile=' + ['555', '123', '4567'].join(''), 'sensitive_data', 'todo CU-283', 'no live row yet'],
   ['navigate-mobile flag (negative)', 'https://shop.example/site?mobile=1', 'allow', 'open CU-283', 'no live row yet'],
   ['navigate-phone yes flag (negative)', 'https://shop.example/form?phone=yes', 'allow', 'open CU-283', 'no live row yet'],
+  // CU-284 (follow-up to CU-281): an address or street parameter carrying a street address navigates; a city alone does
+  // not ask (D-061: not city or postcode).
+  ['navigate-street address in an address parameter', 'https://shop.example/ship?address=' + ['10', 'Downing', 'Street'].join('+'), 'sensitive_data', 'todo CU-284', 'no live row yet'],
+  ['navigate-street address in a street parameter', 'https://shop.example/ship?street=' + ['221B', 'Baker', 'Street'].join('+'), 'sensitive_data', 'todo CU-284', 'no live row yet'],
+  ['navigate-city parameter (negative)', 'https://shop.example/ship?city=Lisbon', 'allow', 'open CU-284', 'no live row yet'],
 ]
 for (const [id, url, expected, status, live] of NAVIGATE_ROWS) {
   const title = `${id} -> ${expected} (live: ${live})`
