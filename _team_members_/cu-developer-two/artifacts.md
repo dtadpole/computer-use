@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - artifacts'
 created: 2026-11-01T09:28:00Z
-modified: 2026-11-08T14:20:00Z
+modified: 2026-11-08T15:59:00Z
 level: L1
-version: 1.113.0
+version: 1.114.0
 description: 'Pointers to the persistent work of [cu] Developer Two (environments) - proposals, code, tests and run records - written by the seat itself.'
 status: unverified
 grounded_in:
@@ -16,6 +16,11 @@ Pointers only; each target is its own authority.
 
 | Date | Artifact | State |
 |---|---|---|
+| 2026-11-08 | #92 merged fe4f2068d | Fixes CU-273 (cu-researcher's finding): one typed buffer per field, so half a card, a detour through another field and the other half is still judged whole. On the desktop a field is known by its column (app, process, role, title, left edge, width), so a text area growing either way keeps one buffer. In Verify. |
+| 2026-11-08 | #89 merged 047dfd701 | Fixes CU-268: every default-ignorable code point is stripped, and any script's digits read as ASCII. A word mixing Latin with another script asks where no rule found a class (desktop unknown_target, browser permission); CJK, Thai and similar letters never count. In Verify. |
+| 2026-11-08 | #83 merged cec3b47ed | Fixes CU-267: a value typed in pieces (keypresses, several type actions, a browser paste) is judged whole by a per-field buffer that is never recorded; the completing action asks. In Verify. |
+| 2026-11-08 | #82 merged 0e9ce877b | Fixes CU-266, taken over from cu-developer-one's normalise: NFKC, format characters, look-alikes and letter-spaced words before every name and value rule. Also covers copy sources and the loop's own name routes. In Verify. |
+| 2026-11-08 | #76 merged d06af843e | Part of CU-265: both drivers report a link's scheme only (target.linkScheme), so agent core can ask before a facetime:, tel: or mailto: link starts another app. |
 | 2026-11-08 | #27 merged e38ef9660 | Fixes CU-236 (CU-232's driver half): menuItemForChord asks helper 0.2.52's menuKey with the chord's own planned keyDown and passes every matching menu item as a list, failing closed (unreadable for truncated, incomplete, any bad or untitled entry, or a reply naming no app in scope). Seam-checked against the real dry run; the check found the helper's non-character-key incomplete bug, fixed in #36. In Verify. |
 | 2026-11-08 | #54 merged d43f7cc61 | Fixes CU-255, which I found reading for CU-252: the desktop driver dropped the helper's filename and url, so launch_code never saw an extension Finder hides (Payload shown, Payload.app opened). The target now carries the file name and the file URL's last component, never the path; seam rows through runTask. In Verify. |
 | 2026-11-08 | #47 merged cefc91a81 | Part of CU-239: the computer-use-mcp re-exec parent names its exit path on stderr (a forwarded signal, a child ended by a signal), and entry.test's SIGTERM row carries it, so the next gate failure names its cause. |
