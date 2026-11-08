@@ -101,6 +101,35 @@ describe('S5 clipboard (CU-62)', () => {
       assert.deepEqual(menus, ['Edit > Paste', 'Log > Clear Log'])
     })
   })
+
+  test('CU-230: Edit gains Paste and Match Style on Command-Option-Shift-V (the field editor\'s plain-text paste); Command-V stays Paste', async () => {
+    await withFixture('fixture', async (fixture) => {
+      // Looked up only - nothing is pasted, so no pasteboard is read.
+      assert.deepEqual(await fixture.call('menuKey', { key: 'alt+shift+cmd+v' }), { title: 'Paste and Match Style', action: 'pasteAsPlainText:' })
+      assert.deepEqual(await fixture.call('menuKey', { key: 'cmd+v' }), { title: 'Paste', action: 'paste:' })
+      assert.deepEqual(await fixture.call('menuKey', { key: 'shift+cmd+v' }), { title: null, action: null })
+    })
+  })
+
+  test('CU-230: the paste sentinel is written only to an empty board this app may read, and cleared only if nothing else wrote since', async () => {
+    await withFixture('fixture', async (fixture) => {
+      assert.deepEqual(await fixture.call('clipboardSentinelSelfTest'), {
+        written: true, onBoard: true, cleared: true, endsEmpty: true,
+        full: 'owner board not empty', fullKept: true,
+        asked: 'pasteboard access needs the owner', askedEmpty: true,
+        raced: 'the board changed since the sentinel', racedKept: true,
+        noSentinel: 'no sentinel on the board',
+        generalUntouched: true,
+      })
+    })
+  })
+
+  test('only CU Fixture writes the paste sentinel: CU Ledger refuses it', async () => {
+    await withFixture('ledger', async (fixture) => {
+      await assert.rejects(fixture.call('clipboardSentinel'), /only CU Fixture keeps the clipboard/)
+      await assert.rejects(fixture.call('clipboardSentinelClear'), /only CU Fixture keeps the clipboard/)
+    })
+  })
 })
 
 test('no test calls the live-board commands: they touch the real general pasteboard (cu-verifier runs the live check, announced)', async () => {
@@ -109,7 +138,7 @@ test('no test calls the live-board commands: they touch the real general pastebo
   for (const file of readdirSync(dir).filter((f) => f.endsWith('.test.mjs'))) {
     // A call that is asserted to be refused (CU Ledger never keeps the clipboard) touches nothing.
     const lines = readFileSync(dir + file, 'utf8').split('\n').filter((line) => !line.includes('assert.rejects('))
-    for (const command of ['clipboardSave', 'clipboardRestore', 'clipboardLiveCheck']) {
+    for (const command of ['clipboardSave', 'clipboardRestore', 'clipboardLiveCheck', 'clipboardSentinel', 'clipboardSentinelClear']) {
       assert.ok(!lines.some((line) => line.includes(`call('${command}'`)), `${file} calls ${command}`)
     }
   }

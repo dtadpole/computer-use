@@ -485,6 +485,20 @@ func handle(_ message: [String: Any]) {
       reply(id, ["allowed": permission.allowed, "behavior": permission.behavior])
     case "clipboardSelfTest":
       reply(id, ClipboardSelfTest.run())
+    case "clipboardSentinel":
+      // CU-230's live rows (cu-verifier): a paste with no own copy must find fixture text on the board, never the
+      // owner's - written only to an empty board this app may read without asking; booleans and counts on the channel.
+      guard fixture.role == "fixture" else { throw ChannelError.message("only CU Fixture keeps the clipboard") }
+      reply(id, ClipboardSentinel.shared.put())
+    case "clipboardSentinelClear":
+      guard fixture.role == "fixture" else { throw ChannelError.message("only CU Fixture keeps the clipboard") }
+      reply(id, ClipboardSentinel.shared.clear())
+    case "clipboardSentinelSelfTest":
+      reply(id, ClipboardSentinel.selfTest())
+    case "menuKey":
+      // Test seam: the menu item a key equivalent such as "alt+shift+cmd+v" reaches - its title and action, nothing run.
+      let item = Menus.itemForKey(params["key"] as? String ?? "")
+      reply(id, ["title": item?.title ?? NSNull(), "action": item?.action.map { NSStringFromSelector($0) } ?? NSNull()])
     case "gridShown":
       // Test seam: what a grid cell shows on screen now (chain-rows' computed D cells).
       let shown = Grid.shown(params["cell"] as? String ?? "")
