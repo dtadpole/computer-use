@@ -41,6 +41,13 @@ export const EXCLUDED_APPS = Object.freeze([
       'com.apple.loginwindow', 'com.apple.UserNotificationCenter',
       // The "open this downloaded app?" prompt and the package installer both run code the person has to accept.
       'com.apple.coreservices.uiagent', 'com.apple.installer',
+      // CU-264 (cu-researcher; cu-coordinator: High): whole-Mac tools whose commands are destructive or act on every app -
+      // Disk Utility (Erase, Restore, Partition), Boot Camp, Migration Assistant, Time Machine, Activity Monitor (Force
+      // Quit). Approving one is not consent to them. Console stays a named limit (read-only).
+      // Ids read from each app's Info.plist on macOS 27 (cu-developer-three); Boot Camp is Intel-only; com.apple.TimeMachine
+      // also covers the menu-bar agent com.apple.timemachine.HelperAgent (an exact id matches its children, any case).
+      'com.apple.DiskUtility', 'com.apple.bootcampassistant', 'com.apple.MigrateAssistant', 'com.apple.backup.launcher',
+      'com.apple.TimeMachine', 'com.apple.ActivityMonitor',
     ]),
   }),
 ])
