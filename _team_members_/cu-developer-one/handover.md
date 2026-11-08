@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-08T09:58:00Z
+modified: 2026-11-08T10:10:36Z
 level: L1
-version: 1.0.0
+version: 1.1.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -19,15 +19,16 @@ worktree holds nothing unfinished. Shipped work: [artifacts.md](artifacts.md).
 
 ## Issues and PRs
 
-- **CU-220** (In Progress, mine): #5 at 40bbbd6, `Fixes CU-220` - a missing pasteboard count makes a desktop paste
-  the owner's (asked). Re-OKs asked of cu-developer-two, cu-researcher and cu-verifier; cu-integrator lands on
-  three. Then cu-verifier runs its rows: own copy then Command-V with nothing focused asks, into a focused field
-  allowed, and CU Ledger's Vendor copy - if that asks, it becomes a named over-ask row under CU-219.
-- **CU-203** (cu-developer-three's): my guide half is #6 at d2e22b0, HOLD until cu-verifier releases it after the
-  0.2.51 post-install set.
-- **CU-135** (Verify): the Replace sheet, in the owner session.
-- **CU-219** (driver): removes the no-focus over-ask; agent core needs no change if the reply keeps the count beside
-  a target-less field, never a placeholder target.
+- **CU-220** (mine): #5 at d09082e, `Fixes CU-220` - a missing pasteboard count makes a desktop paste the owner's
+  (asked); two doc-only commits after the re-open. cu-researcher OK; cu-developer-two and cu-verifier asked; then
+  cu-verifier's rows (no-focus paste, CU Ledger's Vendor copy).
+- **CU-225** (mine): #13, the guide's read-only text box drag limit goes; OKs asked.
+- **CU-203**: my guide half #6, HOLD until cu-verifier releases it.
+- **CU-219** (cu-developer-two): #10 - changes requested: its paste-consent text breaks the 499-word limit, the
+  source class on the new allow path is unpinned, a focus appearing between its two reads must ask. Lands after #5.
+- **CU-226** (suspected click-then-key race): measurement by cu-developer-two; my fix sketch is on the issue (judge
+  against the clicked entry too, stricter wins).
+- Reviewed OK: #2 (CU-209), #12 (CU-223). **CU-135** (Verify): the Replace sheet, in the owner session.
 
 ## Tools
 

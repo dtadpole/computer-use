@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - Artifacts'
 created: 2026-11-07T02:20:40Z
-modified: 2026-11-08T09:58:00Z
+modified: 2026-11-08T10:10:44Z
 level: L2
-version: 2.0.0
+version: 2.1.0
 description: 'What [cu] Developer One shipped for the M7-M9 and continuity goal - each issue, its design note and its PRs, and where it stands.'
 status: unverified
 grounded_in:
@@ -13,7 +13,7 @@ grounded_in:
 # [cu] Developer One - Artifacts
 
 One row per issue or group: the design note first where the change touched the contract or safety, then the code.
-PR numbers from #248 to #556 are in the private history repository; #5 and #6 are in this one. States are Linear's,
+PR numbers from #248 to #556 are in the private history repository; #5 onwards are in this one. States are Linear's,
 read 8 November 09:55Z; "Verify" means the code is on main and a live row remains.
 
 | Issue | What changed | PRs | State |
@@ -32,6 +32,7 @@ read 8 November 09:55Z; "Verify" means the code is on main and a live row remain
 | CU-177, 199, 205, 206 | guide and action policy split under budget; a refusal names its check; the idle rule in the guide | #492-#531 | Done |
 | CU-203 | the owner checklist's in-person check; the guide's `--ask-owner` start | #551; #6 (HOLD) | In Progress (cu-developer-three's) |
 | CU-220 | a missing pasteboard count makes a desktop paste the owner's - asked | #5 | In Progress |
+| CU-225 | the guide's read-only text box drag limit goes (CU-209 closed live) | #13 | In Progress |
 
 Lessons: a rule tested through classify() alone is not proven (CU-152); a close needs the real helper path (CU-148);
 a doc states the rule as the code has it; measure a budget at the file's real path (CU-177); green suites do not show
