@@ -1,9 +1,9 @@
 ---
 title: Consent routes - every way an action reaches a control, and how it is judged
 created: 2026-11-07T03:26:33Z
-modified: 2026-11-08T10:04:15Z
+modified: 2026-11-08T10:47:12Z
 level: L1
-version: 1.0.10
+version: 1.0.11
 description: The D-059 audit table - single-action cells live in an executable matrix; this note lists the composed routes judged in the loop, the named limits, the open cells and the sign-off rule.
 status: unverified
 grounded_in:
@@ -51,6 +51,6 @@ Env: D desktop, B browser. Pin: the test (its mutant). Over-ask: 0 per asking ro
 ## Sign-off
 
 Re-signed by cu-verifier, 8 November (main 309c60328): every closed cell cites cu-verifier's run or a decision
-(D-064); CU-209 open. Since: CU-209 closed (092702Z-8a0307). Open: CU-223 (live row); CU-135's save-panel chain (#1,
-owner session). Open under-asks: either table's open or todo rows (D-063). Every field a rule reads reaches
+(D-064); CU-209 open. Since: CU-209 and CU-223 closed (092702Z-8a0307, 103751Z-7762ec). Open: CU-135's save-panel
+chain (#1, owner session). Open under-asks: either table's open or todo rows (D-063). Every field a rule reads reaches
 `classify()` on both paths (CU-152).
