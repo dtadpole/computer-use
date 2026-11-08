@@ -303,6 +303,8 @@ function nationalPhone(value) {
 /** Whether text looks like sensitive data being transmitted (R29): card, IBAN, routing + account, national id, tax id, phone, e-mail, key, recovery phrase. */
 // CU-260 (cu-researcher): query parameters that carry a secret by name - a reset or session token, an API key.
 const SECRET_PARAM = /^(token|access_?token|refresh_?token|id_?token|api_?key|apikey|client_?secret|secret|password|passwd)$/i
+// cu-verifier on #91: a password or secret parameter asks whatever its length ('hunter2'); a token keeps the 8-character floor.
+const PASSWORD_PARAM = /^(client_?secret|secret|password|passwd|pwd|pass)$/i
 
 /**
  * CU-260: the D-061 value a navigate URL would carry off the page, or null - the value rules over the decoded query
@@ -329,6 +331,7 @@ export function urlSecret(raw) {
   const fragment = url.hash.slice(1)
   if (fragment.includes('=')) params.push(...new URLSearchParams(fragment))
   for (const [name, value] of params) {
+    if (PASSWORD_PARAM.test(name.trim()) && value.trim() !== '') return 'key'
     if (SECRET_PARAM.test(name.trim()) && value.trim().length >= 8) return 'key'
     const kind = looksSensitive(value)
     if (kind !== null) return kind

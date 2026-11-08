@@ -21,6 +21,10 @@ test('CU-260: a value in the query, the fragment or a path segment asks sensitiv
     `${ALLOWED}/reset?token=${j('Zx81', 'qPl0', 'rT55')}`,
     `${ALLOWED}/api?api_key=${j('abcd', '1234', 'efgh')}`,
     j('https://user:', 'hunter2', '@shop.example/'),
+    // cu-verifier on #91: a password or secret parameter asks whatever its length.
+    `${ALLOWED}/login?user=me&password=${j('hun', 'ter2')}`,
+    `${ALLOWED}/login?passwd=${j('ab', 'c1')}`,
+    `${ALLOWED}/oauth?client_secret=${j('s3', 'cr')}`,
   ]) {
     assert.deepEqual(verdict(go(url)), ['confirm', 'sensitive_data', 'url:sensitive_data'], url)
   }
