@@ -1,9 +1,9 @@
 ---
 title: Consent limits - the routes the consent rules leave unjudged, named for the verdict
 created: 2026-11-08T11:23:17Z
-modified: 2026-11-08T12:55:40Z
+modified: 2026-11-08T13:09:00Z
 level: L1
-version: 0.2.1
+version: 0.2.2
 description: The D-059 table's named limits (D-063) - routes the consent rules do not judge, on purpose or by parity, each with its issue; split out of consent-routes.md so the route table keeps its budget.
 status: unverified
 grounded_in:
@@ -19,7 +19,7 @@ row. The routes the rules do judge are in [consent-routes.md](consent-routes.md)
 
 - Unnamed targets, drop points and default buttons are allowed, counted per batch.
 - Scroll is not judged.
-- A form without a submit button is judged by field name - a chat app's Return too, until CU-253's fix.
+- A form without a submit button is judged by field name; a chat app's or compose-named field's Return asks (CU-253).
 - A bare "Reply" is free only with every entry on its page or window read empty (CU-157, live on both).
 - A web page's own shortcut keys - a webmail's `#` deletes, `e` archives, Command-Enter sends - are judged by the
   focused element, not by what the page's script does with the key (CU-241, D-072; ChatGPT relies on the model's
