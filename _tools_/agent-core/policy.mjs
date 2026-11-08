@@ -1,3 +1,4 @@
+import { normaliseForPolicy } from './normalise.mjs'
 import { BIP39_ENGLISH } from './bip39-english.mjs'
 import { normalizeKey } from './keys.mjs'
 import { originPattern } from './sites.mjs'
@@ -20,7 +21,12 @@ const WORDS = Object.freeze({
     // CU-146 (the CU-145 audit): destructive labels the list missed.
     'move to trash', 'move to bin', 'empty bin', 'clear history', 'clear all', 'reset all', 'reset settings', 'reset to defaults', 'uninstall', 'wipe', 'purge',
     'deactivate', 'close account', 'forget', 'factory reset'],
-  permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke'],
+  permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke',
+    // CU-258 (cu-researcher): standing choices an app keeps after the run, as whole phrases. A bare 'Allow' stays free so
+    // cookie banners do not ask (named limit).
+    'always allow', 'always trust', 'always open', 'allow access', "don't ask again", 'don\u2019t ask again', 'do not ask again',
+    'remember my choice', 'remember this choice', 'remember my decision', 'never for this website', 'never for this site',
+    'set as default', 'make default'],
   submit: ['send', 'post', 'submit', 'publish', 'reply', 'sign up', 'register'],
 })
 const PRECEDENCE = ['purchase', 'delete', 'permission', 'page_dialog', 'credential', 'sensitive_data', 'submit', 'new_site', 'install']
@@ -430,7 +436,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
    * `context`: `{ url, target, dialog, task }`, where `target` is `inspectPoint` for pointer actions or
    * `focusedElement()` for `type` and `keypress`, and `dialog` the held dialog from `state()`.
    */
-  function classify(action, context = {}) {
+  function classify(rawAction, rawContext = {}) {
+    // CU-266: every rule below reads the normalised copy (zero-width and format characters, look-alikes, fullwidth forms).
+    const { action, context: normalised } = normaliseForPolicy(rawAction, rawContext)
+    let context = normalised
     context = withCaptionNames(context)
     const url = context.url ?? ''
     const verdict = sitePolicy(url)
@@ -581,6 +590,13 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (action.type === 'type') {
       const inserted = insertedClass(String(action.text ?? ''), target, context)
       if (inserted) classes.push(inserted)
+    }
+    // CU-267: a value typed in pieces is judged whole - what this run typed into the field before (the loop's buffer) with
+    // what this type, printable keypress or browser paste (the run clipboard's text) adds; the action that completes a value
+    // asks. One that only extends a value already judged whole does not ask again.
+    if ((action.type === 'type' || action.type === 'keypress') && context.typed && typeof context.typed.before === 'string' && typeof context.typed.next === 'string' && context.typed.next !== '') {
+      const valueIn = (text) => text !== '' && Boolean(looksSensitive(withoutTaskValues(text, context.task)))
+      if (!valueIn(context.typed.before) && valueIn(context.typed.before + context.typed.next)) classes.push('sensitive_data')
     }
     const unique = [...new Set(classes)].sort((a, b) => PRECEDENCE.indexOf(a) - PRECEDENCE.indexOf(b))
     const needed = unique.filter((cls) => !preApproved(cls, url) || NEVER_PRE_APPROVED.includes(cls))

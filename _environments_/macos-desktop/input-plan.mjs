@@ -208,6 +208,16 @@ function planChord(keys) {
   })
 }
 
+/**
+ * CU-236: the keyDown events of a chord's non-modifier keys, exactly as planChord posts them - each `{ keyCode, flags }`
+ * with the modifiers held at that moment (and Shift for a shifted character). The driver asks the helper which menu
+ * item each would fire (menuKey), so the read and the posted chord share one key mapping. Throws as planChord does.
+ */
+export function chordKeyDowns(keys) {
+  const modifierCodes = new Set(Object.keys(MODIFIER_FLAGS).map((key) => NAMED_KEY_CODES[key]))
+  return planChord(keys).filter((event) => event.kind === 'keyDown' && !modifierCodes.has(event.keyCode)).map(({ keyCode, flags }) => ({ keyCode, flags }))
+}
+
 export function planKeypress({ keys, repeat = 1 }) {
   if (!Number.isInteger(repeat) || repeat < 1 || repeat > KEYPRESS_MAX_REPEAT) {
     throw invalid(`keypress repeat must be an integer from 1 to ${KEYPRESS_MAX_REPEAT}`)
