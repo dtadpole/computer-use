@@ -1611,6 +1611,20 @@ class DesktopEnvironment {
   }
 
   /**
+   * CU-219: the pasteboard's change count alone, from a fresh `focused` read (the reply carries it with or without a
+   * focused element) - an integer, or null as changeCountOf reads it. Agent core asks for it at a key copy, cut or paste
+   * when focusedElement() is null, which drops the count with the element. The count travels beside the null target,
+   * never as a placeholder target: app-policy judges every no-focus key by its target - one naming no app is refused,
+   * one with no role makes Return, Space and a typed newline ask each time - so a placeholder here would change every
+   * no-focus key, not only the paste. Never content (D-060), never cached: a copy raises the count after its key event.
+   */
+  async pasteboardChangeCount() {
+    this.#assertInScope()
+    const reply = await this.link.request('focused', {})
+    return changeCountOf(reply.changeCount)
+  }
+
+  /**
    * The selection of the frontmost open or save panel (file-panels.md, Q-D13): `{ path, directory, name }`. `path` and
    * `directory` are canonical as the helper resolves them on disk (symlinks resolved, control characters escaped), or
    * null when the folder is unknown; `name` is the panel's name field exactly as it reads, so agent core resolves a

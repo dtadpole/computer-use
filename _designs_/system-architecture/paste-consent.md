@@ -1,15 +1,16 @@
 ---
 title: A paste is judged by what it inserts
 created: 2026-11-07T03:33:02Z
-modified: 2026-11-08T03:33:22Z
+modified: 2026-11-08T10:20:00Z
 level: L1
-version: 0.2.9
+version: 0.2.10
 description: How a paste is judged without reading the owner's pasteboard - the browser checks the run's own clipboard text; the desktop asks before a paste that has no copy of the run's own before it.
 status: unverified
 grounded_in:
   - source: CU-151 (a pasted card number passes where a typed one asks; Cmd+V moves the owner's pasteboard unasked)
   - source: D-031 (copy, cut and paste allowed; the helper never reads the pasteboard) and D-050 to D-052 (the clipboard guard)
   - source: the CU-145 matrix rows paste-no-own-copy and web-paste-card
+  - source: CU-219 (a reply with no focused element dropped its count; the count now travels beside the null target)
 ---
 
 # A paste is judged by what it inserts
@@ -32,6 +33,11 @@ copies since. A copy with nothing selected (no rise), a take-over or pause in wh
 writing the pasteboard (a rise the run did not make) all make it the owner's. A clipboard-guarded fixture item
 (D-050) copies first; a write landing after the paste is judged asks - the safe side, counted.
 
+With nothing focused the focused target is null, and a null target carries no count. For a keystroke copy, cut or paste
+there the desktop driver reads the count beside it (`pasteboardChangeCount()`, a fresh `focused` read) and agent core
+judges on that count, the target staying null (CU-219): a placeholder target would change how every rule judges a
+no-focus key - one naming no app is refused, one with no role makes Return ask each time.
+
 A menu paste (Edit > Paste, a context-menu Paste) or, on the desktop, a toolbar or popover button named exactly Paste or Paste
 and Match Style (CU-192; English names; an undescribed icon is
 missed) is a click, so agent core judges it at the focused field:
@@ -48,6 +54,10 @@ name only where none is reported. A copy of shown text carries its caption's cla
   copy's own reply (a delayed-write test pins it).
 - No count: paste first -> asked; copy then paste -> allowed; copy, take-over, paste -> asked; mutant: no count falls
   back to allow.
+- Nothing focused (CU-219): Cmd+C then Cmd+V, the count risen by that copy -> allowed on the count, no target recorded;
+  a rise the run did not make -> asked; a copy with nothing focused pasted into a field, and the reverse -> judged on
+  the count; other keys never read it. Mutants: the side read dropped, read for any target, a copy recording another
+  count, a placeholder target made from the count.
 - Over-ask: none in our trajectories (5 of 5 pastes followed an own copy).
 - Live: consent-keys, unattended - Cmd+V into Message first asks and is declined, nothing pasted.
 

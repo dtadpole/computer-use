@@ -507,9 +507,9 @@ export async function runTask(options) {
     && /^(ax)?button$/i.test(String(target?.role ?? '')) && named(target, /^paste( and match style)?$/i)
   const isPaste = (action, target) => chordOf(action, 'V') || menuPaste(action, target) || buttonPaste(action, target)
   const countOf = (target) => (Number.isSafeInteger(target?.pasteboardChangeCount) && target.pasteboardChangeCount >= 0 ? target.pasteboardChangeCount : null)
-  const ownCopy = (target) => {
+  // CU-219: the judging functions take the count itself (the target's, or the driver's read beside a null target).
+  const ownCopy = (count) => {
     if (pasteboard.own === 0) return false
-    const count = countOf(target)
     return count === null || pasteboard.baseline === null ? true : count === pasteboard.baseline + pasteboard.own
   }
   // CU-183 (copy-source.md): a copy's source field is kept by its descriptor - role, name and the flags the name rules
@@ -549,9 +549,8 @@ export async function runTask(options) {
     if (t.isPassword === true || t.secure === true || t.inputType === 'password' || namesPasswordField(t)) { passwordKeys.add(t.fieldKey); return t }
     return passwordKeys.has(t.fieldKey) ? { ...t, seenAsPassword: true } : t
   }
-  const recordCopy = (target, selection = null) => {
+  const recordCopy = (target, selection = null, count = countOf(target)) => {
     const source = sourceOf(selection ?? target)
-    const count = countOf(target)
     if (count === null) { pasteboard.baseline = null; pasteboard.own += 1; pasteboard.sources.push(source); return }
     if (pasteboard.baseline === null || count !== pasteboard.baseline + pasteboard.own) { pasteboard.baseline = count; pasteboard.own = 0; pasteboard.sources = [] }
     pasteboard.own += 1
@@ -559,10 +558,10 @@ export async function runTask(options) {
   }
   // At a paste of the run's own copy: proven by the count, the last copy wrote what is pasted; with no count, every
   // source since the last proven count is passed and the policy takes the strongest.
-  const pastedSource = (target) => {
+  const pastedSource = (count) => {
     const known = pasteboard.sources.filter(Boolean)
     if (known.length === 0) return null
-    return countOf(target) !== null && pasteboard.baseline !== null ? pasteboard.sources[pasteboard.sources.length - 1] : known
+    return count !== null && pasteboard.baseline !== null ? pasteboard.sources[pasteboard.sources.length - 1] : known
   }
 
   const contextFor = async (action, previous = null) => {
@@ -610,17 +609,26 @@ export async function runTask(options) {
     // read beside it (a descriptor, never a value; null when it could not be read).
     const viaMenu = desktop && isPaste(action, target) && (menuPaste(action, target) || buttonPaste(action, target))
     const destination = viaMenu ? sourceOf(remembered(await environment.focusedElement().catch(() => null))) : undefined
+    // CU-219: a key copy, cut or paste with nothing focused has a null target, which carries no count. The driver reads
+    // the count beside it (pasteboardChangeCount) - never a placeholder target, which would change how every rule judges
+    // a no-focus key - so the target stays null and only the count is judged. A failed read or an environment without
+    // one leaves the count null, as before.
+    const bareKey = desktop && target === null && (chordOf(action, 'C') || chordOf(action, 'X') || chordOf(action, 'V'))
+    const count = bareKey && typeof environment.pasteboardChangeCount === 'function'
+      ? countOf({ pasteboardChangeCount: await Promise.resolve(environment.pasteboardChangeCount()).catch(() => null) })
+      : countOf(target)
     const paste = isPaste(action, target)
       ? (desktop
-          ? { ...(ownCopy(target) ? { fromOwner: false, ...(pastedSource(target) ? { source: pastedSource(target) } : {}) } : { fromOwner: true }), ...(viaMenu ? { destination } : {}) }
+          ? { ...(ownCopy(count) ? { fromOwner: false, ...(pastedSource(count) ? { source: pastedSource(count) } : {}) } : { fromOwner: true }), ...(viaMenu ? { destination } : {}) }
           : { text: String(environment.clipboard?.get?.() ?? ''), ...(runCopySource ? { source: runCopySource } : {}) })
       : null
-    // What a copy or paste was judged on goes on its event - numbers and the verdict, never content (cu-verifier).
+    // What a copy or paste was judged on goes on its event - numbers and the verdict, never content (cu-verifier). A
+    // copy records the count it was judged on (recordCopy below).
     const pasteboardJudged = paste
       ? (desktop
-        ? { kind: 'paste', count: countOf(target), baseline: pasteboard.baseline, copies: pasteboard.own, own: !paste.fromOwner, by: countOf(target) !== null && pasteboard.baseline !== null ? 'count' : 'history' }
+        ? { kind: 'paste', count, baseline: pasteboard.baseline, copies: pasteboard.own, own: !paste.fromOwner, by: count !== null && pasteboard.baseline !== null ? 'count' : 'history' }
         : { kind: 'paste', by: 'run-clipboard' })
-      : desktop && isCopy(action, target) ? { kind: 'copy', count: countOf(target) } : null
+      : desktop && isCopy(action, target) ? { kind: 'copy', count } : null
     return { url: state.url, target: remembered(target), ...(dropTarget ? { dropTarget: remembered(dropTarget) } : {}), ...(dragText !== undefined ? { dragText } : {}), ...(afterClose ? { afterClose: true } : {}), ...(resubmits ? { resubmits: historyMove } : {}), ...(historyJudged ? { historyJudged } : {}), ...(paste ? { paste } : {}), ...(pasteboardJudged ? { pasteboardJudged } : {}), ...(state.interstitial === true ? { interstitial: true } : {}), dialog: state.dialog ?? null, task: task.text, ...app }
   }
 
@@ -824,7 +832,7 @@ export async function runTask(options) {
       // CU-182: the site filter's verdict on the browser target's own origin at the moment the action is judged - so a
       // new_site approval later in this step, or later in the run, never names a target recorded before it.
       const judgedSiteAllows = !desktop && typeof context.target?.origin === 'string' && siteAllows(context.target.origin)
-      if (desktop && decision.decision === 'allow' && isCopy(judged, context.target)) recordCopy(context.target, await copySourceOf(judged, context.target))
+      if (desktop && decision.decision === 'allow' && isCopy(judged, context.target)) recordCopy(context.target, await copySourceOf(judged, context.target), context.pasteboardJudged?.count ?? null)
       // CU-139 (panel-folder-source.md 0.3.3): every desktop action judged in a file panel feeds the panel-folder state;
       // any action outside one drops it. The panel's selection is read only when it can matter (cmd-shift-G, a folder
       // being armed or held, a file choice) and reused below.

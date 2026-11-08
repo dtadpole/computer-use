@@ -610,6 +610,41 @@ test('CU-151: focusedElement and inspectPoint carry the pasteboard change count,
   assert.deepEqual((await read({ changeCount: 0 })).map((t) => t.pasteboardChangeCount), [0, 0], 'zero is a count')
 })
 
+test('CU-219: with nothing focused focusedElement stays null (no placeholder) and pasteboardChangeCount reads the count beside it - fresh from a focused read each time, null when absent or malformed', async () => {
+  const world = (extra) => ({ ...WORLD, focused: null, ...extra })
+  {
+    const { env, child } = await launched(world({ changeCount: 41, phases: [{ afterInputs: 1, changeCount: 42 }] }))
+    try {
+      assert.equal(await env.focusedElement(), null, 'nothing focused and no sheet or default button: null, as before - the count makes no target')
+      await loggedOf(child, 'focused')
+      const reads = typed(child, 'focused').length
+      assert.equal(await env.pasteboardChangeCount(), 41)
+      // The fake's stderr log can trail its reply under load: wait for the read to show, then count.
+      for (const deadline = Date.now() + 2000; typed(child, 'focused').length <= reads && Date.now() < deadline;) await pause(5)
+      assert.equal(typed(child, 'focused').length, reads + 1, 'one focused read of its own, never a cached count')
+      await env.perform({ type: 'keypress', keys: ['META', 'C'] })
+      assert.equal(await env.pasteboardChangeCount(), 42, 'read fresh: the rise after the copy is seen by the next read')
+      assert.equal(await env.focusedElement(), null, 'still no target after the rise')
+    } finally {
+      await env.close()
+      await stopFake(child)
+    }
+  }
+  const count = async (extra) => {
+    const { env, child } = await launched(world(extra))
+    try {
+      return await env.pasteboardChangeCount()
+    } finally {
+      await env.close()
+      await stopFake(child)
+    }
+  }
+  assert.equal(await count({}), null, 'a reply without the count: unknown')
+  for (const malformed of [-1, 1.5, '3', null, 2 ** 60, { n: 3 }]) assert.equal(await count({ changeCount: malformed }), null, JSON.stringify(malformed))
+  assert.equal(await count({ changeCount: 0 }), 0, 'zero is a count')
+  assert.equal(await count({ changeCount: 7, focused: { bundleId: FIXTURE, pid: 601, role: 'AXTextField', subrole: null, title: 'Message', frame: { x: 150, y: 450, width: 200, height: 24 }, secure: false } }), 7, 'with an element focused too')
+})
+
 test('CU-157: focusedElement and inspectPoint carry textEntered, read fresh each time (typing makes it true), strictly a boolean else null, outside the fingerprint, on the no-focus placeholder too', async () => {
   const FIELD = { bundleId: FIXTURE, pid: 601, role: 'AXTextField', subrole: null, title: 'Message', frame: { x: 150, y: 450, width: 200, height: 24 }, secure: false, editable: true }
   const SEND = { bundleId: FIXTURE, pid: 601, role: 'AXButton', subrole: null, title: 'Send', frame: { x: 240, y: 400, width: 60, height: 24 }, secure: false }
