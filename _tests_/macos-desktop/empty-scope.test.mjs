@@ -80,6 +80,7 @@ test('before any addApp every member that captures, inspects or posts is refused
     await assert.rejects(env.inspectPoint({ x: 1, y: 1 }), noScope)
     await assert.rejects(env.focusedElement(), noScope)
     await assert.rejects(env.pasteboardChangeCount(), noScope)
+    await assert.rejects(env.menuItemForChord({ type: 'keypress', keys: ['META', 'SHIFT', 'D'] }), noScope)
     await assert.rejects(env.pageText(), noScope)
     await pause(20)
     assert.deepEqual(types(child), ['pauseOnLocalInput'], 'not one request: no capture, hit test, text or input')

@@ -1,3 +1,4 @@
+import { normaliseForPolicy } from './normalise.mjs'
 import { homedir } from 'node:os'
 import { posix } from 'node:path'
 
@@ -14,11 +15,13 @@ import { NEVER_PRE_APPROVED, createPolicy, namesPasswordField } from './policy.m
 const CLICKS = new Set(['click', 'double_click', 'triple_click'])
 const HUMAN_CHANNELS = ['live', 'tty', 'api']
 // The driver presses a shifted digit as Shift plus the digit, so `META+#` is `META+SHIFT+3`.
-const SHIFTED = Object.freeze({ '#': '3', $: '4', '%': '5', '^': '6' })
+// CU-249: '*' is Shift-8 (Command-* is Get Result of AppleScript).
+const SHIFTED = Object.freeze({ '#': '3', $: '4', '%': '5', '^': '6', '*': '8' })
 
 /** A keypress's keys as a set of canonical names, whatever the order or dialect; empty for other actions. */
 function chord(action) {
-  if (action?.type !== 'keypress' || !Array.isArray(action.keys)) return new Set()
+  // CU-244: a hold carries a chord as a keypress does (systemShortcut() is exported and called on its own too).
+  if ((action?.type !== 'keypress' && action?.type !== 'hold_key') || !Array.isArray(action.keys)) return new Set()
   return new Set(action.keys.flatMap((key) => {
     let name
     try { name = normalizeKey(key) } catch { name = String(key) }
@@ -35,6 +38,8 @@ const SYSTEM_SHORTCUTS = Object.freeze([
   ['log out', ['META', 'SHIFT', 'Q']],
   ['lock screen', ['CTRL', 'META', 'Q']],
   ...['3', '4', '5', '6'].map((digit) => ['screenshot', ['META', 'SHIFT', digit]]),
+  // CU-242: listed before Spotlight, whose keys it contains, so the refusal names it (the first match names the chord).
+  ['Character Viewer', ['CTRL', 'META', 'SPACE']],
   ['Spotlight', ['META', 'SPACE']],
   ['Force Quit', ['META', 'ALT', 'ESCAPE']],
   ['app switcher', ['META', 'TAB']],
@@ -43,7 +48,49 @@ const SYSTEM_SHORTCUTS = Object.freeze([
   ['VoiceOver', ['META', 'F5']],
   // Keyboard focus to the menu bar, the Dock or the status menus reaches the Apple menu, other apps and menu extras.
   ...['F2', 'F3', 'F8'].map((key) => ['system keyboard focus', ['CTRL', key]]),
+  // CU-242 (cu-researcher): switching the input source changes the owner's keyboard layout past the run - an owner
+  // setting; Look Up (and the Character Viewer, above) are system panels over the app. Matched as a subset like every entry, so
+  // Control-Shift-Space (a common 'previous source' setting) is refused too.
+  ['input source', ['CTRL', 'SPACE']],
+  ['Look Up', ['CTRL', 'META', 'D']],
+  // CU-242 (cu-researcher, cu-coordinator 12:10Z): owner settings the system's hotkeys toggle - Dock hiding, keyboard
+  // access, Tab focus mode, and Zoom and Invert colours (refused whether or not the owner enabled them: fail closed).
+  ['Dock hiding', ['META', 'ALT', 'D']],
+  ['keyboard access', ['CTRL', 'F1']],
+  ['Tab focus mode', ['CTRL', 'F7']],
+  ['Invert colours', ['CTRL', 'ALT', 'META', '8']],
+  ['Zoom', ['ALT', 'META', '8']],
+  ['Zoom', ['ALT', 'META', '=']],
+  ['Zoom', ['ALT', 'META', '-']],
 ])
+
+// CU-249 (cu-researcher; cu-coordinator's ruling): the default macOS Services shortcuts the system apps declare
+// (NSServices NSKeyEquivalent). A service acts outside the approved app - a web search of the selection, a Bluetooth
+// send, AppleScript run on the selection, Terminal - so these chords are refused whatever the app binds: whether an
+// app's own item beats a Service in AppKit is unmeasured (a Medium follow-up). Matched exactly, as key equivalents are.
+// Named limit: owner-defined service shortcuts on other chords stay unseen (the menu read cannot list Services).
+const SERVICE_SHORTCUTS = Object.freeze([
+  ['Search With (a web search of the selection)', ['META', 'SHIFT', 'L']],
+  ['Make Sticky', ['META', 'SHIFT', 'Y']],
+  ['Send File To Bluetooth Device', ['META', 'SHIFT', 'B']],
+  ['Get Result of AppleScript (runs the selection)', ['META', 'SHIFT', '8']],
+  ['a Terminal man page service', ['META', 'SHIFT', 'M']],
+  ['a Terminal man page service', ['META', 'SHIFT', 'A']],
+])
+
+// CU-249 (cu-researcher's click route): a Services item clicked in a menu - the app menu's Services submenu or a
+// context menu - acts outside the approved app as its chord does. Known by the helper's servicesMenu flag where it
+// reports one, else by the default services' titles. Named over-ask: an app's own item titled like one (a browser's
+// 'Search With ...' context item); named limit: owner-installed services with other titles.
+const SERVICE_ITEM = /^(search with\b|get result of applescript|run as applescript|make (new )?sticky( note)?|send file to bluetooth device|open man page in terminal|search man page index in terminal|new terminal (tab )?at folder|new email with selection|airdrop$|set desktop picture|add to music as a spoken track|capture selection from screen)/i
+const serviceItem = (action, target) => CLICKS.has(action.type) && /^(ax)?menuitem$/i.test(String(target?.role ?? '')) &&
+  (target?.servicesMenu === true || SERVICE_ITEM.test(String(target?.name ?? '').trim()))
+
+/** The default Services shortcut a chord matches exactly, or null (CU-249). */
+export function serviceShortcut(action) {
+  const keys = chord(action)
+  return SERVICE_SHORTCUTS.find(([, needed]) => needed.length === keys.size && needed.every((key) => keys.has(key)))?.[0] ?? null
+}
 
 /** The name of the system shortcut a keypress would trigger, or null. */
 export function systemShortcut(action) {
@@ -68,6 +115,25 @@ function launchesCode(action, target) {
   if (action.type === 'double_click' || action.type === 'triple_click') return true
   const keys = chord(action)
   return keys.has('META') && (keys.has('O') || keys.has('ARROWDOWN'))
+}
+
+// CU-254 (cu-researcher; cu-coordinator: the install class, ask): the App Store installs or updates software from its
+// Get, Install, Update and Download buttons - no consent word names them - so a click on one, or Space or Return on one
+// focused, asks install - app-policy's own verdict, so no pre-approval covers it (as launch_code). Browsing stays
+// free. Named limit: third-party stores and updaters (Setapp, MacUpdater).
+const APP_STORE = 'com.apple.AppStore'
+const STORE_INSTALL = /^(get|install|update|update all|download|redownload|reinstall)\b/i
+// cu-verifier on #58: a button titled with a price ('$4.99', '¥30', '4,99 €', 'Price, 4.99 dollars') starts a purchase.
+const STORE_PRICE = /^(price\b|[$€£¥₩₹]\s?\d|\d+(?:[.,]\d+)?\s?[$€£¥₩₹])/i
+/** 'install' or 'purchase' for an App Store button that installs or buys, pressed by a click, Space or Return; else null. */
+function storeInstall(action, target, app) {
+  if (String(app ?? '') !== APP_STORE || !/^(ax)?button$/i.test(String(target?.role ?? ''))) return null
+  const name = String(target?.name ?? '').trim()
+  const cls = STORE_PRICE.test(name) ? 'purchase' : STORE_INSTALL.test(name) ? 'install' : null
+  if (cls === null) return null
+  if (CLICKS.has(action.type)) return cls
+  const keys = chord(action)
+  return action.type === 'keypress' && (keys.has('SPACE') || keys.has('ENTER')) ? cls : null
 }
 
 const isKeyAction = (action) => action.type === 'type' || action.type === 'keypress'
@@ -234,7 +300,12 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
 
   const approved = (bundleId) => runScope.has(bundleId.toLowerCase()) || approvals?.covers?.(bundleId) === true
 
-  function classify(action, context = {}) {
+  function classify(rawHeld, rawContext = {}) {
+    // CU-266: names, labels and typed text are judged normalised (zero-width and format characters, look-alikes).
+    const { action: held, context } = normaliseForPolicy(rawHeld, rawContext)
+    // CU-244: a key hold is judged exactly as the same chord pressed (CU-64 H3), here as in the loop - so the system
+    // shortcuts, the file-panel refusals and every keypress rule below see a held chord too, whoever calls.
+    const action = held?.type === 'hold_key' ? { type: 'keypress', keys: held.keys } : held
     if (action.type === 'navigate') return { decision: 'block', class: null, rule: 'desktop:navigate', reason: 'navigate is browser-only' }
     const target = context.target ?? null
     // Copy, cut and paste - chords and menu items - are allowed (D-031, replacing D-025's refusal); the helper never
@@ -242,6 +313,23 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     const shortcut = systemShortcut(action)
     if (shortcut !== null) {
       return { decision: 'block', class: null, rule: 'system_shortcut', reason: `${action.keys.join('+')} is the system's ${shortcut} shortcut; it acts beyond the approved app` }
+    }
+    // CU-249: a default Services chord may run a service outside the approved app - refused whatever the app binds.
+    const service = serviceShortcut(action)
+    if (service !== null) {
+      // Inside a file panel the panel's own refusal names the chord (Command-Shift-A is its Applications shortcut).
+      const panelBlock = panelKind(target) !== null ? panelVerdict(action, target, target?.origin ?? context.frontmostBundleId) : null
+      if (panelBlock?.decision === 'block') return panelBlock
+      return { decision: 'block', class: null, rule: 'system_shortcut', reason: `${action.keys.join('+')} may run the system service ${service}; it acts beyond the approved app` }
+    }
+    if (serviceItem(action, target)) {
+      return { decision: 'block', class: null, rule: 'system_service', reason: `"${String(target.name).trim()}" is a system service; it acts beyond the approved app` }
+    }
+    // A chord the menu read binds to a Services item fires that service too (cu-coordinator: as menu-key targets).
+    const boundList = context.boundMenuItem && typeof context.boundMenuItem === 'object' ? (Array.isArray(context.boundMenuItem.items) ? context.boundMenuItem.items : [context.boundMenuItem]) : []
+    const boundService = (action.type === 'keypress') ? boundList.find((one) => one?.servicesMenu === true || SERVICE_ITEM.test(String(one?.name ?? '').trim())) : undefined
+    if (boundService) {
+      return { decision: 'block', class: null, rule: 'system_service', reason: `${(action.keys ?? []).join('+')} fires the system service "${String(boundService.name).trim()}"; it acts beyond the approved app` }
     }
     // CU-232 (menu-key.md): a chord bound to an item of the Apple menu (Lock Screen, Log Out, Force Quit) acts beyond the
     // approved app, like the system's own shortcuts.
@@ -307,6 +395,10 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     // desktop's own - so no field a rule reads (dropTarget, afterClose, paste, the next one) can be dropped by a rebuild.
     const verdict = classes.classify(action, { ...context, url: 'desktop://', target, dialog: context.dialog ?? null })
     // Never pre-approvable: preApprovals are not consulted. Only a hand-off (a password change) outranks it.
+    const store = storeInstall(action, target, app)
+    if (store !== null && verdict.decision === 'allow') {
+      return { decision: 'confirm', class: store, classes: [store], rule: `target:${store}`, reason: `"${String(target.name).trim()}" in the App Store ${store === 'purchase' ? 'buys an app' : 'installs or updates software'}`, app }
+    }
     if (launchesCode(action, target) && verdict.decision !== 'handoff') {
       return { decision: 'confirm', class: 'launch_code', classes: ['launch_code', ...(verdict.classes ?? [])], rule: 'target:launch_code', reason: `open "${target.name}", which runs code`, app }
     }
@@ -322,6 +414,18 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     // file_choice (D-044), unless the helper attributes the element (hostedBy) or marks its panel.
     if (activates(action) && target && target.origin && !target.role && !target.name && target.opaque !== true) {
       return { decision: 'confirm', class: 'unknown_target', classes: ['unknown_target'], rule: 'target:undescribed', reason: `act on an element ${app} does not describe (it may belong to a system panel)`, app, askEachTime: true }
+    }
+    // CU-268: a name with one word mixing scripts may disguise what the control does (cu-developer-one's ruling): an
+    // activation asks each time, never pre-approved - so does a chord whose bound menu item is named so. Only where the
+    // rules would allow it: a folded look-alike already asks by its class ('Dеlete' asks delete).
+    if (verdict.decision === 'allow') {
+      const bound = context.boundMenuItem && !context.boundMenuItem.unreadable && !context.boundMenuItem.none
+        ? (Array.isArray(context.boundMenuItem.items) ? context.boundMenuItem.items : [context.boundMenuItem]) : []
+      const viaKey = (action.type === 'keypress' || action.type === 'hold_key') && bound.find((one) => one?.mixedScriptName === true)
+      if ((activates(action) && target?.mixedScriptName === true) || viaKey) {
+        const shown = viaKey ? viaKey.name : target.name
+        return { decision: 'confirm', class: 'unknown_target', classes: ['unknown_target'], rule: viaKey ? 'menu:mixed_script' : 'target:mixed_script', reason: `activate "${shown}", whose name mixes scripts in one word (a disguised control?)`, app, askEachTime: true }
+      }
     }
     // Where the accessibility tree says nothing, a click or Return may be anything (R92).
     if (activates(action) && target?.opaque === true && !preApprovedIn('unknown_target', app)) {

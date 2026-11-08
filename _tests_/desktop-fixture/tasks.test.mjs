@@ -575,3 +575,18 @@ describe('CU-66 S9 vendor-onboarding', () => {
   })
 })
 
+test('CU-135 export-overwrite: replacing the existing file passes by outcome; consent due for file_choice and delete', () => {
+  const task = DESKTOP_TASKS['export-overwrite']
+  assert.deepEqual(task.consent, { classes: ['file_choice', 'delete'] })
+  assert.equal(task.optIn, true)
+  const e = expectedFor('export-overwrite', 'unit')
+  const sandbox = mkdtempSync('/tmp/cu-fixture-sandbox-')
+  try {
+    task.prepare(e, { sandbox })
+    assert.match(judge('export-overwrite', facts(), { sandbox }).reason, /not replaced/)
+    writeFileSync(join(sandbox, e.filename), e.report)
+    assert.equal(judge('export-overwrite', facts(), { sandbox }).outcome, true)
+  } finally {
+    rmSync(sandbox, { recursive: true, force: true })
+  }
+})

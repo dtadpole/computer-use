@@ -106,6 +106,8 @@ import { makePng } from './png.mjs'
  * as the real helper reads a positive none - it sends the field in every focused reply; quirk omitDefaultButtonRead
  * leaves it out, the deviation CU-215 reads as unreadable; CU-190),
  * `sheet` (a sheet or alert where focus is, sent as given; CU-148),
+ * `menuKeys` (`[{ keyCode, flags, reply }]`: menuKey's answer for that exact keyDown) and `menuKeyDefault` (else; default
+ * `{ none: true, bundleId: <frontmost> }`, as helper 0.2.52 answers; CU-236),
  * `focusedApp` (sent as the 'focused' reply's `app`: the app whose window was read when no element has focus; CU-148),
  * `changeCount` (the pasteboard change count beside the focused element and the hit-tested one, phased; CU-151),
  * `textEntered` (whether the target's window holds typed text, beside the same two, sent as given and phased; CU-157),
@@ -270,6 +272,8 @@ const REQUESTS = {
   focused: [],
   // CU-187 (helper 0.2.45); quirk noSelection models an older helper (unknown_request).
   ...(quirks.noSelection ? {} : { selection: [] }),
+  // CU-236: the menu item a chord's keyDown would fire; quirk noMenuKey models a helper without it (unknown_request).
+  ...(quirks.noMenuKey ? {} : { menuKey: ['keyCode', 'flags'] }),
   panelSelection: [],
   screenText: ['maxChars'],
   watch: quirks.watchNoRegion ? ['fps', 'maxSize'] : ['fps', 'maxSize', 'region'],
@@ -707,6 +711,14 @@ function handle(message) {
           ...(selection && 'nameFieldFocused' in selection ? { nameFieldFocused: selection.nameFieldFocused } : {}),
         })
       }
+    case 'menuKey': {
+      // CU-236: config.menuKeys [{ keyCode, flags, reply }] - the reply sent as given for that exact keyDown - else
+      // config.menuKeyDefault (default { none: true }); the request is logged like every other.
+      if (quirks.noMenuKey) return refuse(id, 'unknown_request', `unknown request '${String(type)}'`)
+      if (scope === null) return refuse(id, 'no_scope', 'no scope is set')
+      const bound = (config.menuKeys ?? []).find((entry) => entry.keyCode === fields.keyCode && entry.flags === fields.flags)
+      return send({ id, ok: true, ...(bound ? bound.reply : (config.menuKeyDefault ?? { none: true, bundleId: config.frontmost ?? null })) })
+    }
     case 'selection':
       // CU-187: config.selection {role, caption, bundleId, pid} or null - the element holding the selection.
       if (quirks.noSelection) return refuse(id, 'unknown_request', `unknown request '${String(type)}'`)

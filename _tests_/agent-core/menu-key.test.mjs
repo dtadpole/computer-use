@@ -156,3 +156,13 @@ test('CU-232: an item under the Apple menu is refused like a system shortcut; th
   assert.ok(!JSON.stringify(events[0]).includes('Drafts'), 'no menu path in the record')
   assert.deepEqual(verdict(events[0]), ['confirm', 'submit'], 'a disabled item still counts')
 })
+
+test('CU-250 (cu-developer-two): a chord the menu read binds to an item marked servicesMenu is refused as a system service through the loop, any title', async () => {
+  const marked = await run([key('META', 'ALT', 'U')], { menu: () => ({ items: [{ ...item('Upload with Example Sync', 'U', 2), servicesMenu: true }] }) })
+  assert.deepEqual([marked.events[0].decision, marked.events[0].rule], ['block', 'system_service'])
+  assert.equal(marked.events[0].boundMenuItem.servicesMenu, true, 'the record keeps the mark, never a path')
+  const malformed = await run([key('META', 'ALT', 'U')], { menu: () => ({ items: [{ ...item('Upload with Example Sync', 'U', 2), servicesMenu: 'yes' }] }) })
+  assert.equal(malformed.events[0].rule, 'system_service', 'a malformed mark reads as marked (fail closed)')
+  const unmarked = await run([key('META', 'ALT', 'U')], { menu: () => ({ items: [item('Upload with Example Sync', 'U', 2)] }) })
+  assert.equal(unmarked.events[0].decision, 'allow', 'unmarked, an ordinary item')
+})

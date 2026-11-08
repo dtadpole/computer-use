@@ -11,7 +11,7 @@ import {
   captureImage, createHelperServer, HELLO_GRANTS, isPrivateDir, LOCAL_INPUT_KINDS, LOCAL_INPUT_VIA, MAX_SIMULATE_SCALE, PEER_CHECKS, replyError, REQUEST_TIMEOUT_MS,
   SETTLE_CAP_MS, SETTLE_MS,
 } from './helper-link.mjs'
-import { ACTION_TYPES, hitTestPoints, NAVIGATE_REFUSAL, planAction, planBatch } from './input-plan.mjs'
+import { ACTION_TYPES, chordKeyDowns, hitTestPoints, NAVIGATE_REFUSAL, planAction, planBatch } from './input-plan.mjs'
 import { keyName } from './keys.mjs'
 import { defaultBundlePath, driverIdentity, driverLaunchProblems, helperExecutablePath, launchHelper } from './launch.mjs'
 import { acquireDesktopRun, RUN_ID_PATTERN, SEAT_PATTERN } from './run-lock.mjs'
@@ -626,6 +626,146 @@ function keyEquivalentOf(value) {
   const char = typeof value.char === 'string' && value.char.length >= 1 && value.char.length <= 4 && !/[\u0000-\u001F\u007F]/u.test(value.char) ? value.char : null
   const modifiers = Number.isInteger(value.modifiers) && value.modifiers >= 0 && value.modifiers <= 15 ? value.modifiers : null
   return char === null && modifiers === null ? null : { char, modifiers }
+}
+
+/** CU-236: a menu title or path step as passed on - trimmed, at most 80 characters, no control characters; else null. */
+function menuTitleOf(value) {
+  if (typeof value !== 'string') return null
+  const text = value.trim()
+  return text !== '' && !/[\u0000-\u001F\u007F]/u.test(text) ? text.slice(0, 80) : null
+}
+
+/**
+ * CU-236: a bound item's key equivalent - `char` (AXMenuItemCmdChar), or `glyph` (AXMenuItemCmdGlyph, an integer code for
+ * Delete, Return, arrows, F-keys) and `virtualKey` (AXMenuItemCmdVirtualKey), and `modifiers` (AXMenuItemCmdModifiers, 0-15 as keyEquivalentOf reads it). Null when
+ * neither a char nor a glyph is usable.
+ */
+function menuKeyEquivalentOf(value) {
+  const base = keyEquivalentOf(value)
+  const glyph = Number.isSafeInteger(value?.glyph) && value.glyph > 0 && value.glyph < 0x10000 ? value.glyph : null
+  // AXMenuItemCmdVirtualKey (helper 0.2.52): the kVK code of a non-character key equivalent, 0-127.
+  const virtualKey = Number.isSafeInteger(value?.virtualKey) && value.virtualKey >= 0 && value.virtualKey <= 127 ? value.virtualKey : null
+  if (base?.char == null && glyph === null && virtualKey === null) return null
+  return { char: base?.char ?? null, ...(glyph !== null ? { glyph } : {}), ...(virtualKey !== null ? { virtualKey } : {}), modifiers: base?.modifiers ?? null }
+}
+
+/** CU-236: the most items one answer may carry (cu-developer-one's decision; the helper caps its list there too). */
+export const MAX_BOUND_ITEMS = 8
+
+/** One entry of a menuKey list as passed on, or null when it is malformed or untitled. */
+function boundEntryOf(item, scope) {
+  if (item === null || typeof item !== 'object' || Array.isArray(item)) return null
+  if (item.bundleId !== undefined && (typeof item.bundleId !== 'string' || !scope.includes(item.bundleId))) return null
+  if (item.appleMenu !== undefined && typeof item.appleMenu !== 'boolean') return null
+  const name = menuTitleOf(item.title)
+  if (name === null) return null
+  const path = Array.isArray(item.path) ? item.path.slice(0, 8).map(menuTitleOf).filter((step) => step !== null) : []
+  return {
+    role: 'AXMenuItem', name, keyEquivalent: menuKeyEquivalentOf(item.keyEquivalent), path,
+    enabled: typeof item.enabled === 'boolean' ? item.enabled : null,
+    ...(item.appleMenu === true ? { appleMenu: true } : {}),
+  }
+}
+
+/** Entries deduplicated by what agent core judges (name, path, key equivalent), in order. */
+function distinctEntries(entries) {
+  const seen = new Set()
+  return entries.filter((entry) => {
+    const key = JSON.stringify([entry.name, entry.path, entry.keyEquivalent])
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
+/**
+ * CU-236: one menuKey reply as the driver passes it on, failing closed. The helper answers every item whose key
+ * equivalent matches (a disabled benign first match must not hide a consequential one), so the answer is a list:
+ * `{ items: [{ role: 'AXMenuItem', name, keyEquivalent, path, enabled, appleMenu? }] }` with 1 to MAX_BOUND_ITEMS
+ * distinct entries, and `{ none: true }` only for that exact answer - each only when the reply names an app in `scope`; `{ unreadable: true }` for everything else - the
+ * helper's own unreadable (its `reason` is not passed on), `truncated` or `incomplete`, an empty or over-long list, any malformed or untitled entry, a bundle id outside
+ * `scope` (the reply's or an entry's), a malformed reply. Never a value: only titles, the path of titles, the key
+ * equivalent (CU-154's integer modifier mask), whether the item is enabled (context only: disabled items still count),
+ * and the helper's mark for the Apple menu.
+ */
+export function boundMenuItemOf(reply, scope = []) {
+  const unreadable = { unreadable: true }
+  if (reply === null || typeof reply !== 'object') return unreadable
+  // Every answer names the app whose bar was read (helper 0.2.52 always does; cu-researcher, cu-developer-one): a list or
+  // a none without a string bundle id in the run's scope is unreadable.
+  if (typeof reply.bundleId !== 'string' || !scope.includes(reply.bundleId)) return unreadable
+  const flagged = (field) => reply[field] !== undefined && reply[field] !== false
+  if (reply.none === true && reply.items === undefined && reply.unreadable === undefined && !flagged('truncated') && !flagged('incomplete')) return { none: true }
+  // incomplete (helper 0.2.52): a lazily filled top-level menu showed no items, so a match may be missing - unreadable,
+  // like truncated (cu-developer-one's decision); found items are not judged alone.
+  if (reply.none !== undefined || reply.unreadable !== undefined || flagged('truncated') || flagged('incomplete')) return unreadable
+  if (!Array.isArray(reply.items) || reply.items.length < 1 || reply.items.length > MAX_BOUND_ITEMS) return unreadable
+  const entries = reply.items.map((item) => boundEntryOf(item, scope))
+  if (entries.some((entry) => entry === null)) return unreadable
+  return { items: distinctEntries(entries) }
+}
+
+/** Two answers (two keys of one chord) as one: an unreadable read wins; lists join, deduplicated, within the cap. */
+function combineBound(a, b) {
+  if (a === null) return b
+  if (a.unreadable || b.unreadable) return { unreadable: true }
+  if (a.none) return b
+  if (b.none) return a
+  const items = distinctEntries([...a.items, ...b.items])
+  return items.length > MAX_BOUND_ITEMS ? { unreadable: true } : { items }
+}
+
+/**
+ * CU-255: the file an element shows (the helper's `filename`, AXFilename) as launch_code reads it - a bare file name
+ * of 1 to 255 characters with no '/' or control character; null otherwise or when absent (an older helper, a non-file
+ * element). Finder may hide the extension in the element's title (Payload for Payload.app), never in this.
+ */
+export function fileNameOf(value) {
+  if (typeof value !== 'string') return null
+  const name = value.trim()
+  return name.length > 0 && name.length <= 255 && !name.includes('/') && !/[\u0000-\u001f\u007f]/.test(name) ? name : null
+}
+
+/**
+ * CU-255: an element's `url` (AXURL) reduced to what launch_code reads - a file URL's last path component, decoded, a
+ * directory or bundle keeping its trailing '/' (Payload.app/); never the path, which names the owner's folders. Null for
+ * any other scheme, a malformed URL or a leaf fileNameOf refuses.
+ */
+export function fileUrlLeafOf(value) {
+  if (typeof value !== 'string') return null
+  let url
+  try {
+    url = new URL(value)
+  } catch {
+    return null
+  }
+  if (url.protocol !== 'file:') return null
+  const parts = url.pathname.split('/').filter((part) => part !== '')
+  if (parts.length === 0) return null
+  let leaf
+  try {
+    leaf = fileNameOf(decodeURIComponent(parts[parts.length - 1]))
+  } catch {
+    return null
+  }
+  return leaf === null ? null : leaf + (url.pathname.endsWith('/') ? '/' : '')
+}
+
+/**
+ * CU-265: the scheme of a link's URL, what agent core asks about when it is not a web scheme (facetime:, tel:, zoommtg:,
+ * mailto: start another app) - lower case, no colon, the scheme only and never the rest of the URL. Null when there is
+ * no URL or it does not parse.
+ */
+export function linkSchemeOf(url) {
+  if (typeof url !== 'string' || url.trim() === '') return null
+  let parsed
+  try {
+    parsed = new URL(url.trim())
+  } catch {
+    return null
+  }
+  const scheme = parsed.protocol.replace(/:$/, '').toLowerCase()
+  return /^[a-z][a-z0-9+.-]{0,31}$/.test(scheme) ? scheme : null
 }
 
 /** A helper's panel marker: 'save', 'open' or 'unknown' (any other value fails closed to 'unknown'); null when absent. */
@@ -1562,6 +1702,14 @@ class DesktopEnvironment {
       // title, as the helper reads it) - never its value or its own title. A string of at most 80 characters, null when
       // absent (an older helper) or malformed. Context, not identity: outside the fingerprint, and never in run records.
       caption: typeof element.caption === 'string' && element.caption.trim() !== '' ? element.caption.trim().slice(0, 80) : null,
+      // CU-255: the file the element shows and its URL's last component, what launch_code reads besides the name - Finder
+      // may hide an extension in the title (Payload for Payload.app or install.command). Outside the fingerprint, and
+      // never in run records (an event's target keeps origin, role and name); the URL's path never leaves the driver.
+      filename: fileNameOf(element.filename),
+      url: fileUrlLeafOf(element.url),
+      // CU-265: a link's scheme (AXLink's AXURL), so a facetime:, tel: or mailto: link is not a plain click. Links only - a
+      // file browser's items carry file: URLs and are judged by launch_code - and the scheme only, never the URL.
+      linkScheme: element.role === 'AXLink' ? linkSchemeOf(element.url) : null,
       fingerprint,
       ...(fieldKey !== null ? { fieldKey } : {}),
     }
@@ -1682,6 +1830,43 @@ class DesktopEnvironment {
     } catch {
       return null
     }
+  }
+
+  /**
+   * CU-232/CU-236: the menu item a key chord would fire in the frontmost approved app, read before it is sent - AppKit
+   * offers a key equivalent to the menu bar, so Shift-Command-D sends Mail's draft as surely as a click on Message >
+   * Send. The helper's menuKey gets each of the chord's non-modifier keyDowns exactly as the chord would post them
+   * (chordKeyDowns: one key mapping for the read and the input) and answers the matching item's title, path and key
+   * equivalent of every matching item, `none` when the bar was read whole with no match, or `unreadable`. Returns
+   * boundMenuItemOf's shape, the lists of a chord's keys joined; a refusal (an older helper's unknown_request), a throw
+   * or a chord the planner refuses reads as `{ unreadable: true }` - agent core asks then, except for its editing chords.
+   * A chord with no non-modifier key fires no item: `{ none: true }`. Read fresh each time; never cached here.
+   */
+  async menuItemForChord(action) {
+    this.#assertInScope()
+    let downs
+    try {
+      if (action?.type !== 'keypress' && action?.type !== 'hold_key') return { unreadable: true }
+      downs = chordKeyDowns(action.keys)
+    } catch {
+      return { unreadable: true }
+    }
+    const seen = new Set()
+    let bound = null
+    for (const down of downs) {
+      const key = `${down.keyCode}:${down.flags}`
+      if (seen.has(key)) continue
+      seen.add(key)
+      let reply
+      try {
+        reply = await this.link.request('menuKey', { keyCode: down.keyCode, flags: down.flags })
+      } catch {
+        return { unreadable: true }
+      }
+      bound = combineBound(bound, boundMenuItemOf(reply, this.scope))
+      if (bound.unreadable) return bound
+    }
+    return bound ?? { none: true }
   }
 
   /** Visible text of the frontmost approved window for the inspector; secure fields are left out by the helper. */
