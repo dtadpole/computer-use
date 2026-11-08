@@ -714,6 +714,7 @@ const SYS_T = {
   vscodeTerminalZhHantReal: { role: 'AXTextArea', name: '終端機 1，node', editable: true },
   vscodeDebugConsoleHans: { role: 'AXTextArea', name: '调试控制台', editable: true },
   vscodeDebugConsoleHant: { role: 'AXTextArea', name: '偵錯主控台', editable: true },
+  fixtureConsoleWordZh: { role: 'AXTextField', name: '控制台', editable: true },
   openFolderButton: { role: 'AXButton', name: 'Open Folder' },
   codeEditor: { role: 'AXTextArea', name: 'Editor - deploy.py', editable: true },
   placeOrderArmenian: { role: 'AXButton', name: 'Place \u0555rder' },
@@ -819,6 +820,9 @@ const SYSTEM_ROWS = [
   ['ide-terminal-zh-hant-real-label', 'typeLs', 'vscodeTerminalZhHantReal', 'block:terminal_view', 'CU-279 (VS Code zh-hant: 終端機 and a fullwidth comma)', 'no live row yet', 'todo CU-279', { app: VSCODE_ID }],
   ['ide-debug-console-zh-hans', 'typeLs', 'vscodeDebugConsoleHans', 'block:terminal_view', 'CU-296 (VS Code zh-hans debugConsole, a REPL)', 'no live row yet', 'todo CU-296', { app: VSCODE_ID }],
   ['ide-debug-console-zh-hant', 'typeLs', 'vscodeDebugConsoleHant', 'block:terminal_view', 'CU-296 (VS Code zh-hant debugConsole, a REPL)', 'no live row yet', 'todo CU-296', { app: VSCODE_ID }],
+  // Policy owner 22:06Z: the CJK console words count only in IDE apps - outside them 控制台 is a cloud dashboard
+  // (阿里云控制台, 腾讯云控制台), and a refusal there would lock the agent out of it.
+  ['non-ide-console-word-zh', 'typeLs', 'fixtureConsoleWordZh', 'allow', 'CU-296 negative (a dashboard word outside an IDE)', 'no live row yet', 'open CU-296', { app: FIXTURE_ID }],
   ['ide-editor-type (negative)', 'typeLs', 'codeEditor', 'allow', 'CU-279 negative (typing in the editor is the task)', 'no live row yet', 'open CU-279', { app: VSCODE_ID }],
   ['ide-open-folder', 'click', 'openFolderButton', 'allow', 'CU-271 negative (no code runs)', 'no live row yet', 'open CU-271', { app: VSCODE_ID }],
   // CU-268 (14:29Z ruling): a single word mixing Latin with another script asks unknown_target on the desktop, each time -
