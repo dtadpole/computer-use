@@ -133,6 +133,29 @@ function dropsOntoApp(target) {
 }
 const appNameOf = (target) => String(target?.filename ?? target?.name ?? '').trim().replace(/\.app\/?$/i, '')
 
+// CU-271: IDEs (kind ide) - a bundle id or a prefix ending in '.'; Cursor by its exact id (cu-developer-three's read: the
+// com.todesktop. prefix is every ToDesktop-built app).
+const IDE_BUNDLES = ['com.microsoft.VSCode', 'com.microsoft.VSCodeInsiders', 'com.visualstudio.code.oss', 'com.vscodium', 'com.todesktop.230313mzl4w4u92',
+  'com.apple.dt.Xcode', 'com.jetbrains.', 'com.google.android.studio', 'com.sublimetext.', 'com.panic.nova', 'dev.zed.Zed']
+function isIde(bundleId) {
+  const id = String(bundleId ?? '').toLowerCase()
+  return id !== '' && IDE_BUNDLES.some((entry) => (entry.endsWith('.') ? id.startsWith(entry.toLowerCase()) : id === entry.toLowerCase() || id.startsWith(`${entry.toLowerCase()}.`)))
+}
+// cu-researcher on #119: Build (a build system runs the file) and Test (runs test code) run code too.
+const RUN_NAME = /(^|[^a-z])(run|runs|debug|debugging|execute|build and run|build|test|tests)([^a-z]|$)/i
+const RUN_CLICKS = new Set(['click', 'double_click', 'triple_click'])
+function runsInIde(action, target, bound) {
+  // A menu-bar title ('Run' in VS Code's bar) only opens its menu - the item chosen in it is judged.
+  if (RUN_CLICKS.has(action.type)) return !/^(ax)?menubaritem$/i.test(String(target?.role ?? '')) && RUN_NAME.test(String(target?.name ?? ''))
+  if (action.type !== 'keypress' && action.type !== 'hold_key') return false
+  const keys = new Set((action.keys ?? []).map((key) => String(key).toUpperCase()))
+  if ([...keys].some((key) => /^F5$/.test(key))) return true
+  if (keys.size === 2 && keys.has('META') && keys.has('R')) return true
+  if (keys.size === 2 && keys.has('ENTER') && (keys.has('SHIFT') || keys.has('CTRL'))) return true
+  const items = bound && typeof bound === 'object' ? (Array.isArray(bound.items) ? bound.items : (typeof bound.name === 'string' ? [bound] : [])) : []
+  return items.some((item) => RUN_NAME.test(String(item?.name ?? '')))
+}
+
 function launchesCode(action, target) {
   // Finder may hide an extension, so the AX file name or URL the driver reports counts too (red-team retest of P10).
   const names = [target?.name, target?.filename, target?.url].map((value) => String(value ?? '').trim())
@@ -210,11 +233,15 @@ const APP_STORE = 'com.apple.AppStore'
 const STORE_INSTALL = /^(get|install|update|update all|download|redownload|reinstall)\b/i
 // cu-verifier on #58: a button titled with a price ('$4.99', '¥30', '4,99 €', 'Price, 4.99 dollars') starts a purchase.
 const STORE_PRICE = /^(price\b|[$€£¥₩₹]\s?\d|\d+(?:[.,]\d+)?\s?[$€£¥₩₹])/i
+// CU-280 (cu-researcher; cu-coordinator: Medium): a free trial starts a renewing subscription, and a price may be written
+// with its currency code ('USD 4.99', '4,99 EUR') - both are purchases.
+const STORE_TRIAL = /^(try (it )?free|start (a |your )?free trial|free trial|try free for)\b/i
+const STORE_CODE_PRICE = /^((usd|eur|gbp|jpy|cny|rmb|krw|inr|cad|aud|chf|sek|nok|dkk|hkd|sgd|nzd|brl|mxn)\s?\d|\d+(?:[.,]\d+)?\s?(usd|eur|gbp|jpy|cny|rmb|krw|inr|cad|aud|chf|sek|nok|dkk|hkd|sgd|nzd|brl|mxn)\b)/i
 /** 'install' or 'purchase' for an App Store button that installs or buys, pressed by a click, Space or Return; else null. */
 function storeInstall(action, target, app) {
   if (String(app ?? '') !== APP_STORE || !/^(ax)?button$/i.test(String(target?.role ?? ''))) return null
   const name = String(target?.name ?? '').trim()
-  const cls = STORE_PRICE.test(name) ? 'purchase' : STORE_INSTALL.test(name) ? 'install' : null
+  const cls = STORE_PRICE.test(name) || STORE_CODE_PRICE.test(name) || STORE_TRIAL.test(name) ? 'purchase' : STORE_INSTALL.test(name) ? 'install' : null
   if (cls === null) return null
   if (CLICKS.has(action.type)) return cls
   const keys = chord(action)
@@ -501,6 +528,12 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     }
     if (launchesCode(action, target) && verdict.decision !== 'handoff') {
       return { decision: 'confirm', class: 'launch_code', classes: ['launch_code', ...(verdict.classes ?? [])], rule: 'target:launch_code', reason: `open "${target.name}", which runs code`, app }
+    }
+    // CU-271 (cu-researcher; cu-coordinator 14:22Z: High, ask): in an IDE, running the code is the owner's call - a run or
+    // debug control by name (menu, toolbar, CodeLens), a menu item a chord fires with such a name, and the run chords (F5
+    // with any modifiers, Command-R, Shift- or Control-Return) ask launch_code, never pre-approved. Typing code stays free.
+    if (isIde(app) && verdict.decision !== 'handoff' && runsInIde(action, target, context.boundMenuItem)) {
+      return { decision: 'confirm', class: 'launch_code', classes: ['launch_code', ...(verdict.classes ?? [])], rule: 'ide:run', reason: `run code in ${app}`, app }
     }
     const opensFiles = opensUnreadSelection(action, target, app) || (opensSelection(action, target) && selectsFiles(context.selection))
     if (opensFiles && selectionRunsCode(context.selection) && verdict.decision !== 'handoff') {
