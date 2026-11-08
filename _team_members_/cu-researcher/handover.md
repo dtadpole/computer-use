@@ -1,13 +1,13 @@
 ---
 title: '[cu] Researcher - Handover'
 created: 2026-11-08T04:16:21Z
-modified: 2026-11-08T04:16:21Z
+modified: 2026-11-08T23:06:02Z
 level: L2
-version: 1.0.0
-description: 'What a fresh session of [cu] Researcher needs - live state, open PRs and asks, the methods, and the next step.'
+version: 2.0.0
+description: 'What the successor of [cu] Researcher needs - open PRs and what each waits for, owed flips and live closes, reviews due, lessons and rules.'
 status: unverified
 grounded_in:
-  - source: the seat's own state, 2026-11-08 0416Z (cu-coordinator's move notice, inbox 20261108T041401)
+  - source: the seat's own state at 2305Z, main at da1d49f (CU-252's any-app rule, CU-291, CU-293, CU-294 landed; the main checkout moved to ~/dtadpole/computer-use)
 ---
 
 # [cu] Researcher - Handover
@@ -15,24 +15,35 @@ grounded_in:
 Start here, then [responsibilities](responsibilities.md) and [red-team-consent-tables](red-team-consent-tables.md).
 
 ```text
-WHERE: code worktree ~/computer-use--cu-researcher, kept detached at origin/main for probes (main checkout
-~/dtadpole/heddle/_projects_/computer-use); develop in a fresh clone (/tmp/cu-researcher-int, lost on reboot);
-records ~/reflection--cu-researcher (a records PR per change, self-merged).
+WHERE: worktree ~/computer-use--cu-researcher (the helper admits it); a branch per change from origin/main. The main
+checkout is ~/dtadpole/computer-use (symlinks at the old paths): never edit it, nor anything under its .git.
 
-TABLES (mine): D-059 _tests_/agent-core/consent-routes.test.mjs, D-061 sensitive-classes.test.mjs; re-signed by
-cu-verifier on main 309c60328 (#553). Open: D-059 drag-readonly-textview-value (CU-209, after 0.2.51); D-061 none.
-D-064 via closingRun (#547): a closing run is cu-verifier's or a decision in a closing form.
+OPEN PRS (head - waits for): #154 52c0c40 record 2.3.0 - OK'd. #34 d28fc65 consent-limits 0.3.8 - re-OK.
+Table PRs whose heads moved today (flips, live closes) - re-OK: #43 bb5baef, #48 efa7110, #63 14696ae, #65 7f2b70b,
+#68 a7e9e72, #140 0534b07 (cu-verifier). Older table PRs, clean with main and 0 failures at 22:47Z - an OK at their
+heads: #20, #41, #57, #69, #73, #77. #44 is superseded by this PR.
 
-PRS TO WATCH: #470 then #555 (CU-218, CU-220; my OKs sent to cu-integrator); #529 (0.2.51); #556 (guide, HOLD);
-#554. After #555, cu-verifier's CU Ledger Vendor copy may ask: add it as a new over-ask row (open CU-219) with
-its run, not a flip.
+ACTION LOG: every new PR adds its line (actor cu-researcher, UTC Z, commit null); PRs opened before #148 land
+without one and are logged after they merge (one line each, with the merge commit). An old branch's first main
+merge conflicts on the log: keep both sides (git merge-file --union), each line must parse.
 
-NEXT: close the CU-209 cell on cu-verifier's run after 0.2.51 installs; review every consent/classifier PR on a
-real test merge (three-dot diff; never git merge-tree); keep consent-routes.md and sensitive-classes.md at
-<500 words and true.
+OWED FLIPS: #146 -> #48's five CU-279 terminal cells; #149 -> #48's two CU-296 Debug Console cells.
+LIVE CLOSES OWED: CU-294's six web cells need a browser run, its two Firefox checkboxes a checkbox run; CU-293's
+Traditional cells; CU-286's remember-decision checkbox; CU-267's three cells close with D-065 once ruled.
+REVIEWS DUE: #150 (0.2.58) after its main merge - helper Sources unchanged from 4f186dc; after install, the start
+log's 'checkouts:' line names the new roots. Guide lines owed: CU-252's over-ask, the IDE over-block (after
+#146/#149), saving a password or passkey.
 
-RULES: never verify my own filings (CU-145..198, list in Linear) - route bridge pings to cu-verifier; PR states
-as number=state; send only --from cu-researcher, one send per command; D-034 budget ~20.69 of 25 USD, the 21
-USD line holds, Opus S8/S9 waits for the owner; no input outside CUHelper (D-056); reply to the owner in
-Chinese every round with the todo list.
+LESSONS: take labels from an app's own localization files (vscode-loc, mozilla-l10n, Apple's zh-cn and zh-tw guides)
+- VS Code's zh terminal label has a fullwidth comma; Traditional differs in words, not glyphs. Terminal rows need a
+non-shell title (zsh trips E5 by itself). Trace every route of a check (#150's lexical branch). Read the producer
+(loop.mjs) before trusting a policy probe's input shapes. A 'Fixes CU-n' PR must pass every todo pinned to CU-n. A
+run closes only cells of its route, control and exact label. Gate a commit on its edit applied (counts) and 0
+failures; commit before a detached test merge; read the inbox before every push.
+
+RULES: never verify my own filings (CU-145..198, 223, 226, 228, 231, 232, 234, 240, 242, 244, 245, 249, 251-254,
+256-258, 260, 261, 263-273, 278, 283-286, 288, 289, 291-294, 296); send only --from cu-researcher; OKs by inbox as
+'#N OK at <sha>'. D-034: 20.69 of 25 USD; announce a live model run's cost first and log it on CU-66; the 21 USD
+line holds; model-a on S8/S9 waits for the owner. No input outside CUHelper (D-056). Reply to the owner in Chinese
+with the todo list, every round.
 ```
