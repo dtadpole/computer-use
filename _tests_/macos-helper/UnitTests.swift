@@ -29,6 +29,127 @@ extension JSON: ExpressibleByStringLiteral, ExpressibleByBooleanLiteral, Express
 
 // MARK: - JSON and parsing
 
+func testMenuKey() {
+  // CU-235: the matching rule on what AppKit serves Accessibility, the values measured 2026-11-08 (CU-235 part 1).
+  let cmd: UInt64 = 0x100000, shift: UInt64 = 0x20000, option: UInt64 = 0x80000, control: UInt64 = 0x40000
+  func chord(_ code: Int, _ flags: UInt64) -> MenuKey.Chord {
+    MenuKey.Chord(keyCode: code, flags: flags, unshifted: MenuKey.usLayout[code]?.0, shifted: MenuKey.usLayout[code]?.1)
+  }
+  func entry(_ char: String?, _ modifiers: Int?, vk: Int? = nil, glyph: Int? = nil, enabled: Bool = true) -> MenuKey.Entry {
+    MenuKey.Entry(title: "item", path: ["Menu", "item"], enabled: enabled, cmdChar: char, cmdModifiers: modifiers, cmdVirtualKey: vk, cmdGlyph: glyph)
+  }
+  let clearLog = entry("K", 1), plainK = entry("K", 0)
+  check(MenuKey.fires(clearLog, chord(40, cmd | shift)) && !MenuKey.fires(clearLog, chord(40, cmd)), "Clear Log (K, Shift bit) fires on Shift-Command-K only")
+  check(MenuKey.fires(plainK, chord(40, cmd)) && !MenuKey.fires(plainK, chord(40, cmd | shift)), "a Command-K item (K, 0) fires on Command-K, not Shift-Command-K")
+  check(MenuKey.fires(entry("k", 0), chord(40, cmd)), "a lower-case CmdChar matches too (case carries nothing)")
+  check(MenuKey.fires(entry("D", 1), chord(2, cmd | shift)) && !MenuKey.fires(entry("D", 1), chord(2, cmd | shift | option)), "Send on Shift-Command-D, not with Option too")
+  check(MenuKey.fires(entry("V", 3), chord(9, cmd | option | shift)) && !MenuKey.fires(entry("V", 3), chord(9, cmd | shift)), "Paste and Match Style (V, 3) needs Option and Shift")
+  check(MenuKey.fires(entry("W", 2), chord(13, cmd | option)), "an Option alternate (Close All, W, 2) fires on Command-Option-W")
+  check(MenuKey.fires(entry("\u{8}", 0, vk: 51, glyph: 23), chord(51, cmd)) && !MenuKey.fires(entry("\u{8}", 0, vk: 51, glyph: 23), chord(51, 0)),
+        "Move to Trash (Backspace, VK 51) fires on Command-Backspace, not a plain Backspace")
+  check(MenuKey.fires(entry("\u{8}", 8, vk: 51, glyph: 23), chord(51, 0)), "a plain-Backspace item (no-Command bit) fires on Backspace alone")
+  check(MenuKey.fires(entry("\u{1B}", 8, vk: 53, glyph: 27), chord(53, 0)) && MenuKey.fires(entry("\u{F708}", 8, vk: 96, glyph: 115), chord(96, 0)),
+        "Escape and F5 match by virtual key")
+  check(MenuKey.fires(entry("A", 12), chord(0, control)) && !MenuKey.fires(entry("A", 12), chord(0, control | cmd)), "a Control-only item (bits 4 and 8) needs no Command")
+  check(MenuKey.fires(entry("1", 1), chord(18, cmd | shift)) && MenuKey.fires(entry("!", 0), chord(18, cmd | shift)),
+        "Shift-Command-1 reaches '1' with Shift and '!' without it")
+  check(!MenuKey.fires(entry("!", 0), chord(18, cmd)) && !MenuKey.fires(entry("1", 1), chord(18, cmd)), "Command-1 reaches neither")
+  check(MenuKey.fires(entry("D", 3, enabled: false), chord(2, cmd | shift | option)), "a disabled item still matches (agent core judges it)")
+  check(!MenuKey.fires(entry(nil, nil), chord(2, cmd)) && !MenuKey.fires(entry("", 0), chord(2, cmd)), "an item without a key equivalent never matches")
+  check(!MenuKey.fires(entry(",", 0), chord(43, cmd | shift)) && MenuKey.fires(entry(",", 0), chord(43, cmd)), "punctuation matches the layout's character")
+  // The read: every match in menu order, capped; a lazily filled menu turns a miss into unreadable.
+  let send = MenuKey.Entry(title: "Send", path: ["Message", "Send"], enabled: true, cmdChar: "D", cmdModifiers: 1, cmdVirtualKey: nil, cmdGlyph: nil)
+  let other = MenuKey.Entry(title: "Duplicate", path: ["Edit", "Duplicate"], enabled: false, cmdChar: "D", cmdModifiers: 1, cmdVirtualKey: nil, cmdGlyph: nil)
+  check(MenuKey.read(bundleId: "a.b", entries: [other, send, plainK], emptyMenus: [], chord: chord(2, cmd | shift)) == .items(bundleId: "a.b", items: [other, send], truncated: false, incomplete: false),
+        "every matching item is answered, a disabled first match does not hide an enabled one")
+  check(MenuKey.read(bundleId: "a.b", entries: [plainK], emptyMenus: [], chord: chord(2, cmd | shift)) == .none(bundleId: "a.b", incomplete: false), "no match: none")
+  check(MenuKey.isEmptyMenu(role: "AXMenu", depth: 2, childCount: 0, underApple: false) && MenuKey.isEmptyMenu(role: "AXMenuBarItem", depth: 1, childCount: 0, underApple: false),
+        "an empty top-level menu, and a menu-bar item with no menu until it opens, are empty menus")
+  check(!MenuKey.isEmptyMenu(role: "AXMenuBarItem", depth: 1, childCount: 0, underApple: true) && !MenuKey.isEmptyMenu(role: "AXMenu", depth: 2, childCount: 0, underApple: true),
+        "the Apple menu (the first, by position) never counts")
+  check(!MenuKey.isEmptyMenu(role: "AXMenu", depth: 4, childCount: 0, underApple: false) && !MenuKey.isEmptyMenu(role: "AXMenu", depth: 2, childCount: 3, underApple: false),
+        "a nested empty submenu (Services, Open Recent) and a filled menu do not count - the named limit")
+  // Hidden duplicates (CU-238's measurement: AX serves Send Now, the later duplicate of Mark as Read's Option-Command-D,
+  // with modifiers 2 and no character).
+  let markRead = MenuKey.Entry(title: "Mark as Read", path: ["Message", "Mark as Read"], enabled: false, cmdChar: "D", cmdModifiers: 2, cmdVirtualKey: nil, cmdGlyph: nil)
+  let sendNow = MenuKey.Entry(title: "Send Now", path: ["Message", "Send Now"], enabled: true, cmdChar: nil, cmdModifiers: 2, cmdVirtualKey: nil, cmdGlyph: nil)
+  check(MenuKey.hiddenDuplicate(sendNow, chord(2, cmd | option)) && !MenuKey.hiddenDuplicate(sendNow, chord(2, cmd | shift)),
+        "(b) a key-less item whose non-zero modifiers equal the chord's is a hidden duplicate, for that modifier set only")
+  check(MenuKey.read(bundleId: "a.b", entries: [markRead, sendNow], emptyMenus: [], chord: chord(2, cmd | option)) == .unreadable("a hidden duplicate key equivalent"),
+        "(b) the duplicate case reads unreadable, never the disabled benign match alone")
+  check(MenuKey.read(bundleId: "a.b", entries: [sendNow], emptyMenus: [], chord: chord(9, cmd | option)) == .unreadable("a hidden duplicate key equivalent"),
+        "(b) holds whatever the chord's key: the hidden item's character is unknown")
+  let plainItem = MenuKey.Entry(title: "About", path: ["App", "About"], enabled: true, cmdChar: nil, cmdModifiers: 0, cmdVirtualKey: nil, cmdGlyph: nil)
+  check(!MenuKey.hiddenDuplicate(plainItem, chord(2, cmd)), "an item with no key equivalent (modifiers 0) is not a hidden duplicate - the Command-only blind spot")
+  check(MenuKey.read(bundleId: "a.b", entries: [MenuKey.Entry(title: "Duplicate", path: ["Edit", "Duplicate"], enabled: false, cmdChar: "D", cmdModifiers: 0, cmdVirtualKey: nil, cmdGlyph: nil), plainItem],
+                     emptyMenus: [], chord: chord(2, cmd)) == .unreadable("only disabled items match; a later duplicate may fire"),
+        "(a) every match disabled: unreadable (a hidden duplicate on Command alone may fire)")
+  let benign = MenuKey.Entry(title: "Bookmark", path: ["Edit", "Bookmark"], enabled: true, cmdChar: "D", cmdModifiers: 0, cmdVirtualKey: nil, cmdGlyph: nil)
+  check(MenuKey.read(bundleId: "a.b", entries: [benign, plainItem], emptyMenus: [], chord: chord(2, cmd)) == .items(bundleId: "a.b", items: [benign], truncated: false, incomplete: false),
+        "the named residual: an enabled first match on Command alone answers as itself (a later Command-only duplicate stays unseen)")
+  check(MenuKey.read(bundleId: "a.b", entries: [markRead, send], emptyMenus: [], chord: chord(2, cmd | option)) == .unreadable("only disabled items match; a later duplicate may fire"),
+        "(a) applies to the chord's own matches only: Send (Shift) does not count for Option-Command-D")
+  check(MenuKey.read(bundleId: "a.b", entries: [MenuKey.Entry(title: "Move to Trash", path: ["File", "Move to Trash"], enabled: true, cmdChar: "\u{8}", cmdModifiers: 0, cmdVirtualKey: 51, cmdGlyph: 23)],
+                     emptyMenus: [], chord: MenuKey.Chord(keyCode: 51, flags: cmd, unshifted: nil, shifted: nil))
+        == .items(bundleId: "a.b", items: [MenuKey.Entry(title: "Move to Trash", path: ["File", "Move to Trash"], enabled: true, cmdChar: "\u{8}", cmdModifiers: 0, cmdVirtualKey: 51, cmdGlyph: 23)], truncated: false, incomplete: false),
+        "a non-character key (Backspace) with no layout character is not incomplete: it matches by virtual key")
+  // A nil layout (no character for the key): a miss is unreadable, never none; a virtual-key item still matches, marked incomplete.
+  let noLayout = MenuKey.Chord(keyCode: 2, flags: cmd | shift, unshifted: nil, shifted: nil)
+  if case .unreadable = MenuKey.read(bundleId: "a.b", entries: [send], emptyMenus: [], chord: noLayout) {} else {
+    check(false, "a nil layout with a character item answers unreadable, not none")
+  }
+  let f5 = MenuKey.Entry(title: "Refresh", path: ["View", "Refresh"], enabled: true, cmdChar: nil, cmdModifiers: 8, cmdVirtualKey: 96, cmdGlyph: 115)
+  check(MenuKey.read(bundleId: "a.b", entries: [f5, send], emptyMenus: [], chord: MenuKey.Chord(keyCode: 2, flags: cmd | shift, unshifted: nil, shifted: nil))
+        == .unreadable("the keyboard layout gives no character for this key"), "a nil layout for a character key: unreadable even beside virtual-key items")
+  if case .unreadable = MenuKey.read(bundleId: "a.b", entries: [plainK], emptyMenus: ["Bookmarks"], chord: chord(2, cmd | shift)) {} else {
+    check(false, "a miss with a lazily filled menu is unreadable")
+  }
+  check(MenuKey.read(bundleId: "a.b", entries: [send], emptyMenus: ["Bookmarks"], chord: chord(2, cmd | shift)) == .items(bundleId: "a.b", items: [send], truncated: false, incomplete: true),
+        "a match beside a lazily filled menu is answered, marked incomplete")
+  let many = Array(repeating: send, count: 10)
+  if case .items(_, let items, let truncated, _) = MenuKey.read(bundleId: "a.b", entries: many, emptyMenus: [], chord: chord(2, cmd | shift)) {
+    check(items.count == MenuKey.maxItems && truncated, "at most \(MenuKey.maxItems) items, then truncated")
+  } else { check(false, "ten matches answer items") }
+  let wire = MenuKey.json(MenuKey.Entry(title: "Move to Trash", path: ["File", "Move to Trash"], enabled: true, cmdChar: "\u{8}", cmdModifiers: 0, cmdVirtualKey: 51, cmdGlyph: 23))
+  check(wire == .object(["title": "Move to Trash", "path": ["File", "Move to Trash"], "enabled": true, "keyEquivalent": ["char": .null, "modifiers": 0, "glyph": 23, "virtualKey": 51]]),
+        "a non-character key goes by glyph and virtual key, no control character on the wire")
+  check(MenuKey.json(send)["keyEquivalent"] == .object(["char": "D", "modifiers": 1]), "a letter goes as its character, modifiers as AX's raw integer (CU-154's shape)")
+  check(MenuKey.json(send)["appleMenu"] == nil, "appleMenu only on the Apple menu's items")
+  // Through the dispatcher on a dry-run world: scope first, the frontmost approved app's declared menu bar.
+  let display: JSON = [["id": 1, "main": true, "originPt": ["x": 0, "y": 0], "sizePt": ["width": 800, "height": 600], "scale": 1]]
+  let rect: JSON = ["x": 100, "y": 100, "width": 400, "height": 300]
+  let menus: JSON = [["title": "Apple", "items": [["title": "Lock Screen", "char": "Q", "modifiers": 4]]],
+                     ["title": "Message", "items": [["title": "Send", "char": "D", "modifiers": 1], ["title": "Reply", "char": "R", "modifiers": 0]]],
+                     ["title": "Edit", "items": [["title": "Delete", "char": "\u{8}", "modifiers": 8, "virtualKey": 51, "glyph": 23]]]]
+  let mail = Harness(["displays": display, "frontmost": "ai.reflection.cu.fixture", "apps": [["bundleId": "ai.reflection.cu.fixture", "pid": 501, "rect": rect]], "menuKeyBar": menus])
+  check(mail.ask("menuKey", ["keyCode": 2, "flags": .int(Int(cmd | shift))])["code"] == "no_scope", "menuKey needs a scope")
+  _ = mail.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
+  let fired = mail.ask("menuKey", ["keyCode": 2, "flags": .int(Int(cmd | shift))])
+  check(fired["bundleId"] == "ai.reflection.cu.fixture" && fired["items"]?.array?.first?.object?["path"] == ["Message", "Send"], "Shift-Command-D names Message > Send")
+  check(mail.ask("menuKey", ["keyCode": 51, "flags": 0])["items"]?.array?.first?.object?["title"] == "Delete", "a plain Backspace names Edit > Delete")
+  check(mail.ask("menuKey", ["keyCode": 2, "flags": .int(Int(cmd))])["none"] == true, "Command-D names nothing")
+  let lock = mail.ask("menuKey", ["keyCode": 12, "flags": .int(Int(cmd | control))])["items"]?.array?.first?.object
+  check(lock?["appleMenu"] == true && lock?["path"] == ["Apple", "Lock Screen"], "an Apple-menu item (the menu bar's first) is marked appleMenu")
+  check(fired["items"]?.array?.first?.object?["appleMenu"] == nil, "an app's own item is not")
+  check(mail.ask("menuKey", ["keyCode": 2, "flags": 1])["code"] == "invalid_argument" && mail.ask("menuKey", ["keyCode": 128, "flags": 0])["code"] == "invalid_argument",
+        "flags are modifier bits only and keyCode is 0 to 127")
+  let blind = Harness(["displays": display, "frontmost": "ai.reflection.cu.fixture", "apps": [["bundleId": "ai.reflection.cu.fixture", "pid": 501, "rect": rect]], "menuKeyBar": menus, "menuKeyBarUnreadable": true])
+  _ = blind.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
+  check(blind.ask("menuKey", ["keyCode": 2, "flags": .int(Int(cmd | shift))])["unreadable"] == true, "a failed menu-bar read is unreadable, never none")
+  let lazyBar: JSON = [["title": "Apple", "items": []], ["title": "Message", "items": [["title": "Send", "char": "D", "modifiers": 1]]], ["title": "History", "items": []]]
+  let lazy = Harness(["displays": display, "frontmost": "ai.reflection.cu.fixture", "apps": [["bundleId": "ai.reflection.cu.fixture", "pid": 501, "rect": rect]], "menuKeyBar": lazyBar])
+  _ = lazy.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
+  check(lazy.ask("menuKey", ["keyCode": 40, "flags": .int(Int(cmd))])["unreadable"] == true, "a miss beside an empty non-first menu is unreadable")
+  check(lazy.ask("menuKey", ["keyCode": 2, "flags": .int(Int(cmd | shift))])["incomplete"] == true, "a match beside it is marked incomplete")
+  let appleOnly = Harness(["displays": display, "frontmost": "ai.reflection.cu.fixture", "apps": [["bundleId": "ai.reflection.cu.fixture", "pid": 501, "rect": rect]],
+                           "menuKeyBar": [["title": "Pomme", "items": []], ["title": "Message", "items": [["title": "Send", "char": "D", "modifiers": 1]]]]])
+  _ = appleOnly.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
+  check(appleOnly.ask("menuKey", ["keyCode": 40, "flags": .int(Int(cmd))])["none"] == true, "the first menu is the Apple menu by position, whatever its title: empty, it does not count")
+  let elsewhere = Harness(["displays": display, "frontmost": "com.example.other", "apps": [["bundleId": "com.example.other", "pid": 600, "rect": rect]], "menuKeyBar": menus])
+  _ = elsewhere.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
+  check(elsewhere.ask("menuKey", ["keyCode": 2, "flags": .int(Int(cmd | shift))])["unreadable"] == true, "another app in front: unreadable, its menus are not read")
+}
+
 func testJSON() {
   let parsed = JSONCoding.decode(Data(#"{"a":true,"b":1,"c":1.5,"d":"x\ny","e":[null,false],"f":{"g":2}}"#.utf8))
   check(parsed?["a"] == .bool(true), "a boolean stays a boolean")
@@ -59,7 +180,7 @@ func testParser() {
   check(code(["id": 1, "type": "capture", "maxSize": ["width": 1, "height": 1], "simulateScale": 2]) == nil, "simulateScale 2 parses")
   check(code(["id": 1, "type": "capture", "maxSize": ["width": 1, "height": 1], "simulateScale": 1]) == "invalid_argument", "simulateScale is above 1")
   check(code(["id": 1, "type": "capture", "maxSize": ["width": 1, "height": 1], "simulateScale": 4.5]) == "invalid_argument", "simulateScale is at most 4")
-  check(Set(HelperProtocol.fields.keys) == ["scope", "capture", "input", "hitTest", "focused", "selection", "cursor", "panelSelection", "screenText", "watch", "unwatch", "pauseOnLocalInput", "simulateLocalInput", "confirmPhysical", "bye"], "the request set")
+  check(Set(HelperProtocol.fields.keys) == ["scope", "capture", "input", "hitTest", "focused", "selection", "cursor", "panelSelection", "menuKey", "screenText", "watch", "unwatch", "pauseOnLocalInput", "simulateLocalInput", "confirmPhysical", "bye"], "the request set")
   // CU-64: the hold step - 1..10000 ms each, at most 10 s in one request, and allowed in pid (keyboard) mode.
   let down: JSON = ["kind": "keyDown", "keyCode": 56, "flags": 0]
   let up: JSON = ["kind": "keyUp", "keyCode": 56, "flags": 0]
@@ -326,7 +447,7 @@ func button(_ kind: String, _ x: Int, _ y: Int) -> JSON { ["kind": .string(kind)
 func testDispatcherBasics() {
   let h = Harness(fixtureWorld)
   let hello = h.dispatcher.hello(token: "t0k")
-  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.51", "the hello opens the run")
+  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.52", "the hello opens the run")
   check(hello["mode"] == "dry-run" && hello["grants"] == ["screen": true, "accessibility": true, "postEvents": true, "listenEvents": false], "a dry-run hello says so, with all four grants")
   check(h.ask("capture", ["maxSize": size800])["code"] == "no_scope", "capture needs a scope")
   check(h.ask("input", ["events": [key("keyDown", 1)], "mode": "global"])["code"] == "no_scope", "input needs a scope")
@@ -366,7 +487,8 @@ func testDispatcherGrants() {
   check(h.dispatcher.hello(token: "x")["grants"] == ["screen": false, "accessibility": false, "postEvents": false, "listenEvents": false], "an ungranted hello says so")
   let gated: [(String, [String: JSON], String)] = [("capture", ["maxSize": size800], "screen"), ("watch", ["fps": 1], "screen"),
     ("input", ["events": [key("keyDown", 1)], "mode": "global"], "accessibility"), ("hitTest", ["xPt": 1, "yPt": 1], "accessibility"),
-    ("focused", [:], "accessibility"), ("panelSelection", [:], "accessibility"), ("screenText", ["maxChars": 5], "accessibility")]
+    ("focused", [:], "accessibility"), ("panelSelection", [:], "accessibility"), ("menuKey", ["keyCode": 2, "flags": 0x120000], "accessibility"),
+    ("screenText", ["maxChars": 5], "accessibility")]
   for (type, fields, grant) in gated {
     let reply = h.ask(type, fields)
     check(reply["code"] == "not_granted" && reply["grant"] == .string(grant), "\(type) answers not_granted naming \(grant)")
@@ -1560,6 +1682,7 @@ struct UnitTests {
     testAccessibilityShapes()
     testArguments()
     testPeerCheck()
+    testMenuKey()
     // Informational: whether the process that ran these tests is genuine node (true for Node.js Foundation builds).
     let parentIsNode = PeerCheck.satisfiesNodeRequirement(pid: getppid(), token: nil)
     print(JSON.object(["passed": .int(passed), "failed": .int(failures.count), "failures": .array(failures.map { .string($0) }), "parentIsGenuineNode": .bool(parentIsNode)]).text)
