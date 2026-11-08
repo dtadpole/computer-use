@@ -181,7 +181,9 @@ const tfnValid = (digits) => [1, 4, 3, 7, 5, 8, 6, 9, 10].reduce((sum, w, i) => 
 // value is the account a payout or a direct debit goes to.
 const BANK_OR_TAX_FIELD = Object.freeze(['iban', 'account number', 'account no', 'routing', 'routing number', 'sort code', 'tax id', 'tax number', 'tax file number', 'ein',
   // CU-178: spellings and abbreviations of the same fields.
-  'acct number', 'acct no', 'bsb', 'tax identification', 'tax no'])
+  'acct number', 'acct no', 'bsb', 'tax identification', 'tax no',
+  // CU-245 (cu-researcher's D-061 red team): a field named only 'Bank account'.
+  'bank account'])
 function bankOrTaxField(target) {
   return namesWord(target?.name, BANK_OR_TAX_FIELD)
 }
@@ -230,7 +232,9 @@ const SECRET_NAMES = Object.freeze(['recovery phrase', 'seed phrase', 'secret ph
   'billing address', 'mailing address', 'postal address',
   // CU-178 (both sweeps; scope by the table owner): further labels of decided classes - spellings are left to normaliseName.
   'dl number', 'license number', 'birthdate', 'birth day', 'exp date', 'expiration', 'valid thru', 'valid through', 'otp',
-  'card no', 'cell number', 'mobile', 'tel'])
+  'card no', 'cell number', 'mobile', 'tel',
+  // CU-245 (cu-researcher's D-061 red team): a debit card, an account recovery key and two-factor backup codes.
+  'debit card', 'recovery key', 'backup code', 'backup codes'])
 // CU-172: acronyms match case-sensitively as whole tokens, so 'PAN' asks and 'Pan size' or 'Panel' does not.
 const SECRET_ACRONYMS = Object.freeze(['SIN', 'TFN', 'PAN', 'NHS', 'MRN', 'TIN', 'CPF', 'NRIC'])
 const namesAcronym = (name) => SECRET_ACRONYMS.some((word) => new RegExp(`(^|[^A-Za-z])${word}([^A-Za-z]|$)`).test(String(name ?? '')))
@@ -299,6 +303,14 @@ export function looksSensitive(text) {
     if (abaValid(match[1])) return 'bank_account'
   }
   if (/\b\d{3}-\d{2}-\d{4}\b/.test(value)) return 'national_id'
+  // CU-245: an SSN in spaced 3-2-4 groups, held to the issuing rules (no area 000 or 666, no group 00, no serial 0000)
+  // so most spaced references do not fit; an area 9xx is an ITIN only with its group in 50-65, 70-88, 90-92 or 94-99
+  // (cu-researcher: the dashed form asks for both). Named over-ask: a spaced nine-digit reference that fits.
+  const itinGroup = (g) => (g >= 50 && g <= 65) || (g >= 70 && g <= 88) || (g >= 90 && g <= 92) || (g >= 94 && g <= 99)
+  for (const m of value.matchAll(/(?<!\d)(?<!\d[ -])(\d{3}) (\d{2}) (\d{4})(?![ -]?\d)/g)) {
+    const areaOk = m[1][0] === '9' ? itinGroup(Number(m[2])) : m[1] !== '000' && m[1] !== '666'
+    if (areaOk && m[2] !== '00' && m[3] !== '0000') return 'national_id'
+  }
   // CU-172: a UK National Insurance number (HMRC's letter rules, not BG/GB/KN/NK/NT/TN/ZZ, a final A-D) and an Indian PAN
   // (five letters, the fourth a holder type, four digits, a letter) - upper case, as issued.
   for (const m of value.matchAll(/\b([A-CEGHJ-PR-TW-Z][A-CEGHJ-NPR-TW-Z]) ?\d{2} ?\d{2} ?\d{2} ?[A-D]\b/g)) {
@@ -319,6 +331,16 @@ export function looksSensitive(text) {
   // CU-164: a 0x-prefixed 64-hex private key (the word boundary after 'x' kept the rule above from seeing it); a 0x + 40
   // hex wallet address is public and stays allowed.
   if (/\b0x[0-9a-fA-F]{64}\b/.test(value)) return 'key'
+  // CU-245: a PEM or PGP armour block naming a private key (RSA, EC, OPENSSH, ENCRYPTED, bare, or PGP's '... BLOCK'),
+  // and a JWT - three dot-joined base64url parts whose first decodes to a JSON header naming its 'alg'; an unsigned
+  // one (alg none) has an empty third part and still carries the session's claims (cu-verifier).
+  if (/-----BEGIN (?:[A-Z0-9]+ )*PRIVATE KEY(?: BLOCK)?-----/.test(value)) return 'key'
+  for (const m of value.matchAll(/(?<![A-Za-z0-9_-])(eyJ[A-Za-z0-9_-]{5,})\.[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]*/g)) {
+    try {
+      const header = JSON.parse(Buffer.from(m[1], 'base64url').toString('utf8'))
+      if (header && typeof header === 'object' && typeof header.alg === 'string') return 'key'
+    } catch { /* not a JSON header */ }
+  }
   if (hasSeedPhrase(value)) return 'recovery_phrase'
   return null
 }
