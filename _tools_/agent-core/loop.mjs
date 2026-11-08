@@ -1149,6 +1149,19 @@ export async function runTask(options) {
           continue
         }
       }
+      // CU-272 (cu-researcher; cu-coordinator: High, human control): a slow judgement blocks the event loop, so a Stop,
+      // pause or take-over sent meanwhile waits in the queue. Yield once so a queued control request is served, then
+      // re-check run control immediately before posting - a stopped run posts nothing, a paused one waits here.
+      // A timer turn then an immediate turn pass through every phase - due timers, pending I/O (a live-view or API
+      // request), then the check phase - whichever phase this step resumed in.
+      await new Promise((resolve) => setTimeout(resolve, 0))
+      await new Promise((resolve) => setImmediate(resolve))
+      if (!(await control.checkpoint())) {
+        halt = 'cancelled'
+        Object.assign(result, { status: 'skipped', message: 'Not executed: the run was stopped.' })
+        logEvent('action', step, { ...base, status: 'skipped', reason: 'stopped_before_perform', attempted: false, completed: false })
+        continue
+      }
       logEvent('action', step, { ...base, status: 'attempted', attempted: true })
       const performStarted = now()
       const performMs = () => { const ms = Math.max(0, now() - performStarted); timing.performMs += ms; return ms }
