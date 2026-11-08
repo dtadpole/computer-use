@@ -26,6 +26,7 @@ enum HelperProtocol {
     // CU-235 (CU-232's note): the frontmost approved app's menu items a key chord fires - title, path, key equivalent,
     // enabled only. `keyCode` and `flags` are the chord's key down as the driver would post it.
     "menuKey": ["keyCode", "flags"],
+    "selectedItems": [],
     "screenText": ["maxChars"],
     "watch": ["fps", "maxSize", "region"],
     "unwatch": [],
@@ -83,6 +84,10 @@ struct Refusal: Error {
   var point: CGPoint? = nil
   /// CU-199: which check refused an out_of_scope - 'front', 'window', 'element', 'covered', 'corner' or 'icon'.
   var check: String? = nil
+  /// CU-240: a not_granted for a grant that read true earlier in this run, after `rechecks` re-reads - a grant lost
+  /// mid-run (or a transient TCC false), not one never given.
+  var wasGranted: Bool? = nil
+  var rechecks: Int? = nil
 
   static func invalid(_ message: String, field: String? = nil) -> Refusal {
     Refusal(code: "invalid_argument", message: message, field: field)
@@ -96,6 +101,8 @@ struct Refusal: Error {
     if let bundleId { object["bundleId"] = .string(bundleId) }
     if let point { object["point"] = .point(point) }
     if let check { object["check"] = .string(check) }
+    if let wasGranted { object["wasGranted"] = .bool(wasGranted) }
+    if let rechecks { object["rechecks"] = .int(rechecks) }
     return .object(object)
   }
 }
@@ -147,6 +154,8 @@ enum Request {
   case panelSelection
   /// CU-235: the menu items of the frontmost approved app that this key down would fire.
   case menuKey(keyCode: Int, flags: UInt64)
+  /// CU-262: the frontmost approved app's focused collection's selected item names and kinds.
+  case selectedItems
   case screenText(maxChars: Int)
   case watch(fps: Double, maxSize: CGSize?, region: CGRect?)
   case unwatch
@@ -160,7 +169,7 @@ enum Request {
   var grant: String? {
     switch self {
     case .capture, .watch: return "screen"
-    case .input, .hitTest, .focused, .selection, .panelSelection, .menuKey, .screenText: return "accessibility"
+    case .input, .hitTest, .focused, .selection, .panelSelection, .menuKey, .selectedItems, .screenText: return "accessibility"
     // The pointer's location needs no grant (a CGEvent read; CU-64).
     case .scope, .unwatch, .pauseOnLocalInput, .simulateLocalInput, .bye, .cursor, .confirmPhysical: return nil
     }
@@ -325,6 +334,8 @@ enum RequestParser {
       return .panelSelection
     case "menuKey":
       return .menuKey(keyCode: try reader.integer("keyCode", in: 0...127), flags: try reader.flags())
+    case "selectedItems":
+      return .selectedItems
     case "screenText":
       return .screenText(maxChars: try reader.integer("maxChars", in: 1...HelperProtocol.maxScreenText))
     case "watch":

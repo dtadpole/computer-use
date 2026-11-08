@@ -67,3 +67,75 @@ test('CU-272 on the desktop path: a Stop sent during a slow app-policy judgement
   assert.equal(environment.log.filter((x) => (x.action ?? x)?.type === 'type').length, 0)
   assert.ok(readRun(result.trajectoryDir).events.some((e) => e.kind === 'action' && e.reason === 'stopped_before_perform'))
 })
+
+test('CU-274: a pause during a slow classify, then resume - the stale action does not post; the next turn plans again', { timeout: 15_000 }, async () => {
+  const control = createRunControl()
+  const environment = createFakeEnvironment({ url: START, control })
+  let judged = 0
+  const policy = slowPolicy(createPolicy({ sitePolicy: () => 'allow' }), () => {
+    judged += 1
+    if (judged === 1) setTimeout(() => { control.send({ command: 'pause' }, { source: 'control' }); setTimeout(() => control.send({ command: 'resume' }, { source: 'control' }), 20) }, 0)
+  })
+  const model = createScriptedAdapter({ frame: { width: 1440, height: 900 }, turns: [{ actions: [{ type: 'type', text: 'stale' }, { type: 'type', text: 'second' }] }, { actions: [{ type: 'type', text: 'fresh' }] }, { final: 'done' }] })
+  const result = await runTask({ task: 'say hello', environment, model, control, policy, sitePolicy: () => 'allow', runsDirectory: join(tmp, 'resume'), build: { commit: 'test', dirty: false } })
+  const typed = environment.log.map((x) => x.action ?? x).filter((a) => a?.type === 'type').map((a) => a.text)
+  assert.deepEqual(typed, ['fresh'], 'neither the stale action nor the rest of its batch posted')
+  assert.ok(readRun(result.trajectoryDir).events.some((e) => e.kind === 'action' && e.reason === 'paused_before_perform'))
+})
+
+test('CU-274: a take-over during a slow classify that changes the page, then hand back - the stale action does not post', { timeout: 15_000 }, async () => {
+  const control = createRunControl()
+  const environment = createFakeEnvironment({ url: START, control })
+  let judged = 0
+  const policy = slowPolicy(createPolicy({ sitePolicy: () => 'allow' }), () => {
+    judged += 1
+    if (judged === 1) {
+      setTimeout(() => {
+        control.send({ command: 'take_over' }, { source: 'control' })
+        setTimeout(() => control.send({ command: 'hand_back', note: 'I opened another page' }, { source: 'control' }), 20)
+      }, 0)
+    }
+  })
+  const model = createScriptedAdapter({ frame: { width: 1440, height: 900 }, turns: [{ actions: [{ type: 'type', text: 'stale' }] }, { actions: [{ type: 'type', text: 'fresh' }] }, { final: 'done' }] })
+  const result = await runTask({ task: 'say hello', environment, model, control, policy, sitePolicy: () => 'allow', runsDirectory: join(tmp, 'takeover'), build: { commit: 'test', dirty: false } })
+  const typed = environment.log.map((x) => x.action ?? x).filter((a) => a?.type === 'type').map((a) => a.text)
+  assert.deepEqual(typed, ['fresh'])
+  assert.ok(readRun(result.trajectoryDir).events.some((e) => e.kind === 'action' && e.reason === 'paused_before_perform'))
+})
+
+test('CU-274: a pause AND a resume both queued behind a slow classify are still seen - the stale action does not post', { timeout: 15_000 }, async () => {
+  const control = createRunControl()
+  const environment = createFakeEnvironment({ url: START, control })
+  let judged = 0
+  const policy = slowPolicy(createPolicy({ sitePolicy: () => 'allow' }), () => {
+    judged += 1
+    if (judged === 1) {
+      setTimeout(() => control.send({ command: 'pause' }, { source: 'control' }), 0)
+      setTimeout(() => control.send({ command: 'resume' }, { source: 'control' }), 1)
+    }
+  })
+  const model = createScriptedAdapter({ frame: { width: 1440, height: 900 }, turns: [{ actions: [{ type: 'type', text: 'stale' }] }, { actions: [{ type: 'type', text: 'fresh' }] }, { final: 'done' }] })
+  const result = await runTask({ task: 'say hello', environment, model, control, policy, sitePolicy: () => 'allow', runsDirectory: join(tmp, 'pause-resume-queued'), build: { commit: 'test', dirty: false } })
+  const typed = environment.log.map((x) => x.action ?? x).filter((a) => a?.type === 'type').map((a) => a.text)
+  assert.deepEqual(typed, ['fresh'])
+  assert.ok(readRun(result.trajectoryDir).events.some((e) => e.kind === 'action' && e.reason === 'paused_before_perform'))
+})
+
+test('CU-274: a pause and resume during an earlier action of the batch voids the rest - planned on a pre-pause screenshot', { timeout: 15_000 }, async () => {
+  const control = createRunControl()
+  const environment = createFakeEnvironment({ url: START, control })
+  const realPerform = environment.perform.bind(environment)
+  environment.perform = async (action) => {
+    if (action.type === 'wait') {
+      setTimeout(() => control.send({ command: 'pause' }, { source: 'control' }), 10)
+      setTimeout(() => control.send({ command: 'resume' }, { source: 'control' }), 40)
+      await new Promise((resolve) => setTimeout(resolve, 120))
+    }
+    return realPerform(action)
+  }
+  const model = createScriptedAdapter({ frame: { width: 1440, height: 900 }, turns: [{ actions: [{ type: 'wait', ms: 100 }, { type: 'type', text: 'stale' }] }, { actions: [{ type: 'type', text: 'fresh' }] }, { final: 'done' }] })
+  const result = await runTask({ task: 'say hello', environment, model, control, sitePolicy: () => 'allow', runsDirectory: join(tmp, 'pause-in-wait'), build: { commit: 'test', dirty: false } })
+  const typed = environment.log.map((x) => x.action ?? x).filter((a) => a?.type === 'type').map((a) => a.text)
+  assert.deepEqual(typed, ['fresh'])
+  assert.ok(readRun(result.trajectoryDir).events.some((e) => e.kind === 'action' && e.reason === 'paused_before_perform'))
+})

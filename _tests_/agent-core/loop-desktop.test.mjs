@@ -199,7 +199,8 @@ test('a local-input pause records its kind only, never which key or where; witho
   const { environment, run } = setup({
     control,
     appApprovals: approved(FIXTURE),
-    turns: [{ actions: [click(), click(200, 200)] }, { final: 'done' }],
+    // CU-274: a pause voids the rest of its batch, so each click is its own turn.
+    turns: [{ actions: [click()] }, { actions: [click(200, 200)] }, { final: 'done' }],
     env: {
       targets: () => ({ origin: FIXTURE, role: 'AXButton', name: 'Show', fingerprint: 'show' }),
       effect: () => {
