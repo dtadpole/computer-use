@@ -511,6 +511,20 @@ final class SystemCapabilities: Capabilities {
     return true
   }
 
+  /// CU-227: the end watchdog's release - tagged steps posted at once on the calling thread, touching no instance state
+  /// and none of the dispatcher's locks; preflight only (nothing can prompt). Each posted step is noted in `progress`.
+  static func postReleaseNow(_ steps: [InputEvent], progress: ReleaseProgress) {
+    guard Grants.preflight("postEvents") else { return }
+    let source = Events.source()
+    for step in steps {
+      guard let events = Events.make(step, source: source) else { continue }
+      for event in events { event.post(tap: .cghidEventTap) }
+      progress.note()
+    }
+  }
+
+  static func pointerNow() -> CGPoint { CGEvent(source: nil)?.location ?? .zero }
+
   func pointerLocation() -> CGPoint {
     CGEvent(source: nil)?.location ?? .zero
   }

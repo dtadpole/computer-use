@@ -201,3 +201,14 @@ test("CU-209: the caption rule and the selection request share one entry test - 
   assert.match(selection, /AXUIElementIsAttributeSettable\(element, "AXValue"/)
   assert.match(selection, /Caption\.isEntry\(role: role, settable: canSet\)/)
 })
+
+test('every end but bye arms the end watchdog before anything that can wait on a lock (CU-227)', () => {
+  const main = code['main.swift']
+  const body = main.slice(main.indexOf('func endRun('), main.indexOf('\n}\n', main.indexOf('func endRun(')))
+  const arm = body.indexOf('EndWatchdog.arm(')
+  assert.ok(arm > 0, 'endRun arms EndWatchdog')
+  for (const waits of ['dispatcher.abort()', 'endLock.lock()', 'dispatcher.shutdown()']) {
+    assert.ok(body.indexOf(waits) > arm, `the watchdog is armed before ${waits}`)
+  }
+  assert.match(body, /_exit\(EndWatchdog\.exitCode\)/, 'the watchdog exits with _exit, which runs no atexit handler and takes no lock of ours')
+})
