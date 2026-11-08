@@ -144,6 +144,12 @@ test('P9: system-wide shortcuts are blocked by name whatever the modifier order;
     [['CTRL', 'ARROWUP'], 'Mission Control or Spaces'], [['CTRL', 'ARROWDOWN'], 'Mission Control or Spaces'],
     [['ARROWLEFT', 'CTRL'], 'Mission Control or Spaces'], [['CTRL', 'ARROWRIGHT'], 'Mission Control or Spaces'],
     [['F11'], 'Show Desktop'], [['META', 'F5'], 'VoiceOver'], [['CTRL', 'F2'], 'system keyboard focus'],
+    // CU-242: the input source (an owner setting that outlives the run), the Character Viewer and Look Up.
+    [['CTRL', 'SPACE'], 'input source'], [['CTRL', 'ALT', 'SPACE'], 'input source'], [['CTRL', 'SHIFT', 'SPACE'], 'input source'],
+    [['CTRL', 'META', 'SPACE'], 'Character Viewer'], [['META', 'CTRL', 'SPACE'], 'Character Viewer'], [['CTRL', 'META', 'D'], 'Look Up'],
+    // CU-242 additions (cu-coordinator 12:10Z): owner settings the system's hotkeys toggle.
+    [['META', 'ALT', 'D'], 'Dock hiding'], [['CTRL', 'F1'], 'keyboard access'], [['CTRL', 'F7'], 'Tab focus mode'],
+    [['CTRL', 'ALT', 'META', '8'], 'Invert colours'], [['ALT', 'META', '8'], 'Zoom'], [['ALT', 'META', '='], 'Zoom'], [['ALT', 'META', '-'], 'Zoom'],
   ]
   for (const [keys, name] of cases) {
     const verdict = policy.classify(keypress(...keys), ctx())
@@ -156,7 +162,7 @@ test('P9: system-wide shortcuts are blocked by name whatever the modifier order;
     assert.equal(systemShortcut(held), name, `held ${keys.join('+')}`)
   }
   for (const keys of [['META', 'Q'], ['META', 'S'], ['META', 'SHIFT', 'T'], ['META', '3'], ['SHIFT', '3'], ['SPACE'], ['TAB'], ['CTRL', 'TAB'],
-    ['META', 'ARROWLEFT'], ['ALT', 'ARROWRIGHT'], ['ESCAPE'], ['META', 'ESCAPE'], ['F5'], ['CTRL', 'A']]) {
+    ['META', 'ARROWLEFT'], ['ALT', 'ARROWRIGHT'], ['ESCAPE'], ['META', 'ESCAPE'], ['F5'], ['CTRL', 'A'], ['ALT', 'SPACE'], ['SHIFT', 'SPACE'], ['META', 'D'], ['CTRL', 'D'], ['ALT', 'D'], ['F1'], ['META', '='], ['META', '8']]) {
     assert.equal(policy.classify(keypress(...keys), ctx()).decision, 'allow', keys.join('+'))
   }
 })

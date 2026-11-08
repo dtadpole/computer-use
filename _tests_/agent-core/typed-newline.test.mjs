@@ -64,11 +64,16 @@ test('a Return pressing an unnamed default button is marked defaultButtonUnnamed
       return readRun(result.trajectoryDir).events.find((e) => e.kind === 'action' && e.action?.type === 'keypress')
     }
     const unnamed = { role: 'AXButton', name: null, panel: null }
-    const blind = await run({ role: 'AXTextField', name: null, defaultButton: unnamed }, ['ENTER'])
+    // The helper read the button (defaultButtonRead true) but it has no name: marked, not asked.
+    const read = { defaultButtonRead: true }
+    const blind = await run({ role: 'AXTextField', name: null, defaultButton: unnamed, ...read }, ['ENTER'])
     assert.deepEqual([blind.decision, blind.defaultButtonUnnamed], ['allow', true])
-    assert.equal((await run({ role: 'AXTextArea', name: null, defaultButton: unnamed }, ['ENTER'])).defaultButtonUnnamed, undefined, 'a Return in a text area is text')
-    assert.equal((await run({ role: 'AXTextArea', name: null, defaultButton: unnamed }, ['META', 'ENTER'])).defaultButtonUnnamed, true, 'Command-Return there presses it')
-    assert.equal((await run({ role: 'AXTextField', name: null, defaultButton: { role: 'AXButton', name: 'OK', panel: null } }, ['ENTER'])).defaultButtonUnnamed, undefined, 'a named default is judged, not marked')
+    assert.equal((await run({ role: 'AXTextArea', name: null, defaultButton: unnamed, ...read }, ['ENTER'])).defaultButtonUnnamed, undefined, 'a Return in a text area is text')
+    assert.equal((await run({ role: 'AXTextArea', name: null, defaultButton: unnamed, ...read }, ['META', 'ENTER'])).defaultButtonUnnamed, true, 'Command-Return there presses it')
+    assert.equal((await run({ role: 'AXTextField', name: null, defaultButton: { role: 'AXButton', name: 'OK', panel: null }, ...read }, ['ENTER'])).defaultButtonUnnamed, undefined, 'a named default is judged, not marked')
+    // CU-243 (D-069) through the loop: no read state at all asks submit on the desktop.
+    const unread = await run({ role: 'AXTextField', name: null, defaultButton: unnamed }, ['ENTER'])
+    assert.deepEqual([unread.decision, unread.class], ['confirm', 'submit'], 'no defaultButtonRead: asked')
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }
