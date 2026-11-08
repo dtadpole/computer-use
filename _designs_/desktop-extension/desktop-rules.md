@@ -13,8 +13,7 @@ grounded_in:
 
 # Desktop block and confirm rules
 
-Detail for the order of checks in [app policy](app-policy.md); rule names are what `createAppPolicy` returns and the
-trajectory records.
+Detail for [app policy](app-policy.md)'s order of checks; rule names are what `createAppPolicy` returns.
 
 ## Blocked by name
 
@@ -39,6 +38,7 @@ trajectory records.
 | VoiceOver | `META+F5` |
 | focus to the menu bar, Dock, status menus | `CTRL+F2`, `CTRL+F3`, `CTRL+F8` |
 | input source, Character Viewer, Look Up (CU-242) | `CTRL+SPACE`, `CTRL+META+SPACE`, `CTRL+META+D` |
+| owner settings: Dock hiding, keyboard access, Tab focus, Zoom, Invert colours (CU-242) | `META+ALT+D`, `CTRL+F1`, `CTRL+F7`, `ALT+META+` 8, = or -, `CTRL+ALT+META+8` |
 
 ## Confirm classes on the desktop
 
@@ -55,7 +55,7 @@ Known gaps of `launch_code` are [Q-D10](open-questions.md).
 
 A key action - typing, a keypress, a paste - into a secure field (`AXSecureTextField`, or the helper's `secure` or
 `isPassword`) or under secure input is handed to the person, never pre-approvable (R83). So is one into a text entry
-named with a password word (password, passcode, passphrase, PIN; whole words, normalised as CU-178): a "Show password"
+named with a password word (password, passcode, passphrase, PIN): a "Show password"
 toggle makes the secure field an `AXTextField` without changing what it holds. An entry whose name also says "hint"
 stays a `credential` confirm. A click into either only focuses it (CU-170). The browser is unchanged: a password field
 asks `credential`. Not covered: an unnamed shown field labelled by separate static text - neither handed off nor asked
@@ -67,8 +67,8 @@ If an excluded app comes to the front mid-run, the next action is handed to the 
 until they hand back) and the frame shows black where it is; if it is still in front after the hand-back, the run
 ends `refused_by_policy`.
 
-`terminal_view` (block, E5): typing or keypresses into a target whose accessible name, description or role description
-names a terminal, console or shell - an IDE's terminal panel runs commands like a terminal app; clicks stay allowed.
+`terminal_view` (block, E5): keys into a target whose name, description or role description names a terminal,
+console or shell (an IDE's terminal panel); clicks stay allowed.
 
-Copy, cut and paste are not blocked (D-031, replacing D-025): the chords and menu items reach approved apps like any
-other input; P9 still refuses the system-wide chords, including the screenshot-to-clipboard ones.
+Copy, cut and paste are not blocked (D-031): they reach approved apps like any input; P9 still refuses the
+screenshot-to-clipboard chords.

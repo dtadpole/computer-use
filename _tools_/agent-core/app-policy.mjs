@@ -50,6 +50,15 @@ const SYSTEM_SHORTCUTS = Object.freeze([
   // Control-Shift-Space (a common 'previous source' setting) is refused too.
   ['input source', ['CTRL', 'SPACE']],
   ['Look Up', ['CTRL', 'META', 'D']],
+  // CU-242 (cu-researcher, cu-coordinator 12:10Z): owner settings the system's hotkeys toggle - Dock hiding, keyboard
+  // access, Tab focus mode, and Zoom and Invert colours (refused whether or not the owner enabled them: fail closed).
+  ['Dock hiding', ['META', 'ALT', 'D']],
+  ['keyboard access', ['CTRL', 'F1']],
+  ['Tab focus mode', ['CTRL', 'F7']],
+  ['Invert colours', ['CTRL', 'ALT', 'META', '8']],
+  ['Zoom', ['ALT', 'META', '8']],
+  ['Zoom', ['ALT', 'META', '=']],
+  ['Zoom', ['ALT', 'META', '-']],
 ])
 
 /** The name of the system shortcut a keypress would trigger, or null. */
