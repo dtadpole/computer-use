@@ -207,9 +207,9 @@ const ROWS = [
   ['cmd-d-no-sheet', 'desktop', 'cmdD', 'sendField', 'allow', 'sheet-dont-save.test.mjs (#342)', "CU Fixture (#447), helper 0.2.42: Command-D in consent-keys' Message with no sheet allowed, no sheet after (20261107T194542Z-f57f09)", null],
   // CU-232 (red team of CU-230): a chord that is a menu item's key equivalent fires the item (AppKit offers it to the
   // menu bar first - CU-143), yet only Delete chords, a sheet's Command-D, Return and paste are judged by what they
-  // fire. context.boundMenuItem is the proposed field - the enabled item whose key equivalent matches, as the helper
-  // reads a clicked one (CU-154); the design note may rename it. Todo until the fix: today the chord is allowed.
-  ['menu-key-send', 'desktop', 'cmdShiftD', 'composeBody', 'submit', 'CU-232 (the chord judged as its bound item)', 'no live row yet', 'todo CU-232', { boundMenuItem: { role: 'AXMenuItem', name: 'Send', keyEquivalent: { char: 'D', modifiers: 1 } } }],
+  // fire. context.boundMenuItem is the field CU-237 (#26, menu-key.md) reads: every item whose key equivalent matches,
+  // judged as a click on it, the stricter verdict winning. Asserted since #26; it closes on cu-verifier's CU-238 live row.
+  ['menu-key-send', 'desktop', 'cmdShiftD', 'composeBody', 'submit', 'menu-key.test.mjs (CU-237: bound item ignored)', 'no live row yet', 'open CU-232', { boundMenuItem: { role: 'AXMenuItem', name: 'Send', keyEquivalent: { char: 'D', modifiers: 1 } } }],
   ['menu-key-benign', 'desktop', 'cmdShiftK', 'composeBody', 'allow', 'CU-232 negative (a benign bound item)', 'no live row yet', 'open CU-232', { boundMenuItem: { role: 'AXMenuItem', name: 'Clear Log', keyEquivalent: { char: 'K', modifiers: 1 } } }],
   // Accepted over-ask (cu-developer-one, cu-verifier): 'Reply' stays a submit word because a forum's or chat's Reply posts;
   // a button that only opens a composer is asked too (S8 x1, S2 x4, all composers). Escape hatch: submit@<bundle id>.
