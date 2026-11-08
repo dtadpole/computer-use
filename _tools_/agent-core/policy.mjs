@@ -31,7 +31,12 @@ const WORDS = Object.freeze({
     // CU-261 (cu-researcher): a camera or microphone switched on reaches other people.
     'turn on camera', 'turn on microphone', 'turn on video', 'start video', 'unmute',
     // cu-researcher's 13:23Z sweep: an account-wide sign-out.
-    'sign out of all devices', 'sign out everywhere', 'log out of all devices', 'log out everywhere'],
+    'sign out of all devices', 'sign out everywhere', 'log out of all devices', 'log out everywhere',
+    // CU-270 (cu-researcher): switching an account's protection off - every verb with every protection, as whole phrases
+    // ('Turn off notifications' stays free). ChatGPT confirms any change to account permissions.
+    ...['turn off', 'disable', 'remove', 'allow'].flatMap((verb) => ['2 step', 'two step', 'two factor', '2fa', 'mfa', 'multi factor',
+      'passkey', 'passkeys', 'security key', 'security keys', 'login alerts', 'sign in alerts', 'account recovery', 'find my',
+      'less secure apps', 'less secure app access'].map((what) => `${verb} ${what}`))],
   submit: ['send', 'post', 'submit', 'publish', 'reply', 'sign up', 'register',
     // CU-261 (cu-researcher; cu-coordinator: High): actions that reach other people or commit shared work, as whole
     // phrases. A bare Accept, Connect, Join or Follow stays free (cookie banners, Wi-Fi, generic joins: named limits).
