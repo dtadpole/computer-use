@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - Responsibilities'
 created: 2026-11-01T09:06:25Z
-modified: 2026-11-07T02:20:40Z
+modified: 2026-11-08T10:05:00Z
 level: L2
-version: 3.2.0
+version: 3.3.0
 description: 'The responsibilities of [cu] Developer One - the architecture design and the agent core (action schema, loop, model adapters, policy hooks, trajectory).'
 status: unverified
 grounded_in:
@@ -19,8 +19,8 @@ grounded_in:
 ## What the seat owns
 
 `_designs_/` (the contract) and the agent-core code with its `_tests_` suites, at the paths the design names. Since
-D-039 they live in github.com/dtadpole/computer-use (worktree `~/computer-use--cu-developer-one`, landed by
-cu-integrator, issues in Linear team CU); this seat's records stay here in `_projects_/computer-use/`.
+8 November they and this seat's records live in this repository (worktree `~/computer-use--cu-developer-one`,
+landed by cu-integrator, issues in Linear team CU).
 
 ## Done
 
