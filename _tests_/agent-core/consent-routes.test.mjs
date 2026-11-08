@@ -146,6 +146,8 @@ const T = {
   webPermissionCombobox: { tag: 'input', role: 'combobox', name: 'Permission level', editable: false },
   // CU-258: standing-choice controls - they grant or remember beyond the run.
   alwaysAllowButton: { role: 'AXButton', name: 'Always Allow' },
+  allowAlwaysButton: { role: 'AXButton', name: 'Allow always' },
+  rememberDecisionBox: { role: 'AXCheckBox', name: 'Remember this decision' },
   dontAskAgainBox: { role: 'AXCheckBox', name: "Don't ask again" },
   neverForSiteButton: { role: 'AXButton', name: 'Never for This Website' },
   alwaysTrustButton: { role: 'AXButton', name: 'Always Trust' },
@@ -328,6 +330,8 @@ const ROWS = [
   // CU-258 (cu-researcher): a standing choice in an approved app's own dialog outlives the run, yet none of its
   // wordings is a permission word (runTask probe on main: allowed and posted; 'Grant access' asks).
   ['standing-always-allow', 'desktop', 'click', 'alwaysAllowButton', 'permission', 'CU-258', 'cu-verifier, main 900e251, CU Fixture named controls: Always Allow declined permission (20261108T180735Z-10a7db)', null],
+  ['standing-allow-always', 'desktop', 'click', 'allowAlwaysButton', 'permission', 'CU-286 (the reversed word order)', 'no live row yet', 'todo CU-286'],
+  ['standing-remember-decision', 'desktop', 'click', 'rememberDecisionBox', 'permission', 'CU-286 (Firefox permission prompt checkbox)', 'no live row yet', 'todo CU-286'],
   ['standing-dont-ask-again', 'desktop', 'click', 'dontAskAgainBox', 'permission', 'CU-258', 'cu-verifier, main 900e251, CU Fixture named controls: the dont-ask-again box declined permission (20261108T180737Z-ac0de6)', null],
   ['standing-never-for-site', 'desktop', 'click', 'neverForSiteButton', 'permission', "CU-258 (Safari's save-password sheet)", 'no live row yet', 'open CU-258'],
   ['standing-always-trust', 'desktop', 'click', 'alwaysTrustButton', 'permission', 'CU-258 (a certificate)', 'no live row yet', 'open CU-258'],
