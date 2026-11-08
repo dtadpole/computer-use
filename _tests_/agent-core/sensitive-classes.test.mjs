@@ -229,6 +229,37 @@ test('copy-source rows: every todo row still fails (a fixed row cannot stay todo
   for (const r of COPY_SOURCE_ROWS) if (r[4] !== null) assert.notEqual(decideCopySource(r[1], r[2]), r[3], `${r[0]} passes on main - close it`)
 })
 
+// CU-267 (cu-researcher): a value typed in pieces is judged action by action, so no value rule sees it whole. These
+// rows run through the real loop (the desktop-consent harness: CU Fixture approved, its Notes text area focused) and
+// read the first action that is not allowed. [id, pieces, expected, status, live]
+const harness = await import('../../_verifiers_/desktop-consent/harness.mjs')
+const notesArea = { bundleId: harness.FIXTURE, pid: 900, role: 'AXTextArea', title: 'Notes', frame: { x: 100, y: 200, width: 400, height: 200 } }
+async function decideSequence(actions) {
+  const world = harness.twoApps('com.example.other', [{ rect: notesArea.frame, element: notesArea }])
+  const run = await harness.desktopRun({ world, focused: notesArea, turns: [{ actions }, { final: 'done' }], bounds: { maxSteps: 4 } })
+  const asked = run.events.find((e) => e.kind === 'action' && e.decision !== 'allow')
+  return asked ? asked.class : 'allow'
+}
+const cardDigits = CARD.replace(/\D/g, '')
+const SEQUENCE_ROWS = [
+  ['sequence-card as keypresses', [...cardDigits].map((d) => ({ type: 'keypress', keys: [d] })), 'sensitive_data', 'todo CU-267', 'no live row yet'],
+  ['sequence-SSN as keypresses', [...SSN].map((c) => ({ type: 'keypress', keys: [c === '-' ? 'MINUS' : c] })), 'sensitive_data', 'todo CU-267', 'no live row yet'],
+  ['sequence-card as four type actions', cardDigits.match(/\d{4}/g).map((g) => ({ type: 'type', text: g })), 'sensitive_data', 'todo CU-267', 'no live row yet'],
+  ['sequence-plain words in pieces (negative)', [{ type: 'type', text: 'abc' }, { type: 'type', text: 'def' }], 'allow', 'open CU-267', 'no live row yet'],
+]
+for (const [id, pieces, expected, status, live] of SEQUENCE_ROWS) {
+  const title = `${id} -> ${expected} (live: ${live})`
+  const opts = { skip: harness.ready ? false : 'the desktop-consent harness is not built here', ...(status?.startsWith('todo ') ? { todo: status } : {}) }
+  test(title, opts, async () => assert.equal(await decideSequence(pieces), expected))
+}
+test('sequence rows: named once; every open row names its issue; a todo row still fails (a fixed row cannot stay todo)', { skip: harness.ready ? false : 'harness not built' }, async () => {
+  assert.equal(new Set(SEQUENCE_ROWS.map((r) => r[0])).size, SEQUENCE_ROWS.length)
+  for (const [id, pieces, expected, status] of SEQUENCE_ROWS) {
+    assert.match(status, /^(todo|open) CU-\d+$/, id)
+    if (status.startsWith('todo ')) assert.notEqual(await decideSequence(pieces), expected, `${id} passes on main - flip it from todo`)
+  }
+})
+
 // CU-185: a phone number in national format (a trunk 0, no country code) typed into a neutral entry. Todo until the
 // fix; a bare digit run and a 0-prefixed short code stay allowed by design.
 // [id, text, expected, status]
