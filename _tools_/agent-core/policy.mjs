@@ -338,7 +338,9 @@ export function looksSensitive(text) {
     if (tfnValid(m[1] + m[2] + m[3])) return 'tax_id'
   }
   if (/(^|[^\d-])\d{2}-\d{7}([^\d-]|$)/.test(value)) return 'tax_id'
-  if (/[\w.+-]+@[\w-]+\.[\w.-]+/.test(value)) return 'email'
+  // CU-272 (cu-researcher): bounded (RFC 5321's 64-character local part, 63-character labels) and only tried when an '@'
+  // is present - the unbounded form was quadratic on a long word run (an 80k paste took seconds in one classify).
+  if (value.includes('@') && /[\w.+-]{1,64}@[\w-]{1,63}\.[\w.-]{1,190}/.test(value)) return 'email'
   if (/\+\d(?:[\s().-]{0,2}\d){8,}/.test(value) || /(^|[^\d])\(?\d{3}\)?[\s.-]?\d{3}[\s.-]\d{4}([^\d]|$)/.test(value)) return 'phone'
   if (nationalPhone(value)) return 'phone'
   if (/\b(?:sk|pk|ghp|xox[bp]|AKIA)[-_A-Za-z0-9]{16,}\b/.test(value) || /\b[A-Fa-f0-9]{40,}\b/.test(value)) return 'key'
