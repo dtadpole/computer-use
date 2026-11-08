@@ -359,3 +359,30 @@ test('D-064: every closed row names a run id or a D-number', () => {
   for (const r of PASTE_ROWS) if (r[4] === null) assert.ok(closingRun(r[5]), `${r[0]} is closed without a run id - mark it open`)
   for (const r of SPELLING_ROWS) if (r[3] === null) assert.ok(closingRun(r[4]), `${r[0]} is closed without a run id - mark it open`)
 })
+
+// CU-260 (cu-researcher): the browser model's navigate carries a value out as typing does, but policy judges it by
+// its site alone - the value rules never read the URL. [id, url, expected, status, live]
+const decideNavigate = (url) => {
+  const r = policy.classify({ type: 'navigate', url }, { url: 'https://fixture.example/page', target: null })
+  return r.decision === 'allow' ? 'allow' : r.class
+}
+const NAVIGATE_ROWS = [
+  ['navigate-API key in a query', `https://fixture.example/search?q=${AWS_KEY_ID}`, 'sensitive_data', 'todo CU-260', 'no live row yet'],
+  ['navigate-card number in a path', `https://fixture.example/pay/${CARD.replace(/\D/g, '')}`, 'sensitive_data', 'todo CU-260', 'no live row yet'],
+  ['navigate-SSN in a fragment', `https://fixture.example/form#${SSN}`, 'sensitive_data', 'todo CU-260', 'no live row yet'],
+  ['navigate-plain query (negative)', 'https://fixture.example/search?q=weather+in+lisbon', 'allow', 'open CU-260', 'no live row yet'],
+]
+for (const [id, url, expected, status, live] of NAVIGATE_ROWS) {
+  const title = `${id} -> ${expected} (live: ${live})`
+  if (status?.startsWith('todo ')) test(title, { todo: status }, () => assert.equal(decideNavigate(url), expected))
+  else test(title, () => assert.equal(decideNavigate(url), expected))
+}
+test('navigate rows: named once, every open row names its issue, a todo row still fails, a closed row names a run or a decision (D-064)', () => {
+  const ids = NAVIGATE_ROWS.map((r) => r[0])
+  assert.equal(new Set(ids).size, ids.length)
+  for (const [id, url, expected, status, live] of NAVIGATE_ROWS) {
+    if (status === null) { assert.ok(closingRun(live), `${id}: a closed row names its closing run (D-064)`); continue }
+    assert.match(status, /^(todo|open) CU-\d+$/, id)
+    if (status.startsWith('todo ')) assert.notEqual(decideNavigate(url), expected, `${id} passes on main - close it`)
+  }
+})
