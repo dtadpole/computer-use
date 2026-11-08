@@ -92,7 +92,8 @@ const serviceItem = (action, target) => CLICKS.has(action.type) && /^(ax)?menuit
 // Concise, Summary, List, Table, Compose) are refused only there; the unambiguous titles and any item naming an AI are
 // refused by title where no path is read. Named limits: localised titles where no path is read; an app's own AI item
 // under its own menu (VS Code's Ask Copilot) is the approved app's feature and stays as before.
-const WRITING_TOOLS_TITLE = /^(proofread|rewrite|show writing tools|writing tools)\b/i
+// cu-verifier on #108: Writing Tools' own verb phrases are unambiguous too.
+const WRITING_TOOLS_TITLE = /^(proofread|rewrite|show writing tools|writing tools|make (friendly|professional|concise)|create key points)\b/i
 const OTHER_AI = /\b(chatgpt|openai|gemini|claude|copilot)\b/i
 const underWritingTools = (target) => Array.isArray(target?.menuPath) && target.menuPath.slice(0, -1).some((part) => /^writing tools$/i.test(String(part ?? '').trim()))
 // cu-researcher on #108: a menu path, when read, decides - so an app's own 'Rewrite history' (a git client) or 'Ask
