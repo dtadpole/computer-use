@@ -163,6 +163,11 @@ const A = {
   menuClick: { type: 'click', x: 1, y: 1, button: 'left' },
   scroll: { type: 'scroll', x: 1, y: 1, scroll_x: 0, scroll_y: 3 },
   reload: { type: 'keypress', keys: ['F5'] },
+  // CU-249: default macOS Services shortcuts (declared in the system apps' bundles).
+  cmdShiftL: { type: 'keypress', keys: ['META', 'SHIFT', 'L'] },
+  cmdShiftB: { type: 'keypress', keys: ['META', 'SHIFT', 'B'] },
+  cmdShift8: { type: 'keypress', keys: ['META', 'SHIFT', '8'] },
+  cmdShiftM: { type: 'keypress', keys: ['META', 'SHIFT', 'M'] },
   mouseForward: { type: 'click', x: 10, y: 10, button: 'forward' },
   middleClick: { type: 'click', x: 10, y: 10, button: 'middle' },
   scrollX: { type: 'scroll', x: 10, y: 10, scroll_x: -2000, scroll_y: 0 },
@@ -218,6 +223,14 @@ const ROWS = [
   ['long-press-destructive', 'desktop', 'longPress', 'deleteButton', 'delete', 'drag-press.test.mjs', "cu-verifier: a long press on Delete, no travel, declined delete (20261107T033148Z-e6a9d5); earlier cu-researcher run 022946Z-435ad5 (hold-delete)", null],
   ['drag-from-destructive', 'desktop', 'dragAway', 'deleteButton', 'delete', 'drag-press.test.mjs', '20261107T014522Z-727ccc (CU-140)', null],
   ['scroll', 'desktop', 'scroll', 'deleteButton', 'allow', 'not judged by design: no consent class changes on scroll', 'D-059 named limit: scroll is not judged', null],
+  // CU-249 (cu-researcher): a Services shortcut runs a service outside the approved app (web search, Bluetooth send,
+  // AppleScript, Terminal) and the menu read cannot see Services (#36: only 'No Services Apply'), so with no app item
+  // bound to the chord it should ask - the expected class follows the consent owner's decision (ask or refuse).
+  ['service-search-with', 'desktop', 'cmdShiftL', 'notesEntry', 'unknown_target', 'CU-249 (Search With: the selection to a web search)', 'no live row yet', 'todo CU-249', { boundMenuItem: { none: true } }],
+  ['service-bluetooth-send', 'desktop', 'cmdShiftB', 'notesEntry', 'unknown_target', 'CU-249 (Send File To Bluetooth Device)', 'no live row yet', 'todo CU-249', { boundMenuItem: { none: true } }],
+  ['service-run-applescript', 'desktop', 'cmdShift8', 'notesEntry', 'unknown_target', 'CU-249 (Get Result of AppleScript runs the selection)', 'no live row yet', 'todo CU-249', { boundMenuItem: { none: true } }],
+  ['service-terminal-man', 'desktop', 'cmdShiftM', 'notesEntry', 'unknown_target', 'CU-249 (Terminal, an excluded app)', 'no live row yet', 'todo CU-249', { boundMenuItem: { none: true } }],
+  ['service-chord-app-bound', 'desktop', 'cmdShiftL', 'notesEntry', 'allow', 'CU-249 negative (an app item on the chord is judged by its name)', 'no live row yet', 'open CU-249', { boundMenuItem: { role: 'AXMenuItem', name: 'Show Sidebar', keyEquivalent: { char: 'L', modifiers: 1 } } }],
   ['paste-no-own-copy', 'desktop', 'cmdV', 'searchField', 'sensitive_data', 'paste-consent tests (#349)', '20261107T052454Z-bed1eb; count half on 0.2.40 (cu-verifier 10:13Z, no-alert proof)', null, { paste: { fromOwner: true } }],
   ['paste-after-own-copy', 'desktop', 'cmdV', 'searchField', 'allow', 'CU-151 (#349)', "0.2.42 P2: own copy allowed (20261107T173939Z-f03c80)", null, { paste: { fromOwner: false } }],
   // CU-187 desktop half: an own copy of shown text carries its caption's class to a paste into an unnamed entry (the
