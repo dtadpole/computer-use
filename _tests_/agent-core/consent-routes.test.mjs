@@ -603,11 +603,12 @@ const FIXTURE_ID = 'ai.reflection.cu.fixture'
 const APP_STORE_ID = 'com.apple.AppStore'
 const ACTIVITY_MONITOR_ID = 'com.apple.ActivityMonitor'
 const DISK_UTILITY_ID = 'com.apple.DiskUtility'
+const FINDER_ID = 'com.apple.finder'
 const appApprovals = createAppApprovals({ path: join(mkdtempSync(join(tmpdir(), 'cu-routes-')), 'app-approvals.json') })
 appApprovals.grantAlways(FIXTURE_ID, { by: 'api' })
 appApprovals.grantAlways(APP_STORE_ID, { by: 'api' })
-for (const id of [ACTIVITY_MONITOR_ID, DISK_UTILITY_ID]) appApprovals.grantAlways(id, { by: 'api' })
-const appPolicy = createAppPolicy({ scope: [FIXTURE_ID, APP_STORE_ID, ACTIVITY_MONITOR_ID, DISK_UTILITY_ID], approvals: appApprovals })
+for (const id of [ACTIVITY_MONITOR_ID, DISK_UTILITY_ID, FINDER_ID]) appApprovals.grantAlways(id, { by: 'api' })
+const appPolicy = createAppPolicy({ scope: [FIXTURE_ID, APP_STORE_ID, ACTIVITY_MONITOR_ID, DISK_UTILITY_ID, FINDER_ID], approvals: appApprovals })
 // extra.app names the approved app in front (default CU Fixture); the rest of extra joins the context.
 const decideApp = (action, target, extra = {}) => {
   const { app = FIXTURE_ID, ...context } = extra ?? {}
@@ -620,6 +621,7 @@ const SYS_A = {
   cmdShiftL: key('META', 'SHIFT', 'L'), cmdShift8: key('META', 'SHIFT', '8'), cmdShiftA: key('META', 'SHIFT', 'A'), cmdOptD: key('META', 'ALT', 'D'),
   ctrlF1: key('CTRL', 'F1'), ctrlSpace: key('CTRL', 'SPACE'), click: { type: 'click', x: 1, y: 1 },
   holdLogOut: { type: 'hold_key', keys: ['META', 'ALT', 'SHIFT', 'Q'], duration_ms: 300 },
+  dragDrop: { type: 'drag', path: [{ x: 150, y: 112 }, { x: 620, y: 320 }] },
   optCmdJ: key('META', 'ALT', 'J'),
 }
 const SYS_T = {
@@ -629,6 +631,8 @@ const SYS_T = {
   desktopPictureItem: { role: 'AXMenuItem', name: 'Set Desktop Picture' },
   pasteItem: { role: 'AXMenuItem', name: 'Paste' },
   openItem: { role: 'AXMenuItem', name: 'Open' },
+  commandRow: { role: 'AXRow', name: 'install.command', filename: 'install.command' },
+  notesRow: { role: 'AXRow', name: 'notes.txt', filename: 'notes.txt' },
   getButton: { role: 'AXButton', name: 'Get' },
   forceQuitButton: { role: 'AXButton', name: 'Force Quit' },
   restoreButton: { role: 'AXButton', name: 'Restore' },
@@ -673,6 +677,9 @@ const SYSTEM_ROWS = [
   // security action on the owner's sessions (permission) - both allowed today.
   ['revert-to-saved', 'click', 'revertButton', 'delete', 'CU-261 (like Discard Changes)', 'no live row yet', 'todo CU-261'],
   ['sign-out-all-devices', 'click', 'signOutAllButton', 'permission', "CU-261 (the owner's sessions)", 'no live row yet', 'todo CU-261'],
+  // CU-269: a drop onto an app's icon in Finder is 'open with' - the app launches with the file (runTask: posted).
+  ['drop-script-onto-terminal-app', 'dragDrop', 'commandRow', 'not:allow', 'CU-269 (Terminal is excluded; the script runs)', 'no live row yet', 'todo CU-269', { app: FINDER_ID, dropTarget: { role: 'AXImage', name: 'Terminal.app', filename: 'Terminal.app', origin: FINDER_ID } }],
+  ['drop-document-onto-folder', 'dragDrop', 'notesRow', 'allow', 'CU-269 negative (a move into a folder)', 'no live row yet', 'open CU-269', { app: FINDER_ID, dropTarget: { role: 'AXRow', name: 'Projects', origin: FINDER_ID } }],
   ['system-chord-held-log-out', 'holdLogOut', 'field', 'block:system_shortcut', 'desktop-consent P9 (#39), loop.mjs hold-as-keypress', 'no live row yet', 'open CU-244'],
   // CU-252: P10's launch_code reads the clicked target's name only, so File > Open or a context menu's Open on a
   // selected install.command is not judged. 'selection' is the proposed context field (the fix may rename it).
