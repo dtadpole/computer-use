@@ -94,6 +94,7 @@ const T = {
   windowSheetUp: { role: 'AXWindow', name: 'Untitled', sheet: true },
   // CU-232: a compose body - the focus a mail app's Send key equivalent (Shift-Command-D) is pressed from.
   composeBody: { role: 'AXTextArea', name: 'Message body', editable: true, defaultButton: null, defaultButtonRead: true },
+  messageView: { role: 'AXGroup', name: 'Message view' },
   webDelete: { role: 'button', name: 'Delete' },
   // CU-175: what the browser driver judges for a click on a label or icon inside a control (see the driver-half test).
   webDeleteLabelled: { tag: 'button', role: 'button', name: 'Delete' },
@@ -149,6 +150,7 @@ const A = {
   cmdOptShiftBackspace: { type: 'keypress', keys: ['META', 'ALT', 'SHIFT', 'BACKSPACE'] },
   cmdD: { type: 'keypress', keys: ['META', 'D'] },
   cmdShiftD: { type: 'keypress', keys: ['META', 'SHIFT', 'D'] },
+  optCmdL: { type: 'keypress', keys: ['META', 'ALT', 'L'] },
   cmdShiftK: { type: 'keypress', keys: ['META', 'SHIFT', 'K'] },
   backspace: { type: 'keypress', keys: ['BACKSPACE'] },
   cmdV: { type: 'keypress', keys: ['META', 'V'] },
@@ -215,6 +217,10 @@ const ROWS = [
   // fire. context.boundMenuItem is the field CU-237 (#26, menu-key.md) reads: every item whose key equivalent matches,
   // judged as a click on it, the stricter verdict winning. Asserted since #26; it closes on cu-verifier's CU-238 live row.
   ['menu-key-send', 'desktop', 'cmdShiftD', 'composeBody', 'submit', 'menu-key.test.mjs (CU-237: bound item ignored)', 'no live row yet', 'open CU-232', { boundMenuItem: { role: 'AXMenuItem', name: 'Send', keyEquivalent: { char: 'D', modifiers: 1 } } }],
+  // CU-238's screen (a313b4f): a lazily filled menu's item, and Mail's plain-Backspace Delete with a message view (not a
+  // list - a list asks by CU-147 anyway, so it would not discriminate) in focus.
+  ['menu-key-send-later', 'desktop', 'optCmdL', 'composeBody', 'submit', 'menu-key.test.mjs (CU-237: bound item ignored)', 'no live row yet', 'open CU-232', { boundMenuItem: { items: [{ role: 'AXMenuItem', name: 'Send Later', keyEquivalent: { char: 'L', modifiers: 2 }, enabled: true }] } }],
+  ['menu-key-delete-message-view', 'desktop', 'backspace', 'messageView', 'delete', 'menu-key.test.mjs (CU-237: bound item ignored)', 'no live row yet', 'open CU-232', { boundMenuItem: { items: [{ role: 'AXMenuItem', name: 'Delete', keyEquivalent: { char: '\u0008', modifiers: 0 }, enabled: true }] } }],
   ['menu-key-benign', 'desktop', 'cmdShiftK', 'composeBody', 'allow', 'CU-232 negative (a benign bound item)', 'no live row yet', 'open CU-232', { boundMenuItem: { role: 'AXMenuItem', name: 'Clear Log', keyEquivalent: { char: 'K', modifiers: 1 } } }],
   // Accepted over-ask (cu-developer-one, cu-verifier): 'Reply' stays a submit word because a forum's or chat's Reply posts;
   // a button that only opens a composer is asked too (S8 x1, S2 x4, all composers). Escape hatch: submit@<bundle id>.
