@@ -126,6 +126,10 @@ const T = {
   // CU-150 (#337): the browser driver reports the form's implicit submit as defaultButton.
   webQuantityInForm: { role: 'textbox', name: 'Quantity', defaultButton: { role: 'button', name: 'Place order' } },
   webLink: { role: 'link', name: 'Pricing' },
+  // CU-265: links whose scheme leaves the browser, and a same-site web link.
+  webFaceTimeLink: { tag: 'a', role: 'link', name: 'Call support', href: 'facetime://+15550100' },
+  webTelLink: { tag: 'a', role: 'link', name: 'Call us', href: 'tel:+15550100' },
+  webHelpLink: { tag: 'a', role: 'link', name: 'Help page', href: 'https://other.example/faq' },
   webComments: { role: 'textbox', name: 'Comments' },
   webPasswordShown: { role: 'textbox', name: 'Password', inputType: 'text', editable: true },
   // CU-170: a click into a plain text entry vs a chooser or a control with the same kind of name.
@@ -284,6 +288,10 @@ const ROWS = [
   // unnamed origin's load, as for a left click.
   ['web-scroll-x-no-history', 'browser', 'scrollX', 'webComments', 'allow', 'probe (no history move)', "main 1de261e91, real Chrome: two scroll_x -800 allowed, the page stays on bulk-delete (20261107T192500Z-d62d0e)", null],
   ['web-middle-click-link', 'browser', 'middleClick', 'webLink', 'allow', 'site filter (environment)', "main 1de261e91, real Chrome: middle click on 'Terms of service' allowed (20261107T192430Z-496caf)", null],
+  // CU-265 (cu-researcher): policy never reads href and a non-web scheme meets no network-layer site filter.
+  ['web-link-facetime-scheme', 'browser', 'click', 'webFaceTimeLink', 'not:allow', 'CU-265 (ask or refuse - undecided)', 'no live row yet', 'todo CU-265'],
+  ['web-link-tel-scheme', 'browser', 'click', 'webTelLink', 'not:allow', 'CU-265', 'no live row yet', 'todo CU-265'],
+  ['web-link-same-site', 'browser', 'click', 'webHelpLink', 'allow', 'CU-265 negative (an https link on the task site)', 'no live row yet', 'open CU-265'],
   ['web-reload-prg', 'browser', 'reload', 'webComments', 'allow', 'policy (reload not judged)', '20261107T034225Z-fa2dbf', null, {}],
   // CU-155: a certificate warning commits chrome-error:// but the driver reported the attempted URL, so the hand-off never
   // fired (cu-developer-two's probe); classify hands off on the flag - the real path is the open part (#360).
@@ -340,17 +348,21 @@ const decide = (action, target, env, extra = {}) => {
   return r.decision === 'allow' ? 'allow' : r.decision === 'handoff' ? 'handoff' : r.class
 }
 
+// An expected 'not:<v>' meets anything but v - for a fix whose shape (ask or refuse) is still undecided (CU-265).
+const cellMeets = (got, expected) => (expected.startsWith('not:') ? got !== expected.slice(4) : got === expected)
+
 for (const [id, env, action, target, expected, pin, live, open, extra] of ROWS) {
   const name = `${id} [${env}] ${action} on ${target} -> ${expected} (pin: ${pin}; live: ${live})`
-  if (open?.startsWith('todo ')) test(name, { todo: open }, () => assert.equal(decide(action, target, env, extra), expected))
-  else test(name, () => assert.equal(decide(action, target, env, extra), expected))
+  const check = () => { const got = decide(action, target, env, extra); assert.ok(cellMeets(got, expected), `${id}: got ${got}`) }
+  if (open?.startsWith('todo ')) test(name, { todo: open }, check)
+  else test(name, check)
 }
 
 test('the matrix names every row once, and every open cell names its issue', () => {
   assert.equal(new Set(ROWS.map((r) => r[0])).size, ROWS.length)
   for (const r of ROWS) if (r[7] !== null) assert.match(r[7], /^(todo|open) CU-\d+$/)
   // A todo cell must still fail on main: once its fix lands it flips to 'open CU-n' (asserted, awaiting a live row) or closed.
-  for (const r of ROWS) if (r[7]?.startsWith('todo ')) assert.notEqual(decide(r[2], r[3], r[1], r[8]), r[4], `${r[0]} passes on main - flip it from todo`)
+  for (const r of ROWS) if (r[7]?.startsWith('todo ')) assert.ok(!cellMeets(decide(r[2], r[3], r[1], r[8]), r[4]), `${r[0]} passes on main - flip it from todo`)
   // A closed cell names what ran live; 'pending' belongs to an open cell (cu-verifier, 17:15Z: closed cells without a run).
   for (const r of ROWS) if (r[7] === null) assert.doesNotMatch(String(r[6]), /pending/i, `${r[0]} is closed but its live row is pending - mark it open`)
   // D-064: closed means a live run id (YYYYMMDDTHHMMSSZ-xxxxxx, or its HHMMSSZ-xxxxxx short form) or a D-number for a decided limit.
