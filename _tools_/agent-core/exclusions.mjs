@@ -15,24 +15,31 @@ export const EXCLUDED_APPS = Object.freeze([
       'com.apple.shortcuts',
       // Launchers run arbitrary apps, scripts and shell commands (red-team retest).
       'com.runningwithcrayons.Alfred', 'com.raycast.macos',
+      // CU-292 (cu-researcher): Spotlight (its Info.plist on this Mac) and LaunchBar (fleetdm software catalog).
+      'com.apple.Spotlight', 'at.obdev.LaunchBar',
     ]),
   }),
   Object.freeze({
     kind: 'agent',
     // Chrome and Edge app shims (installed web apps) can host our own UIs, so they count as agents, not browsers.
-    ids: Object.freeze(['com.reflection.cu-helper', 'com.openai.*', 'com.anthropic.*', 'com.google.Chrome.app.*', 'com.microsoft.edgemac.app.*']),
+    // CU-292: Perplexity's Mac app (ai.perplexity.macv3, mole.fit's tested apps) and its family.
+    ids: Object.freeze(['com.reflection.cu-helper', 'com.openai.*', 'com.anthropic.*', 'com.google.Chrome.app.*', 'com.microsoft.edgemac.app.*', 'ai.perplexity.*']),
   }),
   Object.freeze({
     kind: 'password_manager',
     ids: Object.freeze([
       'com.1password.*', 'com.agilebits.*', 'com.bitwarden.desktop', 'org.keepassxc.keepassxc', 'com.apple.Passwords',
       'com.apple.keychainaccess', 'com.dashlane.*', 'com.lastpass.*', 'com.nordsec.nordpass',
+      // CU-292 (fleetdm software catalog): Enpass (in.sinew.Enpass-Desktop.App; its maker's family), Proton Pass
+      // (me.proton.pass.electron; the exact id covers its children), Keeper (com.keepersecurity.passwordmanager; family).
+      'in.sinew.*', 'me.proton.pass', 'com.keepersecurity.*',
     ]),
   }),
   // A clipboard history shows what the person copied before the run; D-031 allows copy and paste, not reading that.
   Object.freeze({
     kind: 'clipboard_manager',
-    ids: Object.freeze(['org.p0deje.Maccy', 'com.clipy-app.Clipy', 'com.tapbots.Pastebot2Mac', 'com.tapbots.Pastebot3Mac']),
+    // CU-292: Paste (com.wiheads.paste and com.wiheads.paste-direct, mole.fit's tested apps), so its maker's family.
+    ids: Object.freeze(['org.p0deje.Maccy', 'com.clipy-app.Clipy', 'com.tapbots.Pastebot2Mac', 'com.tapbots.Pastebot3Mac', 'com.wiheads.*']),
   }),
   Object.freeze({
     kind: 'os_security',
