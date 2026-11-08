@@ -2,7 +2,9 @@
 title: '[cu] Coordinator - handover'
 created: 2026-11-08T04:15:00Z
 modified: 2026-11-08T10:00:00Z
+level: L2
 version: 2.0.0
+status: unverified
 description: 'What a fresh [cu] Coordinator session needs to take over the seat mid-flight, after the 8 Nov repository replacement.'
 grounded_in:
   - source: owner's order of 2026-11-08 via hd-coordinator (scrub and replace dtadpole/computer-use; re-home the seats into workspace b40a6ee8)
