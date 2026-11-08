@@ -16,6 +16,7 @@ final class SystemCapabilities: Capabilities {
   private var manualAccessibility = Set<pid_t>()
 
   func grants() -> Grants { Grants.preflight() }
+  func grant(_ name: String) -> Bool { Grants.preflight(name) }
 
   // MARK: Displays and apps (no grant; measured not to prompt)
 
