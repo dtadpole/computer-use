@@ -587,8 +587,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (inserted) classes.push(inserted)
     }
     // CU-267: a value typed in pieces is judged whole - what this run typed into the field before (the loop's buffer) with
-    // what this type or printable keypress adds; the action that completes a value asks. One that only extends a value
-    // already judged whole does not ask again.
+    // what this type, printable keypress or browser paste (the run clipboard's text) adds; the action that completes a value
+    // asks. One that only extends a value already judged whole does not ask again.
     if ((action.type === 'type' || action.type === 'keypress') && context.typed && typeof context.typed.before === 'string' && typeof context.typed.next === 'string' && context.typed.next !== '') {
       const valueIn = (text) => text !== '' && Boolean(looksSensitive(withoutTaskValues(text, context.task)))
       if (!valueIn(context.typed.before) && valueIn(context.typed.before + context.typed.next)) classes.push('sensitive_data')

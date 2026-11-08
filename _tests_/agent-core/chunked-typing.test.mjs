@@ -32,20 +32,22 @@ const fieldOf = (kind, name, fingerprint) => (kind === 'desktop'
   : { origin: 'https://fixture.example', role: 'textbox', tag: 'input', name, editable: true, fingerprint })
 
 let runs = 0
-/** Run `actions` in one batch; a click at x < 100 focuses field A, any other click field B, and ARROWDOWN moves to B. */
-async function run(kind, actions, { task = 'fill in the notes', approve = false } = {}) {
+/** Run `actions` in one batch; a click at x < 100 focuses field A, any other click field B; ARROWDOWN and TAB move to B. */
+async function run(kind, actions, { task = 'fill in the notes', approve = false, clipboard = null } = {}) {
   const control = createRunControl()
   const environment = createFakeEnvironment({ kind, control, ...(kind === 'browser' ? { url: 'https://fixture.example/' } : {}) })
   const A = fieldOf(kind, 'Notes', 'field-a')
   const B = fieldOf(kind, 'Reference', 'field-b')
   let focus = A
   environment.focusedElement = async () => focus
+  // The browser's run clipboard (the run's own copies); agent core reads it at a paste.
+  if (clipboard !== null) environment.clipboard = { get: () => clipboard, set: () => {} }
   environment.inspectPoint = async ({ x }) => (x < 100 ? A : B)
   const perform = environment.perform.bind(environment)
   environment.perform = async (action) => {
     const effect = await perform(action)
     if (action.type === 'click') focus = action.x < 100 ? A : B
-    if (action.type === 'keypress' && action.keys?.[0] === 'ARROWDOWN') focus = B
+    if (action.type === 'keypress' && ['ARROWDOWN', 'TAB'].includes(action.keys?.[0])) focus = B
     return effect
   }
   const model = createScriptedAdapter({ frame: { width: 1440, height: 900 }, turns: [{ actions }, { final: 'done' }] })
@@ -99,19 +101,42 @@ test('CU-267: plain text typed in pieces is never asked; nor is a value the task
   assert.deepEqual(verdicts(given.events), ['allow', 'allow', 'allow', 'allow'], 'the task names the value (the value rules\' own exemption)')
 })
 
-test('CU-267: a new focus, a click, select all or Return starts afresh; Backspace takes back one character', async () => {
+test('CU-267: only a different focused element or a cleared field starts afresh - a click back into the field, Return and a wait keep the buffer; Backspace takes back one character', async () => {
   const [left, right] = [CARD_DIGITS.slice(0, 8), CARD_DIGITS.slice(8)]
   const refocused = await run('desktop', [...types(left), { type: 'click', x: 500, y: 10, button: 'left' }, ...types(right)])
   assert.deepEqual(verdicts(refocused.events), ['allow', 'allow', 'allow'], 'another field: two halves in two fields')
+  const tabbed = await run('desktop', [...types(left), { type: 'keypress', keys: ['TAB'] }, ...types(right)])
+  assert.equal(verdicts(tabbed.events).at(-1), 'allow', 'Tab moved the focus: afresh by the focus change')
   const clickedBack = await run('desktop', [...types(left), { type: 'click', x: 10, y: 10, button: 'left' }, ...types(right)])
-  assert.deepEqual(verdicts(clickedBack.events), ['allow', 'allow', 'allow'], 'a click in the same field may move the caret: afresh')
-  const replaced = await run('desktop', [...types(left), { type: 'keypress', keys: ['META', 'A'] }, ...types(right)])
-  assert.deepEqual(verdicts(replaced.events).at(-1), 'allow', 'select all: what follows replaces it')
+  assert.equal(verdicts(clickedBack.events).at(-1), 'sensitive_data', 'a click back into the same field keeps it (cu-developer-one\'s row)')
   const returned = await run('desktop', [...types(left), { type: 'keypress', keys: ['ENTER'] }, ...types(right)])
-  assert.deepEqual(verdicts(returned.events).at(-1), 'allow')
+  assert.equal(verdicts(returned.events).at(-1), 'sensitive_data', 'Return that moves no focus keeps it')
+  const waited = await run('desktop', [...types(left), { type: 'wait', duration_ms: 10 }, ...types(right)])
+  assert.equal(verdicts(waited.events).at(-1), 'sensitive_data', 'a wait keeps it (cu-researcher\'s #79 row)')
+  const replaced = await run('desktop', [...types(left), { type: 'keypress', keys: ['META', 'A'] }, ...types(right)])
+  assert.equal(verdicts(replaced.events).at(-1), 'allow', 'select all: what follows replaces it')
   const corrected = await run('desktop', [...types(`${CARD_DIGITS.slice(0, 15)}9`), { type: 'keypress', keys: ['BACKSPACE'] }, ...keys(CARD_DIGITS.slice(15))])
   assert.equal(verdicts(corrected.events)[0], 'allow', 'a wrong last digit does not pass Luhn')
   assert.equal(verdicts(corrected.events).at(-1), 'sensitive_data', 'Backspace took the 9 back, so the right digit completes the card')
+})
+
+test('CU-267 [browser]: a run paste joins the buffer - type part of a card, paste the rest from the run clipboard: the paste asks', async () => {
+  const [left, right] = [CARD_DIGITS.slice(0, 8), CARD_DIGITS.slice(8)]
+  const { events, posted } = await run('browser', [...types(left), { type: 'keypress', keys: ['META', 'V'] }], { clipboard: right })
+  assert.deepEqual(verdicts(events), ['allow', 'sensitive_data'])
+  assert.equal(posted, 1, 'the paste never ran')
+  const middle = await run('browser', [...types(CARD_DIGITS.slice(0, 4)), { type: 'keypress', keys: ['META', 'V'] }, ...types(CARD_DIGITS.slice(8))], { clipboard: CARD_DIGITS.slice(4, 8) })
+  assert.deepEqual(verdicts(middle.events), ['allow', 'allow', 'sensitive_data'], 'the pasted middle stays in the buffer, so the typed end completes the card')
+  const plain = await run('browser', [...types('order '), { type: 'keypress', keys: ['META', 'V'] }], { clipboard: 'notes' })
+  assert.deepEqual(verdicts(plain.events), ['allow', 'allow'])
+})
+
+test('CU-267 [desktop]: a typed part plus a pasted rest is a named limit - the paste carries only its source class, never its text (D-031)', async () => {
+  const after = await run('desktop', [...types(CARD_DIGITS.slice(0, 8)), { type: 'keypress', keys: ['META', 'V'] }])
+  const alone = await run('desktop', [{ type: 'keypress', keys: ['META', 'V'] }])
+  const judged = (e) => ({ decision: e?.decision, class: e?.class, rule: e?.rule, kind: e?.pasteboard?.kind })
+  assert.equal(after.events.at(-1)?.pasteboard?.kind, 'paste', 'judged as a paste by its count and source, as before')
+  assert.deepEqual(judged(after.events.at(-1)), judged(alone.events.at(-1)), 'the typed part changes nothing about the paste\'s verdict')
 })
 
 test('CU-267: once a value typed in pieces was asked and approved, typing on after it asks nothing more', async () => {
