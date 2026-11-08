@@ -796,6 +796,15 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const webPage = context.url != null && !desktopUrl
     const unreadWebFocus = webPage && !held && (target == null || framesHost(target))
     if ((multiLineWeb || unreadWebFocus) && keysOf(action).has('ENTER') && (keysOf(action).has('META') || keysOf(action).has('CTRL'))) classes.push('submit')
+    // CU-297 (design note 0.1): a frame host's document is unread, so on a web page (1) text typed or keystroke-pasted into
+    // it meets the field-name rules by the frame's own name - hosted payment and sign-in fields title each frame for its
+    // field (Braintree's 'Secure Credit Card Frame - CVV', Stripe's 'Secure CVC input frame'); and (2) a Return or typed
+    // line break there asks submit, CU-190's web twin: the frame's form and its submit button are unread, and a hosted
+    // checkout or sign-in submits on Return. A null focus keeps today's rule (a focused body has no form). Named over-asks:
+    // a vendor prefix naming every frame for the card ('... Frame - Postal Code'); a Return in a framed comments editor.
+    const framedWeb = unreadWebFocus && target != null
+    const frameEntry = framedWeb ? asNamedEntry(String(target.name ?? '')) : null
+    if (framedWeb && pressesEnter) classes.push('submit')
     // CU-253 (cu-researcher): a chat app sends on a plain Return from its compose field - a text area too, and with no
     // default button to read (Messages' 'iMessage', Slack, WhatsApp). So a plain Return or typed line break asks submit
     // in any text entry of a known chat app, or in an entry named as a compose field; Shift- or Option-Return types
@@ -819,7 +828,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // Only a menu paste carries a destination; a keystroke paste is judged at its target as before (a null target there
       // is not 'unknown' - cu-verifier's desktop-consent S4b caught that over-ask).
       const viaMenu = Object.prototype.hasOwnProperty.call(context.paste, 'destination')
-      const into = viaMenu ? context.paste.destination : target
+      const into = viaMenu ? context.paste.destination : (frameEntry ?? target)
       // The driver's no-focus placeholder (role and name null) is no field either (cu-developer-two).
       if (viaMenu && (into === null || !into?.role || MENU_ROLE.test(String(into.role)))) classes.push('sensitive_data')
       else {
@@ -859,7 +868,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (inserted) classes.push(inserted)
     }
     if (action.type === 'type') {
-      const inserted = insertedClass(String(action.text ?? ''), target, context)
+      const inserted = insertedClass(String(action.text ?? ''), frameEntry ?? target, context)
       if (inserted) classes.push(inserted)
     }
     // CU-267: a value typed in pieces is judged whole - what this run typed into the field before (the loop's buffer) with

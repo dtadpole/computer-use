@@ -71,8 +71,11 @@ test('CU-241 round 2: extra modifiers, the keypad Enter and every frame host ask
 
 test('CU-241: with no described focus a plain or Shift-Enter, typed text and other chords stay as judged', () => {
   for (const target of [null, crossOriginFrame]) {
-    assert.equal(verdict(web(target, key('ENTER'))), 'allow', `Enter, focus ${target?.tag ?? target}: a new line in an editor`)
-    assert.equal(verdict(web(target, key('SHIFT', 'ENTER'))), 'allow', `Shift-Enter, focus ${target?.tag ?? target}`)
+    // A Return on a frame host asks since CU-297 (frame-names.test.mjs); a null focus keeps it.
+    if (target === null) {
+      assert.equal(verdict(web(target, key('ENTER'))), 'allow', 'Enter, no focus: a new line in an editor')
+      assert.equal(verdict(web(target, key('SHIFT', 'ENTER'))), 'allow', 'Shift-Enter, no focus')
+    }
     assert.equal(verdict(web(target, { type: 'type', text: 'Thanks, see you then' })), 'allow', `typing, focus ${target?.tag ?? target}`)
     assert.equal(verdict(web(target, key('META', 'B'))), 'allow', `Command-B, focus ${target?.tag ?? target}`)
   }
