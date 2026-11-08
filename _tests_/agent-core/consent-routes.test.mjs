@@ -71,6 +71,9 @@ const T = {
   cameraOnButton: { role: 'AXButton', name: 'Turn on camera' },
   acceptButton: { role: 'AXButton', name: 'Accept' },
   connectButton: { role: 'AXButton', name: 'Connect' },
+  unsubscribeButton: { role: 'AXButton', name: 'Unsubscribe' },
+  reportSpamButton: { role: 'AXButton', name: 'Report Spam' },
+  leaveGroupButton: { role: 'AXButton', name: 'Leave Group' },
   // CU-187 / CU-223: the unnamed scratch entry a copied value is pasted into (CU Ledger, CU Fixture copyRow).
   unnamedEntry: { role: 'AXTextField', name: '', editable: true },
   // CU-163: a bank account or tax id field (S9's vendor form in CU Ledger).
@@ -243,6 +246,9 @@ const ROWS = [
   ['outward-accept-invitation', 'desktop', 'click', 'acceptInviteButton', 'submit', 'CU-261 (sends a reply)', 'no live row yet', 'todo CU-261'],
   ['outward-merge', 'desktop', 'click', 'mergeButton', 'submit', 'CU-261 (commits work)', 'no live row yet', 'todo CU-261'],
   ['outward-camera-on', 'desktop', 'click', 'cameraOnButton', 'permission', 'CU-261 (camera)', 'no live row yet', 'todo CU-261'],
+  ['outward-unsubscribe', 'desktop', 'click', 'unsubscribeButton', 'submit', 'CU-261 (sends a request; cu-coordinator 13:26Z)', 'no live row yet', 'todo CU-261'],
+  ['outward-report-spam', 'desktop', 'click', 'reportSpamButton', 'submit', 'CU-261 (reports to the provider)', 'no live row yet', 'todo CU-261'],
+  ['outward-leave-group', 'desktop', 'click', 'leaveGroupButton', 'submit', 'CU-261 (visible to its members)', 'no live row yet', 'todo CU-261'],
   ['bare-accept', 'desktop', 'click', 'acceptButton', 'allow', 'CU-261 negative (a cookie banner or terms dialog)', 'no live row yet', 'open CU-261'],
   ['bare-connect', 'desktop', 'click', 'connectButton', 'allow', 'CU-261 negative (Wi-Fi, Bluetooth)', 'no live row yet', 'open CU-261'],
   ['paste-no-own-copy', 'desktop', 'cmdV', 'searchField', 'sensitive_data', 'paste-consent tests (#349)', '20261107T052454Z-bed1eb; count half on 0.2.40 (cu-verifier 10:13Z, no-alert proof)', null, { paste: { fromOwner: true } }],
