@@ -1,9 +1,9 @@
 ---
 title: Desktop evaluation plan - unattended suite runs on two Claude models
 created: 2026-11-05T14:01:35Z
-modified: 2026-11-05T18:30:53Z
+modified: 2026-11-08T13:57:08Z
 level: L1
-version: 1.1.0
+version: 1.2.0
 description: How the desktop suite is run unattended on model-a and claude-sonnet-5-5, every attempt counted, with the cost estimate under D-034 and the rates reported per model and build.
 status: unverified
 grounded_in:
@@ -12,6 +12,7 @@ grounded_in:
   - source: _context_/evaluation-design/r58-measurement.md
   - source: _context_/run-analysis/full-suite-2026-11-01.md
   - source: _context_/team-operations/decision-log.yaml (D-024, D-033, D-034)
+  - source: Linear CU-66 (the D-034 ledger and the 21 USD line, 8 November)
 ---
 
 # Desktop evaluation plan
@@ -32,7 +33,8 @@ announced by inbox; synthetic input only to the two fixture apps.
 
 Measured in the first batch (CU-8, 1920 by 1080 display): 0.028 USD per Sonnet run and 0.050 per Opus run, 2.88 USD
 for 74 runs. The second batch, 38 runs per model, projects to about 1.1 USD on Sonnet and 1.9 on Opus, about 3 USD in
-all. The run stops and the coordinator is told at 15 USD spent of D-034.
+all. On 8 November about 20.69 USD of D-034 is spent and the team holds a 21 USD line: no batch runs, a Sonnet
+rerun of S1-S11 (about 0.33 USD) would cross it, and model-a on S8 and S9 (CU-66) waits for the owner.
 
 ## Rates reported
 
