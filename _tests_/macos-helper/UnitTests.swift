@@ -247,6 +247,53 @@ func testSelectedItems() {
   check(other.ask("selectedItems")["unreadable"] == true, "another app in front: unreadable, its selection is not read")
 }
 
+func testGrantRecheck() {
+  // CU-240: a grant read false is re-read (3 times, 100 ms apart) only if it read true earlier in this run.
+  var sleeps: [TimeInterval] = []
+  func reader(_ values: [Bool]) -> () -> Bool { var rest = values; return { rest.count > 1 ? rest.removeFirst() : rest[0] } }
+  let sleep: (TimeInterval) -> Void = { sleeps.append($0) }
+  check(GrantRecheck.check(seenTrue: false, read: reader([true]), sleep: sleep) == .init(granted: true, wasGranted: true, rechecks: 0) && sleeps.isEmpty, "a true needs no re-read")
+  check(GrantRecheck.check(seenTrue: false, read: reader([false, true]), sleep: sleep) == .init(granted: false, wasGranted: false, rechecks: 0) && sleeps.isEmpty,
+        "a grant never true in this run is refused at once, no re-read")
+  check(GrantRecheck.check(seenTrue: true, read: reader([false, true]), sleep: sleep) == .init(granted: true, wasGranted: true, rechecks: 1) && sleeps == [0.1],
+        "after an earlier true, a transient false re-reads once and goes ahead")
+  sleeps = []
+  check(GrantRecheck.check(seenTrue: true, read: reader([false]), sleep: sleep) == .init(granted: false, wasGranted: true, rechecks: 3) && sleeps == [0.1, 0.1, 0.1],
+        "a grant lost mid-run is refused after 3 re-reads, about 300 ms")
+  sleeps = []
+  var reads: [Grants] = [Grants(screen: false, accessibility: true, postEvents: true, listenEvents: false), Grants(screen: true, accessibility: true, postEvents: true, listenEvents: false)]
+  let settled = GrantRecheck.settled(read: { reads.count > 1 ? reads.removeFirst() : reads[0] }, sleep: sleep)
+  check(settled.screen && settled.accessibility && sleeps.count == 1, "at launch a transient Screen Recording false beside other grants is re-read")
+  sleeps = []
+  check(GrantRecheck.settled(read: { .none }, sleep: sleep) == .none && sleeps.isEmpty, "a helper with no grant at all is not slowed at launch")
+  sleeps = []
+  let lost = GrantRecheck.settled(read: { Grants(screen: false, accessibility: true, postEvents: true, listenEvents: false) }, sleep: sleep)
+  check(!lost.screen && sleeps.count == 3, "a Screen Recording grant that stays false after 3 re-reads is reported false")
+  // Through the dispatcher on a dry-run world whose single reads of Screen Recording are scripted.
+  let display: JSON = [["id": 1, "main": true, "originPt": ["x": 0, "y": 0], "sizePt": ["width": 800, "height": 600], "scale": 1]]
+  let apps: JSON = [["bundleId": "ai.reflection.cu.fixture", "pid": 501, "rect": ["x": 100, "y": 100, "width": 400, "height": 300]]]
+  let size: JSON = ["width": 800, "height": 600]
+  let flicker = Harness(["displays": display, "frontmost": "ai.reflection.cu.fixture", "apps": apps, "grantReads": ["screen": [true, false, true]]])
+  _ = flicker.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
+  check(flicker.ask("capture", ["maxSize": size])["ok"] == true, "a first capture reads Screen Recording true")
+  check(flicker.ask("capture", ["maxSize": size])["ok"] == true, "a transient false after it is re-read and the capture goes ahead")
+  let lostRun = Harness(["displays": display, "frontmost": "ai.reflection.cu.fixture", "apps": apps, "grantReads": ["screen": [true, false]]])
+  _ = lostRun.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
+  _ = lostRun.ask("capture", ["maxSize": size])
+  let refused = lostRun.ask("capture", ["maxSize": size])
+  check(refused["code"] == "not_granted" && refused["grant"] == "screen" && refused["wasGranted"] == true && refused["rechecks"] == 3,
+        "a grant lost mid-run: not_granted with the grant, wasGranted and the re-read count")
+  let never = Harness(["displays": display, "frontmost": "ai.reflection.cu.fixture", "apps": apps, "grants": ["screen": false]])
+  _ = never.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
+  let first = never.ask("capture", ["maxSize": size])
+  check(first["code"] == "not_granted" && first["wasGranted"] == nil && first["rechecks"] == nil, "a grant never given: not_granted as before, no wasGranted")
+  let inputLost = Harness(["displays": display, "frontmost": "ai.reflection.cu.fixture", "apps": apps, "grantReads": ["input": [true, false]]])
+  _ = inputLost.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
+  _ = inputLost.ask("input", ["events": [["kind": "keyDown", "keyCode": 0, "flags": 0], ["kind": "keyUp", "keyCode": 0, "flags": 0]], "mode": "global"])
+  let inputRefused = inputLost.ask("input", ["events": [["kind": "keyDown", "keyCode": 0, "flags": 0], ["kind": "keyUp", "keyCode": 0, "flags": 0]], "mode": "global"])
+  check(inputRefused["code"] == "not_granted" && inputRefused["wasGranted"] == true, "input whose grant is lost mid-run is refused, marked wasGranted (the driver ends the run)")
+}
+
 func testJSON() {
   let parsed = JSONCoding.decode(Data(#"{"a":true,"b":1,"c":1.5,"d":"x\ny","e":[null,false],"f":{"g":2}}"#.utf8))
   check(parsed?["a"] == .bool(true), "a boolean stays a boolean")
@@ -327,6 +374,11 @@ func testExclusions() {
   check(added187.allSatisfy(list.isExcluded), "agent core's additions of PR #187 are in the floor")
   check(!list.isExcluded("com.google.Chrome") && !list.isExcluded("com.microsoft.edgemac"), "the browsers themselves stay approvable")
   check(list.isExcluded("com.runningwithcrayons.Alfred") && list.isExcluded("com.raycast.macos"), "launchers are excluded (design 0.3.4)")
+  // CU-264: whole-Mac tools, ids as read on macOS 27; Time Machine's menu-bar agent through com.apple.TimeMachine's children.
+  let wholeMac = ["com.apple.DiskUtility", "com.apple.bootcampassistant", "com.apple.MigrateAssistant", "com.apple.backup.launcher", "com.apple.ActivityMonitor",
+                  "com.apple.timemachine.HelperAgent"]
+  check(wholeMac.allSatisfy(list.isExcluded), "Disk Utility, Boot Camp, Migration Assistant, Time Machine (launcher and agent) and Activity Monitor are excluded")
+  check(!list.isExcluded("com.apple.Console"), "Console stays approvable (read-only, a named limit)")
   check(list.isExcluded(" com.apple.Terminal\n"), "ids are trimmed before matching")
   check(list.isExcluded("COM.APPLE.TERMINAL"), "case is ignored")
   check(!list.isExcluded("ai.reflection.cu.fixture") && !list.isExcluded("ai.reflection.cu.ledger") && !list.isExcluded("com.apple.TextEdit"), "the fixture apps and ordinary apps are approvable")
@@ -544,7 +596,7 @@ func button(_ kind: String, _ x: Int, _ y: Int) -> JSON { ["kind": .string(kind)
 func testDispatcherBasics() {
   let h = Harness(fixtureWorld)
   let hello = h.dispatcher.hello(token: "t0k")
-  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.54", "the hello opens the run")
+  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.56", "the hello opens the run")
   check(hello["mode"] == "dry-run" && hello["grants"] == ["screen": true, "accessibility": true, "postEvents": true, "listenEvents": false], "a dry-run hello says so, with all four grants")
   check(h.ask("capture", ["maxSize": size800])["code"] == "no_scope", "capture needs a scope")
   check(h.ask("input", ["events": [key("keyDown", 1)], "mode": "global"])["code"] == "no_scope", "input needs a scope")
@@ -1782,6 +1834,7 @@ struct UnitTests {
     testMenuKey()
     testServicesMenu()
     testSelectedItems()
+    testGrantRecheck()
     // Informational: whether the process that ran these tests is genuine node (true for Node.js Foundation builds).
     let parentIsNode = PeerCheck.satisfiesNodeRequirement(pid: getppid(), token: nil)
     print(JSON.object(["passed": .int(passed), "failed": .int(failures.count), "failures": .array(failures.map { .string($0) }), "parentIsGenuineNode": .bool(parentIsNode)]).text)

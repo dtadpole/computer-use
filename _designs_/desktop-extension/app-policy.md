@@ -1,9 +1,9 @@
 ---
 title: App policy and exclusions
 created: 2026-11-02T08:29:12Z
-modified: 2026-11-07T17:30:40Z
+modified: 2026-11-08T13:27:46Z
 level: L1
-version: 0.4.10
+version: 0.4.11
 description: Per-app approval (once, always, revocable) that replaces the site filter on desktop runs, start apps as candidates only, the hard exclusion table that no approval lifts, and the desktop order of checks.
 status: unverified
 grounded_in:
@@ -55,11 +55,10 @@ helper (`Policy.swift`), the fake helper and verify-kit follow it.
 | agents | `com.reflection.cu-helper`, `com.openai.*`, `com.anthropic.*`, `com.google.Chrome.app.*`, `com.microsoft.edgemac.app.*` (installed web apps can host our UIs) |
 | password managers | `com.1password.*`, `com.agilebits.*`, `com.bitwarden.desktop`, `org.keepassxc.keepassxc`, `com.apple.Passwords`, `com.apple.keychainaccess`, `com.dashlane.*`, `com.lastpass.*`, `com.nordsec.nordpass` |
 | clipboard managers | `org.p0deje.Maccy`, `com.clipy-app.Clipy`, `com.tapbots.Pastebot2Mac`, `com.tapbots.Pastebot3Mac` |
-| OS security | `com.apple.systempreferences` (whole app, D-025), `com.apple.SecurityAgent`, `com.apple.LocalAuthentication.UIAgent`, `com.apple.loginwindow`, `com.apple.UserNotificationCenter`, `com.apple.coreservices.uiagent`, `com.apple.installer` |
+| OS security | `com.apple.systempreferences` (whole app, D-025), `com.apple.SecurityAgent`, `com.apple.LocalAuthentication.UIAgent`, `com.apple.loginwindow`, `com.apple.UserNotificationCenter`, `com.apple.coreservices.uiagent`, `com.apple.installer`; CU-264's Disk Utility, Activity Monitor, Time Machine, Boot Camp, Migration Assistant |
 
-An exact id also excludes its children (`id.`), so `com.apple.Terminal.helper` is Terminal's. Ids are trimmed and
-matched case-insensitively. Run config may only add entries, recorded in `run.json` - how a check adds a stand-in
-excluded fixture.
+An exact id also excludes its children (`id.`). Ids are trimmed and
+matched case-insensitively. Run config may only add entries, recorded in `run.json`.
 
 Browsers are approvable, but a window showing our live view or DSH's GUI is excluded by window: the live view's fixed title marker (`[cu live view]`) in the window list and AX, or as a fallback a known browser's
 document URL on a loopback port of [the fixed deny list](../system-architecture/site-filter.md).
