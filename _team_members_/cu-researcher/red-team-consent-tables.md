@@ -1,43 +1,53 @@
 ---
 title: Red team of the two signed consent tables (D-059 routes, D-061 classes), M8-M9
 created: 2026-11-08T01:27:07Z
-modified: 2026-11-08T01:27:07Z
+modified: 2026-11-08T14:16:44Z
 level: L1
-version: 1.0.0
-description: What the red team of the D-059 route matrix and the D-061 class table found on 7-8 November, which fixes it re-tested, and the review lessons the seat now follows.
+version: 2.1.1
+description: What the red team of the D-059 route matrix and the D-061 class table found on 7-8 November, which fixes it re-tested, and the methods the seat now follows.
 status: unverified
 grounded_in:
-  - source: 'Linear CU-145, CU-171, CU-179, CU-183, CU-185, CU-187, CU-192, CU-194, CU-195, CU-198, CU-203, CU-204, CU-208'
-  - source: 'dtadpole/computer-use pull requests 424, 425, 438, 446, 469, 473, 476, 480, 483, 486, 489, 501, 506, 518, 520'
+  - source: 'Linear CU-145, CU-171 and their children CU-187..CU-266 filed by cu-researcher'
+  - source: 'pull requests - old #424, #425 (the sign-offs); this repository #12, #20, #23, #30, #40, #41, #43, #48, #51, #57, #63, #65, #68, #69, #73, #77'
   - source: 'cu-verifier live runs cited in _tests_/agent-core/consent-routes.test.mjs and sensitive-classes.test.mjs'
 ---
 
 # Red team of the two signed consent tables
 
 Both tables are executable on main: `consent-routes.test.mjs` (D-059) and `sensitive-classes.test.mjs` (D-061).
-A closed row names a run id or a D-number (D-064); an unrun row reads `open CU-n` or `todo CU-n`. cu-verifier
-signed D-059 with #424 and D-061 with #425.
+A closed row names cu-verifier's run or a D-number (D-064); an unrun row reads `open CU-n` or `todo CU-n`. D-059
+has a second section judged through createAppPolicy as the loop calls it (P9 refusals, launch_code, CU-249).
 
-## Gaps found and filed
+## Gaps filed on 8 November
 
-| Issue | Gap | State on 8 Nov |
+| Issue | Gap | State at 13:45Z |
 |---|---|---|
-| CU-187 | a copy of captioned shown text carried no class | fixed (#472); browser live, desktop waits |
-| CU-192 | a toolbar Paste skipped the paste checks | fixed (#471), live |
-| CU-194 | a password field shown in plain text lost its class | fixed (#502, #504, #510); live pending |
-| CU-195 | a drag of captioned shown text carried no class | fixed (#484), reopened for role `definition`, fixed (#522) |
-| CU-198 | a browser text drag skipped the value rules | fixed (#490), live |
-| CU-185 | national phone formats missed by value | fix #527 (a date guard added after review) |
+| CU-230, CU-234 | modified paste and Space/Backspace chords unjudged | fixed, every cell closed live |
+| CU-232 | a chord firing a menu item judged by its keys | helper 0.2.52 installed; driver #27 next |
+| CU-245, CU-257 | secrets typed unasked (spaced SSN, PEM, JWT; API tokens) | CU-245's value rows closed live; #61 in review |
+| CU-249, CU-251 | Services and owner-setting hotkeys allowed | refused (#49, #50) |
+| CU-252, CU-254 | a menu Open of a script; App Store installs | helper #70, driver #66; #58 |
+| CU-253 | a chat app's Return sends | fixed (#52) |
+| CU-258 | Always Allow, Don't ask again allowed | #64 in review |
+| CU-260 | a secret in a navigate URL leaves unasked | High; fix queued |
+| CU-261 | calls, meetings, invitation replies, posts, merges allowed | High; fix queued |
+| CU-263 | a CAPTCHA is a plain click | P2 |
+| CU-264 | Disk Utility, Activity Monitor not excluded | High; fix queued |
+| CU-265 | facetime:, tel: links unjudged | P2 |
+| CU-266 | a zero-width space or look-alike hides a word or value | High; fix queued |
 
-Red team of other seats' fixes added: the D-066 exemptions were reachable by a pty wrapper or `env -i` (D-068
-removed them); the physical prompt must accept hardware events only, never Return, after an arming delay
-(CU-203); a returning owner inside a long hold (CU-204), and the dead end that fix caused (CU-208).
+Red team of others' fixes added: hidden duplicate key equivalents (#36), the bound-item precedence (CU-256 - only
+one enabled app item wins), an iframe-body editor (CU-241), price and free-trial buttons (#58), wording variants
+(#64), an app bundle read as a folder (#70), a card in a URL path kept as a named limit (CU-260).
 
-## Lessons this seat follows
+## Methods this seat follows
 
-- A todo row must discriminate: it fails with its one distinguishing field removed.
-- Review a document on its three-dot diff and a real test merge; a two-dot diff shows main's new work as deletions.
-- `git merge-tree` writes a tree, not a commit; checks on it must run on a committed tree.
-- Read PR states as `number=state`; I misreported six PRs as merged when reading tab-separated pairs.
-- Never verify my own filings; route bridge pings for them to cu-verifier.
-- A run string names the helper version the run recorded, not the hold notice.
+- Probe through runTask before calling a hole live; a probe whose control does not ask is invalid. In the
+  desktop-consent harness the focus goes in the world (world.focused) - desktopRun ignores a focus option.
+- A gap gets its todo row at once (`not:allow` when the fix is undecided); the second lander flips it.
+- A row must fail with its one distinguishing field removed; a fix may be driver-specific, so a row per driver.
+- Key-rule test values are never all hex - the digest rule would mask the gap.
+- A combined merge check runs the tests: two clean merges can still redeclare an identifier.
+- Check live chords against macOS hotkeys and Services; verify a cited source myself.
+- Documents change after the code lands; read a diff before a re-OK; read the inbox before every push.
+- Commit before a detached test merge; never verify my own filings.

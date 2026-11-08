@@ -16,7 +16,10 @@ export const NEVER_PRE_APPROVED = Object.freeze(['purchase', 'delete', 'permissi
 
 /** Word lists matched on a target's accessible name, case-insensitively, at word boundaries; they err toward confirm. */
 const WORDS = Object.freeze({
-  purchase: ['buy', 'pay', 'order', 'place order', 'checkout', 'check out', 'subscribe', 'donate', 'purchase', 'transfer', 'withdraw', 'wire', 'send money'],
+  purchase: ['buy', 'pay', 'order', 'place order', 'checkout', 'check out', 'subscribe', 'donate', 'purchase', 'transfer', 'withdraw', 'wire', 'send money',
+    // CU-288 (cu-researcher's real-app wordings, round 2): a booking, an upgrade or a renewal commits money.
+    'book now', 'book this', 'reserve now', 'upgrade plan', 'upgrade now', 'upgrade to pro', 'upgrade to premium', 'renew subscription', 'renew now',
+    'renew plan'],
   // CU-135: replace and overwrite (a save panel's 'already exists' sheet), don't save (a close sheet discards work).
   delete: ['delete', 'remove', 'discard', 'erase', 'empty trash', 'cancel subscription', 'replace', 'overwrite', "don't save", 'don\u2019t save',
     // CU-146 (the CU-145 audit): destructive labels the list missed.
@@ -38,6 +41,14 @@ const WORDS = Object.freeze({
     'allow always', 'remember this decision', 'remember decision',
     // CU-261 (cu-researcher): a camera or microphone switched on reaches other people.
     'turn on camera', 'turn on microphone', 'turn on video', 'start video', 'unmute',
+    // CU-289 (cu-researcher): storing a credential in a browser's or app's password store is a standing choice. 'Remember
+    // me' (staying signed in) and a plain or draft Save stay free; 'Update password' already hands off (password_change).
+    'save password', 'save passwords', 'remember password', 'remember passwords', 'save login', 'save logins',
+    'save login info', 'remember login', 'save credentials', 'save to keychain', 'save in keychain',
+    // cu-researcher on #136: a passkey is a credential too; 'Never save' keeps a standing exception like 'Never for this site'.
+    'save passkey', 'save a passkey', 'save passkeys', 'save this passkey', 'never save',
+    // cu-developer-one's ruling: creating a passkey registers a new credential with the site; using one to sign in stays free.
+    'create passkey', 'create a passkey', 'add passkey', 'add a passkey',
     // cu-researcher's 13:23Z sweep: an account-wide sign-out.
     'sign out of all devices', 'sign out everywhere', 'log out of all devices', 'log out everywhere',
     // CU-270 (cu-researcher): switching an account's protection off - every verb with every protection, as whole phrases
@@ -57,7 +68,9 @@ const WORDS = Object.freeze({
     // cu-researcher on #98: a cancellation goes to every attendee.
     'cancel meeting', 'cancel event', 'cancel invitation', 'send cancellation',
     // CU-286 (cu-researcher's real-app wordings): a request to join a meeting, and Slack's huddle (a call to the channel).
-    'ask to join', 'start huddle', 'start a huddle', 'join huddle'],
+    'ask to join', 'start huddle', 'start a huddle', 'join huddle',
+    // CU-288: a tax filing goes to the authority.
+    'file return', 'file tax return', 'file your return', 'file my return', 'e-file', 'efile', 'submit return', 'submit tax return'],
 })
 const PRECEDENCE = ['purchase', 'launch_code', 'delete', 'permission', 'page_dialog', 'credential', 'sensitive_data', 'submit', 'new_site', 'install']
 const POINTER = new Set(['click', 'double_click', 'triple_click'])
@@ -73,6 +86,10 @@ const TRASH_ROLE = /^(ax)?(button|defaultbutton|menubutton|menuitem)$/i
 // CU-142: a multi-line text input, where a Return is text and does not press the default button.
 const TEXT_AREA_ROLE = /^(ax)?textarea$/i
 // CU-140: a drop zone that deletes - the delete words, and a trash or bin.
+// CU-288 (cu-researcher): a free trial starts a renewing subscription wherever it is offered - the whole name, with or
+// without its length ('Start 14-day free trial', 'Try 3 months free', 'Try it free'); 'Free trial info' stays free.
+const TRIAL_NAME = /^(start (a |your |my )?(\d+[- ]?(day|week|month|year)s? )?free trial|(\d+[- ]?(day|week|month|year)s? )?free trial|try (it |us )?free( for \d+ (days?|weeks?|months?|years?))?|try \d+ (days?|weeks?|months?|years?) (for )?free|get \d+ (days?|weeks?|months?) free)\s*[.!\u2026]?$/i
+const namesPurchase = (name) => namesWord(withoutOrderReferences(name), WORDS.purchase) || TRIAL_NAME.test(String(name ?? '').trim())
 const DROP_DELETE = [...WORDS.delete, 'trash', 'bin']
 const TEXT_ROLE = /^(ax)?(textfield|textarea|searchfield|combobox|textbox|searchbox)$/i
 
@@ -309,7 +326,9 @@ const SECRET_NAMES = Object.freeze(['recovery phrase', 'seed phrase', 'secret ph
   'dl number', 'license number', 'birthdate', 'birth day', 'exp date', 'expiration', 'valid thru', 'valid through', 'otp',
   'card no', 'cell number', 'mobile', 'tel',
   // CU-245 (cu-researcher's D-061 red team): a debit card, an account recovery key and two-factor backup codes.
-  'debit card', 'recovery key', 'backup code', 'backup codes'])
+  'debit card', 'recovery key', 'backup code', 'backup codes',
+  // CU-288: a one-time code named by its length ('Enter the 6-digit code', 'six-digit code').
+  'digit code', 'digit verification code'])
 // CU-172: acronyms match case-sensitively as whole tokens, so 'PAN' asks and 'Pan size' or 'Panel' does not.
 const SECRET_ACRONYMS = Object.freeze(['SIN', 'TFN', 'PAN', 'NHS', 'MRN', 'TIN', 'CPF', 'NRIC'])
 const namesAcronym = (name) => SECRET_ACRONYMS.some((word) => new RegExp(`(^|[^A-Za-z])${word}([^A-Za-z]|$)`).test(String(name ?? '')))
@@ -649,7 +668,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const focusesEntry = POINTER.has(action.type) && plainTextEntry(target)
       for (const cls of ['purchase', 'delete', 'permission']) {
         if (focusesEntry) break
-        if (namesWord(cls === 'purchase' ? withoutOrderReferences(name) : name, WORDS[cls])) classes.push(cls)
+        if ((cls === 'purchase' ? namesPurchase(name) : namesWord(name, WORDS[cls]))) classes.push(cls)
       }
       if (judgesSubmit(name, target)) classes.push('submit')
       // CU-146: 'Trash' or 'Bin' alone deletes on a control (a toolbar button, a menu item); a sidebar row of that name
@@ -663,7 +682,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const boundNames = bound && typeof bound === 'object' ? (Array.isArray(bound.items) ? bound.items : [bound]).map((one) => one?.name).filter((n) => typeof n === 'string' && n.trim() !== '') : []
     for (const boundName of boundNames) {
       for (const cls of ['purchase', 'delete', 'permission']) {
-        if (namesWord(cls === 'purchase' ? withoutOrderReferences(boundName) : boundName, WORDS[cls])) classes.push(cls)
+        if ((cls === 'purchase' ? namesPurchase(boundName) : namesWord(boundName, WORDS[cls]))) classes.push(cls)
       }
       // A bound Reply follows CU-157 on the focused window's entries, as the focused target reports them.
       if (judgesSubmit(boundName, target)) classes.push('submit')
@@ -677,7 +696,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const commandReturn = keysOf(action).has('META') && keysOf(action).has('ENTER')
     if (defaultName !== '' && pressesEnter && (!inTextArea || commandReturn)) {
       for (const cls of ['purchase', 'delete', 'permission']) {
-        if (namesWord(cls === 'purchase' ? withoutOrderReferences(defaultName) : defaultName, WORDS[cls])) classes.push(cls)
+        if ((cls === 'purchase' ? namesPurchase(defaultName) : namesWord(defaultName, WORDS[cls]))) classes.push(cls)
       }
       if (judgesSubmit(defaultName, target)) classes.push('submit')
     }

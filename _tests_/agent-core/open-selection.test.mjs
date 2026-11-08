@@ -176,3 +176,13 @@ test('CU-252 through the loop in a non-Finder app: the selection is read for Com
     rmSync(dir, { recursive: true, force: true })
   }
 })
+
+test('CU-252 reopen (cu-verifier 202258Z, #104 stand-in): rows with no file URL read kind unknown - a launchable name still asks in any app; a document or plain name does not', () => {
+  const list = { role: 'AXTable', name: '' }
+  for (const [keys, name] of [[['META', 'O'], 'install.command'], [['META', 'ARROWDOWN'], 'Payload.app'], [['META', 'O'], 'Payload.app/']]) {
+    assert.deepEqual(verdict(at(FIXTURE, key(...keys), list, { selection: { items: [{ name, kind: 'unknown' }] } })), ['confirm', 'launch_code', 'selection:launch_code'], `${keys.join('+')} ${name}`)
+  }
+  for (const name of ['notes.txt', 'Groceries']) {
+    assert.equal(at(FIXTURE, key('META', 'O'), list, { selection: { items: [{ name, kind: 'unknown' }] } }).decision, 'allow', name)
+  }
+})
