@@ -214,6 +214,17 @@ export function isTextEntry(target) {
   if (!target || target.editable === false) return false
   return target.editable === true || TEXT_ENTRY_ROLES.has(target.role)
 }
+// CU-257: token formats beyond the key rule's sk/pk/ghp/xoxb/AKIA prefixes.
+const API_TOKEN = new RegExp([
+  'github_pat_[A-Za-z0-9_]{22,}',
+  'gh[ousr]_[A-Za-z0-9]{30,}',
+  'glpat-[A-Za-z0-9_-]{20,}',
+  'AIza[0-9A-Za-z_-]{35}',
+  'hf_[A-Za-z0-9]{30,}',
+  'npm_[A-Za-z0-9]{36}',
+  'xox[aprs]-[A-Za-z0-9-]{16,}',
+  'shp(?:at|ss|ca|pa)_[a-fA-F0-9]{32}',
+].map((one) => `\\b${one}\\b`).join('|'))
 const PASSWORD_NAMES = Object.freeze(['password', 'passcode', 'passphrase', 'pin', 'pin code'])
 // CU-167 (cu-researcher's probe): a social security number, a card's CVV, a bare Passport field, a driving licence, a
 // birthday and a security question too - typed unasked before; the apostrophe in either form (' and ’).
@@ -328,6 +339,10 @@ export function looksSensitive(text) {
   if (/\+\d(?:[\s().-]{0,2}\d){8,}/.test(value) || /(^|[^\d])\(?\d{3}\)?[\s.-]?\d{3}[\s.-]\d{4}([^\d]|$)/.test(value)) return 'phone'
   if (nationalPhone(value)) return 'phone'
   if (/\b(?:sk|pk|ghp|xox[bp]|AKIA)[-_A-Za-z0-9]{16,}\b/.test(value) || /\b[A-Fa-f0-9]{40,}\b/.test(value)) return 'key'
+  // CU-257 (cu-researcher's D-061 sweep): widely used token prefixes, each with its format's length floor so a short word,
+  // a file name or 'AIza' in prose stays free - GitHub fine-grained and OAuth/app/user/refresh tokens, GitLab, Google
+  // API keys, Hugging Face, npm, the other Slack token kinds and Shopify. Named over-ask: a documentation page's example.
+  if (API_TOKEN.test(value)) return 'key'
   // CU-164: a 0x-prefixed 64-hex private key (the word boundary after 'x' kept the rule above from seeing it); a 0x + 40
   // hex wallet address is public and stays allowed.
   if (/\b0x[0-9a-fA-F]{64}\b/.test(value)) return 'key'
