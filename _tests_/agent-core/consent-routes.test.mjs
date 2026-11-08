@@ -321,8 +321,8 @@ const ROWS = [
   ['drag-into-iban', 'desktop', 'dragAway', 'notesEntry', 'sensitive_data', 'CU-198 (destination name rules)', "helper 0.2.49, CU Fixture consent-cells copyRow, cu-verifier: hello selected in an unnamed entry, dragged with a 400 ms dwell onto the entry named IBAN - declined sensitive_data, the IBAN entry unchanged (20261108T023516Z-a51b2d)", null, { dropTarget: { role: 'AXTextField', name: 'IBAN', editable: true } }],
   // CU-253 (cu-researcher): a chat app sends on Return in its compose field and has no default button, so the field
   // name decides - and 'iMessage' or 'Message' is no submit word: the message goes unasked (runTask probe on main).
-  ['chat-return-imessage', 'desktop', 'enter', 'chatComposeArea', 'submit', 'CU-253 (Messages sends on Return)', 'no live row yet', 'todo CU-253'],
-  ['chat-newline-imessage', 'desktop', 'typeNewline', 'chatComposeArea', 'submit', 'CU-253 (a typed newline is the same Return)', 'no live row yet', 'todo CU-253'],
+  ['chat-return-imessage', 'desktop', 'enter', 'chatComposeArea', 'submit', 'chat-return.test.mjs (#52, CU-253: Messages sends on Return)', 'no live row yet', 'open CU-253'],
+  ['chat-newline-imessage', 'desktop', 'typeNewline', 'chatComposeArea', 'submit', 'chat-return.test.mjs (#52, CU-253: a typed newline is the same Return)', 'no live row yet', 'open CU-253'],
   ['chat-return-new-message', 'desktop', 'enter', 'chatNewMessageArea', 'submit', 'CU-253 (a compose name in its own words)', 'no live row yet', 'todo CU-253'],
   ['notes-area-return-newline', 'desktop', 'enter', 'notesArea', 'allow', 'CU-253 negative (a notes box takes a new line)', 'no live row yet', 'open CU-253'],
 ]
