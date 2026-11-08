@@ -38,14 +38,17 @@ describe('open-selection (CU-252, CU-269 stand-in)', () => {
     })
   })
 
-  test('Accessibility shows the selected rows as Finder does: AXRow with AXFilename and a /tmp sandbox AXURL, a package with its trailing slash', async () => {
+  test('the selected rows carry Finder\'s shape: row and cell with AXFilename and a /tmp sandbox AXURL, a package with its trailing slash', async () => {
     await withSandbox(async (fixture) => {
       await fixture.act({ sandboxSelect: ['install.command', 'Payload.app'] })
       const { rows } = await fixture.call('sandboxAX')
-      assert.deepEqual(rows, [
-        { role: 'AXRow', filename: 'install.command', url: 'file:///tmp/cu-fixture-sandbox/install.command' },
-        { role: 'AXRow', filename: 'Payload.app', url: 'file:///tmp/cu-fixture-sandbox/Payload.app/' },
+      // AppKit's own row element is not the row view (its role reads AXUnknown in process; CU-252): the row view and
+      // its cell both carry the file name and URL, and the cell is what the helper's read walks to.
+      assert.deepEqual(rows.map(({ role, ...rest }) => rest), [
+        { filename: 'install.command', url: 'file:///tmp/cu-fixture-sandbox/install.command', cellFilename: 'install.command', cellURL: 'file:///tmp/cu-fixture-sandbox/install.command' },
+        { filename: 'Payload.app', url: 'file:///tmp/cu-fixture-sandbox/Payload.app/', cellFilename: 'Payload.app', cellURL: 'file:///tmp/cu-fixture-sandbox/Payload.app/' },
       ])
+      assert.ok(rows.every((row) => row.role !== 'AXRow'), 'the row view no longer claims the row role (that override left AXSelectedRows unusable)')
     })
   })
 

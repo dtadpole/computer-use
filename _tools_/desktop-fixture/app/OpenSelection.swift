@@ -8,12 +8,21 @@ import AppKit
 // (Terminal.app, Payload.app). Nothing is opened, launched or written: the files exist only as strings, and every action
 // only records what it would have opened, so a refusal shows as no event.
 
-/// A file row that says what file it shows, as Finder's rows do.
+/// A file row that says what file it shows, as Finder's rows do. CU-252 (cu-verifier's reopen, cu-developer-three's
+/// probes 215355Z, 221544Z): the row keeps AppKit's own row role and element - an override of the role made AppKit's
+/// table hand the helper no usable rows - and carries the file name and URL; so does its cell, which is what Finder's
+/// list rows hold and what the helper's read walks to (a row's descendants, depth 3).
 final class SandboxFileRow: NSTableRowView {
   var fileName = ""
   var fileURL: URL?
-  override func isAccessibilityElement() -> Bool { true }
-  override func accessibilityRole() -> NSAccessibility.Role? { .row }
+  override func accessibilityFilename() -> String? { fileName }
+  override func accessibilityURL() -> URL? { fileURL }
+}
+
+/// A file's cell: its text field shows the name; the cell carries AXFilename, AXURL and the name as its label.
+final class SandboxFileCell: NSTableCellView {
+  var fileName = ""
+  var fileURL: URL?
   override func accessibilityFilename() -> String? { fileName }
   override func accessibilityURL() -> URL? { fileURL }
   override func accessibilityLabel() -> String? { fileName }
@@ -135,9 +144,16 @@ final class OpenSelection: NSObject, NSTableViewDataSource, NSTableViewDelegate 
   func numberOfRows(in tableView: NSTableView) -> Int { files.count }
 
   func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
+    let cell = SandboxFileCell()
+    cell.fileName = files[row]
+    cell.fileURL = Self.url(files[row])
     let label = NSTextField(labelWithString: files[row])
     label.font = NSFont.systemFont(ofSize: 13)
-    return label
+    label.translatesAutoresizingMaskIntoConstraints = false
+    cell.addSubview(label)
+    cell.textField = label
+    NSLayoutConstraint.activate([label.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: 4), label.centerYAnchor.constraint(equalTo: cell.centerYAnchor)])
+    return cell
   }
 
   func tableView(_ tableView: NSTableView, rowViewForRow row: Int) -> NSTableRowView? {
@@ -218,7 +234,9 @@ final class OpenSelection: NSObject, NSTableViewDataSource, NSTableViewDelegate 
     guard let screen = shared else { return [] }
     // The selected rows' views are the AXRow elements AppKit serves for a view-based table.
     return screen.table.selectedRowIndexes.compactMap { screen.table.rowView(atRow: $0, makeIfNecessary: true) }.map { row in
-      ["role": row.accessibilityRole()?.rawValue ?? NSNull(), "filename": row.accessibilityFilename() ?? NSNull(), "url": row.accessibilityURL()?.absoluteString ?? NSNull()]
+      let cell = (row.subviews.first as? SandboxFileCell) ?? (screen.table.view(atColumn: 0, row: screen.table.row(for: row), makeIfNecessary: true) as? SandboxFileCell)
+      return ["role": row.accessibilityRole()?.rawValue ?? NSNull(), "filename": row.accessibilityFilename() ?? NSNull(), "url": row.accessibilityURL()?.absoluteString ?? NSNull(),
+              "cellFilename": cell?.accessibilityFilename() ?? NSNull(), "cellURL": cell?.accessibilityURL()?.absoluteString ?? NSNull()]
     }
   }
 
