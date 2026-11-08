@@ -1,11 +1,12 @@
 ---
 title: AGENTS.md
 created: 2026-11-08T09:40:00Z
-modified: 2026-11-08T09:40:00Z
-version: 1.0.0
+modified: 2026-11-08T10:20:00Z
+version: 1.1.0
 description: The entry point for whoever works in this repository - what it is, the conventions it follows, and how a change is finished.
 grounded_in:
   - source: owner's order of 2026-11-08 (computer-use becomes one public repository holding its code and its records, by the knowledge-bank conventions)
+  - source: Linear CU-228 (old pull request numbers collide with this repository's)
 ---
 
 # AGENTS.md
@@ -40,6 +41,9 @@ bank; the ones that bind here:
   points; the convention's `~/dtadpole/computer-use-wt/<name>` follows once the helper's allowlist does.
 - **Landing** - `main` is pull-request only and protected; the integrator lands reviewed, gated SHAs. Nobody
   force-pushes or pushes `main`.
+- **Pull request numbers** - this repository's numbering restarted at #1 on 2026-11-08. A number in a record
+  written before that date names a pull request of the private history repository (`computer-use-history`), not
+  of this one; a newer record writes `old #N` for a history pull request and links none.
 
 ## Public hygiene
 
