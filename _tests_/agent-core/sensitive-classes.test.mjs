@@ -177,6 +177,17 @@ export const ROWS = [
   ['name-Recovery phrase', 'auth', 'name', 'abc123xyz', 'Recovery phrase', 'sensitive_data', null, 'secret-fields Recovery phrase 20261107T141139Z-d49bb2'],
   ['name-Recovery key', 'auth', 'name', 'abc123xyz', 'Recovery key', 'sensitive_data', null, 'cu-verifier, main 900e251, CU Fixture named controls: Recovery key declined sensitive_data, entry empty (20261108T180703Z-00358c)'],
   ['name-Backup codes', 'auth', 'name', 'abc123xyz', 'Backup codes', 'sensitive_data', null, 'cu-verifier, main 900e251, CU Fixture named controls: Backup codes declined sensitive_data, entry empty (20261108T180706Z-9983b6)'],
+  // CU-293 (Urgent): field names in Chinese (standard form labels, measured on the issue); a name stays free.
+  ['name-密码', 'auth', 'name', 'abc123xyz', '密码', 'credential', 'todo CU-293', 'no live row yet'],
+  ['name-密碼', 'auth', 'name', 'abc123xyz', '密碼', 'credential', 'todo CU-293', 'no live row yet'],
+  ['name-身份证号', 'gov', 'name', 'abc123xyz', '身份证号', 'sensitive_data', 'todo CU-293', 'no live row yet'],
+  ['name-身分證字號', 'gov', 'name', 'abc123xyz', '身分證字號', 'sensitive_data', 'todo CU-293', 'no live row yet'],
+  ['name-银行卡号', 'pay', 'name', 'abc123xyz', '银行卡号', 'sensitive_data', 'todo CU-293', 'no live row yet'],
+  ['name-銀行卡號', 'pay', 'name', 'abc123xyz', '銀行卡號', 'sensitive_data', 'todo CU-293', 'no live row yet'],
+  ['name-手机号', 'contact', 'name', 'abc123xyz', '手机号', 'sensitive_data', 'todo CU-293', 'no live row yet'],
+  ['name-验证码', 'auth', 'name', 'abc123xyz', '验证码', 'sensitive_data', 'todo CU-293', 'no live row yet'],
+  ['name-护照号码', 'gov', 'name', 'abc123xyz', '护照号码', 'sensitive_data', 'todo CU-293', 'no live row yet'],
+  ['name-姓名 (negative)', 'contact', 'name', 'abc123xyz', '姓名', 'allow', 'open CU-293', 'no live row yet'],
   // CU-288: a one-time code named by its length, as sign-in pages write it ('Enter the 6-digit code we sent').
   ['name-6-digit code', 'auth', 'name', '482913', '6-digit code', 'sensitive_data', 'open CU-288', 'no live row yet'],
   ['name-Enter the six-digit code', 'auth', 'name', '482913', 'Enter the six-digit code', 'sensitive_data', 'open CU-288', 'no live row yet'],
