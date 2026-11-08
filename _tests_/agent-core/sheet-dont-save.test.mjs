@@ -33,7 +33,8 @@ test('without a sheet Command-D is not asked (Duplicate, Bookmark); Escape and C
   assert.equal(decide(['META', 'D'], { role: 'AXWindow', name: 'Untitled' }).decision, 'allow', 'an older helper reports no sheet: as before')
   assert.equal(decide(['ESCAPE'], windowWithSheet).decision, 'allow')
   assert.equal(decide(['META', 'PERIOD'], windowWithSheet).decision, 'allow')
-  assert.equal(decide(['META', 'SHIFT', 'D'], windowWithSheet).decision, 'allow', 'only the exact chord')
+  // CU-234: the modified variants are Don't Save too (generous; a no-op variant is a named over-ask).
+  for (const mod of ['SHIFT', 'ALT', 'CTRL']) assert.equal(decide(['META', mod, 'D'], windowWithSheet).class, 'delete', `Command-${mod}-D`)
 })
 
 test('Command-D right after Command-W or Command-Q in the batch is aimed at the sheet that close raises', () => {
@@ -59,7 +60,9 @@ async function pair(first) {
 }
 
 test('in the loop: Command-W or Command-Q then Command-D in one batch - the D asked delete, though the read sees no sheet yet', async () => {
-  for (const close of [['META', 'W'], ['META', 'Q']]) {
+  // CU-234: Command-Option-W (Close All) and Command-Shift-W raise the same sheets (Command-Shift-Q is the system's Log
+  // Out, refused before it can raise one).
+  for (const close of [['META', 'W'], ['META', 'Q'], ['META', 'ALT', 'W'], ['META', 'SHIFT', 'W'], ['META', 'ALT', 'Q']]) {
     const { first, d } = await pair(close)
     assert.equal(first.decision, 'allow', close.join('+'))
     assert.deepEqual([d.decision, d.class], ['confirm', 'delete'], close.join('+'))

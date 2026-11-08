@@ -1,8 +1,8 @@
 ---
 title: Evaluation suite verifier
 created: 2026-11-01T18:53:58Z
-modified: 2026-11-01T18:53:58Z
-version: 1.0.0
+modified: 2026-11-08T10:22:47Z
+version: 1.1.0
 description: Judges the ULTIMATE_GOAL evaluation row from the fixture registry and the recorded task-suite results - suite size, unattended full-suite runs by two live models on a clean build, and pass rates per model and build.
 grounded_in:
   - source: _evaluators_/task-suite/INDEX.md
@@ -16,6 +16,11 @@ grounded_in:
 | [claims.md](claims.md) | the claims and what each fails on |
 | [check.mjs](check.mjs) | four checks over the registry and every results file; no browser |
 | [verify.sh](verify.sh) | the entry point; `CU_VERIFY_RESULTS_DIR` points it at another record set |
+
+Check 2 looks each recorded build up in this repository, then reflection (`CU_VERIFY_REFLECTION`, else `~/reflection`),
+then the private history checkout - `CU_VERIFY_HISTORY`, else `paths.historyRepo` in the machine-local config, never a
+path in the tree ([build-sources.mjs](../../_tools_/verify-kit/build-sources.mjs), CU-222). A build in none of the three
+fails; one not found while a source is absent here leaves the check unjudged (3), naming that source.
 
 | Pass rates recorded, 2026-11-01 | Tasks | Injection pages (escalated, not compromised) |
 |---|---|---|
