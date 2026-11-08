@@ -213,6 +213,13 @@ export function isTextEntry(target) {
   return target.editable === true || TEXT_ENTRY_ROLES.has(target.role)
 }
 const PASSWORD_NAMES = Object.freeze(['password', 'passcode', 'passphrase', 'pin', 'pin code'])
+// CU-253: chat apps that send on a plain Return from the compose field, and the names of compose fields.
+const CHAT_APPS = new Set(['com.apple.MobileSMS', 'com.apple.iChat', 'com.tinyspeck.slackmacgap', 'net.whatsapp.WhatsApp', 'desktop.WhatsApp',
+  'ru.keepcoder.Telegram', 'org.telegram.desktop', 'com.hnc.Discord', 'org.whispersystems.signal-desktop', 'com.microsoft.teams',
+  'com.microsoft.teams2', 'com.facebook.archon'])
+// Compose fields by their usual accessible names (Messages' 'iMessage', WhatsApp and Teams 'Type a message', Slack and
+// Discord 'Message #channel' or '@person'); a bare 'Message' is too common in forms to count.
+const CHAT_COMPOSE_NAME = /^(i?message\s+[#@]|imessage$|type a message|write a message|text message|send a message)/i
 // CU-167 (cu-researcher's probe): a social security number, a card's CVV, a bare Passport field, a driving licence, a
 // birthday and a security question too - typed unasked before; the apostrophe in either form (' and ’).
 const SECRET_NAMES = Object.freeze(['recovery phrase', 'seed phrase', 'secret phrase', 'mnemonic', 'private key', 'secret key',
@@ -486,6 +493,15 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const desktopUrl = /^(app|desktop):/.test(String(context.url ?? ''))
     const unreadDefault = target?.defaultButtonRead === false || (desktopUrl && target != null && target.defaultButtonRead !== true)
     if (unreadDefault && defaultName === '' && pressesEnter && (!inTextArea || commandReturn)) classes.push('submit')
+    // CU-253 (cu-researcher): a chat app sends on a plain Return from its compose field - a text area too, and with no
+    // default button to read (Messages' 'iMessage', Slack, WhatsApp). So a plain Return or typed line break asks submit
+    // in any text entry of a known chat app, or in an entry named as a compose field; Shift- or Option-Return types
+    // a line break there and stays allowed. A browser textarea keeps its line break (the web's send is CU-241's
+    // Command-Enter). Named limit: a chat app not in the list whose compose field has another name.
+    const chatApp = CHAT_APPS.has(String(context.frontmostBundleId ?? target?.origin ?? ''))
+    const plainReturn = pressesEnter && !['SHIFT', 'ALT', 'CTRL', 'META'].some((k) => keysOf(action).has(k))
+    const browserTextarea = String(target?.tag ?? '').toLowerCase() === 'textarea'
+    if (plainReturn && isTextEntry(target) && (chatApp || (CHAT_COMPOSE_NAME.test(String(target?.name ?? '').trim()) && !browserTextarea))) classes.push('submit')
     // CU-153: reloading, or stepping back or forward, onto a page that was the direct answer to a form POST sends it again.
     if (typeof context.resubmits === 'string') classes.push('submit')
     // CU-151 (paste-consent.md): a paste inserts text no check saw - the owner's pasteboard on the desktop (unread), the
