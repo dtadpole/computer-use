@@ -1,7 +1,7 @@
 ---
 title: What it does, approvals and known limits
 created: 2026-11-07T21:18:46Z
-modified: 2026-11-08T14:29:56Z
+modified: 2026-11-08T14:54:14Z
 version: 0.1.8
 level: L1
 status: unverified
@@ -40,7 +40,6 @@ file choices are never pre-approved. Typed sensitive text stays out of run files
 - A keyboard shortcut is judged as the menu item it fires, read from the menu bar; a window button's or a
   view's own keys are not. For now, run no unattended task
   that types, pastes or sends your data (D-074).
-- Not yet asked: opening a file from a menu or by Command-O in a list; installing from the App Store; an app's
-  Always Allow or Don't ask again.
+- Not yet asked: opening a file from a menu or by Command-O in a list; installing from the App Store.
 - A website's own keyboard shortcuts (a webmail's # deletes, e archives) are judged by the focus, not by what the site
   does with them.
