@@ -710,7 +710,7 @@ const SYSTEM_ROWS = [
   ['revert-to-saved', 'click', 'revertButton', 'delete', 'CU-261 (like Discard Changes)', 'no live row yet', 'todo CU-261'],
   ['sign-out-all-devices', 'click', 'signOutAllButton', 'permission', "CU-261 (the owner's sessions)", 'no live row yet', 'todo CU-261'],
   // CU-269: a drop onto an app's icon in Finder is 'open with' - the app launches with the file (runTask: posted).
-  ['drop-script-onto-terminal-app', 'dragDrop', 'commandRow', 'not:allow', 'CU-269 (Terminal is excluded; the script runs)', 'no live row yet', 'todo CU-269', { app: FINDER_ID, dropTarget: { role: 'AXImage', name: 'Terminal.app', filename: 'Terminal.app', origin: FINDER_ID } }],
+  ['drop-script-onto-terminal-app', 'dragDrop', 'commandRow', 'not:allow', 'CU-269 (Terminal is excluded; the script runs)', 'no live row yet', 'open CU-269', { app: FINDER_ID, dropTarget: { role: 'AXImage', name: 'Terminal.app', filename: 'Terminal.app', origin: FINDER_ID } }],
   ['drop-document-onto-folder', 'dragDrop', 'notesRow', 'allow', 'CU-269 negative (a move into a folder)', 'no live row yet', 'open CU-269', { app: FINDER_ID, dropTarget: { role: 'AXRow', name: 'Projects', origin: FINDER_ID } }],
   // CU-271: an approved IDE runs the code the agent typed - terminal_view only refuses typing into a terminal panel.
   ['ide-run-python-file', 'click', 'runPythonButton', 'not:allow', 'CU-271 (runTask: posted)', 'no live row yet', 'todo CU-271', { app: VSCODE_ID }],
@@ -724,11 +724,11 @@ const SYSTEM_ROWS = [
   // CU-252: P10's launch_code reads the clicked target's name only, so Finder's File > Open on a selected install.command
   // is not judged. A file browser's Open acts on the selection (a document app's opens a chooser); context.selection
   // is the desktop driver's selectedItems reply as it passes it on (abbb95d): { items: [{ name, kind }] } or unreadable.
-  ['menu-open-launchable-selection', 'click', 'openItem', 'launch_code', 'CU-252 (Finder File > Open with a .command selected)', 'no live row yet', 'todo CU-252', { app: FINDER_ID, selection: { items: [{ name: 'install.command', kind: 'file' }] } }],
+  ['menu-open-launchable-selection', 'click', 'openItem', 'launch_code', 'CU-252 (Finder File > Open with a .command selected)', 'no live row yet', 'open CU-252', { app: FINDER_ID, selection: { items: [{ name: 'install.command', kind: 'file' }] } }],
   ['menu-open-text-selection', 'click', 'openItem', 'allow', 'CU-252 negative (a text file opens in its editor)', 'no live row yet', 'open CU-252', { app: FINDER_ID, selection: { items: [{ name: 'notes.txt', kind: 'file' }] } }],
-  ['menu-open-package-selection', 'click', 'openItem', 'launch_code', "CU-252 (#70 reports an app bundle as kind folder; the name decides)", 'no live row yet', 'todo CU-252', { app: FINDER_ID, selection: { items: [{ name: 'Helper.app', kind: 'folder' }] } }],
+  ['menu-open-package-selection', 'click', 'openItem', 'launch_code', "CU-252 (#70 reports an app bundle as kind folder; the name decides)", 'no live row yet', 'open CU-252', { app: FINDER_ID, selection: { items: [{ name: 'Helper.app', kind: 'folder' }] } }],
   // Failing closed: a selection the driver cannot read is no reason to open it unasked (CU-259's unreadable).
-  ['menu-open-unreadable-selection', 'click', 'openItem', 'not:allow', 'CU-252 (an unreadable selection fails closed)', 'no live row yet', 'todo CU-252', { app: FINDER_ID, selection: { unreadable: true } }],
+  ['menu-open-unreadable-selection', 'click', 'openItem', 'not:allow', 'CU-252 (an unreadable selection fails closed)', 'no live row yet', 'open CU-252', { app: FINDER_ID, selection: { unreadable: true } }],
 ]
 // An expected 'not:<v>' holds for any verdict but <v> - for a gap whose fix (refuse or ask) is not decided yet.
 const meets = (got, expected) => (expected.startsWith('not:') ? got !== expected.slice(4) : got === expected)
