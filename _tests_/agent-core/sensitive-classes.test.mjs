@@ -143,7 +143,7 @@ export const ROWS = [
   ['value-US EIN', 'pay', 'value', '12-3456789', 'Notes', 'sensitive_data', null, 'desktop CU Fixture long form, Contact: 20261107T134209Z-7d3ca9'],
   ['name-EIN', 'pay', 'name', 'abc123xyz', 'EIN', 'sensitive_data', null, "main c69f5f665: sensitive_data, declined unattended, server got nothing (20261107T172739Z-904e1e, cu-verifier)"],
   ['name-Tax ID', 'pay', 'name', 'abc123xyz', 'Tax ID', 'sensitive_data', null, 'desktop CU Fixture long form, Tax ID field: 20261107T134312Z-ccea6d'],
-  ['name-Taxpayer Identification Number', 'gov', 'name', 'abc123xyz', 'Taxpayer Identification Number', 'sensitive_data', 'open CU-285', 'no live row yet'],
+  ['name-Taxpayer Identification Number', 'gov', 'name', 'abc123xyz', 'Taxpayer Identification Number', 'sensitive_data', null, 'desktop CU Fixture named-controls, abc123xyz typed into an entry of that name, declined sensitive_data, entry empty: 20261108T201737Z-4caf4a'],
   ['value-VAT number', 'pay', 'value', 'GB123456789', 'Notes', 'allow', null, 'by design (D-061 limit): too broad to judge by value; its name rows carry it'],
   ['name-VAT number', 'pay', 'name', 'abc123xyz', 'VAT number', 'sensitive_data', null, 'class page (#413): asked, main e7aaacfdb 20261107T151957Z-112017; pre-#415 typed unasked 20261107T152203Z-63f09c'],
   ['name-VAT ID', 'pay', 'name', 'abc123xyz', 'VAT ID', 'sensitive_data', null, 'class page (#413): asked, main e7aaacfdb 20261107T152001Z-8a90fa; pre-#415 typed unasked 20261107T152208Z-1ff7c5'],
@@ -497,7 +497,7 @@ const NAVIGATE_ROWS = [
   ['navigate-street address in a street parameter', 'https://shop.example/ship?street=' + ['221B', 'Baker', 'Street'].join('+'), 'sensitive_data', 'todo CU-284', 'no live row yet'],
   ['navigate-city parameter (negative)', 'https://shop.example/ship?city=Lisbon', 'allow', 'open CU-284', 'no live row yet'],
   // CU-285: fields named 'Tax number' and 'TIN' ask, but the same names as URL parameters do not (tax_id= does).
-  ['navigate-tax number parameter', 'https://gov.example/form?tax_number=' + ['1234', '5678'].join(''), 'sensitive_data', 'open CU-285', 'no live row yet'],
+  ['navigate-tax number parameter', 'https://gov.example/form?tax_number=' + ['1234', '5678'].join(''), 'sensitive_data', null, 'browser fixture site, tax_number=12345678 navigate declined url:sensitive_data, nothing reached the server: 20261108T200257Z-3873d9'],
   ['navigate-tin parameter', 'https://gov.example/form?tin=' + ['98', '7654'].join(''), 'sensitive_data', 'open CU-285', 'no live row yet'],
 ]
 for (const [id, url, expected, status, live] of NAVIGATE_ROWS) {
