@@ -500,10 +500,10 @@ const NAVIGATE_ROWS = [
   ['navigate-tax number parameter', 'https://gov.example/form?tax_number=' + ['1234', '5678'].join(''), 'sensitive_data', null, 'browser fixture site, tax_number=12345678 navigate declined url:sensitive_data, nothing reached the server: 20261108T200257Z-3873d9'],
   ['navigate-tin parameter', 'https://gov.example/form?tin=' + ['98', '7654'].join(''), 'sensitive_data', 'open CU-285', 'no live row yet'],
   // CU-291: joined lowercase phone names and the account abbreviations, with a number; a spreadsheet cell stays free.
-  ['navigate-phonenumber parameter', 'https://shop.example/c?phonenumber=' + ['555', '0134', '567'].join(''), 'sensitive_data', 'todo CU-291', 'no live row yet'],
-  ['navigate-cellphone parameter', 'https://shop.example/c?cellphone=' + ['555', '0134', '567'].join(''), 'sensitive_data', 'todo CU-291', 'no live row yet'],
-  ['navigate-acct parameter', 'https://bank.example/t?acct=' + ['0012', '3456', '78'].join(''), 'sensitive_data', 'todo CU-291', 'no live row yet'],
-  ['navigate-acctnum parameter', 'https://bank.example/t?acctnum=' + ['0012', '3456', '78'].join(''), 'sensitive_data', 'todo CU-291', 'no live row yet'],
+  ['navigate-phonenumber parameter', 'https://shop.example/c?phonenumber=' + ['555', '0134', '567'].join(''), 'sensitive_data', 'open CU-291', 'no live row yet'],
+  ['navigate-cellphone parameter', 'https://shop.example/c?cellphone=' + ['555', '0134', '567'].join(''), 'sensitive_data', 'open CU-291', 'no live row yet'],
+  ['navigate-acct parameter', 'https://bank.example/t?acct=' + ['0012', '3456', '78'].join(''), 'sensitive_data', 'open CU-291', 'no live row yet'],
+  ['navigate-acctnum parameter', 'https://bank.example/t?acctnum=' + ['0012', '3456', '78'].join(''), 'sensitive_data', 'open CU-291', 'no live row yet'],
   ['navigate-cell spreadsheet reference (negative)', 'https://sheets.example/d?cell=A1', 'allow', 'open CU-291', 'no live row yet'],
 ]
 for (const [id, url, expected, status, live] of NAVIGATE_ROWS) {
