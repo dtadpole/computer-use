@@ -1,3 +1,4 @@
+import { normaliseForPolicy } from './normalise.mjs'
 import { BIP39_ENGLISH } from './bip39-english.mjs'
 import { normalizeKey } from './keys.mjs'
 import { originPattern } from './sites.mjs'
@@ -10,7 +11,7 @@ import { originPattern } from './sites.mjs'
  */
 
 export const CLASSES = Object.freeze(['submit', 'purchase', 'delete', 'permission', 'credential', 'sensitive_data', 'new_site', 'page_dialog', 'install', 'file_choice'])
-export const NEVER_PRE_APPROVED = Object.freeze(['purchase', 'delete', 'permission', 'file_choice'])
+export const NEVER_PRE_APPROVED = Object.freeze(['purchase', 'delete', 'permission', 'file_choice', 'launch_code'])
 
 /** Word lists matched on a target's accessible name, case-insensitively, at word boundaries; they err toward confirm. */
 const WORDS = Object.freeze({
@@ -20,10 +21,15 @@ const WORDS = Object.freeze({
     // CU-146 (the CU-145 audit): destructive labels the list missed.
     'move to trash', 'move to bin', 'empty bin', 'clear history', 'clear all', 'reset all', 'reset settings', 'reset to defaults', 'uninstall', 'wipe', 'purge',
     'deactivate', 'close account', 'forget', 'factory reset'],
-  permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke'],
+  permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke',
+    // CU-258 (cu-researcher): standing choices an app keeps after the run, as whole phrases. A bare 'Allow' stays free so
+    // cookie banners do not ask (named limit).
+    'always allow', 'always trust', 'always open', 'allow access', "don't ask again", 'don\u2019t ask again', 'do not ask again',
+    'remember my choice', 'remember this choice', 'remember my decision', 'never for this website', 'never for this site',
+    'set as default', 'make default'],
   submit: ['send', 'post', 'submit', 'publish', 'reply', 'sign up', 'register'],
 })
-const PRECEDENCE = ['purchase', 'delete', 'permission', 'page_dialog', 'credential', 'sensitive_data', 'submit', 'new_site', 'install']
+const PRECEDENCE = ['purchase', 'launch_code', 'delete', 'permission', 'page_dialog', 'credential', 'sensitive_data', 'submit', 'new_site', 'install']
 const POINTER = new Set(['click', 'double_click', 'triple_click'])
 // CU-135 (keyboard-activation.md): a focused button; any control a click activates (Space presses or toggles it); and a
 // text input, as the environments name their roles.
@@ -214,6 +220,21 @@ export function isTextEntry(target) {
   if (!target || target.editable === false) return false
   return target.editable === true || TEXT_ENTRY_ROLES.has(target.role)
 }
+// CU-257: token formats beyond the key rule's sk/pk/ghp/xoxb/AKIA prefixes.
+const API_TOKEN = new RegExp([
+  'github_pat_[A-Za-z0-9_]{22,}',
+  'gh[ousr]_[A-Za-z0-9]{30,}',
+  'glpat-[A-Za-z0-9_-]{20,}',
+  'AIza[0-9A-Za-z_-]{35}',
+  'hf_[A-Za-z0-9]{30,}',
+  'npm_[A-Za-z0-9]{36}',
+  'xox[aprs]-[A-Za-z0-9-]{16,}',
+  'shp(?:at|ss|ca|pa)_[a-fA-F0-9]{32}',
+  // cu-verifier on #61: Slack app-level tokens, SendGrid keys (two dot-joined parts), Stripe restricted keys.
+  'xapp-[A-Za-z0-9-]{20,}',
+  'SG\\.[A-Za-z0-9_-]{16,}\\.[A-Za-z0-9_-]{16,}',
+  'rk_(?:live|test)_[A-Za-z0-9]{16,}',
+].map((one) => `\\b${one}\\b`).join('|'))
 const PASSWORD_NAMES = Object.freeze(['password', 'passcode', 'passphrase', 'pin', 'pin code'])
 // CU-253: chat apps that send on a plain Return from the compose field, and the names of compose fields.
 const CHAT_APPS = new Set(['com.apple.MobileSMS', 'com.apple.iChat', 'com.tinyspeck.slackmacgap', 'net.whatsapp.WhatsApp', 'desktop.WhatsApp',
@@ -295,6 +316,51 @@ function nationalPhone(value) {
 }
 
 /** Whether text looks like sensitive data being transmitted (R29): card, IBAN, routing + account, national id, tax id, phone, e-mail, key, recovery phrase. */
+// CU-260 (cu-researcher): query parameters that carry a secret by name - a reset or session token, an API key.
+const SECRET_PARAM = /^(token|access_?token|refresh_?token|id_?token|api_?key|apikey|client_?secret|secret|password|passwd)$/i
+// cu-verifier on #91: a password or secret parameter asks whatever its length ('hunter2'); a token keeps the 8-character floor.
+// cu-researcher: aligned with D-061's credential names (passcode, passphrase, PIN) and any name ending in secret.
+const PASSWORD_PARAM = /^([a-z0-9]*[_-]?secret|password|passwd|pwd|pass|passcode|passphrase|pin)$/i
+
+/**
+ * CU-260: the D-061 value a navigate URL would carry off the page, or null - the value rules over the decoded query
+ * values, fragment and path segments, a password in the address, or a query parameter named for a secret (a value of 8
+ * or more). A path segment's card or phone match is a numeric id (a post or order number), not counted. Named over-ask:
+ * a 40-hex commit hash in a code host's URL (the digest rule; cu-coordinator: keep it).
+ */
+export function urlSecret(raw) {
+  let url
+  try {
+    url = new URL(String(raw ?? ''))
+  } catch {
+    return looksSensitive(String(raw ?? ''))
+  }
+  if (url.password !== '') return 'password'
+  const decode = (part) => {
+    try {
+      return decodeURIComponent(part.replace(/\+/g, ' '))
+    } catch {
+      return part
+    }
+  }
+  const params = [...url.searchParams]
+  const fragment = url.hash.slice(1)
+  if (fragment.includes('=')) params.push(...new URLSearchParams(fragment))
+  for (const [name, value] of params) {
+    if (PASSWORD_PARAM.test(name.trim()) && value.trim() !== '') return 'key'
+    if (SECRET_PARAM.test(name.trim()) && value.trim().length >= 8) return 'key'
+    const kind = looksSensitive(value)
+    if (kind !== null) return kind
+  }
+  const loose = looksSensitive(decode(fragment))
+  if (loose !== null) return loose
+  for (const segment of url.pathname.split('/').filter(Boolean)) {
+    const kind = looksSensitive(decode(segment))
+    if (kind !== null && kind !== 'card' && kind !== 'phone') return kind
+  }
+  return null
+}
+
 export function looksSensitive(text) {
   const value = String(text ?? '')
   for (const match of value.matchAll(/(?:\d[ -]?){13,19}/g)) {
@@ -332,10 +398,16 @@ export function looksSensitive(text) {
     if (tfnValid(m[1] + m[2] + m[3])) return 'tax_id'
   }
   if (/(^|[^\d-])\d{2}-\d{7}([^\d-]|$)/.test(value)) return 'tax_id'
-  if (/[\w.+-]+@[\w-]+\.[\w.-]+/.test(value)) return 'email'
+  // CU-272 (cu-researcher): bounded (RFC 5321's 64-character local part, 63-character labels) and only tried when an '@'
+  // is present - the unbounded form was quadratic on a long word run (an 80k paste took seconds in one classify).
+  if (value.includes('@') && /[\w.+-]{1,64}@[\w-]{1,63}\.[\w.-]{1,190}/.test(value)) return 'email'
   if (/\+\d(?:[\s().-]{0,2}\d){8,}/.test(value) || /(^|[^\d])\(?\d{3}\)?[\s.-]?\d{3}[\s.-]\d{4}([^\d]|$)/.test(value)) return 'phone'
   if (nationalPhone(value)) return 'phone'
   if (/\b(?:sk|pk|ghp|xox[bp]|AKIA)[-_A-Za-z0-9]{16,}\b/.test(value) || /\b[A-Fa-f0-9]{40,}\b/.test(value)) return 'key'
+  // CU-257 (cu-researcher's D-061 sweep): widely used token prefixes, each with its format's length floor so a short word,
+  // a file name or 'AIza' in prose stays free - GitHub fine-grained and OAuth/app/user/refresh tokens, GitLab, Google
+  // API keys, Hugging Face, npm, the other Slack token kinds and Shopify. Named over-ask: a documentation page's example.
+  if (API_TOKEN.test(value)) return 'key'
   // CU-164: a 0x-prefixed 64-hex private key (the word boundary after 'x' kept the rule above from seeing it); a 0x + 40
   // hex wallet address is public and stays allowed.
   if (/\b0x[0-9a-fA-F]{64}\b/.test(value)) return 'key'
@@ -430,7 +502,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
    * `context`: `{ url, target, dialog, task }`, where `target` is `inspectPoint` for pointer actions or
    * `focusedElement()` for `type` and `keypress`, and `dialog` the held dialog from `state()`.
    */
-  function classify(action, context = {}) {
+  function classify(rawAction, rawContext = {}) {
+    // CU-266: every rule below reads the normalised copy (zero-width and format characters, look-alikes, fullwidth forms).
+    const { action, context: normalised } = normaliseForPolicy(rawAction, rawContext)
+    let context = normalised
     context = withCaptionNames(context)
     const url = context.url ?? ''
     const verdict = sitePolicy(url)
@@ -439,12 +514,18 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     }
     if (action.type === 'navigate') {
       const next = sitePolicy(action.url)
-      if (next === 'allow') return { decision: 'allow', class: null, rule: 'site:allowed', reason: '' }
-      if (next.block === 'not_allowed') {
-        if (preApproved('new_site', action.url)) return { decision: 'allow', class: 'new_site', rule: 'pre_approved', reason: '' }
-        return { decision: 'confirm', class: 'new_site', rule: 'site:not_allowed', reason: `open ${originPattern(action.url)}, a site the task did not name` }
+      if (next !== 'allow' && next.block !== 'not_allowed') {
+        return { decision: 'block', class: null, rule: `site:${next.block}`, reason: `${action.url} is refused by the site filter (${next.block})` }
       }
-      return { decision: 'block', class: null, rule: `site:${next.block}`, reason: `${action.url} is refused by the site filter (${next.block})` }
+      // CU-260 (cu-researcher; cu-coordinator: High): a secret in the address leaves with the request, so the D-061 value
+      // rules run over the decoded URL before the site verdict, and a new-site ask that carries one names the class too.
+      const secret = urlSecret(action.url)
+      const asks = [...(secret !== null ? ['sensitive_data'] : []), ...(next !== 'allow' ? ['new_site'] : [])]
+      const needed = asks.filter((cls) => !preApproved(cls, action.url) || NEVER_PRE_APPROVED.includes(cls))
+      if (asks.length === 0) return { decision: 'allow', class: null, rule: 'site:allowed', reason: '' }
+      if (needed.length === 0) return { decision: 'allow', class: asks[0], rule: 'pre_approved', reason: '' }
+      if (needed[0] === 'new_site') return { decision: 'confirm', class: 'new_site', classes: needed, rule: 'site:not_allowed', reason: `open ${originPattern(action.url)}, a site the task did not name` }
+      return { decision: 'confirm', class: 'sensitive_data', classes: needed, rule: 'url:sensitive_data', reason: `open ${originPattern(action.url)} with a ${secret.replace('_', ' ')} in its address` }
     }
     if (url.startsWith('chrome-error:') || context.interstitial === true) {
       return { decision: 'handoff', class: null, rule: 'interstitial', reason: 'a browser safety warning needs the person' }
@@ -453,6 +534,24 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const target = context.target ?? null
     const name = target?.name ?? ''
     const classes = []
+    // CU-271 (cu-coordinator's ruling): a web terminal runs every line it is given, so a key or text into it - typed, a
+    // paste, a chord - or text dropped on it is refused, as a terminal view is on the desktop.
+    if ((['type', 'keypress', 'hold_key'].includes(action.type) && target?.terminal === true) || (action.type === 'drag' && context.dropTarget?.terminal === true)) {
+      return { decision: 'block', class: null, rule: 'terminal_view', reason: 'typing into a web terminal is refused, as in a terminal app' }
+    }
+    // CU-271: running code asks launch_code, never pre-approved - a run chord (Shift-, Control-, Command- or Alt-Return) in
+    // a notebook's code cell or on a notebook page's non-text focus (JupyterLab's command mode focuses the cell container),
+    // Colab's run chords (Control-F8, F9, F10) on a notebook page, or a control named Run or Execute (whole words) on a
+    // notebook or code page (an online IDE or playground). Typing code and a plain Return stay as they are.
+    {
+      const keys = keysOf(action)
+      const isKeys = action.type === 'keypress' || action.type === 'hold_key'
+      const runChord = keys.has('ENTER') && ['SHIFT', 'CTRL', 'META', 'ALT'].some((key) => keys.has(key))
+      const colabChord = keys.has('CTRL') && ['F8', 'F9', 'F10'].some((key) => keys.has(key))
+      const inCell = target?.notebookCell === true || (target?.notebookSurface === true && !isTextEntry(target))
+      const runControl = POINTER.has(action.type) && (target?.notebookSurface === true || target?.codeSurface === true) && /\b(run|execute)\b/i.test(name)
+      if ((isKeys && ((runChord && inCell) || (colabChord && target?.notebookSurface === true))) || runControl) classes.push('launch_code')
+    }
     const held = context.dialog && ['confirm', 'prompt', 'beforeunload'].includes(context.dialog.type)
     // Canonical keys (cu-researcher): 'RETURN', 'Return', 'enter' are ENTER too, whoever the caller is; a hold of it too.
     // CU-142: a typed newline presses the same Return as ENTER, so it is judged as ENTER on the focused element - in a
@@ -582,12 +681,27 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const inserted = insertedClass(String(action.text ?? ''), target, context)
       if (inserted) classes.push(inserted)
     }
+    // CU-267: a value typed in pieces is judged whole - what this run typed into the field before (the loop's buffer) with
+    // what this type, printable keypress or browser paste (the run clipboard's text) adds; the action that completes a value
+    // asks. One that only extends a value already judged whole does not ask again.
+    if ((action.type === 'type' || action.type === 'keypress') && context.typed && typeof context.typed.before === 'string' && typeof context.typed.next === 'string' && context.typed.next !== '') {
+      const valueIn = (text) => text !== '' && Boolean(looksSensitive(withoutTaskValues(text, context.task)))
+      if (!valueIn(context.typed.before) && valueIn(context.typed.before + context.typed.next)) classes.push('sensitive_data')
+    }
+    // CU-268: in the browser a control whose name has one word mixing scripts asks permission - never pre-approved, so a
+    // pre-approved submit cannot wave a disguised Delete or Pay through (cu-developer-one's ruling) - where no rule found a
+    // class: a folded look-alike already asks by its own ('Sеnd' asks submit). The desktop asks unknown_target in app-policy.
+    const mixedScript = !url.startsWith('desktop:') && classes.length === 0 && (POINTER.has(action.type) || pressesEnter || keyboard.activates) && target?.mixedScriptName === true
+    if (mixedScript) classes.push('permission')
     const unique = [...new Set(classes)].sort((a, b) => PRECEDENCE.indexOf(a) - PRECEDENCE.indexOf(b))
     const needed = unique.filter((cls) => !preApproved(cls, url) || NEVER_PRE_APPROVED.includes(cls))
     if (needed.length === 0) {
       return { decision: 'allow', class: unique[0] ?? null, rule: unique.length > 0 ? 'pre_approved' : 'default', reason: '' }
     }
     const cls = needed[0]
+    if (mixedScript && cls === 'permission') {
+      return { decision: 'confirm', class: cls, classes: needed, rule: 'target:mixed_script', reason: `activate "${name}", whose name mixes scripts in one word (a disguised control?)` }
+    }
     // `class` is the one that ranks first; `classes` lists every class that applied, for the evaluator's records.
     return { decision: 'confirm', class: cls, classes: needed, rule: `class:${cls}`, reason: describe(cls, action, target, url, context?.frontmostBundleId) }
   }
