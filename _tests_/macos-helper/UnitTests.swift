@@ -89,14 +89,18 @@ func testMenuKey() {
         "the named residual: an enabled first match on Command alone answers as itself (a later Command-only duplicate stays unseen)")
   check(MenuKey.read(bundleId: "a.b", entries: [markRead, send], emptyMenus: [], chord: chord(2, cmd | option)) == .unreadable("only disabled items match; a later duplicate may fire"),
         "(a) applies to the chord's own matches only: Send (Shift) does not count for Option-Command-D")
+  check(MenuKey.read(bundleId: "a.b", entries: [MenuKey.Entry(title: "Move to Trash", path: ["File", "Move to Trash"], enabled: true, cmdChar: "\u{8}", cmdModifiers: 0, cmdVirtualKey: 51, cmdGlyph: 23)],
+                     emptyMenus: [], chord: MenuKey.Chord(keyCode: 51, flags: cmd, unshifted: nil, shifted: nil))
+        == .items(bundleId: "a.b", items: [MenuKey.Entry(title: "Move to Trash", path: ["File", "Move to Trash"], enabled: true, cmdChar: "\u{8}", cmdModifiers: 0, cmdVirtualKey: 51, cmdGlyph: 23)], truncated: false, incomplete: false),
+        "a non-character key (Backspace) with no layout character is not incomplete: it matches by virtual key")
   // A nil layout (no character for the key): a miss is unreadable, never none; a virtual-key item still matches, marked incomplete.
   let noLayout = MenuKey.Chord(keyCode: 2, flags: cmd | shift, unshifted: nil, shifted: nil)
   if case .unreadable = MenuKey.read(bundleId: "a.b", entries: [send], emptyMenus: [], chord: noLayout) {} else {
     check(false, "a nil layout with a character item answers unreadable, not none")
   }
-  let trash = MenuKey.Entry(title: "Move to Trash", path: ["File", "Move to Trash"], enabled: true, cmdChar: "\u{8}", cmdModifiers: 0, cmdVirtualKey: 51, cmdGlyph: 23)
-  check(MenuKey.read(bundleId: "a.b", entries: [trash], emptyMenus: [], chord: MenuKey.Chord(keyCode: 51, flags: cmd, unshifted: nil, shifted: nil))
-        == .items(bundleId: "a.b", items: [trash], truncated: false, incomplete: true), "a nil layout: a virtual-key item still matches, marked incomplete")
+  let f5 = MenuKey.Entry(title: "Refresh", path: ["View", "Refresh"], enabled: true, cmdChar: nil, cmdModifiers: 8, cmdVirtualKey: 96, cmdGlyph: 115)
+  check(MenuKey.read(bundleId: "a.b", entries: [f5, send], emptyMenus: [], chord: MenuKey.Chord(keyCode: 2, flags: cmd | shift, unshifted: nil, shifted: nil))
+        == .unreadable("the keyboard layout gives no character for this key"), "a nil layout for a character key: unreadable even beside virtual-key items")
   if case .unreadable = MenuKey.read(bundleId: "a.b", entries: [plainK], emptyMenus: ["Bookmarks"], chord: chord(2, cmd | shift)) {} else {
     check(false, "a miss with a lazily filled menu is unreadable")
   }
