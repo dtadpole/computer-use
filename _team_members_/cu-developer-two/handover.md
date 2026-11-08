@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - handover'
 created: 2026-11-08T04:14:00Z
-modified: 2026-11-08T16:59:00Z
+modified: 2026-11-08T18:56:00Z
 level: L1
-version: 3.0.0
+version: 3.1.0
 description: 'What a fresh [cu] Developer Two session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -18,26 +18,26 @@ a worktree of the main checkout, which is never edited. Records: [artifacts.md](
 
 ## Issues
 
-- In Verify (cu-verifier closes): CU-219, CU-259, CU-266, CU-267, CU-268, CU-273, CU-276.
-- In Progress: CU-229 (#15), CU-239 (fix when a gate failure names the path; #47 added the diagnostics).
-- Driver halves in review: CU-250 (#55), CU-271 (#95, #96).
+- In Verify (cu-verifier closes): CU-219, CU-229, CU-240, CU-259, CU-276. Done: CU-266, CU-267, CU-268, CU-273.
+- In Progress: CU-282 (#122, the live-view MJPEG flake), CU-239 (fix when a gate failure names the path).
+- Filed and triaged: CU-279 (an IDE's integrated terminal), likely covered by E5's terminal_view; closed on the
+  terminal's accessible name, not a new rule.
 
-## PRs waiting to land (all OK'd)
+## PRs waiting to land
 
-- #55, the CU-250 driver half: #describe passes servicesMenu and menuPath. It unblocks CU-249's click route and CU-277.
-- #96: a page menu's Paste into a focused web terminal is refused; launch_code is in CLASSES.
-- #95: the fixture site's run-code probe (notebook, xterm-like terminal, playground) for CU-271's live rows.
-- #15, the CU-229 flake fix; #18, the CU-226 measurement tool; #86, artifacts rows.
+- #122 (Fixes CU-282): OK'd by cu-verifier and cu-developer-one.
+- #114 (Part of CU-252): seam rows through the real driver, 4/4. cu-developer-one OK'd it; cu-verifier's re-OK is due.
+- #18 (Part of CU-226): the focus-after-click measurement tool. This records PR.
 
 ## Live state and open asks
 
-- CU-276 is on main. cu-integrator wires `run-lock.mjs wait` into suite.sh. Then a hold refused `phase2_waiting` means
-  wait about 2 minutes and hold again.
-- D-074: no owner data in unattended tasks until the value-class fixes are verified. No seat acts in Finder (CU-252 uses
-  a CU Fixture stand-in).
+- CU-276 is live: suite.sh registers `run-lock.mjs wait`, and a hold refused `phase2_waiting` waits about 2 minutes.
+- D-075 lifted D-074's owner-data limit. Per-app approval, the lock, the idle rule and D-034's cost line stay. No
+  seat acts in Finder (CU-252 uses the CU Fixture stand-in, #104).
+- Helper 0.2.56 is installed, with both halves of CU-240 on main.
 - Before each push, run the merge-tree check against main; GitHub's 'conflicting' can be stale.
 
 ## Next step
 
-Land the queue and keep it mergeable. Add an artifacts row per merged PR (#10, #66, #94, #99 are next). Review the
-driver, lock, MCP and live-view PRs. Complete only on the coordinator's ULTIMATE_GOAL verdict.
+Land the queue and keep it mergeable. Add an artifacts row per merged PR. Review the driver, lock, MCP and live-view
+PRs. Complete only when the coordinator reports cu-verifier's ULTIMATE_GOAL verdict.
