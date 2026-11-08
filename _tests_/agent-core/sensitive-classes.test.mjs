@@ -326,7 +326,8 @@ for (const [id, actions, expected, status, live] of DETOUR_ROWS) {
 }
 test('detour rows: named once; every open row names its issue; a todo row still fails (a fixed row cannot stay todo)', async () => {
   assert.equal(new Set(DETOUR_ROWS.map((r) => r[0])).size, DETOUR_ROWS.length)
-  for (const [id, actions, expected, status] of DETOUR_ROWS) {
+  for (const [id, actions, expected, status, live] of DETOUR_ROWS) {
+    if (status === null) { assert.ok(closingRun(live), `${id} is closed without a run id or a D-number`); continue }
     assert.match(status, /^(todo|open) CU-\d+$/, id)
     if (status.startsWith('todo ')) assert.notEqual(await decideDetour(actions), expected, `${id} passes on main - flip it from todo`)
   }
