@@ -1,17 +1,18 @@
 ---
 title: AGENTS.md
 created: 2026-11-08T09:40:00Z
-modified: 2026-11-08T09:40:00Z
-version: 1.0.0
+modified: 2026-11-08T10:20:00Z
+version: 1.1.0
 description: The entry point for whoever works in this repository - what it is, the conventions it follows, and how a change is finished.
 grounded_in:
   - source: owner's order of 2026-11-08 (computer-use becomes one public repository holding its code and its records, by the knowledge-bank conventions)
+  - source: Linear CU-228 (old pull request numbers collide with this repository's)
 ---
 
 # AGENTS.md
 
-The harness loads this file when a session runs in this folder. It says what the repository is, which
-conventions bind here, and how to check that a change is finished.
+The harness loads this file in every session here: what the repository is, the conventions that bind, and how a
+change is finished.
 
 ## What this repository is
 
@@ -25,9 +26,8 @@ and the team's records (research in [`_context_/`](_context_/INDEX.md), one reco
 
 ## Conventions that bind here
 
-This repository is a knowledge bank: each artifact - a tool, test suite, verifier, design, record - is a unit in
-a registered `_type_` folder of kebab-case instance folders. It follows the conventions of the owner's knowledge
-bank; the ones that bind here:
+This repository is a knowledge bank: each artifact (tool, test suite, verifier, design, record) is a kebab-case
+instance in a registered `_type_` folder. Of the owner's knowledge-bank conventions, these bind here:
 
 - **Working agreements** - replies to the owner are in Chinese; files, logs and messages are in English.
 - **Entry points** - every content folder carries an `INDEX.md` saying what it is and what to read next.
@@ -40,6 +40,8 @@ bank; the ones that bind here:
   points; the convention's `~/dtadpole/computer-use-wt/<name>` follows once the helper's allowlist does.
 - **Landing** - `main` is pull-request only and protected; the integrator lands reviewed, gated SHAs. Nobody
   force-pushes or pushes `main`.
+- **Pull request numbers** - restarted at #1 on 2026-11-08: in an older record, #N is a pull request of the private
+  `computer-use-history`; newer records write `old #N` and link none.
 
 ## Public hygiene
 
@@ -49,7 +51,7 @@ person's name or e-mail, an internal model id, an internal host or domain, a ses
 address, or a key-shaped literal. Machine-specific paths and private model aliases live in the local
 configuration (`~/.config/computer-use/config.json`, read by `_tools_/agent-core/local-config.mjs`), never in
 the tree. Test values shaped like secrets are built at runtime from fragments, never written as literals.
-The live team roster (session ids) and the session-bearing operating logs stay in the owner's private records.
+The live roster (session ids) and session-bearing logs stay in the owner's private records.
 
 ## Finishing a change
 

@@ -1,8 +1,8 @@
 ---
 title: What it does, approvals and known limits
 created: 2026-11-07T21:18:46Z
-modified: 2026-11-08T02:43:27Z
-version: 0.1.3
+modified: 2026-11-08T10:05:49Z
+version: 0.1.4
 level: L1
 status: unverified
 description: What the agent can and cannot do on your Mac, what it asks you, and its known limits.
@@ -25,7 +25,7 @@ keychains, shell start-up files, login items or `/Applications`. A password fiel
 ## Approvals
 
 It asks before using a new app (once, this run, or always), sending, buying, deleting or overwriting, granting a permission,
-entering credentials or sensitive data (a shipping form's street address, e-mail, phone; not city or postcode), pasting your own clipboard, pasting into a field named for a bank account, tax id or secret (by keys, the Edit menu or a toolbar Paste), copying a sensitive field's text into another field (by keys, the Edit menu's Copy or a drag) or text shown beside a label such as Passport or IBAN, and choosing a file (asked every time). Buying, deleting, permissions and
+entering credentials or sensitive data (a shipping form's street address, e-mail, phone; not city or postcode), pasting your own clipboard, pasting into a field named for a bank account, tax id or secret (by keys, the Edit menu or a toolbar Paste), copying a sensitive field's text, or text shown beside a label such as Passport or IBAN, into another field (by keys, the Edit menu's Copy or a drag), and choosing a file (asked every time). Buying, deleting, permissions and
 file choices are never pre-approved. Typed sensitive text stays out of run files. Unattended (`--consent unattended`), every question is declined. Manage "always" apps: `cli.mjs apps list`, `cli.mjs apps revoke <bundle id>`.
 
 ## Known limits
@@ -37,5 +37,3 @@ file choices are never pre-approved. Typed sensitive text stays out of run files
 - A leftover notification blocks clicks beneath it; dismiss it.
 - A run can end partial or not done; its last line says so.
 - A run stopped mid-hold names the key; the next run releases it, or press and release it.
-- A drag of text out of a read-only text box beside a Passport or IBAN label is not yet judged on the
-  desktop.
