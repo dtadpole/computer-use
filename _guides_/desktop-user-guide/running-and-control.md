@@ -1,8 +1,8 @@
 ---
 title: Running it, watching and control
 created: 2026-11-07T21:18:46Z
-modified: 2026-11-08T00:45:22Z
-version: 0.1.3
+modified: 2026-11-08T04:03:34Z
+version: 0.2.0
 level: L1
 status: unverified
 description: Starting a desktop run, watching and stopping it, and what it costs.
@@ -22,7 +22,11 @@ If you have touched the keyboard, mouse or trackpad in the last five minutes, a 
 once without doing anything and says so ('this Mac had local input N s ago ...'); start it again after
 five minutes without touching them. If the idle time cannot be read, it refuses the same way. A session with the team is a few runs, and
 each starts the same way: hands off the Mac for five minutes, then it begins - again before every later part, since
-your input ending one part counts as use. Once a part runs, touching the Mac pauses it (below) and never ends it on
+your input ending one part counts as use. To start a run while you are at the Mac (helper 0.2.50 or later), add
+`--ask-owner`: instead of refusing, it shows a prompt naming the seat and task. Wait a second, then click **Confirm**
+with the mouse or trackpad, at the Mac itself (not over Screen Sharing), and take your hands off. Return goes to the
+app in front, a click in the first second is ignored, and Cancel - or no click within a minute - refuses it; that
+seat then waits five minutes. Once a part runs, touching the Mac pauses it (below) and never ends it on
 its own - you stop it with the control link.
 
 ```
