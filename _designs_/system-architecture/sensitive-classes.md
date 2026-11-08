@@ -1,9 +1,9 @@
 ---
 title: Sensitive classes - everything the agent must never type unasked
 created: 2026-11-07T14:34:22Z
-modified: 2026-11-08T14:45:30Z
+modified: 2026-11-08T15:14:10Z
 level: L1
-version: 0.4.1
+version: 0.4.2
 description: The D-061 table - every sensitive class with its value rule, its field-name rule, the asserting test and the live row; rows live in an executable matrix, gaps are children of CU-145.
 status: unverified
 grounded_in:
@@ -30,15 +30,14 @@ value rule and name is a row of `_tests_/agent-core/sensitive-classes.test.mjs`;
 - Too broad to judge by value: a 9-digit SIN or plain SSN, a 3-digit CVV, an MM/YY expiry, a passport or licence
   number, a date, a street address; the name rule carries them.
 - A digest of 40 or more hex characters asks (accepted over-ask, D-061).
-- Words match whole ('Panel' never asks). A bare six-digit number never asks by value; a one-time code goes by field
-  name.
-- Sensitive-field text (Email and Phone too) is redacted from run files (D-062).
+- Words match whole. A bare six-digit number never asks by value; a one-time code goes by field name.
+- Sensitive-field text (Email, Phone too) is redacted from run files (D-062).
 - Not judged by value: an unbroken national run (07700900123) or the 00 prefix; a grouped reference (01-2345-6789)
   asks (CU-185).
 - Names compare normalised (case, apostrophes, licence as license, # as number, dots, hyphens); acronyms match case-sensitively as whole words ('Pan size' never asks). 'Mobile app name', 'Bank account
   holder' and a spaced reference fitting SSN rules ask (accepted over-asks); a bare 'Account', 'Token' or 'City' never does.
-- Names and values are normalised first (CU-266): NFKC, format characters dropped, common look-alikes folded,
-  letter-spacing closed up.
+- Names and values are normalised first (CU-266, CU-268): NFKC, invisible characters dropped, look-alikes folded,
+  any script's digits as ASCII, letter-spacing closed up.
 - Pieces typed into one field are judged whole (CU-267, never recorded), but not across a click when the focus is
   unreadable, a desktop paste (D-031), arrow or selection edits, or text the run did not type.
 
