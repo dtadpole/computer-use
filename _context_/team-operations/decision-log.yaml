@@ -426,3 +426,13 @@ decisions:
     topic: urgent-keypress-hole-run-hold
     decision: 'CU-301 (cu-researcher, 23:49Z: every field-name rule - the password field, credential names, D-061 names - runs only for a type action, so a password, CVV, SSN or recovery phrase pressed key by key is typed unasked on both drivers; runTask on main 2c0bacb) is an Urgent consent hole under CU-145 and D-063, the same kind of route hole as CU-230. As under D-071: until cu-verifier verifies it live, no live model run operates an app other than the team''s fixture apps and no browser run leaves the fixture site; scripted fixture runs go on. cu-developer-one fixes it ahead of every other item; cu-integrator lands it under D-073.'
     rationale: 'An injected screen only has to say press the keys one at a time; a hold costs nothing while no owner-app model run is planned, and the fix jumps every queue.'
+  - id: D-082
+    date: 2026-11-08
+    topic: table-only-landing
+    decision: 'A pull request whose diff is only _tests_/agent-core/consent-routes.test.mjs and/or _tests_/agent-core/sensitive-classes.test.mjs plus Markdown or YAML records and action-log lines lands after phase 1 and the public-hygiene gate, like D-076: no other file imports the two tables (checked on main f9aaad6), so the desktop phase 2 cannot change their verdict, while phase 1 runs the tables and their meta tests. cu-integrator checks the file list and that no other file has started importing them; CU_INTEGRATOR_FULL_GATE=1 still forces the full gate.'
+    rationale: 'Thirteen of cu-researcher''s table pull requests were each waiting for a phase-2 hold of the desktop-run lock that could not change their result.'
+  - id: D-083
+    date: 2026-11-08
+    topic: urgent-landing-owner-active
+    decision: 'D-073''s phase-1 landing of an Urgent pull request that touches no CUHelper, desktop driver or fixture-app code also applies while phase 2 cannot run because the owner is not idle (D-066), not only while another seat holds the desktop-run lock. The full two-phase check runs on main at the first idle slot, and a red result is reverted by pull request at once. First use: the CU-301 fix (#178).'
+    rationale: 'Phase 1 posts no input, so the idle rule does not bear on it; an Urgent consent fix should not wait hours for the owner to step away, and the post-check keeps the gate''s guarantee as under D-073.'
