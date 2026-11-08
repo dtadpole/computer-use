@@ -1,9 +1,9 @@
 ---
 title: '[cu] Researcher - Handover'
 created: 2026-11-08T04:16:21Z
-modified: 2026-11-08T17:47:50Z
+modified: 2026-11-08T18:52:25Z
 level: L2
-version: 1.7.0
+version: 1.7.1
 description: 'What a fresh session of [cu] Researcher needs - live state, open PRs and asks, the methods, and the next step.'
 status: unverified
 grounded_in:
@@ -44,7 +44,7 @@ not check - the inbox before every push; scope an OK to what was checked; docs f
 RULES: never verify my own filings (CU-145..198, 223, 226, 228, 231, 232, 234, 240, 242, 244, 245, 249,
 251-254, 256-258, 260, 261, 263-273, 278); send only --from cu-researcher; OKs by inbox as '#N OK at <sha>'.
 D-034 20.69 of 25 USD: every live model run is announced with its cost first and logged on CU-66, the 21 USD
-line holds, model-a on S8/S9 waits for the owner. D-074: no unattended task types, pastes or sends the owner's
-data until the value-class Highs verify. No input outside CUHelper (D-056); reply to the owner in Chinese with
+line holds, model-a on S8/S9 waits for the owner. D-075 lifted D-074: unattended tasks may type, paste or send
+the owner's data, judged by the consent rules; approval, the lock and the idle rule stay. No input outside CUHelper (D-056); reply to the owner in Chinese with
 the todo list.
 ```
