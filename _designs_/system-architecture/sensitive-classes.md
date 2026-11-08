@@ -1,9 +1,9 @@
 ---
 title: Sensitive classes - everything the agent must never type unasked
 created: 2026-11-07T14:34:22Z
-modified: 2026-11-08T15:45:09Z
+modified: 2026-11-08T16:30:00Z
 level: L1
-version: 0.4.4
+version: 0.4.5
 description: The D-061 table - every sensitive class with its value rule, its field-name rule, the asserting test and the live row; rows live in an executable matrix, gaps are children of CU-145.
 status: unverified
 grounded_in:
@@ -21,7 +21,7 @@ value rule and name is a row of `_tests_/agent-core/sensitive-classes.test.mjs`;
 |---|---|---|
 | Government IDs | SSN dashed or spaced, ITIN; NI and PAN by issuing rules; Aadhaar (Verhoeff) and TFN (mod 11) in canonical spacing | SSN, social security or insurance, passport, driver's or driving license, DL or license number, national insurance, NI number, national ID or identity, Aadhaar, tax file number; SIN, TFN, PAN, TIN, CPF, NRIC |
 | Payment | card (Luhn), IBAN (mod-97), routing with account (ABA), EIN | card number or no, credit card, CVV, CVC, CSC, security code, expiry, exp date, expiration, valid thru, MM/YY, IBAN, account or acct number, bank account, debit card, routing, sort code, BSB, tax ID, number or identification, EIN, VAT number |
-| Auth secrets | seed phrase (BIP39), 0x key, API and cloud keys, PEM or PGP private key, JWT | password, passcode, passphrase, PIN (credential); one-time, verification, 2FA and authenticator codes, OTP, recovery or seed phrase, mnemonic, private, secret or recovery key, backup codes, API key, access token, secret |
+| Auth secrets | seed phrase (BIP39), 0x key, API, cloud and dev-service tokens (CU-257), PEM or PGP private key, JWT | password, passcode, passphrase, PIN (credential); one-time, verification, 2FA and authenticator codes, OTP, recovery or seed phrase, mnemonic, private, secret or recovery key, backup codes, API key, access token, secret |
 | Personal | none: too broad | date of birth, birthdate, birthday, birth day, DOB, security question or answer, maiden name, Medicare, health insurance, policy number, medical record; NHS, MRN |
 | Contact | email, phone (also national with a trunk 0, grouped: 020 7946 0958; CU-185) | email, phone, mobile, cell number, tel, telephone, street, address line, home, shipping, billing, mailing or postal address (D-062) |
 
@@ -29,7 +29,7 @@ value rule and name is a row of `_tests_/agent-core/sensitive-classes.test.mjs`;
 
 - Too broad to judge by value: a plain SSN or SIN, a CVV, an MM/YY expiry, a passport or licence number, a date, a
   street address; names carry them.
-- A 40+ hex digest asks (accepted over-ask, D-061).
+- A 40+ hex digest asks (over-ask, D-061).
 - Words match whole; a bare six-digit code goes by field name.
 - Sensitive-field text, Email and Phone too, is redacted (D-062).
 - An unbroken national phone run (07700900123) or a 00 prefix is not judged by value; a grouped reference asks (CU-185).
@@ -44,7 +44,7 @@ value rule and name is a row of `_tests_/agent-core/sensitive-classes.test.mjs`;
 
 ## Sign-off
 
-Live rows: the fixture site's secret-fields pages.
+Live rows: fixture site's secret-fields pages.
 Re-signed by cu-verifier, 8 November (main 309c60328): every closed row cites cu-verifier's run or a decision (D-064).
 Open: CU-245's name rows (asserted, #46). An open under-ask is an open or todo row naming
 its issue (D-063).
