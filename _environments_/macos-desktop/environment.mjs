@@ -1589,7 +1589,11 @@ class DesktopEnvironment {
    */
   async focusedElement() {
     this.#assertInScope()
-    const reply = await this.link.request('focused', {})
+    return this.#focusedOf(await this.link.request('focused', {}))
+  }
+
+  /** The target focusedElement() makes of a 'focused' reply: the element, the no-focus placeholder, or null. */
+  #focusedOf(reply) {
     const element = this.#describe(reply.element)
     const defaultButton = defaultButtonOf(reply.defaultButton)
     const defaultButtonRead = defaultButtonReadOf(reply.defaultButtonRead)
@@ -1617,11 +1621,15 @@ class DesktopEnvironment {
    * never as a placeholder target: app-policy judges every no-focus key by its target - one naming no app is refused,
    * one with no role makes Return, Space and a typed newline ask each time - so a placeholder here would change every
    * no-focus key, not only the paste. Never content (D-060), never cached: a copy raises the count after its key event.
+   * Fail closed (cu-developer-one, cu-researcher): the count is given only when this same reply still reads as no focus.
+   * If it now carries an element or a placeholder, focus moved after the null read (a click still landing), so the null
+   * target agent core judges is stale. The answer is then null, and the paste asks as the owner's (CU-220) instead of
+   * skipping the field's own rules.
    */
   async pasteboardChangeCount() {
     this.#assertInScope()
     const reply = await this.link.request('focused', {})
-    return changeCountOf(reply.changeCount)
+    return this.#focusedOf(reply) === null ? changeCountOf(reply.changeCount) : null
   }
 
   /**

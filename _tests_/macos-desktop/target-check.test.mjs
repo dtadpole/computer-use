@@ -642,7 +642,23 @@ test('CU-219: with nothing focused focusedElement stays null (no placeholder) an
   assert.equal(await count({}), null, 'a reply without the count: unknown')
   for (const malformed of [-1, 1.5, '3', null, 2 ** 60, { n: 3 }]) assert.equal(await count({ changeCount: malformed }), null, JSON.stringify(malformed))
   assert.equal(await count({ changeCount: 0 }), 0, 'zero is a count')
-  assert.equal(await count({ changeCount: 7, focused: { bundleId: FIXTURE, pid: 601, role: 'AXTextField', subrole: null, title: 'Message', frame: { x: 150, y: 450, width: 200, height: 24 }, secure: false } }), 7, 'with an element focused too')
+  // Fail closed: the count only when this same reply still reads as no focus - else the null target being judged is stale.
+  assert.equal(await count({ changeCount: 7, focused: { bundleId: FIXTURE, pid: 601, role: 'AXTextField', subrole: null, title: 'Message', frame: { x: 150, y: 450, width: 200, height: 24 }, secure: false } }), null, 'the reply carries an element: no count')
+  assert.equal(await count({ changeCount: 7, sheet: true }), null, 'the reply would make the no-focus placeholder: no count')
+  assert.equal(await count({ changeCount: 7, quirks: { omitDefaultButtonRead: true } }), null, 'an unreadable default button makes the placeholder too: no count')
+})
+
+test('CU-219 (cu-researcher\'s race): focus that appears between focusedElement\'s null and the side read - a click still landing - makes the count null, so agent core asks instead of judging a stale null target', async () => {
+  const PASSWORD = { bundleId: FIXTURE, pid: 601, role: 'AXTextField', subrole: null, title: 'Password', frame: { x: 150, y: 450, width: 200, height: 24 }, secure: false, editable: true }
+  const { env, child } = await launched({ ...WORLD, focused: null, changeCount: 42, focusedAfterReads: { reads: 1, focused: PASSWORD } })
+  try {
+    assert.equal(await env.focusedElement(), null, 'the first read: nothing focused yet')
+    assert.equal(await env.pasteboardChangeCount(), null, 'the side read sees the Password field: its count is not given')
+    assert.equal((await env.focusedElement())?.name, 'Password', 'the field the paste would land in, read next')
+  } finally {
+    await env.close()
+    await stopFake(child)
+  }
 })
 
 test('CU-157: focusedElement and inspectPoint carry textEntered, read fresh each time (typing makes it true), strictly a boolean else null, outside the fingerprint, on the no-focus placeholder too', async () => {
