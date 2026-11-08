@@ -608,7 +608,11 @@ const VSCODE_ID = 'com.microsoft.VSCode'
 const appApprovals = createAppApprovals({ path: join(mkdtempSync(join(tmpdir(), 'cu-routes-')), 'app-approvals.json') })
 appApprovals.grantAlways(FIXTURE_ID, { by: 'api' })
 appApprovals.grantAlways(APP_STORE_ID, { by: 'api' })
-for (const id of [ACTIVITY_MONITOR_ID, DISK_UTILITY_ID, FINDER_ID, VSCODE_ID]) appApprovals.grantAlways(id, { by: 'api' })
+// An app the build excludes (CU-264's whole-Mac tools, once #100 lands) cannot be granted - it stays unapproved, as it
+// would for the owner, and its rows are judged that way; any other grant failure still fails the file.
+for (const id of [ACTIVITY_MONITOR_ID, DISK_UTILITY_ID, FINDER_ID, VSCODE_ID]) {
+  try { await appApprovals.grantAlways(id, { by: 'api' }) } catch (error) { if (!/excluded/.test(String(error?.message))) throw error }
+}
 const appPolicy = createAppPolicy({ scope: [FIXTURE_ID, APP_STORE_ID, ACTIVITY_MONITOR_ID, DISK_UTILITY_ID, FINDER_ID, VSCODE_ID], approvals: appApprovals })
 // extra.app names the approved app in front (default CU Fixture); the rest of extra joins the context.
 const decideApp = (action, target, extra = {}) => {
