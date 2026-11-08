@@ -642,8 +642,10 @@ export async function runTask(options) {
   }
 
   // CU-267: what this run typed into each field, so the value rules judge a value typed in pieces (sixteen keypresses,
-  // four 'type' actions) as one. CU-273 (cu-researcher): one buffer per field, keyed by its fingerprint - a detour through
-  // another field (Tab away, type there, Shift-Tab back) resumes the first field's text rather than starting afresh. A
+  // four 'type' actions) as one. CU-273 (cu-researcher): one buffer per field - a detour through another field (Tab away,
+  // type there, Shift-Tab back) resumes the first field's text rather than starting afresh. A field is known by the
+  // driver's fieldKey where it reports one (CU-194: bundle, process, top-left in its window - a desktop text area that
+  // grows between pieces keeps it, while its fingerprint, which holds the frame's size, changes), else its fingerprint. A
   // field's text is kept across a wait, a screenshot, a move or a click back into it; Backspace removes its last
   // character; select all empties it (what follows replaces it). In the browser a run paste adds the run clipboard's text,
   // the run's own (on the desktop a paste carries only its source class, D-031 - a named limit). Only performed actions
@@ -657,6 +659,7 @@ export async function runTask(options) {
   const TYPED_CHARS_MAX = 256
   let typedKeyNow = null
   const typedKeyOf = (target, state = null) => {
+    if (typeof target?.fieldKey === 'string' && target.fieldKey !== '') return `field:${target.fieldKey}`
     if (typeof target?.fingerprint === 'string' && target.fingerprint !== '') return target.fingerprint
     const app = state?.frontmostBundleId ?? (() => { try { return new URL(String(state?.url ?? '')).origin } catch { return null } })()
     return typeof app === 'string' && app !== '' && app !== 'null' ? `nofocus:${app}` : null

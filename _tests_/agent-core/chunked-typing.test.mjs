@@ -177,6 +177,20 @@ test('CU-273: a detour through another field resumes the first field - Tab away,
   assert.equal(verdicts(elsewhere.events).at(-1), 'allow', 'the other half in another field is still two fields')
 })
 
+test('CU-273: a desktop text area that grows between pieces is still one field - known by its fieldKey, not its fingerprint (cu-researcher)', async () => {
+  const control = createRunControl()
+  const environment = createFakeEnvironment({ kind: 'desktop', control })
+  // The desktop fingerprint holds the frame's size, so a growing text area reports a new one; its fieldKey (CU-194) stays.
+  let height = 30
+  environment.focusedElement = async () => ({ origin: FIXTURE, role: 'AXTextArea', name: 'Notes', editable: true, fingerprint: `notes-${height}`, fieldKey: 'k-notes', defaultButtonRead: true })
+  const perform = environment.perform.bind(environment)
+  environment.perform = async (action) => { const effect = await perform(action); height += 30; return effect }
+  const model = createScriptedAdapter({ frame: { width: 1440, height: 900 }, turns: [{ actions: types(CARD_DIGITS.slice(0, 8), CARD_DIGITS.slice(8)) }, { final: 'done' }] })
+  const result = await runTask({ task: 'fill in the notes', environment, model, control, runsDirectory: join(tmp, `runs-${runs += 1}`), build: { commit: 'test', dirty: false }, apps: [FIXTURE], appApprovals: store })
+  const events = readRun(result.trajectoryDir).events.filter((e) => e.kind === 'action' && e.status !== 'attempted')
+  assert.deepEqual(verdicts(events), ['allow', 'sensitive_data'])
+})
+
 test('CU-273: the buffers are capped at 32 fields - the least recently typed field goes first (named limit)', async () => {
   const [left, right] = [CARD_DIGITS.slice(0, 8), CARD_DIGITS.slice(8)]
   const visit = (n) => Array.from({ length: n }, (_, i) => [{ type: 'click', x: 1000 + i, y: 10, button: 'left' }, ...types('x')]).flat()
