@@ -9,7 +9,7 @@ import { HELPER_VERSION_FLOOR, helloProblem, versionAtLeast } from '../../_envir
 // handshake. The browser has no read state, so its Return keeps the focused-name rule.
 const policy = createPolicy({ sitePolicy: () => 'allow' })
 const RETURN = { type: 'type', text: 'x\n' } // a typed newline in a single-line input presses the default button
-const FIELD = { role: 'AXTextField', name: 'Message' }
+const FIELD = { role: 'AXTextField', name: 'Subject' }
 const verdict = (url, target) => { const r = policy.classify(RETURN, { url, target }); return r.decision === 'allow' ? 'allow' : r.class }
 
 test('D-069: a desktop Return asks submit when the default button read failed or was never sent; a read of none keeps the rule', () => {
@@ -25,7 +25,7 @@ test('D-069 guard: no target on the desktop is the driver\'s good read of nothin
 })
 
 test('D-069 guard: a browser Return without any read state keeps the focused-name rule - no over-ask on every page', () => {
-  assert.equal(verdict('https://other.example/form', { role: 'textbox', name: 'Message', editable: true }), 'allow')
+  assert.equal(verdict('https://other.example/form', { role: 'textbox', name: 'Subject', editable: true }), 'allow')
 })
 
 test('D-069: the helper link refuses a helper before 0.2.44, compared part by part', () => {

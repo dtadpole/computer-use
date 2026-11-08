@@ -55,7 +55,9 @@ const T = {
   // CU-190, D-069: the helper reports whether it could read the default button (defaultButtonRead); false or absent asks,
   // true keeps the rule, and no target at all (the driver's good read of nothing focused) keeps it too.
   fieldDefaultUnread: { role: 'AXTextField', name: 'Message', defaultButton: null, defaultButtonRead: false },
-  fieldNoDefault: { role: 'AXTextField', name: 'Message', defaultButton: null, defaultButtonRead: true },
+  // CU-253 (cu-coordinator): a bare 'Message' field now asks on Return, so the CU-190 negative is judged on a neutral name.
+  fieldNoDefault: { role: 'AXTextField', name: 'Subject', defaultButton: null, defaultButtonRead: true },
+  chatNameNoDefault: { role: 'AXTextField', name: 'Message', defaultButton: null, defaultButtonRead: true },
   fieldDefaultAbsent: { role: 'AXTextField', name: 'Message' },
   nothingFocused: null,
   areaDefaultSend: { role: 'AXTextArea', name: 'Notes', defaultButton: SEND },
@@ -188,6 +190,7 @@ const ROWS = [
   ['enter-default-send', 'desktop', 'enter', 'fieldDefaultSend', 'submit', '#325 tests', "helper 0.2.42, CU Fixture consent-keys K4: asked submit (20261107T173858Z-6c94df)", null],
   ['newline-default-send', 'desktop', 'typeNewline', 'fieldDefaultSend', 'submit', '#325 tests', "helper 0.2.44, main 5548a7fd7: K1 asked submit, nothing sent (20261107T213026Z-8a665e); the 0.2.42 post-install send (173854Z-3f1e69) was the unread state, now its own cell", null],
   ['newline-default-unread', 'desktop', 'typeNewline', 'fieldDefaultUnread', 'submit', 'CU-190 (defaultButtonRead false asks submit)', "D-065 (asserted, not live): the guard asks; the unread state is not producible on demand - seen once, the 0.2.42 post-install transient (20261107T173854Z-3f1e69); unit rows and mutants in default-button-unread.test.mjs", null],
+  ['chat-name-message-no-default', 'desktop', 'typeNewline', 'chatNameNoDefault', 'submit', 'CU-253 (a bare Message field asks; named over-ask in forms)', 'no live row yet', 'open CU-253'],
   ['newline-no-default', 'desktop', 'typeNewline', 'fieldNoDefault', 'allow', 'CU-190 negative: read, no default button', "helper 0.2.44: a newline in a window with no default button (read true, none) allowed (20261107T213028Z-2f5e64)", null],
   ['newline-default-absent', 'desktop', 'typeNewline', 'fieldDefaultAbsent', 'submit', 'D-069: no read state asks on the desktop (fail closed)', 'D-069: decided, not run - a helper before 0.2.44 is refused at the handshake, so this state reaches the policy only by a bug, and then it asks (D-065)', null],
   ['newline-nothing-focused', 'desktop', 'typeNewline', 'nothingFocused', 'allow', 'D-069 negative: no target is the driver\'s good read of nothing focused and no default button', 'D-069: decided - environment.mjs returns null only for a successful read of nothing there, so it keeps the rule (D-065)', null],

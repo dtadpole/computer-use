@@ -70,13 +70,17 @@ test('approved once, the click goes through and the helper\'s scope grows; the n
   assert.equal(next.inputs.length, 0)
 })
 
-test('system-wide chords stay refused (P9): the app switcher, Spotlight and log out are blocked as system shortcuts, nothing sent', async (t) => {
+test('system-wide chords stay refused (P9): the app switcher, Spotlight, log out and lock screen are blocked as system shortcuts, pressed or held, nothing sent', async (t) => {
   if (!guard(t)) return
-  for (const keys of [['META', 'TAB'], ['META', 'SPACE'], ['META', 'SHIFT', 'Q']]) {
-    const run = await desktopRun({ world: twoApps(LEDGER), turns: [{ actions: [{ type: 'keypress', keys }] }, { final: 'done' }] })
-    const [record] = actionsOf(run.events)
-    assert.deepEqual([record?.decision, record?.rule], ['block', 'system_shortcut'], `${keys.join('+')} was not blocked as a system shortcut`)
-    assert.equal(run.inputs.length, 0, `${keys.join('+')} reached the helper`)
+  // CU-244: a hold_key of the same chord reaches macOS just as a keypress does, so it must be refused the same way.
+  const chords = [['META', 'TAB'], ['META', 'SPACE'], ['META', 'SHIFT', 'Q'], ['META', 'ALT', 'SHIFT', 'Q'], ['CTRL', 'META', 'Q']]
+  for (const keys of chords) {
+    for (const action of [{ type: 'keypress', keys }, { type: 'hold_key', keys, duration_ms: 300 }]) {
+      const run = await desktopRun({ world: twoApps(LEDGER), turns: [{ actions: [action] }, { final: 'done' }] })
+      const [record] = actionsOf(run.events)
+      assert.deepEqual([record?.decision, record?.rule], ['block', 'system_shortcut'], `${action.type} ${keys.join('+')} was not blocked as a system shortcut`)
+      assert.equal(run.inputs.length, 0, `${action.type} ${keys.join('+')} reached the helper`)
+    }
   }
 })
 
