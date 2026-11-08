@@ -638,6 +638,51 @@ export async function runTask(options) {
     return countOf(target) !== null && pasteboard.baseline !== null ? pasteboard.sources[pasteboard.sources.length - 1] : known
   }
 
+  // CU-267: what this run typed into the focused field so far, so the value rules judge a value typed in pieces (sixteen
+  // keypresses, four 'type' actions) as one. Keyed by the field's fingerprint: a new focus starts afresh, as does a click,
+  // Return, Tab or Escape; Backspace removes the last character; select all empties it (what follows replaces it). Only
+  // performed actions add to it. Never logged or recorded (D-031): it reaches the policy as context and nothing else.
+  let typedSoFar = { key: null, text: '' }
+  const typedKeyOf = (target) => (typeof target?.fingerprint === 'string' && target.fingerprint !== '' ? target.fingerprint : null)
+  const typedCharOf = (action) => {
+    if (action.type !== 'keypress') return null
+    const keys = keySetOf(action)
+    if (keys === null) return null
+    const main = [...keys].filter((key) => !MODIFIER_KEYS.includes(key))
+    if (main.length !== 1 || [...keys].some((key) => key !== main[0] && key !== 'SHIFT')) return null
+    const [key] = main
+    if (key === 'SPACE') return ' '
+    if (key.length !== 1) return null
+    if (/[A-Z]/.test(key)) return keys.has('SHIFT') ? key : key.toLowerCase()
+    return keys.has('SHIFT') ? null : key
+  }
+  const typedNextOf = (action) => (action.type === 'type' ? String(action.text ?? '') : typedCharOf(action) ?? '')
+  const typedFor = (action, target) => {
+    const key = typedKeyOf(target)
+    const before = key !== null && key === typedSoFar.key ? typedSoFar.text : ''
+    const next = typedNextOf(action)
+    return before !== '' && next !== '' ? { before, next } : null
+  }
+  const noteTyped = (action, target) => {
+    const key = typedKeyOf(target)
+    const same = key !== null && key === typedSoFar.key
+    if (action.type === 'type') {
+      const text = String(action.text ?? '')
+      const tail = /[\r\n\t]/.test(text) ? text.slice(Math.max(text.lastIndexOf('\n'), text.lastIndexOf('\r'), text.lastIndexOf('\t')) + 1) : (same ? typedSoFar.text : '') + text
+      typedSoFar = { key, text: tail.slice(-256) }
+      return
+    }
+    if (action.type === 'keypress') {
+      const char = typedCharOf(action)
+      const keys = keySetOf(action) ?? new Set()
+      if (char !== null) typedSoFar = { key, text: ((same ? typedSoFar.text : '') + char).slice(-256) }
+      else if (keys.size === 1 && (keys.has('BACKSPACE'))) typedSoFar = { key, text: same ? typedSoFar.text.slice(0, -1) : '' }
+      else if (keys.size === 2 && (keys.has('META') || keys.has('CTRL')) && keys.has('A')) typedSoFar = { key, text: '' }
+      else if (['ENTER', 'TAB', 'ESCAPE'].some((name) => keys.has(name))) typedSoFar = { key: null, text: '' }
+      return
+    }
+    if (['click', 'double_click', 'triple_click', 'drag', 'navigate'].includes(action.type)) typedSoFar = { key: null, text: '' }
+  }
   const contextFor = async (action, previous = null) => {
     const state = await environment.state()
     let target = null
@@ -704,7 +749,8 @@ export async function runTask(options) {
     // An unreadable bar asks for any chord but the editing ones, which the keys already judge (named over-ask: a Control
     // editing chord such as Control-K, unlisted, asks when the bar cannot be read).
     const boundMenuItem = read?.unreadable === true && editingChord(action) ? undefined : read
-    return { url: state.url, target: remembered(target), ...(boundMenuItem ? { boundMenuItem } : {}), ...(dropTarget ? { dropTarget: remembered(dropTarget) } : {}), ...(dragText !== undefined ? { dragText } : {}), ...(afterClose ? { afterClose: true } : {}), ...(resubmits ? { resubmits: historyMove } : {}), ...(historyJudged ? { historyJudged } : {}), ...(paste ? { paste } : {}), ...(pasteboardJudged ? { pasteboardJudged } : {}), ...(state.interstitial === true ? { interstitial: true } : {}), dialog: state.dialog ?? null, task: task.text, ...app }
+    const typed = typedFor(action, target)
+    return { url: state.url, target: remembered(target), ...(typed ? { typed } : {}), ...(boundMenuItem ? { boundMenuItem } : {}), ...(dropTarget ? { dropTarget: remembered(dropTarget) } : {}), ...(dragText !== undefined ? { dragText } : {}), ...(afterClose ? { afterClose: true } : {}), ...(resubmits ? { resubmits: historyMove } : {}), ...(historyJudged ? { historyJudged } : {}), ...(paste ? { paste } : {}), ...(pasteboardJudged ? { pasteboardJudged } : {}), ...(state.interstitial === true ? { interstitial: true } : {}), dialog: state.dialog ?? null, task: task.text, ...app }
   }
 
   let consecutiveBlocks = 0
@@ -1118,6 +1164,7 @@ export async function runTask(options) {
         if (action.type === 'drag') lastPointer = action.path[action.path.length - 1]
         notes.push(...noteFromEffect(effect))
         Object.assign(result, { status: 'done', ...(action.type === 'hold_key' ? { message: heldMessage(action) } : {}) })
+        noteTyped(judged, context.target)
         // A desktop driver reports how frame pixels mapped to screen points (scale, originPt); replay needs it.
         const mapping = desktop && effect?.mapping ? { mapping: effect.mapping } : {}
         logEvent('action', step, { ...base, status: 'done', effect, ...mapping, ms: performMs(), ...(retry ? { retry } : {}), attempted: true, completed: true })
