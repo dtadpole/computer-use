@@ -103,6 +103,12 @@ test('browser shortcuts become navigations; clipboard chords are marked; window 
   assert.deepEqual(chordMeaning(MODIFIER_BITS.Control, 'c'), { clipboard: 'copy' })
   assert.deepEqual(chordMeaning(MODIFIER_BITS.Meta, 'x'), { clipboard: 'cut' })
   assert.deepEqual(chordMeaning(MODIFIER_BITS.Control | MODIFIER_BITS.Shift, 'v'), { clipboard: 'paste' })
+  // CU-230: Paste and Match Style (Command-Option-Shift-V) and Command-Option-V paste the run clipboard too - never a raw
+  // key Chrome could answer from the system clipboard; Option with C or X stays an ordinary key (no copy).
+  assert.deepEqual(chordMeaning(MODIFIER_BITS.Meta | MODIFIER_BITS.Alt | MODIFIER_BITS.Shift, 'v'), { clipboard: 'paste' })
+  assert.deepEqual(chordMeaning(MODIFIER_BITS.Meta | MODIFIER_BITS.Alt, 'v'), { clipboard: 'paste' })
+  assert.equal(chordMeaning(MODIFIER_BITS.Meta | MODIFIER_BITS.Alt, 'c'), null)
+  assert.equal(chordMeaning(MODIFIER_BITS.Alt, 'v'), null, 'Option-V alone types a character')
   assert.doesNotThrow(() => refuseChord(chordMeaning(MODIFIER_BITS.Control, 'c')))
   assert.doesNotThrow(() => refuseChord(null))
 })

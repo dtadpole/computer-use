@@ -1,9 +1,9 @@
 ---
 title: Consent routes - every way an action reaches a control, and how it is judged
 created: 2026-11-07T03:26:33Z
-modified: 2026-11-08T03:56:04Z
+modified: 2026-11-08T09:53:37Z
 level: L1
-version: 1.0.8
+version: 1.0.9
 description: The D-059 audit table - single-action cells live in an executable matrix; this note lists the composed routes judged in the loop, the named limits, the open cells and the sign-off rule.
 status: unverified
 grounded_in:
@@ -28,7 +28,7 @@ Env: D desktop, B browser. Pin: the test (its mutant). Over-ask: 0 per asking ro
 | type holding a tab | D B | parts on the settled focus (#315, #329) | type-split (split desktop-only) | D 20261107T012323Z-c04596; B 20261107T042642Z-4af173 |
 | mouse down ... up | D | one drag, judged at the press (CU-140) | loop-press-consent-pointer (composePresses bypassed) | 20261107T033152Z-d1a442 |
 | long press; drag from a control | D | the press point | drag-press (press not judged) | 20261107T014520Z-2ad595 |
-| travelling drag | D B | drop point by delete words, trash, bin; a text drag carries its entry's or caption's class (CU-183, CU-195); onto an entry it is judged as a paste (CU-198) | drag-press (drop not judged) | 20261107T200523Z-06ce1f; CU-195 20261108T012741Z-5a5f14; CU-198 004646Z-a15df9; no fixture Trash zone |
+| travelling drag | D B | drop point by delete words, trash, bin; a text drag carries its entry's or caption's class (CU-183, CU-195); onto an entry it is judged as a paste (CU-198) | drag-press (drop not judged) | 20261107T200523Z-06ce1f; CU-195 20261108T012741Z-5a5f14, D 092702Z-8a0307; CU-198 004646Z-a15df9; no fixture Trash zone |
 | click or drag with held modifiers | D B | as the plain action | policy (modifiers skip judging) | seam only |
 | right click, then a menu item | D B | the item's name | #335 (phrase dropped) | 20261107T180555Z-85b8d0 |
 | Return or typed newline | D B (#337) | focused name, held dialog, default button (single-line or non-text focus); a text area's Return types | #325, #334 (default button ignored) | D 20261107T173858Z-6c94df; B 20261107T172341Z-e8b869 |
@@ -50,5 +50,5 @@ Env: D desktop, B browser. Pin: the test (its mutant). Over-ask: 0 per asking ro
 
 ## Sign-off
 
-Re-signed by cu-verifier, 8 November (main 309c60328): every closed cell cites cu-verifier's run or a decision (D-064); CU-209 open. Open: CU-135's save-panel chain (#313), at the owner session. Open under-asks: open or todo rows here and in the D-061
-table, each naming its issue (D-063 filter). Every field a rule reads reaches `classify()` on both paths (CU-152).
+Re-signed by cu-verifier, 8 November (main 309c60328): every closed cell cites cu-verifier's run or a decision (D-064); CU-209 open. Since: CU-209 closed (092702Z-8a0307). Open: CU-135's save-panel chain (#1), at the owner session. Open
+under-asks: open or todo rows in either table (D-063 filter). Every field a rule reads reaches `classify()` on both paths (CU-152).
