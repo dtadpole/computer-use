@@ -49,13 +49,15 @@ test('CU-260 negatives: plain URLs, numeric ids in the path and short token valu
 test('CU-281: a query or fragment parameter named for a D-061 field asks sensitive_data whatever its value looks like', () => {
   for (const url of [`${ALLOWED}/apply?passport=${j('X12', '34567')}`, `${ALLOWED}/f?ssn=${j('12', '3')}`, `${ALLOWED}/f?date_of_birth=1990-01-01`,
     `${ALLOWED}/f?dateOfBirth=1990`, `${ALLOWED}/f?dob=1`, `${ALLOWED}/pay?card_number=${j('41', '11')}`, `${ALLOWED}/bank?iban=${j('GB', '29')}`,
-    `${ALLOWED}/tax#tax_id=99`, `${ALLOWED}/f?national_insurance=${j('QQ', '12')}`]) {
+    `${ALLOWED}/tax#tax_id=99`, `${ALLOWED}/f?national_insurance=${j('QQ', '12')}`,
+    // cu-verifier on #120: a phone-named parameter with seven or more digits.
+    `${ALLOWED}/f?phone=${j('415', '5550100')}`, `${ALLOWED}/f?mobile_number=${j('07700', '900123')}`, `${ALLOWED}/f?tel=${j('+44', '20', '7946', '0000')}`]) {
     assert.deepEqual(verdict(go(url)), ['confirm', 'sensitive_data', 'url:sensitive_data'], url)
   }
 })
 
 test('CU-281 negatives: an empty value, the word in a value, contact names and cache-style expiry stay as before', () => {
-  for (const url of [`${ALLOWED}/f?passport=`, `${ALLOWED}/search?q=passport`, `${ALLOWED}/f?mobile=on`, `${ALLOWED}/cdn?expiry=3600`, `${ALLOWED}/list?page=2`]) {
+  for (const url of [`${ALLOWED}/f?passport=`, `${ALLOWED}/search?q=passport`, `${ALLOWED}/f?mobile=on`, `${ALLOWED}/f?mobile=1`, `${ALLOWED}/f?phone=yes`, `${ALLOWED}/cdn?expiry=3600`, `${ALLOWED}/list?page=2`]) {
     assert.deepEqual(verdict(go(url)), ['allow', null, 'site:allowed'], url)
   }
 })
