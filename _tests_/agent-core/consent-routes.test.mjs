@@ -555,7 +555,7 @@ test('web-content click cells [desktop]: the driver carries the helper\'s lifted
   }
 })
 
-// System-level refusals (P9, CU-242, CU-244, CU-249) are app-policy's, not the class policy's, so these rows are judged
+// App-policy's verdicts - system-level refusals (P9, CU-242, CU-244, CU-249) and launch_code (P10, CU-252) - are app-policy's, not the class policy's, so these rows are judged
 // through createAppPolicy as the loop builds the call: CU Fixture approved and frontmost, url desktop://, the target's
 // origin set, and a hold judged as the same chord pressed (loop.mjs, CU-64 H3). Expected 'block:<rule>' for a refusal.
 const { createAppPolicy } = await import('../../_tools_/agent-core/app-policy.mjs')
@@ -584,8 +584,9 @@ const SYS_T = {
   appleScriptItem: { role: 'AXMenuItem', name: 'Get Result of AppleScript' },
   desktopPictureItem: { role: 'AXMenuItem', name: 'Set Desktop Picture' },
   pasteItem: { role: 'AXMenuItem', name: 'Paste' },
+  openItem: { role: 'AXMenuItem', name: 'Open' },
 }
-// [id, action, target, expected, pin, live, status]
+// [id, action, target, expected, pin, live, status, extra context]
 const SYSTEM_ROWS = [
   // CU-249: a macOS Service acts outside the approved app - its default chords and its Services items (clicked).
   ['service-chord-search-with', 'cmdShiftL', 'field', 'block:system_shortcut', 'CU-249 (#49: the default Services chords refused)', 'no live row yet', 'todo CU-249'],
@@ -600,19 +601,23 @@ const SYSTEM_ROWS = [
   ['owner-setting-input-source', 'ctrlSpace', 'field', 'block:system_shortcut', 'app-policy.test.mjs (#35, CU-242: input source)', 'no live row yet', 'open CU-242'],
   // CU-244: a held system chord is refused as the keypress (the loop judges a hold so); pinned live-path by #39.
   ['system-chord-held-log-out', 'holdLogOut', 'field', 'block:system_shortcut', 'desktop-consent P9 (#39), loop.mjs hold-as-keypress', 'no live row yet', 'open CU-244'],
+  // CU-252: P10's launch_code reads the clicked target's name only, so File > Open or a context menu's Open on a
+  // selected install.command is not judged. 'selection' is the proposed context field (the fix may rename it).
+  ['menu-open-launchable-selection', 'click', 'openItem', 'launch_code', 'CU-252 (File > Open with a .command selected)', 'no live row yet', 'todo CU-252', { selection: [{ role: 'AXRow', name: 'install.command' }] }],
+  ['menu-open-text-selection', 'click', 'openItem', 'allow', 'CU-252 negative (a text file opens in its editor)', 'no live row yet', 'open CU-252', { selection: [{ role: 'AXRow', name: 'notes.txt' }] }],
 ]
-for (const [id, action, target, expected, pin, live, status] of SYSTEM_ROWS) {
+for (const [id, action, target, expected, pin, live, status, extra] of SYSTEM_ROWS) {
   const name = `${id} [desktop, app-policy] ${action} on ${target} -> ${expected} (pin: ${pin}; live: ${live})`
-  if (status?.startsWith('todo ')) test(name, { todo: status }, () => assert.equal(decideApp(SYS_A[action], SYS_T[target]), expected))
-  else test(name, () => assert.equal(decideApp(SYS_A[action], SYS_T[target]), expected))
+  if (status?.startsWith('todo ')) test(name, { todo: status }, () => assert.equal(decideApp(SYS_A[action], SYS_T[target], extra), expected))
+  else test(name, () => assert.equal(decideApp(SYS_A[action], SYS_T[target], extra), expected))
 }
 test('system rows: named once (apart from the class-policy rows too), every open row names its issue, a todo row still fails', () => {
   const ids = SYSTEM_ROWS.map((r) => r[0])
   assert.equal(new Set(ids).size, ids.length)
   for (const id of ids) assert.ok(!ROWS.some((r) => r[0] === id), `${id} is also a class-policy row`)
-  for (const [id, action, target, expected, , live, status] of SYSTEM_ROWS) {
+  for (const [id, action, target, expected, , live, status, extra] of SYSTEM_ROWS) {
     if (status === null) { assert.ok(closingRun(String(live)), `${id} is closed without a closing run or decision (D-064)`); continue }
     assert.match(status, /^(todo|open) CU-\d+$/, id)
-    if (status.startsWith('todo ')) assert.notEqual(decideApp(SYS_A[action], SYS_T[target]), expected, `${id} passes on main - flip it from todo`)
+    if (status.startsWith('todo ')) assert.notEqual(decideApp(SYS_A[action], SYS_T[target], extra), expected, `${id} passes on main - flip it from todo`)
   }
 })
