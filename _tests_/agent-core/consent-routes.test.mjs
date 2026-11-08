@@ -702,10 +702,13 @@ const SYSTEM_ROWS = [
   ['mixed-script-bound-item', 'cmdShiftU', 'field', 'unknown_target', 'CU-268 (a disguised Post in a menu - an Armenian o outside the fold table)', 'no live row yet', 'open CU-268', { boundMenuItem: { items: [{ role: 'AXMenuItem', name: 'P\u0585st', keyEquivalent: { char: 'U', modifiers: 1 }, enabled: true }] } }],
   ['system-chord-held-log-out', 'holdLogOut', 'field', 'block:system_shortcut', 'desktop-consent P9 (#39), loop.mjs hold-as-keypress', 'no live row yet', 'open CU-244'],
   // CU-252: P10's launch_code reads the clicked target's name only, so File > Open or a context menu's Open on a
-  // selected install.command is not judged. 'selection' is the proposed context field (the fix may rename it).
-  ['menu-open-launchable-selection', 'click', 'openItem', 'launch_code', 'CU-252 (File > Open with a .command selected)', 'no live row yet', 'todo CU-252', { selection: [{ role: 'AXRow', name: 'install.command' }] }],
-  ['menu-open-text-selection', 'click', 'openItem', 'allow', 'CU-252 negative (a text file opens in its editor)', 'no live row yet', 'open CU-252', { selection: [{ role: 'AXRow', name: 'notes.txt' }] }],
-  ['menu-open-package-selection', 'click', 'openItem', 'launch_code', "CU-252 (#70 reports an app bundle as kind folder; the name decides)", 'no live row yet', 'todo CU-252', { selection: [{ name: 'Helper.app', kind: 'folder' }] }],
+  // selected install.command is not judged. selectedItems is the desktop driver's reply as it passes it on (abbb95d,
+  // selectedItemsOf: { items: [{ name, kind }] } or { unreadable: true }); 'selection' stays until the fix names its field.
+  ['menu-open-launchable-selection', 'click', 'openItem', 'launch_code', 'CU-252 (File > Open with a .command selected)', 'no live row yet', 'todo CU-252', { selection: [{ role: 'AXRow', name: 'install.command' }], selectedItems: { items: [{ name: 'install.command', kind: 'file' }] } }],
+  ['menu-open-text-selection', 'click', 'openItem', 'allow', 'CU-252 negative (a text file opens in its editor)', 'no live row yet', 'open CU-252', { selection: [{ role: 'AXRow', name: 'notes.txt' }], selectedItems: { items: [{ name: 'notes.txt', kind: 'file' }] } }],
+  ['menu-open-package-selection', 'click', 'openItem', 'launch_code', "CU-252 (#70 reports an app bundle as kind folder; the name decides)", 'no live row yet', 'todo CU-252', { selection: [{ name: 'Helper.app', kind: 'folder' }], selectedItems: { items: [{ name: 'Helper.app', kind: 'folder' }] } }],
+  // Failing closed: a selection the driver cannot read is no reason to open it unasked (CU-259's unreadable).
+  ['menu-open-unreadable-selection', 'click', 'openItem', 'not:allow', 'CU-252 (an unreadable selection fails closed)', 'no live row yet', 'todo CU-252', { selectedItems: { unreadable: true } }],
 ]
 // An expected 'not:<v>' holds for any verdict but <v> - for a gap whose fix (refuse or ask) is not decided yet.
 const meets = (got, expected) => (expected.startsWith('not:') ? got !== expected.slice(4) : got === expected)
