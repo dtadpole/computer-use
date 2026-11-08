@@ -224,6 +224,10 @@ const API_TOKEN = new RegExp([
   'npm_[A-Za-z0-9]{36}',
   'xox[aprs]-[A-Za-z0-9-]{16,}',
   'shp(?:at|ss|ca|pa)_[a-fA-F0-9]{32}',
+  // cu-verifier on #61: Slack app-level tokens, SendGrid keys (two dot-joined parts), Stripe restricted keys.
+  'xapp-[A-Za-z0-9-]{20,}',
+  'SG\\.[A-Za-z0-9_-]{16,}\\.[A-Za-z0-9_-]{16,}',
+  'rk_(?:live|test)_[A-Za-z0-9]{16,}',
 ].map((one) => `\\b${one}\\b`).join('|'))
 const PASSWORD_NAMES = Object.freeze(['password', 'passcode', 'passphrase', 'pin', 'pin code'])
 // CU-167 (cu-researcher's probe): a social security number, a card's CVV, a bare Passport field, a driving licence, a

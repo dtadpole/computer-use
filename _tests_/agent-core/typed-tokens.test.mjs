@@ -28,6 +28,10 @@ const TOKENS = {
   'Slack xoxr': j('xo', 'xr-', ALNUM.slice(0, 24)),
   'Shopify shpat': j('sh', 'pat_', HEX),
   'Shopify shpss': j('sh', 'pss_', HEX),
+  // cu-verifier on #61.
+  'Slack app-level': j('xa', 'pp-', '1-', ALNUM.slice(0, 11), '-', HEX),
+  SendGrid: j('S', 'G.', ALNUM.slice(0, 22), '.', ALNUM.slice(0, 43)),
+  'Stripe restricted': j('rk', '_live_', ALNUM.slice(0, 24)),
 }
 
 const tmp = mkdtempSync(join(tmpdir(), 'cu-257-'))
@@ -50,7 +54,7 @@ test('CU-257: each token format reads as a key by value and asks sensitive_data 
 })
 
 test('CU-257 negatives: short words, prose and file names with the same prefixes stay free', () => {
-  for (const text of ['gh_pages branch', 'ghs_config', 'AIza is a prefix Google uses', 'hf_model.bin', 'npm_config_cache', 'glpat-short', 'xoxa-1', 'shpat_ token example', j('AI', 'za', ALNUM.slice(0, 20))]) {
+  for (const text of ['gh_pages branch', 'ghs_config', 'AIza is a prefix Google uses', 'hf_model.bin', 'npm_config_cache', 'glpat-short', 'xoxa-1', 'shpat_ token example', j('AI', 'za', ALNUM.slice(0, 20)), 'xapp-short', 'SG.example', 'rk_live_', 'see SG. above']) {
     assert.equal(looksSensitive(text), null, text)
     assert.equal(judged(desktop.classify(type(text), { frontmostBundleId: FIXTURE, target: notes })), 'allow', `desktop ${text}`)
   }
