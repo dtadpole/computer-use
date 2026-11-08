@@ -688,7 +688,7 @@ const SYS_T = {
 // [id, action, target, expected, pin, live, status, extra context]
 const SYSTEM_ROWS = [
   // CU-249: a macOS Service acts outside the approved app - its default chords and its Services items (clicked).
-  ['service-chord-search-with', 'cmdShiftL', 'field', 'block:system_shortcut', 'service-shortcuts.test.mjs (#49, CU-249: the default Services chords refused)', 'no live row yet', 'open CU-249'],
+  ['service-chord-search-with', 'cmdShiftL', 'field', 'block:system_shortcut', 'service-shortcuts.test.mjs (#49, CU-249: the default Services chords refused)', 'cu-verifier, main with #98, helper 0.2.56, CU Fixture consent keys: Command-Shift-L in a field blocked system_shortcut (20261108T184210Z-c68d8d)', null],
   ['service-chord-run-applescript', 'cmdShift8', 'field', 'block:system_shortcut', 'service-shortcuts.test.mjs (#49, CU-249; Command-* is Shift-8)', 'no live row yet', 'open CU-249'],
   ['service-click-search-with', 'click', 'searchWithItem', 'block:system_service', 'service-shortcuts.test.mjs (#49, CU-249: a Services item clicked)', 'no live row yet', 'open CU-249'],
   ['service-click-run-applescript', 'click', 'appleScriptItem', 'block:system_service', 'service-shortcuts.test.mjs (#49, CU-249)', 'no live row yet', 'open CU-249'],
@@ -701,7 +701,7 @@ const SYSTEM_ROWS = [
   ['service-chord-owner-installed', 'cmdShiftU', 'field', 'block:system_service', 'menu-key.test.mjs (#56: mark dropped)', 'no live row yet', 'open CU-250', { boundMenuItem: { items: [{ role: 'AXMenuItem', name: 'Weekly Report Uploader', keyEquivalent: { char: 'U', modifiers: 1 }, enabled: true, servicesMenu: true }] } }],
   // CU-256: with exactly one ENABLED app item bound, the app's shortcut wins (Apple's Services guide) - judged as a click on
   // that item; an item whose enabled state was not read keeps the refusal (fails closed).
-  ['service-chord-app-bound-enabled', 'cmdShiftA', 'field', 'allow', 'CU-256 (one enabled app item bound: judged as its click)', 'no live row yet', 'todo CU-256', { boundMenuItem: { items: [{ role: 'AXMenuItem', name: 'Applications', keyEquivalent: { char: 'A', modifiers: 1 }, enabled: true }] } }],
+  ['service-chord-app-bound-enabled', 'cmdShiftA', 'field', 'allow', 'CU-256 (one enabled app item bound: judged as its click)', 'no live row yet', 'open CU-256', { boundMenuItem: { items: [{ role: 'AXMenuItem', name: 'Applications', keyEquivalent: { char: 'A', modifiers: 1 }, enabled: true }] } }],
   ['service-chord-app-bound-enabled-unread', 'cmdShiftA', 'field', 'block:system_shortcut', 'service-shortcuts.test.mjs (#49; CU-256 keeps the refusal when enabled was not read)', 'no live row yet', 'open CU-256', { boundMenuItem: { items: [{ role: 'AXMenuItem', name: 'Applications', keyEquivalent: { char: 'A', modifiers: 1 } }] } }],
   // CU-256's exception needs an ENABLED app item (Apple: the application's shortcut wins - a disabled one cannot fire, so
   // the keystroke may reach the service): with only a disabled app item bound the refusal stays, before and after the fix.
