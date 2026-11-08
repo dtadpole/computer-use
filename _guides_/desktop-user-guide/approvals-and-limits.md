@@ -38,7 +38,7 @@ file choices are never pre-approved. Typed sensitive text stays out of run files
 - A run can end partial; its last line says so.
 - A run stopped mid-hold names the key; the next run releases it, or press and release it.
 - A keyboard shortcut is judged as the menu item it fires, read from the app's menu bar; a window button's own
-  shortcut or a view's own keys are not. The team keeps its live runs to its own test apps until it is verified.
+  shortcut or a view's own keys are not. Live runs stay on the team's test apps until it is verified.
 - Not yet asked: opening a file from a menu or by Command-O in a list; installing from the App Store; an app's
   Always Allow or Don't ask again.
 - A website's own keyboard shortcuts (a webmail's # deletes, e archives) are judged by the focus, not by what the site
