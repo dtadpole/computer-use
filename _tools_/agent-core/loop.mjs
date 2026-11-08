@@ -547,7 +547,10 @@ export async function runTask(options) {
       // An item under the Apple menu (Lock Screen, Log Out, Force Quit) acts beyond the approved app: app-policy refuses it.
       const appleMenu = one.appleMenu === true || (Array.isArray(one.path) && one.path[0] === 'Apple')
       // Names only, capped as captions are (a Window or bookmarks item may carry a document's title); never the menu path.
-      items.push({ role: 'AXMenuItem', name: one.name.trim().slice(0, 80), ...(key ? { keyEquivalent: key } : {}), ...(typeof one.enabled === 'boolean' ? { enabled: one.enabled } : {}), ...(appleMenu ? { appleMenu: true } : {}) })
+      // CU-250 (cu-developer-two's seam finding): an item under a Services submenu keeps its mark, which app-policy refuses;
+      // anything but false reads as marked (fail closed, as the driver does).
+      const servicesMenu = one.servicesMenu !== undefined && one.servicesMenu !== false
+      items.push({ role: 'AXMenuItem', name: one.name.trim().slice(0, 80), ...(key ? { keyEquivalent: key } : {}), ...(typeof one.enabled === 'boolean' ? { enabled: one.enabled } : {}), ...(appleMenu ? { appleMenu: true } : {}), ...(servicesMenu ? { servicesMenu: true } : {}) })
     }
     return items.length === 1 ? items[0] : { items }
   }
