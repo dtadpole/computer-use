@@ -734,12 +734,12 @@ const SYSTEM_ROWS = [
   ['drop-script-onto-terminal-app', 'dragDrop', 'commandRow', 'not:allow', 'CU-269 (Terminal is excluded; the script runs)', 'no live row yet', 'open CU-269', { app: FINDER_ID, dropTarget: { role: 'AXImage', name: 'Terminal.app', filename: 'Terminal.app', origin: FINDER_ID } }],
   ['drop-document-onto-folder', 'dragDrop', 'notesRow', 'allow', 'CU-269 negative (a move into a folder)', 'no live row yet', 'open CU-269', { app: FINDER_ID, dropTarget: { role: 'AXRow', name: 'Projects', origin: FINDER_ID } }],
   // CU-271: an approved IDE runs the code the agent typed - terminal_view only refuses typing into a terminal panel.
-  ['ide-run-python-file', 'click', 'runPythonButton', 'not:allow', 'CU-271 (runTask: posted)', 'no live row yet', 'todo CU-271', { app: VSCODE_ID }],
-  ['ide-f5-in-editor', 'f5', 'codeEditor', 'not:allow', 'CU-271 (Start Debugging)', 'no live row yet', 'todo CU-271', { app: VSCODE_ID }],
+  ['ide-run-python-file', 'click', 'runPythonButton', 'not:allow', 'CU-271 (runTask: posted)', 'no live row yet', 'open CU-271', { app: VSCODE_ID }],
+  ['ide-f5-in-editor', 'f5', 'codeEditor', 'not:allow', 'CU-271 (Start Debugging)', 'no live row yet', 'open CU-271', { app: VSCODE_ID }],
   // CU-271 (cu-researcher on #119): a run is not only Run or Debug - Sublime's Build (Command-B) runs the file through its
   // build system, and Xcode's Test (Command-U) runs the test target's code.
-  ['ide-sublime-build', 'cmdB', 'codeEditor', 'not:allow', 'CU-271 (Build runs the file)', 'no live row yet', 'todo CU-271', { app: SUBLIME_ID, boundMenuItem: { items: [{ role: 'AXMenuItem', name: 'Build', keyEquivalent: { char: 'B', modifiers: 0 }, enabled: true }] } }],
-  ['ide-xcode-test', 'cmdU', 'codeEditor', 'not:allow', 'CU-271 (Test runs the test code)', 'no live row yet', 'todo CU-271', { app: XCODE_ID, boundMenuItem: { items: [{ role: 'AXMenuItem', name: 'Test', keyEquivalent: { char: 'U', modifiers: 0 }, enabled: true }] } }],
+  ['ide-sublime-build', 'cmdB', 'codeEditor', 'not:allow', 'CU-271 (Build runs the file)', 'no live row yet', 'open CU-271', { app: SUBLIME_ID, boundMenuItem: { items: [{ role: 'AXMenuItem', name: 'Build', keyEquivalent: { char: 'B', modifiers: 0 }, enabled: true }] } }],
+  ['ide-xcode-test', 'cmdU', 'codeEditor', 'not:allow', 'CU-271 (Test runs the test code)', 'no live row yet', 'open CU-271', { app: XCODE_ID, boundMenuItem: { items: [{ role: 'AXMenuItem', name: 'Test', keyEquivalent: { char: 'U', modifiers: 0 }, enabled: true }] } }],
   // CU-279 (triage): an IDE's integrated terminal runs the typed line on Return. Main's E5 rule (TERMINAL_VIEW, Q-D9)
   // already refuses keys into a target named for a terminal or shell; whether the route holds turns on the live name of
   // VS Code's xterm helper textarea - these cells close on that read.
