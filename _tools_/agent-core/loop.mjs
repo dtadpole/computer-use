@@ -644,9 +644,17 @@ export async function runTask(options) {
   // back into the same field keep it; Return or Tab reset it only when the focus moves. Backspace removes the last
   // character; select all empties it (what follows replaces it). In the browser a run paste adds the run clipboard's text,
   // the run's own (on the desktop a paste carries only its source class, D-031 - a named limit). Only performed actions
-  // add to it. Never logged or recorded (D-031): it reaches the policy as context and nothing else.
+  // add to it. Never logged or recorded (D-031): it reaches the policy as context and nothing else. When the focus cannot
+  // be read (no focused element, or one without a fingerprint) the key is the frontmost app's - 'nofocus:<app>' - so the
+  // pieces still join (cu-researcher, cu-developer-one); such a buffer starts afresh on any pointer action, Return, Tab or
+  // Escape, since nothing tells whether they moved the focus, and on an app change by its key.
   let typedSoFar = { key: null, text: '' }
-  const typedKeyOf = (target) => (typeof target?.fingerprint === 'string' && target.fingerprint !== '' ? target.fingerprint : null)
+  let typedKeyNow = null
+  const typedKeyOf = (target, state = null) => {
+    if (typeof target?.fingerprint === 'string' && target.fingerprint !== '') return target.fingerprint
+    const app = state?.frontmostBundleId ?? (() => { try { return new URL(String(state?.url ?? '')).origin } catch { return null } })()
+    return typeof app === 'string' && app !== '' && app !== 'null' ? `nofocus:${app}` : null
+  }
   const typedCharOf = (action) => {
     if (action.type !== 'keypress') return null
     const keys = keySetOf(action)
@@ -660,15 +668,22 @@ export async function runTask(options) {
     return keys.has('SHIFT') ? null : key
   }
   const typedNextOf = (action, pasted = null) => (action.type === 'type' ? String(action.text ?? '') : typeof pasted === 'string' ? pasted : typedCharOf(action) ?? '')
-  const typedFor = (action, target, pasted = null) => {
-    const key = typedKeyOf(target)
+  const typedFor = (action, target, pasted = null, state = null) => {
+    const key = typedKeyOf(target, state)
+    typedKeyNow = key
     const before = key !== null && key === typedSoFar.key ? typedSoFar.text : ''
     const next = typedNextOf(action, pasted)
     return before !== '' && next !== '' ? { before, next } : null
   }
   const noteTyped = (action, target, pasted = null) => {
-    const key = typedKeyOf(target)
+    const key = typedKeyNow ?? typedKeyOf(target)
     const same = key !== null && key === typedSoFar.key
+    // No readable focus: a pointer action, Return, Tab or Escape may have moved it.
+    const keysNow = action.type === 'keypress' ? (keySetOf(action) ?? new Set()) : new Set()
+    if (String(typedSoFar.key ?? '').startsWith('nofocus:') && (['click', 'double_click', 'triple_click', 'drag'].includes(action.type) || ['ENTER', 'TAB', 'ESCAPE'].some((name) => keysNow.has(name)))) {
+      typedSoFar = { key: null, text: '' }
+      return
+    }
     const add = (text) => { typedSoFar = { key, text: ((same ? typedSoFar.text : '') + text).slice(-256) } }
     if (action.type === 'type') return add(String(action.text ?? ''))
     if (typeof pasted === 'string') return add(pasted)
@@ -746,7 +761,7 @@ export async function runTask(options) {
     // An unreadable bar asks for any chord but the editing ones, which the keys already judge (named over-ask: a Control
     // editing chord such as Control-K, unlisted, asks when the bar cannot be read).
     const boundMenuItem = read?.unreadable === true && editingChord(action) ? undefined : read
-    const typed = typedFor(action, target, !desktop && paste ? paste.text : null)
+    const typed = typedFor(action, target, !desktop && paste ? paste.text : null, state)
     return { url: state.url, target: remembered(target), ...(typed ? { typed } : {}), ...(boundMenuItem ? { boundMenuItem } : {}), ...(dropTarget ? { dropTarget: remembered(dropTarget) } : {}), ...(dragText !== undefined ? { dragText } : {}), ...(afterClose ? { afterClose: true } : {}), ...(resubmits ? { resubmits: historyMove } : {}), ...(historyJudged ? { historyJudged } : {}), ...(paste ? { paste } : {}), ...(pasteboardJudged ? { pasteboardJudged } : {}), ...(state.interstitial === true ? { interstitial: true } : {}), dialog: state.dialog ?? null, task: task.text, ...app }
   }
 

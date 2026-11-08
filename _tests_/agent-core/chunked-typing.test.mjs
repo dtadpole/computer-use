@@ -33,13 +33,13 @@ const fieldOf = (kind, name, fingerprint) => (kind === 'desktop'
 
 let runs = 0
 /** Run `actions` in one batch; a click at x < 100 focuses field A, any other click field B; ARROWDOWN and TAB move to B. */
-async function run(kind, actions, { task = 'fill in the notes', approve = false, clipboard = null } = {}) {
+async function run(kind, actions, { task = 'fill in the notes', approve = false, clipboard = null, unreadableFocus = false } = {}) {
   const control = createRunControl()
   const environment = createFakeEnvironment({ kind, control, ...(kind === 'browser' ? { url: 'https://fixture.example/' } : {}) })
   const A = fieldOf(kind, 'Notes', 'field-a')
   const B = fieldOf(kind, 'Reference', 'field-b')
   let focus = A
-  environment.focusedElement = async () => focus
+  environment.focusedElement = async () => (unreadableFocus ? null : focus)
   // The browser's run clipboard (the run's own copies); agent core reads it at a paste.
   if (clipboard !== null) environment.clipboard = { get: () => clipboard, set: () => {} }
   environment.inspectPoint = async ({ x }) => (x < 100 ? A : B)
@@ -148,6 +148,18 @@ test('CU-267: once a value typed in pieces was asked and approved, typing on aft
 test('CU-267: focus moving to another field by a key (no click) starts that field afresh', async () => {
   const { events } = await run('desktop', [...types(CARD_DIGITS.slice(0, 8)), { type: 'keypress', keys: ['ARROWDOWN'] }, ...types(CARD_DIGITS.slice(8))])
   assert.deepEqual(verdicts(events), ['allow', 'allow', 'allow'], 'each half in its own field')
+})
+
+test('CU-267: a focus that cannot be read keys the buffer by the frontmost app - the pieces still join; a click, Return or Tab starts afresh', async () => {
+  const quarters = CARD_DIGITS.match(/.{4}/g)
+  const joined = await run('desktop', types(...quarters), { unreadableFocus: true })
+  assert.deepEqual(verdicts(joined.events), ['allow', 'allow', 'allow', 'sensitive_data'], 'no fail-open when no element reports focus (cu-researcher)')
+  const keyed = await run('desktop', keys(CARD_DIGITS), { unreadableFocus: true })
+  assert.equal(verdicts(keyed.events).at(-1), 'sensitive_data')
+  for (const between of [{ type: 'click', x: 10, y: 10, button: 'left' }, { type: 'keypress', keys: ['ENTER'] }, { type: 'keypress', keys: ['TAB'] }]) {
+    const split = await run('desktop', [...types(quarters[0], quarters[1]), between, ...types(quarters[2], quarters[3])], { unreadableFocus: true })
+    assert.equal(verdicts(split.events).at(-1), 'allow', `${JSON.stringify(between)} may have moved an unreadable focus: afresh`)
+  }
 })
 
 test('CU-267: the field\'s buffer never reaches the run records', async () => {
