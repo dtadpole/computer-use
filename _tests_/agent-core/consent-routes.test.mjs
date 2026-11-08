@@ -602,8 +602,8 @@ const SYSTEM_ROWS = [
   ['service-chord-app-bound-over-refusal', 'cmdShiftA', 'field', 'block:system_shortcut', 'service-shortcuts.test.mjs (#49: refused even with an app item bound - a named over-refusal)', 'no live row yet', 'open CU-256', { boundMenuItem: { items: [{ role: 'AXMenuItem', name: 'Applications', keyEquivalent: { char: 'A', modifiers: 1 } }] } }],
   ['menu-click-paste', 'click', 'pasteItem', 'allow', 'CU-249 negative (an app menu item)', 'no live row yet', 'open CU-249'],
   // CU-242 (landed, #35) and its follow-up CU-251: default system hotkeys that change an owner setting.
-  ['owner-setting-dock-hiding', 'cmdOptD', 'field', 'block:system_shortcut', 'CU-251 (Dock hiding on/off, follow-up to CU-242)', 'no live row yet', 'todo CU-251'],
-  ['owner-setting-keyboard-access', 'ctrlF1', 'field', 'block:system_shortcut', 'CU-251 (keyboard access on/off)', 'no live row yet', 'todo CU-251'],
+  ['owner-setting-dock-hiding', 'cmdOptD', 'field', 'block:system_shortcut', 'app-policy.test.mjs (#50, CU-251: Dock hiding on/off, follow-up to CU-242)', 'no live row yet', 'open CU-251'],
+  ['owner-setting-keyboard-access', 'ctrlF1', 'field', 'block:system_shortcut', 'app-policy.test.mjs (#50, CU-251: keyboard access on/off)', 'no live row yet', 'open CU-251'],
   ['owner-setting-input-source', 'ctrlSpace', 'field', 'block:system_shortcut', 'app-policy.test.mjs (#35, CU-242: input source)', 'no live row yet', 'open CU-242'],
   // CU-244: a held system chord is refused as the keypress (the loop judges a hold so); pinned live-path by #39.
   // CU-254: the App Store installs software, yet it is not excluded and its 'Get' carries no consent word. Refused or
