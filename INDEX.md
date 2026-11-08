@@ -29,6 +29,7 @@ done means is [`ULTIMATE_GOAL.md`](ULTIMATE_GOAL.md). Start with [`AGENTS.md`](A
 | [`_verifiers_/`](_verifiers_/INDEX.md) | one verifier per ULTIMATE_GOAL row, each with mutants |
 | [`_evaluators_/`](_evaluators_/INDEX.md) | the desktop task suite, its runner and results |
 | [`_vendor_/browser-use/`](_vendor_/browser-use/INDEX.md) | the dependency-free Chrome DevTools client, copied unmodified with its provenance |
+| [`_logs_/`](_logs_/INDEX.md) | the repository's own action log (one JSON line per action, no session ids) |
 | [`_context_/`](_context_/INDEX.md) | research (ChatGPT computer use, desktop mechanics, model capabilities, evaluation design) and the team's operating records (decision log, working model, Linear workflow) |
 | [`_team_members_/`](_team_members_/INDEX.md) | one record per seat: responsibilities, artifacts, handover |
 
