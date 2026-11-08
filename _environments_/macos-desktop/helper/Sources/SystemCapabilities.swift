@@ -152,6 +152,22 @@ final class SystemCapabilities: Capabilities {
     return Accessibility.panelFields(pid: front.pid)
   }
 
+  /// CU-235: the frontmost approved app's menu items this key down fires. The menu bar is walked fresh each time (role,
+  /// title, enabled and the four key-equivalent attributes only, never a value); the characters are the current
+  /// keyboard layout's for the key code, as AppKit matches them. Anything unread answers unreadable.
+  func menuKey(keyCode: Int, flags: UInt64, scope: [String]) -> MenuKey.Read {
+    guard AXIsProcessTrusted() else { return .unreadable("no Accessibility grant") }
+    guard let front = frontmost(), let bundleId = front.bundleId else { return .unreadable("no frontmost app") }
+    guard scope.contains(bundleId) else { return .unreadable("the frontmost app is not an approved app of this run") }
+    limitTimeouts()
+    let (outcome, menuBar) = Accessibility.elementRead(AXUIElementCreateApplication(front.pid), "AXMenuBar")
+    guard outcome == .value, let menuBar else { return .unreadable("the app's menu bar could not be read") }
+    guard let walk = MenuWalk.entries(of: menuBar) else { return .unreadable("the app's menu bar could not be read in full") }
+    let chars = KeyLayout.characters(keyCode: keyCode)
+    let chord = MenuKey.Chord(keyCode: keyCode, flags: flags, unshifted: chars.unshifted, shifted: chars.shifted)
+    return MenuKey.read(bundleId: bundleId, entries: walk.entries, emptyMenus: walk.emptyMenus, chord: chord)
+  }
+
   /// Whether an approved app's window lies under the hit window at the point - so the refusal can say what covers it.
   func approvedBeneath(_ point: CGPoint, scope: [String]) -> Bool {
     let windows = WindowOwners.onScreen(includingDesktop: true)
@@ -683,5 +699,81 @@ enum CaptureConfig {
     // PNG's values as sRGB, so they must be sRGB; Frames.resized converts anything else.
     config.colorSpaceName = CGColorSpace.sRGB
     return config
+  }
+}
+
+/// CU-235: the menu bar's items as Accessibility reports them, depth-first in menu order, with each item's path of
+/// titles. Bounded (depth 10 - three submenu levels - and 4000 items); nil when a read fails or a bound is hit, so a
+/// partial walk never answers none.
+enum MenuWalk {
+  static let maxDepth = 10
+  static let maxItems = 4000
+  static let attributes = ["AXRole", "AXTitle", "AXEnabled", "AXMenuItemCmdChar", "AXMenuItemCmdModifiers", "AXMenuItemCmdVirtualKey", "AXMenuItemCmdGlyph", "AXChildren"] as CFArray
+
+  static func entries(of menuBar: AXUIElement) -> (entries: [MenuKey.Entry], emptyMenus: [String])? {
+    var entries: [MenuKey.Entry] = []
+    var emptyMenus: [String] = []
+    var visited = 0
+    /// Reads one element's attributes in one call; nil on a failed read.
+    func read(_ element: AXUIElement) -> [String: Any]? {
+      var values: CFArray?
+      guard AXUIElementCopyMultipleAttributeValues(element, attributes, AXCopyMultipleAttributeOptions(rawValue: 0), &values) == .success,
+            let list = values as? [Any], list.count == 8 else { return nil }
+      var result: [String: Any] = [:]
+      let names = ["role", "title", "enabled", "char", "modifiers", "virtualKey", "glyph", "children"]
+      for (name, value) in zip(names, list) {
+        // A missing attribute comes back as an AXValue holding an error; leave it out.
+        if CFGetTypeID(value as CFTypeRef) == AXValueGetTypeID(), AXValueGetType(value as! AXValue) == .axError { continue }
+        result[name] = value
+      }
+      return result
+    }
+    func walk(_ element: AXUIElement, path: [String], depth: Int, apple: Bool) -> Bool {
+      visited += 1
+      guard visited <= maxItems, depth <= maxDepth, let values = read(element) else { return false }
+      let role = values["role"] as? String
+      let title = values["title"] as? String
+      let children = (values["children"] as? [AXUIElement]) ?? []
+      var here = path
+      if role == "AXMenuItem" || role == "AXMenuBarItem" {
+        here.append(title ?? "")
+        if role == "AXMenuItem" {
+          entries.append(MenuKey.Entry(title: title, path: here, enabled: values["enabled"] as? Bool, cmdChar: values["char"] as? String,
+                                       cmdModifiers: (values["modifiers"] as? NSNumber)?.intValue, cmdVirtualKey: (values["virtualKey"] as? NSNumber)?.intValue,
+                                       cmdGlyph: (values["glyph"] as? NSNumber)?.intValue, appleMenu: apple))
+        }
+      }
+      // A top-level menu with no items yet (filled lazily) cannot be judged by a miss.
+      if role == "AXMenu", depth == 2, children.isEmpty, let top = path.last { emptyMenus.append(top) }
+      // The menu bar's first item is the Apple menu (CU-232 contract point 4).
+      for (index, child) in children.enumerated() where !walk(child, path: here, depth: depth + 1, apple: apple || (role == "AXMenuBar" && index == 0)) { return false }
+      return true
+    }
+    guard walk(menuBar, path: [], depth: 0, apple: false) else { return nil }
+    return (entries, emptyMenus)
+  }
+}
+
+/// CU-235: the characters the current keyboard layout gives a key without and with Shift, as AppKit's
+/// charactersIgnoringModifiers matches menu key equivalents. Nil when the layout cannot be read (an input method
+/// with no Unicode layout): then only virtual-key items can match, and a character item's miss is reported as none.
+enum KeyLayout {
+  static func characters(keyCode: Int) -> (unshifted: String?, shifted: String?) {
+    guard let source = TISCopyCurrentKeyboardLayoutInputSource()?.takeRetainedValue(),
+          let pointer = TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData) else { return (nil, nil) }
+    let data = Unmanaged<CFData>.fromOpaque(pointer).takeUnretainedValue() as Data
+    return data.withUnsafeBytes { raw -> (String?, String?) in
+      guard let layout = raw.baseAddress?.assumingMemoryBound(to: UCKeyboardLayout.self) else { return (nil, nil) }
+      func translate(_ modifiers: UInt32) -> String? {
+        var dead: UInt32 = 0
+        var length = 0
+        var chars = [UniChar](repeating: 0, count: 4)
+        let status = UCKeyTranslate(layout, UInt16(keyCode), UInt16(kUCKeyActionDisplay), modifiers, UInt32(LMGetKbdType()),
+                                    OptionBits(kUCKeyTranslateNoDeadKeysBit), &dead, chars.count, &length, &chars)
+        guard status == noErr, length > 0 else { return nil }
+        return String(utf16CodeUnits: chars, count: length)
+      }
+      return (translate(0), translate(UInt32(shiftKey >> 8) & 0xFF))
+    }
   }
 }

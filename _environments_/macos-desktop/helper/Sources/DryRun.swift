@@ -102,6 +102,11 @@ final class DryRunCapabilities: Capabilities {
   private let declaredSheet: Bool?
   /// CU-151: the declared pasteboard change count (`changeCount`), if the world says.
   private let declaredChangeCount: Int?
+  /// CU-235: the frontmost app's menu bar as Accessibility would report it - `menuKeyBar: [{title, items: [{title, char,
+  /// modifiers (AX bits), virtualKey, glyph, enabled, items}]}]`; `menuKeyBarUnreadable: true` makes the read fail.
+  /// (`menuBar` is the menu-bar strip of CU-51.)
+  private let declaredMenuBar: [JSON]?
+  private let declaredMenuBarUnreadable: Bool
   /// CU-157: the declared `textEntered`, if the world says.
   private let declaredTextEntered: Bool?
   /// CU-187: the declared selection source (`selection`: {role, caption, bundleId, pid}), if the world says.
@@ -216,6 +221,8 @@ final class DryRunCapabilities: Capabilities {
     declaredDefaultButtonRead = world.object?["defaultButtonRead"]?.bool
     declaredSheet = world.object?["sheet"]?.bool
     declaredChangeCount = world.object?["changeCount"]?.integer
+    declaredMenuBar = world.object?["menuKeyBar"]?.array
+    declaredMenuBarUnreadable = world.object?["menuKeyBarUnreadable"]?.bool ?? false
     declaredTextEntered = world.object?["textEntered"]?.bool
     declaredSelection = world.object?["selection"]
     if let selection = world.object?["panelSelection"]?.object {
@@ -703,6 +710,36 @@ final class DryRunCapabilities: Capabilities {
 
   /// The declared pasteboard change count; null when the world names none.
   func pasteboardChangeCount() -> Int? { declaredChangeCount }
+
+  /// CU-235, by the live rule: the declared menu bar of the frontmost approved app, matched through MenuKey with a US
+  /// layout (the dry run never reads the Mac's layout).
+  func menuKey(keyCode: Int, flags: UInt64, scope: [String]) -> MenuKey.Read {
+    guard let front = frontmost(), let bundleId = front.bundleId else { return .unreadable("no frontmost app") }
+    guard scope.contains(bundleId) else { return .unreadable("the frontmost app is not an approved app of this run") }
+    guard !declaredMenuBarUnreadable, let menus = declaredMenuBar else { return .unreadable("the app's menu bar could not be read") }
+    var entries: [MenuKey.Entry] = []
+    var empty: [String] = []
+    func add(_ items: [JSON], path: [String], apple: Bool) {
+      for item in items {
+        guard let object = item.object else { continue }
+        let title = object["title"]?.string
+        let here = path + [title ?? ""]
+        entries.append(MenuKey.Entry(title: title, path: here, enabled: object["enabled"]?.bool ?? true, cmdChar: object["char"]?.string,
+                                     cmdModifiers: object["modifiers"]?.integer, cmdVirtualKey: object["virtualKey"]?.integer, cmdGlyph: object["glyph"]?.integer,
+                                     appleMenu: apple))
+        add(object["items"]?.array ?? [], path: here, apple: apple)
+      }
+    }
+    for (index, menu) in menus.enumerated() {
+      let title = menu.object?["title"]?.string ?? ""
+      let items = menu.object?["items"]?.array ?? []
+      if items.isEmpty { empty.append(title) }
+      // As live: the menu bar's first item is the Apple menu.
+      add(items, path: [title], apple: index == 0)
+    }
+    let chars = MenuKey.usLayout[keyCode]
+    return MenuKey.read(bundleId: bundleId, entries: entries, emptyMenus: empty, chord: MenuKey.Chord(keyCode: keyCode, flags: flags, unshifted: chars?.0, shifted: chars?.1))
+  }
 
   /// The declared `sheet`, else whether the focused (or, with no focus, the frontmost) app has an attached sheet; null
   /// while no approved app has the focus.
