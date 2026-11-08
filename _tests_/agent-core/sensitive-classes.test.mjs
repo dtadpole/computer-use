@@ -181,6 +181,10 @@ export const ROWS = [
   ['value-npm token', 'auth', 'value', ['np', 'm_', 'a1B2c3D4e5'.repeat(3), 'F6g7H8'].join(''), 'Notes', 'sensitive_data', 'todo CU-257', 'no live row yet'],
   ['value-Slack app token', 'auth', 'value', ['xo', 'xa-', '2-', '1234567890', '-', 'a1b2c3d4e5'.repeat(3)].join(''), 'Notes', 'sensitive_data', 'todo CU-257', 'no live row yet'],
   ['value-Shopify token', 'auth', 'value', ['shp', 'at_', 'a1b2c3d4'.repeat(4)].join(''), 'Notes', 'sensitive_data', 'todo CU-257', 'no live row yet'],
+  // cu-verifier's follow-ups on #61 (mixed-case values, so the 40-hex digest rule cannot be what asks).
+  ['value-Slack app-level token', 'auth', 'value', ['xa', 'pp-', '1-', 'A0BcDeFgHiJ', '-', '1234567890123', '-', 'aBcDeFgHiJkLmNoPqRsT'.repeat(3)].join(''), 'Notes', 'sensitive_data', 'todo CU-257', 'no live row yet'],
+  ['value-SendGrid key', 'auth', 'value', ['S', 'G.', 'aBcDeFgHiJkLmNoPqRsTuV', '.', 'wXyZaBcDeFgHiJkLmNoPqRsTuVwXyZaBcDeFgHiJkLm'].join(''), 'Notes', 'sensitive_data', 'todo CU-257', 'no live row yet'],
+  ['value-Stripe restricted key', 'auth', 'value', ['rk', '_live_', 'aBcDeFgHiJkLmNoPqRsTuVwX'].join(''), 'Notes', 'sensitive_data', 'todo CU-257', 'no live row yet'],
   ['value-gh_ word (negative)', 'auth', 'value', 'see gh_issue and hf_model later', 'Notes', 'allow', 'open CU-257', 'no live row yet'],
   ['value-AIza in prose (negative)', 'auth', 'value', 'keys start with AIza in the docs', 'Notes', 'allow', 'open CU-257', 'no live row yet'],
   ['value-npm_ file name (negative)', 'auth', 'value', 'npm_debug.log', 'Notes', 'allow', 'open CU-257', 'no live row yet'],
