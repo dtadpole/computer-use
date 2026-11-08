@@ -228,6 +228,16 @@ func testSelectedItems() {
   let plain = Harness(["displays": display, "frontmost": "ai.reflection.cu.fixture", "apps": apps])
   _ = plain.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
   check(plain.ask("selectedItems")["notCollection"] == true, "no declared collection: notCollection")
+  // cu-verifier on #70: a row whose only text is its AXValue (a mail subject, a cell) gives no name - unreadable, never the value.
+  let mailList = Harness(["displays": display, "frontmost": "ai.reflection.cu.fixture", "apps": apps,
+                          "selectedItems": ["role": "AXTable", "items": [["value": "Quarterly numbers - private"]]]])
+  _ = mailList.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
+  let mailReply = mailList.ask("selectedItems")
+  check(mailReply["unreadable"] == true && mailReply["items"] == nil, "a row known only by its value: unreadable, the value never sent")
+  let labelled = Harness(["displays": display, "frontmost": "ai.reflection.cu.fixture", "apps": apps,
+                          "selectedItems": ["role": "AXList", "items": [["label": "Recents item", "value": "contents"]]]])
+  _ = labelled.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
+  check(labelled.ask("selectedItems")["items"] == [["name": "Recents item", "kind": "unknown"]], "a label (AXTitle/AXDescription) names it, kind unknown")
   let blind = Harness(["displays": display, "frontmost": "ai.reflection.cu.fixture", "apps": apps, "selectedItems": ["role": "AXGroup", "unreadable": true]])
   _ = blind.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
   check(blind.ask("selectedItems")["unreadable"] == true, "an unreadable selection: unreadable")

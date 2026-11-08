@@ -111,7 +111,7 @@ final class DryRunCapabilities: Capabilities {
   private let declaredTextEntered: Bool?
   /// CU-187: the declared selection source (`selection`: {role, caption, bundleId, pid}), if the world says.
   private let declaredSelection: JSON?
-  /// CU-262: the focused collection's selection - `selectedItems: {role, items: [{filename?, url?, text?}], unreadable?}`
+  /// CU-262: the focused collection's selection - `selectedItems: {role, items: [{filename?, url?, label?, value?}], unreadable?}`
   /// (`selection` is the text selection's).
   private let declaredSelectedItems: JSON?
   /// CU-203: the declared `confirmPress` - the press the owner would make on the confirmation prompt.
@@ -734,7 +734,8 @@ final class DryRunCapabilities: Capabilities {
     guard let declared = declaredSelectedItems?.object else { return .notCollection(bundleId: bundleId) }
     let role = declared["role"]?.string ?? "AXOutline"
     let items = declared["unreadable"]?.bool == true ? nil : (declared["items"]?.array ?? []).map { item in
-      SelectedItems.Raw(filename: item.object?["filename"]?.string, url: item.object?["url"]?.string, text: item.object?["text"]?.string)
+      // As live: `label` is an AXTitle/AXDescription; a declared `value` (an AXValue, owner content) is never a name.
+      SelectedItems.Raw(filename: item.object?["filename"]?.string, url: item.object?["url"]?.string, text: item.object?["label"]?.string)
     }
     return SelectedItems.read(bundleId: bundleId, focusedRole: role, selection: items)
   }

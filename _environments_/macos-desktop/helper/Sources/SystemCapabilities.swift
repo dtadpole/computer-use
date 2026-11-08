@@ -830,7 +830,8 @@ enum SelectionRead {
   }
 
   /// An item's own AXFilename and AXURL, else the first descendant (a row's cell, depth 3, 30 nodes) carrying either,
-  /// and the first text it shows.
+  /// and the first label (AXTitle or AXDescription) - never an AXValue, which in a mail or notes list is the owner's
+  /// content (cu-verifier on #70).
   static func raw(_ item: AXUIElement) -> SelectedItems.Raw {
     var result = SelectedItems.Raw(filename: Accessibility.string(item, "AXFilename"), url: Accessibility.urlString(item), text: nil)
     var queue: [(AXUIElement, Int)] = [(item, 0)]
@@ -842,8 +843,8 @@ enum SelectionRead {
         if result.filename == nil { result.filename = Accessibility.string(node, "AXFilename") }
         if result.url == nil { result.url = Accessibility.urlString(node) }
       }
-      if result.text == nil, let role = Accessibility.string(node, "AXRole"), role == "AXStaticText" || role == "AXTextField" {
-        result.text = Accessibility.string(node, "AXValue").flatMap { $0.isEmpty ? nil : $0 } ?? Accessibility.string(node, "AXTitle")
+      if result.text == nil {
+        result.text = Accessibility.string(node, "AXTitle").flatMap { $0.isEmpty ? nil : $0 } ?? Accessibility.string(node, "AXDescription").flatMap { $0.isEmpty ? nil : $0 }
       }
       if result.filename != nil, result.url != nil, result.text != nil { break }
       if depth < 3 { queue += Accessibility.children(node).prefix(10).map { ($0, depth + 1) } }

@@ -934,6 +934,7 @@ enum SelectedItems {
   struct Raw: Equatable {
     var filename: String?
     var url: String?
+    /// A label (AXTitle or AXDescription) - never an AXValue, which can be the owner's content.
     var text: String?
   }
 
@@ -968,7 +969,8 @@ enum SelectedItems {
     return url.hasSuffix("/") ? "folder" : "file"
   }
 
-  /// The item's name: AXFilename, else the file URL's last component (percent-decoded, parsed as a string), else its text.
+  /// The item's name: AXFilename, else the file URL's last component (percent-decoded, parsed as a string), else its
+  /// label. No name: the read is unreadable (agent core asks), never a value in its place.
   static func name(_ raw: Raw) -> String? {
     if let filename = raw.filename, !filename.isEmpty { return filename }
     if let url = raw.url, url.hasPrefix("file://"), let parsed = URL(string: url) {
