@@ -5,7 +5,7 @@ import Foundation
 /// The helper's identity; `build.sh` writes the same bundle id into Info.plist.
 enum HelperIdentity {
   static let bundleId = "com.reflection.cu-helper"
-  static let version = "0.2.51"
+  static let version = "0.2.53"
   /// The value every synthetic event carries in `kCGEventSourceUserData`: 0x43555345, ASCII "CUSE"
   /// (input-and-targets.md, verify-kit's SYNTHETIC_TAG). Not a secret: an event from another process with this tag
   /// could only fail to pause the run, never act.
@@ -669,5 +669,254 @@ struct ConfirmResult {
   var json: JSON {
     // `confirmationId`, not `id`: every reply's `id` is already the request's (the envelope).
     .object(["confirmed": .bool(outcome == "confirmed"), "outcome": .string(outcome), "source": source?.json ?? .null, "confirmationId": .string(id)])
+  }
+}
+
+/// CU-235 (design note on CU-232): which menu items of the frontmost approved app a key chord fires, judged from what
+/// AppKit serves to Accessibility for each item - measured 2026-11-08 (CU-235 part 1): AXMenuItemCmdChar is upper case
+/// for every letter and carries no case information; Shift, Option and Control are AXMenuItemCmdModifiers bits 1, 2 and
+/// 4, and bit 8 means no Command; a non-character key (Backspace, Escape, Return, F-keys, arrows, Space) also carries
+/// AXMenuItemCmdVirtualKey, its kVK code, and AXMenuItemCmdGlyph. Disabled and alternate items are listed like any.
+/// Only role, title, key equivalent and enabled are read - never a value.
+enum MenuKey {
+  /// The chord as the driver would post its key down: the kVK code, the modifiers, and the characters the current
+  /// keyboard layout gives that key without and with Shift (Option and Control ignored, as AppKit's
+  /// charactersIgnoringModifiers does).
+  struct Chord: Equatable {
+    var keyCode: Int
+    var shift: Bool
+    var option: Bool
+    var control: Bool
+    var command: Bool
+    var unshifted: String?
+    var shifted: String?
+
+    init(keyCode: Int, flags: UInt64, unshifted: String?, shifted: String?) {
+      self.keyCode = keyCode
+      shift = flags & 0x0002_0000 != 0
+      control = flags & 0x0004_0000 != 0
+      option = flags & 0x0008_0000 != 0
+      command = flags & 0x0010_0000 != 0
+      self.unshifted = unshifted
+      self.shifted = shifted
+    }
+  }
+
+  /// One menu item as Accessibility reports it.
+  struct Entry: Equatable {
+    var title: String?
+    var path: [String]
+    var enabled: Bool?
+    var cmdChar: String?
+    var cmdModifiers: Int?
+    var cmdVirtualKey: Int?
+    var cmdGlyph: Int?
+    /// Under the menu bar's first item, the Apple menu: system shortcuts (Lock Screen, Log Out, Force Quit) that agent
+    /// core refuses (cu-developer-one, CU-232 contract point 4).
+    var appleMenu: Bool = false
+    /// Under a Services submenu (CU-250): a service acts in another app, so agent core refuses it.
+    var servicesMenu: Bool = false
+
+    /// Whether the item has a key equivalent at all.
+    var hasKey: Bool { cmdVirtualKey != nil || !(cmdChar ?? "").isEmpty }
+  }
+
+  /// The most items one reply names; more set `truncated`.
+  static let maxItems = 8
+
+  /// Whether `chord` fires `entry`'s key equivalent. The modifier sets must be equal - Command present unless bit 8 -
+  /// and either the item's virtual key is the chord's key, or its character is the layout's: the unshifted character
+  /// with Shift as a modifier, or (for a key whose Shift gives another character, '1' and '!') the shifted character
+  /// with Shift used up by it.
+  static func fires(_ entry: Entry, _ chord: Chord) -> Bool {
+    guard entry.hasKey else { return false }
+    let bits = entry.cmdModifiers ?? 0
+    let command = bits & 8 == 0, option = bits & 2 != 0, control = bits & 4 != 0, shift = bits & 1 != 0
+    guard command == chord.command, option == chord.option, control == chord.control else { return false }
+    if let virtualKey = entry.cmdVirtualKey { return virtualKey == chord.keyCode && shift == chord.shift }
+    guard let char = entry.cmdChar?.uppercased(), !char.isEmpty else { return false }
+    if let base = chord.unshifted?.uppercased(), base == char, shift == chord.shift { return true }
+    if chord.shift, !shift, let shifted = chord.shifted?.uppercased(), shifted != chord.unshifted?.uppercased(), shifted == char { return true }
+    return false
+  }
+
+  /// kVK codes of keys AppKit serves by virtual key (measured: AXMenuItemCmdVirtualKey present): Return, Tab, Space,
+  /// Delete, Escape, keypad Enter, Help, Home, Page Up, Forward Delete, End, Page Down, the arrows and F1-F20.
+  static let nonCharacterKeys: Set<Int> = [36, 48, 49, 51, 53, 76, 114, 115, 116, 117, 119, 121, 123, 124, 125, 126,
+                                           122, 120, 99, 118, 96, 97, 98, 100, 101, 109, 103, 111, 105, 107, 113, 106, 64, 79, 80, 90]
+
+  /// The chord's modifiers as AXMenuItemCmdModifiers bits: Shift 1, Option 2, Control 4, no Command 8.
+  static func modifierBits(_ chord: Chord) -> Int {
+    (chord.shift ? 1 : 0) | (chord.option ? 2 : 0) | (chord.control ? 4 : 0) | (chord.command ? 0 : 8)
+  }
+
+  /// (b): an item with no key character and no virtual key, whose non-zero modifiers equal the chord's - the way
+  /// AppKit serves a later duplicate of an earlier item's key equivalent. An item with no key equivalent at all reads
+  /// modifiers 0, so a hidden duplicate on Command alone is not told apart (the named blind spot, which (a) narrows).
+  static func hiddenDuplicate(_ entry: Entry, _ chord: Chord) -> Bool {
+    guard !entry.hasKey, let bits = entry.cmdModifiers, bits != 0 else { return false }
+    return bits == modifierBits(chord)
+  }
+
+  /// How the read went: the matches (every one, capped), none, or unreadable with a reason.
+  enum Read: Equatable {
+    case items(bundleId: String, items: [Entry], truncated: Bool, incomplete: Bool)
+    case none(bundleId: String, incomplete: Bool)
+    case unreadable(String)
+
+    var json: [String: JSON] {
+      switch self {
+      case .items(let bundleId, let items, let truncated, let incomplete):
+        var object: [String: JSON] = ["bundleId": .string(bundleId), "items": .array(items.map(MenuKey.json))]
+        if truncated { object["truncated"] = .bool(true) }
+        if incomplete { object["incomplete"] = .bool(true) }
+        return object
+      case .none(let bundleId, let incomplete):
+        var object: [String: JSON] = ["none": .bool(true), "bundleId": .string(bundleId)]
+        if incomplete { object["incomplete"] = .bool(true) }
+        return object
+      case .unreadable(let reason):
+        return ["unreadable": .bool(true), "reason": .string(reason)]
+      }
+    }
+  }
+
+  /// A printable key character, else nil (a control character or an NS function-key code goes by glyph and virtual key).
+  static func printable(_ char: String?) -> String? {
+    guard let char, let scalar = char.unicodeScalars.first, char.unicodeScalars.count == 1 else { return nil }
+    return scalar.value < 0x21 || scalar.value == 0x7F || (0xF700...0xF8FF).contains(scalar.value) ? nil : char
+  }
+
+  /// One matched item on the wire. `keyEquivalent` is CU-154's shape - `char` (printable, else null) and `modifiers`,
+  /// AXMenuItemCmdModifiers' raw integer (+1 Shift, +2 Option, +4 Control, +8 no Command) - with `glyph` and
+  /// `virtualKey` for a non-character key.
+  static func json(_ entry: Entry) -> JSON {
+    var key: [String: JSON] = ["char": .optionalString(printable(entry.cmdChar)), "modifiers": .int(entry.cmdModifiers ?? 0)]
+    if let glyph = entry.cmdGlyph { key["glyph"] = .int(glyph) }
+    if let virtualKey = entry.cmdVirtualKey { key["virtualKey"] = .int(virtualKey) }
+    var object: [String: JSON] = ["title": .optionalString(entry.title), "path": .array(entry.path.map { .string($0) }), "keyEquivalent": .object(key),
+                                  "enabled": entry.enabled.map { .bool($0) } ?? .null]
+    if entry.appleMenu { object["appleMenu"] = .bool(true) }
+    if entry.servicesMenu { object["servicesMenu"] = .bool(true) }
+    return .object(object)
+  }
+
+  /// Whether a node of the menu-bar walk is an empty menu that makes a miss untrustworthy: a top-level menu with no
+  /// items yet (depth 2, filled lazily), or a menu-bar item with no menu until it opens (depth 1, built lazily) - never
+  /// under the menu bar's first item, the Apple menu (by position).
+  static func isEmptyMenu(role: String?, depth: Int, childCount: Int, underApple: Bool) -> Bool {
+    guard !underApple, childCount == 0 else { return false }
+    return (depth == 2 && role == "AXMenu") || (depth == 1 && role == "AXMenuBarItem")
+  }
+
+  /// The matches among `entries`, in menu order. `emptyMenus`: the top-level menus other than the first (the Apple
+  /// menu, by position) that had no items to read - filled or built lazily - so a miss cannot be trusted. A chord whose
+  /// key the layout gives no character for (an input method without a Unicode layout) cannot be judged against
+  /// character items either (cu-verifier, cu-developer-one on #36): a miss is unreadable, a match incomplete.
+  ///
+  /// Hidden duplicates (cu-developer-one's decision on #36, 8 Nov): AppKit serves a LATER duplicate of an earlier item's
+  /// key equivalent with no key character (CU-238's Send Now reads modifiers 2, no character), so it cannot be matched.
+  /// (b) a key-less item whose non-zero modifiers equal the chord's is such a duplicate: unreadable. (a) when every
+  /// match is disabled, a hidden duplicate on Command alone (modifiers 0, indistinguishable from no key) may be the item
+  /// that fires: unreadable. Named residual: an enabled first match on Command alone hiding a later duplicate stays
+  /// unseen and is answered as its visible match.
+  static func read(bundleId: String, entries: [Entry], emptyMenus: [String], chord: Chord) -> Read {
+    if entries.contains(where: { hiddenDuplicate($0, chord) }) { return .unreadable("a hidden duplicate key equivalent") }
+    let matches = entries.filter { fires($0, chord) }
+    if !matches.isEmpty, matches.allSatisfy({ $0.enabled == false }) { return .unreadable("only disabled items match; a later duplicate may fire") }
+    // A non-character key (Backspace, Escape, Return, F-keys, arrows) matches by virtual key; its layout character
+    // does not matter (cu-developer-two's seam check on #36: Command-Backspace came back incomplete).
+    let layoutUnread = chord.unshifted == nil && !nonCharacterKeys.contains(chord.keyCode)
+    if matches.isEmpty {
+      if layoutUnread { return .unreadable("the keyboard layout gives no character for this key") }
+      return emptyMenus.isEmpty ? .none(bundleId: bundleId, incomplete: false) : .unreadable("a menu had no items to read (filled lazily)")
+    }
+    return .items(bundleId: bundleId, items: Array(matches.prefix(maxItems)), truncated: matches.count > maxItems, incomplete: !emptyMenus.isEmpty || layoutUnread)
+  }
+
+  /// A US ANSI layout for the dry run and the tests (the live helper asks the current layout): kVK code -> (unshifted,
+  /// shifted) for letters, digits and the common punctuation.
+  static let usLayout: [Int: (String, String)] = {
+    var table: [Int: (String, String)] = [:]
+    let letters: [(Int, String)] = [(0, "a"), (11, "b"), (8, "c"), (2, "d"), (14, "e"), (3, "f"), (5, "g"), (4, "h"), (34, "i"), (38, "j"), (40, "k"), (37, "l"), (46, "m"),
+                                    (45, "n"), (31, "o"), (35, "p"), (12, "q"), (15, "r"), (1, "s"), (17, "t"), (32, "u"), (9, "v"), (13, "w"), (7, "x"), (16, "y"), (6, "z")]
+    for (code, letter) in letters { table[code] = (letter, letter.uppercased()) }
+    let others: [(Int, String, String)] = [(18, "1", "!"), (19, "2", "@"), (20, "3", "#"), (21, "4", "$"), (23, "5", "%"), (22, "6", "^"), (26, "7", "&"), (28, "8", "*"),
+                                           (25, "9", "("), (29, "0", ")"), (27, "-", "_"), (24, "=", "+"), (33, "[", "{"), (30, "]", "}"), (42, "\\", "|"), (41, ";", ":"),
+                                           (39, "'", "\""), (43, ",", "<"), (47, ".", ">"), (44, "/", "?"), (50, "`", "~")]
+    for (code, plain, shifted) in others { table[code] = (plain, shifted) }
+    return table
+  }()
+}
+
+/// CU-250: whether a submenu is the Services menu, so a clicked item under it (an owner-installed service included) is
+/// refused by policy. Measured 8 Nov in process: the Services item and its submenu carry no distinguishing
+/// Accessibility attribute; their titles are AppKit's own localized strings (Services.loctable: 'Services', 'Services
+/// Settings…', 'No Services Apply'). So the item counts by its title, or by a marker item AppKit always puts in its
+/// submenu, in the current language (read from AppKit) or in English.
+struct ServicesMenu: Equatable {
+  var titles: Set<String>
+  var markers: Set<String>
+
+  static let english = ServicesMenu(titles: ["Services"], markers: ["Services Settings\u{2026}", "Services Settings...", "No Services Apply"])
+
+  /// The current language's strings from AppKit's own table, beside the English ones.
+  static let current: ServicesMenu = {
+    var menu = english
+    if let appKit = Bundle(identifier: "com.apple.AppKit") {
+      let read = { (key: String) -> String? in
+        let value = appKit.localizedString(forKey: key, value: "\u{1}", table: "Services")
+        return value == "\u{1}" || value.isEmpty ? nil : value
+      }
+      if let title = read("Services") { menu.titles.insert(title) }
+      for key in ["Services Settings\u{2026}", "No Services Apply"] { if let marker = read(key) { menu.markers.insert(marker) } }
+    }
+    return menu
+  }()
+
+  /// A submenu held by an item titled `itemTitle`, whose own items are titled `childTitles`.
+  func isServices(itemTitle: String?, childTitles: [String]) -> Bool {
+    if let itemTitle, titles.contains(itemTitle) { return true }
+    return childTitles.contains { markers.contains($0) }
+  }
+}
+
+extension MenuKey {
+  /// CU-250: marks every entry from `start` on as under a Services submenu when the submenu holding them - held by an
+  /// item titled `holderTitle`, its direct items at path depth `depth` - is the Services menu.
+  static func markServices(_ entries: inout [Entry], from start: Int, holderTitle: String?, depth: Int, services: ServicesMenu) {
+    guard start < entries.count, holderTitle != nil else { return }
+    let direct = entries[start...].filter { $0.path.count == depth }.compactMap { $0.title }
+    guard services.isServices(itemTitle: holderTitle, childTitles: direct) else { return }
+    for index in start..<entries.count { entries[index].servicesMenu = true }
+  }
+}
+
+/// CU-250: where a clicked menu item sits - the titles from the menu bar (or a context menu's top) down to the item, and
+/// whether any submenu on the way is the Services menu. Names only, at most `maxDepth` levels.
+struct MenuContext: Equatable {
+  var path: [String]
+  var servicesMenu: Bool
+
+  static let maxDepth = 10
+
+  /// One level above an item, nearest first: the title of the item holding that submenu (nil for the menu bar or a
+  /// context menu's top) and the titles of the submenu's items.
+  struct Level: Equatable {
+    var holderTitle: String?
+    var childTitles: [String]
+  }
+
+  static func of(itemTitle: String?, levels: [Level], services: ServicesMenu = .current) -> MenuContext {
+    let capped = Array(levels.prefix(maxDepth))
+    let holders = capped.compactMap { $0.holderTitle }
+    let flagged = capped.contains { level in level.holderTitle != nil && services.isServices(itemTitle: level.holderTitle, childTitles: level.childTitles) }
+    return MenuContext(path: holders.reversed() + [itemTitle ?? ""], servicesMenu: flagged)
+  }
+
+  var json: [String: JSON] {
+    var object: [String: JSON] = ["menuPath": .array(path.map { .string($0) })]
+    if servicesMenu { object["servicesMenu"] = .bool(true) }
+    return object
   }
 }

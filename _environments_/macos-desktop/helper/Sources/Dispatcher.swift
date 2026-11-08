@@ -106,6 +106,9 @@ protocol Capabilities: AnyObject {
   /// CU-151: the general pasteboard's change count - a number, never content (D-031, D-056) - read fresh with every
   /// target, so agent core can tell the run's own copy from someone else's; null if it cannot be read.
   func pasteboardChangeCount() -> Int?
+  /// CU-235: the frontmost approved app's menu items this key down fires (the layout's characters are the capability's
+  /// to find), or none, or unreadable.
+  func menuKey(keyCode: Int, flags: UInt64, scope: [String]) -> MenuKey.Read
   /// CU-157: whether any text entry in the target's window (and any sheet on it) holds text - from character counts
   /// only, never a value (D-060). `point` names the hit-tested target, nil the focused one. Null when anything in the
   /// window cannot be read (a secure field, web content, an entry without a count) or no approved app is there.
@@ -128,6 +131,7 @@ extension Capabilities {
   func defaultButton(scope: [String]) -> DefaultButtonRead { .failed }
   func sheetPresent(scope: [String]) -> SheetRead? { nil }
   func pasteboardChangeCount() -> Int? { nil }
+  func menuKey(keyCode: Int, flags: UInt64, scope: [String]) -> MenuKey.Read { .unreadable("this helper cannot read menus") }
   func selectionSource(scope: [String]) -> JSON { .null }
   func textEntered(at point: CGPoint?, scope: [String]) -> Bool? { nil }
 }
@@ -329,6 +333,9 @@ final class Dispatcher {
       // keyboard focus - read-only, for agent core's check of a Go to Folder it made itself (D-058); null when unread.
       ok(id, ["path": .optionalString(canonical.path), "directory": .optionalString(canonical.directory), "name": .optionalString(raw?.fileName),
               "shownFolderName": .optionalString(raw?.shownFolderName), "nameFieldFocused": raw?.nameFieldFocused.map { .bool($0) } ?? .null])
+    case .menuKey(let keyCode, let flags):
+      guard let scope else { return refuse(id, Refusal(code: "no_scope", message: "no scope is set")) }
+      ok(id, capabilities.menuKey(keyCode: keyCode, flags: flags, scope: scope).json)
     case .screenText(let maxChars):
       reply(id, doScreenText(maxChars))
     case .watch(let fps, let maxSize, let region):
