@@ -93,9 +93,10 @@ const serviceItem = (action, target) => CLICKS.has(action.type) && /^(ax)?menuit
 // refused by title where no path is read. Named limits: localised titles where no path is read; an app's own AI item
 // under its own menu (VS Code's Ask Copilot) is the approved app's feature and stays as before.
 // cu-verifier on #108: Writing Tools' own verb phrases are unambiguous too.
-const WRITING_TOOLS_TITLE = /^(proofread|rewrite|show writing tools|writing tools|make (friendly|professional|concise)|create key points)\b/i
+// CU-293: Writing Tools in Chinese too (校对, 重写, 写作工具 / 校對, 重寫, 寫作工具).
+const WRITING_TOOLS_TITLE = /^((proofread|rewrite|show writing tools|writing tools|make (friendly|professional|concise)|create key points)\b|(校对|校對|重写|重寫|显示写作工具|顯示寫作工具|写作工具|寫作工具)(\s|$))/i
 const OTHER_AI = /\b(chatgpt|openai|gemini|claude|copilot)\b/i
-const underWritingTools = (target) => Array.isArray(target?.menuPath) && target.menuPath.slice(0, -1).some((part) => /^writing tools$/i.test(String(part ?? '').trim()))
+const underWritingTools = (target) => Array.isArray(target?.menuPath) && target.menuPath.slice(0, -1).some((part) => /^(writing tools|写作工具|寫作工具)$/i.test(String(part ?? '').trim()))
 // cu-researcher on #108: a menu path, when read, decides - so an app's own 'Rewrite history' (a git client) or 'Ask
 // Copilot' under its own menu stays as before; the title fallback applies only where no path is read.
 const hasMenuPath = (target) => Array.isArray(target?.menuPath) && target.menuPath.length > 0
@@ -172,8 +173,8 @@ function launchesCode(action, target) {
 // opening a document that way. (2) A menu item titled as an excluded runner (Open With > Terminal, Script Editor ...)
 // is refused anywhere: opening anything with it runs it outside the approved app.
 const FILE_BROWSERS = new Set(['com.apple.finder'])
-const OPEN_ITEM = /^open$/i
-const RUNNER_TITLES = /^(terminal|iterm2?|warp|ghostty|kitty|alacritty|hyper|wezterm|script editor|automator|shortcuts|alfred|raycast)$/i
+const OPEN_ITEM = /^(open|打开|打開)$/i
+const RUNNER_TITLES = /^(terminal|iterm2?|warp|ghostty|kitty|alacritty|hyper|wezterm|script editor|automator|shortcuts|alfred|raycast|终端|終端機|脚本编辑器|工序指令編寫程式|自动操作|自動操作|快捷指令|捷徑)$/i
 const isMenuItem = (target) => /^(ax)?menuitem$/i.test(String(target?.role ?? ''))
 /**
  * CU-252: an open that acts on the selection, in any app - a click on a menu item named Open, or Command-O or
@@ -233,7 +234,8 @@ const runnerItem = (action, target, context) => {
 // focused, asks install - app-policy's own verdict, so no pre-approval covers it (as launch_code). Browsing stays
 // free. Named limit: third-party stores and updaters (Setapp, MacUpdater).
 const APP_STORE = 'com.apple.AppStore'
-const STORE_INSTALL = /^(get|install|update|update all|download|redownload|reinstall)\b/i
+// CU-293: the App Store's 获取 / 安装 / 更新 (Traditional 取得 / 安裝 / 更新).
+const STORE_INSTALL = /^((get|install|update|update all|download|redownload|reinstall)\b|(获取|取得|安装|安裝|更新|全部更新|下载|下載|重新下载|重新下載)([,，\s]|$))/i
 // cu-verifier on #58: a button titled with a price ('$4.99', '¥30', '4,99 €', 'Price, 4.99 dollars') starts a purchase.
 const STORE_PRICE = /^(price\b|[$€£¥₩₹]\s?\d|\d+(?:[.,]\d+)?\s?[$€£¥₩₹])/i
 // CU-280 (cu-researcher; cu-coordinator: Medium): a free trial starts a renewing subscription, and a price may be written
