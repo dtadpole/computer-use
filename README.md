@@ -1,3 +1,15 @@
+---
+title: computer-use
+created: 2026-11-05T14:50:00Z
+modified: 2026-11-08T10:00:00Z
+level: L2
+version: 2.0.0
+description: What the computer-use repository is, for a reader arriving cold - a computer-use agent for native macOS and the team's records.
+status: unverified
+grounded_in:
+  - source: INDEX.md and AGENTS.md of this repository
+---
+
 # computer-use
 
 A computer-use agent for native macOS: it completes a task by looking at screenshots of approved apps and

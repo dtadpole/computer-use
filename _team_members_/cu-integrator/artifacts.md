@@ -1,36 +1,42 @@
 ---
 title: '[cu] Integrator - Persistent Artifacts'
 created: 2026-11-02T08:52:00Z
-modified: 2026-11-06T00:15:00Z
+modified: 2026-11-08T10:00:00Z
 level: L2
-version: 2.7.0
-description: 'Where the persistent artifacts of [cu] Integrator live - its records, the checks each code pull request gets (two phases, the desktop-run lock), how it lands without rebasing or force-pushing in dtadpole/computer-use and reflection, and baselines on both mains.'
+version: 3.0.0
+description: 'Where the persistent artifacts of [cu] Integrator live - its records, the checks each pull request gets (public hygiene, two phases, the desktop-run lock), how it lands without rebasing or force-pushing in dtadpole/computer-use, and baselines on main.'
 status: unverified
 grounded_in:
   - source: owner choice 2026-11-02 (7 seats - add a Swift helper developer and an Integrator) - D-026
   - source: coordinator rulings D-027 (records issue, browser-free verifiers, validate-frontmatter as the gate)
   - source: 'coordinator rulings 2026-11-05 13.50Z, 13.56Z and 14.27Z (no CUHelper or fixture launch during a live run; the lock file is the source of truth; the gate takes the desktop-run lock)'
   - source: D-039 (computer-use moves to github.com/dtadpole/computer-use; Linear team CU) and goal revision 3 (pr-merge.py, never force-push)
-  - source: shared/_conventions_/session-team-coordination/integrator-role.md@1.3.0
+  - source: the knowledge bank's Integrator role convention (session-team-coordination) 1.3.0
+  - source: owner order 2026-11-08 (one public repository from a scrubbed tree; the public-hygiene gate before every push)
 ---
 
 # [cu] Integrator - Persistent Artifacts
 
 Pointers, not copies.
 
-- **Records:** each reflection merge is a comment on the pinned issue
-  [dtadpole/reflection#148](https://github.com/dtadpole/reflection/issues/148) (D-027). Each dtadpole/computer-use merge
-  is recorded on its Linear issue (team CU) and its pull request. Nothing per merge lands here.
-- **Worktrees:** records in `~/reflection--cu-integrator` (branch `cu/cu-integrator`); code in
-  `~/computer-use--cu-integrator` (branch `cu/cu-integrator`). Pull requests are tested in clean, detached worktrees at
-  `/tmp/cu-integrator-cu-wt` (computer-use) and `/tmp/cu-integrator-wt` (reflection's frozen tree).
-- **Task:** [responsibilities.md](responsibilities.md); role:
-  [Integrator role](../../../../shared/_conventions_/session-team-coordination/integrator-role.md).
+- **Records:** each dtadpole/computer-use merge is recorded on its Linear issue (team CU) and its pull request.
+  Nothing per merge lands here. Merges before 8 Nov are in the private history repository and on the pinned
+  reflection records issue (D-027).
+- **Worktrees:** `~/computer-use--cu-integrator` (branch `cu/cu-integrator`) for this seat's own records. Pull
+  requests are tested in a clean, detached worktree at `/tmp/cu-integrator-cu-wt`.
+- **Task:** [responsibilities.md](responsibilities.md); role: the knowledge bank's Integrator role convention.
 
 ## The checks each pull request gets
 
 They run on the exact tree the merge will have: `git merge-tree --write-tree <main> <head>`, wrapped in a local test
-commit with both parents. The suite has two phases.
+commit with both parents.
+
+**Public hygiene first (8 Nov).** The repository is public, so before any test the heddle public-hygiene gate judges
+exactly what the merge adds - every added line, new path, commit message and identity in `main..head` - and any
+finding holds the pull request for its author. It runs again against main right before the merge, so a main that moved
+meanwhile is judged too.
+
+The suite has two phases.
 
 **Phase 1, no lock:** every `node --test` file except those that start CUHelper or a fixture app, then the fake-helper
 verifiers, each under a 90 s alarm: `evaluation-suite`, `desktop-perception`, `desktop-action-contract`,
@@ -62,7 +68,6 @@ Also run:
   has a `mutants.mjs`. A verifier without one (`desktop-fixture`) is proven by reverting the change instead;
 - a private ad-hoc `build.sh` plus `--selftest`, under the lock, when a change touches the Swift helper. It must show the
   new version, 38/38 checks and 0 capability calls;
-- reflection only: `validate-frontmatter --root <worktree> --staged` on the pull request's changes (D-027);
 - scope against the TEAM.yaml (the private roster) write scopes, and overlap with every other open pull request.
 
 Every run uses a private `CU_HOME` under /tmp, so nothing touches the owner's `~/.computer-use`.
@@ -83,10 +88,6 @@ runs; desktop runs. The author or cu-verifier names that evidence (D-027).
 - **computer-use:** `pr-merge.py --repo dtadpole/computer-use --head <branch> --title '<msg> (Fixes CU-n)' --expect-sha
   <tested head> --method merge`. Then the read-back: the merge commit's tree must equal the tested merge tree, and the
   head must be an ancestor of main. The issue then moves to Verify; the verifier closes it.
-- **reflection (frozen tree; live-run fixes only, until CU-7):** the same, with `--repo dtadpole/reflection`. When only
-  `_logs_/repo-actions/action-log.jsonl` conflicts, main is merged into the pull request branch with both sides kept
-  (main's lines first). That merge is pushed as a fast-forward, and the merge with main is tested from there. Any other
-  conflict goes back to the author.
 - **Main moving under a test:** if the new merge tree differs from the tested one in no
   `.mjs/.js/.cjs/.swift/.sh/.json/.plist/.py` file, the land goes ahead and expects the new tree. Otherwise it tests
   again.
@@ -107,11 +108,6 @@ runs; desktop runs. The author or cu-verifier names that evidence (D-027).
   not merged; it needs its own pull request (#13's third commit became #28).
 - **Linear:** a merge with 'Fixes CU-n' moves CU-n to Verify, with a signed note; 'Refs CU-n' gets a note only. An issue
   already Done or Canceled is never moved back (CU-22 was, once, and was restored).
-- **Ports (CU-4):** reflection changes merged after the split point `5df4d972b` are replayed byte for byte into
-  computer-use, one port pull request per batch. Its body or a comment lists each file with its reflection blob. The
-  coordinator allows this seat to land its own byte-identical ports; cu-verifier spot-checks one file. computer-use #5
-  carried reflection #570, #566 and #565; #6 carried #587. A port that cannot be byte-identical (reflection #583's helper
-  version) is opened by its author.
 - **A break in another owner's checks:** the change holds until a companion change that holds both before and after
   lands first (#570 before #565), or lands in the same merge.
 - **Load-sensitive tests** are reported to their owner with the reason, and the pull request is retried
@@ -130,7 +126,10 @@ runs; desktop runs. The author or cu-verifier names that evidence (D-027).
 | computer-use `19a2c86ac` | 918/918, plus macos-helper 33/33 and desktop-suite 10/10 | 50/50 | 4/4 | 2026-11-05T17:39Z, full check after the CU-8 batch and its eleven node-only merges; helper 0.2.16: helper-protocol 18/18, helper-dryrun 10/10, perception 12/12, action-contract 9/9, consent 10/10, agent-loop 4/4, trajectory 6/6, integration 11/11, human-control 10/10 |
 | computer-use `940155e12` | 964/964, plus macos-helper 33/33 and desktop-suite 12/12 | 54/54 | 4/4 | 2026-11-05T23:09Z, after #100; helper 0.2.24 (#87, #65, #94): helper-protocol 18/18, helper-dryrun 14/14 (R10-R14), every other desktop verifier passes |
 
-Earlier rows, from `001ff5e32` to `dc41dc0a8`, are in this file's history (version 2.4.1).
+| history `7b589fa64` | 2023/2023, plus macos-helper 69/69 and desktop-suite 28/28 | 76/76 | 4/4 | 2026-11-08T04:36Z, the old repository's last main (#557; helper 0.2.51): every desktop verifier passes |
+
+Rows before 8 Nov name commits of the private history repository (dtadpole/computer-use-history); this repository
+starts at the scrubbed root `6314c0c`. Earlier rows are in the history repository's copy of this file.
 
 ## Read next
 

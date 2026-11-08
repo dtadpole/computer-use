@@ -2,7 +2,9 @@
 title: Computer use on the Mac mini - one-page status for the owner
 created: 2026-11-06T04:55:00Z
 modified: 2026-11-06T10:00:00Z
+level: L2
 version: 1.1.0
+status: unverified
 description: 'What the [cu] team has built and proven, what is left, and the owner actions that are still open - one page, kept current by the coordinator.'
 grounded_in:
   - source: ULTIMATE_GOAL.md@2.0.0

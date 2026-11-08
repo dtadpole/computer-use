@@ -13,7 +13,7 @@ grounded_in:
 # [cu] Developer Two - handover
 
 Seat `cu-developer-two`; goal unchanged. Code: `~/computer-use--cu-developer-two`, a worktree of
-`~/dtadpole/this repository`. Records: [artifacts.md](artifacts.md), version 1.111.0.
+`~/dtadpole/heddle/_projects_/computer-use`. Records: [artifacts.md](artifacts.md), version 1.111.0.
 
 ## Issues
 
