@@ -1,9 +1,9 @@
 ---
 title: Sensitive classes - everything the agent must never type unasked
 created: 2026-11-07T14:34:22Z
-modified: 2026-11-08T15:38:57Z
+modified: 2026-11-08T15:45:09Z
 level: L1
-version: 0.4.3
+version: 0.4.4
 description: The D-061 table - every sensitive class with its value rule, its field-name rule, the asserting test and the live row; rows live in an executable matrix, gaps are children of CU-145.
 status: unverified
 grounded_in:
@@ -39,8 +39,8 @@ value rule and name is a row of `_tests_/agent-core/sensitive-classes.test.mjs`;
   any script's digits as ASCII, letter-spacing closed up.
 - An opened URL is judged (CU-260): a card, key or token in its query or fragment, or any password-, secret- or
   pin-named parameter's value, asks; a path id or a transformed or split value does not. A query email asks (over-ask).
-- Pieces typed into one field are judged whole (CU-267), but not across a click when the focus is
-  unreadable, a desktop paste (D-031), arrow or selection edits, or text the run did not type.
+- Pieces typed into one field are judged whole, detours and growth included (CU-267, CU-273); not across a click
+  with the focus unreadable, a desktop paste (D-031), arrow or selection edits, or text it did not type.
 
 ## Sign-off
 
