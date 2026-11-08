@@ -99,7 +99,9 @@ import { makePng } from './png.mjs'
  *
  * Its world comes from the `FAKE_HELPER_CONFIG` environment variable (JSON): `grants`, `displays`, `apps`
  * (`[{ bundleId, pid, rect }]`, top-most first), `frontmost`, `elements` (`[{ rect, element }]`), `focused`, `focusedReads`
- * (successive focused answers, the last repeating), `defaultButton` (the button Return presses where focus is; CU-142),
+ * (successive focused answers, the last repeating), `focusedAfterReads` (`{ reads, focused }`: after that many focused
+ * requests the focused element becomes `focused`, the rest of the reply as ever - focus that moves between two reads with
+ * no input, a click still landing; CU-219), `defaultButton` (the button Return presses where focus is; CU-142),
  * `defaultButtonRead` (whether that button could be read, sent as given beside it; true when the world says nothing,
  * as the real helper reads a positive none - it sends the field in every focused reply; quirk omitDefaultButtonRead
  * leaves it out, the deviation CU-215 reads as unreadable; CU-190),
@@ -202,6 +204,14 @@ const config = JSON.parse(process.env.FAKE_HELPER_CONFIG ?? '{}')
 // config.phases: the world after N input requests. Counted when an input is taken (not refused), before it posts, so
 // the reply the driver waits for already reflects the app's reaction; reads count nothing (CU-48's seam test).
 let inputsTaken = 0
+// config.focusedAfterReads: the focused requests answered so far (CU-219).
+let focusedRequests = 0
+/** The focused element of this read: the world's (phased), or focusedAfterReads' once that many reads are answered. */
+function focusedNow() {
+  focusedRequests += 1
+  const late = config.focusedAfterReads && focusedRequests > config.focusedAfterReads.reads
+  return late ? config.focusedAfterReads.focused : phased('focused')
+}
 /** CU-151: the pasteboard change count, only when the world names one (else an older helper); phased, so a copy can raise it. */
 function counted() {
   const named = 'changeCount' in config || (config.phases ?? []).some((phase) => 'changeCount' in phase)
@@ -719,7 +729,7 @@ function handle(message) {
       // config.focusedReads (CU-135's race): successive answers, the last one repeating - a focus the app moves late.
       if (Array.isArray(config.focusedReads) && config.focusedReads.length > 0) return send({ id, ok: true, element: elementShape(config.focusedReads.length > 1 ? config.focusedReads.shift() : config.focusedReads[0]) })
       // CU-142: config.defaultButton, the button Return presses there; absent from the reply when the world has none (an older helper).
-      return send({ id, ok: true, element: elementShape(phased('focused') ?? null), ...('defaultButton' in config ? { defaultButton: elementShape(config.defaultButton) } : {}), ...(quirks.omitDefaultButtonRead ? {} : { defaultButtonRead: 'defaultButtonRead' in config ? config.defaultButtonRead : true }), ...('sheet' in config ? { sheet: config.sheet } : {}), ...('focusedApp' in config ? { app: config.focusedApp } : {}), ...counted() })
+      return send({ id, ok: true, element: elementShape(focusedNow() ?? null), ...('defaultButton' in config ? { defaultButton: elementShape(config.defaultButton) } : {}), ...(quirks.omitDefaultButtonRead ? {} : { defaultButtonRead: 'defaultButtonRead' in config ? config.defaultButtonRead : true }), ...('sheet' in config ? { sheet: config.sheet } : {}), ...('focusedApp' in config ? { app: config.focusedApp } : {}), ...counted() })
     case 'screenText': {
       if (!Number.isInteger(fields.maxChars) || fields.maxChars < 1) return refuse(id, 'invalid_argument', 'maxChars must be a positive integer', { field: 'maxChars' })
       if (scope === null) return refuse(id, 'no_scope', 'no scope is set')

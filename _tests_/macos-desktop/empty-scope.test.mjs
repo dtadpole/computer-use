@@ -79,6 +79,7 @@ test('before any addApp every member that captures, inspects or posts is refused
     assert.throws(() => env.planBatch([{ type: 'click', x: 1, y: 1, button: 'left' }]), noScope)
     await assert.rejects(env.inspectPoint({ x: 1, y: 1 }), noScope)
     await assert.rejects(env.focusedElement(), noScope)
+    await assert.rejects(env.pasteboardChangeCount(), noScope)
     await assert.rejects(env.menuItemForChord({ type: 'keypress', keys: ['META', 'SHIFT', 'D'] }), noScope)
     await assert.rejects(env.pageText(), noScope)
     await pause(20)
