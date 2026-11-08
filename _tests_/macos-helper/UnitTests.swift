@@ -190,6 +190,63 @@ func testServicesMenu() {
   check(h.ask("menuKey", ["keyCode": 8, "flags": .int(Int(cmd))])["items"]?.array?.first?.object?["servicesMenu"] == nil, "menuKey: Edit > Copy does not")
 }
 
+func testSelectedItems() {
+  // CU-262: the focused collection's selected items - names and kinds from Accessibility only, never a path.
+  typealias Raw = SelectedItems.Raw
+  check(SelectedItems.kind(url: "file:///tmp/sandbox/Payload.app/") == "folder" && SelectedItems.kind(url: "file:///tmp/sandbox/install.command") == "file"
+        && SelectedItems.kind(url: nil) == "unknown" && SelectedItems.kind(url: "https://example.com/a") == "unknown", "kind from the URL string: folder slash, file, none")
+  check(SelectedItems.name(Raw(filename: "notes.txt", url: "file:///tmp/sandbox/other.txt", text: "x")) == "notes.txt", "AXFilename first")
+  check(SelectedItems.name(Raw(filename: nil, url: "file:///tmp/sandbox/Payload.app/", text: "Payload")) == "Payload.app", "else the URL's leaf - a hidden extension shows")
+  check(SelectedItems.name(Raw(filename: nil, url: "file:///tmp/sandbox/my%20script.command", text: nil)) == "my script.command", "the leaf percent-decoded")
+  check(SelectedItems.name(Raw(filename: nil, url: nil, text: "Recents item")) == "Recents item" && SelectedItems.name(Raw(filename: "", url: nil, text: nil)) == nil, "else the text; nothing gives no name")
+  let script = Raw(filename: nil, url: "file:///tmp/sandbox/install.command", text: "install.command")
+  check(SelectedItems.read(bundleId: "a.b", focusedRole: "AXOutline", selection: [script]) == .items(bundleId: "a.b", items: [SelectedItems.Item(name: "install.command", kind: "file")], truncated: false),
+        "a list view's selected row: its name and kind")
+  check(SelectedItems.read(bundleId: "a.b", focusedRole: "AXOutline", selection: []) == .none(bundleId: "a.b"), "nothing selected: none")
+  check(SelectedItems.read(bundleId: "a.b", focusedRole: "AXTextArea", selection: [script]) == .notCollection(bundleId: "a.b"), "a focus that is no collection: notCollection")
+  check(SelectedItems.read(bundleId: "a.b", focusedRole: nil, selection: nil) == .notCollection(bundleId: "a.b"), "no focused role: notCollection")
+  check(SelectedItems.read(bundleId: "a.b", focusedRole: "AXGroup", selection: nil) == .unreadable("the selection could not be read"), "a selection that cannot be read: unreadable, never none")
+  check(SelectedItems.read(bundleId: "a.b", focusedRole: "AXList", selection: [script, Raw(filename: nil, url: nil, text: nil)]) == .unreadable("a selected item has no name"),
+        "an unnamed item: unreadable")
+  if case .items(_, let items, let truncated) = SelectedItems.read(bundleId: "a.b", focusedRole: "AXTable", selection: Array(repeating: script, count: 33)) {
+    check(items.count == SelectedItems.maxItems && truncated, "at most 32 items, then truncated (the driver reads it as unreadable)")
+  } else { check(false, "33 selected items answer items, truncated") }
+  check(SelectedItems.Read.items(bundleId: "a.b", items: [SelectedItems.Item(name: "Payload.app", kind: "folder")], truncated: false).json
+        == ["bundleId": "a.b", "items": [["name": "Payload.app", "kind": "folder"]]], "the wire: names and kinds, no path, no URL")
+  // Through the dispatcher on a dry-run world.
+  let display: JSON = [["id": 1, "main": true, "originPt": ["x": 0, "y": 0], "sizePt": ["width": 800, "height": 600], "scale": 1]]
+  let rect: JSON = ["x": 100, "y": 100, "width": 400, "height": 300]
+  let apps: JSON = [["bundleId": "ai.reflection.cu.fixture", "pid": 501, "rect": rect]]
+  let h = Harness(["displays": display, "frontmost": "ai.reflection.cu.fixture", "apps": apps,
+                   "selectedItems": ["role": "AXOutline", "items": [["url": "file:///tmp/sandbox/install.command"], ["filename": "notes.txt", "url": "file:///tmp/sandbox/notes.txt"]]]])
+  check(h.ask("selectedItems")["code"] == "no_scope", "selectedItems needs a scope")
+  _ = h.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
+  let reply = h.ask("selectedItems")
+  check(reply["items"] == [["name": "install.command", "kind": "file"], ["name": "notes.txt", "kind": "file"]] && reply["bundleId"] == "ai.reflection.cu.fixture",
+        "the dry run answers the declared selection, names and kinds only")
+  check(reply.object?.keys.contains("path") == false && reply.object?.keys.contains("url") == false, "no path or URL on the wire")
+  let plain = Harness(["displays": display, "frontmost": "ai.reflection.cu.fixture", "apps": apps])
+  _ = plain.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
+  check(plain.ask("selectedItems")["notCollection"] == true, "no declared collection: notCollection")
+  // cu-verifier on #70: a row whose only text is its AXValue (a mail subject, a cell) gives no name - unreadable, never the value.
+  let mailList = Harness(["displays": display, "frontmost": "ai.reflection.cu.fixture", "apps": apps,
+                          "selectedItems": ["role": "AXTable", "items": [["value": "Quarterly numbers - private"]]]])
+  _ = mailList.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
+  let mailReply = mailList.ask("selectedItems")
+  check(mailReply["unreadable"] == true && mailReply["items"] == nil, "a row known only by its value: unreadable, the value never sent")
+  let labelled = Harness(["displays": display, "frontmost": "ai.reflection.cu.fixture", "apps": apps,
+                          "selectedItems": ["role": "AXList", "items": [["label": "Recents item", "value": "contents"]]]])
+  _ = labelled.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
+  check(labelled.ask("selectedItems")["items"] == [["name": "Recents item", "kind": "unknown"]], "a label (AXTitle/AXDescription) names it, kind unknown")
+  let blind = Harness(["displays": display, "frontmost": "ai.reflection.cu.fixture", "apps": apps, "selectedItems": ["role": "AXGroup", "unreadable": true]])
+  _ = blind.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
+  check(blind.ask("selectedItems")["unreadable"] == true, "an unreadable selection: unreadable")
+  let other = Harness(["displays": display, "frontmost": "com.example.other", "apps": [["bundleId": "com.example.other", "pid": 600, "rect": rect]],
+                       "selectedItems": ["role": "AXOutline", "items": [["filename": "secret.txt"]]]])
+  _ = other.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
+  check(other.ask("selectedItems")["unreadable"] == true, "another app in front: unreadable, its selection is not read")
+}
+
 func testJSON() {
   let parsed = JSONCoding.decode(Data(#"{"a":true,"b":1,"c":1.5,"d":"x\ny","e":[null,false],"f":{"g":2}}"#.utf8))
   check(parsed?["a"] == .bool(true), "a boolean stays a boolean")
@@ -220,7 +277,7 @@ func testParser() {
   check(code(["id": 1, "type": "capture", "maxSize": ["width": 1, "height": 1], "simulateScale": 2]) == nil, "simulateScale 2 parses")
   check(code(["id": 1, "type": "capture", "maxSize": ["width": 1, "height": 1], "simulateScale": 1]) == "invalid_argument", "simulateScale is above 1")
   check(code(["id": 1, "type": "capture", "maxSize": ["width": 1, "height": 1], "simulateScale": 4.5]) == "invalid_argument", "simulateScale is at most 4")
-  check(Set(HelperProtocol.fields.keys) == ["scope", "capture", "input", "hitTest", "focused", "selection", "cursor", "panelSelection", "menuKey", "screenText", "watch", "unwatch", "pauseOnLocalInput", "simulateLocalInput", "confirmPhysical", "bye"], "the request set")
+  check(Set(HelperProtocol.fields.keys) == ["scope", "capture", "input", "hitTest", "focused", "selection", "cursor", "panelSelection", "menuKey", "selectedItems", "screenText", "watch", "unwatch", "pauseOnLocalInput", "simulateLocalInput", "confirmPhysical", "bye"], "the request set")
   // CU-64: the hold step - 1..10000 ms each, at most 10 s in one request, and allowed in pid (keyboard) mode.
   let down: JSON = ["kind": "keyDown", "keyCode": 56, "flags": 0]
   let up: JSON = ["kind": "keyUp", "keyCode": 56, "flags": 0]
@@ -270,6 +327,11 @@ func testExclusions() {
   check(added187.allSatisfy(list.isExcluded), "agent core's additions of PR #187 are in the floor")
   check(!list.isExcluded("com.google.Chrome") && !list.isExcluded("com.microsoft.edgemac"), "the browsers themselves stay approvable")
   check(list.isExcluded("com.runningwithcrayons.Alfred") && list.isExcluded("com.raycast.macos"), "launchers are excluded (design 0.3.4)")
+  // CU-264: whole-Mac tools, ids as read on macOS 27; Time Machine's menu-bar agent through com.apple.TimeMachine's children.
+  let wholeMac = ["com.apple.DiskUtility", "com.apple.bootcampassistant", "com.apple.MigrateAssistant", "com.apple.backup.launcher", "com.apple.ActivityMonitor",
+                  "com.apple.timemachine.HelperAgent"]
+  check(wholeMac.allSatisfy(list.isExcluded), "Disk Utility, Boot Camp, Migration Assistant, Time Machine (launcher and agent) and Activity Monitor are excluded")
+  check(!list.isExcluded("com.apple.Console"), "Console stays approvable (read-only, a named limit)")
   check(list.isExcluded(" com.apple.Terminal\n"), "ids are trimmed before matching")
   check(list.isExcluded("COM.APPLE.TERMINAL"), "case is ignored")
   check(!list.isExcluded("ai.reflection.cu.fixture") && !list.isExcluded("ai.reflection.cu.ledger") && !list.isExcluded("com.apple.TextEdit"), "the fixture apps and ordinary apps are approvable")
@@ -487,7 +549,7 @@ func button(_ kind: String, _ x: Int, _ y: Int) -> JSON { ["kind": .string(kind)
 func testDispatcherBasics() {
   let h = Harness(fixtureWorld)
   let hello = h.dispatcher.hello(token: "t0k")
-  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.53", "the hello opens the run")
+  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.55", "the hello opens the run")
   check(hello["mode"] == "dry-run" && hello["grants"] == ["screen": true, "accessibility": true, "postEvents": true, "listenEvents": false], "a dry-run hello says so, with all four grants")
   check(h.ask("capture", ["maxSize": size800])["code"] == "no_scope", "capture needs a scope")
   check(h.ask("input", ["events": [key("keyDown", 1)], "mode": "global"])["code"] == "no_scope", "input needs a scope")
@@ -527,7 +589,7 @@ func testDispatcherGrants() {
   check(h.dispatcher.hello(token: "x")["grants"] == ["screen": false, "accessibility": false, "postEvents": false, "listenEvents": false], "an ungranted hello says so")
   let gated: [(String, [String: JSON], String)] = [("capture", ["maxSize": size800], "screen"), ("watch", ["fps": 1], "screen"),
     ("input", ["events": [key("keyDown", 1)], "mode": "global"], "accessibility"), ("hitTest", ["xPt": 1, "yPt": 1], "accessibility"),
-    ("focused", [:], "accessibility"), ("panelSelection", [:], "accessibility"), ("menuKey", ["keyCode": 2, "flags": 0x120000], "accessibility"),
+    ("focused", [:], "accessibility"), ("panelSelection", [:], "accessibility"), ("menuKey", ["keyCode": 2, "flags": 0x120000], "accessibility"), ("selectedItems", [:], "accessibility"),
     ("screenText", ["maxChars": 5], "accessibility")]
   for (type, fields, grant) in gated {
     let reply = h.ask(type, fields)
@@ -1724,6 +1786,7 @@ struct UnitTests {
     testPeerCheck()
     testMenuKey()
     testServicesMenu()
+    testSelectedItems()
     // Informational: whether the process that ran these tests is genuine node (true for Node.js Foundation builds).
     let parentIsNode = PeerCheck.satisfiesNodeRequirement(pid: getppid(), token: nil)
     print(JSON.object(["passed": .int(passed), "failed": .int(failures.count), "failures": .array(failures.map { .string($0) }), "parentIsGenuineNode": .bool(parentIsNode)]).text)

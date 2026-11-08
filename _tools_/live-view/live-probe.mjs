@@ -252,10 +252,12 @@ export function notReached(check, why) {
  * gives settleMs.
  */
 export function probePlan(base, { leadWaitsMs = TIMING.leadWaitsMs, tailWaitsMs = TIMING.tailWaitsMs } = {}) {
+  // CU-275: a take-over voids the rest of the batch it lands in, so a second tail of waits keeps the run alive for the
+  // probe's stop whether or not the first tail was cut short (the probe still sees exactly one synthetic input).
   const click = base?.turns?.[0]
   if (!Array.isArray(click?.actions) || click.actions.length !== 1 || click.actions[0].type !== 'click') throw new Error('the base plan is not one click (the scripted plan of a single press)')
   const waits = (list) => ({ actions: list.map((ms) => ({ type: 'wait', duration_ms: ms })) })
-  return { ...(base.frame ? { frame: base.frame } : {}), turns: [waits(leadWaitsMs), { actions: [click.actions[0]] }, waits(tailWaitsMs), { final: 'live probe: one click, then the probe stopped the run' }] }
+  return { ...(base.frame ? { frame: base.frame } : {}), turns: [waits(leadWaitsMs), { actions: [click.actions[0]] }, waits(tailWaitsMs), waits(tailWaitsMs), { final: 'live probe: one click, then the probe stopped the run' }] }
 }
 
 /** The child's `cli.mjs run` arguments: unattended, scripted, its runs in the private CU_HOME, the live view on. */

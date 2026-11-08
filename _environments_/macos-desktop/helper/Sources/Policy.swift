@@ -5,7 +5,7 @@ import Foundation
 /// The helper's identity; `build.sh` writes the same bundle id into Info.plist.
 enum HelperIdentity {
   static let bundleId = "com.reflection.cu-helper"
-  static let version = "0.2.53"
+  static let version = "0.2.55"
   /// The value every synthetic event carries in `kCGEventSourceUserData`: 0x43555345, ASCII "CUSE"
   /// (input-and-targets.md, verify-kit's SYNTHETIC_TAG). Not a secret: an event from another process with this tag
   /// could only fail to pause the run, never act.
@@ -72,6 +72,11 @@ struct Exclusions {
     "com.apple.systempreferences", "com.apple.settings.*", "com.apple.SecurityAgent",
     "com.apple.LocalAuthentication.UIAgent", "com.apple.loginwindow", "com.apple.UserNotificationCenter",
     "com.apple.coreservices.uiagent", "com.apple.installer",
+    // CU-264: whole-Mac tools - Disk Utility (Erase, Restore, Partition), Boot Camp, Migration Assistant, Time Machine
+    // (its launcher, and com.apple.TimeMachine, which covers the menu-bar agent com.apple.timemachine.HelperAgent), Activity
+    // Monitor (Force Quit). Ids read from each app's Info.plist on macOS 27; Console stays approvable (read-only).
+    "com.apple.DiskUtility", "com.apple.bootcampassistant", "com.apple.MigrateAssistant", "com.apple.backup.launcher",
+    "com.apple.TimeMachine", "com.apple.ActivityMonitor",
   ]
 
   let entries: [String]
@@ -918,5 +923,79 @@ struct MenuContext: Equatable {
     var object: [String: JSON] = ["menuPath": .array(path.map { .string($0) })]
     if servicesMenu { object["servicesMenu"] = .bool(true) }
     return object
+  }
+}
+
+/// CU-262 (helper half of CU-252): the selected items of the frontmost approved app's focused collection, by name and
+/// kind only - so agent core can ask before Open launches a selected script or app. Accessibility only: no path leaves
+/// the helper, and no URL resource value is read (a file-system call on a file in a protected folder risks a TCC
+/// prompt in the owner's name, D-024).
+enum SelectedItems {
+  static let maxItems = 32
+  /// The focused roles that hold a selection: list and column views (rows), plain lists and icon views (children), and
+  /// a column browser (its last column).
+  static let collectionRoles: Set<String> = ["AXOutline", "AXTable", "AXList", "AXGroup", "AXBrowser"]
+
+  struct Raw: Equatable {
+    var filename: String?
+    var url: String?
+    /// A label (AXTitle or AXDescription) - never an AXValue, which can be the owner's content.
+    var text: String?
+  }
+
+  struct Item: Equatable {
+    var name: String
+    var kind: String
+  }
+
+  enum Read: Equatable {
+    case items(bundleId: String, items: [Item], truncated: Bool)
+    case none(bundleId: String)
+    case notCollection(bundleId: String)
+    case unreadable(String)
+
+    var json: [String: JSON] {
+      switch self {
+      case .items(let bundleId, let items, let truncated):
+        var object: [String: JSON] = ["bundleId": .string(bundleId), "items": .array(items.map { .object(["name": .string($0.name), "kind": .string($0.kind)]) })]
+        if truncated { object["truncated"] = .bool(true) }
+        return object
+      case .none(let bundleId): return ["none": .bool(true), "bundleId": .string(bundleId)]
+      case .notCollection(let bundleId): return ["notCollection": .bool(true), "bundleId": .string(bundleId)]
+      case .unreadable(let reason): return ["unreadable": .bool(true), "reason": .string(reason)]
+      }
+    }
+  }
+
+  /// 'folder' for a file URL with a trailing slash (a folder or a package), 'file' for any other file URL, 'unknown'
+  /// without one - from the string alone.
+  static func kind(url: String?) -> String {
+    guard let url, url.hasPrefix("file://") else { return "unknown" }
+    return url.hasSuffix("/") ? "folder" : "file"
+  }
+
+  /// The item's name: AXFilename, else the file URL's last component (percent-decoded, parsed as a string), else its
+  /// label. No name: the read is unreadable (agent core asks), never a value in its place.
+  static func name(_ raw: Raw) -> String? {
+    if let filename = raw.filename, !filename.isEmpty { return filename }
+    if let url = raw.url, url.hasPrefix("file://"), let parsed = URL(string: url) {
+      let leaf = parsed.lastPathComponent
+      if !leaf.isEmpty, leaf != "/" { return leaf }
+    }
+    if let text = raw.text, !text.isEmpty { return text }
+    return nil
+  }
+
+  /// `selection` nil: the selection could not be read.
+  static func read(bundleId: String, focusedRole: String?, selection: [Raw]?) -> Read {
+    guard let role = focusedRole, collectionRoles.contains(role) else { return .notCollection(bundleId: bundleId) }
+    guard let selection else { return .unreadable("the selection could not be read") }
+    if selection.isEmpty { return .none(bundleId: bundleId) }
+    var items: [Item] = []
+    for raw in selection.prefix(maxItems) {
+      guard let name = name(raw) else { return .unreadable("a selected item has no name") }
+      items.append(Item(name: name, kind: kind(url: raw.url)))
+    }
+    return .items(bundleId: bundleId, items: items, truncated: selection.count > maxItems)
   }
 }

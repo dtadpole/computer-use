@@ -134,7 +134,7 @@ describe('build', () => {
     assert.equal(plist.CFBundleIdentifier, 'com.reflection.cu-helper')
     assert.equal(plist.CFBundleExecutable, 'CUHelper')
     assert.equal(plist.LSUIElement, true)
-    assert.equal(plist.CFBundleShortVersionString, '0.2.53')
+    assert.equal(plist.CFBundleShortVersionString, '0.2.55')
     const details = execFileSync('/bin/sh', ['-c', `codesign -dv "${built.app}" 2>&1`]).toString()
     assert.match(details, /Identifier=com\.reflection\.cu-helper/)
     assert.match(details, /Signature=adhoc/)
@@ -169,7 +169,7 @@ describe('install.sh (the owner\'s install step)', () => {
     assert.ok(existsSync(join(home, 'helper', 'CUHelper.app', 'Contents', 'MacOS', 'CUHelper')))
     assert.equal(execFileSync('stat', ['-f', '%Lp', join(home, 'helper')]).toString().trim(), '700')
     assert.match(output, /designated requirement: cdhash H"[0-9a-f]{40}"/)
-    assert.match(output, /self-test: pass \(39 checks, 0 capability calls\)/)
+    assert.match(output, /self-test: pass \(40 checks, 0 capability calls\)/)
     assert.match(output, /grants: accessibility (on|off), listenEvents (on|off), postEvents (on|off), screen (on|off)/)
   })
 
