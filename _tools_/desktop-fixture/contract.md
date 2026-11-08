@@ -1,9 +1,9 @@
 ---
 title: Desktop fixture contract
 created: 2026-11-02T08:34:00Z
-modified: 2026-11-06T06:20:00Z
+modified: 2026-11-08T11:49:00Z
 level: L1
-version: 0.10.0
+version: 0.10.1
 description: What CU Fixture guarantees to the desktop driver, the verifiers and the evaluator - identity, placement, the private control channel, what the agent can and cannot see, and how a screen's outcome is judged.
 status: unverified
 grounded_in:
@@ -23,10 +23,13 @@ grounded_in:
 - **Appearance.** Aqua, black on white, system fonts, so pixels are the same in light and dark mode.
 - **Menus.** CU Fixture, Document and Log, then Edit (Cut, Copy, Paste, Select All to the first responder), so
   copy and paste work by keyboard and the fixture's own titles keep their places.
+  The menu-compose screen (CU-238) adds Message and Later while it is open: Send on Shift-Command-D, a disabled Mark
+  as Read before Send Now on Option-Command-D, Delete on a plain Backspace (enabled on the Outbox list only), and
+  Send Later on Shift-Command-L in a lazily filled menu; each only records that it fired.
 - **Channel.** JSON lines on the launching process's stdin and stdout: `hello`, `reset`, `open {task, params}`,
   `state`, `act {step}`, `targets` (frames with each control's class), `windows` (content sizes and each content's top-left in global points), `screen` (the primary display's points and
   backing scale), `render {window,
-  path}`, `ax` (the app's own accessibility elements, with a drawn list's rows as non-view children named by `title` and `parent` (CU-19), and its visible text), `trigger` (posts the overlay-late notification without a key, a test seam), `clipboardSave` / `clipboardRestore` (S5, CU-62: CU Fixture keeps the owner's pasteboard in memory for a run and writes it back, also when it quits; a concealed or transient board is not read and replies `{skipped: 'concealed'}`; replies carry counts only), `clipboardSelfTest` (the stash on a private pasteboard), `quit`. `windows` also reports each window's `alpha`, `level` and `clickThrough`. Closing stdin ends the app. Only the
+  path}`, `ax` (the app's own accessibility elements, with a drawn list's rows as non-view children named by `title` and `parent` (CU-19), and its visible text), `trigger` (posts the overlay-late notification without a key, a test seam), `clipboardSave` / `clipboardRestore` (S5, CU-62: CU Fixture keeps the owner's pasteboard in memory for a run and writes it back, also when it quits; a concealed or transient board is not read and replies `{skipped: 'concealed'}`; replies carry counts only), `clipboardSelfTest` (the stash on a private pasteboard), `menuAX` (CU-238: what AppKit serves Accessibility for menu-compose's own menus - title, enabled, key character, modifier bits, virtual key - read in process), `quit`. `windows` also reports each window's `alpha`, `level` and `clickThrough`. Closing stdin ends the app. Only the
   launcher holds it.
 - **What the agent sees.** Only `params`: what a person would see. Expected values, judges and oracle plans stay
   in `tasks.mjs`.

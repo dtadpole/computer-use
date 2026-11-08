@@ -36,6 +36,7 @@ final class Fixture: NSObject {
     // The text editor's Format menu and Undo/Redo belong to that screen only (CU-130).
     TextEditorScreen.uninstallMenus()
     ConsentKeys.uninstallMenus()
+    MenuCompose.uninstallMenus()
     for window in windows.values { window.orderOut(nil); window.close() }
     windows = [:]
     Evidence.input = []
@@ -72,6 +73,7 @@ final class Fixture: NSObject {
     out.merge(VendorForm.fields()) { current, _ in current }
     out.merge(WebButtons.fields()) { current, _ in current }
     out.merge(ConsentCells.fields()) { current, _ in current }
+    out.merge(MenuCompose.fields()) { current, _ in current }
     return out
   }
 
@@ -485,6 +487,10 @@ func handle(_ message: [String: Any]) {
       reply(id, ["allowed": permission.allowed, "behavior": permission.behavior])
     case "clipboardSelfTest":
       reply(id, ClipboardSelfTest.run())
+    case "menuAX":
+      // CU-238: what AppKit serves Accessibility for menu-compose's own menus (Message, Later) - title, enabled and the
+      // key-equivalent attributes only, read in process; the helper's menuKey reads the same values across processes.
+      reply(id, ["menus": MenuCompose.accessibilityMenus()])
     case "gridShown":
       // Test seam: what a grid cell shows on screen now (chain-rows' computed D cells).
       let shown = Grid.shown(params["cell"] as? String ?? "")
