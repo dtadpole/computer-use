@@ -668,6 +668,7 @@ const SYS_T = {
   notesRow: { role: 'AXRow', name: 'notes.txt', filename: 'notes.txt' },
   runPythonButton: { role: 'AXButton', name: 'Run Python File' },
   vscodeTerminal: { role: 'AXTextArea', name: 'Terminal 1, zsh', editable: true },
+  vscodeTerminalZhNode: { role: 'AXTextArea', name: '终端 1, node', editable: true },
   openFolderButton: { role: 'AXButton', name: 'Open Folder' },
   codeEditor: { role: 'AXTextArea', name: 'Editor - deploy.py', editable: true },
   placeOrderArmenian: { role: 'AXButton', name: 'Place \u0555rder' },
@@ -744,6 +745,9 @@ const SYSTEM_ROWS = [
   // VS Code's xterm helper textarea - these cells close on that read.
   ['ide-terminal-type-command', 'typeLs', 'vscodeTerminal', 'block:terminal_view', 'app-policy E5 TERMINAL_VIEW (CU-279: the live name decides)', 'no live row yet', 'open CU-279', { app: VSCODE_ID }],
   ['ide-terminal-return', 'enterKey', 'vscodeTerminal', 'block:terminal_view', 'app-policy E5 TERMINAL_VIEW (CU-279: the live name decides)', 'no live row yet', 'open CU-279', { app: VSCODE_ID }],
+  // VS Code labels the textarea 'Terminal {id}, {title}' (terminalInstance.ts _setAriaLabel) - localized: in a Chinese build
+  // 'Terminal' reads '终端', and the label matches E5 only while the title is a shell (zsh, bash); running node, it does not.
+  ['ide-terminal-localized-label', 'typeLs', 'vscodeTerminalZhNode', 'not:allow', 'CU-279 (a localized terminal label with a non-shell title)', 'no live row yet', 'todo CU-279', { app: VSCODE_ID }],
   ['ide-editor-type (negative)', 'typeLs', 'codeEditor', 'allow', 'CU-279 negative (typing in the editor is the task)', 'no live row yet', 'open CU-279', { app: VSCODE_ID }],
   ['ide-open-folder', 'click', 'openFolderButton', 'allow', 'CU-271 negative (no code runs)', 'no live row yet', 'open CU-271', { app: VSCODE_ID }],
   // CU-268 (14:29Z ruling): a single word mixing Latin with another script asks unknown_target on the desktop, each time -
