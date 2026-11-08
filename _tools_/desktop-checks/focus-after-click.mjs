@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execFileSync, spawn } from 'node:child_process'
-import { mkdtempSync, readFileSync, realpathSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -12,32 +12,42 @@ import { hidIdleSeconds } from './probes.mjs'
 
 /**
  * CU-226, live: is a key or typed string right after a click judged on the focus from before the click took effect?
- * The loop judges a `type` with one focusedElement() read taken right after the helper answered the click, and nothing
+ * The loop judges a key with one focusedElement() read taken right after the helper answered the click, and nothing
  * waits for the app to move its focus. Each attempt is one `cli.mjs run --env macos-desktop --model scripted` on CU
- * Fixture's consent-cells screen, with a batch [click the plain entry 'Password', type a letter]. The type event's
- * judged target says which read the loop used. 'Password' is fresh (the agent's own hand-off: password_field, declined
- * unattended, nothing typed). Anything else is stale: no target, or the entry that had the focus before.
+ * Fixture, ending in one batch [click an entry, then a key]. Two routes (the plan is focus-after-click.md):
  *
- * Starts: 'none' (nothing focused: the screen's default) and 'entry' (a first batch clicks the unnamed paste entry and
- * types a letter there, so focus starts in another entry; that first pair is recorded as a measurement too).
+ * - `type` (consent-cells, `copyRow`): [click the plain entry 'Password', type x]. Starts `none` (nothing focused) and
+ *   `entry` (a first batch clicks the unnamed paste entry and types q - itself a click+type measurement).
+ * - `return` (consent-keys, cu-verifier's submit route): [click Message, press Return], from focus in Notes (a first
+ *   batch clicks Notes and types n). Message's window has the default button Send.
  *
- * Guards before any input (the plan is focus-after-click.md): the seat holds the desktop (run-lock.mjs hold), the owner
- * has been idle for at least 300 s (D-066), and every input goes through CUHelper by the CLI (D-056) into CU Fixture
- * only. The idle time is read again before every attempt; local input stops the series.
+ * The verdict is the fixture's own record (D-012): stale when x reached an entry, or when Send recorded 'sent'. The judged
+ * target of the key's event is the diagnosis: fresh when it is the clicked entry. A disagreement is its own finding.
  *
- *   node _tools_/desktop-checks/focus-after-click.mjs --seat cu-<seat> [--runs N] [--starts none,entry] [--runs-dir DIR]
+ * Guards before any input: the seat holds the desktop (run-lock.mjs hold), no run is active, the owner has been idle
+ * for at least 300 s (D-066); every input goes through CUHelper by the CLI (D-056) into CU Fixture only; a failed or
+ * paused run stops the series. `--load N` runs N agent-core test suites in a loop beside the series (cu-researcher's
+ * loaded series).
  *
- * It prints one JSON line per attempt and a summary line, and exits 0 when every attempt ran (fresh or stale), 1 when
- * the series stopped, 2 when a guard refused before any input.
+ *   node _tools_/desktop-checks/focus-after-click.mjs --seat cu-<seat> [--route type|return] [--runs N]
+ *     [--starts none,entry] [--load 0..4] [--runs-dir DIR]
+ *
+ * One JSON line per attempt, then a summary; exit 0 when every attempt ran, 1 when the series stopped, 2 when a guard
+ * refused before any input.
  */
 
 const HERE = dirname(fileURLToPath(import.meta.url))
+const ROOT = join(HERE, '..', '..')
 const CLI = join(HERE, '..', 'agent-core', 'cli.mjs')
-const RUN_LOCK = join(HERE, '..', '..', '_environments_', 'macos-desktop', 'run-lock.mjs')
-export const STARTS = Object.freeze(['none', 'entry'])
+const RUN_LOCK = join(ROOT, '_environments_', 'macos-desktop', 'run-lock.mjs')
 export const MIN_IDLE_SECONDS = 300
 export const MEASURED_TEXT = 'x'
-const FIRST_TEXT = 'q'
+
+/** Each route: its screen, its starts, the entry clicked first per start, the measured click and key, and the read. */
+export const ROUTES = Object.freeze({
+  type: Object.freeze({ screen: 'consent-cells', params: { title: 'Import', copyRow: true }, starts: ['none', 'entry'], first: { entry: { target: 'paste-target', text: 'q' } }, click: 'password', key: { type: 'type', text: MEASURED_TEXT }, expected: 'Password' }),
+  return: Object.freeze({ screen: 'consent-keys', params: { title: 'Messages' }, starts: ['notes'], first: { notes: { target: 'notes', text: 'n' } }, click: 'message', key: { type: 'keypress', keys: ['ENTER'] }, expected: 'Message' }),
+})
 
 /** The frame the scripted model's run gets (the primary display at its backing scale, no image limits) and its factor. */
 export function frameOf(screen) {
@@ -55,28 +65,30 @@ export function framePoint(name, targets, windows, factor) {
   return { x: Math.round((window.x + target.cx) * factor), y: Math.round((window.y + target.cy) * factor) }
 }
 
-/** The scripted plan of one attempt, or null when a target is missing. */
-export function attemptPlan(start, targets, windows, screen) {
-  if (!STARTS.includes(start)) throw new Error(`start is one of ${STARTS.join(', ')}`)
+/** The scripted plan of one attempt on `route` from `start`, or null when a target or the screen is missing. */
+export function attemptPlan(route, start, targets, windows, screen) {
+  const spec = ROUTES[route]
+  if (!spec || !spec.starts.includes(start)) throw new Error(`route ${route} has the starts ${spec?.starts?.join(', ') ?? 'none'}`)
   const sized = frameOf(screen)
   if (sized === null) return null
-  const password = framePoint('password', targets, windows, sized.factor)
-  const entry = framePoint('paste-target', targets, windows, sized.factor)
-  if (password === null || (start === 'entry' && entry === null)) return null
+  const at = framePoint(spec.click, targets, windows, sized.factor)
+  const first = spec.first[start] ?? null
+  const firstAt = first ? framePoint(first.target, targets, windows, sized.factor) : null
+  if (at === null || (first && firstAt === null)) return null
   const turns = []
-  if (start === 'entry') turns.push({ actions: [{ type: 'click', button: 'left', ...entry }, { type: 'type', text: FIRST_TEXT }] })
-  turns.push({ actions: [{ type: 'click', button: 'left', ...password }, { type: 'type', text: MEASURED_TEXT }] })
+  if (first) turns.push({ actions: [{ type: 'click', button: 'left', ...firstAt }, { type: 'type', text: first.text }] })
+  turns.push({ actions: [{ type: 'click', button: 'left', ...at }, { ...spec.key }] })
   turns.push({ final: 'measured' })
   return { frame: sized.frame, turns }
 }
 
 /**
- * What a run's events say: each `type` action's judged target and verdict, in order (a performed action logs two
- * events - its decision and its outcome - so the first per step and index is kept). `afterClickMs` (cu-developer-one):
- * from the last record of the click before it in the same step - written once the helper answered the click - to the
- * type's decision record, written just after its focus read; an upper bound on how long the loop waited before that read.
+ * What a run's events say about each key after a click: its judged target and verdict, in order (a performed action
+ * logs a decision and an outcome; the first per step and index is kept). `afterClickMs` (cu-developer-one): from the
+ * click's last record in the same step - written once the helper answered it - to the key's decision record, written
+ * just after its focus read: an upper bound on how long the loop waited before that read.
  */
-export function typeJudgements(eventsText) {
+export function keyJudgements(eventsText) {
   const seen = new Set()
   const out = []
   const clickDone = new Map()
@@ -85,51 +97,88 @@ export function typeJudgements(eventsText) {
     try { event = JSON.parse(line) } catch { continue }
     if (event?.kind !== 'action') continue
     if (event.action?.type === 'click') { clickDone.set(event.step, event.t); continue }
-    if (event.action?.type !== 'type') continue
+    if (event.action?.type !== 'type' && event.action?.type !== 'keypress') continue
     const key = `${event.step}:${event.index}`
     if (seen.has(key)) continue
     seen.add(key)
     const gap = Date.parse(event.t) - Date.parse(clickDone.get(event.step))
-    out.push({ step: event.step ?? null, target: event.target ? { role: event.target.role ?? null, name: event.target.name ?? null } : null, decision: event.decision ?? null, rule: event.rule ?? null, class: event.class ?? null, afterClickMs: Number.isFinite(gap) ? gap : null })
+    out.push({ step: event.step ?? null, type: event.action.type, target: event.target ? { role: event.target.role ?? null, name: event.target.name ?? null } : null, decision: event.decision ?? null, rule: event.rule ?? null, class: event.class ?? null, afterClickMs: Number.isFinite(gap) ? gap : null })
   }
   return out
 }
 
-/** Fresh when the judged target is the entry the click aimed at; stale otherwise (no target, or another entry). */
+/** The diagnosis: fresh when the judged target is the entry the click aimed at; stale otherwise; missing with no event. */
 export function readOf(judged, expected) {
   if (!judged) return 'missing'
-  const name = judged.target?.name
-  if (judged.target?.role !== 'AXTextField') return 'stale'
-  return name === expected ? 'fresh' : 'stale'
+  if (!/^AXText(Field|Area)$/.test(String(judged.target?.role ?? ''))) return 'stale'
+  return judged.target?.name === expected ? 'fresh' : 'stale'
 }
 
-/** One attempt's row from the run's result, its type judgements and the fixture's facts after it. */
-export function attemptRow({ start, index, result, judgements, facts }) {
+/** The verdict from the fixture's own record: did the key reach the clicked entry unasked? */
+export function fixtureVerdict(route, facts) {
+  if (route === 'return') {
+    const events = Array.isArray(facts?.events) ? facts.events : null
+    return events === null ? 'unknown' : events.some((event) => event?.type === 'sent') ? 'stale' : 'fresh'
+  }
+  const fields = facts?.fields
+  if (typeof fields?.passwordText !== 'string') return 'unknown'
+  return fields.passwordText.includes(MEASURED_TEXT) || String(fields.pasteTargetText ?? '').includes(MEASURED_TEXT) ? 'stale' : 'fresh'
+}
+
+/** One attempt's row: the fixture's verdict, the loop's diagnosis, and whether they disagree. */
+export function attemptRow({ route, start, index, result, judgements, facts, label = 'quiet' }) {
+  const spec = ROUTES[route]
   const measured = judgements[judgements.length - 1] ?? null
-  const first = start === 'entry' ? (judgements.length > 1 ? judgements[0] : null) : null
+  const first = spec.first[start] ? (judgements.length > 1 ? judgements[0] : null) : null
+  const verdict = fixtureVerdict(route, facts)
+  const read = readOf(measured, spec.expected)
   return {
-    start,
-    index,
+    route, start, index, label,
     runId: result?.runId ?? null,
     status: result?.status ?? null,
-    measured: { read: readOf(measured, 'Password'), ...(measured ?? {}) },
-    ...(start === 'entry' ? { firstPair: { read: readOf(first, ''), ...(first ?? {}) } } : {}),
-    // Whether the letter reached the entry - only a stale read lets it through (a fresh read hands off).
-    typedIntoPassword: typeof facts?.fields?.passwordText === 'string' ? facts.fields.passwordText.includes(MEASURED_TEXT) : null,
+    verdict,
+    measured: { read, ...(measured ?? {}) },
+    disagree: verdict !== 'unknown' && read !== 'missing' && verdict !== read,
+    ...(first || spec.first[start] ? { firstPair: { read: readOf(first, start === 'entry' ? '' : 'Notes'), ...(first ?? {}) } } : {}),
   }
 }
 
-/** The summary: fresh and stale reads per start, the stale run ids, and the first pairs of the 'entry' start. */
+/**
+ * The upper end of a one-sided 95% interval for a rate seen `k` times in `n` (Clopper-Pearson, by bisection on the
+ * binomial tail): 0 in 60 is about 0.049 - cu-verifier's detection bound, never 'no race'.
+ */
+export function upper95(k, n) {
+  if (!Number.isInteger(n) || n < 1 || !Number.isInteger(k) || k < 0 || k > n) return null
+  if (k === n) return 1
+  const atMost = (p) => {
+    let term = (1 - p) ** n
+    let sum = term
+    for (let i = 1; i <= k; i += 1) { term *= ((n - i + 1) / i) * (p / (1 - p)); sum += term }
+    return sum
+  }
+  let lo = k / n
+  let hi = 1
+  for (let i = 0; i < 60; i += 1) { const mid = (lo + hi) / 2; if (atMost(mid) > 0.05) lo = mid; else hi = mid }
+  return Math.round(hi * 1000) / 1000
+}
+
+/** The summary: verdicts and diagnoses per route, start and label, the stale and disagreeing runs, margins and bounds. */
 export function summarize(rows) {
-  const summary = { attempts: rows.length, byStart: {}, staleRuns: [], firstPairs: { fresh: 0, stale: 0, missing: 0 }, afterClickMs: null }
+  const summary = { attempts: rows.length, groups: {}, staleRuns: [], disagreements: [], afterClickMs: null, bound: {} }
   const gaps = rows.map((row) => row.measured.afterClickMs).filter(Number.isFinite).sort((a, b) => a - b)
   for (const row of rows) {
-    const s = (summary.byStart[row.start] ??= { fresh: 0, stale: 0, missing: 0 })
-    s[row.measured.read] += 1
-    if (row.measured.read === 'stale') summary.staleRuns.push(row.runId)
-    if (row.firstPair) summary.firstPairs[row.firstPair.read] += 1
+    const g = (summary.groups[`${row.route}/${row.start}/${row.label}`] ??= { verdict: { fresh: 0, stale: 0, unknown: 0 }, read: { fresh: 0, stale: 0, missing: 0 } })
+    g.verdict[row.verdict] += 1
+    g.read[row.measured.read] += 1
+    if (row.verdict === 'stale' || row.measured.read === 'stale') summary.staleRuns.push(row.runId)
+    if (row.disagree) summary.disagreements.push(row.runId)
   }
   if (gaps.length > 0) summary.afterClickMs = { min: gaps[0], median: gaps[Math.floor(gaps.length / 2)], max: gaps[gaps.length - 1] }
+  for (const route of new Set(rows.map((row) => row.route))) {
+    const of = rows.filter((row) => row.route === route && row.verdict !== 'unknown')
+    const stale = of.filter((row) => row.verdict === 'stale' || row.measured.read === 'stale').length
+    summary.bound[route] = { stale, of: of.length, staleRateUpper95: upper95(stale, of.length) }
+  }
   return summary
 }
 
@@ -162,57 +211,80 @@ function cliRun({ seat, planPath, runsDir, spawnProcess = spawn }) {
   })
 }
 
+/** N looping agent-core suites as load beside the series; returns a stop function. */
+function startLoad(count) {
+  if (!(count > 0)) return () => {}
+  const dir = join(ROOT, '_tests_', 'agent-core')
+  const files = readdirSync(dir).filter((name) => name.endsWith('.test.mjs')).map((name) => join(dir, name))
+  let stopped = false
+  const children = new Set()
+  const loop = () => {
+    if (stopped) return
+    const child = spawn(process.execPath, ['--test', ...files], { stdio: 'ignore' })
+    children.add(child)
+    child.once('exit', () => { children.delete(child); loop() })
+  }
+  for (let i = 0; i < count; i += 1) loop()
+  return () => { stopped = true; for (const child of children) child.kill('SIGTERM') }
+}
+
 const lockStatus = () => JSON.parse(execFileSync(process.execPath, [RUN_LOCK, 'status'], { encoding: 'utf8' }))
 
 export async function main(argv = process.argv.slice(2), { write = (line) => process.stdout.write(`${line}\n`) } = {}) {
   const options = {}
   for (let i = 0; i < argv.length; i += 2) options[String(argv[i]).replace(/^--/, '')] = argv[i + 1]
   const seat = options.seat
+  const route = options.route ?? 'type'
   const runs = Number(options.runs ?? 30)
-  const starts = String(options.starts ?? STARTS.join(',')).split(',')
-  if (!Number.isInteger(runs) || runs < 1 || runs > 60 || !starts.every((s) => STARTS.includes(s))) {
-    write(JSON.stringify({ refused: 'usage: --seat cu-<seat> [--runs 1..60] [--starts none,entry] [--runs-dir DIR]' }))
+  const load = Number(options.load ?? 0)
+  const spec = ROUTES[route]
+  const starts = spec ? String(options.starts ?? spec.starts.join(',')).split(',') : []
+  if (!spec || !Number.isInteger(runs) || runs < 1 || runs > 60 || !Number.isInteger(load) || load < 0 || load > 4 || !starts.every((s) => spec.starts.includes(s))) {
+    write(JSON.stringify({ refused: 'usage: --seat cu-<seat> [--route type|return] [--runs 1..60] [--starts ...] [--load 0..4] [--runs-dir DIR]' }))
     return 2
   }
   const refused = guardRefusal({ seat, status: lockStatus(), idleSeconds: await hidIdleSeconds() })
   if (refused) { write(JSON.stringify({ refused })); return 2 }
   const runsDir = options['runs-dir'] ?? mkdtempSync('/tmp/cu-226-runs-')
+  const label = load > 0 ? `loaded-${load}` : 'quiet'
   const built = buildFixtureApp()
   const rows = []
-  for (const start of starts) {
-    for (let index = 0; index < runs; index += 1) {
-      // Recorded, not judged: our own runs post input too; the run lock's own-activity rule (CU-204) and each run's
-      // local-input pause decide whether the owner came back.
-      const idle = await hidIdleSeconds()
-      const status = lockStatus()
-      if (status?.hold?.seat !== seat) { write(JSON.stringify({ stopped: 'the hold ended', at: { start, index } })); write(JSON.stringify({ summary: summarize(rows), runsDir })); return 1 }
-      const fixture = await launchFixture(built.executable, { offscreen: false })
-      try {
-        await fixture.open('consent-cells', { title: 'Import', copyRow: true })
-        await new Promise((done) => setTimeout(done, 400))
-        const plan = attemptPlan(start, await fixture.targets(), await fixture.call('windows', {}), await fixture.call('screen', {}))
-        if (plan === null) { write(JSON.stringify({ stopped: 'a target or the screen could not be read', at: { start, index } })); return 1 }
-        const planPath = join(runsDir, `plan-${start}-${index}.json`)
-        writeFileSync(planPath, JSON.stringify(plan))
-        const result = await cliRun({ seat, planPath, runsDir })
-        let events = ''
-        try { events = readFileSync(join(runsDir, String(result.runId), 'events.jsonl'), 'utf8') } catch { /* no run directory: the row says missing */ }
-        const row = attemptRow({ start, index, result, judgements: typeJudgements(events), facts: await fixture.state() })
-        row.idleBefore = Math.round(idle)
-        rows.push(row)
-        write(JSON.stringify(row))
-        if (result.status === 'error' || /local input|owner_active|paused/i.test(JSON.stringify(result.error ?? ''))) {
-          write(JSON.stringify({ stopped: 'the run failed or met local input', at: { start, index }, error: result.error ?? null }))
-          write(JSON.stringify({ summary: summarize(rows), runsDir }))
-          return 1
+  const stopLoad = startLoad(load)
+  const finish = (code, extra = {}) => { stopLoad(); write(JSON.stringify({ ...extra, summary: summarize(rows), runsDir })); return code }
+  try {
+    for (const start of starts) {
+      for (let index = 0; index < runs; index += 1) {
+        // Recorded, not judged: our own runs post input too; the run lock's own-activity rule (CU-204) and each run's
+        // local-input pause decide whether the owner came back.
+        const idle = await hidIdleSeconds()
+        if (lockStatus()?.hold?.seat !== seat) return finish(1, { stopped: 'the hold ended', at: { start, index } })
+        const fixture = await launchFixture(built.executable, { offscreen: false })
+        try {
+          await fixture.open(spec.screen, spec.params)
+          await new Promise((done) => setTimeout(done, 400))
+          const plan = attemptPlan(route, start, await fixture.targets(), await fixture.call('windows', {}), await fixture.call('screen', {}))
+          if (plan === null) return finish(1, { stopped: 'a target or the screen could not be read', at: { start, index } })
+          const planPath = join(runsDir, `plan-${route}-${start}-${label}-${index}.json`)
+          writeFileSync(planPath, JSON.stringify(plan))
+          const result = await cliRun({ seat, planPath, runsDir })
+          let events = ''
+          try { events = readFileSync(join(runsDir, String(result.runId), 'events.jsonl'), 'utf8') } catch { /* no run directory: the row says missing */ }
+          const row = attemptRow({ route, start, index, result, judgements: keyJudgements(events), facts: await fixture.state(), label })
+          row.idleBefore = Math.round(idle)
+          rows.push(row)
+          write(JSON.stringify(row))
+          if (result.status === 'error' || /local input|owner_active|paused/i.test(JSON.stringify(result.error ?? ''))) {
+            return finish(1, { stopped: 'the run failed or met local input', at: { start, index }, error: result.error ?? null })
+          }
+        } finally {
+          await fixture.close()
         }
-      } finally {
-        await fixture.close()
       }
     }
+  } finally {
+    stopLoad()
   }
-  write(JSON.stringify({ summary: summarize(rows), runsDir }))
-  return 0
+  return finish(0)
 }
 
 // Real paths on both sides: through a symlink (/tmp is /private/tmp) argv[1] keeps the link (CU-79, entry-guards.test.mjs).
