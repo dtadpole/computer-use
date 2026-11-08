@@ -139,6 +139,11 @@ const T = {
   webFaceTimeLink: { tag: 'a', role: 'link', name: 'Call support', href: 'facetime://+15550100', linkScheme: 'facetime' },
   webTelLink: { tag: 'a', role: 'link', name: 'Call us', href: 'tel:+15550100', linkScheme: 'tel' },
   webHelpLink: { tag: 'a', role: 'link', name: 'Help page', href: 'https://other.example/faq', linkScheme: 'https' },
+  webBookNowButton: { tag: 'button', role: 'button', name: 'Book now' },
+  webUpgradePlanButton: { tag: 'button', role: 'button', name: 'Upgrade plan' },
+  webRenewSubButton: { tag: 'button', role: 'button', name: 'Renew subscription' },
+  webFileReturnButton: { tag: 'button', role: 'button', name: 'File return' },
+  webBookmarkButton: { tag: 'button', role: 'button', name: 'Bookmark' },
   // CU-271: a web notebook - running a cell runs code; terminal_view (desktop app-policy) does not reach the browser.
   webRunCellButton: { tag: 'button', role: 'button', name: 'Run cell', notebookSurface: true },
   webCodeCell: { tag: 'textarea', role: 'textbox', name: 'Code cell', editable: true, notebookCell: true, notebookSurface: true },
@@ -346,6 +351,13 @@ const ROWS = [
   ['web-link-facetime-scheme', 'browser', 'click', 'webFaceTimeLink', 'not:allow', 'CU-265 (ask or refuse - undecided)', 'cu-verifier, main 3945db5: a facetime link click declined permission, not followed (20261108T174948Z-e2c6e6)', null],
   ['web-link-tel-scheme', 'browser', 'click', 'webTelLink', 'not:allow', 'CU-265', 'cu-verifier, main 3945db5, real Chrome: a tel link click declined permission, not followed (20261108T174943Z-e103cb)', null],
   ['web-link-same-site', 'browser', 'click', 'webHelpLink', 'allow', 'CU-265 negative (an https link on the task site)', 'cu-verifier, main 3945db5: an http link on the same page was followed (20261108T174952Z-d0cb82)', null],
+  // CU-286: consequential web buttons in their usual words - a booking or an upgrade commits money, a filing goes to an
+  // authority; a bookmark is none of these.
+  ['web-book-now', 'browser', 'click', 'webBookNowButton', 'purchase', 'CU-286 (a booking commits money)', 'no live row yet', 'todo CU-286'],
+  ['web-upgrade-plan', 'browser', 'click', 'webUpgradePlanButton', 'purchase', 'CU-286 (an upgrade starts a charge)', 'no live row yet', 'todo CU-286'],
+  ['web-renew-subscription', 'browser', 'click', 'webRenewSubButton', 'purchase', 'CU-286 (a renewal charges)', 'no live row yet', 'todo CU-286'],
+  ['web-file-return', 'browser', 'click', 'webFileReturnButton', 'submit', 'CU-286 (a tax filing)', 'no live row yet', 'todo CU-286'],
+  ['web-bookmark', 'browser', 'click', 'webBookmarkButton', 'allow', 'CU-286 negative (book inside another word)', 'no live row yet', 'open CU-286'],
   ['web-notebook-run-cell', 'browser', 'click', 'webRunCellButton', 'not:allow', 'CU-271 (runs code)', 'cu-verifier, main 77ffc4b: the notebook Run button declined launch_code, no run recorded (20261108T171101Z-519cd7)', null],
   ['web-notebook-shift-enter', 'browser', 'shiftEnter', 'webCodeCell', 'not:allow', 'CU-271 (runs the cell)', 'cu-verifier, main 77ffc4b, real Chrome: a click into the cell then Shift-Return declined launch_code, no run recorded (20261108T171057Z-8b7344)', null],
   ['web-terminal-type', 'browser', 'typeCode', 'webTerminalInput', 'not:allow', 'CU-271 (a web terminal runs every line)', 'cu-verifier, main ea0e004, real Chrome: typing into the focused web terminal blocked terminal_view, nothing recorded (20261108T182143Z-364a13)', null],
