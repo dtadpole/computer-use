@@ -461,7 +461,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // submit - focused or not; only a read with none (true) keeps the rule above. D-069: on the desktop (url app:...) no
     // read state at all asks too - the helper link refuses a helper too old to send it, so absence is never a pass. No
     // target at all is the driver's good read of nothing focused and no default button (cu-verifier): it keeps the rule.
-    const desktopUrl = String(context.url ?? '').startsWith('app:')
+    // CU-243: app-policy calls this with url 'desktop://' on every real desktop run; 'app:' is the tests' and the matrix's.
+    const desktopUrl = /^(app|desktop):/.test(String(context.url ?? ''))
     const unreadDefault = target?.defaultButtonRead === false || (desktopUrl && target != null && target.defaultButtonRead !== true)
     if (unreadDefault && defaultName === '' && pressesEnter && (!inTextArea || commandReturn)) classes.push('submit')
     // CU-153: reloading, or stepping back or forward, onto a page that was the direct answer to a form POST sends it again.
