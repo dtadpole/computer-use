@@ -564,12 +564,16 @@ const { mkdtempSync } = await import('node:fs')
 const { tmpdir } = await import('node:os')
 const { join } = await import('node:path')
 const FIXTURE_ID = 'ai.reflection.cu.fixture'
+const APP_STORE_ID = 'com.apple.AppStore'
 const appApprovals = createAppApprovals({ path: join(mkdtempSync(join(tmpdir(), 'cu-routes-')), 'app-approvals.json') })
 appApprovals.grantAlways(FIXTURE_ID, { by: 'api' })
-const appPolicy = createAppPolicy({ scope: [FIXTURE_ID], approvals: appApprovals })
+appApprovals.grantAlways(APP_STORE_ID, { by: 'api' })
+const appPolicy = createAppPolicy({ scope: [FIXTURE_ID, APP_STORE_ID], approvals: appApprovals })
+// extra.app names the approved app in front (default CU Fixture); the rest of extra joins the context.
 const decideApp = (action, target, extra = {}) => {
+  const { app = FIXTURE_ID, ...context } = extra ?? {}
   const judged = action.type === 'hold_key' ? { type: 'keypress', keys: action.keys } : action
-  const r = appPolicy.classify(judged, { url: 'desktop://', frontmostBundleId: FIXTURE_ID, target: { ...target, origin: FIXTURE_ID }, ...extra })
+  const r = appPolicy.classify(judged, { url: 'desktop://', frontmostBundleId: app, target: { ...target, origin: app }, ...context })
   return r.decision === 'block' ? `block:${r.rule}` : r.decision === 'allow' ? 'allow' : r.class
 }
 const key = (...keys) => ({ type: 'keypress', keys })
@@ -585,6 +589,7 @@ const SYS_T = {
   desktopPictureItem: { role: 'AXMenuItem', name: 'Set Desktop Picture' },
   pasteItem: { role: 'AXMenuItem', name: 'Paste' },
   openItem: { role: 'AXMenuItem', name: 'Open' },
+  getButton: { role: 'AXButton', name: 'Get' },
 }
 // [id, action, target, expected, pin, live, status, extra context]
 const SYSTEM_ROWS = [
@@ -600,16 +605,22 @@ const SYSTEM_ROWS = [
   ['owner-setting-keyboard-access', 'ctrlF1', 'field', 'block:system_shortcut', 'CU-251 (keyboard access on/off)', 'no live row yet', 'todo CU-251'],
   ['owner-setting-input-source', 'ctrlSpace', 'field', 'block:system_shortcut', 'app-policy.test.mjs (#35, CU-242: input source)', 'no live row yet', 'open CU-242'],
   // CU-244: a held system chord is refused as the keypress (the loop judges a hold so); pinned live-path by #39.
+  // CU-254: the App Store installs software, yet it is not excluded and its 'Get' carries no consent word. Refused or
+  // asked is the consent owner's call, so the row expects anything but allow.
+  ['appstore-get', 'click', 'getButton', 'not:allow', 'CU-254 (an approved App Store installs software)', 'no live row yet', 'todo CU-254', { app: APP_STORE_ID }],
   ['system-chord-held-log-out', 'holdLogOut', 'field', 'block:system_shortcut', 'desktop-consent P9 (#39), loop.mjs hold-as-keypress', 'no live row yet', 'open CU-244'],
   // CU-252: P10's launch_code reads the clicked target's name only, so File > Open or a context menu's Open on a
   // selected install.command is not judged. 'selection' is the proposed context field (the fix may rename it).
   ['menu-open-launchable-selection', 'click', 'openItem', 'launch_code', 'CU-252 (File > Open with a .command selected)', 'no live row yet', 'todo CU-252', { selection: [{ role: 'AXRow', name: 'install.command' }] }],
   ['menu-open-text-selection', 'click', 'openItem', 'allow', 'CU-252 negative (a text file opens in its editor)', 'no live row yet', 'open CU-252', { selection: [{ role: 'AXRow', name: 'notes.txt' }] }],
 ]
+// An expected 'not:<v>' holds for any verdict but <v> - for a gap whose fix (refuse or ask) is not decided yet.
+const meets = (got, expected) => (expected.startsWith('not:') ? got !== expected.slice(4) : got === expected)
 for (const [id, action, target, expected, pin, live, status, extra] of SYSTEM_ROWS) {
   const name = `${id} [desktop, app-policy] ${action} on ${target} -> ${expected} (pin: ${pin}; live: ${live})`
-  if (status?.startsWith('todo ')) test(name, { todo: status }, () => assert.equal(decideApp(SYS_A[action], SYS_T[target], extra), expected))
-  else test(name, () => assert.equal(decideApp(SYS_A[action], SYS_T[target], extra), expected))
+  const check = () => assert.ok(meets(decideApp(SYS_A[action], SYS_T[target], extra), expected), `${id}: got ${decideApp(SYS_A[action], SYS_T[target], extra)}`)
+  if (status?.startsWith('todo ')) test(name, { todo: status }, check)
+  else test(name, check)
 }
 test('system rows: named once (apart from the class-policy rows too), every open row names its issue, a todo row still fails', () => {
   const ids = SYSTEM_ROWS.map((r) => r[0])
@@ -618,6 +629,6 @@ test('system rows: named once (apart from the class-policy rows too), every open
   for (const [id, action, target, expected, , live, status, extra] of SYSTEM_ROWS) {
     if (status === null) { assert.ok(closingRun(String(live)), `${id} is closed without a closing run or decision (D-064)`); continue }
     assert.match(status, /^(todo|open) CU-\d+$/, id)
-    if (status.startsWith('todo ')) assert.notEqual(decideApp(SYS_A[action], SYS_T[target], extra), expected, `${id} passes on main - flip it from todo`)
+    if (status.startsWith('todo ')) assert.ok(!meets(decideApp(SYS_A[action], SYS_T[target], extra), expected), `${id} passes on main - flip it from todo`)
   }
 })
