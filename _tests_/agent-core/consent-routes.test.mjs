@@ -60,6 +60,8 @@ const T = {
   nothingFocused: null,
   areaDefaultSend: { role: 'AXTextArea', name: 'Notes', defaultButton: SEND },
   searchField: { role: 'AXTextField', name: 'Search' },
+  // CU-187 / CU-223: the unnamed scratch entry a copied value is pasted into (CU Ledger, CU Fixture copyRow).
+  unnamedEntry: { role: 'AXTextField', name: '', editable: true },
   // CU-163: a bank account or tax id field (S9's vendor form in CU Ledger).
   ibanField: { role: 'AXTextField', name: 'IBAN' },
   taxField: { role: 'AXTextField', name: 'Tax ID' },
@@ -218,6 +220,14 @@ const ROWS = [
   ['scroll', 'desktop', 'scroll', 'deleteButton', 'allow', 'not judged by design: no consent class changes on scroll', 'D-059 named limit: scroll is not judged', null],
   ['paste-no-own-copy', 'desktop', 'cmdV', 'searchField', 'sensitive_data', 'paste-consent tests (#349)', '20261107T052454Z-bed1eb; count half on 0.2.40 (cu-verifier 10:13Z, no-alert proof)', null, { paste: { fromOwner: true } }],
   ['paste-after-own-copy', 'desktop', 'cmdV', 'searchField', 'allow', 'CU-151 (#349)', "0.2.42 P2: own copy allowed (20261107T173939Z-f03c80)", null, { paste: { fromOwner: false } }],
+  // CU-187 desktop half: an own copy of shown text carries its caption's class to a paste into an unnamed entry (the
+  // source keeps role and caption, never a name or the text - sourceOf). Live on CU Ledger's ledger-vendor values.
+  ['paste-copy-caption-static', 'desktop', 'cmdV', 'unnamedEntry', 'sensitive_data', 'copy-source.test.mjs (CU-187, CU-223)', "cu-verifier, helper 0.2.49, CU Ledger ledger-vendor: the IBAN-captioned value (not IBAN-shaped) copied with Cmd-C and pasted into the unnamed scratch entry - declined sensitive_data, the entry stayed empty (20261108T024023Z-b216e7, again 024027Z-1c6580); on main 8d66c53 with CU-220, helper 0.2.51: declined again (103814Z-51827e)", null, { paste: { fromOwner: false, source: { role: 'AXStaticText', caption: 'IBAN' } } }],
+  ['paste-copy-caption-static-vendor', 'desktop', 'cmdV', 'unnamedEntry', 'allow', 'CU-187 negative', "cu-verifier, main 8d66c53 with CU-220, helper 0.2.51, CU Ledger ledger-vendor: the Vendor-captioned value copied and pasted - allowed by count (129 = 128 + 1, own copy), 4 chars arrived (20261108T103817Z-1e544e); on 0.2.49 allowed too (023510Z-b9480c)", null, { paste: { fromOwner: false, source: { role: 'AXStaticText', caption: 'Vendor' } } }],
+  // CU-223 (red team of CU-209): since helper 0.2.51 a read-only text view is captioned, so its COPY carries the class too
+  // (before, an uncaptioned entry: the paste ran unasked). Closed on cu-verifier's live rows, keys and Edit > Copy.
+  ['paste-copy-readonly-textview-iban', 'desktop', 'cmdV', 'unnamedEntry', 'sensitive_data', 'copy-source.test.mjs (CU-223)', "cu-verifier, main 8d66c53, helper 0.2.51, CU Fixture consent-cells readonlyText + copyRow: a word in the IBAN-captioned read-only view, Command-C, pasted into the unnamed entry - declined sensitive_data, own copy by count, nothing arrived (20261108T103751Z-7762ec); by Edit > Copy declined too (103801Z-2004a8)", null, { paste: { fromOwner: false, source: { role: 'AXTextArea', caption: 'IBAN', editable: false } } }],
+  ['paste-copy-readonly-textview-notes', 'desktop', 'cmdV', 'unnamedEntry', 'allow', 'copy-source.test.mjs (CU-223 negative)', "cu-verifier, main 8d66c53, helper 0.2.51, CU Fixture consent-cells readonlyText + copyRow: the Notes-captioned read-only view's word, Command-C, pasted - allowed by count, 5 chars arrived (20261108T103756Z-2ffe01); by Edit > Copy allowed too (103807Z-047d66)", null, { paste: { fromOwner: false, source: { role: 'AXTextArea', caption: 'Notes', editable: false } } }],
   ['web-click-destructive', 'browser', 'click', 'webDelete', 'delete', 'policy.test.mjs', "main 1de261e91, real Chrome: bulk-delete 'Delete selected' asks delete, 0 POSTs (20261107T192415Z-7e802c)", null],
   ['web-click-label-in-button', 'browser', 'click', 'webDeleteLabelled', 'delete', 'activatableAncestor (CU-175)', '20261107T151230Z-db195b (main c8af0ec44; before #414 unasked 144600Z-75deb7)', null],
   ['web-click-icon-in-button', 'browser', 'click', 'webIconDelete', 'delete', 'activatableAncestor + clickLabel (CU-175)', '20261107T151235Z-4d0737 (main c8af0ec44; before #414 unasked 144608Z-5284c1)', null],
