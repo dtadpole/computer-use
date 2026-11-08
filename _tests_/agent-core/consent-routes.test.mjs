@@ -131,9 +131,10 @@ const T = {
   webQuantityInForm: { role: 'textbox', name: 'Quantity', defaultButton: { role: 'button', name: 'Place order' } },
   webLink: { role: 'link', name: 'Pricing' },
   // CU-265: links whose scheme leaves the browser, and a same-site web link.
-  webFaceTimeLink: { tag: 'a', role: 'link', name: 'Call support', href: 'facetime://+15550100' },
-  webTelLink: { tag: 'a', role: 'link', name: 'Call us', href: 'tel:+15550100' },
-  webHelpLink: { tag: 'a', role: 'link', name: 'Help page', href: 'https://other.example/faq' },
+  // linkScheme as the drivers report it (d06af84, linkSchemeOf): the scheme alone, never the rest of the URL.
+  webFaceTimeLink: { tag: 'a', role: 'link', name: 'Call support', href: 'facetime://+15550100', linkScheme: 'facetime' },
+  webTelLink: { tag: 'a', role: 'link', name: 'Call us', href: 'tel:+15550100', linkScheme: 'tel' },
+  webHelpLink: { tag: 'a', role: 'link', name: 'Help page', href: 'https://other.example/faq', linkScheme: 'https' },
   // CU-271: a web notebook - running a cell runs code; terminal_view (desktop app-policy) does not reach the browser.
   webRunCellButton: { tag: 'button', role: 'button', name: 'Run cell', notebookSurface: true },
   webCodeCell: { tag: 'textarea', role: 'textbox', name: 'Code cell', editable: true, notebookCell: true, notebookSurface: true },
