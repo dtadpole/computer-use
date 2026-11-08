@@ -7,6 +7,7 @@ import { unattendedController } from './consent.mjs'
 import { createRunControl } from './control.mjs'
 import { inspectPageText } from './inspect.mjs'
 import { createAppPolicy, panelDestination, panelKind, protectedPath } from './app-policy.mjs'
+import { normaliseText } from './normalise.mjs'
 import { createPanelFolder } from './panel-folder.mjs'
 import { createExclusions } from './exclusions.mjs'
 import { createApprovalStore, createPolicy, isTextEntry, namesPasswordField, screenTask, textNamedSource } from './policy.mjs'
@@ -546,7 +547,10 @@ export async function runTask(options) {
       // An item under the Apple menu (Lock Screen, Log Out, Force Quit) acts beyond the approved app: app-policy refuses it.
       const appleMenu = one.appleMenu === true || (Array.isArray(one.path) && one.path[0] === 'Apple')
       // Names only, capped as captions are (a Window or bookmarks item may carry a document's title); never the menu path.
-      items.push({ role: 'AXMenuItem', name: one.name.trim().slice(0, 80), ...(key ? { keyEquivalent: key } : {}), ...(typeof one.enabled === 'boolean' ? { enabled: one.enabled } : {}), ...(appleMenu ? { appleMenu: true } : {}) })
+      // CU-250 (cu-developer-two's seam finding): an item under a Services submenu keeps its mark, which app-policy refuses;
+      // anything but false reads as marked (fail closed, as the driver does).
+      const servicesMenu = one.servicesMenu !== undefined && one.servicesMenu !== false
+      items.push({ role: 'AXMenuItem', name: one.name.trim().slice(0, 80), ...(key ? { keyEquivalent: key } : {}), ...(typeof one.enabled === 'boolean' ? { enabled: one.enabled } : {}), ...(appleMenu ? { appleMenu: true } : {}), ...(servicesMenu ? { servicesMenu: true } : {}) })
     }
     return items.length === 1 ? items[0] : { items }
   }
@@ -557,7 +561,9 @@ export async function runTask(options) {
     const key = target?.keyEquivalent
     return key && typeof key.char === 'string' && key.char !== '' && Number.isSafeInteger(key.modifiers) && key.modifiers >= 0 ? { char: key.char.toUpperCase(), modifiers: key.modifiers } : null
   }
-  const named = (target, names) => names.test(String(target?.name ?? '').trim())
+  // CU-266: the loop's own routes read names too (a menu or toolbar Paste, a menu Copy by its English name), so they read
+  // the normalised name as the policies do - a zero-width or look-alike 'Paste' is still a paste.
+  const named = (target, names) => names.test(normaliseText(String(target?.name ?? '')).trim())
   const menuCopy = (action, target) => {
     if (!menuClick(action, target)) return false
     const key = keyEquivalentOf(target)
