@@ -273,8 +273,8 @@ const ROWS = [
   // CU-241 (4), cu-developer-one's rule (11:24Z): Command- or Control-Enter in a multi-line editable - a textarea or a
   // contenteditable - is the web's send, so it asks submit unless a read default button says otherwise (named over-ask:
   // code editors). A plain or Shift-Enter there types a new line, and a one-line input keeps today's judging.
-  ['cmd-enter-web-compose-body', 'browser', 'cmdEnter', 'webComposeBody', 'submit', 'CU-241 (4)', 'no live row yet', 'todo CU-241'],
-  ['ctrl-enter-web-textarea', 'browser', 'ctrlEnter', 'webCommentsArea', 'submit', 'CU-241 (4)', 'no live row yet', 'todo CU-241'],
+  ['cmd-enter-web-compose-body', 'browser', 'cmdEnter', 'webComposeBody', 'submit', 'CU-241 (4)', 'no live row yet', 'open CU-241'],
+  ['ctrl-enter-web-textarea', 'browser', 'ctrlEnter', 'webCommentsArea', 'submit', 'CU-241 (4)', 'no live row yet', 'open CU-241'],
   ['enter-web-textarea-newline', 'browser', 'enter', 'webCommentsArea', 'allow', 'CU-241 (4) negative (a new line)', 'no live row yet', 'open CU-241'],
   ['shift-enter-web-compose-newline', 'browser', 'shiftEnter', 'webComposeBody', 'allow', 'CU-241 (4) negative (a new line)', 'no live row yet', 'open CU-241'],
   ['cmd-enter-web-single-line', 'browser', 'cmdEnter', 'webSubjectInput', 'allow', 'CU-241 (4) negative (one-line input: implicit submission judges it)', 'no live row yet', 'open CU-241'],
