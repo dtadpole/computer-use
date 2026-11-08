@@ -1,9 +1,9 @@
 ---
 title: Desktop block and confirm rules
 created: 2026-11-02T09:53:32Z
-modified: 2026-11-08T11:21:47Z
+modified: 2026-11-08T12:14:30Z
 level: L1
-version: 0.4.4
+version: 0.4.5
 description: The rules behind the desktop order of checks - what is blocked by name (system shortcuts, excluded or unknown targets; copy and paste are allowed, D-031), the desktop confirm classes and their pre-approval, and what happens when an excluded app comes to the front.
 status: unverified
 grounded_in:
@@ -13,8 +13,7 @@ grounded_in:
 
 # Desktop block and confirm rules
 
-Detail for the order of checks in [app policy](app-policy.md); rule names are what `createAppPolicy` returns and the
-trajectory records.
+Detail for [app policy](app-policy.md)'s order of checks; rule names are what `createAppPolicy` returns.
 
 ## Blocked by name
 
@@ -22,6 +21,7 @@ trajectory records.
 |---|---|
 | `desktop:navigate` | `navigate`, browser-only |
 | `system_shortcut` (P9) | a chord that acts on the whole system, below |
+| `system_service` (CU-249) | a click on a Services item or a chord bound to one (by the helper's flag or a default title) |
 | `excluded:<kind>` | a target in an excluded app; `excluded:unknown` for a target, or a frontmost app, without a bundle id (fail closed) |
 
 `system_shortcut` matches a chord holding every key of an entry, in any order, extra modifiers too:
@@ -37,6 +37,7 @@ trajectory records.
 | Mission Control, Spaces | `CTRL` with an arrow |
 | Show Desktop | `F11` |
 | VoiceOver | `META+F5` |
+| a default Service (CU-249) | exactly `META+SHIFT+` L, Y, B, 8, M or A |
 | focus to the menu bar, Dock, status menus | `CTRL+F2`, `CTRL+F3`, `CTRL+F8` |
 | input source, Character Viewer, Look Up (CU-242) | `CTRL+SPACE`, `CTRL+META+SPACE`, `CTRL+META+D` |
 
@@ -46,7 +47,7 @@ trajectory records.
 |---|---|---|
 | browser classes | `submit`, `purchase`, `delete`, `permission`, `sensitive_data`, `page_dialog` (an AX sheet accepted with Return), from the AX name, role and typed text | as in the browser |
 | `credential` | a typed credential | never on the desktop |
-| `launch_code` (P10) | opening code, a package or an installer bundle: a double or triple click, `META+O` or `META+DOWN` on a target whose name, AX file name or AX URL ends `.app`, `.command`, `.sh`, `.pkg`, `.dmg`, `.scptd`, `.prefPane`, `.mobileconfig`, `.webloc` and similar - the file name or URL catches extensions Finder hides | never; only a hand-off outranks it |
+| `launch_code` (P10) | opening code, a package or an installer bundle: a double or triple click, `META+O` or `META+DOWN` on a target whose name, AX file name or AX URL ends `.app`, `.sh`, `.pkg`, `.dmg`, `.prefPane` and similar - the file name or URL catches extensions Finder hides | never; only a hand-off outranks it |
 | `unknown_target` (R92) | a click, an Enter or Space chord, or typed text with a newline on an `opaque` target ([input and targets](input-and-targets.md)) | per app |
 
 Known gaps of `launch_code` are [Q-D10](open-questions.md).
@@ -55,7 +56,7 @@ Known gaps of `launch_code` are [Q-D10](open-questions.md).
 
 A key action - typing, a keypress, a paste - into a secure field (`AXSecureTextField`, or the helper's `secure` or
 `isPassword`) or under secure input is handed to the person, never pre-approvable (R83). So is one into a text entry
-named with a password word (password, passcode, passphrase, PIN; whole words, normalised as CU-178): a "Show password"
+named with a password word (password, passcode, passphrase, PIN): a "Show password"
 toggle makes the secure field an `AXTextField` without changing what it holds. An entry whose name also says "hint"
 stays a `credential` confirm. A click into either only focuses it (CU-170). The browser is unchanged: a password field
 asks `credential`. Not covered: an unnamed shown field labelled by separate static text - neither handed off nor asked
@@ -67,8 +68,8 @@ If an excluded app comes to the front mid-run, the next action is handed to the 
 until they hand back) and the frame shows black where it is; if it is still in front after the hand-back, the run
 ends `refused_by_policy`.
 
-`terminal_view` (block, E5): typing or keypresses into a target whose accessible name, description or role description
-names a terminal, console or shell - an IDE's terminal panel runs commands like a terminal app; clicks stay allowed.
+`terminal_view` (block, E5): keys into a target whose name, description or role description names a terminal,
+console or shell (an IDE's terminal panel); clicks stay allowed.
 
-Copy, cut and paste are not blocked (D-031, replacing D-025): the chords and menu items reach approved apps like any
-other input; P9 still refuses the system-wide chords, including the screenshot-to-clipboard ones.
+Copy, cut and paste are not blocked (D-031): they reach approved apps like any input; P9 still refuses the
+screenshot-to-clipboard chords.
