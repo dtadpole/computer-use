@@ -1,7 +1,7 @@
 ---
 title: What it does, approvals and known limits
 created: 2026-11-07T21:18:46Z
-modified: 2026-11-08T17:17:15Z
+modified: 2026-11-08T17:22:55Z
 version: 0.1.8
 level: L1
 status: unverified
@@ -19,7 +19,7 @@ It can click, long-press, Shift-click, Option-drag, type, press or hold keys (up
 
 It cannot see or act in an unapproved app (shown black); it asks first. It never acts in
 terminals and launchers, password managers and Keychain, clipboard managers, System Settings, login and security
-prompts, installers, Disk Utility, Time Machine, Activity Monitor, other AI apps, or its own live view, and never presses a system shortcut that acts beyond the app (Services, Dock hiding, input source, keyboard access). It never saves into or opens from `~/.ssh`, launch agents,
+prompts, installers, Disk Utility, Time Machine, Activity Monitor, other AI apps or Writing Tools, or its own live view, and never presses a system shortcut that acts beyond the app (Services, Dock hiding, input source, keyboard access). It never saves into or opens from `~/.ssh`, launch agents,
 keychains, shell start-up files, login items or `/Applications`. A password field is handed to you, and it stays one after Show password puts it in plain text (one never secure and labelled only by nearby text is not yet judged).
 
 ## Approvals
@@ -32,8 +32,7 @@ file choices are never pre-approved. Typed sensitive text stays out of run files
 
 - In a file panel the question names the folder only if the agent opened it (Go to Folder);
   otherwise "destination folder unknown" - check first.
-- One display: your first app's, at its starting size; if an app moves display,
-  the run ends.
+- One display: your first app's, at its starting size; moving display ends the run.
 - A leftover notification blocks clicks beneath it.
 - A run can end partial; its last line says so.
 - A run stopped mid-hold names the key; the next run releases it, or press and release it.
