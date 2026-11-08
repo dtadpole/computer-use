@@ -68,7 +68,7 @@ test('CU-272 on the desktop path: a Stop sent during a slow app-policy judgement
   assert.ok(readRun(result.trajectoryDir).events.some((e) => e.kind === 'action' && e.reason === 'stopped_before_perform'))
 })
 
-test('CU-272 follow-up: a pause during a slow classify, then resume - the stale action does not post; the next turn plans again', { timeout: 15_000 }, async () => {
+test('CU-274: a pause during a slow classify, then resume - the stale action does not post; the next turn plans again', { timeout: 15_000 }, async () => {
   const control = createRunControl()
   const environment = createFakeEnvironment({ url: START, control })
   let judged = 0
@@ -80,5 +80,25 @@ test('CU-272 follow-up: a pause during a slow classify, then resume - the stale 
   const result = await runTask({ task: 'say hello', environment, model, control, policy, sitePolicy: () => 'allow', runsDirectory: join(tmp, 'resume'), build: { commit: 'test', dirty: false } })
   const typed = environment.log.map((x) => x.action ?? x).filter((a) => a?.type === 'type').map((a) => a.text)
   assert.deepEqual(typed, ['fresh'], 'neither the stale action nor the rest of its batch posted')
+  assert.ok(readRun(result.trajectoryDir).events.some((e) => e.kind === 'action' && e.reason === 'paused_before_perform'))
+})
+
+test('CU-274: a take-over during a slow classify that changes the page, then hand back - the stale action does not post', { timeout: 15_000 }, async () => {
+  const control = createRunControl()
+  const environment = createFakeEnvironment({ url: START, control })
+  let judged = 0
+  const policy = slowPolicy(createPolicy({ sitePolicy: () => 'allow' }), () => {
+    judged += 1
+    if (judged === 1) {
+      setTimeout(() => {
+        control.send({ command: 'take_over' }, { source: 'control' })
+        setTimeout(() => control.send({ command: 'hand_back', note: 'I opened another page' }, { source: 'control' }), 20)
+      }, 0)
+    }
+  })
+  const model = createScriptedAdapter({ frame: { width: 1440, height: 900 }, turns: [{ actions: [{ type: 'type', text: 'stale' }] }, { actions: [{ type: 'type', text: 'fresh' }] }, { final: 'done' }] })
+  const result = await runTask({ task: 'say hello', environment, model, control, policy, sitePolicy: () => 'allow', runsDirectory: join(tmp, 'takeover'), build: { commit: 'test', dirty: false } })
+  const typed = environment.log.map((x) => x.action ?? x).filter((a) => a?.type === 'type').map((a) => a.text)
+  assert.deepEqual(typed, ['fresh'])
   assert.ok(readRun(result.trajectoryDir).events.some((e) => e.kind === 'action' && e.reason === 'paused_before_perform'))
 })
