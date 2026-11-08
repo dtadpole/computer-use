@@ -249,9 +249,9 @@ async function decideSequence(actions, { noFocus = false, grows = false } = {}) 
 }
 const cardDigits = CARD.replace(/\D/g, '')
 const SEQUENCE_ROWS = [
-  ['sequence-card as keypresses', [...cardDigits].map((d) => ({ type: 'keypress', keys: [d] })), 'sensitive_data', 'open CU-267', 'no live row yet'],
+  ['sequence-card as keypresses', [...cardDigits].map((d) => ({ type: 'keypress', keys: [d] })), 'sensitive_data', null, 'cu-verifier K2, the card as keypresses asked at the completing key: 20261108T145522Z-525f91'],
   ['sequence-SSN as keypresses', [...SSN].map((c) => ({ type: 'keypress', keys: [c === '-' ? 'MINUS' : c] })), 'sensitive_data', 'open CU-267', 'no live row yet'],
-  ['sequence-card as four type actions', cardDigits.match(/\d{4}/g).map((g) => ({ type: 'type', text: g })), 'sensitive_data', 'open CU-267', 'no live row yet'],
+  ['sequence-card as four type actions', cardDigits.match(/\d{4}/g).map((g) => ({ type: 'type', text: g })), 'sensitive_data', null, 'cu-verifier K1, the card typed as four type actions asked at the completing piece: 20261108T145519Z-dda29b'],
   // A no-input action between the pieces must not reset what the fix keeps (cu-researcher's correction on CU-267).
   ['sequence-card with waits between pieces', cardDigits.match(/\d{4}/g).flatMap((g) => [{ type: 'type', text: g }, { type: 'wait', duration_ms: 100 }]), 'sensitive_data', 'open CU-267', 'no live row yet'],
   ['sequence-card with a screenshot between pieces', cardDigits.match(/\d{4}/g).flatMap((g) => [{ type: 'type', text: g }, { type: 'screenshot' }]), 'sensitive_data', 'open CU-267', 'no live row yet'],
@@ -262,7 +262,7 @@ const SEQUENCE_ROWS = [
   // grows as it fills becomes a new field between pieces; the driver's fieldKey (CU-194) leaves the size out.
   ['sequence-card halves into a field that grows between them', { grows: true, actions: [{ type: 'type', text: cardDigits.slice(0, 8) }, { type: 'type', text: cardDigits.slice(8) }] }, 'sensitive_data', 'open CU-273', 'no live row yet'],
   ['sequence-card halves into a field that grows upward between them', { grows: 'up', actions: [{ type: 'type', text: cardDigits.slice(0, 8) }, { type: 'type', text: cardDigits.slice(8) }] }, 'sensitive_data', 'open CU-273', 'no live row yet'],
-  ['sequence-plain words in pieces (negative)', [{ type: 'type', text: 'abc' }, { type: 'type', text: 'def' }], 'allow', 'open CU-267', 'no live row yet'],
+  ['sequence-plain words in pieces (negative)', [{ type: 'type', text: 'abc' }, { type: 'type', text: 'def' }], 'allow', null, 'cu-verifier K3, words in pieces typed with no question asked: 20261108T145525Z-cfe701'],
 ]
 for (const [id, pieces, expected, status, live] of SEQUENCE_ROWS) {
   const title = `${id} -> ${expected} (live: ${live})`
@@ -271,7 +271,9 @@ for (const [id, pieces, expected, status, live] of SEQUENCE_ROWS) {
 }
 test('sequence rows: named once; every open row names its issue; a todo row still fails (a fixed row cannot stay todo)', { skip: harness.ready ? false : 'harness not built' }, async () => {
   assert.equal(new Set(SEQUENCE_ROWS.map((r) => r[0])).size, SEQUENCE_ROWS.length)
-  for (const [id, pieces, expected, status] of SEQUENCE_ROWS) {
+  for (const [id, pieces, expected, status, live] of SEQUENCE_ROWS) {
+    // A closed sequence row (null) names the live run that typed its shape, like every other section's closed rows.
+    if (status === null) { assert.ok(closingRun(live), `${id} is closed without a run id or a D-number`); continue }
     assert.match(status, /^(todo|open) CU-\d+$/, id)
     if (status.startsWith('todo ')) assert.notEqual(await decideSequence(pieces.actions ?? pieces, { noFocus: pieces.noFocus === true, grows: pieces.grows ?? false }), expected, `${id} passes on main - flip it from todo`)
   }
