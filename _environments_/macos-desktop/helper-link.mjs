@@ -59,6 +59,9 @@ export const CORE_REQUEST_FIELDS = Object.freeze({
   focused: Object.freeze([]),
   // CU-187 (helper 0.2.45): the element holding the selection - role and caption only.
   selection: Object.freeze([]),
+  // CU-232/CU-236: the menu item of the frontmost approved app that a chord's keyDown would fire - title, path and key
+  // equivalent only (never a value); the request is the planned keyDown itself.
+  menuKey: Object.freeze(['keyCode', 'flags']),
   screenText: Object.freeze(['maxChars']),
   // Q-D13 (file-panels.md): the frontmost attributed open or save panel's canonical selection, read by the helper.
   panelSelection: Object.freeze([]),

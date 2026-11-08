@@ -11,7 +11,7 @@ import {
   captureImage, createHelperServer, HELLO_GRANTS, isPrivateDir, LOCAL_INPUT_KINDS, LOCAL_INPUT_VIA, MAX_SIMULATE_SCALE, PEER_CHECKS, replyError, REQUEST_TIMEOUT_MS,
   SETTLE_CAP_MS, SETTLE_MS,
 } from './helper-link.mjs'
-import { ACTION_TYPES, hitTestPoints, NAVIGATE_REFUSAL, planAction, planBatch } from './input-plan.mjs'
+import { ACTION_TYPES, chordKeyDowns, hitTestPoints, NAVIGATE_REFUSAL, planAction, planBatch } from './input-plan.mjs'
 import { keyName } from './keys.mjs'
 import { defaultBundlePath, driverIdentity, driverLaunchProblems, helperExecutablePath, launchHelper } from './launch.mjs'
 import { acquireDesktopRun, RUN_ID_PATTERN, SEAT_PATTERN } from './run-lock.mjs'
@@ -626,6 +626,51 @@ function keyEquivalentOf(value) {
   const char = typeof value.char === 'string' && value.char.length >= 1 && value.char.length <= 4 && !/[\u0000-\u001F\u007F]/u.test(value.char) ? value.char : null
   const modifiers = Number.isInteger(value.modifiers) && value.modifiers >= 0 && value.modifiers <= 15 ? value.modifiers : null
   return char === null && modifiers === null ? null : { char, modifiers }
+}
+
+/** CU-236: a menu title or path step as passed on - trimmed, at most 80 characters, no control characters; else null. */
+function menuTitleOf(value) {
+  if (typeof value !== 'string') return null
+  const text = value.trim()
+  return text !== '' && !/[\u0000-\u001F\u007F]/u.test(text) ? text.slice(0, 80) : null
+}
+
+/**
+ * CU-236: a bound item's key equivalent - `char` (AXMenuItemCmdChar) or `glyph` (AXMenuItemCmdGlyph, an integer code for
+ * Delete, Return, arrows, F-keys), and `modifiers` (AXMenuItemCmdModifiers, 0-15 as keyEquivalentOf reads it). Null when
+ * neither a char nor a glyph is usable.
+ */
+function menuKeyEquivalentOf(value) {
+  const base = keyEquivalentOf(value)
+  const glyph = Number.isSafeInteger(value?.glyph) && value.glyph > 0 && value.glyph < 0x10000 ? value.glyph : null
+  if (base?.char == null && glyph === null) return null
+  return { char: base?.char ?? null, ...(glyph !== null ? { glyph } : {}), modifiers: base?.modifiers ?? null }
+}
+
+/**
+ * CU-236: one menuKey reply as the driver passes it on, failing closed: `{ role: 'AXMenuItem', name, keyEquivalent, path }`
+ * for a titled item of an app in `scope`, `{ none: true }` only for that exact answer, and `{ unreadable: true }` for
+ * everything else - an unreadable bar, an untitled item, an item of an app outside the scope, a malformed reply. Never a
+ * value: only the title, the path of titles and the key equivalent are read.
+ */
+export function boundMenuItemOf(reply, scope = []) {
+  if (reply?.none === true && reply.item === undefined && reply.unreadable === undefined) return { none: true }
+  const item = reply?.item
+  if (item === null || typeof item !== 'object' || Array.isArray(item) || reply.unreadable !== undefined || reply.none !== undefined) return { unreadable: true }
+  if (item.bundleId !== undefined && (typeof item.bundleId !== 'string' || !scope.includes(item.bundleId))) return { unreadable: true }
+  const name = menuTitleOf(item.title)
+  if (name === null) return { unreadable: true }
+  const path = Array.isArray(item.path) ? item.path.slice(0, 8).map(menuTitleOf).filter((step) => step !== null) : []
+  return { role: 'AXMenuItem', name, keyEquivalent: menuKeyEquivalentOf(item.keyEquivalent), path }
+}
+
+/** Two bound-item answers as one: an unreadable read wins, then a second, different item (unreadable), then an item. */
+function combineBound(a, b) {
+  if (a === null) return b
+  if (a.unreadable || b.unreadable) return { unreadable: true }
+  if (a.none) return b
+  if (b.none) return a
+  return a.name === b.name && JSON.stringify(a.path) === JSON.stringify(b.path) ? a : { unreadable: true }
 }
 
 /** A helper's panel marker: 'save', 'open' or 'unknown' (any other value fails closed to 'unknown'); null when absent. */
@@ -1660,6 +1705,43 @@ class DesktopEnvironment {
     } catch {
       return null
     }
+  }
+
+  /**
+   * CU-232/CU-236: the menu item a key chord would fire in the frontmost approved app, read before it is sent - AppKit
+   * offers a key equivalent to the menu bar, so Shift-Command-D sends Mail's draft as surely as a click on Message >
+   * Send. The helper's menuKey gets each of the chord's non-modifier keyDowns exactly as the chord would post them
+   * (chordKeyDowns: one key mapping for the read and the input) and answers the matching item's title, path and key
+   * equivalent, `none` when the bar was read whole with no match, or `unreadable`. Returns boundMenuItemOf's shape;
+   * two keys that bind different items, a refusal (an older helper's unknown_request), a throw or a chord the planner
+   * refuses read as `{ unreadable: true }` - agent core asks then, except for its editing chords. A chord with no
+   * non-modifier key fires no item: `{ none: true }`. Read fresh each time; never cached here.
+   */
+  async menuItemForChord(action) {
+    this.#assertInScope()
+    let downs
+    try {
+      if (action?.type !== 'keypress' && action?.type !== 'hold_key') return { unreadable: true }
+      downs = chordKeyDowns(action.keys)
+    } catch {
+      return { unreadable: true }
+    }
+    const seen = new Set()
+    let bound = null
+    for (const down of downs) {
+      const key = `${down.keyCode}:${down.flags}`
+      if (seen.has(key)) continue
+      seen.add(key)
+      let reply
+      try {
+        reply = await this.link.request('menuKey', { keyCode: down.keyCode, flags: down.flags })
+      } catch {
+        return { unreadable: true }
+      }
+      bound = combineBound(bound, boundMenuItemOf(reply, this.scope))
+      if (bound.unreadable) return bound
+    }
+    return bound ?? { none: true }
   }
 
   /** Visible text of the frontmost approved window for the inspector; secure fields are left out by the helper. */
