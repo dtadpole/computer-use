@@ -352,6 +352,20 @@ const SECRET_PARAM = /^(token|access_?token|refresh_?token|id_?token|api_?key|ap
 // cu-researcher: aligned with D-061's credential names (passcode, passphrase, PIN) and any name ending in secret.
 const PASSWORD_PARAM = /^([a-z0-9]*[_-]?secret|password|passwd|pwd|pass|passcode|passphrase|pin)$/i
 
+// CU-281 (cu-coordinator: High, cu-researcher's idea on CU-260): a query or fragment parameter named for a D-061 field -
+// passport, ssn, date_of_birth, card_number, iban, tax_id - carries that value whatever its shape. D-062's contact names
+// (email, phone, address) and the bare card-expiry words stay out (their values are judged by shape; 'expiry' is a cache
+// parameter as often as a card's). Matched as whole words after splitting snake, kebab and camel case.
+const URL_FIELD_SKIP = new Set(['email', 'e-mail', 'phone', 'mobile number', 'telephone', 'street', 'address line', 'home address',
+  'shipping address', 'billing address', 'mailing address', 'postal address', 'cell number', 'mobile', 'tel', 'expiry',
+  'expiration date', 'mm/yy', 'exp date', 'expiration', 'valid thru', 'valid through', 'secret', 'api key', 'access token'])
+const URL_FIELD_NAMES = Object.freeze([...SECRET_NAMES.filter((name) => !URL_FIELD_SKIP.has(name)), 'iban', 'tax id', 'taxid',
+  'account number', 'routing number', 'sort code', 'bank account', 'national id number', 'id number'])
+function urlFieldName(name) {
+  const words = ` ${String(name ?? '').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase().replace(/[^a-z0-9/']+/g, ' ').trim()} `
+  return words.trim() !== '' && URL_FIELD_NAMES.some((field) => words.includes(` ${field} `))
+}
+
 /**
  * CU-260: the D-061 value a navigate URL would carry off the page, or null - the value rules over the decoded query
  * values, fragment and path segments, a password in the address, or a query parameter named for a secret (a value of 8
@@ -379,6 +393,7 @@ export function urlSecret(raw) {
   for (const [name, value] of params) {
     if (PASSWORD_PARAM.test(name.trim()) && value.trim() !== '') return 'key'
     if (SECRET_PARAM.test(name.trim()) && value.trim().length >= 8) return 'key'
+    if (value.trim() !== '' && urlFieldName(name)) return 'field_name'
     const kind = looksSensitive(value)
     if (kind !== null) return kind
   }

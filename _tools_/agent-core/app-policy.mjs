@@ -92,7 +92,8 @@ const serviceItem = (action, target) => CLICKS.has(action.type) && /^(ax)?menuit
 // Concise, Summary, List, Table, Compose) are refused only there; the unambiguous titles and any item naming an AI are
 // refused by title where no path is read. Named limits: localised titles where no path is read; an app's own AI item
 // under its own menu (VS Code's Ask Copilot) is the approved app's feature and stays as before.
-const WRITING_TOOLS_TITLE = /^(proofread|rewrite|show writing tools|writing tools)\b/i
+// cu-verifier on #108: Writing Tools' own verb phrases are unambiguous too.
+const WRITING_TOOLS_TITLE = /^(proofread|rewrite|show writing tools|writing tools|make (friendly|professional|concise)|create key points)\b/i
 const OTHER_AI = /\b(chatgpt|openai|gemini|claude|copilot)\b/i
 const underWritingTools = (target) => Array.isArray(target?.menuPath) && target.menuPath.slice(0, -1).some((part) => /^writing tools$/i.test(String(part ?? '').trim()))
 // cu-researcher on #108: a menu path, when read, decides - so an app's own 'Rewrite history' (a git client) or 'Ask
@@ -132,6 +133,29 @@ function dropsOntoApp(target) {
 }
 const appNameOf = (target) => String(target?.filename ?? target?.name ?? '').trim().replace(/\.app\/?$/i, '')
 
+// CU-271: IDEs (kind ide) - a bundle id or a prefix ending in '.'; Cursor by its exact id (cu-developer-three's read: the
+// com.todesktop. prefix is every ToDesktop-built app).
+const IDE_BUNDLES = ['com.microsoft.VSCode', 'com.microsoft.VSCodeInsiders', 'com.visualstudio.code.oss', 'com.vscodium', 'com.todesktop.230313mzl4w4u92',
+  'com.apple.dt.Xcode', 'com.jetbrains.', 'com.google.android.studio', 'com.sublimetext.', 'com.panic.nova', 'dev.zed.Zed']
+function isIde(bundleId) {
+  const id = String(bundleId ?? '').toLowerCase()
+  return id !== '' && IDE_BUNDLES.some((entry) => (entry.endsWith('.') ? id.startsWith(entry.toLowerCase()) : id === entry.toLowerCase() || id.startsWith(`${entry.toLowerCase()}.`)))
+}
+// cu-researcher on #119: Build (a build system runs the file) and Test (runs test code) run code too.
+const RUN_NAME = /(^|[^a-z])(run|runs|debug|debugging|execute|build and run|build|test|tests)([^a-z]|$)/i
+const RUN_CLICKS = new Set(['click', 'double_click', 'triple_click'])
+function runsInIde(action, target, bound) {
+  // A menu-bar title ('Run' in VS Code's bar) only opens its menu - the item chosen in it is judged.
+  if (RUN_CLICKS.has(action.type)) return !/^(ax)?menubaritem$/i.test(String(target?.role ?? '')) && RUN_NAME.test(String(target?.name ?? ''))
+  if (action.type !== 'keypress' && action.type !== 'hold_key') return false
+  const keys = new Set((action.keys ?? []).map((key) => String(key).toUpperCase()))
+  if ([...keys].some((key) => /^F5$/.test(key))) return true
+  if (keys.size === 2 && keys.has('META') && keys.has('R')) return true
+  if (keys.size === 2 && keys.has('ENTER') && (keys.has('SHIFT') || keys.has('CTRL'))) return true
+  const items = bound && typeof bound === 'object' ? (Array.isArray(bound.items) ? bound.items : (typeof bound.name === 'string' ? [bound] : [])) : []
+  return items.some((item) => RUN_NAME.test(String(item?.name ?? '')))
+}
+
 function launchesCode(action, target) {
   // Finder may hide an extension, so the AX file name or URL the driver reports counts too (red-team retest of P10).
   const names = [target?.name, target?.filename, target?.url].map((value) => String(value ?? '').trim())
@@ -151,14 +175,28 @@ const FILE_BROWSERS = new Set(['com.apple.finder'])
 const OPEN_ITEM = /^open$/i
 const RUNNER_TITLES = /^(terminal|iterm2?|warp|ghostty|kitty|alacritty|hyper|wezterm|script editor|automator|shortcuts|alfred|raycast)$/i
 const isMenuItem = (target) => /^(ax)?menuitem$/i.test(String(target?.role ?? ''))
-export function opensUnreadSelection(action, target, app) {
-  if (!FILE_BROWSERS.has(String(app ?? ''))) return false
+/**
+ * CU-252: an open that acts on the selection, in any app - a click on a menu item named Open, or Command-O or
+ * Command-Down with no named file focused. The loop reads the selection for it (names and kinds only).
+ */
+export function opensSelection(action, target) {
   if (CLICKS.has(action.type)) return isMenuItem(target) && OPEN_ITEM.test(String(target?.name ?? '').trim())
   const keys = chord(action)
   if (!(keys.has('META') && (keys.has('O') || keys.has('ARROWDOWN')))) return false
   // A focused element that is itself a named file is judged by launchesCode on its own name.
   const named = String(target?.name ?? '').trim() !== '' && !/^(ax)?(outline|table|browser|list|group|scrollarea|splitgroup|window)$/i.test(String(target?.role ?? ''))
   return !named
+}
+/** CU-252 rule 1: in Finder an open of the selection asks unless the selection read says it cannot run code. */
+export function opensUnreadSelection(action, target, app) {
+  return FILE_BROWSERS.has(String(app ?? '')) && opensSelection(action, target)
+}
+/**
+ * CU-252 in any other app (a file manager such as Path Finder or ForkLift, a stand-in): judged only when the selection
+ * read reports a file or folder item - a list of messages or notes (kinds unknown) is not a file list and stays unjudged.
+ */
+function selectsFiles(selection) {
+  return Array.isArray(selection?.items) && selection.items.some((item) => item?.kind === 'file' || item?.kind === 'folder')
 }
 /**
  * CU-252 rule 3 (the driver's selectedItems, CU-259): whether the selection an open acts on may run code. A launchable
@@ -195,11 +233,15 @@ const APP_STORE = 'com.apple.AppStore'
 const STORE_INSTALL = /^(get|install|update|update all|download|redownload|reinstall)\b/i
 // cu-verifier on #58: a button titled with a price ('$4.99', '¥30', '4,99 €', 'Price, 4.99 dollars') starts a purchase.
 const STORE_PRICE = /^(price\b|[$€£¥₩₹]\s?\d|\d+(?:[.,]\d+)?\s?[$€£¥₩₹])/i
+// CU-280 (cu-researcher; cu-coordinator: Medium): a free trial starts a renewing subscription, and a price may be written
+// with its currency code ('USD 4.99', '4,99 EUR') - both are purchases.
+const STORE_TRIAL = /^(try (it )?free|start (a |your )?free trial|free trial|try free for)\b/i
+const STORE_CODE_PRICE = /^((usd|eur|gbp|jpy|cny|rmb|krw|inr|cad|aud|chf|sek|nok|dkk|hkd|sgd|nzd|brl|mxn)\s?\d|\d+(?:[.,]\d+)?\s?(usd|eur|gbp|jpy|cny|rmb|krw|inr|cad|aud|chf|sek|nok|dkk|hkd|sgd|nzd|brl|mxn)\b)/i
 /** 'install' or 'purchase' for an App Store button that installs or buys, pressed by a click, Space or Return; else null. */
 function storeInstall(action, target, app) {
   if (String(app ?? '') !== APP_STORE || !/^(ax)?button$/i.test(String(target?.role ?? ''))) return null
   const name = String(target?.name ?? '').trim()
-  const cls = STORE_PRICE.test(name) ? 'purchase' : STORE_INSTALL.test(name) ? 'install' : null
+  const cls = STORE_PRICE.test(name) || STORE_CODE_PRICE.test(name) || STORE_TRIAL.test(name) ? 'purchase' : STORE_INSTALL.test(name) ? 'install' : null
   if (cls === null) return null
   if (CLICKS.has(action.type)) return cls
   const keys = chord(action)
@@ -389,9 +431,16 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     if (runner !== null) {
       return { decision: 'block', class: null, rule: 'excluded:terminal', reason: `"${runner}" opens the selection in an excluded app` }
     }
-    // CU-249: a default Services chord may run a service outside the approved app - refused whatever the app binds.
+    // CU-249: a default Services chord may run a service outside the approved app - refused, unless (CU-256, cu-coordinator
+    // 13:42Z) the menu read finds exactly one ENABLED app item bound to it: Apple's Services guide says the application's
+    // own shortcut wins, so the chord is judged as a click on that item below. Disabled, none, unreadable, several matches
+    // or a servicesMenu mark keep the refusal. Named residual: an owner-assigned Services shortcut (CU-250 fails it closed).
     const service = serviceShortcut(action)
-    if (service !== null) {
+    const boundItems = context.boundMenuItem && typeof context.boundMenuItem === 'object' && context.boundMenuItem.unreadable !== true
+      ? (Array.isArray(context.boundMenuItem.items) ? context.boundMenuItem.items : (typeof context.boundMenuItem.name === 'string' ? [context.boundMenuItem] : []))
+      : []
+    const appItemWins = boundItems.length === 1 && boundItems[0]?.enabled === true && boundItems[0]?.servicesMenu !== true && !SERVICE_ITEM.test(String(boundItems[0]?.name ?? '').trim())
+    if (service !== null && !appItemWins) {
       // Inside a file panel the panel's own refusal names the chord (Command-Shift-A is its Applications shortcut).
       const panelBlock = panelKind(target) !== null ? panelVerdict(action, target, target?.origin ?? context.frontmostBundleId) : null
       if (panelBlock?.decision === 'block') return panelBlock
@@ -480,7 +529,14 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     if (launchesCode(action, target) && verdict.decision !== 'handoff') {
       return { decision: 'confirm', class: 'launch_code', classes: ['launch_code', ...(verdict.classes ?? [])], rule: 'target:launch_code', reason: `open "${target.name}", which runs code`, app }
     }
-    if (opensUnreadSelection(action, target, app) && selectionRunsCode(context.selection) && verdict.decision !== 'handoff') {
+    // CU-271 (cu-researcher; cu-coordinator 14:22Z: High, ask): in an IDE, running the code is the owner's call - a run or
+    // debug control by name (menu, toolbar, CodeLens), a menu item a chord fires with such a name, and the run chords (F5
+    // with any modifiers, Command-R, Shift- or Control-Return) ask launch_code, never pre-approved. Typing code stays free.
+    if (isIde(app) && verdict.decision !== 'handoff' && runsInIde(action, target, context.boundMenuItem)) {
+      return { decision: 'confirm', class: 'launch_code', classes: ['launch_code', ...(verdict.classes ?? [])], rule: 'ide:run', reason: `run code in ${app}`, app }
+    }
+    const opensFiles = opensUnreadSelection(action, target, app) || (opensSelection(action, target) && selectsFiles(context.selection))
+    if (opensFiles && selectionRunsCode(context.selection) && verdict.decision !== 'handoff') {
       return { decision: 'confirm', class: 'launch_code', classes: ['launch_code', ...(verdict.classes ?? [])], rule: 'selection:launch_code', reason: 'open the selection, which this run cannot read - it may run code', app }
     }
     // CU-269 (cu-researcher): a drop onto an app's icon - a Finder .app item or a Dock app item - opens the dragged item
