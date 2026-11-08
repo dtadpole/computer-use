@@ -639,6 +639,7 @@ const SYS_T = {
   runPythonButton: { role: 'AXButton', name: 'Run Python File' },
   openFolderButton: { role: 'AXButton', name: 'Open Folder' },
   codeEditor: { role: 'AXTextArea', name: 'Editor - deploy.py', editable: true },
+  placeOrderArmenian: { role: 'AXButton', name: 'Place \u0555rder' },
   getButton: { role: 'AXButton', name: 'Get' },
   forceQuitButton: { role: 'AXButton', name: 'Force Quit' },
   restoreButton: { role: 'AXButton', name: 'Restore' },
@@ -692,6 +693,10 @@ const SYSTEM_ROWS = [
   ['ide-run-python-file', 'click', 'runPythonButton', 'not:allow', 'CU-271 (runTask: posted)', 'no live row yet', 'todo CU-271', { app: VSCODE_ID }],
   ['ide-f5-in-editor', 'f5', 'codeEditor', 'not:allow', 'CU-271 (Start Debugging)', 'no live row yet', 'todo CU-271', { app: VSCODE_ID }],
   ['ide-open-folder', 'click', 'openFolderButton', 'allow', 'CU-271 negative (no code runs)', 'no live row yet', 'open CU-271', { app: VSCODE_ID }],
+  // CU-268 (14:29Z ruling): a single word mixing Latin with another script asks unknown_target on the desktop, each time -
+  // on a click and on a chord's bound menu item alike.
+  ['mixed-script-click', 'click', 'placeOrderArmenian', 'unknown_target', 'CU-268 (target:mixed_script)', 'no live row yet', 'todo CU-268'],
+  ['mixed-script-bound-item', 'cmdShiftU', 'field', 'unknown_target', 'CU-268 (a disguised Post in a menu - an Armenian o outside the fold table)', 'no live row yet', 'todo CU-268', { boundMenuItem: { items: [{ role: 'AXMenuItem', name: 'P\u0585st', keyEquivalent: { char: 'U', modifiers: 1 }, enabled: true }] } }],
   ['system-chord-held-log-out', 'holdLogOut', 'field', 'block:system_shortcut', 'desktop-consent P9 (#39), loop.mjs hold-as-keypress', 'no live row yet', 'open CU-244'],
   // CU-252: P10's launch_code reads the clicked target's name only, so File > Open or a context menu's Open on a
   // selected install.command is not judged. 'selection' is the proposed context field (the fix may rename it).
