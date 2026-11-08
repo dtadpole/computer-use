@@ -1,8 +1,8 @@
 ---
 title: Verify kit tests
 created: 2026-11-01T09:33:46Z
-modified: 2026-11-02T11:16:38Z
-version: 1.10.0
+modified: 2026-11-08T10:22:47Z
+version: 1.11.0
 description: The unit suite of the verify kit - the memory gate and guarded profiles, and the CDP input events each canonical action becomes.
 grounded_in:
   - source: shared/_conventions_/core-conventions/working-agreements.md@1.5.1 (key functions carry test cases)
@@ -23,6 +23,7 @@ grounded_in:
 | [mcp-client.test.mjs](mcp-client.test.mjs) | line framing, replies by id, tool results, exit on stdin close |
 | [png.test.mjs](png.test.mjs) | a round trip through every scanline filter, RGB and RGBA, refusals |
 | [cdp-input.test.mjs](cdp-input.test.mjs) | key names and aliases, modifier bits, the events of each action, refusal by name |
+| [build-sources.test.mjs](build-sources.test.mjs) | the local config read, the source order and where the history path may come from, `locateBuild`, `commitIn` on real temporary repositories, and evaluation-suite check 2 holding, failing and unjudged on a record set (CU-222) |
 | [mutants-current.test.mjs](mutants-current.test.mjs) | every verifier's mutants still apply: each find text occurs exactly once in this tree (a changed line names its stranded mutant) |
 
 The plan runner's pure parts are judged in [`_tests_/fixture-site/plans.test.mjs`](../fixture-site/plans.test.mjs).
