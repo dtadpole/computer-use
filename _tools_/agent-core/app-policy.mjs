@@ -441,13 +441,18 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
       return { decision: 'confirm', class: 'launch_code', classes: ['launch_code', ...(verdict.classes ?? [])], rule: 'selection:launch_code', reason: 'open the selection, which this run cannot read - it may run code', app }
     }
     // CU-269 (cu-researcher): a drop onto an app's icon - a Finder .app item or a Dock app item - opens the dragged item
-    // with that app (Finder's 'open with'). A terminal or code runner by name is refused as its app would be; any other app
-    // asks launch_code, never pre-approved - whether the app is approved cannot be read from its icon (an accepted over-ask
-    // for a document dropped onto an approved app's icon).
+    // with that app (Finder's 'open with'). A terminal or code runner by name is refused as its app would be; a launchable
+    // item asks launch_code (never pre-approved); a document asks new_app.
     if (action.type === 'drag' && dropsOntoApp(context.dropTarget) && verdict.decision !== 'handoff') {
       const appName = appNameOf(context.dropTarget)
       if (RUNNER_APP_NAMES.test(appName)) return { decision: 'block', class: null, rule: 'excluded:terminal', reason: `drop onto ${appName}, which runs code (excluded)` }
-      return { decision: 'confirm', class: 'launch_code', classes: ['launch_code', ...(verdict.classes ?? [])], rule: 'drop:open_with', reason: `open the dragged item with ${appName || 'an app'}`, app }
+      // cu-coordinator 14:10Z: a launchable item asks launch_code; a document asks new_app, since the icon does not say
+      // whether its app is approved (an accepted over-ask for an approved app's icon until the driver reports its bundle id).
+      const names = [target?.name, target?.filename, target?.url].map((value) => String(value ?? '').trim())
+      if (names.some((value) => LAUNCHABLE.test(value))) {
+        return { decision: 'confirm', class: 'launch_code', classes: ['launch_code', ...(verdict.classes ?? [])], rule: 'drop:open_with', reason: `open "${target?.name ?? 'the item'}", which runs code, with ${appName || 'an app'}`, app }
+      }
+      return { decision: 'confirm', class: 'new_app', classes: ['new_app', ...(verdict.classes ?? [])], rule: 'drop:open_with', reason: `open the dragged item with ${appName || 'an app'}, whose approval its icon does not show`, app: appName || null }
     }
     // CU-232 (menu-key.md): a chord whose menu item could not be read may fire whatever the app binds to it (Mail's Send
     // is Shift-Command-D), so it asks each time unless the keys already ask. The loop reads no item for the editing chords

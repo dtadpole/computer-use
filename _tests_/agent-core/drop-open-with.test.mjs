@@ -18,15 +18,17 @@ const drag = { type: 'drag', path: [{ x: 10, y: 10 }, { x: 300, y: 200 }] }
 const item = (name) => ({ origin: FINDER, role: 'AXImage', name, filename: name, fingerprint: 'f' })
 const judge = (source, dropTarget) => policy.classify(drag, { frontmostBundleId: FINDER, target: source, dropTarget })
 
-test('CU-269: a drop onto a terminal or code runner icon is refused; onto any other app icon asks launch_code, never pre-approved', () => {
+test('CU-269: a drop onto a terminal or code runner icon is refused; onto any other app icon a launchable item asks launch_code, a document new_app (cu-coordinator 14:10Z)', () => {
   for (const name of ['Terminal.app', 'iTerm.app', 'Script Editor.app', 'Automator', 'Shortcuts.app/']) {
     const dropTarget = name.includes('.app') ? item(name) : { origin: 'com.apple.dock', role: 'AXDockItem', subrole: 'AXApplicationDockItem', name }
     const v = judge(item('install.command'), dropTarget)
     assert.deepEqual([v.decision, v.rule], ['block', 'excluded:terminal'], name)
   }
   for (const dropTarget of [item('TextEdit.app'), item('Preview.app'), { origin: 'com.apple.dock', role: 'AXDockItem', subrole: 'AXApplicationDockItem', name: 'Mail' }]) {
-    const v = judge(item('notes.txt'), dropTarget)
-    assert.deepEqual([v.decision, v.class, v.rule], ['confirm', 'launch_code', 'drop:open_with'], dropTarget.name)
+    const launch = judge(item('install.command'), dropTarget)
+    assert.deepEqual([launch.decision, launch.class, launch.rule], ['confirm', 'launch_code', 'drop:open_with'], `a launchable item onto ${dropTarget.name}`)
+    const doc = judge(item('notes.txt'), dropTarget)
+    assert.deepEqual([doc.decision, doc.class, doc.rule], ['confirm', 'new_app', 'drop:open_with'], `a document onto ${dropTarget.name}`)
   }
 })
 
