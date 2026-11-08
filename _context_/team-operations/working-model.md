@@ -1,7 +1,7 @@
 ---
 title: '[cu] working model'
 created: 2026-11-01T09:06:25Z
-modified: 2026-11-08T23:05:15Z
+modified: 2026-11-08T23:25:02Z
 level: L2
 version: 3.2.0
 description: How every [cu] seat works - its two worktrees, Linear, how records and code land, code rules, the Mac's limits, the inbox and the milestones.
@@ -17,9 +17,11 @@ Seats: TEAM.yaml (the private roster) and `_team_members_/<seat>/responsibilitie
 
 ## Where you work
 
-Records: `~/reflection--<seat>` (branch `cu/<seat>`), project folder `_projects_/computer-use/`. Code:
-`~/computer-use--<seat>` (branch `cu/<seat>`), a worktree of the main checkout `~/dtadpole/computer-use`
-(D-039, D-077). Never edit or commit in `~/reflection` (D-004); pass `workdir` to every shell call.
+Code and public records: this repository, main checkout `~/dtadpole/computer-use` (DSH workspace
+"dtadpole/computer-use"), edited only in your session worktree `~/dtadpole/computer-use-wt/<session-id>` on a
+`cu/<seat>-...` branch per change (D-039, D-077). A CUHelper run starts from `~/computer-use--<seat>` until helper
+0.2.58 admits the convention paths. Private records (the roster, seat files, review log) stay in the reflection
+bank, edited from your reflection session worktree. Never edit a main checkout; pass `workdir` to every shell call.
 Write only your scope; another seat's files change through a message to it.
 
 ## Linear
@@ -32,11 +34,11 @@ priorities, labels, PR words, cadence and each seat's duties: [linear-workflow.m
 ## Landing a change
 
 1. `git add <paths> && git commit` in one command, never `git add -A`; Conventional Commits.
-2. Records (reflection): the same commit appends one English line to `_logs_/repo-actions/action-log.jsonl`; owner
-   inputs go verbatim to `_logs_/user-inputs/input-log.jsonl`. Rebase, push `cu/<seat>-<UTC>`, `gh pr create` and
-   `gh pr merge --merge` yourself; read back that the commit is on `origin/main`.
-3. Code (dtadpole/computer-use, main PR-only): push a branch, open a PR whose title names `Fixes CU-n`, send
-   cu-integrator a merge request; it gates and lands with `pr-merge.py` (D-026). Never push main or force-push.
+2. Records: the same commit appends one English line, without session ids, to `_logs_/repo-actions/action-log.jsonl`
+   (D-077); a records-only PR lands on phase 1 (D-076). Private records in the reflection bank go by PR there.
+3. Code and records (main PR-only): run the public-hygiene gate over `origin/main..HEAD`, push a branch, open a PR
+   whose title names `Fixes CU-n` or `Part of CU-n`, send cu-integrator a merge request; it gates and lands with
+   `pr-merge.py` (D-026). Never push main or force-push.
 
 Replies to the owner are Chinese; files, logs and inbox messages English.
 
