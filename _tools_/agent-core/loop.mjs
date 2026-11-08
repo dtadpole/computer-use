@@ -472,14 +472,35 @@ export async function runTask(options) {
   }
   // CU-151 (paste-consent.md): on the desktop a paste inserts the owner's pasteboard unless the run's own copy put it
   // there. The pasteboard stays unread; the helper's changeCount (target.pasteboardChangeCount) proves an own copy: the
-  // count before each copy or cut, and at the paste it must have risen by exactly the run's own copies. With no count (an
-  // older helper) the action history alone decides - a named limit. A pause or take-over resets it (the person may copy).
+  // count before each copy or cut, and at the paste it must have risen by exactly the run's own copies. With no count -
+  // never an older helper since D-069's floor (the count came in 0.2.38), so a deviation - the paste is the owner's and
+  // asks (CU-220): a copy with nothing selected cannot pass. A pause or take-over resets it (the person may copy).
   const chordOf = (action, letter) => {
     if ((action.type !== 'keypress' && action.type !== 'hold_key') || !Array.isArray(action.keys)) return false
     try {
       const keys = new Set(action.keys.map((key) => normalizeKey(String(key))))
       return keys.size === 2 && (keys.has('META') || keys.has('CTRL')) && keys.has(letter)
     } catch { return false }
+  }
+  // CU-230 (paste-consent.md): a paste chord is Command or Control with V, whatever else is held - Command-Option-Shift-V
+  // (Paste and Match Style) or Command-Shift-V (a plain-text paste in many apps; the browser driver pastes the run
+  // clipboard on it). One recognised wrongly only asks; one missed pastes unjudged. A desktop copy chord stays exact
+  // (chordOf): a copy missed only raises the count past the run's copies, so the paste asks, while one counted wrongly
+  // would vouch for a pasteboard the run did not write. A browser copy follows the driver's map (chordMeaning: Shift
+  // allowed, no Option) and keeps its source only when the run buffer really changed.
+  const keySetOf = (action) => {
+    if ((action.type !== 'keypress' && action.type !== 'hold_key') || !Array.isArray(action.keys)) return null
+    try { return new Set(action.keys.map((key) => normalizeKey(String(key)))) } catch { return null }
+  }
+  const pasteChord = (action) => {
+    const keys = keySetOf(action)
+    return keys !== null && keys.has('V') && (keys.has('META') || keys.has('CTRL'))
+  }
+  const copyChord = (action, letter) => {
+    if (desktop) return chordOf(action, letter)
+    const keys = keySetOf(action)
+    return keys !== null && keys.has(letter) && (keys.has('META') || keys.has('CTRL')) && !keys.has('ALT')
+      && [...keys].every((key) => key === letter || MODIFIER_KEYS.includes(key))
   }
   // CU-154: a menu item is known by its key equivalent (AXMenuItemCmdChar and its modifier mask: 0 Command only, +1 Shift,
   // +2 Option, +4 Control, +8 no Command) in any language; its English name is the fallback when none is reported.
@@ -500,17 +521,17 @@ export async function runTask(options) {
     // Command-V with Shift and Option too (Paste and Match Style), never with Control or without Command.
     return key ? key.char === 'V' && (key.modifiers & 12) === 0 : named(target, /^paste( and match style)?$/i)
   }
-  const isCopy = (action, target) => chordOf(action, 'C') || chordOf(action, 'X') || menuCopy(action, target)
+  const isCopy = (action, target) => copyChord(action, 'C') || copyChord(action, 'X') || menuCopy(action, target)
   // CU-192 (paste-consent.md): on the desktop a toolbar or popover button named exactly Paste or Paste and Match Style
   // pastes the system pasteboard too - a click like a menu paste (English names; a pop-up's AXMenuButton is no paste).
   const buttonPaste = (action, target) => desktop && ['click', 'double_click', 'triple_click'].includes(action.type)
     && /^(ax)?button$/i.test(String(target?.role ?? '')) && named(target, /^paste( and match style)?$/i)
-  const isPaste = (action, target) => chordOf(action, 'V') || menuPaste(action, target) || buttonPaste(action, target)
+  const isPaste = (action, target) => pasteChord(action) || menuPaste(action, target) || buttonPaste(action, target)
   const countOf = (target) => (Number.isSafeInteger(target?.pasteboardChangeCount) && target.pasteboardChangeCount >= 0 ? target.pasteboardChangeCount : null)
   const ownCopy = (target) => {
     if (pasteboard.own === 0) return false
     const count = countOf(target)
-    return count === null || pasteboard.baseline === null ? true : count === pasteboard.baseline + pasteboard.own
+    return count === null || pasteboard.baseline === null ? false : count === pasteboard.baseline + pasteboard.own
   }
   // CU-183 (copy-source.md): a copy's source field is kept by its descriptor - role, name and the flags the name rules
   // read - never its value; each own copy's source sits beside the count that proves it.
@@ -557,8 +578,9 @@ export async function runTask(options) {
     pasteboard.own += 1
     pasteboard.sources.push(source)
   }
-  // At a paste of the run's own copy: proven by the count, the last copy wrote what is pasted; with no count, every
-  // source since the last proven count is passed and the policy takes the strongest.
+  // At a paste of the run's own copy: proven by the count, the last copy wrote what is pasted. With no count ownCopy is
+  // false since CU-220, so no paste reaches the fallback; were one to, every source since the last proven count would be
+  // passed and the policy would take the strongest.
   const pastedSource = (target) => {
     const known = pasteboard.sources.filter(Boolean)
     if (known.length === 0) return null

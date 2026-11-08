@@ -166,6 +166,9 @@ export function chordMeaning(mask, key) {
   if (key === 'F5' && !alt) return { browser: 'reload' }
   if (alt && !accel && !shift && key === 'ArrowLeft') return { browser: 'back' }
   if (alt && !accel && !shift && key === 'ArrowRight') return { browser: 'forward' }
+  // CU-230: Command or Control with V pastes the run clipboard whatever else is held, Option included, so no raw
+  // Paste and Match Style chord reaches the page or Chrome's own paste; agent core judges every such chord as a paste.
+  if (accel && key === 'v') return { clipboard: 'paste' }
   if (!accel || alt) return null
   switch (key) {
     case 'a': return shift ? null : { command: 'selectAll' }

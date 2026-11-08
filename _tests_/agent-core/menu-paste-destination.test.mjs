@@ -17,7 +17,7 @@ const COPY = { type: 'keypress', keys: ['META', 'C'] }
 const MENU_CLICK = { type: 'click', x: 10, y: 10, button: 'left' }
 const isCopy = (a) => a.type === 'keypress' && a.keys.includes('META') && a.keys.includes('C')
 
-async function run(pasteAction, { focused, menu = true, item = { role: 'AXMenuItem', name: 'Paste' } }) {
+async function run(pasteAction, { focused, menu = true, item = { role: 'AXMenuItem', name: 'Paste' }, full = false }) {
   const dir = mkdtempSync(join(tmpdir(), 'cu-186-'))
   try {
     const control = createRunControl()
@@ -32,7 +32,7 @@ async function run(pasteAction, { focused, menu = true, item = { role: 'AXMenuIt
     const model = createScriptedAdapter({ frame: { width: 1440, height: 900 }, turns: [{ actions: [COPY, pasteAction] }, { final: 'done' }] })
     const result = await runTask({ task: 'fill', environment, model, control, runsDirectory: join(dir, 'runs'), build: { commit: 't', dirty: false }, apps: [FIXTURE], appApprovals: store })
     const e = readRun(result.trajectoryDir).events.filter((x) => x.kind === 'action').pop()
-    return [e.decision, e.class ?? e.rule]
+    return full ? e : [e.decision, e.class ?? e.rule]
   } finally { rmSync(dir, { recursive: true, force: true }) }
 }
 const entry = (name, extra = {}) => ({ role: 'AXTextField', name, editable: true, ...extra })
@@ -55,8 +55,11 @@ test('CU-186: a focus read that lands on a menu, or that could not be read, leav
   assert.deepEqual(await run(MENU_CLICK, { focused: { role: null, name: null, noFocus: true, sheet: true } }), ['confirm', 'sensitive_data'], 'the placeholder with a sheet up')
 })
 
-test('CU-186: a keystroke paste with no focused element is judged as before - the unknown-destination rule is for menu pastes only', async () => {
-  assert.deepEqual(await run({ type: 'keypress', keys: ['META', 'V'] }, { focused: null, menu: false }), ['allow', 'default'], 'own copy, Command-V, no focus read')
+test('CU-186: a keystroke paste with no focused element is not the menu\'s unknown-destination rule; with no focus it carries no count, so (CU-220) the paste is the owner\'s and asks - a named over-ask, CU-219 removes it', async () => {
+  const e = await run({ type: 'keypress', keys: ['META', 'V'] }, { focused: null, menu: false, full: true })
+  assert.deepEqual([e.decision, e.class], ['confirm', 'sensitive_data'], 'own copy, Command-V, nothing focused')
+  // Why it asks: the pasteboard is the owner's (no count to prove the own copy) - not an unknown destination, which only a menu paste has.
+  assert.deepEqual([e.pasteboard?.own, e.pasteboard?.count], [false, null])
 })
 
 test('CU-192: a toolbar Paste button takes the same path - judged at the focused field it lands in', async () => {
