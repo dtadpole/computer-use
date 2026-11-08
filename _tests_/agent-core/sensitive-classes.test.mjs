@@ -316,12 +316,12 @@ async function decideDetour(actions) {
   } finally { rmSync(dir, { recursive: true, force: true }) }
 }
 const DETOUR_ROWS = [
-  ['detour-card halves around typing in another field', [{ type: 'type', text: cardDigits.slice(0, 8) }, { type: 'keypress', keys: ['TAB'] }, { type: 'type', text: 'x' }, { type: 'keypress', keys: ['SHIFT', 'TAB'] }, { type: 'type', text: cardDigits.slice(8) }], 'sensitive_data', 'open CU-273', 'no live row yet'],
-  ['detour-plain words around another field (negative)', [{ type: 'type', text: 'abc' }, { type: 'keypress', keys: ['TAB'] }, { type: 'type', text: 'x' }, { type: 'keypress', keys: ['SHIFT', 'TAB'] }, { type: 'type', text: 'def' }], 'allow', 'open CU-273', 'no live row yet'],
+  ['detour-card halves around typing in another field', [{ type: 'type', text: cardDigits.slice(0, 8) }, { type: 'keypress', keys: ['TAB'] }, { type: 'type', text: 'x' }, { type: 'keypress', keys: ['SHIFT', 'TAB'] }, { type: 'type', text: cardDigits.slice(8) }], 'sensitive_data', null, 'cu-verifier real Chrome, Notes and Reference with Tab and Shift-Tab, the second half declined, Notes 8, Reference 1: 20261108T205650Z-0e7ff1'],
+  ['detour-plain words around another field (negative)', [{ type: 'type', text: 'abc' }, { type: 'keypress', keys: ['TAB'] }, { type: 'type', text: 'x' }, { type: 'keypress', keys: ['SHIFT', 'TAB'] }, { type: 'type', text: 'def' }], 'allow', null, 'cu-verifier real Chrome, Notes and Reference with Tab and Shift-Tab, typed: 20261108T205654Z-3089a0'],
 ]
 for (const [id, actions, expected, status, live] of DETOUR_ROWS) {
   const title = `${id} -> ${expected} (live: ${live})`
-  if (status.startsWith('todo ')) test(title, { todo: status }, async () => assert.equal(await decideDetour(actions), expected))
+  if (status?.startsWith('todo ')) test(title, { todo: status }, async () => assert.equal(await decideDetour(actions), expected))
   else test(title, async () => assert.equal(await decideDetour(actions), expected))
 }
 test('detour rows: named once; every open row names its issue; a todo row still fails (a fixed row cannot stay todo)', async () => {
