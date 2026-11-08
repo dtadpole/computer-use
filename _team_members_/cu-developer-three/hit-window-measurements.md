@@ -1,14 +1,14 @@
 ---
 title: Hit-window and drag-image measurements (2026-11-05)
 created: 2026-11-05T20:05:00Z
-modified: 2026-11-05T20:05:00Z
+modified: 2026-11-08T10:06:00Z
 level: L1
-version: 0.1.0
+version: 0.1.1
 description: The grant-free measurements behind CU-46 (AppKit's full-screen drag image) and Q-D15 (the owner at a point is WindowServer's mouse hit window) - what was run and what each result decided.
 status: unverified
 grounded_in:
-  - source: dtadpole/computer-use _designs_/desktop-extension/hit-window.md (PR #77, draft 0.4.18)
-  - source: dtadpole/computer-use _designs_/desktop-extension/input-and-targets.md (PR #71)
+  - source: 'dtadpole/computer-use _designs_/desktop-extension/hit-window.md (PR #77, draft 0.4.18)'
+  - source: 'dtadpole/computer-use _designs_/desktop-extension/input-and-targets.md (PR #71)'
   - source: Linear CU-46, CU-26
   - source: inbox 20261105T191005, 20261105T193014, 20261105T193536 (cu-developer-three)
 ---

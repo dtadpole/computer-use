@@ -1,14 +1,14 @@
 ---
 title: Open/save panel measurements (2026-11-05)
 created: 2026-11-05T22:20:00Z
-modified: 2026-11-06T00:45:00Z
+modified: 2026-11-08T10:06:00Z
 level: L1
-version: 0.3.0
+version: 0.3.1
 description: The live measurements behind CU-39 - CU Fixture's open and save panels are in-process, and AppKit's identifiers mark them - and what each result changed in the helper.
 status: unverified
 grounded_in:
-  - source: dtadpole/computer-use _designs_/desktop-extension/file-panels.md (PR #84)
-  - source: dtadpole/computer-use PRs #87, #65, #96 and #90 (cli.mjs inspect)
+  - source: 'dtadpole/computer-use _designs_/desktop-extension/file-panels.md (PR #84)'
+  - source: 'dtadpole/computer-use PRs #87, #65, #96 and #90 (cli.mjs inspect)'
   - source: Linear CU-39; decision D-045 (cu-coordinator)
   - source: inbox 20261105T203914, 20261105T204346, 20261105T215015, 20261105T221234 (cu-developer-three)
 ---
