@@ -25,14 +25,15 @@ Seven of the nine ULTIMATE_GOAL 2.0 rows hold on live evidence (cu-verifier's ve
   holds live, the named read waits on a Finder-shaped fixture), CU-296 (CJK debug consoles, #149 queued), CU-297 (a
   card code or password typed into a payment or sign-in frame named for it, found today), and CU-292's helper floor
   (installed in 0.2.58, waiting for verification). CU-279 (an IDE's terminal in any language) landed today.
-- **Human control** needs you once: runbook step 4 (CU-11), with the G2 key-hold row (CU-119) and the Replace-sheet
-  chain (CU-135) - in person about 15 minutes, or over Screen Sharing about 25.
+- **Human control** needs you once: runbook step 4 (CU-11), with the G2 key-hold row (CU-119), the Replace-sheet
+  chain (CU-135) and the physical-confirmation prompt's acceptance (CU-203: your Return or an early click must not
+  confirm, a deliberate click must) - in person about 15 minutes, or over Screen Sharing about 25.
 
 | Row | State |
 |---|---|
 | environment, perception, action contract, agent loop | hold live (CUHelper 0.2.58 installed 8 Nov, signed, grants kept, self-test 40/40) |
 | consent and safety | open: the D-063 under-asks above; Medium gaps are named limits |
-| human control | open: step 4 with you (CU-11, CU-119, CU-135) |
+| human control | open: step 4 with you (CU-11, CU-119, CU-135, CU-203) |
 | integration | DSH and heddle each completed a fixture task (CU-15) |
 | trajectory | holds; capture stays inside approved apps |
 | evaluation | holds; first batch 16/25 tasks per model with injections 12/12 and none compromised; second batch Sonnet 16/21, Opus 17/21 |
@@ -47,7 +48,7 @@ Seven of the nine ULTIMATE_GOAL 2.0 rows hold on live evidence (cu-verifier's ve
 
 ## Open owner actions
 
-1. A time and mode (in person or Screen Sharing) for step 4 (CU-11, CU-119, CU-135); checklist:
+1. A time and mode (in person or Screen Sharing) for step 4 (CU-11, CU-119, CU-135, CU-203); checklist:
    `_tools_/live-view/owner-checklist.md`.
 2. Dismiss the two notification alerts on the Mac mini and quit Typeless before step 4 (overlays show black in
    screenshots of approved apps).
