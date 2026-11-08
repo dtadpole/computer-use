@@ -567,3 +567,37 @@ test('CU-198: dragTextAt gives the text a drag pressed at a point would carry - 
   const selfContained = new Function(`return (${dragTextAt.toString()})`)()
   assert.equal(selfContained(card, {}, 50, 20, DRAG_TEXT_MAX), CARD, 'runs as page source, with no closure')
 })
+
+test('CU-271: describeElement marks a web terminal, a notebook cell, a notebook page and a code page from DOM shape alone', () => {
+  // A document whose querySelector answers for the selectors present on the page.
+  const page = (present = [], title = '') => ({
+    title,
+    defaultView: { location: { origin: 'https://nb.example' } },
+    querySelector: (selector) => (selector.split(',').map((one) => one.trim()).some((one) => present.includes(one)) ? {} : null),
+  })
+  const inside = (classes, child, extra = {}) => el('DIV', { attrs: { class: classes, ...extra }, children: [child] }) && child
+  const xtermInput = el('TEXTAREA', { attrs: { class: 'xterm-helper-textarea' }, ownerDocument: page() })
+  el('DIV', { attrs: { class: 'terminal xterm' }, children: [xtermInput] })
+  assert.equal(describeElement(xtermInput).terminal, true, 'xterm.js helper textarea')
+  const roleTerminal = el('DIV', { ownerDocument: page() })
+  el('DIV', { attrs: { role: 'terminal' }, children: [roleTerminal] })
+  assert.equal(describeElement(roleTerminal).terminal, true, 'role=terminal')
+  const jupyter = page(['.jp-CodeCell', '.jp-Notebook'], 'demo.ipynb - JupyterLab')
+  const editor = el('DIV', { attrs: { class: 'cm-content' }, isContentEditable: true, ownerDocument: jupyter })
+  inside('jp-Cell jp-CodeCell jp-Notebook-cell', editor)
+  const described = describeElement(editor)
+  assert.deepEqual([described.notebookCell, described.notebookSurface, described.terminal], [true, true, undefined], 'JupyterLab code cell editor')
+  const colabEditor = el('DIV', { ownerDocument: page(['.cell.code']) })
+  inside('cell code icon-scrolling', colabEditor)
+  assert.equal(describeElement(colabEditor).notebookCell, true, 'a Colab code cell')
+  const commandMode = el('DIV', { attrs: { class: 'jp-Notebook' }, ownerDocument: jupyter })
+  assert.deepEqual([describeElement(commandMode).notebookCell, describeElement(commandMode).notebookSurface], [undefined, true], 'command mode: the notebook itself has focus')
+  const titled = el('BUTTON', { ownerDocument: page([], 'Untitled - Jupyter Notebook') })
+  assert.equal(describeElement(titled).notebookSurface, true, 'a Jupyter title')
+  const playground = el('BUTTON', { ownerDocument: page(['.monaco-editor']) })
+  assert.equal(describeElement(playground).codeSurface, true, 'a Monaco editor on the page')
+  const plain = el('TEXTAREA', { ownerDocument: page() })
+  el('DIV', { attrs: { class: 'cell notes' }, children: [plain] })
+  const none = describeElement(plain)
+  assert.deepEqual([none.terminal, none.notebookCell, none.notebookSurface, none.codeSurface], [undefined, undefined, undefined, undefined], 'an ordinary textarea')
+})
