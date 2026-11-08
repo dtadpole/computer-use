@@ -59,3 +59,14 @@ test('CU-281 negatives: an empty value, the word in a value, contact names and c
     assert.deepEqual(verdict(go(url)), ['allow', null, 'site:allowed'], url)
   }
 })
+
+test('CU-285: tax number, TIN and taxpayer ids ask - as URL parameters and as field names', () => {
+  for (const url of [`${ALLOWED}/f?tax_number=${j('X98', '765')}`, `${ALLOWED}/f?tin=${j('987', '654')}`, `${ALLOWED}/f?taxpayer_id=${j('12', '345')}`, `${ALLOWED}/f?tax_file_number=${j('123', '456')}`]) {
+    assert.deepEqual(verdict(go(url)), ['confirm', 'sensitive_data', 'url:sensitive_data'], url)
+  }
+  for (const url of [`${ALLOWED}/f?tax=vat`, `${ALLOWED}/f?tint=dark`, `${ALLOWED}/map?routing=fastest`]) assert.deepEqual(verdict(go(url)), ['allow', null, 'site:allowed'], url)
+  for (const name of ['Taxpayer Identification Number', 'Taxpayer ID number']) {
+    const v = policy.classify({ type: 'type', text: 'abc' }, { url: `${ALLOWED}/f`, target: { origin: ALLOWED, role: 'textbox', name, editable: true } })
+    assert.equal(v.decision, 'confirm', name)
+  }
+})
