@@ -5,7 +5,7 @@ import Foundation
 /// The helper's identity; `build.sh` writes the same bundle id into Info.plist.
 enum HelperIdentity {
   static let bundleId = "com.reflection.cu-helper"
-  static let version = "0.2.52"
+  static let version = "0.2.53"
   /// The value every synthetic event carries in `kCGEventSourceUserData`: 0x43555345, ASCII "CUSE"
   /// (input-and-targets.md, verify-kit's SYNTHETIC_TAG). Not a secret: an event from another process with this tag
   /// could only fail to pause the run, never act.
@@ -714,6 +714,8 @@ enum MenuKey {
     /// Under the menu bar's first item, the Apple menu: system shortcuts (Lock Screen, Log Out, Force Quit) that agent
     /// core refuses (cu-developer-one, CU-232 contract point 4).
     var appleMenu: Bool = false
+    /// Under a Services submenu (CU-250): a service acts in another app, so agent core refuses it.
+    var servicesMenu: Bool = false
 
     /// Whether the item has a key equivalent at all.
     var hasKey: Bool { cmdVirtualKey != nil || !(cmdChar ?? "").isEmpty }
@@ -795,6 +797,7 @@ enum MenuKey {
     var object: [String: JSON] = ["title": .optionalString(entry.title), "path": .array(entry.path.map { .string($0) }), "keyEquivalent": .object(key),
                                   "enabled": entry.enabled.map { .bool($0) } ?? .null]
     if entry.appleMenu { object["appleMenu"] = .bool(true) }
+    if entry.servicesMenu { object["servicesMenu"] = .bool(true) }
     return .object(object)
   }
 
@@ -844,4 +847,76 @@ enum MenuKey {
     for (code, plain, shifted) in others { table[code] = (plain, shifted) }
     return table
   }()
+}
+
+/// CU-250: whether a submenu is the Services menu, so a clicked item under it (an owner-installed service included) is
+/// refused by policy. Measured 8 Nov in process: the Services item and its submenu carry no distinguishing
+/// Accessibility attribute; their titles are AppKit's own localized strings (Services.loctable: 'Services', 'Services
+/// Settings…', 'No Services Apply'). So the item counts by its title, or by a marker item AppKit always puts in its
+/// submenu, in the current language (read from AppKit) or in English.
+struct ServicesMenu: Equatable {
+  var titles: Set<String>
+  var markers: Set<String>
+
+  static let english = ServicesMenu(titles: ["Services"], markers: ["Services Settings\u{2026}", "Services Settings...", "No Services Apply"])
+
+  /// The current language's strings from AppKit's own table, beside the English ones.
+  static let current: ServicesMenu = {
+    var menu = english
+    if let appKit = Bundle(identifier: "com.apple.AppKit") {
+      let read = { (key: String) -> String? in
+        let value = appKit.localizedString(forKey: key, value: "\u{1}", table: "Services")
+        return value == "\u{1}" || value.isEmpty ? nil : value
+      }
+      if let title = read("Services") { menu.titles.insert(title) }
+      for key in ["Services Settings\u{2026}", "No Services Apply"] { if let marker = read(key) { menu.markers.insert(marker) } }
+    }
+    return menu
+  }()
+
+  /// A submenu held by an item titled `itemTitle`, whose own items are titled `childTitles`.
+  func isServices(itemTitle: String?, childTitles: [String]) -> Bool {
+    if let itemTitle, titles.contains(itemTitle) { return true }
+    return childTitles.contains { markers.contains($0) }
+  }
+}
+
+extension MenuKey {
+  /// CU-250: marks every entry from `start` on as under a Services submenu when the submenu holding them - held by an
+  /// item titled `holderTitle`, its direct items at path depth `depth` - is the Services menu.
+  static func markServices(_ entries: inout [Entry], from start: Int, holderTitle: String?, depth: Int, services: ServicesMenu) {
+    guard start < entries.count, holderTitle != nil else { return }
+    let direct = entries[start...].filter { $0.path.count == depth }.compactMap { $0.title }
+    guard services.isServices(itemTitle: holderTitle, childTitles: direct) else { return }
+    for index in start..<entries.count { entries[index].servicesMenu = true }
+  }
+}
+
+/// CU-250: where a clicked menu item sits - the titles from the menu bar (or a context menu's top) down to the item, and
+/// whether any submenu on the way is the Services menu. Names only, at most `maxDepth` levels.
+struct MenuContext: Equatable {
+  var path: [String]
+  var servicesMenu: Bool
+
+  static let maxDepth = 10
+
+  /// One level above an item, nearest first: the title of the item holding that submenu (nil for the menu bar or a
+  /// context menu's top) and the titles of the submenu's items.
+  struct Level: Equatable {
+    var holderTitle: String?
+    var childTitles: [String]
+  }
+
+  static func of(itemTitle: String?, levels: [Level], services: ServicesMenu = .current) -> MenuContext {
+    let capped = Array(levels.prefix(maxDepth))
+    let holders = capped.compactMap { $0.holderTitle }
+    let flagged = capped.contains { level in level.holderTitle != nil && services.isServices(itemTitle: level.holderTitle, childTitles: level.childTitles) }
+    return MenuContext(path: holders.reversed() + [itemTitle ?? ""], servicesMenu: flagged)
+  }
+
+  var json: [String: JSON] {
+    var object: [String: JSON] = ["menuPath": .array(path.map { .string($0) })]
+    if servicesMenu { object["servicesMenu"] = .bool(true) }
+    return object
+  }
 }
