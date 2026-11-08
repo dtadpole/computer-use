@@ -210,7 +210,7 @@ function selectsFiles(selection) {
 export function selectionRunsCode(selection) {
   if (!selection || typeof selection !== 'object') return true
   if (selection.none === true) return false
-  if (!Array.isArray(selection.items)) return true
+  if (!Array.isArray(selection.items) || selection.items.length === 0) return true
   return selection.truncated === true || selection.items.some((item) => {
     const name = String(item?.name ?? '').trim()
     if (item?.kind === 'unknown' || name === '') return true
@@ -541,7 +541,15 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     if (isIde(app) && verdict.decision !== 'handoff' && runsInIde(action, target, context.boundMenuItem)) {
       return { decision: 'confirm', class: 'launch_code', classes: ['launch_code', ...(verdict.classes ?? [])], rule: 'ide:run', reason: `run code in ${app}`, app }
     }
-    const opensFiles = opensUnreadSelection(action, target, app) || (opensSelection(action, target) && selectsFiles(context.selection))
+    // CU-252 (cu-verifier 221022Z on #104's stand-in; rows read AXStaticText with empty names): in any app, an open whose
+    // selection read came back unreadable - the helper could not name the rows - asks, as Finder's unread does; { none },
+    // a named non-launchable selection and no read at all (an older driver) stay as before.
+    // cu-researcher on #153: rows the helper could not name reach here as items with empty names, or as an empty list
+    // without { none } - the same unreadable read.
+    const items = context.selection?.items
+    const unreadableRead = context.selection?.unreadable === true
+      || (Array.isArray(items) && (items.length === 0 || items.some((item) => String(item?.name ?? '').trim() === '')))
+    const opensFiles = opensUnreadSelection(action, target, app) || (opensSelection(action, target) && (selectsFiles(context.selection) || unreadableRead))
     if (opensFiles && selectionRunsCode(context.selection) && verdict.decision !== 'handoff') {
       return { decision: 'confirm', class: 'launch_code', classes: ['launch_code', ...(verdict.classes ?? [])], rule: 'selection:launch_code', reason: 'open the selection, which this run cannot read - it may run code', app }
     }

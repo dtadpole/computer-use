@@ -117,7 +117,7 @@ import { makePng } from './png.mjs'
  * reaction to input, such as a panel moving to another folder; the last phase reached wins),
  * `screenText`, `excluded` (bundle ids, `prefix.` or `prefix.*` entries it refuses to scope), `runDir`,
  * `captureForm`, `connectWindowMs`, `peerPid`, the settle's `personActiveMs` and `settleCapMs`, and `quirks` for
- * broken or refusing behaviour: `peerRefused`, `badToken`, `protocol`, `helloExtra`, `replyUnknownIdOn`, `exitOn`,
+ * broken or refusing behaviour: `peerRefused`, `badToken`, `protocol`, `helloExtra`, `replyUnknownIdOn`, `exitOn`, `watchdogStopOn`,
  * `garbageOn`, `failOn`, `localInputAfter`, `secureInput`, `secureInputRefusal`, `omitOpaque` (a helper from before
  * design 0.3), `displayChangeAfter`, `silentOn`, `ignoreSimulateScale`, and for capture files `captureBadHash`,
  * `captureBoth`, `captureOutside` (an absolute path to write the file to instead) and `captureSymlinkTo` (an absolute
@@ -574,6 +574,12 @@ function handle(message) {
   }
   if (quirks.silentOn === type) return
   if (quirks.exitOn === type) process.exit(3)
+  // Quirk watchdogStopOn {type, path, reason, released} (CU-227, helper-boundary 0.3.8): the end watchdog's exit - write
+  // stopped.json at path, then exit 70 without a reply.
+  if (quirks.watchdogStopOn?.type === type) {
+    writeFileSync(quirks.watchdogStopOn.path, JSON.stringify({ reason: quirks.watchdogStopOn.reason, released: quirks.watchdogStopOn.released, at: new Date().toISOString() }))
+    process.exit(70)
+  }
   if (quirks.garbageOn === type) return output.write('this is not json\n')
   if (quirks.replyUnknownIdOn === type) return send({ id: 9999, ok: true })
   if (quirks.failOn === type) return refuse(id, 'failed', 'the fake failed on purpose')
