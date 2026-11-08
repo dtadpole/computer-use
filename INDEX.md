@@ -35,8 +35,7 @@ done means is [`ULTIMATE_GOAL.md`](ULTIMATE_GOAL.md). Start with [`AGENTS.md`](A
 Issues and milestones live in Linear (team CU); a pull request names its issue with `Fixes CU-n` or
 `Part of CU-n`. The live roster (`TEAM.yaml`, with session ids) and the session-bearing operating logs stay in
 the owner's private records. The history before 2026-11-08 is kept privately; this repository starts from a
-scrubbed tree, and its pull request numbers restart at #1: a number in a record written before 2026-11-08 names an
-old pull request of the private history repository, written `old #N` from then on.
+scrubbed tree; its pull request numbers restart at #1 (see [`AGENTS.md`](AGENTS.md)).
 
 ## Read next
 
