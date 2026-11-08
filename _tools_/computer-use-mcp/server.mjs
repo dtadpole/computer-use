@@ -237,12 +237,16 @@ export function needsCleanExec(env, execArgv = []) {
  * copy of the environment and the marker is set. Stdio is inherited, so the client's JSON-RPC stream goes straight to
  * the child and nothing here reads or writes it. This process only waits, forwards SIGTERM and SIGINT, and ends as the
  * child ended: its exit code, or the same signal raised again. Killed unforwardable (SIGKILL), this process leaves the
- * child to end as any server does - when the client goes, its stdin closes.
+ * child to end as any server does - when the client goes, its stdin closes. CU-239: a forwarded signal and a child that
+ * ended by a signal each leave one stderr line (signal names and pids only), so an exit no test expected names its path.
  */
 export function execClean({ argv = process.argv, env = process.env, execPath = process.execPath } = {}) {
   const child = spawn(execPath, [argv[1], ...argv.slice(2)], { stdio: 'inherit', env: { ...withoutLoaders(env), [CLEAN_EXEC_MARKER]: '1' } })
   const signals = ['SIGTERM', 'SIGINT']
-  const forward = (signal) => child.kill(signal)
+  const forward = (signal) => {
+    process.stderr.write(`computer-use-mcp: forwarding ${signal} to the serving child (pid ${child.pid ?? 'none'})\n`)
+    child.kill(signal)
+  }
   for (const signal of signals) process.on(signal, forward)
   child.once('error', (error) => {
     process.stderr.write(`computer-use-mcp: the clean re-exec failed: ${error.message}\n`)
@@ -251,6 +255,7 @@ export function execClean({ argv = process.argv, env = process.env, execPath = p
   child.once('exit', (code, signal) => {
     for (const name of signals) process.removeListener(name, forward)
     if (signal === null) process.exit(code ?? 1)
+    process.stderr.write(`computer-use-mcp: the serving child (pid ${child.pid}) ended by ${signal}; ending the same way\n`)
     // With the listeners gone the signal takes its default action and the client sees what the child saw; one that does
     // not end node by default (SIGPIPE is ignored) leaves the shell's 128 + its number as the exit code instead.
     process.exitCode = 128 + (constants.signals[signal] ?? 0)
