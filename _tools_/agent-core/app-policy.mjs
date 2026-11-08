@@ -364,7 +364,9 @@ const TERMINAL_VIEW = /\b(terminal|console|shell|command prompt|zsh|bash|repl|no
 // CU-279 (the owner works in Chinese): the terminal's word in other languages, as a second net in any app - CJK by
 // substring, German, Spanish and Italian as whole words. Cyrillic is a named limit: normalise folds its look-alike letters
 // to Latin before any rule reads the name.
-const TERMINAL_WORD_CJK = /(终端|終端|ターミナル|터미널)/u
+// CU-296: and a console, where a debugger's REPL evaluates what is typed - VS Code's Chinese 调试控制台 / 偵錯主控台, as English
+// 'Debug Console' is E5's (cu-researcher, from VS Code's own language packs).
+const TERMINAL_WORD_CJK = /(终端|終端|ターミナル|터미널|控制台|主控台|コンソール|콘솔)/u
 const TERMINAL_WORD_OTHER = /(?<!\p{L})(konsole|consola|terminale)(?!\p{L})/iu
 const isTerminalView = (target) => {
   if (target === null || target === undefined) return false
@@ -374,7 +376,8 @@ const isTerminalView = (target) => {
 // CU-279: in an IDE an integrated terminal's input is named '<word> <number>, <title>' ('Terminal 1, node' in VS Code's
 // xterm.js, '终端 1, node' in its Chinese build) - a shape, whatever the language. Only in an IDE, by kind: elsewhere the
 // same shape ('Tab 1, notes') is a named limit.
-const IDE_TERMINAL_SHAPE = /^\S+ \d+, \S/u
+// VS Code's Chinese packs write it with a fullwidth comma: '终端 {0}，{1}' (cu-researcher).
+const IDE_TERMINAL_SHAPE = /^\S+ \d+\s*[,，]\s*\S/u
 const ideTerminal = (target, app) => isIdeApp(app) && target !== null && target !== undefined && (target.editable === true || ['AXTextArea', 'AXTextField'].includes(target.role))
   && IDE_TERMINAL_SHAPE.test(String(target.name ?? '').trim())
 

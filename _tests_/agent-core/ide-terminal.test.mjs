@@ -53,6 +53,17 @@ test('CU-279: the terminal word in other languages counts in any app (a second n
   for (const name of ['Consolation prize', 'Determinal', 'Notes']) assert.equal(rule(typing(FIXTURE, name)), 'allow', `'${name}' is no terminal`)
 })
 
+test('CU-296: VS Code\'s Chinese Debug Console (调试控制台 / 偵錯主控台) and other-language consoles are refused like English Debug Console; the shape takes VS Code\'s fullwidth comma', () => {
+  for (const name of ['调试控制台', '偵錯主控台', 'Debug Console', 'デバッグ コンソール', '디버그 콘솔']) {
+    assert.equal(rule(typing(VSCODE, name)), 'terminal_view', `VS Code '${name}'`)
+    assert.equal(rule(pressing(VSCODE, name)), 'terminal_view', `VS Code Return in '${name}'`)
+  }
+  // VS Code's real zh label template is '终端 {0}，{1}' / '終端機 {0}，{1}'; a non-CJK word in the same shape proves the shape
+  // rule takes the fullwidth comma on its own.
+  for (const name of ['终端 1，node', '終端機 2，node', 'Pane 1，node', 'Pane 1 ， node']) assert.equal(rule(typing(VSCODE, name)), 'terminal_view', `'${name}'`)
+  assert.equal(rule(typing(FIXTURE, 'Pane 1，node')), 'allow', 'the fullwidth shape outside an IDE stays a named limit')
+})
+
 test('CU-279: IDEs are a kind with sources - the ids and families match as before (#119), Cursor only by its exact id', () => {
   for (const entry of IDE_APPS) assert.ok(entry.app && entry.ids.length > 0 && entry.source.length > 0, entry.app)
   for (const id of [VSCODE, CURSOR, PYCHARM, 'com.jetbrains.intellij', ZED, 'com.apple.dt.Xcode', 'com.sublimetext.4', 'com.vscodium']) assert.equal(isIdeApp(id), true, id)
