@@ -1,9 +1,9 @@
 ---
 title: Desktop fixture contract
 created: 2026-11-02T08:34:00Z
-modified: 2026-11-08T16:36:08Z
+modified: 2026-11-08T18:03:24Z
 level: L1
-version: 0.12.0
+version: 0.12.1
 description: What CU Fixture guarantees to the desktop driver, the verifiers and the evaluator - identity, placement, the private control channel, what the agent can and cannot see, and how a screen's outcome is judged.
 status: unverified
 grounded_in:
@@ -26,7 +26,8 @@ grounded_in:
   The menu-compose screen (CU-238) adds Message and Later while it is open: Send on Shift-Command-D, a disabled Mark
   as Read before Send Now on Option-Command-J (not Option-Command-D, macOS's Dock-hiding hotkey), Delete on a plain Backspace (enabled on the Outbox list only), and
   Send Later on Option-Command-L (not Shift-Command-L, the Search With Google service) in a lazily filled menu, plus a stand-in Services submenu in the app menu (an owner-style service and AppKit's
-  'Services Settings…' marker, CU-250; not the real Services menu); each only records that it fired.
+  'Services Settings…' marker, CU-250; not the real Services menu); each only records that it fired. A message preview (an AXGroup, neither entry nor list)
+  takes the focus on a click; there Delete is enabled and a plain Backspace deletes the previewed message (Mail's viewer).
 - **Named controls.** The named-controls screen (CU-245, CU-258, CU-261) builds up to six entries (`fields`) and six buttons
   (`buttons`) with the names the harness gives, each at most 60 characters: an entry carries its name as its label and
   title element; a button records only 'pressed' with its index. Its state reports entry lengths, never their text.

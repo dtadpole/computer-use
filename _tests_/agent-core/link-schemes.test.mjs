@@ -17,7 +17,7 @@ test('CU-265: a click or Return on a facetime:, tel:, zoommtg:, mailto:, file: o
 })
 
 test('CU-265: web schemes and no reported scheme keep today\'s judgement', () => {
-  for (const scheme of ['http', 'https', 'javascript', 'about', undefined, '']) assert.equal(judge(click, scheme).decision, 'allow', String(scheme))
+  for (const scheme of ['http', 'https', 'javascript', 'about', 'data', 'blob', undefined, '']) assert.equal(judge(click, scheme).decision, 'allow', String(scheme))
   assert.equal(judge({ type: 'scroll', x: 1, y: 1, dy: 3 }, 'tel').decision, 'allow', 'a scroll over it')
 })
 
