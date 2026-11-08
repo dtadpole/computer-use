@@ -327,6 +327,11 @@ func testExclusions() {
   check(added187.allSatisfy(list.isExcluded), "agent core's additions of PR #187 are in the floor")
   check(!list.isExcluded("com.google.Chrome") && !list.isExcluded("com.microsoft.edgemac"), "the browsers themselves stay approvable")
   check(list.isExcluded("com.runningwithcrayons.Alfred") && list.isExcluded("com.raycast.macos"), "launchers are excluded (design 0.3.4)")
+  // CU-264: whole-Mac tools, ids as read on macOS 27; Time Machine's menu-bar agent through com.apple.TimeMachine's children.
+  let wholeMac = ["com.apple.DiskUtility", "com.apple.bootcampassistant", "com.apple.MigrateAssistant", "com.apple.backup.launcher", "com.apple.ActivityMonitor",
+                  "com.apple.timemachine.HelperAgent"]
+  check(wholeMac.allSatisfy(list.isExcluded), "Disk Utility, Boot Camp, Migration Assistant, Time Machine (launcher and agent) and Activity Monitor are excluded")
+  check(!list.isExcluded("com.apple.Console"), "Console stays approvable (read-only, a named limit)")
   check(list.isExcluded(" com.apple.Terminal\n"), "ids are trimmed before matching")
   check(list.isExcluded("COM.APPLE.TERMINAL"), "case is ignored")
   check(!list.isExcluded("ai.reflection.cu.fixture") && !list.isExcluded("ai.reflection.cu.ledger") && !list.isExcluded("com.apple.TextEdit"), "the fixture apps and ordinary apps are approvable")
@@ -544,7 +549,7 @@ func button(_ kind: String, _ x: Int, _ y: Int) -> JSON { ["kind": .string(kind)
 func testDispatcherBasics() {
   let h = Harness(fixtureWorld)
   let hello = h.dispatcher.hello(token: "t0k")
-  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.54", "the hello opens the run")
+  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.55", "the hello opens the run")
   check(hello["mode"] == "dry-run" && hello["grants"] == ["screen": true, "accessibility": true, "postEvents": true, "listenEvents": false], "a dry-run hello says so, with all four grants")
   check(h.ask("capture", ["maxSize": size800])["code"] == "no_scope", "capture needs a scope")
   check(h.ask("input", ["events": [key("keyDown", 1)], "mode": "global"])["code"] == "no_scope", "input needs a scope")

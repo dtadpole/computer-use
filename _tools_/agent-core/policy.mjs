@@ -11,7 +11,7 @@ import { originPattern } from './sites.mjs'
  */
 
 export const CLASSES = Object.freeze(['submit', 'purchase', 'delete', 'permission', 'credential', 'sensitive_data', 'new_site', 'page_dialog', 'install', 'file_choice'])
-export const NEVER_PRE_APPROVED = Object.freeze(['purchase', 'delete', 'permission', 'file_choice'])
+export const NEVER_PRE_APPROVED = Object.freeze(['purchase', 'delete', 'permission', 'file_choice', 'launch_code'])
 
 /** Word lists matched on a target's accessible name, case-insensitively, at word boundaries; they err toward confirm. */
 const WORDS = Object.freeze({
@@ -52,7 +52,7 @@ const WORDS = Object.freeze({
     // cu-researcher's 13:23Z sweep: messages to the sender or the group.
     'unsubscribe', 'report spam', 'report junk', 'leave group', 'leave conversation', 'leave channel'],
 })
-const PRECEDENCE = ['purchase', 'delete', 'permission', 'page_dialog', 'credential', 'sensitive_data', 'submit', 'new_site', 'install']
+const PRECEDENCE = ['purchase', 'launch_code', 'delete', 'permission', 'page_dialog', 'credential', 'sensitive_data', 'submit', 'new_site', 'install']
 const POINTER = new Set(['click', 'double_click', 'triple_click'])
 // CU-135 (keyboard-activation.md): a focused button; any control a click activates (Space presses or toggles it); and a
 // text input, as the environments name their roles.
@@ -246,6 +246,21 @@ export function isTextEntry(target) {
   if (!target || target.editable === false) return false
   return target.editable === true || TEXT_ENTRY_ROLES.has(target.role)
 }
+// CU-257: token formats beyond the key rule's sk/pk/ghp/xoxb/AKIA prefixes.
+const API_TOKEN = new RegExp([
+  'github_pat_[A-Za-z0-9_]{22,}',
+  'gh[ousr]_[A-Za-z0-9]{30,}',
+  'glpat-[A-Za-z0-9_-]{20,}',
+  'AIza[0-9A-Za-z_-]{35}',
+  'hf_[A-Za-z0-9]{30,}',
+  'npm_[A-Za-z0-9]{36}',
+  'xox[aprs]-[A-Za-z0-9-]{16,}',
+  'shp(?:at|ss|ca|pa)_[a-fA-F0-9]{32}',
+  // cu-verifier on #61: Slack app-level tokens, SendGrid keys (two dot-joined parts), Stripe restricted keys.
+  'xapp-[A-Za-z0-9-]{20,}',
+  'SG\\.[A-Za-z0-9_-]{16,}\\.[A-Za-z0-9_-]{16,}',
+  'rk_(?:live|test)_[A-Za-z0-9]{16,}',
+].map((one) => `\\b${one}\\b`).join('|'))
 const PASSWORD_NAMES = Object.freeze(['password', 'passcode', 'passphrase', 'pin', 'pin code'])
 // CU-253: chat apps that send on a plain Return from the compose field, and the names of compose fields.
 const CHAT_APPS = new Set(['com.apple.MobileSMS', 'com.apple.iChat', 'com.tinyspeck.slackmacgap', 'net.whatsapp.WhatsApp', 'desktop.WhatsApp',
@@ -415,6 +430,10 @@ export function looksSensitive(text) {
   if (/\+\d(?:[\s().-]{0,2}\d){8,}/.test(value) || /(^|[^\d])\(?\d{3}\)?[\s.-]?\d{3}[\s.-]\d{4}([^\d]|$)/.test(value)) return 'phone'
   if (nationalPhone(value)) return 'phone'
   if (/\b(?:sk|pk|ghp|xox[bp]|AKIA)[-_A-Za-z0-9]{16,}\b/.test(value) || /\b[A-Fa-f0-9]{40,}\b/.test(value)) return 'key'
+  // CU-257 (cu-researcher's D-061 sweep): widely used token prefixes, each with its format's length floor so a short word,
+  // a file name or 'AIza' in prose stays free - GitHub fine-grained and OAuth/app/user/refresh tokens, GitLab, Google
+  // API keys, Hugging Face, npm, the other Slack token kinds and Shopify. Named over-ask: a documentation page's example.
+  if (API_TOKEN.test(value)) return 'key'
   // CU-164: a 0x-prefixed 64-hex private key (the word boundary after 'x' kept the rule above from seeing it); a 0x + 40
   // hex wallet address is public and stays allowed.
   if (/\b0x[0-9a-fA-F]{64}\b/.test(value)) return 'key'
@@ -541,6 +560,24 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const target = context.target ?? null
     const name = target?.name ?? ''
     const classes = []
+    // CU-271 (cu-coordinator's ruling): a web terminal runs every line it is given, so a key or text into it - typed, a
+    // paste, a chord - or text dropped on it is refused, as a terminal view is on the desktop.
+    if ((['type', 'keypress', 'hold_key'].includes(action.type) && target?.terminal === true) || (action.type === 'drag' && context.dropTarget?.terminal === true)) {
+      return { decision: 'block', class: null, rule: 'terminal_view', reason: 'typing into a web terminal is refused, as in a terminal app' }
+    }
+    // CU-271: running code asks launch_code, never pre-approved - a run chord (Shift-, Control-, Command- or Alt-Return) in
+    // a notebook's code cell or on a notebook page's non-text focus (JupyterLab's command mode focuses the cell container),
+    // Colab's run chords (Control-F8, F9, F10) on a notebook page, or a control named Run or Execute (whole words) on a
+    // notebook or code page (an online IDE or playground). Typing code and a plain Return stay as they are.
+    {
+      const keys = keysOf(action)
+      const isKeys = action.type === 'keypress' || action.type === 'hold_key'
+      const runChord = keys.has('ENTER') && ['SHIFT', 'CTRL', 'META', 'ALT'].some((key) => keys.has(key))
+      const colabChord = keys.has('CTRL') && ['F8', 'F9', 'F10'].some((key) => keys.has(key))
+      const inCell = target?.notebookCell === true || (target?.notebookSurface === true && !isTextEntry(target))
+      const runControl = POINTER.has(action.type) && (target?.notebookSurface === true || target?.codeSurface === true) && /\b(run|execute)\b/i.test(name)
+      if ((isKeys && ((runChord && inCell) || (colabChord && target?.notebookSurface === true))) || runControl) classes.push('launch_code')
+    }
     const held = context.dialog && ['confirm', 'prompt', 'beforeunload'].includes(context.dialog.type)
     // Canonical keys (cu-researcher): 'RETURN', 'Return', 'enter' are ENTER too, whoever the caller is; a hold of it too.
     // CU-142: a typed newline presses the same Return as ENTER, so it is judged as ENTER on the focused element - in a
