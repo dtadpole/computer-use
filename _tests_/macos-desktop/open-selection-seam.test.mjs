@@ -14,8 +14,8 @@ import { fakeLauncher, logged, scratchLocks, stopFake } from './harness.mjs'
  * CU-252 across the real seam (CU-259's selectedItems, #101's rules): in a file browser, an open of the selection -
  * Command-O with a list focused, or a click on File > Open - reads the selection through the desktop driver from the
  * helper and asks launch_code when it may run code (a script, a bundle, an extensionless file, an unreadable read);
- * a document, a folder or nothing selected opens freely. On the fake helper, with the file browser's bundle id as a
- * plain string in its world - no app is touched.
+ * a document, a folder or nothing selected opens freely; in any other app the same holds once its read reports files
+ * (#103). On the fake helper, with the bundle ids as plain strings in its world - no app is touched.
  */
 
 const FINDER = 'com.apple.finder'
@@ -88,7 +88,7 @@ test('CU-252 seam: a document, a folder or nothing selected opens freely - the k
   }
 })
 
-test('CU-252 seam: in another app whose selection read reports files (the CU Fixture stand-in, Path Finder), Command-O on a script asks', { todo: 'CU-252: #103 (the any-app rule) not on main yet' }, async () => {
+test('CU-252 seam: in another app whose selection read reports files (the CU Fixture stand-in, Path Finder), Command-O on a script asks', async () => {
   const FIXTURE = 'ai.reflection.cu.fixture'
   const config = world({ items: [{ name: 'install.command', kind: 'file' }], bundleId: FIXTURE }, {
     apps: [{ bundleId: FIXTURE, pid: 601, title: 'Fixture', rect: { x: 0, y: 0, width: 800, height: 600 } }],
