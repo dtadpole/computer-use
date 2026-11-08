@@ -747,7 +747,10 @@ enum MenuWalk {
       // lazily), cannot be judged by a miss - except the Apple menu, the menu bar's first item (by position).
       if MenuKey.isEmptyMenu(role: role, depth: depth, childCount: children.count, underApple: apple) { emptyMenus.append(here.last ?? title ?? "") }
       // The menu bar's first item is the Apple menu (CU-232 contract point 4).
+      let start = entries.count
       for (index, child) in children.enumerated() where !walk(child, path: here, depth: depth + 1, apple: apple || (role == "AXMenuBar" && index == 0)) { return false }
+      // CU-250: the items of a submenu that is the Services menu are marked servicesMenu.
+      if role == "AXMenu" { MenuKey.markServices(&entries, from: start, holderTitle: path.last, depth: path.count + 1, services: .current) }
       return true
     }
     guard walk(menuBar, path: [], depth: 0, apple: false) else { return nil }
