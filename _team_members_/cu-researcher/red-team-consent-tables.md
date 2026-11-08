@@ -1,9 +1,9 @@
 ---
 title: Red team of the two signed consent tables (D-059 routes, D-061 classes), M8-M9
 created: 2026-11-08T01:27:07Z
-modified: 2026-11-08T13:44:58Z
+modified: 2026-11-08T14:16:44Z
 level: L1
-version: 2.1.0
+version: 2.1.1
 description: What the red team of the D-059 route matrix and the D-061 class table found on 7-8 November, which fixes it re-tested, and the methods the seat now follows.
 status: unverified
 grounded_in:
@@ -42,7 +42,8 @@ one enabled app item wins), an iframe-body editor (CU-241), price and free-trial
 
 ## Methods this seat follows
 
-- Probe through runTask before calling a hole live; a probe whose control does not ask is invalid.
+- Probe through runTask before calling a hole live; a probe whose control does not ask is invalid. In the
+  desktop-consent harness the focus goes in the world (world.focused) - desktopRun ignores a focus option.
 - A gap gets its todo row at once (`not:allow` when the fix is undecided); the second lander flips it.
 - A row must fail with its one distinguishing field removed; a fix may be driver-specific, so a row per driver.
 - Key-rule test values are never all hex - the digest rule would mask the gap.
