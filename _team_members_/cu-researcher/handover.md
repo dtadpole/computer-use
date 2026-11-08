@@ -1,13 +1,13 @@
 ---
 title: '[cu] Researcher - Handover'
 created: 2026-11-08T04:16:21Z
-modified: 2026-11-08T10:26:20Z
+modified: 2026-11-08T11:50:53Z
 level: L2
-version: 1.3.0
+version: 1.4.0
 description: 'What a fresh session of [cu] Researcher needs - live state, open PRs and asks, the methods, and the next step.'
 status: unverified
 grounded_in:
-  - source: the seat's own state, 2026-11-08 1027Z, after the re-home onto the new public repository (root 6314c0c)
+  - source: the seat's own state, 2026-11-08 1150Z, main at 46e6d65 (CU-230's and CU-232's agent-core fixes in)
 ---
 
 # [cu] Researcher - Handover
@@ -17,33 +17,32 @@ Start here, then [responsibilities](responsibilities.md) and [red-team-consent-t
 ```text
 WHERE: one worktree ~/computer-use--cu-researcher; a branch per change from origin/main
 (cu/cu-researcher-<topic>); never edit the main checkout (the DSH working directory). Code and records land
-here by PR through cu-integrator. Old history is private (computer-use-history): re-apply by hand, never push
-an old branch. PR numbers restarted at #1; old numbers below are marked "old".
+here by PR through cu-integrator. PR numbers restarted at #1 on 8 Nov.
 
 PUBLIC: run the public-hygiene gate over origin/main..HEAD before every push (it must print ok); no home path,
 name, e-mail, internal model id (alias model-a), host, session id, private address or key-shaped literal
 (build test values from _tests_/fixture-shapes/shapes.mjs). Tool paths live in the goal, not here.
 
-TABLES (mine): D-059 _tests_/agent-core/consent-routes.test.mjs, D-061 sensitive-classes.test.mjs; signed by
-cu-verifier on old main 309c60328. D-061: no open row. D-059: CU-209 closes in #2 (092702Z-8a0307); #12 opens
-two CU-223 cells and #20 a CU-232 todo cell until fixes and cu-verifier's live rows; the re-sign waits for
-CU-230's cells (cu-coordinator). consent-routes.md is at 499 words: trim before adding. D-064 closingRun: a
-closing run is cu-verifier's or a decision in a closing form; no 'before', 'twin', 'probe' near the id.
+TABLES (mine): D-059 consent-routes.test.mjs, D-061 sensitive-classes.test.mjs. Open PRs: #12 (Fixes CU-223,
+closed on cu-verifier's R3-R6), #20 (menu-key-send open CU-232 since #26), #23 (CU-230: two web cells closed,
+six desktop cells wait for #24), #30 (CU-234: six todo, flip when #31 lands), #40 (CU-241 (4): two todo),
+#41 (desktop cells judged with url desktop://; newline-default-absent todo CU-243 until #38), #43 (D-061:
+CU-245's seven todo rows). Docs: #34 (consent-limits.md; consent-routes 1.1.1 at 498 words). Rule: whichever of
+a cell PR and its fix lands second flips the cell. D-064: a closing run is cu-verifier's or a decision.
 
-PRS: #1 (Part of CU-135; cu-verifier), #2 (Fixes CU-209; both OKs, landing), #12 (Part of CU-223, after #2),
-#20 (Part of CU-232: a chord firing a menu item judged by its keys only). OK'd by me: #6 (guide, HOLD), #10
-(CU-219) at 94d0577, #13 (CU-225, after CU-223's row), #16 (CU-228), #17 (CU-230, URGENT) at 92f0867. #5 landed.
-After #5, cu-verifier's CU Ledger Vendor copy may ask: a new over-ask row (open CU-219) with its run.
+REVIEWS DUE: #27 (driver list + incomplete -> unreadable), #36 (helper menuKey: a menu-bar item with no AXMenu
+child, the Services submenu), CU-245's and CU-241's fixes, CU-238's compose screen.
 
-OPEN WORK: the Shift/Option/Control variant sweep of every chord the D-059 table judges, reported on CU-145
-(cu-coordinator, 10:20Z) - browser raw Command-Option-Shift-V is its first item. CU-226 (click-then-key race):
-measurement #18 by cu-developer-two, fix by cu-developer-one, my review. Live runs outside the fixture apps hold
-until CU-230 is verified.
+DONE TODAY: chord sweep (CU-145) -> CU-230, CU-232, CU-234; CU-234 measured under my hold (Shift-Space acts in
+CU Fixture; the rest named over-asks - table on CU-234); key-carrying action sweep through runTask (no live
+gap; Control-scroll zoom named). CU-66 released (owner-gated).
 
-NEXT: review every consent/classifier PR on a real test merge (three-dot diff; never git merge-tree); re-read
-the inbox before every push; search CU-145/CU-171 children before filing an Urgent.
+LESSONS: probe through runTask, not one layer, before calling a hole live (CU-243, CU-244 - I over-called
+CU-244); release a hold the moment the series ends (D-073); no CUHelper process of any build outside the lock;
+a measurement plan runs on one non-author OK (D-070) and never closes a cell.
 
-RULES: never verify my own filings (CU-145..198); PR states as number=state; send only --from cu-researcher,
-one send per command; D-034 budget ~20.69 of 25 USD, the 21 USD line holds, model-a on S8/S9 waits for the
-owner; no input outside CUHelper (D-056); reply to the owner in Chinese every round with the todo list.
+RULES: never verify my own filings (CU-145..198, 223, 226, 228, 231, 232, 234, 240, 242, 244, 245); re-read the
+inbox before every push; search recent CU-145/CU-171 children before filing an Urgent; send only --from
+cu-researcher; D-034 ~20.69 of 25 USD, the 21 USD line holds, model-a on S8/S9 waits for the owner; owner-app
+runs wait for CU-230 and CU-232 (D-071); no input outside CUHelper (D-056); reply to the owner in Chinese.
 ```
