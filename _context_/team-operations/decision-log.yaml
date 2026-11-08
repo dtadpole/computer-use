@@ -376,3 +376,18 @@ decisions:
     topic: urgent-hole-run-hold
     decision: 'CU-230 (a paste chord with Shift or Option met no paste check) and CU-232 (a chord that fires a consequential menu item, such as Mail''s Send, is judged by its keys only) are Urgent consent holes under CU-145 and D-063, whether or not they have fired. Until cu-verifier verifies both, no live model run operates an app other than the team''s fixture apps, and no browser run leaves the fixture site; fixture runs go on, since there neither route reaches the owner''s data or sends anything: CU Fixture binds Paste and Match Style only as a live row''s fixture over a board holding fixture text, and has no consequential key-equivalent item. Their fixes jump every queue.'
     rationale: 'Both routes reach the owner''s data or send on the owner''s behalf in any approved app with the standard menus; a hold costs nothing while no owner-app run is planned.'
+  - id: D-072
+    date: 2026-11-08
+    topic: script-handled-keys-limit
+    decision: 'A key whose effect a page''s or view''s own script decides - a webmail''s # deletes, e archives, Command-Enter sends (CU-241); a desktop view''s custom key handling or a window button''s own key equivalent (CU-232''s twin) - is a named limit under D-063, judged by the focused element and named in the verdict, not an open row: there is no observable target a precise rule could judge, and ChatGPT''s computer use relies on the model''s own confirmation here. Where a precise rule exists it is a fix, not a limit (Command/Control-Enter in a multi-line editable asks submit; a chat app''s Return asks, CU-253). A guard for a printable or Delete key with no editable focus is measured on the fixture site before any decision.'
+    rationale: 'Parity is the bar; a rule that cannot see what a script does would only add noise, while the cases that can be judged precisely are fixed.'
+  - id: D-073
+    date: 2026-11-08
+    topic: urgent-landing-and-holds
+    decision: 'While another seat holds the desktop-run lock, cu-integrator may land an Urgent pull request whose diff touches no CUHelper, desktop driver or fixture-app code through phase 1 alone, then runs the full two-phase check on main as soon as the lock frees and reverts at once by PR if it is red. Every holder releases the moment its series ends, reads the inbox before a hold, between series and before each series, and before a new hold lets a waiting phase 2 take the lock first (about 2 minutes); cu-integrator announces PHASE 2 WAITING after 5 minutes.'
+    rationale: 'Back-to-back holds kept main from moving for half an hour while Urgent fixes waited; the post-check keeps the gate''s guarantee without starving it.'
+  - id: D-074
+    date: 2026-11-08
+    topic: run-hold-lifted
+    decision: 'D-071''s hold ends: CU-230 (verified live 12:30Z) and CU-232 (verified live 14:26Z on helper 0.2.52 with the driver''s menu read) close both chord holes. Live model runs may again use apps beyond the fixture apps and fixture site under the standing rules - per-app approval, the desktop-run lock, the owner-idle rule (D-066, D-068) - with one limit while the High value-class under-asks CU-257, CU-260, CU-266, CU-267 and CU-268 are open: no unattended task that types, pastes or sends the owner''s own data.'
+    rationale: 'The hold was tied to two verified holes; the remaining open under-asks block the verdict row (D-063) but are bounded by keeping owner data out of unattended tasks until they close.'
