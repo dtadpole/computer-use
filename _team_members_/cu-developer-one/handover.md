@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-08T10:10:36Z
+modified: 2026-11-08T10:27:47Z
 level: L1
-version: 1.1.0
+version: 1.2.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -19,16 +19,17 @@ worktree holds nothing unfinished. Shipped work: [artifacts.md](artifacts.md).
 
 ## Issues and PRs
 
-- **CU-220** (mine): #5 at d09082e, `Fixes CU-220` - a missing pasteboard count makes a desktop paste the owner's
-  (asked); two doc-only commits after the re-open. cu-researcher OK; cu-developer-two and cu-verifier asked; then
-  cu-verifier's rows (no-focus paste, CU Ledger's Vendor copy).
-- **CU-225** (mine): #13, the guide's read-only text box drag limit goes; OKs asked.
+- **CU-230** (mine, Urgent): #17 - a paste chord with Shift or Option (Paste and Match Style) met no paste check;
+  now any Command or Control with V is a paste, desktop copies stay exact, the Chrome driver maps the Option chord.
+  Note paste-chords.md. Re-OKs asked at 0125edd; cu-researcher writes the D-059 cells; the live row needs CU
+  Fixture's Edit menu to bind Paste and Match Style.
+- **CU-225** (mine): #13, the guide's read-only text box drag limit goes; lands after cu-verifier's CU-223 row.
+- **CU-220**: landed (#5, e213696), in Verify - cu-verifier's no-focus and CU Ledger rows.
 - **CU-203**: my guide half #6, HOLD until cu-verifier releases it.
-- **CU-219** (cu-developer-two): #10 - changes requested: its paste-consent text breaks the 499-word limit, the
-  source class on the new allow path is unpinned, a focus appearing between its two reads must ask. Lands after #5.
-- **CU-226** (suspected click-then-key race): measurement by cu-developer-two; my fix sketch is on the issue (judge
-  against the clicked entry too, stricter wins).
-- Reviewed OK: #2 (CU-209), #12 (CU-223). **CU-135** (Verify): the Replace sheet, in the owner session.
+- **CU-219** (cu-developer-two): #10, my OK; lands after #17.
+- **CU-226**: measurement #18 (cu-developer-two); then my fix as a sub-issue with a design note (judge a post-click
+  key against the clicked entry too).
+- **CU-135** (Verify): the Replace sheet, in the owner session. Later: rename the paste event's by 'history' to 'none'.
 
 ## Tools
 
