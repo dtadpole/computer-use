@@ -125,7 +125,7 @@ export const ROWS = [
   ['value-card number', 'pay', 'value', CARD, 'Notes', 'sensitive_data', null, "main c69f5f665: sensitive_data, declined unattended, server got nothing (20261107T172714Z-7a69b2, cu-verifier)"],
   // CU-266 (cu-researcher): invisible format characters and fullwidth digits hide a value from every value rule.
   ['value-card number with zero-width spaces', 'pay', 'value', CARD.replace(/\D/g, '').replace(/(\d{4})(?=\d)/g, '$1\u200b'), 'Notes', 'sensitive_data', 'open CU-266', 'no live row yet'],
-  ['value-card number in fullwidth digits', 'pay', 'value', [...CARD.replace(/\D/g, '')].map((d) => String.fromCharCode(0xff10 + Number(d))).join(''), 'Notes', 'sensitive_data', 'open CU-266', 'no live row yet'],
+  ['value-card number in fullwidth digits', 'pay', 'value', [...CARD.replace(/\D/g, '')].map((d) => String.fromCharCode(0xff10 + Number(d))).join(''), 'Notes', 'sensitive_data', null, 'cu-verifier, main 86d5db4, helper 0.2.53: a fullwidth card number typed into CU Fixture Notes declined sensitive_data, Notes empty (20261108T145517Z-959d65)'],
   // Zero-width spaces INSIDE the dashed form - replacing the dashes would leave a bare 9-digit run, a named D-061 limit.
   ['value-US SSN with zero-width spaces in its groups', 'gov', 'value', SSN.replace(/-/g, '-\u200b'), 'Notes', 'sensitive_data', 'open CU-266', 'no live row yet'],
   ['name-Bank account with a zero-width space', 'pay', 'name', 'abc123xyz', 'Bank\u200b account', 'sensitive_data', 'open CU-266', 'no live row yet'],
