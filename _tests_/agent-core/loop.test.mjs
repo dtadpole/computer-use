@@ -260,7 +260,7 @@ test('extensions: cursor_position answers from the last pointer; zoom returns an
   assert.match(result.error, /frame_mismatch/)
 })
 
-test('pause holds the loop at its checkpoint; take-over refuses agent input', async () => {
+test('pause holds the loop at its checkpoint; a batch planned before the pause is voided after the resume (CU-274); take-over refuses agent input', async () => {
   const control = createRunControl()
   let sawPausedAt = null
   const { environment, run } = setup({
@@ -280,7 +280,8 @@ test('pause holds the loop at its checkpoint; take-over refuses agent input', as
   const result = await run()
   assert.equal(result.status, 'completed')
   assert.equal(sawPausedAt, 0, 'nothing ran while paused')
-  assert.equal(environment.log.length, 1)
+  // CU-274: the click was planned on the screenshot from before the pause, so it is voided and the model plans again.
+  assert.equal(environment.log.length, 0)
 })
 
 test('a held dialog: accepting asks the person (declined unattended), dismissing runs; no target lookup is attempted', async () => {
