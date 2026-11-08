@@ -331,6 +331,14 @@ const PASSWORD_NAMES = Object.freeze(['password', 'passcode', 'passphrase', 'pin
 // cu-researcher on #112: data: and blob: stay in the browser (blob: is how sites serve a generated 'Download CSV'); a
 // download they start still meets the page's download handling.
 const WEB_SCHEMES = new Set(['http', 'https', 'javascript', 'about', 'data', 'blob'])
+// CU-241 (cu-researcher's amendment): the elements that host another document - the page's focus read stops at them
+// when the document inside is cross-origin (a fenced frame always is), so what the key reaches is unread.
+const FRAME_HOST_TAGS = new Set(['iframe', 'frame', 'object', 'embed', 'fencedframe'])
+const FRAME_HOST_ROLES = new Set(['iframe', 'iframepresentational', 'embeddedobject', 'pluginobject'])
+function framesHost(target) {
+  if (!target || typeof target !== 'object') return false
+  return FRAME_HOST_TAGS.has(String(target.tag ?? '').toLowerCase()) || FRAME_HOST_ROLES.has(String(target.role ?? '').toLowerCase())
+}
 // CU-253, CU-287: messaging apps are known by kind (app-kinds.mjs, exact bundle ids with sources), and the names of compose
 // fields judge every other app.
 // CU-287: a search field takes Return to search, in a messaging app too ('Search Acme' in Slack).
@@ -781,11 +789,12 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const multiLineWeb = target?.editable === true && webTag !== '' && webTag !== 'input'
     // CU-241 (cu-researcher, 12:47Z): an iframe-body editor (TinyMCE, CKEditor 4, many webmail composers) keeps the caret
     // in a same-origin frame's <body>, which the browser driver does not describe - the focus reads null; a cross-origin
-    // frame stops the read at the <iframe> element itself. Either way the chord lands in content the gate cannot read,
-    // and in an editor it is the send, so on a web page it asks submit too. Named over-ask: the chord with nothing
-    // focused, or in a cross-origin widget frame.
+    // frame (an iframe, frame, object, embed or fenced frame) stops the read at its host element. Either way the chord
+    // lands in content the gate cannot read, and in an editor it is the send, so on a web page it asks submit too, with
+    // any extra modifier. Named over-ask: the chord with nothing focused, or in a cross-origin widget frame. A focus read
+    // that fails never reaches here: the loop refuses the key as target_unknown.
     const webPage = context.url != null && !desktopUrl
-    const unreadWebFocus = webPage && !held && (target == null || webTag === 'iframe' || webTag === 'frame')
+    const unreadWebFocus = webPage && !held && (target == null || framesHost(target))
     if ((multiLineWeb || unreadWebFocus) && keysOf(action).has('ENTER') && (keysOf(action).has('META') || keysOf(action).has('CTRL'))) classes.push('submit')
     // CU-253 (cu-researcher): a chat app sends on a plain Return from its compose field - a text area too, and with no
     // default button to read (Messages' 'iMessage', Slack, WhatsApp). So a plain Return or typed line break asks submit
