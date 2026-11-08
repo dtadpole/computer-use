@@ -1,9 +1,9 @@
 ---
 title: Consent limits - the routes the consent rules leave unjudged, named for the verdict
 created: 2026-11-08T11:23:17Z
-modified: 2026-11-08T20:00:31Z
+modified: 2026-11-08T20:07:38Z
 level: L1
-version: 0.3.2
+version: 0.3.3
 description: The D-059 table's named limits (D-063) - routes the consent rules do not judge, on purpose or by parity, each with its issue; split out of consent-routes.md so the route table keeps its budget.
 status: unverified
 grounded_in:
@@ -37,8 +37,9 @@ row. The routes the rules do judge are in [consent-routes.md](consent-routes.md)
 - In an IDE, Run, Debug, Build, Test and their chords ask launch_code (CU-271); 'Build Settings…' over-asks. Typing
   into a terminal panel is refused by its name (E5); a localized label running node is not yet (CU-279).
 - A link to a non-web scheme - facetime:, tel:, mailto:, file:, an app's own - asks permission (CU-265).
-- Not yet asked, rows open (CU-286): Meet's 'Ask to join', Slack's 'Start huddle' and DM composer, 'Allow always',
-  Firefox's 'Remember this decision', bookings, upgrades, renewals, tax e-filing, and one-time codes named by length.
+- Not yet asked, rows open: Meet's 'Ask to join', Slack's 'Start huddle', 'Allow always', Firefox's 'Remember this
+  decision' (CU-286); a chat app's recipient-named composer (CU-287); bookings, upgrades, renewals, tax e-filing,
+  trials with a length and one-time codes named by length (CU-288).
 - A standing choice in an approved app's own dialog - 'Always Allow', 'Always Trust', "Don't ask again", 'Never for
   This Website', 'Set as Default', 'Always use this app', 'Do not ask me again', Finder's 'Change All…' - asks
   permission (CU-258). System prompts are refused (CU-76).
