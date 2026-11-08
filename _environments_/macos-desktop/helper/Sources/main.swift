@@ -67,6 +67,10 @@ do {
 
 // D-029: the boundary applies to a run that holds a grant at its start (or is told to enforce it). A run that starts
 // with none serves with every grant forced off to its end, so a grant given mid-run never reaches an unchecked peer.
+// CU-295: the further checkouts this Mac's local config admits (helper-boundary.md rule (a)) - read and resolved once at
+// start, each inside the home and not world-writable; the effective list goes to the unified log.
+let configuredRead = PeerCheck.configuredCheckouts(home: PeerCheck.home())
+let admittedCheckouts = PeerCheck.admit(configuredRead.checkouts, home: PeerCheck.home(), resolve: PeerCheck.realPath, worldWritable: PeerCheck.isWorldWritable)
 // CU-240: a transient TCC false at launch is re-read (only when some grant reads true, so the boundary is unchanged).
 let grantsAtStart = GrantRecheck.settled(read: { Grants.preflight() }, sleep: { Thread.sleep(forTimeInterval: $0) })
 let boundary = options.boundaryApplies(grantsAtStart: grantsAtStart)
@@ -76,6 +80,11 @@ if options.lockPath != nil && grantsAtStart.any {
 }
 
 note("start \(HelperIdentity.version): \(options.dryRun ? "dry run" : forcedUngranted ? "every grant off" : "live"), boundary \(boundary ? "on" : "off")")
+// CU-295 (b): one line with the effective admitted checkouts, read by the post-install check; refusals and a malformed
+// config are logged too (c).
+note("checkouts: compiled ~/computer-use, ~/computer-use--<seat>; configured \(admittedCheckouts.admitted.isEmpty ? "none" : admittedCheckouts.admitted.map { $0.realBase + ($0.parent ? "/*" : "") }.joined(separator: ", "))")
+for reason in admittedCheckouts.refused { note("checkout refused: \(reason)") }
+if let problem = configuredRead.note { note(problem) }
 
 if boundary && !SingleInstance.acquire(at: options.lockPath ?? SingleInstance.lockPath) {
   fail("another helper is running; one helper serves one run at a time", code: 4)
@@ -97,7 +106,7 @@ case .socket(let path):
       fail("the driver's process could not be identified; refused", code: 3)
     }
     if let reason = PeerCheck.refusal(peer, ownUid: getuid(), home: PeerCheck.home(), expectedNode: options.driverNode,
-                                      expectedEntry: options.driverEntry, resolve: PeerCheck.realPath) {
+                                      expectedEntry: options.driverEntry, admitted: admittedCheckouts.admitted, resolve: PeerCheck.realPath) {
       link.shutdown()
       fail("peer pid \(peer.pid) refused: \(reason)", code: 3)
     }

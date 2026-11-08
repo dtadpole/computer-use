@@ -20,23 +20,31 @@ export const NEVER_PRE_APPROVED = Object.freeze(['purchase', 'delete', 'permissi
 // over-asks: a label that merely contains one ('删除线', strikethrough). Other languages are a named limit.
 const ZH_WORDS = Object.freeze({
   purchase: ['购买', '購買', '支付', '付款', '结账', '結帳', '结算', '結算', '下单', '下單', '提交订单', '提交訂單', '订阅', '訂閱', '充值',
-    '儲值', '转账', '轉帳', '汇款', '匯款', '捐款', '捐赠', '捐贈', '免费试用', '免費試用', '预订', '預訂', '续订', '續訂', '升级套餐', '升級方案'],
+    '儲值', '转账', '轉帳', '汇款', '匯款', '捐款', '捐赠', '捐贈', '免费试用', '免費試用', '预订', '預訂', '续订', '續訂', '升级套餐', '升級方案',
+    // CU-294 (cu-researcher's web sweep): renewals and memberships.
+    '续费', '續費', '开通会员', '開通會員', '立即开通', '立即開通', '升级会员', '升級會員', '开通vip', '開通vip'],
   delete: ['删除', '刪除', '移到废纸篓', '移到垃圾桶', '清空废纸篓', '清空垃圾桶', '抹掉', '抹除', '清除', '清空', '卸载', '解除安裝', '移除',
     '丢弃', '捨棄', '不保存', '不儲存', '替换', '取代', '覆盖', '覆寫', '还原到上次存储', '回復到上次儲存', '注销账户', '註銷帳號',
     '关闭账户', '關閉帳號', '取消订阅', '取消訂閱',
     // cu-researcher's zh sweep (Apple guide labels): Traditional words differ, not just glyphs.
-    '丟到垃圾桶', '丟到資源回收筒', '清倒废纸篓', '清倒垃圾桶', '不存储'],
+    '丟到垃圾桶', '丟到資源回收筒', '清倒废纸篓', '清倒垃圾桶', '不存储',
+    // CU-294: an account closed in other words.
+    '注销账号', '註銷帳號', '注销帐号', '删除账号', '刪除帳號', '注销账户'],
   permission: ['共享', '分享', '邀请', '邀請', '授权', '授權', '公开', '公開', '始终允许', '總是允許', '总是允许', '永遠允許', '一律允许',
     '允许访问', '允許存取', '不再询问', '不再詢問', '不再提示', '记住我的选择', '記住我的選擇', '记住此选择', '设为默认', '設為預設',
     '保存密码', '儲存密碼', '记住密码', '記住密碼', '保存通行密钥', '儲存通行密鑰', '创建通行密钥', '建立通行密鑰', '关闭两步验证',
     '關閉兩步驟驗證', '关闭双重认证', '關閉雙重認證', '打开摄像头', '開啟相機', '打开麦克风', '開啟麥克風',
     // CU-289's amended ruling in Chinese: Never Save keeps a per-site exception.
-    '永不保存', '永不儲存'],
+    '永不保存', '永不儲存',
+    // CU-294 (cu-researcher; Firefox's own 'Remember this decision' checkbox, mozilla-l10n).
+    '记住此决定', '記住此決定'],
   submit: ['发送', '發送', '傳送', '发布', '發佈', '發布', '提交', '注册', '註冊', '送出', '发表', '發表', '加入会议', '加入會議', '加入通话',
     '视频通话', '視訊通話', '语音通话', '語音通話', '开始会议', '開始會議', '接受邀请', '接受邀請', '拒绝邀请', '拒絕邀請',
     '部署', '退出群聊', '退出群組', '取消会议', '取消會議', '举报', '檢舉', '申请加入', '申請加入', '报税', '報稅',
     // cu-researcher on #145: Reply (回复 / 回覆) - judged like English 'reply', by CU-157's text-entered rule.
-    '回复', '回覆'],
+    '回复', '回覆',
+    // CU-294: joining or starting a meeting, and placing a call, in a meeting app's words.
+    '入会', '入會', '立即入会', '发起会议', '發起會議', '快速会议', '拨打', '撥打'],
 })
 const WORDS = Object.freeze({
   purchase: ['buy', 'pay', 'order', 'place order', 'checkout', 'check out', 'subscribe', 'donate', 'purchase', 'transfer', 'withdraw', 'wire', 'send money',
@@ -437,7 +445,8 @@ const URL_FIELD_NAMES = Object.freeze([...[...SECRET_NAMES, ...BANK_OR_TAX_FIELD
   'account number', 'routing number', 'sort code', 'bank account', 'national id number', 'id number'])
 // cu-verifier on #120: a phone, mobile or tel parameter whose value holds seven or more digits carries a phone number
 // (D-062) even unformatted; ?mobile=1 or ?mobile=true (a layout flag) stays free.
-const URL_PHONE_NAME = /(^| )(phone|mobile|tel|telephone|cell)( |$)/
+// CU-291 (cu-researcher): the joined lower-case forms too ('phonenumber', 'cellphone').
+const URL_PHONE_NAME = /(^| )(phone|mobile|tel|telephone|cell|phonenumber|cellphone|mobilephone|mobilenumber|telephonenumber|cellnumber)( |$)/
 const urlPhone = (name, value) => URL_PHONE_NAME.test(` ${String(name ?? '').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()} `)
   && (String(value ?? '').match(/\d/g) ?? []).length >= 7
 // CU-284 (cu-researcher; cu-coordinator: Medium): a street or address parameter whose value reads as a street address - a
@@ -450,6 +459,10 @@ const urlAddress = (name, value) => {
   const text = String(value ?? '')
   return URL_ADDRESS_NAME.test(words) && !URL_ADDRESS_NOT.test(words) && /\d/.test(text) && /[a-z]{3,}/i.test(text)
 }
+// CU-291 (cu-researcher; cu-coordinator: High, CU-281's class): an acct or acctnum parameter holding six or more digits
+// is a bank-account number; acct=<handle> (a fediverse account) stays free, as does a bare account=.
+const URL_ACCOUNT_NAME = /^(acct|acctnum|acct_num|acctno|acct_no|acct_number)$/i
+const urlAccount = (name, value) => URL_ACCOUNT_NAME.test(String(name ?? '').trim()) && (String(value ?? '').match(/\d/g) ?? []).length >= 6
 function urlFieldName(name) {
   const words = ` ${String(name ?? '').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase().replace(/[^a-z0-9/']+/g, ' ').trim()} `
   return words.trim() !== '' && URL_FIELD_NAMES.some((field) => words.includes(` ${field} `))
@@ -484,6 +497,7 @@ export function urlSecret(raw) {
     if (SECRET_PARAM.test(name.trim()) && value.trim().length >= 8) return 'key'
     if (value.trim() !== '' && urlFieldName(name)) return 'field_name'
     if (urlPhone(name, value)) return 'phone'
+    if (urlAccount(name, value)) return 'bank_account'
     if (urlAddress(name, value)) return 'address'
     const kind = looksSensitive(value)
     if (kind !== null) return kind
