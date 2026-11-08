@@ -421,7 +421,7 @@ const ROWS = [
   // name decides - and 'iMessage' or 'Message' is no submit word: the message goes unasked (runTask probe on main).
   ['chat-return-imessage', 'desktop', 'enter', 'chatComposeArea', 'submit', 'chat-return.test.mjs (#52, CU-253: Messages sends on Return)', 'no live row yet', 'open CU-253'],
   ['chat-newline-imessage', 'desktop', 'typeNewline', 'chatComposeArea', 'submit', 'chat-return.test.mjs (#52, CU-253: a typed newline is the same Return)', 'no live row yet', 'open CU-253'],
-  ['chat-return-new-message', 'desktop', 'enter', 'chatNewMessageArea', 'submit', 'CU-253 (a compose name in its own words)', 'no live row yet', 'todo CU-253'],
+  ['chat-return-new-message', 'desktop', 'enter', 'chatNewMessageArea', 'submit', 'CU-253 (a compose name in its own words: Teams\' \'Type a new message\')', 'no live row yet', 'open CU-253'],
   ['notes-area-return-newline', 'desktop', 'enter', 'notesArea', 'allow', 'CU-253 negative (a notes box takes a new line)', 'no live row yet', 'open CU-253'],
 ]
 
