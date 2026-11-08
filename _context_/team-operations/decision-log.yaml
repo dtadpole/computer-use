@@ -411,3 +411,13 @@ decisions:
     topic: records-only-landing-logs
     decision: 'D-076''s records-only list also covers _logs_/repo-actions/*.jsonl: a pull request whose diff is only Markdown or YAML records plus action-log lines lands after phase 1 and the public-hygiene gate, without phase 2. CU_INTEGRATOR_FULL_GATE=1 still forces the full gate.'
     rationale: 'Since #148 every pull request appends its own action-log line; append-only JSON lines cannot reach a desktop verifier, and without this every records PR would take the desktop-run lock again.'
+  - id: D-079
+    date: 2026-11-08
+    topic: records-log-only-merges
+    decision: 'For a pull request in the records-only class of D-076 and D-078 whose only conflict with main is _logs_/repo-actions/action-log.jsonl, cu-integrator makes the mechanical merge of main into the branch itself, resolving the log as a union (main''s lines, then the pull request''s, every line valid JSON), and lands it on the reviewer''s OK of the pre-merge head, provided the gate shows the merge commit''s diff against main equals the OK''d head''s diff against its merge base outside the log, and the log only gains lines. A conflict anywhere else, a changed line or a code file goes back to the author for a merge of main and a fresh OK. Each landing names the merge commit and the OK''d head on the pull request.'
+    rationale: 'Every pull request appends to the action log at its end, so each landing put every other records pull request into conflict; a merge of main plus a fresh OK per pull request per landing cost N rounds for N records pull requests, with nothing a reviewer could judge in the union.'
+  - id: D-080
+    date: 2026-11-08
+    topic: worktree-exception-ends
+    decision: 'D-077''s worktree exception ends: CUHelper 0.2.58 (#150, Fixes CU-292 and CU-295) was installed at 23:37Z from main aca5a2a (READBACK OK, self-test 40/40), and its peer check admits the main checkout ~/dtadpole/computer-use and the session worktrees ~/dtadpole/computer-use-wt/* named in the local configuration, and refused unlisted folders in cu-developer-three''s noInput proof. Every seat edits and starts its CUHelper runs from its session worktree; the old ~/computer-use--<seat> paths stay admitted (compiled in) until a later helper retires them and are no longer edited.'
+    rationale: 'The exception existed only because the installed helper admitted no convention path; with the allowlist installed and proven, the 8 Nov local folder layout applies in full.'
