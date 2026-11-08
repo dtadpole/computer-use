@@ -61,3 +61,12 @@ test('CU-281 negatives: an empty value, the word in a value, contact names and c
     assert.deepEqual(verdict(go(url)), ['allow', null, 'site:allowed'], url)
   }
 })
+
+test('CU-284: a street or address parameter holding a street address (a number beside a street word) asks; a city, postcode or ip address does not', () => {
+  for (const url of [`${ALLOWED}/map?address=10+Downing+Street`, `${ALLOWED}/f?street=221B%20Baker%20Street`, `${ALLOWED}/f?address_line1=1+Infinite+Loop`, `${ALLOWED}/f?shippingAddress=742+Evergreen+Terrace`]) {
+    assert.deepEqual(verdict(go(url)), ['confirm', 'sensitive_data', 'url:sensitive_data'], url)
+  }
+  for (const url of [`${ALLOWED}/map?address=Lisbon`, `${ALLOWED}/f?city=Lisbon`, `${ALLOWED}/f?postcode=94103`, `${ALLOWED}/f?address=94103`, `${ALLOWED}/net?ip_address=203.0.113.5`, `${ALLOWED}/f?street=Main`]) {
+    assert.deepEqual(verdict(go(url)), ['allow', null, 'site:allowed'], url)
+  }
+})
