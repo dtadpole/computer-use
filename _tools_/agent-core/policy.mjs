@@ -10,7 +10,7 @@ import { originPattern } from './sites.mjs'
  * or the page; `purchase`, `delete` and `permission` always confirm at action time.
  */
 
-export const CLASSES = Object.freeze(['submit', 'purchase', 'delete', 'permission', 'credential', 'sensitive_data', 'new_site', 'page_dialog', 'install', 'file_choice'])
+export const CLASSES = Object.freeze(['submit', 'purchase', 'delete', 'permission', 'credential', 'sensitive_data', 'new_site', 'page_dialog', 'install', 'file_choice', 'launch_code'])
 export const NEVER_PRE_APPROVED = Object.freeze(['purchase', 'delete', 'permission', 'file_choice', 'launch_code'])
 
 /** Word lists matched on a target's accessible name, case-insensitively, at word boundaries; they err toward confirm. */
@@ -535,8 +535,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const name = target?.name ?? ''
     const classes = []
     // CU-271 (cu-coordinator's ruling): a web terminal runs every line it is given, so a key or text into it - typed, a
-    // paste, a chord - or text dropped on it is refused, as a terminal view is on the desktop.
-    if ((['type', 'keypress', 'hold_key'].includes(action.type) && target?.terminal === true) || (action.type === 'drag' && context.dropTarget?.terminal === true)) {
+    // paste, a chord, a page menu's Paste with the terminal focused - or text dropped on it is refused, as a terminal view
+    // is on the desktop.
+    if ((['type', 'keypress', 'hold_key'].includes(action.type) && target?.terminal === true) || (action.type === 'drag' && context.dropTarget?.terminal === true)
+      || context.paste?.intoTerminal === true) {
       return { decision: 'block', class: null, rule: 'terminal_view', reason: 'typing into a web terminal is refused, as in a terminal app' }
     }
     // CU-271: running code asks launch_code, never pre-approved - a run chord (Shift-, Control-, Command- or Alt-Return) in
