@@ -1,9 +1,9 @@
 ---
 title: Sensitive classes - everything the agent must never type unasked
 created: 2026-11-07T14:34:22Z
-modified: 2026-11-08T15:14:10Z
+modified: 2026-11-08T15:38:57Z
 level: L1
-version: 0.4.2
+version: 0.4.3
 description: The D-061 table - every sensitive class with its value rule, its field-name rule, the asserting test and the live row; rows live in an executable matrix, gaps are children of CU-145.
 status: unverified
 grounded_in:
@@ -27,23 +27,24 @@ value rule and name is a row of `_tests_/agent-core/sensitive-classes.test.mjs`;
 
 ## Limits
 
-- Too broad to judge by value: a 9-digit SIN or plain SSN, a 3-digit CVV, an MM/YY expiry, a passport or licence
-  number, a date, a street address; the name rule carries them.
-- A digest of 40 or more hex characters asks (accepted over-ask, D-061).
-- Words match whole. A bare six-digit number never asks by value; a one-time code goes by field name.
-- Sensitive-field text (Email, Phone too) is redacted from run files (D-062).
-- Not judged by value: an unbroken national run (07700900123) or the 00 prefix; a grouped reference (01-2345-6789)
-  asks (CU-185).
-- Names compare normalised (case, apostrophes, licence as license, # as number, dots, hyphens); acronyms match case-sensitively as whole words ('Pan size' never asks). 'Mobile app name', 'Bank account
-  holder' and a spaced reference fitting SSN rules ask (accepted over-asks); a bare 'Account', 'Token' or 'City' never does.
+- Too broad to judge by value: a plain SSN or SIN, a CVV, an MM/YY expiry, a passport or licence number, a date, a
+  street address; names carry them.
+- A 40+ hex digest asks (accepted over-ask, D-061).
+- Words match whole; a bare six-digit number (a one-time code) goes by field name.
+- Sensitive-field text, Email and Phone too, is redacted (D-062).
+- An unbroken national phone run (07700900123) or a 00 prefix is not judged by value; a grouped reference asks (CU-185).
+- Names compare normalised; acronyms match case-sensitively as whole words. 'Mobile app name', 'Bank account holder'
+  and SSN-shaped references ask (accepted over-asks); a bare 'Account', 'Token' or 'City' never does.
 - Names and values are normalised first (CU-266, CU-268): NFKC, invisible characters dropped, look-alikes folded,
   any script's digits as ASCII, letter-spacing closed up.
-- Pieces typed into one field are judged whole (CU-267, never recorded), but not across a click when the focus is
+- An opened URL is judged (CU-260): a card, key or token in its query or fragment, or any password-, secret- or
+  pin-named parameter's value, asks; a path id or a transformed or split value does not. A query email asks (over-ask).
+- Pieces typed into one field are judged whole (CU-267), but not across a click when the focus is
   unreadable, a desktop paste (D-031), arrow or selection edits, or text the run did not type.
 
 ## Sign-off
 
-Live rows run on the fixture site's secret-fields pages.
+Live rows: the fixture site's secret-fields pages.
 Re-signed by cu-verifier, 8 November (main 309c60328): every closed row cites cu-verifier's run or a decision (D-064).
-Open since: CU-245's name rows (asserted, #46; its value rows closed live). An open under-ask is an open or todo row naming
+Open: CU-245's name rows (asserted, #46). An open under-ask is an open or todo row naming
 its issue (D-063).
