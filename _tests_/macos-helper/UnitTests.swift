@@ -1782,18 +1782,50 @@ func testPeerCheck() {
   check(configured == [PeerCheck.Checkout(path: "work/computer-use", parent: false), PeerCheck.Checkout(path: "work/computer-use-wt", parent: true)],
         "helperCheckouts keeps home-relative exact checkouts and worktree parents; absolute, '..', inner wildcards, spaces and non-strings are dropped")
   check(PeerCheck.checkouts(fromConfig: nil).isEmpty && PeerCheck.checkouts(fromConfig: ["other": 1]).isEmpty, "no config or no key: no further checkouts")
+  // CU-295 acceptance (hd-coordinator, cu-researcher): each configured checkout resolves once - inside the home, not
+  // world-writable (it or its parent) - and a script is admitted by its real path only, segment by segment.
+  let links: [String: String] = ["\(home)/work/link": "/tmp/evil", "\(home)/work/to-home": home, "\(home)/work/computer-use-wt/escape": "/tmp/evil2"]
+  let linkResolve: (String) -> String? = { path in
+    let normal = (path as NSString).standardizingPath
+    for (from, to) in links where normal == from || normal.hasPrefix(from + "/") { return to + normal.dropFirst(from.count) }
+    return normal
+  }
+  let open777: Set<String> = ["\(home)/open", "\(home)/shared"]
+  let admit = PeerCheck.admit(
+    [PeerCheck.Checkout(path: "work/computer-use", parent: false), PeerCheck.Checkout(path: "work/computer-use-wt", parent: true),
+     PeerCheck.Checkout(path: "work/link", parent: false), PeerCheck.Checkout(path: "work/to-home", parent: true),
+     PeerCheck.Checkout(path: "open", parent: false), PeerCheck.Checkout(path: "shared/repo", parent: false)],
+    home: home, resolve: linkResolve, worldWritable: { open777.contains($0) })
+  check(admit.admitted == [PeerCheck.Admitted(realBase: "\(home)/work/computer-use", parent: false), PeerCheck.Admitted(realBase: "\(home)/work/computer-use-wt", parent: true)],
+        "admitted: the two checkouts inside the home; refused: a symlink out of the home, one onto the home itself, a world-writable root and one under a world-writable parent")
+  check(admit.refused.count == 4 && admit.refused[0].contains("outside the home") && admit.refused[1].contains("outside the home") && admit.refused[2].contains("world-writable") && admit.refused[3].contains("world-writable"),
+        "each refusal says why (logged at start)")
   func configuredRefusal(_ script: String) -> String? {
     let peer = PeerCheck.Peer(pid: 42, uid: 501, executable: "/opt/node/bin/node", arguments: ["node", script], environment: [], cwd: "/", nodeSigned: true)
-    return PeerCheck.refusal(peer, ownUid: 501, home: home, expectedNode: peer.executable, expectedEntry: script, checkouts: configured, resolve: resolve)
+    return PeerCheck.refusal(peer, ownUid: 501, home: home, expectedNode: peer.executable, expectedEntry: script, admitted: admit.admitted, resolve: linkResolve)
   }
-  check(configuredRefusal("\(home)/work/computer-use/_tools_/agent-core/cli.mjs") == nil, "the CLI in a configured checkout is accepted")
-  check(configuredRefusal("\(home)/work/computer-use-wt/session-1a2b/_tools_/agent-core/cli.mjs") == nil, "the CLI in a worktree under a configured parent is accepted")
+  check(configuredRefusal("\(home)/work/computer-use/_tools_/agent-core/cli.mjs") == nil, "the CLI in an admitted checkout is accepted")
+  check(configuredRefusal("\(home)/work/computer-use-wt/session-1a2b/_tools_/agent-core/cli.mjs") == nil, "the CLI in a worktree under an admitted parent is accepted")
   check(configuredRefusal("\(home)/work/computer-use-wt/_tools_/agent-core/cli.mjs") != nil, "the parent itself is no checkout")
   check(configuredRefusal("\(home)/work/computer-use-wt/a/b/_tools_/agent-core/cli.mjs") != nil, "a worktree is one level under its parent, not two")
-  check(configuredRefusal("\(home)/work/computer-use/_tools_/agent-core/other.mjs") != nil, "a configured checkout still serves only the compiled entry points")
+  check(configuredRefusal("\(home)/work/computer-use-wt-evil/x/_tools_/agent-core/cli.mjs") != nil, "a string prefix of the parent ('computer-use-wt-evil') is no match")
+  check(configuredRefusal("\(home)/work/computer-use-wt/escape/_tools_/agent-core/cli.mjs") != nil, "a worktree name that is a symlink out of the home is refused (real path compared)")
+  check(configuredRefusal("\(home)/work/link/_tools_/agent-core/cli.mjs") != nil, "a configured checkout that is a symlink out of the home serves nothing")
+  check(configuredRefusal("\(home)/work/computer-use/_tools_/agent-core/other.mjs") != nil, "an admitted checkout still serves only the compiled entry points")
   check(configuredRefusal("\(home)/work/elsewhere/_tools_/agent-core/cli.mjs") != nil, "an unconfigured directory is refused")
   check(refusal(PeerCheck.Peer(pid: 42, uid: 501, executable: "/opt/node/bin/node", arguments: ["node", "\(home)/work/computer-use/_tools_/agent-core/cli.mjs"], environment: [], cwd: "/", nodeSigned: true)) != nil,
         "without the config entry the same path is refused")
+  // (c): a malformed or unreadable config admits none - the compiled roots only - and says so.
+  let fakeHome = NSTemporaryDirectory() + "cu-home-\(getpid())"
+  try? FileManager.default.createDirectory(atPath: fakeHome + "/.config/computer-use", withIntermediateDirectories: true)
+  check(PeerCheck.configuredCheckouts(home: fakeHome).checkouts.isEmpty && PeerCheck.configuredCheckouts(home: fakeHome).note == nil, "no config file: no further checkouts, nothing to report")
+  FileManager.default.createFile(atPath: fakeHome + "/.config/computer-use/config.json", contents: Data("{ not json".utf8))
+  let malformed = PeerCheck.configuredCheckouts(home: fakeHome)
+  check(malformed.checkouts.isEmpty && malformed.note?.contains("malformed") == true, "a malformed config: compiled checkouts only, logged")
+  FileManager.default.createFile(atPath: fakeHome + "/.config/computer-use/config.json", contents: Data(#"{"helperCheckouts": ["~/a/computer-use", "~/b/*"]}"#.utf8))
+  check(PeerCheck.configuredCheckouts(home: fakeHome).checkouts == [PeerCheck.Checkout(path: "a/computer-use", parent: false), PeerCheck.Checkout(path: "b", parent: true)], "a well-formed config is read")
+  try? FileManager.default.removeItem(atPath: fakeHome)
+  check(PeerCheck.isWorldWritable("/tmp") && !PeerCheck.isWorldWritable(NSHomeDirectory()), "the world-writable test: /tmp (1777) is, the home is not")
   var mcp = good
   mcp.arguments = ["node", "\(home)/computer-use/_tools_/computer-use-mcp/server.mjs"]
   check(refusal(mcp) == nil, "the MCP server in the shared checkout is accepted")

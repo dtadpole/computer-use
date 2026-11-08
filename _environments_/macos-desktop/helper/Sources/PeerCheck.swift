@@ -55,12 +55,64 @@ enum PeerCheck {
     return Checkout(path: body, parent: parent)
   }
 
+  /// A configured checkout as admitted: its real directory (realpath at start), inside the home's real path.
+  struct Admitted: Equatable {
+    var realBase: String
+    var parent: Bool
+  }
+
   /// The configured checkouts, read once from the fixed config path under the home (never an environment variable,
-  /// so a driver cannot redirect it).
-  static func configuredCheckouts(home: String) -> [Checkout] {
+  /// so a driver cannot redirect it), with why any was dropped. A missing, unreadable or malformed file admits none -
+  /// the compiled roots only.
+  static func configuredCheckouts(home: String) -> (checkouts: [Checkout], note: String?) {
     let path = (home as NSString).appendingPathComponent(".config/computer-use/config.json")
-    guard let data = FileManager.default.contents(atPath: path), data.count <= 65_536 else { return [] }
-    return checkouts(fromConfig: JSONCoding.decode(data))
+    guard FileManager.default.fileExists(atPath: path) else { return ([], nil) }
+    guard let data = FileManager.default.contents(atPath: path), data.count <= 65_536, let config = JSONCoding.decode(data), config.object != nil else {
+      return ([], "the local config is unreadable or malformed: compiled checkouts only")
+    }
+    return (checkouts(fromConfig: config), nil)
+  }
+
+  /// cu-coordinator's acceptance for CU-295 (hd-coordinator, cu-researcher): each configured checkout is resolved once,
+  /// and admitted only if its real path lies inside the home's real path (by path segments) and neither it nor its
+  /// parent directory is world-writable. Pure: `resolve` and `worldWritable` come in. Returns what is admitted and a
+  /// reason for each refusal.
+  static func admit(_ checkouts: [Checkout], home: String, resolve: (String) -> String?, worldWritable: (String) -> Bool) -> (admitted: [Admitted], refused: [String]) {
+    let root = home.hasSuffix("/") ? String(home.dropLast()) : home
+    guard let realHome = resolve(root) else { return ([], checkouts.map { "~/\($0.path): the home cannot be resolved" }) }
+    var admitted: [Admitted] = []
+    var refused: [String] = []
+    for checkout in checkouts {
+      let shown = "~/" + checkout.path + (checkout.parent ? "/*" : "")
+      guard let real = resolve(root + "/" + checkout.path) else { refused.append("\(shown): does not resolve"); continue }
+      guard real.hasPrefix(realHome + "/"), real != realHome else { refused.append("\(shown): resolves outside the home"); continue }
+      let parentDirectory = (real as NSString).deletingLastPathComponent
+      guard !worldWritable(real), !worldWritable(parentDirectory) else { refused.append("\(shown): it or its parent is world-writable"); continue }
+      admitted.append(Admitted(realBase: real, parent: checkout.parent))
+    }
+    return (admitted, refused)
+  }
+
+  /// Whether a directory's mode lets every user write it (the sticky 1777 included).
+  static func isWorldWritable(_ path: String) -> Bool {
+    var info = stat()
+    guard stat(path, &info) == 0 else { return true }
+    return info.st_mode & S_IWOTH != 0
+  }
+
+  /// Where an admitted checkout holds a real path's project directory, with a trailing slash: the real base itself, or
+  /// one named child of a parent (segment-checked), compared real path to real path only - no lexical route.
+  static func admittedProject(_ real: String, admitted: [Admitted]) -> String? {
+    for checkout in admitted {
+      let base = checkout.realBase + "/"
+      guard real.hasPrefix(base) else { continue }
+      if !checkout.parent { return base }
+      let name = real.dropFirst(base.count).prefix { $0 != "/" }
+      guard !name.isEmpty, name != ".", name != "..", name.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber || "._-".contains($0)) }),
+            real.dropFirst(base.count + name.count).hasPrefix("/") else { continue }
+      return base + name + "/"
+    }
+    return nil
   }
 
   /// The entry points that drive runs through agent core (design 0.3.3), relative to the project directory, plus
@@ -90,7 +142,7 @@ enum PeerCheck {
   }
 
   /// Why the peer is refused, or nil when it is accepted. Pure: every fact comes in, so it is unit-tested.
-  static func refusal(_ peer: Peer, ownUid: uid_t, home: String, expectedNode: String?, expectedEntry: String?, checkouts: [Checkout] = [], resolve: (String) -> String?) -> String? {
+  static func refusal(_ peer: Peer, ownUid: uid_t, home: String, expectedNode: String?, expectedEntry: String?, admitted: [Admitted] = [], resolve: (String) -> String?) -> String? {
     guard peer.uid == ownUid else { return "the peer runs as another user" }
     guard peer.nodeSigned, let executable = peer.executable else { return "the peer is not a genuine node binary" }
     guard let expectedNode, let expectedEntry else { return "the launch named no --driver-node and --driver-entry" }
@@ -104,7 +156,8 @@ enum PeerCheck {
     let absolute = script.hasPrefix("/") ? script : peer.cwd.map { ($0 as NSString).appendingPathComponent(script) }
     guard let absolute, let real = resolve(absolute) else { return "the peer's script cannot be resolved" }
     let root = home.hasSuffix("/") ? String(home.dropLast()) : home
-    guard isAllowedEntry(real: real, lexical: lexicallyNormalized(absolute), root: root, checkouts: checkouts, resolve: resolve) else {
+    let configured = admittedProject(real, admitted: admitted).map { project in entryPoints.contains(where: { real == project + $0 }) } ?? false
+    guard configured || isAllowedEntry(real: real, lexical: lexicallyNormalized(absolute), root: root, resolve: resolve) else {
       return "the peer's script is not an allowed entry point"
     }
     guard resolve(expectedEntry) == real else { return "the peer's script is not the entry point the driver named" }
@@ -116,15 +169,15 @@ enum PeerCheck {
   /// real path (a `~/computer-use` that is a symlink); or, for a seat checkout reached through a
   /// symlink, on the path as named, provided the entry point named there resolves to that same real file inside the
   /// checkout's real directory - so a symlink planted inside a checkout cannot lead out of it.
-  static func isAllowedEntry(real: String, lexical: String, root: String, checkouts: [Checkout] = [], resolve: (String) -> String?) -> Bool {
-    if let project = projectRoot(real, root: root, checkouts: checkouts), entryPoints.contains(where: { real == project + $0 }) { return true }
-    if let realRoot = resolve(root), realRoot != root, let project = projectRoot(real, root: realRoot, checkouts: checkouts), entryPoints.contains(where: { real == project + $0 }) { return true }
+  static func isAllowedEntry(real: String, lexical: String, root: String, resolve: (String) -> String?) -> Bool {
+    if let project = projectRoot(real, root: root), entryPoints.contains(where: { real == project + $0 }) { return true }
+    if let realRoot = resolve(root), realRoot != root, let project = projectRoot(real, root: realRoot), entryPoints.contains(where: { real == project + $0 }) { return true }
     for layout in layouts {
       guard let realCheckout = resolve(root + "/" + layout.repository), realCheckout != root + "/" + layout.repository else { continue }
       let project = (realCheckout.hasSuffix("/") ? realCheckout : realCheckout + "/") + layout.projectDirectory
       if entryPoints.contains(where: { real == project + $0 }) { return true }
     }
-    guard let project = projectRoot(lexical, root: root, checkouts: checkouts), let entry = entryPoints.first(where: { lexical == project + $0 }),
+    guard let project = projectRoot(lexical, root: root), let entry = entryPoints.first(where: { lexical == project + $0 }),
           let realProject = resolve(project) else { return false }
     return real.hasPrefix(realProject.hasSuffix("/") ? realProject : realProject + "/") && resolve(project + entry) == real
   }
@@ -143,19 +196,9 @@ enum PeerCheck {
   /// The project directory a path lies in, with a trailing slash: the checkout `<home>/<repository>/` or a seat
   /// worktree `<home>/<repository>--<seat>/` of one of the `layouts`, plus that layout's project directory; nil for
   /// anything else.
-  static func projectRoot(_ path: String, root: String, checkouts: [Checkout] = []) -> String? {
+  static func projectRoot(_ path: String, root: String) -> String? {
     for layout in layouts {
       if let checkout = checkoutRoot(path, root: root, repository: layout.repository) { return checkout + layout.projectDirectory }
-    }
-    // CU-295: a configured checkout holds the standalone repository at its root.
-    for checkout in checkouts {
-      let base = root + "/" + checkout.path + "/"
-      guard path.hasPrefix(base) else { continue }
-      if !checkout.parent { return base }
-      let name = path.dropFirst(base.count).prefix { $0 != "/" }
-      guard !name.isEmpty, name != ".", name != "..", name.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber || "._-".contains($0)) }),
-            path.dropFirst(base.count + name.count).hasPrefix("/") else { continue }
-      return base + name + "/"
     }
     return nil
   }
