@@ -234,9 +234,11 @@ test('copy-source rows: every todo row still fails (a fixed row cannot stay todo
 // read the first action that is not allowed. [id, pieces, expected, status, live]
 const harness = await import('../../_verifiers_/desktop-consent/harness.mjs')
 const notesArea = { bundleId: harness.FIXTURE, pid: 900, role: 'AXTextArea', title: 'Notes', frame: { x: 100, y: 200, width: 400, height: 200 } }
-async function decideSequence(actions) {
-  const world = harness.twoApps('com.example.other', [{ rect: notesArea.frame, element: notesArea }])
-  const run = await harness.desktopRun({ world, focused: notesArea, turns: [{ actions }, { final: 'done' }], bounds: { maxSteps: 4 } })
+// The fake helper reads the focus from the world (world.focused); desktopRun takes no focus of its own. With noFocus the
+// helper answers no focused element, as it does when an app's focus cannot be read.
+async function decideSequence(actions, { noFocus = false } = {}) {
+  const world = { ...harness.twoApps('com.example.other', [{ rect: notesArea.frame, element: notesArea }]), ...(noFocus ? {} : { focused: notesArea }) }
+  const run = await harness.desktopRun({ world, turns: [{ actions }, { final: 'done' }], bounds: { maxSteps: 4 } })
   const asked = run.events.find((e) => e.kind === 'action' && e.decision !== 'allow')
   return asked ? asked.class : 'allow'
 }
@@ -248,18 +250,21 @@ const SEQUENCE_ROWS = [
   // A no-input action between the pieces must not reset what the fix keeps (cu-researcher's correction on CU-267).
   ['sequence-card with waits between pieces', cardDigits.match(/\d{4}/g).flatMap((g) => [{ type: 'type', text: g }, { type: 'wait', duration_ms: 100 }]), 'sensitive_data', 'todo CU-267', 'no live row yet'],
   ['sequence-card with a screenshot between pieces', cardDigits.match(/\d{4}/g).flatMap((g) => [{ type: 'type', text: g }, { type: 'screenshot' }]), 'sensitive_data', 'todo CU-267', 'no live row yet'],
+  ['sequence-card with a click into the same field between pieces', cardDigits.match(/\d{4}/g).flatMap((g) => [{ type: 'type', text: g }, { type: 'click', button: 'left', x: 200, y: 300 }]), 'sensitive_data', 'todo CU-267', 'no live row yet'],
+  // With the focus unreadable the fix has no field to key the buffer by; the app (reset on any pointer action) would do.
+  ['sequence-card as four type actions, focus unreadable', { noFocus: true, actions: cardDigits.match(/\d{4}/g).map((g) => ({ type: 'type', text: g })) }, 'sensitive_data', 'todo CU-267', 'no live row yet'],
   ['sequence-plain words in pieces (negative)', [{ type: 'type', text: 'abc' }, { type: 'type', text: 'def' }], 'allow', 'open CU-267', 'no live row yet'],
 ]
 for (const [id, pieces, expected, status, live] of SEQUENCE_ROWS) {
   const title = `${id} -> ${expected} (live: ${live})`
   const opts = { skip: harness.ready ? false : 'the desktop-consent harness is not built here', ...(status?.startsWith('todo ') ? { todo: status } : {}) }
-  test(title, opts, async () => assert.equal(await decideSequence(pieces), expected))
+  test(title, opts, async () => assert.equal(await decideSequence(pieces.actions ?? pieces, { noFocus: pieces.noFocus === true }), expected))
 }
 test('sequence rows: named once; every open row names its issue; a todo row still fails (a fixed row cannot stay todo)', { skip: harness.ready ? false : 'harness not built' }, async () => {
   assert.equal(new Set(SEQUENCE_ROWS.map((r) => r[0])).size, SEQUENCE_ROWS.length)
   for (const [id, pieces, expected, status] of SEQUENCE_ROWS) {
     assert.match(status, /^(todo|open) CU-\d+$/, id)
-    if (status.startsWith('todo ')) assert.notEqual(await decideSequence(pieces), expected, `${id} passes on main - flip it from todo`)
+    if (status.startsWith('todo ')) assert.notEqual(await decideSequence(pieces.actions ?? pieces, { noFocus: pieces.noFocus === true }), expected, `${id} passes on main - flip it from todo`)
   }
 })
 
