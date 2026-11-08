@@ -115,6 +115,10 @@ const T = {
   readonlyTextViewValue: { role: 'AXTextArea', name: 'ACCT-REF 7731', caption: 'IBAN', editable: false },
   readonlyTextViewNotes: { role: 'AXTextArea', name: 'Bring the blue folder', caption: 'Notes', editable: false },
   webNotesEntry: { role: 'textbox', name: 'Notes', editable: true },
+  // CU-241 (4): a webmail's compose body (contenteditable), a comment box (textarea), a one-line subject - as describeElement reports them.
+  webComposeBody: { tag: 'div', role: 'textbox', name: 'Message Body', editable: true },
+  webCommentsArea: { tag: 'textarea', role: 'textbox', name: 'Comments', editable: true },
+  webSubjectInput: { tag: 'input', role: 'textbox', name: 'Subject', editable: true },
   notesEntry: { role: 'AXTextField', name: 'Notes', editable: true },
   webOnclickDelete: { tag: 'div', role: 'generic', name: 'Delete' },
   webPointerIconDelete: { tag: 'div', role: 'generic', name: 'Delete' },
@@ -143,6 +147,8 @@ const A = {
   space: { type: 'keypress', keys: ['SPACE'] },
   enter: { type: 'keypress', keys: ['ENTER'] },
   cmdEnter: { type: 'keypress', keys: ['META', 'ENTER'] },
+  ctrlEnter: { type: 'keypress', keys: ['CTRL', 'ENTER'] },
+  shiftEnter: { type: 'keypress', keys: ['SHIFT', 'ENTER'] },
   cmdBackspace: { type: 'keypress', keys: ['META', 'BACKSPACE'] },
   cmdOptShiftBackspace: { type: 'keypress', keys: ['META', 'ALT', 'SHIFT', 'BACKSPACE'] },
   cmdD: { type: 'keypress', keys: ['META', 'D'] },
@@ -251,6 +257,14 @@ const ROWS = [
   ['web-click-card-over-ask', 'browser', 'click', 'webCardDeleteArticle', 'delete', 'clickLabel (CU-176): accepted over-ask - a clickable card is judged by its words', '20261107T152804Z-7aa92f (main c184e26f8: asks delete, the accepted over-ask; before allowed 150000Z-9b9fd6)', null],
   ['web-click-body-pointer-text', 'browser', 'click', 'webBodyPointerText', 'allow', 'activatableAncestor + clickLabel (CU-176): a pointer cursor on body says nothing', '20261107T152800Z-84b1e9 (main c184e26f8: allowed; branch v2 2cf10d966 asked purchase 145948Z-dea6bd)', null],
   ['web-enter-implicit-submit', 'browser', 'enter', 'webQuantityInForm', 'purchase', 'chrome-browser implicit submit seam (#337)', 'main 1d7059a61: Enter in Quantity asks purchase, declined, no submit (20261107T172341Z-e8b869)', null],
+  // CU-241 (4), cu-developer-one's rule (11:24Z): Command- or Control-Enter in a multi-line editable - a textarea or a
+  // contenteditable - is the web's send, so it asks submit unless a read default button says otherwise (named over-ask:
+  // code editors). A plain or Shift-Enter there types a new line, and a one-line input keeps today's judging.
+  ['cmd-enter-web-compose-body', 'browser', 'cmdEnter', 'webComposeBody', 'submit', 'CU-241 (4)', 'no live row yet', 'todo CU-241'],
+  ['ctrl-enter-web-textarea', 'browser', 'ctrlEnter', 'webCommentsArea', 'submit', 'CU-241 (4)', 'no live row yet', 'todo CU-241'],
+  ['enter-web-textarea-newline', 'browser', 'enter', 'webCommentsArea', 'allow', 'CU-241 (4) negative (a new line)', 'no live row yet', 'open CU-241'],
+  ['shift-enter-web-compose-newline', 'browser', 'shiftEnter', 'webComposeBody', 'allow', 'CU-241 (4) negative (a new line)', 'no live row yet', 'open CU-241'],
+  ['cmd-enter-web-single-line', 'browser', 'cmdEnter', 'webSubjectInput', 'allow', 'CU-241 (4) negative (one-line input: implicit submission judges it)', 'no live row yet', 'open CU-241'],
   ['web-newline-implicit-submit', 'browser', 'typeNewline', 'webQuantityInForm', 'purchase', 'chrome-browser implicit submit seam (#337)', 'main: typed newline asks purchase, no submit (20261107T172346Z-2698b2)', null],
   ['web-type-card-third-party', 'browser', 'typeCard', 'webComments', 'sensitive_data', 'policy.test.mjs', "main 1de261e91, real Chrome: a card number typed into share-document's Email asks sensitive_data (20261107T192422Z-75b2d6)", null],
   ['type-into-iban-field', 'desktop', 'typePlain', 'ibanField', 'sensitive_data', 'bank-tax-sensitive.test.mjs (CU-163)', 'name rule live on the Tax ID field (F1 20261107T134312Z-ccea6d); the IBAN field itself not reached (not wholly shown); the IBAN value live in Vendor (V1 20261107T134206Z-da1f65)', null],
