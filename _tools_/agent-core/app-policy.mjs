@@ -115,6 +115,20 @@ function launchesCode(action, target) {
   return keys.has('META') && (keys.has('O') || keys.has('ARROWDOWN'))
 }
 
+// CU-254 (cu-researcher; cu-coordinator: the install class, ask): the App Store installs or updates software from its
+// Get, Install, Update and Download buttons - no consent word names them - so a click on one, or Space or Return on one
+// focused, asks install - app-policy's own verdict, so no pre-approval covers it (as launch_code). Browsing stays
+// free. Named limit: third-party stores and updaters (Setapp, MacUpdater).
+const APP_STORE = 'com.apple.AppStore'
+const STORE_INSTALL = /^(get|install|update|update all|download|redownload|reinstall)\b/i
+function storeInstall(action, target, app) {
+  if (String(app ?? '') !== APP_STORE || !/^(ax)?button$/i.test(String(target?.role ?? ''))) return false
+  if (!STORE_INSTALL.test(String(target?.name ?? '').trim())) return false
+  if (CLICKS.has(action.type)) return true
+  const keys = chord(action)
+  return action.type === 'keypress' && (keys.has('SPACE') || keys.has('ENTER'))
+}
+
 const isKeyAction = (action) => action.type === 'type' || action.type === 'keypress'
 
 /** The service macOS draws open and save panels in (design file-panels.md, Q-D13). */
@@ -369,6 +383,9 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     // desktop's own - so no field a rule reads (dropTarget, afterClose, paste, the next one) can be dropped by a rebuild.
     const verdict = classes.classify(action, { ...context, url: 'desktop://', target, dialog: context.dialog ?? null })
     // Never pre-approvable: preApprovals are not consulted. Only a hand-off (a password change) outranks it.
+    if (storeInstall(action, target, app) && verdict.decision === 'allow') {
+      return { decision: 'confirm', class: 'install', classes: ['install'], rule: 'target:install', reason: `"${String(target.name).trim()}" in the App Store installs or updates software`, app }
+    }
     if (launchesCode(action, target) && verdict.decision !== 'handoff') {
       return { decision: 'confirm', class: 'launch_code', classes: ['launch_code', ...(verdict.classes ?? [])], rule: 'target:launch_code', reason: `open "${target.name}", which runs code`, app }
     }
