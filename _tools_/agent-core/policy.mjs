@@ -304,7 +304,8 @@ function nationalPhone(value) {
 // CU-260 (cu-researcher): query parameters that carry a secret by name - a reset or session token, an API key.
 const SECRET_PARAM = /^(token|access_?token|refresh_?token|id_?token|api_?key|apikey|client_?secret|secret|password|passwd)$/i
 // cu-verifier on #91: a password or secret parameter asks whatever its length ('hunter2'); a token keeps the 8-character floor.
-const PASSWORD_PARAM = /^(client_?secret|secret|password|passwd|pwd|pass)$/i
+// cu-researcher: aligned with D-061's credential names (passcode, passphrase, PIN) and any name ending in secret.
+const PASSWORD_PARAM = /^([a-z0-9]*[_-]?secret|password|passwd|pwd|pass|passcode|passphrase|pin)$/i
 
 /**
  * CU-260: the D-061 value a navigate URL would carry off the page, or null - the value rules over the decoded query

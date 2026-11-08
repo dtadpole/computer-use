@@ -25,6 +25,9 @@ test('CU-260: a value in the query, the fragment or a path segment asks sensitiv
     `${ALLOWED}/login?user=me&password=${j('hun', 'ter2')}`,
     `${ALLOWED}/login?passwd=${j('ab', 'c1')}`,
     `${ALLOWED}/oauth?client_secret=${j('s3', 'cr')}`,
+    `${ALLOWED}/x?api_secret=${j('hun', 'ter2')}`,
+    `${ALLOWED}/x?passcode=${j('12', '34')}`,
+    `${ALLOWED}/x?pin=${j('98', '76')}`,
   ]) {
     assert.deepEqual(verdict(go(url)), ['confirm', 'sensitive_data', 'url:sensitive_data'], url)
   }
