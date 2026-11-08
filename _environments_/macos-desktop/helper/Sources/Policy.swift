@@ -5,7 +5,7 @@ import Foundation
 /// The helper's identity; `build.sh` writes the same bundle id into Info.plist.
 enum HelperIdentity {
   static let bundleId = "com.reflection.cu-helper"
-  static let version = "0.2.54"
+  static let version = "0.2.55"
   /// The value every synthetic event carries in `kCGEventSourceUserData`: 0x43555345, ASCII "CUSE"
   /// (input-and-targets.md, verify-kit's SYNTHETIC_TAG). Not a secret: an event from another process with this tag
   /// could only fail to pause the run, never act.
@@ -72,6 +72,11 @@ struct Exclusions {
     "com.apple.systempreferences", "com.apple.settings.*", "com.apple.SecurityAgent",
     "com.apple.LocalAuthentication.UIAgent", "com.apple.loginwindow", "com.apple.UserNotificationCenter",
     "com.apple.coreservices.uiagent", "com.apple.installer",
+    // CU-264: whole-Mac tools - Disk Utility (Erase, Restore, Partition), Boot Camp, Migration Assistant, Time Machine
+    // (its launcher, and com.apple.TimeMachine, which covers the menu-bar agent com.apple.timemachine.HelperAgent), Activity
+    // Monitor (Force Quit). Ids read from each app's Info.plist on macOS 27; Console stays approvable (read-only).
+    "com.apple.DiskUtility", "com.apple.bootcampassistant", "com.apple.MigrateAssistant", "com.apple.backup.launcher",
+    "com.apple.TimeMachine", "com.apple.ActivityMonitor",
   ]
 
   let entries: [String]

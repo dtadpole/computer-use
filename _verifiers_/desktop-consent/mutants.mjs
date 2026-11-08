@@ -21,5 +21,5 @@ export const MUTANTS = Object.freeze([
     { file: POLICY, find: "    const action = held?.type === 'hold_key' ? { type: 'keypress', keys: held.keys } : held", replace: '    const action = held' },
     { file: POLICY, find: "  if ((action?.type !== 'keypress' && action?.type !== 'hold_key') || !Array.isArray(action.keys)) return new Set()", replace: "  if (action?.type !== 'keypress' || !Array.isArray(action.keys)) return new Set()" },
   ] },
-  { name: 'paste-without-own-copy-allowed', why: 'a desktop paste is taken as the run\'s own copy, so the owner\'s pasteboard is pasted into a field unasked (CU-151)', mutations: [{ file: LOOP, find: "          ? { ...(ownCopy(target) ? { fromOwner: false,", replace: "          ? { ...(true ? { fromOwner: false," }] },
+  { name: 'paste-without-own-copy-allowed', why: 'a desktop paste is taken as the run\'s own copy, so the owner\'s pasteboard is pasted into a field unasked (CU-151)', mutations: [{ file: LOOP, find: "          ? { ...(ownCopy(count) ? { fromOwner: false,", replace: "          ? { ...(true ? { fromOwner: false," }] },
 ])
