@@ -76,6 +76,9 @@ const T = {
   zhNeverSaveHant: { role: 'AXButton', name: '永不儲存' },
   zhChangePasswordHans: { role: 'AXButton', name: '更改密码' },
   zhRememberMeHans: { role: 'AXButton', name: '记住我' },
+  zhAlwaysAllowHans: { role: 'AXButton', name: '始终允许' },
+  zhAlwaysAllowHant: { role: 'AXButton', name: '永遠允許' },
+  zhPayHans: { role: 'AXButton', name: '支付' },
   chatDmArea: { role: 'AXTextArea', name: 'Message Ann Smith', editable: true, defaultButtonRead: true },
   chatToArea: { role: 'AXTextArea', name: 'Write a message to Ann', editable: true, defaultButtonRead: true },
   messageSubjectArea: { role: 'AXTextArea', name: 'Message subject', editable: true, defaultButtonRead: true },
@@ -304,6 +307,9 @@ const ROWS = [
   ['zh-never-save-hans', 'desktop', 'click', 'zhNeverSaveHans', 'permission', 'CU-293 (Apple zh label)', 'no live row yet', 'todo CU-293'],
   ['zh-never-save-hant', 'desktop', 'click', 'zhNeverSaveHant', 'permission', 'CU-293 (Apple zh label)', 'no live row yet', 'todo CU-293'],
   ['zh-change-password-hans', 'desktop', 'click', 'zhChangePasswordHans', 'handoff', 'CU-293 (Apple zh label)', 'no live row yet', 'todo CU-293'],
+  ['zh-always-allow-hans', 'desktop', 'click', 'zhAlwaysAllowHans', 'permission', 'CU-293 (Apple mac-help kychn002, zh-cn)', 'no live row yet', 'todo CU-293'],
+  ['zh-always-allow-hant', 'desktop', 'click', 'zhAlwaysAllowHant', 'permission', 'CU-293 (Apple mac-help kychn002, zh-tw)', 'no live row yet', 'todo CU-293'],
+  ['zh-pay-hans', 'desktop', 'click', 'zhPayHans', 'purchase', 'CU-293 (WeChat Pay merchant docs)', 'no live row yet', 'todo CU-293'],
   ['zh-remember-me-hans', 'desktop', 'click', 'zhRememberMeHans', 'allow', 'CU-293 negative (stay signed in)', 'no live row yet', 'open CU-293'],
   // CU-287 (after #131): a compose field named for its recipient - Slack's DM placeholder - still escapes the chat rule.
   // In a known messaging app any compose field asks, whatever its name (#52's CHAT_APPS, kept by CU-287's app-kinds);
