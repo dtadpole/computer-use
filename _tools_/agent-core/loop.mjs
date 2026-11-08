@@ -472,8 +472,9 @@ export async function runTask(options) {
   }
   // CU-151 (paste-consent.md): on the desktop a paste inserts the owner's pasteboard unless the run's own copy put it
   // there. The pasteboard stays unread; the helper's changeCount (target.pasteboardChangeCount) proves an own copy: the
-  // count before each copy or cut, and at the paste it must have risen by exactly the run's own copies. With no count (an
-  // older helper) the action history alone decides - a named limit. A pause or take-over resets it (the person may copy).
+  // count before each copy or cut, and at the paste it must have risen by exactly the run's own copies. With no count -
+  // never an older helper since D-069's floor (the count came in 0.2.38), so a deviation - the paste is the owner's and
+  // asks (CU-220): a copy with nothing selected cannot pass. A pause or take-over resets it (the person may copy).
   const chordOf = (action, letter) => {
     if ((action.type !== 'keypress' && action.type !== 'hold_key') || !Array.isArray(action.keys)) return false
     try {
@@ -510,7 +511,7 @@ export async function runTask(options) {
   const ownCopy = (target) => {
     if (pasteboard.own === 0) return false
     const count = countOf(target)
-    return count === null || pasteboard.baseline === null ? true : count === pasteboard.baseline + pasteboard.own
+    return count === null || pasteboard.baseline === null ? false : count === pasteboard.baseline + pasteboard.own
   }
   // CU-183 (copy-source.md): a copy's source field is kept by its descriptor - role, name and the flags the name rules
   // read - never its value; each own copy's source sits beside the count that proves it.
