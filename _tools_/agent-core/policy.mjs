@@ -41,6 +41,14 @@ const WORDS = Object.freeze({
     'allow always', 'remember this decision', 'remember decision',
     // CU-261 (cu-researcher): a camera or microphone switched on reaches other people.
     'turn on camera', 'turn on microphone', 'turn on video', 'start video', 'unmute',
+    // CU-289 (cu-researcher): storing a credential in a browser's or app's password store is a standing choice. 'Remember
+    // me' (staying signed in) and a plain or draft Save stay free; 'Update password' already hands off (password_change).
+    'save password', 'save passwords', 'remember password', 'remember passwords', 'save login', 'save logins',
+    'save login info', 'remember login', 'save credentials', 'save to keychain', 'save in keychain',
+    // cu-researcher on #136: a passkey is a credential too; 'Never save' keeps a standing exception like 'Never for this site'.
+    'save passkey', 'save a passkey', 'save passkeys', 'save this passkey', 'never save',
+    // cu-developer-one's ruling: creating a passkey registers a new credential with the site; using one to sign in stays free.
+    'create passkey', 'create a passkey', 'add passkey', 'add a passkey',
     // cu-researcher's 13:23Z sweep: an account-wide sign-out.
     'sign out of all devices', 'sign out everywhere', 'log out of all devices', 'log out everywhere',
     // CU-270 (cu-researcher): switching an account's protection off - every verb with every protection, as whole phrases
@@ -392,6 +400,21 @@ const URL_FIELD_SKIP = new Set(['email', 'e-mail', 'phone', 'mobile number', 'te
 // lower-case tin= (a field's TIN is matched as an acronym, case-sensitively).
 const URL_FIELD_NAMES = Object.freeze([...[...SECRET_NAMES, ...BANK_OR_TAX_FIELD].filter((name) => !URL_FIELD_SKIP.has(name)), 'tin', 'iban', 'tax id', 'taxid',
   'account number', 'routing number', 'sort code', 'bank account', 'national id number', 'id number'])
+// cu-verifier on #120: a phone, mobile or tel parameter whose value holds seven or more digits carries a phone number
+// (D-062) even unformatted; ?mobile=1 or ?mobile=true (a layout flag) stays free.
+const URL_PHONE_NAME = /(^| )(phone|mobile|tel|telephone|cell)( |$)/
+const urlPhone = (name, value) => URL_PHONE_NAME.test(` ${String(name ?? '').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()} `)
+  && (String(value ?? '').match(/\d/g) ?? []).length >= 7
+// CU-284 (cu-researcher; cu-coordinator: Medium): a street or address parameter whose value reads as a street address - a
+// house number beside a street word ('10 Downing Street', '221B Baker St') - carries it out as a typed one would (D-062).
+// A city or postcode alone stays free (D-061), and so do an ip, mac, e-mail, wallet or web address.
+const URL_ADDRESS_NAME = /(^| )(address|addr|street|address line|street address)( |$)/
+const URL_ADDRESS_NOT = /(^| )(ip|mac|email|e mail|wallet|web|url|server|host)( |$)/
+const urlAddress = (name, value) => {
+  const words = ` ${String(name ?? '').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()} `
+  const text = String(value ?? '')
+  return URL_ADDRESS_NAME.test(words) && !URL_ADDRESS_NOT.test(words) && /\d/.test(text) && /[a-z]{3,}/i.test(text)
+}
 function urlFieldName(name) {
   const words = ` ${String(name ?? '').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase().replace(/[^a-z0-9/']+/g, ' ').trim()} `
   return words.trim() !== '' && URL_FIELD_NAMES.some((field) => words.includes(` ${field} `))
@@ -425,6 +448,8 @@ export function urlSecret(raw) {
     if (PASSWORD_PARAM.test(name.trim()) && value.trim() !== '') return 'key'
     if (SECRET_PARAM.test(name.trim()) && value.trim().length >= 8) return 'key'
     if (value.trim() !== '' && urlFieldName(name)) return 'field_name'
+    if (urlPhone(name, value)) return 'phone'
+    if (urlAddress(name, value)) return 'address'
     const kind = looksSensitive(value)
     if (kind !== null) return kind
   }
