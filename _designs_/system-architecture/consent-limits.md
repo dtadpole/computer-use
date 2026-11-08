@@ -1,9 +1,9 @@
 ---
 title: Consent limits - the routes the consent rules leave unjudged, named for the verdict
 created: 2026-11-08T11:23:17Z
-modified: 2026-11-08T11:23:17Z
+modified: 2026-11-08T12:27:51Z
 level: L1
-version: 0.1.0
+version: 0.2.0
 description: The D-059 table's named limits (D-063) - routes the consent rules do not judge, on purpose or by parity, each with its issue; split out of consent-routes.md so the route table keeps its budget.
 status: unverified
 grounded_in:
@@ -19,7 +19,7 @@ row. The routes the rules do judge are in [consent-routes.md](consent-routes.md)
 
 - Unnamed targets, drop points and default buttons are allowed, counted per batch.
 - Scroll is not judged.
-- A form without a submit button is judged by field name.
+- A form without a submit button is judged by field name - a chat app's Return too, until CU-253's fix.
 - A bare "Reply" is free only with every entry on its page or window read empty (CU-157, live on both).
 - A web page's own shortcut keys - a webmail's `#` deletes, `e` archives, Command-Enter sends - are judged by the
   focused element, not by what the page's script does with the key (CU-241, D-072; ChatGPT relies on the model's
@@ -27,3 +27,5 @@ row. The routes the rules do judge are in [consent-routes.md](consent-routes.md)
   site before any decision.
 - Its desktop twin: a key a view handles itself (a custom keyDown, web content inside an app) and a window button's
   own key equivalent are judged by their keys; only menu-bar items are read (CU-232's named limit, D-072).
+- Owner-defined macOS Services - a shortcut on another chord, an item with another title - are not refused; the
+  default ones are (CU-249). The helper sending a clicked menu item's path closes it (CU-250).
