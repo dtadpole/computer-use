@@ -39,6 +39,6 @@ file choices are never pre-approved. Typed sensitive text stays out of run files
 - A run stopped mid-hold names the key; the next run releases it, or press and release it.
 - Not yet asked: a keyboard shortcut that fires a menu item, such as Mail's Send on Shift-Command-D, until the helper
   reads menus (in progress). The team keeps its live runs to its own test apps until it is verified.
-- Not yet asked: opening a file from a menu, by Command-O in a list or with a hidden extension; installing from the App Store.
+- Not yet asked: opening a file from a menu or by Command-O in a list; installing from the App Store.
 - A website's own keyboard shortcuts (a webmail's # deletes, e archives) are judged by the focus, not by what the site
   does with them.
