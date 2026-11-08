@@ -60,6 +60,15 @@ const T = {
   nothingFocused: null,
   areaDefaultSend: { role: 'AXTextArea', name: 'Notes', defaultButton: SEND },
   searchField: { role: 'AXTextField', name: 'Search' },
+  // CU-261: actions that reach other people or commit work.
+  joinMeetingButton: { role: 'AXButton', name: 'Join Meeting' },
+  videoCallButton: { role: 'AXButton', name: 'Video call' },
+  tweetButton: { role: 'AXButton', name: 'Tweet' },
+  acceptInviteButton: { role: 'AXButton', name: 'Accept invitation' },
+  mergeButton: { role: 'AXButton', name: 'Merge' },
+  cameraOnButton: { role: 'AXButton', name: 'Turn on camera' },
+  acceptButton: { role: 'AXButton', name: 'Accept' },
+  connectButton: { role: 'AXButton', name: 'Connect' },
   // CU-187 / CU-223: the unnamed scratch entry a copied value is pasted into (CU Ledger, CU Fixture copyRow).
   unnamedEntry: { role: 'AXTextField', name: '', editable: true },
   // CU-163: a bank account or tax id field (S9's vendor form in CU Ledger).
@@ -218,6 +227,16 @@ const ROWS = [
   ['long-press-destructive', 'desktop', 'longPress', 'deleteButton', 'delete', 'drag-press.test.mjs', "cu-verifier: a long press on Delete, no travel, declined delete (20261107T033148Z-e6a9d5); earlier cu-researcher run 022946Z-435ad5 (hold-delete)", null],
   ['drag-from-destructive', 'desktop', 'dragAway', 'deleteButton', 'delete', 'drag-press.test.mjs', '20261107T014522Z-727ccc (CU-140)', null],
   ['scroll', 'desktop', 'scroll', 'deleteButton', 'allow', 'not judged by design: no consent class changes on scroll', 'D-059 named limit: scroll is not judged', null],
+  // CU-261 (cu-researcher): a call, a meeting, an invitation reply, a public post or a merge reaches others or commits
+  // work, yet carries no submit word (runTask probe on main: allowed and posted; 'Send' asks).
+  ['outward-join-meeting', 'desktop', 'click', 'joinMeetingButton', 'submit', 'CU-261 (contacts others)', 'no live row yet', 'todo CU-261'],
+  ['outward-video-call', 'desktop', 'click', 'videoCallButton', 'submit', 'CU-261', 'no live row yet', 'todo CU-261'],
+  ['outward-tweet', 'desktop', 'click', 'tweetButton', 'submit', 'CU-261 (a public post)', 'no live row yet', 'todo CU-261'],
+  ['outward-accept-invitation', 'desktop', 'click', 'acceptInviteButton', 'submit', 'CU-261 (sends a reply)', 'no live row yet', 'todo CU-261'],
+  ['outward-merge', 'desktop', 'click', 'mergeButton', 'submit', 'CU-261 (commits work)', 'no live row yet', 'todo CU-261'],
+  ['outward-camera-on', 'desktop', 'click', 'cameraOnButton', 'permission', 'CU-261 (camera)', 'no live row yet', 'todo CU-261'],
+  ['bare-accept', 'desktop', 'click', 'acceptButton', 'allow', 'CU-261 negative (a cookie banner or terms dialog)', 'no live row yet', 'open CU-261'],
+  ['bare-connect', 'desktop', 'click', 'connectButton', 'allow', 'CU-261 negative (Wi-Fi, Bluetooth)', 'no live row yet', 'open CU-261'],
   ['paste-no-own-copy', 'desktop', 'cmdV', 'searchField', 'sensitive_data', 'paste-consent tests (#349)', '20261107T052454Z-bed1eb; count half on 0.2.40 (cu-verifier 10:13Z, no-alert proof)', null, { paste: { fromOwner: true } }],
   ['paste-after-own-copy', 'desktop', 'cmdV', 'searchField', 'allow', 'CU-151 (#349)', "0.2.42 P2: own copy allowed (20261107T173939Z-f03c80)", null, { paste: { fromOwner: false } }],
   // CU-187 desktop half: an own copy of shown text carries its caption's class to a paste into an unnamed entry (the
