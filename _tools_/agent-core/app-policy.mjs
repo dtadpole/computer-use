@@ -19,7 +19,8 @@ const SHIFTED = Object.freeze({ '#': '3', $: '4', '%': '5', '^': '6', '*': '8' }
 
 /** A keypress's keys as a set of canonical names, whatever the order or dialect; empty for other actions. */
 function chord(action) {
-  if (action?.type !== 'keypress' || !Array.isArray(action.keys)) return new Set()
+  // CU-244: a hold carries a chord as a keypress does (systemShortcut() is exported and called on its own too).
+  if ((action?.type !== 'keypress' && action?.type !== 'hold_key') || !Array.isArray(action.keys)) return new Set()
   return new Set(action.keys.flatMap((key) => {
     let name
     try { name = normalizeKey(key) } catch { name = String(key) }
@@ -279,7 +280,10 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
 
   const approved = (bundleId) => runScope.has(bundleId.toLowerCase()) || approvals?.covers?.(bundleId) === true
 
-  function classify(action, context = {}) {
+  function classify(held, context = {}) {
+    // CU-244: a key hold is judged exactly as the same chord pressed (CU-64 H3), here as in the loop - so the system
+    // shortcuts, the file-panel refusals and every keypress rule below see a held chord too, whoever calls.
+    const action = held?.type === 'hold_key' ? { type: 'keypress', keys: held.keys } : held
     if (action.type === 'navigate') return { decision: 'block', class: null, rule: 'desktop:navigate', reason: 'navigate is browser-only' }
     const target = context.target ?? null
     // Copy, cut and paste - chords and menu items - are allowed (D-031, replacing D-025's refusal); the helper never
