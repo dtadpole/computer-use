@@ -7,13 +7,16 @@ import AppKit
 /// its accessibility label and title element, as a captioned entry does; every button records only 'pressed' with its
 /// index, so a declined click shows as no event. The state reports each entry's length, never its text, so a typed
 /// secret never comes back through the harness.
+/// An entry of this screen: the generic state skips it, so what is typed never leaves the app (lengths only, below).
+final class NamedField: NSTextField {}
+
 final class NamedControls: NSObject {
   static let task = "named-controls"
   static var shared: NamedControls?
   static let maxControls = 6
   static let maxName = 60
 
-  var fields: [NSTextField] = []
+  var fields: [NamedField] = []
   var buttons: [NSButton] = []
   var pressed: [Int] = []
 
@@ -42,7 +45,7 @@ final class NamedControls: NSObject {
       let caption = Kit.label(name, size: 12, bold: true)
       caption.frame = NSRect(x: 20, y: y, width: 380, height: 16)
       content.addSubview(caption)
-      let field = NSTextField()
+      let field = NamedField()
       field.font = NSFont.systemFont(ofSize: 14)
       field.frame = NSRect(x: 20, y: y + 20, width: 380, height: 26)
       field.identifier = NSUserInterfaceItemIdentifier("field-\(index)")
