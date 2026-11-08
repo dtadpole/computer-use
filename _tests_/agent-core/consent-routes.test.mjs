@@ -288,9 +288,9 @@ const ROWS = [
   ['click-into-security-entry', 'desktop', 'click', 'securityEntry', 'allow', 'text-entry-focus-click.test.mjs (CU-170)', "CU Fixture consent-cells (#447), helper 0.2.42: allowed (20261107T180023Z-4dddcc)", null],
   ['web-click-into-security-entry', 'browser', 'click', 'webSecurityEntry', 'allow', 'text-entry-focus-click.test.mjs (CU-170)', 'real Chrome on /more at #417 head 09c2a1d74: a click into Social Security number and Security question allowed (20261107T150213Z-7c1671, 20261107T150217Z-aed066), the typing still asked; main asked permission on the click (20261107T150223Z-46dced, 20261107T150226Z-36cf54)', null],
   // CU-270 (cu-researcher): weakening an account's protection carries no 'security' word (runTask: performed).
-  ['web-security-2sv-off', 'browser', 'click', 'web2svOffButton', 'permission', 'CU-270', 'no live row yet', 'todo CU-270'],
-  ['web-security-less-secure-apps', 'browser', 'click', 'webLessSecureButton', 'permission', 'CU-270', 'no live row yet', 'todo CU-270'],
-  ['web-security-recovery-off', 'browser', 'click', 'webRecoveryOffButton', 'permission', 'CU-270', 'no live row yet', 'todo CU-270'],
+  ['web-security-2sv-off', 'browser', 'click', 'web2svOffButton', 'permission', 'CU-270', 'no live row yet', 'open CU-270'],
+  ['web-security-less-secure-apps', 'browser', 'click', 'webLessSecureButton', 'permission', 'CU-270', 'no live row yet', 'open CU-270'],
+  ['web-security-recovery-off', 'browser', 'click', 'webRecoveryOffButton', 'permission', 'CU-270', 'no live row yet', 'open CU-270'],
   ['web-notifications-off', 'browser', 'click', 'webNotificationsOffButton', 'allow', 'CU-270 negative (noise, not protection)', 'no live row yet', 'open CU-270'],
   ['web-click-permission-combobox', 'browser', 'click', 'webPermissionCombobox', 'permission', 'text-entry-focus-click.test.mjs (CU-170)', "fixture controls page (#445): asks permission (20261107T175259Z-b457f1)", null],
   ['web-click-delete-button-in-editor', 'browser', 'click', 'webDeleteInEditor', 'delete', 'text-entry-focus-click.test.mjs (CU-170)', "fixture controls page (#445): asks delete (20261107T175304Z-990ae1)", null],
