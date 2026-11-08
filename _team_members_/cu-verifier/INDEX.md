@@ -1,8 +1,8 @@
 ---
 title: '[cu] Verifier - Team Member'
 created: 2026-11-01T09:06:25Z
-modified: 2026-11-08T04:15:32Z
-version: 1.3.0
+modified: 2026-11-08T23:24:35Z
+version: 1.4.0
 description: 'The lasting record of [cu] Verifier - its seat, current direction and links to its work.'
 grounded_in:
   - source: owner request in the dsh session 2026-11-01 (set up workspace, team and sessions for computer use)
@@ -16,7 +16,7 @@ its direction changes when the coordinator assigns a new one, and the write scop
 | | |
 |---|---|
 | Current direction | fixture suite, verifiers, injection red team, evaluation |
-| Worktree (this Mac) | `~/computer-use--cu-verifier`, branch `cu/cu-verifier`; DSH workspace `dtadpole/heddle · computer-use` |
+| Worktree (this Mac) | the session worktree `~/dtadpole/computer-use-wt/<session-id>` of the main checkout `~/dtadpole/computer-use`, a `cu/cu-verifier-...` branch per change; CUHelper runs start from `~/computer-use--cu-verifier` until helper 0.2.58 admits the convention paths (D-077); DSH workspace `dtadpole/computer-use` |
 | Model | gateway-provider model-a, xhigh (D-002) |
 | Goal and schedule intent | an armed goal for the current milestone |
 
