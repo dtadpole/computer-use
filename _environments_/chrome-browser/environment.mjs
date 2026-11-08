@@ -551,6 +551,12 @@ class BrowserEnvironment {
       // CU-265: the scheme of the link the element is in (the page script resolves it from the closest <a href>), so a
       // facetime:, tel: or mailto: link is not judged as a plain click. Outside the fingerprint; never recorded.
       linkScheme: linkSchemeOf(href),
+      // CU-271: a web terminal, a notebook cell, a notebook or code page - DOM shape only; outside the fingerprint, never
+      // recorded.
+      ...(extra.terminal === true ? { terminal: true } : {}),
+      ...(extra.notebookCell === true ? { notebookCell: true } : {}),
+      ...(extra.notebookSurface === true ? { notebookSurface: true } : {}),
+      ...(extra.codeSurface === true ? { codeSurface: true } : {}),
       inputType,
       isPassword: inputType === 'password',
       autocomplete: attributes.autocomplete ?? null,

@@ -657,6 +657,8 @@ function boundEntryOf(item, scope) {
   if (item === null || typeof item !== 'object' || Array.isArray(item)) return null
   if (item.bundleId !== undefined && (typeof item.bundleId !== 'string' || !scope.includes(item.bundleId))) return null
   if (item.appleMenu !== undefined && typeof item.appleMenu !== 'boolean') return null
+  // CU-250 (helper 0.2.53): an item under the Services menu acts outside the approved app; app-policy refuses it.
+  if (item.servicesMenu !== undefined && typeof item.servicesMenu !== 'boolean') return null
   const name = menuTitleOf(item.title)
   if (name === null) return null
   const path = Array.isArray(item.path) ? item.path.slice(0, 8).map(menuTitleOf).filter((step) => step !== null) : []
@@ -664,6 +666,7 @@ function boundEntryOf(item, scope) {
     role: 'AXMenuItem', name, keyEquivalent: menuKeyEquivalentOf(item.keyEquivalent), path,
     enabled: typeof item.enabled === 'boolean' ? item.enabled : null,
     ...(item.appleMenu === true ? { appleMenu: true } : {}),
+    ...(item.servicesMenu === true ? { servicesMenu: true } : {}),
   }
 }
 
@@ -713,6 +716,26 @@ function combineBound(a, b) {
   if (b.none) return a
   const items = distinctEntries([...a.items, ...b.items])
   return items.length > MAX_BOUND_ITEMS ? { unreadable: true } : { items }
+}
+
+/**
+ * CU-250 (helper 0.2.53): a menu item's place - the titles from the menu bar down to the item, at most 10, each trimmed
+ * and capped at 80 characters ('' for an untitled level). Null when absent (an older helper, not a menu item) or
+ * malformed. Context for agent core (Open With > Terminal); never in run records.
+ */
+export function menuPathOf(value) {
+  if (!Array.isArray(value) || value.length === 0 || value.length > 10) return null
+  if (!value.every((step) => typeof step === 'string')) return null
+  return value.map((step) => step.trim().slice(0, 80))
+}
+
+/**
+ * CU-250: whether a menu item sits under the Services menu - false when the helper sends nothing, true for its true and
+ * for any other value: a malformed mark fails closed, since app-policy refuses a Services item and a refused menu click
+ * is the safe side.
+ */
+export function servicesMenuOf(value) {
+  return !(value === undefined || value === null || value === false)
 }
 
 /**
@@ -1731,6 +1754,10 @@ class DesktopEnvironment {
       // keys they are bound to, in any language; null on anything else and from an older helper. Outside the
       // fingerprint: the same item is the same target whatever its shortcut reads.
       keyEquivalent: keyEquivalentOf(element.keyEquivalent),
+      // CU-250 (helper 0.2.53): a menu item under the Services menu, and its menu path - outside the fingerprint, and never in
+      // run records (an event's target keeps origin, role and name).
+      ...(servicesMenuOf(element.servicesMenu) ? { servicesMenu: true } : {}),
+      menuPath: menuPathOf(element.menuPath),
       // CU-187: the label that captions a non-entry element (AXTitleUIElement's title, else its row's or cell's sibling
       // title, as the helper reads it) - never its value or its own title. A string of at most 80 characters, null when
       // absent (an older helper) or malformed. Context, not identity: outside the fingerprint, and never in run records.
