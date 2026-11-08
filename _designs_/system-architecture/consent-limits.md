@@ -1,9 +1,9 @@
 ---
 title: Consent limits - the routes the consent rules leave unjudged, named for the verdict
 created: 2026-11-08T11:23:17Z
-modified: 2026-11-08T17:09:31Z
+modified: 2026-11-08T17:23:45Z
 level: L1
-version: 0.2.6
+version: 0.2.7
 description: The D-059 table's named limits (D-063) - routes the consent rules do not judge, on purpose or by parity, each with its issue; split out of consent-routes.md so the route table keeps its budget.
 status: unverified
 grounded_in:
@@ -32,6 +32,8 @@ row. The routes the rules do judge are in [consent-routes.md](consent-routes.md)
   own key equivalent are judged by their keys; only menu-bar items are read (CU-232's named limit, D-072).
 - A default Services chord is refused (CU-249) unless one enabled app item binds it (CU-256). An owner-defined Service -
   another chord, another title - is refused by the helper's Services mark (CU-250).
+- A Writing Tools item, or one naming another vendor's AI, is refused like a Service (CU-277); a read menu path decides.
+  An approved app's own AI feature under its own menu counts as the app (named, cu-coordinator).
 - A standing choice in an approved app's own dialog - 'Always Allow', 'Always Trust', "Don't ask again", 'Never for
   This Website', 'Set as Default' - asks permission (CU-258); 'Always use this app', 'Do not ask me again' and Finder's
   'Change All…' are not yet asked. System prompts are refused (CU-76).
