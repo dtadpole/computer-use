@@ -1156,10 +1156,19 @@ export async function runTask(options) {
       // request), then the check phase - whichever phase this step resumed in.
       await new Promise((resolve) => setTimeout(resolve, 0))
       await new Promise((resolve) => setImmediate(resolve))
+      const waitedBeforePerform = !control.agentMayAct()
       if (!(await control.checkpoint())) {
         halt = 'cancelled'
         Object.assign(result, { status: 'skipped', message: 'Not executed: the run was stopped.' })
         logEvent('action', step, { ...base, status: 'skipped', reason: 'stopped_before_perform', attempted: false, completed: false })
+        continue
+      }
+      // A pause, take-over or local input landed here and the run resumed: the screen may have changed, so this action's
+      // judgement is stale - nothing posts, the batch ends and the model plans again from a fresh screenshot.
+      if (waitedBeforePerform) {
+        halt = 'batch'
+        Object.assign(result, { status: 'skipped', message: 'Not executed: the run was paused before this action; the screen may have changed.' })
+        logEvent('action', step, { ...base, status: 'skipped', reason: 'paused_before_perform', attempted: false, completed: false })
         continue
       }
       logEvent('action', step, { ...base, status: 'attempted', attempted: true })
