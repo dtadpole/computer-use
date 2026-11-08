@@ -37,8 +37,7 @@ file choices are never pre-approved. Typed sensitive text stays out of run files
 - A run can end partial; its last line says so.
 - A run stopped mid-hold names the key; the next run releases it, or press and release it.
 - A keyboard shortcut is judged as the menu item it fires, read from the menu bar; a window button's or a
-  view's own keys are not. For now, run no unattended task
-  that types, pastes or sends your data (D-074).
+  view's own keys are not.
 - App Store installs and price buttons ask.
 - An approved app's built-in AI counts as part of the app.
 - A website's own keyboard shortcuts (a webmail's # deletes, e archives) are judged by the focus, not by what the site
