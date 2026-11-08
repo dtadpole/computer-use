@@ -462,6 +462,12 @@ func testExclusions() {
                   "com.apple.timemachine.HelperAgent"]
   check(wholeMac.allSatisfy(list.isExcluded), "Disk Utility, Boot Camp, Migration Assistant, Time Machine (launcher and agent) and Activity Monitor are excluded")
   check(!list.isExcluded("com.apple.Console"), "Console stays approvable (read-only, a named limit)")
+  // CU-292: launchers, password managers, a clipboard manager and another AI app, with their public ids.
+  let gaps292 = ["com.apple.Spotlight", "at.obdev.LaunchBar", "in.sinew.Enpass-Desktop.App", "in.sinew.Enpass-Desktop", "me.proton.pass.electron",
+                 "com.keepersecurity.passwordmanager", "com.wiheads.paste", "com.wiheads.paste-direct", "ai.perplexity.macv3"]
+  check(gaps292.allSatisfy(list.isExcluded), "Spotlight, LaunchBar, Enpass, Proton Pass, Keeper, Paste and Perplexity are in the floor (CU-292)")
+  check(!list.isExcluded("at.obdev.littlesnitch") && !list.isExcluded("me.proton.mail") && !list.isExcluded("com.apple.spotlightd"),
+        "their neighbours stay approvable: Little Snitch, Proton Mail, the Spotlight daemon id")
   check(list.isExcluded(" com.apple.Terminal\n"), "ids are trimmed before matching")
   check(list.isExcluded("COM.APPLE.TERMINAL"), "case is ignored")
   check(!list.isExcluded("ai.reflection.cu.fixture") && !list.isExcluded("ai.reflection.cu.ledger") && !list.isExcluded("com.apple.TextEdit"), "the fixture apps and ordinary apps are approvable")
@@ -679,7 +685,7 @@ func button(_ kind: String, _ x: Int, _ y: Int) -> JSON { ["kind": .string(kind)
 func testDispatcherBasics() {
   let h = Harness(fixtureWorld)
   let hello = h.dispatcher.hello(token: "t0k")
-  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.57", "the hello opens the run")
+  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.58", "the hello opens the run")
   check(hello["mode"] == "dry-run" && hello["grants"] == ["screen": true, "accessibility": true, "postEvents": true, "listenEvents": false], "a dry-run hello says so, with all four grants")
   check(h.ask("capture", ["maxSize": size800])["code"] == "no_scope", "capture needs a scope")
   check(h.ask("input", ["events": [key("keyDown", 1)], "mode": "global"])["code"] == "no_scope", "input needs a scope")
@@ -1771,6 +1777,23 @@ func testPeerCheck() {
     return PeerCheck.refusal(peer, ownUid: 501, home: home, expectedNode: node ?? peer.executable, expectedEntry: entry ?? defaultEntry, resolve: resolve)
   }
   check(refusal(good) == nil, "genuine node on agent core's CLI in a seat checkout is accepted")
+  // CU-295: further checkouts from the local config - an exact checkout and a parent of worktrees; nothing else widens.
+  let configured = PeerCheck.checkouts(fromConfig: ["helperCheckouts": ["~/work/computer-use", "~/work/computer-use-wt/*", "/abs/path", "~/../escape", "~/a/*/b", "~/ok dir", 7]])
+  check(configured == [PeerCheck.Checkout(path: "work/computer-use", parent: false), PeerCheck.Checkout(path: "work/computer-use-wt", parent: true)],
+        "helperCheckouts keeps home-relative exact checkouts and worktree parents; absolute, '..', inner wildcards, spaces and non-strings are dropped")
+  check(PeerCheck.checkouts(fromConfig: nil).isEmpty && PeerCheck.checkouts(fromConfig: ["other": 1]).isEmpty, "no config or no key: no further checkouts")
+  func configuredRefusal(_ script: String) -> String? {
+    let peer = PeerCheck.Peer(pid: 42, uid: 501, executable: "/opt/node/bin/node", arguments: ["node", script], environment: [], cwd: "/", nodeSigned: true)
+    return PeerCheck.refusal(peer, ownUid: 501, home: home, expectedNode: peer.executable, expectedEntry: script, checkouts: configured, resolve: resolve)
+  }
+  check(configuredRefusal("\(home)/work/computer-use/_tools_/agent-core/cli.mjs") == nil, "the CLI in a configured checkout is accepted")
+  check(configuredRefusal("\(home)/work/computer-use-wt/session-1a2b/_tools_/agent-core/cli.mjs") == nil, "the CLI in a worktree under a configured parent is accepted")
+  check(configuredRefusal("\(home)/work/computer-use-wt/_tools_/agent-core/cli.mjs") != nil, "the parent itself is no checkout")
+  check(configuredRefusal("\(home)/work/computer-use-wt/a/b/_tools_/agent-core/cli.mjs") != nil, "a worktree is one level under its parent, not two")
+  check(configuredRefusal("\(home)/work/computer-use/_tools_/agent-core/other.mjs") != nil, "a configured checkout still serves only the compiled entry points")
+  check(configuredRefusal("\(home)/work/elsewhere/_tools_/agent-core/cli.mjs") != nil, "an unconfigured directory is refused")
+  check(refusal(PeerCheck.Peer(pid: 42, uid: 501, executable: "/opt/node/bin/node", arguments: ["node", "\(home)/work/computer-use/_tools_/agent-core/cli.mjs"], environment: [], cwd: "/", nodeSigned: true)) != nil,
+        "without the config entry the same path is refused")
   var mcp = good
   mcp.arguments = ["node", "\(home)/computer-use/_tools_/computer-use-mcp/server.mjs"]
   check(refusal(mcp) == nil, "the MCP server in the shared checkout is accepted")

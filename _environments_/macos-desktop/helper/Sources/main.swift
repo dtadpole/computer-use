@@ -67,6 +67,8 @@ do {
 
 // D-029: the boundary applies to a run that holds a grant at its start (or is told to enforce it). A run that starts
 // with none serves with every grant forced off to its end, so a grant given mid-run never reaches an unchecked peer.
+// The further checkouts this Mac's local config admits (helper-boundary.md rule (a)), read once at start.
+let configuredCheckouts = PeerCheck.configuredCheckouts(home: PeerCheck.home())
 // CU-240: a transient TCC false at launch is re-read (only when some grant reads true, so the boundary is unchanged).
 let grantsAtStart = GrantRecheck.settled(read: { Grants.preflight() }, sleep: { Thread.sleep(forTimeInterval: $0) })
 let boundary = options.boundaryApplies(grantsAtStart: grantsAtStart)
@@ -97,7 +99,7 @@ case .socket(let path):
       fail("the driver's process could not be identified; refused", code: 3)
     }
     if let reason = PeerCheck.refusal(peer, ownUid: getuid(), home: PeerCheck.home(), expectedNode: options.driverNode,
-                                      expectedEntry: options.driverEntry, resolve: PeerCheck.realPath) {
+                                      expectedEntry: options.driverEntry, checkouts: configuredCheckouts, resolve: PeerCheck.realPath) {
       link.shutdown()
       fail("peer pid \(peer.pid) refused: \(reason)", code: 3)
     }
