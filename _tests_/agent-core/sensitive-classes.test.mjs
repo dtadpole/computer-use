@@ -372,6 +372,9 @@ const NAVIGATE_ROWS = [
   // A digit run in a path segment is read as an id (status and order numbers pass Luhn one time in ten) - CU-260's named limit.
   ['navigate-card number in a path (named limit)', `https://fixture.example/pay/${CARD.replace(/\D/g, '')}`, 'allow', 'open CU-260', 'no live row yet'],
   ['navigate-SSN in a fragment', `https://fixture.example/form#${SSN}`, 'sensitive_data', 'todo CU-260', 'no live row yet'],
+  // cu-verifier's #91 review: a parameter named for a secret leaks even a short value - 'hunter2' is under the 8-char floor.
+  ['navigate-short password in a password parameter', 'https://login.example/auth?user=jane&password=' + ['hun', 'ter2'].join(''), 'sensitive_data', 'todo CU-260', 'no live row yet'],
+  ['navigate-short value in a neutral parameter (negative)', 'https://shop.example/search?q=' + ['hun', 'ter2'].join(''), 'allow', 'open CU-260', 'no live row yet'],
   ['navigate-plain query (negative)', 'https://fixture.example/search?q=weather+in+lisbon', 'allow', 'open CU-260', 'no live row yet'],
 ]
 for (const [id, url, expected, status, live] of NAVIGATE_ROWS) {
