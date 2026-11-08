@@ -31,7 +31,9 @@ test('CU-293: Chinese send, delete, purchase and permission labels ask their cla
     ['删除', 'delete'], ['刪除', 'delete'], ['移到废纸篓', 'delete'], ['清空垃圾桶', 'delete'], ['不保存', 'delete'], ['替换', 'delete'],
     ['购买', 'purchase'], ['立即购买', 'purchase'], ['購買', 'purchase'], ['付款', 'purchase'], ['结账', 'purchase'], ['訂閱', 'purchase'], ['免费试用', 'purchase'],
     // cu-researcher's Apple-guide labels (zh-cn / zh-tw from the same page ids).
-    ['丟到垃圾桶', 'delete'], ['清倒废纸篓', 'delete'], ['不存储', 'delete'], ['永不保存', 'delete'],
+    ['丟到垃圾桶', 'delete'], ['清倒废纸篓', 'delete'], ['不存储', 'delete'], ['不儲存', 'delete'],
+    // cu-researcher on #145: Never Save is a standing choice (permission), Reply asks as English Reply does.
+    ['永不保存', 'permission'], ['永不儲存', 'permission'], ['回复', 'submit'], ['回覆', 'submit'],
     ['始终允许', 'permission'], ['總是允許', 'permission'], ['不再询问', 'permission'], ['记住我的选择', 'permission'], ['保存密码', 'permission'], ['分享', 'permission'],
   ]) {
     assert.equal(judged(onDesktop(name)), cls, `desktop ${name}`)
@@ -40,7 +42,7 @@ test('CU-293: Chinese send, delete, purchase and permission labels ask their cla
 })
 
 test('CU-293: ordinary Chinese labels stay free', () => {
-  for (const name of ['取消', '完成', '搜索', '设置', '下一步', '返回', '好', '查看', '详情', '记住我', '转发']) {
+  for (const name of ['取消', '完成', '搜索', '设置', '下一步', '返回', '好', '查看', '详情', '记住我', '转发', '合并单元格']) {
     assert.equal(judged(onDesktop(name)), 'allow', `desktop ${name}`)
     assert.equal(judged(onWeb(name)), 'allow', `web ${name}`)
   }
@@ -66,4 +68,10 @@ test('CU-293: desktop titles - Writing Tools, the App Store and a runner in Chin
   assert.equal(judged(onDesktop('获取', 'AXButton', STORE)), 'install')
   assert.equal(judged(onDesktop('更新内容', 'AXButton', STORE)), 'allow', 'What\'s New is no update')
   assert.equal(desktop.classify(click, { frontmostBundleId: FIXTURE, target: { ...control('终端', 'AXMenuItem'), menuPath: ['文件', '打开方式', '终端'] } }).decision, 'block', 'Open With > 终端')
+})
+
+test('CU-293 on cu-researcher\'s review: Chinese Reply follows CU-157 - free when every entry reads empty, as English Reply', () => {
+  for (const name of ['回复', '回覆', 'Reply']) {
+    assert.equal(web.classify(click, { url: 'https://mail.example/', target: { role: 'button', name, textEntered: false } }).decision, 'allow', name)
+  }
 })

@@ -33,8 +33,10 @@ const ZH_WORDS = Object.freeze({
     // CU-289's amended ruling in Chinese: Never Save keeps a per-site exception.
     '永不保存', '永不儲存'],
   submit: ['发送', '發送', '傳送', '发布', '發佈', '發布', '提交', '注册', '註冊', '送出', '发表', '發表', '加入会议', '加入會議', '加入通话',
-    '视频通话', '視訊通話', '语音通话', '語音通話', '开始会议', '開始會議', '接受邀请', '接受邀請', '拒绝邀请', '拒絕邀請', '合并',
-    '合併', '部署', '退出群聊', '退出群組', '取消会议', '取消會議', '举报', '檢舉', '申请加入', '申請加入', '报税', '報稅'],
+    '视频通话', '視訊通話', '语音通话', '語音通話', '开始会议', '開始會議', '接受邀请', '接受邀請', '拒绝邀请', '拒絕邀請',
+    '部署', '退出群聊', '退出群組', '取消会议', '取消會議', '举报', '檢舉', '申请加入', '申請加入', '报税', '報稅',
+    // cu-researcher on #145: Reply (回复 / 回覆) - judged like English 'reply', by CU-157's text-entered rule.
+    '回复', '回覆'],
 })
 const WORDS = Object.freeze({
   purchase: ['buy', 'pay', 'order', 'place order', 'checkout', 'check out', 'subscribe', 'donate', 'purchase', 'transfer', 'withdraw', 'wire', 'send money',
@@ -110,6 +112,8 @@ const TEXT_AREA_ROLE = /^(ax)?textarea$/i
 // CU-288 (cu-researcher): a free trial starts a renewing subscription wherever it is offered - the whole name, with or
 // without its length ('Start 14-day free trial', 'Try 3 months free', 'Try it free'); 'Free trial info' stays free.
 const TRIAL_NAME = /^(start (a |your |my )?(\d+[- ]?(day|week|month|year)s? )?free trial|(\d+[- ]?(day|week|month|year)s? )?free trial|try (it |us )?free( for \d+ (days?|weeks?|months?|years?))?|try \d+ (days?|weeks?|months?|years?) (for )?free|get \d+ (days?|weeks?|months?) free)\s*[.!\u2026]?$/i
+// cu-researcher on #145: 永不保存 / 永不儲存 (Never Save) is a standing choice; its '不保存' / '不儲存' is not Don't Save.
+const namesDelete = (name) => namesWord(String(name ?? '').replace(/永不(保存|儲存|存储)/g, ''), WORDS.delete)
 const namesPurchase = (name) => namesWord(withoutOrderReferences(name), WORDS.purchase) || TRIAL_NAME.test(String(name ?? '').trim())
 const DROP_DELETE = [...WORDS.delete, 'trash', 'bin']
 const TEXT_ROLE = /^(ax)?(textfield|textarea|searchfield|combobox|textbox|searchbox)$/i
@@ -196,9 +200,11 @@ function namesWord(name, words) {
 // CU-157 (reply-text-entered.md): a control whose only submit word is 'reply' submits typed text only when some text
 // entry on its page or window holds text. The environment reports that as target.textEntered, read at each action's
 // own judgement; only a strict false - every entry read and empty - lets it run. True, null or absent asks, as before.
-const SUBMIT_BUT_REPLY = Object.freeze(WORDS.submit.filter((word) => word !== 'reply'))
+const REPLY_WORDS = new Set(['reply', '回复', '回覆'])
+const SUBMIT_BUT_REPLY = Object.freeze(WORDS.submit.filter((word) => !REPLY_WORDS.has(word)))
 // CU-261: a control named only Call, Answer or Merge submits; inside a longer name ('Call Stack', 'Merge Cells') it does not.
-const SUBMIT_WHOLE_NAMES = new Set(['call', 'answer', 'merge'])
+// CU-293: the same whole names in Chinese - 合并单元格 (Merge Cells) stays free like its English.
+const SUBMIT_WHOLE_NAMES = new Set(['call', 'answer', 'merge', '呼叫', '接听', '接聽', '合并', '合併'])
 function judgesSubmit(name, target) {
   if (SUBMIT_WHOLE_NAMES.has(normaliseName(name).trim())) return true
   if (!namesWord(name, WORDS.submit)) return false
@@ -697,7 +703,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const focusesEntry = POINTER.has(action.type) && plainTextEntry(target)
       for (const cls of ['purchase', 'delete', 'permission']) {
         if (focusesEntry) break
-        if ((cls === 'purchase' ? namesPurchase(name) : namesWord(name, WORDS[cls]))) classes.push(cls)
+        if ((cls === 'purchase' ? namesPurchase(name) : cls === 'delete' ? namesDelete(name) : namesWord(name, WORDS[cls]))) classes.push(cls)
       }
       if (judgesSubmit(name, target)) classes.push('submit')
       // CU-146: 'Trash' or 'Bin' alone deletes on a control (a toolbar button, a menu item); a sidebar row of that name
@@ -711,7 +717,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const boundNames = bound && typeof bound === 'object' ? (Array.isArray(bound.items) ? bound.items : [bound]).map((one) => one?.name).filter((n) => typeof n === 'string' && n.trim() !== '') : []
     for (const boundName of boundNames) {
       for (const cls of ['purchase', 'delete', 'permission']) {
-        if ((cls === 'purchase' ? namesPurchase(boundName) : namesWord(boundName, WORDS[cls]))) classes.push(cls)
+        if ((cls === 'purchase' ? namesPurchase(boundName) : cls === 'delete' ? namesDelete(boundName) : namesWord(boundName, WORDS[cls]))) classes.push(cls)
       }
       // A bound Reply follows CU-157 on the focused window's entries, as the focused target reports them.
       if (judgesSubmit(boundName, target)) classes.push('submit')
@@ -725,7 +731,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const commandReturn = keysOf(action).has('META') && keysOf(action).has('ENTER')
     if (defaultName !== '' && pressesEnter && (!inTextArea || commandReturn)) {
       for (const cls of ['purchase', 'delete', 'permission']) {
-        if ((cls === 'purchase' ? namesPurchase(defaultName) : namesWord(defaultName, WORDS[cls]))) classes.push(cls)
+        if ((cls === 'purchase' ? namesPurchase(defaultName) : cls === 'delete' ? namesDelete(defaultName) : namesWord(defaultName, WORDS[cls]))) classes.push(cls)
       }
       if (judgesSubmit(defaultName, target)) classes.push('submit')
     }
