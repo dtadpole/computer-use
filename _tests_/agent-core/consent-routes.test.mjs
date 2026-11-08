@@ -128,6 +128,9 @@ const T = {
   webDeleteVs16: { tag: 'button', role: 'button', name: 'Del\ufe0fete' },
   webDeleteCgj: { tag: 'button', role: 'button', name: 'Del\u034fete' },
   webDeleteHangulFiller: { tag: 'button', role: 'button', name: 'Del\u3164ete' },
+  webPlaceOrderArmenian: { tag: 'button', role: 'button', name: 'Place \u0555rder' },
+  webSendCyrillicWord: { tag: 'button', role: 'button', name: '\u041e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u044c' },
+  webSaveTwoScripts: { tag: 'button', role: 'button', name: 'Save \u4fdd\u5b58' },
   webPointerIconDelete: { tag: 'div', role: 'generic', name: 'Delete' },
   webReadingText: { tag: 'span', role: 'generic', name: '' },
   webPointerDivDelete: { tag: 'div', role: 'generic', name: 'Delete' },
@@ -258,6 +261,11 @@ const ROWS = [
   ['web-click-delete-variation-selector', 'browser', 'click', 'webDeleteVs16', 'delete', 'CU-268', 'no live row yet', 'todo CU-268'],
   ['web-click-delete-grapheme-joiner', 'browser', 'click', 'webDeleteCgj', 'delete', 'CU-268', 'no live row yet', 'todo CU-268'],
   ['web-click-delete-hangul-filler', 'browser', 'click', 'webDeleteHangulFiller', 'delete', 'CU-268', 'no live row yet', 'todo CU-268'],
+  // CU-268's ruling (cu-developer-one, 14:29Z): a single word mixing Latin with another script's letters asks - permission
+  // in the browser (never pre-approvable); a name wholly in one script, or words of two scripts, stays free.
+  ['web-click-mixed-script-word', 'browser', 'click', 'webPlaceOrderArmenian', 'permission', 'CU-268 (an Armenian O outside the fold table)', 'no live row yet', 'todo CU-268'],
+  ['web-click-one-script-name', 'browser', 'click', 'webSendCyrillicWord', 'allow', 'CU-268 negative (a name wholly in Cyrillic)', 'no live row yet', 'open CU-268'],
+  ['web-click-two-script-words', 'browser', 'click', 'webSaveTwoScripts', 'allow', 'CU-268 negative (a word per script)', 'no live row yet', 'open CU-268'],
   ['web-click-label-in-button', 'browser', 'click', 'webDeleteLabelled', 'delete', 'activatableAncestor (CU-175)', '20261107T151230Z-db195b (main c8af0ec44; before #414 unasked 144600Z-75deb7)', null],
   ['web-click-icon-in-button', 'browser', 'click', 'webIconDelete', 'delete', 'activatableAncestor + clickLabel (CU-175)', '20261107T151235Z-4d0737 (main c8af0ec44; before #414 unasked 144608Z-5284c1)', null],
   ['web-click-text-in-link', 'browser', 'click', 'webBuyLink', 'purchase', 'activatableAncestor (CU-175)', '20261107T151239Z-979b16 (main c8af0ec44; before #414 unasked 144612Z-2403a4)', null],
