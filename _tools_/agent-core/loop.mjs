@@ -796,10 +796,14 @@ export async function runTask(options) {
       ? countOf({ pasteboardChangeCount: await Promise.resolve(environment.pasteboardChangeCount()).catch(() => null) })
       : countOf(target)
     const countRead = sideRead ? { countRead: 'no-focus' } : {}
+    // CU-271 (cu-developer-one's follow-up): a page's own menu item named Paste pastes into the focused element - a web
+    // terminal there runs it, so the focus is read for that one fact (the rest of a browser paste is judged as before).
+    const intoTerminal = !desktop && isPaste(action, target) && menuPaste(action, target)
+      && (await environment.focusedElement().catch(() => null))?.terminal === true
     const paste = isPaste(action, target)
       ? (desktop
           ? { ...(ownCopy(count) ? { fromOwner: false, ...(pastedSource(count) ? { source: pastedSource(count) } : {}) } : { fromOwner: true }), ...(viaMenu ? { destination } : {}) }
-          : { text: String(environment.clipboard?.get?.() ?? ''), ...(runCopySource ? { source: runCopySource } : {}) })
+          : { text: String(environment.clipboard?.get?.() ?? ''), ...(runCopySource ? { source: runCopySource } : {}), ...(intoTerminal ? { intoTerminal: true } : {}) })
       : null
     // What a copy or paste was judged on goes on its event - numbers and the verdict, never content (cu-verifier). A
     // copy records the count it was judged on (recordCopy below).

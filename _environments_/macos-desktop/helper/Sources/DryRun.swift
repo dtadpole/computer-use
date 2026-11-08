@@ -87,6 +87,9 @@ final class DryRunCapabilities: Capabilities {
 
   private let lock = NSLock()
   private let declaredGrants: Grants
+  /// CU-240: `grantReads: {screen: [true, false, ...]}` - what successive single reads of a grant answer (the last
+  /// value repeats), to model a transient TCC false or a grant lost mid-run. Guarded by `lock`.
+  private var grantReads: [String: [Bool]]
   private let declaredDisplays: [DisplayInfo]
   /// Top-most first. Changed only by `coverAfter`, from `post`, on the input request's own thread.
   private var apps: [App]
@@ -165,6 +168,7 @@ final class DryRunCapabilities: Capabilities {
   init(world: JSON, eventsOutPath: String?) throws {
     let grants = world.object?["grants"]?.object ?? [:]
     declaredConfirmPress = world.object?["confirmPress"]?.object
+    grantReads = (world.object?["grantReads"]?.object ?? [:]).mapValues { ($0.array ?? []).compactMap { $0.bool } }.filter { !$0.value.isEmpty }
     declaredGrants = Grants(screen: grants["screen"]?.bool ?? true, accessibility: grants["accessibility"]?.bool ?? true,
                             postEvents: grants["postEvents"]?.bool ?? true, listenEvents: grants["listenEvents"]?.bool ?? false)
     var displays: [DisplayInfo] = []
@@ -297,6 +301,13 @@ final class DryRunCapabilities: Capabilities {
   }
 
   func grants() -> Grants { declaredGrants }
+
+  func grant(_ name: String) -> Bool {
+    lock.lock(); defer { lock.unlock() }
+    guard var reads = grantReads[name], let first = reads.first else { return declaredGrants.has(name) }
+    if reads.count > 1 { reads.removeFirst(); grantReads[name] = reads }
+    return first
+  }
   func displays() -> [DisplayInfo] { declaredDisplays }
 
   func running(_ bundleIds: [String]) -> [AppRef] {

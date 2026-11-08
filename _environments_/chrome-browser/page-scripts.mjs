@@ -375,7 +375,36 @@ export function describeElement(el) {
       }
     }
   }
-  return { tag, inputType: type, isPassword: type === 'password', autocomplete: autocomplete || null, href: link, origin, editable, caption: editable ? null : caption, entryCaption: editable ? caption : null }
+  // CU-271 (cu-coordinator's ruling, cu-researcher's review): where the element sits, from DOM shape alone - never a
+  // value. terminal: inside a web terminal (xterm.js and its helper textarea, role=terminal). notebookCell: inside a
+  // notebook's code cell (JupyterLab and Notebook 7, the classic Notebook, Colab, VS Code for the Web), editor or
+  // container. notebookSurface: the page has such a cell or a Jupyter title. codeSurface: the page has a Monaco or
+  // CodeMirror editor (an online IDE or playground).
+  const classTokens = (node) => String((node.getAttribute && node.getAttribute('class')) || '').split(/\s+/).filter(Boolean)
+  const roleIs = (node, wanted) => String((node.getAttribute && node.getAttribute('role')) || '').toLowerCase() === wanted
+  const CELL_CLASSES = ['jp-CodeCell', 'code_cell', 'cell-editor-container', 'code-cell']
+  let terminal = false
+  let notebookCell = false
+  for (let node = el; node && node.nodeType === 1; node = node.parentElement) {
+    const tokens = classTokens(node)
+    if (roleIs(node, 'terminal') || tokens.includes('xterm') || tokens.includes('xterm-helper-textarea')) terminal = true
+    if (tokens.some((token) => CELL_CLASSES.includes(token)) || (tokens.includes('cell') && tokens.includes('code'))
+      || String(node.tagName || '').toLowerCase() === 'colab-run-button') notebookCell = true
+  }
+  let notebookSurface = notebookCell
+  let codeSurface = false
+  try {
+    const doc = el.ownerDocument
+    if (doc && typeof doc.querySelector === 'function') {
+      notebookSurface = notebookSurface || doc.querySelector('.jp-CodeCell, .jp-Notebook, .code_cell, .cell.code, colab-run-button, .notebook-cell-list') !== null
+        || /(^|[\s|-])(JupyterLab|Jupyter Notebook)$/.test(String(doc.title || '').trim())
+      codeSurface = doc.querySelector('.monaco-editor, .cm-editor, .CodeMirror') !== null
+    }
+  } catch {
+    // A detached or cross-origin document: no page-level flags.
+  }
+  return { tag, inputType: type, isPassword: type === 'password', autocomplete: autocomplete || null, href: link, origin, editable, caption: editable ? null : caption, entryCaption: editable ? caption : null,
+    ...(terminal ? { terminal } : {}), ...(notebookCell ? { notebookCell } : {}), ...(notebookSurface ? { notebookSurface } : {}), ...(codeSurface ? { codeSurface } : {}) }
 }
 
 /**
