@@ -115,8 +115,6 @@ function dropsOntoApp(target) {
   return [target.name, target.filename, target.url].some((value) => APP_BUNDLE.test(String(value ?? '').trim()))
 }
 const appNameOf = (target) => String(target?.filename ?? target?.name ?? '').trim().replace(/\.app\/?$/i, '')
-// The excluded terminals and code runners as Finder and the Dock name them (exclusions.mjs holds their bundle ids).
-const RUNNER_APP_NAMES = /^(terminal|iterm2?|warp|ghostty|kitty|alacritty|hyper|wezterm|script editor|automator|shortcuts)$/i
 
 function launchesCode(action, target) {
   // Finder may hide an extension, so the AX file name or URL the driver reports counts too (red-team retest of P10).
@@ -445,7 +443,7 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     // item asks launch_code (never pre-approved); a document asks new_app.
     if (action.type === 'drag' && dropsOntoApp(context.dropTarget) && verdict.decision !== 'handoff') {
       const appName = appNameOf(context.dropTarget)
-      if (RUNNER_APP_NAMES.test(appName)) return { decision: 'block', class: null, rule: 'excluded:terminal', reason: `drop onto ${appName}, which runs code (excluded)` }
+      if (RUNNER_TITLES.test(appName)) return { decision: 'block', class: null, rule: 'excluded:terminal', reason: `drop onto ${appName}, which runs code (excluded)` }
       // cu-coordinator 14:10Z: a launchable item asks launch_code; a document asks new_app, since the icon does not say
       // whether its app is approved (an accepted over-ask for an approved app's icon until the driver reports its bundle id).
       const names = [target?.name, target?.filename, target?.url].map((value) => String(value ?? '').trim())
