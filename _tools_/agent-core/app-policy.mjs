@@ -117,6 +117,25 @@ function launchesCode(action, target) {
   return keys.has('META') && (keys.has('O') || keys.has('ARROWDOWN'))
 }
 
+// CU-254 (cu-researcher; cu-coordinator: the install class, ask): the App Store installs or updates software from its
+// Get, Install, Update and Download buttons - no consent word names them - so a click on one, or Space or Return on one
+// focused, asks install - app-policy's own verdict, so no pre-approval covers it (as launch_code). Browsing stays
+// free. Named limit: third-party stores and updaters (Setapp, MacUpdater).
+const APP_STORE = 'com.apple.AppStore'
+const STORE_INSTALL = /^(get|install|update|update all|download|redownload|reinstall)\b/i
+// cu-verifier on #58: a button titled with a price ('$4.99', '¥30', '4,99 €', 'Price, 4.99 dollars') starts a purchase.
+const STORE_PRICE = /^(price\b|[$€£¥₩₹]\s?\d|\d+(?:[.,]\d+)?\s?[$€£¥₩₹])/i
+/** 'install' or 'purchase' for an App Store button that installs or buys, pressed by a click, Space or Return; else null. */
+function storeInstall(action, target, app) {
+  if (String(app ?? '') !== APP_STORE || !/^(ax)?button$/i.test(String(target?.role ?? ''))) return null
+  const name = String(target?.name ?? '').trim()
+  const cls = STORE_PRICE.test(name) ? 'purchase' : STORE_INSTALL.test(name) ? 'install' : null
+  if (cls === null) return null
+  if (CLICKS.has(action.type)) return cls
+  const keys = chord(action)
+  return action.type === 'keypress' && (keys.has('SPACE') || keys.has('ENTER')) ? cls : null
+}
+
 const isKeyAction = (action) => action.type === 'type' || action.type === 'keypress'
 
 /** The service macOS draws open and save panels in (design file-panels.md, Q-D13). */
@@ -376,6 +395,10 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     // desktop's own - so no field a rule reads (dropTarget, afterClose, paste, the next one) can be dropped by a rebuild.
     const verdict = classes.classify(action, { ...context, url: 'desktop://', target, dialog: context.dialog ?? null })
     // Never pre-approvable: preApprovals are not consulted. Only a hand-off (a password change) outranks it.
+    const store = storeInstall(action, target, app)
+    if (store !== null && verdict.decision === 'allow') {
+      return { decision: 'confirm', class: store, classes: [store], rule: `target:${store}`, reason: `"${String(target.name).trim()}" in the App Store ${store === 'purchase' ? 'buys an app' : 'installs or updates software'}`, app }
+    }
     if (launchesCode(action, target) && verdict.decision !== 'handoff') {
       return { decision: 'confirm', class: 'launch_code', classes: ['launch_code', ...(verdict.classes ?? [])], rule: 'target:launch_code', reason: `open "${target.name}", which runs code`, app }
     }
