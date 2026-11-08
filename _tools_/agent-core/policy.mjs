@@ -1,3 +1,4 @@
+import { normaliseForPolicy } from './normalise.mjs'
 import { BIP39_ENGLISH } from './bip39-english.mjs'
 import { normalizeKey } from './keys.mjs'
 import { originPattern } from './sites.mjs'
@@ -430,7 +431,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
    * `context`: `{ url, target, dialog, task }`, where `target` is `inspectPoint` for pointer actions or
    * `focusedElement()` for `type` and `keypress`, and `dialog` the held dialog from `state()`.
    */
-  function classify(action, context = {}) {
+  function classify(rawAction, rawContext = {}) {
+    // CU-266: every rule below reads the normalised copy (zero-width and format characters, look-alikes, fullwidth forms).
+    const { action, context: normalised } = normaliseForPolicy(rawAction, rawContext)
+    let context = normalised
     context = withCaptionNames(context)
     const url = context.url ?? ''
     const verdict = sitePolicy(url)
