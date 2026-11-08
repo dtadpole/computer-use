@@ -133,6 +133,29 @@ function dropsOntoApp(target) {
 }
 const appNameOf = (target) => String(target?.filename ?? target?.name ?? '').trim().replace(/\.app\/?$/i, '')
 
+// CU-271: IDEs (kind ide) - a bundle id or a prefix ending in '.'; Cursor by its exact id (cu-developer-three's read: the
+// com.todesktop. prefix is every ToDesktop-built app).
+const IDE_BUNDLES = ['com.microsoft.VSCode', 'com.microsoft.VSCodeInsiders', 'com.visualstudio.code.oss', 'com.vscodium', 'com.todesktop.230313mzl4w4u92',
+  'com.apple.dt.Xcode', 'com.jetbrains.', 'com.google.android.studio', 'com.sublimetext.', 'com.panic.nova', 'dev.zed.Zed']
+function isIde(bundleId) {
+  const id = String(bundleId ?? '').toLowerCase()
+  return id !== '' && IDE_BUNDLES.some((entry) => (entry.endsWith('.') ? id.startsWith(entry.toLowerCase()) : id === entry.toLowerCase() || id.startsWith(`${entry.toLowerCase()}.`)))
+}
+// cu-researcher on #119: Build (a build system runs the file) and Test (runs test code) run code too.
+const RUN_NAME = /(^|[^a-z])(run|runs|debug|debugging|execute|build and run|build|test|tests)([^a-z]|$)/i
+const RUN_CLICKS = new Set(['click', 'double_click', 'triple_click'])
+function runsInIde(action, target, bound) {
+  // A menu-bar title ('Run' in VS Code's bar) only opens its menu - the item chosen in it is judged.
+  if (RUN_CLICKS.has(action.type)) return !/^(ax)?menubaritem$/i.test(String(target?.role ?? '')) && RUN_NAME.test(String(target?.name ?? ''))
+  if (action.type !== 'keypress' && action.type !== 'hold_key') return false
+  const keys = new Set((action.keys ?? []).map((key) => String(key).toUpperCase()))
+  if ([...keys].some((key) => /^F5$/.test(key))) return true
+  if (keys.size === 2 && keys.has('META') && keys.has('R')) return true
+  if (keys.size === 2 && keys.has('ENTER') && (keys.has('SHIFT') || keys.has('CTRL'))) return true
+  const items = bound && typeof bound === 'object' ? (Array.isArray(bound.items) ? bound.items : (typeof bound.name === 'string' ? [bound] : [])) : []
+  return items.some((item) => RUN_NAME.test(String(item?.name ?? '')))
+}
+
 function launchesCode(action, target) {
   // Finder may hide an extension, so the AX file name or URL the driver reports counts too (red-team retest of P10).
   const names = [target?.name, target?.filename, target?.url].map((value) => String(value ?? '').trim())
@@ -505,6 +528,12 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     }
     if (launchesCode(action, target) && verdict.decision !== 'handoff') {
       return { decision: 'confirm', class: 'launch_code', classes: ['launch_code', ...(verdict.classes ?? [])], rule: 'target:launch_code', reason: `open "${target.name}", which runs code`, app }
+    }
+    // CU-271 (cu-researcher; cu-coordinator 14:22Z: High, ask): in an IDE, running the code is the owner's call - a run or
+    // debug control by name (menu, toolbar, CodeLens), a menu item a chord fires with such a name, and the run chords (F5
+    // with any modifiers, Command-R, Shift- or Control-Return) ask launch_code, never pre-approved. Typing code stays free.
+    if (isIde(app) && verdict.decision !== 'handoff' && runsInIde(action, target, context.boundMenuItem)) {
+      return { decision: 'confirm', class: 'launch_code', classes: ['launch_code', ...(verdict.classes ?? [])], rule: 'ide:run', reason: `run code in ${app}`, app }
     }
     const opensFiles = opensUnreadSelection(action, target, app) || (opensSelection(action, target) && selectsFiles(context.selection))
     if (opensFiles && selectionRunsCode(context.selection) && verdict.decision !== 'handoff') {
