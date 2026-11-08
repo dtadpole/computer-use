@@ -41,6 +41,10 @@ test('CU-261: switching a camera or microphone on asks permission', () => {
 })
 
 test('CU-261 with cu-researcher\'s 13:23Z sweep: unsubscribe, report spam and leave group submit; Revert to Saved deletes; signing out everywhere asks permission', () => {
+  for (const name of ['Cancel Meeting', 'Cancel Event', 'Cancel meeting…', 'Send Cancellation']) {
+    assert.equal(onDesktop(name), 'submit', `desktop ${name} (cu-researcher on #98)`)
+    assert.equal(onWeb(name), 'submit', `web ${name}`)
+  }
   for (const name of ['Unsubscribe', 'Report Spam', 'Report Junk', 'Leave Group', 'Leave conversation', 'Leave channel']) assert.equal(onDesktop(name), 'submit', name)
   for (const name of ['Revert to Saved', 'Revert All Changes']) assert.equal(onDesktop(name), 'delete', name)
   for (const name of ['Sign Out of All Devices', 'Log out everywhere']) assert.equal(onDesktop(name), 'permission', name)

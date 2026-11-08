@@ -50,7 +50,9 @@ const WORDS = Object.freeze({
     'decline invitation', 'accept invite', 'decline invite', 'rsvp', 'tweet', 'approve', 'merge pull request',
     'confirm merge', 'squash and merge', 'rebase and merge', 'deploy', 'run workflow',
     // cu-researcher's 13:23Z sweep: messages to the sender or the group.
-    'unsubscribe', 'report spam', 'report junk', 'leave group', 'leave conversation', 'leave channel'],
+    'unsubscribe', 'report spam', 'report junk', 'leave group', 'leave conversation', 'leave channel',
+    // cu-researcher on #98: a cancellation goes to every attendee.
+    'cancel meeting', 'cancel event', 'cancel invitation', 'send cancellation'],
 })
 const PRECEDENCE = ['purchase', 'launch_code', 'delete', 'permission', 'page_dialog', 'credential', 'sensitive_data', 'submit', 'new_site', 'install']
 const POINTER = new Set(['click', 'double_click', 'triple_click'])
