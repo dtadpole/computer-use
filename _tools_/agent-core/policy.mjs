@@ -617,6 +617,12 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const desktopUrl = /^(app|desktop):/.test(String(context.url ?? ''))
     const unreadDefault = target?.defaultButtonRead === false || (desktopUrl && target != null && target.defaultButtonRead !== true)
     if (unreadDefault && defaultName === '' && pressesEnter && (!inTextArea || commandReturn)) classes.push('submit')
+    // CU-241 (keyboard-activation.md): on a web page, Command- or Control-Enter in a multi-line editable - a textarea or a
+    // contenteditable - is the web's universal send (webmail, chat, comment boxes), and the page reports no default button
+    // to judge, so it asks submit. Named over-ask: code editors. The desktop keeps its default-button reading (CU-142).
+    const webTag = /^(app|desktop):/.test(String(context.url ?? '')) ? '' : String(target?.tag ?? '').toLowerCase()
+    const multiLineWeb = target?.editable === true && webTag !== '' && webTag !== 'input'
+    if (multiLineWeb && keysOf(action).has('ENTER') && (keysOf(action).has('META') || keysOf(action).has('CTRL'))) classes.push('submit')
     // CU-253 (cu-researcher): a chat app sends on a plain Return from its compose field - a text area too, and with no
     // default button to read (Messages' 'iMessage', Slack, WhatsApp). So a plain Return or typed line break asks submit
     // in any text entry of a known chat app, or in an entry named as a compose field; Shift- or Option-Return types
