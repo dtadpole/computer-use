@@ -487,14 +487,14 @@ const NAVIGATE_ROWS = [
   ['navigate-passport as a search word (negative)', 'https://travel.example/search?q=passport+renewal', 'allow', 'open CU-281', 'no live row yet'],
   // CU-283 (follow-up to CU-281): contact names are skipped as a named limit, so an unformatted number under phone= or
   // mobile= navigates; a flag value (mobile=1, phone=yes) is not a number.
-  ['navigate-unformatted phone in a phone parameter', 'https://shop.example/checkout?phone=' + ['555', '123', '4567'].join(''), 'sensitive_data', 'todo CU-283', 'no live row yet'],
-  ['navigate-unformatted phone in a mobile parameter', 'https://shop.example/checkout?mobile=' + ['555', '123', '4567'].join(''), 'sensitive_data', 'todo CU-283', 'no live row yet'],
+  ['navigate-unformatted phone in a phone parameter', 'https://shop.example/checkout?phone=' + ['555', '123', '4567'].join(''), 'sensitive_data', 'open CU-283', 'no live row yet'],
+  ['navigate-unformatted phone in a mobile parameter', 'https://shop.example/checkout?mobile=' + ['555', '123', '4567'].join(''), 'sensitive_data', 'open CU-283', 'no live row yet'],
   ['navigate-mobile flag (negative)', 'https://shop.example/site?mobile=1', 'allow', 'open CU-283', 'no live row yet'],
   ['navigate-phone yes flag (negative)', 'https://shop.example/form?phone=yes', 'allow', 'open CU-283', 'no live row yet'],
   // CU-284 (follow-up to CU-281): an address or street parameter carrying a street address navigates; a city alone does
   // not ask (D-061: not city or postcode).
-  ['navigate-street address in an address parameter', 'https://shop.example/ship?address=' + ['10', 'Downing', 'Street'].join('+'), 'sensitive_data', 'todo CU-284', 'no live row yet'],
-  ['navigate-street address in a street parameter', 'https://shop.example/ship?street=' + ['221B', 'Baker', 'Street'].join('+'), 'sensitive_data', 'todo CU-284', 'no live row yet'],
+  ['navigate-street address in an address parameter', 'https://shop.example/ship?address=' + ['10', 'Downing', 'Street'].join('+'), 'sensitive_data', 'open CU-284', 'no live row yet'],
+  ['navigate-street address in a street parameter', 'https://shop.example/ship?street=' + ['221B', 'Baker', 'Street'].join('+'), 'sensitive_data', 'open CU-284', 'no live row yet'],
   ['navigate-city parameter (negative)', 'https://shop.example/ship?city=Lisbon', 'allow', 'open CU-284', 'no live row yet'],
   // CU-285: fields named 'Tax number' and 'TIN' ask, but the same names as URL parameters do not (tax_id= does).
   ['navigate-tax number parameter', 'https://gov.example/form?tax_number=' + ['1234', '5678'].join(''), 'sensitive_data', null, 'browser fixture site, tax_number=12345678 navigate declined url:sensitive_data, nothing reached the server: 20261108T200257Z-3873d9'],
