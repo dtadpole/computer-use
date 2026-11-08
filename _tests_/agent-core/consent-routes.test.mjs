@@ -640,6 +640,7 @@ const SYS_T = {
   openFolderButton: { role: 'AXButton', name: 'Open Folder' },
   codeEditor: { role: 'AXTextArea', name: 'Editor - deploy.py', editable: true },
   placeOrderArmenian: { role: 'AXButton', name: 'Place \u0555rder' },
+  ownerServiceItem: { role: 'AXMenuItem', name: 'Weekly Report Uploader', servicesMenu: true, menuPath: ['CU Fixture', 'Services', 'Weekly Report Uploader'] },
   getButton: { role: 'AXButton', name: 'Get' },
   forceQuitButton: { role: 'AXButton', name: 'Force Quit' },
   restoreButton: { role: 'AXButton', name: 'Restore' },
@@ -657,6 +658,8 @@ const SYSTEM_ROWS = [
   ['service-click-run-applescript', 'click', 'appleScriptItem', 'block:system_service', 'service-shortcuts.test.mjs (#49, CU-249)', 'no live row yet', 'open CU-249'],
   ['service-click-set-desktop-picture', 'click', 'desktopPictureItem', 'block:system_service', "CU-249 (changes the owner's wallpaper)", 'no live row yet', 'open CU-249'],
   // CU-250 (#56, on main): a chord bound to an owner-installed service - read with its servicesMenu mark - is refused.
+  // CU-250: a click on an owner-installed service (helper 0.2.53 marks it servicesMenu, with its menu path) is refused.
+  ['service-click-owner-installed', 'click', 'ownerServiceItem', 'block:system_service', 'app-policy.mjs (CU-250: the servicesMenu mark ignored)', 'no live row yet', 'open CU-250'],
   ['service-chord-owner-installed', 'cmdShiftU', 'field', 'block:system_service', 'menu-key.test.mjs (#56: mark dropped)', 'no live row yet', 'open CU-250', { boundMenuItem: { items: [{ role: 'AXMenuItem', name: 'Weekly Report Uploader', keyEquivalent: { char: 'U', modifiers: 1 }, enabled: true, servicesMenu: true }] } }],
   ['service-chord-app-bound-over-refusal', 'cmdShiftA', 'field', 'block:system_shortcut', 'service-shortcuts.test.mjs (#49: refused even with an app item bound - a named over-refusal)', 'no live row yet', 'open CU-256', { boundMenuItem: { items: [{ role: 'AXMenuItem', name: 'Applications', keyEquivalent: { char: 'A', modifiers: 1 } }] } }],
   // CU-256's exception needs an ENABLED app item (Apple: the application's shortcut wins - a disabled one cannot fire, so
