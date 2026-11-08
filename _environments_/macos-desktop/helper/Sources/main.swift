@@ -144,8 +144,17 @@ let dispatcher = Dispatcher(
   })
 
 /// The end of the run on anything but `bye`: no queued request runs, the input in flight stops at its next step,
-/// what is held is released, the scope dropped, then exit. Safe from any queue.
+/// what is held is released, the scope dropped, then exit. Safe from any queue. CU-227: bounded - the watchdog is armed
+/// before anything that can wait on a lock, so an end that cannot finish still exits within EndWatchdog.bound.
 func endRun(_ reason: String) -> Never {
+  EndWatchdog.arm(reason: reason) { why in
+    // CU-227: release what is still held first - from the copy the dispatcher's locks do not guard, on a second thread,
+    // waited on for about a second - then leave stopped.json for the driver (#130) and exit.
+    let released = EndWatchdog.boundedRelease { progress in EndWatchdog.releaseHeld(dispatcher.heldMirror, progress: progress, markerPath: dispatcherOptions.heldMarkerPath) }
+    if let marker = dispatcherOptions.heldMarkerPath { StoppedMarker.write(reason: why, released: released, besideHeldMarker: marker) }
+    note("end watchdog: '\(why)' did not finish within \(Int(EndWatchdog.bound)) s; released \(released); exit \(EndWatchdog.exitCode)")
+    _exit(EndWatchdog.exitCode)
+  }
   dispatcher.abort()
   endLock.lock()
   note("end: \(reason)")

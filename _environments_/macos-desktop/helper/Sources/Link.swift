@@ -1,5 +1,6 @@
 import Darwin
 import Foundation
+import os
 
 struct LinkError: Error, CustomStringConvertible {
   let description: String
@@ -142,6 +143,55 @@ final class SocketLink: @unchecked Sendable {
   }
 }
 
+/// CU-227: every end but `bye` is bounded. The end arms this first; if the orderly end - releases posted, tap stopped -
+/// has not exited within `bound`, `expire` runs on the watchdog's own thread, which takes no lock of the helper's (in
+/// the helper: one log line, then `_exit(exitCode)`). What is still held then stays in the held-keys marker, released
+/// first by the next helper (CU-64 G1), as for a killed helper. Arming twice is harmless: the first to expire ends it.
+enum EndWatchdog {
+  static let bound: TimeInterval = 5
+  static let exitCode: Int32 = 70
+
+  /// CU-227 (cu-researcher, cu-coordinator: required): before exit 70 the watchdog posts a tagged up for every key and
+  /// button the copy says is held - a synthetic modifier left down would turn the owner's own keystrokes into shortcuts.
+  /// Keys come up in reverse, then buttons, where the pointer is. Preflight only (nothing can prompt); returns how many
+  /// ups were posted.
+  static func releaseHeld(_ mirror: HeldMirror, progress: ReleaseProgress, markerPath: String?) {
+    // cu-researcher: the watchdog never blocks on the copy's lock - a try-lock for up to 100 ms, then the held-keys
+    // marker (a button held with no drag state known is treated as a drag, so Escape goes first).
+    let snapshot = mirror.trySnapshot(timeout: 0.1) ?? HeldMirror.fromMarker(markerPath)
+    let steps = HeldMirror.releaseSteps(keys: snapshot.keys, buttons: snapshot.buttons, dragged: snapshot.dragged, at: SystemCapabilities.pointerNow())
+    SystemCapabilities.postReleaseNow(steps, progress: progress)
+  }
+
+  /// How long the watchdog waits for its release before it exits anyway: a wedged WindowServer can block a post.
+  static let releaseBound: TimeInterval = 1
+
+  /// Runs `release` on a second thread and returns, after it finished or after `timeout`, how many steps it posted.
+  static func boundedRelease(timeout: TimeInterval = releaseBound, _ release: @escaping (ReleaseProgress) -> Void) -> Int {
+    let progress = ReleaseProgress()
+    let finished = DispatchSemaphore(value: 0)
+    let thread = Thread {
+      release(progress)
+      finished.signal()
+    }
+    thread.name = "cu-helper-end-release"
+    thread.start()
+    _ = finished.wait(timeout: .now() + timeout)
+    return progress.count
+  }
+
+  @discardableResult
+  static func arm(after seconds: TimeInterval = bound, reason: String, expire: @escaping (String) -> Void) -> Thread {
+    let thread = Thread {
+      Thread.sleep(forTimeInterval: seconds)
+      expire(reason)
+    }
+    thread.name = "cu-helper-end-watchdog"
+    thread.start()
+    return thread
+  }
+}
+
 /// D-029 (b): one helper at a time. An exclusive lock on a per-user file, held for the process's life; a second
 /// helper that can use a grant finds it taken and exits.
 enum SingleInstance {
@@ -159,5 +209,122 @@ enum SingleInstance {
     }
     fd = descriptor
     return true
+  }
+}
+
+/// CU-227: a copy of what the helper's input holds down, kept beside the dispatcher's own record so the end watchdog
+/// can release it without taking the dispatcher's locks. Its own lock is held only to copy a few codes, never across a
+/// call. A key or button is added before its down is posted and dropped after its up is posted, so a hang right after a
+/// down still knows to release it.
+final class HeldMirror: @unchecked Sendable {
+  private var lock = os_unfair_lock()
+  private var keys: [UInt16] = []
+  private var buttons: [MouseButton] = []
+  /// A held button has moved since its down: a drag in flight, which a bare up would drop.
+  private var dragged = false
+
+  /// Before a step is posted: a down adds what it presses.
+  func willPost(_ step: InputEvent) {
+    os_unfair_lock_lock(&lock)
+    switch step {
+    case .keyDown(let code, _): if !keys.contains(code) { keys.append(code) }
+    case .down(let button, _, _, _):
+      if buttons.isEmpty { dragged = false }
+      if !buttons.contains(button) { buttons.append(button) }
+    case .drag: if !buttons.isEmpty { dragged = true }
+    default: break
+    }
+    os_unfair_lock_unlock(&lock)
+  }
+
+  /// After a step was posted: an up drops what it releases.
+  func didPost(_ step: InputEvent) {
+    os_unfair_lock_lock(&lock)
+    switch step {
+    case .keyUp(let code, _): keys.removeAll { $0 == code }
+    case .up(let button, _, _, _):
+      buttons.removeAll { $0 == button }
+      if buttons.isEmpty { dragged = false }
+    default: break
+    }
+    os_unfair_lock_unlock(&lock)
+  }
+
+  func snapshot() -> (keys: [UInt16], buttons: [MouseButton], dragged: Bool) {
+    os_unfair_lock_lock(&lock)
+    defer { os_unfair_lock_unlock(&lock) }
+    return (keys, buttons, dragged)
+  }
+
+  /// Runs `body` with the copy's lock held (the copy's own updates, and tests that need it busy).
+  func locked<T>(_ body: () -> T) -> T {
+    os_unfair_lock_lock(&lock)
+    defer { os_unfair_lock_unlock(&lock) }
+    return body()
+  }
+
+  /// The watchdog's read: the lock is only tried, for up to `timeout`; nil if it stayed busy.
+  func trySnapshot(timeout: TimeInterval) -> (keys: [UInt16], buttons: [MouseButton], dragged: Bool)? {
+    let deadline = Date().addingTimeInterval(timeout)
+    repeat {
+      if os_unfair_lock_trylock(&lock) {
+        defer { os_unfair_lock_unlock(&lock) }
+        return (keys, buttons, dragged)
+      }
+      usleep(1_000)
+    } while Date() < deadline
+    return nil
+  }
+
+  /// What the held-keys marker names, when the copy cannot be read; a held button counts as a drag.
+  static func fromMarker(_ path: String?) -> (keys: [UInt16], buttons: [MouseButton], dragged: Bool) {
+    guard let path, let marker = HeldMarker.read(path), !marker.released else { return ([], [], false) }
+    return (marker.keys, marker.buttons, !marker.buttons.isEmpty)
+  }
+
+  /// The Escape key, which cancels a drag in Finder and most AppKit drags.
+  static let escapeKey: UInt16 = 53
+
+  /// What releases a held set: a drag in flight is cancelled first (Escape down and up - a bare button-up would drop the
+  /// item on an unjudged target; an app that ignores Escape still gets the drop, a named residual), then keys up in
+  /// reverse order, then each button up at `point`.
+  static func releaseSteps(keys: [UInt16], buttons: [MouseButton], dragged: Bool, at point: CGPoint) -> [InputEvent] {
+    let cancel: [InputEvent] = dragged && !buttons.isEmpty ? [.keyDown(escapeKey, flags: 0), .keyUp(escapeKey, flags: 0)] : []
+    return cancel + keys.reversed().map { .keyUp($0, flags: 0) } + buttons.map { .up($0, point, clickCount: 1, flags: 0) }
+  }
+}
+
+/// CU-227: how many release steps the watchdog's release thread has posted so far.
+final class ReleaseProgress: @unchecked Sendable {
+  private var lock = os_unfair_lock()
+  private var posted = 0
+  func note() { os_unfair_lock_lock(&lock); posted += 1; os_unfair_lock_unlock(&lock) }
+  var count: Int { os_unfair_lock_lock(&lock); defer { os_unfair_lock_unlock(&lock) }; return posted }
+}
+
+/// CU-227 (#130): what the end watchdog leaves for the driver before exit 70 - `stopped.json` beside the held-keys marker,
+/// {reason, released, at}, since a helper LaunchServices started is not the driver's child and its exit code never
+/// reaches it. Written like the marker: mode 600, through a temporary file and a rename.
+enum StoppedMarker {
+  static func path(besideHeldMarker marker: String) -> String {
+    ((marker as NSString).deletingLastPathComponent as NSString).appendingPathComponent("stopped.json")
+  }
+
+  /// The end's reason in the driver's accepted class (#130: a letter, then letters, digits, space, '_' or '-', at most
+  /// 64): other characters are dropped ("the run's wall-time cap" reads "the runs wall-time cap").
+  static func phrase(_ reason: String) -> String {
+    let kept = String(reason.unicodeScalars.filter { $0.isASCII && (CharacterSet.alphanumerics.contains($0) || " _-".unicodeScalars.contains($0)) }.map(Character.init))
+    let trimmed = String(kept.drop { !($0.isASCII && $0.isLetter) }.prefix(64))
+    return trimmed.isEmpty ? "unknown" : trimmed
+  }
+
+  static func object(reason: String, released: Int, at: Date) -> JSON {
+    let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    return .object(["reason": .string(phrase(reason)), "released": .int(max(0, released)), "at": .string(formatter.string(from: at))])
+  }
+
+  static func write(reason: String, released: Int, besideHeldMarker marker: String, at: Date = Date()) {
+    HeldMarker.write(object(reason: reason, released: released, at: at), to: path(besideHeldMarker: marker))
   }
 }
