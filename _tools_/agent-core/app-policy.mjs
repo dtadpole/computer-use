@@ -86,6 +86,17 @@ const SERVICE_ITEM = /^(search with\b|get result of applescript|run as applescri
 const serviceItem = (action, target) => CLICKS.has(action.type) && /^(ax)?menuitem$/i.test(String(target?.role ?? '')) &&
   (target?.servicesMenu === true || SERVICE_ITEM.test(String(target?.name ?? '').trim()))
 
+// CU-277 (cu-coordinator: High, refused like Services): Writing Tools rewrites or summarises the owner's selection
+// outside the approved app - on the Mac or in Private Cloud Compute - and can hand it to ChatGPT or another AI. Any
+// item whose menu path has a 'Writing Tools' parent is refused (the driver's menuPath, #55), so generic titles (Friendly,
+// Concise, Summary, List, Table, Compose) are refused only there; the unambiguous titles and any item naming an AI are
+// refused by title where no path is read. Named limit: localised titles where no path is read.
+const WRITING_TOOLS_TITLE = /^(proofread|rewrite|show writing tools|writing tools)\b/i
+const OTHER_AI = /\b(chatgpt|openai|gemini|claude|copilot)\b/i
+const underWritingTools = (target) => Array.isArray(target?.menuPath) && target.menuPath.slice(0, -1).some((part) => /^writing tools$/i.test(String(part ?? '').trim()))
+const writingToolsItem = (action, target) => CLICKS.has(action.type) && /^(ax)?menuitem$/i.test(String(target?.role ?? '')) &&
+  (underWritingTools(target) || WRITING_TOOLS_TITLE.test(String(target?.name ?? '').trim()) || OTHER_AI.test(String(target?.name ?? '')))
+
 /** The default Services shortcut a chord matches exactly, or null (CU-249). */
 export function serviceShortcut(action) {
   const keys = chord(action)
@@ -324,6 +335,9 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     }
     if (serviceItem(action, target)) {
       return { decision: 'block', class: null, rule: 'system_service', reason: `"${String(target.name).trim()}" is a system service; it acts beyond the approved app` }
+    }
+    if (writingToolsItem(action, target)) {
+      return { decision: 'block', class: null, rule: 'writing_tools', reason: `"${String(target.name ?? '').trim()}" sends the selected text to Writing Tools or another AI, beyond the approved app` }
     }
     // A chord the menu read binds to a Services item fires that service too (cu-coordinator: as menu-key targets).
     const boundList = context.boundMenuItem && typeof context.boundMenuItem === 'object' ? (Array.isArray(context.boundMenuItem.items) ? context.boundMenuItem.items : [context.boundMenuItem]) : []
