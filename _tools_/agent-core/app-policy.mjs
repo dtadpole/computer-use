@@ -236,7 +236,7 @@ const STORE_PRICE = /^(price\b|[$€£¥₩₹]\s?\d|\d+(?:[.,]\d+)?\s?[$€£¥
 // CU-280 (cu-researcher; cu-coordinator: Medium): a free trial starts a renewing subscription, and a price may be written
 // with its currency code ('USD 4.99', '4,99 EUR') - both are purchases.
 // CU-288: a trial with its length ('Start 7-day free trial', 'Try 1 month free', 'Try 3 months free').
-const STORE_TRIAL = /^(try (it )?free|start (a |your )?(\d+[- ](day|week|month|year)s? )?free trial|(\d+[- ](day|week|month|year)s? )?free trial|try free for|try \d+ (day|week|month|year)s? free)\b/i
+const STORE_TRIAL = /^(try (it )?free|start (a |your )?(\d+[- ]?(day|week|month|year)s? )?free trial|(\d+[- ]?(day|week|month|year)s? )?free trial|try free for .*|try \d+ (day|week|month|year)s? free)\s*[.!\u2026]?$/i
 const STORE_CODE_PRICE = /^((usd|eur|gbp|jpy|cny|rmb|krw|inr|cad|aud|chf|sek|nok|dkk|hkd|sgd|nzd|brl|mxn)\s?\d|\d+(?:[.,]\d+)?\s?(usd|eur|gbp|jpy|cny|rmb|krw|inr|cad|aud|chf|sek|nok|dkk|hkd|sgd|nzd|brl|mxn)\b)/i
 /** 'install' or 'purchase' for an App Store button that installs or buys, pressed by a click, Space or Return; else null. */
 function storeInstall(action, target, app) {

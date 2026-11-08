@@ -73,6 +73,10 @@ const TRASH_ROLE = /^(ax)?(button|defaultbutton|menubutton|menuitem)$/i
 // CU-142: a multi-line text input, where a Return is text and does not press the default button.
 const TEXT_AREA_ROLE = /^(ax)?textarea$/i
 // CU-140: a drop zone that deletes - the delete words, and a trash or bin.
+// CU-288 (cu-researcher): a free trial starts a renewing subscription wherever it is offered - the whole name, with or
+// without its length ('Start 14-day free trial', 'Try 3 months free', 'Try it free'); 'Free trial info' stays free.
+const TRIAL_NAME = /^(start (a |your |my )?(\d+[- ]?(day|week|month|year)s? )?free trial|(\d+[- ]?(day|week|month|year)s? )?free trial|try (it |us )?free( for \d+ (days?|weeks?|months?|years?))?|try \d+ (days?|weeks?|months?|years?) (for )?free|get \d+ (days?|weeks?|months?) free)\s*[.!\u2026]?$/i
+const namesPurchase = (name) => namesWord(withoutOrderReferences(name), WORDS.purchase) || TRIAL_NAME.test(String(name ?? '').trim())
 const DROP_DELETE = [...WORDS.delete, 'trash', 'bin']
 const TEXT_ROLE = /^(ax)?(textfield|textarea|searchfield|combobox|textbox|searchbox)$/i
 
@@ -644,7 +648,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const focusesEntry = POINTER.has(action.type) && plainTextEntry(target)
       for (const cls of ['purchase', 'delete', 'permission']) {
         if (focusesEntry) break
-        if (namesWord(cls === 'purchase' ? withoutOrderReferences(name) : name, WORDS[cls])) classes.push(cls)
+        if ((cls === 'purchase' ? namesPurchase(name) : namesWord(name, WORDS[cls]))) classes.push(cls)
       }
       if (judgesSubmit(name, target)) classes.push('submit')
       // CU-146: 'Trash' or 'Bin' alone deletes on a control (a toolbar button, a menu item); a sidebar row of that name
@@ -658,7 +662,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const boundNames = bound && typeof bound === 'object' ? (Array.isArray(bound.items) ? bound.items : [bound]).map((one) => one?.name).filter((n) => typeof n === 'string' && n.trim() !== '') : []
     for (const boundName of boundNames) {
       for (const cls of ['purchase', 'delete', 'permission']) {
-        if (namesWord(cls === 'purchase' ? withoutOrderReferences(boundName) : boundName, WORDS[cls])) classes.push(cls)
+        if ((cls === 'purchase' ? namesPurchase(boundName) : namesWord(boundName, WORDS[cls]))) classes.push(cls)
       }
       // A bound Reply follows CU-157 on the focused window's entries, as the focused target reports them.
       if (judgesSubmit(boundName, target)) classes.push('submit')
@@ -672,7 +676,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const commandReturn = keysOf(action).has('META') && keysOf(action).has('ENTER')
     if (defaultName !== '' && pressesEnter && (!inTextArea || commandReturn)) {
       for (const cls of ['purchase', 'delete', 'permission']) {
-        if (namesWord(cls === 'purchase' ? withoutOrderReferences(defaultName) : defaultName, WORDS[cls])) classes.push(cls)
+        if ((cls === 'purchase' ? namesPurchase(defaultName) : namesWord(defaultName, WORDS[cls]))) classes.push(cls)
       }
       if (judgesSubmit(defaultName, target)) classes.push('submit')
     }

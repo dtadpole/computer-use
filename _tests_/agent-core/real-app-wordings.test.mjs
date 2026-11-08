@@ -49,3 +49,15 @@ test('CU-288: a one-time code named by its length asks sensitive_data when typed
   const plain = web.classify({ type: 'type', text: 'hello' }, { url: 'https://login.example/', target: { role: 'textbox', name: 'Discount code', editable: true } })
   assert.equal(plain.decision, 'allow', 'a discount code is not a one-time code')
 })
+
+test('CU-288 on cu-researcher\'s review: any length and either form, in any app or page; Free trial info stays free', () => {
+  for (const name of ['Start 14-day free trial', 'Start 2-week free trial', 'Try 3 months free', 'Try 6 months free', 'Start free trial', 'Try it free', 'Try free for 30 days', 'Get 3 months free']) {
+    assert.equal(judged(onWeb(name)), 'purchase', `web ${name}`)
+    assert.equal(judged(desktop.classify(click, { frontmostBundleId: STORE, target: button(STORE, name) })), 'purchase', `App Store ${name}`)
+    assert.equal(judged(desktop.classify(click, { frontmostBundleId: FIXTURE, target: button(FIXTURE, name) })), 'purchase', `desktop ${name}`)
+  }
+  for (const name of ['Free trial info', 'Free trial ends soon', 'Trial version', 'Free']) {
+    assert.equal(judged(onWeb(name)), 'allow', `web ${name}`)
+    assert.equal(judged(desktop.classify(click, { frontmostBundleId: STORE, target: button(STORE, name) })), 'allow', `App Store ${name}`)
+  }
+})
