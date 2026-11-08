@@ -105,7 +105,7 @@ const activates = (action) => CLICKS.has(action.type) ||
 
 // Opening one of these runs code beyond the approved app: an app, a script, an installer, a disk image (P10).
 // Code, packages, and bundles that install into the system (.prefPane, .mobileconfig) or open locations (.webloc).
-const LAUNCHABLE = /\.(app|command|sh|zsh|bash|pkg|mpkg|dmg|tool|workflow|scpt|scptd|applescript|terminal|jar|py|rb|pl|prefpane|mobileconfig|webloc|inetloc|fileloc|action|saver|qlgenerator|kext|plugin)\/?$/i
+const LAUNCHABLE = /\.(app|command|sh|zsh|bash|pkg|mpkg|dmg|tool|workflow|scpt|scptd|applescript|terminal|jar|py|rb|pl|prefpane|mobileconfig|webloc|inetloc|fileloc|action|saver|qlgenerator|kext|plugin|bundle|service|appex|xpc|shortcut|osax|component|mdimporter|systemextension)\/?$/i
 
 // CU-269: an app's icon as a drop target - a Finder item whose name, file name or URL is a .app bundle, or a Dock app item.
 const APP_BUNDLE = /\.app\/?$/i
@@ -157,6 +157,9 @@ export function selectionRunsCode(selection) {
     const name = String(item?.name ?? '').trim()
     if (item?.kind === 'unknown' || name === '') return true
     if (LAUNCHABLE.test(name)) return true
+    // cu-developer-three on #101: helper names never carry a trailing '/', so a folder-kind item with a letter extension
+    // may be a package not on the list - it asks (named over-ask: a plain folder named like 'site.assets').
+    if (item?.kind === 'folder' && /\.[a-z][a-z0-9-]{0,15}$/i.test(name)) return true
     return item?.kind === 'file' && !name.replace(/^\./, '').includes('.')
   })
 }

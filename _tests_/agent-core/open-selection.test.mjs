@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { createAppPolicy } from '../../_tools_/agent-core/app-policy.mjs'
+import { createAppPolicy, selectionRunsCode } from '../../_tools_/agent-core/app-policy.mjs'
 
 // CU-252 (cu-researcher; note 0.1 on the issue): opening the SELECTION runs it too, and the loop reads no selection.
 const FINDER = 'com.apple.finder'
@@ -120,4 +120,12 @@ test('CU-252 rule 3 through the loop: Finder\'s selectedItems is read for Comman
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }
+})
+
+test('CU-252 on cu-developer-three\'s review: a folder-kind item with a letter extension may be an unlisted package and asks; package extensions are launchable', () => {
+  for (const name of ['Sync.bundle', 'Helper.xpc', 'Share.appex', 'Morning.shortcut', 'Tool.service', 'Some.package']) {
+    assert.equal(selectionRunsCode({ items: [{ name, kind: 'folder' }] }), true, name)
+  }
+  for (const name of ['Run.shortcut', 'Agent.xpc']) assert.equal(selectionRunsCode({ items: [{ name, kind: 'file' }] }), true, name)
+  for (const name of ['Reports', 'Photos 2026', 'v2']) assert.equal(selectionRunsCode({ items: [{ name, kind: 'folder' }] }), false, name)
 })
