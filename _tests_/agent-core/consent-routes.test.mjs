@@ -280,8 +280,8 @@ const ROWS = [
   // CU-261 (cu-researcher): a call, a meeting, an invitation reply, a public post or a merge reaches others or commits
   // work, yet carries no submit word (runTask probe on main: allowed and posted; 'Send' asks).
   ['outward-join-meeting', 'desktop', 'click', 'joinMeetingButton', 'submit', 'CU-261 (contacts others)', 'cu-verifier, main with #98, helper 0.2.56, CU Fixture named controls: Join Meeting declined submit (20261108T184215Z-460cb2)', null],
-  ['outward-ask-to-join', 'desktop', 'click', 'askToJoinButton', 'submit', 'CU-286 (Google Meet: a join request to the host)', 'no live row yet', 'todo CU-286'],
-  ['outward-start-huddle', 'desktop', 'click', 'startHuddleButton', 'submit', 'CU-286 (Slack: an audio call that notifies the channel)', 'no live row yet', 'todo CU-286'],
+  ['outward-ask-to-join', 'desktop', 'click', 'askToJoinButton', 'submit', 'CU-286 (Google Meet: a join request to the host)', 'no live row yet', 'open CU-286'],
+  ['outward-start-huddle', 'desktop', 'click', 'startHuddleButton', 'submit', 'CU-286 (Slack: an audio call that notifies the channel)', 'no live row yet', 'open CU-286'],
   // CU-287 (after #131): a compose field named for its recipient - Slack's DM placeholder - still escapes the chat rule.
   // In a known messaging app any compose field asks, whatever its name (#52's CHAT_APPS, kept by CU-287's app-kinds);
   // CU-287 adds Telegram Desktop's id; outside a messaging app the same name falls back to the name rules (named limit).
