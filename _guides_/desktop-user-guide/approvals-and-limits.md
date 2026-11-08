@@ -1,7 +1,7 @@
 ---
 title: What it does, approvals and known limits
 created: 2026-11-07T21:18:46Z
-modified: 2026-11-08T14:16:23Z
+modified: 2026-11-08T14:29:56Z
 version: 0.1.8
 level: L1
 status: unverified
@@ -37,8 +37,9 @@ file choices are never pre-approved. Typed sensitive text stays out of run files
 - A leftover notification blocks clicks beneath it.
 - A run can end partial; its last line says so.
 - A run stopped mid-hold names the key; the next run releases it, or press and release it.
-- A keyboard shortcut is judged as the menu item it fires, read from the app's menu bar; a window button's own
-  shortcut or a view's own keys are not. Live runs stay on the team's test apps until it is verified.
+- A keyboard shortcut is judged as the menu item it fires, read from the menu bar; a window button's or a
+  view's own keys are not. For now, run no unattended task
+  that types, pastes or sends your data (D-074).
 - Not yet asked: opening a file from a menu or by Command-O in a list; installing from the App Store; an app's
   Always Allow or Don't ask again.
 - A website's own keyboard shortcuts (a webmail's # deletes, e archives) are judged by the focus, not by what the site
