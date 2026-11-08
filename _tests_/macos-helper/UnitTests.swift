@@ -294,6 +294,89 @@ func testGrantRecheck() {
   check(inputRefused["code"] == "not_granted" && inputRefused["wasGranted"] == true, "input whose grant is lost mid-run is refused, marked wasGranted (the driver ends the run)")
 }
 
+func testEndWatchdog() {
+  // CU-227: an end that cannot finish still ends - the watchdog fires once its bound has passed, on its own thread,
+  // with the end's reason, and not before.
+  let fired = DispatchSemaphore(value: 0)
+  var seen: String?
+  let thread = EndWatchdog.arm(after: 0.2, reason: "the driver closed the connection") { why in
+    seen = why
+    fired.signal()
+  }
+  check(fired.wait(timeout: .now() + 0.05) == .timedOut, "the end watchdog does not fire before its bound")
+  check(fired.wait(timeout: .now() + 2) == .success && seen == "the driver closed the connection", "the end watchdog fires after its bound with the end's reason")
+  check(thread !== Thread.current && thread.name == "cu-helper-end-watchdog", "the end watchdog runs on a thread of its own")
+  check(EndWatchdog.bound == 5 && EndWatchdog.exitCode == 70, "the end watchdog's bound is 5 s and its exit code 70")
+  // The held copy the watchdog releases from (cu-researcher's stuck-modifier case): a down is added before its post,
+  // an up dropped after it; the release is keys up in reverse, then buttons up where the pointer is.
+  let mirror = HeldMirror()
+  mirror.willPost(.keyDown(56, flags: 0))
+  mirror.willPost(.keyDown(0, flags: 0))
+  mirror.willPost(.down(.left, CGPoint(x: 5, y: 5), clickCount: 1, flags: 0))
+  check(mirror.snapshot().keys == [56, 0] && mirror.snapshot().buttons == [.left], "a down is in the copy as soon as it is about to be posted")
+  mirror.didPost(.keyUp(0, flags: 0))
+  check(mirror.snapshot().keys == [56], "an up leaves the copy once posted")
+  check(!mirror.snapshot().dragged, "a pressed button that has not moved is no drag")
+  check(HeldMirror.releaseSteps(keys: [56, 0], buttons: [.left], dragged: false, at: CGPoint(x: 9, y: 8))
+        == [.keyUp(0, flags: 0), .keyUp(56, flags: 0), .up(.left, CGPoint(x: 9, y: 8), clickCount: 1, flags: 0)], "the watchdog's release: keys up in reverse, then buttons at the pointer")
+  mirror.willPost(.drag(.left, CGPoint(x: 40, y: 40), flags: 0))
+  check(mirror.snapshot().dragged, "a held button that moved is a drag in flight")
+  check(HeldMirror.releaseSteps(keys: [], buttons: [.left], dragged: true, at: CGPoint(x: 9, y: 8))
+        == [.keyDown(53, flags: 0), .keyUp(53, flags: 0), .up(.left, CGPoint(x: 9, y: 8), clickCount: 1, flags: 0)],
+        "a drag in flight is cancelled with Escape before its button comes up (a bare up would drop it)")
+  mirror.didPost(.up(.left, CGPoint(x: 40, y: 40), clickCount: 1, flags: 0))
+  check(mirror.snapshot().buttons.isEmpty && !mirror.snapshot().dragged, "the button's up ends the drag in the copy")
+  // cu-researcher: the watchdog only tries the copy's lock; busy past the timeout, it falls back to the held-keys marker.
+  check(mirror.locked { mirror.trySnapshot(timeout: 0.05) } == nil, "a busy copy is not waited on past the try-lock's timeout")
+  check(mirror.trySnapshot(timeout: 0.05) != nil, "a free copy is read at once")
+  let markerFolder = NSTemporaryDirectory() + "cu-held-\(getpid())"
+  try? FileManager.default.createDirectory(atPath: markerFolder, withIntermediateDirectories: true)
+  HeldMarker.write(.object(["pid": .int(1), "keys": .array([.int(55)]), "buttons": .array([.string("left")])]), to: markerFolder + "/held-keys.json")
+  let fallback = HeldMirror.fromMarker(markerFolder + "/held-keys.json")
+  check(fallback.keys == [55] && fallback.buttons == [.left] && fallback.dragged, "the marker fallback names the held keys and buttons, a held button treated as a drag")
+  check(HeldMirror.fromMarker(nil).keys.isEmpty && HeldMirror.fromMarker(markerFolder + "/none.json").buttons.isEmpty, "no marker: nothing to release")
+  try? FileManager.default.removeItem(atPath: markerFolder)
+  // The release runs on a second thread and is waited on for a bound only: a wedged post cannot keep the helper alive.
+  let started = Date()
+  let partial = EndWatchdog.boundedRelease(timeout: 0.2) { progress in
+    progress.note()
+    Thread.sleep(forTimeInterval: 3)
+    progress.note()
+  }
+  check(partial == 1 && Date().timeIntervalSince(started) < 1, "a release that blocks is abandoned after its bound with what it posted so far")
+  check(EndWatchdog.releaseBound == 1, "the watchdog waits about 1 s for its release")
+  // stopped.json for the driver (#130): beside the held-keys marker, {reason, released, at}.
+  let folder = NSTemporaryDirectory() + "cu-stopped-\(getpid())"
+  try? FileManager.default.createDirectory(atPath: folder, withIntermediateDirectories: true)
+  let marker = folder + "/held-keys.json"
+  check(StoppedMarker.path(besideHeldMarker: marker) == folder + "/stopped.json", "stopped.json sits beside the held-keys marker")
+  StoppedMarker.write(reason: "the driver closed the connection", released: 3, besideHeldMarker: marker, at: Date(timeIntervalSince1970: 1_800_000_000))
+  let stopped = FileManager.default.contents(atPath: folder + "/stopped.json").flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] }
+  check(stopped?["reason"] as? String == "the driver closed the connection" && stopped?["released"] as? Int == 3 && (stopped?["at"] as? String)?.hasPrefix("2027-01-15T") == true,
+        "stopped.json says the end's reason, how many steps were released, and when")
+  check(StoppedMarker.phrase("the run's wall-time cap") == "the runs wall-time cap" && StoppedMarker.phrase("signal 15") == "signal 15" && StoppedMarker.phrase("'") == "unknown",
+        "the reason is written in the driver's accepted class: a letter first, then letters, digits, space, '_' or '-'")
+  let mode = (try? FileManager.default.attributesOfItem(atPath: folder + "/stopped.json")[.posixPermissions] as? Int) ?? 0
+  check(mode == 0o600, "stopped.json is private to the owner (mode 600)")
+  try? FileManager.default.removeItem(atPath: folder)
+  // Through the dispatcher: what an input request leaves held is in its copy; the ups take it out.
+  let display: JSON = [["id": 1, "main": true, "originPt": ["x": 0, "y": 0], "sizePt": ["width": 800, "height": 600], "scale": 1]]
+  let h = Harness(["displays": display, "frontmost": "ai.reflection.cu.fixture", "apps": [["bundleId": "ai.reflection.cu.fixture", "pid": 501, "rect": ["x": 100, "y": 100, "width": 400, "height": 300]]]])
+  _ = h.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
+  _ = h.ask("pauseOnLocalInput", ["on": true])
+  // A held modifier, read from another thread during the hold: the copy has it; after the request's end releases it, not.
+  let done = DispatchSemaphore(value: 0)
+  var holdReply: JSON = .null
+  DispatchQueue.global().async {
+    holdReply = h.ask("input", ["events": [["kind": "keyDown", "keyCode": 56, "flags": 0x20000], ["kind": "hold", "ms": 600], ["kind": "keyUp", "keyCode": 56, "flags": 0]], "mode": "global"])
+    done.signal()
+  }
+  Thread.sleep(forTimeInterval: 0.25)
+  check(h.dispatcher.heldMirror.snapshot().keys == [56], "during a hold the held modifier is in the dispatcher's copy")
+  check(done.wait(timeout: .now() + 5) == .success && h.dispatcher.heldMirror.snapshot().keys.isEmpty, "its key-up takes it out")
+  check(holdReply["done"] == true, "the held input request completes")
+}
+
 func testJSON() {
   let parsed = JSONCoding.decode(Data(#"{"a":true,"b":1,"c":1.5,"d":"x\ny","e":[null,false],"f":{"g":2}}"#.utf8))
   check(parsed?["a"] == .bool(true), "a boolean stays a boolean")
@@ -596,7 +679,7 @@ func button(_ kind: String, _ x: Int, _ y: Int) -> JSON { ["kind": .string(kind)
 func testDispatcherBasics() {
   let h = Harness(fixtureWorld)
   let hello = h.dispatcher.hello(token: "t0k")
-  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.56", "the hello opens the run")
+  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.57", "the hello opens the run")
   check(hello["mode"] == "dry-run" && hello["grants"] == ["screen": true, "accessibility": true, "postEvents": true, "listenEvents": false], "a dry-run hello says so, with all four grants")
   check(h.ask("capture", ["maxSize": size800])["code"] == "no_scope", "capture needs a scope")
   check(h.ask("input", ["events": [key("keyDown", 1)], "mode": "global"])["code"] == "no_scope", "input needs a scope")
@@ -1835,6 +1918,7 @@ struct UnitTests {
     testServicesMenu()
     testSelectedItems()
     testGrantRecheck()
+    testEndWatchdog()
     // Informational: whether the process that ran these tests is genuine node (true for Node.js Foundation builds).
     let parentIsNode = PeerCheck.satisfiesNodeRequirement(pid: getppid(), token: nil)
     print(JSON.object(["passed": .int(passed), "failed": .int(failures.count), "failures": .array(failures.map { .string($0) }), "parentIsGenuineNode": .bool(parentIsNode)]).text)

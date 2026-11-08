@@ -1,8 +1,8 @@
 ---
 title: What it does, approvals and known limits
 created: 2026-11-07T21:18:46Z
-modified: 2026-11-08T19:15:01Z
-version: 0.1.9
+modified: 2026-11-08T21:36:58Z
+version: 0.1.10
 level: L1
 status: unverified
 description: What the agent can and cannot do on your Mac, what it asks you, and its known limits.
@@ -30,15 +30,13 @@ file choices are never pre-approved. Typed sensitive text stays out of run files
 
 ## Known limits
 
-- In a file panel the question names the folder only if the agent opened it (Go to Folder);
-  otherwise "destination folder unknown" - check first.
+- Names are read in English; secure fields, shortcuts, file types and excluded apps do not depend on it. Until CU-293 adds Chinese, approve apps running in English.
+- A file panel's question names the folder only if the agent opened it; otherwise check first.
 - One display: your first app's, at its starting size; moving display ends the run.
 - A leftover notification blocks clicks beneath it.
 - A run can end partial; its last line says so.
-- A run stopped mid-hold names the key; the next run releases it, or press and release it.
-- A keyboard shortcut is judged as the menu item it fires, read from the menu bar; a window button's or a
-  view's own keys are not.
+- A run stopped mid-hold names the key; the next run, or pressing it, releases it.
+- A shortcut is judged as the menu item it fires; a window button's or view's own keys are not.
 - App Store installs, prices and free trials ask.
 - An approved app's built-in AI counts as part of the app.
-- A website's own keyboard shortcuts (a webmail's # deletes, e archives) are judged by the focus, not by what the site
-  does with them.
+- A website's own shortcuts (a webmail's # deletes) are judged by the focus, not their effect.

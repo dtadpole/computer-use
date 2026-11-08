@@ -174,6 +174,8 @@ final class Dispatcher {
   private let options: Options
   private let send: (JSON) -> Void
   private let onBye: () -> Void
+  /// CU-227: what the end watchdog releases without this dispatcher's locks (HeldMirror).
+  let heldMirror = HeldMirror()
   private let lock = NSLock()
   /// Serialises every post - an input step or a release - so a release never lands inside a step.
   private let postLock = NSLock()
@@ -633,7 +635,10 @@ final class Dispatcher {
       lock.lock()
       guardState.notePosted(now: Self.now())
       lock.unlock()
-      if capabilities.post(events, mode: mode, pid: target ?? 0) { released.note(step) }
+      if capabilities.post(events, mode: mode, pid: target ?? 0) {
+        released.note(step)
+        heldMirror.didPost(step)
+      }
     }
     lock.lock()
     held = released
@@ -923,7 +928,9 @@ final class Dispatcher {
       lock.lock()
       guardState.notePosted(now: Self.now())
       lock.unlock()
+      heldMirror.willPost(event)
       let posted = capabilities.post(built, mode: mode, pid: targetPid)
+      if posted { heldMirror.didPost(event) }
       lock.lock()
       if posted {
         held.note(event)
