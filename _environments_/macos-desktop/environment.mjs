@@ -1,14 +1,15 @@
 import { execFile } from 'node:child_process'
 import { createHash, randomBytes } from 'node:crypto'
 import { EventEmitter } from 'node:events'
-import { isAbsolute, join } from 'node:path'
+import { homedir } from 'node:os'
+import { dirname, isAbsolute, join } from 'node:path'
 
 import { createExclusions } from '../../_tools_/agent-core/exclusions.mjs'
 import { cuHome } from '../../_tools_/agent-core/lib.mjs'
 import { captureMatchesFrame, checkPoint, displayFrame, fitFactor, pngSize, rectToFrame, regionToGlobal, sizeAt, toFrame, toGlobal } from './coords.mjs'
 import { EnvironmentError, invalid, notGranted } from './errors.mjs'
 import {
-  captureImage, createHelperServer, HELLO_GRANTS, isPrivateDir, LOCAL_INPUT_KINDS, LOCAL_INPUT_VIA, MAX_SIMULATE_SCALE, PEER_CHECKS, replyError, REQUEST_TIMEOUT_MS,
+  captureImage, createHelperServer, HELLO_GRANTS, isPrivateDir, LOCAL_INPUT_KINDS, LOCAL_INPUT_VIA, MAX_SIMULATE_SCALE, PEER_CHECKS, readStoppedMarker, replyError, REQUEST_TIMEOUT_MS,
   SETTLE_CAP_MS, SETTLE_MS,
 } from './helper-link.mjs'
 import { ACTION_TYPES, chordKeyDowns, hitTestPoints, NAVIGATE_REFUSAL, planAction, planBatch } from './input-plan.mjs'
@@ -445,6 +446,21 @@ function confirmChannel(options, early) {
   }
 }
 
+/**
+ * CU-227: where a helper's end watchdog writes stopped.json - beside the held-keys marker (the live helper's default
+ * marker, or the `heldMarkerPath` a launch passes), or at `stoppedMarkerPath` (absolute; the test seam, allowed with a
+ * `connect` seam). A `connect` seam without one reads none.
+ */
+function stoppedMarkerPathOf(options) {
+  if (options.stoppedMarkerPath !== undefined) {
+    if (typeof options.stoppedMarkerPath !== 'string' || !isAbsolute(options.stoppedMarkerPath) || /[\n\r\0]/.test(options.stoppedMarkerPath)) throw invalid('stoppedMarkerPath must be an absolute path', { field: 'stoppedMarkerPath' })
+    return options.stoppedMarkerPath
+  }
+  if (typeof options.connect === 'function') return null
+  const marker = typeof options.heldMarkerPath === 'string' ? options.heldMarkerPath : join(homedir(), '.computer-use', 'helper', 'held-keys.json')
+  return join(dirname(marker), 'stopped.json')
+}
+
 export async function launchDesktopEnvironment(options = {}) {
   const { candidates, mode, seat, runId, simulateScale, simulateDisplay, refitFrameAtFirstApp, captureDir, exclusions, runLock, settleMs, noInput, menuCloseMs, appWindowWaitMs, appWindowPollMs } = checkOptions(options)
   if (options.askOwner !== undefined && typeof options.askOwner !== 'boolean') throw invalid('askOwner is true or false', { field: 'askOwner' })
@@ -469,6 +485,14 @@ export async function launchDesktopEnvironment(options = {}) {
   } catch (error) {
     releaseRun()
     throw error
+  }
+  // CU-227: a stopped.json left by an earlier helper is removed unread; one this run's helper writes is read when its link
+  // is lost, and the run ends helper_lost with details.stopped.
+  const stoppedPath = stoppedMarkerPathOf(options)
+  if (stoppedPath !== null && link !== null && typeof link === 'object') {
+    readStoppedMarker(stoppedPath, { since: Number.POSITIVE_INFINITY })
+    const since = Date.now()
+    link.stoppedProbe = () => readStoppedMarker(stoppedPath, { since })
   }
   let env
   try {
