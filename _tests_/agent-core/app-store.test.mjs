@@ -45,6 +45,15 @@ test('CU-254: browsing stays free, the same names elsewhere keep their judgement
   assert.equal(pre.classify(click, { frontmostBundleId: STORE, target: button(STORE, 'Get') }).decision, 'confirm', 'a pre-approval does not cover it')
 })
 
+test('CU-280: a free trial (a renewing subscription) and a price written with its currency code ask purchase in the App Store', () => {
+  for (const name of ['Try Free', 'Try It Free', 'Start Free Trial', 'Start Your Free Trial', 'Free Trial', 'USD 4.99', '4,99 EUR', 'GBP 2.49', 'JPY 300']) {
+    const v = at(STORE, click, button(STORE, name))
+    assert.deepEqual([v.decision, v.class, v.rule], ['confirm', 'purchase', 'target:purchase'], name)
+  }
+  for (const name of ['Free Apps', 'Free', 'USB Tools', 'Trials and Tips']) assert.equal(at(STORE, click, button(STORE, name)).decision, 'allow', name)
+  assert.equal(at(FIXTURE, click, button(FIXTURE, 'Try Free')).decision, 'allow', 'outside the App Store, as before')
+})
+
 test('CU-254 through the loop: a click on Get in the App Store is declined unattended, nothing posted', async () => {
   const control = createRunControl()
   const environment = createFakeEnvironment({ kind: 'desktop', control })
