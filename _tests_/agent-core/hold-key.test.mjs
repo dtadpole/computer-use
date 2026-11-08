@@ -116,3 +116,12 @@ test('a local-input stop mid-hold names the held keys through the held-key notic
   assert.match(failed.notice, /first keystroke may have carried SHIFT/)
 })
 
+
+test('CU-244: through the loop a held system chord is refused like the pressed one - log out, lock screen, the app switcher, Spotlight - and nothing is sent', async () => {
+  for (const keys of [['META', 'ALT', 'SHIFT', 'Q'], ['CTRL', 'META', 'Q'], ['META', 'TAB'], ['META', 'SPACE'], ['CTRL', 'ARROWLEFT']]) {
+    const { events, inputs } = await run([{ type: 'hold_key', keys, duration_ms: 300 }], { actionTypes: ['hold_key'] })
+    const action = events.find((e) => e.kind === 'action')
+    assert.deepEqual([action.decision, action.rule], ['block', 'system_shortcut'], keys.join('+'))
+    assert.deepEqual(inputs, [], `${keys.join('+')}: nothing sent`)
+  }
+})
