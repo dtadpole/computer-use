@@ -664,7 +664,9 @@ export async function runTask(options) {
     // CU-148: Command-W or Command-Q raises a Don't Save sheet a moment later, so the key after it in the batch is judged
     // as aimed at that sheet (the read may come before the sheet exists).
     const closeKeys = previous?.type === 'keypress' && Array.isArray(previous.keys) ? (() => { try { return new Set(previous.keys.map((key) => normalizeKey(String(key)))) } catch { return null } })() : null
-    const afterClose = closeKeys !== null && closeKeys.size === 2 && closeKeys.has('META') && (closeKeys.has('W') || closeKeys.has('Q'))
+    // CU-234: Command-Option-W (Close All) and Command-Shift-W or -Q raise the same sheets, so they count too.
+    const closeMain = closeKeys === null ? null : closeKeys.has('W') ? 'W' : closeKeys.has('Q') ? 'Q' : null
+    const afterClose = closeMain !== null && closeKeys.has('META') && [...closeKeys].every((key) => key === closeMain || ['META', 'SHIFT', 'ALT'].includes(key))
     // CU-153: a browser chord that reloads, or steps back or forward, onto an entry whose page was the direct answer to a
     // POST would send that form again. The environment names the chord's history action (one table: its own key map) and
     // its state reports postResult per entry; null or absent - as today, a named limit.

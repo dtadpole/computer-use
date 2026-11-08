@@ -16,7 +16,11 @@ test('Space alone on a focused button is judged as a click on it', () => {
   assert.equal(decide(key('SPACE'), { role: 'button', name: 'Delete archive' }).class, 'delete', 'the browser role too')
   assert.equal(decide(key('SPACE'), button('Update cart')).decision, 'allow', 'a benign button')
   assert.equal(decide(key('SPACE'), { role: 'AXTextField', name: 'Delete reason' }).decision, 'allow', 'a space typed into a field presses nothing')
-  assert.equal(decide(key('SHIFT', 'SPACE'), button('Delete')).decision, 'allow', 'only Space alone')
+  // CU-234: Shift-, Option- and Control-Space press it too (generous: a recognised no-op only over-asks); Command-Space is
+  // the system's (app-policy refuses it), never a press.
+  for (const mod of ['SHIFT', 'ALT', 'CTRL']) assert.equal(decide(key(mod, 'SPACE'), button('Delete')).class, 'delete', `${mod}-Space`)
+  assert.equal(decide(key('SHIFT', 'ALT', 'SPACE'), button('Delete')).class, 'delete', 'Shift-Option-Space')
+  assert.equal(decide(key('META', 'SPACE'), button('Delete')).decision, 'allow', 'Command-Space presses nothing here')
 })
 
 test('Space on any control a click activates is judged like that click', () => {
@@ -49,7 +53,9 @@ test('Command-Backspace deletes, in a text field too', () => {
 test('Command-D with a button focused presses a sheet\'s Don\'t Save or Delete', () => {
   assert.equal(decide(key('META', 'D'), button('Save')).class, 'delete')
   assert.equal(decide(key('META', 'D'), { role: 'AXTextArea', name: 'Body' }).decision, 'allow', 'in an editor it is not a sheet')
-  assert.equal(decide(key('META', 'SHIFT', 'D'), button('Save')).decision, 'allow', 'only Command-D')
+  // CU-234: with Shift, Option or Control too (an extra modifier may still reach Don't Save).
+  for (const mod of ['SHIFT', 'ALT', 'CTRL']) assert.equal(decide(key('META', mod, 'D'), button('Save')).class, 'delete', `Command-${mod}-D`)
+  assert.equal(decide(key('META', 'SHIFT', 'K'), button('Save')).decision, 'allow', 'another letter is not Command-D')
 })
 
 test('Replace, Overwrite and Don\'t Save are destructive; Cancel and Keep Both are not', () => {
