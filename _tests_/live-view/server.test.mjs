@@ -10,6 +10,12 @@ import { createRunControl } from '../../_tools_/agent-core/lib.mjs'
 import { hostAllowed, pick, publicEvent, startLiveView } from '../../_tools_/live-view/server.mjs'
 import { initialView, pageFor } from '../../_tools_/live-view/ui-logic.mjs'
 
+/** CU-282: resolves once `predicate()` holds, polling every 10 ms; gives up after `ms` (the assertion that follows then fails). */
+async function until(predicate, ms = 3000) {
+  const deadline = Date.now() + ms
+  while (!predicate() && Date.now() < deadline) await new Promise((resolve) => setTimeout(resolve, 10))
+}
+
 // This suite opens loopback sockets only; no browser.
 
 function fakeEnvironment() {
@@ -200,7 +206,9 @@ test('the screen streams MJPEG while someone watches, starting the screencast on
   live.attach(env)
   try {
     const opened = stream(live.port, `/screen?token=${control.viewToken}`, (text) => text.includes('JPEGDATA-2'))
-    await new Promise((resolve) => setTimeout(resolve, 50))
+    // CU-282: the start and the stop follow socket events - waited for with a deadline, not a fixed tick (a 50 ms tick
+    // failed under gate load).
+    await until(() => env.calls.length >= 1)
     assert.deepEqual(env.calls, ['start'])
     env.onFrame({ data: Buffer.from('JPEGDATA-1') })
     env.onFrame({ data: Buffer.from('JPEGDATA-2') })
@@ -208,7 +216,7 @@ test('the screen streams MJPEG while someone watches, starting the screencast on
     assert.match(screen.headers['content-type'], /^multipart\/x-mixed-replace; boundary=cu-live-frame/)
     assert.match(screen.text, /--cu-live-frame\r\ncontent-type: image\/jpeg\r\ncontent-length: 10\r\n\r\nJPEGDATA-1/)
     screen.req.destroy()
-    await new Promise((resolve) => setTimeout(resolve, 50))
+    await until(() => env.calls.length >= 2)
     assert.deepEqual(env.calls, ['start', 'stop'])
     const again = await stream(live.port, `/screen?token=${control.viewToken}`, (text) => text.includes('JPEGDATA-2'))
     assert.ok(again.text.includes('JPEGDATA-2'), 'a new viewer gets the last frame at once')
