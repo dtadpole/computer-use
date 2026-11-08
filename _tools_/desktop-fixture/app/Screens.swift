@@ -191,6 +191,11 @@ enum Menus {
     editMenu.addItem(withTitle: "Cut", action: #selector(NSText.cut(_:)), keyEquivalent: "x")
     editMenu.addItem(withTitle: "Copy", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
     editMenu.addItem(withTitle: "Paste", action: #selector(NSText.paste(_:)), keyEquivalent: "v")
+    // CU-230's live row: Paste and Match Style on Command-Option-Shift-V, as in TextEdit, Notes and Mail - the field
+    // editor's plain-text paste, so the chord really pastes here and a declined one shows as nothing pasted.
+    let matchStyle = NSMenuItem(title: "Paste and Match Style", action: #selector(NSTextView.pasteAsPlainText(_:)), keyEquivalent: "v")
+    matchStyle.keyEquivalentModifierMask = [.command, .option, .shift]
+    editMenu.addItem(matchStyle)
     editMenu.addItem(withTitle: "Select All", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
     editItem.submenu = editMenu
     main.addItem(editItem)
