@@ -7,7 +7,7 @@ version: 1.0.0
 description: 'What a fresh [cu] Integrator session needs to take over the code lane of dtadpole/computer-use mid-flight.'
 status: unverified
 grounded_in:
-  - source: 'cu-coordinator decision 2026-11-08 04.14Z (owner-requested move to a DSH workspace on ~/dtadpole/this repository)'
+  - source: 'cu-coordinator decision 2026-11-08 04.14Z (owner-requested move to a DSH workspace on ~/dtadpole/heddle/_projects_/computer-use)'
 ---
 
 # [cu] Integrator - handover
@@ -32,4 +32,4 @@ carried helper files: test the real tree delta.
 **Next.** Land the queue; #556 on its author's release after the 0.2.50 + 0.2.51 install; nightly CU-59 at 10:00Z.
 
 **Paths.** Records `~/reflection--cu-integrator/_projects_/computer-use/`; code main checkout
-`~/dtadpole/this repository` (symlink `~/computer-use`), worktree `~/computer-use--cu-integrator`.
+`~/dtadpole/heddle/_projects_/computer-use` (symlink `~/computer-use`), worktree `~/computer-use--cu-integrator`.

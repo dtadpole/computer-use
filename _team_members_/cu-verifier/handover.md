@@ -15,7 +15,7 @@ grounded_in:
 Start here, then [responsibilities](responsibilities.md) and the [verdict](ultimate-goal-2-verdict.md).
 
 ```text
-WHERE: code worktree ~/computer-use--cu-verifier (main checkout ~/dtadpole/this repository); records
+WHERE: code worktree ~/computer-use--cu-verifier (main checkout ~/dtadpole/heddle/_projects_/computer-use); records
 ~/reflection--cu-verifier; helper scripts in /tmp/cu-verifier-*.sh and /tmp/cu-verifier-proofs/ (lost on reboot).
 
 LIVE: helper 0.2.49 installed, post-install complete (Q-D15 5/5, step 4 20261108T021005Z-2cc922). The Confirm prompt
