@@ -217,7 +217,9 @@ const BANK_OR_TAX_FIELD = Object.freeze(['iban', 'account number', 'account no',
   // CU-178: spellings and abbreviations of the same fields.
   'acct number', 'acct no', 'bsb', 'tax identification', 'tax no',
   // CU-245 (cu-researcher's D-061 red team): a field named only 'Bank account'.
-  'bank account'])
+  'bank account',
+  // CU-285 (cu-researcher): the US form's own words - Taxpayer Identification Number, Taxpayer ID.
+  'taxpayer identification', 'taxpayer id'])
 function bankOrTaxField(target) {
   return namesWord(target?.name, BANK_OR_TAX_FIELD)
 }
@@ -265,7 +267,9 @@ const API_TOKEN = new RegExp([
 ].map((one) => `\\b${one}\\b`).join('|'))
 const PASSWORD_NAMES = Object.freeze(['password', 'passcode', 'passphrase', 'pin', 'pin code'])
 // CU-265: the schemes a page navigates itself; any other hands the link to another app.
-const WEB_SCHEMES = new Set(['http', 'https', 'javascript', 'about'])
+// cu-researcher on #112: data: and blob: stay in the browser (blob: is how sites serve a generated 'Download CSV'); a
+// download they start still meets the page's download handling.
+const WEB_SCHEMES = new Set(['http', 'https', 'javascript', 'about', 'data', 'blob'])
 // CU-253: chat apps that send on a plain Return from the compose field, and the names of compose fields.
 const CHAT_APPS = new Set(['com.apple.MobileSMS', 'com.apple.iChat', 'com.tinyspeck.slackmacgap', 'net.whatsapp.WhatsApp', 'desktop.WhatsApp',
   'ru.keepcoder.Telegram', 'org.telegram.desktop', 'com.hnc.Discord', 'org.whispersystems.signal-desktop', 'com.microsoft.teams',
@@ -358,8 +362,12 @@ const PASSWORD_PARAM = /^([a-z0-9]*[_-]?secret|password|passwd|pwd|pass|passcode
 // parameter as often as a card's). Matched as whole words after splitting snake, kebab and camel case.
 const URL_FIELD_SKIP = new Set(['email', 'e-mail', 'phone', 'mobile number', 'telephone', 'street', 'address line', 'home address',
   'shipping address', 'billing address', 'mailing address', 'postal address', 'cell number', 'mobile', 'tel', 'expiry',
-  'expiration date', 'mm/yy', 'exp date', 'expiration', 'valid thru', 'valid through', 'secret', 'api key', 'access token'])
-const URL_FIELD_NAMES = Object.freeze([...SECRET_NAMES.filter((name) => !URL_FIELD_SKIP.has(name)), 'iban', 'tax id', 'taxid',
+  'expiration date', 'mm/yy', 'exp date', 'expiration', 'valid thru', 'valid through', 'secret', 'api key', 'access token',
+  // CU-285: a bare 'routing' is a map's or an API's parameter as often as a bank's; 'routing number' stays.
+  'routing'])
+// CU-285: every bank-or-tax field name counts as a URL parameter name too (tax_number, tax_file_number, ein, bsb), and a
+// lower-case tin= (a field's TIN is matched as an acronym, case-sensitively).
+const URL_FIELD_NAMES = Object.freeze([...[...SECRET_NAMES, ...BANK_OR_TAX_FIELD].filter((name) => !URL_FIELD_SKIP.has(name)), 'tin', 'iban', 'tax id', 'taxid',
   'account number', 'routing number', 'sort code', 'bank account', 'national id number', 'id number'])
 function urlFieldName(name) {
   const words = ` ${String(name ?? '').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase().replace(/[^a-z0-9/']+/g, ' ').trim()} `
