@@ -1,7 +1,7 @@
 ---
 title: Helper peer boundary
 created: 2026-11-02T09:10:12Z
-modified: 2026-11-08T19:13:00Z
+modified: 2026-11-08T19:25:00Z
 level: L1
 version: 0.3.8
 description: Why the helper must not lend the owner's grants to any same-user process, and the four rules of D-029 - a peer check against a compiled list of entry points, one-run lifetime, a visible indicator, human-only approvals - with the residual risk the owner is told.
@@ -21,7 +21,7 @@ as the owner could launch `CUHelper.app` with its own socket and token file and 
 | Rule | How (cu-developer-three, helper) |
 |---|---|
 | (a) peer check | after connecting, the helper reads the peer's uid and pid (`LOCAL_PEERCRED`, `LOCAL_PEERPID`) and refuses unless the peer is node signed by the Node.js Foundation's team and its arguments name, by realpath inside `~/computer-use` or a `~/computer-use--*` checkout (CU-29; reflection paths no longer served), one entry point of a compiled list - `_tools_/agent-core/cli.mjs`, `_tools_/computer-use-mcp/server.mjs`, `_evaluators_/desktop-suite/run.mjs`, and cu-verifier's `_verifiers_/desktop-helper-boundary/stand-in-driver.mjs` (it only awaits `hello` and sends `bye`) - the one `--driver-entry` names; a refusal closes the socket, logged by pid only; and refused if its exec-time environment holds any `DYLD_*`, `LD_*`, `NODE_OPTIONS`, `NODE_PATH`, `NODE_REPL_EXTERNAL_MODULE` or `NODE_ICU_DATA` |
-| (b) one run | the helper serves one run: it exits on `bye`, on socket loss, at the run's wall-time cap, and when no driver connects within 10 seconds of launch; it never listens without a run. Every end but `bye` is bounded (CU-227): the end arms a watchdog first, on a thread of its own that takes no lock, and if the orderly end - releases posted, tap stopped - has not exited within 5 seconds the helper exits at once with code 70, after one unified-log line naming the end's reason. What is still held then stays in the held-keys marker, which the next helper releases before anything else (CU-64 G1), as for a killed helper |
+| (b) one run | the helper serves one run: it exits on `bye`, on socket loss, at the run's wall-time cap, and when no driver connects within 10 seconds of launch; it never listens without a run. Every end but `bye` is bounded (CU-227): the end arms a watchdog first, on a thread of its own that takes no lock, and if the orderly end - releases posted, tap stopped - has not exited within 5 seconds, the watchdog itself posts a tagged key-up or button-up for everything still held, from a copy of the held set that it reads without the dispatcher's locks (a stuck synthetic modifier would turn the owner's own keystrokes into shortcuts), logs one unified-log line naming the end's reason and what it released, and exits with code 70. The held-keys marker stays as a second net for the next helper (CU-64 G1). The driver reports an exit 70 to the live view and the run record as the helper stopping |
 | (c) visible indicator | with any grant and a connected driver the helper shows an always-visible status item or small window; with no grant it may show none, since nothing can act; excluded by bundle id, it is never in scope or captured |
 | (d) human approvals | per-app approvals and consent still come only from a human channel ([app policy](app-policy.md)); the helper accepts no approval at all |
 
