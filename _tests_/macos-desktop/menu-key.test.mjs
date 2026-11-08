@@ -96,7 +96,8 @@ test('none only for the exact answer; unreadable for the helper\'s unreadable, a
   }
   const long = boundMenuItemOf(list({ title: `  ${'S'.repeat(120)}  `, path: ['Message', 7, '', 'x'.repeat(90)], keyEquivalent: { char: 'D', modifiers: 99 }, enabled: 'yes' }), scope)
   assert.deepEqual(long, { items: [{ role: 'AXMenuItem', name: 'S'.repeat(80), keyEquivalent: { char: 'D', modifiers: null }, path: ['Message', 'x'.repeat(80)], enabled: null }] }, 'trimmed and capped; a malformed part is null')
-  assert.deepEqual(boundMenuItemOf({ items: [SEND] }, scope), { items: [SEND_OUT] }, 'no bundle id: the helper\'s own scoping')
+  assert.deepEqual(boundMenuItemOf({ items: [SEND] }, scope), { unreadable: true }, 'a list naming no app (cu-researcher): unreadable')
+  assert.deepEqual(boundMenuItemOf({ bundleId: FIXTURE, items: [SEND] }, scope), { items: [SEND_OUT] }, 'the same list naming the app in scope')
   assert.deepEqual(boundMenuItemOf(list({ title: 'Move to Trash', keyEquivalent: { glyph: 23, modifiers: 0 } }), scope).items[0].keyEquivalent, { char: null, glyph: 23, modifiers: 0 }, 'a glyph key equivalent (Delete)')
   assert.equal(boundMenuItemOf(list({ title: 'Send', keyEquivalent: { glyph: -1 } }), scope).items[0].keyEquivalent, null, 'nothing usable: null')
   assert.deepEqual(boundMenuItemOf(list({ title: 'Lock Screen', path: ['Apple', 'Lock Screen'], keyEquivalent: { char: 'Q', modifiers: 4 }, appleMenu: true }), scope).items[0].appleMenu, true, 'the helper\'s Apple-menu mark passes')
