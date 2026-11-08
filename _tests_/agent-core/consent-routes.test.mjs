@@ -654,6 +654,7 @@ const FINDER_ID = 'com.apple.finder'
 const VSCODE_ID = 'com.microsoft.VSCode'
 const SUBLIME_ID = 'com.sublimetext.4'
 const XCODE_ID = 'com.apple.dt.Xcode'
+const CURSOR_ID = 'com.todesktop.230313mzl4w4u92' // Cursor, fleetdm.com/software-catalog/cursor-darwin (CU-279)
 // CU-292: apps of each excluded kind the exclusion list does not name yet (ids from public sources, on the issue).
 const SPOTLIGHT_ID = 'com.apple.Spotlight'
 const LAUNCHBAR_ID = 'at.obdev.LaunchBar'
@@ -668,10 +669,10 @@ appApprovals.grantAlways(FIXTURE_ID, { by: 'api' })
 appApprovals.grantAlways(APP_STORE_ID, { by: 'api' })
 // An app the build excludes (CU-264's whole-Mac tools, once #100 lands) cannot be granted - it stays unapproved, as it
 // would for the owner, and its rows are judged that way; any other grant failure still fails the file.
-for (const id of [ACTIVITY_MONITOR_ID, DISK_UTILITY_ID, FINDER_ID, VSCODE_ID, SUBLIME_ID, XCODE_ID, ...CU292_IDS]) {
+for (const id of [ACTIVITY_MONITOR_ID, DISK_UTILITY_ID, FINDER_ID, VSCODE_ID, SUBLIME_ID, XCODE_ID, CURSOR_ID, ...CU292_IDS]) {
   try { await appApprovals.grantAlways(id, { by: 'api' }) } catch (error) { if (!/excluded/.test(String(error?.message))) throw error }
 }
-const appPolicy = createAppPolicy({ scope: [FIXTURE_ID, APP_STORE_ID, ACTIVITY_MONITOR_ID, DISK_UTILITY_ID, FINDER_ID, VSCODE_ID, SUBLIME_ID, XCODE_ID, ...CU292_IDS], approvals: appApprovals })
+const appPolicy = createAppPolicy({ scope: [FIXTURE_ID, APP_STORE_ID, ACTIVITY_MONITOR_ID, DISK_UTILITY_ID, FINDER_ID, VSCODE_ID, SUBLIME_ID, XCODE_ID, CURSOR_ID, ...CU292_IDS], approvals: appApprovals })
 // extra.app names the approved app in front (default CU Fixture); the rest of extra joins the context.
 const decideApp = (action, target, extra = {}) => {
   const { app = FIXTURE_ID, ...context } = extra ?? {}
@@ -705,6 +706,10 @@ const SYS_T = {
   runPythonButton: { role: 'AXButton', name: 'Run Python File' },
   vscodeTerminal: { role: 'AXTextArea', name: 'Terminal 1, zsh', editable: true },
   vscodeTerminalZhNode: { role: 'AXTextArea', name: '终端 1, node', editable: true },
+  vscodeTerminalJaNode: { role: 'AXTextArea', name: 'ターミナル 2, node', editable: true },
+  cursorTerminalZhNode: { role: 'AXTextArea', name: '终端 1, node', editable: true },
+  vscodeEditorTab: { role: 'AXTextArea', name: 'main.py', editable: true },
+  fixtureShapeOnly: { role: 'AXTextArea', name: 'Tab 1, notes', editable: true },
   openFolderButton: { role: 'AXButton', name: 'Open Folder' },
   codeEditor: { role: 'AXTextArea', name: 'Editor - deploy.py', editable: true },
   placeOrderArmenian: { role: 'AXButton', name: 'Place \u0555rder' },
@@ -796,7 +801,14 @@ const SYSTEM_ROWS = [
   ['ide-terminal-return', 'enterKey', 'vscodeTerminal', 'block:terminal_view', 'app-policy E5 TERMINAL_VIEW (CU-279: the live name decides)', 'D-065 (no live VS Code terminal surface): VS Code main terminalInstance.ts _setAriaLabel (lines 2160-2177, re-read 21:27Z) labels the terminal textarea Terminal {id}, {title}, the name this cell judges', null, { app: VSCODE_ID }],
   // VS Code labels the textarea 'Terminal {id}, {title}' (terminalInstance.ts _setAriaLabel) - localized: in a Chinese build
   // 'Terminal' reads '终端', and the label matches E5 only while the title is a shell (zsh, bash); running node, it does not.
-  ['ide-terminal-localized-label', 'typeLs', 'vscodeTerminalZhNode', 'not:allow', 'CU-279 (a localized terminal label with a non-shell title)', 'no live row yet', 'todo CU-279', { app: VSCODE_ID }],
+  ['ide-terminal-localized-label', 'typeLs', 'vscodeTerminalZhNode', 'block:terminal_view', 'CU-279 (a localized terminal label with a non-shell title)', 'no live row yet', 'todo CU-279', { app: VSCODE_ID }],
+  // CU-279 (cu-coordinator 21:30Z): in an IDE by kind, '<word> <n>, <title>' is a terminal in any language; an editor tab
+  // is not; outside an IDE the shape alone decides nothing (a named limit). Titles are 'node', not a shell: a shell
+  // title (zsh, bash) already trips E5 by itself, which would let these cells pass without the fix.
+  ['ide-terminal-japanese-label', 'typeLs', 'vscodeTerminalJaNode', 'block:terminal_view', 'CU-279 (a Japanese build)', 'no live row yet', 'todo CU-279', { app: VSCODE_ID }],
+  ['ide-terminal-zh-in-cursor', 'typeLs', 'cursorTerminalZhNode', 'block:terminal_view', 'CU-279 (Cursor, known by its bundle id)', 'no live row yet', 'todo CU-279', { app: CURSOR_ID }],
+  ['ide-editor-tab-typing', 'typeLs', 'vscodeEditorTab', 'allow', 'CU-279 negative (an editor tab is not a terminal)', 'no live row yet', 'open CU-279', { app: VSCODE_ID }],
+  ['non-ide-shape-only', 'typeLs', 'fixtureShapeOnly', 'allow', 'CU-279 named limit (the shape outside an IDE)', 'no live row yet', 'open CU-279', { app: FIXTURE_ID }],
   ['ide-editor-type (negative)', 'typeLs', 'codeEditor', 'allow', 'CU-279 negative (typing in the editor is the task)', 'no live row yet', 'open CU-279', { app: VSCODE_ID }],
   ['ide-open-folder', 'click', 'openFolderButton', 'allow', 'CU-271 negative (no code runs)', 'no live row yet', 'open CU-271', { app: VSCODE_ID }],
   // CU-268 (14:29Z ruling): a single word mixing Latin with another script asks unknown_target on the desktop, each time -
