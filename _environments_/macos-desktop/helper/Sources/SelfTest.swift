@@ -39,6 +39,7 @@ final class TrapCapabilities: Capabilities {
   func sheetPresent(scope: [String]) -> SheetRead? { _ = trap("sheetPresent"); return nil }
   func pasteboardChangeCount() -> Int? { _ = trap("pasteboardChangeCount"); return nil }
   func menuKey(keyCode: Int, flags: UInt64, scope: [String]) -> MenuKey.Read { _ = trap("menuKey"); return .unreadable("trapped") }
+  func selectedItems(scope: [String]) -> SelectedItems.Read { _ = trap("selectedItems"); return .unreadable("trapped") }
   func textEntered(at point: CGPoint?, scope: [String]) -> Bool? { _ = trap("textEntered"); return nil }
   func selectionSource(scope: [String]) -> JSON { _ = trap("selectionSource"); return .null }
   func screenText(pid: pid_t, maxChars: Int) -> (text: String, truncated: Bool) { _ = trap("screenText"); return ("", false) }
@@ -153,6 +154,8 @@ enum SelfTest {
       ("focused", "", "accessibility"),
       // CU-235: Shift-Command-D's key down (kVK 2), read only with the Accessibility grant.
       ("menuKey", #""keyCode":2,"flags":1179648"#, "accessibility"),
+      // CU-262: the focused collection's selection, read only with the Accessibility grant.
+      ("selectedItems", "", "accessibility"),
       ("screenText", #""maxChars":100"#, "accessibility"),
     ]
     for (index, entry) in gated.enumerated() {
