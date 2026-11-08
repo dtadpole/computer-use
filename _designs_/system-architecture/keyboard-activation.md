@@ -1,9 +1,9 @@
 ---
 title: Keyboard activation is judged like a click
 created: 2026-11-07T00:07:33Z
-modified: 2026-11-08T13:03:38Z
+modified: 2026-11-08T23:40:00Z
 level: L1
-version: 0.3.4
+version: 0.3.5
 description: How a keypress that activates a button - Space on a focused button, a sheet's key equivalents - is classed like a click on that button, and the destructive words a save panel's Replace sheet needs.
 status: unverified
 grounded_in:
@@ -13,6 +13,7 @@ grounded_in:
   - source: the two trajectory scans of 2026-11-07 (models press Space on focused buttons; CU-137's unnamed hold button)
   - source: CU-234 (cu-researcher's chord sweep - modifier variants recognised generously)
   - source: CU-241 and D-072 (cu-researcher's option 4 - Command-Enter in a multi-line web editable)
+  - source: CU-241, cu-researcher 2026-11-08 12:47Z (an iframe-body editor's focus reads null) and the consent owner's design note 0.2 (23:28Z)
 ---
 
 # Keyboard activation is judged like a click
@@ -27,6 +28,7 @@ sheet and a save panel's Replace went unasked.
 | SPACE, alone or with Shift, Option or Control (CU-234), on a focused control a click activates (button, checkbox, radio, pop-up, menu item, link, disclosure) | a click on it: its name against every word list; in a text input it types a space and is not judged |
 | ENTER or RETURN, a key hold, a typed newline anywhere, a typed space on a focused control | as those keys pressed: the focused element's name, a held dialog, and the window's default button, if reported, for a single-line input or non-text focus; in a text area a Return is text, Command-Return presses it (CU-142) |
 | CMD or CTRL+ENTER in a web textarea or contenteditable (CU-241) | `submit` (no default button to read); code editors over-ask |
+| CMD or CTRL+ENTER on a web page whose focus the driver does not describe - an iframe-body editor (TinyMCE, CKEditor 4), whose `<body>` reads as no focus - or a focused frame element (CU-241) | `submit`: the key lands in content the gate cannot read; over-asks with nothing focused or in a cross-origin widget frame; a held dialog keeps `page_dialog` alone |
 | RETURN in a chat app (Command-Return too) or a Message, Reply or Chat field (CU-253) | `submit`, text areas too; Shift-Return is text |
 | CMD+BACKSPACE or CMD+DELETE, any modifiers | `delete` (Move to Trash, Empty Trash, a dialog's Delete), in a text input too: the menu sees the chord before the field (CU-143) |
 | CMD+D, any extra modifier too (CU-234), the focused element a button | `delete`: with a sheet or alert focused it presses Don't Save or Delete |

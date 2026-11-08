@@ -779,7 +779,14 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // to judge, so it asks submit. Named over-ask: code editors. The desktop keeps its default-button reading (CU-142).
     const webTag = /^(app|desktop):/.test(String(context.url ?? '')) ? '' : String(target?.tag ?? '').toLowerCase()
     const multiLineWeb = target?.editable === true && webTag !== '' && webTag !== 'input'
-    if (multiLineWeb && keysOf(action).has('ENTER') && (keysOf(action).has('META') || keysOf(action).has('CTRL'))) classes.push('submit')
+    // CU-241 (cu-researcher, 12:47Z): an iframe-body editor (TinyMCE, CKEditor 4, many webmail composers) keeps the caret
+    // in a same-origin frame's <body>, which the browser driver does not describe - the focus reads null; a cross-origin
+    // frame stops the read at the <iframe> element itself. Either way the chord lands in content the gate cannot read,
+    // and in an editor it is the send, so on a web page it asks submit too. Named over-ask: the chord with nothing
+    // focused, or in a cross-origin widget frame.
+    const webPage = context.url != null && !desktopUrl
+    const unreadWebFocus = webPage && !held && (target == null || webTag === 'iframe' || webTag === 'frame')
+    if ((multiLineWeb || unreadWebFocus) && keysOf(action).has('ENTER') && (keysOf(action).has('META') || keysOf(action).has('CTRL'))) classes.push('submit')
     // CU-253 (cu-researcher): a chat app sends on a plain Return from its compose field - a text area too, and with no
     // default button to read (Messages' 'iMessage', Slack, WhatsApp). So a plain Return or typed line break asks submit
     // in any text entry of a known chat app, or in an entry named as a compose field; Shift- or Option-Return types
