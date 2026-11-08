@@ -647,30 +647,65 @@ function menuKeyEquivalentOf(value) {
   return { char: base?.char ?? null, ...(glyph !== null ? { glyph } : {}), modifiers: base?.modifiers ?? null }
 }
 
-/**
- * CU-236: one menuKey reply as the driver passes it on, failing closed: `{ role: 'AXMenuItem', name, keyEquivalent, path }`
- * for a titled item of an app in `scope`, `{ none: true }` only for that exact answer, and `{ unreadable: true }` for
- * everything else - an unreadable bar, an untitled item, an item of an app outside the scope, a malformed reply. Never a
- * value: only the title, the path of titles and the key equivalent are read.
- */
-export function boundMenuItemOf(reply, scope = []) {
-  if (reply?.none === true && reply.item === undefined && reply.unreadable === undefined) return { none: true }
-  const item = reply?.item
-  if (item === null || typeof item !== 'object' || Array.isArray(item) || reply.unreadable !== undefined || reply.none !== undefined) return { unreadable: true }
-  if (item.bundleId !== undefined && (typeof item.bundleId !== 'string' || !scope.includes(item.bundleId))) return { unreadable: true }
+/** CU-236: the most items one answer may carry (cu-developer-one's decision; the helper caps its list there too). */
+export const MAX_BOUND_ITEMS = 8
+
+/** One entry of a menuKey list as passed on, or null when it is malformed or untitled. */
+function boundEntryOf(item, scope) {
+  if (item === null || typeof item !== 'object' || Array.isArray(item)) return null
+  if (item.bundleId !== undefined && (typeof item.bundleId !== 'string' || !scope.includes(item.bundleId))) return null
+  if (item.appleMenu !== undefined && typeof item.appleMenu !== 'boolean') return null
   const name = menuTitleOf(item.title)
-  if (name === null) return { unreadable: true }
+  if (name === null) return null
   const path = Array.isArray(item.path) ? item.path.slice(0, 8).map(menuTitleOf).filter((step) => step !== null) : []
-  return { role: 'AXMenuItem', name, keyEquivalent: menuKeyEquivalentOf(item.keyEquivalent), path }
+  return {
+    role: 'AXMenuItem', name, keyEquivalent: menuKeyEquivalentOf(item.keyEquivalent), path,
+    enabled: typeof item.enabled === 'boolean' ? item.enabled : null,
+    ...(item.appleMenu === true ? { appleMenu: true } : {}),
+  }
 }
 
-/** Two bound-item answers as one: an unreadable read wins, then a second, different item (unreadable), then an item. */
+/** Entries deduplicated by what agent core judges (name, path, key equivalent), in order. */
+function distinctEntries(entries) {
+  const seen = new Set()
+  return entries.filter((entry) => {
+    const key = JSON.stringify([entry.name, entry.path, entry.keyEquivalent])
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
+/**
+ * CU-236: one menuKey reply as the driver passes it on, failing closed. The helper answers every item whose key
+ * equivalent matches (a disabled benign first match must not hide a consequential one), so the answer is a list:
+ * `{ items: [{ role: 'AXMenuItem', name, keyEquivalent, path, enabled, appleMenu? }] }` with 1 to MAX_BOUND_ITEMS
+ * distinct entries; `{ none: true }` only for that exact answer; `{ unreadable: true }` for everything else - the
+ * helper's own unreadable, `truncated`, an empty or over-long list, any malformed or untitled entry, a bundle id outside
+ * `scope` (the reply's or an entry's), a malformed reply. Never a value: only titles, the path of titles, the key
+ * equivalent (CU-154's integer modifier mask), whether the item is enabled (context only: disabled items still count),
+ * and the helper's mark for the Apple menu.
+ */
+export function boundMenuItemOf(reply, scope = []) {
+  const unreadable = { unreadable: true }
+  if (reply === null || typeof reply !== 'object') return unreadable
+  if (reply.none === true && reply.items === undefined && reply.unreadable === undefined && reply.truncated === undefined) return { none: true }
+  if (reply.none !== undefined || reply.unreadable !== undefined || (reply.truncated !== undefined && reply.truncated !== false)) return unreadable
+  if (reply.bundleId !== undefined && (typeof reply.bundleId !== 'string' || !scope.includes(reply.bundleId))) return unreadable
+  if (!Array.isArray(reply.items) || reply.items.length < 1 || reply.items.length > MAX_BOUND_ITEMS) return unreadable
+  const entries = reply.items.map((item) => boundEntryOf(item, scope))
+  if (entries.some((entry) => entry === null)) return unreadable
+  return { items: distinctEntries(entries) }
+}
+
+/** Two answers (two keys of one chord) as one: an unreadable read wins; lists join, deduplicated, within the cap. */
 function combineBound(a, b) {
   if (a === null) return b
   if (a.unreadable || b.unreadable) return { unreadable: true }
   if (a.none) return b
   if (b.none) return a
-  return a.name === b.name && JSON.stringify(a.path) === JSON.stringify(b.path) ? a : { unreadable: true }
+  const items = distinctEntries([...a.items, ...b.items])
+  return items.length > MAX_BOUND_ITEMS ? { unreadable: true } : { items }
 }
 
 /** A helper's panel marker: 'save', 'open' or 'unknown' (any other value fails closed to 'unknown'); null when absent. */
@@ -1712,10 +1747,10 @@ class DesktopEnvironment {
    * offers a key equivalent to the menu bar, so Shift-Command-D sends Mail's draft as surely as a click on Message >
    * Send. The helper's menuKey gets each of the chord's non-modifier keyDowns exactly as the chord would post them
    * (chordKeyDowns: one key mapping for the read and the input) and answers the matching item's title, path and key
-   * equivalent, `none` when the bar was read whole with no match, or `unreadable`. Returns boundMenuItemOf's shape;
-   * two keys that bind different items, a refusal (an older helper's unknown_request), a throw or a chord the planner
-   * refuses read as `{ unreadable: true }` - agent core asks then, except for its editing chords. A chord with no
-   * non-modifier key fires no item: `{ none: true }`. Read fresh each time; never cached here.
+   * equivalent of every matching item, `none` when the bar was read whole with no match, or `unreadable`. Returns
+   * boundMenuItemOf's shape, the lists of a chord's keys joined; a refusal (an older helper's unknown_request), a throw
+   * or a chord the planner refuses reads as `{ unreadable: true }` - agent core asks then, except for its editing chords.
+   * A chord with no non-modifier key fires no item: `{ none: true }`. Read fresh each time; never cached here.
    */
   async menuItemForChord(action) {
     this.#assertInScope()
