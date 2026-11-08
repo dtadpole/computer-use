@@ -445,7 +445,8 @@ const URL_FIELD_NAMES = Object.freeze([...[...SECRET_NAMES, ...BANK_OR_TAX_FIELD
   'account number', 'routing number', 'sort code', 'bank account', 'national id number', 'id number'])
 // cu-verifier on #120: a phone, mobile or tel parameter whose value holds seven or more digits carries a phone number
 // (D-062) even unformatted; ?mobile=1 or ?mobile=true (a layout flag) stays free.
-const URL_PHONE_NAME = /(^| )(phone|mobile|tel|telephone|cell)( |$)/
+// CU-291 (cu-researcher): the joined lower-case forms too ('phonenumber', 'cellphone').
+const URL_PHONE_NAME = /(^| )(phone|mobile|tel|telephone|cell|phonenumber|cellphone|mobilephone|mobilenumber|telephonenumber|cellnumber)( |$)/
 const urlPhone = (name, value) => URL_PHONE_NAME.test(` ${String(name ?? '').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()} `)
   && (String(value ?? '').match(/\d/g) ?? []).length >= 7
 // CU-284 (cu-researcher; cu-coordinator: Medium): a street or address parameter whose value reads as a street address - a
@@ -458,6 +459,10 @@ const urlAddress = (name, value) => {
   const text = String(value ?? '')
   return URL_ADDRESS_NAME.test(words) && !URL_ADDRESS_NOT.test(words) && /\d/.test(text) && /[a-z]{3,}/i.test(text)
 }
+// CU-291 (cu-researcher; cu-coordinator: High, CU-281's class): an acct or acctnum parameter holding six or more digits
+// is a bank-account number; acct=<handle> (a fediverse account) stays free, as does a bare account=.
+const URL_ACCOUNT_NAME = /^(acct|acctnum|acct_num|acctno|acct_no|acct_number)$/i
+const urlAccount = (name, value) => URL_ACCOUNT_NAME.test(String(name ?? '').trim()) && (String(value ?? '').match(/\d/g) ?? []).length >= 6
 function urlFieldName(name) {
   const words = ` ${String(name ?? '').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase().replace(/[^a-z0-9/']+/g, ' ').trim()} `
   return words.trim() !== '' && URL_FIELD_NAMES.some((field) => words.includes(` ${field} `))
@@ -492,6 +497,7 @@ export function urlSecret(raw) {
     if (SECRET_PARAM.test(name.trim()) && value.trim().length >= 8) return 'key'
     if (value.trim() !== '' && urlFieldName(name)) return 'field_name'
     if (urlPhone(name, value)) return 'phone'
+    if (urlAccount(name, value)) return 'bank_account'
     if (urlAddress(name, value)) return 'address'
     const kind = looksSensitive(value)
     if (kind !== null) return kind
