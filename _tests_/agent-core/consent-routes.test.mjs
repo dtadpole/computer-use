@@ -654,6 +654,8 @@ const SYS_A = {
   cmdShiftU: key('META', 'SHIFT', 'U'),
   cmdB: { type: 'keypress', keys: ['META', 'B'] },
   cmdU: { type: 'keypress', keys: ['META', 'U'] },
+  typeLs: { type: 'type', text: 'ls -la' },
+  enterKey: key('ENTER'),
 }
 const SYS_T = {
   field: { role: 'AXTextField', name: 'Notes', editable: true },
@@ -665,6 +667,7 @@ const SYS_T = {
   commandRow: { role: 'AXRow', name: 'install.command', filename: 'install.command' },
   notesRow: { role: 'AXRow', name: 'notes.txt', filename: 'notes.txt' },
   runPythonButton: { role: 'AXButton', name: 'Run Python File' },
+  vscodeTerminal: { role: 'AXTextArea', name: 'Terminal 1, zsh', editable: true },
   openFolderButton: { role: 'AXButton', name: 'Open Folder' },
   codeEditor: { role: 'AXTextArea', name: 'Editor - deploy.py', editable: true },
   placeOrderArmenian: { role: 'AXButton', name: 'Place \u0555rder' },
@@ -736,6 +739,12 @@ const SYSTEM_ROWS = [
   // build system, and Xcode's Test (Command-U) runs the test target's code.
   ['ide-sublime-build', 'cmdB', 'codeEditor', 'not:allow', 'CU-271 (Build runs the file)', 'no live row yet', 'todo CU-271', { app: SUBLIME_ID, boundMenuItem: { items: [{ role: 'AXMenuItem', name: 'Build', keyEquivalent: { char: 'B', modifiers: 0 }, enabled: true }] } }],
   ['ide-xcode-test', 'cmdU', 'codeEditor', 'not:allow', 'CU-271 (Test runs the test code)', 'no live row yet', 'todo CU-271', { app: XCODE_ID, boundMenuItem: { items: [{ role: 'AXMenuItem', name: 'Test', keyEquivalent: { char: 'U', modifiers: 0 }, enabled: true }] } }],
+  // CU-279 (triage): an IDE's integrated terminal runs the typed line on Return. Main's E5 rule (TERMINAL_VIEW, Q-D9)
+  // already refuses keys into a target named for a terminal or shell; whether the route holds turns on the live name of
+  // VS Code's xterm helper textarea - these cells close on that read.
+  ['ide-terminal-type-command', 'typeLs', 'vscodeTerminal', 'block:terminal_view', 'app-policy E5 TERMINAL_VIEW (CU-279: the live name decides)', 'no live row yet', 'open CU-279', { app: VSCODE_ID }],
+  ['ide-terminal-return', 'enterKey', 'vscodeTerminal', 'block:terminal_view', 'app-policy E5 TERMINAL_VIEW (CU-279: the live name decides)', 'no live row yet', 'open CU-279', { app: VSCODE_ID }],
+  ['ide-editor-type (negative)', 'typeLs', 'codeEditor', 'allow', 'CU-279 negative (typing in the editor is the task)', 'no live row yet', 'open CU-279', { app: VSCODE_ID }],
   ['ide-open-folder', 'click', 'openFolderButton', 'allow', 'CU-271 negative (no code runs)', 'no live row yet', 'open CU-271', { app: VSCODE_ID }],
   // CU-268 (14:29Z ruling): a single word mixing Latin with another script asks unknown_target on the desktop, each time -
   // on a click and on a chord's bound menu item alike.
