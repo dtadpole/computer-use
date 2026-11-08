@@ -1,38 +1,54 @@
 ---
 title: '[cu] Verifier - Handover'
 created: 2026-11-08T04:15:13Z
-modified: 2026-11-08T10:46:00Z
+modified: 2026-11-08T23:10:00Z
 level: L2
-version: 2.0.0
-description: 'What a fresh session of [cu] Verifier needs - live state, open PRs and asks, the scripts, and the next step.'
+version: 3.0.0
+description: 'What the successor of [cu] Verifier needs - live state, open PRs, what each pending verification waits for, the scripts, and the lessons of 8 Nov.'
 status: unverified
 grounded_in:
-  - source: the seat's own state, 2026-11-08 1046Z, after the re-home onto the new public repository (root 6314c0c)
+  - source: the seat's own state, 2026-11-08 2310Z, as the owner moves the team to successor sessions
 ---
 
 # [cu] Verifier - Handover
 
-Start here, then [responsibilities](responsibilities.md) and the [verdict](ultimate-goal-2-verdict.md).
+Start here, then [responsibilities](responsibilities.md) and the [verdict](ultimate-goal-2-verdict.md) (0.9.53).
 
 ```text
-WHERE: one worktree ~/computer-use--cu-verifier, a branch per change from origin/main; live runs use it detached at
-origin/main (the helper admits only ~/computer-use--* entry points). Never edit the main checkout. Hygiene gate
-before every push. PR numbers restarted at #1 ("old #N" = history). Scripts: /tmp/cu-verifier-hold.sh and
-/tmp/cu-verifier-proofs/ (lost on reboot; the hold rule is D-053, D-066).
+WHERE: main checkout ~/dtadpole/computer-use (old paths are symlinks); this seat's worktree ~/computer-use--cu-verifier
+(the helper admits it). Live runs use it detached at origin/main. Never run a branch switch while a live job uses it.
+Hygiene gate before every push; every new PR carries one _logs_/repo-actions line (since 22:22Z).
 
-LIVE: helper 0.2.51, its post-install set passed (Q-D15 5/5, step 4 092653Z-7ef81d). Done today: CU-220, CU-98,
-CU-193. CU-223 rows posted (103751Z-7762ec asks, 103756Z-2ffe01 allowed; Edit > Copy 103801Z, 103807Z). D-059:
-none open after #2 except CU-223 (#12), CU-230 (#23) and CU-232 (#20); re-sign after those cells close. D-071: no
-owner-app or off-site run until CU-230 and CU-232 are verified.
+LIVE: helper 0.2.56 installed; post-install passed (contents, Q-D15 5/5, step 4 184106Z-f887b3). 0.2.57 (#133,
+CU-227) is on main and 0.2.58 (#150, CU-292/CU-295) is OK'd; neither is installed yet.
 
-PRS (mine): #19 (Fixes CU-222, history build source; paths.historyRepo is in the local config), #24 (Fixes CU-233:
-Paste and Match Style, paste sentinel).
+MY PR: #132 named-controls 'areas' (AXTextArea named by the harness; OK'd by cu-researcher and cu-developer-three at
+8b4b97d; fixture 230/230 under the lock). It is needed for CU-253's cells.
 
-NEXT: 1) After #17 + #24: CU-230 live set inside the S5 save/restore (Command-Option-Shift-V no own copy declined,
-own copy from Notes arrives, from IBAN asks; the three unbound chords decision-only; browser cells), then verify
-CU-230 and close #23's cells. 2) CU-232: rows on CU-238's screen per my list on CU-232. 3) #10 landed: CU-219 rows.
-4) Re-sign D-059. 5) Owner session: CU-11, CU-119, CU-135's chain (#1), CU-203's in-person rows, then CU-16 and the
-verdict.
+VERIFY NEXT (each waits on the item named):
+- CU-252, CU-259, CU-262: #153 landed; land #141 too, then re-run the stand-in rows O1/O2 (Command-O on install.command,
+  Command-Down on Payload.app must ask). The stand-in rows read AXStaticText with empty names, so the read is
+  unreadable. CU-269 is Done.
+- CU-253: #132, then the area rows (iMessage Return, typed newline, Notes negative, 'Type a new message', 'Write a
+  message...'; entry 'Message' with a typed newline).
+- CU-294: rows on named-controls (续费, 开通会员, 入会, 发起会议, 拨打, 注销账号, 记住此决定; negative 查看会员). Two series were refused by local input; not run yet.
+- CU-291: #147 is merged; run the URL rows (acct=, acctnum=, phonenumber=).
+- CU-227: install 0.2.57, then post-install plus #128's acceptance items (1)-(6).
+- CU-292/CU-295: install 0.2.58, then post-install, the start log line of admitted roots, and a symlinked root
+  pointing outside home refused.
+- CU-145: re-sign D-059 and D-061 once the table PRs land and their cells close on my runs. D-061 is green.
+  D-059 still has CU-241 and CU-253 cells open. D-065 is proposed for CU-267's focus-unreadable and growing-field cells.
+- Owner session: CU-11 step 4, CU-119 G2, CU-135's chain (it needs the person: the helper admits only the CLI and MCP
+  entry points), CU-203's in-person rows, the Finder rows; then CU-16 and the verdict.
 
-ASKS: owner time and mode via cu-coordinator.
+SCRIPTS (in /tmp, lost on reboot; rebuild from these notes if gone): cu-verifier-hold.sh (cu_hold checks idle, takes
+the hold with --wait-free, releases on exit); proofs/live-batch.sh (detach at main, hold, re-check idle once the desktop
+is free, run, release, announce); named-live.mjs (named-controls rows, env modes CU253/285/288/293); cu252-live.mjs;
+cu253-areas.mjs; cu281-browser.mjs (env CU283/284/285); cu2xx-browser.mjs pages served on 127.0.0.1;
+cu-verifier-post-install.sh and cu-verifier-qd15-gate.sh.
+
+LESSONS: run the real entry points (createPolicy with a web url, createAppPolicy for the desktop, the CLI); a test
+merge per review; ask what the OS keeps after a helper exits (keys, buttons, a drag in flight); announce a model
+run's cost before it starts (D-034); release the lock as soon as the series ends, and never hold it while waiting for
+the owner; verified issues can be moved back by a sweep, so re-check the state.
 ```
