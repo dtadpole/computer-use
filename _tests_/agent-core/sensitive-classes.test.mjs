@@ -368,7 +368,9 @@ const decideNavigate = (url) => {
 }
 const NAVIGATE_ROWS = [
   ['navigate-API key in a query', `https://fixture.example/search?q=${AWS_KEY_ID}`, 'sensitive_data', 'todo CU-260', 'no live row yet'],
-  ['navigate-card number in a path', `https://fixture.example/pay/${CARD.replace(/\D/g, '')}`, 'sensitive_data', 'todo CU-260', 'no live row yet'],
+  ['navigate-card number in a query', `https://fixture.example/pay?card=${CARD.replace(/\D/g, '')}`, 'sensitive_data', 'todo CU-260', 'no live row yet'],
+  // A digit run in a path segment is read as an id (status and order numbers pass Luhn one time in ten) - CU-260's named limit.
+  ['navigate-card number in a path (named limit)', `https://fixture.example/pay/${CARD.replace(/\D/g, '')}`, 'allow', 'open CU-260', 'no live row yet'],
   ['navigate-SSN in a fragment', `https://fixture.example/form#${SSN}`, 'sensitive_data', 'todo CU-260', 'no live row yet'],
   ['navigate-plain query (negative)', 'https://fixture.example/search?q=weather+in+lisbon', 'allow', 'open CU-260', 'no live row yet'],
 ]
