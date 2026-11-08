@@ -108,6 +108,16 @@ describe('menu-compose (CU-238)', () => {
     })
   })
 
+  test('CU-250: a stand-in Services submenu in the app menu - an owner-style service and AppKit\'s marker; each only records', async () => {
+    await withCompose({}, async (fixture) => {
+      const { menus } = await fixture.call('menuAX')
+      assert.deepEqual(menus.find((menu) => menu.title === 'Services'), { title: 'Services', items: [{ title: 'Weekly Report Uploader' }, { title: 'Services Settings\u2026' }] })
+      await fixture.act({ composeService: 'Weekly Report Uploader' })
+      const { events } = await fixture.state()
+      assert.deepEqual(events.filter((event) => event.type === 'service-ran').map((event) => event.item), ['Weekly Report Uploader'])
+    })
+  })
+
   test('the menus leave with the screen', async () => {
     await withCompose({}, async (fixture) => {
       await fixture.open('consent-keys', { title: 'Quick message' })

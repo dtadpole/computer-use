@@ -22,5 +22,5 @@ test('the desktop class policy sees the whole context: a sentinel field, the dro
   assert.equal(seen[0].dropTarget?.name, 'Trash')
   assert.equal(seen[0].paste?.fromOwner, true)
   assert.equal(seen[0].url, 'desktop://')
-  assert.equal(seen[0].target, target)
+  assert.deepEqual(seen[0].target, target, 'the judged copy (CU-266 normalises names; the posted action is untouched)')
 })
