@@ -408,7 +408,7 @@ export class HelperLink extends EventEmitter {
     this.lose('protocol: a line from the helper is neither a reply nor a known event')
   }
 
-  /** Mark the hello accepted; requests may flow from now on. */
+    /** Mark the hello accepted; requests may flow from now on. */
   accept(hello) {
     const { token, ...rest } = hello
     this.hello = Object.freeze(rest)
@@ -420,7 +420,7 @@ export class HelperLink extends EventEmitter {
    */
   request(type, fields = {}, { timeoutMs = this.requestTimeoutMs } = {}) {
     if (this.closedByUs) return Promise.reject(new EnvironmentError('closed', 'the helper link is closed'))
-    if (this.lost) return Promise.reject(new EnvironmentError('helper_lost', `the desktop helper is gone: ${this.lostReason}`))
+    if (this.lost) return Promise.reject(new EnvironmentError('helper_lost', `the desktop helper is gone: ${this.lostReason}`, this.stopped ? { stopped: this.stopped } : undefined))
     if (this.hello === null) return Promise.reject(new EnvironmentError('helper_lost', 'the helper has not said hello'))
     try {
       checkRequest(type, fields)
@@ -448,16 +448,23 @@ export class HelperLink extends EventEmitter {
   /** End the link for `reason`; every waiting request rejects. Idempotent; the first reason wins. */
   lose(reason) {
     if (this.lostReason !== null) return
-    this.lostReason = reason
+    // CU-227: a helper its end watchdog stopped says so in a file (readStoppedMarker); the probe is set by the environment.
+    let stopped = null
+    if (!this.closedByUs && typeof this.stoppedProbe === 'function') {
+      try { stopped = this.stoppedProbe() } catch { stopped = null }
+    }
+    this.stopped = stopped
+    this.lostReason = stopped !== null ? stoppedText(stopped) : reason
+    reason = this.lostReason
     const code = this.closedByUs ? 'closed' : 'helper_lost'
     for (const [id, entry] of this.pending) {
       clearTimeout(entry.timer)
-      entry.reject(new EnvironmentError(code, code === 'closed' ? 'the helper link is closed' : `the desktop helper is gone: ${reason}`))
+      entry.reject(new EnvironmentError(code, code === 'closed' ? 'the helper link is closed' : `the desktop helper is gone: ${reason}`, stopped !== null ? { stopped } : undefined))
       this.pending.delete(id)
     }
     try { this.destroyTransport() } catch { /* already gone */ }
     // `lost` is a crash; `closed` (our own close) only tells a waiter such as `awaitHello` to stop waiting.
-    this.emit(this.closedByUs ? 'closed' : 'lost', { reason })
+    this.emit(this.closedByUs ? 'closed' : 'lost', { reason, ...(stopped !== null ? { stopped } : {}) })
   }
 
   /** Close the link from this side. */
@@ -510,6 +517,46 @@ export function awaitHello(link, { token, timeoutMs = HELLO_TIMEOUT_MS }) {
     else if (link.closedByUs) onClosed()
     else if (link.lost) onLost({ reason: link.lostReason })
   })
+}
+
+/**
+ * CU-227 (helper-boundary 0.3.8, row (b)): an end the helper could not finish is bounded by a watchdog that releases what
+ * is held, writes `stopped.json` beside the held-keys marker and exits 70. A helper started by LaunchServices is not the
+ * driver's child, so that file is how the driver learns it: `{ reason, released, at }`, read once when the link is lost.
+ * Resolves to `{ reason, released }` for a well-formed file written at or after `since` (less 5 s of clock slack), else
+ * null; a file it reads is removed, fresh or stale, so it can never speak for a later run.
+ */
+export function readStoppedMarker(path, { since = 0, now = Date.now() } = {}) {
+  let text
+  try {
+    const st = lstatSync(path)
+    if (!st.isFile() || st.size > 1024) return null
+    const fd = openSync(path, constants.O_RDONLY | constants.O_NOFOLLOW)
+    try {
+      const buffer = Buffer.alloc(st.size)
+      readSync(fd, buffer, 0, st.size, 0)
+      text = buffer.toString('utf8')
+    } finally {
+      closeSync(fd)
+    }
+  } catch {
+    return null
+  }
+  try { unlinkSync(path) } catch { /* already gone */ }
+  let parsed
+  try { parsed = JSON.parse(text) } catch { return null }
+  if (parsed === null || typeof parsed !== 'object') return null
+  const at = Date.parse(parsed.at)
+  if (!Number.isFinite(at) || at < since - 5000 || at > now + 60_000) return null
+  const reason = typeof parsed.reason === 'string' && /^[A-Za-z][A-Za-z0-9 _-]{0,63}$/.test(parsed.reason) ? parsed.reason : 'unknown'
+  const released = Number.isInteger(parsed.released) && parsed.released >= 0 && parsed.released <= 256 ? parsed.released : null
+  return { reason, released }
+}
+
+/** CU-227: what the model, the live view and the run record read when the helper's end watchdog stopped it. */
+export function stoppedText(stopped) {
+  const released = stopped.released === null ? 'released what it held' : `released ${stopped.released} held input${stopped.released === 1 ? '' : 's'}`
+  return `the helper stopped: its end watchdog fired (${stopped.reason}) after its orderly end did not finish, and ${released}`
 }
 
 /**
