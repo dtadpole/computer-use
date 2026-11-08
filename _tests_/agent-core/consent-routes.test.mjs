@@ -222,12 +222,12 @@ const ROWS = [
   // set, so a modifier variant is allowed where the plain key asks - CU Fixture's FocusButton presses on Shift-Space
   // (ConsentCells.swift). Rule decided by cu-developer-one (10:46Z): every variant family generous; variants measured
   // as no-ops become named over-asks. Todo until the fix; Control-Space is left out of the live set (input source).
-  ['shift-space-destructive', 'desktop', 'shiftSpace', 'deleteButton', 'delete', 'CU-234 (keyboardActivation)', 'no live row yet', 'todo CU-234'],
-  ['shift-space-checkbox', 'desktop', 'shiftSpace', 'deleteCheckbox', 'delete', 'CU-234 (keyboardActivation)', 'no live row yet', 'todo CU-234'],
-  ['option-space-destructive', 'desktop', 'optSpace', 'deleteButton', 'delete', 'CU-234 (keyboardActivation; over-ask if no-op)', 'no live row yet', 'todo CU-234'],
-  ['shift-backspace-list', 'desktop', 'shiftBackspace', 'messageTable', 'delete', 'CU-234 (CU-147 rule)', 'no live row yet', 'todo CU-234'],
-  ['option-backspace-list', 'desktop', 'optBackspace', 'messageTable', 'delete', 'CU-234 (CU-147 rule; over-ask if no-op)', 'no live row yet', 'todo CU-234'],
-  ['cmd-shift-d-sheet', 'desktop', 'cmdShiftDSheet', 'windowSheetUp', 'delete', 'CU-234 (CU-148 rule; over-ask if no-op)', 'no live row yet', 'todo CU-234'],
+  ['shift-space-destructive', 'desktop', 'shiftSpace', 'deleteButton', 'delete', 'CU-234 (keyboardActivation); measured acting in CU Fixture (20261108T105653Z-f6cd2b, a measurement)', 'no live row yet', 'todo CU-234'],
+  ['shift-space-checkbox', 'desktop', 'shiftSpace', 'deleteCheckbox', 'delete', 'CU-234 (keyboardActivation); measured acting in CU Fixture (20261108T105705Z-baca96, a measurement)', 'no live row yet', 'todo CU-234'],
+  ['option-space-destructive', 'desktop', 'optSpace', 'deleteButton', 'delete', 'CU-234 (keyboardActivation); a named over-ask - no press in CU Fixture (20261108T105658Z-694440, a measurement)', 'no live row yet', 'todo CU-234'],
+  ['shift-backspace-list', 'desktop', 'shiftBackspace', 'messageTable', 'delete', 'CU-234 (CU-147 rule); a named over-ask - no delete on a stock NSTableView (20261108T105949Z-4633cb, a measurement)', 'no live row yet', 'todo CU-234'],
+  ['option-backspace-list', 'desktop', 'optBackspace', 'messageTable', 'delete', 'CU-234 (CU-147 rule); a named over-ask - no delete on a stock NSTableView (20261108T105954Z-6964c3, a measurement)', 'no live row yet', 'todo CU-234'],
+  ['cmd-shift-d-sheet', 'desktop', 'cmdShiftDSheet', 'windowSheetUp', 'delete', 'CU-234 (CU-148 rule); a named over-ask - a stock NSAlert ignores it (20261108T110011Z-3091f4, a measurement)', 'no live row yet', 'todo CU-234'],
   ['long-press-destructive', 'desktop', 'longPress', 'deleteButton', 'delete', 'drag-press.test.mjs', "cu-verifier: a long press on Delete, no travel, declined delete (20261107T033148Z-e6a9d5); earlier cu-researcher run 022946Z-435ad5 (hold-delete)", null],
   ['drag-from-destructive', 'desktop', 'dragAway', 'deleteButton', 'delete', 'drag-press.test.mjs', '20261107T014522Z-727ccc (CU-140)', null],
   ['scroll', 'desktop', 'scroll', 'deleteButton', 'allow', 'not judged by design: no consent class changes on scroll', 'D-059 named limit: scroll is not judged', null],
