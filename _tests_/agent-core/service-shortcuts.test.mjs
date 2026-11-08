@@ -70,7 +70,7 @@ test('CU-249 through the loop: Command-Shift-L in a field with no menu read is r
 test('CU-249 click route: a Services item clicked in a menu is refused too - by the helper flag or a default service title', () => {
   const click = { type: 'click', x: 1, y: 1, button: 'left' }
   const at = (t) => policy.classify(click, { frontmostBundleId: FIXTURE, target: { origin: FIXTURE, fingerprint: 'm', ...t } })
-  for (const name of ['Search With Google', 'Get Result of AppleScript', 'Run as AppleScript', 'Make New Sticky Note', 'Send File To Bluetooth Device', 'Open man Page in Terminal', 'New Terminal at Folder', 'New Email With Selection', 'AirDrop']) {
+  for (const name of ['Search With Google', 'Get Result of AppleScript', 'Run as AppleScript', 'Make New Sticky Note', 'Send File To Bluetooth Device', 'Open man Page in Terminal', 'New Terminal at Folder', 'New Email With Selection', 'AirDrop', 'Set Desktop Picture', 'Add to Music as a Spoken Track', 'Capture Selection from Screen']) {
     const v = at({ role: 'AXMenuItem', name })
     assert.deepEqual([v.decision, v.rule], ['block', 'system_service'], name)
   }

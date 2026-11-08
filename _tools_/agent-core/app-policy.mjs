@@ -71,7 +71,7 @@ const SERVICE_SHORTCUTS = Object.freeze([
 // context menu - acts outside the approved app as its chord does. Known by the helper's servicesMenu flag where it
 // reports one, else by the default services' titles. Named over-ask: an app's own item titled like one (a browser's
 // 'Search With ...' context item); named limit: owner-installed services with other titles.
-const SERVICE_ITEM = /^(search with\b|get result of applescript|run as applescript|make (new )?sticky( note)?|send file to bluetooth device|open man page in terminal|search man page index in terminal|new terminal (tab )?at folder|new email with selection|airdrop$)/i
+const SERVICE_ITEM = /^(search with\b|get result of applescript|run as applescript|make (new )?sticky( note)?|send file to bluetooth device|open man page in terminal|search man page index in terminal|new terminal (tab )?at folder|new email with selection|airdrop$|set desktop picture|add to music as a spoken track|capture selection from screen)/i
 const serviceItem = (action, target) => CLICKS.has(action.type) && /^(ax)?menuitem$/i.test(String(target?.role ?? '')) &&
   (target?.servicesMenu === true || SERVICE_ITEM.test(String(target?.name ?? '').trim()))
 
