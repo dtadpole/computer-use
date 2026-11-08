@@ -113,10 +113,15 @@ test('CU-252 rule 3 through the loop: Finder\'s selectedItems is read for Comman
     const script = await run(async () => ({ bundleId: FINDER, items: [{ name: 'install.command', kind: 'file' }] }))
     assert.deepEqual([script.event.decision, script.event.class, script.sent], ['confirm', 'launch_code', 0])
     assert.ok(!script.json.includes('install.command'), 'no selected name in the run record')
+    // cu-verifier's ask: the judged open records the read's shape, counts by kind only.
+    assert.deepEqual(script.event.selectionRead, { items: 1, kinds: { file: 1 } })
     const doc = await run(async () => ({ bundleId: FINDER, items: [{ name: 'report.pdf', kind: 'file' }] }))
     assert.deepEqual([doc.event.decision, doc.sent], ['allow', 1])
     const older = await run(null)
     assert.deepEqual([older.event.decision, older.event.class, older.sent], ['confirm', 'launch_code', 0], 'a driver without the read asks')
+    assert.equal(older.event.selectionRead, undefined, 'no read, no shape')
+    const unread = await run(async () => null)
+    assert.deepEqual(unread.event.selectionRead, { unreadable: true })
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }
