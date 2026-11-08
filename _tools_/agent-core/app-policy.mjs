@@ -14,7 +14,8 @@ import { NEVER_PRE_APPROVED, createPolicy, namesPasswordField } from './policy.m
 const CLICKS = new Set(['click', 'double_click', 'triple_click'])
 const HUMAN_CHANNELS = ['live', 'tty', 'api']
 // The driver presses a shifted digit as Shift plus the digit, so `META+#` is `META+SHIFT+3`.
-const SHIFTED = Object.freeze({ '#': '3', $: '4', '%': '5', '^': '6' })
+// CU-249: '*' is Shift-8 (Command-* is Get Result of AppleScript).
+const SHIFTED = Object.freeze({ '#': '3', $: '4', '%': '5', '^': '6', '*': '8' })
 
 /** A keypress's keys as a set of canonical names, whatever the order or dialect; empty for other actions. */
 function chord(action) {
@@ -35,6 +36,8 @@ const SYSTEM_SHORTCUTS = Object.freeze([
   ['log out', ['META', 'SHIFT', 'Q']],
   ['lock screen', ['CTRL', 'META', 'Q']],
   ...['3', '4', '5', '6'].map((digit) => ['screenshot', ['META', 'SHIFT', digit]]),
+  // CU-242: listed before Spotlight, whose keys it contains, so the refusal names it (the first match names the chord).
+  ['Character Viewer', ['CTRL', 'META', 'SPACE']],
   ['Spotlight', ['META', 'SPACE']],
   ['Force Quit', ['META', 'ALT', 'ESCAPE']],
   ['app switcher', ['META', 'TAB']],
@@ -43,7 +46,49 @@ const SYSTEM_SHORTCUTS = Object.freeze([
   ['VoiceOver', ['META', 'F5']],
   // Keyboard focus to the menu bar, the Dock or the status menus reaches the Apple menu, other apps and menu extras.
   ...['F2', 'F3', 'F8'].map((key) => ['system keyboard focus', ['CTRL', key]]),
+  // CU-242 (cu-researcher): switching the input source changes the owner's keyboard layout past the run - an owner
+  // setting; Look Up (and the Character Viewer, above) are system panels over the app. Matched as a subset like every entry, so
+  // Control-Shift-Space (a common 'previous source' setting) is refused too.
+  ['input source', ['CTRL', 'SPACE']],
+  ['Look Up', ['CTRL', 'META', 'D']],
+  // CU-242 (cu-researcher, cu-coordinator 12:10Z): owner settings the system's hotkeys toggle - Dock hiding, keyboard
+  // access, Tab focus mode, and Zoom and Invert colours (refused whether or not the owner enabled them: fail closed).
+  ['Dock hiding', ['META', 'ALT', 'D']],
+  ['keyboard access', ['CTRL', 'F1']],
+  ['Tab focus mode', ['CTRL', 'F7']],
+  ['Invert colours', ['CTRL', 'ALT', 'META', '8']],
+  ['Zoom', ['ALT', 'META', '8']],
+  ['Zoom', ['ALT', 'META', '=']],
+  ['Zoom', ['ALT', 'META', '-']],
 ])
+
+// CU-249 (cu-researcher; cu-coordinator's ruling): the default macOS Services shortcuts the system apps declare
+// (NSServices NSKeyEquivalent). A service acts outside the approved app - a web search of the selection, a Bluetooth
+// send, AppleScript run on the selection, Terminal - so these chords are refused whatever the app binds: whether an
+// app's own item beats a Service in AppKit is unmeasured (a Medium follow-up). Matched exactly, as key equivalents are.
+// Named limit: owner-defined service shortcuts on other chords stay unseen (the menu read cannot list Services).
+const SERVICE_SHORTCUTS = Object.freeze([
+  ['Search With (a web search of the selection)', ['META', 'SHIFT', 'L']],
+  ['Make Sticky', ['META', 'SHIFT', 'Y']],
+  ['Send File To Bluetooth Device', ['META', 'SHIFT', 'B']],
+  ['Get Result of AppleScript (runs the selection)', ['META', 'SHIFT', '8']],
+  ['a Terminal man page service', ['META', 'SHIFT', 'M']],
+  ['a Terminal man page service', ['META', 'SHIFT', 'A']],
+])
+
+// CU-249 (cu-researcher's click route): a Services item clicked in a menu - the app menu's Services submenu or a
+// context menu - acts outside the approved app as its chord does. Known by the helper's servicesMenu flag where it
+// reports one, else by the default services' titles. Named over-ask: an app's own item titled like one (a browser's
+// 'Search With ...' context item); named limit: owner-installed services with other titles.
+const SERVICE_ITEM = /^(search with\b|get result of applescript|run as applescript|make (new )?sticky( note)?|send file to bluetooth device|open man page in terminal|search man page index in terminal|new terminal (tab )?at folder|new email with selection|airdrop$|set desktop picture|add to music as a spoken track|capture selection from screen)/i
+const serviceItem = (action, target) => CLICKS.has(action.type) && /^(ax)?menuitem$/i.test(String(target?.role ?? '')) &&
+  (target?.servicesMenu === true || SERVICE_ITEM.test(String(target?.name ?? '').trim()))
+
+/** The default Services shortcut a chord matches exactly, or null (CU-249). */
+export function serviceShortcut(action) {
+  const keys = chord(action)
+  return SERVICE_SHORTCUTS.find(([, needed]) => needed.length === keys.size && needed.every((key) => keys.has(key)))?.[0] ?? null
+}
 
 /** The name of the system shortcut a keypress would trigger, or null. */
 export function systemShortcut(action) {
@@ -242,6 +287,23 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     const shortcut = systemShortcut(action)
     if (shortcut !== null) {
       return { decision: 'block', class: null, rule: 'system_shortcut', reason: `${action.keys.join('+')} is the system's ${shortcut} shortcut; it acts beyond the approved app` }
+    }
+    // CU-249: a default Services chord may run a service outside the approved app - refused whatever the app binds.
+    const service = serviceShortcut(action)
+    if (service !== null) {
+      // Inside a file panel the panel's own refusal names the chord (Command-Shift-A is its Applications shortcut).
+      const panelBlock = panelKind(target) !== null ? panelVerdict(action, target, target?.origin ?? context.frontmostBundleId) : null
+      if (panelBlock?.decision === 'block') return panelBlock
+      return { decision: 'block', class: null, rule: 'system_shortcut', reason: `${action.keys.join('+')} may run the system service ${service}; it acts beyond the approved app` }
+    }
+    if (serviceItem(action, target)) {
+      return { decision: 'block', class: null, rule: 'system_service', reason: `"${String(target.name).trim()}" is a system service; it acts beyond the approved app` }
+    }
+    // A chord the menu read binds to a Services item fires that service too (cu-coordinator: as menu-key targets).
+    const boundList = context.boundMenuItem && typeof context.boundMenuItem === 'object' ? (Array.isArray(context.boundMenuItem.items) ? context.boundMenuItem.items : [context.boundMenuItem]) : []
+    const boundService = (action.type === 'keypress') ? boundList.find((one) => one?.servicesMenu === true || SERVICE_ITEM.test(String(one?.name ?? '').trim())) : undefined
+    if (boundService) {
+      return { decision: 'block', class: null, rule: 'system_service', reason: `${(action.keys ?? []).join('+')} fires the system service "${String(boundService.name).trim()}"; it acts beyond the approved app` }
     }
     // CU-232 (menu-key.md): a chord bound to an item of the Apple menu (Lock Screen, Log Out, Force Quit) acts beyond the
     // approved app, like the system's own shortcuts.

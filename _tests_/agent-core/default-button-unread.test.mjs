@@ -27,9 +27,10 @@ test('CU-190: an unread default button asks submit for a typed newline or a Retu
   }
 })
 
-test('CU-190: a read with no default button, or no read state (an older helper), keeps today\'s rule', () => {
+test('CU-190: a read with no default button keeps today\'s rule; D-069 - no read state at all asks, on the composed desktop path (CU-243)', () => {
   assert.equal(judge(NEWLINE, field({ defaultButton: null, defaultButtonRead: true })).decision, 'allow', 'read, none')
-  assert.equal(judge(NEWLINE, field({})).decision, 'allow', 'an older helper')
+  // CU-243: app-policy hands the class policy url 'desktop://'; the D-069 guard must fire there, not only under 'app:'.
+  for (const action of [NEWLINE, ENTER]) assert.deepEqual([judge(action, field({})).decision, judge(action, field({})).class], ['confirm', 'submit'], `no read state, ${action.type}`)
   const named = judge(NEWLINE, field({ defaultButton: { role: 'AXButton', name: 'Send', panel: null }, defaultButtonRead: true }))
   assert.equal(named.class, 'submit', 'a read button is judged by its name, as before')
   assert.doesNotMatch(named.reason, /could not be read/)
