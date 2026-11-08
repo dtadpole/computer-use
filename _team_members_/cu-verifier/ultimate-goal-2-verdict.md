@@ -17,7 +17,8 @@ grounded_in:
 Seven of nine rows hold live. Consent and safety does not hold yet. CU-209 and CU-223 closed live on 0.2.51, but red
 teaming found three more under-asks that block it (D-063): CU-230, a paste chord with Shift or Option (Urgent; fix on
 main, live rows next); CU-232, a chord that fires a consequential menu item such as Mail's Send (Urgent; in review);
-and CU-234, Shift-Space on a focused Delete button (in review). D-071 keeps every live run in the team's fixture apps
+and CU-234, Shift-Space on a focused Delete button (in review). CU-226, a key right after a click judged on the
+focus from before it, is suspected and being measured; it blocks only if the measurement shows a stale read. D-071 keeps every live run in the team's fixture apps
 until CU-230 and CU-232 are verified. D-061 has no open row; D-059's open cells are those three issues'. Then CU-135's
 Replace chain with the owner (#1). Human control waits for step 4 with the owner (CU-11). Runs sit on each claim's CU
 issue, re-proven by the [evidence audit](evidence-audit.md) (CU-53).
