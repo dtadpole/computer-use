@@ -60,7 +60,11 @@ function keyboardActivation(action, target, context = {}) {
   const keys = keysOf(action)
   if (keys.size === 0) return { activates: false, deletes: false }
   const button = BUTTON_ROLE.test(String(target?.role ?? ''))
-  const activates = keys.size === 1 && keys.has('SPACE') && CONTROL_ROLE.test(String(target?.role ?? ''))
+  // CU-234 (keyboard-activation.md): a variant is recognised generously - a miss is an under-ask, a recognised no-op only
+  // over-asks. Space with any of Shift, Option or Control presses a focused control (an app that handles Space itself,
+  // as CU Fixture's buttons do, presses on them); Command-Space is the system's.
+  const onlyWith = (main, allowed) => [...keys].every((key) => key === main || allowed.includes(key))
+  const activates = keys.has('SPACE') && onlyWith('SPACE', ['SHIFT', 'ALT', 'CTRL']) && CONTROL_ROLE.test(String(target?.role ?? ''))
   // CU-143 (live, 0.2.34): AppKit sends a key equivalent to the menu before the field editor, so even a plain
   // Command-Backspace in a focused text field fires the app's menu item bound to it (Finder's Move to Trash, Mail's
   // Delete) - Command-Backspace and Command-Delete, with any modifiers, are judged delete on every target.
@@ -68,10 +72,14 @@ function keyboardActivation(action, target, context = {}) {
   // keyboard navigation off (a default Mac) the focus is the sheet or its window, never the button. The helper reports
   // it (sheet); a Command-D right after Command-W or Command-Q in the batch is aimed at the sheet that close raises.
   const sheetUp = target?.sheet === true || context.afterClose === true
-  const deletes = keys.has('META') && ((keys.has('BACKSPACE') || keys.has('DELETE')) || (keys.size === 2 && keys.has('D') && (button || sheetUp)))
+  // CU-234: Command-D with Shift, Option or Control too presses the sheet's Don't Save.
+  const deletes = keys.has('META') && ((keys.has('BACKSPACE') || keys.has('DELETE')) || (keys.has('D') && onlyWith('D', ['META', 'SHIFT', 'ALT', 'CTRL']) && (button || sheetUp)))
   // CU-147: exactly Backspace or Delete on a focused collection - a list, table, outline, row or cell, not a text input
   // (a cell being edited is a text field) - removes the selection: Mail moves messages to the Trash with no dialog.
-  const removesSelection = keys.size === 1 && (keys.has('BACKSPACE') || keys.has('DELETE')) && COLLECTION_ROLE.test(String(target?.role ?? '')) && !TEXT_ROLE.test(String(target?.role ?? ''))
+  // CU-234: with Shift, Option or Control too (Shift-Backspace is deleteBackward: in the standard key bindings); with
+  // Command it is CU-143's delete above.
+  const deleteKey = keys.has('BACKSPACE') ? 'BACKSPACE' : keys.has('DELETE') ? 'DELETE' : null
+  const removesSelection = deleteKey !== null && onlyWith(deleteKey, ['SHIFT', 'ALT', 'CTRL']) && COLLECTION_ROLE.test(String(target?.role ?? '')) && !TEXT_ROLE.test(String(target?.role ?? ''))
   return { activates, deletes: deletes || removesSelection }
 }
 const SECRET = /\{\{secret:[a-z0-9_-]+\}\}/i
