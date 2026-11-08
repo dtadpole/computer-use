@@ -265,8 +265,12 @@ export async function runTask(options) {
   const start = now()
   let inactiveMs = 0
   let inactiveSince = null
+  // CU-274 (cu-developer-two's review): pauses and take-overs counted as they happen, so a pause and a resume both served
+  // while a judgement ran are still seen before the perform (a single state sample would read 'running' again).
+  let interrupts = 0
   const unsubscribeTime = control.subscribe((event) => {
     if (event.type !== 'state') return
+    if (event.state === 'paused' || event.state === 'taken_over') interrupts += 1
     const idle = event.state === 'paused' || event.state === 'taken_over'
     if (idle) { pasteboard.baseline = null; pasteboard.own = 0; pasteboard.sources = [] }
     // CU-64 D5: once the run pauses or the person takes over, the last pointer agent core sent may no longer be where the
@@ -964,6 +968,7 @@ export async function runTask(options) {
         logEvent('action', step, { index, action: redactAction(action), site: environment.site, status: 'failed', code, detail: String(error?.message ?? error).slice(0, 300), attempted: false, completed: false })
         continue
       }
+      const interruptsAtJudgement = interrupts
       let decision = policy.classify(judged, context)
       // CU-182: the site filter's verdict on the browser target's own origin at the moment the action is judged - so a
       // new_site approval later in this step, or later in the run, never names a target recorded before it.
@@ -1148,6 +1153,28 @@ export async function runTask(options) {
           logEvent('action', step, { ...base, status: 'failed', code, detail: String(scopeError?.message ?? '').slice(0, 300), attempted: false, completed: false })
           continue
         }
+      }
+      // CU-272 (cu-researcher; cu-coordinator: High, human control): a slow judgement blocks the event loop, so a Stop,
+      // pause or take-over sent meanwhile waits in the queue. Yield once so a queued control request is served, then
+      // re-check run control immediately before posting - a stopped run posts nothing, a paused one waits here.
+      // A timer turn then an immediate turn pass through every phase - due timers, pending I/O (a live-view or API
+      // request), then the check phase - whichever phase this step resumed in.
+      await new Promise((resolve) => setTimeout(resolve, 0))
+      await new Promise((resolve) => setImmediate(resolve))
+      const waitedBeforePerform = !control.agentMayAct() || interrupts !== interruptsAtJudgement
+      if (!(await control.checkpoint())) {
+        halt = 'cancelled'
+        Object.assign(result, { status: 'skipped', message: 'Not executed: the run was stopped.' })
+        logEvent('action', step, { ...base, status: 'skipped', reason: 'stopped_before_perform', attempted: false, completed: false })
+        continue
+      }
+      // A pause, take-over or local input landed here and the run resumed: the screen may have changed, so this action's
+      // judgement is stale - nothing posts, the batch ends and the model plans again from a fresh screenshot.
+      if (waitedBeforePerform) {
+        halt = 'batch'
+        Object.assign(result, { status: 'skipped', message: 'Not executed: the run was paused before this action; the screen may have changed.' })
+        logEvent('action', step, { ...base, status: 'skipped', reason: 'paused_before_perform', attempted: false, completed: false })
+        continue
       }
       logEvent('action', step, { ...base, status: 'attempted', attempted: true })
       const performStarted = now()
