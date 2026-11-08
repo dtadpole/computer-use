@@ -133,3 +133,43 @@ test('CU-268: a card or SSN in another script\'s digits reads as one - Arabic-In
   assert.equal(normaliseText(scriptDigits('2026', 0x0660)), '2026', 'a year stays a year')
   assert.equal(judged(desktop.classify({ type: 'type', text: scriptDigits('12', 0x0966) }, { frontmostBundleId: FIXTURE, target: notes })), 'allow')
 })
+
+// CU-268: a look-alike outside the fold table cannot be folded, so a word mixing scripts asks instead.
+const ARM_OH = String.fromCodePoint(0x0585) // Armenian small oh, drawn like o
+const ARM_VO = String.fromCodePoint(0x0578) // Armenian small vo, drawn like n
+
+test('CU-268: a control whose name has one word mixing scripts asks - desktop unknown_target each time, browser permission (never pre-approved)', () => {
+  const name = `Sh${ARM_OH}w details`
+  const d = desktop.classify(click, { frontmostBundleId: FIXTURE, target: button(name) })
+  assert.deepEqual([d.decision, d.class, d.rule, d.askEachTime], ['confirm', 'unknown_target', 'target:mixed_script', true])
+  const w = web.classify(click, { url: 'https://fixture.example/', target: { role: 'button', name } })
+  assert.deepEqual([w.decision, w.class, w.rule], ['confirm', 'permission', 'target:mixed_script'])
+  const enter = web.classify({ type: 'keypress', keys: ['ENTER'] }, { url: 'https://fixture.example/', target: { role: 'button', name } })
+  assert.equal(enter.class, 'permission', 'Return on it too')
+  for (const plain of ['Отправить', '日本語', 'Save 保存', 'Café', 'Show details']) {
+    assert.equal(judged(desktop.classify(click, { frontmostBundleId: FIXTURE, target: button(plain) })), 'allow', `desktop ${plain}`)
+    assert.equal(judged(web.classify(click, { url: 'https://fixture.example/', target: { role: 'button', name: plain } })), 'allow', `web ${plain}`)
+  }
+  assert.equal(judged(desktop.classify({ type: 'type', text: 'abc' }, { frontmostBundleId: FIXTURE, target: { origin: FIXTURE, role: 'AXTextField', name: `N${ARM_OH}tes`, editable: true, fingerprint: 'x', defaultButtonRead: true } })), 'allow', 'typing is no activation')
+})
+
+test('CU-268: a chord whose bound menu item mixes scripts asks unknown_target (cu-developer-one: a disguised Send in a menu)', () => {
+  const bound = { items: [{ role: 'AXMenuItem', name: `Se${ARM_VO}d`, keyEquivalent: { char: 'D', modifiers: 1 } }] }
+  const target = { origin: FIXTURE, role: 'AXTextArea', name: 'Message', editable: true, fingerprint: 'm', defaultButtonRead: true }
+  const v = desktop.classify({ type: 'keypress', keys: ['META', 'SHIFT', 'D'] }, { frontmostBundleId: FIXTURE, target, boundMenuItem: bound })
+  assert.deepEqual([v.decision, v.class, v.rule], ['confirm', 'unknown_target', 'menu:mixed_script'])
+  const plain = desktop.classify({ type: 'keypress', keys: ['META', 'SHIFT', 'D'] }, { frontmostBundleId: FIXTURE, target, boundMenuItem: { items: [{ role: 'AXMenuItem', name: 'Archive', keyEquivalent: { char: 'D', modifiers: 1 } }] } })
+  assert.equal(judged(plain), 'allow')
+})
+
+test('CU-268 through the loop: a click on a mixed-script control is declined unattended, nothing posted, and the record keeps the name only', async () => {
+  const control = createRunControl()
+  const environment = createFakeEnvironment({ kind: 'desktop', control })
+  environment.inspectPoint = async () => button(`Sh${ARM_OH}w details`)
+  const model = createScriptedAdapter({ frame: { width: 1440, height: 900 }, turns: [{ actions: [click] }, { final: 'done' }] })
+  const result = await runTask({ task: 'tidy up', environment, model, control, runsDirectory: join(tmp, 'runs'), build: { commit: 'test', dirty: false }, apps: [FIXTURE], appApprovals: store })
+  const action = readRun(result.trajectoryDir).events.find((e) => e.kind === 'action')
+  assert.deepEqual([action.decision, action.class, action.rule], ['confirm', 'unknown_target', 'target:mixed_script'])
+  assert.equal(environment.log.filter((x) => (x.action ?? x)?.type).length, 0)
+  assert.equal(Object.hasOwn(action.target ?? {}, 'mixedScriptName'), false)
+})

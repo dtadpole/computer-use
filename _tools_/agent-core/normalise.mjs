@@ -47,12 +47,29 @@ export function normaliseText(value) {
     .replace(LETTER_SPACED_RE, (run) => run.replaceAll(' ', ''))
 }
 
+/**
+ * CU-268: whether a name has one word mixing Latin letters with another script's letters, as a disguise outside the
+ * fold table would (an Armenian or Cherokee look-alike in 'Delete'). Read before the look-alike fold (NFKC and the
+ * invisible characters only), so a word wholly in one script stays one script ('Отправить' would fold into a mix); a
+ * name whose words are each in one script ('Save 保存') does not count either. Combining marks belong to their letter.
+ * normaliseTarget records it as mixedScriptName; the policies ask on it.
+ */
+export function mixedScriptWord(value) {
+  if (typeof value !== 'string' || value === '') return false
+  for (const [word] of value.matchAll(/[\p{L}\p{M}]+/gu)) {
+    const letters = [...word].filter((ch) => /\p{L}/u.test(ch))
+    if (letters.some((ch) => /\p{Script=Latin}/u.test(ch)) && letters.some((ch) => !/\p{Script=Latin}/u.test(ch))) return true
+  }
+  return false
+}
+
 // The string fields of a target that a rule reads by name.
 const TARGET_FIELDS = ['name', 'description', 'roleDescription', 'title', 'label', 'placeholder', 'caption', 'captionName', 'filename', 'url', 'autocomplete']
 
 export function normaliseTarget(target) {
   if (!target || typeof target !== 'object') return target
   const out = { ...target }
+  if (typeof target.name === 'string' && mixedScriptWord(target.name.normalize('NFKC').replace(INVISIBLE_RE, ''))) out.mixedScriptName = true
   for (const field of TARGET_FIELDS) if (typeof out[field] === 'string') out[field] = normaliseText(out[field])
   if (out.defaultButton && typeof out.defaultButton === 'object') out.defaultButton = { ...out.defaultButton, name: normaliseText(out.defaultButton.name) }
   if (Array.isArray(out.labels)) out.labels = out.labels.map(normaliseText)
