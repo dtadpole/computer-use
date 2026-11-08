@@ -20,3 +20,14 @@ test('CU-265: web schemes and no reported scheme keep today\'s judgement', () =>
   for (const scheme of ['http', 'https', 'javascript', 'about', undefined, '']) assert.equal(judge(click, scheme).decision, 'allow', String(scheme))
   assert.equal(judge({ type: 'scroll', x: 1, y: 1, dy: 3 }, 'tel').decision, 'allow', 'a scroll over it')
 })
+
+test('CU-265 on the desktop: an AXLink whose scheme the macos-desktop driver reports (#76) asks permission too; https stays free', async () => {
+  const { createAppPolicy } = await import('../../_tools_/agent-core/app-policy.mjs')
+  const app = 'ai.reflection.cu.fixture'
+  const desk = createAppPolicy({ scope: [app] })
+  desk.grantScope(app, { approved: true, answeredBy: 'api' })
+  const at = (linkScheme) => desk.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { frontmostBundleId: app, target: { origin: app, role: 'AXLink', name: 'Call Ann', fingerprint: 'l', linkScheme } })
+  for (const scheme of ['facetime', 'tel', 'mailto']) assert.deepEqual([at(scheme).decision, at(scheme).class], ['confirm', 'permission'], scheme)
+  assert.equal(at('https').decision, 'allow')
+  assert.equal(at(null).decision, 'allow', 'no scheme reported keeps today\'s judgement')
+})
