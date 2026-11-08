@@ -71,11 +71,13 @@ test('capture and input APIs live only in the live capabilities, behind the disp
   assert.match(code['SystemCapabilities.swift'], /SCContentFilter\(display: scDisplay, including: included\)/, 'a window-scoped filter, rebuilt per capture (0.4.6)')
   assert.match(code['SystemCapabilities.swift'], /CaptureScope\.approves\(sckBundleId: window\.owningApplication\?\.bundleIdentifier, appKitBundleId: owners\[window\.windowID\]\.flatMap \{ Accessibility\.bundleId\(pid: \$0\) \}/, 'each window owner checked by WindowServer pid through AppKit too')
   assert.doesNotMatch(code['SystemCapabilities.swift'], /including: apps|applicationName|kCGWindowOwnerName/, 'never an app-level or name match')
-  assert.match(code['Dispatcher.swift'], /if let grant = request\.grant, let check = request\.grantCheck, !grants\(\)\.has\(check\)/, 'the grant check precedes every call')
+  // CU-240: the gate reads the one grant it needs (re-read only after an earlier true) and refuses before the switch.
+  assert.match(code['Dispatcher.swift'], /if let grant = request\.grant, let check = request\.grantCheck \{\n\s+let outcome = checkGrant\(check\)\n\s+if !outcome\.granted \{\n\s+return refuse\(/, 'the grant check precedes every call')
+  assert.match(code['Dispatcher.swift'], /let outcome = GrantRecheck\.check\(seenTrue: seen, read: \{ capabilities\.grant\(name\) \}/, 'a gate re-reads only through GrantRecheck')
 })
 
 test('the boundary of D-029 is wired: peer check, one instance, indicator, the connect window', () => {
-  assert.match(code['main.swift'], /let grantsAtStart = Grants\.preflight\(\)\nlet boundary = options\.boundaryApplies\(grantsAtStart: grantsAtStart\)/)
+  assert.match(code['main.swift'], /let grantsAtStart = GrantRecheck\.settled\(read: \{ Grants\.preflight\(\) \}, sleep: \{ Thread\.sleep\(forTimeInterval: \$0\) \}\)\nlet boundary = options\.boundaryApplies\(grantsAtStart: grantsAtStart\)/)
   assert.match(code['main.swift'], /if options\.lockPath != nil && grantsAtStart\.any \{\n  fail\(/, 'a granted helper always takes the shared lock')
   assert.match(code['main.swift'], /let forcedUngranted = options\.simulateUngranted \|\| \(options\.mayHoldGrants && !boundary\)/, 'no grant at the start, none for the run')
   assert.match(code['main.swift'], /if boundary && !SingleInstance\.acquire\(at: options\.lockPath \?\? SingleInstance\.lockPath\)/)

@@ -533,6 +533,8 @@ describe('task routes, request log, targets and secrets', () => {
     const terminal = await (await fetch(at('/tasks/run-code-probe/terminal'))).text()
     assert.match(terminal, /<div class="terminal xterm" id="term"><textarea class="xterm-helper-textarea" aria-label="Terminal input"/, 'terminal')
     assert.match(terminal, /addEventListener\('paste', \(\) => ran\('paste'\)\)/, 'a paste counts as a run: the shell runs it')
+    assert.match(terminal, /\.xterm-helper-textarea\{[^}]*left:-9999em;top:0;width:0;height:0;z-index:-5/, "xterm.js's own helper-textarea CSS: zero size, off screen")
+    assert.match(terminal, /getElementById\('term'\)\.addEventListener\('mousedown', \(event\) => \{ event\.preventDefault\(\); document\.getElementById\('term-input'\)\.focus\(\) \}\)/, 'a press on the terminal focuses its helper textarea, as xterm.js does')
     const playground = await (await fetch(at('/tasks/run-code-probe/playground'))).text()
     assert.match(playground, /<div class="monaco-editor"><div class="editor" contenteditable="true" id="code"/, 'codeSurface')
     assert.match(playground, /<button data-run>Run<\/button> <button>Format<\/button>/)
