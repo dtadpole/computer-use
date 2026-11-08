@@ -77,6 +77,32 @@ function launchesCode(action, target) {
   return keys.has('META') && (keys.has('O') || keys.has('ARROWDOWN'))
 }
 
+// CU-252 (cu-researcher; menu-open.md note 0.1 on the issue): opening the SELECTION runs it too, and the loop reads no
+// selection. (1) In Finder, a click on a menu item named Open, or Command-O or Command-Down while the focus is not a
+// named file (a list, a column or icon view, nothing), asks launch_code: the selected file is unread. Named over-ask:
+// opening a document that way. (2) A menu item titled as an excluded runner (Open With > Terminal, Script Editor ...)
+// is refused anywhere: opening anything with it runs it outside the approved app.
+const FILE_BROWSERS = new Set(['com.apple.finder'])
+const OPEN_ITEM = /^open$/i
+const RUNNER_TITLES = /^(terminal|iterm2?|warp|ghostty|kitty|alacritty|hyper|wezterm|script editor|automator|shortcuts|alfred|raycast)$/i
+const isMenuItem = (target) => /^(ax)?menuitem$/i.test(String(target?.role ?? ''))
+function opensUnreadSelection(action, target, app) {
+  if (!FILE_BROWSERS.has(String(app ?? ''))) return false
+  if (CLICKS.has(action.type)) return isMenuItem(target) && OPEN_ITEM.test(String(target?.name ?? '').trim())
+  const keys = chord(action)
+  if (!(keys.has('META') && (keys.has('O') || keys.has('ARROWDOWN')))) return false
+  // A focused element that is itself a named file is judged by launchesCode on its own name.
+  const named = String(target?.name ?? '').trim() !== '' && !/^(ax)?(outline|table|browser|list|group|scrollarea|splitgroup|window)$/i.test(String(target?.role ?? ''))
+  return !named
+}
+const runnerItem = (action, target, context) => {
+  if (CLICKS.has(action.type) && isMenuItem(target) && RUNNER_TITLES.test(String(target?.name ?? '').trim())) return String(target.name).trim()
+  if (action.type !== 'keypress') return null
+  const bound = context.boundMenuItem && typeof context.boundMenuItem === 'object' ? (Array.isArray(context.boundMenuItem.items) ? context.boundMenuItem.items : [context.boundMenuItem]) : []
+  const hit = bound.find((one) => RUNNER_TITLES.test(String(one?.name ?? '').trim()))
+  return hit ? String(hit.name).trim() : null
+}
+
 const isKeyAction = (action) => action.type === 'type' || action.type === 'keypress'
 
 /** The service macOS draws open and save panels in (design file-panels.md, Q-D13). */
@@ -250,6 +276,11 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     if (shortcut !== null) {
       return { decision: 'block', class: null, rule: 'system_shortcut', reason: `${action.keys.join('+')} is the system's ${shortcut} shortcut; it acts beyond the approved app` }
     }
+    // CU-252 rule 2: a menu item titled as an excluded runner opens the selection in it, outside the approved app.
+    const runner = runnerItem(action, target, context)
+    if (runner !== null) {
+      return { decision: 'block', class: null, rule: 'excluded:terminal', reason: `"${runner}" opens the selection in an excluded app` }
+    }
     // CU-232 (menu-key.md): a chord bound to an item of the Apple menu (Lock Screen, Log Out, Force Quit) acts beyond the
     // approved app, like the system's own shortcuts.
     const bound = context.boundMenuItem
@@ -316,6 +347,9 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     // Never pre-approvable: preApprovals are not consulted. Only a hand-off (a password change) outranks it.
     if (launchesCode(action, target) && verdict.decision !== 'handoff') {
       return { decision: 'confirm', class: 'launch_code', classes: ['launch_code', ...(verdict.classes ?? [])], rule: 'target:launch_code', reason: `open "${target.name}", which runs code`, app }
+    }
+    if (opensUnreadSelection(action, target, app) && verdict.decision !== 'handoff') {
+      return { decision: 'confirm', class: 'launch_code', classes: ['launch_code', ...(verdict.classes ?? [])], rule: 'selection:launch_code', reason: 'open the selection, which this run cannot read - it may run code', app }
     }
     // CU-232 (menu-key.md): a chord whose menu item could not be read may fire whatever the app binds to it (Mail's Send
     // is Shift-Command-D), so it asks each time unless the keys already ask. The loop reads no item for the editing chords
