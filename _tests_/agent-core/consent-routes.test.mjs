@@ -155,6 +155,12 @@ const A = {
   typeHexKey0x: { type: 'type', text: '0x' + 'a3f1'.repeat(16) },
   typeSeedPhrase: { type: 'type', text: SEED_TWELVE },
   holdSpace: { type: 'hold_key', keys: ['SPACE'], duration_ms: 500 },
+  // CU-234 (chord sweep): modifier variants of the keys the table judges.
+  shiftSpace: { type: 'keypress', keys: ['SHIFT', 'SPACE'] },
+  optSpace: { type: 'keypress', keys: ['ALT', 'SPACE'] },
+  shiftBackspace: { type: 'keypress', keys: ['SHIFT', 'BACKSPACE'] },
+  optBackspace: { type: 'keypress', keys: ['ALT', 'BACKSPACE'] },
+  cmdShiftDSheet: { type: 'keypress', keys: ['META', 'SHIFT', 'D'] },
   longPress: { type: 'drag', path: [{ x: 1, y: 1, holdMs: 1700 }] },
   dragAway: { type: 'drag', path: [{ x: 1, y: 1 }, { x: 50, y: 50 }] },
   menuClick: { type: 'click', x: 1, y: 1, button: 'left' },
@@ -212,6 +218,16 @@ const ROWS = [
   ['web-reply-draft', 'browser', 'click', 'webReplyDraft', 'submit', 'reply-text-entered.test.mjs (#376)', "E8 restored draft (20261107T173851Z-5c85ab) and decoy (173856Z-ee8a95), real Chrome", null],
   ['web-reply-unknown', 'browser', 'click', 'webReplyUnknown', 'submit', 'reply-text-entered.test.mjs (#376)', "main 1de261e91, real Chrome: canvas Reply (#454) asks submit, 0 POSTs (20261107T192406Z-621ab4)", null],
   ['backspace-list-selection', 'desktop', 'backspace', 'messageTable', 'delete', 'collection-delete.test.mjs (#344)', '20261107T052028Z-9b1d7c (Drafts table, declined)', null],
+  // CU-234 (chord sweep for CU-145): Space activation, Backspace on a list and a sheet's Command-D key on an exact key
+  // set, so a modifier variant is allowed where the plain key asks - CU Fixture's FocusButton presses on Shift-Space
+  // (ConsentCells.swift). Rule decided by cu-developer-one (10:46Z): every variant family generous; variants measured
+  // as no-ops become named over-asks. Todo until the fix; Control-Space is left out of the live set (input source).
+  ['shift-space-destructive', 'desktop', 'shiftSpace', 'deleteButton', 'delete', 'CU-234 (keyboardActivation)', 'no live row yet', 'todo CU-234'],
+  ['shift-space-checkbox', 'desktop', 'shiftSpace', 'deleteCheckbox', 'delete', 'CU-234 (keyboardActivation)', 'no live row yet', 'todo CU-234'],
+  ['option-space-destructive', 'desktop', 'optSpace', 'deleteButton', 'delete', 'CU-234 (keyboardActivation; over-ask if no-op)', 'no live row yet', 'todo CU-234'],
+  ['shift-backspace-list', 'desktop', 'shiftBackspace', 'messageTable', 'delete', 'CU-234 (CU-147 rule)', 'no live row yet', 'todo CU-234'],
+  ['option-backspace-list', 'desktop', 'optBackspace', 'messageTable', 'delete', 'CU-234 (CU-147 rule; over-ask if no-op)', 'no live row yet', 'todo CU-234'],
+  ['cmd-shift-d-sheet', 'desktop', 'cmdShiftDSheet', 'windowSheetUp', 'delete', 'CU-234 (CU-148 rule; over-ask if no-op)', 'no live row yet', 'todo CU-234'],
   ['long-press-destructive', 'desktop', 'longPress', 'deleteButton', 'delete', 'drag-press.test.mjs', "cu-verifier: a long press on Delete, no travel, declined delete (20261107T033148Z-e6a9d5); earlier cu-researcher run 022946Z-435ad5 (hold-delete)", null],
   ['drag-from-destructive', 'desktop', 'dragAway', 'deleteButton', 'delete', 'drag-press.test.mjs', '20261107T014522Z-727ccc (CU-140)', null],
   ['scroll', 'desktop', 'scroll', 'deleteButton', 'allow', 'not judged by design: no consent class changes on scroll', 'D-059 named limit: scroll is not judged', null],
