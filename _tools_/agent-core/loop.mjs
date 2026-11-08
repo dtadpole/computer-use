@@ -505,8 +505,9 @@ export async function runTask(options) {
   // CU-232 (menu-key.md): a desktop chord with Command or Control held, or a function key, may be a menu item's key
   // equivalent, so the loop reads the items it would fire (environment.menuItemForChord: role, name, key equivalent only);
   // so do a plain Delete, Forward Delete or Escape when the focus is no text input (Mail's Delete is a plain Delete key
-  // equivalent - cu-researcher). The editing chords it already judges by their meaning - copy, cut, paste, select all,
-  // undo and redo, Command or Option arrows, the CU-143 delete chords - read nothing, so an unreadable bar never asks them.
+  // equivalent - cu-researcher). Every such chord takes the read, so an app that binds Command-Down to Delete is judged
+  // by it; only an unreadable bar spares the editing chords the loop already judges by their meaning - copy, cut, paste,
+  // select all, undo and redo, Command or Option arrows, the CU-143 delete chords (cu-verifier, cu-researcher).
   const FUNCTION_KEY = /^F([1-9]|1[0-2])$/
   const ARROW = /^ARROW(UP|DOWN|LEFT|RIGHT)$/
   const editingChord = (action) => {
@@ -526,7 +527,7 @@ export async function runTask(options) {
     const keys = keySetOf(action)
     if (keys === null) return false
     const plainOffText = keys.size === 1 && (keys.has('BACKSPACE') || keys.has('DELETE') || keys.has('ESCAPE')) && !isTextEntry(target)
-    return plainOffText || ((keys.has('META') || keys.has('CTRL') || [...keys].some((key) => FUNCTION_KEY.test(key))) && !editingChord(action))
+    return plainOffText || keys.has('META') || keys.has('CTRL') || [...keys].some((key) => FUNCTION_KEY.test(key))
   }
   // The driver's answer, kept to names: every bound item (the helper answers all matches, capped - a disabled benign first
   // match must not hide a consequential one; cu-researcher), a whole read with no match, or unreadable (also anything
@@ -692,9 +693,12 @@ export async function runTask(options) {
       : desktop && isCopy(action, target) ? { kind: 'copy', count: countOf(target) } : null
     // CU-232 (menu-key.md): the menu item the chord would fire, read beside the focused target. An environment without the
     // read (the browser, fakes) judges by the keys as before; a read that fails is unreadable, which app-policy asks.
-    const boundMenuItem = menuChord(action, target) && typeof environment.menuItemForChord === 'function'
+    const read = menuChord(action, target) && typeof environment.menuItemForChord === 'function'
       ? boundItemOf(await Promise.resolve(environment.menuItemForChord(action)).catch(() => null))
       : undefined
+    // An unreadable bar asks for any chord but the editing ones, which the keys already judge (named over-ask: a Control
+    // editing chord such as Control-K, unlisted, asks when the bar cannot be read).
+    const boundMenuItem = read?.unreadable === true && editingChord(action) ? undefined : read
     return { url: state.url, target: remembered(target), ...(boundMenuItem ? { boundMenuItem } : {}), ...(dropTarget ? { dropTarget: remembered(dropTarget) } : {}), ...(dragText !== undefined ? { dragText } : {}), ...(afterClose ? { afterClose: true } : {}), ...(resubmits ? { resubmits: historyMove } : {}), ...(historyJudged ? { historyJudged } : {}), ...(paste ? { paste } : {}), ...(pasteboardJudged ? { pasteboardJudged } : {}), ...(state.interstitial === true ? { interstitial: true } : {}), dialog: state.dialog ?? null, task: task.text, ...app }
   }
 

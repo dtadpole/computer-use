@@ -69,16 +69,24 @@ test('CU-232: a menu read that fails, throws or answers nothing usable asks (unk
   }
 })
 
-test('CU-232: the editing chords the loop judges by meaning read no item, so an unreadable bar never asks for them', async () => {
-  const editing = [key('META', 'A'), key('META', 'C'), key('META', 'X'), key('META', 'V'), key('META', 'ALT', 'SHIFT', 'V'), key('META', 'Z'), key('META', 'SHIFT', 'Z'), key('META', 'ARROWLEFT'), key('ALT', 'SHIFT', 'ARROWRIGHT'), key('META', 'SHIFT', 'ARROWDOWN')]
+test('CU-232: an unreadable bar never asks for the editing chords the loop judges by meaning - they are still read, so a consequential binding counts', async () => {
+  const editing = [key('META', 'A'), key('META', 'C'), key('META', 'X'), key('META', 'Z'), key('META', 'SHIFT', 'Z'), key('META', 'ARROWLEFT'), key('ALT', 'SHIFT', 'ARROWRIGHT'), key('META', 'SHIFT', 'ARROWDOWN')]
   const { events, asked } = await run(editing, { menu: () => ({ unreadable: true }) })
-  assert.deepEqual(asked, [], 'no read for any of them')
-  assert.ok(events.every((e) => e.rule !== 'menu:unreadable' && e.boundMenuItem === undefined), 'none asked for a menu it did not read')
+  assert.equal(events.length, editing.length, 'all were judged')
+  assert.deepEqual(asked.length, 7, 'every chord with Command took the read (Option-Shift-Right has neither Command nor Control)')
+  assert.ok(events.every((e) => e.decision === 'allow' && e.boundMenuItem === undefined), 'none asked for the unreadable bar')
+  // A paste chord keeps its own rules (the owner's board asks), never the unreadable bar's.
+  for (const paste of [key('META', 'V'), key('META', 'ALT', 'SHIFT', 'V')]) {
+    const [e] = (await run([paste], { menu: () => ({ unreadable: true }) })).events
+    assert.deepEqual([e.decision, e.class], ['confirm', 'sensitive_data'], paste.keys.join('+'))
+  }
+  // cu-researcher: an app may bind an editing chord to a consequential item.
+  assert.deepEqual(verdict((await run([key('META', 'ARROWDOWN')], { menu: () => item('Delete', null, 0) })).events[0]), ['confirm', 'delete'], 'Command-Down bound to Delete')
 })
 
 test('CU-232: typing, Shift or Option alone, and plain keys read no item; Command-Backspace stays CU-143\'s delete', async () => {
   const { events, asked } = await run([{ type: 'type', text: 'hello' }, key('SHIFT', 'A'), key('ALT', 'E'), key('ENTER'), key('META', 'BACKSPACE')], { menu: () => ({ unreadable: true }) })
-  assert.deepEqual(asked, [])
+  assert.deepEqual(asked, ['META+BACKSPACE'], 'only the Command chord took the read')
   assert.deepEqual(verdict(events[4]), ['confirm', 'delete'], 'Command-Backspace judged by its keys as before')
 })
 
