@@ -18,6 +18,15 @@ export function transientInput(error) {
   return error?.code === 'out_of_scope' && error?.details?.reason === 'target_unverified'
 }
 
+/**
+ * CU-240: a grant the helper saw true earlier in this run and re-read false (helper 0.2.56) - most likely a TCC read
+ * failing under load. A capture refused that way is retried once; input is never retried on it, since a grant really
+ * revoked mid-run is exactly when the agent must stop.
+ */
+export function transientGrant(error) {
+  return error?.code === 'not_granted' && error?.details?.wasGranted === true
+}
+
 /** True for a capture the driver dropped for a transient out-of-scope window. */
 export function transientCapture(error) {
   return error?.code === 'out_of_scope' && error?.details?.reason === 'capture_leak'

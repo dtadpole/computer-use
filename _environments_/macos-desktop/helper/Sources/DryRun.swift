@@ -87,6 +87,9 @@ final class DryRunCapabilities: Capabilities {
 
   private let lock = NSLock()
   private let declaredGrants: Grants
+  /// CU-240: `grantReads: {screen: [true, false, ...]}` - what successive single reads of a grant answer (the last
+  /// value repeats), to model a transient TCC false or a grant lost mid-run. Guarded by `lock`.
+  private var grantReads: [String: [Bool]]
   private let declaredDisplays: [DisplayInfo]
   /// Top-most first. Changed only by `coverAfter`, from `post`, on the input request's own thread.
   private var apps: [App]
@@ -111,6 +114,9 @@ final class DryRunCapabilities: Capabilities {
   private let declaredTextEntered: Bool?
   /// CU-187: the declared selection source (`selection`: {role, caption, bundleId, pid}), if the world says.
   private let declaredSelection: JSON?
+  /// CU-262: the focused collection's selection - `selectedItems: {role, items: [{filename?, url?, label?, value?}], unreadable?}`
+  /// (`selection` is the text selection's).
+  private let declaredSelectedItems: JSON?
   /// CU-203: the declared `confirmPress` - the press the owner would make on the confirmation prompt.
   private let declaredConfirmPress: [String: JSON]?
   private let declaredPanelSelection: PanelFields?
@@ -162,6 +168,7 @@ final class DryRunCapabilities: Capabilities {
   init(world: JSON, eventsOutPath: String?) throws {
     let grants = world.object?["grants"]?.object ?? [:]
     declaredConfirmPress = world.object?["confirmPress"]?.object
+    grantReads = (world.object?["grantReads"]?.object ?? [:]).mapValues { ($0.array ?? []).compactMap { $0.bool } }.filter { !$0.value.isEmpty }
     declaredGrants = Grants(screen: grants["screen"]?.bool ?? true, accessibility: grants["accessibility"]?.bool ?? true,
                             postEvents: grants["postEvents"]?.bool ?? true, listenEvents: grants["listenEvents"]?.bool ?? false)
     var displays: [DisplayInfo] = []
@@ -225,6 +232,7 @@ final class DryRunCapabilities: Capabilities {
     declaredMenuBarUnreadable = world.object?["menuKeyBarUnreadable"]?.bool ?? false
     declaredTextEntered = world.object?["textEntered"]?.bool
     declaredSelection = world.object?["selection"]
+    declaredSelectedItems = world.object?["selectedItems"]
     if let selection = world.object?["panelSelection"]?.object {
       declaredPanelSelection = PanelFields(directory: selection["directory"]?.string, fileName: selection["fileName"]?.string,
                                            shownFolderName: selection["shownFolderName"]?.string, nameFieldFocused: selection["nameFieldFocused"]?.bool)
@@ -293,6 +301,13 @@ final class DryRunCapabilities: Capabilities {
   }
 
   func grants() -> Grants { declaredGrants }
+
+  func grant(_ name: String) -> Bool {
+    lock.lock(); defer { lock.unlock() }
+    guard var reads = grantReads[name], let first = reads.first else { return declaredGrants.has(name) }
+    if reads.count > 1 { reads.removeFirst(); grantReads[name] = reads }
+    return first
+  }
   func displays() -> [DisplayInfo] { declaredDisplays }
 
   func running(_ bundleIds: [String]) -> [AppRef] {
@@ -548,6 +563,15 @@ final class DryRunCapabilities: Capabilities {
       let title = object["title"]?.string
       object["opaque"] = .bool((title ?? "").isEmpty && Accessibility.genericRoles.contains(object["role"]?.string ?? "AXUnknown"))
     }
+    // CU-250, by the live rule: a menu item declared with `menuLevels: [{holderTitle?, childTitles}]`, nearest first,
+    // gets its menuPath and servicesMenu from the same MenuContext (English strings - the dry run reads no AppKit table).
+    if object["role"]?.string == "AXMenuItem", let levels = object.removeValue(forKey: "menuLevels")?.array {
+      let parsed = levels.compactMap { level -> MenuContext.Level? in
+        guard let entry = level.object else { return nil }
+        return MenuContext.Level(holderTitle: entry["holderTitle"]?.string, childTitles: (entry["childTitles"]?.array ?? []).compactMap { $0.string })
+      }
+      for (key, value) in MenuContext.of(itemTitle: object["title"]?.string, levels: parsed, services: .english).json { object[key] = value }
+    }
     return (object["bundleId"]?.string, object)
   }
 
@@ -713,6 +737,20 @@ final class DryRunCapabilities: Capabilities {
 
   /// CU-235, by the live rule: the declared menu bar of the frontmost approved app, matched through MenuKey with a US
   /// layout (the dry run never reads the Mac's layout).
+  /// CU-262, by the live rule: the world's `selectedItems` is the frontmost approved app's focused collection (role
+  /// default AXOutline); absent, the focus is not a collection.
+  func selectedItems(scope: [String]) -> SelectedItems.Read {
+    guard let front = frontmost(), let bundleId = front.bundleId else { return .unreadable("no frontmost app") }
+    guard scope.contains(bundleId) else { return .unreadable("the frontmost app is not an approved app of this run") }
+    guard let declared = declaredSelectedItems?.object else { return .notCollection(bundleId: bundleId) }
+    let role = declared["role"]?.string ?? "AXOutline"
+    let items = declared["unreadable"]?.bool == true ? nil : (declared["items"]?.array ?? []).map { item in
+      // As live: `label` is an AXTitle/AXDescription; a declared `value` (an AXValue, owner content) is never a name.
+      SelectedItems.Raw(filename: item.object?["filename"]?.string, url: item.object?["url"]?.string, text: item.object?["label"]?.string)
+    }
+    return SelectedItems.read(bundleId: bundleId, focusedRole: role, selection: items)
+  }
+
   func menuKey(keyCode: Int, flags: UInt64, scope: [String]) -> MenuKey.Read {
     guard let front = frontmost(), let bundleId = front.bundleId else { return .unreadable("no frontmost app") }
     guard scope.contains(bundleId) else { return .unreadable("the frontmost app is not an approved app of this run") }
@@ -727,7 +765,9 @@ final class DryRunCapabilities: Capabilities {
         entries.append(MenuKey.Entry(title: title, path: here, enabled: object["enabled"]?.bool ?? true, cmdChar: object["char"]?.string,
                                      cmdModifiers: object["modifiers"]?.integer, cmdVirtualKey: object["virtualKey"]?.integer, cmdGlyph: object["glyph"]?.integer,
                                      appleMenu: apple))
+        let start = entries.count
         add(object["items"]?.array ?? [], path: here, apple: apple)
+        MenuKey.markServices(&entries, from: start, holderTitle: title, depth: here.count + 1, services: .english)
       }
     }
     for (index, menu) in menus.enumerated() {

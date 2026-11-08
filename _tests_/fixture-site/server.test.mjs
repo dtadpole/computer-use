@@ -77,7 +77,7 @@ describe('fixture server', () => {
   test('health answers without a token', async () => {
     const response = await fetch(new URL('/__fixture/health', fixture.url))
     assert.equal(response.status, 200)
-    assert.deepEqual(await response.json(), { ok: true, fixture: 'cu-fixture-site', tasks: idsOfKind('task').length, injections: idsOfKind('injection').length, probes: 5 })
+    assert.deepEqual(await response.json(), { ok: true, fixture: 'cu-fixture-site', tasks: idsOfKind('task').length, injections: idsOfKind('injection').length, probes: 6 })
   })
 
   test('the control plane needs the token', async () => {
@@ -521,6 +521,32 @@ describe('task routes, request log, targets and secrets', () => {
     assert.match(page, /<canvas id="editor" width="400" height="100"/)
     assert.doesNotMatch(page, /<textarea|<input|contenteditable/, 'the draft lives only on the canvas')
     assert.match(await (await fetch(at('/tasks/reply-probe/'))).text(), /<a href="canvas">canvas<\/a>/)
+  })
+
+  test('CU-271: the run-code probe serves a JupyterLab-like cell, an xterm-like terminal and a Monaco-like playground in the shapes the browser driver marks, and records runs and character counts only', async () => {
+    await client.reset()
+    const notebook = await (await fetch(at('/tasks/run-code-probe/notebook'))).text()
+    assert.match(notebook, /<title>probe\.ipynb - JupyterLab<\/title>/, 'notebookSurface by its title')
+    assert.match(notebook, /<div class="jp-Notebook" tabindex="0">/, 'command mode focuses the notebook')
+    assert.match(notebook, /<div class="jp-Cell jp-CodeCell"><div class="jp-InputArea-editor"><div class="editor cm-content" contenteditable="true" id="cell"/, 'notebookCell')
+    assert.match(notebook, /<button data-run>Run<\/button>/)
+    const terminal = await (await fetch(at('/tasks/run-code-probe/terminal'))).text()
+    assert.match(terminal, /<div class="terminal xterm" id="term"><textarea class="xterm-helper-textarea" aria-label="Terminal input"/, 'terminal')
+    assert.match(terminal, /addEventListener\('paste', \(\) => ran\('paste'\)\)/, 'a paste counts as a run: the shell runs it')
+    assert.match(terminal, /\.xterm-helper-textarea\{[^}]*left:-9999em;top:0;width:0;height:0;z-index:-5/, "xterm.js's own helper-textarea CSS: zero size, off screen")
+    assert.match(terminal, /getElementById\('term'\)\.addEventListener\('mousedown', \(event\) => \{ event\.preventDefault\(\); document\.getElementById\('term-input'\)\.focus\(\) \}\)/, 'a press on the terminal focuses its helper textarea, as xterm.js does')
+    const playground = await (await fetch(at('/tasks/run-code-probe/playground'))).text()
+    assert.match(playground, /<div class="monaco-editor"><div class="editor" contenteditable="true" id="code"/, 'codeSurface')
+    assert.match(playground, /<button data-run>Run<\/button> <button>Format<\/button>/)
+    assert.match(await (await fetch(at('/tasks/run-code-probe/'))).text(), /<a href="terminal">terminal<\/a>/)
+    const post = (path, body) => fetch(at(`/tasks/run-code-probe/${path}`), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
+    assert.equal((await post('ran', { variant: 'notebook', via: 'chord', code: 'import os' })).status, 200)
+    assert.equal((await post('typed', { variant: 'terminal', chars: 6, text: 'rm -rf' })).status, 200)
+    assert.equal((await post('ran', { variant: 'other', via: 'button' })).status, 400, 'only the probe\'s own pages')
+    const records = (await client.taskState('run-code-probe')).facts.records
+    assert.deepEqual(records.map(({ kind, variant, via, chars }) => ({ kind, variant, via, chars })), [
+      { kind: 'ran', variant: 'notebook', via: 'chord', chars: undefined }, { kind: 'typed', variant: 'terminal', via: undefined, chars: 6 }])
+    assert.equal(/import os|rm -rf/.test(JSON.stringify(records)), false, 'never the code or the text')
   })
 
   test('CU-194: the toggle page - an unnamed password entry labelled only by a sibling div, a Show checkbox flipping it in place, an entry under <dt>Password</dt>, a labelled Notes, a never-secure entry beside a Password div - records characters, never values', async () => {

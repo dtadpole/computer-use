@@ -16,6 +16,7 @@ final class SystemCapabilities: Capabilities {
   private var manualAccessibility = Set<pid_t>()
 
   func grants() -> Grants { Grants.preflight() }
+  func grant(_ name: String) -> Bool { Grants.preflight(name) }
 
   // MARK: Displays and apps (no grant; measured not to prompt)
 
@@ -155,6 +156,21 @@ final class SystemCapabilities: Capabilities {
   /// CU-235: the frontmost approved app's menu items this key down fires. The menu bar is walked fresh each time (role,
   /// title, enabled and the four key-equivalent attributes only, never a value); the characters are the current
   /// keyboard layout's for the key code, as AppKit matches them. Anything unread answers unreadable.
+  /// CU-262: the focused collection's selection - AXSelectedRows (outline, table), AXSelectedChildren (list, icon view),
+  /// or a browser's last column - each item's AXFilename, AXURL string and first text, bounded. No file-system call.
+  func selectedItems(scope: [String]) -> SelectedItems.Read {
+    guard AXIsProcessTrusted() else { return .unreadable("no Accessibility grant") }
+    guard let front = frontmost(), let bundleId = front.bundleId else { return .unreadable("no frontmost app") }
+    guard scope.contains(bundleId) else { return .unreadable("the frontmost app is not an approved app of this run") }
+    limitTimeouts()
+    guard let focused = Accessibility.elementAttribute(AXUIElementCreateApplication(front.pid), "AXFocusedUIElement") else {
+      return .unreadable("the focused element could not be read")
+    }
+    let role = Accessibility.string(focused, "AXRole")
+    guard let role, SelectedItems.collectionRoles.contains(role) else { return .notCollection(bundleId: bundleId) }
+    return SelectedItems.read(bundleId: bundleId, focusedRole: role, selection: SelectionRead.selection(of: focused, role: role))
+  }
+
   func menuKey(keyCode: Int, flags: UInt64, scope: [String]) -> MenuKey.Read {
     guard AXIsProcessTrusted() else { return .unreadable("no Accessibility grant") }
     guard let front = frontmost(), let bundleId = front.bundleId else { return .unreadable("no frontmost app") }
@@ -747,7 +763,10 @@ enum MenuWalk {
       // lazily), cannot be judged by a miss - except the Apple menu, the menu bar's first item (by position).
       if MenuKey.isEmptyMenu(role: role, depth: depth, childCount: children.count, underApple: apple) { emptyMenus.append(here.last ?? title ?? "") }
       // The menu bar's first item is the Apple menu (CU-232 contract point 4).
+      let start = entries.count
       for (index, child) in children.enumerated() where !walk(child, path: here, depth: depth + 1, apple: apple || (role == "AXMenuBar" && index == 0)) { return false }
+      // CU-250: the items of a submenu that is the Services menu are marked servicesMenu.
+      if role == "AXMenu" { MenuKey.markServices(&entries, from: start, holderTitle: path.last, depth: path.count + 1, services: .current) }
       return true
     }
     guard walk(menuBar, path: [], depth: 0, apple: false) else { return nil }
@@ -779,5 +798,58 @@ enum KeyLayout {
       let commandBit = command ? UInt32(cmdKey >> 8) & 0xFF : 0
       return (translate(commandBit), translate(commandBit | (UInt32(shiftKey >> 8) & 0xFF)))
     }
+  }
+}
+
+/// CU-262: the selected items of a focused collection, as raw names (filename, URL string, text). Nil when the
+/// selection cannot be read. At most SelectedItems.maxItems + 1 items are read (one more says truncated).
+enum SelectionRead {
+  static func selection(of collection: AXUIElement, role: String) -> [SelectedItems.Raw]? {
+    let selected: [AXUIElement]?
+    switch role {
+    case "AXOutline", "AXTable": selected = elements(collection, "AXSelectedRows")
+    case "AXBrowser":
+      // The last column holds the selection that Open acts on.
+      let columns = elements(collection, "AXColumns") ?? Accessibility.children(collection)
+      selected = columns.last.flatMap { column in firstList(in: column, depth: 0).flatMap { elements($0, "AXSelectedChildren") } }
+    default: selected = elements(collection, "AXSelectedChildren")
+    }
+    guard let selected else { return nil }
+    return selected.prefix(SelectedItems.maxItems + 1).map(raw)
+  }
+
+  static func elements(_ element: AXUIElement, _ name: String) -> [AXUIElement]? {
+    guard let value = Accessibility.attribute(element, name), CFGetTypeID(value) == CFArrayGetTypeID() else { return nil }
+    return (value as! [AnyObject]).compactMap { CFGetTypeID($0) == AXUIElementGetTypeID() ? ($0 as! AXUIElement) : nil }
+  }
+
+  static func firstList(in element: AXUIElement, depth: Int) -> AXUIElement? {
+    if Accessibility.string(element, "AXRole") == "AXList" { return element }
+    guard depth < 3 else { return nil }
+    for child in Accessibility.children(element).prefix(20) { if let list = firstList(in: child, depth: depth + 1) { return list } }
+    return nil
+  }
+
+  /// An item's own AXFilename and AXURL, else the first descendant (a row's cell, depth 3, 30 nodes) carrying either,
+  /// and the first label (AXTitle or AXDescription) - never an AXValue, which in a mail or notes list is the owner's
+  /// content (cu-verifier on #70).
+  static func raw(_ item: AXUIElement) -> SelectedItems.Raw {
+    var result = SelectedItems.Raw(filename: Accessibility.string(item, "AXFilename"), url: Accessibility.urlString(item), text: nil)
+    var queue: [(AXUIElement, Int)] = [(item, 0)]
+    var visited = 0
+    while !queue.isEmpty, visited < 30 {
+      let (node, depth) = queue.removeFirst()
+      visited += 1
+      if node != item {
+        if result.filename == nil { result.filename = Accessibility.string(node, "AXFilename") }
+        if result.url == nil { result.url = Accessibility.urlString(node) }
+      }
+      if result.text == nil {
+        result.text = Accessibility.string(node, "AXTitle").flatMap { $0.isEmpty ? nil : $0 } ?? Accessibility.string(node, "AXDescription").flatMap { $0.isEmpty ? nil : $0 }
+      }
+      if result.filename != nil, result.url != nil, result.text != nil { break }
+      if depth < 3 { queue += Accessibility.children(node).prefix(10).map { ($0, depth + 1) } }
+    }
+    return result
   }
 }

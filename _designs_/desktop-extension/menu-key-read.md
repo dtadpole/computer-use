@@ -1,9 +1,9 @@
 ---
 title: The helper's menu-key read
 created: 2026-11-08T11:55:00Z
-modified: 2026-11-08T12:06:00Z
+modified: 2026-11-08T17:00:00Z
 level: L1
-version: 0.2.0
+version: 0.4.0
 description: How CUHelper answers menuKey - which menu items of the frontmost approved app a key chord fires - from what AppKit serves Accessibility, and what that read cannot see.
 status: unverified
 grounded_in:
@@ -32,5 +32,16 @@ unreadable, never none. A later duplicate of an earlier item's key reads with no
 (CU-238): a key-less item whose non-zero modifiers equal the chord's, or a chord whose matches are all disabled, is
 unreadable too.
 
-**Not seen:** shortcuts in lazily filled submenus below the top level - Services shows Accessibility only 'No Services
-Apply' while its shortcuts stay hidden - and a later duplicate on Command alone behind an enabled first match.
+**Services (CU-250):** a hit or focused menu item carries `menuPath` (titles from the menu bar or a context menu's
+top, at most 10 levels) and `servicesMenu: true` when a submenu on the way is the Services menu; menuKey items carry
+the flag too. With no distinguishing attribute, the Services item counts by AppKit's own localized title, or by the
+marker AppKit puts in its submenu ('Services Settings…', 'No Services Apply'), in the current language or English.
+
+**Not seen:** shortcuts in lazily filled submenus below the top level (Services shows Accessibility only 'No Services
+Apply'), a later duplicate on Command alone behind an enabled first match, and the context menu's inline web search
+item (measured live, 162915Z-e311d6: 'Search With Google' sits in the top group, outside the Services submenu, judged
+by its title).
+
+**Named over-asks** (CU-232's live rows): a chord sharing its modifiers with a hidden duplicate asks, whatever its key;
+an item enabled since the menu last updated can read disabled (AppKit revalidates only in its own process), so a chord
+whose matches all read disabled asks.
