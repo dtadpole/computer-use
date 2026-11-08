@@ -502,6 +502,54 @@ export async function runTask(options) {
     return keys !== null && keys.has(letter) && (keys.has('META') || keys.has('CTRL')) && !keys.has('ALT')
       && [...keys].every((key) => key === letter || MODIFIER_KEYS.includes(key))
   }
+  // CU-232 (menu-key.md): a desktop chord with Command or Control held, or a function key, may be a menu item's key
+  // equivalent, so the loop reads the items it would fire (environment.menuItemForChord: role, name, key equivalent only);
+  // so do a plain Delete, Forward Delete or Escape when the focus is no text input (Mail's Delete is a plain Delete key
+  // equivalent - cu-researcher). Every such chord takes the read, so an app that binds Command-Down to Delete is judged
+  // by it; only an unreadable bar spares the editing chords the loop already judges by their meaning - copy, cut, paste,
+  // select all, undo and redo, Command or Option arrows, the CU-143 delete chords (cu-verifier, cu-researcher).
+  const FUNCTION_KEY = /^F([1-9]|1[0-2])$/
+  const ARROW = /^ARROW(UP|DOWN|LEFT|RIGHT)$/
+  const editingChord = (action) => {
+    const keys = keySetOf(action)
+    if (keys === null) return false
+    if (pasteChord(action) || chordOf(action, 'C') || chordOf(action, 'X')) return true
+    const main = [...keys].filter((key) => !MODIFIER_KEYS.includes(key))
+    if (main.length !== 1 || keys.has('CTRL')) return false
+    const [key] = main
+    if (key === 'A') return keys.size === 2 && keys.has('META')
+    if (key === 'Z') return keys.has('META') && !keys.has('ALT')
+    if (ARROW.test(key)) return true
+    return (key === 'BACKSPACE' || key === 'DELETE') && keys.has('META')
+  }
+  const menuChord = (action, target) => {
+    if (!desktop) return false
+    const keys = keySetOf(action)
+    if (keys === null) return false
+    const plainOffText = keys.size === 1 && (keys.has('BACKSPACE') || keys.has('DELETE') || keys.has('ESCAPE')) && !isTextEntry(target)
+    return plainOffText || keys.has('META') || keys.has('CTRL') || [...keys].some((key) => FUNCTION_KEY.test(key))
+  }
+  // The driver's answer, kept to names: every bound item (the helper answers all matches, capped - a disabled benign first
+  // match must not hide a consequential one; cu-researcher), a whole read with no match, or unreadable (also anything
+  // else). A single item is read as a list of one.
+  const MAX_BOUND_ITEMS = 8
+  const boundItemOf = (answer) => {
+    if (answer && typeof answer === 'object' && answer.none === true) return { none: true }
+    const listed = answer && typeof answer === 'object' ? (Array.isArray(answer.items) ? answer.items : typeof answer.name === 'string' ? [answer] : null) : null
+    // More matches than the cap could hide one, so that reads as unreadable too.
+    if (!listed || listed.length === 0 || listed.length > MAX_BOUND_ITEMS) return { unreadable: true }
+    const items = []
+    for (const one of listed) {
+      if (!one || typeof one !== 'object' || typeof one.name !== 'string' || one.name.trim() === '') return { unreadable: true }
+      const k = one.keyEquivalent && typeof one.keyEquivalent === 'object' ? one.keyEquivalent : null
+      const key = k ? { char: k.char ?? null, ...(k.glyph !== undefined ? { glyph: k.glyph } : {}), modifiers: k.modifiers ?? null } : null
+      // An item under the Apple menu (Lock Screen, Log Out, Force Quit) acts beyond the approved app: app-policy refuses it.
+      const appleMenu = one.appleMenu === true || (Array.isArray(one.path) && one.path[0] === 'Apple')
+      // Names only, capped as captions are (a Window or bookmarks item may carry a document's title); never the menu path.
+      items.push({ role: 'AXMenuItem', name: one.name.trim().slice(0, 80), ...(key ? { keyEquivalent: key } : {}), ...(typeof one.enabled === 'boolean' ? { enabled: one.enabled } : {}), ...(appleMenu ? { appleMenu: true } : {}) })
+    }
+    return items.length === 1 ? items[0] : { items }
+  }
   // CU-154: a menu item is known by its key equivalent (AXMenuItemCmdChar and its modifier mask: 0 Command only, +1 Shift,
   // +2 Option, +4 Control, +8 no Command) in any language; its English name is the fallback when none is reported.
   const menuClick = (action, target) => ['click', 'double_click', 'triple_click'].includes(action.type) && /^(ax)?menuitem$/i.test(String(target?.role ?? ''))
@@ -643,7 +691,15 @@ export async function runTask(options) {
         ? { kind: 'paste', count: countOf(target), baseline: pasteboard.baseline, copies: pasteboard.own, own: !paste.fromOwner, by: countOf(target) !== null && pasteboard.baseline !== null ? 'count' : 'history' }
         : { kind: 'paste', by: 'run-clipboard' })
       : desktop && isCopy(action, target) ? { kind: 'copy', count: countOf(target) } : null
-    return { url: state.url, target: remembered(target), ...(dropTarget ? { dropTarget: remembered(dropTarget) } : {}), ...(dragText !== undefined ? { dragText } : {}), ...(afterClose ? { afterClose: true } : {}), ...(resubmits ? { resubmits: historyMove } : {}), ...(historyJudged ? { historyJudged } : {}), ...(paste ? { paste } : {}), ...(pasteboardJudged ? { pasteboardJudged } : {}), ...(state.interstitial === true ? { interstitial: true } : {}), dialog: state.dialog ?? null, task: task.text, ...app }
+    // CU-232 (menu-key.md): the menu item the chord would fire, read beside the focused target. An environment without the
+    // read (the browser, fakes) judges by the keys as before; a read that fails is unreadable, which app-policy asks.
+    const read = menuChord(action, target) && typeof environment.menuItemForChord === 'function'
+      ? boundItemOf(await Promise.resolve(environment.menuItemForChord(action)).catch(() => null))
+      : undefined
+    // An unreadable bar asks for any chord but the editing ones, which the keys already judge (named over-ask: a Control
+    // editing chord such as Control-K, unlisted, asks when the bar cannot be read).
+    const boundMenuItem = read?.unreadable === true && editingChord(action) ? undefined : read
+    return { url: state.url, target: remembered(target), ...(boundMenuItem ? { boundMenuItem } : {}), ...(dropTarget ? { dropTarget: remembered(dropTarget) } : {}), ...(dragText !== undefined ? { dragText } : {}), ...(afterClose ? { afterClose: true } : {}), ...(resubmits ? { resubmits: historyMove } : {}), ...(historyJudged ? { historyJudged } : {}), ...(paste ? { paste } : {}), ...(pasteboardJudged ? { pasteboardJudged } : {}), ...(state.interstitial === true ? { interstitial: true } : {}), dialog: state.dialog ?? null, task: task.text, ...app }
   }
 
   let consecutiveBlocks = 0
@@ -920,7 +976,7 @@ export async function runTask(options) {
       const defaultBlind = desktop && pressesReturn && context.target?.defaultButton && !String(context.target.defaultButton.name ?? '').trim()
         && (!inTextArea || returnKeys.includes('META'))
       // The app a desktop decision names (bundle id only, trajectory privacy) makes refusals and hand-offs diagnosable.
-      const base = { index, action: record, ...(composedOf[index] ? { composedFrom: composedOf[index] } : {}), site: environment.site, decision: decision.decision, class: decision.class, rule: decision.rule, ...(decision.app ? { app: decision.app } : {}), ...(target ? { target } : {}), ...(blind ? { targetUnnamed: true } : {}), ...(dropBlind ? { dropTargetUnnamed: true } : {}), ...(defaultBlind ? { defaultButtonUnnamed: true } : {}), ...(context.historyJudged ? { history: context.historyJudged } : {}), ...(context.pasteboardJudged ? { pasteboard: context.pasteboardJudged } : {}), ...(context.target && (context.target.textEntered === true || context.target.textEntered === false || context.target.textEntered === null) ? { textEntered: context.target.textEntered } : {}) }
+      const base = { index, action: record, ...(composedOf[index] ? { composedFrom: composedOf[index] } : {}), site: environment.site, decision: decision.decision, class: decision.class, rule: decision.rule, ...(decision.app ? { app: decision.app } : {}), ...(target ? { target } : {}), ...(blind ? { targetUnnamed: true } : {}), ...(dropBlind ? { dropTargetUnnamed: true } : {}), ...(defaultBlind ? { defaultButtonUnnamed: true } : {}), ...(context.historyJudged ? { history: context.historyJudged } : {}), ...(context.pasteboardJudged ? { pasteboard: context.pasteboardJudged } : {}), ...(context.boundMenuItem ? { boundMenuItem: context.boundMenuItem } : {}), ...(context.target && (context.target.textEntered === true || context.target.textEntered === false || context.target.textEntered === null) ? { textEntered: context.target.textEntered } : {}) }
       if (decision.decision !== 'block') consecutiveBlocks = 0
 
       if (decision.decision === 'block') {
