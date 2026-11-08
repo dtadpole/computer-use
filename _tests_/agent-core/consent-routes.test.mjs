@@ -625,6 +625,7 @@ const SYS_A = {
   dragDrop: { type: 'drag', path: [{ x: 150, y: 112 }, { x: 620, y: 320 }] },
   f5: key('F5'),
   optCmdJ: key('META', 'ALT', 'J'),
+  cmdShiftU: key('META', 'SHIFT', 'U'),
 }
 const SYS_T = {
   field: { role: 'AXTextField', name: 'Notes', editable: true },
@@ -654,6 +655,8 @@ const SYSTEM_ROWS = [
   ['service-click-search-with', 'click', 'searchWithItem', 'block:system_service', 'service-shortcuts.test.mjs (#49, CU-249: a Services item clicked)', 'no live row yet', 'open CU-249'],
   ['service-click-run-applescript', 'click', 'appleScriptItem', 'block:system_service', 'service-shortcuts.test.mjs (#49, CU-249)', 'no live row yet', 'open CU-249'],
   ['service-click-set-desktop-picture', 'click', 'desktopPictureItem', 'block:system_service', "CU-249 (changes the owner's wallpaper)", 'no live row yet', 'open CU-249'],
+  // CU-250 (#56, on main): a chord bound to an owner-installed service - read with its servicesMenu mark - is refused.
+  ['service-chord-owner-installed', 'cmdShiftU', 'field', 'block:system_service', 'menu-key.test.mjs (#56: mark dropped)', 'no live row yet', 'open CU-250', { boundMenuItem: { items: [{ role: 'AXMenuItem', name: 'Weekly Report Uploader', keyEquivalent: { char: 'U', modifiers: 1 }, enabled: true, servicesMenu: true }] } }],
   ['service-chord-app-bound-over-refusal', 'cmdShiftA', 'field', 'block:system_shortcut', 'service-shortcuts.test.mjs (#49: refused even with an app item bound - a named over-refusal)', 'no live row yet', 'open CU-256', { boundMenuItem: { items: [{ role: 'AXMenuItem', name: 'Applications', keyEquivalent: { char: 'A', modifiers: 1 } }] } }],
   // CU-256's exception needs an ENABLED app item (Apple: the application's shortcut wins - a disabled one cannot fire, so
   // the keystroke may reach the service): with only a disabled app item bound the refusal stays, before and after the fix.
