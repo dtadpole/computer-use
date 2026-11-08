@@ -150,6 +150,46 @@ func testMenuKey() {
   check(elsewhere.ask("menuKey", ["keyCode": 2, "flags": .int(Int(cmd | shift))])["unreadable"] == true, "another app in front: unreadable, its menus are not read")
 }
 
+func testServicesMenu() {
+  // CU-250: a menu item says where it sits, and a submenu that is the Services menu flags every item under it.
+  let english = ServicesMenu.english
+  check(english.isServices(itemTitle: "Services", childTitles: []), "the Services item counts by its title")
+  check(english.isServices(itemTitle: "Dienste", childTitles: ["Text", "Services Settings\u{2026}"]), "or by AppKit's marker item in its submenu, whatever the holder's title")
+  check(!english.isServices(itemTitle: "Edit", childTitles: ["Copy", "Paste"]), "an ordinary submenu does not")
+  let german = ServicesMenu(titles: ["Services", "Dienste"], markers: english.markers.union(["Dienste-Einstellungen\u{2026}"]))
+  check(german.isServices(itemTitle: "Dienste", childTitles: []), "the current language's title, read from AppKit, counts too")
+  let services = MenuContext.Level(holderTitle: "Services", childTitles: ["Make New Sticky Note", "Weekly Report Uploader", "Services Settings\u{2026}"])
+  let inApp = MenuContext.of(itemTitle: "Weekly Report Uploader", levels: [services, MenuContext.Level(holderTitle: "CU Fixture", childTitles: ["About CU Fixture", "Services", "Quit CU Fixture"])], services: english)
+  check(inApp == MenuContext(path: ["CU Fixture", "Services", "Weekly Report Uploader"], servicesMenu: true), "an owner-installed service under the app menu's Services: flagged, with its path")
+  let inContext = MenuContext.of(itemTitle: "Make New Sticky Note", levels: [services, MenuContext.Level(holderTitle: nil, childTitles: ["Cut", "Copy", "Paste", "Services"])], services: english)
+  check(inContext == MenuContext(path: ["Services", "Make New Sticky Note"], servicesMenu: true), "a context menu's Services item: flagged, its path from the context menu's top")
+  let plain = MenuContext.of(itemTitle: "Copy", levels: [MenuContext.Level(holderTitle: "Edit", childTitles: ["Cut", "Copy", "Paste"])], services: english)
+  check(plain == MenuContext(path: ["Edit", "Copy"], servicesMenu: false) && plain.json["servicesMenu"] == nil, "an ordinary item: its path, no flag")
+  let deep = Array(repeating: MenuContext.Level(holderTitle: "More", childTitles: []), count: 14)
+  check(MenuContext.of(itemTitle: "Leaf", levels: deep, services: english).path.count == MenuContext.maxDepth + 1, "the path is capped at \(MenuContext.maxDepth) levels")
+  // Dry run: a declared menu item gets the same context on hitTest; menuKey items under Services are flagged.
+  let display: JSON = [["id": 1, "main": true, "originPt": ["x": 0, "y": 0], "sizePt": ["width": 800, "height": 600], "scale": 1]]
+  let rect: JSON = ["x": 100, "y": 100, "width": 400, "height": 300]
+  let serviceItem: JSON = ["bundleId": "ai.reflection.cu.fixture", "pid": 501, "role": "AXMenuItem", "title": "Weekly Report Uploader",
+                           "menuLevels": [["holderTitle": "Services", "childTitles": ["Weekly Report Uploader", "Services Settings\u{2026}"]], ["holderTitle": "CU Fixture", "childTitles": ["Services"]]]]
+  let editItem: JSON = ["bundleId": "ai.reflection.cu.fixture", "pid": 501, "role": "AXMenuItem", "title": "Copy", "menuLevels": [["holderTitle": "Edit", "childTitles": ["Copy"]]]]
+  let world: JSON = ["displays": display, "frontmost": "ai.reflection.cu.fixture", "apps": [["bundleId": "ai.reflection.cu.fixture", "pid": 501, "rect": rect]],
+                     "elements": [["rect": ["x": 110, "y": 110, "width": 50, "height": 20], "element": serviceItem], ["rect": ["x": 200, "y": 110, "width": 50, "height": 20], "element": editItem]],
+                     "menuKeyBar": [["title": "Apple", "items": []], ["title": "CU Fixture", "items": [["title": "Services", "items": [["title": "Search With Google", "char": "L", "modifiers": 1], ["title": "Services Settings\u{2026}"]]]]],
+                                    ["title": "Edit", "items": [["title": "Copy", "char": "C", "modifiers": 0]]]]]
+  let h = Harness(world)
+  _ = h.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
+  let hit = h.ask("hitTest", ["xPt": 120, "yPt": 115])["element"]?.object
+  check(hit?["servicesMenu"] == true && hit?["menuPath"] == ["CU Fixture", "Services", "Weekly Report Uploader"], "hitTest on a service: servicesMenu with its path")
+  check(hit?["menuLevels"] == nil, "the declared levels never reach the wire")
+  let copy = h.ask("hitTest", ["xPt": 210, "yPt": 115])["element"]?.object
+  check(copy?["servicesMenu"] == nil && copy?["menuPath"] == ["Edit", "Copy"], "hitTest on Edit > Copy: its path, no flag")
+  let cmd: UInt64 = 0x100000, shift: UInt64 = 0x20000
+  let google = h.ask("menuKey", ["keyCode": 37, "flags": .int(Int(cmd | shift))])["items"]?.array?.first?.object
+  check(google?["servicesMenu"] == true && google?["path"] == ["CU Fixture", "Services", "Search With Google"], "menuKey: a service's item carries servicesMenu")
+  check(h.ask("menuKey", ["keyCode": 8, "flags": .int(Int(cmd))])["items"]?.array?.first?.object?["servicesMenu"] == nil, "menuKey: Edit > Copy does not")
+}
+
 func testJSON() {
   let parsed = JSONCoding.decode(Data(#"{"a":true,"b":1,"c":1.5,"d":"x\ny","e":[null,false],"f":{"g":2}}"#.utf8))
   check(parsed?["a"] == .bool(true), "a boolean stays a boolean")
@@ -447,7 +487,7 @@ func button(_ kind: String, _ x: Int, _ y: Int) -> JSON { ["kind": .string(kind)
 func testDispatcherBasics() {
   let h = Harness(fixtureWorld)
   let hello = h.dispatcher.hello(token: "t0k")
-  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.52", "the hello opens the run")
+  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.53", "the hello opens the run")
   check(hello["mode"] == "dry-run" && hello["grants"] == ["screen": true, "accessibility": true, "postEvents": true, "listenEvents": false], "a dry-run hello says so, with all four grants")
   check(h.ask("capture", ["maxSize": size800])["code"] == "no_scope", "capture needs a scope")
   check(h.ask("input", ["events": [key("keyDown", 1)], "mode": "global"])["code"] == "no_scope", "input needs a scope")
@@ -1683,6 +1723,7 @@ struct UnitTests {
     testArguments()
     testPeerCheck()
     testMenuKey()
+    testServicesMenu()
     // Informational: whether the process that ran these tests is genuine node (true for Node.js Foundation builds).
     let parentIsNode = PeerCheck.satisfiesNodeRequirement(pid: getppid(), token: nil)
     print(JSON.object(["passed": .int(passed), "failed": .int(failures.count), "failures": .array(failures.map { .string($0) }), "parentIsGenuineNode": .bool(parentIsNode)]).text)
