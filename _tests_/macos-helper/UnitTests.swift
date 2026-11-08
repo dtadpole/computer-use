@@ -326,6 +326,16 @@ func testEndWatchdog() {
         "a drag in flight is cancelled with Escape before its button comes up (a bare up would drop it)")
   mirror.didPost(.up(.left, CGPoint(x: 40, y: 40), clickCount: 1, flags: 0))
   check(mirror.snapshot().buttons.isEmpty && !mirror.snapshot().dragged, "the button's up ends the drag in the copy")
+  // cu-researcher: the watchdog only tries the copy's lock; busy past the timeout, it falls back to the held-keys marker.
+  check(mirror.locked { mirror.trySnapshot(timeout: 0.05) } == nil, "a busy copy is not waited on past the try-lock's timeout")
+  check(mirror.trySnapshot(timeout: 0.05) != nil, "a free copy is read at once")
+  let markerFolder = NSTemporaryDirectory() + "cu-held-\(getpid())"
+  try? FileManager.default.createDirectory(atPath: markerFolder, withIntermediateDirectories: true)
+  HeldMarker.write(.object(["pid": .int(1), "keys": .array([.int(55)]), "buttons": .array([.string("left")])]), to: markerFolder + "/held-keys.json")
+  let fallback = HeldMirror.fromMarker(markerFolder + "/held-keys.json")
+  check(fallback.keys == [55] && fallback.buttons == [.left] && fallback.dragged, "the marker fallback names the held keys and buttons, a held button treated as a drag")
+  check(HeldMirror.fromMarker(nil).keys.isEmpty && HeldMirror.fromMarker(markerFolder + "/none.json").buttons.isEmpty, "no marker: nothing to release")
+  try? FileManager.default.removeItem(atPath: markerFolder)
   // The release runs on a second thread and is waited on for a bound only: a wedged post cannot keep the helper alive.
   let started = Date()
   let partial = EndWatchdog.boundedRelease(timeout: 0.2) { progress in

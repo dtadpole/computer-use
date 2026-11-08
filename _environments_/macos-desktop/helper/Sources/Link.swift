@@ -155,8 +155,10 @@ enum EndWatchdog {
   /// button the copy says is held - a synthetic modifier left down would turn the owner's own keystrokes into shortcuts.
   /// Keys come up in reverse, then buttons, where the pointer is. Preflight only (nothing can prompt); returns how many
   /// ups were posted.
-  static func releaseHeld(_ mirror: HeldMirror, progress: ReleaseProgress) {
-    let snapshot = mirror.snapshot()
+  static func releaseHeld(_ mirror: HeldMirror, progress: ReleaseProgress, markerPath: String?) {
+    // cu-researcher: the watchdog never blocks on the copy's lock - a try-lock for up to 100 ms, then the held-keys
+    // marker (a button held with no drag state known is treated as a drag, so Escape goes first).
+    let snapshot = mirror.trySnapshot(timeout: 0.1) ?? HeldMirror.fromMarker(markerPath)
     let steps = HeldMirror.releaseSteps(keys: snapshot.keys, buttons: snapshot.buttons, dragged: snapshot.dragged, at: SystemCapabilities.pointerNow())
     SystemCapabilities.postReleaseNow(steps, progress: progress)
   }
@@ -252,6 +254,32 @@ final class HeldMirror: @unchecked Sendable {
     os_unfair_lock_lock(&lock)
     defer { os_unfair_lock_unlock(&lock) }
     return (keys, buttons, dragged)
+  }
+
+  /// Runs `body` with the copy's lock held (the copy's own updates, and tests that need it busy).
+  func locked<T>(_ body: () -> T) -> T {
+    os_unfair_lock_lock(&lock)
+    defer { os_unfair_lock_unlock(&lock) }
+    return body()
+  }
+
+  /// The watchdog's read: the lock is only tried, for up to `timeout`; nil if it stayed busy.
+  func trySnapshot(timeout: TimeInterval) -> (keys: [UInt16], buttons: [MouseButton], dragged: Bool)? {
+    let deadline = Date().addingTimeInterval(timeout)
+    repeat {
+      if os_unfair_lock_trylock(&lock) {
+        defer { os_unfair_lock_unlock(&lock) }
+        return (keys, buttons, dragged)
+      }
+      usleep(1_000)
+    } while Date() < deadline
+    return nil
+  }
+
+  /// What the held-keys marker names, when the copy cannot be read; a held button counts as a drag.
+  static func fromMarker(_ path: String?) -> (keys: [UInt16], buttons: [MouseButton], dragged: Bool) {
+    guard let path, let marker = HeldMarker.read(path), !marker.released else { return ([], [], false) }
+    return (marker.keys, marker.buttons, !marker.buttons.isEmpty)
   }
 
   /// The Escape key, which cancels a drag in Finder and most AppKit drags.

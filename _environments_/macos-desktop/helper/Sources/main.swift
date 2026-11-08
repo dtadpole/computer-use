@@ -150,7 +150,7 @@ func endRun(_ reason: String) -> Never {
   EndWatchdog.arm(reason: reason) { why in
     // CU-227: release what is still held first - from the copy the dispatcher's locks do not guard, on a second thread,
     // waited on for about a second - then leave stopped.json for the driver (#130) and exit.
-    let released = EndWatchdog.boundedRelease { progress in EndWatchdog.releaseHeld(dispatcher.heldMirror, progress: progress) }
+    let released = EndWatchdog.boundedRelease { progress in EndWatchdog.releaseHeld(dispatcher.heldMirror, progress: progress, markerPath: dispatcherOptions.heldMarkerPath) }
     if let marker = dispatcherOptions.heldMarkerPath { StoppedMarker.write(reason: why, released: released, besideHeldMarker: marker) }
     note("end watchdog: '\(why)' did not finish within \(Int(EndWatchdog.bound)) s; released \(released); exit \(EndWatchdog.exitCode)")
     _exit(EndWatchdog.exitCode)
