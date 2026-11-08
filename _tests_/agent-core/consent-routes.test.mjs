@@ -88,6 +88,8 @@ const T = {
   fieldDefaultReplyNoText: { role: 'AXTextField', name: '', defaultButton: { role: 'AXButton', name: 'Reply' }, textEntered: false },
   // CU-148 (#342/#343): the helper reports sheet: true while a sheet is up, whatever holds the focus.
   windowSheetUp: { role: 'AXWindow', name: 'Untitled', sheet: true },
+  // CU-232: a compose body - the focus a mail app's Send key equivalent (Shift-Command-D) is pressed from.
+  composeBody: { role: 'AXTextArea', name: 'Message body', editable: true, defaultButton: null, defaultButtonRead: true },
   webDelete: { role: 'button', name: 'Delete' },
   // CU-175: what the browser driver judges for a click on a label or icon inside a control (see the driver-half test).
   webDeleteLabelled: { tag: 'button', role: 'button', name: 'Delete' },
@@ -141,6 +143,8 @@ const A = {
   cmdBackspace: { type: 'keypress', keys: ['META', 'BACKSPACE'] },
   cmdOptShiftBackspace: { type: 'keypress', keys: ['META', 'ALT', 'SHIFT', 'BACKSPACE'] },
   cmdD: { type: 'keypress', keys: ['META', 'D'] },
+  cmdShiftD: { type: 'keypress', keys: ['META', 'SHIFT', 'D'] },
+  cmdShiftK: { type: 'keypress', keys: ['META', 'SHIFT', 'K'] },
   backspace: { type: 'keypress', keys: ['BACKSPACE'] },
   cmdV: { type: 'keypress', keys: ['META', 'V'] },
   typeSpace: { type: 'type', text: ' ' },
@@ -200,6 +204,12 @@ const ROWS = [
   ['cmd-d-button', 'desktop', 'cmdD', 'okButton', 'delete', 'keyboard-activation.test.mjs', "consent-keys closeSheet, 0.2.42: Command-D on the sheet asked delete, sheet stayed open (20261107T180859Z-724b2e; also 181113Z-4ab57d, 181119Z-f8938f); an earlier combined run 180558Z-5975d2 allowed it with the sheet state unread", null],
   ['cmd-d-sheet-no-focus', 'desktop', 'cmdD', 'windowSheetUp', 'delete', 'sheet-dont-save.test.mjs (#342, #370)', '20261107T083425Z-4a5eb3 (no focusable button), -074411Z-2f170a (focused)', null],
   ['cmd-d-no-sheet', 'desktop', 'cmdD', 'sendField', 'allow', 'sheet-dont-save.test.mjs (#342)', "CU Fixture (#447), helper 0.2.42: Command-D in consent-keys' Message with no sheet allowed, no sheet after (20261107T194542Z-f57f09)", null],
+  // CU-232 (red team of CU-230): a chord that is a menu item's key equivalent fires the item (AppKit offers it to the
+  // menu bar first - CU-143), yet only Delete chords, a sheet's Command-D, Return and paste are judged by what they
+  // fire. context.boundMenuItem is the proposed field - the enabled item whose key equivalent matches, as the helper
+  // reads a clicked one (CU-154); the design note may rename it. Todo until the fix: today the chord is allowed.
+  ['menu-key-send', 'desktop', 'cmdShiftD', 'composeBody', 'submit', 'CU-232 (the chord judged as its bound item)', 'no live row yet', 'todo CU-232', { boundMenuItem: { role: 'AXMenuItem', name: 'Send', keyEquivalent: { char: 'D', modifiers: 1 } } }],
+  ['menu-key-benign', 'desktop', 'cmdShiftK', 'composeBody', 'allow', 'CU-232 negative (a benign bound item)', 'no live row yet', 'open CU-232', { boundMenuItem: { role: 'AXMenuItem', name: 'Clear Log', keyEquivalent: { char: 'K', modifiers: 1 } } }],
   // Accepted over-ask (cu-developer-one, cu-verifier): 'Reply' stays a submit word because a forum's or chat's Reply posts;
   // a button that only opens a composer is asked too (S8 x1, S2 x4, all composers). Escape hatch: submit@<bundle id>.
   ['reply-in-thread-over-ask', 'desktop', 'click', 'replyInThread', 'submit', 'policy submit words', "cu-verifier, chat-thread: text in the composer, a click on AXButton 'Reply in thread' declined submit (20261107T134726Z-325231); earlier cu-researcher run 080755Z-0c7c74 (preapproved)", null],
