@@ -4,7 +4,7 @@ decisions:
   - id: D-001
     date: 2026-11-01
     topic: authorization
-    decision: 'A [cu] team learns how computer use works in ChatGPT and builds our own computer-use agent in _projects_/this repository, with its own DSH workspace, team record and sessions. The setup session (session-<id>, in the heddle workspace) created the record and the sessions and hands coordination to the [cu] Coordinator.'
+    decision: 'A [cu] team learns how computer use works in ChatGPT and builds our own computer-use agent in _projects_/heddle/_projects_/computer-use, with its own DSH workspace, team record and sessions. The setup session (session-<id>, in the heddle workspace) created the record and the sessions and hands coordination to the [cu] Coordinator.'
     owner_statements:
       - 'Please learn about how computer-use on ChatGPT works, and implement our own computer-use in this repository.'
       - 'Please setup workspace, team and sessions, to push forward this work accordingly.'
@@ -227,7 +227,7 @@ decisions:
   - id: D-042
     date: 2026-11-05
     topic: cutover-done
-    decision: 'The cutover (CU-7) passed at 16:09 UTC: on dtadpole/computer-use main a7d6001a6 with CUHelper 0.2.14 installed signed from the new repo (requirement unchanged, grants kept, self-test 38/38), all 21 verifiers exit 0, verify-kit 101/101, and a scripted fixture run from ~/computer-use--cu-verifier passes with 18/18 events tagged from the helper (cu-verifier, /tmp/cu-verifier-proofs/cu7-gate-a7d6001a6.txt). From now every live run starts from ~/computer-use--<seat>; reflection''s _projects_/this repository code is no longer used. It is removed, leaving its pointer INDEX, once the DSH and heddle proofs (CU-15) pass from the new repo and the owner has the new install rows, so no owner configuration points at a removed path. Gaps between a batch''s checks and its runs are not reserved: a holder goes straight from check to run.'
+    decision: 'The cutover (CU-7) passed at 16:09 UTC: on dtadpole/computer-use main a7d6001a6 with CUHelper 0.2.14 installed signed from the new repo (requirement unchanged, grants kept, self-test 38/38), all 21 verifiers exit 0, verify-kit 101/101, and a scripted fixture run from ~/computer-use--cu-verifier passes with 18/18 events tagged from the helper (cu-verifier, /tmp/cu-verifier-proofs/cu7-gate-a7d6001a6.txt). From now every live run starts from ~/computer-use--<seat>; reflection''s _projects_/heddle/_projects_/computer-use code is no longer used. It is removed, leaving its pointer INDEX, once the DSH and heddle proofs (CU-15) pass from the new repo and the owner has the new install rows, so no owner configuration points at a removed path. Gaps between a batch''s checks and its runs are not reserved: a holder goes straight from check to run.'
     rationale: 'Records the cutover gate and orders the removal of the frozen copy after the owner-facing paths have moved.'
   - id: D-043
     date: 2026-11-05

@@ -1,35 +1,38 @@
 ---
 title: '[cu] Coordinator - handover'
 created: 2026-11-08T04:15:00Z
-modified: 2026-11-08T04:15:00Z
-version: 1.0.0
-description: 'What a fresh [cu] Coordinator session needs to take over the seat mid-flight.'
+modified: 2026-11-08T10:00:00Z
+version: 2.0.0
+description: 'What a fresh [cu] Coordinator session needs to take over the seat mid-flight, after the 8 Nov repository replacement.'
 grounded_in:
-  - source: owner request relayed by hd-coordinator 2026-11-08T04:09Z (sessions to move to a DSH workspace on ~/dtadpole/this repository)
+  - source: owner's order of 2026-11-08 via hd-coordinator (scrub and replace dtadpole/computer-use; re-home the seats into workspace b40a6ee8)
 ---
 
 # [cu] Coordinator - handover
 
-**Goal.** ULTIMATE_GOAL 2.0 (desktop computer use on native macOS); complete only when cu-verifier judges every row passing.
-Verdict 0.9.34: seven of nine rows hold live. Two remain:
+**Repository (8 Nov).** This public repository replaced the old one: one root commit `6314c0c`, code and records
+together, history private in dtadpole/computer-use-history (old checkout `~/dtadpole/computer-use-history`, its
+pre-push hook refuses this repository). Main checkout `~/dtadpole/heddle/_projects_/computer-use` (DSH workspace
+"dtadpole/heddle · computer-use"); seat worktrees `~/computer-use--<seat>`, the paths the installed helper admits.
+The live roster `TEAM.yaml` (session ids), the member-review log and the re-home record stay private in the
+reflection checkout `~/dtadpole/reflection/_projects_/computer-use/`, edited from a reflection worktree by PR.
 
-- **Consent and safety** - blocked by open High/Urgent under-asks under CU-145 / CU-171 (D-063 bar). The D-059 and
-  D-061 tables are re-signed (#553, meta 289/0/0, D-064/D-065/D-069).
-- **Human control** - needs the owner session: step 4 (CU-11), G2 (CU-119), CU-135's real-panel chain (#313).
-  Two modes (owner-checklist.md): in person with confirmPhysical (CU-203, ~15 min, needs helper 0.2.50 installed)
-  or over Screen Sharing with 5-minute hands-off starts (~25 min).
+**Public hygiene.** Every push passes `node ~/dtadpole/heddle/_tools_/public-hygiene/gate.mjs --range
+origin/main..HEAD`; cu-integrator lands code and records PRs. Before a release-like change, hd's
+`verify-publication.py` (seven checks) is the reference.
 
-**Every 15 minutes** (schedule prompt): inbox, health/supervise (revive stalled seats; renew goals near 230 rounds),
-Linear triage (`/tmp/cu-coord/lin.py`; Urgent/High under-asks block CU-16), one review in roster order
-(`execution-review-log.jsonl`), decisions into `decision-log.yaml` (last D-069), land with `/tmp/cu-coord/land.sh`,
-Chinese summary to the owner with the session ask and the checklist link.
+**Goal.** ULTIMATE_GOAL 2.0; complete only when cu-verifier judges every row passing. Verdict 0.9.34: seven of nine
+rows hold live. Consent and safety waits on open High/Urgent under-asks (CU-145 / CU-171, D-063); human control
+waits on the owner session (step 4 CU-11, G2 CU-119, CU-135's real-panel chain) - in person with confirmPhysical
+(~15 min, helper 0.2.51 installed) or over Screen Sharing with 5-minute hands-off starts (~25 min).
 
-**Rules that bite.** Synthetic input only through CUHelper (D-056, no exceptions); owner-idle rule follows input
-(D-066, D-068: no TTY/env exemption, only a hardware Confirm click); only cu-verifier sets Done; records PRs are
-landed by their author; never read ~/.dsh, ~/Library or home folders.
+**Every 15 minutes.** Inbox (`python3 ~/dtadpole/reflection/_tools_/session-inbox/session-inbox.py check|read
+--roster ~/dtadpole/reflection/_projects_/computer-use/TEAM.yaml --me cu-coordinator`), supervise and revive with
+`~/dtadpole/reflection/_tools_/session-relay/session-relay.py`, renew goals near 230 rounds, Linear triage, one
+member review, decisions into `_context_/team-operations/decision-log.yaml` (last D-069), a Chinese summary to the owner.
 
-**Owner items.** A time and mode for the owner session; dismiss two notification alerts; quit Typeless; the Mac-wide
-paste setting (D-052); GitHub app; initiative scope; say 继续 to rearm the coordinator goal.
+**Rules that bite.** Synthetic input only through CUHelper (D-056); the owner-idle rule follows input (D-066,
+D-068); only cu-verifier sets Done; never read ~/.dsh, ~/Library or home folders.
 
-**Paths.** Records `~/reflection--cu-coordinator/_projects_/computer-use/`; code main checkout
-`~/dtadpole/this repository` (symlink `~/computer-use`), seat worktrees `~/computer-use--<seat>`.
+**Owner items.** A time and mode for the owner session; dismiss two notification alerts; quit Typeless; the
+Mac-wide paste setting (D-052); connect the new repository to Linear's GitHub app; initiative scope.
