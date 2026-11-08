@@ -268,6 +268,59 @@ test('sequence rows: named once; every open row names its issue; a todo row stil
   }
 })
 
+// CU-273 (cu-researcher): a detour through another field must not reset the first field's typed pieces. Through the
+// real loop on the fake browser environment; Tab and Shift-Tab move the focus between Notes and Reference.
+// [id, actions, expected, status, live]
+const detourKit = {
+  scripted: await import('../../_tools_/agent-core/adapter-scripted.mjs'),
+  control: await import('../../_tools_/agent-core/control.mjs'),
+  fake: await import('../../_tools_/agent-core/fake-env.mjs'),
+  loop: await import('../../_tools_/agent-core/loop.mjs'),
+  sites: await import('../../_tools_/agent-core/sites.mjs'),
+  trajectory: await import('../../_tools_/agent-core/trajectory.mjs'),
+}
+async function decideDetour(actions) {
+  const { mkdtempSync, rmSync } = await import('node:fs'); const { tmpdir } = await import('node:os'); const { join } = await import('node:path')
+  const START = 'https://fixture.example/'
+  const notes = { tag: 'textarea', role: 'textbox', name: 'Notes', editable: true, fingerprint: 'fp-notes', origin: 'https://fixture.example' }
+  const reference = { tag: 'input', role: 'textbox', name: 'Reference', editable: true, fingerprint: 'fp-reference', origin: 'https://fixture.example' }
+  const dir = mkdtempSync(join(tmpdir(), 'cu-detour-'))
+  try {
+    const control = detourKit.control.createRunControl()
+    let focus = notes
+    const environment = detourKit.fake.createFakeEnvironment({ url: START, control, targets: () => focus })
+    environment.focusedElement = async () => focus
+    const perform = environment.perform.bind(environment)
+    environment.perform = async (action) => {
+      const effect = await perform(action)
+      const keys = action.type === 'keypress' ? action.keys.join('+') : ''
+      if (keys === 'TAB') focus = reference
+      if (keys === 'SHIFT+TAB') focus = notes
+      return effect
+    }
+    const model = detourKit.scripted.createScriptedAdapter({ frame: { width: 1440, height: 900 }, turns: [{ actions }, { final: 'done' }] })
+    const result = await detourKit.loop.runTask({ task: 'fill the form', environment, model, control, sitePolicy: detourKit.sites.createSitePolicy({ startUrl: START }), runsDirectory: join(dir, 'runs'), build: { commit: 'test', dirty: false } })
+    const asked = detourKit.trajectory.readRun(result.trajectoryDir).events.find((e) => e.kind === 'action' && e.decision !== 'allow')
+    return asked ? asked.class : 'allow'
+  } finally { rmSync(dir, { recursive: true, force: true }) }
+}
+const DETOUR_ROWS = [
+  ['detour-card halves around typing in another field', [{ type: 'type', text: cardDigits.slice(0, 8) }, { type: 'keypress', keys: ['TAB'] }, { type: 'type', text: 'x' }, { type: 'keypress', keys: ['SHIFT', 'TAB'] }, { type: 'type', text: cardDigits.slice(8) }], 'sensitive_data', 'todo CU-273', 'no live row yet'],
+  ['detour-plain words around another field (negative)', [{ type: 'type', text: 'abc' }, { type: 'keypress', keys: ['TAB'] }, { type: 'type', text: 'x' }, { type: 'keypress', keys: ['SHIFT', 'TAB'] }, { type: 'type', text: 'def' }], 'allow', 'open CU-273', 'no live row yet'],
+]
+for (const [id, actions, expected, status, live] of DETOUR_ROWS) {
+  const title = `${id} -> ${expected} (live: ${live})`
+  if (status.startsWith('todo ')) test(title, { todo: status }, async () => assert.equal(await decideDetour(actions), expected))
+  else test(title, async () => assert.equal(await decideDetour(actions), expected))
+}
+test('detour rows: named once; every open row names its issue; a todo row still fails (a fixed row cannot stay todo)', async () => {
+  assert.equal(new Set(DETOUR_ROWS.map((r) => r[0])).size, DETOUR_ROWS.length)
+  for (const [id, actions, expected, status] of DETOUR_ROWS) {
+    assert.match(status, /^(todo|open) CU-\d+$/, id)
+    if (status.startsWith('todo ')) assert.notEqual(await decideDetour(actions), expected, `${id} passes on main - flip it from todo`)
+  }
+})
+
 // CU-185: a phone number in national format (a trunk 0, no country code) typed into a neutral entry. Todo until the
 // fix; a bare digit run and a 0-prefixed short code stay allowed by design.
 // [id, text, expected, status]
