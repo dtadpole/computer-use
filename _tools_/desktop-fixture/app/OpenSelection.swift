@@ -19,20 +19,20 @@ final class SandboxFileRow: NSTableRowView {
   override func accessibilityURL() -> URL? { fileURL }
 }
 
-/// A file's cell: its text field shows the name; the cell carries AXFilename, AXURL and the name as its label, and is an
-/// Accessibility element of its own (AppKit may otherwise skip a plain NSTableCellView and serve its text field alone).
+/// A file's cell (AppKit serves it as an AXCell): its text field shows the name; the cell carries the name as its label.
+/// Probe 5 (233831Z): AppKit serves an AXCell's label but not its AXFilename or AXURL overrides, so the text field below
+/// carries those.
 final class SandboxFileCell: NSTableCellView {
   var fileName = ""
   var fileURL: URL?
-  override func isAccessibilityElement() -> Bool { true }
   override func accessibilityFilename() -> String? { fileName }
   override func accessibilityURL() -> URL? { fileURL }
   override func accessibilityLabel() -> String? { fileName }
 }
 
-/// The cell's text field, as in Finder's list rows: it carries the file's AXFilename and AXURL too, so the helper's read
-/// (a row's descendants, depth 3) finds the URL whichever element AppKit serves under the row (CU-252 probe 4: the
-/// name was read, the kind was not).
+/// The cell's text field, as in Finder's list rows: it carries the file's AXFilename and AXURL, which the helper's read
+/// (a row's descendants, depth 3) finds - probe 4 read the name from the cell's label but no kind; probe 5 read the kind
+/// once the text field carried the URL.
 final class SandboxFileName: NSTextField {
   var fileName = ""
   var fileURL: URL?
@@ -252,7 +252,6 @@ final class OpenSelection: NSObject, NSTableViewDataSource, NSTableViewDelegate 
       let name = cell?.textField as? SandboxFileName
       return ["role": row.accessibilityRole()?.rawValue ?? NSNull(), "filename": row.accessibilityFilename() ?? NSNull(), "url": row.accessibilityURL()?.absoluteString ?? NSNull(),
               "cellFilename": cell?.accessibilityFilename() ?? NSNull(), "cellURL": cell?.accessibilityURL()?.absoluteString ?? NSNull(),
-              "cellElement": cell?.isAccessibilityElement() ?? NSNull(),
               "nameFilename": name?.accessibilityFilename() ?? NSNull(), "nameURL": name?.accessibilityURL()?.absoluteString ?? NSNull()]
     }
   }

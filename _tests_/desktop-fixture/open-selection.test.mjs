@@ -43,11 +43,11 @@ describe('open-selection (CU-252, CU-269 stand-in)', () => {
       await fixture.act({ sandboxSelect: ['install.command', 'Payload.app'] })
       const { rows } = await fixture.call('sandboxAX')
       // AppKit's own row element is not the row view (its role reads AXUnknown in process; CU-252): the row view, its
-      // cell (an element of its own) and the cell's text field all carry the file name and URL, as the helper's read
-      // walks a row's descendants.
+      // cell and the cell's text field all carry the file name and URL; across processes AppKit serves the text field's
+      // (probe 5), which the helper's read finds among a row's descendants.
       assert.deepEqual(rows.map(({ role, ...rest }) => rest), [
-        { filename: 'install.command', url: 'file:///tmp/cu-fixture-sandbox/install.command', cellFilename: 'install.command', cellURL: 'file:///tmp/cu-fixture-sandbox/install.command', cellElement: true, nameFilename: 'install.command', nameURL: 'file:///tmp/cu-fixture-sandbox/install.command' },
-        { filename: 'Payload.app', url: 'file:///tmp/cu-fixture-sandbox/Payload.app/', cellFilename: 'Payload.app', cellURL: 'file:///tmp/cu-fixture-sandbox/Payload.app/', cellElement: true, nameFilename: 'Payload.app', nameURL: 'file:///tmp/cu-fixture-sandbox/Payload.app/' },
+        { filename: 'install.command', url: 'file:///tmp/cu-fixture-sandbox/install.command', cellFilename: 'install.command', cellURL: 'file:///tmp/cu-fixture-sandbox/install.command', nameFilename: 'install.command', nameURL: 'file:///tmp/cu-fixture-sandbox/install.command' },
+        { filename: 'Payload.app', url: 'file:///tmp/cu-fixture-sandbox/Payload.app/', cellFilename: 'Payload.app', cellURL: 'file:///tmp/cu-fixture-sandbox/Payload.app/', nameFilename: 'Payload.app', nameURL: 'file:///tmp/cu-fixture-sandbox/Payload.app/' },
       ])
       assert.ok(rows.every((row) => row.role !== 'AXRow'), 'the row view no longer claims the row role (that override left AXSelectedRows unusable)')
     })
