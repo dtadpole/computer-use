@@ -99,11 +99,16 @@ import { makePng } from './png.mjs'
  *
  * Its world comes from the `FAKE_HELPER_CONFIG` environment variable (JSON): `grants`, `displays`, `apps`
  * (`[{ bundleId, pid, rect }]`, top-most first), `frontmost`, `elements` (`[{ rect, element }]`), `focused`, `focusedReads`
- * (successive focused answers, the last repeating), `defaultButton` (the button Return presses where focus is; CU-142),
+ * (successive focused answers, the last repeating), `focusedAfterReads` (`{ reads, focused }`: after that many focused
+ * requests the focused element becomes `focused`, the rest of the reply as ever - focus that moves between two reads with
+ * no input, a click still landing; CU-219), `defaultButton` (the button Return presses where focus is; CU-142),
  * `defaultButtonRead` (whether that button could be read, sent as given beside it; true when the world says nothing,
  * as the real helper reads a positive none - it sends the field in every focused reply; quirk omitDefaultButtonRead
  * leaves it out, the deviation CU-215 reads as unreadable; CU-190),
  * `sheet` (a sheet or alert where focus is, sent as given; CU-148),
+ * `menuKeys` (`[{ keyCode, flags, reply }]`: menuKey's answer for that exact keyDown) and `menuKeyDefault` (else; default
+ * `{ none: true, bundleId: <frontmost> }`, as helper 0.2.52 answers; CU-236),
+ * `selectedItems` (the selectedItems reply, sent as given; default `{ notCollection: true, bundleId: <frontmost> }`; CU-259),
  * `focusedApp` (sent as the 'focused' reply's `app`: the app whose window was read when no element has focus; CU-148),
  * `changeCount` (the pasteboard change count beside the focused element and the hit-tested one, phased; CU-151),
  * `textEntered` (whether the target's window holds typed text, beside the same two, sent as given and phased; CU-157),
@@ -200,6 +205,14 @@ const config = JSON.parse(process.env.FAKE_HELPER_CONFIG ?? '{}')
 // config.phases: the world after N input requests. Counted when an input is taken (not refused), before it posts, so
 // the reply the driver waits for already reflects the app's reaction; reads count nothing (CU-48's seam test).
 let inputsTaken = 0
+// config.focusedAfterReads: the focused requests answered so far (CU-219).
+let focusedRequests = 0
+/** The focused element of this read: the world's (phased), or focusedAfterReads' once that many reads are answered. */
+function focusedNow() {
+  focusedRequests += 1
+  const late = config.focusedAfterReads && focusedRequests > config.focusedAfterReads.reads
+  return late ? config.focusedAfterReads.focused : phased('focused')
+}
 /** CU-151: the pasteboard change count, only when the world names one (else an older helper); phased, so a copy can raise it. */
 function counted() {
   const named = 'changeCount' in config || (config.phases ?? []).some((phase) => 'changeCount' in phase)
@@ -260,6 +273,10 @@ const REQUESTS = {
   focused: [],
   // CU-187 (helper 0.2.45); quirk noSelection models an older helper (unknown_request).
   ...(quirks.noSelection ? {} : { selection: [] }),
+  // CU-236: the menu item a chord's keyDown would fire; quirk noMenuKey models a helper without it (unknown_request).
+  ...(quirks.noMenuKey ? {} : { menuKey: ['keyCode', 'flags'] }),
+  // CU-259: the focused collection's selected items; quirk noSelectedItems models a helper without it (unknown_request).
+  ...(quirks.noSelectedItems ? {} : { selectedItems: [] }),
   panelSelection: [],
   screenText: ['maxChars'],
   watch: quirks.watchNoRegion ? ['fps', 'maxSize'] : ['fps', 'maxSize', 'region'],
@@ -697,6 +714,19 @@ function handle(message) {
           ...(selection && 'nameFieldFocused' in selection ? { nameFieldFocused: selection.nameFieldFocused } : {}),
         })
       }
+    case 'menuKey': {
+      // CU-236: config.menuKeys [{ keyCode, flags, reply }] - the reply sent as given for that exact keyDown - else
+      // config.menuKeyDefault (default { none: true }); the request is logged like every other.
+      if (quirks.noMenuKey) return refuse(id, 'unknown_request', `unknown request '${String(type)}'`)
+      if (scope === null) return refuse(id, 'no_scope', 'no scope is set')
+      const bound = (config.menuKeys ?? []).find((entry) => entry.keyCode === fields.keyCode && entry.flags === fields.flags)
+      return send({ id, ok: true, ...(bound ? bound.reply : (config.menuKeyDefault ?? { none: true, bundleId: config.frontmost ?? null })) })
+    }
+    case 'selectedItems':
+      // CU-259: config.selectedItems - the reply sent as given - else { notCollection: true, bundleId: <frontmost> }.
+      if (quirks.noSelectedItems) return refuse(id, 'unknown_request', `unknown request '${String(type)}'`)
+      if (scope === null) return refuse(id, 'no_scope', 'no scope is set')
+      return send({ id, ok: true, ...(config.selectedItems ?? { notCollection: true, bundleId: config.frontmost ?? null }) })
     case 'selection':
       // CU-187: config.selection {role, caption, bundleId, pid} or null - the element holding the selection.
       if (quirks.noSelection) return refuse(id, 'unknown_request', `unknown request '${String(type)}'`)
@@ -707,7 +737,7 @@ function handle(message) {
       // config.focusedReads (CU-135's race): successive answers, the last one repeating - a focus the app moves late.
       if (Array.isArray(config.focusedReads) && config.focusedReads.length > 0) return send({ id, ok: true, element: elementShape(config.focusedReads.length > 1 ? config.focusedReads.shift() : config.focusedReads[0]) })
       // CU-142: config.defaultButton, the button Return presses there; absent from the reply when the world has none (an older helper).
-      return send({ id, ok: true, element: elementShape(phased('focused') ?? null), ...('defaultButton' in config ? { defaultButton: elementShape(config.defaultButton) } : {}), ...(quirks.omitDefaultButtonRead ? {} : { defaultButtonRead: 'defaultButtonRead' in config ? config.defaultButtonRead : true }), ...('sheet' in config ? { sheet: config.sheet } : {}), ...('focusedApp' in config ? { app: config.focusedApp } : {}), ...counted() })
+      return send({ id, ok: true, element: elementShape(focusedNow() ?? null), ...('defaultButton' in config ? { defaultButton: elementShape(config.defaultButton) } : {}), ...(quirks.omitDefaultButtonRead ? {} : { defaultButtonRead: 'defaultButtonRead' in config ? config.defaultButtonRead : true }), ...('sheet' in config ? { sheet: config.sheet } : {}), ...('focusedApp' in config ? { app: config.focusedApp } : {}), ...counted() })
     case 'screenText': {
       if (!Number.isInteger(fields.maxChars) || fields.maxChars < 1) return refuse(id, 'invalid_argument', 'maxChars must be a positive integer', { field: 'maxChars' })
       if (scope === null) return refuse(id, 'no_scope', 'no scope is set')

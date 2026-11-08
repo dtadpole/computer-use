@@ -1,3 +1,4 @@
+import { normaliseForPolicy } from './normalise.mjs'
 import { homedir } from 'node:os'
 import { posix } from 'node:path'
 
@@ -19,7 +20,8 @@ const SHIFTED = Object.freeze({ '#': '3', $: '4', '%': '5', '^': '6', '*': '8' }
 
 /** A keypress's keys as a set of canonical names, whatever the order or dialect; empty for other actions. */
 function chord(action) {
-  if (action?.type !== 'keypress' || !Array.isArray(action.keys)) return new Set()
+  // CU-244: a hold carries a chord as a keypress does (systemShortcut() is exported and called on its own too).
+  if ((action?.type !== 'keypress' && action?.type !== 'hold_key') || !Array.isArray(action.keys)) return new Set()
   return new Set(action.keys.flatMap((key) => {
     let name
     try { name = normalizeKey(key) } catch { name = String(key) }
@@ -113,6 +115,25 @@ function launchesCode(action, target) {
   if (action.type === 'double_click' || action.type === 'triple_click') return true
   const keys = chord(action)
   return keys.has('META') && (keys.has('O') || keys.has('ARROWDOWN'))
+}
+
+// CU-254 (cu-researcher; cu-coordinator: the install class, ask): the App Store installs or updates software from its
+// Get, Install, Update and Download buttons - no consent word names them - so a click on one, or Space or Return on one
+// focused, asks install - app-policy's own verdict, so no pre-approval covers it (as launch_code). Browsing stays
+// free. Named limit: third-party stores and updaters (Setapp, MacUpdater).
+const APP_STORE = 'com.apple.AppStore'
+const STORE_INSTALL = /^(get|install|update|update all|download|redownload|reinstall)\b/i
+// cu-verifier on #58: a button titled with a price ('$4.99', '¥30', '4,99 €', 'Price, 4.99 dollars') starts a purchase.
+const STORE_PRICE = /^(price\b|[$€£¥₩₹]\s?\d|\d+(?:[.,]\d+)?\s?[$€£¥₩₹])/i
+/** 'install' or 'purchase' for an App Store button that installs or buys, pressed by a click, Space or Return; else null. */
+function storeInstall(action, target, app) {
+  if (String(app ?? '') !== APP_STORE || !/^(ax)?button$/i.test(String(target?.role ?? ''))) return null
+  const name = String(target?.name ?? '').trim()
+  const cls = STORE_PRICE.test(name) ? 'purchase' : STORE_INSTALL.test(name) ? 'install' : null
+  if (cls === null) return null
+  if (CLICKS.has(action.type)) return cls
+  const keys = chord(action)
+  return action.type === 'keypress' && (keys.has('SPACE') || keys.has('ENTER')) ? cls : null
 }
 
 const isKeyAction = (action) => action.type === 'type' || action.type === 'keypress'
@@ -279,7 +300,12 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
 
   const approved = (bundleId) => runScope.has(bundleId.toLowerCase()) || approvals?.covers?.(bundleId) === true
 
-  function classify(action, context = {}) {
+  function classify(rawHeld, rawContext = {}) {
+    // CU-266: names, labels and typed text are judged normalised (zero-width and format characters, look-alikes).
+    const { action: held, context } = normaliseForPolicy(rawHeld, rawContext)
+    // CU-244: a key hold is judged exactly as the same chord pressed (CU-64 H3), here as in the loop - so the system
+    // shortcuts, the file-panel refusals and every keypress rule below see a held chord too, whoever calls.
+    const action = held?.type === 'hold_key' ? { type: 'keypress', keys: held.keys } : held
     if (action.type === 'navigate') return { decision: 'block', class: null, rule: 'desktop:navigate', reason: 'navigate is browser-only' }
     const target = context.target ?? null
     // Copy, cut and paste - chords and menu items - are allowed (D-031, replacing D-025's refusal); the helper never
@@ -369,6 +395,10 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     // desktop's own - so no field a rule reads (dropTarget, afterClose, paste, the next one) can be dropped by a rebuild.
     const verdict = classes.classify(action, { ...context, url: 'desktop://', target, dialog: context.dialog ?? null })
     // Never pre-approvable: preApprovals are not consulted. Only a hand-off (a password change) outranks it.
+    const store = storeInstall(action, target, app)
+    if (store !== null && verdict.decision === 'allow') {
+      return { decision: 'confirm', class: store, classes: [store], rule: `target:${store}`, reason: `"${String(target.name).trim()}" in the App Store ${store === 'purchase' ? 'buys an app' : 'installs or updates software'}`, app }
+    }
     if (launchesCode(action, target) && verdict.decision !== 'handoff') {
       return { decision: 'confirm', class: 'launch_code', classes: ['launch_code', ...(verdict.classes ?? [])], rule: 'target:launch_code', reason: `open "${target.name}", which runs code`, app }
     }
@@ -384,6 +414,18 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     // file_choice (D-044), unless the helper attributes the element (hostedBy) or marks its panel.
     if (activates(action) && target && target.origin && !target.role && !target.name && target.opaque !== true) {
       return { decision: 'confirm', class: 'unknown_target', classes: ['unknown_target'], rule: 'target:undescribed', reason: `act on an element ${app} does not describe (it may belong to a system panel)`, app, askEachTime: true }
+    }
+    // CU-268: a name with one word mixing scripts may disguise what the control does (cu-developer-one's ruling): an
+    // activation asks each time, never pre-approved - so does a chord whose bound menu item is named so. Only where the
+    // rules would allow it: a folded look-alike already asks by its class ('Dеlete' asks delete).
+    if (verdict.decision === 'allow') {
+      const bound = context.boundMenuItem && !context.boundMenuItem.unreadable && !context.boundMenuItem.none
+        ? (Array.isArray(context.boundMenuItem.items) ? context.boundMenuItem.items : [context.boundMenuItem]) : []
+      const viaKey = (action.type === 'keypress' || action.type === 'hold_key') && bound.find((one) => one?.mixedScriptName === true)
+      if ((activates(action) && target?.mixedScriptName === true) || viaKey) {
+        const shown = viaKey ? viaKey.name : target.name
+        return { decision: 'confirm', class: 'unknown_target', classes: ['unknown_target'], rule: viaKey ? 'menu:mixed_script' : 'target:mixed_script', reason: `activate "${shown}", whose name mixes scripts in one word (a disguised control?)`, app, askEachTime: true }
+      }
     }
     // Where the accessibility tree says nothing, a click or Return may be anything (R92).
     if (activates(action) && target?.opaque === true && !preApprovedIn('unknown_target', app)) {
