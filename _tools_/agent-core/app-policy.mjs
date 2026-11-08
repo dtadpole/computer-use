@@ -1,3 +1,4 @@
+import { normaliseForPolicy } from './normalise.mjs'
 import { homedir } from 'node:os'
 import { posix } from 'node:path'
 
@@ -280,7 +281,9 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
 
   const approved = (bundleId) => runScope.has(bundleId.toLowerCase()) || approvals?.covers?.(bundleId) === true
 
-  function classify(held, context = {}) {
+  function classify(rawHeld, rawContext = {}) {
+    // CU-266: names, labels and typed text are judged normalised (zero-width and format characters, look-alikes).
+    const { action: held, context } = normaliseForPolicy(rawHeld, rawContext)
     // CU-244: a key hold is judged exactly as the same chord pressed (CU-64 H3), here as in the loop - so the system
     // shortcuts, the file-panel refusals and every keypress rule below see a held chord too, whoever calls.
     const action = held?.type === 'hold_key' ? { type: 'keypress', keys: held.keys } : held
