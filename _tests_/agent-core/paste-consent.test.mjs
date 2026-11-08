@@ -57,8 +57,8 @@ test('desktop: a copy that raised nothing (nothing selected, or a write still pe
   assert.equal((await desktop([COPY, PASTE], (log) => 41 + 2 * copies(log))).class, 'sensitive_data', 'another write too')
 })
 
-test('desktop with an older helper (no count): the action history decides - an own copy before allows, none asks', async () => {
-  assert.equal((await desktop([COPY, PASTE], () => undefined)).decision, 'allow')
+test('CU-220: desktop with no count (a deviation since D-069\'s floor) - the paste is the owner\'s, asked even after an own copy', async () => {
+  assert.equal((await desktop([COPY, PASTE], () => undefined)).class, 'sensitive_data')
   assert.equal((await desktop([PASTE], () => undefined)).class, 'sensitive_data')
 })
 
@@ -93,7 +93,8 @@ async function acrossTurns({ takeOver }) {
   try {
     const control = createRunControl()
     const environment = createFakeEnvironment({ kind: 'desktop', control })
-    environment.focusedElement = async () => ({ origin: FIXTURE, role: 'AXTextField', name: 'Message', fingerprint: 'm' })
+    // The count rises with each copy, as every admitted helper reports it, so the reset is tested on the path real runs take.
+    environment.focusedElement = async () => ({ origin: FIXTURE, role: 'AXTextField', name: 'Message', fingerprint: 'm', pasteboardChangeCount: 41 + copies(environment.log) })
     const store = createAppApprovals({ path: join(dir, 'a.json') })
     store.grantAlways(FIXTURE, { by: 'api' })
     const scripted = createScriptedAdapter({ frame, turns: [{ actions: [COPY] }, { actions: [PASTE] }, { final: 'done' }] })
@@ -127,7 +128,7 @@ test('a copy\'s and a paste\'s events record what they were judged on - the coun
   const owner = await desktop([PASTE], () => 41)
   assert.deepEqual(owner.pasteboard, { kind: 'paste', count: 41, baseline: null, copies: 0, own: false, by: 'history' })
   const older = await desktop([COPY, PASTE], () => undefined)
-  assert.deepEqual(older.pasteboard, { kind: 'paste', count: null, baseline: null, copies: 1, own: true, by: 'history' })
+  assert.deepEqual(older.pasteboard, { kind: 'paste', count: null, baseline: null, copies: 1, own: false, by: 'history' })
   const web = await browser(CARD)
   assert.deepEqual(web.pasteboard, { kind: 'paste', by: 'run-clipboard' })
   assert.ok(!JSON.stringify(web).includes('4111'), 'the pasted text is never recorded')
