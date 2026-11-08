@@ -129,3 +129,50 @@ test('CU-252 on cu-developer-three\'s review: a folder-kind item with a letter e
   for (const name of ['Run.shortcut', 'Agent.xpc']) assert.equal(selectionRunsCode({ items: [{ name, kind: 'file' }] }), true, name)
   for (const name of ['Reports', 'Photos 2026', 'v2']) assert.equal(selectionRunsCode({ items: [{ name, kind: 'folder' }] }), false, name)
 })
+
+test('CU-252 in any app (a file manager or the CU Fixture stand-in): an open whose selection read reports files is judged by it; a non-file list or no read stays unjudged', () => {
+  const open = (selection) => at(FIXTURE, key('META', 'O'), { role: 'AXTable', name: '' }, { selection })
+  for (const items of [[{ name: 'install.command', kind: 'file' }], [{ name: 'Payload.app', kind: 'folder' }], [{ name: 'notes.txt', kind: 'file' }, { name: 'thing', kind: 'unknown' }]]) {
+    assert.deepEqual(verdict(open({ items })), ['confirm', 'launch_code', 'selection:launch_code'], JSON.stringify(items))
+  }
+  assert.deepEqual(verdict(at(FIXTURE, click, { role: 'AXMenuItem', name: 'Open' }, { selection: { items: [{ name: 'install.command', kind: 'file' }] } })).slice(0, 2), ['confirm', 'launch_code'], 'File > Open on a script')
+  for (const selection of [{ items: [{ name: 'notes.txt', kind: 'file' }] }, { items: [{ name: 'Inbox message', kind: 'unknown' }] }, { none: true }, { unreadable: true }, { notCollection: true }, undefined]) {
+    assert.equal(open(selection).decision, 'allow', `outside Finder, unjudged: ${JSON.stringify(selection)}`)
+  }
+})
+
+test('CU-252 through the loop in a non-Finder app: the selection is read for Command-O, a script in a file list asks and nothing is sent', async () => {
+  const { mkdtempSync, rmSync } = await import('node:fs')
+  const { tmpdir } = await import('node:os')
+  const { join } = await import('node:path')
+  const { createScriptedAdapter } = await import('../../_tools_/agent-core/adapter-scripted.mjs')
+  const { createAppApprovals } = await import('../../_tools_/agent-core/app-approvals.mjs')
+  const { createRunControl } = await import('../../_tools_/agent-core/control.mjs')
+  const { createFakeEnvironment } = await import('../../_tools_/agent-core/fake-env.mjs')
+  const { runTask } = await import('../../_tools_/agent-core/loop.mjs')
+  const { readRun } = await import('../../_tools_/agent-core/trajectory.mjs')
+  const dir = mkdtempSync(join(tmpdir(), 'cu-252-any-'))
+  try {
+    let reads = 0
+    const run = async (items) => {
+      const control = createRunControl()
+      const environment = createFakeEnvironment({ kind: 'desktop', control })
+      environment.state = async () => ({ url: `app:${FIXTURE}`, frontmostBundleId: FIXTURE, dialog: null })
+      environment.focusedElement = async () => ({ origin: FIXTURE, role: 'AXTable', name: '', fingerprint: 'list' })
+      environment.selectedItems = async () => { reads += 1; return { bundleId: FIXTURE, items } }
+      const store = createAppApprovals({ path: join(dir, `a-${Math.random()}.json`) })
+      store.grantAlways(FIXTURE, { by: 'api' })
+      const model = createScriptedAdapter({ frame: { width: 1440, height: 900 }, turns: [{ actions: [key('META', 'O')] }, { final: 'done' }] })
+      const result = await runTask({ task: 'open it', environment, model, control, runsDirectory: join(dir, 'runs'), build: { commit: 'test', dirty: false }, apps: [FIXTURE], appApprovals: store })
+      const event = readRun(result.trajectoryDir).events.find((e) => e.kind === 'action')
+      return { event, sent: environment.log.filter((x) => (x.action ?? x)?.type).length }
+    }
+    const script = await run([{ name: 'install.command', kind: 'file' }])
+    assert.deepEqual([script.event.decision, script.event.class, script.sent], ['confirm', 'launch_code', 0])
+    const doc = await run([{ name: 'notes.txt', kind: 'file' }])
+    assert.deepEqual([doc.event.decision, doc.sent], ['allow', 1])
+    assert.equal(reads, 2, 'the selection is read in a non-Finder app')
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
