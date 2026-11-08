@@ -286,7 +286,7 @@ const ROWS = [
   // In a known messaging app any compose field asks, whatever its name (#52's CHAT_APPS, kept by CU-287's app-kinds);
   // CU-287 adds Telegram Desktop's id; outside a messaging app the same name falls back to the name rules (named limit).
   ['chat-return-dm-recipient', 'desktop', 'enter', 'chatDmArea', 'submit', 'CU-253/#52 by kind (Slack DM: Message <name>, in Slack)', 'no live row yet', 'open CU-287', { frontmostBundleId: 'com.tinyspeck.slackmacgap' }],
-  ['chat-return-message-to', 'desktop', 'enter', 'chatToArea', 'submit', 'CU-287 (Telegram Desktop com.tdesktop.Telegram was missing)', 'no live row yet', 'todo CU-287', { frontmostBundleId: 'com.tdesktop.Telegram' }],
+  ['chat-return-message-to', 'desktop', 'enter', 'chatToArea', 'submit', 'CU-287 (Telegram Desktop com.tdesktop.Telegram was missing)', 'no live row yet', 'open CU-287', { frontmostBundleId: 'com.tdesktop.Telegram' }],
   ['chat-name-outside-chat-app', 'desktop', 'enter', 'chatDmArea', 'allow', 'CU-287 named limit (not a messaging app)', 'no live row yet', 'open CU-287'],
   ['message-subject-return', 'desktop', 'enter', 'messageSubjectArea', 'allow', 'CU-287 negative (a subject line is not a composer)', 'no live row yet', 'open CU-287'],
   ['outward-video-call', 'desktop', 'click', 'videoCallButton', 'submit', 'CU-261', 'no live row yet', 'open CU-261'],
