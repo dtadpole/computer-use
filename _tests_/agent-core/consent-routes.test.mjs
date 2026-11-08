@@ -253,10 +253,10 @@ const ROWS = [
   ['scroll', 'desktop', 'scroll', 'deleteButton', 'allow', 'not judged by design: no consent class changes on scroll', 'D-059 named limit: scroll is not judged', null],
   // CU-261 (cu-researcher): a call, a meeting, an invitation reply, a public post or a merge reaches others or commits
   // work, yet carries no submit word (runTask probe on main: allowed and posted; 'Send' asks).
-  ['outward-join-meeting', 'desktop', 'click', 'joinMeetingButton', 'submit', 'CU-261 (contacts others)', 'no live row yet', 'open CU-261'],
+  ['outward-join-meeting', 'desktop', 'click', 'joinMeetingButton', 'submit', 'CU-261 (contacts others)', 'cu-verifier, main with #98, helper 0.2.56, CU Fixture named controls: Join Meeting declined submit (20261108T184215Z-460cb2)', null],
   ['outward-video-call', 'desktop', 'click', 'videoCallButton', 'submit', 'CU-261', 'no live row yet', 'open CU-261'],
-  ['outward-tweet', 'desktop', 'click', 'tweetButton', 'submit', 'CU-261 (a public post)', 'no live row yet', 'open CU-261'],
-  ['outward-accept-invitation', 'desktop', 'click', 'acceptInviteButton', 'submit', 'CU-261 (sends a reply)', 'no live row yet', 'open CU-261'],
+  ['outward-tweet', 'desktop', 'click', 'tweetButton', 'submit', 'CU-261 (a public post)', 'cu-verifier, main with #98, helper 0.2.56, CU Fixture named controls: Tweet declined submit (20261108T184223Z-e1e967)', null],
+  ['outward-accept-invitation', 'desktop', 'click', 'acceptInviteButton', 'submit', 'CU-261 (sends a reply)', 'cu-verifier, main with #98, helper 0.2.56, CU Fixture named controls: Accept invitation declined submit (20261108T184225Z-aaecb8)', null],
   ['outward-merge', 'desktop', 'click', 'mergeButton', 'submit', 'CU-261 (commits work)', 'no live row yet', 'open CU-261'],
   ['outward-camera-on', 'desktop', 'click', 'cameraOnButton', 'permission', 'CU-261 (camera)', 'no live row yet', 'open CU-261'],
   ['outward-unsubscribe', 'desktop', 'click', 'unsubscribeButton', 'submit', 'CU-261 (sends a request; cu-coordinator 13:26Z)', 'no live row yet', 'open CU-261'],
