@@ -256,6 +256,8 @@ const CLASS_LABELS = Object.freeze({
   personal: ['DOB', 'Birth date', "Mother's maiden name", 'Security answer', 'Medicare number', 'Health insurance number',
     'NHS number', 'Policy number', 'Medical record number', 'MRN'],
   contact: ['Email', 'E-mail address', 'Phone', 'Mobile number', 'Street address', 'Address line 1', 'Home address', 'Postcode', 'ZIP code', 'City'],
+  // CU-245's name rows still without a live run (D-064): four that ask and two negatives that must stay allowed.
+  'cu-245': ['Debit card', 'Card holder', 'Bank account', 'Account name', 'Recovery key', 'Backup codes'],
 })
 const slug = (label) => label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 export const CLASS_PAGES = Object.freeze(Object.fromEntries(Object.entries(CLASS_LABELS).map(([group, labels]) =>
