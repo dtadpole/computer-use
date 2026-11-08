@@ -1,7 +1,7 @@
 ---
 title: A desktop chord is judged by the menu item it fires
 created: 2026-11-08T10:36:57Z
-modified: 2026-11-08T14:12:49Z
+modified: 2026-11-08T14:26:31Z
 level: L1
 version: 0.1.4
 description: How agent core judges a desktop key chord that is a menu item's key equivalent - as a click on that item too, the stricter verdict winning - and what it does when the menu bar cannot be read.
@@ -37,8 +37,8 @@ is judged by its name ([action-classes](action-classes.md)), so the chord must b
 ## Acceptance
 
 - `menu-key.test.mjs`, through runTask, a row per rule above; a mutant per rule fails one.
-- Halves CU-235 (helper) and CU-236 (driver); D-059 cells menu-key-send and menu-key-benign; live (cu-verifier,
-  CU-238): Shift-Command-D on a compose screen's Message > Send with a draft is declined submit, nothing sent.
+- CU-235 and CU-236; D-059 cells menu-key-send and menu-key-benign. Live on helper 0.2.52 with #27 (cu-verifier, CU-232 Done, 142423Z-142448Z): the Send chord, menu click, hidden duplicate, lazy menu and
+  Mail's plain Delete ask; the Clear Log twin fires.
 
 ## Limits
 
