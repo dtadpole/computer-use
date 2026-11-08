@@ -720,8 +720,8 @@ const SYSTEM_ROWS = [
   ['systool-disk-utility-restore', 'click', 'restoreButton', 'not:allow', 'CU-264 (overwrites a volume)', 'no live row yet', 'open CU-264', { app: DISK_UTILITY_ID }],
   // cu-coordinator's 13:26Z ruling, implemented with CU-261 (cu-developer-one): Revert to Saved loses edits (destructive), Sign Out of All Devices is a
   // security action on the owner's sessions (permission) - both allowed today.
-  ['revert-to-saved', 'click', 'revertButton', 'delete', 'CU-261 (like Discard Changes)', 'no live row yet', 'todo CU-261'],
-  ['sign-out-all-devices', 'click', 'signOutAllButton', 'permission', "CU-261 (the owner's sessions)", 'no live row yet', 'todo CU-261'],
+  ['revert-to-saved', 'click', 'revertButton', 'delete', 'CU-261 (like Discard Changes)', 'no live row yet', 'open CU-261'],
+  ['sign-out-all-devices', 'click', 'signOutAllButton', 'permission', "CU-261 (the owner's sessions)", 'no live row yet', 'open CU-261'],
   // CU-269: a drop onto an app's icon in Finder is 'open with' - the app launches with the file (runTask: posted).
   ['drop-script-onto-terminal-app', 'dragDrop', 'commandRow', 'not:allow', 'CU-269 (Terminal is excluded; the script runs)', 'no live row yet', 'open CU-269', { app: FINDER_ID, dropTarget: { role: 'AXImage', name: 'Terminal.app', filename: 'Terminal.app', origin: FINDER_ID } }],
   ['drop-document-onto-folder', 'dragDrop', 'notesRow', 'allow', 'CU-269 negative (a move into a folder)', 'no live row yet', 'open CU-269', { app: FINDER_ID, dropTarget: { role: 'AXRow', name: 'Projects', origin: FINDER_ID } }],
