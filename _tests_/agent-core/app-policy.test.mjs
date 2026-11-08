@@ -150,6 +150,10 @@ test('P9: system-wide shortcuts are blocked by name whatever the modifier order;
     assert.deepEqual([verdict.decision, verdict.rule], ['block', 'system_shortcut'], keys.join('+'))
     assert.match(verdict.reason, new RegExp(name), keys.join('+'))
     assert.equal(systemShortcut(keypress(...keys)), name, keys.join('+'))
+    // CU-244: a hold of the same chord is refused the same way, whoever calls app-policy.
+    const held = { type: 'hold_key', keys, duration_ms: 500 }
+    assert.deepEqual([policy.classify(held, ctx()).decision, policy.classify(held, ctx()).rule], ['block', 'system_shortcut'], `held ${keys.join('+')}`)
+    assert.equal(systemShortcut(held), name, `held ${keys.join('+')}`)
   }
   for (const keys of [['META', 'Q'], ['META', 'S'], ['META', 'SHIFT', 'T'], ['META', '3'], ['SHIFT', '3'], ['SPACE'], ['TAB'], ['CTRL', 'TAB'],
     ['META', 'ARROWLEFT'], ['ALT', 'ARROWRIGHT'], ['ESCAPE'], ['META', 'ESCAPE'], ['F5'], ['CTRL', 'A']]) {
@@ -306,6 +310,11 @@ test('inside an attributed file panel: navigation passes, every commit is file_c
     const v = at(action, inPanel('report.pdf', 'AXCell'))
     assert.equal(v.decision, 'block', rule)
     assert.equal(v.rule, rule)
+  }
+  // CU-244: the keypress-gated panel refusals hold for a key hold too.
+  for (const [keys, rule] of [[['SPACE'], 'panel:quick_look'], [['META', 'BACKSPACE'], 'panel:file_operation'], [['META', 'SHIFT', '.'], 'panel:protected_place']]) {
+    const v = at({ type: 'hold_key', keys, duration_ms: 300 }, inPanel('report.pdf', 'AXCell'))
+    assert.deepEqual([v.decision, v.rule], ['block', rule], `held ${keys.join('+')}`)
   }
   assert.notEqual(at(click, target('Save')).class, 'file_choice', "the app's own Save button is not a file choice")
 })
