@@ -497,7 +497,7 @@ const NAVIGATE_ROWS = [
   ['navigate-street address in a street parameter', 'https://shop.example/ship?street=' + ['221B', 'Baker', 'Street'].join('+'), 'sensitive_data', 'todo CU-284', 'no live row yet'],
   ['navigate-city parameter (negative)', 'https://shop.example/ship?city=Lisbon', 'allow', 'open CU-284', 'no live row yet'],
   // CU-285: fields named 'Tax number' and 'TIN' ask, but the same names as URL parameters do not (tax_id= does).
-  ['navigate-tax number parameter', 'https://gov.example/form?tax_number=' + ['X9', '8765'].join(''), 'sensitive_data', 'open CU-285', 'no live row yet'],
+  ['navigate-tax number parameter', 'https://gov.example/form?tax_number=' + ['1234', '5678'].join(''), 'sensitive_data', 'open CU-285', 'no live row yet'],
   ['navigate-tin parameter', 'https://gov.example/form?tin=' + ['98', '7654'].join(''), 'sensitive_data', 'open CU-285', 'no live row yet'],
 ]
 for (const [id, url, expected, status, live] of NAVIGATE_ROWS) {
