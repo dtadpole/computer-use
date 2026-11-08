@@ -809,18 +809,18 @@ const SYSTEM_ROWS = [
   ['ide-terminal-return', 'enterKey', 'vscodeTerminal', 'block:terminal_view', 'app-policy E5 TERMINAL_VIEW (CU-279: the live name decides)', 'D-065 (no live VS Code terminal surface): VS Code main terminalInstance.ts _setAriaLabel (lines 2160-2177, re-read 21:27Z) labels the terminal textarea Terminal {id}, {title}, the name this cell judges', null, { app: VSCODE_ID }],
   // VS Code labels the textarea 'Terminal {id}, {title}' (terminalInstance.ts _setAriaLabel) - localized: in a Chinese build
   // 'Terminal' reads '终端', and the label matches E5 only while the title is a shell (zsh, bash); running node, it does not.
-  ['ide-terminal-localized-label', 'typeLs', 'vscodeTerminalZhNode', 'block:terminal_view', 'CU-279 (a localized terminal label with a non-shell title)', 'no live row yet', 'todo CU-279', { app: VSCODE_ID }],
+  ['ide-terminal-localized-label', 'typeLs', 'vscodeTerminalZhNode', 'block:terminal_view', 'CU-279 (a localized terminal label with a non-shell title)', 'no live row yet', 'open CU-279', { app: VSCODE_ID }],
   // CU-279 (cu-coordinator 21:30Z): in an IDE by kind, '<word> <n>, <title>' is a terminal in any language; an editor tab
   // is not; outside an IDE the shape alone decides nothing (a named limit). Titles are 'node', not a shell: a shell
   // title (zsh, bash) already trips E5 by itself, which would let these cells pass without the fix.
-  ['ide-terminal-japanese-label', 'typeLs', 'vscodeTerminalJaNode', 'block:terminal_view', 'CU-279 (a Japanese build)', 'no live row yet', 'todo CU-279', { app: VSCODE_ID }],
-  ['ide-terminal-zh-in-cursor', 'typeLs', 'cursorTerminalZhNode', 'block:terminal_view', 'CU-279 (Cursor, known by its bundle id)', 'no live row yet', 'todo CU-279', { app: CURSOR_ID }],
+  ['ide-terminal-japanese-label', 'typeLs', 'vscodeTerminalJaNode', 'block:terminal_view', 'CU-279 (a Japanese build)', 'no live row yet', 'open CU-279', { app: VSCODE_ID }],
+  ['ide-terminal-zh-in-cursor', 'typeLs', 'cursorTerminalZhNode', 'block:terminal_view', 'CU-279 (Cursor, known by its bundle id)', 'no live row yet', 'open CU-279', { app: CURSOR_ID }],
   ['ide-editor-tab-typing', 'typeLs', 'vscodeEditorTab', 'allow', 'CU-279 negative (an editor tab is not a terminal)', 'no live row yet', 'open CU-279', { app: VSCODE_ID }],
   ['non-ide-shape-only', 'typeLs', 'fixtureShapeOnly', 'allow', 'CU-279 named limit (the shape outside an IDE)', 'no live row yet', 'open CU-279', { app: FIXTURE_ID }],
   // VS Code's own zh labels (microsoft/vscode-loc main.i18n.json): the terminal template '终端 {0}，{1}' / '終端機 {0}，{1}'
   // takes a fullwidth comma; debugConsole is 调试控制台 / 偵錯主控台 (a REPL, CU-296).
-  ['ide-terminal-zh-real-label', 'typeLs', 'vscodeTerminalZhReal', 'block:terminal_view', 'CU-279 (VS Code zh-hans terminalTextBoxAriaLabelNumberAndTitle)', 'no live row yet', 'todo CU-279', { app: VSCODE_ID }],
-  ['ide-terminal-zh-hant-real-label', 'typeLs', 'vscodeTerminalZhHantReal', 'block:terminal_view', 'CU-279 (VS Code zh-hant: 終端機 and a fullwidth comma)', 'no live row yet', 'todo CU-279', { app: VSCODE_ID }],
+  ['ide-terminal-zh-real-label', 'typeLs', 'vscodeTerminalZhReal', 'block:terminal_view', 'CU-279 (VS Code zh-hans terminalTextBoxAriaLabelNumberAndTitle)', 'no live row yet', 'open CU-279', { app: VSCODE_ID }],
+  ['ide-terminal-zh-hant-real-label', 'typeLs', 'vscodeTerminalZhHantReal', 'block:terminal_view', 'CU-279 (VS Code zh-hant: 終端機 and a fullwidth comma)', 'no live row yet', 'open CU-279', { app: VSCODE_ID }],
   ['ide-debug-console-zh-hans', 'typeLs', 'vscodeDebugConsoleHans', 'block:terminal_view', 'CU-296 (VS Code zh-hans debugConsole, a REPL)', 'no live row yet', 'todo CU-296', { app: VSCODE_ID }],
   ['ide-debug-console-zh-hant', 'typeLs', 'vscodeDebugConsoleHant', 'block:terminal_view', 'CU-296 (VS Code zh-hant debugConsole, a REPL)', 'no live row yet', 'todo CU-296', { app: VSCODE_ID }],
   // Policy owner 22:06Z: the CJK console words count only in IDE apps - outside them 控制台 is a cloud dashboard
