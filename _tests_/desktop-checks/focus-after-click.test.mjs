@@ -96,6 +96,11 @@ test('guards refuse before any input: no seat, no hold of this seat, an active r
   assert.match(guardRefusal({ seat: 'cu-developer-two', status: held, idleSeconds: NaN }), /could not be read/)
   assert.match(guardRefusal({ seat: 'cu-developer-two', status: held, idleSeconds: 299 }), /D-066/)
   assert.equal(guardRefusal({ seat: 'cu-developer-two', status: held, idleSeconds: 300 }), null)
+  // Inside the seat's own hold, the lock's rule (CU-204): the idle time reaching back to the seat's own last activity.
+  assert.equal(guardRefusal({ seat: 'cu-developer-two', status: held, idleSeconds: 11, sinceOwnSeconds: 12 }), null, 'our own last run 12 s ago, idle 11 s: within the slack')
+  assert.match(guardRefusal({ seat: 'cu-developer-two', status: held, idleSeconds: 11, sinceOwnSeconds: 60 }), /after this seat's own last activity/, 'someone used the Mac after our last run')
+  assert.match(guardRefusal({ seat: 'cu-developer-two', status: held, idleSeconds: 11, sinceOwnSeconds: -5 }), /D-066/, 'a clock behind our own stamp proves nothing')
+  assert.match(guardRefusal({ seat: 'cu-developer-two', status: held, idleSeconds: 11, sinceOwnSeconds: null }), /D-066/, 'no known own activity')
 })
 
 test('on the real fixture (offscreen): both screens report their targets, so every route and start gets a plan', async () => {

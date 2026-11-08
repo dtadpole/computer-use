@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fitFactor, sizeAt } from '../../_environments_/macos-desktop/coords.mjs'
+import { LAST_INPUT_NAME, OWN_ACTIVITY_SLACK_SECONDS, RUN_LOCK_DIR } from '../../_environments_/macos-desktop/run-lock.mjs'
 import { BUNDLE_ID, buildFixtureApp } from '../desktop-fixture/build.mjs'
 import { launchFixture } from '../desktop-fixture/client.mjs'
 import { cleanEnvironment } from '../verify-kit/sut.mjs'
@@ -182,13 +183,20 @@ export function summarize(rows) {
   return summary
 }
 
-/** A guard's refusal, or null: the seat must hold the desktop and the owner must have been idle long enough. */
-export function guardRefusal({ seat, status, idleSeconds }) {
+/**
+ * A guard's refusal, or null: the seat must hold the desktop, and the owner must not have used the Mac - by the run
+ * lock's own rule for a run inside its seat's hold (CU-204, CU-208): the idle time passes 300 s, or it reaches back to
+ * the seat's own last activity (the hold's idle-checked start or the last input its runs posted; `sinceOwnSeconds`),
+ * within the lock's slack. Our own runs post input too, so a second series in the same hold starts on that rule; each
+ * run is checked by the lock the same way.
+ */
+export function guardRefusal({ seat, status, idleSeconds, sinceOwnSeconds = null }) {
   if (typeof seat !== 'string' || !/^cu-[a-z0-9-]+$/.test(seat)) return '--seat is required (the seat holding the desktop)'
   if (status?.hold?.seat !== seat) return `the desktop is not held by ${seat}: take the hold first (run-lock.mjs hold --seat ${seat} --minutes N)`
   if (status?.run) return `a run is active on the desktop (${status.run.seat}); wait for it`
   if (!Number.isFinite(idleSeconds)) return 'the idle time could not be read'
-  if (idleSeconds < MIN_IDLE_SECONDS) return `the Mac had local input ${Math.round(idleSeconds)} s ago; the owner may be at it (D-066 needs ${MIN_IDLE_SECONDS} s)`
+  const ownCovers = Number.isFinite(sinceOwnSeconds) && sinceOwnSeconds >= 0 && idleSeconds + OWN_ACTIVITY_SLACK_SECONDS >= sinceOwnSeconds
+  if (idleSeconds < MIN_IDLE_SECONDS && !ownCovers) return `the Mac had local input ${Math.round(idleSeconds)} s ago, after this seat's own last activity; the owner may be at it (D-066 needs ${MIN_IDLE_SECONDS} s)`
   return null
 }
 
@@ -230,6 +238,18 @@ function startLoad(count) {
 
 const lockStatus = () => JSON.parse(execFileSync(process.execPath, [RUN_LOCK, 'status'], { encoding: 'utf8' }))
 
+/** Seconds since the seat's own last activity: its hold's start or its runs' last posted input, whichever is later. */
+function sinceOwnActivity(seat, status, now = Date.now()) {
+  let posted = NaN
+  try {
+    const last = JSON.parse(readFileSync(join(RUN_LOCK_DIR, LAST_INPUT_NAME), 'utf8'))
+    if (last?.seat === seat) posted = Date.parse(last.at)
+  } catch { /* no record: the hold's start alone */ }
+  const started = Date.parse(status?.hold?.heldAt ?? status?.hold?.since)
+  const own = Math.max(Number.isFinite(started) ? started : -Infinity, Number.isFinite(posted) ? posted : -Infinity)
+  return Number.isFinite(own) ? (now - own) / 1000 : null
+}
+
 export async function main(argv = process.argv.slice(2), { write = (line) => process.stdout.write(`${line}\n`) } = {}) {
   const options = {}
   for (let i = 0; i < argv.length; i += 2) options[String(argv[i]).replace(/^--/, '')] = argv[i + 1]
@@ -243,7 +263,8 @@ export async function main(argv = process.argv.slice(2), { write = (line) => pro
     write(JSON.stringify({ refused: 'usage: --seat cu-<seat> [--route type|return] [--runs 1..60] [--starts ...] [--load 0..4] [--runs-dir DIR]' }))
     return 2
   }
-  const refused = guardRefusal({ seat, status: lockStatus(), idleSeconds: await hidIdleSeconds() })
+  const status = lockStatus()
+  const refused = guardRefusal({ seat, status, idleSeconds: await hidIdleSeconds(), sinceOwnSeconds: sinceOwnActivity(seat, status) })
   if (refused) { write(JSON.stringify({ refused })); return 2 }
   const runsDir = options['runs-dir'] ?? mkdtempSync('/tmp/cu-226-runs-')
   const label = load > 0 ? `loaded-${load}` : 'quiet'
