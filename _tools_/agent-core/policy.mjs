@@ -600,12 +600,20 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const valueIn = (text) => text !== '' && Boolean(looksSensitive(withoutTaskValues(text, context.task)))
       if (!valueIn(context.typed.before) && valueIn(context.typed.before + context.typed.next)) classes.push('sensitive_data')
     }
+    // CU-268: in the browser a control whose name has one word mixing scripts asks permission - never pre-approved, so a
+    // pre-approved submit cannot wave a disguised Delete or Pay through (cu-developer-one's ruling) - where no rule found a
+    // class: a folded look-alike already asks by its own ('Sеnd' asks submit). The desktop asks unknown_target in app-policy.
+    const mixedScript = !url.startsWith('desktop:') && classes.length === 0 && (POINTER.has(action.type) || pressesEnter || keyboard.activates) && target?.mixedScriptName === true
+    if (mixedScript) classes.push('permission')
     const unique = [...new Set(classes)].sort((a, b) => PRECEDENCE.indexOf(a) - PRECEDENCE.indexOf(b))
     const needed = unique.filter((cls) => !preApproved(cls, url) || NEVER_PRE_APPROVED.includes(cls))
     if (needed.length === 0) {
       return { decision: 'allow', class: unique[0] ?? null, rule: unique.length > 0 ? 'pre_approved' : 'default', reason: '' }
     }
     const cls = needed[0]
+    if (mixedScript && cls === 'permission') {
+      return { decision: 'confirm', class: cls, classes: needed, rule: 'target:mixed_script', reason: `activate "${name}", whose name mixes scripts in one word (a disguised control?)` }
+    }
     // `class` is the one that ranks first; `classes` lists every class that applied, for the evaluator's records.
     return { decision: 'confirm', class: cls, classes: needed, rule: `class:${cls}`, reason: describe(cls, action, target, url, context?.frontmostBundleId) }
   }
