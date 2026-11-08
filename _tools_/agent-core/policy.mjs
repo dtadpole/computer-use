@@ -20,14 +20,39 @@ const WORDS = Object.freeze({
   delete: ['delete', 'remove', 'discard', 'erase', 'empty trash', 'cancel subscription', 'replace', 'overwrite', "don't save", 'don\u2019t save',
     // CU-146 (the CU-145 audit): destructive labels the list missed.
     'move to trash', 'move to bin', 'empty bin', 'clear history', 'clear all', 'reset all', 'reset settings', 'reset to defaults', 'uninstall', 'wipe', 'purge',
-    'deactivate', 'close account', 'forget', 'factory reset'],
+    'deactivate', 'close account', 'forget', 'factory reset',
+    // cu-researcher's 13:23Z sweep: unsaved edits lost, like Discard Changes.
+    'revert to saved', 'revert all changes'],
   permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke',
     // CU-258 (cu-researcher): standing choices an app keeps after the run, as whole phrases. A bare 'Allow' stays free so
     // cookie banners do not ask (named limit).
     'always allow', 'always trust', 'always open', 'allow access', "don't ask again", 'don\u2019t ask again', 'do not ask again',
     'remember my choice', 'remember this choice', 'remember my decision', 'never for this website', 'never for this site',
-    'set as default', 'make default'],
-  submit: ['send', 'post', 'submit', 'publish', 'reply', 'sign up', 'register'],
+    'set as default', 'make default',
+    // cu-coordinator 14:17Z (with CU-258): Finder's Get Info 'Change All...' sets the default app for every file of a type.
+    'change all',
+    // cu-researcher's CU-258 remainder (#63): more standing-choice wordings.
+    'always use this app', 'always use this application', 'do not ask me again', "don't ask me again", 'don\u2019t ask me again',
+    // CU-261 (cu-researcher): a camera or microphone switched on reaches other people.
+    'turn on camera', 'turn on microphone', 'turn on video', 'start video', 'unmute',
+    // cu-researcher's 13:23Z sweep: an account-wide sign-out.
+    'sign out of all devices', 'sign out everywhere', 'log out of all devices', 'log out everywhere',
+    // CU-270 (cu-researcher): switching an account's protection off - every verb with every protection, as whole phrases
+    // ('Turn off notifications' stays free). ChatGPT confirms any change to account permissions.
+    ...['turn off', 'disable', 'remove', 'allow'].flatMap((verb) => ['2 step', 'two step', 'two factor', '2fa', 'mfa', 'multi factor',
+      'password', 'passkey', 'passkeys', 'security key', 'security keys', 'login alerts', 'sign in alerts', 'account recovery', 'find my',
+      'less secure apps', 'less secure app access'].map((what) => `${verb} ${what}`))],
+  submit: ['send', 'post', 'submit', 'publish', 'reply', 'sign up', 'register',
+    // CU-261 (cu-researcher; cu-coordinator: High): actions that reach other people or commit shared work, as whole
+    // phrases. A bare Accept, Connect, Join or Follow stays free (cookie banners, Wi-Fi, generic joins: named limits).
+    'facetime', 'video call', 'audio call', 'voice call', 'start call', 'start a call', 'join meeting', 'join call',
+    'join with video', 'join with audio', 'join now', 'start meeting', 'start a meeting', 'accept invitation',
+    'decline invitation', 'accept invite', 'decline invite', 'rsvp', 'tweet', 'approve', 'merge pull request',
+    'confirm merge', 'squash and merge', 'rebase and merge', 'deploy', 'run workflow',
+    // cu-researcher's 13:23Z sweep: messages to the sender or the group.
+    'unsubscribe', 'report spam', 'report junk', 'leave group', 'leave conversation', 'leave channel',
+    // cu-researcher on #98: a cancellation goes to every attendee.
+    'cancel meeting', 'cancel event', 'cancel invitation', 'send cancellation'],
 })
 const PRECEDENCE = ['purchase', 'launch_code', 'delete', 'permission', 'page_dialog', 'credential', 'sensitive_data', 'submit', 'new_site', 'install']
 const POINTER = new Set(['click', 'double_click', 'triple_click'])
@@ -129,7 +154,10 @@ function namesWord(name, words) {
 // entry on its page or window holds text. The environment reports that as target.textEntered, read at each action's
 // own judgement; only a strict false - every entry read and empty - lets it run. True, null or absent asks, as before.
 const SUBMIT_BUT_REPLY = Object.freeze(WORDS.submit.filter((word) => word !== 'reply'))
+// CU-261: a control named only Call, Answer or Merge submits; inside a longer name ('Call Stack', 'Merge Cells') it does not.
+const SUBMIT_WHOLE_NAMES = new Set(['call', 'answer', 'merge'])
 function judgesSubmit(name, target) {
+  if (SUBMIT_WHOLE_NAMES.has(normaliseName(name).trim())) return true
   if (!namesWord(name, WORDS.submit)) return false
   return !(target?.textEntered === false && !namesWord(name, SUBMIT_BUT_REPLY))
 }
@@ -324,6 +352,20 @@ const SECRET_PARAM = /^(token|access_?token|refresh_?token|id_?token|api_?key|ap
 // cu-researcher: aligned with D-061's credential names (passcode, passphrase, PIN) and any name ending in secret.
 const PASSWORD_PARAM = /^([a-z0-9]*[_-]?secret|password|passwd|pwd|pass|passcode|passphrase|pin)$/i
 
+// CU-281 (cu-coordinator: High, cu-researcher's idea on CU-260): a query or fragment parameter named for a D-061 field -
+// passport, ssn, date_of_birth, card_number, iban, tax_id - carries that value whatever its shape. D-062's contact names
+// (email, phone, address) and the bare card-expiry words stay out (their values are judged by shape; 'expiry' is a cache
+// parameter as often as a card's). Matched as whole words after splitting snake, kebab and camel case.
+const URL_FIELD_SKIP = new Set(['email', 'e-mail', 'phone', 'mobile number', 'telephone', 'street', 'address line', 'home address',
+  'shipping address', 'billing address', 'mailing address', 'postal address', 'cell number', 'mobile', 'tel', 'expiry',
+  'expiration date', 'mm/yy', 'exp date', 'expiration', 'valid thru', 'valid through', 'secret', 'api key', 'access token'])
+const URL_FIELD_NAMES = Object.freeze([...SECRET_NAMES.filter((name) => !URL_FIELD_SKIP.has(name)), 'iban', 'tax id', 'taxid',
+  'account number', 'routing number', 'sort code', 'bank account', 'national id number', 'id number'])
+function urlFieldName(name) {
+  const words = ` ${String(name ?? '').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase().replace(/[^a-z0-9/']+/g, ' ').trim()} `
+  return words.trim() !== '' && URL_FIELD_NAMES.some((field) => words.includes(` ${field} `))
+}
+
 /**
  * CU-260: the D-061 value a navigate URL would carry off the page, or null - the value rules over the decoded query
  * values, fragment and path segments, a password in the address, or a query parameter named for a secret (a value of 8
@@ -351,6 +393,7 @@ export function urlSecret(raw) {
   for (const [name, value] of params) {
     if (PASSWORD_PARAM.test(name.trim()) && value.trim() !== '') return 'key'
     if (SECRET_PARAM.test(name.trim()) && value.trim().length >= 8) return 'key'
+    if (value.trim() !== '' && urlFieldName(name)) return 'field_name'
     const kind = looksSensitive(value)
     if (kind !== null) return kind
   }

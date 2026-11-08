@@ -424,7 +424,7 @@ const secretFields = defineTask({
  * rows can show a run asked or refused and nothing executed. Each page reports how many characters reached it, never
  * what they were, and every run (via a chord, a button or Return), so a declined or refused action leaves no record.
  */
-const RUN_STYLE = '<style>main{max-width:900px}.editor{min-height:60px;border:1px solid #999;padding:8px;font-family:monospace;white-space:pre-wrap}.xterm{background:#111;color:#eee;min-height:200px;padding:8px;font-family:monospace;position:relative}.xterm-helper-textarea{position:absolute;opacity:0;left:8px;top:8px;width:20px;height:20px}</style>'
+const RUN_STYLE = '<style>main{max-width:900px}.editor{min-height:60px;border:1px solid #999;padding:8px;font-family:monospace;white-space:pre-wrap}.xterm{background:#111;color:#eee;min-height:200px;padding:8px;font-family:monospace;position:relative}.xterm-helper-textarea{padding:0;border:0;margin:0;position:absolute;opacity:0;left:-9999em;top:0;width:0;height:0;z-index:-5;white-space:nowrap;overflow:hidden;resize:none}</style>'
 const runScript = (variant) => `const post = (path, body) => fetch('/tasks/run-code-probe/' + path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(Object.assign({ variant: '${variant}' }, body)) })
 let chars = 0
 let timer = null
@@ -448,7 +448,11 @@ const RUN_PAGES = {
     title: 'Web terminal',
     body: `<main><h1>Web terminal</h1>
 <div class="terminal xterm" id="term"><textarea class="xterm-helper-textarea" aria-label="Terminal input" id="term-input" autocomplete="off"></textarea><div class="xterm-screen">$ </div></div></main>`,
-    script: `document.getElementById('term-input').addEventListener('keydown', (event) => {
+    // As xterm.js does: a press anywhere on the terminal focuses its hidden helper textarea, styled with xterm.js's own CSS
+    // (zero size, far off screen) - no press can reach it, so without this handler focus stayed on the body (cu-verifier's
+    // 17:11Z row).
+    script: `document.getElementById('term').addEventListener('mousedown', (event) => { event.preventDefault(); document.getElementById('term-input').focus() })
+document.getElementById('term-input').addEventListener('keydown', (event) => {
   if (event.key === 'Enter') ran('return')
   else if (event.key.length === 1) typed()
 })

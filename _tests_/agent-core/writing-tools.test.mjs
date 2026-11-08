@@ -22,7 +22,7 @@ test('CU-277: any item under a Writing Tools parent is refused, generic titles i
 
 test('CU-277: with no path read, the unambiguous titles and any item naming another AI are refused by title', () => {
   // 'Writing Tools Settings…' opens an owner setting (System Settings), refused as well.
-  for (const name of ['Proofread', 'Rewrite', 'Show Writing Tools', 'Writing Tools', 'Writing Tools Settings…', 'Compose with ChatGPT', 'Ask Gemini', 'Send to Copilot']) {
+  for (const name of ['Proofread', 'Rewrite', 'Show Writing Tools', 'Writing Tools', 'Writing Tools Settings…', 'Compose with ChatGPT', 'Ask Gemini', 'Send to Copilot', 'Make Friendly', 'Make Professional', 'Make Concise', 'Create Key Points']) {
     assert.deepEqual([item(name).decision, item(name).rule], ['block', 'writing_tools'], name)
   }
 })
