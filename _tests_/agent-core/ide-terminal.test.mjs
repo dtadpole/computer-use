@@ -62,6 +62,8 @@ test('CU-296: VS Code\'s Chinese Debug Console (调试控制台 / 偵錯主控�
   // rule takes the fullwidth comma on its own.
   for (const name of ['终端 1，node', '終端機 2，node', 'Pane 1，node', 'Pane 1 ， node']) assert.equal(rule(typing(VSCODE, name)), 'terminal_view', `'${name}'`)
   assert.equal(rule(typing(FIXTURE, 'Pane 1，node')), 'allow', 'the fullwidth shape outside an IDE stays a named limit')
+  // cu-developer-one's ruling: outside an IDE 控制台 is a cloud dashboard's word (阿里云控制台) - its fields stay usable.
+  for (const name of ['控制台', '搜索控制台', '阿里云控制台', '主控台', 'コンソール', '콘솔']) assert.equal(rule(typing(FIXTURE, name)), 'allow', `'${name}' outside an IDE`)
 })
 
 test('CU-279: IDEs are a kind with sources - the ids and families match as before (#119), Cursor only by its exact id', () => {
