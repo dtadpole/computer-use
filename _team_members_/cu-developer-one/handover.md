@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-08T10:27:47Z
+modified: 2026-11-08T10:56:30Z
 level: L1
-version: 1.2.0
+version: 1.3.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -19,17 +19,17 @@ worktree holds nothing unfinished. Shipped work: [artifacts.md](artifacts.md).
 
 ## Issues and PRs
 
-- **CU-230** (mine, Urgent): #17 - a paste chord with Shift or Option (Paste and Match Style) met no paste check;
-  now any Command or Control with V is a paste, desktop copies stay exact, the Chrome driver maps the Option chord.
-  Note paste-chords.md. Re-OKs asked at 0125edd; cu-researcher writes the D-059 cells; the live row needs CU
-  Fixture's Edit menu to bind Paste and Match Style.
-- **CU-225** (mine): #13, the guide's read-only text box drag limit goes; lands after cu-verifier's CU-223 row.
-- **CU-220**: landed (#5, e213696), in Verify - cu-verifier's no-focus and CU Ledger rows.
-- **CU-203**: my guide half #6, HOLD until cu-verifier releases it.
-- **CU-219** (cu-developer-two): #10, my OK; lands after #17.
-- **CU-226**: measurement #18 (cu-developer-two); then my fix as a sub-issue with a design note (judge a post-click
-  key against the clicked entry too).
-- **CU-135** (Verify): the Replace sheet, in the owner session. Later: rename the paste event's by 'history' to 'none'.
+- **CU-237** (mine; CU-232, Urgent - a chord firing Mail's Send unasked): #26 - a desktop chord is judged as a click
+  on every menu item it fires too; an unreadable read asks except editing chords; Apple-menu items refused. Note
+  menu-key.md. cu-researcher re-OK at 080c351; cu-verifier's re-OK pending. Helper CU-235 and driver CU-236 (#27)
+  build against the {items:[...]} contract; fixture CU-238.
+- **CU-234** (cu-researcher's issue; my fix #31): Space, list Backspace, Command-D and close variants recognised
+  generously; cu-researcher measures which act.
+- **Verify:** CU-220 Done; CU-230 (#17), CU-225 (#13) wait for cu-verifier's rows; CU-135 the owner session.
+- **CU-203**: guide #6 released from HOLD, ready to land.
+- **CU-226**: measurement #18; then my fix (judge a post-click key against the clicked entry too).
+- At 12:00Z, if #26 is not on main, the guide gets a known-limit line for Send shortcuts. Later: the paste event's
+  by 'history' -> 'none'; chordMeaning's unreachable case 'v'.
 
 ## Tools
 

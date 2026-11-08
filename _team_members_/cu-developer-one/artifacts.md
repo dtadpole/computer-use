@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - Artifacts'
 created: 2026-11-07T02:20:40Z
-modified: 2026-11-08T10:27:47Z
+modified: 2026-11-08T10:56:30Z
 level: L2
-version: 2.2.0
+version: 2.3.0
 description: 'What [cu] Developer One shipped for the M7-M9 and continuity goal - each issue, its design note and its PRs, and where it stands.'
 status: unverified
 grounded_in:
@@ -14,7 +14,7 @@ grounded_in:
 
 One row per issue or group: the design note first where the change touched the contract or safety, then the code.
 PR numbers from #248 to #556 are in the private history repository; #5 onwards are in this one. States are Linear's,
-read 8 November 10:28Z; "Verify" means the code is on main and a live row remains.
+read 8 November 10:57Z; "Verify" means the code is on main and a live row remains.
 
 | Issue | What changed | PRs | State |
 |---|---|---|---|
@@ -31,9 +31,11 @@ read 8 November 10:28Z; "Verify" means the code is on main and a live row remain
 | CU-145, 171 | the action policy true to live closes; D-061 closes; four D-059 cells close on cu-verifier's runs | #373, #495, #546, #550 | CU-171 Done; CU-145 open |
 | CU-177, 199, 205, 206 | guide and action policy split under budget; a refusal names its check; the idle rule in the guide | #492-#531 | Done |
 | CU-203 | the owner checklist's in-person check; the guide's `--ask-owner` start | #551; #6 (HOLD) | In Progress (cu-developer-three's) |
-| CU-220 | a missing pasteboard count makes a desktop paste the owner's - asked | #5 | Verify |
-| CU-225 | the guide's read-only text box drag limit goes (CU-209 closed live) | #13 | In Progress |
-| CU-230 | any Command or Control with V is a paste (Paste and Match Style); browser copies by the driver's map | #17 | In Progress |
+| CU-220 | a missing pasteboard count makes a desktop paste the owner's - asked | #5 | Done |
+| CU-225 | the guide's read-only text box drag limit goes (CU-209 closed live) | #13 | Verify |
+| CU-230 | any Command or Control with V is a paste (Paste and Match Style); browser copies by the driver's map | #17 | Verify |
+| CU-237 | a desktop chord judged by the menu items it fires (CU-232) | #26 | In Progress |
+| CU-234 | modifier variants of judged keys recognised generously | #31 | In Review |
 
 Lessons: a rule tested through classify() alone is not proven (CU-152); a close needs the real helper path (CU-148);
 a doc states the rule as the code has it; measure a budget at the file's real path (CU-177); green suites do not show
