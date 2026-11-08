@@ -46,11 +46,15 @@ async function run(kind, actions, { task = 'fill in the notes', approve = false,
   const perform = environment.perform.bind(environment)
   environment.perform = async (action) => {
     const effect = await perform(action)
-    if (action.type === 'click') focus = action.x < 100 ? A : B
+    if (action.type === 'click') focus = action.x < 100 ? A : action.x < 1000 ? B : fieldOf(kind, `Field ${action.x}`, `field-${action.x}`)
     if (action.type === 'keypress' && ['ARROWDOWN', 'TAB'].includes(action.keys?.[0])) focus = B
+    if (action.type === 'keypress' && action.keys?.[0] === 'SHIFT' && action.keys?.[1] === 'TAB') focus = A
     return effect
   }
-  const model = createScriptedAdapter({ frame: { width: 1440, height: 900 }, turns: [{ actions }, { final: 'done' }] })
+  // A long sequence goes over several model turns (a call carries a bounded batch).
+  const turns = []
+  for (let i = 0; i < actions.length; i += 16) turns.push({ actions: actions.slice(i, i + 16) })
+  const model = createScriptedAdapter({ frame: { width: 1440, height: 900 }, turns: [...turns, { final: 'done' }] })
   // A person who approves every request, counted.
   const controller = approve ? apiController() : undefined
   let asked = 0
@@ -160,6 +164,26 @@ test('CU-267: a focus that cannot be read keys the buffer by the frontmost app -
     const split = await run('desktop', [...types(quarters[0], quarters[1]), between, ...types(quarters[2], quarters[3])], { unreadableFocus: true })
     assert.equal(verdicts(split.events).at(-1), 'allow', `${JSON.stringify(between)} may have moved an unreadable focus: afresh`)
   }
+})
+
+// CU-273 (cu-researcher): one buffer per field, so a detour through another field resumes the first.
+test('CU-273: a detour through another field resumes the first field - Tab away, type there, Shift-Tab back: the other half asks', async () => {
+  const [left, right] = [CARD_DIGITS.slice(0, 8), CARD_DIGITS.slice(8)]
+  const tabbed = await run('desktop', [...types(left), { type: 'keypress', keys: ['TAB'] }, ...types('x'), { type: 'keypress', keys: ['SHIFT', 'TAB'] }, ...types(right)])
+  assert.deepEqual(verdicts(tabbed.events), ['allow', 'allow', 'allow', 'allow', 'sensitive_data'])
+  const clicked = await run('browser', [...types(left), { type: 'click', x: 500, y: 10, button: 'left' }, ...types('x'), { type: 'click', x: 10, y: 10, button: 'left' }, ...types(right)])
+  assert.deepEqual(verdicts(clicked.events), ['allow', 'allow', 'allow', 'allow', 'sensitive_data'], 'a click detour, in the browser')
+  const elsewhere = await run('desktop', [...types(left), { type: 'click', x: 500, y: 10, button: 'left' }, ...types(right)])
+  assert.equal(verdicts(elsewhere.events).at(-1), 'allow', 'the other half in another field is still two fields')
+})
+
+test('CU-273: the buffers are capped at 32 fields - the least recently typed field goes first (named limit)', async () => {
+  const [left, right] = [CARD_DIGITS.slice(0, 8), CARD_DIGITS.slice(8)]
+  const visit = (n) => Array.from({ length: n }, (_, i) => [{ type: 'click', x: 1000 + i, y: 10, button: 'left' }, ...types('x')]).flat()
+  const within = await run('desktop', [...types(left), ...visit(31), { type: 'click', x: 10, y: 10, button: 'left' }, ...types(right)])
+  assert.equal(verdicts(within.events).at(-1), 'sensitive_data', '31 other fields: the first is still kept')
+  const beyond = await run('desktop', [...types(left), ...visit(32), { type: 'click', x: 10, y: 10, button: 'left' }, ...types(right)])
+  assert.equal(verdicts(beyond.events).at(-1), 'allow', '32 other fields: the first was dropped')
 })
 
 test('CU-267: the field\'s buffer never reaches the run records', async () => {
