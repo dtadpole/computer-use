@@ -196,7 +196,10 @@ export function opensUnreadSelection(action, target, app) {
  * read reports a file or folder item - a list of messages or notes (kinds unknown) is not a file list and stays unjudged.
  */
 function selectsFiles(selection) {
-  return Array.isArray(selection?.items) && selection.items.some((item) => item?.kind === 'file' || item?.kind === 'folder')
+  // CU-252 reopen (cu-verifier, 202258Z on #104's stand-in): a list whose rows carry no file URL reports kind 'unknown';
+  // an item whose own name is launchable ('install.command', 'Payload.app') still counts - the open runs it all the same.
+  return Array.isArray(selection?.items) && selection.items.some((item) => item?.kind === 'file' || item?.kind === 'folder'
+    || (item?.kind === 'unknown' && LAUNCHABLE.test(String(item?.name ?? '').trim().replace(/\/$/, ''))))
 }
 /**
  * CU-252 rule 3 (the driver's selectedItems, CU-259): whether the selection an open acts on may run code. A launchable
