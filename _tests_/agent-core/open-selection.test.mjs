@@ -193,6 +193,10 @@ test('CU-252 stand-in re-run (cu-verifier 221022Z): an unreadable selection read
   for (const keys of [['META', 'O'], ['META', 'ARROWDOWN']]) {
     assert.deepEqual(verdict(at(FIXTURE, key(...keys), list, { selection: { unreadable: true } })), ['confirm', 'launch_code', 'selection:launch_code'], keys.join('+'))
   }
+  // cu-researcher on #153: nameless rows and an empty list without { none } are the same unreadable read.
+  for (const selection of [{ items: [{ name: '', kind: 'unknown' }] }, { items: [{ name: 'notes.txt', kind: 'unknown' }, { name: ' ', kind: 'unknown' }] }, { items: [] }]) {
+    assert.equal(at(FIXTURE, key('META', 'O'), list, { selection }).class, 'launch_code', JSON.stringify(selection))
+  }
   assert.equal(at(FIXTURE, key('META', 'O'), list, { selection: { none: true } }).decision, 'allow', 'nothing selected')
   assert.equal(at(FIXTURE, key('META', 'O'), list, { selection: { items: [{ name: 'notes.txt', kind: 'unknown' }] } }).decision, 'allow', 'a named document')
   assert.equal(at(FIXTURE, key('META', 'O'), list).decision, 'allow', 'no read (an older driver) as before')
