@@ -776,3 +776,27 @@ test('CU-198: dragText returns the text under a drag\'s press for the value rule
     await env.close()
   }
 })
+
+test('CU-271: the page script\'s surface flags reach the target (terminal, notebookCell, notebookSurface, codeSurface), outside the fingerprint', async () => {
+  let extra = { origin: 'https://nb.example', editable: true, href: null, terminal: true }
+  const { options } = harness({
+    handlers: {
+      'DOM.getNodeForLocation': () => ({ result: { backendNodeId: 7, frameId: 'F-S1' } }),
+      'DOM.describeNode': () => ({ result: { node: { nodeName: 'TEXTAREA', attributes: [] } } }),
+      'Accessibility.getPartialAXTree': () => ({ result: { nodes: [{ backendDOMNodeId: 7, role: { value: 'textbox' }, name: { value: 'Terminal input' } }] } }),
+      'DOM.getBoxModel': () => ({ result: { model: { border: [100, 300, 200, 300, 200, 340, 100, 340] } } }),
+      'DOM.resolveNode': () => ({ result: { object: { objectId: 'o1' } } }),
+      'Runtime.callFunctionOn': () => ({ result: { result: { value: extra } } }),
+    },
+  })
+  const env = await launchBrowserEnvironment(options)
+  const term = await env.inspectPoint({ x: 120, y: 240 })
+  assert.equal(term.terminal, true)
+  extra = { origin: 'https://nb.example', editable: true, href: null, notebookCell: true, notebookSurface: true, codeSurface: true }
+  const cell = await env.inspectPoint({ x: 120, y: 240 })
+  assert.deepEqual([cell.terminal, cell.notebookCell, cell.notebookSurface, cell.codeSurface], [undefined, true, true, true])
+  assert.equal(cell.fingerprint, term.fingerprint, 'outside the fingerprint')
+  extra = { origin: 'https://nb.example', editable: true, href: null, terminal: 'yes' }
+  assert.equal((await env.inspectPoint({ x: 120, y: 240 })).terminal, undefined, 'only a true flag counts')
+  await env.close()
+})
