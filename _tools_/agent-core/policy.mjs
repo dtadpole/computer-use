@@ -33,6 +33,8 @@ const WORDS = Object.freeze({
     'change all',
     // cu-researcher's CU-258 remainder (#63): more standing-choice wordings.
     'always use this app', 'always use this application', 'do not ask me again', "don't ask me again", 'don\u2019t ask me again',
+    // CU-286 (cu-researcher's real-app wordings): the same standing choices in other words.
+    'allow always', 'remember this decision', 'remember decision',
     // CU-261 (cu-researcher): a camera or microphone switched on reaches other people.
     'turn on camera', 'turn on microphone', 'turn on video', 'start video', 'unmute',
     // cu-researcher's 13:23Z sweep: an account-wide sign-out.
@@ -52,7 +54,9 @@ const WORDS = Object.freeze({
     // cu-researcher's 13:23Z sweep: messages to the sender or the group.
     'unsubscribe', 'report spam', 'report junk', 'leave group', 'leave conversation', 'leave channel',
     // cu-researcher on #98: a cancellation goes to every attendee.
-    'cancel meeting', 'cancel event', 'cancel invitation', 'send cancellation'],
+    'cancel meeting', 'cancel event', 'cancel invitation', 'send cancellation',
+    // CU-286 (cu-researcher's real-app wordings): a request to join a meeting, and Slack's huddle (a call to the channel).
+    'ask to join', 'start huddle', 'start a huddle', 'join huddle'],
 })
 const PRECEDENCE = ['purchase', 'launch_code', 'delete', 'permission', 'page_dialog', 'credential', 'sensitive_data', 'submit', 'new_site', 'install']
 const POINTER = new Set(['click', 'double_click', 'triple_click'])
