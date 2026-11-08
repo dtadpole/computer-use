@@ -6,7 +6,7 @@ import { validateBatch } from './actions.mjs'
 import { unattendedController } from './consent.mjs'
 import { createRunControl } from './control.mjs'
 import { inspectPageText } from './inspect.mjs'
-import { createAppPolicy, opensUnreadSelection as opensSelection, panelDestination, panelKind, protectedPath } from './app-policy.mjs'
+import { createAppPolicy, opensSelection, panelDestination, panelKind, protectedPath } from './app-policy.mjs'
 import { normaliseText } from './normalise.mjs'
 import { createPanelFolder } from './panel-folder.mjs'
 import { createExclusions } from './exclusions.mjs'
@@ -828,10 +828,10 @@ export async function runTask(options) {
     // An unreadable bar asks for any chord but the editing ones, which the keys already judge (named over-ask: a Control
     // editing chord such as Control-K, unlisted, asks when the bar cannot be read).
     const boundMenuItem = read?.unreadable === true && editingChord(action) ? undefined : read
-    // CU-252 (CU-259's selectedItems): an open that acts on the selection - in Finder, an Open menu item, or Command-O or
+    // CU-252 (CU-259's selectedItems): an open that acts on the selection - in any app, an Open menu item, or Command-O or
     // Command-Down with no named file focused - reads what is selected: names and kinds only, never a path or contents.
     // No read (an older driver, fakes) leaves it undefined, which app-policy asks as unread.
-    const selection = desktop && opensSelection(action, target, app?.frontmostBundleId) && typeof environment.selectedItems === 'function'
+    const selection = desktop && opensSelection(action, target) && typeof environment.selectedItems === 'function'
       ? selectedItemsOf(await Promise.resolve(environment.selectedItems()).catch(() => null))
       : undefined
     const typed = typedFor(action, target, !desktop && paste ? paste.text : null, state)

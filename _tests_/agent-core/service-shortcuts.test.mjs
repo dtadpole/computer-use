@@ -34,9 +34,22 @@ test('CU-249: a default Services chord with no app item bound - none, unreadable
   }
 })
 
-test('CU-249: refused whatever the app binds to the chord - whether an app item beats a Service is unmeasured (cu-coordinator)', () => {
-  for (const bound of [{ role: 'AXMenuItem', name: 'Show Sidebar' }, { items: [{ role: 'AXMenuItem', name: 'Select None' }] }]) {
-    assert.deepEqual([judge(['META', 'SHIFT', 'L'], bound).decision, judge(['META', 'SHIFT', 'L'], bound).rule], ['block', 'system_shortcut'], JSON.stringify(bound))
+test('CU-256 (cu-coordinator 13:42Z): exactly one ENABLED app item bound to the chord wins, as Apple documents - judged as a click on it', () => {
+  const one = (extra) => ({ items: [{ role: 'AXMenuItem', name: 'Show Sidebar', enabled: true, ...extra }] })
+  assert.equal(judge(['META', 'SHIFT', 'L'], one()).decision, 'allow', 'a benign app item')
+  const send = judge(['META', 'SHIFT', 'L'], { items: [{ role: 'AXMenuItem', name: 'Send', enabled: true }] })
+  assert.deepEqual([send.decision, send.class], ['confirm', 'submit'], 'a consequential app item asks as its click would')
+  for (const [label, bound] of [
+    ['disabled', one({ enabled: false })],
+    ['enabled unknown', { items: [{ role: 'AXMenuItem', name: 'Show Sidebar' }] }],
+    ['two matches', { items: [{ role: 'AXMenuItem', name: 'Show Sidebar', enabled: true }, { role: 'AXMenuItem', name: 'Show Map', enabled: true }] }],
+    ['servicesMenu', one({ servicesMenu: true })],
+    ['a service title', { items: [{ role: 'AXMenuItem', name: 'Search With Google', enabled: true }] }],
+    ['unreadable', { unreadable: true }],
+    ['none', { none: true }],
+  ]) {
+    const v = judge(['META', 'SHIFT', 'L'], bound)
+    assert.equal(v.decision, 'block', label)
   }
 })
 

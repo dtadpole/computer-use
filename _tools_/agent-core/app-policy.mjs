@@ -92,7 +92,8 @@ const serviceItem = (action, target) => CLICKS.has(action.type) && /^(ax)?menuit
 // Concise, Summary, List, Table, Compose) are refused only there; the unambiguous titles and any item naming an AI are
 // refused by title where no path is read. Named limits: localised titles where no path is read; an app's own AI item
 // under its own menu (VS Code's Ask Copilot) is the approved app's feature and stays as before.
-const WRITING_TOOLS_TITLE = /^(proofread|rewrite|show writing tools|writing tools)\b/i
+// cu-verifier on #108: Writing Tools' own verb phrases are unambiguous too.
+const WRITING_TOOLS_TITLE = /^(proofread|rewrite|show writing tools|writing tools|make (friendly|professional|concise)|create key points)\b/i
 const OTHER_AI = /\b(chatgpt|openai|gemini|claude|copilot)\b/i
 const underWritingTools = (target) => Array.isArray(target?.menuPath) && target.menuPath.slice(0, -1).some((part) => /^writing tools$/i.test(String(part ?? '').trim()))
 // cu-researcher on #108: a menu path, when read, decides - so an app's own 'Rewrite history' (a git client) or 'Ask
@@ -151,14 +152,28 @@ const FILE_BROWSERS = new Set(['com.apple.finder'])
 const OPEN_ITEM = /^open$/i
 const RUNNER_TITLES = /^(terminal|iterm2?|warp|ghostty|kitty|alacritty|hyper|wezterm|script editor|automator|shortcuts|alfred|raycast)$/i
 const isMenuItem = (target) => /^(ax)?menuitem$/i.test(String(target?.role ?? ''))
-export function opensUnreadSelection(action, target, app) {
-  if (!FILE_BROWSERS.has(String(app ?? ''))) return false
+/**
+ * CU-252: an open that acts on the selection, in any app - a click on a menu item named Open, or Command-O or
+ * Command-Down with no named file focused. The loop reads the selection for it (names and kinds only).
+ */
+export function opensSelection(action, target) {
   if (CLICKS.has(action.type)) return isMenuItem(target) && OPEN_ITEM.test(String(target?.name ?? '').trim())
   const keys = chord(action)
   if (!(keys.has('META') && (keys.has('O') || keys.has('ARROWDOWN')))) return false
   // A focused element that is itself a named file is judged by launchesCode on its own name.
   const named = String(target?.name ?? '').trim() !== '' && !/^(ax)?(outline|table|browser|list|group|scrollarea|splitgroup|window)$/i.test(String(target?.role ?? ''))
   return !named
+}
+/** CU-252 rule 1: in Finder an open of the selection asks unless the selection read says it cannot run code. */
+export function opensUnreadSelection(action, target, app) {
+  return FILE_BROWSERS.has(String(app ?? '')) && opensSelection(action, target)
+}
+/**
+ * CU-252 in any other app (a file manager such as Path Finder or ForkLift, a stand-in): judged only when the selection
+ * read reports a file or folder item - a list of messages or notes (kinds unknown) is not a file list and stays unjudged.
+ */
+function selectsFiles(selection) {
+  return Array.isArray(selection?.items) && selection.items.some((item) => item?.kind === 'file' || item?.kind === 'folder')
 }
 /**
  * CU-252 rule 3 (the driver's selectedItems, CU-259): whether the selection an open acts on may run code. A launchable
@@ -389,9 +404,16 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     if (runner !== null) {
       return { decision: 'block', class: null, rule: 'excluded:terminal', reason: `"${runner}" opens the selection in an excluded app` }
     }
-    // CU-249: a default Services chord may run a service outside the approved app - refused whatever the app binds.
+    // CU-249: a default Services chord may run a service outside the approved app - refused, unless (CU-256, cu-coordinator
+    // 13:42Z) the menu read finds exactly one ENABLED app item bound to it: Apple's Services guide says the application's
+    // own shortcut wins, so the chord is judged as a click on that item below. Disabled, none, unreadable, several matches
+    // or a servicesMenu mark keep the refusal. Named residual: an owner-assigned Services shortcut (CU-250 fails it closed).
     const service = serviceShortcut(action)
-    if (service !== null) {
+    const boundItems = context.boundMenuItem && typeof context.boundMenuItem === 'object' && context.boundMenuItem.unreadable !== true
+      ? (Array.isArray(context.boundMenuItem.items) ? context.boundMenuItem.items : (typeof context.boundMenuItem.name === 'string' ? [context.boundMenuItem] : []))
+      : []
+    const appItemWins = boundItems.length === 1 && boundItems[0]?.enabled === true && boundItems[0]?.servicesMenu !== true && !SERVICE_ITEM.test(String(boundItems[0]?.name ?? '').trim())
+    if (service !== null && !appItemWins) {
       // Inside a file panel the panel's own refusal names the chord (Command-Shift-A is its Applications shortcut).
       const panelBlock = panelKind(target) !== null ? panelVerdict(action, target, target?.origin ?? context.frontmostBundleId) : null
       if (panelBlock?.decision === 'block') return panelBlock
@@ -480,7 +502,8 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     if (launchesCode(action, target) && verdict.decision !== 'handoff') {
       return { decision: 'confirm', class: 'launch_code', classes: ['launch_code', ...(verdict.classes ?? [])], rule: 'target:launch_code', reason: `open "${target.name}", which runs code`, app }
     }
-    if (opensUnreadSelection(action, target, app) && selectionRunsCode(context.selection) && verdict.decision !== 'handoff') {
+    const opensFiles = opensUnreadSelection(action, target, app) || (opensSelection(action, target) && selectsFiles(context.selection))
+    if (opensFiles && selectionRunsCode(context.selection) && verdict.decision !== 'handoff') {
       return { decision: 'confirm', class: 'launch_code', classes: ['launch_code', ...(verdict.classes ?? [])], rule: 'selection:launch_code', reason: 'open the selection, which this run cannot read - it may run code', app }
     }
     // CU-269 (cu-researcher): a drop onto an app's icon - a Finder .app item or a Dock app item - opens the dragged item
