@@ -1,9 +1,9 @@
 ---
 title: Desktop block and confirm rules
 created: 2026-11-02T09:53:32Z
-modified: 2026-11-07T17:52:30Z
+modified: 2026-11-08T11:21:47Z
 level: L1
-version: 0.4.3
+version: 0.4.4
 description: The rules behind the desktop order of checks - what is blocked by name (system shortcuts, excluded or unknown targets; copy and paste are allowed, D-031), the desktop confirm classes and their pre-approval, and what happens when an excluded app comes to the front.
 status: unverified
 grounded_in:
@@ -24,21 +24,21 @@ trajectory records.
 | `system_shortcut` (P9) | a chord that acts on the whole system, below |
 | `excluded:<kind>` | a target in an excluded app; `excluded:unknown` for a target, or a frontmost app, without a bundle id (fail closed) |
 
-`system_shortcut` matches when a chord holds every key of an entry, so modifier order and extra modifiers do not
-matter:
+`system_shortcut` matches a chord holding every key of an entry, in any order, extra modifiers too:
 
 | Name | Chord |
 |---|---|
 | log out | `META+SHIFT+Q` |
 | lock screen | `CTRL+META+Q` |
-| screenshots (whole screen, selection, panel) | `META+SHIFT+3`, `4`, `5`, `6` |
+| screenshots | `META+SHIFT+3`, `4`, `5`, `6` |
 | Spotlight | `META+SPACE` |
 | Force Quit | `META+ALT+ESCAPE` |
 | app switcher | `META+TAB` |
 | Mission Control, Spaces | `CTRL` with an arrow |
 | Show Desktop | `F11` |
 | VoiceOver | `META+F5` |
-| keyboard focus to the menu bar, Dock, status menus | `CTRL+F2`, `CTRL+F3`, `CTRL+F8` |
+| focus to the menu bar, Dock, status menus | `CTRL+F2`, `CTRL+F3`, `CTRL+F8` |
+| input source, Character Viewer, Look Up (CU-242) | `CTRL+SPACE`, `CTRL+META+SPACE`, `CTRL+META+D` |
 
 ## Confirm classes on the desktop
 

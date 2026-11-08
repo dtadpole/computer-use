@@ -35,6 +35,8 @@ const SYSTEM_SHORTCUTS = Object.freeze([
   ['log out', ['META', 'SHIFT', 'Q']],
   ['lock screen', ['CTRL', 'META', 'Q']],
   ...['3', '4', '5', '6'].map((digit) => ['screenshot', ['META', 'SHIFT', digit]]),
+  // CU-242: listed before Spotlight, whose keys it contains, so the refusal names it (the first match names the chord).
+  ['Character Viewer', ['CTRL', 'META', 'SPACE']],
   ['Spotlight', ['META', 'SPACE']],
   ['Force Quit', ['META', 'ALT', 'ESCAPE']],
   ['app switcher', ['META', 'TAB']],
@@ -43,6 +45,11 @@ const SYSTEM_SHORTCUTS = Object.freeze([
   ['VoiceOver', ['META', 'F5']],
   // Keyboard focus to the menu bar, the Dock or the status menus reaches the Apple menu, other apps and menu extras.
   ...['F2', 'F3', 'F8'].map((key) => ['system keyboard focus', ['CTRL', key]]),
+  // CU-242 (cu-researcher): switching the input source changes the owner's keyboard layout past the run - an owner
+  // setting; Look Up (and the Character Viewer, above) are system panels over the app. Matched as a subset like every entry, so
+  // Control-Shift-Space (a common 'previous source' setting) is refused too.
+  ['input source', ['CTRL', 'SPACE']],
+  ['Look Up', ['CTRL', 'META', 'D']],
 ])
 
 /** The name of the system shortcut a keypress would trigger, or null. */
@@ -243,6 +250,13 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     if (shortcut !== null) {
       return { decision: 'block', class: null, rule: 'system_shortcut', reason: `${action.keys.join('+')} is the system's ${shortcut} shortcut; it acts beyond the approved app` }
     }
+    // CU-232 (menu-key.md): a chord bound to an item of the Apple menu (Lock Screen, Log Out, Force Quit) acts beyond the
+    // approved app, like the system's own shortcuts.
+    const bound = context.boundMenuItem
+    const appleItem = bound && typeof bound === 'object' ? (Array.isArray(bound.items) ? bound.items : [bound]).find((one) => one?.appleMenu === true) : undefined
+    if (appleItem) {
+      return { decision: 'block', class: null, rule: 'system_shortcut', reason: `${(action.keys ?? []).join('+')} fires the Apple menu's ${appleItem.name}; it acts beyond the approved app` }
+    }
     // Aiming at an excluded app is refused, and so is a target that names no app (fail closed); an excluded app that
     // came to the front is the person's (R65, R79).
     const aimed = target === null ? null : exclusions.isExcludedApp(target.origin)
@@ -302,6 +316,12 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     // Never pre-approvable: preApprovals are not consulted. Only a hand-off (a password change) outranks it.
     if (launchesCode(action, target) && verdict.decision !== 'handoff') {
       return { decision: 'confirm', class: 'launch_code', classes: ['launch_code', ...(verdict.classes ?? [])], rule: 'target:launch_code', reason: `open "${target.name}", which runs code`, app }
+    }
+    // CU-232 (menu-key.md): a chord whose menu item could not be read may fire whatever the app binds to it (Mail's Send
+    // is Shift-Command-D), so it asks each time unless the keys already ask. The loop reads no item for the editing chords
+    // it judges by their meaning (copy, paste, undo, select all, arrows, delete chords), so those never land here.
+    if ((action.type === 'keypress' || action.type === 'hold_key') && context.boundMenuItem?.unreadable === true && verdict.decision === 'allow') {
+      return { decision: 'confirm', class: 'unknown_target', classes: ['unknown_target'], rule: 'menu:unreadable', reason: `press ${(action.keys ?? []).join('+')} in ${app}, whose menu item for it could not be read`, app, askEachTime: true }
     }
     // An element the helper could not describe: it names the window's owner but no role or title, because Accessibility
     // at the point belongs to another process - for example a sandboxed app's remote open/save panel, whose elements are

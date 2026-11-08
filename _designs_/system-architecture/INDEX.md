@@ -1,8 +1,8 @@
 ---
 title: computer-use system architecture
 created: 2026-11-01T09:24:10Z
-modified: 2026-11-07T20:04:28Z
-version: 0.9.2
+modified: 2026-11-08T10:36:57Z
+version: 0.9.4
 description: Entry point to the M1 contract of our computer-use agent - components, owners and the articles that fix each interface.
 grounded_in:
   - source: ULTIMATE_GOAL.md@1.0.0
@@ -33,20 +33,20 @@ caller (CLI, MCP tool) -> agent core loop <-> model adapter (claude-gateway | re
 | [agent-loop](agent-loop.md), [run-outcomes](run-outcomes.md) | loop, bounds, cancel, statuses |
 | [action-policy](action-policy.md), [action-classes](action-classes.md), [consent-gate](consent-gate.md) | allow, confirm, block, hand-off |
 | [consent-authority](consent-authority.md), [run-tokens](run-tokens.md) | who may consent; view and control tokens |
-| [site-filter](site-filter.md) | the one URL decision, loopback aliases |
+| [site-filter](site-filter.md) | one URL decision, loopback aliases |
 | [untrusted-content](untrusted-content.md) | injection, escalation, secrets |
 | [trajectory](trajectory.md), [live-control](live-control.md) | records, replay, human control |
 | [integration-surface](integration-surface.md) | the M4 tool |
-| [traceability](traceability.md), [goal-checks](goal-checks.md) | R1..R53; a failing check per row |
+| [traceability](traceability.md), [goal-checks](goal-checks.md) | R1..R53; a check per row |
 | [final-answer-lines](final-answer-lines.md) | the ANSWER (D-057) and OUTCOME lines |
-| [keyboard-activation](keyboard-activation.md) | a key activating a button judged like a click |
+| [keyboard-activation](keyboard-activation.md), [menu-key](menu-key.md) | a key activating a button or bound menu item, judged like a click |
 | [press-and-drop](press-and-drop.md) | a press or drag judged at control and drop zone |
-| [paste-consent](paste-consent.md) | a paste judged by what it inserts; the desktop asks without an own copy |
+| [paste-consent](paste-consent.md), [paste-chords](paste-chords.md) | a paste judged by what it inserts; its chords; no own copy asks |
 | [copy-source](copy-source.md), [copy-caption](copy-caption.md) | a copy or drag carries its source's or caption's class |
 | [drag-text](drag-text.md) | a text drag onto an entry judged as a paste |
-| [password-memory](password-memory.md) | a seen password field stays one when shown (CU-194) |
-| [text-entry-focus-click](text-entry-focus-click.md) | a focus click takes no class from the entry's name (CU-170) |
-| [reply-text-entered](reply-text-entered.md) | a bare Reply free only with every entry empty (CU-157) |
+| [password-memory](password-memory.md) | a seen password field stays one when shown |
+| [text-entry-focus-click](text-entry-focus-click.md) | a focus click takes no class from the entry's name |
+| [reply-text-entered](reply-text-entered.md) | a bare Reply free only with every entry empty |
 | [consent-routes](consent-routes.md) | the D-059 route audit, its sign-off and matrix |
 | [sensitive-classes](sensitive-classes.md) | D-061: sensitive classes' value and name rules |
 | [open-questions](open-questions.md) | questions, defaults, review state |

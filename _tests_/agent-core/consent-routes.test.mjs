@@ -60,6 +60,8 @@ const T = {
   nothingFocused: null,
   areaDefaultSend: { role: 'AXTextArea', name: 'Notes', defaultButton: SEND },
   searchField: { role: 'AXTextField', name: 'Search' },
+  // CU-187 / CU-223: the unnamed scratch entry a copied value is pasted into (CU Ledger, CU Fixture copyRow).
+  unnamedEntry: { role: 'AXTextField', name: '', editable: true },
   // CU-163: a bank account or tax id field (S9's vendor form in CU Ledger).
   ibanField: { role: 'AXTextField', name: 'IBAN' },
   taxField: { role: 'AXTextField', name: 'Tax ID' },
@@ -109,6 +111,7 @@ const T = {
   webDdValue: { role: 'definition', name: 'X1234567', caption: 'Passport' },
   webListItemValue: { role: 'listitem', name: 'ACCT-REF 7731', caption: 'IBAN' },
   readonlyTextViewValue: { role: 'AXTextArea', name: 'ACCT-REF 7731', caption: 'IBAN', editable: false },
+  readonlyTextViewNotes: { role: 'AXTextArea', name: 'Bring the blue folder', caption: 'Notes', editable: false },
   webNotesEntry: { role: 'textbox', name: 'Notes', editable: true },
   notesEntry: { role: 'AXTextField', name: 'Notes', editable: true },
   webOnclickDelete: { tag: 'div', role: 'generic', name: 'Delete' },
@@ -217,6 +220,14 @@ const ROWS = [
   ['scroll', 'desktop', 'scroll', 'deleteButton', 'allow', 'not judged by design: no consent class changes on scroll', 'D-059 named limit: scroll is not judged', null],
   ['paste-no-own-copy', 'desktop', 'cmdV', 'searchField', 'sensitive_data', 'paste-consent tests (#349)', '20261107T052454Z-bed1eb; count half on 0.2.40 (cu-verifier 10:13Z, no-alert proof)', null, { paste: { fromOwner: true } }],
   ['paste-after-own-copy', 'desktop', 'cmdV', 'searchField', 'allow', 'CU-151 (#349)', "0.2.42 P2: own copy allowed (20261107T173939Z-f03c80)", null, { paste: { fromOwner: false } }],
+  // CU-187 desktop half: an own copy of shown text carries its caption's class to a paste into an unnamed entry (the
+  // source keeps role and caption, never a name or the text - sourceOf). Live on CU Ledger's ledger-vendor values.
+  ['paste-copy-caption-static', 'desktop', 'cmdV', 'unnamedEntry', 'sensitive_data', 'copy-source.test.mjs (CU-187, CU-223)', "cu-verifier, helper 0.2.49, CU Ledger ledger-vendor: the IBAN-captioned value (not IBAN-shaped) copied with Cmd-C and pasted into the unnamed scratch entry - declined sensitive_data, the entry stayed empty (20261108T024023Z-b216e7, again 024027Z-1c6580); on main 8d66c53 with CU-220, helper 0.2.51: declined again (103814Z-51827e)", null, { paste: { fromOwner: false, source: { role: 'AXStaticText', caption: 'IBAN' } } }],
+  ['paste-copy-caption-static-vendor', 'desktop', 'cmdV', 'unnamedEntry', 'allow', 'CU-187 negative', "cu-verifier, main 8d66c53 with CU-220, helper 0.2.51, CU Ledger ledger-vendor: the Vendor-captioned value copied and pasted - allowed by count (129 = 128 + 1, own copy), 4 chars arrived (20261108T103817Z-1e544e); on 0.2.49 allowed too (023510Z-b9480c)", null, { paste: { fromOwner: false, source: { role: 'AXStaticText', caption: 'Vendor' } } }],
+  // CU-223 (red team of CU-209): since helper 0.2.51 a read-only text view is captioned, so its COPY carries the class too
+  // (before, an uncaptioned entry: the paste ran unasked). Closed on cu-verifier's live rows, keys and Edit > Copy.
+  ['paste-copy-readonly-textview-iban', 'desktop', 'cmdV', 'unnamedEntry', 'sensitive_data', 'copy-source.test.mjs (CU-223)', "cu-verifier, main 8d66c53, helper 0.2.51, CU Fixture consent-cells readonlyText + copyRow: a word in the IBAN-captioned read-only view, Command-C, pasted into the unnamed entry - declined sensitive_data, own copy by count, nothing arrived (20261108T103751Z-7762ec); by Edit > Copy declined too (103801Z-2004a8)", null, { paste: { fromOwner: false, source: { role: 'AXTextArea', caption: 'IBAN', editable: false } } }],
+  ['paste-copy-readonly-textview-notes', 'desktop', 'cmdV', 'unnamedEntry', 'allow', 'copy-source.test.mjs (CU-223 negative)', "cu-verifier, main 8d66c53, helper 0.2.51, CU Fixture consent-cells readonlyText + copyRow: the Notes-captioned read-only view's word, Command-C, pasted - allowed by count, 5 chars arrived (20261108T103756Z-2ffe01); by Edit > Copy allowed too (103807Z-047d66)", null, { paste: { fromOwner: false, source: { role: 'AXTextArea', caption: 'Notes', editable: false } } }],
   ['web-click-destructive', 'browser', 'click', 'webDelete', 'delete', 'policy.test.mjs', "main 1de261e91, real Chrome: bulk-delete 'Delete selected' asks delete, 0 POSTs (20261107T192415Z-7e802c)", null],
   ['web-click-label-in-button', 'browser', 'click', 'webDeleteLabelled', 'delete', 'activatableAncestor (CU-175)', '20261107T151230Z-db195b (main c8af0ec44; before #414 unasked 144600Z-75deb7)', null],
   ['web-click-icon-in-button', 'browser', 'click', 'webIconDelete', 'delete', 'activatableAncestor + clickLabel (CU-175)', '20261107T151235Z-4d0737 (main c8af0ec44; before #414 unasked 144608Z-5284c1)', null],
@@ -291,7 +302,8 @@ const ROWS = [
   ['web-drag-captioned-notes', 'browser', 'dragAway', 'webCaptionedNotes', 'allow', 'CU-195 negative', "main b438e0ac1, real Chrome, cu-verifier: the Notes-captioned twins dragged onto the unnamed entry were allowed (20261108T012745Z-3d512f, 012848Z-fe99f7)", null, { dropTarget: { role: 'textbox', name: '', editable: true } }],
   ['web-drag-dd-value', 'browser', 'dragAway', 'webDdValue', 'sensitive_data', 'CU-195 (role definition)', "main b438e0ac1, real Chrome, cu-verifier: a value directly in <dd> under 'Passport' dragged onto the unnamed entry asked sensitive_data, nothing dropped (20261108T012741Z-5a5f14; before #522 allowed, 004357Z-30bbf7)", null, { dropTarget: { role: 'textbox', name: '', editable: true } }],
   ['web-drag-listitem-value', 'browser', 'dragAway', 'webListItemValue', 'sensitive_data', 'CU-195 (role listitem)', "main b438e0ac1, real Chrome, cu-verifier: a labelled list item's value dragged onto the unnamed entry asked sensitive_data, nothing dropped (20261108T012853Z-098e21)", null, { dropTarget: { role: 'textbox', name: '', editable: true } }],
-  ['drag-readonly-textview-value', 'desktop', 'dragAway', 'readonlyTextViewValue', 'sensitive_data', 'CU-195 (a read-only AXTextArea)', 'no live row yet', 'open CU-209', { dropTarget: { role: 'AXTextField', name: '', editable: true } }],
+  ['drag-readonly-textview-value', 'desktop', 'dragAway', 'readonlyTextViewValue', 'sensitive_data', 'CU-195 (a read-only AXTextArea)', "cu-verifier, helper 0.2.51, CU Fixture consent-cells readonlyText: a word selected in the IBAN-captioned read-only text view, dragged with a 600 ms dwell onto the unnamed entry - declined sensitive_data, nothing arrived, the view intact (20261108T092702Z-8a0307, again 092705Z-95bd3d) - CU-209", null, { dropTarget: { role: 'AXTextField', name: '', editable: true } }],
+  ['drag-readonly-textview-notes', 'desktop', 'dragAway', 'readonlyTextViewNotes', 'allow', 'CU-195 negative (a read-only AXTextArea)', "cu-verifier, helper 0.2.51, CU Fixture consent-cells readonlyText: the Notes-captioned read-only text view dragged onto the unnamed entry was allowed (20261108T092707Z-7eefb3; the word did not arrive, so the run pins the verdict only)", null, { dropTarget: { role: 'AXTextField', name: '', editable: true } }],
   // CU-198 (red team of #485): once a browser drag of selected text delivers it, the dragged text meets no value rule;
   // context.dragText: a string, { unknown: true } on a failed read, null when nothing is selected under the press (the drag selects), undefined with no read (the desktop) - #490.
   ['web-drag-card-paragraph', 'browser', 'dragAway', 'webParagraphText', 'sensitive_data', 'CU-198', "main 9a7821b47, real Chrome, #514's drag page: the card number dragged onto the unnamed entry asked sensitive_data, nothing dropped (20261108T004646Z-a15df9)", null, { dropTarget: { role: 'textbox', name: '', editable: true }, dragText: CARD }],
