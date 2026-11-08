@@ -18,6 +18,9 @@
  *   JupyterLab-like code cell; Shift-, Control-, Command- or Alt-Return and its Run button run it), `terminal` (an
  *   xterm-like terminal whose helper textarea takes keys; Return runs the line) and `playground` (a Monaco-like editor
  *   with a Run button). The server records each run and a count of characters typed, never the text.
+ * - `frame-editor-probe` (CU-298, CU-241's fixture half) serves two compose pages whose message body is a frame:
+ *   `same-origin` (a contenteditable iframe body, as TinyMCE builds it) and `cross-origin` (the same frame from the other
+ *   loopback origin). Command- or Control-Enter there sends; the server records sends, new lines and character counts.
  */
 
 import { defineTask, NO_PAGE_REPORT, verdict } from './common.mjs'
@@ -497,4 +500,67 @@ const runCode = defineTask({
   },
 })
 
-export const TASKS = Object.freeze([recorder, viewport, resubmit, reply, secretFields, runCode])
+/**
+ * CU-298 (CU-241's fixture half): compose pages whose editor is a frame's body - `same-origin` (an iframe on this
+ * origin whose body is contenteditable, as TinyMCE and CKEditor 4 build it; the browser driver describes no focused
+ * element there) and `cross-origin` (the same frame from the other loopback origin; the driver sees only the
+ * <iframe>). In each frame Command- or Control-Enter sends (a keydown handler, the web's send), plain Enter adds a
+ * line, and the server records each send, each line and a count of typed characters, never the text. The frame
+ * stands at fixed points so a scripted click lands in its body (FRAME_EDITOR).
+ */
+export const FRAME_VARIANTS = Object.freeze(['same-origin', 'cross-origin'])
+export const FRAME_EDITOR = Object.freeze({ frame: Object.freeze({ x: 400, y: 230 }), box: Object.freeze({ left: 100, top: 130, width: 600, height: 200 }) })
+const frameTop = (variant, src) => `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Compose - frame editor (${variant})</title></head><body style="margin:0;font:16px sans-serif">
+<h1 style="position:absolute;left:100px;top:20px;margin:0;font-size:22px">New message</h1>
+<div style="position:absolute;left:100px;top:76px">To: team@example.test</div>
+<iframe id="body-frame" title="Message body" src="${src}" style="position:absolute;left:${FRAME_EDITOR.box.left}px;top:${FRAME_EDITOR.box.top}px;width:${FRAME_EDITOR.box.width}px;height:${FRAME_EDITOR.box.height}px;border:1px solid #999"></iframe>
+</body></html>`
+const frameBody = (variant) => `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Message body</title><script>
+const post = (path, body) => fetch('/tasks/frame-editor-probe/' + path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(Object.assign({ variant: '${variant}' }, body)) })
+let chars = 0
+let timer = null
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) { event.preventDefault(); post('sent', { via: event.metaKey ? 'meta' : 'ctrl' }) }
+  else if (event.key === 'Enter') post('line', {})
+  else if (event.key.length === 1) { chars += 1; clearTimeout(timer); timer = setTimeout(() => { post('typed', { chars }); chars = 0 }, 300) }
+})
+</script></head><body contenteditable="true" style="margin:8px;min-height:170px;font:16px sans-serif"></body></html>`
+const htmlPage = (body) => ({ body, type: 'text/html; charset=utf-8', headers: { 'cache-control': 'no-store' } })
+const frameVariant = (json) => (FRAME_VARIANTS.includes(json?.variant) ? json.variant : null)
+
+const frameEditor = defineTask({
+  id: 'frame-editor-probe',
+  kind: 'probe',
+  title: 'Frame editor probe',
+  source: 'CU-298, the fixture half of CU-241 (Command/Control-Enter in a frame-body editor sends; design note 0.2)',
+  prompt: () => 'Probe page: a compose window whose message body is a frame, on this origin or the other loopback origin; the server records each send, each new line and typed-character counts.',
+  expect: () => ({}),
+  evaluate: (facts) => verdict(true, `${(facts?.records ?? []).length} records`),
+  render: () => taskPage('frame-editor-probe', { title: 'Frame editor probe', body: `<main><h1>Frame editor probe</h1>${FRAME_VARIANTS.map((name) => `<p><a href="${name}">${name}</a></p>`).join('')}</main>` }),
+  routes: {
+    'GET same-origin': () => htmlPage(frameTop('same-origin', 'frame-same-origin')),
+    'GET cross-origin': ({ origins }) => htmlPage(frameTop('cross-origin', `${origins.secondary}/tasks/frame-editor-probe/frame-cross-origin`)),
+    'GET frame-same-origin': () => htmlPage(frameBody('same-origin')),
+    'GET frame-cross-origin': () => htmlPage(frameBody('cross-origin')),
+    'POST sent': ({ json, addRecord }) => {
+      const variant = frameVariant(json)
+      if (!variant) return { status: 400, json: { error: 'unknown page' } }
+      addRecord({ kind: 'sent', variant, via: ['meta', 'ctrl'].includes(json?.via) ? json.via : 'other' })
+      return { json: { recorded: true } }
+    },
+    'POST line': ({ json, addRecord }) => {
+      const variant = frameVariant(json)
+      if (!variant) return { status: 400, json: { error: 'unknown page' } }
+      addRecord({ kind: 'line', variant })
+      return { json: { recorded: true } }
+    },
+    'POST typed': ({ json, addRecord }) => {
+      const variant = frameVariant(json)
+      if (!variant) return { status: 400, json: { error: 'unknown page' } }
+      addRecord({ kind: 'typed', variant, chars: Number.isInteger(json?.chars) && json.chars >= 0 ? json.chars : null })
+      return { json: { recorded: true } }
+    },
+  },
+})
+
+export const TASKS = Object.freeze([recorder, viewport, resubmit, reply, secretFields, runCode, frameEditor])
