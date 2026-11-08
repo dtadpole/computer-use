@@ -780,13 +780,26 @@ enum MenuKey {
     return .object(object)
   }
 
-  /// The matches among `entries`, in menu order. `incomplete`: a top-level menu (other than Apple's) had no items to
-  /// read - filled lazily - so a miss cannot be trusted.
+  /// Whether a node of the menu-bar walk is an empty menu that makes a miss untrustworthy: a top-level menu with no
+  /// items yet (depth 2, filled lazily), or a menu-bar item with no menu until it opens (depth 1, built lazily) - never
+  /// under the menu bar's first item, the Apple menu (by position).
+  static func isEmptyMenu(role: String?, depth: Int, childCount: Int, underApple: Bool) -> Bool {
+    guard !underApple, childCount == 0 else { return false }
+    return (depth == 2 && role == "AXMenu") || (depth == 1 && role == "AXMenuBarItem")
+  }
+
+  /// The matches among `entries`, in menu order. `emptyMenus`: the top-level menus other than the first (the Apple
+  /// menu, by position) that had no items to read - filled or built lazily - so a miss cannot be trusted. A chord whose
+  /// key the layout gives no character for (an input method without a Unicode layout) cannot be judged against
+  /// character items either (cu-verifier, cu-developer-one on #36): a miss is unreadable, a match incomplete.
   static func read(bundleId: String, entries: [Entry], emptyMenus: [String], chord: Chord) -> Read {
     let matches = entries.filter { fires($0, chord) }
-    let incomplete = !emptyMenus.filter { $0 != "Apple" }.isEmpty
-    if matches.isEmpty { return incomplete ? .unreadable("a menu had no items to read (filled lazily)") : .none(bundleId: bundleId, incomplete: false) }
-    return .items(bundleId: bundleId, items: Array(matches.prefix(maxItems)), truncated: matches.count > maxItems, incomplete: incomplete)
+    let layoutUnread = chord.unshifted == nil
+    if matches.isEmpty {
+      if layoutUnread { return .unreadable("the keyboard layout gives no character for this key") }
+      return emptyMenus.isEmpty ? .none(bundleId: bundleId, incomplete: false) : .unreadable("a menu had no items to read (filled lazily)")
+    }
+    return .items(bundleId: bundleId, items: Array(matches.prefix(maxItems)), truncated: matches.count > maxItems, incomplete: !emptyMenus.isEmpty || layoutUnread)
   }
 
   /// A US ANSI layout for the dry run and the tests (the live helper asks the current layout): kVK code -> (unshifted,

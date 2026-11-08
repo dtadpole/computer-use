@@ -733,7 +733,8 @@ final class DryRunCapabilities: Capabilities {
     for (index, menu) in menus.enumerated() {
       let title = menu.object?["title"]?.string ?? ""
       let items = menu.object?["items"]?.array ?? []
-      if items.isEmpty { empty.append(title) }
+      // As live: an empty menu other than the first (the Apple menu, by position) makes a miss untrustworthy.
+      if items.isEmpty, index > 0 { empty.append(title) }
       // As live: the menu bar's first item is the Apple menu.
       add(items, path: [title], apple: index == 0)
     }

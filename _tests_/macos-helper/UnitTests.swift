@@ -63,7 +63,20 @@ func testMenuKey() {
   check(MenuKey.read(bundleId: "a.b", entries: [other, send, plainK], emptyMenus: [], chord: chord(2, cmd | shift)) == .items(bundleId: "a.b", items: [other, send], truncated: false, incomplete: false),
         "every matching item is answered, a disabled first match does not hide an enabled one")
   check(MenuKey.read(bundleId: "a.b", entries: [plainK], emptyMenus: [], chord: chord(2, cmd | shift)) == .none(bundleId: "a.b", incomplete: false), "no match: none")
-  check(MenuKey.read(bundleId: "a.b", entries: [plainK], emptyMenus: ["Apple"], chord: chord(2, cmd | shift)) == .none(bundleId: "a.b", incomplete: false), "an empty Apple menu does not count")
+  check(MenuKey.isEmptyMenu(role: "AXMenu", depth: 2, childCount: 0, underApple: false) && MenuKey.isEmptyMenu(role: "AXMenuBarItem", depth: 1, childCount: 0, underApple: false),
+        "an empty top-level menu, and a menu-bar item with no menu until it opens, are empty menus")
+  check(!MenuKey.isEmptyMenu(role: "AXMenuBarItem", depth: 1, childCount: 0, underApple: true) && !MenuKey.isEmptyMenu(role: "AXMenu", depth: 2, childCount: 0, underApple: true),
+        "the Apple menu (the first, by position) never counts")
+  check(!MenuKey.isEmptyMenu(role: "AXMenu", depth: 4, childCount: 0, underApple: false) && !MenuKey.isEmptyMenu(role: "AXMenu", depth: 2, childCount: 3, underApple: false),
+        "a nested empty submenu (Services, Open Recent) and a filled menu do not count - the named limit")
+  // A nil layout (no character for the key): a miss is unreadable, never none; a virtual-key item still matches, marked incomplete.
+  let noLayout = MenuKey.Chord(keyCode: 2, flags: cmd | shift, unshifted: nil, shifted: nil)
+  if case .unreadable = MenuKey.read(bundleId: "a.b", entries: [send], emptyMenus: [], chord: noLayout) {} else {
+    check(false, "a nil layout with a character item answers unreadable, not none")
+  }
+  let trash = MenuKey.Entry(title: "Move to Trash", path: ["File", "Move to Trash"], enabled: true, cmdChar: "\u{8}", cmdModifiers: 0, cmdVirtualKey: 51, cmdGlyph: 23)
+  check(MenuKey.read(bundleId: "a.b", entries: [trash], emptyMenus: [], chord: MenuKey.Chord(keyCode: 51, flags: cmd, unshifted: nil, shifted: nil))
+        == .items(bundleId: "a.b", items: [trash], truncated: false, incomplete: true), "a nil layout: a virtual-key item still matches, marked incomplete")
   if case .unreadable = MenuKey.read(bundleId: "a.b", entries: [plainK], emptyMenus: ["Bookmarks"], chord: chord(2, cmd | shift)) {} else {
     check(false, "a miss with a lazily filled menu is unreadable")
   }
@@ -99,6 +112,15 @@ func testMenuKey() {
   let blind = Harness(["displays": display, "frontmost": "ai.reflection.cu.fixture", "apps": [["bundleId": "ai.reflection.cu.fixture", "pid": 501, "rect": rect]], "menuKeyBar": menus, "menuKeyBarUnreadable": true])
   _ = blind.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
   check(blind.ask("menuKey", ["keyCode": 2, "flags": .int(Int(cmd | shift))])["unreadable"] == true, "a failed menu-bar read is unreadable, never none")
+  let lazyBar: JSON = [["title": "Apple", "items": []], ["title": "Message", "items": [["title": "Send", "char": "D", "modifiers": 1]]], ["title": "History", "items": []]]
+  let lazy = Harness(["displays": display, "frontmost": "ai.reflection.cu.fixture", "apps": [["bundleId": "ai.reflection.cu.fixture", "pid": 501, "rect": rect]], "menuKeyBar": lazyBar])
+  _ = lazy.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
+  check(lazy.ask("menuKey", ["keyCode": 40, "flags": .int(Int(cmd))])["unreadable"] == true, "a miss beside an empty non-first menu is unreadable")
+  check(lazy.ask("menuKey", ["keyCode": 2, "flags": .int(Int(cmd | shift))])["incomplete"] == true, "a match beside it is marked incomplete")
+  let appleOnly = Harness(["displays": display, "frontmost": "ai.reflection.cu.fixture", "apps": [["bundleId": "ai.reflection.cu.fixture", "pid": 501, "rect": rect]],
+                           "menuKeyBar": [["title": "Pomme", "items": []], ["title": "Message", "items": [["title": "Send", "char": "D", "modifiers": 1]]]]])
+  _ = appleOnly.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
+  check(appleOnly.ask("menuKey", ["keyCode": 40, "flags": .int(Int(cmd))])["none"] == true, "the first menu is the Apple menu by position, whatever its title: empty, it does not count")
   let elsewhere = Harness(["displays": display, "frontmost": "com.example.other", "apps": [["bundleId": "com.example.other", "pid": 600, "rect": rect]], "menuKeyBar": menus])
   _ = elsewhere.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
   check(elsewhere.ask("menuKey", ["keyCode": 2, "flags": .int(Int(cmd | shift))])["unreadable"] == true, "another app in front: unreadable, its menus are not read")
