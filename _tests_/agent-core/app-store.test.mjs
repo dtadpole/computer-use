@@ -31,10 +31,15 @@ test('CU-254: the App Store\'s Get, Install, Update and Download ask install - c
   }
   for (const keys of [['SPACE'], ['ENTER']]) assert.equal(at(STORE, { type: 'keypress', keys }, button(STORE, 'Get')).class, 'install', keys.join('+'))
   assert.equal(at(STORE, click, button(STORE, 'Buy')).class, 'purchase', 'Buy keeps purchase')
+  // cu-verifier on #58: a price button starts a purchase.
+  for (const name of ['$4.99', '¥30', '4,99 €', 'Price, 4.99 dollars', '£ 2.49']) {
+    const v = at(STORE, click, button(STORE, name))
+    assert.deepEqual([v.decision, v.class, v.rule], ['confirm', 'purchase', 'target:purchase'], name)
+  }
 })
 
 test('CU-254: browsing stays free, the same names elsewhere keep their judgement, and install is never pre-approved on the desktop', () => {
-  for (const name of ['See All', 'Discover', 'Getting Started', 'Updates']) assert.equal(at(STORE, click, button(STORE, name)).decision, 'allow', name)
+  for (const name of ['See All', 'Discover', 'Getting Started', 'Updates', 'Top 100', 'Priceless Apps']) assert.equal(at(STORE, click, button(STORE, name)).decision, 'allow', name)
   assert.equal(at(FIXTURE, click, button(FIXTURE, 'Get')).decision, 'allow', 'Get in another app')
   const pre = createAppPolicy({ scope: [STORE], approvals: store, preApprovals: [{ class: 'install' }] })
   assert.equal(pre.classify(click, { frontmostBundleId: STORE, target: button(STORE, 'Get') }).decision, 'confirm', 'a pre-approval does not cover it')

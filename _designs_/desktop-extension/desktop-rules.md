@@ -48,8 +48,8 @@ Detail for [app policy](app-policy.md)'s order of checks; rule names are what `c
 |---|---|---|
 | browser classes | `submit`, `purchase`, `delete`, `permission`, `sensitive_data`, `page_dialog` (an AX sheet accepted with Return), from the AX name, role and typed text | as in the browser |
 | `credential` | a typed credential | never on the desktop |
-| `launch_code` (P10) | opening code: a double or triple click, `META+O` or `META+DOWN` on a target whose name, AX file name or AX URL ends `.app`, `.sh`, `.pkg`, `.dmg`, `.prefPane` and similar, by file name or URL too | never; only a hand-off outranks it |
-| `install` (CU-254) | App Store Get, Install, Update, Download | never |
+| `launch_code` (P10) | opening code: a double or triple click, `META+O` or `META+DOWN` on a target whose name, AX file name or AX URL ends `.app`, `.sh`, `.pkg`, `.dmg`, `.prefPane` and similar, by file name or URL | never; only a hand-off outranks it |
+| `install` (CU-254) | App Store install verbs; a price is `purchase` | never |
 | `unknown_target` (R92) | a click, an Enter or Space chord, or typed text with a newline on an `opaque` target ([input and targets](input-and-targets.md)) | per app |
 
 `launch_code` gaps: [Q-D10](open-questions.md).
