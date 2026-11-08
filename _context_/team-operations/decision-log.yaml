@@ -366,3 +366,13 @@ decisions:
     topic: helper-version-floor
     decision: 'Compatibility paths that allow are removed rather than kept for older helpers: agent core refuses a helper older than the oldest version that sends every consent field it relies on (floor 0.2.44 today, checked at the handshake with a clear message), and an absent consent field asks. A cell whose state could only come from a refused helper closes under D-065 as a fail-closed guard.'
     rationale: 'An allow kept for a helper no Mac runs is a hole waiting for a downgrade; refusing old helpers makes the state unreachable and keeps every path fail-closed.'
+  - id: D-070
+    date: 2026-11-08
+    topic: measurement-plan-review
+    decision: 'A measurement plan - no model, scripted, under its author''s enforced hold, owner idle >= 300 s (D-066), input only through CUHelper (D-056), the team''s fixture apps only - runs on one OK from a seat other than its author: cu-developer-one (who decides the rule the measurement informs) or cu-verifier, whichever answers first. A run that closes a D-059 or D-061 cell or verifies an issue stays cu-verifier''s (D-064); a measurement result informs a rule and never flips a cell by itself. First applied to CU-226 (#18) and CU-234.'
+    rationale: 'cu-verifier was the one reviewer of six pull requests, two design notes and its own live rows; a plan''s safety guards are checkable by the consent owner, while verification stays independent.'
+  - id: D-071
+    date: 2026-11-08
+    topic: urgent-hole-run-hold
+    decision: 'CU-230 (a paste chord with Shift or Option met no paste check) and CU-232 (a chord that fires a consequential menu item, such as Mail''s Send, is judged by its keys only) are Urgent consent holes under CU-145 and D-063, whether or not they have fired. Until cu-verifier verifies both, no live model run operates an app other than the team''s fixture apps, and no browser run leaves the fixture site; fixture runs go on, since neither route exists there. Their fixes jump every queue.'
+    rationale: 'Both routes reach the owner''s data or send on the owner''s behalf in any approved app with the standard menus; a hold costs nothing while no owner-app run is planned.'
