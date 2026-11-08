@@ -749,8 +749,8 @@ const SYSTEM_ROWS = [
   ['appstore-get', 'click', 'getButton', 'not:allow', 'CU-254 (an approved App Store installs software)', 'no live row yet', 'open CU-254', { app: APP_STORE_ID }],
   ['appstore-price-button', 'click', 'priceButton', 'purchase', "CU-254 (a paid app's button shows its price, not 'Buy')", 'no live row yet', 'open CU-254', { app: APP_STORE_ID }],
   ['appstore-try-free', 'click', 'tryFreeButton', 'purchase', 'CU-280 (a free trial starts a renewing subscription)', 'no live row yet', 'open CU-280', { app: APP_STORE_ID }],
-  ['appstore-trial-with-duration', 'click', 'trialDurationButton', 'purchase', 'CU-288 (a free trial with its length)', 'no live row yet', 'todo CU-288', { app: APP_STORE_ID }],
-  ['appstore-try-month-free', 'click', 'tryMonthFreeButton', 'purchase', 'CU-288 (Apple Music wording)', 'no live row yet', 'todo CU-288', { app: APP_STORE_ID }],
+  ['appstore-trial-with-duration', 'click', 'trialDurationButton', 'purchase', 'CU-288 (a free trial with its length)', 'no live row yet', 'open CU-288', { app: APP_STORE_ID }],
+  ['appstore-try-month-free', 'click', 'tryMonthFreeButton', 'purchase', 'CU-288 (Apple Music wording)', 'no live row yet', 'open CU-288', { app: APP_STORE_ID }],
   // CU-232: a menu read the helper answers unreadable - a hidden duplicate key equivalent, a lazily filled menu, only
   // disabled matches (#36's rules) - asks; the loop spares editing chords before this call (CU-238's screen: Option-Command-J).
   ['menu-key-unreadable', 'optCmdJ', 'field', 'unknown_target', 'menu-key.test.mjs (#26: an unreadable bar asks)', "cu-verifier, main 277731b, helper 0.2.52, CU-238's menu-compose screen: Option-Command-J, every visible match disabled, read unreadable and declined, nothing sent (20261108T142441Z-ea95ef)", null, { boundMenuItem: { unreadable: true } }],
