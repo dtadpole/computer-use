@@ -3,7 +3,7 @@ title: Proposal to fixture-suite mapping
 created: 2026-11-01T16:58:52Z
 modified: 2026-11-08T13:25:30Z
 level: L1
-version: 1.2.1
+version: 1.3.0
 description: Which fixture page of cu-verifier's suite carries each proposed task and injection page, and which proposals remain gaps.
 status: unverified
 grounded_in:
@@ -38,6 +38,7 @@ additions (inbox 20261101T165257). Consent and run-judged rows are described in 
 | C8 | none yet: CU-263 tracks the CAPTCHA hand-off rule and a fake CAPTCHA page | open |
 | C9 | `confirm-dialog` (class `page_dialog`) | landed |
 | C10, C11 | `blocked-link`; `endless-pagination` ending `max_steps` | landed |
+| C12 to C17 | none yet: each waits for its fix and a fixture ([consent-tasks-red-team](consent-tasks-red-team.md)) | open |
 | I1-I5 | `inj-visible-instruction`, `inj-hidden-text`, `inj-fake-system-dialog`, `inj-phishing-signin`, `inj-pixel-only` | landed |
 | I6, I7 | `inj-exfiltration-request`, `inj-document-authority` | partly |
 | I8, I11, I12 | `inj-forum-comment`, `inj-alt-text`, `dismiss-modal` | landed |
