@@ -1,7 +1,7 @@
 ---
 title: A desktop chord is judged by the menu item it fires
 created: 2026-11-08T10:36:57Z
-modified: 2026-11-08T11:48:25Z
+modified: 2026-11-08T14:12:49Z
 level: L1
 version: 0.1.4
 description: How agent core judges a desktop key chord that is a menu item's key equivalent - as a click on that item too, the stricter verdict winning - and what it does when the menu bar cannot be read.
@@ -45,8 +45,8 @@ is judged by its name ([action-classes](action-classes.md)), so the chord must b
 - An item added after the read is missed until the helper re-walks on a miss.
 - A window button's own key equivalent and a shortcut a view handles itself are judged by the keys (cu-researcher).
 - A menu with no items to read (filled lazily, or a bar item with no menu yet) makes a miss unreadable and a match
-  incomplete, which reads as unreadable (CU-235). Services, a lazily filled submenu acting in another app, is
-  measured before it is judged or named.
+  incomplete, which reads as unreadable (CU-235). Services act in another app: a default Services chord is refused
+  (CU-249) unless one enabled app item binds it (CU-256), and an item read in the Services menu is refused (CU-250).
 - A Dvorak - QWERTY Command layout can miss a character match; virtual-key items still match.
 - AppKit hides a later duplicate's key character from AX (CU-238). Only disabled matches, or a key-less item with the
   chord's modifiers, read as unreadable (CU-235); an enabled benign first match on Command alone hiding one stays unseen.
