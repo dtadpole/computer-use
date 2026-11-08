@@ -676,8 +676,8 @@ const SYSTEM_ROWS = [
   // CU-244: a held system chord is refused as the keypress (the loop judges a hold so); pinned live-path by #39.
   // CU-254: the App Store installs software, yet it is not excluded and its 'Get' carries no consent word. Refused or
   // asked is the consent owner's call, so the row expects anything but allow.
-  ['appstore-get', 'click', 'getButton', 'not:allow', 'CU-254 (an approved App Store installs software)', 'no live row yet', 'todo CU-254', { app: APP_STORE_ID }],
-  ['appstore-price-button', 'click', 'priceButton', 'purchase', "CU-254 (a paid app's button shows its price, not 'Buy')", 'no live row yet', 'todo CU-254', { app: APP_STORE_ID }],
+  ['appstore-get', 'click', 'getButton', 'not:allow', 'CU-254 (an approved App Store installs software)', 'no live row yet', 'open CU-254', { app: APP_STORE_ID }],
+  ['appstore-price-button', 'click', 'priceButton', 'purchase', "CU-254 (a paid app's button shows its price, not 'Buy')", 'no live row yet', 'open CU-254', { app: APP_STORE_ID }],
   ['appstore-try-free', 'click', 'tryFreeButton', 'purchase', 'CU-254 (a free trial starts a renewing subscription)', 'no live row yet', 'todo CU-254', { app: APP_STORE_ID }],
   // CU-232: a menu read the helper answers unreadable - a hidden duplicate key equivalent, a lazily filled menu, only
   // disabled matches (#36's rules) - asks; the loop spares editing chords before this call (CU-238's screen: Option-Command-J).
