@@ -93,6 +93,10 @@ const T = {
   // CU-148 (#342/#343): the helper reports sheet: true while a sheet is up, whatever holds the focus.
   windowSheetUp: { role: 'AXWindow', name: 'Untitled', sheet: true },
   webDelete: { role: 'button', name: 'Delete' },
+  // CU-263: CAPTCHA controls as the page reports them, and a terms box that is not one.
+  webCaptchaBox: { tag: 'div', role: 'checkbox', name: "I'm not a robot" },
+  webTurnstileBox: { tag: 'input', role: 'checkbox', name: 'Verify you are human' },
+  webTermsBox: { tag: 'input', role: 'checkbox', name: 'I agree to the terms' },
   // CU-175: what the browser driver judges for a click on a label or icon inside a control (see the driver-half test).
   webDeleteLabelled: { tag: 'button', role: 'button', name: 'Delete' },
   webIconDelete: { tag: 'button', role: 'button', name: 'Delete' },
@@ -283,6 +287,10 @@ const ROWS = [
   // CU-155: a certificate warning commits chrome-error:// but the driver reported the attempted URL, so the hand-off never
   // fired (cu-developer-two's probe); classify hands off on the flag - the real path is the open part (#360).
   ['web-interstitial', 'browser', 'click', 'webDelete', 'handoff', 'interstitial-handoff (#360, #361)', '20261107T061749Z-fc953f (main: handed off, never driven)', null, { interstitial: true }],
+  // CU-263 (cu-researcher): Operator hands a CAPTCHA to the person; here it is a plain click (C8 is open).
+  ['web-captcha-checkbox', 'browser', 'click', 'webCaptchaBox', 'handoff', 'CU-263 (reCAPTCHA)', 'no live row yet', 'todo CU-263'],
+  ['web-turnstile-checkbox', 'browser', 'click', 'webTurnstileBox', 'handoff', 'CU-263 (Cloudflare Turnstile)', 'no live row yet', 'todo CU-263'],
+  ['web-terms-checkbox', 'browser', 'click', 'webTermsBox', 'allow', 'CU-263 negative (a terms box)', 'no live row yet', 'open CU-263'],
   ['web-paste-card', 'browser', 'cmdV', 'webComments', 'sensitive_data', 'paste-consent tests (#349)', '20261107T052524Z-24ff7c (real Chrome)', null, { paste: { text: CARD } }],
   // CU-183: a text drag from a sensitive entry onto another entry moves the value without the clipboard; the press
   // target is known (context.target, CU-140), the drop point too (context.dropTarget), and neither is judged for it today.
