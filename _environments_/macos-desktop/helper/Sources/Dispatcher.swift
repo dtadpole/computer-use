@@ -48,6 +48,8 @@ protocol Capabilities: AnyObject {
   /// `live` or `dry-run`.
   var mode: String { get }
   func grants() -> Grants
+  /// CU-240: one grant ('screen', 'accessibility', 'input', 'postEvents', 'listenEvents'), read alone.
+  func grant(_ name: String) -> Bool
   func displays() -> [DisplayInfo]
   func running(_ bundleIds: [String]) -> [AppRef]
   /// The display holding the first approved app's focused window, when it can be told without a missing grant.
@@ -109,6 +111,8 @@ protocol Capabilities: AnyObject {
   /// CU-235: the frontmost approved app's menu items this key down fires (the layout's characters are the capability's
   /// to find), or none, or unreadable.
   func menuKey(keyCode: Int, flags: UInt64, scope: [String]) -> MenuKey.Read
+  /// CU-262: the frontmost approved app's focused collection's selected items - names and kinds, never a path.
+  func selectedItems(scope: [String]) -> SelectedItems.Read
   /// CU-157: whether any text entry in the target's window (and any sheet on it) holds text - from character counts
   /// only, never a value (D-060). `point` names the hit-tested target, nil the focused one. Null when anything in the
   /// window cannot be read (a secure field, web content, an entry without a count) or no approved app is there.
@@ -132,6 +136,8 @@ extension Capabilities {
   func sheetPresent(scope: [String]) -> SheetRead? { nil }
   func pasteboardChangeCount() -> Int? { nil }
   func menuKey(keyCode: Int, flags: UInt64, scope: [String]) -> MenuKey.Read { .unreadable("this helper cannot read menus") }
+  func grant(_ name: String) -> Bool { grants().has(name) }
+  func selectedItems(scope: [String]) -> SelectedItems.Read { .unreadable("this helper cannot read a selection") }
   func selectionSource(scope: [String]) -> JSON { .null }
   func textEntered(at point: CGPoint?, scope: [String]) -> Bool? { nil }
 }
@@ -200,6 +206,8 @@ final class Dispatcher {
     self.onBye = onBye
     guardState = LocalInputGuard(tolerance: options.guardTolerance, syntheticResetsIdle: options.syntheticResetsIdle)
     source = Events.source()
+    // CU-240: only the live helper waits between re-reads; a dry run's or a test's grants never flicker in time.
+    if capabilities.mode != "live" { recheckSleep = { _ in } }
   }
 
   var scope: [String]? {
@@ -214,6 +222,37 @@ final class Dispatcher {
 
   func grants() -> Grants { options.simulateUngranted ? .none : capabilities.grants() }
 
+  /// CU-240: the grants that read true in this run (the hello's, and every gate passed) - only those are re-read
+  /// before a not_granted. Guarded by `lock`.
+  private var grantsSeenTrue: Set<String> = []
+  /// The pause between re-reads; the live helper sleeps, the dry run and the tests need not.
+  var recheckSleep: (TimeInterval) -> Void = { Thread.sleep(forTimeInterval: $0) }
+
+  /// CU-240: one gated grant, read alone and re-read after an earlier true (GrantRecheck).
+  func checkGrant(_ name: String) -> GrantRecheck.Outcome {
+    if options.simulateUngranted { return GrantRecheck.Outcome(granted: false, wasGranted: false, rechecks: 0) }
+    lock.lock()
+    let seen = grantsSeenTrue.contains(name)
+    lock.unlock()
+    let outcome = GrantRecheck.check(seenTrue: seen, read: { capabilities.grant(name) }, sleep: recheckSleep)
+    if outcome.granted {
+      lock.lock()
+      grantsSeenTrue.insert(name)
+      lock.unlock()
+    }
+    return outcome
+  }
+
+  /// The not_granted for a failed check: the grant's name, and wasGranted with the re-read count when it read true earlier.
+  static func notGranted(_ grant: String, _ outcome: GrantRecheck.Outcome, message: String) -> Refusal {
+    var refusal = Refusal(code: "not_granted", message: outcome.wasGranted ? "the \(grantLabel(grant)) grant read true earlier in this run and reads false now (re-read \(outcome.rechecks) times)" : message, grant: grant)
+    if outcome.wasGranted {
+      refusal.wasGranted = true
+      refusal.rechecks = outcome.rechecks
+    }
+    return refusal
+  }
+
   static func grantLabel(_ grant: String) -> String {
     switch grant {
     case "screen": return "Screen Recording"
@@ -225,9 +264,14 @@ final class Dispatcher {
 
   /// The helper's opening line. A dry run says so; a live hello has exactly the fields the driver's link accepts.
   func hello(token: String) -> JSON {
+    // CU-240: a transient false at launch is re-read before the hello reports it; what reads true seeds the re-check.
+    let settled = options.simulateUngranted ? Grants.none : GrantRecheck.settled(read: { capabilities.grants() }, sleep: recheckSleep)
+    lock.lock()
+    for name in ["screen", "accessibility", "postEvents", "listenEvents", "input"] where settled.has(name) { grantsSeenTrue.insert(name) }
+    lock.unlock()
     var object: [String: JSON] = [
       "type": .string("hello"), "token": .string(token), "protocol": .int(HelperProtocol.version),
-      "helperVersion": .string(HelperIdentity.version), "grants": grants().json,
+      "helperVersion": .string(HelperIdentity.version), "grants": settled.json,
       "displays": .array(capabilities.displays().map { $0.json }),
     ]
     if capabilities.mode != "live" { object["mode"] = .string(capabilities.mode) }
@@ -285,8 +329,11 @@ final class Dispatcher {
   }
 
   private func dispatch(id: JSON, request: Request) {
-    if let grant = request.grant, let check = request.grantCheck, !grants().has(check) {
-      return refuse(id, Refusal(code: "not_granted", message: "the \(Self.grantLabel(grant)) grant is missing; the helper never asks for it, the owner grants it once", grant: grant))
+    if let grant = request.grant, let check = request.grantCheck {
+      let outcome = checkGrant(check)
+      if !outcome.granted {
+        return refuse(id, Self.notGranted(grant, outcome, message: "the \(Self.grantLabel(grant)) grant is missing; the helper never asks for it, the owner grants it once"))
+      }
     }
     switch request {
     case .scope(let bundleIds):
@@ -336,6 +383,9 @@ final class Dispatcher {
     case .menuKey(let keyCode, let flags):
       guard let scope else { return refuse(id, Refusal(code: "no_scope", message: "no scope is set")) }
       ok(id, capabilities.menuKey(keyCode: keyCode, flags: flags, scope: scope).json)
+    case .selectedItems:
+      guard let scope else { return refuse(id, Refusal(code: "no_scope", message: "no scope is set")) }
+      ok(id, capabilities.selectedItems(scope: scope).json)
     case .screenText(let maxChars):
       reply(id, doScreenText(maxChars))
     case .watch(let fps, let maxSize, let region):
@@ -519,7 +569,8 @@ final class Dispatcher {
       return .success(["detectedBy": .string("idle")])
     default:
       // A real untagged event is synthetic input: only with the grant and an approved app in front (D-024).
-      guard grants().has("input") else { return .failure(Refusal(code: "not_granted", message: "the Accessibility grant is missing, so no event can be posted", grant: "accessibility")) }
+      let inputGrant = checkGrant("input")
+      guard inputGrant.granted else { return .failure(Self.notGranted("accessibility", inputGrant, message: "the Accessibility grant is missing, so no event can be posted")) }
       guard scope != nil else { return .failure(Refusal(code: "no_scope", message: "no scope is set")) }
       let front = capabilities.frontmost()
       guard inScope(front?.bundleId) else { return .failure(Refusal(code: "out_of_scope", message: "the frontmost app is not an approved app of this run", bundleId: front?.bundleId, check: "front")) }
@@ -1064,7 +1115,8 @@ final class Dispatcher {
     timer.schedule(deadline: .now() + 1.0 / fps, repeating: 1.0 / fps, leeway: .milliseconds(10))
     timer.setEventHandler { [weak self] in
       // A lost grant or scope stops the frames; it never prompts.
-      guard let self, self.grants().screen, let scope = self.scope, busy.claim() else { return }
+      // One Screen Recording preflight per frame (CU-240); a transient false skips one frame, never prompts.
+      guard let self, !self.options.simulateUngranted, self.capabilities.grant("screen"), let scope = self.scope, busy.claim() else { return }
       self.lock.lock()
       let display = self.watchDisplay.map { JSON.int(Int($0)) }
       self.lock.unlock()

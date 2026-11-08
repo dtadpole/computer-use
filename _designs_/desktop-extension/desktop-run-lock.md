@@ -1,9 +1,9 @@
 ---
 title: Desktop-run lock
 created: 2026-11-02T09:53:32Z
-modified: 2026-11-07T19:18:00Z
+modified: 2026-11-08T16:07:00Z
 level: L1
-version: 0.5.0
+version: 0.6.0
 description: One desktop run team-wide on the shared Mac (D-024, D-028) - the lock in /tmp/cu-desktop-run, its refusal that names the holder but never the pid, stale takeover, and why desktop runs need a seat.
 status: unverified
 grounded_in:
@@ -13,9 +13,9 @@ grounded_in:
 
 # Desktop-run lock
 
-The Mac has one display, keyboard and pointer, so two desktop runs - by two seats, or twice by one seat - would click
-into each other's apps. One desktop run at a time, team-wide (D-024; R90 and R91 in D-028). The desktop driver
-(`run-lock.mjs`, cu-developer-two) takes the lock before it launches the helper.
+The Mac has one display, keyboard and pointer, so two desktop runs would click into each other's apps. One desktop
+run at a time, team-wide (D-024; R90 and R91 in D-028). The desktop driver (`run-lock.mjs`, cu-developer-two) takes
+the lock before it launches the helper.
 
 | Part | Contract |
 |---|---|
@@ -28,8 +28,7 @@ into each other's apps. One desktop run at a time, team-wide (D-024; R90 and R91
 ## Seat
 
 Desktop runs require a seat (`startRun({seat})`, `cli.mjs run --env macos-desktop --seat <seat>`), as browser runs
-do: the lock's entry and its refusal name the holder by seat. A desktop run without one is refused before the driver
-starts.
+do; one without is refused before the driver starts.
 
 ## The hold and its sentinel
 
@@ -43,14 +42,17 @@ A fresh hold on this Mac's lock refuses after local input in the last 300 s, sin
 (`owner_active`), or when `ioreg`'s `HIDIdleTime` is unreadable (`owner_idle_unknown`), logging it (CU-191).
 Extensions are exempt: the helper's input resets that counter. Scratch locks are unchecked; no switch disables it.
 
-Code older than 010dd7b52 never reads `hold.json`. So the CLI's hold also starts a keeper (CU-106) that keeps a
+Code older than 010dd7b52 never reads `hold.json`, so the CLI's hold also starts a keeper (CU-106) that keeps a
 sentinel `{ seat, runId: 'hold', pid: keeper, sentinel: true }` in `run.json` while the hold is live, which older code
-refuses as an active run, the holder's own included. The holder's runs swap it out and back by one rename each, so
-`run.json` never lacks a live entry; a holder's run killed by a signal is covered within the keeper's 250 ms look; the
-keeper leaves, removing the sentinel, when the hold ends, is released or is replaced. A killed keeper leaves the hold
-binding new code only, as before. Every hold, swap and sentinel change is a line of `hold.log`.
+refuses as an active run. The holder's runs swap it out and back by one rename each, so `run.json` never lacks a live
+entry; the keeper removes the sentinel when the hold ends, is released or is replaced. A killed keeper leaves the hold
+binding new code only. Every hold, swap and sentinel change is a line of `hold.log`.
+
+A waiting phase 2 goes first (D-073, CU-276): `run-lock.mjs wait --seat S` registers `waiting.json` `{ seat, pid,
+since }` while its process lives (at most 30 minutes), and another seat's fresh hold, re-hold or extension is then
+refused `phase2_waiting`; the live hold is never cut short.
 
 ## Known gap
 
 A killed run leaves its entry behind until its pid is dead. If macOS reuses that pid for another process, the dead
-run's lock stays alive and blocks every desktop run until someone clears it. cu-developer-two owns the mitigation.
+run's lock stays alive and blocks every desktop run until someone clears it.

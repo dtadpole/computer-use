@@ -29,7 +29,7 @@ test('framing: lines split across chunks and several per chunk; an over-long lin
 })
 
 test('requests and fields outside the protocol are refused by name before anything is sent', () => {
-  assert.deepEqual(Object.keys(REQUEST_FIELDS).sort(), ['bye', 'capture', 'confirmPhysical', 'cursor', 'focused', 'hitTest', 'input', 'menuKey', 'panelSelection', 'pauseOnLocalInput', 'scope', 'screenText', 'selection', 'simulateLocalInput', 'unwatch', 'watch'])
+  assert.deepEqual(Object.keys(REQUEST_FIELDS).sort(), ['bye', 'capture', 'confirmPhysical', 'cursor', 'focused', 'hitTest', 'input', 'menuKey', 'panelSelection', 'pauseOnLocalInput', 'scope', 'screenText', 'selectedItems', 'selection', 'simulateLocalInput', 'unwatch', 'watch'])
   // CU-203: the lock's own request, apart from the requests a run uses.
   assert.deepEqual([...helperLink.LOCK_REQUESTS.confirmPhysical], ['seat', 'task', 'timeoutMs'])
   assert.equal(Object.hasOwn(CORE_REQUEST_FIELDS, 'confirmPhysical'), false)

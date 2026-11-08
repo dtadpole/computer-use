@@ -86,6 +86,22 @@ const SERVICE_ITEM = /^(search with\b|get result of applescript|run as applescri
 const serviceItem = (action, target) => CLICKS.has(action.type) && /^(ax)?menuitem$/i.test(String(target?.role ?? '')) &&
   (target?.servicesMenu === true || SERVICE_ITEM.test(String(target?.name ?? '').trim()))
 
+// CU-277 (cu-coordinator: High, refused like Services): Writing Tools rewrites or summarises the owner's selection
+// outside the approved app - on the Mac or in Private Cloud Compute - and can hand it to ChatGPT or another AI. Any
+// item whose menu path has a 'Writing Tools' parent is refused (the driver's menuPath, #55), so generic titles (Friendly,
+// Concise, Summary, List, Table, Compose) are refused only there; the unambiguous titles and any item naming an AI are
+// refused by title where no path is read. Named limits: localised titles where no path is read; an app's own AI item
+// under its own menu (VS Code's Ask Copilot) is the approved app's feature and stays as before.
+const WRITING_TOOLS_TITLE = /^(proofread|rewrite|show writing tools|writing tools)\b/i
+const OTHER_AI = /\b(chatgpt|openai|gemini|claude|copilot)\b/i
+const underWritingTools = (target) => Array.isArray(target?.menuPath) && target.menuPath.slice(0, -1).some((part) => /^writing tools$/i.test(String(part ?? '').trim()))
+// cu-researcher on #108: a menu path, when read, decides - so an app's own 'Rewrite history' (a git client) or 'Ask
+// Copilot' under its own menu stays as before; the title fallback applies only where no path is read.
+const hasMenuPath = (target) => Array.isArray(target?.menuPath) && target.menuPath.length > 0
+const writingToolsItem = (action, target) => CLICKS.has(action.type) && /^(ax)?menuitem$/i.test(String(target?.role ?? '')) &&
+  (hasMenuPath(target) ? underWritingTools(target)
+    : WRITING_TOOLS_TITLE.test(String(target?.name ?? '').trim()) || OTHER_AI.test(String(target?.name ?? '')))
+
 /** The default Services shortcut a chord matches exactly, or null (CU-249). */
 export function serviceShortcut(action) {
   const keys = chord(action)
@@ -105,7 +121,16 @@ const activates = (action) => CLICKS.has(action.type) ||
 
 // Opening one of these runs code beyond the approved app: an app, a script, an installer, a disk image (P10).
 // Code, packages, and bundles that install into the system (.prefPane, .mobileconfig) or open locations (.webloc).
-const LAUNCHABLE = /\.(app|command|sh|zsh|bash|pkg|mpkg|dmg|tool|workflow|scpt|scptd|applescript|terminal|jar|py|rb|pl|prefpane|mobileconfig|webloc|inetloc|fileloc|action|saver|qlgenerator|kext|plugin)\/?$/i
+const LAUNCHABLE = /\.(app|command|sh|zsh|bash|pkg|mpkg|dmg|tool|workflow|scpt|scptd|applescript|terminal|jar|py|rb|pl|prefpane|mobileconfig|webloc|inetloc|fileloc|action|saver|qlgenerator|kext|plugin|bundle|service|appex|xpc|shortcut|osax|component|mdimporter|systemextension)\/?$/i
+
+// CU-269: an app's icon as a drop target - a Finder item whose name, file name or URL is a .app bundle, or a Dock app item.
+const APP_BUNDLE = /\.app\/?$/i
+function dropsOntoApp(target) {
+  if (!target || typeof target !== 'object') return false
+  if (target.subrole === 'AXApplicationDockItem' || target.role === 'AXDockItem') return true
+  return [target.name, target.filename, target.url].some((value) => APP_BUNDLE.test(String(value ?? '').trim()))
+}
+const appNameOf = (target) => String(target?.filename ?? target?.name ?? '').trim().replace(/\.app\/?$/i, '')
 
 function launchesCode(action, target) {
   // Finder may hide an extension, so the AX file name or URL the driver reports counts too (red-team retest of P10).
@@ -115,6 +140,70 @@ function launchesCode(action, target) {
   if (action.type === 'double_click' || action.type === 'triple_click') return true
   const keys = chord(action)
   return keys.has('META') && (keys.has('O') || keys.has('ARROWDOWN'))
+}
+
+// CU-252 (cu-researcher; menu-open.md note 0.1 on the issue): opening the SELECTION runs it too, and the loop reads no
+// selection. (1) In Finder, a click on a menu item named Open, or Command-O or Command-Down while the focus is not a
+// named file (a list, a column or icon view, nothing), asks launch_code: the selected file is unread. Named over-ask:
+// opening a document that way. (2) A menu item titled as an excluded runner (Open With > Terminal, Script Editor ...)
+// is refused anywhere: opening anything with it runs it outside the approved app.
+const FILE_BROWSERS = new Set(['com.apple.finder'])
+const OPEN_ITEM = /^open$/i
+const RUNNER_TITLES = /^(terminal|iterm2?|warp|ghostty|kitty|alacritty|hyper|wezterm|script editor|automator|shortcuts|alfred|raycast)$/i
+const isMenuItem = (target) => /^(ax)?menuitem$/i.test(String(target?.role ?? ''))
+export function opensUnreadSelection(action, target, app) {
+  if (!FILE_BROWSERS.has(String(app ?? ''))) return false
+  if (CLICKS.has(action.type)) return isMenuItem(target) && OPEN_ITEM.test(String(target?.name ?? '').trim())
+  const keys = chord(action)
+  if (!(keys.has('META') && (keys.has('O') || keys.has('ARROWDOWN')))) return false
+  // A focused element that is itself a named file is judged by launchesCode on its own name.
+  const named = String(target?.name ?? '').trim() !== '' && !/^(ax)?(outline|table|browser|list|group|scrollarea|splitgroup|window)$/i.test(String(target?.role ?? ''))
+  return !named
+}
+/**
+ * CU-252 rule 3 (the driver's selectedItems, CU-259): whether the selection an open acts on may run code. A launchable
+ * name, a package (a bundle's trailing '/'), or a file with no extension (a script needs none) may; a document or a
+ * folder does not; nothing selected does not. No read, an unreadable one or a non-collection focus asks (rule 1).
+ */
+export function selectionRunsCode(selection) {
+  if (!selection || typeof selection !== 'object') return true
+  if (selection.none === true) return false
+  if (!Array.isArray(selection.items)) return true
+  return selection.truncated === true || selection.items.some((item) => {
+    const name = String(item?.name ?? '').trim()
+    if (item?.kind === 'unknown' || name === '') return true
+    if (LAUNCHABLE.test(name)) return true
+    // cu-developer-three on #101: helper names never carry a trailing '/', so a folder-kind item with a letter extension
+    // may be a package not on the list - it asks (named over-ask: a plain folder named like 'site.assets').
+    if (item?.kind === 'folder' && /\.[a-z][a-z0-9-]{0,15}$/i.test(name)) return true
+    return item?.kind === 'file' && !name.replace(/^\./, '').includes('.')
+  })
+}
+const runnerItem = (action, target, context) => {
+  if (CLICKS.has(action.type) && isMenuItem(target) && RUNNER_TITLES.test(String(target?.name ?? '').trim())) return String(target.name).trim()
+  if (action.type !== 'keypress') return null
+  const bound = context.boundMenuItem && typeof context.boundMenuItem === 'object' ? (Array.isArray(context.boundMenuItem.items) ? context.boundMenuItem.items : [context.boundMenuItem]) : []
+  const hit = bound.find((one) => RUNNER_TITLES.test(String(one?.name ?? '').trim()))
+  return hit ? String(hit.name).trim() : null
+}
+
+// CU-254 (cu-researcher; cu-coordinator: the install class, ask): the App Store installs or updates software from its
+// Get, Install, Update and Download buttons - no consent word names them - so a click on one, or Space or Return on one
+// focused, asks install - app-policy's own verdict, so no pre-approval covers it (as launch_code). Browsing stays
+// free. Named limit: third-party stores and updaters (Setapp, MacUpdater).
+const APP_STORE = 'com.apple.AppStore'
+const STORE_INSTALL = /^(get|install|update|update all|download|redownload|reinstall)\b/i
+// cu-verifier on #58: a button titled with a price ('$4.99', '¥30', '4,99 €', 'Price, 4.99 dollars') starts a purchase.
+const STORE_PRICE = /^(price\b|[$€£¥₩₹]\s?\d|\d+(?:[.,]\d+)?\s?[$€£¥₩₹])/i
+/** 'install' or 'purchase' for an App Store button that installs or buys, pressed by a click, Space or Return; else null. */
+function storeInstall(action, target, app) {
+  if (String(app ?? '') !== APP_STORE || !/^(ax)?button$/i.test(String(target?.role ?? ''))) return null
+  const name = String(target?.name ?? '').trim()
+  const cls = STORE_PRICE.test(name) ? 'purchase' : STORE_INSTALL.test(name) ? 'install' : null
+  if (cls === null) return null
+  if (CLICKS.has(action.type)) return cls
+  const keys = chord(action)
+  return action.type === 'keypress' && (keys.has('SPACE') || keys.has('ENTER')) ? cls : null
 }
 
 const isKeyAction = (action) => action.type === 'type' || action.type === 'keypress'
@@ -295,6 +384,11 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     if (shortcut !== null) {
       return { decision: 'block', class: null, rule: 'system_shortcut', reason: `${action.keys.join('+')} is the system's ${shortcut} shortcut; it acts beyond the approved app` }
     }
+    // CU-252 rule 2: a menu item titled as an excluded runner opens the selection in it, outside the approved app.
+    const runner = runnerItem(action, target, context)
+    if (runner !== null) {
+      return { decision: 'block', class: null, rule: 'excluded:terminal', reason: `"${runner}" opens the selection in an excluded app` }
+    }
     // CU-249: a default Services chord may run a service outside the approved app - refused whatever the app binds.
     const service = serviceShortcut(action)
     if (service !== null) {
@@ -305,6 +399,9 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     }
     if (serviceItem(action, target)) {
       return { decision: 'block', class: null, rule: 'system_service', reason: `"${String(target.name).trim()}" is a system service; it acts beyond the approved app` }
+    }
+    if (writingToolsItem(action, target)) {
+      return { decision: 'block', class: null, rule: 'writing_tools', reason: `"${String(target.name ?? '').trim()}" sends the selected text to Writing Tools or another AI, beyond the approved app` }
     }
     // A chord the menu read binds to a Services item fires that service too (cu-coordinator: as menu-key targets).
     const boundList = context.boundMenuItem && typeof context.boundMenuItem === 'object' ? (Array.isArray(context.boundMenuItem.items) ? context.boundMenuItem.items : [context.boundMenuItem]) : []
@@ -376,8 +473,29 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     // desktop's own - so no field a rule reads (dropTarget, afterClose, paste, the next one) can be dropped by a rebuild.
     const verdict = classes.classify(action, { ...context, url: 'desktop://', target, dialog: context.dialog ?? null })
     // Never pre-approvable: preApprovals are not consulted. Only a hand-off (a password change) outranks it.
+    const store = storeInstall(action, target, app)
+    if (store !== null && verdict.decision === 'allow') {
+      return { decision: 'confirm', class: store, classes: [store], rule: `target:${store}`, reason: `"${String(target.name).trim()}" in the App Store ${store === 'purchase' ? 'buys an app' : 'installs or updates software'}`, app }
+    }
     if (launchesCode(action, target) && verdict.decision !== 'handoff') {
       return { decision: 'confirm', class: 'launch_code', classes: ['launch_code', ...(verdict.classes ?? [])], rule: 'target:launch_code', reason: `open "${target.name}", which runs code`, app }
+    }
+    if (opensUnreadSelection(action, target, app) && selectionRunsCode(context.selection) && verdict.decision !== 'handoff') {
+      return { decision: 'confirm', class: 'launch_code', classes: ['launch_code', ...(verdict.classes ?? [])], rule: 'selection:launch_code', reason: 'open the selection, which this run cannot read - it may run code', app }
+    }
+    // CU-269 (cu-researcher): a drop onto an app's icon - a Finder .app item or a Dock app item - opens the dragged item
+    // with that app (Finder's 'open with'). A terminal or code runner by name is refused as its app would be; a launchable
+    // item asks launch_code (never pre-approved); a document asks new_app.
+    if (action.type === 'drag' && dropsOntoApp(context.dropTarget) && verdict.decision !== 'handoff') {
+      const appName = appNameOf(context.dropTarget)
+      if (RUNNER_TITLES.test(appName)) return { decision: 'block', class: null, rule: 'excluded:terminal', reason: `drop onto ${appName}, which runs code (excluded)` }
+      // cu-coordinator 14:10Z: a launchable item asks launch_code; a document asks new_app, since the icon does not say
+      // whether its app is approved (an accepted over-ask for an approved app's icon until the driver reports its bundle id).
+      const names = [target?.name, target?.filename, target?.url].map((value) => String(value ?? '').trim())
+      if (names.some((value) => LAUNCHABLE.test(value))) {
+        return { decision: 'confirm', class: 'launch_code', classes: ['launch_code', ...(verdict.classes ?? [])], rule: 'drop:open_with', reason: `open "${target?.name ?? 'the item'}", which runs code, with ${appName || 'an app'}`, app }
+      }
+      return { decision: 'confirm', class: 'new_app', classes: ['new_app', ...(verdict.classes ?? [])], rule: 'drop:open_with', reason: `open the dragged item with ${appName || 'an app'}, whose approval its icon does not show`, app: appName || null }
     }
     // CU-232 (menu-key.md): a chord whose menu item could not be read may fire whatever the app binds to it (Mail's Send
     // is Shift-Command-D), so it asks each time unless the keys already ask. The loop reads no item for the editing chords
@@ -391,6 +509,18 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     // file_choice (D-044), unless the helper attributes the element (hostedBy) or marks its panel.
     if (activates(action) && target && target.origin && !target.role && !target.name && target.opaque !== true) {
       return { decision: 'confirm', class: 'unknown_target', classes: ['unknown_target'], rule: 'target:undescribed', reason: `act on an element ${app} does not describe (it may belong to a system panel)`, app, askEachTime: true }
+    }
+    // CU-268: a name with one word mixing scripts may disguise what the control does (cu-developer-one's ruling): an
+    // activation asks each time, never pre-approved - so does a chord whose bound menu item is named so. Only where the
+    // rules would allow it: a folded look-alike already asks by its class ('Dеlete' asks delete).
+    if (verdict.decision === 'allow') {
+      const bound = context.boundMenuItem && !context.boundMenuItem.unreadable && !context.boundMenuItem.none
+        ? (Array.isArray(context.boundMenuItem.items) ? context.boundMenuItem.items : [context.boundMenuItem]) : []
+      const viaKey = (action.type === 'keypress' || action.type === 'hold_key') && bound.find((one) => one?.mixedScriptName === true)
+      if ((activates(action) && target?.mixedScriptName === true) || viaKey) {
+        const shown = viaKey ? viaKey.name : target.name
+        return { decision: 'confirm', class: 'unknown_target', classes: ['unknown_target'], rule: viaKey ? 'menu:mixed_script' : 'target:mixed_script', reason: `activate "${shown}", whose name mixes scripts in one word (a disguised control?)`, app, askEachTime: true }
+      }
     }
     // Where the accessibility tree says nothing, a click or Return may be anything (R92).
     if (activates(action) && target?.opaque === true && !preApprovedIn('unknown_target', app)) {
