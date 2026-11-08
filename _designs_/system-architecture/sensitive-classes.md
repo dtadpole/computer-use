@@ -30,7 +30,7 @@ value rule and name is a row of `_tests_/agent-core/sensitive-classes.test.mjs`;
 - Too broad to judge by value: a plain SSN or SIN, a CVV, an MM/YY expiry, a passport or licence number, a date, a
   street address; names carry them.
 - A 40+ hex digest asks (accepted over-ask, D-061).
-- Words match whole; a bare six-digit number (a one-time code) goes by field name.
+- Words match whole; a bare six-digit code goes by field name.
 - Sensitive-field text, Email and Phone too, is redacted (D-062).
 - An unbroken national phone run (07700900123) or a 00 prefix is not judged by value; a grouped reference asks (CU-185).
 - Names compare normalised; acronyms match case-sensitively as whole words. 'Mobile app name', 'Bank account holder'
