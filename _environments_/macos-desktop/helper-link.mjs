@@ -206,7 +206,9 @@ const COVERED_POINT = 'the point is covered by a window of an app this run is no
 export function replyError(type, reply) {
   const message = typeof reply.message === 'string' && reply.message.length > 0 ? reply.message : `the helper refused the ${type} request`
   switch (reply.code) {
-    case 'not_granted': return notGranted(reply.grant)
+    // CU-240: helper 0.2.56 adds wasGranted and rechecks after a grant that read true earlier in the run; only a true
+    // boolean counts.
+    case 'not_granted': return notGranted(reply.grant, { wasGranted: reply.wasGranted === true, rechecks: reply.rechecks })
     case 'out_of_scope':
     case 'no_scope': {
       const details = scopeDetails(reply)

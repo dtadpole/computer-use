@@ -65,9 +65,18 @@ export function invalid(message, details) {
 
 /**
  * The refusal for a missing grant, naming it both ways, so the model's text and the run's error say which grant the
- * owner would have to give; the run itself can never ask for it.
+ * owner would have to give; the run itself can never ask for it. CU-240 (helper 0.2.56): when the grant read true earlier
+ * in this run and still reads false after the helper's re-reads, it is most likely a TCC read failing under load, not a
+ * grant to give - the code stays not_granted (every fail-closed path keeps it), the details say wasGranted and the re-read
+ * count, and the text no longer asks the owner to grant what is already on.
  */
-export function notGranted(grant) {
+export function notGranted(grant, { wasGranted = false, rechecks = null } = {}) {
   const label = GRANT_NAMES[grant] ?? 'an unknown'
+  if (wasGranted === true) {
+    const reread = Number.isInteger(rechecks) && rechecks >= 0 && rechecks <= 10 ? rechecks : null
+    return new EnvironmentError('not_granted',
+      `the desktop helper's ${label} grant (${String(grant)}) read true earlier in this run and reads false now${reread !== null ? ` after ${reread} re-reads` : ''}; the system may be overloaded - if the grant is still on in System Settings there is nothing to grant`,
+      { grant, wasGranted: true, ...(reread !== null ? { rechecks: reread } : {}) })
+  }
   return new EnvironmentError('not_granted', `the desktop helper lacks the ${label} grant (${String(grant)}); only the owner can grant it, and this run cannot ask`, { grant })
 }

@@ -20,14 +20,39 @@ const WORDS = Object.freeze({
   delete: ['delete', 'remove', 'discard', 'erase', 'empty trash', 'cancel subscription', 'replace', 'overwrite', "don't save", 'don\u2019t save',
     // CU-146 (the CU-145 audit): destructive labels the list missed.
     'move to trash', 'move to bin', 'empty bin', 'clear history', 'clear all', 'reset all', 'reset settings', 'reset to defaults', 'uninstall', 'wipe', 'purge',
-    'deactivate', 'close account', 'forget', 'factory reset'],
+    'deactivate', 'close account', 'forget', 'factory reset',
+    // cu-researcher's 13:23Z sweep: unsaved edits lost, like Discard Changes.
+    'revert to saved', 'revert all changes'],
   permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke',
     // CU-258 (cu-researcher): standing choices an app keeps after the run, as whole phrases. A bare 'Allow' stays free so
     // cookie banners do not ask (named limit).
     'always allow', 'always trust', 'always open', 'allow access', "don't ask again", 'don\u2019t ask again', 'do not ask again',
     'remember my choice', 'remember this choice', 'remember my decision', 'never for this website', 'never for this site',
-    'set as default', 'make default'],
-  submit: ['send', 'post', 'submit', 'publish', 'reply', 'sign up', 'register'],
+    'set as default', 'make default',
+    // cu-coordinator 14:17Z (with CU-258): Finder's Get Info 'Change All...' sets the default app for every file of a type.
+    'change all',
+    // cu-researcher's CU-258 remainder (#63): more standing-choice wordings.
+    'always use this app', 'always use this application', 'do not ask me again', "don't ask me again", 'don\u2019t ask me again',
+    // CU-261 (cu-researcher): a camera or microphone switched on reaches other people.
+    'turn on camera', 'turn on microphone', 'turn on video', 'start video', 'unmute',
+    // cu-researcher's 13:23Z sweep: an account-wide sign-out.
+    'sign out of all devices', 'sign out everywhere', 'log out of all devices', 'log out everywhere',
+    // CU-270 (cu-researcher): switching an account's protection off - every verb with every protection, as whole phrases
+    // ('Turn off notifications' stays free). ChatGPT confirms any change to account permissions.
+    ...['turn off', 'disable', 'remove', 'allow'].flatMap((verb) => ['2 step', 'two step', 'two factor', '2fa', 'mfa', 'multi factor',
+      'password', 'passkey', 'passkeys', 'security key', 'security keys', 'login alerts', 'sign in alerts', 'account recovery', 'find my',
+      'less secure apps', 'less secure app access'].map((what) => `${verb} ${what}`))],
+  submit: ['send', 'post', 'submit', 'publish', 'reply', 'sign up', 'register',
+    // CU-261 (cu-researcher; cu-coordinator: High): actions that reach other people or commit shared work, as whole
+    // phrases. A bare Accept, Connect, Join or Follow stays free (cookie banners, Wi-Fi, generic joins: named limits).
+    'facetime', 'video call', 'audio call', 'voice call', 'start call', 'start a call', 'join meeting', 'join call',
+    'join with video', 'join with audio', 'join now', 'start meeting', 'start a meeting', 'accept invitation',
+    'decline invitation', 'accept invite', 'decline invite', 'rsvp', 'tweet', 'approve', 'merge pull request',
+    'confirm merge', 'squash and merge', 'rebase and merge', 'deploy', 'run workflow',
+    // cu-researcher's 13:23Z sweep: messages to the sender or the group.
+    'unsubscribe', 'report spam', 'report junk', 'leave group', 'leave conversation', 'leave channel',
+    // cu-researcher on #98: a cancellation goes to every attendee.
+    'cancel meeting', 'cancel event', 'cancel invitation', 'send cancellation'],
 })
 const PRECEDENCE = ['purchase', 'launch_code', 'delete', 'permission', 'page_dialog', 'credential', 'sensitive_data', 'submit', 'new_site', 'install']
 const POINTER = new Set(['click', 'double_click', 'triple_click'])
@@ -129,7 +154,10 @@ function namesWord(name, words) {
 // entry on its page or window holds text. The environment reports that as target.textEntered, read at each action's
 // own judgement; only a strict false - every entry read and empty - lets it run. True, null or absent asks, as before.
 const SUBMIT_BUT_REPLY = Object.freeze(WORDS.submit.filter((word) => word !== 'reply'))
+// CU-261: a control named only Call, Answer or Merge submits; inside a longer name ('Call Stack', 'Merge Cells') it does not.
+const SUBMIT_WHOLE_NAMES = new Set(['call', 'answer', 'merge'])
 function judgesSubmit(name, target) {
+  if (SUBMIT_WHOLE_NAMES.has(normaliseName(name).trim())) return true
   if (!namesWord(name, WORDS.submit)) return false
   return !(target?.textEntered === false && !namesWord(name, SUBMIT_BUT_REPLY))
 }
@@ -236,6 +264,8 @@ const API_TOKEN = new RegExp([
   'rk_(?:live|test)_[A-Za-z0-9]{16,}',
 ].map((one) => `\\b${one}\\b`).join('|'))
 const PASSWORD_NAMES = Object.freeze(['password', 'passcode', 'passphrase', 'pin', 'pin code'])
+// CU-265: the schemes a page navigates itself; any other hands the link to another app.
+const WEB_SCHEMES = new Set(['http', 'https', 'javascript', 'about'])
 // CU-253: chat apps that send on a plain Return from the compose field, and the names of compose fields.
 const CHAT_APPS = new Set(['com.apple.MobileSMS', 'com.apple.iChat', 'com.tinyspeck.slackmacgap', 'net.whatsapp.WhatsApp', 'desktop.WhatsApp',
   'ru.keepcoder.Telegram', 'org.telegram.desktop', 'com.hnc.Discord', 'org.whispersystems.signal-desktop', 'com.microsoft.teams',
@@ -563,6 +593,13 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       classes.push('page_dialog')
       for (const cls of ['purchase', 'delete', 'permission']) if (namesWord(context.dialog.message, WORDS[cls])) classes.push(cls)
     }
+    // CU-265 (cu-researcher; cu-coordinator: ask): a link whose scheme is not the web's - facetime:, tel:, zoommtg:,
+    // mailto:, file:, an app's own - hands the click to another app, outside the run. The browser driver reports the
+    // clicked link's scheme only (target.linkScheme, lower case, no colon); a click or a Return on it asks permission,
+    // never pre-approved. No scheme reported keeps today's judgement (a named limit until the driver sends it).
+    const scheme = typeof target?.linkScheme === 'string' ? target.linkScheme.trim().toLowerCase().replace(/:$/, '') : ''
+    const pressesLink = ['click', 'double_click', 'triple_click'].includes(action.type) || keysOf(action).has('ENTER')
+    if (scheme !== '' && !WEB_SCHEMES.has(scheme) && pressesLink) classes.push('permission')
     const keyboard = keyboardActivation(action, target, context)
     if (keyboard.deletes) classes.push('delete')
     // CU-140 (press-and-drop.md): a drag pressed on a control - a long press, or any drag starting there - is judged like

@@ -6,7 +6,7 @@ import { validateBatch } from './actions.mjs'
 import { unattendedController } from './consent.mjs'
 import { createRunControl } from './control.mjs'
 import { inspectPageText } from './inspect.mjs'
-import { createAppPolicy, opensUnreadSelection as opensSelection, panelDestination, panelKind, protectedPath } from './app-policy.mjs'
+import { createAppPolicy, opensSelection, panelDestination, panelKind, protectedPath } from './app-policy.mjs'
 import { normaliseText } from './normalise.mjs'
 import { createPanelFolder } from './panel-folder.mjs'
 import { createExclusions } from './exclusions.mjs'
@@ -17,7 +17,7 @@ import { MODIFIER_KEYS, normalizeKey } from './keys.mjs'
 import { composePresses, expandResults } from './press.mjs'
 import { joinSplitResults, splitTypesAtTabs } from './type-split.mjs'
 import { answerLinePattern } from './answer-line.mjs'
-import { RETRY, transientCapture, transientFront, transientInput } from './retry.mjs'
+import { RETRY, transientCapture, transientFront, transientGrant, transientInput } from './retry.mjs'
 
 /**
  * The agent loop (design: agent-loop.md, run-outcomes.md). Observe, ask the model, validate the whole batch, settle
@@ -407,11 +407,19 @@ export async function runTask(options) {
     interruptsAtObservation = interrupts
     // CU-56: a capture dropped for a transient out-of-scope window is retried a bounded number of times.
     const captureRetries = []
+    let grantRetried = false
     const capture = async () => {
       for (let attempt = 0; ; attempt += 1) {
         try {
           return await environment.screenshot()
         } catch (error) {
+          // CU-240: a grant re-read false after reading true earlier in the run gets one retry of its own.
+          if (desktop && transientGrant(error) && !grantRetried) {
+            grantRetried = true
+            captureRetries.push({ reason: 'grant_reread', grant: String(error.details.grant ?? ''), delayMs: RETRY.captureDelaysMs[0] })
+            await pause(RETRY.captureDelaysMs[0])
+            continue
+          }
           if (!desktop || !transientCapture(error) || attempt >= RETRY.captureDelaysMs.length) throw error
           captureRetries.push({ reason: error.details.reason, ...(typeof error.details.bundleId === 'string' ? { bundleId: error.details.bundleId } : {}), delayMs: RETRY.captureDelaysMs[attempt] })
           await pause(RETRY.captureDelaysMs[attempt])
@@ -820,10 +828,10 @@ export async function runTask(options) {
     // An unreadable bar asks for any chord but the editing ones, which the keys already judge (named over-ask: a Control
     // editing chord such as Control-K, unlisted, asks when the bar cannot be read).
     const boundMenuItem = read?.unreadable === true && editingChord(action) ? undefined : read
-    // CU-252 (CU-259's selectedItems): an open that acts on the selection - in Finder, an Open menu item, or Command-O or
+    // CU-252 (CU-259's selectedItems): an open that acts on the selection - in any app, an Open menu item, or Command-O or
     // Command-Down with no named file focused - reads what is selected: names and kinds only, never a path or contents.
     // No read (an older driver, fakes) leaves it undefined, which app-policy asks as unread.
-    const selection = desktop && opensSelection(action, target, app?.frontmostBundleId) && typeof environment.selectedItems === 'function'
+    const selection = desktop && opensSelection(action, target) && typeof environment.selectedItems === 'function'
       ? selectedItemsOf(await Promise.resolve(environment.selectedItems()).catch(() => null))
       : undefined
     const typed = typedFor(action, target, !desktop && paste ? paste.text : null, state)
