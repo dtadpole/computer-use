@@ -1,8 +1,8 @@
 ---
 title: '[cu] Developer One (agent core) - Team Member'
 created: 2026-11-01T09:06:25Z
-modified: 2026-11-07T02:20:40Z
-version: 1.1.0
+modified: 2026-11-08T09:58:00Z
+version: 1.2.0
 description: 'The lasting record of [cu] Developer One (agent core) - its seat, current direction and links to its work.'
 grounded_in:
   - source: owner request in the dsh session 2026-11-01 (set up workspace, team and sessions for computer use)
@@ -24,6 +24,7 @@ its direction changes when the coordinator assigns a new one, and the write scop
 |---|---|
 | [`responsibilities.md`](responsibilities.md) | the owner's words for this seat, its task and parameters |
 | [`artifacts.md`](artifacts.md) | what the seat shipped - each issue, its note and PRs, and its state |
+| [`handover.md`](handover.md) | what a fresh session needs - current issues and PRs, open asks, tools, the next step |
 
 ## Read next
 

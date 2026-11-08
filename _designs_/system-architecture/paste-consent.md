@@ -1,9 +1,9 @@
 ---
 title: A paste is judged by what it inserts
 created: 2026-11-07T03:33:02Z
-modified: 2026-11-08T03:33:22Z
+modified: 2026-11-08T10:03:20Z
 level: L1
-version: 0.2.9
+version: 0.2.10
 description: How a paste is judged without reading the owner's pasteboard - the browser checks the run's own clipboard text; the desktop asks before a paste that has no copy of the run's own before it.
 status: unverified
 grounded_in:
@@ -46,14 +46,14 @@ name only where none is reported. A copy of shown text carries its caption's cla
   in which the person copies, or another app's write before the paste - asked; the Edit menu's Paste counts the same.
 - Mutants: the paste text not judged (browser); changeCount ignored; the take-over reset removed; the count read in the
   copy's own reply (a delayed-write test pins it).
-- No count: paste first -> asked; copy then paste -> allowed; copy, take-over, paste -> asked; mutant: no count falls
-  back to allow.
+- No count (a deviation since D-069's floor; CU-220): paste first -> asked; copy then paste -> asked too; mutant: a
+  missing count taken as the run's own copy fails three rows.
 - Over-ask: none in our trajectories (5 of 5 pastes followed an own copy).
 - Live: consent-keys, unattended - Cmd+V into Message first asks and is declined, nothing pasted.
 
 ## Not done
 
 
-Every helper the link admits sends the count (0.2.38; D-069's floor is 0.2.44). Were it missing, the run's own copy or cut
-would stand in for the rise, the take-over reset still applying; a copy with nothing selected would pass unnoticed.
+Every admitted helper sends the count (since 0.2.38; the floor is 0.2.44), so a missing one makes the paste the
+owner's - asked (CU-220). A keystroke paste with nothing focused has none, so it asks: a named over-ask (CU-219).
 
