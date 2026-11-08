@@ -540,8 +540,12 @@ export async function runTask(options) {
     const items = []
     for (const one of listed) {
       if (!one || typeof one !== 'object' || typeof one.name !== 'string' || one.name.trim() === '') return { unreadable: true }
-      const key = one.keyEquivalent && typeof one.keyEquivalent === 'object' ? { char: one.keyEquivalent.char ?? null, modifiers: one.keyEquivalent.modifiers ?? null } : null
-      items.push({ role: 'AXMenuItem', name: one.name, ...(key ? { keyEquivalent: key } : {}) })
+      const k = one.keyEquivalent && typeof one.keyEquivalent === 'object' ? one.keyEquivalent : null
+      const key = k ? { char: k.char ?? null, ...(k.glyph !== undefined ? { glyph: k.glyph } : {}), modifiers: k.modifiers ?? null } : null
+      // An item under the Apple menu (Lock Screen, Log Out, Force Quit) acts beyond the approved app: app-policy refuses it.
+      const appleMenu = one.appleMenu === true || (Array.isArray(one.path) && one.path[0] === 'Apple')
+      // Names only, capped as captions are (a Window or bookmarks item may carry a document's title); never the menu path.
+      items.push({ role: 'AXMenuItem', name: one.name.trim().slice(0, 80), ...(key ? { keyEquivalent: key } : {}), ...(typeof one.enabled === 'boolean' ? { enabled: one.enabled } : {}), ...(appleMenu ? { appleMenu: true } : {}) })
     }
     return items.length === 1 ? items[0] : { items }
   }

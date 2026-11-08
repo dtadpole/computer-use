@@ -243,6 +243,13 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     if (shortcut !== null) {
       return { decision: 'block', class: null, rule: 'system_shortcut', reason: `${action.keys.join('+')} is the system's ${shortcut} shortcut; it acts beyond the approved app` }
     }
+    // CU-232 (menu-key.md): a chord bound to an item of the Apple menu (Lock Screen, Log Out, Force Quit) acts beyond the
+    // approved app, like the system's own shortcuts.
+    const bound = context.boundMenuItem
+    const appleItem = bound && typeof bound === 'object' ? (Array.isArray(bound.items) ? bound.items : [bound]).find((one) => one?.appleMenu === true) : undefined
+    if (appleItem) {
+      return { decision: 'block', class: null, rule: 'system_shortcut', reason: `${(action.keys ?? []).join('+')} fires the Apple menu's ${appleItem.name}; it acts beyond the approved app` }
+    }
     // Aiming at an excluded app is refused, and so is a target that names no app (fail closed); an excluded app that
     // came to the front is the person's (R65, R79).
     const aimed = target === null ? null : exclusions.isExcludedApp(target.origin)

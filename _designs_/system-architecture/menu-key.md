@@ -1,9 +1,9 @@
 ---
 title: A desktop chord is judged by the menu item it fires
 created: 2026-11-08T10:36:57Z
-modified: 2026-11-08T10:42:10Z
+modified: 2026-11-08T10:44:56Z
 level: L1
-version: 0.1.1
+version: 0.1.2
 description: How agent core judges a desktop key chord that is a menu item's key equivalent - as a click on that item too, the stricter verdict winning - and what it does when the menu bar cannot be read.
 status: unverified
 grounded_in:
@@ -14,8 +14,8 @@ grounded_in:
 
 # A desktop chord is judged by the menu item it fires
 
-On a Mac a chord that is a menu item's key equivalent fires that item: Mail's Send is Shift-Command-D. A click on the
-item is judged by its name ([action-classes](action-classes.md)), so the chord must be too.
+A chord that is a menu item's key equivalent fires the item (Mail's Send is Shift-Command-D); a click on the item
+is judged by its name ([action-classes](action-classes.md)), so the chord must be too.
 
 ## Rule
 
@@ -23,28 +23,30 @@ item is judged by its name ([action-classes](action-classes.md)), so the chord m
    so do a plain Delete, Forward Delete or Escape when the focus is no text input (Mail's Delete). The editing
    chords the loop already judges by their meaning do not: Command with A, Command or Control with C, X or V (any paste
    chord, [paste-chords](paste-chords.md)), Command-Z with or without Shift, Command or Option arrows, and the CU-143
-   delete chords. Typing, Shift or Option alone, and plain keys never do.
+   delete chords. Typing and other plain keys never do.
 2. **The read.** `environment.menuItemForChord(action)` asks the helper (`menuKey`) for the frontmost approved app's
    menu items whose key equivalent matches - all of them, so a benign first match hides nothing. It reads the role,
-   title and key equivalent only, never a value or a selection. It answers the items (`{role, name, keyEquivalent}`,
+   title and key equivalent only, never a value or selection. It answers the items (`{role, name, keyEquivalent}`,
    one or a list of up to eight), `{none: true}` after a whole read with no match, or `{unreadable: true}` (also more
-   matches than eight, or a lazily filled menu). Disabled items still match: a stale enabled state could hide an
-   item that fires, while a disabled one only over-asks.
+   than eight matches, or a lazily filled menu). Disabled items still match: a stale enabled state could hide one
+   that fires.
 3. **The verdict.** Each item's name joins the keys' own judgement by the click rules: purchase, delete, permission and
    submit words, Trash or Bin, a Reply by the entries' text (CU-157). The stricter verdict wins, and an item never
-   lowers what the keys ask. With `none`, the keys alone decide.
+   lowers what the keys ask. With `none`, the keys alone decide. An Apple-menu item (Lock Screen, Log Out) is
+   refused as a system shortcut.
 4. **Unreadable.** A read that fails, throws or answers nothing usable is unreadable. App-policy asks it each time
-   (`unknown_target`, rule `menu:unreadable`) unless the keys already ask. An environment with no read (the browser,
-   test fakes) judges by the keys, as before.
-5. **Records.** The action event names the item (`boundMenuItem`: role, name, key equivalent - no menu path), or
-   `none`, or `unreadable`.
+   (`unknown_target`, rule `menu:unreadable`) unless the keys already ask. With no read (the browser, fakes), the keys
+   decide as before.
+5. **Records.** The event's `boundMenuItem` keeps names only: role, name capped at 80 characters, key equivalent,
+   enabled - never the menu path; or `none`, or `unreadable`.
 
 ## Acceptance
 
 - `menu-key.test.mjs`, through runTask: Send asks submit, while no match or no read is allowed; bound items take
   their click-rule class; every match counts; unreadable, thrown, null, nameless and over-cap answers ask; editing
-  chords read nothing; a plain Delete or Escape reads off text only; a sheet's Command-D stays delete.
-- Six mutants, one per rule above, each fail a row.
+  chords read nothing; a plain Delete or Escape reads off text only; a sheet's Command-D stays delete; an Apple-menu
+  item is refused; the record is capped and pathless.
+- Seven mutants, one per rule, each fail a row.
 - Halves CU-235 (helper) and CU-236 (driver); D-059 cells menu-key-send and menu-key-benign; live (cu-verifier,
   CU-238): Shift-Command-D on a compose screen's Message > Send with a draft is declined submit, nothing sent.
 

@@ -138,3 +138,13 @@ test('CU-232 (cu-researcher): a plain Delete or Escape off a text input takes th
   const inText = await runFocused([key('BACKSPACE'), key('ESCAPE')], BODY, () => item('Delete', null, 8))
   assert.deepEqual(inText.asked, [], 'a text input reads nothing for a plain Backspace or Escape')
 })
+
+test('CU-232: an item under the Apple menu is refused like a system shortcut; the event keeps names only - capped, no menu path, the glyph and enabled state as context', async () => {
+  const apple = await run([key('META', 'SHIFT', 'L')], { menu: () => ({ items: [{ ...item('Lock Screen', 'L', 1), path: ['Apple'] }] }) })
+  assert.deepEqual([apple.events[0].decision, apple.events[0].rule], ['block', 'system_shortcut'])
+  const long = 'Send '.padEnd(200, 'x')
+  const { events } = await run([key('F5')], { menu: () => ({ items: [{ role: 'AXMenuItem', name: long, keyEquivalent: { char: null, glyph: 115, modifiers: 8 }, path: ['Message', 'Drafts'], enabled: false }] }) })
+  assert.deepEqual(events[0].boundMenuItem, { role: 'AXMenuItem', name: long.slice(0, 80), keyEquivalent: { char: null, glyph: 115, modifiers: 8 }, enabled: false })
+  assert.ok(!JSON.stringify(events[0]).includes('Drafts'), 'no menu path in the record')
+  assert.deepEqual(verdict(events[0]), ['confirm', 'submit'], 'a disabled item still counts')
+})
