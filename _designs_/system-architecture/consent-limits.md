@@ -1,9 +1,9 @@
 ---
 title: Consent limits - the routes the consent rules leave unjudged, named for the verdict
 created: 2026-11-08T11:23:17Z
-modified: 2026-11-08T18:29:05Z
+modified: 2026-11-08T19:08:54Z
 level: L1
-version: 0.2.9
+version: 0.3.0
 description: The D-059 table's named limits (D-063) - routes the consent rules do not judge, on purpose or by parity, each with its issue; split out of consent-routes.md so the route table keeps its budget.
 status: unverified
 grounded_in:
@@ -34,6 +34,8 @@ row. The routes the rules do judge are in [consent-routes.md](consent-routes.md)
   another chord, another title - is refused by the helper's Services mark (CU-250).
 - A Writing Tools item, or one naming another vendor's AI, is refused like a Service (CU-277); a read menu path decides.
   An approved app's own AI feature under its own menu counts as the app (named, cu-coordinator).
+- In an IDE, Run, Debug, Build, Test and their chords ask launch_code (CU-271); 'Build Settings…' over-asks. Typing
+  into a terminal panel is refused by its name (E5); a localized label running node is not yet (CU-279).
 - A link to a non-web scheme - facetime:, tel:, mailto:, file:, an app's own - asks permission (CU-265); data: and
   blob: links ask too (accepted over-ask until they count as web schemes).
 - A standing choice in an approved app's own dialog - 'Always Allow', 'Always Trust', "Don't ask again", 'Never for
