@@ -31,6 +31,8 @@ const WORDS = Object.freeze({
     'set as default', 'make default',
     // cu-coordinator 14:17Z (with CU-258): Finder's Get Info 'Change All...' sets the default app for every file of a type.
     'change all',
+    // cu-researcher's CU-258 remainder (#63): more standing-choice wordings.
+    'always use this app', 'always use this application', 'do not ask me again', "don't ask me again", 'don\u2019t ask me again',
     // CU-261 (cu-researcher): a camera or microphone switched on reaches other people.
     'turn on camera', 'turn on microphone', 'turn on video', 'start video', 'unmute',
     // cu-researcher's 13:23Z sweep: an account-wide sign-out.

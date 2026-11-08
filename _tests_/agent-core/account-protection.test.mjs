@@ -9,7 +9,7 @@ const judge = (name) => policy.classify({ type: 'click', x: 1, y: 1, button: 'le
 
 test('CU-270 (and Finder\'s Change All, with CU-258): turning off 2-step verification, 2FA, passkeys, login alerts, recovery or Find My, or allowing less secure apps, asks permission', () => {
   for (const name of ['Turn off 2-Step Verification', 'Disable 2FA', 'Turn off two-factor authentication', 'Remove passkey', 'Remove security key',
-    'Turn off login alerts', 'Turn off account recovery', 'Turn Off Find My Mac', 'Allow less secure apps', 'Disable MFA', 'Turn off password', 'Change All\u2026', 'Change All...']) {
+    'Turn off login alerts', 'Turn off account recovery', 'Turn Off Find My Mac', 'Allow less secure apps', 'Disable MFA', 'Turn off password', 'Change All\u2026', 'Change All...', 'Always use this app\u2026', 'Do not ask me again', "Don't ask me again"]) {
     assert.ok((judge(name).classes ?? []).includes('permission'), name)
   }
 })
