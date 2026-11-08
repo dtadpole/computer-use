@@ -107,3 +107,29 @@ test('CU-266 through the loop: a menu item named Paste with a soft hyphen and no
   assert.deepEqual([action.decision, action.class], ['confirm', 'sensitive_data'])
   assert.equal(environment.log.filter((x) => (x.action ?? x)?.type).length, 0)
 })
+
+// CU-268: the residue cu-researcher found after #82 - invisible characters outside Cf, and other scripts' digits.
+const VS16 = String.fromCodePoint(0xfe0f) // variation selector-16
+const CGJ = String.fromCodePoint(0x034f) // combining grapheme joiner
+const HANGUL_FILLER = String.fromCodePoint(0x3164)
+const scriptDigits = (text, zero) => [...text].map((ch) => (ch >= '0' && ch <= '9' ? String.fromCodePoint(zero + Number(ch)) : ch)).join('')
+
+test('CU-268: default-ignorable characters outside Cf no longer hide a class word - variation selector, grapheme joiner, Hangul filler', () => {
+  for (const [name, cls] of [[`Se${VS16}nd`, 'submit'], [`De${CGJ}lete`, 'delete'], [`Place${HANGUL_FILLER}order`.replace(HANGUL_FILLER, ` ${HANGUL_FILLER}`), 'purchase']]) {
+    assert.equal(judged(desktop.classify(click, { frontmostBundleId: FIXTURE, target: button(name) })), cls, `desktop ${JSON.stringify(name)}`)
+    assert.equal(judged(web.classify(click, { url: 'https://fixture.example/', target: { role: 'button', name } })), cls, `web ${JSON.stringify(name)}`)
+  }
+  assert.equal(normaliseText(String.fromCodePoint(0x2800)), String.fromCodePoint(0x2800), 'the braille blank draws a cell: a named limit')
+})
+
+test('CU-268: a card or SSN in another script\'s digits reads as one - Arabic-Indic, Extended Arabic-Indic, Devanagari, Bengali', () => {
+  const notes = { origin: FIXTURE, role: 'AXTextArea', name: 'Notes', editable: true, fingerprint: 'n', defaultButtonRead: true }
+  for (const zero of [0x0660, 0x06f0, 0x0966, 0x09e6]) {
+    for (const value of [CARD_DIGITS, SSN]) {
+      const text = scriptDigits(value, zero)
+      assert.equal(judged(desktop.classify({ type: 'type', text }, { frontmostBundleId: FIXTURE, target: notes })), 'sensitive_data', `${zero.toString(16)} ${value === SSN ? 'SSN' : 'card'}`)
+    }
+  }
+  assert.equal(normaliseText(scriptDigits('2026', 0x0660)), '2026', 'a year stays a year')
+  assert.equal(judged(desktop.classify({ type: 'type', text: scriptDigits('12', 0x0966) }, { frontmostBundleId: FIXTURE, target: notes })), 'allow')
+})

@@ -3,8 +3,9 @@
  * app controls its accessible names and the text it shows, so a zero-width space, a soft hyphen, a fullwidth form or a
  * Cyrillic or Greek look-alike must not hide 'Send', 'Password', a card number or 'Bank account' from consent.
  *
- * normaliseText: NFKC (fullwidth and compatibility forms to their plain ones), every format character removed (Unicode
- * Cf: zero-width space and joiners, word joiner, BOM, soft hyphen, bidi marks), the common Cyrillic and Greek letters
+ * normaliseText: NFKC (fullwidth and compatibility forms to their plain ones), every format character and every other
+ * default-ignorable code point removed (zero-width space and joiners, word joiner, BOM, soft hyphen, bidi marks,
+ * variation selectors, the Hangul fillers; CU-268), any script's decimal digits read as ASCII digits (CU-268), the common Cyrillic and Greek letters
  * that look Latin folded to Latin, whitespace collapsed, and a letter-spaced word closed up ('S e n d' reads 'Send';
  * cu-coordinator's ruling - three or more single letters each one space apart). Case is left to each rule (they already
  * fold it). Only the judged copy is normalised - the action the run posts is never changed. Named limit: a letter-spaced
@@ -20,12 +21,29 @@ const HOMOGLYPHS = new Map(Object.entries({
 }))
 const HOMOGLYPH_RE = new RegExp(`[${[...HOMOGLYPHS.keys()].join('')}]`, 'gu')
 
+// CU-268: every default-ignorable code point (variation selectors, U+034F combining grapheme joiner, the Hangul fillers)
+// besides the format characters - none draws a glyph a person reads.
+const INVISIBLE_RE = /[\p{Cf}\p{Default_Ignorable_Code_Point}]/gu
+
+// CU-268: a decimal digit of any script (Arabic-Indic, Devanagari, Bengali...) read as its ASCII digit, so a card number
+// written in another script's digits meets the value rules. A script's digits are runs of ten from its zero; NFKC has
+// already folded the fullwidth and mathematical ones.
+const DIGIT_RE = /\p{Nd}/gu
+const isDigit = (cp) => /\p{Nd}/u.test(String.fromCodePoint(cp))
+function asciiDigit(ch) {
+  const cp = ch.codePointAt(0)
+  if (cp >= 0x30 && cp <= 0x39) return ch
+  let zero = cp
+  for (let i = 0; i < 64 && isDigit(zero - 1); i += 1) zero -= 1
+  return String((cp - zero) % 10)
+}
+
 // Three or more single letters, each one space from the next, standing alone (CU-266: 'S e n d').
 const LETTER_SPACED_RE = /(?<![\p{L}\p{N}])\p{L}(?: \p{L}){2,}(?![\p{L}\p{N}])/gu
 
 export function normaliseText(value) {
   if (typeof value !== 'string') return value
-  return value.normalize('NFKC').replace(/\p{Cf}/gu, '').replace(HOMOGLYPH_RE, (ch) => HOMOGLYPHS.get(ch)).replace(/[^\S\r\n]+/g, ' ')
+  return value.normalize('NFKC').replace(INVISIBLE_RE, '').replace(DIGIT_RE, asciiDigit).replace(HOMOGLYPH_RE, (ch) => HOMOGLYPHS.get(ch)).replace(/[^\S\r\n]+/g, ' ')
     .replace(LETTER_SPACED_RE, (run) => run.replaceAll(' ', ''))
 }
 
