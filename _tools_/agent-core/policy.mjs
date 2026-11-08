@@ -15,7 +15,10 @@ export const NEVER_PRE_APPROVED = Object.freeze(['purchase', 'delete', 'permissi
 
 /** Word lists matched on a target's accessible name, case-insensitively, at word boundaries; they err toward confirm. */
 const WORDS = Object.freeze({
-  purchase: ['buy', 'pay', 'order', 'place order', 'checkout', 'check out', 'subscribe', 'donate', 'purchase', 'transfer', 'withdraw', 'wire', 'send money'],
+  purchase: ['buy', 'pay', 'order', 'place order', 'checkout', 'check out', 'subscribe', 'donate', 'purchase', 'transfer', 'withdraw', 'wire', 'send money',
+    // CU-288 (cu-researcher's real-app wordings, round 2): a booking, an upgrade or a renewal commits money.
+    'book now', 'book this', 'reserve now', 'upgrade plan', 'upgrade now', 'upgrade to pro', 'upgrade to premium', 'renew subscription', 'renew now',
+    'renew plan'],
   // CU-135: replace and overwrite (a save panel's 'already exists' sheet), don't save (a close sheet discards work).
   delete: ['delete', 'remove', 'discard', 'erase', 'empty trash', 'cancel subscription', 'replace', 'overwrite', "don't save", 'don\u2019t save',
     // CU-146 (the CU-145 audit): destructive labels the list missed.
@@ -52,7 +55,9 @@ const WORDS = Object.freeze({
     // cu-researcher's 13:23Z sweep: messages to the sender or the group.
     'unsubscribe', 'report spam', 'report junk', 'leave group', 'leave conversation', 'leave channel',
     // cu-researcher on #98: a cancellation goes to every attendee.
-    'cancel meeting', 'cancel event', 'cancel invitation', 'send cancellation'],
+    'cancel meeting', 'cancel event', 'cancel invitation', 'send cancellation',
+    // CU-288: a tax filing goes to the authority.
+    'file return', 'file tax return', 'file your return', 'file my return', 'e-file', 'efile', 'submit return', 'submit tax return'],
 })
 const PRECEDENCE = ['purchase', 'launch_code', 'delete', 'permission', 'page_dialog', 'credential', 'sensitive_data', 'submit', 'new_site', 'install']
 const POINTER = new Set(['click', 'double_click', 'triple_click'])
@@ -297,7 +302,9 @@ const SECRET_NAMES = Object.freeze(['recovery phrase', 'seed phrase', 'secret ph
   'dl number', 'license number', 'birthdate', 'birth day', 'exp date', 'expiration', 'valid thru', 'valid through', 'otp',
   'card no', 'cell number', 'mobile', 'tel',
   // CU-245 (cu-researcher's D-061 red team): a debit card, an account recovery key and two-factor backup codes.
-  'debit card', 'recovery key', 'backup code', 'backup codes'])
+  'debit card', 'recovery key', 'backup code', 'backup codes',
+  // CU-288: a one-time code named by its length ('Enter the 6-digit code', 'six-digit code').
+  'digit code', 'digit verification code'])
 // CU-172: acronyms match case-sensitively as whole tokens, so 'PAN' asks and 'Pan size' or 'Panel' does not.
 const SECRET_ACRONYMS = Object.freeze(['SIN', 'TFN', 'PAN', 'NHS', 'MRN', 'TIN', 'CPF', 'NRIC'])
 const namesAcronym = (name) => SECRET_ACRONYMS.some((word) => new RegExp(`(^|[^A-Za-z])${word}([^A-Za-z]|$)`).test(String(name ?? '')))
