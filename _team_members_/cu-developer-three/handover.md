@@ -13,7 +13,7 @@ grounded_in:
 # [cu] Developer Three (macOS helper) - handover
 
 Seat `cu-developer-three`; goal unchanged. Code: `~/computer-use--cu-developer-three`, a worktree of
-`~/dtadpole/this repository`. Scratch scripts (`install-slot.sh`, `install-held.sh`, `locked.mjs`) live
+`~/dtadpole/heddle/_projects_/computer-use`. Scratch scripts (`install-slot.sh`, `install-held.sh`, `locked.mjs`) live
 in `/tmp/cu-developer-three-scratch`; a fresh session re-reads them before use.
 
 ## Live state

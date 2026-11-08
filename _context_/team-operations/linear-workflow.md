@@ -4,12 +4,12 @@ created: 2026-11-06T11:30:00Z
 modified: 2026-11-06T16:00:00Z
 level: L2
 version: 1.2.0
-description: 'How the [cu] team runs its work in Linear (the team Linear workspace, team CU): what each state means and who moves it, priorities, labels, templates, cycles, project updates, PR rules, owner questions, and every seat''s Linear duties.'
+description: 'How the [cu] team runs its work in Linear (team CU) - what each state means and who moves it, priorities, labels, templates, cycles, project updates, PR rules, owner questions, and every seat''s Linear duties.'
 status: unverified
 grounded_in:
-  - source: owner 2026-11-06 03:15 PST (research and set up how the team works with Linear; member workflow, roles and responsibilities)
+  - source: owner 2026-11-06 0315 PST (research and set up how the team works with Linear; member workflow, roles and responsibilities)
   - source: _context_/team-operations/decision-log.yaml D-039 to D-042, D-049, D-053, D-055
-  - source: https://linear.app/docs/triage, https://linear.app/docs/use-cycles, https://linear.app/docs/github, https://linear.app/docs/assigning-issues, https://linear.app/docs/initiative-and-project-updates, https://linear.app/developers/agent-best-practices
+  - source: Linear documentation at linear.app - docs/triage, docs/use-cycles, docs/github, docs/assigning-issues, docs/initiative-and-project-updates, developers/agent-best-practices
 ---
 
 # [cu] Linear workflow

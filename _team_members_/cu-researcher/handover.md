@@ -16,7 +16,7 @@ Start here, then [responsibilities](responsibilities.md) and [red-team-consent-t
 
 ```text
 WHERE: code worktree ~/computer-use--cu-researcher, kept detached at origin/main for probes (main checkout
-~/dtadpole/this repository); develop in a fresh clone (/tmp/cu-researcher-int, lost on reboot);
+~/dtadpole/heddle/_projects_/computer-use); develop in a fresh clone (/tmp/cu-researcher-int, lost on reboot);
 records ~/reflection--cu-researcher (a records PR per change, self-merged).
 
 TABLES (mine): D-059 _tests_/agent-core/consent-routes.test.mjs, D-061 sensitive-classes.test.mjs; re-signed by
