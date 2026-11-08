@@ -1,9 +1,9 @@
 ---
 title: The helper's menu-key read
 created: 2026-11-08T11:55:00Z
-modified: 2026-11-08T11:55:00Z
+modified: 2026-11-08T12:06:00Z
 level: L1
-version: 0.1.0
+version: 0.2.0
 description: How CUHelper answers menuKey - which menu items of the frontmost approved app a key chord fires - from what AppKit serves Accessibility, and what that read cannot see.
 status: unverified
 grounded_in:
@@ -28,8 +28,9 @@ Every match is returned, at most 8.
 
 **Fail closed:** a failed or partial walk, another app in front, a layout with no character for the key, or a miss
 beside an empty top-level menu or menu-bar item (filled or built lazily; the first, Apple's, excepted by position) is
-unreadable, never none.
+unreadable, never none. A later duplicate of an earlier item's key reads with no character but keeps its modifiers
+(CU-238): a key-less item whose non-zero modifiers equal the chord's, or a chord whose matches are all disabled, is
+unreadable too.
 
 **Not seen:** shortcuts in lazily filled submenus below the top level - Services shows Accessibility only 'No Services
-Apply' while its shortcuts stay hidden - and a later duplicate of an earlier item's key, which reads with no
-character (CU-238's live row decides whether a real key reaches it past a disabled first item).
+Apply' while its shortcuts stay hidden - and a later duplicate on Command alone behind an enabled first match.

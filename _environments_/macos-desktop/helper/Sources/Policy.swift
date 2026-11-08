@@ -738,6 +738,19 @@ enum MenuKey {
     return false
   }
 
+  /// The chord's modifiers as AXMenuItemCmdModifiers bits: Shift 1, Option 2, Control 4, no Command 8.
+  static func modifierBits(_ chord: Chord) -> Int {
+    (chord.shift ? 1 : 0) | (chord.option ? 2 : 0) | (chord.control ? 4 : 0) | (chord.command ? 0 : 8)
+  }
+
+  /// (b): an item with no key character and no virtual key, whose non-zero modifiers equal the chord's - the way
+  /// AppKit serves a later duplicate of an earlier item's key equivalent. An item with no key equivalent at all reads
+  /// modifiers 0, so a hidden duplicate on Command alone is not told apart (the named blind spot, which (a) narrows).
+  static func hiddenDuplicate(_ entry: Entry, _ chord: Chord) -> Bool {
+    guard !entry.hasKey, let bits = entry.cmdModifiers, bits != 0 else { return false }
+    return bits == modifierBits(chord)
+  }
+
   /// How the read went: the matches (every one, capped), none, or unreadable with a reason.
   enum Read: Equatable {
     case items(bundleId: String, items: [Entry], truncated: Bool, incomplete: Bool)
@@ -792,8 +805,17 @@ enum MenuKey {
   /// menu, by position) that had no items to read - filled or built lazily - so a miss cannot be trusted. A chord whose
   /// key the layout gives no character for (an input method without a Unicode layout) cannot be judged against
   /// character items either (cu-verifier, cu-developer-one on #36): a miss is unreadable, a match incomplete.
+  ///
+  /// Hidden duplicates (cu-developer-one's decision on #36, 8 Nov): AppKit serves a LATER duplicate of an earlier item's
+  /// key equivalent with no key character (CU-238's Send Now reads modifiers 2, no character), so it cannot be matched.
+  /// (b) a key-less item whose non-zero modifiers equal the chord's is such a duplicate: unreadable. (a) when every
+  /// match is disabled, a hidden duplicate on Command alone (modifiers 0, indistinguishable from no key) may be the item
+  /// that fires: unreadable. Named residual: an enabled first match on Command alone hiding a later duplicate stays
+  /// unseen and is answered as its visible match.
   static func read(bundleId: String, entries: [Entry], emptyMenus: [String], chord: Chord) -> Read {
+    if entries.contains(where: { hiddenDuplicate($0, chord) }) { return .unreadable("a hidden duplicate key equivalent") }
     let matches = entries.filter { fires($0, chord) }
+    if !matches.isEmpty, matches.allSatisfy({ $0.enabled == false }) { return .unreadable("only disabled items match; a later duplicate may fire") }
     let layoutUnread = chord.unshifted == nil
     if matches.isEmpty {
       if layoutUnread { return .unreadable("the keyboard layout gives no character for this key") }

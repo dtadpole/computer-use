@@ -69,6 +69,26 @@ func testMenuKey() {
         "the Apple menu (the first, by position) never counts")
   check(!MenuKey.isEmptyMenu(role: "AXMenu", depth: 4, childCount: 0, underApple: false) && !MenuKey.isEmptyMenu(role: "AXMenu", depth: 2, childCount: 3, underApple: false),
         "a nested empty submenu (Services, Open Recent) and a filled menu do not count - the named limit")
+  // Hidden duplicates (CU-238's measurement: AX serves Send Now, the later duplicate of Mark as Read's Option-Command-D,
+  // with modifiers 2 and no character).
+  let markRead = MenuKey.Entry(title: "Mark as Read", path: ["Message", "Mark as Read"], enabled: false, cmdChar: "D", cmdModifiers: 2, cmdVirtualKey: nil, cmdGlyph: nil)
+  let sendNow = MenuKey.Entry(title: "Send Now", path: ["Message", "Send Now"], enabled: true, cmdChar: nil, cmdModifiers: 2, cmdVirtualKey: nil, cmdGlyph: nil)
+  check(MenuKey.hiddenDuplicate(sendNow, chord(2, cmd | option)) && !MenuKey.hiddenDuplicate(sendNow, chord(2, cmd | shift)),
+        "(b) a key-less item whose non-zero modifiers equal the chord's is a hidden duplicate, for that modifier set only")
+  check(MenuKey.read(bundleId: "a.b", entries: [markRead, sendNow], emptyMenus: [], chord: chord(2, cmd | option)) == .unreadable("a hidden duplicate key equivalent"),
+        "(b) the duplicate case reads unreadable, never the disabled benign match alone")
+  check(MenuKey.read(bundleId: "a.b", entries: [sendNow], emptyMenus: [], chord: chord(9, cmd | option)) == .unreadable("a hidden duplicate key equivalent"),
+        "(b) holds whatever the chord's key: the hidden item's character is unknown")
+  let plainItem = MenuKey.Entry(title: "About", path: ["App", "About"], enabled: true, cmdChar: nil, cmdModifiers: 0, cmdVirtualKey: nil, cmdGlyph: nil)
+  check(!MenuKey.hiddenDuplicate(plainItem, chord(2, cmd)), "an item with no key equivalent (modifiers 0) is not a hidden duplicate - the Command-only blind spot")
+  check(MenuKey.read(bundleId: "a.b", entries: [MenuKey.Entry(title: "Duplicate", path: ["Edit", "Duplicate"], enabled: false, cmdChar: "D", cmdModifiers: 0, cmdVirtualKey: nil, cmdGlyph: nil), plainItem],
+                     emptyMenus: [], chord: chord(2, cmd)) == .unreadable("only disabled items match; a later duplicate may fire"),
+        "(a) every match disabled: unreadable (a hidden duplicate on Command alone may fire)")
+  let benign = MenuKey.Entry(title: "Bookmark", path: ["Edit", "Bookmark"], enabled: true, cmdChar: "D", cmdModifiers: 0, cmdVirtualKey: nil, cmdGlyph: nil)
+  check(MenuKey.read(bundleId: "a.b", entries: [benign, plainItem], emptyMenus: [], chord: chord(2, cmd)) == .items(bundleId: "a.b", items: [benign], truncated: false, incomplete: false),
+        "the named residual: an enabled first match on Command alone answers as itself (a later Command-only duplicate stays unseen)")
+  check(MenuKey.read(bundleId: "a.b", entries: [markRead, send], emptyMenus: [], chord: chord(2, cmd | option)) == .unreadable("only disabled items match; a later duplicate may fire"),
+        "(a) applies to the chord's own matches only: Send (Shift) does not count for Option-Command-D")
   // A nil layout (no character for the key): a miss is unreadable, never none; a virtual-key item still matches, marked incomplete.
   let noLayout = MenuKey.Chord(keyCode: 2, flags: cmd | shift, unshifted: nil, shifted: nil)
   if case .unreadable = MenuKey.read(bundleId: "a.b", entries: [send], emptyMenus: [], chord: noLayout) {} else {
