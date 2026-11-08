@@ -18,6 +18,35 @@ import AppKit
 //     update, while the delegate answers the chord itself (menuHasKeyEquivalent) without filling it, as apps with lazy
 //     menus do. Measured in process on 8 Nov: an Accessibility read of the menu's children fills it; whether the
 //     helper's read across processes does too is what the live row measures (acceptance 2e).
+/// CU-232's message-view row (cu-researcher on #20): a read-only preview of the first Outbox message that takes the
+/// keyboard focus and is neither a text entry nor a list - as Mail's message viewer, where a plain Backspace fires
+/// Message > Delete. A click focuses it; Delete is enabled while it has the focus and removes the previewed message.
+final class PreviewPane: NSView {
+  var text = "" { didSet { needsDisplay = true } }
+  override var acceptsFirstResponder: Bool { true }
+  override var isFlipped: Bool { true }
+  override func mouseDown(with event: NSEvent) { window?.makeFirstResponder(self) }
+  /// A plain Backspace that reaches the pane deletes as the menu item does (Mail's viewer handles it this way too), so a
+  /// real keystroke acts whether or not AppKit matches the menu's key equivalent first.
+  override func keyDown(with event: NSEvent) {
+    if event.keyCode == 51, event.modifierFlags.intersection([.command, .option, .control, .shift]).isEmpty, let screen = MenuCompose.shared {
+      screen.deleteChosen(nil)
+    } else { super.keyDown(with: event) }
+  }
+  override func becomeFirstResponder() -> Bool { needsDisplay = true; return true }
+  override func resignFirstResponder() -> Bool { needsDisplay = true; return true }
+  override func draw(_ dirtyRect: NSRect) {
+    NSColor(white: 0.97, alpha: 1).setFill(); bounds.fill()
+    (window?.firstResponder === self ? NSColor.keyboardFocusIndicatorColor : NSColor.gray).setStroke()
+    NSBezierPath(rect: bounds.insetBy(dx: 0.5, dy: 0.5)).stroke()
+    (text as NSString).draw(at: NSPoint(x: 8, y: 8), withAttributes: [.font: NSFont.systemFont(ofSize: 13), .foregroundColor: NSColor.black])
+  }
+  override func isAccessibilityElement() -> Bool { true }
+  override func accessibilityRole() -> NSAccessibility.Role? { .group }
+  override func accessibilityLabel() -> String? { "Message preview" }
+  override func isAccessibilityFocused() -> Bool { window?.firstResponder === self }
+}
+
 final class MenuCompose: NSObject, NSMenuDelegate, NSMenuItemValidation, NSTableViewDataSource, NSTableViewDelegate {
   static var shared: MenuCompose?
   static let task = "menu-compose"
@@ -28,6 +57,7 @@ final class MenuCompose: NSObject, NSMenuDelegate, NSMenuItemValidation, NSTable
   let outbox = NSTableView()
   let outboxScroll = NSScrollView(frame: NSRect(x: 20, y: 244, width: 380, height: 78))
   let status = NSTextField(labelWithString: "")
+  let preview = PreviewPane(frame: NSRect(x: 20, y: 334, width: 380, height: 40))
   var outboxNames = ["Weekly summary", "Room booking", "Follow-up notes"]
   private var installed: [NSMenuItem] = []
   private(set) var sent: [String] = []
@@ -55,7 +85,7 @@ final class MenuCompose: NSObject, NSMenuDelegate, NSMenuItemValidation, NSTable
 
   private func build(title: String) {
     let fixture = Fixture.shared
-    let content = FlippedView(frame: NSRect(x: 0, y: 0, width: 420, height: 370))
+    let content = FlippedView(frame: NSRect(x: 0, y: 0, width: 420, height: 420))
     content.wantsLayer = true
     content.layer?.backgroundColor = NSColor.white.cgColor
     let heading = Kit.label("New message", size: 16, bold: true)
@@ -97,7 +127,11 @@ final class MenuCompose: NSObject, NSMenuDelegate, NSMenuItemValidation, NSTable
     content.addSubview(outboxScroll)
     status.font = NSFont.systemFont(ofSize: 12)
     status.textColor = .darkGray
-    status.frame = NSRect(x: 20, y: 334, width: 380, height: 18)
+    preview.text = outboxNames.first.map { "Preview: \($0)" } ?? ""
+    preview.identifier = NSUserInterfaceItemIdentifier("preview")
+    fixture.controls["preview"] = preview
+    content.addSubview(preview)
+    status.frame = NSRect(x: 20, y: 386, width: 380, height: 18)
     content.addSubview(status)
     installMenus()
     let window = Windows.open("main", title: title, content: content)
@@ -182,7 +216,9 @@ final class MenuCompose: NSObject, NSMenuDelegate, NSMenuItemValidation, NSTable
   func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
     switch menuItem.title {
     case "Mark as Read": return false
-    case "Delete": return outbox.window?.firstResponder === outbox && outbox.selectedRow >= 0
+    case "Delete":
+      let focus = outbox.window?.firstResponder
+      return (focus === outbox && outbox.selectedRow >= 0) || (focus === preview && !outboxNames.isEmpty)
     default: return true
     }
   }
@@ -195,14 +231,16 @@ final class MenuCompose: NSObject, NSMenuDelegate, NSMenuItemValidation, NSTable
 
   @objc func markRead(_ sender: NSMenuItem) { Fixture.shared.record("marked-read", [:]) }
 
-  @objc func deleteChosen(_ sender: NSMenuItem) {
-    let row = outbox.selectedRow
+  @objc func deleteChosen(_ sender: NSMenuItem?) {
+    // From the preview, the previewed (first) message; from the list, its selected row.
+    let row = outbox.window?.firstResponder === preview ? 0 : outbox.selectedRow
     guard outboxNames.indices.contains(row) else { return }
     let name = outboxNames.remove(at: row)
     deleted.append(name)
     Fixture.shared.record("deleted", ["name": name])
     outbox.reloadData()
     status.stringValue = "Deleted: \(name)"
+    preview.text = outboxNames.first.map { "Preview: \($0)" } ?? ""
   }
 
   /// The in-process Accessibility view of this screen's menus: [{title, items: [{title, enabled, char, modifiers,
@@ -231,7 +269,7 @@ final class MenuCompose: NSObject, NSMenuDelegate, NSMenuItemValidation, NSTable
     guard Screens.current == task, let screen = shared else { return [:] }
     return ["composeSent": screen.sent, "composeDeleted": screen.deleted, "outbox": screen.outboxNames, "lazyMenuFilled": screen.lazyFilled,
             "bodyText": screen.body.string,
-            "composeFocus": screen.body.window?.firstResponder === screen.outbox ? "outbox" : (screen.body.window?.firstResponder === screen.body ? "body" : "other"),
+            "composeFocus": screen.body.window?.firstResponder === screen.preview ? "preview" : screen.body.window?.firstResponder === screen.outbox ? "outbox" : (screen.body.window?.firstResponder === screen.body ? "body" : "other"),
             "composeChords": chords.map { chord -> [String: Any] in
               var mods: [String] = []
               if chord.modifiers.contains(.command) { mods.append("cmd") }
@@ -242,12 +280,14 @@ final class MenuCompose: NSObject, NSMenuDelegate, NSMenuItemValidation, NSTable
   }
 
   /// Seams, in-process models only (which item a real keystroke reaches is the live row's question):
-  /// `composeFocus 'outbox' | 'body'` moves the focus (the list's first row selected); `composeKey {key, modifiers}`
+  /// `composeFocus 'outbox' | 'body' | 'preview'` moves the focus (the list's first row selected); `composeKey {key, modifiers}`
   /// offers a key down to the main menu's key equivalents, as AppKit does for a chord - key 'd', 'j', 'l' or 'backspace'.
   static func act(_ step: [String: Any]) -> Bool {
     guard Screens.current == task, let screen = shared, let window = screen.body.window else { return false }
     if let target = step["composeFocus"] as? String {
-      if target == "outbox" {
+      if target == "preview" {
+        window.makeFirstResponder(screen.preview)
+      } else if target == "outbox" {
         if screen.outbox.selectedRow < 0, !screen.outboxNames.isEmpty { screen.outbox.selectRowIndexes(IndexSet(integer: 0), byExtendingSelection: false) }
         window.makeFirstResponder(screen.outbox)
       } else {
