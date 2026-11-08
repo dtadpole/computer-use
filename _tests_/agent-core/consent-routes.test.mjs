@@ -682,6 +682,7 @@ const decideApp = (action, target, extra = {}) => {
 }
 const key = (...keys) => ({ type: 'keypress', keys })
 const SYS_A = {
+  cmdO: key('META', 'O'), cmdDown: key('META', 'ARROWDOWN'),
   cmdShiftL: key('META', 'SHIFT', 'L'), cmdShift8: key('META', 'SHIFT', '8'), cmdShiftA: key('META', 'SHIFT', 'A'), cmdOptD: key('META', 'ALT', 'D'),
   ctrlF1: key('CTRL', 'F1'), ctrlSpace: key('CTRL', 'SPACE'), click: { type: 'click', x: 1, y: 1 },
   holdLogOut: { type: 'hold_key', keys: ['META', 'ALT', 'SHIFT', 'Q'], duration_ms: 300 },
@@ -701,6 +702,8 @@ const SYS_T = {
   desktopPictureItem: { role: 'AXMenuItem', name: 'Set Desktop Picture' },
   pasteItem: { role: 'AXMenuItem', name: 'Paste' },
   openItem: { role: 'AXMenuItem', name: 'Open' },
+  fixtureFileList: { role: 'AXList', name: '' },
+  fixtureOutline: { role: 'AXOutline', name: 'Files' },
   commandRow: { role: 'AXRow', name: 'install.command', filename: 'install.command' },
   notesRow: { role: 'AXRow', name: 'notes.txt', filename: 'notes.txt' },
   runPythonButton: { role: 'AXButton', name: 'Run Python File' },
@@ -838,6 +841,13 @@ const SYSTEM_ROWS = [
   ['menu-open-package-selection', 'click', 'openItem', 'launch_code', "CU-252 (#70 reports an app bundle as kind folder; the name decides)", 'no live row yet', 'open CU-252', { app: FINDER_ID, selection: { items: [{ name: 'Helper.app', kind: 'folder' }] } }],
   // Failing closed: a selection the driver cannot read is no reason to open it unasked (CU-259's unreadable).
   ['menu-open-unreadable-selection', 'click', 'openItem', 'not:allow', 'CU-252 (an unreadable selection fails closed)', 'no live row yet', 'open CU-252', { app: FINDER_ID, selection: { unreadable: true } }],
+  // CU-252 (cu-coordinator 22:13Z): in ANY app an open of the selection whose read is unreadable asks launch_code -
+  // a Path Finder- or ForkLift-style list that names nothing; nothing selected and a named document stay free.
+  ['any-app-open-unreadable-cmd-o', 'cmdO', 'fixtureFileList', 'launch_code', 'CU-252 (Command-O on a list, read unreadable)', 'no live row yet', 'todo CU-252', { app: FIXTURE_ID, selection: { unreadable: true } }],
+  ['any-app-open-unreadable-cmd-down', 'cmdDown', 'fixtureOutline', 'launch_code', 'CU-252 (Command-Down on an outline, read unreadable)', 'no live row yet', 'todo CU-252', { app: FIXTURE_ID, selection: { unreadable: true } }],
+  ['any-app-open-unreadable-menu', 'click', 'openItem', 'launch_code', 'CU-252 (File > Open, read unreadable)', 'no live row yet', 'todo CU-252', { app: FIXTURE_ID, selection: { unreadable: true } }],
+  ['any-app-open-none', 'cmdO', 'fixtureFileList', 'allow', 'CU-252 negative (nothing selected)', 'no live row yet', 'open CU-252', { app: FIXTURE_ID, selection: { none: true } }],
+  ['any-app-open-named-document', 'cmdO', 'fixtureFileList', 'allow', 'CU-252 negative (a named document, kind unknown)', 'no live row yet', 'open CU-252', { app: FIXTURE_ID, selection: { items: [{ name: 'notes.txt', kind: 'unknown' }] } }],
 ]
 // An expected 'not:<v>' holds for any verdict but <v> - for a gap whose fix (refuse or ask) is not decided yet.
 const meets = (got, expected) => (expected.startsWith('not:') ? got !== expected.slice(4) : got === expected)
