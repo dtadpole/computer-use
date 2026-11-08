@@ -163,6 +163,11 @@ const A = {
   mouseForward: { type: 'click', x: 10, y: 10, button: 'forward' },
   middleClick: { type: 'click', x: 10, y: 10, button: 'middle' },
   scrollX: { type: 'scroll', x: 10, y: 10, scroll_x: -2000, scroll_y: 0 },
+  // CU-230: paste chords with Shift and/or Option (Paste and Match Style is Command-Option-Shift-V), and Control's.
+  cmdShiftV: { type: 'keypress', keys: ['META', 'SHIFT', 'V'] },
+  cmdOptShiftV: { type: 'keypress', keys: ['META', 'ALT', 'SHIFT', 'V'] },
+  cmdOptV: { type: 'keypress', keys: ['META', 'ALT', 'V'] },
+  ctrlShiftV: { type: 'keypress', keys: ['CTRL', 'SHIFT', 'V'] },
 }
 
 // [id, env, action, target, expected ('allow' | class asked), pin, live, status, extra context]; status is null (closed),
@@ -281,6 +286,18 @@ const ROWS = [
   ['menu-paste-focus-on-menu', 'desktop', 'menuClick', 'pasteMenuItem', 'sensitive_data', 'menu-paste-destination.test.mjs (#457)', 'D-065 (asserted, not live): the guard asks; AppKit keeps the focus on the field with the Edit menu open (193001Z-f2fde4), so no fixture produces this state; unit rows and mutants in menu-paste-destination.test.mjs', null, { paste: { fromOwner: false, destination: { role: 'AXMenuItem', name: 'Paste' } } }],
   ['menu-paste-focus-unread', 'desktop', 'menuClick', 'pasteMenuItem', 'sensitive_data', 'menu-paste-destination.test.mjs (#457)', 'D-065 (asserted, not live): the guard asks; AppKit keeps the focus on the field with the Edit menu open (193001Z-f2fde4), so no fixture produces this state; unit rows and mutants in menu-paste-destination.test.mjs', null, { paste: { fromOwner: false, destination: null } }],
   ['menu-paste-no-focus-placeholder', 'desktop', 'menuClick', 'pasteMenuItem', 'sensitive_data', 'menu-paste-destination.test.mjs (#457)', 'D-065 (asserted, not live): the guard asks; AppKit keeps the focus on the field with the Edit menu open (193001Z-f2fde4), so no fixture produces this state; unit rows and mutants in menu-paste-destination.test.mjs', null, { paste: { fromOwner: false, destination: { role: null, name: null } } }],
+  // CU-230 (paste-chords.md): a paste chord is Command or Control with V whatever else is held, so each meets every paste
+  // check - the loop builds the paste context the rows hand classify (pinned through runTask in paste-chords.test.mjs).
+  // Desktop Control-V is no macOS paste: judging it as one is a named over-ask. Live rows wait for CU Fixture's Edit menu
+  // to bind Paste and Match Style.
+  ['paste-shift-owner-board', 'desktop', 'cmdShiftV', 'searchField', 'sensitive_data', 'paste-chords.test.mjs (CU-230)', 'no live row yet', 'open CU-230', { paste: { fromOwner: true } }],
+  ['paste-match-style-owner-board', 'desktop', 'cmdOptShiftV', 'searchField', 'sensitive_data', 'paste-chords.test.mjs (CU-230)', 'no live row yet', 'open CU-230', { paste: { fromOwner: true } }],
+  ['paste-option-owner-board', 'desktop', 'cmdOptV', 'searchField', 'sensitive_data', 'paste-chords.test.mjs (CU-230)', 'no live row yet', 'open CU-230', { paste: { fromOwner: true } }],
+  ['paste-control-shift-owner-board', 'desktop', 'ctrlShiftV', 'searchField', 'sensitive_data', 'paste-chords.test.mjs (CU-230; a named over-ask)', 'no live row yet', 'open CU-230', { paste: { fromOwner: true } }],
+  ['paste-match-style-own-copy-iban', 'desktop', 'cmdOptShiftV', 'searchField', 'sensitive_data', 'paste-chords.test.mjs (CU-230, CU-183)', 'no live row yet', 'open CU-230', { paste: { fromOwner: false, source: { role: 'AXTextField', name: 'IBAN' } } }],
+  ['paste-match-style-own-copy-notes', 'desktop', 'cmdOptShiftV', 'searchField', 'allow', 'paste-chords.test.mjs (CU-230 negative)', 'no live row yet', 'open CU-230', { paste: { fromOwner: false, source: { role: 'AXTextField', name: 'Notes' } } }],
+  ['web-paste-shift-card', 'browser', 'cmdShiftV', 'webComments', 'sensitive_data', 'paste-chords.test.mjs (CU-230)', 'no live row yet', 'open CU-230', { paste: { text: CARD } }],
+  ['web-paste-match-style-card', 'browser', 'cmdOptShiftV', 'webComments', 'sensitive_data', 'paste-chords.test.mjs, keys.test.mjs (CU-230)', 'no live row yet', 'open CU-230', { paste: { text: CARD } }],
   // CU-192 (#471): a desktop toolbar or popover button named exactly Paste is a paste, judged as a menu paste (CU-186).
   ['toolbar-paste-owner-board', 'desktop', 'menuClick', 'toolbarPaste', 'sensitive_data', 'toolbar-paste.test.mjs (#459, #471)', "CU Fixture consent-cells copyRow (#478), helper 0.2.44: the Paste button with no own copy asked (20261107T213539Z-fda93b); the icon-only Paste asked too (213541Z-a3726e)", null, { paste: { fromOwner: true, destination: { role: 'AXTextField', name: 'Message' } } }],
   ['toolbar-paste-into-iban', 'desktop', 'menuClick', 'toolbarPaste', 'sensitive_data', 'menu-paste-destination.test.mjs (#471)', "CU Fixture consent-cells copyRow (#478), helper 0.2.44: own copy, then the Paste button into IBAN asked (20261107T213548Z-9e573e)", null, { paste: { fromOwner: false, destination: { role: 'AXTextField', name: 'IBAN' } } }],
@@ -381,14 +398,16 @@ test('newline cells [desktop, browser]: a typed newline presses the same Return/
   }
 })
 
-test('paste cells [desktop, browser]: Command-V is a paste on both drivers (pin: both planKeypress, #349)', () => {
+test('paste cells [desktop, browser]: Command-V, and its Shift and Option chords, is a paste on both drivers (pin: both planKeypress, #349, CU-230)', () => {
   const cells = rowsWhere((r) => r.extra.paste && A[r.action].type === 'keypress')
   assert.ok(cells.some((r) => r.env === 'desktop') && cells.some((r) => r.env === 'browser'), 'rows on both drivers')
   for (const r of cells) {
     if (r.env === 'browser') assert.deepEqual(planBrowserKeypress(A[r.action]), [{ kind: 'clipboard', op: 'paste' }], r.id)
     else {
+      // CU-230: a modified chord reaches the app whole - its modifiers first (Command 55 or Control 59), V (9) last.
       const down = planDesktopKeypress(A[r.action]).input.filter((e) => e.kind === 'keyDown').map((e) => e.keyCode)
-      assert.deepEqual(down, [55, 9], `${r.id}: Command then V reach the app`)
+      assert.equal(down.at(-1), 9, `${r.id}: V reaches the app last`)
+      assert.ok(down.includes(55) || down.includes(59), `${r.id}: with Command or Control held`)
     }
   }
 })
