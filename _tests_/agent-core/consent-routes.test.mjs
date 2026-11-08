@@ -618,6 +618,8 @@ const SYS_T = {
   getButton: { role: 'AXButton', name: 'Get' },
   forceQuitButton: { role: 'AXButton', name: 'Force Quit' },
   restoreButton: { role: 'AXButton', name: 'Restore' },
+  revertButton: { role: 'AXMenuItem', name: 'Revert to Saved' },
+  signOutAllButton: { role: 'AXButton', name: 'Sign Out of All Devices' },
   priceButton: { role: 'AXButton', name: '$4.99' },
   tryFreeButton: { role: 'AXButton', name: 'Try Free' },
 }
@@ -647,6 +649,10 @@ const SYSTEM_ROWS = [
   // CU-264: whole-Mac tools are not excluded - in an approved Activity Monitor or Disk Utility these run unasked.
   ['systool-activity-monitor-force-quit', 'click', 'forceQuitButton', 'not:allow', 'CU-264 (kills any process)', 'no live row yet', 'todo CU-264', { app: ACTIVITY_MONITOR_ID }],
   ['systool-disk-utility-restore', 'click', 'restoreButton', 'not:allow', 'CU-264 (overwrites a volume)', 'no live row yet', 'todo CU-264', { app: DISK_UTILITY_ID }],
+  // CU-264's ruling (cu-coordinator, 13:26Z): Revert to Saved loses edits (destructive), Sign Out of All Devices is a
+  // security action on the owner's sessions (permission) - both allowed today.
+  ['revert-to-saved', 'click', 'revertButton', 'delete', 'CU-264 (like Discard Changes)', 'no live row yet', 'todo CU-264'],
+  ['sign-out-all-devices', 'click', 'signOutAllButton', 'permission', "CU-264 (the owner's sessions)", 'no live row yet', 'todo CU-264'],
   ['system-chord-held-log-out', 'holdLogOut', 'field', 'block:system_shortcut', 'desktop-consent P9 (#39), loop.mjs hold-as-keypress', 'no live row yet', 'open CU-244'],
   // CU-252: P10's launch_code reads the clicked target's name only, so File > Open or a context menu's Open on a
   // selected install.command is not judged. 'selection' is the proposed context field (the fix may rename it).
