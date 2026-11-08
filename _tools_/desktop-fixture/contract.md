@@ -1,9 +1,9 @@
 ---
 title: Desktop fixture contract
 created: 2026-11-02T08:34:00Z
-modified: 2026-11-08T12:36:00Z
+modified: 2026-11-08T16:58:00Z
 level: L1
-version: 0.11.2
+version: 0.11.3
 description: What CU Fixture guarantees to the desktop driver, the verifiers and the evaluator - identity, placement, the private control channel, what the agent can and cannot see, and how a screen's outcome is judged.
 status: unverified
 grounded_in:
@@ -27,10 +27,14 @@ grounded_in:
   as Read before Send Now on Option-Command-J (not Option-Command-D, macOS's Dock-hiding hotkey), Delete on a plain Backspace (enabled on the Outbox list only), and
   Send Later on Option-Command-L (not Shift-Command-L, the Search With Google service) in a lazily filled menu, plus a stand-in Services submenu in the app menu (an owner-style service and AppKit's
   'Services Settings…' marker, CU-250; not the real Services menu); each only records that it fired.
+  The open-selection screen (CU-252, CU-269: the stand-in for Finder) adds File (Open on Command-O, Open With >
+  Terminal / TextEdit) while open; its rows carry AXFilename and a /tmp sandbox AXURL (strings only, nothing on disk),
+  Command-Down on the list opens, and two drop targets are titled Terminal.app and Payload.app - each open only records
+  what it would have opened.
 - **Channel.** JSON lines on the launching process's stdin and stdout: `hello`, `reset`, `open {task, params}`,
   `state`, `act {step}`, `targets` (frames with each control's class), `windows` (content sizes and each content's top-left in global points), `screen` (the primary display's points and
   backing scale), `render {window,
-  path}`, `ax` (the app's own accessibility elements, with a drawn list's rows as non-view children named by `title` and `parent` (CU-19), and its visible text), `trigger` (posts the overlay-late notification without a key, a test seam), `clipboardSave` / `clipboardRestore` (S5, CU-62: CU Fixture keeps the owner's pasteboard in memory for a run and writes it back, also when it quits; a concealed or transient board is not read and replies `{skipped: 'concealed'}`; replies carry counts only), `clipboardSelfTest` (the stash on a private pasteboard), `clipboardSentinel` / `clipboardSentinelClear` (CU-230: fixture text on an empty board this app may read without asking, for a paste with no own copy; cleared only if nothing else wrote since; booleans and counts only. Named limit: a copy landing in the microseconds between the last change-count check and the clear or write is not seen - the check narrows that window, it cannot close it) with `clipboardSentinelSelfTest` (its rules on a private pasteboard), `menuItemForKey` (the menu item a key equivalent reaches, title and action, nothing run), `menuAX` (CU-238: what AppKit serves Accessibility for menu-compose's own menus - title, enabled, key character, modifier bits, virtual key - read in process), `quit`. The Edit menu binds Cut, Copy, Paste, Paste and Match Style (Command-Option-Shift-V, CU-233; the payment screens record its plain-text paste as `paste`) and Select All. `windows` also reports each window's `alpha`, `level` and `clickThrough`. Closing stdin ends the app. Only the
+  path}`, `ax` (the app's own accessibility elements, with a drawn list's rows as non-view children named by `title` and `parent` (CU-19), and its visible text), `trigger` (posts the overlay-late notification without a key, a test seam), `clipboardSave` / `clipboardRestore` (S5, CU-62: CU Fixture keeps the owner's pasteboard in memory for a run and writes it back, also when it quits; a concealed or transient board is not read and replies `{skipped: 'concealed'}`; replies carry counts only), `clipboardSelfTest` (the stash on a private pasteboard), `clipboardSentinel` / `clipboardSentinelClear` (CU-230: fixture text on an empty board this app may read without asking, for a paste with no own copy; cleared only if nothing else wrote since; booleans and counts only. Named limit: a copy landing in the microseconds between the last change-count check and the clear or write is not seen - the check narrows that window, it cannot close it) with `clipboardSentinelSelfTest` (its rules on a private pasteboard), `menuItemForKey` (the menu item a key equivalent reaches, title and action, nothing run), `sandboxAX` (CU-252: open-selection's selected rows as Accessibility shows them in process - role, AXFilename, AXURL), `menuAX` (CU-238: what AppKit serves Accessibility for menu-compose's own menus - title, enabled, key character, modifier bits, virtual key - read in process), `quit`. The Edit menu binds Cut, Copy, Paste, Paste and Match Style (Command-Option-Shift-V, CU-233; the payment screens record its plain-text paste as `paste`) and Select All. `windows` also reports each window's `alpha`, `level` and `clickThrough`. Closing stdin ends the app. Only the
   launcher holds it.
 - **What the agent sees.** Only `params`: what a person would see. Expected values, judges and oracle plans stay
   in `tasks.mjs`.

@@ -37,6 +37,7 @@ final class Fixture: NSObject {
     TextEditorScreen.uninstallMenus()
     ConsentKeys.uninstallMenus()
     MenuCompose.uninstallMenus()
+    OpenSelection.uninstallMenus()
     for window in windows.values { window.orderOut(nil); window.close() }
     windows = [:]
     Evidence.input = []
@@ -74,6 +75,7 @@ final class Fixture: NSObject {
     out.merge(WebButtons.fields()) { current, _ in current }
     out.merge(ConsentCells.fields()) { current, _ in current }
     out.merge(MenuCompose.fields()) { current, _ in current }
+    out.merge(OpenSelection.fields()) { current, _ in current }
     return out
   }
 
@@ -501,6 +503,9 @@ func handle(_ message: [String: Any]) {
       // Test seam: the menu item a key equivalent such as "alt+shift+cmd+v" reaches - its title and action, nothing run.
       let item = Menus.itemForKey(params["key"] as? String ?? "")
       reply(id, ["title": item?.title ?? NSNull(), "action": item?.action.map { NSStringFromSelector($0) } ?? NSNull()])
+    case "sandboxAX":
+      // CU-252: the selected rows of open-selection as Accessibility shows them in process - role, AXFilename, AXURL.
+      reply(id, ["rows": OpenSelection.accessibilitySelection()])
     case "menuAX":
       // CU-238: what AppKit serves Accessibility for menu-compose's own menus (Message, Later) - title, enabled and the
       // key-equivalent attributes only, read in process; the helper's menuKey reads the same values across processes.
