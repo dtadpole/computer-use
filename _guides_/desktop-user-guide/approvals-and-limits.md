@@ -1,8 +1,8 @@
 ---
 title: What it does, approvals and known limits
 created: 2026-11-07T21:18:46Z
-modified: 2026-11-08T17:22:55Z
-version: 0.1.8
+modified: 2026-11-08T19:15:01Z
+version: 0.1.9
 level: L1
 status: unverified
 description: What the agent can and cannot do on your Mac, what it asks you, and its known limits.
@@ -24,8 +24,8 @@ keychains, shell start-up files, login items or `/Applications`. A password fiel
 
 ## Approvals
 
-It asks before using a new app (once, this run, or always), opening a file that runs code (an app, script or installer package), sending, buying, deleting or overwriting, granting a permission,
-entering credentials or sensitive data (a shipping form's street address, e-mail, phone; not city or postcode), pasting your own clipboard, pasting into a field named for a bank account, tax id or secret (keys, menu or toolbar), copying a sensitive field's text, or text shown beside a label such as Passport or IBAN, into another field (keys, menu or drag), and choosing a file (asked every time). Buying, deleting, permissions and
+It asks before using a new app (once, this run, or always), running code (opening an app, script or installer; Run in an IDE or notebook), sending, calling or joining a meeting, opening a link to another app (tel:, FaceTime), buying, deleting or overwriting, granting a permission or switching off account protection,
+entering credentials or sensitive data in a field (street address, e-mail, phone; not city or postcode) or in a web address (a card, key, e-mail, passport or tax id), pasting your own clipboard, pasting into a field named for a bank account, tax id or secret, copying a sensitive field's text, or text shown beside a label such as Passport or IBAN, into another field, and choosing a file (asked every time). Buying, deleting, permissions and
 file choices are never pre-approved. Typed sensitive text stays out of run files. Unattended (`--consent unattended`), every question is declined. Manage "always" apps: `cli.mjs apps list`, `cli.mjs apps revoke <bundle id>`.
 
 ## Known limits
@@ -37,9 +37,8 @@ file choices are never pre-approved. Typed sensitive text stays out of run files
 - A run can end partial; its last line says so.
 - A run stopped mid-hold names the key; the next run releases it, or press and release it.
 - A keyboard shortcut is judged as the menu item it fires, read from the menu bar; a window button's or a
-  view's own keys are not. For now, run no unattended task
-  that types, pastes or sends your data (D-074).
-- Opening a script or an app from Finder's Open or Command-O asks (tested; live with you); App Store installs and price buttons ask.
+  view's own keys are not.
+- App Store installs, prices and free trials ask.
 - An approved app's built-in AI counts as part of the app.
 - A website's own keyboard shortcuts (a webmail's # deletes, e archives) are judged by the focus, not by what the site
   does with them.
