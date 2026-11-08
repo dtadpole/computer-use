@@ -295,10 +295,13 @@ export function looksSensitive(text) {
     if (abaValid(match[1])) return 'bank_account'
   }
   if (/\b\d{3}-\d{2}-\d{4}\b/.test(value)) return 'national_id'
-  // CU-245: an SSN in spaced 3-2-4 groups, held to the issuing rules (no area 000, 666 or 9xx, no group 00, no serial
-  // 0000) so most spaced references do not fit. Named over-ask: a spaced nine-digit reference that does.
+  // CU-245: an SSN in spaced 3-2-4 groups, held to the issuing rules (no area 000 or 666, no group 00, no serial 0000)
+  // so most spaced references do not fit; an area 9xx is an ITIN only with its group in 50-65, 70-88, 90-92 or 94-99
+  // (cu-researcher: the dashed form asks for both). Named over-ask: a spaced nine-digit reference that fits.
+  const itinGroup = (g) => (g >= 50 && g <= 65) || (g >= 70 && g <= 88) || (g >= 90 && g <= 92) || (g >= 94 && g <= 99)
   for (const m of value.matchAll(/(?<!\d)(?<!\d[ -])(\d{3}) (\d{2}) (\d{4})(?![ -]?\d)/g)) {
-    if (m[1] !== '000' && m[1] !== '666' && m[1][0] !== '9' && m[2] !== '00' && m[3] !== '0000') return 'national_id'
+    const areaOk = m[1][0] === '9' ? itinGroup(Number(m[2])) : m[1] !== '000' && m[1] !== '666'
+    if (areaOk && m[2] !== '00' && m[3] !== '0000') return 'national_id'
   }
   // CU-172: a UK National Insurance number (HMRC's letter rules, not BG/GB/KN/NK/NT/TN/ZZ, a final A-D) and an Indian PAN
   // (five letters, the fourth a holder type, four digits, a letter) - upper case, as issued.

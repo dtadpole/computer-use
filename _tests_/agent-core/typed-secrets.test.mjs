@@ -20,6 +20,8 @@ const JWT = [b64({ alg: 'HS256', typ: 'JWT' }), b64({ sub: '1234567890', name: '
 // cu-verifier's two on #46: PGP armour ends its header with ' BLOCK', and an unsigned JWT (alg none) has an empty signature.
 const PGP = [j('-----', 'BEGIN'), 'PGP', 'PRIVATE', 'KEY', j('BLOCK', '-----'), 'lQOYBF1example0data'].join(' ')
 const JWT_UNSIGNED = [b64({ alg: 'none', typ: 'JWT' }), b64({ sub: '1234567890' }), ''].join('.')
+// cu-researcher on #46: a spaced ITIN (area 9xx, group 70) asks as the dashed one does.
+const ITIN_SPACED = ['912', '70', '1234'].join(' ')
 
 const FIXTURE = 'ai.reflection.cu.fixture'
 const tmp = mkdtempSync(join(tmpdir(), 'cu-245-'))
@@ -36,7 +38,7 @@ const both = (text, name) => [
 ]
 
 test('CU-245 values: a spaced SSN, a PEM private key and a JWT ask sensitive_data on both paths, typed into an unnamed entry', () => {
-  for (const [label, value] of [['spaced SSN', SSN_SPACED], ['PEM private key', PEM], ['JWT', JWT], ['PGP private key block', PGP], ['unsigned JWT', JWT_UNSIGNED]]) {
+  for (const [label, value] of [['spaced SSN', SSN_SPACED], ['PEM private key', PEM], ['JWT', JWT], ['PGP private key block', PGP], ['unsigned JWT', JWT_UNSIGNED], ['spaced ITIN', ITIN_SPACED]]) {
     assert.deepEqual(both(value, ''), ['sensitive_data', 'sensitive_data'], label)
   }
   assert.equal(looksSensitive(SSN_SPACED), 'national_id')
@@ -51,7 +53,7 @@ test('CU-245 names: Bank account, Debit card, Recovery key and Backup codes ask 
 })
 
 test('CU-245 negatives: SSN issuing rules, other PEM blocks, a non-JWT dotted string, and nearby names stay allowed', () => {
-  for (const spaced of [['000', '45', '6789'], ['666', '45', '6789'], ['912', '45', '6789'], ['123', '00', '6789'], ['123', '45', '0000']]) {
+  for (const spaced of [['000', '45', '6789'], ['666', '45', '6789'], ['912', '45', '6789'], ['912', '93', '6789'], ['123', '00', '6789'], ['123', '45', '0000']]) {
     assert.equal(looksSensitive(spaced.join(' ')), null, `${spaced.join(' ')} fails the issuing rules`)
   }
   assert.equal(looksSensitive([j('-----', 'BEGIN'), 'PUBLIC', j('KEY', '-----')].join(' ')), null, 'a public key block')
