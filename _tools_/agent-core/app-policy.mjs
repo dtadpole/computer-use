@@ -135,14 +135,28 @@ const FILE_BROWSERS = new Set(['com.apple.finder'])
 const OPEN_ITEM = /^open$/i
 const RUNNER_TITLES = /^(terminal|iterm2?|warp|ghostty|kitty|alacritty|hyper|wezterm|script editor|automator|shortcuts|alfred|raycast)$/i
 const isMenuItem = (target) => /^(ax)?menuitem$/i.test(String(target?.role ?? ''))
-export function opensUnreadSelection(action, target, app) {
-  if (!FILE_BROWSERS.has(String(app ?? ''))) return false
+/**
+ * CU-252: an open that acts on the selection, in any app - a click on a menu item named Open, or Command-O or
+ * Command-Down with no named file focused. The loop reads the selection for it (names and kinds only).
+ */
+export function opensSelection(action, target) {
   if (CLICKS.has(action.type)) return isMenuItem(target) && OPEN_ITEM.test(String(target?.name ?? '').trim())
   const keys = chord(action)
   if (!(keys.has('META') && (keys.has('O') || keys.has('ARROWDOWN')))) return false
   // A focused element that is itself a named file is judged by launchesCode on its own name.
   const named = String(target?.name ?? '').trim() !== '' && !/^(ax)?(outline|table|browser|list|group|scrollarea|splitgroup|window)$/i.test(String(target?.role ?? ''))
   return !named
+}
+/** CU-252 rule 1: in Finder an open of the selection asks unless the selection read says it cannot run code. */
+export function opensUnreadSelection(action, target, app) {
+  return FILE_BROWSERS.has(String(app ?? '')) && opensSelection(action, target)
+}
+/**
+ * CU-252 in any other app (a file manager such as Path Finder or ForkLift, a stand-in): judged only when the selection
+ * read reports a file or folder item - a list of messages or notes (kinds unknown) is not a file list and stays unjudged.
+ */
+function selectsFiles(selection) {
+  return Array.isArray(selection?.items) && selection.items.some((item) => item?.kind === 'file' || item?.kind === 'folder')
 }
 /**
  * CU-252 rule 3 (the driver's selectedItems, CU-259): whether the selection an open acts on may run code. A launchable
@@ -461,7 +475,8 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     if (launchesCode(action, target) && verdict.decision !== 'handoff') {
       return { decision: 'confirm', class: 'launch_code', classes: ['launch_code', ...(verdict.classes ?? [])], rule: 'target:launch_code', reason: `open "${target.name}", which runs code`, app }
     }
-    if (opensUnreadSelection(action, target, app) && selectionRunsCode(context.selection) && verdict.decision !== 'handoff') {
+    const opensFiles = opensUnreadSelection(action, target, app) || (opensSelection(action, target) && selectsFiles(context.selection))
+    if (opensFiles && selectionRunsCode(context.selection) && verdict.decision !== 'handoff') {
       return { decision: 'confirm', class: 'launch_code', classes: ['launch_code', ...(verdict.classes ?? [])], rule: 'selection:launch_code', reason: 'open the selection, which this run cannot read - it may run code', app }
     }
     // CU-269 (cu-researcher): a drop onto an app's icon - a Finder .app item or a Dock app item - opens the dragged item
