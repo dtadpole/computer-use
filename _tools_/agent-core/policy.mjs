@@ -361,6 +361,11 @@ const URL_FIELD_SKIP = new Set(['email', 'e-mail', 'phone', 'mobile number', 'te
   'expiration date', 'mm/yy', 'exp date', 'expiration', 'valid thru', 'valid through', 'secret', 'api key', 'access token'])
 const URL_FIELD_NAMES = Object.freeze([...SECRET_NAMES.filter((name) => !URL_FIELD_SKIP.has(name)), 'iban', 'tax id', 'taxid',
   'account number', 'routing number', 'sort code', 'bank account', 'national id number', 'id number'])
+// cu-verifier on #120: a phone, mobile or tel parameter whose value holds seven or more digits carries a phone number
+// (D-062) even unformatted; ?mobile=1 or ?mobile=true (a layout flag) stays free.
+const URL_PHONE_NAME = /(^| )(phone|mobile|tel|telephone|cell)( |$)/
+const urlPhone = (name, value) => URL_PHONE_NAME.test(` ${String(name ?? '').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()} `)
+  && (String(value ?? '').match(/\d/g) ?? []).length >= 7
 function urlFieldName(name) {
   const words = ` ${String(name ?? '').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase().replace(/[^a-z0-9/']+/g, ' ').trim()} `
   return words.trim() !== '' && URL_FIELD_NAMES.some((field) => words.includes(` ${field} `))
@@ -394,6 +399,7 @@ export function urlSecret(raw) {
     if (PASSWORD_PARAM.test(name.trim()) && value.trim() !== '') return 'key'
     if (SECRET_PARAM.test(name.trim()) && value.trim().length >= 8) return 'key'
     if (value.trim() !== '' && urlFieldName(name)) return 'field_name'
+    if (urlPhone(name, value)) return 'phone'
     const kind = looksSensitive(value)
     if (kind !== null) return kind
   }
