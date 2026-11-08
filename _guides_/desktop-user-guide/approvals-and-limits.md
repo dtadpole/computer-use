@@ -1,8 +1,8 @@
 ---
 title: What it does, approvals and known limits
 created: 2026-11-07T21:18:46Z
-modified: 2026-11-08T10:05:49Z
-version: 0.1.4
+modified: 2026-11-08T11:19:22Z
+version: 0.1.5
 level: L1
 status: unverified
 description: What the agent can and cannot do on your Mac, what it asks you, and its known limits.
@@ -37,3 +37,5 @@ file choices are never pre-approved. Typed sensitive text stays out of run files
 - A leftover notification blocks clicks beneath it; dismiss it.
 - A run can end partial or not done; its last line says so.
 - A run stopped mid-hold names the key; the next run releases it, or press and release it.
+- Not yet asked (fixes in review): a keyboard shortcut that fires a menu item, such as Mail's Send on Shift-Command-D,
+  and Shift-Space on a focused Delete button. The team keeps its live runs to its own test apps until the shortcut fix lands.
