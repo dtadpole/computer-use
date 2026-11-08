@@ -72,19 +72,25 @@ export function attemptPlan(start, targets, windows, screen) {
 
 /**
  * What a run's events say: each `type` action's judged target and verdict, in order (a performed action logs two
- * events - its decision and its outcome - so the first per step and index is kept).
+ * events - its decision and its outcome - so the first per step and index is kept). `afterClickMs` (cu-developer-one):
+ * from the last record of the click before it in the same step - written once the helper answered the click - to the
+ * type's decision record, written just after its focus read; an upper bound on how long the loop waited before that read.
  */
 export function typeJudgements(eventsText) {
   const seen = new Set()
   const out = []
+  const clickDone = new Map()
   for (const line of String(eventsText).split('\n')) {
     let event
     try { event = JSON.parse(line) } catch { continue }
-    if (event?.kind !== 'action' || event.action?.type !== 'type') continue
+    if (event?.kind !== 'action') continue
+    if (event.action?.type === 'click') { clickDone.set(event.step, event.t); continue }
+    if (event.action?.type !== 'type') continue
     const key = `${event.step}:${event.index}`
     if (seen.has(key)) continue
     seen.add(key)
-    out.push({ step: event.step ?? null, target: event.target ? { role: event.target.role ?? null, name: event.target.name ?? null } : null, decision: event.decision ?? null, rule: event.rule ?? null, class: event.class ?? null })
+    const gap = Date.parse(event.t) - Date.parse(clickDone.get(event.step))
+    out.push({ step: event.step ?? null, target: event.target ? { role: event.target.role ?? null, name: event.target.name ?? null } : null, decision: event.decision ?? null, rule: event.rule ?? null, class: event.class ?? null, afterClickMs: Number.isFinite(gap) ? gap : null })
   }
   return out
 }
@@ -115,13 +121,15 @@ export function attemptRow({ start, index, result, judgements, facts }) {
 
 /** The summary: fresh and stale reads per start, the stale run ids, and the first pairs of the 'entry' start. */
 export function summarize(rows) {
-  const summary = { attempts: rows.length, byStart: {}, staleRuns: [], firstPairs: { fresh: 0, stale: 0, missing: 0 } }
+  const summary = { attempts: rows.length, byStart: {}, staleRuns: [], firstPairs: { fresh: 0, stale: 0, missing: 0 }, afterClickMs: null }
+  const gaps = rows.map((row) => row.measured.afterClickMs).filter(Number.isFinite).sort((a, b) => a - b)
   for (const row of rows) {
     const s = (summary.byStart[row.start] ??= { fresh: 0, stale: 0, missing: 0 })
     s[row.measured.read] += 1
     if (row.measured.read === 'stale') summary.staleRuns.push(row.runId)
     if (row.firstPair) summary.firstPairs[row.firstPair.read] += 1
   }
+  if (gaps.length > 0) summary.afterClickMs = { min: gaps[0], median: gaps[Math.floor(gaps.length / 2)], max: gaps[gaps.length - 1] }
   return summary
 }
 
