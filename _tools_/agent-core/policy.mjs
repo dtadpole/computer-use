@@ -331,6 +331,35 @@ const PASSWORD_NAMES = Object.freeze(['password', 'passcode', 'passphrase', 'pin
 // cu-researcher on #112: data: and blob: stay in the browser (blob: is how sites serve a generated 'Download CSV'); a
 // download they start still meets the page's download handling.
 const WEB_SCHEMES = new Set(['http', 'https', 'javascript', 'about', 'data', 'blob'])
+// CU-263 (design note 0.2): a human check - a CAPTCHA - is the person's to solve, as Operator hands it over. Known by the
+// pressed target's name (also inside a longer label: 'Press & Hold to confirm you are a human'), the providers' Chinese
+// labels included; a bare 'Verify' or 'I agree' stays judged by its own words (named limit).
+const CAPTCHA_NAME = new RegExp([
+  "\\bi\\s*(?:['’]\\s*m|\\s+am)\\s+not\\s+a\\s+robot\\b",
+  '\\bim\\s+not\\s+a\\s+robot\\b',
+  "\\bi\\s*(?:['’]\\s*m|\\s+am)\\s+(?:a\\s+)?human\\b",
+  "\\b(?:verify|confirm|prove)\\s+(?:that\\s+)?you\\s*(?:['’]\\s*re|\\s+are)\\s+(?:a\\s+)?(?:human|real\\s+person|not\\s+a\\s+(?:robot|bot))\\b",
+  '\\bhuman\\s+verification\\b',
+  '\\bselect\\s+all\\s+(?:images|squares)\\s+with\\b',
+  '我不是机器人', '我不是機器人', '我是人类', '我是人類', '人机验证', '人機驗證', '人机身份验证', '人機身份驗證', '确认您是真人', '確認您是真人',
+].join('|'), 'i')
+// ... a text CAPTCHA's entry, where typing the shown characters is solving it (a bare 验证码 is as often a one-time code,
+// which the D-061 value rules judge) ...
+const CAPTCHA_ENTRY = /\bcaptcha\b|\btype\s+the\s+(?:characters|letters|text)\s+(?:you\s+see|shown|in\s+the\s+(?:image|picture))\b|图形验证码|圖形驗證碼|图片验证码|圖片驗證碼/i
+// ... and the challenge providers' own frames, by the target document's origin (the browser driver describes an element
+// inside a cross-site frame through its frame session). www.google.com is left out: its frames carry maps and sign-in too,
+// so reCAPTCHA's image challenge inside it is the bare-Verify limit; its checkbox is caught by name.
+const CAPTCHA_HOSTS = Object.freeze(['challenges.cloudflare.com', 'hcaptcha.com', 'recaptcha.net', 'arkoselabs.com', 'geetest.com'])
+function captchaFrame(origin) {
+  if (typeof origin !== 'string' || !/^https?:\/\//i.test(origin.trim())) return false
+  let host
+  try {
+    host = new URL(origin.trim()).hostname.toLowerCase()
+  } catch {
+    return false
+  }
+  return CAPTCHA_HOSTS.some((provider) => host === provider || host.endsWith(`.${provider}`))
+}
 // CU-253, CU-287: messaging apps are known by kind (app-kinds.mjs, exact bundle ids with sources), and the names of compose
 // fields judge every other app.
 // CU-287: a search field takes Return to search, in a messaging app too ('Search Acme' in Slack).
@@ -690,6 +719,17 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if ((['type', 'keypress', 'hold_key'].includes(action.type) && target?.terminal === true) || (action.type === 'drag' && context.dropTarget?.terminal === true)
       || context.paste?.intoTerminal === true) {
       return { decision: 'block', class: null, rule: 'terminal_view', reason: 'typing into a web terminal is refused, as in a terminal app' }
+    }
+    // CU-263 (design note 0.2): a human check is handed to the person - never pre-approvable; unattended the run ends
+    // refused. Any click, drag, key or typing inside a challenge provider's frame; a click, drag, Space or Return on a
+    // target named as one (the desktop has names only - its origin is a bundle id); typing into a text CAPTCHA's entry.
+    {
+      const captcha = { decision: 'handoff', class: null, rule: 'captcha', reason: 'a human check (CAPTCHA) is the person\'s to solve' }
+      const acts = POINTER.has(action.type) || ['drag', 'type', 'keypress', 'hold_key'].includes(action.type)
+      if (acts && captchaFrame(target?.origin)) return captcha
+      const presses = POINTER.has(action.type) || action.type === 'drag' || keysOf(action).has('ENTER') || keyboardActivation(action, target, context).activates
+      if (presses && CAPTCHA_NAME.test(name)) return captcha
+      if (action.type === 'type' && isTextEntry(target) && CAPTCHA_ENTRY.test(name)) return captcha
     }
     // CU-271: running code asks launch_code, never pre-approved - a run chord (Shift-, Control-, Command- or Alt-Return) in
     // a notebook's code cell or on a notebook page's non-text focus (JupyterLab's command mode focuses the cell container),
