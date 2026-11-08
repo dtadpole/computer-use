@@ -568,10 +568,13 @@ const { tmpdir } = await import('node:os')
 const { join } = await import('node:path')
 const FIXTURE_ID = 'ai.reflection.cu.fixture'
 const APP_STORE_ID = 'com.apple.AppStore'
+const ACTIVITY_MONITOR_ID = 'com.apple.ActivityMonitor'
+const DISK_UTILITY_ID = 'com.apple.DiskUtility'
 const appApprovals = createAppApprovals({ path: join(mkdtempSync(join(tmpdir(), 'cu-routes-')), 'app-approvals.json') })
 appApprovals.grantAlways(FIXTURE_ID, { by: 'api' })
 appApprovals.grantAlways(APP_STORE_ID, { by: 'api' })
-const appPolicy = createAppPolicy({ scope: [FIXTURE_ID, APP_STORE_ID], approvals: appApprovals })
+for (const id of [ACTIVITY_MONITOR_ID, DISK_UTILITY_ID]) appApprovals.grantAlways(id, { by: 'api' })
+const appPolicy = createAppPolicy({ scope: [FIXTURE_ID, APP_STORE_ID, ACTIVITY_MONITOR_ID, DISK_UTILITY_ID], approvals: appApprovals })
 // extra.app names the approved app in front (default CU Fixture); the rest of extra joins the context.
 const decideApp = (action, target, extra = {}) => {
   const { app = FIXTURE_ID, ...context } = extra ?? {}
@@ -594,6 +597,8 @@ const SYS_T = {
   pasteItem: { role: 'AXMenuItem', name: 'Paste' },
   openItem: { role: 'AXMenuItem', name: 'Open' },
   getButton: { role: 'AXButton', name: 'Get' },
+  forceQuitButton: { role: 'AXButton', name: 'Force Quit' },
+  restoreButton: { role: 'AXButton', name: 'Restore' },
   priceButton: { role: 'AXButton', name: '$4.99' },
   tryFreeButton: { role: 'AXButton', name: 'Try Free' },
 }
@@ -620,6 +625,9 @@ const SYSTEM_ROWS = [
   // CU-232: a menu read the helper answers unreadable - a hidden duplicate key equivalent, a lazily filled menu, only
   // disabled matches (#36's rules) - asks; the loop spares editing chords before this call (CU-238's screen: Option-Command-J).
   ['menu-key-unreadable', 'optCmdJ', 'field', 'unknown_target', 'menu-key.test.mjs (#26: an unreadable bar asks)', 'no live row yet', 'open CU-232', { boundMenuItem: { unreadable: true } }],
+  // CU-264: whole-Mac tools are not excluded - in an approved Activity Monitor or Disk Utility these run unasked.
+  ['systool-activity-monitor-force-quit', 'click', 'forceQuitButton', 'not:allow', 'CU-264 (kills any process)', 'no live row yet', 'todo CU-264', { app: ACTIVITY_MONITOR_ID }],
+  ['systool-disk-utility-restore', 'click', 'restoreButton', 'not:allow', 'CU-264 (overwrites a volume)', 'no live row yet', 'todo CU-264', { app: DISK_UTILITY_ID }],
   ['system-chord-held-log-out', 'holdLogOut', 'field', 'block:system_shortcut', 'desktop-consent P9 (#39), loop.mjs hold-as-keypress', 'no live row yet', 'open CU-244'],
   // CU-252: P10's launch_code reads the clicked target's name only, so File > Open or a context menu's Open on a
   // selected install.command is not judged. 'selection' is the proposed context field (the fix may rename it).
