@@ -632,6 +632,9 @@ const SYSTEM_ROWS = [
   ['service-click-run-applescript', 'click', 'appleScriptItem', 'block:system_service', 'service-shortcuts.test.mjs (#49, CU-249)', 'no live row yet', 'open CU-249'],
   ['service-click-set-desktop-picture', 'click', 'desktopPictureItem', 'block:system_service', "CU-249 (changes the owner's wallpaper)", 'no live row yet', 'open CU-249'],
   ['service-chord-app-bound-over-refusal', 'cmdShiftA', 'field', 'block:system_shortcut', 'service-shortcuts.test.mjs (#49: refused even with an app item bound - a named over-refusal)', 'no live row yet', 'open CU-256', { boundMenuItem: { items: [{ role: 'AXMenuItem', name: 'Applications', keyEquivalent: { char: 'A', modifiers: 1 } }] } }],
+  // CU-256's exception needs an ENABLED app item (Apple: the application's shortcut wins - a disabled one cannot fire, so
+  // the keystroke may reach the service): with only a disabled app item bound the refusal stays, before and after the fix.
+  ['service-chord-app-item-disabled', 'cmdShiftA', 'field', 'block:system_shortcut', 'service-shortcuts.test.mjs (#49)', 'no live row yet', 'open CU-256', { boundMenuItem: { items: [{ role: 'AXMenuItem', name: 'Applications', keyEquivalent: { char: 'A', modifiers: 1 }, enabled: false }] } }],
   ['menu-click-paste', 'click', 'pasteItem', 'allow', 'CU-249 negative (an app menu item)', 'no live row yet', 'open CU-249'],
   // CU-242 (landed, #35) and its follow-up CU-251: default system hotkeys that change an owner setting.
   ['owner-setting-dock-hiding', 'cmdOptD', 'field', 'block:system_shortcut', 'app-policy.test.mjs (#50, CU-251: Dock hiding on/off, follow-up to CU-242)', 'no live row yet', 'open CU-251'],
