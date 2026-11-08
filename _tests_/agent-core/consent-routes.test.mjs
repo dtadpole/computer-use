@@ -792,8 +792,8 @@ const SYSTEM_ROWS = [
   // CU-279 (triage): an IDE's integrated terminal runs the typed line on Return. Main's E5 rule (TERMINAL_VIEW, Q-D9)
   // already refuses keys into a target named for a terminal or shell; whether the route holds turns on the live name of
   // VS Code's xterm helper textarea - these cells close on that read.
-  ['ide-terminal-type-command', 'typeLs', 'vscodeTerminal', 'block:terminal_view', 'app-policy E5 TERMINAL_VIEW (CU-279: the live name decides)', 'no live row yet', 'open CU-279', { app: VSCODE_ID }],
-  ['ide-terminal-return', 'enterKey', 'vscodeTerminal', 'block:terminal_view', 'app-policy E5 TERMINAL_VIEW (CU-279: the live name decides)', 'no live row yet', 'open CU-279', { app: VSCODE_ID }],
+  ['ide-terminal-type-command', 'typeLs', 'vscodeTerminal', 'block:terminal_view', 'app-policy E5 TERMINAL_VIEW (CU-279: the live name decides)', 'D-065 (no live VS Code terminal surface): VS Code main terminalInstance.ts _setAriaLabel (lines 2160-2177, re-read 21:27Z) labels the terminal textarea Terminal {id}, {title}, the name this cell judges', null, { app: VSCODE_ID }],
+  ['ide-terminal-return', 'enterKey', 'vscodeTerminal', 'block:terminal_view', 'app-policy E5 TERMINAL_VIEW (CU-279: the live name decides)', 'D-065 (no live VS Code terminal surface): VS Code main terminalInstance.ts _setAriaLabel (lines 2160-2177, re-read 21:27Z) labels the terminal textarea Terminal {id}, {title}, the name this cell judges', null, { app: VSCODE_ID }],
   // VS Code labels the textarea 'Terminal {id}, {title}' (terminalInstance.ts _setAriaLabel) - localized: in a Chinese build
   // 'Terminal' reads '终端', and the label matches E5 only while the title is a shell (zsh, bash); running node, it does not.
   ['ide-terminal-localized-label', 'typeLs', 'vscodeTerminalZhNode', 'not:allow', 'CU-279 (a localized terminal label with a non-shell title)', 'no live row yet', 'todo CU-279', { app: VSCODE_ID }],
