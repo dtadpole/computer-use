@@ -102,3 +102,21 @@ test('CU-274: a take-over during a slow classify that changes the page, then han
   assert.deepEqual(typed, ['fresh'])
   assert.ok(readRun(result.trajectoryDir).events.some((e) => e.kind === 'action' && e.reason === 'paused_before_perform'))
 })
+
+test('CU-274: a pause AND a resume both queued behind a slow classify are still seen - the stale action does not post', { timeout: 15_000 }, async () => {
+  const control = createRunControl()
+  const environment = createFakeEnvironment({ url: START, control })
+  let judged = 0
+  const policy = slowPolicy(createPolicy({ sitePolicy: () => 'allow' }), () => {
+    judged += 1
+    if (judged === 1) {
+      setTimeout(() => control.send({ command: 'pause' }, { source: 'control' }), 0)
+      setTimeout(() => control.send({ command: 'resume' }, { source: 'control' }), 1)
+    }
+  })
+  const model = createScriptedAdapter({ frame: { width: 1440, height: 900 }, turns: [{ actions: [{ type: 'type', text: 'stale' }] }, { actions: [{ type: 'type', text: 'fresh' }] }, { final: 'done' }] })
+  const result = await runTask({ task: 'say hello', environment, model, control, policy, sitePolicy: () => 'allow', runsDirectory: join(tmp, 'pause-resume-queued'), build: { commit: 'test', dirty: false } })
+  const typed = environment.log.map((x) => x.action ?? x).filter((a) => a?.type === 'type').map((a) => a.text)
+  assert.deepEqual(typed, ['fresh'])
+  assert.ok(readRun(result.trajectoryDir).events.some((e) => e.kind === 'action' && e.reason === 'paused_before_perform'))
+})
