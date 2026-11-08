@@ -65,6 +65,9 @@ const T = {
   // CU-261: actions that reach other people or commit work.
   joinMeetingButton: { role: 'AXButton', name: 'Join Meeting' },
   askToJoinButton: { role: 'AXButton', name: 'Ask to join' },
+  chatDmArea: { role: 'AXTextArea', name: 'Message Ann Smith', editable: true, defaultButtonRead: true },
+  chatToArea: { role: 'AXTextArea', name: 'Write a message to Ann', editable: true, defaultButtonRead: true },
+  messageSubjectArea: { role: 'AXTextArea', name: 'Message subject', editable: true, defaultButtonRead: true },
   startHuddleButton: { role: 'AXButton', name: 'Start huddle' },
   videoCallButton: { role: 'AXButton', name: 'Video call' },
   tweetButton: { role: 'AXButton', name: 'Tweet' },
@@ -279,6 +282,10 @@ const ROWS = [
   ['outward-join-meeting', 'desktop', 'click', 'joinMeetingButton', 'submit', 'CU-261 (contacts others)', 'cu-verifier, main with #98, helper 0.2.56, CU Fixture named controls: Join Meeting declined submit (20261108T184215Z-460cb2)', null],
   ['outward-ask-to-join', 'desktop', 'click', 'askToJoinButton', 'submit', 'CU-286 (Google Meet: a join request to the host)', 'no live row yet', 'todo CU-286'],
   ['outward-start-huddle', 'desktop', 'click', 'startHuddleButton', 'submit', 'CU-286 (Slack: an audio call that notifies the channel)', 'no live row yet', 'todo CU-286'],
+  // CU-286 (after #131): a compose field named for its recipient - Slack's DM placeholder - still escapes the chat rule.
+  ['chat-return-dm-recipient', 'desktop', 'enter', 'chatDmArea', 'submit', 'CU-286 (Slack DM: Message <name>)', 'no live row yet', 'todo CU-286'],
+  ['chat-return-message-to', 'desktop', 'enter', 'chatToArea', 'submit', 'CU-286 (Write a message to <name>)', 'no live row yet', 'todo CU-286'],
+  ['message-subject-return', 'desktop', 'enter', 'messageSubjectArea', 'allow', 'CU-286 negative (a subject line is not a composer)', 'no live row yet', 'open CU-286'],
   ['outward-video-call', 'desktop', 'click', 'videoCallButton', 'submit', 'CU-261', 'no live row yet', 'open CU-261'],
   ['outward-tweet', 'desktop', 'click', 'tweetButton', 'submit', 'CU-261 (a public post)', 'cu-verifier, main with #98, helper 0.2.56, CU Fixture named controls: Tweet declined submit (20261108T184223Z-e1e967)', null],
   ['outward-accept-invitation', 'desktop', 'click', 'acceptInviteButton', 'submit', 'CU-261 (sends a reply)', 'cu-verifier, main with #98, helper 0.2.56, CU Fixture named controls: Accept invitation declined submit (20261108T184225Z-aaecb8)', null],
