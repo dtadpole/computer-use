@@ -578,7 +578,7 @@ const decideApp = (action, target, extra = {}) => {
 }
 const key = (...keys) => ({ type: 'keypress', keys })
 const SYS_A = {
-  cmdShiftL: key('META', 'SHIFT', 'L'), cmdShift8: key('META', 'SHIFT', '8'), cmdOptD: key('META', 'ALT', 'D'),
+  cmdShiftL: key('META', 'SHIFT', 'L'), cmdShift8: key('META', 'SHIFT', '8'), cmdShiftA: key('META', 'SHIFT', 'A'), cmdOptD: key('META', 'ALT', 'D'),
   ctrlF1: key('CTRL', 'F1'), ctrlSpace: key('CTRL', 'SPACE'), click: { type: 'click', x: 1, y: 1 },
   holdLogOut: { type: 'hold_key', keys: ['META', 'ALT', 'SHIFT', 'Q'], duration_ms: 300 },
 }
@@ -599,6 +599,7 @@ const SYSTEM_ROWS = [
   ['service-click-search-with', 'click', 'searchWithItem', 'block:system_service', 'service-shortcuts.test.mjs (#49, CU-249: a Services item clicked)', 'no live row yet', 'open CU-249'],
   ['service-click-run-applescript', 'click', 'appleScriptItem', 'block:system_service', 'service-shortcuts.test.mjs (#49, CU-249)', 'no live row yet', 'open CU-249'],
   ['service-click-set-desktop-picture', 'click', 'desktopPictureItem', 'block:system_service', "CU-249 (changes the owner's wallpaper)", 'no live row yet', 'open CU-249'],
+  ['service-chord-app-bound-over-refusal', 'cmdShiftA', 'field', 'block:system_shortcut', 'service-shortcuts.test.mjs (#49: refused even with an app item bound - a named over-refusal)', 'no live row yet', 'open CU-256', { boundMenuItem: { items: [{ role: 'AXMenuItem', name: 'Applications', keyEquivalent: { char: 'A', modifiers: 1 } }] } }],
   ['menu-click-paste', 'click', 'pasteItem', 'allow', 'CU-249 negative (an app menu item)', 'no live row yet', 'open CU-249'],
   // CU-242 (landed, #35) and its follow-up CU-251: default system hotkeys that change an owner setting.
   ['owner-setting-dock-hiding', 'cmdOptD', 'field', 'block:system_shortcut', 'CU-251 (Dock hiding on/off, follow-up to CU-242)', 'no live row yet', 'todo CU-251'],
