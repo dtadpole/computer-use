@@ -1,9 +1,9 @@
 ---
 title: Desktop block and confirm rules
 created: 2026-11-02T09:53:32Z
-modified: 2026-11-07T17:52:30Z
+modified: 2026-11-08T12:06:51Z
 level: L1
-version: 0.4.3
+version: 0.4.4
 description: The rules behind the desktop order of checks - what is blocked by name (system shortcuts, excluded or unknown targets; copy and paste are allowed, D-031), the desktop confirm classes and their pre-approval, and what happens when an excluded app comes to the front.
 status: unverified
 grounded_in:
@@ -13,8 +13,7 @@ grounded_in:
 
 # Desktop block and confirm rules
 
-Detail for the order of checks in [app policy](app-policy.md); rule names are what `createAppPolicy` returns and the
-trajectory records.
+Detail for [app policy](app-policy.md)'s order of checks; rule names are what `createAppPolicy` returns.
 
 ## Blocked by name
 
@@ -38,6 +37,7 @@ matter:
 | Mission Control, Spaces | `CTRL` with an arrow |
 | Show Desktop | `F11` |
 | VoiceOver | `META+F5` |
+| a default Service, unless an app item binds it (CU-249) | exactly `META+SHIFT+` L, Y, B, 8, M or A |
 | keyboard focus to the menu bar, Dock, status menus | `CTRL+F2`, `CTRL+F3`, `CTRL+F8` |
 
 ## Confirm classes on the desktop
@@ -46,7 +46,7 @@ matter:
 |---|---|---|
 | browser classes | `submit`, `purchase`, `delete`, `permission`, `sensitive_data`, `page_dialog` (an AX sheet accepted with Return), from the AX name, role and typed text | as in the browser |
 | `credential` | a typed credential | never on the desktop |
-| `launch_code` (P10) | opening code, a package or an installer bundle: a double or triple click, `META+O` or `META+DOWN` on a target whose name, AX file name or AX URL ends `.app`, `.command`, `.sh`, `.pkg`, `.dmg`, `.scptd`, `.prefPane`, `.mobileconfig`, `.webloc` and similar - the file name or URL catches extensions Finder hides | never; only a hand-off outranks it |
+| `launch_code` (P10) | opening code, a package or an installer bundle: a double or triple click, `META+O` or `META+DOWN` on a target whose name, AX file name or AX URL ends `.app`, `.sh`, `.pkg`, `.dmg`, `.prefPane` and similar - the file name or URL catches extensions Finder hides | never; only a hand-off outranks it |
 | `unknown_target` (R92) | a click, an Enter or Space chord, or typed text with a newline on an `opaque` target ([input and targets](input-and-targets.md)) | per app |
 
 Known gaps of `launch_code` are [Q-D10](open-questions.md).
@@ -70,5 +70,5 @@ ends `refused_by_policy`.
 `terminal_view` (block, E5): typing or keypresses into a target whose accessible name, description or role description
 names a terminal, console or shell - an IDE's terminal panel runs commands like a terminal app; clicks stay allowed.
 
-Copy, cut and paste are not blocked (D-031, replacing D-025): the chords and menu items reach approved apps like any
-other input; P9 still refuses the system-wide chords, including the screenshot-to-clipboard ones.
+Copy, cut and paste are not blocked (D-031): they reach approved apps like any input; P9 still refuses the
+screenshot-to-clipboard chords.
