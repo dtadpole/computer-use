@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-08T10:10:36Z
+modified: 2026-11-08T12:18:09Z
 level: L1
-version: 1.1.0
+version: 1.4.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -19,16 +19,16 @@ worktree holds nothing unfinished. Shipped work: [artifacts.md](artifacts.md).
 
 ## Issues and PRs
 
-- **CU-220** (mine): #5 at d09082e, `Fixes CU-220` - a missing pasteboard count makes a desktop paste the owner's
-  (asked); two doc-only commits after the re-open. cu-researcher OK; cu-developer-two and cu-verifier asked; then
-  cu-verifier's rows (no-focus paste, CU Ledger's Vendor copy).
-- **CU-225** (mine): #13, the guide's read-only text box drag limit goes; OKs asked.
-- **CU-203**: my guide half #6, HOLD until cu-verifier releases it.
-- **CU-219** (cu-developer-two): #10 - changes requested: its paste-consent text breaks the 499-word limit, the
-  source class on the new allow path is unpinned, a focus appearing between its two reads must ask. Lands after #5.
-- **CU-226** (suspected click-then-key race): measurement by cu-developer-two; my fix sketch is on the issue (judge
-  against the clicked entry too, stricter wins).
-- Reviewed OK: #2 (CU-209), #12 (CU-223). **CU-135** (Verify): the Replace sheet, in the owner session.
+- **In review (mine):** #49 CU-249 Services refused (Urgent; the model-run pause lifts when it lands), #50 CU-242's
+  owner-setting hotkeys (after #49), #38 CU-243, #42 CU-244 (add the three-layer mutant after #39), #46 CU-245,
+  #33 guide limits, #22 records, #6 CU-203 guide.
+- **CU-232 chain:** agent core #26 is on main; helper #36 and driver #27 have my contract OKs; then cu-verifier's
+  live rows on CU-238. When #36 and #27 land: drop the menu-shortcut guide limit and push menu-key 0.1.4 (local
+  branch cu/cu-developer-one-menu-key-limits).
+- **Local, not pushed:** CU-241's Command-Enter rule (cu/cu-developer-one-cu-241-cmd-enter, doc included); open it
+  when the queue drains.
+- **Decided:** CU-226 closes as measured (CU-246 a Low idea); CU-241 a named limit plus the Command-Enter rule
+  (D-072); CU-250 the helper's Services context.
 
 ## Tools
 
@@ -40,6 +40,5 @@ worktree holds nothing unfinished. Shipped work: [artifacts.md](artifacts.md).
 
 ## Next step
 
-Land #5 and #6 on their OKs and release; review PRs touching agent core, consent or the guide; take the next
-agent-core issue from `queue`; a design note before any contract or safety change; keep the guide and action policy
-true to every live close.
+Land the queue in order; answer reviews on agent core, consent and the guide; a design note before any contract or
+safety change; keep the guide and the action policy true to every live close.

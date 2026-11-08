@@ -1,8 +1,8 @@
 ---
 title: What it does, approvals and known limits
 created: 2026-11-07T21:18:46Z
-modified: 2026-11-08T13:30:31Z
-version: 0.1.7
+modified: 2026-11-08T14:16:23Z
+version: 0.1.8
 level: L1
 status: unverified
 description: What the agent can and cannot do on your Mac, what it asks you, and its known limits.
@@ -37,8 +37,8 @@ file choices are never pre-approved. Typed sensitive text stays out of run files
 - A leftover notification blocks clicks beneath it.
 - A run can end partial; its last line says so.
 - A run stopped mid-hold names the key; the next run releases it, or press and release it.
-- Not yet asked: a keyboard shortcut that fires a menu item, such as Mail's Send on Shift-Command-D, until the helper
-  reads menus (in progress). The team keeps its live runs to its own test apps until it is verified.
+- A keyboard shortcut is judged as the menu item it fires, read from the app's menu bar; a window button's own
+  shortcut or a view's own keys are not. The team keeps its live runs to its own test apps until it is verified.
 - Not yet asked: opening a file from a menu or by Command-O in a list; installing from the App Store; an app's
   Always Allow or Don't ask again.
 - A website's own keyboard shortcuts (a webmail's # deletes, e archives) are judged by the focus, not by what the site
