@@ -773,13 +773,13 @@ const SYSTEM_ROWS = [
   ['systool-activity-monitor-force-quit', 'click', 'forceQuitButton', 'not:allow', 'CU-264 (kills any process)', 'no live row yet', 'open CU-264', { app: ACTIVITY_MONITOR_ID }],
   ['systool-disk-utility-restore', 'click', 'restoreButton', 'not:allow', 'CU-264 (overwrites a volume)', 'no live row yet', 'open CU-264', { app: DISK_UTILITY_ID }],
   // CU-292: approved by the owner or not, an app of an excluded kind is refused whole.
-  ['excluded-spotlight', 'click', 'neutralOkButton', 'block:excluded:terminal', 'CU-292 (a launcher, like Alfred and Raycast)', 'no live row yet', 'todo CU-292', { app: SPOTLIGHT_ID }],
-  ['excluded-launchbar', 'click', 'neutralOkButton', 'block:excluded:terminal', 'CU-292 (a launcher)', 'no live row yet', 'todo CU-292', { app: LAUNCHBAR_ID }],
-  ['excluded-enpass', 'click', 'neutralOkButton', 'block:excluded:password_manager', 'CU-292 (a password manager)', 'no live row yet', 'todo CU-292', { app: ENPASS_ID }],
-  ['excluded-proton-pass', 'click', 'neutralOkButton', 'block:excluded:password_manager', 'CU-292 (a password manager)', 'no live row yet', 'todo CU-292', { app: PROTON_PASS_ID }],
-  ['excluded-keeper', 'click', 'neutralOkButton', 'block:excluded:password_manager', 'CU-292 (a password manager)', 'no live row yet', 'todo CU-292', { app: KEEPER_ID }],
-  ['excluded-paste', 'click', 'neutralOkButton', 'block:excluded:clipboard_manager', 'CU-292 (a clipboard manager)', 'no live row yet', 'todo CU-292', { app: PASTE_ID }],
-  ['excluded-perplexity', 'click', 'neutralOkButton', 'block:excluded:agent', 'CU-292 (another AI app)', 'no live row yet', 'todo CU-292', { app: PERPLEXITY_ID }],
+  ['excluded-spotlight', 'click', 'neutralOkButton', 'block:excluded:terminal', 'CU-292 (a launcher, like Alfred and Raycast)', 'no live row yet', 'open CU-292', { app: SPOTLIGHT_ID }],
+  ['excluded-launchbar', 'click', 'neutralOkButton', 'block:excluded:terminal', 'CU-292 (a launcher)', 'no live row yet', 'open CU-292', { app: LAUNCHBAR_ID }],
+  ['excluded-enpass', 'click', 'neutralOkButton', 'block:excluded:password_manager', 'CU-292 (a password manager)', 'no live row yet', 'open CU-292', { app: ENPASS_ID }],
+  ['excluded-proton-pass', 'click', 'neutralOkButton', 'block:excluded:password_manager', 'CU-292 (a password manager)', 'no live row yet', 'open CU-292', { app: PROTON_PASS_ID }],
+  ['excluded-keeper', 'click', 'neutralOkButton', 'block:excluded:password_manager', 'CU-292 (a password manager)', 'no live row yet', 'open CU-292', { app: KEEPER_ID }],
+  ['excluded-paste', 'click', 'neutralOkButton', 'block:excluded:clipboard_manager', 'CU-292 (a clipboard manager)', 'no live row yet', 'open CU-292', { app: PASTE_ID }],
+  ['excluded-perplexity', 'click', 'neutralOkButton', 'block:excluded:agent', 'CU-292 (another AI app)', 'no live row yet', 'open CU-292', { app: PERPLEXITY_ID }],
   // cu-coordinator's 13:26Z ruling, implemented with CU-261 (cu-developer-one): Revert to Saved loses edits (destructive), Sign Out of All Devices is a
   // security action on the owner's sessions (permission) - both allowed today.
   ['revert-to-saved', 'click', 'revertButton', 'delete', 'CU-261 (like Discard Changes)', 'no live row yet', 'open CU-261'],
