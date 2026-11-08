@@ -594,10 +594,10 @@ const SYSTEM_ROWS = [
   ['service-click-run-applescript', 'click', 'appleScriptItem', 'block:system_service', 'CU-249 (#49)', 'no live row yet', 'todo CU-249'],
   ['service-click-set-desktop-picture', 'click', 'desktopPictureItem', 'block:system_service', "CU-249 (changes the owner's wallpaper)", 'no live row yet', 'todo CU-249'],
   ['menu-click-paste', 'click', 'pasteItem', 'allow', 'CU-249 negative (an app menu item)', 'no live row yet', 'open CU-249'],
-  // CU-242: default system hotkeys that change an owner setting.
-  ['owner-setting-dock-hiding', 'cmdOptD', 'field', 'block:system_shortcut', 'CU-242 (Dock hiding on/off)', 'no live row yet', 'todo CU-242'],
-  ['owner-setting-keyboard-access', 'ctrlF1', 'field', 'block:system_shortcut', 'CU-242 (keyboard access on/off)', 'no live row yet', 'todo CU-242'],
-  ['owner-setting-input-source', 'ctrlSpace', 'field', 'block:system_shortcut', 'CU-242 (#35: input source)', 'no live row yet', 'todo CU-242'],
+  // CU-242 (landed, #35) and its follow-up CU-251: default system hotkeys that change an owner setting.
+  ['owner-setting-dock-hiding', 'cmdOptD', 'field', 'block:system_shortcut', 'CU-251 (Dock hiding on/off, follow-up to CU-242)', 'no live row yet', 'todo CU-251'],
+  ['owner-setting-keyboard-access', 'ctrlF1', 'field', 'block:system_shortcut', 'CU-251 (keyboard access on/off)', 'no live row yet', 'todo CU-251'],
+  ['owner-setting-input-source', 'ctrlSpace', 'field', 'block:system_shortcut', 'app-policy.test.mjs (#35, CU-242: input source)', 'no live row yet', 'open CU-242'],
   // CU-244: a held system chord is refused as the keypress (the loop judges a hold so); pinned live-path by #39.
   ['system-chord-held-log-out', 'holdLogOut', 'field', 'block:system_shortcut', 'desktop-consent P9 (#39), loop.mjs hold-as-keypress', 'no live row yet', 'open CU-244'],
 ]
