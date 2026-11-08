@@ -615,7 +615,8 @@ export async function runTask(options) {
     // the count beside it (pasteboardChangeCount) - never a placeholder target, which would change how every rule judges
     // a no-focus key - so the target stays null and only the count is judged. A failed read or an environment without
     // one leaves the count null, so the paste asks (CU-220). The event says when the count came from that read.
-    const bareKey = desktop && target === null && (chordOf(action, 'C') || chordOf(action, 'X') || chordOf(action, 'V'))
+    // The keys are the loop's own copy and paste chords (isCopy, isPaste), so the side read follows them as they change.
+    const bareKey = desktop && target === null && (isCopy(action, null) || isPaste(action, null))
     const sideRead = bareKey && typeof environment.pasteboardChangeCount === 'function'
     const count = sideRead
       ? countOf({ pasteboardChangeCount: await Promise.resolve(environment.pasteboardChangeCount()).catch(() => null) })
