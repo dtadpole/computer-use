@@ -15,18 +15,41 @@ export const CLASSES = Object.freeze(['submit', 'purchase', 'delete', 'permissio
 export const NEVER_PRE_APPROVED = Object.freeze(['purchase', 'delete', 'permission', 'file_choice', 'launch_code'])
 
 /** Word lists matched on a target's accessible name, case-insensitively, at word boundaries; they err toward confirm. */
+// CU-293 (cu-developer-one; cu-coordinator: Urgent - the owner works in Chinese): each name class in Simplified and
+// Traditional Chinese. CJK has no word gaps, so a phrase matches inside a longer label ('立即购买' asks purchase); named
+// over-asks: a label that merely contains one ('删除线', strikethrough). Other languages are a named limit.
+const ZH_WORDS = Object.freeze({
+  purchase: ['购买', '購買', '支付', '付款', '结账', '結帳', '结算', '結算', '下单', '下單', '提交订单', '提交訂單', '订阅', '訂閱', '充值',
+    '儲值', '转账', '轉帳', '汇款', '匯款', '捐款', '捐赠', '捐贈', '免费试用', '免費試用', '预订', '預訂', '续订', '續訂', '升级套餐', '升級方案'],
+  delete: ['删除', '刪除', '移到废纸篓', '移到垃圾桶', '清空废纸篓', '清空垃圾桶', '抹掉', '抹除', '清除', '清空', '卸载', '解除安裝', '移除',
+    '丢弃', '捨棄', '不保存', '不儲存', '替换', '取代', '覆盖', '覆寫', '还原到上次存储', '回復到上次儲存', '注销账户', '註銷帳號',
+    '关闭账户', '關閉帳號', '取消订阅', '取消訂閱',
+    // cu-researcher's zh sweep (Apple guide labels): Traditional words differ, not just glyphs.
+    '丟到垃圾桶', '丟到資源回收筒', '清倒废纸篓', '清倒垃圾桶', '不存储'],
+  permission: ['共享', '分享', '邀请', '邀請', '授权', '授權', '公开', '公開', '始终允许', '總是允許', '总是允许', '永遠允許', '一律允许',
+    '允许访问', '允許存取', '不再询问', '不再詢問', '不再提示', '记住我的选择', '記住我的選擇', '记住此选择', '设为默认', '設為預設',
+    '保存密码', '儲存密碼', '记住密码', '記住密碼', '保存通行密钥', '儲存通行密鑰', '创建通行密钥', '建立通行密鑰', '关闭两步验证',
+    '關閉兩步驟驗證', '关闭双重认证', '關閉雙重認證', '打开摄像头', '開啟相機', '打开麦克风', '開啟麥克風',
+    // CU-289's amended ruling in Chinese: Never Save keeps a per-site exception.
+    '永不保存', '永不儲存'],
+  submit: ['发送', '發送', '傳送', '发布', '發佈', '發布', '提交', '注册', '註冊', '送出', '发表', '發表', '加入会议', '加入會議', '加入通话',
+    '视频通话', '視訊通話', '语音通话', '語音通話', '开始会议', '開始會議', '接受邀请', '接受邀請', '拒绝邀请', '拒絕邀請',
+    '部署', '退出群聊', '退出群組', '取消会议', '取消會議', '举报', '檢舉', '申请加入', '申請加入', '报税', '報稅',
+    // cu-researcher on #145: Reply (回复 / 回覆) - judged like English 'reply', by CU-157's text-entered rule.
+    '回复', '回覆'],
+})
 const WORDS = Object.freeze({
   purchase: ['buy', 'pay', 'order', 'place order', 'checkout', 'check out', 'subscribe', 'donate', 'purchase', 'transfer', 'withdraw', 'wire', 'send money',
     // CU-288 (cu-researcher's real-app wordings, round 2): a booking, an upgrade or a renewal commits money.
     'book now', 'book this', 'reserve now', 'upgrade plan', 'upgrade now', 'upgrade to pro', 'upgrade to premium', 'renew subscription', 'renew now',
-    'renew plan'],
+    'renew plan', ...ZH_WORDS.purchase],
   // CU-135: replace and overwrite (a save panel's 'already exists' sheet), don't save (a close sheet discards work).
   delete: ['delete', 'remove', 'discard', 'erase', 'empty trash', 'cancel subscription', 'replace', 'overwrite', "don't save", 'don\u2019t save',
     // CU-146 (the CU-145 audit): destructive labels the list missed.
     'move to trash', 'move to bin', 'empty bin', 'clear history', 'clear all', 'reset all', 'reset settings', 'reset to defaults', 'uninstall', 'wipe', 'purge',
     'deactivate', 'close account', 'forget', 'factory reset',
     // cu-researcher's 13:23Z sweep: unsaved edits lost, like Discard Changes.
-    'revert to saved', 'revert all changes'],
+    'revert to saved', 'revert all changes', ...ZH_WORDS.delete],
   permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke',
     // CU-258 (cu-researcher): standing choices an app keeps after the run, as whole phrases. A bare 'Allow' stays free so
     // cookie banners do not ask (named limit).
@@ -55,7 +78,7 @@ const WORDS = Object.freeze({
     // ('Turn off notifications' stays free). ChatGPT confirms any change to account permissions.
     ...['turn off', 'disable', 'remove', 'allow'].flatMap((verb) => ['2 step', 'two step', 'two factor', '2fa', 'mfa', 'multi factor',
       'password', 'passkey', 'passkeys', 'security key', 'security keys', 'login alerts', 'sign in alerts', 'account recovery', 'find my',
-      'less secure apps', 'less secure app access'].map((what) => `${verb} ${what}`))],
+      'less secure apps', 'less secure app access'].map((what) => `${verb} ${what}`)), ...ZH_WORDS.permission],
   submit: ['send', 'post', 'submit', 'publish', 'reply', 'sign up', 'register',
     // CU-261 (cu-researcher; cu-coordinator: High): actions that reach other people or commit shared work, as whole
     // phrases. A bare Accept, Connect, Join or Follow stays free (cookie banners, Wi-Fi, generic joins: named limits).
@@ -70,7 +93,7 @@ const WORDS = Object.freeze({
     // CU-286 (cu-researcher's real-app wordings): a request to join a meeting, and Slack's huddle (a call to the channel).
     'ask to join', 'start huddle', 'start a huddle', 'join huddle',
     // CU-288: a tax filing goes to the authority.
-    'file return', 'file tax return', 'file your return', 'file my return', 'e-file', 'efile', 'submit return', 'submit tax return'],
+    'file return', 'file tax return', 'file your return', 'file my return', 'e-file', 'efile', 'submit return', 'submit tax return', ...ZH_WORDS.submit],
 })
 const PRECEDENCE = ['purchase', 'launch_code', 'delete', 'permission', 'page_dialog', 'credential', 'sensitive_data', 'submit', 'new_site', 'install']
 const POINTER = new Set(['click', 'double_click', 'triple_click'])
@@ -89,6 +112,8 @@ const TEXT_AREA_ROLE = /^(ax)?textarea$/i
 // CU-288 (cu-researcher): a free trial starts a renewing subscription wherever it is offered - the whole name, with or
 // without its length ('Start 14-day free trial', 'Try 3 months free', 'Try it free'); 'Free trial info' stays free.
 const TRIAL_NAME = /^(start (a |your |my )?(\d+[- ]?(day|week|month|year)s? )?free trial|(\d+[- ]?(day|week|month|year)s? )?free trial|try (it |us )?free( for \d+ (days?|weeks?|months?|years?))?|try \d+ (days?|weeks?|months?|years?) (for )?free|get \d+ (days?|weeks?|months?) free)\s*[.!\u2026]?$/i
+// cu-researcher on #145: 永不保存 / 永不儲存 (Never Save) is a standing choice; its '不保存' / '不儲存' is not Don't Save.
+const namesDelete = (name) => namesWord(String(name ?? '').replace(/永不(保存|儲存|存储)/g, ''), WORDS.delete)
 const namesPurchase = (name) => namesWord(withoutOrderReferences(name), WORDS.purchase) || TRIAL_NAME.test(String(name ?? '').trim())
 const DROP_DELETE = [...WORDS.delete, 'trash', 'bin']
 const TEXT_ROLE = /^(ax)?(textfield|textarea|searchfield|combobox|textbox|searchbox)$/i
@@ -175,9 +200,11 @@ function namesWord(name, words) {
 // CU-157 (reply-text-entered.md): a control whose only submit word is 'reply' submits typed text only when some text
 // entry on its page or window holds text. The environment reports that as target.textEntered, read at each action's
 // own judgement; only a strict false - every entry read and empty - lets it run. True, null or absent asks, as before.
-const SUBMIT_BUT_REPLY = Object.freeze(WORDS.submit.filter((word) => word !== 'reply'))
+const REPLY_WORDS = new Set(['reply', '回复', '回覆'])
+const SUBMIT_BUT_REPLY = Object.freeze(WORDS.submit.filter((word) => !REPLY_WORDS.has(word)))
 // CU-261: a control named only Call, Answer or Merge submits; inside a longer name ('Call Stack', 'Merge Cells') it does not.
-const SUBMIT_WHOLE_NAMES = new Set(['call', 'answer', 'merge'])
+// CU-293: the same whole names in Chinese - 合并单元格 (Merge Cells) stays free like its English.
+const SUBMIT_WHOLE_NAMES = new Set(['call', 'answer', 'merge', '呼叫', '接听', '接聽', '合并', '合併'])
 function judgesSubmit(name, target) {
   if (SUBMIT_WHOLE_NAMES.has(normaliseName(name).trim())) return true
   if (!namesWord(name, WORDS.submit)) return false
@@ -241,7 +268,9 @@ const BANK_OR_TAX_FIELD = Object.freeze(['iban', 'account number', 'account no',
   // CU-245 (cu-researcher's D-061 red team): a field named only 'Bank account'.
   'bank account',
   // CU-285 (cu-researcher): the US form's own words - Taxpayer Identification Number, Taxpayer ID.
-  'taxpayer identification', 'taxpayer id'])
+  'taxpayer identification', 'taxpayer id',
+  // CU-293: a bank account or tax id in Chinese.
+  '银行账号', '銀行帳號', '银行账户', '銀行帳戶', '开户行', '開戶行', '税号', '稅號', '纳税人识别号', '納稅人識別號', '统一社会信用代码'])
 function bankOrTaxField(target) {
   return namesWord(target?.name, BANK_OR_TAX_FIELD)
 }
@@ -287,7 +316,9 @@ const API_TOKEN = new RegExp([
   'SG\\.[A-Za-z0-9_-]{16,}\\.[A-Za-z0-9_-]{16,}',
   'rk_(?:live|test)_[A-Za-z0-9]{16,}',
 ].map((one) => `\\b${one}\\b`).join('|'))
-const PASSWORD_NAMES = Object.freeze(['password', 'passcode', 'passphrase', 'pin', 'pin code'])
+const PASSWORD_NAMES = Object.freeze(['password', 'passcode', 'passphrase', 'pin', 'pin code',
+  // CU-293: the same names in Chinese.
+  '密码', '密碼', '口令', '支付密码', '支付密碼'])
 // CU-265: the schemes a page navigates itself; any other hands the link to another app.
 // cu-researcher on #112: data: and blob: stay in the browser (blob: is how sites serve a generated 'Download CSV'); a
 // download they start still meets the page's download handling.
@@ -327,6 +358,10 @@ const SECRET_NAMES = Object.freeze(['recovery phrase', 'seed phrase', 'secret ph
   'card no', 'cell number', 'mobile', 'tel',
   // CU-245 (cu-researcher's D-061 red team): a debit card, an account recovery key and two-factor backup codes.
   'debit card', 'recovery key', 'backup code', 'backup codes',
+  // CU-293: D-061's field names in Chinese (an id, a passport, a card, a birth date, a code, contact data).
+  '身份证', '身份證', '身分證', '护照', '護照', '社保号', '社会保障号', '出生日期', '生日', '银行卡', '銀行卡', '卡号', '卡號', '信用卡',
+  '有效期', '安全码', '安全碼', '验证码', '驗證碼', '动态码', '手机号', '手機號', '电话', '電話', '邮箱', '电子邮件', '電子郵件',
+  '街道', '详细地址', '詳細地址', '收货地址', '收貨地址', '病历', '病歷', '医保', '醫保',
   // CU-288: a one-time code named by its length ('Enter the 6-digit code', 'six-digit code').
   'digit code', 'digit verification code'])
 // CU-172: acronyms match case-sensitively as whole tokens, so 'PAN' asks and 'Pan size' or 'Panel' does not.
@@ -679,13 +714,13 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // ... and the drop point of a drag that travels: a drop onto a Trash, Delete or Remove zone deletes.
     if (action.type === 'drag' && context.dropTarget && namesWord(String(context.dropTarget.name ?? ''), DROP_DELETE)) classes.push('delete')
     if (pressesTarget || pressesEnter || keyboard.activates) {
-      if (POINTER.has(action.type) && /change\s+password|update\s+password/i.test(name)) {
+      if (POINTER.has(action.type) && /change\s+password|update\s+password|修改密码|更改密码|修改密碼|更改密碼|重设密码|重設密碼/i.test(name)) {
         return { decision: 'handoff', class: null, rule: 'password_change', reason: 'the final step of a password change is the person\'s' }
       }
       const focusesEntry = POINTER.has(action.type) && plainTextEntry(target)
       for (const cls of ['purchase', 'delete', 'permission']) {
         if (focusesEntry) break
-        if ((cls === 'purchase' ? namesPurchase(name) : namesWord(name, WORDS[cls]))) classes.push(cls)
+        if ((cls === 'purchase' ? namesPurchase(name) : cls === 'delete' ? namesDelete(name) : namesWord(name, WORDS[cls]))) classes.push(cls)
       }
       if (judgesSubmit(name, target)) classes.push('submit')
       // CU-146: 'Trash' or 'Bin' alone deletes on a control (a toolbar button, a menu item); a sidebar row of that name
@@ -699,7 +734,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const boundNames = bound && typeof bound === 'object' ? (Array.isArray(bound.items) ? bound.items : [bound]).map((one) => one?.name).filter((n) => typeof n === 'string' && n.trim() !== '') : []
     for (const boundName of boundNames) {
       for (const cls of ['purchase', 'delete', 'permission']) {
-        if ((cls === 'purchase' ? namesPurchase(boundName) : namesWord(boundName, WORDS[cls]))) classes.push(cls)
+        if ((cls === 'purchase' ? namesPurchase(boundName) : cls === 'delete' ? namesDelete(boundName) : namesWord(boundName, WORDS[cls]))) classes.push(cls)
       }
       // A bound Reply follows CU-157 on the focused window's entries, as the focused target reports them.
       if (judgesSubmit(boundName, target)) classes.push('submit')
@@ -713,7 +748,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const commandReturn = keysOf(action).has('META') && keysOf(action).has('ENTER')
     if (defaultName !== '' && pressesEnter && (!inTextArea || commandReturn)) {
       for (const cls of ['purchase', 'delete', 'permission']) {
-        if ((cls === 'purchase' ? namesPurchase(defaultName) : namesWord(defaultName, WORDS[cls]))) classes.push(cls)
+        if ((cls === 'purchase' ? namesPurchase(defaultName) : cls === 'delete' ? namesDelete(defaultName) : namesWord(defaultName, WORDS[cls]))) classes.push(cls)
       }
       if (judgesSubmit(defaultName, target)) classes.push('submit')
     }
