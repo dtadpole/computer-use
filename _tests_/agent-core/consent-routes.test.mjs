@@ -710,6 +710,10 @@ const SYS_T = {
   cursorTerminalZhNode: { role: 'AXTextArea', name: '终端 1, node', editable: true },
   vscodeEditorTab: { role: 'AXTextArea', name: 'main.py', editable: true },
   fixtureShapeOnly: { role: 'AXTextArea', name: 'Tab 1, notes', editable: true },
+  vscodeTerminalZhReal: { role: 'AXTextArea', name: '终端 1，node', editable: true },
+  vscodeTerminalZhHantReal: { role: 'AXTextArea', name: '終端機 1，node', editable: true },
+  vscodeDebugConsoleHans: { role: 'AXTextArea', name: '调试控制台', editable: true },
+  vscodeDebugConsoleHant: { role: 'AXTextArea', name: '偵錯主控台', editable: true },
   openFolderButton: { role: 'AXButton', name: 'Open Folder' },
   codeEditor: { role: 'AXTextArea', name: 'Editor - deploy.py', editable: true },
   placeOrderArmenian: { role: 'AXButton', name: 'Place \u0555rder' },
@@ -809,6 +813,12 @@ const SYSTEM_ROWS = [
   ['ide-terminal-zh-in-cursor', 'typeLs', 'cursorTerminalZhNode', 'block:terminal_view', 'CU-279 (Cursor, known by its bundle id)', 'no live row yet', 'todo CU-279', { app: CURSOR_ID }],
   ['ide-editor-tab-typing', 'typeLs', 'vscodeEditorTab', 'allow', 'CU-279 negative (an editor tab is not a terminal)', 'no live row yet', 'open CU-279', { app: VSCODE_ID }],
   ['non-ide-shape-only', 'typeLs', 'fixtureShapeOnly', 'allow', 'CU-279 named limit (the shape outside an IDE)', 'no live row yet', 'open CU-279', { app: FIXTURE_ID }],
+  // VS Code's own zh labels (microsoft/vscode-loc main.i18n.json): the terminal template '终端 {0}，{1}' / '終端機 {0}，{1}'
+  // takes a fullwidth comma; debugConsole is 调试控制台 / 偵錯主控台 (a REPL, CU-296).
+  ['ide-terminal-zh-real-label', 'typeLs', 'vscodeTerminalZhReal', 'block:terminal_view', 'CU-279 (VS Code zh-hans terminalTextBoxAriaLabelNumberAndTitle)', 'no live row yet', 'todo CU-279', { app: VSCODE_ID }],
+  ['ide-terminal-zh-hant-real-label', 'typeLs', 'vscodeTerminalZhHantReal', 'block:terminal_view', 'CU-279 (VS Code zh-hant: 終端機 and a fullwidth comma)', 'no live row yet', 'todo CU-279', { app: VSCODE_ID }],
+  ['ide-debug-console-zh-hans', 'typeLs', 'vscodeDebugConsoleHans', 'block:terminal_view', 'CU-296 (VS Code zh-hans debugConsole, a REPL)', 'no live row yet', 'todo CU-296', { app: VSCODE_ID }],
+  ['ide-debug-console-zh-hant', 'typeLs', 'vscodeDebugConsoleHant', 'block:terminal_view', 'CU-296 (VS Code zh-hant debugConsole, a REPL)', 'no live row yet', 'todo CU-296', { app: VSCODE_ID }],
   ['ide-editor-type (negative)', 'typeLs', 'codeEditor', 'allow', 'CU-279 negative (typing in the editor is the task)', 'no live row yet', 'open CU-279', { app: VSCODE_ID }],
   ['ide-open-folder', 'click', 'openFolderButton', 'allow', 'CU-271 negative (no code runs)', 'no live row yet', 'open CU-271', { app: VSCODE_ID }],
   // CU-268 (14:29Z ruling): a single word mixing Latin with another script asks unknown_target on the desktop, each time -
