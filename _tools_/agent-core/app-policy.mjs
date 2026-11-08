@@ -140,10 +140,12 @@ function isIde(bundleId) {
   const id = String(bundleId ?? '').toLowerCase()
   return id !== '' && IDE_BUNDLES.some((entry) => (entry.endsWith('.') ? id.startsWith(entry.toLowerCase()) : id === entry.toLowerCase() || id.startsWith(`${entry.toLowerCase()}.`)))
 }
-const RUN_NAME = /(^|[^a-z])(run|runs|debug|debugging|execute|build and run)([^a-z]|$)/i
+// cu-researcher on #119: Build (a build system runs the file) and Test (runs test code) run code too.
+const RUN_NAME = /(^|[^a-z])(run|runs|debug|debugging|execute|build and run|build|test|tests)([^a-z]|$)/i
 const RUN_CLICKS = new Set(['click', 'double_click', 'triple_click'])
 function runsInIde(action, target, bound) {
-  if (RUN_CLICKS.has(action.type)) return RUN_NAME.test(String(target?.name ?? ''))
+  // A menu-bar title ('Run' in VS Code's bar) only opens its menu - the item chosen in it is judged.
+  if (RUN_CLICKS.has(action.type)) return !/^(ax)?menubaritem$/i.test(String(target?.role ?? '')) && RUN_NAME.test(String(target?.name ?? ''))
   if (action.type !== 'keypress' && action.type !== 'hold_key') return false
   const keys = new Set((action.keys ?? []).map((key) => String(key).toUpperCase()))
   if ([...keys].some((key) => /^F5$/.test(key))) return true

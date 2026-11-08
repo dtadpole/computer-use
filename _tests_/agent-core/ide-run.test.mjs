@@ -60,3 +60,13 @@ test('CU-271 through the loop: Start Debugging in VS Code is declined unattended
   assert.deepEqual([action.decision, action.class], ['confirm', 'launch_code'])
   assert.equal(environment.log.filter((x) => (x.action ?? x)?.type).length, 0)
 })
+
+test('CU-271 on cu-researcher\'s review: Build and Test run code too - by click or by the chord their menu item binds; a menu-bar title only opens its menu', () => {
+  for (const name of ['Build', 'Test', 'Run Tests', 'Build For Testing']) {
+    assert.deepEqual([judge(XCODE, click, control(XCODE, name, 'AXMenuItem')).class, judge(XCODE, click, control(XCODE, name, 'AXMenuItem')).rule], ['launch_code', 'ide:run'], name)
+  }
+  const bound = (name) => ({ items: [{ role: 'AXMenuItem', name, enabled: true }] })
+  assert.equal(judge(XCODE, { type: 'keypress', keys: ['META', 'U'] }, editor(XCODE), { boundMenuItem: bound('Test') }).rule, 'ide:run', 'Command-U bound to Test')
+  assert.equal(judge(XCODE, { type: 'keypress', keys: ['META', 'B'] }, editor(XCODE), { boundMenuItem: bound('Build') }).rule, 'ide:run', 'Command-B bound to Build')
+  assert.notEqual(judge(VSCODE, click, control(VSCODE, 'Run', 'AXMenuBarItem')).rule, 'ide:run', 'the Run menu-bar title only opens its menu')
+})
