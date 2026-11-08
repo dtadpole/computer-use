@@ -1,7 +1,7 @@
 ---
 title: What it does, approvals and known limits
 created: 2026-11-07T21:18:46Z
-modified: 2026-11-08T11:19:22Z
+modified: 2026-11-08T11:32:45Z
 version: 0.1.5
 level: L1
 status: unverified
@@ -37,5 +37,8 @@ file choices are never pre-approved. Typed sensitive text stays out of run files
 - A leftover notification blocks clicks beneath it; dismiss it.
 - A run can end partial or not done; its last line says so.
 - A run stopped mid-hold names the key; the next run releases it, or press and release it.
-- Not yet asked (fixes in review): a keyboard shortcut that fires a menu item, such as Mail's Send on Shift-Command-D,
-  and Shift-Space on a focused Delete button. The team keeps its live runs to its own test apps until the shortcut fix lands.
+- Not yet asked (fixes in progress): a keyboard shortcut that fires a menu item, such as Mail's Send on Shift-Command-D,
+  until the helper reads menus; and Shift-Space on a focused Delete button. The team keeps its live runs to its own
+  test apps until both shortcut holes are verified.
+- A website's own keyboard shortcuts (a webmail's # deletes, e archives) are judged by where the focus is, not by what
+  the site does with the key.
