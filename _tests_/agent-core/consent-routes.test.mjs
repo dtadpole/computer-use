@@ -148,6 +148,8 @@ const T = {
   alwaysAllowButton: { role: 'AXButton', name: 'Always Allow' },
   allowAlwaysButton: { role: 'AXButton', name: 'Allow always' },
   rememberDecisionBox: { role: 'AXCheckBox', name: 'Remember this decision' },
+  rememberDecisionHans: { role: 'AXCheckBox', name: '记住此决定' },
+  rememberDecisionHant: { role: 'AXCheckBox', name: '記住此決定' },
   savePasswordButton: { role: 'AXButton', name: 'Save password' },
   rememberPasswordButton: { role: 'AXButton', name: 'Remember password' },
   saveLoginButton: { role: 'AXButton', name: 'Save login' },
@@ -344,6 +346,8 @@ const ROWS = [
   ['standing-always-allow', 'desktop', 'click', 'alwaysAllowButton', 'permission', 'CU-258', 'cu-verifier, main 900e251, CU Fixture named controls: Always Allow declined permission (20261108T180735Z-10a7db)', null],
   ['standing-allow-always', 'desktop', 'click', 'allowAlwaysButton', 'permission', 'CU-286 (the reversed word order)', 'cu-verifier CU Fixture named-controls, declined permission and not pressed: 20261108T214828Z-f2f9dc', null],
   ['standing-remember-decision', 'desktop', 'click', 'rememberDecisionBox', 'permission', 'CU-286 (Firefox permission prompt checkbox)', 'no live row yet', 'open CU-286'],
+  ['standing-remember-decision-zh-hans', 'desktop', 'click', 'rememberDecisionHans', 'permission', 'CU-294 (Firefox zh-CN geolocation.remember)', 'no live row yet', 'todo CU-294'],
+  ['standing-remember-decision-zh-hant', 'desktop', 'click', 'rememberDecisionHant', 'permission', 'CU-294 (Firefox zh-TW geolocation.remember)', 'no live row yet', 'todo CU-294'],
   // CU-289 (cu-developer-one 20:07Z): storing a credential is a standing choice; staying signed in and a plain save are not.
   ['standing-save-password', 'desktop', 'click', 'savePasswordButton', 'permission', 'CU-289 (stores a credential)', 'no live row yet', 'open CU-289'],
   ['standing-remember-password', 'desktop', 'click', 'rememberPasswordButton', 'permission', 'CU-289', 'no live row yet', 'open CU-289'],
