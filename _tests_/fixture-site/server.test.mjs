@@ -9,7 +9,7 @@ import { TASK_PLANS } from '../../_tools_/fixture-site/plans.mjs'
 import { hasToken, matchRoute, originsFor, parseCommandLine, startFixtureServer } from '../../_tools_/fixture-site/server.mjs'
 import { CUSTOMERS } from '../../_tools_/fixture-site/tasks-consent.mjs'
 import { idsOfKind, instantiate, TASK_IDS } from '../../_tools_/fixture-site/tasks.mjs'
-import { CLASS_PAGES, CONTROLS, COPY_FIELDS, COPY_PAGE, DRAG_FIELDS, FRAME_EDITOR, FRAME_VARIANTS, MORE_SECRET_FIELDS, SECRET_FIELDS, TOGGLE_FIELDS } from '../../_tools_/fixture-site/tasks-probes.mjs'
+import { CARD_FRAMES, CLASS_PAGES, CONTROLS, COPY_FIELDS, COPY_PAGE, DRAG_FIELDS, FRAME_EDITOR, FRAME_VARIANTS, MORE_SECRET_FIELDS, SECRET_FIELDS, TOGGLE_FIELDS } from '../../_tools_/fixture-site/tasks-probes.mjs'
 import { CARD, CARD_DIGITS } from '../fixture-shapes/shapes.mjs'
 
 const MAX_BADGE_NAME = 100
@@ -576,6 +576,26 @@ describe('task routes, request log, targets and secrets', () => {
       { kind: 'line', variant: 'same-origin', via: undefined, chars: undefined },
       { kind: 'typed', variant: 'cross-origin', via: undefined, chars: 12 }])
     assert.equal(/see you soon/.test(JSON.stringify(records)), false, 'never the text')
+  })
+
+  test('CU-297 (on CU-298): the card-frames checkout hosts each field in a cross-origin frame titled for it, the entry filling its frame, and records character counts per field only', async () => {
+    await client.reset()
+    const page = await (await fetch(at('/tasks/frame-editor-probe/card-frames'))).text()
+    for (const [field, f] of Object.entries(CARD_FRAMES)) {
+      assert.match(page, new RegExp(`<iframe id="frame-${field}" title="${f.title}" src="http://localhost:${fixture.port}/tasks/frame-editor-probe/field-${field}" style="position:absolute;left:${f.left}px;top:${f.top}px;width:300px;height:40px;`), `${field}: titled, from the other origin`)
+      assert.ok(f.x > f.left && f.x < f.left + 300 && f.y > f.top && f.y < f.top + 40, `${field}: the click point lies inside the frame`)
+      const inner = await (await fetch(at(`/tasks/frame-editor-probe/field-${field}`))).text()
+      assert.match(inner, /<input id="field" autocomplete="off" style="box-sizing:border-box;width:100%;height:40px;/, `${field}: the entry fills the frame`)
+      assert.doesNotMatch(inner, /aria-label|placeholder|<label/, `${field}: only the frame's title names it`)
+    }
+    assert.equal(CARD_FRAMES.cvv.title, 'Secure Credit Card Frame - CVV', "Braintree's hosted-field title, as CU-297's row reads it")
+    assert.doesNotMatch(page, /<input|contenteditable/, 'the top page holds no entry of its own')
+    const post = (body) => fetch(at('/tasks/frame-editor-probe/field-typed'), { method: 'POST', headers: { 'content-type': 'application/json', origin: `http://localhost:${fixture.port}`, 'sec-fetch-site': 'same-origin' }, body: JSON.stringify(body) })
+    assert.equal((await post({ field: 'cvv', chars: 3, value: '123' })).status, 200)
+    assert.equal((await post({ field: 'card', chars: 16 })).status, 400, 'only the page\'s own fields')
+    const records = (await client.taskState('frame-editor-probe')).facts.records
+    assert.deepEqual(records.map(({ kind, field, chars }) => ({ kind, field, chars })), [{ kind: 'field-typed', field: 'cvv', chars: 3 }])
+    assert.equal(JSON.stringify(records).includes('123'), false, 'never the value')
   })
 
   test('CU-194: the toggle page - an unnamed password entry labelled only by a sibling div, a Show checkbox flipping it in place, an entry under <dt>Password</dt>, a labelled Notes, a never-secure entry beside a Password div - records characters, never values', async () => {

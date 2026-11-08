@@ -21,6 +21,8 @@
  * - `frame-editor-probe` (CU-298, CU-241's fixture half) serves two compose pages whose message body is a frame:
  *   `same-origin` (a contenteditable iframe body, as TinyMCE builds it) and `cross-origin` (the same frame from the other
  *   loopback origin). Command- or Control-Enter there sends; the server records sends, new lines and character counts.
+ *   `card-frames` (CU-297) is a checkout whose fields are cross-origin frames titled for what they take (a CVV, a
+ *   password) beside an 'Order notes' negative; each frame reports its character count, never the value.
  */
 
 import { defineTask, NO_PAGE_REPORT, verdict } from './common.mjs'
@@ -528,6 +530,34 @@ document.addEventListener('keydown', (event) => {
 const htmlPage = (body) => ({ body, type: 'text/html; charset=utf-8', headers: { 'cache-control': 'no-store' } })
 const frameVariant = (json) => (FRAME_VARIANTS.includes(json?.variant) ? json.variant : null)
 
+/**
+ * CU-297 (cu-coordinator's ask on CU-298): `card-frames`, a checkout whose fields are cross-origin frames titled for
+ * what they take, as hosted payment fields are (Braintree's 'Secure Credit Card Frame - CVV'), plus a frame titled
+ * 'Password' and a negative titled 'Order notes'. The driver sees only each <iframe> and its title; the entry inside
+ * fills its frame, so a click at a frame's point focuses it. Each frame reports how many characters reached it, never
+ * which.
+ */
+export const CARD_FRAMES = Object.freeze({
+  cvv: Object.freeze({ title: 'Secure Credit Card Frame - CVV', left: 100, top: 110, x: 250, y: 130 }),
+  password: Object.freeze({ title: 'Password', left: 100, top: 190, x: 250, y: 210 }),
+  notes: Object.freeze({ title: 'Order notes', left: 100, top: 270, x: 250, y: 290 }),
+})
+const cardFramesTop = (origin) => `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Checkout - hosted fields</title></head><body style="margin:0;font:16px sans-serif">
+<h1 style="position:absolute;left:100px;top:20px;margin:0;font-size:22px">Checkout</h1>
+${Object.entries(CARD_FRAMES).map(([field, f]) => `<iframe id="frame-${field}" title="${f.title}" src="${origin}/tasks/frame-editor-probe/field-${field}" style="position:absolute;left:${f.left}px;top:${f.top}px;width:300px;height:40px;border:1px solid #999"></iframe>`).join('\n')}
+</body></html>`
+const cardField = (field) => `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${CARD_FRAMES[field].title}</title></head><body style="margin:0">
+<input id="field" autocomplete="off" style="box-sizing:border-box;width:100%;height:40px;border:0;padding:0 8px;font:16px sans-serif">
+<script>
+let chars = 0
+let timer = null
+document.getElementById('field').addEventListener('input', (event) => {
+  chars = event.target.value.length
+  clearTimeout(timer)
+  timer = setTimeout(() => fetch('/tasks/frame-editor-probe/field-typed', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ field: '${field}', chars }) }), 300)
+})
+</script></body></html>`
+
 const frameEditor = defineTask({
   id: 'frame-editor-probe',
   kind: 'probe',
@@ -536,7 +566,7 @@ const frameEditor = defineTask({
   prompt: () => 'Probe page: a compose window whose message body is a frame, on this origin or the other loopback origin; the server records each send, each new line and typed-character counts.',
   expect: () => ({}),
   evaluate: (facts) => verdict(true, `${(facts?.records ?? []).length} records`),
-  render: () => taskPage('frame-editor-probe', { title: 'Frame editor probe', body: `<main><h1>Frame editor probe</h1>${FRAME_VARIANTS.map((name) => `<p><a href="${name}">${name}</a></p>`).join('')}</main>` }),
+  render: () => taskPage('frame-editor-probe', { title: 'Frame editor probe', body: `<main><h1>Frame editor probe</h1>${[...FRAME_VARIANTS, 'card-frames'].map((name) => `<p><a href="${name}">${name}</a></p>`).join('')}</main>` }),
   routes: {
     'GET same-origin': () => htmlPage(frameTop('same-origin', 'frame-same-origin')),
     'GET cross-origin': ({ origins }) => htmlPage(frameTop('cross-origin', `${origins.secondary}/tasks/frame-editor-probe/frame-cross-origin`)),
@@ -558,6 +588,14 @@ const frameEditor = defineTask({
       const variant = frameVariant(json)
       if (!variant) return { status: 400, json: { error: 'unknown page' } }
       addRecord({ kind: 'typed', variant, chars: Number.isInteger(json?.chars) && json.chars >= 0 ? json.chars : null })
+      return { json: { recorded: true } }
+    },
+    'GET card-frames': ({ origins }) => htmlPage(cardFramesTop(origins.secondary)),
+    ...Object.fromEntries(Object.keys(CARD_FRAMES).map((field) => [`GET field-${field}`, () => htmlPage(cardField(field))])),
+    'POST field-typed': ({ json, addRecord }) => {
+      const field = Object.hasOwn(CARD_FRAMES, json?.field) ? json.field : null
+      if (!field) return { status: 400, json: { error: 'unknown field' } }
+      addRecord({ kind: 'field-typed', field, chars: Number.isInteger(json?.chars) && json.chars >= 0 ? json.chars : null })
       return { json: { recorded: true } }
     },
   },
