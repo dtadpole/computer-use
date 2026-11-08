@@ -48,10 +48,12 @@ test('CU-254: browsing stays free, the same names elsewhere keep their judgement
 test('CU-280: a free trial (a renewing subscription) and a price written with its currency code ask purchase in the App Store', () => {
   for (const name of ['Try Free', 'Try It Free', 'Start Free Trial', 'Start Your Free Trial', 'Free Trial', 'USD 4.99', '4,99 EUR', 'GBP 2.49', 'JPY 300']) {
     const v = at(STORE, click, button(STORE, name))
-    assert.deepEqual([v.decision, v.class, v.rule], ['confirm', 'purchase', 'target:purchase'], name)
+    // CU-288 made a free trial a purchase in any app (class:purchase); a price stays the App Store's own (target:purchase).
+    assert.deepEqual([v.decision, v.class], ['confirm', 'purchase'], name)
   }
   for (const name of ['Free Apps', 'Free', 'USB Tools', 'Trials and Tips']) assert.equal(at(STORE, click, button(STORE, name)).decision, 'allow', name)
-  assert.equal(at(FIXTURE, click, button(FIXTURE, 'Try Free')).decision, 'allow', 'outside the App Store, as before')
+  assert.equal(at(FIXTURE, click, button(FIXTURE, 'USD 4.99')).decision, 'allow', 'a code price outside the App Store, as before')
+  assert.equal(at(FIXTURE, click, button(FIXTURE, 'Try Free')).class, 'purchase', 'CU-288: a trial asks in any app')
 })
 
 test('CU-254 through the loop: a click on Get in the App Store is declined unattended, nothing posted', async () => {
