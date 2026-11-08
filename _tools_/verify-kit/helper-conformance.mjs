@@ -12,7 +12,9 @@ import { CODES, helloFields } from './helper-client.mjs'
  * The design's hard exclusions (app-policy.md 0.3), a trailing dot meaning a prefix: the spec the helper's table is
  * judged against, never the helper's own table.
  */
-export const DESIGN_EXCLUSIONS = Object.freeze(['com.apple.Terminal', 'com.googlecode.iterm2', 'dev.warp.', 'com.mitchellh.ghostty', 'net.kovidgoyal.kitty', 'org.alacritty', 'co.zeit.hyper', 'com.github.wez.wezterm', 'com.apple.ScriptEditor2', 'com.apple.Automator', 'com.apple.shortcuts', 'com.reflection.cu-helper', 'com.openai.', 'com.1password.', 'com.agilebits.', 'com.bitwarden.desktop', 'org.keepassxc.keepassxc', 'com.apple.Passwords', 'com.apple.keychainaccess', 'com.apple.systempreferences', 'com.apple.SecurityAgent', 'com.apple.LocalAuthentication.UIAgent', 'com.apple.loginwindow', 'com.apple.UserNotificationCenter'])
+export const DESIGN_EXCLUSIONS = Object.freeze(['com.apple.Terminal', 'com.googlecode.iterm2', 'dev.warp.', 'com.mitchellh.ghostty', 'net.kovidgoyal.kitty', 'org.alacritty', 'co.zeit.hyper', 'com.github.wez.wezterm', 'com.apple.ScriptEditor2', 'com.apple.Automator', 'com.apple.shortcuts', 'com.reflection.cu-helper', 'com.openai.', 'com.1password.', 'com.agilebits.', 'com.bitwarden.desktop', 'org.keepassxc.keepassxc', 'com.apple.Passwords', 'com.apple.keychainaccess', 'com.apple.systempreferences', 'com.apple.SecurityAgent', 'com.apple.LocalAuthentication.UIAgent', 'com.apple.loginwindow', 'com.apple.UserNotificationCenter',
+  // CU-264: whole-Mac tools (app-policy.md's OS security row).
+  'com.apple.DiskUtility', 'com.apple.bootcampassistant', 'com.apple.MigrateAssistant', 'com.apple.backup.launcher', 'com.apple.TimeMachine', 'com.apple.ActivityMonitor'])
 /** One concrete bundle id per entry (prefix entries get a realistic id), so every kind is asked about. */
 export const EXCLUDED_SAMPLE = Object.freeze(DESIGN_EXCLUSIONS.map((entry) => ({ 'dev.warp.': 'dev.warp.Warp-Stable', 'com.openai.': 'com.openai.chat', 'com.1password.': 'com.1password.1password', 'com.agilebits.': 'com.agilebits.onepassword7' })[entry] ?? entry))
 export const FIXTURE_ID = 'ai.reflection.cu.fixture'
