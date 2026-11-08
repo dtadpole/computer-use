@@ -111,6 +111,9 @@ final class DryRunCapabilities: Capabilities {
   private let declaredTextEntered: Bool?
   /// CU-187: the declared selection source (`selection`: {role, caption, bundleId, pid}), if the world says.
   private let declaredSelection: JSON?
+  /// CU-262: the focused collection's selection - `selectedItems: {role, items: [{filename?, url?, text?}], unreadable?}`
+  /// (`selection` is the text selection's).
+  private let declaredSelectedItems: JSON?
   /// CU-203: the declared `confirmPress` - the press the owner would make on the confirmation prompt.
   private let declaredConfirmPress: [String: JSON]?
   private let declaredPanelSelection: PanelFields?
@@ -225,6 +228,7 @@ final class DryRunCapabilities: Capabilities {
     declaredMenuBarUnreadable = world.object?["menuKeyBarUnreadable"]?.bool ?? false
     declaredTextEntered = world.object?["textEntered"]?.bool
     declaredSelection = world.object?["selection"]
+    declaredSelectedItems = world.object?["selectedItems"]
     if let selection = world.object?["panelSelection"]?.object {
       declaredPanelSelection = PanelFields(directory: selection["directory"]?.string, fileName: selection["fileName"]?.string,
                                            shownFolderName: selection["shownFolderName"]?.string, nameFieldFocused: selection["nameFieldFocused"]?.bool)
@@ -722,6 +726,19 @@ final class DryRunCapabilities: Capabilities {
 
   /// CU-235, by the live rule: the declared menu bar of the frontmost approved app, matched through MenuKey with a US
   /// layout (the dry run never reads the Mac's layout).
+  /// CU-262, by the live rule: the world's `selectedItems` is the frontmost approved app's focused collection (role
+  /// default AXOutline); absent, the focus is not a collection.
+  func selectedItems(scope: [String]) -> SelectedItems.Read {
+    guard let front = frontmost(), let bundleId = front.bundleId else { return .unreadable("no frontmost app") }
+    guard scope.contains(bundleId) else { return .unreadable("the frontmost app is not an approved app of this run") }
+    guard let declared = declaredSelectedItems?.object else { return .notCollection(bundleId: bundleId) }
+    let role = declared["role"]?.string ?? "AXOutline"
+    let items = declared["unreadable"]?.bool == true ? nil : (declared["items"]?.array ?? []).map { item in
+      SelectedItems.Raw(filename: item.object?["filename"]?.string, url: item.object?["url"]?.string, text: item.object?["text"]?.string)
+    }
+    return SelectedItems.read(bundleId: bundleId, focusedRole: role, selection: items)
+  }
+
   func menuKey(keyCode: Int, flags: UInt64, scope: [String]) -> MenuKey.Read {
     guard let front = frontmost(), let bundleId = front.bundleId else { return .unreadable("no frontmost app") }
     guard scope.contains(bundleId) else { return .unreadable("the frontmost app is not an approved app of this run") }
