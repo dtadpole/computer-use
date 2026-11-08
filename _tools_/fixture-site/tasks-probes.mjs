@@ -446,7 +446,10 @@ const RUN_PAGES = {
     title: 'Web terminal',
     body: `<main><h1>Web terminal</h1>
 <div class="terminal xterm" id="term"><textarea class="xterm-helper-textarea" aria-label="Terminal input" id="term-input" autocomplete="off"></textarea><div class="xterm-screen">$ </div></div></main>`,
-    script: `document.getElementById('term-input').addEventListener('keydown', (event) => {
+    // As xterm.js does: a press anywhere on the terminal focuses its hidden helper textarea (a mouse press alone does not
+    // focus that 20 px, transparent box in Chrome - cu-verifier's 17:11Z row found focus null).
+    script: `document.getElementById('term').addEventListener('mousedown', (event) => { event.preventDefault(); document.getElementById('term-input').focus() })
+document.getElementById('term-input').addEventListener('keydown', (event) => {
   if (event.key === 'Enter') ran('return')
   else if (event.key.length === 1) typed()
 })
