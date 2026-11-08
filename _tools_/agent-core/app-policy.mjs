@@ -36,6 +36,8 @@ const SYSTEM_SHORTCUTS = Object.freeze([
   ['log out', ['META', 'SHIFT', 'Q']],
   ['lock screen', ['CTRL', 'META', 'Q']],
   ...['3', '4', '5', '6'].map((digit) => ['screenshot', ['META', 'SHIFT', digit]]),
+  // CU-242: listed before Spotlight, whose keys it contains, so the refusal names it (the first match names the chord).
+  ['Character Viewer', ['CTRL', 'META', 'SPACE']],
   ['Spotlight', ['META', 'SPACE']],
   ['Force Quit', ['META', 'ALT', 'ESCAPE']],
   ['app switcher', ['META', 'TAB']],
@@ -44,6 +46,11 @@ const SYSTEM_SHORTCUTS = Object.freeze([
   ['VoiceOver', ['META', 'F5']],
   // Keyboard focus to the menu bar, the Dock or the status menus reaches the Apple menu, other apps and menu extras.
   ...['F2', 'F3', 'F8'].map((key) => ['system keyboard focus', ['CTRL', key]]),
+  // CU-242 (cu-researcher): switching the input source changes the owner's keyboard layout past the run - an owner
+  // setting; Look Up (and the Character Viewer, above) are system panels over the app. Matched as a subset like every entry, so
+  // Control-Shift-Space (a common 'previous source' setting) is refused too.
+  ['input source', ['CTRL', 'SPACE']],
+  ['Look Up', ['CTRL', 'META', 'D']],
 ])
 
 // CU-249 (cu-researcher; cu-coordinator's ruling): the default macOS Services shortcuts the system apps declare
