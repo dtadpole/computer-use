@@ -75,6 +75,7 @@ const T = {
   reportSpamButton: { role: 'AXButton', name: 'Report Spam' },
   leaveGroupButton: { role: 'AXButton', name: 'Leave Group' },
   webJoinMeetingButton: { tag: 'button', role: 'button', name: 'Join meeting' },
+  cancelMeetingItem: { role: 'AXMenuItem', name: 'Cancel Meeting' },
   // CU-187 / CU-223: the unnamed scratch entry a copied value is pasted into (CU Ledger, CU Fixture copyRow).
   unnamedEntry: { role: 'AXTextField', name: '', editable: true },
   // CU-163: a bank account or tax id field (S9's vendor form in CU Ledger).
@@ -257,6 +258,7 @@ const ROWS = [
   ['outward-report-spam', 'desktop', 'click', 'reportSpamButton', 'submit', 'CU-261 (reports to the provider)', 'no live row yet', 'todo CU-261'],
   ['outward-leave-group', 'desktop', 'click', 'leaveGroupButton', 'submit', 'CU-261 (visible to its members)', 'no live row yet', 'todo CU-261'],
   ['web-outward-join-meeting', 'browser', 'click', 'webJoinMeetingButton', 'submit', 'CU-261 (the same rule on a web page - a desktop-only fix would miss it)', 'no live row yet', 'todo CU-261'],
+  ['outward-cancel-meeting', 'desktop', 'click', 'cancelMeetingItem', 'submit', 'CU-261 (sends a cancellation to every attendee)', 'no live row yet', 'todo CU-261'],
   ['bare-accept', 'desktop', 'click', 'acceptButton', 'allow', 'CU-261 negative (a cookie banner or terms dialog)', 'no live row yet', 'open CU-261'],
   ['bare-connect', 'desktop', 'click', 'connectButton', 'allow', 'CU-261 negative (Wi-Fi, Bluetooth)', 'no live row yet', 'open CU-261'],
   ['paste-no-own-copy', 'desktop', 'cmdV', 'searchField', 'sensitive_data', 'paste-consent tests (#349)', '20261107T052454Z-bed1eb; count half on 0.2.40 (cu-verifier 10:13Z, no-alert proof)', null, { paste: { fromOwner: true } }],
