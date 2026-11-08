@@ -34,6 +34,8 @@ const PRODUCT_KEY = ['ABCDE', 'FGHIJ', 'KLMNP', 'QRSTU', 'VWXYZ'].join('-')
 // Red team of #46 (cu-researcher): a PGP private key's armour ends 'KEY BLOCK-----'; an ITIN spaced as an SSN.
 const PGP_PRIVATE = ['-----BEGIN PGP ', 'PRIVATE KEY BLOCK-----', '\n', 'lQOYBF'].join('')
 const ITIN_SPACED = ['912', '70', '1234'].join(' ')
+// cu-verifier's find on #46: an unsigned JWT ('alg' none) keeps an empty third part.
+const JWT_UNSIGNED = ['eyJ' + 'hbGciOiJub25lIn0', 'eyJ' + 'zdWIiOiIxMjM0In0', ''].join('.')
 const policy = createPolicy({ sitePolicy: () => 'allow' })
 const decide = (text, name) => {
   const r = policy.classify({ type: 'type', text }, { url: 'https://other.example/form', target: { role: 'textbox', name, editable: true } })
@@ -186,6 +188,7 @@ export const ROWS = [
   ['value-PEM private key', 'auth', 'value', PEM_PRIVATE, 'Notes', 'sensitive_data', 'todo CU-245', 'no live row yet'],
   ['value-PGP private key', 'auth', 'value', PGP_PRIVATE, 'Notes', 'sensitive_data', 'todo CU-245', 'no live row yet'],
   ['value-JWT', 'auth', 'value', JWT_TOKEN, 'Notes', 'sensitive_data', 'todo CU-245', 'no live row yet'],
+  ['value-JWT unsigned', 'auth', 'value', JWT_UNSIGNED, 'Notes', 'sensitive_data', 'todo CU-245', 'no live row yet'],
   ['value-product key (negative)', 'auth', 'value', PRODUCT_KEY, 'Notes', 'allow', 'open CU-245', 'no live row yet'],
   ['value-version string (negative)', 'auth', 'value', '1.24.3.4567', 'Notes', 'allow', 'open CU-245', 'no live row yet'],
   ['name-Secret', 'auth', 'name', 'abc123xyz', 'Secret', 'sensitive_data', null, 'class page (#413): asked, main e7aaacfdb 20261107T152022Z-be5e17; pre-#415 typed unasked 20261107T152232Z-178e00'],
