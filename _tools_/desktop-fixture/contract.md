@@ -1,9 +1,9 @@
 ---
 title: Desktop fixture contract
 created: 2026-11-02T08:34:00Z
-modified: 2026-11-08T18:03:24Z
+modified: 2026-11-08T19:42:23Z
 level: L1
-version: 0.12.1
+version: 0.12.2
 description: What CU Fixture guarantees to the desktop driver, the verifiers and the evaluator - identity, placement, the private control channel, what the agent can and cannot see, and how a screen's outcome is judged.
 status: unverified
 grounded_in:
@@ -30,7 +30,8 @@ grounded_in:
   takes the focus on a click; there Delete is enabled and a plain Backspace deletes the previewed message (Mail's viewer).
 - **Named controls.** The named-controls screen (CU-245, CU-258, CU-261) builds up to six entries (`fields`) and six buttons
   (`buttons`) with the names the harness gives, each at most 60 characters: an entry carries its name as its label and
-  title element; a button records only 'pressed' with its index. Its state reports entry lengths, never their text.
+  title element; a button records only 'pressed' with its index; `areas` (CU-253) adds up to six multi-line text areas
+  (AXTextArea) named the same way. Its state reports entry and area lengths (and area line counts), never their text.
 - **Channel.** JSON lines on the launching process's stdin and stdout: `hello`, `reset`, `open {task, params}`,
   `state`, `act {step}`, `targets` (frames with each control's class), `windows` (content sizes and each content's top-left in global points), `screen` (the primary display's points and
   backing scale), `render {window,
