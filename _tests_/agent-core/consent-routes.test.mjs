@@ -131,6 +131,8 @@ const T = {
   webPlaceOrderArmenian: { tag: 'button', role: 'button', name: 'Place \u0555rder' },
   webSendCyrillicWord: { tag: 'button', role: 'button', name: '\u041e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u044c' },
   webSaveTwoScripts: { tag: 'button', role: 'button', name: 'Save \u4fdd\u5b58' },
+  webCloudDriveCjk: { tag: 'button', role: 'button', name: 'iCloud\u4e91\u76d8' },
+  webSearchWithKana: { tag: 'button', role: 'button', name: 'Google\u3067\u691c\u7d22' },
   webPointerIconDelete: { tag: 'div', role: 'generic', name: 'Delete' },
   webReadingText: { tag: 'span', role: 'generic', name: '' },
   webPointerDivDelete: { tag: 'div', role: 'generic', name: 'Delete' },
@@ -266,6 +268,9 @@ const ROWS = [
   ['web-click-mixed-script-word', 'browser', 'click', 'webPlaceOrderArmenian', 'permission', 'CU-268 (an Armenian O outside the fold table)', 'no live row yet', 'todo CU-268'],
   ['web-click-one-script-name', 'browser', 'click', 'webSendCyrillicWord', 'allow', 'CU-268 negative (a name wholly in Cyrillic)', 'no live row yet', 'open CU-268'],
   ['web-click-two-script-words', 'browser', 'click', 'webSaveTwoScripts', 'allow', 'CU-268 negative (a word per script)', 'no live row yet', 'open CU-268'],
+  // cu-developer-one's #89 review: CJK and Latin share a word in everyday UI and look like no Latin letter - never asked.
+  ['web-click-cjk-latin-word', 'browser', 'click', 'webCloudDriveCjk', 'allow', 'CU-268 negative (Han beside Latin in one word)', 'no live row yet', 'open CU-268'],
+  ['web-click-kana-latin-word', 'browser', 'click', 'webSearchWithKana', 'allow', 'CU-268 negative (kana and Han beside Latin)', 'no live row yet', 'open CU-268'],
   ['web-click-label-in-button', 'browser', 'click', 'webDeleteLabelled', 'delete', 'activatableAncestor (CU-175)', '20261107T151230Z-db195b (main c8af0ec44; before #414 unasked 144600Z-75deb7)', null],
   ['web-click-icon-in-button', 'browser', 'click', 'webIconDelete', 'delete', 'activatableAncestor + clickLabel (CU-175)', '20261107T151235Z-4d0737 (main c8af0ec44; before #414 unasked 144608Z-5284c1)', null],
   ['web-click-text-in-link', 'browser', 'click', 'webBuyLink', 'purchase', 'activatableAncestor (CU-175)', '20261107T151239Z-979b16 (main c8af0ec44; before #414 unasked 144612Z-2403a4)', null],
