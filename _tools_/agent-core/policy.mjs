@@ -588,6 +588,13 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const inserted = insertedClass(String(action.text ?? ''), target, context)
       if (inserted) classes.push(inserted)
     }
+    // CU-267: a value typed in pieces is judged whole - what this run typed into the field before (the loop's buffer) with
+    // what this type, printable keypress or browser paste (the run clipboard's text) adds; the action that completes a value
+    // asks. One that only extends a value already judged whole does not ask again.
+    if ((action.type === 'type' || action.type === 'keypress') && context.typed && typeof context.typed.before === 'string' && typeof context.typed.next === 'string' && context.typed.next !== '') {
+      const valueIn = (text) => text !== '' && Boolean(looksSensitive(withoutTaskValues(text, context.task)))
+      if (!valueIn(context.typed.before) && valueIn(context.typed.before + context.typed.next)) classes.push('sensitive_data')
+    }
     const unique = [...new Set(classes)].sort((a, b) => PRECEDENCE.indexOf(a) - PRECEDENCE.indexOf(b))
     const needed = unique.filter((cls) => !preApproved(cls, url) || NEVER_PRE_APPROVED.includes(cls))
     if (needed.length === 0) {

@@ -55,6 +55,8 @@ export function normaliseForPolicy(action, context = {}) {
   if (judged.boundMenuItem) judged.boundMenuItem = normaliseBound(judged.boundMenuItem)
   if (judged.dialog && typeof judged.dialog === 'object') judged.dialog = { ...judged.dialog, message: normaliseText(judged.dialog.message) }
   if (typeof judged.dragText === 'string') judged.dragText = normaliseText(judged.dragText)
+  // CU-267: what this run typed into the field before, and what this action types.
+  if (judged.typed && typeof judged.typed === 'object') judged.typed = { before: normaliseText(String(judged.typed.before ?? '')), next: normaliseText(String(judged.typed.next ?? '')) }
   if (judged.paste && typeof judged.paste.text === 'string') judged.paste = { ...judged.paste, text: normaliseText(judged.paste.text) }
   // The copied-from field lends its name class to the paste (CU-183): its descriptor's name and caption are names too.
   if (judged.paste && judged.paste.source !== undefined && judged.paste.source !== null) {
