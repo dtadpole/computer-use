@@ -800,3 +800,29 @@ test('CU-271: the page script\'s surface flags reach the target (terminal, noteb
   assert.equal((await env.inspectPoint({ x: 120, y: 240 })).terminal, undefined, 'only a true flag counts')
   await env.close()
 })
+
+test('CU-265: a target carries its link\'s scheme only (facetime, tel, mailto, https) - never the rest of the href; no link is null', async () => {
+  let href = 'facetime://+15550100'
+  const { options } = harness({
+    handlers: {
+      'DOM.getNodeForLocation': () => ({ result: { backendNodeId: 7, frameId: 'F-S1' } }),
+      'DOM.describeNode': () => ({ result: { node: { nodeName: 'A', attributes: [] } } }),
+      'Accessibility.getPartialAXTree': () => ({ result: { nodes: [{ backendDOMNodeId: 7, role: { value: 'link' }, name: { value: 'Call support' } }] } }),
+      'DOM.getBoxModel': () => ({ result: { model: { border: [100, 300, 200, 300, 200, 340, 100, 340] } } }),
+      'DOM.resolveNode': () => ({ result: { object: { objectId: 'o1' } } }),
+      'Runtime.callFunctionOn': () => ({ result: { result: { value: { origin: 'http://127.0.0.1:43117', editable: false, href } } } }),
+    },
+  })
+  const env = await launchBrowserEnvironment(options)
+  const schemeAt = async (value) => { href = value; return (await env.inspectPoint({ x: 120, y: 240 })).linkScheme }
+  assert.equal(await schemeAt('facetime://+15550100'), 'facetime')
+  assert.equal(await schemeAt('TEL:+15550100'), 'tel', 'lower case')
+  assert.equal(await schemeAt('mailto:someone@example.com?subject=x'), 'mailto', 'the scheme only')
+  assert.equal(await schemeAt('https://example.com/a'), 'https')
+  assert.equal(await schemeAt(null), null, 'not in a link')
+  assert.equal(await schemeAt('not a url'), null)
+  const first = await env.inspectPoint({ x: 120, y: 240 })
+  href = 'zoommtg://zoom.us/join?confno=1'
+  assert.equal((await env.inspectPoint({ x: 120, y: 240 })).fingerprint, first.fingerprint, 'outside the fingerprint')
+  await env.close()
+})

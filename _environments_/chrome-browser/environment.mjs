@@ -64,6 +64,23 @@ async function passGate(resourceGate, seat) {
   return slot
 }
 
+/**
+ * CU-265: the scheme of a link's URL, what agent core asks about when it is not a web scheme (facetime:, tel:, zoommtg:,
+ * mailto: start another app) - lower case, no colon, the scheme only and never the rest of the URL. Null when there is
+ * no URL or it does not parse.
+ */
+export function linkSchemeOf(url) {
+  if (typeof url !== 'string' || url.trim() === '') return null
+  let parsed
+  try {
+    parsed = new URL(url.trim())
+  } catch {
+    return null
+  }
+  const scheme = parsed.protocol.replace(/:$/, '').toLowerCase()
+  return /^[a-z][a-z0-9+.-]{0,31}$/.test(scheme) ? scheme : null
+}
+
 export async function launchBrowserEnvironment(options = {}) {
   const isFixedDenied = options.isFixedDenied ?? options.sitePolicy?.isFixedDenied
   const viewport = checkOptions({ ...options, isFixedDenied })
@@ -524,12 +541,16 @@ class BrowserEnvironment {
     const fieldKey = extra.editable === true && typeof rootLoader === 'string' && rootLoader !== ''
       ? createHash('sha256').update(['field', page.targetId, rootLoader, backendNodeId].join('|')).digest('hex').slice(0, 32) : null
     const unnamed = name === null || name === ''
+    const href = extra.href ?? attributes.href ?? null
     const captionText = extra.editable === true ? (unnamed ? extra.entryCaption : null) : extra.caption
     return {
       tag: tagName,
       role,
       name,
-      href: extra.href ?? attributes.href ?? null,
+      href,
+      // CU-265: the scheme of the link the element is in (the page script resolves it from the closest <a href>), so a
+      // facetime:, tel: or mailto: link is not judged as a plain click. Outside the fingerprint; never recorded.
+      linkScheme: linkSchemeOf(href),
       // CU-271: a web terminal, a notebook cell, a notebook or code page - DOM shape only; outside the fingerprint, never
       // recorded.
       ...(extra.terminal === true ? { terminal: true } : {}),

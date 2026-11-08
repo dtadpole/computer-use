@@ -265,8 +265,12 @@ export async function runTask(options) {
   const start = now()
   let inactiveMs = 0
   let inactiveSince = null
+  // CU-274 (cu-developer-two's review): pauses and take-overs counted as they happen, so a pause and a resume both served
+  // while a judgement ran are still seen before the perform (a single state sample would read 'running' again).
+  let interrupts = 0
   const unsubscribeTime = control.subscribe((event) => {
     if (event.type !== 'state') return
+    if (event.state === 'paused' || event.state === 'taken_over') interrupts += 1
     const idle = event.state === 'paused' || event.state === 'taken_over'
     if (idle) { pasteboard.baseline = null; pasteboard.own = 0; pasteboard.sources = [] }
     // CU-64 D5: once the run pauses or the person takes over, the last pointer agent core sent may no longer be where the
@@ -641,22 +645,40 @@ export async function runTask(options) {
     return countOf(target) !== null && pasteboard.baseline !== null ? pasteboard.sources[pasteboard.sources.length - 1] : known
   }
 
-  // CU-267: what this run typed into the focused field so far, so the value rules judge a value typed in pieces (sixteen
-  // keypresses, four 'type' actions) as one. Keyed by the field's fingerprint, it starts afresh only on a different focused
-  // element or a cleared field (cu-researcher's rule, cu-developer-one's review): a wait, a screenshot, a move or a click
-  // back into the same field keep it; Return or Tab reset it only when the focus moves. Backspace removes the last
+  // CU-267: what this run typed into each field, so the value rules judge a value typed in pieces (sixteen keypresses,
+  // four 'type' actions) as one. CU-273 (cu-researcher): one buffer per field - a detour through another field (Tab away,
+  // type there, Shift-Tab back) resumes the first field's text rather than starting afresh. On the desktop a field is
+  // known by its column - app, process, role, title, left edge and width - since a text area that grows between pieces
+  // changes its fingerprint (which holds the frame's size), and a bottom-anchored chat box growing upward moves its top
+  // too (cu-researcher, cu-developer-one); two same-titled entries of one width in one column share a buffer, an
+  // over-ask. Elsewhere (the browser, whose fingerprint holds no size) a field is known by its fingerprint. A
+  // field's text is kept across a wait, a screenshot, a move or a click back into it; Backspace removes its last
   // character; select all empties it (what follows replaces it). In the browser a run paste adds the run clipboard's text,
   // the run's own (on the desktop a paste carries only its source class, D-031 - a named limit). Only performed actions
-  // add to it. Never logged or recorded (D-031): it reaches the policy as context and nothing else. When the focus cannot
-  // be read (no focused element, or one without a fingerprint) the key is the frontmost app's - 'nofocus:<app>' - so the
-  // pieces still join (cu-researcher, cu-developer-one); such a buffer starts afresh on any pointer action, Return, Tab or
-  // Escape, since nothing tells whether they moved the focus, and on an app change by its key.
-  let typedSoFar = { key: null, text: '' }
+  // add to it. Capped at 256 characters a field and 32 fields (the least recently typed field goes first); it lives in this
+  // run only and is never logged or recorded (D-031): it reaches the policy as context and nothing else. When the focus
+  // cannot be read (no focused element, or one without a fingerprint) the key is the frontmost app's - 'nofocus:<app>' -
+  // so the pieces still join (cu-researcher, cu-developer-one); that entry is dropped on any pointer action, Return, Tab
+  // or Escape, since nothing tells whether they moved the focus.
+  const typedByField = new Map()
+  const TYPED_FIELDS_MAX = 32
+  const TYPED_CHARS_MAX = 256
   let typedKeyNow = null
   const typedKeyOf = (target, state = null) => {
+    const box = target?.box
+    if (typeof target?.origin === 'string' && target.origin !== '' && Number.isInteger(target?.pid) && box && Number.isFinite(box.x) && Number.isFinite(box.width)) {
+      return `column:${[target.origin, target.pid, target.role ?? '', target.name ?? '', Math.round(box.x), Math.round(box.width)].join('|')}`
+    }
     if (typeof target?.fingerprint === 'string' && target.fingerprint !== '') return target.fingerprint
     const app = state?.frontmostBundleId ?? (() => { try { return new URL(String(state?.url ?? '')).origin } catch { return null } })()
     return typeof app === 'string' && app !== '' && app !== 'null' ? `nofocus:${app}` : null
+  }
+  const typedIn = (key) => (key !== null && typedByField.has(key) ? typedByField.get(key) : '')
+  const setTyped = (key, text) => {
+    if (key === null) return
+    typedByField.delete(key)
+    typedByField.set(key, text.slice(-TYPED_CHARS_MAX))
+    while (typedByField.size > TYPED_FIELDS_MAX) typedByField.delete(typedByField.keys().next().value)
   }
   const typedCharOf = (action) => {
     if (action.type !== 'keypress') return null
@@ -674,28 +696,27 @@ export async function runTask(options) {
   const typedFor = (action, target, pasted = null, state = null) => {
     const key = typedKeyOf(target, state)
     typedKeyNow = key
-    const before = key !== null && key === typedSoFar.key ? typedSoFar.text : ''
+    const before = typedIn(key)
     const next = typedNextOf(action, pasted)
     return before !== '' && next !== '' ? { before, next } : null
   }
   const noteTyped = (action, target, pasted = null) => {
     const key = typedKeyNow ?? typedKeyOf(target)
-    const same = key !== null && key === typedSoFar.key
     // No readable focus: a pointer action, Return, Tab or Escape may have moved it.
     const keysNow = action.type === 'keypress' ? (keySetOf(action) ?? new Set()) : new Set()
-    if (String(typedSoFar.key ?? '').startsWith('nofocus:') && (['click', 'double_click', 'triple_click', 'drag'].includes(action.type) || ['ENTER', 'TAB', 'ESCAPE'].some((name) => keysNow.has(name)))) {
-      typedSoFar = { key: null, text: '' }
-      return
+    if (['click', 'double_click', 'triple_click', 'drag'].includes(action.type) || ['ENTER', 'TAB', 'ESCAPE'].some((name) => keysNow.has(name))) {
+      for (const field of [...typedByField.keys()]) if (field.startsWith('nofocus:')) typedByField.delete(field)
+      if (String(key ?? '').startsWith('nofocus:')) return
     }
-    const add = (text) => { typedSoFar = { key, text: ((same ? typedSoFar.text : '') + text).slice(-256) } }
+    const add = (text) => setTyped(key, typedIn(key) + text)
     if (action.type === 'type') return add(String(action.text ?? ''))
     if (typeof pasted === 'string') return add(pasted)
     if (action.type === 'keypress') {
       const char = typedCharOf(action)
       const keys = keySetOf(action) ?? new Set()
       if (char !== null) add(char)
-      else if (keys.size === 1 && keys.has('BACKSPACE')) typedSoFar = { key, text: same ? typedSoFar.text.slice(0, -1) : '' }
-      else if (keys.size === 2 && (keys.has('META') || keys.has('CTRL')) && keys.has('A')) typedSoFar = { key, text: '' }
+      else if (keys.size === 1 && keys.has('BACKSPACE')) setTyped(key, typedIn(key).slice(0, -1))
+      else if (keys.size === 2 && (keys.has('META') || keys.has('CTRL')) && keys.has('A')) setTyped(key, '')
     }
   }
   const contextFor = async (action, previous = null) => {
@@ -964,6 +985,7 @@ export async function runTask(options) {
         logEvent('action', step, { index, action: redactAction(action), site: environment.site, status: 'failed', code, detail: String(error?.message ?? error).slice(0, 300), attempted: false, completed: false })
         continue
       }
+      const interruptsAtJudgement = interrupts
       let decision = policy.classify(judged, context)
       // CU-182: the site filter's verdict on the browser target's own origin at the moment the action is judged - so a
       // new_site approval later in this step, or later in the run, never names a target recorded before it.
@@ -1156,10 +1178,19 @@ export async function runTask(options) {
       // request), then the check phase - whichever phase this step resumed in.
       await new Promise((resolve) => setTimeout(resolve, 0))
       await new Promise((resolve) => setImmediate(resolve))
+      const waitedBeforePerform = !control.agentMayAct() || interrupts !== interruptsAtJudgement
       if (!(await control.checkpoint())) {
         halt = 'cancelled'
         Object.assign(result, { status: 'skipped', message: 'Not executed: the run was stopped.' })
         logEvent('action', step, { ...base, status: 'skipped', reason: 'stopped_before_perform', attempted: false, completed: false })
+        continue
+      }
+      // A pause, take-over or local input landed here and the run resumed: the screen may have changed, so this action's
+      // judgement is stale - nothing posts, the batch ends and the model plans again from a fresh screenshot.
+      if (waitedBeforePerform) {
+        halt = 'batch'
+        Object.assign(result, { status: 'skipped', message: 'Not executed: the run was paused before this action; the screen may have changed.' })
+        logEvent('action', step, { ...base, status: 'skipped', reason: 'paused_before_perform', attempted: false, completed: false })
         continue
       }
       logEvent('action', step, { ...base, status: 'attempted', attempted: true })
