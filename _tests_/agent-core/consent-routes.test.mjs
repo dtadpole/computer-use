@@ -590,6 +590,8 @@ const SYS_T = {
   pasteItem: { role: 'AXMenuItem', name: 'Paste' },
   openItem: { role: 'AXMenuItem', name: 'Open' },
   getButton: { role: 'AXButton', name: 'Get' },
+  priceButton: { role: 'AXButton', name: '$4.99' },
+  tryFreeButton: { role: 'AXButton', name: 'Try Free' },
 }
 // [id, action, target, expected, pin, live, status, extra context]
 const SYSTEM_ROWS = [
@@ -609,6 +611,8 @@ const SYSTEM_ROWS = [
   // CU-254: the App Store installs software, yet it is not excluded and its 'Get' carries no consent word. Refused or
   // asked is the consent owner's call, so the row expects anything but allow.
   ['appstore-get', 'click', 'getButton', 'not:allow', 'CU-254 (an approved App Store installs software)', 'no live row yet', 'todo CU-254', { app: APP_STORE_ID }],
+  ['appstore-price-button', 'click', 'priceButton', 'purchase', "CU-254 (a paid app's button shows its price, not 'Buy')", 'no live row yet', 'todo CU-254', { app: APP_STORE_ID }],
+  ['appstore-try-free', 'click', 'tryFreeButton', 'purchase', 'CU-254 (a free trial starts a renewing subscription)', 'no live row yet', 'todo CU-254', { app: APP_STORE_ID }],
   ['system-chord-held-log-out', 'holdLogOut', 'field', 'block:system_shortcut', 'desktop-consent P9 (#39), loop.mjs hold-as-keypress', 'no live row yet', 'open CU-244'],
   // CU-252: P10's launch_code reads the clicked target's name only, so File > Open or a context menu's Open on a
   // selected install.command is not judged. 'selection' is the proposed context field (the fix may rename it).
