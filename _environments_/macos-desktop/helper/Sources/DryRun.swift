@@ -548,6 +548,15 @@ final class DryRunCapabilities: Capabilities {
       let title = object["title"]?.string
       object["opaque"] = .bool((title ?? "").isEmpty && Accessibility.genericRoles.contains(object["role"]?.string ?? "AXUnknown"))
     }
+    // CU-250, by the live rule: a menu item declared with `menuLevels: [{holderTitle?, childTitles}]`, nearest first,
+    // gets its menuPath and servicesMenu from the same MenuContext (English strings - the dry run reads no AppKit table).
+    if object["role"]?.string == "AXMenuItem", let levels = object.removeValue(forKey: "menuLevels")?.array {
+      let parsed = levels.compactMap { level -> MenuContext.Level? in
+        guard let entry = level.object else { return nil }
+        return MenuContext.Level(holderTitle: entry["holderTitle"]?.string, childTitles: (entry["childTitles"]?.array ?? []).compactMap { $0.string })
+      }
+      for (key, value) in MenuContext.of(itemTitle: object["title"]?.string, levels: parsed, services: .english).json { object[key] = value }
+    }
     return (object["bundleId"]?.string, object)
   }
 
@@ -727,7 +736,9 @@ final class DryRunCapabilities: Capabilities {
         entries.append(MenuKey.Entry(title: title, path: here, enabled: object["enabled"]?.bool ?? true, cmdChar: object["char"]?.string,
                                      cmdModifiers: object["modifiers"]?.integer, cmdVirtualKey: object["virtualKey"]?.integer, cmdGlyph: object["glyph"]?.integer,
                                      appleMenu: apple))
+        let start = entries.count
         add(object["items"]?.array ?? [], path: here, apple: apple)
+        MenuKey.markServices(&entries, from: start, holderTitle: title, depth: here.count + 1, services: .english)
       }
     }
     for (index, menu) in menus.enumerated() {
