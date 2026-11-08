@@ -321,7 +321,27 @@ enum Accessibility {
                                                          modifiers: (attribute(element, "AXMenuItemCmdModifiers") as? NSNumber)?.intValue) {
       shape["keyEquivalent"] = key
     }
+    // CU-250: a menu item says where it sits - its menu path, and whether a submenu on the way is the Services menu -
+    // so policy refuses a clicked service (an owner-installed one included), not only the default services' titles.
+    if role == "AXMenuItem" { for (key, value) in menuContext(of: element, title: string(element, "AXTitle")).json { shape[key] = value } }
     return .object(shape)
+  }
+
+  /// CU-250: the menus above a menu item, nearest first, up to the menu bar (or a context menu's top): each submenu's
+  /// holding item title and its items' titles (at most 60 read, for the Services markers). Names only.
+  static func menuContext(of item: AXUIElement, title: String?) -> MenuContext {
+    var levels: [MenuContext.Level] = []
+    var node = elementAttribute(item, "AXParent")
+    while let menu = node, levels.count < MenuContext.maxDepth, string(menu, "AXRole") == "AXMenu" {
+      let holder = elementAttribute(menu, "AXParent")
+      let holderRole = holder.flatMap { string($0, "AXRole") }
+      let holds = holderRole == "AXMenuItem" || holderRole == "AXMenuBarItem"
+      let childTitles = children(menu).prefix(60).compactMap { string($0, "AXTitle") }
+      levels.append(MenuContext.Level(holderTitle: holds ? holder.flatMap { string($0, "AXTitle") } ?? "" : nil, childTitles: childTitles))
+      guard holds, holderRole == "AXMenuItem", let holder else { break }
+      node = elementAttribute(holder, "AXParent")
+    }
+    return MenuContext.of(itemTitle: title, levels: levels)
   }
 
   /// The subroles of an element and its ancestors up to its window, nearest first (CU-76: a system dialog marks itself

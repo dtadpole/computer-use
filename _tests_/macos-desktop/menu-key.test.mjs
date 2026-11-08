@@ -1,0 +1,144 @@
+import assert from 'node:assert/strict'
+import { after, test } from 'node:test'
+
+import { boundMenuItemOf, MAX_BOUND_ITEMS } from '../../_environments_/macos-desktop/environment.mjs'
+import { chordKeyDowns } from '../../_environments_/macos-desktop/input-plan.mjs'
+import { fakeLauncher, logged, pause, scratchLocks, stopFake } from './harness.mjs'
+
+/**
+ * CU-232/CU-236: the driver's menuItemForChord. A key chord fires the menu item its key equivalent names (AppKit offers
+ * it to the menu bar), so agent core must know that item. The driver asks the helper's menuKey with each of the chord's
+ * non-modifier keyDowns exactly as it would post them, and passes on every matching item's title, path, key equivalent
+ * and enabled state as a list (cu-developer-one's contract), `none`, or `unreadable` - failing closed on anything else.
+ * All on the fake helper.
+ */
+
+const FIXTURE = 'com.example.fixture'
+const locks = scratchLocks()
+after(() => locks.remove())
+const launchOnFake = fakeLauncher(locks, { apps: [FIXTURE] })
+const WORLD = {
+  displays: [{ id: 1, main: true, originPt: { x: 0, y: 0 }, sizePt: { width: 800, height: 600 }, scale: 1 }],
+  apps: [{ bundleId: FIXTURE, pid: 601, title: 'CU Fixture', rect: { x: 0, y: 0, width: 800, height: 600 } }],
+  frontmost: FIXTURE,
+}
+// kVK codes and CGEventFlags, written out so the rows do not lean on the code under test.
+const KEY_D = 2
+const KEY_K = 40
+const KEY_DELETE = 0x33
+const SHIFT = 0x2_0000
+const COMMAND = 0x10_0000
+const SEND = { title: 'Send', path: ['Message', 'Send'], keyEquivalent: { char: 'D', modifiers: 1 }, enabled: true }
+const SEND_OUT = { role: 'AXMenuItem', name: 'Send', keyEquivalent: { char: 'D', modifiers: 1 }, path: ['Message', 'Send'], enabled: true }
+const list = (...items) => ({ bundleId: FIXTURE, items })
+
+const menuKeys = (child) => child.requests.filter((r) => r.type === 'menuKey')
+
+async function withDriver(extra, body) {
+  const { env, child } = await launchOnFake({ ...WORLD, ...extra })
+  try {
+    await logged(child, 3)
+    return await body(env, child)
+  } finally {
+    await env.close()
+    await stopFake(child)
+  }
+}
+
+/** The menuKey requests once the fake's log has caught up with its replies. */
+async function settledMenuKeys(child, at = 0) {
+  let last = -1
+  for (const deadline = Date.now() + 2000; Date.now() < deadline;) {
+    const now = menuKeys(child).length
+    if (now === last && now >= at) break
+    last = now
+    await pause(60)
+  }
+  return menuKeys(child).map(({ keyCode, flags }) => ({ keyCode, flags }))
+}
+
+test('Shift-Command-D bound to Send: the request is the chord\'s own keyDown, and the item comes back as title, path, key equivalent and enabled only', async () => {
+  await withDriver({ menuKeys: [{ keyCode: KEY_D, flags: SHIFT | COMMAND, reply: list({ ...SEND, value: 'draft text', selectedText: 'x' }) }] }, async (env, child) => {
+    const bound = await env.menuItemForChord({ type: 'keypress', keys: ['META', 'SHIFT', 'D'] })
+    assert.deepEqual(bound, { items: [SEND_OUT] }, 'no value or selected text passes')
+    assert.deepEqual(await settledMenuKeys(child, 1), [{ keyCode: KEY_D, flags: SHIFT | COMMAND }])
+    assert.deepEqual(chordKeyDowns(['META', 'SHIFT', 'D']), [{ keyCode: KEY_D, flags: SHIFT | COMMAND }], 'the planner posts that same keyDown')
+    assert.deepEqual(await env.menuItemForChord({ type: 'hold_key', keys: ['SHIFT', 'CMD', 'd'], duration_ms: 500 }), bound, 'a held chord binds the same item')
+    assert.equal((await settledMenuKeys(child, 2)).length, 2, 'read fresh each time, never cached')
+  })
+})
+
+test('none only for the exact answer; unreadable for the helper\'s unreadable, an older helper and every malformed reply', async () => {
+  await withDriver({ menuKeyDefault: { none: true, bundleId: FIXTURE } }, async (env) => {
+    assert.deepEqual(await env.menuItemForChord({ type: 'keypress', keys: ['META', 'SHIFT', 'K'] }), { none: true })
+  })
+  await withDriver({ menuKeyDefault: { unreadable: true } }, async (env) => {
+    assert.deepEqual(await env.menuItemForChord({ type: 'keypress', keys: ['META', 'SHIFT', 'K'] }), { unreadable: true })
+  })
+  await withDriver({ quirks: { noMenuKey: true } }, async (env) => {
+    assert.deepEqual(await env.menuItemForChord({ type: 'keypress', keys: ['META', 'SHIFT', 'K'] }), { unreadable: true }, 'unknown_request')
+  })
+  const scope = [FIXTURE]
+  for (const [label, reply] of [
+    ['empty', {}], ['null', null], ['none false', { none: false }], ['none naming no app (cu-verifier)', { none: true }], ['none with a bundle id that is no string', { none: true, bundleId: 7 }], ['none and items', { none: true, items: [SEND] }], ['none and truncated', { none: true, truncated: true }],
+    ['items and unreadable', { items: [SEND], unreadable: true }], ['truncated', { ...list(SEND), truncated: true }], ['truncated not a boolean', { ...list(SEND), truncated: 'no' }],
+    ['a single item, not a list', { item: SEND }], ['an empty list', list()], ['over the cap', list(...Array.from({ length: MAX_BOUND_ITEMS + 1 }, (_, i) => ({ ...SEND, title: `Item ${i}` })))],
+    ['an entry that is a string', list(SEND, 'Send')], ['an untitled entry beside a good one', list(SEND, { ...SEND, title: undefined })],
+    ['a blank title', list({ ...SEND, title: '  ' })], ['a control character', list({ ...SEND, title: 'Se\u0007nd' })],
+    ['the reply\'s app outside the scope', { bundleId: 'com.example.other', items: [SEND] }], ['an entry\'s app outside the scope', list({ ...SEND, bundleId: 'com.example.other' })],
+    ['a bundle id that is no string', { bundleId: 7, items: [SEND] }], ['appleMenu not a boolean', list({ ...SEND, appleMenu: 'yes' })],
+    // Helper 0.2.52's shapes: incomplete (a lazily filled menu beside the match) fails closed like truncated; unreadable
+    // carries a reason; none names the app whose bar was read.
+    ['incomplete', { ...list(SEND), incomplete: true }], ['incomplete not a boolean', { ...list(SEND), incomplete: 1 }], ['none and incomplete', { none: true, bundleId: FIXTURE, incomplete: true }],
+    ['unreadable with a reason', { unreadable: true, reason: 'zero-children menu' }], ['none for an app outside the scope', { none: true, bundleId: 'com.example.other' }],
+  ]) {
+    assert.deepEqual(boundMenuItemOf(reply, scope), { unreadable: true }, label)
+  }
+  const long = boundMenuItemOf(list({ title: `  ${'S'.repeat(120)}  `, path: ['Message', 7, '', 'x'.repeat(90)], keyEquivalent: { char: 'D', modifiers: 99 }, enabled: 'yes' }), scope)
+  assert.deepEqual(long, { items: [{ role: 'AXMenuItem', name: 'S'.repeat(80), keyEquivalent: { char: 'D', modifiers: null }, path: ['Message', 'x'.repeat(80)], enabled: null }] }, 'trimmed and capped; a malformed part is null')
+  assert.deepEqual(boundMenuItemOf({ items: [SEND] }, scope), { unreadable: true }, 'a list naming no app (cu-researcher): unreadable')
+  assert.deepEqual(boundMenuItemOf({ bundleId: FIXTURE, items: [SEND] }, scope), { items: [SEND_OUT] }, 'the same list naming the app in scope')
+  assert.deepEqual(boundMenuItemOf(list({ title: 'Move to Trash', keyEquivalent: { glyph: 23, modifiers: 0 } }), scope).items[0].keyEquivalent, { char: null, glyph: 23, modifiers: 0 }, 'a glyph key equivalent (Delete)')
+  assert.equal(boundMenuItemOf(list({ title: 'Send', keyEquivalent: { glyph: -1 } }), scope).items[0].keyEquivalent, null, 'nothing usable: null')
+  assert.deepEqual(boundMenuItemOf(list({ title: 'Lock Screen', path: ['Apple', 'Lock Screen'], keyEquivalent: { char: 'Q', modifiers: 4 }, appleMenu: true }), scope).items[0].appleMenu, true, 'the helper\'s Apple-menu mark passes')
+  // cu-researcher's point 1: every match counts - a disabled benign item first must not hide an enabled consequential one.
+  const both = boundMenuItemOf(list({ title: 'Clear Draft', path: ['Edit', 'Clear Draft'], keyEquivalent: { char: 'D', modifiers: 1 }, enabled: false }, SEND, SEND), scope)
+  assert.deepEqual(both.items.map((i) => [i.name, i.enabled]), [['Clear Draft', false], ['Send', true]], 'both kept, in order; the duplicate once')
+  assert.equal(boundMenuItemOf({ ...list(SEND), truncated: false, incomplete: false }, scope).items.length, 1, 'false flags are no flags')
+  assert.deepEqual(boundMenuItemOf({ none: true, bundleId: FIXTURE }, scope), { none: true }, 'none naming the app in scope')
+  assert.deepEqual(boundMenuItemOf(list({ title: 'Move to Trash', keyEquivalent: { char: null, glyph: 23, virtualKey: 51, modifiers: 0 } }), scope).items[0].keyEquivalent, { char: null, glyph: 23, virtualKey: 51, modifiers: 0 }, 'a non-character key\'s virtual key passes')
+  assert.equal(boundMenuItemOf(list({ title: 'X', keyEquivalent: { virtualKey: 200, modifiers: 0 } }), scope).items[0].keyEquivalent, null, 'a virtual key out of range is nothing usable')
+})
+
+test('a chord with two keys: one list and a none is that list; two lists join; any unreadable, or more than the cap, is unreadable', async () => {
+  const other = { title: 'Clear Log', path: ['Log', 'Clear Log'], keyEquivalent: { char: 'K', modifiers: 1 }, enabled: true }
+  const keys = ['META', 'SHIFT', 'D', 'K']
+  assert.deepEqual(chordKeyDowns(keys), [{ keyCode: KEY_D, flags: SHIFT | COMMAND }, { keyCode: KEY_K, flags: SHIFT | COMMAND }])
+  await withDriver({ menuKeys: [{ keyCode: KEY_D, flags: SHIFT | COMMAND, reply: list(SEND) }] }, async (env) => {
+    assert.deepEqual(await env.menuItemForChord({ type: 'keypress', keys }), { items: [SEND_OUT] })
+  })
+  await withDriver({ menuKeys: [{ keyCode: KEY_D, flags: SHIFT | COMMAND, reply: list(SEND) }, { keyCode: KEY_K, flags: SHIFT | COMMAND, reply: list(other, SEND) }] }, async (env) => {
+    assert.deepEqual((await env.menuItemForChord({ type: 'keypress', keys })).items.map((i) => i.name), ['Send', 'Clear Log'], 'joined, the duplicate once')
+  })
+  const many = (prefix) => list(...Array.from({ length: 5 }, (_, i) => ({ ...SEND, title: `${prefix} ${i}` })))
+  await withDriver({ menuKeys: [{ keyCode: KEY_D, flags: SHIFT | COMMAND, reply: many('A') }, { keyCode: KEY_K, flags: SHIFT | COMMAND, reply: many('B') }] }, async (env) => {
+    assert.deepEqual(await env.menuItemForChord({ type: 'keypress', keys }), { unreadable: true }, '10 items: over the cap')
+  })
+  await withDriver({ menuKeys: [{ keyCode: KEY_D, flags: SHIFT | COMMAND, reply: list(SEND) }, { keyCode: KEY_K, flags: SHIFT | COMMAND, reply: { unreadable: true } }] }, async (env) => {
+    assert.deepEqual(await env.menuItemForChord({ type: 'keypress', keys }), { unreadable: true })
+  })
+})
+
+test('nothing to ask: a modifier-only chord is none; a non-key action or a key the planner refuses is unreadable; none sends a request', async () => {
+  await withDriver({ menuKeys: [{ keyCode: KEY_DELETE, flags: COMMAND, reply: list({ title: 'Move to Trash', keyEquivalent: { glyph: 23, modifiers: 0 } }) }] }, async (env, child) => {
+    assert.deepEqual(await env.menuItemForChord({ type: 'keypress', keys: ['META', 'SHIFT'] }), { none: true })
+    assert.deepEqual(await env.menuItemForChord({ type: 'click', x: 1, y: 1, keys: ['META', 'SHIFT', 'D'] }), { unreadable: true }, 'a click is no chord, whatever keys it names')
+    assert.deepEqual(await env.menuItemForChord({ type: 'keypress', keys: ['META', 'NOT_A_KEY'] }), { unreadable: true })
+    assert.deepEqual(await env.menuItemForChord({ type: 'keypress', keys: 'META+D' }), { unreadable: true })
+    assert.deepEqual(await settledMenuKeys(child), [], 'not one menuKey request')
+    assert.equal((await env.menuItemForChord({ type: 'keypress', keys: ['CMD', 'BACKSPACE'] })).items[0].name, 'Move to Trash', 'Command-Delete binds by its keyDown')
+    // cu-developer-one: plain Delete, Forward Delete and Escape take the read off a text input - keyDowns with no flags.
+    assert.deepEqual(['BACKSPACE', 'DELETE', 'ESCAPE'].flatMap((key) => chordKeyDowns([key])), [{ keyCode: 0x33, flags: 0 }, { keyCode: 0x75, flags: 0 }, { keyCode: 0x35, flags: 0 }])
+    assert.deepEqual(await env.menuItemForChord({ type: 'keypress', keys: ['ESCAPE'] }), { none: true }, 'asked, and nothing bound')
+  })
+})
