@@ -21,7 +21,12 @@ const WORDS = Object.freeze({
     // CU-146 (the CU-145 audit): destructive labels the list missed.
     'move to trash', 'move to bin', 'empty bin', 'clear history', 'clear all', 'reset all', 'reset settings', 'reset to defaults', 'uninstall', 'wipe', 'purge',
     'deactivate', 'close account', 'forget', 'factory reset'],
-  permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke'],
+  permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke',
+    // CU-258 (cu-researcher): standing choices an app keeps after the run, as whole phrases. A bare 'Allow' stays free so
+    // cookie banners do not ask (named limit).
+    'always allow', 'always trust', 'always open', 'allow access', "don't ask again", 'don\u2019t ask again', 'do not ask again',
+    'remember my choice', 'remember this choice', 'remember my decision', 'never for this website', 'never for this site',
+    'set as default', 'make default'],
   submit: ['send', 'post', 'submit', 'publish', 'reply', 'sign up', 'register'],
 })
 const PRECEDENCE = ['purchase', 'delete', 'permission', 'page_dialog', 'credential', 'sensitive_data', 'submit', 'new_site', 'install']
@@ -333,7 +338,9 @@ export function looksSensitive(text) {
     if (tfnValid(m[1] + m[2] + m[3])) return 'tax_id'
   }
   if (/(^|[^\d-])\d{2}-\d{7}([^\d-]|$)/.test(value)) return 'tax_id'
-  if (/[\w.+-]+@[\w-]+\.[\w.-]+/.test(value)) return 'email'
+  // CU-272 (cu-researcher): bounded (RFC 5321's 64-character local part, 63-character labels) and only tried when an '@'
+  // is present - the unbounded form was quadratic on a long word run (an 80k paste took seconds in one classify).
+  if (value.includes('@') && /[\w.+-]{1,64}@[\w-]{1,63}\.[\w.-]{1,190}/.test(value)) return 'email'
   if (/\+\d(?:[\s().-]{0,2}\d){8,}/.test(value) || /(^|[^\d])\(?\d{3}\)?[\s.-]?\d{3}[\s.-]\d{4}([^\d]|$)/.test(value)) return 'phone'
   if (nationalPhone(value)) return 'phone'
   if (/\b(?:sk|pk|ghp|xox[bp]|AKIA)[-_A-Za-z0-9]{16,}\b/.test(value) || /\b[A-Fa-f0-9]{40,}\b/.test(value)) return 'key'
