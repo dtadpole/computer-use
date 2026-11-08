@@ -10,7 +10,7 @@ import { originPattern } from './sites.mjs'
  * or the page; `purchase`, `delete` and `permission` always confirm at action time.
  */
 
-export const CLASSES = Object.freeze(['submit', 'purchase', 'delete', 'permission', 'credential', 'sensitive_data', 'new_site', 'page_dialog', 'install', 'file_choice'])
+export const CLASSES = Object.freeze(['submit', 'purchase', 'delete', 'permission', 'credential', 'sensitive_data', 'new_site', 'page_dialog', 'install', 'file_choice', 'launch_code'])
 export const NEVER_PRE_APPROVED = Object.freeze(['purchase', 'delete', 'permission', 'file_choice', 'launch_code'])
 
 /** Word lists matched on a target's accessible name, case-insensitively, at word boundaries; they err toward confirm. */
@@ -264,6 +264,8 @@ const API_TOKEN = new RegExp([
   'rk_(?:live|test)_[A-Za-z0-9]{16,}',
 ].map((one) => `\\b${one}\\b`).join('|'))
 const PASSWORD_NAMES = Object.freeze(['password', 'passcode', 'passphrase', 'pin', 'pin code'])
+// CU-265: the schemes a page navigates itself; any other hands the link to another app.
+const WEB_SCHEMES = new Set(['http', 'https', 'javascript', 'about'])
 // CU-253: chat apps that send on a plain Return from the compose field, and the names of compose fields.
 const CHAT_APPS = new Set(['com.apple.MobileSMS', 'com.apple.iChat', 'com.tinyspeck.slackmacgap', 'net.whatsapp.WhatsApp', 'desktop.WhatsApp',
   'ru.keepcoder.Telegram', 'org.telegram.desktop', 'com.hnc.Discord', 'org.whispersystems.signal-desktop', 'com.microsoft.teams',
@@ -563,8 +565,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const name = target?.name ?? ''
     const classes = []
     // CU-271 (cu-coordinator's ruling): a web terminal runs every line it is given, so a key or text into it - typed, a
-    // paste, a chord - or text dropped on it is refused, as a terminal view is on the desktop.
-    if ((['type', 'keypress', 'hold_key'].includes(action.type) && target?.terminal === true) || (action.type === 'drag' && context.dropTarget?.terminal === true)) {
+    // paste, a chord, a page menu's Paste with the terminal focused - or text dropped on it is refused, as a terminal view
+    // is on the desktop.
+    if ((['type', 'keypress', 'hold_key'].includes(action.type) && target?.terminal === true) || (action.type === 'drag' && context.dropTarget?.terminal === true)
+      || context.paste?.intoTerminal === true) {
       return { decision: 'block', class: null, rule: 'terminal_view', reason: 'typing into a web terminal is refused, as in a terminal app' }
     }
     // CU-271: running code asks launch_code, never pre-approved - a run chord (Shift-, Control-, Command- or Alt-Return) in
@@ -589,6 +593,13 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       classes.push('page_dialog')
       for (const cls of ['purchase', 'delete', 'permission']) if (namesWord(context.dialog.message, WORDS[cls])) classes.push(cls)
     }
+    // CU-265 (cu-researcher; cu-coordinator: ask): a link whose scheme is not the web's - facetime:, tel:, zoommtg:,
+    // mailto:, file:, an app's own - hands the click to another app, outside the run. The browser driver reports the
+    // clicked link's scheme only (target.linkScheme, lower case, no colon); a click or a Return on it asks permission,
+    // never pre-approved. No scheme reported keeps today's judgement (a named limit until the driver sends it).
+    const scheme = typeof target?.linkScheme === 'string' ? target.linkScheme.trim().toLowerCase().replace(/:$/, '') : ''
+    const pressesLink = ['click', 'double_click', 'triple_click'].includes(action.type) || keysOf(action).has('ENTER')
+    if (scheme !== '' && !WEB_SCHEMES.has(scheme) && pressesLink) classes.push('permission')
     const keyboard = keyboardActivation(action, target, context)
     if (keyboard.deletes) classes.push('delete')
     // CU-140 (press-and-drop.md): a drag pressed on a control - a long press, or any drag starting there - is judged like
@@ -643,6 +654,12 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const desktopUrl = /^(app|desktop):/.test(String(context.url ?? ''))
     const unreadDefault = target?.defaultButtonRead === false || (desktopUrl && target != null && target.defaultButtonRead !== true)
     if (unreadDefault && defaultName === '' && pressesEnter && (!inTextArea || commandReturn)) classes.push('submit')
+    // CU-241 (keyboard-activation.md): on a web page, Command- or Control-Enter in a multi-line editable - a textarea or a
+    // contenteditable - is the web's universal send (webmail, chat, comment boxes), and the page reports no default button
+    // to judge, so it asks submit. Named over-ask: code editors. The desktop keeps its default-button reading (CU-142).
+    const webTag = /^(app|desktop):/.test(String(context.url ?? '')) ? '' : String(target?.tag ?? '').toLowerCase()
+    const multiLineWeb = target?.editable === true && webTag !== '' && webTag !== 'input'
+    if (multiLineWeb && keysOf(action).has('ENTER') && (keysOf(action).has('META') || keysOf(action).has('CTRL'))) classes.push('submit')
     // CU-253 (cu-researcher): a chat app sends on a plain Return from its compose field - a text area too, and with no
     // default button to read (Messages' 'iMessage', Slack, WhatsApp). So a plain Return or typed line break asks submit
     // in any text entry of a known chat app, or in an entry named as a compose field; Shift- or Option-Return types
