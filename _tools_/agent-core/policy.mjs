@@ -320,10 +320,11 @@ export function looksSensitive(text) {
   // CU-164: a 0x-prefixed 64-hex private key (the word boundary after 'x' kept the rule above from seeing it); a 0x + 40
   // hex wallet address is public and stays allowed.
   if (/\b0x[0-9a-fA-F]{64}\b/.test(value)) return 'key'
-  // CU-245: a PEM block naming a private key (RSA, EC, OPENSSH, ENCRYPTED or bare), and a JWT - three dot-joined
-  // base64url parts whose first decodes to a JSON header naming its 'alg'.
-  if (/-----BEGIN (?:[A-Z0-9]+ )*PRIVATE KEY-----/.test(value)) return 'key'
-  for (const m of value.matchAll(/(?<![A-Za-z0-9_-])(eyJ[A-Za-z0-9_-]{5,})\.[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}/g)) {
+  // CU-245: a PEM or PGP armour block naming a private key (RSA, EC, OPENSSH, ENCRYPTED, bare, or PGP's '... BLOCK'),
+  // and a JWT - three dot-joined base64url parts whose first decodes to a JSON header naming its 'alg'; an unsigned
+  // one (alg none) has an empty third part and still carries the session's claims (cu-verifier).
+  if (/-----BEGIN (?:[A-Z0-9]+ )*PRIVATE KEY(?: BLOCK)?-----/.test(value)) return 'key'
+  for (const m of value.matchAll(/(?<![A-Za-z0-9_-])(eyJ[A-Za-z0-9_-]{5,})\.[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]*/g)) {
     try {
       const header = JSON.parse(Buffer.from(m[1], 'base64url').toString('utf8'))
       if (header && typeof header === 'object' && typeof header.alg === 'string') return 'key'

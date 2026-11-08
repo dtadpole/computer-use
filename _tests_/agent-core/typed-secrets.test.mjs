@@ -17,6 +17,9 @@ const SSN_SPACED = ['123', '45', '6789'].join(' ')
 const PEM = [j('-----', 'BEGIN'), 'RSA', 'PRIVATE', j('KEY', '-----'), 'MIIBOgIBAAJBAKj34GkxFhD90vcNLYLInFEX6Ppy1tPf9Cnzj4p4WGeKLs1Pt8Qu'].join(' ')
 const b64 = (object) => Buffer.from(JSON.stringify(object)).toString('base64url')
 const JWT = [b64({ alg: 'HS256', typ: 'JWT' }), b64({ sub: '1234567890', name: 'Test' }), 'SflKxwRJSMeKKF2QT4fwpMeJf36P'].join('.')
+// cu-verifier's two on #46: PGP armour ends its header with ' BLOCK', and an unsigned JWT (alg none) has an empty signature.
+const PGP = [j('-----', 'BEGIN'), 'PGP', 'PRIVATE', 'KEY', j('BLOCK', '-----'), 'lQOYBF1example0data'].join(' ')
+const JWT_UNSIGNED = [b64({ alg: 'none', typ: 'JWT' }), b64({ sub: '1234567890' }), ''].join('.')
 
 const FIXTURE = 'ai.reflection.cu.fixture'
 const tmp = mkdtempSync(join(tmpdir(), 'cu-245-'))
@@ -33,7 +36,7 @@ const both = (text, name) => [
 ]
 
 test('CU-245 values: a spaced SSN, a PEM private key and a JWT ask sensitive_data on both paths, typed into an unnamed entry', () => {
-  for (const [label, value] of [['spaced SSN', SSN_SPACED], ['PEM private key', PEM], ['JWT', JWT]]) {
+  for (const [label, value] of [['spaced SSN', SSN_SPACED], ['PEM private key', PEM], ['JWT', JWT], ['PGP private key block', PGP], ['unsigned JWT', JWT_UNSIGNED]]) {
     assert.deepEqual(both(value, ''), ['sensitive_data', 'sensitive_data'], label)
   }
   assert.equal(looksSensitive(SSN_SPACED), 'national_id')
@@ -52,6 +55,8 @@ test('CU-245 negatives: SSN issuing rules, other PEM blocks, a non-JWT dotted st
     assert.equal(looksSensitive(spaced.join(' ')), null, `${spaced.join(' ')} fails the issuing rules`)
   }
   assert.equal(looksSensitive([j('-----', 'BEGIN'), 'PUBLIC', j('KEY', '-----')].join(' ')), null, 'a public key block')
+  assert.equal(looksSensitive([j('-----', 'BEGIN'), 'PGP', 'PUBLIC', 'KEY', j('BLOCK', '-----')].join(' ')), null, 'a PGP public key block')
+  assert.equal(looksSensitive([b64({ typ: 'JWT' }), b64({ sub: '1' }), ''].join('.')), null, 'an unsigned token whose header names no alg')
   assert.equal(looksSensitive([j('-----', 'BEGIN'), j('CERTIFICATE', '-----')].join(' ')), null, 'a certificate')
   assert.equal(looksSensitive(['eyJub3Rqc29u', 'abcdefgh', 'ijklmnop'].join('.')), null, 'eyJ prefix without a JSON header')
   assert.equal(looksSensitive([b64({ typ: 'none' }), 'abcdefgh', 'ijklmnop'].join('.')), null, 'a JSON header without alg')
