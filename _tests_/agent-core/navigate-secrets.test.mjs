@@ -81,3 +81,12 @@ test('CU-285: tax number, TIN and taxpayer ids ask - as URL parameters and as fi
     assert.equal(v.decision, 'confirm', name)
   }
 })
+
+test('CU-291: acct or acctnum with six or more digits, and the joined phonenumber / cellphone names, ask; a fediverse acct handle and a bare account stay free', () => {
+  for (const url of [`${ALLOWED}/pay?acct=${j('12345', '67890')}`, `${ALLOWED}/pay?acctnum=${j('0012', '3456')}`, `${ALLOWED}/f?phonenumber=${j('415', '5550100')}`, `${ALLOWED}/f?cellphone=${j('07700', '900123')}`]) {
+    assert.deepEqual(verdict(go(url)), ['confirm', 'sensitive_data', 'url:sensitive_data'], url)
+  }
+  for (const url of [`${ALLOWED}/follow?acct=someone`, `${ALLOWED}/u?account=someone`, `${ALLOWED}/f?acct=12`, `${ALLOWED}/f?phonenumber=yes`]) {
+    assert.deepEqual(verdict(go(url)), ['allow', null, 'site:allowed'], url)
+  }
+})
