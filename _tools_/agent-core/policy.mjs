@@ -1,3 +1,4 @@
+import { isMessagingApp } from './app-kinds.mjs'
 import { normaliseForPolicy } from './normalise.mjs'
 import { BIP39_ENGLISH } from './bip39-english.mjs'
 import { normalizeKey } from './keys.mjs'
@@ -270,10 +271,15 @@ const PASSWORD_NAMES = Object.freeze(['password', 'passcode', 'passphrase', 'pin
 // cu-researcher on #112: data: and blob: stay in the browser (blob: is how sites serve a generated 'Download CSV'); a
 // download they start still meets the page's download handling.
 const WEB_SCHEMES = new Set(['http', 'https', 'javascript', 'about', 'data', 'blob'])
-// CU-253: chat apps that send on a plain Return from the compose field, and the names of compose fields.
-const CHAT_APPS = new Set(['com.apple.MobileSMS', 'com.apple.iChat', 'com.tinyspeck.slackmacgap', 'net.whatsapp.WhatsApp', 'desktop.WhatsApp',
-  'ru.keepcoder.Telegram', 'org.telegram.desktop', 'com.hnc.Discord', 'org.whispersystems.signal-desktop', 'com.microsoft.teams',
-  'com.microsoft.teams2', 'com.facebook.archon'])
+// CU-253, CU-287: messaging apps are known by kind (app-kinds.mjs, exact bundle ids with sources), and the names of compose
+// fields judge every other app.
+// CU-287: a search field takes Return to search, in a messaging app too ('Search Acme' in Slack).
+const SEARCH_NAME = /^(search|find)\b/i
+function isSearchField(target) {
+  if (!target || typeof target !== 'object') return false
+  if (target.role === 'AXSearchField' || target.subrole === 'AXSearchField' || target.role === 'searchbox' || target.inputType === 'search') return true
+  return SEARCH_NAME.test(String(target.name ?? '').trim())
+}
 // Compose fields by their usual accessible names (Messages' 'iMessage', WhatsApp and Teams 'Type a message', Slack and
 // Discord 'Message #channel'), and - cu-coordinator's ruling - a bare 'Message', 'Reply' or 'Chat' in any app. Named
 // over-ask: a form's multi-line 'Message' box, whose Return is a line break.
@@ -689,7 +695,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // a line break there and stays allowed. A browser textarea keeps its line break (the web's send is CU-241's
     // Command-Enter). Named limit: a chat app not in the list whose compose field has another name.
     // In a chat app Command- or Control-Return asks too (a send in many of them; cu-coordinator's ruling).
-    const chatApp = CHAT_APPS.has(String(context.frontmostBundleId ?? target?.origin ?? ''))
+    const chatApp = isMessagingApp(String(context.frontmostBundleId ?? target?.origin ?? '')) && !isSearchField(target)
     const lineBreakChord = ['SHIFT', 'ALT'].some((k) => keysOf(action).has(k))
     const sendReturn = pressesEnter && !lineBreakChord && (chatApp || !['CTRL', 'META'].some((k) => keysOf(action).has(k)))
     const browserTextarea = String(target?.tag ?? '').toLowerCase() === 'textarea'
