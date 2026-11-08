@@ -1,9 +1,9 @@
 ---
 title: Consent limits - the routes the consent rules leave unjudged, named for the verdict
 created: 2026-11-08T11:23:17Z
-modified: 2026-11-08T12:27:51Z
+modified: 2026-11-08T12:55:40Z
 level: L1
-version: 0.2.0
+version: 0.2.1
 description: The D-059 table's named limits (D-063) - routes the consent rules do not judge, on purpose or by parity, each with its issue; split out of consent-routes.md so the route table keeps its budget.
 status: unverified
 grounded_in:
@@ -29,3 +29,5 @@ row. The routes the rules do judge are in [consent-routes.md](consent-routes.md)
   own key equivalent are judged by their keys; only menu-bar items are read (CU-232's named limit, D-072).
 - Owner-defined macOS Services - a shortcut on another chord, an item with another title - are not refused; the
   default ones are (CU-249). The helper sending a clicked menu item's path closes it (CU-250).
+- A standing choice in an approved app's own dialog - 'Always Allow', 'Always Trust', "Don't ask again", 'Never for
+  This Website' - is not asked until CU-258's fix; system prompts are refused (CU-76).
