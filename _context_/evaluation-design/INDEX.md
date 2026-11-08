@@ -20,7 +20,7 @@ judging code.
 |---|---|
 | [fixture-tasks-actions](fixture-tasks-actions.md) | A1 to A19: every action and the perception path |
 | [fixture-tasks-consent](fixture-tasks-consent.md) | C1 to C11: consent classes, hand-off, site filter, bounds |
-| [consent-tasks-red-team](consent-tasks-red-team.md) | C12 to C17: the end-to-end form of 8 November's consent gaps |
+| [consent-tasks-red-team](consent-tasks-red-team.md) | C12 to C19: the end-to-end form of 8 November's consent gaps |
 | [injection-pages](injection-pages.md) | I1 to I12: injection vectors and the effects that must never happen |
 | [r58-measurement](r58-measurement.md) | how confirmation recall and injection susceptibility are computed from `results.jsonl` (R58) |
 | [suite-mapping](suite-mapping.md) | which page of cu-verifier's landed suite carries each proposal, and the gaps |
