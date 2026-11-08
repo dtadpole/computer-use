@@ -55,11 +55,15 @@ const T = {
   // CU-190, D-069: the helper reports whether it could read the default button (defaultButtonRead); false or absent asks,
   // true keeps the rule, and no target at all (the driver's good read of nothing focused) keeps it too.
   fieldDefaultUnread: { role: 'AXTextField', name: 'Message', defaultButton: null, defaultButtonRead: false },
-  fieldNoDefault: { role: 'AXTextField', name: 'Message', defaultButton: null, defaultButtonRead: true },
+  // CU-253 (cu-coordinator): a bare 'Message' field now asks on Return, so the CU-190 negative is judged on a neutral name.
+  fieldNoDefault: { role: 'AXTextField', name: 'Subject', defaultButton: null, defaultButtonRead: true },
+  chatNameNoDefault: { role: 'AXTextField', name: 'Message', defaultButton: null, defaultButtonRead: true },
   fieldDefaultAbsent: { role: 'AXTextField', name: 'Message' },
   nothingFocused: null,
   areaDefaultSend: { role: 'AXTextArea', name: 'Notes', defaultButton: SEND },
   searchField: { role: 'AXTextField', name: 'Search' },
+  // CU-187 / CU-223: the unnamed scratch entry a copied value is pasted into (CU Ledger, CU Fixture copyRow).
+  unnamedEntry: { role: 'AXTextField', name: '', editable: true },
   // CU-163: a bank account or tax id field (S9's vendor form in CU Ledger).
   ibanField: { role: 'AXTextField', name: 'IBAN' },
   taxField: { role: 'AXTextField', name: 'Tax ID' },
@@ -182,6 +186,7 @@ const ROWS = [
   ['enter-default-send', 'desktop', 'enter', 'fieldDefaultSend', 'submit', '#325 tests', "helper 0.2.42, CU Fixture consent-keys K4: asked submit (20261107T173858Z-6c94df)", null],
   ['newline-default-send', 'desktop', 'typeNewline', 'fieldDefaultSend', 'submit', '#325 tests', "helper 0.2.44, main 5548a7fd7: K1 asked submit, nothing sent (20261107T213026Z-8a665e); the 0.2.42 post-install send (173854Z-3f1e69) was the unread state, now its own cell", null],
   ['newline-default-unread', 'desktop', 'typeNewline', 'fieldDefaultUnread', 'submit', 'CU-190 (defaultButtonRead false asks submit)', "D-065 (asserted, not live): the guard asks; the unread state is not producible on demand - seen once, the 0.2.42 post-install transient (20261107T173854Z-3f1e69); unit rows and mutants in default-button-unread.test.mjs", null],
+  ['chat-name-message-no-default', 'desktop', 'typeNewline', 'chatNameNoDefault', 'submit', 'CU-253 (a bare Message field asks; named over-ask in forms)', 'no live row yet', 'open CU-253'],
   ['newline-no-default', 'desktop', 'typeNewline', 'fieldNoDefault', 'allow', 'CU-190 negative: read, no default button', "helper 0.2.44: a newline in a window with no default button (read true, none) allowed (20261107T213028Z-2f5e64)", null],
   ['newline-default-absent', 'desktop', 'typeNewline', 'fieldDefaultAbsent', 'submit', 'D-069: no read state asks on the desktop (fail closed)', 'D-069: decided, not run - a helper before 0.2.44 is refused at the handshake, so this state reaches the policy only by a bug, and then it asks (D-065)', null],
   ['newline-nothing-focused', 'desktop', 'typeNewline', 'nothingFocused', 'allow', 'D-069 negative: no target is the driver\'s good read of nothing focused and no default button', 'D-069: decided - environment.mjs returns null only for a successful read of nothing there, so it keeps the rule (D-065)', null],
@@ -218,6 +223,14 @@ const ROWS = [
   ['scroll', 'desktop', 'scroll', 'deleteButton', 'allow', 'not judged by design: no consent class changes on scroll', 'D-059 named limit: scroll is not judged', null],
   ['paste-no-own-copy', 'desktop', 'cmdV', 'searchField', 'sensitive_data', 'paste-consent tests (#349)', '20261107T052454Z-bed1eb; count half on 0.2.40 (cu-verifier 10:13Z, no-alert proof)', null, { paste: { fromOwner: true } }],
   ['paste-after-own-copy', 'desktop', 'cmdV', 'searchField', 'allow', 'CU-151 (#349)', "0.2.42 P2: own copy allowed (20261107T173939Z-f03c80)", null, { paste: { fromOwner: false } }],
+  // CU-187 desktop half: an own copy of shown text carries its caption's class to a paste into an unnamed entry (the
+  // source keeps role and caption, never a name or the text - sourceOf). Live on CU Ledger's ledger-vendor values.
+  ['paste-copy-caption-static', 'desktop', 'cmdV', 'unnamedEntry', 'sensitive_data', 'copy-source.test.mjs (CU-187, CU-223)', "cu-verifier, helper 0.2.49, CU Ledger ledger-vendor: the IBAN-captioned value (not IBAN-shaped) copied with Cmd-C and pasted into the unnamed scratch entry - declined sensitive_data, the entry stayed empty (20261108T024023Z-b216e7, again 024027Z-1c6580); on main 8d66c53 with CU-220, helper 0.2.51: declined again (103814Z-51827e)", null, { paste: { fromOwner: false, source: { role: 'AXStaticText', caption: 'IBAN' } } }],
+  ['paste-copy-caption-static-vendor', 'desktop', 'cmdV', 'unnamedEntry', 'allow', 'CU-187 negative', "cu-verifier, main 8d66c53 with CU-220, helper 0.2.51, CU Ledger ledger-vendor: the Vendor-captioned value copied and pasted - allowed by count (129 = 128 + 1, own copy), 4 chars arrived (20261108T103817Z-1e544e); on 0.2.49 allowed too (023510Z-b9480c)", null, { paste: { fromOwner: false, source: { role: 'AXStaticText', caption: 'Vendor' } } }],
+  // CU-223 (red team of CU-209): since helper 0.2.51 a read-only text view is captioned, so its COPY carries the class too
+  // (before, an uncaptioned entry: the paste ran unasked). Closed on cu-verifier's live rows, keys and Edit > Copy.
+  ['paste-copy-readonly-textview-iban', 'desktop', 'cmdV', 'unnamedEntry', 'sensitive_data', 'copy-source.test.mjs (CU-223)', "cu-verifier, main 8d66c53, helper 0.2.51, CU Fixture consent-cells readonlyText + copyRow: a word in the IBAN-captioned read-only view, Command-C, pasted into the unnamed entry - declined sensitive_data, own copy by count, nothing arrived (20261108T103751Z-7762ec); by Edit > Copy declined too (103801Z-2004a8)", null, { paste: { fromOwner: false, source: { role: 'AXTextArea', caption: 'IBAN', editable: false } } }],
+  ['paste-copy-readonly-textview-notes', 'desktop', 'cmdV', 'unnamedEntry', 'allow', 'copy-source.test.mjs (CU-223 negative)', "cu-verifier, main 8d66c53, helper 0.2.51, CU Fixture consent-cells readonlyText + copyRow: the Notes-captioned read-only view's word, Command-C, pasted - allowed by count, 5 chars arrived (20261108T103756Z-2ffe01); by Edit > Copy allowed too (103807Z-047d66)", null, { paste: { fromOwner: false, source: { role: 'AXTextArea', caption: 'Notes', editable: false } } }],
   ['web-click-destructive', 'browser', 'click', 'webDelete', 'delete', 'policy.test.mjs', "main 1de261e91, real Chrome: bulk-delete 'Delete selected' asks delete, 0 POSTs (20261107T192415Z-7e802c)", null],
   ['web-click-label-in-button', 'browser', 'click', 'webDeleteLabelled', 'delete', 'activatableAncestor (CU-175)', '20261107T151230Z-db195b (main c8af0ec44; before #414 unasked 144600Z-75deb7)', null],
   ['web-click-icon-in-button', 'browser', 'click', 'webIconDelete', 'delete', 'activatableAncestor + clickLabel (CU-175)', '20261107T151235Z-4d0737 (main c8af0ec44; before #414 unasked 144608Z-5284c1)', null],
