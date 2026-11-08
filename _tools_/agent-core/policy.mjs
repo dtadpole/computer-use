@@ -25,8 +25,16 @@ const WORDS = Object.freeze({
     // cookie banners do not ask (named limit).
     'always allow', 'always trust', 'always open', 'allow access', "don't ask again", 'don\u2019t ask again', 'do not ask again',
     'remember my choice', 'remember this choice', 'remember my decision', 'never for this website', 'never for this site',
-    'set as default', 'make default'],
-  submit: ['send', 'post', 'submit', 'publish', 'reply', 'sign up', 'register'],
+    'set as default', 'make default',
+    // CU-261 (cu-researcher): a camera or microphone switched on reaches other people.
+    'turn on camera', 'turn on microphone', 'turn on video', 'start video', 'unmute'],
+  submit: ['send', 'post', 'submit', 'publish', 'reply', 'sign up', 'register',
+    // CU-261 (cu-researcher; cu-coordinator: High): actions that reach other people or commit shared work, as whole
+    // phrases. A bare Accept, Connect, Join or Follow stays free (cookie banners, Wi-Fi, generic joins: named limits).
+    'facetime', 'video call', 'audio call', 'voice call', 'start call', 'start a call', 'join meeting', 'join call',
+    'join with video', 'join with audio', 'join now', 'start meeting', 'start a meeting', 'accept invitation',
+    'decline invitation', 'accept invite', 'decline invite', 'rsvp', 'tweet', 'approve', 'merge pull request',
+    'confirm merge', 'squash and merge', 'rebase and merge', 'deploy', 'run workflow'],
 })
 const PRECEDENCE = ['purchase', 'delete', 'permission', 'page_dialog', 'credential', 'sensitive_data', 'submit', 'new_site', 'install']
 const POINTER = new Set(['click', 'double_click', 'triple_click'])
@@ -128,7 +136,10 @@ function namesWord(name, words) {
 // entry on its page or window holds text. The environment reports that as target.textEntered, read at each action's
 // own judgement; only a strict false - every entry read and empty - lets it run. True, null or absent asks, as before.
 const SUBMIT_BUT_REPLY = Object.freeze(WORDS.submit.filter((word) => word !== 'reply'))
+// CU-261: a control named only Call, Answer or Merge submits; inside a longer name ('Call Stack', 'Merge Cells') it does not.
+const SUBMIT_WHOLE_NAMES = new Set(['call', 'answer', 'merge'])
 function judgesSubmit(name, target) {
+  if (SUBMIT_WHOLE_NAMES.has(normaliseName(name).trim())) return true
   if (!namesWord(name, WORDS.submit)) return false
   return !(target?.textEntered === false && !namesWord(name, SUBMIT_BUT_REPLY))
 }
