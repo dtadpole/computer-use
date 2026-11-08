@@ -1,9 +1,9 @@
 ---
 title: Consent limits - the routes the consent rules leave unjudged, named for the verdict
 created: 2026-11-08T11:23:17Z
-modified: 2026-11-08T21:43:06Z
+modified: 2026-11-08T22:13:28Z
 level: L1
-version: 0.3.6
+version: 0.3.7
 description: The D-059 table's named limits (D-063) - routes the consent rules do not judge, on purpose or by parity, each with its issue; split out of consent-routes.md so the route table keeps its budget.
 status: unverified
 grounded_in:
@@ -39,9 +39,9 @@ row. The routes the rules do judge are in [consent-routes.md](consent-routes.md)
 - A link to a non-web scheme - facetime:, tel:, mailto:, file:, an app's own - asks permission (CU-265).
 - In a known messaging app (Messages, Slack, Teams, WhatsApp, Telegram, Discord, Signal) any compose field asks on
   Return, whatever its name; elsewhere the name decides.
-- Control and field names are judged in English only (CU-293, Urgent): a Chinese label - 发送, 移到废纸篓, 购买,
-  始终允许, a field named 密码 or 身份证号 - goes unasked. Secure fields, key equivalents, file extensions and
-  excluded apps do not depend on language. Until CU-293 lands, approve apps running in English.
+- Names are judged in English and Chinese, Simplified and Traditional (#145): 发送 / 傳送, 移到废纸篓 / 丟到垃圾桶,
+  a field named 密码 or 身份证号. Not yet: 续费, 入会, 拨打, 注销账号 and Firefox's 记住此决定 (CU-294). Other
+  languages go unasked. Secure fields, key equivalents, file extensions and excluded apps do not depend on it.
 - A standing choice in an approved app's own dialog - 'Always Allow', 'Always Trust', "Don't ask again", 'Never for
   This Website', 'Set as Default', 'Always use this app', 'Do not ask me again', Finder's 'Change All…' - asks
   permission (CU-258). System prompts are refused (CU-76).
