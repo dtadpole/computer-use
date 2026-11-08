@@ -79,6 +79,16 @@ test('CU-219: Command-X counts as a copy too, and Control works as Command does'
   assert.deepEqual([ctrl.reads, ctrl.events[1].pasteboard.by, ctrl.events[1].decision], [[0, 1], 'count', 'allow'])
 })
 
+test('CU-219 with CU-230: every paste chord with nothing focused reads the count beside - Paste and Match Style, Command-Shift-V - and is judged on it', async () => {
+  for (const keys of [['META', 'ALT', 'SHIFT', 'V'], ['META', 'SHIFT', 'V']]) {
+    const own = await run([COPY, { type: 'keypress', keys }])
+    assert.deepEqual(own.events[1].pasteboard, { kind: 'paste', count: 42, baseline: 41, copies: 1, own: true, by: 'count', ...SIDE }, keys.join('+'))
+    assert.deepEqual(verdict(own.events[1]), ['allow', 'default'], keys.join('+'))
+    const foreign = await run([COPY, { type: 'keypress', keys }], { count: (log) => 41 + 2 * copies(log) })
+    assert.deepEqual(verdict(foreign.events[1]), ['confirm', 'sensitive_data'], `${keys.join('+')}: a rise the run did not make`)
+  }
+})
+
 test('CU-219: with nothing focused, a rise the run did not make, none at all, or no own copy - the paste is the owner\'s and asks', async () => {
   const other = await run([COPY, PASTE], { count: (log) => 41 + 2 * copies(log) })
   assert.deepEqual(other.events[1].pasteboard, { kind: 'paste', count: 43, baseline: 41, copies: 1, own: false, by: 'count', ...SIDE })
