@@ -103,7 +103,7 @@ test('CU-250 driver: menuPathOf and servicesMenuOf, and menuKey items carry the 
   assert.equal(Object.hasOwn(boundMenuItemOf({ ...reply, items: [{ ...reply.items[0], servicesMenu: false }] }, [FIXTURE]).items[0], 'servicesMenu'), false)
 })
 
-test('CU-250 seam: a chord bound to a marked service is refused', { todo: 'agent core: loop.mjs boundItemOf keeps role, name, keyEquivalent, enabled and appleMenu, and drops servicesMenu, so app-policy never sees the mark on a bound item (cu-developer-one)' }, async () => {
+test('CU-250 seam: a chord bound to a marked service is refused (agent core keeps the mark on a bound item since #56)', async () => {
   const bound = { bundleId: FIXTURE, items: [{ title: 'Upload with Example Sync', path: ['CU Fixture', 'Services', 'Upload with Example Sync'], keyEquivalent: { char: 'U', modifiers: 1 }, enabled: true, servicesMenu: true }] }
   const { event, posted } = await runOnFake(world([], { menuKeys: [{ keyCode: 32, flags: 0x120000, reply: bound }] }), { type: 'keypress', keys: ['META', 'SHIFT', 'U'] })
   assert.equal(event?.decision, 'block', summary(event))
