@@ -464,6 +464,12 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const desktopUrl = String(context.url ?? '').startsWith('app:')
     const unreadDefault = target?.defaultButtonRead === false || (desktopUrl && target != null && target.defaultButtonRead !== true)
     if (unreadDefault && defaultName === '' && pressesEnter && (!inTextArea || commandReturn)) classes.push('submit')
+    // CU-241 (keyboard-activation.md): on a web page, Command- or Control-Enter in a multi-line editable - a textarea or a
+    // contenteditable - is the web's universal send (webmail, chat, comment boxes), and the page reports no default button
+    // to judge, so it asks submit. Named over-ask: code editors. The desktop keeps its default-button reading (CU-142).
+    const webTag = /^(app|desktop):/.test(String(context.url ?? '')) ? '' : String(target?.tag ?? '').toLowerCase()
+    const multiLineWeb = target?.editable === true && webTag !== '' && webTag !== 'input'
+    if (multiLineWeb && keysOf(action).has('ENTER') && (keysOf(action).has('META') || keysOf(action).has('CTRL'))) classes.push('submit')
     // CU-153: reloading, or stepping back or forward, onto a page that was the direct answer to a form POST sends it again.
     if (typeof context.resubmits === 'string') classes.push('submit')
     // CU-151 (paste-consent.md): a paste inserts text no check saw - the owner's pasteboard on the desktop (unread), the
