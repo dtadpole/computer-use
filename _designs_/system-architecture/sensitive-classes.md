@@ -1,9 +1,9 @@
 ---
 title: Sensitive classes - everything the agent must never type unasked
 created: 2026-11-07T14:34:22Z
-modified: 2026-11-08T03:56:04Z
+modified: 2026-11-08T11:46:32Z
 level: L1
-version: 0.3.2
+version: 0.3.3
 description: The D-061 table - every sensitive class with its value rule, its field-name rule, the asserting test and the live row; rows live in an executable matrix, gaps are children of CU-145.
 status: unverified
 grounded_in:
@@ -43,7 +43,7 @@ name (on a text entry only, never a button). Each class has one row per value ru
 
 ## Sign-off
 
-Live rows run on the fixture site's secret-fields pages (browser, no model, no desktop hold), each paired against the
-main before its fix. Re-signed by cu-verifier, 8 November (main 309c60328): every closed row cites cu-verifier's run or a
-decision (D-064); none open. An open under-ask is an open or todo row naming its issue (D-063: team CU,
-not done).
+Live rows run on the fixture site's secret-fields pages (browser, no model), each paired against main before its fix.
+Re-signed by cu-verifier, 8 November (main 309c60328): every closed row cites cu-verifier's run or a decision (D-064).
+Open since: CU-245's seven todo rows. An open under-ask is an open or todo row naming its issue (D-063: team CU, not
+done).
