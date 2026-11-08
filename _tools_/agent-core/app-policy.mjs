@@ -292,9 +292,16 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     if (shortcut !== null) {
       return { decision: 'block', class: null, rule: 'system_shortcut', reason: `${action.keys.join('+')} is the system's ${shortcut} shortcut; it acts beyond the approved app` }
     }
-    // CU-249: a default Services chord may run a service outside the approved app - refused whatever the app binds.
+    // CU-249: a default Services chord may run a service outside the approved app - refused, unless (CU-256, cu-coordinator
+    // 13:42Z) the menu read finds exactly one ENABLED app item bound to it: Apple's Services guide says the application's
+    // own shortcut wins, so the chord is judged as a click on that item below. Disabled, none, unreadable, several matches
+    // or a servicesMenu mark keep the refusal. Named residual: an owner-assigned Services shortcut (CU-250 fails it closed).
     const service = serviceShortcut(action)
-    if (service !== null) {
+    const boundItems = context.boundMenuItem && typeof context.boundMenuItem === 'object' && context.boundMenuItem.unreadable !== true
+      ? (Array.isArray(context.boundMenuItem.items) ? context.boundMenuItem.items : (typeof context.boundMenuItem.name === 'string' ? [context.boundMenuItem] : []))
+      : []
+    const appItemWins = boundItems.length === 1 && boundItems[0]?.enabled === true && boundItems[0]?.servicesMenu !== true && !SERVICE_ITEM.test(String(boundItems[0]?.name ?? '').trim())
+    if (service !== null && !appItemWins) {
       // Inside a file panel the panel's own refusal names the chord (Command-Shift-A is its Applications shortcut).
       const panelBlock = panelKind(target) !== null ? panelVerdict(action, target, target?.origin ?? context.frontmostBundleId) : null
       if (panelBlock?.decision === 'block') return panelBlock
