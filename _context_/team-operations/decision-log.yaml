@@ -396,3 +396,8 @@ decisions:
     topic: owner-data-limit-lifted
     decision: 'D-074''s owner-data limit ends: the value-class Highs it named (CU-257, CU-260, CU-266, CU-267, CU-268) and their follow-ups (CU-273, and CU-281 for D-061 field names carried as URL parameters) are verified live, so an unattended task may again type, paste or send the owner''s own data, judged by the consent rules. Per-app approval, the desktop-run lock, the owner-idle rule (D-066, D-068) and D-034''s cost line (every model run announced with its expected cost; nothing past 21 USD without the owner) stay.'
     rationale: 'The limit was tied to named holes in the value rules; with each verified live, the rules themselves are the backstop again. A Medium contact-data follow-up (CU-283, unformatted phone numbers in a URL) does not reopen it.'
+  - id: D-076
+    date: 2026-11-08
+    topic: records-only-landing
+    decision: 'A pull request whose diff changes only Markdown or YAML records (no .mjs, .swift, .sh, .json or test file) lands after phase 1 and the public-hygiene gate, without the desktop phase 2; the integrator keeps such a PR on the full gate when a record it changes feeds a desktop verifier. Consent-row blockers land first, then records-only batches, then the rest.'
+    rationale: 'With about 25 reviewed PRs queued and phase 2 holding the desktop-run lock for each, records that cannot reach a desktop verifier were costing hours of lock time and delaying the fixes the consent row waits on.'
