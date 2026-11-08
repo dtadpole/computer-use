@@ -108,6 +108,7 @@ import { makePng } from './png.mjs'
  * `sheet` (a sheet or alert where focus is, sent as given; CU-148),
  * `menuKeys` (`[{ keyCode, flags, reply }]`: menuKey's answer for that exact keyDown) and `menuKeyDefault` (else; default
  * `{ none: true, bundleId: <frontmost> }`, as helper 0.2.52 answers; CU-236),
+ * `selectedItems` (the selectedItems reply, sent as given; default `{ notCollection: true, bundleId: <frontmost> }`; CU-259),
  * `focusedApp` (sent as the 'focused' reply's `app`: the app whose window was read when no element has focus; CU-148),
  * `changeCount` (the pasteboard change count beside the focused element and the hit-tested one, phased; CU-151),
  * `textEntered` (whether the target's window holds typed text, beside the same two, sent as given and phased; CU-157),
@@ -274,6 +275,8 @@ const REQUESTS = {
   ...(quirks.noSelection ? {} : { selection: [] }),
   // CU-236: the menu item a chord's keyDown would fire; quirk noMenuKey models a helper without it (unknown_request).
   ...(quirks.noMenuKey ? {} : { menuKey: ['keyCode', 'flags'] }),
+  // CU-259: the focused collection's selected items; quirk noSelectedItems models a helper without it (unknown_request).
+  ...(quirks.noSelectedItems ? {} : { selectedItems: [] }),
   panelSelection: [],
   screenText: ['maxChars'],
   watch: quirks.watchNoRegion ? ['fps', 'maxSize'] : ['fps', 'maxSize', 'region'],
@@ -719,6 +722,11 @@ function handle(message) {
       const bound = (config.menuKeys ?? []).find((entry) => entry.keyCode === fields.keyCode && entry.flags === fields.flags)
       return send({ id, ok: true, ...(bound ? bound.reply : (config.menuKeyDefault ?? { none: true, bundleId: config.frontmost ?? null })) })
     }
+    case 'selectedItems':
+      // CU-259: config.selectedItems - the reply sent as given - else { notCollection: true, bundleId: <frontmost> }.
+      if (quirks.noSelectedItems) return refuse(id, 'unknown_request', `unknown request '${String(type)}'`)
+      if (scope === null) return refuse(id, 'no_scope', 'no scope is set')
+      return send({ id, ok: true, ...(config.selectedItems ?? { notCollection: true, bundleId: config.frontmost ?? null }) })
     case 'selection':
       // CU-187: config.selection {role, caption, bundleId, pid} or null - the element holding the selection.
       if (quirks.noSelection) return refuse(id, 'unknown_request', `unknown request '${String(type)}'`)
