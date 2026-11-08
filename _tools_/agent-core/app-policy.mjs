@@ -541,7 +541,11 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     if (isIde(app) && verdict.decision !== 'handoff' && runsInIde(action, target, context.boundMenuItem)) {
       return { decision: 'confirm', class: 'launch_code', classes: ['launch_code', ...(verdict.classes ?? [])], rule: 'ide:run', reason: `run code in ${app}`, app }
     }
-    const opensFiles = opensUnreadSelection(action, target, app) || (opensSelection(action, target) && selectsFiles(context.selection))
+    // CU-252 (cu-verifier 221022Z on #104's stand-in; rows read AXStaticText with empty names): in any app, an open whose
+    // selection read came back unreadable - the helper could not name the rows - asks, as Finder's unread does; { none },
+    // a named non-launchable selection and no read at all (an older driver) stay as before.
+    const unreadableRead = context.selection?.unreadable === true
+    const opensFiles = opensUnreadSelection(action, target, app) || (opensSelection(action, target) && (selectsFiles(context.selection) || unreadableRead))
     if (opensFiles && selectionRunsCode(context.selection) && verdict.decision !== 'handoff') {
       return { decision: 'confirm', class: 'launch_code', classes: ['launch_code', ...(verdict.classes ?? [])], rule: 'selection:launch_code', reason: 'open the selection, which this run cannot read - it may run code', app }
     }

@@ -136,7 +136,8 @@ test('CU-252 in any app (a file manager or the CU Fixture stand-in): an open who
     assert.deepEqual(verdict(open({ items })), ['confirm', 'launch_code', 'selection:launch_code'], JSON.stringify(items))
   }
   assert.deepEqual(verdict(at(FIXTURE, click, { role: 'AXMenuItem', name: 'Open' }, { selection: { items: [{ name: 'install.command', kind: 'file' }] } })).slice(0, 2), ['confirm', 'launch_code'], 'File > Open on a script')
-  for (const selection of [{ items: [{ name: 'notes.txt', kind: 'file' }] }, { items: [{ name: 'Inbox message', kind: 'unknown' }] }, { none: true }, { unreadable: true }, { notCollection: true }, undefined]) {
+  // An unreadable read now asks in any app (the CU-252 stand-in re-run; its own test below).
+  for (const selection of [{ items: [{ name: 'notes.txt', kind: 'file' }] }, { items: [{ name: 'Inbox message', kind: 'unknown' }] }, { none: true }, { notCollection: true }, undefined]) {
     assert.equal(open(selection).decision, 'allow', `outside Finder, unjudged: ${JSON.stringify(selection)}`)
   }
 })
@@ -185,4 +186,14 @@ test('CU-252 reopen (cu-verifier 202258Z, #104 stand-in): rows with no file URL 
   for (const name of ['notes.txt', 'Groceries']) {
     assert.equal(at(FIXTURE, key('META', 'O'), list, { selection: { items: [{ name, kind: 'unknown' }] } }).decision, 'allow', name)
   }
+})
+
+test('CU-252 stand-in re-run (cu-verifier 221022Z): an unreadable selection read asks in any app; none, a named document and no read stay free', () => {
+  const list = { role: 'AXTable', name: 'Sandbox files' }
+  for (const keys of [['META', 'O'], ['META', 'ARROWDOWN']]) {
+    assert.deepEqual(verdict(at(FIXTURE, key(...keys), list, { selection: { unreadable: true } })), ['confirm', 'launch_code', 'selection:launch_code'], keys.join('+'))
+  }
+  assert.equal(at(FIXTURE, key('META', 'O'), list, { selection: { none: true } }).decision, 'allow', 'nothing selected')
+  assert.equal(at(FIXTURE, key('META', 'O'), list, { selection: { items: [{ name: 'notes.txt', kind: 'unknown' }] } }).decision, 'allow', 'a named document')
+  assert.equal(at(FIXTURE, key('META', 'O'), list).decision, 'allow', 'no read (an older driver) as before')
 })
