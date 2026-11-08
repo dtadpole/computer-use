@@ -191,6 +191,11 @@ enum Menus {
     editMenu.addItem(withTitle: "Cut", action: #selector(NSText.cut(_:)), keyEquivalent: "x")
     editMenu.addItem(withTitle: "Copy", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
     editMenu.addItem(withTitle: "Paste", action: #selector(NSText.paste(_:)), keyEquivalent: "v")
+    // CU-233: macOS's Paste and Match Style, a plain-text paste into the first responder by Command-Option-Shift-V -
+    // a paste chord with more keys held, which CU-230's live row needs to paste when allowed.
+    let matchStyle = NSMenuItem(title: "Paste and Match Style", action: #selector(NSTextView.pasteAsPlainText(_:)), keyEquivalent: "v")
+    matchStyle.keyEquivalentModifierMask = [.command, .option, .shift]
+    editMenu.addItem(matchStyle)
     editMenu.addItem(withTitle: "Select All", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
     editItem.submenu = editMenu
     main.addItem(editItem)

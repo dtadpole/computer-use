@@ -1,9 +1,9 @@
 ---
 title: Desktop fixture contract
 created: 2026-11-02T08:34:00Z
-modified: 2026-11-06T06:20:00Z
+modified: 2026-11-08T10:32:00Z
 level: L1
-version: 0.10.0
+version: 0.10.1
 description: What CU Fixture guarantees to the desktop driver, the verifiers and the evaluator - identity, placement, the private control channel, what the agent can and cannot see, and how a screen's outcome is judged.
 status: unverified
 grounded_in:
@@ -21,8 +21,8 @@ grounded_in:
   (layer 1-19: alerts, panels) moves rightwards along its row, then lower rows, to the first free spot - never left of its
   default and never onto the other fixture app's windows; with no free spot it keeps its default.
 - **Appearance.** Aqua, black on white, system fonts, so pixels are the same in light and dark mode.
-- **Menus.** CU Fixture, Document and Log, then Edit (Cut, Copy, Paste, Select All to the first responder), so
-  copy and paste work by keyboard and the fixture's own titles keep their places.
+- **Menus.** CU Fixture, Document and Log, then Edit (Cut, Copy, Paste, Paste and Match Style by Command-Option-Shift-V,
+  Select All, to the first responder), so copy and paste work by keyboard and the fixture's own titles keep their places.
 - **Channel.** JSON lines on the launching process's stdin and stdout: `hello`, `reset`, `open {task, params}`,
   `state`, `act {step}`, `targets` (frames with each control's class), `windows` (content sizes and each content's top-left in global points), `screen` (the primary display's points and
   backing scale), `render {window,

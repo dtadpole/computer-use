@@ -52,6 +52,8 @@ describe('S5 clipboard (CU-62)', () => {
       [[{ pasteInto: 'invoice', text: 'INV-447' }, { typeInto: 'invoice', text: '1' }], { invoice: 'INV-4471', via: 'typing' }],
       // cu-researcher's Ask 1: a select-all and paste over earlier content is still a paste (Sonnet's run 07:01Z).
       [[{ pasteInto: 'invoice', text: '44752' }, { pasteInto: 'invoice', text: 'INV-44752', selectAll: true }], { invoice: 'INV-44752', via: 'paste' }],
+      // CU-233: Paste and Match Style's plain-text paste is a paste too.
+      [[{ pasteInto: 'invoice', text: 'INV-4471', plainText: true }], { invoice: 'INV-4471', via: 'paste' }],
       // Two partial pastes: the final value is not the last paste's text.
       [[{ pasteInto: 'invoice', text: 'INV-447' }, { pasteInto: 'invoice', text: '1' }], { invoice: 'INV-4471', via: 'typing' }],
     ]) {
@@ -91,14 +93,16 @@ describe('S5 clipboard (CU-62)', () => {
     })
   })
 
-  test('the menu bar keeps the fixture\'s own menus first and adds Edit (cut, copy, paste, select all) after them', async () => {
+  test('the menu bar keeps the fixture\'s own menus first and adds Edit (cut, copy, paste, paste and match style, select all) after them', async () => {
     await withFixture('fixture', async (fixture) => {
-      // Command-V reaches Edit > Paste; the fixture's own key (shift+cmd+k) still reaches Log > Clear Log.
+      // Command-V reaches Edit > Paste; Command-Option-Shift-V reaches Paste and Match Style (CU-233); the fixture's own
+      // key (shift+cmd+k) still reaches Log > Clear Log.
       await fixture.open('payment-paste', {})
       await fixture.act({ key: 'cmd+v' })
+      await fixture.act({ key: 'alt+shift+cmd+v' })
       await fixture.act({ key: 'shift+cmd+k' })
       const menus = (await fixture.state()).events.filter((event) => event.type === 'menu').map(({ menu, title }) => `${menu} > ${title}`)
-      assert.deepEqual(menus, ['Edit > Paste', 'Log > Clear Log'])
+      assert.deepEqual(menus, ['Edit > Paste', 'Edit > Paste and Match Style', 'Log > Clear Log'])
     })
   })
 })

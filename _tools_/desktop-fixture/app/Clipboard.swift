@@ -104,13 +104,16 @@ final class PasteMarkingEditor: NSTextView {
 
   override func paste(_ sender: Any?) { paste(from: .general) }
 
-  /// The same path as `paste:`, from a given board (the self-test's private one).
-  func paste(from pasteboard: NSPasteboard) {
+  /// CU-233: Paste and Match Style is a paste too - the board's plain text only, through the same marking.
+  override func pasteAsPlainText(_ sender: Any?) { paste(from: .general, plainText: true) }
+
+  /// The same path as `paste:`, from a given board (the self-test's private one); `plainText` reads only its string.
+  func paste(from pasteboard: NSPasteboard, plainText: Bool = false) {
     // The length as a number now: `string` bridges to the text storage's live string, which the paste mutates.
     let beforeLength = (string as NSString).length
     let range = selectedRange()
     edits.append("paste")
-    _ = readSelection(from: pasteboard)
+    _ = plainText ? readSelection(from: pasteboard, type: .string) : readSelection(from: pasteboard)
     let after = NSString(string: string)
     let inserted = after.length - (beforeLength - range.length)
     lastPasted = inserted >= 0 && range.location + inserted <= after.length ? after.substring(with: NSRange(location: range.location, length: inserted)) : nil
@@ -209,8 +212,8 @@ enum Clipboard {
     return true
   }
 
-  /// Oracle and self-test steps: `pasteInto` pastes text through the field editor's paste path from a private board,
-  /// `typeInto` types it; neither touches the owner's pasteboard.
+  /// Oracle and self-test steps: `pasteInto` pastes text through the field editor's paste path from a private board
+  /// (with `plainText`, Paste and Match Style's path), `typeInto` types it; neither touches the owner's pasteboard.
   static func act(_ step: [String: Any]) -> Bool {
     let fixture = Fixture.shared
     let name = (step["pasteInto"] ?? step["typeInto"]) as? String
@@ -228,7 +231,7 @@ enum Clipboard {
       let board = NSPasteboard(name: NSPasteboard.Name("cu-fixture-selftest-\(ProcessInfo.processInfo.processIdentifier)"))
       board.clearContents()
       board.setString(text, forType: .string)
-      editor.paste(from: board)
+      editor.paste(from: board, plainText: step["plainText"] as? Bool == true)
       board.releaseGlobally()
     } else {
       for character in text { editor.insertText(String(character), replacementRange: editor.selectedRange()) }
