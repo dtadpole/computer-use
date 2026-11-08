@@ -1,9 +1,9 @@
 ---
 title: Desktop fixture contract
 created: 2026-11-02T08:34:00Z
-modified: 2026-11-08T16:58:00Z
+modified: 2026-11-08T18:20:00Z
 level: L1
-version: 0.11.3
+version: 0.12.1
 description: What CU Fixture guarantees to the desktop driver, the verifiers and the evaluator - identity, placement, the private control channel, what the agent can and cannot see, and how a screen's outcome is judged.
 status: unverified
 grounded_in:
@@ -31,6 +31,9 @@ grounded_in:
   Terminal / TextEdit) while open; its rows carry AXFilename and a /tmp sandbox AXURL (strings only, nothing on disk),
   Command-Down on the list opens, and two drop targets are titled Terminal.app and Payload.app - each open only records
   what it would have opened.
+- **Named controls.** The named-controls screen (CU-245, CU-258, CU-261) builds up to six entries (`fields`) and six buttons
+  (`buttons`) with the names the harness gives, each at most 60 characters: an entry carries its name as its label and
+  title element; a button records only 'pressed' with its index. Its state reports entry lengths, never their text.
 - **Channel.** JSON lines on the launching process's stdin and stdout: `hello`, `reset`, `open {task, params}`,
   `state`, `act {step}`, `targets` (frames with each control's class), `windows` (content sizes and each content's top-left in global points), `screen` (the primary display's points and
   backing scale), `render {window,

@@ -5,7 +5,7 @@ import Foundation
 /// The helper's identity; `build.sh` writes the same bundle id into Info.plist.
 enum HelperIdentity {
   static let bundleId = "com.reflection.cu-helper"
-  static let version = "0.2.55"
+  static let version = "0.2.56"
   /// The value every synthetic event carries in `kCGEventSourceUserData`: 0x43555345, ASCII "CUSE"
   /// (input-and-targets.md, verify-kit's SYNTHETIC_TAG). Not a secret: an event from another process with this tag
   /// could only fail to pause the run, never act.
@@ -997,5 +997,64 @@ enum SelectedItems {
       items.append(Item(name: name, kind: kind(url: raw.url)))
     }
     return .items(bundleId: bundleId, items: items, truncated: selection.count > maxItems)
+  }
+}
+
+extension Grants {
+  /// CU-240: the one grant a gated request needs - a single TCC preflight, not all four.
+  static func preflight(_ name: String) -> Bool {
+    switch name {
+    case "screen": return CGPreflightScreenCaptureAccess()
+    case "accessibility": return AXIsProcessTrusted()
+    case "input": return AXIsProcessTrusted() && CGPreflightPostEventAccess()
+    case "postEvents": return CGPreflightPostEventAccess()
+    case "listenEvents": return CGPreflightListenEventAccess()
+    default: return false
+    }
+  }
+
+  /// Each grant true if either reading says so.
+  func union(_ other: Grants) -> Grants {
+    Grants(screen: screen || other.screen, accessibility: accessibility || other.accessibility,
+           postEvents: postEvents || other.postEvents, listenEvents: listenEvents || other.listenEvents)
+  }
+}
+
+/// CU-240: under load a TCC preflight can read false for a grant the helper holds, refusing a capture or input
+/// mid-run. A false is re-read before a refusal - but only for a grant that read true earlier in this run, so a grant
+/// never given is refused at once, and a real revocation still refuses within about 300 ms. Preflights only: nothing
+/// here can prompt (D-024).
+enum GrantRecheck {
+  static let attempts = 3
+  static let interval: TimeInterval = 0.1
+
+  struct Outcome: Equatable {
+    var granted: Bool
+    var wasGranted: Bool
+    var rechecks: Int
+  }
+
+  static func check(seenTrue: Bool, read: () -> Bool, sleep: (TimeInterval) -> Void) -> Outcome {
+    if read() { return Outcome(granted: true, wasGranted: true, rechecks: 0) }
+    guard seenTrue else { return Outcome(granted: false, wasGranted: false, rechecks: 0) }
+    for attempt in 1...attempts {
+      sleep(interval)
+      if read() { return Outcome(granted: true, wasGranted: true, rechecks: attempt) }
+    }
+    return Outcome(granted: false, wasGranted: true, rechecks: attempts)
+  }
+
+  /// At launch and in the hello there is no earlier reading: when some grant reads true but Screen Recording or
+  /// Accessibility reads false, those are re-read up to `attempts` times (a helper with no grant at all is not slowed).
+  static func settled(read: () -> Grants, sleep: (TimeInterval) -> Void) -> Grants {
+    var grants = read()
+    guard grants.any else { return grants }
+    var attempt = 0
+    while (!grants.screen || !grants.accessibility), attempt < attempts {
+      attempt += 1
+      sleep(interval)
+      grants = grants.union(read())
+    }
+    return grants
   }
 }

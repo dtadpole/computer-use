@@ -249,6 +249,8 @@ enum Extra {
       return ConsentCells.open(title: title)
     case MenuCompose.task:
       return MenuCompose.open(title: title)
+    case NamedControls.task:
+      return NamedControls.open(title: title)
     case OpenSelection.task:
       return OpenSelection.open(title: title)
     default:

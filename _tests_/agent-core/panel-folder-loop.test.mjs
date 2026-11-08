@@ -59,7 +59,10 @@ async function saveThroughGoTo({ shownAtCommit = 'Reports', pauseBeforeName = fa
     ...pause,
     { type: 'type', text: 'report.txt' },
     { type: 'click', x: 600, y: 500, button: 'left' },
-  ] }, { final: 'done\nOUTCOME: not_done' }] })
+  ] },
+  // CU-274: a pause voids the rest of its batch; the model plans the name and the Save again on a fresh screenshot.
+  ...(pauseBeforeName ? [{ actions: [{ type: 'type', text: 'report.txt' }, { type: 'click', x: 600, y: 500, button: 'left' }] }] : []),
+  { final: 'done\nOUTCOME: not_done' }] })
   await runTask({ task: 'save the report', environment, model, control, runsDirectory: join(dir, 'runs'), build: { commit: 'test', dirty: false }, apps: [FIXTURE], appApprovals: store })
   return { reports, choices: requests.filter((r) => r.class === 'file_choice') }
 }
