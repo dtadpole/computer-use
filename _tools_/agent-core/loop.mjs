@@ -503,9 +503,10 @@ export async function runTask(options) {
       && [...keys].every((key) => key === letter || MODIFIER_KEYS.includes(key))
   }
   // CU-232 (menu-key.md): a desktop chord with Command or Control held, or a function key, may be a menu item's key
-  // equivalent, so the loop reads the item it would fire (environment.menuItemForChord: role, name, key equivalent only).
-  // The editing chords it already judges by their meaning - copy, cut, paste, select all, undo and redo, Command or
-  // Option arrows, the CU-143 delete chords - read nothing, so a bar that cannot be read never asks for them.
+  // equivalent, so the loop reads the items it would fire (environment.menuItemForChord: role, name, key equivalent only);
+  // so do a plain Delete, Forward Delete or Escape when the focus is no text input (Mail's Delete is a plain Delete key
+  // equivalent - cu-researcher). The editing chords it already judges by their meaning - copy, cut, paste, select all,
+  // undo and redo, Command or Option arrows, the CU-143 delete chords - read nothing, so an unreadable bar never asks them.
   const FUNCTION_KEY = /^F([1-9]|1[0-2])$/
   const ARROW = /^ARROW(UP|DOWN|LEFT|RIGHT)$/
   const editingChord = (action) => {
@@ -520,19 +521,29 @@ export async function runTask(options) {
     if (ARROW.test(key)) return true
     return (key === 'BACKSPACE' || key === 'DELETE') && keys.has('META')
   }
-  const menuChord = (action) => {
+  const menuChord = (action, target) => {
     if (!desktop) return false
     const keys = keySetOf(action)
-    return keys !== null && (keys.has('META') || keys.has('CTRL') || [...keys].some((key) => FUNCTION_KEY.test(key))) && !editingChord(action)
+    if (keys === null) return false
+    const plainOffText = keys.size === 1 && (keys.has('BACKSPACE') || keys.has('DELETE') || keys.has('ESCAPE')) && !isTextEntry(target)
+    return plainOffText || ((keys.has('META') || keys.has('CTRL') || [...keys].some((key) => FUNCTION_KEY.test(key))) && !editingChord(action))
   }
-  // The driver's answer, kept to names: the bound item, a whole read with no match, or unreadable (also anything else).
+  // The driver's answer, kept to names: every bound item (the helper answers all matches, capped - a disabled benign first
+  // match must not hide a consequential one; cu-researcher), a whole read with no match, or unreadable (also anything
+  // else). A single item is read as a list of one.
+  const MAX_BOUND_ITEMS = 8
   const boundItemOf = (answer) => {
     if (answer && typeof answer === 'object' && answer.none === true) return { none: true }
-    if (answer && typeof answer === 'object' && typeof answer.name === 'string' && answer.name.trim() !== '') {
-      const key = answer.keyEquivalent && typeof answer.keyEquivalent === 'object' ? { char: answer.keyEquivalent.char ?? null, modifiers: answer.keyEquivalent.modifiers ?? null } : null
-      return { role: 'AXMenuItem', name: answer.name, ...(key ? { keyEquivalent: key } : {}) }
+    const listed = answer && typeof answer === 'object' ? (Array.isArray(answer.items) ? answer.items : typeof answer.name === 'string' ? [answer] : null) : null
+    // More matches than the cap could hide one, so that reads as unreadable too.
+    if (!listed || listed.length === 0 || listed.length > MAX_BOUND_ITEMS) return { unreadable: true }
+    const items = []
+    for (const one of listed) {
+      if (!one || typeof one !== 'object' || typeof one.name !== 'string' || one.name.trim() === '') return { unreadable: true }
+      const key = one.keyEquivalent && typeof one.keyEquivalent === 'object' ? { char: one.keyEquivalent.char ?? null, modifiers: one.keyEquivalent.modifiers ?? null } : null
+      items.push({ role: 'AXMenuItem', name: one.name, ...(key ? { keyEquivalent: key } : {}) })
     }
-    return { unreadable: true }
+    return items.length === 1 ? items[0] : { items }
   }
   // CU-154: a menu item is known by its key equivalent (AXMenuItemCmdChar and its modifier mask: 0 Command only, +1 Shift,
   // +2 Option, +4 Control, +8 no Command) in any language; its English name is the fallback when none is reported.
@@ -677,7 +688,7 @@ export async function runTask(options) {
       : desktop && isCopy(action, target) ? { kind: 'copy', count: countOf(target) } : null
     // CU-232 (menu-key.md): the menu item the chord would fire, read beside the focused target. An environment without the
     // read (the browser, fakes) judges by the keys as before; a read that fails is unreadable, which app-policy asks.
-    const boundMenuItem = menuChord(action) && typeof environment.menuItemForChord === 'function'
+    const boundMenuItem = menuChord(action, target) && typeof environment.menuItemForChord === 'function'
       ? boundItemOf(await Promise.resolve(environment.menuItemForChord(action)).catch(() => null))
       : undefined
     return { url: state.url, target: remembered(target), ...(boundMenuItem ? { boundMenuItem } : {}), ...(dropTarget ? { dropTarget: remembered(dropTarget) } : {}), ...(dragText !== undefined ? { dragText } : {}), ...(afterClose ? { afterClose: true } : {}), ...(resubmits ? { resubmits: historyMove } : {}), ...(historyJudged ? { historyJudged } : {}), ...(paste ? { paste } : {}), ...(pasteboardJudged ? { pasteboardJudged } : {}), ...(state.interstitial === true ? { interstitial: true } : {}), dialog: state.dialog ?? null, task: task.text, ...app }

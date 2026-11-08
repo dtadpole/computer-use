@@ -1,14 +1,14 @@
 ---
 title: A desktop chord is judged by the menu item it fires
 created: 2026-11-08T10:36:57Z
-modified: 2026-11-08T10:36:57Z
+modified: 2026-11-08T10:42:10Z
 level: L1
-version: 0.1.0
+version: 0.1.1
 description: How agent core judges a desktop key chord that is a menu item's key equivalent - as a click on that item too, the stricter verdict winning - and what it does when the menu bar cannot be read.
 status: unverified
 grounded_in:
   - source: CU-232 (cu-researcher - Mail's Send, Shift-Command-D, runs unasked while a click on Message > Send asks submit)
-  - source: design note 0.1 and 0.1.1 on CU-232 (cu-developer-one), reviewed by cu-verifier and cu-researcher
+  - source: design note 0.1 and 0.1.1 on CU-232 (cu-developer-one) and cu-researcher's review (every match, plain Delete and Escape off text, lazy menus, named limits)
   - source: keyboard-activation.md (CU-143 - AppKit offers a key equivalent to the menu before the field editor) and D-069 (an absent read asks)
 ---
 
@@ -19,16 +19,18 @@ item is judged by its name ([action-classes](action-classes.md)), so the chord m
 
 ## Rule
 
-1. **Which chords.** A desktop keypress or key hold with Command or Control held, or a function key, takes the read. The editing
+1. **Which chords.** A desktop keypress or key hold with Command or Control held, or a function key, takes the read;
+   so do a plain Delete, Forward Delete or Escape when the focus is no text input (Mail's Delete). The editing
    chords the loop already judges by their meaning do not: Command with A, Command or Control with C, X or V (any paste
    chord, [paste-chords](paste-chords.md)), Command-Z with or without Shift, Command or Option arrows, and the CU-143
    delete chords. Typing, Shift or Option alone, and plain keys never do.
 2. **The read.** `environment.menuItemForChord(action)` asks the helper (`menuKey`) for the frontmost approved app's
-   menu item whose key equivalent matches. It reads the role, title and key equivalent only, never a value or a
-   selection. It answers `{role, name, keyEquivalent}`, `{none: true}` after a whole read with no match, or
-   `{unreadable: true}`. Disabled items still match: a stale enabled state could hide an item that fires, while a
-   disabled one only over-asks.
-3. **The verdict.** The item's name joins the keys' own judgement by the click rules: purchase, delete, permission and
+   menu items whose key equivalent matches - all of them, so a benign first match hides nothing. It reads the role,
+   title and key equivalent only, never a value or a selection. It answers the items (`{role, name, keyEquivalent}`,
+   one or a list of up to eight), `{none: true}` after a whole read with no match, or `{unreadable: true}` (also more
+   matches than eight, or a lazily filled menu). Disabled items still match: a stale enabled state could hide an
+   item that fires, while a disabled one only over-asks.
+3. **The verdict.** Each item's name joins the keys' own judgement by the click rules: purchase, delete, permission and
    submit words, Trash or Bin, a Reply by the entries' text (CU-157). The stricter verdict wins, and an item never
    lowers what the keys ask. With `none`, the keys alone decide.
 4. **Unreadable.** A read that fails, throws or answers nothing usable is unreadable. App-policy asks it each time
@@ -39,20 +41,15 @@ item is judged by its name ([action-classes](action-classes.md)), so the chord m
 
 ## Acceptance
 
-- Through runTask on a fake desktop:
-  - Shift-Command-D bound to Send asks submit; with no bound item, or with no read, it is allowed;
-  - Clear Log is allowed;
-  - Delete Conversation and Move to Trash ask delete, Buy Now asks purchase, a function key bound to Send All asks submit;
-  - an unreadable, thrown, null or nameless answer asks unknown_target;
-  - the editing chords read nothing, even with an unreadable bar;
-  - Command-D on a sheet stays delete beside a benign item.
-- Mutants: the bound item ignored; unreadable read as none; the editing exemption removed; app-policy's unreadable
-  ask removed.
-- Helper and driver halves: CU-235 and CU-236. D-059 cells: menu-key-send and menu-key-benign.
-- Live (cu-verifier, CU-238): CU Fixture's compose screen with Message > Send on Shift-Command-D - the chord with a
-  draft is declined submit and nothing is sent.
+- `menu-key.test.mjs`, through runTask: Send asks submit, while no match or no read is allowed; bound items take
+  their click-rule class; every match counts; unreadable, thrown, null, nameless and over-cap answers ask; editing
+  chords read nothing; a plain Delete or Escape reads off text only; a sheet's Command-D stays delete.
+- Six mutants, one per rule above, each fail a row.
+- Halves CU-235 (helper) and CU-236 (driver); D-059 cells menu-key-send and menu-key-benign; live (cu-verifier,
+  CU-238): Shift-Command-D on a compose screen's Message > Send with a draft is declined submit, nothing sent.
 
 ## Limits
 
-An item the app adds after the read, in the same step, is missed only until the helper re-walks on a miss. The D-069
-floor rises to the helper that answers `menuKey`.
+An item the app adds after the read, in the same step, is missed only until the helper re-walks on a miss. A window
+button's own key equivalent and a shortcut a view handles itself are judged by the keys alone (cu-researcher). The
+D-069 floor rises to the helper that answers `menuKey`.

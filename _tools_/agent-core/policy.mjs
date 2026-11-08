@@ -446,16 +446,17 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (TRASH_ROLE.test(String(target?.role ?? '')) && namesWord(name, CONTROL_DELETE)) classes.push('delete')
     }
     // CU-232 (menu-key.md): a desktop chord that is a menu item's key equivalent fires that item, so the item's name is
-    // judged as a click on it would be, beside the keys - Shift-Command-D bound to Send asks submit. The loop reads the
-    // item (role, name, key equivalent only); a menu bar it could not read is app-policy's to ask.
+    // judged as a click on it would be, beside the keys - Shift-Command-D bound to Send asks submit. Every matching item
+    // counts (one or a list); a menu bar the loop could not read is app-policy's to ask.
     const bound = context.boundMenuItem
-    if (bound && typeof bound === 'object' && typeof bound.name === 'string' && bound.name.trim() !== '') {
+    const boundNames = bound && typeof bound === 'object' ? (Array.isArray(bound.items) ? bound.items : [bound]).map((one) => one?.name).filter((n) => typeof n === 'string' && n.trim() !== '') : []
+    for (const boundName of boundNames) {
       for (const cls of ['purchase', 'delete', 'permission']) {
-        if (namesWord(cls === 'purchase' ? withoutOrderReferences(bound.name) : bound.name, WORDS[cls])) classes.push(cls)
+        if (namesWord(cls === 'purchase' ? withoutOrderReferences(boundName) : boundName, WORDS[cls])) classes.push(cls)
       }
       // A bound Reply follows CU-157 on the focused window's entries, as the focused target reports them.
-      if (judgesSubmit(bound.name, target)) classes.push('submit')
-      if (namesWord(bound.name, CONTROL_DELETE)) classes.push('delete')
+      if (judgesSubmit(boundName, target)) classes.push('submit')
+      if (namesWord(boundName, CONTROL_DELETE)) classes.push('delete')
     }
     // CU-142 (keyboard-activation.md): a Return presses the window's default button, so its name - where the environment
     // reports it - is judged as a second name, from a single-line input or non-text focus; in a text area a Return is

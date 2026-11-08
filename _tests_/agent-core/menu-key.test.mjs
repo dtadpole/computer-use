@@ -101,3 +101,40 @@ test('CU-232: the keys still count - a bound item never lowers what the keys ask
   }
   assert.deepEqual(verdict(await sheetRun()), ['confirm', 'delete'])
 })
+
+test('CU-232 (cu-researcher): every matching item counts - a benign first match does not hide a consequential one; more matches than the cap read as unreadable', async () => {
+  const two = await run([key('META', 'SHIFT', 'D')], { menu: () => ({ items: [item('Clear', 'D', 1), item('Send', 'D', 1)] }) })
+  assert.deepEqual(verdict(two.events[0]), ['confirm', 'submit'])
+  assert.deepEqual(two.events[0].boundMenuItem.items.map((i) => i.name), ['Clear', 'Send'], 'the event names both')
+  const many = Array.from({ length: 9 }, (_, i) => item(`Item ${i}`, 'D', 1))
+  assert.deepEqual(verdict((await run([key('META', 'SHIFT', 'D')], { menu: () => ({ items: many }) })).events[0]), ['confirm', 'unknown_target'])
+  assert.deepEqual(verdict((await run([key('META', 'SHIFT', 'D')], { menu: () => ({ items: [item('Send', 'D', 1), { name: '' }] }) })).events[0]), ['confirm', 'unknown_target'], 'one nameless entry spoils the list')
+})
+
+/** A run whose focus is `focus` rather than the compose body. */
+async function runFocused(actions, focus, menu) {
+  const dir = mkdtempSync(join(tmpdir(), 'cu-232-f-'))
+  try {
+    const control = createRunControl()
+    const environment = createFakeEnvironment({ kind: 'desktop', control })
+    const asked = []
+    environment.focusedElement = async () => focus
+    environment.menuItemForChord = async (action) => { asked.push(action.keys.join('+')); return menu(action) }
+    const store = createAppApprovals({ path: join(dir, 'a.json') })
+    store.grantAlways(FIXTURE, { by: 'api' })
+    const model = createScriptedAdapter({ frame, turns: [{ actions }, { final: 'done' }] })
+    const result = await runTask({ task: 'tidy up', environment, model, control, runsDirectory: join(dir, 'runs'), build: { commit: 'test', dirty: false }, apps: [FIXTURE], appApprovals: store })
+    return { events: [...new Map(readRun(result.trajectoryDir).events.filter((e) => e.kind === 'action').map((e) => [`${e.step}:${e.index}`, e])).values()], asked }
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+}
+
+test('CU-232 (cu-researcher): a plain Delete or Escape off a text input takes the read - Mail\'s Delete is a plain Delete key equivalent; in a text input it edits text and reads nothing', async () => {
+  const pane = { origin: FIXTURE, role: 'AXGroup', name: 'Preview', fingerprint: 'p', defaultButtonRead: true }
+  assert.deepEqual(verdict((await runFocused([key('DELETE')], pane, () => item('Delete', null, 8))).events[0]), ['confirm', 'delete'], 'Delete bound in a preview pane')
+  assert.deepEqual(verdict((await runFocused([key('ESCAPE')], pane, () => item('Discard Draft', null, 8))).events[0]), ['confirm', 'delete'], 'Escape bound to Discard Draft')
+  assert.deepEqual(verdict((await runFocused([key('BACKSPACE')], null, () => item('Delete', null, 8))).events[0]), ['confirm', 'delete'], 'nothing focused')
+  const inText = await runFocused([key('BACKSPACE'), key('ESCAPE')], BODY, () => item('Delete', null, 8))
+  assert.deepEqual(inText.asked, [], 'a text input reads nothing for a plain Backspace or Escape')
+})
