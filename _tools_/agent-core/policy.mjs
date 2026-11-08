@@ -60,7 +60,11 @@ function keyboardActivation(action, target, context = {}) {
   const keys = keysOf(action)
   if (keys.size === 0) return { activates: false, deletes: false }
   const button = BUTTON_ROLE.test(String(target?.role ?? ''))
-  const activates = keys.size === 1 && keys.has('SPACE') && CONTROL_ROLE.test(String(target?.role ?? ''))
+  // CU-234 (keyboard-activation.md): a variant is recognised generously - a miss is an under-ask, a recognised no-op only
+  // over-asks. Space with any of Shift, Option or Control presses a focused control (an app that handles Space itself,
+  // as CU Fixture's buttons do, presses on them); Command-Space is the system's.
+  const onlyWith = (main, allowed) => [...keys].every((key) => key === main || allowed.includes(key))
+  const activates = keys.has('SPACE') && onlyWith('SPACE', ['SHIFT', 'ALT', 'CTRL']) && CONTROL_ROLE.test(String(target?.role ?? ''))
   // CU-143 (live, 0.2.34): AppKit sends a key equivalent to the menu before the field editor, so even a plain
   // Command-Backspace in a focused text field fires the app's menu item bound to it (Finder's Move to Trash, Mail's
   // Delete) - Command-Backspace and Command-Delete, with any modifiers, are judged delete on every target.
@@ -68,10 +72,14 @@ function keyboardActivation(action, target, context = {}) {
   // keyboard navigation off (a default Mac) the focus is the sheet or its window, never the button. The helper reports
   // it (sheet); a Command-D right after Command-W or Command-Q in the batch is aimed at the sheet that close raises.
   const sheetUp = target?.sheet === true || context.afterClose === true
-  const deletes = keys.has('META') && ((keys.has('BACKSPACE') || keys.has('DELETE')) || (keys.size === 2 && keys.has('D') && (button || sheetUp)))
+  // CU-234: Command-D with Shift, Option or Control too presses the sheet's Don't Save.
+  const deletes = keys.has('META') && ((keys.has('BACKSPACE') || keys.has('DELETE')) || (keys.has('D') && onlyWith('D', ['META', 'SHIFT', 'ALT', 'CTRL']) && (button || sheetUp)))
   // CU-147: exactly Backspace or Delete on a focused collection - a list, table, outline, row or cell, not a text input
   // (a cell being edited is a text field) - removes the selection: Mail moves messages to the Trash with no dialog.
-  const removesSelection = keys.size === 1 && (keys.has('BACKSPACE') || keys.has('DELETE')) && COLLECTION_ROLE.test(String(target?.role ?? '')) && !TEXT_ROLE.test(String(target?.role ?? ''))
+  // CU-234: with Shift, Option or Control too (Shift-Backspace is deleteBackward: in the standard key bindings); with
+  // Command it is CU-143's delete above.
+  const deleteKey = keys.has('BACKSPACE') ? 'BACKSPACE' : keys.has('DELETE') ? 'DELETE' : null
+  const removesSelection = deleteKey !== null && onlyWith(deleteKey, ['SHIFT', 'ALT', 'CTRL']) && COLLECTION_ROLE.test(String(target?.role ?? '')) && !TEXT_ROLE.test(String(target?.role ?? ''))
   return { activates, deletes: deletes || removesSelection }
 }
 const SECRET = /\{\{secret:[a-z0-9_-]+\}\}/i
@@ -173,7 +181,9 @@ const tfnValid = (digits) => [1, 4, 3, 7, 5, 8, 6, 9, 10].reduce((sum, w, i) => 
 // value is the account a payout or a direct debit goes to.
 const BANK_OR_TAX_FIELD = Object.freeze(['iban', 'account number', 'account no', 'routing', 'routing number', 'sort code', 'tax id', 'tax number', 'tax file number', 'ein',
   // CU-178: spellings and abbreviations of the same fields.
-  'acct number', 'acct no', 'bsb', 'tax identification', 'tax no'])
+  'acct number', 'acct no', 'bsb', 'tax identification', 'tax no',
+  // CU-245 (cu-researcher's D-061 red team): a field named only 'Bank account'.
+  'bank account'])
 function bankOrTaxField(target) {
   return namesWord(target?.name, BANK_OR_TAX_FIELD)
 }
@@ -205,6 +215,14 @@ export function isTextEntry(target) {
   return target.editable === true || TEXT_ENTRY_ROLES.has(target.role)
 }
 const PASSWORD_NAMES = Object.freeze(['password', 'passcode', 'passphrase', 'pin', 'pin code'])
+// CU-253: chat apps that send on a plain Return from the compose field, and the names of compose fields.
+const CHAT_APPS = new Set(['com.apple.MobileSMS', 'com.apple.iChat', 'com.tinyspeck.slackmacgap', 'net.whatsapp.WhatsApp', 'desktop.WhatsApp',
+  'ru.keepcoder.Telegram', 'org.telegram.desktop', 'com.hnc.Discord', 'org.whispersystems.signal-desktop', 'com.microsoft.teams',
+  'com.microsoft.teams2', 'com.facebook.archon'])
+// Compose fields by their usual accessible names (Messages' 'iMessage', WhatsApp and Teams 'Type a message', Slack and
+// Discord 'Message #channel'), and - cu-coordinator's ruling - a bare 'Message', 'Reply' or 'Chat' in any app. Named
+// over-ask: a form's multi-line 'Message' box, whose Return is a line break.
+const CHAT_COMPOSE_NAME = /^(i?message(\s+[#@].*)?|type a message|write a message|text message|send a message|reply|chat)$/i
 // CU-167 (cu-researcher's probe): a social security number, a card's CVV, a bare Passport field, a driving licence, a
 // birthday and a security question too - typed unasked before; the apostrophe in either form (' and ’).
 const SECRET_NAMES = Object.freeze(['recovery phrase', 'seed phrase', 'secret phrase', 'mnemonic', 'private key', 'secret key',
@@ -222,7 +240,9 @@ const SECRET_NAMES = Object.freeze(['recovery phrase', 'seed phrase', 'secret ph
   'billing address', 'mailing address', 'postal address',
   // CU-178 (both sweeps; scope by the table owner): further labels of decided classes - spellings are left to normaliseName.
   'dl number', 'license number', 'birthdate', 'birth day', 'exp date', 'expiration', 'valid thru', 'valid through', 'otp',
-  'card no', 'cell number', 'mobile', 'tel'])
+  'card no', 'cell number', 'mobile', 'tel',
+  // CU-245 (cu-researcher's D-061 red team): a debit card, an account recovery key and two-factor backup codes.
+  'debit card', 'recovery key', 'backup code', 'backup codes'])
 // CU-172: acronyms match case-sensitively as whole tokens, so 'PAN' asks and 'Pan size' or 'Panel' does not.
 const SECRET_ACRONYMS = Object.freeze(['SIN', 'TFN', 'PAN', 'NHS', 'MRN', 'TIN', 'CPF', 'NRIC'])
 const namesAcronym = (name) => SECRET_ACRONYMS.some((word) => new RegExp(`(^|[^A-Za-z])${word}([^A-Za-z]|$)`).test(String(name ?? '')))
@@ -291,6 +311,14 @@ export function looksSensitive(text) {
     if (abaValid(match[1])) return 'bank_account'
   }
   if (/\b\d{3}-\d{2}-\d{4}\b/.test(value)) return 'national_id'
+  // CU-245: an SSN in spaced 3-2-4 groups, held to the issuing rules (no area 000 or 666, no group 00, no serial 0000)
+  // so most spaced references do not fit; an area 9xx is an ITIN only with its group in 50-65, 70-88, 90-92 or 94-99
+  // (cu-researcher: the dashed form asks for both). Named over-ask: a spaced nine-digit reference that fits.
+  const itinGroup = (g) => (g >= 50 && g <= 65) || (g >= 70 && g <= 88) || (g >= 90 && g <= 92) || (g >= 94 && g <= 99)
+  for (const m of value.matchAll(/(?<!\d)(?<!\d[ -])(\d{3}) (\d{2}) (\d{4})(?![ -]?\d)/g)) {
+    const areaOk = m[1][0] === '9' ? itinGroup(Number(m[2])) : m[1] !== '000' && m[1] !== '666'
+    if (areaOk && m[2] !== '00' && m[3] !== '0000') return 'national_id'
+  }
   // CU-172: a UK National Insurance number (HMRC's letter rules, not BG/GB/KN/NK/NT/TN/ZZ, a final A-D) and an Indian PAN
   // (five letters, the fourth a holder type, four digits, a letter) - upper case, as issued.
   for (const m of value.matchAll(/\b([A-CEGHJ-PR-TW-Z][A-CEGHJ-NPR-TW-Z]) ?\d{2} ?\d{2} ?\d{2} ?[A-D]\b/g)) {
@@ -311,6 +339,16 @@ export function looksSensitive(text) {
   // CU-164: a 0x-prefixed 64-hex private key (the word boundary after 'x' kept the rule above from seeing it); a 0x + 40
   // hex wallet address is public and stays allowed.
   if (/\b0x[0-9a-fA-F]{64}\b/.test(value)) return 'key'
+  // CU-245: a PEM or PGP armour block naming a private key (RSA, EC, OPENSSH, ENCRYPTED, bare, or PGP's '... BLOCK'),
+  // and a JWT - three dot-joined base64url parts whose first decodes to a JSON header naming its 'alg'; an unsigned
+  // one (alg none) has an empty third part and still carries the session's claims (cu-verifier).
+  if (/-----BEGIN (?:[A-Z0-9]+ )*PRIVATE KEY(?: BLOCK)?-----/.test(value)) return 'key'
+  for (const m of value.matchAll(/(?<![A-Za-z0-9_-])(eyJ[A-Za-z0-9_-]{5,})\.[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]*/g)) {
+    try {
+      const header = JSON.parse(Buffer.from(m[1], 'base64url').toString('utf8'))
+      if (header && typeof header === 'object' && typeof header.alg === 'string') return 'key'
+    } catch { /* not a JSON header */ }
+  }
   if (hasSeedPhrase(value)) return 'recovery_phrase'
   return null
 }
@@ -474,9 +512,21 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // submit - focused or not; only a read with none (true) keeps the rule above. D-069: on the desktop (url app:...) no
     // read state at all asks too - the helper link refuses a helper too old to send it, so absence is never a pass. No
     // target at all is the driver's good read of nothing focused and no default button (cu-verifier): it keeps the rule.
-    const desktopUrl = String(context.url ?? '').startsWith('app:')
+    // CU-243: app-policy calls this with url 'desktop://' on every real desktop run; 'app:' is the tests' and the matrix's.
+    const desktopUrl = /^(app|desktop):/.test(String(context.url ?? ''))
     const unreadDefault = target?.defaultButtonRead === false || (desktopUrl && target != null && target.defaultButtonRead !== true)
     if (unreadDefault && defaultName === '' && pressesEnter && (!inTextArea || commandReturn)) classes.push('submit')
+    // CU-253 (cu-researcher): a chat app sends on a plain Return from its compose field - a text area too, and with no
+    // default button to read (Messages' 'iMessage', Slack, WhatsApp). So a plain Return or typed line break asks submit
+    // in any text entry of a known chat app, or in an entry named as a compose field; Shift- or Option-Return types
+    // a line break there and stays allowed. A browser textarea keeps its line break (the web's send is CU-241's
+    // Command-Enter). Named limit: a chat app not in the list whose compose field has another name.
+    // In a chat app Command- or Control-Return asks too (a send in many of them; cu-coordinator's ruling).
+    const chatApp = CHAT_APPS.has(String(context.frontmostBundleId ?? target?.origin ?? ''))
+    const lineBreakChord = ['SHIFT', 'ALT'].some((k) => keysOf(action).has(k))
+    const sendReturn = pressesEnter && !lineBreakChord && (chatApp || !['CTRL', 'META'].some((k) => keysOf(action).has(k)))
+    const browserTextarea = String(target?.tag ?? '').toLowerCase() === 'textarea'
+    if (sendReturn && isTextEntry(target) && (chatApp || (CHAT_COMPOSE_NAME.test(String(target?.name ?? '').trim()) && !browserTextarea))) classes.push('submit')
     // CU-153: reloading, or stepping back or forward, onto a page that was the direct answer to a form POST sends it again.
     if (typeof context.resubmits === 'string') classes.push('submit')
     // CU-151 (paste-consent.md): a paste inserts text no check saw - the owner's pasteboard on the desktop (unread), the
