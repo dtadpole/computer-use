@@ -1,3 +1,4 @@
+import { isMessagingApp } from './app-kinds.mjs'
 import { normaliseForPolicy } from './normalise.mjs'
 import { BIP39_ENGLISH } from './bip39-english.mjs'
 import { normalizeKey } from './keys.mjs'
@@ -15,7 +16,10 @@ export const NEVER_PRE_APPROVED = Object.freeze(['purchase', 'delete', 'permissi
 
 /** Word lists matched on a target's accessible name, case-insensitively, at word boundaries; they err toward confirm. */
 const WORDS = Object.freeze({
-  purchase: ['buy', 'pay', 'order', 'place order', 'checkout', 'check out', 'subscribe', 'donate', 'purchase', 'transfer', 'withdraw', 'wire', 'send money'],
+  purchase: ['buy', 'pay', 'order', 'place order', 'checkout', 'check out', 'subscribe', 'donate', 'purchase', 'transfer', 'withdraw', 'wire', 'send money',
+    // CU-288 (cu-researcher's real-app wordings, round 2): a booking, an upgrade or a renewal commits money.
+    'book now', 'book this', 'reserve now', 'upgrade plan', 'upgrade now', 'upgrade to pro', 'upgrade to premium', 'renew subscription', 'renew now',
+    'renew plan'],
   // CU-135: replace and overwrite (a save panel's 'already exists' sheet), don't save (a close sheet discards work).
   delete: ['delete', 'remove', 'discard', 'erase', 'empty trash', 'cancel subscription', 'replace', 'overwrite', "don't save", 'don\u2019t save',
     // CU-146 (the CU-145 audit): destructive labels the list missed.
@@ -33,8 +37,18 @@ const WORDS = Object.freeze({
     'change all',
     // cu-researcher's CU-258 remainder (#63): more standing-choice wordings.
     'always use this app', 'always use this application', 'do not ask me again', "don't ask me again", 'don\u2019t ask me again',
+    // CU-286 (cu-researcher's real-app wordings): the same standing choices in other words.
+    'allow always', 'remember this decision', 'remember decision',
     // CU-261 (cu-researcher): a camera or microphone switched on reaches other people.
     'turn on camera', 'turn on microphone', 'turn on video', 'start video', 'unmute',
+    // CU-289 (cu-researcher): storing a credential in a browser's or app's password store is a standing choice. 'Remember
+    // me' (staying signed in) and a plain or draft Save stay free; 'Update password' already hands off (password_change).
+    'save password', 'save passwords', 'remember password', 'remember passwords', 'save login', 'save logins',
+    'save login info', 'remember login', 'save credentials', 'save to keychain', 'save in keychain',
+    // cu-researcher on #136: a passkey is a credential too; 'Never save' keeps a standing exception like 'Never for this site'.
+    'save passkey', 'save a passkey', 'save passkeys', 'save this passkey', 'never save',
+    // cu-developer-one's ruling: creating a passkey registers a new credential with the site; using one to sign in stays free.
+    'create passkey', 'create a passkey', 'add passkey', 'add a passkey',
     // cu-researcher's 13:23Z sweep: an account-wide sign-out.
     'sign out of all devices', 'sign out everywhere', 'log out of all devices', 'log out everywhere',
     // CU-270 (cu-researcher): switching an account's protection off - every verb with every protection, as whole phrases
@@ -52,7 +66,11 @@ const WORDS = Object.freeze({
     // cu-researcher's 13:23Z sweep: messages to the sender or the group.
     'unsubscribe', 'report spam', 'report junk', 'leave group', 'leave conversation', 'leave channel',
     // cu-researcher on #98: a cancellation goes to every attendee.
-    'cancel meeting', 'cancel event', 'cancel invitation', 'send cancellation'],
+    'cancel meeting', 'cancel event', 'cancel invitation', 'send cancellation',
+    // CU-286 (cu-researcher's real-app wordings): a request to join a meeting, and Slack's huddle (a call to the channel).
+    'ask to join', 'start huddle', 'start a huddle', 'join huddle',
+    // CU-288: a tax filing goes to the authority.
+    'file return', 'file tax return', 'file your return', 'file my return', 'e-file', 'efile', 'submit return', 'submit tax return'],
 })
 const PRECEDENCE = ['purchase', 'launch_code', 'delete', 'permission', 'page_dialog', 'credential', 'sensitive_data', 'submit', 'new_site', 'install']
 const POINTER = new Set(['click', 'double_click', 'triple_click'])
@@ -68,6 +86,10 @@ const TRASH_ROLE = /^(ax)?(button|defaultbutton|menubutton|menuitem)$/i
 // CU-142: a multi-line text input, where a Return is text and does not press the default button.
 const TEXT_AREA_ROLE = /^(ax)?textarea$/i
 // CU-140: a drop zone that deletes - the delete words, and a trash or bin.
+// CU-288 (cu-researcher): a free trial starts a renewing subscription wherever it is offered - the whole name, with or
+// without its length ('Start 14-day free trial', 'Try 3 months free', 'Try it free'); 'Free trial info' stays free.
+const TRIAL_NAME = /^(start (a |your |my )?(\d+[- ]?(day|week|month|year)s? )?free trial|(\d+[- ]?(day|week|month|year)s? )?free trial|try (it |us )?free( for \d+ (days?|weeks?|months?|years?))?|try \d+ (days?|weeks?|months?|years?) (for )?free|get \d+ (days?|weeks?|months?) free)\s*[.!\u2026]?$/i
+const namesPurchase = (name) => namesWord(withoutOrderReferences(name), WORDS.purchase) || TRIAL_NAME.test(String(name ?? '').trim())
 const DROP_DELETE = [...WORDS.delete, 'trash', 'bin']
 const TEXT_ROLE = /^(ax)?(textfield|textarea|searchfield|combobox|textbox|searchbox)$/i
 
@@ -217,7 +239,9 @@ const BANK_OR_TAX_FIELD = Object.freeze(['iban', 'account number', 'account no',
   // CU-178: spellings and abbreviations of the same fields.
   'acct number', 'acct no', 'bsb', 'tax identification', 'tax no',
   // CU-245 (cu-researcher's D-061 red team): a field named only 'Bank account'.
-  'bank account'])
+  'bank account',
+  // CU-285 (cu-researcher): the US form's own words - Taxpayer Identification Number, Taxpayer ID.
+  'taxpayer identification', 'taxpayer id'])
 function bankOrTaxField(target) {
   return namesWord(target?.name, BANK_OR_TAX_FIELD)
 }
@@ -268,14 +292,21 @@ const PASSWORD_NAMES = Object.freeze(['password', 'passcode', 'passphrase', 'pin
 // cu-researcher on #112: data: and blob: stay in the browser (blob: is how sites serve a generated 'Download CSV'); a
 // download they start still meets the page's download handling.
 const WEB_SCHEMES = new Set(['http', 'https', 'javascript', 'about', 'data', 'blob'])
-// CU-253: chat apps that send on a plain Return from the compose field, and the names of compose fields.
-const CHAT_APPS = new Set(['com.apple.MobileSMS', 'com.apple.iChat', 'com.tinyspeck.slackmacgap', 'net.whatsapp.WhatsApp', 'desktop.WhatsApp',
-  'ru.keepcoder.Telegram', 'org.telegram.desktop', 'com.hnc.Discord', 'org.whispersystems.signal-desktop', 'com.microsoft.teams',
-  'com.microsoft.teams2', 'com.facebook.archon'])
+// CU-253, CU-287: messaging apps are known by kind (app-kinds.mjs, exact bundle ids with sources), and the names of compose
+// fields judge every other app.
+// CU-287: a search field takes Return to search, in a messaging app too ('Search Acme' in Slack).
+const SEARCH_NAME = /^(search|find)\b/i
+function isSearchField(target) {
+  if (!target || typeof target !== 'object') return false
+  if (target.role === 'AXSearchField' || target.subrole === 'AXSearchField' || target.role === 'searchbox' || target.inputType === 'search') return true
+  return SEARCH_NAME.test(String(target.name ?? '').trim())
+}
 // Compose fields by their usual accessible names (Messages' 'iMessage', WhatsApp and Teams 'Type a message', Slack and
 // Discord 'Message #channel'), and - cu-coordinator's ruling - a bare 'Message', 'Reply' or 'Chat' in any app. Named
 // over-ask: a form's multi-line 'Message' box, whose Return is a line break.
-const CHAT_COMPOSE_NAME = /^(i?message(\s+[#@].*)?|type a message|write a message|text message|send a message|reply|chat)$/i
+// CU-253 (cu-researcher): 'Type a new message' is Microsoft Teams' compose wording - 'new' is optional in the phrases - and a
+// placeholder may end in ' here' or an ellipsis or stop ('Write a message…', Telegram's; 'Type a message here').
+const CHAT_COMPOSE_NAME = /^(i?message(\s+[#@].*)?|(type|write|send) a (new )?message|text message|reply|chat)(\s+here)?\s*(…|\.{3}|[.!])?$/i
 // CU-167 (cu-researcher's probe): a social security number, a card's CVV, a bare Passport field, a driving licence, a
 // birthday and a security question too - typed unasked before; the apostrophe in either form (' and ’).
 const SECRET_NAMES = Object.freeze(['recovery phrase', 'seed phrase', 'secret phrase', 'mnemonic', 'private key', 'secret key',
@@ -295,7 +326,9 @@ const SECRET_NAMES = Object.freeze(['recovery phrase', 'seed phrase', 'secret ph
   'dl number', 'license number', 'birthdate', 'birth day', 'exp date', 'expiration', 'valid thru', 'valid through', 'otp',
   'card no', 'cell number', 'mobile', 'tel',
   // CU-245 (cu-researcher's D-061 red team): a debit card, an account recovery key and two-factor backup codes.
-  'debit card', 'recovery key', 'backup code', 'backup codes'])
+  'debit card', 'recovery key', 'backup code', 'backup codes',
+  // CU-288: a one-time code named by its length ('Enter the 6-digit code', 'six-digit code').
+  'digit code', 'digit verification code'])
 // CU-172: acronyms match case-sensitively as whole tokens, so 'PAN' asks and 'Pan size' or 'Panel' does not.
 const SECRET_ACRONYMS = Object.freeze(['SIN', 'TFN', 'PAN', 'NHS', 'MRN', 'TIN', 'CPF', 'NRIC'])
 const namesAcronym = (name) => SECRET_ACRONYMS.some((word) => new RegExp(`(^|[^A-Za-z])${word}([^A-Za-z]|$)`).test(String(name ?? '')))
@@ -360,9 +393,28 @@ const PASSWORD_PARAM = /^([a-z0-9]*[_-]?secret|password|passwd|pwd|pass|passcode
 // parameter as often as a card's). Matched as whole words after splitting snake, kebab and camel case.
 const URL_FIELD_SKIP = new Set(['email', 'e-mail', 'phone', 'mobile number', 'telephone', 'street', 'address line', 'home address',
   'shipping address', 'billing address', 'mailing address', 'postal address', 'cell number', 'mobile', 'tel', 'expiry',
-  'expiration date', 'mm/yy', 'exp date', 'expiration', 'valid thru', 'valid through', 'secret', 'api key', 'access token'])
-const URL_FIELD_NAMES = Object.freeze([...SECRET_NAMES.filter((name) => !URL_FIELD_SKIP.has(name)), 'iban', 'tax id', 'taxid',
+  'expiration date', 'mm/yy', 'exp date', 'expiration', 'valid thru', 'valid through', 'secret', 'api key', 'access token',
+  // CU-285: a bare 'routing' is a map's or an API's parameter as often as a bank's; 'routing number' stays.
+  'routing'])
+// CU-285: every bank-or-tax field name counts as a URL parameter name too (tax_number, tax_file_number, ein, bsb), and a
+// lower-case tin= (a field's TIN is matched as an acronym, case-sensitively).
+const URL_FIELD_NAMES = Object.freeze([...[...SECRET_NAMES, ...BANK_OR_TAX_FIELD].filter((name) => !URL_FIELD_SKIP.has(name)), 'tin', 'iban', 'tax id', 'taxid',
   'account number', 'routing number', 'sort code', 'bank account', 'national id number', 'id number'])
+// cu-verifier on #120: a phone, mobile or tel parameter whose value holds seven or more digits carries a phone number
+// (D-062) even unformatted; ?mobile=1 or ?mobile=true (a layout flag) stays free.
+const URL_PHONE_NAME = /(^| )(phone|mobile|tel|telephone|cell)( |$)/
+const urlPhone = (name, value) => URL_PHONE_NAME.test(` ${String(name ?? '').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()} `)
+  && (String(value ?? '').match(/\d/g) ?? []).length >= 7
+// CU-284 (cu-researcher; cu-coordinator: Medium): a street or address parameter whose value reads as a street address - a
+// house number beside a street word ('10 Downing Street', '221B Baker St') - carries it out as a typed one would (D-062).
+// A city or postcode alone stays free (D-061), and so do an ip, mac, e-mail, wallet or web address.
+const URL_ADDRESS_NAME = /(^| )(address|addr|street|address line|street address)( |$)/
+const URL_ADDRESS_NOT = /(^| )(ip|mac|email|e mail|wallet|web|url|server|host)( |$)/
+const urlAddress = (name, value) => {
+  const words = ` ${String(name ?? '').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()} `
+  const text = String(value ?? '')
+  return URL_ADDRESS_NAME.test(words) && !URL_ADDRESS_NOT.test(words) && /\d/.test(text) && /[a-z]{3,}/i.test(text)
+}
 function urlFieldName(name) {
   const words = ` ${String(name ?? '').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase().replace(/[^a-z0-9/']+/g, ' ').trim()} `
   return words.trim() !== '' && URL_FIELD_NAMES.some((field) => words.includes(` ${field} `))
@@ -396,6 +448,8 @@ export function urlSecret(raw) {
     if (PASSWORD_PARAM.test(name.trim()) && value.trim() !== '') return 'key'
     if (SECRET_PARAM.test(name.trim()) && value.trim().length >= 8) return 'key'
     if (value.trim() !== '' && urlFieldName(name)) return 'field_name'
+    if (urlPhone(name, value)) return 'phone'
+    if (urlAddress(name, value)) return 'address'
     const kind = looksSensitive(value)
     if (kind !== null) return kind
   }
@@ -631,7 +685,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const focusesEntry = POINTER.has(action.type) && plainTextEntry(target)
       for (const cls of ['purchase', 'delete', 'permission']) {
         if (focusesEntry) break
-        if (namesWord(cls === 'purchase' ? withoutOrderReferences(name) : name, WORDS[cls])) classes.push(cls)
+        if ((cls === 'purchase' ? namesPurchase(name) : namesWord(name, WORDS[cls]))) classes.push(cls)
       }
       if (judgesSubmit(name, target)) classes.push('submit')
       // CU-146: 'Trash' or 'Bin' alone deletes on a control (a toolbar button, a menu item); a sidebar row of that name
@@ -645,7 +699,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const boundNames = bound && typeof bound === 'object' ? (Array.isArray(bound.items) ? bound.items : [bound]).map((one) => one?.name).filter((n) => typeof n === 'string' && n.trim() !== '') : []
     for (const boundName of boundNames) {
       for (const cls of ['purchase', 'delete', 'permission']) {
-        if (namesWord(cls === 'purchase' ? withoutOrderReferences(boundName) : boundName, WORDS[cls])) classes.push(cls)
+        if ((cls === 'purchase' ? namesPurchase(boundName) : namesWord(boundName, WORDS[cls]))) classes.push(cls)
       }
       // A bound Reply follows CU-157 on the focused window's entries, as the focused target reports them.
       if (judgesSubmit(boundName, target)) classes.push('submit')
@@ -659,7 +713,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const commandReturn = keysOf(action).has('META') && keysOf(action).has('ENTER')
     if (defaultName !== '' && pressesEnter && (!inTextArea || commandReturn)) {
       for (const cls of ['purchase', 'delete', 'permission']) {
-        if (namesWord(cls === 'purchase' ? withoutOrderReferences(defaultName) : defaultName, WORDS[cls])) classes.push(cls)
+        if ((cls === 'purchase' ? namesPurchase(defaultName) : namesWord(defaultName, WORDS[cls]))) classes.push(cls)
       }
       if (judgesSubmit(defaultName, target)) classes.push('submit')
     }
@@ -683,7 +737,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // a line break there and stays allowed. A browser textarea keeps its line break (the web's send is CU-241's
     // Command-Enter). Named limit: a chat app not in the list whose compose field has another name.
     // In a chat app Command- or Control-Return asks too (a send in many of them; cu-coordinator's ruling).
-    const chatApp = CHAT_APPS.has(String(context.frontmostBundleId ?? target?.origin ?? ''))
+    const chatApp = isMessagingApp(String(context.frontmostBundleId ?? target?.origin ?? '')) && !isSearchField(target)
     const lineBreakChord = ['SHIFT', 'ALT'].some((k) => keysOf(action).has(k))
     const sendReturn = pressesEnter && !lineBreakChord && (chatApp || !['CTRL', 'META'].some((k) => keysOf(action).has(k)))
     const browserTextarea = String(target?.tag ?? '').toLowerCase() === 'textarea'

@@ -235,7 +235,9 @@ test('CU-100 end to end: with no window of the approved app on screen, the calle
 test('CU-100 timing end to end: with no app window, the run ends within the start wait plus a margin - the final screenshot does not wait again', { timeout: 30_000 }, async () => {
   const { dir, remove } = scratch()
   const desktop = fakeDesktop({ lockDir: join(dir, 'run-lock'), world: { ...WORLD, quirks: { noAppWindow: 1_000_000 } } })
-  const waitMs = 1500
+  // CU-290: a second wait would end the run at 2 x waitMs or later, so that is the bound; the margin left for start-up
+  // under gate load is a whole waitMs, not a fixed second.
+  const waitMs = 3000
   const manager = createRunManager({
     seat: 'cu-test-seat', runsDirectory: join(dir, 'runs'), appApprovals: alwaysApproved(join(dir, 'app-approvals.json')),
     environmentOptions: () => ({ ...desktop.environmentOptions(), appWindowWaitMs: waitMs, appWindowPollMs: 50 }),
@@ -247,7 +249,7 @@ test('CU-100 timing end to end: with no app window, the run ends within the star
     const elapsed = Date.now() - started
     assert.match(body.result.error, /^no_app_window: /)
     assert.ok(elapsed >= waitMs, `it waited the start wait (${elapsed} ms)`)
-    assert.ok(elapsed < waitMs + 1000, `ended ${elapsed} ms after the start, not after a second wait (${2 * waitMs} ms or more)`)
+    assert.ok(elapsed < 2 * waitMs, `ended ${elapsed} ms after the start, not after a second wait (${2 * waitMs} ms or more)`)
   } finally {
     await desktop.stop()
     remove()

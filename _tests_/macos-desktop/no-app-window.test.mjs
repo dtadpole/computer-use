@@ -65,7 +65,9 @@ test('no approved window through the start wait: the run ends no_app_window nami
 })
 
 test('a window that appears within the start wait: the run goes on normally (an app the run just launched)', async () => {
-  const { env, child } = await launchOnFake(world({ quirks: { noAppWindow: 3 } }))
+  // CU-290: four captures must fit in the wait; under gate load 300 ms did not hold them. The wait ends at the first
+  // window, so a long bound costs nothing when the code is right.
+  const { env, child } = await launchOnFake(world({ quirks: { noAppWindow: 3 } }), { appWindowWaitMs: 10_000 })
   try {
     assert.equal(env.link.lost, false)
     const shot = await env.screenshot()
