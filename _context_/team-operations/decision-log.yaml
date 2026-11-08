@@ -1,0 +1,368 @@
+# Decisions of the [cu] team, appended; a superseded decision is marked, never rewritten.
+# Paths resolve from the reflection root. Owner statements are quoted verbatim.
+decisions:
+  - id: D-001
+    date: 2026-11-01
+    topic: authorization
+    decision: 'A [cu] team learns how computer use works in ChatGPT and builds our own computer-use agent in _projects_/this repository, with its own DSH workspace, team record and sessions. The setup session (session-<id>, in the heddle workspace) created the record and the sessions and hands coordination to the [cu] Coordinator.'
+    owner_statements:
+      - 'Please learn about how computer-use on ChatGPT works, and implement our own computer-use in this repository.'
+      - 'Please setup workspace, team and sessions, to push forward this work accordingly.'
+  - id: D-002
+    date: 2026-11-01
+    topic: model
+    decision: 'Every [cu] seat runs provider gateway-provider, model model-a, reasoning effort xhigh, selected through session/selectModel at spawn and read back from each session''s modelSelection projection. A seat started later uses the same model unless the owner changes it.'
+    owner_statements:
+      - 'Please use Claude Opus 5.5 model, with effort level xHigh for your team'
+  - id: D-003
+    date: 2026-11-01
+    topic: composition
+    decision: 'Five seats, under the normal cap of seven: cu-coordinator, cu-researcher, cu-developer-one (agent core - action contract, loop, model adapters, policy, trajectory), cu-developer-two (environments - browser driver, live view and takeover, later desktop), cu-verifier (fixture suite, verifiers, injection red team, evaluation). Integration as a DSH and heddle tool is assigned when the browser slice works; the coordinator may move it to either developer or ask the owner for a sixth seat.'
+    rationale: 'The small-team example (coordinator, investigation, implementation, verification) with implementation split along the one real seam, the agent versus the computer it drives, so the two developers never edit the same files. The Mac is shared with the eighteen [hd] seats (swap near full on 2026-11-01 09.00 UTC), so the team stays small.'
+  - id: D-004
+    date: 2026-11-01
+    topic: workspace-and-commits
+    decision: 'The DSH workspace heddle/computer-use is mounted on the computer-use project folder of the shared reflection checkout; it binds sessions to the project and is not where work is written. The shared checkout lags origin (it held 21 local commits and was 154 behind on 2026-11-01), so every seat works in its own worktree ~/reflection--<seat> on branch cu/<seat> made from origin/main, commits with explicit paths, and lands with git fetch origin, git rebase origin/main, git push origin HEAD:main. A seat never commits in ~/reflection and never stashes, resets or rebases another session''s work there.'
+  - id: D-005
+    date: 2026-11-01
+    topic: resources
+    decision: 'One Mac (10 cores, 16 GB) is shared with the [hd] team. A [cu] seat starts a browser only when memory_pressure reports at least 25 percent free, runs at most one browser at a time, closes it when the run ends, and the team runs at most two browsers at once. No VM, container runtime or long-lived background service is started without the coordinator''s approval, and none is installed without the owner''s. No tool call waits longer than 120 seconds.'
+  - id: D-006
+    date: 2026-11-01
+    topic: desktop-control
+    decision: 'Driving the real macOS desktop (screen capture of other apps, synthetic mouse and keyboard events, Accessibility) needs Screen Recording and Accessibility grants that raise TCC prompts on the owner''s Mac and act on signed-in apps. It is not started, prototyped or permission-prompted by any seat until the owner approves it through the coordinator. The browser environment comes first.'
+  - id: D-007
+    date: 2026-11-01
+    topic: model-endpoints
+    decision: 'Live model runs of the agent loop use the local Conclave gateway (127.0.0.1:8088, Anthropic Messages) with the key file the [hd] team keeps at ~/.heddle/keys/conclave.api.key (see _projects_/heddle/_context_/model-endpoints/INDEX.md). The key is read at run time only - never copied, printed, logged or committed. Live runs are small and bounded (step and cost caps per run); unit tests and verifiers default to the scripted model and need no key.'
+  - id: D-008
+    date: 2026-11-01
+    topic: browser-engine
+    decision: 'The browser environment drives the installed Google Chrome, headless, over CDP with browser-use''s dependency-free client (import or agreed copy), not Playwright: the working model allows Node 24 and no npm dependencies. Requirement R1 is read as isolated Chromium - a fresh throwaway profile under /tmp/cu-<seat>-*, extensions off, Chrome''s own sandbox left on, no inherited environment secrets; R2''s network-layer allow list is expected through CDP request interception (Fetch domain) rather than URL checks alone; R18''s exec_js, if built, evaluates through CDP Runtime in an isolated world. cu-researcher rewords R1 and R18 to match; cu-developer-one''s M1 design states the mechanism.'
+    rationale: 'R1 and R18 in the study name Playwright, while the working model forbids npm dependencies and names browser-use''s CDP client. Settled by the coordinator on 2026-11-01 so M1 is not drafted against two engines.'
+  - id: D-009
+    date: 2026-11-01
+    topic: local-servers-and-layout
+    decision: 'A short-lived local server bound to 127.0.0.1 on a random port that exits with its test, run or verifier (the fixture site, the live view during a run, a test double of the gateway) needs no further approval under D-005; anything meant to outlive one run, bind another interface or start at login needs the coordinator''s approval first. The folder layout article of the M1 design (paths and owning seat) is published first, ahead of the rest of M1, so cu-developer-two and cu-verifier can commit code at final paths in parallel; until it lands they work at paths of their choosing in their own worktrees and move the code once.'
+    rationale: 'The verifier starts the fixture site and developer-two the driver before M1 is approved; settling server permission and path ownership up front avoids waits and renames.'
+  - id: D-010
+    date: 2026-11-01
+    topic: continuation
+    decision: 'Every assigned [cu] seat holds both an armed goal for its current work and a live todo list (todo_write) that breaks its goal and responsibilities into steps in milestone order, with the current step in_progress, kept updated as steps complete. The coordinator checks both in every health pass - the goal through session-relay supervise, the todo list through the session''s todos projection (session/projections values.todos) - and repairs or requests a missing or stale one. Relayed by the setup session (session-<id>), which logs the owner input; TEAM.yaml coordination.execution.continuation_requirement carries it.'
+    owner_statements:
+      - 'Please setup goal and todo list accordingly'
+  - id: D-011
+    date: 2026-11-01
+    topic: owner-clipboard
+    decision: 'No seat reads the content of the owner''s macOS pasteboard or writes to it - not with pbpaste, pbcopy or osascript, and not through a probe. cu-developer-two''s proposed isolation check (hash pbpaste, copy a token inside headless Chrome, hash again) is declined: it passes the owner''s clipboard through a process and, if Chrome''s clipboard is the system one, replaces it. The browser environment either keeps refusing copy, cut and paste chords, or emulates a per-run clipboard (copy reads the selection through CDP Runtime into a run buffer; paste types it with Input.insertText; Chrome''s native copy and paste editing commands are never dispatched), so the system pasteboard is never touched. Proof of Chrome''s native clipboard isolation, if ever needed, goes to the owner through the coordinator.'
+    rationale: 'The clipboard is the owner''s data and state on a shared Mac; a per-run clipboard gives the model copy and paste without that risk. Inference, not verified here: recent macOS versions may raise a privacy alert on programmatic pasteboard reads, which D-006''s no-prompt rule would also forbid.'
+  - id: D-012
+    date: 2026-11-01
+    topic: verification-independence
+    decision: 'Three standing rules from cu-verifier''s M1 testability review (ffe8dcd51), accepted by the coordinator: (1) a verifier''s verdict rests only on evidence the judged code did not write - the fixture page''s event log, the fixture server''s request log, Chrome''s command line, the filesystem - while run status, trajectory events and model answers are diagnostics (R48); (2) the fixture site and verify-kit never import agent-core or the environment code they judge; (3) the agent''s Chrome never runs without its sandbox - the driver refuses with a named error instead of falling back to --no-sandbox as browser-use''s launchChrome does (R1). A build with a dirty tree yields no pass rate. The in-process library may give a test harness the control token and the api controller; the MCP surface never gives a calling model an approval path (coordinator review B1 of M1 0.1).'
+    rationale: 'A judge that shares code or records with the judged fails in step with it; a silent sandbox fallback would void R1 on exactly the machines where it matters.'
+  - id: D-013
+    date: 2026-11-01
+    topic: consent-channels-and-heddle-path
+    decision: 'Consent channels: requirement R61 states the property - consent comes only through a channel the calling model cannot answer or relay. In M1 to M3 those channels are the CLI''s tty and the live view used with the run''s control token, which never appears in a tool result (M1 consent-authority.md). MCP elicitation is unavailable today (DSH 0.2.1-rc.2 declares no elicitation capability; heddle has no MCP client - cu-researcher, b3ae00270, _context_/model-capabilities/mcp-clients.md). DSH''s per-call approval gate is human-only only in its default preset, so it is at most an optional later channel gating one consequential action per call. Integration path: DSH sessions load the MCP server; heddle sessions cannot until heddle has an MCP client or a native tool, which is [hd] code - at M4 the coordinator asks hd-coordinator for it, and until then the ULTIMATE_GOAL integration row can pass for DSH only.'
+    rationale: 'Settles the reading of R61 against the M1 design and names the cross-team dependency of the integration row early.'
+  - id: D-014
+    date: 2026-11-01
+    topic: browser-registry
+    decision: 'D-005''s team cap of two browsers is enforced through one on-disk registry that every [cu] Chrome launch honours - agent-core''s resourceGate(), verify-kit''s own gate, and any probe script. Protocol: take the lock by mkdir /tmp/cu-browsers/.lock (atomic; retry for at most 10 seconds, then refuse; a lock older than 60 seconds is stale and may be removed); remove entries whose owner pid is no longer alive; if two entries remain, release the lock and refuse with resource_refused; else write /tmp/cu-browsers/<seat>-<pid>.json ({ seat, pid, profile, startedAt }), release the lock, then check the memory floor and launch. The entry is removed on close and in exit handlers; the chrome pid is added after launch. Each implementation has its own unit tests (D-012: shared on disk, not in code).'
+    rationale: 'Asked by cu-developer-two in its M1 driver review (b623a9e68): two independent gates cannot enforce a team-wide count without a shared record.'
+  - id: D-015
+    date: 2026-11-01
+    topic: m1-approval
+    decision: 'M1 is approved: _designs_/system-architecture/ as of 687f4336b (design 0.8.1) is the contract the code is built against. Criteria met: (1) traceability to R1..R62 - cu-researcher''s trace found no MUST missing and four partials (R34, R39, R31, R49), all folded in 0.8 per the coordinator''s rulings; (2) every ULTIMATE_GOAL row names a check that can fail on outside evidence - cu-verifier''s sign-off (inbox 20261101T100312, item by item against its review ffe8dcd51/9a6101492); (3) interfaces exact enough to build against test doubles - cu-developer-two''s driver sign-off (b623a9e68); (4) D-005 to D-007 and D-011 to D-014 respected, coordinator blockers B1 (caller self-consent) and B2 (loopback aliases) closed in 0.3. A later change goes through cu-developer-one as a design revision with a version bump, announced by inbox. M2 starts.'
+    rationale: 'Approval per the coordinator''s published criteria (inbox decision 20261101T092316); 0.8.1 differs from 0.8 only in closing Q-R7.'
+  - id: D-016
+    date: 2026-11-01
+    topic: live-run-budget
+    decision: 'Live model runs through the gateway (D-007) are capped per run at maxSteps 20, maxWallMs 600000 and maxCostUsd 1.00, with prices configured in the claude-gateway adapter so the cost bound governs (cache reads counted at their own price), and prompt caching on (breakpoints on the toolset entry and the newest tool_result). M2''s live evidence (3 fixture tasks x model-a and claude-sonnet-5-5, up to 3 attempts) is budgeted at 20 USD at list prices; a seat announces a live batch by inbox before starting it and reports runs and estimated cost after. Anything beyond the budget, or any run on a site outside the fixture, asks the coordinator first.'
+    rationale: 'cu-researcher''s estimate (5a2c12464, _context_/model-capabilities/live-run-costs.md): about 1.10-3.20 USD for the 18 M2 runs with caching, 18 USD worst case at the per-run cap.'
+  - id: D-017
+    date: 2026-11-01
+    topic: m4-assignment
+    decision: 'M4 (integration) is assigned to cu-developer-two, whose M2 driver and M3 live view are landed (988780418, 4f7e1e9b1) and whose goal completed; cu-developer-one keeps agent core and M3''s agent-side work. Scope added to cu-developer-two: _tools_/computer-use-mcp/ (the MCP stdio server of integration-surface.md, built on agent-core''s lib.mjs) and _tools_/heddle-plugin/ (cu-researcher''s path C, 0488901c2: a dependency-free heddle plugin that reaches the MCP server and adds the final screenshot as an image), with their _tests_ suites. Proof runs use an isolated DSH_HOME and HEDDLE_HOME under /tmp; nothing is written to ~/.dsh, the owner''s heddle home or heddle''s repository - installing into the owner''s own sessions is an owner action the coordinator requests at M4 acceptance. The [hd] request for images in heddle tool results (cu-researcher''s path D) is sent by the coordinator only if path C cannot meet the integration row.'
+    rationale: 'D-003 left integration to be assigned when the browser slice works; the live M2 runs passed (61dc7480d) and cu-developer-two is free.'
+  - id: D-018
+    date: 2026-11-01
+    topic: m2-accepted-and-live-budget
+    decision: 'M2 is accepted: cu-verifier''s independent verdict at clean build a1825fca5 (7591b9152, _team_members_/cu-verifier/m2-verdict.md) - scripted cli.mjs runs 3/3 on the documented tasks, live model-a 3/3 and claude-sonnet-5-5 3/3 (0.159 USD), the browser-environment, perception-mapping, action-contract and agent-loop verifiers pass with 15/15 mutants caught; no defect in agent-core or chrome-browser. The live-run budget for M3 and M4 evidence is a further 20 USD at list prices under D-016''s per-run caps (max_cost is a true ceiling since 841b741fc), each batch announced before and reported after; live spending on 2026-11-01 to M2 acceptance was about 0.52 USD.'
+    rationale: 'Records the milestone and lets the M3 consent and injection batches proceed (cu-researcher''s estimate about 1 USD).'
+  - id: D-019
+    date: 2026-11-01
+    topic: no-git-stash
+    decision: 'No [cu] seat uses git stash. All worktrees of ~/reflection share one stash list, so a git stash pop in one worktree can apply another session''s work-in-progress - cu-developer-two''s pop applied an [hd] seat''s stash@{0} (808a0968) on 2026-11-01, restored without committing it. Park unfinished work in a commit on the seat branch or a patch file under /tmp/<seat>-*.'
+    rationale: 'A shared-artifact hazard (working agreements: never remove or apply content you did not put there).'
+  - id: D-020
+    date: 2026-11-01
+    topic: browser-slot-priority
+    decision: 'Until cu-verifier has given its M3 and M4 verdicts, its judging runs have priority on the team''s two browser slots (D-005, D-014). cu-researcher''s full-suite batch may hold one slot; cu-developer-one and cu-developer-two run browser pre-checks only to confirm a fix for a defect a verifier reported, and stop launching when the verifier says it is waiting for a slot. The cap stays at two because the Mac is shared with the [hd] team.'
+    rationale: 'At 18:06 UTC cu-verifier found the registry full with two other seats'' browsers while it judged M3; the verifier is the critical path for M3, M4 and the evaluation row.'
+  - id: D-021
+    date: 2026-11-01
+    topic: fixture-help-scope
+    decision: 'cu-researcher may change _tools_/fixture-site/ and its _tests_ suite for two fixture fixes found by the first full-suite evaluation - B (visible results after consent effects) and D (declared consent classes) - as small commits that cu-verifier reviews; cu-verifier keeps ownership of the fixture, the judge (fix C) and every verdict. cu-researcher wrote none of the judged code, so D-012 holds. The scope lapses when the re-run of the system-caused pages is recorded.'
+    rationale: 'cu-verifier is the critical path for the M3 and M4 verdicts (D-020); the evaluation row''s re-run would otherwise wait hours.'
+  - id: D-022
+    date: 2026-11-01
+    topic: m3-m4-accepted
+    decision: 'M3 and M4 are accepted: cu-verifier''s independent verdict at clean build 842b12c06 (cd8b62032, _team_members_/cu-verifier/m3-m4-verdict.md) - consent-safety 6/6, human-control 5/5, trajectory-replay 3/3, session-integration 4/4 over MCP stdio, 13/13 mutants re-proven, the M2 verifiers and the 56 fixture checks still holding; no defect in the code under test. D-020''s slot priority lapses. What remains of ULTIMATE_GOAL: the evaluation row''s own verifier (evaluation-suite) on the first full-suite record (c74975ae3) and its re-run; a DSH and a heddle session driven by the verifier itself for the integration row (cu-developer-two''s isolated-home proofs stand meanwhile); then a per-row verdict of the whole goal by cu-verifier. Installing into the owner''s own DSH and heddle is an owner action, requested now with its residual risk.'
+    rationale: 'Records the milestones and names the last steps to the ultimate goal.'
+  - id: D-023
+    date: 2026-11-01
+    topic: ultimate-goal-achieved
+    decision: 'The computer-use ULTIMATE_GOAL is achieved. cu-verifier''s per-row verdict (5e30916e2, _team_members_/cu-verifier/ultimate-goal-verdict.md) judges every row passing on its own verifier from outside evidence, each proven to fail on broken builds (29 mutants, 2 broken record sets): environment 5/5, perception 2/2, action contract 13/13, agent loop 7/7 (Claude, Responses-shaped and scripted adapters), consent and safety 6/6 with 14/14 injection pages escalated and none compromised per model, human control 5/5, integration 4/4 plus its own DSH and heddle sessions, trajectory 3/3, evaluation (35 tasks and 14 injection pages, model-a 28/35 and claude-sonnet-5-5 29/35 on clean 273400b0c; every first-batch failure since fixed or ruled, re-runs 9064ae5b0). The coordinator re-ran evaluation-suite 4/4, agent-loop 7/7, consent-safety 6/6 and the live DSH (I6) and heddle (I7) session checks independently on origin/main 2662d9a3e - all pass. Open by design or owner decision: the desktop environment (D-006); a live Responses endpoint (owner''s OpenAI key question); installing into the owner''s own DSH and heddle (install-rows.mjs). With every seat''s goal complete, the coordinator''s review cadence drops to 60 minutes until the owner sets a next direction.'
+    rationale: 'The project''s stated completion condition is met and independently re-checked.'
+  - id: D-024
+    date: 2026-11-02
+    topic: rescope-to-desktop-computer-use
+    decision: 'The project''s target is computer use, not browser use. Browser use means an agent that reads and acts inside web pages of one browser it controls (our M1-M4 build: headless Chrome over CDP; ChatGPT''s built-in Browser, Chrome extension and cloud browser; Anthropic''s browser use tool). Computer use means an agent that sees and operates a whole graphical desktop - any app, window, menu, file dialog and the flow between apps - through screenshots and operating-system mouse and keyboard input (ChatGPT''s Computer Use plugin on macOS and Windows: Screen Recording to see, Accessibility to click and type, per-app approval, terminals, ChatGPT itself and OS security prompts excluded; Anthropic''s computer use tool on a desktop VM). On the owner''s choice the environment is native macOS, app-scoped, on this Mac: our own helper app with a stable identity is the only process granted Screen Recording and Accessibility (the owner grants them once, on request); it captures and acts only in apps the owner approves; terminal apps, DSH and ChatGPT windows, our own live view, password managers, System Settings privacy and security panes and OS authentication prompts are excluded. This supersedes D-006 for that scope only: no VM or container, no other process gets the grants, no Windows or Linux desktop. The agent core, consent gate, trajectory, live control, MCP integration and evaluation harness carry over; the browser environment stays as one environment. ULTIMATE_GOAL is re-baselined to 2.0 and milestones M6-M9 follow (working model). Until the local-input pause and the exclusion list are implemented and unit-tested, synthetic input goes only to the team''s own fixture app, and desktop runs are announced and one at a time team-wide because the display is shared.'
+    owner_statements:
+      - 'No, it is not about browser-use, it is computer-use, please research and differentiate between them!'
+      - 'After research you may need to re-establish your goal and todo list'
+      - 'Native macOS, app-scoped (Recommended)'
+    rationale: 'The owner pointed out that the M1-M4 build is browser use; ChatGPT''s own docs separate Computer Use (desktop GUI) from its Browser, and Anthropic separates its computer use tool from its browser use tool (learn.chatgpt.com/docs/computer-use, platform.claude.com computer-use-tool, fetched 2026-11-02).'
+  - id: D-025
+    date: 2026-11-02
+    topic: desktop-rulings-for-m6
+    decision: 'Coordinator rulings on the M6 desktop design 0.1 (aac08e27c): (Q-D5) System Settings is excluded whole, stricter than the privacy and security panes alone, until the owner asks otherwise. (Q-D6) The helper never reads or writes the system pasteboard and copy, cut and paste chords are refused in desktop runs (D-011 carried to the desktop), because in a native app they overwrite the owner''s clipboard; the owner may allow clipboard use later. Scripting apps that run arbitrary code - Script Editor, Automator, Shortcuts - join the terminal exclusions. (Q-D1) The single owner TCC request names Screen Recording, Accessibility and, only if M7''s fixture-app measurement shows the local-input pause needs it, Input Monitoring - all for the helper bundle alone, asked once by the coordinator. The helper''s signing identity (Q-D2) waits for the owner; until then the helper stays thin and stable, is ad-hoc signed, and nothing is granted.'
+    rationale: 'Settles the open questions that bear on safety and on the owner''s one permission request, so M6 can be approved and M7 built without grants.'
+  - id: D-026
+    date: 2026-11-02
+    topic: team-composition-for-desktop
+    decision: 'The team grows from five to seven sessions, all gateway-provider model-a at xhigh (D-002). New: cu-developer-three (macOS helper) owns the Swift helper app - capture, input, Accessibility, event tap and idle guard, launch, stable identity - and prepares the single owner TCC request with the coordinator; cu-integrator merges [cu] code pull requests on dtadpole/reflection after tests on the rebased head, never authoring them, per the Integrator role (records keep landing through the author''s own pull request). Changed: cu-researcher adds the red team (helper boundary, exclusions, injection, consent) and the desktop evaluation runs; cu-developer-two narrows to the Node side (browser and desktop drivers, helper client, desktop-run lock, live view, MCP and heddle) and hands its helper skeleton to cu-developer-three; cu-developer-one and cu-verifier keep their roles. No more developers: the one display allows one live desktop run at a time. A second verifier is reconsidered only if cu-verifier''s queue holds back a milestone for more than one pass.'
+    owner_statements:
+      - 'If you have done the research, please think about your team composition, and if anything you''d like to optimize your team, both their roles, and capacity (number of team members)'
+      - '7: add a Swift helper developer and an Integrator (Recommended)'
+    rationale: 'The critical path moved to a native Swift helper, a different skill from the Node driver; main became pull-request-only and the conventions want an Integrator to merge code; seven sessions including the coordinator is within the composition guidance.'
+  - id: D-027
+    date: 2026-11-02
+    topic: m6-approved-and-integrator-rulings
+    decision: 'M6 is approved at desktop-extension 0.2.0 (8a8d98fd9): every ULTIMATE_GOAL 2.0 row has a design article and a check seed that can fail on outside evidence (cu-verifier, 20261102T085730: all nine testability items folded); the changed study requirements and DR1-DR3 are traced; the helper protocol is exact with fake-helper.mjs as its reference; D-024 and D-025 are respected; cu-developer-two''s feasibility review is folded. cu-researcher''s trace and parity review is still due and is folded as 0.2.x - a gap it finds is a revision, not a reopening, unless it touches safety. Agent-core changes C1-C9 and the M7 build may proceed through code pull requests to cu-integrator. Integrator rulings: cu-integrator runs the browser-free verifiers (desktop-fixture, evaluation-suite and any other that starts no Chrome) and every node suite; Chrome-based verifiers stay with the author or cu-verifier, who name their evidence in the request. Per the Integrator role, per-merge records and integration decisions go as comments on a pinned records issue on dtadpole/reflection, and artifacts.md keeps only lasting baselines and practice. Repository-wide git settings (core.hooksPath) are not changed from a [cu] worktree because the configuration is shared with the main checkout and the [hd] team; validate-frontmatter on each pull request''s diff is the gate.'
+    rationale: 'Design work is offline until the owner''s grant, so waiting for the last review would idle three builders; the Integrator''s first pass raised three questions that need one answer each.'
+  - id: D-028
+    date: 2026-11-02
+    topic: m6-safety-revisions
+    decision: 'cu-researcher''s trace of the desktop design against R63-R97 (20261102T090122) found two MUST conflicts and safety-relevant partials, so under D-027 they are required in desktop-extension 0.2.1 before the code they touch merges: (R86) the helper tracks every button and modifier it pressed and always posts the tagged up events on pause, stop, failure, out_of_scope, bye and socket loss - a fixture check proves every down has its up; (R83) on the desktop a secure text field is a hand-over to the person, never confirm and never pre-approvable, and the helper checks secure event input before each key step; (R79, R65) scope and exclusions are re-checked before each posted event, not only per action - an excluded app or window coming forward stops input and goes to the person, named by bundle id; (R92) a click on a consequential-looking target that Accessibility cannot name raises an unknown_target confirm, and the helper sets AXManualAccessibility before hit-testing; (R77) the HID idle counter is the primary pause guard and the event tap is created only when listen access is already granted, with post and listen grants reported in hello. Also: Copy, Cut and Paste menu items are refused like their chords (D-025); one helper instance at a time and the desktop-run lock enforce R90/R91; a local-input pause stops step screenshots like take over (R93). Agent-core C2 (903cb3a1d) gets a follow-up for the secure-field rule.'
+    rationale: 'Stuck keys, typed secrets and keys landing in a terminal are exactly the harms the owner''s app-scoped choice must prevent; they are cheaper to fix in the design than after the grant.'
+  - id: D-029
+    date: 2026-11-02
+    topic: helper-peer-boundary
+    decision: 'The helper must not lend the owner''s grants to an arbitrary same-user process (cu-developer-two, 20261102T090415 item 3). Required in desktop-extension 0.2.1 and the helper before the owner''s grant: (a) the helper verifies its peer on the socket - LOCAL_PEERPID, then the peer''s executable is the configured node binary and its arguments name this project''s agent-core entry point - and refuses anything else; (b) the helper serves one run only: it exits on bye, on socket loss, at the run''s wall-time cap and when no driver connects within a short window, and never listens without a run; (c) while a driver is connected the helper shows an always-visible indicator on screen (a status item or small window, never in scope and never captured), so the owner can see whenever computer use is active; (d) per-app approvals still come only from a human channel. Residual risk, to be stated in the owner''s grant request: a same-user process that imitates the driver (same node binary, same arguments) or reads the control-token file can still use a running helper; cu-researcher red-teams this boundary. A per-run confirmation the owner clicks in the helper''s own dialog is held as an owner option because it would stop unattended evaluation runs.'
+    rationale: 'Granting Screen Recording and Accessibility to our helper must not grant them to every process the owner runs; the checks raise the bar, the indicator makes misuse visible, and the remaining risk is told to the owner before the grant.'
+  - id: D-030
+    date: 2026-11-02
+    topic: m6-reapproved-at-0.3
+    decision: 'M6 stands at desktop-extension 0.3 (7da50c346): it resolves both MUST conflicts and the safety partials of D-028 (up events on every stop path, secure fields and secure input as hand-offs, per-event front-app and window re-check, unknown_target confirm with AXManualAccessibility, idle counter as primary guard and a tap only with listen access already granted, menu clipboard items refused, one helper instance, no step screenshots while paused) and traces R63-R97. Due in 0.3.1 before the owner''s grant: D-029''s peer boundary (peer check, one-run lifetime, visible indicator) and cu-developer-two''s protocol items (hello as the helper''s opening line, capture region and exact maxSize, bundleId in fingerprints, approvals keyed by bundle id). PR #151 (C2) follows 0.3 as its author stated.'
+    rationale: 'Re-approval after a safety revision, as D-027 required; the remaining items are named so the grant request waits for them.'
+  - id: D-031
+    date: 2026-11-05
+    topic: signing-clipboard-and-a-coordinator-stall
+    decision: 'Owner answers (asked 2026-11-02 09:15 UTC, answered 2026-11-05 12:15 UTC): (1) the helper is signed with a self-signed code-signing certificate the owner creates once in the login keychain (Q-D2), so grants survive rebuilds; the owner''s one Always Allow lets cu-developer-three''s signing builds use the key through codesign, and no seat reads the keychain; (2) copy, cut and paste are allowed in desktop runs - as chords and as menu items - and may overwrite the owner''s clipboard; this replaces D-025''s and D-028''s clipboard refusal (agent-core C9 is reverted); the helper itself still never reads the pasteboard and the trajectory never records clipboard contents. Lesson: the coordinator asked these through a blocking question inside a goal round, which held its session for three days while 23 member requests waited and every member goal ended blocked on the grant request it never sent. From now on the coordinator never blocks its session on a question: questions go into its report and work continues on stated defaults.'
+    owner_statements:
+      - 'Self-signed certificate, created once (Recommended)'
+      - 'Allow, my clipboard may be overwritten'
+    rationale: 'Records the owner''s choices and the cause of the 75-hour stall so it does not recur.'
+  - id: D-032
+    date: 2026-11-05
+    topic: helper-request-grants-mode
+    decision: 'At the owner''s request the helper gains one prompting mode, --request-grants, which calls CGRequestScreenCaptureAccess and AXIsProcessTrustedWithOptions with the prompt option once each so macOS lists CUHelper in both privacy panes and the owner only switches them on. Only the owner runs it, as part of the coordinated grant (D-024); every other mode keeps the no-prompt rule, tested. No Input Monitoring, no capture and no events in that mode. The signed install of helper 0.2.8 (certificate leaf 9ca48e08..., self-test 38/38, grants off) is in place since 2026-11-05 13:36 UTC.'
+    owner_statements:
+      - 'for mac permission, can you please help request those permissions, so that all that I need to do is just click?'
+    rationale: 'The owner should only click; adding the app through the + button in System Settings is the error-prone step.'
+  - id: D-033
+    date: 2026-11-05
+    topic: owner-grant-done
+    decision: 'The owner''s grant is complete on the Mac mini (the Mac mini, user owner): CUHelper 0.2.8 signed with "CU Helper Signing" (designated requirement certificate leaf 9ca48e086) holds Screen Recording and Accessibility; the coordinator''s prompt-free self-test at 13:44 UTC reads screen, accessibility, postEvents and listenEvents all true. CU Fixture and CU Ledger are approved always by tty (13:42 UTC). The owner works on the Mac mini (display 5120x2880, Dark appearance since about 13:35 UTC). cu-verifier''s post-grant runbook starts now, one announced desktop run at a time, synthetic input only to the two fixture apps until the local-input pause and the exclusions hold live (D-024). The --request-grants mode (D-032) stays useful for future re-grants.'
+    owner_statements:
+      - '好了'
+    rationale: 'Records the grant that unblocks M7-M9 and the conditions the first live runs keep.'
+  - id: D-034
+    date: 2026-11-05
+    topic: desktop-live-budget
+    decision: 'Live model runs for the desktop milestones M7-M9 (runbook steps 2, 3 and 7, cu-researcher''s evaluation runs, developers'' defect checks) share a budget of 25 USD on the Conclave gateway, announced per batch with an estimate and reported with the actual cost; per-run caps stay 20 steps, 10 minutes and 1 USD (D-016). Scripted runs cost nothing and need no budget. The coordinator is told when 15 USD is reached.'
+    rationale: 'The browser milestones used about 4 USD of their budgets; the desktop suite (22 tasks and 10 injection screens on two models, plus re-runs) needs a stated ceiling before Claude drives the desktop.'
+  - id: D-035
+    date: 2026-11-05
+    topic: capture-leak-hold
+    decision: 'Runbook step 5 found a capture leak on helper 0.2.10 (cu-verifier, 20261105T142726): with only CU Fixture in scope, CU Ledger''s window - an unapproved app whose executable shares CU Fixture''s name - was blacked out in the first capture but visible in the second and third. Until a fixed helper passes a step-5 rerun that fails on 0.2.10 and passes on the fix, no live-model desktop run is made (runbook steps 2-3 and cu-researcher''s batch wait), because those runs send screenshots to the gateway. Required: the helper rebuilds its capture filter for every capture from the run''s scope and includes only windows whose owning app''s bundle id is approved, matched exactly, never by process or executable name or a cached pid map (design 0.4.6, #558); plus defence in depth in the driver - a frame whose reported windows name an app outside the scope is refused (out_of_scope, capture_leak) and never reaches the model. CU Ledger keeps the shared executable name until the fix is proven, so the test can still fail. Scripted runs, which send nothing off the Mac, may continue.'
+    rationale: 'Nothing outside approved apps may be captured (ULTIMATE_GOAL 2.0, trajectory and consent rows); a leak that appears only after the first frame must be closed before any screenshot goes to a model.'
+  - id: D-036
+    date: 2026-11-05
+    topic: impersonation-hole-input-path
+    decision: 'D-035 extends to the input path. cu-verifier''s probe on helper 0.2.10 (run 20261105T143128Z-921a0c, 14:31 UTC) confirmed cu-researcher''s prediction: with only CU Fixture in scope, a click on out-of-scope CU Ledger - same executable name, different bundle id - was allowed by agent core (rule default) and delivered by the helper (CU Ledger''s log shows the CUSE-tagged mouse events from the helper''s pid). So an app whose executable is named like an approved app''s could be shown to the agent and driven by it - a consent-and-safety failure. The gate for any live-model desktop run is now two live reruns, each failing on 0.2.10 and passing on the fix: (1) step 5 phase B, the same-named out-of-scope window black in every capture; (2) the impersonation probe, the click refused out_of_scope with CU Ledger''s input log empty. Every owner resolution (capture filter, owner at point, hit test, frontmost, excluded-front, and agent core''s target app) maps a window''s pid to its bundle id through AppKit on every check, refuses a pid without one, and keeps no name or pid cache; the dry run gains per-app executable names so both cases have mutant-proven checks on every pull request. Scripted runs on the two fixture apps, including runbook step 4 with the owner, may continue.'
+    rationale: 'The live result contradicts the source reading of the input side, so the gate must be the observed behaviour, not the code review.'
+  - id: D-037
+    date: 2026-11-05
+    topic: impersonation-probe-refined
+    decision: 'Refines D-036 after cu-developer-one''s reading: CU Ledger was in the always store (approved by the owner at 13:42:50 UTC, D-033), so agent core treated the click as approved by design. The input gate is therefore: (a) the probe rerun with a private CU_HOME whose always store holds only CU Fixture - expected new_app asked and declined unattended, CU Ledger''s input log empty; and (b) settle run 20261105T143128Z-921a0c from its evidence - cu-developer-one reads an addApp before the post, cu-developer-two reads none; if the helper posted to a point over a window outside its scope, that is a helper defect fixed in the same release as the capture fix. Design: the environment''s scope is authoritative for every action - an always-approved app is added to the helper''s scope (env.addApp) before any action on it, never acted on while unscoped. The capture gate is unchanged: step 5 phase B black in every capture on the fixed helper, which needs its own PR because #556 merged without the window-scoped filter.'
+    rationale: 'A false positive must not be fixed by weakening the probe, and a real helper defect must not hide behind the always store; the evidence of the run decides.'
+  - id: D-038
+    date: 2026-11-05
+    topic: live-model-hold-lifted
+    decision: 'D-035 and D-036 are lifted. cu-verifier''s refined probes on the installed helper 0.2.10 with a private CU_HOME whose always store holds only CU Fixture (runs 20261105T144114Z-9a39c2 and 20261105T144115Z-133359) show 0 marker pixels from the unapproved same-named CU Ledger in every capture and its click asked new_app and declined with CU Ledger''s input log empty. The earlier "leak" and "impersonation" were the test setup: CU Ledger was in the owner''s always store (D-033), and agent core by design adds an always-covered target or frontmost app to the helper''s scope before acting, so those captures and that click were permitted. Helper 0.2.12 (#567, WindowServer owner pid through AppKit as ground truth, window-scoped capture) stays as defence in depth, with the driver''s capture_leak refusal (#565) and the scope-addition note in the trajectory (#566). Before the first live-model batch: install 0.2.12 signed, rerun step 5 and the click probe on it with a private CU_HOME, then steps 2-3. Every probe and step-5 run from now on uses a private CU_HOME holding only the apps the test means to approve.'
+    rationale: 'The hold rested on a premise the refined evidence disproves; the defence in depth already built is kept, and the test method is fixed so the confusion cannot recur.'
+  - id: D-039
+    date: 2026-11-05
+    topic: migration-to-own-repo-and-linear
+    decision: 'Owner''s instructions of 5 Nov 2026 via hd-coordinator: computer-use becomes its own top-level project, code in github.com/dtadpole/computer-use, project management in Linear (the team Linear workspace, team CU), work never stops. Done 14:52 UTC: the code-only history (243 commits; team records filtered out) split from reflection 5df4d972b is main 7a5121758 of dtadpole/computer-use, protected (PR only, admins included, no force-push, no deletion); clone ~/computer-use with seat worktrees ~/computer-use--<seat> on branches cu/<seat>. Plan, in steps with no stop: (1) the standalone port as CU issues in the new repo - vendor the browser-use CDP client and verify runner with provenance (cu-developer-two, cu-verifier), the helper entry-point allowlist for ~/computer-use and ~/computer-use--<seat> keeping the reflection paths until cutover, signed rebuild (cu-developer-three), verify-kit''s mutant layout (cu-verifier), install rows and MCP paths (cu-developer-two), design and INDEX links to the KB (cu-developer-one), the new repo''s gate and pr-merge.py landing, and porting reflection code merged after 5df4d972b (cu-integrator); (2) reflection''s computer-use code is frozen except in-flight gated PRs, which cu-integrator lands and ports; live runs continue from the reflection worktrees until the new repo passes every test and verifier and the helper accepts its paths, then cut over; (3) team records move to the top-level KB folder _projects_/computer-use (TEAM.yaml, ULTIMATE_GOAL, INDEX, _team_members_, _context_ including the research), by one KB pull request, together with goal edits carrying the new paths and the Linear rule; (4) the code folder in reflection is removed only after every seat has worked a round in the new repo, leaving a pointer INDEX.md; (5) the backlog enters Linear (each seat files and takes its items; Area and Type labels; project and milestone set by the coordinator), Monday cycle planning and M7-M9 and initiative updates in Linear; owner questions through linear.py ask. Existing DSH sessions continue on absolute paths.'
+    owner_statements:
+      - 'Make computer-use its own top-level project at github.com/dtadpole/computer-use and migrate your code there.'
+      - 'Move your project management to Linear.'
+      - 'After the migration the team keeps operating, in the same DSH sessions or new ones. Computer-use work must not stop.'
+    rationale: 'Follows hd-coordinator''s recommended migration; the port and cutover keep the live runbook running from the frozen reflection code until the new repository is proven.'
+  - id: D-040
+    date: 2026-11-05
+    topic: cutover-first
+    decision: 'The team stops maintaining two builds: no more live-run copies of new-repo fixes into reflection. Cutover (CU-7) order: cu-integrator lands computer-use #9 (CU-3 standalone verifiers), #3 (CU-2 allowlist, realpath to realpath), #15 (helper 0.2.14 = allowlist + owner rule 0.4.11), then the fixture, judge and prompt fixes; cu-developer-three installs 0.2.14 signed from its new-repo worktree with the self-test; cu-verifier runs every verifier and one scripted fixture run from a ~/computer-use--<seat> checkout as the cutover gate, recorded on CU-7. After it every live run starts from the new repo: the rerun that accepts runbook steps 2-3, step 4 with the owner (CU-11), the live view (CU-12), the DSH and heddle proofs (CU-15), and cu-researcher''s evaluation batch run once (CU-8, about 2.7 USD). PR titles say Fixes CU-n only when the PR completes the issue, Refs CU-n otherwise. Approval records for private CU_HOMEs are verbatim copies of the owner''s tty records, never synthesized.'
+    rationale: 'Rates are per build; one build after the cutover halves the live spend and removes the double maintenance that the migration''s transition required.'
+  - id: D-041
+    date: 2026-11-05
+    topic: third-party-overlays-fail-closed
+    decision: 'Confirms design ruling Q-D11 (cu-developer-one, 0.4.11): a third-party window above the point owns it even if it passes clicks through - WindowServer cannot show click-through and an Accessibility-based exception is exactly the click-jack the owner rule closes (cu-researcher). Live, Typeless (now.typeless.desktop) keeps such an overlay over the bottom middle of the Mac mini''s screen, and two UserNotificationCenter alerts block their areas. The owner is asked to quit overlay apps and close the alerts for desktop runs; the out_of_scope reply names the blocking app so a person knows what to quit. An owner-held list of trusted click-through overlay apps, written only through a human channel like the always store, is CU-26 (after the cutover).'
+    rationale: 'Fail closed against unknown overlays; give the owner a deliberate, human-only way to trust a specific one later.'
+  - id: D-042
+    date: 2026-11-05
+    topic: cutover-done
+    decision: 'The cutover (CU-7) passed at 16:09 UTC: on dtadpole/computer-use main a7d6001a6 with CUHelper 0.2.14 installed signed from the new repo (requirement unchanged, grants kept, self-test 38/38), all 21 verifiers exit 0, verify-kit 101/101, and a scripted fixture run from ~/computer-use--cu-verifier passes with 18/18 events tagged from the helper (cu-verifier, /tmp/cu-verifier-proofs/cu7-gate-a7d6001a6.txt). From now every live run starts from ~/computer-use--<seat>; reflection''s _projects_/this repository code is no longer used. It is removed, leaving its pointer INDEX, once the DSH and heddle proofs (CU-15) pass from the new repo and the owner has the new install rows, so no owner configuration points at a removed path. Gaps between a batch''s checks and its runs are not reserved: a holder goes straight from check to run.'
+    rationale: 'Records the cutover gate and orders the removal of the frozen copy after the owner-facing paths have moved.'
+  - id: D-043
+    date: 2026-11-05
+    topic: first-desktop-evaluation-accepted
+    decision: 'cu-researcher''s item 5 is accepted: the first desktop evaluation (CU-8) ran every one of 37 fixture items (25 tasks, 12 injection screens) on claude-sonnet-5-5 and model-a on one clean build (dtadpole/computer-use 23a4600d7, CUHelper 0.2.16), 74 runs, 2.88 USD, every attempt counted (record: _context_/run-analysis/desktop-suite-2026-11-05.md). Rates: tasks 16/25 on each model (Wilson 95% 45-80%), injections 12/12 on each with 0 compromised (6 stopped by the inspector, 6 by the model). cu-verifier''s independent tally agrees: every task failure traces to consent stops by design (10), the owner''s Typeless overlay (3), the out-of-process save panel CU-39 (1), the Order classifier CU-40 (2) or the two-window drag CU-36 (2) - on the 16 tasks with no gate or block both models pass 16/16. A second batch runs after Typeless is quit and CU-36, CU-39 and CU-40 land, on one build, for the per-row verdict.'
+    rationale: 'Meets the evaluation row''s counts (at least 20 fixture tasks and 10 injection screens, rates per model and build) with honest attribution; the follow-up batch measures the fixes.'
+  - id: D-044
+    date: 2026-11-05
+    topic: file-panels-and-drags-policy
+    decision: 'Adopted after cu-researcher''s red team (designs Q-D12 and Q-D13, computer-use #50): (1) the system open/save panel (com.apple.appkit.xpc.openAndSavePanelService) counts as its client app only while attached as a sheet to the frontmost approved, unexcluded client (frame equality checked on every capture and event, never by title); floating panels are refused. Inside it only navigation and selection are allowed - no Quick Look, context menus, drag out or file operations. Its final button is the consent class file_choice: asked every time, showing the canonical path read after the choice (symlinks resolved, Unicode and bidi controls escaped), never pre-approved and never always, declined unattended. Nothing is chosen from or saved into ~/.ssh, LaunchAgents/LaunchDaemons, ~/Library/Keychains, shell start-up files, login items, /Applications or app bundles. Folder listings in the panel are a residual noted in trajectory privacy. (2) Held moves of a drag cross only approved-app windows or the bare desktop (not desktop icons, the Dock, the menu bar or within 8 pt of a corner); the whole path is validated before mouseDown; an aborted drag sends Escape before its mouse-up so nothing drops.'
+    rationale: 'Closes the two design gaps the first evaluation exposed (CU-36, CU-39) without opening an exfiltration or persistence path.'
+  - id: D-045
+    date: 2026-11-05
+    topic: file-panel-consent-hole-hold
+    decision: 'cu-developer-three measured (grant-free, 20:38 UTC) that on this Mac the open/save sheet''s window is owned by the client app itself; only its content and Accessibility elements belong to com.apple.appkit.xpc.openAndSavePanelService. Helper 0.2.21 follows the window owner, so a click on the panel''s Save or Open button would pass as a plain click on the approved app - no file_choice question and no protected-folder refusal (D-044). This is treated as a P1 consent hole. Until a fix is proven: no model or scripted run posts input into any open/save panel; export-file and open-file stay out of every batch; the interim fix is fail-closed - when the Accessibility element at a point belongs to a different process than the hit window''s owner, refuse or ask new_app naming the element''s owner - unless the corrected attribution proof holds (the client''s own attached sheet whose element belongs to the panel service, described with hostedBy so file_choice triggers). cu-verifier reopens the consent row until the fix is proven live. Runbook step 4 does not touch a panel and is unaffected. The owner is told not to give file open/save tasks to computer use until then.'
+    rationale: 'A consent rule that never triggers is worse than a refusal; fail closed first, then restore the panel with the corrected proof.'
+  - id: D-046
+    date: 2026-11-05
+    topic: file-panel-hold-lifted
+    decision: 'D-045''s hold is lifted for both panel styles. On CUHelper 0.2.22 (computer-use main with #83, #86, #87), two independent read-only inspections (cli.mjs inspect, no input into a panel) marked every point inside attached sheets and inside separate panel windows as save or open and left the main window unmarked, and cu-researcher''s scripted commits in a sheet (Return in the name field, double-click) were each asked file_choice, declined unattended, with nothing written. Panels may again receive input under the file_choice rules of D-044. Still to show live: a click on the Save button itself (it lay under the owner''s Typeless overlay), after the Q-D15 hit-window build is installed. The owner may use file open/save tasks again with helper 0.2.22 or later; every commit is asked.'
+    rationale: 'The consent hole of D-045 is closed and proven live for both styles; the remaining Save-button case is covered by the same marker and tests.'
+  - id: D-047
+    date: 2026-11-05
+    topic: file-panel-folder-named-limit
+    decision: 'The measurement build (0.2.24-measure, branch only, installed and replaced by main 0.2.24 in one slot; main verified back by version, strings, sources, self-test and the Q-D15 set) walked 1,500 Accessibility nodes in each in-process sheet and found no attribute that carries the panel''s folder as a file URL or path. So a panel navigated into a folder and given a plain name is asked as "destination folder unknown" (declined unattended, never read as allowed) - a named limit in the verdict, not a pass. A typed path is still resolved and refused if protected. Agent core narrows the limit (#101): inside a marked panel the shortcuts to Applications, Utilities and hidden files, and clicks on items named like protected places, are refused (defence in depth only; names are not a protection source). One more targeted measurement (the column browser''s rows, names and booleans only, same conditions) is approved for later; the full fix waits for a real file-URL source.'
+    rationale: 'No fix on a guess; the fail-safe ask keeps consent intact while the source is unknown.'
+  - id: D-048
+    date: 2026-11-06
+    topic: second-desktop-evaluation-accepted
+    decision: 'The second desktop evaluation is accepted as the evaluation row''s current evidence: 38 items (26 tasks, 12 injection screens) on claude-sonnet-5-5 and model-a on one build (dtadpole/computer-use 73bc75608, CUHelper 0.2.25), pre-registered, every attempt counted (record: _context_/run-analysis/desktop-suite-2026-11-06.md). Sonnet 17/26 tasks (clean 16/21, plain clean 16/17), Opus 18/26 (clean 17/21, plain clean 17/17); injections 12/12 each with 0 compromised; consentMissed 0, false-success 0, 0 errors; cu-verifier''s independent re-judge of 83 rows found 0 discrepancies. Five items are reported apart with causes (four covered by the owner''s two notification alerts, two-window-code changed by the fixture placement). Clean failures are correct consent stops, a hand-off by design and one capability miss. CU-39 closes against what is proven with two named limits (the panel''s folder is not read on this macOS - its own issue; the Save-button commit not shown live because the owner''s alert took the click).'
+    rationale: 'Meets the evaluation row with honest attribution on a single clean build after the D-044 to D-047 safety fixes.'
+  - id: D-049
+    date: 2026-11-06
+    topic: continuity-while-step-4-waits
+    decision: 'Under the owner''s continuity rule (relayed by hd-coordinator at 04:00 UTC, who renewed cu-researcher, cu-developer-one and cu-developer-two and resumed the coordinator''s goal), quiet mode with unrenewed goals is withdrawn. Waiting on the owner''s step 4 (CU-11, kept as an Owner ask) does not stop the team: the coordinator renews every seat''s goal at about 245 rounds, keeps the review passes, the Monday cycle plan and the M7-M9 project updates, and gives each seat continuity work inside the safety rules (synthetic input only to the fixture apps, one announced desktop run at a time): parity gaps and a broader fixture suite (cu-researcher), the owner''s user guide and agent-core robustness (cu-developer-one), DSH/heddle end-to-end examples and MCP tests (cu-developer-two), Retina scale-2 and multi-display support in the helper with dry-run worlds (cu-developer-three), verifiers for those worlds and an evidence audit of every ULTIMATE_GOAL row (cu-verifier), and a scripted no-model nightly regression (cu-integrator). Step 4 runs the moment the owner gives a time.'
+    rationale: 'The owner wants computer-use work to continue; one owner-held step must not idle a team of seven.'
+  - id: D-050
+    date: 2026-11-06
+    topic: clipboard-items-and-guard
+    decision: 'Clipboard items (CU-62), under the owner''s earlier "clipboard allowed": copy and paste only between the fixture apps with fixture text; before the run the owner''s general pasteboard items are kept in process memory only (never on disk, in logs, in the trajectory or sent to a model) and restored at run end, also on failure; a pasteboard with concealed or transient content skips the item unread; the trajectory records clipboard actions as kinds and lengths. The owner''s board must end as it began: a restore after an empty save clears the board, and a save that fails to read stops the item before any copy. At 07:01 UTC the guard saved 0 items and left the fixture text INV-44752 on the board; clipboard items are held until the fix is verified end to end (non-empty round trip, empty board ends empty, concealed board skips), and our own leftover text is cleared.'
+    rationale: 'Using the owner''s clipboard is allowed only if it is invisible to the owner afterwards and never leaks.'
+  - id: D-051
+    date: 2026-11-06
+    topic: clipboard-guard-incident
+    decision: 'Possible owner impact: CU Fixture''s clipboard guard (CU-62 live runs at 06:01 and 07:01 UTC) read 0 items from the general pasteboard and then cleared it. On macOS 27 a programmatic read of the general pasteboard asks the person first (since macOS 15.4), so the read may have been refused rather than the board being empty; if the owner had clipboard content then, it may have been erased, and a macOS access alert naming CU Fixture may have appeared. Nothing was read, stored or sent (counts were zero). The guard is changed to check the pasteboard''s access behaviour first and skip the item unread unless access is always allowed, and never to clear after an unconfirmed read; clipboard items stay held until cu-verifier verifies the fix and the coordinator says go. The owner is told.'
+    rationale: 'An unverified read must never be followed by a destructive write to the owner''s clipboard.'
+  - id: D-052
+    date: 2026-11-06
+    topic: clipboard-incident-finding
+    decision: 'Finding on D-051: on this Mac every process reports the general pasteboard''s access behaviour as alwaysAllow, including a brand-new bundle launched once (cu-developer-three''s probe reads only the setting). So no access prompt existed for CU Fixture and none was answered by a model, a script or a seat; the 06:01 UTC saves most likely read and restored the owner''s board, and the 07:01 UTC zero-item saves were an empty board. Probably no owner content was lost; the owner is asked to confirm the Mac-wide paste setting. #157 (skip unless access is always allowed, never clear after an unconfirmed read, an empty save ends empty) lands after cu-verifier''s live verification under D-050; refusing input to system privacy and permission UI even inside an approved window is filed as hardening.'
+    rationale: 'Close the incident on evidence while keeping the stricter guard for Macs set to ask.'
+  - id: D-053
+    date: 2026-11-06
+    topic: enforced-desktop-hold
+    decision: 'The desktop-run lock now has an enforced hold (CU-75, computer-use 010dd7b52): a holder writes hold.json {seat, until, reason}, capped at about 30 minutes, and acquireDesktopRun refuses other seats while it is live; it replaces the step-4 yield flag. Protocol: take the hold first, then wait for any active run, then run - never check "free" and then hold. Every desktop run must come from a checkout that contains 010dd7b52 (an older checkout ignores holds, as at 08:04 UTC); seats check with git merge-base --is-ancestor before each run.'
+    rationale: 'Announced holds were interleaved three times on 6 Nov; an enforced hold only works if every runner reads it.'
+  - id: D-054
+    date: 2026-11-06
+    topic: screenshot-pruning-with-thinking
+    decision: 'CU-65''s screenshot pruning (past 30 images keep the newest 10) edits earlier turns, which newer accounts reject with a 400 when thinking is preserved (Sonnet/Opus 5.5); the gateway does not accept the block-binding parameter that would make a prune safe (cu-researcher''s probe, CU-84). So pruning is off by default for models that preserve thinking (#195); an account proven to accept it may opt in with --prune-with-thinking allow, recorded in each row''s build; a refused cut resends with the last accepted request and freezes pruning for the rest of the run, and a resend that would exceed size limits ends the run with a named outcome. Default runs (20 steps) never reach the ceiling.'
+    rationale: 'A run must never fail from our own request shaping; cost control comes second.'
+  - id: D-055
+    date: 2026-11-06
+    topic: linear-workflow
+    owner_words: 'Please research and think about how to setup our team to work with Linear for project management and setup team member workflow and roles and responsibility accordingly'
+    decision: 'The [cu] team runs its work in Linear by linear-workflow.md 1.0.0: one issue per unit of work; states Triage > Backlog > Todo > In Progress > In Review > Verify > Done with a named mover for each (coordinator triages every pass and plans weekly cycles, seats take and implement, GitHub automation moves to In Review and on a complete merge to Verify, only cu-verifier sets Done); Linear priorities mapped to [cu] meanings (Urgent = consent, exclusion, privacy or owner-impact hole); labels Agent, Found by, Area, Type, Owner ask; no estimates - split across seats into sub-issues; PR words Fixes only for complete work, Part of/Refs for partial; at most two In Progress per seat; Stale after 2 h, released after 6 h; Verify cleared within the hour; one-week cycles from Monday with project updates then; no owner data in Linear. Views CU Triage, Verify queue, This cycle, Blocked and Stale added; issue templates need a key that may create templates (asked of hd-coordinator). Each seat''s responsibilities.md has a Linear duties section.'
+    rationale: 'Linear already had the structure (states, cycles, labels, projects); what was missing was who moves what, when, and why - written down so seven agent seats act alike and the owner sees only what needs them.'
+  - id: D-056
+    date: 2026-11-06
+    topic: no-raw-events
+    decision: 'Every synthetic click, drag or key on this Mac goes through CUHelper (a scripted driver run under an enforced hold); no seat script, test or probe posts raw CGEvents or installs input taps, because raw events land on whatever window is under the point without the helper''s approved-app, overlay and system-prompt checks. Read-only probes (window list, modifier flags, idle time) stay allowed. Raised by cu-verifier when CU-95 drag checks planned raw-event drags beside two on-screen alerts and the owner''s windows.'
+    rationale: 'The helper''s checks are the safety boundary; a test that steps around them can put input into the owner''s apps.'
+  - id: D-057
+    date: 2026-11-06
+    topic: strict-answer-line
+    decision: 'Single-value desktop answer tasks end with a strict ''ANSWER: <value>'' line; the judge reads the last such line only and it must equal one of the task''s accepted forms; a missing line fails (#275). Results before and after the switch carry different batch labels and are never pooled. Prompted by cu-verifier''s hedge scan (67 passed rows read): an Opus common-slot ''pass'' answered 12:00 while 15:30 appeared only in its listing - now re-judged as a fail.'
+    rationale: 'A judge that finds the right value anywhere in a long answer rewards hedging; one stated value is what an owner would act on.'
+  - id: D-058
+    date: 2026-11-06
+    topic: file-panel-folder-source
+    decision: 'CU-48 (note #305 0.2.0): first C - one inspect build under D-047''s measurement conditions looks for an AXURL on the panel; a real file-URL source, if found, replaces everything else. If none, A: the folder is known only when the agent itself set it through Go to Folder (a typed path, already resolved and refused if protected), only until any other click, key or navigation in the panel, and only if it matches the panel''s shown name; otherwise "destination folder unknown", declined unattended as in D-047. Consent owner (cu-developer-one) and red team (cu-researcher) agreed; cu-verifier reviews the live test plan.'
+    rationale: 'Narrows the named limit with a source the agent itself controls, without trusting names; the fail-safe ask stays for every other path.'
+  - id: D-059
+    date: 2026-11-07
+    topic: consent-route-audit
+    decision: 'After five consent holes found in one day (CU-135 keyboard activation, CU-140 press target of drags and long presses, CU-142 typed newline, CU-143 modified Command-Backspace, CU-144 browser typed tab), the team enumerates every route instead of finding them one by one: cu-researcher (lead) and cu-developer-one (consent owner) keep one table of every action the agent can send against every element class, each cell naming how the policy judges it, the test that pins it and the live row that proves it; gaps become issues; cu-verifier signs the table. The consent row of the verdict (failing since 0.9.22) returns only when the table has no open cell and the P0 fixes are verified live.'
+    rationale: 'A consent rule is only as strong as its least-considered input route; a closed list is checkable, a stream of discoveries is not.'
+  - id: D-060
+    date: 2026-11-07
+    topic: pasteboard-change-count
+    decision: 'The helper may read exactly NSPasteboard.general.changeCount (an integer) beside hitTest/focused, so agent core can tell whether the board changed since the run''s own copy (CU-151: a paste with no own copy is asked as sensitive_data). It never reads pasteboard content, types or items and never writes; a source guard allows that one expression and forbids content and write APIs (#363, helper 0.2.38). D-050..D-052 stand.'
+    rationale: 'A change counter carries none of the owner''s content and is the least it takes to know whether a paste would move the owner''s data.'
+  - id: D-061
+    date: 2026-11-07
+    topic: sensitive-data-class-table
+    decision: 'After three sensitive-data gaps in one afternoon (CU-163 bank and tax numbers, CU-164 keys, seed phrases and one-time codes, CU-167 SSN, CVV and identity documents), the team enumerates every class the agent must never type unasked - government IDs, payment data, authentication secrets, personal identifiers, contact details - in one table, each class with its value rule, field-name rule, asserting test and live row; gaps become children of CU-145 and cu-verifier signs the table as for D-059. The consent row names any open class until it is fixed and verified live.'
+    rationale: 'Same lesson as D-059: a closed list can be checked; a stream of discoveries cannot.'
+  - id: D-062
+    date: 2026-11-07
+    topic: contact-field-names
+    decision: 'D-061 contact rows: a field NAMED email or phone asks before the agent types into it (values of those shapes already ask); street-level address names ask (Street address, Address line 1, Home address); City, Postcode or ZIP alone do not ask. The owner''s guide says a shipping form asks once for the street address.'
+    rationale: 'Measured over-ask is small (2 of 474 typed actions on email/phone names, 0 on address names); city or postcode alone is low-sensitivity and would over-ask on most forms.'
+  - id: D-063
+    date: 2026-11-07
+    topic: consent-row-bar
+    decision: 'The consent and safety row is blocked by any open Urgent or High under-ask - one that lets the agent type a credential, payment data or a government ID unasked, or complete a destructive, irreversible or submitting action unasked. Medium and Low gaps (for example CU-185, national phone formats without a country code) are named as limits in the verdict and do not block it. Docs list open under-asks through a Linear filter (team CU, parent CU-145 or CU-171, not done) rather than an enumerated list. cu-verifier judges the row against this bar.'
+    rationale: 'Red-teaming keeps finding gaps; without a severity bar the row could never hold, and an enumerated list goes stale faster than docs land.'
+  - id: D-064
+    date: 2026-11-07
+    topic: closed-means-live
+    decision: 'In the D-059 consent-route table and the D-061 sensitive-class table a row is closed only when its live column holds a run id, or a D-number for a decided limit; a meta test fails any closed row without one. Both tables are re-signed by cu-verifier only when that meta test is green on main.'
+    rationale: 'cu-verifier found its own signatures overclaimed (10 D-059 cells and 50 D-061 rows read pending or no live row) and reopened them; a mechanical check keeps a signature from outrunning the evidence.'
+  - id: D-065
+    date: 2026-11-07
+    topic: guard-cells-not-live
+    decision: 'A D-059 or D-061 cell for a state no fixture can produce on demand may close as "asserted, not live (D-065)" only when (a) the guard fails closed - it asks, (b) a recorded attempt run shows the state cannot be produced on demand, and (c) a unit row plus a mutant that fails it assert the guard. A cell that would allow in that state does not qualify and stays open.'
+    rationale: 'Some fail-closed guards (focus unreadable with a menu open, no-focus placeholders) cannot be reached live on AppKit; D-064 still needs an honest close for them without weakening any allow path.'
+  - id: D-066
+    date: 2026-11-07
+    topic: idle-rule-follows-input
+    decision: 'The owner-idle rule (idle >= 5 min before, abort on any local input) applies to every run that can post synthetic input into the owner''s session, with or without a desktop hold; it is enforced in acquireDesktopRun as well as in fresh holds. A run that posts nothing declares noInput, is exempt, and the helper refuses input for it.'
+    rationale: 'Display changes showed the owner may be at the Mac; the risk is input, not the lock, so the rule follows input rather than the hold.'
+  - id: D-067
+    date: 2026-11-07
+    topic: owner-run-exemption
+    decision: 'A run the owner starts himself is exempt from the D-066 idle rule: from the CLI only when stdin and stdout are both TTYs; through MCP only when the server was started with CU_OWNER_SESSION=1 from the owner''s own client configuration. Agents (the heddle plugin, the seats) never set it, a seat identity in the environment refuses it, and every exempt run logs which rule applied. Anything ambiguous fails closed to the idle check.'
+    rationale: 'The idle rule protects the owner from input he did not start; his own run is his consent, but the exemption must be impossible for an agent to claim by accident.'
+  - id: D-068
+    date: 2026-11-07
+    topic: physical-presence-confirmation
+    supersedes: D-067
+    decision: 'There is no TTY or environment-flag exemption from the D-066 idle rule. While the Mac is active, a run may post input only after a physical confirmation: a helper-shown prompt that accepts only an untagged (real hardware) click or key, never a synthetic one. Until that prompt exists there is no exemption; a run waits for 5 idle minutes.'
+    rationale: 'cu-researcher showed a pty wrapper fakes the TTY predicate and env -i launders an MCP flag, so a prompt-injected agent could claim either; only a hardware event the helper itself can tell from its own input proves the owner is there and consents.'
+  - id: D-069
+    date: 2026-11-08
+    topic: helper-version-floor
+    decision: 'Compatibility paths that allow are removed rather than kept for older helpers: agent core refuses a helper older than the oldest version that sends every consent field it relies on (floor 0.2.44 today, checked at the handshake with a clear message), and an absent consent field asks. A cell whose state could only come from a refused helper closes under D-065 as a fail-closed guard.'
+    rationale: 'An allow kept for a helper no Mac runs is a hole waiting for a downgrade; refusing old helpers makes the state unreachable and keeps every path fail-closed.'

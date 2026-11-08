@@ -1,0 +1,36 @@
+---
+title: Verify kit tests
+created: 2026-11-01T09:33:46Z
+modified: 2026-11-02T11:16:38Z
+version: 1.10.0
+description: The unit suite of the verify kit - the memory gate and guarded profiles, and the CDP input events each canonical action becomes.
+grounded_in:
+  - source: shared/_conventions_/core-conventions/working-agreements.md@1.5.1 (key functions carry test cases)
+---
+
+# Verify kit tests
+
+| File | Judges |
+|---|---|
+| [browser-gate.test.mjs](browser-gate.test.mjs) | `parseMemoryFree`, `memoryGate`, `floorFromEnv`, `isThrowawayProfile`, a real `/tmp/cu-verifier-chrome-*` directory |
+| [browser-registry.test.mjs](browser-registry.test.mjs) | the D-014 protocol against a temporary directory: entries, seat and team refusals, dead entries, lock wait and stale lock, exit cleanup |
+| [check-browser.test.mjs](check-browser.test.mjs) | the start order and that every refusal gives back what was taken |
+| [sut.test.mjs](sut.test.mjs) | loading the system under test, exact-once mutations, a real mutant built and removed without touching browser-use |
+| [prove-failing.test.mjs](prove-failing.test.mjs) | verdict classes, the all-caught rule, leaked-profile detection |
+| [desktop-evidence.test.mjs](desktop-evidence.test.mjs) | landing tolerance, pid and tag, the marker matcher, run-directory scans |
+| [helper-conformance.test.mjs](helper-conformance.test.mjs), [double-helper.mjs](double-helper.mjs) | each conformance check holds on a protocol double, over stdio and a socket, and fails on its breach |
+| [driver.test.mjs](driver.test.mjs) | `launchRefusal` names only a refused launch |
+| [mcp-client.test.mjs](mcp-client.test.mjs) | line framing, replies by id, tool results, exit on stdin close |
+| [png.test.mjs](png.test.mjs) | a round trip through every scanline filter, RGB and RGBA, refusals |
+| [cdp-input.test.mjs](cdp-input.test.mjs) | key names and aliases, modifier bits, the events of each action, refusal by name |
+| [mutants-current.test.mjs](mutants-current.test.mjs) | every verifier's mutants still apply: each find text occurs exactly once in this tree (a changed line names its stranded mutant) |
+
+The plan runner's pure parts are judged in [`_tests_/fixture-site/plans.test.mjs`](../fixture-site/plans.test.mjs).
+
+```bash
+node --test _tests_/verify-kit/*.test.mjs
+```
+
+## Read next
+
+[`../INDEX.md`](../INDEX.md).

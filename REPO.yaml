@@ -1,0 +1,17 @@
+# REPO.yaml - this repository's identity (repository-graph convention of the owner's knowledge bank).
+# Public repository: it names no internal host. It extends the owner's knowledge bank (a private repository on
+# GitHub) for its conventions; AGENTS.md lists the ones that bind here, so a reader needs nothing private to work.
+schema: reflection/repository/v1
+scope: repository
+repository: github.com/dtadpole/computer-use
+checkout_hint: ~/dtadpole/heddle/_projects_/computer-use
+description: A computer-use agent for native macOS - code, tests, verifiers and the [cu] team's records.
+extends:
+  - repository: github.com/dtadpole/reflection
+hosts:
+  gh: github.com
+types:
+  _designs_: designs the code follows
+  _guides_: guides for the people who use the agent
+  _vendor_: third-party or copied code kept verbatim with its provenance
+  _team_members_: one record per team seat

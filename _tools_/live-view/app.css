@@ -1,0 +1,32 @@
+/* The page hides by the hidden attribute alone (ui-logic pageFor); a display rule below must never show a hidden
+   element - .buttons once did, and the watcher of a browser run saw #nav's Back, Forward and Reload. */
+[hidden] { display: none !important; }
+body { margin: 0; font: 14px system-ui, sans-serif; background: #f4f4f5; color: #18181b; }
+header { padding: 8px 12px; background: #18181b; color: #fafafa; display: flex; gap: 12px; align-items: center; }
+.state { padding: 2px 8px; border-radius: 4px; background: #3f3f46; }
+.state[data-state="running"] { background: #15803d; }
+.state[data-state="paused"], .state[data-state="awaiting_consent"] { background: #b45309; }
+.state[data-state="taken_over"] { background: #1d4ed8; }
+.state[data-state="finished"] { background: #52525b; }
+.attention { padding: 10px 12px; background: #fde68a; font-weight: 600; animation: pulse 1s infinite alternate; }
+@keyframes pulse { from { background: #fde68a; } to { background: #fca5a5; } }
+.notice { padding: 10px 12px; background: #dbeafe; font-weight: 600; display: flex; gap: 12px; align-items: center; }
+.notice[hidden] { display: none; }
+.notice[data-kind="secure_input"], .notice[data-kind="point_covered"] { background: #fef3c7; }
+main { display: flex; gap: 12px; padding: 12px; align-items: flex-start; }
+.screen-wrap { flex: 1; min-width: 0; }
+.screen-wait { margin: 0 0 8px; min-height: 160px; display: flex; align-items: center; justify-content: center; padding: 24px; text-align: center; color: #fafafa; background: #27272a; border: 2px dashed #a1a1aa; }
+.screen-wait[hidden] { display: none; }
+#screen { width: 100%; height: auto; background: #27272a; border: 2px solid #a1a1aa; outline: none; user-select: none; }
+#screen.driving { border-color: #1d4ed8; cursor: crosshair; }
+aside { width: 320px; display: flex; flex-direction: column; gap: 8px; }
+.buttons { display: flex; flex-wrap: wrap; gap: 6px; }
+button { padding: 6px 10px; border-radius: 4px; border: 1px solid #a1a1aa; background: #fff; cursor: pointer; }
+button:disabled { opacity: 0.4; cursor: default; }
+button.danger { border-color: #b91c1c; color: #b91c1c; }
+.panel { background: #fff; border: 1px solid #d4d4d8; border-radius: 4px; padding: 8px; }
+.panel:empty { display: none; }
+.consent p { margin: 0 0 6px; }
+.consent .consent-note { font-weight: 600; color: #92400e; }
+input { width: 100%; box-sizing: border-box; padding: 6px; }
+#log { font-size: 12px; max-height: 40vh; overflow: auto; padding-left: 18px; margin: 0; }

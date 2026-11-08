@@ -1,0 +1,248 @@
+{
+  "title": "cu desktop mechanics probe results",
+  "collected_utc": "2026-11-02T08:35:03Z",
+  "safety": "prompt-free calls only; no capture, no synthetic events, no Apple events, no window titles recorded",
+  "tcc_attribution_caveat": "the probe ran from a DSH shell (bash <- node <- ~/.volta/bin/dsh <- launchd); TCC attributes it to its responsible process, so the preflight values describe that host, not a future helper app",
+  "probe_output": {
+    "buildStamp": "build-A",
+    "displays": [
+      {
+        "boundsPoints_globalTopLeft": {
+          "h": 1080,
+          "w": 1920,
+          "x": 0,
+          "y": 0
+        },
+        "CGDisplayPixelsHigh": 1080,
+        "CGDisplayPixelsWide": 1920,
+        "id": 5,
+        "isBuiltin": false,
+        "isMain": true,
+        "mode": {
+          "height_points": 1080,
+          "impliedScale": 1,
+          "pixelHeight": 1080,
+          "pixelWidth": 1920,
+          "refreshRate": 60,
+          "width_points": 1920
+        },
+        "nsscreen": {
+          "backingScaleFactor": 1,
+          "frame_appKitBottomLeft": {
+            "h": 1080,
+            "w": 1920,
+            "x": 0,
+            "y": 0
+          },
+          "frame_convertedToGlobalTopLeft_y": 0,
+          "localizedName_present": false
+        },
+        "rotationDegrees": 0
+      }
+    ],
+    "frontmostApplication": {
+      "bundleIdentifier": "com.apple.UserNotificationCenter",
+      "isOurProcess": false
+    },
+    "idleSeconds": {
+      "combinedSessionState_anyInput": 30405.889146584,
+      "hidSystemState_anyInput": 734.971686958,
+      "hidSystemState_keyDown": 56893.882517125,
+      "hidSystemState_mouseMoved": 30405.890402583
+    },
+    "macOS": {
+      "major": 27,
+      "minor": 0,
+      "patch": 0,
+      "string": "Version 27.0 (Build 26A428)"
+    },
+    "probe": "cu-desktop-probe",
+    "process": {
+      "bundleIdentifier": null,
+      "executable": "./build/a/probe",
+      "pid": 37886,
+      "ppid": 37885
+    },
+    "tccPreflight_describesResponsibleHostProcess": {
+      "AXIsProcessTrusted": false,
+      "CGPreflightListenEventAccess": false,
+      "CGPreflightPostEventAccess": false,
+      "CGPreflightScreenCaptureAccess": false
+    },
+    "timestampUTC": "2026-11-02T08:35:03Z",
+    "windows": {
+      "distinctOwnerPIDs": 20,
+      "layer0WindowCount": 14,
+      "note": "window names are not printed; per WWDC19-701 name and sharing state are withheld unless the caller is approved for Screen Recording",
+      "onScreenWindowCount": 26,
+      "windowsWithNameKey": 2,
+      "windowsWithNonEmptyName": 2,
+      "windowsWithSharingStateKey": 26
+    }
+  },
+  "ioreg_HIDIdleTime": {
+    "raw_ns": 734990166833,
+    "seconds": 734.99,
+    "note": "collected seconds after the probe; agrees with hidSystemState_anyInput"
+  },
+  "system_profiler_displays": [
+    {
+      "gpu": "Apple M4",
+      "pixels": "1920 x 1080",
+      "resolution": "1920 x 1080 @ 60.00Hz",
+      "main": "spdisplays_yes",
+      "mirror": "spdisplays_off",
+      "online": "spdisplays_yes",
+      "productIdHex": "76697274",
+      "productIdAsAscii": "virt"
+    }
+  ],
+  "process_ancestry": [
+    "bash (shell)",
+    "node (pid 72910)",
+    "~/.volta/bin/dsh (pid 72905)",
+    "/sbin/launchd (pid 1)"
+  ],
+  "codesign": {
+    "swiftc_linker_signature": [
+      {
+        "path": "build/a/probe",
+        "sha256": "f2adb9b57dc79737",
+        "codesign_dv": [
+          "Identifier=probe",
+          "Format=Mach-O thin (arm64)",
+          "CodeDirectory v=20400 size=830 flags=0x20002(adhoc,linker-signed) hashes=23+0 location=embedded",
+          "CDHash=2486d794a",
+          "Signature=adhoc",
+          "Info.plist=not bound",
+          "TeamIdentifier=not set"
+        ],
+        "designated_requirement": "# designated => cdhash H\"2486d794a\""
+      },
+      {
+        "path": "build/b/probe",
+        "sha256": "f2adb9b57dc79737",
+        "codesign_dv": [
+          "Identifier=probe",
+          "Format=Mach-O thin (arm64)",
+          "CodeDirectory v=20400 size=830 flags=0x20002(adhoc,linker-signed) hashes=23+0 location=embedded",
+          "CDHash=2486d794a",
+          "Signature=adhoc",
+          "Info.plist=not bound",
+          "TeamIdentifier=not set"
+        ],
+        "designated_requirement": "# designated => cdhash H\"2486d794a\""
+      },
+      {
+        "path": "build/c/probe",
+        "sha256": "c638f83c7b6712d4",
+        "codesign_dv": [
+          "Identifier=probe",
+          "Format=Mach-O thin (arm64)",
+          "CodeDirectory v=20400 size=830 flags=0x20002(adhoc,linker-signed) hashes=23+0 location=embedded",
+          "CDHash=aa5c07541",
+          "Signature=adhoc",
+          "Info.plist=not bound",
+          "TeamIdentifier=not set"
+        ],
+        "designated_requirement": "# designated => cdhash H\"aa5c07541\""
+      }
+    ],
+    "reading": "a and b are identical-source rebuilds with the same output name, byte-identical with the same cdhash; c changes one string constant and gets a new cdhash; the ad hoc designated requirement is the cdhash itself, so any code change breaks a grant keyed to it (TN3127). An earlier run with different output names (probe-1, probe-2) also changed the cdhash because the linker uses the file name as the code-signing identifier.",
+    "helper_bundle_skeleton_never_launched": {
+      "path": "build/CUHelperSkeleton.app",
+      "sha256": null,
+      "codesign_dv": [
+        "Identifier=invalid.cu-researcher.helper-skeleton",
+        "Format=app bundle with Mach-O thin (arm64)",
+        "CodeDirectory v=20400 size=350 flags=0x2(adhoc) hashes=4+3 location=embedded",
+        "CDHash=b9154d09b",
+        "Signature=adhoc",
+        "Info.plist entries=9",
+        "TeamIdentifier=not set"
+      ],
+      "designated_requirement": "# designated => cdhash H\"b9154d09b\""
+    },
+    "helper_bundle_reading": "codesign -s - on the bundle takes Identifier from CFBundleIdentifier and binds the Info.plist (9 entries), yet the DR is still cdhash-only. Re-signing after an Info.plist edit changed the CDHash (3aa2e6f9 -> 714f4203); plutil rewriting the file back gave a third value (b9154d09)."
+  },
+  "observations": [
+    "One active display, 1920x1080 points = 1920x1080 pixels, scale 1, main, not built-in; system_profiler product id 76697274 decodes to ASCII virt (inference - a virtual or dummy display, not Retina)",
+    "Every TCC preflight is false for the DSH host: Screen Recording, PostEvent, ListenEvent, Accessibility",
+    "CGWindowListCopyWindowInfo returned 26 on-screen windows; only 2 carry a window name and all 26 carry kCGWindowSharingState, which does not match the WWDC19 statement that name and sharing state are withheld without Screen Recording (unexplained on macOS 27; names not recorded)",
+    "combinedSessionState idle (30406 s) was larger than hidSystemState idle (735 s); HID mouseMoved idle 30406 s, keyDown 56894 s - the latest HID event was another type (click, scroll or flags); semantics need a controlled owner test",
+    "Frontmost app was com.apple.UserNotificationCenter with one on-screen alert window (layer 8, 260x208 at 852,211); that process has been running since 2026-11-01 08:50 local; origin unknown, not interacted with"
+  ],
+  "scaling_examples_inference": {
+    "gateway_limits": {
+      "long_edge_px_max": 2576,
+      "visual_tokens_max": 4784
+    },
+    "token_formula": "ceil(width/28) * ceil(height/28) visual tokens (platform.claude.com vision doc; the doc lists 1920x1080 as 2,691 tokens, not resized, on the high-resolution tier)",
+    "rule": "largest s <= 1 with long edge <= 2576 and tokens <= 4784; computer-use tool_result images over the limit are rejected, not downscaled, so the helper must resize",
+    "this_mac_1920x1080_points_at_1x": {
+      "source_px": [
+        1920,
+        1080
+      ],
+      "scale": 1.0,
+      "output_px": [
+        1920,
+        1080
+      ],
+      "visual_tokens": 2691,
+      "map_back": "x_point = display_origin_x + x_img / (scale * backingScale)"
+    },
+    "retina_1512x982_points_at_2x_full_pixels": {
+      "source_px": [
+        3024,
+        1964
+      ],
+      "scale": 0.7874,
+      "output_px": [
+        2380,
+        1546
+      ],
+      "visual_tokens": 4760,
+      "map_back": "x_point = display_origin_x + x_img / (scale * backingScale)"
+    },
+    "retina_1512x982_points_captured_at_point_size": {
+      "source_px": [
+        1512,
+        982
+      ],
+      "scale": 1.0,
+      "output_px": [
+        1512,
+        982
+      ],
+      "visual_tokens": 1944,
+      "map_back": "x_point = display_origin_x + x_img / (scale * backingScale)"
+    },
+    "retina_1728x1117_points_at_2x_full_pixels": {
+      "source_px": [
+        3456,
+        2234
+      ],
+      "scale": 0.6894,
+      "output_px": [
+        2382,
+        1540
+      ],
+      "visual_tokens": 4730,
+      "map_back": "x_point = display_origin_x + x_img / (scale * backingScale)"
+    },
+    "retina_1728x1117_points_captured_at_point_size": {
+      "source_px": [
+        1728,
+        1117
+      ],
+      "scale": 1.0,
+      "output_px": [
+        1728,
+        1117
+      ],
+      "visual_tokens": 2480,
+      "map_back": "x_point = display_origin_x + x_img / (scale * backingScale)"
+    }
+  }
+}

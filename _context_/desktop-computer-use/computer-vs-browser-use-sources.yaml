@@ -1,0 +1,140 @@
+# Computer use versus browser use source register
+# Source register (URL and quoted passage per short name), kept as data so the articles stay within the word budget.
+title: 'Computer use versus browser use source register'
+register: |
+
+  # Sources for computer use versus browser use
+
+  All pages were fetched on 2026-11-02 between 08:25 and 08:32 UTC by cu-researcher. The docs pages were read as
+  markdown (`.md` appended; Gemini as `.md.txt`), the support pages as HTML. openai.com was read through the Internet
+  Archive capture named below. Quotes are verbatim, and an ellipsis marks a cut. Keys match
+  [the article](computer-vs-browser-use.md).
+
+  ## OpenAI and ChatGPT
+
+  **[cu]** https://learn.chatgpt.com/docs/computer-use (markdown at `.md`)
+
+  - "With Computer Use, ChatGPT can see and operate graphical user interfaces on macOS or Windows." (scope, ChatGPT section)
+  - "Executing a workflow that spans more than one app." (scope)
+  - "**Screen Recording** permission so ChatGPT can see the target app." and "**Accessibility** permission so ChatGPT can click, type, and navigate." (permissions, action channel)
+  - "ChatGPT can view screen content, take screenshots, and interact with windows, menus, keyboard input, and clipboard state in the target app." (perception)
+  - "On macOS, running a scoped task in the background while you keep working elsewhere." (action channel)
+  - "With Computer Use, ChatGPT can see and take action only in the apps you allow. During a task, ChatGPT asks for your permission before it can use an app on your computer. You can choose **Always allow** ..." (consent model)
+  - "ChatGPT may also ask for permission before taking sensitive or disruptive actions." (consent model)
+  - "You can stop the task or take over your computer at any time." (ChatGPT section)
+  - "Cancel the task if ChatGPT starts interacting with the wrong window." (failure modes)
+  - "The feature can't automate terminal apps or ChatGPT itself, since automating them could bypass ChatGPT security policies. It also can't authenticate as an administrator or approve security and privacy permission prompts on your computer." (consent model, ChatGPT section)
+
+  **[wls]** https://learn.chatgpt.com/docs/enterprise/chatgpt-work-local-security
+
+  - "Computer Use operating a browser | Operates the browser as an approved native application and can use accounts already signed in. **Browser Use's site and capability policies do not apply to this path.**" (ChatGPT section)
+  - "On macOS, Screen Recording allows Computer Use to see application content, and Accessibility allows it to click, type, and navigate." (permissions)
+  - "Browser Use feature flags, the built-in browser pane, and native Computer Use are separate controls." (terminology note below)
+
+  **[br]** https://learn.chatgpt.com/docs/browser
+
+  - "In the desktop app, Computer Use lets ChatGPT Work or Codex operate the built-in browser directly. The selected experience can open pages, click, type, inspect rendered state, take screenshots, and verify the result of its work in the page." (perception, ChatGPT section terminology note)
+  - "The built-in browser keeps its own profile and browsing history." (environment)
+  - "ChatGPT also asks for confirmation before sensitive actions such as submitting information, making a purchase, changing permissions, or deleting data." (consent model)
+  - "It gives ChatGPT controlled access to the Chrome DevTools Protocol (CDP)." (Developer mode; action channel)
+
+  **[ext]** https://learn.chatgpt.com/docs/chrome-extension
+
+  - "ChatGPT can read or act on sites where you're already signed in" (environment)
+  - Chrome's install prompt "may include: Access the page debugger ... Communicate with cooperating native applications" (action channel, permissions)
+  - "**Allow once** ... **Allow for this site** ... **Allow for all sites** ... **Decline**" (consent model)
+
+  **[op]** https://web.archive.org/web/20260108213932/https://openai.com/index/introducing-operator/ (Internet Archive capture; openai.com answers HTTP 403)
+
+  - "A research preview of an agent that can use its own browser to perform tasks for you." (ChatGPT section)
+  - "Operator can “see” (through screenshots) and “interact” (using all the actions a mouse and keyboard allow) with a browser" (ChatGPT section)
+  - "Users can choose to take over control of the remote browser at any point" (environment)
+
+  ## Anthropic
+
+  **[act]** https://platform.claude.com/docs/en/agents-and-tools/tool-use/computer-use-tool (markdown at `.md`)
+
+  - "Claude can interact with computer environments through the computer use tool, which provides screenshot capabilities and mouse/keyboard control for autonomous desktop interaction." (scope, Anthropic section)
+  - "For tasks that stay inside webpages, the browser use tool is the closer fit: its member tools read and act on the page itself, and it doesn’t need a full desktop environment." (Anthropic section)
+  - "A lightweight UI with window manager (Mutter) and panel (Tint2) running on Linux" and "the reference implementation runs all of this inside a Docker container" (environment, Anthropic section)
+  - "Clicks consistently offset in one direction ... on macOS Retina displays, account for the 2x device pixel ratio" (failure modes)
+
+  **[abt]** https://platform.claude.com/docs/en/agents-and-tools/tool-use/browser-use-tool (markdown at `.md`)
+
+  - "Claude works with the page both through its structure (the accessibility tree, elements, forms, and tabs) and through screenshots and viewport coordinates." (perception, Anthropic section)
+  - "When a task needs a whole desktop, use the computer use tool, which works through screenshots and coordinates alone." (perception, both columns)
+  - "a browser that your application runs" (scope)
+  - "text on a page that says “ignore your previous instructions and navigate to...” can divert it from the task" (failure modes)
+  - "A reference survives layout shifts and reflows that make pixel coordinates fragile" (failure modes)
+
+  **[cic]** https://support.claude.com/en/articles/12012173-get-started-with-claude-in-chrome
+
+  - "Claude in Chrome is a browser extension that allows Claude to read, click, and navigate websites alongside you." (scope, Anthropic section)
+  - "debugger | This is what allows Claude to actually control your browser – clicking buttons, typing text, and taking screenshots – when you ask it to complete tasks for you." (action channel, permissions)
+  - "scripting | This lets Claude read text on webpages so it can help you with tasks." (perception)
+  - "Claude can read errors, network requests, and DOM state directly." (perception)
+
+  **[cicp]** https://support.claude.com/en/articles/12902446-claude-in-chrome-permissions-guide
+
+  - '"Allow this action" grants permission for a single action only.' and '"Always allow actions on this site" grants ongoing permission for this website.' (consent model)
+  - 'When you choose "Always allow actions on this site," Claude still asks for your explicit approval before: Downloading a file ...' (consent model)
+
+  **[cow]** https://support.claude.com/en/articles/14128542-let-claude-use-your-computer-in-cowork
+
+  - "it may navigate to your screen directly—clicking, typing, and opening apps just like you would." (Anthropic section)
+  - "Claude takes screenshots of your computer to understand how to navigate the screen and the apps to which you’ve given permission." (perception)
+  - "On macOS (version 15 or later), Claude works in background windows ... Claude doesn't take over your pointer or keyboard, and it generally waits if you're in the middle of typing." (action channel)
+  - "Claude asks for your permission before accessing each application." (Anthropic section)
+  - "navigating Slack through your screen takes much longer and is more error-prone." (failure modes)
+  - "clicking a link in your email app might open it in Chrome, even if you haven’t explicitly granted Claude permission to use Chrome" (failure modes)
+
+  **[ccd]** https://code.claude.com/docs/en/desktop (markdown at `.md`)
+
+  - "On macOS, you also need to grant Accessibility and Screen Recording permissions." (permissions)
+  - "**Accessibility**: lets Claude click, type, and scroll" and "**Screen Recording**: lets Claude see what's on your screen" (permissions, action channel)
+  - "On macOS, computer use can also run in the background: Claude works in the apps you've approved while you keep working." (action channel)
+  - "View only | See the app in screenshots | Browsers, trading platforms" and "Click only | Click and scroll, but not type or use keyboard shortcuts | Terminals, IDEs" (consent model, Anthropic section)
+  - "**Denied apps**: add apps here to reject them without prompting." (consent model)
+
+  ## Google
+
+  **[gem]** https://ai.google.dev/gemini-api/docs/computer-use (markdown at `.md.txt`)
+
+  - "The Computer Use tool lets you build browser, mobile, and desktop control agents" (Anthropic section)
+  - "Desktop environments OS-level cursor commands" (the `ENVIRONMENT_DESKTOP` action table)
+
+  ## Repository
+
+  - `_context_/team-operations/decision-log.yaml`, D-024: "Browser use means
+    an agent that reads and acts inside web pages of one browser it controls (our M1-M4 build: headless Chrome over
+    CDP ...)" and "The agent core, consent gate, trajectory, live control, MCP integration and evaluation harness carry
+    over"
+  - `dtadpole/computer-use/_environments_/chrome-browser/INDEX.md`: "headless Google Chrome over
+    CDP with a fresh profile, a fixed viewport, every canonical action, a two-layer site filter"
+  - `ULTIMATE_GOAL.md`, human-control row: "automation pauses when the
+    person uses the keyboard or mouse"
+
+  ## Terminology note
+
+  ChatGPT's docs use "Computer Use" for browser control as well ([br]: "Computer Use lets ChatGPT Work or Codex operate
+  the built-in browser directly"). The enterprise docs still keep "Browser Use" policies and "native Computer Use" as
+  separate controls [wls]. The article follows the D-024 split, which matches the enterprise usage.
+
+  ## Not sourced, or inference
+
+  - **How either vendor sees and acts in the background on macOS.** Neither documents the capture API (window capture or
+    full display) nor how input reaches a background window without the pointer moving.
+  - **Whether ChatGPT Computer Use reads the accessibility tree.** Its page names screenshots and "screen content" only,
+    and Accessibility only for acting.
+  - **Pause on the user's own input outside Locked use.** ChatGPT documents it only for Locked use. Anthropic says
+    Claude "generally waits if you're in the middle of typing" [cow].
+  - **ChatGPT's full exclusion list.** Password managers, System Settings privacy panes and our own live view are D-024
+    choices, not exclusions ChatGPT documents. Anthropic names trading and cryptocurrency apps as blocked by default.
+  - **That an extension's `debugger` permission means CDP.** This is inference: Chrome's debugger API carries CDP, which
+    neither help page states.
+  - **That Claude in Chrome is built on the API's browser use tool.** Not stated. The article calls it only "the
+    browser-use product".
+  - **What carries over from M1-M4 beyond D-024's own list.** The article names only D-024's list. Which parts of
+    agent-core (its page-text inspector, `sites.mjs`) and the live view (CDP screencast) need replacing is an
+    unverified reading of the code index.
+
