@@ -29,13 +29,16 @@ test('framing: lines split across chunks and several per chunk; an over-long lin
 })
 
 test('requests and fields outside the protocol are refused by name before anything is sent', () => {
-  assert.deepEqual(Object.keys(REQUEST_FIELDS).sort(), ['bye', 'capture', 'confirmPhysical', 'cursor', 'focused', 'hitTest', 'input', 'panelSelection', 'pauseOnLocalInput', 'scope', 'screenText', 'selection', 'simulateLocalInput', 'unwatch', 'watch'])
+  assert.deepEqual(Object.keys(REQUEST_FIELDS).sort(), ['bye', 'capture', 'confirmPhysical', 'cursor', 'focused', 'hitTest', 'input', 'menuKey', 'panelSelection', 'pauseOnLocalInput', 'scope', 'screenText', 'selectedItems', 'selection', 'simulateLocalInput', 'unwatch', 'watch'])
   // CU-203: the lock's own request, apart from the requests a run uses.
   assert.deepEqual([...helperLink.LOCK_REQUESTS.confirmPhysical], ['seat', 'task', 'timeoutMs'])
   assert.equal(Object.hasOwn(CORE_REQUEST_FIELDS, 'confirmPhysical'), false)
   assert.throws(() => checkRequest('screenshot', {}), (e) => code('invalid_argument')(e) && /'screenshot'/.test(e.message))
   assert.throws(() => checkRequest('capture', { quality: 1 }), (e) => code('invalid_argument')(e) && e.details.field === 'quality')
   assert.doesNotThrow(() => checkRequest('hitTest', { xPt: 1, yPt: 2 }))
+  // CU-236: menuKey carries the chord's planned keyDown and nothing else.
+  assert.deepEqual([...CORE_REQUEST_FIELDS.menuKey], ['keyCode', 'flags'])
+  assert.throws(() => checkRequest('menuKey', { key: 'D', modifiers: 1 }), (e) => code('invalid_argument')(e) && e.details.field === 'key')
   // The design's test seams are protocol too, kept in one table apart from the requests a run uses.
   assert.deepEqual(REQUEST_FIELDS.capture, ['display', 'maxSize', 'region', 'simulateScale'])
   assert.deepEqual(REQUEST_FIELDS.simulateLocalInput, ['kind', 'via'])

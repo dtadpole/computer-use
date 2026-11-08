@@ -152,6 +152,37 @@ final class SystemCapabilities: Capabilities {
     return Accessibility.panelFields(pid: front.pid)
   }
 
+  /// CU-235: the frontmost approved app's menu items this key down fires. The menu bar is walked fresh each time (role,
+  /// title, enabled and the four key-equivalent attributes only, never a value); the characters are the current
+  /// keyboard layout's for the key code, as AppKit matches them. Anything unread answers unreadable.
+  /// CU-262: the focused collection's selection - AXSelectedRows (outline, table), AXSelectedChildren (list, icon view),
+  /// or a browser's last column - each item's AXFilename, AXURL string and first text, bounded. No file-system call.
+  func selectedItems(scope: [String]) -> SelectedItems.Read {
+    guard AXIsProcessTrusted() else { return .unreadable("no Accessibility grant") }
+    guard let front = frontmost(), let bundleId = front.bundleId else { return .unreadable("no frontmost app") }
+    guard scope.contains(bundleId) else { return .unreadable("the frontmost app is not an approved app of this run") }
+    limitTimeouts()
+    guard let focused = Accessibility.elementAttribute(AXUIElementCreateApplication(front.pid), "AXFocusedUIElement") else {
+      return .unreadable("the focused element could not be read")
+    }
+    let role = Accessibility.string(focused, "AXRole")
+    guard let role, SelectedItems.collectionRoles.contains(role) else { return .notCollection(bundleId: bundleId) }
+    return SelectedItems.read(bundleId: bundleId, focusedRole: role, selection: SelectionRead.selection(of: focused, role: role))
+  }
+
+  func menuKey(keyCode: Int, flags: UInt64, scope: [String]) -> MenuKey.Read {
+    guard AXIsProcessTrusted() else { return .unreadable("no Accessibility grant") }
+    guard let front = frontmost(), let bundleId = front.bundleId else { return .unreadable("no frontmost app") }
+    guard scope.contains(bundleId) else { return .unreadable("the frontmost app is not an approved app of this run") }
+    limitTimeouts()
+    let (outcome, menuBar) = Accessibility.elementRead(AXUIElementCreateApplication(front.pid), "AXMenuBar")
+    guard outcome == .value, let menuBar else { return .unreadable("the app's menu bar could not be read") }
+    guard let walk = MenuWalk.entries(of: menuBar) else { return .unreadable("the app's menu bar could not be read in full") }
+    let chars = KeyLayout.characters(keyCode: keyCode, command: flags & 0x0010_0000 != 0)
+    let chord = MenuKey.Chord(keyCode: keyCode, flags: flags, unshifted: chars.unshifted, shifted: chars.shifted)
+    return MenuKey.read(bundleId: bundleId, entries: walk.entries, emptyMenus: walk.emptyMenus, chord: chord)
+  }
+
   /// Whether an approved app's window lies under the hit window at the point - so the refusal can say what covers it.
   func approvedBeneath(_ point: CGPoint, scope: [String]) -> Bool {
     let windows = WindowOwners.onScreen(includingDesktop: true)
@@ -683,5 +714,141 @@ enum CaptureConfig {
     // PNG's values as sRGB, so they must be sRGB; Frames.resized converts anything else.
     config.colorSpaceName = CGColorSpace.sRGB
     return config
+  }
+}
+
+/// CU-235: the menu bar's items as Accessibility reports them, depth-first in menu order, with each item's path of
+/// titles. Bounded (depth 10 - three submenu levels - and 4000 items); nil when a read fails or a bound is hit, so a
+/// partial walk never answers none.
+enum MenuWalk {
+  static let maxDepth = 10
+  static let maxItems = 4000
+  static let attributes = ["AXRole", "AXTitle", "AXEnabled", "AXMenuItemCmdChar", "AXMenuItemCmdModifiers", "AXMenuItemCmdVirtualKey", "AXMenuItemCmdGlyph", "AXChildren"] as CFArray
+
+  static func entries(of menuBar: AXUIElement) -> (entries: [MenuKey.Entry], emptyMenus: [String])? {
+    var entries: [MenuKey.Entry] = []
+    var emptyMenus: [String] = []
+    var visited = 0
+    /// Reads one element's attributes in one call; nil on a failed read.
+    func read(_ element: AXUIElement) -> [String: Any]? {
+      var values: CFArray?
+      guard AXUIElementCopyMultipleAttributeValues(element, attributes, AXCopyMultipleAttributeOptions(rawValue: 0), &values) == .success,
+            let list = values as? [Any], list.count == 8 else { return nil }
+      var result: [String: Any] = [:]
+      let names = ["role", "title", "enabled", "char", "modifiers", "virtualKey", "glyph", "children"]
+      for (name, value) in zip(names, list) {
+        // A missing attribute comes back as an AXValue holding an error; leave it out.
+        if CFGetTypeID(value as CFTypeRef) == AXValueGetTypeID(), AXValueGetType(value as! AXValue) == .axError { continue }
+        result[name] = value
+      }
+      return result
+    }
+    func walk(_ element: AXUIElement, path: [String], depth: Int, apple: Bool) -> Bool {
+      visited += 1
+      guard visited <= maxItems, depth <= maxDepth, let values = read(element) else { return false }
+      let role = values["role"] as? String
+      let title = values["title"] as? String
+      let children = (values["children"] as? [AXUIElement]) ?? []
+      var here = path
+      if role == "AXMenuItem" || role == "AXMenuBarItem" {
+        here.append(title ?? "")
+        if role == "AXMenuItem" {
+          entries.append(MenuKey.Entry(title: title, path: here, enabled: values["enabled"] as? Bool, cmdChar: values["char"] as? String,
+                                       cmdModifiers: (values["modifiers"] as? NSNumber)?.intValue, cmdVirtualKey: (values["virtualKey"] as? NSNumber)?.intValue,
+                                       cmdGlyph: (values["glyph"] as? NSNumber)?.intValue, appleMenu: apple))
+        }
+      }
+      // A top-level menu with no items yet (filled lazily), or a menu-bar item with no menu until it opens (built
+      // lazily), cannot be judged by a miss - except the Apple menu, the menu bar's first item (by position).
+      if MenuKey.isEmptyMenu(role: role, depth: depth, childCount: children.count, underApple: apple) { emptyMenus.append(here.last ?? title ?? "") }
+      // The menu bar's first item is the Apple menu (CU-232 contract point 4).
+      let start = entries.count
+      for (index, child) in children.enumerated() where !walk(child, path: here, depth: depth + 1, apple: apple || (role == "AXMenuBar" && index == 0)) { return false }
+      // CU-250: the items of a submenu that is the Services menu are marked servicesMenu.
+      if role == "AXMenu" { MenuKey.markServices(&entries, from: start, holderTitle: path.last, depth: path.count + 1, services: .current) }
+      return true
+    }
+    guard walk(menuBar, path: [], depth: 0, apple: false) else { return nil }
+    return (entries, emptyMenus)
+  }
+}
+
+/// CU-235: the characters the current keyboard layout gives a key without and with Shift, as AppKit's
+/// charactersIgnoringModifiers matches menu key equivalents. Nil when the layout cannot be read (an input method
+/// with no Unicode layout): then only virtual-key items can match, and a character item's miss is reported as none.
+enum KeyLayout {
+  /// `command`: translate with the Command bit, as layouts like Dvorak - QWERTY Command give QWERTY characters while
+  /// Command is held (cu-researcher on #36); other layouts give the same characters either way.
+  static func characters(keyCode: Int, command: Bool = false) -> (unshifted: String?, shifted: String?) {
+    guard let source = TISCopyCurrentKeyboardLayoutInputSource()?.takeRetainedValue(),
+          let pointer = TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData) else { return (nil, nil) }
+    let data = Unmanaged<CFData>.fromOpaque(pointer).takeUnretainedValue() as Data
+    return data.withUnsafeBytes { raw -> (String?, String?) in
+      guard let layout = raw.baseAddress?.assumingMemoryBound(to: UCKeyboardLayout.self) else { return (nil, nil) }
+      func translate(_ modifiers: UInt32) -> String? {
+        var dead: UInt32 = 0
+        var length = 0
+        var chars = [UniChar](repeating: 0, count: 4)
+        let status = UCKeyTranslate(layout, UInt16(keyCode), UInt16(kUCKeyActionDisplay), modifiers, UInt32(LMGetKbdType()),
+                                    OptionBits(kUCKeyTranslateNoDeadKeysBit), &dead, chars.count, &length, &chars)
+        guard status == noErr, length > 0 else { return nil }
+        return String(utf16CodeUnits: chars, count: length)
+      }
+      let commandBit = command ? UInt32(cmdKey >> 8) & 0xFF : 0
+      return (translate(commandBit), translate(commandBit | (UInt32(shiftKey >> 8) & 0xFF)))
+    }
+  }
+}
+
+/// CU-262: the selected items of a focused collection, as raw names (filename, URL string, text). Nil when the
+/// selection cannot be read. At most SelectedItems.maxItems + 1 items are read (one more says truncated).
+enum SelectionRead {
+  static func selection(of collection: AXUIElement, role: String) -> [SelectedItems.Raw]? {
+    let selected: [AXUIElement]?
+    switch role {
+    case "AXOutline", "AXTable": selected = elements(collection, "AXSelectedRows")
+    case "AXBrowser":
+      // The last column holds the selection that Open acts on.
+      let columns = elements(collection, "AXColumns") ?? Accessibility.children(collection)
+      selected = columns.last.flatMap { column in firstList(in: column, depth: 0).flatMap { elements($0, "AXSelectedChildren") } }
+    default: selected = elements(collection, "AXSelectedChildren")
+    }
+    guard let selected else { return nil }
+    return selected.prefix(SelectedItems.maxItems + 1).map(raw)
+  }
+
+  static func elements(_ element: AXUIElement, _ name: String) -> [AXUIElement]? {
+    guard let value = Accessibility.attribute(element, name), CFGetTypeID(value) == CFArrayGetTypeID() else { return nil }
+    return (value as! [AnyObject]).compactMap { CFGetTypeID($0) == AXUIElementGetTypeID() ? ($0 as! AXUIElement) : nil }
+  }
+
+  static func firstList(in element: AXUIElement, depth: Int) -> AXUIElement? {
+    if Accessibility.string(element, "AXRole") == "AXList" { return element }
+    guard depth < 3 else { return nil }
+    for child in Accessibility.children(element).prefix(20) { if let list = firstList(in: child, depth: depth + 1) { return list } }
+    return nil
+  }
+
+  /// An item's own AXFilename and AXURL, else the first descendant (a row's cell, depth 3, 30 nodes) carrying either,
+  /// and the first label (AXTitle or AXDescription) - never an AXValue, which in a mail or notes list is the owner's
+  /// content (cu-verifier on #70).
+  static func raw(_ item: AXUIElement) -> SelectedItems.Raw {
+    var result = SelectedItems.Raw(filename: Accessibility.string(item, "AXFilename"), url: Accessibility.urlString(item), text: nil)
+    var queue: [(AXUIElement, Int)] = [(item, 0)]
+    var visited = 0
+    while !queue.isEmpty, visited < 30 {
+      let (node, depth) = queue.removeFirst()
+      visited += 1
+      if node != item {
+        if result.filename == nil { result.filename = Accessibility.string(node, "AXFilename") }
+        if result.url == nil { result.url = Accessibility.urlString(node) }
+      }
+      if result.text == nil {
+        result.text = Accessibility.string(node, "AXTitle").flatMap { $0.isEmpty ? nil : $0 } ?? Accessibility.string(node, "AXDescription").flatMap { $0.isEmpty ? nil : $0 }
+      }
+      if result.filename != nil, result.url != nil, result.text != nil { break }
+      if depth < 3 { queue += Accessibility.children(node).prefix(10).map { ($0, depth + 1) } }
+    }
+    return result
   }
 }

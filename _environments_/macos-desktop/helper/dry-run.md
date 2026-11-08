@@ -1,9 +1,9 @@
 ---
 title: CUHelper dry run - driving the real helper before the grant
 created: 2026-11-02T10:45:00Z
-modified: 2026-11-06T04:20:00Z
+modified: 2026-11-08T13:18:00Z
 level: L1
-version: 0.3.1
+version: 0.3.3
 description: How cu-verifier and tests drive the real Swift helper's rules with no grant and nothing on screen - the command line, the world file, what the helper answers and the events file it writes.
 status: unverified
 grounded_in:
@@ -43,6 +43,8 @@ Every field is optional; the defaults give one 800 x 600 display at scale 1 and 
 | `localInputAfter` | integer | a person acts after that many posted steps of the next input (`local_input`, a `localInput` event) |
 | `secureInputAfter` | integer | secure input turns on after that many posted steps (`secure_input` before the next key step) |
 | `menuBar` | `[{bundleId, frame, title?}]` | each app's own menu bar items (its AXMenuBarItems) in global points |
+| `menuKeyBar`, `menuKeyBarUnreadable` | `[{title, items: [{title, char?, modifiers?, virtualKey?, glyph?, enabled?, items?}]}]`; bool | the frontmost app's menus as Accessibility reports them (`modifiers` in AX bits: Shift 1, Option 2, Control 4, no Command 8), matched by `menuKey` with a US layout (CU-235); unreadable makes the read fail |
+| `selectedItems` | `{role?, items: [{filename?, url?, label?, value?}], unreadable?}` | the frontmost app's focused collection (role default AXOutline) and its selection, answered by `selectedItems` as names and kinds only (CU-262; a `value` is never a name); absent, the focus is no collection |
 | `statusItems` | `[{frame, image?}]` | other apps' extras, the clock, Control Center - a colour block or a PNG |
 | `menuBarStrip` | `{x, y, width, height}` | the menu bar strip (default the main display's top 24 pt when either field above is set); a capture includes it only on the display that holds it (CU-51) |
 | `apps[].executable`, `apps[].sckBundleId`, `apps[].axOwner` | string; bundle ids | the same-named-app failures of 2026-11-05, declared: `sckBundleId` is the owner ScreenCaptureKit reports for the app's windows, `axOwner` the app Accessibility's hit test names over them (both default to the app itself). As live, a window is drawn only when `sckBundleId` equals the app's own bundle id and it is in scope, and the owner of a point is the topmost app (WindowServer) whenever `axOwner` names another one (design 0.4.9) |

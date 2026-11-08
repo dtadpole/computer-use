@@ -55,7 +55,9 @@ const T = {
   // CU-190, D-069: the helper reports whether it could read the default button (defaultButtonRead); false or absent asks,
   // true keeps the rule, and no target at all (the driver's good read of nothing focused) keeps it too.
   fieldDefaultUnread: { role: 'AXTextField', name: 'Message', defaultButton: null, defaultButtonRead: false },
-  fieldNoDefault: { role: 'AXTextField', name: 'Message', defaultButton: null, defaultButtonRead: true },
+  // CU-253 (cu-coordinator): a bare 'Message' field now asks on Return, so the CU-190 negative is judged on a neutral name.
+  fieldNoDefault: { role: 'AXTextField', name: 'Subject', defaultButton: null, defaultButtonRead: true },
+  chatNameNoDefault: { role: 'AXTextField', name: 'Message', defaultButton: null, defaultButtonRead: true },
   fieldDefaultAbsent: { role: 'AXTextField', name: 'Message' },
   nothingFocused: null,
   areaDefaultSend: { role: 'AXTextArea', name: 'Notes', defaultButton: SEND },
@@ -113,6 +115,10 @@ const T = {
   readonlyTextViewValue: { role: 'AXTextArea', name: 'ACCT-REF 7731', caption: 'IBAN', editable: false },
   readonlyTextViewNotes: { role: 'AXTextArea', name: 'Bring the blue folder', caption: 'Notes', editable: false },
   webNotesEntry: { role: 'textbox', name: 'Notes', editable: true },
+  // CU-241 (4): a webmail's compose body (contenteditable), a comment box (textarea), a one-line subject - as describeElement reports them.
+  webComposeBody: { tag: 'div', role: 'textbox', name: 'Message Body', editable: true },
+  webCommentsArea: { tag: 'textarea', role: 'textbox', name: 'Comments', editable: true },
+  webSubjectInput: { tag: 'input', role: 'textbox', name: 'Subject', editable: true },
   notesEntry: { role: 'AXTextField', name: 'Notes', editable: true },
   webOnclickDelete: { tag: 'div', role: 'generic', name: 'Delete' },
   webPointerIconDelete: { tag: 'div', role: 'generic', name: 'Delete' },
@@ -141,6 +147,8 @@ const A = {
   space: { type: 'keypress', keys: ['SPACE'] },
   enter: { type: 'keypress', keys: ['ENTER'] },
   cmdEnter: { type: 'keypress', keys: ['META', 'ENTER'] },
+  ctrlEnter: { type: 'keypress', keys: ['CTRL', 'ENTER'] },
+  shiftEnter: { type: 'keypress', keys: ['SHIFT', 'ENTER'] },
   cmdBackspace: { type: 'keypress', keys: ['META', 'BACKSPACE'] },
   cmdOptShiftBackspace: { type: 'keypress', keys: ['META', 'ALT', 'SHIFT', 'BACKSPACE'] },
   cmdD: { type: 'keypress', keys: ['META', 'D'] },
@@ -166,6 +174,11 @@ const A = {
   mouseForward: { type: 'click', x: 10, y: 10, button: 'forward' },
   middleClick: { type: 'click', x: 10, y: 10, button: 'middle' },
   scrollX: { type: 'scroll', x: 10, y: 10, scroll_x: -2000, scroll_y: 0 },
+  // CU-230: paste chords with Shift and/or Option (Paste and Match Style is Command-Option-Shift-V), and Control's.
+  cmdShiftV: { type: 'keypress', keys: ['META', 'SHIFT', 'V'] },
+  cmdOptShiftV: { type: 'keypress', keys: ['META', 'ALT', 'SHIFT', 'V'] },
+  cmdOptV: { type: 'keypress', keys: ['META', 'ALT', 'V'] },
+  ctrlShiftV: { type: 'keypress', keys: ['CTRL', 'SHIFT', 'V'] },
 }
 
 // [id, env, action, target, expected ('allow' | class asked), pin, live, status, extra context]; status is null (closed),
@@ -184,6 +197,7 @@ const ROWS = [
   ['enter-default-send', 'desktop', 'enter', 'fieldDefaultSend', 'submit', '#325 tests', "helper 0.2.42, CU Fixture consent-keys K4: asked submit (20261107T173858Z-6c94df)", null],
   ['newline-default-send', 'desktop', 'typeNewline', 'fieldDefaultSend', 'submit', '#325 tests', "helper 0.2.44, main 5548a7fd7: K1 asked submit, nothing sent (20261107T213026Z-8a665e); the 0.2.42 post-install send (173854Z-3f1e69) was the unread state, now its own cell", null],
   ['newline-default-unread', 'desktop', 'typeNewline', 'fieldDefaultUnread', 'submit', 'CU-190 (defaultButtonRead false asks submit)', "D-065 (asserted, not live): the guard asks; the unread state is not producible on demand - seen once, the 0.2.42 post-install transient (20261107T173854Z-3f1e69); unit rows and mutants in default-button-unread.test.mjs", null],
+  ['chat-name-message-no-default', 'desktop', 'typeNewline', 'chatNameNoDefault', 'submit', 'CU-253 (a bare Message field asks; named over-ask in forms)', 'no live row yet', 'open CU-253'],
   ['newline-no-default', 'desktop', 'typeNewline', 'fieldNoDefault', 'allow', 'CU-190 negative: read, no default button', "helper 0.2.44: a newline in a window with no default button (read true, none) allowed (20261107T213028Z-2f5e64)", null],
   ['newline-default-absent', 'desktop', 'typeNewline', 'fieldDefaultAbsent', 'submit', 'D-069: no read state asks on the desktop (fail closed)', 'D-069: decided, not run - a helper before 0.2.44 is refused at the handshake, so this state reaches the policy only by a bug, and then it asks (D-065)', null],
   ['newline-nothing-focused', 'desktop', 'typeNewline', 'nothingFocused', 'allow', 'D-069 negative: no target is the driver\'s good read of nothing focused and no default button', 'D-069: decided - environment.mjs returns null only for a successful read of nothing there, so it keeps the rule (D-065)', null],
@@ -243,6 +257,14 @@ const ROWS = [
   ['web-click-card-over-ask', 'browser', 'click', 'webCardDeleteArticle', 'delete', 'clickLabel (CU-176): accepted over-ask - a clickable card is judged by its words', '20261107T152804Z-7aa92f (main c184e26f8: asks delete, the accepted over-ask; before allowed 150000Z-9b9fd6)', null],
   ['web-click-body-pointer-text', 'browser', 'click', 'webBodyPointerText', 'allow', 'activatableAncestor + clickLabel (CU-176): a pointer cursor on body says nothing', '20261107T152800Z-84b1e9 (main c184e26f8: allowed; branch v2 2cf10d966 asked purchase 145948Z-dea6bd)', null],
   ['web-enter-implicit-submit', 'browser', 'enter', 'webQuantityInForm', 'purchase', 'chrome-browser implicit submit seam (#337)', 'main 1d7059a61: Enter in Quantity asks purchase, declined, no submit (20261107T172341Z-e8b869)', null],
+  // CU-241 (4), cu-developer-one's rule (11:24Z): Command- or Control-Enter in a multi-line editable - a textarea or a
+  // contenteditable - is the web's send, so it asks submit unless a read default button says otherwise (named over-ask:
+  // code editors). A plain or Shift-Enter there types a new line, and a one-line input keeps today's judging.
+  ['cmd-enter-web-compose-body', 'browser', 'cmdEnter', 'webComposeBody', 'submit', 'CU-241 (4)', 'no live row yet', 'todo CU-241'],
+  ['ctrl-enter-web-textarea', 'browser', 'ctrlEnter', 'webCommentsArea', 'submit', 'CU-241 (4)', 'no live row yet', 'todo CU-241'],
+  ['enter-web-textarea-newline', 'browser', 'enter', 'webCommentsArea', 'allow', 'CU-241 (4) negative (a new line)', 'no live row yet', 'open CU-241'],
+  ['shift-enter-web-compose-newline', 'browser', 'shiftEnter', 'webComposeBody', 'allow', 'CU-241 (4) negative (a new line)', 'no live row yet', 'open CU-241'],
+  ['cmd-enter-web-single-line', 'browser', 'cmdEnter', 'webSubjectInput', 'allow', 'CU-241 (4) negative (one-line input: implicit submission judges it)', 'no live row yet', 'open CU-241'],
   ['web-newline-implicit-submit', 'browser', 'typeNewline', 'webQuantityInForm', 'purchase', 'chrome-browser implicit submit seam (#337)', 'main: typed newline asks purchase, no submit (20261107T172346Z-2698b2)', null],
   ['web-type-card-third-party', 'browser', 'typeCard', 'webComments', 'sensitive_data', 'policy.test.mjs', "main 1de261e91, real Chrome: a card number typed into share-document's Email asks sensitive_data (20261107T192422Z-75b2d6)", null],
   ['type-into-iban-field', 'desktop', 'typePlain', 'ibanField', 'sensitive_data', 'bank-tax-sensitive.test.mjs (CU-163)', 'name rule live on the Tax ID field (F1 20261107T134312Z-ccea6d); the IBAN field itself not reached (not wholly shown); the IBAN value live in Vendor (V1 20261107T134206Z-da1f65)', null],
@@ -292,6 +314,18 @@ const ROWS = [
   ['menu-paste-focus-on-menu', 'desktop', 'menuClick', 'pasteMenuItem', 'sensitive_data', 'menu-paste-destination.test.mjs (#457)', 'D-065 (asserted, not live): the guard asks; AppKit keeps the focus on the field with the Edit menu open (193001Z-f2fde4), so no fixture produces this state; unit rows and mutants in menu-paste-destination.test.mjs', null, { paste: { fromOwner: false, destination: { role: 'AXMenuItem', name: 'Paste' } } }],
   ['menu-paste-focus-unread', 'desktop', 'menuClick', 'pasteMenuItem', 'sensitive_data', 'menu-paste-destination.test.mjs (#457)', 'D-065 (asserted, not live): the guard asks; AppKit keeps the focus on the field with the Edit menu open (193001Z-f2fde4), so no fixture produces this state; unit rows and mutants in menu-paste-destination.test.mjs', null, { paste: { fromOwner: false, destination: null } }],
   ['menu-paste-no-focus-placeholder', 'desktop', 'menuClick', 'pasteMenuItem', 'sensitive_data', 'menu-paste-destination.test.mjs (#457)', 'D-065 (asserted, not live): the guard asks; AppKit keeps the focus on the field with the Edit menu open (193001Z-f2fde4), so no fixture produces this state; unit rows and mutants in menu-paste-destination.test.mjs', null, { paste: { fromOwner: false, destination: { role: null, name: null } } }],
+  // CU-230 (paste-chords.md): a paste chord is Command or Control with V whatever else is held, so each meets every paste
+  // check - the loop builds the paste context the rows hand classify (pinned through runTask in paste-chords.test.mjs).
+  // Desktop Control-V is no macOS paste: judging it as one is a named over-ask. Live rows wait for CU Fixture's Edit menu
+  // to bind Paste and Match Style.
+  ['paste-shift-owner-board', 'desktop', 'cmdShiftV', 'searchField', 'sensitive_data', 'paste-chords.test.mjs (CU-230)', "cu-verifier, main d090a0c, helper 0.2.51, CU Fixture S5 stash with the paste sentinel: Command-Shift-V with no own copy - declined sensitive_data, nothing pasted (20261108T122914Z-59bf61)", null, { paste: { fromOwner: true } }],
+  ['paste-match-style-owner-board', 'desktop', 'cmdOptShiftV', 'searchField', 'sensitive_data', 'paste-chords.test.mjs (CU-230)', "cu-verifier, main d090a0c, helper 0.2.51, CU Fixture S5 stash with the paste sentinel: Command-Option-Shift-V with no own copy - declined sensitive_data, the sentinel not pasted (20261108T122853Z-70a2ad)", null, { paste: { fromOwner: true } }],
+  ['paste-option-owner-board', 'desktop', 'cmdOptV', 'searchField', 'sensitive_data', 'paste-chords.test.mjs (CU-230)', "cu-verifier, main d090a0c, helper 0.2.51, CU Fixture S5 stash with the paste sentinel: Command-Option-V with no own copy - declined sensitive_data (20261108T122918Z-3ade8e)", null, { paste: { fromOwner: true } }],
+  ['paste-control-shift-owner-board', 'desktop', 'ctrlShiftV', 'searchField', 'sensitive_data', 'paste-chords.test.mjs (CU-230; a named over-ask)', "cu-verifier, main d090a0c, helper 0.2.51, CU Fixture S5 stash with the paste sentinel: Control-Shift-V with no own copy - declined sensitive_data, a named over-ask (20261108T122921Z-2dcbbf)", null, { paste: { fromOwner: true } }],
+  ['paste-match-style-own-copy-iban', 'desktop', 'cmdOptShiftV', 'searchField', 'sensitive_data', 'paste-chords.test.mjs (CU-230, CU-183)', "cu-verifier, main d090a0c, helper 0.2.51, CU Fixture S5 stash with the paste sentinel: an own copy from IBAN (count 135 = 134 + 1), Paste and Match Style - declined by the source's class (20261108T122859Z-5d27a8)", null, { paste: { fromOwner: false, source: { role: 'AXTextField', name: 'IBAN' } } }],
+  ['paste-match-style-own-copy-notes', 'desktop', 'cmdOptShiftV', 'searchField', 'allow', 'paste-chords.test.mjs (CU-230 negative)', "cu-verifier, main d090a0c, helper 0.2.51, CU Fixture S5 stash with the paste sentinel: an own copy from Notes (count 133 = 132 + 1) - allowed, the 11 characters arrived through Paste and Match Style (20261108T122855Z-f3e6ad)", null, { paste: { fromOwner: false, source: { role: 'AXTextField', name: 'Notes' } } }],
+  ['web-paste-shift-card', 'browser', 'cmdShiftV', 'webComments', 'sensitive_data', 'paste-chords.test.mjs (CU-230)', "cu-verifier, main 46e6d65 with #17, real Chrome, fixture site CU-198 drag page: the card paragraph copied by the run, Command-Shift-V into the unnamed entry - declined sensitive_data on the run clipboard, nothing typed (20261108T114533Z-501264); the words paragraph is allowed and typed (114544Z-92459f)", null, { paste: { text: CARD } }],
+  ['web-paste-match-style-card', 'browser', 'cmdOptShiftV', 'webComments', 'sensitive_data', 'paste-chords.test.mjs, keys.test.mjs (CU-230)', "cu-verifier, main 46e6d65 with #17, real Chrome, fixture site CU-198 drag page: the card paragraph, Command-Option-Shift-V - the driver maps it to the run-clipboard paste, no raw chord reaches Chrome; declined sensitive_data, nothing typed (20261108T114539Z-09e886)", null, { paste: { text: CARD } }],
   // CU-192 (#471): a desktop toolbar or popover button named exactly Paste is a paste, judged as a menu paste (CU-186).
   ['toolbar-paste-owner-board', 'desktop', 'menuClick', 'toolbarPaste', 'sensitive_data', 'toolbar-paste.test.mjs (#459, #471)', "CU Fixture consent-cells copyRow (#478), helper 0.2.44: the Paste button with no own copy asked (20261107T213539Z-fda93b); the icon-only Paste asked too (213541Z-a3726e)", null, { paste: { fromOwner: true, destination: { role: 'AXTextField', name: 'Message' } } }],
   ['toolbar-paste-into-iban', 'desktop', 'menuClick', 'toolbarPaste', 'sensitive_data', 'menu-paste-destination.test.mjs (#471)', "CU Fixture consent-cells copyRow (#478), helper 0.2.44: own copy, then the Paste button into IBAN asked (20261107T213548Z-9e573e)", null, { paste: { fromOwner: false, destination: { role: 'AXTextField', name: 'IBAN' } } }],
@@ -393,14 +427,16 @@ test('newline cells [desktop, browser]: a typed newline presses the same Return/
   }
 })
 
-test('paste cells [desktop, browser]: Command-V is a paste on both drivers (pin: both planKeypress, #349)', () => {
+test('paste cells [desktop, browser]: Command-V, and its Shift and Option chords, is a paste on both drivers (pin: both planKeypress, #349, CU-230)', () => {
   const cells = rowsWhere((r) => r.extra.paste && A[r.action].type === 'keypress')
   assert.ok(cells.some((r) => r.env === 'desktop') && cells.some((r) => r.env === 'browser'), 'rows on both drivers')
   for (const r of cells) {
     if (r.env === 'browser') assert.deepEqual(planBrowserKeypress(A[r.action]), [{ kind: 'clipboard', op: 'paste' }], r.id)
     else {
+      // CU-230: a modified chord reaches the app whole - its modifiers first (Command 55 or Control 59), V (9) last.
       const down = planDesktopKeypress(A[r.action]).input.filter((e) => e.kind === 'keyDown').map((e) => e.keyCode)
-      assert.deepEqual(down, [55, 9], `${r.id}: Command then V reach the app`)
+      assert.equal(down.at(-1), 9, `${r.id}: V reaches the app last`)
+      assert.ok(down.includes(55) || down.includes(59), `${r.id}: with Command or Control held`)
     }
   }
 })
