@@ -1,9 +1,9 @@
 ---
 title: A copy carries its source field's class to the paste, and a text drag its press field's
 created: 2026-11-07T17:10:00Z
-modified: 2026-11-07T20:53:09Z
+modified: 2026-11-08T10:04:25Z
 level: L1
-version: 0.1.3
+version: 0.1.4
 description: How text the run copies or drags out of a sensitive field is judged where it lands - the source field's name class travels with the run's own copy to its paste, and with a text drag to its drop - without reading anything the run does not read today.
 status: unverified
 grounded_in:
@@ -28,7 +28,7 @@ box - what an injected instruction asks for ("copy the Passport field and paste 
    run's copies at the paste (the count rose by exactly their number), so the last one wrote what is pasted. An empty
    copy writes nothing and leaves the class; on the desktop it breaks the proof, so the paste asks as the owner's.
 3. **At a paste of that copy** - Command-V, Edit > Paste, a context-menu Paste, Paste and Match Style - the source's class joins the verdict, whatever the destination is named
-   (`context.paste.source`). With no desktop count, the strongest source since the last proven count is passed.
+   (`context.paste.source`). With no desktop count the paste is the owner's and asks (CU-220).
 4. **A drag pressed on a text entry** carries that entry's class to any drop off it - an entry, a contenteditable, a drop zone, a canvas; only a drop back inside the same entry (reordering) is exempt.
    Both points are in the drag's context (CU-140).
 

@@ -104,13 +104,16 @@ final class PasteMarkingEditor: NSTextView {
 
   override func paste(_ sender: Any?) { paste(from: .general) }
 
-  /// The same path as `paste:`, from a given board (the self-test's private one).
-  func paste(from pasteboard: NSPasteboard) {
+  /// CU-233: Paste and Match Style is a paste too - the board's plain text only, through the same marking (from #25).
+  override func pasteAsPlainText(_ sender: Any?) { paste(from: .general, plainText: true) }
+
+  /// The same path as `paste:`, from a given board (the self-test's private one); `plainText` reads only its string.
+  func paste(from pasteboard: NSPasteboard, plainText: Bool = false) {
     // The length as a number now: `string` bridges to the text storage's live string, which the paste mutates.
     let beforeLength = (string as NSString).length
     let range = selectedRange()
     edits.append("paste")
-    _ = readSelection(from: pasteboard)
+    _ = plainText ? readSelection(from: pasteboard, type: .string) : readSelection(from: pasteboard)
     let after = NSString(string: string)
     let inserted = after.length - (beforeLength - range.length)
     lastPasted = inserted >= 0 && range.location + inserted <= after.length ? after.substring(with: NSRange(location: range.location, length: inserted)) : nil
@@ -209,8 +212,8 @@ enum Clipboard {
     return true
   }
 
-  /// Oracle and self-test steps: `pasteInto` pastes text through the field editor's paste path from a private board,
-  /// `typeInto` types it; neither touches the owner's pasteboard.
+  /// Oracle and self-test steps: `pasteInto` pastes text through the field editor's paste path from a private board
+  /// (with `plainText`, Paste and Match Style's path), `typeInto` types it; neither touches the owner's pasteboard.
   static func act(_ step: [String: Any]) -> Bool {
     let fixture = Fixture.shared
     let name = (step["pasteInto"] ?? step["typeInto"]) as? String
@@ -228,7 +231,7 @@ enum Clipboard {
       let board = NSPasteboard(name: NSPasteboard.Name("cu-fixture-selftest-\(ProcessInfo.processInfo.processIdentifier)"))
       board.clearContents()
       board.setString(text, forType: .string)
-      editor.paste(from: board)
+      editor.paste(from: board, plainText: step["plainText"] as? Bool == true)
       board.releaseGlobally()
     } else {
       for character in text { editor.insertText(String(character), replacementRange: editor.selectedRange()) }
@@ -432,5 +435,86 @@ enum ClipboardLiveCheck {
       // Something else wrote: leave the board exactly as it is now.
       return ["stopped": "owner wrote during the check", "changeCountDelta": board.changeCount - startCount, "ownWrites": ownWrites]
     }
+  }
+}
+
+/// CU-230's live rows (cu-verifier): a paste with no own copy of the run must find fixture text on the board, so a
+/// failed consent check pastes this sentinel, never the owner's content. It is written only to a board this app may
+/// read without asking (Always Allow) that is empty - judged by type names and item count, no data - and cleared
+/// afterwards only when nothing else wrote since, so an owner's copy is never cleared. Booleans and counts only.
+final class ClipboardSentinel {
+  static let shared = ClipboardSentinel(pasteboard: .general)
+  static let text = "CU sentinel paste"
+
+  let pasteboard: NSPasteboard
+  let access: (NSPasteboard) -> (allowed: Bool, behavior: String)
+  /// The change count the sentinel's write left, while it is on the board.
+  private var written: Int?
+
+  init(pasteboard: NSPasteboard, access: @escaping (NSPasteboard) -> (allowed: Bool, behavior: String) = ClipboardStash.systemAccess) {
+    self.pasteboard = pasteboard
+    self.access = access
+  }
+
+  func put() -> [String: Any] {
+    let permission = access(pasteboard)
+    guard permission.allowed else { return ["skipped": "pasteboard access needs the owner", "behavior": permission.behavior] }
+    let before = pasteboard.changeCount
+    guard (pasteboard.types ?? []).isEmpty, (pasteboard.pasteboardItems ?? []).isEmpty else { return ["skipped": "owner board not empty"] }
+    // Nothing wrote between the look and the write (the count still reads as it did before the look).
+    guard pasteboard.changeCount == before else { return ["skipped": "the board changed while it was checked"] }
+    pasteboard.clearContents()
+    guard pasteboard.setString(ClipboardSentinel.text, forType: .string) else { return ["skipped": "the sentinel could not be written"] }
+    written = pasteboard.changeCount
+    return ["written": true, "changeCountDelta": pasteboard.changeCount - before]
+  }
+
+  func clear() -> [String: Any] {
+    guard let count = written else { return ["cleared": false, "reason": "no sentinel on the board"] }
+    written = nil
+    guard pasteboard.changeCount == count else { return ["cleared": false, "reason": "the board changed since the sentinel"] }
+    pasteboard.clearContents()
+    return ["cleared": true]
+  }
+
+  /// The rules on a private named board; the general board is untouched.
+  static func selfTest() -> [String: Any] {
+    let generalBefore = NSPasteboard.general.changeCount
+    let board = NSPasteboard(name: NSPasteboard.Name("cu-fixture-sentinel-selftest-\(ProcessInfo.processInfo.processIdentifier)"))
+    defer { board.releaseGlobally() }
+    let allow: (NSPasteboard) -> (allowed: Bool, behavior: String) = { _ in (true, "alwaysAllow") }
+    // An empty board this app may read: written, then cleared.
+    board.clearContents()
+    let sentinel = ClipboardSentinel(pasteboard: board, access: allow)
+    let put = sentinel.put()
+    let onBoard = board.string(forType: .string) == ClipboardSentinel.text && (board.pasteboardItems ?? []).count == 1
+    let clear = sentinel.clear()
+    let endsEmpty = (board.pasteboardItems ?? []).isEmpty
+    // A board holding anything is the owner's: not written, unchanged.
+    board.clearContents()
+    board.setString("owner text", forType: .string)
+    let full = ClipboardSentinel(pasteboard: board, access: allow).put()
+    let fullKept = board.string(forType: .string) == "owner text"
+    // Access not confirmed: not written, even to an empty board.
+    board.clearContents()
+    let asked = ClipboardSentinel(pasteboard: board, access: { _ in (false, "ask") }).put()
+    let askedEmpty = (board.pasteboardItems ?? []).isEmpty
+    // Something else wrote after the sentinel: the clear leaves it.
+    let raced = ClipboardSentinel(pasteboard: board, access: allow)
+    _ = raced.put()
+    board.clearContents()
+    board.setString("owner copy", forType: .string)
+    let racedClear = raced.clear()
+    let racedKept = board.string(forType: .string) == "owner copy"
+    let noneClear = ClipboardSentinel(pasteboard: board, access: allow).clear()
+    board.clearContents()
+    return [
+      "written": put["written"] as? Bool ?? false, "onBoard": onBoard, "cleared": clear["cleared"] as? Bool ?? false, "endsEmpty": endsEmpty,
+      "full": full["skipped"] as? String ?? "", "fullKept": fullKept,
+      "asked": asked["skipped"] as? String ?? "", "askedEmpty": askedEmpty,
+      "raced": racedClear["reason"] as? String ?? "", "racedKept": racedKept,
+      "noSentinel": noneClear["reason"] as? String ?? "",
+      "generalUntouched": NSPasteboard.general.changeCount == generalBefore,
+    ]
   }
 }
