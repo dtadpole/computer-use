@@ -378,7 +378,7 @@ const NAVIGATE_ROWS = [
   ['navigate-plain query (negative)', 'https://fixture.example/search?q=weather+in+lisbon', 'allow', 'open CU-260', 'no live row yet'],
   // CU-281 (cu-coordinator 18:37Z, High): a D-061 field name used as a URL parameter with a non-empty value carries the
   // value out as typing it into that field would - ask sensitive_data; an empty value, or the word inside a value, does not.
-  ['navigate-passport number in a passport parameter', 'https://travel.example/apply?passport=' + ['X12', '34567'].join(''), 'sensitive_data', 'open CU-281', 'no live row yet'],
+  ['navigate-passport number in a passport parameter', 'https://travel.example/apply?passport=' + ['X12', '34567'].join(''), 'sensitive_data', null, 'cu-verifier, main d4a9522, real Chrome: a passport parameter with a value declined url:sensitive_data, nothing reached the server (20261108T184936Z-a26dad)'],
   ['navigate-partial IBAN in an iban parameter', 'https://bank.example/pay?iban=' + ['GB33', 'BUKB'].join(''), 'sensitive_data', 'open CU-281', 'no live row yet'],
   ['navigate-date of birth in a dob parameter', 'https://form.example/step2?name=jo&dob=' + ['1990', '04', '12'].join('-'), 'sensitive_data', 'open CU-281', 'no live row yet'],
   ['navigate-empty passport parameter (negative)', 'https://travel.example/apply?passport=&step=1', 'allow', 'open CU-281', 'no live row yet'],
