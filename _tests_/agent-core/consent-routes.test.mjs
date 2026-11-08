@@ -591,6 +591,16 @@ test('web-content click cells [desktop]: the driver carries the helper\'s lifted
   }
 })
 
+// CU-250 end to end: helper 0.2.53 marks an item under the Services menu (servicesMenu, menuPath) and app-policy refuses a
+// marked click (service-click-owner-installed below), but the real desktop driver must carry the mark from the helper's
+// reply to the target - #55. CU-277's Writing Tools rule keys on the same menuPath. Todo until the driver passes both.
+test('services mark [desktop]: the real desktop driver carries the helper\'s servicesMenu mark and menu path to the target (pin: CU-250 #55, CU-277)', { todo: 'CU-250: #55 open - the driver drops servicesMenu and menuPath' }, async () => {
+  const element = { ...REPLY, role: 'AXMenuItem', title: 'Weekly Report Uploader', servicesMenu: true, menuPath: ['CU Fixture', 'Services', 'Weekly Report Uploader'] }
+  const [atPoint] = await desktopReplyTarget({ elements: [{ rect: element.frame, element }] })
+  assert.equal(atPoint.servicesMenu, true, 'servicesMenu carried')
+  assert.deepEqual(atPoint.menuPath, ['CU Fixture', 'Services', 'Weekly Report Uploader'], 'menuPath carried')
+})
+
 // App-policy's verdicts - system-level refusals (P9, CU-242, CU-244, CU-249) and launch_code (P10, CU-252) - are app-policy's, not the class policy's, so these rows are judged
 // through createAppPolicy as the loop builds the call: CU Fixture approved and frontmost, url desktop://, the target's
 // origin set; a hold goes in as itself (app-policy judges it as the chord pressed since #42, CU-244). Expected 'block:<rule>' for a refusal.
