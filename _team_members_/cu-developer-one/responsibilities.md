@@ -1,7 +1,7 @@
 ---
 title: '[cu] Developer One - Responsibilities'
 created: 2026-11-01T09:06:25Z
-modified: 2026-11-08T10:05:00Z
+modified: 2026-11-08T09:58:00Z
 level: L2
 version: 3.3.0
 description: 'The responsibilities of [cu] Developer One - the architecture design and the agent core (action schema, loop, model adapters, policy hooks, trajectory).'

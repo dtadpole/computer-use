@@ -1,7 +1,7 @@
 ---
 title: '[cu] Developer One - handover'
-created: 2026-11-08T10:05:00Z
-modified: 2026-11-08T10:05:00Z
+created: 2026-11-08T09:58:00Z
+modified: 2026-11-08T09:58:00Z
 level: L1
 version: 1.0.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'

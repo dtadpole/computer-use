@@ -1,7 +1,7 @@
 ---
 title: '[cu] Developer One (agent core) - Team Member'
 created: 2026-11-01T09:06:25Z
-modified: 2026-11-08T10:05:00Z
+modified: 2026-11-08T09:58:00Z
 version: 1.2.0
 description: 'The lasting record of [cu] Developer One (agent core) - its seat, current direction and links to its work.'
 grounded_in:

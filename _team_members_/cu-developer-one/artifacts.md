@@ -1,7 +1,7 @@
 ---
 title: '[cu] Developer One - Artifacts'
 created: 2026-11-07T02:20:40Z
-modified: 2026-11-08T10:05:00Z
+modified: 2026-11-08T09:58:00Z
 level: L2
 version: 2.0.0
 description: 'What [cu] Developer One shipped for the M7-M9 and continuity goal - each issue, its design note and its PRs, and where it stands.'
@@ -14,7 +14,7 @@ grounded_in:
 
 One row per issue or group: the design note first where the change touched the contract or safety, then the code.
 PR numbers from #248 to #556 are in the private history repository; #5 and #6 are in this one. States are Linear's,
-read 8 November 10:00Z; "Verify" means the code is on main and a live row remains.
+read 8 November 09:55Z; "Verify" means the code is on main and a live row remains.
 
 | Issue | What changed | PRs | State |
 |---|---|---|---|
