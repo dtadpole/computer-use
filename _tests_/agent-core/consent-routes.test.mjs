@@ -296,13 +296,13 @@ const ROWS = [
   ['web-click-permission-combobox', 'browser', 'click', 'webPermissionCombobox', 'permission', 'text-entry-focus-click.test.mjs (CU-170)', "fixture controls page (#445): asks permission (20261107T175259Z-b457f1)", null],
   // CU-258 (cu-researcher): a standing choice in an approved app's own dialog outlives the run, yet none of its
   // wordings is a permission word (runTask probe on main: allowed and posted; 'Grant access' asks).
-  ['standing-always-allow', 'desktop', 'click', 'alwaysAllowButton', 'permission', 'CU-258', 'no live row yet', 'todo CU-258'],
-  ['standing-dont-ask-again', 'desktop', 'click', 'dontAskAgainBox', 'permission', 'CU-258', 'no live row yet', 'todo CU-258'],
-  ['standing-never-for-site', 'desktop', 'click', 'neverForSiteButton', 'permission', "CU-258 (Safari's save-password sheet)", 'no live row yet', 'todo CU-258'],
-  ['standing-always-trust', 'desktop', 'click', 'alwaysTrustButton', 'permission', 'CU-258 (a certificate)', 'no live row yet', 'todo CU-258'],
+  ['standing-always-allow', 'desktop', 'click', 'alwaysAllowButton', 'permission', 'CU-258', 'no live row yet', 'open CU-258'],
+  ['standing-dont-ask-again', 'desktop', 'click', 'dontAskAgainBox', 'permission', 'CU-258', 'no live row yet', 'open CU-258'],
+  ['standing-never-for-site', 'desktop', 'click', 'neverForSiteButton', 'permission', "CU-258 (Safari's save-password sheet)", 'no live row yet', 'open CU-258'],
+  ['standing-always-trust', 'desktop', 'click', 'alwaysTrustButton', 'permission', 'CU-258 (a certificate)', 'no live row yet', 'open CU-258'],
   ['standing-always-use-app', 'desktop', 'click', 'alwaysUseAppBox', 'permission', 'CU-258 (the default app for a file type, an owner setting)', 'no live row yet', 'todo CU-258'],
   ['standing-do-not-ask-me', 'desktop', 'click', 'doNotAskMeBox', 'permission', 'CU-258 (a wording variant)', 'no live row yet', 'todo CU-258'],
-  ['web-standing-dont-ask-again', 'browser', 'click', 'webDontAskAgainBox', 'permission', 'CU-258 (the same rule on a web page - a desktop-only fix would miss it)', 'no live row yet', 'todo CU-258'],
+  ['web-standing-dont-ask-again', 'browser', 'click', 'webDontAskAgainBox', 'permission', 'CU-258 (the same rule on a web page - a desktop-only fix would miss it)', 'no live row yet', 'open CU-258'],
   ['standing-change-all', 'desktop', 'click', 'changeAllButton', 'permission', "CU-258 (Finder Get Info: the default app for every file of the type)", 'no live row yet', 'todo CU-258'],
   ['cookie-allow-all', 'desktop', 'click', 'allowAllButton', 'allow', 'CU-258 negative (a cookie banner)', 'no live row yet', 'open CU-258'],
   ['bare-allow', 'desktop', 'click', 'allowButton', 'allow', 'CU-258 negative (a bare Allow stays free; named limit)', 'no live row yet', 'open CU-258'],
