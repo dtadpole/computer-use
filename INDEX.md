@@ -1,8 +1,8 @@
 ---
 title: computer-use
 created: 2026-11-01T09:06:25Z
-modified: 2026-11-08T09:50:00Z
-version: 3.0.0
+modified: 2026-11-08T10:20:00Z
+version: 3.1.0
 description: 'The computer-use repository - a computer-use agent for native macOS, its code, tests, verifiers and the [cu] team''s records, in one public knowledge bank.'
 grounded_in:
   - source: owner request in the dsh session 2026-11-01 (learn how computer use on ChatGPT works and implement our own)
@@ -35,7 +35,7 @@ done means is [`ULTIMATE_GOAL.md`](ULTIMATE_GOAL.md). Start with [`AGENTS.md`](A
 Issues and milestones live in Linear (team CU); a pull request names its issue with `Fixes CU-n` or
 `Part of CU-n`. The live roster (`TEAM.yaml`, with session ids) and the session-bearing operating logs stay in
 the owner's private records. The history before 2026-11-08 is kept privately; this repository starts from a
-scrubbed tree.
+scrubbed tree; its pull request numbers restart at #1 (see [`AGENTS.md`](AGENTS.md)).
 
 ## Read next
 

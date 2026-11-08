@@ -1,8 +1,8 @@
 ---
 title: desktop-extension
 created: 2026-11-02T08:29:12Z
-modified: 2026-11-07T03:17:52Z
-version: 0.4.10
+modified: 2026-11-08T11:55:00Z
+version: 0.4.11
 description: The M6 design for computer use on native macOS, app-scoped (D-024) - a helper app with its own grants, app-scoped capture and tagged input, per-app approval and hard exclusions, the local-input pause, and the agent-core changes they need.
 grounded_in:
   - source: ULTIMATE_GOAL.md@2.0.0
@@ -38,6 +38,7 @@ cu-coordinator approves.
 | [agent-core-live-runs](agent-core-live-runs.md) | the changes landed from the CU-8 evaluation and live checks |
 | [traceability](traceability.md) | every ULTIMATE_GOAL 2.0 row and changed requirement, with its check |
 | [file-panels](file-panels.md) | an approved app's open and save panel: AppKit marker or attribution, `file_choice` always asked, folder a named limit |
+| [menu-key-read](menu-key-read.md) | CU-235: the helper's menuKey read - what AppKit serves Accessibility for menu items, the match, fail-closed cases, what it cannot see |
 | [panel-folder-source](panel-folder-source.md) | CU-48: a panel's folder beyond Accessibility - the agent's own Go to Folder, dropped on navigation, checked against the shown name |
 | [driver-action-routes](driver-action-routes.md) | D-059's rows (CU-145): each macOS driver action, its input and judged target; two suspect cells (scroll unjudged; control characters in type) |
 | [hit-window](hit-window.md) | Q-D15: pointer input judged by the window WindowServer's mouse hit test names |

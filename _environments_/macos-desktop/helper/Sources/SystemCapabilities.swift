@@ -163,7 +163,7 @@ final class SystemCapabilities: Capabilities {
     let (outcome, menuBar) = Accessibility.elementRead(AXUIElementCreateApplication(front.pid), "AXMenuBar")
     guard outcome == .value, let menuBar else { return .unreadable("the app's menu bar could not be read") }
     guard let walk = MenuWalk.entries(of: menuBar) else { return .unreadable("the app's menu bar could not be read in full") }
-    let chars = KeyLayout.characters(keyCode: keyCode)
+    let chars = KeyLayout.characters(keyCode: keyCode, command: flags & 0x0010_0000 != 0)
     let chord = MenuKey.Chord(keyCode: keyCode, flags: flags, unshifted: chars.unshifted, shifted: chars.shifted)
     return MenuKey.read(bundleId: bundleId, entries: walk.entries, emptyMenus: walk.emptyMenus, chord: chord)
   }
@@ -743,8 +743,9 @@ enum MenuWalk {
                                        cmdGlyph: (values["glyph"] as? NSNumber)?.intValue, appleMenu: apple))
         }
       }
-      // A top-level menu with no items yet (filled lazily) cannot be judged by a miss.
-      if role == "AXMenu", depth == 2, children.isEmpty, let top = path.last { emptyMenus.append(top) }
+      // A top-level menu with no items yet (filled lazily), or a menu-bar item with no menu until it opens (built
+      // lazily), cannot be judged by a miss - except the Apple menu, the menu bar's first item (by position).
+      if MenuKey.isEmptyMenu(role: role, depth: depth, childCount: children.count, underApple: apple) { emptyMenus.append(here.last ?? title ?? "") }
       // The menu bar's first item is the Apple menu (CU-232 contract point 4).
       for (index, child) in children.enumerated() where !walk(child, path: here, depth: depth + 1, apple: apple || (role == "AXMenuBar" && index == 0)) { return false }
       return true
@@ -758,7 +759,9 @@ enum MenuWalk {
 /// charactersIgnoringModifiers matches menu key equivalents. Nil when the layout cannot be read (an input method
 /// with no Unicode layout): then only virtual-key items can match, and a character item's miss is reported as none.
 enum KeyLayout {
-  static func characters(keyCode: Int) -> (unshifted: String?, shifted: String?) {
+  /// `command`: translate with the Command bit, as layouts like Dvorak - QWERTY Command give QWERTY characters while
+  /// Command is held (cu-researcher on #36); other layouts give the same characters either way.
+  static func characters(keyCode: Int, command: Bool = false) -> (unshifted: String?, shifted: String?) {
     guard let source = TISCopyCurrentKeyboardLayoutInputSource()?.takeRetainedValue(),
           let pointer = TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData) else { return (nil, nil) }
     let data = Unmanaged<CFData>.fromOpaque(pointer).takeUnretainedValue() as Data
@@ -773,7 +776,8 @@ enum KeyLayout {
         guard status == noErr, length > 0 else { return nil }
         return String(utf16CodeUnits: chars, count: length)
       }
-      return (translate(0), translate(UInt32(shiftKey >> 8) & 0xFF))
+      let commandBit = command ? UInt32(cmdKey >> 8) & 0xFF : 0
+      return (translate(commandBit), translate(commandBit | (UInt32(shiftKey >> 8) & 0xFF)))
     }
   }
 }
