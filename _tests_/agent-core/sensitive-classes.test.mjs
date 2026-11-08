@@ -260,8 +260,8 @@ const SEQUENCE_ROWS = [
   ['sequence-card as four type actions, focus unreadable', { noFocus: true, actions: cardDigits.match(/\d{4}/g).map((g) => ({ type: 'type', text: g })) }, 'sensitive_data', 'open CU-267', 'no live row yet'],
   // CU-273 (cu-researcher on #92): the buffer is keyed by the fingerprint, which holds the frame's size, so a text area that
   // grows as it fills becomes a new field between pieces; the driver's fieldKey (CU-194) leaves the size out.
-  ['sequence-card halves into a field that grows between them', { grows: true, actions: [{ type: 'type', text: cardDigits.slice(0, 8) }, { type: 'type', text: cardDigits.slice(8) }] }, 'sensitive_data', 'todo CU-273', 'no live row yet'],
-  ['sequence-card halves into a field that grows upward between them', { grows: 'up', actions: [{ type: 'type', text: cardDigits.slice(0, 8) }, { type: 'type', text: cardDigits.slice(8) }] }, 'sensitive_data', 'todo CU-273', 'no live row yet'],
+  ['sequence-card halves into a field that grows between them', { grows: true, actions: [{ type: 'type', text: cardDigits.slice(0, 8) }, { type: 'type', text: cardDigits.slice(8) }] }, 'sensitive_data', 'open CU-273', 'no live row yet'],
+  ['sequence-card halves into a field that grows upward between them', { grows: 'up', actions: [{ type: 'type', text: cardDigits.slice(0, 8) }, { type: 'type', text: cardDigits.slice(8) }] }, 'sensitive_data', 'open CU-273', 'no live row yet'],
   ['sequence-plain words in pieces (negative)', [{ type: 'type', text: 'abc' }, { type: 'type', text: 'def' }], 'allow', 'open CU-267', 'no live row yet'],
 ]
 for (const [id, pieces, expected, status, live] of SEQUENCE_ROWS) {
@@ -314,7 +314,7 @@ async function decideDetour(actions) {
   } finally { rmSync(dir, { recursive: true, force: true }) }
 }
 const DETOUR_ROWS = [
-  ['detour-card halves around typing in another field', [{ type: 'type', text: cardDigits.slice(0, 8) }, { type: 'keypress', keys: ['TAB'] }, { type: 'type', text: 'x' }, { type: 'keypress', keys: ['SHIFT', 'TAB'] }, { type: 'type', text: cardDigits.slice(8) }], 'sensitive_data', 'todo CU-273', 'no live row yet'],
+  ['detour-card halves around typing in another field', [{ type: 'type', text: cardDigits.slice(0, 8) }, { type: 'keypress', keys: ['TAB'] }, { type: 'type', text: 'x' }, { type: 'keypress', keys: ['SHIFT', 'TAB'] }, { type: 'type', text: cardDigits.slice(8) }], 'sensitive_data', 'open CU-273', 'no live row yet'],
   ['detour-plain words around another field (negative)', [{ type: 'type', text: 'abc' }, { type: 'keypress', keys: ['TAB'] }, { type: 'type', text: 'x' }, { type: 'keypress', keys: ['SHIFT', 'TAB'] }, { type: 'type', text: 'def' }], 'allow', 'open CU-273', 'no live row yet'],
 ]
 for (const [id, actions, expected, status, live] of DETOUR_ROWS) {
