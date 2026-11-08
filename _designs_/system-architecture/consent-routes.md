@@ -1,10 +1,10 @@
 ---
 title: Consent routes - every way an action reaches a control, and how it is judged
 created: 2026-11-07T03:26:33Z
-modified: 2026-11-08T10:47:12Z
+modified: 2026-11-08T11:23:17Z
 level: L1
-version: 1.0.11
-description: The D-059 audit table - single-action cells live in an executable matrix; this note lists the composed routes judged in the loop, the named limits, the open cells and the sign-off rule.
+version: 1.1.0
+description: The D-059 audit table - single-action cells live in an executable matrix; this note lists the composed routes judged in the loop, the open cells and the sign-off rule; the named limits are in consent-limits.md.
 status: unverified
 grounded_in:
   - source: D-059 and CU-145 (five consent holes in one day)
@@ -35,7 +35,7 @@ Env: D desktop, B browser. Pin: the test (its mutant). Over-ask: 0 per asking ro
 | held page dialog, then Return or type | B | page_dialog plus the class its message names | policy (dialog ignored) | fixture-site dialog rows |
 | Command chord in a text input | D | delete: a plain chord fires a bound menu first (CU-143) | #353 (plain exemption restored) | 20261107T053218Z-535da8 |
 | Command-W or Q, then Command-D | D | Don't Save while a sheet is up (CU-148) | sheet-dont-save (sheet ignored) | 20261107T074411Z-2f170a |
-| paste (keys, Edit menu, toolbar Paste) | D B | the owner's board asks; own copy by count (CU-151), at the focused field (CU-186, CU-192), with its source's class (CU-183; CU-196 menu copy; CU-187 caption; CU-223 read-only view) | paste-consent (count ignored) | 20261107T052454Z-bed1eb, 201801Z-5265f2, 213539Z-fda93b, 200526Z-fcaee3, 220120Z-666204, 215448Z-d562f6; D 024023Z-b216e7 |
+| paste (keys, with Shift or Option too - CU-230; Edit menu; toolbar Paste) | D B | the owner's board asks; own copy by count (CU-151), at the focused field (CU-186, CU-192), with its source's class (CU-183; CU-196 menu copy; CU-187 caption; CU-223 read-only view) | paste-consent (count ignored); paste-chords (exact chord only) | 20261107T052454Z-bed1eb, 201801Z-5265f2, 213539Z-fda93b, 200526Z-fcaee3, 220120Z-666204, 215448Z-d562f6; D 024023Z-b216e7 |
 | reload, back, forward onto a POST answer | B | submit (CU-153) | history-resubmit (resubmits unjudged) | 20261107T054200Z-d9a46e |
 | panel commit; Go to Folder Return | D | file_choice; navigation only on positive evidence | panel-folder (arm without evidence) | 20261107T111700Z-a9c300 |
 | "already exists - Replace?" | D | delete (CU-135) | keyboard-activation (Replace dropped) | 20261107T070122Z-828a8b; panel chain at step 4 |
@@ -43,10 +43,7 @@ Env: D desktop, B browser. Pin: the test (its mutant). Over-ask: 0 per asking ro
 
 ## Named limits
 
-- Unnamed targets, drop points and default buttons are allowed, counted per batch.
-- Scroll is not judged.
-- A form without a submit button is judged by field name.
-- A bare "Reply" is free only with every entry on its page or window read empty (CU-157, live on both).
+In [consent-limits.md](consent-limits.md) (D-063), with CU-241's and CU-232's.
 
 ## Sign-off
 
