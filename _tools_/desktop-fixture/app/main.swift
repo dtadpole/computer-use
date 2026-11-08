@@ -495,7 +495,7 @@ func handle(_ message: [String: Any]) {
       reply(id, ClipboardSentinel.shared.clear())
     case "clipboardSentinelSelfTest":
       reply(id, ClipboardSentinel.selfTest())
-    case "menuKey":
+    case "menuItemForKey":
       // Test seam: the menu item a key equivalent such as "alt+shift+cmd+v" reaches - its title and action, nothing run.
       let item = Menus.itemForKey(params["key"] as? String ?? "")
       reply(id, ["title": item?.title ?? NSNull(), "action": item?.action.map { NSStringFromSelector($0) } ?? NSNull()])
