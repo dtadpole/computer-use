@@ -391,3 +391,8 @@ decisions:
     topic: run-hold-lifted
     decision: 'D-071''s hold ends: CU-230 (verified live 12:30Z) and CU-232 (verified live 14:26Z on helper 0.2.52 with the driver''s menu read) close both chord holes. Live model runs may again use apps beyond the fixture apps and fixture site under the standing rules - per-app approval, the desktop-run lock, the owner-idle rule (D-066, D-068) - with one limit while the High value-class under-asks CU-257, CU-260, CU-266, CU-267 and CU-268 are open: no unattended task that types, pastes or sends the owner''s own data.'
     rationale: 'The hold was tied to two verified holes; the remaining open under-asks block the verdict row (D-063) but are bounded by keeping owner data out of unattended tasks until they close.'
+  - id: D-075
+    date: 2026-11-08
+    topic: owner-data-limit-lifted
+    decision: 'D-074''s owner-data limit ends: the value-class Highs it named (CU-257, CU-260, CU-266, CU-267, CU-268) and their follow-ups (CU-273, and CU-281 for D-061 field names carried as URL parameters) are verified live, so an unattended task may again type, paste or send the owner''s own data, judged by the consent rules. Per-app approval, the desktop-run lock, the owner-idle rule (D-066, D-068) and D-034''s cost line (every model run announced with its expected cost; nothing past 21 USD without the owner) stay.'
+    rationale: 'The limit was tied to named holes in the value rules; with each verified live, the rules themselves are the backstop again. A Medium contact-data follow-up (CU-283, unformatted phone numbers in a URL) does not reopen it.'
