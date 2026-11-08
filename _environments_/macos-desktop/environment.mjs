@@ -751,6 +751,39 @@ export function fileUrlLeafOf(value) {
   return leaf === null ? null : leaf + (url.pathname.endsWith('/') ? '/' : '')
 }
 
+/** CU-259: the most selected items one answer may carry (design note 0.2 on CU-252). */
+export const MAX_SELECTED_ITEMS = 32
+const SELECTED_KINDS = new Set(['folder', 'file', 'unknown'])
+
+/**
+ * CU-259 (CU-252 rule 3): one selectedItems reply as the driver passes it on, failing closed as menuKey does.
+ * `{ items: [{ name, kind }] }` with 1 to MAX_SELECTED_ITEMS entries - a bare file name (fileNameOf) and a kind the helper
+ * worked out from the AXURL string alone ('folder' for a trailing '/', 'file', 'unknown' without a file URL; never URL
+ * resource values, D-024); `{ none: true }` when the focused collection has nothing selected; `{ notCollection: true }`
+ * when the focus is no collection (the focused target, with its filename and URL leaf, is what Command-O acts on); and
+ * `{ unreadable: true }` for everything else - the helper's own unreadable, `truncated`, an empty or over-long list, any
+ * malformed or unnamed entry, a reply naming no app or one outside `scope`, more than one answer at once. Never a path
+ * or the contents.
+ */
+export function selectedItemsOf(reply, scope = []) {
+  const unreadable = { unreadable: true }
+  if (reply === null || typeof reply !== 'object') return unreadable
+  if (typeof reply.bundleId !== 'string' || !scope.includes(reply.bundleId)) return unreadable
+  const answers = ['items', 'none', 'notCollection', 'unreadable'].filter((key) => reply[key] !== undefined)
+  if (answers.length !== 1 || (reply.truncated !== undefined && reply.truncated !== false)) return unreadable
+  if (reply.none === true) return { none: true }
+  if (reply.notCollection === true) return { notCollection: true }
+  if (!Array.isArray(reply.items) || reply.items.length < 1 || reply.items.length > MAX_SELECTED_ITEMS) return unreadable
+  const items = []
+  for (const item of reply.items) {
+    if (item === null || typeof item !== 'object' || Array.isArray(item)) return unreadable
+    const name = fileNameOf(item.name)
+    if (name === null || !SELECTED_KINDS.has(item.kind)) return unreadable
+    items.push({ name, kind: item.kind })
+  }
+  return { items }
+}
+
 /**
  * CU-265: the scheme of a link's URL, what agent core asks about when it is not a web scheme (facetime:, tel:, zoommtg:,
  * mailto: start another app) - lower case, no colon, the scheme only and never the rest of the URL. Null when there is
@@ -1737,7 +1770,11 @@ class DesktopEnvironment {
    */
   async focusedElement() {
     this.#assertInScope()
-    const reply = await this.link.request('focused', {})
+    return this.#focusedOf(await this.link.request('focused', {}))
+  }
+
+  /** The target focusedElement() makes of a 'focused' reply: the element, the no-focus placeholder, or null. */
+  #focusedOf(reply) {
     const element = this.#describe(reply.element)
     const defaultButton = defaultButtonOf(reply.defaultButton)
     const defaultButtonRead = defaultButtonReadOf(reply.defaultButtonRead)
@@ -1756,6 +1793,24 @@ class DesktopEnvironment {
       return { ...this.#describe(appOf(reply.app)), noFocus: true, defaultButton, defaultButtonRead, sheet, pasteboardChangeCount, textEntered }
     }
     return { ...element, defaultButton, defaultButtonRead, sheet, pasteboardChangeCount, textEntered }
+  }
+
+  /**
+   * CU-219: the pasteboard's change count alone, from a fresh `focused` read (the reply carries it with or without a
+   * focused element) - an integer, or null as changeCountOf reads it. Agent core asks for it at a key copy, cut or paste
+   * when focusedElement() is null, which drops the count with the element. The count travels beside the null target,
+   * never as a placeholder target: app-policy judges every no-focus key by its target - one naming no app is refused,
+   * one with no role makes Return, Space and a typed newline ask each time - so a placeholder here would change every
+   * no-focus key, not only the paste. Never content (D-060), never cached: a copy raises the count after its key event.
+   * Fail closed (cu-developer-one, cu-researcher): the count is given only when this same reply still reads as no focus.
+   * If it now carries an element or a placeholder, focus moved after the null read (a click still landing), so the null
+   * target agent core judges is stale. The answer is then null, and the paste asks as the owner's (CU-220) instead of
+   * skipping the field's own rules.
+   */
+  async pasteboardChangeCount() {
+    this.#assertInScope()
+    const reply = await this.link.request('focused', {})
+    return this.#focusedOf(reply) === null ? changeCountOf(reply.changeCount) : null
   }
 
   /**
@@ -1845,6 +1900,23 @@ class DesktopEnvironment {
       if (bound.unreadable) return bound
     }
     return bound ?? { none: true }
+  }
+
+  /**
+   * CU-259 (CU-252 rule 3): what a menu Open, Command-O or Command-Down acts on - the selected items of the frontmost
+   * approved app's focused collection, names and kinds only (selectedItemsOf). A refusal (an older helper's
+   * unknown_request) or a throw reads as `{ unreadable: true }`, so agent core asks launch_code as rule 1 does. Read
+   * fresh each time, never cached; agent core decides when.
+   */
+  async selectedItems() {
+    this.#assertInScope()
+    let reply
+    try {
+      reply = await this.link.request('selectedItems', {})
+    } catch {
+      return { unreadable: true }
+    }
+    return selectedItemsOf(reply, this.scope)
   }
 
   /** Visible text of the frontmost approved window for the inspector; secure fields are left out by the helper. */
