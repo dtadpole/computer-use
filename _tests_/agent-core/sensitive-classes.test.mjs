@@ -457,6 +457,38 @@ test('spelling rows: named once; every todo row still fails (a fixed row cannot 
   for (const r of SPELLING_ROWS) if (r[3] === null) assert.doesNotMatch(String(r[4]), /no live row|pending/i, `${r[0]} is closed without a live row - mark it open`)
 })
 
+// CU-297 (cu-researcher, red team of CU-241's note 0.2): a cross-origin frame stops the browser driver's focus read at the
+// <iframe> element, so text typed into a hosted payment or sign-in field meets a target { tag: 'iframe', role: 'Iframe',
+// name: <the frame's title>, editable: false } - not a text entry, so no field-name rule reads the name. Hosted fields name
+// each frame for its field (Braintree: 'Secure Credit Card Frame - <field>'; Stripe: 'Secure CVC input frame'). A name row
+// types what that field takes; a value the value rules know is caught either way.
+const decideFrame = (text, name) => {
+  const r = policy.classify({ type: 'type', text }, { url: 'https://other.example/form', target: { tag: 'iframe', role: 'Iframe', name, editable: false } })
+  return r.decision === 'allow' ? 'allow' : r.class
+}
+const FRAME_ROWS = [
+  ['frame-cvv-braintree', '123', 'Secure Credit Card Frame - CVV', 'sensitive_data', 'todo CU-297', 'no live row yet'],
+  ['frame-cvc-stripe', '1234', 'Secure CVC input frame', 'sensitive_data', 'todo CU-297', 'no live row yet'],
+  ['frame-expiry-braintree', '12/29', 'Secure Credit Card Frame - Expiration Date', 'sensitive_data', 'todo CU-297', 'no live row yet'],
+  ['frame-password', 'correct-horse', 'Password', 'credential', 'todo CU-297', 'no live row yet'],
+  ['frame-card-value', CARD, 'Secure card number input frame', 'sensitive_data', 'open CU-297', 'no live row yet (the value rule catches it in a frame too)'],
+  ['frame-comments-negative', 'hello there', 'Comments', 'allow', 'open CU-297', 'no live row yet (negative: a frame named for no class takes text)'],
+]
+
+for (const [id, text, name, expected, status, live] of FRAME_ROWS) {
+  const title = `${id} [frame '${name}'] -> ${expected} (live: ${live})`
+  if (status?.startsWith('todo ')) test(title, { todo: status }, () => assert.equal(decideFrame(text, name), expected))
+  else test(title, () => assert.equal(decideFrame(text, name), expected))
+}
+
+test('frame rows: named once; every todo row still fails (a fixed row cannot stay todo)', () => {
+  assert.equal(new Set(FRAME_ROWS.map((r) => r[0])).size, FRAME_ROWS.length)
+  for (const r of FRAME_ROWS) {
+    assert.match(r[4], /^(todo|open) CU-\d+$/)
+    if (r[4].startsWith('todo ')) assert.notEqual(decideFrame(r[1], r[2]), r[3], `${r[0]} passes on main - flip it to open`)
+  }
+})
+
 // D-064: in this table a row is closed only with a live run id (or its HHMMSSZ-xxxxxx short form) or a D-number.
 test('D-064: every closed row names a run id or a D-number', () => {
   for (const r of ROWS) if (r[6] === null) assert.ok(closingRun(r[7]), `${r[0]} is closed without a run id - mark it open`)
