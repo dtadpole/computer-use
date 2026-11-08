@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - artifacts'
 created: 2026-11-01T09:28:00Z
-modified: 2026-11-08T15:59:00Z
+modified: 2026-11-08T18:14:00Z
 level: L1
-version: 1.114.0
+version: 1.115.0
 description: 'Pointers to the persistent work of [cu] Developer Two (environments) - proposals, code, tests and run records - written by the seat itself.'
 status: unverified
 grounded_in:
@@ -16,6 +16,17 @@ Pointers only; each target is its own authority.
 
 | Date | Artifact | State |
 |---|---|---|
+| 2026-11-08 | #109 merged ea0e004eb | Part of CU-271: the run-code probe's terminal focuses its helper textarea on a press and uses xterm.js 5's real CSS. This settled R3: the driver reads a focused 0x0 off-screen helper textarea as terminal: true, so real web terminals are refused (live 20261108T182143Z-364a13, 20261108T182149Z-c4f5be on main). |
+| 2026-11-08 | #113 merged 2aa515a56 | Fixes CU-240 (driver half, on helper 0.2.56): a not_granted after the grant read true earlier in the run keeps its code but says so, and no longer asks the owner to grant what is on; a capture refused that way is retried once, input never. In Verify. |
+| 2026-11-08 | #105 merged 453bc465f | Records: handover 3.0.0 (state at 17:00Z). |
+| 2026-11-08 | #99 merged 6ee393fb0 | Fixes CU-276, which I proposed: the run lock enforces D-073 - a waiting gate registers (run-lock.mjs wait) and another seat's new hold, re-hold or extension is refused phase2_waiting; the live hold is never cut. cu-integrator wired it at 16:59Z; three gate waits registered and cleared in pairs by 17:37Z. In Verify. |
+| 2026-11-08 | #96 merged 7b4ac4b76 | Part of CU-271: a page menu's Paste into a focused web terminal is refused; launch_code joins CLASSES. |
+| 2026-11-08 | #95 merged 77ffc4b1f | Part of CU-271: the fixture site's run-code probe (notebook cell, xterm-like terminal, code playground; records runs and counts only) for the live rows. |
+| 2026-11-08 | #94 merged 304b2fdba | Part of CU-271 (browser half): typing, keys, a drop or a paste into a web terminal is refused (terminal_view); a notebook or code-page run asks launch_code, never pre-approved. The browser driver reports the surface flags. |
+| 2026-11-08 | #66 merged abbb95d9f | CU-259 (CU-252's driver half): selectedItems() passes the names and kinds of the selection a menu Open acts on, failing closed; cu-developer-one's #101 and #103 judge it. Ready for Verify. |
+| 2026-11-08 | #55 merged 504679f00 | Part of CU-250 (driver half): #describe passes helper 0.2.53's servicesMenu mark and menu path on click targets, so a clicked owner-installed service is refused (live 20261108T171735Z-f28b05) and CU-277 keys on the path. |
+| 2026-11-08 | #15 merged 69570e67f | Fixes CU-229: the no-app-window test proves the once-per-run start wait by one capture request, not a wall-clock bound that failed under load. In Verify. |
+| 2026-11-08 | #10 merged 9f087db12 | Fixes CU-219: a key copy or paste with nothing focused is judged on the pasteboard count the driver reads beside the null target - never a placeholder target. In Verify. |
 | 2026-11-08 | #92 merged fe4f2068d | Fixes CU-273 (cu-researcher's finding): one typed buffer per field, so half a card, a detour through another field and the other half is still judged whole. On the desktop a field is known by its column (app, process, role, title, left edge, width), so a text area growing either way keeps one buffer. In Verify. |
 | 2026-11-08 | #89 merged 047dfd701 | Fixes CU-268: every default-ignorable code point is stripped, and any script's digits read as ASCII. A word mixing Latin with another script asks where no rule found a class (desktop unknown_target, browser permission); CJK, Thai and similar letters never count. In Verify. |
 | 2026-11-08 | #83 merged cec3b47ed | Fixes CU-267: a value typed in pieces (keypresses, several type actions, a browser paste) is judged whole by a per-field buffer that is never recorded; the completing action asks. In Verify. |
