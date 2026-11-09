@@ -50,9 +50,12 @@ test('CU-325 negatives: ids that are not card-shaped stay allowed', () => {
   }
 })
 
-test('CU-325: a card the run never typed, in a host label or split across two segments, is not read (open under-ask, cu-coordinator 06:41Z)', () => {
+// Open under-ask CU-326 (Medium, cu-researcher): these shapes leave a card the run never typed unasked; a fix flips them.
+test('open CU-326: a card the run never typed - in a host label, split across two segments, or inside a longer digit run - is not read', () => {
   assert.equal(go(`https://${CARD_DIGITS}.fixture.example/`).decision, 'allow')
   assert.equal(go(`${SITE}/p/${CARD_DIGITS.slice(0, 8)}/${CARD_DIGITS.slice(8)}`).decision, 'allow')
+  // cu-verifier on #245: an 18-digit run holding the card ('00<card>') is no card-length run.
+  assert.equal(go(`${SITE}/p/00${CARD_DIGITS}`).decision, 'allow')
 })
 
 test('CU-325 follow-up: digits the run typed ask anywhere in the address - a host label, split across segments, path and fragment', () => {
