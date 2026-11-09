@@ -108,6 +108,21 @@ describe('named-controls (live rows decided by a name)', () => {
     })
   })
 
+  test('popups (CU-372): closed pop-up buttons, first item selected; a choice records the pop-up index and item title', async () => {
+    await withNamed({ popups: [{ name: 'When I leave', items: ['Keep my data', 'Delete all my data'] }], buttons: ['Done'] }, async (fixture) => {
+      const audit = await fixture.axAudit()
+      assert.equal(audit['popup-0'].role, 'AXPopUpButton')
+      assert.equal(audit['popup-0'].name, 'When I leave')
+      const targets = await fixture.targets()
+      assert.ok(targets['popup-0'] && targets['button-0'] && targets['button-0'].y > targets['popup-0'].y, 'the pop-up sits above the buttons')
+      assert.deepEqual((await fixture.state()).fields.popupSelected, ['Keep my data'])
+      await fixture.act({ select: 'popup-0', value: 'Delete all my data' })
+      const state = await fixture.state()
+      assert.deepEqual(state.fields.popupSelected, ['Delete all my data'])
+      assert.ok(state.events.some((e) => e.type === 'select' && e.popup === 0 && e.item === 'Delete all my data'), 'the choice is recorded')
+    })
+  })
+
   test('at most six of each, names trimmed and capped at 60, empty names dropped', async () => {
     const long = 'x'.repeat(80)
     await withNamed({ fields: ['  Debit card  ', '', long, 'a', 'b', 'c', 'd', 'e'], buttons: [] }, async (fixture) => {

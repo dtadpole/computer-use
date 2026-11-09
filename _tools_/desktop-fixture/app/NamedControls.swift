@@ -29,6 +29,7 @@ final class NamedControls: NSObject {
   var fields: [NamedField] = []
   var placeholderFields: [NamedField] = []
   var layoutFields: [NamedField] = []
+  var popups: [NSPopUpButton] = []
   var areas: [NamedArea] = []
   var buttons: [NSButton] = []
   var pressed: [Int] = []
@@ -63,7 +64,7 @@ final class NamedControls: NSObject {
   static func open(title: String) -> Bool {
     let screen = NamedControls()
     shared = screen
-    screen.build(title: title, fieldNames: names("fields"), placeholderNames: names("placeholders"), layoutSpecs: layoutSpecs(), areaNames: names("areas"), buttonTitles: names("buttons"), checkboxNames: names("checkboxes"))
+    screen.build(title: title, fieldNames: names("fields"), placeholderNames: names("placeholders"), layoutSpecs: layoutSpecs(), popupSpecs: popupSpecs(), areaNames: names("areas"), buttonTitles: names("buttons"), checkboxNames: names("checkboxes"))
     screen.installMenu(menuEntries())
     return true
   }
@@ -80,9 +81,20 @@ final class NamedControls: NSObject {
     }
   }
 
-  private func build(title: String, fieldNames: [String], placeholderNames: [String], layoutSpecs: [(name: String, above: Bool)], areaNames: [String], buttonTitles: [String], checkboxNames: [String]) {
+  /// CU-372: `popups` - up to four closed pop-up buttons (AXPopUpButton), each `{name, items}` with up to six items of at
+  /// most 40 characters; the first item is selected. A choice - by mouse, type-ahead or arrows - records only 'select'
+  /// with the pop-up's index and the item's title (fixture words, never typed text).
+  static func popupSpecs() -> [(name: String, items: [String])] {
+    let raw = Screens.params["popups"] as? [[String: Any]] ?? []
+    return raw.prefix(4).compactMap { spec in
+      guard let name = spec["name"] as? String, let items = spec["items"] as? [String], !items.isEmpty else { return nil }
+      return (String(name.prefix(60)), items.prefix(6).map { String($0.prefix(40)) })
+    }
+  }
+
+  private func build(title: String, fieldNames: [String], placeholderNames: [String], layoutSpecs: [(name: String, above: Bool)], popupSpecs: [(name: String, items: [String])], areaNames: [String], buttonTitles: [String], checkboxNames: [String]) {
     // CU-349's placeholder-only entries sit under the named ones; everything below moves down by their rows.
-    let shift = CGFloat(placeholderNames.count * 40 + layoutSpecs.count * 48)
+    let shift = CGFloat(placeholderNames.count * 40 + layoutSpecs.count * 48 + popupSpecs.count * 40)
     let height = CGFloat(60 + fieldNames.count * 56 + areaNames.count * 92 + checkboxNames.count * 32 + (buttonTitles.isEmpty ? 0 : 50)) + shift
     let content = FlippedView(frame: NSRect(x: 0, y: 0, width: 420, height: max(height, 120)))
     content.wantsLayer = true
@@ -134,6 +146,22 @@ final class NamedControls: NSObject {
       content.addSubview(text)
       content.addSubview(field)
       layoutFields.append(field)
+    }
+    for (index, spec) in popupSpecs.enumerated() {
+      let rowY = CGFloat(48 + fieldNames.count * 56 + placeholderNames.count * 40 + layoutSpecs.count * 48 + index * 40)
+      let caption = Kit.label(spec.name, size: 13, bold: false)
+      caption.frame = NSRect(x: 20, y: rowY + 4, width: 150, height: 18)
+      let popup = NSPopUpButton(frame: NSRect(x: 180, y: rowY, width: 220, height: 26), pullsDown: false)
+      popup.addItems(withTitles: spec.items)
+      popup.selectItem(at: 0)
+      popup.identifier = NSUserInterfaceItemIdentifier("popup-\(index)")
+      popup.setAccessibilityLabel(spec.name)
+      popup.target = self
+      popup.action = #selector(popupChose(_:))
+      Fixture.shared.controls["popup-\(index)"] = popup
+      content.addSubview(caption)
+      content.addSubview(popup)
+      popups.append(popup)
     }
     for (index, name) in areaNames.enumerated() {
       let y = CGFloat(48 + fieldNames.count * 56 + index * 92) + shift
@@ -201,6 +229,10 @@ final class NamedControls: NSObject {
     Fixture.shared.record("chosen", ["index": sender.tag])
   }
 
+  @objc func popupChose(_ sender: NSPopUpButton) {
+    Fixture.shared.record("select", ["popup": popups.firstIndex(of: sender) ?? -1, "item": sender.titleOfSelectedItem ?? ""])
+  }
+
   private func installMenu(_ entries: [MenuEntry]) {
     guard !entries.isEmpty, let main = NSApp.mainMenu else { return }
     let menu = NSMenu(title: "Actions")
@@ -249,7 +281,7 @@ final class NamedControls: NSObject {
 
   static func fields() -> [String: Any] {
     guard Screens.current == task, let screen = shared else { return [:] }
-    return ["namedFieldLengths": screen.fields.map { $0.stringValue.count }, "placeholderFieldLengths": screen.placeholderFields.map { $0.stringValue.count }, "layoutFieldLengths": screen.layoutFields.map { $0.stringValue.count },
+    return ["namedFieldLengths": screen.fields.map { $0.stringValue.count }, "placeholderFieldLengths": screen.placeholderFields.map { $0.stringValue.count }, "layoutFieldLengths": screen.layoutFields.map { $0.stringValue.count }, "popupSelected": screen.popups.map { $0.titleOfSelectedItem ?? "" },
             "namedAreaLengths": screen.areas.map { $0.string.count },
             "namedAreaLines": screen.areas.map { $0.string.components(separatedBy: "\n").count }, "namedPressed": screen.pressed,
             "namedChecked": screen.checkboxes.map { $0.state == .on ? 1 : 0 }, "namedToggled": screen.toggled, "namedChosen": screen.chosen,

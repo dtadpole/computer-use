@@ -3,7 +3,7 @@ title: Desktop fixture contract
 created: 2026-11-02T08:34:00Z
 modified: 2026-11-09T20:40:00Z
 level: L1
-version: 0.16.0
+version: 0.16.1
 description: What CU Fixture guarantees to the desktop driver, the verifiers and the evaluator - identity, placement, the private control channel, what the agent can and cannot see, and how a screen's outcome is judged.
 status: unverified
 grounded_in:
@@ -41,8 +41,9 @@ grounded_in:
   'chosen' with its index - the menu exists only while the screen is open, and `menuAX` serves it with the bar item's
   frame; `placeholders` (CU-349) up to six entries labelled only by a placeholder - no caption, no label or title
   element - as a native one-time-code or CVV box often is. `layoutLabels` (CU-361) up to six entries named only by a static text
-  beside them - to the left on the same row, or `{name, above: true}` just above - with nothing linking the two. Its state reports entry and area lengths (and area line
-  counts), placeholder- and layout-entry lengths, never their text, plus check-box states and the chosen indices. `axAudit` serves
+  beside them - to the left on the same row, or `{name, above: true}` just above - with nothing linking the two. `popups` (CU-372) up to four closed pop-up buttons
+  (AXPopUpButton), each `{name, items}`; a choice records 'select' with the pop-up's index and the item's title. Its state reports entry and area lengths (and area line
+  counts), placeholder- and layout-entry lengths, never their text, the pop-ups' selected titles, plus check-box states and the chosen indices. `axAudit` serves
   each target's placeholder apart from its name.
 - **AXManualAccessibility (CU-329).** The application element answers `AXManualAccessibility` as an Electron app does:
   no value until set, then the stored boolean; listed and settable. Every outside write is kept in order (value only;
