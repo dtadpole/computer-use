@@ -1,8 +1,8 @@
 ---
 title: Desktop fixture tests
 created: 2026-11-02T08:34:00Z
-modified: 2026-11-09T15:05:58Z
-version: 0.7.1
+modified: 2026-11-09T21:40:00Z
+version: 0.8.0
 description: Tests of the desktop fixture - its judges, bundle identity and channel framing, and its screens in the real CU Fixture app, which they launch; run them only under the desktop-run lock (CU-305).
 grounded_in:
   - source: _tools_/desktop-fixture/INDEX.md
@@ -22,6 +22,7 @@ Since CU-305 `launchFixture` refuses otherwise ([fixture-launch-lock](../../_des
 | [open-selection.test.mjs](open-selection.test.mjs) | CU-252, CU-269: the Finder stand-in - sandbox rows with AXFilename and AXURL, File > Open, Open With, Command-Down, app-bundle drop targets; each open only recorded |
 | [menu-compose.test.mjs](menu-compose.test.mjs) | CU-238: the compose screen's menu chords - Send, the disabled duplicate, Mail's plain Delete, the lazy menu - and what AppKit serves Accessibility for them |
 | [manual-ax.test.mjs](manual-ax.test.mjs) | CU-329: the app element answers AXManualAccessibility like an Electron app (no value, then stored; settable, listed); outside writes recorded in order; a preset is not a write |
+| [attach-upload.test.mjs](attach-upload.test.mjs) | CU-377: CU Ledger's attach-upload window - a named drop zone and an Upload button recording counts only |
 | [named-controls.test.mjs](named-controls.test.mjs) | CU-245/CU-258/CU-261/CU-323: entries, buttons, check boxes and Actions menu items named by the harness; a press, toggle or choice records its index only; entry lengths, never text |
 | [approve-always.test.mjs](approve-always.test.mjs) | only the two fixture apps; a y records them by tty, a rerun finds them, an n records nothing |
 
