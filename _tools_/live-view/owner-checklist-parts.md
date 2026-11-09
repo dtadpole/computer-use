@@ -1,9 +1,9 @@
 ---
 title: Owner checklist - the three parts (step 4, G2, the Replace chain)
 created: 2026-11-08T03:05:00Z
-modified: 2026-11-08T03:05:00Z
+modified: 2026-11-09T15:00:00Z
 level: L1
-version: 0.1.0
+version: 0.2.0
 description: The owner session's three parts, moved from owner-checklist.md (three sentences tightened) - what the owner presses in each and what he should see.
 status: unverified
 grounded_in:
@@ -36,11 +36,10 @@ then Resume, Take over, Hand back, Stop. Pause is optional.
 or click) on the Mac paused the agent. It stays paused until you press Resume; it never resumes by itself." - with a
 Resume button. Input during a 1.5 s wait restarts it; 60 s of it pauses the run again.
 
-**Consent.** Title `(!) computer-use needs you`; "New app: allow the agent to use <bundle id>?" with Approve once,
-Approve for this run, Always allow <bundle id>, Decline. An app you did not expect (a covering window such as
-Typeless): decline and quit it. A hit test reads: "A <bundle id> window covers the
-point the agent wants to click - quit or move it rather than approve it." A refused action can also leave a notice
-"A <bundle id> window covered the point of the agent's last action - quit, move or dismiss it." (CU-38).
+**Consent.** Part 1's run starts with `--consent unattended`, so it answers any question itself (declined) and
+you see no consent buttons. An app you did not expect in front (a covering window such as Typeless): quit it. A
+refused action can leave a notice "A <bundle id> window covered the point of the agent's last action - quit, move or
+dismiss it." (CU-38). Part 3 is the part with questions for you.
 
 **Watch link.** Same screen and state; only Pause and Stop; a question shows as text without answers.
 

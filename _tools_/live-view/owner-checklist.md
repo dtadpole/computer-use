@@ -1,58 +1,68 @@
 ---
 title: Owner checklist - the owner session (step 4, G2, the Replace chain)
 created: 2026-11-05T17:25:00Z
-modified: 2026-11-08T03:44:30Z
+modified: 2026-11-09T15:00:00Z
 level: L1
-version: 0.3.1
-description: The owner session's two modes (at the Mac mini with the Confirm prompt, or over Screen Sharing with five-minute breaks), what to do before it, and what to report; the parts are in owner-checklist-parts.md. One page for the owner's sitting - step 4 (pause, resume, take over, hand back, stop and his own input on a desktop run), G2 (his input during a key hold) and CU-135's Replace chain on the real save panel - what he presses and what he should see.
+version: 0.4.0
+description: 'One page for the owner - what you do in the owner session, in order, and how long each step takes, at the Mac mini (the Confirm prompt) or over Screen Sharing; the per-part tables are in owner-checklist-parts.md. Rehearsed on helper 0.2.62 with labelled stand-ins (CU-341).'
 status: unverified
 grounded_in:
-  - source: _designs_/desktop-extension/human-control.md@0.4.4
+  - source: _designs_/desktop-extension/human-control.md@0.4.6
   - source: _designs_/desktop-extension/physical-confirmation.md (the prompt, its 1 s arm, no Return, no remote confirmation)
-  - source: _environments_/macos-desktop/run-lock.mjs (D-066's five minutes; own_hold admits at 300 s, CU-208)
-  - source: _environments_/macos-desktop/helper/Sources/LocalInput.swift localInputTapCallback (any input not tagged by the helper pauses a run, Screen Sharing's included)
-  - source: _designs_/system-architecture/run-tokens.md@0.6.1
-  - source: _tools_/live-view/ui-logic.mjs (controlsFor, noticeFor, consentView, pageFor - the texts quoted here)
-  - source: _environments_/macos-desktop/helper-link.mjs (SETTLE_MS 1500, SETTLE_CAP_MS 60000)
-  - source: Linear CU-11, CU-37, CU-119 and CU-135
-  - source: _tools_/agent-core/loop.mjs (the held-key notice, G2)
+  - source: _environments_/macos-desktop/run-lock.mjs (D-066's five minutes; the prompt only on owner_active; a Cancel or timeout blocks the seat's next prompt for 5 minutes)
+  - source: _environments_/macos-desktop/helper/Sources/ConfirmPrompt.swift (never key; no key equivalent)
+  - source: _tools_/live-view/ui-logic.mjs (the texts quoted in owner-checklist-parts.md)
   - source: _verifiers_/desktop-human-control/owner-step4.mjs (the step 4 run)
+  - source: Linear CU-11, CU-119, CU-135, CU-203 and CU-341 (rehearsal R1 and R1b on helper 0.2.62, 9 Nov)
 ---
 
 # Owner checklist - the owner session
 
-One sitting in three parts - step 4 (CU-11), your input during a key hold (G2, CU-119) and the Replace chain
-(CU-135). cu-verifier runs each as an announced scripted run in **CU Fixture** and calls every step; nothing you own is
-touched and no setting is changed. What you press in each part: [owner-checklist-parts](owner-checklist-parts.md).
+One sitting, three parts. cu-verifier runs each part as an announced scripted run in **CU Fixture** and calls every
+step. Nothing you own is touched, no setting changes, and the helper is CUHelper 0.2.62. What each press shows:
+[owner-checklist-parts](owner-checklist-parts.md).
 
-## Two ways to take part
+## Before (2 minutes)
 
-A desktop run refuses to start within five minutes of your own input on the Mac (D-066), and each part ends with your
-input, so every part needs a fresh start:
+1. Quit Typeless and any app that floats a window over the screen; dismiss the two notification alerts (top right).
+2. Open both links in a browser **on the Mac mini** (they bind 127.0.0.1). For the watch link, cu-verifier gives you
+   the run's `live view (watch):` line. For the control link, copy the **whole line** cu-verifier gives you (it
+   starts `CU_HOME=...`) and run it **in your own Terminal**; the link prints only there. The page title starts
+   `[cu live view]`.
+3. Then take your hands off the Mac. cu-verifier holds the Mac for the session, and that hold needs five minutes of
+   no input, so it is taken before you start.
 
-- **At the Mac mini** (about 15 minutes; helper 0.2.50 or later): each part opens the helper's prompt "<seat> wants
-  to post clicks and keys into this session. Confirm lets this one run start now." At the first prompt, check it as cu-verifier calls
-  each step: once cu-verifier says CU Fixture is in front, press **Return** -
-  nothing happens on the prompt (it never takes the keyboard: a Return goes to the app in front, so never with your
-  Terminal there); click **Confirm** within a second of it appearing - nothing happens; wait a second, then click
-  **Confirm** with the mouse or trackpad - the part starts. After that, wait a second and click Confirm each time;
-  **Cancel** refuses the part at once. Then take your hands off - your next touch pauses the part.
-- **Over Screen Sharing** (about 25 minutes; also at the Mac before helper 0.2.50): a remote click cannot confirm (it
-  is not hardware), so before each part leave the Mac untouched for five minutes - cu-verifier says when the next part
-  starts. Your remote key or click should pause a running part as at the Mac - cu-verifier checks that first when
-  you join remotely.
+## In order
 
-Once a part runs, your input pauses it and never ends it; you stop it with the control link.
+| # | You | How long |
+|---|---|---|
+| 1 | **Part 1, step 4 (CU-11).** At the prompt (see below), Confirm. When cu-verifier says so, press one key on the Mac: the run pauses before its next action. Then on the control link: **Resume**, **Take over**, **Hand back**, **Stop**. | about 8 minutes |
+| 2 | **Part 2, G2 (CU-119).** At the prompt, Confirm. While the run holds a key, press any key once: the held key comes up and the run pauses. Then **Stop**. | about 1 minute |
+| 3 | **Part 3, the Replace chain (CU-135).** At the prompt, Confirm. Answer the file choice **Approve once**; answer the separate Replace question **Decline**. | about 2 minutes |
 
-**Before.** Quit Typeless and any app that floats a window over the screen, and dismiss the two notification alerts
-(top right). Both links bind 127.0.0.1: open them in
-a browser **on the Mac mini**. Watch link: the run's `live view (watch):` line. Control link: copy the
-**whole line** cu-verifier gives you (it starts `CU_HOME=...`: the run keeps a private store) and run it **in your
-own Terminal** - the link prints only there.
-The header shows run, state and `(control)` or `(watching)`; the title starts `[cu live view]`.
+Each control press takes effect at once: the rehearsal measured 6 to 34 ms from a press to the new state. After
+Resume or Hand back, the agent waits 1.5 s of hands-off before its next action.
 
-## Any part
+## The prompt at each part's start
 
-**Report at once:** a part started by Return or by a click in the prompt's first second; agent input while paused or
-taken over; a resume you did not press; any window but CU
-Fixture on the page; control buttons or consent answers on the watch link.
+- **At the Mac mini** (about 15 minutes in all): each part opens the helper's prompt "<seat> wants to post clicks
+  and keys into this session. Confirm lets this one run start now."
+  - A **Return** does nothing: the prompt never takes the keyboard. A click on **Confirm** in its first second also
+    does nothing.
+  - **Wait a second, then click Confirm** with the mouse or trackpad.
+  - **Cancel** refuses the part. After a Cancel, or 60 s with no answer, that seat cannot ask again for 5 minutes.
+- **Over Screen Sharing** (about 25 minutes in all): a remote click cannot confirm, because it is not hardware. Before
+  each part, leave the Mac untouched for five minutes; cu-verifier says when the next part starts. Your remote key
+  or click must pause a running part as it would at the Mac, and cu-verifier checks that first.
+
+Once a part runs, your own input pauses it and never ends it; you stop it with the control link. In Part 1, the run
+answers any question itself (declined), so you see no consent buttons there.
+
+## Report at once
+
+- a part that started by Return, or by a click in the prompt's first second;
+- agent input while paused or taken over;
+- a resume you did not press;
+- any window but CU Fixture on the page;
+- control buttons or consent answers on the watch link;
+- in Part 3, a Replace that happens without its own question.
