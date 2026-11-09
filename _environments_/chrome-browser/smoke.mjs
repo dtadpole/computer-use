@@ -103,6 +103,16 @@ const server = http.createServer((req, res) => {
     res.end('<!doctype html><style>body{margin:0}</style><button style="position:absolute;left:50px;top:40px;width:120px;height:40px">Inner button</button><input style="position:absolute;left:50px;top:120px;width:200px;height:30px">')
     return
   }
+  // A click on a <label>'s text activates its control: a wrapped CAPTCHA box and a button labelled from elsewhere (for=).
+  if (req.url.startsWith('/label-page')) {
+    res.end('<!doctype html><style>body{margin:0;font:16px sans-serif}.at{position:absolute;left:20px;width:300px;height:30px}</style><label class="at" style="top:20px"><input type="checkbox" id="human"> <span>Verify you are human</span></label><label class="at" style="top:100px" for="del">Delete my account now</label><button class="at" style="top:200px" id="del">Delete account</button><input type="checkbox" id="h2" style="display:none"><label class="at" style="top:300px" for="h2">Verify you are human</label><span class="at" style="top:400px"><input type="checkbox" id="h3" style="opacity:0;position:absolute;width:1px;height:1px"><label for="h3">I am not a robot</label></span>')
+    return
+  }
+  // CU-353: accesskeys - a Delete button, and a label whose accesskey forwards to its check box.
+  if (req.url.startsWith('/accesskey-page')) {
+    res.end('<!doctype html><style>body{margin:0}.at{position:absolute;left:20px;width:300px;height:30px}</style><input class="at" style="top:20px" id="notes" value=""><button class="at" style="top:100px" accesskey="d" onclick="window.fired=(window.fired||[]).concat(\'delete\')">Delete account</button><input type="checkbox" id="hb" style="position:absolute;left:20px;top:200px"><label class="at" style="top:200px;left:50px" for="hb" accesskey="h">Verify you are human</label>')
+    return
+  }
   // CU-319: a card form for Chrome's own autofill (CDP Autofill.trigger with a test card built at runtime).
   if (req.url.startsWith('/autofill-form')) {
     res.end('<!doctype html><style>body{margin:0}input,button{position:absolute;left:20px;width:300px;height:30px}</style><form onsubmit="event.preventDefault()"><input id="cardnumber" autocomplete="cc-number" aria-label="Card number" style="top:20px"><input autocomplete="cc-name" aria-label="Name on card" style="top:70px"><input autocomplete="cc-exp" aria-label="Expiry" style="top:120px"><input aria-label="Notes" style="top:170px"><button type="submit" style="top:220px">Pay now</button></form>')
@@ -265,6 +275,32 @@ try {
 
   // CU-319: the browser's own autofill marks fields :autofill; the submit button then carries them as descriptors. Typing
   // into one clears Chrome's state, and the driver keeps reporting it, marked edited (a partial edit launders nothing).
+  // cu-verifier's label-click under-ask: the driver names the control a label activates, never the bare label text.
+  await env.perform({ type: 'navigate', url: `${origin}/label-page` })
+  const viaLabelText = await env.inspectPoint({ x: 150, y: 26 })
+  check('a click on a label\'s text is judged as its control: the wrapped check box', viaLabelText?.tag === 'input' && viaLabelText.role === 'checkbox' && viaLabelText.name === 'Verify you are human', viaLabelText)
+  const viaLabelFor = await env.inspectPoint({ x: 150, y: 86 })
+  // Chrome names a labelled button by its label (HTML-AAM), so the button's name is the label's words here.
+  // The custom check box: a display:none input styled by its label has no accessibility name - the label's words name it.
+  const viaHidden = await env.inspectPoint({ x: 150, y: 236 })
+  check('a label for= a display:none check box is judged as the box, named by the label', viaHidden?.tag === 'input' && viaHidden.inputType === 'checkbox' && viaHidden.name === 'Verify you are human', viaHidden)
+  const viaInvisible = await env.inspectPoint({ x: 30, y: 311 })
+  check('a label for= a transparent 1px check box is judged as the box', viaInvisible?.tag === 'input' && viaInvisible.role === 'checkbox' && viaInvisible.name === 'I am not a robot', viaInvisible)
+  check('a click on a label for= a button is judged as the button', viaLabelFor?.tag === 'button' && viaLabelFor.role === 'button' && /^Delete my account now$/.test(viaLabelFor.name ?? ''), viaLabelFor)
+  // CU-353: Control-Option-<key> fires the element whose accesskey is that key; keyTarget reports it, not the focus.
+  await env.perform({ type: 'navigate', url: `${origin}/accesskey-page` })
+  await env.perform({ type: 'click', x: 100, y: 26, button: 'left' })
+  const chordD = await env.keyTarget({ type: 'keypress', keys: ['CTRL', 'ALT', 'D'] })
+  check('keyTarget answers Control-Option-D with the accesskey button, marked accessKey', chordD?.tag === 'button' && chordD.name === 'Delete account' && chordD.accessKey === true, chordD)
+  const chordH = await env.keyTarget({ type: 'keypress', keys: ['CTRL', 'ALT', 'H'] })
+  check('an accesskey on a label answers with its check box', chordH?.tag === 'input' && chordH.inputType === 'checkbox' && chordH.accessKey === true, chordH)
+  const chordQ = await env.keyTarget({ type: 'keypress', keys: ['CTRL', 'ALT', 'Q'] })
+  check('a chord no accesskey answers is the focus, unmarked', chordQ?.tag === 'input' && chordQ.accessKey === undefined, chordQ)
+  await env.perform({ type: 'keypress', keys: ['CTRL', 'ALT', 'D'] })
+  // Recorded, not assumed: this driver sends a Control or Option chord as rawKeyDown with no text (input-plan.mjs), and
+  // Blink matches access keys on a keyDown with text - so the chord does not fire here today; keyTarget judges it anyway,
+  // should the plan change. A change in Chrome or the plan fails this check and is looked at.
+  check('the chord does not fire the accesskey through this driver today (rawKeyDown, no text)', JSON.stringify(await evaluate('window.fired || []')) === '[]', await evaluate('window.fired || []'))
   await env.perform({ type: 'navigate', url: `${origin}/autofill-form` })
   const payAt = { x: 128, y: 176 }
   const payBefore = await env.inspectPoint(payAt)
