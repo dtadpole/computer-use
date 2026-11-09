@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-09T01:49:49Z
+modified: 2026-11-09T03:08:10Z
 level: L1
-version: 2.6.0
+version: 2.7.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,25 +15,26 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; never drives the desktop. State at 01:50Z, 9 November.
+session worktree plus `--review` worktrees; never drives the desktop. State at 03:08Z, 9 November.
 
-## Landed tonight
+## Landed
 
-#178 (CU-301 Urgent), #168 (CU-241), #175 (CU-297) - all verified live; #180, #166, #156 (records).
+- Verified live: #178 (CU-301), #168 (CU-241), #175 (CU-297).
+- CU-302 policy side: #195 (autofilled submit asks, never pre-approved), #202 + #204 (D-089 and CU-322: in an
+  approved browser only a target read with inWebArea false keeps its rules). cu-verifier's desktop rows C1-C4 held.
+- Guide 0.1.14 (#213) names the interim over-block (address bar, tabs, menus, shortcuts).
 
-## Open PRs (OK'd heads)
+## Open
 
-- #184 (CU-300 policy half, ca6257c; #181 stacks on it) and #174 (Fixes CU-263, 8221ead): OK'd, waiting for phase 2 (D-086).
-- CU-302 (High, D-088), OK'd pairs: #195 ea2d8dd (autofilled submit asks) with #200 (driver); #202 b7e04ed (D-089 refusal) with #204 7b3fa6e (CU-322: only inWebArea false is outside); then #205 and the helper half.
-- #190 (guide 0.1.13); this handover.
+- #184 (CU-300 policy half, ef8df3d; #181 stacks on it) and #174 (Fixes CU-263, 8221ead): OK'd, waiting for phase 2.
+- CU-302 rest: #200 (driver autofilledFields), #205 (driver inWebArea), helper 0.2.61 (#206 chain), then live rows.
 
 ## Pending
 
-- CU-302 live rows by cu-verifier after landing; name the Cmd-L-with-no-focus over-block in the limits (cu-researcher).
-- #198's todo cell flips in #202 if #198 lands first.
-- #184 restores two sensitive-classes precisions after #43 lands (Shift/Option keys; grounded_in sources).
-- Guide next: the CAPTCHA hand-off (#174) and the AutoFill/desktop-browser lines (CU-302) once landed; 497 of 499 words.
-- CU-135 waits on the owner's step 4; CU-252 on the Finder-shape stand-in (#165).
+- Guide: the CAPTCHA line (#174) and the AutoFill line (#200) when landed; 499 of 499 words, trim to add.
+- After 0.2.61: re-run #204's rows on real inWebArea reads with cu-verifier (C4 should allow); CU-321's results
+  decide how D-089 narrows (design note first).
+- CU-135 waits on the owner's step 4.
 - Schedules: hourly pass; daily Session reflection 23:00Z.
 
 ## Lessons
