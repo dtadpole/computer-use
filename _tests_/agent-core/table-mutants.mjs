@@ -57,6 +57,10 @@ export const MUTANTS = Object.freeze([
     rows: ['split-card 4x4 typed key by key into unnamed boxes', 'split-SSN 3/2/4 typed per box into unnamed boxes'] },
   { name: 'locale-submit-dropped', from: 'consent-routes', why: 'a Russian Send button is not read as submit (CU-352)', mutations: [{ file: POLICY, find: "'submit return', 'submit tax return', ...ZH_WORDS.submit, ...LOCALE_WORDS.submit],", replace: "'submit return', 'submit tax return', ...ZH_WORDS.submit]," }],
     rows: ['web-click-one-script-name'] },
+  { name: 'aws-secret-ignored', why: 'a standalone AWS secret access key is not a key (CU-347)', mutations: [{ file: POLICY, find: "    if (/[A-Z]/.test(m[0]) && /[a-z]/.test(m[0]) && /\\d/.test(m[0])) return 'key'\n", replace: '' }],
+    rows: ['value-AWS secret access key'] },
+  { name: 'assignment-ignored', why: 'a credential assignment (password=, token=, DB_PASSWORD=) is not a key (CU-347)', mutations: [{ file: POLICY, find: "    if (/[\\d\\W_]/.test(m[1])) return 'key'\n  }\n", replace: '  }\n' }],
+    rows: ['value-credential assignment password=', 'value-credential assignment token=', 'value-credential assignment UPPER_SNAKE', 'value-credential assignment JSON'] },
   { name: 'terminal-typed', from: 'desktop-consent', rows: ['ide-terminal-type-command', 'ide-terminal-return', 'ide-terminal-localized-label', 'ide-terminal-japanese-label', 'ide-terminal-zh-in-cursor', 'ide-terminal-zh-real-label', 'ide-terminal-zh-hant-real-label', 'ide-debug-console-zh-hans', 'ide-debug-console-zh-hant'] },
   { name: 'held-chord-unjudged', from: 'desktop-consent', rows: ['system-chord-held-log-out'] },
 ])
