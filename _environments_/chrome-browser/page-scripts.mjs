@@ -309,7 +309,12 @@ export function deepActiveElement(doc) {
         inner = null
       }
       if (!inner || !inner.activeElement) return active
-      active = inner.activeElement
+      const innerActive = inner.activeElement
+      // A same-origin frame editor (TinyMCE, CKEditor classic, webmail composers): its focus is the frame's body, which
+      // takes text when contentEditable or in designMode - a text entry, as FRAME_FOCUS_EXPRESSION already answers for
+      // a cross-site frame (CU-300). Without this the focus read null, and a null focus makes typed text a page shortcut.
+      if ((innerActive.tagName === 'BODY' || innerActive.tagName === 'HTML') && (innerActive.isContentEditable || inner.designMode === 'on')) return inner.body || innerActive
+      active = innerActive
       continue
     }
     break

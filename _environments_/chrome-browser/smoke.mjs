@@ -113,6 +113,11 @@ const server = http.createServer((req, res) => {
     res.end('<!doctype html><style>body{margin:0}.at{position:absolute;left:20px;width:300px;height:30px}</style><input class="at" style="top:20px" id="notes" value=""><button class="at" style="top:100px" accesskey="d" onclick="window.fired=(window.fired||[]).concat(\'delete\')">Delete account</button><input type="checkbox" id="hb" style="position:absolute;left:20px;top:200px"><label class="at" style="top:200px;left:50px" for="hb" accesskey="h">Verify you are human</label>')
     return
   }
+  // A same-origin frame editor: a srcdoc iframe whose body is contentEditable, and one in designMode.
+  if (req.url.startsWith('/frame-editor-page')) {
+    res.end('<!doctype html><style>body{margin:0}iframe{position:absolute;left:20px;width:400px;height:120px;border:1px solid #888}</style><iframe id="ce" style="top:20px" srcdoc="<body contenteditable>hello</body>"></iframe><iframe id="dm" style="top:180px" srcdoc="<body>draft</body>"></iframe><script>const dm = document.getElementById(\'dm\'); dm.addEventListener(\'load\', () => { dm.contentDocument.designMode = \'on\' })</script>')
+    return
+  }
   // CU-319: a card form for Chrome's own autofill (CDP Autofill.trigger with a test card built at runtime).
   if (req.url.startsWith('/autofill-form')) {
     res.end('<!doctype html><style>body{margin:0}input,button{position:absolute;left:20px;width:300px;height:30px}</style><form onsubmit="event.preventDefault()"><input id="cardnumber" autocomplete="cc-number" aria-label="Card number" style="top:20px"><input autocomplete="cc-name" aria-label="Name on card" style="top:70px"><input autocomplete="cc-exp" aria-label="Expiry" style="top:120px"><input aria-label="Notes" style="top:170px"><button type="submit" style="top:220px">Pay now</button></form>')
@@ -301,6 +306,14 @@ try {
   // Blink matches access keys on a keyDown with text - so the chord does not fire here today; keyTarget judges it anyway,
   // should the plan change. A change in Chrome or the plan fails this check and is looked at.
   check('the chord does not fire the accesskey through this driver today (rawKeyDown, no text)', JSON.stringify(await evaluate('window.fired || []')) === '[]', await evaluate('window.fired || []'))
+  // A same-origin frame editor's focus is its body, a text entry - contentEditable and designMode alike.
+  await env.perform({ type: 'navigate', url: `${origin}/frame-editor-page` })
+  await env.perform({ type: 'wait', ms: 200 })
+  await env.perform({ type: 'click', x: 60, y: 60, button: 'left' })
+  const ceFocus = await env.focusedElement()
+  await env.perform({ type: 'click', x: 60, y: 220, button: 'left' })
+  const dmFocus = await env.focusedElement()
+  check('a same-origin frame editor\'s focus is its body, a text entry (contentEditable and designMode)', ceFocus?.tag === 'body' && ceFocus?.editable === true && dmFocus?.tag === 'body' && dmFocus?.editable === true, { ce: ceFocus && { tag: ceFocus.tag, editable: ceFocus.editable, role: ceFocus.role }, dm: dmFocus && { tag: dmFocus.tag, editable: dmFocus.editable, role: dmFocus.role } })
   await env.perform({ type: 'navigate', url: `${origin}/autofill-form` })
   const payAt = { x: 128, y: 176 }
   const payBefore = await env.inspectPoint(payAt)

@@ -548,7 +548,10 @@ class BrowserEnvironment {
     const node = (await this.session.send(page, 'DOM.describeNode', { objectId: remote.objectId })).result.node
     const inner = await this.#focusInsideFrame(page, node)
     if (inner !== undefined) return inner
-    const element = await this.#withAutofill(page, node.backendNodeId, undefined, await this.#describe(page, node.backendNodeId, undefined))
+    // deepActiveElement answers a body only for a same-origin frame editor (contentEditable or designMode); the top
+    // document's own body is null there. So a body here is a text entry, described as CU-300's cross-site case is.
+    const editableBody = String(node.nodeName ?? '').toUpperCase() === 'BODY'
+    const element = await this.#withAutofill(page, node.backendNodeId, undefined, await this.#describe(page, node.backendNodeId, undefined, { node, editableBody }))
     if (element === null) return null
     const submit = await this.#implicitSubmit(page, node.backendNodeId)
     return { ...element, defaultButton: submit.button, defaultButtonRead: submit.read }
