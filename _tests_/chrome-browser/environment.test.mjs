@@ -126,6 +126,10 @@ test('CU-360: a page\'s navigation to another app\'s scheme is a notice (the sch
   connection.emit('Page.frameRequestedNavigation', { frameId: 'F-S9', reason: 'scriptInitiated', url: 'zoommtg://zoom.us/join', disposition: 'currentTab' }, 'S9')
   const added = env.session.notices.slice(before).map(({ kind, url, reason }) => [kind, url, reason])
   assert.deepEqual(added, [['external_navigation_requested', 'shortcuts:', 'scriptInitiated']], 'the app scheme of this page; not the web navigation, not another session\'s')
+  await new Promise((resolve) => setImmediate(resolve))
+  assert.equal(connection.of('Page.stopLoading', 'S1').length, 1, 'the best-effort stop is sent once, on the page\'s session, for the app scheme only')
+  assert.equal(connection.of('Page.stopLoading', 'S9').length, 0)
+  assert.equal(env.session.notices.slice(before)[0].stop, 'acknowledged', 'the notice says the stop was acknowledged - what was tried, not that a launch was stopped')
   await env.close()
 })
 
