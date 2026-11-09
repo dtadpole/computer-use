@@ -48,4 +48,4 @@ file choices are never pre-approved. Typed sensitive text stays out of run files
 - An approved app's built-in AI counts as part of the app.
 - A website's own shortcuts are judged by the focus, not their effect.
 - A card's security code or expiry typed into a payment frame whose title cannot be read is not asked.
-- Digits typed after a paste it cannot read are asked.
+- Digits typed after an unreadable paste ask.
