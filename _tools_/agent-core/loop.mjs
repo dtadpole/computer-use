@@ -835,6 +835,13 @@ export async function runTask(options) {
     // off the frame) leaves it unjudged there, never fails the drag - the helper's scope check refuses such a drop.
     const last = action.type === 'drag' && Array.isArray(action.path) && action.path.length > 1 ? action.path[action.path.length - 1] : null
     const dropTarget = last ? await environment.inspectPoint(last).catch(() => null) : null
+    // CU-377 (cu-coordinator 21:35Z): what a desktop drag carries - 'file' (the press target names a file: a filename or a
+    // file URL), 'unknown' (nothing read, a role-less shape, or another app's element), else 'other'.
+    const dragSource = action.type === 'drag' && desktop
+      ? (!target || !target.role ? 'unknown'
+        : (typeof target.filename === 'string' && target.filename !== '') || /^file:/i.test(String(target.url ?? '')) ? 'file'
+          : (typeof target.origin === 'string' && target.origin !== '' && context?.frontmostBundleId && target.origin !== context.frontmostBundleId) ? 'unknown' : 'other')
+      : null
     // CU-198 (drag-text.md): the browser reads what a drag moves - once, and only when it lands on a text entry: a string,
     // { unknown: true } on a failed read, or null (nothing selected under the press). Never recorded; the desktop reads none.
     // CU-370 (cu-developer-two's contract): before a type into a native select the browser driver answers every option the
@@ -915,7 +922,7 @@ export async function runTask(options) {
     // CU-325: a navigate carries the card-length digit runs this run typed or pasted (in memory, never recorded), so a URL
     // path that holds one asks whatever its prefix.
     const typedDigits = action.type === 'navigate' ? typedCardRuns() : []
-    return { url: state.url, target: remembered(target), ...(Array.isArray(typeOptions) || typeOptions?.unread === true ? { typeOptions } : {}), ...(typed ? { typed } : {}), ...(typedSplit ? { typedSplit } : {}), ...(typedDigits.length ? { typedDigits } : {}), ...(boundMenuItem ? { boundMenuItem } : {}), ...(selection ? { selection } : {}), ...(dropTarget ? { dropTarget: remembered(dropTarget) } : {}), ...(dragText !== undefined ? { dragText } : {}), ...(afterClose ? { afterClose: true } : {}), ...(resubmits ? { resubmits: historyMove } : {}), ...(historyJudged ? { historyJudged } : {}), ...(paste ? { paste } : {}), ...(pasteboardJudged ? { pasteboardJudged } : {}), ...(state.interstitial === true ? { interstitial: true } : {}), dialog: state.dialog ?? null, task: task.text, ...app }
+    return { url: state.url, target: remembered(target), ...(dragSource ? { dragSource } : {}), ...(Array.isArray(typeOptions) || typeOptions?.unread === true ? { typeOptions } : {}), ...(typed ? { typed } : {}), ...(typedSplit ? { typedSplit } : {}), ...(typedDigits.length ? { typedDigits } : {}), ...(boundMenuItem ? { boundMenuItem } : {}), ...(selection ? { selection } : {}), ...(dropTarget ? { dropTarget: remembered(dropTarget) } : {}), ...(dragText !== undefined ? { dragText } : {}), ...(afterClose ? { afterClose: true } : {}), ...(resubmits ? { resubmits: historyMove } : {}), ...(historyJudged ? { historyJudged } : {}), ...(paste ? { paste } : {}), ...(pasteboardJudged ? { pasteboardJudged } : {}), ...(state.interstitial === true ? { interstitial: true } : {}), dialog: state.dialog ?? null, task: task.text, ...app }
   }
 
   let consecutiveBlocks = 0
