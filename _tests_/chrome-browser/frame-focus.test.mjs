@@ -230,6 +230,16 @@ test("CU-300 end to end: the driver's own answers, judged by agent core's policy
     assert.equal(unread.defaultButtonRead, false)
     assert.equal(judge({ type: 'keypress', keys: ['ENTER'] }, unread), 'submit', 'a Return after a failed read asks submit')
     world.resolveFails = false
+    // A text drop: inspectPoint's inner target (it carries frameHost too) is the drop target (#184 round 2).
+    const hit = AX[FRAME][5]
+    AX[FRAME][5] = { role: 'textbox', name: '' }
+    const dropTarget = await env.inspectPoint({ x: 240, y: 120 })
+    AX[FRAME][5] = hit
+    assert.deepEqual([dropTarget.name, dropTarget.frameHost.name], ['', 'Secure Credit Card Frame - CVV'])
+    const drag = { type: 'drag', path: [{ x: 10, y: 10 }, { x: 240, y: 120 }] }
+    const source = { tag: 'p', role: 'paragraph', name: 'Your code', origin: 'https://shop.example' }
+    const dropped = policy.classify(drag, { url: 'https://shop.example/checkout', target: source, dropTarget: { ...dropTarget, autocomplete: null }, dragText: '123' })
+    assert.equal(dropped.decision === 'allow' ? 'allow' : dropped.class, 'sensitive_data', 'a text drop into the framed CVV asks too')
     AX[PAGE][40] = { role: 'Iframe', name: 'Comments' }
     AX[FRAME][9] = { role: 'textbox', name: 'Order notes' }
     assert.equal(judge({ type: 'type', text: 'gift wrap' }, await env.focusedElement()), 'allow', 'two neutral names stay free (the twin)')
