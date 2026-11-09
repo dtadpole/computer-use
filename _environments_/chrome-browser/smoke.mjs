@@ -123,6 +123,11 @@ const server = http.createServer((req, res) => {
     res.end('not a disk image')
     return
   }
+  // A same-origin frame editor: a srcdoc iframe whose body is contentEditable, and one in designMode.
+  if (req.url.startsWith('/frame-editor-page')) {
+    res.end('<!doctype html><style>body{margin:0}iframe{position:absolute;left:20px;width:400px;height:120px;border:1px solid #888}</style><iframe id="ce" style="top:20px" srcdoc="<body contenteditable>hello</body>"></iframe><iframe id="dm" style="top:180px" srcdoc="<body>draft</body>"></iframe><script>const dm = document.getElementById(\'dm\'); dm.addEventListener(\'load\', () => { dm.contentDocument.designMode = \'on\' })</script>')
+    return
+  }
   // CU-370: a 'Bulk actions' select, a text field, and an ARIA listbox whose active option is Delete.
   if (req.url.startsWith('/select-page')) {
     res.end('<!doctype html><style>body{margin:0}.at{position:absolute;left:20px;width:300px;height:30px}</style><select class="at" style="top:20px" id="bulk"><option>Bulk actions</option><option>Archive</option><option>Delete</option><option>Details</option><option>Sort: Newest</option></select><input class="at" style="top:70px" id="note"><div class="at" style="top:120px" id="lb" role="listbox" tabindex="0" aria-label="Actions" aria-activedescendant="lb-del"><div role="option" id="lb-arc">Archive</div><div role="option" id="lb-del">Delete</div></div><select class="at" style="top:170px" id="multi" multiple><option>Archive</option><option>Delete</option></select><form class="at" style="top:230px"><label><input type="radio" name="account" id="keep" checked> Keep my account</label><label><input type="radio" name="account" id="del"> Delete my account</label></form>')
@@ -322,6 +327,14 @@ try {
   if (!downloadEffect.notices?.some((n) => n.kind === 'download_refused')) downloadEffect = await env.perform({ type: 'wait', ms: 500 })
   const refused = (downloadEffect.notices ?? []).find((n) => n.kind === 'download_refused')
   check('a refused download is on the effect, without its query', refused !== undefined && refused.url === `${origin}/app.dmg`, downloadEffect.notices ?? null)
+  // A same-origin frame editor's focus is its body, a text entry - contentEditable and designMode alike.
+  await env.perform({ type: 'navigate', url: `${origin}/frame-editor-page` })
+  await env.perform({ type: 'wait', ms: 200 })
+  await env.perform({ type: 'click', x: 60, y: 60, button: 'left' })
+  const ceFocus = await env.focusedElement()
+  await env.perform({ type: 'click', x: 60, y: 220, button: 'left' })
+  const dmFocus = await env.focusedElement()
+  check('a same-origin frame editor\'s focus is its body, a text entry (contentEditable and designMode)', ceFocus?.tag === 'body' && ceFocus?.editable === true && dmFocus?.tag === 'body' && dmFocus?.editable === true, { ce: ceFocus && { tag: ceFocus.tag, editable: ceFocus.editable, role: ceFocus.role }, dm: dmFocus && { tag: dmFocus.tag, editable: dmFocus.editable, role: dmFocus.role } })
   // CU-370: a key on a focused select is judged by the option it lands on; a type by every option it passes through.
   await env.perform({ type: 'navigate', url: `${origin}/select-page` })
   await evaluate("document.getElementById('bulk').focus()")
