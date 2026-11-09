@@ -13,6 +13,9 @@ import { runTask } from '../../_tools_/agent-core/loop.mjs'
 import { createPolicy } from '../../_tools_/agent-core/policy.mjs'
 import { readRun } from '../../_tools_/agent-core/trajectory.mjs'
 
+// CU-377: a drag pressed on nothing at all is an unknown source and asks; these rows press a control (the frontmost app's).
+const PRESS_ELEMENT = () => ({ origin: 'ai.reflection.cu.fixture', role: 'AXGroup', name: 'Canvas' })
+
 // CU-140: a long press or a drag is judged by the target where the button goes down, like a click on it.
 
 const policy = createPolicy({ sitePolicy: () => 'allow' })
@@ -55,7 +58,7 @@ test('a travelling drag whose drop point has no name is marked dropTargetUnnamed
   try {
     const FIXTURE = 'ai.reflection.cu.fixture'
     const control = createRunControl()
-    const environment = createFakeEnvironment({ kind: 'desktop', control })
+    const environment = createFakeEnvironment({ targets: PRESS_ELEMENT, kind: 'desktop', control })
     environment.inspectPoint = async ({ x }) => (x < 100 ? { origin: FIXTURE, role: 'AXRow', name: 'doc-104', fingerprint: 'row' } : { origin: FIXTURE, role: 'AXGroup', name: null, fingerprint: 'canvas' })
     const store = createAppApprovals({ path: join(dir, 'a.json') })
     store.grantAlways(FIXTURE, { by: 'api' })
