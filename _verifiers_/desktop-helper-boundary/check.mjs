@@ -21,7 +21,7 @@ import { sutRoot } from '../../_tools_/verify-kit/sut.mjs'
 
 const STAND_IN = fileURLToPath(new URL('./stand-in-driver.mjs', import.meta.url))
 const NOT_AN_ENTRY = fileURLToPath(new URL('./not-an-entry.mjs', import.meta.url))
-// The helper accepts only a script inside one of the owner's checkouts under the home directory: reflection's
+// The helper accepted only a script inside one of the owner's checkouts under the home directory: reflection's
 // (~/reflection or ~/reflection--<seat>, the project under _projects_/heddle/_projects_/computer-use/) until the cutover
 // (CU-7), and the standalone repository's (~/computer-use or ~/computer-use--<seat>, the project at its root, D-039)
 // once the helper under test lists that layout (CU-2). A verifier run from elsewhere (an integrator's /tmp worktree),
@@ -37,8 +37,34 @@ const helperListsRepository = () => {
     return false
   }
 }
-const IN_HOME_CHECKOUT = IN_REFLECTION || (IN_REPOSITORY && helperListsRepository())
-const CHECKOUT_WHY = IN_REPOSITORY ? 'this verifier is in a ~/computer-use checkout, a layout the helper under test does not list yet (CU-2)' : 'this verifier is not inside one of the owner\'s checkouts under the home directory'
+// CU-295/CU-299: since 0.2.58 the helper also admits the checkouts this Mac's local config names (helperCheckouts) - an
+// exact checkout or one named child of a worktrees parent, by real path - and from 0.2.60 only those. Read the file the
+// helper reads, with its entry shape; a missing or malformed config admits nothing.
+const ENTRY = /^~\/([A-Za-z0-9._-]+\/)*[A-Za-z0-9._-]+(\/\*)?$/
+const configuredRoots = () => {
+  try {
+    const config = JSON.parse(readFileSync(join(homedir(), '.config/computer-use/config.json'), 'utf8'))
+    const entries = Array.isArray(config?.helperCheckouts) ? config.helperCheckouts : []
+    return entries.filter((entry) => typeof entry === 'string' && ENTRY.test(entry) && !entry.split('/').some((part) => part === '.' || part === '..'))
+      .flatMap((entry) => {
+        const parent = entry.endsWith('/*')
+        try { return [{ parent, real: realpathSync(join(homedir(), entry.slice(2).replace(/\/\*$/, ''))) }] } catch { return [] }
+      })
+  } catch {
+    return []
+  }
+}
+const IN_CONFIGURED = configuredRoots().some(({ parent, real }) => STAND_IN_REAL.startsWith(`${real}/`) && (!parent || STAND_IN_REAL.slice(real.length + 1).includes('/')))
+const helperListsConfigured = () => {
+  try {
+    return readFileSync(join(sutRoot(), '_environments_/macos-desktop/helper/Sources/PeerCheck.swift'), 'utf8').includes('helperCheckouts')
+  } catch {
+    return false
+  }
+}
+const IN_HOME_CHECKOUT = IN_REFLECTION || (IN_REPOSITORY && helperListsRepository()) || (IN_CONFIGURED && helperListsConfigured())
+const CHECKOUT_WHY = IN_REPOSITORY ? 'this verifier is in a ~/computer-use checkout, a layout the helper under test does not list (the compiled roots went in 0.2.60, CU-299)'
+  : 'this verifier is not inside a checkout the local config names (helperCheckouts) or one the helper under test compiles in'
 let helper
 let windowTable
 before(() => {
