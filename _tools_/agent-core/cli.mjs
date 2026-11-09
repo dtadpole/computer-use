@@ -30,9 +30,10 @@ import { buildInfo, cuHome, formatReplay, pruneRuns, readRun, runsDir } from './
  *   cli.mjs prune [--runs-dir DIR]
  *   cli.mjs control-link <run-id>      (only in a person's own terminal: stdin and stdout must be terminals)
  *   cli.mjs apps list | revoke <bundle-id>      (the desktop's always app approvals in $CU_HOME/app-approvals.json)
- *   cli.mjs inspect --env macos-desktop --seat cu-<seat> --app BUNDLE_ID [--app ...] [--at X,Y]... [--panel]
- *               (read-only: describes the element at each global screen point, and with --panel the open or save
- *               panel's selection and the destination agent core would resolve; no input, no model, D-045)
+ *   cli.mjs inspect --env macos-desktop --seat cu-<seat> --app BUNDLE_ID [--app ...] [--at X,Y]... [--panel] [--focused]
+ *               (read-only: describes the element at each global screen point, with --panel the open or save
+ *               panel's selection and the destination agent core would resolve, and with --focused the focused element;
+ *               each target carries inWebArea when the helper read it (CU-328); no input, no model, D-045)
  *
  * `run` prints the result as JSON and exits 0 for `completed`, 2 for `needs_input`, `escalated` or `declined`, 1
  * otherwise. Unless `--no-live`, it serves the live view (M3) and prints its view URL once on stderr, never in the
@@ -43,7 +44,7 @@ import { buildInfo, cuHome, formatReplay, pruneRuns, readRun, runsDir } from './
  */
 
 const REPEATABLE = new Set(['allow', 'block', 'pre-approve', 'secret', 'app', 'exclude-app', 'at'])
-const BOOLEAN = new Set(['no-live', 'no-control-line', 'panel', 'ask-owner'])
+const BOOLEAN = new Set(['no-live', 'no-control-line', 'panel', 'focused', 'ask-owner'])
 
 export class UsageError extends Error {}
 
@@ -258,13 +259,13 @@ function resolveRunDir(target, options) {
 async function commandInspect(options, inspect, env) {
   if (options.env !== 'macos-desktop') throw new UsageError('inspect needs --env macos-desktop')
   for (const required of ['seat', 'app']) if (!options[required]) throw new UsageError(`inspect needs --${required}`)
-  if (!options.at && !options.panel) throw new UsageError('inspect needs --at X,Y or --panel')
+  if (!options.at && !options.panel && !options.focused) throw new UsageError('inspect needs --at X,Y, --panel or --focused')
   const points = (options.at ?? []).map((text) => {
     const match = /^(-?\d+),(-?\d+)$/.exec(String(text).trim())
     if (!match) throw new UsageError(`--at takes X,Y in global screen points, not '${text}'`)
     return { x: Number(match[1]), y: Number(match[2]) }
   })
-  return inspect({ seat: options.seat, apps: options.app, points, panel: Boolean(options.panel), env })
+  return inspect({ seat: options.seat, apps: options.app, points, panel: Boolean(options.panel), focused: Boolean(options.focused), env })
 }
 
 /** Run one command; returns `{ code, stdout }` so the command line is testable without a process. */

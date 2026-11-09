@@ -153,6 +153,9 @@ const inspected = (target) => (target === null || target === undefined ? null : 
   origin: target.origin ?? null, role: target.role ?? null, subrole: target.subrole ?? null, name: target.name ?? null,
   panel: target.panel ?? null, elementOwner: target.elementOwner ?? null, hostedBy: target.hostedBy ?? null,
   opaque: target.opaque === true, secure: target.secure === true, keyEquivalent: target.keyEquivalent ?? null,
+  // CU-328: the helper's inWebArea (CU-322) exactly as the driver passes it - true or false, or no key when the driver
+  // has no read (an older helper, or a walk that could not finish). Unread is never printed as false.
+  ...(Object.hasOwn(target, 'inWebArea') ? { inWebArea: target.inWebArea } : {}),
 })
 
 /**
@@ -162,7 +165,8 @@ const inspected = (target) => (target === null || target === undefined ? null : 
  * `perform`, never loads a model and keeps no capture, so it can look at an open or save panel without touching it.
  * Options: `seat`, `apps` (bundle ids), `points` ([{x, y}] in global points), `panel` (also read the open or save panel's
  * selection once, and say what agent core would make of it: the resolved destination, whether it is known and protected),
- * `env`, and test seams `launch`, `appApprovals` and `environmentOptions`. Returns `{ seat, frame, scope, points, panel? }`.
+ * `focused` (also read the focused element once: role, name and the helper's inWebArea, CU-328),
+ * `env`, and test seams `launch`, `appApprovals` and `environmentOptions`. Returns `{ seat, frame, scope, points, panel?, focused? }`.
  */
 export async function inspectPoints(options) {
   const { seat, apps = [], points = [] } = options
@@ -217,7 +221,21 @@ export async function inspectPoints(options) {
         }
       }
     }
-    return { seat, frame: { width: frame.width, height: frame.height, originPt: frame.originPt, display: frame.display ?? null }, scope, points: results, ...(options.panel ? { panel } : {}) }
+    // CU-328: with `focused`, the element that has keyboard focus once (role, name, inWebArea - what a key would be
+    // judged by), through the same read a run uses; null when nothing approved has focus.
+    let focused
+    if (options.focused) {
+      if (typeof environment.focusedElement !== 'function') {
+        focused = { error: 'unsupported: this driver has no focusedElement' }
+      } else {
+        try {
+          focused = inspected(await environment.focusedElement())
+        } catch (error) {
+          focused = { error: `${error?.code ?? 'failed'}: ${error?.message ?? ''}` }
+        }
+      }
+    }
+    return { seat, frame: { width: frame.width, height: frame.height, originPt: frame.originPt, display: frame.display ?? null }, scope, points: results, ...(options.panel ? { panel } : {}), ...(options.focused ? { focused } : {}) }
   } finally {
     try { await environment.close() } catch { /* already closed */ }
   }
