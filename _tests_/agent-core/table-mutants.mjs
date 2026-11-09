@@ -10,7 +10,7 @@ const APP = '_tools_/agent-core/app-policy.mjs'
 const POLICY = '_tools_/agent-core/policy.mjs'
 const LOOP = '_tools_/agent-core/loop.mjs'
 
-export const TABLE_MUTANTS = Object.freeze([
+export const MUTANTS = Object.freeze([
   { name: 'selection-read-ignored', why: 'an open never reads its selection as running code (CU-252)', mutations: [{ file: APP, find: "export function selectionRunsCode(selection) {\n  if (!selection || typeof selection !== 'object') return true", replace: "export function selectionRunsCode(selection) {\n  return false\n  if (!selection || typeof selection !== 'object') return true" }],
     rows: ['menu-open-launchable-selection', 'menu-open-package-selection', 'menu-open-unreadable-selection', 'any-app-open-unreadable-cmd-o', 'any-app-open-unreadable-cmd-down', 'any-app-open-unreadable-menu', 'any-app-open-unnamed-items'] },
   { name: 'store-install-ignored', why: 'an App Store price or install button is judged by name only (CU-254)', mutations: [{ file: APP, find: '    const store = storeInstall(action, target, app)', replace: '    const store = null' }],
@@ -35,15 +35,17 @@ export const TABLE_MUTANTS = Object.freeze([
     rows: ['chat-return-dm-recipient', 'chat-return-message-to'] },
   { name: 'nofocus-key-dropped', why: "with the focus unreadable, typed pieces are keyed by the field only, so none is joined (CU-267)", mutations: [{ file: LOOP, find: "return typeof app === 'string' && app !== '' && app !== 'null' ? `nofocus:${app}` : null", replace: 'return null' }],
     rows: ['sequence-card as four type actions, focus unreadable'] },
-  { name: 'default-button-read-ignored', why: "a Return whose default button could not be read is judged as if none were there (CU-190); the row's field is named Message, so CU-253's compose-name guard is dropped too", mutations: [
-    { file: POLICY, find: '    if (unreadDefault && defaultName === \'\' && pressesEnter && (!inTextArea || commandReturn)) classes.push(\'submit\')', replace: '' },
-    { file: POLICY, find: "(chatApp || (CHAT_COMPOSE_NAME.test(String(target?.name ?? '').trim()) && !browserTextarea))) classes.push('submit')", replace: "chatApp) classes.push('submit')" },
-  ],
-    rows: ['newline-default-unread'] },
-  { name: 'bound-item-ignored', why: "a chord is judged by its keys only, not as the menu item it fires (CU-232, CU-237)", mutations: [{ file: POLICY, find: '    const bound = context.boundMenuItem\n', replace: '    const bound = null\n' }],
-    rows: ['menu-key-send-later', 'menu-key-delete-message-view'] },
-  { name: 'menu-paste-destination-ignored', why: 'a menu paste whose destination is unread, a menu or the no-focus placeholder is judged as a paste into nothing (CU-186)', mutations: [{ file: POLICY, find: "      if (viaMenu && (into === null || !into?.role || MENU_ROLE.test(String(into.role)))) classes.push('sensitive_data')\n      else {", replace: '      {' }],
+  { name: 'typed-newline-not-enter', why: 'a typed line break is not a Return, so no default-button rule sees it (CU-190, D-069); measured by cu-researcher 05:00Z', mutations: [{ file: POLICY, find: "const pressesEnter = keysOf(action).has('ENTER') || (action.type === 'type' && /[\\r\\n]/.test(String(action.text ?? '')))", replace: "const pressesEnter = keysOf(action).has('ENTER')" }],
+    rows: ['newline-default-unread', 'newline-default-absent'] },
+  { name: 'nothing-focused-read-as-unread', why: "the driver's good read of nothing focused counts as an unread default button (D-069 negative); measured by cu-researcher 05:00Z", mutations: [{ file: POLICY, find: '(desktopUrl && target != null && target.defaultButtonRead !== true)', replace: '(desktopUrl && target?.defaultButtonRead !== true)' }],
+    rows: ['newline-nothing-focused'] },
+  { name: 'menu-paste-unknown-allowed', why: 'a menu paste whose destination is unread, a menu or the no-focus placeholder is judged as a paste into nothing (CU-186)', mutations: [{ file: POLICY, find: "if (viaMenu && (into === null || !into?.role || MENU_ROLE.test(String(into.role)))) classes.push('sensitive_data')", replace: "if (false) classes.push('sensitive_data')" }],
     rows: ['menu-paste-focus-on-menu', 'menu-paste-focus-unread', 'menu-paste-no-focus-placeholder'] },
+  { name: 'bound-menu-item-ignored', why: 'a chord is judged by its keys only, not as the menu item it fires (CU-232, CU-237)', mutations: [{ file: POLICY, find: '    const bound = context.boundMenuItem\n', replace: '    const bound = undefined\n' }],
+    rows: ['menu-key-send-later', 'menu-key-delete-message-view'] },
   { name: 'terminal-typed', from: 'desktop-consent', rows: ['ide-terminal-type-command', 'ide-terminal-return', 'ide-terminal-localized-label', 'ide-terminal-japanese-label', 'ide-terminal-zh-in-cursor', 'ide-terminal-zh-real-label', 'ide-terminal-zh-hant-real-label', 'ide-debug-console-zh-hans', 'ide-debug-console-zh-hant'] },
   { name: 'held-chord-unjudged', from: 'desktop-consent', rows: ['system-chord-held-log-out'] },
 ])
+
+/** The name the runner and older notes use; d065-audit (CU-324) reads MUTANTS, as desktop-consent's file names it. */
+export const TABLE_MUTANTS = MUTANTS
