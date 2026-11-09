@@ -704,12 +704,27 @@ export async function runTask(options) {
     return typeof app === 'string' && app !== '' && app !== 'null' ? `nofocus:${app}` : null
   }
   const typedIn = (key) => (key !== null && typedByField.has(key) ? typedByField.get(key) : '')
+  // CU-340: a value a page splits across boxes (an SSN in 3/2/4, a card in 4x4) - each box's buffer holds only its part.
+  // Each field remembers the scope it was typed in (the page's origin and path, or the frontmost app) and when (a count
+  // of typed actions); the policy gets the last three other fields typed in the same scope within the last eight typed
+  // actions, oldest first, with this action's own before and next, and judges them joined. In memory only (D-031).
+  const typedMeta = new Map()
+  let typedClock = 0
+  let typedScopeNow = null
+  const typedScopeOf = (state) => {
+    if (typeof state?.frontmostBundleId === 'string' && state.frontmostBundleId !== '') return `app:${state.frontmostBundleId}`
+    try { const u = new URL(String(state?.url ?? '')); return `page:${u.origin}${u.pathname}` } catch { return null }
+  }
+  const typedRecentFor = (key, scope) => {
+    if (scope === null) return []
+    return [...typedByField.keys()].filter((k) => k !== key && typedByField.get(k) !== '' && typedMeta.get(k)?.scope === scope && typedClock - typedMeta.get(k).at <= 8).slice(-3).map((k) => typedByField.get(k))
+  }
   const typedCardRuns = () => [...new Set([...typedByField.values()].flatMap((text) => [...String(text).matchAll(/(?:\d[ -]?){13,19}/g)].map((m) => m[0].replace(/\D/g, '')).filter((d) => d.length >= 13 && d.length <= 19)))]
   const setTyped = (key, text) => {
     if (key === null) return
     typedByField.delete(key)
     typedByField.set(key, text.slice(-TYPED_CHARS_MAX))
-    while (typedByField.size > TYPED_FIELDS_MAX) typedByField.delete(typedByField.keys().next().value)
+    while (typedByField.size > TYPED_FIELDS_MAX) { const oldest = typedByField.keys().next().value; typedByField.delete(oldest); typedMeta.delete(oldest) }
   }
   const typedCharOf = (action) => {
     if (action.type !== 'keypress') return null
@@ -727,9 +742,16 @@ export async function runTask(options) {
   const typedFor = (action, target, pasted = null, state = null) => {
     const key = typedKeyOf(target, state)
     typedKeyNow = key
+    typedScopeNow = typedScopeOf(state)
     const before = typedIn(key)
     const next = typedNextOf(action, pasted)
     return before !== '' && next !== '' ? { before, next } : null
+  }
+  const typedSplitFor = (action, target, pasted = null) => {
+    const next = typedNextOf(action, pasted)
+    if (next === '' || typedKeyNow === null) return null
+    const parts = typedRecentFor(typedKeyNow, typedScopeNow)
+    return parts.length ? { parts, before: typedIn(typedKeyNow), next } : null
   }
   const noteTyped = (action, target, pasted = null) => {
     const key = typedKeyNow ?? typedKeyOf(target)
@@ -739,7 +761,7 @@ export async function runTask(options) {
       for (const field of [...typedByField.keys()]) if (field.startsWith('nofocus:')) typedByField.delete(field)
       if (String(key ?? '').startsWith('nofocus:')) return
     }
-    const add = (text) => setTyped(key, typedIn(key) + text)
+    const add = (text) => { setTyped(key, typedIn(key) + text); if (key !== null) typedMeta.set(key, { scope: typedScopeNow, at: ++typedClock }) }
     if (action.type === 'type') return add(String(action.text ?? ''))
     if (typeof pasted === 'string') return add(pasted)
     if (action.type === 'keypress') {
@@ -839,10 +861,11 @@ export async function runTask(options) {
       ? selectedItemsOf(await Promise.resolve(environment.selectedItems()).catch(() => null))
       : undefined
     const typed = typedFor(action, target, !desktop && paste ? paste.text : null, state)
+    const typedSplit = typedSplitFor(action, target, !desktop && paste ? paste.text : null)
     // CU-325: a navigate carries the card-length digit runs this run typed or pasted (in memory, never recorded), so a URL
     // path that holds one asks whatever its prefix.
     const typedDigits = action.type === 'navigate' ? typedCardRuns() : []
-    return { url: state.url, target: remembered(target), ...(typed ? { typed } : {}), ...(typedDigits.length ? { typedDigits } : {}), ...(boundMenuItem ? { boundMenuItem } : {}), ...(selection ? { selection } : {}), ...(dropTarget ? { dropTarget: remembered(dropTarget) } : {}), ...(dragText !== undefined ? { dragText } : {}), ...(afterClose ? { afterClose: true } : {}), ...(resubmits ? { resubmits: historyMove } : {}), ...(historyJudged ? { historyJudged } : {}), ...(paste ? { paste } : {}), ...(pasteboardJudged ? { pasteboardJudged } : {}), ...(state.interstitial === true ? { interstitial: true } : {}), dialog: state.dialog ?? null, task: task.text, ...app }
+    return { url: state.url, target: remembered(target), ...(typed ? { typed } : {}), ...(typedSplit ? { typedSplit } : {}), ...(typedDigits.length ? { typedDigits } : {}), ...(boundMenuItem ? { boundMenuItem } : {}), ...(selection ? { selection } : {}), ...(dropTarget ? { dropTarget: remembered(dropTarget) } : {}), ...(dragText !== undefined ? { dragText } : {}), ...(afterClose ? { afterClose: true } : {}), ...(resubmits ? { resubmits: historyMove } : {}), ...(historyJudged ? { historyJudged } : {}), ...(paste ? { paste } : {}), ...(pasteboardJudged ? { pasteboardJudged } : {}), ...(state.interstitial === true ? { interstitial: true } : {}), dialog: state.dialog ?? null, task: task.text, ...app }
   }
 
   let consecutiveBlocks = 0
