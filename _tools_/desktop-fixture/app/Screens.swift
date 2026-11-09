@@ -241,7 +241,8 @@ enum Oracle {
       _ = popup.sendAction(popup.action, to: popup.target)
     } else if let title = step["menu"] as? String {
       guard let item = Menus.item(title) else { throw ChannelError.message("no menu item \(title)") }
-      fixture.menuChosen(item)
+      // named-controls' Actions items record their index only (CU-323); every other item goes through menuChosen.
+      if let screen = item.target as? NamedControls { screen.choose(item) } else { fixture.menuChosen(item) }
     } else if let answer = step["dialog"] as? String {
       guard let dialog = Screens.pendingDialog else { throw ChannelError.message("no dialog is open") }
       guard dialog.buttons.contains(answer) else { throw ChannelError.message("the dialog has no \(answer)") }
