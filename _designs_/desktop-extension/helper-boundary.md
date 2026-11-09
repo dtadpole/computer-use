@@ -39,6 +39,11 @@ uses, and a `~/computer-use--*` created later would be admitted unasked.
   path to real path and its target is a configured checkout.
 - **Unchanged:** the entry list, the node signing rule, the environment and option rules, and the
   `--driver-node`/`--driver-entry` pins.
+- **Residual (D-029, not widened):** `helperCheckouts` lives in the user's own config, and a worktrees entry admits
+  any folder one level below it. So a same-user process can still add an entry or create an admitted checkout,
+  just as it can edit a listed entry point today. Checking that a child is a git worktree of the main checkout
+  (cu-developer-one's option) would not narrow this, because such a process can run `git worktree add` too, so the
+  rule stays simple.
 - **Fail closed:** with no `helperCheckouts` (missing, unreadable or malformed config) no peer is admitted, and every
   live run is refused before the hello. The start log says `checkouts: configured none - every peer is refused`.
   The post-install check reads that line.
