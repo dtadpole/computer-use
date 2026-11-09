@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-09T10:25:00Z
+modified: 2026-11-09T14:12:00Z
 level: L1
-version: 3.1.0
+version: 3.4.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,23 +15,24 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; never drives the desktop. State at 10:25Z, 9 November.
+session worktree plus `--review` worktrees; never drives the desktop. State at 14:12Z, 9 November.
 
 ## Landed
 
-- Verified live: CU-301, CU-241, CU-297, CU-302 (D-088 ended, D-096), CU-325; CU-321 decided (keep ancestry).
-- #184 (CU-300 policy half); table-mutants.mjs and d065-audit gate the table lane; guides to 0.1.17.
+- Verified: CU-301, CU-241, CU-297, CU-302 (D-096), CU-325, CU-326, CU-263; CU-321 decided (keep ancestry).
+- PR #294 (CU-340, High): boxes judged joined, desktop unread paste marks its field; rows PR #305; guide 0.1.20.
 
 ## Open
 
-- #250 (Fixes CU-326, OK'd): full code gate; then the D-061 rows live with cu-verifier, and the guide's CU-326 line goes.
-- #174 (Fixes CU-263, OK'd): phase 2 re-run after CU-333's fixture flake; then the cells flip and the CAPTCHA guide line.
-- CU-336 (Medium): design note 0.2 on the issue (typed buffer, both frame paths, whitespace, 3-4 digits or MM/YY);
-  take it when a slot frees; rows in #268 (todo); cu-developer-two owns the driver fallback.
+- CU-340 closes on cu-verifier's live rows (table-mutants entry landed, PR #307).
+- PR #291 (Fixes CU-339, OK'd): in its gate. PR #274 (Fixes CU-336, OK'd): next; when it lands, the guide's CU-336
+  limit line becomes its over-ask (a short numeric entry in an unnamed third-party frame).
 
 ## Pending
 
-- #181, #259, #263 OK'd. CU-135 waits on the owner. Schedules: hourly pass; daily reflection 23:00Z.
+- New under-asks filed by cu-researcher 14:20Z, triage pending: CU-345 (non-English PIN/OTP/CVV labels, proposed
+  High), CU-347 (AWS secret, AIza, password=/token=, proposed High), CU-346 (separators, Medium).
+- CU-135 waits on the owner. Schedules: hourly pass; daily reflection 23:00Z.
 
 ## Lessons
 
@@ -42,7 +43,7 @@ session worktree plus `--review` worktrees; never drives the desktop. State at 1
 - Fail closed on unread fields: test 'not exactly the safe value', never '=== undefined'.
 - A D-065 cell needs a mutant seen failing it: run table-mutants-run.mjs, never trust a named one.
 - 'Named limit' is for allow negatives only; an under-ask that stays is a filed issue plus a guide line.
-- Push only when the hygiene gate's output starts with 'ok:' - never chain it through a pipe.
+- Push only on the hygiene gate's exit status 0, run unpiped; write 'PR #n', never a closing keyword before #n.
 
 ## Tools
 

@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { test } from 'node:test'
 
-import { auditCells, failingIds, parseD065Cells } from '../../_tools_/verify-kit/d065-audit.mjs'
+import { auditCells, failingIds, JOURNAL, journalPath, parseD065Cells, recoverJournal, repoAdapters } from '../../_tools_/verify-kit/d065-audit.mjs'
 
 const SOURCE = [
   "  ['cell-a', 'click', 'x', 'launch_code', 'note', 'D-065 (asserted, not live): reason; unit row: t.mjs; mutant: kit-a right-mutant', null],",
@@ -60,4 +63,41 @@ test('CU-324: a table-mutants citation loads from _tests_/agent-core/table-mutan
   assert.equal(await loadMutant('table-mutants', 'nope'), null)
   assert.equal((await loadMutant('table-mutants', 'm2'))?.mutations?.[0]?.file, 'b', 'a from-reference resolves to the verifier mutant')
   assert.equal(await loadMutant('no-such-verifier', 'm1'), null)
+})
+
+test('a mutant run journals the originals and removes the journal after restoring', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'd065-journal-'))
+  try {
+    mkdirSync(join(root, 'lib'))
+    writeFileSync(join(root, 'lib', 'rule.mjs'), 'export const ok = true\n')
+    // The row test reads the journal while the mutant is applied, so the test sees it exist mid-run.
+    writeFileSync(join(root, 'row.test.mjs'), [
+      "import { test } from 'node:test'", "import assert from 'node:assert/strict'", "import { existsSync } from 'node:fs'",
+      "import { ok } from './lib/rule.mjs'",
+      `test('cell-x journalled', () => assert.ok(existsSync('${JOURNAL}')))`, // a bare folder: the journal sits in the root
+      "test('cell-y holds', () => assert.equal(ok, true))",
+    ].join('\n'))
+    const failing = await repoAdapters(root).runWith([{ file: 'lib/rule.mjs', find: 'true', replace: 'false' }], 'row.test.mjs')
+    assert.deepEqual(failing, ['cell-y holds'], 'the mutant applied and the journal existed during the run')
+    assert.equal(readFileSync(join(root, 'lib', 'rule.mjs'), 'utf8'), 'export const ok = true\n', 'restored')
+    assert.equal(existsSync(join(root, JOURNAL)), false, 'journal removed')
+  } finally { rmSync(root, { recursive: true, force: true }) }
+})
+
+test('in a git checkout the journal lives in the git directory, never in the tree', () => {
+  const path = journalPath(process.cwd())
+  assert.ok(!path.startsWith(process.cwd() + '/_') && /\.git|worktrees/.test(path), `journal at ${path}`)
+})
+
+test('an interrupted run (journal left, file mutated) is repaired at the next start; no journal is a no-op', () => {
+  const root = mkdtempSync(join(tmpdir(), 'd065-recover-'))
+  try {
+    const file = join(root, 'rule.mjs')
+    writeFileSync(file, 'export const ok = false\n')
+    writeFileSync(join(root, JOURNAL), JSON.stringify([{ path: file, text: 'export const ok = true\n' }]))
+    assert.deepEqual(recoverJournal(root), [file])
+    assert.equal(readFileSync(file, 'utf8'), 'export const ok = true\n')
+    assert.equal(existsSync(join(root, JOURNAL)), false)
+    assert.deepEqual(recoverJournal(root), [], 'nothing to repair')
+  } finally { rmSync(root, { recursive: true, force: true }) }
 })

@@ -44,7 +44,7 @@ export const MUTANTS = Object.freeze([
   { name: 'bound-menu-item-ignored', why: 'a chord is judged by its keys only, not as the menu item it fires (CU-232, CU-237)', mutations: [{ file: POLICY, find: '    const bound = context.boundMenuItem\n', replace: '    const bound = undefined\n' }],
     rows: ['menu-key-send-later', 'menu-key-delete-message-view'] },
   { name: 'path-card-ignored', why: 'a card number in a URL path is read as an id and sent unasked (CU-325)', mutations: [{ file: POLICY, find: "    if (pathCard(decode(segment), typedDigits)) return 'card'\n", replace: '' }],
-    rows: ['navigate-card number in a path (named limit)'] },
+    rows: ['navigate-card number in a path'] },
   { name: 'host-card-ignored', why: 'a card as a host label is not read (CU-326)', mutations: [{ file: POLICY, find: "  if (url.hostname.split('.').some((label) => pathCard(label))) return 'card'\n", replace: '' }],
     rows: ['navigate-card number as a host label'] },
   { name: 'split-card-ignored', why: 'a card split across all-digit path segments is not joined (CU-326)', mutations: [{ file: POLICY, find: "      if (k > i && cardNumber(joined)) return 'card'\n", replace: '' }],
@@ -53,6 +53,8 @@ export const MUTANTS = Object.freeze([
     rows: ['navigate-card number inside a longer digit run'] },
   { name: 'unread-frame-code-ignored', why: 'a CVV or expiry typed into an unnamed cross-origin frame is sent unasked (CU-336)', mutations: [{ file: POLICY, find: "      if (added !== '' && (shortCode(added) || (whole !== null && shortCode(whole)))) classes.push('sensitive_data')\n", replace: '' }],
     rows: ['frame-cvv-untitled', 'frame-expiry-untitled'] },
+  { name: 'split-join-ignored', why: 'a value split across unnamed boxes is never judged joined (CU-340)', mutations: [{ file: POLICY, find: "        if (joinedAsks) classes.push('sensitive_data')\n", replace: '' }],
+    rows: ['split-card 4x4 typed key by key into unnamed boxes', 'split-SSN 3/2/4 typed per box into unnamed boxes'] },
   { name: 'terminal-typed', from: 'desktop-consent', rows: ['ide-terminal-type-command', 'ide-terminal-return', 'ide-terminal-localized-label', 'ide-terminal-japanese-label', 'ide-terminal-zh-in-cursor', 'ide-terminal-zh-real-label', 'ide-terminal-zh-hant-real-label', 'ide-debug-console-zh-hans', 'ide-debug-console-zh-hant'] },
   { name: 'held-chord-unjudged', from: 'desktop-consent', rows: ['system-chord-held-log-out'] },
 ])

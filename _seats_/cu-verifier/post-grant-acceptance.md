@@ -1,15 +1,15 @@
 ---
 title: Post-grant acceptance - the live halves, in order
 created: 2026-11-02T11:58:57Z
-modified: 2026-11-05T19:48:06Z
+modified: 2026-11-09T13:47:48Z
 level: L1
-version: 0.3.0
+version: 0.3.1
 description: cu-verifier's runbook for the session after the owner's TCC grant - preconditions, the ordered live runs with their commands, and what each must show for its ULTIMATE_GOAL 2.0 row and for M7-M9 acceptance.
 status: unverified
 grounded_in:
   - source: ULTIMATE_GOAL.md@2.0.0
-  - source: _team_members_/cu-verifier/ultimate-goal-2-verdict.md
-  - source: _team_members_/cu-developer-three/tcc-request-draft.md
+  - source: _seats_/cu-verifier/ultimate-goal-2-verdict.md
+  - source: _seats_/cu-developer-three/tcc-request-draft.md
 ---
 
 # Post-grant acceptance

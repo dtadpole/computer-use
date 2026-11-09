@@ -354,6 +354,48 @@ function framesHost(target) {
   if (!target || typeof target !== 'object') return false
   return FRAME_HOST_TAGS.has(String(target.tag ?? '').toLowerCase()) || FRAME_HOST_ROLES.has(String(target.role ?? '').toLowerCase())
 }
+// CU-263 (design note 0.2): a human check - a CAPTCHA - is the person's to solve, as Operator hands it over. Known by the
+// pressed target's name (also inside a longer label: 'Press & Hold to confirm you are a human'), the providers' Chinese
+// labels included; a bare 'Verify' or 'I agree' stays judged by its own words (named limit).
+const CAPTCHA_NAME = new RegExp([
+  "\\bi\\s*(?:['’]\\s*m|\\s+am)\\s+not\\s+a\\s+robot\\b",
+  '\\bim\\s+not\\s+a\\s+robot\\b',
+  "\\bi\\s*(?:['’]\\s*m|\\s+am)\\s+(?:a\\s+)?human\\b",
+  "\\b(?:verify|confirm|prove)\\s+(?:that\\s+)?you\\s*(?:['’]\\s*re|\\s+are)\\s+(?:a\\s+)?(?:human|real\\s+person|not\\s+a\\s+(?:robot|bot))\\b",
+  '\\bhuman\\s+verification\\b',
+  '\\bselect\\s+all\\s+(?:images|squares)\\s+with\\b',
+  '我不是机器人', '我不是機器人', '我是人类', '我是人類', '人机验证', '人機驗證', '人机身份验证', '人機身份驗證', '确认您是真人', '確認您是真人',
+].join('|'), 'i')
+// ... a text CAPTCHA's entry, where typing the shown characters (or the heard ones) is solving it (a bare 验证码 is as often a
+// one-time code, which the D-061 value rules judge) ...
+const CAPTCHA_ENTRY = /\bcaptcha\b|\btype\s+the\s+(?:characters|letters|text)\s+(?:you\s+see|shown|in\s+the\s+(?:image|picture))\b|\benter\s+what\s+you\s+hear\b|图形验证码|圖形驗證碼|图片验证码|圖片驗證碼/i
+// ... the challenge providers' own frames, by the target document's origin (the browser driver describes an element
+// inside a cross-site frame through its frame session) or, once the driver reports it (CU-300), its frame URL - read in
+// memory, never recorded - which lets reCAPTCHA's frames under www.google.com/recaptcha/ count without a google.com-wide
+// rule (cu-researcher's F2); DataDome serves its challenges from captcha-delivery.com (F3) ...
+const CAPTCHA_HOSTS = Object.freeze(['challenges.cloudflare.com', 'hcaptcha.com', 'recaptcha.net', 'arkoselabs.com', 'geetest.com', 'captcha-delivery.com'])
+function hostAndPath(url) {
+  if (typeof url !== 'string' || !/^https?:\/\//i.test(url.trim())) return null
+  try {
+    const parsed = new URL(url.trim())
+    return { host: parsed.hostname.toLowerCase(), path: parsed.pathname }
+  } catch {
+    return null
+  }
+}
+function captchaFrame(target) {
+  for (const url of [target?.origin, target?.frameUrl]) {
+    const at = hostAndPath(url)
+    if (at === null) continue
+    if (CAPTCHA_HOSTS.some((provider) => at.host === provider || at.host.endsWith(`.${provider}`))) return true
+    if ((at.host === 'www.google.com' || at.host === 'google.com') && at.path.startsWith('/recaptcha/')) return true
+  }
+  return false
+}
+// ... and a frame host titled for a challenge (cu-researcher's F1): the focus read stops at the provider's iframe, titled
+// 'reCAPTCHA', 'Widget containing checkbox for hCaptcha security challenge' or 'Widget containing a Cloudflare security
+// challenge', so a Space or Return after Tab reaches the check box through it; CU-300's frameHost carries the same title.
+const CAPTCHA_FRAME_TITLE = /\b(?:re)?captcha\b|\bhcaptcha\b|\bsecurity\s+challenge\b|\bhuman\s+verification\b|\bturnstile\b/i
 // CU-253, CU-287: messaging apps are known by kind (app-kinds.mjs, exact bundle ids with sources), and the names of compose
 // fields judge every other app.
 // CU-287: a search field takes Return to search, in a messaging app too ('Search Acme' in Slack).
@@ -761,6 +803,26 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       || context.paste?.intoTerminal === true) {
       return { decision: 'block', class: null, rule: 'terminal_view', reason: 'typing into a web terminal is refused, as in a terminal app' }
     }
+    // CU-263 (design note 0.3): a human check is handed to the person - never pre-approvable; unattended the loop declines
+    // it (handoff_unavailable). Any click, drag, key or typing inside a challenge provider's frame or on a frame host titled
+    // for one (the keyboard route after Tab); a click, drag, Space or Return on a target named as one (the desktop has
+    // names only - its origin is a bundle id); typing into a text CAPTCHA's entry. Named limit: a slider or picture
+    // puzzle drawn into the page itself, outside any provider frame and unnamed (cu-researcher's F4).
+    {
+      const captcha = { decision: 'handoff', class: null, rule: 'captcha', reason: 'a human check (CAPTCHA) is the person\'s to solve' }
+      const acts = POINTER.has(action.type) || ['drag', 'type', 'keypress', 'hold_key'].includes(action.type)
+      const onWeb = context.url != null && !/^(app|desktop):/.test(String(context.url))
+      const titledFrame = onWeb && ((framesHost(target) && CAPTCHA_FRAME_TITLE.test(name)) || CAPTCHA_FRAME_TITLE.test(String(target?.frameHost?.name ?? '')))
+      if (acts && (captchaFrame(target) || titledFrame)) return captcha
+      const presses = POINTER.has(action.type) || action.type === 'drag' || keysOf(action).has('ENTER') || keyboardActivation(action, target, context).activates
+      if (presses && CAPTCHA_NAME.test(name)) return captcha
+      // F7 (cu-researcher): a text CAPTCHA keyed character by character (CU-301's printable keys) or pasted is solved as
+      // surely as one typed; a menu paste is judged at its read destination.
+      const intoEntry = action.type === 'type' || printableKeyChar(action) !== null || (context.paste && !Object.prototype.hasOwnProperty.call(context.paste, 'destination'))
+      if (intoEntry && isTextEntry(target) && CAPTCHA_ENTRY.test(name)) return captcha
+      const menuInto = context.paste?.destination
+      if (menuInto && isTextEntry(menuInto) && CAPTCHA_ENTRY.test(String(menuInto.name ?? ''))) return captcha
+    }
     // CU-271: running code asks launch_code, never pre-approved - a run chord (Shift-, Control-, Command- or Alt-Return) in
     // a notebook's code cell or on a notebook page's non-text focus (JupyterLab's command mode focuses the cell container),
     // Colab's run chords (Control-F8, F9, F10) on a notebook page, or a control named Run or Execute (whole words) on a
@@ -972,6 +1034,35 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if ((action.type === 'type' || action.type === 'keypress') && context.typed && typeof context.typed.before === 'string' && typeof context.typed.next === 'string' && context.typed.next !== '') {
       const valueIn = (text) => text !== '' && Boolean(looksSensitive(withoutTaskValues(text, context.task)))
       if (!valueIn(context.typed.before) && valueIn(context.typed.before + context.typed.next)) classes.push('sensitive_data')
+      // CU-340: digits typed into a field that took a desktop paste whose text this run cannot read (D-031) may complete a
+      // value the paste began (a card pasted in half, typed in half) - they ask. Named over-ask: digits after any such paste.
+      if (context.typed.afterUnreadPaste === true && /\d/.test(context.typed.next) && /^[\d\s-]+$/.test(context.typed.next)) classes.push('sensitive_data')
+    }
+    // CU-340 (design note 0.1): a page that splits one value across boxes - an SSN in 3/2/4, a card in 4x4, an expiry or a
+    // phone in parts - leaves each box's buffer with only its part. The loop passes the last three other fields typed in
+    // the same page or app within the last eight typed actions (typedSplit.parts, oldest first); when this field's text
+    // and every joined part are short (1-6 letters or digits), the parts joined with this field's text - with no
+    // separator, a dash or a space - are judged by the value rules, and the action that completes a value asks
+    // sensitive_data. Named over-ask: short entries that happen to join into a value (a phone typed as area code, prefix
+    // and line asks as a phone).
+    if ((action.type === 'type' || action.type === 'keypress') && context.typedSplit && Array.isArray(context.typedSplit.parts)) {
+      const shortPart = (t) => /^[A-Za-z0-9]{1,6}$/.test(String(t ?? '').trim())
+      const before = String(context.typedSplit.before ?? '')
+      const here = (before + String(context.typedSplit.next ?? '')).trim()
+      if (shortPart(here)) {
+        const parts = context.typedSplit.parts.map((t) => String(t ?? '').trim())
+        let joinedAsks = false
+        for (let k = 1; k <= Math.min(3, parts.length) && !joinedAsks; k++) {
+          const used = parts.slice(-k)
+          if (!used.every(shortPart)) break
+          for (const sep of ['', '-', ' ']) {
+            const whole = [...used, here].join(sep)
+            const prior = [...used, before.trim()].filter((t) => t !== '').join(sep)
+            if (looksSensitive(withoutTaskValues(whole, context.task)) && !looksSensitive(withoutTaskValues(prior, context.task))) { joinedAsks = true; break }
+          }
+        }
+        if (joinedAsks) classes.push('sensitive_data')
+      }
     }
     // CU-336 (design note 0.2): inside a cross-origin frame whose names are unread - the frame host's title and the field's
     // own name both null (an AX failure in the driver's host read, or a frame that titles nothing) - a CVV or an expiry
