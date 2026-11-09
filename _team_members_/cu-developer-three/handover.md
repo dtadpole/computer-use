@@ -1,14 +1,14 @@
 ---
 title: '[cu] Developer Three (macOS helper) - handover'
 created: 2026-11-08T04:20:00Z
-modified: 2026-11-09T02:20:00Z
+modified: 2026-11-09T07:35:00Z
 level: L1
-version: 1.6.0
+version: 1.7.0
 description: 'What a fresh [cu] Developer Three session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
-  - source: cu-coordinator landing plan 2026-11-09 01:50Z (one install of 0.2.61 after the helper chain lands)
-  - source: Linear CU-252, CU-299, CU-303, CU-321, CU-322 (9 Nov)
+  - source: the 0.2.61 install of 2026-11-09 07:25Z (READBACK, self-test, boundary proof)
+  - source: Linear CU-299, CU-303, CU-321, CU-322 (9 Nov)
 ---
 
 # [cu] Developer Three (macOS helper) - handover
@@ -19,28 +19,32 @@ Seat `cu-developer-three`. Edits and CUHelper launches run from the session work
 
 ## Live state
 
-- Installed helper: 0.2.58 (8 Nov 23:37Z, sha256 0c7d9f2f). The local config's `helperCheckouts` names the main
-  checkout and the worktrees folder.
-- #165 landed (add66af): CU-252's stand-in reads names and kinds; CU-259 and CU-262 are verified.
+- Installed helper: 0.2.61 from main e49b9cb (9 Nov 07:25Z). Read-back was OK, sha256 860e20ac, self-test 40 checks.
+- It carries 0.2.59 (CU-303: a dry-run or simulated start asks TCC nothing) and 0.2.60 (CU-299: only the checkouts
+  that `helperCheckouts` names are admitted, and the config must be this user's alone). It also carries 0.2.61
+  (CU-322: hitTest and focused report `inWebArea` true, false, or null when the ancestor walk cannot finish).
+- Proof: the session worktree was admitted; a throwaway `~/computer-use--probe`, an unlisted folder and `/tmp` were
+  refused.
 
-## Helper chain (all OK'd, in cu-integrator's code lane)
+## Waiting on others
 
-Land order: #182 (0.2.59, CU-303) -> #199 (boundary verifier) -> #192 (0.2.60, CU-299) -> #206 (0.2.61, CU-322).
+- cu-verifier: the post-install set and CU-322's rows C1-C5 (Chrome for Testing with
+  `--force-renderer-accessibility`).
+- cu-coordinator: moving CU-299 to Verify.
 
-- #182: dry-run and simulated starts ask TCC nothing (a test burst ran tccd out of descriptors).
-- #192: only configured checkouts are admitted, and the config must be this user's alone. Design #191 landed.
-- #206: hitTest and focused report `inWebArea` (true, false, or null for a walk that could not finish).
-- Then ONE install of 0.2.61 with `--prove`: the session worktree admitted; a throwaway `~/computer-use--probe`,
-  an unlisted folder and `/tmp` refused. First check that cu-integrator's nightly passes `--worktree-root` (#201).
+## Next
+
+CU-321 (read-only, plan OK'd, D-084 extended): does an approved Chrome expose its web tree after AXManualAccessibility
+(re-reads at +2, +5 and +15 s), or only with `--force-renderer-accessibility`? Reads go through `cli.mjs inspect`,
+because the helper refuses a script that is not an entry point as its peer. Its rows go to cu-developer-one for
+narrowing D-089. Setting AXEnhancedUserInterface stays out until a design note exists.
 
 ## Issues
 
-In Progress: CU-322 (High), CU-303. Todo: CU-299 (released for the WIP limit, until the install). Next: CU-321
-(does setting AXManualAccessibility expose Chrome's web tree? The helper already sets it in `exposeTree`). Verify:
-CU-203 (the owner in person).
+In Progress: CU-322 (High), CU-321. Verify: CU-303, CU-203 (the owner in person).
 
 ## Rules learned
 
 - Re-check owner idle right before a hold.
-- When grants read all false for a moment, read tccd in the unified log first.
-- Check Accessibility shapes across processes through the helper; an in-process read can differ.
+- When the lock is free and the owner idle but a gate does not run, send one factual note to cu-integrator.
+- A measurement script drives the helper only through an entry point (`cli.mjs`), never in-process.
