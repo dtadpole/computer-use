@@ -39,6 +39,8 @@ const T = {
   deleteButton: { role: 'AXButton', name: 'Delete' },
   okButton: { role: 'AXButton', name: 'OK' },
   unnamedButton: { role: 'AXButton', name: '' },
+  // CU-302 (measured 2026-11-09 01:13Z): an approved browser's page as the desktop helper reads it - one opaque area.
+  browserWebArea: { origin: 'com.google.chrome.for.testing', role: 'AXScrollArea', name: null, opaque: true, secure: false },
   // CU-180: what helper 0.2.42 reports for a click on web content inside a native app - the label, icon or unnamed
   // group lifted to the control it sits in, an unnamed control named by its labels; plain text stays itself.
   webDeleteButtonAX: { role: 'AXButton', name: 'Delete' },
@@ -242,6 +244,7 @@ const ROWS = [
   ['click-named-destructive', 'desktop', 'click', 'deleteButton', 'delete', 'policy.test.mjs', "cu-verifier, CU Fixture web-buttons, helper 0.2.48: a click on AXButton 'Delete' declined delete (20261108T001154Z-e1838e) - CU-140", null],
   ['click-benign', 'desktop', 'click', 'okButton', 'allow', 'policy.test.mjs', "cu-verifier, CU Fixture keypad: the 'C' button clicked, allowed (20261107T174423Z-6715b8); earlier cu-researcher S9 rerun 131912Z-744b5e", null],
   ['click-unnamed', 'desktop', 'click', 'unnamedButton', 'allow', 'loop marks targetUnnamed (#311)', "CU Fixture (#447), helper 0.2.42: a click on consent-cells' unnamed entry allowed, marked targetUnnamed (20261107T194540Z-163013)", null],
+  ['click-browser-web-area', 'desktop', 'click', 'browserWebArea', 'not:allow', 'CU-302 (a saved login fills on load; a desktop click on Sign in submits it unseen) - ask or refuse awaits cu-coordinator', 'no live row yet', 'todo CU-302'],
   ['click-destructive-checkbox', 'desktop', 'doubleClick', 'deleteCheckbox', 'delete', 'keyboard-activation.test.mjs', "CU Fixture consent-cells (#447), helper 0.2.42: double-click asked delete (20261107T180026Z-3c8ca5)", null],
   ['click-move-to-trash', 'desktop', 'click', 'trashMenuItem', 'delete', 'destructive-labels.test.mjs (#335)', "CU Fixture context-menu with its task params, 0.2.42: 'Move to Trash' (AXMenuItem) asked delete, declined, no event (20261107T180555Z-85b8d0)", null],
   ['click-submit-field-name', 'desktop', 'click', 'sendField', 'submit', 'policy.test.mjs', "CU Fixture consent-cells (#447), helper 0.2.42: asked submit (20261107T180021Z-9fbf56)", null],
