@@ -159,9 +159,9 @@ for (const kind of ['desktop', 'browser']) {
 
 for (const kind of ['desktop', 'browser']) {
   test(`CU-340 [${kind}]: a card typed key by key into four boxes - the last key asks (cu-researcher)`, async () => {
-    const keyed = card.flatMap((part, i) => [clickBox(i), ...[...part].map((ch) => ({ type: 'keypress', keys: [ch] }))])
+    const keyed = card.flatMap((part, i) => [clickBox(i), ...[...part].map((ch) => ({ type: 'type', text: ch }))])
     const { events } = await run(kind, keyed)
-    const v = events.filter((e) => e.action?.type === 'keypress').map((e) => (e.decision === 'allow' ? 'allow' : e.class))
+    const v = events.filter((e) => e.action?.type === 'type').map((e) => (e.decision === 'allow' ? 'allow' : e.class))
     assert.equal(v.at(-1), 'sensitive_data', JSON.stringify(v))
     assert.equal(v.filter((x) => x !== 'allow').length, 1)
   })
