@@ -82,18 +82,32 @@ const LOCALE_ID_NAMES = Object.freeze(['reisepass', '…passnummer', 'geburtsdat
   'паспорт', 'номер паспорта', 'дата рождения', 'инн', 'снилс', 'номер счета', 'номер счёта',
   'パスポート', '旅券番号', '生年月日', 'マイナンバー', '個人番号', '口座番号',
   '여권', '여권번호', '생년월일', '주민등록번호', '계좌번호', '사업자등록번호'])
+// CU-358 (D-099's next table pass): the same classes in Italian, Dutch, Portuguese and Turkish.
+const LOCALE_WORDS_2 = Object.freeze({
+  purchase: ['acquista', 'acquista ora', 'paga', 'paga ora', 'compra ora', 'procedi al pagamento', 'conferma ordine', 'effettua ordine',
+    'kopen', 'nu kopen', 'betalen', 'nu betalen', 'bestellen en betalen', 'afrekenen', 'bestelling plaatsen',
+    'comprar agora', 'finalizar pedido', 'finalizar compra', 'pagar agora',
+    'satın al', 'hemen al', 'öde', 'ödeme yap', 'siparişi tamamla', 'sipariş ver'],
+  delete: ['elimina', 'cancella', 'rimuovi', 'verwijderen', 'wissen', 'excluir', 'apagar', 'remover', 'sil', 'kaldır'],
+  submit: ['invia', 'verzenden', 'versturen', 'gönder'],
+  secret: ['codice di sicurezza', 'codice di verifica', 'wachtwoord', 'beveiligingscode', 'verificatiecode', 'pincode', 'senha',
+    'código de segurança', 'código de verificação', 'şifre', 'parola', 'güvenlik kodu', 'doğrulama kodu',
+    'numero della carta', 'kaartnummer', 'número do cartão', 'kart numarası'],
+  id: ['passaporto', 'data di nascita', 'codice fiscale', 'paspoort', 'geboortedatum', 'bsn', 'burgerservicenummer', '…rekeningnummer',
+    'passaporte', 'data de nascimento', 'cpf', 'número da conta', 'pasaport', 'doğum tarihi', 'tc kimlik', 'kimlik numarası', 'iban numarası'],
+})
 const WORDS = Object.freeze({
   purchase: ['buy', 'pay', 'order', 'place order', 'checkout', 'check out', 'subscribe', 'donate', 'purchase', 'transfer', 'withdraw', 'wire', 'send money',
     // CU-288 (cu-researcher's real-app wordings, round 2): a booking, an upgrade or a renewal commits money.
     'book now', 'book this', 'reserve now', 'upgrade plan', 'upgrade now', 'upgrade to pro', 'upgrade to premium', 'renew subscription', 'renew now',
-    'renew plan', ...ZH_WORDS.purchase, ...LOCALE_WORDS.purchase],
+    'renew plan', ...ZH_WORDS.purchase, ...LOCALE_WORDS.purchase, ...LOCALE_WORDS_2.purchase],
   // CU-135: replace and overwrite (a save panel's 'already exists' sheet), don't save (a close sheet discards work).
   delete: ['delete', 'remove', 'discard', 'erase', 'empty trash', 'cancel subscription', 'replace', 'overwrite', "don't save", 'don\u2019t save',
     // CU-146 (the CU-145 audit): destructive labels the list missed.
     'move to trash', 'move to bin', 'empty bin', 'clear history', 'clear all', 'reset all', 'reset settings', 'reset to defaults', 'uninstall', 'wipe', 'purge',
     'deactivate', 'close account', 'forget', 'factory reset',
     // cu-researcher's 13:23Z sweep: unsaved edits lost, like Discard Changes.
-    'revert to saved', 'revert all changes', ...ZH_WORDS.delete, ...LOCALE_WORDS.delete],
+    'revert to saved', 'revert all changes', ...ZH_WORDS.delete, ...LOCALE_WORDS.delete, ...LOCALE_WORDS_2.delete],
   permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke',
     // CU-258 (cu-researcher): standing choices an app keeps after the run, as whole phrases. A bare 'Allow' stays free so
     // cookie banners do not ask (named limit).
@@ -137,7 +151,7 @@ const WORDS = Object.freeze({
     // CU-286 (cu-researcher's real-app wordings): a request to join a meeting, and Slack's huddle (a call to the channel).
     'ask to join', 'start huddle', 'start a huddle', 'join huddle',
     // CU-288: a tax filing goes to the authority.
-    'file return', 'file tax return', 'file your return', 'file my return', 'e-file', 'efile', 'submit return', 'submit tax return', ...ZH_WORDS.submit, ...LOCALE_WORDS.submit],
+    'file return', 'file tax return', 'file your return', 'file my return', 'e-file', 'efile', 'submit return', 'submit tax return', ...ZH_WORDS.submit, ...LOCALE_WORDS.submit, ...LOCALE_WORDS_2.submit],
 })
 const PRECEDENCE = ['purchase', 'launch_code', 'delete', 'permission', 'page_dialog', 'credential', 'sensitive_data', 'submit', 'new_site', 'install']
 const POINTER = new Set(['click', 'double_click', 'triple_click'])
@@ -249,7 +263,9 @@ function withoutTaskValues(text, task) {
 // license, '#' read as 'number', dots dropped (D.O.B., Exp. date, Tax no.) - so one canonical list covers the spellings.
 // An entry then matches whole, its regex specials literally, a space in it as any run of spaces or hyphens (Sort-code).
 const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-const normaliseName = (text) => String(text ?? '').toLowerCase().replace(/[\u2018\u2019]/g, "'").replace(/licence/g, 'license')
+// CU-358: Turkish casing - 'İ' lower-cases to 'i' plus a combining dot and 'I' to 'i', not 'ı' - so the dot is dropped and
+// a dotless 'ı' read as 'i', on names and entries alike ('SİL' and 'SATIN AL' match 'sil' and 'satın al').
+const normaliseName = (text) => String(text ?? '').toLowerCase().replace(/\u0307/g, '').replace(/\u0131/g, 'i').replace(/[\u2018\u2019]/g, "'").replace(/licence/g, 'license')
   .replace(/#/g, ' number ').replace(/\./g, '').replace(/\s+/g, ' ').trim()
 // CU-352: an entry with an accented Latin or a Cyrillic letter is bounded by any letter, so 'удалить' does not match inside
 // a longer word; ASCII entries keep the a-z boundary they always had.
@@ -473,6 +489,8 @@ const SECRET_NAMES = Object.freeze(['recovery phrase', 'seed phrase', 'secret ph
   ...LOCALE_WORDS.secret,
   // CU-355: passport, birth date, tax, national and account numbers named in the same six languages.
   ...LOCALE_ID_NAMES,
+  // CU-358: the same in Italian, Dutch, Portuguese and Turkish.
+  ...LOCALE_WORDS_2.secret, ...LOCALE_WORDS_2.id,
   // D-062 (cu-coordinator): an e-mail or phone field, and a street-level address, ask by name; a city, postcode or ZIP
   // alone does not, and neither does an IP or web address.
   'email', 'e-mail', 'phone', 'mobile number', 'telephone', 'street', 'address line', 'home address', 'shipping address',
