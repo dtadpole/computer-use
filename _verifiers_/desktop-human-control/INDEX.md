@@ -1,8 +1,8 @@
 ---
 title: Desktop human control verifier
 created: 2026-11-02T10:18:03Z
-modified: 2026-11-09T02:16:00Z
-version: 0.6.1
+modified: 2026-11-09T15:00:00Z
+version: 0.6.2
 description: Judges the local-input pause, human-only resume, stop, take over and hand back, and the live view's frames and link rights, through desktop runs on the fake helper, with six mutants.
 grounded_in:
   - source: _designs_/desktop-extension/human-control.md@0.3.4
@@ -27,7 +27,9 @@ History: each check was added with the mutant that proves it, verdict 0 on main 
 One sitting with the owner under an enforced hold (D-053), every input through CUHelper (D-056), no owner setting
 changed. cu-verifier re-runs the scripted part of step 4 after every helper install.
 
-1. Step 4 (CU-11): `ROUNDS=80 node _verifiers_/desktop-human-control/owner-step4.mjs`. The owner opens the control
+1. Step 4 (CU-11): under the seat's own hold (`run-lock.mjs hold --seat <seat> ...`, keep its token; CU-305 needs
+   `CU_DESKTOP_SEAT=<seat>` for the fixture launch), `CU_VERIFY_SEAT=<seat> ROUNDS=80 node _verifiers_/desktop-human-control/owner-step4.mjs`
+   (`CU_ASK_OWNER=1` at the Mac, for the Confirm prompt). The owner opens the control
    link in their own Terminal (the printed `control-link` command), presses a key (the run pauses before its next
    event), resumes in the live view, takes over, hands back, stops. Pass: each step in the run's events, no synthetic
    event between the key press and the resume, only tagged events in the fixture's input log.

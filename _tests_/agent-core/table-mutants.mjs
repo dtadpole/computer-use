@@ -61,6 +61,10 @@ export const MUTANTS = Object.freeze([
     rows: ['value-AWS secret access key'] },
   { name: 'assignment-ignored', why: 'a credential assignment (password=, token=, DB_PASSWORD=) is not a key (CU-347)', mutations: [{ file: POLICY, find: "    if (/[\\d\\W_]/.test(m[1])) return 'key'\n  }\n", replace: '  }\n' }],
     rows: ['value-credential assignment password=', 'value-credential assignment token=', 'value-credential assignment UPPER_SNAKE', 'value-credential assignment JSON'] },
+  { name: 'page-shortcut-off', why: 'printable input outside a text entry is no page or app shortcut (CU-363)', mutations: [{ file: POLICY, find: "    if (pageShortcut && classes.length === 0) classes.push('permission')\n", replace: '' }],
+    rows: ['sequence-card as four type actions, focus unreadable'] },
+  { name: 'page-shortcut-off-routes', from: 'consent-routes', why: 'printable input outside a text entry is no page or app shortcut (CU-363)', mutations: [{ file: POLICY, find: "    if (pageShortcut && classes.length === 0) classes.push('permission')\n", replace: '' }],
+    rows: ['newline-nothing-focused'] },
   { name: 'terminal-typed', from: 'desktop-consent', rows: ['ide-terminal-type-command', 'ide-terminal-return', 'ide-terminal-localized-label', 'ide-terminal-japanese-label', 'ide-terminal-zh-in-cursor', 'ide-terminal-zh-real-label', 'ide-terminal-zh-hant-real-label', 'ide-debug-console-zh-hans', 'ide-debug-console-zh-hant'] },
   { name: 'held-chord-unjudged', from: 'desktop-consent', rows: ['system-chord-held-log-out'] },
 ])
