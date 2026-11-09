@@ -922,8 +922,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // driver reports autofilledFields on the targets that submit a form (CU-319); a failed read (autofillRead false) asks
     // credential. No field at all (an older driver, the desktop) keeps today's judgement.
     const autofillClasses = []
+    let autofillCard = false
     if (!desktopUrl && target && (POINTER.has(action.type) || pressesEnter || keyboard.activates)) {
       for (const field of Array.isArray(target.autofilledFields) ? target.autofilledFields : []) {
+        if (/^cc-/i.test(String(field?.autocomplete ?? ''))) autofillCard = true
         const filled = { ...asNamedEntry(String(field?.name ?? '')), inputType: field?.inputType ?? null, autocomplete: field?.autocomplete ?? null }
         const cls = insertedClass(null, filled, context)
         if (cls) autofillClasses.push(cls)
@@ -941,7 +943,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       return { decision: 'confirm', class: cls, classes: needed, rule: 'target:mixed_script', reason: `activate "${name}", whose name mixes scripts in one word (a disguised control?)` }
     }
     if (autofillClasses.includes(cls)) {
-      return { decision: 'confirm', class: cls, classes: needed, rule: `autofill:${cls}`, reason: `submit a form the browser filled from your saved ${cls === 'credential' ? 'login' : 'details'} on ${originPattern(url)}` }
+      return { decision: 'confirm', class: cls, classes: needed, rule: `autofill:${cls}`, reason: `submit a form the browser filled from your saved ${autofillCard ? 'card' : cls === 'credential' ? 'login' : 'details'} on ${originPattern(url)}` }
     }
     // `class` is the one that ranks first; `classes` lists every class that applied, for the evaluator's records.
     return { decision: 'confirm', class: cls, classes: needed, rule: `class:${cls}`, reason: describe(cls, action, target, url, context?.frontmostBundleId) }

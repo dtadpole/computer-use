@@ -40,6 +40,18 @@ test('CU-302 (cu-verifier): a field the browser autofilled and the run then edit
   assert.equal(judge(click, signIn([{ ...password, edited: true }])), 'credential/autofill:credential')
 })
 
+test('CU-302 (cu-verifier\'s pin): typing into an autofilled password asks by itself; once typed, the browser drops it from the list', () => {
+  assert.equal(judge({ type: 'type', text: 'x' }, { tag: 'input', inputType: 'password', role: 'textbox', name: 'Password', editable: true }), 'credential/class:credential', 'the edit itself asks')
+  assert.equal(judge(click, signIn([{ tag: 'input', inputType: 'text', name: 'Username', autocomplete: 'username' }])), 'allow', 'Sign in afterwards: only the username is still autofilled')
+})
+
+test('CU-302 (cu-researcher N1): a saved card is named as one in the reason', () => {
+  const v = policy.classify(click, { url: WEB, target: signIn([{ tag: 'input', inputType: 'text', name: '', autocomplete: 'cc-number' }]) })
+  assert.equal(v.class, 'credential', 'cc-* autocomplete is a credential field, as D-061 has it everywhere')
+  assert.match(v.reason, /saved card/)
+  assert.match(policy.classify(click, { url: WEB, target: signIn([password]) }).reason, /saved login/)
+})
+
 test('CU-302: an autofilled card or D-061 field asks too; an autofilled username alone does not', () => {
   assert.equal(judge(click, signIn([{ tag: 'input', inputType: 'text', name: 'Card number', autocomplete: 'cc-number' }])), 'credential/autofill:credential', 'cc-* autocomplete is a credential field')
   assert.equal(judge(click, signIn([{ tag: 'input', inputType: 'text', name: 'Card number' }])), 'sensitive_data/autofill:sensitive_data', 'a card-number name')
