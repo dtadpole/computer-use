@@ -992,6 +992,17 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const scheme = typeof target?.linkScheme === 'string' ? target.linkScheme.trim().toLowerCase().replace(/:$/, '') : ''
     const pressesLink = ['click', 'double_click', 'triple_click'].includes(action.type) || keysOf(action).has('ENTER')
     if (scheme !== '' && !WEB_SCHEMES.has(scheme) && pressesLink) classes.push('permission')
+    // CU-382 (cu-coordinator 23:10Z; helper 0.2.66): a Finder Quick Action runs an owner's Automator workflow, like a Service,
+    // so a press on an item marked quickActions (or a chord bound to one) asks; a menu whose context could not be walked
+    // (menuContextUnread) asks unknown.
+    const quickAction = target?.quickActions === true || context.boundMenuItem?.quickActions === true
+    const quickPress = action.type === 'click' || action.type === 'double_click' || action.type === 'keypress' || action.type === 'hold_key'
+    if (quickPress && quickAction) {
+      return { decision: 'confirm', class: 'permission', classes: ['permission'], rule: 'quick_action', reason: `run the Quick Action "${target?.name ?? context.boundMenuItem?.title ?? ''}", an Automator workflow` }
+    }
+    if (quickPress && (target?.menuContextUnread === true || context.boundMenuItem?.menuContextUnread === true)) {
+      return { decision: 'confirm', class: 'unknown_target', classes: ['unknown_target'], rule: 'menu:context_unread', reason: `press "${target?.name ?? ''}" in a menu whose context could not be read` }
+    }
     const keyboard = keyboardActivation(action, target, context)
     if (keyboard.deletes) classes.push('delete')
     // CU-381 (High; cu-coordinator 22:09Z): on a web page Delete or Backspace with no text entry focused - a null or
