@@ -1272,6 +1272,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // CU-365 stacking (cu-researcher 18:19Z): when another class asks too, the shortcut half still needs its own approval,
     // so a yes for that class (sensitive_data for the run, say) never frees the page's handlers.
     const also = pageShortcut ? { alsoNeeds: shortcutApproval } : {}
+    // ... and 'permission' is listed beside the other classes (the record), while the class that ranks first still leads.
+    const stack = (list) => (pageShortcut && !list.includes('permission') ? [...list, 'permission'] : list)
     const unique = [...new Set(classes)].sort((a, b) => PRECEDENCE.indexOf(a) - PRECEDENCE.indexOf(b))
     const needed = unique.filter((cls) => !preApproved(cls, url) || NEVER_PRE_APPROVED.includes(cls) || autofillClasses.includes(cls))
     if (needed.length === 0 && pageShortcut) {
@@ -1285,13 +1287,13 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       return { decision: 'confirm', class: cls, classes: needed, rule: 'page:shortcut', approvalKey: shortcutApproval, runOnly: true, reason: `press '${shortcutKey}' on ${placeOf(url, target, context?.frontmostBundleId)}, a keyboard shortcut of the ${onDesktop ? 'app' : 'page'} - it decides what it does` }
     }
     if (mixedScript && cls === 'permission') {
-      return { ...also, decision: 'confirm', class: cls, classes: needed, rule: 'target:mixed_script', reason: `activate "${name}", whose name mixes scripts in one word (a disguised control?)` }
+      return { ...also, decision: 'confirm', class: cls, classes: stack(needed), rule: 'target:mixed_script', reason: `activate "${name}", whose name mixes scripts in one word (a disguised control?)` }
     }
     if (autofillClasses.includes(cls)) {
-      return { ...also, decision: 'confirm', class: cls, classes: needed, rule: `autofill:${cls}`, reason: `submit a form the browser filled from your saved ${autofillCard ? 'card' : cls === 'credential' ? 'login' : 'details'} on ${originPattern(url)}` }
+      return { ...also, decision: 'confirm', class: cls, classes: stack(needed), rule: `autofill:${cls}`, reason: `submit a form the browser filled from your saved ${autofillCard ? 'card' : cls === 'credential' ? 'login' : 'details'} on ${originPattern(url)}` }
     }
     // `class` is the one that ranks first; `classes` lists every class that applied, for the evaluator's records.
-    return { ...also, decision: 'confirm', class: cls, classes: needed, rule: `class:${cls}`, reason: `${describe(cls, action, target, url, context?.frontmostBundleId)}${pageShortcut ? `; also a keyboard shortcut of the ${onDesktop ? 'app' : 'page'} ('${shortcutKey}')` : ''}` }
+    return { ...also, decision: 'confirm', class: cls, classes: stack(needed), rule: `class:${cls}`, reason: `${describe(cls, action, target, url, context?.frontmostBundleId)}${pageShortcut ? `; also a keyboard shortcut of the ${onDesktop ? 'app' : 'page'} ('${shortcutKey}')` : ''}` }
   }
 
   return { classify, preApprovals: granted }

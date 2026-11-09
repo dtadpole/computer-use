@@ -40,6 +40,7 @@ test('CU-365 stacking: a page shortcut under another class names its own approva
   const v = policy.classify({ type: 'type', text: ['4111', '1111', '1111', '1111'].join(' ') }, { url: 'https://mail.example/inbox', target: { role: 'link', name: 'Invoice' } })
   assert.equal(v.class, 'sensitive_data')
   assert.match(String(v.alsoNeeds), /^permission:page-shortcut:/)
+  assert.deepEqual(v.classes, ['sensitive_data', 'permission'], "'permission' stacks beside the leading class")
 })
 
 const tmp = mkdtempSync(join(tmpdir(), 'cu-365-'))
