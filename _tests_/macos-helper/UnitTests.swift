@@ -697,7 +697,7 @@ func button(_ kind: String, _ x: Int, _ y: Int) -> JSON { ["kind": .string(kind)
 func testDispatcherBasics() {
   let h = Harness(fixtureWorld)
   let hello = h.dispatcher.hello(token: "t0k")
-  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.64", "the hello opens the run")
+  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.65", "the hello opens the run")
   check(hello["mode"] == "dry-run" && hello["grants"] == ["screen": true, "accessibility": true, "postEvents": true, "listenEvents": false], "a dry-run hello says so, with all four grants")
   check(h.ask("capture", ["maxSize": size800])["code"] == "no_scope", "capture needs a scope")
   check(h.ask("input", ["events": [key("keyDown", 1)], "mode": "global"])["code"] == "no_scope", "input needs a scope")
@@ -2055,6 +2055,31 @@ func testNearbyLabel() {
   check(NearbyLabel.pick(box: box, candidates: []) == nil, "no static text, no label")
 }
 
+func testPopUpItems() {
+  // CU-372: a closed pop-up button's items as AX shows them - never an empty list for unknown.
+  typealias Item = PopUpItems.Item
+  let three = [Item(title: "Archive", enabled: true), Item(title: "", enabled: true), Item(title: " Delete ", enabled: nil), Item(title: "Keep", enabled: false)]
+  let read = PopUpItems.shape(selected: "Archive", items: three)
+  check(read["items"] == .array([.object(["title": .string("Archive"), "enabled": .bool(true)]), .object(["title": .string("Delete"), "enabled": .bool(true)]), .object(["title": .string("Keep"), "enabled": .bool(false)])]),
+        "items in order: a separator (no title) skipped, titles trimmed, an unreadable AXEnabled counts as enabled")
+  check(read["selected"] == "Archive" && read["selectedIndex"] == 0 && read["unread"] == nil, "the selected title and its index; no unread")
+  check(PopUpItems.shape(selected: "Gone", items: three)["selectedIndex"] == .null, "a selected title matching no item gives index null")
+  let none = PopUpItems.shape(selected: "1 GB", items: nil)
+  check(none["unread"] == true && none["items"] == nil && none["selected"] == "1 GB", "no AXMenu child (a closed popup that exposes none, a failed read) is unread, never an empty list")
+  check(PopUpItems.shape(selected: nil, items: [])["unread"] == true && PopUpItems.shape(selected: nil, items: [Item(title: " ", enabled: true)])["unread"] == true, "no titled item is unread")
+  let fifty = (1...50).map { Item(title: "Item \($0)", enabled: true) }
+  check(PopUpItems.shape(selected: nil, items: fifty)["unread"] == nil, "50 items are read")
+  check(PopUpItems.shape(selected: nil, items: fifty + [Item(title: "Delete", enabled: true)])["unread"] == true, "over 50 items is unread")
+  let long = String(repeating: "x", count: 90)
+  let twins = [Item(title: "Custom…", enabled: true), Item(title: "Delete", enabled: true), Item(title: "Custom…", enabled: true)]
+  check(PopUpItems.shape(selected: "Custom…", items: twins)["unread"] == true, "a selected title two items share is unread (the arrow's neighbour is unknown)")
+  check(PopUpItems.shape(selected: "Delete", items: twins)["selectedIndex"] == 1, "a unique selected title among duplicates elsewhere is read")
+  let pull = PopUpItems.shape(selected: "Actions", items: three, pullsDown: true)
+  check(pull["pullsDown"] == true && pull["selectedIndex"] == .null && pull["items"] != nil, "a pull-down says so; its title is a label, so no selected index")
+  check(PopUpItems.shape(selected: "Actions", items: nil, pullsDown: true)["pullsDown"] == true && PopUpItems.shape(selected: nil, items: nil)["pullsDown"] == nil, "unread keeps the pull-down mark; a pop-up has none")
+  check(PopUpItems.shape(selected: long, items: [Item(title: long, enabled: true)])["items"] == .array([.object(["title": .string(String(repeating: "x", count: 80)), "enabled": .bool(true)])]), "a title is cut at 80 characters")
+}
+
 @main
 struct UnitTests {
   static func main() {
@@ -2098,6 +2123,7 @@ struct UnitTests {
     testManualAccessibilityRestore()
     testPlaceholder()
     testNearbyLabel()
+    testPopUpItems()
     testEndWatchdog()
     // Informational: whether the process that ran these tests is genuine node (true for Node.js Foundation builds).
     let parentIsNode = PeerCheck.satisfiesNodeRequirement(pid: getppid(), token: nil)

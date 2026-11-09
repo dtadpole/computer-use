@@ -5,7 +5,7 @@ import Foundation
 /// The helper's identity; `build.sh` writes the same bundle id into Info.plist.
 enum HelperIdentity {
   static let bundleId = "com.reflection.cu-helper"
-  static let version = "0.2.64"
+  static let version = "0.2.65"
   /// The value every synthetic event carries in `kCGEventSourceUserData`: 0x43555345, ASCII "CUSE"
   /// (input-and-targets.md, verify-kit's SYNTHETIC_TAG). Not a secret: an event from another process with this tag
   /// could only fail to pause the run, never act.
@@ -468,6 +468,47 @@ enum Placeholder {
     guard applies(role: role) else { return nil }
     guard let text = raw?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty, text.count <= maxLength else { return nil }
     return text
+  }
+}
+
+/// CU-372: a pop-up button's menu items as AX shows them while it is closed - read from its AXMenu child, never by
+/// opening it (no AXPress, no AXShowMenu). The driver turns the shape into the items a type or an arrow moves the button
+/// through (typeOptions / keyTarget, as CU-370 does for a web select). Unread is never an empty list: no menu child, a
+/// failed read, no titled item, or more than 50 items give `unread: true`, which agent core asks on. Pure, so the unit
+/// tests decide it.
+enum PopUpItems {
+  static let maxItems = 50
+  static let maxTitle = 80
+  struct Item {
+    let title: String?
+    let enabled: Bool?
+  }
+
+  /// `items` nil when no AXMenu child could be read. Separators (no title) are skipped; titles are trimmed and cut at
+  /// 80 characters; an item whose AXEnabled cannot be read counts as enabled (it may be landed on - the safe side).
+  /// `pullsDown`: a pull-down button (AppKit gives it AXMenuButton) - its title is a fixed label and Return or Space
+  /// opens a menu of actions, so the shape says so and its selected index is never read (cu-researcher's case 2).
+  static func shape(selected: String?, items: [Item]?, pullsDown: Bool = false) -> JSON {
+    let chosen = selected.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.flatMap { $0.isEmpty ? nil : String($0.prefix(maxTitle)) }
+    var unreadShape: [String: JSON] = ["unread": .bool(true), "selected": .optionalString(chosen)]
+    if pullsDown { unreadShape["pullsDown"] = .bool(true) }
+    let unread = JSON.object(unreadShape)
+    guard let items else { return unread }
+    let titled = items.compactMap { item -> (title: String, enabled: Bool)? in
+      guard let title = item.title?.trimmingCharacters(in: .whitespacesAndNewlines), !title.isEmpty else { return nil }
+      return (String(title.prefix(maxTitle)), item.enabled ?? true)
+    }
+    guard !titled.isEmpty, titled.count <= maxItems else { return unread }
+    // cu-researcher's case 1: a selected title two items share leaves the neighbour of an arrow unknown - unread.
+    if let chosen, titled.filter({ $0.title == chosen }).count > 1 { return unread }
+    let index = pullsDown ? nil : chosen.flatMap { name in titled.firstIndex { $0.title == name } }
+    var read: [String: JSON] = [
+      "items": .array(titled.map { .object(["title": .string($0.title), "enabled": .bool($0.enabled)]) }),
+      "selected": .optionalString(chosen),
+      "selectedIndex": index.map { .int($0) } ?? .null,
+    ]
+    if pullsDown { read["pullsDown"] = .bool(true) }
+    return .object(read)
   }
 }
 

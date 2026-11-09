@@ -352,7 +352,23 @@ enum Accessibility {
     // CU-250: a menu item says where it sits - its menu path, and whether a submenu on the way is the Services menu -
     // so policy refuses a clicked service (an owner-installed one included), not only the default services' titles.
     if role == "AXMenuItem" { for (key, value) in menuContext(of: element, title: string(element, "AXTitle")).json { shape[key] = value } }
+    // CU-372: a pop-up button takes type-ahead and arrows without opening its menu, so it says what it holds - its menu
+    // items as AX shows them closed (PopUpItems), never by opening the menu.
+    // A pull-down button is AXMenuButton in AppKit: the same read, marked pullsDown (its title is a label, not a value).
+    if role == "AXPopUpButton" || role == "AXMenuButton" { shape["popUp"] = popUp(element, pullsDown: role == "AXMenuButton") }
     return .object(shape)
+  }
+
+  /// CU-372: a pop-up button's selected title (its AXValue) and its menu's items, read from the AXMenu among its
+  /// AXChildren (at most 200 children read) - attributes only, never AXPress or AXShowMenu. No menu child: unread.
+  private static func popUp(_ element: AXUIElement, pullsDown: Bool) -> JSON {
+    let selected = pullsDown ? string(element, "AXTitle") : string(element, "AXValue")
+    guard let menu = children(element).first(where: { string($0, "AXRole") == "AXMenu" }) else { return PopUpItems.shape(selected: selected, items: nil, pullsDown: pullsDown) }
+    let entries = children(menu)
+    guard entries.count <= 200 else { return PopUpItems.shape(selected: selected, items: nil, pullsDown: pullsDown) }
+    let items = entries.filter { string($0, "AXRole") == "AXMenuItem" }
+      .map { PopUpItems.Item(title: string($0, "AXTitle"), enabled: (attribute($0, "AXEnabled") as? NSNumber)?.boolValue) }
+    return PopUpItems.shape(selected: selected, items: items, pullsDown: pullsDown)
   }
 
   /// CU-361: the static text beside an entry in layout (NearbyLabel.pick) - its window's AXStaticText descendants (at
