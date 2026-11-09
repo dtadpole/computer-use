@@ -12,8 +12,9 @@ import { isBrowserApp } from '../../_tools_/agent-core/app-kinds.mjs'
 const CHROME = 'com.google.chrome.for.testing'
 const SAFARI = 'com.apple.Safari'
 const PREVIEW = 'com.apple.Preview'
-const policy = createAppPolicy({ scope: [CHROME, SAFARI, PREVIEW], preApprovals: [{ class: 'unknown_target', app: CHROME }] })
-for (const app of [CHROME, SAFARI, PREVIEW]) policy.grantScope(app, { approved: true, answeredBy: 'api' })
+const FIREFOX = 'org.mozilla.firefox'
+const policy = createAppPolicy({ scope: [CHROME, SAFARI, PREVIEW, FIREFOX], preApprovals: [{ class: 'unknown_target', app: CHROME }] })
+for (const app of [CHROME, SAFARI, PREVIEW, FIREFOX]) policy.grantScope(app, { approved: true, answeredBy: 'api' })
 const click = { type: 'click', x: 10, y: 10, button: 'left' }
 const verdict = (v) => (v.decision === 'allow' ? 'allow' : v.decision === 'block' ? `block:${v.rule}` : v.class)
 const at = (app, action, target, extra = {}) => verdict(policy.classify(action, { frontmostBundleId: app, target: target ? { origin: app, fingerprint: 't', ...target } : null, ...extra }))
@@ -24,6 +25,11 @@ test('D-089: a click, key, typing, hold or drag inside an approved browser\'s op
     { type: 'type', text: 'hello' }, { type: 'hold_key', keys: ['ENTER'], duration_ms: 200 }, { type: 'drag', path: [{ x: 10, y: 10 }, { x: 60, y: 10 }] }]
   for (const action of actions) assert.equal(at(CHROME, action, page), 'block:browser_web_content', `${action.type} in Chrome's page`)
   assert.equal(at(SAFARI, click, { role: 'AXWebArea', name: 'Sign in - Example' }), 'block:browser_web_content', 'Safari\'s web area, named or not')
+  assert.equal(at(FIREFOX, { type: 'keypress', keys: ['ENTER'] }, { role: 'AXWebArea', name: null }), 'block:browser_web_content', 'Firefox\'s web area focused, Return')
+  assert.equal(at(CHROME, { type: 'click', x: 10, y: 10, button: 'right' }, page), 'block:browser_web_content', 'a right click (its menu may submit too)')
+  assert.equal(at(CHROME, { type: 'triple_click', x: 10, y: 10, button: 'left' }, page), 'block:browser_web_content', 'a triple click')
+  assert.equal(at(CHROME, { type: 'keypress', keys: ['META', 'V'] }, page, { paste: { fromOwner: false, text: 'x' } }), 'block:browser_web_content', 'a keystroke paste while the page holds the focus')
+  assert.equal(at(CHROME, { type: 'keypress', keys: ['TAB'] }, page), 'block:browser_web_content', 'any key while the page holds the focus - Tab moves inside the unseen page')
 })
 
 test('D-089: a drop or a menu paste into the page is refused too', () => {
