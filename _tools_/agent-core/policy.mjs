@@ -66,7 +66,7 @@ const LOCALE_WORDS = Object.freeze({
     '비밀번호', '보안코드', '인증번호',
     // cu-researcher's red team of PR #323: PIN, one-time code, card-check and card-number names the first list missed.
     // German writes compounds: an entry led by '…' also matches as the end of a longer word (Kreditkartennummer).
-    '…geheimzahl', '…bestätigungscode', '…sicherheitscode', '…prüfnummer', '…prüfziffer', '…kartennummer', '…einmalcode', 'einmal code',
+    '…geheimzahl', '…bestätigungscode', '…sicherheitscode', '…prüfnummer', '…prüfziffer', '…kartennummer', '…karten nummer', '…einmalcode', 'einmal code',
     'sms code', 'bestätigungs code', 'sicherheits code', 'code de vérification', 'numéro de carte',
     'código de verificación', 'número de tarjeta', 'код подтверждения', 'номер карты', 'pin-код', '確認コード', 'カード番号',
     '인증 코드', '카드 번호', '카드번호'],
@@ -247,7 +247,7 @@ function namesWord(name, words) {
   const text = normaliseName(name)
   return words.some((word) => {
     // CU-345: '…' leads a German compound ending - matched after any letters, bounded only on its right.
-    if (word.startsWith('\u2026')) return new RegExp(`${escapeRegExp(normaliseName(word.slice(1)))}([^\\p{L}]|$)`, 'u').test(text)
+    if (word.startsWith('\u2026')) return new RegExp(`${escapeRegExp(normaliseName(word.slice(1))).replace(/ /g, '[\\s-]+')}([^\\p{L}]|$)`, 'u').test(text)
     if (!LETTER_BOUNDED.test(word)) return new RegExp(`(^|[^a-z])${escapeRegExp(normaliseName(word)).replace(/ /g, '[\\s-]+')}([^a-z]|$)`).test(text)
     // A judged name has passed normaliseText, which folds homoglyphs case by case (a Cyrillic 'К' reads as Latin 'K'), so the
     // entry is folded the same way as written, capitalised and in capitals before it is compared.
