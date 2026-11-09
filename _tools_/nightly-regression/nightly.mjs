@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 // Nightly no-model regression on main (CU-59). On a fresh detached worktree of --ref (default origin/main):
-//   phase 1, no lock: every node --test suite outside macos-helper and desktop-suite, then the fake-helper verifiers;
-//   phase 2, under the team's desktop-run lock: macos-helper (ad-hoc CUHelper), desktop-suite (offscreen CU Fixture),
-//   and the desktop-fixture (fixture plans), desktop-helper-protocol and desktop-helper-dryrun verifiers.
+//   phase 1, no lock: every node --test file outside macos-helper and desktop-suite that starts no app, then the
+//   fake-helper verifiers;
+//   phase 2, under the team's desktop-run lock (which refuses while the owner is active, D-066 - waited for like a
+//   busy lock): macos-helper (ad-hoc CUHelper), desktop-suite (offscreen CU Fixture), every other test file that builds
+//   or launches CU Fixture (CU-304), and the desktop-fixture, desktop-helper-protocol and desktop-helper-dryrun verifiers.
 // A failing step runs once more; passing on that retry makes it a flake, recorded in <out>/flakes.json.
 // No model key reaches a child, no Chrome starts, CU_HOME is private, no helper is installed.
 // Writes <out>/<stamp>-<head>/{<step>.log,report.json,report.md}, <out>/latest.md and prints the report.
@@ -13,7 +15,8 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { acquireDesktopRun } from '../../_environments_/macos-desktop/run-lock.mjs'
 import {
-  buildSteps, classify, failingTests, mergeFlakes, nodeCounts, overall, parseArgs, renderReport, strippedEnv, summaryLine, verdictOf,
+  buildSteps, classify, failingTests, launchesFixtureApp, mergeFlakes, nodeCounts, overall, parseArgs, renderReport, strippedEnv,
+  summaryLine, verdictOf,
 } from './logic.mjs'
 
 const USAGE = `usage: node _tools_/nightly-regression/nightly.mjs [options]
@@ -93,9 +96,11 @@ async function takeLock(opts, runId) {
       } catch (error) {
         const reason = error?.details?.reason ?? error?.code ?? 'error'
         // desktop_held: another seat's announced hold (CU-75, e.g. step 4) - wait for it like a run, never fail on it.
-        if (reason !== 'desktop_run_active' && reason !== 'run_lock_busy' && reason !== 'desktop_held') return { error: `${reason}: ${error?.message ?? error}` }
+        // owner_active (D-066): local input in the last minutes - wait for an idle slot the same way (CU-304).
+        if (!['desktop_run_active', 'run_lock_busy', 'desktop_held', 'owner_active'].includes(reason)) return { error: `${reason}: ${error?.message ?? error}` }
         const holder = error?.details?.holder
-        why = !holder ? reason : holder.runId ? `held by ${holder.seat} (${holder.runId})` : `held by ${holder.seat} until ${holder.until}`
+        why = reason === 'owner_active' ? `the owner is active (idle ${error?.details?.idleSeconds ?? '?'} s)`
+          : !holder ? reason : holder.runId ? `held by ${holder.seat} (${holder.runId})` : `held by ${holder.seat} until ${holder.until}`
       }
     }
     if (Date.now() >= deadline) return { error: `not taken within ${opts.lockWait}s, ${why}` }
@@ -164,7 +169,9 @@ async function main() {
   const env = strippedEnv(process.env, { CU_HOME: cuHome, CU_NIGHTLY: '1' })
   const hookEnv = { ...process.env, NIGHTLY_HEAD: head, NIGHTLY_RUN_ID: runId, NIGHTLY_SEAT: opts.seat }
   const ctx = { wt, env, runDir }
-  const steps = buildSteps({ testFiles: listTests(wt), verifiers: listVerifiers(wt) })
+  const testFiles = listTests(wt)
+  const fixtureAppFiles = testFiles.filter((f) => launchesFixtureApp(readFileSync(join(wt, f), 'utf8')))
+  const steps = buildSteps({ testFiles, verifiers: listVerifiers(wt), fixtureAppFiles })
   const results = []
   let lockNote = 'no phase 2 steps'
   let killed = []

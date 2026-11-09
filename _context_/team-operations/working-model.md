@@ -1,9 +1,9 @@
 ---
 title: '[cu] working model'
 created: 2026-11-01T09:06:25Z
-modified: 2026-11-08T23:25:02Z
+modified: 2026-11-08T23:42:00Z
 level: L2
-version: 3.2.0
+version: 3.3.0
 description: How every [cu] seat works - its two worktrees, Linear, how records and code land, code rules, the Mac's limits, the inbox and the milestones.
 status: unverified
 grounded_in:
@@ -19,8 +19,7 @@ Seats: TEAM.yaml (the private roster) and `_team_members_/<seat>/responsibilitie
 
 Code and public records: this repository, main checkout `~/dtadpole/computer-use` (DSH workspace
 "dtadpole/computer-use"), edited only in your session worktree `~/dtadpole/computer-use-wt/<session-id>` on a
-`cu/<seat>-...` branch per change (D-039, D-077). A CUHelper run starts from `~/computer-use--<seat>` until helper
-0.2.58 admits the convention paths. Private records (the roster, seat files, review log) stay in the reflection
+`cu/<seat>-...` branch per change (D-039, D-077); CUHelper runs start there too since helper 0.2.58 (D-080). Private records (the roster, seat files, review log) stay in the reflection
 bank, edited from your reflection session worktree. Never edit a main checkout; pass `workdir` to every shell call.
 Write only your scope; another seat's files change through a message to it.
 
