@@ -66,7 +66,8 @@ const LOCALE_WORDS = Object.freeze({
     '비밀번호', '보안코드', '인증번호',
     // cu-researcher's red team of PR #323: PIN, one-time code, card-check and card-number names the first list missed.
     // German writes compounds: an entry led by '…' also matches as the end of a longer word (Kreditkartennummer).
-    '…geheimzahl', '…bestätigungscode', '…sicherheitscode', '…prüfnummer', '…prüfziffer', '…kartennummer', 'code de vérification', 'numéro de carte',
+    '…geheimzahl', '…bestätigungscode', '…sicherheitscode', '…prüfnummer', '…prüfziffer', '…kartennummer', '…einmalcode', 'einmal code',
+    'sms code', 'bestätigungs code', 'sicherheits code', 'code de vérification', 'numéro de carte',
     'código de verificación', 'número de tarjeta', 'код подтверждения', 'номер карты', 'pin-код', '確認コード', 'カード番号',
     '인증 코드', '카드 번호', '카드번호'],
 })
