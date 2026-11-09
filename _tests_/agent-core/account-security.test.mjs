@@ -30,3 +30,25 @@ test('CU-373 refinement: a native toggle state decides the direction; an ARIA, m
   assert.equal(press(box('Forward a copy of incoming mail to', true)), 'allow', 'native forwarding on -> off is the safe direction')
   assert.equal(press(box('Forward a copy of incoming mail to', false)), 'credential', 'turning forwarding on asks')
 })
+
+test('CU-373 audit: the recorded target of a 2FA-checkbox click carries its checked state', async () => {
+  const { mkdtempSync, rmSync } = await import('node:fs')
+  const { tmpdir } = await import('node:os')
+  const { join } = await import('node:path')
+  const { createScriptedAdapter } = await import('../../_tools_/agent-core/adapter-scripted.mjs')
+  const { createRunControl } = await import('../../_tools_/agent-core/control.mjs')
+  const { createFakeEnvironment } = await import('../../_tools_/agent-core/fake-env.mjs')
+  const { runTask } = await import('../../_tools_/agent-core/loop.mjs')
+  const { createSitePolicy } = await import('../../_tools_/agent-core/sites.mjs')
+  const { readRun } = await import('../../_tools_/agent-core/trajectory.mjs')
+  const tmp = mkdtempSync(join(tmpdir(), 'cu-373-'))
+  try {
+    const control = createRunControl()
+    const environment = createFakeEnvironment({ kind: 'browser', control, url: 'https://mail.example/settings' })
+    environment.inspectPoint = async () => ({ origin: 'https://mail.example', tag: 'input', inputType: 'checkbox', role: 'checkbox', name: '2-Step Verification', checked: false })
+    const model = createScriptedAdapter({ frame: { width: 1440, height: 900 }, turns: [{ actions: [{ type: 'click', x: 10, y: 10, button: 'left' }] }, { final: 'done' }] })
+    const result = await runTask({ task: 'secure my account', environment, model, control, runsDirectory: join(tmp, 'runs'), build: { commit: 'test', dirty: false }, sitePolicy: createSitePolicy({ allowed: ['https://mail.example'] }) })
+    const click = readRun(result.trajectoryDir).events.filter((e) => e.kind === 'action' && e.action?.type === 'click').at(-1)
+    assert.equal(click.target?.checked, false)
+  } finally { rmSync(tmp, { recursive: true, force: true }) }
+})
