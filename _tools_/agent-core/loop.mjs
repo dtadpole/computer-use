@@ -840,7 +840,7 @@ export async function runTask(options) {
     const dragSource = action.type === 'drag' && desktop
       ? (!target || !target.role ? 'unknown'
         : (typeof target.filename === 'string' && target.filename !== '') || /^file:/i.test(String(target.url ?? '')) ? 'file'
-          : (typeof target.origin === 'string' && target.origin !== '' && context?.frontmostBundleId && target.origin !== context.frontmostBundleId) ? 'unknown' : 'other')
+          : (typeof target.origin === 'string' && target.origin !== '' && state?.frontmostBundleId && target.origin !== state.frontmostBundleId) ? 'unknown' : 'other')
       : null
     // CU-198 (drag-text.md): the browser reads what a drag moves - once, and only when it lands on a text entry: a string,
     // { unknown: true } on a failed read, or null (nothing selected under the press). Never recorded; the desktop reads none.
