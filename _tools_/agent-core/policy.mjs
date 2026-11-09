@@ -222,6 +222,13 @@ function withoutTaskValues(text, task) {
   let out = String(text ?? '')
   for (const parts of taskValuesOf(task)) {
     out = out.replace(new RegExp(parts.map((part) => escapeRegExp(part)).join('\\s+'), 'gi'), ' ')
+    // A card or IBAN field reformats as it is typed (cu-researcher): the task's card or IBAN typed back plain, spaced or
+    // dashed is the same value, so it is compared on its digits and letters with any spaces or dashes between them.
+    const joined = parts.join(' ')
+    if (['card', 'iban'].includes(looksSensitive(joined))) {
+      const compact = joined.replace(/[\s-]/g, '')
+      out = out.replace(new RegExp([...compact].map((ch) => escapeRegExp(ch)).join('[\\s-]*'), 'gi'), ' ')
+    }
   }
   return out
 }
