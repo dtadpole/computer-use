@@ -50,9 +50,21 @@ test('CU-325 negatives: ids that are not card-shaped stay allowed', () => {
   }
 })
 
-test('CU-325 named limits (cu-researcher on #245): a card as a host label, or split across two segments, is not read', () => {
+// Open under-ask CU-326 (Medium, cu-researcher): these shapes leave a card the run never typed unasked; a fix flips them.
+test('open CU-326: a card the run never typed - in a host label, split across two segments, or inside a longer digit run - is not read', () => {
   assert.equal(go(`https://${CARD_DIGITS}.fixture.example/`).decision, 'allow')
   assert.equal(go(`${SITE}/p/${CARD_DIGITS.slice(0, 8)}/${CARD_DIGITS.slice(8)}`).decision, 'allow')
+  // cu-verifier on #245: an 18-digit run holding the card ('00<card>') is no card-length run.
+  assert.equal(go(`${SITE}/p/00${CARD_DIGITS}`).decision, 'allow')
+})
+
+test('CU-325 follow-up: digits the run typed ask anywhere in the address - a host label, split across segments, path and fragment', () => {
+  const typed = { typedDigits: [NINES] }
+  for (const url of [`https://${NINES}.fixture.example/`, `${SITE}/p/${NINES.slice(0, 8)}/${NINES.slice(8)}`, `${SITE}/p/${NINES.slice(0, 8)}#${NINES.slice(8)}`, `https://a${NINES.slice(0, 6)}.fixture.example/${NINES.slice(6)}`]) {
+    assert.deepEqual([go(url, typed).decision, go(url, typed).class], ['confirm', 'sensitive_data'], url)
+    assert.equal(go(url).decision, 'allow', `${url} untyped`)
+  }
+  assert.equal(go(`https://${CARD_DIGITS}.fixture.example/`, { typedDigits: [CARD_DIGITS] }).decision, 'confirm', 'a typed brand card in a host label')
 })
 
 test('CU-325: digits the run typed ask in a later path whatever their prefix; untyped they stay an id', () => {

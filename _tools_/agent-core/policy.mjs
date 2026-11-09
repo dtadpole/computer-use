@@ -501,8 +501,8 @@ function urlFieldName(name) {
 // digit run - bare or in card groupings, not touching other digits, so a file name ('<card>.pdf') or a suffix counts too
 // (cu-researcher on #245) - that passes Luhn and carries a card brand's prefix with that brand's length (a random numeric id
 // then trips about one time in a hundred, not one in ten), or when its digits hold a card-length run the run itself typed or
-// pasted (typedDigits, the loop's in-memory buffer, CU-267), whatever its prefix. Named limits: a card as a host label, or
-// split across two segments.
+// pasted (typedDigits, the loop's in-memory buffer, CU-267), whatever its prefix. Open under-ask CU-326: an untyped card as
+// a host label, split across two segments, or inside a longer digit run.
 const CARD_RUN = /(?<!\d)(\d{4}(?:[ -]\d{4}){3}(?:[ -]\d{3})?|\d{4}[ -]\d{6}[ -]\d{4,5}|\d{13,19})(?!\d)/g
 const CARD_BRANDS = [
   [/^4/, [13, 16, 19]],
@@ -558,6 +558,13 @@ export function urlSecret(raw, typedDigits = []) {
     if (pathCard(decode(segment), typedDigits)) return 'card'
     const kind = looksSensitive(decode(segment))
     if (kind !== null && kind !== 'card' && kind !== 'phone') return kind
+  }
+  // CU-325 follow-up (cu-coordinator 06:41Z): digits the run typed are matched against every digit of the address - host
+  // labels, the joined path, query and fragment - so a typed card split across segments or put in a host label asks too.
+  const typedRuns = (Array.isArray(typedDigits) ? typedDigits : []).filter((run) => typeof run === 'string' && run.length >= 13 && run.length <= 19)
+  if (typedRuns.length > 0) {
+    const every = decode(`${url.hostname}${url.pathname}${url.search}${url.hash}`).replace(/\D/g, '')
+    if (typedRuns.some((run) => every.includes(run))) return 'card'
   }
   return null
 }
