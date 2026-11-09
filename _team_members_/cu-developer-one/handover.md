@@ -1,45 +1,51 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-08T18:03:25Z
+modified: 2026-11-09T00:51:50Z
 level: L1
-version: 2.0.0
+version: 2.4.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
   - source: cu-coordinator decision 2026-11-08 (each seat keeps handover.md, at most 300 words)
-  - source: owner's order of 2026-11-08 (the new repository; each open PR re-opened by hand on its main)
+  - source: owner's direct order 2026-11-08 14:59 PST (one successor per seat in the new workspace)
+  - source: cu-coordinator's goal of 2026-11-08 (CU-301, CU-241, CU-297, CU-263) and its 12th review (refresh before 80 % context)
 ---
 
 # [cu] Developer One - handover
 
-Seat `cu-developer-one`, agent core and design; goal unchanged ([responsibilities](responsibilities.md)). Code and
-records: `~/computer-use--cu-developer-one`, a worktree of `~/dtadpole/heddle/_projects_/computer-use`. Shipped work:
-[artifacts.md](artifacts.md). State at 18:00Z, 8 November.
+Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)). The
+session works in a worktree under `~/dtadpole/computer-use-wt/` with `--review` purpose worktrees beside it;
+shipped work in [artifacts.md](artifacts.md). State at 00:52Z, 9 November. This seat never drives the desktop.
 
-## Issues and PRs
+## Landed tonight
 
-- **Ready to land:** #98 (CU-261, CU-270, CU-258's remainder; re-OK from cu-verifier at 3fc74ed), #103 (CU-252 in any
-  app whose selection read reports files; cu-developer-three's re-OK at 73eb224), #110 (Writing Tools verb phrases),
-  #115 (data: and blob: as web schemes), #116 (CU-256, the documented Services exception menu-key 0.1.4 states).
-- **Next, local:** CU-271's desktop half (IDE runs ask launch_code, Cursor by its exact id) opens once #98 lands.
-- **Landed today:** CU-272, CU-274, CU-275 (run control), CU-260, CU-264, CU-265, CU-269, CU-277, the guide (#33, #72).
-- **Named remainders:** App Store 'Try Free' and currency-code prices (CU-254); D-061 field names as URL parameters
-  (passport, ssn, dob; cu-researcher's idea on CU-260).
+#178 (CU-301 Urgent, verified live, D-081 ended by D-087), #168 (CU-241, Verify), #175 (CU-297, Verify), #180 and
+#166 (records).
 
-## Rules learned
+## Open PRs (OK'd heads)
 
-- Run the whole agent-core suite before any push that changes loop behaviour (coordinator, 15:55Z).
-- Search open PRs before filing or alarming (16:37Z).
-- Inbox OKs name the exact head; merging main into a PR in the chain needs fresh OKs.
+- #184 (Part of CU-300, policy half) at ca6257c: OKs cu-verifier, cu-researcher, cu-developer-two. #181 (driver) stacks on it.
+- #174 (Fixes CU-263) at 3d2d128: OKs cu-researcher, cu-verifier. #184 and #174 wait for an owner-idle phase 2 (D-086).
+- #190 (guide 0.1.13: web-editor send, card frames); this handover.
+
+## Pending
+
+- CU-241 and CU-297 live rows: cu-verifier on #171's pages.
+- CU-302 (AutoFill): fix after cu-researcher's measurement, if confirmed.
+- Guide next: the CAPTCHA hand-off once #174 lands (497 of 499 words; trim when adding).
+- CU-135 waits on the owner's step 4; CU-252 on the Finder-shape stand-in (#165).
+- Schedules: hourly pass; daily Session reflection 23:00Z.
+
+## Lessons
+
+- Run the whole agent-core suite before every push, fail 0 in the same command.
+- Never run `_tests_/desktop-fixture` outside your own desktop-run hold (it starts CU Fixture; CU-305).
+- Reviews go on a real test merge in a purpose worktree; never switch branches under a running job.
+- OKs name the exact head; check the head before you send one.
+- Every text route (type, key, paste, drop) must meet the same name rules.
 
 ## Tools
 
-- Inbox: `python3 ~/dtadpole/reflection/_tools_/session-inbox/session-inbox.py check|read --roster
-  ~/dtadpole/reflection/_projects_/computer-use/TEAM.yaml --me cu-developer-one`.
+- Inbox: `session-inbox.py check|read --me cu-developer-one` with the roster beside TEAM.yaml.
 - Before every push: `node ~/dtadpole/heddle/_tools_/public-hygiene/gate.mjs --range origin/main..HEAD`.
-
-## Next step
-
-Land the queue; answer reviews on agent core, consent and the guide; a design note before any contract or safety
-change; keep the guide and the action classes true to every live close.
