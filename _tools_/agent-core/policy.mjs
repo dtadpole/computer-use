@@ -984,6 +984,17 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (scheme !== '' && !WEB_SCHEMES.has(scheme) && pressesLink) classes.push('permission')
     const keyboard = keyboardActivation(action, target, context)
     if (keyboard.deletes) classes.push('delete')
+    // CU-370 (design note 0.1): the option a key lands on in a select, listbox or combobox is judged like a click on it -
+    // the driver's keyTarget when it reads one, else (type-ahead) the typed text taken as the option's name.
+    const choiceTarget = target && /combo|listbox|select/i.test(String(target.role ?? '')) && target.editable !== true
+    if (choiceTarget && ['keypress', 'hold_key', 'type'].includes(action.type)) {
+      const optionName = typeof context.keyTarget?.name === 'string' ? context.keyTarget.name : action.type === 'type' ? String(action.text ?? '').trim() : ''
+      if (optionName !== '') {
+        if (namesPurchase(optionName)) classes.push('purchase')
+        if (namesDelete(optionName)) classes.push('delete')
+        if (namesWord(optionName, WORDS.permission)) classes.push('permission')
+      }
+    }
     // CU-363 (design note 0.1; High pending a live row): on a web page a printable key pressed outside text entry goes to
     // the page, whose own handler may delete, archive or send (Gmail '#', 'e', '!') - its effect cannot be read, so it asks
     // once per key, site and run (permission, never pre-approved; the answer keys 'permission:page-shortcut:<key>' -
@@ -1004,7 +1015,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         if (text.trim() === '') return null
         // A control is no text entry: its typed text reaches the page's handlers as a keypress would (cu-researcher: rows are
         // often links). Only an entry-like role the driver reports read-only is left to its own rules.
-        if (target && /text|search|combo/i.test(String(target.role ?? ''))) return null
+        // CU-370: a select is a choice, not a text entry - a combobox or listbox the driver reports not editable (a native
+        // <select>) keeps no exemption: its type-ahead picks an option (judged below) and reaches the page's handlers.
+        const choice = target && /combo|listbox/i.test(String(target.role ?? '')) && target.editable !== true
+        if (target && !choice && /text|search|combo/i.test(String(target.role ?? ''))) return null
         return text
       }
       const keys = keysOf(action)
