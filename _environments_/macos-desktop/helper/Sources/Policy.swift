@@ -234,8 +234,12 @@ enum ManualAccessibilityRestore {
   private static let lock = NSLock()
   private static var remembered = Set<pid_t>()
 
-  /// Whether to write true (and remember the pid): only when the app does not already have it set.
-  static func shouldWrite(prior: Bool?) -> Bool { prior != true }
+  /// What the read before the write found: set, unset (false, or "no value"/"unsupported"), or a failed read.
+  enum Prior: Equatable { case on, unset, unreadable }
+
+  /// Whether to write true (and remember the pid): only when the read says unset. Already on - the user's or another
+  /// assistive app's - is left alone, and a failed read writes nothing (cu-developer-one, helper-boundary 0.3.12).
+  static func shouldWrite(prior: Prior) -> Bool { prior == .unset }
 
   static func remember(_ pid: pid_t) {
     lock.lock(); remembered.insert(pid); lock.unlock()

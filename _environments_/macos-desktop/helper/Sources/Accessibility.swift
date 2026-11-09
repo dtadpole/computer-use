@@ -96,14 +96,18 @@ enum Accessibility {
     _ = AXUIElementSetAttributeValue(app, "AXManualAccessibility" as CFString, on ? kCFBooleanTrue : kCFBooleanFalse)
   }
 
-  /// CU-329: the app's AXManualAccessibility before the helper writes it - nil when unset or unreadable.
-  static func manualAccessibility(pid: pid_t) -> Bool? {
+  /// CU-329: the app's AXManualAccessibility before the helper writes it. "No value" and "unsupported" mean unset;
+  /// any other error (a timeout, a dead element) is a failed read.
+  static func manualAccessibility(pid: pid_t) -> ManualAccessibilityRestore.Prior {
     let app = AXUIElementCreateApplication(pid)
     AXUIElementSetMessagingTimeout(app, 0.5)
     var value: CFTypeRef?
-    guard AXUIElementCopyAttributeValue(app, "AXManualAccessibility" as CFString, &value) == .success, let value,
-          CFGetTypeID(value) == CFBooleanGetTypeID() else { return nil }
-    return CFBooleanGetValue((value as! CFBoolean))
+    let error = AXUIElementCopyAttributeValue(app, "AXManualAccessibility" as CFString, &value)
+    if error == .noValue || error == .attributeUnsupported { return .unset }
+    guard error == .success, let value else { return .unreadable }
+    if CFGetTypeID(value) == CFBooleanGetTypeID() { return CFBooleanGetValue((value as! CFBoolean)) ? .on : .unset }
+    if let number = value as? NSNumber { return number.boolValue ? .on : .unset }
+    return .unreadable
   }
 
   /// The title of the window an element belongs to; read only for an approved app (the caller checks).

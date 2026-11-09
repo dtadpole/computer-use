@@ -2005,8 +2005,9 @@ func testWebArea() {
 
 func testManualAccessibilityRestore() {
   // CU-329: the helper's one Accessibility write is undone at the run's end, only where the helper made it.
-  check(ManualAccessibilityRestore.shouldWrite(prior: nil) && ManualAccessibilityRestore.shouldWrite(prior: false), "unset or false: write true and remember")
-  check(!ManualAccessibilityRestore.shouldWrite(prior: true), "already true (the user or another assistive app): leave it alone")
+  check(ManualAccessibilityRestore.shouldWrite(prior: .unset), "unset (false, no value, unsupported): write true and remember")
+  check(!ManualAccessibilityRestore.shouldWrite(prior: .on), "already true (the user or another assistive app): leave it alone")
+  check(!ManualAccessibilityRestore.shouldWrite(prior: .unreadable), "a failed read writes nothing (cu-developer-one)")
   _ = ManualAccessibilityRestore.restoreAll(write: { _ in }, isRunning: { _ in true })
   for pid: pid_t in [303, 101, 202] { ManualAccessibilityRestore.remember(pid) }
   ManualAccessibilityRestore.remember(101)
