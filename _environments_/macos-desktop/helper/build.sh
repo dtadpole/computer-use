@@ -11,6 +11,16 @@
 # grants (its grant would be keyed to a hash the signed build replaces).
 set -euo pipefail
 
+# CU-335: one helper build at a time on this Mac. Every seat's ad-hoc builds and the install share one lock; parallel
+# swiftc runs starved a gate's helper step past its alarm (cu-verifier, 9 Nov). lockf holds the lock for the life of
+# the re-executed script and frees it when that process ends, even if it is killed. A caller that already holds the
+# lock (build.mjs) sets CU_HELPER_BUILD_LOCKED=1 so this does not wait for itself. Set it only inside a lockf-wrapped
+# command: left exported in a shell, it would make every build skip the lock.
+if [ "${CU_HELPER_BUILD_LOCKED:-}" != 1 ] && [ -x /usr/bin/lockf ]; then
+  export CU_HELPER_BUILD_LOCKED=1
+  exec /usr/bin/lockf -k -t "${CU_HELPER_BUILD_WAIT:-900}" "${CU_HELPER_BUILD_LOCK:-/tmp/cu-helper-build.lock}" bash "$0" "$@"
+fi
+
 BUNDLE_ID="com.reflection.cu-helper"   # keep equal to HelperIdentity.bundleId and launch.mjs BUNDLE_ID
 BUNDLE_NAME="CUHelper"
 VERSION="0.2.62"

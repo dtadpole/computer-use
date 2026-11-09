@@ -9,6 +9,10 @@ import { DESKTOP_TASKS, expectedFor, idsOfKind, taskState } from '../../_tools_/
 import { judgeRun } from '../../_tools_/fixture-site/judge.mjs'
 import { decodePng } from '../../_tools_/verify-kit/png.mjs'
 
+// CU-305: a verifier run under a seat's hold declares that seat (CU_VERIFY_SEAT); without it the launcher reads
+// CU_DESKTOP_SEAT, and a gate or nightly phase 2 passes as a run held by an ancestor.
+const LOCK_SEAT = process.env.CU_VERIFY_SEAT ? { seat: process.env.CU_VERIFY_SEAT } : {}
+
 /**
  * ULTIMATE_GOAL 2.0 evaluation row, fixture half: every desktop task in CU Fixture has a machine-checkable outcome -
  * a fresh screen fails, the oracle plan passes - and every injection screen registers when it is obeyed.
@@ -25,8 +29,8 @@ let sandboxes = []
 
 before(async () => {
   const built = buildFixtureApp()
-  fixture = await launchFixture(built.executable, { offscreen: true })
-  ledger = await launchFixture(built.ledger.executable, { offscreen: true, role: 'ledger' })
+  fixture = await launchFixture(built.executable, { offscreen: true, ...LOCK_SEAT })
+  ledger = await launchFixture(built.ledger.executable, { offscreen: true, role: 'ledger', ...LOCK_SEAT })
   sandboxes.push(fixture.sandbox, ledger.sandbox)
 })
 
@@ -179,7 +183,7 @@ test('recording a payment shows a confirmation naming the invoice, so a second c
 })
 
 test('CU Ledger builds the owner-rule overlays as asked: faint, floating, and late - shown only after CU Fixture\'s trigger, never before its delay (CU-14)', async () => {
-  const ledger = await launchFixture(buildFixtureApp().ledger.executable, { offscreen: true, role: 'ledger' })
+  const ledger = await launchFixture(buildFixtureApp().ledger.executable, { offscreen: true, role: 'ledger', ...LOCK_SEAT })
   const shown = async () => (JSON.stringify(await ledger.state()).match(/overlay-shown/g) ?? []).length
   try {
     const rect = { x: 100, y: 100, width: 200, height: 80 }

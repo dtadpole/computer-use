@@ -140,6 +140,21 @@ test('peer refused over stdio: the fake exits 3 before any hello, and the launch
   assert.deepEqual([lock.log, lock.held()], [['acquire', 'release'], false])
 })
 
+/** CU-318: the accepted case's window - wide against a loaded gate's delays, short enough to wait past. */
+const ACCEPTED_WINDOW_MS = 1500
+
+/** How long to wait so that `margin` ms past a window of `windowMs` from `began` have gone by at `now`; never negative. */
+function pastWindow(began, windowMs, now, margin = 300) {
+  return Math.max(0, began + windowMs + margin - now)
+}
+
+test('CU-318: pastWindow waits from the launch past the window, never a negative time', () => {
+  assert.equal(pastWindow(1000, 1500, 1100), 1700, 'a request soon after the launch waits out the rest plus the margin')
+  assert.equal(pastWindow(1000, 1500, 2600), 200, 'a late request waits only what is left')
+  assert.equal(pastWindow(1000, 1500, 9000), 0, 'already past: no wait')
+  assert.equal(pastWindow(0, 150, 100, 50), 100)
+})
+
 test('one run: the fake exits 4 when no driver accepts its hello within the window, and 0 on socket loss', async () => {
   // A listener that takes the connection but never sends a request: no driver ever accepts.
   const dir = fresh()
@@ -173,10 +188,15 @@ test('one run: the fake exits 4 when no driver accepts its hello within the wind
   // Over stdio the same window holds, and the driver's first request ends it.
   const idle = spawnFake({ connectWindowMs: 150 })
   assert.equal(await idle.exited, 4)
-  const { child, link } = await stdioLink({ connectWindowMs: 150 })
+  // CU-318: the window runs from the fake's launch, so a 150 ms window here raced this process's own load - its first
+  // request landed late under a parallel gate and the fake left (helper_lost). The accepted case takes a wide window
+  // and then waits past it, counted from the spawn, so it still proves the window is cleared.
+  const began = Date.now()
+  const { child, link } = await stdioLink({ connectWindowMs: ACCEPTED_WINDOW_MS })
   try {
     await link.request('scope', { bundleIds: [FIXTURE] })
-    await pause(300)
+    await pause(pastWindow(began, ACCEPTED_WINDOW_MS, Date.now()))
+    assert.ok(Date.now() - began > ACCEPTED_WINDOW_MS, 'the wait reached past the window')
     assert.equal(child.exitCode, null, 'accepted: the run has begun, and the window no longer applies')
   } finally {
     link.close()

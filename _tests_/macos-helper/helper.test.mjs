@@ -72,11 +72,17 @@ function lineChannel(readable, writable) {
   return {
     events,
     loose,
-    hello: () => (hello !== null ? Promise.resolve(hello) : new Promise((resolve) => { helloWaiter = resolve })),
-    request(type, fields = {}) {
+    // Bounded (CU-334): a helper that refuses this test's process as its peer, or dies, sends no hello. The test then
+    // fails naming that, instead of hanging the gate until its alarm.
+    hello: (timeoutMs = 30_000) => (hello !== null ? Promise.resolve(hello) : new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error(`no hello within ${timeoutMs} ms - the helper refused this peer or exited (see its stderr)`)), timeoutMs)
+      helloWaiter = (message) => { clearTimeout(timer); resolve(message) }
+    })),
+    request(type, fields = {}, timeoutMs = 60_000) {
       const id = nextId++
-      return new Promise((resolve) => {
-        replies.set(id, resolve)
+      return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => { replies.delete(id); reject(new Error(`no reply to ${type} within ${timeoutMs} ms`)) }, timeoutMs)
+        replies.set(id, (message) => { clearTimeout(timer); resolve(message) })
         writable.write(`${JSON.stringify({ id, type, ...fields })}\n`)
       })
     },
@@ -86,10 +92,13 @@ function lineChannel(readable, writable) {
   }
 }
 
-function exitOf(child) {
-  return new Promise((resolve) => {
-    if (child.exitCode !== null) return resolve(child.exitCode)
-    child.once('exit', (code) => resolve(code))
+/** The child's exit code - at once if it already exited (a listener added after the exit would never fire), else when
+ * it exits; bounded (CU-334) so a helper that never exits fails the test instead of hanging the gate. */
+function exitOf(child, timeoutMs = 30_000) {
+  return new Promise((resolve, reject) => {
+    if (child.exitCode !== null || child.signalCode !== null) return resolve(child.exitCode)
+    const timer = setTimeout(() => reject(new Error(`the helper did not exit within ${timeoutMs} ms`)), timeoutMs)
+    child.once('exit', (code) => { clearTimeout(timer); resolve(code) })
   })
 }
 
@@ -922,7 +931,7 @@ describe('holds and the cursor (CU-64)', () => {
       const during = JSON.parse(readFileSync(marker, 'utf8'))
       assert.deepEqual([during.keys, during.buttons], [[], ['left']], JSON.stringify(during))
       child.kill('SIGKILL')
-      await new Promise((r) => child.once('exit', r))
+      await exitOf(child)
     }, { marker })
     assert.ok(existsSync(marker), 'the killed helper left no marker')
     await withHelper(world(), async ({ channel, posted }) => {
@@ -995,7 +1004,7 @@ describe('holds and the cursor (CU-64)', () => {
     assert.ok(readFileSync(firstEvents, 'utf8').includes('"type":12'), 'the first helper did not post the ups')
     assert.ok(!first.channel.events.some((e) => e.event === 'releasedStale'), 'the report went out before any request')
     first.child.kill('SIGKILL')
-    await new Promise((r) => first.child.once('exit', r))
+    await exitOf(first.child)
     // The next helper: no ups again, one report after its first request, marker gone.
     await withHelper(world(), async ({ channel, posted }) => {
       const reports = channel.events.filter((e) => e.event === 'releasedStale')
