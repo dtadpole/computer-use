@@ -35,8 +35,12 @@ test('CU-276: the live hold is never cut short, but neither extended nor re-held
   const isAlive = alive(new Set([901]))
   const hold = await holdDesktop({ seat: 'cu-verifier', minutes: 6, dir, now: () => t0, isAlive })
   await registerWaiter({ seat: 'cu-integrator', dir, pid: 901, now: () => t0 + 60_000, isAlive })
-  await assert.rejects(holdDesktop({ seat: 'cu-verifier', minutes: 6, dir, now: () => t0 + 120_000, isAlive }), waiting('cu-integrator'), 'an extension')
+  await assert.rejects(holdDesktop({ seat: 'cu-verifier', minutes: 6, token: hold.token, dir, now: () => t0 + 120_000, isAlive }), waiting('cu-integrator'), 'an extension')
   assert.equal(JSON.parse(readFileSync(join(dir, 'hold.json'), 'utf8')).until, hold.until, 'the live hold keeps its own end')
+  // CU-327: a nested hold (a script inside the held batch) is never refused, but does not stretch the hold past the waiter.
+  const inner = await holdDesktop({ seat: 'cu-verifier', minutes: 6, dir, now: () => t0 + 125_000, isAlive })
+  assert.deepEqual([inner.nested, inner.until], [true, hold.until], 'nested, the end unchanged while a phase 2 waits')
+  assert.equal(await releaseHold({ seat: 'cu-verifier', dir, now: () => t0 + 130_000 }), false, 'its tokenless release ends only itself')
   await releaseHold({ seat: 'cu-verifier', dir, now: () => t0 + 180_000 })
   await assert.rejects(holdDesktop({ seat: 'cu-verifier', minutes: 6, dir, now: () => t0 + 190_000, isAlive }), waiting('cu-integrator'), 'a re-hold within the chain gap')
 })
