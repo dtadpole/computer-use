@@ -1805,6 +1805,11 @@ class DesktopEnvironment {
       // characters (longer reads as none), null when absent (an older helper) or malformed. Outside the fingerprint, and
       // never in run records.
       placeholder: placeholderOf(element.placeholder),
+      // CU-361 (helper 0.2.64): a static text beside an entry in layout (left on its row, else just above it), as the
+      // helper reads it only when the entry has no title, caption or placeholder - a layout label agent core uses
+      // upgrade-only. Trimmed, at most 80 characters (longer reads as none), else null (absent from an older helper, or
+      // malformed). Outside the fingerprint, and never in run records.
+      nearbyLabel: placeholderOf(element.nearbyLabel),
       // CU-255: the file the element shows and its URL's last component, what launch_code reads besides the name - Finder
       // may hide an extension in the title (Payload for Payload.app or install.command). Outside the fingerprint, and
       // never in run records (an event's target keeps origin, role and name); the URL's path never leaves the driver.

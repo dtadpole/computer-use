@@ -5,7 +5,7 @@ import Foundation
 /// The helper's identity; `build.sh` writes the same bundle id into Info.plist.
 enum HelperIdentity {
   static let bundleId = "com.reflection.cu-helper"
-  static let version = "0.2.63"
+  static let version = "0.2.64"
   /// The value every synthetic event carries in `kCGEventSourceUserData`: 0x43555345, ASCII "CUSE"
   /// (input-and-targets.md, verify-kit's SYNTHETIC_TAG). Not a secret: an event from another process with this tag
   /// could only fail to pause the run, never act.
@@ -467,6 +467,33 @@ enum Placeholder {
   static func pick(role: String?, raw: String?) -> String? {
     guard applies(role: role) else { return nil }
     guard let text = raw?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty, text.count <= maxLength else { return nil }
+    return text
+  }
+}
+
+/// CU-361: the layout label of an unnamed entry - a static text beside it on screen, as VoiceOver reads one when no
+/// AXTitleUIElement links them: a plain box whose only label sits to its left ('Password  [      ]') or just above it.
+/// describe() asks for it only for an entry with no title, no caption and no placeholder; agent core uses it
+/// upgrade-only (it can make a field ask, never stop one asking). Frames are global top-left points (y grows down).
+/// Left: the candidate ends at or before the box's left edge (2 pt slack), at most `leftGap` away, its centre within
+/// half the box's height of the box's centre (the same row); the nearest wins. Else above: the candidate ends at or
+/// before the box's top (2 pt slack), at most `aboveGap` away, overlapping the box horizontally; the nearest wins. Left
+/// beats above. Trimmed; empty or more than 80 characters reads as none, never cut. Static texts' shown words only -
+/// never the entry's own value.
+enum NearbyLabel {
+  static let maxLength = 80
+  static let leftGap: CGFloat = 120
+  static let aboveGap: CGFloat = 24
+  struct Candidate { let text: String; let frame: CGRect }
+
+  static func pick(box: CGRect, candidates: [Candidate]) -> String? {
+    let left = candidates
+      .filter { $0.frame.maxX <= box.minX + 2 && box.minX - $0.frame.maxX <= leftGap && abs($0.frame.midY - box.midY) <= box.height / 2 }
+      .min { box.minX - $0.frame.maxX < box.minX - $1.frame.maxX }
+    let above = candidates
+      .filter { $0.frame.maxY <= box.minY + 2 && box.minY - $0.frame.maxY <= aboveGap && $0.frame.maxX > box.minX && $0.frame.minX < box.maxX }
+      .min { box.minY - $0.frame.maxY < box.minY - $1.frame.maxY }
+    guard let text = (left ?? above)?.text.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty, text.count <= maxLength else { return nil }
     return text
   }
 }
