@@ -403,7 +403,9 @@ const ROWS = [
 ]
 
 const decide = (action, target, env, extra = {}) => {
-  const url = env === 'browser' ? 'https://other.example/form' : 'app://ai.reflection.cu.fixture'
+  // CU-243: the desktop cells are judged with the url app-policy passes on every real desktop run (desktop://), so a
+  // rule keyed on a context the real path never builds fails here instead of passing (CU-152's lesson).
+  const url = env === 'browser' ? 'https://other.example/form' : 'desktop://'
   const r = policy.classify(A[action], { url, target: T[target], ...extra })
   return r.decision === 'allow' ? 'allow' : r.decision === 'handoff' ? 'handoff' : r.class
 }
