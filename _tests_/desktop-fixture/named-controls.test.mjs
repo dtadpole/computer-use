@@ -63,6 +63,29 @@ describe('named-controls (live rows decided by a name)', () => {
     })
   })
 
+  test('placeholders (CU-349): entries labelled only by a placeholder - AXTextField, the placeholder served apart from the name; lengths only', async () => {
+    const names = ['One-time code', 'CVV', 'Search']
+    await withNamed({ fields: ['Bank account'], placeholders: names, buttons: ['Continue'] }, async (fixture) => {
+      const audit = await fixture.axAudit()
+      names.forEach((name, index) => {
+        const entry = audit[`placeholder-${index}`]
+        assert.equal(entry.role, 'AXTextField')
+        // No caption or label is set; what AppKit serves as a name is not the placeholder's words (the policy must find
+        // them in the placeholder, CU-349).
+        assert.notEqual(entry.name, name, `placeholder-${index} must not carry its placeholder as its name`)
+        assert.equal(entry.placeholder, name)
+      })
+      assert.equal(audit['field-0'].name, 'Bank account', 'the named entry keeps its name above them')
+      const targets = await fixture.targets()
+      for (const key of ['placeholder-0', 'placeholder-1', 'placeholder-2', 'field-0', 'button-0']) assert.ok(targets[key], `no target for ${key}`)
+      assert.ok(targets['placeholder-0'].y > targets['field-0'].y && targets['button-0'].y > targets['placeholder-2'].y, 'they sit between the named entries and the buttons')
+      await fixture.act({ set: 'placeholder-1', value: '123' })
+      const { fields } = await fixture.state()
+      assert.deepEqual(fields.placeholderFieldLengths, [0, 3, 0])
+      assert.doesNotMatch(JSON.stringify(await fixture.state()), /"123"/, 'the text never comes back through the channel')
+    })
+  })
+
   test('at most six of each, names trimmed and capped at 60, empty names dropped', async () => {
     const long = 'x'.repeat(80)
     await withNamed({ fields: ['  Debit card  ', '', long, 'a', 'b', 'c', 'd', 'e'], buttons: [] }, async (fixture) => {

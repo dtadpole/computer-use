@@ -324,7 +324,9 @@ enum Windows {
         }
       }
       let element: Any = hit.map { String(describing: type(of: $0)) } ?? NSNull()
-      out[name] = ["role": (role as Any?) ?? NSNull(), "name": (label as Any?) ?? NSNull(), "element": element]
+      // CU-349: the placeholder Accessibility serves, apart from the name (a placeholder is not AXTitle).
+      let placeholder = (hit?.accessibilityPlaceholderValue()).flatMap { $0.isEmpty ? nil : $0 }
+      out[name] = ["role": (role as Any?) ?? NSNull(), "name": (label as Any?) ?? NSNull(), "placeholder": (placeholder as Any?) ?? NSNull(), "element": element]
     }
     return out
   }
