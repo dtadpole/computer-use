@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path'
 import { describe, test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 
-import { BUNDLE_ID, infoPlist, LEDGER, sourceHash } from '../../_tools_/desktop-fixture/build.mjs'
+import { BUNDLE_ID, LEDGER, PROBE_BUNDLE_ID, infoPlist, sourceHash } from '../../_tools_/desktop-fixture/build.mjs'
 import { jsonLines } from '../../_tools_/desktop-fixture/client.mjs'
 import { DESKTOP_TASKS, SHARED_SCREENS, chainCode, expectedFor, idsOfKind, taskState } from '../../_tools_/desktop-fixture/tasks.mjs'
 
@@ -112,11 +112,23 @@ describe('CU-360 the registered-scheme probe: x-cu-fixture-probe and the openURL
     return text.slice(from, to)
   }
 
-  test('the generated Info.plist of CU Fixture declares exactly the x-cu-fixture-probe scheme; CU Ledger declares none', () => {
-    const fixture = plist(infoPlist())
-    assert.equal(fixture.CFBundleIdentifier, BUNDLE_ID)
-    assert.deepEqual(fixture.CFBundleURLTypes, [{ CFBundleURLName: 'ai.reflection.cu.fixture.probe', CFBundleURLSchemes: ['x-cu-fixture-probe'] }])
-    assert.equal(plist(infoPlist(LEDGER)).CFBundleURLTypes, undefined, 'one app owns the scheme, so a probe never meets a choice of handler')
+  test('only the probe-only bundle (its own id) declares x-cu-fixture-probe; CU Fixture and CU Ledger declare none', () => {
+    const probe = plist(infoPlist({ bundleId: PROBE_BUNDLE_ID, name: 'CU Fixture Probe' }))
+    assert.equal(probe.CFBundleIdentifier, 'ai.reflection.cu.fixture.probe')
+    assert.deepEqual(probe.CFBundleURLTypes, [{ CFBundleURLName: 'ai.reflection.cu.fixture.probe', CFBundleURLSchemes: ['x-cu-fixture-probe'] }])
+    assert.equal(plist(infoPlist()).CFBundleIdentifier, BUNDLE_ID)
+    assert.equal(plist(infoPlist()).CFBundleURLTypes, undefined, 'every cached CU Fixture build shares one id and claims no scheme (cu-coordinator 17:58Z)')
+    assert.equal(plist(infoPlist(LEDGER)).CFBundleURLTypes, undefined)
+  })
+
+  test('buildProbeApp copies the executable into the scratch directory it is given, under the probe id, and caches nothing', () => {
+    const build = source('build.mjs')
+    const fn = between(build, 'export function buildProbeApp', '\n}\n')
+    assert.match(fn, /typeof into !== 'string' \|\| into === ''/, 'refuses without a scratch directory')
+    assert.match(fn, /join\(into, `\$\{PROBE_APP_NAME\}\.app`\)/)
+    assert.match(fn, /infoPlist\(\{ bundleId: PROBE_BUNDLE_ID/)
+    assert.match(fn, /'--identifier', PROBE_BUNDLE_ID/)
+    assert.doesNotMatch(fn, /lsregister|cacheRoot, `cu-desktop-fixture/, 'never registered or cached here')
   })
 
   test('the app sets a GetURL handler at will-finish-launching and records openURL with the scheme and the path only', () => {

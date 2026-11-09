@@ -1,9 +1,9 @@
 ---
 title: Desktop fixture contract
 created: 2026-11-02T08:34:00Z
-modified: 2026-11-09T17:36:00Z
+modified: 2026-11-09T18:05:00Z
 level: L1
-version: 0.15.0
+version: 0.16.0
 description: What CU Fixture guarantees to the desktop driver, the verifiers and the evaluator - identity, placement, the private control channel, what the agent can and cannot see, and how a screen's outcome is judged.
 status: unverified
 grounded_in:
@@ -61,14 +61,16 @@ grounded_in:
   characters, the focused field of a key event, modifiers, and the posting process's `pid` and synthetic `tag`
   (`eventSourceUserData`). It needs no grant. Screens `input-recorder` (odd-sized targets, a text field, mouse-moved on), `marker-standin` (sRGB
   #FF00FF, matched with red and blue above 230, green below 100) and `secure-marker` serve the desktop verifiers.
-- **URL scheme (CU-360).** CU Fixture's Info.plist declares the scheme `x-cu-fixture-probe` (CFBundleURLTypes, name
-  `ai.reflection.cu.fixture.probe`; CU Ledger declares none), so a probe can measure whether a browser opens a
-  registered app scheme with the team's own app. A GetURL Apple event (kInternetEventClass / kAEGetURL, its handler set
-  at will-finish-launching) adds one `state.input` entry `{kind: 'openURL', scheme, path}` (with `seq` and `t`): the
-  scheme in lower case and the URL's path component cut at 80 characters - never its host, query, fragment or user
-  info; `reset` clears it with the rest of the log. `build.mjs` never registers the bundle with LaunchServices: a probe
-  registers the build it uses before it runs and unregisters it afterwards, itself. Started by LaunchServices the app
-  has no channel on stdin and quits at once, so a probe starts it with `launchFixture` first and reads `state` there.
+- **URL scheme (CU-360).** Only a probe-only copy declares the scheme `x-cu-fixture-probe`: `buildProbeApp({into})`
+  writes `CU Fixture Probe.app` (the same executable, its own id `ai.reflection.cu.fixture.probe`) into a scratch
+  directory the probe owns, so it is the scheme's single claimant; CU Fixture and CU Ledger declare none (every cached
+  CU Fixture build shares one id, and several claimants left LaunchServices routing the scheme nowhere). A GetURL Apple
+  event (kInternetEventClass / kAEGetURL, its handler set at will-finish-launching) adds one `state.input` entry
+  `{kind: 'openURL', scheme, path}` (with `seq` and `t`): the scheme in lower case and the URL's path component cut at
+  80 characters - never its host, query, fragment or user info; `reset` clears it with the rest of the log. Nothing in
+  `build.mjs` registers a bundle with LaunchServices or sets a default handler: the probe registers its copy for its run
+  and unregisters it afterwards, itself, and sets no default (cu-coordinator 17:58Z). Started by LaunchServices the app
+  has no channel on stdin and quits at once, so a probe starts its copy with `launchFixture` first and reads `state` there.
 - **Oracle.** `act` performs a step on the app's own controls through the code a person's input reaches. It proves
   a screen completable and machine-checkable. It does not prove the OS path; agent runs do (M7).
 - **Retina.** This Mac has one 1920x1080 display at scale 1. A 2x path must be shown with a simulated scale.

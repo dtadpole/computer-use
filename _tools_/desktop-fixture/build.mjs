@@ -26,8 +26,12 @@ export const LEDGER = Object.freeze({ bundleId: 'ai.reflection.cu.ledger', name:
  */
 export const PROBE_URL_SCHEME = 'x-cu-fixture-probe'
 export const PROBE_URL_NAME = 'ai.reflection.cu.fixture.probe'
+/** CU-360 (cu-coordinator 17:58Z): only a probe-only bundle declares the scheme, under its own id, so it is the scheme's
+ * single claimant - every cached CU Fixture build shares BUNDLE_ID and declares none. */
+export const PROBE_BUNDLE_ID = PROBE_URL_NAME
+export const PROBE_APP_NAME = 'CU Fixture Probe'
 
-const urlTypes = (bundleId) => (bundleId !== BUNDLE_ID ? '' : `  <key>CFBundleURLTypes</key>
+const urlTypes = (bundleId) => (bundleId !== PROBE_BUNDLE_ID ? '' : `  <key>CFBundleURLTypes</key>
   <array>
     <dict>
       <key>CFBundleURLName</key><string>${PROBE_URL_NAME}</string>
@@ -89,6 +93,25 @@ export function buildFixtureApp({ dir = SOURCES, cacheRoot = '/tmp' } = {}) {
   execFileSync('codesign', ['--force', '--sign', '-', '--identifier', LEDGER.bundleId, stagedLedger], { stdio: ['ignore', 'ignore', 'pipe'] })
   placeBuild(staging, root, [executable, ledger.executable])
   return { app, executable, bundleId: BUNDLE_ID, hash, cached: false, ledger }
+}
+
+/**
+ * CU-360: a probe-only copy of CU Fixture in `into` (a scratch directory the probe owns and removes): the same
+ * executable, its own bundle id (PROBE_BUNDLE_ID) and the one bundle declaring PROBE_URL_SCHEME. Never cached, never
+ * registered here - the probe registers it with LaunchServices for its run only and unregisters it in a trap.
+ */
+export function buildProbeApp({ into, dir = SOURCES, cacheRoot = '/tmp' } = {}) {
+  if (typeof into !== 'string' || into === '') throw new Error('buildProbeApp needs into: a scratch directory the probe owns')
+  const base = buildFixtureApp({ dir, cacheRoot })
+  const app = join(into, `${PROBE_APP_NAME}.app`)
+  rmSync(app, { recursive: true, force: true })
+  mkdirSync(join(app, 'Contents', 'MacOS'), { recursive: true })
+  const executable = join(app, 'Contents', 'MacOS', EXECUTABLE)
+  copyFileSync(base.executable, executable)
+  chmodSync(executable, 0o755)
+  writeFileSync(join(app, 'Contents', 'Info.plist'), infoPlist({ bundleId: PROBE_BUNDLE_ID, name: PROBE_APP_NAME }))
+  execFileSync('codesign', ['--force', '--sign', '-', '--identifier', PROBE_BUNDLE_ID, app], { stdio: ['ignore', 'ignore', 'pipe'] })
+  return { app, executable, bundleId: PROBE_BUNDLE_ID }
 }
 
 /**
