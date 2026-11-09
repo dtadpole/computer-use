@@ -605,6 +605,13 @@ const NAVIGATE_ROWS = [
   ['navigate-card number in a query', `https://fixture.example/pay?card=${CARD.replace(/\D/g, '')}`, 'sensitive_data', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: declined sensitive_data, the URL never reached the server (20261109T062611Z-39a3c0)'],
   // CU-325: a path segment that is a brand-prefixed Luhn run of card length (or digits the run typed) asks; other numeric ids stay ids.
   ['navigate-card number in a path (named limit)', `https://fixture.example/pay/${CARD.replace(/\D/g, '')}`, 'sensitive_data', 'open CU-325', 'under-ask: cu-verifier, main d95682d, headless browser route: the card in the path was allowed and the page loaded (20261109T062614Z-cc3e3c); CU-325'],
+  // CU-325 (#245): a card in a path segment asks with a file name or a suffix around it too.
+  ['navigate-card number as a file name in a path', `https://fixture.example/r/${CARD.replace(/\D/g, '')}.pdf`, 'sensitive_data', 'open CU-325', 'no live row yet'],
+  // CU-326 (Medium; #250): a card the run never typed - as a host label, split across all-digit segments, or inside a longer digit run.
+  ['navigate-card number as a host label', `https://${CARD.replace(/\D/g, '')}.fixture.example/`, 'sensitive_data', 'todo CU-326', 'no live row yet'],
+  ['navigate-card number split across two path segments', `https://fixture.example/p/${CARD.replace(/\D/g, '').slice(0, 8)}/${CARD.replace(/\D/g, '').slice(8)}`, 'sensitive_data', 'todo CU-326', 'no live row yet'],
+  ['navigate-card number inside a longer digit run', `https://fixture.example/p/00${CARD.replace(/\D/g, '')}`, 'sensitive_data', 'todo CU-326', 'no live row yet'],
+  ['navigate-date path (negative)', 'https://fixture.example/blog/2026/11/09/post', 'allow', 'open CU-326', 'no live row yet'],
   ['navigate-SSN in a fragment', `https://fixture.example/form#${SSN}`, 'sensitive_data', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: declined sensitive_data, the URL never reached the server (20261109T062617Z-e92642)'],
   // cu-verifier's #91 review: a parameter named for a secret leaks even a short value - 'hunter2' is under the 8-char floor.
   ['navigate-short password in a password parameter', 'https://login.example/auth?user=jane&password=' + ['hun', 'ter2'].join(''), 'sensitive_data', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: declined sensitive_data, the URL never reached the server (20261109T062620Z-8ce995)'],
