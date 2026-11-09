@@ -70,7 +70,8 @@ test('CU-297 rule 1 negatives: a frame named for nothing takes text; the value r
   const card = ['4242', '4242', '4242', '4242'].join(' ')
   assert.equal(judge(type(card), frame('Secure card number input frame')), 'sensitive_data', 'a card number by its value')
   assert.equal(judge(type('123'), { role: 'AXGroup', name: 'CVV', tag: 'iframe' }, {}, 'desktop://'), 'allow', 'the desktop reads no frame host')
-  assert.equal(judge(type('123'), null), 'allow', 'a null focus has no name to judge')
+  // CU-363: a null focus on a web page is no text entry, so typed text there is a page shortcut (asked once per key).
+  assert.equal(judge(type('123'), null), 'permission', 'a null focus has no name to judge - a page shortcut (CU-363)')
 })
 
 test('CU-297 rule 2: a Return or typed line break in a frame host asks submit; a null focus keeps today\'s rule', () => {

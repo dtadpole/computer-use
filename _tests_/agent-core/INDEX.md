@@ -1,8 +1,8 @@
 ---
 title: agent-core test suite
 created: 2026-11-01T10:11:08Z
-modified: 2026-11-09T05:05:00Z
-version: 0.8.0
+modified: 2026-11-09T14:50:21Z
+version: 0.8.1
 description: Unit tests of agent-core - keys, the site filter table, the launch gate, run control, schema validation, policy classes, trajectory and the loop against a fake environment and the scripted model - with no browser, network or key.
 grounded_in:
   - source: _tools_/agent-core/INDEX.md@0.6.0
@@ -37,3 +37,4 @@ grounded_in:
 | [`desktop-scope.test.mjs`](desktop-scope.test.mjs) | an approved or always-covered app joins the helper scope before its first input; a refused add posts nothing; a desktop startRun passes seat and driver seams |
 | [`desktop-start-apps.test.mjs`](desktop-start-apps.test.mjs) | P11 with an empty helper: an uncovered start app asked `new_app` before any capture and added before the first screenshot; a covered one added without a question; an excluded one never asked nor added; an `always` answer stored; unattended with none approved ends `declined` with no screenshot, input or model |
 | [`lib.test.mjs`](lib.test.mjs) | the public surface: `lib.mjs` exports `createExclusions`, `EXCLUDED_APPS`, `createAppPolicy` and `createAppApprovals` alongside the browser pieces |
+| [`stand-in-owner-input.test.mjs`](stand-in-owner-input.test.mjs) | CU-342: `cli.mjs run` refuses `CU_STAND_IN_OWNER_INPUT` unless the scripted adapter it built, a private `CU_HOME` (symlinks resolved), the seat's own live hold token (scratch locks), unattended consent and macos-desktop all hold; on the real driver over the fake helper one labelled untagged key per named turn, whose pause matches a person's; the MCP server, runTask and the driver read no variable; no model action reaches the seam |

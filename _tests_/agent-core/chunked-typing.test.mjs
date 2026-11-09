@@ -157,12 +157,14 @@ test('CU-267: focus moving to another field by a key (no click) starts that fiel
 test('CU-267: a focus that cannot be read keys the buffer by the frontmost app - the pieces still join; a click, Return or Tab starts afresh', async () => {
   const quarters = CARD_DIGITS.match(/.{4}/g)
   const joined = await run('desktop', types(...quarters), { unreadableFocus: true })
-  assert.deepEqual(verdicts(joined.events), ['allow', 'allow', 'allow', 'sensitive_data'], 'no fail-open when no element reports focus (cu-researcher)')
+  // CU-363 (cu-coordinator 17:40Z): printable input with no text entry known asks first, as an app shortcut - stricter than
+  // the joined buffer, never a fail-open.
+  assert.equal(verdicts(joined.events)[0], 'permission', 'no fail-open when no element reports focus (cu-researcher; CU-363 asks at once)')
   const keyed = await run('desktop', keys(CARD_DIGITS), { unreadableFocus: true })
-  assert.equal(verdicts(keyed.events).at(-1), 'sensitive_data')
+  assert.equal(verdicts(keyed.events)[0], 'permission')
   for (const between of [{ type: 'click', x: 10, y: 10, button: 'left' }, { type: 'keypress', keys: ['ENTER'] }, { type: 'keypress', keys: ['TAB'] }]) {
     const split = await run('desktop', [...types(quarters[0], quarters[1]), between, ...types(quarters[2], quarters[3])], { unreadableFocus: true })
-    assert.equal(verdicts(split.events).at(-1), 'allow', `${JSON.stringify(between)} may have moved an unreadable focus: afresh`)
+    assert.equal(verdicts(split.events)[0], 'permission', `${JSON.stringify(between)}: an unreadable focus asks at the first piece (CU-363)`)
   }
 })
 

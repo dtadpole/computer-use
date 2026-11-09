@@ -1,8 +1,8 @@
 ---
 title: '[cu] Verifier - Team Member'
 created: 2026-11-01T09:06:25Z
-modified: 2026-11-08T23:42:00Z
-version: 1.4.1
+modified: 2026-11-09T16:55:00Z
+version: 1.5.0
 description: 'The lasting record of [cu] Verifier - its seat, current direction and links to its work.'
 grounded_in:
   - source: owner request in the dsh session 2026-11-01 (set up workspace, team and sessions for computer use)
@@ -26,6 +26,7 @@ its direction changes when the coordinator assigns a new one, and the write scop
 | [`responsibilities.md`](responsibilities.md) | the owner's words for this seat, its task and parameters |
 | [`artifacts.md`](artifacts.md) | the seat's own pointers to its fixture site, verifiers, tests and evaluation records |
 | [`ultimate-goal-2-verdict.md`](ultimate-goal-2-verdict.md) | the per-row ULTIMATE_GOAL 2.0 verdict (pre-grant draft) |
+| [`owner-session-evidence.md`](owner-session-evidence.md) | the owner session (CU-341): per part, what cu-verifier records, from which outside source, and what passes |
 | [`post-grant-acceptance.md`](post-grant-acceptance.md) | the live halves after the owner's grant, in order: preconditions, commands, what each run must show |
 
 ## Read next

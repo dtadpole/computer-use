@@ -1,13 +1,13 @@
 ---
 title: '[cu] Researcher - Handover'
 created: 2026-11-08T04:16:21Z
-modified: 2026-11-09T14:40:00Z
+modified: 2026-11-09T18:00:00Z
 level: L2
-version: 5.2.0
+version: 5.4.0
 description: 'What the next session of [cu] Researcher needs - the D-061 re-sign state, the under-ask hunt, open reviews, the scripts, rules and lessons.'
 status: unverified
 grounded_in:
-  - source: the seat's own state at 1440Z (goal refreshed 14:19Z; D-059 re-signed; D-061 waits on the CU-336 fix)
+  - source: the seat's own state at 1800Z (guide limits audited; CU-361/363/364 filed; the desktop target-shape lesson)
 ---
 
 # [cu] Researcher - Handover
@@ -21,19 +21,18 @@ GOAL (cu-coordinator 14:19Z): (1) D-061 re-sign; (2) red-team every consent chan
 CU-342's stand-in - unreachable from any model run); (3) hunt under-asks and file each (High if it reaches a
 credential, D-063); (4) this handover, hourly note.
 
-REMAINING: D-059 re-signed at 12:07Z (main 445c98e). D-061: CU-336's three rows (two todo + the free-text
-negative) close on cu-verifier's post-landing runs once PR 274 (3572069, OK'd) and PR 299 land; then the re-sign.
-CU-340's split rows are closed (PR 305). Reviews: CU-342's PR (design 0.2 took my six gate notes); probe each gate row and its mutant on the merge.
+DONE: D-059 re-signed 12:07Z (main 445c98e); D-061 re-signed 16:23Z (main fc72439c5) - CU-145's acceptance met;
+cu-coordinator moves it to Verify, cu-verifier closes it (never me). Open reviews: CU-349's agent-core half
+(placeholder upgrades only); recheck each OK'd PR on main after it lands.
 
-HUNT: filed CU-345 (localized PIN/OTP/CVV names), CU-346 (card/SSN separators), CU-347 (AWS secret, credential
-assignments - PR 314 OK'd), CU-348 (card as URL userinfo), CU-349 (desktop placeholder-only fields). Held:
-unreadable focus, cursor reordering, paste chords, drag text, terminals. Loop probes
-reuse split-fields.test's run() harness.
+HUNT: filed CU-345..355 (fixed or OK'd); from the guide's limits CU-361 (layout label), CU-363 (page
+shortcuts, High, PR 356 - type on a link/button and desktop null focus still open), CU-364 (Low). CU-348,
+356 and 364 were stand-in probes the real components already decide.
 
 LESSONS: a mutant is cited only after it is applied and seen to fail; when seats share a change, post the plan
 and wait for the go; re-apply on main after a sibling lands; probe the merge with
 edge inputs, not only the suite; probe loop-level where the change is in loop.mjs (PR 294's window); count
-sample lengths before filing (my AIza slip).
+sample lengths; probe with the real createSitePolicy/createAppPolicy and targets carrying every field the driver sends (desktop: sheet, defaultButton, caption, placeholder; loop: boundMenuItem; browser: linkScheme), focus null too (D-100).
 
 RULES: never verify my own filings; D-034 20.69 of 25 USD, no model run; input only via CUHelper under the lock
 with the Mac idle >= 300 s; run the gate unpiped and push only on exit 0 (CU-337); no CU-n in a PR title or branch unless it

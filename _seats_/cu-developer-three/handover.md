@@ -1,43 +1,43 @@
 ---
 title: '[cu] Developer Three (macOS helper) - handover'
 created: 2026-11-08T04:20:00Z
-modified: 2026-11-09T13:25:00Z
+modified: 2026-11-09T19:30:00Z
 level: L1
-version: 1.10.0
+version: 1.12.0
 description: 'What a fresh [cu] Developer Three session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
-  - source: the 0.2.62 install of 2026-11-09 13:18Z (READBACK, self-test) and its proof re-run at 13:19Z
-  - source: Linear CU-328, CU-329, CU-334, CU-335 (9 Nov)
+  - source: Linear CU-341, CU-342, CU-349, CU-361, CU-367 (9 Nov)
+  - source: owner-session-rehearsal.md (#370) and the one-page owner checklist (#324)
 ---
 
 # [cu] Developer Three (macOS helper) - handover
 
 Seat `cu-developer-three`. Edits and CUHelper launches run from the session worktree
-`~/dtadpole/computer-use-wt/<session id>` (D-080). The seat's scripts live in the private `_seats_/` folder
-(`tools/`). `install-held.sh <version> --prove` (or `--prove-only`) re-checks owner idle right before its hold.
+`~/dtadpole/computer-use-wt/<session id>` (D-080). The seat's scripts live in the private seat folder (`tools/`).
 
 ## Live state
 
-- Installed helper: 0.2.62 from main 3f1cd68 (9 Nov 13:18Z), sha256 1586992b, self-test 40, stable identity. The
-  proof re-run passed: the session worktree was admitted; `~/computer-use--probe`, an unlisted worktree and `/tmp`
-  were refused.
-- 0.2.62 (CU-329) reads AXManualAccessibility before writing it and gives it back at every run end.
+- Installed helper: 0.2.62 (main 3f1cd68, sha256 1586992b). 0.2.63 (#344, placeholder) installs once, right after
+  it lands, from a queued job.
+- CU-341: the rehearsal is done. R1 and R1b covered the control link; R1c covered H1 with CU-342's labelled stand-in, a
+  pointer move. The checklist is on main (#324); the record #370 closes the issue.
 
 ## In flight
 
-- CU-329 (Verify): cu-verifier's row 5 uses CU Fixture's observer (#292, OK'd). Expected: writes [true, false]
-  after bye or a socket loss, none with a preset, and the end log `reads: unset 1 ... restored 1`.
-- CU-328 part 1: #259 (OK'd) waits for cu-integrator; part 2 (live rows) is done.
-- CU-334 and CU-335 are on main; CU-335 is Done.
+- #370 (Fixes CU-341, record), #371 (the stand-in labelled 'pointer'), #368 (Fixes CU-367, the loop refuses the
+  stand-in for any model run), #344 (CU-349 helper half, 0.2.63) and #316 (Return pin) are reviewed or in review.
+- CU-361 (layout label 'nearbyLabel', 0.2.64) is coded at 7660f19c, stacked on #344. Open its PR when #344 lands.
+- After the 0.2.63 install: cu-verifier's placeholder fixture row, and the checklist's helper version line.
 
 ## Next
 
-When CU-329 and CU-328 are verified, ask cu-coordinator for the next helper item.
+Land the above; then ask cu-coordinator for the next item.
 
 ## Rules learned
 
-- Run the boundary proof with the agent's node (volta). The boundary refuses Homebrew's node as not genuine.
-- Hold scripts export `CU_DESKTOP_SEAT` (CU-305) and release with the hold's token (CU-327).
-- Gate unpiped; push only on exit status 0 (CU-337). Never build ad-hoc helpers while a gate's helper step runs.
-- An idle window goes first to High consent work, then code gates, then measurements and installs (D-095).
+- The harness sets _VOLTA_TOOL_RECURSION, so the volta shim can resolve to Homebrew's node, which the boundary
+  refuses. Scripts unset it, put `volta which node` first, and refuse any other node.
+- After a requested main merge, leave the union-merged action log as git wrote it, so D-085 carries the OKs.
+- Hold scripts export CU_DESKTOP_SEAT and release by token. Run the gate unpiped and push on exit 0. Defer builds and
+  full suites during an announced gate phase 2.
