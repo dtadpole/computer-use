@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - artifacts'
 created: 2026-11-01T09:28:00Z
-modified: 2026-11-09T10:50:00Z
+modified: 2026-11-09T12:05:00Z
 level: L1
-version: 1.120.0
+version: 1.121.0
 description: 'Pointers to the persistent work of [cu] Developer Two (environments) - proposals, code, tests and run records - written by the seat itself.'
 status: unverified
 grounded_in:
@@ -16,6 +16,8 @@ Pointers only; each target is its own authority.
 
 | Date | Artifact | State |
 |---|---|---|
+| 2026-11-09 | #193 merged 33bade1d2 | CU-318 (in Verify): peer-boundary's accepted-window row takes a 1500 ms window and waits past it from the spawn - no longer racing a loaded gate; pastWindow unit row; 8/8 under four parallel runs on main. |
+| 2026-11-09 | #167 merged b88058307 | CU-239 (in Verify): the MCP re-exec parent installs its signal listeners before it spawns the child, so a SIGTERM right after the spawn is forwarded, not fatal; entry.test 12/12 three times on main. |
 | 2026-11-09 | #181 merged 3ce947099 | CU-300 (now in Verify): the browser focus followed into a cross-site frame - the inner entry, frameUrl, frameHost, defaultButtonRead, with CU-319's autofill facts read in the frame's own world; the smoke row re-clicks a missed click and records it. |
 | 2026-11-09 | #205 merged a5dadb356 | Part of CU-322: desktop targets carry the helper's inWebArea (is, or descends from, a browser's AXWebArea), only as a boolean - absent when the helper does not say, which policy refuses in a browser. |
 | 2026-11-09 | #200 merged cd40fc078 | Fixes CU-319: a submit-like browser target carries the fields the browser autofilled (:autofill / :-webkit-autofill) as descriptors, never values; an edited field stays reported; a truncated walk fails closed. Verified live by cu-verifier (Done). |
