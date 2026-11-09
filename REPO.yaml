@@ -4,7 +4,7 @@
 schema: reflection/repository/v1
 scope: repository
 repository: github.com/dtadpole/computer-use
-checkout_hint: ~/dtadpole/heddle/_projects_/computer-use
+checkout_hint: ~/dtadpole/computer-use
 description: A computer-use agent for native macOS - code, tests, verifiers and the [cu] team's records.
 extends:
   - repository: github.com/dtadpole/reflection

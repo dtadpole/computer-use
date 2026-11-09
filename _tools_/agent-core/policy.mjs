@@ -171,6 +171,21 @@ function keyboardActivation(action, target, context = {}) {
 const SECRET = /\{\{secret:[a-z0-9_-]+\}\}/i
 
 /**
+ * CU-301: the character a printable key puts into the focused field - a keypress or a hold whose one non-modifier key is
+ * a single character or Space, with Shift and/or Option at most (Option types the Mac's special characters); null for
+ * anything else. Command or Control make it a shortcut, judged by the rules for chords.
+ */
+function printableKeyChar(action) {
+  if (action.type !== 'keypress' && action.type !== 'hold_key') return null
+  const keys = keysOf(action)
+  if (keys.has('META') || keys.has('CTRL')) return null
+  const main = [...keys].filter((key) => key !== 'SHIFT' && key !== 'ALT')
+  if (main.length !== 1) return null
+  if (main[0] === 'SPACE') return ' '
+  return main[0].length === 1 ? main[0] : null
+}
+
+/**
  * A reference to an existing order ('Order #4344', 'Order 4344' with three or more digits, 'Order details') names a record;
  * it is dropped before the purchase words are matched, so the verb ('Order', 'Order now', 'Place order') still confirms
  * and any other purchase word in the same name still counts (CU-8: a double-click on a list cell 'Order #4344').
@@ -331,6 +346,14 @@ const PASSWORD_NAMES = Object.freeze(['password', 'passcode', 'passphrase', 'pin
 // cu-researcher on #112: data: and blob: stay in the browser (blob: is how sites serve a generated 'Download CSV'); a
 // download they start still meets the page's download handling.
 const WEB_SCHEMES = new Set(['http', 'https', 'javascript', 'about', 'data', 'blob'])
+// CU-241 (cu-researcher's amendment): the elements that host another document - the page's focus read stops at them
+// when the document inside is cross-origin (a fenced frame always is), so what the key reaches is unread.
+const FRAME_HOST_TAGS = new Set(['iframe', 'frame', 'object', 'embed', 'fencedframe'])
+const FRAME_HOST_ROLES = new Set(['iframe', 'iframepresentational', 'embeddedobject', 'pluginobject'])
+function framesHost(target) {
+  if (!target || typeof target !== 'object') return false
+  return FRAME_HOST_TAGS.has(String(target.tag ?? '').toLowerCase()) || FRAME_HOST_ROLES.has(String(target.role ?? '').toLowerCase())
+}
 // CU-253, CU-287: messaging apps are known by kind (app-kinds.mjs, exact bundle ids with sources), and the names of compose
 // fields judge every other app.
 // CU-287: a search field takes Return to search, in a messaging app too ('Search Acme' in Slack).
@@ -779,7 +802,15 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // to judge, so it asks submit. Named over-ask: code editors. The desktop keeps its default-button reading (CU-142).
     const webTag = /^(app|desktop):/.test(String(context.url ?? '')) ? '' : String(target?.tag ?? '').toLowerCase()
     const multiLineWeb = target?.editable === true && webTag !== '' && webTag !== 'input'
-    if (multiLineWeb && keysOf(action).has('ENTER') && (keysOf(action).has('META') || keysOf(action).has('CTRL'))) classes.push('submit')
+    // CU-241 (cu-researcher, 12:47Z): an iframe-body editor (TinyMCE, CKEditor 4, many webmail composers) keeps the caret
+    // in a same-origin frame's <body>, which the browser driver does not describe - the focus reads null; a cross-origin
+    // frame (an iframe, frame, object, embed or fenced frame) stops the read at its host element. Either way the chord
+    // lands in content the gate cannot read, and in an editor it is the send, so on a web page it asks submit too, with
+    // any extra modifier. Named over-ask: the chord with nothing focused, or in a cross-origin widget frame. A focus read
+    // that fails never reaches here: the loop refuses the key as target_unknown.
+    const webPage = context.url != null && !desktopUrl
+    const unreadWebFocus = webPage && !held && (target == null || framesHost(target))
+    if ((multiLineWeb || unreadWebFocus) && keysOf(action).has('ENTER') && (keysOf(action).has('META') || keysOf(action).has('CTRL'))) classes.push('submit')
     // CU-253 (cu-researcher): a chat app sends on a plain Return from its compose field - a text area too, and with no
     // default button to read (Messages' 'iMessage', Slack, WhatsApp). So a plain Return or typed line break asks submit
     // in any text entry of a known chat app, or in an entry named as a compose field; Shift- or Option-Return types
@@ -844,6 +875,15 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     }
     if (action.type === 'type') {
       const inserted = insertedClass(String(action.text ?? ''), target, context)
+      if (inserted) classes.push(inserted)
+    }
+    // CU-301 (design note 0.1): a printable key pressed into a text entry puts its character there as typing does, so the
+    // same rules judge it - a credential field or a password name asks credential, a D-061 name sensitive_data - else a
+    // password, CVV or SSN pressed key by key goes in unasked. The whole value stays CU-267's buffer (below). Only on a text
+    // entry: a letter that selects in a list, or Space on a check box, is not text.
+    const keyChar = printableKeyChar(action)
+    if (keyChar !== null && (isTextEntry(target) || credentialField(target))) {
+      const inserted = insertedClass(keyChar, target, context)
       if (inserted) classes.push(inserted)
     }
     // CU-267: a value typed in pieces is judged whole - what this run typed into the field before (the loop's buffer) with
