@@ -138,6 +138,7 @@ const WORDS = Object.freeze({
     // (every cookie banner's 'Reject all'; named limit).
     'repost', 'retweet', 'quote post', 'add friend', 'send friend request', 'request to join', 'ask to join',
     'reject request', 'reject invite', 'reject invitation', 'reject friend request', 'yes, going', "i'm going", 'i\u2019m going',
+    'reject changes', 'decline request',
     // CU-377 (cu-coordinator 21:43Z): a file leaving through another app - an upload or attachment sends it.
     'upload file', 'upload files', 'attach', 'attach file', 'attach files', 'share file',
     // cu-researcher's 13:23Z sweep: messages to the sender or the group.
@@ -1122,6 +1123,14 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         if ((cls === 'purchase' ? namesPurchase(name) : cls === 'delete' ? namesDelete(name) : namesWord(name, WORDS[cls]))) classes.push(cls)
       }
       if (judgesSubmit(name, target)) classes.push('submit')
+      // CU-378 (cu-coordinator 23:14Z): an RSVP labelled only 'Going' or 'Not going' answers other people.
+      if (/^(?:not\s+)?going$/i.test(name.trim())) classes.push('submit')
+      // CU-379: handing over ownership is a permission, not a payment, though it says 'transfer'.
+      if (/\btransfer\s+ownership\b/i.test(name)) {
+        const paid = classes.indexOf('purchase')
+        if (paid >= 0) classes.splice(paid, 1)
+        if (!classes.includes('permission')) classes.push('permission')
+      }
       // CU-377: a control named only Upload (an 'Uploader' service keeps its name rules - CU-250).
       if (/^upload(?:\s*(?:\u2026|\.\.\.))?$/i.test(name.trim())) classes.push('submit')
       // CU-373 (design note 0.1): a control named for account security reaches a credential (D-063) - an app password, mail
