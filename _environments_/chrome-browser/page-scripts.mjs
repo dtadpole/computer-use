@@ -616,15 +616,20 @@ export function accessKeyOf(action) {
 }
 
 /**
- * CU-353: the first element in document order whose accesskey names `key` (any of its space-separated keys, any case),
- * or null. Elements inside shadow roots and other frames are not searched (a named limit). Self-contained: it runs
- * serialized in the page.
+ * CU-353: the first element whose accesskey names `key` (any of its space-separated keys, any case), or null - the
+ * document in order, then each open shadow root (a web component's accesskey button; cu-researcher). Other frames and
+ * closed roots are not searched (a named limit). Several elements on one key: Chrome moves the focus among them rather
+ * than firing one, so judging the first as pressed only over-asks. Self-contained: it runs serialized in the page.
  */
 export function accessKeyElement(doc, key) {
   const want = String(key).toLowerCase()
-  for (const el of doc.querySelectorAll('[accesskey]')) {
-    const keys = String(el.getAttribute('accesskey') || '').trim().toLowerCase().split(/\s+/)
-    if (keys.includes(want)) return el
+  const roots = [doc]
+  for (let i = 0; i < roots.length && i < 256; i += 1) {
+    for (const el of roots[i].querySelectorAll('*')) {
+      const keys = String((el.getAttribute && el.getAttribute('accesskey')) || '').trim().toLowerCase().split(/\s+/)
+      if (keys.includes(want)) return el
+      if (el.shadowRoot) roots.push(el.shadowRoot)
+    }
   }
   return null
 }

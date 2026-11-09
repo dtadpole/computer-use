@@ -795,7 +795,11 @@ export async function runTask(options) {
       && (action.type === 'type' || (Array.isArray(action.keys) && action.keys.some((key) => /^(space|enter|return|backspace|delete)$/i.test(String(key)))))) target = await settledFocus()
     // CU-353: a keypress is judged on what it acts on - the browser driver's keyTarget answers an accesskey chord with the
     // element it fires (marked accessKey), else the focus; an environment without it (the desktop, fakes) gives the focus.
-    else if (action.type === 'keypress' && typeof environment.keyTarget === 'function') target = await environment.keyTarget(action)
+    // A keyTarget that throws (a page navigating, a frame detached) falls back to the focus, as before CU-353, and a focus
+    // read that fails too leaves the target null - never a failed step (cu-developer-one).
+    else if (action.type === 'keypress' && typeof environment.keyTarget === 'function') {
+      target = await Promise.resolve(environment.keyTarget(action)).catch(() => Promise.resolve(environment.focusedElement()).catch(() => null))
+    }
     else if (action.type === 'type' || action.type === 'keypress') target = await environment.focusedElement()
     // CU-140: a drag that travels is judged at its drop point too; a drop point that cannot be inspected (another app,
     // off the frame) leaves it unjudged there, never fails the drag - the helper's scope check refuses such a drop.

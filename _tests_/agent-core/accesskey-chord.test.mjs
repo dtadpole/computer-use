@@ -61,3 +61,10 @@ test('CU-353 loop: a keypress takes its target from the driver\'s keyTarget when
   const older = await run([chord('D')], { focused: field })
   assert.deepEqual([older.events[0].decision, older.asked], ['allow', []], 'an environment without keyTarget (the desktop, fakes): the focus, as before')
 })
+
+test('CU-353 loop (cu-developer-one): a keyTarget that throws falls back to the focus, as before CU-353 - the step is judged on it, never failed', async () => {
+  const del = target('button', 'Delete account')
+  const thrown = await run([{ type: 'keypress', keys: ['SPACE'] }], { keyTarget: () => { throw new Error('the frame detached') }, focused: del })
+  assert.deepEqual([thrown.events[0].decision, thrown.events[0].class], ['confirm', 'delete'], 'Space on the focused Delete button: judged on the focus')
+  assert.equal(thrown.performed, 0)
+})

@@ -522,13 +522,16 @@ test('CU-353: accessKeyOf - Control-Option-<letter or digit> (Shift allowed, nev
 })
 
 test('CU-353: accessKeyElement - the first element in document order whose accesskey lists the key, any case; null when none', () => {
-  const node = (accesskey) => ({ getAttribute: (name) => (name === 'accesskey' ? accesskey : null) })
+  const node = (accesskey, shadowRoot) => ({ getAttribute: (name) => (name === 'accesskey' ? accesskey : null), shadowRoot })
   const del = node('D')
   const multi = node('x  h')
-  const doc = { querySelectorAll: (selector) => (selector === '[accesskey]' ? [node(''), del, node('d'), multi] : []) }
+  const shadowButton = node('k')
+  const host = node(null, { querySelectorAll: (selector) => (selector === '*' ? [node(null), shadowButton] : []) })
+  const doc = { querySelectorAll: (selector) => (selector === '*' ? [node(null), node(''), host, del, node('d'), multi] : []) }
   assert.equal(accessKeyElement(doc, 'd'), del, 'the first match, case-insensitive')
   assert.equal(accessKeyElement(doc, 'h'), multi, 'one of several listed keys')
   assert.equal(accessKeyElement(doc, 'q'), null)
+  assert.equal(accessKeyElement(doc, 'k'), shadowButton, 'inside an open shadow root (cu-researcher)')
   const rebuilt = new Function(`return (${accessKeyElement.toString()})`)()
   assert.equal(rebuilt(doc, 'D'), del, 'self-contained: rebuilt from its source, as the driver runs it')
 })
