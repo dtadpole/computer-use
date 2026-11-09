@@ -1,5 +1,5 @@
 import { isMessagingApp } from './app-kinds.mjs'
-import { normaliseForPolicy } from './normalise.mjs'
+import { normaliseForPolicy, normaliseText } from './normalise.mjs'
 import { BIP39_ENGLISH } from './bip39-english.mjs'
 import { normalizeKey } from './keys.mjs'
 import { originPattern } from './sites.mjs'
@@ -46,18 +46,43 @@ const ZH_WORDS = Object.freeze({
     // CU-294: joining or starting a meeting, and placing a call, in a meeting app's words.
     '入会', '入會', '立即入会', '发起会议', '發起會議', '快速会议', '拨打', '撥打'],
 })
+// CU-352 (design note 0.1; cu-coordinator: High) and CU-345: the same name classes in German, French, Spanish, Russian,
+// Japanese and Korean, so a 'Zahlungspflichtig bestellen', 'Supprimer', 'Отправить' or '결제하기' button asks as its English
+// would. Latin and Cyrillic entries match whole words (namesWord's letter-aware boundary); Japanese and Korean ones match
+// inside a label, as Chinese does. Named over-asks: a label that merely contains a phrase ('削除線'). Other languages stay
+// a named limit.
+const LOCALE_WORDS = Object.freeze({
+  purchase: ['kaufen', 'jetzt kaufen', 'bezahlen', 'jetzt bezahlen', 'bestellen', 'zahlungspflichtig bestellen', 'kaufen und bezahlen', 'zur kasse',
+    'acheter', 'payer', 'commander', 'passer la commande', 'valider la commande', 'acheter maintenant',
+    'comprar', 'pagar', 'realizar pedido', 'finalizar compra', 'tramitar pedido', 'comprar ahora',
+    'купить', 'оплатить', 'заказать', 'оформить заказ',
+    '購入', '支払', '注文を確定', '注文する', 'レジに進む', '今すぐ買う',
+    '구매', '결제', '주문하기', '바로구매'],
+  delete: ['löschen', 'entfernen', 'verwerfen', 'supprimer', 'effacer', 'eliminar', 'borrar', 'удалить', 'стереть', '削除', '消去', '삭제', '지우기'],
+  submit: ['senden', 'absenden', 'abschicken', 'envoyer', 'soumettre', 'enviar', 'отправить', '送信', '보내기', '전송', '제출'],
+  // CU-345: a PIN, one-time code, security code or password field named in these languages.
+  secret: ['passwort', 'kennwort', 'sicherheitscode', 'prüfziffer', 'mot de passe', 'code de sécurité', 'cryptogramme',
+    'contraseña', 'código de seguridad', 'пароль', 'код безопасности', 'パスワード', '暗証番号', 'セキュリティコード', '認証コード',
+    '비밀번호', '보안코드', '인증번호',
+    // cu-researcher's red team of PR #323: PIN, one-time code, card-check and card-number names the first list missed.
+    // German writes compounds: an entry led by '…' also matches as the end of a longer word (Kreditkartennummer).
+    '…geheimzahl', '…bestätigungscode', '…sicherheitscode', '…prüfnummer', '…prüfziffer', '…kartennummer', '…karten nummer', '…einmalcode', 'einmal code',
+    'sms code', 'bestätigungs code', 'sicherheits code', 'code de vérification', 'numéro de carte',
+    'código de verificación', 'número de tarjeta', 'код подтверждения', 'номер карты', 'pin-код', '確認コード', 'カード番号',
+    '인증 코드', '카드 번호', '카드번호'],
+})
 const WORDS = Object.freeze({
   purchase: ['buy', 'pay', 'order', 'place order', 'checkout', 'check out', 'subscribe', 'donate', 'purchase', 'transfer', 'withdraw', 'wire', 'send money',
     // CU-288 (cu-researcher's real-app wordings, round 2): a booking, an upgrade or a renewal commits money.
     'book now', 'book this', 'reserve now', 'upgrade plan', 'upgrade now', 'upgrade to pro', 'upgrade to premium', 'renew subscription', 'renew now',
-    'renew plan', ...ZH_WORDS.purchase],
+    'renew plan', ...ZH_WORDS.purchase, ...LOCALE_WORDS.purchase],
   // CU-135: replace and overwrite (a save panel's 'already exists' sheet), don't save (a close sheet discards work).
   delete: ['delete', 'remove', 'discard', 'erase', 'empty trash', 'cancel subscription', 'replace', 'overwrite', "don't save", 'don\u2019t save',
     // CU-146 (the CU-145 audit): destructive labels the list missed.
     'move to trash', 'move to bin', 'empty bin', 'clear history', 'clear all', 'reset all', 'reset settings', 'reset to defaults', 'uninstall', 'wipe', 'purge',
     'deactivate', 'close account', 'forget', 'factory reset',
     // cu-researcher's 13:23Z sweep: unsaved edits lost, like Discard Changes.
-    'revert to saved', 'revert all changes', ...ZH_WORDS.delete],
+    'revert to saved', 'revert all changes', ...ZH_WORDS.delete, ...LOCALE_WORDS.delete],
   permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke',
     // CU-258 (cu-researcher): standing choices an app keeps after the run, as whole phrases. A bare 'Allow' stays free so
     // cookie banners do not ask (named limit).
@@ -101,7 +126,7 @@ const WORDS = Object.freeze({
     // CU-286 (cu-researcher's real-app wordings): a request to join a meeting, and Slack's huddle (a call to the channel).
     'ask to join', 'start huddle', 'start a huddle', 'join huddle',
     // CU-288: a tax filing goes to the authority.
-    'file return', 'file tax return', 'file your return', 'file my return', 'e-file', 'efile', 'submit return', 'submit tax return', ...ZH_WORDS.submit],
+    'file return', 'file tax return', 'file your return', 'file my return', 'e-file', 'efile', 'submit return', 'submit tax return', ...ZH_WORDS.submit, ...LOCALE_WORDS.submit],
 })
 const PRECEDENCE = ['purchase', 'launch_code', 'delete', 'permission', 'page_dialog', 'credential', 'sensitive_data', 'submit', 'new_site', 'install']
 const POINTER = new Set(['click', 'double_click', 'triple_click'])
@@ -145,6 +170,8 @@ function keyboardActivation(action, target, context = {}) {
   if (action.type === 'type') return { activates: CONTROL_ROLE.test(String(target?.role ?? '')) && /[ \r\n]/.test(String(action.text ?? '')), deletes: false }
   const keys = keysOf(action)
   if (keys.size === 0) return { activates: false, deletes: false }
+  // CU-353: an accesskey chord fires the element the browser driver reports for it (target.accessKey) - a press on it.
+  if (action.type === 'keypress' && target?.accessKey === true) return { activates: true, deletes: false }
   const button = BUTTON_ROLE.test(String(target?.role ?? ''))
   // CU-234 (keyboard-activation.md): a variant is recognised generously - a miss is an under-ask, a recognised no-op only
   // over-asks. Space with any of Shift, Option or Control presses a focused control (an app that handles Space itself,
@@ -203,10 +230,34 @@ function withoutOrderReferences(name) {
  * still looks sensitive - a value the task does not name - still asks.
  */
 const TOKEN_EDGES = /^[^\w+@]+|[^\w]+$/g
+// CU-354 (design note 0.1): whole values, never tokens. The task's own values are the shortest runs of 1-6 of its tokens
+// that the value rules accept; only those, typed back whole (any case, any run of spaces between their tokens), are taken
+// out of the typed text. A task word that is only part of a value ('1234' in 'Visa ending in 1234') or a keyword
+// ('password') exempts nothing.
+function taskValuesOf(task) {
+  const tokens = String(task ?? '').split(/\s+/).map((t) => t.replace(TOKEN_EDGES, '')).filter(Boolean)
+  const values = []
+  for (let i = 0; i < tokens.length; i++) {
+    for (let k = 1; k <= 6 && i + k <= tokens.length; k++) {
+      const run = tokens.slice(i, i + k).join(' ')
+      if (looksSensitive(run)) { values.push(tokens.slice(i, i + k)); break }
+    }
+  }
+  return values
+}
 function withoutTaskValues(text, task) {
-  const given = new Set(String(task ?? '').toLowerCase().split(/\s+/).map((t) => t.replace(TOKEN_EDGES, '')).filter(Boolean))
-  if (given.size === 0) return String(text ?? '')
-  return String(text ?? '').split(/(\s+)/).map((t) => (given.has(t.toLowerCase().replace(TOKEN_EDGES, '')) ? ' ' : t)).join('')
+  let out = String(text ?? '')
+  for (const parts of taskValuesOf(task)) {
+    out = out.replace(new RegExp(parts.map((part) => escapeRegExp(part)).join('\\s+'), 'gi'), ' ')
+    // A card or IBAN field reformats as it is typed (cu-researcher): the task's card or IBAN typed back plain, spaced or
+    // dashed is the same value, so it is compared on its digits and letters with any spaces or dashes between them.
+    const joined = parts.join(' ')
+    if (['card', 'iban'].includes(looksSensitive(joined))) {
+      const compact = joined.replace(/[\s-]/g, '')
+      out = out.replace(new RegExp([...compact].map((ch) => escapeRegExp(ch)).join('[\\s-]*'), 'gi'), ' ')
+    }
+  }
+  return out
 }
 
 // CU-178: a name and a list entry are compared normalised - lower case, a curly apostrophe straight, licence spelled
@@ -215,9 +266,20 @@ function withoutTaskValues(text, task) {
 const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 const normaliseName = (text) => String(text ?? '').toLowerCase().replace(/[\u2018\u2019]/g, "'").replace(/licence/g, 'license')
   .replace(/#/g, ' number ').replace(/\./g, '').replace(/\s+/g, ' ').trim()
+// CU-352: an entry with an accented Latin or a Cyrillic letter is bounded by any letter, so 'удалить' does not match inside
+// a longer word; ASCII entries keep the a-z boundary they always had.
+const LETTER_BOUNDED = /[\u00c0-\u024f\u0400-\u04ff]/
 function namesWord(name, words) {
   const text = normaliseName(name)
-  return words.some((word) => new RegExp(`(^|[^a-z])${escapeRegExp(normaliseName(word)).replace(/ /g, '[\\s-]+')}([^a-z]|$)`).test(text))
+  return words.some((word) => {
+    // CU-345: '…' leads a German compound ending - matched after any letters, bounded only on its right.
+    if (word.startsWith('\u2026')) return new RegExp(`${escapeRegExp(normaliseName(word.slice(1))).replace(/ /g, '[\\s-]+')}([^\\p{L}]|$)`, 'u').test(text)
+    if (!LETTER_BOUNDED.test(word)) return new RegExp(`(^|[^a-z])${escapeRegExp(normaliseName(word)).replace(/ /g, '[\\s-]+')}([^a-z]|$)`).test(text)
+    // A judged name has passed normaliseText, which folds homoglyphs case by case (a Cyrillic 'К' reads as Latin 'K'), so the
+    // entry is folded the same way as written, capitalised and in capitals before it is compared.
+    const forms = new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))
+    return [...forms].some((form) => new RegExp(`(^|[^\\p{L}])${escapeRegExp(form).replace(/ /g, '[\\s-]+')}([^\\p{L}]|$)`, 'u').test(text))
+  })
 }
 
 // CU-157 (reply-text-entered.md): a control whose only submit word is 'reply' submits typed text only when some text
@@ -422,6 +484,8 @@ const SECRET_NAMES = Object.freeze(['recovery phrase', 'seed phrase', 'secret ph
   'national identity', 'aadhaar', 'card number', 'credit card', 'expiry', 'expiration date', 'mm/yy', 'vat number', 'vat id',
   '2fa', 'authenticator code', 'api key', 'access token', 'secret', 'medicare', 'health insurance', 'policy number',
   'medical record',
+  // CU-345: the same secrets named in German, French, Spanish, Russian, Japanese and Korean.
+  ...LOCALE_WORDS.secret,
   // D-062 (cu-coordinator): an e-mail or phone field, and a street-level address, ask by name; a city, postcode or ZIP
   // alone does not, and neither does an IP or web address.
   'email', 'e-mail', 'phone', 'mobile number', 'telephone', 'street', 'address line', 'home address', 'shipping address',
@@ -670,6 +734,17 @@ export function looksSensitive(text) {
   // a file name or 'AIza' in prose stays free - GitHub fine-grained and OAuth/app/user/refresh tokens, GitLab, Google
   // API keys, Hugging Face, npm, the other Slack token kinds and Shopify. Named over-ask: a documentation page's example.
   if (API_TOKEN.test(value)) return 'key'
+  // CU-347 (design note 0.1): two credential shapes the rules above missed (a Google 'AIza' key is already API_TOKEN's;
+  // key-shapes.test pins it). An AWS secret access key - exactly 40 characters of [A-Za-z0-9/+] standing alone, with upper and lower
+  // case and a digit (named over-ask: any such 40-character run); and a credential assignment - password, passwd, pwd,
+  // secret, token, api key, access key or client secret, - also as the end of an UPPER_SNAKE name (DB_PASSWORD) or a quoted JSON key - then '=' or ':', then a
+  // value of 6 or more non-space characters holding a digit or a symbol (named over-ask: 'token: abc123' in prose).
+  for (const m of value.matchAll(/(?<![A-Za-z0-9/+])[A-Za-z0-9/+]{40}(?![A-Za-z0-9/+=])/g)) {
+    if (/[A-Z]/.test(m[0]) && /[a-z]/.test(m[0]) && /\d/.test(m[0])) return 'key'
+  }
+  for (const m of value.matchAll(/(?<![A-Za-z0-9])(?:password|passwd|pwd|secret|token|api[_-]?key|access[_-]?key|client[_-]?secret)["']?\s*[=:]\s*["']?([^\s"',}]{6,})/gi)) {
+    if (/[\d\W_]/.test(m[1])) return 'key'
+  }
   // CU-164: a 0x-prefixed 64-hex private key (the word boundary after 'x' kept the rule above from seeing it); a 0x + 40
   // hex wallet address is public and stays allowed.
   if (/\b0x[0-9a-fA-F]{64}\b/.test(value)) return 'key'
@@ -1063,6 +1138,26 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         }
         if (joinedAsks) classes.push('sensitive_data')
       }
+    }
+    // CU-336 (design note 0.2): inside a cross-origin frame whose names are unread - the frame host's title and the field's
+    // own name both null (an AX failure in the driver's host read, or a frame that titles nothing) - a CVV or an expiry
+    // matches no name and no value rule. A short card code typed there asks sensitive_data: 3 or 4 digits alone, or an
+    // expiry MM/YY, MM/YYYY, MM-YY or MM.YY, judged after removing whitespace, on the action's own text and on the field's typed
+    // buffer (CU-267), so a code pressed key by key asks too. Both paths count: the iframe itself as the target (the driver
+    // did not follow the focus) and an inner field with frameHost (CU-300). A frame whose origin is not read counts as
+    // cross-origin (fail closed, cu-verifier); the inner field's frameUrl (#181) is read first, then its origin. Named over-ask: a short numeric entry in an unnamed third-party frame.
+    // One-time codes stay CU-288's.
+    const pageOrigin = (() => { try { return new URL(String(context.url ?? '')).origin } catch { return null } })()
+    const crossOriginOf = (raw) => { try { return raw == null || raw === '' || new URL(String(raw)).origin !== pageOrigin } catch { return true } }
+    const unnamed = (value) => String(value ?? '').trim() === ''
+    const unnamedFrame = webPage && !held && target != null && (
+      (framedWeb && unnamed(target.name) && crossOriginOf(target.frameUrl))
+      || (target.frameHost && typeof target.frameHost === 'object' && unnamed(target.frameHost.name) && unnamed(target.name) && crossOriginOf(target.frameUrl ?? target.origin)))
+    if (unnamedFrame) {
+      const shortCode = (text) => /^(\d{3,4}|(0?[1-9]|1[0-2])[/.-](\d{2}|\d{4}))$/.test(String(text ?? '').replace(/\s+/g, ''))
+      const added = action.type === 'type' ? String(action.text ?? '') : (keyChar ?? (typeof context.paste?.text === 'string' ? context.paste.text : ''))
+      const whole = context.typed && typeof context.typed.before === 'string' && typeof context.typed.next === 'string' ? context.typed.before + context.typed.next : null
+      if (added !== '' && (shortCode(added) || (whole !== null && shortCode(whole)))) classes.push('sensitive_data')
     }
     // CU-268: in the browser a control whose name has one word mixing scripts asks permission - never pre-approved, so a
     // pre-approved submit cannot wave a disguised Delete or Pay through (cu-developer-one's ruling) - where no rule found a

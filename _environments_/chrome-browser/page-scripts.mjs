@@ -506,7 +506,8 @@ export function describeElement(el) {
  * CU-175: the element a click at `el` activates, in two passes over the flat tree (a slotted node's slot, then its
  * parent, then a shadow root's host), stopping at <body>:
  * 1. the nearest button, link, summary, select, button-like input, element with a control role, or element with an
- *    onclick handler;
+ *    onclick handler - or, when a <label> comes first, the control it labels (label.control), which the browser
+ *    activates for it;
  * 2. else, when `el` shows a pointer cursor, the topmost element of that run of pointer cursors - cursor is inherited, so
  *    the element that set it is the highest one still showing it (a script-wired <div> 'button').
  * Else `el` itself. Hit testing returns the innermost node - a <span> label or an <svg> icon inside a 'Delete' button -
@@ -529,6 +530,12 @@ export function activatableAncestor(el) {
     if (tag === 'button' || tag === 'summary' || tag === 'select' || CONTROL_ROLES.includes(String(attr('role') || '').toLowerCase()) ||
       (tag === 'a' && attr('href') !== null) || attr('onclick') !== null ||
       (tag === 'input' && BUTTON_INPUTS.includes(String(node.type || '').toLowerCase()))) return node
+    // A click on a <label>'s text activates its control (the browser forwards it): the control is the target, so the
+    // control's own rules judge the click (cu-verifier, 9 Nov: a CAPTCHA box toggled and a Delete button fired through
+    // their labels unjudged). A control met first inside the label - a link in its text - was returned above, as the
+    // browser activates that one. A label with no control stays a label - so does a label in a shadow root whose for=
+    // names a light-DOM control, as label.control is null across trees (a named limit; cu-researcher).
+    if (tag === 'label' && node.control && node.control.nodeType === 1) return node.control
   }
   const view = el && el.ownerDocument && el.ownerDocument.defaultView
   const pointer = (candidate) => {
@@ -552,8 +559,9 @@ export function activatableAncestor(el) {
  * CU-175: a name for a click target the accessibility tree leaves unnamed (a <div onclick> computes no name from its
  * content), so a target that shows words is never judged as nameless. Only for a target a click activates (a control,
  * an onclick handler or a pointer cursor) - plain reading text is not a control and keeps its own (empty) name. The
- * first aria-label, title or alt from the clicked node up to the target, else the target's visible text, at most 80
- * characters (a label is short); null when there is none. Self-contained: it runs serialized in the page.
+ * first aria-label, title or alt from the clicked node up to the target - or the words of the <label> the click came
+ * through (CU-351) - else the target's visible text, at most 80 characters (a label is short); null when there is
+ * none. Self-contained: it runs serialized in the page.
  */
 export function clickLabel(hit, target) {
   const CONTROL_ROLES = ['button', 'link', 'menuitem', 'menuitemcheckbox', 'menuitemradio', 'tab', 'checkbox', 'radio', 'switch',
@@ -582,12 +590,48 @@ export function clickLabel(hit, target) {
     if (node.nodeType === 1) {
       const label = clean(attr(node, 'aria-label') || attr(node, 'title') || (String(node.tagName || '').toLowerCase() === 'img' ? attr(node, 'alt') : ''))
       if (label) return label
+      // The click came through a <label> of the target (activatableAncestor's label step): the label's words name it -
+      // a display:none check box styled by its label has no accessibility name of its own (CU-351).
+      if (String(node.tagName || '').toLowerCase() === 'label' && node.control === target) return clean(node.innerText || node.textContent) || null
     }
     if (node === target) break
     const root = node.getRootNode ? node.getRootNode() : null
     node = node.assignedSlot || node.parentElement || (root && root !== node && root.host) || null
   }
   return clean(target.innerText || target.textContent) || null
+}
+
+/**
+ * CU-353: the key of an accesskey chord - Control-Option-<key> on a Mac (Shift allowed, never Command) fires the element
+ * whose accesskey is that key, not the focused one (cu-researcher's probe, 9 Nov). The key in lower case, or null for any
+ * other keypress. Keys arrive canonical (CTRL, ALT, SHIFT, META, a letter or digit); common aliases are accepted.
+ */
+export function accessKeyOf(action) {
+  if (action?.type !== 'keypress' || !Array.isArray(action.keys)) return null
+  const alias = { CONTROL: 'CTRL', OPTION: 'ALT', OPT: 'ALT', CMD: 'META', COMMAND: 'META' }
+  const keys = action.keys.map((key) => { const upper = String(key).toUpperCase(); return alias[upper] ?? upper })
+  if (!keys.includes('CTRL') || !keys.includes('ALT') || keys.includes('META')) return null
+  const main = keys.filter((key) => !['CTRL', 'ALT', 'SHIFT'].includes(key))
+  return main.length === 1 && /^[A-Z0-9]$/.test(main[0]) ? main[0].toLowerCase() : null
+}
+
+/**
+ * CU-353: the first element whose accesskey names `key` (any of its space-separated keys, any case), or null - the
+ * document in order, then each open shadow root (a web component's accesskey button; cu-researcher). Other frames and
+ * closed roots are not searched (a named limit). Several elements on one key: Chrome moves the focus among them rather
+ * than firing one, so judging the first as pressed only over-asks. Self-contained: it runs serialized in the page.
+ */
+export function accessKeyElement(doc, key) {
+  const want = String(key).toLowerCase()
+  const roots = [doc]
+  for (let i = 0; i < roots.length && i < 256; i += 1) {
+    for (const el of roots[i].querySelectorAll('*')) {
+      const keys = String((el.getAttribute && el.getAttribute('accesskey')) || '').trim().toLowerCase().split(/\s+/)
+      if (keys.includes(want)) return el
+      if (el.shadowRoot) roots.push(el.shadowRoot)
+    }
+  }
+  return null
 }
 
 /** Resolves after two animation frames, so a screenshot shows the frame the last input produced. */
