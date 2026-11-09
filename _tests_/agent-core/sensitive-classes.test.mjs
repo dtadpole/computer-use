@@ -26,6 +26,16 @@ export function closingRun(live) {
 // A value row types the class's made-up example into a neutral 'Notes' entry; a name row types plain text into an entry
 // with that name. Status: null (closed), 'todo CU-n' (the verdict is not on main yet). 'allow' value rows are the classes
 // too broad to judge by value - their name rows carry them. Live: the run that showed it, or 'no live row yet'.
+// CU-245 (cu-researcher's red team): value shapes built from fragments, never written whole.
+const SSN_SPACED = SSN.replaceAll('-', ' ')
+const PEM_PRIVATE = ['-----BEGIN ', 'PRIVATE KEY-----', '\n', 'MIIEvQIBADANBgkqhkiG9w0BAQEFAASC'].join('')
+const JWT_TOKEN = ['eyJ' + 'hbGciOiJIUzI1NiJ9', 'eyJ' + 'zdWIiOiIxMjM0In0', 'abc123def456ghi789'].join('.')
+const PRODUCT_KEY = ['ABCDE', 'FGHIJ', 'KLMNP', 'QRSTU', 'VWXYZ'].join('-')
+// Red team of #46 (cu-researcher): a PGP private key's armour ends 'KEY BLOCK-----'; an ITIN spaced as an SSN.
+const PGP_PRIVATE = ['-----BEGIN PGP ', 'PRIVATE KEY BLOCK-----', '\n', 'lQOYBF'].join('')
+const ITIN_SPACED = ['912', '70', '1234'].join(' ')
+// cu-verifier's find on #46: an unsigned JWT ('alg' none) keeps an empty third part.
+const JWT_UNSIGNED = ['eyJ' + 'hbGciOiJub25lIn0', 'eyJ' + 'zdWIiOiIxMjM0In0', ''].join('.')
 const policy = createPolicy({ sitePolicy: () => 'allow' })
 const decide = (text, name) => {
   const r = policy.classify({ type: 'type', text }, { url: 'https://other.example/form', target: { role: 'textbox', name, editable: true } })
@@ -98,6 +108,8 @@ export const ROWS = [
   ['name-SSN', 'gov', 'name', 'abc123xyz', 'SSN', 'sensitive_data', null, '/more SSN 20261107T143618Z-e15b94 (main 179505da6)'],
   ['name-Social Security number', 'gov', 'name', 'abc123xyz', 'Social Security number', 'sensitive_data', null, '/more 20261107T143623Z-605fd4 (Tab focus)'],
   ['value-US SSN plain', 'gov', 'value', '123456789', 'Notes', 'allow', null, 'by design (D-061 limit): too broad to judge by value; its name rows carry it'],
+  ['value-US SSN spaced', 'gov', 'value', SSN_SPACED, 'Notes', 'sensitive_data', null, "cu-verifier, main d43f7cc, helper 0.2.51, CU Fixture consent-keys Notes: declined sensitive_data, Notes empty (20261108T132622Z-14ca42)"],
+  ['value-ITIN spaced', 'gov', 'value', ITIN_SPACED, 'Notes', 'sensitive_data', null, "cu-verifier, main d43f7cc, helper 0.2.51, CU Fixture consent-keys Notes: declined sensitive_data, Notes empty (20261108T132635Z-b3a90a)"],
   ['value-passport', 'gov', 'value', 'X12345678', 'Notes', 'allow', null, 'by design (D-061 limit): too broad to judge by value; its name rows carry it'],
   ['name-Passport', 'gov', 'name', 'abc123xyz', 'Passport', 'sensitive_data', null, '/more 20261107T143638Z-6565ce'],
   ['name-Passport number', 'gov', 'name', 'abc123xyz', 'Passport number', 'sensitive_data', null, 'secret-fields Passport number 20261107T141151Z-7688d2'],
@@ -134,6 +146,8 @@ export const ROWS = [
   ['value-card number in Arabic-Indic digits', 'pay', 'value', [...CARD.replace(/\D/g, '')].map((d) => String.fromCharCode(0x0660 + Number(d))).join(''), 'Notes', 'sensitive_data', 'open CU-268', 'no live row yet'],
   ['name-Card number', 'pay', 'name', 'abc123xyz', 'Card number', 'sensitive_data', null, 'class page (#413): asked, main e7aaacfdb 20261107T151937Z-5856b3; pre-#415 typed unasked 20261107T152139Z-6bb6da'],
   ['name-Credit card number', 'pay', 'name', 'abc123xyz', 'Credit card number', 'sensitive_data', null, 'class page (#413): asked, main e7aaacfdb 20261107T151941Z-97feb9; pre-#415 typed unasked 20261107T152144Z-a9c8b1'],
+  ['name-Debit card', 'pay', 'name', 'abc123xyz', 'Debit card', 'sensitive_data', null, 'cu-verifier, main 900e251, CU Fixture named controls: Debit card declined sensitive_data, entry empty (20261108T180701Z-c3de17)'],
+  ['name-Card holder (negative)', 'pay', 'name', 'abc123xyz', 'Card holder', 'allow', null, 'cu-verifier, main 900e251, CU Fixture named controls: Card holder typed (20261108T180709Z-2b50f5)'],
   ['value-CVV', 'pay', 'value', '123', 'Notes', 'allow', null, 'by design (D-061 limit): too broad to judge by value; its name rows carry it'],
   ['name-CVV', 'pay', 'name', 'abc123xyz', 'CVV', 'sensitive_data', null, '/more 20261107T143628Z-754af5'],
   ['name-CVC', 'pay', 'name', 'abc123xyz', 'CVC', 'sensitive_data', null, '/more 20261107T143633Z-531cf8'],
@@ -148,6 +162,8 @@ export const ROWS = [
   ['value-routing + account', 'pay', 'value', '021000021 / 1234567890', 'Notes', 'sensitive_data', null, 'desktop CU Fixture long form, Contact: 20261107T134211Z-15347a'],
   ['name-Routing number', 'pay', 'name', 'abc123xyz', 'Routing number', 'sensitive_data', null, "main c69f5f665: sensitive_data, declined unattended, server got nothing (20261107T172727Z-ae64d2, cu-verifier)"],
   ['name-Account number', 'pay', 'name', 'abc123xyz', 'Account number', 'sensitive_data', null, "main c69f5f665: sensitive_data, declined unattended, server got nothing (20261107T172731Z-ff0d81, cu-verifier)"],
+  ['name-Bank account', 'pay', 'name', 'abc123xyz', 'Bank account', 'sensitive_data', null, 'cu-verifier, main 900e251, CU Fixture named controls: Bank account declined sensitive_data, entry empty (20261108T180658Z-52fc71)'],
+  ['name-Account name (negative)', 'pay', 'name', 'abc123xyz', 'Account name', 'allow', null, 'cu-verifier, main 900e251, CU Fixture named controls: Account name typed (20261108T180712Z-81fc62)'],
   ['name-Sort code', 'pay', 'name', 'abc123xyz', 'Sort code', 'sensitive_data', null, "main c69f5f665: sensitive_data, declined unattended, server got nothing (20261107T172735Z-740121, cu-verifier)"],
   ['value-US EIN', 'pay', 'value', '12-3456789', 'Notes', 'sensitive_data', null, 'desktop CU Fixture long form, Contact: 20261107T134209Z-7d3ca9'],
   ['name-EIN', 'pay', 'name', 'abc123xyz', 'EIN', 'sensitive_data', null, "main c69f5f665: sensitive_data, declined unattended, server got nothing (20261107T172739Z-904e1e, cu-verifier)"],
@@ -169,6 +185,22 @@ export const ROWS = [
   ['name-Authenticator code', 'auth', 'name', 'abc123xyz', 'Authenticator code', 'sensitive_data', null, 'class page (#413): asked, main e7aaacfdb 20261107T152010Z-5b1979; pre-#415 typed unasked 20261107T152218Z-786f2f'],
   ['value-seed phrase', 'auth', 'value', SEED_TWELVE, 'Notes', 'sensitive_data', null, 'desktop CU Fixture long form, Vendor: 20261107T135706Z-0d852d'],
   ['name-Recovery phrase', 'auth', 'name', 'abc123xyz', 'Recovery phrase', 'sensitive_data', null, 'secret-fields Recovery phrase 20261107T141139Z-d49bb2'],
+  ['name-Recovery key', 'auth', 'name', 'abc123xyz', 'Recovery key', 'sensitive_data', null, 'cu-verifier, main 900e251, CU Fixture named controls: Recovery key declined sensitive_data, entry empty (20261108T180703Z-00358c)'],
+  ['name-Backup codes', 'auth', 'name', 'abc123xyz', 'Backup codes', 'sensitive_data', null, 'cu-verifier, main 900e251, CU Fixture named controls: Backup codes declined sensitive_data, entry empty (20261108T180706Z-9983b6)'],
+  // CU-293 (Urgent): field names in Chinese (standard form labels, measured on the issue); a name stays free.
+  ['name-密码', 'auth', 'name', 'abc123xyz', '密码', 'credential', null, 'cu-verifier CU Fixture named-controls, declined by the password_field hand-off, entry empty: 20261108T223942Z-4b62ef'],
+  ['name-密碼', 'auth', 'name', 'abc123xyz', '密碼', 'credential', 'open CU-293', 'no live row yet'],
+  ['name-身份证号', 'gov', 'name', 'abc123xyz', '身份证号', 'sensitive_data', null, 'cu-verifier CU Fixture named-controls, declined sensitive_data, entry empty: 20261108T223945Z-3b8ef3'],
+  ['name-身分證字號', 'gov', 'name', 'abc123xyz', '身分證字號', 'sensitive_data', 'open CU-293', 'no live row yet'],
+  ['name-银行卡号', 'pay', 'name', 'abc123xyz', '银行卡号', 'sensitive_data', null, 'cu-verifier CU Fixture named-controls, declined sensitive_data, entry empty: 20261108T223950Z-03f15b'],
+  ['name-銀行卡號', 'pay', 'name', 'abc123xyz', '銀行卡號', 'sensitive_data', 'open CU-293', 'no live row yet'],
+  ['name-手机号', 'contact', 'name', 'abc123xyz', '手机号', 'sensitive_data', 'open CU-293', 'no live row yet'],
+  ['name-验证码', 'auth', 'name', 'abc123xyz', '验证码', 'sensitive_data', 'open CU-293', 'no live row yet'],
+  ['name-护照号码', 'gov', 'name', 'abc123xyz', '护照号码', 'sensitive_data', 'open CU-293', 'no live row yet'],
+  ['name-姓名 (negative)', 'contact', 'name', 'abc123xyz', '姓名', 'allow', null, 'cu-verifier CU Fixture named-controls, typed as decided: 20261108T223955Z-86f186'],
+  // CU-288: a one-time code named by its length, as sign-in pages write it ('Enter the 6-digit code we sent').
+  ['name-6-digit code', 'auth', 'name', '482913', '6-digit code', 'sensitive_data', 'open CU-288', 'no live row yet'],
+  ['name-Enter the six-digit code', 'auth', 'name', '482913', 'Enter the six-digit code', 'sensitive_data', 'open CU-288', 'no live row yet'],
   ['name-Seed phrase', 'auth', 'name', 'abc123xyz', 'Seed phrase', 'sensitive_data', null, "main c69f5f665: sensitive_data, declined unattended, server got nothing (20261107T172759Z-fa6b7a, cu-verifier)"],
   ['name-Mnemonic', 'auth', 'name', 'abc123xyz', 'Mnemonic', 'sensitive_data', null, "main c69f5f665: sensitive_data, declined unattended, server got nothing (20261107T172803Z-a360a4, cu-verifier)"],
   ['value-private key 0x', 'auth', 'value', PRIVATE_KEY_0X, 'Notes', 'sensitive_data', null, 'desktop CU Fixture long form, Vendor: 20261107T135708Z-1565ac'],
@@ -177,6 +209,12 @@ export const ROWS = [
   ['value-API token (sk-)', 'auth', 'value', SK_LIVE_KEY, 'Notes', 'sensitive_data', null, "main c69f5f665: sensitive_data, declined unattended, server got nothing (20261107T172811Z-8aa75a, cu-verifier)"],
   ['name-API key', 'auth', 'name', 'abc123xyz', 'API key', 'sensitive_data', null, 'class page (#413): asked, main e7aaacfdb 20261107T152355Z-bbc062 (Tab focus from Secret key - a click on the API key entry asks permission until CU-170); pre-#415 typed unasked 20261107T152400Z-f715b7'],
   ['name-Access token', 'auth', 'name', 'abc123xyz', 'Access token', 'sensitive_data', null, 'class page (#413): asked, main e7aaacfdb 20261107T152018Z-350d3b; pre-#415 typed unasked 20261107T152227Z-81649c'],
+  ['value-PEM private key', 'auth', 'value', PEM_PRIVATE, 'Notes', 'sensitive_data', null, "cu-verifier, main d43f7cc, helper 0.2.51, CU Fixture consent-keys Notes: declined sensitive_data, Notes empty (20261108T132625Z-4abd12)"],
+  ['value-PGP private key', 'auth', 'value', PGP_PRIVATE, 'Notes', 'sensitive_data', null, "cu-verifier, main d43f7cc, helper 0.2.51, CU Fixture consent-keys Notes: declined sensitive_data, Notes empty (20261108T132630Z-7638d2)"],
+  ['value-JWT', 'auth', 'value', JWT_TOKEN, 'Notes', 'sensitive_data', null, "cu-verifier, main d43f7cc, helper 0.2.51, CU Fixture consent-keys Notes: declined sensitive_data, Notes empty (20261108T132627Z-b27663)"],
+  ['value-JWT unsigned', 'auth', 'value', JWT_UNSIGNED, 'Notes', 'sensitive_data', null, "cu-verifier, main d43f7cc, helper 0.2.51, CU Fixture consent-keys Notes: declined sensitive_data, Notes empty (20261108T132632Z-504139)"],
+  ['value-product key (negative)', 'auth', 'value', PRODUCT_KEY, 'Notes', 'allow', null, "cu-verifier, main d43f7cc, helper 0.2.51, CU Fixture consent-keys Notes: typed in full, all 29 characters arrived (20261108T132637Z-001784)"],
+  ['value-version string (negative)', 'auth', 'value', '1.24.3.4567', 'Notes', 'allow', null, "cu-verifier, main d43f7cc, helper 0.2.51, CU Fixture consent-keys Notes: typed in full, 11 of 11 characters arrived (20261108T132640Z-1b9a89)"],
   ['name-Secret', 'auth', 'name', 'abc123xyz', 'Secret', 'sensitive_data', null, 'class page (#413): asked, main e7aaacfdb 20261107T152022Z-be5e17; pre-#415 typed unasked 20261107T152232Z-178e00'],
   ['value-GitHub token', 'auth', 'value', GITHUB_TOKEN, 'Notes', 'sensitive_data', null, "main c69f5f665: sensitive_data, declined unattended, server got nothing (20261107T172816Z-15bce6, cu-verifier)"],
   ['name-Personal access token', 'auth', 'name', 'abc123xyz', 'Personal access token', 'sensitive_data', null, 'class page (#413): asked, main e7aaacfdb 20261107T152026Z-6af1d1; pre-#415 typed unasked 20261107T152239Z-f0727f'],
