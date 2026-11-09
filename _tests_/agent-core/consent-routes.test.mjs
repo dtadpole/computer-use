@@ -1091,7 +1091,7 @@ const SYSTEM_ROWS = [
   // Policy owner 22:06Z: the CJK console words count only in IDE apps - outside them 控制台 is a cloud dashboard
   // (阿里云控制台, 腾讯云控制台), and a refusal there would lock the agent out of it.
   ['non-ide-console-word-zh', 'typeLs', 'fixtureConsoleWordZh', 'allow', 'CU-296 negative (a dashboard word outside an IDE)', "negative - cu-verifier, CU Fixture, helper 0.2.58: 'ls' typed into the AXTextField 控制台 outside an IDE was allowed (20261109T003544Z-333840)", null, { app: FIXTURE_ID }],
-  ['ide-editor-type (negative)', 'typeLs', 'codeEditor', 'allow', 'CU-279 negative (typing in the editor is the task)', 'no live row yet', 'open CU-279', { app: VSCODE_ID }],
+  ['ide-editor-type (negative)', 'typeLs', 'codeEditor', 'allow', 'CU-279 negative (typing in the editor is the task)', "named limit (cu-coordinator 04:24Z, D-092): a bundle-keyed allow negative - producing it needs the owner's real VS Code; over-ask side", 'open CU-279', { app: VSCODE_ID }],
   ['ide-open-folder', 'click', 'openFolderButton', 'allow', 'CU-271 negative (no code runs)', "named limit (cu-coordinator 04:24Z): a bundle-keyed allow negative - producing it needs the owner's real app; over-ask side", 'open CU-271', { app: VSCODE_ID }],
   // CU-268 (14:29Z ruling): a single word mixing Latin with another script asks unknown_target on the desktop, each time -
   // on a click and on a chord's bound menu item alike.
