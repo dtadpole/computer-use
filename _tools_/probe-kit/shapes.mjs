@@ -56,8 +56,9 @@ export const web = Object.freeze({
 /** Desktop route: the target object environment.mjs maps from the helper's describe() reply. */
 export const desk = Object.freeze({
   none: null,
-  textField: (app, { name = '', caption = null, placeholder = null, nearbyLabel = null, secure = false } = {}) =>
-    ({ origin: app, role: secure ? 'AXSecureTextField' : 'AXTextField', name, editable: true, caption, placeholder, nearbyLabel }),
+  /** pasteboardHasFile (helper 0.2.65): true, false, or null when unread - carried on the focused target. */
+  textField: (app, { name = '', caption = null, placeholder = null, nearbyLabel = null, secure = false, pasteboardHasFile } = {}) =>
+    ({ origin: app, role: secure ? 'AXSecureTextField' : 'AXTextField', name, editable: true, caption, placeholder, nearbyLabel, ...flag('pasteboardHasFile', pasteboardHasFile) }),
   row: (app, name = 'Invoice', { filename } = {}) => ({ origin: app, role: 'AXRow', name, editable: false, ...flag('filename', filename) }),
   /** A list-focused collection, the shape opensSelection reads for Command-O (CU-252). */
   outline: (app) => ({ origin: app, role: 'AXOutline', name: '', editable: false }),
@@ -65,10 +66,10 @@ export const desk = Object.freeze({
   /** A sheet's control: sheet true and the sheet's default button (CU-148). */
   sheetButton: (app, name, defaultButton) => ({ origin: app, role: 'AXButton', name, editable: false, sheet: true, defaultButton }),
   webArea: (app, name = '') => ({ origin: app, role: 'AXWebArea', name, editable: false }),
-  /** A menu item; flags as the helper marks them: servicesMenu (CU-250), quickActions (PR #418), menuOpen (PR #405). */
+  /** A menu item; flags as the helper marks them: servicesMenu (CU-250), quickActions (PR #418), menuOpen (helper 0.2.65). */
   menuItem: (app, name, flags = {}) => ({ origin: app, role: 'AXMenuItem', name, editable: false, ...flags }),
   popUp: (app, name = 'Action') => ({ origin: app, role: 'AXPopUpButton', name, editable: false }),
-  /** The helper's placeholder for an open menu whose highlight it cannot read (PR #405). */
+  /** The helper's placeholder for an open menu whose highlight it cannot read (helper 0.2.65). */
   openMenu: (app) => ({ origin: app, role: 'AXMenu', name: '', editable: false, menuOpen: true }),
 })
 
@@ -118,8 +119,9 @@ export const SOURCES = Object.freeze([
   { field: 'nearbyLabel', file: '_environments_/macos-desktop/environment.mjs' },
   { field: 'filename', file: '_environments_/macos-desktop/environment.mjs' },
   { field: 'servicesMenu', file: '_environments_/macos-desktop/environment.mjs' },
-  { field: 'menuOpen', file: '_environments_/macos-desktop/environment.mjs', pending: 'PR #405' },
-  { field: 'quickActions', file: '_environments_/macos-desktop/environment.mjs', pending: 'PR #405 / #418' },
+  { field: 'menuOpen', file: '_environments_/macos-desktop/environment.mjs' },
+  { field: 'pasteboardHasFile', file: '_environments_/macos-desktop/environment.mjs' },
+  { field: 'quickActions', file: '_environments_/macos-desktop/environment.mjs', pending: 'helper 0.2.66 / PR #418' },
   { field: 'boundMenuItem', file: '_tools_/agent-core/loop.mjs' },
   { field: 'selection', file: '_tools_/agent-core/loop.mjs' },
   { field: 'typeOptions', file: '_tools_/agent-core/loop.mjs' },
