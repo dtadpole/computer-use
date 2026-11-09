@@ -315,9 +315,9 @@ const ROWS = [
   // CU-241 note 0.2 (cu-developer-one, 23:25Z): on a web page the chord asks submit when the driver describes no focus or a
   // frame element - TinyMCE/CKEditor 4 frame bodies and cross-origin editors, where it sends unasked today. Extra modifiers
   // still ask (CU-230's lesson); a plain Return with no focus has no form to submit and stays allowed.
-  ['cmd-enter-web-no-focus', 'browser', 'cmdEnter', 'nothingFocused', 'submit', 'CU-241 note 0.2 (no described focus)', 'no live row yet', 'todo CU-241'],
-  ['ctrl-enter-web-editor-frame', 'browser', 'ctrlEnter', 'webEditorFrame', 'submit', 'CU-241 note 0.2 (a frame element)', 'no live row yet', 'todo CU-241'],
-  ['cmd-shift-enter-web-editor-frame', 'browser', 'cmdShiftEnter', 'webEditorFrame', 'submit', 'CU-241 note 0.2 (an extra modifier still asks)', 'no live row yet', 'todo CU-241'],
+  ['cmd-enter-web-no-focus', 'browser', 'cmdEnter', 'nothingFocused', 'submit', 'CU-241 note 0.2 (no described focus)', 'no live row yet', 'open CU-241'],
+  ['ctrl-enter-web-editor-frame', 'browser', 'ctrlEnter', 'webEditorFrame', 'submit', 'CU-241 note 0.2 (a frame element)', 'no live row yet', 'open CU-241'],
+  ['cmd-shift-enter-web-editor-frame', 'browser', 'cmdShiftEnter', 'webEditorFrame', 'submit', 'CU-241 note 0.2 (an extra modifier still asks)', 'no live row yet', 'open CU-241'],
   ['enter-web-no-focus', 'browser', 'enter', 'nothingFocused', 'allow', 'CU-241 note 0.2 negative (no focus: no form, a plain Return submits nothing)', 'no live row yet', 'open CU-241'],
   ['web-newline-implicit-submit', 'browser', 'typeNewline', 'webQuantityInForm', 'purchase', 'chrome-browser implicit submit seam (#337)', 'main: typed newline asks purchase, no submit (20261107T172346Z-2698b2)', null],
   ['web-type-card-third-party', 'browser', 'typeCard', 'webComments', 'sensitive_data', 'policy.test.mjs', "main 1de261e91, real Chrome: a card number typed into share-document's Email asks sensitive_data (20261107T192422Z-75b2d6)", null],
