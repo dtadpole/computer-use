@@ -130,3 +130,29 @@ test('CU-340 [browser]: boxes typed on another page are not joined', async () =>
   const { events } = await run('browser', [clickBox(0), { type: 'type', text: s1 }, clickBox(1), { type: 'type', text: s2 }, { type: 'navigate', url: 'https://fixture.example/other' }, clickBox(2), { type: 'type', text: s3 }])
   assert.equal(events.filter((e) => e.decision !== 'allow' && e.action?.type === 'type').length, 0, JSON.stringify(events.map((e) => [e.action?.type, e.decision, e.class])))
 })
+
+// CU-340's second shape (cu-researcher, cu-coordinator 12:59Z): half a card pasted, half typed into one field.
+const half = CARD_DIGITS.slice(0, 8)
+const rest = CARD_DIGITS.slice(8)
+const typeVerdict = (events) => { const e = events.filter((x) => x.action?.type === 'type').at(-1); return e ? (e.decision === 'allow' ? 'allow' : e.class) : 'missing' }
+test('CU-340 [desktop]: a paste the run cannot read, then digits typed into the same field - the typed digits ask', async () => {
+  const { events } = await run('desktop', [{ type: 'keypress', keys: ['META', 'V'] }, { type: 'type', text: rest }], { approve: true })
+  assert.equal(typeVerdict(events), 'sensitive_data', JSON.stringify(events.map((e) => [e.action?.type, e.decision, e.class])))
+})
+test('CU-340 [desktop]: text typed after such a paste stays as judged; select all clears the mark', async () => {
+  const words = await run('desktop', [{ type: 'keypress', keys: ['META', 'V'] }, { type: 'type', text: 'kind regards' }], { approve: true })
+  assert.equal(typeVerdict(words.events), 'allow')
+  const cleared = await run('desktop', [{ type: 'keypress', keys: ['META', 'V'] }, { type: 'keypress', keys: ['META', 'A'] }, { type: 'type', text: '1234' }], { approve: true })
+  assert.equal(typeVerdict(cleared.events), 'allow')
+})
+test('CU-340 [browser]: half a card pasted from the run clipboard, half typed - the typed half asks', async () => {
+  const { events } = await run('browser', [{ type: 'keypress', keys: ['META', 'V'] }, { type: 'type', text: rest }], { clipboard: half, approve: true })
+  assert.equal(typeVerdict(events), 'sensitive_data', JSON.stringify(events.map((e) => [e.action?.type, e.decision, e.class])))
+})
+for (const kind of ['desktop', 'browser']) {
+  test(`CU-340 [${kind}]: a card in four boxes followed by a CVV box - the fourth box asks`, async () => {
+    const { events } = await run(kind, [...boxes(...card), clickBox(4), { type: 'type', text: '123' }])
+    const typedVerdicts = events.filter((e) => e.action?.type === 'type' || e.decision !== 'allow').map((e) => (e.decision === 'allow' ? 'allow' : e.class))
+    assert.equal(typedVerdicts[3], 'sensitive_data', JSON.stringify(typedVerdicts))
+  })
+}

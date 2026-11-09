@@ -745,6 +745,7 @@ export async function runTask(options) {
     typedScopeNow = typedScopeOf(state)
     const before = typedIn(key)
     const next = typedNextOf(action, pasted)
+    if (next !== '' && unreadPaste.has(key)) return { before, next, afterUnreadPaste: true }
     return before !== '' && next !== '' ? { before, next } : null
   }
   const typedSplitFor = (action, target, pasted = null) => {
@@ -753,7 +754,12 @@ export async function runTask(options) {
     const parts = typedRecentFor(typedKeyNow, typedScopeNow)
     return parts.length ? { parts, before: typedIn(typedKeyNow), next } : null
   }
-  const noteTyped = (action, target, pasted = null) => {
+  // CU-340 (cu-researcher, cu-coordinator 12:59Z): on the desktop a paste carries only its source class (D-031), so its
+  // text never reaches the buffer and a card pasted in half and typed in half leaves half a card. A field that took such a
+  // paste is marked; digits typed into it afterwards ask (named over-ask: digits typed after any desktop paste there).
+  const unreadPaste = new Set()
+  const noteTyped = (action, target, pasted = null, pastedUnread = false) => {
+    if (pastedUnread) { const at = typedKeyNow ?? typedKeyOf(target); if (at !== null) unreadPaste.add(at); return }
     const key = typedKeyNow ?? typedKeyOf(target)
     // No readable focus: a pointer action, Return, Tab or Escape may have moved it.
     const keysNow = action.type === 'keypress' ? (keySetOf(action) ?? new Set()) : new Set()
@@ -769,7 +775,7 @@ export async function runTask(options) {
       const keys = keySetOf(action) ?? new Set()
       if (char !== null) add(char)
       else if (keys.size === 1 && keys.has('BACKSPACE')) setTyped(key, typedIn(key).slice(0, -1))
-      else if (keys.size === 2 && (keys.has('META') || keys.has('CTRL')) && keys.has('A')) setTyped(key, '')
+      else if (keys.size === 2 && (keys.has('META') || keys.has('CTRL')) && keys.has('A')) { setTyped(key, ''); unreadPaste.delete(key) }
     }
   }
   const contextFor = async (action, previous = null) => {
@@ -1312,7 +1318,7 @@ export async function runTask(options) {
         if (action.type === 'drag') lastPointer = action.path[action.path.length - 1]
         notes.push(...noteFromEffect(effect))
         Object.assign(result, { status: 'done', ...(action.type === 'hold_key' ? { message: heldMessage(action) } : {}) })
-        noteTyped(judged, context.target, !desktop && context.paste && typeof context.paste.text === 'string' ? context.paste.text : null)
+        noteTyped(judged, context.target, !desktop && context.paste && typeof context.paste.text === 'string' ? context.paste.text : null, desktop && Boolean(context.paste) && !Object.prototype.hasOwnProperty.call(context.paste, 'destination'))
         // A desktop driver reports how frame pixels mapped to screen points (scale, originPt); replay needs it.
         const mapping = desktop && effect?.mapping ? { mapping: effect.mapping } : {}
         logEvent('action', step, { ...base, status: 'done', effect, ...mapping, ms: performMs(), ...(retry ? { retry } : {}), attempted: true, completed: true })
