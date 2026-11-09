@@ -1,8 +1,8 @@
 ---
 title: What it does, approvals and known limits
 created: 2026-11-07T21:18:46Z
-modified: 2026-11-09T02:50:00Z
-version: 0.1.14
+modified: 2026-11-09T03:40:00Z
+version: 0.1.15
 level: L1
 status: unverified
 description: What the agent can and cannot do on your Mac, what it asks you, and its known limits.
@@ -12,6 +12,7 @@ grounded_in:
   - source: 'computer-use #136 (CU-289 saving a password or passkey), #153 (CU-252 an unreadable selection), #146 and #149 (CU-279, CU-296 IDE terminals and consoles)'
   - source: 'computer-use #59 and #168 (CU-241 Command/Control-Enter in a web editor, an iframe editor too), #175 (CU-297 hosted card and sign-in frames)'
   - source: 'computer-use #202 and #204 (D-089, CU-302, CU-322 - an approved browser''s page refused on the desktop route; unread browser targets too until the helper reports inWebArea)'
+  - source: 'computer-use #195 and #200 (CU-302 - a submit of a form the browser autofilled asks by the filled fields, never pre-approved)'
 ---
 
 # What it does, approvals and known limits
@@ -27,14 +28,14 @@ keychains, shell start-up files, login items or `/Applications`. A password fiel
 
 ## Approvals
 
-It asks before using a new app (once, this run, or always), running code (opening an app, script, installer or items it cannot read; App Store installs; Run in an IDE or notebook), sending (Command/Control-Enter in a web editor too), calling or joining a meeting, opening a link to another app (tel:, FaceTime), buying (free trials too), deleting or overwriting, granting a permission (saving a password or passkey too) or switching off account protection,
+It asks before using a new app (once, this run, or always), running code (opening an app, script, installer or items it cannot read; App Store installs; Run in an IDE or notebook), sending (Command/Control-Enter in a web editor too), calling or joining a meeting, opening a link to another app (tel:, FaceTime), buying (free trials too), deleting or overwriting, granting a permission (saving a password or passkey too) or switching off account protection, submitting a form your browser autofilled,
 entering credentials or sensitive data in a field or embedded card frame (street address, e-mail, phone; not city or postcode) or in a web address (a card, key, e-mail, phone, street address, passport, tax id or bank account), pasting your own clipboard, copying a sensitive field's text, or labelled text (Passport, IBAN), into another field, and choosing a file (asked every time). Buying, deleting, permissions and
-file choices are never pre-approved. Typed sensitive text stays out of run files. Unattended (`--consent unattended`), every question is declined. Manage "always" apps: `cli.mjs apps list`, `cli.mjs apps revoke <bundle id>`.
+file choices are never pre-approved. Typed sensitive text stays out of run files. Unattended (`--consent unattended`), every question is declined. Manage "always" apps with `cli.mjs apps list` and `apps revoke <bundle id>`.
 
 ## Known limits
 
-- Names are read in English and Chinese; approve only apps running in those languages.
-- A file panel's question names the folder only if the agent opened it; otherwise check first.
+- Names are read in English and Chinese only.
+- A file panel's question names the folder only if the agent opened it.
 - One display: your first app's, at its starting size; moving display ends the run.
 - A leftover notification blocks clicks beneath it.
 - Until the helper reads page boundaries, a browser's address bar, tabs, menus and shortcuts are refused too.
