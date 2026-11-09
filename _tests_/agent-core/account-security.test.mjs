@@ -19,3 +19,14 @@ test('CU-373 negatives: a bare Forward on one message and other mail controls ke
   for (const name of ['Forward', 'Archive', 'Forwarded messages']) assert.equal(click('button', name), 'allow', name)
   assert.equal(click('switch', 'Disable forwarding'), 'allow', 'turning forwarding off is the safe direction')
 })
+
+test('CU-373 refinement: a native toggle state decides the direction; an ARIA, mixed or missing state asks', () => {
+  const press = (target) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: 'https://mail.example/settings', target }); return v.decision === 'allow' ? 'allow' : v.class }
+  const box = (name, checked) => ({ tag: 'input', inputType: 'checkbox', role: 'checkbox', name, checked })
+  assert.equal(press(box('Two-factor authentication', false)), 'allow', 'native off -> on: protection on')
+  assert.equal(press(box('Two-factor authentication', true)), 'credential', 'native on -> off asks')
+  assert.equal(press(box('Two-factor authentication', 'mixed')), 'credential', 'mixed asks')
+  assert.equal(press({ role: 'switch', name: 'Two-factor authentication', checked: false }), 'credential', 'an ARIA-sourced off asks (the derivation pin)')
+  assert.equal(press(box('Forward a copy of incoming mail to', true)), 'allow', 'native forwarding on -> off is the safe direction')
+  assert.equal(press(box('Forward a copy of incoming mail to', false)), 'credential', 'turning forwarding on asks')
+})
