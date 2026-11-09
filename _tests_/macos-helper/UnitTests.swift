@@ -269,6 +269,18 @@ func testGrantRecheck() {
   sleeps = []
   let lost = GrantRecheck.settled(read: { Grants(screen: false, accessibility: true, postEvents: true, listenEvents: false) }, sleep: sleep)
   check(!lost.screen && sleeps.count == 3, "a Screen Recording grant that stays false after 3 re-reads is reported false")
+  // CU-303: a start that cannot hold a grant (dry run, simulated ungranted) reads no TCC at all; a live start does.
+  sleeps = []
+  var startReads = 0
+  let granted = Grants(screen: true, accessibility: true, postEvents: true, listenEvents: true)
+  check(GrantRecheck.atStart(mayHoldGrants: false, read: { startReads += 1; return granted }, sleep: sleep) == .none && startReads == 0 && sleeps.isEmpty,
+        "a dry or simulated start takes no grant and asks TCC nothing")
+  check(GrantRecheck.atStart(mayHoldGrants: true, read: { startReads += 1; return granted }, sleep: sleep) == granted && startReads == 1,
+        "a live start reads the grants once when they read true")
+  for (flags, may) in [(["--dry-run"], false), (["--simulate-ungranted"], false), ([], true)] {
+    let parsed = try? HelperArguments.parse(["--socket", "/tmp/s", "--token-file", "/tmp/t"] + flags)
+    check(parsed?.mayHoldGrants == may, "mayHoldGrants is \(may) for \(flags)")
+  }
   // Through the dispatcher on a dry-run world whose single reads of Screen Recording are scripted.
   let display: JSON = [["id": 1, "main": true, "originPt": ["x": 0, "y": 0], "sizePt": ["width": 800, "height": 600], "scale": 1]]
   let apps: JSON = [["bundleId": "ai.reflection.cu.fixture", "pid": 501, "rect": ["x": 100, "y": 100, "width": 400, "height": 300]]]
@@ -685,7 +697,7 @@ func button(_ kind: String, _ x: Int, _ y: Int) -> JSON { ["kind": .string(kind)
 func testDispatcherBasics() {
   let h = Harness(fixtureWorld)
   let hello = h.dispatcher.hello(token: "t0k")
-  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.58", "the hello opens the run")
+  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.59", "the hello opens the run")
   check(hello["mode"] == "dry-run" && hello["grants"] == ["screen": true, "accessibility": true, "postEvents": true, "listenEvents": false], "a dry-run hello says so, with all four grants")
   check(h.ask("capture", ["maxSize": size800])["code"] == "no_scope", "capture needs a scope")
   check(h.ask("input", ["events": [key("keyDown", 1)], "mode": "global"])["code"] == "no_scope", "input needs a scope")

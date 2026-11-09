@@ -103,6 +103,11 @@ const server = http.createServer((req, res) => {
     res.end('<!doctype html><style>body{margin:0}</style><button style="position:absolute;left:50px;top:40px;width:120px;height:40px">Inner button</button><input style="position:absolute;left:50px;top:120px;width:200px;height:30px">')
     return
   }
+  // CU-319: a card form for Chrome's own autofill (CDP Autofill.trigger with a test card built at runtime).
+  if (req.url.startsWith('/autofill-form')) {
+    res.end('<!doctype html><style>body{margin:0}input,button{position:absolute;left:20px;width:300px;height:30px}</style><form onsubmit="event.preventDefault()"><input id="cardnumber" autocomplete="cc-number" aria-label="Card number" style="top:20px"><input autocomplete="cc-name" aria-label="Name on card" style="top:70px"><input autocomplete="cc-exp" aria-label="Expiry" style="top:120px"><input aria-label="Notes" style="top:170px"><button type="submit" style="top:220px">Pay now</button></form>')
+    return
+  }
   if (req.url.startsWith('/ws-page')) {
     const port = Number(new URL(req.url, 'http://x').searchParams.get('port'))
     res.end(`<!doctype html><title>ws</title><script>new WebSocket('ws://127.0.0.1:${port}/ws-from-page')</script>`)
@@ -257,6 +262,35 @@ try {
     { backgroundRefused: background.length })
   report.blockedDuringRun = env.session.blocked.map((entry) => `${entry.via ?? 'fetch'} ${entry.rule} ${entry.url}`)
   report.backgroundTrafficRefused = [...new Set(background.map((notice) => new URL(notice.url).host))]
+
+  // CU-319: the browser's own autofill marks fields :autofill; the submit button then carries them as descriptors. Typing
+  // into one clears Chrome's state, and the driver keeps reporting it, marked edited (a partial edit launders nothing).
+  await env.perform({ type: 'navigate', url: `${origin}/autofill-form` })
+  const payAt = { x: 128, y: 176 }
+  const payBefore = await env.inspectPoint(payAt)
+  const autofillPage = env.session.foreground()
+  const autofillDoc = (await env.session.send(autofillPage, 'DOM.getDocument', { depth: 0 })).result.root
+  const cardNode = (await env.session.send(autofillPage, 'DOM.querySelector', { nodeId: autofillDoc.nodeId, selector: '#cardnumber' })).result.nodeId
+  const cardBackend = (await env.session.send(autofillPage, 'DOM.describeNode', { nodeId: cardNode })).result.node.backendNodeId
+  const testCard = { number: ['4111', '1111', '1111', '1111'].join(''), name: 'Test Card', expiryMonth: '01', expiryYear: '2030', cvc: ['1', '2', '3'].join('') }
+  let triggered = 'ok'
+  try {
+    await env.session.send(autofillPage, 'Autofill.trigger', { fieldId: cardBackend, card: testCard })
+  } catch (error) {
+    triggered = error.details?.cdpMessage ?? error.message
+  }
+  await env.perform({ type: 'wait', duration_ms: 300 })
+  const payAfter = await env.inspectPoint(payAt)
+  await env.perform({ type: 'click', x: 128, y: 26, button: 'left' })
+  await env.perform({ type: 'keypress', keys: ['END'] })
+  await env.perform({ type: 'type', text: '9' })
+  const payTyped = await env.inspectPoint(payAt)
+  const autofilledOf = (target) => (target?.autofilledFields ?? []).map((field) => `${field.autocomplete}${field.edited ? ' (edited)' : ''}`)
+  check('a submit button carries the fields the browser autofilled, as descriptors; one the run then edits stays, marked edited (CU-319)',
+    payBefore?.tag === 'button' && payBefore.autofillRead === true && payBefore.autofilledFields === undefined && triggered === 'ok' &&
+    JSON.stringify(autofilledOf(payAfter)) === JSON.stringify(['cc-number', 'cc-name', 'cc-exp']) && payAfter.autofilledFields[0].name === 'Card number' &&
+    !JSON.stringify(payAfter.autofilledFields).includes('4111') && JSON.stringify(autofilledOf(payTyped)) === JSON.stringify(['cc-number (edited)', 'cc-name', 'cc-exp']),
+    { triggered, before: autofilledOf(payBefore), after: autofilledOf(payAfter), afterTyping: autofilledOf(payTyped) })
 
   // A point inside a cross-site iframe resolves to the inner element through the frame's own session.
   sitePolicy.allowOrigin(`http://localhost:${mainPort}/`)

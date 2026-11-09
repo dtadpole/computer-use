@@ -1,8 +1,8 @@
 ---
 title: chrome-browser test suite
 created: 2026-11-01T09:52:00Z
-modified: 2026-11-09T00:08:00Z
-version: 0.11.0
+modified: 2026-11-09T03:40:00Z
+version: 0.12.0
 description: Unit tests of the chrome-browser environment - keys, coordinates, input planning, clipboard, launching, request decisions, page scripts, the CDP session, the executor and the environment object - with no browser.
 grounded_in:
   - source: _environments_/chrome-browser/INDEX.md@0.11.0
@@ -27,5 +27,6 @@ loopback sockets. [`fake-cdp.mjs`](fake-cdp.mjs) is the fake CDP connection the 
 | [`session.test.mjs`](session.test.mjs) | pages, popups, cross-site frame sessions, dialogs; the executor's gate, signal, dialog rule, effects, settle, clipboard; proxy refusals classified |
 | [`environment.test.mjs`](environment.test.mjs) | launch refusals, frame, dialog-time behaviour, targets (also inside a cross-site iframe), proxy lifetime, parity with the fake environment, screencast, human input, close |
 | [`frame-focus.test.mjs`](frame-focus.test.mjs) | CU-300: the focus followed into a cross-site frame (inner field, `frameUrl`, `frameHost`, the frame's default button, one fingerprint with the click), every failed read keeping the iframe, an editable frame body, `defaultButtonRead`, one level only |
+| [`autofill.test.mjs`](autofill.test.mjs) | CU-319: a submit-like target's autofilled fields (form, form-less control, focused entry), descriptors never values, :-webkit-autofill fallback, a failed read (`autofillRead: false`) |
 
 Behaviour in a real browser is checked by [`smoke.mjs`](../../_environments_/chrome-browser/smoke.mjs).

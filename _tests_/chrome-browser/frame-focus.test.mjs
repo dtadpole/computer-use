@@ -60,6 +60,11 @@ function harness(world) {
     },
     'Runtime.callFunctionOn': (params, sessionId) => {
       const fn = params.functionDeclaration
+      // CU-319's read, inside the frame only when world.frameAutofill lists backend ids of the frame's autofilled fields.
+      if (fn.includes(':-webkit-autofill')) return { result: { result: sessionId === FRAME && Array.isArray(world.frameAutofill) ? { type: 'object', objectId: 'scope-1' } : { type: 'object', subtype: 'null', value: null } } }
+      if (fn.includes('return this.truncated')) return { result: { result: { type: 'boolean', value: false } } }
+      if (fn.includes('return this.edited')) return { result: { result: { type: 'object', value: world.frameAutofill.map(() => false) } } }
+      if (fn.includes('return this.fields')) return { result: { result: { type: 'object', subtype: 'array', objectId: 'fields-1' } } }
       if (fn.includes('IMPLICIT')) return { result: { result: sessionId === FRAME && world.submit !== false && params.objectId === 'node-5' ? { type: 'object', objectId: 'node-6' } : { type: 'object', subtype: 'null', value: null } } }
       if (fn.includes('CONTROL_ROLES') && params.returnByValue === false) return { result: { result: { type: 'object', objectId: params.objectId } } }
       if (fn.includes('function (target)')) return { result: { result: { value: null } } }
@@ -71,6 +76,7 @@ function harness(world) {
       }
       return { result: { result: { value: false } } }
     },
+    'Runtime.getProperties': () => ({ result: { result: (world.frameAutofill ?? []).map((id, index) => ({ name: String(index), value: { type: 'object', objectId: `node-${id}` } })) } }),
     'Page.getFrameTree': (params, sessionId) => ({ result: { frameTree: { frame: sessionId === FRAME ? { id: 'OOPIF-1', loaderId: 'L-A' } : { id: `F-${sessionId}`, loaderId: `L-${sessionId}` } } } }),
     'DOM.enable': (params, sessionId) => (sessionId === FRAME && world.frameStalls ? new Promise(() => {}) : { result: {} }),
   })
@@ -247,7 +253,11 @@ test("CU-300 end to end: the driver's own answers, judged by agent core's policy
     world.resolveFails = true
     const unread = await env.focusedElement()
     assert.equal(unread.defaultButtonRead, false)
-    assert.equal(judge({ type: 'keypress', keys: ['ENTER'] }, unread), 'submit', 'a Return after a failed read asks submit')
+    // Since CU-319 (#200, #195) the same failed read also leaves the autofill unread (autofillRead false), and a
+    // submit on an unread form asks credential - the stricter class, still never an allow.
+    assert.deepEqual([unread.autofillRead, unread.autofilledFields], [false, null])
+    assert.equal(judge({ type: 'keypress', keys: ['ENTER'] }, unread), 'credential', 'a Return after a failed read asks (credential outranks submit)')
+    assert.equal(judge({ type: 'keypress', keys: ['ENTER'] }, { ...unread, autofillRead: true, autofilledFields: undefined }), 'submit', 'with the autofill read, the failed default-button read alone asks submit')
     world.resolveFails = false
     // A text drop: inspectPoint's inner target (it carries frameHost too) is the drop target (#184 round 2).
     const hit = AX[FRAME][5]
@@ -282,4 +292,23 @@ test('CU-300: describeElement gives frameUrl inside a frame only - origin and pa
   assert.equal('frameUrl' in onTop, false, 'absent on the top document')
   const isolated = new Function(`return (${describeElement.toString()})`)()
   assert.deepEqual(isolated(inFrame(http)), describeElement(inFrame(http)), 'self-contained, as the driver runs it in the page')
+})
+
+test('CU-300 x CU-319: a focus followed into a cross-site frame carries the autofilled fields of the frame\'s form, read in its own world', async () => {
+  const world = { frameFocus: focusOn(5), frameAutofill: [9] }
+  const { options, attach } = harness(world)
+  const saved = AX[FRAME][9]
+  try {
+    AX[FRAME][9] = { role: 'textbox', name: 'Password' }
+    const env = await launchBrowserEnvironment(options)
+    await attach(env)
+    const focused = await env.focusedElement()
+    assert.equal(focused.frameHost.name, 'Secure CVC input frame', 'still the followed inner entry')
+    assert.deepEqual([focused.autofillRead, focused.autofilledFields.map((field) => field.name)], [true, ['Password']])
+    world.frameAutofill = null
+    assert.equal('autofillRead' in (await env.focusedElement()), false, 'no submit-like answer from the frame: nothing added')
+    await env.close()
+  } finally {
+    AX[FRAME][9] = saved
+  }
 })

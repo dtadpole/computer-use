@@ -77,7 +77,10 @@ test('capture and input APIs live only in the live capabilities, behind the disp
 })
 
 test('the boundary of D-029 is wired: peer check, one instance, indicator, the connect window', () => {
-  assert.match(code['main.swift'], /let grantsAtStart = GrantRecheck\.settled\(read: \{ Grants\.preflight\(\) \}, sleep: \{ Thread\.sleep\(forTimeInterval: \$0\) \}\)\nlet boundary = options\.boundaryApplies\(grantsAtStart: grantsAtStart\)/)
+  // CU-303: a start that cannot hold a grant (dry run, simulated ungranted) reads no TCC; a live start settles them.
+  assert.match(code['main.swift'], /let grantsAtStart = GrantRecheck\.atStart\(mayHoldGrants: options\.mayHoldGrants, read: \{ Grants\.preflight\(\) \}, sleep: \{ Thread\.sleep\(forTimeInterval: \$0\) \}\)\nlet boundary = options\.boundaryApplies\(grantsAtStart: grantsAtStart\)/)
+  assert.match(code['Policy.swift'], /static func atStart\(mayHoldGrants: Bool, read: \(\) -> Grants, sleep: \(TimeInterval\) -> Void\) -> Grants \{\n    mayHoldGrants \? settled\(read: read, sleep: sleep\) : \.none\n  \}/, 'only a start that may hold grants reads them')
+  assert.doesNotMatch(code['main.swift'], /^(?!.*GrantRecheck\.atStart\().*Grants\.preflight\(\)/m, 'main.swift reads TCC only through atStart')
   assert.match(code['main.swift'], /if options\.lockPath != nil && grantsAtStart\.any \{\n  fail\(/, 'a granted helper always takes the shared lock')
   assert.match(code['main.swift'], /let forcedUngranted = options\.simulateUngranted \|\| \(options\.mayHoldGrants && !boundary\)/, 'no grant at the start, none for the run')
   assert.match(code['main.swift'], /if boundary && !SingleInstance\.acquire\(at: options\.lockPath \?\? SingleInstance\.lockPath\)/)
