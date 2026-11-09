@@ -29,7 +29,7 @@ export function createFakeEnvironment({
   url = 'http://127.0.0.1:43117/',
   title = 'fixture',
   targets = null,
-  focused = null,
+  focused,
   pageText = '',
   hiddenText = '',
   dialog = null,
@@ -40,6 +40,9 @@ export function createFakeEnvironment({
   frontmost = 'ai.reflection.cu.fixture',
   secureInput = false,
 } = {}) {
+  // CU-363: an unread or body focus on a web page now asks for printable input, so a fake page's default focus is a plain
+  // search field (what a scripted 'type' aims at); a test about a missing focus passes focused: null.
+  if (focused === undefined) focused = kind === 'desktop' ? { origin: frontmost, role: 'AXTextField', name: 'Notes', editable: true, fingerprint: 'fake-notes' } : { tag: 'input', inputType: 'search', role: 'searchbox', name: 'Search', editable: true }
   const log = []
   const listeners = new Map()
   let currentUrl = url

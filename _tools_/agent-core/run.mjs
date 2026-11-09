@@ -5,7 +5,7 @@ import { createAppApprovals } from './app-approvals.mjs'
 import { panelDestination, protectedPath } from './app-policy.mjs'
 import { unattendedController } from './consent.mjs'
 import { createRunControl } from './control.mjs'
-import { runTask } from './loop.mjs'
+import { runTask, standInTurnsOf } from './loop.mjs'
 import { resourceGate } from './resource-gate.mjs'
 import { createSitePolicy } from './sites.mjs'
 import { createRecorder, newRunId, runsDir } from './trajectory.mjs'
@@ -39,7 +39,8 @@ export const LIVE_VIEW = resolve(HERE, '..', 'live-view', 'server.mjs')
  * `onEvent(line)` hears every trajectory event line as it is written, secret values scrubbed as in the file; a
  * throwing listener never breaks the run. The live view closes when the run ends (D-009) unless `keepLiveView: true`:
  * then it keeps serving the replay, the result carries `replayUrl` (view token, as the MCP run manager builds it), and
- * the caller closes it with the handle's `closeLiveView()`.
+ * the caller closes it with the handle's `closeLiveView()`. `standInTurns` (CU-342) goes to runTask as given; only
+ * cli.mjs run sets it, after its gates, and a driver without simulateLocalInput fails the run before it starts.
  * The handle: `{ runId, control, viewUrl, controlUrl, started, closeLiveView, done }`; `started` is false when the run
  * was refused or failed before runTask began (`done` then resolves the error result), true otherwise.
  */
@@ -49,6 +50,8 @@ export async function startRun(options) {
   const desktop = name === 'macos-desktop'
   // A desktop run needs its seat too: the desktop driver's one-run-at-a-time lock names the holder (cu-verifier's finding).
   if (!model || !seat || (!desktop && !startUrl)) throw new TypeError(desktop ? 'startRun needs seat and model' : 'startRun needs startUrl, seat and model')
+  // CU-342: cli.mjs run's gated stand-in turns, checked before anything starts; never read from the environment here.
+  const standInTurns = standInTurnsOf(options.standInTurns)
   const task = typeof options.task === 'string' ? { text: options.task, meta: null } : options.task
   const runId = newRunId()
   const recorder = createRecorder({ dir: options.runsDirectory ?? runsDir(), runId })
@@ -115,6 +118,11 @@ export async function startRun(options) {
     try { await environment.close() } catch { /* already closed */ }
     return failEarly({ code: 'pause_not_armed', message: 'the local-input pause is not armed, so the desktop run does not start (no input to a shared Mac without it)' })
   }
+  // CU-342: a stand-in the driver cannot post ends the run here, before the model, never mid-run.
+  if (standInTurns.length > 0 && typeof environment.simulateLocalInput !== 'function') {
+    try { await environment.close() } catch { /* already closed */ }
+    return failEarly({ code: 'stand_in_unsupported', message: 'standInTurns needs a driver with simulateLocalInput (macos-desktop); this one has none, so the run does not start' })
+  }
   live?.attach(environment)
   const keep = options.keepLiveView === true && live !== null
   const done = runTask({
@@ -132,6 +140,7 @@ export async function startRun(options) {
     onEvent: typeof options.onEvent === 'function' ? options.onEvent : null,
     ...(desktop ? { apps, excludeApps: options.excludeApps ?? [], appApprovals: options.appApprovals ?? createAppApprovals() } : {}),
     ...(options.inspector ? { inspector: options.inspector } : {}),
+    ...(standInTurns.length > 0 ? { standInTurns } : {}),
   })
     // A kept view serves this run's replay until the caller closes it; its URL carries the view token, never control.
     .then((result) => (keep && closing === null ? { ...result, replayUrl: replayUrlOf(live, runId, control) } : result))

@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-09T16:15:00Z
+modified: 2026-11-09T19:10:00Z
 level: L1
-version: 3.6.0
+version: 3.8.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,23 +15,20 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; never drives the desktop. State at 16:15Z, 9 November.
+session worktree plus `--review` worktrees; never drives the desktop. State at 19:10Z, 9 November.
 
 ## Landed
 
-- Verified: CU-301, CU-241, CU-297, CU-302, CU-325, CU-326, CU-263, CU-336, CU-347; CU-339 audit; CU-321 decided.
-- High, in Verify: CU-340, CU-352 (locale action names, PR #323), CU-354 (whole task values, PR #329).
+- Verified: CU-301, CU-241, CU-297, CU-302, CU-325, CU-326, CU-263, CU-336, CU-347, CU-345, CU-346, CU-363; CU-321 decided.
+- In Verify: CU-340, CU-352, CU-354, CU-350.
 
 ## Open
 
-- Fully OK'd, queued: PR #331 (CU-345 field names, German compounds), PR #333 (CU-346 separators), PR #335 (CU-348, Low).
-- In review: PR #336 (CU-350 credential shapes), PR #338 (CU-355 personal-ID names, stacked on #331).
-- After PR #331 lands: the guide's 'Names are read in English and Chinese only' lists the eight languages.
-- After PR #321 lands: table-mutants aws-secret-ignored and assignment-ignored.
-
-## Pending
-
-- CU-349's agent-core half (placeholder adds asks, never removes) after the helper half; the it/nl/pt/tr pass.
+- CU-365 (High, D-086): PR #367 - modifier chords outside a text entry ask per (site, chord); a stacked page shortcut
+  keeps its own approval (alsoNeeds, 'permission' in classes); reasons never echo typed text. Waits for cu-verifier's rows.
+- OK'd, queued: #338 (CU-355), #343 (CU-358), #347 (CU-359), #335 (CU-348), #349 (CU-349, after 0.2.63), #360 (CU-364, Low).
+- One guide PR after #338 and #355: the eight-language line (#351), the CU-360 mailto note, drop line 49 (CU-363);
+  line 32 when CU-361 lands. Under 500 words.
 
 ## Lessons
 
