@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-09T08:20:00Z
+modified: 2026-11-09T10:25:00Z
 level: L1
-version: 3.0.0
+version: 3.1.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,24 +15,23 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; never drives the desktop. State at 08:20Z, 9 November.
+session worktree plus `--review` worktrees; never drives the desktop. State at 10:25Z, 9 November.
 
 ## Landed
 
-- Verified live: CU-301, CU-241, CU-297, CU-302 (D-088 ended, D-096), CU-325; guides to 0.1.17.
-- table-mutants.mjs (+ runner) and d065-audit gate the table lane: every D-065 cell's mutant must fail it.
+- Verified live: CU-301, CU-241, CU-297, CU-302 (D-088 ended, D-096), CU-325; CU-321 decided (keep ancestry).
+- #184 (CU-300 policy half); table-mutants.mjs and d065-audit gate the table lane; guides to 0.1.17.
 
 ## Open
 
-- #174 (Fixes CU-263, re-OK'd at 14c2123) and #184 (CU-300; #181 stacks): waiting for phase 2 (D-095 order).
-- #250 (Fixes CU-326, OK'd at 55bcb5e): Medium, full code gate behind #230.
+- #250 (Fixes CU-326, OK'd): full code gate; then the D-061 rows live with cu-verifier, and the guide's CU-326 line goes.
+- #174 (Fixes CU-263, OK'd): phase 2 re-run after CU-333's fixture flake; then the cells flip and the CAPTCHA guide line.
+- CU-336 (Medium): design note 0.2 on the issue (typed buffer, both frame paths, whitespace, 3-4 digits or MM/YY);
+  take it when a slot frees; rows in #268 (todo); cu-developer-two owns the driver fallback.
 
 ## Pending
 
-- CU-321: when its read-only series reports, a design note on narrowing D-089, with cu-researcher's named button
-  inside an iframe as a live row.
-- Guide: the CAPTCHA line when #174 lands; drop the CU-326 line when #250 lands (stay under 500 words).
-- CU-135 waits on the owner's step 4. Schedules: hourly pass; daily Session reflection 23:00Z.
+- #181, #259, #263 OK'd. CU-135 waits on the owner. Schedules: hourly pass; daily reflection 23:00Z.
 
 ## Lessons
 
