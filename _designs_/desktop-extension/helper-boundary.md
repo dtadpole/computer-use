@@ -1,9 +1,9 @@
 ---
 title: Helper peer boundary
 created: 2026-11-02T09:10:12Z
-modified: 2026-11-09T01:00:00Z
+modified: 2026-11-09T08:45:00Z
 level: L1
-version: 0.3.11
+version: 0.3.12
 description: Why the helper must not lend the owner's grants to any same-user process, and the four rules of D-029 - a peer check against a compiled list of entry points, one-run lifetime, a visible indicator, human-only approvals - with the residual risk the owner is told.
 status: unverified
 grounded_in:
@@ -60,6 +60,25 @@ uses, and a `~/computer-use--*` created later would be admitted unasked.
   - helper-sources: no compiled root remains (`layouts`, `checkoutRoot`).
 - **Proof after install:** admitted from the session worktree; refused from an unlisted `~/computer-use--probe`
   worktree made for the test and removed after; the start line.
+
+## The helper's one Accessibility write (CU-329, helper 0.2.62)
+
+The helper otherwise only reads Accessibility. It makes one write: `AXManualAccessibility = true` on the application
+element of an approved app, the first time in a run that the app is frontmost or activated. Electron apps build their
+whole tree only once it is set; Chrome ignores it (CU-321). Up to 0.2.61 the write was never undone. The app kept
+building its full tree after the run until it quit, which costs CPU and memory and exposes that tree to every other
+Accessibility client the user has granted.
+
+From 0.2.62:
+
+- **Read first.** The helper reads the attribute before writing. If it is already true, set by the user or another
+  assistive app, the helper writes nothing and remembers nothing.
+- **Restore at every end.** Otherwise the helper writes true and remembers the pid. At every run end - `bye`, socket
+  loss, the wall-time cap, and the CU-227 watchdog path - it writes false back for each remembered pid whose process
+  still runs. Each write is bounded by the 0.5 s messaging timeout; a hung app costs at most that.
+- **Residual.** A helper killed outright (SIGKILL, power loss) restores nothing, so the app keeps the tree until it
+  quits. If another assistive app sets the attribute during the run, the helper still writes false at the end. An app
+  relaunched during the run has a new pid and is handled as a new app.
 
 ## Why a list, not any `.mjs`
 
