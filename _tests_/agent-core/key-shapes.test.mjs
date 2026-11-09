@@ -10,7 +10,7 @@ const policy = createPolicy({ sitePolicy: () => 'allow' })
 const FIELD = { tag: 'input', inputType: 'text', role: 'textbox', name: 'Notes', editable: true }
 const verdict = (text) => { const r = policy.classify({ type: 'type', text }, { url: 'https://app.example/settings', target: FIELD }); return r.decision === 'allow' ? 'allow' : r.class }
 const AWS_SECRET = j('wJalrXUtnFEMI/K7MDENG/', 'bPxRfiCYEXAMPLEKEY')
-const GOOGLE_KEY = j('AI', 'za', 'SyD3x4mpl3K3yAbCdEfGhIjKlMnOpQrStUv')
+const GOOGLE_KEY = j('AI', 'za', 'SyB', 'z'.repeat(32))
 
 test('CU-347: an AWS secret, a Google API key and credential assignments ask sensitive_data', () => {
   for (const text of [AWS_SECRET, `aws_secret_access_key = ${AWS_SECRET}`, GOOGLE_KEY, `key=${GOOGLE_KEY}`, j('password', '=hunter2!'), j('TOKEN: ', 'tk_9f8e7d'), j('api_key: "', 'abc-123-def"'), j('client_secret=', 'x9Y8z7W6')]) {
