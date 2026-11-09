@@ -87,13 +87,22 @@ export function fixtureLaunchAllowed({ seat = process.env.CU_DESKTOP_SEAT, lockD
  * file area (made under /tmp when omitted). Resolves to `{ call(method, params), open, state, act, targets, render, close, sandbox,
  * child }`.
  */
-export async function launchFixture(executable, { offscreen = true, sandbox, role = 'fixture', timeoutMs = 10_000, seat, lockDir, lockCheck = fixtureLaunchAllowed } = {}) {
+/**
+ * CU-333: how long `open` may take to build a screen. Building a window is the fixture's heaviest call (grid-sheet lays out
+ * two 300-row tables), and on a loaded host it outran the 10 s every other call keeps: three gates between 08:50Z and
+ * 09:39Z on 9 Nov (fixapps step 100-154 s against its usual 20-30 s, while six helper builds ran at once - CU-335) timed
+ * out every grid-sheet open, and nothing else. Still bounded, so a fixture that never answers fails the row.
+ */
+export const OPEN_TIMEOUT_MS = 30_000
+
+export async function launchFixture(executable, { offscreen = true, sandbox, role = 'fixture', timeoutMs = 10_000, openTimeoutMs = OPEN_TIMEOUT_MS, seat, lockDir, lockCheck = fixtureLaunchAllowed, spawnArgs = null } = {}) {
   // CU-305: the lock is checked before anything is made or started.
   const allowed = lockCheck({ ...(seat !== undefined ? { seat } : {}), ...(lockDir !== undefined ? { lockDir } : {}) })
   if (allowed?.ok !== true) throw Object.assign(new Error(allowed?.message ?? 'CU Fixture launches only under the desktop-run lock (CU-305)'), { code: 'fixture_unlocked' })
   sandbox ??= mkdtempSync('/tmp/cu-fixture-sandbox-')
   const args = ['--sandbox', sandbox, '--role', role, ...(offscreen ? ['--offscreen'] : [])]
-  const child = spawn(executable, args, { stdio: ['pipe', 'pipe', 'pipe'] })
+  // spawnArgs: a test seam that starts a stand-in (a node script speaking the same JSON lines) in place of the app.
+  const child = spawnArgs ? spawn(spawnArgs[0], [...spawnArgs.slice(1), ...args], { stdio: ['pipe', 'pipe', 'pipe'] }) : spawn(executable, args, { stdio: ['pipe', 'pipe', 'pipe'] })
   const pending = new Map()
   let nextId = 1
   let stderr = ''
@@ -112,14 +121,14 @@ export async function launchFixture(executable, { offscreen = true, sandbox, rol
   child.stderr.setEncoding('utf8')
   child.stderr.on('data', (chunk) => (stderr = (stderr + chunk).slice(-4000)))
   const exited = new Promise((resolve) => child.once('exit', (code, signal) => resolve({ code, signal })))
-  const call = (method, params = {}) =>
+  const call = (method, params = {}, bound = method === 'open' ? openTimeoutMs : timeoutMs) =>
     new Promise((resolve, reject) => {
       if (child.exitCode !== null) return reject(new Error(`the fixture has exited: ${stderr.slice(-300)}`))
       const id = nextId++
       const timer = setTimeout(() => {
         pending.delete(id)
-        reject(new Error(`fixture ${method} got no answer within ${timeoutMs} ms`))
-      }, timeoutMs)
+        reject(new Error(`fixture ${method} got no answer within ${bound} ms`))
+      }, bound)
       pending.set(id, { resolve, reject, timer })
       child.stdin.write(`${JSON.stringify({ id, method, params })}\n`)
     })
