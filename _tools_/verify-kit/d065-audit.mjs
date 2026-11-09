@@ -1,7 +1,8 @@
 // CU-324 (D-093): a D-065 cell ('asserted, not live') counts only if the mutant it cites, applied alone, makes that
 // cell's own row fail. This audit reads every D-065 cell of the D-059/D-061 tables, applies each cited mutant to the
 // working tree, runs the cell's table test, restores the file, and reports every cell whose mutant is missing or
-// leaves the row passing. A citation reads 'mutant: <verifier> <name>' (a mutant of _verifiers_/<verifier>/mutants.mjs).
+// leaves the row passing. A citation reads 'mutant: table-mutants <name>' (a mutant of _tests_/agent-core/table-mutants.mjs,
+// cu-coordinator 04:53Z: the one shape); 'mutant: <verifier> <name>' (a mutant of _verifiers_/<verifier>/mutants.mjs) is read too.
 // Run from the repository root on a clean tree: `node _tools_/verify-kit/d065-audit.mjs`; exit 0 when every cell holds.
 import { execFileSync, spawnSync } from 'node:child_process'
 import { readFileSync, writeFileSync } from 'node:fs'
@@ -50,7 +51,8 @@ export function repoAdapters(root) {
   return {
     async loadMutant(verifier, name) {
       try {
-        const m = await import(pathToFileURL(join(root, '_verifiers_', verifier, 'mutants.mjs')).href)
+        const file = verifier === 'table-mutants' ? join(root, '_tests_', 'agent-core', 'table-mutants.mjs') : join(root, '_verifiers_', verifier, 'mutants.mjs')
+        const m = await import(pathToFileURL(file).href)
         return (m.MUTANTS ?? []).find((x) => x.name === name) ?? null
       } catch {
         return null
