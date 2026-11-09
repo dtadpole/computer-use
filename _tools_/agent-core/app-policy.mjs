@@ -1,4 +1,4 @@
-import { isIdeApp } from './app-kinds.mjs'
+import { isBrowserApp, isIdeApp } from './app-kinds.mjs'
 import { normaliseForPolicy } from './normalise.mjs'
 import { homedir } from 'node:os'
 import { posix } from 'node:path'
@@ -534,6 +534,22 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
       if (!approved(bundleId)) {
         return { decision: 'confirm', class: 'new_app', classes: ['new_app'], rule: 'app:not_approved', reason: `use ${bundleId}, an app this run has no approval for (${which})`, app: bundleId }
       }
+    }
+    // CU-302, D-089 (interim): on the desktop route an approved browser's page is one opaque area - an AXWebArea, or an
+    // AXScrollArea the helper marks opaque (cu-researcher's Q2) - where no field, button or suggestion can be read, so no
+    // web consent rule (a saved login autofilled on load, Buy, Delete, Send) can judge a click, key or drop there. Acting
+    // inside it is refused, never pre-approvable; browser tasks go through the browser environment, which reads the page.
+    // The browser's own chrome (address bar, tabs, menus) is judged as before. A precise rule replaces this once the page
+    // is readable on the desktop (CU-321).
+    const webArea = (one) => Boolean(one) && (one.role === 'AXWebArea' || (one.role === 'AXScrollArea' && one.opaque === true))
+    const inBrowser = (one) => isBrowserApp(one?.origin ?? context.frontmostBundleId)
+    const reaches = CLICKS.has(action.type) || action.type === 'drag' || action.type === 'hold_key' || isKeyAction(action)
+    const webTarget = reaches && webArea(target) && inBrowser(target)
+    const webDrop = action.type === 'drag' && webArea(context.dropTarget) && inBrowser(context.dropTarget)
+    const webPaste = webArea(context.paste?.destination) && inBrowser(context.paste?.destination)
+    if (webTarget || webDrop || webPaste) {
+      const browser = (webTarget ? target : webDrop ? context.dropTarget : context.paste.destination)?.origin ?? context.frontmostBundleId
+      return { decision: 'block', class: null, rule: 'browser_web_content', reason: `act inside ${browser}'s page, which the desktop route cannot read - use the browser environment`, app: browser }
     }
     const panel = panelVerdict(action, target, targetApp ?? context.frontmostBundleId)
     if (panel) return panel
