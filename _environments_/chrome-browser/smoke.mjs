@@ -314,7 +314,7 @@ try {
   await env.perform({ type: 'click', x: 100, y: 26, button: 'left' })
   await env.perform({ type: 'wait', ms: 300 })
   const ext = env.session.notices.slice(extBefore).filter((n) => n.kind === 'external_navigation_requested')
-  check('a page script\'s navigation to an app scheme is a notice - on load and from a click, the scheme only, its stop acknowledged by Chrome', ext.length >= 2 && ext.every((n) => n.url === 'x-cu-probe-unregistered-7f3a:' && n.reason === 'scriptInitiated' && n.stop === 'acknowledged') && env.state().url === `${origin}/extproto-page`, { ext, url: env.state().url })
+  check('a page script\'s navigation to an app scheme is a notice - on load and from a click, the scheme only, its stop taken by Chrome, launch unknown', ext.length >= 2 && ext.every((n) => n.url === 'x-cu-probe-unregistered-7f3a:' && n.reason === 'scriptInitiated' && n.stop === 'sent_ok' && n.launched === 'unknown') && env.state().url === `${origin}/extproto-page`, { ext, url: env.state().url })
   await env.perform({ type: 'navigate', url: `${origin}/autofill-form` })
   const payAt = { x: 128, y: 176 }
   const payBefore = await env.inspectPoint(payAt)
