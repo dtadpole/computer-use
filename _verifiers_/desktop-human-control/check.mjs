@@ -24,17 +24,17 @@ const SEAT = verifySeat()
 const guard = (t) => skipUnless(t, ready, 'the desktop loop (C4/C5), driver or fake helper has not landed')
 const click = (x, y) => ({ type: 'click', button: 'left', x, y })
 // One click is three helper events; the person acts after the first.
-const NOTES = { bundleId: FIXTURE, pid: 900, role: 'AXTextField', subrole: null, title: 'Notes', frame: { x: 100, y: 80, width: 300, height: 40 }, secure: false, editable: true }
 const world = {
   grants: { screen: true, accessibility: true, postEvents: true, listenEvents: false },
   displays: [{ id: 1, main: true, originPt: { x: 0, y: 0 }, sizePt: { width: 1280, height: 800 }, scale: 1 }],
   apps: [{ bundleId: FIXTURE, pid: 900, rect: { x: 0, y: 0, width: 1280, height: 800 } }],
-  // CU-363: the click at (200, 100) lands on a text field, so the typed 'x' that follows is text entry - a printable key
-  // outside one is an app shortcut and asks, which is consent, not what this human-control check measures.
-  elements: [{ rect: { x: 100, y: 80, width: 300, height: 40 }, element: NOTES }],
-  focused: NOTES,
   quirks: { localInputAfter: 1 },
 }
+// The resume checks type one character after the click: the click and the focus are a text entry, so the typed
+// character is text, not a page or app shortcut (CU-363 asks for a printable typed outside text entry, the over-ask
+// D-092 allows). These checks measure pause, resume and settleMs - never consent.
+const ENTRY = { bundleId: FIXTURE, pid: 900, role: 'AXTextField', subrole: null, title: 'Notes', frame: { x: 0, y: 0, width: 1280, height: 800 }, secure: false, editable: true }
+const entryWorld = { ...world, elements: [{ rect: ENTRY.frame, element: ENTRY }], focused: ENTRY }
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 /** One record per action (step and index): the last line written for it. */
 const actionsOf = (events) => [...new Map(events.filter((e) => e.kind === 'action').map((e) => [`${e.step}:${e.index}`, e])).values()]
@@ -103,7 +103,7 @@ test('local input can only pause: it cannot resume or stop the run', { timeout: 
 test('a person resumes the run: the next action reaches the helper and the run completes', { timeout: 30_000 }, async (t) => {
   if (!guard(t)) return
   const run = await desktopRun({
-    world,
+    world: entryWorld,
     // After the click the person resumes; the next action is one event, below the quirk's threshold.
     turns: [{ actions: [click(200, 100)] }, { actions: [{ type: 'type', text: 'x' }] }, { final: 'done' }],
     bounds: { maxSteps: 5, maxWallMs: 20_000 },
@@ -334,7 +334,7 @@ test('after a person resumes, only the first input asks the helper to settle (se
   if (!guard(t)) return
   if (!skipUnless(t, driverSettles(), 'the driver under test does not settle after a human resume yet (PR #518)')) return
   const run = await desktopRun({
-    world,
+    world: entryWorld,
     driverOptions: { settleMs: 60 },
     // The click is stopped by local input (the quirk); after the resume two one-event actions follow.
     turns: [{ actions: [click(200, 100)] }, { actions: [{ type: 'type', text: 'x' }] }, { actions: [{ type: 'type', text: 'y' }] }, { final: 'done' }],
