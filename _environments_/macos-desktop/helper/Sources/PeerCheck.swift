@@ -8,9 +8,9 @@ import Security
 /// node options that load other code (`-e`, `-r`, `--import`, `--loader`) and no environment that does (`DYLD_*`,
 /// `NODE_OPTIONS`, `NODE_PATH`, ...: this Mac's node allows DYLD variables and unsigned libraries); and its script - the
 /// first argument - must be one of the compiled entry points that drive runs through agent core's policy and consent,
-/// in one of the owner's checkouts - `~/computer-use` or a seat worktree `~/computer-use--<seat>` (the standalone
-/// repository, D-039; the reflection checkouts were dropped after the cutover, D-042, CU-29) (design 0.3.3: a new
-/// `.mjs` written into a checkout must not reach a granted helper). The launch arguments
+/// in a checkout this Mac's local config names (`helperCheckouts`, CU-295) - the compiled `~/computer-use` and
+/// `~/computer-use--<seat>` roots are gone (CU-299, helper-boundary 0.3.11), so with no configured checkout no peer is
+/// admitted (design 0.3.3: a new `.mjs` written into a checkout must not reach a granted helper). The launch arguments
 /// `--driver-node` and `--driver-entry` are required and must name exactly that binary and entry point; they can
 /// never widen the compiled list. A refusal closes
 /// the socket and names the pid only. Residual risk (told to the owner): a same-user process running genuine node on
@@ -18,15 +18,10 @@ import Security
 enum PeerCheck {
   /// Genuine node builds are signed by the Node.js Foundation (team HX7739G8FX); measured on this Mac's node 24.21.0.
   static let nodeRequirement = #"anchor apple generic and certificate leaf[subject.OU] = "HX7739G8FX""#
-  /// The owner's checkouts by repository name, each with the project directory inside it: the standalone repository
-  /// holds the project at its root (D-039). Reflection's copy is no longer served (D-042, CU-29).
-  static let layouts: [(repository: String, projectDirectory: String)] = [
-    ("computer-use", ""),
-  ]
-  /// CU-295 (the 8 Nov conventions): further checkouts this Mac names in ~/.config/computer-use/config.json's
+  /// CU-295 (the 8 Nov conventions): the checkouts this Mac names in ~/.config/computer-use/config.json's
   /// `helperCheckouts` - home-relative, each an exact checkout (`~/a/computer-use`) or a parent of worktrees
-  /// (`~/a/computer-use-wt/*`, one level of names). The machine's paths stay out of the public tree; the entry points,
-  /// the node checks and the compiled checkouts are unchanged. An entry of any other shape is dropped.
+  /// (`~/a/computer-use-wt/*`, one level of names). The machine's paths stay out of the public tree; since CU-299 they
+  /// are the only checkouts served. An entry of any other shape is dropped.
   struct Checkout: Equatable {
     /// Home-relative, without '~/' or a trailing slash.
     var path: String
@@ -63,12 +58,12 @@ enum PeerCheck {
 
   /// The configured checkouts, read once from the fixed config path under the home (never an environment variable,
   /// so a driver cannot redirect it), with why any was dropped. A missing, unreadable or malformed file admits none -
-  /// the compiled roots only.
+  /// no checkout at all (CU-299).
   static func configuredCheckouts(home: String) -> (checkouts: [Checkout], note: String?) {
     let path = (home as NSString).appendingPathComponent(".config/computer-use/config.json")
     guard FileManager.default.fileExists(atPath: path) else { return ([], nil) }
     guard let data = FileManager.default.contents(atPath: path), data.count <= 65_536, let config = JSONCoding.decode(data), config.object != nil else {
-      return ([], "the local config is unreadable or malformed: compiled checkouts only")
+      return ([], "the local config is unreadable or malformed: no checkout is admitted")
     }
     return (checkouts(fromConfig: config), nil)
   }
@@ -155,63 +150,11 @@ enum PeerCheck {
     if peer.environment.contains(where: loadsCode) { return "the peer's environment loads other code (DYLD_*, NODE_OPTIONS, NODE_PATH)" }
     let absolute = script.hasPrefix("/") ? script : peer.cwd.map { ($0 as NSString).appendingPathComponent(script) }
     guard let absolute, let real = resolve(absolute) else { return "the peer's script cannot be resolved" }
-    let root = home.hasSuffix("/") ? String(home.dropLast()) : home
+    // CU-299: only an entry point of a configured checkout, compared real path to real path; no compiled root.
     let configured = admittedProject(real, admitted: admitted).map { project in entryPoints.contains(where: { real == project + $0 }) } ?? false
-    guard configured || isAllowedEntry(real: real, lexical: lexicallyNormalized(absolute), root: root, resolve: resolve) else {
-      return "the peer's script is not an allowed entry point"
-    }
+    guard configured else { return "the peer's script is not an allowed entry point" }
     guard resolve(expectedEntry) == real else { return "the peer's script is not the entry point the driver named" }
     return nil
-  }
-
-  /// Whether a script is one of the entry points of an owner checkout, compared real path to real path: the script's
-  /// real path against the checkouts under the home, under the home's real path, and under each shared checkout's
-  /// real path (a `~/computer-use` that is a symlink); or, for a seat checkout reached through a
-  /// symlink, on the path as named, provided the entry point named there resolves to that same real file inside the
-  /// checkout's real directory - so a symlink planted inside a checkout cannot lead out of it.
-  static func isAllowedEntry(real: String, lexical: String, root: String, resolve: (String) -> String?) -> Bool {
-    if let project = projectRoot(real, root: root), entryPoints.contains(where: { real == project + $0 }) { return true }
-    if let realRoot = resolve(root), realRoot != root, let project = projectRoot(real, root: realRoot), entryPoints.contains(where: { real == project + $0 }) { return true }
-    for layout in layouts {
-      guard let realCheckout = resolve(root + "/" + layout.repository), realCheckout != root + "/" + layout.repository else { continue }
-      let project = (realCheckout.hasSuffix("/") ? realCheckout : realCheckout + "/") + layout.projectDirectory
-      if entryPoints.contains(where: { real == project + $0 }) { return true }
-    }
-    guard let project = projectRoot(lexical, root: root), let entry = entryPoints.first(where: { lexical == project + $0 }),
-          let realProject = resolve(project) else { return false }
-    return real.hasPrefix(realProject.hasSuffix("/") ? realProject : realProject + "/") && resolve(project + entry) == real
-  }
-
-  /// An absolute path with `.` and `..` removed by its components alone, symlinks left as they are.
-  static func lexicallyNormalized(_ path: String) -> String {
-    var parts: [Substring] = []
-    for part in path.split(separator: "/", omittingEmptySubsequences: true) {
-      if part == "." { continue }
-      if part == ".." { if !parts.isEmpty { parts.removeLast() }; continue }
-      parts.append(part)
-    }
-    return "/" + parts.joined(separator: "/")
-  }
-
-  /// The project directory a path lies in, with a trailing slash: the checkout `<home>/<repository>/` or a seat
-  /// worktree `<home>/<repository>--<seat>/` of one of the `layouts`, plus that layout's project directory; nil for
-  /// anything else.
-  static func projectRoot(_ path: String, root: String) -> String? {
-    for layout in layouts {
-      if let checkout = checkoutRoot(path, root: root, repository: layout.repository) { return checkout + layout.projectDirectory }
-    }
-    return nil
-  }
-
-  /// The checkout of `repository` a path lies in, with a trailing slash: `<home>/<repository>/` or a seat worktree
-  /// `<home>/<repository>--<seat>/`; nil for anything else.
-  static func checkoutRoot(_ path: String, root: String, repository: String) -> String? {
-    if path.hasPrefix(root + "/" + repository + "/") { return root + "/" + repository + "/" }
-    let prefix = root + "/" + repository + "--"
-    guard path.hasPrefix(prefix) else { return nil }
-    let seat = path.dropFirst(prefix.count).prefix { $0 != "/" }
-    guard !seat.isEmpty, seat.allSatisfy({ $0.isLetter || $0.isNumber || $0 == "-" }), path.dropFirst(prefix.count + seat.count).hasPrefix("/") else { return nil }
-    return prefix + seat + "/"
   }
 
   // MARK: Facts about the peer (no grant, no prompt)

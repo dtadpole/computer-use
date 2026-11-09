@@ -87,6 +87,10 @@ test('the boundary of D-029 is wired: peer check, one instance, indicator, the c
   assert.match(code['main.swift'], /if boundary \{ Indicator\.show\(\) \}\n\nlink\.send\(dispatcher\.hello/, 'the indicator is up before the hello')
   assert.match(code['main.swift'], /DispatchSource\.makeSignalSource/, 'a quit releases held input')
   assert.match(code['main.swift'], /PeerCheck\.refusal\(peer/)
+  // CU-299: the compiled ~/computer-use roots are gone; only a configured checkout's entry points are served.
+  assert.doesNotMatch(code['PeerCheck.swift'], /static let layouts|func checkoutRoot|func projectRoot|func isAllowedEntry/, 'no compiled checkout root remains (CU-299)')
+  assert.match(code['PeerCheck.swift'], /guard configured else \{ return "the peer's script is not an allowed entry point" \}/, 'only a configured checkout admits a peer (CU-299)')
+  assert.match(code['main.swift'], /"none - every peer is refused"/, 'the start line says when no checkout is configured')
   assert.match(code['main.swift'], /Indicator\.show\(\)/)
   assert.match(code['main.swift'], /SocketLink\.connect\(path: path, timeout: 10\)/)
   assert.match(code['main.swift'], /cap\.schedule\(deadline: \.now\(\) \+ options\.maxRunSeconds\)/, 'the wall-time cap')

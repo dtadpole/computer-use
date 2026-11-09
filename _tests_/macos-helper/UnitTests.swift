@@ -697,7 +697,7 @@ func button(_ kind: String, _ x: Int, _ y: Int) -> JSON { ["kind": .string(kind)
 func testDispatcherBasics() {
   let h = Harness(fixtureWorld)
   let hello = h.dispatcher.hello(token: "t0k")
-  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.59", "the hello opens the run")
+  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.60", "the hello opens the run")
   check(hello["mode"] == "dry-run" && hello["grants"] == ["screen": true, "accessibility": true, "postEvents": true, "listenEvents": false], "a dry-run hello says so, with all four grants")
   check(h.ask("capture", ["maxSize": size800])["code"] == "no_scope", "capture needs a scope")
   check(h.ask("input", ["events": [key("keyDown", 1)], "mode": "global"])["code"] == "no_scope", "input needs a scope")
@@ -1780,15 +1780,24 @@ func testArguments() {
 
 func testPeerCheck() {
   let home = "/Users/someone"
-  let cli = "\(home)/computer-use--cu-developer-two/_tools_/agent-core/cli.mjs"
+  let cli = "\(home)/computer-use-wt/session-1/_tools_/agent-core/cli.mjs"
   let good = PeerCheck.Peer(pid: 42, uid: 501, executable: "/opt/node/bin/node", arguments: ["node", cli, "run"], environment: ["PATH=/usr/bin"], cwd: "/", nodeSigned: true)
   let resolve: (String) -> String? = { ($0 as NSString).standardizingPath }
+  // CU-299: only configured checkouts are served - here a main checkout and a worktrees folder, as this Mac names them.
+  let standard = [PeerCheck.Admitted(realBase: "\(home)/computer-use", parent: false), PeerCheck.Admitted(realBase: "\(home)/computer-use-wt", parent: true)]
   /// The pins default to what the peer runs, as the driver passes them; a test overrides one to see it refused.
-  func refusal(_ peer: PeerCheck.Peer, node: String?? = .none, entry: String?? = .none) -> String? {
+  func refusal(_ peer: PeerCheck.Peer, node: String?? = .none, entry: String?? = .none, admitted: [PeerCheck.Admitted]? = nil) -> String? {
     let defaultEntry = peer.arguments.count > 1 ? (peer.arguments[1].hasPrefix("/") ? peer.arguments[1] : peer.cwd.map { ($0 as NSString).appendingPathComponent(peer.arguments[1]) }) : nil
-    return PeerCheck.refusal(peer, ownUid: 501, home: home, expectedNode: node ?? peer.executable, expectedEntry: entry ?? defaultEntry, resolve: resolve)
+    return PeerCheck.refusal(peer, ownUid: 501, home: home, expectedNode: node ?? peer.executable, expectedEntry: entry ?? defaultEntry, admitted: admitted ?? standard, resolve: resolve)
   }
-  check(refusal(good) == nil, "genuine node on agent core's CLI in a seat checkout is accepted")
+  check(refusal(good) == nil, "genuine node on agent core's CLI in a configured worktree is accepted")
+  check(refusal(good, admitted: []) != nil, "with no configured checkout every peer is refused (CU-299, fail closed)")
+  for old in ["\(home)/computer-use--cu-developer-two/_tools_/agent-core/cli.mjs", "\(home)/computer-use--cu-verifier/_evaluators_/desktop-suite/run.mjs",
+              "\(home)/computer-use--cu-verifier/_verifiers_/desktop-helper-boundary/stand-in-driver.mjs"] {
+    var seat = good
+    seat.arguments = ["node", old]
+    check(refusal(seat) != nil, "an old seat path is refused unless configured (CU-299): \(old.dropFirst(home.count))")
+  }
   // CU-295: further checkouts from the local config - an exact checkout and a parent of worktrees; nothing else widens.
   let configured = PeerCheck.checkouts(fromConfig: ["helperCheckouts": ["~/work/computer-use", "~/work/computer-use-wt/*", "/abs/path", "~/../escape", "~/a/*/b", "~/ok dir", 7]])
   check(configured == [PeerCheck.Checkout(path: "work/computer-use", parent: false), PeerCheck.Checkout(path: "work/computer-use-wt", parent: true)],
@@ -1827,13 +1836,13 @@ func testPeerCheck() {
   check(configuredRefusal("\(home)/work/elsewhere/_tools_/agent-core/cli.mjs") != nil, "an unconfigured directory is refused")
   check(refusal(PeerCheck.Peer(pid: 42, uid: 501, executable: "/opt/node/bin/node", arguments: ["node", "\(home)/work/computer-use/_tools_/agent-core/cli.mjs"], environment: [], cwd: "/", nodeSigned: true)) != nil,
         "without the config entry the same path is refused")
-  // (c): a malformed or unreadable config admits none - the compiled roots only - and says so.
+  // (c): a malformed or unreadable config admits none - since CU-299 no checkout at all - and says so.
   let fakeHome = NSTemporaryDirectory() + "cu-home-\(getpid())"
   try? FileManager.default.createDirectory(atPath: fakeHome + "/.config/computer-use", withIntermediateDirectories: true)
   check(PeerCheck.configuredCheckouts(home: fakeHome).checkouts.isEmpty && PeerCheck.configuredCheckouts(home: fakeHome).note == nil, "no config file: no further checkouts, nothing to report")
   FileManager.default.createFile(atPath: fakeHome + "/.config/computer-use/config.json", contents: Data("{ not json".utf8))
   let malformed = PeerCheck.configuredCheckouts(home: fakeHome)
-  check(malformed.checkouts.isEmpty && malformed.note?.contains("malformed") == true, "a malformed config: compiled checkouts only, logged")
+  check(malformed.checkouts.isEmpty && malformed.note?.contains("malformed") == true, "a malformed config: no checkout admitted, logged")
   FileManager.default.createFile(atPath: fakeHome + "/.config/computer-use/config.json", contents: Data(#"{"helperCheckouts": ["~/a/computer-use", "~/b/*"]}"#.utf8))
   check(PeerCheck.configuredCheckouts(home: fakeHome).checkouts == [PeerCheck.Checkout(path: "a/computer-use", parent: false), PeerCheck.Checkout(path: "b", parent: true)], "a well-formed config is read")
   try? FileManager.default.removeItem(atPath: fakeHome)
@@ -1875,16 +1884,16 @@ func testPeerCheck() {
   check(refusal(good, entry: "\(home)/computer-use/x.mjs") != nil && refusal(good, entry: cli) == nil, "--driver-entry pins the script")
   check(refusal(good, node: .some(nil)) != nil && refusal(good, entry: .some(nil)) != nil, "both pins are required (design 0.3.3)")
   var runner = good
-  runner.arguments = ["node", "\(home)/computer-use--cu-verifier/_verifiers_/desktop-boundary/check.mjs"]
+  runner.arguments = ["node", "\(home)/computer-use-wt/session-2/_verifiers_/desktop-boundary/check.mjs"]
   check(refusal(runner) != nil, "another .mjs of the project does not drive a granted helper (design 0.3.3)")
   var suite = good
-  suite.arguments = ["node", "\(home)/computer-use--cu-verifier/_evaluators_/desktop-suite/run.mjs", "--model", "x"]
+  suite.arguments = ["node", "\(home)/computer-use-wt/session-2/_evaluators_/desktop-suite/run.mjs", "--model", "x"]
   check(refusal(suite) == nil, "the desktop evaluation suite's entry point does")
   var standIn = good
-  standIn.arguments = ["node", "\(home)/computer-use--cu-verifier/_verifiers_/desktop-helper-boundary/stand-in-driver.mjs"]
+  standIn.arguments = ["node", "\(home)/computer-use-wt/session-2/_verifiers_/desktop-helper-boundary/stand-in-driver.mjs"]
   check(refusal(standIn) == nil, "cu-verifier's boundary stand-in does (design 0.3.5)")
   var otherVerifier = good
-  otherVerifier.arguments = ["node", "\(home)/computer-use--cu-verifier/_verifiers_/desktop-helper-protocol/check.mjs"]
+  otherVerifier.arguments = ["node", "\(home)/computer-use-wt/session-2/_verifiers_/desktop-helper-protocol/check.mjs"]
   check(refusal(otherVerifier) != nil, "no other verifier script does")
   var elsewhere = good
   elsewhere.arguments = ["node", "\(home)/computer-use-other/_tools_/agent-core/cli.mjs"]
@@ -1892,18 +1901,11 @@ func testPeerCheck() {
   var notModule = good
   notModule.arguments = ["node", "\(home)/computer-use/_tools_/agent-core/cli.js"]
   check(refusal(notModule) != nil, "only .mjs scripts")
-  check(PeerCheck.checkoutRoot("\(home)/reflection--cu-verifier/a", root: home, repository: "reflection") == "\(home)/reflection--cu-verifier/" && PeerCheck.checkoutRoot("\(home)/reflection--/a", root: home, repository: "reflection") == nil
-        && PeerCheck.checkoutRoot("\(home)/reflection--x y/a", root: home, repository: "reflection") == nil && PeerCheck.checkoutRoot("\(home)/reflectionx/a", root: home, repository: "reflection") == nil, "checkouts by name")
-  // The standalone repository (D-039, CU-2): the project at the checkout's root; reflection's layout dropped (D-042, CU-29).
-  check(PeerCheck.projectRoot("\(home)/computer-use/_tools_/agent-core/cli.mjs", root: home) == "\(home)/computer-use/"
-        && PeerCheck.projectRoot("\(home)/computer-use--cu-verifier/x", root: home) == "\(home)/computer-use--cu-verifier/"
-        && PeerCheck.projectRoot("\(home)/reflection/x", root: home) == nil && PeerCheck.projectRoot("\(home)/reflection--cu-verifier/x", root: home) == nil
-        && PeerCheck.projectRoot("\(home)/computer-usex/x", root: home) == nil && PeerCheck.projectRoot("\(home)/computer-use--/x", root: home) == nil, "project roots: the standalone repository only (reflection dropped, CU-29)")
-  for path in ["\(home)/computer-use/_tools_/agent-core/cli.mjs", "\(home)/computer-use--cu-developer-two/_tools_/computer-use-mcp/server.mjs",
-               "\(home)/computer-use--cu-verifier/_evaluators_/desktop-suite/run.mjs", "\(home)/computer-use--cu-verifier/_verifiers_/desktop-helper-boundary/stand-in-driver.mjs"] {
+  for path in ["\(home)/computer-use/_tools_/agent-core/cli.mjs", "\(home)/computer-use-wt/session-1/_tools_/computer-use-mcp/server.mjs",
+               "\(home)/computer-use-wt/session-2/_evaluators_/desktop-suite/run.mjs", "\(home)/computer-use-wt/session-2/_verifiers_/desktop-helper-boundary/stand-in-driver.mjs"] {
     var moved = good
     moved.arguments = ["node", path]
-    check(refusal(moved) == nil, "an entry point in the standalone repository is accepted: \(path.dropFirst(home.count))")
+    check(refusal(moved) == nil, "an entry point in a configured checkout is accepted: \(path.dropFirst(home.count))")
   }
   // A shared checkout that is a symlink (~/computer-use -> ~/dtadpole/computer-use): both namings of its entry points.
   let linked: (String) -> String? = { path in
@@ -1911,10 +1913,13 @@ func testPeerCheck() {
     if standard == "\(home)/computer-use/_tools_/agent-core/cli.mjs" { return "/tmp/evil.mjs" }
     return standard.hasPrefix("\(home)/computer-use/") || standard == "\(home)/computer-use" ? "\(home)/dtadpole/computer-use" + standard.dropFirst("\(home)/computer-use".count) : standard
   }
+  // CU-299: the configured main checkout is named by its real path; ~/computer-use is only a symlink into it.
+  let linkedAdmitted = PeerCheck.admit([PeerCheck.Checkout(path: "dtadpole/computer-use", parent: false)], home: home, resolve: linked, worldWritable: { _ in false }).admitted
+  check(linkedAdmitted == [PeerCheck.Admitted(realBase: "\(home)/dtadpole/computer-use", parent: false)], "the configured main checkout resolves to its real directory")
   func linkedRefusal(_ script: String) -> String? {
     var peer = good
     peer.arguments = ["node", script]
-    return PeerCheck.refusal(peer, ownUid: 501, home: home, expectedNode: peer.executable, expectedEntry: script, resolve: linked)
+    return PeerCheck.refusal(peer, ownUid: 501, home: home, expectedNode: peer.executable, expectedEntry: script, admitted: linkedAdmitted, resolve: linked)
   }
   check(linkedRefusal("\(home)/computer-use/_tools_/computer-use-mcp/server.mjs") == nil, "an entry point reached through a symlinked ~/computer-use is accepted")
   check(linkedRefusal("\(home)/computer-use/_tools_/agent-core/cli.mjs") != nil, "an entry point that is itself a symlink leading out of the checkout is refused")
@@ -1926,19 +1931,19 @@ func testPeerCheck() {
     let standard = (path as NSString).standardizingPath
     return standard.hasPrefix(home + "/") || standard == home ? "/System/Volumes/Data" + standard : standard
   }
-  for script in ["\(home)/computer-use--cu-verifier/_evaluators_/desktop-suite/run.mjs", "/System/Volumes/Data\(home)/computer-use--cu-verifier/_evaluators_/desktop-suite/run.mjs"] {
+  let movedAdmitted = PeerCheck.admit([PeerCheck.Checkout(path: "computer-use-wt", parent: true)], home: home, resolve: movedHome, worldWritable: { _ in false }).admitted
+  for script in ["\(home)/computer-use-wt/session-2/_evaluators_/desktop-suite/run.mjs", "/System/Volumes/Data\(home)/computer-use-wt/session-2/_evaluators_/desktop-suite/run.mjs"] {
     var peer = good
     peer.arguments = ["node", script]
-    check(PeerCheck.refusal(peer, ownUid: 501, home: home, expectedNode: peer.executable, expectedEntry: script, resolve: movedHome) == nil, "with a symlinked home: \(script.prefix(24))... is accepted")
+    check(PeerCheck.refusal(peer, ownUid: 501, home: home, expectedNode: peer.executable, expectedEntry: script, admitted: movedAdmitted, resolve: movedHome) == nil, "with a symlinked home: \(script.prefix(24))... is accepted")
   }
   check(linkedRefusal("\(home)/computer-use/_verifiers_/desktop-helper-protocol/check.mjs") != nil, "through the symlink, still only the entry points")
-  check(PeerCheck.lexicallyNormalized("/a/./b/../c//d") == "/a/c/d" && PeerCheck.lexicallyNormalized("/a/../../b") == "/b", "lexical normalization")
   for path in ["\(home)/computer-use/_projects_/heddle/_projects_/computer-use/_tools_/agent-core/cli.mjs", "\(home)/computer-use/_verifiers_/desktop-helper-protocol/check.mjs",
                "/tmp/computer-use/_tools_/agent-core/cli.mjs", "\(home)/computer-use/../evil/_tools_/agent-core/cli.mjs", "\(home)/reflection/_tools_/agent-core/cli.mjs",
                "\(home)/reflection/_projects_/computer-use/_tools_/agent-core/cli.mjs", "\(home)/reflection--cu-verifier/_projects_/heddle/_projects_/computer-use/_evaluators_/desktop-suite/run.mjs"] {
     var wrong = good
     wrong.arguments = ["node", path]
-    check(refusal(wrong) != nil, "refused: \(path) (only the standalone layout; reflection dropped after the cutover)")
+    check(refusal(wrong) != nil, "refused: \(path) (only the entry points of a configured checkout)")
   }
   let mine = PeerCheck.processArguments(getpid())
   check(mine?.0.first?.contains("unit-tests") ?? false, "KERN_PROCARGS2 reads argv")
