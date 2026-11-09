@@ -44,6 +44,26 @@ test('CU-297 rule 1: a keystroke paste into such a frame is judged by the same n
   assert.equal(judge(paste, frame('Password'), { paste: { fromOwner: false, text: '' } }), 'credential', 'a paste into a framed password')
 })
 
+test('CU-297 round 2: a printable key and a menu paste into a frame host meet its name too (with CU-301)', () => {
+  assert.equal(judge(key('1'), frame('Secure Credit Card Frame - CVV')), 'sensitive_data', 'a key into the CVV frame')
+  assert.equal(judge(key('SHIFT', 'H'), frame('Password')), 'credential', 'a key into a framed password')
+  assert.equal(judge({ type: 'hold_key', keys: ['7'] }, frame('Secure CVC input frame')), 'sensitive_data', 'a held key into the CVC frame')
+  assert.equal(judge(key('A'), frame('Comments')), 'allow', 'a key into a comments frame')
+  const menuPaste = { type: 'click', x: 10, y: 10, button: 'left' }
+  const pasteItem = { role: 'menuitem', name: 'Paste' }
+  assert.equal(judge(menuPaste, pasteItem, { paste: { fromOwner: false, text: '', destination: frame('Secure CVC input frame') } }), 'sensitive_data', 'a menu paste whose destination is the CVC frame')
+  assert.equal(judge(menuPaste, pasteItem, { paste: { fromOwner: false, text: 'see you', destination: frame('Comments') } }), 'allow', 'a menu paste into a comments frame')
+})
+
+test('CU-297 round 2: Space on a frame host asks submit - it presses whatever is focused inside (a hosted Pay button)', () => {
+  for (const action of [key('SPACE'), key('SHIFT', 'SPACE'), { type: 'hold_key', keys: ['SPACE'] }]) {
+    assert.equal(judge(action, frame('Secure payment input frame')), 'submit', JSON.stringify(action))
+  }
+  assert.equal(judge(key('META', 'SPACE'), frame('Secure payment input frame')), 'allow', 'Command-Space is the system\'s')
+  assert.equal(judge(key('SPACE'), null), 'allow', 'no focus: nothing to press')
+  assert.equal(judge(key('SPACE'), { ...frame('Notes'), defaultButton: null, defaultButtonRead: true }, {}, 'desktop://'), 'allow', 'the desktop reads no frame host')
+})
+
 test('CU-297 rule 1 negatives: a frame named for nothing takes text; the value rules still judge; the desktop is unchanged', () => {
   assert.equal(judge(type('hello there'), frame('Comments')), 'allow', 'a comments frame')
   assert.equal(judge(type('Great product, fast delivery'), frame('Rich Text Area')), 'allow', 'an editor frame')
