@@ -29,6 +29,10 @@ test('CU-373 refinement: a native toggle state decides the direction; an ARIA, m
   assert.equal(press({ role: 'switch', name: 'Two-factor authentication', checked: false }), 'credential', 'an ARIA-sourced off asks (the derivation pin)')
   assert.equal(press(box('Forward a copy of incoming mail to', true)), 'allow', 'native forwarding on -> off is the safe direction')
   assert.equal(press(box('Forward a copy of incoming mail to', false)), 'credential', 'turning forwarding on asks')
+  const radio = (name) => ({ tag: 'input', inputType: 'radio', role: 'radio', name, checked: false })
+  assert.equal(press(radio('Two-factor authentication off')), 'credential', 'a radio has no direction: its label decides')
+  assert.equal(press(radio('2-Step Verification: Off')), 'credential')
+  assert.equal(press(box('App passwords', false)), 'credential', 'only the protection list goes free when turned on')
 })
 
 test('CU-373 audit: the recorded target of a 2FA-checkbox click carries its checked state', async () => {

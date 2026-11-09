@@ -1107,11 +1107,13 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // direction only when the read is native (an input of type checkbox or radio) - an ARIA-sourced, 'mixed' or missing
       // state asks. A native two-factor/recovery box that is off turns protection ON; a native forwarding box that is on
       // turns forwarding OFF - both the safe direction, so free.
-      const nativeToggle = String(target?.tag ?? '').toLowerCase() === 'input' && /^(checkbox|radio)$/i.test(String(target?.inputType ?? ''))
+      // A native CHECKBOX only - a radio has no on/off direction; its label decides (cu-researcher 21:15Z).
+      const nativeToggle = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
       const nativeOn = nativeToggle && target.checked === true
       const nativeOff = nativeToggle && target.checked === false
       const isForwarding = /forward/i.test(name)
-      const isProtection = !isForwarding && !/app[\s-]?(?:specific[\s-]?)?password|filter/i.test(name)
+      // The explicit protection list (CU-270's two-factor and recovery names), never 'every security name but a few'.
+      const isProtection = /two[\s-]?(?:factor|step)|2[\s-]?step|\b2fa\b|multi[\s-]?factor|recovery\s+(?:e-?mail|phone|codes?)/i.test(name)
       const safeToggle = (isProtection && nativeOff) || (isForwarding && nativeOn)
       if (!focusesEntry && ACCOUNT_SECURITY.test(name) && !protectionOn && !forwardingOff && !safeToggle) classes.push('credential')
       // CU-146: 'Trash' or 'Bin' alone deletes on a control (a toolbar button, a menu item); a sidebar row of that name
