@@ -40,9 +40,10 @@ test('D-089: a drop or a menu paste into the page is refused too', () => {
 })
 
 test('D-089: the browser\'s own chrome, other apps\' opaque areas and named scroll areas keep their rules', () => {
-  assert.equal(at(CHROME, click, { role: 'AXTextField', name: 'Address and search bar', editable: true }), 'allow', 'the address bar')
-  assert.equal(at(CHROME, click, { role: 'AXRadioButton', name: 'New Tab' }), 'allow', 'a tab')
-  assert.equal(at(CHROME, click, { role: 'AXScrollArea', name: 'Bookmarks', opaque: false }), 'allow', 'a described scroll area')
+  assert.equal(at(CHROME, click, { role: 'AXTextField', name: 'Address and search bar', editable: true, inWebArea: false }), 'allow', 'the address bar')
+  assert.equal(at(CHROME, click, { role: 'AXRadioButton', name: 'New Tab', inWebArea: false }), 'allow', 'a tab')
+  assert.equal(at(CHROME, click, { role: 'AXScrollArea', name: 'Bookmarks', opaque: false, inWebArea: false }), 'allow', 'a described scroll area')
+  assert.equal(at(CHROME, click, { role: 'AXMenuItem', name: 'New Window' }), 'allow', 'a menu item, read or not')
   assert.equal(at(PREVIEW, click, page), 'unknown_target', 'an opaque area in a non-browser app still asks, as before (R92)')
   assert.equal(at(CHROME, { type: 'scroll', x: 10, y: 10, scroll_x: 0, scroll_y: 5 }, null), 'allow', 'a scroll reads no target and submits nothing (named limit)')
 })
@@ -50,4 +51,17 @@ test('D-089: the browser\'s own chrome, other apps\' opaque areas and named scro
 test('D-089: browsers are known by exact bundle id, case-insensitively; look-alikes are not', () => {
   for (const id of ['com.google.Chrome', 'COM.GOOGLE.CHROME', 'com.microsoft.edgemac', 'org.mozilla.firefox', 'com.apple.Safari', 'company.thebrowser.Browser']) assert.equal(isBrowserApp(id), true, id)
   for (const id of ['com.google.Chrome.app.abcdef', 'com.apple.finder', 'com.google.Chromex', '', null]) assert.equal(isBrowserApp(id), false, String(id))
+})
+
+test('CU-322: inside a page the browser exposes (Safari; Chrome with AX on), the element is refused by its ancestry, never its name', () => {
+  assert.equal(at(SAFARI, click, { role: 'AXButton', name: 'Sign in', inWebArea: true }), 'block:browser_web_content', 'Safari\'s Sign in button')
+  assert.equal(at(SAFARI, { type: 'type', text: 'hello' }, { role: 'AXTextField', name: 'Search', editable: true, inWebArea: true }), 'block:browser_web_content', 'typing into a page field')
+  assert.equal(at(CHROME, { type: 'keypress', keys: ['ENTER'] }, { role: 'AXTextField', name: 'Email', editable: true, inWebArea: true }), 'block:browser_web_content', 'Return in a page field')
+  assert.equal(at(SAFARI, click, { role: 'AXLink', name: 'Continue', inWebArea: true }), 'block:browser_web_content', 'a link in the page')
+})
+
+test('CU-322 interim: a browser target with no inWebArea read fails closed - the address bar too - until the helper reports it', () => {
+  assert.equal(at(SAFARI, click, { role: 'AXButton', name: 'Sign in' }), 'block:browser_web_content', 'an unread page button')
+  assert.equal(at(CHROME, click, { role: 'AXTextField', name: 'Address and search bar', editable: true }), 'block:browser_web_content', 'the address bar, unread (over-block until the helper ships inWebArea)')
+  assert.equal(at(PREVIEW, click, { role: 'AXButton', name: 'Rotate Left' }), 'allow', 'a non-browser app is not affected')
 })

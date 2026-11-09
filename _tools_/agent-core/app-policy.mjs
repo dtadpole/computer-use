@@ -541,7 +541,14 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     // inside it is refused, never pre-approvable; browser tasks go through the browser environment, which reads the page.
     // The browser's own chrome (address bar, tabs, menus) is judged as before. A precise rule replaces this once the page
     // is readable on the desktop (CU-321).
-    const webArea = (one) => Boolean(one) && (one.role === 'AXWebArea' || (one.role === 'AXScrollArea' && one.opaque === true))
+    // CU-322 (cu-verifier, cu-researcher): a browser that exposes its page (Safari always, Chrome with AX on) hit-tests to
+    // an element inside it - an AXButton 'Sign in', an AXTextField - so the page is also any target the helper reports
+    // inWebArea (an AXWebArea in its parent chain). Until the helper reports it on every browser target, a browser target
+    // with no inWebArea read fails closed unless it is the menu bar or a menu (outside any window's page); the browser's
+    // own chrome (address bar, tabs, toolbar) is judged again once the helper says inWebArea false.
+    const BROWSER_MENU_ROLES = new Set(['AXMenuBar', 'AXMenuBarItem', 'AXMenu', 'AXMenuItem'])
+    const webArea = (one) => Boolean(one) && (one.role === 'AXWebArea' || (one.role === 'AXScrollArea' && one.opaque === true) ||
+      one.inWebArea === true || (one.inWebArea === undefined && !BROWSER_MENU_ROLES.has(one.role)))
     const inBrowser = (one) => isBrowserApp(one?.origin ?? context.frontmostBundleId)
     const reaches = CLICKS.has(action.type) || action.type === 'drag' || action.type === 'hold_key' || isKeyAction(action)
     const webTarget = reaches && webArea(target) && inBrowser(target)
