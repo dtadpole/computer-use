@@ -10,7 +10,7 @@ import { createAppPolicy, opensSelection, panelDestination, panelKind, protected
 import { normaliseText } from './normalise.mjs'
 import { createPanelFolder } from './panel-folder.mjs'
 import { createExclusions } from './exclusions.mjs'
-import { createApprovalStore, createPolicy, isTextEntry, namesPasswordField, screenTask, textNamedSource } from './policy.mjs'
+import { createApprovalStore, createPolicy, isTextEntry, namesPasswordField, screenTask, textNamedSource, looksSensitive } from './policy.mjs'
 import { originPattern } from './sites.mjs'
 import { buildInfo, createRecorder, redactAction, redactTyped, runsDir } from './trajectory.mjs'
 import { MODIFIER_KEYS, normalizeKey } from './keys.mjs'
@@ -682,6 +682,8 @@ export async function runTask(options) {
   // field showed is kept by its key - the first key and a later one into the same box are judged under the same names.
   const placeholderKeys = new Map()
   const remembered = (given) => {
+    // CU-361: a value-shaped nearbyLabel (card, IBAN, key, e-mail) never becomes a name and never reaches a record.
+    if (given && typeof given === 'object' && typeof given.nearbyLabel === 'string' && looksSensitive(given.nearbyLabel.trim())) { const { nearbyLabel, ...rest } = given; given = rest }
     if (!given || typeof given !== 'object' || typeof given.fieldKey !== 'string' || given.fieldKey === '') return given
     let t = given
     if (typeof t.placeholder === 'string' && t.placeholder.trim() !== '') placeholderKeys.set(t.fieldKey, t.placeholder)

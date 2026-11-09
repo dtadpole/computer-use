@@ -538,7 +538,13 @@ function plainTextEntry(target) {
 // CU-349 (cu-coordinator 15:55Z: upgrade only): an entry's placeholder (helper 0.2.63, target.placeholder) is an extra
 // name for the field-name rules below - it can make a field ask ('Notes' with placeholder 'CVV' asks, a named over-ask),
 // never stop one asking, and never replaces the name a question shows. Each rule tests the name and the placeholder apart.
-const entryNamesOf = (target) => [target?.name, typeof target?.placeholder === 'string' && target.placeholder.trim() !== '' ? target.placeholder : null]
+// CU-361 (cu-coordinator 20:23Z): the helper's nearbyLabel (0.2.64: the static text beside a box with no title, caption
+// or placeholder) is one more upgrade-only name - but a value-shaped text (a card, IBAN, key, e-mail) is never a name.
+const nearbyLabelOf = (target) => {
+  const text = typeof target?.nearbyLabel === 'string' ? target.nearbyLabel.trim() : ''
+  return text !== '' && !looksSensitive(text) ? text : null
+}
+const entryNamesOf = (target) => [target?.name, typeof target?.placeholder === 'string' && target.placeholder.trim() !== '' ? target.placeholder : null, nearbyLabelOf(target)]
   .filter((name) => name !== null && name !== undefined)
 const passwordNamedEntry = (target) => isTextEntry(target) && entryNamesOf(target).some((name) => namesWord(name, PASSWORD_NAMES))
 // CU-184 (desktop-rules.md): a text entry named for a password - shown or not, it holds one - unless its name says it is
