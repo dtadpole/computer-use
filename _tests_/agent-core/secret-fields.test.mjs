@@ -60,7 +60,7 @@ test('a text entry named for a recovery phrase, a private key, a one-time code o
 
 test('the name rules need a text entry: a button named Pin, a checkbox, an editable-false element do not ask', () => {
   assert.notEqual(judge({ tag: 'button', role: 'button', name: 'Pin to top', editable: false }, 'x').class, 'credential')
-  assert.equal(judge({ role: 'AXButton', name: 'Password settings' }, 'x').decision, 'allow')
+  assert.equal(judge({ role: 'AXButton', name: 'Password settings' }, 'x').rule, 'page:shortcut', 'no credential rule; a typed key on a button is an app shortcut (CU-363)')
   assert.equal(judge({ role: 'textbox', name: 'Password', editable: false }, 'x').decision, 'allow', 'an ARIA textbox the driver reports not editable')
   assert.equal(judge(web('Order notes'), 'leave it at the door please').decision, 'allow')
 })
@@ -75,7 +75,7 @@ test('CU-167: a social security number, a CVV, a bare Passport, a driving licenc
 })
 
 test('CU-167 negatives: no text entry, or a name that only contains the letters, does not ask', () => {
-  assert.equal(judge({ tag: 'input', role: 'button', name: 'Upload passport photo', editable: false }, 'x').decision, 'allow', 'a button, not a text entry')
+  assert.equal(judge({ tag: 'input', role: 'button', name: 'Upload passport photo', editable: false }, 'x').rule, 'page:shortcut', 'a button, not a text entry - no passport rule; a page shortcut (CU-363)')
   for (const name of ['Classname', 'Mission statement', 'Cvvx code', 'Driver name']) assert.equal(judge(web(name), 'hello').decision, 'allow', name)
   assert.equal(judge(web('ID number'), 'A-1042').decision, 'allow', "'ID number' alone stays allowed (order and member ids - cu-researcher)")
 })

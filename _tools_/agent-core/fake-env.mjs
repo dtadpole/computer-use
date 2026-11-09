@@ -42,7 +42,7 @@ export function createFakeEnvironment({
 } = {}) {
   // CU-363: an unread or body focus on a web page now asks for printable input, so a fake page's default focus is a plain
   // search field (what a scripted 'type' aims at); a test about a missing focus passes focused: null.
-  if (focused === undefined) focused = kind === 'desktop' ? null : { tag: 'input', inputType: 'search', role: 'searchbox', name: 'Search', editable: true }
+  if (focused === undefined) focused = kind === 'desktop' ? { origin: frontmost, role: 'AXTextField', name: 'Notes', editable: true, fingerprint: 'fake-notes' } : { tag: 'input', inputType: 'search', role: 'searchbox', name: 'Search', editable: true }
   const log = []
   const listeners = new Map()
   let currentUrl = url

@@ -72,6 +72,7 @@ test('CU-363 round 3: hold_key, longer text on the body, and the desktop route a
   for (const action of [{ type: 'keypress', keys: ['E'] }, { type: 'type', text: '#' }, { type: 'hold_key', keys: ['E'], duration_ms: 300 }]) {
     assert.equal(j(action, desk, 'app:com.example.mail', { boundMenuItem: { none: true } }).rule, 'page:shortcut', `desktop ${action.type}`)
   }
-  assert.equal(j({ type: 'type', text: 'hello' }, null, 'app:com.example.mail').decision, 'allow', 'desktop nothing focused (D-069) keeps its rule')
+  assert.equal(j({ type: 'type', text: '###' }, null, 'app:com.example.mail').rule, 'page:shortcut', 'desktop: no text entry focused (null) asks too')
+  assert.equal(j({ type: 'type', text: '#' }, { role: 'link', name: 'Message from Pat' }).rule, 'page:shortcut', 'a typed key on a link asks like a keypress')
   assert.equal(j({ type: 'keypress', keys: ['SHIFT', '3'] }, ROW).runOnly, true, "an 'always' answer is capped at the run")
 })

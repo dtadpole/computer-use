@@ -958,7 +958,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         // cu-verifier's live rows: a type outside text entry delivers every character to the page ('###', 'ok #').
         const text = String(action.text ?? '').replace(/[\r\n]/g, '')
         if (text.trim() === '') return null
-        if (target && (CONTROL_ROLE.test(String(target.role ?? '')) || /text|search|combo/i.test(String(target.role ?? '')))) return null
+        // A control is no text entry: its typed text reaches the page's handlers as a keypress would (cu-researcher: rows are
+        // often links). Only an entry-like role the driver reports read-only is left to its own rules.
+        if (target && /text|search|combo/i.test(String(target.role ?? ''))) return null
         return text
       }
       const keys = keysOf(action)
@@ -971,9 +973,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // A key into a frame host goes to the frame's own field (CU-297 judges it by the frame's name), not to a page handler.
     // An unread focus counts (cu-coordinator 17:40Z: printable input of any length into an unread focus asks - a named
     // over-ask: typing into a desktop field whose focus cannot be read asks).
-    // On the desktop a null target is the driver's good read of nothing focused (D-069), not an unread focus; an unread one
-    // arrives as { unknown: true }.
-    const desktopTarget = desktopNoMenu && target != null
+    // On the desktop a null target (nothing focused, or a focus the driver could not read) holds no text entry either, so
+    // printable input there asks too (cu-coordinator 17:53Z) - a typed line break alone is no printable input (D-069 keeps it).
+    const desktopTarget = desktopNoMenu
     const pageShortcut = (browserRoute || desktopTarget) && shortcutKey !== null && !isTextEntry(target) && !framesHost(target) && !keyboard.deletes && !keyboard.activates
     // CU-140 (press-and-drop.md): a drag pressed on a control - a long press, or any drag starting there - is judged like
     // a click on it; a file, row, cell or image at the press point is not judged by its name (dragging it moves it).
