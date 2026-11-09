@@ -113,6 +113,16 @@ const server = http.createServer((req, res) => {
     res.end('<!doctype html><style>body{margin:0}.at{position:absolute;left:20px;width:300px;height:30px}</style><input class="at" style="top:20px" id="notes" value=""><button class="at" style="top:100px" accesskey="d" onclick="window.fired=(window.fired||[]).concat(\'delete\')">Delete account</button><input type="checkbox" id="hb" style="position:absolute;left:20px;top:200px"><label class="at" style="top:200px;left:50px" for="hb" accesskey="h">Verify you are human</label>')
     return
   }
+  // CU-357: a download link (refused by the driver) and the file it names.
+  if (req.url.startsWith('/download-page')) {
+    res.end('<!doctype html><style>body{margin:0}a{position:absolute;left:20px;top:20px;width:300px;height:30px;display:block}</style><a href="/app.dmg?token=t0k3n" download>Download the app</a>')
+    return
+  }
+  if (req.url.startsWith('/app.dmg')) {
+    res.writeHead(200, { 'content-type': 'application/octet-stream', 'content-disposition': 'attachment; filename="app.dmg"' })
+    res.end('not a disk image')
+    return
+  }
   // CU-319: a card form for Chrome's own autofill (CDP Autofill.trigger with a test card built at runtime).
   if (req.url.startsWith('/autofill-form')) {
     res.end('<!doctype html><style>body{margin:0}input,button{position:absolute;left:20px;width:300px;height:30px}</style><form onsubmit="event.preventDefault()"><input id="cardnumber" autocomplete="cc-number" aria-label="Card number" style="top:20px"><input autocomplete="cc-name" aria-label="Name on card" style="top:70px"><input autocomplete="cc-exp" aria-label="Expiry" style="top:120px"><input aria-label="Notes" style="top:170px"><button type="submit" style="top:220px">Pay now</button></form>')
@@ -301,6 +311,12 @@ try {
   // Blink matches access keys on a keyDown with text - so the chord does not fire here today; keyTarget judges it anyway,
   // should the plan change. A change in Chrome or the plan fails this check and is looked at.
   check('the chord does not fire the accesskey through this driver today (rawKeyDown, no text)', JSON.stringify(await evaluate('window.fired || []')) === '[]', await evaluate('window.fired || []'))
+  // CU-357: the refused download is reported on the effect (so the trajectory shows it), its token left out.
+  await env.perform({ type: 'navigate', url: `${origin}/download-page` })
+  let downloadEffect = await env.perform({ type: 'click', x: 100, y: 26, button: 'left' })
+  if (!downloadEffect.notices?.some((n) => n.kind === 'download_refused')) downloadEffect = await env.perform({ type: 'wait', ms: 500 })
+  const refused = (downloadEffect.notices ?? []).find((n) => n.kind === 'download_refused')
+  check('a refused download is on the effect, without its query', refused !== undefined && refused.url === `${origin}/app.dmg`, downloadEffect.notices ?? null)
   await env.perform({ type: 'navigate', url: `${origin}/autofill-form` })
   const payAt = { x: 128, y: 176 }
   const payBefore = await env.inspectPoint(payAt)
