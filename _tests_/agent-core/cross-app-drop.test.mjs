@@ -27,3 +27,35 @@ test('CU-377 negatives: a drag inside one app and a drag that does not travel st
   assert.equal(v.decision, 'allow', 'a press-and-hold that does not travel')
   assert.equal(policy.classify({ type: 'drag', path: [{ x: 1, y: 1 }, { x: 9, y: 9 }] }, { url: 'https://example.com/', target: FILE, dropTarget: null }).rule === 'class:permission', false, 'the browser route keeps its own drop block')
 })
+
+test('CU-377: Upload, Attach and Share file controls ask (a file leaving through another app)', () => {
+  for (const name of ['Upload', 'Upload files', 'Attach', 'Share file']) {
+    const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: 'app:com.tinyspeck.slackmacgap', target: { origin: 'com.tinyspeck.slackmacgap', role: 'AXButton', name } })
+    assert.notEqual(v.decision, 'allow', name)
+  }
+})
+
+test('CU-377 in the loop: a Finder row with no filename is a file source - dragged into Slack it asks, unattended declined', async () => {
+  const { mkdtempSync, rmSync } = await import('node:fs')
+  const { tmpdir } = await import('node:os')
+  const { join } = await import('node:path')
+  const { createScriptedAdapter } = await import('../../_tools_/agent-core/adapter-scripted.mjs')
+  const { createRunControl } = await import('../../_tools_/agent-core/control.mjs')
+  const { createFakeEnvironment } = await import('../../_tools_/agent-core/fake-env.mjs')
+  const { runTask } = await import('../../_tools_/agent-core/loop.mjs')
+  const { createAppApprovals } = await import('../../_tools_/agent-core/app-approvals.mjs')
+  const { readRun } = await import('../../_tools_/agent-core/trajectory.mjs')
+  const tmp = mkdtempSync(join(tmpdir(), 'cu-377-'))
+  try {
+    const FINDER = 'com.apple.finder'
+    const SLACK = 'com.tinyspeck.slackmacgap'
+    const control = createRunControl()
+    const environment = createFakeEnvironment({ kind: 'desktop', control, frontmost: FINDER, targets: ({ x }) => (x < 200 ? { origin: FINDER, role: 'AXRow', name: 'report' } : { origin: SLACK, role: 'AXGroup', name: 'Message' }) })
+    const approvals = createAppApprovals({ path: join(tmp, 'a.json') })
+    for (const app of [FINDER, SLACK]) approvals.grantAlways(app, { by: 'api' })
+    const model = createScriptedAdapter({ frame: { width: 1440, height: 900 }, turns: [{ actions: [{ type: 'drag', path: [{ x: 100, y: 100 }, { x: 600, y: 400 }] }] }, { final: 'done' }] })
+    const result = await runTask({ task: 'share the report', environment, model, control, runsDirectory: join(tmp, 'runs'), build: { commit: 'test', dirty: false }, apps: [FINDER, SLACK], appApprovals: approvals })
+    const dragged = readRun(result.trajectoryDir).events.filter((e) => e.kind === 'action' && e.action?.type === 'drag').at(-1)
+    assert.equal(dragged.status, 'declined')
+  } finally { rmSync(tmp, { recursive: true, force: true }) }
+})

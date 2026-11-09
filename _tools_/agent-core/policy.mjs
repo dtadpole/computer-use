@@ -130,6 +130,8 @@ const WORDS = Object.freeze({
     'join with video', 'join with audio', 'join now', 'start meeting', 'start a meeting', 'accept invitation',
     'decline invitation', 'accept invite', 'decline invite', 'rsvp', 'tweet', 'approve', 'merge pull request',
     'confirm merge', 'squash and merge', 'rebase and merge', 'deploy', 'run workflow',
+    // CU-377 (cu-coordinator 21:43Z): a file leaving through another app - an upload or attachment sends it.
+    'upload file', 'upload files', 'attach', 'attach file', 'attach files', 'share file',
     // cu-researcher's 13:23Z sweep: messages to the sender or the group.
     'unsubscribe', 'report spam', 'report junk', 'leave group', 'leave conversation', 'leave channel',
     // cu-researcher on #98: a cancellation goes to every attendee.
@@ -1104,6 +1106,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         if ((cls === 'purchase' ? namesPurchase(name) : cls === 'delete' ? namesDelete(name) : namesWord(name, WORDS[cls]))) classes.push(cls)
       }
       if (judgesSubmit(name, target)) classes.push('submit')
+      // CU-377: a control named only Upload (an 'Uploader' service keeps its name rules - CU-250).
+      if (/^upload(?:\s*(?:\u2026|\.\.\.))?$/i.test(name.trim())) classes.push('submit')
       // CU-146: 'Trash' or 'Bin' alone deletes on a control (a toolbar button, a menu item); a sidebar row of that name
       // only opens the folder.
       if (TRASH_ROLE.test(String(target?.role ?? '')) && namesWord(name, CONTROL_DELETE)) classes.push('delete')
