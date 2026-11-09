@@ -673,12 +673,12 @@ export function looksSensitive(text) {
   // CU-347 (design note 0.1): two credential shapes the rules above missed (a Google 'AIza' key is already API_TOKEN's;
   // key-shapes.test pins it). An AWS secret access key - exactly 40 characters of [A-Za-z0-9/+] standing alone, with upper and lower
   // case and a digit (named over-ask: any such 40-character run); and a credential assignment - password, passwd, pwd,
-  // secret, token, api key, access key or client secret, then '=' or ':', then a value of 6 or more non-space characters
-  // holding a digit or a symbol (named over-ask: 'token: abc123' in prose).
-  for (const m of value.matchAll(/(?<![A-Za-z0-9/+=])[A-Za-z0-9/+]{40}(?![A-Za-z0-9/+=])/g)) {
+  // secret, token, api key, access key or client secret, - also as the end of an UPPER_SNAKE name (DB_PASSWORD) or a quoted JSON key - then '=' or ':', then a
+  // value of 6 or more non-space characters holding a digit or a symbol (named over-ask: 'token: abc123' in prose).
+  for (const m of value.matchAll(/(?<![A-Za-z0-9/+])[A-Za-z0-9/+]{40}(?![A-Za-z0-9/+=])/g)) {
     if (/[A-Z]/.test(m[0]) && /[a-z]/.test(m[0]) && /\d/.test(m[0])) return 'key'
   }
-  for (const m of value.matchAll(/\b(?:password|passwd|pwd|secret|token|api[_-]?key|access[_-]?key|client[_-]?secret)\s*[=:]\s*["']?([^\s"']{6,})/gi)) {
+  for (const m of value.matchAll(/(?<![A-Za-z0-9])(?:password|passwd|pwd|secret|token|api[_-]?key|access[_-]?key|client[_-]?secret)["']?\s*[=:]\s*["']?([^\s"',}]{6,})/gi)) {
     if (/[\d\W_]/.test(m[1])) return 'key'
   }
   // CU-164: a 0x-prefixed 64-hex private key (the word boundary after 'x' kept the rule above from seeing it); a 0x + 40
