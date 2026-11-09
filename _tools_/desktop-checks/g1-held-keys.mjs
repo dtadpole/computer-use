@@ -245,10 +245,10 @@ export function realDeps() {
       return { copiedFrom: copied.copiedFrom }
     },
     /** CU Fixture built, launched visible and showing its input recorder (the driver launches no app). */
-    startFixture: async () => {
+    startFixture: async ({ seat } = {}) => {
       const { buildFixtureApp } = await import('../desktop-fixture/build.mjs')
       const { launchFixture } = await import('../desktop-fixture/client.mjs')
-      const fixture = await launchFixture(buildFixtureApp().executable, { offscreen: false })
+      const fixture = await launchFixture(buildFixtureApp().executable, { offscreen: false, ...(seat ? { seat } : {}) })
       await fixture.open('input-recorder', { title: 'Input recorder' })
       return { pid: fixture.child.pid, close: () => fixture.close() }
     },
@@ -353,7 +353,7 @@ export async function runG1(options, deps = realDeps()) {
   // captures only its apps' windows, so with no fixture window run A failed at its first capture).
   let fixtureApp
   try {
-    fixtureApp = await deps.startFixture()
+    fixtureApp = await deps.startFixture({ seat })
   } catch (error) {
     return refuse(`CU Fixture could not be launched: ${error?.message ?? error}`)
   }
