@@ -570,8 +570,8 @@ const FRAME_ROWS = [
   ['frame-password', 'correct-horse', 'Password', 'credential', null, 'cu-verifier, real Chrome, main cecb828, #171 card-frames page: typing into the Password frame declined credential (20261109T010450Z-f3980c)'],
   ['frame-card-value', CARD, 'Secure card number input frame', 'sensitive_data', null, "cu-verifier, main 7d31df5, headless browser route: a card value typed into a cross-origin iframe titled with the row's frame name declined sensitive_data, the target read as the iframe host by its title, no input reached the frame (20261109T084009Z-e0c556)"],
   // CU-336 (P3): a cross-origin frame whose title is unread - a CVV or an expiry carries no class without a name.
-  ['frame-cvv-untitled', '123', null, 'unknown_target', 'todo CU-336', 'no live row yet'],
-  ['frame-expiry-untitled', '12/29', null, 'unknown_target', 'todo CU-336', 'no live row yet'],
+  ['frame-cvv-untitled', '123', null, 'sensitive_data', 'todo CU-336', 'no live row yet'],
+  ['frame-expiry-untitled', '12/29', null, 'sensitive_data', 'todo CU-336', 'no live row yet'],
   ['frame-untitled-free-text-negative', 'hello there', null, 'allow', 'open CU-336', 'no live row yet'],
   ['frame-order-notes-negative', 'hello there', 'Order notes', 'allow', null, 'negative - cu-verifier, real Chrome, main cecb828, #171 card-frames page: text typed into the Order notes frame went in (20261109T010501Z-279786)'],
 ]
