@@ -71,6 +71,17 @@ const LOCALE_WORDS = Object.freeze({
     'código de verificación', 'número de tarjeta', 'код подтверждения', 'номер карты', 'pin-код', '確認コード', 'カード番号',
     '인증 코드', '카드 번호', '카드번호'],
 })
+// CU-355 (design note 0.1): personal-ID field names in German, French, Spanish, Russian, Japanese and Korean - the third
+// locale side beside CU-352's action names and CU-345's credential names. '…' leads a German compound ending.
+const LOCALE_ID_NAMES = Object.freeze(['reisepass', '…passnummer', 'geburtsdatum', '…steuernummer', 'steuer id', 'steuer-id',
+  'steueridentifikationsnummer', '…ausweisnummer', 'personalausweis', '…versicherungsnummer', '…kontonummer',
+  'passeport', 'numéro de passeport', 'date de naissance', 'numéro fiscal', "numéro d'identification fiscale", 'numéro de sécurité sociale',
+  'numéro de compte', "carte d'identité",
+  'pasaporte', 'número de pasaporte', 'fecha de nacimiento', 'número de identificación fiscal', 'nif', 'dni', 'número de cuenta',
+  'número de seguridad social',
+  'паспорт', 'номер паспорта', 'дата рождения', 'инн', 'снилс', 'номер счета', 'номер счёта',
+  'パスポート', '旅券番号', '生年月日', 'マイナンバー', '個人番号', '口座番号',
+  '여권', '여권번호', '생년월일', '주민등록번호', '계좌번호', '사업자등록번호'])
 const WORDS = Object.freeze({
   purchase: ['buy', 'pay', 'order', 'place order', 'checkout', 'check out', 'subscribe', 'donate', 'purchase', 'transfer', 'withdraw', 'wire', 'send money',
     // CU-288 (cu-researcher's real-app wordings, round 2): a booking, an upgrade or a renewal commits money.
@@ -460,6 +471,8 @@ const SECRET_NAMES = Object.freeze(['recovery phrase', 'seed phrase', 'secret ph
   'medical record',
   // CU-345: the same secrets named in German, French, Spanish, Russian, Japanese and Korean.
   ...LOCALE_WORDS.secret,
+  // CU-355: passport, birth date, tax, national and account numbers named in the same six languages.
+  ...LOCALE_ID_NAMES,
   // D-062 (cu-coordinator): an e-mail or phone field, and a street-level address, ask by name; a city, postcode or ZIP
   // alone does not, and neither does an IP or web address.
   'email', 'e-mail', 'phone', 'mobile number', 'telephone', 'street', 'address line', 'home address', 'shipping address',
