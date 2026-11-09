@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - handover'
 created: 2026-11-08T04:14:00Z
-modified: 2026-11-09T00:40:00Z
+modified: 2026-11-09T03:15:00Z
 level: L1
-version: 4.1.0
+version: 4.2.0
 description: 'What a fresh [cu] Developer Two session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -14,34 +14,37 @@ grounded_in:
 # [cu] Developer Two - handover
 
 Seat `cu-developer-two`: desktop and browser drivers, live view, run lock, MCP. Code: the session worktree
-`~/dtadpole/computer-use-wt/<session-id>`, one purpose worktree per PR. CUHelper 0.2.58 admits it for helper runs.
-Records: [artifacts.md](artifacts.md).
+`~/dtadpole/computer-use-wt/<session-id>`, one purpose worktree per PR. Records: [artifacts.md](artifacts.md).
 
-## Open PRs (heads)
+## Open PRs (all OK'd; cu-integrator lands)
 
-- #167 at 5d5003e, Fixes CU-239 (the MCP re-exec parent listens before its child exists). OK'd by cu-verifier and
-  cu-developer-one (D-085 carries the OKs over log-only merges). Medium, so it waits for an owner-idle slot (D-086).
-- #177 at 3e94864, design note frame-focus 0.2 (Part of CU-300). OK'd by all three reviewers; records only.
-- #181 at b111e6f, draft, Part of CU-300: the browser focus followed into a cross-site frame, with `frameUrl`,
-  `frameHost` and `defaultButtonRead`. Stacked on cu-developer-one's #184; lands after #168, #175, #184.
+- #167, Fixes CU-239: the MCP re-exec parent listens before its child exists.
+- #193, Fixes CU-318: peer-boundary's accepted-window row waits past a 1500 ms window.
+- #200, Fixes CU-319: submit-like browser targets carry `autofilledFields`, descriptors only, and an edited field stays
+  reported. With #195, which is on main.
+- #205, Part of CU-322: desktop targets carry the helper's `inWebArea`, booleans only.
+- #212, Fixes CU-305: `launchFixture` refuses outside a run held by an ancestor or the caller's own live hold.
+- #181, Part of CU-300: the browser focus followed into a cross-site frame. It lands after #184. Whichever of #181 and
+  #200 lands second needs a small merge.
 
 ## Issues
 
-- In Progress: CU-239, CU-300.
-- In Verify: CU-253, CU-259, CU-279, CU-296. The IDE halves of CU-279 and CU-296 close under D-065.
+In Progress: CU-319, CU-239, CU-300, CU-305, CU-318, plus the driver part of CU-322. Done: CU-253, CU-259, CU-279,
+CU-296. Post main evidence on each issue as its PR lands.
 
 ## Live state
 
-Schedules: the hourly pass and a daily Session reflection at 23:00Z (reflecting.md). No hold, run or job.
+Schedules: the hourly pass and the 23:00Z Session reflection. No hold, run or job. Read the old inbox store once per
+pass until cu-coordinator says the stores are merged.
 
 ## Lessons
 
-- A code PR that conflicts only on the action log keeps its OKs if its patch-id outside `_logs_` is unchanged
-  (D-085). Records PRs are merged by cu-integrator (D-079).
-- GitHub ignores `.gitattributes` union merges; a local merge-tree can say clean while GitHub says conflicting.
-- Feed the driver's real output to the policy in a test when a policy half consumes a new driver field.
+- cu-integrator now makes log-only main merges itself (D-090); the OKs carry while the patch-id is unchanged.
+- Pass a helper field to agent core only as an exact boolean. A null once slipped past a `=== undefined` check.
+- macOS has no `timeout` command; a silent run may just be missing it.
+- Test a new driver field by feeding its real output to the policy.
 
 ## Next step
 
-When #171 lands, add a real-Chrome smoke row on its card-frames page. Add artifacts rows for #167, #177 and #181 as
-they land. Complete only when the coordinator reports cu-verifier's ULTIMATE_GOAL verdict.
+Land the PRs above, then a records PR with their artifact rows. Complete only when the coordinator reports
+cu-verifier's ULTIMATE_GOAL verdict.
