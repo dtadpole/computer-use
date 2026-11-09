@@ -4,9 +4,10 @@ import { before, describe, test } from 'node:test'
 import { buildFixtureApp } from '../../_tools_/desktop-fixture/build.mjs'
 import { launchFixture } from '../../_tools_/desktop-fixture/client.mjs'
 
-// 'named-controls' (CU-245, CU-258, CU-261), offscreen: entries and buttons named by the harness, for live rows decided
-// by a control's name alone. Each entry carries its name as its accessibility label; each button records only
-// 'pressed' with its index; the state reports entry lengths, never their text.
+// 'named-controls' (CU-245, CU-258, CU-261, CU-323), offscreen: entries, buttons, check boxes and menu items named by the
+// harness, for live rows decided by a control's name alone. Each entry carries its name as its accessibility label; each
+// button records only 'pressed' with its index, each check box 'toggled' with its index and state, each Actions menu
+// item 'chosen' with its index; the state reports entry lengths, never their text.
 
 let executable
 before(() => {
@@ -71,5 +72,54 @@ describe('named-controls (live rows decided by a name)', () => {
       assert.equal((await fixture.state()).fields.namedFieldLengths.length, 6)
       assert.equal(audit['field-6'], undefined)
     })
+  })
+
+  test('checkboxes (CU-323): AXCheckBox with the exact names, CJK included; a toggle records its index and state only', async () => {
+    const names = ['Remember this decision', '\u8bb0\u4f4f\u6b64\u51b3\u5b9a', '\u8a18\u4f4f\u6b64\u6c7a\u5b9a', 'Remember me']
+    await withNamed({ checkboxes: names }, async (fixture) => {
+      const audit = await fixture.axAudit()
+      names.forEach((name, index) => assert.deepEqual([audit[`checkbox-${index}`].role, audit[`checkbox-${index}`].name], ['AXCheckBox', name]))
+      const targets = await fixture.targets()
+      for (const index of [0, 1, 2, 3]) assert.ok(targets[`checkbox-${index}`], `no target for checkbox-${index}`)
+      assert.deepEqual((await fixture.state()).fields.namedChecked, [0, 0, 0, 0])
+      await fixture.act({ press: 'checkbox-1' })
+      const after = await fixture.state()
+      assert.deepEqual([after.fields.namedChecked, after.fields.namedToggled], [[0, 1, 0, 0], [1]])
+      const toggles = after.events.filter((event) => event.type === 'toggled')
+      assert.deepEqual(toggles.map(({ index, on }) => [index, on]), [[1, true]])
+      assert.ok(toggles.every((event) => !Object.values(event).includes(names[1])), 'a toggle carries no name')
+    })
+  })
+
+  test('menuItems (CU-323): an Actions menu of AXMenuItem with the exact names; a bound item serves its key equivalent; choosing records the index', async () => {
+    const disguised = ['P', '\u0585', 'st'].join('')
+    await withNamed({ fields: ['Message'], menuItems: ['Cancel Meeting', 'Revert to Saved', { name: disguised, key: 'U', shift: true }] }, async (fixture) => {
+      const actions = (await fixture.call('menuAX')).menus.find((menu) => menu.title === 'Actions')
+      assert.ok(actions, 'the Actions menu is in the menu bar')
+      assert.deepEqual(actions.items.map(({ title, role }) => [title, role]), [['Cancel Meeting', 'AXMenuItem'], ['Revert to Saved', 'AXMenuItem'], [disguised, 'AXMenuItem']])
+      assert.deepEqual([actions.items[2].char, actions.items[2].modifiers], ['U', 1], 'Command-Shift-U: char U, modifiers shift')
+      assert.equal(actions.items[0].char, null, 'an unbound item has no key equivalent')
+      const bound = await fixture.call('menuItemForKey', { key: 'shift+cmd+u' })
+      assert.deepEqual([bound.title, bound.action], [disguised, 'choose:'])
+      assert.equal((await fixture.state()).fields.namedMenuItems, 3)
+      await fixture.act({ menu: 'Revert to Saved' })
+      const after = await fixture.state()
+      assert.deepEqual(after.fields.namedChosen, [1])
+      assert.deepEqual(after.events.filter((event) => event.type === 'chosen').map((event) => event.index), [1])
+      assert.equal(after.events.filter((event) => event.type === 'menu').length, 0, 'not recorded by title')
+    })
+  })
+
+  test('the Actions menu exists only while named-controls is open', async () => {
+    const fixture = await launchFixture(executable, { offscreen: true })
+    try {
+      await fixture.open('named-controls', { title: 'Account', menuItems: ['Cancel Meeting'] })
+      assert.ok((await fixture.call('menuAX')).menus.some((menu) => menu.title === 'Actions'))
+      await fixture.open('named-controls', { title: 'Account', buttons: ['OK'] })
+      assert.deepEqual((await fixture.call('menuAX')).menus.filter((menu) => menu.title === 'Actions'), [])
+      assert.equal((await fixture.state()).fields.namedMenuItems, 0)
+    } finally {
+      await fixture.close()
+    }
   })
 })
