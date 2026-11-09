@@ -381,7 +381,7 @@ enum Accessibility {
   }
 
   /// CU-372: a pop-up button's selected title (its AXValue) and its menu's items, read from the AXMenu among its
-  /// AXChildren (at most 200 children read) - attributes only, never AXPress or AXShowMenu. No menu child: unread.
+  /// AXChildren (at most 200 children read) - attributes only; nothing is pressed or opened. No menu child: unread.
   private static func popUp(_ element: AXUIElement, pullsDown: Bool) -> JSON {
     let selected = pullsDown ? string(element, "AXTitle") : string(element, "AXValue")
     guard let menu = children(element).first(where: { string($0, "AXRole") == "AXMenu" }) else { return PopUpItems.shape(selected: selected, items: nil, pullsDown: pullsDown) }

@@ -492,7 +492,7 @@ enum PasteboardTypes {
 }
 
 /// CU-372: a pop-up button's menu items as AX shows them while it is closed - read from its AXMenu child, never by
-/// opening it (no AXPress, no AXShowMenu). The driver turns the shape into the items a type or an arrow moves the button
+/// opening it (attributes only, no action performed). The driver turns the shape into the items a type or an arrow moves the button
 /// through (typeOptions / keyTarget, as CU-370 does for a web select). Unread is never an empty list: no menu child, a
 /// failed read, no titled item, or more than 50 items give `unread: true`, which agent core asks on. Pure, so the unit
 /// tests decide it.
