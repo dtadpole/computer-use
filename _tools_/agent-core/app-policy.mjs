@@ -541,19 +541,18 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     // inside it is refused, never pre-approvable; browser tasks go through the browser environment, which reads the page.
     // The browser's own chrome (address bar, tabs, menus) is judged as before. A precise rule replaces this once the page
     // is readable on the desktop (CU-321).
-    // CU-322 (cu-verifier, cu-researcher): a browser that exposes its page (Safari always, Chrome with AX on) hit-tests to
-    // an element inside it - an AXButton 'Sign in', an AXTextField - so the page is also any target the helper reports
-    // inWebArea (an AXWebArea in its parent chain). Until the helper reports it on every browser target, a browser target
-    // with no inWebArea read fails closed unless it is the menu bar or a menu (outside any window's page); the browser's
-    // own chrome (address bar, tabs, toolbar) is judged again once the helper says inWebArea false.
-    const BROWSER_MENU_ROLES = new Set(['AXMenuBar', 'AXMenuBarItem', 'AXMenu', 'AXMenuItem'])
-    const webArea = (one) => Boolean(one) && (one.role === 'AXWebArea' || (one.role === 'AXScrollArea' && one.opaque === true) ||
-      one.inWebArea === true || (one.inWebArea === undefined && !BROWSER_MENU_ROLES.has(one.role)))
+    // CU-322 (cu-verifier, cu-researcher; cu-coordinator's fail-closed ruling): a browser that exposes its page (Safari
+    // always, Chrome with AX on) hit-tests to an element inside it - an AXButton 'Sign in', an AXTextField, a link - so the
+    // page is also any target the helper reports inWebArea (an AXWebArea in its parent chain). Until a target is read as
+    // outside the page (inWebArea false), it is treated as inside: no role tells the browser's own chrome from the page,
+    // because a page's ARIA toolbar, tablist, menu and menuitem surface as AXToolbar, AXTabGroup, AXMenu and AXMenuItem.
+    // No target read at all (no element at the point, no focused element for a key) is inside too - keys go to the page.
+    const webArea = (one) => one == null || one.role === 'AXWebArea' || (one.role === 'AXScrollArea' && one.opaque === true) || one.inWebArea !== false
     const inBrowser = (one) => isBrowserApp(one?.origin ?? context.frontmostBundleId)
     const reaches = CLICKS.has(action.type) || action.type === 'drag' || action.type === 'hold_key' || isKeyAction(action)
     const webTarget = reaches && webArea(target) && inBrowser(target)
-    const webDrop = action.type === 'drag' && webArea(context.dropTarget) && inBrowser(context.dropTarget)
-    const webPaste = webArea(context.paste?.destination) && inBrowser(context.paste?.destination)
+    const webDrop = action.type === 'drag' && Object.prototype.hasOwnProperty.call(context, 'dropTarget') && webArea(context.dropTarget) && inBrowser(context.dropTarget)
+    const webPaste = Object.prototype.hasOwnProperty.call(context.paste ?? {}, 'destination') && webArea(context.paste.destination) && inBrowser(context.paste.destination)
     if (webTarget || webDrop || webPaste) {
       const browser = (webTarget ? target : webDrop ? context.dropTarget : context.paste.destination)?.origin ?? context.frontmostBundleId
       return { decision: 'block', class: null, rule: 'browser_web_content', reason: `act inside ${browser}'s page, which the desktop route cannot read - use the browser environment`, app: browser }

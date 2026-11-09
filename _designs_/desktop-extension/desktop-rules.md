@@ -1,7 +1,7 @@
 ---
 title: Desktop block and confirm rules
 created: 2026-11-02T09:53:32Z
-modified: 2026-11-09T01:45:00Z
+modified: 2026-11-09T01:50:00Z
 level: L1
 version: 0.4.13
 description: The rules behind the desktop order of checks - what is blocked by name (system shortcuts, excluded or unknown targets; copy and paste are allowed, D-031), the desktop confirm classes and their pre-approval, and what happens when an excluded app comes to the front.
@@ -25,7 +25,7 @@ Detail for [app policy](app-policy.md)'s order of checks; rule names are what `c
 | `system_service` (CU-249) | a Services item clicked or a chord bound to one (helper flag or default title) |
 | `writing_tools` (CU-277) | a Writing Tools item; Proofread, Rewrite or another AI by title |
 | `excluded:<kind>` | an excluded app's target; `excluded:unknown` with no bundle id (fail closed) |
-| `browser_web_content` (D-089, CU-302, CU-322) | a click, key, typing, hold, drag, drop or menu paste on an approved browser's page or anything in it (an `AXWebArea`, an `opaque` `AXScrollArea`, or a target the helper reports `inWebArea`) - a saved login or a Buy there is unjudged on the desktop; browser tasks use the browser environment. Until the helper reports `inWebArea` on every target, an unread browser target fails closed except the menu bar and menus; with `inWebArea` false the browser's own chrome is judged as before |
+| `browser_web_content` (D-089, CU-302, CU-322) | a click, key, typing, hold, drag, drop or menu paste on an approved browser's page or anything in it (an `AXWebArea`, an `opaque` `AXScrollArea`, or a target the helper reports `inWebArea`) - a saved login or a Buy there is unjudged on the desktop; browser tasks use the browser environment. Any browser target not read as outside the page (`inWebArea` false) counts as inside, a null target too - no role tells the browser's chrome from the page, whose ARIA toolbar, tabs and menus surface as AX ones; with `inWebArea` false the chrome is judged as before |
 
 `system_shortcut` matches a chord holding every key of an entry, in any order, extra modifiers too:
 

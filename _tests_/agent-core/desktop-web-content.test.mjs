@@ -43,7 +43,7 @@ test('D-089: the browser\'s own chrome, other apps\' opaque areas and named scro
   assert.equal(at(CHROME, click, { role: 'AXTextField', name: 'Address and search bar', editable: true, inWebArea: false }), 'allow', 'the address bar')
   assert.equal(at(CHROME, click, { role: 'AXRadioButton', name: 'New Tab', inWebArea: false }), 'allow', 'a tab')
   assert.equal(at(CHROME, click, { role: 'AXScrollArea', name: 'Bookmarks', opaque: false, inWebArea: false }), 'allow', 'a described scroll area')
-  assert.equal(at(CHROME, click, { role: 'AXMenuItem', name: 'New Window' }), 'allow', 'a menu item, read or not')
+  assert.equal(at(CHROME, click, { role: 'AXMenuItem', name: 'New Window', inWebArea: false }), 'allow', 'a menu item read as outside the page')
   assert.equal(at(PREVIEW, click, page), 'unknown_target', 'an opaque area in a non-browser app still asks, as before (R92)')
   assert.equal(at(CHROME, { type: 'scroll', x: 10, y: 10, scroll_x: 0, scroll_y: 5 }, null), 'allow', 'a scroll reads no target and submits nothing (named limit)')
 })
@@ -63,5 +63,16 @@ test('CU-322: inside a page the browser exposes (Safari; Chrome with AX on), the
 test('CU-322 interim: a browser target with no inWebArea read fails closed - the address bar too - until the helper reports it', () => {
   assert.equal(at(SAFARI, click, { role: 'AXButton', name: 'Sign in' }), 'block:browser_web_content', 'an unread page button')
   assert.equal(at(CHROME, click, { role: 'AXTextField', name: 'Address and search bar', editable: true }), 'block:browser_web_content', 'the address bar, unread (over-block until the helper ships inWebArea)')
+  assert.equal(at(SAFARI, click, { role: 'AXMenuItem', name: 'Sign in' }), 'block:browser_web_content', 'an unread menu item - a page\'s ARIA menuitem surfaces as AXMenuItem too')
+  assert.equal(at(SAFARI, click, { role: 'AXToolbar', name: null }), 'block:browser_web_content', 'an unread toolbar - a page\'s ARIA toolbar surfaces as AXToolbar')
   assert.equal(at(PREVIEW, click, { role: 'AXButton', name: 'Rotate Left' }), 'allow', 'a non-browser app is not affected')
+})
+
+test('CU-322 (cu-researcher): no target read at all in an approved browser is the page too - keys go to its focus', () => {
+  assert.equal(at(CHROME, click, null), 'block:browser_web_content', 'a click with no element read at the point')
+  assert.equal(at(CHROME, { type: 'keypress', keys: ['ENTER'] }, null), 'block:browser_web_content', 'Return with no focused element read')
+  assert.equal(at(CHROME, { type: 'type', text: 'x' }, null), 'block:browser_web_content', 'typing with no focused element read')
+  const pasteItem = { role: 'AXMenuItem', name: 'Paste', inWebArea: false }
+  assert.equal(at(CHROME, click, pasteItem, { paste: { fromOwner: false, destination: null } }), 'block:browser_web_content', 'a menu paste whose destination could not be read')
+  assert.equal(at(PREVIEW, { type: 'keypress', keys: ['ENTER'] }, null), 'allow', 'outside a browser a null target keeps its rules')
 })
