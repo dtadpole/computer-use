@@ -113,6 +113,11 @@ const server = http.createServer((req, res) => {
     res.end('<!doctype html><style>body{margin:0}.at{position:absolute;left:20px;width:300px;height:30px}</style><input class="at" style="top:20px" id="notes" value=""><button class="at" style="top:100px" accesskey="d" onclick="window.fired=(window.fired||[]).concat(\'delete\')">Delete account</button><input type="checkbox" id="hb" style="position:absolute;left:20px;top:200px"><label class="at" style="top:200px;left:50px" for="hb" accesskey="h">Verify you are human</label>')
     return
   }
+  // CU-360: a page script (on load, and from a click) navigates to a scheme no app on any machine registers.
+  if (req.url.startsWith('/extproto-page')) {
+    res.end('<!doctype html><style>body{margin:0}button{position:absolute;left:20px;top:20px;width:300px;height:30px}</style><button onclick="location.href=\'x-cu-probe-unregistered-7f3a://click\'">Open</button><script>setTimeout(() => { location.href = \'x-cu-probe-unregistered-7f3a://load\' }, 50)</script>')
+    return
+  }
   // CU-319: a card form for Chrome's own autofill (CDP Autofill.trigger with a test card built at runtime).
   if (req.url.startsWith('/autofill-form')) {
     res.end('<!doctype html><style>body{margin:0}input,button{position:absolute;left:20px;width:300px;height:30px}</style><form onsubmit="event.preventDefault()"><input id="cardnumber" autocomplete="cc-number" aria-label="Card number" style="top:20px"><input autocomplete="cc-name" aria-label="Name on card" style="top:70px"><input autocomplete="cc-exp" aria-label="Expiry" style="top:120px"><input aria-label="Notes" style="top:170px"><button type="submit" style="top:220px">Pay now</button></form>')
@@ -301,6 +306,15 @@ try {
   // Blink matches access keys on a keyDown with text - so the chord does not fire here today; keyTarget judges it anyway,
   // should the plan change. A change in Chrome or the plan fails this check and is looked at.
   check('the chord does not fire the accesskey through this driver today (rawKeyDown, no text)', JSON.stringify(await evaluate('window.fired || []')) === '[]', await evaluate('window.fired || []'))
+  // CU-360: a script-started navigation to another app's scheme reaches no Fetch and no policy; the driver records it.
+  // Only a scheme no app registers is used, so nothing can open on the desktop (Chrome finds no handler).
+  const extBefore = env.session.notices.length
+  await env.perform({ type: 'navigate', url: `${origin}/extproto-page` })
+  await env.perform({ type: 'wait', ms: 300 })
+  await env.perform({ type: 'click', x: 100, y: 26, button: 'left' })
+  await env.perform({ type: 'wait', ms: 300 })
+  const ext = env.session.notices.slice(extBefore).filter((n) => n.kind === 'external_navigation_requested')
+  check('a page script\'s navigation to an app scheme is a notice - on load and from a click, the scheme only', ext.length >= 2 && ext.every((n) => n.url === 'x-cu-probe-unregistered-7f3a:' && n.reason === 'scriptInitiated') && env.state().url === `${origin}/extproto-page`, { ext, url: env.state().url })
   await env.perform({ type: 'navigate', url: `${origin}/autofill-form` })
   const payAt = { x: 128, y: 176 }
   const payBefore = await env.inspectPoint(payAt)

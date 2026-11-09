@@ -117,6 +117,18 @@ test('a start URL refused by the site filter fails the launch and cleans up', as
   assert.deepEqual([counts.started, counts.stopped, counts.released], [1, 1, 1])
 })
 
+test('CU-360: a page\'s navigation to another app\'s scheme is a notice (the scheme only, the reason); web schemes are not', async () => {
+  const { connection, options } = harness()
+  const env = await launchBrowserEnvironment(options)
+  const before = env.session.notices.length
+  connection.emit('Page.frameRequestedNavigation', { frameId: 'F-S1', reason: 'scriptInitiated', url: 'shortcuts://run-shortcut?name=Wipe', disposition: 'currentTab' }, 'S1')
+  connection.emit('Page.frameRequestedNavigation', { frameId: 'F-S1', reason: 'anchorClick', url: 'https://shop.example/next', disposition: 'currentTab' }, 'S1')
+  connection.emit('Page.frameRequestedNavigation', { frameId: 'F-S9', reason: 'scriptInitiated', url: 'zoommtg://zoom.us/join', disposition: 'currentTab' }, 'S9')
+  const added = env.session.notices.slice(before).map(({ kind, url, reason }) => [kind, url, reason])
+  assert.deepEqual(added, [['external_navigation_requested', 'shortcuts:', 'scriptInitiated']], 'the app scheme of this page; not the web navigation, not another session\'s')
+  await env.close()
+})
+
 test('while a dialog is held: the last screenshot comes back stale, page text is the dialog, targets are refused', async () => {
   const { connection, options } = harness()
   const env = await launchBrowserEnvironment(options)

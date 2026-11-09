@@ -379,6 +379,21 @@ export class BrowserSession extends EventEmitter {
       if (message?.sessionId === page.sessionId) handler(params ?? {})
     })
     on('Page.frameAttached', ({ frameId }) => page.frames.add(frameId))
+    // CU-360: a navigation to a scheme Chrome hands to another app (shortcuts:, zoommtg:, ...) never reaches Fetch and
+    // needs no action of the run - a page script can start it. Chrome reports the request first (measured: reason
+    // scriptInitiated, then 'Failed to launch ...' for a scheme with no handler); it becomes a notice, the scheme only.
+    on('Page.frameRequestedNavigation', ({ url, reason }) => {
+      let scheme
+      try {
+        scheme = new URL(String(url)).protocol
+      } catch {
+        return
+      }
+      if (['http:', 'https:', 'about:', 'data:', 'blob:', 'javascript:', 'chrome-error:'].includes(scheme)) return
+      const notice = { kind: 'external_navigation_requested', url: scheme, reason: typeof reason === 'string' ? reason : null, at: Date.now() }
+      this.notices.push(notice)
+      this.emit('notice', notice)
+    })
     on('Page.frameDetached', ({ frameId }) => {
       page.frames.delete(frameId)
       page.worlds.delete(frameId)

@@ -1,8 +1,8 @@
 ---
 title: chrome-browser environment
 created: 2026-11-01T09:52:00Z
-modified: 2026-11-09T14:58:03Z
-version: 0.13.0
+modified: 2026-11-09T17:23:38Z
+version: 0.13.1
 description: The browser environment driver - headless Google Chrome over CDP with a fresh profile, a fixed viewport, every canonical action, a two-layer site filter and the per-run clipboard.
 grounded_in:
   - source: _designs_/system-architecture/environment-driver.md@0.4.0
@@ -23,9 +23,9 @@ Writer: cu-developer-two. Contract: [environment driver](../../_designs_/system-
 | [`network.mjs`](network.mjs), [`proxy.mjs`](proxy.mjs) | site filter layers: `Fetch` for page requests, a 127.0.0.1 proxy for WebSocket and the rest |
 | [`executor.mjs`](executor.mjs), [`human-input.mjs`](human-input.mjs) | one action: gates, dialog rule, steps, settle, `ActionEffect`; a person's input during take-over |
 | [`input-plan.mjs`](input-plan.mjs), [`keys.mjs`](keys.mjs), [`coords.mjs`](coords.mjs) | actions as exact CDP steps; key names; frame and viewport spaces |
-| [`clipboard.mjs`](clipboard.mjs), [`page-scripts.mjs`](page-scripts.mjs) | per-run clipboard (D-011); in-page readers - a click on a `<label>` is judged as the control it activates, named by the label when it has no name of its own (CU-351); `keyTarget` answers an accesskey chord with the element it fires (CU-353) |
+| [`clipboard.mjs`](clipboard.mjs), [`page-scripts.mjs`](page-scripts.mjs) | per-run clipboard (D-011); in-page readers - a click on a `<label>` is judged as the control it activates, named by the label when it has no name of its own (CU-351); `keyTarget` answers an accesskey chord with the element it fires (CU-353); a page's navigation to another app's scheme is a session notice (CU-360) |
 | [`errors.mjs`](errors.mjs) | `EnvironmentError` codes |
-| [`smoke.mjs`](smoke.mjs) | live check: one gated Chrome, 49 checks |
+| [`smoke.mjs`](smoke.mjs) | live check: one gated Chrome, 50 checks |
 
 Tests: [`_tests_/chrome-browser/`](../../_tests_/chrome-browser/INDEX.md).
 
