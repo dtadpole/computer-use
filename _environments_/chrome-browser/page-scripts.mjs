@@ -110,12 +110,15 @@ export function collectPageText(doc, win, maxChars) {
  * button, an input of type button, a [role=button] or a link - a script may submit on its click) or a text entry (its
  * Return may submit). Inside a form it takes that form's fields, plus those in open shadow roots under the form; outside
  * any form (a sign-in built without <form>, cu-researcher's F1/F2) the autofilled fields of its whole document, open
- * shadow roots included (sign-in web components, N1; at most 2000 elements walked). Anything else: null. Only :autofill
- * (or Chrome's older :-webkit-autofill) is asked - never a value.
+ * shadow roots included (sign-in web components, N1). The walk stops at 2000 elements, and a stopped walk answers
+ * `{ truncated: true }` rather than a partial list, so a page padded past the bound fails closed (cu-researcher).
+ * Anything else: null. Only :autofill (or Chrome's older :-webkit-autofill) is asked - never a value.
  *
  * Chrome clears :autofill as soon as a field is edited, so 'a saved password plus one typed character' would launder the
- * saved value (cu-verifier). A field once seen autofilled in this document is remembered in this world (a WeakSet on the
- * driver's isolated-world global, which the page cannot see) and stays reported, marked edited, after it stops matching.
+ * saved value (cu-verifier). A field once seen autofilled in this document is remembered and stays reported, marked
+ * edited, after it stops matching. The memory is a WeakSet on `globalThis` of the world this function runs in: the driver
+ * resolves the element into its own isolated world (Page.createIsolatedWorld 'cu-driver') and calls it there, so the
+ * page's main-world scripts cannot reach or reset it.
  * Returns `{ fields, edited }` (parallel lists, at most 20), or null. Self-contained: it runs serialized in the page.
  */
 export function autofilledFields(el) {
@@ -140,15 +143,19 @@ export function autofilledFields(el) {
   const control = tag === 'button' || (tag === 'input' && type === 'button') || role === 'button' || (tag === 'a' && el.getAttribute && el.getAttribute('href') !== null)
   if (!(submits || control || entry)) return null
   // The text fields under `root`, descending into open shadow roots; bounded so a huge page cannot stall the read.
+  let truncated = false
   const deep = (root) => {
     const found = []
     let walked = 0
     const visit = (node) => {
-      if (!node || walked > 2000) return
+      if (!node || truncated) return
       const all = typeof node.querySelectorAll === 'function' ? Array.from(node.querySelectorAll('*')) : []
       for (const child of all) {
         walked += 1
-        if (walked > 2000) return
+        if (walked > 2000) {
+          truncated = true
+          return
+        }
         const name = String(child.tagName || '').toLowerCase()
         if (name === 'input' || name === 'textarea' || name === 'select') found.push(child)
         if (child.shadowRoot) visit(child.shadowRoot)
@@ -160,6 +167,7 @@ export function autofilledFields(el) {
   const owned = form ? Array.from(form.elements || []) : []
   const ownedSet = new Set(owned)
   const scope = form ? [...owned, ...deep(form).filter((field) => !ownedSet.has(field))] : deep(el.ownerDocument)
+  if (truncated) return { fields: [], edited: [], truncated: true }
   const seen = globalThis.__cuAutofillSeen instanceof WeakSet ? globalThis.__cuAutofillSeen : (globalThis.__cuAutofillSeen = new WeakSet())
   const fields = []
   const edited = []

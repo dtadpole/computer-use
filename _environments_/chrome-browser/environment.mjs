@@ -310,6 +310,8 @@ class BrowserEnvironment {
       })).result.result
       if (found?.subtype === 'null' || found?.objectId === undefined) return described
       const part = (name, returnByValue) => this.session.send(target, 'Runtime.callFunctionOn', { objectId: found.objectId, functionDeclaration: `function () { return this.${name} }`, returnByValue })
+      // A walk the page's size stopped answers truncated: fail closed rather than trust a partial list (cu-researcher).
+      if ((await part('truncated', true)).result.result.value === true) return { ...described, autofillRead: false, autofilledFields: null }
       const edited = (await part('edited', true)).result.result.value
       const list = (await part('fields', false)).result.result
       if (!Array.isArray(edited) || typeof list?.objectId !== 'string') throw new Error('autofill read: no field list')

@@ -86,6 +86,16 @@ test("CU-319: fields in open shadow roots are found too (sign-in web components,
   assert.deepEqual(fieldsOf(autofilledFields(el('button', { type: 'submit', form }))), [hidden], 'inside a form: its shadow roots too')
 })
 
+test('CU-319: a walk stopped by the page\'s size answers truncated, never a partial list (fail closed, cu-researcher)', () => {
+  freshMemory()
+  const saved = el('input', { type: 'password', autofill: true })
+  const padding = Array.from({ length: 2001 }, () => el('div', {}))
+  const padded = Object.assign(el('button', { type: 'submit' }), { ownerDocument: { querySelectorAll: () => [...padding, saved] } })
+  assert.deepEqual(autofilledFields(padded), { fields: [], edited: [], truncated: true })
+  const small = Object.assign(el('button', { type: 'submit' }), { ownerDocument: { querySelectorAll: () => [...padding.slice(0, 1990), saved] } })
+  assert.deepEqual(fieldsOf(autofilledFields(small)), [saved], 'under the bound: the field')
+})
+
 test('CU-319: an engine without :autofill falls back to :-webkit-autofill; at most 20 fields', () => {
   freshMemory()
   const old = el('input', { type: 'password', autofill: true, webkitOnly: true })
@@ -143,6 +153,7 @@ function harness(world) {
         if (world.fails) throw Object.assign(new Error('Execution context was destroyed'), { code: -32000 })
         return { result: { result: world.scope === null ? { type: 'object', subtype: 'null', value: null } : { type: 'object', objectId: 'scope-1' } } }
       }
+      if (fn.includes('return this.truncated')) return { result: { result: { type: 'boolean', value: world.truncated === true } } }
       if (fn.includes('return this.edited')) return { result: { result: { type: 'object', value: world.scope.map((id) => (world.edited ?? []).includes(id)) } } }
       if (fn.includes('return this.fields')) return { result: { result: { type: 'object', subtype: 'array', objectId: 'fields-1' } } }
       if (fn.includes('CONTROL_ROLES') && params.returnByValue === false) return { result: { result: { type: 'object', objectId: params.objectId } } }
@@ -194,6 +205,9 @@ test('CU-319: inspectPoint on a Sign in button carries the autofilled fields as 
   const unread = await env.inspectPoint(at)
   assert.deepEqual([unread.autofillRead, unread.autofilledFields], [false, null], 'a failed read on a control: agent core asks on its submit')
   world.fails = false
+  world.truncated = true
+  assert.deepEqual(Object.entries(await env.inspectPoint(at)).filter(([k]) => k.startsWith('autofill')), [['autofillRead', false], ['autofilledFields', null]], 'a truncated walk: unread, asked on a submit')
+  world.truncated = false
   world.scope = null
   const plain = await env.inspectPoint(at)
   assert.deepEqual(['autofillRead' in plain, 'autofilledFields' in plain], [false, false], 'no submit-like target: nothing added')
