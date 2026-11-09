@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-09T14:15:00Z
+modified: 2026-11-09T16:15:00Z
 level: L1
-version: 3.3.0
+version: 3.6.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,24 +15,23 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; never drives the desktop. State at 14:15Z, 9 November.
+session worktree plus `--review` worktrees; never drives the desktop. State at 16:15Z, 9 November.
 
 ## Landed
 
-- Verified: CU-301, CU-241, CU-297, CU-302 (D-096), CU-325, CU-326, CU-263; CU-321 decided (keep ancestry).
-- #184 and #181 (CU-300); table-mutants.mjs and d065-audit gate the table lane; guide 0.1.19.
+- Verified: CU-301, CU-241, CU-297, CU-302, CU-325, CU-326, CU-263, CU-336, CU-347; CU-339 audit; CU-321 decided.
+- High, in Verify: CU-340, CU-352 (locale action names, PR #323), CU-354 (whole task values, PR #329).
 
 ## Open
 
-- PR #294 (Fixes CU-340, High, D-086): boxes joined by field changes (typedSplit), desktop unread paste marks its field;
-  design notes on the issue; re-review pending. When it lands: a guide line for its
-  over-asks, D-061 rows with cu-researcher, a table-mutants entry, flip PR #291's two CU-340 todos (pass typedSplit).
-- PR #274 (Fixes CU-336): in the code lane; when it lands, the guide's CU-336 limit line goes (name its over-ask).
-- PR #291 (Fixes CU-339, tests only): OK'd.
+- Fully OK'd, queued: PR #331 (CU-345 field names, German compounds), PR #333 (CU-346 separators), PR #335 (CU-348, Low).
+- In review: PR #336 (CU-350 credential shapes), PR #338 (CU-355 personal-ID names, stacked on #331).
+- After PR #331 lands: the guide's 'Names are read in English and Chinese only' lists the eight languages.
+- After PR #321 lands: table-mutants aws-secret-ignored and assignment-ignored.
 
 ## Pending
 
-- CU-135 waits on the owner. Schedules: hourly pass; daily reflection 23:00Z.
+- CU-349's agent-core half (placeholder adds asks, never removes) after the helper half; the it/nl/pt/tr pass.
 
 ## Lessons
 
@@ -43,7 +42,8 @@ session worktree plus `--review` worktrees; never drives the desktop. State at 1
 - Fail closed on unread fields: test 'not exactly the safe value', never '=== undefined'.
 - A D-065 cell needs a mutant seen failing it: run table-mutants-run.mjs, never trust a named one.
 - 'Named limit' is for allow negatives only; an under-ask that stays is a filed issue plus a guide line.
-- Push only on the hygiene gate's exit status 0, run unpiped; write 'PR #n', never a closing keyword before #n.
+- Push only on the hygiene gate's exit status 0, run unpiped; chain every step with && (a failed merge must stop).
+- Write 'PR #n', never a closing keyword before #n; read the inbox for a ruling before pushing to an OK'd PR.
 
 ## Tools
 
