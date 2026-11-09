@@ -88,11 +88,22 @@ enum Accessibility {
     return frontmostPid() == pid
   }
 
-  /// Ask an approved app to expose its whole tree (Electron apps build it only when `AXManualAccessibility` is set).
-  static func setManualAccessibility(pid: pid_t) {
+  /// Ask an approved app to expose its whole tree (Electron apps build it only when `AXManualAccessibility` is set), or
+  /// with `on: false` give that back at the run's end (CU-329). Bounded by a 0.5 s messaging timeout.
+  static func setManualAccessibility(pid: pid_t, on: Bool = true) {
     let app = AXUIElementCreateApplication(pid)
     AXUIElementSetMessagingTimeout(app, 0.5)
-    _ = AXUIElementSetAttributeValue(app, "AXManualAccessibility" as CFString, kCFBooleanTrue)
+    _ = AXUIElementSetAttributeValue(app, "AXManualAccessibility" as CFString, on ? kCFBooleanTrue : kCFBooleanFalse)
+  }
+
+  /// CU-329: the app's AXManualAccessibility before the helper writes it - nil when unset or unreadable.
+  static func manualAccessibility(pid: pid_t) -> Bool? {
+    let app = AXUIElementCreateApplication(pid)
+    AXUIElementSetMessagingTimeout(app, 0.5)
+    var value: CFTypeRef?
+    guard AXUIElementCopyAttributeValue(app, "AXManualAccessibility" as CFString, &value) == .success, let value,
+          CFGetTypeID(value) == CFBooleanGetTypeID() else { return nil }
+    return CFBooleanGetValue((value as! CFBoolean))
   }
 
   /// The title of the window an element belongs to; read only for an approved app (the caller checks).

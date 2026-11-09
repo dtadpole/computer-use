@@ -697,7 +697,7 @@ func button(_ kind: String, _ x: Int, _ y: Int) -> JSON { ["kind": .string(kind)
 func testDispatcherBasics() {
   let h = Harness(fixtureWorld)
   let hello = h.dispatcher.hello(token: "t0k")
-  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.61", "the hello opens the run")
+  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.62", "the hello opens the run")
   check(hello["mode"] == "dry-run" && hello["grants"] == ["screen": true, "accessibility": true, "postEvents": true, "listenEvents": false], "a dry-run hello says so, with all four grants")
   check(h.ask("capture", ["maxSize": size800])["code"] == "no_scope", "capture needs a scope")
   check(h.ask("input", ["events": [key("keyDown", 1)], "mode": "global"])["code"] == "no_scope", "input needs a scope")
@@ -2003,6 +2003,21 @@ func testWebArea() {
   check(world.ask("focused")["element"]?["inWebArea"] == true, "keys: the focused field's chain says inWebArea: true")
 }
 
+func testManualAccessibilityRestore() {
+  // CU-329: the helper's one Accessibility write is undone at the run's end, only where the helper made it.
+  check(ManualAccessibilityRestore.shouldWrite(prior: nil) && ManualAccessibilityRestore.shouldWrite(prior: false), "unset or false: write true and remember")
+  check(!ManualAccessibilityRestore.shouldWrite(prior: true), "already true (the user or another assistive app): leave it alone")
+  _ = ManualAccessibilityRestore.restoreAll(write: { _ in }, isRunning: { _ in true })
+  for pid: pid_t in [303, 101, 202] { ManualAccessibilityRestore.remember(pid) }
+  ManualAccessibilityRestore.remember(101)
+  var written: [pid_t] = []
+  let restored = ManualAccessibilityRestore.restoreAll(write: { written.append($0) }, isRunning: { $0 != 202 })
+  check(restored == [101, 303] && written == [101, 303], "every remembered pid still running gets false back, once, in order; a quit app is skipped")
+  check(ManualAccessibilityRestore.restoreAll(write: { written.append($0) }, isRunning: { _ in true }).isEmpty && written.count == 2,
+        "a second end (bye racing a broken link) writes nothing again")
+  check(ManualAccessibilityRestore.processRuns(getpid()) && !ManualAccessibilityRestore.processRuns(99_999_999), "processRuns: this process yes, an impossible pid no")
+}
+
 @main
 struct UnitTests {
   static func main() {
@@ -2043,6 +2058,7 @@ struct UnitTests {
     testSelectedItems()
     testGrantRecheck()
     testWebArea()
+    testManualAccessibilityRestore()
     testEndWatchdog()
     // Informational: whether the process that ran these tests is genuine node (true for Node.js Foundation builds).
     let parentIsNode = PeerCheck.satisfiesNodeRequirement(pid: getppid(), token: nil)

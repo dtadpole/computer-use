@@ -138,6 +138,11 @@ dispatcherOptions.syntheticResetsIdle = options.idleSyntheticResets
 if let capMs = options.settleCapMs { dispatcherOptions.settleCap = capMs / 1000 }
 // CU-64 G1: a live helper always keeps the held-keys marker; a dry run only when a test names one.
 dispatcherOptions.heldMarkerPath = options.dryRun ? options.heldMarker : (options.heldMarker ?? HeldMarker.defaultPath)
+/// CU-329: give back the one Accessibility write at the run's end (each write bounded by its 0.5 s timeout).
+func restoreManualAccessibility() {
+  let restored = ManualAccessibilityRestore.restoreAll(write: { Accessibility.setManualAccessibility(pid: $0, on: false) }, isRunning: ManualAccessibilityRestore.processRuns)
+  if !restored.isEmpty { note("restored AXManualAccessibility on \(restored.count) app(s)") }
+}
 let requests = DispatchQueue(label: "com.reflection.cu-helper.requests")
 /// Taken once by whichever end comes first; a second end waits here until the process is gone.
 let endLock = NSLock()
@@ -150,6 +155,7 @@ let dispatcher = Dispatcher(
     endLock.lock()
     note("end: bye")
     link.shutdown()
+    restoreManualAccessibility()
     exit(0)
   })
 
@@ -162,6 +168,7 @@ func endRun(_ reason: String) -> Never {
     // waited on for about a second - then leave stopped.json for the driver (#130) and exit.
     let released = EndWatchdog.boundedRelease { progress in EndWatchdog.releaseHeld(dispatcher.heldMirror, progress: progress, markerPath: dispatcherOptions.heldMarkerPath) }
     if let marker = dispatcherOptions.heldMarkerPath { StoppedMarker.write(reason: why, released: released, besideHeldMarker: marker) }
+    restoreManualAccessibility()
     note("end watchdog: '\(why)' did not finish within \(Int(EndWatchdog.bound)) s; released \(released); exit \(EndWatchdog.exitCode)")
     _exit(EndWatchdog.exitCode)
   }
@@ -169,6 +176,7 @@ func endRun(_ reason: String) -> Never {
   endLock.lock()
   note("end: \(reason)")
   dispatcher.shutdown()
+  restoreManualAccessibility()
   exit(0)
 }
 

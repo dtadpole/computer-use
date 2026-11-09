@@ -5,7 +5,7 @@ import Foundation
 /// The helper's identity; `build.sh` writes the same bundle id into Info.plist.
 enum HelperIdentity {
   static let bundleId = "com.reflection.cu-helper"
-  static let version = "0.2.61"
+  static let version = "0.2.62"
   /// The value every synthetic event carries in `kCGEventSourceUserData`: 0x43555345, ASCII "CUSE"
   /// (input-and-targets.md, verify-kit's SYNTHETIC_TAG). Not a secret: an event from another process with this tag
   /// could only fail to pause the run, never act.
@@ -224,6 +224,37 @@ enum PanelMarker {
     }
     return ending == .top ? nil : "unknown"
   }
+}
+
+/// CU-329 (helper-boundary 0.3.12): the helper's one Accessibility write - AXManualAccessibility = true on an approved
+/// app - is undone at the run's end. Read first: an app that already has it set is left alone and not remembered.
+/// Otherwise the pid is remembered, and every end writes false back once for each remembered pid still running. Safe
+/// from any thread: the lock guards only the set, never an Accessibility call.
+enum ManualAccessibilityRestore {
+  private static let lock = NSLock()
+  private static var remembered = Set<pid_t>()
+
+  /// Whether to write true (and remember the pid): only when the app does not already have it set.
+  static func shouldWrite(prior: Bool?) -> Bool { prior != true }
+
+  static func remember(_ pid: pid_t) {
+    lock.lock(); remembered.insert(pid); lock.unlock()
+  }
+
+  /// The remembered pids to write false back to: those still running, in order.
+  static func toRestore(_ pids: Set<pid_t>, isRunning: (pid_t) -> Bool) -> [pid_t] { pids.filter(isRunning).sorted() }
+
+  /// Takes the remembered set once and writes false back to each pid still running; returns the pids written.
+  @discardableResult
+  static func restoreAll(write: (pid_t) -> Void, isRunning: (pid_t) -> Bool) -> [pid_t] {
+    lock.lock(); let taken = remembered; remembered.removeAll(); lock.unlock()
+    let pids = toRestore(taken, isRunning: isRunning)
+    for pid in pids { write(pid) }
+    return pids
+  }
+
+  /// Whether a process still exists (kill with signal 0; EPERM means it exists under another user).
+  static func processRuns(_ pid: pid_t) -> Bool { kill(pid, 0) == 0 || errno == EPERM }
 }
 
 /// CU-322 (D-089): whether an element is, or descends from, an AXWebArea - the page of a browser that exposes its web
