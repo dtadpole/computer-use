@@ -24,12 +24,13 @@ for (const [locale, rows] of Object.entries(BUTTONS)) {
 }
 
 test('CU-345: PIN, security code and password fields named in six languages ask for what is typed', () => {
-  for (const name of ['Passwort', 'Sicherheitscode', 'Mot de passe', 'Contraseña', 'Пароль', 'パスワード', '暗証番号', '비밀번호', '인증번호']) {
+  for (const name of ['Passwort', 'Sicherheitscode', 'Mot de passe', 'Contraseña', 'Пароль', 'パスワード', '暗証番号', '비밀번호', '인증번호',
+    'Geheimzahl', 'Bestätigungscode', 'Prüfnummer', 'Código de verificación', 'Код подтверждения', 'Kartennummer', 'カード番号', 'Numéro de carte', 'Número de tarjeta', 'Номер карты', '카드 번호', 'Kreditkartennummer', 'Debitkartennummer', 'Bankkartennummer', 'Kartenprüfnummer', 'Bankkartengeheimzahl', 'Einmalcode', 'SMS-Code', 'Bestätigungs-Code', 'Bestätigungs Code', 'Kreditkarten-Nummer', 'Karten Nummer']) {
     assert.notEqual(typeInto(name), 'allow', name)
   }
 })
 
 test('CU-352 negatives: cancel, back, a shopping list, a longer Russian word and ordinary fields stay allowed', () => {
   for (const name of ['Abbrechen', 'Annuler', 'Cancelar', 'Отмена', 'キャンセル', '취소', 'Einkaufsliste', 'Удалиться', 'Zurück']) assert.equal(click(name), 'allow', name)
-  for (const name of ['Vorname', 'Nom', 'Ciudad', 'Город', '名前', '이름']) assert.equal(typeInto(name), 'allow', name)
+  for (const name of ['Vorname', 'Nom', 'Ciudad', 'Город', '名前', '이름', 'Benutzername', 'ユーザー名', 'Suche', 'Código postal', 'Kartenname', 'Kartentyp', 'Gutscheincode', 'Rabattcode', 'Promo-Code', 'Ländercode', 'Barcode', 'Postleitzahl', 'SMS-Benachrichtigung']) assert.equal(typeInto(name), 'allow', name)
 })
