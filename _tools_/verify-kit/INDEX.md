@@ -1,8 +1,8 @@
 ---
 title: Verify kit
 created: 2026-11-01T09:33:46Z
-modified: 2026-11-08T10:59:37Z
-version: 1.13.0
+modified: 2026-11-09T04:55:00Z
+version: 1.14.0
 description: Helpers the [cu] checks share - starting a check browser through the D-014 registry and the D-005 memory gate, a reference CDP input executor for canonical actions, and the oracle plan runner.
 grounded_in:
   - source: _context_/team-operations/decision-log.yaml (D-005, D-012, D-014)
@@ -28,6 +28,7 @@ Judge-side only: it imports nothing from agent-core or the environments it helps
 | [png.mjs](png.mjs) | `decodePng()`: 8-bit RGB or RGBA, all five filters, for reading a screenshot pixel; `solidPng` writes a solid-colour PNG for dry-run worlds |
 | [build-sources.mjs](build-sources.mjs) | where a recorded build commit lives: this repository, reflection, then the history checkout named only by the local config or `CU_VERIFY_HISTORY` (CU-222); reads the local config itself, not through agent-core |
 | [plan-runner.mjs](plan-runner.mjs) | `runPlan`: resolve each oracle step from fresh target boxes, refuse offscreen clicks, wait out scrolls, follow new tabs; `denyDownloads` |
+| [d065-audit.mjs](d065-audit.mjs) | CU-324 (D-093): every D-065 cell of the D-059/D-061 tables must cite `mutant: <verifier> <name>` that exists and, applied alone, fails that cell; `node _tools_/verify-kit/d065-audit.mjs` on a clean tree, exit 0 when all hold |
 
 A closed gate makes a check unjudged (exit 3), never a pass. Suite:
 [`_tests_/verify-kit/`](../../_tests_/verify-kit/INDEX.md). Owner: cu-verifier; other seats may import it.
