@@ -126,16 +126,23 @@ test('CU-263 negatives: a bare Verify, a terms box, a google.com frame, look-ali
   assert.equal(judge({ type: 'scroll', x: 10, y: 10, scroll_x: 0, scroll_y: 100 }, box("I'm not a robot")), 'allow', 'a scroll')
 })
 
-test('CU-263 on the desktop as the loop calls it: app-policy hands a named check in an approved browser to the person', () => {
+test('CU-263 on the desktop as the loop calls it: app-policy hands a named check in an approved app to the person; in an approved browser D-089 refuses the page first', () => {
+  // A native app's embedded sign-in sheet (Mail's account setup, a game launcher) can show a provider's check outside any browser.
+  const MAIL = 'com.apple.mail'
   const SAFARI = 'com.apple.Safari'
-  const apps = createAppPolicy({ scope: [SAFARI] })
+  const apps = createAppPolicy({ scope: [MAIL, SAFARI] })
+  apps.grantScope(MAIL, { approved: true, answeredBy: 'api' })
   apps.grantScope(SAFARI, { approved: true, answeredBy: 'api' })
-  const at = (action, target) => apps.classify(action, { frontmostBundleId: SAFARI, target: { origin: SAFARI, fingerprint: 't', ...target } })
+  const at = (app, action, target) => apps.classify(action, { frontmostBundleId: app, target: { origin: app, fingerprint: 't', ...target } })
   for (const name of ["I'm not a robot", 'Verify you are human', '我不是机器人']) {
-    const v = at(click, { role: 'AXCheckBox', name })
+    const v = at(MAIL, click, { role: 'AXCheckBox', name })
     assert.deepEqual([v.decision, v.rule], ['handoff', 'captcha'], name)
+    // D-089 (#204): a desktop target in an approved browser not read as outside the page is refused - stricter than the
+    // hand-off, and the browser route (where CU-263 hands it off) is the place for pages.
+    const inBrowser = at(SAFARI, click, { role: 'AXCheckBox', name })
+    assert.deepEqual([inBrowser.decision, inBrowser.rule], ['block', 'browser_web_content'], `${name} in Safari`)
   }
-  assert.equal(at(click, { role: 'AXCheckBox', name: 'Remember me' }).decision, 'allow', 'a plain check box in the same app')
+  assert.equal(at(MAIL, click, { role: 'AXCheckBox', name: 'Remember me' }).decision, 'allow', 'a plain check box in the same app')
 })
 
 test('CU-263: a CAPTCHA hand-off is never pre-approved', () => {
