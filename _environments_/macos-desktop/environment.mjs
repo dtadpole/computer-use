@@ -1772,6 +1772,12 @@ class DesktopEnvironment {
       editable: typeof element.editable === 'boolean' ? element.editable : null,
       box: rectToFrame(rect, this.frame),
       opaque,
+      // CU-322 (D-089): the element is, or descends from, a browser's web area (AXWebArea) - the helper's word, from the
+      // parent chain at the hit test and the focused element's chain for keys. A browser that exposes its page (Safari;
+      // Chrome with accessibility on) hit-tests to an AXButton or AXTextField inside it, which D-089 refuses on the
+      // desktop route as web content. true or false as the helper says; null from a helper that does not say (agent
+      // core decides what unknown means). Outside the fingerprint, never in run records.
+      inWebArea: typeof element.inWebArea === 'boolean' ? element.inWebArea : null,
       // CU-76: part of a system privacy or permission prompt (the helper's, from structure); agent core hands it off.
       systemPrompt: element.systemPrompt === true,
       // CU-154: a menu item's key equivalent ({ char, modifiers }), so agent core knows Copy, Cut and Paste by the
