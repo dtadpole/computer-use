@@ -71,7 +71,14 @@ final class SystemCapabilities: Capabilities {
     lock.lock()
     let fresh = manualAccessibility.insert(pid).inserted
     lock.unlock()
-    if fresh { Accessibility.setManualAccessibility(pid: pid) }
+    guard fresh else { return }
+    // CU-329: read first; write - and remember for the run's end - only when the app does not already have it set.
+    let prior = Accessibility.manualAccessibility(pid: pid)
+    ManualAccessibilityRestore.recordRead(prior)
+    if ManualAccessibilityRestore.shouldWrite(prior: prior) {
+      Accessibility.setManualAccessibility(pid: pid)
+      ManualAccessibilityRestore.remember(pid)
+    }
   }
 
   private var timeoutsLimited = false

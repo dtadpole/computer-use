@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-09T12:10:00Z
+modified: 2026-11-09T14:15:00Z
 level: L1
-version: 3.2.0
+version: 3.3.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,18 +15,20 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; never drives the desktop. State at 12:10Z, 9 November.
+session worktree plus `--review` worktrees; never drives the desktop. State at 14:15Z, 9 November.
 
 ## Landed
 
 - Verified: CU-301, CU-241, CU-297, CU-302 (D-096), CU-325, CU-326, CU-263; CU-321 decided (keep ancestry).
-- #184 and #181 (CU-300); table-mutants.mjs and d065-audit gate the table lane; guide 0.1.19 (CAPTCHA handed over).
+- #184 and #181 (CU-300); table-mutants.mjs and d065-audit gate the table lane; guide 0.1.19.
 
 ## Open
 
-- PR #274 (Fixes CU-336, OK'd by cu-researcher and cu-verifier, live before/after on the merge): full code gate.
-  When it lands: drop the guide's CU-336 limit line and name its over-ask (a short numeric entry in an unnamed
-  third-party frame); cu-verifier repeats the live trio on main; cu-developer-two owns the driver fallback.
+- PR #294 (Fixes CU-340, High, D-086): boxes joined by field changes (typedSplit), desktop unread paste marks its field;
+  design notes on the issue; re-review pending. When it lands: a guide line for its
+  over-asks, D-061 rows with cu-researcher, a table-mutants entry, flip PR #291's two CU-340 todos (pass typedSplit).
+- PR #274 (Fixes CU-336): in the code lane; when it lands, the guide's CU-336 limit line goes (name its over-ask).
+- PR #291 (Fixes CU-339, tests only): OK'd.
 
 ## Pending
 

@@ -509,6 +509,25 @@ func handle(_ message: [String: Any]) {
     case "sandboxAX":
       // CU-252: the selected rows of open-selection as Accessibility shows them in process - role, AXFilename, AXURL.
       reply(id, ["rows": OpenSelection.accessibilitySelection()])
+    case "manualAX":
+      // CU-329: AXManualAccessibility on this app's element - the value (null while never set) and every outside write.
+      reply(id, FixtureApplication.report())
+    case "manualAXPreset":
+      // CU-329 test seam: preset true (the leave-alone case) or back to no value (null); the write log restarts.
+      FixtureApplication.preset(params["on"] as? Bool)
+      reply(id, FixtureApplication.report())
+    case "manualAXSelfTest":
+      // CU-329: an in-process write through the Accessibility entry point, read back the same way - the plumbing only.
+      NSApp.accessibilitySetValue(NSNumber(value: true), forAttribute: FixtureApplication.manualAttribute)
+      let read = NSApp.accessibilityAttributeValue(FixtureApplication.manualAttribute) as? NSNumber
+      let settable = NSApp.accessibilityIsAttributeSettable(FixtureApplication.manualAttribute)
+      let listed = NSApp.accessibilityAttributeNames().contains(FixtureApplication.manualAttribute)
+      var out = FixtureApplication.report()
+      out["readBack"] = read?.boolValue ?? NSNull()
+      out["settable"] = settable
+      out["listed"] = listed
+      FixtureApplication.preset(nil)
+      reply(id, out)
     case "menuAX":
       // CU-238: what AppKit serves Accessibility for menu-compose's own menus (Message, Later) - title, enabled and the
       // key-equivalent attributes only, read in process; the helper's menuKey reads the same values across processes.
@@ -563,7 +582,8 @@ Fixture.shared.offscreen = arguments.contains("--offscreen")
 if let i = arguments.firstIndex(of: "--sandbox"), i + 1 < arguments.count { Fixture.shared.sandbox = arguments[i + 1] }
 if let i = arguments.firstIndex(of: "--role"), i + 1 < arguments.count { Fixture.shared.role = arguments[i + 1] }
 
-let app = NSApplication.shared
+// CU-329: the application class answers AXManualAccessibility like an Electron app (ManualAccessibility.swift).
+let app = FixtureApplication.shared
 app.setActivationPolicy(Fixture.shared.offscreen ? .accessory : .regular)
 Menus.install()
 Evidence.install()

@@ -1034,6 +1034,35 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if ((action.type === 'type' || action.type === 'keypress') && context.typed && typeof context.typed.before === 'string' && typeof context.typed.next === 'string' && context.typed.next !== '') {
       const valueIn = (text) => text !== '' && Boolean(looksSensitive(withoutTaskValues(text, context.task)))
       if (!valueIn(context.typed.before) && valueIn(context.typed.before + context.typed.next)) classes.push('sensitive_data')
+      // CU-340: digits typed into a field that took a desktop paste whose text this run cannot read (D-031) may complete a
+      // value the paste began (a card pasted in half, typed in half) - they ask. Named over-ask: digits after any such paste.
+      if (context.typed.afterUnreadPaste === true && /\d/.test(context.typed.next) && /^[\d\s-]+$/.test(context.typed.next)) classes.push('sensitive_data')
+    }
+    // CU-340 (design note 0.1): a page that splits one value across boxes - an SSN in 3/2/4, a card in 4x4, an expiry or a
+    // phone in parts - leaves each box's buffer with only its part. The loop passes the last three other fields typed in
+    // the same page or app within the last eight typed actions (typedSplit.parts, oldest first); when this field's text
+    // and every joined part are short (1-6 letters or digits), the parts joined with this field's text - with no
+    // separator, a dash or a space - are judged by the value rules, and the action that completes a value asks
+    // sensitive_data. Named over-ask: short entries that happen to join into a value (a phone typed as area code, prefix
+    // and line asks as a phone).
+    if ((action.type === 'type' || action.type === 'keypress') && context.typedSplit && Array.isArray(context.typedSplit.parts)) {
+      const shortPart = (t) => /^[A-Za-z0-9]{1,6}$/.test(String(t ?? '').trim())
+      const before = String(context.typedSplit.before ?? '')
+      const here = (before + String(context.typedSplit.next ?? '')).trim()
+      if (shortPart(here)) {
+        const parts = context.typedSplit.parts.map((t) => String(t ?? '').trim())
+        let joinedAsks = false
+        for (let k = 1; k <= Math.min(3, parts.length) && !joinedAsks; k++) {
+          const used = parts.slice(-k)
+          if (!used.every(shortPart)) break
+          for (const sep of ['', '-', ' ']) {
+            const whole = [...used, here].join(sep)
+            const prior = [...used, before.trim()].filter((t) => t !== '').join(sep)
+            if (looksSensitive(withoutTaskValues(whole, context.task)) && !looksSensitive(withoutTaskValues(prior, context.task))) { joinedAsks = true; break }
+          }
+        }
+        if (joinedAsks) classes.push('sensitive_data')
+      }
     }
     // CU-268: in the browser a control whose name has one word mixing scripts asks permission - never pre-approved, so a
     // pre-approved submit cannot wave a disguised Delete or Pay through (cu-developer-one's ruling) - where no rule found a

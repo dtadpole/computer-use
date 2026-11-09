@@ -1,8 +1,8 @@
 ---
 title: macos-desktop environment
 created: 2026-11-02T09:00:00Z
-modified: 2026-11-06T09:55:26Z
-version: 0.8.1
+modified: 2026-11-09T08:10:00Z
+version: 0.9.0
 description: The macOS desktop environment driver of M7 - a Swift helper app that alone holds the grants, a line protocol to it over a peer-checked socket, the team-wide desktop-run lock, and a Node driver that launches with an empty scope, grows it by addApp, records each pointer action's mapping and settles the first input after a human resume, tested only against a fake helper.
 grounded_in:
   - source: _designs_/desktop-extension/INDEX.md@0.4.0
@@ -27,7 +27,7 @@ Writers: cu-developer-two (Node), cu-developer-three (`helper/`, D-026). Contrac
 | File | Owns |
 |---|---|
 | [`environment.mjs`](environment.mjs) | `launchDesktopEnvironment` (lock, helper, frame, pause); `addApp` confirms the frame; `planBatch`; `mapping`; out-of-scope guards `capture_leak`, `target_out_of_scope` (D-035, D-036) |
-| [`run-lock.mjs`](run-lock.mjs) | `acquireDesktopRun`: one desktop run team-wide (D-024); a seat's hold (CLI `hold [--wait-free]`; CU-75) refuses others `desktop_held` |
+| [`run-lock.mjs`](run-lock.mjs) | `acquireDesktopRun`: one desktop run team-wide (D-024); a seat's hold (CLI `hold`, CU-75) refuses others `desktop_held`; only its token ends it (CU-327) |
 | [`helper-link.mjs`](helper-link.mjs) | framing, hello, `no_hello`, requests by id, capture files, seams; the socket server's peer check |
 | [`launch.mjs`](launch.mjs) | `open -g -n -a CUHelper.app` with `--driver-node`, `--driver-entry`, opt-in `--enforce-boundary`, `--lock-path`; `spawn` seam |
 | [`input-plan.mjs`](input-plan.mjs), [`keys.mjs`](keys.mjs), [`coords.mjs`](coords.mjs) | actions as helper events; key codes, copy and paste chords too (D-031); frame and global points; `pid` mode keyboard-only (Q-D3) |
