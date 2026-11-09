@@ -442,8 +442,15 @@ class BrowserEnvironment {
     if ((await frame.ready) !== true) return undefined
     const box = await this.#contentBox(page, node.backendNodeId)
     const target = await this.#frameTarget(page, frame)
-    const remote = await this.session.evaluate(target, FRAME_FOCUS_EXPRESSION, { returnByValue: false, timeoutMs: FRAME_FOCUS_MS })
-    if (remote?.objectId === undefined) return undefined
+    let remote = await this.session.evaluate(target, FRAME_FOCUS_EXPRESSION, { returnByValue: false, timeoutMs: FRAME_FOCUS_MS })
+    if (remote?.objectId === undefined) {
+      // The page already names the frame focused, but the frame's own renderer may not have handled the click that moved
+      // the focus there yet (measured in real Chrome: one smoke run in three read the host right after the click). Two of
+      // the frame's animation frames, then one more read; still nothing focused inside is the host, as before.
+      await this.session.evaluate(target, TWO_FRAMES_EXPRESSION, { timeoutMs: FRAME_FOCUS_MS })
+      remote = await this.session.evaluate(target, FRAME_FOCUS_EXPRESSION, { returnByValue: false, timeoutMs: FRAME_FOCUS_MS })
+      if (remote?.objectId === undefined) return undefined
+    }
     const inner = (await this.session.send(target, 'DOM.describeNode', { objectId: remote.objectId })).result.node
     const host = await this.#hostFacts(page, node)
     const described = await this.#describe(target, inner.backendNodeId, frame.targetId, { node: inner, offset: { x: box.x, y: box.y }, editableBody: true, fallbackName: String(inner.nodeName ?? '').toUpperCase() === 'BODY' ? host.name : null })

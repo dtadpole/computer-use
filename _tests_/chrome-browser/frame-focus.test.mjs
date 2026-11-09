@@ -38,7 +38,11 @@ function harness(world) {
   const connection = new FakeConnection({
     'Runtime.evaluate': (params, sessionId) => {
       if (sessionId === PAGE) return { result: { result: world.pageFocus === null ? { type: 'object', subtype: 'null', value: null } : { type: 'object', objectId: `node-${world.pageFocus ?? 40}` } } }
-      if (sessionId === FRAME) return world.frameFocus()
+      if (sessionId === FRAME && String(params.expression).includes('requestAnimationFrame')) {
+        world.settles = (world.settles ?? 0) + 1
+        return { result: { result: { type: 'boolean', value: true } } }
+      }
+      if (sessionId === FRAME) return world.frameFocus(params)
       return { result: { result: { value: true } } }
     },
     'DOM.describeNode': (params, sessionId) => ({ result: { node: NODES[sessionId]?.[idOf(params)] ?? NODES[sessionId]?.[5] } }),
@@ -134,6 +138,21 @@ test('CU-300: every failed read keeps the iframe element - no frame session, a p
   assert.equal((await env.focusedElement()).fingerprint, host.fingerprint, 'a read that never answers: the host at the bound')
   const took = Date.now() - began
   assert.ok(took >= FRAME_FOCUS_MS - 50 && took < FRAME_FOCUS_MS + 1500, `bounded: ${took} ms`)
+  await env.close()
+})
+
+test("CU-300: a frame whose renderer has not yet handled the click is read again after two of its animation frames (real Chrome raced it)", async () => {
+  let reads = 0
+  const isFocusRead = (params) => String(params?.expression).includes('designMode')
+  const world = { frameFocus: (params) => (isFocusRead(params) && ++reads === 1 ? { result: { result: { type: 'object', subtype: 'null', value: null } } } : focusOn(5)()) }
+  const { options, attach } = harness(world)
+  const env = await launchBrowserEnvironment(options)
+  await attach(env)
+  const focused = await env.focusedElement()
+  assert.deepEqual([focused.tag, focused.name, reads, world.settles], ['input', 'CVC', 2, 1], 'nothing focused at first; after the settle the inner field')
+  reads = 0
+  world.frameFocus = (params) => { if (isFocusRead(params)) reads += 1; return { result: { result: { type: 'object', subtype: 'null', value: null } } } }
+  assert.deepEqual([(await env.focusedElement()).tag, reads], ['iframe', 2], 'still nothing inside after the settle: the host, after exactly one more read')
   await env.close()
 })
 
