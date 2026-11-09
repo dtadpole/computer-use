@@ -1,20 +1,20 @@
 ---
 title: Computer use on the Mac mini - one-page status for the owner
 created: 2026-11-06T04:55:00Z
-modified: 2026-11-09T19:50:00Z
+modified: 2026-11-09T20:45:00Z
 level: L2
 version: 1.7.0
 status: unverified
 description: 'What the [cu] team has built and proven, what is left, and the owner actions that are still open - one page, kept current by the coordinator.'
 grounded_in:
   - source: ULTIMATE_GOAL.md@2.0.0
-  - source: _seats_/cu-verifier/ultimate-goal-2-verdict.md@0.9.73
+  - source: _seats_/cu-verifier/ultimate-goal-2-verdict.md@0.9.75
   - source: _context_/team-operations/decision-log.yaml (D-034, D-052, D-063, D-079 to D-102)
 ---
 
 # Computer use on the Mac mini - status for the owner
 
-State at 9 November 2026, 19:50 UTC.
+State at 9 November 2026, 20:45 UTC.
 
 ## Where it stands
 
@@ -22,10 +22,10 @@ Seven of the nine ULTIMATE_GOAL 2.0 rows hold on live evidence. Two are open, an
 with you:
 
 - **Consent and safety** holds only when no Urgent or High under-ask is open (D-063). **No Urgent or High item is
-  open** (verdict 0.9.73), and both consent tables are signed. Today the team's own audits found eight High gaps and
+  open** (verdict 0.9.75), and both consent tables are signed. Today the team's own audits found nine High gaps and
   closed each live: CU-340, CU-347, CU-351, CU-352, CU-353 and CU-354 by mid-afternoon, then CU-363 (a website's own
-  one-key shortcuts, such as '#' to delete in a mail list, pressed or typed outside a text field) and CU-365 (the
-  same with Ctrl or Command chords). Medium fixes closed live today include field names in six more languages,
+  one-key shortcuts, such as '#' to delete in a mail list, pressed or typed outside a text field), CU-365 (the
+  same with Ctrl or Command chords) and CU-370 (choosing 'Delete' in a list, menu or radio group by keyboard). Medium fixes closed live today include field names in six more languages,
   personal-ID names, unusual separators, less common password forms and links carrying a password. What the row
   still needs is CU-135, the Replace-sheet chain, which only you can answer (a scripted consent answer is refused by
   design).
@@ -41,7 +41,7 @@ with you:
 | Row | State |
 |---|---|
 | environment, perception, action contract, agent loop | hold live (CUHelper 0.2.62 installed 9 Nov; 0.2.63, which adds placeholder text, installs in the next idle window) |
-| consent and safety | no Urgent or High item open (0.9.73); both tables signed; waits on CU-135 in the owner session |
+| consent and safety | no Urgent or High item open (0.9.75); both tables signed; waits on CU-135 in the owner session |
 | human control | open: step 4 with you (CU-11, CU-119, CU-135, CU-203) |
 | integration | DSH and heddle each completed a fixture task (CU-15) |
 | trajectory | holds; capture stays inside approved apps |
