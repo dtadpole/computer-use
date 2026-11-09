@@ -203,10 +203,27 @@ function withoutOrderReferences(name) {
  * still looks sensitive - a value the task does not name - still asks.
  */
 const TOKEN_EDGES = /^[^\w+@]+|[^\w]+$/g
+// CU-354 (design note 0.1): whole values, never tokens. The task's own values are the shortest runs of 1-6 of its tokens
+// that the value rules accept; only those, typed back whole (any case, any run of spaces between their tokens), are taken
+// out of the typed text. A task word that is only part of a value ('1234' in 'Visa ending in 1234') or a keyword
+// ('password') exempts nothing.
+function taskValuesOf(task) {
+  const tokens = String(task ?? '').split(/\s+/).map((t) => t.replace(TOKEN_EDGES, '')).filter(Boolean)
+  const values = []
+  for (let i = 0; i < tokens.length; i++) {
+    for (let k = 1; k <= 6 && i + k <= tokens.length; k++) {
+      const run = tokens.slice(i, i + k).join(' ')
+      if (looksSensitive(run)) { values.push(tokens.slice(i, i + k)); break }
+    }
+  }
+  return values
+}
 function withoutTaskValues(text, task) {
-  const given = new Set(String(task ?? '').toLowerCase().split(/\s+/).map((t) => t.replace(TOKEN_EDGES, '')).filter(Boolean))
-  if (given.size === 0) return String(text ?? '')
-  return String(text ?? '').split(/(\s+)/).map((t) => (given.has(t.toLowerCase().replace(TOKEN_EDGES, '')) ? ' ' : t)).join('')
+  let out = String(text ?? '')
+  for (const parts of taskValuesOf(task)) {
+    out = out.replace(new RegExp(parts.map((part) => escapeRegExp(part)).join('\\s+'), 'gi'), ' ')
+  }
+  return out
 }
 
 // CU-178: a name and a list entry are compared normalised - lower case, a curly apostrophe straight, licence spelled
