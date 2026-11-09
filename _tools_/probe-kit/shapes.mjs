@@ -20,8 +20,11 @@ export const web = Object.freeze({
   textbox: (name = 'Search', extra = {}) => ({ tag: 'input', inputType: 'text', role: 'textbox', name, editable: true, ...extra }),
   password: (name = 'Password') => ({ tag: 'input', inputType: 'password', isPassword: true, role: 'textbox', name, editable: true }),
   contentEditable: (name = 'Message body') => ({ tag: 'div', role: 'textbox', name, editable: true }),
-  div: (name = '') => ({ tag: 'div', role: '', name, editable: false }),
-  row: (name = 'Invoice') => ({ tag: 'div', role: 'option', name, editable: false }),
+  /** A plain div: the accessibility tree names its role 'generic' (cu-developer-two's live probe, 23:29Z). */
+  div: (name = '') => ({ tag: 'div', role: 'generic', name, editable: false }),
+  /** A focused grid row, and a list option (role option) - both real shapes a key can act on. */
+  row: (name = 'Invoice') => ({ tag: 'div', role: 'row', name, editable: false }),
+  listItem: (name = 'Invoice') => ({ tag: 'div', role: 'option', name, editable: false }),
   button: (name = 'Archive') => ({ tag: 'button', role: 'button', name, editable: false }),
   /** A link carries its scheme only (environment.mjs linkScheme), never the URL. */
   link: (name = 'Invoice', scheme = 'https') => ({ tag: 'a', role: 'link', name, editable: false, linkScheme: scheme }),
@@ -33,11 +36,12 @@ export const web = Object.freeze({
   /** A toggle button: pressed from aria-pressed (PR #393; true, false or 'mixed'; omitted when unknown). */
   toggleButton: (name, pressed) => ({ tag: 'button', role: 'button', name, editable: false, ...flag('pressed', pressed) }),
   /** A same-origin frame editor's body: focusedElement answers it as an editable body (#369); a plain body is null. */
-  frameEditorBody: () => ({ tag: 'body', role: '', name: '', editable: true }),
+  frameEditorBody: () => ({ tag: 'body', role: 'generic', name: '', editable: true }),
   /** A closed native select: a control, never editable; Chrome's accessibility role is combobox (CU-370). */
   select: (name = 'Bulk actions') => ({ tag: 'select', role: 'combobox', name, editable: false }),
   /** keyTarget's answers (CU-370, environment.mjs): the option or radio a key lands on, or an unread choice. */
-  option: (name) => ({ tag: 'option', role: 'option', name, editable: false, selectOption: true }),
+  /** tag 'option' for a native option; an ARIA option is a 'div' (cu-developer-two, 22:15Z). */
+  option: (name, tag = 'option') => ({ tag, role: 'option', name, editable: false, selectOption: true }),
   radioChoice: (name) => ({ tag: 'input', inputType: 'radio', role: 'radio', name, editable: false, radioChoice: true, selectOption: true }),
   unreadChoice: (base, readFailed = false) => ({ ...base, optionUnread: true, ...(readFailed ? { readFailed: true } : {}) }),
 })

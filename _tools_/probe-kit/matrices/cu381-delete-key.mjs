@@ -5,7 +5,7 @@ import { check, webPolicy } from '../policies.mjs'
 
 const url = 'https://mail.fixture.example/inbox'
 const p = webPolicy()
-const targets = { null: web.none, div: web.div(), row: web.row(), button: web.button(), link: web.link() }
+const targets = { null: web.none, div: web.div(), row: web.row(), listItem: web.listItem(), button: web.button(), link: web.link() }
 const keys = [['DELETE'], ['BACKSPACE'], ['SHIFT', 'DELETE'], ['ALT', 'BACKSPACE'], ['CTRL', 'BACKSPACE']]
 const rows = []
 for (const [name, target] of Object.entries(targets)) for (const k of keys) {

@@ -6,7 +6,7 @@ import { check, webPolicy } from '../policies.mjs'
 const url = 'https://shop.fixture.example/admin'
 const p = webPolicy(['https://shop.fixture.example'])
 const keys = [['ARROWDOWN'], ['ARROWUP'], ['PAGEDOWN'], ['HOME'], ['END'], ['D'], ['ENTER'], ['SPACE'], ['ARROWRIGHT']]
-const asks = { "option 'Delete'": web.option('Delete'), "option 'Buy now'": web.option('Buy now'), "radio 'Delete my account'": web.radioChoice('Delete my account'),
+const asks = { "option 'Delete'": web.option('Delete'), "ARIA option 'Delete'": web.option('Delete', 'div'), "option 'Buy now'": web.option('Buy now'), "radio 'Delete my account'": web.radioChoice('Delete my account'),
   'unread select': web.unreadChoice(web.select()), 'read-failed select': web.unreadChoice(web.select(), true) }
 const rows = []
 for (const [name, target] of Object.entries(asks)) for (const k of keys) {
