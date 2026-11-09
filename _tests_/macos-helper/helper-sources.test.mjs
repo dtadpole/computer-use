@@ -243,3 +243,11 @@ test('every end but bye arms the end watchdog before anything that can wait on a
   }
   assert.match(body, /_exit\(EndWatchdog\.exitCode\)/, 'the watchdog exits with _exit, which runs no atexit handler and takes no lock of ours')
 })
+
+test('CU-349: describe() reports an entry\'s placeholder from AXPlaceholderValue and never reads its AXValue for it', () => {
+  const access = readFileSync(join(SOURCES, 'Accessibility.swift'), 'utf8')
+  const line = access.split('\n').find((l) => l.includes('"placeholder":'))
+  assert.ok(line, 'describe() has a placeholder key')
+  assert.match(line, /Placeholder\.applies\(role: role\) \? Placeholder\.pick\(role: role, raw: string\(element, "AXPlaceholderValue"\)\) : nil/)
+  assert.doesNotMatch(line, /AXValue"/, 'the placeholder is never the field\'s value')
+})
