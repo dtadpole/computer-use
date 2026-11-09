@@ -603,7 +603,8 @@ class BrowserEnvironment {
     const described = await this.#describe(page, node.backendNodeId, page.mainFrameId, { node, fallbackName: text })
     if (described === null || described === undefined) return undefined
     const radio = described.inputType === 'radio' || described.role === 'radio'
-    return { ...described, name: described.name || text, ...(radio ? { radioChoice: true } : { selectOption: true }) }
+    // Option or radio, the chosen element carries selectOption (one flag for the policy; cu-coordinator 20:11Z).
+    return { ...described, name: described.name || text, selectOption: true, ...(radio ? { radioChoice: true } : {}) }
   }
 
   /**

@@ -328,7 +328,7 @@ try {
   const multiType = await env.typeOptions({ type: 'type', text: 'Del' })
   await evaluate("document.getElementById('keep').focus()")
   const radioDown = await env.keyTarget({ type: 'keypress', keys: ['ArrowDown'] })
-  check("PageDown and a multiple select are unread (asked); ArrowDown on 'Keep my account' names 'Delete my account'", pageDown?.optionUnread === true && multiDown?.optionUnread === true && multiType?.unread === true && radioDown?.radioChoice === true && /Delete my account/.test(radioDown?.name ?? ''), { pageDown: pageDown?.optionUnread, multiDown: multiDown?.optionUnread, multiType, radio: radioDown && { name: radioDown.name, role: radioDown.role, inputType: radioDown.inputType } })
+  check("PageDown and a multiple select are unread (asked); ArrowDown on 'Keep my account' names 'Delete my account'", pageDown?.optionUnread === true && multiDown?.optionUnread === true && multiType?.unread === true && radioDown?.selectOption === true && radioDown?.radioChoice === true && /Delete my account/.test(radioDown?.name ?? ''), { pageDown: pageDown?.optionUnread, multiDown: multiDown?.optionUnread, multiType, radio: radioDown && { name: radioDown.name, role: radioDown.role, inputType: radioDown.inputType } })
   await env.perform({ type: 'navigate', url: `${origin}/autofill-form` })
   const payAt = { x: 128, y: 176 }
   const payBefore = await env.inspectPoint(payAt)
