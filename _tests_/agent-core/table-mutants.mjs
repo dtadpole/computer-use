@@ -53,6 +53,8 @@ export const MUTANTS = Object.freeze([
     rows: ['navigate-card number inside a longer digit run'] },
   { name: 'split-join-ignored', why: 'a value split across unnamed boxes is never judged joined (CU-340)', mutations: [{ file: POLICY, find: "        if (joinedAsks) classes.push('sensitive_data')\n", replace: '' }],
     rows: ['split-card 4x4 typed key by key into unnamed boxes', 'split-SSN 3/2/4 typed per box into unnamed boxes'] },
+  { name: 'locale-submit-dropped', from: 'consent-routes', why: 'a Russian Send button is not read as submit (CU-352)', mutations: [{ file: POLICY, find: "'submit return', 'submit tax return', ...ZH_WORDS.submit, ...LOCALE_WORDS.submit],", replace: "'submit return', 'submit tax return', ...ZH_WORDS.submit]," }],
+    rows: ['web-click-one-script-name'] },
   { name: 'terminal-typed', from: 'desktop-consent', rows: ['ide-terminal-type-command', 'ide-terminal-return', 'ide-terminal-localized-label', 'ide-terminal-japanese-label', 'ide-terminal-zh-in-cursor', 'ide-terminal-zh-real-label', 'ide-terminal-zh-hant-real-label', 'ide-debug-console-zh-hans', 'ide-debug-console-zh-hant'] },
   { name: 'held-chord-unjudged', from: 'desktop-consent', rows: ['system-chord-held-log-out'] },
 ])
