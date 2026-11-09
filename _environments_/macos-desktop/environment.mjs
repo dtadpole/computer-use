@@ -1977,6 +1977,10 @@ class DesktopEnvironment {
     const sheet = sheetOf(reply.sheet)
     const pasteboardChangeCount = changeCountOf(reply.changeCount)
     const textEntered = textEnteredOf(reply.textEntered)
+    // CU-377 (helper 0.2.65): whether the clipboard holds a file, from its type names only (never a path or content) -
+    // true, false, or null when unread or from an older helper (agent core reads null as unknown). Context beside the
+    // change count: outside the fingerprint, and never in run records.
+    const pasteboardHasFile = typeof reply.pasteboardHasFile === 'boolean' ? reply.pasteboardHasFile : null
     if (element === null) {
       // CU-148: no focused element - with keyboard navigation off the focus is the window itself - yet the helper read
       // the window: a sheet is up, or Return has a default button to press. A placeholder target (the shape of any
@@ -1986,9 +1990,9 @@ class DesktopEnvironment {
       // CU-190: a default button the helper could not read makes one too - Return still presses the window's default
       // button, so agent core must see the failed read (cu-developer-one); a positive none or an older helper does not.
       if (sheet !== true && defaultButton === null && defaultButtonRead !== false) return null
-      return { ...this.#describe(appOf(reply.app)), noFocus: true, defaultButton, defaultButtonRead, sheet, pasteboardChangeCount, textEntered }
+      return { ...this.#describe(appOf(reply.app)), noFocus: true, defaultButton, defaultButtonRead, sheet, pasteboardChangeCount, pasteboardHasFile, textEntered }
     }
-    return { ...element, defaultButton, defaultButtonRead, sheet, pasteboardChangeCount, textEntered }
+    return { ...element, defaultButton, defaultButtonRead, sheet, pasteboardChangeCount, pasteboardHasFile, textEntered }
   }
 
   /**

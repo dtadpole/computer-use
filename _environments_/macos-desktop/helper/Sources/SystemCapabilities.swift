@@ -402,6 +402,7 @@ final class SystemCapabilities: Capabilities {
   /// CU-151: `changeCount` only - never `string(forType:)`, `data(forType:)` or `types`, so no pasteboard content is
   /// read and macOS's paste-privacy alert has nothing to ask about (D-051's no-alert proof is cu-verifier's live row).
   func pasteboardChangeCount() -> Int? { NSPasteboard.general.changeCount }
+  func pasteboardHasFile() -> Bool? { PasteboardTypes.hasFile(NSPasteboard.general.types?.map { $0.rawValue }) }
 
   /// A system prompt that can take keys (CU-76, cu-verifier): the frontmost application is a system prompt process (an
   /// out-of-process dialog that is key), or the frontmost approved app's focused window or a sheet on it is an

@@ -135,3 +135,21 @@ test('CU-372 (cu-researcher): a pull-down button (AXMenuButton, pullsDown) - any
   })
 })
 
+test('CU-377 (helper 0.2.65): the focused target says whether the clipboard holds a file - true, false, or null when unread or absent', async () => {
+  const box = { ...POPUP, role: 'AXTextField', editable: true, title: 'Message' }
+  for (const [named, expected] of [[true, true], [false, false], [null, null], ['yes', null]]) {
+    const value = await (async () => {
+      const { env, child } = await launchOnFake({ ...world(box), pasteboardHasFile: named })
+      try {
+        await logged(child, 3)
+        return await env.focusedElement()
+      } finally {
+        await env.close()
+        await stopFake(child)
+      }
+    })()
+    assert.equal(value.pasteboardHasFile, expected, String(named))
+  }
+  await onFake(box, async (env) => assert.equal((await env.focusedElement()).pasteboardHasFile, null, 'an older helper sends none: unknown'))
+})
+

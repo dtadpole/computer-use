@@ -2080,6 +2080,15 @@ func testPopUpItems() {
   check(PopUpItems.shape(selected: long, items: [Item(title: long, enabled: true)])["items"] == .array([.object(["title": .string(String(repeating: "x", count: 80)), "enabled": .bool(true)])]), "a title is cut at 80 characters")
 }
 
+func testPasteboardTypes() {
+  // CU-377: a file on the clipboard, from type names only.
+  check(PasteboardTypes.hasFile(["public.utf8-plain-text", "public.file-url"]) == true, "a file URL type is a file")
+  check(PasteboardTypes.hasFile(["NSFilenamesPboardType"]) == true, "the legacy filenames type is a file")
+  check(PasteboardTypes.hasFile(["public.utf8-plain-text", "public.html"]) == false, "text alone is not a file")
+  check(PasteboardTypes.hasFile([]) == false, "an empty pasteboard holds no file")
+  check(PasteboardTypes.hasFile(nil) == nil, "unreadable types are unknown, never false")
+}
+
 @main
 struct UnitTests {
   static func main() {
@@ -2124,6 +2133,7 @@ struct UnitTests {
     testPlaceholder()
     testNearbyLabel()
     testPopUpItems()
+    testPasteboardTypes()
     testEndWatchdog()
     // Informational: whether the process that ran these tests is genuine node (true for Node.js Foundation builds).
     let parentIsNode = PeerCheck.satisfiesNodeRequirement(pid: getppid(), token: nil)

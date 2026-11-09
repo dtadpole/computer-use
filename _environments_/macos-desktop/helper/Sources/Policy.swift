@@ -471,6 +471,16 @@ enum Placeholder {
   }
 }
 
+/// CU-377: whether a pasteboard's type names say it holds a file - a file URL (public.file-url) or the legacy filenames
+/// type. Type names only: no path, no content (D-060). nil when the types could not be read (the caller asks).
+enum PasteboardTypes {
+  static let fileTypes: Set<String> = ["public.file-url", "NSFilenamesPboardType"]
+  static func hasFile(_ types: [String]?) -> Bool? {
+    guard let types else { return nil }
+    return types.contains { fileTypes.contains($0) }
+  }
+}
+
 /// CU-372: a pop-up button's menu items as AX shows them while it is closed - read from its AXMenu child, never by
 /// opening it (no AXPress, no AXShowMenu). The driver turns the shape into the items a type or an arrow moves the button
 /// through (typeOptions / keyTarget, as CU-370 does for a web select). Unread is never an empty list: no menu child, a
