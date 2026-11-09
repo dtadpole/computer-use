@@ -5,7 +5,7 @@ import Foundation
 /// The helper's identity; `build.sh` writes the same bundle id into Info.plist.
 enum HelperIdentity {
   static let bundleId = "com.reflection.cu-helper"
-  static let version = "0.2.59"
+  static let version = "0.2.60"
   /// The value every synthetic event carries in `kCGEventSourceUserData`: 0x43555345, ASCII "CUSE"
   /// (input-and-targets.md, verify-kit's SYNTHETIC_TAG). Not a secret: an event from another process with this tag
   /// could only fail to pause the run, never act.
