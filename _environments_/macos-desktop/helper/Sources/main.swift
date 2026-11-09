@@ -82,8 +82,8 @@ if options.lockPath != nil && grantsAtStart.any {
 
 note("start \(HelperIdentity.version): \(options.dryRun ? "dry run" : forcedUngranted ? "every grant off" : "live"), boundary \(boundary ? "on" : "off")")
 // CU-295 (b): one line with the effective admitted checkouts, read by the post-install check; refusals and a malformed
-// config are logged too (c).
-note("checkouts: compiled ~/computer-use, ~/computer-use--<seat>; configured \(admittedCheckouts.admitted.isEmpty ? "none" : admittedCheckouts.admitted.map { $0.realBase + ($0.parent ? "/*" : "") }.joined(separator: ", "))")
+// config are logged too (c). CU-299: they are the only checkouts, so none means every live peer is refused.
+note("checkouts: configured \(admittedCheckouts.admitted.isEmpty ? "none - every peer is refused" : admittedCheckouts.admitted.map { $0.realBase + ($0.parent ? "/*" : "") }.joined(separator: ", "))")
 for reason in admittedCheckouts.refused { note("checkout refused: \(reason)") }
 if let problem = configuredRead.note { note(problem) }
 
