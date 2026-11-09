@@ -20,12 +20,15 @@ State at 9 November 2026, 14:22 UTC.
 
 Seven of the nine ULTIMATE_GOAL 2.0 rows hold on live evidence. Two are open:
 
-- **Consent and safety** holds only when no Urgent or High under-ask is open (D-063). No Urgent or High item is open.
-  Closed live since 8 November: CU-301, CU-253, CU-241, CU-297, CU-279/CU-296, CU-289, CU-292, CU-252, CU-319,
+- **Consent and safety** holds only when no Urgent or High under-ask is open (D-063). One High item is open: CU-347,
+  found at 14:20Z by the team's own probe - an AWS secret key, a Google API key or a 'password=' line typed into a
+  field does not ask yet; the fix is being made now. Closed live since 8 November: CU-301, CU-253, CU-241, CU-297, CU-279/CU-296, CU-289, CU-292, CU-252, CU-319,
   CU-302, CU-325, and overnight **CU-340** - a card or ID number split across separate boxes, or half pasted, now asks
   at the box that completes it (found by the team's own key-by-key audit, CU-339). Also closed: CU-326, CU-300, CU-263
   (a CAPTCHA is handed to you), CU-323, CU-328. Open:
   - CU-336 (Medium): a card's security code typed into a payment frame whose name cannot be read; fix in review.
+  - CU-345 (Medium: a PIN or code box labelled only in Japanese, Korean, German, French or Spanish) and CU-346
+    (Medium: a card or ID number written with dots, slashes or underscores).
   - The consent tables (CU-145): D-059 is re-signed (every cell closed by a live run or a test that fails without its
     guard, 9 named over-ask limits); D-061 is re-signed after CU-336.
 - **Human control** needs you once: runbook step 4 (CU-11), with the G2 key-hold row (CU-119), the Replace-sheet
@@ -36,7 +39,7 @@ Seven of the nine ULTIMATE_GOAL 2.0 rows hold on live evidence. Two are open:
 | Row | State |
 |---|---|
 | environment, perception, action contract, agent loop | hold live (CUHelper 0.2.62 installed 9 Nov; it admits drivers only from the configured checkouts and now gives back the one Accessibility setting it changes in your apps at every run end, CU-329) |
-| consent and safety | no Urgent or High item open; D-059 re-signed; D-061 after CU-336 (Medium) |
+| consent and safety | open: CU-347 (High, fix in progress); D-059 re-signed; D-061 after CU-336 (Medium) |
 | human control | open: step 4 with you (CU-11, CU-119, CU-135, CU-203) |
 | integration | DSH and heddle each completed a fixture task (CU-15) |
 | trajectory | holds; capture stays inside approved apps |
