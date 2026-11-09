@@ -26,8 +26,9 @@ Seven of the nine ULTIMATE_GOAL 2.0 rows hold on live evidence. Two are open:
   into a field), CU-351 (a click on a label fired its button unjudged), CU-352 (buy, pay, delete and send buttons in
   German, French, Spanish, Russian, Japanese and Korean), CU-353 (an access-key shortcut, closed as a precaution) and
   CU-354 (a task naming the last four digits let the whole card through). Also closed: CU-336, CU-326, CU-300, CU-263
-  (a CAPTCHA is handed to you), CU-328, CU-329. Left:
-  - The D-061 table's re-sign (its last rows are landing); D-059 is re-signed.
+  (a CAPTCHA is handed to you), CU-328, CU-329. Both consent tables are re-signed by cu-verifier (D-059, and D-061 at
+  16:23Z: 270 closed rows, 247 on its own runs), so CU-145 is done. What the row still needs is CU-135, the
+  Replace-sheet chain, which you run in the session below. Also in flight:
   - Medium items with fixes in review: field names in those six languages (CU-345), unusual separators (CU-346), less
     common password forms (CU-350), personal-ID field names (CU-355), placeholder-only boxes on the desktop (CU-349).
   - Button names are read in English, Chinese and those six languages; field names in the six follow with CU-345 (in
@@ -40,7 +41,7 @@ Seven of the nine ULTIMATE_GOAL 2.0 rows hold on live evidence. Two are open:
 | Row | State |
 |---|---|
 | environment, perception, action contract, agent loop | hold live (CUHelper 0.2.62 installed 9 Nov; it admits drivers only from the configured checkouts and now gives back the one Accessibility setting it changes in your apps at every run end, CU-329) |
-| consent and safety | no Urgent or High item open (0.9.66); D-059 re-signed; D-061 re-sign next; Medium fixes in review |
+| consent and safety | no Urgent or High item open (0.9.66); both tables re-signed; waits on CU-135 in the owner session |
 | human control | open: step 4 with you (CU-11, CU-119, CU-135, CU-203) |
 | integration | DSH and heddle each completed a fixture task (CU-15) |
 | trajectory | holds; capture stays inside approved apps |
