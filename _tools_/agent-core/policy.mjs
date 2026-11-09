@@ -171,6 +171,21 @@ function keyboardActivation(action, target, context = {}) {
 const SECRET = /\{\{secret:[a-z0-9_-]+\}\}/i
 
 /**
+ * CU-301: the character a printable key puts into the focused field - a keypress or a hold whose one non-modifier key is
+ * a single character or Space, with Shift and/or Option at most (Option types the Mac's special characters); null for
+ * anything else. Command or Control make it a shortcut, judged by the rules for chords.
+ */
+function printableKeyChar(action) {
+  if (action.type !== 'keypress' && action.type !== 'hold_key') return null
+  const keys = keysOf(action)
+  if (keys.has('META') || keys.has('CTRL')) return null
+  const main = [...keys].filter((key) => key !== 'SHIFT' && key !== 'ALT')
+  if (main.length !== 1) return null
+  if (main[0] === 'SPACE') return ' '
+  return main[0].length === 1 ? main[0] : null
+}
+
+/**
  * A reference to an existing order ('Order #4344', 'Order 4344' with three or more digits, 'Order details') names a record;
  * it is dropped before the purchase words are matched, so the verb ('Order', 'Order now', 'Place order') still confirms
  * and any other purchase word in the same name still counts (CU-8: a double-click on a list cell 'Order #4344').
@@ -844,6 +859,15 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     }
     if (action.type === 'type') {
       const inserted = insertedClass(String(action.text ?? ''), target, context)
+      if (inserted) classes.push(inserted)
+    }
+    // CU-301 (design note 0.1): a printable key pressed into a text entry puts its character there as typing does, so the
+    // same rules judge it - a credential field or a password name asks credential, a D-061 name sensitive_data - else a
+    // password, CVV or SSN pressed key by key goes in unasked. The whole value stays CU-267's buffer (below). Only on a text
+    // entry: a letter that selects in a list, or Space on a check box, is not text.
+    const keyChar = printableKeyChar(action)
+    if (keyChar !== null && (isTextEntry(target) || credentialField(target))) {
+      const inserted = insertedClass(keyChar, target, context)
       if (inserted) classes.push(inserted)
     }
     // CU-267: a value typed in pieces is judged whole - what this run typed into the field before (the loop's buffer) with
