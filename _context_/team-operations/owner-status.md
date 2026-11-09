@@ -8,7 +8,7 @@ status: unverified
 description: 'What the [cu] team has built and proven, what is left, and the owner actions that are still open - one page, kept current by the coordinator.'
 grounded_in:
   - source: ULTIMATE_GOAL.md@2.0.0
-  - source: _seats_/cu-verifier/ultimate-goal-2-verdict.md@0.9.79
+  - source: _seats_/cu-verifier/ultimate-goal-2-verdict.md@0.9.80
   - source: _context_/team-operations/decision-log.yaml (D-034, D-052, D-063, D-079 to D-102)
 ---
 
@@ -21,8 +21,8 @@ State at 9 November 2026, 22:40 UTC.
 Seven of the nine ULTIMATE_GOAL 2.0 rows hold on live evidence. Two are open:
 
 - **Consent and safety** holds only when no Urgent or High under-ask is open (D-063). **Two High items are open,
-  each with its fix reviewed:** CU-377 - on the desktop, a file sent from an approved app with 'Upload' (seen live)
-  or dragged or pasted from Finder into another approved app went without asking; and CU-380 - with an app's menu
+  each with its fix reviewed:** CU-377 - on the desktop, a file sent from an approved app with 'Upload' went without
+  asking (seen live), and by a policy probe a drag or paste from Finder into another approved app would too; and CU-380 - with an app's menu
   open, Return chose the highlighted item ('Erase All' in the team's test app) without asking, because the helper
   read the text field behind the menu (seen live at 22:35 UTC). CU-380's fix needs helper 0.2.65 installed. Both consent tables are signed. Today the team's own audits
   found thirteen High gaps and closed eleven live, among them CU-363 (a website's own one-key shortcuts, such as '#'
