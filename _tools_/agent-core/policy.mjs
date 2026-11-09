@@ -130,6 +130,8 @@ const WORDS = Object.freeze({
     'join with video', 'join with audio', 'join now', 'start meeting', 'start a meeting', 'accept invitation',
     'decline invitation', 'accept invite', 'decline invite', 'rsvp', 'tweet', 'approve', 'merge pull request',
     'confirm merge', 'squash and merge', 'rebase and merge', 'deploy', 'run workflow',
+    // CU-377 (cu-coordinator 21:43Z): a file leaving through another app - an upload or attachment sends it.
+    'upload file', 'upload files', 'attach', 'attach file', 'attach files', 'share file',
     // cu-researcher's 13:23Z sweep: messages to the sender or the group.
     'unsubscribe', 'report spam', 'report junk', 'leave group', 'leave conversation', 'leave channel',
     // cu-researcher on #98: a cancellation goes to every attendee.
@@ -139,6 +141,8 @@ const WORDS = Object.freeze({
     // CU-288: a tax filing goes to the authority.
     'file return', 'file tax return', 'file your return', 'file my return', 'e-file', 'efile', 'submit return', 'submit tax return', ...ZH_WORDS.submit, ...LOCALE_WORDS.submit],
 })
+// CU-377 follow-up: the file browsers whose rows are files (the same set as app-policy's FILE_BROWSERS).
+const FILE_BROWSER_APPS = new Set(['com.apple.finder', 'com.cocoatech.PathFinder', 'com.binarynights.ForkLift-3', 'com.binarynights.ForkLift', 'com.eltima.cmd1', 'com.mrrsoftware.marta', 'org.yanex.marta'])
 const ACCOUNT_SECURITY = /\b(?:(?:generate|create|new|add)\s+(?:an?\s+)?app[\s-]?(?:specific[\s-]?)?passwords?|app[\s-]?(?:specific[\s-]?)?passwords?|(?:enable|disable|turn\s+(?:on|off)|set\s+up|add\s+(?:a\s+)?)?\s*(?:auto[\s-]?forward(?:ing)?|forwarding(?:\s+address)?|forward\s+(?:a\s+copy|incoming|all|to)\b)|two[\s-]?(?:factor|step)(?:\s+(?:authentication|verification|login))?|2[\s-]?step\s+verification|create\s+(?:a\s+|new\s+)?filter|2fa|multi[\s-]?factor(?:\s+authentication)?|recovery\s+(?:e-?mail|phone|codes?))\b/i
 const PRECEDENCE = ['purchase', 'launch_code', 'delete', 'permission', 'page_dialog', 'credential', 'sensitive_data', 'submit', 'new_site', 'install']
 const POINTER = new Set(['click', 'double_click', 'triple_click'])
@@ -996,6 +1000,11 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     }
     const keyboard = keyboardActivation(action, target, context)
     if (keyboard.deletes) classes.push('delete')
+    // CU-381 (High; cu-coordinator 22:09Z): on a web page Delete or Backspace with no text entry focused - a null or
+    // role-less focus, the page body, a row the driver could not name - reaches the page's own handler, which may delete
+    // (cu-verifier's live row) - it asks delete, at CU-363's level. A text entry and a frame host keep their rules.
+    if (context.url != null && !/^(app|desktop):/.test(String(context.url ?? '')) && (action.type === 'keypress' || action.type === 'hold_key')
+      && [...keysOf(action)].some((key) => key === 'DELETE' || key === 'BACKSPACE') && !isTextEntry(target) && !framesHost(target)) classes.push('delete')
     // CU-370 (design note 0.1; cu-developer-two's driver contract): the option a key lands on is judged like a click on it.
     // A keypress's keyTarget answers the option itself (selectOption: true) - or the select with optionUnread: true when an
     // open popup's highlight cannot be read, which asks. A type is judged by every option its prefix passes through
@@ -1092,6 +1101,15 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const pressesTarget = POINTER.has(action.type) || (action.type === 'drag' && CONTROL_ROLE.test(String(target?.role ?? '')))
     // ... and the drop point of a drag that travels: a drop onto a Trash, Delete or Remove zone deletes.
     if (action.type === 'drag' && context.dropTarget && namesWord(String(context.dropTarget.name ?? ''), DROP_DELETE)) classes.push('delete')
+    // CU-377 (High pending a live row; cu-coordinator 21:35Z): a desktop drag that carries a file, or whose source is unknown,
+    // asks when its drop is in another app or cannot be read (fail closed only where it matters, cu-researcher); a drag of
+    // anything else, or inside one app, keeps today's judgement. The loop computes context.dragSource.
+    if (action.type === 'drag' && travels(action) && (context.dragSource === 'file' || context.dragSource === 'unknown')) {
+      const appOf = (element) => (element ? (typeof element.origin === 'string' && element.origin !== '' ? element.origin : String(context.frontmostBundleId ?? '')) : '')
+      const from = appOf(target)
+      const to = appOf(context.dropTarget)
+      if (to === '' || from === '' || from !== to) classes.push('permission')
+    }
     if (pressesTarget || pressesEnter || keyboard.activates) {
       if (POINTER.has(action.type) && /change\s+password|update\s+password|修改密码|更改密码|修改密碼|更改密碼|重设密码|重設密碼/i.test(name)) {
         return { decision: 'handoff', class: null, rule: 'password_change', reason: 'the final step of a password change is the person\'s' }
@@ -1102,6 +1120,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         if ((cls === 'purchase' ? namesPurchase(name) : cls === 'delete' ? namesDelete(name) : namesWord(name, WORDS[cls]))) classes.push(cls)
       }
       if (judgesSubmit(name, target)) classes.push('submit')
+      // CU-377: a control named only Upload (an 'Uploader' service keeps its name rules - CU-250).
+      if (/^upload(?:\s*(?:\u2026|\.\.\.))?$/i.test(name.trim())) classes.push('submit')
       // CU-373 (design note 0.1): a control named for account security reaches a credential (D-063) - an app password, mail
       // auto-forwarding, two-factor or recovery settings - so a press asks credential, whatever a toggle's direction.
       // Turning two-factor or recovery protection ON by an explicit name stays free (CU-270); a bare toggle, whose direction
@@ -1206,6 +1226,18 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // (insertedClass), so a paste into a field named IBAN, Password or Passport asks as typing there does - also a desktop
     // paste of the run's own copy, whose text the run does not read (the name rules need none).
     if (context.paste?.fromOwner === true) classes.push('sensitive_data')
+    // CU-377 paste half (cu-coordinator 21:45Z/21:47Z): on the desktop a run's paste whose copied source is a file item (a
+    // filename or file URL, or a file browser's / file panel's row, cell or icon) into another app hands that file over - it
+    // asks. A copy from TextEdit stays as today.
+    if (context.paste && context.paste.fromOwner === false && /^(app|desktop):/.test(String(context.url ?? ''))) {
+      const src = context.paste.source ?? null
+      const into = (typeof target?.origin === 'string' && target.origin !== '') ? target.origin : String(context.frontmostBundleId ?? '')
+      const fileSource = src && ((typeof src.filename === 'string' && src.filename !== '') || /^file:/i.test(String(src.url ?? ''))
+        || ((FILE_BROWSER_APPS.has(String(src.origin ?? '')) || src.panel) && /row|cell|icon|outline|image|statictext|textfield|group/i.test(String(src.role ?? ''))))
+      // An unattributed run paste (no source recorded: a copy with nothing focused) keeps today's judgement - asking on it
+      // re-judged CU-219's own-copy rows; it is the named follow-up with the helper's pasteboardHasFile read.
+      if (fileSource && src.origin !== into) classes.push('permission')
+    }
     if (context.paste) {
       // CU-186: a menu paste is judged at the field it lands in; one that could not be read, or a menu, is unknown and asks.
       // Only a menu paste carries a destination; a keystroke paste is judged at its target as before (a null target there
