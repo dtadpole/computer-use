@@ -53,7 +53,7 @@ with you:
   tabs, toolbar and menus work wherever the helper reads them as outside the page. Browser tasks go through the
   browser environment, which reads the page.
 - **Mail links** (CU-360): in browser mode a page's own script may open a mail draft (mailto:) in the Mac's mail
-  app; nothing is sent, and the run records the attempt.
+  app; nothing is sent.
 - **Public hygiene** (D-097): a push to the public repository goes ahead only when the hygiene gate exits clean, and a
   pre-push hook enforces it.
 
