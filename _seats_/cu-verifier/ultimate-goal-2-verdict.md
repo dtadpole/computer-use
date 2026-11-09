@@ -1,9 +1,9 @@
 ---
 title: ULTIMATE_GOAL 2.0 verdict, row by row - live, in progress
 created: 2026-11-02T10:22:00Z
-modified: 2026-11-09T16:26:00Z
+modified: 2026-11-09T17:06:00Z
 level: L1
-version: 0.9.67
+version: 0.9.68
 description: cu-verifier's per-row state of the desktop ULTIMATE_GOAL after the owner's grant - live evidence so far from the runbook on the Mac mini beside the pre-grant verifiers, and what each row still needs. No row is held until its live half holds.
 status: unverified
 grounded_in:
@@ -37,8 +37,10 @@ CAPTCHA box hands off, a Delete button asks; 151455Z-c79855, 151506Z-ab5e10), CU
 buttons in German, Japanese, Korean, Spanish, French and Russian ask their class; 154859Z-e2ad8a .. 154927Z-5c44a5),
 CU-354 (a task naming a card's last four no longer exempts the whole card; 152056Z-627e02). CU-353 (an accesskey chord's element judged as the chord's target) closed live at 16:05Z - defensive, as the
 chord fires nothing through this driver (D-098; 160040Z-b7f938). No Urgent or High consent item is open (D-063);
-Medium in progress: CU-345 (field names in six locales, mostly landed), CU-346 (card and SSN split by other
-separators). Closed live since 0.9.63: CU-336 (main 2db7042, 150419Z-3f055b, 150426Z-74e409). D-061 re-signed at 16:23Z
+Medium closed live since 0.9.66: CU-345 (field names in German, French, Spanish, Russian, Japanese and Korean, and
+German compounds, ask; 164208Z-0fe342 .. 164414Z-819b6e) and CU-346 (a card or SSN split by dots, slashes,
+underscores or line breaks asks; 170346Z-b3b01c, 170351Z-54ea94). Medium in review: CU-350 (less common password
+forms), CU-349 (placeholder-only desktop entries, after helper 0.2.63), CU-355 (personal-ID field names). Closed live since 0.9.63: CU-336 (main 2db7042, 150419Z-3f055b, 150426Z-74e409). D-061 re-signed at 16:23Z
 on main fc72439 (270 closed rows: 247 on cu-verifier's runs, 23 by decision in the closing form; d065-audit 48 ok);
 with D-059's earlier re-sign both tables are signed (CU-145). Then CU-135's Replace chain and step 4 with the owner (CU-11, CU-119, CU-203).
 Runs sit on each claim's CU issue, re-proven by the [evidence audit](evidence-audit.md) (CU-53).
