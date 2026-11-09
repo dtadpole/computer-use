@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - artifacts'
 created: 2026-11-01T09:28:00Z
-modified: 2026-11-09T13:40:00Z
+modified: 2026-11-09T14:10:30Z
 level: L1
-version: 1.124.0
+version: 1.125.0
 description: 'Pointers to the persistent work of [cu] Developer Two (environments) - proposals, code, tests and run records - written by the seat itself.'
 status: unverified
 grounded_in:
@@ -16,6 +16,7 @@ Pointers only; each target is its own authority.
 
 | Date | Artifact | State |
 |---|---|---|
+| 2026-11-09 | #306 merged f28ecee80 | CU-332 (in Verify): the public repo's seat records folder _team_members_/ became _seats_/ (git mv of 52 files, 38 files' references rewritten, logs as written), cut behind a freeze; cu-coordinator repoints the roster refs. |
 | 2026-11-09 | #298 merged 662e7571a | CU-337 follow-up (re-cut of #296): the push gate judges what each ref adds beyond <remote>/main, so a branch that merged origin/main pushes clean; the --no-verify interim ended at 13:37Z. |
 | 2026-11-09 | #289 merged eab9ef530 | CU-327 (in Verify): only a hold's token ends it - a same-seat hold without it nests with its own token, a tokenless release pops the newest nested holder, an unknown token is refused; minutes still expire; every seat told. |
 | 2026-11-09 | #288 merged db1219011 | CU-337 (in Verify; follow-up open): push-gate - a pre-push hook runs the public-hygiene gate unpiped and refuses on its exit status; install.mjs --check; installed in the shared clone; every seat told. |
