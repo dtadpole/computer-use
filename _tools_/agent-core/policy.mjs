@@ -915,14 +915,35 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // class: a folded look-alike already asks by its own ('Sеnd' asks submit). The desktop asks unknown_target in app-policy.
     const mixedScript = !url.startsWith('desktop:') && classes.length === 0 && (POINTER.has(action.type) || pressesEnter || keyboard.activates) && target?.mixedScriptName === true
     if (mixedScript) classes.push('permission')
+    // CU-302 (design note 0.1): a form the browser filled from saved logins or cards - a field matching :autofill, which
+    // typing clears - is submitted with the owner's saved secret by a click, Space or Return on what submits it. That
+    // submit asks by the filled fields' names (the credential and D-061 name rules, one source) and is never
+    // pre-approved: a caller's credential pre-approval covers secrets it supplied, not the owner's saved ones. The browser
+    // driver reports autofilledFields on the targets that submit a form (CU-319); a failed read (autofillRead false) asks
+    // credential. No field at all (an older driver, the desktop) keeps today's judgement.
+    const autofillClasses = []
+    let autofillCard = false
+    if (!desktopUrl && target && (POINTER.has(action.type) || pressesEnter || keyboard.activates)) {
+      for (const field of Array.isArray(target.autofilledFields) ? target.autofilledFields : []) {
+        if (/^cc-/i.test(String(field?.autocomplete ?? ''))) autofillCard = true
+        const filled = { ...asNamedEntry(String(field?.name ?? '')), inputType: field?.inputType ?? null, autocomplete: field?.autocomplete ?? null }
+        const cls = insertedClass(null, filled, context)
+        if (cls) autofillClasses.push(cls)
+      }
+      if (target.autofillRead === false) autofillClasses.push('credential')
+    }
+    classes.push(...autofillClasses)
     const unique = [...new Set(classes)].sort((a, b) => PRECEDENCE.indexOf(a) - PRECEDENCE.indexOf(b))
-    const needed = unique.filter((cls) => !preApproved(cls, url) || NEVER_PRE_APPROVED.includes(cls))
+    const needed = unique.filter((cls) => !preApproved(cls, url) || NEVER_PRE_APPROVED.includes(cls) || autofillClasses.includes(cls))
     if (needed.length === 0) {
       return { decision: 'allow', class: unique[0] ?? null, rule: unique.length > 0 ? 'pre_approved' : 'default', reason: '' }
     }
     const cls = needed[0]
     if (mixedScript && cls === 'permission') {
       return { decision: 'confirm', class: cls, classes: needed, rule: 'target:mixed_script', reason: `activate "${name}", whose name mixes scripts in one word (a disguised control?)` }
+    }
+    if (autofillClasses.includes(cls)) {
+      return { decision: 'confirm', class: cls, classes: needed, rule: `autofill:${cls}`, reason: `submit a form the browser filled from your saved ${autofillCard ? 'card' : cls === 'credential' ? 'login' : 'details'} on ${originPattern(url)}` }
     }
     // `class` is the one that ranks first; `classes` lists every class that applied, for the evaluator's records.
     return { decision: 'confirm', class: cls, classes: needed, rule: `class:${cls}`, reason: describe(cls, action, target, url, context?.frontmostBundleId) }

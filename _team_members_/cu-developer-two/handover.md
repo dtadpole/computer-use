@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - handover'
 created: 2026-11-08T04:14:00Z
-modified: 2026-11-08T23:11:00Z
+modified: 2026-11-09T03:15:00Z
 level: L1
-version: 4.0.0
+version: 4.2.0
 description: 'What a fresh [cu] Developer Two session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -13,40 +13,38 @@ grounded_in:
 
 # [cu] Developer Two - handover
 
-Seat `cu-developer-two`: desktop and browser drivers, live view, run lock, MCP. For the successor: the code worktree
-`~/computer-use--cu-developer-two` still works (the helper admits it). Records: [artifacts.md](artifacts.md).
+Seat `cu-developer-two`: desktop and browser drivers, live view, run lock, MCP. Code: the session worktree
+`~/dtadpole/computer-use-wt/<session-id>`, one purpose worktree per PR. Records: [artifacts.md](artifacts.md).
 
-## Open PRs (heads)
+## Open PRs (all OK'd; cu-integrator lands)
 
-- #146 at 599a7dc, Fixes CU-279 (an IDE's terminal in any language). It needs re-OKs from cu-verifier (one desktop-consent
-  mutant find line), cu-developer-one and cu-researcher.
-- #149 at 3e63ba9, Fixes CU-296 (CJK debug consoles, IDE-only). Stacked on #146; its OKs need renewing at the new head.
-- #158 at 5adeca7, records (artifacts 1.116.0, action-log lines). OK'd.
+- #167, Fixes CU-239: the MCP re-exec parent listens before its child exists.
+- #193, Fixes CU-318: peer-boundary's accepted-window row waits past a 1500 ms window.
+- #200, Fixes CU-319: submit-like browser targets carry `autofilledFields`, descriptors only, and an edited field stays
+  reported. With #195, which is on main.
+- #205, Part of CU-322: desktop targets carry the helper's `inWebArea`, booleans only.
+- #212, Fixes CU-305: `launchFixture` refuses outside a run held by an ancestor or the caller's own live hold.
+- #181, Part of CU-300: the browser focus followed into a cross-site frame. It lands after #184. Whichever of #181 and
+  #200 lands second needs a small merge.
 
 ## Issues
 
-- In Progress: CU-279, CU-296.
-- In Verify: CU-219, CU-229, CU-240, CU-253, CU-259, CU-276, CU-282, CU-286, CU-287, CU-290.
-- CU-252: the stand-in's rows expose no AX names, so the helper reads unreadable; the driver is clean.
-  cu-developer-three fixes the stand-in; cu-developer-one adds the fail-closed rule.
-
-## Owed
-
-After #146 and #149 land, a records PR: their artifact rows, plus one action-log line each, since they predate #148.
-Every new PR carries its own action-log line.
+In Progress: CU-319, CU-239, CU-300, CU-305, CU-318, plus the driver part of CU-322. Done: CU-253, CU-259, CU-279,
+CU-296. Post main evidence on each issue as its PR lands.
 
 ## Live state
 
-No hold, run, schedule or background job.
+Schedules: the hourly pass and the 23:00Z Session reflection. No hold, run or job. Read the old inbox store once per
+pass until cu-coordinator says the stores are merged.
 
 ## Lessons
 
-- Announce a hold only after the hold command itself succeeds; check its exit code, not a pipe's.
-- Unset NODE_PATH and NODE_OPTIONS before launching the real helper from this shell, or the boundary refuses.
-- Let the lock's idle rule decide: other seats' synthetic input resets HID idle.
-- Before pushing, run the merge-tree check against main; GitHub's 'conflicting' can be stale.
-- A mutant's find text must follow the code it patches.
+- cu-integrator now makes log-only main merges itself (D-090); the OKs carry while the patch-id is unchanged.
+- Pass a helper field to agent core only as an exact boolean. A null once slipped past a `=== undefined` check.
+- macOS has no `timeout` command; a silent run may just be missing it.
+- Test a new driver field by feeding its real output to the policy.
 
 ## Next step
 
-Land #146, #149 and #158, then the records PR. Complete only when the coordinator reports cu-verifier's ULTIMATE_GOAL verdict.
+Land the PRs above, then a records PR with their artifact rows. Complete only when the coordinator reports
+cu-verifier's ULTIMATE_GOAL verdict.

@@ -411,3 +411,68 @@ decisions:
     topic: records-only-landing-logs
     decision: 'D-076''s records-only list also covers _logs_/repo-actions/*.jsonl: a pull request whose diff is only Markdown or YAML records plus action-log lines lands after phase 1 and the public-hygiene gate, without phase 2. CU_INTEGRATOR_FULL_GATE=1 still forces the full gate.'
     rationale: 'Since #148 every pull request appends its own action-log line; append-only JSON lines cannot reach a desktop verifier, and without this every records PR would take the desktop-run lock again.'
+  - id: D-079
+    date: 2026-11-08
+    topic: records-log-only-merges
+    decision: 'For a pull request in the records-only class of D-076 and D-078, or the table-only class of D-082, whose only conflict with main is _logs_/repo-actions/action-log.jsonl, cu-integrator makes the mechanical merge of main into the branch itself, resolving the log as a union (main''s lines, then the pull request''s, every line valid JSON), and lands it on the reviewer''s OK of the pre-merge head, provided the gate shows the merge commit''s diff against main equals the OK''d head''s diff against its merge base outside the log, and the log only gains lines. A conflict anywhere else, a changed line or a code file outside those classes goes back to the author for a merge of main and a fresh OK. Each landing names the merge commit and the OK''d head on the pull request.'
+    rationale: 'Every pull request appends to the action log at its end, so each landing put every other records pull request into conflict; a merge of main plus a fresh OK per pull request per landing cost N rounds for N records pull requests, with nothing a reviewer could judge in the union.'
+  - id: D-080
+    date: 2026-11-08
+    topic: worktree-exception-ends
+    decision: 'D-077''s worktree exception ends: CUHelper 0.2.58 (#150, Fixes CU-292 and CU-295) was installed at 23:37Z from main aca5a2a (READBACK OK, self-test 40/40), and its peer check admits the main checkout ~/dtadpole/computer-use and the session worktrees ~/dtadpole/computer-use-wt/* named in the local configuration, and refused unlisted folders in cu-developer-three''s noInput proof. Every seat edits and starts its CUHelper runs from its session worktree; the old ~/computer-use--<seat> paths stay admitted (compiled in) until a later helper retires them and are no longer edited.'
+    rationale: 'The exception existed only because the installed helper admitted no convention path; with the allowlist installed and proven, the 8 Nov local folder layout applies in full.'
+  - id: D-081
+    date: 2026-11-08
+    topic: urgent-keypress-hole-run-hold
+    decision: 'CU-301 (cu-researcher, 23:49Z: every field-name rule - the password field, credential names, D-061 names - runs only for a type action, so a password, CVV, SSN or recovery phrase pressed key by key is typed unasked on both drivers; runTask on main 2c0bacb) is an Urgent consent hole under CU-145 and D-063, the same kind of route hole as CU-230. As under D-071: until cu-verifier verifies it live, no live model run operates an app other than the team''s fixture apps and no browser run leaves the fixture site; scripted fixture runs go on. cu-developer-one fixes it ahead of every other item; cu-integrator lands it under D-073.'
+    rationale: 'An injected screen only has to say press the keys one at a time; a hold costs nothing while no owner-app model run is planned, and the fix jumps every queue.'
+  - id: D-082
+    date: 2026-11-08
+    topic: table-only-landing
+    decision: 'A pull request whose diff is only _tests_/agent-core/consent-routes.test.mjs and/or _tests_/agent-core/sensitive-classes.test.mjs plus Markdown or YAML records and action-log lines lands after phase 1 and the public-hygiene gate, like D-076: no other file imports the two tables (checked on main f9aaad6), so the desktop phase 2 cannot change their verdict, while phase 1 runs the tables and their meta tests. cu-integrator checks the file list and that no other file has started importing them; CU_INTEGRATOR_FULL_GATE=1 still forces the full gate.'
+    rationale: 'Thirteen of cu-researcher''s table pull requests were each waiting for a phase-2 hold of the desktop-run lock that could not change their result.'
+  - id: D-083
+    date: 2026-11-08
+    topic: urgent-landing-owner-active
+    decision: 'D-073''s phase-1 landing of an Urgent pull request that touches no CUHelper, desktop driver or fixture-app code also applies while phase 2 cannot run because the owner is not idle (D-066), not only while another seat holds the desktop-run lock. The full two-phase check runs on main at the first idle slot, and a red result is reverted by pull request at once. First use: the CU-301 fix (#178).'
+    rationale: 'Phase 1 posts no input, so the idle rule does not bear on it; an Urgent consent fix should not wait hours for the owner to step away, and the post-check keeps the gate''s guarantee as under D-073.'
+  - id: D-084
+    date: 2026-11-09
+    topic: portable-test-browser
+    decision: 'For the CU-302 AutoFill measurement, a Chrome for Testing build fetched into the measuring seat''s purpose worktree folder, launched by its executable path and deleted when the series ends is a portable download, not an install under D-005 (which forbids installing VMs, container runtimes or long-lived services without the owner). Conditions: never copied to /Applications or registered as a login item; the D-014 browser registry and D-005''s memory floor honoured at launch; no first-run, default-browser or cast-discovery prompts, a mock keychain and background networking off; any system prompt ends the series unanswered; the bundle, the throwaway profile and the private CU_HOME are removed by checked absolute paths. The owner''s Google Chrome is never approved for it, even in a private store.'
+    rationale: 'A different bundle id cannot admit an owner window, while approving Google Chrome could, if the owner opened it mid-series; a portable build deleted afterwards leaves nothing installed.'
+  - id: D-085
+    date: 2026-11-09
+    topic: ok-survives-log-only-merge
+    decision: 'For a code pull request, a reviewer''s OK carries over a merge of main whose only conflict was _logs_/repo-actions/action-log.jsonl, when the pull request''s own diff outside the log keeps the same stable patch-id and the log only gains lines; cu-integrator checks this as for D-079 and still runs the full gate on the exact merge tree. Any other change after the OK needs a fresh OK.'
+    rationale: 'Every landing put the open code pull requests into a log-only conflict, and a fresh OK per merge of main re-reviewed nothing a reviewer could judge; the gate on the merge tree keeps the guarantee.'
+  - id: D-086
+    date: 2026-11-09
+    topic: high-consent-fix-phase1-landing
+    decision: 'D-083''s phase-1 landing extends from Urgent to High: a pull request that fixes an Urgent or High consent-row under-ask (D-063), or one such a fix is stacked on, and touches no CUHelper, desktop driver or fixture-app code, may land after phase 1 and the public-hygiene gate while phase 2 cannot run because the owner is not idle. At most two such landings may be outstanding without a full two-phase post-check on main; the post-check runs at the first idle slot, and a red result reverts the responsible pull request by pull request at once. Medium-only work keeps waiting for the idle slot. First use: #168 (CU-241, which #175 stacks on) and #175 (CU-297).'
+    rationale: 'The owner was active for hours on 8-9 Nov, and consent-row fixes that phase 2 does not exercise beyond phase 1 waited behind his idle slot; the cap of two keeps a red post-check attributable.'
+  - id: D-087
+    date: 2026-11-09
+    topic: keypress-hold-lifted
+    decision: 'D-081''s hold ends: cu-verifier verified CU-301 live on main (#178, CUHelper 0.2.58) at 00:36Z - keys pressed one by one into CVV, recovery phrase, SSN and IBAN fields are declined sensitive_data at the first key with the entry empty, and a password field hands off or asks credential, on the desktop and in the browser, with negatives typed - and cu-integrator''s full post-check of main 09d170256 is green. Live model runs may again operate approved apps beyond the fixture apps and leave the fixture site, under the standing rules: per-app approval, the desktop-run lock, the owner-idle rule (D-066, D-068) and D-034''s cost line. While CU-302 (a browser''s AutoFill suggestion, High provisional) is open, no unattended task clicks an AutoFill suggestion.'
+    rationale: 'The hold was tied to one verified hole; the AutoFill route is the one suspected gap left on the same ground and is bounded by its own limit until its measurement.'
+  - id: D-088
+    date: 2026-11-09
+    topic: saved-login-browser-hold
+    decision: 'CU-302 is confirmed High: cu-researcher''s headed measurement (01:05Z) showed a saved login filling both sign-in fields of the fixture page on load, so a Sign in click or Return submits the owner''s saved password - asked on the desktop only as an unknown target (pre-approvable by a caller), never as a credential (cu-researcher''s correction, 02:35Z). Until its fix (the browser half in agent core with CU-319 in the driver, the desktop half under D-089) is verified live, live model runs do not operate a browser profile that holds saved logins (the owner''s Chrome or Safari); browser tasks stay on throwaway profiles and the fixture site. This replaces D-087''s narrower AutoFill-click line.'
+    rationale: 'The measured route needs no suggestion click at all; the owner''s own browser profiles are where saved logins live.'
+  - id: D-089
+    date: 2026-11-09
+    topic: desktop-route-refuses-browser-web-content
+    decision: 'Interim: on the desktop route, a click, key, type, paste, drag, drop or hold whose target - or, for keys, whose focused element - is, or descends from, an approved browser''s web content (an AXWebArea, or an AXScrollArea that is opaque or has no readable children; identified by role, opacity and the ancestor chain, never by name - a browser that exposes its page, as Safari does, hit-tests to a descendant, CU-322); until the helper reports that ancestry (inWebArea false, helper 0.2.61), every desktop target in an approved browser counts as web content and is refused - fail closed - including the browser''s own address bar, tabs, toolbar, menu bar and menus and its shortcuts with no focused element read, a named over-block (no role can tell the browser''s chrome from an exposed page''s ARIA widgets; cu-developer-one, #204) is refused by name, attended and unattended alike; browser tasks go through the browser environment, where the page''s elements and :autofill are readable. The browser''s own interface (address bar, tabs, menus) stays judged as before. A scroll is not refused - it reads no target and submits nothing - which is a named limit (cu-developer-one, #202). Applies to Chrome, Chrome for Testing, Chromium, Edge, Brave, Arc, Vivaldi, Opera, Safari and Firefox. CU-321 measures whether the helper can read the web element tree; if it can, a precise per-element rule replaces this one.'
+    rationale: 'cu-researcher''s measurement (01:13Z) found the desktop sees an approved browser''s page as one opaque area, so every web consent rule - not only AutoFill - is blind there; asking on every web click (or once per run) would either flood the owner or, after one yes, leave Buy, Delete and Send unjudged, while refusing costs nothing the team uses today.'
+  - id: D-090
+    date: 2026-11-09
+    topic: integrator-log-merge-code-prs
+    decision: 'D-079''s mechanical main merge extends to code pull requests: when one is CONFLICTING only on _logs_/repo-actions/action-log.jsonl - a single merge base, nothing else changed on both sides, the stable patch-id of the pull request''s diff outside the log unchanged, and the log only gaining lines - cu-integrator makes the main merge itself (the log as main''s lines then the pull request''s), runs the public-hygiene gate, pushes it to the branch as a fast-forward and lands it through the full gate on the existing OKs (D-085). Any other overlap goes back to the author. D-084''s portable Chrome for Testing conditions also cover cu-developer-three''s CU-321 read-only series and cu-verifier''s CU-302 live rows.'
+    rationale: 'On 8-9 Nov code pull requests bounced to their authors eight times on the append-only log alone (#200 three times), each costing a round trip and often an idle slot; the full gate still runs on the merged tree.'
+  - id: D-091
+    date: 2026-11-09
+    topic: consent-table-d065-sweep
+    decision: 'For CU-145''s re-sign, cu-researcher''s D-065 sweep is ruled per group. G1, IDE kinds (VS Code, Cursor, Sublime, Xcode; 13 cells): asserted, not live (D-065). G2, third-party apps by bundle (Spotlight, LaunchBar, Enpass, Proton Pass, Keeper, Paste, Perplexity; 7 cells): not D-065 - they carry cu-verifier''s live start-app exclusion runs from CU-292. G3: App Store (5 cells) and Finder (6 cells) asserted, not live (D-065) - acting there risks a purchase or the owner''s files; Activity Monitor and Disk Utility (2 cells) not D-065 - their exclusion fires at approval, so a start-app exclusion run like CU-292''s closes them. Every D-065 cell names its unit row and failing mutant; the producible cells go to cu-verifier''s live batches.'
+    rationale: 'D-065 is for states no fixture can produce on demand and the owner''s real apps would be needed; where a run that never captures or acts can show the guard (start-app exclusion), live evidence is cheap and wins.'

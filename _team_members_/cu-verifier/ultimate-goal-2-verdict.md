@@ -1,9 +1,9 @@
 ---
 title: ULTIMATE_GOAL 2.0 verdict, row by row - live, in progress
 created: 2026-11-02T10:22:00Z
-modified: 2026-11-09T00:20:00Z
+modified: 2026-11-09T01:15:00Z
 level: L1
-version: 0.9.54
+version: 0.9.55
 description: cu-verifier's per-row state of the desktop ULTIMATE_GOAL after the owner's grant - live evidence so far from the runbook on the Mac mini beside the pre-grant verifiers, and what each row still needs. No row is held until its live half holds.
 status: unverified
 grounded_in:
@@ -19,13 +19,15 @@ Services chords and their menu context (CU-249, CU-250, CU-256), API tokens and 
 (CU-245, CU-257, CU-260, CU-281, CU-283, CU-284, CU-285, CU-291), standing choices, outward and account-protection
 controls and real-app wordings (CU-258, CU-261, CU-270, CU-286, CU-288, CU-289), recipient-named compose fields
 (CU-287), an approved IDE's runs (CU-271), drops onto an app icon (CU-269), Chinese names (CU-293, CU-294), CU-292's
-seven apps (in the installed helper floor and refused at start), and the helper's bounded end (CU-227). Still open,
-each blocking under D-063: CU-301 (Urgent: keys pressed one by one met no field-name rule; #178 landed, live rows
-next; D-081 keeps model runs on the fixture apps), CU-252 (the fail-closed half holds live, selectionRead
-{unreadable}; the named read and the notes.txt twin wait on #165's Finder-shaped stand-in), CU-253 (fix on main;
-area rows wait on #132) and CU-297 (#175). Awaiting my rows: CU-279/CU-296 (IDE terminals; Cursor needs the owner's
-approval for the live read) and CU-295. Then CU-135's Replace chain and step 4 with the owner (CU-11, CU-119,
-CU-203). Runs sit on each claim's CU issue, re-proven by the [evidence audit](evidence-audit.md) (CU-53).
+seven apps (in the installed helper floor and refused at start), and the helper's bounded end (CU-227). Since 0.9.54, closed live:
+keys pressed one by one into named secret fields (CU-301, ending D-081), chat compose fields (CU-253), the selection
+an Open acts on, read by name and kind (CU-259, CU-262), IDE terminals in any language (CU-279, CU-296; the IDE half
+under D-065), a send chord in a frame-body editor (CU-241), fields hosted in frames named for them (CU-297), and the
+helper's configured checkouts (CU-295). Still open and blocking under D-063: CU-302 (High, measured 01:05Z: a saved
+login autofills on load and Sign in submits it unasked; D-088 keeps model runs off profiles with saved logins),
+and CU-252 (every live row holds on #165's stand-in; O4 closes as asserted under D-065 when it reaches Verify); CU-263's
+CAPTCHA hand-off (#174, Medium) follows. Then CU-135's Replace chain and step 4 with the owner (CU-11, CU-119, CU-203).
+Runs sit on each claim's CU issue, re-proven by the [evidence audit](evidence-audit.md) (CU-53).
 
 | Row | Live evidence | State |
 |---|---|---|
