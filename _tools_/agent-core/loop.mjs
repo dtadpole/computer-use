@@ -828,7 +828,8 @@ export async function runTask(options) {
       target = await settledFocus()
       if (action.type === 'keypress' && typeof environment.keyTarget === 'function') {
         const keyed = await Promise.resolve(environment.keyTarget(action)).catch(() => null)
-        if (keyed) target = keyed
+        // Only an answer that names an option (CU-370's flags) replaces the settled focus (cu-coordinator 22:23Z).
+        if (keyed && (keyed.selectOption === true || keyed.radioChoice === true || keyed.optionUnread === true)) target = keyed
       }
     }
     // CU-353: a keypress is judged on what it acts on - the browser driver's keyTarget answers an accesskey chord with the

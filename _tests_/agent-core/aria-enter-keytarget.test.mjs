@@ -40,3 +40,13 @@ test('ArrowDown then Delete on a grid row still asks (keyTarget has no answer, t
   const pressed = readRun(result.trajectoryDir).events.filter((e) => e.kind === 'action' && (e.action?.keys ?? []).includes('DELETE')).at(-1)
   assert.equal(pressed.status, 'declined')
 })
+
+test('a keyTarget answer without an option flag does not replace the settled focus', async () => {
+  const control = createRunControl()
+  const environment = createFakeEnvironment({ kind: 'browser', control, url: 'https://shop.example/orders', focused: { origin: 'https://shop.example', role: 'row', name: 'Order 1001' } })
+  environment.keyTarget = async () => ({ origin: 'https://shop.example', role: 'button', name: 'Help' })
+  const model = createScriptedAdapter({ frame: { width: 1440, height: 900 }, turns: [{ actions: [{ type: 'keypress', keys: ['ARROWDOWN'] }, { type: 'keypress', keys: ['DELETE'] }] }, { final: 'done' }] })
+  const result = await runTask({ task: 'tidy the orders', environment, model, control, runsDirectory: join(tmp, 'unflagged'), build: { commit: 'test', dirty: false }, sitePolicy: createSitePolicy({ allowed: ['https://shop.example'] }) })
+  const pressed = readRun(result.trajectoryDir).events.filter((e) => e.kind === 'action' && (e.action?.keys ?? []).includes('DELETE')).at(-1)
+  assert.equal(pressed.status, 'declined', 'the settled row is judged, not the unflagged Help button')
+})
