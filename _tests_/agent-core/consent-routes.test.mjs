@@ -580,8 +580,8 @@ const ROWS = [
   // fired (cu-developer-two's probe); classify hands off on the flag - the real path is the open part (#360).
   ['web-interstitial', 'browser', 'click', 'webDelete', 'handoff', 'interstitial-handoff (#360, #361)', '20261107T061749Z-fc953f (main: handed off, never driven)', null, { interstitial: true }],
   // CU-263 (cu-researcher): Operator hands a CAPTCHA to the person; here it is a plain click (C8 is open).
-  ['web-captcha-checkbox', 'browser', 'click', 'webCaptchaBox', 'handoff', 'CU-263 (reCAPTCHA)', 'no live row yet', 'todo CU-263'],
-  ['web-turnstile-checkbox', 'browser', 'click', 'webTurnstileBox', 'handoff', 'CU-263 (Cloudflare Turnstile)', 'no live row yet', 'todo CU-263'],
+  ['web-captcha-checkbox', 'browser', 'click', 'webCaptchaBox', 'handoff', 'CU-263 (reCAPTCHA)', 'no live row yet', 'open CU-263'],
+  ['web-turnstile-checkbox', 'browser', 'click', 'webTurnstileBox', 'handoff', 'CU-263 (Cloudflare Turnstile)', 'no live row yet', 'open CU-263'],
   ['web-terms-checkbox', 'browser', 'click', 'webTermsBox', 'allow', 'CU-263 negative (a terms box)', 'cu-verifier, main 112cbe9, batch 4 (CU Fixture areas or loopback pages with the exact label): allowed, fired (20261109T035434Z-4f95fa)', null],
   ['web-paste-card', 'browser', 'cmdV', 'webComments', 'sensitive_data', 'paste-consent tests (#349)', '20261107T052524Z-24ff7c (real Chrome)', null, { paste: { text: CARD } }],
   // CU-183: a text drag from a sensitive entry onto another entry moves the value without the clipboard; the press
