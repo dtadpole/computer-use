@@ -164,6 +164,8 @@ function keyboardActivation(action, target, context = {}) {
   if (action.type === 'type') return { activates: CONTROL_ROLE.test(String(target?.role ?? '')) && /[ \r\n]/.test(String(action.text ?? '')), deletes: false }
   const keys = keysOf(action)
   if (keys.size === 0) return { activates: false, deletes: false }
+  // CU-353: an accesskey chord fires the element the browser driver reports for it (target.accessKey) - a press on it.
+  if (action.type === 'keypress' && target?.accessKey === true) return { activates: true, deletes: false }
   const button = BUTTON_ROLE.test(String(target?.role ?? ''))
   // CU-234 (keyboard-activation.md): a variant is recognised generously - a miss is an under-ask, a recognised no-op only
   // over-asks. Space with any of Shift, Option or Control presses a focused control (an app that handles Space itself,
