@@ -327,6 +327,8 @@ enum Accessibility {
       // A target lifted from a captioned value (a value inside a pressable row or card) keeps the value's caption when
       // the control itself has none (cu-developer-two's residual on CU-195).
       "caption": .optionalString(Caption.forTarget(own: caption(element, role: role), leaf: captionLeaf.flatMap { caption($0, role: string($0, "AXRole")) })),
+      // CU-349: an entry's placeholder (AXPlaceholderValue, never its AXValue), for the consent field rules' extra name.
+      "placeholder": .optionalString(Placeholder.applies(role: role) ? Placeholder.pick(role: role, raw: string(element, "AXPlaceholderValue")) : nil),
     ]
     if markPanel {
       // One ancestor walk for both markers. CU-322 (D-089): `inWebArea` - true when the element is, or descends from,
