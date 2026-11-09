@@ -8,7 +8,8 @@ import { historyMove } from './input-plan.mjs'
 import { clipboardOp, executeAction, NAVIGATION_TIMEOUT_MS, navigateHistory, sendInput, settle } from './executor.mjs'
 import { planHumanInput } from './human-input.mjs'
 import { processCommandLine, sandboxProblem, SEAT_PATTERN, startChrome } from './launch.mjs'
-import { accessKeyElement, accessKeyOf, activatableAncestor, autofilledFields, clickLabel, closedRootHoldsEntry, collectPageText, deepActiveElement, describeElement, DRAG_TEXT_MAX, dragTextAt, FRAME_FOCUS_EXPRESSION, implicitSubmitButton, pageExpression, selectionContainer, textEntered, TWO_FRAMES_EXPRESSION } from './page-scripts.mjs'
+import { normalizeKey } from './keys.mjs'
+import { accessKeyElement, accessKeyOf, activatableAncestor, autofilledFields, clickLabel, closedRootHoldsEntry, collectPageText, deepActiveElement, describeElement, DRAG_TEXT_MAX, dragTextAt, FRAME_FOCUS_EXPRESSION, implicitSubmitButton, selectKeyOption, selectTypeOptions, pageExpression, selectionContainer, textEntered, TWO_FRAMES_EXPRESSION } from './page-scripts.mjs'
 
 /** CU-300: how long focusedElement may spend reading the focus inside a cross-site frame before it keeps the iframe. */
 export const FRAME_FOCUS_MS = 2000
@@ -531,7 +532,106 @@ class BrowserEnvironment {
         // The page's world is gone: the focused element, as before (a named limit).
       }
     }
+    const option = page.dialog === null ? await this.#keyOption(page, action).catch(() => undefined) : undefined
+    if (option !== undefined) return option
     return this.focusedElement()
+  }
+
+  /**
+   * CU-370: the main key of a keypress with no modifier but Shift, canonical (keys.mjs), or null.
+   */
+  static #plainKey(action) {
+    if (action?.type !== 'keypress' || !Array.isArray(action.keys)) return null
+    let keys
+    try {
+      keys = action.keys.map((key) => normalizeKey(String(key)))
+    } catch {
+      return null
+    }
+    const main = keys.filter((key) => !['Shift', 'Control', 'Alt', 'Meta'].includes(key))
+    if (main.length !== 1 || keys.some((key) => ['Control', 'Alt', 'Meta'].includes(key))) return null
+    return main[0]
+  }
+
+  /**
+   * CU-370: a key on a focused native <select> is judged by the option it lands on (selectKeyOption): that option,
+   * described, with selectOption: true; Enter or Space, whose popup highlight cannot be read, return the select with
+   * optionUnread: true. Enter on an ARIA listbox or combobox answers its aria-activedescendant option (cu-researcher).
+   * undefined when none applies - the caller falls back to the focus. The focus is read in the page's world through open
+   * shadow roots and same-origin frames (deepActiveElement); a cross-site frame's select is a named limit.
+   */
+  async #keyOption(page, action) {
+    const key = BrowserEnvironment.#plainKey(action)
+    if (key === null) return undefined
+    const world = await this.session.isolatedContext(page, page.mainFrameId)
+    const expression = `(() => {
+      const el = (${deepActiveElement.toString()})(document)
+      if (!el) return null
+      const key = ${JSON.stringify(key)}
+      if (String(el.tagName || '').toUpperCase() === 'SELECT') {
+        const moved = (${selectKeyOption.toString()})(el, key)
+        if (moved === null) return null
+        return moved.unread ? 'unread' : el.options[moved.index]
+      }
+      const role = String(el.getAttribute && el.getAttribute('role') || '').toLowerCase()
+      const active = el.getAttribute && el.getAttribute('aria-activedescendant')
+      if (key === 'Enter' && (role === 'listbox' || role === 'combobox') && active) {
+        const root = el.getRootNode && el.getRootNode()
+        return (root && root.getElementById ? root.getElementById(active) : null) || el.ownerDocument.getElementById(active)
+      }
+      return null
+    })()`
+    const found = (await this.session.send(page, 'Runtime.evaluate', { expression, contextId: world, returnByValue: false })).result.result
+    if (found?.type === 'string' && found.value === 'unread') {
+      const focus = await this.focusedElement()
+      return focus === null ? undefined : { ...focus, optionUnread: true }
+    }
+    if (typeof found?.objectId !== 'string') return undefined
+    return this.#describeOption(page, found.objectId)
+  }
+
+  /** CU-370: an option element, described as a target - its own text the name when the AX tree has none for it. */
+  async #describeOption(page, objectId) {
+    const node = (await this.session.send(page, 'DOM.describeNode', { objectId })).result.node
+    const text = (await this.session.send(page, 'Runtime.callFunctionOn', {
+      objectId, functionDeclaration: 'function () { return String(this.label || this.textContent || \'\').replace(/\\s+/g, \' \').trim().slice(0, 200) }', returnByValue: true,
+    })).result.result?.value ?? null
+    const described = await this.#describe(page, node.backendNodeId, page.mainFrameId, { node, fallbackName: text })
+    if (described === null || described === undefined) return undefined
+    return { ...described, name: described.name || text, selectOption: true }
+  }
+
+  /**
+   * CU-370: for a type action whose focus is a native single <select>, every option the typed string moves it through
+   * (selectTypeOptions: Chrome's accumulated type-ahead, each step selecting), each described with selectOption: true,
+   * in order; [] when nothing matches; null when the focus is no such select (the type is judged as before). Agent core
+   * judges each like a click on that option, keeping the strongest class.
+   */
+  async typeOptions(action) {
+    this.#assertOpen()
+    if (action?.type !== 'type' || typeof action.text !== 'string') return null
+    const page = this.session.foreground()
+    if (page.dialog !== null) return null
+    try {
+      const world = await this.session.isolatedContext(page, page.mainFrameId)
+      const expression = `(() => {
+        const el = (${deepActiveElement.toString()})(document)
+        const indices = (${selectTypeOptions.toString()})(el, ${JSON.stringify(action.text)})
+        return indices === null ? null : indices.map((index) => el.options[index])
+      })()`
+      const found = (await this.session.send(page, 'Runtime.evaluate', { expression, contextId: world, returnByValue: false })).result.result
+      if (typeof found?.objectId !== 'string') return null
+      const properties = (await this.session.send(page, 'Runtime.getProperties', { objectId: found.objectId, ownProperties: true })).result.result ?? []
+      const elements = properties.filter((entry) => /^\d+$/.test(entry.name) && typeof entry.value?.objectId === 'string').sort((a, b) => Number(a.name) - Number(b.name))
+      const options = []
+      for (const entry of elements) {
+        const option = await this.#describeOption(page, entry.value.objectId)
+        if (option !== undefined) options.push(option)
+      }
+      return options
+    } catch {
+      return null
+    }
   }
 
   /**
