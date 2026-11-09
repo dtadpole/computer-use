@@ -76,6 +76,41 @@ export function stuckInput(input, { tag = SYNTHETIC_TAG } = {}) {
   }
 }
 
+/**
+ * CU-341 Part 2 (G2, CU-119): the owner presses a key while the agent holds one. From CU Fixture's input log, in log
+ * order: `press`, the person's first untagged key-down (or modifier change) at or after `since`; `held`, each key the
+ * agent held at that moment (a tagged key-down not yet up) with the time its tagged key-up came after the press
+ * (`upAt`, null if it never came); `modifiers`, the agent's tagged modifier flags at the press and the time a tagged
+ * flags change cleared them (`clearedAt`); and `after`, every other tagged event after the press - what the pause must
+ * keep at zero. `ok` when the press exists, the agent held something at it, all of that came up after the press and
+ * nothing else tagged followed. The person's key is located by position only; its key code is not reported.
+ */
+export function heldKeyOrder(input, { since = 0, tag = SYNTHETIC_TAG } = {}) {
+  const at = input.findIndex((event) => event.t >= since && event.tag !== tag && !event.repeat && (event.kind === 'keyDown' || event.kind === 'flagsChanged'))
+  if (at < 0) return { press: null, held: [], modifiers: { atPress: 0, clearedAt: null }, after: [], ok: false }
+  const down = new Map()
+  let flags = 0
+  for (const event of input.slice(0, at)) {
+    if (event.tag !== tag) continue
+    if (event.kind === 'keyDown' && !event.repeat) down.set(event.keyCode, event)
+    else if (event.kind === 'keyUp') down.delete(event.keyCode)
+    else if (event.kind === 'flagsChanged') flags = event.modifiers ?? 0
+  }
+  const later = input.slice(at + 1).filter((event) => event.tag === tag)
+  const releases = new Set()
+  const held = [...down.values()].map((d) => {
+    const up = later.find((event) => event.kind === 'keyUp' && event.keyCode === d.keyCode && !releases.has(event))
+    if (up) releases.add(up)
+    return { keyCode: d.keyCode, downAt: d.t, upAt: up?.t ?? null }
+  })
+  const cleared = flags === 0 ? null : later.find((event) => event.kind === 'flagsChanged' && (event.modifiers ?? 0) === 0) ?? null
+  if (cleared) releases.add(cleared)
+  const after = later.filter((event) => !releases.has(event))
+  const press = { t: input[at].t, kind: input[at].kind, index: at }
+  const ok = (held.length > 0 || flags !== 0) && held.every((h) => h.upAt !== null) && (flags === 0 || cleared !== null) && after.length === 0
+  return { press, held, modifiers: { atPress: flags, clearedAt: cleared?.t ?? null }, after, ok }
+}
+
 /** True for a pixel matching the stand-in marker colour (sRGB #FF00FF, tolerant of display profiles). */
 export const isMarker = ([r, g, b]) => r > 230 && g < 100 && b > 230
 
