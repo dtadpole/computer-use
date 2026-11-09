@@ -188,6 +188,19 @@ test('only hitTest reads the lifted action target; desktop(at:) and the pid chec
   assert.doesNotMatch(desktop, /actionTarget/)
 })
 
+test('CU-329: the AXManualAccessibility write is read first and restored at bye, at every other end and on the watchdog path', () => {
+  const caps = readFileSync(join(SOURCES, 'SystemCapabilities.swift'), 'utf8')
+  const expose = caps.slice(caps.indexOf('private func exposeTree('), caps.indexOf('private var timeoutsLimited'))
+  assert.match(expose, /let prior = Accessibility\.manualAccessibility\(pid: pid\)\n    ManualAccessibilityRestore\.recordRead\(prior\)\n    if ManualAccessibilityRestore\.shouldWrite\(prior: prior\) \{\n      Accessibility\.setManualAccessibility\(pid: pid\)\n      ManualAccessibilityRestore\.remember\(pid\)/, 'read, then write and remember')
+  const access = readFileSync(join(SOURCES, 'Accessibility.swift'), 'utf8')
+  assert.match(access, /if error == \.noValue \|\| error == \.attributeUnsupported \{ return \.unset \}\n    guard error == \.success, let value else \{ return \.unreadable \}/, 'no value / unsupported mean unset; any other error is a failed read')
+  const main = readFileSync(join(SOURCES, 'main.swift'), 'utf8')
+  assert.match(main, /link\.shutdown\(\)\n    restoreManualAccessibility\(\)\n    exit\(0\)/, 'bye restores before exit')
+  assert.match(main, /dispatcher\.shutdown\(\)\n  restoreManualAccessibility\(\)\n  exit\(0\)/, 'every other end restores before exit')
+  assert.match(main, /StoppedMarker\.write\(reason: why[^\n]*\n    restoreManualAccessibility\(\)/, 'the watchdog path restores too')
+  assert.match(main, /Accessibility\.setManualAccessibility\(pid: \$0, on: false\)/, 'the restore writes false')
+})
+
 test('CU-322: describe() reports inWebArea from the one ancestor walk the panel marker reads, null when it cannot finish', () => {
   const source = readFileSync(join(SOURCES, 'Accessibility.swift'), 'utf8')
   const describe = source.slice(source.indexOf('static func describe('), source.indexOf('static func describe(') + 6000)
