@@ -63,7 +63,13 @@ const LOCALE_WORDS = Object.freeze({
   // CU-345: a PIN, one-time code, security code or password field named in these languages.
   secret: ['passwort', 'kennwort', 'sicherheitscode', 'prüfziffer', 'mot de passe', 'code de sécurité', 'cryptogramme',
     'contraseña', 'código de seguridad', 'пароль', 'код безопасности', 'パスワード', '暗証番号', 'セキュリティコード', '認証コード',
-    '비밀번호', '보안코드', '인증번호'],
+    '비밀번호', '보안코드', '인증번호',
+    // cu-researcher's red team of PR #323: PIN, one-time code, card-check and card-number names the first list missed.
+    // German writes compounds: an entry led by '…' also matches as the end of a longer word (Kreditkartennummer).
+    '…geheimzahl', '…bestätigungscode', '…sicherheitscode', '…prüfnummer', '…prüfziffer', '…kartennummer', '…karten nummer', '…einmalcode', 'einmal code',
+    'sms code', 'bestätigungs code', 'sicherheits code', 'code de vérification', 'numéro de carte',
+    'código de verificación', 'número de tarjeta', 'код подтверждения', 'номер карты', 'pin-код', '確認コード', 'カード番号',
+    '인증 코드', '카드 번호', '카드번호'],
 })
 const WORDS = Object.freeze({
   purchase: ['buy', 'pay', 'order', 'place order', 'checkout', 'check out', 'subscribe', 'donate', 'purchase', 'transfer', 'withdraw', 'wire', 'send money',
@@ -271,6 +277,8 @@ const LETTER_BOUNDED = /[\u00c0-\u024f\u0400-\u04ff]/
 function namesWord(name, words) {
   const text = normaliseName(name)
   return words.some((word) => {
+    // CU-345: '…' leads a German compound ending - matched after any letters, bounded only on its right.
+    if (word.startsWith('\u2026')) return new RegExp(`${escapeRegExp(normaliseName(word.slice(1))).replace(/ /g, '[\\s-]+')}([^\\p{L}]|$)`, 'u').test(text)
     if (!LETTER_BOUNDED.test(word)) return new RegExp(`(^|[^a-z])${escapeRegExp(normaliseName(word)).replace(/ /g, '[\\s-]+')}([^a-z]|$)`).test(text)
     // A judged name has passed normaliseText, which folds homoglyphs case by case (a Cyrillic 'К' reads as Latin 'K'), so the
     // entry is folded the same way as written, capitalised and in capitals before it is compared.
@@ -690,6 +698,13 @@ export function looksSensitive(text) {
     const digits = match[0].replace(/\D/g, '')
     if (digits.length >= 13 && digits.length <= 19 && luhn(digits)) return 'card'
   }
+  // CU-346 (cu-researcher): a card's groups split by dots, slashes, commas, underscores, tabs or line breaks - any of
+  // them per gap, each optionally followed by a space - in 4-4-4-4(-1..3) or Amex 4-6-5 groups, passing Luhn. Named
+  // over-ask: a grouped number that fits.
+  const gap = '(?:[./,_\\-][ \\t]?|\\r?\\n|\\t)'
+  for (const m of value.matchAll(new RegExp(`(?<!\\d)\\d{4}${gap}(?:\\d{4}${gap}\\d{4}${gap}\\d{4}(?:${gap}\\d{1,3})?|\\d{6}${gap}\\d{5})(?!\\d)`, 'g'))) {
+    if (luhn(m[0].replace(/\D/g, ''))) return 'card'
+  }
   // The match is greedy (an IBAN followed by a word runs on into it), so it is cut at its country's length.
   for (const match of value.matchAll(/\b[A-Za-z]{2}\d{2}(?:\s?[A-Za-z0-9]){11,30}\b/g)) {
     const compact = match[0].replace(/\s+/g, '')
@@ -700,6 +715,11 @@ export function looksSensitive(text) {
     if (abaValid(match[1])) return 'bank_account'
   }
   if (/\b\d{3}-\d{2}-\d{4}\b/.test(value)) return 'national_id'
+  // CU-346: an SSN in 3-2-4 groups split by dots, slashes, commas, underscores or line breaks (the same separator twice), held
+  // to the issuing rules below. Named over-ask: a reference written that way that fits them.
+  for (const m of value.matchAll(/(?<!\d)(\d{3})([./,_]|\r?\n)[ \t]?(\d{2})\2[ \t]?(\d{4})(?!\d)/g)) {
+    if (m[1] !== '000' && m[1] !== '666' && m[1][0] !== '9' && m[3] !== '00' && m[4] !== '0000') return 'national_id'
+  }
   // CU-245: an SSN in spaced 3-2-4 groups, held to the issuing rules (no area 000 or 666, no group 00, no serial 0000)
   // so most spaced references do not fit; an area 9xx is an ITIN only with its group in 50-65, 70-88, 90-92 or 94-99
   // (cu-researcher: the dashed form asks for both). Named over-ask: a spaced nine-digit reference that fits.
