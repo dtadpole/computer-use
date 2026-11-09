@@ -120,9 +120,10 @@ test('a start URL refused by the site filter fails the launch and cleans up', as
 test('CU-357: an effect reports the session notices since the last one - a refused download (no query), an accepted alert - once each; one between actions lands on the next', async () => {
   const { connection, options } = harness()
   const env = await launchBrowserEnvironment(options)
+  env.session.notices.push({ kind: 'browser_traffic_blocked', url: 'https://update.example/check', rule: 'not_allowed', at: 1 })
   connection.emit('Browser.downloadWillBegin', { url: 'https://files.example/app.dmg?token=abc#x', guid: 'g1' })
   const first = await env.perform({ type: 'click', x: 10, y: 10, button: 'left' })
-  assert.deepEqual(first.notices.map((n) => [n.kind, n.url]), [['download_refused', 'https://files.example/app.dmg']], 'the download, its token left out')
+  assert.deepEqual(first.notices.map((n) => [n.kind, n.url]), [['download_refused', 'https://files.example/app.dmg']], 'the download, its token left out; Chrome\'s own background traffic is no effect of the action')
   assert.equal(typeof first.notices[0].at, 'number')
   const second = await env.perform({ type: 'click', x: 10, y: 10, button: 'left' })
   assert.equal(second.notices, undefined, 'reported once: no notices on the next effect')

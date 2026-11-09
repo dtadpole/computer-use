@@ -259,7 +259,7 @@ class BrowserEnvironment {
   /**
    * One validated canonical action in frame pixels; resolves to its `ActionEffect`, with `notices` (CU-357): the
    * session's notices that arrived since the last effect reported them - a refused download, an accepted alert, a
-   * refused file chooser, Chrome's own blocked traffic, a page that failed set-up - so the trajectory (which logs the
+   * refused file chooser, a page that failed set-up; not Chrome's own blocked background traffic - so the trajectory (which logs the
    * effect whole) shows them. A notice that arrives between actions, or after the action settles, lands on the next
    * effect; a URL loses its query and fragment (see noticeOf). Absent when there is none. The model is not shown them.
    */
@@ -274,7 +274,9 @@ class BrowserEnvironment {
       navigationTimeoutMs: this.navigationTimeoutMs,
       screenshot: (args) => this.screenshot(args),
     })
-    const fresh = this.session.notices.slice(this.#noticesReported)
+    // Chrome's own background traffic (update checks, clock sync - a dozen at start-up, measured) is no effect of the
+    // run's actions: it stays in session.notices and the smoke, out of the effect.
+    const fresh = this.session.notices.slice(this.#noticesReported).filter((notice) => notice.kind !== 'browser_traffic_blocked')
     this.#noticesReported = this.session.notices.length
     return fresh.length > 0 ? { ...effect, notices: fresh.map(noticeOf) } : effect
   }
