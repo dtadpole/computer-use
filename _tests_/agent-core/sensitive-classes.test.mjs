@@ -608,9 +608,9 @@ const NAVIGATE_ROWS = [
   // CU-325 (#245): a card in a path segment asks with a file name or a suffix around it too.
   ['navigate-card number as a file name in a path', `https://fixture.example/r/${CARD.replace(/\D/g, '')}.pdf`, 'sensitive_data', 'open CU-325', 'no live row yet'],
   // CU-326 (Medium; #250): a card the run never typed - as a host label, split across all-digit segments, or inside a longer digit run.
-  ['navigate-card number as a host label', `https://${CARD.replace(/\D/g, '')}.fixture.example/`, 'sensitive_data', 'todo CU-326', 'no live row yet'],
-  ['navigate-card number split across two path segments', `https://fixture.example/p/${CARD.replace(/\D/g, '').slice(0, 8)}/${CARD.replace(/\D/g, '').slice(8)}`, 'sensitive_data', 'todo CU-326', 'no live row yet'],
-  ['navigate-card number inside a longer digit run', `https://fixture.example/p/00${CARD.replace(/\D/g, '')}`, 'sensitive_data', 'todo CU-326', 'no live row yet'],
+  ['navigate-card number as a host label', `https://${CARD.replace(/\D/g, '')}.fixture.example/`, 'sensitive_data', 'open CU-326', 'no live row yet'],
+  ['navigate-card number split across two path segments', `https://fixture.example/p/${CARD.replace(/\D/g, '').slice(0, 8)}/${CARD.replace(/\D/g, '').slice(8)}`, 'sensitive_data', 'open CU-326', 'no live row yet'],
+  ['navigate-card number inside a longer digit run', `https://fixture.example/p/00${CARD.replace(/\D/g, '')}`, 'sensitive_data', 'open CU-326', 'no live row yet'],
   ['navigate-date path (negative)', 'https://fixture.example/blog/2026/11/09/post', 'allow', 'open CU-326', 'no live row yet'],
   ['navigate-SSN in a fragment', `https://fixture.example/form#${SSN}`, 'sensitive_data', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: declined sensitive_data, the URL never reached the server (20261109T062617Z-e92642)'],
   // cu-verifier's #91 review: a parameter named for a secret leaks even a short value - 'hunter2' is under the 8-char floor.
