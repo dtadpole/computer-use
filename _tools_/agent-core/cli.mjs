@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process'
-import { existsSync, readFileSync, realpathSync } from 'node:fs'
-import { isAbsolute, join, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { existsSync, lstatSync, readFileSync, realpathSync } from 'node:fs'
+import { homedir } from 'node:os'
+import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
-import { createScriptedAdapter, loadPlan } from './adapter-scripted.mjs'
+import { createScriptedAdapter, isScriptedAdapter, loadPlan } from './adapter-scripted.mjs'
 import { createAppApprovals } from './app-approvals.mjs'
 import { ttyController, unattendedController } from './consent.mjs'
 import { ENVIRONMENTS, inspectPoints, startRun } from './run.mjs'
@@ -41,6 +42,11 @@ import { buildInfo, cuHome, formatReplay, pruneRuns, readRun, runsDir } from './
  * line names `cli.mjs control-link <run-id>`, which reads the mode-600 link file (a pipe never carries the capability); the live view's port joins the site filter's fixed deny list (R32). A desktop run attaches to
  * apps that are already running (the driver launches none) and never starts without the local-input pause armed.
  * `apps revoke` exits 1 when the bundle id was not stored; `apps list` exits 1 when the store is unreadable.
+ *
+ * CU-342 (human-control.md, the owner-input stand-in): `run` alone reads CU_STAND_IN_OWNER_INPUT (turn numbers such as
+ * `3` or `3,9`) and CU_DESKTOP_HOLD_TOKEN. Set, the run refuses to start unless every gate of standInGate holds; then
+ * runTask gets `standInTurns` and, after each named turn, posts one labelled untagged key event the helper's guards
+ * detect like the owner's own - a rehearsal of the owner's pause with no owner at the Mac.
  */
 
 const REPEATABLE = new Set(['allow', 'block', 'pre-approve', 'secret', 'app', 'exclude-app', 'at'])
@@ -150,6 +156,85 @@ export function exitCode(status) {
   return 1
 }
 
+/** CU-342: the variables only `run` reads - the stand-in's turns and the seat's own hold token. */
+export const STAND_IN_VARIABLE = 'CU_STAND_IN_OWNER_INPUT'
+export const HOLD_TOKEN_VARIABLE = 'CU_DESKTOP_HOLD_TOKEN'
+
+/** CU-342: a refused stand-in names the variable and the gate (`gate`) that failed; never a silent ignore. */
+export class StandInRefusal extends UsageError {
+  constructor(gate, detail) {
+    super(`${STAND_IN_VARIABLE} is set, so this run would post a labelled stand-in for the owner's input (CU-342); refused by the ${gate} gate: ${detail}`)
+    this.name = 'StandInRefusal'
+    this.gate = gate
+  }
+}
+
+/** CU-342: `3` or `3,9` to sorted distinct turn numbers; unset or empty is null; anything else is refused. */
+export function parseStandInTurns(text) {
+  if (text === undefined || text === null || text === '') return null
+  const parts = String(text).split(',').map((part) => part.trim())
+  if (parts.some((part) => !/^[1-9][0-9]{0,5}$/.test(part))) {
+    throw new StandInRefusal('turns', `it must be comma-separated positive turn numbers such as 3 or 3,9, not '${String(text).slice(0, 40)}'`)
+  }
+  return [...new Set(parts.map(Number))].sort((a, b) => a - b)
+}
+
+/**
+ * A path with every existing part resolved through symlinks, the parts not yet created appended as written; null when
+ * a part cannot be followed (a dangling link, a loop, no permission), which a gate takes as a refusal.
+ */
+function canonicalPath(path) {
+  const absolute = resolve(path)
+  try {
+    return realpathSync(absolute)
+  } catch (error) {
+    if (error?.code !== 'ENOENT') return null
+  }
+  try {
+    lstatSync(absolute)
+    return null // it exists, yet realpath could not follow it: a dangling link
+  } catch { /* absent: resolve its parent */ }
+  const parent = dirname(absolute)
+  if (parent === absolute) return null
+  const above = canonicalPath(parent)
+  return above === null ? null : join(above, basename(absolute))
+}
+
+/**
+ * CU-342: the stand-in's gates, every one of which must hold when CU_STAND_IN_OWNER_INPUT is set; resolves the turns
+ * (null when it is unset) or throws StandInRefusal naming the gate. A model run cannot set cli.mjs's environment, and
+ * these keep a person's rehearsal from reaching the owner's own state:
+ * - `macos-desktop`: the run is `--env macos-desktop`, the only driver that can post it;
+ * - `scripted-adapter`: `model` is the very adapter createScriptedAdapter built (isScriptedAdapter), never a flag's text;
+ * - `unattended`: the run's consent mode is unattended - nobody answers at a terminal while the stand-in pauses it;
+ * - `private-home`: CU_HOME is set and is not the default ~/.computer-use, compared after resolving symlinks;
+ * - `hold-token`: CU_DESKTOP_HOLD_TOKEN is `seat`'s live hold's own token in the desktop-run lock (run-lock.mjs
+ *   holdTokenMatch: missing, malformed, expired, nested or another seat's refuses). A match, not a secret: hold.json is
+ *   readable by every seat and anyone can set CU_DESKTOP_SEAT; it stops a model run, and is no isolation between seats.
+ * `runLockDir`, `defaultHome` and `now` are test seams.
+ */
+export async function standInGate({ env = process.env, model, consent, environment, seat, runLockDir, defaultHome = join(homedir(), '.computer-use'), now = Date.now } = {}) {
+  const turns = parseStandInTurns(env[STAND_IN_VARIABLE])
+  if (turns === null) return null
+  if (environment !== 'macos-desktop') throw new StandInRefusal('macos-desktop', `it is for --env macos-desktop runs only, not ${environment ?? 'a browser run'}`)
+  if (!isScriptedAdapter(model)) throw new StandInRefusal('scripted-adapter', 'only a scripted run (--model scripted --plan FILE) may carry it; a model-driven run never does')
+  if (consent !== 'unattended') throw new StandInRefusal('unattended', `the run's consent mode must be unattended (--consent unattended), not ${consent ?? 'unset'}`)
+  if (typeof env.CU_HOME !== 'string' || env.CU_HOME === '') throw new StandInRefusal('private-home', 'CU_HOME is unset, so the run would use the default ~/.computer-use; set CU_HOME to a private home')
+  const home = cuHome(env)
+  const fallback = resolve(defaultHome)
+  if (home === fallback) throw new StandInRefusal('private-home', 'CU_HOME is the default ~/.computer-use; set it to a private home')
+  const realHome = canonicalPath(home)
+  const realDefault = canonicalPath(fallback)
+  if (realHome === null || realDefault === null) throw new StandInRefusal('private-home', 'CU_HOME or the default home cannot be resolved through its links; set CU_HOME to a plain private directory')
+  if (realHome === realDefault) throw new StandInRefusal('private-home', 'CU_HOME resolves to the default ~/.computer-use through a link; set it to a private home')
+  const lock = await import(pathToFileURL(join(dirname(ENVIRONMENTS['macos-desktop']), 'run-lock.mjs')).href)
+  const match = lock.holdTokenMatch({ seat, token: env[HOLD_TOKEN_VARIABLE], dir: runLockDir ?? lock.RUN_LOCK_DIR, now })
+  if (match.ok !== true) {
+    throw new StandInRefusal('hold-token', `${HOLD_TOKEN_VARIABLE} must be the token seat ${seat}'s own live hold printed (run-lock.mjs hold --seat ${seat}): ${match.message} (${match.reason})`)
+  }
+  return turns
+}
+
 async function loadModel(options) {
   const name = options.model ?? 'scripted'
   if (name === 'scripted') {
@@ -166,7 +251,7 @@ async function loadModel(options) {
   throw new UsageError(`unknown model '${name}'`)
 }
 
-async function commandRun(options, start = startRun, env = process.env) {
+async function commandRun(options, start = startRun, env = process.env, seams = {}) {
   if (options.consent === 'tty' && !(process.stdin.isTTY === true && process.stdout.isTTY === true)) {
     throw new UsageError('--consent tty needs an interactive terminal (stdin and stdout); a pipe cannot answer consent')
   }
@@ -205,13 +290,17 @@ async function commandRun(options, start = startRun, env = process.env) {
   if (options.env && !ENVIRONMENTS[options.env]) throw new UsageError(`unknown environment '${options.env}'`)
   // Consent at the terminal needs a person at a real terminal: from a pipe or a tool shell, refuse (red team C1, R61).
   const interactive = process.stdin.isTTY === true && process.stdout.isTTY === true
-  const controller = (options.consent ?? (interactive ? 'tty' : 'unattended')) === 'tty' ? ttyController() : unattendedController()
+  const consent = options.consent ?? (interactive ? 'tty' : 'unattended')
+  // CU-342: CU_STAND_IN_OWNER_INPUT set means every stand-in gate holds, or the run does not start.
+  const standInTurns = await standInGate({ env, model, consent, environment: options.env, seat: options.seat, runLockDir: seams.runLockDir, ...(seams.defaultCuHome ? { defaultHome: seams.defaultCuHome } : {}) })
+  const controller = consent === 'tty' ? ttyController() : unattendedController()
   const abort = new AbortController()
   const onSignal = () => abort.abort()
   process.once('SIGINT', onSignal)
   process.once('SIGTERM', onSignal)
   try {
     if (desktop) process.stderr.write(checkoutLine(buildInfo()))
+    if (standInTurns !== null) process.stderr.write(`stand-in owner input (CU-342) after turn ${standInTurns.join(', ')}: not the owner's\n`)
     const run = await start({
       task: { text: options.task, meta: options['task-meta'] ? JSON.parse(options['task-meta']) : null },
       startUrl: options['start-url'],
@@ -230,6 +319,7 @@ async function commandRun(options, start = startRun, env = process.env) {
       environment: options.env,
       ...(desktop ? { apps: options.app, excludeApps: options['exclude-app'] ?? [] } : {}),
       ...(Object.keys(environmentOptions).length > 0 ? { environmentOptions } : {}),
+      ...(standInTurns !== null ? { standInTurns } : {}),
       signal: abort.signal,
       // Notices reach a run without a live view too (CU-64 G1/G2), as each event line is written.
       onEvent: (line) => { const text = noticeLine(line); if (text) process.stderr.write(text) },
@@ -295,12 +385,15 @@ function commandApps([sub, bundleId], { write, env }) {
   throw new UsageError('apps commands: list, revoke <bundle-id>')
 }
 
-/** `startRun` is a seam for tests only, so the argument mapping is checked without launching any environment. */
-export async function main(argv, { write = (text) => process.stdout.write(text), isTerminal = attachedToTerminal, env = process.env, startRun: start = startRun, inspectPoints: inspect = inspectPoints } = {}) {
+/**
+ * `startRun` is a seam for tests only, so the argument mapping is checked without launching any environment; so are
+ * `runLockDir` and `defaultCuHome`, the desktop-run lock and the default home the stand-in's gates read (CU-342).
+ */
+export async function main(argv, { write = (text) => process.stdout.write(text), isTerminal = attachedToTerminal, env = process.env, startRun: start = startRun, inspectPoints: inspect = inspectPoints, runLockDir, defaultCuHome } = {}) {
   const { command, positional, options } = parseArgs(argv)
   switch (command) {
     case 'run': {
-      const result = await commandRun(options, start, env)
+      const result = await commandRun(options, start, env, { runLockDir, defaultCuHome })
       write(JSON.stringify(result, null, 2) + '\n')
       return exitCode(result.status)
     }
