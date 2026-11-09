@@ -92,6 +92,9 @@ const T = {
   fieldDefaultReplyNoText: { role: 'AXTextField', name: '', defaultButton: { role: 'AXButton', name: 'Reply' }, textEntered: false },
   // CU-148 (#342/#343): the helper reports sheet: true while a sheet is up, whatever holds the focus.
   windowSheetUp: { role: 'AXWindow', name: 'Untitled', sheet: true },
+  // CU-232: a compose body - the focus a mail app's Send key equivalent (Shift-Command-D) is pressed from.
+  composeBody: { role: 'AXTextArea', name: 'Message body', editable: true, defaultButton: null, defaultButtonRead: true },
+  messageView: { role: 'AXGroup', name: 'Message view' },
   webDelete: { role: 'button', name: 'Delete' },
   // CU-175: what the browser driver judges for a click on a label or icon inside a control (see the driver-half test).
   webDeleteLabelled: { tag: 'button', role: 'button', name: 'Delete' },
@@ -161,6 +164,9 @@ const A = {
   cmdBackspace: { type: 'keypress', keys: ['META', 'BACKSPACE'] },
   cmdOptShiftBackspace: { type: 'keypress', keys: ['META', 'ALT', 'SHIFT', 'BACKSPACE'] },
   cmdD: { type: 'keypress', keys: ['META', 'D'] },
+  cmdShiftD: { type: 'keypress', keys: ['META', 'SHIFT', 'D'] },
+  optCmdL: { type: 'keypress', keys: ['META', 'ALT', 'L'] },
+  cmdShiftK: { type: 'keypress', keys: ['META', 'SHIFT', 'K'] },
   backspace: { type: 'keypress', keys: ['BACKSPACE'] },
   cmdV: { type: 'keypress', keys: ['META', 'V'] },
   typeSpace: { type: 'type', text: ' ' },
@@ -232,6 +238,17 @@ const ROWS = [
   ['cmd-d-button', 'desktop', 'cmdD', 'okButton', 'delete', 'keyboard-activation.test.mjs', "consent-keys closeSheet, 0.2.42: Command-D on the sheet asked delete, sheet stayed open (20261107T180859Z-724b2e; also 181113Z-4ab57d, 181119Z-f8938f); an earlier combined run 180558Z-5975d2 allowed it with the sheet state unread", null],
   ['cmd-d-sheet-no-focus', 'desktop', 'cmdD', 'windowSheetUp', 'delete', 'sheet-dont-save.test.mjs (#342, #370)', '20261107T083425Z-4a5eb3 (no focusable button), -074411Z-2f170a (focused)', null],
   ['cmd-d-no-sheet', 'desktop', 'cmdD', 'sendField', 'allow', 'sheet-dont-save.test.mjs (#342)', "CU Fixture (#447), helper 0.2.42: Command-D in consent-keys' Message with no sheet allowed, no sheet after (20261107T194542Z-f57f09)", null],
+  // CU-232 (red team of CU-230): a chord that is a menu item's key equivalent fires the item (AppKit offers it to the
+  // menu bar first - CU-143), yet only Delete chords, a sheet's Command-D, Return and paste are judged by what they
+  // fire. context.boundMenuItem is the field CU-237 (#26, menu-key.md) reads: every item whose key equivalent matches,
+  // judged as a click on it, the stricter verdict winning. Asserted since #26; it closes on cu-verifier's CU-238 live row.
+  ['menu-key-send', 'desktop', 'cmdShiftD', 'composeBody', 'submit', 'menu-key.test.mjs (CU-237: bound item ignored)', "cu-verifier, main 277731b, helper 0.2.52, CU-238's menu-compose screen: Shift-Command-D bound to Send declined submit, nothing sent (20261108T142423Z-5a43a9)", null, { boundMenuItem: { role: 'AXMenuItem', name: 'Send', keyEquivalent: { char: 'D', modifiers: 1 } } }],
+  // CU-238's screen (a313b4f): a lazily filled menu's item, and Mail's plain-Backspace Delete with a message view (not a
+  // list - a list asks by CU-147 anyway, so it would not discriminate) in focus.
+  ['menu-key-send-later', 'desktop', 'optCmdL', 'composeBody', 'submit', 'menu-key.test.mjs (CU-237: bound item ignored)', "asserted, not live (D-065): on a warmed screen the chord asked and nothing was sent, but via menu:unreadable - Send Now's key-less Option bits match every Option-Command chord (cu-verifier, 20261108T145003Z-7a79e5); the bound branch is menu-key.test.mjs's, with its mutant", null, { boundMenuItem: { items: [{ role: 'AXMenuItem', name: 'Send Later', keyEquivalent: { char: 'L', modifiers: 2 }, enabled: true }] } }],
+  ['menu-key-delete-message-view', 'desktop', 'backspace', 'messageView', 'delete', 'menu-key.test.mjs (CU-237: bound item ignored)', "asserted, not live (D-065): Backspace in #88's message preview asked and nothing was deleted, but via menu:unreadable - a stale AXEnabled on Delete (cu-verifier, 20261108T145008Z-949186); the bound branch is menu-key.test.mjs's, with its mutant", null, { boundMenuItem: { items: [{ role: 'AXMenuItem', name: 'Delete', keyEquivalent: { char: '\u0008', modifiers: 0 }, enabled: true }] } }],
+  ['menu-key-benign', 'desktop', 'cmdShiftK', 'composeBody', 'allow', 'CU-232 negative (a benign bound item)', "cu-verifier, main 277731b, helper 0.2.52, CU-238's menu-compose screen: Shift-Command-K bound to Clear Log allowed, the item fired (20261108T142426Z-d2a6e7)", null, { boundMenuItem: { role: 'AXMenuItem', name: 'Clear Log', keyEquivalent: { char: 'K', modifiers: 1 } } }],
+  ['menu-key-backspace-in-body', 'desktop', 'backspace', 'composeBody', 'allow', 'loop.mjs menuChord (a plain key in a text entry takes no read)', "cu-verifier, main 277731b, helper 0.2.52, CU-238's menu-compose screen: Backspace in the draft body edited one character (20261108T142453Z-afc083)", null],
   // Accepted over-ask (cu-developer-one, cu-verifier): 'Reply' stays a submit word because a forum's or chat's Reply posts;
   // a button that only opens a composer is asked too (S8 x1, S2 x4, all composers). Escape hatch: submit@<bundle id>.
   ['reply-in-thread-over-ask', 'desktop', 'click', 'replyInThread', 'submit', 'policy submit words', "cu-verifier, chat-thread: text in the composer, a click on AXButton 'Reply in thread' declined submit (20261107T134726Z-325231); earlier cu-researcher run 080755Z-0c7c74 (preapproved)", null],

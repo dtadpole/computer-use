@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - handover'
 created: 2026-11-08T04:14:00Z
-modified: 2026-11-08T18:56:00Z
+modified: 2026-11-08T23:11:00Z
 level: L1
-version: 3.1.0
+version: 4.0.0
 description: 'What a fresh [cu] Developer Two session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -13,31 +13,40 @@ grounded_in:
 
 # [cu] Developer Two - handover
 
-Seat `cu-developer-two`: desktop and browser drivers, live view, run lock, MCP. Code: `~/computer-use--cu-developer-two`,
-a worktree of the main checkout, which is never edited. Records: [artifacts.md](artifacts.md).
+Seat `cu-developer-two`: desktop and browser drivers, live view, run lock, MCP. For the successor: the code worktree
+`~/computer-use--cu-developer-two` still works (the helper admits it). Records: [artifacts.md](artifacts.md).
+
+## Open PRs (heads)
+
+- #146 at 599a7dc, Fixes CU-279 (an IDE's terminal in any language). It needs re-OKs from cu-verifier (one desktop-consent
+  mutant find line), cu-developer-one and cu-researcher.
+- #149 at 3e63ba9, Fixes CU-296 (CJK debug consoles, IDE-only). Stacked on #146; its OKs need renewing at the new head.
+- #158 at 5adeca7, records (artifacts 1.116.0, action-log lines). OK'd.
 
 ## Issues
 
-- In Verify (cu-verifier closes): CU-219, CU-229, CU-240, CU-259, CU-276. Done: CU-266, CU-267, CU-268, CU-273.
-- In Progress: CU-282 (#122, the live-view MJPEG flake), CU-239 (fix when a gate failure names the path).
-- Filed and triaged: CU-279 (an IDE's integrated terminal), likely covered by E5's terminal_view; closed on the
-  terminal's accessible name, not a new rule.
+- In Progress: CU-279, CU-296.
+- In Verify: CU-219, CU-229, CU-240, CU-253, CU-259, CU-276, CU-282, CU-286, CU-287, CU-290.
+- CU-252: the stand-in's rows expose no AX names, so the helper reads unreadable; the driver is clean.
+  cu-developer-three fixes the stand-in; cu-developer-one adds the fail-closed rule.
 
-## PRs waiting to land
+## Owed
 
-- #122 (Fixes CU-282): OK'd by cu-verifier and cu-developer-one.
-- #114 (Part of CU-252): seam rows through the real driver, 4/4. cu-developer-one OK'd it; cu-verifier's re-OK is due.
-- #18 (Part of CU-226): the focus-after-click measurement tool. This records PR.
+After #146 and #149 land, a records PR: their artifact rows, plus one action-log line each, since they predate #148.
+Every new PR carries its own action-log line.
 
-## Live state and open asks
+## Live state
 
-- CU-276 is live: suite.sh registers `run-lock.mjs wait`, and a hold refused `phase2_waiting` waits about 2 minutes.
-- D-075 lifted D-074's owner-data limit. Per-app approval, the lock, the idle rule and D-034's cost line stay. No
-  seat acts in Finder (CU-252 uses the CU Fixture stand-in, #104).
-- Helper 0.2.56 is installed, with both halves of CU-240 on main.
-- Before each push, run the merge-tree check against main; GitHub's 'conflicting' can be stale.
+No hold, run, schedule or background job.
+
+## Lessons
+
+- Announce a hold only after the hold command itself succeeds; check its exit code, not a pipe's.
+- Unset NODE_PATH and NODE_OPTIONS before launching the real helper from this shell, or the boundary refuses.
+- Let the lock's idle rule decide: other seats' synthetic input resets HID idle.
+- Before pushing, run the merge-tree check against main; GitHub's 'conflicting' can be stale.
+- A mutant's find text must follow the code it patches.
 
 ## Next step
 
-Land the queue and keep it mergeable. Add an artifacts row per merged PR. Review the driver, lock, MCP and live-view
-PRs. Complete only when the coordinator reports cu-verifier's ULTIMATE_GOAL verdict.
+Land #146, #149 and #158, then the records PR. Complete only when the coordinator reports cu-verifier's ULTIMATE_GOAL verdict.
