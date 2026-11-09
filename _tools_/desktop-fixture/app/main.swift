@@ -587,6 +587,8 @@ let app = FixtureApplication.shared
 app.setActivationPolicy(Fixture.shared.offscreen ? .accessory : .regular)
 Menus.install()
 Evidence.install()
+// CU-360: the GetURL handler, set at will-finish-launching (Evidence.swift); the app has no NSApplicationDelegate.
+OpenURLEvidence.shared.install()
 Clipboard.installTerminationRestore()
 
 Thread.detachNewThread {

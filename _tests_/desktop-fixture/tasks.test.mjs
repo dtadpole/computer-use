@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict'
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { execFileSync } from 'node:child_process'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import { describe, test } from 'node:test'
+import { fileURLToPath } from 'node:url'
 
 import { BUNDLE_ID, infoPlist, LEDGER, sourceHash } from '../../_tools_/desktop-fixture/build.mjs'
 import { jsonLines } from '../../_tools_/desktop-fixture/client.mjs'
@@ -95,6 +97,54 @@ describe('build and channel helpers', () => {
     const read = jsonLines()
     assert.deepEqual(read('{"id":1,"result":{}}\n{"id"'), [{ id: 1, result: {} }])
     assert.deepEqual(read(':2}\n'), [{ id: 2 }])
+  })
+})
+
+describe('CU-360 the registered-scheme probe: x-cu-fixture-probe and the openURL record', () => {
+  const FIXTURE = join(dirname(fileURLToPath(import.meta.url)), '../../_tools_/desktop-fixture')
+  const source = (path) => readFileSync(join(FIXTURE, path), 'utf8')
+  const plist = (xml) => JSON.parse(execFileSync('plutil', ['-convert', 'json', '-o', '-', '-'], { input: xml }).toString())
+  const between = (text, start, end) => {
+    const from = text.indexOf(start)
+    assert.ok(from >= 0, `missing ${start}`)
+    const to = end === undefined ? text.length : text.indexOf(end, from)
+    assert.ok(to > from, `missing ${end} after ${start}`)
+    return text.slice(from, to)
+  }
+
+  test('the generated Info.plist of CU Fixture declares exactly the x-cu-fixture-probe scheme; CU Ledger declares none', () => {
+    const fixture = plist(infoPlist())
+    assert.equal(fixture.CFBundleIdentifier, BUNDLE_ID)
+    assert.deepEqual(fixture.CFBundleURLTypes, [{ CFBundleURLName: 'ai.reflection.cu.fixture.probe', CFBundleURLSchemes: ['x-cu-fixture-probe'] }])
+    assert.equal(plist(infoPlist(LEDGER)).CFBundleURLTypes, undefined, 'one app owns the scheme, so a probe never meets a choice of handler')
+  })
+
+  test('the app sets a GetURL handler at will-finish-launching and records openURL with the scheme and the path only', () => {
+    const evidence = source('app/Evidence.swift')
+    const handler = between(evidence, 'final class OpenURLEvidence')
+    assert.match(handler, /NSApplication\.willFinishLaunchingNotification[\s\S]*NSAppleEventManager\.shared\(\)\.setEventHandler\(/, 'set when the app will finish launching, so a cold launch by URL is caught')
+    assert.match(handler, /forEventClass: AEEventClass\(kInternetEventClass\), andEventID: AEEventID\(kAEGetURL\)/)
+    assert.match(handler, /func handleGetURL\(_ event: NSAppleEventDescriptor, withReplyEvent reply: NSAppleEventDescriptor\)/)
+    assert.match(handler, /paramDescriptor\(forKeyword: AEKeyword\(keyDirectObject\)\)\?\.stringValue[\s\S]*Evidence\.recordOpenURL\(text\)/)
+    assert.match(source('app/main.swift'), /OpenURLEvidence\.shared\.install\(\)[\s\S]*\napp\.run\(\)/, 'installed before the run loop starts')
+    const record = between(evidence, 'static func recordOpenURL', '/// The named control')
+    const entry = record.match(/input\.append\(\[([^\]]*)\]\)/)
+    assert.ok(entry, 'one entry appended to the input log')
+    assert.deepEqual([...entry[1].matchAll(/"(\w+)":/g)].map((m) => m[1]), ['seq', 't', 'kind', 'scheme', 'path'])
+    assert.match(entry[1], /"kind": "openURL"/)
+    assert.match(record, /static let openURLPathLimit = 80\b/)
+    assert.match(record, /parts\.path\.prefix\(openURLPathLimit\)/)
+    for (const code of [record, handler]) {
+      assert.doesNotMatch(code, /\.(host|query|queryItems|fragment|user|password|absoluteString|absoluteURL|percentEncodedHost|percentEncodedQuery|percentEncodedUser|percentEncodedPassword|resourceSpecifier)\b/)
+      assert.doesNotMatch(code, /Fixture\.shared\.record|events\.append|print\(|NSLog/, 'the URL goes nowhere but the openURL entry')
+    }
+  })
+
+  test('build.mjs never registers the bundle with LaunchServices: it runs swiftc and codesign only', () => {
+    const build = source('build.mjs')
+    assert.doesNotMatch(build, /lsregister|LSRegister/i)
+    assert.deepEqual([...new Set([...build.matchAll(/execFileSync\('([^']+)'/g)].map((m) => m[1]))].sort(), ['codesign', 'swiftc'])
+    assert.doesNotMatch(build, /\b(spawn|spawnSync|exec|execSync|execFile)\(/)
   })
 })
 

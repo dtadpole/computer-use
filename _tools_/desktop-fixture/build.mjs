@@ -19,6 +19,23 @@ export const EXECUTABLE = 'cu-fixture'
 /** The second app for two-app tasks: the same executable under its own identity, so approval sees two apps. */
 export const LEDGER = Object.freeze({ bundleId: 'ai.reflection.cu.ledger', name: 'CU Ledger' })
 
+/**
+ * CU-360: the URL scheme CU Fixture declares (CU Ledger declares none), so a probe can measure whether a browser opens
+ * a registered app scheme with the team's own app. The build never registers it with LaunchServices: the probe
+ * registers the bundle before it runs and unregisters it afterwards. A GetURL event is logged as `openURL` (Evidence.swift).
+ */
+export const PROBE_URL_SCHEME = 'x-cu-fixture-probe'
+export const PROBE_URL_NAME = 'ai.reflection.cu.fixture.probe'
+
+const urlTypes = (bundleId) => (bundleId !== BUNDLE_ID ? '' : `  <key>CFBundleURLTypes</key>
+  <array>
+    <dict>
+      <key>CFBundleURLName</key><string>${PROBE_URL_NAME}</string>
+      <key>CFBundleURLSchemes</key><array><string>${PROBE_URL_SCHEME}</string></array>
+    </dict>
+  </array>
+`)
+
 /** The Info.plist of the bundle: a stable identifier, so per-app approval can name it. */
 export function infoPlist({ bundleId = BUNDLE_ID, name = APP_NAME, executable = EXECUTABLE, version = '1' } = {}) {
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -33,7 +50,7 @@ export function infoPlist({ bundleId = BUNDLE_ID, name = APP_NAME, executable = 
   <key>CFBundleVersion</key><string>${version}</string>
   <key>LSMinimumSystemVersion</key><string>14.0</string>
   <key>NSHighResolutionCapable</key><true/>
-</dict>
+${urlTypes(bundleId)}</dict>
 </plist>
 `
 }

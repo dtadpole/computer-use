@@ -82,6 +82,26 @@ enum Evidence {
     input.append(entry)
   }
 
+  /// CU-360: one URL opened with this app (the GetURL Apple event), logged as `openURL` with the URL's scheme and its
+  /// path component only - never the host, query, fragment, user or password - and the path cut at 80 characters.
+  static func recordOpenURL(_ text: String) {
+    let (scheme, path) = schemeAndPath(text)
+    input.append(["seq": input.count + 1, "t": Date().timeIntervalSince1970, "kind": "openURL", "scheme": scheme, "path": path])
+  }
+
+  static let openURLPathLimit = 80
+
+  /// The scheme (lower case) and the path of a URL string; a string Foundation cannot parse keeps only a well-formed
+  /// scheme before its first colon, and no path.
+  static func schemeAndPath(_ text: String) -> (String, String) {
+    if let parts = URLComponents(string: text) {
+      return ((parts.scheme ?? "").lowercased(), String(parts.path.prefix(openURLPathLimit)))
+    }
+    let head = text.prefix { $0 != ":" }
+    let wellFormed = head.count < text.count && head.first?.isLetter == true && head.allSatisfy { $0.isASCII && ($0.isLetter || $0.isNumber || "+-.".contains($0)) }
+    return (wellFormed ? head.lowercased() : "", "")
+  }
+
   /// The named control or recorder target under a window point, if any.
   static func targetName(window: String, x: CGFloat, y: CGFloat) -> String? {
     let targets = Windows.targets()
@@ -183,5 +203,26 @@ enum Evidence {
     guard let type = types[spec["kind"] as? String ?? ""], let event = NSEvent.mouseEvent(with: type, location: inWindow, modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber, context: nil, eventNumber: 0, clickCount: spec["clickCount"] as? Int ?? 1, pressure: 1) else { return false }
     NSApp.postEvent(event, atStart: false)
     return true
+  }
+}
+
+/// CU-360: the receiver of the GetURL Apple event (kInternetEventClass / kAEGetURL), the open of a URL in the
+/// x-cu-fixture-probe scheme the Info.plist declares. The handler is set when the app will finish launching - after
+/// NSApplication has installed its own Apple event handlers, before the launch's events are dispatched - so a URL that
+/// launches the app is caught as well as one sent to it running. Only Evidence.recordOpenURL sees the URL string.
+final class OpenURLEvidence: NSObject {
+  static let shared = OpenURLEvidence()
+  var launchObserver: NSObjectProtocol?
+
+  func install() {
+    launchObserver = NotificationCenter.default.addObserver(forName: NSApplication.willFinishLaunchingNotification, object: nil, queue: nil) { _ in
+      NSAppleEventManager.shared().setEventHandler(OpenURLEvidence.shared, andSelector: #selector(OpenURLEvidence.handleGetURL(_:withReplyEvent:)),
+                                                   forEventClass: AEEventClass(kInternetEventClass), andEventID: AEEventID(kAEGetURL))
+    }
+  }
+
+  @objc func handleGetURL(_ event: NSAppleEventDescriptor, withReplyEvent reply: NSAppleEventDescriptor) {
+    guard let text = event.paramDescriptor(forKeyword: AEKeyword(keyDirectObject))?.stringValue else { return }
+    Evidence.recordOpenURL(text)
   }
 }

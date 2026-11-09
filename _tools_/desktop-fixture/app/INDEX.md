@@ -1,8 +1,8 @@
 ---
 title: CU Fixture sources
 created: 2026-11-02T08:34:00Z
-modified: 2026-11-06T04:45:00Z
-version: 0.5.0
+modified: 2026-11-09T17:36:00Z
+version: 0.5.1
 description: The Swift sources of CU Fixture.app - the process, its channel and windows, and its task screens.
 grounded_in:
   - source: _tools_/desktop-fixture/contract.md
@@ -14,7 +14,7 @@ grounded_in:
 |---|---|
 | [main.swift](main.swift) | fixture state, controls, the drop board, windows, render and targets, the channel, start-up |
 | [Screens.swift](Screens.swift) | the first screens, menus, confirmations, file saves, the oracle's `act` |
-| [Evidence.swift](Evidence.swift) | the input log (landing point, target, pid, tag), input-recorder, marker-colour and secure-marker screens |
+| [Evidence.swift](Evidence.swift) | the input log (landing point, target, pid, tag), input-recorder, marker-colour and secure-marker screens; the GetURL handler that logs `openURL` (scheme and path only, CU-360) |
 | [More.swift](More.swift) | AX-only note, fake permission prompt, secure hand-over, window behind a window, drag between windows |
 | [Extra.swift](Extra.swift) | row lists, tabs, search, stepper, purchase, send, sandbox files, CU Ledger, more injection screens |
 | [Clipboard.swift](Clipboard.swift) | S5 clipboard: CU Ledger's invoice to copy, the payment form that tells a paste from typing, the owner's pasteboard kept for a run |
