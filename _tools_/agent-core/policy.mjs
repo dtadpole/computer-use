@@ -195,6 +195,8 @@ function keyboardActivation(action, target, context = {}) {
   if (action.type === 'type') return { activates: CONTROL_ROLE.test(String(target?.role ?? '')) && /[ \r\n]/.test(String(action.text ?? '')), deletes: false }
   const keys = keysOf(action)
   if (keys.size === 0) return { activates: false, deletes: false }
+  // CU-353: an accesskey chord fires the element the browser driver reports for it (target.accessKey) - a press on it.
+  if (action.type === 'keypress' && target?.accessKey === true) return { activates: true, deletes: false }
   const button = BUTTON_ROLE.test(String(target?.role ?? ''))
   // CU-234 (keyboard-activation.md): a variant is recognised generously - a miss is an under-ask, a recognised no-op only
   // over-asks. Space with any of Shift, Option or Control presses a focused control (an app that handles Space itself,
@@ -253,10 +255,34 @@ function withoutOrderReferences(name) {
  * still looks sensitive - a value the task does not name - still asks.
  */
 const TOKEN_EDGES = /^[^\w+@]+|[^\w]+$/g
+// CU-354 (design note 0.1): whole values, never tokens. The task's own values are the shortest runs of 1-6 of its tokens
+// that the value rules accept; only those, typed back whole (any case, any run of spaces between their tokens), are taken
+// out of the typed text. A task word that is only part of a value ('1234' in 'Visa ending in 1234') or a keyword
+// ('password') exempts nothing.
+function taskValuesOf(task) {
+  const tokens = String(task ?? '').split(/\s+/).map((t) => t.replace(TOKEN_EDGES, '')).filter(Boolean)
+  const values = []
+  for (let i = 0; i < tokens.length; i++) {
+    for (let k = 1; k <= 6 && i + k <= tokens.length; k++) {
+      const run = tokens.slice(i, i + k).join(' ')
+      if (looksSensitive(run)) { values.push(tokens.slice(i, i + k)); break }
+    }
+  }
+  return values
+}
 function withoutTaskValues(text, task) {
-  const given = new Set(String(task ?? '').toLowerCase().split(/\s+/).map((t) => t.replace(TOKEN_EDGES, '')).filter(Boolean))
-  if (given.size === 0) return String(text ?? '')
-  return String(text ?? '').split(/(\s+)/).map((t) => (given.has(t.toLowerCase().replace(TOKEN_EDGES, '')) ? ' ' : t)).join('')
+  let out = String(text ?? '')
+  for (const parts of taskValuesOf(task)) {
+    out = out.replace(new RegExp(parts.map((part) => escapeRegExp(part)).join('\\s+'), 'gi'), ' ')
+    // A card or IBAN field reformats as it is typed (cu-researcher): the task's card or IBAN typed back plain, spaced or
+    // dashed is the same value, so it is compared on its digits and letters with any spaces or dashes between them.
+    const joined = parts.join(' ')
+    if (['card', 'iban'].includes(looksSensitive(joined))) {
+      const compact = joined.replace(/[\s-]/g, '')
+      out = out.replace(new RegExp([...compact].map((ch) => escapeRegExp(ch)).join('[\\s-]*'), 'gi'), ' ')
+    }
+  }
+  return out
 }
 
 // CU-178: a name and a list entry are compared normalised - lower case, a curly apostrophe straight, licence spelled

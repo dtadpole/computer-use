@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-09T14:48:00Z
+modified: 2026-11-09T16:15:00Z
 level: L1
-version: 3.5.0
+version: 3.6.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,24 +15,23 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; never drives the desktop. State at 14:48Z, 9 November.
+session worktree plus `--review` worktrees; never drives the desktop. State at 16:15Z, 9 November.
 
 ## Landed
 
-- Verified: CU-301, CU-241, CU-297, CU-302 (D-096), CU-325, CU-326, CU-263; CU-339 audit; CU-321 decided.
-- CU-340 (PR #294, rows PR #305, mutants PR #307, guide 0.1.20) and CU-347 (PR #314: AWS secret, credential
-  assignments; AIza was already API_TOKEN's) - both High, both in Verify.
+- Verified: CU-301, CU-241, CU-297, CU-302, CU-325, CU-326, CU-263, CU-336, CU-347; CU-339 audit; CU-321 decided.
+- High, in Verify: CU-340, CU-352 (locale action names, PR #323), CU-354 (whole task values, PR #329).
 
 ## Open
 
-- CU-347: D-061 rows from cu-researcher, then table-mutants aws-secret-ignored and assignment-ignored.
-- PR #274 (Fixes CU-336, at 3572069): queued after CU-351's driver fix (cu-developer-two); when it lands the guide's
-  CU-336 limit line becomes its over-ask.
-- Filed, Medium: CU-345, CU-346, CU-348, CU-349 (helper half first), CU-350 (passphrase, Bearer, -p, PGPASSWORD).
+- Fully OK'd, queued: PR #331 (CU-345 field names, German compounds), PR #333 (CU-346 separators), PR #335 (CU-348, Low).
+- In review: PR #336 (CU-350 credential shapes), PR #338 (CU-355 personal-ID names, stacked on #331).
+- After PR #331 lands: the guide's 'Names are read in English and Chinese only' lists the eight languages.
+- After PR #321 lands: table-mutants aws-secret-ignored and assignment-ignored.
 
 ## Pending
 
-- CU-342 (owner-input stand-in) design 0.2 agreed; review its agent-core PR. CU-135 waits on the owner.
+- CU-349's agent-core half (placeholder adds asks, never removes) after the helper half; the it/nl/pt/tr pass.
 
 ## Lessons
 
@@ -44,7 +43,7 @@ session worktree plus `--review` worktrees; never drives the desktop. State at 1
 - A D-065 cell needs a mutant seen failing it: run table-mutants-run.mjs, never trust a named one.
 - 'Named limit' is for allow negatives only; an under-ask that stays is a filed issue plus a guide line.
 - Push only on the hygiene gate's exit status 0, run unpiped; chain every step with && (a failed merge must stop).
-- Write 'PR #n', never a closing keyword before #n.
+- Write 'PR #n', never a closing keyword before #n; read the inbox for a ruling before pushing to an OK'd PR.
 
 ## Tools
 
