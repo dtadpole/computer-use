@@ -51,3 +51,10 @@ test('CU-349: a placeholder is trimmed; over 80 characters, empty, absent (an ol
   assert.equal((await read(BOX)).hit.placeholder, null, 'an older helper sends none')
   for (const placeholder of ['', '   ', 42, { text: 'CVV' }, null]) assert.equal((await read({ ...BOX, placeholder })).hit.placeholder, null, JSON.stringify(placeholder))
 })
+
+test('CU-349 (cu-researcher): a box whose value holds a card and whose placeholder says Card number returns the placeholder and never the digits', async () => {
+  const digits = ['4111', '1111', '1111', '1111'].join('') // built from fragments: no card-shaped literal in the tree
+  const { hit, focused } = await read({ ...BOX, value: digits, placeholder: 'Card number' })
+  assert.equal(hit.placeholder, 'Card number')
+  for (const target of [hit, focused]) assert.ok(!JSON.stringify(target).includes(digits), 'no field of the target carries the value')
+})
