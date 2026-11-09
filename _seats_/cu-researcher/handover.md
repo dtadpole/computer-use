@@ -15,9 +15,7 @@ grounded_in:
 Start here, then [responsibilities](responsibilities.md) and [red-team-consent-tables](red-team-consent-tables.md).
 
 ```text
-WHERE: session worktree ~/dtadpole/computer-use-wt/<session-id>; test merges in <session-id>--probe. Scripts
-outside the tree in <session-id>--cu302: match-open-cells.mjs, match-sys.mjs, mutate-d065.mjs (apply one mutant,
-see the row fail), browser-actions.mjs.
+WHERE: session worktree ~/dtadpole/computer-use-wt/<session-id>; test merges in <session-id>--probe.
 
 GOAL (cu-coordinator 14:19Z): (1) D-061 re-sign; (2) red-team every consent change on the merge (PR 274, 299,
 CU-342's stand-in - unreachable from any model run); (3) hunt under-asks and file each (High if it reaches a
@@ -29,8 +27,8 @@ CU-340's split rows are closed (PR 305). Reviews: CU-342's PR (design 0.2 took m
 identity, cli-only env read, no action path, realpath CU_HOME); probe each gate row and its mutant on the merge.
 
 HUNT: filed CU-345 (localized PIN/OTP/CVV names), CU-346 (card/SSN separators), CU-347 (AWS secret, credential
-assignments - PR 314 OK'd), CU-348 (card as URL userinfo), CU-349 (desktop placeholder-only fields). Probes that
-held: unreadable focus, cursor-move reordering, paste chords, {{secret}}, drag text, terminals. Loop-level
+assignments - PR 314 OK'd), CU-348 (card as URL userinfo), CU-349 (desktop placeholder-only fields). Held:
+unreadable focus, cursor reordering, paste chords, drag text, terminals. Loop-level
 probes reuse split-fields.test's run() harness (/tmp/cu-r-probe/*.mjs).
 
 LESSONS: a mutant is cited only after it is applied and seen to fail; when seats share a change, post the plan
