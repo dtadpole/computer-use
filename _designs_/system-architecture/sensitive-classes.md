@@ -1,9 +1,9 @@
 ---
 title: Sensitive classes - everything the agent must never type unasked
 created: 2026-11-07T14:34:22Z
-modified: 2026-11-08T18:48:59Z
+modified: 2026-11-09T01:02:00Z
 level: L1
-version: 0.4.7
+version: 0.4.8
 description: The D-061 table - every sensitive class with its value rule, its field-name rule, the asserting test and the live row; rows live in an executable matrix, gaps are children of CU-145.
 status: unverified
 grounded_in:
@@ -14,8 +14,9 @@ grounded_in:
 
 # Sensitive classes
 
-A typed value is judged twice: by the value and by a text entry's name. Each
-value rule and name is a row of `_tests_/agent-core/sensitive-classes.test.mjs`; todo rows mark open under-asks.
+A typed value is judged twice: by the value and by a text entry's name - on a web page a frame host's own name counts
+(CU-297), and a printable key pressed into an entry counts as typing it (CU-301). Each value rule and name is a row of
+`_tests_/agent-core/sensitive-classes.test.mjs`; todo rows mark open under-asks.
 
 | Group | By value | By name (policy.mjs's lists, compared normalised) |
 |---|---|---|
@@ -30,6 +31,7 @@ value rule and name is a row of `_tests_/agent-core/sensitive-classes.test.mjs`;
 - Too broad to judge by value: a plain SSN or SIN, a CVV, an MM/YY expiry, a passport or licence number, a date, a
   street address; names carry them.
 - A 40+ hex digest asks (over-ask, D-061).
+- A vendor prefix naming every frame for the card ('Secure Credit Card Frame - Postal Code') asks (over-ask, CU-297).
 - Words match whole; a bare six-digit code goes by field name.
 - Sensitive-field text, Email and Phone too, is redacted (D-062).
 - An unbroken national phone run (07700900123) or a 00 prefix is not judged by value; a grouped reference asks (CU-185).
