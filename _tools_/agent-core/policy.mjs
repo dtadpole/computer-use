@@ -497,11 +497,13 @@ function urlFieldName(name) {
  * or more). A path segment's card or phone match is a numeric id (a post or order number), not counted. Named over-ask:
  * a 40-hex commit hash in a code host's URL (the digest rule; cu-coordinator: keep it).
  */
-// CU-325 (cu-coordinator 06:30Z, High): a card number in a URL path. A path segment counts when the whole segment is a
-// card-shaped digit run (bare, or in card groupings) that passes Luhn and carries a card brand's prefix with that brand's
-// length - a random numeric id then trips about one time in a hundred, not one in ten - or when its digits hold a card-length
-// run the run itself typed or pasted (typedDigits, the loop's in-memory buffer, CU-267), whatever its prefix.
-const CARD_SEGMENT = /^(\d{13,19}|\d{4}(?:[ -]\d{4}){3}(?:[ -]\d{3})?|\d{4}[ -]\d{6}[ -]\d{4,5})$/
+// CU-325 (cu-coordinator 06:30Z, High): a card number in a URL path. A path segment counts when it holds a card-shaped
+// digit run - bare or in card groupings, not touching other digits, so a file name ('<card>.pdf') or a suffix counts too
+// (cu-researcher on #245) - that passes Luhn and carries a card brand's prefix with that brand's length (a random numeric id
+// then trips about one time in a hundred, not one in ten), or when its digits hold a card-length run the run itself typed or
+// pasted (typedDigits, the loop's in-memory buffer, CU-267), whatever its prefix. Named limits: a card as a host label, or
+// split across two segments.
+const CARD_RUN = /(?<!\d)(\d{4}(?:[ -]\d{4}){3}(?:[ -]\d{3})?|\d{4}[ -]\d{6}[ -]\d{4,5}|\d{13,19})(?!\d)/g
 const CARD_BRANDS = [
   [/^4/, [13, 16, 19]],
   [/^(5[1-5]|222[1-9]|22[3-9]\d|2[3-6]\d\d|27[01]\d|2720)/, [16]],
@@ -515,7 +517,10 @@ const brandCard = (digits) => CARD_BRANDS.some(([prefix, lengths]) => prefix.tes
 export function pathCard(segment, typedDigits = []) {
   const text = String(segment ?? '').trim()
   const digits = text.replace(/\D/g, '')
-  if (CARD_SEGMENT.test(text) && luhn(digits) && brandCard(digits)) return true
+  for (const match of text.matchAll(CARD_RUN)) {
+    const run = match[0].replace(/\D/g, '')
+    if (luhn(run) && brandCard(run)) return true
+  }
   return (Array.isArray(typedDigits) ? typedDigits : []).some((run) => typeof run === 'string' && run.length >= 13 && run.length <= 19 && digits.includes(run))
 }
 

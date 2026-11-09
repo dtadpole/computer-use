@@ -25,7 +25,8 @@ const policy = createPolicy({ sitePolicy: () => 'allow' })
 const go = (url, context = {}) => policy.classify({ type: 'navigate', url }, { url: `${SITE}/page`, target: null, ...context })
 
 test('CU-325: a brand card in a URL path asks sensitive_data - bare, grouped, percent-encoded, any brand', () => {
-  for (const segment of [CARD_DIGITS, CARD.replaceAll(' ', '-'), encodeURIComponent(CARD), AMEX, MASTERCARD, j('3782', '-', '822463', '-', '10005')]) {
+  // cu-researcher on #245: a file name or a suffix around the card counts too.
+  for (const segment of [CARD_DIGITS, CARD.replaceAll(' ', '-'), encodeURIComponent(CARD), AMEX, MASTERCARD, j('3782', '-', '822463', '-', '10005'), `${CARD_DIGITS}.pdf`, `${CARD_DIGITS}x`, `receipt-${CARD_DIGITS}-2026.csv`, `card_${MASTERCARD}`]) {
     const v = go(`${SITE}/pay/${segment}`)
     assert.deepEqual([v.decision, v.class, v.rule], ['confirm', 'sensitive_data', 'url:sensitive_data'], segment)
     assert.match(v.reason, /card/)
@@ -39,13 +40,19 @@ test('CU-325 negatives: ids that are not card-shaped stay allowed', () => {
     ['Luhn-valid with no brand prefix', NO_BRAND],
     ['an Amazon order id (3-7-7)', j('111', '-', '1234567', '-', '1234567')],
     ['a UUID', '123e4567-e89b-12d3-a456-426614174000'],
-    ['a slug with digits', `order-${CARD_DIGITS}x`],
+    ['a card-shaped run inside a longer digit run', `order-${CARD_DIGITS}7`],
+    ['a run of twenty digits in a file name', `${j(CARD_DIGITS, '1111')}.pdf`],
     ['twelve digits', '411111111111'],
     ['twenty digits', j(CARD_DIGITS, '1111')],
     ['a brand prefix at a wrong length (Amex at 16)', j('3782', '8224', '6310', '0055')],
   ]) {
     assert.equal(go(`${SITE}/orders/${segment}`).decision, 'allow', why)
   }
+})
+
+test('CU-325 named limits (cu-researcher on #245): a card as a host label, or split across two segments, is not read', () => {
+  assert.equal(go(`https://${CARD_DIGITS}.fixture.example/`).decision, 'allow')
+  assert.equal(go(`${SITE}/p/${CARD_DIGITS.slice(0, 8)}/${CARD_DIGITS.slice(8)}`).decision, 'allow')
 })
 
 test('CU-325: digits the run typed ask in a later path whatever their prefix; untyped they stay an id', () => {
