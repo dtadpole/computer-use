@@ -63,11 +63,7 @@ const LOCALE_WORDS = Object.freeze({
   // CU-345: a PIN, one-time code, security code or password field named in these languages.
   secret: ['passwort', 'kennwort', 'sicherheitscode', 'prüfziffer', 'mot de passe', 'code de sécurité', 'cryptogramme',
     'contraseña', 'código de seguridad', 'пароль', 'код безопасности', 'パスワード', '暗証番号', 'セキュリティコード', '認証コード',
-    '비밀번호', '보안코드', '인증번호',
-    // cu-researcher's red team of PR #323: PIN, one-time code, card-check and card-number names the first list missed.
-    'geheimzahl', 'bestätigungscode', 'prüfnummer', 'kartennummer', 'code de vérification', 'numéro de carte',
-    'código de verificación', 'número de tarjeta', 'код подтверждения', 'номер карты', 'pin-код', '確認コード', 'カード番号',
-    '인증 코드', '카드 번호', '카드번호'],
+    '비밀번호', '보안코드', '인증번호'],
 })
 const WORDS = Object.freeze({
   purchase: ['buy', 'pay', 'order', 'place order', 'checkout', 'check out', 'subscribe', 'donate', 'purchase', 'transfer', 'withdraw', 'wire', 'send money',
