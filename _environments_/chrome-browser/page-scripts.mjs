@@ -503,8 +503,16 @@ export function describeElement(el) {
   } catch {
     // A detached or cross-origin document: no page-level flags.
   }
+  // CU-373: a toggle's state - a native checkbox or radio (indeterminate is 'mixed'), else aria-checked on a checkbox,
+  // switch, radio or menu item; aria-pressed on a toggle button - so a click on a security switch can be judged by the
+  // direction it flips. Absent when the element carries neither.
+  const tristate = (value) => (value === 'true' ? true : value === 'false' ? false : value === 'mixed' ? 'mixed' : null)
+  const ariaChecked = typeof el.getAttribute === 'function' ? tristate(el.getAttribute('aria-checked')) : null
+  const checked = tag === 'input' && (type === 'checkbox' || type === 'radio') ? (el.indeterminate ? 'mixed' : Boolean(el.checked)) : ariaChecked
+  const pressed = typeof el.getAttribute === 'function' ? tristate(el.getAttribute('aria-pressed')) : null
   return { tag, inputType: type, isPassword: type === 'password', autocomplete: autocomplete || null, href: link, origin, editable, caption: editable ? null : caption, entryCaption: editable ? caption : null,
-    ...(frameUrl ? { frameUrl } : {}), ...(terminal ? { terminal } : {}), ...(notebookCell ? { notebookCell } : {}), ...(notebookSurface ? { notebookSurface } : {}), ...(codeSurface ? { codeSurface } : {}) }
+    ...(frameUrl ? { frameUrl } : {}), ...(terminal ? { terminal } : {}), ...(notebookCell ? { notebookCell } : {}), ...(notebookSurface ? { notebookSurface } : {}), ...(codeSurface ? { codeSurface } : {}),
+    ...(checked !== null ? { checked } : {}), ...(pressed !== null ? { pressed } : {}) }
 }
 
 /**

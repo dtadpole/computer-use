@@ -138,6 +138,11 @@ const server = http.createServer((req, res) => {
     res.end('<!doctype html><style>body{margin:0}.at{position:absolute;left:20px;width:300px;height:30px}</style><select class="at" style="top:20px" id="bulk"><option>Bulk actions</option><option>Archive</option><option>Delete</option><option>Details</option><option>Sort: Newest</option></select><input class="at" style="top:70px" id="note"><div class="at" style="top:120px" id="lb" role="listbox" tabindex="0" aria-label="Actions" aria-activedescendant="lb-del"><div role="option" id="lb-arc">Archive</div><div role="option" id="lb-del">Delete</div></div><select class="at" style="top:170px" id="multi" multiple><option>Archive</option><option>Delete</option></select><form class="at" style="top:230px"><label><input type="radio" name="account" id="keep" checked> Keep my account</label><label><input type="radio" name="account" id="del"> Delete my account</label></form>')
     return
   }
+  // CU-373: a checked checkbox and an ARIA switch that is off.
+  if (req.url.startsWith('/toggle-page')) {
+    res.end('<!doctype html><style>body{margin:0}.at{position:absolute;left:20px;width:300px;height:30px}</style><label class="at" style="top:20px"><input type="checkbox" id="twofa" checked> Two-factor authentication</label><button class="at" style="top:70px" role="switch" aria-checked="false" id="fwd">Forward incoming mail</button>')
+    return
+  }
   // CU-319: a card form for Chrome's own autofill (CDP Autofill.trigger with a test card built at runtime).
   if (req.url.startsWith('/autofill-form')) {
     res.end('<!doctype html><style>body{margin:0}input,button{position:absolute;left:20px;width:300px;height:30px}</style><form onsubmit="event.preventDefault()"><input id="cardnumber" autocomplete="cc-number" aria-label="Card number" style="top:20px"><input autocomplete="cc-name" aria-label="Name on card" style="top:70px"><input autocomplete="cc-exp" aria-label="Expiry" style="top:120px"><input aria-label="Notes" style="top:170px"><button type="submit" style="top:220px">Pay now</button></form>')
@@ -372,6 +377,11 @@ try {
   await evaluate("document.getElementById('keep').focus()")
   const radioDown = await env.keyTarget({ type: 'keypress', keys: ['ArrowDown'] })
   check("PageDown and a multiple select are unread (asked); ArrowDown on 'Keep my account' names 'Delete my account'", pageDown?.optionUnread === true && multiDown?.optionUnread === true && multiType?.unread === true && radioDown?.selectOption === true && radioDown?.radioChoice === true && /Delete my account/.test(radioDown?.name ?? ''), { pageDown: pageDown?.optionUnread, multiDown: multiDown?.optionUnread, multiType, radio: radioDown && { name: radioDown.name, role: radioDown.role, inputType: radioDown.inputType } })
+  // CU-373: a toggle's state reaches the target - a checked box is checked, an ARIA switch that is off is not.
+  await env.perform({ type: 'navigate', url: `${origin}/toggle-page` })
+  const twofa = await env.inspectPoint({ x: 30, y: 35 })
+  const forward = await env.inspectPoint({ x: 100, y: 64 })
+  check("a toggle's state reaches the target: the 2FA box is checked, the forwarding switch is off", twofa?.checked === true && forward?.checked === false, { twofa: twofa && { tag: twofa.tag, role: twofa.role, checked: twofa.checked }, forward: forward && { tag: forward.tag, role: forward.role, checked: forward.checked } })
   await env.perform({ type: 'navigate', url: `${origin}/autofill-form` })
   const payAt = { x: 128, y: 176 }
   const payBefore = await env.inspectPoint(payAt)

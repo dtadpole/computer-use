@@ -754,3 +754,18 @@ test('CU-370: keyChoice - an arrow on a radio lands on the next one of its group
   assert.equal(keyChoice(keep, 'Enter', selectKeyOption), null, 'Enter chooses no radio')
   assert.equal(keyChoice(other, 'ArrowDown', selectKeyOption), null, 'a group of one')
 })
+
+test('CU-373: describeElement reports a toggle\'s state - native checkbox/radio (indeterminate mixed), aria-checked, aria-pressed; none for other elements', () => {
+  const box = (extra) => el('INPUT', { type: 'checkbox', ...extra })
+  assert.equal(describeElement(box({ checked: true })).checked, true)
+  assert.equal(describeElement(box({ checked: false })).checked, false)
+  assert.equal(describeElement(box({ checked: false, indeterminate: true })).checked, 'mixed')
+  assert.equal(describeElement(el('INPUT', { type: 'radio', checked: true })).checked, true)
+  assert.equal(describeElement(el('BUTTON', { attrs: { role: 'switch', 'aria-checked': 'true' } })).checked, true, 'an ARIA switch that is on')
+  assert.equal(describeElement(el('DIV', { attrs: { role: 'checkbox', 'aria-checked': 'mixed' } })).checked, 'mixed')
+  assert.equal(describeElement(el('BUTTON', { attrs: { 'aria-pressed': 'false' } })).pressed, false, 'a toggle button that is off')
+  const plain = describeElement(el('BUTTON'))
+  assert.equal('checked' in plain, false)
+  assert.equal('pressed' in plain, false)
+  assert.equal('checked' in describeElement(el('INPUT', { type: 'text' })), false)
+})
