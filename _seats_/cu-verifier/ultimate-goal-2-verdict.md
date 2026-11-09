@@ -1,9 +1,9 @@
 ---
 title: ULTIMATE_GOAL 2.0 verdict, row by row - live, in progress
 created: 2026-11-02T10:22:00Z
-modified: 2026-11-09T19:16:00Z
+modified: 2026-11-09T19:45:00Z
 level: L1
-version: 0.9.72
+version: 0.9.73
 description: cu-verifier's per-row state of the desktop ULTIMATE_GOAL after the owner's grant - live evidence so far from the runbook on the Mac mini beside the pre-grant verifiers, and what each row still needs. No row is held until its live half holds.
 status: unverified
 grounded_in:
@@ -47,8 +47,11 @@ types again, 190933Z-2a592d).
 Medium closed live since 0.9.66: CU-345 (field names in German, French, Spanish, Russian, Japanese and Korean, and
 German compounds, ask; 164208Z-0fe342 .. 164414Z-819b6e) and CU-346 (a card or SSN split by dots, slashes,
 underscores or line breaks asks; 170346Z-b3b01c, 170351Z-54ea94). Also closed live: CU-350 (passphrase:, PGPASSWORD=, Bearer
-tokens, 'mysql -p', 'curl -u user:pw' typed into an unnamed field ask; 175726Z-09e98c .. 175800Z-f903eb). Medium in
-review: CU-349 (placeholder-only desktop entries, after helper 0.2.63), CU-355 (personal-ID field names). Closed live since 0.9.63: CU-336 (main 2db7042, 150419Z-3f055b, 150426Z-74e409). D-061 re-signed at 16:23Z
+tokens, 'mysql -p', 'curl -u user:pw' typed into an unnamed field ask; 175726Z-09e98c .. 175800Z-f903eb). Also closed
+live: CU-348 (a URL's userinfo refused whatever it holds; 192737Z-bcd87c .. 192750Z-ffb028), CU-355 (personal-ID field
+names in de, ja, ko, es, fr, ru ask; 193933Z-a03aec .. 194025Z-15e4d3) and CU-359 (CJK Sent and Deleted folder names
+no longer ask, the imperatives still do; 194125Z-be608c .. 194214Z-9723df). Medium in review: CU-349 (placeholder-only
+desktop entries, after helper 0.2.63), CU-368. Closed live since 0.9.63: CU-336 (main 2db7042, 150419Z-3f055b, 150426Z-74e409). D-061 re-signed at 16:23Z
 on main fc72439 (270 closed rows: 247 on cu-verifier's runs, 23 by decision in the closing form; d065-audit 48 ok);
 with D-059's earlier re-sign both tables are signed (CU-145). Then CU-135's Replace chain and step 4 with the owner (CU-11, CU-119, CU-203).
 Runs sit on each claim's CU issue, re-proven by the [evidence audit](evidence-audit.md) (CU-53).
