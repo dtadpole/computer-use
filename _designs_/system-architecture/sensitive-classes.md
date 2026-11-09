@@ -1,9 +1,9 @@
 ---
 title: Sensitive classes - everything the agent must never type unasked
 created: 2026-11-07T14:34:22Z
-modified: 2026-11-09T00:10:00Z
+modified: 2026-11-09T00:30:00Z
 level: L1
-version: 0.3.4
+version: 0.3.5
 description: The D-061 table - every sensitive class with its value rule, its field-name rule, the asserting test and the live row; rows live in an executable matrix, gaps are children of CU-145.
 status: unverified
 grounded_in:
@@ -18,7 +18,8 @@ grounded_in:
 
 Typing a sensitive value is judged twice: by the value (a pattern with a check where one exists) and by the field's
 name (on a text entry only, never a button; on a web page a frame host's own name counts as the field's when text is
-typed, pressed or pasted into it - hosted payment and sign-in fields title each frame for its field, CU-297). A printable
+typed, pressed or pasted into it - hosted payment and sign-in fields title each frame for its field, CU-297 - and, once
+the driver follows the focus inside, the inner field's frameHost name beside its own, either asking, CU-300). A printable
 key pressed or held into a text entry - one character or Space, Shift or Option at most - counts as typing its
 character (CU-301); a chord with Command or Control does not. Each class
 has one row per value rule and per name in

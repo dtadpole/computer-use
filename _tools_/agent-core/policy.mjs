@@ -823,6 +823,17 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const asFrameEntry = (into) => (webPage && !held && framesHost(into) ? asNamedEntry(String(into.name ?? '')) : null)
     const frameEntry = framedWeb ? asFrameEntry(target) : null
     if (framedWeb && pressesEnter) classes.push('submit')
+    // CU-300 (frame-focus.md, never weaker than the frame-host rules): once the driver follows the focus into a
+    // cross-origin frame, the target is the inner field and carries its host as frameHost. Every text route judges the
+    // host's name too - an unnamed input inside 'Secure Credit Card Frame - CVV' still asks - and a Return there asks
+    // submit unless the frame's own default button was read (defaultButtonRead true), which the rules below then judge.
+    const hostEntryOf = (into) => (webPage && !held && into?.frameHost && typeof into.frameHost === 'object' ? asNamedEntry(String(into.frameHost.name ?? '')) : null)
+    const hostEntry = hostEntryOf(target)
+    const throughHost = (text, host) => {
+      const viaHost = host === null ? null : insertedClass(text, host, context)
+      if (viaHost) classes.push(viaHost)
+    }
+    if (hostEntry !== null && pressesEnter && target.defaultButtonRead !== true) classes.push('submit')
     // ... and Space presses whatever control is focused inside the frame - a hosted Pay or Submit button, a CAPTCHA's
     // check box (CU-263's keyboard route) - so it asks submit too until the driver follows the focus (CU-300). Named
     // over-ask: a lone Space keypress in a framed editor (typed text goes as 'type').
@@ -854,8 +865,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // The driver's no-focus placeholder (role and name null) is no field either (cu-developer-two).
       if (viaMenu && (into === null || !into?.role || MENU_ROLE.test(String(into.role)))) classes.push('sensitive_data')
       else {
-        const inserted = insertedClass(typeof context.paste.text === 'string' && context.paste.text !== '' ? context.paste.text : null, into, context)
+        const pastedText = typeof context.paste.text === 'string' && context.paste.text !== '' ? context.paste.text : null
+        const inserted = insertedClass(pastedText, into, context)
         if (inserted) classes.push(inserted)
+        throughHost(pastedText, viaMenu ? hostEntryOf(context.paste.destination) : hostEntry)
       }
       // CU-183 (copy-source.md): the field the run copied from - one descriptor, or several when the desktop has no
       // count to prove which copy wrote - lends its name class to the paste, whatever the destination is named.
@@ -892,6 +905,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (action.type === 'type') {
       const inserted = insertedClass(String(action.text ?? ''), frameEntry ?? target, context)
       if (inserted) classes.push(inserted)
+      throughHost(String(action.text ?? ''), hostEntry)
     }
     // CU-301 (design note 0.1): a printable key pressed into a text entry puts its character there as typing does, so the
     // same rules judge it - a credential field or a password name asks credential, a D-061 name sensitive_data - else a
@@ -902,6 +916,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (keyChar !== null && (isTextEntry(keyInto) || credentialField(keyInto))) {
       const inserted = insertedClass(keyChar, keyInto, context)
       if (inserted) classes.push(inserted)
+      throughHost(keyChar, hostEntry)
     }
     // CU-267: a value typed in pieces is judged whole - what this run typed into the field before (the loop's buffer) with
     // what this type, printable keypress or browser paste (the run clipboard's text) adds; the action that completes a value
