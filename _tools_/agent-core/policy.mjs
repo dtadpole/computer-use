@@ -769,7 +769,12 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (acts && (captchaFrame(target) || titledFrame)) return captcha
       const presses = POINTER.has(action.type) || action.type === 'drag' || keysOf(action).has('ENTER') || keyboardActivation(action, target, context).activates
       if (presses && CAPTCHA_NAME.test(name)) return captcha
-      if (action.type === 'type' && isTextEntry(target) && CAPTCHA_ENTRY.test(name)) return captcha
+      // F7 (cu-researcher): a text CAPTCHA keyed character by character (CU-301's printable keys) or pasted is solved as
+      // surely as one typed; a menu paste is judged at its read destination.
+      const intoEntry = action.type === 'type' || printableKeyChar(action) !== null || (context.paste && !Object.prototype.hasOwnProperty.call(context.paste, 'destination'))
+      if (intoEntry && isTextEntry(target) && CAPTCHA_ENTRY.test(name)) return captcha
+      const menuInto = context.paste?.destination
+      if (menuInto && isTextEntry(menuInto) && CAPTCHA_ENTRY.test(String(menuInto.name ?? ''))) return captcha
     }
     // CU-271: running code asks launch_code, never pre-approved - a run chord (Shift-, Control-, Command- or Alt-Return) in
     // a notebook's code cell or on a notebook page's non-text focus (JupyterLab's command mode focuses the cell container),

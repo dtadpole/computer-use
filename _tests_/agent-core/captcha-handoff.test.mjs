@@ -92,6 +92,17 @@ test('CU-263 round 2 (F2, F3, F5): reCAPTCHA by frame path, DataDome by host, an
   assert.equal(judge(type('seven three'), { tag: 'input', role: 'textbox', name: 'Enter what you hear', editable: true, origin: 'https://shop.example' }), 'handoff:captcha', 'the audio challenge entry')
 })
 
+test('CU-263 round 3 (F7): a text CAPTCHA keyed character by character or pasted hands off too', () => {
+  const entry = { tag: 'input', role: 'textbox', name: 'Enter the CAPTCHA', editable: true, origin: 'https://shop.example' }
+  assert.equal(judge(key('X'), entry), 'handoff:captcha', 'a printable key')
+  assert.equal(judge(key('SHIFT', '7'), entry), 'handoff:captcha', 'a shifted key')
+  assert.equal(policy.classify(key('META', 'V'), { url: WEB, target: entry, paste: { fromOwner: false, text: 'x7Kp2' } }).rule, 'captcha', 'a keystroke paste')
+  const pasteItem = { role: 'menuitem', name: 'Paste' }
+  assert.equal(policy.classify(click, { url: WEB, target: pasteItem, paste: { fromOwner: false, text: 'x7Kp2', destination: entry } }).rule, 'captcha', 'a menu paste into it')
+  assert.equal(judge(key('TAB'), entry), 'allow', 'Tab moves on')
+  assert.equal(judge(key('META', 'A'), entry), 'allow', 'Command-A selects')
+})
+
 test('CU-263 round 2 (F6): the subdomain boundary holds', () => {
   for (const origin of ['https://myhcaptcha.com', 'https://recaptcha.net.evil.example', 'https://captcha-delivery.com.evil.example', 'https://notgeetest.com']) {
     assert.equal(judge(click, { tag: 'button', role: 'button', name: 'Continue', origin }), 'allow', origin)
