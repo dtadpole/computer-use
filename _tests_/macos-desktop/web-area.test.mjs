@@ -33,18 +33,18 @@ function webWorld(focused) {
   }
 }
 
-test('CU-322: a target inside a browser\'s web area says so; the address bar says not; a helper that does not say gives null', async () => {
+test('CU-322: a target inside a browser\'s web area says so; the address bar says not; a helper that does not say leaves it absent', async () => {
   const { env, child } = await launchOnFake(webWorld(), { apps: [SAFARI] })
   try {
     const at = async (x, y) => {
       const target = await env.inspectPoint({ x, y })
-      return [target.role, target.name, target.inWebArea]
+      return [target.role, target.name, 'inWebArea' in target ? target.inWebArea : 'absent']
     }
     assert.deepEqual(await at(150, 50), ['AXButton', 'Buy now', true], "a page's button: descends from the web area")
     assert.deepEqual(await at(250, 50), ['AXTextField', 'Card number', true], "a page's text field")
     assert.deepEqual(await at(350, 50), ['AXWebArea', null, true], 'the web area itself')
     assert.deepEqual(await at(50, 50), ['AXTextField', 'Address and search', false], "the browser's own address bar: not web content")
-    assert.deepEqual(await at(50, 150), ['AXButton', 'Reload', null], 'no word from the helper: unknown, never false')
+    assert.deepEqual(await at(50, 150), ['AXButton', 'Reload', 'absent'], "no word from the helper: absent - agent core's 'unread', never false and never null")
     const buy = await env.inspectPoint({ x: 150, y: 50 })
     const { inWebArea, ...rest } = buy
     assert.equal(inWebArea, true)
