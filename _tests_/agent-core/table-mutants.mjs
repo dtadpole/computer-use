@@ -43,6 +43,8 @@ export const MUTANTS = Object.freeze([
     rows: ['menu-paste-focus-on-menu', 'menu-paste-focus-unread', 'menu-paste-no-focus-placeholder'] },
   { name: 'bound-menu-item-ignored', why: 'a chord is judged by its keys only, not as the menu item it fires (CU-232, CU-237)', mutations: [{ file: POLICY, find: '    const bound = context.boundMenuItem\n', replace: '    const bound = undefined\n' }],
     rows: ['menu-key-send-later', 'menu-key-delete-message-view'] },
+  { name: 'path-card-ignored', why: 'a card number in a URL path is read as an id and sent unasked (CU-325)', mutations: [{ file: POLICY, find: "    if (pathCard(decode(segment), typedDigits)) return 'card'\n", replace: '' }],
+    rows: ['navigate-card number in a path (named limit)'] },
   { name: 'terminal-typed', from: 'desktop-consent', rows: ['ide-terminal-type-command', 'ide-terminal-return', 'ide-terminal-localized-label', 'ide-terminal-japanese-label', 'ide-terminal-zh-in-cursor', 'ide-terminal-zh-real-label', 'ide-terminal-zh-hant-real-label', 'ide-debug-console-zh-hans', 'ide-debug-console-zh-hant'] },
   { name: 'held-chord-unjudged', from: 'desktop-consent', rows: ['system-chord-held-log-out'] },
 ])
