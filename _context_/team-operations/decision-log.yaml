@@ -446,3 +446,8 @@ decisions:
     topic: ok-survives-log-only-merge
     decision: 'For a code pull request, a reviewer''s OK carries over a merge of main whose only conflict was _logs_/repo-actions/action-log.jsonl, when the pull request''s own diff outside the log keeps the same stable patch-id and the log only gains lines; cu-integrator checks this as for D-079 and still runs the full gate on the exact merge tree. Any other change after the OK needs a fresh OK.'
     rationale: 'Every landing put the open code pull requests into a log-only conflict, and a fresh OK per merge of main re-reviewed nothing a reviewer could judge; the gate on the merge tree keeps the guarantee.'
+  - id: D-086
+    date: 2026-11-09
+    topic: high-consent-fix-phase1-landing
+    decision: 'D-083''s phase-1 landing extends from Urgent to High: a pull request that fixes an Urgent or High consent-row under-ask (D-063), or one such a fix is stacked on, and touches no CUHelper, desktop driver or fixture-app code, may land after phase 1 and the public-hygiene gate while phase 2 cannot run because the owner is not idle. At most two such landings may be outstanding without a full two-phase post-check on main; the post-check runs at the first idle slot, and a red result reverts the responsible pull request by pull request at once. Medium-only work keeps waiting for the idle slot. First use: #168 (CU-241, which #175 stacks on) and #175 (CU-297).'
+    rationale: 'The owner was active for hours on 8-9 Nov, and consent-row fixes that phase 2 does not exercise beyond phase 1 waited behind his idle slot; the cap of two keeps a red post-check attributable.'
