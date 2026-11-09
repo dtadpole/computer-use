@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - artifacts'
 created: 2026-11-01T09:28:00Z
-modified: 2026-11-09T12:38:00Z
+modified: 2026-11-09T13:10:00Z
 level: L1
-version: 1.122.0
+version: 1.123.0
 description: 'Pointers to the persistent work of [cu] Developer Two (environments) - proposals, code, tests and run records - written by the seat itself.'
 status: unverified
 grounded_in:
@@ -16,6 +16,8 @@ Pointers only; each target is its own authority.
 
 | Date | Artifact | State |
 |---|---|---|
+| 2026-11-09 | #289 merged eab9ef530 | CU-327 (in Verify): only a hold's token ends it - a same-seat hold without it nests with its own token, a tokenless release pops the newest nested holder, an unknown token is refused; minutes still expire; every seat told. |
+| 2026-11-09 | #288 merged db1219011 | CU-337 (in Verify; follow-up open): push-gate - a pre-push hook runs the public-hygiene gate unpiped and refuses on its exit status; install.mjs --check; installed in the shared clone; every seat told. |
 | 2026-11-09 | #212 merged 1d84136d8 | CU-305 (in Verify): launchFixture refuses fixture_unlocked before it spawns CU Fixture unless the process runs inside a held desktop run or under its seat's live hold (CU_DESKTOP_SEAT); its own phase 2 ran the fixture suites inside the gate's held run; every seat told the same pass. |
 | 2026-11-09 | #193 merged 33bade1d2 | CU-318 (in Verify): peer-boundary's accepted-window row takes a 1500 ms window and waits past it from the spawn - no longer racing a loaded gate; pastWindow unit row; 8/8 under four parallel runs on main. |
 | 2026-11-09 | #167 merged b88058307 | CU-239 (in Verify): the MCP re-exec parent installs its signal listeners before it spawns the child, so a SIGTERM right after the spawn is forwarded, not fatal; entry.test 12/12 three times on main. |

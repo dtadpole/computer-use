@@ -74,8 +74,8 @@ test('D-066: another seat\'s live hold refuses first (desktop_held), before any 
 
 test('CU-191 follow-up (cu-verifier): a fresh hold\'s log line carries the idle seconds it was checked at, so the log proves it; an extension (not checked) carries none', async () => {
   const dir = scratch()
-  await holdDesktop({ seat: SEAT, minutes: 5, dir, idleSeconds: () => 912.7 })
-  await holdDesktop({ seat: SEAT, minutes: 6, dir, idleSeconds: () => 3 })
+  const { token } = await holdDesktop({ seat: SEAT, minutes: 5, dir, idleSeconds: () => 912.7 })
+  await holdDesktop({ seat: SEAT, minutes: 6, token, dir, idleSeconds: () => 3 })
   assert.deepEqual(holdLog(dir).map(({ action, idleSeconds }) => ({ action, idleSeconds })), [{ action: 'hold', idleSeconds: 912 }, { action: 'extend', idleSeconds: undefined }])
 })
 

@@ -1,4 +1,5 @@
 import { execFileSync, spawn } from 'node:child_process'
+import { randomBytes } from 'node:crypto'
 import { appendFileSync, existsSync, lstatSync, mkdirSync, readFileSync, realpathSync, renameSync, rmdirSync, statSync, unlinkSync, writeFileSync } from 'node:fs'
 import { isAbsolute, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -86,8 +87,18 @@ export const SEAT_PATTERN = /^cu-[a-z0-9]+(-[a-z0-9]+){0,3}$/
 export const RUN_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/
 /** CU-191: seconds without any local input before a fresh hold may take the Mac - the owner may be at it otherwise. */
 export const OWNER_IDLE_SECONDS = 300
+/** CU-327: a hold's token - 16 hex characters - names who may end it; a nested holder gets its own. */
+export const HOLD_TOKEN_PATTERN = /^[0-9a-f]{16}$/
+/** CU-327: at most this many nested holders under one hold; past it a nest is refused (a runaway loop, not nesting). */
+export const MAX_NESTED_HOLDS = 16
 
 const sleepMs = (ms) => new Promise((done) => setTimeout(done, ms))
+const newHoldToken = () => randomBytes(8).toString('hex')
+
+/** CU-327: the tokens of a hold file's nested holders, oldest first; anything malformed counts as none. */
+function nestedTokens(parsed) {
+  return Array.isArray(parsed?.nested) ? parsed.nested.filter((t) => typeof t === 'string' && HOLD_TOKEN_PATTERN.test(t)).slice(-MAX_NESTED_HOLDS) : []
+}
 
 /** A holder field as safe text for a message: a short string or null, whatever the file held. */
 function safeText(value, max = 128) {
@@ -612,12 +623,13 @@ function holdRoot(seat, dir) {
  * another seat's hold is live (a hold is never taken over); the same seat's hold is replaced, so a holder can extend
  * it. A run already active continues - the hold only decides who may start the next one. Resolves to the hold.
  */
-export async function holdDesktop({ seat, minutes, reason = '', dir = RUN_LOCK_DIR, now = Date.now, sleep = sleepMs, lockTimeoutMs = LOCK_TIMEOUT_MS, staleLockMs = STALE_LOCK_MS, startKeeper = null, isAlive = pidAlive, idleSeconds = null, minIdleSeconds = OWNER_IDLE_SECONDS } = {}) {
+export async function holdDesktop({ seat, minutes, reason = '', token = null, dir = RUN_LOCK_DIR, now = Date.now, sleep = sleepMs, lockTimeoutMs = LOCK_TIMEOUT_MS, staleLockMs = STALE_LOCK_MS, startKeeper = null, isAlive = pidAlive, idleSeconds = null, minIdleSeconds = OWNER_IDLE_SECONDS } = {}) {
   const root = holdRoot(seat, dir)
   if (typeof minutes !== 'number' || !Number.isFinite(minutes) || minutes <= 0 || minutes > MAX_HOLD_MINUTES) {
     throw invalid(`a hold lasts more than 0 and at most ${MAX_HOLD_MINUTES} minutes`, { field: 'minutes' })
   }
   if (typeof reason !== 'string' || reason.length > 200) throw invalid('a hold\'s reason is text of at most 200 characters', { field: 'reason' })
+  if (token !== null && (typeof token !== 'string' || !HOLD_TOKEN_PATTERN.test(token))) throw invalid('a hold token is the 16 hex characters a hold printed', { field: 'token' })
   const lock = join(root, '.lock')
   await takeMutex(lock, { now, sleep, lockTimeoutMs, staleLockMs, isAlive })
   try {
@@ -626,6 +638,13 @@ export async function holdDesktop({ seat, minutes, reason = '', dir = RUN_LOCK_D
     const at = now()
     const current = liveHold(parsed, at)
     if (current !== null && current.seat !== seat) throw heldError(current)
+    // CU-327: the seat's own live hold, taken again without its token (or a nested holder's), is a nested hold - a
+    // script run inside a held batch - not an extension: it gets its own token, and its release ends only itself.
+    const ownToken = typeof parsed?.token === 'string' && HOLD_TOKEN_PATTERN.test(parsed.token) ? parsed.token : null
+    const nested = current !== null ? nestedTokens(parsed) : []
+    if (current !== null && ownToken !== null && token !== ownToken && !(token !== null && nested.includes(token))) {
+      return nestHold(root, { parsed, current, seat, minutes, at, nested, isAlive })
+    }
     // CU-276 (D-073): a phase 2 waiting for the lock goes first - no fresh hold, re-hold or extension by another seat
     // while it waits. The live hold itself is never cut short; the waiter's runs start when it ends.
     const waiter = liveWaiter(readEntry(join(root, WAITING_NAME)), at, isAlive)
@@ -657,31 +676,78 @@ export async function holdDesktop({ seat, minutes, reason = '', dir = RUN_LOCK_D
     // CU-120: heldAt is this hold's own start, beside since (the chain's): a re-hold within the gap keeps since and
     // starts a fresh heldAt; an extension of the live hold keeps its heldAt (an older checkout's hold: its since).
     const heldAt = current !== null ? (isoOrNull(parsed?.heldAt) ?? isoOrNull(parsed?.since) ?? new Date(at).toISOString()) : new Date(at).toISOString()
-    const hold = Object.freeze({ seat, since: new Date(since).toISOString(), heldAt, until: new Date(until).toISOString(), reason: safeText(reason, 200), ...(Number.isInteger(keeperPid) ? { keeperPid } : {}) })
+    // CU-327: a fresh hold gets a token; an extension keeps the hold's (an older checkout's tokenless hold gets one now).
+    const holdToken = current !== null && ownToken !== null ? ownToken : newHoldToken()
+    // An extension (by the holder, or by a nested holder with its own token) keeps every nested entry.
+    const keptNested = current !== null ? nested : []
+    const hold = Object.freeze({ seat, since: new Date(since).toISOString(), heldAt, until: new Date(until).toISOString(), reason: safeText(reason, 200), ...(Number.isInteger(keeperPid) ? { keeperPid } : {}), token: holdToken, ...(keptNested.length > 0 ? { nested: keptNested } : {}) })
     writeFileSync(path, `${JSON.stringify(hold)}\n`, { mode: 0o644 })
-    logHold(root, { at: new Date(at).toISOString(), action: current !== null ? 'extend' : 'hold', ...hold, ...(idleAtHold !== null ? { idleSeconds: idleAtHold } : {}) })
-    return hold
+    const { token: _logged, nested: _entries, ...logged } = hold
+    logHold(root, { at: new Date(at).toISOString(), action: current !== null ? 'extend' : 'hold', ...logged, ...(keptNested.length > 0 ? { nested: keptNested.length } : {}), ...(idleAtHold !== null ? { idleSeconds: idleAtHold } : {}) })
+    return token !== null && keptNested.includes(token) ? Object.freeze({ ...hold, token, nested: true }) : hold
   } finally {
     dropMutex(lock)
   }
 }
 
 /**
- * End `seat`'s hold, under the mutex. Removes the file when it is this seat's hold or no live hold at all (expired,
- * unreadable); another seat's live hold is left alone. Resolves to whether this seat's hold was ended.
+ * CU-327: add a nested holder to `seat`'s live hold (called under the mutex). It never refuses for the hour cap or a
+ * waiting phase 2 - a refused nest whose script then releases tokenless would end the outer hold, the very bug - but
+ * it lengthens `until` only within the cap and only while no other seat waits (D-073: the live hold is never cut
+ * short, and never stretched past a waiter). Resolves to the hold with the nested holder's own token.
  */
-export async function releaseHold({ seat, dir = RUN_LOCK_DIR, now = Date.now, sleep = sleepMs, lockTimeoutMs = LOCK_TIMEOUT_MS, staleLockMs = STALE_LOCK_MS } = {}) {
+function nestHold(root, { parsed, current, seat, minutes, at, nested, isAlive }) {
+  if (nested.length >= MAX_NESTED_HOLDS) {
+    throw new EnvironmentError('resource_refused', `seat ${seat}'s hold already has ${nested.length} nested holders; release them (CU-327)`, { reason: 'hold_nesting_too_deep' })
+  }
+  const nestedToken = newHoldToken()
+  const since = Date.parse(current.since ?? current.heldAt ?? current.until)
+  const capUntil = (Number.isFinite(since) ? since : at) + MAX_HOLD_CHAIN_MINUTES * 60_000
+  const waiter = liveWaiter(readEntry(join(root, WAITING_NAME)), at, isAlive)
+  const wanted = typeof minutes === 'number' && Number.isFinite(minutes) && minutes > 0 ? at + Math.min(minutes, MAX_HOLD_MINUTES) * 60_000 : 0
+  const until = waiter !== null && waiter.seat !== seat ? Date.parse(current.until) : Math.max(Date.parse(current.until), Math.min(wanted, capUntil))
+  const entry = { ...parsed, until: new Date(until).toISOString(), nested: [...nested, nestedToken] }
+  writeFileSync(join(root, HOLD_NAME), `${JSON.stringify(entry)}\n`, { mode: 0o644 })
+  logHold(root, { at: new Date(at).toISOString(), action: 'nest', seat, until: entry.until, nested: entry.nested.length })
+  const { token: _own, nested: _entries, ...hold } = entry
+  return Object.freeze({ ...hold, token: nestedToken, nested: true })
+}
+
+/**
+ * End `seat`'s hold, or one nested holder of it (CU-327), under the mutex; resolves to `{ released, unnested, nested }`.
+ * - With `token`: the hold's own token ends the hold (nested entries go with it); a nested holder's token removes that
+ *   entry only; any other token is refused `hold_token_mismatch` and the hold stays.
+ * - Without a token (every script older than CU-327): the newest nested entry is removed when there is one, so a
+ *   nested script's EXIT trap no longer frees the outer hold; else the hold ends, as before.
+ * The file is removed when there is no live hold at all (expired, unreadable); another seat's live hold is left alone.
+ */
+export async function releaseHoldEntry({ seat, token = null, dir = RUN_LOCK_DIR, now = Date.now, sleep = sleepMs, lockTimeoutMs = LOCK_TIMEOUT_MS, staleLockMs = STALE_LOCK_MS } = {}) {
   const root = holdRoot(seat, dir)
+  if (token !== null && (typeof token !== 'string' || !HOLD_TOKEN_PATTERN.test(token))) throw invalid('a hold token is the 16 hex characters a hold printed', { field: 'token' })
   const lock = join(root, '.lock')
   await takeMutex(lock, { now, sleep, lockTimeoutMs, staleLockMs })
+  const result = (released, unnested = false, nested = 0) => ({ released, unnested, nested })
   try {
     const path = join(root, HOLD_NAME)
     const parsed = readEntry(path)
-    if (parsed === null) return false
+    if (parsed === null) return result(false)
     const at = now()
     const current = liveHold(parsed, at)
-    if (current !== null && current.seat !== seat) return false
+    if (current !== null && current.seat !== seat) return result(false)
     if (current !== null) {
+      const ownToken = typeof parsed.token === 'string' && HOLD_TOKEN_PATTERN.test(parsed.token) ? parsed.token : null
+      const nested = nestedTokens(parsed)
+      const unnest = token === null ? (nested.length > 0 ? nested.at(-1) : null) : (token !== ownToken && nested.includes(token) ? token : null)
+      if (token !== null && token !== ownToken && unnest === null) {
+        throw new EnvironmentError('resource_refused', `that token names no holder of seat ${seat}'s hold; the hold stays (CU-327)`, { reason: 'hold_token_mismatch' })
+      }
+      if (unnest !== null) {
+        const left = nested.filter((t) => t !== unnest)
+        const { nested: _entries, ...rest } = parsed
+        writeFileSync(path, `${JSON.stringify(left.length > 0 ? { ...rest, nested: left } : rest)}\n`, { mode: 0o644 })
+        logHold(root, { at: new Date(at).toISOString(), action: 'unnest', seat, nested: left.length })
+        return result(false, true, left.length)
+      }
       // Ended, not forgotten: the chain's start stays for HOLD_CHAIN_GAP_MINUTES, so releasing and holding again at
       // once continues the chain instead of starting a fresh hour.
       const heldAt = isoOrNull(parsed.heldAt)
@@ -695,17 +761,22 @@ export async function releaseHold({ seat, dir = RUN_LOCK_DIR, now = Date.now, sl
         try { unlinkSync(entryPath) } catch { /* already gone */ }
         logHold(root, { at: new Date(at).toISOString(), action: 'sentinel_removed', seat })
       }
-      return true
+      return result(true)
     }
     // Not live: the seat's own ended hold is left as the chain's memory; anything else (unreadable, seatless, another
     // seat's expired hold) is cleared.
     if (!(parsed?.seat === seat && Number.isFinite(Date.parse(parsed?.until)))) {
       try { unlinkSync(path) } catch { /* already gone */ }
     }
-    return false
+    return result(false)
   } finally {
     dropMutex(lock)
   }
+}
+
+/** End `seat`'s hold (see releaseHoldEntry; a tokenless call removes the newest nested holder first); resolves to whether the hold ended. */
+export async function releaseHold(options = {}) {
+  return (await releaseHoldEntry(options)).released
 }
 
 /**
@@ -857,7 +928,10 @@ export function readWaiter({ dir = RUN_LOCK_DIR, now = Date.now, isAlive = pidAl
 
 export function readHold({ dir = RUN_LOCK_DIR, now = Date.now } = {}) {
   if (typeof dir !== 'string' || !isAbsolute(dir)) throw invalid('the desktop-run lock needs an absolute dir')
-  return liveHold(readEntry(join(resolve(dir), HOLD_NAME)), now())
+  const parsed = readEntry(join(resolve(dir), HOLD_NAME))
+  const hold = liveHold(parsed, now())
+  // CU-327: how many nested holders the hold has (never their tokens).
+  return hold === null ? null : { ...hold, nested: nestedTokens(parsed).length }
 }
 
 /**
@@ -874,8 +948,8 @@ export async function main(argv, { write = (line) => process.stdout.write(`${lin
   const options = {}
   for (let i = 0; i < rest.length; i += 2) {
     const key = rest[i]
-    if (!['--seat', '--minutes', '--reason', '--dir', '--wait-free'].includes(key) || rest[i + 1] === undefined) {
-      write(JSON.stringify({ error: `usage: run-lock.mjs hold --seat S --minutes N [--reason R] [--wait-free SECONDS] | release --seat S | wait --seat S [--reason R] | status [--dir D] (exit 3 = held, a run still active: release it if you give up); bad '${String(key)}'` }))
+    if (!['--seat', '--minutes', '--reason', '--dir', '--wait-free', '--token'].includes(key) || rest[i + 1] === undefined) {
+      write(JSON.stringify({ error: `usage: run-lock.mjs hold --seat S --minutes N [--reason R] [--token T] [--wait-free SECONDS] | release --seat S [--token T] | wait --seat S [--reason R] | status [--dir D] (exit 3 = held, a run still active: release it if you give up); bad '${String(key)}'` }))
       return 2
     }
     options[key.slice(2)] = rest[i + 1]
@@ -885,7 +959,7 @@ export async function main(argv, { write = (line) => process.stdout.write(`${lin
     if (command === 'hold') {
       const waitFree = options['wait-free'] === undefined ? null : Number(options['wait-free'])
       if (waitFree !== null && !(Number.isFinite(waitFree) && waitFree >= 0 && waitFree <= 3600)) throw invalid('--wait-free is seconds from 0 to 3600', { field: 'wait-free' })
-      const held = await holdDesktop({ seat: options.seat, minutes: Number(options.minutes), reason: options.reason ?? '', dir, startKeeper: seams.startKeeper ?? spawnKeeper, idleSeconds: seams.idleSeconds ?? ownerIdleReader(dir) })
+      const held = await holdDesktop({ seat: options.seat, minutes: Number(options.minutes), reason: options.reason ?? '', token: options.token ?? null, dir, startKeeper: seams.startKeeper ?? spawnKeeper, idleSeconds: seams.idleSeconds ?? ownerIdleReader(dir) })
       if (waitFree === null) {
         write(JSON.stringify({ held }))
       } else {
@@ -903,13 +977,13 @@ export async function main(argv, { write = (line) => process.stdout.write(`${lin
     } else if (command === 'keep') {
       await keepHold({ seat: options.seat, dir })
     } else if (command === 'release') {
-      write(JSON.stringify({ released: await releaseHold({ seat: options.seat, dir }) }))
+      write(JSON.stringify(await releaseHoldEntry({ seat: options.seat, token: options.token ?? null, dir })))
     } else if (command === 'status') {
       const current = readEntry(join(resolve(dir), ENTRY_NAME)) ?? undefined
       const run = isSentinel(current) ? null : (({ seat, runId, startedAt, commit } = {}) => (seat ? { seat, runId, startedAt, commit: commit ?? null } : null))(current)
       write(JSON.stringify({ hold: readHold({ dir }), run, sentinel: isSentinel(current), waiter: readWaiter({ dir }) }))
     } else {
-      write(JSON.stringify({ error: 'usage: run-lock.mjs hold --seat S --minutes N [--reason R] [--wait-free SECONDS] | release --seat S | wait --seat S [--reason R] | status [--dir D] (exit 3 = held, a run still active: release it if you give up)' }))
+      write(JSON.stringify({ error: 'usage: run-lock.mjs hold --seat S --minutes N [--reason R] [--token T] [--wait-free SECONDS] | release --seat S [--token T] | wait --seat S [--reason R] | status [--dir D] (exit 3 = held, a run still active: release it if you give up)' }))
       return 2
     }
     return 0
