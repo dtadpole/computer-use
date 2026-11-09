@@ -670,6 +670,17 @@ export function looksSensitive(text) {
   // a file name or 'AIza' in prose stays free - GitHub fine-grained and OAuth/app/user/refresh tokens, GitLab, Google
   // API keys, Hugging Face, npm, the other Slack token kinds and Shopify. Named over-ask: a documentation page's example.
   if (API_TOKEN.test(value)) return 'key'
+  // CU-347 (design note 0.1): two credential shapes the rules above missed (a Google 'AIza' key is already API_TOKEN's;
+  // key-shapes.test pins it). An AWS secret access key - exactly 40 characters of [A-Za-z0-9/+] standing alone, with upper and lower
+  // case and a digit (named over-ask: any such 40-character run); and a credential assignment - password, passwd, pwd,
+  // secret, token, api key, access key or client secret, - also as the end of an UPPER_SNAKE name (DB_PASSWORD) or a quoted JSON key - then '=' or ':', then a
+  // value of 6 or more non-space characters holding a digit or a symbol (named over-ask: 'token: abc123' in prose).
+  for (const m of value.matchAll(/(?<![A-Za-z0-9/+])[A-Za-z0-9/+]{40}(?![A-Za-z0-9/+=])/g)) {
+    if (/[A-Z]/.test(m[0]) && /[a-z]/.test(m[0]) && /\d/.test(m[0])) return 'key'
+  }
+  for (const m of value.matchAll(/(?<![A-Za-z0-9])(?:password|passwd|pwd|secret|token|api[_-]?key|access[_-]?key|client[_-]?secret)["']?\s*[=:]\s*["']?([^\s"',}]{6,})/gi)) {
+    if (/[\d\W_]/.test(m[1])) return 'key'
+  }
   // CU-164: a 0x-prefixed 64-hex private key (the word boundary after 'x' kept the rule above from seeing it); a 0x + 40
   // hex wallet address is public and stays allowed.
   if (/\b0x[0-9a-fA-F]{64}\b/.test(value)) return 'key'
@@ -1063,6 +1074,26 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         }
         if (joinedAsks) classes.push('sensitive_data')
       }
+    }
+    // CU-336 (design note 0.2): inside a cross-origin frame whose names are unread - the frame host's title and the field's
+    // own name both null (an AX failure in the driver's host read, or a frame that titles nothing) - a CVV or an expiry
+    // matches no name and no value rule. A short card code typed there asks sensitive_data: 3 or 4 digits alone, or an
+    // expiry MM/YY, MM/YYYY, MM-YY or MM.YY, judged after removing whitespace, on the action's own text and on the field's typed
+    // buffer (CU-267), so a code pressed key by key asks too. Both paths count: the iframe itself as the target (the driver
+    // did not follow the focus) and an inner field with frameHost (CU-300). A frame whose origin is not read counts as
+    // cross-origin (fail closed, cu-verifier); the inner field's frameUrl (#181) is read first, then its origin. Named over-ask: a short numeric entry in an unnamed third-party frame.
+    // One-time codes stay CU-288's.
+    const pageOrigin = (() => { try { return new URL(String(context.url ?? '')).origin } catch { return null } })()
+    const crossOriginOf = (raw) => { try { return raw == null || raw === '' || new URL(String(raw)).origin !== pageOrigin } catch { return true } }
+    const unnamed = (value) => String(value ?? '').trim() === ''
+    const unnamedFrame = webPage && !held && target != null && (
+      (framedWeb && unnamed(target.name) && crossOriginOf(target.frameUrl))
+      || (target.frameHost && typeof target.frameHost === 'object' && unnamed(target.frameHost.name) && unnamed(target.name) && crossOriginOf(target.frameUrl ?? target.origin)))
+    if (unnamedFrame) {
+      const shortCode = (text) => /^(\d{3,4}|(0?[1-9]|1[0-2])[/.-](\d{2}|\d{4}))$/.test(String(text ?? '').replace(/\s+/g, ''))
+      const added = action.type === 'type' ? String(action.text ?? '') : (keyChar ?? (typeof context.paste?.text === 'string' ? context.paste.text : ''))
+      const whole = context.typed && typeof context.typed.before === 'string' && typeof context.typed.next === 'string' ? context.typed.before + context.typed.next : null
+      if (added !== '' && (shortCode(added) || (whole !== null && shortCode(whole)))) classes.push('sensitive_data')
     }
     // CU-268: in the browser a control whose name has one word mixing scripts asks permission - never pre-approved, so a
     // pre-approved submit cannot wave a disguised Delete or Pay through (cu-developer-one's ruling) - where no rule found a
