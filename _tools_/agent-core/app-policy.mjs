@@ -367,6 +367,10 @@ const TERMINAL_VIEW = /\b(terminal|console|shell|command prompt|zsh|bash|repl|no
 // substring, German, Spanish and Italian as whole words. Cyrillic is a named limit: normalise folds its look-alike letters
 // to Latin before any rule reads the name.
 const TERMINAL_WORD_CJK = /(终端|終端|ターミナル|터미널)/u
+// CU-296: a console in an IDE, where a debugger's REPL evaluates what is typed - VS Code's Chinese 调试控制台 / 偵錯主控台, as
+// English 'Debug Console' is E5's (cu-researcher, from VS Code's own language packs). Only in an IDE, by kind: elsewhere
+// 控制台 is the everyday word for a cloud dashboard (阿里云控制台), whose fields stay the owner's to use (cu-developer-one's ruling).
+const CONSOLE_WORD_CJK = /(控制台|主控台|コンソール|콘솔)/u
 const TERMINAL_WORD_OTHER = /(?<!\p{L})(konsole|consola|terminale)(?!\p{L})/iu
 const isTerminalView = (target) => {
   if (target === null || target === undefined) return false
@@ -376,9 +380,10 @@ const isTerminalView = (target) => {
 // CU-279: in an IDE an integrated terminal's input is named '<word> <number>, <title>' ('Terminal 1, node' in VS Code's
 // xterm.js, '终端 1, node' in its Chinese build) - a shape, whatever the language. Only in an IDE, by kind: elsewhere the
 // same shape ('Tab 1, notes') is a named limit.
-const IDE_TERMINAL_SHAPE = /^\S+ \d+, \S/u
-const ideTerminal = (target, app) => isIdeApp(app) && target !== null && target !== undefined && (target.editable === true || ['AXTextArea', 'AXTextField'].includes(target.role))
-  && IDE_TERMINAL_SHAPE.test(String(target.name ?? '').trim())
+// VS Code's Chinese packs write it with a fullwidth comma: '终端 {0}，{1}' (cu-researcher).
+const IDE_TERMINAL_SHAPE = /^\S+ \d+\s*[,，]\s*\S/u
+const ideTerminal = (target, app) => isIdeApp(app) && target !== null && target !== undefined && ((target.editable === true || ['AXTextArea', 'AXTextField'].includes(target.role))
+  && IDE_TERMINAL_SHAPE.test(String(target.name ?? '').trim()) || CONSOLE_WORD_CJK.test([target.name, target.description, target.roleDescription].filter(Boolean).join(' ')))
 
 // No pre-approval covers these on the desktop, scoped to an app or not: a credential (P4), opening code (P10), and the
 // browser's always-confirm classes.
