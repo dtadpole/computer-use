@@ -19,7 +19,7 @@ const frame = (name, extra = {}) => ({ tag: 'iframe', role: 'Iframe', name, edit
 const inner = (name, hostName, origin = 'https://js.payments.example') => ({ tag: 'input', inputType: 'text', role: 'textbox', name, editable: true, origin, frameHost: { tag: 'iframe', role: 'Iframe', name: hostName } })
 
 test('CU-336: a CVV or expiry typed into an unnamed cross-origin frame asks - both paths, whitespace removed', () => {
-  for (const text of ['123', '1234', '12/29', '12/2029', '01-27', ' 1 2 3 ', '12 / 27']) {
+  for (const text of ['123', '1234', '12/29', '12/2029', '01-27', '12.27', ' 1 2 3 ', '12 / 27']) {
     assert.equal(verdict(type(text), frame(null)), 'sensitive_data', `iframe target: ${JSON.stringify(text)}`)
     assert.equal(verdict(type(text), inner(null, null)), 'sensitive_data', `inner field: ${JSON.stringify(text)}`)
   }
@@ -39,6 +39,8 @@ test('CU-336 negatives: named frames, same-origin frames, other lengths and free
   assert.equal(verdict(type('123'), inner(null, 'Chat widget')), 'allow', 'a named frame host is judged by its name')
   assert.equal(verdict(type('123'), frame(null, { frameUrl: 'https://shop.example/embedded' })), 'allow', 'a same-origin frame')
   assert.equal(verdict(type('123'), inner(null, null, 'https://shop.example')), 'allow', 'a same-origin inner field')
+  assert.equal(verdict(type('123'), { ...inner(null, null, undefined), frameUrl: 'https://shop.example/pay' }), 'allow', 'a same-origin frameUrl on the inner field (#181) is read first')
+  assert.equal(verdict(type('123'), { ...inner(null, null, undefined), frameUrl: 'https://js.payments.example/pay' }), 'sensitive_data', 'a cross-origin frameUrl on the inner field asks')
   for (const text of ['12', '12345', '123456', 'hello there', '13/29', '12/295']) {
     assert.equal(verdict(type(text), frame(null)), 'allow', JSON.stringify(text))
   }
