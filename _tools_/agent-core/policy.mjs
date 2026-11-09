@@ -943,10 +943,21 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (keyboard.deletes) classes.push('delete')
     // CU-363 (design note 0.1; High pending a live row): on a web page a printable key pressed outside text entry goes to
     // the page, whose own handler may delete, archive or send (Gmail '#', 'e', '!') - its effect cannot be read, so it asks
-    // once per site and run (permission, never pre-approved; the answer keys 'permission:page-shortcut', not permission).
+    // once per key, site and run (permission, never pre-approved; the answer keys 'permission:page-shortcut:<key>' -
+    // cu-researcher: an approval covers that key on that site, never every character, nor a permission request).
     // Named over-ask: the first printable shortcut on any site (j/k navigation, '/') asks once a run.
     const browserRoute = context.url != null && !/^(app|desktop):/.test(String(context.url ?? ''))
+    // cu-verifier's live row: a type action outside text entry delivers the same keys to the page ('#' typed with the body
+    // focused deleted the row), so a type's printable text counts as its keys.
     const shortcutKey = (() => {
+      if (action.type === 'type') {
+        // With the body focused the judge sees no target, so an unread focus counts too - but only for a shortcut-sized
+        // type (one or two characters, no space); longer text into an unread focus keeps its own judgement.
+        const text = String(action.text ?? '').replace(/[\r\n]/g, '')
+        if (text.trim() === '') return null
+        if (target && (CONTROL_ROLE.test(String(target.role ?? '')) || /text|search|combo/i.test(String(target.role ?? '')))) return null
+        return target || (/^\S{1,2}$/.test(text)) ? text : null
+      }
       const keys = keysOf(action)
       if (action.type !== 'keypress' || [...keys].some((key) => ['CMD', 'COMMAND', 'META', 'SUPER', 'CTRL', 'CONTROL', 'ALT', 'OPTION'].includes(key))) return null
       const main = [...keys].filter((key) => key !== 'SHIFT')
@@ -1216,7 +1227,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     }
     const cls = needed[0]
     if (pageShortcut && cls === 'permission') {
-      return { decision: 'confirm', class: cls, classes: needed, rule: 'page:shortcut', approvalKey: 'permission:page-shortcut', reason: `press '${shortcutKey}' on ${placeOf(url, target, context?.frontmostBundleId)}, a keyboard shortcut of the page - the page decides what it does` }
+      return { decision: 'confirm', class: cls, classes: needed, rule: 'page:shortcut', approvalKey: `permission:page-shortcut:${shortcutKey.toLowerCase()}`, reason: `press '${shortcutKey}' on ${placeOf(url, target, context?.frontmostBundleId)}, a keyboard shortcut of the page - the page decides what it does` }
     }
     if (mixedScript && cls === 'permission') {
       return { decision: 'confirm', class: cls, classes: needed, rule: 'target:mixed_script', reason: `activate "${name}", whose name mixes scripts in one word (a disguised control?)` }

@@ -25,6 +25,13 @@ test('CU-363: a printable key on a row, the page body or an unread focus asks as
   }
 })
 
+test('CU-363: a type action outside text entry carries the same keys to the page (cu-verifier 172724Z)', () => {
+  const type = (text, target) => { const r = policy.classify({ type: 'type', text }, { url: 'https://mail.example/inbox', target }); return r.decision === 'allow' ? 'allow' : `${r.class}/${r.rule}` }
+  assert.equal(type('#', null), 'permission/page:shortcut')
+  assert.equal(type('#', { role: 'document' }), 'permission/page:shortcut')
+  assert.equal(type('#', { tag: 'input', role: 'searchbox', name: 'Search mail', editable: true }), 'allow')
+})
+
 test('CU-363 unchanged: typing into a field, DELETE on a row, Tab, Command chords, Return on a button, the desktop route', () => {
   assert.equal(press(['A'], { tag: 'input', role: 'textbox', editable: true }), 'allow')
   assert.equal(press(['DELETE'], ROW), 'delete/class:delete')
@@ -36,12 +43,12 @@ test('CU-363 unchanged: typing into a field, DELETE on a row, Tab, Command chord
 const tmp = mkdtempSync(join(tmpdir(), 'cu-363-'))
 after(() => rmSync(tmp, { recursive: true, force: true }))
 
-test('CU-363: a run approval of a page shortcut covers later shortcuts on that site, not a permission request', async () => {
+test('CU-363: a run approval covers that key on that site only - a different key asks again (cu-researcher)', async () => {
   const control = createRunControl()
   const environment = createFakeEnvironment({ kind: 'browser', control, url: 'https://mail.example/inbox' })
   environment.focusedElement = async () => ROW
   environment.inspectPoint = async () => ROW
-  const model = createScriptedAdapter({ frame: { width: 1440, height: 900 }, turns: [{ actions: [{ type: 'keypress', keys: ['E'] }, { type: 'keypress', keys: ['J'] }] }, { final: 'done' }] })
+  const model = createScriptedAdapter({ frame: { width: 1440, height: 900 }, turns: [{ actions: [{ type: 'keypress', keys: ['E'] }, { type: 'keypress', keys: ['E'] }, { type: 'keypress', keys: ['J'] }] }, { final: 'done' }] })
   const controller = apiController()
   let asked = 0
   let running = true
@@ -50,6 +57,6 @@ test('CU-363: a run approval of a page shortcut covers later shortcuts on that s
   running = false
   await answering
   const presses = readRun(result.trajectoryDir).events.filter((e) => e.kind === 'action' && e.status !== 'attempted' && e.action?.type === 'keypress')
-  assert.equal(presses.length, 2)
-  assert.equal(asked, 1, 'asked once for the site and run')
+  assert.equal(presses.length, 3)
+  assert.equal(asked, 2, 'E asked once for the run, J asked again')
 })
