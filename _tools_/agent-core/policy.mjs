@@ -497,7 +497,29 @@ function urlFieldName(name) {
  * or more). A path segment's card or phone match is a numeric id (a post or order number), not counted. Named over-ask:
  * a 40-hex commit hash in a code host's URL (the digest rule; cu-coordinator: keep it).
  */
-export function urlSecret(raw) {
+// CU-325 (cu-coordinator 06:30Z, High): a card number in a URL path. A path segment counts when the whole segment is a
+// card-shaped digit run (bare, or in card groupings) that passes Luhn and carries a card brand's prefix with that brand's
+// length - a random numeric id then trips about one time in a hundred, not one in ten - or when its digits hold a card-length
+// run the run itself typed or pasted (typedDigits, the loop's in-memory buffer, CU-267), whatever its prefix.
+const CARD_SEGMENT = /^(\d{13,19}|\d{4}(?:[ -]\d{4}){3}(?:[ -]\d{3})?|\d{4}[ -]\d{6}[ -]\d{4,5})$/
+const CARD_BRANDS = [
+  [/^4/, [13, 16, 19]],
+  [/^(5[1-5]|222[1-9]|22[3-9]\d|2[3-6]\d\d|27[01]\d|2720)/, [16]],
+  [/^3[47]/, [15]],
+  [/^(6011|64[4-9]|65)/, [16, 17, 18, 19]],
+  [/^35(2[89]|[3-8]\d)/, [16, 17, 18, 19]],
+  [/^62/, [16, 17, 18, 19]],
+  [/^(36|38|30[0-5])/, [14, 15, 16, 17, 18, 19]],
+]
+const brandCard = (digits) => CARD_BRANDS.some(([prefix, lengths]) => prefix.test(digits) && lengths.includes(digits.length))
+export function pathCard(segment, typedDigits = []) {
+  const text = String(segment ?? '').trim()
+  const digits = text.replace(/\D/g, '')
+  if (CARD_SEGMENT.test(text) && luhn(digits) && brandCard(digits)) return true
+  return (Array.isArray(typedDigits) ? typedDigits : []).some((run) => typeof run === 'string' && run.length >= 13 && run.length <= 19 && digits.includes(run))
+}
+
+export function urlSecret(raw, typedDigits = []) {
   let url
   try {
     url = new URL(String(raw ?? ''))
@@ -528,6 +550,7 @@ export function urlSecret(raw) {
   const loose = looksSensitive(decode(fragment))
   if (loose !== null) return loose
   for (const segment of url.pathname.split('/').filter(Boolean)) {
+    if (pathCard(decode(segment), typedDigits)) return 'card'
     const kind = looksSensitive(decode(segment))
     if (kind !== null && kind !== 'card' && kind !== 'phone') return kind
   }
@@ -692,7 +715,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       }
       // CU-260 (cu-researcher; cu-coordinator: High): a secret in the address leaves with the request, so the D-061 value
       // rules run over the decoded URL before the site verdict, and a new-site ask that carries one names the class too.
-      const secret = urlSecret(action.url)
+      const secret = urlSecret(action.url, context.typedDigits)
       const asks = [...(secret !== null ? ['sensitive_data'] : []), ...(next !== 'allow' ? ['new_site'] : [])]
       const needed = asks.filter((cls) => !preApproved(cls, action.url) || NEVER_PRE_APPROVED.includes(cls))
       if (asks.length === 0) return { decision: 'allow', class: null, rule: 'site:allowed', reason: '' }

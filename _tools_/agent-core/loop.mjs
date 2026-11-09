@@ -704,6 +704,7 @@ export async function runTask(options) {
     return typeof app === 'string' && app !== '' && app !== 'null' ? `nofocus:${app}` : null
   }
   const typedIn = (key) => (key !== null && typedByField.has(key) ? typedByField.get(key) : '')
+  const typedCardRuns = () => [...new Set([...typedByField.values()].flatMap((text) => [...String(text).matchAll(/(?:\d[ -]?){13,19}/g)].map((m) => m[0].replace(/\D/g, '')).filter((d) => d.length >= 13 && d.length <= 19)))]
   const setTyped = (key, text) => {
     if (key === null) return
     typedByField.delete(key)
@@ -838,7 +839,10 @@ export async function runTask(options) {
       ? selectedItemsOf(await Promise.resolve(environment.selectedItems()).catch(() => null))
       : undefined
     const typed = typedFor(action, target, !desktop && paste ? paste.text : null, state)
-    return { url: state.url, target: remembered(target), ...(typed ? { typed } : {}), ...(boundMenuItem ? { boundMenuItem } : {}), ...(selection ? { selection } : {}), ...(dropTarget ? { dropTarget: remembered(dropTarget) } : {}), ...(dragText !== undefined ? { dragText } : {}), ...(afterClose ? { afterClose: true } : {}), ...(resubmits ? { resubmits: historyMove } : {}), ...(historyJudged ? { historyJudged } : {}), ...(paste ? { paste } : {}), ...(pasteboardJudged ? { pasteboardJudged } : {}), ...(state.interstitial === true ? { interstitial: true } : {}), dialog: state.dialog ?? null, task: task.text, ...app }
+    // CU-325: a navigate carries the card-length digit runs this run typed or pasted (in memory, never recorded), so a URL
+    // path that holds one asks whatever its prefix.
+    const typedDigits = action.type === 'navigate' ? typedCardRuns() : []
+    return { url: state.url, target: remembered(target), ...(typed ? { typed } : {}), ...(typedDigits.length ? { typedDigits } : {}), ...(boundMenuItem ? { boundMenuItem } : {}), ...(selection ? { selection } : {}), ...(dropTarget ? { dropTarget: remembered(dropTarget) } : {}), ...(dragText !== undefined ? { dragText } : {}), ...(afterClose ? { afterClose: true } : {}), ...(resubmits ? { resubmits: historyMove } : {}), ...(historyJudged ? { historyJudged } : {}), ...(paste ? { paste } : {}), ...(pasteboardJudged ? { pasteboardJudged } : {}), ...(state.interstitial === true ? { interstitial: true } : {}), dialog: state.dialog ?? null, task: task.text, ...app }
   }
 
   let consecutiveBlocks = 0
