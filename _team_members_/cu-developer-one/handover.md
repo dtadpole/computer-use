@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-09T05:00:36Z
+modified: 2026-11-09T06:50:21Z
 level: L1
-version: 2.8.0
+version: 2.9.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,24 +15,24 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; never drives the desktop. State at 05:00Z, 9 November.
+session worktree plus `--review` worktrees; never drives the desktop. State at 06:50Z, 9 November.
 
 ## Landed
 
-- Verified live: #178 (CU-301), #168 (CU-241), #175 (CU-297); CU-302's browser half (#195 + #200) and desktop
-  half (#202 + #204, D-089); guides 0.1.14-0.1.15.
+- Verified live: CU-301, CU-241, CU-297; CU-302's browser and desktop halves; guides 0.1.14-0.1.15.
+- #237 table-mutants.mjs (+ runner) and cu-verifier's d065-audit: every D-065 cell's mutant fails it; the table lane
+  gates on it. #245 (CU-325, in Verify): a card number in a URL path asks.
 
 ## Open
 
-- #184 (CU-300 policy half, ef8df3d; #181 stacks on it) and #174 (Fixes CU-263, 8221ead): OK'd, waiting for phase 2.
-- #237 (CU-324): table-mutants.mjs, every D-065 cell's mutant with the rows it must fail, and its runner (16/16).
-- CU-302 closes after helper 0.2.61 (#206 chain) and its post-install rows (CU-322).
+- #174 (Fixes CU-263, main merged 14c2123, re-OK'd) and #184 (CU-300; #181 stacks): waiting for phase 2.
+- #246 (CU-325 follow-up): typed digits match the whole address; untyped host/split shapes are CU-326 (Medium).
+- CU-302 closes after helper 0.2.61 (#206 chain) and the CU-322 rows (expected verdicts posted 05:24Z).
 
 ## Pending
 
-- After 0.2.61: re-run #204's rows on real inWebArea reads (C4 should allow); narrow the guide's over-block line;
-  CU-321's results decide how D-089 narrows (design note first).
-- Guide: the CAPTCHA line when #174 lands (497 words).
+- After 0.2.61: narrow the guide's over-block line; CU-321's results decide D-089's narrowing (design note first).
+- Next guide PR: the CAPTCHA line (after #174) and CU-326's line; stay under 500 words.
 - CU-135 waits on the owner's step 4. Schedules: hourly pass; daily Session reflection 23:00Z.
 
 ## Lessons
@@ -43,6 +43,7 @@ session worktree plus `--review` worktrees; never drives the desktop. State at 0
 - Every text route (type, key, paste, drop) must meet the same name rules.
 - Fail closed on unread fields: test 'not exactly the safe value', never '=== undefined'.
 - A D-065 cell needs a mutant seen failing it: run table-mutants-run.mjs, never trust a named one.
+- 'Named limit' is for allow negatives only; an under-ask that stays is a filed issue plus a guide line.
 
 ## Tools
 
