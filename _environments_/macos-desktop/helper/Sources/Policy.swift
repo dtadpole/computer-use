@@ -471,6 +471,16 @@ enum Placeholder {
   }
 }
 
+/// CU-380: whether a menu is tracking - any on-screen window at the pop-up menu level (kCGPopUpMenuWindowLevel, 101),
+/// which every open menu bar menu, context menu and pop-up button menu is drawn in, whoever owns it. Visible windows only
+/// (alpha above 0, a non-empty frame). Another window at that level counts too - the named over-ask (Return then asks).
+enum MenuTracking {
+  static let popUpMenuLevel = 101
+  static func open(_ windows: [(layer: Int, alpha: Double, bounds: CGRect)]) -> Bool {
+    windows.contains { $0.layer == popUpMenuLevel && $0.alpha > 0 && $0.bounds.width > 0 && $0.bounds.height > 0 }
+  }
+}
+
 /// CU-377: whether a pasteboard's type names say it holds a file - a file URL (public.file-url) or the legacy filenames
 /// type. Type names only: no path, no content (D-060). nil when the types could not be read (the caller asks).
 enum PasteboardTypes {

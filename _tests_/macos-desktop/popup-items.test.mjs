@@ -153,3 +153,19 @@ test('CU-377 (helper 0.2.65): the focused target says whether the clipboard hold
   await onFake(box, async (env) => assert.equal((await env.focusedElement()).pasteboardHasFile, null, 'an older helper sends none: unknown'))
 })
 
+test('CU-380 (helper 0.2.65): a focus the helper marks menuOpen carries it - a highlighted item, a stale text field, an AXMenu placeholder', async () => {
+  const shapes = [
+    { ...POPUP, role: 'AXMenuItem', title: 'Erase All', menuOpen: true },
+    { ...POPUP, role: 'AXTextField', title: 'Name', editable: true, menuOpen: true },
+    { bundleId: FIXTURE, pid: 601, role: 'AXMenu', subrole: null, title: null, frame: null, secure: false, opaque: true, editable: false, menuOpen: true },
+  ]
+  for (const shape of shapes) {
+    await onFake({ ...shape, frame: shape.frame ?? POPUP.frame }, async (env) => {
+      const focus = await env.focusedElement()
+      assert.deepEqual([focus.role, focus.menuOpen], [shape.role, true], shape.role)
+    })
+  }
+  await onFake({ ...POPUP, role: 'AXTextField', editable: true }, async (env) => assert.equal((await env.focusedElement()).menuOpen, undefined, 'no menu: no mark'))
+  await onFake({ ...POPUP, role: 'AXTextField', editable: true, menuOpen: 'yes' }, async (env) => assert.equal((await env.focusedElement()).menuOpen, undefined, 'only true marks'))
+})
+

@@ -261,6 +261,37 @@ final class SystemCapabilities: Capabilities {
 
   func focused(scope: [String]) -> JSON {
     limitTimeouts()
+    // CU-380: while a menu tracks, Return and Space act on its highlighted item, not on the focus AX reports (which can be
+    // the window's first responder from before the menu opened). So: the highlighted item when it can be read, else the
+    // focus, else an AXMenu placeholder - each marked menuOpen, which agent core asks on unless it can judge the item.
+    if MenuTracking.open(WindowOwners.onScreen().map { (layer: $0.layer, alpha: $0.alpha, bounds: $0.bounds) }) {
+      return Self.markedMenuOpen(openMenuFocus(scope: scope))
+    }
+    return plainFocused(scope: scope)
+  }
+
+  /// CU-380: the focus while a menu tracks - the frontmost app's highlighted menu item (Accessibility.highlightedMenuItem,
+  /// attributes only), else the reported focus, else a placeholder AXMenu in the frontmost app.
+  private func openMenuFocus(scope: [String]) -> JSON {
+    if let front = Accessibility.frontmostPid(), let item = Accessibility.highlightedMenuItem(pid: front) {
+      return Accessibility.describe(item, scope: scope, markPanel: true)
+    }
+    let plain = plainFocused(scope: scope)
+    if plain != .null { return plain }
+    guard let front = Accessibility.frontmostPid() else { return .null }
+    let bundle = Accessibility.bundleId(pid: front)
+    guard let bundle, scope.contains(bundle) else { return Accessibility.unapproved(bundleId: bundle, pid: front) }
+    return .object(["bundleId": .string(bundle), "pid": .int(Int(front)), "role": .string("AXMenu"), "subrole": .null, "title": .null, "frame": .null,
+                    "secure": .bool(false), "opaque": .bool(true), "editable": .bool(false)])
+  }
+
+  static func markedMenuOpen(_ shape: JSON) -> JSON {
+    guard case .object(var fields) = shape else { return shape }
+    fields["menuOpen"] = .bool(true)
+    return .object(fields)
+  }
+
+  private func plainFocused(scope: [String]) -> JSON {
     guard let element = Accessibility.focusedElement() else { return .null }
     let pid = Accessibility.pid(element)
     let bundle = pid.flatMap { Accessibility.bundleId(pid: $0) }

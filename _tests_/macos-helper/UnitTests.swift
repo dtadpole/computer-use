@@ -2089,6 +2089,19 @@ func testPasteboardTypes() {
   check(PasteboardTypes.hasFile(nil) == nil, "unreadable types are unknown, never false")
 }
 
+func testMenuTracking() {
+  // CU-380: a menu tracks when any visible window sits at the pop-up menu level (101), whoever owns it.
+  let menu = (layer: 101, alpha: 1.0, bounds: CGRect(x: 100, y: 30, width: 200, height: 300))
+  let window = (layer: 0, alpha: 1.0, bounds: CGRect(x: 0, y: 0, width: 800, height: 600))
+  let bar = (layer: 24, alpha: 1.0, bounds: CGRect(x: 0, y: 0, width: 1920, height: 25))
+  check(MenuTracking.open([window, bar, menu]), "a window at level 101 is an open menu")
+  check(!MenuTracking.open([window, bar]), "the menu bar alone (level 24) and plain windows are no open menu")
+  check(!MenuTracking.open([(layer: 101, alpha: 0.0, bounds: menu.bounds)]) && !MenuTracking.open([(layer: 101, alpha: 1.0, bounds: .zero)]), "an invisible or empty level-101 window is not")
+  check(!MenuTracking.open([]), "no windows, no menu")
+  check(SystemCapabilities.markedMenuOpen(.object(["role": .string("AXTextField")]))["menuOpen"] == true, "any focus shape returned while a menu tracks is marked menuOpen - a stale first responder too")
+  check(SystemCapabilities.markedMenuOpen(.null) == .null, "no shape stays none")
+}
+
 @main
 struct UnitTests {
   static func main() {
@@ -2134,6 +2147,7 @@ struct UnitTests {
     testNearbyLabel()
     testPopUpItems()
     testPasteboardTypes()
+    testMenuTracking()
     testEndWatchdog()
     // Informational: whether the process that ran these tests is genuine node (true for Node.js Foundation builds).
     let parentIsNode = PeerCheck.satisfiesNodeRequirement(pid: getppid(), token: nil)

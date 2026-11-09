@@ -1897,6 +1897,10 @@ class DesktopEnvironment {
       // CU-372 (helper 0.2.65): a pop-up button's menu items as the helper read them closed (popUpOf) - what keyTarget and
       // typeOptions turn into the item a key or a type selects. Outside the fingerprint, and never in run records.
       ...(element.role === 'AXPopUpButton' || element.role === 'AXMenuButton' ? { popUp: popUpOf(element.popUp) } : {}),
+      // CU-380 (helper 0.2.65): a menu is tracking - set by the helper on whatever focus it returns then (the highlighted
+      // item, a stale first responder, or an AXMenu placeholder), so agent core asks on Return or Space unless it can
+      // judge the item. Present only when true; outside the fingerprint, and never in run records.
+      ...(element.menuOpen === true ? { menuOpen: true } : {}),
       // CU-255: the file the element shows and its URL's last component, what launch_code reads besides the name - Finder
       // may hide an extension in the title (Payload for Payload.app or install.command). Outside the fingerprint, and
       // never in run records (an event's target keeps origin, role and name); the URL's path never leaves the driver.

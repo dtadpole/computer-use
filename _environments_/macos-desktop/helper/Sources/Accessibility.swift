@@ -255,6 +255,27 @@ enum Accessibility {
     elementAttribute(AXUIElementCreateSystemWide(), "AXFocusedUIElement")
   }
 
+  /// CU-380: the highlighted item of an open menu in an app - its open context or pop-up menu (an AXMenu among the
+  /// app's children), else the menu under its selected menu bar item - through each AXMenu's AXSelectedChildren, into an
+  /// open submenu at most 6 deep. Attributes only: nothing is pressed, opened or moved. nil when none can be read.
+  static func highlightedMenuItem(pid: pid_t) -> AXUIElement? {
+    let app = AXUIElementCreateApplication(pid)
+    var menu = children(app).first { string($0, "AXRole") == "AXMenu" }
+    if menu == nil, let bar = elementAttribute(app, "AXMenuBar"),
+       let open = children(bar).first(where: { (attribute($0, "AXSelected") as? NSNumber)?.boolValue == true }) {
+      menu = children(open).first { string($0, "AXRole") == "AXMenu" }
+    }
+    var item: AXUIElement? = nil
+    var depth = 0
+    while let current = menu, depth < 6 {
+      guard let selected = elements(current, "AXSelectedChildren").first(where: { string($0, "AXRole") == "AXMenuItem" }) else { break }
+      item = selected
+      menu = children(selected).first { string($0, "AXRole") == "AXMenu" }
+      depth += 1
+    }
+    return item
+  }
+
   /// CU-190: an element-valued attribute with what the read said - the element, a positive none, or a failure.
   static func elementRead(_ element: AXUIElement, _ name: String) -> (AXRead, AXUIElement?) {
     var value: CFTypeRef?
