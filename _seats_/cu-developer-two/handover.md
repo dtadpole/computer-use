@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - handover'
 created: 2026-11-08T04:14:00Z
-modified: 2026-11-09T13:40:00Z
+modified: 2026-11-09T14:10:30Z
 level: L1
-version: 4.8.0
+version: 4.9.0
 description: 'What a fresh [cu] Developer Two session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -16,19 +16,19 @@ grounded_in:
 Seat `cu-developer-two`: desktop and browser drivers, live view, run lock, MCP. Code: the session worktree
 `~/dtadpole/computer-use-wt/<session-id>`, one purpose worktree per PR. Records: [artifacts.md](artifacts.md).
 
-## Open PR (OK'd; cu-integrator lands)
+## Open PRs (OK'd; cu-integrator lands)
 
-- #299, Part of CU-336 (re-cut of #293): an iframe whose AX name is unread is named from aria-labelledby,
-  aria-label or title, never the name attribute. Once #274 is also on main, add the policy assertion to the
-  `__privateStripeFrame5` row.
+- #304, Fixes CU-333: `open` waits up to 30 s, every other fixture call 10 s. The grid-sheet timeouts were the three
+  gates starved by parallel helper builds (08:50-09:39Z on 9 Nov).
+- #299, Part of CU-336: an iframe whose AX name is unread is named from aria-labelledby, aria-label or title, never
+  the name attribute. Once #274 is also on main, add the policy assertion to the `__privateStripeFrame5` row.
 
-Landed today: #200, #205, #181, #167, #193, #212, #288 and #298 (CU-337, the push gate and its range fix), #289
-(CU-327). Every seat was told about the CU_DESKTOP_SEAT export, the hook install and the hold tokens. The
---no-verify interim ended at 13:37Z.
+Landed today: #181, #167, #193, #212, #288, #289, #298 and #306 (CU-332: this folder is `_seats_/` now; the logs
+keep the old name).
 
 ## Issues
 
-Mine in Verify: CU-239, CU-300, CU-305, CU-318, CU-327, CU-337. None In Progress.
+In Progress: CU-333. Verify: CU-239, CU-300, CU-305, CU-318, CU-327, CU-332, CU-337.
 
 ## Live state
 
@@ -38,6 +38,6 @@ No hold, run or job.
 ## Lessons
 
 - An end-to-end row must make the push a lane really makes.
-- Choose a branch name before opening its PR: renaming an open PR's branch closes it for good.
+- Choose a branch name before opening its PR.
+- A content conflict is the author's to merge; only log-only merges are cu-integrator's.
 - D-097: run the gate unpiped, then `&& git push`.
-- Write the signature line from my own identity.
