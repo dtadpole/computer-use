@@ -256,6 +256,19 @@ export function describeElement(el) {
   } catch {
     origin = null
   }
+  // CU-300: inside a frame only, the frame document's address - origin and path for http(s), with no query, fragment or
+  // credentials (a path may still carry a token: the driver never records it); the scheme alone for any other scheme,
+  // so a data: URL never carries its payload. Absent on the top document.
+  let frameUrl = null
+  try {
+    const view = el.ownerDocument.defaultView
+    if (view && view.top && view !== view.top) {
+      const place = view.location
+      frameUrl = place.protocol === 'http:' || place.protocol === 'https:' ? `${place.protocol}//${place.host}${place.pathname}` : String(place.protocol || '') || null
+    }
+  } catch {
+    frameUrl = null
+  }
   const autocomplete = el.getAttribute ? el.getAttribute('autocomplete') : null
   // CU-173: editable means it takes text. A read-only or disabled input or textarea takes none, so it is not a text
   // entry - as the desktop's editable (AXValue settable) and this driver's clipboard read already say - and agent core's
@@ -404,7 +417,7 @@ export function describeElement(el) {
     // A detached or cross-origin document: no page-level flags.
   }
   return { tag, inputType: type, isPassword: type === 'password', autocomplete: autocomplete || null, href: link, origin, editable, caption: editable ? null : caption, entryCaption: editable ? caption : null,
-    ...(terminal ? { terminal } : {}), ...(notebookCell ? { notebookCell } : {}), ...(notebookSurface ? { notebookSurface } : {}), ...(codeSurface ? { codeSurface } : {}) }
+    ...(frameUrl ? { frameUrl } : {}), ...(terminal ? { terminal } : {}), ...(notebookCell ? { notebookCell } : {}), ...(notebookSurface ? { notebookSurface } : {}), ...(codeSurface ? { codeSurface } : {}) }
 }
 
 /**
@@ -496,6 +509,13 @@ export function clickLabel(hit, target) {
 }
 
 /** Resolves after two animation frames, so a screenshot shows the frame the last input produced. */
+/**
+ * CU-300: the focus inside a frame document, read through the frame's own session - deepActiveElement's answer, or,
+ * when that is nothing, the document's body if it takes text (an iframe editor: contentEditable or designMode).
+ * Composed here because a page function runs serialized, without this module.
+ */
+export const FRAME_FOCUS_EXPRESSION = `(() => { const found = (${deepActiveElement.toString()})(document); if (found) return found; const body = document.body; return body && (body.isContentEditable || document.designMode === 'on') ? body : null })()`
+
 export const TWO_FRAMES_EXPRESSION = 'new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve(true))))'
 
 /** The expression form of a page function applied to the page's own `document` and `window`. */
