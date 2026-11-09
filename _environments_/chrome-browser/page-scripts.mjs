@@ -685,6 +685,80 @@ export function selectTypeOptions(select, text) {
 }
 
 /**
+ * CU-370: what one plain key on the focused element `el` chooses - the element it would select or check (an option of a
+ * native select via `selectKeyOption`, which the caller passes in, as this runs serialized; the next or previous radio
+ * of the group; the ARIA listbox/combobox option it moves to or commits), the string 'unread' when a choice changes but
+ * cannot be read (Enter/Space on a select, PageUp/PageDown, any navigation in a multiple or size>1 select), or null when
+ * the key chooses nothing here. ArrowLeft/ArrowRight count as ArrowUp/ArrowDown (a safe over-ask where the platform
+ * ignores them; cu-researcher). Radios: one name in one form (or none), wrapping, skipping disabled ones; ARIA radios
+ * in their radiogroup, skipping aria-disabled. ARIA listbox: its role=option elements; a combobox's via aria-controls
+ * or aria-owns; aria-activedescendant names the current one, else the focused option itself. Self-contained.
+ */
+export function keyChoice(el, key, selectKeyOptionFn) {
+  if (!el || typeof key !== 'string') return null
+  const tag = String(el.tagName || '').toUpperCase()
+  const attr = (node, name) => (node && typeof node.getAttribute === 'function' ? node.getAttribute(name) : null)
+  const role = String(attr(el, 'role') || '').toLowerCase()
+  const forward = key === 'ArrowDown' || key === 'ArrowRight'
+  const backward = key === 'ArrowUp' || key === 'ArrowLeft'
+  const navigation = forward || backward || ['Home', 'End', 'PageUp', 'PageDown'].includes(key)
+  const step = (list, current) => {
+    if (list.length === 0) return null
+    if (key === 'Home') return list[0]
+    if (key === 'End') return list[list.length - 1]
+    if (current < 0) return forward ? list[0] : backward ? list[list.length - 1] : null
+    if (forward) return list[(current + 1) % list.length]
+    if (backward) return list[(current - 1 + list.length) % list.length]
+    return null
+  }
+  if (tag === 'SELECT') {
+    if (el.disabled) return null
+    if (el.multiple || Number(el.size) > 1) return navigation || key === ' ' || key === 'Enter' || key.length === 1 ? 'unread' : null
+    if (key === 'PageUp' || key === 'PageDown') return 'unread'
+    const moved = selectKeyOptionFn(el, key === 'ArrowRight' ? 'ArrowDown' : key === 'ArrowLeft' ? 'ArrowUp' : key)
+    if (moved === null) return null
+    return moved.unread ? 'unread' : el.options[moved.index]
+  }
+  if (tag === 'INPUT' && String(el.type || '').toLowerCase() === 'radio') {
+    if (!(forward || backward) || !el.name) return null
+    const pool = el.form ? Array.from(el.form.elements || []) : Array.from(el.ownerDocument ? el.ownerDocument.querySelectorAll('input') : [])
+    const group = pool.filter((r) => String(r.tagName || '').toUpperCase() === 'INPUT' && String(r.type || '').toLowerCase() === 'radio' && r.name === el.name && (r.form || null) === (el.form || null) && (r === el || !r.disabled))
+    const next = step(group, group.indexOf(el))
+    return next && next !== el ? next : null
+  }
+  if (role === 'radio') {
+    if (!(forward || backward)) return null
+    const box = typeof el.closest === 'function' ? el.closest('[role="radiogroup"]') : null
+    if (!box) return null
+    const group = Array.from(box.querySelectorAll('[role="radio"]')).filter((r) => r === el || attr(r, 'aria-disabled') !== 'true')
+    const next = step(group, group.indexOf(el))
+    return next && next !== el ? next : null
+  }
+  const doc = el.ownerDocument
+  const byId = (id) => {
+    if (!id) return null
+    const root = typeof el.getRootNode === 'function' ? el.getRootNode() : null
+    return (root && typeof root.getElementById === 'function' ? root.getElementById(id) : null) || (doc ? doc.getElementById(id) : null)
+  }
+  let box = null
+  let current = null
+  if (role === 'listbox') box = el
+  else if (role === 'combobox') box = byId(String(attr(el, 'aria-controls') || attr(el, 'aria-owns') || '').split(/\s+/)[0]) || el
+  else if (role === 'option') {
+    box = typeof el.closest === 'function' ? el.closest('[role="listbox"]') : null
+    current = el
+  }
+  if (!box || typeof box.querySelectorAll !== 'function') return null
+  const options = Array.from(box.querySelectorAll('[role="option"]')).filter((o) => attr(o, 'aria-disabled') !== 'true')
+  if (current === null) current = byId(attr(el, 'aria-activedescendant'))
+  const index = current ? options.indexOf(current) : -1
+  if (key === 'Enter') return role === 'option' ? null : index >= 0 ? options[index] : null
+  if (!navigation || key === 'PageUp' || key === 'PageDown') return navigation ? 'unread' : null
+  const next = step(options, index)
+  return next && next !== current ? next : null
+}
+
+/**
  * CU-353: the first element whose accesskey names `key` (any of its space-separated keys, any case), or null - the
  * document in order, then each open shadow root (a web component's accesskey button; cu-researcher). Other frames and
  * closed roots are not searched (a named limit). Several elements on one key: Chrome moves the focus among them rather

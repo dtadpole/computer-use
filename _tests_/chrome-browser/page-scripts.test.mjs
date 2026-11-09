@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import vm from 'node:vm'
 
-import { accessKeyElement, accessKeyOf, selectKeyOption, selectTypeOptions, activatableAncestor, clickLabel, closedRootHoldsEntry, collectPageText, deepActiveElement, describeElement, DRAG_TEXT_MAX, dragTextAt, implicitSubmitButton, pageExpression, selectionContainer, textEntered } from '../../_environments_/chrome-browser/page-scripts.mjs'
+import { accessKeyElement, accessKeyOf, keyChoice, selectKeyOption, selectTypeOptions, activatableAncestor, clickLabel, closedRootHoldsEntry, collectPageText, deepActiveElement, describeElement, DRAG_TEXT_MAX, dragTextAt, implicitSubmitButton, pageExpression, selectionContainer, textEntered } from '../../_environments_/chrome-browser/page-scripts.mjs'
 import { CARD } from '../fixture-shapes/shapes.mjs'
 
 const DEFAULT_STYLE = { visibility: 'visible', opacity: '1', fontSize: '16px', color: 'rgb(0, 0, 0)', backgroundColor: 'rgba(0, 0, 0, 0)' }
@@ -715,4 +715,30 @@ test('CU-370: every option a typed string passes through - the accumulated prefi
   assert.deepEqual(selectTypeOptions(select(0), 'xyz'), [], 'nothing matches')
   assert.deepEqual(selectTypeOptions(select(-1), 'a'), [1], 'from no selection')
   assert.equal(selectTypeOptions({ tagName: 'DIV' }, 'Del'), null)
+})
+
+test('CU-370: keyChoice - a select\'s option, unread for Enter/Page keys and listbox selects; Left/Right as neighbours', () => {
+  const opt = (text) => ({ text, label: text, disabled: false, parentNode: { tagName: 'SELECT' } })
+  const options = [opt('Bulk actions'), opt('Archive'), opt('Delete')]
+  const select = (extra = {}) => ({ tagName: 'SELECT', selectedIndex: 1, options, getAttribute: () => null, ...extra })
+  assert.equal(keyChoice(select(), 'ArrowRight', selectKeyOption), options[2], 'ArrowRight as ArrowDown')
+  assert.equal(keyChoice(select(), 'ArrowLeft', selectKeyOption), options[0])
+  assert.equal(keyChoice(select(), 'd', selectKeyOption), options[2])
+  assert.equal(keyChoice(select(), 'PageDown', selectKeyOption), 'unread')
+  assert.equal(keyChoice(select(), 'Enter', selectKeyOption), 'unread')
+  assert.equal(keyChoice(select({ multiple: true }), 'ArrowDown', selectKeyOption), 'unread', 'a multiple select is a listbox: ask')
+  assert.equal(keyChoice(select({ size: 4 }), 'd', selectKeyOption), 'unread', 'size > 1 too')
+  assert.equal(keyChoice(select({ size: 4 }), 'Tab', selectKeyOption), null)
+})
+
+test('CU-370: keyChoice - an arrow on a radio lands on the next one of its group, wrapping, skipping disabled ones', () => {
+  const form = { elements: [] }
+  const radio = (name, extra = {}) => ({ tagName: 'INPUT', type: 'radio', name, form, disabled: false, getAttribute: () => null, ...extra })
+  const keep = radio('account'); const locked = radio('account', { disabled: true }); const del = radio('account'); const other = radio('plan')
+  form.elements.push(keep, other, locked, del)
+  assert.equal(keyChoice(keep, 'ArrowDown', selectKeyOption), del, "from 'Keep' ArrowDown lands on 'Delete my account' (the disabled one skipped)")
+  assert.equal(keyChoice(keep, 'ArrowUp', selectKeyOption), del, 'wrapping')
+  assert.equal(keyChoice(del, 'ArrowRight', selectKeyOption), keep)
+  assert.equal(keyChoice(keep, 'Enter', selectKeyOption), null, 'Enter chooses no radio')
+  assert.equal(keyChoice(other, 'ArrowDown', selectKeyOption), null, 'a group of one')
 })

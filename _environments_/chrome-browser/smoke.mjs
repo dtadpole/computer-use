@@ -115,7 +115,7 @@ const server = http.createServer((req, res) => {
   }
   // CU-370: a 'Bulk actions' select, a text field, and an ARIA listbox whose active option is Delete.
   if (req.url.startsWith('/select-page')) {
-    res.end('<!doctype html><style>body{margin:0}.at{position:absolute;left:20px;width:300px;height:30px}</style><select class="at" style="top:20px" id="bulk"><option>Bulk actions</option><option>Archive</option><option>Delete</option><option>Details</option><option>Sort: Newest</option></select><input class="at" style="top:70px" id="note"><div class="at" style="top:120px" id="lb" role="listbox" tabindex="0" aria-label="Actions" aria-activedescendant="lb-del"><div role="option" id="lb-arc">Archive</div><div role="option" id="lb-del">Delete</div></div>')
+    res.end('<!doctype html><style>body{margin:0}.at{position:absolute;left:20px;width:300px;height:30px}</style><select class="at" style="top:20px" id="bulk"><option>Bulk actions</option><option>Archive</option><option>Delete</option><option>Details</option><option>Sort: Newest</option></select><input class="at" style="top:70px" id="note"><div class="at" style="top:120px" id="lb" role="listbox" tabindex="0" aria-label="Actions" aria-activedescendant="lb-del"><div role="option" id="lb-arc">Archive</div><div role="option" id="lb-del">Delete</div></div><select class="at" style="top:170px" id="multi" multiple><option>Archive</option><option>Delete</option></select><form class="at" style="top:230px"><label><input type="radio" name="account" id="keep" checked> Keep my account</label><label><input type="radio" name="account" id="del"> Delete my account</label></form>')
     return
   }
   // CU-319: a card form for Chrome's own autofill (CDP Autofill.trigger with a test card built at runtime).
@@ -319,7 +319,16 @@ try {
   const typedField = await env.typeOptions({ type: 'type', text: 'Det' })
   await evaluate("document.getElementById('lb').focus()")
   const listEnter = await env.keyTarget({ type: 'keypress', keys: ['Enter'] })
-  check('a type into a text field has no options; Enter on an ARIA listbox names its active option', typedField === null && listEnter?.selectOption === true && listEnter?.name === 'Delete', { typedField, list: listEnter && { name: listEnter.name, role: listEnter.role } })
+  const listUp = await env.keyTarget({ type: 'keypress', keys: ['ArrowUp'] })
+  check('a type into a text field has no options; on an ARIA listbox Enter names its active option, ArrowUp the one above', typedField === null && listEnter?.selectOption === true && listEnter?.name === 'Delete' && listUp?.name === 'Archive', { typedField, enter: listEnter && { name: listEnter.name, role: listEnter.role }, up: listUp?.name })
+  await evaluate("document.getElementById('bulk').focus()")
+  const pageDown = await env.keyTarget({ type: 'keypress', keys: ['PageDown'] })
+  await evaluate("document.getElementById('multi').focus()")
+  const multiDown = await env.keyTarget({ type: 'keypress', keys: ['ArrowDown'] })
+  const multiType = await env.typeOptions({ type: 'type', text: 'Del' })
+  await evaluate("document.getElementById('keep').focus()")
+  const radioDown = await env.keyTarget({ type: 'keypress', keys: ['ArrowDown'] })
+  check("PageDown and a multiple select are unread (asked); ArrowDown on 'Keep my account' names 'Delete my account'", pageDown?.optionUnread === true && multiDown?.optionUnread === true && multiType?.unread === true && radioDown?.radioChoice === true && /Delete my account/.test(radioDown?.name ?? ''), { pageDown: pageDown?.optionUnread, multiDown: multiDown?.optionUnread, multiType, radio: radioDown && { name: radioDown.name, role: radioDown.role, inputType: radioDown.inputType } })
   await env.perform({ type: 'navigate', url: `${origin}/autofill-form` })
   const payAt = { x: 128, y: 176 }
   const payBefore = await env.inspectPoint(payAt)
