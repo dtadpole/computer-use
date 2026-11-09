@@ -30,7 +30,7 @@ Saved menu items, a mixed-script item bound to a chord - have live rows on CU-32
 buttons inside same- and cross-origin frames are refused with the helper reading them inside the web area (CU-328), and
 the D-059 table is re-signed on main 445c98e - every cell closed live or under D-065, nine allow-side named limits
 (CU-145). Since 0.9.59: a full SSN or card split across unnamed boxes asks at the box that completes it, typed or
-key by key (CU-340, High), main before the fix taking both whole. Open again since 14:2xZ: CU-347 (High) - an AWS
+key by key (CU-340, High), main before the fix taking both whole. Open again since 14:23Z: CU-347 (High) - an AWS
 secret access key and 'password='/'token=' assignments typed into an unnamed field go unasked (cu-researcher's hunt;
 confirmed on main with policy.looksSensitive, values built at runtime). Also open: CU-336 (Medium: a CVV or expiry typed into an unnamed cross-origin frame goes through on main,
 measured 11:37Z; its fix is OK'd and measured on the merge) and so the D-061 re-sign, then CU-135's Replace chain and
