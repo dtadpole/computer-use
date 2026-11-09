@@ -1,8 +1,8 @@
 ---
 title: What it does, approvals and known limits
 created: 2026-11-07T21:18:46Z
-modified: 2026-11-09T00:50:00Z
-version: 0.1.13
+modified: 2026-11-09T02:50:00Z
+version: 0.1.14
 level: L1
 status: unverified
 description: What the agent can and cannot do on your Mac, what it asks you, and its known limits.
@@ -11,6 +11,7 @@ grounded_in:
   - source: _designs_/desktop-extension/human-control.md, file-panels.md, app-policy.md
   - source: 'computer-use #136 (CU-289 saving a password or passkey), #153 (CU-252 an unreadable selection), #146 and #149 (CU-279, CU-296 IDE terminals and consoles)'
   - source: 'computer-use #59 and #168 (CU-241 Command/Control-Enter in a web editor, an iframe editor too), #175 (CU-297 hosted card and sign-in frames)'
+  - source: 'computer-use #202 and #204 (D-089, CU-302, CU-322 - an approved browser''s page refused on the desktop route; unread browser targets too until the helper reports inWebArea)'
 ---
 
 # What it does, approvals and known limits
@@ -21,7 +22,7 @@ It can click, long-press, Shift-click, Option-drag, type, press or hold keys (up
 
 It cannot see or act in an unapproved app (shown black); it asks first. It never acts in
 terminals (IDE terminals and debug consoles too, any language) and launchers, password managers and Keychain, clipboard managers, System Settings, login and security
-prompts, installers, Disk Utility, Time Machine, Activity Monitor, other AI apps or Writing Tools, or its own live view, and never presses a system shortcut that acts beyond the app (Services, Dock hiding, input source, keyboard access). It never saves into or opens from `~/.ssh`, launch agents,
+prompts, installers, Disk Utility, Time Machine, Activity Monitor, other AI apps or Writing Tools, a browser's pages (use browser mode), or its own live view, and never presses a system shortcut that acts beyond the app (Services, Dock hiding, input source, keyboard access). It never saves into or opens from `~/.ssh`, launch agents,
 keychains, shell start-up files, login items or `/Applications`. A password field is handed to you, also after Show password reveals it (one never secure and labelled only by nearby text is not yet judged).
 
 ## Approvals
@@ -32,12 +33,12 @@ file choices are never pre-approved. Typed sensitive text stays out of run files
 
 ## Known limits
 
-- Names are read in English and Chinese (Simplified and Traditional); for other languages approve only apps running in one of those.
+- Names are read in English and Chinese; approve only apps running in those languages.
 - A file panel's question names the folder only if the agent opened it; otherwise check first.
 - One display: your first app's, at its starting size; moving display ends the run.
 - A leftover notification blocks clicks beneath it.
-- A run can end partial; its last line says so.
-- A run stopped mid-hold names the key; the next run, or pressing it, releases it.
+- Until the helper reads page boundaries, a browser's address bar, tabs, menus and shortcuts are refused too.
+- A run stopped mid-hold names the key; pressing it releases it.
 - A shortcut is judged as the menu item it fires; a window button's or view's own keys are not.
 - An approved app's built-in AI counts as part of the app.
 - A website's own shortcuts (a webmail's # deletes) are judged by the focus, not their effect.
