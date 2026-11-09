@@ -5,7 +5,7 @@ import Foundation
 /// The helper's identity; `build.sh` writes the same bundle id into Info.plist.
 enum HelperIdentity {
   static let bundleId = "com.reflection.cu-helper"
-  static let version = "0.2.58"
+  static let version = "0.2.61"
   /// The value every synthetic event carries in `kCGEventSourceUserData`: 0x43555345, ASCII "CUSE"
   /// (input-and-targets.md, verify-kit's SYNTHETIC_TAG). Not a secret: an event from another process with this tag
   /// could only fail to pause the run, never act.
@@ -223,6 +223,23 @@ enum PanelMarker {
       if node.role == "AXWindow" || node.role == "AXApplication" { return nil }
     }
     return ending == .top ? nil : "unknown"
+  }
+}
+
+/// CU-322 (D-089): whether an element is, or descends from, an AXWebArea - the page of a browser that exposes its web
+/// content (Safari; Chrome with accessibility on), where a hit-test lands on a button or field inside the page. Read
+/// from the same ancestor walk as the panel marker: `path` is the element and its ancestors, nearest first (roles).
+/// true at an AXWebArea before a window or the application; false at a clean top without one; nil (unknown) when the
+/// walk ended at an Accessibility error or the depth limit - agent core treats unknown in a browser as web content.
+enum WebArea {
+  static let role = "AXWebArea"
+
+  static func contains(path: [String?], ending: PanelMarker.Ending) -> Bool? {
+    for role in path.prefix(PanelMarker.maxDepth) {
+      if role == Self.role { return true }
+      if role == "AXWindow" || role == "AXApplication" { return false }
+    }
+    return ending == .top ? false : nil
   }
 }
 
@@ -1061,5 +1078,13 @@ enum GrantRecheck {
       grants = grants.union(read())
     }
     return grants
+  }
+
+  /// CU-303: the grants a serving start reads. A start that cannot hold a grant (`--dry-run` or `--simulate-ungranted`:
+  /// the boundary never applies and its capabilities are the dry-run world or forced off) takes `.none` and asks TCC
+  /// nothing - a test suite's burst of such starts ran tccd out of file descriptors (EMFILE), and the next live start
+  /// read every grant false.
+  static func atStart(mayHoldGrants: Bool, read: () -> Grants, sleep: (TimeInterval) -> Void) -> Grants {
+    mayHoldGrants ? settled(read: read, sleep: sleep) : .none
   }
 }

@@ -77,13 +77,21 @@ test('capture and input APIs live only in the live capabilities, behind the disp
 })
 
 test('the boundary of D-029 is wired: peer check, one instance, indicator, the connect window', () => {
-  assert.match(code['main.swift'], /let grantsAtStart = GrantRecheck\.settled\(read: \{ Grants\.preflight\(\) \}, sleep: \{ Thread\.sleep\(forTimeInterval: \$0\) \}\)\nlet boundary = options\.boundaryApplies\(grantsAtStart: grantsAtStart\)/)
+  // CU-303: a start that cannot hold a grant (dry run, simulated ungranted) reads no TCC; a live start settles them.
+  assert.match(code['main.swift'], /let grantsAtStart = GrantRecheck\.atStart\(mayHoldGrants: options\.mayHoldGrants, read: \{ Grants\.preflight\(\) \}, sleep: \{ Thread\.sleep\(forTimeInterval: \$0\) \}\)\nlet boundary = options\.boundaryApplies\(grantsAtStart: grantsAtStart\)/)
+  assert.match(code['Policy.swift'], /static func atStart\(mayHoldGrants: Bool, read: \(\) -> Grants, sleep: \(TimeInterval\) -> Void\) -> Grants \{\n    mayHoldGrants \? settled\(read: read, sleep: sleep\) : \.none\n  \}/, 'only a start that may hold grants reads them')
+  assert.doesNotMatch(code['main.swift'], /^(?!.*GrantRecheck\.atStart\().*Grants\.preflight\(\)/m, 'main.swift reads TCC only through atStart')
   assert.match(code['main.swift'], /if options\.lockPath != nil && grantsAtStart\.any \{\n  fail\(/, 'a granted helper always takes the shared lock')
   assert.match(code['main.swift'], /let forcedUngranted = options\.simulateUngranted \|\| \(options\.mayHoldGrants && !boundary\)/, 'no grant at the start, none for the run')
   assert.match(code['main.swift'], /if boundary && !SingleInstance\.acquire\(at: options\.lockPath \?\? SingleInstance\.lockPath\)/)
   assert.match(code['main.swift'], /if boundary \{ Indicator\.show\(\) \}\n\nlink\.send\(dispatcher\.hello/, 'the indicator is up before the hello')
   assert.match(code['main.swift'], /DispatchSource\.makeSignalSource/, 'a quit releases held input')
   assert.match(code['main.swift'], /PeerCheck\.refusal\(peer/)
+  // CU-299: the compiled ~/computer-use roots are gone; only a configured checkout's entry points are served.
+  assert.doesNotMatch(code['PeerCheck.swift'], /static let layouts|func checkoutRoot|func projectRoot|func isAllowedEntry/, 'no compiled checkout root remains (CU-299)')
+  assert.match(code['PeerCheck.swift'], /guard configured else \{ return "the peer's script is not an allowed entry point" \}/, 'only a configured checkout admits a peer (CU-299)')
+  assert.match(code['main.swift'], /"none - every peer is refused"/, 'the start line says when no checkout is configured')
+  assert.match(code['PeerCheck.swift'], /guard trustedForConfig\(path, ownUid: ownUid\), trustedForConfig\(\(path as NSString\)\.deletingLastPathComponent, ownUid: ownUid\) else \{\n      return \(\[\], /, 'the config and its folder are this user\'s alone before any entry is read (CU-299)')
   assert.match(code['main.swift'], /Indicator\.show\(\)/)
   assert.match(code['main.swift'], /SocketLink\.connect\(path: path, timeout: 10\)/)
   assert.match(code['main.swift'], /cap\.schedule\(deadline: \.now\(\) \+ options\.maxRunSeconds\)/, 'the wall-time cap')
@@ -178,6 +186,16 @@ test('only hitTest reads the lifted action target; desktop(at:) and the pid chec
   const desktop = source.slice(source.indexOf('func desktop(at point'), source.indexOf('func hitTest('))
   assert.match(desktop, /Accessibility\.element\(at: point\)/)
   assert.doesNotMatch(desktop, /actionTarget/)
+})
+
+test('CU-322: describe() reports inWebArea from the one ancestor walk the panel marker reads, null when it cannot finish', () => {
+  const source = readFileSync(join(SOURCES, 'Accessibility.swift'), 'utf8')
+  const describe = source.slice(source.indexOf('static func describe('), source.indexOf('static func describe(') + 6000)
+  assert.match(describe, /let walk = ancestorWalk\(of: element\)/, 'one walk per described element')
+  assert.match(describe, /shape\["inWebArea"\] = WebArea\.contains\(path: walk\.path\.map \{ \$0\.role \}, ending: walk\.ending\)\.map \{ \.bool\(\$0\) \} \?\? \.null/, 'true, false or null')
+  const policy = readFileSync(join(SOURCES, 'Policy.swift'), 'utf8')
+  assert.match(policy, /if role == Self\.role \{ return true \}\n      if role == "AXWindow" \|\| role == "AXApplication" \{ return false \}/, 'a web area before the window; nothing above it')
+  assert.match(policy, /return ending == \.top \? false : nil/, 'an unfinished walk is unknown, never false')
 })
 
 test("CU-194: windowOrigin is read from the element's AXWindow's AXPosition, never the element's own frame", () => {

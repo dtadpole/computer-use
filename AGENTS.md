@@ -1,8 +1,8 @@
 ---
 title: AGENTS.md
 created: 2026-11-08T09:40:00Z
-modified: 2026-11-08T23:25:02Z
-version: 1.2.0
+modified: 2026-11-08T23:42:00Z
+version: 1.3.0
 description: The entry point for whoever works in this repository - what it is, the conventions it follows, and how a change is finished.
 grounded_in:
   - source: owner's order of 2026-11-08 (computer-use becomes one public repository holding its code and its records, by the knowledge-bank conventions)
@@ -36,9 +36,9 @@ instance in a registered `_type_` folder. Of the owner's knowledge-bank conventi
 - **Frontmatter** - every authored Markdown artifact starts with YAML frontmatter (title, created, modified,
   version, description, grounded_in); a value never contains a colon unless quoted.
 - **Local folder layout** - the main checkout `~/dtadpole/computer-use` (old paths symlink to it) is the sync's,
-  never edited; a session edits only in its own worktree `~/dtadpole/computer-use-wt/<session-id>`. A CUHelper run
-  still starts from `~/computer-use--<seat>`, the paths the installed helper admits, until helper 0.2.58 admits the
-  convention paths (D-077).
+  never edited; a session edits only in its own worktree `~/dtadpole/computer-use-wt/<session-id>`, and since helper
+  0.2.58 (installed 8 Nov) its CUHelper runs start there too; the old `~/computer-use--<seat>` paths stay admitted
+  until a later helper retires them (D-080).
 - **Landing** - `main` is pull-request only and protected; the integrator lands reviewed, gated SHAs. Nobody
   force-pushes or pushes `main`.
 - **Pull request numbers** - restarted at #1 on 2026-11-08: in an older record, #N is a pull request of the private

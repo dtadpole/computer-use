@@ -1,8 +1,8 @@
 ---
 title: agent-core test suite
 created: 2026-11-01T10:11:08Z
-modified: 2026-11-05T16:23:32Z
-version: 0.7.1
+modified: 2026-11-09T05:05:00Z
+version: 0.8.0
 description: Unit tests of agent-core - keys, the site filter table, the launch gate, run control, schema validation, policy classes, trajectory and the loop against a fake environment and the scripted model - with no browser, network or key.
 grounded_in:
   - source: _tools_/agent-core/INDEX.md@0.6.0
@@ -16,6 +16,7 @@ grounded_in:
 |---|---|
 | [`keys.test.mjs`](keys.test.mjs) | canonical names, both dialects' aliases, printable characters, refusal by name, xdotool chords |
 | [`sites.test.mjs`](sites.test.mjs) | every row of the site-filter test table: loopback aliases, fixed-deny ports, private and link-local hosts, exact-origin patterns, wildcard depth, the default allow list, `new_site` approvals |
+| [`table-mutants.mjs`](table-mutants.mjs), [`table-mutants-run.mjs`](table-mutants-run.mjs) | the mutants the D-059 and D-061 tables cite for their D-065 cells, each with the rows it must fail; the runner (not in the suite, about a minute) applies each alone to a scratch copy and exits 1 if a listed row survives |
 | [`resource-gate.test.mjs`](resource-gate.test.mjs) | the D-014 registry: entry, chrome pid, release, seat and team caps, dead-owner pruning, lock timeout and stale lock, memory floor, exit handler |
 | [`control.test.mjs`](control.test.mjs) | tokens, pause and resume rules, take-over gates, consent only from human channels, timeouts, stop, hand-back, guidance |
 | [`actions.test.mjs`](actions.test.mjs) | the nine GA actions, extensions only when declared, whole-batch refusal with each code, batch cap, ignored fields |
