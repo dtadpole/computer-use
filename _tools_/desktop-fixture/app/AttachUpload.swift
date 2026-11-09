@@ -1,7 +1,7 @@
 import AppKit
 
 // 'attach-upload' (CU-377's live row): a message window - meant for CU Ledger, the second approved app - with a drop zone
-// that takes files dragged from CU Fixture's file browser (S6) and an 'Upload' button that sends what is attached. Each
+// that takes files dragged from CU Fixture's file browser (S6) or its open-selection list (the Finder stand-in, rows with AXFilename) and an 'Upload' button that sends what is attached. Each
 // step records only counts: 'attached' with how many files arrived, 'uploaded' with how many went. Nothing leaves the
 // window; the files are names in CU Fixture's model.
 
@@ -15,7 +15,7 @@ final class AttachZone: NSView {
 
   override init(frame: NSRect) {
     super.init(frame: frame)
-    registerForDraggedTypes([Files.dragType, .fileURL, .string])
+    registerForDraggedTypes([Files.dragType, OpenSelection.dragType, .fileURL, .string])
   }
   required init?(coder: NSCoder) { nil }
 
