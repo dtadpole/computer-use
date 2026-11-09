@@ -976,7 +976,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // On the desktop a null target (nothing focused, or a focus the driver could not read) holds no text entry either, so
     // printable input there asks too (cu-coordinator 17:53Z) - a typed line break alone is no printable input (D-069 keeps it).
     const desktopTarget = desktopNoMenu
-    const pageShortcut = (browserRoute || desktopTarget) && shortcutKey !== null && !isTextEntry(target) && !framesHost(target) && !keyboard.deletes && !keyboard.activates
+    // cu-verifier 180522Z: 'ok #' typed on a focused link row - its space presses the link, its other characters still reach
+    // the page's handlers - so a typed text is an activation only when it holds nothing but spaces and line breaks.
+    const activationOnly = keyboard.activates && !(action.type === 'type' && /\S/.test(String(action.text ?? '')))
+    const pageShortcut = (browserRoute || desktopTarget) && shortcutKey !== null && !isTextEntry(target) && !framesHost(target) && !keyboard.deletes && !activationOnly
     // CU-140 (press-and-drop.md): a drag pressed on a control - a long press, or any drag starting there - is judged like
     // a click on it; a file, row, cell or image at the press point is not judged by its name (dragging it moves it).
     const pressesTarget = POINTER.has(action.type) || (action.type === 'drag' && CONTROL_ROLE.test(String(target?.role ?? '')))

@@ -74,5 +74,7 @@ test('CU-363 round 3: hold_key, longer text on the body, and the desktop route a
   }
   assert.equal(j({ type: 'type', text: '###' }, null, 'app:com.example.mail').rule, 'page:shortcut', 'desktop: no text entry focused (null) asks too')
   assert.equal(j({ type: 'type', text: '#' }, { role: 'link', name: 'Message from Pat' }).rule, 'page:shortcut', 'a typed key on a link asks like a keypress')
+  assert.equal(j({ type: 'type', text: 'ok #' }, { role: 'link', name: 'Invoice from Acme' }).rule, 'page:shortcut', "'ok #' on a link: the space presses it, the rest reaches the page (cu-verifier 180522Z)")
+  assert.equal(j({ type: 'type', text: ' ' }, { role: 'button', name: 'Archive' }).rule === 'page:shortcut', false, 'a typed space alone is the activation rule')
   assert.equal(j({ type: 'keypress', keys: ['SHIFT', '3'] }, ROW).runOnly, true, "an 'always' answer is capped at the run")
 })
