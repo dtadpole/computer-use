@@ -1,8 +1,8 @@
 ---
 title: What it does, approvals and known limits
 created: 2026-11-07T21:18:46Z
-modified: 2026-11-09T08:15:00Z
-version: 0.1.17
+modified: 2026-11-09T10:58:00Z
+version: 0.1.18
 level: L1
 status: unverified
 description: What the agent can and cannot do on your Mac, what it asks you, and its known limits.
@@ -15,6 +15,7 @@ grounded_in:
   - source: 'computer-use #195 and #200 (CU-302 - a submit of a form the browser autofilled asks by the filled fields, never pre-approved)'
   - source: 'computer-use #245 and #246 (CU-325 - a card in a web address path asks; CU-326 - an untyped card in a host label or split across segments does not, Medium under-ask)'
   - source: 'CU-322 live rows on helper 0.2.61 (cu-verifier 08:04Z, red-teamed by cu-researcher 08:07Z) - the address bar, menu bar and omnibox read inWebArea false and are judged as before; page targets stay refused'
+  - source: 'computer-use #250 (CU-326 - a card in a host label, split across all-digit segments or zero-padded now asks; the limit line goes)'
 ---
 
 # What it does, approvals and known limits
@@ -44,4 +45,3 @@ file choices are never pre-approved. Typed sensitive text stays out of run files
 - A shortcut is judged as the menu item it fires; a window button's or view's own keys are not.
 - An approved app's built-in AI counts as part of the app.
 - A website's own shortcuts are judged by the focus, not their effect.
-- A card it never typed - in a site name, split across an address, or inside a longer number - is not asked.
