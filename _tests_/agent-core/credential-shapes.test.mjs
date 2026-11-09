@@ -19,3 +19,13 @@ test('CU-350 negatives: ports, prose, counters and a prompt-for-password flag st
     assert.equal(looksSensitive(text), null, text)
   }
 })
+
+test('CU-350 round 2: curl -u user:pw, sshpass -p and Basic auth that decodes to user:password are keys (cu-researcher)', () => {
+  const basic = Buffer.from(j('admin:', 's3cr3t-pw')).toString('base64')
+  for (const text of [j('curl -u admin:', 'hunter2x https://api.example/'), j('sshpass -p ', 'hunter2x ssh host'), `Authorization: Basic ${basic}`]) {
+    assert.equal(looksSensitive(text), 'key', text.slice(0, 14))
+  }
+  for (const text of ['curl -u admin https://api.example/', 'sshpass -f pwfile ssh host', 'Basic usage of the API', `Authorization: Basic ${Buffer.from('justaword').toString('base64')}`]) {
+    assert.equal(looksSensitive(text), null, text)
+  }
+})

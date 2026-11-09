@@ -746,6 +746,15 @@ export function looksSensitive(text) {
     if (/\d/.test(m[1])) return 'key'
   }
   if (/\b(?:mysql|mariadb|mysqldump|psql|pg_dump|mongo|mongosh|redis-cli)\b[^\n]*?(?:\s-p(?!\s)\S{4,}|\s--password=\S{4,})/i.test(value)) return 'key'
+  // cu-researcher's red team: 'curl -u user:<pw>', 'sshpass -p <pw>', and an 'Authorization: Basic' value whose base64 decodes
+  // to user:password.
+  if (/\b(?:curl|wget|http|https)\b[^\n]*?\s(?:-u|--user)\s+[^\s:]+:\S{4,}/i.test(value)) return 'key'
+  if (/\bsshpass\b[^\n]*?\s-p\s*\S{4,}/i.test(value)) return 'key'
+  for (const m of value.matchAll(/\bbasic\s+([A-Za-z0-9+/]{8,}={0,2})(?![A-Za-z0-9+/=])/gi)) {
+    let decoded = ''
+    try { decoded = atob(m[1]) } catch { decoded = '' }
+    if (/^[^:\s]+:\S{4,}$/.test(decoded)) return 'key'
+  }
   // CU-164: a 0x-prefixed 64-hex private key (the word boundary after 'x' kept the rule above from seeing it); a 0x + 40
   // hex wallet address is public and stays allowed.
   if (/\b0x[0-9a-fA-F]{64}\b/.test(value)) return 'key'
