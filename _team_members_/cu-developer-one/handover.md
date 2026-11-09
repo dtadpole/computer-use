@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-09T03:08:10Z
+modified: 2026-11-09T05:00:36Z
 level: L1
-version: 2.7.0
+version: 2.8.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,27 +15,25 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; never drives the desktop. State at 03:08Z, 9 November.
+session worktree plus `--review` worktrees; never drives the desktop. State at 05:00Z, 9 November.
 
 ## Landed
 
-- Verified live: #178 (CU-301), #168 (CU-241), #175 (CU-297).
-- CU-302 policy side: #195 (autofilled submit asks, never pre-approved), #202 + #204 (D-089 and CU-322: in an
-  approved browser only a target read with inWebArea false keeps its rules). cu-verifier's desktop rows C1-C4 held.
-- Guide 0.1.14 (#213) names the interim over-block (address bar, tabs, menus, shortcuts).
+- Verified live: #178 (CU-301), #168 (CU-241), #175 (CU-297); CU-302's browser half (#195 + #200) and desktop
+  half (#202 + #204, D-089); guides 0.1.14-0.1.15.
 
 ## Open
 
 - #184 (CU-300 policy half, ef8df3d; #181 stacks on it) and #174 (Fixes CU-263, 8221ead): OK'd, waiting for phase 2.
-- CU-302 rest: #200 (driver autofilledFields), #205 (driver inWebArea), helper 0.2.61 (#206 chain), then live rows.
+- #237 (CU-324): table-mutants.mjs, every D-065 cell's mutant with the rows it must fail, and its runner (16/16).
+- CU-302 closes after helper 0.2.61 (#206 chain) and its post-install rows (CU-322).
 
 ## Pending
 
-- Guide: the CAPTCHA line (#174) and the AutoFill line (#200) when landed; 499 of 499 words, trim to add.
-- After 0.2.61: re-run #204's rows on real inWebArea reads with cu-verifier (C4 should allow); CU-321's results
-  decide how D-089 narrows (design note first).
-- CU-135 waits on the owner's step 4.
-- Schedules: hourly pass; daily Session reflection 23:00Z.
+- After 0.2.61: re-run #204's rows on real inWebArea reads (C4 should allow); narrow the guide's over-block line;
+  CU-321's results decide how D-089 narrows (design note first).
+- Guide: the CAPTCHA line when #174 lands (497 words).
+- CU-135 waits on the owner's step 4. Schedules: hourly pass; daily Session reflection 23:00Z.
 
 ## Lessons
 
@@ -44,6 +42,7 @@ session worktree plus `--review` worktrees; never drives the desktop. State at 0
 - Review on a real test merge in a purpose worktree; an OK names the exact head.
 - Every text route (type, key, paste, drop) must meet the same name rules.
 - Fail closed on unread fields: test 'not exactly the safe value', never '=== undefined'.
+- A D-065 cell needs a mutant seen failing it: run table-mutants-run.mjs, never trust a named one.
 
 ## Tools
 

@@ -13,7 +13,7 @@ set -euo pipefail
 
 BUNDLE_ID="com.reflection.cu-helper"   # keep equal to HelperIdentity.bundleId and launch.mjs BUNDLE_ID
 BUNDLE_NAME="CUHelper"
-VERSION="0.2.59"
+VERSION="0.2.60"
 MIN_MACOS="14.0"                        # SCScreenshotManager
 
 if [ "$#" -ne 1 ] || [ -z "$1" ]; then
