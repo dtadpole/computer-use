@@ -1,14 +1,15 @@
 ---
 title: The browser driver follows the focus into a cross-origin frame and names the frame's URL
 created: 2026-11-08T23:55:00Z
-modified: 2026-11-08T23:55:00Z
+modified: 2026-11-09T00:05:00Z
 level: L1
-version: 0.1.0
+version: 0.2.0
 description: "CU-300 (CU-297's driver half): focusedElement() describes the element focused inside a cross-origin iframe through the frame's own session, as inspectPoint already does for a point, keeping the iframe element whenever that read fails; every target inside a frame carries frameUrl (origin and path) and, through a cross-origin frame, its host's name; an editable frame body is an editable target."
 status: proposed
 grounded_in:
   - source: "CU-300 and cu-developer-one's ask (inbox 2026-11-08 23:47Z): (a) follow the frame session, (b) frameUrl, (c) an editable body"
   - source: "CU-297 note 0.1 (cu-developer-one) and its reviews - cu-researcher's amendment 3 (frameUrl judged in memory, never recorded), cu-verifier's live rows on the fixture site's card-frames and frame-editor pages (#171)"
+  - source: "cu-researcher's red team of 0.1 (inbox 2026-11-08 23:59Z): B1 - never weaker than #175's frame-host rules (names and Return); N1 the nested 3-D Secure frame; N2 no URL in policy reasons; N3 the recheck row"
   - source: "_environments_/chrome-browser/environment.mjs on main c7fb862 - inspectPoint and #insideFrame (lines 280-379), focusedElement (382-392), #describe (481-574); session.mjs #attachedFrame (307-323)"
 ---
 
@@ -43,20 +44,39 @@ they stay one. `inspectPoint` already looks inside such a frame through the fram
 5. **An editable body.** A frame `<body>` that is `isContentEditable`, or whose document is in `designMode`, is
    described as an editable target, named from its host's title or aria-label (CU-241's iframe editor). A non-editable
    body stays as in point 2, or null in a same-origin frame, as today.
-6. **The frame's own form.** `defaultButton` (`#implicitSubmit`) is read in the frame target's world, so a Return in a
-   hosted sign-in field names the frame's submit button. If that read fails, `defaultButton` is null, as today.
+6. **The frame's own form, and whether it was read.** `defaultButton` (`#implicitSubmit`) is read in the frame target's
+   world, so a Return in a hosted sign-in field names the frame's submit button. Every browser focus now also carries
+   `defaultButtonRead`: true when the read ran (a button or none), false when it failed. A false makes the Return ask
+   submit through CU-190's rule, which `policy.mjs` already applies on any URL. Today a failed read gives null and the
+   Return is allowed; that covers a field in a same-origin frame too, whose read in the main world always fails.
+
+## Never weaker than the frame-host rules (cu-researcher's B1)
+
+Once the focus is followed, the target is the inner field rather than the frame host, so #175's two rules stop firing.
+The policy half (cu-developer-one) therefore makes these rules, not proposals:
+- **Names.** A target that carries `frameHost` is judged by its own name **and** by `frameHost.name`, and it asks if
+  either asks. An unnamed or placeholder-only input inside 'Secure Credit Card Frame - CVV' must still ask
+  sensitive_data.
+- **Return.** A Return in a target with `frameHost` asks submit unless `defaultButtonRead` is true. When the read is
+  true, the frame's own default button is judged instead.
+
+**Landing order:** the policy half lands first, or in the same batch; the driver PR is stacked on it. If the driver
+landed alone, CU-297's rows would stop asking.
 
 ## Privacy and identity
 
 `frameUrl` and `frameHost` stay outside the fingerprint and are never recorded, following cu-researcher's amendment 3:
-a path can carry a checkout token. `recordedWebTarget` keeps recording only origin, role and the allowed name, and the
+a path can carry a checkout token. This covers policy reasons too, which reach the trajectory (N2): a CU-263 hand-off
+names the provider ('reCAPTCHA'), never the URL. `recordedWebTarget` keeps recording only origin, role and the allowed name, and the
 trajectory gains nothing. The fingerprint keeps its inputs: the frame target id and loader, the backend node, role,
 name, tag and type. So a focus that moves from the host to the inner field between a proposal and its consent recheck
 changes the fingerprint, and the recheck fails closed.
 
 ## Named limits
 
-- Only one cross-origin level is followed.
+- Only one cross-origin level is followed. A 3-D Secure challenge frame nested inside a payment provider's frame (N1)
+  resolves to its own iframe element inside the outer frame, with the outer frame's `frameUrl` and `frameHost`. A
+  one-time code typed there is judged by that frame's title, and its Return by #175's frame-host rule (submit).
 - A same-origin frame inside the cross-origin frame takes the cross-origin frame's main world for its extra facts.
   That world cannot reach the element, so `textEntered` is null and the policy asks, as on the page today.
 - An untransformed iframe is assumed for the box, as in `#insideFrame`.
@@ -65,7 +85,12 @@ changes the fingerprint, and the recheck fails closed.
 
 - **Unit, on `fake-cdp`.** The followed focus gives the inner field with `frameUrl`, `frameHost` and the same
   fingerprint as `inspectPoint`. Each failure in point 2 gives the host. A query, fragment, credentials or a `data:`
-  payload is stripped from `frameUrl`. The editable body is named from the host. The frame's `defaultButton` is read.
+  payload is stripped from `frameUrl`. The editable body is named from the host. The frame's `defaultButton` is read,
+  and a failed read gives `defaultButtonRead: false`. A nested cross-origin iframe focused inside the frame gives that
+  iframe element (N1). A focus that moves from host to inner field changes the fingerprint (N3).
+- **Policy rows (cu-developer-one's half, from B1).** An unnamed inner field with `frameHost` 'CVV' asks
+  sensitive_data. A Return in an inner field whose frame read failed asks submit. A Return on the second-level 3-D
+  Secure host asks submit. Each has a mutant.
 - **Mutants.** Not following the frame fails the inner-field row. Keeping the query fails the `frameUrl` row.
   Answering null instead of the host on a failure fails the fallback rows.
 - **Live smoke, real Chrome, fixture site** (D-005, one browser).
