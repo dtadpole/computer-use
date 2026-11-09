@@ -25,10 +25,10 @@ session worktree plus `--review` worktrees; never drives the desktop. State at 1
 ## Open
 
 - PR #294 (Fixes CU-340, High, D-086): boxes joined by field changes (typedSplit), desktop unread paste marks its field;
-  design notes 0.1/0.2 on the issue; re-review by cu-researcher and cu-verifier. When it lands: a guide line for its
+  design notes on the issue; re-review pending. When it lands: a guide line for its
   over-asks, D-061 rows with cu-researcher, a table-mutants entry, flip PR #291's two CU-340 todos (pass typedSplit).
 - PR #274 (Fixes CU-336): in the code lane; when it lands, the guide's CU-336 limit line goes (name its over-ask).
-- PR #291 (Fixes CU-339, tests only): OK'd by cu-researcher and cu-verifier.
+- PR #291 (Fixes CU-339, tests only): OK'd.
 
 ## Pending
 
