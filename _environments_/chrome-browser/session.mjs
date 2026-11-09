@@ -383,7 +383,7 @@ export class BrowserSession extends EventEmitter {
     // needs no action of the run - a page script can start it. Chrome reports the request first (measured: reason
     // scriptInitiated, then 'Failed to launch ...' for a scheme with no handler); it becomes a notice, the scheme only.
     // Then a best-effort stop: Page.stopLoading at once (`stop`: sent, then sent_ok - Chrome took the command - or failed; `launched` stays 'unknown'). Chrome opens
-    // mailto: (also news:, snews:) through the OS with no prompt (cu-researcher's reading of external_protocol_handler.cc)
+    // mailto: (only mailto:) through the OS with no prompt (cu-researcher's reading of external_protocol_handler.cc)
     // after an asynchronous handler lookup, so the stop may or may not win that race; it is not measured against a real
     // launch (no app may be opened here), which is why the notice says what was tried, not that the launch was stopped.
     on('Page.frameRequestedNavigation', ({ url, reason }) => {
