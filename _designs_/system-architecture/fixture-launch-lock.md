@@ -3,7 +3,7 @@ title: CU Fixture launches only under the desktop-run lock
 created: 2026-11-09T02:40:00Z
 modified: 2026-11-09T02:40:00Z
 level: L1
-version: 0.1.0
+version: 0.2.0
 description: "CU-305: launchFixture refuses unless its process runs inside a live desktop run (run.json held by itself or an ancestor) or under a live hold of the seat it declares (CU_DESKTOP_SEAT); the rule moves from each caller into the launcher."
 status: proposed
 grounded_in:
@@ -22,36 +22,38 @@ either of these holds, and otherwise refuses with `fixture_unlocked`, a message 
 1. **Inside a run.** `run.json` holds a live run (not the keeper's sentinel) whose `pid` is this process or one of its
    ancestors. This covers the nightly's and the gate's phase 2, which acquire the run and then start the test
    processes, and an agent run that launches the fixture itself. The ancestors come from a `ps -o ppid=` walk, at most
-   32 steps.
-2. **Under the caller's own hold.** `hold.json` holds a live hold whose seat equals the seat the caller declares:
+   32 steps. A walk that fails or passes 32 steps finds no ancestor, so it refuses (fail closed).
+2. **Under the caller's own hold.** `hold.json` holds a live hold - minutes left and its keeper alive (a stale file
+   whose keeper died does not count) - whose seat equals the seat the caller declares:
    `options.seat`, else the environment's `CU_DESKTOP_SEAT`. A seat that runs a series under
    `run-lock.mjs hold --seat S` exports `CU_DESKTOP_SEAT=S` to it.
 
-Both are read without the mutex; launching is not admission. The check only refuses, and nothing is written.
+Read without the mutex (launching is not admission); nothing is written.
 
 ## The holder-process case
 
-A hold's keeper is detached, so it is never an ancestor of the series it protects, and rule 1 cannot see a hold.
-Rule 2 is the exported token: the holder names its seat to its own children. A random token in `hold.json` would add
-nothing, because every seat is the same Unix user and `hold.json` is world-readable. The lock guards against
-accidents (all three incidents were callers that never thought of the lock), not against a seat that sets a
-variable to another's name. A seat that names itself while another seat holds the Mac is refused, because the seats
-differ.
+A hold's keeper is detached, never an ancestor of its series, so rule 2 is the exported token: the holder names its
+seat to its children. A random token would add nothing: every seat is one Unix user and `hold.json` is
+world-readable. The lock guards against accidents (all three incidents), not against a seat naming another.
 
 ## Callers
 
-- The nightly's and the gate's phase 2: rule 1, no change. cu-integrator, confirm that the gate's node-tests-fixapps
-  step runs under a process that holds `run.json`, as the nightly does.
+- The nightly's phase 2: rule 1 (nightly.mjs holds `run.json`). The gate's: rule 1 since 02:26Z, when cu-integrator's
+  holder began naming its parent, the suite shell; a sibling before, which the walk refuses.
 - Seat series (verifier runs, cross-checks): take the hold and export `CU_DESKTOP_SEAT`.
 - `_verifiers_/desktop-fixture/check.mjs` passes `CU_VERIFY_SEAT` as `options.seat`.
-- `_tools_/desktop-checks`, which already checks the hold itself: unchanged.
+- `_tools_/desktop-checks` (which already checks the hold itself) and the step-4 owner verifier declare their `--seat`.
 - Hermetic tests: `options.lockDir` points at a scratch lock, never `/tmp/cu-desktop-run`.
 
 ## Tests and limits
 
-- Rows: no lock refuses; another seat's hold refuses; one's own hold launches; a run held by an ancestor launches; a
-  sentinel or a dead pid refuses; an expired hold refuses.
-- Mutants: the check dropped; the seat comparison dropped; the ancestor walk replaced by "any live run".
-- Named limit: a process started outside the holder (`env -i`, a detached job) that sets `CU_DESKTOP_SEAT` to the
-  holding seat passes. That is accepted, because the lock is a coordination rule (D-053, D-066), not a sandbox.
+- Rows (cu-verifier's four included):
+  - refused: no lock; another seat's hold; an expired or stale hold; a sentinel; a dead pid; a sibling's, cousin's or
+    stranger's run; a failed or over-long walk;
+  - admitted: one's own hold; a run held by an ancestor;
+  - wording: the refusal names the holding seat and both ways in, never a pid, path or time.
+- Mutants: the check dropped; any hold; any live run; the sentinel counted; the keeper ignored; the walk unbounded.
+- Named limit: a process outside the holder that sets `CU_DESKTOP_SEAT` to the holding seat passes - accepted, since
+  the lock is a coordination rule (D-053, D-066), not a sandbox.
 - The `desktop-fixture` suite INDEX says it launches the real app under the lock.
+- Out of scope: the fixture site (`_tools_/fixture-site`, a loopback web server). It starts no app and posts no input.

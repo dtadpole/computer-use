@@ -50,7 +50,7 @@ caller (CLI, MCP tool) -> agent core loop <-> model adapter (claude-gateway | re
 | [reply-text-entered](reply-text-entered.md) | a bare Reply free only with every entry empty |
 | [consent-routes](consent-routes.md) | the D-059 route audit and sign-off; [limits](consent-limits.md) |
 | [sensitive-classes](sensitive-classes.md) | D-061: sensitive classes' value and name rules |
-| [fixture-launch-lock](fixture-launch-lock.md) | CU Fixture launches only inside a desktop run or under the caller's own hold (CU-305, proposed) |
+| [fixture-launch-lock](fixture-launch-lock.md) | CU Fixture launches only inside a desktop run or under the caller's own live hold (CU-305, proposed) |
 | [open-questions](open-questions.md) | questions, defaults, review state |
 
 Approved by the coordinator at 687f4336b, design 0.8.1 (D-015). A change is a design revision with a version
