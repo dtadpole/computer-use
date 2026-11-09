@@ -34,7 +34,7 @@ per local input, guards armed meanwhile, with seams `personActiveMs` (the person
 | [`run-lock-sentinel.test.mjs`](run-lock-sentinel.test.mjs) | CU-106: a CLI hold binds the pre-hold run-lock module (from git) through a keeper's run.json sentinel; swaps by rename with no gap (a tight-loop reader); a killed holder's run restored within a second; the keeper leaves at the end; a killed keeper; --wait-free and status |
 | [`seams.test.mjs`](seams.test.mjs) | captures by path; `simulateScale`; local input per guard, pause `via` |
 | [`grants-and-targets.test.mjs`](grants-and-targets.test.mjs) | both `secure_input` forms; `postEvents`; `opaque`, fingerprints; clipboard policy before or after C9's revert |
-| [`web-area.test.mjs`](web-area.test.mjs) | CU-322: the helper's `inWebArea` on targets at a point and where focus is; null from a helper that does not say; outside the fingerprint |
+| [`web-area.test.mjs`](web-area.test.mjs) | CU-322: the helper's `inWebArea` on targets at a point and where focus is; absent unless the helper sends a boolean (its null for a failed walk, or an older helper's silence); outside the fingerprint |
 | [`target-check.test.mjs`](target-check.test.mjs), [`file-panels.test.mjs`](file-panels.test.mjs), [`panel-marker.test.mjs`](panel-marker.test.mjs) | D-036: pointer targets hit-tested, unapproved apps refused unsent; panels |
 | [`settle.test.mjs`](settle.test.mjs) | `settleMs` only after a resume; hands-off wait, cap; reports meanwhile pause nothing; spent, ranges |
 | [`environment.test.mjs`](environment.test.mjs) | options, launch order, actions, grants, targets, local input, socket path |
