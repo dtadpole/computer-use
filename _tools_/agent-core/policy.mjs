@@ -995,7 +995,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // Excluded, keeping their own rules: the editing set (select all, undo, redo, copy, cut, paste) and, in the
       // browser, the chords the driver turns into browser actions or refuses (chrome-browser keys.mjs chordMeaning).
       const lower = ch.toLowerCase()
-      if (accel && (lower === 'v' || (!alt && 'azycx'.includes(lower)))) return null
+      // Find and find-next (Cmd/Ctrl + F, G) join the editing set (cu-coordinator 18:59Z).
+      if (accel && (lower === 'v' || (!alt && 'azycxfg'.includes(lower)))) return null
       if (browserRoute && accel && !alt && 'r[]ltnwq'.includes(lower)) return null
       // On the desktop a chord usually fires a menu item: only the loop's read that none fires makes it the app's own.
       if (onDesktop && context.boundMenuItem?.none !== true) return null
@@ -1268,6 +1269,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // CU-363: the page shortcut asks only when no other rule already judges the key (a field's name, a delete key).
     if (pageShortcut && classes.length === 0) classes.push('permission')
     // The approval a page shortcut needs: typed text keys by its characters, a key or chord by what it produces.
+    const shortcutShown = action.type === 'type' ? `${[...String(action.text ?? '')].length} typed characters` : `'${shortcutKey}'`
     const shortcutApproval = pageShortcut ? `permission:page-shortcut:${action.type === 'type' ? [...new Set(shortcutKey)].sort().join('') : shortcutKey}` : null
     // CU-365 stacking (cu-researcher 18:19Z): when another class asks too, the shortcut half still needs its own approval,
     // so a yes for that class (sensitive_data for the run, say) never frees the page's handlers.
@@ -1277,14 +1279,14 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const unique = [...new Set(classes)].sort((a, b) => PRECEDENCE.indexOf(a) - PRECEDENCE.indexOf(b))
     const needed = unique.filter((cls) => !preApproved(cls, url) || NEVER_PRE_APPROVED.includes(cls) || autofillClasses.includes(cls))
     if (needed.length === 0 && pageShortcut) {
-      return { decision: 'confirm', class: 'permission', classes: ['permission'], rule: 'page:shortcut', approvalKey: shortcutApproval, runOnly: true, reason: `press '${shortcutKey}' on ${placeOf(url, target, context?.frontmostBundleId)}, a keyboard shortcut of the ${onDesktop ? 'app' : 'page'} - it decides what it does` }
+      return { decision: 'confirm', class: 'permission', classes: ['permission'], rule: 'page:shortcut', approvalKey: shortcutApproval, runOnly: true, reason: `press ${shortcutShown} on ${placeOf(url, target, context?.frontmostBundleId)}, a keyboard shortcut of the ${onDesktop ? 'app' : 'page'} - it decides what it does` }
     }
     if (needed.length === 0) {
       return { decision: 'allow', class: unique[0] ?? null, rule: unique.length > 0 ? 'pre_approved' : 'default', reason: '' }
     }
     const cls = needed[0]
     if (pageShortcut && cls === 'permission') {
-      return { decision: 'confirm', class: cls, classes: needed, rule: 'page:shortcut', approvalKey: shortcutApproval, runOnly: true, reason: `press '${shortcutKey}' on ${placeOf(url, target, context?.frontmostBundleId)}, a keyboard shortcut of the ${onDesktop ? 'app' : 'page'} - it decides what it does` }
+      return { decision: 'confirm', class: cls, classes: needed, rule: 'page:shortcut', approvalKey: shortcutApproval, runOnly: true, reason: `press ${shortcutShown} on ${placeOf(url, target, context?.frontmostBundleId)}, a keyboard shortcut of the ${onDesktop ? 'app' : 'page'} - it decides what it does` }
     }
     if (mixedScript && cls === 'permission') {
       return { ...also, decision: 'confirm', class: cls, classes: stack(needed), rule: 'target:mixed_script', reason: `activate "${name}", whose name mixes scripts in one word (a disguised control?)` }
@@ -1293,7 +1295,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       return { ...also, decision: 'confirm', class: cls, classes: stack(needed), rule: `autofill:${cls}`, reason: `submit a form the browser filled from your saved ${autofillCard ? 'card' : cls === 'credential' ? 'login' : 'details'} on ${originPattern(url)}` }
     }
     // `class` is the one that ranks first; `classes` lists every class that applied, for the evaluator's records.
-    return { ...also, decision: 'confirm', class: cls, classes: stack(needed), rule: `class:${cls}`, reason: `${describe(cls, action, target, url, context?.frontmostBundleId)}${pageShortcut ? `; also a keyboard shortcut of the ${onDesktop ? 'app' : 'page'} ('${shortcutKey}')` : ''}` }
+    return { ...also, decision: 'confirm', class: cls, classes: stack(needed), rule: `class:${cls}`, reason: `${describe(cls, action, target, url, context?.frontmostBundleId)}${pageShortcut ? `; the same keys may also trigger a keyboard shortcut of the ${onDesktop ? 'app' : 'page'}` : ''}` }
   }
 
   return { classify, preApprovals: granted }

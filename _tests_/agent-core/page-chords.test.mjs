@@ -29,7 +29,7 @@ test('CU-365: chords outside a text entry ask as page or app shortcuts, keyed by
 })
 
 test('CU-365 negatives: the editing set, the browser chords, a menu item, and a text entry keep their rules', () => {
-  for (const keys of [['META', 'C'], ['META', 'A'], ['META', 'Z'], ['META', 'SHIFT', 'Z'], ['CTRL', 'X'], ['META', 'T'], ['META', 'R'], ['META', 'L']]) {
+  for (const keys of [['META', 'C'], ['META', 'A'], ['META', 'Z'], ['META', 'SHIFT', 'Z'], ['CTRL', 'X'], ['META', 'F'], ['META', 'G'], ['CTRL', 'F'], ['META', 'T'], ['META', 'R'], ['META', 'L']]) {
     assert.notEqual(judge(keys, ROW).rule, 'page:shortcut', keys.join('+'))
   }
   assert.equal(judge(['CTRL', 'D'], { role: 'AXRow', name: 'm' }, 'app:com.example.mail', { boundMenuItem: { name: 'Duplicate' } }).decision, 'allow', 'a desktop chord that fires a menu item')
@@ -41,6 +41,8 @@ test('CU-365 stacking: a page shortcut under another class names its own approva
   assert.equal(v.class, 'sensitive_data')
   assert.match(String(v.alsoNeeds), /^permission:page-shortcut:/)
   assert.deepEqual(v.classes, ['sensitive_data', 'permission'], "'permission' stacks beside the leading class")
+  assert.match(v.reason, /may also trigger a keyboard shortcut of the page/, 'the question names the shortcut half')
+  assert.equal(v.reason.includes('4111'), false, 'and never echoes the typed text')
 })
 
 const tmp = mkdtempSync(join(tmpdir(), 'cu-365-'))
