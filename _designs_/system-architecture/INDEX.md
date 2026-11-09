@@ -1,8 +1,8 @@
 ---
 title: computer-use system architecture
 created: 2026-11-01T09:24:10Z
-modified: 2026-11-08T23:55:00Z
-version: 0.9.6
+modified: 2026-11-09T02:40:00Z
+version: 0.9.7
 description: Entry point to the M1 contract of our computer-use agent - components, owners and the articles that fix each interface.
 grounded_in:
   - source: ULTIMATE_GOAL.md@1.0.0
@@ -50,6 +50,7 @@ caller (CLI, MCP tool) -> agent core loop <-> model adapter (claude-gateway | re
 | [reply-text-entered](reply-text-entered.md) | a bare Reply free only with every entry empty |
 | [consent-routes](consent-routes.md) | the D-059 route audit and sign-off; [limits](consent-limits.md) |
 | [sensitive-classes](sensitive-classes.md) | D-061: sensitive classes' value and name rules |
+| [fixture-launch-lock](fixture-launch-lock.md) | CU Fixture launches only inside a desktop run or under the caller's own live hold (CU-305, proposed) |
 | [open-questions](open-questions.md) | questions, defaults, review state |
 
 Approved by the coordinator at 687f4336b, design 0.8.1 (D-015). A change is a design revision with a version
