@@ -39,13 +39,15 @@ export function parsePushLines(text) {
 }
 
 /**
- * What each ref adds, as a gate range: an update is `<remote sha>..<local sha>`; a new branch is
- * `<remote>/main..<local sha>` (the remote's main, as fetched); a delete adds nothing and is skipped (null range).
+ * What each ref adds beyond the remote's main, as a gate range: `<remote>/main..<local sha>` for a new branch and an
+ * update alike; a delete adds nothing and is skipped (null range). Never `<remote sha>..<local sha>`: after a branch
+ * merges origin/main (D-079/D-090) that range takes in main's own commits - GitHub's merge commits fail the gate's
+ * identity rule though nothing new is flagged (cu-verifier and cu-integrator, 13:04Z on 9 Nov). The gate diffs
+ * three-dot from the merge base, so this range is exactly the branch's own commits and changes.
  */
 export function rangeFor(ref, remote = 'origin') {
   if (ref.localSha === ZERO_SHA) return null
-  if (ref.remoteSha === ZERO_SHA) return `${remote}/main..${ref.localSha}`
-  return `${ref.remoteSha}..${ref.localSha}`
+  return `${remote}/main..${ref.localSha}`
 }
 
 /** The gate script's absolute path for this machine, or throws naming how to set it. */

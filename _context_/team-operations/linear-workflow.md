@@ -1,9 +1,9 @@
 ---
 title: '[cu] Linear workflow - states, fields, cadence, roles'
 created: 2026-11-06T11:30:00Z
-modified: 2026-11-06T16:00:00Z
+modified: 2026-11-09T13:06:32Z
 level: L2
-version: 1.2.0
+version: 1.3.0
 description: 'How the [cu] team runs its work in Linear (team CU) - what each state means and who moves it, priorities, labels, templates, cycles, project updates, PR rules, owner questions, and every seat''s Linear duties.'
 status: unverified
 grounded_in:
@@ -93,6 +93,11 @@ service - no screenshots of the owner's windows, no clipboard or file contents, 
    `Part of CU-n` (or `Refs CU-n`) on partial ones; `linear.py pr` links it; merge request to cu-integrator.
    A PR that mentions another issue only for context writes `skip CU-n` (Linear's GitHub automation otherwise links
    it and moves its state, as #231 moved CU-95 back on 6 Nov).
+   A PR that does not complete an issue carries no CU-n in its title or branch name (Linear links and moves an issue
+   named there on merge, as CU-145 moved on 9 Nov); in a body, `Part of`, `Related to` or `Ref CU-n` links without
+   moving. Never write fix, close or resolve before `#N` unless that PR is meant to close: GitHub closes it on merge
+   (PR #274 on 9 Nov) - write `PR #N`. Choose the branch name before opening the PR: renaming an open PR's branch
+   closes it for good (#293 and #296 on 9 Nov); for an open PR, edit only the title.
 6. **Merge** - cu-integrator lands after the two-phase gate; a complete PR moves the issue to Verify.
 7. **Verify** - cu-verifier works the CU Verify queue every round: `verified` with the evidence (commit, run id,
    mutant) or `reopen` with the failing evidence. Never closes its own deliverables; cu-coordinator does.

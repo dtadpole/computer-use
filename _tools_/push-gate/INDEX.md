@@ -1,8 +1,8 @@
 ---
 title: push-gate
 created: 2026-11-09T11:20:00Z
-modified: 2026-11-09T12:37:00Z
-version: 0.1.1
+modified: 2026-11-09T13:08:00Z
+version: 0.2.0
 description: "CU-337 (D-097): git's pre-push hook for this public repository - it runs the public-hygiene gate unpiped over exactly what each pushed ref adds and refuses the push on any non-zero exit; the gate's path comes from the machine, never the tree; one installer per repository and a check for cu-integrator."
 grounded_in:
   - source: _context_/team-operations/decision-log.yaml (D-097)
@@ -15,7 +15,7 @@ Writer: cu-developer-two. Node 24, no npm.
 
 | File | What it does |
 |---|---|
-| [`push-gate.mjs`](push-gate.mjs) | reads git's pushed refs; a new branch adds `<remote>/main..sha`, an update `remote..local`, a delete nothing; runs the gate over each range and refuses on any exit other than 0 (1 findings, 2 the gate cannot run) |
+| [`push-gate.mjs`](push-gate.mjs) | reads git's pushed refs; every ref is gated over what it adds beyond the remote's main, `<remote>/main..sha` (so a branch that merged origin/main is not judged on main's commits), a delete over nothing; runs the gate over each range and refuses on any exit other than 0 (1 findings, 2 the gate cannot run) |
 | [`hooks/pre-push`](hooks/pre-push) | the hook git runs |
 | [`install.mjs`](install.mjs) | sets `core.hooksPath` to `_tools_/push-gate/hooks`, which git resolves per worktree; `--check` exits 0 only when that is set and this worktree has an executable hook |
 

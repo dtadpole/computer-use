@@ -44,8 +44,8 @@ test('CU-337: the pushed refs are read strictly - four fields, two full shas; an
   }
 })
 
-test('CU-337: the range is what the ref adds - an update from the remote sha, a new branch from <remote>/main, a delete nothing', () => {
-  assert.equal(rangeFor({ localSha: A, remoteSha: B }), `${B}..${A}`)
+test('CU-337: the range is what the ref adds beyond the remote main - an update and a new branch alike from <remote>/main, a delete nothing', () => {
+  assert.equal(rangeFor({ localSha: A, remoteSha: B }), `origin/main..${A}`, 'never <remote sha>..<local sha>: a main merge would bring in main\'s commits')
   assert.equal(rangeFor({ localSha: A, remoteSha: ZERO_SHA }, 'upstream'), `upstream/main..${A}`)
   assert.equal(rangeFor({ localSha: ZERO_SHA, remoteSha: B }), null)
 })
@@ -53,7 +53,7 @@ test('CU-337: the range is what the ref adds - an update from the remote sha, a 
 test('CU-337: a clean gate lets the push go; a gate that finds terms (1) or cannot run (2) refuses it, naming the status', () => {
   const clean = gateEnv()
   assert.equal(prePush({ input: line('refs/heads/x', A, 'refs/heads/x', B), env: clean.env, log: quiet }), 0)
-  assert.deepEqual(clean.ranges(), [`${B}..${A}`])
+  assert.deepEqual(clean.ranges(), [`origin/main..${A}`])
   for (const [status, words] of [[1, /exited 1 .*found terms/], [2, /exited 2 .*could not run/]]) {
     const failing = gateEnv({ FAKE_GATE_EXIT: String(status) })
     const said = []
@@ -73,7 +73,7 @@ test('CU-337: several refs in one push - each added range is gated, and the push
   const input = [line('refs/heads/one', A, 'refs/heads/one', B), line('refs/heads/two', C, 'refs/heads/two', ZERO_SHA)].join('\n')
   const clean = gateEnv()
   assert.equal(prePush({ input, env: clean.env, log: quiet }), 0)
-  assert.deepEqual(clean.ranges(), [`${B}..${A}`, `origin/main..${C}`])
+  assert.deepEqual(clean.ranges(), [`origin/main..${A}`, `origin/main..${C}`])
   const second = gateEnv({ FAKE_GATE_FAIL_ON: C })
   assert.equal(prePush({ input, env: second.env, log: quiet }), 1, 'the second ref has findings')
 })
@@ -114,4 +114,58 @@ test('CU-337 end to end: with the hook installed, git push to a bare remote is r
   const clean = push({})
   assert.equal(clean.status, 0, clean.stderr)
   assert.equal(git(['rev-parse', 'refs/heads/main'], remote).trim(), git(['rev-parse', 'HEAD'], work).trim())
+})
+
+test('CU-337 end to end: a branch that merged origin/main (D-079/D-090) pushes clean - main\'s own commits, under a foreign identity, are not judged again', () => {
+  const git = (args, cwd, env = process.env) => execFileSync('git', args, { cwd, env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
+  const base = join(dir, 'merged')
+  const remote = join(base, 'remote.git')
+  const work = join(base, 'work')
+  mkdirSync(base, { recursive: true })
+  git(['init', '-q', '--bare', '-b', 'main', remote], base)
+  git(['init', '-q', '-b', 'main', work], base)
+  for (const file of ['_tools_/push-gate/push-gate.mjs', '_tools_/push-gate/install.mjs', '_tools_/push-gate/hooks/pre-push', '_tools_/agent-core/local-config.mjs']) {
+    mkdirSync(join(work, dirname(file)), { recursive: true })
+    copyFileSync(join(ROOT, file), join(work, file))
+  }
+  execFileSync('chmod', ['755', join(work, HOOKS_PATH, 'pre-push')])
+  const seat = ['-c', 'user.name=push-gate seat', '-c', 'user.email=seat@example.invalid']
+  const github = ['-c', 'user.name=GitHub', '-c', 'user.email=noreply@github.example']
+  git([...seat, 'add', '-A'], work)
+  git([...seat, 'commit', '-q', '-m', 'base'], work)
+  git(['remote', 'add', 'origin', remote], work)
+  // A gate that refuses any commit in its range committed under the foreign identity (the real gate's identity rule).
+  const identityGate = join(base, 'identity-gate.mjs')
+  writeFileSync(identityGate, `import { execFileSync } from 'node:child_process'
+const range = process.argv[process.argv.indexOf('--range') + 1]
+const committers = execFileSync('git', ['log', '--format=%ce', range], { encoding: 'utf8' }).split('\\n').filter(Boolean)
+process.exit(committers.some((email) => email === 'noreply@github.example') ? 1 : 0)
+`)
+  const env = { ...process.env, [GATE_ENV]: identityGate }
+  install(work)
+  const push = (ref) => spawnSync('git', ['push', '-q', 'origin', ref], { cwd: work, env, encoding: 'utf8' })
+  assert.equal(spawnSync('git', ['push', '-q', '--no-verify', 'origin', 'HEAD:refs/heads/main'], { cwd: work, env, encoding: 'utf8' }).status, 0, 'main seeded')
+  git(['fetch', '-q', 'origin'], work)
+  git(['checkout', '-q', '-b', 'feature'], work)
+  writeFileSync(join(work, 'feature.txt'), 'one\n')
+  git([...seat, 'add', 'feature.txt'], work)
+  git([...seat, 'commit', '-q', '-m', 'feature one'], work)
+  assert.equal(push('feature').status, 0, 'the branch, first push')
+  // main moves on under GitHub's identity (a PR merged on GitHub), and the seat merges it into the branch.
+  git(['checkout', '-q', 'main'], work)
+  writeFileSync(join(work, 'main.txt'), 'landed\n')
+  git([...github, 'add', 'main.txt'], work)
+  git([...github, 'commit', '-q', '-m', 'Merge pull request on GitHub'], work)
+  assert.equal(spawnSync('git', ['push', '-q', '--no-verify', 'origin', 'main'], { cwd: work, env, encoding: 'utf8' }).status, 0)
+  git(['fetch', '-q', 'origin'], work)
+  git(['checkout', '-q', 'feature'], work)
+  git([...seat, 'merge', '-q', '--no-edit', 'origin/main'], work)
+  const merged = push('feature')
+  assert.equal(merged.status, 0, `a main merge pushes clean: ${merged.stderr}`)
+  assert.equal(git(['rev-parse', 'refs/heads/feature'], remote).trim(), git(['rev-parse', 'HEAD'], work).trim())
+  // The branch's own foreign-identity commit is still refused: only main's commits are left out.
+  writeFileSync(join(work, 'feature.txt'), 'two\n')
+  git([...github, 'add', 'feature.txt'], work)
+  git([...github, 'commit', '-q', '-m', 'not the seat'], work)
+  assert.notEqual(push('feature').status, 0, 'a new commit of the branch is judged as before')
 })
