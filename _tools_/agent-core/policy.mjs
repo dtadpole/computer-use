@@ -140,8 +140,13 @@ const TEXT_AREA_ROLE = /^(ax)?textarea$/i
 // without its length ('Start 14-day free trial', 'Try 3 months free', 'Try it free'); 'Free trial info' stays free.
 const TRIAL_NAME = /^(start (a |your |my )?(\d+[- ]?(day|week|month|year)s? )?free trial|(\d+[- ]?(day|week|month|year)s? )?free trial|try (it |us )?free( for \d+ (days?|weeks?|months?|years?))?|try \d+ (days?|weeks?|months?|years?) (for )?free|get \d+ (days?|weeks?|months?) free)\s*[.!\u2026]?$/i
 // cu-researcher on #145: 永不保存 / 永不儲存 (Never Save) is a standing choice; its '不保存' / '不儲存' is not Don't Save.
-const namesDelete = (name) => namesWord(String(name ?? '').replace(/永不(保存|儲存|存储)/g, ''), WORDS.delete)
-const namesPurchase = (name) => namesWord(withoutOrderReferences(name), WORDS.purchase) || TRIAL_NAME.test(String(name ?? '').trim())
+// CU-359 (D-099: a past-state folder name that over-asks is Medium): CJK phrases match inside a label, so a mail app's
+// Sent or Deleted folder (已发送, 送信済み, 삭제됨) read as Send or Delete. The past-state forms are taken out before the
+// action-name match; an imperative beside one ('删除已发送邮件', delete the sent mail) still matches.
+const PAST_STATE = /已(?:经|經)?(?:发送|發送|傳送|删除|刪除|提交|支付|付款|购买|購買|下单|下單)|(?:送信|削除|購入|支払い?|注文)済み?|(?:삭제|전송|결제|구매|제출)(?:됨|완료|된)/g
+const withoutPastState = (name) => String(name ?? '').replace(PAST_STATE, ' ')
+const namesDelete = (name) => namesWord(withoutPastState(name).replace(/永不(保存|儲存|存储)/g, ''), WORDS.delete)
+const namesPurchase = (name) => namesWord(withoutOrderReferences(withoutPastState(name)), WORDS.purchase) || TRIAL_NAME.test(String(name ?? '').trim())
 const DROP_DELETE = [...WORDS.delete, 'trash', 'bin']
 const TEXT_ROLE = /^(ax)?(textfield|textarea|searchfield|combobox|textbox|searchbox)$/i
 
@@ -284,7 +289,7 @@ const SUBMIT_BUT_REPLY = Object.freeze(WORDS.submit.filter((word) => !REPLY_WORD
 const SUBMIT_WHOLE_NAMES = new Set(['call', 'answer', 'merge', '呼叫', '接听', '接聽', '合并', '合併'])
 function judgesSubmit(name, target) {
   if (SUBMIT_WHOLE_NAMES.has(normaliseName(name).trim())) return true
-  if (!namesWord(name, WORDS.submit)) return false
+  if (!namesWord(withoutPastState(name), WORDS.submit)) return false
   return !(target?.textEntered === false && !namesWord(name, SUBMIT_BUT_REPLY))
 }
 
