@@ -982,11 +982,25 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         return text
       }
       const keys = keysOf(action)
-      if ((action.type !== 'keypress' && action.type !== 'hold_key') || [...keys].some((key) => ['CMD', 'COMMAND', 'META', 'SUPER', 'CTRL', 'CONTROL', 'ALT', 'OPTION'].includes(key))) return null
-      const main = [...keys].filter((key) => key !== 'SHIFT')
+      if (action.type !== 'keypress' && action.type !== 'hold_key') return null
+      const MODS = ['CMD', 'COMMAND', 'META', 'SUPER', 'CTRL', 'CONTROL', 'ALT', 'OPTION', 'SHIFT']
+      const main = [...keys].filter((key) => !MODS.includes(key))
       if (main.length !== 1 || [...main[0]].length !== 1) return null
       const ch = main[0]
-      return keys.has('SHIFT') ? (SHIFTED[ch] ?? ch.toUpperCase()) : ch.toLowerCase()
+      const produced = keys.has('SHIFT') ? (SHIFTED[ch] ?? ch.toUpperCase()) : ch.toLowerCase()
+      const accel = ['CMD', 'COMMAND', 'META', 'SUPER', 'CTRL', 'CONTROL'].some((key) => keys.has(key))
+      const alt = keys.has('ALT') || keys.has('OPTION')
+      if (!accel && !alt) return produced
+      // CU-365 (design note 0.1): a Control, Option or Command chord with one printable key reaches the page or app too.
+      // Excluded, keeping their own rules: the editing set (select all, undo, redo, copy, cut, paste) and, in the
+      // browser, the chords the driver turns into browser actions or refuses (chrome-browser keys.mjs chordMeaning).
+      const lower = ch.toLowerCase()
+      if (accel && (lower === 'v' || (!alt && 'azycx'.includes(lower)))) return null
+      if (browserRoute && accel && !alt && 'r[]ltnwq'.includes(lower)) return null
+      // On the desktop a chord usually fires a menu item: only the loop's read that none fires makes it the app's own.
+      if (onDesktop && context.boundMenuItem?.none !== true) return null
+      const label = [keys.has('CTRL') || keys.has('CONTROL') ? 'ctrl' : null, alt ? 'alt' : null, ['CMD', 'COMMAND', 'META', 'SUPER'].some((key) => keys.has(key)) ? 'cmd' : null].filter(Boolean)
+      return `${label.join('+')}+${produced}`
     })()
     // A key into a frame host goes to the frame's own field (CU-297 judges it by the frame's name), not to a page handler.
     // An unread focus counts (cu-coordinator 17:40Z: printable input of any length into an unread focus asks - a named
@@ -1253,23 +1267,31 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     classes.push(...autofillClasses)
     // CU-363: the page shortcut asks only when no other rule already judges the key (a field's name, a delete key).
     if (pageShortcut && classes.length === 0) classes.push('permission')
+    // The approval a page shortcut needs: typed text keys by its characters, a key or chord by what it produces.
+    const shortcutApproval = pageShortcut ? `permission:page-shortcut:${action.type === 'type' ? [...new Set(shortcutKey)].sort().join('') : shortcutKey}` : null
+    // CU-365 stacking (cu-researcher 18:19Z): when another class asks too, the shortcut half still needs its own approval,
+    // so a yes for that class (sensitive_data for the run, say) never frees the page's handlers.
+    const also = pageShortcut ? { alsoNeeds: shortcutApproval } : {}
     const unique = [...new Set(classes)].sort((a, b) => PRECEDENCE.indexOf(a) - PRECEDENCE.indexOf(b))
     const needed = unique.filter((cls) => !preApproved(cls, url) || NEVER_PRE_APPROVED.includes(cls) || autofillClasses.includes(cls))
+    if (needed.length === 0 && pageShortcut) {
+      return { decision: 'confirm', class: 'permission', classes: ['permission'], rule: 'page:shortcut', approvalKey: shortcutApproval, runOnly: true, reason: `press '${shortcutKey}' on ${placeOf(url, target, context?.frontmostBundleId)}, a keyboard shortcut of the ${onDesktop ? 'app' : 'page'} - it decides what it does` }
+    }
     if (needed.length === 0) {
       return { decision: 'allow', class: unique[0] ?? null, rule: unique.length > 0 ? 'pre_approved' : 'default', reason: '' }
     }
     const cls = needed[0]
     if (pageShortcut && cls === 'permission') {
-      return { decision: 'confirm', class: cls, classes: needed, rule: 'page:shortcut', approvalKey: `permission:page-shortcut:${[...new Set(shortcutKey)].sort().join('')}`, runOnly: true, reason: `press '${shortcutKey}' on ${placeOf(url, target, context?.frontmostBundleId)}, a keyboard shortcut of the ${onDesktop ? 'app' : 'page'} - it decides what it does` }
+      return { decision: 'confirm', class: cls, classes: needed, rule: 'page:shortcut', approvalKey: shortcutApproval, runOnly: true, reason: `press '${shortcutKey}' on ${placeOf(url, target, context?.frontmostBundleId)}, a keyboard shortcut of the ${onDesktop ? 'app' : 'page'} - it decides what it does` }
     }
     if (mixedScript && cls === 'permission') {
-      return { decision: 'confirm', class: cls, classes: needed, rule: 'target:mixed_script', reason: `activate "${name}", whose name mixes scripts in one word (a disguised control?)` }
+      return { ...also, decision: 'confirm', class: cls, classes: needed, rule: 'target:mixed_script', reason: `activate "${name}", whose name mixes scripts in one word (a disguised control?)` }
     }
     if (autofillClasses.includes(cls)) {
-      return { decision: 'confirm', class: cls, classes: needed, rule: `autofill:${cls}`, reason: `submit a form the browser filled from your saved ${autofillCard ? 'card' : cls === 'credential' ? 'login' : 'details'} on ${originPattern(url)}` }
+      return { ...also, decision: 'confirm', class: cls, classes: needed, rule: `autofill:${cls}`, reason: `submit a form the browser filled from your saved ${autofillCard ? 'card' : cls === 'credential' ? 'login' : 'details'} on ${originPattern(url)}` }
     }
     // `class` is the one that ranks first; `classes` lists every class that applied, for the evaluator's records.
-    return { decision: 'confirm', class: cls, classes: needed, rule: `class:${cls}`, reason: describe(cls, action, target, url, context?.frontmostBundleId) }
+    return { ...also, decision: 'confirm', class: cls, classes: needed, rule: `class:${cls}`, reason: `${describe(cls, action, target, url, context?.frontmostBundleId)}${pageShortcut ? `; also a keyboard shortcut of the ${onDesktop ? 'app' : 'page'} ('${shortcutKey}')` : ''}` }
   }
 
   return { classify, preApprovals: granted }
