@@ -436,3 +436,13 @@ decisions:
     topic: urgent-landing-owner-active
     decision: 'D-073''s phase-1 landing of an Urgent pull request that touches no CUHelper, desktop driver or fixture-app code also applies while phase 2 cannot run because the owner is not idle (D-066), not only while another seat holds the desktop-run lock. The full two-phase check runs on main at the first idle slot, and a red result is reverted by pull request at once. First use: the CU-301 fix (#178).'
     rationale: 'Phase 1 posts no input, so the idle rule does not bear on it; an Urgent consent fix should not wait hours for the owner to step away, and the post-check keeps the gate''s guarantee as under D-073.'
+  - id: D-084
+    date: 2026-11-09
+    topic: portable-test-browser
+    decision: 'For the CU-302 AutoFill measurement, a Chrome for Testing build fetched into the measuring seat''s purpose worktree folder, launched by its executable path and deleted when the series ends is a portable download, not an install under D-005 (which forbids installing VMs, container runtimes or long-lived services without the owner). Conditions: never copied to /Applications or registered as a login item; the D-014 browser registry and D-005''s memory floor honoured at launch; no first-run, default-browser or cast-discovery prompts, a mock keychain and background networking off; any system prompt ends the series unanswered; the bundle, the throwaway profile and the private CU_HOME are removed by checked absolute paths. The owner''s Google Chrome is never approved for it, even in a private store.'
+    rationale: 'A different bundle id cannot admit an owner window, while approving Google Chrome could, if the owner opened it mid-series; a portable build deleted afterwards leaves nothing installed.'
+  - id: D-085
+    date: 2026-11-09
+    topic: ok-survives-log-only-merge
+    decision: 'For a code pull request, a reviewer''s OK carries over a merge of main whose only conflict was _logs_/repo-actions/action-log.jsonl, when the pull request''s own diff outside the log keeps the same stable patch-id and the log only gains lines; cu-integrator checks this as for D-079 and still runs the full gate on the exact merge tree. Any other change after the OK needs a fresh OK.'
+    rationale: 'Every landing put the open code pull requests into a log-only conflict, and a fresh OK per merge of main re-reviewed nothing a reviewer could judge; the gate on the merge tree keeps the guarantee.'
