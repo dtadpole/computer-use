@@ -67,7 +67,7 @@ test('CU-301 negatives: a field named for nothing, a non-entry, and chords keep 
   // CU-363: on a web page a printable key outside text entry is a page shortcut - it asks once per site and run.
   assert.equal(judge(key('B'), { tag: 'ul', role: 'list', name: 'Bank accounts' }), 'permission', 'a letter in a list is not text; on a page it is a shortcut (CU-363)')
   assert.equal(judge(key('I'), { tag: 'div', role: 'listbox', name: 'IBAN' }), 'permission', 'nor in a list box named for a class - a page shortcut (CU-363)')
-  assert.equal(judge(key('I'), { role: 'AXTable', name: 'IBAN' }, 'desktop://'), 'allow', 'nor in a desktop table')
+  assert.equal(judge(key('I'), { role: 'AXTable', name: 'IBAN' }, 'desktop://'), 'permission', 'nor in a desktop table - an app shortcut when no menu item fires (CU-363)')
   assert.equal(judge(key('1'), { tag: 'input', role: 'textbox', name: 'CVV', editable: false }), 'permission', 'a read-only field takes no text - a page shortcut (CU-363)')
   const password = entry('Password', { inputType: 'password' })
   assert.equal(judge(key('META', 'A'), password), 'allow', 'Command-A selects; a chord is not text')

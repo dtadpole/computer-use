@@ -946,25 +946,35 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // once per key, site and run (permission, never pre-approved; the answer keys 'permission:page-shortcut:<key>' -
     // cu-researcher: an approval covers that key on that site, never every character, nor a permission request).
     // Named over-ask: the first printable shortcut on any site (j/k navigation, '/') asks once a run.
-    const browserRoute = context.url != null && !/^(app|desktop):/.test(String(context.url ?? ''))
-    // cu-verifier's live row: a type action outside text entry delivers the same keys to the page ('#' typed with the body
-    // focused deleted the row), so a type's printable text counts as its keys.
+    const onDesktop = /^(app|desktop):/.test(String(context.url ?? ''))
+    const browserRoute = context.url != null && !onDesktop
+    // CU-363 round 3 (cu-coordinator 17:40Z): the desktop route too - an app's own key equivalent outside a text entry
+    // that fires no menu item (the loop's boundMenuItem read says none, or there is none to read).
+    const desktopNoMenu = onDesktop && (context.boundMenuItem == null || context.boundMenuItem.none === true)
+    // The key is the character it produces (Shift+3 is '#'), so a yes for '3' never frees '#' (cu-researcher).
+    const SHIFTED = { 1: '!', 2: '@', 3: '#', 4: '$', 5: '%', 6: '^', 7: '&', 8: '*', 9: '(', 0: ')', '-': '_', '=': '+', '[': '{', ']': '}', '\\': '|', ';': ':', "'": '"', ',': '<', '.': '>', '/': '?', '`': '~' }
     const shortcutKey = (() => {
       if (action.type === 'type') {
-        // With the body focused the judge sees no target, so an unread focus counts too - but only for a shortcut-sized
-        // type (one or two characters, no space); longer text into an unread focus keeps its own judgement.
+        // cu-verifier's live rows: a type outside text entry delivers every character to the page ('###', 'ok #').
         const text = String(action.text ?? '').replace(/[\r\n]/g, '')
         if (text.trim() === '') return null
         if (target && (CONTROL_ROLE.test(String(target.role ?? '')) || /text|search|combo/i.test(String(target.role ?? '')))) return null
-        return target || (/^\S{1,2}$/.test(text)) ? text : null
+        return text
       }
       const keys = keysOf(action)
-      if (action.type !== 'keypress' || [...keys].some((key) => ['CMD', 'COMMAND', 'META', 'SUPER', 'CTRL', 'CONTROL', 'ALT', 'OPTION'].includes(key))) return null
+      if ((action.type !== 'keypress' && action.type !== 'hold_key') || [...keys].some((key) => ['CMD', 'COMMAND', 'META', 'SUPER', 'CTRL', 'CONTROL', 'ALT', 'OPTION'].includes(key))) return null
       const main = [...keys].filter((key) => key !== 'SHIFT')
-      return main.length === 1 && [...main[0]].length === 1 ? main[0] : null
+      if (main.length !== 1 || [...main[0]].length !== 1) return null
+      const ch = main[0]
+      return keys.has('SHIFT') ? (SHIFTED[ch] ?? ch.toUpperCase()) : ch.toLowerCase()
     })()
     // A key into a frame host goes to the frame's own field (CU-297 judges it by the frame's name), not to a page handler.
-    const pageShortcut = browserRoute && shortcutKey !== null && !isTextEntry(target) && !framesHost(target) && !keyboard.deletes && !keyboard.activates
+    // An unread focus counts (cu-coordinator 17:40Z: printable input of any length into an unread focus asks - a named
+    // over-ask: typing into a desktop field whose focus cannot be read asks).
+    // On the desktop a null target is the driver's good read of nothing focused (D-069), not an unread focus; an unread one
+    // arrives as { unknown: true }.
+    const desktopTarget = desktopNoMenu && target != null
+    const pageShortcut = (browserRoute || desktopTarget) && shortcutKey !== null && !isTextEntry(target) && !framesHost(target) && !keyboard.deletes && !keyboard.activates
     // CU-140 (press-and-drop.md): a drag pressed on a control - a long press, or any drag starting there - is judged like
     // a click on it; a file, row, cell or image at the press point is not judged by its name (dragging it moves it).
     const pressesTarget = POINTER.has(action.type) || (action.type === 'drag' && CONTROL_ROLE.test(String(target?.role ?? '')))
@@ -1227,7 +1237,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     }
     const cls = needed[0]
     if (pageShortcut && cls === 'permission') {
-      return { decision: 'confirm', class: cls, classes: needed, rule: 'page:shortcut', approvalKey: `permission:page-shortcut:${shortcutKey.toLowerCase()}`, reason: `press '${shortcutKey}' on ${placeOf(url, target, context?.frontmostBundleId)}, a keyboard shortcut of the page - the page decides what it does` }
+      return { decision: 'confirm', class: cls, classes: needed, rule: 'page:shortcut', approvalKey: `permission:page-shortcut:${[...new Set(shortcutKey)].sort().join('')}`, runOnly: true, reason: `press '${shortcutKey}' on ${placeOf(url, target, context?.frontmostBundleId)}, a keyboard shortcut of the ${onDesktop ? 'app' : 'page'} - it decides what it does` }
     }
     if (mixedScript && cls === 'permission') {
       return { decision: 'confirm', class: cls, classes: needed, rule: 'target:mixed_script', reason: `activate "${name}", whose name mixes scripts in one word (a disguised control?)` }

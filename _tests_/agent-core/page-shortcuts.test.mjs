@@ -37,7 +37,7 @@ test('CU-363 unchanged: typing into a field, DELETE on a row, Tab, Command chord
   assert.equal(press(['DELETE'], ROW), 'delete/class:delete')
   assert.equal(press(['TAB'], ROW), 'allow')
   assert.equal(press(['CMD', 'C'], ROW), 'allow')
-  assert.equal(press(['E'], ROW, 'app:com.example.mail'), 'allow')
+  assert.equal(policy.classify({ type: 'keypress', keys: ['E'] }, { url: 'app:com.example.mail', target: { role: 'AXRow', name: 'm' }, boundMenuItem: { name: 'Archive' } }).decision, 'allow', 'a desktop key that fires a menu item keeps the menu rules')
 })
 
 const tmp = mkdtempSync(join(tmpdir(), 'cu-363-'))
@@ -59,4 +59,19 @@ test('CU-363: a run approval covers that key on that site only - a different key
   const presses = readRun(result.trajectoryDir).events.filter((e) => e.kind === 'action' && e.status !== 'attempted' && e.action?.type === 'keypress')
   assert.equal(presses.length, 3)
   assert.equal(asked, 2, 'E asked once for the run, J asked again')
+})
+
+test('CU-363 round 3: hold_key, longer text on the body, and the desktop route ask; the key is the produced character', () => {
+  const j = (action, target, url = 'https://mail.example/inbox', extra = {}) => policy.classify(action, { url, target, ...extra })
+  assert.equal(j({ type: 'hold_key', keys: ['E'], duration_ms: 300 }, ROW).rule, 'page:shortcut', 'a held key')
+  for (const text of ['###', 'ok #', 'hello']) assert.equal(j({ type: 'type', text }, null).rule, 'page:shortcut', `type ${text} on the body`)
+  assert.equal(j({ type: 'keypress', keys: ['SHIFT', '3'] }, ROW).approvalKey, 'permission:page-shortcut:#', 'Shift+3 is #')
+  assert.equal(j({ type: 'type', text: '#' }, ROW).approvalKey, 'permission:page-shortcut:#', 'the same key as a typed #')
+  assert.notEqual(j({ type: 'keypress', keys: ['3'] }, ROW).approvalKey, 'permission:page-shortcut:#', "a bare '3' is another key")
+  const desk = { role: 'AXRow', name: 'Message from Pat' }
+  for (const action of [{ type: 'keypress', keys: ['E'] }, { type: 'type', text: '#' }, { type: 'hold_key', keys: ['E'], duration_ms: 300 }]) {
+    assert.equal(j(action, desk, 'app:com.example.mail', { boundMenuItem: { none: true } }).rule, 'page:shortcut', `desktop ${action.type}`)
+  }
+  assert.equal(j({ type: 'type', text: 'hello' }, null, 'app:com.example.mail').decision, 'allow', 'desktop nothing focused (D-069) keeps its rule')
+  assert.equal(j({ type: 'keypress', keys: ['SHIFT', '3'] }, ROW).runOnly, true, "an 'always' answer is capped at the run")
 })

@@ -1239,7 +1239,7 @@ export async function runTask(options) {
           logEvent('action', step, { ...base, status: 'declined', answeredBy: answer.answeredBy, attempted: false, completed: false })
           continue
         }
-        if (decision.class !== 'new_app' && decision.class !== 'file_choice' && decision.askEachTime !== true) approvals.grant({ cls: decision.approvalKey ?? decision.class, origin, lifetime: answer.lifetime })
+        if (decision.class !== 'new_app' && decision.class !== 'file_choice' && decision.askEachTime !== true) approvals.grant({ cls: decision.approvalKey ?? decision.class, origin, lifetime: decision.runOnly === true && answer.lifetime === 'always' ? 'run' : answer.lifetime })
         if (decision.class === 'new_site') sitePolicy?.allowOrigin?.(action.url)
         if (decision.class === 'new_app') {
           policy.grantScope?.(decision.app, answer)
