@@ -217,7 +217,9 @@ function focusedNow() {
 function counted() {
   const named = 'changeCount' in config || (config.phases ?? []).some((phase) => 'changeCount' in phase)
   const entered = 'textEntered' in config || (config.phases ?? []).some((phase) => 'textEntered' in phase)
-  return { ...(named ? { changeCount: phased('changeCount') } : {}), ...(entered ? { textEntered: phased('textEntered') } : {}) }
+  // CU-377: a file on the clipboard (type names only), when the world names it.
+  const file = 'pasteboardHasFile' in config || (config.phases ?? []).some((phase) => 'pasteboardHasFile' in phase)
+  return { ...(named ? { changeCount: phased('changeCount') } : {}), ...(entered ? { textEntered: phased('textEntered') } : {}), ...(file ? { pasteboardHasFile: phased('pasteboardHasFile') } : {}) }
 }
 function phased(key) {
   let value = config[key]
