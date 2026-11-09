@@ -6,7 +6,7 @@
 
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -86,4 +86,5 @@ function buildLocked(hash, cacheRoot) {
   }
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url) && process.argv[2] === '--build') buildLocked(process.argv[3], process.argv[4])
+// Started as the locked child: compare real paths (CU-79 - through a symlink argv[1] keeps the link).
+if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url)) && process.argv[2] === '--build') buildLocked(process.argv[3], process.argv[4])
