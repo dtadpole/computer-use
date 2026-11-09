@@ -484,12 +484,12 @@ const decideFrame = (text, name) => {
   return r.decision === 'allow' ? 'allow' : r.class
 }
 const FRAME_ROWS = [
-  ['frame-cvv-braintree', '123', 'Secure Credit Card Frame - CVV', 'sensitive_data', 'open CU-297', 'no live row yet'],
+  ['frame-cvv-braintree', '123', 'Secure Credit Card Frame - CVV', 'sensitive_data', null, "cu-verifier, real Chrome, main cecb828, #171 card-frames page: '123' typed into the CVV frame declined sensitive_data (20261109T010436Z-e71ee3)"],
   ['frame-cvc-stripe', '1234', 'Secure CVC input frame', 'sensitive_data', 'open CU-297', 'no live row yet'],
   ['frame-expiry-braintree', '12/29', 'Secure Credit Card Frame - Expiration Date', 'sensitive_data', 'open CU-297', 'no live row yet'],
-  ['frame-password', 'correct-horse', 'Password', 'credential', 'open CU-297', 'no live row yet'],
+  ['frame-password', 'correct-horse', 'Password', 'credential', null, 'cu-verifier, real Chrome, main cecb828, #171 card-frames page: typing into the Password frame declined credential (20261109T010450Z-f3980c)'],
   ['frame-card-value', CARD, 'Secure card number input frame', 'sensitive_data', 'open CU-297', 'no live row yet (the value rule catches it in a frame too)'],
-  ['frame-comments-negative', 'hello there', 'Comments', 'allow', 'open CU-297', 'no live row yet (negative: a frame named for no class takes text)'],
+  ['frame-order-notes-negative', 'hello there', 'Order notes', 'allow', null, 'negative - cu-verifier, real Chrome, main cecb828, #171 card-frames page: text typed into the Order notes frame went in (20261109T010501Z-279786)'],
 ]
 
 for (const [id, text, name, expected, status, live] of FRAME_ROWS) {
@@ -501,6 +501,7 @@ for (const [id, text, name, expected, status, live] of FRAME_ROWS) {
 test('frame rows: named once; every todo row still fails (a fixed row cannot stay todo)', () => {
   assert.equal(new Set(FRAME_ROWS.map((r) => r[0])).size, FRAME_ROWS.length)
   for (const r of FRAME_ROWS) {
+    if (r[4] === null) { assert.ok(closingRun(r[5]), `${r[0]} is closed without a run id - mark it open`); continue }
     assert.match(r[4], /^(todo|open) CU-\d+$/)
     if (r[4].startsWith('todo ')) assert.notEqual(decideFrame(r[1], r[2]), r[3], `${r[0]} passes on main - flip it to open`)
   }
