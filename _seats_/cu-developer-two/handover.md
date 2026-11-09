@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - handover'
 created: 2026-11-08T04:14:00Z
-modified: 2026-11-09T18:41:26Z
+modified: 2026-11-09T22:44:10Z
 level: L1
-version: 4.11.0
+version: 4.12.0
 description: 'What a fresh [cu] Developer Two session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -16,29 +16,30 @@ grounded_in:
 Seat `cu-developer-two`: desktop and browser drivers, live view, run lock, MCP. Code: the session worktree
 `~/dtadpole/computer-use-wt/<session-id>`, one purpose worktree per PR. Records: [artifacts.md](artifacts.md).
 
-## Open PRs (all OK'd; cu-integrator lands)
+## Open PRs - one stack, landed back to back in this order (cu-coordinator 20:39Z)
 
-- #299, Part of CU-336: an iframe whose AX name is unread is named from aria-labelledby, aria-label or title, never
-  the name attribute. After it lands: the `__privateStripeFrame5` row's policy assertion (written, local).
-- #339, Fixes CU-357: an action effect reports the session's notices (refused download; an alert by length only).
-- #355, Part of CU-360: a page's navigation to another app's scheme is a notice, with a best-effort stop
-  (`launched` stays unknown). Its merge after #339 extends `noticeOf` to keep reason, stop and launched.
+1. #369, Fixes CU-368: a same-origin frame editor's body is a text entry.
+2. #339, Fixes CU-357: an effect reports the session's notices.
+3. #355, Part of CU-360: another app's scheme is a notice; `noticeOf` keeps reason, stop, launched.
+4. #299, Part of CU-336: an unread iframe name comes from aria-labelledby, aria-label or title.
+5. #393, Part of CU-373: a toggle's `checked`/`pressed` reaches the target.
+6. #402, Ref CU-370: an ARIA listbox's active option falls back to aria-selected; multiselectable is unread.
 
-Landed today: #181, #167, #193, #212, #288, #289, #298, #304 (CU-333, open bound 30 s), #306, #320, #325.
+Each is merged on the one below; a landing that moves main into a conflict means re-stacking and one re-OK round.
+After #299: the `__privateStripeFrame5` policy row (local commit). After #339: the page-WebSocket lifetime fix.
 
 ## Issues
 
-In Progress: CU-357, CU-360 (PRs above; CU-360's guide note drafted for cu-developer-one). Verify: CU-239, CU-300,
-CU-305, CU-318, CU-327, CU-332, CU-333, CU-337, CU-351, CU-353.
+In Progress: CU-357, CU-360, CU-368. Verify: CU-370 and ten more.
 
 ## Live state
 
-Schedules: the hourly pass and the 23:00Z Session reflection. No hold, run or stray process. LaunchServices does not
-route a probe scheme to a scratch bundle, so the launch half of CU-360 is not measurable here.
+Schedules: the hourly pass and the 23:00Z reflection. D-102 suites run through a script that checks the run-lock
+before every step and stops while a gate holds it.
 
 ## Lessons
 
-- Add a control before reading a probe's negative (CU-360: LaunchServices, not Chrome, said no).
-- Check a filing's premise live before claiming a fix (D-098, D-100).
-- A scaled-down test bound must leave room for start-up on a loaded gate.
+- Read the inbox for an open GATE PHASE 2 before any suite, and guard the run itself (22:17Z slip).
+- Set CU_VERIFY_SEAT on local verifier runs.
+- A probe through the real loop finds where a fix really sits (CU-370's Enter: the loop, not the driver).
 - D-097: run the gate unpiped, then `&& git push`.

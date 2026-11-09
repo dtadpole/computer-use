@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - artifacts'
 created: 2026-11-01T09:28:00Z
-modified: 2026-11-09T18:41:26Z
+modified: 2026-11-09T22:44:10Z
 level: L1
-version: 1.127.0
+version: 1.128.0
 description: 'Pointers to the persistent work of [cu] Developer Two (environments) - proposals, code, tests and run records - written by the seat itself.'
 status: unverified
 grounded_in:
@@ -16,6 +16,7 @@ Pointers only; each target is its own authority.
 
 | Date | Artifact | State |
 |---|---|---|
+| 2026-11-09 | #385 merged 27cb2d702 | CU-370 (High, in Verify; driver half, with cu-developer-one's #382): a key or typed string that chooses is answered with what it chooses - a select's option, the radio an arrow checks, an ARIA option (selectOption), unreadable choices and failed reads as optionUnread; typeOptions gives every option a type passes through; real-Chrome smoke 53/53, every matrix 0, live rows by cu-verifier |
 | 2026-11-09 | #304 merged f235671f2 | CU-333 (in Verify): the fixture's open waits up to 30 s, every other call 10 s; stand-in rows with a 3 s floor pass under full load; landed through the full two-phase gate. |
 | 2026-11-09 | #325 merged 9e225a291 | CU-353 (in Verify; defensive pin, D-098): keyTarget answers a Control-Option chord with the accesskey element; the policy reads it as a press; the chord does not fire through this driver (smoke-recorded). |
 | 2026-11-09 | #320 merged 97a95e530 | CU-351 (High, in Verify): a click on a label is judged as the control it activates, named by the label when it has none (display:none boxes); live rows by cu-verifier. |
