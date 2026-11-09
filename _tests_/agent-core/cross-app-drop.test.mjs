@@ -65,3 +65,32 @@ test('CU-377 paste half: a file copied in Finder and pasted into Slack asks; a T
   assert.equal(paste({ origin: 'com.apple.finder', role: 'AXRow', name: 'report' }), 'permission')
   assert.equal(paste({ origin: 'com.apple.TextEdit', role: 'AXTextArea', name: 'Untitled' }), 'allow')
 })
+
+test('CU-377 follow-up: a third-party file browser row (Path Finder) is a file source for a paste into Slack', () => {
+  const v = policy.classify({ type: 'keypress', keys: ['META', 'V'] }, { url: 'app:com.tinyspeck.slackmacgap', frontmostBundleId: 'com.tinyspeck.slackmacgap', target: { origin: 'com.tinyspeck.slackmacgap', role: 'AXTextArea', name: 'Message', editable: true }, paste: { fromOwner: false, source: { origin: 'com.cocoatech.PathFinder', role: 'AXRow', name: 'report' } } })
+  assert.equal(v.class, 'permission')
+})
+
+test('CU-377 follow-up in the loop: a Path Finder row dragged into Slack is declined', async () => {
+  const { mkdtempSync, rmSync } = await import('node:fs')
+  const { tmpdir } = await import('node:os')
+  const { join } = await import('node:path')
+  const { createScriptedAdapter } = await import('../../_tools_/agent-core/adapter-scripted.mjs')
+  const { createRunControl } = await import('../../_tools_/agent-core/control.mjs')
+  const { createFakeEnvironment } = await import('../../_tools_/agent-core/fake-env.mjs')
+  const { runTask } = await import('../../_tools_/agent-core/loop.mjs')
+  const { createAppApprovals } = await import('../../_tools_/agent-core/app-approvals.mjs')
+  const { readRun } = await import('../../_tools_/agent-core/trajectory.mjs')
+  const tmp = mkdtempSync(join(tmpdir(), 'cu-377-pf-'))
+  try {
+    const PF = 'com.cocoatech.PathFinder'
+    const SLACK = 'com.tinyspeck.slackmacgap'
+    const control = createRunControl()
+    const environment = createFakeEnvironment({ kind: 'desktop', control, frontmost: PF, targets: ({ x }) => (x < 200 ? { origin: PF, role: 'AXRow', name: 'report' } : { origin: SLACK, role: 'AXGroup', name: 'Message' }) })
+    const approvals = createAppApprovals({ path: join(tmp, 'a.json') })
+    for (const app of [PF, SLACK]) approvals.grantAlways(app, { by: 'api' })
+    const model = createScriptedAdapter({ frame: { width: 1440, height: 900 }, turns: [{ actions: [{ type: 'drag', path: [{ x: 100, y: 100 }, { x: 600, y: 400 }] }] }, { final: 'done' }] })
+    const result = await runTask({ task: 'share the report', environment, model, control, runsDirectory: join(tmp, 'runs'), build: { commit: 'test', dirty: false }, apps: [PF, SLACK], appApprovals: approvals })
+    assert.equal(readRun(result.trajectoryDir).events.filter((e) => e.kind === 'action' && e.action?.type === 'drag').at(-1).status, 'declined')
+  } finally { rmSync(tmp, { recursive: true, force: true }) }
+})
