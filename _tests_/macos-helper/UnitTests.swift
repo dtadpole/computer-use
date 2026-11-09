@@ -697,7 +697,7 @@ func button(_ kind: String, _ x: Int, _ y: Int) -> JSON { ["kind": .string(kind)
 func testDispatcherBasics() {
   let h = Harness(fixtureWorld)
   let hello = h.dispatcher.hello(token: "t0k")
-  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.65", "the hello opens the run")
+  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.66", "the hello opens the run")
   check(hello["mode"] == "dry-run" && hello["grants"] == ["screen": true, "accessibility": true, "postEvents": true, "listenEvents": false], "a dry-run hello says so, with all four grants")
   check(h.ask("capture", ["maxSize": size800])["code"] == "no_scope", "capture needs a scope")
   check(h.ask("input", ["events": [key("keyDown", 1)], "mode": "global"])["code"] == "no_scope", "input needs a scope")
@@ -2102,6 +2102,25 @@ func testMenuTracking() {
   check(SystemCapabilities.markedMenuOpen(.null) == .null, "no shape stays none")
 }
 
+func testQuickActions() {
+  // CU-382: Finder's Quick Actions submenu, by its own strings - structure (the 'Customize…' marker last) in Finder, title anywhere.
+  let quick = QuickActionsMenu.english
+  let submenu = ["Rotate Left", "Run Shell Script", "Customize\u{2026}"]
+  check(quick.isQuickActions(itemTitle: "Schnellaktionen", childTitles: submenu, inFinder: true), "in Finder, a submenu ending in the marker is Quick Actions whatever its holder's title")
+  check(!quick.isQuickActions(itemTitle: "Tools", childTitles: submenu, inFinder: false), "the marker alone outside Finder does not count (structure needs Finder)")
+  check(quick.isQuickActions(itemTitle: "Quick Actions", childTitles: ["Run Shell Script"], inFinder: false), "the holder's title counts in any app")
+  check(!quick.isQuickActions(itemTitle: "View", childTitles: ["Customize Toolbar\u{2026}", "Show Sidebar"], inFinder: true), "'Customize Toolbar…' not last and not the marker: View is not Quick Actions")
+  check(quick.isExempt("Customize\u{2026}") && quick.isExempt("More...") && !quick.isExempt("Run Shell Script") && !quick.isExempt(nil), "Customize… and More… are exempt")
+  let level = MenuContext.Level(holderTitle: "Quick Actions", childTitles: submenu)
+  let run = MenuContext.of(itemTitle: "Run Shell Script", levels: [level, .init(holderTitle: nil, childTitles: ["Open", "Quick Actions"])], services: .english, quick: quick, inFinder: true)
+  check(run.quickActions && !run.servicesMenu && run.path == ["Quick Actions", "Run Shell Script"], "an item under Quick Actions is marked, its path kept")
+  check(run.json["quickActions"] == true && run.json["menuContextUnread"] == nil, "the json says quickActions, no unread")
+  check(!MenuContext.of(itemTitle: "Customize\u{2026}", levels: [level], services: .english, quick: quick, inFinder: true).quickActions, "the marker item itself is not marked")
+  check(!MenuContext.of(itemTitle: "Copy", levels: [.init(holderTitle: "Edit", childTitles: ["Undo", "Copy"])], services: .english, quick: quick).quickActions, "an ordinary submenu is not")
+  let short = MenuContext.of(itemTitle: "Run Shell Script", levels: [], services: .english, quick: quick, unread: true)
+  check(short.unread && short.json["menuContextUnread"] == true && !short.quickActions, "a failed read on the walk says menuContextUnread, never a plain item")
+}
+
 @main
 struct UnitTests {
   static func main() {
@@ -2148,6 +2167,7 @@ struct UnitTests {
     testPopUpItems()
     testPasteboardTypes()
     testMenuTracking()
+    testQuickActions()
     testEndWatchdog()
     // Informational: whether the process that ran these tests is genuine node (true for Node.js Foundation builds).
     let parentIsNode = PeerCheck.satisfiesNodeRequirement(pid: getppid(), token: nil)
