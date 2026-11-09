@@ -484,10 +484,10 @@ const decideFrame = (text, name) => {
   return r.decision === 'allow' ? 'allow' : r.class
 }
 const FRAME_ROWS = [
-  ['frame-cvv-braintree', '123', 'Secure Credit Card Frame - CVV', 'sensitive_data', 'todo CU-297', 'no live row yet'],
-  ['frame-cvc-stripe', '1234', 'Secure CVC input frame', 'sensitive_data', 'todo CU-297', 'no live row yet'],
-  ['frame-expiry-braintree', '12/29', 'Secure Credit Card Frame - Expiration Date', 'sensitive_data', 'todo CU-297', 'no live row yet'],
-  ['frame-password', 'correct-horse', 'Password', 'credential', 'todo CU-297', 'no live row yet'],
+  ['frame-cvv-braintree', '123', 'Secure Credit Card Frame - CVV', 'sensitive_data', 'open CU-297', 'no live row yet'],
+  ['frame-cvc-stripe', '1234', 'Secure CVC input frame', 'sensitive_data', 'open CU-297', 'no live row yet'],
+  ['frame-expiry-braintree', '12/29', 'Secure Credit Card Frame - Expiration Date', 'sensitive_data', 'open CU-297', 'no live row yet'],
+  ['frame-password', 'correct-horse', 'Password', 'credential', 'open CU-297', 'no live row yet'],
   ['frame-card-value', CARD, 'Secure card number input frame', 'sensitive_data', 'open CU-297', 'no live row yet (the value rule catches it in a frame too)'],
   ['frame-comments-negative', 'hello there', 'Comments', 'allow', 'open CU-297', 'no live row yet (negative: a frame named for no class takes text)'],
 ]
