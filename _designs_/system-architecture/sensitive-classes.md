@@ -1,9 +1,9 @@
 ---
 title: Sensitive classes - everything the agent must never type unasked
 created: 2026-11-07T14:34:22Z
-modified: 2026-11-09T00:00:00Z
+modified: 2026-11-09T00:10:00Z
 level: L1
-version: 0.3.3
+version: 0.3.4
 description: The D-061 table - every sensitive class with its value rule, its field-name rule, the asserting test and the live row; rows live in an executable matrix, gaps are children of CU-145.
 status: unverified
 grounded_in:
@@ -11,13 +11,16 @@ grounded_in:
   - source: _tests_/agent-core/sensitive-classes.test.mjs (the executable matrix)
   - source: 'the CU-171 probe of classify() on main and on #407'
   - source: CU-301 design note 0.1 (2026-11-08 23:58Z; a password pressed key by key)
+  - source: CU-297 design note 0.1 (2026-11-08 23:51Z; a cross-origin frame's title as its field name)
 ---
 
 # Sensitive classes
 
 Typing a sensitive value is judged twice: by the value (a pattern with a check where one exists) and by the field's
-name (on a text entry only, never a button). A printable key pressed or held into a text entry - one character or Space,
-Shift or Option at most - counts as typing its character (CU-301); a chord with Command or Control does not. Each class
+name (on a text entry only, never a button; on a web page a frame host's own name counts as the field's when text is
+typed, pressed or pasted into it - hosted payment and sign-in fields title each frame for its field, CU-297). A printable
+key pressed or held into a text entry - one character or Space, Shift or Option at most - counts as typing its
+character (CU-301); a chord with Command or Control does not. Each class
 has one row per value rule and per name in
 `_tests_/agent-core/sensitive-classes.test.mjs`; todo rows only for open under-asks.
 
@@ -43,6 +46,8 @@ has one row per value rule and per name in
   space). Acronyms match case-sensitively as whole words: 'Pan size' and 'Sin City' never ask. 'Mobile' alone asks, so
   a 'Mobile app name' field asks too (an accepted over-ask). A bare
   'Account', 'Token', 'ID number', 'Address', 'City' or 'Postcode' never asks.
+- A frame host's name is read as typed: a vendor prefix naming every frame for the card ('Secure Credit Card Frame -
+  Postal Code') asks too (accepted over-ask, CU-297).
 
 ## Sign-off
 
