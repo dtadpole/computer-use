@@ -1,9 +1,9 @@
 ---
 title: '[cu] Linear workflow - states, fields, cadence, roles'
 created: 2026-11-06T11:30:00Z
-modified: 2026-11-06T16:00:00Z
+modified: 2026-11-09T13:06:32Z
 level: L2
-version: 1.2.0
+version: 1.3.0
 description: 'How the [cu] team runs its work in Linear (team CU) - what each state means and who moves it, priorities, labels, templates, cycles, project updates, PR rules, owner questions, and every seat''s Linear duties.'
 status: unverified
 grounded_in:
