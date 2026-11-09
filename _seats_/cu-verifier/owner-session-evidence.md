@@ -1,8 +1,8 @@
 ---
 title: Owner session - the evidence cu-verifier records
 created: 2026-11-09T16:55:00Z
-modified: 2026-11-09T16:55:00Z
-version: 0.1.0
+modified: 2026-11-09T17:03:00Z
+version: 0.1.1
 description: 'For each part of the owner session (owner-checklist.md, CU-341) - what cu-verifier records, from which outside source, and what makes the part pass or fail; the report-at-once items mapped to checks.'
 grounded_in:
   - source: _tools_/live-view/owner-checklist.md@0.4.0 (PR #324; the three parts, the prompt, the report-at-once list)
@@ -32,7 +32,8 @@ run directory. Nothing records which key the owner pressed or what he typed.
 
 ## Part 1 - step 4 (CU-11)
 
-The run: `owner-step4.mjs` (ten click-type-wait rounds in CU Fixture). The owner presses one key, then Resume, Take
+The run: `owner-step4.mjs` with `ROUNDS=80` (click, type one letter, wait 4 s - about 6.5 active minutes, so the owner
+has time to open the control link; a pause or take-over stops the clock), as the checklist and step 4's INDEX say. The owner presses one key, then Resume, Take
 over, Hand back and Stop on the control link.
 
 | Record | Source | Pass |
