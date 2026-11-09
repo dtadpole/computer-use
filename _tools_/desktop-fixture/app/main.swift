@@ -38,6 +38,7 @@ final class Fixture: NSObject {
     ConsentKeys.uninstallMenus()
     MenuCompose.uninstallMenus()
     OpenSelection.uninstallMenus()
+    NamedControls.uninstallMenus()
     for window in windows.values { window.orderOut(nil); window.close() }
     windows = [:]
     Evidence.input = []
@@ -530,7 +531,7 @@ func handle(_ message: [String: Any]) {
     case "menuAX":
       // CU-238: what AppKit serves Accessibility for menu-compose's own menus (Message, Later) - title, enabled and the
       // key-equivalent attributes only, read in process; the helper's menuKey reads the same values across processes.
-      reply(id, ["menus": MenuCompose.accessibilityMenus()])
+      reply(id, ["menus": MenuCompose.accessibilityMenus() + NamedControls.accessibilityMenus()])
     case "gridShown":
       // Test seam: what a grid cell shows on screen now (chain-rows' computed D cells).
       let shown = Grid.shown(params["cell"] as? String ?? "")
