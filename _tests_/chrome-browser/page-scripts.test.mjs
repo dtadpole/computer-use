@@ -769,3 +769,12 @@ test('CU-373: describeElement reports a toggle\'s state - native checkbox/radio 
   assert.equal('pressed' in plain, false)
   assert.equal('checked' in describeElement(el('INPUT', { type: 'text' })), false)
 })
+
+test('CU-370: an ARIA listbox without aria-activedescendant - Enter answers the aria-selected option, arrows move from it', () => {
+  const node = (role, attrs = {}) => ({ getAttribute: (name) => (name === 'role' ? role : attrs[name] ?? null) })
+  const archive = node('option', { 'aria-selected': 'true' })
+  const del = node('option')
+  const listbox = { ...node('listbox'), tagName: 'DIV', ownerDocument: { getElementById: () => null, activeElement: null }, getRootNode: () => null, querySelectorAll: () => [archive, del] }
+  assert.equal(keyChoice(listbox, 'Enter', selectKeyOption), archive, 'Enter commits the aria-selected option')
+  assert.equal(keyChoice(listbox, 'ArrowDown', selectKeyOption), del, 'ArrowDown moves from it to Delete')
+})
