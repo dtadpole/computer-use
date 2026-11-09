@@ -30,7 +30,8 @@ Seven of the nine ULTIMATE_GOAL 2.0 rows hold on live evidence. Two are open:
   - The D-061 table's re-sign (its last rows are landing); D-059 is re-signed.
   - Medium items with fixes in review: field names in those six languages (CU-345), unusual separators (CU-346), less
     common password forms (CU-350), personal-ID field names (CU-355), placeholder-only boxes on the desktop (CU-349).
-  - Names are read in English, Chinese and those six languages; other languages are a named limit (D-099).
+  - Button names are read in English, Chinese and those six languages; field names in the six follow with CU-345 (in
+    review). Other languages are a named limit (D-099).
 - **Human control** needs you once: runbook step 4 (CU-11), with the G2 key-hold row (CU-119), the Replace-sheet
   chain (CU-135) and the physical-confirmation prompt (CU-203) - in person about 15 minutes, or over Screen Sharing
   about 25. The team rehearsed every step it can with labelled stand-ins (every pause and take-over under 35 ms, no
