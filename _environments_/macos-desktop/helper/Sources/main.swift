@@ -72,7 +72,8 @@ do {
 let configuredRead = PeerCheck.configuredCheckouts(home: PeerCheck.home())
 let admittedCheckouts = PeerCheck.admit(configuredRead.checkouts, home: PeerCheck.home(), resolve: PeerCheck.realPath, worldWritable: PeerCheck.isWorldWritable)
 // CU-240: a transient TCC false at launch is re-read (only when some grant reads true, so the boundary is unchanged).
-let grantsAtStart = GrantRecheck.settled(read: { Grants.preflight() }, sleep: { Thread.sleep(forTimeInterval: $0) })
+// CU-303: a dry or simulated run asks TCC nothing.
+let grantsAtStart = GrantRecheck.atStart(mayHoldGrants: options.mayHoldGrants, read: { Grants.preflight() }, sleep: { Thread.sleep(forTimeInterval: $0) })
 let boundary = options.boundaryApplies(grantsAtStart: grantsAtStart)
 let forcedUngranted = options.simulateUngranted || (options.mayHoldGrants && !boundary)
 if options.lockPath != nil && grantsAtStart.any {
