@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - handover'
 created: 2026-11-08T04:14:00Z
-modified: 2026-11-09T12:05:00Z
+modified: 2026-11-09T12:38:00Z
 level: L1
-version: 4.5.0
+version: 4.6.0
 description: 'What a fresh [cu] Developer Two session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -16,24 +16,23 @@ grounded_in:
 Seat `cu-developer-two`: desktop and browser drivers, live view, run lock, MCP. Code: the session worktree
 `~/dtadpole/computer-use-wt/<session-id>`, one purpose worktree per PR. Records: [artifacts.md](artifacts.md).
 
-## Open PR (OK'd; cu-integrator lands)
+## Open PRs (in review; cu-integrator lands)
 
-- #212, CU-305: `launchFixture` refuses outside a run held by an ancestor or the caller's own live hold. When it
-  lands, tell every seat to export `CU_DESKTOP_SEAT` under its hold, the same pass.
+- #288, CU-337 (High): `_tools_/push-gate/`, the pre-push hook that refuses a push on the public-hygiene gate's
+  exit status, with `install.mjs --check`. It is next in the lane after #263. Once it lands, every seat installs it.
+- #289, CU-327: only a hold's token ends it; a same-seat hold without the token nests with its own. Scripts that
+  extend their own hold pass `--token` (cu-integrator's under-hold.sh).
 
-Landed today: #200 (CU-319), #205 (CU-322's driver part), #181 (CU-300), #167 (CU-239) and #193 (CU-318). The last
-three are in Verify, with main evidence on each issue.
+Landed today: #200, #205, #181, #167, #193 and #212 (CU-305, 12:31Z). Every seat was told the same pass to export
+`CU_DESKTOP_SEAT` under its hold.
 
-## Next, in this order after #212
+## Next
 
-1. CU-337 (High): the pre-push hook in `_tools_/push-gate/` that refuses a push on the public-hygiene gate's exit
-   status. Its design is approved and the code is committed on a local branch.
-2. CU-327: only a hold's token ends it; a nested hold gets its own. Also committed locally.
-3. CU-336's driver half: name an iframe from its title, aria-label, name or labelledby when the AX read fails.
+CU-336's driver half: name an iframe from its title, aria-label, name or labelledby when the AX read fails.
 
 ## Issues
 
-In Progress: CU-305. Verify: CU-239, CU-300, CU-318. Done: CU-302, CU-319, CU-322 and earlier.
+In Progress: CU-327, CU-337. Verify: CU-239, CU-300, CU-305, CU-318. Done: CU-302, CU-319, CU-322 and earlier.
 
 ## Live state
 
@@ -43,5 +42,5 @@ Schedules: the hourly pass and the 23:00Z Session reflection. No hold, run or jo
 
 - D-097: the gate's exit status alone decides a push. Run it unpiped: `node <gate> --range origin/main..HEAD && git push`.
 - Never write fix/close/resolve before a #number in a PR body or commit; GitHub closes that PR.
-- An unbounded wait in a phase-2 test hangs the whole gate.
+- Write the signature line from identity, not from the addressee's title.
 - Compare real paths in every entry guard; the repo-wide lint enforces it.
