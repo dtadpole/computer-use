@@ -84,6 +84,10 @@ const LOCALE_ID_NAMES = Object.freeze(['reisepass', '…passnummer', 'geburtsdat
   '여권', '여권번호', '생년월일', '주민등록번호', '계좌번호', '사업자등록번호'])
 const WORDS = Object.freeze({
   purchase: ['buy', 'pay', 'order', 'place order', 'checkout', 'check out', 'subscribe', 'donate', 'purchase', 'transfer', 'withdraw', 'wire', 'send money',
+    // CU-386 (High pending a live row; cu-coordinator 23:42Z): money committed outside a checkout - an irreversible spend
+    // (D-063), as whole phrases.
+    'place bid', 'bid now', 'make offer', 'make an offer', 'accept offer', 'pledge', 'top up', 'top-up', 'add funds', 'add money',
+    'cash out', 'place bet', 'place a bet', 'send tip', 'send a tip', 'tip creator',
     // CU-288 (cu-researcher's real-app wordings, round 2): a booking, an upgrade or a renewal commits money.
     'book now', 'book this', 'reserve now', 'upgrade plan', 'upgrade now', 'upgrade to pro', 'upgrade to premium', 'renew subscription', 'renew now',
     'renew plan', ...ZH_WORDS.purchase, ...LOCALE_WORDS.purchase],
