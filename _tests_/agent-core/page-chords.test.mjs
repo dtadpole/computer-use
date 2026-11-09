@@ -34,6 +34,7 @@ test('CU-365 negatives: the editing set, the browser chords, a menu item, and a 
   }
   assert.equal(judge(['CTRL', 'D'], { role: 'AXRow', name: 'm' }, 'app:com.example.mail', { boundMenuItem: { name: 'Duplicate' } }).decision, 'allow', 'a desktop chord that fires a menu item')
   assert.equal(judge(['CTRL', 'D'], { tag: 'input', role: 'textbox', name: 'Notes', editable: true }).decision, 'allow', 'a chord into a field')
+  assert.notEqual(judge(['META', 'O'], { role: 'AXRow', name: 'notes.txt' }, 'app:com.apple.finder', { boundMenuItem: { none: true } }).rule, 'page:shortcut', 'Command-O on the desktop is judged by what it opens (CU-252)')
 })
 
 test('CU-365 stacking: a page shortcut under another class names its own approval', () => {

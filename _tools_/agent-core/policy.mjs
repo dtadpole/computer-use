@@ -1013,6 +1013,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (browserRoute && accel && !alt && 'r[]ltnwq'.includes(lower)) return null
       // On the desktop a chord usually fires a menu item: only the loop's read that none fires makes it the app's own.
       if (onDesktop && context.boundMenuItem?.none !== true) return null
+      // The open chord (Command-O) is judged by what it opens - CU-252's selection rule in app-policy - never as a shortcut.
+      if (onDesktop && accel && !alt && lower === 'o') return null
       const label = [keys.has('CTRL') || keys.has('CONTROL') ? 'ctrl' : null, alt ? 'alt' : null, ['CMD', 'COMMAND', 'META', 'SUPER'].some((key) => keys.has(key)) ? 'cmd' : null].filter(Boolean)
       return `${label.join('+')}+${produced}`
     })()
