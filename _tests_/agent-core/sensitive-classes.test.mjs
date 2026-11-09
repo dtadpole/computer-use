@@ -603,8 +603,8 @@ const decideNavigate = (url) => {
 const NAVIGATE_ROWS = [
   ['navigate-API key in a query', `https://fixture.example/search?q=${AWS_KEY_ID}`, 'sensitive_data', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: declined sensitive_data, the URL never reached the server (20261109T062607Z-c7d374)'],
   ['navigate-card number in a query', `https://fixture.example/pay?card=${CARD.replace(/\D/g, '')}`, 'sensitive_data', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: declined sensitive_data, the URL never reached the server (20261109T062611Z-39a3c0)'],
-  // A digit run in a path segment is read as an id (status and order numbers pass Luhn one time in ten) - CU-260's named limit.
-  ['navigate-card number in a path (named limit)', `https://fixture.example/pay/${CARD.replace(/\D/g, '')}`, 'sensitive_data', 'todo CU-325', 'under-ask: cu-verifier, main d95682d, headless browser route: the card in the path was allowed and the page loaded (20261109T062614Z-cc3e3c); CU-325'],
+  // CU-325: a path segment that is a brand-prefixed Luhn run of card length (or digits the run typed) asks; other numeric ids stay ids.
+  ['navigate-card number in a path (named limit)', `https://fixture.example/pay/${CARD.replace(/\D/g, '')}`, 'sensitive_data', 'open CU-325', 'under-ask: cu-verifier, main d95682d, headless browser route: the card in the path was allowed and the page loaded (20261109T062614Z-cc3e3c); CU-325'],
   ['navigate-SSN in a fragment', `https://fixture.example/form#${SSN}`, 'sensitive_data', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: declined sensitive_data, the URL never reached the server (20261109T062617Z-e92642)'],
   // cu-verifier's #91 review: a parameter named for a secret leaks even a short value - 'hunter2' is under the 8-char floor.
   ['navigate-short password in a password parameter', 'https://login.example/auth?user=jane&password=' + ['hun', 'ter2'].join(''), 'sensitive_data', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: declined sensitive_data, the URL never reached the server (20261109T062620Z-8ce995)'],
