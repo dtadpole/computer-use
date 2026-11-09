@@ -110,7 +110,11 @@ export function collectPageText(doc, win, maxChars) {
  * Return submits) take the fields of that form; a control outside any form (a button, an input of type button, a
  * [role=button] or a link - a script-driven 'Sign in') takes the autofilled fields of its whole document. Anything else
  * is no submit-like target: null. Only :autofill (or Chrome's older :-webkit-autofill) is asked - never a value.
- * Self-contained: it runs serialized in the page.
+ *
+ * Chrome clears :autofill as soon as a field is edited, so 'a saved password plus one typed character' would launder the
+ * saved value (cu-verifier). A field once seen autofilled in this document is remembered in this world (a WeakSet on the
+ * driver's isolated-world global, which the page cannot see) and stays reported, marked edited, after it stops matching.
+ * Returns `{ fields, edited }` (parallel lists, at most 20), or null. Self-contained: it runs serialized in the page.
  */
 export function autofilledFields(el) {
   const NOT_TEXT = ['button', 'submit', 'reset', 'checkbox', 'radio', 'file', 'image', 'range', 'color', 'hidden']
@@ -136,7 +140,21 @@ export function autofilledFields(el) {
   if (form && (submits || entry)) scope = Array.from(form.elements || [])
   else if (!form && (submits || control)) scope = Array.from((el.ownerDocument && el.ownerDocument.querySelectorAll) ? el.ownerDocument.querySelectorAll('input, textarea, select') : [])
   if (scope === null) return null
-  return scope.filter(autofilled).slice(0, 20)
+  const seen = globalThis.__cuAutofillSeen instanceof WeakSet ? globalThis.__cuAutofillSeen : (globalThis.__cuAutofillSeen = new WeakSet())
+  const fields = []
+  const edited = []
+  for (const field of scope) {
+    if (fields.length >= 20) break
+    if (autofilled(field)) {
+      seen.add(field)
+      fields.push(field)
+      edited.push(false)
+    } else if (field && typeof field === 'object' && seen.has(field)) {
+      fields.push(field)
+      edited.push(true)
+    }
+  }
+  return { fields, edited }
 }
 
 export function implicitSubmitButton(el) {

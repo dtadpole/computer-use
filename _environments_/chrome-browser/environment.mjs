@@ -309,13 +309,18 @@ class BrowserEnvironment {
         objectId, functionDeclaration: `function () { return (${autofilledFields.toString()})(this) }`, returnByValue: false,
       })).result.result
       if (found?.subtype === 'null' || found?.objectId === undefined) return described
-      const properties = (await this.session.send(target, 'Runtime.getProperties', { objectId: found.objectId, ownProperties: true })).result.result
+      const part = (name, returnByValue) => this.session.send(target, 'Runtime.callFunctionOn', { objectId: found.objectId, functionDeclaration: `function () { return this.${name} }`, returnByValue })
+      const edited = (await part('edited', true)).result.result.value
+      const list = (await part('fields', false)).result.result
+      if (!Array.isArray(edited) || typeof list?.objectId !== 'string') throw new Error('autofill read: no field list')
+      const properties = (await this.session.send(target, 'Runtime.getProperties', { objectId: list.objectId, ownProperties: true })).result.result
       const fields = []
       for (const property of properties ?? []) {
         if (!/^\d+$/.test(String(property.name)) || typeof property.value?.objectId !== 'string') continue
         const node = (await this.session.send(target, 'DOM.describeNode', { objectId: property.value.objectId })).result.node
         const field = await this.#describe(target, node.backendNodeId, frameId, { node, scanText: false })
-        if (field !== null) fields.push({ tag: field.tag, inputType: field.inputType, name: field.name, autocomplete: field.autocomplete, caption: field.caption })
+        // An autofilled field the run then edited (Chrome cleared its :autofill) stays reported, marked edited (cu-verifier).
+        if (field !== null) fields.push({ tag: field.tag, inputType: field.inputType, name: field.name, autocomplete: field.autocomplete, caption: field.caption, ...(edited[Number(property.name)] === true ? { edited: true } : {}) })
       }
       return fields.length > 0 ? { ...described, autofillRead: true, autofilledFields: fields } : { ...described, autofillRead: true }
     } catch {

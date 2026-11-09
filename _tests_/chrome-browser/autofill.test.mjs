@@ -31,32 +31,38 @@ function page(fields) {
   return { querySelectorAll: () => fields }
 }
 
+/** The fields of an autofilledFields answer (null stays null); each case starts with an empty memory. */
+const fieldsOf = (answer) => (answer === null ? null : answer.fields)
+const freshMemory = () => { delete globalThis.__cuAutofillSeen }
+
 test('CU-319: a form\'s submit control and a text entry in it carry the form\'s autofilled fields - never a value', () => {
+  freshMemory()
   const username = el('input', { type: 'email', autofill: true, name: 'user' })
   const password = el('input', { type: 'password', autofill: true, name: 'pass' })
   const notes = el('input', { type: 'text' })
   const form = { elements: [] }
   const submit = el('button', { type: 'submit', form })
   form.elements.push(username, password, notes, submit)
-  assert.deepEqual(autofilledFields(submit), [username, password], 'the button: the two autofilled fields, not the typed one')
-  assert.deepEqual(autofilledFields(el('input', { type: 'submit', form })), [username, password])
-  assert.deepEqual(autofilledFields(el('input', { type: 'image', form })), [username, password])
+  assert.deepEqual(fieldsOf(autofilledFields(submit)), [username, password], 'the button: the two autofilled fields, not the typed one')
+  assert.deepEqual(fieldsOf(autofilledFields(el('input', { type: 'submit', form }))), [username, password])
+  assert.deepEqual(fieldsOf(autofilledFields(el('input', { type: 'image', form }))), [username, password])
   notes.form = form
   password.form = form
-  assert.deepEqual(autofilledFields(notes), [username, password], 'a focused entry in the form (its Return submits)')
-  assert.deepEqual(autofilledFields(password), [username, password], 'an autofilled entry itself counts too')
+  assert.deepEqual(fieldsOf(autofilledFields(notes)), [username, password], 'a focused entry in the form (its Return submits)')
+  assert.deepEqual(fieldsOf(autofilledFields(password)), [username, password], 'an autofilled entry itself counts too')
   const noneForm = { elements: [el('input', { type: 'text' }), el('input', { type: 'password' })] }
-  assert.deepEqual(autofilledFields(el('button', { type: 'submit', form: noneForm })), [], 'a submit-like target with nothing autofilled: empty')
+  assert.deepEqual(fieldsOf(autofilledFields(el('button', { type: 'submit', form: noneForm }))), [], 'a submit-like target with nothing autofilled: empty')
 })
 
 test('CU-319: a control outside any form carries its document\'s autofilled fields; anything else is no submit-like target', () => {
+  freshMemory()
   const saved = el('input', { type: 'password', autofill: true })
   const doc = page([el('input', { type: 'text' }), saved])
   const outside = (tag, opts) => Object.assign(el(tag, opts), { ownerDocument: doc })
-  assert.deepEqual(autofilledFields(outside('button', { type: 'submit' })), [saved], 'a form-less <button>')
-  assert.deepEqual(autofilledFields(outside('div', { role: 'button' })), [saved], 'a script-driven [role=button] Sign in')
-  assert.deepEqual(autofilledFields(outside('a', { href: '#signin' })), [saved], 'a link')
-  assert.deepEqual(autofilledFields(outside('input', { type: 'button' })), [saved])
+  assert.deepEqual(fieldsOf(autofilledFields(outside('button', { type: 'submit' }))), [saved], 'a form-less <button>')
+  assert.deepEqual(fieldsOf(autofilledFields(outside('div', { role: 'button' }))), [saved], 'a script-driven [role=button] Sign in')
+  assert.deepEqual(fieldsOf(autofilledFields(outside('a', { href: '#signin' }))), [saved], 'a link')
+  assert.deepEqual(fieldsOf(autofilledFields(outside('input', { type: 'button' }))), [saved])
   const form = { elements: [saved] }
   assert.equal(autofilledFields(el('button', { type: 'button', form })), null, 'a type=button inside a form submits nothing by itself')
   assert.equal(autofilledFields(el('input', { type: 'checkbox', form })), null)
@@ -66,13 +72,29 @@ test('CU-319: a control outside any form carries its document\'s autofilled fiel
 })
 
 test('CU-319: an engine without :autofill falls back to :-webkit-autofill; at most 20 fields', () => {
+  freshMemory()
   const old = el('input', { type: 'password', autofill: true, webkitOnly: true })
   const form = { elements: [old] }
-  assert.deepEqual(autofilledFields(el('button', { type: 'submit', form })), [old])
+  assert.deepEqual(fieldsOf(autofilledFields(el('button', { type: 'submit', form }))), [old])
   const many = { elements: Array.from({ length: 30 }, () => el('input', { type: 'text', autofill: true })) }
-  assert.equal(autofilledFields(el('button', { type: 'submit', form: many })).length, 20)
+  assert.equal(fieldsOf(autofilledFields(el('button', { type: 'submit', form: many }))).length, 20)
   const isolated = new Function(`return (${autofilledFields.toString()})`)()
-  assert.deepEqual(isolated(el('button', { type: 'submit', form })), [old], 'self-contained, as the driver runs it in the page')
+  assert.deepEqual(fieldsOf(isolated(el('button', { type: 'submit', form }))), [old], 'self-contained, as the driver runs it in the page')
+})
+
+test("CU-319: a field once seen autofilled stays reported, marked edited, after the run's typing cleared :autofill - the run's own typed field never is", () => {
+  freshMemory()
+  const form = { elements: [] }
+  const password = el('input', { type: 'password', autofill: true, form })
+  const own = el('input', { type: 'text', form })
+  const submit = el('button', { type: 'submit', form })
+  form.elements.push(password, own, submit)
+  assert.deepEqual(autofilledFields(submit), { fields: [password], edited: [false] }, 'filled on load, seen at the first read')
+  password.matches = () => false // the run typed one more character: Chrome cleared :autofill
+  assert.deepEqual(autofilledFields(submit), { fields: [password], edited: [true] }, 'still reported, now as edited: a partial edit launders nothing')
+  assert.deepEqual(autofilledFields(own), { fields: [password], edited: [true] }, 'from the focused entry too')
+  freshMemory()
+  assert.deepEqual(autofilledFields(submit), { fields: [], edited: [] }, 'a new document (a fresh world) remembers nothing; a field only the run typed is never reported')
 })
 
 /**
@@ -104,8 +126,10 @@ function harness(world) {
       const fn = params.functionDeclaration
       if (fn.includes(':-webkit-autofill')) {
         if (world.fails) throw Object.assign(new Error('Execution context was destroyed'), { code: -32000 })
-        return { result: { result: world.scope === null ? { type: 'object', subtype: 'null', value: null } : { type: 'object', subtype: 'array', objectId: 'scope-1' } } }
+        return { result: { result: world.scope === null ? { type: 'object', subtype: 'null', value: null } : { type: 'object', objectId: 'scope-1' } } }
       }
+      if (fn.includes('return this.edited')) return { result: { result: { type: 'object', value: world.scope.map((id) => (world.edited ?? []).includes(id)) } } }
+      if (fn.includes('return this.fields')) return { result: { result: { type: 'object', subtype: 'array', objectId: 'fields-1' } } }
       if (fn.includes('CONTROL_ROLES') && params.returnByValue === false) return { result: { result: { type: 'object', objectId: params.objectId } } }
       if (fn.includes('function (target)')) return { result: { result: { value: null } } }
       if (fn.includes('IMPLICIT')) return { result: { result: { type: 'object', subtype: 'null', value: null } } }
@@ -142,6 +166,9 @@ test('CU-319: inspectPoint on a Sign in button carries the autofilled fields as 
     { tag: 'input', inputType: 'password', name: 'Password', autocomplete: 'current-password', caption: null },
   ], 'descriptors only: tag, type, accessible name, autocomplete, caption')
   assert.ok(!JSON.stringify(button.autofilledFields).includes('value'), 'never a value')
+  world.edited = [42]
+  assert.deepEqual((await env.inspectPoint(at)).autofilledFields.map((f) => [f.autocomplete, f.edited]), [['username', undefined], ['current-password', true]], 'an autofilled field the run edited is still reported, marked edited')
+  world.edited = []
   world.scope = [43]
   assert.deepEqual((await env.inspectPoint(at)).autofilledFields, [{ tag: 'input', inputType: 'text', name: '', autocomplete: null, caption: 'Notes' }], 'an unnamed field carries its caption, as any entry')
   world.scope = []

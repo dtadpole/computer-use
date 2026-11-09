@@ -263,8 +263,8 @@ try {
   report.blockedDuringRun = env.session.blocked.map((entry) => `${entry.via ?? 'fetch'} ${entry.rule} ${entry.url}`)
   report.backgroundTrafficRefused = [...new Set(background.map((notice) => new URL(notice.url).host))]
 
-  // CU-319: the browser's own autofill marks fields :autofill; the submit button then carries them as descriptors, and
-  // typing into one clears its state (so the list means 'filled by the browser, not typed by the run').
+  // CU-319: the browser's own autofill marks fields :autofill; the submit button then carries them as descriptors. Typing
+  // into one clears Chrome's state, and the driver keeps reporting it, marked edited (a partial edit launders nothing).
   await env.perform({ type: 'navigate', url: `${origin}/autofill-form` })
   const payAt = { x: 128, y: 176 }
   const payBefore = await env.inspectPoint(payAt)
@@ -285,11 +285,11 @@ try {
   await env.perform({ type: 'keypress', keys: ['END'] })
   await env.perform({ type: 'type', text: '9' })
   const payTyped = await env.inspectPoint(payAt)
-  const autofilledOf = (target) => (target?.autofilledFields ?? []).map((field) => field.autocomplete)
-  check('a submit button carries the fields the browser autofilled, as descriptors; typing into one clears it (CU-319)',
+  const autofilledOf = (target) => (target?.autofilledFields ?? []).map((field) => `${field.autocomplete}${field.edited ? ' (edited)' : ''}`)
+  check('a submit button carries the fields the browser autofilled, as descriptors; one the run then edits stays, marked edited (CU-319)',
     payBefore?.tag === 'button' && payBefore.autofillRead === true && payBefore.autofilledFields === undefined && triggered === 'ok' &&
     JSON.stringify(autofilledOf(payAfter)) === JSON.stringify(['cc-number', 'cc-name', 'cc-exp']) && payAfter.autofilledFields[0].name === 'Card number' &&
-    !JSON.stringify(payAfter.autofilledFields).includes('4111') && JSON.stringify(autofilledOf(payTyped)) === JSON.stringify(['cc-name', 'cc-exp']),
+    !JSON.stringify(payAfter.autofilledFields).includes('4111') && JSON.stringify(autofilledOf(payTyped)) === JSON.stringify(['cc-number (edited)', 'cc-name', 'cc-exp']),
     { triggered, before: autofilledOf(payBefore), after: autofilledOf(payAfter), afterTyping: autofilledOf(payTyped) })
 
   // A point inside a cross-site iframe resolves to the inner element through the frame's own session.
