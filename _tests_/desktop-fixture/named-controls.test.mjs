@@ -50,6 +50,18 @@ describe('named-controls (live rows decided by a name)', () => {
     })
   })
 
+  test('areas (CU-253): multi-line text areas named by the harness, AXTextArea with the name, reporting length and lines only', async () => {
+    await withNamed({ areas: ['iMessage', 'Type a new message'] }, async (fixture) => {
+      const audit = await fixture.axAudit()
+      assert.deepEqual([audit['area-0'].role, audit['area-0'].name], ['AXTextArea', 'iMessage'])
+      assert.deepEqual([audit['area-1'].role, audit['area-1'].name], ['AXTextArea', 'Type a new message'])
+      const targets = await fixture.targets()
+      for (const key of ['area-0', 'area-1']) assert.ok(targets[key], `no target for ${key}`)
+      const { fields } = await fixture.state()
+      assert.deepEqual([fields.namedAreaLengths, fields.namedAreaLines], [[0, 0], [1, 1]])
+    })
+  })
+
   test('at most six of each, names trimmed and capped at 60, empty names dropped', async () => {
     const long = 'x'.repeat(80)
     await withNamed({ fields: ['  Debit card  ', '', long, 'a', 'b', 'c', 'd', 'e'], buttons: [] }, async (fixture) => {
