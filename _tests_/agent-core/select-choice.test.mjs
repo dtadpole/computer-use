@@ -29,6 +29,12 @@ test('CU-370: a type is judged by every option its prefix passes through (typeOp
   assert.equal(judge({ type: 'type', text: 'Ar' }, BULK, { typeOptions: [] }), 'permission/page:shortcut', 'no option read: the shortcut fallback still asks')
 })
 
+test('CU-370: an unread option list and a bare select on a navigation key ask unknown (cu-coordinator 20:15Z)', () => {
+  assert.equal(judge({ type: 'type', text: 'Del' }, BULK, { typeOptions: { unread: true } }), 'unknown_target/select:options_unread')
+  for (const key of ['ARROWDOWN', 'PAGEDOWN', 'END', 'ENTER']) assert.equal(judge({ type: 'keypress', keys: [key] }, BULK), 'unknown_target/select:option_unknown', key)
+  assert.equal(policy.classify({ type: 'keypress', keys: ['ARROWDOWN'] }, { url: 'app:com.example.app', target: { role: 'AXPopUpButton', name: 'Sort' } }).rule === 'select:option_unknown', false, 'the desktop route keeps its rules')
+})
+
 test('CU-370 negatives and named over-ask: an editable combobox is text entry; a harmless option name asks once as a shortcut', () => {
   assert.equal(judge({ type: 'type', text: 'Delete' }, { role: 'combobox', name: 'Search', editable: true }), 'allow', 'an editable combobox takes text')
   assert.equal(judge({ type: 'type', text: 'Newest' }, { tag: 'select', role: 'combobox', name: 'Sort', editable: false }), 'permission/page:shortcut', "named over-ask: 'Newest' into a sort select")

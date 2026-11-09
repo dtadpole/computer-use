@@ -992,6 +992,17 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       return { decision: 'confirm', class: 'unknown_target', classes: ['unknown_target'], rule: 'select:option_unread', reason: `press ${(action.keys ?? []).join('+')} on "${target?.name ?? 'a list'}", whose highlighted option could not be read` }
     }
     const choiceTarget = target && /combo|listbox|select/i.test(String(target.role ?? '')) && target.editable !== true
+    // cu-coordinator 20:15Z, both asks (the safe direction): a type whose options the driver could not read
+    // (typeOptions { unread: true }), and on a web page a navigation key on a bare select-like focus - keyTarget threw or
+    // read no option, so where the key lands is unknown.
+    if (action.type === 'type' && choiceTarget && context.typeOptions?.unread === true) {
+      return { decision: 'confirm', class: 'unknown_target', classes: ['unknown_target'], rule: 'select:options_unread', reason: `type into "${target?.name ?? 'a list'}", whose options could not be read` }
+    }
+    const onWebPage = context.url != null && !/^(app|desktop):/.test(String(context.url ?? ''))
+    const NAV_KEY = /^(ARROW(UP|DOWN|LEFT|RIGHT)|PAGEUP|PAGEDOWN|HOME|END|ENTER|RETURN|SPACE)$/
+    if (onWebPage && choiceTarget && target.selectOption !== true && target.radioChoice !== true && ['keypress', 'hold_key'].includes(action.type) && [...keysOf(action)].some((key) => NAV_KEY.test(key))) {
+      return { decision: 'confirm', class: 'unknown_target', classes: ['unknown_target'], rule: 'select:option_unknown', reason: `press ${(action.keys ?? []).join('+')} on "${target?.name ?? 'a list'}", where the option it lands on could not be read` }
+    }
     // The driver marks a radio the key checks with radioChoice (cu-coordinator 20:11Z): judged the same way by its name.
     const optionRead = (target?.selectOption === true || target?.radioChoice === true) && action.type !== 'type'
     // A choice whose landing the driver read (the option, the radio, or every option a type passes through) is judged by
