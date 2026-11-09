@@ -14,6 +14,7 @@ test('CU-372: a popup item landed on by arrow or type is judged by its title; un
   assert.equal(judge({ type: 'keypress', keys: ['ARROWDOWN'] }, { origin: APP, role: 'AXMenuItem', name: 'Delete', selectOption: true }), 'delete')
   assert.equal(judge({ type: 'type', text: 'Del' }, POPUP, { typeOptions: [{ role: 'AXMenuItem', name: 'Delete' }] }), 'delete')
   assert.equal(judge({ type: 'keypress', keys: ['ENTER'] }, { ...POPUP, optionUnread: true }), 'unknown_target')
+  assert.equal(judge({ type: 'keypress', keys: ['ARROWDOWN'] }, { origin: APP, role: 'AXMenuItem', name: ['Remove account pat', 'example.com'].join('@'), selectOption: true }), 'delete', 'the raw title is judged (cu-researcher)')
   assert.equal(judge({ type: 'type', text: 'Del' }, POPUP, { typeOptions: { unread: true } }), 'unknown_target')
 })
 

@@ -682,9 +682,6 @@ export async function runTask(options) {
   // field showed is kept by its key - the first key and a later one into the same box are judged under the same names.
   const placeholderKeys = new Map()
   const remembered = (given) => {
-    // CU-372 privacy (cu-researcher, cu-coordinator 22:34Z): a landed menu item's title becomes the target's name - a
-    // value-shaped one (a card, an address book entry) is blanked before it is judged as a name or reaches a record.
-    if (given && typeof given === 'object' && given.selectOption === true && typeof given.name === 'string' && looksSensitive(given.name.trim())) given = { ...given, name: '' }
     if (!given || typeof given !== 'object' || typeof given.fieldKey !== 'string' || given.fieldKey === '') return given
     let t = given
     if (typeof t.placeholder === 'string' && t.placeholder.trim() !== '') placeholderKeys.set(t.fieldKey, t.placeholder)
@@ -1007,7 +1004,10 @@ export async function runTask(options) {
   const recordedTarget = (target, decision) => {
     if (!target) return null
     const app = { origin: target.origin ?? null, role: target.role ?? null }
-    return inScope(target.origin) && !String(decision.rule ?? '').startsWith('excluded') ? { ...app, name: target.name ?? '' } : app
+    // CU-372 privacy (cu-researcher, cu-coordinator 22:43Z): the raw title is judged, and only the record is redacted - a
+    // value-shaped name (a card, an e-mail address) is recorded as '[redacted]'.
+    const name = typeof target.name === 'string' && looksSensitive(target.name.trim()) ? '[redacted]' : (target.name ?? '')
+    return inScope(target.origin) && !String(decision.rule ?? '').startsWith('excluded') ? { ...app, name } : app
   }
 
   // CU-182: a browser record names the target's frame origin and role, and its accessible name only when the site
