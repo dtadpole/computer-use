@@ -1,22 +1,26 @@
 ---
 title: Sensitive classes - everything the agent must never type unasked
 created: 2026-11-07T14:34:22Z
-modified: 2026-11-09T01:02:00Z
+modified: 2026-11-09T02:00:00Z
 level: L1
-version: 0.4.8
+version: 0.4.9
 description: The D-061 table - every sensitive class with its value rule, its field-name rule, the asserting test and the live row; rows live in an executable matrix, gaps are children of CU-145.
 status: unverified
 grounded_in:
   - source: D-061 and CU-171 (three sensitive-data gaps in one afternoon - CU-163, CU-164, CU-167)
   - source: _tests_/agent-core/sensitive-classes.test.mjs (the executable matrix)
   - source: 'the CU-171 probe of classify() on main and on #407'
+  - source: CU-301 design note 0.1 (2026-11-08 23:58Z; a password pressed key by key)
+  - source: CU-297 design note 0.1 (2026-11-08 23:51Z; a cross-origin frame's title as its field name)
+  - source: frame-focus.md 0.2 (CU-300; the inner field's frameHost)
 ---
 
 # Sensitive classes
 
-A typed value is judged twice: by the value and by a text entry's name - on a web page a frame host's own name counts
-(CU-297), and a printable key pressed into an entry counts as typing it (CU-301). Each value rule and name is a row of
-`_tests_/agent-core/sensitive-classes.test.mjs`; todo rows mark open under-asks.
+A typed value is judged twice: by the value and by a text entry's name, never a button's. On a web page a frame host's
+name counts too (CU-297), and an inner field's frameHost name beside its own (CU-300). A key pressed or held into an
+entry - one character or Space, Shift or Option at most - is typing it (CU-301); a Command or Control chord is not.
+Each rule is a row of `_tests_/agent-core/sensitive-classes.test.mjs`; todo rows mark open under-asks.
 
 | Group | By value | By name (policy.mjs's lists, compared normalised) |
 |---|---|---|
