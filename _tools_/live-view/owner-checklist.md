@@ -37,10 +37,11 @@ step. Nothing you own is touched, no setting changes, and the helper is CUHelper
 | # | You | How long |
 |---|---|---|
 | 1 | **Part 1, step 4 (CU-11).** At the prompt (see below), Confirm. When cu-verifier says so, press one key on the Mac: the run pauses before its next action. Then on the control link: **Resume**, **Take over**, **Hand back**, **Stop**. | about 8 minutes |
-| 2 | **Part 2, G2 (CU-119).** At the prompt, Confirm. While the run holds a key, press any key once: the held key comes up and the run pauses. Then **Stop**. | about 1 minute |
+| 2 | **Part 2, G2 (CU-119), live only, no rehearsal.** At the prompt, Confirm. While the run holds a key, press any key once: the held key comes up and the run pauses. Then **Stop**. | about 1 minute |
 | 3 | **Part 3, the Replace chain (CU-135).** At the prompt, Confirm. Answer the file choice **Approve once**; answer the separate Replace question **Decline**. | about 2 minutes |
 
-Each control press takes effect at once: the rehearsal measured 6 to 34 ms from a press to the new state. After
+Part 2 was not rehearsed: no scripted stand-in can act during a hold (CU-343), so the dry run and your press here
+are its evidence; no rehearsal pass covers it. Each control press takes effect at once: the rehearsal measured 6 to 34 ms from a press to the new state. After
 Resume or Hand back, the agent waits 1.5 s of hands-off before its next action.
 
 ## The prompt at each part's start

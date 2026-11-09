@@ -54,6 +54,11 @@ A run holds one key down for a few seconds (cu-verifier names the key). While it
 
 Report: the key still down after your press, or a notice that does not name the key.
 
+**Live only, no rehearsal** (CU-343: a scripted stand-in cannot act during a hold). cu-verifier records, for your
+press during the hold_key turn, in event order: the time of your press; the helper's key-up for the held key (or the
+held-keys marker cleared) and its time; the pause with sender `local_input`; and no synthetic event after your press
+until a resume.
+
 ## Part 3 - the Replace chain (CU-135), about 1 minute
 
 A run exports `summary.txt` into a folder that already has one.
