@@ -1,8 +1,8 @@
 ---
 title: computer-use
 created: 2026-11-01T09:06:25Z
-modified: 2026-11-08T10:20:00Z
-version: 3.1.0
+modified: 2026-11-09T13:47:48Z
+version: 3.1.1
 description: 'The computer-use repository - a computer-use agent for native macOS, its code, tests, verifiers and the [cu] team''s records, in one public knowledge bank.'
 grounded_in:
   - source: owner request in the dsh session 2026-11-01 (learn how computer use on ChatGPT works and implement our own)
@@ -31,7 +31,7 @@ done means is [`ULTIMATE_GOAL.md`](ULTIMATE_GOAL.md). Start with [`AGENTS.md`](A
 | [`_vendor_/browser-use/`](_vendor_/browser-use/INDEX.md) | the dependency-free Chrome DevTools client, copied unmodified with its provenance |
 | [`_logs_/`](_logs_/INDEX.md) | the repository's own action log (one JSON line per action, no session ids) |
 | [`_context_/`](_context_/INDEX.md) | research (ChatGPT computer use, desktop mechanics, model capabilities, evaluation design) and the team's operating records (decision log, working model, Linear workflow) |
-| [`_team_members_/`](_team_members_/INDEX.md) | one record per seat: responsibilities, artifacts, handover |
+| [`_seats_/`](_seats_/INDEX.md) | one record per seat: responsibilities, artifacts, handover |
 
 Issues and milestones live in Linear (team CU); a pull request names its issue with `Fixes CU-n` or
 `Part of CU-n`. The live roster (`TEAM.yaml`, with session ids) and the session-bearing operating logs stay in

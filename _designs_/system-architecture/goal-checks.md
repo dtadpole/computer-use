@@ -1,14 +1,14 @@
 ---
 title: How each ULTIMATE_GOAL row can fail a check
 created: 2026-11-01T09:24:10Z
-modified: 2026-11-05T16:23:12Z
+modified: 2026-11-09T13:47:48Z
 level: L1
-version: 0.8.1
+version: 0.8.2
 description: For each row of the project's ultimate goal, the mechanism in this design and an observable check that fails when the mechanism is broken, judged only on evidence the judged code did not write.
 status: unverified
 grounded_in:
   - source: ULTIMATE_GOAL.md@1.0.0
-  - source: _team_members_/cu-verifier/m1-testability-review.md (ffe8dcd51)
+  - source: _seats_/cu-verifier/m1-testability-review.md (ffe8dcd51)
   - source: _context_/team-operations/decision-log.yaml (D-012)
 ---
 

@@ -1,11 +1,11 @@
 ---
 title: Run analysis for computer use
 created: 2026-11-01T17:22:17Z
-modified: 2026-11-06T00:23:41Z
-version: 1.3.0
+modified: 2026-11-09T13:47:48Z
+version: 1.3.1
 description: 'Analyses of the [cu] agent''s recorded runs - failures per model and what they imply - read from run directories and fixture verdicts.'
 grounded_in:
-  - source: _team_members_/cu-researcher/responsibilities.md (2.0.0, item 4)
+  - source: _seats_/cu-researcher/responsibilities.md (2.0.0, item 4)
 ---
 
 # Run analysis

@@ -1,20 +1,20 @@
 ---
 title: Environment driver interface
 created: 2026-11-01T09:24:10Z
-modified: 2026-11-05T16:23:12Z
+modified: 2026-11-09T13:47:48Z
 level: L1
-version: 0.8.5
+version: 0.8.6
 description: The interface of the computer the agent drives - launch options, frame, screenshots with region zoom, perform in frame pixels with its effect, targets and page text for policy, screencast and human input, errors - and who calls whom.
 status: unverified
 grounded_in:
-  - source: _team_members_/cu-developer-two/environment-interface-proposal.md@1.0.0
-  - source: _team_members_/cu-developer-two/headless-chrome-measurements.md@1.3.0
+  - source: _seats_/cu-developer-two/environment-interface-proposal.md@1.0.0
+  - source: _seats_/cu-developer-two/headless-chrome-measurements.md@1.3.0
   - source: _context_/chatgpt-computer-use/api-sdk-computer-toolset.md@1.0.0
 ---
 
 # Environment driver interface
 
-Built from cu-developer-two's [proposal](../../_team_members_/cu-developer-two/environment-interface-proposal.md);
+Built from cu-developer-two's [proposal](../../_seats_/cu-developer-two/environment-interface-proposal.md);
 the decisions it asked for are in [environment-behaviour](environment-behaviour.md).
 
 ```js
