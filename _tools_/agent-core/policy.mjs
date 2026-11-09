@@ -184,7 +184,9 @@ function keyboardActivation(action, target, context = {}) {
   // CU-148: with a sheet or alert up, Command-D and Command-Delete press its Don't Save whatever holds the focus - with
   // keyboard navigation off (a default Mac) the focus is the sheet or its window, never the button. The helper reports
   // it (sheet); a Command-D right after Command-W or Command-Q in the batch is aimed at the sheet that close raises.
-  const sheetUp = target?.sheet === true || context.afterClose === true
+  // CU-364 (design note 0.1; High pending a live row): the focus may be the sheet or dialog itself, reported by its role
+  // (AXSheet) or subrole (AXDialog, AXSystemDialog) without the sheet flag - its Don't Save still takes Command-D.
+  const sheetUp = target?.sheet === true || context.afterClose === true || target?.role === 'AXSheet' || ['AXDialog', 'AXSystemDialog'].includes(target?.subrole)
   // CU-234: Command-D with Shift, Option or Control too presses the sheet's Don't Save.
   const deletes = keys.has('META') && ((keys.has('BACKSPACE') || keys.has('DELETE')) || (keys.has('D') && onlyWith('D', ['META', 'SHIFT', 'ALT', 'CTRL']) && (button || sheetUp)))
   // CU-147: exactly Backspace or Delete on a focused collection - a list, table, outline, row or cell, not a text input
