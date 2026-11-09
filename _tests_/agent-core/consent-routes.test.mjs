@@ -821,8 +821,8 @@ const SYSTEM_ROWS = [
   // takes a fullwidth comma; debugConsole is 调试控制台 / 偵錯主控台 (a REPL, CU-296).
   ['ide-terminal-zh-real-label', 'typeLs', 'vscodeTerminalZhReal', 'block:terminal_view', 'CU-279 (VS Code zh-hans terminalTextBoxAriaLabelNumberAndTitle)', 'no live row yet', 'open CU-279', { app: VSCODE_ID }],
   ['ide-terminal-zh-hant-real-label', 'typeLs', 'vscodeTerminalZhHantReal', 'block:terminal_view', 'CU-279 (VS Code zh-hant: 終端機 and a fullwidth comma)', 'no live row yet', 'open CU-279', { app: VSCODE_ID }],
-  ['ide-debug-console-zh-hans', 'typeLs', 'vscodeDebugConsoleHans', 'block:terminal_view', 'CU-296 (VS Code zh-hans debugConsole, a REPL)', 'no live row yet', 'todo CU-296', { app: VSCODE_ID }],
-  ['ide-debug-console-zh-hant', 'typeLs', 'vscodeDebugConsoleHant', 'block:terminal_view', 'CU-296 (VS Code zh-hant debugConsole, a REPL)', 'no live row yet', 'todo CU-296', { app: VSCODE_ID }],
+  ['ide-debug-console-zh-hans', 'typeLs', 'vscodeDebugConsoleHans', 'block:terminal_view', 'CU-296 (VS Code zh-hans debugConsole, a REPL)', 'no live row yet', 'open CU-296', { app: VSCODE_ID }],
+  ['ide-debug-console-zh-hant', 'typeLs', 'vscodeDebugConsoleHant', 'block:terminal_view', 'CU-296 (VS Code zh-hant debugConsole, a REPL)', 'no live row yet', 'open CU-296', { app: VSCODE_ID }],
   // Policy owner 22:06Z: the CJK console words count only in IDE apps - outside them 控制台 is a cloud dashboard
   // (阿里云控制台, 腾讯云控制台), and a refusal there would lock the agent out of it.
   ['non-ide-console-word-zh', 'typeLs', 'fixtureConsoleWordZh', 'allow', 'CU-296 negative (a dashboard word outside an IDE)', 'no live row yet', 'open CU-296', { app: FIXTURE_ID }],
