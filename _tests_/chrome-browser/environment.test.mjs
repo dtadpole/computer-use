@@ -346,6 +346,66 @@ test('CU-175/176: inspectPoint runs the real activatableAncestor and clickLabel 
   await env.close()
 })
 
+test("label click end to end: inspectPoint through the real walk resolves a <label>'s text to its control, and agent core judges that control - a CAPTCHA box hands off, a Delete button asks delete (cu-verifier's live under-ask, 9 Nov)", async () => {
+  const view = { getComputedStyle: () => ({ cursor: 'auto' }) }
+  const doc = { defaultView: view }
+  const make = (tagName, { attrs = {}, text, parent, type, control } = {}) => ({ nodeType: 1, tagName, type, innerText: text, parentElement: parent ?? null,
+    ownerDocument: doc, control, getAttribute: (name) => (name in attrs ? attrs[name] : null) })
+  const body = make('BODY')
+  const box = make('INPUT', { type: 'checkbox', parent: body })
+  const boxLabel = make('LABEL', { text: 'Verify you are human', parent: body, control: box })
+  const boxText = make('SPAN', { text: 'Verify you are human', parent: boxLabel })
+  const button = make('BUTTON', { text: 'Delete account', parent: body })
+  const buttonLabel = make('LABEL', { text: 'Delete my account now', parent: body, attrs: { for: 'del' }, control: button })
+  const ids = new Map([[51, boxText], [52, boxLabel], [53, box], [61, buttonLabel], [62, button]])
+  const idOf = (n) => [...ids].find(([, node]) => node === n)?.[0]
+  const AX = { 53: ['checkbox', 'Verify you are human'], 62: ['button', 'Delete account'] }
+  const run = (declaration, self, args) => new Function(`return (${declaration})`)().apply(self, args)
+  let hit = 51
+  const { options } = harness({
+    handlers: {
+      'DOM.getNodeForLocation': () => ({ result: { backendNodeId: hit, frameId: 'F-S1' } }),
+      'DOM.resolveNode': (params) => ({ result: { object: { objectId: `node-${params.backendNodeId}` } } }),
+      'DOM.describeNode': (params) => {
+        const id = params.backendNodeId ?? Number(String(params.objectId).replace('node-', ''))
+        return { result: { node: { backendNodeId: id, nodeName: ids.get(id).tagName, attributes: ids.get(id).type ? ['type', ids.get(id).type] : [] } } }
+      },
+      'Accessibility.getPartialAXTree': (params) => {
+        const [role, name] = AX[params.backendNodeId] ?? ['LabelText', '']
+        return { result: { nodes: [{ backendDOMNodeId: params.backendNodeId, role: { value: role }, name: { value: name } }] } }
+      },
+      'DOM.getBoxModel': () => ({ result: { model: { border: [20, 420, 320, 420, 320, 450, 20, 450] } } }),
+      'Runtime.callFunctionOn': (params) => {
+        const self = ids.get(Number(String(params.objectId).replace('node-', '')))
+        if (params.functionDeclaration.includes('CONTROL_ROLES') && params.returnByValue === false) {
+          return { result: { result: { objectId: `node-${idOf(run(params.functionDeclaration, self, []))}` } } }
+        }
+        if (params.functionDeclaration.includes('function (target)')) {
+          const target = ids.get(Number(String(params.arguments[0].objectId).replace('node-', '')))
+          return { result: { result: { value: run(params.functionDeclaration, self, [target]) } } }
+        }
+        return { result: { result: { value: { origin: 'http://127.0.0.1:43117', editable: false, href: null } } } }
+      },
+    },
+  })
+  const policy = createPolicy({ sitePolicy: () => 'allow' })
+  const judge = (target) => {
+    const verdict = policy.classify({ type: 'click', x: 30, y: 326, button: 'left' }, { url: 'http://127.0.0.1:43117/signup', target })
+    return verdict.decision === 'allow' ? 'allow' : (verdict.class ?? verdict.decision)
+  }
+  const env = await launchBrowserEnvironment(options)
+  const viaText = await env.inspectPoint({ x: 30, y: 326 })
+  assert.deepEqual([viaText.tag, viaText.role, viaText.name], ['input', 'checkbox', 'Verify you are human'], "the label's text: its check box")
+  assert.notEqual(judge(viaText), 'allow', 'the CAPTCHA box is not clicked unasked through its label')
+  hit = 52
+  assert.deepEqual([(await env.inspectPoint({ x: 30, y: 326 })).role], ['checkbox'], 'the label element itself: the same box')
+  hit = 61
+  const viaFor = await env.inspectPoint({ x: 30, y: 326 })
+  assert.deepEqual([viaFor.tag, viaFor.role, viaFor.name], ['button', 'button', 'Delete account'], 'a label for= the button: the button')
+  assert.equal(judge(viaFor), 'delete', 'the Delete button asks delete through its label')
+  await env.close()
+})
+
 test('CU-175: inspectPoint judges a label or icon inside a button as the button it activates (role, name, box, fingerprint)', async () => {
   const SPAN = 31
   const BUTTON = 77
