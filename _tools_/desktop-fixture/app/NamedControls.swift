@@ -8,7 +8,11 @@ import AppKit
 /// index, so a declined click shows as no event. The state reports each entry's length, never its text, so a typed
 /// secret never comes back through the harness. `areas` (CU-253's cells) adds up to six multi-line text areas named the
 /// same way - an AXTextArea named 'iMessage' or 'Type a new message', as a chat app's composer is - reporting only
-/// their length and line count.
+/// their length and line count. `checkboxes` (CU-323) adds up to six check boxes titled by the harness (AXCheckBox; a
+/// toggle records only 'toggled' with its index and new state), and `menuItems` up to six items of an 'Actions' menu in
+/// the menu bar (AXMenuItem; choosing one records only 'chosen' with its index). A menu item is a name, or
+/// `{name, key, shift, option}` for one bound to Command plus `key` - CU-268's disguised item is a mixed-script name
+/// bound to Command-Shift-U. The menu exists only while this screen is open.
 /// An entry of this screen: the generic state skips it, so what is typed never leaves the app (lengths only, below).
 final class NamedField: NSTextField {}
 /// A text area of this screen: like NamedField, only its length and line count leave the app.
@@ -24,6 +28,28 @@ final class NamedControls: NSObject {
   var areas: [NamedArea] = []
   var buttons: [NSButton] = []
   var pressed: [Int] = []
+  var checkboxes: [NSButton] = []
+  var toggled: [Int] = []
+  var chosen: [Int] = []
+  var menuItem: NSMenuItem?
+
+  /// One item of the Actions menu: its title and an optional Command key equivalent.
+  struct MenuEntry { let name: String; let key: String; let modifiers: NSEvent.ModifierFlags }
+
+  static func menuEntries() -> [MenuEntry] {
+    let given = Screens.params["menuItems"] as? [Any] ?? []
+    let entries = given.compactMap { raw -> MenuEntry? in
+      if let name = raw as? String { return MenuEntry(name: name, key: "", modifiers: []) }
+      guard let spec = raw as? [String: Any], let name = spec["name"] as? String else { return nil }
+      let key = String((spec["key"] as? String ?? "").lowercased().prefix(1))
+      var modifiers: NSEvent.ModifierFlags = key.isEmpty ? [] : [.command]
+      if spec["shift"] as? Bool == true, !key.isEmpty { modifiers.insert(.shift) }
+      if spec["option"] as? Bool == true, !key.isEmpty { modifiers.insert(.option) }
+      return MenuEntry(name: name, key: key, modifiers: modifiers)
+    }
+    return entries.map { MenuEntry(name: String($0.name.trimmingCharacters(in: .whitespacesAndNewlines).prefix(maxName)), key: $0.key, modifiers: $0.modifiers) }
+      .filter { !$0.name.isEmpty }.prefix(maxControls).map { $0 }
+  }
 
   static func names(_ key: String) -> [String] {
     let given = (Screens.params[key] as? [Any] ?? []).compactMap { $0 as? String }
@@ -33,12 +59,13 @@ final class NamedControls: NSObject {
   static func open(title: String) -> Bool {
     let screen = NamedControls()
     shared = screen
-    screen.build(title: title, fieldNames: names("fields"), areaNames: names("areas"), buttonTitles: names("buttons"))
+    screen.build(title: title, fieldNames: names("fields"), areaNames: names("areas"), buttonTitles: names("buttons"), checkboxNames: names("checkboxes"))
+    screen.installMenu(menuEntries())
     return true
   }
 
-  private func build(title: String, fieldNames: [String], areaNames: [String], buttonTitles: [String]) {
-    let height = CGFloat(60 + fieldNames.count * 56 + areaNames.count * 92 + (buttonTitles.isEmpty ? 0 : 50))
+  private func build(title: String, fieldNames: [String], areaNames: [String], buttonTitles: [String], checkboxNames: [String]) {
+    let height = CGFloat(60 + fieldNames.count * 56 + areaNames.count * 92 + checkboxNames.count * 32 + (buttonTitles.isEmpty ? 0 : 50))
     let content = FlippedView(frame: NSRect(x: 0, y: 0, width: 420, height: max(height, 120)))
     content.wantsLayer = true
     content.layer?.backgroundColor = NSColor.white.cgColor
@@ -82,7 +109,17 @@ final class NamedControls: NSObject {
       content.addSubview(scroll)
       areas.append(area)
     }
-    let buttonsY = CGFloat(56 + fieldNames.count * 56 + areaNames.count * 92)
+    for (index, name) in checkboxNames.enumerated() {
+      let box = NSButton(checkboxWithTitle: name, target: self, action: #selector(toggle(_:)))
+      box.tag = index
+      box.sizeToFit()  // the box's frame is its square and title only, so a click at its centre toggles it
+      box.frame = NSRect(x: 20, y: CGFloat(52 + fieldNames.count * 56 + areaNames.count * 92 + index * 32), width: min(box.frame.width, 380), height: 24)
+      box.identifier = NSUserInterfaceItemIdentifier("checkbox-\(index)")
+      Fixture.shared.controls["checkbox-\(index)"] = box
+      content.addSubview(box)
+      checkboxes.append(box)
+    }
+    let buttonsY = CGFloat(56 + fieldNames.count * 56 + areaNames.count * 92 + checkboxNames.count * 32)
     var x: CGFloat = 20
     for (index, name) in buttonTitles.enumerated() {
       let button = NSButton(title: name, target: self, action: #selector(press(_:)))
@@ -105,9 +142,69 @@ final class NamedControls: NSObject {
     Fixture.shared.record("pressed", ["index": sender.tag])
   }
 
+  /// A toggle records its index and new state only, never the box's title.
+  @objc func toggle(_ sender: NSButton) {
+    toggled.append(sender.tag)
+    Fixture.shared.record("toggled", ["index": sender.tag, "on": sender.state == .on])
+  }
+
+  /// Choosing an Actions item records its index only (a refused click never reaches here).
+  @objc func choose(_ sender: NSMenuItem) {
+    chosen.append(sender.tag)
+    Fixture.shared.record("chosen", ["index": sender.tag])
+  }
+
+  private func installMenu(_ entries: [MenuEntry]) {
+    guard !entries.isEmpty, let main = NSApp.mainMenu else { return }
+    let menu = NSMenu(title: "Actions")
+    for (index, entry) in entries.enumerated() {
+      let item = NSMenuItem(title: entry.name, action: #selector(choose(_:)), keyEquivalent: entry.key)
+      item.keyEquivalentModifierMask = entry.modifiers
+      item.target = self
+      item.tag = index
+      menu.addItem(item)
+    }
+    let top = NSMenuItem()
+    top.title = "Actions"
+    top.submenu = menu
+    main.addItem(top)
+    menuItem = top
+  }
+
+  /// CU-323: the Actions menu as Accessibility serves it in process - each item's title, role, enabled state and key
+  /// equivalent attributes (the values the helper's menu-key read sees across processes); [] when the screen is closed.
+  static func accessibilityMenus() -> [[String: Any]] {
+    guard let screen = shared, let top = screen.menuItem, NSApp.mainMenu?.items.contains(top) == true,
+          let bar = NSApp.accessibilityAttributeValue(NSAccessibility.Attribute.menuBar) as AnyObject? else { return [] }
+    func value(_ element: AnyObject, _ name: String) -> Any? { element.accessibilityAttributeValue(NSAccessibility.Attribute(rawValue: name)) }
+    func kids(_ element: AnyObject) -> [AnyObject] { (value(element, "AXChildren") as? [AnyObject]) ?? [] }
+    return kids(bar).compactMap { top -> [String: Any]? in
+      guard value(top, "AXTitle") as? String == "Actions" else { return nil }
+      let items = kids(top).flatMap(kids).filter { value($0, "AXRole") as? String == "AXMenuItem" }.map { item -> [String: Any] in
+        ["title": value(item, "AXTitle") as? String ?? "", "role": value(item, "AXRole") as? String ?? "",
+         "enabled": (value(item, "AXEnabled") as? Bool) ?? NSNull(), "char": (value(item, "AXMenuItemCmdChar") as? String) ?? NSNull(),
+         "modifiers": (value(item, "AXMenuItemCmdModifiers") as? NSNumber)?.intValue ?? NSNull()]
+      }
+      // Where the menu bar shows it, so a live row can open it with a click: global points from the primary display's
+      // top-left, as `windows` reports (in process, Accessibility gives AppKit's bottom-left origin; flipped here).
+      let origin = (value(top, "AXPosition") as? NSValue)?.pointValue ?? .zero
+      let size = (value(top, "AXSize") as? NSValue)?.sizeValue ?? .zero
+      let primaryHeight = NSScreen.screens.first?.frame.height ?? 0
+      return ["title": "Actions", "items": items, "frame": ["x": origin.x, "y": primaryHeight - origin.y - size.height, "width": size.width, "height": size.height]]
+    }
+  }
+
+  static func uninstallMenus() {
+    guard let screen = shared, let top = screen.menuItem, let main = NSApp.mainMenu, main.items.contains(top) else { return }
+    main.removeItem(top)
+    screen.menuItem = nil
+  }
+
   static func fields() -> [String: Any] {
     guard Screens.current == task, let screen = shared else { return [:] }
     return ["namedFieldLengths": screen.fields.map { $0.stringValue.count }, "namedAreaLengths": screen.areas.map { $0.string.count },
-            "namedAreaLines": screen.areas.map { $0.string.components(separatedBy: "\n").count }, "namedPressed": screen.pressed]
+            "namedAreaLines": screen.areas.map { $0.string.components(separatedBy: "\n").count }, "namedPressed": screen.pressed,
+            "namedChecked": screen.checkboxes.map { $0.state == .on ? 1 : 0 }, "namedToggled": screen.toggled, "namedChosen": screen.chosen,
+            "namedMenuItems": screen.menuItem?.submenu?.items.count ?? 0]
   }
 }

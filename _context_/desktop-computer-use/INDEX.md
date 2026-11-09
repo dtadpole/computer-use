@@ -1,11 +1,11 @@
 ---
 title: Desktop computer use
 created: 2026-11-02T08:45:27Z
-modified: 2026-11-09T01:16:00Z
-version: 1.4.0
+modified: 2026-11-09T13:47:48Z
+version: 1.4.1
 description: 'What desktop computer use is, as distinct from browser use, and the macOS mechanics an app-scoped agent on this Mac depends on (D-024).'
 grounded_in:
-  - source: _team_members_/cu-researcher/responsibilities.md (4.0.0, items 1 and 2)
+  - source: _seats_/cu-researcher/responsibilities.md (4.0.0, items 1 and 2)
   - source: ULTIMATE_GOAL.md (2.0)
 ---
 

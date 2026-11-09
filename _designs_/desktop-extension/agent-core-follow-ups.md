@@ -1,14 +1,14 @@
 ---
 title: Agent-core follow-ups after the desktop design 0.3.3
 created: 2026-11-02T11:53:05Z
-modified: 2026-11-06T10:13:32Z
+modified: 2026-11-09T13:47:48Z
 level: L1
-version: 0.4.8
+version: 0.4.9
 description: The agent-core changes landed after design 0.3.3 from red-team, verifier, developer and live-run findings, each with its rule, pull request and test.
 status: unverified
 grounded_in:
   - source: _designs_/desktop-extension/agent-core-changes.md@0.3.7
-  - source: _team_members_/cu-researcher/red-team-retest-2.md
+  - source: _seats_/cu-researcher/red-team-retest-2.md
 ---
 
 # Agent-core follow-ups after 0.3.3

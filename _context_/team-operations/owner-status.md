@@ -1,14 +1,14 @@
 ---
 title: Computer use on the Mac mini - one-page status for the owner
 created: 2026-11-06T04:55:00Z
-modified: 2026-11-09T08:11:15Z
+modified: 2026-11-09T13:47:48Z
 level: L2
-version: 1.4.0
+version: 1.4.1
 status: unverified
 description: 'What the [cu] team has built and proven, what is left, and the owner actions that are still open - one page, kept current by the coordinator.'
 grounded_in:
   - source: ULTIMATE_GOAL.md@2.0.0
-  - source: _team_members_/cu-verifier/ultimate-goal-2-verdict.md@0.9.56 (in review)
+  - source: _seats_/cu-verifier/ultimate-goal-2-verdict.md@0.9.56 (in review)
   - source: _context_/team-operations/decision-log.yaml (D-034, D-052, D-063, D-079 to D-096)
 ---
 

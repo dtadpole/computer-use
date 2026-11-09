@@ -1,18 +1,18 @@
 ---
 title: ULTIMATE_GOAL 2.0 verdict, row by row - live, in progress
 created: 2026-11-02T10:22:00Z
-modified: 2026-11-09T12:15:00Z
+modified: 2026-11-09T14:12:00Z
 level: L1
-version: 0.9.59
+version: 0.9.61
 description: cu-verifier's per-row state of the desktop ULTIMATE_GOAL after the owner's grant - live evidence so far from the runbook on the Mac mini beside the pre-grant verifiers, and what each row still needs. No row is held until its live half holds.
 status: unverified
 grounded_in:
   - source: ULTIMATE_GOAL.md@2.0.0
   - source: github.com/dtadpole/computer-use/_verifiers_/INDEX.md
-  - source: _team_members_/cu-verifier/evidence-audit.md@1.0.0
+  - source: _seats_/cu-verifier/evidence-audit.md@1.0.0
 ---
 
-# ULTIMATE_GOAL 2.0: live, in progress (CUHelper 0.2.58, dtadpole/computer-use)
+# ULTIMATE_GOAL 2.0: live, in progress (CUHelper 0.2.62, dtadpole/computer-use)
 
 Seven of nine rows hold live. Consent and safety does not hold yet. Since 0.9.53 these D-063 under-asks closed live:
 Services chords and their menu context (CU-249, CU-250, CU-256), API tokens and D-061 names, including in URLs
@@ -30,14 +30,15 @@ Saved menu items, a mixed-script item bound to a chord - have live rows on CU-32
 item is open. Since 0.9.58: a CAPTCHA check box is handed to the person (CU-263), an exposed page's ARIA menu item and
 buttons inside same- and cross-origin frames are refused with the helper reading them inside the web area (CU-328), and
 the D-059 table is re-signed on main 445c98e - every cell closed live or under D-065, nine allow-side named limits
-(CU-145). Still open: CU-336 (Medium: a CVV or expiry typed into an unnamed cross-origin frame goes through on main,
+(CU-145). Since 0.9.59: a full SSN or card split across unnamed boxes asks at the box that completes it, typed or
+key by key (CU-340, High), main before the fix taking both whole. Still open: CU-336 (Medium: a CVV or expiry typed into an unnamed cross-origin frame goes through on main,
 measured 11:37Z; its fix is OK'd and measured on the merge) and so the D-061 re-sign, then CU-135's Replace chain and
 step 4 with the owner (CU-11, CU-119, CU-203).
 Runs sit on each claim's CU issue, re-proven by the [evidence audit](evidence-audit.md) (CU-53).
 
 | Row | Live evidence | State |
 |---|---|---|
-| environment | signed helper 0.2.61 (main e49b9cb, sha256 860e20ac): self-test, peer, entry and second-helper refusals; one desktop run at a time, enforced hold (CU-75), owner idle first, a waiting gate first (CU-276); every non-bye end bounded, exit 70 (CU-227); after each install (0.2.53 to 0.2.61): contents and Q-D15 (0.2.61: all pass, 08:38Z); a dry-run burst no longer starves the next live start (CU-303); only configured checkouts are entry points (CU-299), step 4 | holds |
+| environment | signed helper 0.2.62 (main 3f1cd68, sha256 1586992b): self-test, peer, entry and second-helper refusals; one desktop run at a time, enforced hold (CU-75), a nested hold never ends its outer one (CU-327), owner idle first, a waiting gate first (CU-276); every non-bye end bounded, exit 70 (CU-227); the helper's one Accessibility write read first and given back at every run end - bye, socket loss, left alone when already on (CU-329); after each install (0.2.53 to 0.2.62): contents and Q-D15 (0.2.62: all pass, 13:31Z); a dry-run burst no longer starves the next live start (CU-303); only configured checkouts are entry points (CU-299); CU Fixture launches only inside a run or a live hold (CU-305), step 4 | holds |
 | perception | scale 1 at 1920x1080, 100+ runs; simulated Retina: precision 24/24 at 1.04 and 1.32 px/pt, keypad 18/18 across 1, 1.04 and 1.32, 42 rows re-judged with 0 discrepancies (CU-61, CU-70, CU-71, CU-74, CU-81, CU-83) | holds; a real Retina or second display not shown |
 | action contract | click, double-click, type, chords, drag, menus, scroll, right-click, timed holds, button down and up (CU-64); a drag crossing another app is refused (CU-36) | holds; the bare-desktop crossing is dry-run only |
 | agent loop | Sonnet and Opus unattended: 74 rows (CU-8) and 76 on 0.2.25, re-judged with 0 discrepancies; screenshot pruning is off by default when turns carry thinking (CU-65, CU-84) | holds |

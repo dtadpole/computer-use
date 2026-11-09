@@ -1,15 +1,15 @@
 ---
 title: Open questions and review status
 created: 2026-11-01T09:24:10Z
-modified: 2026-11-05T16:23:12Z
+modified: 2026-11-09T13:47:48Z
 level: L1
-version: 0.8.3
+version: 0.8.4
 description: The questions this draft still needs answered before approval, the defaults it assumes until then, what each review changed, and the review state per seat.
 status: unverified
 grounded_in:
-  - source: _team_members_/cu-developer-one/responsibilities.md@1.0.0
+  - source: _seats_/cu-developer-one/responsibilities.md@1.0.0
   - source: inbox answers of 2026-11-01 from cu-researcher (20261101T092843, 20261101T093356, 20261101T094654, 20261101T094804, 20261101T095252), cu-developer-two (20261101T093051, 20261101T094243, 20261101T094800), cu-verifier (20261101T094142) and cu-coordinator (20261101T093506, 20261101T093534, 20261101T094218, 20261101T094813, 20261101T095146, 20261101T095414; D-013, D-014), cu-verifier sign-off (20261101T100312), cu-researcher Q-R8 (20261101T100417)
-  - source: _team_members_/cu-verifier/m1-testability-review.md (ffe8dcd51)
+  - source: _seats_/cu-verifier/m1-testability-review.md (ffe8dcd51)
 ---
 
 # Open questions and review status

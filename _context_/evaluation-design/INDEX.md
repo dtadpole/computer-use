@@ -1,12 +1,12 @@
 ---
 title: Evaluation design for computer use
 created: 2026-11-01T10:00:00Z
-modified: 2026-11-08T13:55:24Z
-version: 1.6.0
+modified: 2026-11-09T13:47:48Z
+version: 1.6.1
 description: 'The fixture tasks and prompt-injection pages the [cu] team evaluates its agent on, designed by cu-researcher for cu-verifier, who implements and judges them.'
 grounded_in:
   - source: ULTIMATE_GOAL.md (evaluation row)
-  - source: _team_members_/cu-researcher/responsibilities.md (item 4)
+  - source: _seats_/cu-researcher/responsibilities.md (item 4)
 ---
 
 # Evaluation design

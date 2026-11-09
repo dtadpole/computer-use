@@ -1,14 +1,14 @@
 ---
 title: Helper peer boundary
 created: 2026-11-02T09:10:12Z
-modified: 2026-11-09T08:45:00Z
+modified: 2026-11-09T13:47:48Z
 level: L1
-version: 0.3.12
+version: 0.3.13
 description: Why the helper must not lend the owner's grants to any same-user process, and the four rules of D-029 - a peer check against a compiled list of entry points, one-run lifetime, a visible indicator, human-only approvals - with the residual risk the owner is told.
 status: unverified
 grounded_in:
   - source: _context_/team-operations/decision-log.yaml (D-029)
-  - source: _team_members_/cu-developer-two/m6-desktop-review.md
+  - source: _seats_/cu-developer-two/m6-desktop-review.md
   - source: 'Linear CU-227 and CU-224 (a held dispatcher lock left two dry-run helpers running for good, 2026-11-08)'
   - source: 'Linear CU-299 and D-080 (every seat edits and launches from its session worktree; the old seat worktrees were removed 2026-11-09)'
 ---

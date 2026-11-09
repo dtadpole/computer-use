@@ -1,14 +1,14 @@
 ---
-title: '[cu] Team Members'
+title: '[cu] Seats'
 created: 2026-11-01T09:06:25Z
-modified: 2026-11-02T08:52:00Z
-version: 1.0.0
-description: 'The member records of the [cu] computer-use team, one folder per seat, named for the seat.'
+modified: 2026-11-09T13:48:01Z
+version: 1.1.0
+description: 'The seat records of the [cu] computer-use team, one folder per seat, named for the seat (the folder took this name on 9 Nov, CU-332, as in the reflection roster v3).'
 grounded_in:
   - source: owner request in the dsh session 2026-11-01 (set up workspace, team and sessions for computer use)
 ---
 
-# [cu] team members
+# [cu] seats
 
 One folder per seat, named for the seat so a new direction never renames it. TEAM.yaml (the private roster) is the roster
 and holds the session ids.

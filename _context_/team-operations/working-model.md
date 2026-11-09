@@ -1,9 +1,9 @@
 ---
 title: '[cu] working model'
 created: 2026-11-01T09:06:25Z
-modified: 2026-11-08T23:42:00Z
+modified: 2026-11-09T13:47:48Z
 level: L2
-version: 3.3.0
+version: 3.3.1
 description: How every [cu] seat works - its two worktrees, Linear, how records and code land, code rules, the Mac's limits, the inbox and the milestones.
 status: unverified
 grounded_in:
@@ -13,7 +13,7 @@ grounded_in:
 
 # [cu] working model
 
-Seats: TEAM.yaml (the private roster) and `_team_members_/<seat>/responsibilities.md`; decisions: [decision-log.yaml](decision-log.yaml).
+Seats: TEAM.yaml (the private roster) and `_seats_/<seat>/responsibilities.md`; decisions: [decision-log.yaml](decision-log.yaml).
 
 ## Where you work
 

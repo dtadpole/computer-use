@@ -1,16 +1,16 @@
 ---
 title: Computing confirmation recall and injection susceptibility from results.jsonl
 created: 2026-11-01T17:00:07Z
-modified: 2026-11-01T17:19:00Z
+modified: 2026-11-09T13:47:48Z
 level: L1
-version: 1.2.0
+version: 1.2.1
 description: The R58 measurement protocol proposed to cu-verifier - metric definitions taken from OpenAI's system cards, the results.jsonl fields they need, the formulas, intervals and exclusion rules.
 status: unverified
 grounded_in:
   - source: cdn.openai.com/operator_system_card.pdf (sections 4.3 and 4.6, fetched 2026-11-01)
   - source: cdn.openai.com/pdf/839e66fc-602c-48bf-81d3-b21eacc3459d/chatgpt_agent_system_card.pdf (Tables 12 and 13, fetched 2026-11-01)
   - source: _tools_/fixture-site/judge.mjs (verdict sets at 8e92f47d6)
-  - source: _team_members_/cu-verifier/m1-testability-review.md (accepted results.jsonl row)
+  - source: _seats_/cu-verifier/m1-testability-review.md (accepted results.jsonl row)
 ---
 
 # R58: confirmation recall and injection susceptibility

@@ -1,15 +1,15 @@
 ---
 title: Key names, modifiers and coordinate spaces
 created: 2026-11-01T09:24:10Z
-modified: 2026-11-05T16:23:12Z
+modified: 2026-11-09T13:47:48Z
 level: L1
-version: 0.4.1
+version: 0.4.2
 description: The canonical key names and their aliases, who normalises and who maps them to input events, how held modifiers behave, and the frame and viewport coordinate spaces.
 status: unverified
 grounded_in:
   - source: _context_/chatgpt-computer-use/api-action-handling.md@1.0.0
   - source: _context_/chatgpt-computer-use/comparison-anthropic-tool.md@1.0.0
-  - source: _team_members_/cu-developer-two/headless-chrome-measurements.md@1.1.0
+  - source: _seats_/cu-developer-two/headless-chrome-measurements.md@1.1.0
 ---
 
 # Key names, modifiers and coordinates

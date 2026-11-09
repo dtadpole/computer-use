@@ -115,3 +115,48 @@ test('inspect --panel reads the panel selection once and says what agent core wo
   assert.deepEqual(seen.points, [], '--panel alone needs no --at')
 })
 
+
+test('CU-328: inspect prints inWebArea exactly as the driver passes it - true, false, or no key when unread (never false)', async () => {
+  const targets = [
+    { role: 'AXButton', name: 'Continue', inWebArea: true },
+    { role: 'AXTextField', name: 'Address and search', inWebArea: false },
+    { role: 'AXButton', name: 'Reload' },
+  ]
+  const { launch } = fakeDesktop({ describe: (point) => targets[point.x] ?? null })
+  const result = await inspectPoints({ seat: 'cu-verifier', apps: [FIXTURE], points: [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 0 }, { x: 3, y: 0 }], env: {}, launch, appApprovals: { covers: () => true } })
+  const read = result.points.map((p) => p.target)
+  assert.equal(read[0].inWebArea, true, 'a page control: true')
+  assert.equal(read[1].inWebArea, false, 'browser chrome: false')
+  assert.equal(Object.hasOwn(read[2], 'inWebArea'), false, 'unread: no key at all, so it cannot be read as false')
+  assert.equal(read[3], null, 'empty space stays null')
+  assert.equal(result.focused, undefined, 'no focused read unless asked')
+})
+
+test('CU-328: inspect --focused reads the focused element once (role, name, inWebArea); still no input', async () => {
+  const fake = fakeDesktop()
+  let reads = 0
+  const withFocus = (target) => async (options) => {
+    const environment = await fake.launch(options)
+    return { ...environment, frame: environment.frame, addApp: environment.addApp, inspectPoint: environment.inspectPoint, perform: environment.perform, close: environment.close, async focusedElement() { reads += 1; return target } }
+  }
+  const page = await inspectPoints({ seat: 'cu-verifier', apps: [FIXTURE], points: [], focused: true, env: {}, launch: withFocus({ role: 'AXTextField', name: 'Card number', inWebArea: true }), appApprovals: { covers: () => true } })
+  assert.deepEqual([page.focused.role, page.focused.name, page.focused.inWebArea], ['AXTextField', 'Card number', true])
+  assert.equal(reads, 1, 'one read')
+  const unread = await inspectPoints({ seat: 'cu-verifier', apps: [FIXTURE], points: [], focused: true, env: {}, launch: withFocus({ role: 'AXTextField', name: 'Search' }), appApprovals: { covers: () => true } })
+  assert.equal(Object.hasOwn(unread.focused, 'inWebArea'), false, 'an unread focus has no inWebArea key')
+  const none = await inspectPoints({ seat: 'cu-verifier', apps: [FIXTURE], points: [], focused: true, env: {}, launch: withFocus(null), appApprovals: { covers: () => true } })
+  assert.equal(none.focused, null, 'nothing approved focused: null')
+  const old = await inspectPoints({ seat: 'cu-verifier', apps: [FIXTURE], points: [], focused: true, env: {}, launch: fake.launch, appApprovals: { covers: () => true } })
+  assert.match(old.focused.error, /unsupported/, 'a driver without focusedElement says so')
+  assert.equal(fake.calls.perform, 0, 'no input posted')
+})
+
+test('CU-328: cli inspect --focused alone is valid and maps to focused: true', async () => {
+  const seen = []
+  const code = await main(['inspect', '--env', 'macos-desktop', '--seat', 'cu-verifier', '--app', FIXTURE, '--focused'], {
+    write: () => {}, env: {}, inspectPoints: async (options) => { seen.push(options); return { points: [], focused: null } },
+  })
+  assert.equal(code, 0)
+  assert.equal(seen[0].focused, true)
+  assert.deepEqual(seen[0].points, [])
+})
