@@ -6,6 +6,7 @@ import { dirname, isAbsolute, join } from 'node:path'
 
 import { createExclusions } from '../../_tools_/agent-core/exclusions.mjs'
 import { cuHome } from '../../_tools_/agent-core/lib.mjs'
+import { looksSensitive } from '../../_tools_/agent-core/policy.mjs'
 import { captureMatchesFrame, checkPoint, displayFrame, fitFactor, pngSize, rectToFrame, regionToGlobal, sizeAt, toFrame, toGlobal } from './coords.mjs'
 import { EnvironmentError, invalid, notGranted } from './errors.mjs'
 import {
@@ -645,6 +646,16 @@ function defaultButtonOf(value) {
  * control characters) and `modifiers` (AXMenuItemCmdModifiers: an integer 0-15 - Command alone is 0; +1 Shift,
  * +2 Option, +4 Control, +8 no Command). A part that is malformed is null; nothing usable at all is null.
  */
+/**
+ * CU-361 (cu-researcher): a layout label as placeholderOf reads it, except that text the value rules class as sensitive
+ * (a card, an IBAN, a bank account: policy.mjs looksSensitive) is a displayed value, not a label, and reads as none - so
+ * a summary screen's 'Card 4111...' beside a box never becomes a name anywhere.
+ */
+export function nearbyLabelOf(value) {
+  const text = placeholderOf(value)
+  return text !== null && looksSensitive(text) === null ? text : null
+}
+
 /** CU-349: a placeholder string, trimmed, at most 80 characters (longer is none, never cut), else null. */
 export function placeholderOf(value) {
   if (typeof value !== 'string') return null
@@ -1809,7 +1820,7 @@ class DesktopEnvironment {
       // helper reads it only when the entry has no title, caption or placeholder - a layout label agent core uses
       // upgrade-only. Trimmed, at most 80 characters (longer reads as none), else null (absent from an older helper, or
       // malformed). Outside the fingerprint, and never in run records.
-      nearbyLabel: placeholderOf(element.nearbyLabel),
+      nearbyLabel: nearbyLabelOf(element.nearbyLabel),
       // CU-255: the file the element shows and its URL's last component, what launch_code reads besides the name - Finder
       // may hide an extension in the title (Payload for Payload.app or install.command). Outside the fingerprint, and
       // never in run records (an event's target keeps origin, role and name); the URL's path never leaves the driver.

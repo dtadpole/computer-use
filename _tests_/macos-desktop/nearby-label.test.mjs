@@ -57,3 +57,16 @@ test('CU-361: absent (an older helper), empty or not a string is null', async ()
     assert.equal((await read({ ...BOX, nearbyLabel })).hit.nearbyLabel, null, JSON.stringify(nearbyLabel))
   }
 })
+
+test('CU-361 (cu-researcher): a static text the value rules class as sensitive is a displayed value, not a label - it reads as null', async () => {
+  const card = ['4111', '1111', '1111', '1111'].join(' ') // built from fragments: no card-shaped literal in the tree
+  const iban = ['GB82', 'WEST', '1234', '5698', '7654', '32'].join(' ')
+  for (const shown of [`Card ${card}`, card, `IBAN ${iban}`]) {
+    const { hit, focused } = await read({ ...BOX, nearbyLabel: shown })
+    assert.equal(hit.nearbyLabel, null, shown.replace(/\d/g, '#'))
+    assert.equal(focused.nearbyLabel, null)
+    for (const target of [hit, focused]) assert.ok(!JSON.stringify(target).includes(card.replace(/ /g, '').slice(0, 8)) && !JSON.stringify(target).includes('4111 1111'), 'no field carries the value')
+  }
+  assert.equal((await read({ ...BOX, nearbyLabel: 'Card number' })).hit.nearbyLabel, 'Card number', 'a label naming a card stays a label')
+})
+

@@ -479,7 +479,8 @@ enum Placeholder {
 /// half the box's height of the box's centre (the same row); the nearest wins. Else above: the candidate ends at or
 /// before the box's top (2 pt slack), at most `aboveGap` away, overlapping the box horizontally; the nearest wins. Left
 /// beats above. Trimmed; empty or more than 80 characters reads as none, never cut. Static texts' shown words only -
-/// never the entry's own value.
+/// never the entry's own value. Named limits (cu-researcher, #386): a right-to-left layout's label on the right is not
+/// read; a window past the 400-descendant walk gives none (today's behaviour). The driver drops a sensitive-looking value.
 enum NearbyLabel {
   static let maxLength = 80
   static let leftGap: CGFloat = 120
