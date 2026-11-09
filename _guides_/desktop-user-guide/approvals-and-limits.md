@@ -1,7 +1,7 @@
 ---
 title: What it does, approvals and known limits
 created: 2026-11-07T21:18:46Z
-modified: 2026-11-09T21:05:00Z
+modified: 2026-11-09T23:55:00Z
 version: 0.1.24
 level: L1
 status: unverified
@@ -20,18 +20,19 @@ grounded_in:
   - source: 'computer-use PR #294 (CU-340 - a value split across boxes asks at the completing box; digits typed after a desktop paste the run cannot read ask, a named over-ask)'
   - source: 'computer-use PR #323 and PR #331 (CU-352, CU-345 - action and field names in German, French, Spanish, Russian, Japanese and Korean; D-099 lists the rest by name)'
   - source: 'computer-use PR #356 and PR #367 (CU-363, CU-365 - a page or app key or chord that fires no menu item, outside a text field, asks)'
+  - source: 'computer-use PR #397, PR #414 and PR #417 (CU-377 drop and file paste, CU-378/CU-379 phrases; named limits)'
 ---
 
 # What it does, approvals and known limits
 
 ## What it can and cannot do
 
-It can click, long-press, Shift-click, Option-drag, type, press or hold keys (up to 10 s), scroll, drag within approved windows (across bare desktop: not yet live), use approved apps' menus, copy and paste, and choose a file in an open or save panel, with approval. It never reads or keeps your clipboard (a verification paste may replace it).
+It can click, long-press, type, press or hold keys (up to 10 s), scroll, drag within approved windows (across bare desktop: not yet live), use approved apps' menus, copy and paste, and choose a file in an open or save panel, with approval. It never reads or keeps your clipboard (a verification paste may replace it).
 
 It cannot see or act in an unapproved app (shown black); it asks first. It never acts in
-terminals (IDE terminals and debug consoles too) and launchers, password managers and Keychain, clipboard managers, System Settings, login and security
+terminals (IDE ones too) and launchers, password managers and Keychain, clipboard managers, System Settings, login and security
 prompts, installers, Disk Utility, Time Machine, Activity Monitor, other AI apps or Writing Tools, a browser's pages (use browser mode), or its own live view, and never presses a system shortcut that acts beyond the app (Services, Dock hiding, input source, keyboard access). It never saves into or opens from `~/.ssh`, launch agents,
-keychains, shell start-up files, login items or `/Applications`. A password field is handed to you, also after Show password reveals it (one never secure and labelled only by nearby text is not yet judged). So is a human check (CAPTCHA): its box, challenge or Verify.
+keychains, shell start-up files, login items or `/Applications`. A password field is handed to you, also after Show password reveals it (one never secure and labelled only by nearby text is not yet judged). So is a human check (CAPTCHA).
 
 ## Approvals
 
@@ -46,7 +47,9 @@ file choices are never pre-approved. Typed sensitive text stays out of run files
 - One display, at its starting size; moving display ends the run.
 - A leftover notification blocks clicks beneath it.
 - A run stopped mid-hold names the key; pressing it releases it.
-- A shortcut is judged as the menu item it fires; a key that fires none, outside a text field, asks.
+- A shortcut is judged as the menu item it fires; other non-editing keys outside a text field ask.
+- Bare Accept, Join, Follow and Reject are free.
+- A file copied before the run and pasted elsewhere is not asked.
 - An approved app's built-in AI counts as the app.
 - A 3- or 4-digit number or expiry typed into another site's untitled frame is asked.
 - Digits typed after an unreadable paste ask.
