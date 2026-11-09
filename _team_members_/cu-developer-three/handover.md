@@ -1,43 +1,46 @@
 ---
 title: '[cu] Developer Three (macOS helper) - handover'
 created: 2026-11-08T04:20:00Z
-modified: 2026-11-08T23:12:00Z
+modified: 2026-11-09T02:20:00Z
 level: L1
-version: 1.4.0
+version: 1.6.0
 description: 'What a fresh [cu] Developer Three session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
-  - source: cu-coordinator decision 2026-11-08 (owner's order - one successor per seat; handover before stand-down)
-  - source: Linear CU-227, CU-240, CU-252, CU-289, CU-292, CU-295 (8 Nov)
+  - source: cu-coordinator landing plan 2026-11-09 01:50Z (one install of 0.2.61 after the helper chain lands)
+  - source: Linear CU-252, CU-299, CU-303, CU-321, CU-322 (9 Nov)
 ---
 
 # [cu] Developer Three (macOS helper) - handover
 
-Seat `cu-developer-three`. Scratch scripts in `/tmp/cu-developer-three-scratch` (re-read before use):
-`install-held.sh <version>` (idle check, no gate or waiter, hold, install, READBACK), `held-run.sh <script> <purpose>`
-(an idle-checked hold around one scripted CU Fixture measurement), `locked.mjs` (run under the desktop-run lock).
+Seat `cu-developer-three`. Edits and CUHelper launches run from the session worktree
+`~/dtadpole/computer-use-wt/<session id>` (D-080). The install, held-run and lock scripts live in the seat's private
+`tools/`; `install-held.sh <version> --prove` re-checks owner idle right before its hold.
 
 ## Live state
 
-- Installed helper: 0.2.56 (READBACK OK, sha256 7e276fa7). 0.2.57 (CU-227) is on main, not yet installed; install it
-  and 0.2.58 back to back.
-- #150 (0.2.58: CU-292's floor, CU-295's helperCheckouts allowlist) was taken over by the successor at 727226c. After
-  it lands: add the two helperCheckouts entries to this Mac's local config, install, then show hd-coordinator READBACK,
-  the start-log `checkouts:` line, and noInput runs admitted from a new worktree and an old path, one refused.
+- Installed helper: 0.2.58 (8 Nov 23:37Z, sha256 0c7d9f2f). The local config's `helperCheckouts` names the main
+  checkout and the worktrees folder.
+- #165 landed (add66af): CU-252's stand-in reads names and kinds; CU-259 and CU-262 are verified.
 
-## CU-252 (in flight)
+## Helper chain (all OK'd, in cu-integrator's code lane)
 
-The stand-in's rows gave the helper nothing (probes 215355Z, 221544Z): every row hit-tests as an unnamed AXStaticText,
-and selectedItems reads unreadable. An NSView's AXFilename and AXURL do reach the helper (the AXImage target). Fix
-on branch `cu/cu-developer-three-cu-252-finder-shape` (worktree `/tmp/cu-dev3-wt-252b`): the row view drops its
-role override, and the cell (NSTableCellView) carries AXFilename and AXURL. Probe 4 on that fixture decides it; then
-open the PR. cu-developer-one's fail-closed rule (#153) asks on an unreadable read in any app.
+Land order: #182 (0.2.59, CU-303) -> #199 (boundary verifier) -> #192 (0.2.60, CU-299) -> #206 (0.2.61, CU-322).
+
+- #182: dry-run and simulated starts ask TCC nothing (a test burst ran tccd out of descriptors).
+- #192: only configured checkouts are admitted, and the config must be this user's alone. Design #191 landed.
+- #206: hitTest and focused report `inWebArea` (true, false, or null for a walk that could not finish).
+- Then ONE install of 0.2.61 with `--prove`: the session worktree admitted; a throwaway `~/computer-use--probe`,
+  an unlisted folder and `/tmp` refused. First check that cu-integrator's nightly passes `--worktree-root` (#201).
 
 ## Issues
 
-Verify: CU-227, CU-240, CU-250, CU-262, CU-289. In Progress: CU-292, CU-295 (#150). Todo: CU-203 (owner session).
+In Progress: CU-322 (High), CU-303. Todo: CU-299 (released for the WIP limit, until the install). Next: CU-321
+(does setting AXManualAccessibility expose Chrome's web tree? The helper already sets it in `exposeTree`). Verify:
+CU-203 (the owner in person).
 
 ## Rules learned
 
-Every CUHelper-starting run goes under the lock; announce a hold only after it succeeds. Never merge main into a PR in
-cu-integrator's chain. A config-read allowlist matches real paths only. Check live-row chords against macOS hotkeys.
+- Re-check owner idle right before a hold.
+- When grants read all false for a moment, read tccd in the unified log first.
+- Check Accessibility shapes across processes through the helper; an in-process read can differ.

@@ -5,7 +5,7 @@ import Foundation
 /// The helper's identity; `build.sh` writes the same bundle id into Info.plist.
 enum HelperIdentity {
   static let bundleId = "com.reflection.cu-helper"
-  static let version = "0.2.58"
+  static let version = "0.2.60"
   /// The value every synthetic event carries in `kCGEventSourceUserData`: 0x43555345, ASCII "CUSE"
   /// (input-and-targets.md, verify-kit's SYNTHETIC_TAG). Not a secret: an event from another process with this tag
   /// could only fail to pause the run, never act.
@@ -1061,5 +1061,13 @@ enum GrantRecheck {
       grants = grants.union(read())
     }
     return grants
+  }
+
+  /// CU-303: the grants a serving start reads. A start that cannot hold a grant (`--dry-run` or `--simulate-ungranted`:
+  /// the boundary never applies and its capabilities are the dry-run world or forced off) takes `.none` and asks TCC
+  /// nothing - a test suite's burst of such starts ran tccd out of file descriptors (EMFILE), and the next live start
+  /// read every grant false.
+  static func atStart(mayHoldGrants: Bool, read: () -> Grants, sleep: (TimeInterval) -> Void) -> Grants {
+    mayHoldGrants ? settled(read: read, sleep: sleep) : .none
   }
 }
