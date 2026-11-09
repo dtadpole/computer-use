@@ -22,9 +22,11 @@ test('never set: supported, no value, no writes', async () => {
 })
 
 test('a write through the Accessibility entry point is stored, read back, listed as settable, and recorded once', async () => {
+  const eventsBefore = (await fixture.state()).events?.length ?? 0
   const out = await fixture.call('manualAXSelfTest')
   assert.deepEqual([out.readBack, out.settable, out.listed, out.value, out.writes], [true, true, true, true, [true]])
   assert.deepEqual(await fixture.call('manualAX'), { supported: true, value: null, writes: [] }, 'the self-test clears after itself')
+  assert.equal((await fixture.state()).events?.length ?? 0, eventsBefore, 'a write never enters the general event log (checks count events after helper runs)')
 })
 
 test('a preset (the user or another assistive app set it) is not a write; null clears it back to no value', async () => {

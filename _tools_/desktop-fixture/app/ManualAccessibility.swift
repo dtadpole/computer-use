@@ -3,7 +3,7 @@ import AppKit
 /// CU-329 (live row 5): CU Fixture answers `AXManualAccessibility` on its application element the way an Electron app
 /// does - no value until someone sets it, then the stored boolean - so a verifier can watch CUHelper's one
 /// Accessibility write and its restore without Accessibility trust of its own. Every write from outside (the helper)
-/// is recorded in order, value only; the harness reads them over the channel (`manualAX`) and may preset the attribute
+/// is kept in order, value only, outside the general event log; the harness reads them over the channel (`manualAX`) and may preset the attribute
 /// to true (`manualAXPreset`) to show the helper's leave-alone branch. Presets are not writes.
 final class FixtureApplication: NSApplication {
   static let manualAttribute = NSAccessibility.Attribute(rawValue: "AXManualAccessibility")
@@ -31,8 +31,9 @@ final class FixtureApplication: NSApplication {
     guard attribute == Self.manualAttribute else { return super.accessibilitySetValue(value, forAttribute: attribute) }
     let on = (value as? NSNumber)?.boolValue ?? false
     manualAccessibility = on
+    // Only here, never in the fixture's general events: every helper run that has CU Fixture frontmost makes this
+    // write (and, from 0.2.62, its restore), and checks that count events after a run must not see them (cu-developer-three).
     manualWrites.append(on)
-    Fixture.shared.record("manual-ax", ["on": on])
   }
 
   /// The channel's view: the current value (null while never set) and every write in order.
