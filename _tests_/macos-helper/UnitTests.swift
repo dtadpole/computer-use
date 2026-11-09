@@ -697,7 +697,7 @@ func button(_ kind: String, _ x: Int, _ y: Int) -> JSON { ["kind": .string(kind)
 func testDispatcherBasics() {
   let h = Harness(fixtureWorld)
   let hello = h.dispatcher.hello(token: "t0k")
-  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.62", "the hello opens the run")
+  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.63", "the hello opens the run")
   check(hello["mode"] == "dry-run" && hello["grants"] == ["screen": true, "accessibility": true, "postEvents": true, "listenEvents": false], "a dry-run hello says so, with all four grants")
   check(h.ask("capture", ["maxSize": size800])["code"] == "no_scope", "capture needs a scope")
   check(h.ask("input", ["events": [key("keyDown", 1)], "mode": "global"])["code"] == "no_scope", "input needs a scope")
@@ -2023,6 +2023,15 @@ func testManualAccessibilityRestore() {
   check(ManualAccessibilityRestore.processRuns(getpid()) && !ManualAccessibilityRestore.processRuns(99_999_999), "processRuns: this process yes, an impossible pid no")
 }
 
+func testPlaceholder() {
+  // CU-349: an entry's placeholder, trimmed, at most 80 characters, entry roles only; never a value.
+  check(Placeholder.pick(role: "AXTextField", raw: "  One-time code ") == "One-time code", "an entry's placeholder, trimmed")
+  check(Placeholder.pick(role: "AXSecureTextField", raw: "PIN") == "PIN" && Placeholder.pick(role: "AXSearchField", raw: "Search") == "Search", "a secure field and a search field too")
+  check(Placeholder.pick(role: "AXButton", raw: "CVV") == nil && Placeholder.pick(role: nil, raw: "CVV") == nil, "a non-entry role reports none")
+  check(Placeholder.pick(role: "AXTextField", raw: String(repeating: "x", count: 80)) != nil && Placeholder.pick(role: "AXTextField", raw: String(repeating: "x", count: 81)) == nil, "over 80 characters reads as none, never cut")
+  check(Placeholder.pick(role: "AXTextField", raw: "   ") == nil && Placeholder.pick(role: "AXTextField", raw: nil) == nil, "empty or absent reads as none")
+}
+
 @main
 struct UnitTests {
   static func main() {
@@ -2064,6 +2073,7 @@ struct UnitTests {
     testGrantRecheck()
     testWebArea()
     testManualAccessibilityRestore()
+    testPlaceholder()
     testEndWatchdog()
     // Informational: whether the process that ran these tests is genuine node (true for Node.js Foundation builds).
     let parentIsNode = PeerCheck.satisfiesNodeRequirement(pid: getppid(), token: nil)
