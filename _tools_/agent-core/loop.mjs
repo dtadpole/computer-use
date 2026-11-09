@@ -10,7 +10,7 @@ import { createAppPolicy, opensSelection, panelDestination, panelKind, protected
 import { normaliseText } from './normalise.mjs'
 import { createPanelFolder } from './panel-folder.mjs'
 import { createExclusions } from './exclusions.mjs'
-import { createApprovalStore, createPolicy, isTextEntry, namesPasswordField, screenTask, textNamedSource } from './policy.mjs'
+import { createApprovalStore, createPolicy, isTextEntry, namesPasswordField, screenTask, textNamedSource, looksSensitive } from './policy.mjs'
 import { originPattern } from './sites.mjs'
 import { buildInfo, createRecorder, redactAction, redactTyped, runsDir } from './trajectory.mjs'
 import { MODIFIER_KEYS, normalizeKey } from './keys.mjs'
@@ -682,6 +682,9 @@ export async function runTask(options) {
   // field showed is kept by its key - the first key and a later one into the same box are judged under the same names.
   const placeholderKeys = new Map()
   const remembered = (given) => {
+    // CU-372 privacy (cu-researcher, cu-coordinator 22:34Z): a landed menu item's title becomes the target's name - a
+    // value-shaped one (a card, an address book entry) is blanked before it is judged as a name or reaches a record.
+    if (given && typeof given === 'object' && given.selectOption === true && typeof given.name === 'string' && looksSensitive(given.name.trim())) given = { ...given, name: '' }
     if (!given || typeof given !== 'object' || typeof given.fieldKey !== 'string' || given.fieldKey === '') return given
     let t = given
     if (typeof t.placeholder === 'string' && t.placeholder.trim() !== '') placeholderKeys.set(t.fieldKey, t.placeholder)
@@ -840,7 +843,8 @@ export async function runTask(options) {
     // CU-370 (cu-developer-two's contract): before a type into a native select the browser driver answers every option the
     // typed prefix passes through (Chrome's type-ahead); null when the focus is no select. A failed read is null too - the
     // policy then judges the typed text itself and asks it as a page shortcut.
-    const typeOptions = !desktop && action.type === 'type' && typeof environment.typeOptions === 'function'
+    // CU-372: the desktop driver answers typeOptions for a popup button too (helper 0.2.65), so both routes ask it.
+    const typeOptions = action.type === 'type' && typeof environment.typeOptions === 'function'
       ? await Promise.resolve(environment.typeOptions(action)).catch(() => null)
       : null
     const dragText = !desktop && last && isTextEntry(dropTarget) && typeof environment.dragText === 'function'
