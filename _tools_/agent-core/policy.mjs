@@ -88,6 +88,8 @@ const WORDS = Object.freeze({
     // (D-063), as whole phrases.
     'place bid', 'bid now', 'make offer', 'make an offer', 'accept offer', 'pledge', 'top up', 'top-up', 'add funds', 'add money',
     'cash out', 'place bet', 'place a bet', 'send tip', 'send a tip', 'tip creator',
+    'confirm bid', 'back this project', 'bet now', 'swap now', 'confirm swap', 'stake now', 'mint now', 'rent now', 'tip now',
+    'sell now', 'confirm sale',
     // CU-288 (cu-researcher's real-app wordings, round 2): a booking, an upgrade or a renewal commits money.
     'book now', 'book this', 'reserve now', 'upgrade plan', 'upgrade now', 'upgrade to pro', 'upgrade to premium', 'renew subscription', 'renew now',
     'renew plan', ...ZH_WORDS.purchase, ...LOCALE_WORDS.purchase],
@@ -99,6 +101,8 @@ const WORDS = Object.freeze({
     // cu-researcher's 13:23Z sweep: unsaved edits lost, like Discard Changes.
     'revert to saved', 'revert all changes', ...ZH_WORDS.delete, ...LOCALE_WORDS.delete],
   permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke',
+    // CU-386 (cu-coordinator 23:54Z): asking someone else for money.
+    'request money',
     // CU-258 (cu-researcher): standing choices an app keeps after the run, as whole phrases. A bare 'Allow' stays free so
     // cookie banners do not ask (named limit).
     'always allow', 'always trust', 'always open', 'allow access', "don't ask again", 'don\u2019t ask again', 'do not ask again',

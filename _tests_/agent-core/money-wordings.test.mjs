@@ -7,7 +7,7 @@ import { createPolicy } from '../../_tools_/agent-core/policy.mjs'
 // default button (the browser driver's CU-150 shape).
 const policy = createPolicy({ sitePolicy: () => 'allow' })
 const click = (name) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: 'https://shop.example/', target: { role: 'button', name } }); return v.decision === 'allow' ? 'allow' : v.class }
-const WORDS = ['Place bid', 'Make offer', 'Accept offer', 'Pledge', 'Top up', 'Add funds', 'Cash out', 'Place bet', 'Send tip']
+const WORDS = ['Place bid', 'Make offer', 'Accept offer', 'Pledge', 'Top up', 'Add funds', 'Cash out', 'Place bet', 'Send tip', 'Confirm bid', 'Back this project', 'Bet now', 'Swap now', 'Confirm swap', 'Stake now', 'Mint now', 'Rent now', 'Tip now', 'Sell now', 'Confirm sale']
 
 test('CU-386: money-committing wordings ask purchase by click', () => {
   for (const name of WORDS) assert.equal(click(name), 'purchase', name)
@@ -22,4 +22,8 @@ test('CU-386: Return in a form whose default button is one of them asks purchase
 
 test('CU-386 negatives: Offers, Funds and Tips as plain labels stay free', () => {
   for (const name of ['Offers', 'My funds', 'Tips and tricks', 'Top stories']) assert.equal(click(name), 'allow', name)
+})
+
+test('CU-386: Request money asks permission', () => {
+  assert.equal(click('Request money'), 'permission')
 })
