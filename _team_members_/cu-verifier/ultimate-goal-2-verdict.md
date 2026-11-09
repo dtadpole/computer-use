@@ -1,9 +1,9 @@
 ---
 title: ULTIMATE_GOAL 2.0 verdict, row by row - live, in progress
 created: 2026-11-02T10:22:00Z
-modified: 2026-11-09T08:12:00Z
+modified: 2026-11-09T08:46:00Z
 level: L1
-version: 0.9.56
+version: 0.9.57
 description: cu-verifier's per-row state of the desktop ULTIMATE_GOAL after the owner's grant - live evidence so far from the runbook on the Mac mini beside the pre-grant verifiers, and what each row still needs. No row is held until its live half holds.
 status: unverified
 grounded_in:
@@ -30,7 +30,7 @@ Runs sit on each claim's CU issue, re-proven by the [evidence audit](evidence-au
 
 | Row | Live evidence | State |
 |---|---|---|
-| environment | signed helper 0.2.61 (main e49b9cb, sha256 860e20ac): self-test, peer, entry and second-helper refusals; one desktop run at a time, enforced hold (CU-75), owner idle first, a waiting gate first (CU-276); every non-bye end bounded, exit 70 (CU-227); after each install (0.2.53 to 0.2.61): contents (0.2.61 passed 07:35Z), Q-D15 (5/5 to 0.2.58; on 0.2.61 next), step 4 | holds |
+| environment | signed helper 0.2.61 (main e49b9cb, sha256 860e20ac): self-test, peer, entry and second-helper refusals; one desktop run at a time, enforced hold (CU-75), owner idle first, a waiting gate first (CU-276); every non-bye end bounded, exit 70 (CU-227); after each install (0.2.53 to 0.2.61): contents and Q-D15 (0.2.61: all pass, 08:38Z); a dry-run burst no longer starves the next live start (CU-303); only configured checkouts are entry points (CU-299), step 4 | holds |
 | perception | scale 1 at 1920x1080, 100+ runs; simulated Retina: precision 24/24 at 1.04 and 1.32 px/pt, keypad 18/18 across 1, 1.04 and 1.32, 42 rows re-judged with 0 discrepancies (CU-61, CU-70, CU-71, CU-74, CU-81, CU-83) | holds; a real Retina or second display not shown |
 | action contract | click, double-click, type, chords, drag, menus, scroll, right-click, timed holds, button down and up (CU-64); a drag crossing another app is refused (CU-36) | holds; the bare-desktop crossing is dry-run only |
 | agent loop | Sonnet and Opus unattended: 74 rows (CU-8) and 76 on 0.2.25, re-judged with 0 discrepancies; screenshot pruning is off by default when turns carry thinking (CU-65, CU-84) | holds |

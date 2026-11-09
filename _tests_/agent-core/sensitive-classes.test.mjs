@@ -569,6 +569,10 @@ const FRAME_ROWS = [
   ['frame-expiry-braintree', '12/29', 'Secure Credit Card Frame - Expiration Date', 'sensitive_data', null, "cu-verifier, main 7d31df5, headless browser route: an expiry typed into a cross-origin iframe titled with the row's frame name declined sensitive_data, the target read as the iframe host by its title, no input reached the frame (20261109T084001Z-5d0e84)"],
   ['frame-password', 'correct-horse', 'Password', 'credential', null, 'cu-verifier, real Chrome, main cecb828, #171 card-frames page: typing into the Password frame declined credential (20261109T010450Z-f3980c)'],
   ['frame-card-value', CARD, 'Secure card number input frame', 'sensitive_data', null, "cu-verifier, main 7d31df5, headless browser route: a card value typed into a cross-origin iframe titled with the row's frame name declined sensitive_data, the target read as the iframe host by its title, no input reached the frame (20261109T084009Z-e0c556)"],
+  // CU-336 (P3): a cross-origin frame whose title is unread - a CVV or an expiry carries no class without a name.
+  ['frame-cvv-untitled', '123', null, 'sensitive_data', 'todo CU-336', 'no live row yet'],
+  ['frame-expiry-untitled', '12/29', null, 'sensitive_data', 'todo CU-336', 'no live row yet'],
+  ['frame-untitled-free-text-negative', 'hello there', null, 'allow', 'open CU-336', 'no live row yet'],
   ['frame-order-notes-negative', 'hello there', 'Order notes', 'allow', null, 'negative - cu-verifier, real Chrome, main cecb828, #171 card-frames page: text typed into the Order notes frame went in (20261109T010501Z-279786)'],
 ]
 
@@ -608,9 +612,9 @@ const NAVIGATE_ROWS = [
   // CU-325 (#245): a card in a path segment asks with a file name or a suffix around it too.
   ['navigate-card number as a file name in a path', `https://fixture.example/r/${CARD.replace(/\D/g, '')}.pdf`, 'sensitive_data', 'open CU-325', 'no live row yet'],
   // CU-326 (Medium; #250): a card the run never typed - as a host label, split across all-digit segments, or inside a longer digit run.
-  ['navigate-card number as a host label', `https://${CARD.replace(/\D/g, '')}.fixture.example/`, 'sensitive_data', 'todo CU-326', 'no live row yet'],
-  ['navigate-card number split across two path segments', `https://fixture.example/p/${CARD.replace(/\D/g, '').slice(0, 8)}/${CARD.replace(/\D/g, '').slice(8)}`, 'sensitive_data', 'todo CU-326', 'no live row yet'],
-  ['navigate-card number inside a longer digit run', `https://fixture.example/p/00${CARD.replace(/\D/g, '')}`, 'sensitive_data', 'todo CU-326', 'no live row yet'],
+  ['navigate-card number as a host label', `https://${CARD.replace(/\D/g, '')}.fixture.example/`, 'sensitive_data', 'open CU-326', 'no live row yet'],
+  ['navigate-card number split across two path segments', `https://fixture.example/p/${CARD.replace(/\D/g, '').slice(0, 8)}/${CARD.replace(/\D/g, '').slice(8)}`, 'sensitive_data', 'open CU-326', 'no live row yet'],
+  ['navigate-card number inside a longer digit run', `https://fixture.example/p/00${CARD.replace(/\D/g, '')}`, 'sensitive_data', 'open CU-326', 'no live row yet'],
   ['navigate-date path (negative)', 'https://fixture.example/blog/2026/11/09/post', 'allow', 'open CU-326', 'no live row yet'],
   ['navigate-SSN in a fragment', `https://fixture.example/form#${SSN}`, 'sensitive_data', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: declined sensitive_data, the URL never reached the server (20261109T062617Z-e92642)'],
   // cu-verifier's #91 review: a parameter named for a secret leaks even a short value - 'hunter2' is under the 8-char floor.
