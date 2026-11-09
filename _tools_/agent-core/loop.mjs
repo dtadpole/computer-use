@@ -6,7 +6,7 @@ import { validateBatch } from './actions.mjs'
 import { unattendedController } from './consent.mjs'
 import { createRunControl } from './control.mjs'
 import { inspectPageText } from './inspect.mjs'
-import { createAppPolicy, opensSelection, panelDestination, panelKind, protectedPath } from './app-policy.mjs'
+import { FILE_BROWSERS, createAppPolicy, opensSelection, panelDestination, panelKind, protectedPath } from './app-policy.mjs'
 import { normaliseText } from './normalise.mjs'
 import { createPanelFolder } from './panel-folder.mjs'
 import { createExclusions } from './exclusions.mjs'
@@ -842,7 +842,7 @@ export async function runTask(options) {
         : (typeof target.filename === 'string' && target.filename !== '') || /^file:/i.test(String(target.url ?? '')) ? 'file'
           // In a file browser (Finder) or a file panel, any row, cell, icon, outline item or name is a file unless known
           // otherwise - fail closed, no unmeasured attribute (cu-coordinator 21:43Z).
-          : (state?.frontmostBundleId === 'com.apple.finder' || target.panel) && /row|cell|icon|outline|image|statictext|textfield|group/i.test(String(target.role ?? '')) ? 'file'
+          : (FILE_BROWSERS.has(String(state?.frontmostBundleId ?? '')) || FILE_BROWSERS.has(String(target.origin ?? '')) || target.panel) && /row|cell|icon|outline|image|statictext|textfield|group/i.test(String(target.role ?? '')) ? 'file'
           : (typeof target.origin === 'string' && target.origin !== '' && state?.frontmostBundleId && target.origin !== state.frontmostBundleId) ? 'unknown' : 'other')
       : null
     // CU-198 (drag-text.md): the browser reads what a drag moves - once, and only when it lands on a text entry: a string,
