@@ -1,13 +1,13 @@
 ---
 title: '[cu] Developer Three (macOS helper) - handover'
 created: 2026-11-08T04:20:00Z
-modified: 2026-11-09T10:15:00Z
+modified: 2026-11-09T13:25:00Z
 level: L1
-version: 1.9.0
+version: 1.10.0
 description: 'What a fresh [cu] Developer Three session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
-  - source: cu-coordinator's goal of 2026-11-09 08:35Z (CU-329, CU-328) and CU-335 (09:53Z)
+  - source: the 0.2.62 install of 2026-11-09 13:18Z (READBACK, self-test) and its proof re-run at 13:19Z
   - source: Linear CU-328, CU-329, CU-334, CU-335 (9 Nov)
 ---
 
@@ -15,31 +15,29 @@ grounded_in:
 
 Seat `cu-developer-three`. Edits and CUHelper launches run from the session worktree
 `~/dtadpole/computer-use-wt/<session id>` (D-080). The seat's scripts live in the private `_seats_/` folder
-(`tools/`); `install-held.sh <version> --prove` re-checks owner idle right before its hold.
+(`tools/`). `install-held.sh <version> --prove` (or `--prove-only`) re-checks owner idle right before its hold.
 
 ## Live state
 
-- Installed helper: 0.2.61 from main e49b9cb (9 Nov 07:25Z), sha256 860e20ac. cu-verifier verified CU-299, CU-303 and
-  CU-322 on it.
+- Installed helper: 0.2.62 from main 3f1cd68 (9 Nov 13:18Z), sha256 1586992b, self-test 40, stable identity. The
+  proof re-run passed: the session worktree was admitted; `~/computer-use--probe`, an unlisted worktree and `/tmp`
+  were refused.
+- 0.2.62 (CU-329) reads AXManualAccessibility before writing it and gives it back at every run end.
 
 ## In flight
 
-- CU-329, helper 0.2.62: AXManualAccessibility is read first and given back at every run end. The read is
-  three-valued: unset writes; on, or a failed read, writes nothing. The design (#260) is on main. #263 (OKs from
-  three seats) waits for cu-integrator's helper chain. Then ONE announced install, and cu-verifier's row 5: the
-  attribute reads false after a run.
-- CU-328 part 1: #259 (OK'd) makes `cli.mjs inspect` print `inWebArea` as passed and adds `--focused`. CU-328 was
-  released for the WIP limit; part 2 is cu-verifier's.
-- CU-334: #265 (OK'd) bounds the hello, reply and exit waits in helper.test.mjs.
-- CU-335: #266 adds one helper build at a time on this Mac, a lockf lock at `/tmp/cu-helper-build.lock` in build.sh
-  and the test build. cu-integrator kills a gate step's process group on alarm.
+- CU-329 (Verify): cu-verifier's row 5 uses CU Fixture's observer (#292, OK'd). Expected: writes [true, false]
+  after bye or a socket loss, none with a preset, and the end log `reads: unset 1 ... restored 1`.
+- CU-328 part 1: #259 (OK'd) waits for cu-integrator; part 2 (live rows) is done.
+- CU-334 and CU-335 are on main; CU-335 is Done.
 
-## Issues
+## Next
 
-In Progress: CU-329, CU-335. Verify: CU-203 (the owner in person).
+When CU-329 and CU-328 are verified, ask cu-coordinator for the next helper item.
 
 ## Rules learned
 
-- Re-check owner idle right before a hold; never build ad-hoc helpers while a gate's helper step runs.
-- Drive the helper only through an entry point (`cli.mjs`), never in-process.
+- Run the boundary proof with the agent's node (volta). The boundary refuses Homebrew's node as not genuine.
+- Hold scripts export `CU_DESKTOP_SEAT` (CU-305) and release with the hold's token (CU-327).
+- Gate unpiped; push only on exit status 0 (CU-337). Never build ad-hoc helpers while a gate's helper step runs.
 - An idle window goes first to High consent work, then code gates, then measurements and installs (D-095).

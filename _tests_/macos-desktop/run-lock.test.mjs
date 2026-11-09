@@ -254,7 +254,8 @@ test('a hold keeps the Mac for its seat across runs: another seat between two of
   const dir = freshDir()
   const t0 = Date.parse('2026-11-06T07:00:00Z')
   const hold = await holdDesktop({ seat: 'cu-verifier', minutes: 10, reason: 'Q-D15 probe set', dir, now: () => t0 })
-  assert.deepEqual(hold, { seat: 'cu-verifier', since: '2026-11-06T07:00:00.000Z', heldAt: '2026-11-06T07:00:00.000Z', until: '2026-11-06T07:10:00.000Z', reason: 'Q-D15 probe set' })
+  assert.match(hold.token, /^[0-9a-f]{16}$/, 'CU-327: a fresh hold names its token')
+  assert.deepEqual(hold, { seat: 'cu-verifier', since: '2026-11-06T07:00:00.000Z', heldAt: '2026-11-06T07:00:00.000Z', until: '2026-11-06T07:10:00.000Z', reason: 'Q-D15 probe set', token: hold.token })
   assert.deepEqual(JSON.parse(readFileSync(join(dir, HOLD_NAME), 'utf8')), hold)
   const at = () => t0 + 60_000
   const first = await acquire(dir, { seat: 'cu-verifier', runId: 'probe-1', now: at })
@@ -276,9 +277,9 @@ test('a hold keeps the Mac for its seat across runs: another seat between two of
 test('a hold is never taken over: another seat\'s live hold refuses holdDesktop; the same seat extends its own', async () => {
   const dir = freshDir()
   const t0 = Date.parse('2026-11-06T07:00:00Z')
-  await holdDesktop({ seat: 'cu-researcher', minutes: 8, reason: 'CU-74 check', dir, now: () => t0 })
+  const first = await holdDesktop({ seat: 'cu-researcher', minutes: 8, reason: 'CU-74 check', dir, now: () => t0 })
   await assert.rejects(holdDesktop({ seat: 'cu-developer-three', minutes: 5, dir, now: () => t0 + 1000 }), held('cu-researcher'))
-  const extended = await holdDesktop({ seat: 'cu-researcher', minutes: 12, reason: 'CU-74 check, second pass', dir, now: () => t0 + 60_000 })
+  const extended = await holdDesktop({ seat: 'cu-researcher', minutes: 12, reason: 'CU-74 check, second pass', token: first.token, dir, now: () => t0 + 60_000 })
   assert.equal(extended.until, '2026-11-06T07:13:00.000Z')
   assert.equal(readHold({ dir, now: () => t0 + 60_000 }).reason, 'CU-74 check, second pass')
   // Expired, another seat may hold.
@@ -364,12 +365,12 @@ test('a chain of one seat\'s holds ends at an hour: extending past since + 60 mi
   const t0 = Date.parse('2026-11-06T08:00:00Z')
   const min = (m) => () => t0 + m * 60_000
   assert.deepEqual([MAX_HOLD_CHAIN_MINUTES, HOLD_CHAIN_GAP_MINUTES], [60, 10])
-  await holdDesktop({ seat: 'cu-verifier', minutes: 30, reason: 'step 4', dir, now: min(0) })
-  assert.equal((await holdDesktop({ seat: 'cu-verifier', minutes: 30, dir, now: min(25) })).since, '2026-11-06T08:00:00.000Z', 'an extension keeps the chain\'s start')
+  const { token } = await holdDesktop({ seat: 'cu-verifier', minutes: 30, reason: 'step 4', dir, now: min(0) })
+  assert.equal((await holdDesktop({ seat: 'cu-verifier', minutes: 30, token, dir, now: min(25) })).since, '2026-11-06T08:00:00.000Z', 'an extension keeps the chain\'s start')
   let refusal = null
-  await assert.rejects(holdDesktop({ seat: 'cu-verifier', minutes: 30, dir, now: min(50) }), (e) => { refusal = e; return code('resource_refused')(e) && e.details.reason === 'desktop_hold_cap' })
+  await assert.rejects(holdDesktop({ seat: 'cu-verifier', minutes: 30, token, dir, now: min(50) }), (e) => { refusal = e; return code('resource_refused')(e) && e.details.reason === 'desktop_hold_cap' })
   assert.deepEqual([refusal.details.since, refusal.details.capUntil], ['2026-11-06T08:00:00.000Z', '2026-11-06T09:00:00.000Z'])
-  assert.equal((await holdDesktop({ seat: 'cu-verifier', minutes: 10, dir, now: min(50) })).until, '2026-11-06T09:00:00.000Z', 'up to the cap exactly')
+  assert.equal((await holdDesktop({ seat: 'cu-verifier', minutes: 10, token, dir, now: min(50) })).until, '2026-11-06T09:00:00.000Z', 'up to the cap exactly')
   // A loop that releases and holds again does not start a fresh hour.
   assert.equal(await releaseHold({ seat: 'cu-verifier', dir, now: min(55) }), true)
   await assert.rejects(holdDesktop({ seat: 'cu-verifier', minutes: 30, dir, now: min(56) }), (e) => e.details?.reason === 'desktop_hold_cap')
@@ -379,8 +380,8 @@ test('a chain of one seat\'s holds ends at an hour: extending past since + 60 mi
   assert.equal((await holdDesktop({ seat: 'cu-verifier', minutes: 30, dir, now: min(75) })).since, '2026-11-06T09:15:00.000Z', 'a new chain after the gap')
   // An expired own hold, held again within the gap, continues its chain too.
   const dir2 = freshDir()
-  await holdDesktop({ seat: 'cu-verifier', minutes: 30, dir: dir2, now: min(0) })
-  await holdDesktop({ seat: 'cu-verifier', minutes: 30, dir: dir2, now: min(25) })
+  const own = await holdDesktop({ seat: 'cu-verifier', minutes: 30, dir: dir2, now: min(0) })
+  await holdDesktop({ seat: 'cu-verifier', minutes: 30, token: own.token, dir: dir2, now: min(25) })
   await assert.rejects(holdDesktop({ seat: 'cu-verifier', minutes: 30, dir: dir2, now: min(60) }), (e) => e.details?.reason === 'desktop_hold_cap', 'expired at 55, held again at 60: same chain')
   assert.equal((await holdDesktop({ seat: 'cu-verifier', minutes: 30, dir: dir2, now: min(66) })).since, '2026-11-06T09:06:00.000Z', 'gap of 11 minutes: new chain')
 })
@@ -388,8 +389,8 @@ test('a chain of one seat\'s holds ends at an hour: extending past since + 60 mi
 test('every hold, extension and release is one line of hold.log', async () => {
   const dir = freshDir()
   const t0 = Date.parse('2026-11-06T09:00:00Z')
-  await holdDesktop({ seat: 'cu-verifier', minutes: 10, reason: 'overlap pass', dir, now: () => t0 })
-  await holdDesktop({ seat: 'cu-verifier', minutes: 20, reason: 'overlap pass, longer', dir, now: () => t0 + 60_000 })
+  const { token } = await holdDesktop({ seat: 'cu-verifier', minutes: 10, reason: 'overlap pass', dir, now: () => t0 })
+  await holdDesktop({ seat: 'cu-verifier', minutes: 20, reason: 'overlap pass, longer', token, dir, now: () => t0 + 60_000 })
   await releaseHold({ seat: 'cu-verifier', dir, now: () => t0 + 120_000 })
   const lines = readFileSync(join(dir, HOLD_LOG_NAME), 'utf8').trim().split('\n').map((line) => JSON.parse(line))
   assert.deepEqual(lines.map((line) => [line.action, line.seat]), [['hold', 'cu-verifier'], ['extend', 'cu-verifier'], ['release', 'cu-verifier']])
@@ -453,7 +454,7 @@ test('CU-120: heldAt is this hold\'s own start beside since, the chain\'s - a re
   assert.equal(first.since, iso(0))
   assert.equal(first.heldAt, iso(0))
   // An extension of the live hold keeps its heldAt.
-  const extended = await holdDesktop({ seat: 'cu-verifier', minutes: 5, reason: 'first, longer', dir, now: () => at(3) })
+  const extended = await holdDesktop({ seat: 'cu-verifier', minutes: 5, reason: 'first, longer', token: first.token, dir, now: () => at(3) })
   assert.equal(extended.since, iso(0))
   assert.equal(extended.heldAt, iso(0), 'an extension is the same hold')
   // Released, then held again within the gap: the chain continues (since), the hold is new (heldAt).
