@@ -806,14 +806,20 @@ final class DryRunCapabilities: Capabilities {
   /// `shaped`, plus `panel` for an approved element, computed by PanelMarker from the declared ancestry.
   private func marked(_ value: JSON?, scope: [String], windowPanel: String?) -> JSON {
     guard case .object(var fields) = shaped(value, scope: scope) else { return .null }
-    // Only the declared ancestry marks a panel, never a declared `panel` key (so R13's mutants meet real code).
+    // Only the declared ancestry marks a panel or a web area, never a declared `panel` or `inWebArea` key (so the
+    // mutants meet real code).
     fields["panel"] = nil
+    fields["inWebArea"] = nil
     let shape = JSON.object(fields)
     guard fields["role"] != .null || fields["frame"] != .null, let object = value?.object else { return shape }
     var path: [(identifier: String?, role: String?)] = [(object["identifier"]?.string, object["role"]?.string)]
     for ancestor in object["ancestors"]?.array ?? [] { path.append((ancestor.object?["identifier"]?.string, ancestor.object?["role"]?.string)) }
     var ending: PanelMarker.Ending = object["ancestorsEnd"]?.string == "error" ? .error : object["ancestorsEnd"]?.string == "limit" ? .limit : .top
     if path.count >= PanelMarker.maxDepth { ending = .limit }
+    // CU-322, by the live walk: `inWebArea` from the declared ancestry (or an element that is the AXWebArea itself).
+    if object["ancestors"] != nil || object["role"]?.string == WebArea.role {
+      fields["inWebArea"] = WebArea.contains(path: path.map { $0.role }, ending: ending).map { .bool($0) } ?? .null
+    }
     if object["ancestors"] == nil, let windowPanel {
       // A window declared as an AppKit panel: its sheet carries the identifier, or the walk failed ('unknown'). A hit
       // on the window's empty space is the sheet itself.
@@ -821,7 +827,7 @@ final class DryRunCapabilities: Capabilities {
       if windowPanel == "unknown" { ending = .error } else { path.append((windowPanel + "-panel", "AXSheet")) }
       if windowPanel != "unknown" { path.append((nil, "AXWindow")) }
     }
-    if path.last?.role != "AXWindow", path.last?.role != "AXApplication", ending == .top, object["ancestors"] == nil, windowPanel == nil { return shape }
+    if path.last?.role != "AXWindow", path.last?.role != "AXApplication", ending == .top, object["ancestors"] == nil, windowPanel == nil { return .object(fields) }
     if let kind = PanelMarker.kind(path: path, ending: ending) { fields["panel"] = .string(kind) }
     return .object(fields)
   }

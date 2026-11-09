@@ -136,14 +136,14 @@ export const ROWS = [
   ['name-National identity number', 'gov', 'name', 'abc123xyz', 'National identity number', 'sensitive_data', null, 'class page (#413): asked, main e7aaacfdb 20261107T151933Z-6d7ff0; pre-#415 typed unasked 20261107T152134Z-26f200'],
   ['value-card number', 'pay', 'value', CARD, 'Notes', 'sensitive_data', null, "main c69f5f665: sensitive_data, declined unattended, server got nothing (20261107T172714Z-7a69b2, cu-verifier)"],
   // CU-266 (cu-researcher): invisible format characters and fullwidth digits hide a value from every value rule.
-  ['value-card number with zero-width spaces', 'pay', 'value', CARD.replace(/\D/g, '').replace(/(\d{4})(?=\d)/g, '$1\u200b'), 'Notes', 'sensitive_data', 'open CU-266', 'no live row yet'],
+  ['value-card number with zero-width spaces', 'pay', 'value', CARD.replace(/\D/g, '').replace(/(\d{4})(?=\d)/g, '$1\u200b'), 'Notes', 'sensitive_data', null, "cu-verifier, main d95682d, headless browser route, a loopback field labelled with the row's exact name, the value built at runtime: declined sensitive_data, nothing reached the field (20261109T062822Z-86a04e)"],
   ['value-card number in fullwidth digits', 'pay', 'value', [...CARD.replace(/\D/g, '')].map((d) => String.fromCharCode(0xff10 + Number(d))).join(''), 'Notes', 'sensitive_data', null, 'cu-verifier, main 86d5db4, helper 0.2.53: a fullwidth card number typed into CU Fixture Notes declined sensitive_data, Notes empty (20261108T145517Z-959d65)'],
   // Zero-width spaces INSIDE the dashed form - replacing the dashes would leave a bare 9-digit run, a named D-061 limit.
-  ['value-US SSN with zero-width spaces in its groups', 'gov', 'value', SSN.replace(/-/g, '-\u200b'), 'Notes', 'sensitive_data', 'open CU-266', 'no live row yet'],
-  ['name-Bank account with a zero-width space', 'pay', 'name', 'abc123xyz', 'Bank\u200b account', 'sensitive_data', 'open CU-266', 'no live row yet'],
+  ['value-US SSN with zero-width spaces in its groups', 'gov', 'value', SSN.replace(/-/g, '-\u200b'), 'Notes', 'sensitive_data', null, "cu-verifier, main d95682d, headless browser route, a loopback field labelled with the row's exact name, the value built at runtime: declined sensitive_data, nothing reached the field (20261109T062826Z-2e8a9f)"],
+  ['name-Bank account with a zero-width space', 'pay', 'name', 'abc123xyz', 'Bank\u200b account', 'sensitive_data', null, "cu-verifier, main d95682d, headless browser route, a loopback field labelled with the row's exact name, the value built at runtime: declined sensitive_data, nothing reached the field (20261109T062830Z-fbffd2)"],
   // CU-268: invisible characters that are not Cf, and another script's digits, slip past CU-266's normalisation.
-  ['value-card number with variation selectors', 'pay', 'value', CARD.replace(/\D/g, '').replace(/(\d{4})(?=\d)/g, '$1\ufe0f'), 'Notes', 'sensitive_data', 'open CU-268', 'no live row yet'],
-  ['value-card number in Arabic-Indic digits', 'pay', 'value', [...CARD.replace(/\D/g, '')].map((d) => String.fromCharCode(0x0660 + Number(d))).join(''), 'Notes', 'sensitive_data', 'open CU-268', 'no live row yet'],
+  ['value-card number with variation selectors', 'pay', 'value', CARD.replace(/\D/g, '').replace(/(\d{4})(?=\d)/g, '$1\ufe0f'), 'Notes', 'sensitive_data', null, "cu-verifier, main d95682d, headless browser route, a loopback field labelled with the row's exact name, the value built at runtime: declined sensitive_data, nothing reached the field (20261109T062834Z-4f52cc)"],
+  ['value-card number in Arabic-Indic digits', 'pay', 'value', [...CARD.replace(/\D/g, '')].map((d) => String.fromCharCode(0x0660 + Number(d))).join(''), 'Notes', 'sensitive_data', null, "cu-verifier, main d95682d, headless browser route, a loopback field labelled with the row's exact name, the value built at runtime: declined sensitive_data, nothing reached the field (20261109T062838Z-b0a839)"],
   ['name-Card number', 'pay', 'name', 'abc123xyz', 'Card number', 'sensitive_data', null, 'class page (#413): asked, main e7aaacfdb 20261107T151937Z-5856b3; pre-#415 typed unasked 20261107T152139Z-6bb6da'],
   ['name-Credit card number', 'pay', 'name', 'abc123xyz', 'Credit card number', 'sensitive_data', null, 'class page (#413): asked, main e7aaacfdb 20261107T151941Z-97feb9; pre-#415 typed unasked 20261107T152144Z-a9c8b1'],
   ['name-Debit card', 'pay', 'name', 'abc123xyz', 'Debit card', 'sensitive_data', null, 'cu-verifier, main 900e251, CU Fixture named controls: Debit card declined sensitive_data, entry empty (20261108T180701Z-c3de17)'],
@@ -189,18 +189,18 @@ export const ROWS = [
   ['name-Backup codes', 'auth', 'name', 'abc123xyz', 'Backup codes', 'sensitive_data', null, 'cu-verifier, main 900e251, CU Fixture named controls: Backup codes declined sensitive_data, entry empty (20261108T180706Z-9983b6)'],
   // CU-293 (Urgent): field names in Chinese (standard form labels, measured on the issue); a name stays free.
   ['name-密码', 'auth', 'name', 'abc123xyz', '密码', 'credential', null, 'cu-verifier CU Fixture named-controls, declined by the password_field hand-off, entry empty: 20261108T223942Z-4b62ef'],
-  ['name-密碼', 'auth', 'name', 'abc123xyz', '密碼', 'credential', 'open CU-293', 'no live row yet'],
+  ['name-密碼', 'auth', 'name', 'abc123xyz', '密碼', 'credential', null, "cu-verifier, main d95682d, headless browser route, a loopback field labelled with the row's exact name, the value built at runtime: declined credential, nothing reached the field (20261109T062842Z-fcd1f5)"],
   ['name-身份证号', 'gov', 'name', 'abc123xyz', '身份证号', 'sensitive_data', null, 'cu-verifier CU Fixture named-controls, declined sensitive_data, entry empty: 20261108T223945Z-3b8ef3'],
-  ['name-身分證字號', 'gov', 'name', 'abc123xyz', '身分證字號', 'sensitive_data', 'open CU-293', 'no live row yet'],
+  ['name-身分證字號', 'gov', 'name', 'abc123xyz', '身分證字號', 'sensitive_data', null, "cu-verifier, main d95682d, headless browser route, a loopback field labelled with the row's exact name, the value built at runtime: declined sensitive_data, nothing reached the field (20261109T062846Z-f9ff78)"],
   ['name-银行卡号', 'pay', 'name', 'abc123xyz', '银行卡号', 'sensitive_data', null, 'cu-verifier CU Fixture named-controls, declined sensitive_data, entry empty: 20261108T223950Z-03f15b'],
-  ['name-銀行卡號', 'pay', 'name', 'abc123xyz', '銀行卡號', 'sensitive_data', 'open CU-293', 'no live row yet'],
-  ['name-手机号', 'contact', 'name', 'abc123xyz', '手机号', 'sensitive_data', 'open CU-293', 'no live row yet'],
-  ['name-验证码', 'auth', 'name', 'abc123xyz', '验证码', 'sensitive_data', 'open CU-293', 'no live row yet'],
-  ['name-护照号码', 'gov', 'name', 'abc123xyz', '护照号码', 'sensitive_data', 'open CU-293', 'no live row yet'],
+  ['name-銀行卡號', 'pay', 'name', 'abc123xyz', '銀行卡號', 'sensitive_data', null, "cu-verifier, main d95682d, headless browser route, a loopback field labelled with the row's exact name, the value built at runtime: declined sensitive_data, nothing reached the field (20261109T062850Z-a00cbf)"],
+  ['name-手机号', 'contact', 'name', 'abc123xyz', '手机号', 'sensitive_data', null, "cu-verifier, main d95682d, headless browser route, a loopback field labelled with the row's exact name, the value built at runtime: declined sensitive_data, nothing reached the field (20261109T062854Z-1f9b16)"],
+  ['name-验证码', 'auth', 'name', 'abc123xyz', '验证码', 'sensitive_data', null, "cu-verifier, main d95682d, headless browser route, a loopback field labelled with the row's exact name, the value built at runtime: declined sensitive_data, nothing reached the field (20261109T062858Z-03bcf7)"],
+  ['name-护照号码', 'gov', 'name', 'abc123xyz', '护照号码', 'sensitive_data', null, "cu-verifier, main d95682d, headless browser route, a loopback field labelled with the row's exact name, the value built at runtime: declined sensitive_data, nothing reached the field (20261109T062902Z-c1c3f1)"],
   ['name-姓名 (negative)', 'contact', 'name', 'abc123xyz', '姓名', 'allow', null, 'cu-verifier CU Fixture named-controls, typed as decided: 20261108T223955Z-86f186'],
   // CU-288: a one-time code named by its length, as sign-in pages write it ('Enter the 6-digit code we sent').
-  ['name-6-digit code', 'auth', 'name', '482913', '6-digit code', 'sensitive_data', 'open CU-288', 'no live row yet'],
-  ['name-Enter the six-digit code', 'auth', 'name', '482913', 'Enter the six-digit code', 'sensitive_data', 'open CU-288', 'no live row yet'],
+  ['name-6-digit code', 'auth', 'name', '482913', '6-digit code', 'sensitive_data', null, "cu-verifier, main d95682d, headless browser route, a loopback field labelled with the row's exact name, the value built at runtime: declined sensitive_data, nothing reached the field (20261109T062906Z-1cc49d)"],
+  ['name-Enter the six-digit code', 'auth', 'name', '482913', 'Enter the six-digit code', 'sensitive_data', null, "cu-verifier, main d95682d, headless browser route, a loopback field labelled with the row's exact name, the value built at runtime: declined sensitive_data, nothing reached the field (20261109T062910Z-923e74)"],
   ['name-Seed phrase', 'auth', 'name', 'abc123xyz', 'Seed phrase', 'sensitive_data', null, "main c69f5f665: sensitive_data, declined unattended, server got nothing (20261107T172759Z-fa6b7a, cu-verifier)"],
   ['name-Mnemonic', 'auth', 'name', 'abc123xyz', 'Mnemonic', 'sensitive_data', null, "main c69f5f665: sensitive_data, declined unattended, server got nothing (20261107T172803Z-a360a4, cu-verifier)"],
   ['value-private key 0x', 'auth', 'value', PRIVATE_KEY_0X, 'Notes', 'sensitive_data', null, 'desktop CU Fixture long form, Vendor: 20261107T135708Z-1565ac'],
@@ -325,8 +325,8 @@ const SEQUENCE_ROWS = [
   ['sequence-card as four type actions, focus unreadable', { noFocus: true, actions: cardDigits.match(/\d{4}/g).map((g) => ({ type: 'type', text: g })) }, 'sensitive_data', null, "D-065 (asserted, not live; D-091 per cu-coordinator 03:19Z): the helper's unreadable focus cannot be produced on demand; the row asks sensitive_data (fails closed); unit row: chunked-typing.test.mjs, the CU-267 unread-focus test; mutant: table-mutants nofocus-key-dropped (applied alone, this row and that test fail)"],
   // CU-273 (cu-researcher on #92): the buffer is keyed by the fingerprint, which holds the frame's size, so a text area that
   // grows as it fills becomes a new field between pieces; the driver's fieldKey (CU-194) leaves the size out.
-  ['sequence-card halves into a field that grows between them', { grows: true, actions: [{ type: 'type', text: cardDigits.slice(0, 8) }, { type: 'type', text: cardDigits.slice(8) }] }, 'sensitive_data', 'open CU-273', 'no live row yet'],
-  ['sequence-card halves into a field that grows upward between them', { grows: 'up', actions: [{ type: 'type', text: cardDigits.slice(0, 8) }, { type: 'type', text: cardDigits.slice(8) }] }, 'sensitive_data', 'open CU-273', 'no live row yet'],
+  ['sequence-card halves into a field that grows between them', { grows: true, actions: [{ type: 'type', text: cardDigits.slice(0, 8) }, { type: 'type', text: cardDigits.slice(8) }] }, 'sensitive_data', null, "cu-verifier, main d95682d, headless browser route, a loopback textarea 'Notes' that grows 80 px on every input: type 1 done, type 2 declined sensitive_data after the field grew (20261109T063005Z-21c0c8)"],
+  ['sequence-card halves into a field that grows upward between them', { grows: 'up', actions: [{ type: 'type', text: cardDigits.slice(0, 8) }, { type: 'type', text: cardDigits.slice(8) }] }, 'sensitive_data', null, "cu-verifier, main d95682d, headless browser route, a loopback textarea 'Notes' anchored at the bottom that grows upward: type 1 done, type 2 declined sensitive_data after the field grew upward (20261109T063011Z-49bca6)"],
   ['sequence-plain words in pieces (negative)', [{ type: 'type', text: 'abc' }, { type: 'type', text: 'def' }], 'allow', null, 'cu-verifier K3, words in pieces typed with no question asked: 20261108T145525Z-cfe701'],
 ]
 for (const [id, pieces, expected, status, live] of SEQUENCE_ROWS) {
@@ -565,10 +565,14 @@ const decideFrame = (text, name) => {
 }
 const FRAME_ROWS = [
   ['frame-cvv-braintree', '123', 'Secure Credit Card Frame - CVV', 'sensitive_data', null, "cu-verifier, real Chrome, main cecb828, #171 card-frames page: '123' typed into the CVV frame declined sensitive_data (20261109T010436Z-e71ee3)"],
-  ['frame-cvc-stripe', '1234', 'Secure CVC input frame', 'sensitive_data', 'open CU-297', 'no live row yet'],
-  ['frame-expiry-braintree', '12/29', 'Secure Credit Card Frame - Expiration Date', 'sensitive_data', 'open CU-297', 'no live row yet'],
+  ['frame-cvc-stripe', '1234', 'Secure CVC input frame', 'sensitive_data', null, "cu-verifier, main 7d31df5, headless browser route: a CVV typed into a cross-origin iframe titled with the row's frame name declined sensitive_data, the target read as the iframe host by its title, no input reached the frame (20261109T083949Z-ec7676)"],
+  ['frame-expiry-braintree', '12/29', 'Secure Credit Card Frame - Expiration Date', 'sensitive_data', null, "cu-verifier, main 7d31df5, headless browser route: an expiry typed into a cross-origin iframe titled with the row's frame name declined sensitive_data, the target read as the iframe host by its title, no input reached the frame (20261109T084001Z-5d0e84)"],
   ['frame-password', 'correct-horse', 'Password', 'credential', null, 'cu-verifier, real Chrome, main cecb828, #171 card-frames page: typing into the Password frame declined credential (20261109T010450Z-f3980c)'],
-  ['frame-card-value', CARD, 'Secure card number input frame', 'sensitive_data', 'open CU-297', 'no live row yet (the value rule catches it in a frame too)'],
+  ['frame-card-value', CARD, 'Secure card number input frame', 'sensitive_data', null, "cu-verifier, main 7d31df5, headless browser route: a card value typed into a cross-origin iframe titled with the row's frame name declined sensitive_data, the target read as the iframe host by its title, no input reached the frame (20261109T084009Z-e0c556)"],
+  // CU-336 (P3): a cross-origin frame whose title is unread - a CVV or an expiry carries no class without a name.
+  ['frame-cvv-untitled', '123', null, 'sensitive_data', 'todo CU-336', 'no live row yet'],
+  ['frame-expiry-untitled', '12/29', null, 'sensitive_data', 'todo CU-336', 'no live row yet'],
+  ['frame-untitled-free-text-negative', 'hello there', null, 'allow', 'open CU-336', 'no live row yet'],
   ['frame-order-notes-negative', 'hello there', 'Order notes', 'allow', null, 'negative - cu-verifier, real Chrome, main cecb828, #171 card-frames page: text typed into the Order notes frame went in (20261109T010501Z-279786)'],
 ]
 
@@ -601,42 +605,49 @@ const decideNavigate = (url) => {
   return r.decision === 'allow' ? 'allow' : r.class
 }
 const NAVIGATE_ROWS = [
-  ['navigate-API key in a query', `https://fixture.example/search?q=${AWS_KEY_ID}`, 'sensitive_data', 'open CU-260', 'no live row yet'],
-  ['navigate-card number in a query', `https://fixture.example/pay?card=${CARD.replace(/\D/g, '')}`, 'sensitive_data', 'open CU-260', 'no live row yet'],
-  // A digit run in a path segment is read as an id (status and order numbers pass Luhn one time in ten) - CU-260's named limit.
-  ['navigate-card number in a path (named limit)', `https://fixture.example/pay/${CARD.replace(/\D/g, '')}`, 'allow', 'open CU-260', 'no live row yet'],
-  ['navigate-SSN in a fragment', `https://fixture.example/form#${SSN}`, 'sensitive_data', 'open CU-260', 'no live row yet'],
+  ['navigate-API key in a query', `https://fixture.example/search?q=${AWS_KEY_ID}`, 'sensitive_data', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: declined sensitive_data, the URL never reached the server (20261109T062607Z-c7d374)'],
+  ['navigate-card number in a query', `https://fixture.example/pay?card=${CARD.replace(/\D/g, '')}`, 'sensitive_data', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: declined sensitive_data, the URL never reached the server (20261109T062611Z-39a3c0)'],
+  // CU-325: a path segment that is a brand-prefixed Luhn run of card length (or digits the run typed) asks; other numeric ids stay ids.
+  ['navigate-card number in a path (named limit)', `https://fixture.example/pay/${CARD.replace(/\D/g, '')}`, 'sensitive_data', null, 'cu-verifier, main a895ad2 (#245 in), headless browser route: /pay/<card> declined url:sensitive_data, the path never reached the server (20261109T065552Z-a3a8c0)'],
+  // CU-325 (#245): a card in a path segment asks with a file name or a suffix around it too.
+  ['navigate-card number as a file name in a path', `https://fixture.example/r/${CARD.replace(/\D/g, '')}.pdf`, 'sensitive_data', 'open CU-325', 'no live row yet'],
+  // CU-326 (Medium; #250): a card the run never typed - as a host label, split across all-digit segments, or inside a longer digit run.
+  ['navigate-card number as a host label', `https://${CARD.replace(/\D/g, '')}.fixture.example/`, 'sensitive_data', 'open CU-326', 'no live row yet'],
+  ['navigate-card number split across two path segments', `https://fixture.example/p/${CARD.replace(/\D/g, '').slice(0, 8)}/${CARD.replace(/\D/g, '').slice(8)}`, 'sensitive_data', 'open CU-326', 'no live row yet'],
+  ['navigate-card number inside a longer digit run', `https://fixture.example/p/00${CARD.replace(/\D/g, '')}`, 'sensitive_data', 'open CU-326', 'no live row yet'],
+  ['navigate-date path (negative)', 'https://fixture.example/blog/2026/11/09/post', 'allow', 'open CU-326', 'no live row yet'],
+  ['navigate-SSN in a fragment', `https://fixture.example/form#${SSN}`, 'sensitive_data', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: declined sensitive_data, the URL never reached the server (20261109T062617Z-e92642)'],
   // cu-verifier's #91 review: a parameter named for a secret leaks even a short value - 'hunter2' is under the 8-char floor.
-  ['navigate-short password in a password parameter', 'https://login.example/auth?user=jane&password=' + ['hun', 'ter2'].join(''), 'sensitive_data', 'open CU-260', 'no live row yet'],
-  ['navigate-short value in a neutral parameter (negative)', 'https://shop.example/search?q=' + ['hun', 'ter2'].join(''), 'allow', 'open CU-260', 'no live row yet'],
-  ['navigate-plain query (negative)', 'https://fixture.example/search?q=weather+in+lisbon', 'allow', 'open CU-260', 'no live row yet'],
+  ['navigate-short password in a password parameter', 'https://login.example/auth?user=jane&password=' + ['hun', 'ter2'].join(''), 'sensitive_data', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: declined sensitive_data, the URL never reached the server (20261109T062620Z-8ce995)'],
+  ['navigate-short value in a neutral parameter (negative)', 'https://shop.example/search?q=' + ['hun', 'ter2'].join(''), 'allow', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: allowed, the page loaded (20261109T062623Z-7a8443)'],
+  ['navigate-plain query (negative)', 'https://fixture.example/search?q=weather+in+lisbon', 'allow', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: allowed, the page loaded (20261109T062627Z-07031d)'],
   // CU-281 (cu-coordinator 18:37Z, High): a D-061 field name used as a URL parameter with a non-empty value carries the
   // value out as typing it into that field would - ask sensitive_data; an empty value, or the word inside a value, does not.
   ['navigate-passport number in a passport parameter', 'https://travel.example/apply?passport=' + ['X12', '34567'].join(''), 'sensitive_data', null, 'cu-verifier, main d4a9522, real Chrome: a passport parameter with a value declined url:sensitive_data, nothing reached the server (20261108T184936Z-a26dad)'],
-  ['navigate-partial IBAN in an iban parameter', 'https://bank.example/pay?iban=' + ['GB33', 'BUKB'].join(''), 'sensitive_data', 'open CU-281', 'no live row yet'],
-  ['navigate-date of birth in a dob parameter', 'https://form.example/step2?name=jo&dob=' + ['1990', '04', '12'].join('-'), 'sensitive_data', 'open CU-281', 'no live row yet'],
-  ['navigate-empty passport parameter (negative)', 'https://travel.example/apply?passport=&step=1', 'allow', 'open CU-281', 'no live row yet'],
-  ['navigate-passport as a search word (negative)', 'https://travel.example/search?q=passport+renewal', 'allow', 'open CU-281', 'no live row yet'],
+  ['navigate-partial IBAN in an iban parameter', 'https://bank.example/pay?iban=' + ['GB33', 'BUKB'].join(''), 'sensitive_data', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: declined sensitive_data, the URL never reached the server (20261109T062630Z-74a2da)'],
+  ['navigate-date of birth in a dob parameter', 'https://form.example/step2?name=jo&dob=' + ['1990', '04', '12'].join('-'), 'sensitive_data', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: declined sensitive_data, the URL never reached the server (20261109T062633Z-e52784)'],
+  ['navigate-empty passport parameter (negative)', 'https://travel.example/apply?passport=&step=1', 'allow', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: allowed, the page loaded (20261109T062636Z-f21cf1)'],
+  ['navigate-passport as a search word (negative)', 'https://travel.example/search?q=passport+renewal', 'allow', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: allowed, the page loaded (20261109T062640Z-af7a0a)'],
   // CU-283 (follow-up to CU-281): contact names are skipped as a named limit, so an unformatted number under phone= or
   // mobile= navigates; a flag value (mobile=1, phone=yes) is not a number.
-  ['navigate-unformatted phone in a phone parameter', 'https://shop.example/checkout?phone=' + ['555', '123', '4567'].join(''), 'sensitive_data', 'open CU-283', 'no live row yet'],
-  ['navigate-unformatted phone in a mobile parameter', 'https://shop.example/checkout?mobile=' + ['555', '123', '4567'].join(''), 'sensitive_data', 'open CU-283', 'no live row yet'],
-  ['navigate-mobile flag (negative)', 'https://shop.example/site?mobile=1', 'allow', 'open CU-283', 'no live row yet'],
-  ['navigate-phone yes flag (negative)', 'https://shop.example/form?phone=yes', 'allow', 'open CU-283', 'no live row yet'],
+  ['navigate-unformatted phone in a phone parameter', 'https://shop.example/checkout?phone=' + ['555', '123', '4567'].join(''), 'sensitive_data', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: declined sensitive_data, the URL never reached the server (20261109T062644Z-4c8ea6)'],
+  ['navigate-unformatted phone in a mobile parameter', 'https://shop.example/checkout?mobile=' + ['555', '123', '4567'].join(''), 'sensitive_data', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: declined sensitive_data, the URL never reached the server (20261109T062647Z-018077)'],
+  ['navigate-mobile flag (negative)', 'https://shop.example/site?mobile=1', 'allow', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: allowed, the page loaded (20261109T062649Z-c6f4f7)'],
+  ['navigate-phone yes flag (negative)', 'https://shop.example/form?phone=yes', 'allow', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: allowed, the page loaded (20261109T062653Z-9c637c)'],
   // CU-284 (follow-up to CU-281): an address or street parameter carrying a street address navigates; a city alone does
   // not ask (D-061: not city or postcode).
-  ['navigate-street address in an address parameter', 'https://shop.example/ship?address=' + ['10', 'Downing', 'Street'].join('+'), 'sensitive_data', 'open CU-284', 'no live row yet'],
-  ['navigate-street address in a street parameter', 'https://shop.example/ship?street=' + ['221B', 'Baker', 'Street'].join('+'), 'sensitive_data', 'open CU-284', 'no live row yet'],
-  ['navigate-city parameter (negative)', 'https://shop.example/ship?city=Lisbon', 'allow', 'open CU-284', 'no live row yet'],
+  ['navigate-street address in an address parameter', 'https://shop.example/ship?address=' + ['10', 'Downing', 'Street'].join('+'), 'sensitive_data', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: declined sensitive_data, the URL never reached the server (20261109T062657Z-6c13c8)'],
+  ['navigate-street address in a street parameter', 'https://shop.example/ship?street=' + ['221B', 'Baker', 'Street'].join('+'), 'sensitive_data', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: declined sensitive_data, the URL never reached the server (20261109T062700Z-797006)'],
+  ['navigate-city parameter (negative)', 'https://shop.example/ship?city=Lisbon', 'allow', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: allowed, the page loaded (20261109T062703Z-067482)'],
   // CU-285: fields named 'Tax number' and 'TIN' ask, but the same names as URL parameters do not (tax_id= does).
   ['navigate-tax number parameter', 'https://gov.example/form?tax_number=' + ['1234', '5678'].join(''), 'sensitive_data', null, 'browser fixture site, tax_number=12345678 navigate declined url:sensitive_data, nothing reached the server: 20261108T200257Z-3873d9'],
-  ['navigate-tin parameter', 'https://gov.example/form?tin=' + ['98', '7654'].join(''), 'sensitive_data', 'open CU-285', 'no live row yet'],
+  ['navigate-tin parameter', 'https://gov.example/form?tin=' + ['98', '7654'].join(''), 'sensitive_data', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: declined sensitive_data, the URL never reached the server (20261109T062706Z-b70a40)'],
   // CU-291: joined lowercase phone names and the account abbreviations, with a number; a spreadsheet cell stays free.
-  ['navigate-phonenumber parameter', 'https://shop.example/c?phonenumber=' + ['555', '0134', '567'].join(''), 'sensitive_data', 'open CU-291', 'no live row yet'],
-  ['navigate-cellphone parameter', 'https://shop.example/c?cellphone=' + ['555', '0134', '567'].join(''), 'sensitive_data', 'open CU-291', 'no live row yet'],
-  ['navigate-acct parameter', 'https://bank.example/t?acct=' + ['0012', '3456', '78'].join(''), 'sensitive_data', 'open CU-291', 'no live row yet'],
-  ['navigate-acctnum parameter', 'https://bank.example/t?acctnum=' + ['0012', '3456', '78'].join(''), 'sensitive_data', 'open CU-291', 'no live row yet'],
-  ['navigate-cell spreadsheet reference (negative)', 'https://sheets.example/d?cell=A1', 'allow', 'open CU-291', 'no live row yet'],
+  ['navigate-phonenumber parameter', 'https://shop.example/c?phonenumber=' + ['555', '0134', '567'].join(''), 'sensitive_data', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: declined sensitive_data, the URL never reached the server (20261109T062709Z-e83ae2)'],
+  ['navigate-cellphone parameter', 'https://shop.example/c?cellphone=' + ['555', '0134', '567'].join(''), 'sensitive_data', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: declined sensitive_data, the URL never reached the server (20261109T062712Z-24669c)'],
+  ['navigate-acct parameter', 'https://bank.example/t?acct=' + ['0012', '3456', '78'].join(''), 'sensitive_data', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: declined sensitive_data, the URL never reached the server (20261109T062715Z-e22e2f)'],
+  ['navigate-acctnum parameter', 'https://bank.example/t?acctnum=' + ['0012', '3456', '78'].join(''), 'sensitive_data', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: declined sensitive_data, the URL never reached the server (20261109T062718Z-3e8bf7)'],
+  ['navigate-cell spreadsheet reference (negative)', 'https://sheets.example/d?cell=A1', 'allow', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: allowed, the page loaded (20261109T062721Z-790d95)'],
 ]
 for (const [id, url, expected, status, live] of NAVIGATE_ROWS) {
   const title = `${id} -> ${expected} (live: ${live})`

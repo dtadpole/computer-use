@@ -1,7 +1,7 @@
 // The nightly regression (CU-59): its pure parts, and end-to-end runs of nightly.mjs on a throwaway repository with a
 // private lock directory - no CUHelper, no fixture app, no model, no network.
 import { execFileSync, spawnSync } from 'node:child_process'
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -21,6 +21,12 @@ test('parseArgs: defaults, flags, values and refusals', () => {
   assert.equal(d.fetch, true)
   assert.equal(d.lockWait, 900)
   assert.equal(d.seat, 'cu-integrator')
+  assert.equal(d.worktreeRoot, '/tmp')
+  assert.equal(parseArgs(['--worktree-root', '/w/wt']).worktreeRoot, '/w/wt')
+  assert.throws(() => parseArgs(['--worktree-root', 'wt']), /--worktree-root needs an absolute path/)
+  assert.equal(d.worktreePrefix, 'cu-nightly-wt-')
+  assert.equal(parseArgs(['--worktree-prefix', 'seat-x--nightly-']).worktreePrefix, 'seat-x--nightly-')
+  for (const bad of ['a/b-', '../x-', '.hidden-']) assert.throws(() => parseArgs(['--worktree-prefix', bad]), /--worktree-prefix needs a plain name/)
   const o = parseArgs(['--ref', 'HEAD', '--no-fetch', '--node-only', '--lock-wait', '30', '--out', '/tmp/x', '--on-lock', 'echo hi', '--keep-worktree'])
   assert.deepEqual([o.ref, o.fetch, o.nodeOnly, o.lockWait, o.out, o.onLock, o.keepWorktree], ['HEAD', false, true, 30, '/tmp/x', 'echo hi', true])
   assert.throws(() => parseArgs(['--bogus']), /unknown argument --bogus/)
@@ -180,10 +186,11 @@ test('a run on a scratch repo: green with one flake, phase 2 under a private loc
   const repo = scratchRepo()
   const out = mkdtempSync(join(tmpdir(), 'cu-nightly-out-'))
   const lockDir = mkdtempSync(join(tmpdir(), 'cu-nightly-lock-'))
+  const wtRoot = mkdtempSync(join(tmpdir(), 'cu-nightly-wtroot-'))
   const marks = join(out, 'marks.txt')
   try {
     const r = spawnSync('node', [NIGHTLY, '--repo', repo, '--ref', 'HEAD', '--no-fetch', '--out', out, '--lock-dir', lockDir, '--lock-wait', '5',
-      '--on-lock', `echo "lock $NIGHTLY_RUN_ID $NIGHTLY_SEAT" >> ${marks}`, '--on-release', `echo release >> ${marks}`], { encoding: 'utf8', timeout: 60_000 })
+      '--worktree-root', wtRoot, '--worktree-prefix', 'seat-x--nightly-', '--on-lock', `echo "lock $NIGHTLY_RUN_ID $NIGHTLY_SEAT" >> ${marks}`, '--on-release', `echo release >> ${marks}`], { encoding: 'utf8', timeout: 60_000 })
     assert.equal(r.status, 0, r.stdout + r.stderr)
     assert.match(r.stdout, /^# Nightly regression - HEAD [0-9a-f]{9} - GREEN \(flaky\)$/m)
     assert.match(r.stdout, /^\| node-tests \| 1 \| pass \| 1\/1 \|/m)
@@ -196,8 +203,12 @@ test('a run on a scratch repo: green with one flake, phase 2 under a private loc
     assert.equal(readFileSync(join(out, 'latest.md'), 'utf8'), r.stdout, 'latest.md is the printed report')
     const worktrees = execFileSync('git', ['-C', repo, 'worktree', 'list'], { encoding: 'utf8' }).trim().split('\n')
     assert.equal(worktrees.length, 1, 'the worktree is removed')
+    const runs = readdirSync(out).filter((n) => /^\d{4}-/.test(n))
+    const report = JSON.parse(readFileSync(join(out, runs[0], 'report.json'), 'utf8'))
+    assert.ok(report.worktree.startsWith(join(wtRoot, 'seat-x--nightly-')), `worktree under --worktree-root, named by --worktree-prefix: ${report.worktree}`)
+    assert.deepEqual(readdirSync(wtRoot), [], 'and removed from it')
   } finally {
-    for (const dir of [repo, out, lockDir]) rmSync(dir, { recursive: true, force: true })
+    for (const dir of [repo, out, lockDir, wtRoot]) rmSync(dir, { recursive: true, force: true })
   }
 })
 

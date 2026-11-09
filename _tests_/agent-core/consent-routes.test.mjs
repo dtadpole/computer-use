@@ -325,7 +325,7 @@ const ROWS = [
   ['enter-default-send', 'desktop', 'enter', 'fieldDefaultSend', 'submit', '#325 tests', "helper 0.2.42, CU Fixture consent-keys K4: asked submit (20261107T173858Z-6c94df)", null],
   ['newline-default-send', 'desktop', 'typeNewline', 'fieldDefaultSend', 'submit', '#325 tests', "helper 0.2.44, main 5548a7fd7: K1 asked submit, nothing sent (20261107T213026Z-8a665e); the 0.2.42 post-install send (173854Z-3f1e69) was the unread state, now its own cell", null],
   ['newline-default-unread', 'desktop', 'typeNewline', 'fieldDefaultUnread', 'submit', 'CU-190 (defaultButtonRead false asks submit)', "D-065 (asserted, not live): the guard asks; the unread state is not producible on demand - seen once, the 0.2.42 post-install transient (20261107T173854Z-3f1e69); unit rows and mutants in default-button-unread.test.mjs; mutant: table-mutants typed-newline-not-enter (applied alone, this row fails)", null],
-  ['chat-name-message-no-default', 'desktop', 'typeNewline', 'chatNameNoDefault', 'submit', 'CU-253 (a bare Message field asks; named over-ask in forms)', 'no live row yet', 'open CU-253'],
+  ['chat-name-message-no-default', 'desktop', 'typeNewline', 'chatNameNoDefault', 'submit', 'CU-253 (a bare Message field asks; named over-ask in forms)', "cu-verifier, CU Fixture named-controls: text ending in a newline into the entry 'Message' declined submit, entry empty (20261109T004200Z-8019fb)", null],
   ['newline-no-default', 'desktop', 'typeNewline', 'fieldNoDefault', 'allow', 'CU-190 negative: read, no default button', "helper 0.2.44: a newline in a window with no default button (read true, none) allowed (20261107T213028Z-2f5e64)", null],
   ['newline-default-absent', 'desktop', 'typeNewline', 'fieldDefaultAbsent', 'submit', 'D-069: no read state asks on the desktop (fail closed)', 'D-069: decided, not run - a helper before 0.2.44 is refused at the handshake, so this state reaches the policy only by a bug, and then it asks (D-065); mutant: table-mutants typed-newline-not-enter (applied alone, this row fails)', null],
   ['newline-nothing-focused', 'desktop', 'typeNewline', 'nothingFocused', 'allow', 'D-069 negative: no target is the driver\'s good read of nothing focused and no default button', 'D-069: decided - environment.mjs returns null only for a successful read of nothing there, so it keeps the rule (D-065); mutant: table-mutants nothing-focused-read-as-unread (applied alone, this row fails)', null],
@@ -573,8 +573,8 @@ const ROWS = [
   ['web-terminal-paste', 'browser', 'cmdV', 'webTerminalInput', 'not:allow', 'CU-271 (a paste reaches the shell as typing does)', 'cu-verifier, main ea0e004: Command-V into the focused web terminal blocked terminal_view, nothing recorded (20261108T182149Z-c4f5be)', null],
   ['web-playground-run', 'browser', 'click', 'webPlaygroundRun', 'launch_code', 'CU-271 (Run on a code page)', 'cu-verifier, main 77ffc4b: the playground Run button declined launch_code, no run recorded (20261108T171110Z-05b78c)', null],
   ['web-plain-run-button', 'browser', 'click', 'webPlainRun', 'allow', 'CU-271 negative (Run off a code page)', 'cu-verifier, main 112cbe9, batch 4 (CU Fixture areas or loopback pages with the exact label): allowed, fired (20261109T035430Z-47b63b)', null],
-  ['web-notebook-type-code', 'browser', 'typeCode', 'webCodeCell', 'allow', 'CU-271 negative (editing code is the task)', 'no live row yet', 'open CU-271'],
-  ['web-notebook-plain-return', 'browser', 'plainEnter', 'webCodeCell', 'allow', 'CU-271 negative (a new line, not a run)', 'no live row yet', 'open CU-271'],
+  ['web-notebook-type-code', 'browser', 'typeCode', 'webCodeCell', 'allow', 'CU-271 negative (editing code is the task)', "negative - cu-verifier, main d95682d, browser route on a loopback Jupyter-shaped cell (textarea 'Code cell'): click and type print(1) allowed, the input reached the page (20261109T062325Z-332b95)", null],
+  ['web-notebook-plain-return', 'browser', 'plainEnter', 'webCodeCell', 'allow', 'CU-271 negative (a new line, not a run)', 'negative - cu-verifier, main d95682d, browser route on the same notebook cell: plain Enter allowed, the key reached the page (20261109T062330Z-6a2fb9)', null],
   ['web-reload-prg', 'browser', 'reload', 'webComments', 'allow', 'policy (reload not judged)', '20261107T034225Z-fa2dbf', null, {}],
   // CU-155: a certificate warning commits chrome-error:// but the driver reported the attempted URL, so the hand-off never
   // fired (cu-developer-two's probe); classify hands off on the flag - the real path is the open part (#360).
@@ -632,7 +632,7 @@ const ROWS = [
   ['chat-return-imessage', 'desktop', 'enter', 'chatComposeArea', 'submit', 'chat-return.test.mjs (#52, CU-253: Messages sends on Return)', "recorded run on CU Fixture named-controls areas (helper 0.2.58): Return in the AXTextArea 'iMessage' asked submit (20261109T004145Z-c13d3a)", null],
   ['chat-newline-imessage', 'desktop', 'typeNewline', 'chatComposeArea', 'submit', 'chat-return.test.mjs (#52, CU-253: a typed newline is the same Return)', "recorded run on CU Fixture named-controls areas (helper 0.2.58): a typed newline in the AXTextArea 'iMessage' asked submit (20261109T004148Z-6b894d)", null],
   ['chat-return-new-message', 'desktop', 'enter', 'chatNewMessageArea', 'submit', 'CU-253 (a compose name in its own words: Teams\' \'Type a new message\')', "recorded run on CU Fixture named-controls areas (helper 0.2.58): Return in the AXTextArea 'Type a new message' asked submit (20261109T004154Z-544cb8)", null],
-  ['notes-area-return-newline', 'desktop', 'enter', 'notesArea', 'allow', 'CU-253 negative (a notes box takes a new line)', 'no live row yet', 'open CU-253'],
+  ['notes-area-return-newline', 'desktop', 'enter', 'notesArea', 'allow', 'CU-253 negative (a notes box takes a new line)', "negative - cu-verifier, CU Fixture named-controls: Return in the area 'Notes' allowed, a second line inserted (20261109T004150Z-2b7c05)", null],
 ]
 
 const decide = (action, target, env, extra = {}) => {
@@ -1091,7 +1091,7 @@ const SYSTEM_ROWS = [
   // Policy owner 22:06Z: the CJK console words count only in IDE apps - outside them 控制台 is a cloud dashboard
   // (阿里云控制台, 腾讯云控制台), and a refusal there would lock the agent out of it.
   ['non-ide-console-word-zh', 'typeLs', 'fixtureConsoleWordZh', 'allow', 'CU-296 negative (a dashboard word outside an IDE)', "negative - cu-verifier, CU Fixture, helper 0.2.58: 'ls' typed into the AXTextField 控制台 outside an IDE was allowed (20261109T003544Z-333840)", null, { app: FIXTURE_ID }],
-  ['ide-editor-type (negative)', 'typeLs', 'codeEditor', 'allow', 'CU-279 negative (typing in the editor is the task)', 'no live row yet', 'open CU-279', { app: VSCODE_ID }],
+  ['ide-editor-type (negative)', 'typeLs', 'codeEditor', 'allow', 'CU-279 negative (typing in the editor is the task)', "named limit (cu-coordinator 04:24Z, D-092): a bundle-keyed allow negative - producing it needs the owner's real VS Code; over-ask side", 'open CU-279', { app: VSCODE_ID }],
   ['ide-open-folder', 'click', 'openFolderButton', 'allow', 'CU-271 negative (no code runs)', "named limit (cu-coordinator 04:24Z): a bundle-keyed allow negative - producing it needs the owner's real app; over-ask side", 'open CU-271', { app: VSCODE_ID }],
   // CU-268 (14:29Z ruling): a single word mixing Latin with another script asks unknown_target on the desktop, each time -
   // on a click and on a chord's bound menu item alike.
