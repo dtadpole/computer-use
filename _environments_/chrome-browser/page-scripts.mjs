@@ -103,6 +103,42 @@ export function collectPageText(doc, win, maxChars) {
  * single field, and then nothing names it) and a disabled default button (nothing submits). Run in an isolated world,
  * so a page cannot redefine `form.elements` to hide its real button.
  */
+/**
+ * CU-319 (CU-302's driver half): the fields a submit-like control would send that the browser autofilled - a saved login
+ * filled on load, which the run never typed (typing clears the state). `el` is the described target. A form's submit
+ * control (a button of type submit, the default, or an input of type submit or image) and a text entry in a form (its
+ * Return submits) take the fields of that form; a control outside any form (a button, an input of type button, a
+ * [role=button] or a link - a script-driven 'Sign in') takes the autofilled fields of its whole document. Anything else
+ * is no submit-like target: null. Only :autofill (or Chrome's older :-webkit-autofill) is asked - never a value.
+ * Self-contained: it runs serialized in the page.
+ */
+export function autofilledFields(el) {
+  const NOT_TEXT = ['button', 'submit', 'reset', 'checkbox', 'radio', 'file', 'image', 'range', 'color', 'hidden']
+  const autofilled = (field) => {
+    for (const selector of [':autofill', ':-webkit-autofill']) {
+      try {
+        if (field && typeof field.matches === 'function' && field.matches(selector)) return true
+      } catch {
+        // A selector this engine does not know: try the next.
+      }
+    }
+    return false
+  }
+  if (!el || el.nodeType !== 1) return null
+  const tag = String(el.tagName || '').toLowerCase()
+  const type = tag === 'input' ? String(el.type || 'text').toLowerCase() : tag === 'button' ? String(el.type || 'submit').toLowerCase() : ''
+  const role = String((el.getAttribute && el.getAttribute('role')) || '').toLowerCase()
+  const form = el.form || (typeof el.closest === 'function' ? el.closest('form') : null) || null
+  const submits = (tag === 'button' && type === 'submit') || (tag === 'input' && (type === 'submit' || type === 'image'))
+  const entry = (tag === 'input' && !NOT_TEXT.includes(type)) || tag === 'textarea'
+  const control = tag === 'button' || (tag === 'input' && type === 'button') || role === 'button' || (tag === 'a' && el.getAttribute && el.getAttribute('href') !== null)
+  let scope = null
+  if (form && (submits || entry)) scope = Array.from(form.elements || [])
+  else if (!form && (submits || control)) scope = Array.from((el.ownerDocument && el.ownerDocument.querySelectorAll) ? el.ownerDocument.querySelectorAll('input, textarea, select') : [])
+  if (scope === null) return null
+  return scope.filter(autofilled).slice(0, 20)
+}
+
 export function implicitSubmitButton(el) {
   const IMPLICIT = ['text', 'search', 'email', 'url', 'tel', 'password', 'number', 'date', 'datetime-local', 'month', 'time', 'week']
   if (!el || el.tagName !== 'INPUT' || !IMPLICIT.includes(String(el.type).toLowerCase())) return null
