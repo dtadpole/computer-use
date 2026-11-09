@@ -973,6 +973,26 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const valueIn = (text) => text !== '' && Boolean(looksSensitive(withoutTaskValues(text, context.task)))
       if (!valueIn(context.typed.before) && valueIn(context.typed.before + context.typed.next)) classes.push('sensitive_data')
     }
+    // CU-336 (design note 0.2): inside a cross-origin frame whose names are unread - the frame host's title and the field's
+    // own name both null (an AX failure in the driver's host read, or a frame that titles nothing) - a CVV or an expiry
+    // matches no name and no value rule. A short card code typed there asks sensitive_data: 3 or 4 digits alone, or an
+    // expiry MM/YY, MM/YYYY or MM-YY, judged after removing whitespace, on the action's own text and on the field's typed
+    // buffer (CU-267), so a code pressed key by key asks too. Both paths count: the iframe itself as the target (the driver
+    // did not follow the focus) and an inner field with frameHost (CU-300). A frame whose origin is not read counts as
+    // cross-origin (fail closed, cu-verifier). Named over-ask: a short numeric entry in an unnamed third-party frame.
+    // One-time codes stay CU-288's.
+    const pageOrigin = (() => { try { return new URL(String(context.url ?? '')).origin } catch { return null } })()
+    const crossOriginOf = (raw) => { try { return raw == null || raw === '' || new URL(String(raw)).origin !== pageOrigin } catch { return true } }
+    const unnamed = (value) => String(value ?? '').trim() === ''
+    const unnamedFrame = webPage && !held && target != null && (
+      (framedWeb && unnamed(target.name) && crossOriginOf(target.frameUrl))
+      || (target.frameHost && typeof target.frameHost === 'object' && unnamed(target.frameHost.name) && unnamed(target.name) && crossOriginOf(target.origin)))
+    if (unnamedFrame) {
+      const shortCode = (text) => /^(\d{3,4}|(0?[1-9]|1[0-2])[/-](\d{2}|\d{4}))$/.test(String(text ?? '').replace(/\s+/g, ''))
+      const added = action.type === 'type' ? String(action.text ?? '') : (keyChar ?? (typeof context.paste?.text === 'string' ? context.paste.text : ''))
+      const whole = context.typed && typeof context.typed.before === 'string' && typeof context.typed.next === 'string' ? context.typed.before + context.typed.next : null
+      if (added !== '' && (shortCode(added) || (whole !== null && shortCode(whole)))) classes.push('sensitive_data')
+    }
     // CU-268: in the browser a control whose name has one word mixing scripts asks permission - never pre-approved, so a
     // pre-approved submit cannot wave a disguised Delete or Pay through (cu-developer-one's ruling) - where no rule found a
     // class: a folded look-alike already asks by its own ('Sеnd' asks submit). The desktop asks unknown_target in app-policy.
