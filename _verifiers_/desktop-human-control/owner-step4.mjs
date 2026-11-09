@@ -74,7 +74,14 @@ try {
   try { result = JSON.parse(stdout) } catch { try { result = JSON.parse(stdout.trim().split('\n').filter((l) => l.startsWith('{')).pop()) } catch {} }
   await new Promise((r) => setTimeout(r, 1500)) // let the app settle before reading its log
   const input = (await fixture.state()).input ?? []
-  note({ exit: code, status: result.status, steps: result.steps, actions: result.actions, fixtureEvents: input.length, untagged: input.filter((e) => e.tag !== 1129665349).length, runsDir })
+  // CU-341 (cu-verifier's R1c note): the input log is kept for the outside-evidence judges (taggedAfter, stuckInput,
+  // heldKeyOrder), with every untagged event's key code and characters removed - nothing records which key the
+  // owner pressed. The agent's own tagged events are kept whole.
+  const TAG = 1129665349
+  const redacted = input.map((e) => (e.tag === TAG ? e : Object.fromEntries(Object.entries(e).filter(([k]) => !['keyCode', 'characters'].includes(k)))))
+  const inputLog = join(runsDir, 'fixture-input.json')
+  writeFileSync(inputLog, JSON.stringify(redacted) + '\n')
+  note({ exit: code, status: result.status, steps: result.steps, actions: result.actions, fixtureEvents: input.length, untagged: input.filter((e) => e.tag !== TAG).length, inputLog, runsDir })
 } finally {
   await fixture.close().catch(() => {})
   log.end()
