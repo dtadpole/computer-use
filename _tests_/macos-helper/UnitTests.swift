@@ -1845,6 +1845,18 @@ func testPeerCheck() {
   check(malformed.checkouts.isEmpty && malformed.note?.contains("malformed") == true, "a malformed config: no checkout admitted, logged")
   FileManager.default.createFile(atPath: fakeHome + "/.config/computer-use/config.json", contents: Data(#"{"helperCheckouts": ["~/a/computer-use", "~/b/*"]}"#.utf8))
   check(PeerCheck.configuredCheckouts(home: fakeHome).checkouts == [PeerCheck.Checkout(path: "a/computer-use", parent: false), PeerCheck.Checkout(path: "b", parent: true)], "a well-formed config is read")
+  // CU-299 (cu-researcher's check 1): the config file and its folder must be this user's alone, or nothing is admitted.
+  let configFile = fakeHome + "/.config/computer-use/config.json"
+  let configDir = fakeHome + "/.config/computer-use"
+  chmod(configFile, 0o600); chmod(configDir, 0o700)
+  check(PeerCheck.configuredCheckouts(home: fakeHome).checkouts.count == 2, "a 0600 config in a 0700 folder is read")
+  check(PeerCheck.configuredCheckouts(home: fakeHome, ownUid: getuid() + 1).checkouts.isEmpty, "a config owned by another uid admits nothing")
+  for (file, dir, why) in [(0o620, 0o700, "group-writable file"), (0o602, 0o700, "world-writable file"), (0o600, 0o770, "group-writable folder"), (0o600, 0o777, "world-writable folder")] {
+    chmod(configFile, mode_t(file)); chmod(configDir, mode_t(dir))
+    let read = PeerCheck.configuredCheckouts(home: fakeHome)
+    check(read.checkouts.isEmpty && read.note?.contains("not this user's alone") == true, "a \(why) admits nothing, logged")
+  }
+  chmod(configFile, 0o600); chmod(configDir, 0o700)
   try? FileManager.default.removeItem(atPath: fakeHome)
   check(PeerCheck.isWorldWritable("/tmp") && !PeerCheck.isWorldWritable(NSHomeDirectory()), "the world-writable test: /tmp (1777) is, the home is not")
   var mcp = good

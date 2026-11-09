@@ -59,9 +59,14 @@ enum PeerCheck {
   /// The configured checkouts, read once from the fixed config path under the home (never an environment variable,
   /// so a driver cannot redirect it), with why any was dropped. A missing, unreadable or malformed file admits none -
   /// no checkout at all (CU-299).
-  static func configuredCheckouts(home: String) -> (checkouts: [Checkout], note: String?) {
+  static func configuredCheckouts(home: String, ownUid: uid_t = getuid()) -> (checkouts: [Checkout], note: String?) {
     let path = (home as NSString).appendingPathComponent(".config/computer-use/config.json")
     guard FileManager.default.fileExists(atPath: path) else { return ([], nil) }
+    // CU-299 (cu-researcher's check 1): the config names what the boundary admits, so another account must not be able
+    // to write it - the file and its folder are this user's and writable by no group or other user, else none is read.
+    guard trustedForConfig(path, ownUid: ownUid), trustedForConfig((path as NSString).deletingLastPathComponent, ownUid: ownUid) else {
+      return ([], "the local config or its folder is not this user's alone (owner or group/other write): no checkout is admitted")
+    }
     guard let data = FileManager.default.contents(atPath: path), data.count <= 65_536, let config = JSONCoding.decode(data), config.object != nil else {
       return ([], "the local config is unreadable or malformed: no checkout is admitted")
     }
@@ -86,6 +91,13 @@ enum PeerCheck {
       admitted.append(Admitted(realBase: real, parent: checkout.parent))
     }
     return (admitted, refused)
+  }
+
+  /// Whether a path (as read, symlinks followed) is owned by `ownUid` and writable by no group or other user.
+  static func trustedForConfig(_ path: String, ownUid: uid_t) -> Bool {
+    var info = stat()
+    guard stat(path, &info) == 0 else { return false }
+    return info.st_uid == ownUid && info.st_mode & (S_IWGRP | S_IWOTH) == 0
   }
 
   /// Whether a directory's mode lets every user write it (the sticky 1777 included).

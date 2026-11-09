@@ -91,6 +91,7 @@ test('the boundary of D-029 is wired: peer check, one instance, indicator, the c
   assert.doesNotMatch(code['PeerCheck.swift'], /static let layouts|func checkoutRoot|func projectRoot|func isAllowedEntry/, 'no compiled checkout root remains (CU-299)')
   assert.match(code['PeerCheck.swift'], /guard configured else \{ return "the peer's script is not an allowed entry point" \}/, 'only a configured checkout admits a peer (CU-299)')
   assert.match(code['main.swift'], /"none - every peer is refused"/, 'the start line says when no checkout is configured')
+  assert.match(code['PeerCheck.swift'], /guard trustedForConfig\(path, ownUid: ownUid\), trustedForConfig\(\(path as NSString\)\.deletingLastPathComponent, ownUid: ownUid\) else \{\n      return \(\[\], /, 'the config and its folder are this user\'s alone before any entry is read (CU-299)')
   assert.match(code['main.swift'], /Indicator\.show\(\)/)
   assert.match(code['main.swift'], /SocketLink\.connect\(path: path, timeout: 10\)/)
   assert.match(code['main.swift'], /cap\.schedule\(deadline: \.now\(\) \+ options\.maxRunSeconds\)/, 'the wall-time cap')
