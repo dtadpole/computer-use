@@ -447,6 +447,38 @@ test('negatives: a word inside another word, and a button, never ask by name', (
   assert.equal(r.decision, 'allow')
 })
 
+// CU-301 (cu-researcher): a printable keypress - one character key, Shift at most - puts that character into the focused
+// field as typing does, so the field-name rules (credential, password field, D-061 names) must judge it as 'type' of that
+// character - since #178 (Fixes CU-301) they do; before it they ran for 'type' only. CU-267's buffer keeps the value half.
+const decideKey = (keys, target, url = 'https://other.example/form') => {
+  const r = policy.classify({ type: 'keypress', keys }, { url, target })
+  return r.decision === 'allow' ? 'allow' : r.class
+}
+const KEYPRESS_ROWS = [
+  ['key-into-cvv', ['1'], { tag: 'input', role: 'textbox', name: 'CVV', editable: true }, null, 'sensitive_data', null, 'cu-verifier, main 7a1d4a6, Chrome loopback page: a key pressed into CVV declined sensitive_data at the first key, entry empty (20261109T003514Z-820592); the desktop entry the same (003451Z-351db8)'],
+  ['key-into-password-field', ['SHIFT', 'H'], { tag: 'input', role: 'textbox', name: 'Password', editable: true, inputType: 'password' }, null, 'credential', null, 'cu-verifier, main 7a1d4a6, Chrome loopback page: a key pressed into the password field declined credential, entry empty (20261109T003506Z-2a35cc); the desktop secure field hands off password_field (003501Z-556eec)'],
+  ['key-into-ssn', ['1'], { tag: 'input', role: 'textbox', name: 'Social security number', editable: true }, null, 'sensitive_data', null, 'cu-verifier, main 7a1d4a6, Chrome loopback page: a key pressed into Social security number declined sensitive_data, entry empty (20261109T003518Z-feca30); the desktop entry the same (003456Z-0f43a2)'],
+  ['key-into-recovery-phrase', ['W'], { tag: 'textarea', role: 'textbox', name: 'Recovery phrase', editable: true }, null, 'sensitive_data', null, 'cu-verifier, main 7a1d4a6, Chrome loopback page: a key pressed into Recovery phrase declined sensitive_data, entry empty (20261109T003511Z-4bff76); the desktop entry the same (003454Z-5eae4f)'],
+  ['key-into-desktop-iban', ['A'], { role: 'AXTextField', name: 'IBAN', editable: true, defaultButtonRead: true }, 'desktop://', 'sensitive_data', null, 'cu-verifier, main 7a1d4a6, helper 0.2.58, CU Fixture named-controls: a key pressed into IBAN declined sensitive_data at the first key, entry empty (20261109T003458Z-5f5eb2)'],
+  ['key-into-nickname-negative', ['A'], { tag: 'input', role: 'textbox', name: 'Nickname', editable: true }, null, 'allow', null, "negative - cu-verifier, main 7a1d4a6, Chrome loopback page: three keys pressed into Nickname were typed (20261109T003523Z-3d93ba); desktop 'Card holder' took five (003503Z-402eac)"],
+]
+
+for (const [id, keys, target, url, expected, status, live] of KEYPRESS_ROWS) {
+  const title = `${id} [keypress ${keys.join('+')} into '${target.name}'] -> ${expected} (live: ${live})`
+  const check = () => assert.equal(decideKey(keys, target, url ?? undefined), expected)
+  if (status?.startsWith('todo ')) test(title, { todo: status }, check)
+  else test(title, check)
+}
+
+test('keypress rows: named once; every todo row still fails (a fixed row cannot stay todo)', () => {
+  assert.equal(new Set(KEYPRESS_ROWS.map((r) => r[0])).size, KEYPRESS_ROWS.length)
+  for (const r of KEYPRESS_ROWS) {
+    if (r[5] === null) { assert.ok(closingRun(r[6]), `${r[0]} is closed without a run id - mark it open`); continue }
+    assert.match(r[5], /^(todo|open) CU-\d+$/)
+    if (r[5].startsWith('todo ')) assert.notEqual(decideKey(r[1], r[2], r[3] ?? undefined), r[4], `${r[0]} passes on main - flip it to open`)
+  }
+})
+
 // CU-179: a paste takes the same name rules as typing. A browser paste carries the run's own clipboard text
 // (paste.text); a desktop paste of the run's own copy carries no text, so the field's name is the only signal.
 const decidePaste = (env, name) => {
