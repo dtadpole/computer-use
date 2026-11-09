@@ -670,12 +670,11 @@ export function looksSensitive(text) {
   // a file name or 'AIza' in prose stays free - GitHub fine-grained and OAuth/app/user/refresh tokens, GitLab, Google
   // API keys, Hugging Face, npm, the other Slack token kinds and Shopify. Named over-ask: a documentation page's example.
   if (API_TOKEN.test(value)) return 'key'
-  // CU-347 (design note 0.1): three credential shapes the rules above missed. A Google API key ('AIza' and 35 more URL-safe
-  // characters); an AWS secret access key - exactly 40 characters of [A-Za-z0-9/+] standing alone, with upper and lower
+  // CU-347 (design note 0.1): two credential shapes the rules above missed (a Google 'AIza' key is already API_TOKEN's;
+  // key-shapes.test pins it). An AWS secret access key - exactly 40 characters of [A-Za-z0-9/+] standing alone, with upper and lower
   // case and a digit (named over-ask: any such 40-character run); and a credential assignment - password, passwd, pwd,
   // secret, token, api key, access key or client secret, then '=' or ':', then a value of 6 or more non-space characters
   // holding a digit or a symbol (named over-ask: 'token: abc123' in prose).
-  if (/(?<![A-Za-z0-9_-])AIza[0-9A-Za-z_-]{35}(?![A-Za-z0-9_-])/.test(value)) return 'key'
   for (const m of value.matchAll(/(?<![A-Za-z0-9/+=])[A-Za-z0-9/+]{40}(?![A-Za-z0-9/+=])/g)) {
     if (/[A-Z]/.test(m[0]) && /[a-z]/.test(m[0]) && /\d/.test(m[0])) return 'key'
   }
