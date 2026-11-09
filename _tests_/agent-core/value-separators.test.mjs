@@ -19,6 +19,7 @@ test('CU-346: mixed separators and a separator plus a space in one card are sens
   assert.equal(looksSensitive(`${GROUPS[0]}.${GROUPS[1]}-${GROUPS[2]}.${GROUPS[3]}`), 'card')
   assert.equal(looksSensitive(GROUPS.join('. ')), 'card')
   assert.equal(looksSensitive(`${GROUPS[0]}.${GROUPS[1]}/${GROUPS[2]}_${GROUPS[3]}`), 'card')
+  assert.equal(looksSensitive(SSN_GROUPS.join('. ')), 'national_id')
 })
 
 test('CU-346 negatives: versions, dates, IPs, thousands and mixed separators stay free', () => {

@@ -672,7 +672,7 @@ export function looksSensitive(text) {
   if (/\b\d{3}-\d{2}-\d{4}\b/.test(value)) return 'national_id'
   // CU-346: an SSN in 3-2-4 groups split by dots, slashes, commas, underscores or line breaks (the same separator twice), held
   // to the issuing rules below. Named over-ask: a reference written that way that fits them.
-  for (const m of value.matchAll(/(?<!\d)(\d{3})([./,_]|\r?\n)(\d{2})\2(\d{4})(?!\d)/g)) {
+  for (const m of value.matchAll(/(?<!\d)(\d{3})([./,_]|\r?\n)[ \t]?(\d{2})\2[ \t]?(\d{4})(?!\d)/g)) {
     if (m[1] !== '000' && m[1] !== '666' && m[1][0] !== '9' && m[3] !== '00' && m[4] !== '0000') return 'national_id'
   }
   // CU-245: an SSN in spaced 3-2-4 groups, held to the issuing rules (no area 000 or 666, no group 00, no serial 0000)
