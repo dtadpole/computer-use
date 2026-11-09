@@ -601,42 +601,42 @@ const decideNavigate = (url) => {
   return r.decision === 'allow' ? 'allow' : r.class
 }
 const NAVIGATE_ROWS = [
-  ['navigate-API key in a query', `https://fixture.example/search?q=${AWS_KEY_ID}`, 'sensitive_data', 'open CU-260', 'no live row yet'],
-  ['navigate-card number in a query', `https://fixture.example/pay?card=${CARD.replace(/\D/g, '')}`, 'sensitive_data', 'open CU-260', 'no live row yet'],
+  ['navigate-API key in a query', `https://fixture.example/search?q=${AWS_KEY_ID}`, 'sensitive_data', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: declined sensitive_data, the URL never reached the server (20261109T062607Z-c7d374)'],
+  ['navigate-card number in a query', `https://fixture.example/pay?card=${CARD.replace(/\D/g, '')}`, 'sensitive_data', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: declined sensitive_data, the URL never reached the server (20261109T062611Z-39a3c0)'],
   // A digit run in a path segment is read as an id (status and order numbers pass Luhn one time in ten) - CU-260's named limit.
-  ['navigate-card number in a path (named limit)', `https://fixture.example/pay/${CARD.replace(/\D/g, '')}`, 'allow', 'open CU-260', 'no live row yet'],
-  ['navigate-SSN in a fragment', `https://fixture.example/form#${SSN}`, 'sensitive_data', 'open CU-260', 'no live row yet'],
+  ['navigate-card number in a path (named limit)', `https://fixture.example/pay/${CARD.replace(/\D/g, '')}`, 'sensitive_data', 'todo CU-325', 'under-ask: cu-verifier, main d95682d, headless browser route: the card in the path was allowed and the page loaded (20261109T062614Z-cc3e3c); CU-325'],
+  ['navigate-SSN in a fragment', `https://fixture.example/form#${SSN}`, 'sensitive_data', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: declined sensitive_data, the URL never reached the server (20261109T062617Z-e92642)'],
   // cu-verifier's #91 review: a parameter named for a secret leaks even a short value - 'hunter2' is under the 8-char floor.
-  ['navigate-short password in a password parameter', 'https://login.example/auth?user=jane&password=' + ['hun', 'ter2'].join(''), 'sensitive_data', 'open CU-260', 'no live row yet'],
-  ['navigate-short value in a neutral parameter (negative)', 'https://shop.example/search?q=' + ['hun', 'ter2'].join(''), 'allow', 'open CU-260', 'no live row yet'],
-  ['navigate-plain query (negative)', 'https://fixture.example/search?q=weather+in+lisbon', 'allow', 'open CU-260', 'no live row yet'],
+  ['navigate-short password in a password parameter', 'https://login.example/auth?user=jane&password=' + ['hun', 'ter2'].join(''), 'sensitive_data', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: declined sensitive_data, the URL never reached the server (20261109T062620Z-8ce995)'],
+  ['navigate-short value in a neutral parameter (negative)', 'https://shop.example/search?q=' + ['hun', 'ter2'].join(''), 'allow', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: allowed, the page loaded (20261109T062623Z-7a8443)'],
+  ['navigate-plain query (negative)', 'https://fixture.example/search?q=weather+in+lisbon', 'allow', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: allowed, the page loaded (20261109T062627Z-07031d)'],
   // CU-281 (cu-coordinator 18:37Z, High): a D-061 field name used as a URL parameter with a non-empty value carries the
   // value out as typing it into that field would - ask sensitive_data; an empty value, or the word inside a value, does not.
   ['navigate-passport number in a passport parameter', 'https://travel.example/apply?passport=' + ['X12', '34567'].join(''), 'sensitive_data', null, 'cu-verifier, main d4a9522, real Chrome: a passport parameter with a value declined url:sensitive_data, nothing reached the server (20261108T184936Z-a26dad)'],
-  ['navigate-partial IBAN in an iban parameter', 'https://bank.example/pay?iban=' + ['GB33', 'BUKB'].join(''), 'sensitive_data', 'open CU-281', 'no live row yet'],
-  ['navigate-date of birth in a dob parameter', 'https://form.example/step2?name=jo&dob=' + ['1990', '04', '12'].join('-'), 'sensitive_data', 'open CU-281', 'no live row yet'],
-  ['navigate-empty passport parameter (negative)', 'https://travel.example/apply?passport=&step=1', 'allow', 'open CU-281', 'no live row yet'],
-  ['navigate-passport as a search word (negative)', 'https://travel.example/search?q=passport+renewal', 'allow', 'open CU-281', 'no live row yet'],
+  ['navigate-partial IBAN in an iban parameter', 'https://bank.example/pay?iban=' + ['GB33', 'BUKB'].join(''), 'sensitive_data', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: declined sensitive_data, the URL never reached the server (20261109T062630Z-74a2da)'],
+  ['navigate-date of birth in a dob parameter', 'https://form.example/step2?name=jo&dob=' + ['1990', '04', '12'].join('-'), 'sensitive_data', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: declined sensitive_data, the URL never reached the server (20261109T062633Z-e52784)'],
+  ['navigate-empty passport parameter (negative)', 'https://travel.example/apply?passport=&step=1', 'allow', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: allowed, the page loaded (20261109T062636Z-f21cf1)'],
+  ['navigate-passport as a search word (negative)', 'https://travel.example/search?q=passport+renewal', 'allow', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: allowed, the page loaded (20261109T062640Z-af7a0a)'],
   // CU-283 (follow-up to CU-281): contact names are skipped as a named limit, so an unformatted number under phone= or
   // mobile= navigates; a flag value (mobile=1, phone=yes) is not a number.
-  ['navigate-unformatted phone in a phone parameter', 'https://shop.example/checkout?phone=' + ['555', '123', '4567'].join(''), 'sensitive_data', 'open CU-283', 'no live row yet'],
-  ['navigate-unformatted phone in a mobile parameter', 'https://shop.example/checkout?mobile=' + ['555', '123', '4567'].join(''), 'sensitive_data', 'open CU-283', 'no live row yet'],
-  ['navigate-mobile flag (negative)', 'https://shop.example/site?mobile=1', 'allow', 'open CU-283', 'no live row yet'],
-  ['navigate-phone yes flag (negative)', 'https://shop.example/form?phone=yes', 'allow', 'open CU-283', 'no live row yet'],
+  ['navigate-unformatted phone in a phone parameter', 'https://shop.example/checkout?phone=' + ['555', '123', '4567'].join(''), 'sensitive_data', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: declined sensitive_data, the URL never reached the server (20261109T062644Z-4c8ea6)'],
+  ['navigate-unformatted phone in a mobile parameter', 'https://shop.example/checkout?mobile=' + ['555', '123', '4567'].join(''), 'sensitive_data', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: declined sensitive_data, the URL never reached the server (20261109T062647Z-018077)'],
+  ['navigate-mobile flag (negative)', 'https://shop.example/site?mobile=1', 'allow', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: allowed, the page loaded (20261109T062649Z-c6f4f7)'],
+  ['navigate-phone yes flag (negative)', 'https://shop.example/form?phone=yes', 'allow', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: allowed, the page loaded (20261109T062653Z-9c637c)'],
   // CU-284 (follow-up to CU-281): an address or street parameter carrying a street address navigates; a city alone does
   // not ask (D-061: not city or postcode).
-  ['navigate-street address in an address parameter', 'https://shop.example/ship?address=' + ['10', 'Downing', 'Street'].join('+'), 'sensitive_data', 'open CU-284', 'no live row yet'],
-  ['navigate-street address in a street parameter', 'https://shop.example/ship?street=' + ['221B', 'Baker', 'Street'].join('+'), 'sensitive_data', 'open CU-284', 'no live row yet'],
-  ['navigate-city parameter (negative)', 'https://shop.example/ship?city=Lisbon', 'allow', 'open CU-284', 'no live row yet'],
+  ['navigate-street address in an address parameter', 'https://shop.example/ship?address=' + ['10', 'Downing', 'Street'].join('+'), 'sensitive_data', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: declined sensitive_data, the URL never reached the server (20261109T062657Z-6c13c8)'],
+  ['navigate-street address in a street parameter', 'https://shop.example/ship?street=' + ['221B', 'Baker', 'Street'].join('+'), 'sensitive_data', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: declined sensitive_data, the URL never reached the server (20261109T062700Z-797006)'],
+  ['navigate-city parameter (negative)', 'https://shop.example/ship?city=Lisbon', 'allow', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: allowed, the page loaded (20261109T062703Z-067482)'],
   // CU-285: fields named 'Tax number' and 'TIN' ask, but the same names as URL parameters do not (tax_id= does).
   ['navigate-tax number parameter', 'https://gov.example/form?tax_number=' + ['1234', '5678'].join(''), 'sensitive_data', null, 'browser fixture site, tax_number=12345678 navigate declined url:sensitive_data, nothing reached the server: 20261108T200257Z-3873d9'],
-  ['navigate-tin parameter', 'https://gov.example/form?tin=' + ['98', '7654'].join(''), 'sensitive_data', 'open CU-285', 'no live row yet'],
+  ['navigate-tin parameter', 'https://gov.example/form?tin=' + ['98', '7654'].join(''), 'sensitive_data', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: declined sensitive_data, the URL never reached the server (20261109T062706Z-b70a40)'],
   // CU-291: joined lowercase phone names and the account abbreviations, with a number; a spreadsheet cell stays free.
-  ['navigate-phonenumber parameter', 'https://shop.example/c?phonenumber=' + ['555', '0134', '567'].join(''), 'sensitive_data', 'open CU-291', 'no live row yet'],
-  ['navigate-cellphone parameter', 'https://shop.example/c?cellphone=' + ['555', '0134', '567'].join(''), 'sensitive_data', 'open CU-291', 'no live row yet'],
-  ['navigate-acct parameter', 'https://bank.example/t?acct=' + ['0012', '3456', '78'].join(''), 'sensitive_data', 'open CU-291', 'no live row yet'],
-  ['navigate-acctnum parameter', 'https://bank.example/t?acctnum=' + ['0012', '3456', '78'].join(''), 'sensitive_data', 'open CU-291', 'no live row yet'],
-  ['navigate-cell spreadsheet reference (negative)', 'https://sheets.example/d?cell=A1', 'allow', 'open CU-291', 'no live row yet'],
+  ['navigate-phonenumber parameter', 'https://shop.example/c?phonenumber=' + ['555', '0134', '567'].join(''), 'sensitive_data', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: declined sensitive_data, the URL never reached the server (20261109T062709Z-e83ae2)'],
+  ['navigate-cellphone parameter', 'https://shop.example/c?cellphone=' + ['555', '0134', '567'].join(''), 'sensitive_data', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: declined sensitive_data, the URL never reached the server (20261109T062712Z-24669c)'],
+  ['navigate-acct parameter', 'https://bank.example/t?acct=' + ['0012', '3456', '78'].join(''), 'sensitive_data', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: declined sensitive_data, the URL never reached the server (20261109T062715Z-e22e2f)'],
+  ['navigate-acctnum parameter', 'https://bank.example/t?acctnum=' + ['0012', '3456', '78'].join(''), 'sensitive_data', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: declined sensitive_data, the URL never reached the server (20261109T062718Z-3e8bf7)'],
+  ['navigate-cell spreadsheet reference (negative)', 'https://sheets.example/d?cell=A1', 'allow', null, 'cu-verifier, main d95682d, headless browser route on a loopback origin: allowed, the page loaded (20261109T062721Z-790d95)'],
 ]
 for (const [id, url, expected, status, live] of NAVIGATE_ROWS) {
   const title = `${id} -> ${expected} (live: ${live})`
