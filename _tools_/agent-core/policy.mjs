@@ -988,6 +988,12 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const scheme = typeof target?.linkScheme === 'string' ? target.linkScheme.trim().toLowerCase().replace(/:$/, '') : ''
     const pressesLink = ['click', 'double_click', 'triple_click'].includes(action.type) || keysOf(action).has('ENTER')
     if (scheme !== '' && !WEB_SCHEMES.has(scheme) && pressesLink) classes.push('permission')
+    // Open-menu focus (cu-coordinator 22:03Z; Medium until cu-verifier's live row): with a menu open the helper reads only the
+    // system-wide focus, never the highlighted item, so Return or Space there commits an item the policy cannot see - asks.
+    if ((action.type === 'keypress' || action.type === 'hold_key') && (target?.menuOpen === true || target?.role === 'AXMenu')
+      && [...keysOf(action)].some((key) => /^(ENTER|RETURN|SPACE)$/.test(key))) {
+      return { decision: 'confirm', class: 'unknown_target', classes: ['unknown_target'], rule: 'menu:open_unread', reason: `press ${(action.keys ?? []).join('+')} in an open menu whose highlighted item could not be read` }
+    }
     const keyboard = keyboardActivation(action, target, context)
     if (keyboard.deletes) classes.push('delete')
     // CU-370 (design note 0.1; cu-developer-two's driver contract): the option a key lands on is judged like a click on it.
