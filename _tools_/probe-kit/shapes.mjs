@@ -18,6 +18,13 @@ export const web = Object.freeze({
   /** A null focus: the driver reports a focused document body, or nothing, as null (page-scripts deepActiveElement). */
   none: null,
   textbox: (name = 'Search', extra = {}) => ({ tag: 'input', inputType: 'text', role: 'textbox', name, editable: true, ...extra }),
+  /**
+   * A focused single-line input as keys see it: the browser driver adds the form's implicit submit button (CU-150,
+   * page-scripts implicitSubmitButton) as defaultButton {role, name, panel: null} and defaultButtonRead (false when the
+   * read failed). submit null means a read that found none.
+   */
+  formField: (name, submit = null, read = true) => ({ tag: 'input', inputType: 'text', role: 'textbox', name, editable: true,
+    defaultButton: submit ? { role: 'button', name: submit, panel: null } : null, defaultButtonRead: read }),
   password: (name = 'Password') => ({ tag: 'input', inputType: 'password', isPassword: true, role: 'textbox', name, editable: true }),
   contentEditable: (name = 'Message body') => ({ tag: 'div', role: 'textbox', name, editable: true }),
   /** A plain div: the accessibility tree names its role 'generic' (cu-developer-two's live probe, 23:29Z). */
@@ -97,6 +104,7 @@ export const SOURCES = Object.freeze([
   { field: 'editable', file: '_environments_/chrome-browser/page-scripts.mjs' },
   { field: 'isPassword', file: '_environments_/chrome-browser/page-scripts.mjs' },
   { field: 'linkScheme', file: '_environments_/chrome-browser/environment.mjs' },
+  { field: 'defaultButtonRead', file: '_environments_/chrome-browser/environment.mjs' },
   { field: 'selectOption', file: '_environments_/chrome-browser/environment.mjs' },
   { field: 'radioChoice', file: '_environments_/chrome-browser/environment.mjs' },
   { field: 'optionUnread', file: '_environments_/chrome-browser/environment.mjs' },
