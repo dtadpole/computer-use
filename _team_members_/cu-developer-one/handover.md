@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-09T00:51:50Z
+modified: 2026-11-09T01:49:49Z
 level: L1
-version: 2.4.0
+version: 2.6.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -14,26 +14,25 @@ grounded_in:
 
 # [cu] Developer One - handover
 
-Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)). The
-session works in a worktree under `~/dtadpole/computer-use-wt/` with `--review` purpose worktrees beside it;
-shipped work in [artifacts.md](artifacts.md). State at 00:52Z, 9 November. This seat never drives the desktop.
+Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
+session worktree plus `--review` worktrees; never drives the desktop. State at 01:50Z, 9 November.
 
 ## Landed tonight
 
-#178 (CU-301 Urgent, verified live, D-081 ended by D-087), #168 (CU-241, Verify), #175 (CU-297, Verify), #180 and
-#166 (records).
+#178 (CU-301 Urgent), #168 (CU-241), #175 (CU-297) - all verified live; #180, #166, #156 (records).
 
 ## Open PRs (OK'd heads)
 
-- #184 (Part of CU-300, policy half) at ca6257c: OKs cu-verifier, cu-researcher, cu-developer-two. #181 (driver) stacks on it.
-- #174 (Fixes CU-263) at 3d2d128: OKs cu-researcher, cu-verifier. #184 and #174 wait for an owner-idle phase 2 (D-086).
-- #190 (guide 0.1.13: web-editor send, card frames); this handover.
+- #184 (CU-300 policy half, ca6257c; #181 stacks on it) and #174 (Fixes CU-263, 8221ead): OK'd, waiting for phase 2 (D-086).
+- CU-302 (High, D-088), OK'd pairs: #195 ea2d8dd (autofilled submit asks) with #200 (driver); #202 b7e04ed (D-089 refusal) with #204 7b3fa6e (CU-322: only inWebArea false is outside); then #205 and the helper half.
+- #190 (guide 0.1.13); this handover.
 
 ## Pending
 
-- CU-241 and CU-297 live rows: cu-verifier on #171's pages.
-- CU-302 (AutoFill): fix after cu-researcher's measurement, if confirmed.
-- Guide next: the CAPTCHA hand-off once #174 lands (497 of 499 words; trim when adding).
+- CU-302 live rows by cu-verifier after landing; name the Cmd-L-with-no-focus over-block in the limits (cu-researcher).
+- #198's todo cell flips in #202 if #198 lands first.
+- #184 restores two sensitive-classes precisions after #43 lands (Shift/Option keys; grounded_in sources).
+- Guide next: the CAPTCHA hand-off (#174) and the AutoFill/desktop-browser lines (CU-302) once landed; 497 of 499 words.
 - CU-135 waits on the owner's step 4; CU-252 on the Finder-shape stand-in (#165).
 - Schedules: hourly pass; daily Session reflection 23:00Z.
 
@@ -41,11 +40,11 @@ shipped work in [artifacts.md](artifacts.md). State at 00:52Z, 9 November. This 
 
 - Run the whole agent-core suite before every push, fail 0 in the same command.
 - Never run `_tests_/desktop-fixture` outside your own desktop-run hold (it starts CU Fixture; CU-305).
-- Reviews go on a real test merge in a purpose worktree; never switch branches under a running job.
-- OKs name the exact head; check the head before you send one.
+- Review on a real test merge in a purpose worktree; an OK names the exact head.
 - Every text route (type, key, paste, drop) must meet the same name rules.
+- Fail closed on unread fields: test 'not exactly the safe value', never '=== undefined'.
 
 ## Tools
 
-- Inbox: `session-inbox.py check|read --me cu-developer-one` with the roster beside TEAM.yaml.
+- Inbox: only `~/dtadpole/reflection/_tools_/session-inbox/session-inbox.py check|read --me cu-developer-one`; also read the old store until the split is merged (REF #6167).
 - Before every push: `node ~/dtadpole/heddle/_tools_/public-hygiene/gate.mjs --range origin/main..HEAD`.
