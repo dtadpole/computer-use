@@ -1,13 +1,13 @@
 ---
 title: Evidence audit of the ULTIMATE_GOAL 2.0 verdict (CU-53)
 created: 2026-11-06T04:13:54Z
-modified: 2026-11-06T04:13:54Z
+modified: 2026-11-09T13:47:48Z
 level: L1
-version: 1.0.0
+version: 1.0.1
 description: cu-verifier's audit (D-049) that every issue, decision, PR, run and record the verdict cites still resolves, and that its claims hold on today's computer-use main and the installed helper; findings and the fix for each.
 status: ratified
 grounded_in:
-  - source: _team_members_/cu-verifier/ultimate-goal-2-verdict.md@0.9.9
+  - source: _seats_/cu-verifier/ultimate-goal-2-verdict.md@0.9.9
   - source: _context_/team-operations/decision-log.yaml
 ---
 

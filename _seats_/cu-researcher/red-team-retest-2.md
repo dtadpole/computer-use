@@ -1,13 +1,13 @@
 ---
 title: Red team retest 2 - peer environment, launchers, code launch, driver peer check
 created: 2026-11-02T10:21:45Z
-modified: 2026-11-05T16:26:33Z
+modified: 2026-11-09T13:47:48Z
 level: L1
-version: 1.5.1
+version: 1.5.2
 description: The second retest of the desktop red-team findings after helper 0.2.1, the policy fixes and the driver-side peer check, with what still stays open.
 status: unverified
 grounded_in:
-  - source: _team_members_/cu-researcher/red-team-round-1.md (1.1.1)
+  - source: _seats_/cu-researcher/red-team-round-1.md (1.1.1)
   - source: 'main at 9f6822d5b (PR #196), f0db9e0b3 (PR #187) and 609480de9 (helper 0.2.3); PR #204 head (open)'
 ---
 

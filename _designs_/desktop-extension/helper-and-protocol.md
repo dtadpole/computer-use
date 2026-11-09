@@ -1,15 +1,15 @@
 ---
 title: Helper app and protocol
 created: 2026-11-02T08:29:12Z
-modified: 2026-11-07T23:30:00Z
+modified: 2026-11-09T13:47:48Z
 level: L1
-version: 0.3.5
+version: 0.3.6
 description: The Swift helper that alone holds Screen Recording and Accessibility - its identity, how it is launched so the grants are its own, and an outline of the line protocol between it and the macos-desktop driver.
 status: unverified
 grounded_in:
   - source: ULTIMATE_GOAL.md@2.0.0 (environment row)
   - source: _context_/chatgpt-computer-use/product-desktop-computer-use.md
-  - source: _team_members_/cu-developer-two/macos-helper-measurements.md (PR 110, 95d9b4bbe)
+  - source: _seats_/cu-developer-two/macos-helper-measurements.md (PR 110, 95d9b4bbe)
   - source: D-068 (cu-coordinator, 2026-11-07) and the red team of CU-203 (cu-researcher, cu-developer-one), inbox 20261107T224612
 ---
 

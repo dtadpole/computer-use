@@ -1,15 +1,15 @@
 ---
 title: ULTIMATE_GOAL 2.0 verdict, row by row - live, in progress
 created: 2026-11-02T10:22:00Z
-modified: 2026-11-09T12:15:00Z
+modified: 2026-11-09T13:47:48Z
 level: L1
-version: 0.9.59
+version: 0.9.60
 description: cu-verifier's per-row state of the desktop ULTIMATE_GOAL after the owner's grant - live evidence so far from the runbook on the Mac mini beside the pre-grant verifiers, and what each row still needs. No row is held until its live half holds.
 status: unverified
 grounded_in:
   - source: ULTIMATE_GOAL.md@2.0.0
   - source: github.com/dtadpole/computer-use/_verifiers_/INDEX.md
-  - source: _team_members_/cu-verifier/evidence-audit.md@1.0.0
+  - source: _seats_/cu-verifier/evidence-audit.md@1.0.0
 ---
 
 # ULTIMATE_GOAL 2.0: live, in progress (CUHelper 0.2.58, dtadpole/computer-use)

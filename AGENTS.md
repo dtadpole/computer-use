@@ -1,8 +1,8 @@
 ---
 title: AGENTS.md
 created: 2026-11-08T09:40:00Z
-modified: 2026-11-08T23:42:00Z
-version: 1.3.0
+modified: 2026-11-09T13:47:48Z
+version: 1.3.1
 description: The entry point for whoever works in this repository - what it is, the conventions it follows, and how a change is finished.
 grounded_in:
   - source: owner's order of 2026-11-08 (computer-use becomes one public repository holding its code and its records, by the knowledge-bank conventions)
@@ -22,7 +22,7 @@ per-app approval, consent at the point of risk, and a person able to watch, paus
 What completes it is [`ULTIMATE_GOAL.md`](ULTIMATE_GOAL.md), one row per verifiable part, each decided by a
 verifier under [`_verifiers_/`](_verifiers_/INDEX.md). The repository holds the code, its tests and verifiers,
 and the team's records (research in [`_context_/`](_context_/INDEX.md), one record per seat in
-[`_team_members_/`](_team_members_/INDEX.md)). [`INDEX.md`](INDEX.md) maps every folder.
+[`_seats_/`](_seats_/INDEX.md)). [`INDEX.md`](INDEX.md) maps every folder.
 
 ## Conventions that bind here
 
@@ -32,7 +32,7 @@ instance in a registered `_type_` folder. Of the owner's knowledge-bank conventi
 - **Working agreements** - replies to the owner are in Chinese; files, logs and messages are in English.
 - **Entry points** - every content folder carries an `INDEX.md` saying what it is and what to read next.
 - **Type and instance trees** - `_tools_/`, `_tests_/`, `_verifiers_/`, `_evaluators_/`, `_environments_/`,
-  `_designs_/`, `_guides_/`, `_context_/`, `_team_members_/` and `_vendor_/` hold kebab-case instances.
+  `_designs_/`, `_guides_/`, `_context_/`, `_seats_/` and `_vendor_/` hold kebab-case instances.
 - **Frontmatter** - every authored Markdown artifact starts with YAML frontmatter (title, created, modified,
   version, description, grounded_in); a value never contains a colon unless quoted.
 - **Local folder layout** - the main checkout `~/dtadpole/computer-use` (old paths symlink to it) is the sync's,
