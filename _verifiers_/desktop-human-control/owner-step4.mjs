@@ -13,7 +13,8 @@ const ROOT = process.env.CU_ROOT ?? fileURLToPath(new URL('../..', import.meta.u
 const OWNER = join(homedir(), '.computer-use')
 // CU-203, the in-person mode: CU_ASK_OWNER=1 starts the run with --ask-owner, so the lock refusing it while the owner
 // is at the Mac opens the helper's prompt; his deliberate click there starts it (owner-checklist.md). Over Screen Sharing
-// leave it unset - the run then waits for 5 minutes hands-off.
+// leave it unset - the run is then refused at once while the owner was active in the last 5 minutes, so start it after
+// 5 minutes hands-off.
 const ASK_OWNER = process.env.CU_ASK_OWNER === '1'
 const { buildFixtureApp } = await import(`${ROOT}/_tools_/desktop-fixture/build.mjs`)
 const { launchFixture } = await import(`${ROOT}/_tools_/desktop-fixture/client.mjs`)
