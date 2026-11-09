@@ -929,7 +929,10 @@ appApprovals.grantAlways(APP_STORE_ID, { by: 'api' })
 for (const id of [ACTIVITY_MONITOR_ID, DISK_UTILITY_ID, FINDER_ID, VSCODE_ID, SUBLIME_ID, XCODE_ID, CURSOR_ID, ...CU292_IDS]) {
   try { await appApprovals.grantAlways(id, { by: 'api' }) } catch (error) { if (!/excluded/.test(String(error?.message))) throw error }
 }
-const appPolicy = createAppPolicy({ scope: [FIXTURE_ID, APP_STORE_ID, ACTIVITY_MONITOR_ID, DISK_UTILITY_ID, FINDER_ID, VSCODE_ID, SUBLIME_ID, XCODE_ID, CURSOR_ID, ...CU292_IDS], approvals: appApprovals })
+// CU-302: Chrome for Testing, the browser the 01:13Z AutoFill measurement drove (D-089's rows).
+const CFT_ID = 'com.google.chrome.for.testing'
+try { await appApprovals.grantAlways(CFT_ID, { by: 'api' }) } catch (error) { if (!/excluded/.test(String(error?.message))) throw error }
+const appPolicy = createAppPolicy({ scope: [CFT_ID, FIXTURE_ID, APP_STORE_ID, ACTIVITY_MONITOR_ID, DISK_UTILITY_ID, FINDER_ID, VSCODE_ID, SUBLIME_ID, XCODE_ID, CURSOR_ID, ...CU292_IDS], approvals: appApprovals })
 // extra.app names the approved app in front (default CU Fixture); the rest of extra joins the context.
 const decideApp = (action, target, extra = {}) => {
   const { app = FIXTURE_ID, ...context } = extra ?? {}
@@ -993,9 +996,14 @@ const SYS_T = {
   tryFreeButton: { role: 'AXButton', name: 'Try Free' },
   trialDurationButton: { role: 'AXButton', name: 'Start 7-day free trial' },
   tryMonthFreeButton: { role: 'AXButton', name: 'Try 1 month free' },
+  // CU-302 (measured 2026-11-09 01:13Z): an approved browser's page as the helper reads it - one opaque area.
+  browserWebArea: { role: 'AXScrollArea', name: null, opaque: true, secure: false },
 }
 // [id, action, target, expected, pin, live, status, extra context]
 const SYSTEM_ROWS = [
+  // CU-302 / D-089: a saved login fills a sign-in form on load, and the desktop reads the page as one opaque area, so a
+  // click there (Sign in) would submit it unseen - the desktop route refuses inside an approved browser's page.
+  ['click-browser-web-area', 'click', 'browserWebArea', 'block:browser_web_content', 'desktop-web-content.test.mjs (#202, D-089)', 'no live row yet', 'open CU-302', { app: CFT_ID }],
   // CU-249: a macOS Service acts outside the approved app - its default chords and its Services items (clicked).
   ['service-chord-search-with', 'cmdShiftL', 'field', 'block:system_shortcut', 'service-shortcuts.test.mjs (#49, CU-249: the default Services chords refused)', 'cu-verifier, main with #98, helper 0.2.56, CU Fixture consent keys: Command-Shift-L in a field blocked system_shortcut (20261108T184210Z-c68d8d)', null],
   ['service-chord-run-applescript', 'cmdShift8', 'field', 'block:system_shortcut', 'service-shortcuts.test.mjs (#49, CU-249; Command-* is Shift-8)', 'no live row yet', 'open CU-249'],
@@ -1026,11 +1034,11 @@ const SYSTEM_ROWS = [
   // CU-244: a held system chord is refused as the keypress (the loop judges a hold so); pinned live-path by #39.
   // CU-254: the App Store installs software, yet it is not excluded and its 'Get' carries no consent word. Refused or
   // asked is the consent owner's call, so the row expects anything but allow.
-  ['appstore-get', 'click', 'getButton', 'not:allow', 'CU-254 (an approved App Store installs software)', 'no live row yet', 'open CU-254', { app: APP_STORE_ID }],
-  ['appstore-price-button', 'click', 'priceButton', 'purchase', "CU-254 (a paid app's button shows its price, not 'Buy')", 'no live row yet', 'open CU-254', { app: APP_STORE_ID }],
-  ['appstore-try-free', 'click', 'tryFreeButton', 'purchase', 'CU-280 (a free trial starts a renewing subscription)', 'no live row yet', 'open CU-280', { app: APP_STORE_ID }],
-  ['appstore-trial-with-duration', 'click', 'trialDurationButton', 'purchase', 'CU-288 (a free trial with its length)', 'no live row yet', 'open CU-288', { app: APP_STORE_ID }],
-  ['appstore-try-month-free', 'click', 'tryMonthFreeButton', 'purchase', 'CU-288 (Apple Music wording)', 'no live row yet', 'open CU-288', { app: APP_STORE_ID }],
+  ['appstore-get', 'click', 'getButton', 'not:allow', 'CU-254 (an approved App Store installs software)', 'D-065 (asserted, not live; D-091 G3): App Store keyed by bundle id; acting there risks a purchase; the guard asks or refuses; pinned by its unit row and mutant', null, { app: APP_STORE_ID }],
+  ['appstore-price-button', 'click', 'priceButton', 'purchase', "CU-254 (a paid app's button shows its price, not 'Buy')", 'D-065 (asserted, not live; D-091 G3): App Store keyed by bundle id; acting there risks a purchase; the guard asks or refuses; pinned by its unit row and mutant', null, { app: APP_STORE_ID }],
+  ['appstore-try-free', 'click', 'tryFreeButton', 'purchase', 'CU-280 (a free trial starts a renewing subscription)', 'D-065 (asserted, not live; D-091 G3): App Store keyed by bundle id; acting there risks a purchase; the guard asks or refuses; pinned by its unit row and mutant', null, { app: APP_STORE_ID }],
+  ['appstore-trial-with-duration', 'click', 'trialDurationButton', 'purchase', 'CU-288 (a free trial with its length)', 'D-065 (asserted, not live; D-091 G3): App Store keyed by bundle id; acting there risks a purchase; the guard asks or refuses; pinned by its unit row and mutant', null, { app: APP_STORE_ID }],
+  ['appstore-try-month-free', 'click', 'tryMonthFreeButton', 'purchase', 'CU-288 (Apple Music wording)', 'D-065 (asserted, not live; D-091 G3): App Store keyed by bundle id; acting there risks a purchase; the guard asks or refuses; pinned by its unit row and mutant', null, { app: APP_STORE_ID }],
   // CU-232: a menu read the helper answers unreadable - a hidden duplicate key equivalent, a lazily filled menu, only
   // disabled matches (#36's rules) - asks; the loop spares editing chords before this call (CU-238's screen: Option-Command-J).
   ['menu-key-unreadable', 'optCmdJ', 'field', 'unknown_target', 'menu-key.test.mjs (#26: an unreadable bar asks)', "cu-verifier, main 277731b, helper 0.2.52, CU-238's menu-compose screen: Option-Command-J, every visible match disabled, read unreadable and declined, nothing sent (20261108T142441Z-ea95ef)", null, { boundMenuItem: { unreadable: true } }],
@@ -1038,27 +1046,27 @@ const SYSTEM_ROWS = [
   ['systool-activity-monitor-force-quit', 'click', 'forceQuitButton', 'not:allow', 'CU-264 (kills any process)', 'no live row yet', 'open CU-264', { app: ACTIVITY_MONITOR_ID }],
   ['systool-disk-utility-restore', 'click', 'restoreButton', 'not:allow', 'CU-264 (overwrites a volume)', 'no live row yet', 'open CU-264', { app: DISK_UTILITY_ID }],
   // CU-292: approved by the owner or not, an app of an excluded kind is refused whole.
-  ['excluded-spotlight', 'click', 'neutralOkButton', 'block:excluded:terminal', 'CU-292 (a launcher, like Alfred and Raycast)', 'no live row yet', 'open CU-292', { app: SPOTLIGHT_ID }],
-  ['excluded-launchbar', 'click', 'neutralOkButton', 'block:excluded:terminal', 'CU-292 (a launcher)', 'no live row yet', 'open CU-292', { app: LAUNCHBAR_ID }],
-  ['excluded-enpass', 'click', 'neutralOkButton', 'block:excluded:password_manager', 'CU-292 (a password manager)', 'no live row yet', 'open CU-292', { app: ENPASS_ID }],
-  ['excluded-proton-pass', 'click', 'neutralOkButton', 'block:excluded:password_manager', 'CU-292 (a password manager)', 'no live row yet', 'open CU-292', { app: PROTON_PASS_ID }],
-  ['excluded-keeper', 'click', 'neutralOkButton', 'block:excluded:password_manager', 'CU-292 (a password manager)', 'no live row yet', 'open CU-292', { app: KEEPER_ID }],
-  ['excluded-paste', 'click', 'neutralOkButton', 'block:excluded:clipboard_manager', 'CU-292 (a clipboard manager)', 'no live row yet', 'open CU-292', { app: PASTE_ID }],
-  ['excluded-perplexity', 'click', 'neutralOkButton', 'block:excluded:agent', 'CU-292 (another AI app)', 'no live row yet', 'open CU-292', { app: PERPLEXITY_ID }],
+  ['excluded-spotlight', 'click', 'neutralOkButton', 'block:excluded:terminal', 'CU-292 (a launcher, like Alfred and Raycast)', "cu-verifier, CUHelper 0.2.58, run 20261108T235944Z-39b71b: the app named as the start app was decided 'excluded' in the first note; no capture, no input", null, { app: SPOTLIGHT_ID }],
+  ['excluded-launchbar', 'click', 'neutralOkButton', 'block:excluded:terminal', 'CU-292 (a launcher)', "cu-verifier, CUHelper 0.2.58, run 20261108T235945Z-cdbc49: the app named as the start app was decided 'excluded' in the first note; no capture, no input", null, { app: LAUNCHBAR_ID }],
+  ['excluded-enpass', 'click', 'neutralOkButton', 'block:excluded:password_manager', 'CU-292 (a password manager)', "cu-verifier, CUHelper 0.2.58, run 20261108T235945Z-3838c8: the app named as the start app was decided 'excluded' in the first note; no capture, no input", null, { app: ENPASS_ID }],
+  ['excluded-proton-pass', 'click', 'neutralOkButton', 'block:excluded:password_manager', 'CU-292 (a password manager)', "cu-verifier, CUHelper 0.2.58, run 20261108T235946Z-deddd6: the app named as the start app was decided 'excluded' in the first note; no capture, no input", null, { app: PROTON_PASS_ID }],
+  ['excluded-keeper', 'click', 'neutralOkButton', 'block:excluded:password_manager', 'CU-292 (a password manager)', "cu-verifier, CUHelper 0.2.58, run 20261108T235947Z-043255: the app named as the start app was decided 'excluded' in the first note; no capture, no input", null, { app: KEEPER_ID }],
+  ['excluded-paste', 'click', 'neutralOkButton', 'block:excluded:clipboard_manager', 'CU-292 (a clipboard manager)', "cu-verifier, CUHelper 0.2.58, run 20261108T235947Z-a0bb4e: the app named as the start app was decided 'excluded' in the first note; no capture, no input", null, { app: PASTE_ID }],
+  ['excluded-perplexity', 'click', 'neutralOkButton', 'block:excluded:agent', 'CU-292 (another AI app)', "cu-verifier, CUHelper 0.2.58, run 20261108T235948Z-9552fb: the app named as the start app was decided 'excluded' in the first note; no capture, no input", null, { app: PERPLEXITY_ID }],
   // cu-coordinator's 13:26Z ruling, implemented with CU-261 (cu-developer-one): Revert to Saved loses edits (destructive), Sign Out of All Devices is a
   // security action on the owner's sessions (permission) - both allowed today.
   ['revert-to-saved', 'click', 'revertButton', 'delete', 'CU-261 (like Discard Changes)', 'no live row yet', 'open CU-261'],
   ['sign-out-all-devices', 'click', 'signOutAllButton', 'permission', "CU-261 (the owner's sessions)", 'no live row yet', 'open CU-261'],
   // CU-269: a drop onto an app's icon in Finder is 'open with' - the app launches with the file (runTask: posted).
-  ['drop-script-onto-terminal-app', 'dragDrop', 'commandRow', 'not:allow', 'CU-269 (Terminal is excluded; the script runs)', 'no live row yet', 'open CU-269', { app: FINDER_ID, dropTarget: { role: 'AXImage', name: 'Terminal.app', filename: 'Terminal.app', origin: FINDER_ID } }],
+  ['drop-script-onto-terminal-app', 'dragDrop', 'commandRow', 'not:allow', 'CU-269 (Terminal is excluded; the script runs)', "D-065 (asserted, not live; D-091 G3): Finder keyed by bundle id; acting on the owner's real files; the Finder-shaped stand-in rows and CU-252's O1-O3 runs support it; pinned by its unit row and mutant", null, { app: FINDER_ID, dropTarget: { role: 'AXImage', name: 'Terminal.app', filename: 'Terminal.app', origin: FINDER_ID } }],
   ['drop-document-onto-folder', 'dragDrop', 'notesRow', 'allow', 'CU-269 negative (a move into a folder)', 'no live row yet', 'open CU-269', { app: FINDER_ID, dropTarget: { role: 'AXRow', name: 'Projects', origin: FINDER_ID } }],
   // CU-271: an approved IDE runs the code the agent typed - terminal_view only refuses typing into a terminal panel.
-  ['ide-run-python-file', 'click', 'runPythonButton', 'not:allow', 'CU-271 (runTask: posted)', 'no live row yet', 'open CU-271', { app: VSCODE_ID }],
-  ['ide-f5-in-editor', 'f5', 'codeEditor', 'not:allow', 'CU-271 (Start Debugging)', 'no live row yet', 'open CU-271', { app: VSCODE_ID }],
+  ['ide-run-python-file', 'click', 'runPythonButton', 'not:allow', 'CU-271 (runTask: posted)', "D-065 (asserted, not live; D-091 G1): the IDE-kind state keys on a real IDE's bundle id, which no fixture carries; the guard fails closed; pinned by its unit row and mutant", null, { app: VSCODE_ID }],
+  ['ide-f5-in-editor', 'f5', 'codeEditor', 'not:allow', 'CU-271 (Start Debugging)', "D-065 (asserted, not live; D-091 G1): the IDE-kind state keys on a real IDE's bundle id, which no fixture carries; the guard fails closed; pinned by its unit row and mutant", null, { app: VSCODE_ID }],
   // CU-271 (cu-researcher on #119): a run is not only Run or Debug - Sublime's Build (Command-B) runs the file through its
   // build system, and Xcode's Test (Command-U) runs the test target's code.
-  ['ide-sublime-build', 'cmdB', 'codeEditor', 'not:allow', 'CU-271 (Build runs the file)', 'no live row yet', 'open CU-271', { app: SUBLIME_ID, boundMenuItem: { items: [{ role: 'AXMenuItem', name: 'Build', keyEquivalent: { char: 'B', modifiers: 0 }, enabled: true }] } }],
-  ['ide-xcode-test', 'cmdU', 'codeEditor', 'not:allow', 'CU-271 (Test runs the test code)', 'no live row yet', 'open CU-271', { app: XCODE_ID, boundMenuItem: { items: [{ role: 'AXMenuItem', name: 'Test', keyEquivalent: { char: 'U', modifiers: 0 }, enabled: true }] } }],
+  ['ide-sublime-build', 'cmdB', 'codeEditor', 'not:allow', 'CU-271 (Build runs the file)', "D-065 (asserted, not live; D-091 G1): the IDE-kind state keys on a real IDE's bundle id, which no fixture carries; the guard fails closed; pinned by its unit row and mutant", null, { app: SUBLIME_ID, boundMenuItem: { items: [{ role: 'AXMenuItem', name: 'Build', keyEquivalent: { char: 'B', modifiers: 0 }, enabled: true }] } }],
+  ['ide-xcode-test', 'cmdU', 'codeEditor', 'not:allow', 'CU-271 (Test runs the test code)', "D-065 (asserted, not live; D-091 G1): the IDE-kind state keys on a real IDE's bundle id, which no fixture carries; the guard fails closed; pinned by its unit row and mutant", null, { app: XCODE_ID, boundMenuItem: { items: [{ role: 'AXMenuItem', name: 'Test', keyEquivalent: { char: 'U', modifiers: 0 }, enabled: true }] } }],
   // CU-279 (triage): an IDE's integrated terminal runs the typed line on Return. Main's E5 rule (TERMINAL_VIEW, Q-D9)
   // already refuses keys into a target named for a terminal or shell; whether the route holds turns on the live name of
   // VS Code's xterm helper textarea - these cells close on that read.
@@ -1066,20 +1074,20 @@ const SYSTEM_ROWS = [
   ['ide-terminal-return', 'enterKey', 'vscodeTerminal', 'block:terminal_view', 'app-policy E5 TERMINAL_VIEW (CU-279: the live name decides)', 'D-065 (no live VS Code terminal surface): VS Code main terminalInstance.ts _setAriaLabel (lines 2160-2177, re-read 21:27Z) labels the terminal textarea Terminal {id}, {title}, the name this cell judges', null, { app: VSCODE_ID }],
   // VS Code labels the textarea 'Terminal {id}, {title}' (terminalInstance.ts _setAriaLabel) - localized: in a Chinese build
   // 'Terminal' reads '终端', and the label matches E5 only while the title is a shell (zsh, bash); running node, it does not.
-  ['ide-terminal-localized-label', 'typeLs', 'vscodeTerminalZhNode', 'block:terminal_view', 'CU-279 (a localized terminal label with a non-shell title)', 'no live row yet', 'open CU-279', { app: VSCODE_ID }],
+  ['ide-terminal-localized-label', 'typeLs', 'vscodeTerminalZhNode', 'block:terminal_view', 'CU-279 (a localized terminal label with a non-shell title)', "D-065 (asserted, not live; D-091 G1): the IDE-kind state keys on a real IDE's bundle id, which no fixture carries; the guard fails closed; pinned by its unit row and mutant", null, { app: VSCODE_ID }],
   // CU-279 (cu-coordinator 21:30Z): in an IDE by kind, '<word> <n>, <title>' is a terminal in any language; an editor tab
   // is not; outside an IDE the shape alone decides nothing (a named limit). Titles are 'node', not a shell: a shell
   // title (zsh, bash) already trips E5 by itself, which would let these cells pass without the fix.
-  ['ide-terminal-japanese-label', 'typeLs', 'vscodeTerminalJaNode', 'block:terminal_view', 'CU-279 (a Japanese build)', 'no live row yet', 'open CU-279', { app: VSCODE_ID }],
-  ['ide-terminal-zh-in-cursor', 'typeLs', 'cursorTerminalZhNode', 'block:terminal_view', 'CU-279 (Cursor, known by its bundle id)', 'no live row yet', 'open CU-279', { app: CURSOR_ID }],
+  ['ide-terminal-japanese-label', 'typeLs', 'vscodeTerminalJaNode', 'block:terminal_view', 'CU-279 (a Japanese build)', "D-065 (asserted, not live; D-091 G1): the IDE-kind state keys on a real IDE's bundle id, which no fixture carries; the guard fails closed; pinned by its unit row and mutant", null, { app: VSCODE_ID }],
+  ['ide-terminal-zh-in-cursor', 'typeLs', 'cursorTerminalZhNode', 'block:terminal_view', 'CU-279 (Cursor, known by its bundle id)', "D-065 (asserted, not live; D-091 G1): the IDE-kind state keys on a real IDE's bundle id, which no fixture carries; the guard fails closed; pinned by its unit row and mutant", null, { app: CURSOR_ID }],
   ['ide-editor-tab-typing', 'typeLs', 'vscodeEditorTab', 'allow', 'CU-279 negative (an editor tab is not a terminal)', 'no live row yet', 'open CU-279', { app: VSCODE_ID }],
   ['non-ide-shape-only', 'typeLs', 'fixtureShapeOnly', 'allow', 'CU-279 named limit (the shape outside an IDE)', 'no live row yet', 'open CU-279', { app: FIXTURE_ID }],
   // VS Code's own zh labels (microsoft/vscode-loc main.i18n.json): the terminal template '终端 {0}，{1}' / '終端機 {0}，{1}'
   // takes a fullwidth comma; debugConsole is 调试控制台 / 偵錯主控台 (a REPL, CU-296).
-  ['ide-terminal-zh-real-label', 'typeLs', 'vscodeTerminalZhReal', 'block:terminal_view', 'CU-279 (VS Code zh-hans terminalTextBoxAriaLabelNumberAndTitle)', 'no live row yet', 'open CU-279', { app: VSCODE_ID }],
-  ['ide-terminal-zh-hant-real-label', 'typeLs', 'vscodeTerminalZhHantReal', 'block:terminal_view', 'CU-279 (VS Code zh-hant: 終端機 and a fullwidth comma)', 'no live row yet', 'open CU-279', { app: VSCODE_ID }],
-  ['ide-debug-console-zh-hans', 'typeLs', 'vscodeDebugConsoleHans', 'block:terminal_view', 'CU-296 (VS Code zh-hans debugConsole, a REPL)', 'no live row yet', 'open CU-296', { app: VSCODE_ID }],
-  ['ide-debug-console-zh-hant', 'typeLs', 'vscodeDebugConsoleHant', 'block:terminal_view', 'CU-296 (VS Code zh-hant debugConsole, a REPL)', 'no live row yet', 'open CU-296', { app: VSCODE_ID }],
+  ['ide-terminal-zh-real-label', 'typeLs', 'vscodeTerminalZhReal', 'block:terminal_view', 'CU-279 (VS Code zh-hans terminalTextBoxAriaLabelNumberAndTitle)', "D-065 (asserted, not live; D-091 G1): the IDE-kind state keys on a real IDE's bundle id, which no fixture carries; the guard fails closed; pinned by its unit row and mutant", null, { app: VSCODE_ID }],
+  ['ide-terminal-zh-hant-real-label', 'typeLs', 'vscodeTerminalZhHantReal', 'block:terminal_view', 'CU-279 (VS Code zh-hant: 終端機 and a fullwidth comma)', "D-065 (asserted, not live; D-091 G1): the IDE-kind state keys on a real IDE's bundle id, which no fixture carries; the guard fails closed; pinned by its unit row and mutant", null, { app: VSCODE_ID }],
+  ['ide-debug-console-zh-hans', 'typeLs', 'vscodeDebugConsoleHans', 'block:terminal_view', 'CU-296 (VS Code zh-hans debugConsole, a REPL)', "D-065 (asserted, not live; D-091 G1): the IDE-kind state keys on a real IDE's bundle id, which no fixture carries; the guard fails closed; pinned by its unit row and mutant", null, { app: VSCODE_ID }],
+  ['ide-debug-console-zh-hant', 'typeLs', 'vscodeDebugConsoleHant', 'block:terminal_view', 'CU-296 (VS Code zh-hant debugConsole, a REPL)', "D-065 (asserted, not live; D-091 G1): the IDE-kind state keys on a real IDE's bundle id, which no fixture carries; the guard fails closed; pinned by its unit row and mutant", null, { app: VSCODE_ID }],
   // Policy owner 22:06Z: the CJK console words count only in IDE apps - outside them 控制台 is a cloud dashboard
   // (阿里云控制台, 腾讯云控制台), and a refusal there would lock the agent out of it.
   ['non-ide-console-word-zh', 'typeLs', 'fixtureConsoleWordZh', 'allow', 'CU-296 negative (a dashboard word outside an IDE)', 'no live row yet', 'open CU-296', { app: FIXTURE_ID }],
@@ -1093,11 +1101,11 @@ const SYSTEM_ROWS = [
   // CU-252: P10's launch_code reads the clicked target's name only, so Finder's File > Open on a selected install.command
   // is not judged. A file browser's Open acts on the selection (a document app's opens a chooser); context.selection
   // is the desktop driver's selectedItems reply as it passes it on (abbb95d): { items: [{ name, kind }] } or unreadable.
-  ['menu-open-launchable-selection', 'click', 'openItem', 'launch_code', 'CU-252 (Finder File > Open with a .command selected)', 'no live row yet', 'open CU-252', { app: FINDER_ID, selection: { items: [{ name: 'install.command', kind: 'file' }] } }],
+  ['menu-open-launchable-selection', 'click', 'openItem', 'launch_code', 'CU-252 (Finder File > Open with a .command selected)', "D-065 (asserted, not live; D-091 G3): Finder keyed by bundle id; acting on the owner's real files; the Finder-shaped stand-in rows and CU-252's O1-O3 runs support it; pinned by its unit row and mutant", null, { app: FINDER_ID, selection: { items: [{ name: 'install.command', kind: 'file' }] } }],
   ['menu-open-text-selection', 'click', 'openItem', 'allow', 'CU-252 negative (a text file opens in its editor)', 'no live row yet', 'open CU-252', { app: FINDER_ID, selection: { items: [{ name: 'notes.txt', kind: 'file' }] } }],
-  ['menu-open-package-selection', 'click', 'openItem', 'launch_code', "CU-252 (#70 reports an app bundle as kind folder; the name decides)", 'no live row yet', 'open CU-252', { app: FINDER_ID, selection: { items: [{ name: 'Helper.app', kind: 'folder' }] } }],
+  ['menu-open-package-selection', 'click', 'openItem', 'launch_code', "CU-252 (#70 reports an app bundle as kind folder; the name decides)", "D-065 (asserted, not live; D-091 G3): Finder keyed by bundle id; acting on the owner's real files; the Finder-shaped stand-in rows and CU-252's O1-O3 runs support it; pinned by its unit row and mutant", null, { app: FINDER_ID, selection: { items: [{ name: 'Helper.app', kind: 'folder' }] } }],
   // Failing closed: a selection the driver cannot read is no reason to open it unasked (CU-259's unreadable).
-  ['menu-open-unreadable-selection', 'click', 'openItem', 'not:allow', 'CU-252 (an unreadable selection fails closed)', 'no live row yet', 'open CU-252', { app: FINDER_ID, selection: { unreadable: true } }],
+  ['menu-open-unreadable-selection', 'click', 'openItem', 'not:allow', 'CU-252 (an unreadable selection fails closed)', "D-065 (asserted, not live; D-091 G3): Finder keyed by bundle id; acting on the owner's real files; the Finder-shaped stand-in rows and CU-252's O1-O3 runs support it; pinned by its unit row and mutant", null, { app: FINDER_ID, selection: { unreadable: true } }],
   // CU-252 (cu-coordinator 22:13Z): in ANY app an open of the selection whose read is unreadable asks launch_code -
   // a Path Finder- or ForkLift-style list that names nothing; nothing selected and a named document stay free.
   ['any-app-open-unreadable-cmd-o', 'cmdO', 'fixtureFileList', 'launch_code', 'CU-252 (Command-O on a list, read unreadable)', 'no live row yet', 'open CU-252', { app: FIXTURE_ID, selection: { unreadable: true } }],
