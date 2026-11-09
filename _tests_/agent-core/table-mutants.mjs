@@ -51,6 +51,8 @@ export const MUTANTS = Object.freeze([
     rows: ['navigate-card number split across two path segments'] },
   { name: 'zero-padded-card-ignored', why: 'leading zeros hide a card inside a longer number (CU-326)', mutations: [{ file: POLICY, find: "    const run = match[0].replace(/\\D/g, '').replace(/^0+/, '')", replace: "    const run = match[0].replace(/\\D/g, '')" }],
     rows: ['navigate-card number inside a longer digit run'] },
+  { name: 'unread-frame-code-ignored', why: 'a CVV or expiry typed into an unnamed cross-origin frame is sent unasked (CU-336)', mutations: [{ file: POLICY, find: "      if (added !== '' && (shortCode(added) || (whole !== null && shortCode(whole)))) classes.push('sensitive_data')\n", replace: '' }],
+    rows: ['frame-cvv-untitled', 'frame-expiry-untitled'] },
   { name: 'split-join-ignored', why: 'a value split across unnamed boxes is never judged joined (CU-340)', mutations: [{ file: POLICY, find: "        if (joinedAsks) classes.push('sensitive_data')\n", replace: '' }],
     rows: ['split-card 4x4 typed key by key into unnamed boxes', 'split-SSN 3/2/4 typed per box into unnamed boxes'] },
   { name: 'locale-submit-dropped', from: 'consent-routes', why: 'a Russian Send button is not read as submit (CU-352)', mutations: [{ file: POLICY, find: "'submit return', 'submit tax return', ...ZH_WORDS.submit, ...LOCALE_WORDS.submit],", replace: "'submit return', 'submit tax return', ...ZH_WORDS.submit]," }],
