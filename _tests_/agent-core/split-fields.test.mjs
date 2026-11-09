@@ -118,10 +118,10 @@ for (const kind of ['desktop', 'browser']) {
     assert.equal(v.filter((x) => x !== 'allow').length, 1)
   })
 
-  test(`CU-340 [${kind}]: boxes typed more than eight typed actions apart are not joined`, async () => {
-    // Nine typed actions in a scratch box, each erased, keep that box empty (it is not joined) but move the clock on.
-    const filler = Array.from({ length: 9 }, () => [{ type: 'type', text: 'x' }, { type: 'keypress', keys: ['BACKSPACE'] }]).flat()
-    const { events } = await run(kind, [clickBox(0), { type: 'type', text: s1 }, clickBox(1), { type: 'type', text: s2 }, clickBox(5), ...filler, clickBox(2), { type: 'type', text: s3 }])
+  test(`CU-340 [${kind}]: boxes typed more than eight field changes apart are not joined`, async () => {
+    // Nine scratch boxes, each typed and erased, stay empty (not joined) but move the field-change clock on.
+    const filler = Array.from({ length: 9 }, (_, i) => [clickBox(6 + i), { type: 'type', text: 'x' }, { type: 'keypress', keys: ['BACKSPACE'] }]).flat()
+    const { events } = await run(kind, [clickBox(0), { type: 'type', text: s1 }, clickBox(1), { type: 'type', text: s2 }, ...filler, clickBox(2), { type: 'type', text: s3 }])
     assert.equal(events.filter((e) => e.decision !== 'allow').length, 0)
   })
 }
@@ -154,5 +154,15 @@ for (const kind of ['desktop', 'browser']) {
     const { events } = await run(kind, [...boxes(...card), clickBox(4), { type: 'type', text: '123' }])
     const typedVerdicts = events.filter((e) => e.action?.type === 'type' || e.decision !== 'allow').map((e) => (e.decision === 'allow' ? 'allow' : e.class))
     assert.equal(typedVerdicts[3], 'sensitive_data', JSON.stringify(typedVerdicts))
+  })
+}
+
+for (const kind of ['desktop', 'browser']) {
+  test(`CU-340 [${kind}]: a card typed key by key into four boxes - the last key asks (cu-researcher)`, async () => {
+    const keyed = card.flatMap((part, i) => [clickBox(i), ...[...part].map((ch) => ({ type: 'keypress', keys: [ch] }))])
+    const { events } = await run(kind, keyed)
+    const v = events.filter((e) => e.action?.type === 'keypress').map((e) => (e.decision === 'allow' ? 'allow' : e.class))
+    assert.equal(v.at(-1), 'sensitive_data', JSON.stringify(v))
+    assert.equal(v.filter((x) => x !== 'allow').length, 1)
   })
 }

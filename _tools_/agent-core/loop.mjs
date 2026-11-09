@@ -706,10 +706,11 @@ export async function runTask(options) {
   const typedIn = (key) => (key !== null && typedByField.has(key) ? typedByField.get(key) : '')
   // CU-340: a value a page splits across boxes (an SSN in 3/2/4, a card in 4x4) - each box's buffer holds only its part.
   // Each field remembers the scope it was typed in (the page's origin and path, or the frontmost app) and when (a count
-  // of typed actions); the policy gets the last three other fields typed in the same scope within the last eight typed
-  // actions, oldest first, with this action's own before and next, and judges them joined. In memory only (D-031).
+  // of field changes); the policy gets the last three other fields typed in the same scope within the last eight field
+  // changes (a box typed key by key counts once), oldest first, with this action's own before and next, and judges them joined. In memory only (D-031).
   const typedMeta = new Map()
   let typedClock = 0
+  let typedLastKey = null
   let typedScopeNow = null
   const typedScopeOf = (state) => {
     if (typeof state?.frontmostBundleId === 'string' && state.frontmostBundleId !== '') return `app:${state.frontmostBundleId}`
@@ -767,7 +768,7 @@ export async function runTask(options) {
       for (const field of [...typedByField.keys()]) if (field.startsWith('nofocus:')) typedByField.delete(field)
       if (String(key ?? '').startsWith('nofocus:')) return
     }
-    const add = (text) => { setTyped(key, typedIn(key) + text); if (key !== null) typedMeta.set(key, { scope: typedScopeNow, at: ++typedClock }) }
+    const add = (text) => { setTyped(key, typedIn(key) + text); if (key !== null) { if (key !== typedLastKey) { typedClock += 1; typedLastKey = key } typedMeta.set(key, { scope: typedScopeNow, at: typedClock }) } }
     if (action.type === 'type') return add(String(action.text ?? ''))
     if (typeof pasted === 'string') return add(pasted)
     if (action.type === 'keypress') {
