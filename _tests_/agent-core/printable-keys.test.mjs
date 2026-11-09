@@ -64,17 +64,18 @@ test('CU-301 on the desktop: the class policy judges the key; secure and passwor
 
 test('CU-301 negatives: a field named for nothing, a non-entry, and chords keep their rules', () => {
   assert.equal(judge(key('A'), { tag: 'textarea', role: 'textbox', name: 'Notes', editable: true }), 'allow', 'a notes field')
-  assert.equal(judge(key('B'), { tag: 'ul', role: 'list', name: 'Bank accounts' }), 'allow', 'a letter that selects in a list is not text')
-  assert.equal(judge(key('I'), { tag: 'div', role: 'listbox', name: 'IBAN' }), 'allow', 'nor in a list box named for a class')
+  // CU-363: on a web page a printable key outside text entry is a page shortcut - it asks once per site and run.
+  assert.equal(judge(key('B'), { tag: 'ul', role: 'list', name: 'Bank accounts' }), 'permission', 'a letter in a list is not text; on a page it is a shortcut (CU-363)')
+  assert.equal(judge(key('I'), { tag: 'div', role: 'listbox', name: 'IBAN' }), 'permission', 'nor in a list box named for a class - a page shortcut (CU-363)')
   assert.equal(judge(key('I'), { role: 'AXTable', name: 'IBAN' }, 'desktop://'), 'allow', 'nor in a desktop table')
-  assert.equal(judge(key('1'), { tag: 'input', role: 'textbox', name: 'CVV', editable: false }), 'allow', 'a read-only field takes no text')
+  assert.equal(judge(key('1'), { tag: 'input', role: 'textbox', name: 'CVV', editable: false }), 'permission', 'a read-only field takes no text - a page shortcut (CU-363)')
   const password = entry('Password', { inputType: 'password' })
   assert.equal(judge(key('META', 'A'), password), 'allow', 'Command-A selects; a chord is not text')
   assert.equal(judge(key('CTRL', 'A'), password), 'allow', 'Control-A moves the caret')
   for (const named of [key('TAB'), key('BACKSPACE'), key('ARROWLEFT'), key('ESCAPE')]) {
     assert.equal(judge(named, password), 'allow', `${named.keys[0]} types nothing`)
   }
-  assert.equal(judge(key('A'), null), 'allow', 'no focus, no field')
+  assert.equal(judge(key('A'), null), 'permission', 'no focus, no field - a page shortcut (CU-363)')
 })
 
 test('CU-301 in the loop: a password pressed key by key into a password field is declined unattended, nothing typed', async () => {
