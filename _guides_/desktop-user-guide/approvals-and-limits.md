@@ -20,7 +20,7 @@ grounded_in:
 
 ## What it can and cannot do
 
-It can click, long-press, Shift-click, Option-drag, type, press or hold keys (up to 10 s), scroll, drag within approved windows (across bare desktop: not yet shown live), use approved apps' menus, copy and paste, and choose a file in an open or save panel, with approval. It never reads or keeps your clipboard (a verification paste may replace it).
+It can click, long-press, Shift-click, Option-drag, type, press or hold keys (up to 10 s), scroll, drag within approved windows (across bare desktop: not yet live), use approved apps' menus, copy and paste, and choose a file in an open or save panel, with approval. It never reads or keeps your clipboard (a verification paste may replace it).
 
 It cannot see or act in an unapproved app (shown black); it asks first. It never acts in
 terminals (IDE terminals and debug consoles too) and launchers, password managers and Keychain, clipboard managers, System Settings, login and security
@@ -31,7 +31,7 @@ keychains, shell start-up files, login items or `/Applications`. A password fiel
 
 It asks before using a new app (once, this run, or always), running code (opening an app, script, installer or items it cannot read; App Store installs; Run in an IDE or notebook), sending, calling or joining a meeting, opening a link to another app (tel:, FaceTime), buying (free trials too), deleting or overwriting, granting a permission (saving a password or passkey too) or switching off account protection, submitting a form your browser autofilled,
 entering credentials or sensitive data in a field or embedded card frame (street address, e-mail, phone; not city or postcode) or in a web address (a card, key, e-mail, phone, street address, passport, tax id or bank account), pasting your own clipboard, copying a sensitive field's text, or labelled text (Passport, IBAN), into another field, and choosing a file (asked every time). Buying, deleting, permissions and
-file choices are never pre-approved. Typed sensitive text stays out of run files. Unattended (`--consent unattended`), every question is declined. Manage "always" apps with `cli.mjs apps list` and `apps revoke <bundle id>`.
+file choices are never pre-approved. Typed sensitive text stays out of run files. Unattended (`--consent unattended`), every question is declined. Manage "always" apps: `cli.mjs apps list`, `apps revoke <bundle id>`.
 
 ## Known limits
 
@@ -44,4 +44,4 @@ file choices are never pre-approved. Typed sensitive text stays out of run files
 - A shortcut is judged as the menu item it fires; a window button's or view's own keys are not.
 - An approved app's built-in AI counts as part of the app.
 - A website's own shortcuts are judged by the focus, not their effect.
-- A card it never typed, in a site name or split across an address, is not asked.
+- A card it never typed - in a site name, split across an address, or inside a longer number - is not asked.
