@@ -243,3 +243,14 @@ test('every end but bye arms the end watchdog before anything that can wait on a
   }
   assert.match(body, /_exit\(EndWatchdog\.exitCode\)/, 'the watchdog exits with _exit, which runs no atexit handler and takes no lock of ours')
 })
+
+test('CU-341 (CU-203): the confirm prompt cannot take a Return - never key or main, no key equivalent on either button', () => {
+  const prompt = readFileSync(join(SOURCES, 'ConfirmPrompt.swift'), 'utf8')
+  const panel = prompt.slice(prompt.indexOf('private final class PromptPanel'), prompt.indexOf('final class PressButton'))
+  assert.match(panel, /override var canBecomeKey: Bool \{ false \}/, 'the panel never becomes key, so a Return typed elsewhere never reaches it')
+  assert.match(panel, /override var canBecomeMain: Bool \{ false \}/)
+  assert.match(prompt, /for button in \[cancel, confirm\] \{ button\.keyEquivalent = ""/, 'neither Cancel nor Confirm answers Return or Escape')
+  const press = prompt.slice(prompt.indexOf('final class PressButton'))
+  assert.match(press, /override func performKeyEquivalent\(with event: NSEvent\) -> Bool \{ false \}/, 'a key equivalent never presses a prompt button')
+  assert.doesNotMatch(prompt, /keyEquivalent = "\\r"|makeKeyAndOrderFront|NSApp\.activate/, 'nothing makes the prompt key or the helper active')
+})
