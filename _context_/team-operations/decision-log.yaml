@@ -406,3 +406,8 @@ decisions:
     topic: conventions-exceptions
     decision: 'On the owner''s request (through the [hd] Coordinator) the team moves to the 8 Nov reflection conventions, with these declared exceptions: issues stay in Linear team CU instead of a GitHub Project (D-039); the roster, the member-review log, the seat files (bootstrap, duties, launcher header) and the input log stay in the owner''s private records because this repository is public and session ids and home paths must not appear in it; this repository logs its own actions in _logs_/repo-actions/action-log.jsonl without session ids; seat worktrees stay at the paths the installed helper admits until its allowlist covers the convention paths and the main checkout has moved.'
     rationale: 'A descendant repository may narrow the conventions but never contradict them silently; each deviation is written here, in the private roster and in the setup verification.'
+  - id: D-078
+    date: 2026-11-08
+    topic: records-only-landing-logs
+    decision: 'D-076''s records-only list also covers _logs_/repo-actions/*.jsonl: a pull request whose diff is only Markdown or YAML records plus action-log lines lands after phase 1 and the public-hygiene gate, without phase 2. CU_INTEGRATOR_FULL_GATE=1 still forces the full gate.'
+    rationale: 'Since #148 every pull request appends its own action-log line; append-only JSON lines cannot reach a desktop verifier, and without this every records PR would take the desktop-run lock again.'
