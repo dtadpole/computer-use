@@ -49,7 +49,7 @@ file choices are never pre-approved. Typed sensitive text stays out of run files
 - A run stopped mid-hold names the key; pressing it releases it.
 - A shortcut is judged as the menu item it fires; other non-editing keys outside a text field ask.
 - Bare Accept, Join, Follow and Reject are free.
-- A file copied before the run and pasted elsewhere is not asked.
+- A file the agent copied with nothing selected, pasted into another app, is not asked.
 - An approved app's built-in AI counts as the app.
 - A 3- or 4-digit number or expiry typed into another site's untitled frame is asked.
 - Digits typed after an unreadable paste ask.
