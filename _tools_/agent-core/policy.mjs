@@ -984,16 +984,21 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (scheme !== '' && !WEB_SCHEMES.has(scheme) && pressesLink) classes.push('permission')
     const keyboard = keyboardActivation(action, target, context)
     if (keyboard.deletes) classes.push('delete')
-    // CU-370 (design note 0.1): the option a key lands on in a select, listbox or combobox is judged like a click on it -
-    // the driver's keyTarget when it reads one, else (type-ahead) the typed text taken as the option's name.
+    // CU-370 (design note 0.1; cu-developer-two's driver contract): the option a key lands on is judged like a click on it.
+    // A keypress's keyTarget answers the option itself (selectOption: true) - or the select with optionUnread: true when an
+    // open popup's highlight cannot be read, which asks. A type is judged by every option its prefix passes through
+    // (context.typeOptions); with no such read, a type into a non-editable choice takes its text as the option's name.
+    if (target?.optionUnread === true && ['keypress', 'hold_key'].includes(action.type)) {
+      return { decision: 'confirm', class: 'unknown_target', classes: ['unknown_target'], rule: 'select:option_unread', reason: `press ${(action.keys ?? []).join('+')} on "${target?.name ?? 'a list'}", whose highlighted option could not be read` }
+    }
     const choiceTarget = target && /combo|listbox|select/i.test(String(target.role ?? '')) && target.editable !== true
-    if (choiceTarget && ['keypress', 'hold_key', 'type'].includes(action.type)) {
-      const optionName = typeof context.keyTarget?.name === 'string' ? context.keyTarget.name : action.type === 'type' ? String(action.text ?? '').trim() : ''
-      if (optionName !== '') {
-        if (namesPurchase(optionName)) classes.push('purchase')
-        if (namesDelete(optionName)) classes.push('delete')
-        if (namesWord(optionName, WORDS.permission)) classes.push('permission')
-      }
+    const optionNames = target?.selectOption === true && action.type !== 'type' ? [String(target.name ?? '')]
+      : action.type === 'type' && Array.isArray(context.typeOptions) ? context.typeOptions.map((option) => String(option?.name ?? ''))
+        : action.type === 'type' && choiceTarget ? [String(action.text ?? '').trim()] : []
+    for (const optionName of optionNames.filter((name) => name.trim() !== '')) {
+      if (namesPurchase(optionName)) classes.push('purchase')
+      if (namesDelete(optionName)) classes.push('delete')
+      if (namesWord(optionName, WORDS.permission)) classes.push('permission')
     }
     // CU-363 (design note 0.1; High pending a live row): on a web page a printable key pressed outside text entry goes to
     // the page, whose own handler may delete, archive or send (Gmail '#', 'e', '!') - its effect cannot be read, so it asks
