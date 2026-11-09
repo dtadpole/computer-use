@@ -1,14 +1,15 @@
 ---
 title: Human control on a real display
 created: 2026-11-02T08:29:12Z
-modified: 2026-11-05T23:44:42Z
+modified: 2026-11-09T14:50:21Z
 level: L1
-version: 0.4.6
+version: 0.5.0
 description: The local-input pause, what take over and hand back mean when the person shares the display with the agent, and how the live view watches a desktop run without becoming a target.
 status: unverified
 grounded_in:
   - source: ULTIMATE_GOAL.md@2.0.0 (human control row)
   - source: _designs_/system-architecture/live-control.md@0.8.4
+  - source: Linear CU-342 (owner-input stand-in for owner-session rehearsals, approved design 0.2)
 ---
 
 # Human control on a real display
@@ -35,6 +36,22 @@ paused; the interrupted action reports `skipped`, the rest of the batch the halt
 
 After a human resume the first input settles ([details](helper-protocol-details.md)). Paused time is not wall time. The test seam `simulateLocalInput {kind, via}` reports input
 through either guard or posts a real untagged event; it can only pause a run.
+
+### The owner-input stand-in (CU-342)
+
+An owner-session rehearsal needs the owner's key press without the owner. `CU_STAND_IN_OWNER_INPUT` (turn numbers,
+such as `3` or `3,9`) asks `cli.mjs run` for a labelled stand-in: after each named turn, agent core writes the note
+`STAND-IN owner input (CU-342): not the owner's` and calls `simulateLocalInput {kind: 'key', via: 'untagged'}` once -
+one real untagged event the guards detect exactly as they detect a person, so the pause it causes is the ordinary
+local-input pause, with no branch of its own; the run header lists the turns. Only `cli.mjs run` reads the variable
+(and `CU_DESKTOP_HOLD_TOKEN`) and hands runTask an explicit `standInTurns`; the loop, the driver and the MCP server read
+neither, and no model action maps to the seam. Set, the run refuses to start, naming the variable and the gate, unless
+every gate holds: the adapter cli.mjs built is the scripted one (by identity, never the `--model` text); `CU_HOME` is
+set and is not the default `~/.computer-use` after resolving symlinks; `CU_DESKTOP_HOLD_TOKEN` is the token of the run
+seat's own live hold (missing, malformed, expired, nested or another seat's refuses); consent is unattended; and the run
+is `--env macos-desktop`. A driver without the seam fails the run before it starts. The hold token is a match, not a
+secret: the lock file is readable by every seat and anyone can set CU_DESKTOP_SEAT; this stops a model run (which
+cannot set env for cli.mjs) but is no isolation between seats.
 
 ## Take over and hand back
 
