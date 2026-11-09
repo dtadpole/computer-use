@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - handover'
 created: 2026-11-08T04:14:00Z
-modified: 2026-11-09T16:51:04Z
+modified: 2026-11-09T18:41:26Z
 level: L1
-version: 4.10.0
+version: 4.11.0
 description: 'What a fresh [cu] Developer Two session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -20,24 +20,25 @@ Seat `cu-developer-two`: desktop and browser drivers, live view, run lock, MCP. 
 
 - #299, Part of CU-336: an iframe whose AX name is unread is named from aria-labelledby, aria-label or title, never
   the name attribute. After it lands: the `__privateStripeFrame5` row's policy assertion (written, local).
-- #304, Fixes CU-333: `open` waits up to 30 s, every other fixture call 10 s.
-- #339, Fixes CU-357: an action effect reports the session's notices (refused download, accepted alert by length).
+- #339, Fixes CU-357: an action effect reports the session's notices (refused download; an alert by length only).
+- #355, Part of CU-360: a page's navigation to another app's scheme is a notice, with a best-effort stop
+  (`launched` stays unknown). Its merge after #339 extends `noticeOf` to keep reason, stop and launched.
 
-Landed today: #181, #167, #193, #212, #288, #289, #298, #306, #320 (CU-351, label clicks) and #325 (CU-353's pin).
+Landed today: #181, #167, #193, #212, #288, #289, #298, #304 (CU-333, open bound 30 s), #306, #320, #325.
 
 ## Issues
 
-In Progress: CU-333, CU-357 (PRs above). Verify: CU-239, CU-300, CU-305, CU-318, CU-327, CU-332, CU-337, CU-351,
-CU-353.
+In Progress: CU-357, CU-360 (PRs above; CU-360's guide note drafted for cu-developer-one). Verify: CU-239, CU-300,
+CU-305, CU-318, CU-327, CU-332, CU-333, CU-337, CU-351, CU-353.
 
 ## Live state
 
-Schedules: the hourly pass and the 23:00Z Session reflection (subject_kind Session). The push-gate hook is in the
-shared clone. No hold, run or job.
+Schedules: the hourly pass and the 23:00Z Session reflection. No hold, run or stray process. LaunchServices does not
+route a probe scheme to a scratch bundle, so the launch half of CU-360 is not measurable here.
 
 ## Lessons
 
-- Check a filing's premise live before claiming a fix (CU-353; D-098, D-100).
-- An end-to-end row must make the push a lane really makes.
-- Choose a branch name before opening its PR; a content conflict is the author's to merge.
+- Add a control before reading a probe's negative (CU-360: LaunchServices, not Chrome, said no).
+- Check a filing's premise live before claiming a fix (D-098, D-100).
+- A scaled-down test bound must leave room for start-up on a loaded gate.
 - D-097: run the gate unpiped, then `&& git push`.
