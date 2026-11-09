@@ -559,6 +559,13 @@ export function urlSecret(raw, typedDigits = []) {
     const kind = looksSensitive(decode(segment))
     if (kind !== null && kind !== 'card' && kind !== 'phone') return kind
   }
+  // CU-325 follow-up (cu-coordinator 06:41Z): digits the run typed are matched against every digit of the address - host
+  // labels, the joined path, query and fragment - so a typed card split across segments or put in a host label asks too.
+  const typedRuns = (Array.isArray(typedDigits) ? typedDigits : []).filter((run) => typeof run === 'string' && run.length >= 13 && run.length <= 19)
+  if (typedRuns.length > 0) {
+    const every = decode(`${url.hostname}${url.pathname}${url.search}${url.hash}`).replace(/\D/g, '')
+    if (typedRuns.some((run) => every.includes(run))) return 'card'
+  }
   return null
 }
 
