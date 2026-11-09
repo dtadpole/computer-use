@@ -42,6 +42,9 @@ test('CU-301: a printable key into a password field or a password-named entry as
   assert.equal(judge(key('h'), entry('Choose a passphrase')), 'credential', 'a passphrase-named entry')
   assert.equal(judge(key('4'), entry('', { autocomplete: 'one-time-code' })), 'credential', 'a one-time-code field by autocomplete')
   assert.equal(judge(hold('a'), entry('Password', { inputType: 'password' })), 'credential', 'a held key')
+  // cu-verifier's surviving mutant on #178: a credential field the driver reports without an editable flag or a text role
+  // is still one (credentialField); a key into it asks.
+  assert.equal(judge(key('a'), { tag: 'input', inputType: 'password', role: 'generic', name: '' }), 'credential', 'a password input read without editable')
 })
 
 test('CU-301 on the desktop: the class policy judges the key; secure and password fields still hand off in app-policy', () => {

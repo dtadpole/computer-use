@@ -96,11 +96,11 @@ const server = http.createServer((req, res) => {
   res.setHeader('content-type', 'text/html')
   // 127.0.0.1 and localhost are different sites, so Chrome gives this frame its own process (a cross-site iframe).
   if (req.url.startsWith('/frame-host')) {
-    res.end(`<!doctype html><style>body{margin:0}</style><iframe src="http://localhost:${server.address().port}/frame-inner" style="position:absolute;left:100px;top:100px;width:400px;height:300px;border:10px solid #888"></iframe>`)
+    res.end(`<!doctype html><style>body{margin:0}</style><iframe title="Secure Credit Card Frame - CVV" src="http://localhost:${server.address().port}/frame-inner?token=abc#x" style="position:absolute;left:100px;top:100px;width:400px;height:300px;border:10px solid #888"></iframe>`)
     return
   }
   if (req.url.startsWith('/frame-inner')) {
-    res.end('<!doctype html><style>body{margin:0}</style><button style="position:absolute;left:50px;top:40px;width:120px;height:40px">Inner button</button>')
+    res.end('<!doctype html><style>body{margin:0}</style><button style="position:absolute;left:50px;top:40px;width:120px;height:40px">Inner button</button><input style="position:absolute;left:50px;top:120px;width:200px;height:30px">')
     return
   }
   // CU-319: a card form for Chrome's own autofill (CDP Autofill.trigger with a test card built at runtime).
@@ -307,6 +307,34 @@ try {
   check('inspectPoint inside a cross-site iframe returns the inner element, its origin and its box',
     frameSessions >= 1 && inner?.tag === 'button' && inner.name === 'Inner button' && inner.origin === `http://localhost:${mainPort}` &&
     near(inner.box.x, 120) && near(inner.box.y, 112.5) && near(inner.box.width, 90) && near(inner.box.height, 30), { frameSessions, inner })
+
+  // CU-300: a click into the frame's unnamed entry moves the focus there; focusedElement follows it through the frame's
+  // session - the entry itself (not the iframe), its frameUrl without query or fragment, its host's title as frameHost,
+  // the default-button read, and the fingerprint inspectPoint gave the same entry.
+  const entryAt = { x: 195, y: 184 }
+  const clickedEntry = await env.inspectPoint(entryAt)
+  // About one run in ten, Chrome gives the iframe the page's focus but the click never focuses the entry inside it: the
+  // frame's own document then has no focused element at all (traced 9 Nov), and the driver rightly answers the host.
+  // That is the click's miss, not the read's, so the row clicks once more and records how often it had to.
+  const frameActive = async () => {
+    const frame = [...(env.session.foreground().frameSessions?.values() ?? [])][0]
+    if (frame === undefined) return 'no frame session'
+    const read = await env.session.send({ sessionId: frame.sessionId }, 'Runtime.evaluate', { expression: 'document.activeElement && document.activeElement.tagName', returnByValue: true }).catch(() => null)
+    return read?.result?.result?.value ?? null
+  }
+  let framedFocus = null
+  const misses = []
+  for (let clicks = 0; clicks < 2 && framedFocus?.tag !== 'input'; clicks += 1) {
+    await env.perform({ type: 'click', x: entryAt.x, y: entryAt.y, button: 'left' })
+    framedFocus = await env.focusedElement()
+    if (framedFocus?.tag !== 'input') misses.push({ driver: framedFocus?.tag ?? null, frameDocument: await frameActive() })
+  }
+  report.frameFocusClickMisses = misses
+  check('focusedElement follows the focus into a cross-site iframe: the entry, frameUrl, frameHost, one fingerprint with the click (CU-300)',
+    framedFocus?.tag === 'input' && framedFocus.editable === true && framedFocus.frameUrl === `http://localhost:${mainPort}/frame-inner` &&
+    framedFocus.frameHost?.tag === 'iframe' && framedFocus.frameHost?.name === 'Secure Credit Card Frame - CVV' && framedFocus.defaultButtonRead === true &&
+    clickedEntry?.tag === 'input' && clickedEntry.fingerprint === framedFocus.fingerprint && clickedEntry.frameHost?.name === 'Secure Credit Card Frame - CVV',
+    { framedFocus: framedFocus && { tag: framedFocus.tag, name: framedFocus.name, frameUrl: framedFocus.frameUrl, frameHost: framedFocus.frameHost, defaultButtonRead: framedFocus.defaultButtonRead, same: clickedEntry?.fingerprint === framedFocus.fingerprint }, misses })
 
   // DNS rebinding: an allowed name that resolves to a loopback address is refused by the proxy before any connection.
   sitePolicy.allowOrigin(`http://rebind.test:${mainPort}/`)
