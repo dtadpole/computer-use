@@ -678,8 +678,14 @@ export async function runTask(options) {
   // after 'Show password' is still judged as one. The key comes from the driver (fieldKey), outside the fingerprint and
   // never recorded; it carries the page's loader or the app's process, so a navigation or a relaunch forgets it.
   const passwordKeys = new Set()
-  const remembered = (t) => {
-    if (!t || typeof t !== 'object' || typeof t.fieldKey !== 'string' || t.fieldKey === '') return t
+  // CU-349 (cu-researcher): some web and Electron fields drop their placeholder once a value is typed, so the placeholder a
+  // field showed is kept by its key - the first key and a later one into the same box are judged under the same names.
+  const placeholderKeys = new Map()
+  const remembered = (given) => {
+    if (!given || typeof given !== 'object' || typeof given.fieldKey !== 'string' || given.fieldKey === '') return given
+    let t = given
+    if (typeof t.placeholder === 'string' && t.placeholder.trim() !== '') placeholderKeys.set(t.fieldKey, t.placeholder)
+    else if (placeholderKeys.has(t.fieldKey)) t = { ...t, placeholder: placeholderKeys.get(t.fieldKey) }
     if (t.isPassword === true || t.secure === true || t.inputType === 'password' || namesPasswordField(t)) { passwordKeys.add(t.fieldKey); return t }
     return passwordKeys.has(t.fieldKey) ? { ...t, seenAsPassword: true } : t
   }
@@ -1153,7 +1159,7 @@ export async function runTask(options) {
       }
       // On the desktop, approvals key by bundle id, never by the driver's app: URL.
       const origin = desktop ? (context.target?.origin ?? context.frontmostBundleId) : originPattern(context.url)
-      if (decision.decision === 'confirm' && decision.class !== 'new_site' && decision.class !== 'new_app' && decision.class !== 'file_choice' && decision.askEachTime !== true && approvals.covers(decision.approvalKey ?? decision.class, origin)) {
+      if (decision.decision === 'confirm' && decision.class !== 'new_site' && decision.class !== 'new_app' && decision.class !== 'file_choice' && decision.askEachTime !== true && approvals.covers(decision.approvalKey ?? decision.class, origin) && (decision.alsoNeeds == null || approvals.covers(decision.alsoNeeds, origin))) {
         decision = { ...decision, decision: 'allow', rule: `approved:${decision.class}` }
       }
       // Text meant for a secure field, or typed while secure input is on, is redacted like a credential, whatever the
@@ -1264,6 +1270,8 @@ export async function runTask(options) {
           continue
         }
         if (decision.class !== 'new_app' && decision.class !== 'file_choice' && decision.askEachTime !== true) approvals.grant({ cls: decision.approvalKey ?? decision.class, origin, lifetime: decision.runOnly === true && answer.lifetime === 'always' ? 'run' : answer.lifetime })
+        // CU-365: the shortcut half of a stacked ask is granted beside it, capped at the run like any page-shortcut yes.
+        if (decision.alsoNeeds != null && decision.class !== 'new_app' && decision.class !== 'file_choice' && decision.askEachTime !== true) approvals.grant({ cls: decision.alsoNeeds, origin, lifetime: answer.lifetime === 'always' ? 'run' : answer.lifetime })
         if (decision.class === 'new_site') sitePolicy?.allowOrigin?.(action.url)
         if (decision.class === 'new_app') {
           policy.grantScope?.(decision.app, answer)

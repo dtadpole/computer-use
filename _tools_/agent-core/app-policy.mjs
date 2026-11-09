@@ -590,6 +590,9 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     if (opensFiles && selectionRunsCode(context.selection) && verdict.decision !== 'handoff') {
       return { decision: 'confirm', class: 'launch_code', classes: ['launch_code', ...(verdict.classes ?? [])], rule: 'selection:launch_code', reason: 'open the selection, which this run cannot read - it may run code', app }
     }
+    // CU-365 (cu-coordinator 19:19Z): the chord shortcut is a fallback - where CU-252's open-selection judgement applies
+    // (an open chord with the selection read), that judgement decides; a selection that cannot run code opens freely.
+    if (opensFiles && verdict.rule === 'page:shortcut') return { decision: 'allow', class: null, rule: 'selection:opens', reason: '', app }
     // CU-269 (cu-researcher): a drop onto an app's icon - a Finder .app item or a Dock app item - opens the dragged item
     // with that app (Finder's 'open with'). A terminal or code runner by name is refused as its app would be; a launchable
     // item asks launch_code (never pre-approved); a document asks new_app.

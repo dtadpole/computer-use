@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-09T18:10:00Z
+modified: 2026-11-09T20:10:00Z
 level: L1
-version: 3.7.0
+version: 3.9.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,20 +15,22 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; never drives the desktop. State at 18:10Z, 9 November.
+session worktree plus `--review` worktrees; never drives the desktop. State at 20:10Z, 9 November.
 
 ## Landed
 
-- Verified: CU-301, CU-241, CU-297, CU-302, CU-325, CU-326, CU-263, CU-336, CU-347, CU-345, CU-346; CU-321 decided.
-- In Verify: CU-340, CU-352, CU-354, CU-350.
+- Verified: CU-301, CU-241, CU-297, CU-302, CU-325, CU-326, CU-263, CU-336, CU-347, CU-345, CU-346, CU-363, CU-365.
+- In Verify: CU-340, CU-352, CU-354, CU-350, CU-355, CU-359.
 
 ## Open
 
-- CU-363 (High, D-086): PR #356 round 5 - page and app shortcuts (keypress/type/hold, both routes, unread focus, per-key
-  run-capped approvals); waits for cu-verifier's link rows. Next: modifier chords on a row (cu-researcher files it).
-- OK'd, queued: #338 (CU-355), #343 (CU-358), #347 (CU-359), #335 (CU-348), #349 (CU-349, after #344), #360 (CU-364, Low).
-- PR #351 (guide 0.1.23, eight languages) lands after #338; add it/nl/pt/tr when #343 lands.
-- CU-361: read the helper's nearbyLabel upgrade-only; drop guide line 32 when it lands.
+- CU-370 (High, D-086 slot 2): PR #382 - a non-editable select is a choice; keyTarget's selectOption is judged as a click
+  on that option, optionUnread asks; the loop passes typeOptions. Lands with cu-developer-two's driver PR.
+- Queued: #343 (CU-358, waits for cu-verifier), #349 (CU-349, after 0.2.63), #360 (CU-364, Low).
+- One guide PR after #351 lands: drop line 49 (CU-363/CU-365), the CU-360 mailto note after #355 (no 'records'
+  clause until #339 too); line 32 when CU-361 lands. Under 500 words.
+- D-101/D-102: run agent-core, _tests_/macos-desktop and every node verifier (CU_VERIFY_SEAT=cu-developer-one) before
+  review; name skips and live scenarios in the body.
 
 ## Lessons
 
