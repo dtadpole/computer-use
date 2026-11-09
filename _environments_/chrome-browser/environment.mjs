@@ -68,8 +68,10 @@ async function passGate(resourceGate, seat) {
 }
 
 /**
- * CU-357: a session notice as an effect reports it - its kind and time, the rule when there is one, an alert's message
- * (at most 200 characters), and a URL without its query or fragment (a download link's token stays out of the record).
+ * CU-357: a session notice as an effect reports it - its kind and time, the rule when there is one, a URL without its
+ * query or fragment (a download link's token stays out of the record), and a driver message (a failed set-up, at most
+ * 200 characters). An alert's message is page text the run never typed and may carry a secret ('Your new API key is
+ * ...'), so only its length is kept (cu-researcher).
  */
 export function noticeOf(notice) {
   const bare = (value) => {
@@ -85,7 +87,7 @@ export function noticeOf(notice) {
     at: notice?.at ?? null,
     ...(typeof notice?.url === 'string' && notice.url !== '' ? { url: bare(notice.url) } : {}),
     ...(typeof notice?.rule === 'string' ? { rule: notice.rule } : {}),
-    ...(typeof notice?.message === 'string' ? { message: notice.message.slice(0, 200) } : {}),
+    ...(typeof notice?.message === 'string' ? (notice.kind === 'alert_accepted' ? { messageLength: notice.message.length } : { message: notice.message.slice(0, 200) }) : {}),
   }
 }
 

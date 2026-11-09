@@ -128,14 +128,16 @@ test('CU-357: an effect reports the session notices since the last one - a refus
   assert.equal(second.notices, undefined, 'reported once: no notices on the next effect')
   connection.emit('Page.javascriptDialogOpening', { type: 'alert', message: 'Saved.', url: 'https://shop.example/a?b=1' }, 'S1')
   const third = await env.perform({ type: 'click', x: 10, y: 10, button: 'left' })
-  assert.deepEqual(third.notices.map((n) => [n.kind, n.message, n.url]), [['alert_accepted', 'Saved.', 'https://shop.example/a']], 'an alert accepted between actions lands on the next effect')
+  assert.deepEqual(third.notices.map((n) => [n.kind, n.messageLength, n.message, n.url]), [['alert_accepted', 6, undefined, 'https://shop.example/a']], 'an alert accepted between actions lands on the next effect - its length, never its text')
   await env.close()
 })
 
-test('CU-357: noticeOf keeps kind, time, rule and a short message; a URL loses its query and fragment; a non-web URL keeps its scheme only', () => {
+test('CU-357: noticeOf keeps kind, time, rule and a driver message; an alert keeps only its length (page text may hold a secret); a URL loses its query and fragment; a non-web URL keeps its scheme only', () => {
   assert.deepEqual(noticeOf({ kind: 'browser_traffic_blocked', url: 'https://update.example/check?id=1', rule: 'not_allowed', at: 5, extra: 'x' }), { kind: 'browser_traffic_blocked', at: 5, url: 'https://update.example/check', rule: 'not_allowed' })
   assert.deepEqual(noticeOf({ kind: 'download_refused', url: 'data:application/octet-stream;base64,AAAA', at: 1 }), { kind: 'download_refused', at: 1, url: 'data:' })
-  assert.equal(noticeOf({ kind: 'alert_accepted', message: 'm'.repeat(300), at: 2 }).message.length, 200)
+  const key = ['sk', 'live', 'abcdefghijklmnop'].join('-')
+  assert.deepEqual(noticeOf({ kind: 'alert_accepted', message: `Your new API key is ${key}`, at: 2 }), { kind: 'alert_accepted', at: 2, messageLength: 20 + key.length }, 'an alert carrying a key: its length only')
+  assert.equal(noticeOf({ kind: 'page_setup_failed', message: 'm'.repeat(300), at: 2 }).message.length, 200)
   assert.deepEqual(noticeOf({ kind: 'page_setup_failed', message: 'boom', at: 3 }), { kind: 'page_setup_failed', at: 3, message: 'boom' })
 })
 
