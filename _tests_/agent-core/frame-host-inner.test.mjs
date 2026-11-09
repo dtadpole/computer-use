@@ -47,6 +47,13 @@ test('CU-300: a Return in an inner field asks submit unless the frame\'s own def
   assert.equal(judge(key('ENTER'), { ...host('3-D Secure challenge'), editable: false, frameHost: host('Secure payment frame') }), 'submit', 'the nested host')
 })
 
+test('CU-300: Space on an inner control is judged by that control, as on a top-level page (cu-researcher\'s parity note)', () => {
+  const button = (name) => ({ tag: 'button', role: 'button', name, origin: 'https://js.payments.example', frameHost: host('Secure payment frame') })
+  assert.equal(judge(key('SPACE'), button('Pay now')), 'purchase', 'a hosted Pay button asks by its own name')
+  assert.equal(judge(key('SPACE'), button('')), 'allow', 'an unnamed inner control is allowed, as anywhere else (the chosen parity)')
+  assert.equal(judge(key('SPACE'), { ...host('Secure payment frame'), editable: false }), 'submit', 'the host element itself (the fallback) still asks')
+})
+
 test('CU-300: the desktop and a held dialog are unchanged', () => {
   assert.equal(judge(type('123'), { role: 'AXTextField', name: '', editable: true, frameHost: host('CVV') }, {}, 'desktop://'), 'allow', 'the desktop reports no frame host')
   const held = policy.classify(key('ENTER'), { url: WEB, target: null, dialog: { type: 'confirm', message: 'Leave this page?' } })
