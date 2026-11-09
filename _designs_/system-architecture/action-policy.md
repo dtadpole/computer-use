@@ -1,14 +1,15 @@
 ---
 title: Action policy
 created: 2026-11-01T09:24:10Z
-modified: 2026-11-08T00:30:01Z
+modified: 2026-11-09T01:20:00Z
 level: L1
-version: 0.9.0
+version: 0.9.3
 description: How every action is classified allow, confirm, block or hand-off from its target and context, the consequential-action classes including new sites and dialogs, and caller pre-approvals.
 status: unverified
 grounded_in:
   - source: _context_/chatgpt-computer-use/safety-confirmation-policy.md@1.0.0
   - source: _context_/chatgpt-computer-use/safety-isolation-and-approvals.md@1.0.0
+  - source: CU-302 design note 0.1 (2026-11-09 01:12Z; a saved login autofilled on load)
 ---
 
 # Action policy
@@ -37,6 +38,8 @@ has allowed and blocked tests (R51).
 
 Only the caller grants them (`preApprovals`), never the model or page. They may cover
 `submit`, `credential` (caller-supplied secrets), named `sensitive_data`, `new_site`, and `page_dialog` of the named kind.
+None covers a submit of a form the browser autofilled from saved logins or cards: a click, Space or Return on what
+submits it asks by the filled fields' names, from the driver's `autofilledFields` (CU-302; a failed read asks credential).
 `purchase`, `delete` and `permission` always confirm.
 
 ## Task screening
