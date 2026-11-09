@@ -935,6 +935,36 @@ export function readHold({ dir = RUN_LOCK_DIR, now = Date.now } = {}) {
 }
 
 /**
+ * CU-342: whether `token` is `seat`'s live hold's own token, read as readHold reads the hold (the same file and liveness
+ * rule). Resolves `{ ok: true }` or `{ ok: false, reason, message }`, `reason` one of `no_token`, `malformed_token`,
+ * `unreadable`, `no_live_hold` (none, expired, released or malformed), `other_seat`, `tokenless_hold`, `nested_token`
+ * (a nested holder's token is not the hold's) and `token_mismatch`. It never reports a token. A match, not a secret:
+ * hold.json is readable by every seat, so this tells a person's own command apart from a model run that cannot set its
+ * environment, and is no isolation between seats.
+ */
+export function holdTokenMatch({ seat, token, dir = RUN_LOCK_DIR, now = Date.now } = {}) {
+  if (typeof dir !== 'string' || !isAbsolute(dir)) throw invalid('the desktop-run lock needs an absolute dir')
+  const no = (reason, message) => ({ ok: false, reason, message })
+  if (typeof seat !== 'string' || !SEAT_PATTERN.test(seat)) return no('other_seat', 'the run names no [cu] seat key')
+  if (typeof token !== 'string' || token === '') return no('no_token', 'no hold token was given')
+  if (!HOLD_TOKEN_PATTERN.test(token)) return no('malformed_token', 'a hold token is the 16 hex characters a hold printed')
+  let parsed
+  try {
+    parsed = readEntry(join(resolve(dir), HOLD_NAME))
+  } catch {
+    return no('unreadable', 'the hold file could not be read')
+  }
+  const hold = liveHold(parsed, now())
+  if (hold === null) return no('no_live_hold', 'no live hold (none, expired, released or unreadable)')
+  if (hold.seat !== seat) return no('other_seat', `the live hold is seat ${hold.seat}'s, not ${seat}'s`)
+  const own = typeof parsed.token === 'string' && HOLD_TOKEN_PATTERN.test(parsed.token) ? parsed.token : null
+  if (own === null) return no('tokenless_hold', `seat ${seat}'s hold has no token (an older checkout took it); hold again`)
+  if (token === own) return { ok: true }
+  if (nestedTokens(parsed).includes(token)) return no('nested_token', `that is a nested holder's token, not seat ${seat}'s hold's own`)
+  return no('token_mismatch', `that token is not seat ${seat}'s live hold's`)
+}
+
+/**
  * The CLI: `hold --seat S --minutes N [--reason R] [--wait-free SECONDS]`, `release --seat S`, `status`, each with an
  * optional `--dir`. `--wait-free` holds first, then waits up to that long for an active run to end (`waitForFree`), so
  * one command gives the race-free order; it reports `free` and exits 3 when the run outlasted the wait. On exit 3 the

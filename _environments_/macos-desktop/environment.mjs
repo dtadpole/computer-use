@@ -645,6 +645,13 @@ function defaultButtonOf(value) {
  * control characters) and `modifiers` (AXMenuItemCmdModifiers: an integer 0-15 - Command alone is 0; +1 Shift,
  * +2 Option, +4 Control, +8 no Command). A part that is malformed is null; nothing usable at all is null.
  */
+/** CU-349: a placeholder string, trimmed, at most 80 characters (longer is none, never cut), else null. */
+export function placeholderOf(value) {
+  if (typeof value !== 'string') return null
+  const text = value.trim()
+  return text !== '' && text.length <= 80 ? text : null
+}
+
 function keyEquivalentOf(value) {
   if (value === null || typeof value !== 'object') return null
   const char = typeof value.char === 'string' && value.char.length >= 1 && value.char.length <= 4 && !/[\u0000-\u001F\u007F]/u.test(value.char) ? value.char : null
@@ -1793,6 +1800,11 @@ class DesktopEnvironment {
       // title, as the helper reads it) - never its value or its own title. A string of at most 80 characters, null when
       // absent (an older helper) or malformed. Context, not identity: outside the fingerprint, and never in run records.
       caption: typeof element.caption === 'string' && element.caption.trim() !== '' ? element.caption.trim().slice(0, 80) : null,
+      // CU-349 (helper 0.2.63): an entry's placeholder as the helper reads it (AXPlaceholderValue, never the value) - an
+      // extra name source the consent field rules may use to ask, never to replace a name. A string of at most 80
+      // characters (longer reads as none), null when absent (an older helper) or malformed. Outside the fingerprint, and
+      // never in run records.
+      placeholder: placeholderOf(element.placeholder),
       // CU-255: the file the element shows and its URL's last component, what launch_code reads besides the name - Finder
       // may hide an extension in the title (Payload for Payload.app or install.command). Outside the fingerprint, and
       // never in run records (an event's target keeps origin, role and name); the URL's path never leaves the driver.

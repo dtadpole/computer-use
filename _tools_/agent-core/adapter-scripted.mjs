@@ -98,6 +98,17 @@ export function loadPlan(path) {
   return JSON.parse(readFileSync(path, 'utf8'))
 }
 
+/** CU-342: every adapter createScriptedAdapter built - an identity no field, copy or spread of one can claim. */
+const SCRIPTED = new WeakSet()
+
+/**
+ * CU-342: whether `adapter` is the very object createScriptedAdapter returned (not a copy, a wrapper or anything else
+ * whose `id` says 'scripted'): only such a run may carry the labelled owner-input stand-in, as no model plays it.
+ */
+export function isScriptedAdapter(adapter) {
+  return adapter !== null && typeof adapter === 'object' && SCRIPTED.has(adapter)
+}
+
 /**
  * Create the scripted adapter. `plan` is `{ frame, turns }` or a function. The adapter declares every extension and
  * reports provider safety checks, so a plan can exercise the consent gate.
@@ -107,7 +118,7 @@ export function createScriptedAdapter(plan) {
   if (!isFunction && (plan === null || typeof plan !== 'object' || !Array.isArray(plan.turns))) {
     throw new ScriptError('bad_plan', 'a plan is { frame, turns } or a function')
   }
-  return {
+  const adapter = {
     id: 'scripted',
     model: 'scripted',
     capabilities: Object.freeze({ maxImage: {}, extensions: EXTENSION_ACTIONS, safetyChecks: true }),
@@ -141,4 +152,6 @@ export function createScriptedAdapter(plan) {
       }
     },
   }
+  SCRIPTED.add(adapter)
+  return adapter
 }

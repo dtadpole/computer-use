@@ -63,8 +63,25 @@ const LOCALE_WORDS = Object.freeze({
   // CU-345: a PIN, one-time code, security code or password field named in these languages.
   secret: ['passwort', 'kennwort', 'sicherheitscode', 'prüfziffer', 'mot de passe', 'code de sécurité', 'cryptogramme',
     'contraseña', 'código de seguridad', 'пароль', 'код безопасности', 'パスワード', '暗証番号', 'セキュリティコード', '認証コード',
-    '비밀번호', '보안코드', '인증번호'],
+    '비밀번호', '보안코드', '인증번호',
+    // cu-researcher's red team of PR #323: PIN, one-time code, card-check and card-number names the first list missed.
+    // German writes compounds: an entry led by '…' also matches as the end of a longer word (Kreditkartennummer).
+    '…geheimzahl', '…bestätigungscode', '…sicherheitscode', '…prüfnummer', '…prüfziffer', '…kartennummer', '…karten nummer', '…einmalcode', 'einmal code',
+    'sms code', 'bestätigungs code', 'sicherheits code', 'code de vérification', 'numéro de carte',
+    'código de verificación', 'número de tarjeta', 'код подтверждения', 'номер карты', 'pin-код', '確認コード', 'カード番号',
+    '인증 코드', '카드 번호', '카드번호'],
 })
+// CU-355 (design note 0.1): personal-ID field names in German, French, Spanish, Russian, Japanese and Korean - the third
+// locale side beside CU-352's action names and CU-345's credential names. '…' leads a German compound ending.
+const LOCALE_ID_NAMES = Object.freeze(['reisepass', '…passnummer', 'geburtsdatum', '…steuernummer', 'steuer id', 'steuer-id',
+  'steueridentifikationsnummer', '…ausweisnummer', 'personalausweis', '…versicherungsnummer', '…kontonummer',
+  'passeport', 'numéro de passeport', 'date de naissance', 'numéro fiscal', "numéro d'identification fiscale", 'numéro de sécurité sociale',
+  'numéro de compte', "carte d'identité",
+  'pasaporte', 'número de pasaporte', 'fecha de nacimiento', 'número de identificación fiscal', 'nif', 'dni', 'número de cuenta',
+  'número de seguridad social',
+  'паспорт', 'номер паспорта', 'дата рождения', 'инн', 'снилс', 'номер счета', 'номер счёта',
+  'パスポート', '旅券番号', '生年月日', 'マイナンバー', '個人番号', '口座番号',
+  '여권', '여권번호', '생년월일', '주민등록번호', '계좌번호', '사업자등록번호'])
 const WORDS = Object.freeze({
   purchase: ['buy', 'pay', 'order', 'place order', 'checkout', 'check out', 'subscribe', 'donate', 'purchase', 'transfer', 'withdraw', 'wire', 'send money',
     // CU-288 (cu-researcher's real-app wordings, round 2): a booking, an upgrade or a renewal commits money.
@@ -140,8 +157,13 @@ const TEXT_AREA_ROLE = /^(ax)?textarea$/i
 // without its length ('Start 14-day free trial', 'Try 3 months free', 'Try it free'); 'Free trial info' stays free.
 const TRIAL_NAME = /^(start (a |your |my )?(\d+[- ]?(day|week|month|year)s? )?free trial|(\d+[- ]?(day|week|month|year)s? )?free trial|try (it |us )?free( for \d+ (days?|weeks?|months?|years?))?|try \d+ (days?|weeks?|months?|years?) (for )?free|get \d+ (days?|weeks?|months?) free)\s*[.!\u2026]?$/i
 // cu-researcher on #145: 永不保存 / 永不儲存 (Never Save) is a standing choice; its '不保存' / '不儲存' is not Don't Save.
-const namesDelete = (name) => namesWord(String(name ?? '').replace(/永不(保存|儲存|存储)/g, ''), WORDS.delete)
-const namesPurchase = (name) => namesWord(withoutOrderReferences(name), WORDS.purchase) || TRIAL_NAME.test(String(name ?? '').trim())
+// CU-359 (D-099: a past-state folder name that over-asks is Medium): CJK phrases match inside a label, so a mail app's
+// Sent or Deleted folder (已发送, 送信済み, 삭제됨) read as Send or Delete. The past-state forms are taken out before the
+// action-name match; an imperative beside one ('删除已发送邮件', delete the sent mail) still matches.
+const PAST_STATE = /已(?:经|經)?(?:发送|發送|傳送|删除|刪除|提交|支付|付款|购买|購買|下单|下單)|(?:送信|削除|購入|支払い?|注文)済み?|(?:삭제|전송|결제|구매|제출)(?:됨|완료|된)/g
+const withoutPastState = (name) => String(name ?? '').replace(PAST_STATE, ' ')
+const namesDelete = (name) => namesWord(withoutPastState(name).replace(/永不(保存|儲存|存储)/g, ''), WORDS.delete)
+const namesPurchase = (name) => namesWord(withoutOrderReferences(withoutPastState(name)), WORDS.purchase) || TRIAL_NAME.test(String(name ?? '').trim())
 const DROP_DELETE = [...WORDS.delete, 'trash', 'bin']
 const TEXT_ROLE = /^(ax)?(textfield|textarea|searchfield|combobox|textbox|searchbox)$/i
 
@@ -266,6 +288,8 @@ const LETTER_BOUNDED = /[\u00c0-\u024f\u0400-\u04ff]/
 function namesWord(name, words) {
   const text = normaliseName(name)
   return words.some((word) => {
+    // CU-345: '…' leads a German compound ending - matched after any letters, bounded only on its right.
+    if (word.startsWith('\u2026')) return new RegExp(`${escapeRegExp(normaliseName(word.slice(1))).replace(/ /g, '[\\s-]+')}([^\\p{L}]|$)`, 'u').test(text)
     if (!LETTER_BOUNDED.test(word)) return new RegExp(`(^|[^a-z])${escapeRegExp(normaliseName(word)).replace(/ /g, '[\\s-]+')}([^a-z]|$)`).test(text)
     // A judged name has passed normaliseText, which folds homoglyphs case by case (a Cyrillic 'К' reads as Latin 'K'), so the
     // entry is folded the same way as written, capitalised and in capitals before it is compared.
@@ -284,7 +308,7 @@ const SUBMIT_BUT_REPLY = Object.freeze(WORDS.submit.filter((word) => !REPLY_WORD
 const SUBMIT_WHOLE_NAMES = new Set(['call', 'answer', 'merge', '呼叫', '接听', '接聽', '合并', '合併'])
 function judgesSubmit(name, target) {
   if (SUBMIT_WHOLE_NAMES.has(normaliseName(name).trim())) return true
-  if (!namesWord(name, WORDS.submit)) return false
+  if (!namesWord(withoutPastState(name), WORDS.submit)) return false
   return !(target?.textEntered === false && !namesWord(name, SUBMIT_BUT_REPLY))
 }
 
@@ -349,7 +373,7 @@ const BANK_OR_TAX_FIELD = Object.freeze(['iban', 'account number', 'account no',
   // CU-293: a bank account or tax id in Chinese.
   '银行账号', '銀行帳號', '银行账户', '銀行帳戶', '开户行', '開戶行', '税号', '稅號', '纳税人识别号', '納稅人識別號', '统一社会信用代码'])
 function bankOrTaxField(target) {
-  return namesWord(target?.name, BANK_OR_TAX_FIELD)
+  return entryNamesOf(target).some((name) => namesWord(name, BANK_OR_TAX_FIELD))
 }
 
 // CU-164: a text entry - the browser's editable flag, or a desktop text role - named for a password asks credential, and
@@ -478,6 +502,8 @@ const SECRET_NAMES = Object.freeze(['recovery phrase', 'seed phrase', 'secret ph
   'medical record',
   // CU-345: the same secrets named in German, French, Spanish, Russian, Japanese and Korean.
   ...LOCALE_WORDS.secret,
+  // CU-355: passport, birth date, tax, national and account numbers named in the same six languages.
+  ...LOCALE_ID_NAMES,
   // D-062 (cu-coordinator): an e-mail or phone field, and a street-level address, ask by name; a city, postcode or ZIP
   // alone does not, and neither does an IP or web address.
   'email', 'e-mail', 'phone', 'mobile number', 'telephone', 'street', 'address line', 'home address', 'shipping address',
@@ -509,11 +535,16 @@ function plainTextEntry(target) {
   return target.editable === true && (['input', 'textarea'].includes(String(target.tag ?? '').toLowerCase()) || ['textbox', 'searchbox'].includes(target.role))
 }
 
-const passwordNamedEntry = (target) => isTextEntry(target) && namesWord(target.name, PASSWORD_NAMES)
+// CU-349 (cu-coordinator 15:55Z: upgrade only): an entry's placeholder (helper 0.2.63, target.placeholder) is an extra
+// name for the field-name rules below - it can make a field ask ('Notes' with placeholder 'CVV' asks, a named over-ask),
+// never stop one asking, and never replaces the name a question shows. Each rule tests the name and the placeholder apart.
+const entryNamesOf = (target) => [target?.name, typeof target?.placeholder === 'string' && target.placeholder.trim() !== '' ? target.placeholder : null]
+  .filter((name) => name !== null && name !== undefined)
+const passwordNamedEntry = (target) => isTextEntry(target) && entryNamesOf(target).some((name) => namesWord(name, PASSWORD_NAMES))
 // CU-184 (desktop-rules.md): a text entry named for a password - shown or not, it holds one - unless its name says it is
 // a hint; the desktop hands a key action into it to the person, as it does a secure field (R83).
-export const namesPasswordField = (target) => passwordNamedEntry(target) && !namesWord(target.name, ['hint'])
-const secretNamedEntry = (target) => isTextEntry(target) && (namesWord(target.name, SECRET_NAMES) || namesAcronym(target.name))
+export const namesPasswordField = (target) => isTextEntry(target) && entryNamesOf(target).some((name) => namesWord(name, PASSWORD_NAMES) && !namesWord(name, ['hint']))
+const secretNamedEntry = (target) => isTextEntry(target) && entryNamesOf(target).some((name) => namesWord(name, SECRET_NAMES) || namesAcronym(name))
 
 // CU-164: a wallet recovery phrase - twelve or more words in a row, every one on the BIP39 list; ordinary prose breaks
 // the run with words the list does not hold (the, is, to, of, a).
@@ -639,6 +670,13 @@ export function urlSecret(raw, typedDigits = []) {
       return part
     }
   }
+  // CU-348 (design note 0.1): the userinfo username is read like a path segment - a card, SSN or other value there asks.
+  if (url.username !== '') {
+    const user = decode(url.username)
+    if (pathCard(user, typedDigits)) return 'card'
+    const kind = looksSensitive(user)
+    if (kind !== null) return kind
+  }
   const params = [...url.searchParams]
   const fragment = url.hash.slice(1)
   if (fragment.includes('=')) params.push(...new URLSearchParams(fragment))
@@ -673,7 +711,7 @@ export function urlSecret(raw, typedDigits = []) {
   // labels, the joined path, query and fragment - so a typed card split across segments or put in a host label asks too.
   const typedRuns = (Array.isArray(typedDigits) ? typedDigits : []).filter((run) => typeof run === 'string' && run.length >= 13 && run.length <= 19)
   if (typedRuns.length > 0) {
-    const every = decode(`${url.hostname}${url.pathname}${url.search}${url.hash}`).replace(/\D/g, '')
+    const every = decode(`${url.username}${url.hostname}${url.pathname}${url.search}${url.hash}`).replace(/\D/g, '')
     if (typedRuns.some((run) => every.includes(run))) return 'card'
   }
   return null
@@ -685,6 +723,13 @@ export function looksSensitive(text) {
     const digits = match[0].replace(/\D/g, '')
     if (digits.length >= 13 && digits.length <= 19 && luhn(digits)) return 'card'
   }
+  // CU-346 (cu-researcher): a card's groups split by dots, slashes, commas, underscores, tabs or line breaks - any of
+  // them per gap, each optionally followed by a space - in 4-4-4-4(-1..3) or Amex 4-6-5 groups, passing Luhn. Named
+  // over-ask: a grouped number that fits.
+  const gap = '(?:[./,_\\-][ \\t]?|\\r?\\n|\\t)'
+  for (const m of value.matchAll(new RegExp(`(?<!\\d)\\d{4}${gap}(?:\\d{4}${gap}\\d{4}${gap}\\d{4}(?:${gap}\\d{1,3})?|\\d{6}${gap}\\d{5})(?!\\d)`, 'g'))) {
+    if (luhn(m[0].replace(/\D/g, ''))) return 'card'
+  }
   // The match is greedy (an IBAN followed by a word runs on into it), so it is cut at its country's length.
   for (const match of value.matchAll(/\b[A-Za-z]{2}\d{2}(?:\s?[A-Za-z0-9]){11,30}\b/g)) {
     const compact = match[0].replace(/\s+/g, '')
@@ -695,6 +740,11 @@ export function looksSensitive(text) {
     if (abaValid(match[1])) return 'bank_account'
   }
   if (/\b\d{3}-\d{2}-\d{4}\b/.test(value)) return 'national_id'
+  // CU-346: an SSN in 3-2-4 groups split by dots, slashes, commas, underscores or line breaks (the same separator twice), held
+  // to the issuing rules below. Named over-ask: a reference written that way that fits them.
+  for (const m of value.matchAll(/(?<!\d)(\d{3})([./,_]|\r?\n)[ \t]?(\d{2})\2[ \t]?(\d{4})(?!\d)/g)) {
+    if (m[1] !== '000' && m[1] !== '666' && m[1][0] !== '9' && m[3] !== '00' && m[4] !== '0000') return 'national_id'
+  }
   // CU-245: an SSN in spaced 3-2-4 groups, held to the issuing rules (no area 000 or 666, no group 00, no serial 0000)
   // so most spaced references do not fit; an area 9xx is an ITIN only with its group in 50-65, 70-88, 90-92 or 94-99
   // (cu-researcher: the dashed form asks for both). Named over-ask: a spaced nine-digit reference that fits.
@@ -734,8 +784,26 @@ export function looksSensitive(text) {
   for (const m of value.matchAll(/(?<![A-Za-z0-9/+])[A-Za-z0-9/+]{40}(?![A-Za-z0-9/+=])/g)) {
     if (/[A-Z]/.test(m[0]) && /[a-z]/.test(m[0]) && /\d/.test(m[0])) return 'key'
   }
-  for (const m of value.matchAll(/(?<![A-Za-z0-9])(?:password|passwd|pwd|secret|token|api[_-]?key|access[_-]?key|client[_-]?secret)["']?\s*[=:]\s*["']?([^\s"',}]{6,})/gi)) {
+  for (const m of value.matchAll(/(?<![A-Za-z0-9])(?:password|passwd|passphrase|pwd|secret|token|api[_-]?key|access[_-]?key|client[_-]?secret)["']?\s*[=:]\s*["']?([^\s"',}]{6,})/gi)) {
     if (/[\d\W_]/.test(m[1])) return 'key'
+  }
+  // CU-350 (design note 0.1): an UPPER_SNAKE or run-together upper-case name ending in PASSWORD, PASSWD, SECRET or TOKEN
+  // (PGPASSWORD=, MYSQL_ROOT_PASSWORD=), a bearer token, and a password glued to a database client's flag.
+  for (const m of value.matchAll(/(?<![A-Za-z0-9])[A-Z][A-Z0-9_]*(?:PASSWORD|PASSWD|SECRET|TOKEN)["']?\s*[=:]\s*["']?([^\s"',}]{6,})/g)) {
+    if (/[\d\W_]/.test(m[1])) return 'key'
+  }
+  for (const m of value.matchAll(/\bbearer\s+([A-Za-z0-9._~+/-]{16,}=*)/gi)) {
+    if (/\d/.test(m[1])) return 'key'
+  }
+  if (/\b(?:mysql|mariadb|mysqldump|psql|pg_dump|mongo|mongosh|redis-cli)\b[^\n]*?(?:\s-p(?!\s)\S{4,}|\s--password=\S{4,})/i.test(value)) return 'key'
+  // cu-researcher's red team: 'curl -u user:<pw>', 'sshpass -p <pw>', and an 'Authorization: Basic' value whose base64 decodes
+  // to user:password.
+  if (/\b(?:curl|wget|http|https)\b[^\n]*?\s(?:-u|--user)\s+[^\s:]+:\S{4,}/i.test(value)) return 'key'
+  if (/\bsshpass\b[^\n]*?\s-p\s*\S{4,}/i.test(value)) return 'key'
+  for (const m of value.matchAll(/\bbasic\s+([A-Za-z0-9+/]{8,}={0,2})(?![A-Za-z0-9+/=])/gi)) {
+    let decoded = ''
+    try { decoded = atob(m[1]) } catch { decoded = '' }
+    if (/^[^:\s]+:\S{4,}$/.test(decoded)) return 'key'
   }
   // CU-164: a 0x-prefixed 64-hex private key (the word boundary after 'x' kept the rule above from seeing it); a 0x + 40
   // hex wallet address is public and stays allowed.
@@ -921,6 +989,62 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (scheme !== '' && !WEB_SCHEMES.has(scheme) && pressesLink) classes.push('permission')
     const keyboard = keyboardActivation(action, target, context)
     if (keyboard.deletes) classes.push('delete')
+    // CU-363 (design note 0.1; High pending a live row): on a web page a printable key pressed outside text entry goes to
+    // the page, whose own handler may delete, archive or send (Gmail '#', 'e', '!') - its effect cannot be read, so it asks
+    // once per key, site and run (permission, never pre-approved; the answer keys 'permission:page-shortcut:<key>' -
+    // cu-researcher: an approval covers that key on that site, never every character, nor a permission request).
+    // Named over-ask: the first printable shortcut on any site (j/k navigation, '/') asks once a run.
+    const onDesktop = /^(app|desktop):/.test(String(context.url ?? ''))
+    const browserRoute = context.url != null && !onDesktop
+    // CU-363 round 3 (cu-coordinator 17:40Z): the desktop route too - an app's own key equivalent outside a text entry
+    // that fires no menu item (the loop's boundMenuItem read says none, or there is none to read).
+    const desktopNoMenu = onDesktop && (context.boundMenuItem == null || context.boundMenuItem.none === true)
+    // The key is the character it produces (Shift+3 is '#'), so a yes for '3' never frees '#' (cu-researcher).
+    const SHIFTED = { 1: '!', 2: '@', 3: '#', 4: '$', 5: '%', 6: '^', 7: '&', 8: '*', 9: '(', 0: ')', '-': '_', '=': '+', '[': '{', ']': '}', '\\': '|', ';': ':', "'": '"', ',': '<', '.': '>', '/': '?', '`': '~' }
+    let chordShortcut = false
+    const shortcutKey = (() => {
+      if (action.type === 'type') {
+        // cu-verifier's live rows: a type outside text entry delivers every character to the page ('###', 'ok #').
+        const text = String(action.text ?? '').replace(/[\r\n]/g, '')
+        if (text.trim() === '') return null
+        // A control is no text entry: its typed text reaches the page's handlers as a keypress would (cu-researcher: rows are
+        // often links). Only an entry-like role the driver reports read-only is left to its own rules.
+        if (target && /text|search|combo/i.test(String(target.role ?? ''))) return null
+        return text
+      }
+      const keys = keysOf(action)
+      if (action.type !== 'keypress' && action.type !== 'hold_key') return null
+      const MODS = ['CMD', 'COMMAND', 'META', 'SUPER', 'CTRL', 'CONTROL', 'ALT', 'OPTION', 'SHIFT']
+      const main = [...keys].filter((key) => !MODS.includes(key))
+      if (main.length !== 1 || [...main[0]].length !== 1) return null
+      const ch = main[0]
+      const produced = keys.has('SHIFT') ? (SHIFTED[ch] ?? ch.toUpperCase()) : ch.toLowerCase()
+      const accel = ['CMD', 'COMMAND', 'META', 'SUPER', 'CTRL', 'CONTROL'].some((key) => keys.has(key))
+      const alt = keys.has('ALT') || keys.has('OPTION')
+      if (!accel && !alt) return produced
+      // CU-365 (design note 0.1): a Control, Option or Command chord with one printable key reaches the page or app too.
+      // Excluded, keeping their own rules: the editing set (select all, undo, redo, copy, cut, paste) and, in the
+      // browser, the chords the driver turns into browser actions or refuses (chrome-browser keys.mjs chordMeaning).
+      const lower = ch.toLowerCase()
+      // Find and find-next (Cmd/Ctrl + F, G) join the editing set (cu-coordinator 18:59Z).
+      if (accel && (lower === 'v' || (!alt && 'azycxfg'.includes(lower)))) return null
+      if (browserRoute && accel && !alt && 'r[]ltnwq'.includes(lower)) return null
+      // On the desktop a chord usually fires a menu item: only the loop's read that none fires makes it the app's own.
+      if (onDesktop && context.boundMenuItem?.none !== true) return null
+      chordShortcut = true
+      const label = [keys.has('CTRL') || keys.has('CONTROL') ? 'ctrl' : null, alt ? 'alt' : null, ['CMD', 'COMMAND', 'META', 'SUPER'].some((key) => keys.has(key)) ? 'cmd' : null].filter(Boolean)
+      return `${label.join('+')}+${produced}`
+    })()
+    // A key into a frame host goes to the frame's own field (CU-297 judges it by the frame's name), not to a page handler.
+    // An unread focus counts (cu-coordinator 17:40Z: printable input of any length into an unread focus asks - a named
+    // over-ask: typing into a desktop field whose focus cannot be read asks).
+    // On the desktop a null target (nothing focused, or a focus the driver could not read) holds no text entry either, so
+    // printable input there asks too (cu-coordinator 17:53Z) - a typed line break alone is no printable input (D-069 keeps it).
+    const desktopTarget = desktopNoMenu
+    // cu-verifier 180522Z: 'ok #' typed on a focused link row - its space presses the link, its other characters still reach
+    // the page's handlers - so a typed text is an activation only when it holds nothing but spaces and line breaks.
+    const activationOnly = keyboard.activates && !(action.type === 'type' && /\S/.test(String(action.text ?? '')))
+    const pageShortcut = (browserRoute || desktopTarget) && shortcutKey !== null && !isTextEntry(target) && !framesHost(target) && !keyboard.deletes && !activationOnly
     // CU-140 (press-and-drop.md): a drag pressed on a control - a long press, or any drag starting there - is judged like
     // a click on it; a file, row, cell or image at the press point is not judged by its name (dragging it moves it).
     const pressesTarget = POINTER.has(action.type) || (action.type === 'drag' && CONTROL_ROLE.test(String(target?.role ?? '')))
@@ -1174,20 +1298,39 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (target.autofillRead === false) autofillClasses.push('credential')
     }
     classes.push(...autofillClasses)
+    // CU-363: the page shortcut asks only when no other rule already judges the key (a field's name, a delete key).
+    // CU-365 (cu-coordinator 19:19Z): a chord is a fallback - when an earlier rule has already classed it, that rule decides
+    // and the chord adds no shortcut ask (typed text and single keys still stack, CU-363).
+    const shortcutActive = pageShortcut && !(chordShortcut && classes.length > 0)
+    if (shortcutActive && classes.length === 0) classes.push('permission')
+    // The approval a page shortcut needs: typed text keys by its characters, a key or chord by what it produces.
+    const shortcutShown = action.type === 'type' ? `${[...String(action.text ?? '')].length} typed characters` : `'${shortcutKey}'`
+    const shortcutApproval = shortcutActive ? `permission:page-shortcut:${action.type === 'type' ? [...new Set(shortcutKey)].sort().join('') : shortcutKey}` : null
+    // CU-365 stacking (cu-researcher 18:19Z): when another class asks too, the shortcut half still needs its own approval,
+    // so a yes for that class (sensitive_data for the run, say) never frees the page's handlers.
+    const also = shortcutActive ? { alsoNeeds: shortcutApproval } : {}
+    // ... and 'permission' is listed beside the other classes (the record), while the class that ranks first still leads.
+    const stack = (list) => (shortcutActive && !list.includes('permission') ? [...list, 'permission'] : list)
     const unique = [...new Set(classes)].sort((a, b) => PRECEDENCE.indexOf(a) - PRECEDENCE.indexOf(b))
     const needed = unique.filter((cls) => !preApproved(cls, url) || NEVER_PRE_APPROVED.includes(cls) || autofillClasses.includes(cls))
+    if (needed.length === 0 && shortcutActive) {
+      return { decision: 'confirm', class: 'permission', classes: ['permission'], rule: 'page:shortcut', approvalKey: shortcutApproval, runOnly: true, reason: `press ${shortcutShown} on ${placeOf(url, target, context?.frontmostBundleId)}, a keyboard shortcut of the ${onDesktop ? 'app' : 'page'} - it decides what it does` }
+    }
     if (needed.length === 0) {
       return { decision: 'allow', class: unique[0] ?? null, rule: unique.length > 0 ? 'pre_approved' : 'default', reason: '' }
     }
     const cls = needed[0]
+    if (shortcutActive && cls === 'permission') {
+      return { decision: 'confirm', class: cls, classes: needed, rule: 'page:shortcut', approvalKey: shortcutApproval, runOnly: true, reason: `press ${shortcutShown} on ${placeOf(url, target, context?.frontmostBundleId)}, a keyboard shortcut of the ${onDesktop ? 'app' : 'page'} - it decides what it does` }
+    }
     if (mixedScript && cls === 'permission') {
-      return { decision: 'confirm', class: cls, classes: needed, rule: 'target:mixed_script', reason: `activate "${name}", whose name mixes scripts in one word (a disguised control?)` }
+      return { ...also, decision: 'confirm', class: cls, classes: stack(needed), rule: 'target:mixed_script', reason: `activate "${name}", whose name mixes scripts in one word (a disguised control?)` }
     }
     if (autofillClasses.includes(cls)) {
-      return { decision: 'confirm', class: cls, classes: needed, rule: `autofill:${cls}`, reason: `submit a form the browser filled from your saved ${autofillCard ? 'card' : cls === 'credential' ? 'login' : 'details'} on ${originPattern(url)}` }
+      return { ...also, decision: 'confirm', class: cls, classes: stack(needed), rule: `autofill:${cls}`, reason: `submit a form the browser filled from your saved ${autofillCard ? 'card' : cls === 'credential' ? 'login' : 'details'} on ${originPattern(url)}` }
     }
     // `class` is the one that ranks first; `classes` lists every class that applied, for the evaluator's records.
-    return { decision: 'confirm', class: cls, classes: needed, rule: `class:${cls}`, reason: describe(cls, action, target, url, context?.frontmostBundleId) }
+    return { ...also, decision: 'confirm', class: cls, classes: stack(needed), rule: `class:${cls}`, reason: `${describe(cls, action, target, url, context?.frontmostBundleId)}${shortcutActive ? `; the same keys may also trigger a keyboard shortcut of the ${onDesktop ? 'app' : 'page'}` : ''}` }
   }
 
   return { classify, preApprovals: granted }

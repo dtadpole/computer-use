@@ -648,6 +648,149 @@ export function accessKeyOf(action) {
 }
 
 /**
+ * CU-370: the option one key moves a focused native single <select> to - `{ index }` of that option; `{ unread: true }`
+ * for Enter or Space (they open the popup or commit its highlight, which no page script can read, so the policy asks);
+ * null for anything else, or when the value would not change. ArrowDown/ArrowUp: the next/previous enabled option;
+ * Home/PageUp and End/PageDown: the first/last; a printable character: Chrome's type-ahead from the option after the
+ * current one, wrapping. Self-contained: it runs serialized in the page.
+ */
+export function selectKeyOption(select, key) {
+  if (!select || String(select.tagName || '').toUpperCase() !== 'SELECT' || select.multiple || select.disabled) return null
+  const options = Array.from(select.options || [])
+  const usable = (o) => Boolean(o) && !o.disabled && !(o.parentNode && String(o.parentNode.tagName || '').toUpperCase() === 'OPTGROUP' && o.parentNode.disabled)
+  const label = (o) => String(o.label || o.text || '').replace(/\s+/g, ' ').trim().toLowerCase()
+  const current = typeof select.selectedIndex === 'number' ? select.selectedIndex : -1
+  const pick = (index) => (index >= 0 && index !== current ? { index } : null)
+  if (key === 'Enter' || key === ' ') return { unread: true }
+  if (key === 'ArrowDown') {
+    for (let i = current + 1; i < options.length; i += 1) if (usable(options[i])) return pick(i)
+    return null
+  }
+  if (key === 'ArrowUp') {
+    for (let i = current - 1; i >= 0; i -= 1) if (usable(options[i])) return pick(i)
+    return null
+  }
+  if (key === 'Home' || key === 'PageUp') return pick(options.findIndex(usable))
+  if (key === 'End' || key === 'PageDown') {
+    for (let i = options.length - 1; i >= 0; i -= 1) if (usable(options[i])) return pick(i)
+    return null
+  }
+  if (typeof key === 'string' && key.length === 1) {
+    const needle = key.toLowerCase()
+    for (let k = 1; k <= options.length; k += 1) {
+      const i = (((current + k) % options.length) + options.length) % options.length
+      if (usable(options[i]) && label(options[i]).startsWith(needle)) return pick(i)
+    }
+  }
+  return null
+}
+
+/**
+ * CU-370: every option a typed string moves a focused native single <select> through, in order - Chrome's type-ahead
+ * accumulates the prefix ('Del' reaches Delete, not Details by 'D' then 'e'), each step selects (and may fire change),
+ * so each step's option counts (cu-researcher). A prefix of one repeated character cycles through that character's
+ * options. Indices without repeats; [] when nothing matches; null when the element is no such select. Self-contained.
+ */
+export function selectTypeOptions(select, text) {
+  if (!select || String(select.tagName || '').toUpperCase() !== 'SELECT' || select.multiple || select.disabled) return null
+  const options = Array.from(select.options || [])
+  const usable = (o) => Boolean(o) && !o.disabled && !(o.parentNode && String(o.parentNode.tagName || '').toUpperCase() === 'OPTGROUP' && o.parentNode.disabled)
+  const label = (o) => String(o.label || o.text || '').replace(/\s+/g, ' ').trim().toLowerCase()
+  let current = typeof select.selectedIndex === 'number' ? select.selectedIndex : -1
+  let prefix = ''
+  const landed = []
+  for (const ch of String(text ?? '')) {
+    prefix += ch.toLowerCase()
+    const repeated = prefix.length > 1 && Array.from(prefix).every((c) => c === prefix[0])
+    const needle = repeated ? prefix[0] : prefix
+    const from = prefix.length === 1 || repeated ? current + 1 : current
+    for (let k = 0; k < options.length; k += 1) {
+      const i = (((from + k) % options.length) + options.length) % options.length
+      if (usable(options[i]) && label(options[i]).startsWith(needle)) {
+        current = i
+        if (!landed.includes(i)) landed.push(i)
+        break
+      }
+    }
+  }
+  return landed
+}
+
+/**
+ * CU-370: what one plain key on the focused element `el` chooses - the element it would select or check (an option of a
+ * native select via `selectKeyOption`, which the caller passes in, as this runs serialized; the next or previous radio
+ * of the group; the ARIA listbox/combobox option it moves to or commits), the string 'unread' when a choice changes but
+ * cannot be read (Enter/Space on a select, PageUp/PageDown, any navigation in a multiple or size>1 select), or null when
+ * the key chooses nothing here. ArrowLeft/ArrowRight count as ArrowUp/ArrowDown (a safe over-ask where the platform
+ * ignores them; cu-researcher). Radios: one name in one form (or none), wrapping, skipping disabled ones; ARIA radios
+ * in their radiogroup, skipping aria-disabled. ARIA listbox: its role=option elements; a combobox's via aria-controls
+ * or aria-owns; aria-activedescendant names the current one, else the focused option itself. Self-contained.
+ */
+export function keyChoice(el, key, selectKeyOptionFn) {
+  if (!el || typeof key !== 'string') return null
+  const tag = String(el.tagName || '').toUpperCase()
+  const attr = (node, name) => (node && typeof node.getAttribute === 'function' ? node.getAttribute(name) : null)
+  const role = String(attr(el, 'role') || '').toLowerCase()
+  const forward = key === 'ArrowDown' || key === 'ArrowRight'
+  const backward = key === 'ArrowUp' || key === 'ArrowLeft'
+  const navigation = forward || backward || ['Home', 'End', 'PageUp', 'PageDown'].includes(key)
+  const step = (list, current) => {
+    if (list.length === 0) return null
+    if (key === 'Home') return list[0]
+    if (key === 'End') return list[list.length - 1]
+    if (current < 0) return forward ? list[0] : backward ? list[list.length - 1] : null
+    if (forward) return list[(current + 1) % list.length]
+    if (backward) return list[(current - 1 + list.length) % list.length]
+    return null
+  }
+  if (tag === 'SELECT') {
+    if (el.disabled) return null
+    if (el.multiple || Number(el.size) > 1) return navigation || key === ' ' || key === 'Enter' || key.length === 1 ? 'unread' : null
+    if (key === 'PageUp' || key === 'PageDown') return 'unread'
+    const moved = selectKeyOptionFn(el, key === 'ArrowRight' ? 'ArrowDown' : key === 'ArrowLeft' ? 'ArrowUp' : key)
+    if (moved === null) return null
+    return moved.unread ? 'unread' : el.options[moved.index]
+  }
+  if (tag === 'INPUT' && String(el.type || '').toLowerCase() === 'radio') {
+    if (!(forward || backward) || !el.name) return null
+    const pool = el.form ? Array.from(el.form.elements || []) : Array.from(el.ownerDocument ? el.ownerDocument.querySelectorAll('input') : [])
+    const group = pool.filter((r) => String(r.tagName || '').toUpperCase() === 'INPUT' && String(r.type || '').toLowerCase() === 'radio' && r.name === el.name && (r.form || null) === (el.form || null) && (r === el || !r.disabled))
+    const next = step(group, group.indexOf(el))
+    return next && next !== el ? next : null
+  }
+  if (role === 'radio') {
+    if (!(forward || backward)) return null
+    const box = typeof el.closest === 'function' ? el.closest('[role="radiogroup"]') : null
+    if (!box) return null
+    const group = Array.from(box.querySelectorAll('[role="radio"]')).filter((r) => r === el || attr(r, 'aria-disabled') !== 'true')
+    const next = step(group, group.indexOf(el))
+    return next && next !== el ? next : null
+  }
+  const doc = el.ownerDocument
+  const byId = (id) => {
+    if (!id) return null
+    const root = typeof el.getRootNode === 'function' ? el.getRootNode() : null
+    return (root && typeof root.getElementById === 'function' ? root.getElementById(id) : null) || (doc ? doc.getElementById(id) : null)
+  }
+  let box = null
+  let current = null
+  if (role === 'listbox') box = el
+  else if (role === 'combobox') box = byId(String(attr(el, 'aria-controls') || attr(el, 'aria-owns') || '').split(/\s+/)[0]) || el
+  else if (role === 'option') {
+    box = typeof el.closest === 'function' ? el.closest('[role="listbox"]') : null
+    current = el
+  }
+  if (!box || typeof box.querySelectorAll !== 'function') return null
+  const options = Array.from(box.querySelectorAll('[role="option"]')).filter((o) => attr(o, 'aria-disabled') !== 'true')
+  if (current === null) current = byId(attr(el, 'aria-activedescendant'))
+  const index = current ? options.indexOf(current) : -1
+  if (key === 'Enter') return role === 'option' ? null : index >= 0 ? options[index] : null
+  if (!navigation || key === 'PageUp' || key === 'PageDown') return navigation ? 'unread' : null
+  const next = step(options, index)
+  return next && next !== current ? next : null
+}
+
+/**
  * CU-353: the first element whose accesskey names `key` (any of its space-separated keys, any case), or null - the
  * document in order, then each open shadow root (a web component's accesskey button; cu-researcher). Other frames and
  * closed roots are not searched (a named limit). Several elements on one key: Chrome moves the focus among them rather
