@@ -11,17 +11,20 @@ import { describeElement } from '../../_environments_/chrome-browser/page-script
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
 const source = (file) => readFileSync(join(root, file), 'utf8')
+// A field counts as named when it appears in property syntax - obj.field, field:, 'field', { field or , field - so a
+// common word in a comment ('a drag pressed at') does not count.
+const names = (text, field) => new RegExp(`(\\.${field}\\b|\\b${field}\\s*:|['"]${field}['"]|[{,]\\s*${field}\\b)`).test(text)
 
 test('every landed field the kit builds is still named by the file that produces it', () => {
   for (const { field, file, pending } of SOURCES) {
     if (pending) continue
-    assert.match(source(file), new RegExp(`\\b${field}\\b`), `${field} is no longer named in ${file} - update the kit`)
+    assert.ok(names(source(file), field), `${field} is no longer named in ${file} - update the kit`)
   }
 })
 
 test('a pending field is still pending: when its pull request lands, the list must drop the mark', () => {
   for (const { field, file, pending } of SOURCES.filter((one) => one.pending)) {
-    assert.doesNotMatch(source(file), new RegExp(`\\b${field}\\b`), `${field} is now in ${file}; remove 'pending: ${pending}' from SOURCES`)
+    assert.ok(!names(source(file), field), `${field} is now in ${file}; remove 'pending: ${pending}' from SOURCES`)
   }
 })
 
