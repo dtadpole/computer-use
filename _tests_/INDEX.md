@@ -1,8 +1,8 @@
 ---
 title: computer-use tests
 created: 2026-11-01T09:33:46Z
-modified: 2026-11-08T09:30:55Z
-version: 1.11.0
+modified: 2026-11-09T11:20:00Z
+version: 1.12.0
 description: The computer-use project's _tests_ type folder - component suites run with node --test, one instance per suite.
 grounded_in:
   - source: _context_/team-operations/working-model.md@1.0.0
@@ -28,6 +28,7 @@ Component suites, no browser and no key. Delivered behaviour is judged in
 | [`heddle-plugin/`](heddle-plugin/INDEX.md) | [`_tools_/heddle-plugin/`](../_tools_/heddle-plugin/INDEX.md) | cu-developer-two |
 | [`nightly-regression/`](nightly-regression/INDEX.md) | [`_tools_/nightly-regression/`](../_tools_/nightly-regression/INDEX.md) | cu-integrator |
 | [`fixture-shapes/`](fixture-shapes/INDEX.md) | not a suite: [`shapes.mjs`](fixture-shapes/shapes.mjs), the key-shaped test values built from fragments | shared |
+| [`push-gate/`](push-gate/INDEX.md) | the CU-337 pre-push hook: ranges, refusal on the gate's exit status, a real push to a bare remote | cu-developer-two |
 
 ```bash
 node --test _tests_/*/*.test.mjs
