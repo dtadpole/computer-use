@@ -34,7 +34,7 @@ if (record.length !== 1) throw new Error('the owner store has no tty record for 
 writeFileSync(join(home, 'app-approvals.json'), JSON.stringify({ schema: ownerStore.schema, apps: record }))
 const log = createWriteStream(join(runsDir, 'step4.log'))
 const note = (o) => { const line = JSON.stringify({ t: new Date().toISOString(), ...o }); console.log(line); log.write(line + '\n') }
-const fixture = await launchFixture(buildFixtureApp().executable, { offscreen: false })
+const fixture = await launchFixture(buildFixtureApp().executable, { offscreen: false, seat: SEAT })
 try {
   await fixture.open('badge-form', {})
   const screen = await fixture.call('screen', {})

@@ -354,6 +354,48 @@ function framesHost(target) {
   if (!target || typeof target !== 'object') return false
   return FRAME_HOST_TAGS.has(String(target.tag ?? '').toLowerCase()) || FRAME_HOST_ROLES.has(String(target.role ?? '').toLowerCase())
 }
+// CU-263 (design note 0.2): a human check - a CAPTCHA - is the person's to solve, as Operator hands it over. Known by the
+// pressed target's name (also inside a longer label: 'Press & Hold to confirm you are a human'), the providers' Chinese
+// labels included; a bare 'Verify' or 'I agree' stays judged by its own words (named limit).
+const CAPTCHA_NAME = new RegExp([
+  "\\bi\\s*(?:['’]\\s*m|\\s+am)\\s+not\\s+a\\s+robot\\b",
+  '\\bim\\s+not\\s+a\\s+robot\\b',
+  "\\bi\\s*(?:['’]\\s*m|\\s+am)\\s+(?:a\\s+)?human\\b",
+  "\\b(?:verify|confirm|prove)\\s+(?:that\\s+)?you\\s*(?:['’]\\s*re|\\s+are)\\s+(?:a\\s+)?(?:human|real\\s+person|not\\s+a\\s+(?:robot|bot))\\b",
+  '\\bhuman\\s+verification\\b',
+  '\\bselect\\s+all\\s+(?:images|squares)\\s+with\\b',
+  '我不是机器人', '我不是機器人', '我是人类', '我是人類', '人机验证', '人機驗證', '人机身份验证', '人機身份驗證', '确认您是真人', '確認您是真人',
+].join('|'), 'i')
+// ... a text CAPTCHA's entry, where typing the shown characters (or the heard ones) is solving it (a bare 验证码 is as often a
+// one-time code, which the D-061 value rules judge) ...
+const CAPTCHA_ENTRY = /\bcaptcha\b|\btype\s+the\s+(?:characters|letters|text)\s+(?:you\s+see|shown|in\s+the\s+(?:image|picture))\b|\benter\s+what\s+you\s+hear\b|图形验证码|圖形驗證碼|图片验证码|圖片驗證碼/i
+// ... the challenge providers' own frames, by the target document's origin (the browser driver describes an element
+// inside a cross-site frame through its frame session) or, once the driver reports it (CU-300), its frame URL - read in
+// memory, never recorded - which lets reCAPTCHA's frames under www.google.com/recaptcha/ count without a google.com-wide
+// rule (cu-researcher's F2); DataDome serves its challenges from captcha-delivery.com (F3) ...
+const CAPTCHA_HOSTS = Object.freeze(['challenges.cloudflare.com', 'hcaptcha.com', 'recaptcha.net', 'arkoselabs.com', 'geetest.com', 'captcha-delivery.com'])
+function hostAndPath(url) {
+  if (typeof url !== 'string' || !/^https?:\/\//i.test(url.trim())) return null
+  try {
+    const parsed = new URL(url.trim())
+    return { host: parsed.hostname.toLowerCase(), path: parsed.pathname }
+  } catch {
+    return null
+  }
+}
+function captchaFrame(target) {
+  for (const url of [target?.origin, target?.frameUrl]) {
+    const at = hostAndPath(url)
+    if (at === null) continue
+    if (CAPTCHA_HOSTS.some((provider) => at.host === provider || at.host.endsWith(`.${provider}`))) return true
+    if ((at.host === 'www.google.com' || at.host === 'google.com') && at.path.startsWith('/recaptcha/')) return true
+  }
+  return false
+}
+// ... and a frame host titled for a challenge (cu-researcher's F1): the focus read stops at the provider's iframe, titled
+// 'reCAPTCHA', 'Widget containing checkbox for hCaptcha security challenge' or 'Widget containing a Cloudflare security
+// challenge', so a Space or Return after Tab reaches the check box through it; CU-300's frameHost carries the same title.
+const CAPTCHA_FRAME_TITLE = /\b(?:re)?captcha\b|\bhcaptcha\b|\bsecurity\s+challenge\b|\bhuman\s+verification\b|\bturnstile\b/i
 // CU-253, CU-287: messaging apps are known by kind (app-kinds.mjs, exact bundle ids with sources), and the names of compose
 // fields judge every other app.
 // CU-287: a search field takes Return to search, in a messaging app too ('Search Acme' in Slack).
@@ -501,8 +543,8 @@ function urlFieldName(name) {
 // digit run - bare or in card groupings, not touching other digits, so a file name ('<card>.pdf') or a suffix counts too
 // (cu-researcher on #245) - that passes Luhn and carries a card brand's prefix with that brand's length (a random numeric id
 // then trips about one time in a hundred, not one in ten), or when its digits hold a card-length run the run itself typed or
-// pasted (typedDigits, the loop's in-memory buffer, CU-267), whatever its prefix. Open under-ask CU-326: an untyped card as
-// a host label, split across two segments, or inside a longer digit run.
+// pasted (typedDigits, the loop's in-memory buffer, CU-267), whatever its prefix. CU-326: a host label, a card split across
+// all-digit segments and a zero-padded run count too (urlSecret).
 const CARD_RUN = /(?<!\d)(\d{4}(?:[ -]\d{4}){3}(?:[ -]\d{3})?|\d{4}[ -]\d{6}[ -]\d{4,5}|\d{13,19})(?!\d)/g
 const CARD_BRANDS = [
   [/^4/, [13, 16, 19]],
@@ -514,12 +556,14 @@ const CARD_BRANDS = [
   [/^(36|38|30[0-5])/, [14, 15, 16, 17, 18, 19]],
 ]
 const brandCard = (digits) => CARD_BRANDS.some(([prefix, lengths]) => prefix.test(digits) && lengths.includes(digits.length))
+const cardNumber = (digits) => digits.length >= 13 && digits.length <= 19 && luhn(digits) && brandCard(digits)
 export function pathCard(segment, typedDigits = []) {
   const text = String(segment ?? '').trim()
   const digits = text.replace(/\D/g, '')
   for (const match of text.matchAll(CARD_RUN)) {
-    const run = match[0].replace(/\D/g, '')
-    if (luhn(run) && brandCard(run)) return true
+    // CU-326: leading zeros pad a card into a longer number ('00<card>') without changing its Luhn sum.
+    const run = match[0].replace(/\D/g, '').replace(/^0+/, '')
+    if (cardNumber(run)) return true
   }
   return (Array.isArray(typedDigits) ? typedDigits : []).some((run) => typeof run === 'string' && run.length >= 13 && run.length <= 19 && digits.includes(run))
 }
@@ -558,6 +602,16 @@ export function urlSecret(raw, typedDigits = []) {
     if (pathCard(decode(segment), typedDigits)) return 'card'
     const kind = looksSensitive(decode(segment))
     if (kind !== null && kind !== 'card' && kind !== 'phone') return kind
+  }
+  // CU-326: a card as a host label, or split across two to four all-digit path segments (/p/41111111/11111111).
+  if (url.hostname.split('.').some((label) => pathCard(label))) return 'card'
+  const segments = url.pathname.split('/').filter(Boolean).map((segment) => decode(segment).trim())
+  for (let i = 0; i < segments.length; i += 1) {
+    let joined = ''
+    for (let k = i; k < Math.min(segments.length, i + 4) && /^\d+$/.test(segments[k]); k += 1) {
+      joined += segments[k]
+      if (k > i && cardNumber(joined)) return 'card'
+    }
   }
   // CU-325 follow-up (cu-coordinator 06:41Z): digits the run typed are matched against every digit of the address - host
   // labels, the joined path, query and fragment - so a typed card split across segments or put in a host label asks too.
@@ -748,6 +802,26 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if ((['type', 'keypress', 'hold_key'].includes(action.type) && target?.terminal === true) || (action.type === 'drag' && context.dropTarget?.terminal === true)
       || context.paste?.intoTerminal === true) {
       return { decision: 'block', class: null, rule: 'terminal_view', reason: 'typing into a web terminal is refused, as in a terminal app' }
+    }
+    // CU-263 (design note 0.3): a human check is handed to the person - never pre-approvable; unattended the loop declines
+    // it (handoff_unavailable). Any click, drag, key or typing inside a challenge provider's frame or on a frame host titled
+    // for one (the keyboard route after Tab); a click, drag, Space or Return on a target named as one (the desktop has
+    // names only - its origin is a bundle id); typing into a text CAPTCHA's entry. Named limit: a slider or picture
+    // puzzle drawn into the page itself, outside any provider frame and unnamed (cu-researcher's F4).
+    {
+      const captcha = { decision: 'handoff', class: null, rule: 'captcha', reason: 'a human check (CAPTCHA) is the person\'s to solve' }
+      const acts = POINTER.has(action.type) || ['drag', 'type', 'keypress', 'hold_key'].includes(action.type)
+      const onWeb = context.url != null && !/^(app|desktop):/.test(String(context.url))
+      const titledFrame = onWeb && ((framesHost(target) && CAPTCHA_FRAME_TITLE.test(name)) || CAPTCHA_FRAME_TITLE.test(String(target?.frameHost?.name ?? '')))
+      if (acts && (captchaFrame(target) || titledFrame)) return captcha
+      const presses = POINTER.has(action.type) || action.type === 'drag' || keysOf(action).has('ENTER') || keyboardActivation(action, target, context).activates
+      if (presses && CAPTCHA_NAME.test(name)) return captcha
+      // F7 (cu-researcher): a text CAPTCHA keyed character by character (CU-301's printable keys) or pasted is solved as
+      // surely as one typed; a menu paste is judged at its read destination.
+      const intoEntry = action.type === 'type' || printableKeyChar(action) !== null || (context.paste && !Object.prototype.hasOwnProperty.call(context.paste, 'destination'))
+      if (intoEntry && isTextEntry(target) && CAPTCHA_ENTRY.test(name)) return captcha
+      const menuInto = context.paste?.destination
+      if (menuInto && isTextEntry(menuInto) && CAPTCHA_ENTRY.test(String(menuInto.name ?? ''))) return captcha
     }
     // CU-271: running code asks launch_code, never pre-approved - a run chord (Shift-, Control-, Command- or Alt-Return) in
     // a notebook's code cell or on a notebook page's non-text focus (JupyterLab's command mode focuses the cell container),
