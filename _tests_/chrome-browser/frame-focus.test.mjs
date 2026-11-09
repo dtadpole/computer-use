@@ -3,6 +3,7 @@ import { test } from 'node:test'
 
 import { FRAME_FOCUS_MS, launchBrowserEnvironment } from '../../_environments_/chrome-browser/environment.mjs'
 import { describeElement } from '../../_environments_/chrome-browser/page-scripts.mjs'
+import { createPolicy } from '../../_tools_/agent-core/policy.mjs'
 import { FakeConnection } from './fake-cdp.mjs'
 
 // CU-300 (frame-focus.md): focusedElement follows the focus into a cross-site iframe through the frame's own session,
@@ -18,12 +19,14 @@ const NODES = {
     6: { nodeName: 'BUTTON', backendNodeId: 6, attributes: ['type', 'submit'] },
     7: { nodeName: 'BODY', backendNodeId: 7, attributes: [] },
     8: { nodeName: 'IFRAME', backendNodeId: 8, frameId: 'OOPIF-2', attributes: ['title', 'Bank challenge'] },
+    // #171's card-frames entry: no label, placeholder, aria-label or autocomplete - only its frame's title names it.
+    9: { nodeName: 'INPUT', backendNodeId: 9, attributes: ['type', 'text'] },
   },
   [PAGE]: { 40: HOST, 41: { nodeName: 'INPUT', backendNodeId: 41, attributes: ['type', 'email'] } },
 }
 const AX = {
   [PAGE]: { 40: { role: 'Iframe', name: 'Secure CVC input frame' }, 41: { role: 'textbox', name: 'Email' } },
-  [FRAME]: { 5: { role: 'textbox', name: 'CVC' }, 6: { role: 'button', name: 'Pay' }, 7: { role: 'generic', name: '' }, 8: { role: 'Iframe', name: 'Bank challenge' } },
+  [FRAME]: { 5: { role: 'textbox', name: 'CVC' }, 6: { role: 'button', name: 'Pay' }, 7: { role: 'generic', name: '' }, 8: { role: 'Iframe', name: 'Bank challenge' }, 9: { role: 'textbox', name: '' } },
 }
 
 /**
@@ -59,7 +62,7 @@ function harness(world) {
       if (fn.includes('NOT_TEXT_INPUTS')) {
         const id = Number(params.objectId.replace(/^node-/, ''))
         if (sessionId !== FRAME) return { result: { result: { value: { origin: 'http://127.0.0.1:43117', editable: id === 41, href: null } } } }
-        const editable = id === 5 || (id === 7 && world.bodyEditable === true)
+        const editable = id === 5 || id === 9 || (id === 7 && world.bodyEditable === true)
         return { result: { result: { value: { origin: 'https://pay.example', frameUrl: 'https://pay.example/elements/inner', editable, href: null } } } }
       }
       return { result: { result: { value: false } } }
@@ -199,6 +202,41 @@ test("CU-300: the inner field keeps its own name - named or not, the host's name
     await env.close()
   } finally {
     AX[FRAME][5] = saved
+  }
+})
+
+test("CU-300 end to end: the driver's own answers, judged by agent core's policy, never weaker than the frame-host rules (B1)", async () => {
+  const policy = createPolicy({ sitePolicy: () => 'allow' })
+  const judge = (action, target) => {
+    const verdict = policy.classify(action, { url: 'https://shop.example/checkout', target })
+    return verdict.decision === 'allow' ? 'allow' : verdict.class
+  }
+  const world = { frameFocus: focusOn(9) }
+  const { options, attach } = harness(world)
+  const saved = AX[FRAME][9]
+  const savedHost = AX[PAGE][40]
+  try {
+    const env = await launchBrowserEnvironment(options)
+    await attach(env)
+    AX[PAGE][40] = { role: 'Iframe', name: 'Secure Credit Card Frame - CVV' }
+    world.submit = false
+    const cvv = await env.focusedElement()
+    assert.equal(cvv.name, '', "the inner field is unnamed (#171's card-frames entries)")
+    assert.equal(judge({ type: 'type', text: '123' }, cvv), 'sensitive_data', 'typed: the host name still asks')
+    assert.equal(judge({ type: 'keypress', keys: ['1'] }, cvv), 'sensitive_data', 'pressed key by key (CU-301): the host name still asks')
+    assert.equal(judge({ type: 'keypress', keys: ['ENTER'] }, cvv), 'allow', 'a Return after a good read of no default button')
+    world.resolveFails = true
+    const unread = await env.focusedElement()
+    assert.equal(unread.defaultButtonRead, false)
+    assert.equal(judge({ type: 'keypress', keys: ['ENTER'] }, unread), 'submit', 'a Return after a failed read asks submit')
+    world.resolveFails = false
+    AX[PAGE][40] = { role: 'Iframe', name: 'Comments' }
+    AX[FRAME][9] = { role: 'textbox', name: 'Order notes' }
+    assert.equal(judge({ type: 'type', text: 'gift wrap' }, await env.focusedElement()), 'allow', 'two neutral names stay free (the twin)')
+    await env.close()
+  } finally {
+    AX[FRAME][9] = saved
+    AX[PAGE][40] = savedHost
   }
 })
 
