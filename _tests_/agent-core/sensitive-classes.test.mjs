@@ -384,17 +384,17 @@ test('negatives: a word inside another word, and a button, never ask by name', (
 
 // CU-301 (cu-researcher): a printable keypress - one character key, Shift at most - puts that character into the focused
 // field as typing does, so the field-name rules (credential, password field, D-061 names) must judge it as 'type' of that
-// character. On main they run for 'type' only; CU-267's buffer covers the value half, not the name half.
+// character - since #178 (Fixes CU-301) they do; before it they ran for 'type' only. CU-267's buffer keeps the value half.
 const decideKey = (keys, target, url = 'https://other.example/form') => {
   const r = policy.classify({ type: 'keypress', keys }, { url, target })
   return r.decision === 'allow' ? 'allow' : r.class
 }
 const KEYPRESS_ROWS = [
-  ['key-into-cvv', ['1'], { tag: 'input', role: 'textbox', name: 'CVV', editable: true }, null, 'sensitive_data', 'todo CU-301', 'no live row yet'],
-  ['key-into-password-field', ['SHIFT', 'H'], { tag: 'input', role: 'textbox', name: 'Password', editable: true, inputType: 'password' }, null, 'credential', 'todo CU-301', 'no live row yet'],
-  ['key-into-ssn', ['1'], { tag: 'input', role: 'textbox', name: 'Social security number', editable: true }, null, 'sensitive_data', 'todo CU-301', 'no live row yet'],
-  ['key-into-recovery-phrase', ['W'], { tag: 'textarea', role: 'textbox', name: 'Recovery phrase', editable: true }, null, 'sensitive_data', 'todo CU-301', 'no live row yet'],
-  ['key-into-desktop-iban', ['A'], { role: 'AXTextField', name: 'IBAN', editable: true, defaultButtonRead: true }, 'desktop://', 'sensitive_data', 'todo CU-301', 'no live row yet'],
+  ['key-into-cvv', ['1'], { tag: 'input', role: 'textbox', name: 'CVV', editable: true }, null, 'sensitive_data', 'open CU-301', 'no live row yet'],
+  ['key-into-password-field', ['SHIFT', 'H'], { tag: 'input', role: 'textbox', name: 'Password', editable: true, inputType: 'password' }, null, 'credential', 'open CU-301', 'no live row yet'],
+  ['key-into-ssn', ['1'], { tag: 'input', role: 'textbox', name: 'Social security number', editable: true }, null, 'sensitive_data', 'open CU-301', 'no live row yet'],
+  ['key-into-recovery-phrase', ['W'], { tag: 'textarea', role: 'textbox', name: 'Recovery phrase', editable: true }, null, 'sensitive_data', 'open CU-301', 'no live row yet'],
+  ['key-into-desktop-iban', ['A'], { role: 'AXTextField', name: 'IBAN', editable: true, defaultButtonRead: true }, 'desktop://', 'sensitive_data', 'open CU-301', 'no live row yet'],
   ['key-into-notes-negative', ['A'], { tag: 'textarea', role: 'textbox', name: 'Notes', editable: true }, null, 'allow', 'open CU-301', 'no live row yet (negative: a field named for no class takes a key)'],
 ]
 
