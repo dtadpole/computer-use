@@ -778,3 +778,14 @@ test('CU-370: an ARIA listbox without aria-activedescendant - Enter answers the 
   assert.equal(keyChoice(listbox, 'Enter', selectKeyOption), archive, 'Enter commits the aria-selected option')
   assert.equal(keyChoice(listbox, 'ArrowDown', selectKeyOption), del, 'ArrowDown moves from it to Delete')
 })
+
+test('CU-370: an aria-multiselectable listbox is unread for keys that change or commit the selection', () => {
+  const node = (role, attrs = {}) => ({ getAttribute: (name) => (name === 'role' ? role : attrs[name] ?? null) })
+  const a = node('option', { 'aria-selected': 'true' })
+  const b = node('option', { 'aria-selected': 'true' })
+  const listbox = { ...node('listbox', { 'aria-multiselectable': 'true' }), tagName: 'DIV', ownerDocument: { getElementById: () => null, activeElement: null }, getRootNode: () => null, querySelectorAll: () => [a, b] }
+  assert.equal(keyChoice(listbox, 'Enter', selectKeyOption), 'unread')
+  assert.equal(keyChoice(listbox, 'ArrowDown', selectKeyOption), 'unread')
+  assert.equal(keyChoice(listbox, ' ', selectKeyOption), 'unread')
+  assert.equal(keyChoice(listbox, 'Tab', selectKeyOption), null)
+})
