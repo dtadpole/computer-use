@@ -1029,7 +1029,7 @@ const SYSTEM_ROWS = [
   ['menu-click-paste', 'click', 'pasteItem', 'allow', 'CU-249 negative (an app menu item)', 'named limit (cu-coordinator 04:19Z): the Services-menu fixture state is not produced; allow negative, over-ask side', 'open CU-249'],
   // CU-242 (landed, #35) and its follow-up CU-251: default system hotkeys that change an owner setting.
   ['owner-setting-dock-hiding', 'cmdOptD', 'field', 'block:system_shortcut', 'app-policy.test.mjs (#50, CU-251: Dock hiding on/off, follow-up to CU-242)', 'cu-verifier seat, CU Fixture, main after eed4f7d: Command-Option-D refused system_shortcut, nothing posted (20261108T123233Z-42c4cd)', null],
-  ['owner-setting-keyboard-access', 'ctrlF1', 'field', 'block:system_shortcut', 'app-policy.test.mjs (#50, CU-251: keyboard access on/off)', 'no live row yet', 'open CU-251'],
+  ['owner-setting-keyboard-access', 'ctrlF1', 'field', 'block:system_shortcut', 'app-policy.test.mjs (#50, CU-251: keyboard access on/off)', 'cu-verifier, CU Fixture, CUHelper 0.2.58: one Control-F1 press into a field refused system_shortcut, nothing posted (20261109T041648Z-4abfff)', null],
   ['owner-setting-input-source', 'ctrlSpace', 'field', 'block:system_shortcut', 'app-policy.test.mjs (#35, CU-242: input source)', 'cu-verifier seat, CU Fixture, main after 1d970b2: Control-Space refused system_shortcut, nothing posted (20261108T123229Z-767b79)', null],
   // CU-244: a held system chord is refused as the keypress (the loop judges a hold so); pinned live-path by #39.
   // CU-254: the App Store installs software, yet it is not excluded and its 'Get' carries no consent word. Refused or
