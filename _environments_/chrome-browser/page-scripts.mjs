@@ -533,7 +533,8 @@ export function activatableAncestor(el) {
     // A click on a <label>'s text activates its control (the browser forwards it): the control is the target, so the
     // control's own rules judge the click (cu-verifier, 9 Nov: a CAPTCHA box toggled and a Delete button fired through
     // their labels unjudged). A control met first inside the label - a link in its text - was returned above, as the
-    // browser activates that one. A label with no control stays a label.
+    // browser activates that one. A label with no control stays a label - so does a label in a shadow root whose for=
+    // names a light-DOM control, as label.control is null across trees (a named limit; cu-researcher).
     if (tag === 'label' && node.control && node.control.nodeType === 1) return node.control
   }
   const view = el && el.ownerDocument && el.ownerDocument.defaultView
@@ -598,6 +599,34 @@ export function clickLabel(hit, target) {
     node = node.assignedSlot || node.parentElement || (root && root !== node && root.host) || null
   }
   return clean(target.innerText || target.textContent) || null
+}
+
+/**
+ * CU-353: the key of an accesskey chord - Control-Option-<key> on a Mac (Shift allowed, never Command) fires the element
+ * whose accesskey is that key, not the focused one (cu-researcher's probe, 9 Nov). The key in lower case, or null for any
+ * other keypress. Keys arrive canonical (CTRL, ALT, SHIFT, META, a letter or digit); common aliases are accepted.
+ */
+export function accessKeyOf(action) {
+  if (action?.type !== 'keypress' || !Array.isArray(action.keys)) return null
+  const alias = { CONTROL: 'CTRL', OPTION: 'ALT', OPT: 'ALT', CMD: 'META', COMMAND: 'META' }
+  const keys = action.keys.map((key) => { const upper = String(key).toUpperCase(); return alias[upper] ?? upper })
+  if (!keys.includes('CTRL') || !keys.includes('ALT') || keys.includes('META')) return null
+  const main = keys.filter((key) => !['CTRL', 'ALT', 'SHIFT'].includes(key))
+  return main.length === 1 && /^[A-Z0-9]$/.test(main[0]) ? main[0].toLowerCase() : null
+}
+
+/**
+ * CU-353: the first element in document order whose accesskey names `key` (any of its space-separated keys, any case),
+ * or null. Elements inside shadow roots and other frames are not searched (a named limit). Self-contained: it runs
+ * serialized in the page.
+ */
+export function accessKeyElement(doc, key) {
+  const want = String(key).toLowerCase()
+  for (const el of doc.querySelectorAll('[accesskey]')) {
+    const keys = String(el.getAttribute('accesskey') || '').trim().toLowerCase().split(/\s+/)
+    if (keys.includes(want)) return el
+  }
+  return null
 }
 
 /** Resolves after two animation frames, so a screenshot shows the frame the last input produced. */
