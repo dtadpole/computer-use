@@ -496,3 +496,8 @@ decisions:
     topic: idle-window-priority
     decision: 'The owner''s idle windows go first to work that closes or fixes an Urgent or High consent item (a verification series, a High fix''s gate under D-086), then to code-lane gates (D-073 orders them among themselves), then to table batches and measurements. A code gate does not register as the run lock''s waiter while such a series is queued; the series'' holder announces RELEASED when it ends.'
     rationale: 'On 9 Nov the CU-322 rows that close CU-302 (High) yielded to a Medium chain''s gate; idle windows are the scarce input, and the consent row waits on High items first.'
+  - id: D-096
+    date: 2026-11-09
+    topic: d088-ends-d089-narrowed
+    decision: 'D-088 ends: CU-302 was verified live on 9 Nov (the browser half through CU-319, the desktop half on helper 0.2.61 through CU-322), so a model run may use a browser profile that holds saved logins again; submitting an autofilled login or card still asks every time and is never pre-approvable. D-089 is narrowed: the desktop route refuses a target that is, or descends from, an approved browser''s page content - read as inWebArea true, or unread (null, absent, or the opaque page area) - and judges the address bar, tabs, toolbar, menus and shortcuts by the ordinary rules wherever the helper reads inWebArea false. Browser tasks still go through the browser environment. CU-321''s note may narrow it further.'
+    rationale: 'cu-verifier''s rows on 0.2.61 (08:04Z): a named page button, a focused page field, a 64-deep button and a cross-origin iframe refused; the address bar, omnibox typing and the menu bar judged as before; without the accessibility flag the opaque rule refuses. cu-researcher red-teamed the rows.'
