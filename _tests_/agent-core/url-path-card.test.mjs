@@ -50,12 +50,19 @@ test('CU-325 negatives: ids that are not card-shaped stay allowed', () => {
   }
 })
 
-// Open under-ask CU-326 (Medium, cu-researcher): these shapes leave a card the run never typed unasked; a fix flips them.
-test('open CU-326: a card the run never typed - in a host label, split across two segments, or inside a longer digit run - is not read', () => {
-  assert.equal(go(`https://${CARD_DIGITS}.fixture.example/`).decision, 'allow')
-  assert.equal(go(`${SITE}/p/${CARD_DIGITS.slice(0, 8)}/${CARD_DIGITS.slice(8)}`).decision, 'allow')
-  // cu-verifier on #245: an 18-digit run holding the card ('00<card>') is no card-length run.
-  assert.equal(go(`${SITE}/p/00${CARD_DIGITS}`).decision, 'allow')
+test('CU-326: a card it never typed asks in a host label, split across all-digit segments, or zero-padded inside a longer number', () => {
+  for (const url of [`https://${CARD_DIGITS}.fixture.example/`, `https://${CARD.replaceAll(' ', '-')}.fixture.example/`, `${SITE}/p/${CARD_DIGITS.slice(0, 8)}/${CARD_DIGITS.slice(8)}`,
+    `${SITE}/${CARD.replaceAll(' ', '/')}`, `${SITE}/c/${AMEX.slice(0, 5)}/${AMEX.slice(5)}/receipt`, `${SITE}/p/00${CARD_DIGITS}`, `${SITE}/p/000${MASTERCARD}.pdf`]) {
+    const v = go(url)
+    assert.deepEqual([v.decision, v.class], ['confirm', 'sensitive_data'], url)
+  }
+})
+
+test('CU-326 negatives: dates, versions, IP hosts, numeric hosts and long ids that hold no card stay allowed', () => {
+  for (const url of [`${SITE}/2026/11/09/post`, `${SITE}/v1/2/3`, 'https://192.168.1.10/x', 'https://123456.fixture.example/', `${SITE}/p/12345678901234567890`,
+    `${SITE}/a/${NO_BRAND.slice(0, 8)}/${NO_BRAND.slice(8)}`, `${SITE}/p/1/${CARD_DIGITS.slice(0, 15)}`, `${SITE}/p/00${NO_BRAND}`]) {
+    assert.equal(go(url).decision, 'allow', url)
+  }
 })
 
 test('CU-325 follow-up: digits the run typed ask anywhere in the address - a host label, split across segments, path and fragment', () => {
