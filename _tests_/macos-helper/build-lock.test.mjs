@@ -12,6 +12,7 @@ import { HELPER_DIR, underBuildLock } from './build.mjs'
 const dir = mkdtempSync(join(tmpdir(), 'cu-build-lock-'))
 after(() => rmSync(dir, { recursive: true, force: true }))
 const pause = (ms) => new Promise((done) => setTimeout(done, ms))
+const unlocked = () => { const env = { ...process.env }; delete env.CU_HELPER_BUILD_LOCKED; return env }
 
 /** Hold `lock` for `seconds` in a sleeper; resolves once the sleeper holds it. */
 async function holdLock(lock, seconds) {
@@ -24,17 +25,26 @@ test('CU-335: a second build waits for the lock instead of compiling alongside',
   const lock = join(dir, 'wait.lock')
   const holder = await holdLock(lock, 2)
   const started = Date.now()
-  underBuildLock(['/usr/bin/true'], { lock, waitSeconds: 10 })
+  underBuildLock(['/usr/bin/true'], { lock, waitSeconds: 10, env: unlocked() })
   const waited = Date.now() - started
   holder.kill()
   assert.ok(waited >= 1200, `it waited for the holder (${waited} ms)`)
+})
+
+test('CU-335: a caller that holds the lock (CU_HELPER_BUILD_LOCKED=1, e.g. a gate wrapping its helper step) runs at once', async () => {
+  const lock = join(dir, 'held.lock')
+  const holder = await holdLock(lock, 3)
+  const started = Date.now()
+  underBuildLock(['/usr/bin/true'], { lock, waitSeconds: 10, env: { ...process.env, CU_HELPER_BUILD_LOCKED: '1' } })
+  holder.kill()
+  assert.ok(Date.now() - started < 1000, 'no wait for its own hold')
 })
 
 test('CU-335: a wait past the bound fails, naming the lock', async () => {
   const lock = join(dir, 'timeout.lock')
   const holder = await holdLock(lock, 4)
   try {
-    assert.throws(() => underBuildLock(['/usr/bin/true'], { lock, waitSeconds: 1 }), /another helper build held .*timeout\.lock for 1 s/)
+    assert.throws(() => underBuildLock(['/usr/bin/true'], { lock, waitSeconds: 1, env: unlocked() }), /another helper build held .*timeout\.lock for 1 s/)
   } finally {
     holder.kill()
   }

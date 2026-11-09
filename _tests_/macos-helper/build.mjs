@@ -37,6 +37,8 @@ export const BUILD_WAIT_SECONDS = Number(process.env.CU_HELPER_BUILD_WAIT ?? 900
  * killed test leaves no stale lock. A wait past `waitSeconds` throws, naming the lock (lockf exits 75, EX_TEMPFAIL).
  */
 export function underBuildLock(argv, { lock = BUILD_LOCK, waitSeconds = BUILD_WAIT_SECONDS, env = process.env, stdio = ['ignore', 'ignore', 'pipe'] } = {}) {
+  // A caller that already holds the lock (a gate wrapping its whole helper step) is not made to wait for itself.
+  if (env.CU_HELPER_BUILD_LOCKED === '1') return execFileSync(argv[0], argv.slice(1), { env, stdio })
   try {
     return execFileSync('/usr/bin/lockf', ['-k', '-t', String(waitSeconds), lock, ...argv], { env: { ...env, CU_HELPER_BUILD_LOCKED: '1' }, stdio })
   } catch (error) {
