@@ -45,6 +45,12 @@ export const MUTANTS = Object.freeze([
     rows: ['menu-key-send-later', 'menu-key-delete-message-view'] },
   { name: 'path-card-ignored', why: 'a card number in a URL path is read as an id and sent unasked (CU-325)', mutations: [{ file: POLICY, find: "    if (pathCard(decode(segment), typedDigits)) return 'card'\n", replace: '' }],
     rows: ['navigate-card number in a path (named limit)'] },
+  { name: 'host-card-ignored', why: 'a card as a host label is not read (CU-326)', mutations: [{ file: POLICY, find: "  if (url.hostname.split('.').some((label) => pathCard(label))) return 'card'\n", replace: '' }],
+    rows: ['navigate-card number as a host label'] },
+  { name: 'split-card-ignored', why: 'a card split across all-digit path segments is not joined (CU-326)', mutations: [{ file: POLICY, find: "      if (k > i && cardNumber(joined)) return 'card'\n", replace: '' }],
+    rows: ['navigate-card number split across two path segments'] },
+  { name: 'zero-padded-card-ignored', why: 'leading zeros hide a card inside a longer number (CU-326)', mutations: [{ file: POLICY, find: "    const run = match[0].replace(/\\D/g, '').replace(/^0+/, '')", replace: "    const run = match[0].replace(/\\D/g, '')" }],
+    rows: ['navigate-card number inside a longer digit run'] },
   { name: 'terminal-typed', from: 'desktop-consent', rows: ['ide-terminal-type-command', 'ide-terminal-return', 'ide-terminal-localized-label', 'ide-terminal-japanese-label', 'ide-terminal-zh-in-cursor', 'ide-terminal-zh-real-label', 'ide-terminal-zh-hant-real-label', 'ide-debug-console-zh-hans', 'ide-debug-console-zh-hant'] },
   { name: 'held-chord-unjudged', from: 'desktop-consent', rows: ['system-chord-held-log-out'] },
 ])
