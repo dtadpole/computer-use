@@ -1180,8 +1180,15 @@ export async function runTask(options) {
         let answer = await askConsent(step, request)
         if (answer.approved) {
           const again = await contextFor(action).catch(() => null)
+          // CU-302 (cu-verifier): the re-read is judged again, so a class that appeared after the ask - a form the browser
+          // autofilled once the proposal was read - is asked on its own, never carried by the earlier approval.
+          const asked = decision.classes ?? [decision.class]
+          const fresh = again === null ? null : policy.classify(judged, again)
+          const added = fresh?.decision === 'confirm' ? [].concat(fresh.classes ?? [fresh.class]).filter((cls) => !asked.includes(cls)) : []
           if (again === null || !sameTarget(context, again)) {
             answer = await askConsent(step, { ...request, what: `${decision.reason} (the target changed since it was approved)` })
+          } else if (added.length > 0) {
+            answer = await askConsent(step, { ...request, class: added[0], classes: added, rule: fresh.rule, what: `${fresh.reason} (new since it was approved)` })
           }
         }
         if (!answer.approved) {

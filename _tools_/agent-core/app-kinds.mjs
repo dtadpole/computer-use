@@ -37,6 +37,26 @@ export const IDE_APPS = Object.freeze([
   Object.freeze({ app: 'Other IDEs', ids: Object.freeze(['com.apple.dt.Xcode', 'com.google.android.studio', 'com.sublimetext.', 'com.panic.nova']), source: "#119's list" }),
 ])
 
+/**
+ * Web browsers (CU-302, D-089): on the desktop route an approved browser's page is one opaque area - the helper reads no
+ * element, field or suggestion row in it (cu-researcher's Q2, 01:13Z) - so no web consent rule can see what a click or
+ * key there does. Sources: each vendor's Info.plist CFBundleIdentifier as published in Fleet's software catalog and
+ * the channels' own bundles (beta, dev, canary, technology preview); Chrome for Testing as fetched under D-084.
+ */
+export const BROWSER_APPS = Object.freeze([
+  Object.freeze({ app: 'Google Chrome', ids: Object.freeze(['com.google.Chrome', 'com.google.Chrome.beta', 'com.google.Chrome.dev', 'com.google.Chrome.canary', 'com.google.chrome.for.testing']), source: "Fleet's software catalog; Chrome for Testing as fetched under D-084" }),
+  Object.freeze({ app: 'Chromium family', ids: Object.freeze(['org.chromium.Chromium', 'com.brave.Browser', 'com.brave.Browser.beta', 'com.brave.Browser.nightly', 'com.vivaldi.Vivaldi', 'com.operasoftware.Opera', 'company.thebrowser.Browser']), source: "Fleet's software catalog" }),
+  Object.freeze({ app: 'Microsoft Edge', ids: Object.freeze(['com.microsoft.edgemac', 'com.microsoft.edgemac.Beta', 'com.microsoft.edgemac.Dev', 'com.microsoft.edgemac.Canary']), source: "Microsoft Learn's Edge for macOS deployment docs" }),
+  Object.freeze({ app: 'Safari', ids: Object.freeze(['com.apple.Safari', 'com.apple.SafariTechnologyPreview']), source: "the built-in app's Info.plist" }),
+  Object.freeze({ app: 'Firefox', ids: Object.freeze(['org.mozilla.firefox', 'org.mozilla.firefoxdeveloperedition', 'org.mozilla.nightly']), source: "Mozilla's enterprise deployment docs" }),
+])
+const BROWSER_IDS = new Set(BROWSER_APPS.flatMap((entry) => entry.ids.map((id) => id.toLowerCase())))
+
+/** Whether `bundleId` is a web browser's, by exact id (case-insensitive). */
+export function isBrowserApp(bundleId) {
+  return typeof bundleId === 'string' && BROWSER_IDS.has(bundleId.toLowerCase())
+}
+
 /** Whether `bundleId` is an IDE's: an exact id (or one below it), or a family prefix ending in '.'. */
 export function isIdeApp(bundleId) {
   const id = String(bundleId ?? '').toLowerCase()
