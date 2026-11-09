@@ -1,21 +1,24 @@
 ---
 title: Sensitive classes - everything the agent must never type unasked
 created: 2026-11-07T14:34:22Z
-modified: 2026-11-08T03:56:04Z
+modified: 2026-11-09T00:00:00Z
 level: L1
-version: 0.3.2
+version: 0.3.3
 description: The D-061 table - every sensitive class with its value rule, its field-name rule, the asserting test and the live row; rows live in an executable matrix, gaps are children of CU-145.
 status: unverified
 grounded_in:
   - source: D-061 and CU-171 (three sensitive-data gaps in one afternoon - CU-163, CU-164, CU-167)
   - source: _tests_/agent-core/sensitive-classes.test.mjs (the executable matrix)
   - source: 'the CU-171 probe of classify() on main and on #407'
+  - source: CU-301 design note 0.1 (2026-11-08 23:58Z; a password pressed key by key)
 ---
 
 # Sensitive classes
 
 Typing a sensitive value is judged twice: by the value (a pattern with a check where one exists) and by the field's
-name (on a text entry only, never a button). Each class has one row per value rule and per name in
+name (on a text entry only, never a button). A printable key pressed or held into a text entry - one character or Space,
+Shift or Option at most - counts as typing its character (CU-301); a chord with Command or Control does not. Each class
+has one row per value rule and per name in
 `_tests_/agent-core/sensitive-classes.test.mjs`; todo rows only for open under-asks.
 
 | Group | By value | By name (policy.mjs's lists, compared normalised) |
