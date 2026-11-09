@@ -959,6 +959,45 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (scheme !== '' && !WEB_SCHEMES.has(scheme) && pressesLink) classes.push('permission')
     const keyboard = keyboardActivation(action, target, context)
     if (keyboard.deletes) classes.push('delete')
+    // CU-363 (design note 0.1; High pending a live row): on a web page a printable key pressed outside text entry goes to
+    // the page, whose own handler may delete, archive or send (Gmail '#', 'e', '!') - its effect cannot be read, so it asks
+    // once per key, site and run (permission, never pre-approved; the answer keys 'permission:page-shortcut:<key>' -
+    // cu-researcher: an approval covers that key on that site, never every character, nor a permission request).
+    // Named over-ask: the first printable shortcut on any site (j/k navigation, '/') asks once a run.
+    const onDesktop = /^(app|desktop):/.test(String(context.url ?? ''))
+    const browserRoute = context.url != null && !onDesktop
+    // CU-363 round 3 (cu-coordinator 17:40Z): the desktop route too - an app's own key equivalent outside a text entry
+    // that fires no menu item (the loop's boundMenuItem read says none, or there is none to read).
+    const desktopNoMenu = onDesktop && (context.boundMenuItem == null || context.boundMenuItem.none === true)
+    // The key is the character it produces (Shift+3 is '#'), so a yes for '3' never frees '#' (cu-researcher).
+    const SHIFTED = { 1: '!', 2: '@', 3: '#', 4: '$', 5: '%', 6: '^', 7: '&', 8: '*', 9: '(', 0: ')', '-': '_', '=': '+', '[': '{', ']': '}', '\\': '|', ';': ':', "'": '"', ',': '<', '.': '>', '/': '?', '`': '~' }
+    const shortcutKey = (() => {
+      if (action.type === 'type') {
+        // cu-verifier's live rows: a type outside text entry delivers every character to the page ('###', 'ok #').
+        const text = String(action.text ?? '').replace(/[\r\n]/g, '')
+        if (text.trim() === '') return null
+        // A control is no text entry: its typed text reaches the page's handlers as a keypress would (cu-researcher: rows are
+        // often links). Only an entry-like role the driver reports read-only is left to its own rules.
+        if (target && /text|search|combo/i.test(String(target.role ?? ''))) return null
+        return text
+      }
+      const keys = keysOf(action)
+      if ((action.type !== 'keypress' && action.type !== 'hold_key') || [...keys].some((key) => ['CMD', 'COMMAND', 'META', 'SUPER', 'CTRL', 'CONTROL', 'ALT', 'OPTION'].includes(key))) return null
+      const main = [...keys].filter((key) => key !== 'SHIFT')
+      if (main.length !== 1 || [...main[0]].length !== 1) return null
+      const ch = main[0]
+      return keys.has('SHIFT') ? (SHIFTED[ch] ?? ch.toUpperCase()) : ch.toLowerCase()
+    })()
+    // A key into a frame host goes to the frame's own field (CU-297 judges it by the frame's name), not to a page handler.
+    // An unread focus counts (cu-coordinator 17:40Z: printable input of any length into an unread focus asks - a named
+    // over-ask: typing into a desktop field whose focus cannot be read asks).
+    // On the desktop a null target (nothing focused, or a focus the driver could not read) holds no text entry either, so
+    // printable input there asks too (cu-coordinator 17:53Z) - a typed line break alone is no printable input (D-069 keeps it).
+    const desktopTarget = desktopNoMenu
+    // cu-verifier 180522Z: 'ok #' typed on a focused link row - its space presses the link, its other characters still reach
+    // the page's handlers - so a typed text is an activation only when it holds nothing but spaces and line breaks.
+    const activationOnly = keyboard.activates && !(action.type === 'type' && /\S/.test(String(action.text ?? '')))
+    const pageShortcut = (browserRoute || desktopTarget) && shortcutKey !== null && !isTextEntry(target) && !framesHost(target) && !keyboard.deletes && !activationOnly
     // CU-140 (press-and-drop.md): a drag pressed on a control - a long press, or any drag starting there - is judged like
     // a click on it; a file, row, cell or image at the press point is not judged by its name (dragging it moves it).
     const pressesTarget = POINTER.has(action.type) || (action.type === 'drag' && CONTROL_ROLE.test(String(target?.role ?? '')))
@@ -1212,12 +1251,17 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (target.autofillRead === false) autofillClasses.push('credential')
     }
     classes.push(...autofillClasses)
+    // CU-363: the page shortcut asks only when no other rule already judges the key (a field's name, a delete key).
+    if (pageShortcut && classes.length === 0) classes.push('permission')
     const unique = [...new Set(classes)].sort((a, b) => PRECEDENCE.indexOf(a) - PRECEDENCE.indexOf(b))
     const needed = unique.filter((cls) => !preApproved(cls, url) || NEVER_PRE_APPROVED.includes(cls) || autofillClasses.includes(cls))
     if (needed.length === 0) {
       return { decision: 'allow', class: unique[0] ?? null, rule: unique.length > 0 ? 'pre_approved' : 'default', reason: '' }
     }
     const cls = needed[0]
+    if (pageShortcut && cls === 'permission') {
+      return { decision: 'confirm', class: cls, classes: needed, rule: 'page:shortcut', approvalKey: `permission:page-shortcut:${[...new Set(shortcutKey)].sort().join('')}`, runOnly: true, reason: `press '${shortcutKey}' on ${placeOf(url, target, context?.frontmostBundleId)}, a keyboard shortcut of the ${onDesktop ? 'app' : 'page'} - it decides what it does` }
+    }
     if (mixedScript && cls === 'permission') {
       return { decision: 'confirm', class: cls, classes: needed, rule: 'target:mixed_script', reason: `activate "${name}", whose name mixes scripts in one word (a disguised control?)` }
     }
