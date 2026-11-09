@@ -1,45 +1,47 @@
 ---
 title: Computer use on the Mac mini - one-page status for the owner
 created: 2026-11-06T04:55:00Z
-modified: 2026-11-09T14:22:00Z
+modified: 2026-11-09T16:12:00Z
 level: L2
-version: 1.5.0
+version: 1.6.0
 status: unverified
 description: 'What the [cu] team has built and proven, what is left, and the owner actions that are still open - one page, kept current by the coordinator.'
 grounded_in:
   - source: ULTIMATE_GOAL.md@2.0.0
-  - source: _seats_/cu-verifier/ultimate-goal-2-verdict.md@0.9.61
-  - source: _context_/team-operations/decision-log.yaml (D-034, D-052, D-063, D-079 to D-097)
+  - source: _seats_/cu-verifier/ultimate-goal-2-verdict.md@0.9.66
+  - source: _context_/team-operations/decision-log.yaml (D-034, D-052, D-063, D-079 to D-099)
 ---
 
 # Computer use on the Mac mini - status for the owner
 
-State at 9 November 2026, 14:22 UTC.
+State at 9 November 2026, 16:12 UTC.
 
 ## Where it stands
 
 Seven of the nine ULTIMATE_GOAL 2.0 rows hold on live evidence. Two are open:
 
-- **Consent and safety** holds only when no Urgent or High under-ask is open (D-063). One High item is open: CU-347,
-  found at 14:20Z by the team's own probe - an AWS secret key, a Google API key or a 'password=' line typed into a
-  field does not ask yet; the fix is being made now. Closed live since 8 November: CU-301, CU-253, CU-241, CU-297, CU-279/CU-296, CU-289, CU-292, CU-252, CU-319,
-  CU-302, CU-325, and overnight **CU-340** - a card or ID number split across separate boxes, or half pasted, now asks
-  at the box that completes it (found by the team's own key-by-key audit, CU-339). Also closed: CU-326, CU-300, CU-263
-  (a CAPTCHA is handed to you), CU-328, and CU-323's six table cells (its fixture change lands with PR #272). Open:
-  - CU-336 (Medium): a card's security code typed into a payment frame whose name cannot be read; fix in review.
-  - CU-345 (Medium: a PIN or code box labelled only in Japanese, Korean, German, French or Spanish) and CU-346
-    (Medium: a card or ID number written with dots, slashes or underscores).
-  - The consent tables (CU-145): D-059 is re-signed (every cell closed by a live run or a test that fails without its
-    guard; 9 named limits where it deliberately does not ask, such as a scroll); D-061 is re-signed after CU-336.
+- **Consent and safety** holds only when no Urgent or High under-ask is open (D-063). **No Urgent or High item is
+  open** (verdict 0.9.66). Today the team's own audits found six High gaps and closed each live within hours:
+  CU-340 (a card or ID number split across boxes, or half pasted), CU-347 (secret keys and 'password=' lines typed
+  into a field), CU-351 (a click on a label fired its button unjudged), CU-352 (buy, pay, delete and send buttons in
+  German, French, Spanish, Russian, Japanese and Korean), CU-353 (an access-key shortcut, closed as a precaution) and
+  CU-354 (a task naming the last four digits let the whole card through). Also closed: CU-336, CU-326, CU-300, CU-263
+  (a CAPTCHA is handed to you), CU-328, CU-329. Both consent tables are re-signed by cu-verifier (D-059, and D-061 at
+  16:23Z: 270 closed rows, 247 on its own runs), so CU-145 is done. What the row still needs is CU-135, the
+  Replace-sheet chain, which you run in the session below. Also in flight:
+  - Medium items with fixes in review: field names in those six languages (CU-345), unusual separators (CU-346), less
+    common password forms (CU-350), personal-ID field names (CU-355), placeholder-only boxes on the desktop (CU-349).
+  - Button names are read in English, Chinese and those six languages; field names in the six follow with CU-345 (in
+    review). Other languages are a named limit (D-099).
 - **Human control** needs you once: runbook step 4 (CU-11), with the G2 key-hold row (CU-119), the Replace-sheet
   chain (CU-135) and the physical-confirmation prompt (CU-203) - in person about 15 minutes, or over Screen Sharing
-  about 25. The team is rehearsing every step with labelled stand-ins first and will hand you a one-page checklist
-  (CU-341).
+  about 25. The team rehearsed every step it can with labelled stand-ins (every pause and take-over under 35 ms, no
+  input while paused); the one-page checklist is reviewed (CU-341).
 
 | Row | State |
 |---|---|
 | environment, perception, action contract, agent loop | hold live (CUHelper 0.2.62 installed 9 Nov; it admits drivers only from the configured checkouts and now gives back the one Accessibility setting it changes in your apps at every run end, CU-329) |
-| consent and safety | open: CU-347 (High, fix in progress); D-059 re-signed; D-061 after CU-336 (Medium) |
+| consent and safety | no Urgent or High item open (0.9.66); both tables re-signed; waits on CU-135 in the owner session |
 | human control | open: step 4 with you (CU-11, CU-119, CU-135, CU-203) |
 | integration | DSH and heddle each completed a fixture task (CU-15) |
 | trajectory | holds; capture stays inside approved apps |
@@ -63,3 +65,4 @@ Seven of the nine ULTIMATE_GOAL 2.0 rows hold on live evidence. Two are open:
 5. Optional: give the Heddle Linear app initiative read/write for initiative updates.
 6. The third evaluation batch's S8 and S9 on Opus wait for your answer (CU-66).
 7. Model budget: 20.69 of 25 USD spent; nothing past 21 USD runs without you (D-034).
+8. If your apps use a language other than the eight above, say which, and the next table pass adds it (D-099).
