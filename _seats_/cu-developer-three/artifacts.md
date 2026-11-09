@@ -1,13 +1,13 @@
 ---
 title: '[cu] Developer Three - Artifacts'
 created: 2026-11-02T09:50:00Z
-modified: 2026-11-07T08:20:00Z
+modified: 2026-11-09T13:47:48Z
 level: L1
-version: 0.11.3
+version: 0.11.4
 description: What cu-developer-three has delivered and learned - the helper pull requests, the owner request draft, the measurements and the practice notes.
 status: unverified
 grounded_in:
-  - source: _team_members_/cu-developer-three/responsibilities.md
+  - source: _seats_/cu-developer-three/responsibilities.md
 ---
 
 # Artifacts

@@ -1,13 +1,13 @@
 ---
 title: Red team live findings after the grant
 created: 2026-11-05T14:32:56Z
-modified: 2026-11-05T16:28:42Z
+modified: 2026-11-09T13:47:48Z
 level: L1
-version: 2.1.0
+version: 2.1.1
 description: Findings the red team raised or confirmed on live desktop runs after the owner's grant, with owners and the retest that closes each.
 status: unverified
 grounded_in:
-  - source: _team_members_/cu-researcher/red-team-retest-2.md
+  - source: _seats_/cu-researcher/red-team-retest-2.md
   - source: 'cu-verifier runbook step 5 and its impersonation probe on CUHelper 0.2.10, 2026-11-05 (inbox 20261105T142726 and 143150)'
 ---
 

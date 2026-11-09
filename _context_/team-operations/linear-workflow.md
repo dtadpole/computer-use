@@ -1,9 +1,9 @@
 ---
 title: '[cu] Linear workflow - states, fields, cadence, roles'
 created: 2026-11-06T11:30:00Z
-modified: 2026-11-09T13:06:32Z
+modified: 2026-11-09T13:47:48Z
 level: L2
-version: 1.3.0
+version: 1.3.1
 description: 'How the [cu] team runs its work in Linear (team CU) - what each state means and who moves it, priorities, labels, templates, cycles, project updates, PR rules, owner questions, and every seat''s Linear duties.'
 status: unverified
 grounded_in:
@@ -128,5 +128,5 @@ service - no screenshots of the owner's windows, no clipboard or file contents, 
 ## Records and Linear
 
 Decisions stay in [decision-log.yaml](decision-log.yaml) (cite CU ids); member reviews in
-`execution-review-log.jsonl`; the verdict in `_team_members_/cu-verifier/ultimate-goal-2-verdict.md`; run analyses
+`execution-review-log.jsonl`; the verdict in `_seats_/cu-verifier/ultimate-goal-2-verdict.md`; run analyses
 in `_context_/run-analysis/`. Linear comments carry links to them, not copies.

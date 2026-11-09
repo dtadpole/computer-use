@@ -1,12 +1,12 @@
 ---
 title: computer-use verifiers
 created: 2026-11-01T09:33:46Z
-modified: 2026-11-05T15:50:46Z
-version: 2.34.0
+modified: 2026-11-09T13:47:48Z
+version: 2.34.1
 description: The computer-use project's _verifiers_ type folder - one runnable claim per folder, bound to the rows of ULTIMATE_GOAL.md, each exiting 0 holds, 1 fails, 3 unjudged.
 grounded_in:
   - source: ULTIMATE_GOAL.md@1.0.0
-  - source: _team_members_/cu-verifier/responsibilities.md@1.0.0
+  - source: _seats_/cu-verifier/responsibilities.md@1.0.0
   - source: _designs_/system-architecture/goal-checks.md@0.8.0
 ---
 

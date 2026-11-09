@@ -14,4 +14,4 @@ types:
   _designs_: designs the code follows
   _guides_: guides for the people who use the agent
   _vendor_: third-party or copied code kept verbatim with its provenance
-  _team_members_: one record per team seat
+  _seats_: one record per team seat

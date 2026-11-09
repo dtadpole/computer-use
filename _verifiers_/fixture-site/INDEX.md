@@ -1,11 +1,11 @@
 ---
 title: Fixture site verifier
 created: 2026-11-01T09:33:46Z
-modified: 2026-11-01T17:54:38Z
-version: 1.5.0
+modified: 2026-11-09T13:47:48Z
+version: 1.5.1
 description: Drives every fixture task, injection page and probe in headless Chrome with canonical actions sent as CDP input, and judges only from the fixture's state endpoint and request log.
 grounded_in:
-  - source: _team_members_/cu-verifier/responsibilities.md@1.0.0
+  - source: _seats_/cu-verifier/responsibilities.md@1.0.0
   - source: _context_/team-operations/decision-log.yaml (D-005, D-012)
 ---
 

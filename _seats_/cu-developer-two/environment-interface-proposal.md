@@ -1,13 +1,13 @@
 ---
 title: '[cu] Developer Two - environment driver interface proposal for M1'
 created: 2026-11-01T09:28:00Z
-modified: 2026-11-05T16:22:58Z
+modified: 2026-11-09T13:47:48Z
 level: L1
-version: 1.0.1
+version: 1.0.2
 description: 'The browser environment interface cu-developer-two needs the M1 design to declare, and the decisions it asks cu-developer-one to make.'
 status: unverified
 grounded_in:
-  - source: _team_members_/cu-developer-two/responsibilities.md@1.0.0 (item 1)
+  - source: _seats_/cu-developer-two/responsibilities.md@1.0.0 (item 1)
   - source: _context_/chatgpt-computer-use/api-sdk-computer-toolset.md@1.0.0
   - source: _projects_/browser-use/cdp.mjs and chrome.mjs (read 2026-11-01)
 related_to:
