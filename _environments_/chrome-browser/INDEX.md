@@ -1,12 +1,12 @@
 ---
 title: chrome-browser environment
 created: 2026-11-01T09:52:00Z
-modified: 2026-11-05T16:22:09Z
-version: 0.12.1
+modified: 2026-11-09T13:47:48Z
+version: 0.12.2
 description: The browser environment driver - headless Google Chrome over CDP with a fresh profile, a fixed viewport, every canonical action, a two-layer site filter and the per-run clipboard.
 grounded_in:
   - source: _designs_/system-architecture/environment-driver.md@0.4.0
-  - source: dtadpole/_team_members_/cu-developer-two/headless-chrome-measurements.md@1.3.0
+  - source: dtadpole/_seats_/cu-developer-two/headless-chrome-measurements.md@1.3.0
 ---
 
 # `chrome-browser`

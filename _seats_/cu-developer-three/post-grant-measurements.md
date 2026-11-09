@@ -1,16 +1,16 @@
 ---
 title: Helper measurements - before and after the owner's grant
 created: 2026-11-02T10:35:00Z
-modified: 2026-11-05T16:30:00Z
+modified: 2026-11-09T13:47:48Z
 level: L1
-version: 0.7.0
+version: 0.7.1
 description: What cu-developer-three has measured of CUHelper without a grant, and the plan for the fixture-app-only measurements after it - each question, how it is driven through a listed driver entry, what decides it, and what changes in the helper on each answer.
 status: unverified
 grounded_in:
   - source: dtadpole/computer-use _designs_/desktop-extension/open-questions.md
   - source: dtadpole/computer-use _designs_/desktop-extension/helper-boundary.md@0.3.5
   - source: dtadpole/computer-use _verifiers_/desktop-fixture/claims.md
-  - source: _team_members_/cu-verifier/post-grant-acceptance.md@0.1.1
+  - source: _seats_/cu-verifier/post-grant-acceptance.md@0.1.1
   - source: _context_/team-operations/decision-log.yaml (D-031)
   - source: dtadpole/computer-use _environments_/macos-desktop/helper/INDEX.md
 ---

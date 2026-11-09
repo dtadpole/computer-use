@@ -1,14 +1,14 @@
 ---
 title: Helper protocol details
 created: 2026-11-02T09:53:32Z
-modified: 2026-11-05T17:00:36Z
+modified: 2026-11-09T13:47:48Z
 level: L1
-version: 0.4.4
+version: 0.4.5
 description: The requests, replies, events and codes of the line protocol between the macos-desktop driver and the helper - scope growth, captures by path, inline watch frames and the test seams.
 status: unverified
 grounded_in:
   - source: _environments_/macos-desktop/helper-link.mjs
-  - source: _team_members_/cu-developer-two/macos-helper-measurements.md (PR 110, 95d9b4bbe)
+  - source: _seats_/cu-developer-two/macos-helper-measurements.md (PR 110, 95d9b4bbe)
 ---
 
 # Helper protocol details

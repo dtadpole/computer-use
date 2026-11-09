@@ -1,15 +1,15 @@
 ---
 title: Questions behind the owner TCC request for the helper
 created: 2026-11-02T09:10:00Z
-modified: 2026-11-05T16:26:33Z
+modified: 2026-11-09T13:47:48Z
 level: L1
-version: 1.1.1
+version: 1.1.2
 description: What the coordinator's single TCC request for our Swift helper must ask and leave out - Input Monitoring, Screen Recording re-confirmation, Accessibility scope, signing identity and launch - answered with sources, confidence and what the owner will see.
 status: unverified
 grounded_in:
   - source: 'design open-questions.md Q-D1 as measured in cdfefa64e and helper 0.2.10 (f6b69d1e5)'
-  - source: '_team_members_/cu-developer-two/macos-helper-measurements.md@1.0.0'
-  - source: '_team_members_/cu-developer-two/m6-desktop-review.md@1.0.0'
+  - source: '_seats_/cu-developer-two/macos-helper-measurements.md@1.0.0'
+  - source: '_seats_/cu-developer-two/m6-desktop-review.md@1.0.0'
   - source: 'dtadpole/computer-use/_designs_/desktop-extension/helper-and-protocol.md@0.2.0'
   - source: 'dtadpole/computer-use/_designs_/desktop-extension/human-control.md@0.2.0'
   - source: 'dtadpole/computer-use/_designs_/desktop-extension/open-questions.md@0.2.0'
@@ -35,8 +35,8 @@ grounded_in:
 
 # Questions behind the owner TCC request
 
-On cu-developer-two's [measurements](../../_team_members_/cu-developer-two/macos-helper-measurements.md) and
-[review](../../_team_members_/cu-developer-two/m6-desktop-review.md); short names in
+On cu-developer-two's [measurements](../../_seats_/cu-developer-two/macos-helper-measurements.md) and
+[review](../../_seats_/cu-developer-two/m6-desktop-review.md); short names in
 [mechanics-sources.yaml](mechanics-sources.yaml); 3p = third-party.
 
 | Q | Answer | Confidence | Evidence |
