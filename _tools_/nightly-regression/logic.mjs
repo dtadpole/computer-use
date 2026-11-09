@@ -35,16 +35,19 @@ export const TIMEOUTS = Object.freeze({
 
 const DEFAULTS = Object.freeze({
   repo: null, ref: 'origin/main', out: '/tmp/cu-nightly', fetch: true, nodeOnly: false, lockWait: 900,
-  yieldFlag: null, onLock: null, onRelease: null, keepWorktree: false, seat: 'cu-integrator', lockDir: null, help: false,
+  yieldFlag: null, onLock: null, onRelease: null, keepWorktree: false, seat: 'cu-integrator', lockDir: null, worktreeRoot: '/tmp',
+  help: false,
 })
 const VALUE_FLAGS = Object.freeze({
   '--repo': 'repo', '--ref': 'ref', '--out': 'out', '--lock-wait': 'lockWait', '--yield-flag': 'yieldFlag',
-  '--on-lock': 'onLock', '--on-release': 'onRelease', '--seat': 'seat', '--lock-dir': 'lockDir',
+  '--on-lock': 'onLock', '--on-release': 'onRelease', '--seat': 'seat', '--lock-dir': 'lockDir', '--worktree-root': 'worktreeRoot',
 })
 const BOOL_FLAGS = Object.freeze({
   '--no-fetch': ['fetch', false], '--node-only': ['nodeOnly', true], '--keep-worktree': ['keepWorktree', true], '--help': ['help', true],
 })
-const PATH_OPTIONS = Object.freeze({ repo: '--repo', out: '--out', yieldFlag: '--yield-flag', lockDir: '--lock-dir' })
+const PATH_OPTIONS = Object.freeze({
+  repo: '--repo', out: '--out', yieldFlag: '--yield-flag', lockDir: '--lock-dir', worktreeRoot: '--worktree-root',
+})
 
 /** Parse the command line; throws an Error with a one-line message on a bad argument. */
 export function parseArgs(argv) {

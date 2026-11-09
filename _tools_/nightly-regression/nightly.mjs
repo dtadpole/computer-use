@@ -31,6 +31,8 @@ const USAGE = `usage: node _tools_/nightly-regression/nightly.mjs [options]
   --on-release CMD  sh command run after the lock is released
   --seat SEAT       the lock's seat (default cu-integrator)
   --lock-dir DIR    the lock directory (tests only; default the team's)
+  --worktree-root D  folder for the run's detached worktree (default /tmp); a helper that admits only configured
+                    checkouts (0.2.60, CU-299) needs one under the configured worktrees parent
   --keep-worktree   leave the worktree for inspection`
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -159,7 +161,7 @@ async function main() {
   mkdirSync(opts.out, { recursive: true })
   const runDir = join(opts.out, `${startedAt.replace(/:/g, '')}-${head.slice(0, 9)}`)
   mkdirSync(runDir, { recursive: true })
-  const wt = mkdtempSync('/tmp/cu-nightly-wt-')
+  const wt = mkdtempSync(join(opts.worktreeRoot, 'cu-nightly-wt-'))
   try { git(repo, ['worktree', 'add', '--detach', '--quiet', wt, head]) } catch (error) {
     console.error(`nightly: worktree add failed: ${String(error?.stderr ?? error).trim()}`)
     rmSync(wt, { recursive: true, force: true })
@@ -209,7 +211,7 @@ async function main() {
       try { git(repo, ['worktree', 'remove', '--force', wt]) } catch { rmSync(wt, { recursive: true, force: true }) }
     }
   }
-  const run = { head, ref: opts.ref, startedAt, finishedAt: stamp(), seat: opts.seat, lockNote, results, killed, runDir, ...overall(results) }
+  const run = { head, ref: opts.ref, startedAt, finishedAt: stamp(), seat: opts.seat, lockNote, results, killed, runDir, worktree: wt, ...overall(results) }
   run.summary = summaryLine(run)
   const flakesPath = join(opts.out, 'flakes.json')
   const flakes = mergeFlakes(readJson(flakesPath) ?? {}, { results, head, at: run.finishedAt })
