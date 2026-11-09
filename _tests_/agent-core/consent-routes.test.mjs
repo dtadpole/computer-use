@@ -929,7 +929,10 @@ appApprovals.grantAlways(APP_STORE_ID, { by: 'api' })
 for (const id of [ACTIVITY_MONITOR_ID, DISK_UTILITY_ID, FINDER_ID, VSCODE_ID, SUBLIME_ID, XCODE_ID, CURSOR_ID, ...CU292_IDS]) {
   try { await appApprovals.grantAlways(id, { by: 'api' }) } catch (error) { if (!/excluded/.test(String(error?.message))) throw error }
 }
-const appPolicy = createAppPolicy({ scope: [FIXTURE_ID, APP_STORE_ID, ACTIVITY_MONITOR_ID, DISK_UTILITY_ID, FINDER_ID, VSCODE_ID, SUBLIME_ID, XCODE_ID, CURSOR_ID, ...CU292_IDS], approvals: appApprovals })
+// CU-302: Chrome for Testing, the browser the 01:13Z AutoFill measurement drove (D-089's rows).
+const CFT_ID = 'com.google.chrome.for.testing'
+try { await appApprovals.grantAlways(CFT_ID, { by: 'api' }) } catch (error) { if (!/excluded/.test(String(error?.message))) throw error }
+const appPolicy = createAppPolicy({ scope: [CFT_ID, FIXTURE_ID, APP_STORE_ID, ACTIVITY_MONITOR_ID, DISK_UTILITY_ID, FINDER_ID, VSCODE_ID, SUBLIME_ID, XCODE_ID, CURSOR_ID, ...CU292_IDS], approvals: appApprovals })
 // extra.app names the approved app in front (default CU Fixture); the rest of extra joins the context.
 const decideApp = (action, target, extra = {}) => {
   const { app = FIXTURE_ID, ...context } = extra ?? {}
@@ -993,9 +996,14 @@ const SYS_T = {
   tryFreeButton: { role: 'AXButton', name: 'Try Free' },
   trialDurationButton: { role: 'AXButton', name: 'Start 7-day free trial' },
   tryMonthFreeButton: { role: 'AXButton', name: 'Try 1 month free' },
+  // CU-302 (measured 2026-11-09 01:13Z): an approved browser's page as the helper reads it - one opaque area.
+  browserWebArea: { role: 'AXScrollArea', name: null, opaque: true, secure: false },
 }
 // [id, action, target, expected, pin, live, status, extra context]
 const SYSTEM_ROWS = [
+  // CU-302 / D-089: a saved login fills a sign-in form on load, and the desktop reads the page as one opaque area, so a
+  // click there (Sign in) would submit it unseen - the desktop route refuses inside an approved browser's page.
+  ['click-browser-web-area', 'click', 'browserWebArea', 'block:browser_web_content', 'desktop-web-content.test.mjs (#202, D-089)', 'no live row yet', 'open CU-302', { app: CFT_ID }],
   // CU-249: a macOS Service acts outside the approved app - its default chords and its Services items (clicked).
   ['service-chord-search-with', 'cmdShiftL', 'field', 'block:system_shortcut', 'service-shortcuts.test.mjs (#49, CU-249: the default Services chords refused)', 'cu-verifier, main with #98, helper 0.2.56, CU Fixture consent keys: Command-Shift-L in a field blocked system_shortcut (20261108T184210Z-c68d8d)', null],
   ['service-chord-run-applescript', 'cmdShift8', 'field', 'block:system_shortcut', 'service-shortcuts.test.mjs (#49, CU-249; Command-* is Shift-8)', 'no live row yet', 'open CU-249'],
