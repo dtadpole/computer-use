@@ -103,6 +103,88 @@ export function collectPageText(doc, win, maxChars) {
  * single field, and then nothing names it) and a disabled default button (nothing submits). Run in an isolated world,
  * so a page cannot redefine `form.elements` to hide its real button.
  */
+/**
+ * CU-319 (CU-302's driver half): the fields a submit-like control would send that the browser autofilled - a saved login
+ * filled on load, which the run never typed (typing clears the state). `el` is the described target, submit-like when it
+ * is a submit control (a button of type submit, the default, or an input of type submit or image), any other control (a
+ * button, an input of type button, a [role=button] or a link - a script may submit on its click) or a text entry (its
+ * Return may submit). Inside a form it takes that form's fields, plus those in open shadow roots under the form; outside
+ * any form (a sign-in built without <form>, cu-researcher's F1/F2) the autofilled fields of its whole document, open
+ * shadow roots included (sign-in web components, N1). The walk stops at 2000 elements, and a stopped walk answers
+ * `{ truncated: true }` rather than a partial list, so a page padded past the bound fails closed (cu-researcher).
+ * Anything else: null. Only :autofill (or Chrome's older :-webkit-autofill) is asked - never a value.
+ *
+ * Chrome clears :autofill as soon as a field is edited, so 'a saved password plus one typed character' would launder the
+ * saved value (cu-verifier). A field once seen autofilled in this document is remembered and stays reported, marked
+ * edited, after it stops matching. The memory is a WeakSet on `globalThis` of the world this function runs in: the driver
+ * resolves the element into its own isolated world (Page.createIsolatedWorld 'cu-driver') and calls it there, so the
+ * page's main-world scripts cannot reach or reset it.
+ * Returns `{ fields, edited }` (parallel lists, at most 20), or null. Self-contained: it runs serialized in the page.
+ */
+export function autofilledFields(el) {
+  const NOT_TEXT = ['button', 'submit', 'reset', 'checkbox', 'radio', 'file', 'image', 'range', 'color', 'hidden']
+  const autofilled = (field) => {
+    for (const selector of [':autofill', ':-webkit-autofill']) {
+      try {
+        if (field && typeof field.matches === 'function' && field.matches(selector)) return true
+      } catch {
+        // A selector this engine does not know: try the next.
+      }
+    }
+    return false
+  }
+  if (!el || el.nodeType !== 1) return null
+  const tag = String(el.tagName || '').toLowerCase()
+  const type = tag === 'input' ? String(el.type || 'text').toLowerCase() : tag === 'button' ? String(el.type || 'submit').toLowerCase() : ''
+  const role = String((el.getAttribute && el.getAttribute('role')) || '').toLowerCase()
+  const form = el.form || (typeof el.closest === 'function' ? el.closest('form') : null) || null
+  const submits = (tag === 'button' && type === 'submit') || (tag === 'input' && (type === 'submit' || type === 'image'))
+  const entry = (tag === 'input' && !NOT_TEXT.includes(type)) || tag === 'textarea'
+  const control = tag === 'button' || (tag === 'input' && type === 'button') || role === 'button' || (tag === 'a' && el.getAttribute && el.getAttribute('href') !== null)
+  if (!(submits || control || entry)) return null
+  // The text fields under `root`, descending into open shadow roots; bounded so a huge page cannot stall the read.
+  let truncated = false
+  const deep = (root) => {
+    const found = []
+    let walked = 0
+    const visit = (node) => {
+      if (!node || truncated) return
+      const all = typeof node.querySelectorAll === 'function' ? Array.from(node.querySelectorAll('*')) : []
+      for (const child of all) {
+        walked += 1
+        if (walked > 2000) {
+          truncated = true
+          return
+        }
+        const name = String(child.tagName || '').toLowerCase()
+        if (name === 'input' || name === 'textarea' || name === 'select') found.push(child)
+        if (child.shadowRoot) visit(child.shadowRoot)
+      }
+    }
+    visit(root)
+    return found
+  }
+  const owned = form ? Array.from(form.elements || []) : []
+  const ownedSet = new Set(owned)
+  const scope = form ? [...owned, ...deep(form).filter((field) => !ownedSet.has(field))] : deep(el.ownerDocument)
+  if (truncated) return { fields: [], edited: [], truncated: true }
+  const seen = globalThis.__cuAutofillSeen instanceof WeakSet ? globalThis.__cuAutofillSeen : (globalThis.__cuAutofillSeen = new WeakSet())
+  const fields = []
+  const edited = []
+  for (const field of scope) {
+    if (fields.length >= 20) break
+    if (autofilled(field)) {
+      seen.add(field)
+      fields.push(field)
+      edited.push(false)
+    } else if (field && typeof field === 'object' && seen.has(field)) {
+      fields.push(field)
+      edited.push(true)
+    }
+  }
+  return { fields, edited }
+}
+
 export function implicitSubmitButton(el) {
   const IMPLICIT = ['text', 'search', 'email', 'url', 'tel', 'password', 'number', 'date', 'datetime-local', 'month', 'time', 'week']
   if (!el || el.tagName !== 'INPUT' || !IMPLICIT.includes(String(el.type).toLowerCase())) return null
