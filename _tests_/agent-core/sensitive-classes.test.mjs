@@ -663,3 +663,29 @@ test('navigate rows: named once, every open row names its issue, a todo row stil
     if (status.startsWith('todo ')) assert.notEqual(decideNavigate(url), expected, `${id} passes on main - close it`)
   }
 })
+
+// CU-340 (High; PR #294): a value a page splits across unnamed boxes - each box's buffer holds only its part, so the
+// loop passes the last other fields typed in the same page (typedSplit.parts) and the action that completes a value
+// asks. Rows: [id, parts typed before into other boxes, this box's text before, this action's text, action type,
+// expected, status, live].
+const decideSplit = (parts, before, next, type) => {
+  const action = type === 'keypress' ? { type: 'keypress', keys: [next] } : { type: 'type', text: next }
+  const r = policy.classify(action, { url: 'https://forms.example/apply', target: { tag: 'input', role: 'textbox', name: null, editable: true }, typedSplit: { parts, before, next } })
+  return r.decision === 'allow' ? 'allow' : r.class
+}
+const SPLIT_CARD = CARD.replace(/\D/g, '').match(/.{4}/g)
+const SPLIT_SSN = SSN.split('-')
+const SPLIT_ROWS = [
+  ['split-card 4x4 typed key by key into unnamed boxes', SPLIT_CARD.slice(0, 3), SPLIT_CARD[3].slice(0, 3), SPLIT_CARD[3].slice(3), 'keypress', 'sensitive_data', null, "cu-verifier, main 5a6d8d8 (PR #294 in), headless browser route on four unnamed maxlength-4 boxes: the 16th key declined sensitive_data, the page got 15 keys (20261109T132904Z-71a14d)"],
+  ['split-SSN 3/2/4 typed per box into unnamed boxes', SPLIT_SSN.slice(0, 2), '', SPLIT_SSN[2], 'type', 'sensitive_data', null, "cu-verifier, main 5a6d8d8, the same page: the third box declined sensitive_data, 5 characters in (20261109T132919Z-26efc7)"],
+  ['split-four unrelated 4-digit entries (negative)', ['2468', '1357', '9753'], '', '8642', 'type', 'allow', null, "negative - cu-verifier, main 5a6d8d8, the same page: four unrelated 4-digit entries (no join matches a shape) all done, 16 in (20261109T132930Z-f2a28d)"],
+]
+for (const [id, parts, before, next, type, expected, status, live] of SPLIT_ROWS) {
+  const title = `${id} -> ${expected} (live: ${live})`
+  if (status?.startsWith('todo ')) test(title, { todo: status }, () => assert.equal(decideSplit(parts, before, next, type), expected))
+  else test(title, () => assert.equal(decideSplit(parts, before, next, type), expected))
+}
+test('split rows: named once; a closed row names its run', () => {
+  assert.equal(new Set(SPLIT_ROWS.map((r) => r[0])).size, SPLIT_ROWS.length)
+  for (const r of SPLIT_ROWS) if (r[6] === null) assert.match(r[7], /\d{8}T\d{6}Z-[0-9a-f]{6}/, r[0])
+})
