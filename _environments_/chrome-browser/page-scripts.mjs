@@ -550,9 +550,10 @@ export function activatableAncestor(el) {
 
 /**
  * CU-336: a name for an <iframe>/<frame> element whose accessibility name could not be read - the words the page gives
- * it, in the order accessible names take them: the text of the elements its aria-labelledby names, its aria-label, its
- * title, then its name attribute. Whitespace collapsed, at most 80 characters; null when there is none. Self-contained:
- * it runs serialized in the page.
+ * it, in the order accessible names take them: the text of the elements its aria-labelledby names, its aria-label, then
+ * its title. Never its name attribute: that is an id for scripts ('__privateStripeFrame5'), and an id taken as a name
+ * would switch off the policy's unnamed-frame rule (cu-researcher's red team). Whitespace collapsed, at most 80
+ * characters; null when there is none. Self-contained: it runs serialized in the page.
  */
 export function frameLabel(el) {
   if (!el || el.nodeType !== 1) return null
@@ -564,18 +565,19 @@ export function frameLabel(el) {
     const node = doc && doc.getElementById ? doc.getElementById(id) : null
     return node ? node.textContent : ''
   }).join(' '))
-  return labelled || clean(attr('aria-label')) || clean(attr('title')) || clean(attr('name')) || null
+  return labelled || clean(attr('aria-label')) || clean(attr('title')) || null
 }
 
 /**
  * CU-336: the same order from a DOM.describeNode attribute list, for when the page script cannot run (the node does
- * not resolve): aria-label, title, name - aria-labelledby needs the document and is skipped. Null when there is none.
+ * not resolve): aria-label, then title - aria-labelledby needs the document and is skipped; never name. Null when
+ * there is none.
  */
 export function frameLabelFromAttributes(attributes = []) {
   const map = {}
   for (let index = 0; index + 1 < attributes.length; index += 2) map[attributes[index]] = attributes[index + 1]
   const clean = (value) => String(value || '').replace(/\s+/g, ' ').trim().slice(0, 80)
-  return clean(map['aria-label']) || clean(map.title) || clean(map.name) || null
+  return clean(map['aria-label']) || clean(map.title) || null
 }
 
 /**

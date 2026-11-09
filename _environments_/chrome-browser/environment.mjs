@@ -454,16 +454,16 @@ class BrowserEnvironment {
     } catch {
       // Unread: role and name stay null.
     }
-    // CU-336: an unread host name falls back to the words the page gives the frame element (title, aria-label, ...).
+    // CU-336: an unread host name falls back to the words the page gives the frame element (labelledby, aria-label, title).
     if (name === null || name === '') name = (await this.#frameLabel(page, node)) ?? name
     return { tag: String(node?.nodeName ?? '').toLowerCase(), role, name }
   }
 
   /**
    * CU-336: the words the page gives an <iframe>/<frame> element whose accessibility name is unread or empty -
-   * aria-labelledby's text, aria-label, title, then name (page-scripts frameLabel), read in the isolated world; when
-   * the node does not resolve there, the same order from its describeNode attributes without aria-labelledby. Null when
-   * the element carries none, so the policy's unknown-name rules still judge a frame with no name at all.
+   * aria-labelledby's text, aria-label, then title (page-scripts frameLabel; never the name attribute, an id), read in
+   * the isolated world; when the node does not resolve there, the same order from its describeNode attributes without
+   * aria-labelledby. Null when the element carries none, so the policy's unnamed-frame rule still judges it.
    */
   async #frameLabel(page, node, frameId = page.mainFrameId) {
     const tag = String(node?.nodeName ?? '').toUpperCase()

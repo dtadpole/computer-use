@@ -325,12 +325,14 @@ test('CU-336: a host whose AX read fails is named from the words the page gives 
   try {
     const env = await launchBrowserEnvironment(options)
     await attach(env)
-    assert.deepEqual((await env.focusedElement()).frameHost, { tag: 'iframe', role: null, name: 'Card security code' }, 'aria-labelledby text (or aria-label, title, name) read in the page')
+    assert.deepEqual((await env.focusedElement()).frameHost, { tag: 'iframe', role: null, name: 'Card security code' }, 'aria-labelledby text (or aria-label, title) read in the page')
     world.pageResolveFails = true
     assert.equal((await env.focusedElement()).frameHost.name, 'Secure CVC input frame', 'the node does not resolve: the title from its describeNode attributes')
     assert.equal((await env.inspectPoint({ x: 240, y: 120 })).frameHost.name, 'Secure CVC input frame', 'inspectPoint through the frame alike')
     HOST.attributes = []
     assert.equal((await env.focusedElement()).frameHost.name, null, 'no words at all: still unread, for the policy\'s own rules')
+    HOST.attributes = ['name', '__privateStripeFrame5', 'src', 'https://js.stripe.example/v3/elements-inner-cvc.html']
+    assert.equal((await env.focusedElement()).frameHost.name, null, 'a name attribute is an id for scripts, never a label: the frame stays unnamed (cu-researcher)')
     HOST.attributes = savedAttributes
     world.pageResolveFails = false
     world.hostLabel = null
@@ -377,13 +379,13 @@ test("CU-336 end to end: a CVV frame whose AX name is unread still asks once the
   }
 })
 
-test('CU-336: frameLabel takes aria-labelledby text, then aria-label, title, name - collapsed, at most 80 characters, self-contained; the attribute form skips labelledby', () => {
+test('CU-336: frameLabel takes aria-labelledby text, then aria-label, then title - never the name attribute; collapsed, at most 80 characters, self-contained; the attribute form skips labelledby', () => {
   const doc = { getElementById: (id) => ({ a: { textContent: '  Card  ' }, b: { textContent: 'security code' } })[id] ?? null }
   const el = (attrs) => ({ nodeType: 1, ownerDocument: doc, getAttribute: (name) => attrs[name] ?? null })
   assert.equal(frameLabel(el({ 'aria-labelledby': 'a b missing', 'aria-label': 'x', title: 'y' })), 'Card security code')
   assert.equal(frameLabel(el({ 'aria-label': '  Secure   CVC ', title: 'y' })), 'Secure CVC')
   assert.equal(frameLabel(el({ title: 'Secure Credit Card Frame - CVV', name: 'n' })), 'Secure Credit Card Frame - CVV')
-  assert.equal(frameLabel(el({ name: 'cvc-frame' })), 'cvc-frame')
+  assert.equal(frameLabel(el({ name: '__privateStripeFrame5' })), null, 'an id is no label')
   assert.equal(frameLabel(el({ 'aria-labelledby': 'missing' })), null)
   assert.equal(frameLabel(el({ title: 'x'.repeat(200) })).length, 80)
   assert.equal(frameLabel(null), null)
@@ -391,4 +393,5 @@ test('CU-336: frameLabel takes aria-labelledby text, then aria-label, title, nam
   assert.equal(isolated(el({ title: 'T' })), 'T', 'runs serialized in the page')
   assert.equal(frameLabelFromAttributes(['aria-labelledby', 'a', 'title', ' T ', 'name', 'n']), 'T')
   assert.equal(frameLabelFromAttributes(['src', 'https://pay.example/']), null)
+  assert.equal(frameLabelFromAttributes(['name', 'frame1']), null, 'never the name attribute')
 })
