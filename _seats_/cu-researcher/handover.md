@@ -23,16 +23,15 @@ credential, D-063); (4) this handover, hourly note.
 
 REMAINING: D-059 re-signed at 12:07Z (main 445c98e). D-061: CU-336's three rows (two todo + the free-text
 negative) close on cu-verifier's post-landing runs once PR 274 (3572069, OK'd) and PR 299 land; then the re-sign.
-CU-340's split rows are closed (PR 305). Reviews: CU-342's PR (design 0.2 took my six gate notes - adapter
-identity, cli-only env read, no action path, realpath CU_HOME); probe each gate row and its mutant on the merge.
+CU-340's split rows are closed (PR 305). Reviews: CU-342's PR (design 0.2 took my six gate notes); probe each gate row and its mutant on the merge.
 
 HUNT: filed CU-345 (localized PIN/OTP/CVV names), CU-346 (card/SSN separators), CU-347 (AWS secret, credential
 assignments - PR 314 OK'd), CU-348 (card as URL userinfo), CU-349 (desktop placeholder-only fields). Held:
-unreadable focus, cursor reordering, paste chords, drag text, terminals. Loop-level
-probes reuse split-fields.test's run() harness (/tmp/cu-r-probe/*.mjs).
+unreadable focus, cursor reordering, paste chords, drag text, terminals. Loop probes
+reuse split-fields.test's run() harness.
 
 LESSONS: a mutant is cited only after it is applied and seen to fail; when seats share a change, post the plan
-and wait for the go; re-apply on main after a sibling lands (ours-merge, no force push); probe the merge with
+and wait for the go; re-apply on main after a sibling lands; probe the merge with
 edge inputs, not only the suite; probe loop-level where the change is in loop.mjs (PR 294's window); count
 sample lengths before filing (my AIza slip).
 
