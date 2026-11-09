@@ -1,12 +1,13 @@
 ---
 title: nightly-regression
 created: 2026-11-06T04:10:00Z
-modified: 2026-11-06T07:21:57Z
-version: 0.2.0
-description: The no-model nightly regression on main - every node suite, the fake-helper verifiers, and under the desktop-run lock the helper tests, the fixture suite, the fixture plans and the dry run - with one retry per failing step, a persistent flake list and a short report.
+modified: 2026-11-09T00:14:00Z
+version: 0.3.0
+description: The no-model nightly regression on main - every node suite that starts no app and the fake-helper verifiers, and under the desktop-run lock the helper tests, the fixture suite, every test file that launches CU Fixture, the fixture plans and the dry run - with one retry per failing step, a persistent flake list and a short report.
 grounded_in:
   - source: Linear CU-59 (the nightly regression and flake list)
   - source: _context_/team-operations/decision-log.yaml, D-049 (continuity work while step 4 waits)
+  - source: Linear CU-304 (25 test files that launch CU Fixture ran in phase 1, outside the lock)
 ---
 
 # `nightly-regression`
@@ -22,18 +23,19 @@ On a fresh detached worktree of `--ref` (default `origin/main`, fetched first):
 
 | Phase | Lock | Steps |
 |---|---|---|
-| 1 | none | `node --test` on every `_tests_/*/` suite except `macos-helper` and `desktop-suite`; the fake-helper verifiers `evaluation-suite`, `desktop-perception`, `desktop-action-contract`, `desktop-consent`, `desktop-agent-loop`, `desktop-trajectory`, `desktop-integration`, `desktop-human-control` |
-| 2 | the team's desktop-run lock (`/tmp/cu-desktop-run`) as `--seat` | `_tests_/macos-helper` (ad-hoc CUHelper), `_tests_/desktop-suite` (offscreen CU Fixture), then the `desktop-fixture` (fixture plans), `desktop-helper-protocol` and `desktop-helper-dryrun` verifiers |
+| 1 | none | `node --test` on every `_tests_/*/` file outside `macos-helper` and `desktop-suite` that starts no app; the fake-helper verifiers `evaluation-suite`, `desktop-perception`, `desktop-action-contract`, `desktop-consent`, `desktop-agent-loop`, `desktop-trajectory`, `desktop-integration`, `desktop-human-control` |
+| 2 | the team's desktop-run lock (`/tmp/cu-desktop-run`) as `--seat` | `_tests_/macos-helper` (ad-hoc CUHelper), `_tests_/desktop-suite` (offscreen CU Fixture), `node-tests-fixapps` - every other test file that imports `_tools_/desktop-fixture/build.mjs` or `client.mjs` (CU-304) - then the `desktop-fixture` (fixture plans), `desktop-helper-protocol` and `desktop-helper-dryrun` verifiers |
 
-These are the same steps as cu-integrator's gate, run on main rather than on a PR head.
+These are the same steps as cu-integrator's gate, run on main rather than on a PR head. A test file counts as launching CU
+Fixture by its import statements (`launchesFixtureApp`), not by a mention in a string or comment.
 
 - **Retry and flakes.** A failing step runs once more. A step that passes on the retry is a flake: its first run's
   failing test names (or `(whole step)`) go into `<out>/flakes.json` with a count, first and last seen, and the last
   five heads. A step that fails twice is a failure.
 - **Safety.** Model keys (`ANTHROPIC_*`, `OPENAI_*`, `*_API_KEY` and the like) are stripped from every child's
   environment; `CU_HOME` is a private temporary directory; no step starts Chrome, installs a helper or sends input
-  to anything but CU Fixture. Phase 2 takes the lock or waits for it, or out a seat's hold (`--lock-wait`, default 900 s;
-  `desktop_held`, CU-75), and is otherwise skipped and reported. Leftover processes started from the
+  to anything but CU Fixture. Phase 2 takes the lock or waits for it, out a seat's hold or for the owner's idle slot
+  (`--lock-wait`, default 900 s; `desktop_held`, CU-75; `owner_active`, D-066), and is otherwise skipped and reported. Leftover processes started from the
   worktree are killed and the worktree removed.
 - **Announcing.** `--on-lock` and `--on-release` run a shell command when the lock is taken and after it is
   released (`NIGHTLY_HEAD`, `NIGHTLY_RUN_ID`, `NIGHTLY_SEAT` in the environment), for the team's DESKTOP HELD and
