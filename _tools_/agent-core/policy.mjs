@@ -1085,6 +1085,17 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const pressesTarget = POINTER.has(action.type) || (action.type === 'drag' && CONTROL_ROLE.test(String(target?.role ?? '')))
     // ... and the drop point of a drag that travels: a drop onto a Trash, Delete or Remove zone deletes.
     if (action.type === 'drag' && context.dropTarget && namesWord(String(context.dropTarget.name ?? ''), DROP_DELETE)) classes.push('delete')
+    // CU-377 (High pending a live row; cu-coordinator 21:29Z): on the desktop a drag that travels into another app hands it
+    // what was pressed (a file from Finder into Slack or Mail) - it asks; fail closed when either end's app is unknown. A drag
+    // inside one app (a reorder in Slack) stays free.
+    if (action.type === 'drag' && travels(action) && /^(app|desktop):/.test(String(context.url ?? ''))) {
+      // A read element without its own origin belongs to the frontmost app (the desktop driver's describe); an end that was
+      // not read at all (null) is unknown.
+      const appOf = (element) => (element ? (typeof element.origin === 'string' && element.origin !== '' ? element.origin : String(context.frontmostBundleId ?? '')) : '')
+      const from = appOf(target)
+      const to = appOf(context.dropTarget)
+      if (from === '' || to === '' || from !== to) classes.push('permission')
+    }
     if (pressesTarget || pressesEnter || keyboard.activates) {
       if (POINTER.has(action.type) && /change\s+password|update\s+password|修改密码|更改密码|修改密碼|更改密碼|重设密码|重設密碼/i.test(name)) {
         return { decision: 'handoff', class: null, rule: 'password_change', reason: 'the final step of a password change is the person\'s' }
