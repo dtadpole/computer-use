@@ -56,14 +56,17 @@ for (const [label, value] of CLASSES) {
   }
 }
 
-// The audit's one miss, filed as CU-340: a value the page splits across consecutive unnamed fields. Each field's buffer
-// holds only its part, so no part matches a class. These rows ask once the fix judges adjacent entries together.
+// The audit's one miss, CU-340 (PR #294): a value the page splits across consecutive unnamed fields. The loop passes the
+// other boxes typed just before (typedSplit), and the box that completes the value asks.
 const UNNAMED = { tag: 'input', inputType: 'text', role: 'textbox', name: null, editable: true }
-const splitAsks = (parts) => parts.some((part) => policy.classify({ type: 'type', text: part }, { url: PAGE, target: UNNAMED, typed: { before: '', next: part } }).decision !== 'allow')
-test('CU-340 (open): an SSN typed 3/2/4 into three unnamed fields asks', { todo: 'CU-340' }, () => {
-  assert.ok(splitAsks(SSN.split('-')))
+const splitVerdicts = (parts) => parts.map((part, i) => {
+  const r = policy.classify({ type: 'type', text: part }, { url: PAGE, target: UNNAMED, typedSplit: { parts: parts.slice(0, i), before: '', next: part } })
+  return r.decision === 'allow' ? 'allow' : r.class
 })
-test('CU-340 (open): a card typed 4x4 into four unnamed fields asks', { todo: 'CU-340' }, () => {
+test('CU-340: an SSN typed 3/2/4 into three unnamed fields asks at the third', () => {
+  assert.deepEqual(splitVerdicts(SSN.split('-')), ['allow', 'allow', 'sensitive_data'])
+})
+test('CU-340: a card typed 4x4 into four unnamed fields asks at the fourth', () => {
   const digits = CARD.replace(/\D/g, '')
-  assert.ok(splitAsks([digits.slice(0, 4), digits.slice(4, 8), digits.slice(8, 12), digits.slice(12)]))
+  assert.deepEqual(splitVerdicts([digits.slice(0, 4), digits.slice(4, 8), digits.slice(8, 12), digits.slice(12)]), ['allow', 'allow', 'allow', 'sensitive_data'])
 })
