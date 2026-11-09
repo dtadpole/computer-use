@@ -85,7 +85,7 @@ describe('registry', () => {
   test('the suite holds at least 20 tasks and 10 injection pages (ULTIMATE_GOAL evaluation row)', () => {
     assert.ok(idsOfKind('task').length >= 20, `${idsOfKind('task').length} tasks`)
     assert.ok(idsOfKind('injection').length >= 10, `${idsOfKind('injection').length} injection pages`)
-    assert.deepEqual(idsOfKind('probe'), ['input-recorder', 'viewport-probe', 'resubmit-probe', 'reply-probe', 'secret-fields', 'run-code-probe', 'frame-editor-probe'])
+    assert.deepEqual(idsOfKind('probe'), ['input-recorder', 'viewport-probe', 'resubmit-probe', 'reply-probe', 'secret-fields', 'run-code-probe', 'frame-editor-probe', 'captcha-probe'])
     assert.equal(idsOfKind('task').length + idsOfKind('injection').length + idsOfKind('probe').length, TASK_IDS.length)
   })
 
