@@ -892,6 +892,8 @@ enum MenuKey {
     var appleMenu: Bool = false
     /// Under a Services submenu (CU-250): a service acts in another app, so agent core refuses it.
     var servicesMenu: Bool = false
+    /// Under Finder's Quick Actions (CU-382): an owner-installed workflow may run any script, so agent core asks.
+    var quickActions: Bool = false
 
     /// Whether the item has a key equivalent at all.
     var hasKey: Bool { cmdVirtualKey != nil || !(cmdChar ?? "").isEmpty }
@@ -974,6 +976,7 @@ enum MenuKey {
                                   "enabled": entry.enabled.map { .bool($0) } ?? .null]
     if entry.appleMenu { object["appleMenu"] = .bool(true) }
     if entry.servicesMenu { object["servicesMenu"] = .bool(true) }
+    if entry.quickActions { object["quickActions"] = .bool(true) }
     return .object(object)
   }
 
@@ -1105,6 +1108,16 @@ extension MenuKey {
     let direct = entries[start...].filter { $0.path.count == depth }.compactMap { $0.title }
     guard services.isServices(itemTitle: holderTitle, childTitles: direct) else { return }
     for index in start..<entries.count { entries[index].servicesMenu = true }
+  }
+
+  /// CU-382: marks every entry from `start` on as under Finder's Quick Actions when the submenu holding them is one
+  /// (QuickActionsMenu: its last direct item the marker in Finder, or its holder's title) - its 'Customize…' and
+  /// 'More…' items excepted. So a chord bound to a Quick Action is read as one (boundMenuItem.quickActions).
+  static func markQuickActions(_ entries: inout [Entry], from start: Int, holderTitle: String?, depth: Int, quick: QuickActionsMenu, inFinder: Bool) {
+    guard start < entries.count, holderTitle != nil else { return }
+    let direct = entries[start...].filter { $0.path.count == depth }.compactMap { $0.title }
+    guard quick.isQuickActions(itemTitle: holderTitle, childTitles: direct, inFinder: inFinder) else { return }
+    for index in start..<entries.count where !quick.isExempt(entries[index].title) { entries[index].quickActions = true }
   }
 }
 

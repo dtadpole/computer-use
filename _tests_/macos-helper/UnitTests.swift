@@ -2117,6 +2117,13 @@ func testQuickActions() {
   check(run.json["quickActions"] == true && run.json["menuContextUnread"] == nil, "the json says quickActions, no unread")
   check(!MenuContext.of(itemTitle: "Customize\u{2026}", levels: [level], services: .english, quick: quick, inFinder: true).quickActions, "the marker item itself is not marked")
   check(!MenuContext.of(itemTitle: "Copy", levels: [.init(holderTitle: "Edit", childTitles: ["Undo", "Copy"])], services: .english, quick: quick).quickActions, "an ordinary submenu is not")
+  // A chord bound to a Quick Action: the menu-key walk marks the submenu's entries (its marker excepted).
+  func entry(_ title: String, _ path: [String]) -> MenuKey.Entry {
+    MenuKey.Entry(title: title, path: path, enabled: true, cmdChar: nil, cmdModifiers: nil, cmdVirtualKey: nil, cmdGlyph: nil, appleMenu: false)
+  }
+  var walked = [entry("Run Shell Script", ["File", "Quick Actions", "Run Shell Script"]), entry("Customize\u{2026}", ["File", "Quick Actions", "Customize\u{2026}"])]
+  MenuKey.markQuickActions(&walked, from: 0, holderTitle: "Quick Actions", depth: 3, quick: quick, inFinder: true)
+  check(walked[0].quickActions && !walked[1].quickActions && MenuKey.json(walked[0])["quickActions"] == true, "a bound Quick Action is marked in the menu-key walk; Customize… is not")
   let short = MenuContext.of(itemTitle: "Run Shell Script", levels: [], services: .english, quick: quick, unread: true)
   check(short.unread && short.json["menuContextUnread"] == true && !short.quickActions, "a failed read on the walk says menuContextUnread, never a plain item")
 }

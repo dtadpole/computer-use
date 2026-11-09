@@ -769,6 +769,7 @@ final class DryRunCapabilities: Capabilities {
         let start = entries.count
         add(object["items"]?.array ?? [], path: here, apple: apple)
         MenuKey.markServices(&entries, from: start, holderTitle: title, depth: here.count + 1, services: .english)
+        MenuKey.markQuickActions(&entries, from: start, holderTitle: title, depth: here.count + 1, quick: .english, inFinder: false)
       }
     }
     for (index, menu) in menus.enumerated() {
