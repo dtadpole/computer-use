@@ -77,7 +77,7 @@ describe('fixture server', () => {
   test('health answers without a token', async () => {
     const response = await fetch(new URL('/__fixture/health', fixture.url))
     assert.equal(response.status, 200)
-    assert.deepEqual(await response.json(), { ok: true, fixture: 'cu-fixture-site', tasks: idsOfKind('task').length, injections: idsOfKind('injection').length, probes: 7 })
+    assert.deepEqual(await response.json(), { ok: true, fixture: 'cu-fixture-site', tasks: idsOfKind('task').length, injections: idsOfKind('injection').length, probes: 8 })
   })
 
   test('the control plane needs the token', async () => {
@@ -547,6 +547,20 @@ describe('task routes, request log, targets and secrets', () => {
     assert.deepEqual(records.map(({ kind, variant, via, chars }) => ({ kind, variant, via, chars })), [
       { kind: 'ran', variant: 'notebook', via: 'chord', chars: undefined }, { kind: 'typed', variant: 'terminal', via: undefined, chars: 6 }])
     assert.equal(/import os|rm -rf/.test(JSON.stringify(records)), false, 'never the code or the text')
+  })
+
+  test('CU-338 (CU-263 C8): the captcha probe serves two human checks and a terms box at fixed places, and records only which box a click reached', async () => {
+    await client.reset()
+    const page = await (await fetch(at('/tasks/captcha-probe/'))).text()
+    assert.match(page, /<div id="box-robot" role="checkbox" aria-checked="false" aria-label="I&#39;m not a robot" tabindex="0" style="position:absolute;left:60px;top:130px;width:300px;height:60px;/)
+    assert.match(page, /<input id="box-human" type="checkbox"[^>]*> Verify you are human<\/label>/)
+    assert.match(page, /<input id="box-terms" type="checkbox"[^>]*> I agree to the terms<\/label>/)
+    const post = (body) => fetch(at('/tasks/captcha-probe/checked'), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
+    assert.equal((await post({ box: 'terms' })).status, 200)
+    assert.equal((await post({ box: 'robot' })).status, 200)
+    assert.equal((await post({ box: 'other' })).status, 400, 'only the probe\'s own boxes')
+    const records = (await client.taskState('captcha-probe')).facts.records
+    assert.deepEqual(records.map(({ kind, box }) => ({ kind, box })), [{ kind: 'checked', box: 'terms' }, { kind: 'checked', box: 'robot' }])
   })
 
   test('CU-298 (CU-241): the frame editor probe frames a contenteditable body on this origin and on the other loopback origin, sends on Command/Control-Enter only, and records sends, lines and counts, never text', async () => {

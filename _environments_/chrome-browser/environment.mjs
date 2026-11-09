@@ -8,7 +8,7 @@ import { historyMove } from './input-plan.mjs'
 import { clipboardOp, executeAction, NAVIGATION_TIMEOUT_MS, navigateHistory, sendInput, settle } from './executor.mjs'
 import { planHumanInput } from './human-input.mjs'
 import { processCommandLine, sandboxProblem, SEAT_PATTERN, startChrome } from './launch.mjs'
-import { activatableAncestor, autofilledFields, clickLabel, closedRootHoldsEntry, collectPageText, deepActiveElement, describeElement, DRAG_TEXT_MAX, dragTextAt, FRAME_FOCUS_EXPRESSION, frameLabel, frameLabelFromAttributes, implicitSubmitButton, pageExpression, selectionContainer, textEntered, TWO_FRAMES_EXPRESSION } from './page-scripts.mjs'
+import { accessKeyElement, accessKeyOf, activatableAncestor, autofilledFields, clickLabel, closedRootHoldsEntry, collectPageText, deepActiveElement, describeElement, DRAG_TEXT_MAX, dragTextAt, FRAME_FOCUS_EXPRESSION, frameLabel, frameLabelFromAttributes, implicitSubmitButton, pageExpression, selectionContainer, textEntered, TWO_FRAMES_EXPRESSION } from './page-scripts.mjs'
 
 /** CU-300: how long focusedElement may spend reading the focus inside a cross-site frame before it keeps the iframe. */
 export const FRAME_FOCUS_MS = 2000
@@ -526,6 +526,35 @@ class BrowserEnvironment {
     if (described === null) return undefined
     const submit = await this.#implicitSubmit(target, inner.backendNodeId)
     return { ...described, frameHost: host, defaultButton: submit.button, defaultButtonRead: submit.read }
+  }
+
+  /**
+   * CU-353: the element a keypress acts on. A Control-Option-<key> chord fires the element whose accesskey is that key
+   * (see accessKeyOf), so that element - through activatableAncestor, a label's control included - is the target,
+   * described as inspectPoint describes one and marked `accessKey: true`; agent core judges the chord as a press on it.
+   * Any other keypress, a chord no element answers, or a lookup that fails: focusedElement(), as before.
+   */
+  async keyTarget(action) {
+    this.#assertOpen()
+    const key = accessKeyOf(action)
+    const page = this.session.foreground()
+    if (key !== null && page.dialog === null) {
+      try {
+        const world = await this.session.isolatedContext(page, page.mainFrameId)
+        const found = (await this.session.send(page, 'Runtime.evaluate', {
+          expression: `(${accessKeyElement.toString()})(document, ${JSON.stringify(key)})`, contextId: world, returnByValue: false,
+        })).result.result
+        if (typeof found?.objectId === 'string') {
+          const node = (await this.session.send(page, 'DOM.describeNode', { objectId: found.objectId })).result.node
+          const activating = await this.#activating(page, node.backendNodeId, page.mainFrameId)
+          const described = await this.#describe(page, activating.id, page.mainFrameId, { fallbackName: activating.name })
+          if (described !== null && described !== undefined) return { ...described, accessKey: true }
+        }
+      } catch {
+        // The page's world is gone: the focused element, as before (a named limit).
+      }
+    }
+    return this.focusedElement()
   }
 
   /**

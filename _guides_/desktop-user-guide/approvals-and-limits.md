@@ -1,8 +1,8 @@
 ---
 title: What it does, approvals and known limits
 created: 2026-11-07T21:18:46Z
-modified: 2026-11-09T15:08:00Z
-version: 0.1.21
+modified: 2026-11-09T15:30:00Z
+version: 0.1.22
 level: L1
 status: unverified
 description: What the agent can and cannot do on your Mac, what it asks you, and its known limits.
@@ -47,5 +47,5 @@ file choices are never pre-approved. Typed sensitive text stays out of run files
 - A shortcut is judged as the menu item it fires; a window button's or view's own keys are not.
 - An approved app's built-in AI counts as part of the app.
 - A website's own shortcuts are judged by the focus, not their effect.
-- Any short number typed into an untitled payment frame is asked.
+- A 3- or 4-digit number or expiry typed into another site's untitled frame is asked.
 - Digits typed after an unreadable paste ask.
