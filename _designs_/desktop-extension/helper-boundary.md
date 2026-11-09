@@ -1,15 +1,16 @@
 ---
 title: Helper peer boundary
 created: 2026-11-02T09:10:12Z
-modified: 2026-11-08T21:59:00Z
+modified: 2026-11-09T01:00:00Z
 level: L1
-version: 0.3.10
+version: 0.3.11
 description: Why the helper must not lend the owner's grants to any same-user process, and the four rules of D-029 - a peer check against a compiled list of entry points, one-run lifetime, a visible indicator, human-only approvals - with the residual risk the owner is told.
 status: unverified
 grounded_in:
   - source: _context_/team-operations/decision-log.yaml (D-029)
   - source: _team_members_/cu-developer-two/m6-desktop-review.md
   - source: 'Linear CU-227 and CU-224 (a held dispatcher lock left two dry-run helpers running for good, 2026-11-08)'
+  - source: 'Linear CU-299 and D-080 (every seat edits and launches from its session worktree; the old seat worktrees were removed 2026-11-09)'
 ---
 
 # Helper peer boundary
@@ -20,12 +21,40 @@ same-user process can be stopped.
 
 | Rule | How (cu-developer-three, helper) |
 |---|---|
-| (a) peer check | after connecting, the helper reads the peer's uid and pid and refuses unless the peer is node signed by the Node.js Foundation's team running, by realpath inside `~/computer-use`, a `~/computer-use--*` checkout or one the local config's `helperCheckouts` names, resolved inside the home, not world-writable (CU-295), the one compiled entry point `--driver-entry` names - `_tools_/agent-core/cli.mjs`, `_tools_/computer-use-mcp/server.mjs`, `_evaluators_/desktop-suite/run.mjs`, or `_verifiers_/desktop-helper-boundary/stand-in-driver.mjs` (it only awaits `hello`, sends `bye`) - with no `DYLD_*`, `LD_*`, `NODE_OPTIONS`, `NODE_PATH`, `NODE_REPL_EXTERNAL_MODULE` or `NODE_ICU_DATA` in its exec-time environment; a refusal closes the socket, logged by pid only |
+| (a) peer check | after connecting, the helper reads the peer's uid and pid and refuses unless the peer is node signed by the Node.js Foundation's team running, by realpath inside a checkout the local config's `helperCheckouts` names, resolved inside the home, not world-writable (CU-295; from 0.2.60 the compiled `~/computer-use` and `~/computer-use--*` roots are gone, CU-299), the one compiled entry point `--driver-entry` names - `_tools_/agent-core/cli.mjs`, `_tools_/computer-use-mcp/server.mjs`, `_evaluators_/desktop-suite/run.mjs`, or `_verifiers_/desktop-helper-boundary/stand-in-driver.mjs` (it only awaits `hello`, sends `bye`) - with no `DYLD_*`, `LD_*`, `NODE_OPTIONS`, `NODE_PATH`, `NODE_REPL_EXTERNAL_MODULE` or `NODE_ICU_DATA` in its exec-time environment; a refusal closes the socket, logged by pid only |
 | (b) one run | the helper exits on `bye`, on socket loss, at the run's wall-time cap, and when no driver connects within 10 s; it never listens without a run. Every other end is bounded (CU-227) by a watchdog on its own thread, taking none of the dispatcher's locks: if the orderly end has not exited within 5 s, it releases, on a second thread, what a copy of the held set names - a drag in flight cancelled first with Escape (an app that ignores Escape still gets the drop, a named residual), then every key and button up, tagged - and after about 1 s, posted or not, writes `stopped.json` (reason, released, time) beside the held-keys marker and exits 70; the driver ends the run `helper_lost` and tells the live view. The marker stays as a second net (CU-64 G1) |
 | (c) visible indicator | with any grant and a connected driver, an always-visible status item or small window (none without a grant, since nothing can act); excluded by bundle id, never in scope or captured |
 | (d) human approvals | per-app approvals and consent come only from a human channel ([app policy](app-policy.md)); the helper accepts no approval |
 
 `--driver-node` and `--driver-entry` are checked against the compiled signing rule and list, so arguments cannot widen it.
+
+## Configured checkouts only (CU-299, helper 0.2.60)
+
+The compiled roots `~/computer-use` and `~/computer-use--<seat>` go. Under D-080 every seat edits and launches from
+its session worktree, and the old seat worktrees were removed on 9 Nov. So those roots now admit only folders nobody
+uses, and a `~/computer-use--*` created later would be admitted unasked.
+
+- **Admitted:** a script whose real path is a listed entry point inside a `helperCheckouts` checkout, resolved and
+  checked as CU-295 says. A path through the `~/computer-use` symlink is still admitted, because the match is real
+  path to real path and its target is a configured checkout.
+- **Unchanged:** the entry list, the node signing rule, the environment and option rules, and the
+  `--driver-node`/`--driver-entry` pins.
+- **Fail closed:** with no `helperCheckouts` (missing, unreadable or malformed config) no peer is admitted, and every
+  live run is refused before the hello. The start log says `checkouts: configured none - every peer is refused`.
+  The post-install check reads that line.
+- **Dependents, before the helper lands:**
+  - cu-verifier's boundary verifier decides whether it can judge the accepted case by a `~/computer-use(--seat)`
+    pattern. It must read the configured checkouts instead (real path inside one), or it skips that case from a
+    session worktree.
+  - cu-integrator's phase 2 runs from a `/tmp` worktree. Its helper suites use `--dry-run` or
+    `--simulate-ungranted` (no peer check), so they are unaffected.
+  - A live desktop run from `/tmp` is already refused today.
+- **Tests:**
+  - Unit: an old seat path that is not configured is refused, no config admits nothing, and a configured worktree
+    child and the symlinked main checkout are admitted.
+  - helper-sources: no compiled root remains (`layouts`, `checkoutRoot`).
+- **Proof after install:** admitted from the session worktree; refused from an unlisted `~/computer-use--probe`
+  worktree made for the test and removed after; the start line.
 
 ## Why a list, not any `.mjs`
 
