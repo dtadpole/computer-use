@@ -1,9 +1,9 @@
 ---
 title: Desktop fixture contract
 created: 2026-11-02T08:34:00Z
-modified: 2026-11-08T23:24:51Z
+modified: 2026-11-09T12:55:00Z
 level: L1
-version: 0.12.3
+version: 0.13.0
 description: What CU Fixture guarantees to the desktop driver, the verifiers and the evaluator - identity, placement, the private control channel, what the agent can and cannot see, and how a screen's outcome is judged.
 status: unverified
 grounded_in:
@@ -36,6 +36,10 @@ grounded_in:
   (`buttons`) with the names the harness gives, each at most 60 characters: an entry carries its name as its label and
   title element; a button records only 'pressed' with its index; `areas` (CU-253) adds up to six multi-line text areas
   (AXTextArea) named the same way. Its state reports entry and area lengths (and area line counts), never their text.
+- **AXManualAccessibility (CU-329).** The application element answers `AXManualAccessibility` as an Electron app does:
+  no value until set, then the stored boolean; listed and settable. Every outside write is kept in order (value only;
+  never in the general events, which a helper run must not change); `manualAX` reports the value and the writes, `manualAXPreset {on}` sets true or clears it
+  to no value without a write (the leave-alone case), `manualAXSelfTest` writes once in process and reads back.
 - **Channel.** JSON lines on the launching process's stdin and stdout: `hello`, `reset`, `open {task, params}`,
   `state`, `act {step}`, `targets` (frames with each control's class), `windows` (content sizes and each content's top-left in global points), `screen` (the primary display's points and
   backing scale), `render {window,
