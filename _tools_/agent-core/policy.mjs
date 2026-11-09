@@ -660,6 +660,13 @@ export function urlSecret(raw, typedDigits = []) {
       return part
     }
   }
+  // CU-348 (design note 0.1): the userinfo username is read like a path segment - a card, SSN or other value there asks.
+  if (url.username !== '') {
+    const user = decode(url.username)
+    if (pathCard(user, typedDigits)) return 'card'
+    const kind = looksSensitive(user)
+    if (kind !== null) return kind
+  }
   const params = [...url.searchParams]
   const fragment = url.hash.slice(1)
   if (fragment.includes('=')) params.push(...new URLSearchParams(fragment))
@@ -694,7 +701,7 @@ export function urlSecret(raw, typedDigits = []) {
   // labels, the joined path, query and fragment - so a typed card split across segments or put in a host label asks too.
   const typedRuns = (Array.isArray(typedDigits) ? typedDigits : []).filter((run) => typeof run === 'string' && run.length >= 13 && run.length <= 19)
   if (typedRuns.length > 0) {
-    const every = decode(`${url.hostname}${url.pathname}${url.search}${url.hash}`).replace(/\D/g, '')
+    const every = decode(`${url.username}${url.hostname}${url.pathname}${url.search}${url.hash}`).replace(/\D/g, '')
     if (typedRuns.some((run) => every.includes(run))) return 'card'
   }
   return null
