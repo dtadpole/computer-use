@@ -64,11 +64,26 @@ test('CU-319: a control outside any form carries its document\'s autofilled fiel
   assert.deepEqual(fieldsOf(autofilledFields(outside('a', { href: '#signin' }))), [saved], 'a link')
   assert.deepEqual(fieldsOf(autofilledFields(outside('input', { type: 'button' }))), [saved])
   const form = { elements: [saved] }
-  assert.equal(autofilledFields(el('button', { type: 'button', form })), null, 'a type=button inside a form submits nothing by itself')
-  assert.equal(autofilledFields(el('input', { type: 'checkbox', form })), null)
+  // cu-researcher's F1: a script may submit on any control's click, inside a form too.
+  assert.deepEqual(fieldsOf(autofilledFields(el('button', { type: 'button', form }))), [saved], "a type=button 'Sign in' inside the form")
+  assert.deepEqual(fieldsOf(autofilledFields(el('div', { role: 'button', form }))), [saved], 'a [role=button] inside the form')
+  assert.deepEqual(fieldsOf(autofilledFields(el('a', { href: '#', form }))), [saved], 'a link inside the form')
+  // F2: an entry outside any form (Return handled by script) takes the document's fields.
+  assert.deepEqual(fieldsOf(autofilledFields(outside('input', { type: 'text' }))), [saved], 'a form-less entry')
+  assert.equal(autofilledFields(el('input', { type: 'checkbox', form })), null, 'a checkbox is no submit-like target')
   assert.equal(autofilledFields(outside('p', {})), null, 'a paragraph')
-  assert.equal(autofilledFields(outside('input', { type: 'text' })), null, 'a form-less entry has no form to submit')
   assert.equal(autofilledFields(null), null)
+})
+
+test("CU-319: fields in open shadow roots are found too (sign-in web components, cu-researcher's N1)", () => {
+  freshMemory()
+  const hidden = el('input', { type: 'password', autofill: true })
+  const host = Object.assign(el('sso-login', {}), { shadowRoot: { querySelectorAll: () => [hidden] } })
+  const doc = { querySelectorAll: () => [host] }
+  const signIn = Object.assign(el('button', { type: 'submit' }), { ownerDocument: doc })
+  assert.deepEqual(fieldsOf(autofilledFields(signIn)), [hidden], 'a form-less Sign in: the password inside the component')
+  const form = { elements: [], querySelectorAll: () => [host] }
+  assert.deepEqual(fieldsOf(autofilledFields(el('button', { type: 'submit', form }))), [hidden], 'inside a form: its shadow roots too')
 })
 
 test('CU-319: an engine without :autofill falls back to :-webkit-autofill; at most 20 fields', () => {

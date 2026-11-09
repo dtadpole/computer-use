@@ -105,11 +105,13 @@ export function collectPageText(doc, win, maxChars) {
  */
 /**
  * CU-319 (CU-302's driver half): the fields a submit-like control would send that the browser autofilled - a saved login
- * filled on load, which the run never typed (typing clears the state). `el` is the described target. A form's submit
- * control (a button of type submit, the default, or an input of type submit or image) and a text entry in a form (its
- * Return submits) take the fields of that form; a control outside any form (a button, an input of type button, a
- * [role=button] or a link - a script-driven 'Sign in') takes the autofilled fields of its whole document. Anything else
- * is no submit-like target: null. Only :autofill (or Chrome's older :-webkit-autofill) is asked - never a value.
+ * filled on load, which the run never typed (typing clears the state). `el` is the described target, submit-like when it
+ * is a submit control (a button of type submit, the default, or an input of type submit or image), any other control (a
+ * button, an input of type button, a [role=button] or a link - a script may submit on its click) or a text entry (its
+ * Return may submit). Inside a form it takes that form's fields, plus those in open shadow roots under the form; outside
+ * any form (a sign-in built without <form>, cu-researcher's F1/F2) the autofilled fields of its whole document, open
+ * shadow roots included (sign-in web components, N1; at most 2000 elements walked). Anything else: null. Only :autofill
+ * (or Chrome's older :-webkit-autofill) is asked - never a value.
  *
  * Chrome clears :autofill as soon as a field is edited, so 'a saved password plus one typed character' would launder the
  * saved value (cu-verifier). A field once seen autofilled in this document is remembered in this world (a WeakSet on the
@@ -136,10 +138,28 @@ export function autofilledFields(el) {
   const submits = (tag === 'button' && type === 'submit') || (tag === 'input' && (type === 'submit' || type === 'image'))
   const entry = (tag === 'input' && !NOT_TEXT.includes(type)) || tag === 'textarea'
   const control = tag === 'button' || (tag === 'input' && type === 'button') || role === 'button' || (tag === 'a' && el.getAttribute && el.getAttribute('href') !== null)
-  let scope = null
-  if (form && (submits || entry)) scope = Array.from(form.elements || [])
-  else if (!form && (submits || control)) scope = Array.from((el.ownerDocument && el.ownerDocument.querySelectorAll) ? el.ownerDocument.querySelectorAll('input, textarea, select') : [])
-  if (scope === null) return null
+  if (!(submits || control || entry)) return null
+  // The text fields under `root`, descending into open shadow roots; bounded so a huge page cannot stall the read.
+  const deep = (root) => {
+    const found = []
+    let walked = 0
+    const visit = (node) => {
+      if (!node || walked > 2000) return
+      const all = typeof node.querySelectorAll === 'function' ? Array.from(node.querySelectorAll('*')) : []
+      for (const child of all) {
+        walked += 1
+        if (walked > 2000) return
+        const name = String(child.tagName || '').toLowerCase()
+        if (name === 'input' || name === 'textarea' || name === 'select') found.push(child)
+        if (child.shadowRoot) visit(child.shadowRoot)
+      }
+    }
+    visit(root)
+    return found
+  }
+  const owned = form ? Array.from(form.elements || []) : []
+  const ownedSet = new Set(owned)
+  const scope = form ? [...owned, ...deep(form).filter((field) => !ownedSet.has(field))] : deep(el.ownerDocument)
   const seen = globalThis.__cuAutofillSeen instanceof WeakSet ? globalThis.__cuAutofillSeen : (globalThis.__cuAutofillSeen = new WeakSet())
   const fields = []
   const edited = []
