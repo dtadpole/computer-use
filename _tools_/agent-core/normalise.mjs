@@ -97,7 +97,9 @@ export function normaliseForPolicy(action, context = {}) {
   if (judged.dialog && typeof judged.dialog === 'object') judged.dialog = { ...judged.dialog, message: normaliseText(judged.dialog.message) }
   if (typeof judged.dragText === 'string') judged.dragText = normaliseText(judged.dragText)
   // CU-267: what this run typed into the field before, and what this action types.
-  if (judged.typed && typeof judged.typed === 'object') judged.typed = { before: normaliseText(String(judged.typed.before ?? '')), next: normaliseText(String(judged.typed.next ?? '')) }
+  if (judged.typed && typeof judged.typed === 'object') judged.typed = { before: normaliseText(String(judged.typed.before ?? '')), next: normaliseText(String(judged.typed.next ?? '')), ...(judged.typed.afterUnreadPaste === true ? { afterUnreadPaste: true } : {}) }
+  // CU-340: the other boxes' texts a split value is judged across, normalised the same way.
+  if (judged.typedSplit && typeof judged.typedSplit === 'object') judged.typedSplit = { parts: (Array.isArray(judged.typedSplit.parts) ? judged.typedSplit.parts : []).map((t) => normaliseText(String(t ?? ''))), before: normaliseText(String(judged.typedSplit.before ?? '')), next: normaliseText(String(judged.typedSplit.next ?? '')) }
   if (judged.paste && typeof judged.paste.text === 'string') judged.paste = { ...judged.paste, text: normaliseText(judged.paste.text) }
   // The copied-from field lends its name class to the paste (CU-183): its descriptor's name and caption are names too.
   if (judged.paste && judged.paste.source !== undefined && judged.paste.source !== null) {
