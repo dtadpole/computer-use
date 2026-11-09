@@ -1,13 +1,13 @@
 ---
 title: '[cu] Researcher - Handover'
 created: 2026-11-08T04:16:21Z
-modified: 2026-11-09T04:45:00Z
+modified: 2026-11-09T12:25:00Z
 level: L2
-version: 4.0.0
-description: 'What the next session of [cu] Researcher needs - the CU-145 re-sign state, open PRs, what each remaining cell waits for, the scripts, rules and lessons.'
+version: 5.1.0
+description: 'What the next session of [cu] Researcher needs - the CU-145 re-sign state, what each remaining cell waits for, open reviews, the scripts, rules and lessons.'
 status: unverified
 grounded_in:
-  - source: the seat's own state at 0445Z (D-091, D-092 sweep rulings; CU-302 measured and handed over; CU-301 done)
+  - source: the seat's own state at 1225Z (D-059 re-signed by cu-verifier on main 445c98e; D-061 waits on the CU-336 fix)
 ---
 
 # [cu] Researcher - Handover
@@ -16,24 +16,21 @@ Start here, then [responsibilities](responsibilities.md) and [red-team-consent-t
 
 ```text
 WHERE: session worktree ~/dtadpole/computer-use-wt/<session-id>; test merges in <session-id>--probe. Scripts
-(outside the tree) in <session-id>--cu302: match-open-cells.mjs, match-sys.mjs (recorded runs -> cells),
-browser-actions.mjs, measure.mjs (CU-302).
+outside the tree in <session-id>--cu302: match-open-cells.mjs, match-sys.mjs, mutate-d065.mjs (apply one mutant,
+see the row fail), browser-actions.mjs.
 
-GOAL (cu-coordinator 02:50Z): CU-145 re-sign - every D-059/D-061 cell closed on a run, D-065 (fail closed, reason,
-unit row, mutant), or a named limit; then ask cu-verifier to re-sign.
+GOAL (cu-coordinator 09:05Z): CU-145 re-sign - every D-059/D-061 cell closed on a run, D-065 (fail closed, a
+measured failing mutant - d065-audit gates it), or a named limit (allow negatives only); then ask cu-verifier.
 
-OPEN PRS: #229 (Services cells D-065, mutants as cu-verifier measured), #233 (D-092 applied; stacked on #229) -
-both re-OK'd, land in that order. #174 (cu-developer-one) flips #69's two CU-263 cells.
+REMAINING: D-059 re-signed by cu-verifier at 12:07Z on main 445c98e (9 named limits, all allow negatives).
+D-061: three CU-336 rows (frame-cvv-untitled, frame-expiry-untitled - todo; frame-untitled-free-text-negative)
+close on cu-verifier's post-landing runs once the CU-336 fix (PR 274, two OKs) lands; then ask for the D-061
+re-sign. CU-336 is my filing - cu-verifier verifies it.
 
-REMAINING CELLS: D-059 - CU-323 (named-controls check boxes and menu items: standing-remember-decision x3,
-standing-remember-me, outward-cancel-meeting, revert-to-saved); CU-253 two, CU-268 mixed-script-bound-item,
-CU-271 web notebook two - cu-verifier's batches. D-061 - 42 rows (navigate URLs, Chinese names, hidden
-characters, CU-297 frames, CU-273 growing fields), batches B4/B5 on CU-145. Named limits stay open.
+LESSONS: a mutant is cited only after it is applied and seen to fail; when seats share a change, post the plan
+and wait for the go; re-apply on main after a sibling lands (ours-merge, no force push); probe the merge with
+edge inputs, not only the suite (#245's file-name gap).
 
-METHOD: close a batch within the hour of its run ids; a run closes only its own route, control, label and branch
-(cu-developer-one caught a run that took the unreadable branch); re-apply on main when a sibling PR lands
-(ours-merge the old head, never force-push).
-
-RULES: never verify my own filings (list on CU-145); D-034 20.69 of 25 USD, no model run; input only through
-CUHelper under the lock with the Mac idle >= 300 s.
+RULES: never verify my own filings; D-034 20.69 of 25 USD, no model run; input only via CUHelper under the lock
+with the Mac idle >= 300 s; run the gate unpiped and push only on exit 0 (CU-337); never write a closing keyword before '#n' in a PR body.
 ```

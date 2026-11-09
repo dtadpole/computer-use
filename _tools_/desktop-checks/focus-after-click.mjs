@@ -279,7 +279,8 @@ export async function main(argv = process.argv.slice(2), { write = (line) => pro
         // local-input pause decide whether the owner came back.
         const idle = await hidIdleSeconds()
         if (lockStatus()?.hold?.seat !== seat) return finish(1, { stopped: 'the hold ended', at: { start, index } })
-        const fixture = await launchFixture(built.executable, { offscreen: false })
+        // CU-305: the launcher checks the hold too; this tool knows its seat, so it declares it.
+        const fixture = await launchFixture(built.executable, { offscreen: false, seat })
         try {
           await fixture.open(spec.screen, spec.params)
           await new Promise((done) => setTimeout(done, 400))
