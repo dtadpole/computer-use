@@ -48,16 +48,20 @@ export async function auditCells(cells, { loadMutant, runWith }) {
 
 /** Real loaders for a repository root. */
 export function repoAdapters(root) {
-  return {
-    async loadMutant(verifier, name) {
+  const loadMutant = async (verifier, name) => {
       try {
         const file = verifier === 'table-mutants' ? join(root, '_tests_', 'agent-core', 'table-mutants.mjs') : join(root, '_verifiers_', verifier, 'mutants.mjs')
         const m = await import(pathToFileURL(file).href)
-        return (m.MUTANTS ?? []).find((x) => x.name === name) ?? null
+        const def = (m.TABLE_MUTANTS ?? m.MUTANTS ?? []).find((x) => x.name === name) ?? null
+        // A table mutant may stand for a verifier's ({ name, from: '<verifier>' }); follow it once.
+        if (def && !def.mutations && typeof def.from === 'string' && def.from !== verifier) return await loadMutant(def.from, name)
+        return def?.mutations ? def : null
       } catch {
         return null
       }
-    },
+  }
+  return {
+    loadMutant,
     async runWith(mutations, file) {
       const originals = mutations.map((u) => [join(root, u.file), readFileSync(join(root, u.file), 'utf8')])
       try {

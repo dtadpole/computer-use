@@ -45,15 +45,19 @@ test('CU-324: failing row titles map back to cell ids, never to a cell whose id 
   assert.deepEqual(failingIds(['appstore-get-free asks purchase'], cells), ['appstore-get-free'])
 })
 
-test('CU-324: a table-mutants citation loads from _tests_/agent-core/table-mutants.mjs (absent there = reported missing)', async () => {
+test('CU-324: a table-mutants citation loads from _tests_/agent-core/table-mutants.mjs (TABLE_MUTANTS; a from-reference resolves; absent = missing)', async () => {
   const { repoAdapters } = await import('../../_tools_/verify-kit/d065-audit.mjs')
   const { mkdtempSync, mkdirSync, writeFileSync } = await import('node:fs')
   const { join } = await import('node:path')
   const root = mkdtempSync(join((await import('node:os')).tmpdir(), 'd065-'))
   mkdirSync(join(root, '_tests_', 'agent-core'), { recursive: true })
-  writeFileSync(join(root, '_tests_', 'agent-core', 'table-mutants.mjs'), "export const MUTANTS = [{ name: 'm1', mutations: [{ file: 'a', find: 'x', replace: 'y' }] }]\n")
+  writeFileSync(join(root, '_tests_', 'agent-core', 'table-mutants.mjs'),
+    "export const TABLE_MUTANTS = [{ name: 'm1', mutations: [{ file: 'a', find: 'x', replace: 'y' }] }, { name: 'm2', from: 'kit-b', rows: ['r'] }]\n")
+  mkdirSync(join(root, '_verifiers_', 'kit-b'), { recursive: true })
+  writeFileSync(join(root, '_verifiers_', 'kit-b', 'mutants.mjs'), "export const MUTANTS = [{ name: 'm2', mutations: [{ file: 'b', find: 'p', replace: 'q' }] }]\n")
   const { loadMutant } = repoAdapters(root)
   assert.equal((await loadMutant('table-mutants', 'm1'))?.name, 'm1')
   assert.equal(await loadMutant('table-mutants', 'nope'), null)
+  assert.equal((await loadMutant('table-mutants', 'm2'))?.mutations?.[0]?.file, 'b', 'a from-reference resolves to the verifier mutant')
   assert.equal(await loadMutant('no-such-verifier', 'm1'), null)
 })
