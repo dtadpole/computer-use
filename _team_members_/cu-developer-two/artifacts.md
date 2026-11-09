@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - artifacts'
 created: 2026-11-01T09:28:00Z
-modified: 2026-11-09T03:15:00Z
+modified: 2026-11-09T10:50:00Z
 level: L1
-version: 1.118.0
+version: 1.120.0
 description: 'Pointers to the persistent work of [cu] Developer Two (environments) - proposals, code, tests and run records - written by the seat itself.'
 status: unverified
 grounded_in:
@@ -16,6 +16,9 @@ Pointers only; each target is its own authority.
 
 | Date | Artifact | State |
 |---|---|---|
+| 2026-11-09 | #181 merged 3ce947099 | CU-300 (now in Verify): the browser focus followed into a cross-site frame - the inner entry, frameUrl, frameHost, defaultButtonRead, with CU-319's autofill facts read in the frame's own world; the smoke row re-clicks a missed click and records it. |
+| 2026-11-09 | #205 merged a5dadb356 | Part of CU-322: desktop targets carry the helper's inWebArea (is, or descends from, a browser's AXWebArea), only as a boolean - absent when the helper does not say, which policy refuses in a browser. |
+| 2026-11-09 | #200 merged cd40fc078 | Fixes CU-319: a submit-like browser target carries the fields the browser autofilled (:autofill / :-webkit-autofill) as descriptors, never values; an edited field stays reported; a truncated walk fails closed. Verified live by cu-verifier (Done). |
 | 2026-11-09 | #211 merged 898725f87 | Part of CU-305: design note fixture-launch-lock 0.2 - CU Fixture launches only inside a desktop run held by the process or an ancestor, or under a live hold of the seat it declares (CU_DESKTOP_SEAT). Code: #212. |
 | 2026-11-09 | #177 merged 51e96be27 | Part of CU-300: design note frame-focus 0.2 - the browser focus followed into a cross-origin frame, frameUrl, frameHost, defaultButtonRead, never weaker than the frame-host rules. Code: #181. |
 | 2026-11-09 | #189 merged 0c61ce654 | Records: artifacts 1.117.0, the action-log lines for #146 and #149, handover 4.1.0. |

@@ -539,7 +539,36 @@ function urlFieldName(name) {
  * or more). A path segment's card or phone match is a numeric id (a post or order number), not counted. Named over-ask:
  * a 40-hex commit hash in a code host's URL (the digest rule; cu-coordinator: keep it).
  */
-export function urlSecret(raw) {
+// CU-325 (cu-coordinator 06:30Z, High): a card number in a URL path. A path segment counts when it holds a card-shaped
+// digit run - bare or in card groupings, not touching other digits, so a file name ('<card>.pdf') or a suffix counts too
+// (cu-researcher on #245) - that passes Luhn and carries a card brand's prefix with that brand's length (a random numeric id
+// then trips about one time in a hundred, not one in ten), or when its digits hold a card-length run the run itself typed or
+// pasted (typedDigits, the loop's in-memory buffer, CU-267), whatever its prefix. CU-326: a host label, a card split across
+// all-digit segments and a zero-padded run count too (urlSecret).
+const CARD_RUN = /(?<!\d)(\d{4}(?:[ -]\d{4}){3}(?:[ -]\d{3})?|\d{4}[ -]\d{6}[ -]\d{4,5}|\d{13,19})(?!\d)/g
+const CARD_BRANDS = [
+  [/^4/, [13, 16, 19]],
+  [/^(5[1-5]|222[1-9]|22[3-9]\d|2[3-6]\d\d|27[01]\d|2720)/, [16]],
+  [/^3[47]/, [15]],
+  [/^(6011|64[4-9]|65)/, [16, 17, 18, 19]],
+  [/^35(2[89]|[3-8]\d)/, [16, 17, 18, 19]],
+  [/^62/, [16, 17, 18, 19]],
+  [/^(36|38|30[0-5])/, [14, 15, 16, 17, 18, 19]],
+]
+const brandCard = (digits) => CARD_BRANDS.some(([prefix, lengths]) => prefix.test(digits) && lengths.includes(digits.length))
+const cardNumber = (digits) => digits.length >= 13 && digits.length <= 19 && luhn(digits) && brandCard(digits)
+export function pathCard(segment, typedDigits = []) {
+  const text = String(segment ?? '').trim()
+  const digits = text.replace(/\D/g, '')
+  for (const match of text.matchAll(CARD_RUN)) {
+    // CU-326: leading zeros pad a card into a longer number ('00<card>') without changing its Luhn sum.
+    const run = match[0].replace(/\D/g, '').replace(/^0+/, '')
+    if (cardNumber(run)) return true
+  }
+  return (Array.isArray(typedDigits) ? typedDigits : []).some((run) => typeof run === 'string' && run.length >= 13 && run.length <= 19 && digits.includes(run))
+}
+
+export function urlSecret(raw, typedDigits = []) {
   let url
   try {
     url = new URL(String(raw ?? ''))
@@ -570,8 +599,26 @@ export function urlSecret(raw) {
   const loose = looksSensitive(decode(fragment))
   if (loose !== null) return loose
   for (const segment of url.pathname.split('/').filter(Boolean)) {
+    if (pathCard(decode(segment), typedDigits)) return 'card'
     const kind = looksSensitive(decode(segment))
     if (kind !== null && kind !== 'card' && kind !== 'phone') return kind
+  }
+  // CU-326: a card as a host label, or split across two to four all-digit path segments (/p/41111111/11111111).
+  if (url.hostname.split('.').some((label) => pathCard(label))) return 'card'
+  const segments = url.pathname.split('/').filter(Boolean).map((segment) => decode(segment).trim())
+  for (let i = 0; i < segments.length; i += 1) {
+    let joined = ''
+    for (let k = i; k < Math.min(segments.length, i + 4) && /^\d+$/.test(segments[k]); k += 1) {
+      joined += segments[k]
+      if (k > i && cardNumber(joined)) return 'card'
+    }
+  }
+  // CU-325 follow-up (cu-coordinator 06:41Z): digits the run typed are matched against every digit of the address - host
+  // labels, the joined path, query and fragment - so a typed card split across segments or put in a host label asks too.
+  const typedRuns = (Array.isArray(typedDigits) ? typedDigits : []).filter((run) => typeof run === 'string' && run.length >= 13 && run.length <= 19)
+  if (typedRuns.length > 0) {
+    const every = decode(`${url.hostname}${url.pathname}${url.search}${url.hash}`).replace(/\D/g, '')
+    if (typedRuns.some((run) => every.includes(run))) return 'card'
   }
   return null
 }
@@ -734,7 +781,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       }
       // CU-260 (cu-researcher; cu-coordinator: High): a secret in the address leaves with the request, so the D-061 value
       // rules run over the decoded URL before the site verdict, and a new-site ask that carries one names the class too.
-      const secret = urlSecret(action.url)
+      const secret = urlSecret(action.url, context.typedDigits)
       const asks = [...(secret !== null ? ['sensitive_data'] : []), ...(next !== 'allow' ? ['new_site'] : [])]
       const needed = asks.filter((cls) => !preApproved(cls, action.url) || NEVER_PRE_APPROVED.includes(cls))
       if (asks.length === 0) return { decision: 'allow', class: null, rule: 'site:allowed', reason: '' }
@@ -885,6 +932,17 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const asFrameEntry = (into) => (webPage && !held && framesHost(into) ? asNamedEntry(String(into.name ?? '')) : null)
     const frameEntry = framedWeb ? asFrameEntry(target) : null
     if (framedWeb && pressesEnter) classes.push('submit')
+    // CU-300 (frame-focus.md, never weaker than the frame-host rules): once the driver follows the focus into a
+    // cross-origin frame, the target is the inner field and carries its host as frameHost. Every text route judges the
+    // host's name too - an unnamed input inside 'Secure Credit Card Frame - CVV' still asks - and a Return there asks
+    // submit unless the frame's own default button was read (defaultButtonRead true), which the rules below then judge.
+    const hostEntryOf = (into) => (webPage && !held && into?.frameHost && typeof into.frameHost === 'object' ? asNamedEntry(String(into.frameHost.name ?? '')) : null)
+    const hostEntry = hostEntryOf(target)
+    const throughHost = (text, host) => {
+      const viaHost = host === null ? null : insertedClass(text, host, context)
+      if (viaHost) classes.push(viaHost)
+    }
+    if (hostEntry !== null && pressesEnter && target.defaultButtonRead !== true) classes.push('submit')
     // ... and Space presses whatever control is focused inside the frame - a hosted Pay or Submit button, a CAPTCHA's
     // check box (CU-263's keyboard route) - so it asks submit too until the driver follows the focus (CU-300). Named
     // over-ask: a lone Space keypress in a framed editor (typed text goes as 'type').
@@ -916,8 +974,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // The driver's no-focus placeholder (role and name null) is no field either (cu-developer-two).
       if (viaMenu && (into === null || !into?.role || MENU_ROLE.test(String(into.role)))) classes.push('sensitive_data')
       else {
-        const inserted = insertedClass(typeof context.paste.text === 'string' && context.paste.text !== '' ? context.paste.text : null, into, context)
+        const pastedText = typeof context.paste.text === 'string' && context.paste.text !== '' ? context.paste.text : null
+        const inserted = insertedClass(pastedText, into, context)
         if (inserted) classes.push(inserted)
+        throughHost(pastedText, viaMenu ? hostEntryOf(context.paste.destination) : hostEntry)
       }
       // CU-183 (copy-source.md): the field the run copied from - one descriptor, or several when the desktop has no
       // count to prove which copy wrote - lends its name class to the paste, whatever the destination is named.
@@ -950,10 +1010,12 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (read?.unknown === true) classes.push('sensitive_data')
       const inserted = insertedClass(typeof read === 'string' ? read : null, context.dropTarget, context)
       if (inserted) classes.push(inserted)
+      throughHost(typeof read === 'string' ? read : null, hostEntryOf(context.dropTarget))
     }
     if (action.type === 'type') {
       const inserted = insertedClass(String(action.text ?? ''), frameEntry ?? target, context)
       if (inserted) classes.push(inserted)
+      throughHost(String(action.text ?? ''), hostEntry)
     }
     // CU-301 (design note 0.1): a printable key pressed into a text entry puts its character there as typing does, so the
     // same rules judge it - a credential field or a password name asks credential, a D-061 name sensitive_data - else a
@@ -964,6 +1026,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (keyChar !== null && (isTextEntry(keyInto) || credentialField(keyInto))) {
       const inserted = insertedClass(keyChar, keyInto, context)
       if (inserted) classes.push(inserted)
+      throughHost(keyChar, hostEntry)
     }
     // CU-267: a value typed in pieces is judged whole - what this run typed into the field before (the loop's buffer) with
     // what this type, printable keypress or browser paste (the run clipboard's text) adds; the action that completes a value

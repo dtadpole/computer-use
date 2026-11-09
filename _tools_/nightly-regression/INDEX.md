@@ -1,8 +1,8 @@
 ---
 title: nightly-regression
 created: 2026-11-06T04:10:00Z
-modified: 2026-11-09T00:14:00Z
-version: 0.3.0
+modified: 2026-11-09T04:23:00Z
+version: 0.4.1
 description: The no-model nightly regression on main - every node suite that starts no app and the fake-helper verifiers, and under the desktop-run lock the helper tests, the fixture suite, every test file that launches CU Fixture, the fixture plans and the dry run - with one retry per failing step, a persistent flake list and a short report.
 grounded_in:
   - source: Linear CU-59 (the nightly regression and flake list)
@@ -17,9 +17,12 @@ Writer: cu-integrator. Node 24, no npm, no model, no Chrome.
 ```bash
 node _tools_/nightly-regression/nightly.mjs                 # origin/main, reports in /tmp/cu-nightly
 node _tools_/nightly-regression/nightly.mjs --node-only     # phase 1 only, no lock
+node _tools_/nightly-regression/nightly.mjs --worktree-root ~/dtadpole/computer-use-wt --worktree-prefix '<session-id>--nightly-'
 ```
 
-On a fresh detached worktree of `--ref` (default `origin/main`, fetched first):
+On a fresh detached worktree of `--ref` (default `origin/main`, fetched first), made under `--worktree-root`
+(default `/tmp`; helper 0.2.60 admits live helper starts only from configured checkouts, so the integrator's nightly
+passes the configured worktrees parent, CU-299):
 
 | Phase | Lock | Steps |
 |---|---|---|

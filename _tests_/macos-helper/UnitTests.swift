@@ -697,7 +697,7 @@ func button(_ kind: String, _ x: Int, _ y: Int) -> JSON { ["kind": .string(kind)
 func testDispatcherBasics() {
   let h = Harness(fixtureWorld)
   let hello = h.dispatcher.hello(token: "t0k")
-  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.60", "the hello opens the run")
+  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.61", "the hello opens the run")
   check(hello["mode"] == "dry-run" && hello["grants"] == ["screen": true, "accessibility": true, "postEvents": true, "listenEvents": false], "a dry-run hello says so, with all four grants")
   check(h.ask("capture", ["maxSize": size800])["code"] == "no_scope", "capture needs a scope")
   check(h.ask("input", ["events": [key("keyDown", 1)], "mode": "global"])["code"] == "no_scope", "input needs a scope")
@@ -1963,6 +1963,46 @@ func testPeerCheck() {
   check(PeerCheck.workingDirectory(getpid()) == FileManager.default.currentDirectoryPath, "proc_pidinfo reads the working directory")
 }
 
+func testWebArea() {
+  // CU-322 (D-089): an element that is, or descends from, an AXWebArea - the page of a browser that exposes it.
+  let window: String? = "AXWindow"
+  check(WebArea.contains(path: ["AXButton", "AXGroup", "AXWebArea", "AXScrollArea", window], ending: .top) == true, "a button inside the page is in the web area")
+  check(WebArea.contains(path: ["AXWebArea", "AXScrollArea", window], ending: .top) == true, "the web area itself counts")
+  check(WebArea.contains(path: ["AXTextField", "AXGroup", "AXWebArea"], ending: .error) == true, "found before an error: still in the web area")
+  check(WebArea.contains(path: ["AXTextField", "AXToolbar", window], ending: .top) == false, "the address bar (browser chrome) is not")
+  check(WebArea.contains(path: ["AXButton", window, "AXWebArea"], ending: .top) == false, "nothing above the window counts")
+  check(WebArea.contains(path: ["AXButton", nil, "AXGroup"], ending: .top) == false, "a clean top without a web area: false")
+  check(WebArea.contains(path: ["AXButton", "AXGroup"], ending: .error) == nil && WebArea.contains(path: ["AXButton"], ending: .limit) == nil,
+        "a walk that ends at an Accessibility error or the depth limit is unknown (null), never false")
+  check(WebArea.contains(path: Array(repeating: "AXGroup", count: PanelMarker.maxDepth) + ["AXWebArea"], ending: .top) == false,
+        "past the walk's depth nothing is read (the live walk stops there and reports limit, so unknown)")
+  // Through the dry run, by the live walk: hitTest and focused carry inWebArea from the declared ancestry.
+  let display: JSON = [["id": 1, "main": true, "originPt": ["x": 0, "y": 0], "sizePt": ["width": 800, "height": 600], "scale": 1]]
+  let page: JSON = [["role": "AXGroup"], ["role": "AXWebArea"], ["role": "AXScrollArea"], ["role": "AXWindow"]]
+  let world = Harness(["displays": display, "frontmost": "ai.reflection.cu.fixture",
+                       "apps": [["bundleId": "ai.reflection.cu.fixture", "pid": 501, "rect": ["x": 0, "y": 0, "width": 800, "height": 600]]],
+                       "elements": [["rect": ["x": 100, "y": 300, "width": 80, "height": 30],
+                                     "element": ["bundleId": "ai.reflection.cu.fixture", "pid": 501, "role": "AXButton", "title": "Buy now", "ancestors": page]],
+                                    ["rect": ["x": 100, "y": 20, "width": 400, "height": 24],
+                                     "element": ["bundleId": "ai.reflection.cu.fixture", "pid": 501, "role": "AXTextField", "title": "Address and Search",
+                                                 "ancestors": [["role": "AXToolbar"], ["role": "AXWindow"]]]],
+                                    ["rect": ["x": 100, "y": 400, "width": 300, "height": 100],
+                                     "element": ["bundleId": "ai.reflection.cu.fixture", "pid": 501, "role": "AXWebArea"]],
+                                    ["rect": ["x": 500, "y": 300, "width": 80, "height": 30],
+                                     "element": ["bundleId": "ai.reflection.cu.fixture", "pid": 501, "role": "AXButton", "title": "Pay", "ancestors": [["role": "AXGroup"]], "ancestorsEnd": "error"]],
+                                    ["rect": ["x": 500, "y": 100, "width": 80, "height": 30],
+                                     "element": ["bundleId": "ai.reflection.cu.fixture", "pid": 501, "role": "AXButton", "title": "Plain", "inWebArea": true]]],
+                       "focused": ["bundleId": "ai.reflection.cu.fixture", "pid": 501, "role": "AXTextField", "title": "Card number", "ancestors": page]])
+  _ = world.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
+  check(world.ask("hitTest", ["xPt": 140, "yPt": 315])["element"]?["inWebArea"] == true, "a page button's hit test says inWebArea: true")
+  check(world.ask("hitTest", ["xPt": 200, "yPt": 30])["element"]?["inWebArea"] == false, "the address bar's says false")
+  check(world.ask("hitTest", ["xPt": 200, "yPt": 450])["element"]?["inWebArea"] == true, "the web area itself says true")
+  let unknown = world.ask("hitTest", ["xPt": 540, "yPt": 315])["element"]
+  check(unknown?.object?.keys.contains("inWebArea") == true && unknown?["inWebArea"] == .null, "an ancestry ending in an error: inWebArea null (present)")
+  check(world.ask("hitTest", ["xPt": 540, "yPt": 115])["element"]?.object?.keys.contains("inWebArea") == false, "a declared inWebArea key is ignored; only ancestry decides")
+  check(world.ask("focused")["element"]?["inWebArea"] == true, "keys: the focused field's chain says inWebArea: true")
+}
+
 @main
 struct UnitTests {
   static func main() {
@@ -2002,6 +2042,7 @@ struct UnitTests {
     testServicesMenu()
     testSelectedItems()
     testGrantRecheck()
+    testWebArea()
     testEndWatchdog()
     // Informational: whether the process that ran these tests is genuine node (true for Node.js Foundation builds).
     let parentIsNode = PeerCheck.satisfiesNodeRequirement(pid: getppid(), token: nil)
