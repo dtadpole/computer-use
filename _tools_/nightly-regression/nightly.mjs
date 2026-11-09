@@ -33,6 +33,8 @@ const USAGE = `usage: node _tools_/nightly-regression/nightly.mjs [options]
   --lock-dir DIR    the lock directory (tests only; default the team's)
   --worktree-root D  folder for the run's detached worktree (default /tmp); a helper that admits only configured
                     checkouts (0.2.60, CU-299) needs one under the configured worktrees parent
+  --worktree-prefix P  the worktree's name prefix (default cu-nightly-wt-); the local layout names a seat's
+                    purpose worktree <session-id>--<purpose>, so a seat passes '<its session id>--nightly-'
   --keep-worktree   leave the worktree for inspection`
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -161,7 +163,7 @@ async function main() {
   mkdirSync(opts.out, { recursive: true })
   const runDir = join(opts.out, `${startedAt.replace(/:/g, '')}-${head.slice(0, 9)}`)
   mkdirSync(runDir, { recursive: true })
-  const wt = mkdtempSync(join(opts.worktreeRoot, 'cu-nightly-wt-'))
+  const wt = mkdtempSync(join(opts.worktreeRoot, opts.worktreePrefix))
   try { git(repo, ['worktree', 'add', '--detach', '--quiet', wt, head]) } catch (error) {
     console.error(`nightly: worktree add failed: ${String(error?.stderr ?? error).trim()}`)
     rmSync(wt, { recursive: true, force: true })
