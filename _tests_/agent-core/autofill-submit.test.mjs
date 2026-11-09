@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import { test } from 'node:test'
 
 import { createScriptedAdapter } from '../../_tools_/agent-core/adapter-scripted.mjs'
+import { apiController } from '../../_tools_/agent-core/consent.mjs'
 import { createRunControl } from '../../_tools_/agent-core/control.mjs'
 import { createFakeEnvironment } from '../../_tools_/agent-core/fake-env.mjs'
 import { runTask } from '../../_tools_/agent-core/loop.mjs'
@@ -33,6 +34,10 @@ test('CU-302: a click, Space or Return that submits a form holding an autofilled
   const field = { tag: 'input', inputType: 'email', role: 'textbox', name: 'Email', editable: true, autofilledFields: [email, password] }
   assert.equal(judge(key('ENTER'), field), 'credential/autofill:credential', 'Return in a field of that form (implicit submit)')
   assert.equal(judge(click, signIn([{ tag: 'input', inputType: 'password', name: '' }])), 'credential/autofill:credential', 'an unnamed password field, by its type')
+})
+
+test('CU-302 (cu-verifier): a field the browser autofilled and the run then edited still asks - one typed character never launders a saved secret', () => {
+  assert.equal(judge(click, signIn([{ ...password, edited: true }])), 'credential/autofill:credential')
 })
 
 test('CU-302: an autofilled card or D-061 field asks too; an autofilled username alone does not', () => {
@@ -68,6 +73,35 @@ test('CU-302 in the loop: unattended, a Sign in click on an autofilled form is d
     const event = readRun(result.trajectoryDir).events.filter((e) => e.kind === 'action').pop()
     assert.deepEqual([event.decision, event.class, event.rule], ['confirm', 'credential', 'autofill:credential'])
     assert.equal(environment.log.length, 0, 'unattended, the click never reached the page')
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('CU-302 in the loop (cu-verifier): a form autofilled between the ask and the post is asked again for the new class', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'cu-302-late-'))
+  try {
+    const START = 'http://127.0.0.1:43117/tasks/demo/'
+    const control = createRunControl()
+    const environment = createFakeEnvironment({ url: START, control })
+    let reads = 0
+    const send = { tag: 'button', role: 'button', name: 'Send', inputType: 'submit', origin: 'http://127.0.0.1:43117', fingerprint: 's' }
+    environment.inspectPoint = async () => { reads += 1; return reads === 1 ? send : { ...send, autofilledFields: [password] } }
+    const api = apiController()
+    const model = createScriptedAdapter({ frame: { width: 1440, height: 900 }, turns: [{ actions: [click] }, { final: 'done' }] })
+    const answers = (async () => {
+      const first = await api.waitForRequest(2000)
+      assert.equal(first.class, 'submit')
+      api.respond({ id: first.id, approved: true })
+      await new Promise((r) => setTimeout(r, 10))
+      const second = await api.waitForRequest(2000)
+      assert.equal(second.class, 'credential')
+      assert.match(second.what, /new since it was approved/)
+      api.respond({ id: second.id, approved: false })
+    })()
+    await runTask({ task: 'send the form', environment, model, sitePolicy: createSitePolicy({ startUrl: START }), control, controller: api, runsDirectory: join(dir, 'runs'), build: { commit: 'test', dirty: false } })
+    await answers
+    assert.equal(environment.log.length, 0, 'the saved password was never submitted')
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }
