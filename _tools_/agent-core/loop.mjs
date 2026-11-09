@@ -678,8 +678,14 @@ export async function runTask(options) {
   // after 'Show password' is still judged as one. The key comes from the driver (fieldKey), outside the fingerprint and
   // never recorded; it carries the page's loader or the app's process, so a navigation or a relaunch forgets it.
   const passwordKeys = new Set()
-  const remembered = (t) => {
-    if (!t || typeof t !== 'object' || typeof t.fieldKey !== 'string' || t.fieldKey === '') return t
+  // CU-349 (cu-researcher): some web and Electron fields drop their placeholder once a value is typed, so the placeholder a
+  // field showed is kept by its key - the first key and a later one into the same box are judged under the same names.
+  const placeholderKeys = new Map()
+  const remembered = (given) => {
+    if (!given || typeof given !== 'object' || typeof given.fieldKey !== 'string' || given.fieldKey === '') return given
+    let t = given
+    if (typeof t.placeholder === 'string' && t.placeholder.trim() !== '') placeholderKeys.set(t.fieldKey, t.placeholder)
+    else if (placeholderKeys.has(t.fieldKey)) t = { ...t, placeholder: placeholderKeys.get(t.fieldKey) }
     if (t.isPassword === true || t.secure === true || t.inputType === 'password' || namesPasswordField(t)) { passwordKeys.add(t.fieldKey); return t }
     return passwordKeys.has(t.fieldKey) ? { ...t, seenAsPassword: true } : t
   }

@@ -373,7 +373,7 @@ const BANK_OR_TAX_FIELD = Object.freeze(['iban', 'account number', 'account no',
   // CU-293: a bank account or tax id in Chinese.
   '银行账号', '銀行帳號', '银行账户', '銀行帳戶', '开户行', '開戶行', '税号', '稅號', '纳税人识别号', '納稅人識別號', '统一社会信用代码'])
 function bankOrTaxField(target) {
-  return namesWord(target?.name, BANK_OR_TAX_FIELD)
+  return entryNamesOf(target).some((name) => namesWord(name, BANK_OR_TAX_FIELD))
 }
 
 // CU-164: a text entry - the browser's editable flag, or a desktop text role - named for a password asks credential, and
@@ -535,11 +535,16 @@ function plainTextEntry(target) {
   return target.editable === true && (['input', 'textarea'].includes(String(target.tag ?? '').toLowerCase()) || ['textbox', 'searchbox'].includes(target.role))
 }
 
-const passwordNamedEntry = (target) => isTextEntry(target) && namesWord(target.name, PASSWORD_NAMES)
+// CU-349 (cu-coordinator 15:55Z: upgrade only): an entry's placeholder (helper 0.2.63, target.placeholder) is an extra
+// name for the field-name rules below - it can make a field ask ('Notes' with placeholder 'CVV' asks, a named over-ask),
+// never stop one asking, and never replaces the name a question shows. Each rule tests the name and the placeholder apart.
+const entryNamesOf = (target) => [target?.name, typeof target?.placeholder === 'string' && target.placeholder.trim() !== '' ? target.placeholder : null]
+  .filter((name) => name !== null && name !== undefined)
+const passwordNamedEntry = (target) => isTextEntry(target) && entryNamesOf(target).some((name) => namesWord(name, PASSWORD_NAMES))
 // CU-184 (desktop-rules.md): a text entry named for a password - shown or not, it holds one - unless its name says it is
 // a hint; the desktop hands a key action into it to the person, as it does a secure field (R83).
-export const namesPasswordField = (target) => passwordNamedEntry(target) && !namesWord(target.name, ['hint'])
-const secretNamedEntry = (target) => isTextEntry(target) && (namesWord(target.name, SECRET_NAMES) || namesAcronym(target.name))
+export const namesPasswordField = (target) => isTextEntry(target) && entryNamesOf(target).some((name) => namesWord(name, PASSWORD_NAMES) && !namesWord(name, ['hint']))
+const secretNamedEntry = (target) => isTextEntry(target) && entryNamesOf(target).some((name) => namesWord(name, SECRET_NAMES) || namesAcronym(name))
 
 // CU-164: a wallet recovery phrase - twelve or more words in a row, every one on the BIP39 list; ordinary prose breaks
 // the run with words the list does not hold (the, is, to, of, a).
