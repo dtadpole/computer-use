@@ -1,8 +1,8 @@
 ---
 title: push-gate
 created: 2026-11-09T11:20:00Z
-modified: 2026-11-09T11:20:00Z
-version: 0.1.0
+modified: 2026-11-09T12:37:00Z
+version: 0.1.1
 description: "CU-337 (D-097): git's pre-push hook for this public repository - it runs the public-hygiene gate unpiped over exactly what each pushed ref adds and refuses the push on any non-zero exit; the gate's path comes from the machine, never the tree; one installer per repository and a check for cu-integrator."
 grounded_in:
   - source: _context_/team-operations/decision-log.yaml (D-097)
@@ -26,6 +26,6 @@ Install once per repository on a host, from any of its worktrees:
 **The gate's path.** It is read from `CU_HYGIENE_GATE`, else the local config's `paths.hygieneGate`, else
 `<paths.heddleRepo>/_tools_/public-hygiene/gate.mjs`. A path that is no file refuses the push.
 
-**Limit.** A branch cut before this landed has no `hooks/pre-push`. Git then pushes without it, and `--check` says
-so; merging origin/main brings the hook in. Running the gate unpiped and chaining the push with `&&` stays the rule
+**Limit.** A missing hook file means no hook: a branch cut before this landed has no `hooks/pre-push`, and git then
+pushes silently unguarded. Run `--check` before pushing from an old branch; merging origin/main brings the hook in. Running the gate unpiped and chaining the push with `&&` stays the rule
 (D-097).
