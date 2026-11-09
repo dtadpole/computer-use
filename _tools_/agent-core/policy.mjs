@@ -653,9 +653,11 @@ export function looksSensitive(text) {
     const digits = match[0].replace(/\D/g, '')
     if (digits.length >= 13 && digits.length <= 19 && luhn(digits)) return 'card'
   }
-  // CU-346 (cu-researcher): a card's groups split by dots, slashes, commas, underscores or line breaks - the same
-  // separator throughout, in 4-4-4-4(-1..3) or Amex 4-6-5 groups, passing Luhn. Named over-ask: a grouped number that fits.
-  for (const m of value.matchAll(/(?<!\d)\d{4}([./,_]|\r?\n)(?:\d{4}\1\d{4}\1\d{4}(?:\1\d{1,3})?|\d{6}\1\d{5})(?!\d)/g)) {
+  // CU-346 (cu-researcher): a card's groups split by dots, slashes, commas, underscores, tabs or line breaks - any of
+  // them per gap, each optionally followed by a space - in 4-4-4-4(-1..3) or Amex 4-6-5 groups, passing Luhn. Named
+  // over-ask: a grouped number that fits.
+  const gap = '(?:[./,_\\-][ \\t]?|\\r?\\n|\\t)'
+  for (const m of value.matchAll(new RegExp(`(?<!\\d)\\d{4}${gap}(?:\\d{4}${gap}\\d{4}${gap}\\d{4}(?:${gap}\\d{1,3})?|\\d{6}${gap}\\d{5})(?!\\d)`, 'g'))) {
     if (luhn(m[0].replace(/\D/g, ''))) return 'card'
   }
   // The match is greedy (an IBAN followed by a word runs on into it), so it is cut at its country's length.

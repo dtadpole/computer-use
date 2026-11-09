@@ -15,8 +15,14 @@ for (const [label, sep] of [['dots', '.'], ['slashes', '/'], ['commas', ','], ['
   })
 }
 
+test('CU-346: mixed separators and a separator plus a space in one card are sensitive (cu-researcher)', () => {
+  assert.equal(looksSensitive(`${GROUPS[0]}.${GROUPS[1]}-${GROUPS[2]}.${GROUPS[3]}`), 'card')
+  assert.equal(looksSensitive(GROUPS.join('. ')), 'card')
+  assert.equal(looksSensitive(`${GROUPS[0]}.${GROUPS[1]}/${GROUPS[2]}_${GROUPS[3]}`), 'card')
+})
+
 test('CU-346 negatives: versions, dates, IPs, thousands and mixed separators stay free', () => {
-  for (const text of ['1.2.3.4', 'v10.15.7', '2026/11/09', '1,234,567', [10, 20, 30, 40].join('.'), `${GROUPS[0]}.${GROUPS[1]}/${GROUPS[2]}_${GROUPS[3]}`, '000.12.3456', '123/00/4567']) {
+  for (const text of ['1.2.3.4', 'v10.15.7', '2026/11/09', '1,234,567', [10, 20, 30, 40].join('.'), '000.12.3456', '123/00/4567', '1234.5678.9012.3456', '1.5,2.5,3.5,4.5']) {
     assert.equal(looksSensitive(text), null, JSON.stringify(text))
   }
 })
