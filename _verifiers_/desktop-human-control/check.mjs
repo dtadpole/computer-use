@@ -24,10 +24,15 @@ const SEAT = verifySeat()
 const guard = (t) => skipUnless(t, ready, 'the desktop loop (C4/C5), driver or fake helper has not landed')
 const click = (x, y) => ({ type: 'click', button: 'left', x, y })
 // One click is three helper events; the person acts after the first.
+const NOTES = { bundleId: FIXTURE, pid: 900, role: 'AXTextField', subrole: null, title: 'Notes', frame: { x: 100, y: 80, width: 300, height: 40 }, secure: false, editable: true }
 const world = {
   grants: { screen: true, accessibility: true, postEvents: true, listenEvents: false },
   displays: [{ id: 1, main: true, originPt: { x: 0, y: 0 }, sizePt: { width: 1280, height: 800 }, scale: 1 }],
   apps: [{ bundleId: FIXTURE, pid: 900, rect: { x: 0, y: 0, width: 1280, height: 800 } }],
+  // CU-363: the click at (200, 100) lands on a text field, so the typed 'x' that follows is text entry - a printable key
+  // outside one is an app shortcut and asks, which is consent, not what this human-control check measures.
+  elements: [{ rect: { x: 100, y: 80, width: 300, height: 40 }, element: NOTES }],
+  focused: NOTES,
   quirks: { localInputAfter: 1 },
 }
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
