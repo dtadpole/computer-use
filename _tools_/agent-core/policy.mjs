@@ -811,6 +811,22 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const webPage = context.url != null && !desktopUrl
     const unreadWebFocus = webPage && !held && (target == null || framesHost(target))
     if ((multiLineWeb || unreadWebFocus) && keysOf(action).has('ENTER') && (keysOf(action).has('META') || keysOf(action).has('CTRL'))) classes.push('submit')
+    // CU-297 (design note 0.1): a frame host's document is unread, so on a web page (1) text typed or keystroke-pasted into
+    // it meets the field-name rules by the frame's own name - hosted payment and sign-in fields title each frame for its
+    // field (Braintree's 'Secure Credit Card Frame - CVV', Stripe's 'Secure CVC input frame'); and (2) a Return or typed
+    // line break there asks submit, CU-190's web twin: the frame's form and its submit button are unread, and a hosted
+    // checkout or sign-in submits on Return. A null focus keeps today's rule (a focused body has no form). Named over-asks:
+    // a vendor prefix naming every frame for the card ('... Frame - Postal Code'); a Return in a framed comments editor.
+    const framedWeb = unreadWebFocus && target != null
+    // Every route that puts text into the focused field reads the frame host as an entry named by it: typing, a printable
+    // key (CU-301), a keystroke paste, and a menu paste whose read destination is a frame host (cu-researcher).
+    const asFrameEntry = (into) => (webPage && !held && framesHost(into) ? asNamedEntry(String(into.name ?? '')) : null)
+    const frameEntry = framedWeb ? asFrameEntry(target) : null
+    if (framedWeb && pressesEnter) classes.push('submit')
+    // ... and Space presses whatever control is focused inside the frame - a hosted Pay or Submit button, a CAPTCHA's
+    // check box (CU-263's keyboard route) - so it asks submit too until the driver follows the focus (CU-300). Named
+    // over-ask: a lone Space keypress in a framed editor (typed text goes as 'type').
+    if (framedWeb && keysOf(action).has('SPACE') && !['META', 'CTRL'].some((k) => keysOf(action).has(k))) classes.push('submit')
     // CU-253 (cu-researcher): a chat app sends on a plain Return from its compose field - a text area too, and with no
     // default button to read (Messages' 'iMessage', Slack, WhatsApp). So a plain Return or typed line break asks submit
     // in any text entry of a known chat app, or in an entry named as a compose field; Shift- or Option-Return types
@@ -834,7 +850,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // Only a menu paste carries a destination; a keystroke paste is judged at its target as before (a null target there
       // is not 'unknown' - cu-verifier's desktop-consent S4b caught that over-ask).
       const viaMenu = Object.prototype.hasOwnProperty.call(context.paste, 'destination')
-      const into = viaMenu ? context.paste.destination : target
+      const into = viaMenu ? (asFrameEntry(context.paste.destination) ?? context.paste.destination) : (frameEntry ?? target)
       // The driver's no-focus placeholder (role and name null) is no field either (cu-developer-two).
       if (viaMenu && (into === null || !into?.role || MENU_ROLE.test(String(into.role)))) classes.push('sensitive_data')
       else {
@@ -874,7 +890,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (inserted) classes.push(inserted)
     }
     if (action.type === 'type') {
-      const inserted = insertedClass(String(action.text ?? ''), target, context)
+      const inserted = insertedClass(String(action.text ?? ''), frameEntry ?? target, context)
       if (inserted) classes.push(inserted)
     }
     // CU-301 (design note 0.1): a printable key pressed into a text entry puts its character there as typing does, so the
@@ -882,8 +898,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // password, CVV or SSN pressed key by key goes in unasked. The whole value stays CU-267's buffer (below). Only on a text
     // entry: a letter that selects in a list, or Space on a check box, is not text.
     const keyChar = printableKeyChar(action)
-    if (keyChar !== null && (isTextEntry(target) || credentialField(target))) {
-      const inserted = insertedClass(keyChar, target, context)
+    const keyInto = frameEntry ?? target
+    if (keyChar !== null && (isTextEntry(keyInto) || credentialField(keyInto))) {
+      const inserted = insertedClass(keyChar, keyInto, context)
       if (inserted) classes.push(inserted)
     }
     // CU-267: a value typed in pieces is judged whole - what this run typed into the field before (the loop's buffer) with

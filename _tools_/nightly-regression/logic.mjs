@@ -11,12 +11,24 @@ export const PHASE1_VERIFIERS = Object.freeze([
 export const PHASE2_VERIFIERS = Object.freeze(['desktop-fixture', 'desktop-helper-protocol', 'desktop-helper-dryrun'])
 /** node --test suites that start CUHelper or CU Fixture: phase 2. */
 export const LOCKED_SUITES = Object.freeze(['macos-helper', 'desktop-suite'])
+/**
+ * CU-304: a test file in any other suite that builds or launches CU Fixture imports one of these modules (a static
+ * import statement, or a dynamic import()); it runs in phase 2 (step node-tests-fixapps) under the lock, never in
+ * phase 1 (on 8 Nov 25 such files sat in phase 1). A mention in a string or a comment does not count.
+ */
+export const FIXTURE_APP_IMPORT = /^\s*(?:import\b[^'"\n]*|\}\s*)from\s+['"][^'"\n]*desktop-fixture\/(?:build|client)\.mjs['"]|\bimport\(\s*['"][^'"\n]*desktop-fixture\/(?:build|client)\.mjs['"]/m
+
+/** Does this test file's source build or launch CU Fixture? */
+export function launchesFixtureApp(source) {
+  return FIXTURE_APP_IMPORT.test(String(source))
+}
 
 /** Seconds per attempt before the step's process group is killed. */
 export const TIMEOUTS = Object.freeze({
   'node-tests': 300,
   'node-tests-helper': 300,
   'node-tests-fixture': 180,
+  'node-tests-fixapps': 300,
   verifier: 120,
   'verifier:desktop-fixture': 300,
 })
@@ -66,13 +78,16 @@ const suiteOf = (file) => file.split('/')[1]
 
 /**
  * The run's steps from the files on the tested head: `testFiles` are paths like `_tests_/agent-core/x.test.mjs`,
- * `verifiers` the names of `_verifiers_/<name>/` folders that hold a verify.sh. Phase 1 needs no lock.
+ * `verifiers` the names of `_verifiers_/<name>/` folders that hold a verify.sh, `fixtureAppFiles` the test files whose
+ * source launchesFixtureApp (CU-304). Phase 1 needs no lock and starts no app.
  */
-export function buildSteps({ testFiles, verifiers }) {
+export function buildSteps({ testFiles, verifiers, fixtureAppFiles = [] }) {
   const present = new Set(verifiers)
   const tests = [...testFiles].sort()
   const steps = []
-  const unlocked = tests.filter((f) => !LOCKED_SUITES.includes(suiteOf(f)))
+  const launching = new Set(fixtureAppFiles)
+  const fixapps = tests.filter((f) => !LOCKED_SUITES.includes(suiteOf(f)) && launching.has(f))
+  const unlocked = tests.filter((f) => !LOCKED_SUITES.includes(suiteOf(f)) && !launching.has(f))
   if (unlocked.length) steps.push({ name: 'node-tests', phase: 1, kind: 'node', files: unlocked, timeout: TIMEOUTS['node-tests'] })
   for (const v of PHASE1_VERIFIERS) {
     if (present.has(v)) steps.push({ name: `verifier:${v}`, phase: 1, kind: 'verifier', verifier: v, timeout: TIMEOUTS.verifier })
@@ -81,6 +96,7 @@ export function buildSteps({ testFiles, verifiers }) {
   if (helper.length) steps.push({ name: 'node-tests-helper', phase: 2, kind: 'node', files: helper, timeout: TIMEOUTS['node-tests-helper'] })
   const fixture = tests.filter((f) => suiteOf(f) === 'desktop-suite')
   if (fixture.length) steps.push({ name: 'node-tests-fixture', phase: 2, kind: 'node', files: fixture, timeout: TIMEOUTS['node-tests-fixture'] })
+  if (fixapps.length) steps.push({ name: 'node-tests-fixapps', phase: 2, kind: 'node', files: fixapps, timeout: TIMEOUTS['node-tests-fixapps'] })
   for (const v of PHASE2_VERIFIERS) {
     if (present.has(v)) {
       steps.push({ name: `verifier:${v}`, phase: 2, kind: 'verifier', verifier: v, timeout: TIMEOUTS[`verifier:${v}`] ?? TIMEOUTS.verifier })
@@ -175,6 +191,7 @@ export function summaryLine(run) {
     part('node-tests', 'node'),
     part('node-tests-helper', 'macos-helper'),
     part('node-tests-fixture', 'desktop-suite'),
+    part('node-tests-fixapps', 'fixture-app tests'),
     verifiers.length ? `verifiers ${ok.length}/${verifiers.length}${skipped ? ` (${skipped} skipped)` : ''}` : null,
     `flaky steps ${flaky}`,
   ].filter(Boolean)
