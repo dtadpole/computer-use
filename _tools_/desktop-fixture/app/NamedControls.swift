@@ -28,6 +28,7 @@ final class NamedControls: NSObject {
 
   var fields: [NamedField] = []
   var placeholderFields: [NamedField] = []
+  var layoutFields: [NamedField] = []
   var areas: [NamedArea] = []
   var buttons: [NSButton] = []
   var pressed: [Int] = []
@@ -62,14 +63,26 @@ final class NamedControls: NSObject {
   static func open(title: String) -> Bool {
     let screen = NamedControls()
     shared = screen
-    screen.build(title: title, fieldNames: names("fields"), placeholderNames: names("placeholders"), areaNames: names("areas"), buttonTitles: names("buttons"), checkboxNames: names("checkboxes"))
+    screen.build(title: title, fieldNames: names("fields"), placeholderNames: names("placeholders"), layoutSpecs: layoutSpecs(), areaNames: names("areas"), buttonTitles: names("buttons"), checkboxNames: names("checkboxes"))
     screen.installMenu(menuEntries())
     return true
   }
 
-  private func build(title: String, fieldNames: [String], placeholderNames: [String], areaNames: [String], buttonTitles: [String], checkboxNames: [String]) {
+  /// CU-361: `layoutLabels` - up to six entries named only by a static text beside them on screen, never linked to it
+  /// (no accessibility label, no title element, no placeholder): a string puts its text to the left on the same row
+  /// ('Password  [      ]'); `{name, above: true}` puts it just above the box. Each text at most 60 characters.
+  static func layoutSpecs() -> [(name: String, above: Bool)] {
+    let raw = Screens.params["layoutLabels"] as? [Any] ?? []
+    return raw.prefix(6).compactMap { item in
+      if let name = item as? String { return (String(name.prefix(60)), false) }
+      if let spec = item as? [String: Any], let name = spec["name"] as? String { return (String(name.prefix(60)), spec["above"] as? Bool == true) }
+      return nil
+    }
+  }
+
+  private func build(title: String, fieldNames: [String], placeholderNames: [String], layoutSpecs: [(name: String, above: Bool)], areaNames: [String], buttonTitles: [String], checkboxNames: [String]) {
     // CU-349's placeholder-only entries sit under the named ones; everything below moves down by their rows.
-    let shift = CGFloat(placeholderNames.count * 40)
+    let shift = CGFloat(placeholderNames.count * 40 + layoutSpecs.count * 48)
     let height = CGFloat(60 + fieldNames.count * 56 + areaNames.count * 92 + checkboxNames.count * 32 + (buttonTitles.isEmpty ? 0 : 50)) + shift
     let content = FlippedView(frame: NSRect(x: 0, y: 0, width: 420, height: max(height, 120)))
     content.wantsLayer = true
@@ -102,6 +115,25 @@ final class NamedControls: NSObject {
       Fixture.shared.controls["placeholder-\(index)"] = field
       content.addSubview(field)
       placeholderFields.append(field)
+    }
+    for (index, spec) in layoutSpecs.enumerated() {
+      // CU-361: the text and the box are siblings only by position; nothing links them for Accessibility.
+      let rowY = CGFloat(48 + fieldNames.count * 56 + placeholderNames.count * 40 + index * 48)
+      let text = Kit.label(spec.name, size: 13, bold: false)
+      let field = NamedField()
+      field.font = NSFont.systemFont(ofSize: 14)
+      if spec.above {
+        text.frame = NSRect(x: 20, y: rowY, width: 380, height: 16)
+        field.frame = NSRect(x: 20, y: rowY + 18, width: 380, height: 26)
+      } else {
+        text.frame = NSRect(x: 20, y: rowY + 4, width: 110, height: 18)
+        field.frame = NSRect(x: 140, y: rowY, width: 260, height: 26)
+      }
+      field.identifier = NSUserInterfaceItemIdentifier("layout-\(index)")
+      Fixture.shared.controls["layout-\(index)"] = field
+      content.addSubview(text)
+      content.addSubview(field)
+      layoutFields.append(field)
     }
     for (index, name) in areaNames.enumerated() {
       let y = CGFloat(48 + fieldNames.count * 56 + index * 92) + shift
@@ -149,7 +181,7 @@ final class NamedControls: NSObject {
       buttons.append(button)
     }
     let window = Windows.open("main", title: title, content: content)
-    if let first = fields.first ?? placeholderFields.first { window.makeFirstResponder(first) } else if let area = areas.first { window.makeFirstResponder(area) }
+    if let first = fields.first ?? placeholderFields.first ?? layoutFields.first { window.makeFirstResponder(first) } else if let area = areas.first { window.makeFirstResponder(area) }
   }
 
   @objc func press(_ sender: NSButton) {
@@ -217,7 +249,7 @@ final class NamedControls: NSObject {
 
   static func fields() -> [String: Any] {
     guard Screens.current == task, let screen = shared else { return [:] }
-    return ["namedFieldLengths": screen.fields.map { $0.stringValue.count }, "placeholderFieldLengths": screen.placeholderFields.map { $0.stringValue.count },
+    return ["namedFieldLengths": screen.fields.map { $0.stringValue.count }, "placeholderFieldLengths": screen.placeholderFields.map { $0.stringValue.count }, "layoutFieldLengths": screen.layoutFields.map { $0.stringValue.count },
             "namedAreaLengths": screen.areas.map { $0.string.count },
             "namedAreaLines": screen.areas.map { $0.string.components(separatedBy: "\n").count }, "namedPressed": screen.pressed,
             "namedChecked": screen.checkboxes.map { $0.state == .on ? 1 : 0 }, "namedToggled": screen.toggled, "namedChosen": screen.chosen,
