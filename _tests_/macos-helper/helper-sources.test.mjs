@@ -188,6 +188,16 @@ test('only hitTest reads the lifted action target; desktop(at:) and the pid chec
   assert.doesNotMatch(desktop, /actionTarget/)
 })
 
+test('CU-322: describe() reports inWebArea from the one ancestor walk the panel marker reads, null when it cannot finish', () => {
+  const source = readFileSync(join(SOURCES, 'Accessibility.swift'), 'utf8')
+  const describe = source.slice(source.indexOf('static func describe('), source.indexOf('static func describe(') + 6000)
+  assert.match(describe, /let walk = ancestorWalk\(of: element\)/, 'one walk per described element')
+  assert.match(describe, /shape\["inWebArea"\] = WebArea\.contains\(path: walk\.path\.map \{ \$0\.role \}, ending: walk\.ending\)\.map \{ \.bool\(\$0\) \} \?\? \.null/, 'true, false or null')
+  const policy = readFileSync(join(SOURCES, 'Policy.swift'), 'utf8')
+  assert.match(policy, /if role == Self\.role \{ return true \}\n      if role == "AXWindow" \|\| role == "AXApplication" \{ return false \}/, 'a web area before the window; nothing above it')
+  assert.match(policy, /return ending == \.top \? false : nil/, 'an unfinished walk is unknown, never false')
+})
+
 test("CU-194: windowOrigin is read from the element's AXWindow's AXPosition, never the element's own frame", () => {
   const source = readFileSync(join(SOURCES, 'Accessibility.swift'), 'utf8')
   const fn = source.slice(source.indexOf('static func windowOrigin(of element'), source.indexOf('static func labelText('))
