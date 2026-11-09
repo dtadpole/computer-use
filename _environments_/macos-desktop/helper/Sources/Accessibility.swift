@@ -307,6 +307,8 @@ enum Accessibility {
     let own = string(element, "AXTitle").flatMap { $0.isEmpty ? nil : $0 } ?? string(element, "AXDescription").flatMap { $0.isEmpty ? nil : $0 }
     let title = TargetName.pick(own: own, role: role, actionable: Actionable.isActionable(Actionable.Node(role: role, actions: actionNames(element), titled: false), press: pressSignal),
                                 displayText: { displayText(element) }, staticValue: { string(element, "AXValue") })
+    let captionValue = Caption.forTarget(own: caption(element, role: role), leaf: captionLeaf.flatMap { caption($0, role: string($0, "AXRole")) })
+    let placeholderValue = Placeholder.applies(role: role) ? Placeholder.pick(role: role, raw: string(element, "AXPlaceholderValue")) : nil
     var shape: [String: JSON] = [
       "bundleId": .string(bundle),
       "pid": owner.map { .int(Int($0)) } ?? .null,
@@ -326,7 +328,12 @@ enum Accessibility {
       // CU-187: the label that captions a non-entry element (the driver carries it like the name, outside the fingerprint).
       // A target lifted from a captioned value (a value inside a pressable row or card) keeps the value's caption when
       // the control itself has none (cu-developer-two's residual on CU-195).
-      "caption": .optionalString(Caption.forTarget(own: caption(element, role: role), leaf: captionLeaf.flatMap { caption($0, role: string($0, "AXRole")) })),
+      "caption": .optionalString(captionValue),
+      // CU-349: an entry's placeholder (AXPlaceholderValue, never its AXValue), for the consent field rules' extra name.
+      "placeholder": .optionalString(placeholderValue),
+      // CU-361: an entry with no title, caption or placeholder - the static text beside it in layout (NearbyLabel), read
+      // from its window's static texts, never the entry's own value; agent core uses it upgrade-only.
+      "nearbyLabel": .optionalString(Placeholder.applies(role: role) && title == nil && captionValue == nil && placeholderValue == nil ? nearbyLabel(element) : nil),
     ]
     if markPanel {
       // One ancestor walk for both markers. CU-322 (D-089): `inWebArea` - true when the element is, or descends from,
@@ -346,6 +353,19 @@ enum Accessibility {
     // so policy refuses a clicked service (an owner-installed one included), not only the default services' titles.
     if role == "AXMenuItem" { for (key, value) in menuContext(of: element, title: string(element, "AXTitle")).json { shape[key] = value } }
     return .object(shape)
+  }
+
+  /// CU-361: the static text beside an entry in layout (NearbyLabel.pick) - its window's AXStaticText descendants (at
+  /// most 400 read), each by its shown words (a static text's AXValue) and frame. The entry's own value is never read.
+  private static func nearbyLabel(_ element: AXUIElement) -> String? {
+    guard let box = frame(element), let window = elementAttribute(element, "AXWindow") else { return nil }
+    let candidates = descendants(of: window, limit: 400)
+      .filter { string($0, "AXRole") == "AXStaticText" }
+      .compactMap { label -> NearbyLabel.Candidate? in
+        guard let text = string(label, "AXValue"), let rect = frame(label) else { return nil }
+        return NearbyLabel.Candidate(text: text, frame: rect)
+      }
+    return NearbyLabel.pick(box: box, candidates: candidates)
   }
 
   /// CU-250: the menus above a menu item, nearest first, up to the menu bar (or a context menu's top): each submenu's

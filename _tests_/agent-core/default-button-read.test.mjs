@@ -21,7 +21,8 @@ test('D-069: a desktop Return asks submit when the default button read failed or
 
 test('D-069 guard: no target on the desktop is the driver\'s good read of nothing focused and no default button - it keeps the rule', () => {
   // environment.mjs returns null exactly then (cu-verifier); a live focused target always carries the read field.
-  assert.equal(verdict('app:ai.reflection.cu.fixture', null), 'allow')
+  // CU-363: the 'x' typed before the line break, with nothing focused, is an app shortcut (asked once per key).
+  assert.equal(verdict('app:ai.reflection.cu.fixture', null), 'permission')
 })
 
 test('D-069 guard: a browser Return without any read state keeps the focused-name rule - no over-ask on every page', () => {

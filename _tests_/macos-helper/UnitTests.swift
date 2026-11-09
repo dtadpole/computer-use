@@ -697,7 +697,7 @@ func button(_ kind: String, _ x: Int, _ y: Int) -> JSON { ["kind": .string(kind)
 func testDispatcherBasics() {
   let h = Harness(fixtureWorld)
   let hello = h.dispatcher.hello(token: "t0k")
-  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.62", "the hello opens the run")
+  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.64", "the hello opens the run")
   check(hello["mode"] == "dry-run" && hello["grants"] == ["screen": true, "accessibility": true, "postEvents": true, "listenEvents": false], "a dry-run hello says so, with all four grants")
   check(h.ask("capture", ["maxSize": size800])["code"] == "no_scope", "capture needs a scope")
   check(h.ask("input", ["events": [key("keyDown", 1)], "mode": "global"])["code"] == "no_scope", "input needs a scope")
@@ -2023,6 +2023,38 @@ func testManualAccessibilityRestore() {
   check(ManualAccessibilityRestore.processRuns(getpid()) && !ManualAccessibilityRestore.processRuns(99_999_999), "processRuns: this process yes, an impossible pid no")
 }
 
+func testPlaceholder() {
+  // CU-349: an entry's placeholder, trimmed, at most 80 characters, entry roles only; never a value.
+  check(Placeholder.pick(role: "AXTextField", raw: "  One-time code ") == "One-time code", "an entry's placeholder, trimmed")
+  check(Placeholder.pick(role: "AXSecureTextField", raw: "PIN") == "PIN" && Placeholder.pick(role: "AXSearchField", raw: "Search") == "Search", "a secure field and a search field too")
+  check(Placeholder.pick(role: "AXButton", raw: "CVV") == nil && Placeholder.pick(role: nil, raw: "CVV") == nil, "a non-entry role reports none")
+  check(Placeholder.pick(role: "AXTextField", raw: String(repeating: "x", count: 80)) != nil && Placeholder.pick(role: "AXTextField", raw: String(repeating: "x", count: 81)) == nil, "over 80 characters reads as none, never cut")
+  check(Placeholder.pick(role: "AXTextField", raw: "   ") == nil && Placeholder.pick(role: "AXTextField", raw: nil) == nil, "empty or absent reads as none")
+}
+
+func testNearbyLabel() {
+  // CU-361: the static text beside an unnamed entry in layout - left on its row, else just above it; global top-left frames.
+  let box = CGRect(x: 200, y: 100, width: 200, height: 24) // minX 200, maxX 400, minY 100, midY 112
+  func text(_ words: String, _ x: CGFloat, _ y: CGFloat, _ width: CGFloat, _ height: CGFloat = 16) -> NearbyLabel.Candidate {
+    NearbyLabel.Candidate(text: words, frame: CGRect(x: x, y: y, width: width, height: height))
+  }
+  let left = text("Password", 120, 104, 70)  // ends 10 pt left of the box, centred on its row
+  let above = text("Email", 200, 80, 80)     // ends 4 pt above the box, over it
+  check(NearbyLabel.pick(box: box, candidates: [left]) == "Password", "a static text left of the box on its row labels it")
+  check(NearbyLabel.pick(box: box, candidates: [above]) == "Email", "a static text just above the box, overlapping it, labels it")
+  check(NearbyLabel.pick(box: box, candidates: [text("Password", 0, 104, 70)]) == nil, "left but 130 pt away (over 120) is none")
+  check(NearbyLabel.pick(box: box, candidates: [text("Password", 120, 130, 70)]) == nil, "left but on another row (centre 26 pt off, over half the height) is none")
+  check(NearbyLabel.pick(box: box, candidates: [above, left]) == "Password", "left beats above, even when above is nearer")
+  check(NearbyLabel.pick(box: box, candidates: [text("Name", 40, 104, 60), left]) == "Password", "of two left candidates the nearer wins")
+  check(NearbyLabel.pick(box: box, candidates: [text("  Password \n", 120, 104, 70)]) == "Password", "the label is trimmed")
+  check(NearbyLabel.pick(box: box, candidates: [text("   ", 120, 104, 70)]) == nil, "a whitespace text reads as none")
+  check(NearbyLabel.pick(box: box, candidates: [text(String(repeating: "x", count: 80), 120, 104, 70)]) == String(repeating: "x", count: 80), "80 characters is kept")
+  check(NearbyLabel.pick(box: box, candidates: [text(String(repeating: "x", count: 81), 120, 104, 70)]) == nil, "over 80 characters reads as none, never cut")
+  check(NearbyLabel.pick(box: box, candidates: [text("Email", 420, 80, 60)]) == nil, "above but not overlapping the box horizontally is none")
+  check(NearbyLabel.pick(box: box, candidates: [text("Email", 200, 56, 80)]) == nil, "above but 28 pt away (over 24) is none")
+  check(NearbyLabel.pick(box: box, candidates: []) == nil, "no static text, no label")
+}
+
 @main
 struct UnitTests {
   static func main() {
@@ -2064,6 +2096,8 @@ struct UnitTests {
     testGrantRecheck()
     testWebArea()
     testManualAccessibilityRestore()
+    testPlaceholder()
+    testNearbyLabel()
     testEndWatchdog()
     // Informational: whether the process that ran these tests is genuine node (true for Node.js Foundation builds).
     let parentIsNode = PeerCheck.satisfiesNodeRequirement(pid: getppid(), token: nil)

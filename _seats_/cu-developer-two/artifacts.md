@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - artifacts'
 created: 2026-11-01T09:28:00Z
-modified: 2026-11-09T14:10:30Z
+modified: 2026-11-09T18:41:26Z
 level: L1
-version: 1.125.0
+version: 1.127.0
 description: 'Pointers to the persistent work of [cu] Developer Two (environments) - proposals, code, tests and run records - written by the seat itself.'
 status: unverified
 grounded_in:
@@ -16,6 +16,9 @@ Pointers only; each target is its own authority.
 
 | Date | Artifact | State |
 |---|---|---|
+| 2026-11-09 | #304 merged f235671f2 | CU-333 (in Verify): the fixture's open waits up to 30 s, every other call 10 s; stand-in rows with a 3 s floor pass under full load; landed through the full two-phase gate. |
+| 2026-11-09 | #325 merged 9e225a291 | CU-353 (in Verify; defensive pin, D-098): keyTarget answers a Control-Option chord with the accesskey element; the policy reads it as a press; the chord does not fire through this driver (smoke-recorded). |
+| 2026-11-09 | #320 merged 97a95e530 | CU-351 (High, in Verify): a click on a label is judged as the control it activates, named by the label when it has none (display:none boxes); live rows by cu-verifier. |
 | 2026-11-09 | #306 merged f28ecee80 | CU-332 (in Verify): the public repo's seat records folder _team_members_/ became _seats_/ (git mv of 52 files, 38 files' references rewritten, logs as written), cut behind a freeze; cu-coordinator repoints the roster refs. |
 | 2026-11-09 | #298 merged 662e7571a | CU-337 follow-up (re-cut of #296): the push gate judges what each ref adds beyond <remote>/main, so a branch that merged origin/main pushes clean; the --no-verify interim ended at 13:37Z. |
 | 2026-11-09 | #289 merged eab9ef530 | CU-327 (in Verify): only a hold's token ends it - a same-seat hold without it nests with its own token, a tokenless release pops the newest nested holder, an unknown token is refused; minutes still expire; every seat told. |

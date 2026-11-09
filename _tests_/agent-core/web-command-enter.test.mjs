@@ -76,8 +76,10 @@ test('CU-241: with no described focus a plain or Shift-Enter, typed text and oth
       assert.equal(verdict(web(target, key('ENTER'))), 'allow', 'Enter, no focus: a new line in an editor')
       assert.equal(verdict(web(target, key('SHIFT', 'ENTER'))), 'allow', 'Shift-Enter, no focus')
     }
-    assert.equal(verdict(web(target, { type: 'type', text: 'Thanks, see you then' })), 'allow', `typing, focus ${target?.tag ?? target}`)
-    assert.equal(verdict(web(target, key('META', 'B'))), 'allow', `Command-B, focus ${target?.tag ?? target}`)
+    // CU-363: text typed with no focus reaches the page's key handlers - a page shortcut; into a frame host it is the frame's.
+    assert.equal(verdict(web(target, { type: 'type', text: 'Thanks, see you then' })), target === null ? 'permission' : 'allow', `typing, focus ${target?.tag ?? target}`)
+    // CU-365: with no focus Command-B reaches the page's handlers - a page shortcut; into a frame host it is the frame's.
+    assert.equal(verdict(web(target, key('META', 'B'))), target === null ? 'permission' : 'allow', `Command-B, focus ${target?.tag ?? target}`)
   }
   // A held confirm reads no focus by design (dialog_open): the chord answers the dialog and is judged as that alone.
   const held = policy.classify(key('META', 'ENTER'), { url: 'https://mail.example/compose', target: null, dialog: { type: 'confirm', message: 'Leave this page?' } })
