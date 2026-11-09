@@ -6,7 +6,7 @@
 
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -28,14 +28,46 @@ export function sourceHash() {
   return hash.update(readFileSync(UNIT_TESTS)).digest('hex').slice(0, 16)
 }
 
+/** CU-335: the host-wide helper build lock - one helper build at a time across every seat (and the install). */
+export const BUILD_LOCK = process.env.CU_HELPER_BUILD_LOCK ?? '/tmp/cu-helper-build.lock'
+export const BUILD_WAIT_SECONDS = Number(process.env.CU_HELPER_BUILD_WAIT ?? 900)
+
+/**
+ * Run argv while holding the build lock. lockf frees it when the command's process ends, even if it is killed, so a
+ * killed test leaves no stale lock. A wait past `waitSeconds` throws, naming the lock (lockf exits 75, EX_TEMPFAIL).
+ */
+export function underBuildLock(argv, { lock = BUILD_LOCK, waitSeconds = BUILD_WAIT_SECONDS, env = process.env, stdio = ['ignore', 'ignore', 'pipe'] } = {}) {
+  // A caller that already holds the lock (a gate wrapping its whole helper step) is not made to wait for itself.
+  if (env.CU_HELPER_BUILD_LOCKED === '1') return execFileSync(argv[0], argv.slice(1), { env, stdio })
+  try {
+    return execFileSync('/usr/bin/lockf', ['-k', '-t', String(waitSeconds), lock, ...argv], { env: { ...env, CU_HELPER_BUILD_LOCKED: '1' }, stdio })
+  } catch (error) {
+    if (error?.status === 75) throw new Error(`another helper build held ${lock} for ${waitSeconds} s; try again when it ends`)
+    throw error
+  }
+}
+
+function paths(hash, cacheRoot) {
+  const root = join(cacheRoot, `cu-helper-test-${hash}`)
+  const app = join(root, 'CUHelper.app')
+  return { root, app, executable: join(app, 'Contents', 'MacOS', 'CUHelper'), unitTests: join(root, 'unit-tests') }
+}
+
 /** Build (or reuse) the bundle and the unit-test binary; returns their paths. */
 export function buildAll({ cacheRoot = '/tmp' } = {}) {
   const hash = sourceHash()
-  const root = join(cacheRoot, `cu-helper-test-${hash}`)
-  const app = join(root, 'CUHelper.app')
-  const executable = join(app, 'Contents', 'MacOS', 'CUHelper')
-  const unitTests = join(root, 'unit-tests')
+  const { root, app, executable, unitTests } = paths(hash, cacheRoot)
   if (existsSync(executable) && existsSync(unitTests)) return { root, app, executable, unitTests, hash, cached: true }
+  // CU-335: build under the host-wide lock, in a child that re-checks the cache once it holds it - a seat that waited
+  // for another's build of the same sources reuses it instead of compiling again.
+  underBuildLock([process.execPath, fileURLToPath(import.meta.url), '--build', hash, cacheRoot])
+  return { root, app, executable, unitTests, hash, cached: false }
+}
+
+/** The locked step: compile into a staging folder and rename it into place, unless the cache was filled meanwhile. */
+function buildLocked(hash, cacheRoot) {
+  const { root, executable, unitTests } = paths(hash, cacheRoot)
+  if (existsSync(executable) && existsSync(unitTests)) return
   // Build beside, then rename, so a concurrent reader never sees half a build.
   const staging = `${root}.staging-${process.pid}`
   rmSync(staging, { recursive: true, force: true })
@@ -52,5 +84,7 @@ export function buildAll({ cacheRoot = '/tmp' } = {}) {
     // Another run finished first: use its build.
     rmSync(staging, { recursive: true, force: true })
   }
-  return { root, app, executable, unitTests, hash, cached: false }
 }
+
+// Started as the locked child: compare real paths (CU-79 - through a symlink argv[1] keeps the link).
+if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url)) && process.argv[2] === '--build') buildLocked(process.argv[3], process.argv[4])

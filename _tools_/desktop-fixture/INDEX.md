@@ -1,8 +1,8 @@
 ---
 title: Desktop fixture (CU Fixture)
 created: 2026-11-02T08:34:00Z
-modified: 2026-11-05T12:27:23Z
-version: 0.5.0
+modified: 2026-11-09T02:45:00Z
+version: 0.6.0
 description: The [cu] team's native macOS fixture app - a swiftc-built AppKit app with a stable bundle id whose task and injection screens record raw facts, judged only by the harness over a private stdin/stdout channel.
 grounded_in:
   - source: ULTIMATE_GOAL.md@2.0.0 (evaluation row)
@@ -17,7 +17,7 @@ Writer: cu-verifier. Node 24 and Swift, no npm. Contract: [contract.md](contract
 |---|---|
 | [app/](app/INDEX.md) | the Swift sources of CU Fixture.app |
 | [build.mjs](build.mjs) | builds CU Fixture.app and CU Ledger.app with swiftc into `/tmp/cu-desktop-fixture-<hash>/`, ad-hoc signed |
-| [client.mjs](client.mjs) | `launchFixture()`: the harness side of the JSON-lines channel |
+| [client.mjs](client.mjs) | `launchFixture()`: the harness side of the JSON-lines channel; it starts the app only inside a desktop run or under the caller's own hold (`fixtureLaunchAllowed`, CU-305) |
 | [approve-always.mjs](approve-always.mjs) | the owner's one-time step: approve CU Fixture and CU Ledger 'always', asked on the controlling terminal only; launches and captures nothing |
 | [tasks.mjs](tasks.mjs) | the catalogue: seeded expected values, prompts, screen params, judges, oracle and obey plans |
 

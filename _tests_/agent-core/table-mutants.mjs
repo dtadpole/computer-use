@@ -44,7 +44,7 @@ export const MUTANTS = Object.freeze([
   { name: 'bound-menu-item-ignored', why: 'a chord is judged by its keys only, not as the menu item it fires (CU-232, CU-237)', mutations: [{ file: POLICY, find: '    const bound = context.boundMenuItem\n', replace: '    const bound = undefined\n' }],
     rows: ['menu-key-send-later', 'menu-key-delete-message-view'] },
   { name: 'path-card-ignored', why: 'a card number in a URL path is read as an id and sent unasked (CU-325)', mutations: [{ file: POLICY, find: "    if (pathCard(decode(segment), typedDigits)) return 'card'\n", replace: '' }],
-    rows: ['navigate-card number in a path (named limit)'] },
+    rows: ['navigate-card number in a path'] },
   { name: 'host-card-ignored', why: 'a card as a host label is not read (CU-326)', mutations: [{ file: POLICY, find: "  if (url.hostname.split('.').some((label) => pathCard(label))) return 'card'\n", replace: '' }],
     rows: ['navigate-card number as a host label'] },
   { name: 'split-card-ignored', why: 'a card split across all-digit path segments is not joined (CU-326)', mutations: [{ file: POLICY, find: "      if (k > i && cardNumber(joined)) return 'card'\n", replace: '' }],
