@@ -1,8 +1,8 @@
 ---
 title: What it does, approvals and known limits
 created: 2026-11-07T21:18:46Z
-modified: 2026-11-09T11:45:00Z
-version: 0.1.19
+modified: 2026-11-09T14:25:00Z
+version: 0.1.20
 level: L1
 status: unverified
 description: What the agent can and cannot do on your Mac, what it asks you, and its known limits.
@@ -17,6 +17,7 @@ grounded_in:
   - source: 'CU-322 live rows on helper 0.2.61 (cu-verifier 08:04Z, red-teamed by cu-researcher 08:07Z) - the address bar, menu bar and omnibox read inWebArea false and are judged as before; page targets stay refused'
   - source: 'computer-use #250 (CU-326 - a card in a host label, split across all-digit segments or zero-padded now asks; the limit line goes) and CU-336 (a short code into an unnamed payment frame, open, Medium - fix in #274)'
   - source: 'computer-use #174 (CU-263 - a human check is handed to the person: provider frames, frame hosts titled for one, pressed names, text and audio entries)'
+  - source: 'computer-use PR #294 (CU-340 - a value split across boxes asks at the completing box; digits typed after a desktop paste the run cannot read ask, a named over-ask)'
 ---
 
 # What it does, approvals and known limits
@@ -47,3 +48,4 @@ file choices are never pre-approved. Typed sensitive text stays out of run files
 - An approved app's built-in AI counts as part of the app.
 - A website's own shortcuts are judged by the focus, not their effect.
 - A card's security code or expiry typed into a payment frame whose title cannot be read is not asked.
+- Digits typed after an unreadable paste ask.
