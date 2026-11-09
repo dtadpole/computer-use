@@ -24,12 +24,14 @@ session worktree plus `--review` worktrees; never drives the desktop. State at 1
 
 ## Open
 
-- PR #307: table-mutants split-join-ignored (OK'd); CU-340 closes on cu-verifier's live rows.
+- CU-340 closes on cu-verifier's live rows (table-mutants entry landed, PR #307).
 - PR #291 (Fixes CU-339, OK'd): in its gate. PR #274 (Fixes CU-336, OK'd): next; when it lands, the guide's CU-336
   limit line becomes its over-ask (a short numeric entry in an unnamed third-party frame).
 
 ## Pending
 
+- New under-asks filed by cu-researcher 14:20Z, triage pending: CU-345 (non-English PIN/OTP/CVV labels, proposed
+  High), CU-347 (AWS secret, AIza, password=/token=, proposed High), CU-346 (separators, Medium).
 - CU-135 waits on the owner. Schedules: hourly pass; daily reflection 23:00Z.
 
 ## Lessons
