@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import vm from 'node:vm'
 
-import { activatableAncestor, clickLabel, closedRootHoldsEntry, collectPageText, deepActiveElement, describeElement, DRAG_TEXT_MAX, dragTextAt, implicitSubmitButton, pageExpression, selectionContainer, textEntered } from '../../_environments_/chrome-browser/page-scripts.mjs'
+import { accessKeyElement, accessKeyOf, keyChoice, selectKeyOption, selectTypeOptions, activatableAncestor, clickLabel, closedRootHoldsEntry, collectPageText, deepActiveElement, describeElement, DRAG_TEXT_MAX, dragTextAt, implicitSubmitButton, pageExpression, selectionContainer, textEntered } from '../../_environments_/chrome-browser/page-scripts.mjs'
 import { CARD } from '../fixture-shapes/shapes.mjs'
 
 const DEFAULT_STYLE = { visibility: 'visible', opacity: '1', fontSize: '16px', color: 'rgb(0, 0, 0)', backgroundColor: 'rgba(0, 0, 0, 0)' }
@@ -467,6 +467,86 @@ test('CU-175: activatableAncestor resolves a click on a label or icon to the but
   body.parentElement = null
 })
 
+test('label click: a click on a <label> (its text or inside it) is judged as the control the label activates - label.control; a control inside the label still wins; a label with no control stays a label', () => {
+  const chain = (...nodes) => { for (let i = 0; i + 1 < nodes.length; i += 1) nodes[i].parentElement = nodes[i + 1]; return nodes[0] }
+  const body = el('BODY')
+  // <label><input type=checkbox> Verify you are human</label>: the text is a span inside the label.
+  const box = el('INPUT', { type: 'checkbox' })
+  const wrap = chain(el('LABEL', { control: box }), body)
+  const text = chain(el('SPAN'), wrap)
+  assert.equal(activatableAncestor(text), box, 'the text of a wrapping label: its check box')
+  assert.equal(activatableAncestor(wrap), box, 'the label itself: its check box')
+  // <label for=del>Delete my account now</label> ... <button id=del>: the control sits elsewhere.
+  const button = chain(el('BUTTON'), el('FORM'), body)
+  const forLabel = chain(el('LABEL', { control: button, attrs: { for: 'del' } }), el('P'), body)
+  assert.equal(activatableAncestor(forLabel), button, 'a label for= a button: the button')
+  // A link in the label's text is what the browser activates: the walk meets it first.
+  const link = el('A', { attrs: { href: '/terms' } })
+  const inLink = chain(el('SPAN'), link, el('LABEL', { control: box }), body)
+  assert.equal(activatableAncestor(inLink), link, 'a link inside a label stays the link')
+  // A label that labels nothing (no for, no labelable descendant) is no control: the walk goes on as before.
+  const bare = chain(el('LABEL', { control: null }), el('DIV'), body)
+  assert.equal(activatableAncestor(bare), bare, 'a label with no control: the node itself')
+  // The innermost element with activation behaviour takes the click: a label nested in a button (invalid HTML, seen
+  // in the wild) forwards to its control, as the browser does; a span in the button above the label is still the button.
+  const outer = chain(el('BUTTON'), body)
+  const nested = chain(el('LABEL', { control: box }), outer)
+  assert.equal(activatableAncestor(nested), box, 'a label nested in a button: the label\'s control, the innermost activation')
+  assert.equal(activatableAncestor(chain(el('SPAN'), outer)), outer, 'a span beside it in the button: the button, as before')
+})
+
+test('CU-351: clickLabel names a control reached through its <label> by the label\'s words - a display:none check box has no name of its own; an aria-label on the way still comes first', () => {
+  const chain = (...nodes) => { for (let i = 0; i + 1 < nodes.length; i += 1) nodes[i].parentElement = nodes[i + 1]; return nodes[0] }
+  const body = el('BODY')
+  const hidden = el('INPUT', { type: 'checkbox', innerText: '' })
+  const label = chain(el('LABEL', { control: hidden, innerText: '  Verify   you are human ' }), body)
+  const span = chain(el('SPAN'), label)
+  assert.equal(clickLabel(span, hidden), 'Verify you are human', 'the text inside the label')
+  assert.equal(clickLabel(label, hidden), 'Verify you are human', 'the label itself')
+  const ariaLabel = chain(el('LABEL', { control: hidden, innerText: 'words', attrs: { 'aria-label': 'I am not a robot' } }), body)
+  assert.equal(clickLabel(ariaLabel, hidden), 'I am not a robot', 'an aria-label on the label comes first')
+  const other = chain(el('LABEL', { control: el('INPUT', { type: 'checkbox' }), innerText: 'Someone else' }), body)
+  assert.equal(clickLabel(other, hidden), null, 'a label of another control does not name this one')
+})
+
+test('CU-353: accessKeyOf - Control-Option-<letter or digit> (Shift allowed, never Command) is an accesskey chord; anything else is not', () => {
+  const press = (...keys) => accessKeyOf({ type: 'keypress', keys })
+  assert.equal(press('CTRL', 'ALT', 'D'), 'd')
+  assert.equal(press('ALT', 'CTRL', '7'), '7', 'any order, a digit')
+  assert.equal(press('CTRL', 'ALT', 'SHIFT', 'K'), 'k', 'Shift too')
+  assert.equal(press('control', 'option', 'x'), 'x', 'aliases')
+  for (const keys of [['CTRL', 'D'], ['ALT', 'D'], ['META', 'CTRL', 'ALT', 'D'], ['CTRL', 'ALT'], ['CTRL', 'ALT', 'D', 'E'], ['CTRL', 'ALT', 'ENTER'], ['CTRL', 'ALT', 'F5']]) {
+    assert.equal(press(...keys), null, keys.join('+'))
+  }
+  assert.equal(accessKeyOf({ type: 'type', text: 'd' }), null)
+})
+
+test('CU-353: accessKeyElement - the first element in document order whose accesskey lists the key, any case; null when none', () => {
+  const node = (accesskey, shadowRoot) => ({ getAttribute: (name) => (name === 'accesskey' ? accesskey : null), shadowRoot })
+  const del = node('D')
+  const multi = node('x  h')
+  const shadowButton = node('k')
+  const host = node(null, { querySelectorAll: (selector) => (selector === '*' ? [node(null), shadowButton] : []) })
+  const doc = { querySelectorAll: (selector) => (selector === '*' ? [node(null), node(''), host, del, node('d'), multi] : []) }
+  assert.equal(accessKeyElement(doc, 'd'), del, 'the first match, case-insensitive')
+  assert.equal(accessKeyElement(doc, 'h'), multi, 'one of several listed keys')
+  assert.equal(accessKeyElement(doc, 'q'), null)
+  assert.equal(accessKeyElement(doc, 'k'), shadowButton, 'inside an open shadow root (cu-researcher)')
+  const rebuilt = new Function(`return (${accessKeyElement.toString()})`)()
+  assert.equal(rebuilt(doc, 'D'), del, 'self-contained: rebuilt from its source, as the driver runs it')
+})
+
+test('label click (cu-researcher\'s rows): a span nested in a label for= a Delete button is judged as the button; a label in a shadow root whose for= names a light-DOM control has no control and stays a label (named limit)', () => {
+  const chain = (...nodes) => { for (let i = 0; i + 1 < nodes.length; i += 1) nodes[i].parentElement = nodes[i + 1]; return nodes[0] }
+  const body = el('BODY')
+  const button = chain(el('BUTTON'), body)
+  const span = chain(el('SPAN'), el('B'), el('LABEL', { control: button, attrs: { for: 'del' } }), body)
+  assert.equal(activatableAncestor(span), button)
+  const shadowLabel = el('LABEL', { control: null, attrs: { for: 'light-box' } })
+  shadowLabel.getRootNode = () => ({ host: chain(el('X-FORM'), body) })
+  assert.equal(activatableAncestor(shadowLabel), shadowLabel, 'label.control is null across trees: the label itself')
+})
+
 test('CU-175: activatableAncestor is self-contained - rebuilt from its own source, as the driver runs it in the page', () => {
   const isolated = new Function(`return (${activatableAncestor.toString()})`)()
   const button = el('BUTTON')
@@ -600,4 +680,65 @@ test('CU-271: describeElement marks a web terminal, a notebook cell, a notebook 
   el('DIV', { attrs: { class: 'cell notes' }, children: [plain] })
   const none = describeElement(plain)
   assert.deepEqual([none.terminal, none.notebookCell, none.notebookSurface, none.codeSurface], [undefined, undefined, undefined, undefined], 'an ordinary textarea')
+})
+
+test('CU-370: the option a key moves a native select to - arrows, Home/End, type-ahead; Enter/Space unread; no change is null', () => {
+  const opt = (text, extra = {}) => ({ text, label: text, disabled: false, parentNode: { tagName: 'SELECT' }, ...extra })
+  const select = (selectedIndex, extra = {}) => ({ tagName: 'SELECT', multiple: false, disabled: false, selectedIndex, options: [opt('Bulk actions'), opt('Archive'), opt('Delete'), opt('Details'), opt('Locked', { disabled: true }), opt('Sort: Newest')], ...extra })
+  assert.deepEqual(selectKeyOption(select(0), 'ArrowDown'), { index: 1 })
+  assert.deepEqual(selectKeyOption(select(3), 'ArrowDown'), { index: 5 }, 'a disabled option is skipped')
+  assert.equal(selectKeyOption(select(5), 'ArrowDown'), null, 'at the end nothing changes')
+  assert.deepEqual(selectKeyOption(select(2), 'ArrowUp'), { index: 1 })
+  assert.deepEqual(selectKeyOption(select(3), 'Home'), { index: 0 })
+  assert.deepEqual(selectKeyOption(select(0), 'End'), { index: 5 })
+  assert.deepEqual(selectKeyOption(select(0), 'd'), { index: 2 }, "type-ahead 'd' from the current option lands on Delete")
+  assert.deepEqual(selectKeyOption(select(2), 'd'), { index: 3 }, "'d' again moves on to Details")
+  assert.deepEqual(selectKeyOption(select(3), 'D'), { index: 2 }, 'it wraps, case-insensitively')
+  assert.equal(selectKeyOption(select(0), 'z'), null)
+  assert.deepEqual(selectKeyOption(select(0), 'Enter'), { unread: true })
+  assert.deepEqual(selectKeyOption(select(0), ' '), { unread: true })
+  assert.equal(selectKeyOption(select(0), 'Tab'), null)
+  assert.equal(selectKeyOption(select(0, { multiple: true }), 'ArrowDown'), null, 'a multi-select is no such select')
+  assert.equal(selectKeyOption(select(0, { disabled: true }), 'ArrowDown'), null)
+  assert.equal(selectKeyOption({ tagName: 'INPUT' }, 'ArrowDown'), null)
+  const grouped = { tagName: 'SELECT', selectedIndex: 0, options: [opt('A'), opt('Delete', { parentNode: { tagName: 'OPTGROUP', disabled: true } }), opt('Done')] }
+  assert.deepEqual(selectKeyOption(grouped, 'ArrowDown'), { index: 2 }, 'an option in a disabled group is skipped')
+})
+
+test('CU-370: every option a typed string passes through - the accumulated prefix, a repeated letter cycling', () => {
+  const opt = (text) => ({ text, label: text, disabled: false, parentNode: { tagName: 'SELECT' } })
+  const select = (selectedIndex) => ({ tagName: 'SELECT', selectedIndex, options: [opt('Bulk actions'), opt('Archive'), opt('Delete'), opt('Details'), opt('Sort: Newest')] })
+  assert.deepEqual(selectTypeOptions(select(0), 'Del'), [2], "'Del' reaches Delete")
+  assert.deepEqual(selectTypeOptions(select(0), 'Det'), [2, 3], "'Det' passes through Delete on its way to Details")
+  assert.deepEqual(selectTypeOptions(select(0), 'dd'), [2, 3], "'dd' cycles Delete then Details")
+  assert.deepEqual(selectTypeOptions(select(0), 'Sort'), [4])
+  assert.deepEqual(selectTypeOptions(select(0), 'xyz'), [], 'nothing matches')
+  assert.deepEqual(selectTypeOptions(select(-1), 'a'), [1], 'from no selection')
+  assert.equal(selectTypeOptions({ tagName: 'DIV' }, 'Del'), null)
+})
+
+test('CU-370: keyChoice - a select\'s option, unread for Enter/Page keys and listbox selects; Left/Right as neighbours', () => {
+  const opt = (text) => ({ text, label: text, disabled: false, parentNode: { tagName: 'SELECT' } })
+  const options = [opt('Bulk actions'), opt('Archive'), opt('Delete')]
+  const select = (extra = {}) => ({ tagName: 'SELECT', selectedIndex: 1, options, getAttribute: () => null, ...extra })
+  assert.equal(keyChoice(select(), 'ArrowRight', selectKeyOption), options[2], 'ArrowRight as ArrowDown')
+  assert.equal(keyChoice(select(), 'ArrowLeft', selectKeyOption), options[0])
+  assert.equal(keyChoice(select(), 'd', selectKeyOption), options[2])
+  assert.equal(keyChoice(select(), 'PageDown', selectKeyOption), 'unread')
+  assert.equal(keyChoice(select(), 'Enter', selectKeyOption), 'unread')
+  assert.equal(keyChoice(select({ multiple: true }), 'ArrowDown', selectKeyOption), 'unread', 'a multiple select is a listbox: ask')
+  assert.equal(keyChoice(select({ size: 4 }), 'd', selectKeyOption), 'unread', 'size > 1 too')
+  assert.equal(keyChoice(select({ size: 4 }), 'Tab', selectKeyOption), null)
+})
+
+test('CU-370: keyChoice - an arrow on a radio lands on the next one of its group, wrapping, skipping disabled ones', () => {
+  const form = { elements: [] }
+  const radio = (name, extra = {}) => ({ tagName: 'INPUT', type: 'radio', name, form, disabled: false, getAttribute: () => null, ...extra })
+  const keep = radio('account'); const locked = radio('account', { disabled: true }); const del = radio('account'); const other = radio('plan')
+  form.elements.push(keep, other, locked, del)
+  assert.equal(keyChoice(keep, 'ArrowDown', selectKeyOption), del, "from 'Keep' ArrowDown lands on 'Delete my account' (the disabled one skipped)")
+  assert.equal(keyChoice(keep, 'ArrowUp', selectKeyOption), del, 'wrapping')
+  assert.equal(keyChoice(del, 'ArrowRight', selectKeyOption), keep)
+  assert.equal(keyChoice(keep, 'Enter', selectKeyOption), null, 'Enter chooses no radio')
+  assert.equal(keyChoice(other, 'ArrowDown', selectKeyOption), null, 'a group of one')
 })

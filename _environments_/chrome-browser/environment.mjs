@@ -8,7 +8,8 @@ import { historyMove } from './input-plan.mjs'
 import { clipboardOp, executeAction, NAVIGATION_TIMEOUT_MS, navigateHistory, sendInput, settle } from './executor.mjs'
 import { planHumanInput } from './human-input.mjs'
 import { processCommandLine, sandboxProblem, SEAT_PATTERN, startChrome } from './launch.mjs'
-import { activatableAncestor, autofilledFields, clickLabel, closedRootHoldsEntry, collectPageText, deepActiveElement, describeElement, DRAG_TEXT_MAX, dragTextAt, FRAME_FOCUS_EXPRESSION, implicitSubmitButton, pageExpression, selectionContainer, textEntered, TWO_FRAMES_EXPRESSION } from './page-scripts.mjs'
+import { normalizeKey } from './keys.mjs'
+import { accessKeyElement, accessKeyOf, activatableAncestor, autofilledFields, clickLabel, closedRootHoldsEntry, collectPageText, deepActiveElement, describeElement, DRAG_TEXT_MAX, dragTextAt, FRAME_FOCUS_EXPRESSION, implicitSubmitButton, keyChoice, selectKeyOption, selectTypeOptions, pageExpression, selectionContainer, textEntered, TWO_FRAMES_EXPRESSION } from './page-scripts.mjs'
 
 /** CU-300: how long focusedElement may spend reading the focus inside a cross-site frame before it keeps the iframe. */
 export const FRAME_FOCUS_MS = 2000
@@ -503,6 +504,145 @@ class BrowserEnvironment {
     if (described === null) return undefined
     const submit = await this.#implicitSubmit(target, inner.backendNodeId)
     return { ...described, frameHost: host, defaultButton: submit.button, defaultButtonRead: submit.read }
+  }
+
+  /**
+   * CU-353: the element a keypress acts on. A Control-Option-<key> chord fires the element whose accesskey is that key
+   * (see accessKeyOf), so that element - through activatableAncestor, a label's control included - is the target,
+   * described as inspectPoint describes one and marked `accessKey: true`; agent core judges the chord as a press on it.
+   * Any other keypress, a chord no element answers, or a lookup that fails: focusedElement(), as before.
+   */
+  async keyTarget(action) {
+    this.#assertOpen()
+    const key = accessKeyOf(action)
+    const page = this.session.foreground()
+    if (key !== null && page.dialog === null) {
+      try {
+        const world = await this.session.isolatedContext(page, page.mainFrameId)
+        const found = (await this.session.send(page, 'Runtime.evaluate', {
+          expression: `(${accessKeyElement.toString()})(document, ${JSON.stringify(key)})`, contextId: world, returnByValue: false,
+        })).result.result
+        if (typeof found?.objectId === 'string') {
+          const node = (await this.session.send(page, 'DOM.describeNode', { objectId: found.objectId })).result.node
+          const activating = await this.#activating(page, node.backendNodeId, page.mainFrameId)
+          const described = await this.#describe(page, activating.id, page.mainFrameId, { fallbackName: activating.name })
+          if (described !== null && described !== undefined) return { ...described, accessKey: true }
+        }
+      } catch {
+        // The page's world is gone: the focused element, as before (a named limit).
+      }
+    }
+    if (page.dialog === null && BrowserEnvironment.#plainKey(action) !== null) {
+      try {
+        const option = await this.#keyOption(page, action)
+        if (option !== undefined) return option
+      } catch {
+        // A failed read never falls back silently on a control that chooses: the policy asks (cu-researcher's point 4).
+        const focus = await this.focusedElement()
+        if (BrowserEnvironment.#choosing(focus)) return { ...focus, optionUnread: true, readFailed: true }
+        return focus
+      }
+    }
+    return this.focusedElement()
+  }
+
+  /** CU-370: a focus whose keys can choose something - a select, listbox, combobox that takes no text, radio. */
+  static #choosing(focus) {
+    if (focus === null || focus === undefined) return false
+    if (focus.tag === 'select' || focus.inputType === 'radio') return true
+    return ['listbox', 'combobox', 'radio', 'option', 'radiogroup'].includes(String(focus.role ?? '')) && focus.editable !== true
+  }
+
+  /**
+   * CU-370: the main key of a keypress with no modifier but Shift, canonical (keys.mjs), or null.
+   */
+  static #plainKey(action) {
+    if (action?.type !== 'keypress' || !Array.isArray(action.keys)) return null
+    let keys
+    try {
+      keys = action.keys.map((key) => normalizeKey(String(key)))
+    } catch {
+      return null
+    }
+    const main = keys.filter((key) => !['Shift', 'Control', 'Alt', 'Meta'].includes(key))
+    if (main.length !== 1 || keys.some((key) => ['Control', 'Alt', 'Meta'].includes(key))) return null
+    return main[0]
+  }
+
+  /**
+   * CU-370: a key that chooses is judged by what it chooses (keyChoice): a native select's option, the radio an arrow
+   * checks, the ARIA listbox/combobox option it moves to or commits - described, with selectOption: true (an option) or
+   * radioChoice: true (a radio); a choice that cannot be read returns the focus with optionUnread: true. undefined when
+   * the key chooses nothing - the caller falls back to the focus. A throw means a failed read (the caller asks). The focus is read in the page's world through open
+   * shadow roots and same-origin frames (deepActiveElement); a cross-site frame's select is a named limit.
+   */
+  async #keyOption(page, action) {
+    const key = BrowserEnvironment.#plainKey(action)
+    if (key === null) return undefined
+    const world = await this.session.isolatedContext(page, page.mainFrameId)
+    const expression = `(() => {
+      const el = (${deepActiveElement.toString()})(document)
+      return (${keyChoice.toString()})(el, ${JSON.stringify(key)}, ${selectKeyOption.toString()})
+    })()`
+    const found = (await this.session.send(page, 'Runtime.evaluate', { expression, contextId: world, returnByValue: false })).result.result
+    if (found?.type === 'string' && found.value === 'unread') {
+      const focus = await this.focusedElement()
+      return focus === null ? undefined : { ...focus, optionUnread: true }
+    }
+    if (typeof found?.objectId !== 'string') return undefined
+    return this.#describeOption(page, found.objectId)
+  }
+
+
+  /** CU-370: an option element, described as a target - its own text the name when the AX tree has none for it. */
+  async #describeOption(page, objectId) {
+    const node = (await this.session.send(page, 'DOM.describeNode', { objectId })).result.node
+    const text = (await this.session.send(page, 'Runtime.callFunctionOn', {
+      objectId, functionDeclaration: 'function () { const own = this.labels && this.labels[0] ? this.labels[0].textContent : null; return String(this.label || own || this.textContent || \'\').replace(/\\s+/g, \' \').trim().slice(0, 200) }', returnByValue: true,
+    })).result.result?.value ?? null
+    const described = await this.#describe(page, node.backendNodeId, page.mainFrameId, { node, fallbackName: text })
+    if (described === null || described === undefined) return undefined
+    const radio = described.inputType === 'radio' || described.role === 'radio'
+    // Option or radio, the chosen element carries selectOption (one flag for the policy; cu-coordinator 20:11Z).
+    return { ...described, name: described.name || text, selectOption: true, ...(radio ? { radioChoice: true } : {}) }
+  }
+
+  /**
+   * CU-370: for a type action whose focus is a native single <select>, every option the typed string moves it through
+   * (selectTypeOptions: Chrome's accumulated type-ahead, each step selecting), each described with selectOption: true,
+   * in order; [] when nothing matches; `{ unread: true }` for a multiple or size>1 select, or a failed read on a select
+   * (the policy asks); null when the focus is no select (the type is judged as before). Agent core judges each option
+   * like a click on it, keeping the strongest class.
+   */
+  async typeOptions(action) {
+    this.#assertOpen()
+    if (action?.type !== 'type' || typeof action.text !== 'string') return null
+    const page = this.session.foreground()
+    if (page.dialog !== null) return null
+    try {
+      const world = await this.session.isolatedContext(page, page.mainFrameId)
+      const expression = `(() => {
+        const el = (${deepActiveElement.toString()})(document)
+        if (el && String(el.tagName || '').toUpperCase() === 'SELECT' && !el.disabled && (el.multiple || Number(el.size) > 1)) return 'unread'
+        const indices = (${selectTypeOptions.toString()})(el, ${JSON.stringify(action.text)})
+        return indices === null ? null : indices.map((index) => el.options[index])
+      })()`
+      const found = (await this.session.send(page, 'Runtime.evaluate', { expression, contextId: world, returnByValue: false })).result.result
+      if (found?.type === 'string' && found.value === 'unread') return { unread: true }
+      if (typeof found?.objectId !== 'string') return null
+      const properties = (await this.session.send(page, 'Runtime.getProperties', { objectId: found.objectId, ownProperties: true })).result.result ?? []
+      const elements = properties.filter((entry) => /^\d+$/.test(entry.name) && typeof entry.value?.objectId === 'string').sort((a, b) => Number(a.name) - Number(b.name))
+      const options = []
+      for (const entry of elements) {
+        const option = await this.#describeOption(page, entry.value.objectId)
+        if (option !== undefined) options.push(option)
+      }
+      return options
+    } catch {
+      // A failed read on a select is no 'not a select': it asks (cu-researcher's point 4).
+      const focus = await this.focusedElement().catch(() => null)
+      return focus?.tag === 'select' ? { unread: true, readFailed: true } : null
+    }
   }
 
   /**

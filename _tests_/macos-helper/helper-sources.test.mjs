@@ -254,3 +254,34 @@ test('CU-341 (CU-203): the confirm prompt cannot take a Return - never key or ma
   assert.match(press, /override func performKeyEquivalent\(with event: NSEvent\) -> Bool \{ false \}/, 'a key equivalent never presses a prompt button')
   assert.doesNotMatch(prompt, /keyEquivalent = "\\r"|makeKeyAndOrderFront|NSApp\.activate/, 'nothing makes the prompt key or the helper active')
 })
+
+test('CU-349: describe() reports an entry\'s placeholder from AXPlaceholderValue and never reads its AXValue for it', () => {
+  const access = readFileSync(join(SOURCES, 'Accessibility.swift'), 'utf8')
+  const key = access.split('\n').find((l) => l.includes('"placeholder":'))
+  assert.ok(key, 'describe() has a placeholder key')
+  // CU-361 (helper 0.2.64): the value is computed once into a local, which the nearbyLabel guard reads too.
+  assert.match(key, /"placeholder": \.optionalString\(placeholderValue\),/)
+  const line = access.split('\n').find((l) => l.includes('let placeholderValue ='))
+  assert.ok(line, 'describe() computes the placeholder into a local')
+  assert.match(line, /Placeholder\.applies\(role: role\) \? Placeholder\.pick\(role: role, raw: string\(element, "AXPlaceholderValue"\)\) : nil/)
+  for (const l of [key, line]) assert.doesNotMatch(l, /AXValue"/, 'the placeholder is never the field\'s value')
+})
+
+test('CU-361: describe() reports a nearby label only for an unnamed entry, from its window\'s static texts, never the entry\'s own value', () => {
+  const access = readFileSync(join(SOURCES, 'Accessibility.swift'), 'utf8')
+  const line = access.split('\n').find((l) => l.includes('"nearbyLabel":'))
+  assert.ok(line, 'describe() has a nearbyLabel key')
+  assert.match(line, /Placeholder\.applies\(role: role\) && title == nil && captionValue == nil && placeholderValue == nil \? nearbyLabel\(element\) : nil/,
+    'only an entry with no title, caption or placeholder asks for one')
+  assert.doesNotMatch(line, /AXValue"/, 'the key\'s line never reads the entry\'s own value')
+  assert.match(access, /"caption": \.optionalString\(captionValue\),/, 'the guard reads the same caption describe() reports')
+  const start = access.indexOf('private static func nearbyLabel(_ element: AXUIElement) -> String? {')
+  assert.ok(start > 0, 'the nearbyLabel helper exists')
+  const helper = access.slice(start, access.indexOf('\n  }\n', start))
+  assert.match(helper, /guard let box = frame\(element\), let window = elementAttribute\(element, "AXWindow"\)/)
+  assert.match(helper, /descendants\(of: window, limit: 400\)/)
+  assert.match(helper, /\.filter \{ string\(\$0, "AXRole"\) == "AXStaticText" \}/, 'only static texts are candidates')
+  assert.match(helper, /string\(label, "AXValue"\)/, 'a candidate\'s words are the static text\'s AXValue')
+  assert.doesNotMatch(helper, /string\(element, "AXValue"\)|attribute\(element, "AXValue"\)/, 'the entry\'s own value is never read')
+  assert.match(helper, /NearbyLabel\.pick\(box: box, candidates: candidates\)/)
+})

@@ -506,7 +506,8 @@ export function describeElement(el) {
  * CU-175: the element a click at `el` activates, in two passes over the flat tree (a slotted node's slot, then its
  * parent, then a shadow root's host), stopping at <body>:
  * 1. the nearest button, link, summary, select, button-like input, element with a control role, or element with an
- *    onclick handler;
+ *    onclick handler - or, when a <label> comes first, the control it labels (label.control), which the browser
+ *    activates for it;
  * 2. else, when `el` shows a pointer cursor, the topmost element of that run of pointer cursors - cursor is inherited, so
  *    the element that set it is the highest one still showing it (a script-wired <div> 'button').
  * Else `el` itself. Hit testing returns the innermost node - a <span> label or an <svg> icon inside a 'Delete' button -
@@ -529,6 +530,12 @@ export function activatableAncestor(el) {
     if (tag === 'button' || tag === 'summary' || tag === 'select' || CONTROL_ROLES.includes(String(attr('role') || '').toLowerCase()) ||
       (tag === 'a' && attr('href') !== null) || attr('onclick') !== null ||
       (tag === 'input' && BUTTON_INPUTS.includes(String(node.type || '').toLowerCase()))) return node
+    // A click on a <label>'s text activates its control (the browser forwards it): the control is the target, so the
+    // control's own rules judge the click (cu-verifier, 9 Nov: a CAPTCHA box toggled and a Delete button fired through
+    // their labels unjudged). A control met first inside the label - a link in its text - was returned above, as the
+    // browser activates that one. A label with no control stays a label - so does a label in a shadow root whose for=
+    // names a light-DOM control, as label.control is null across trees (a named limit; cu-researcher).
+    if (tag === 'label' && node.control && node.control.nodeType === 1) return node.control
   }
   const view = el && el.ownerDocument && el.ownerDocument.defaultView
   const pointer = (candidate) => {
@@ -552,8 +559,9 @@ export function activatableAncestor(el) {
  * CU-175: a name for a click target the accessibility tree leaves unnamed (a <div onclick> computes no name from its
  * content), so a target that shows words is never judged as nameless. Only for a target a click activates (a control,
  * an onclick handler or a pointer cursor) - plain reading text is not a control and keeps its own (empty) name. The
- * first aria-label, title or alt from the clicked node up to the target, else the target's visible text, at most 80
- * characters (a label is short); null when there is none. Self-contained: it runs serialized in the page.
+ * first aria-label, title or alt from the clicked node up to the target - or the words of the <label> the click came
+ * through (CU-351) - else the target's visible text, at most 80 characters (a label is short); null when there is
+ * none. Self-contained: it runs serialized in the page.
  */
 export function clickLabel(hit, target) {
   const CONTROL_ROLES = ['button', 'link', 'menuitem', 'menuitemcheckbox', 'menuitemradio', 'tab', 'checkbox', 'radio', 'switch',
@@ -582,12 +590,191 @@ export function clickLabel(hit, target) {
     if (node.nodeType === 1) {
       const label = clean(attr(node, 'aria-label') || attr(node, 'title') || (String(node.tagName || '').toLowerCase() === 'img' ? attr(node, 'alt') : ''))
       if (label) return label
+      // The click came through a <label> of the target (activatableAncestor's label step): the label's words name it -
+      // a display:none check box styled by its label has no accessibility name of its own (CU-351).
+      if (String(node.tagName || '').toLowerCase() === 'label' && node.control === target) return clean(node.innerText || node.textContent) || null
     }
     if (node === target) break
     const root = node.getRootNode ? node.getRootNode() : null
     node = node.assignedSlot || node.parentElement || (root && root !== node && root.host) || null
   }
   return clean(target.innerText || target.textContent) || null
+}
+
+/**
+ * CU-353: the key of an accesskey chord - Control-Option-<key> on a Mac (Shift allowed, never Command) fires the element
+ * whose accesskey is that key, not the focused one (cu-researcher's probe, 9 Nov). The key in lower case, or null for any
+ * other keypress. Keys arrive canonical (CTRL, ALT, SHIFT, META, a letter or digit); common aliases are accepted.
+ */
+export function accessKeyOf(action) {
+  if (action?.type !== 'keypress' || !Array.isArray(action.keys)) return null
+  const alias = { CONTROL: 'CTRL', OPTION: 'ALT', OPT: 'ALT', CMD: 'META', COMMAND: 'META' }
+  const keys = action.keys.map((key) => { const upper = String(key).toUpperCase(); return alias[upper] ?? upper })
+  if (!keys.includes('CTRL') || !keys.includes('ALT') || keys.includes('META')) return null
+  const main = keys.filter((key) => !['CTRL', 'ALT', 'SHIFT'].includes(key))
+  return main.length === 1 && /^[A-Z0-9]$/.test(main[0]) ? main[0].toLowerCase() : null
+}
+
+/**
+ * CU-370: the option one key moves a focused native single <select> to - `{ index }` of that option; `{ unread: true }`
+ * for Enter or Space (they open the popup or commit its highlight, which no page script can read, so the policy asks);
+ * null for anything else, or when the value would not change. ArrowDown/ArrowUp: the next/previous enabled option;
+ * Home/PageUp and End/PageDown: the first/last; a printable character: Chrome's type-ahead from the option after the
+ * current one, wrapping. Self-contained: it runs serialized in the page.
+ */
+export function selectKeyOption(select, key) {
+  if (!select || String(select.tagName || '').toUpperCase() !== 'SELECT' || select.multiple || select.disabled) return null
+  const options = Array.from(select.options || [])
+  const usable = (o) => Boolean(o) && !o.disabled && !(o.parentNode && String(o.parentNode.tagName || '').toUpperCase() === 'OPTGROUP' && o.parentNode.disabled)
+  const label = (o) => String(o.label || o.text || '').replace(/\s+/g, ' ').trim().toLowerCase()
+  const current = typeof select.selectedIndex === 'number' ? select.selectedIndex : -1
+  const pick = (index) => (index >= 0 && index !== current ? { index } : null)
+  if (key === 'Enter' || key === ' ') return { unread: true }
+  if (key === 'ArrowDown') {
+    for (let i = current + 1; i < options.length; i += 1) if (usable(options[i])) return pick(i)
+    return null
+  }
+  if (key === 'ArrowUp') {
+    for (let i = current - 1; i >= 0; i -= 1) if (usable(options[i])) return pick(i)
+    return null
+  }
+  if (key === 'Home' || key === 'PageUp') return pick(options.findIndex(usable))
+  if (key === 'End' || key === 'PageDown') {
+    for (let i = options.length - 1; i >= 0; i -= 1) if (usable(options[i])) return pick(i)
+    return null
+  }
+  if (typeof key === 'string' && key.length === 1) {
+    const needle = key.toLowerCase()
+    for (let k = 1; k <= options.length; k += 1) {
+      const i = (((current + k) % options.length) + options.length) % options.length
+      if (usable(options[i]) && label(options[i]).startsWith(needle)) return pick(i)
+    }
+  }
+  return null
+}
+
+/**
+ * CU-370: every option a typed string moves a focused native single <select> through, in order - Chrome's type-ahead
+ * accumulates the prefix ('Del' reaches Delete, not Details by 'D' then 'e'), each step selects (and may fire change),
+ * so each step's option counts (cu-researcher). A prefix of one repeated character cycles through that character's
+ * options. Indices without repeats; [] when nothing matches; null when the element is no such select. Self-contained.
+ */
+export function selectTypeOptions(select, text) {
+  if (!select || String(select.tagName || '').toUpperCase() !== 'SELECT' || select.multiple || select.disabled) return null
+  const options = Array.from(select.options || [])
+  const usable = (o) => Boolean(o) && !o.disabled && !(o.parentNode && String(o.parentNode.tagName || '').toUpperCase() === 'OPTGROUP' && o.parentNode.disabled)
+  const label = (o) => String(o.label || o.text || '').replace(/\s+/g, ' ').trim().toLowerCase()
+  let current = typeof select.selectedIndex === 'number' ? select.selectedIndex : -1
+  let prefix = ''
+  const landed = []
+  for (const ch of String(text ?? '')) {
+    prefix += ch.toLowerCase()
+    const repeated = prefix.length > 1 && Array.from(prefix).every((c) => c === prefix[0])
+    const needle = repeated ? prefix[0] : prefix
+    const from = prefix.length === 1 || repeated ? current + 1 : current
+    for (let k = 0; k < options.length; k += 1) {
+      const i = (((from + k) % options.length) + options.length) % options.length
+      if (usable(options[i]) && label(options[i]).startsWith(needle)) {
+        current = i
+        if (!landed.includes(i)) landed.push(i)
+        break
+      }
+    }
+  }
+  return landed
+}
+
+/**
+ * CU-370: what one plain key on the focused element `el` chooses - the element it would select or check (an option of a
+ * native select via `selectKeyOption`, which the caller passes in, as this runs serialized; the next or previous radio
+ * of the group; the ARIA listbox/combobox option it moves to or commits), the string 'unread' when a choice changes but
+ * cannot be read (Enter/Space on a select, PageUp/PageDown, any navigation in a multiple or size>1 select), or null when
+ * the key chooses nothing here. ArrowLeft/ArrowRight count as ArrowUp/ArrowDown (a safe over-ask where the platform
+ * ignores them; cu-researcher). Radios: one name in one form (or none), wrapping, skipping disabled ones; ARIA radios
+ * in their radiogroup, skipping aria-disabled. ARIA listbox: its role=option elements; a combobox's via aria-controls
+ * or aria-owns; aria-activedescendant names the current one, else the focused option itself. Self-contained.
+ */
+export function keyChoice(el, key, selectKeyOptionFn) {
+  if (!el || typeof key !== 'string') return null
+  const tag = String(el.tagName || '').toUpperCase()
+  const attr = (node, name) => (node && typeof node.getAttribute === 'function' ? node.getAttribute(name) : null)
+  const role = String(attr(el, 'role') || '').toLowerCase()
+  const forward = key === 'ArrowDown' || key === 'ArrowRight'
+  const backward = key === 'ArrowUp' || key === 'ArrowLeft'
+  const navigation = forward || backward || ['Home', 'End', 'PageUp', 'PageDown'].includes(key)
+  const step = (list, current) => {
+    if (list.length === 0) return null
+    if (key === 'Home') return list[0]
+    if (key === 'End') return list[list.length - 1]
+    if (current < 0) return forward ? list[0] : backward ? list[list.length - 1] : null
+    if (forward) return list[(current + 1) % list.length]
+    if (backward) return list[(current - 1 + list.length) % list.length]
+    return null
+  }
+  if (tag === 'SELECT') {
+    if (el.disabled) return null
+    if (el.multiple || Number(el.size) > 1) return navigation || key === ' ' || key === 'Enter' || key.length === 1 ? 'unread' : null
+    if (key === 'PageUp' || key === 'PageDown') return 'unread'
+    const moved = selectKeyOptionFn(el, key === 'ArrowRight' ? 'ArrowDown' : key === 'ArrowLeft' ? 'ArrowUp' : key)
+    if (moved === null) return null
+    return moved.unread ? 'unread' : el.options[moved.index]
+  }
+  if (tag === 'INPUT' && String(el.type || '').toLowerCase() === 'radio') {
+    if (!(forward || backward) || !el.name) return null
+    const pool = el.form ? Array.from(el.form.elements || []) : Array.from(el.ownerDocument ? el.ownerDocument.querySelectorAll('input') : [])
+    const group = pool.filter((r) => String(r.tagName || '').toUpperCase() === 'INPUT' && String(r.type || '').toLowerCase() === 'radio' && r.name === el.name && (r.form || null) === (el.form || null) && (r === el || !r.disabled))
+    const next = step(group, group.indexOf(el))
+    return next && next !== el ? next : null
+  }
+  if (role === 'radio') {
+    if (!(forward || backward)) return null
+    const box = typeof el.closest === 'function' ? el.closest('[role="radiogroup"]') : null
+    if (!box) return null
+    const group = Array.from(box.querySelectorAll('[role="radio"]')).filter((r) => r === el || attr(r, 'aria-disabled') !== 'true')
+    const next = step(group, group.indexOf(el))
+    return next && next !== el ? next : null
+  }
+  const doc = el.ownerDocument
+  const byId = (id) => {
+    if (!id) return null
+    const root = typeof el.getRootNode === 'function' ? el.getRootNode() : null
+    return (root && typeof root.getElementById === 'function' ? root.getElementById(id) : null) || (doc ? doc.getElementById(id) : null)
+  }
+  let box = null
+  let current = null
+  if (role === 'listbox') box = el
+  else if (role === 'combobox') box = byId(String(attr(el, 'aria-controls') || attr(el, 'aria-owns') || '').split(/\s+/)[0]) || el
+  else if (role === 'option') {
+    box = typeof el.closest === 'function' ? el.closest('[role="listbox"]') : null
+    current = el
+  }
+  if (!box || typeof box.querySelectorAll !== 'function') return null
+  const options = Array.from(box.querySelectorAll('[role="option"]')).filter((o) => attr(o, 'aria-disabled') !== 'true')
+  if (current === null) current = byId(attr(el, 'aria-activedescendant'))
+  const index = current ? options.indexOf(current) : -1
+  if (key === 'Enter') return role === 'option' ? null : index >= 0 ? options[index] : null
+  if (!navigation || key === 'PageUp' || key === 'PageDown') return navigation ? 'unread' : null
+  const next = step(options, index)
+  return next && next !== current ? next : null
+}
+
+/**
+ * CU-353: the first element whose accesskey names `key` (any of its space-separated keys, any case), or null - the
+ * document in order, then each open shadow root (a web component's accesskey button; cu-researcher). Other frames and
+ * closed roots are not searched (a named limit). Several elements on one key: Chrome moves the focus among them rather
+ * than firing one, so judging the first as pressed only over-asks. Self-contained: it runs serialized in the page.
+ */
+export function accessKeyElement(doc, key) {
+  const want = String(key).toLowerCase()
+  const roots = [doc]
+  for (let i = 0; i < roots.length && i < 256; i += 1) {
+    for (const el of roots[i].querySelectorAll('*')) {
+      const keys = String((el.getAttribute && el.getAttribute('accesskey')) || '').trim().toLowerCase().split(/\s+/)
+      if (keys.includes(want)) return el
+      if (el.shadowRoot) roots.push(el.shadowRoot)
+    }
+  }
+  return null
 }
 
 /** Resolves after two animation frames, so a screenshot shows the frame the last input produced. */
