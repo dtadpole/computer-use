@@ -984,6 +984,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const desktopNoMenu = onDesktop && (context.boundMenuItem == null || context.boundMenuItem.none === true)
     // The key is the character it produces (Shift+3 is '#'), so a yes for '3' never frees '#' (cu-researcher).
     const SHIFTED = { 1: '!', 2: '@', 3: '#', 4: '$', 5: '%', 6: '^', 7: '&', 8: '*', 9: '(', 0: ')', '-': '_', '=': '+', '[': '{', ']': '}', '\\': '|', ';': ':', "'": '"', ',': '<', '.': '>', '/': '?', '`': '~' }
+    let chordShortcut = false
     const shortcutKey = (() => {
       if (action.type === 'type') {
         // cu-verifier's live rows: a type outside text entry delivers every character to the page ('###', 'ok #').
@@ -1013,8 +1014,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (browserRoute && accel && !alt && 'r[]ltnwq'.includes(lower)) return null
       // On the desktop a chord usually fires a menu item: only the loop's read that none fires makes it the app's own.
       if (onDesktop && context.boundMenuItem?.none !== true) return null
-      // The open chord (Command-O) is judged by what it opens - CU-252's selection rule in app-policy - never as a shortcut.
-      if (onDesktop && accel && !alt && lower === 'o') return null
+      chordShortcut = true
       const label = [keys.has('CTRL') || keys.has('CONTROL') ? 'ctrl' : null, alt ? 'alt' : null, ['CMD', 'COMMAND', 'META', 'SUPER'].some((key) => keys.has(key)) ? 'cmd' : null].filter(Boolean)
       return `${label.join('+')}+${produced}`
     })()
@@ -1282,25 +1282,28 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     }
     classes.push(...autofillClasses)
     // CU-363: the page shortcut asks only when no other rule already judges the key (a field's name, a delete key).
-    if (pageShortcut && classes.length === 0) classes.push('permission')
+    // CU-365 (cu-coordinator 19:19Z): a chord is a fallback - when an earlier rule has already classed it, that rule decides
+    // and the chord adds no shortcut ask (typed text and single keys still stack, CU-363).
+    const shortcutActive = pageShortcut && !(chordShortcut && classes.length > 0)
+    if (shortcutActive && classes.length === 0) classes.push('permission')
     // The approval a page shortcut needs: typed text keys by its characters, a key or chord by what it produces.
     const shortcutShown = action.type === 'type' ? `${[...String(action.text ?? '')].length} typed characters` : `'${shortcutKey}'`
-    const shortcutApproval = pageShortcut ? `permission:page-shortcut:${action.type === 'type' ? [...new Set(shortcutKey)].sort().join('') : shortcutKey}` : null
+    const shortcutApproval = shortcutActive ? `permission:page-shortcut:${action.type === 'type' ? [...new Set(shortcutKey)].sort().join('') : shortcutKey}` : null
     // CU-365 stacking (cu-researcher 18:19Z): when another class asks too, the shortcut half still needs its own approval,
     // so a yes for that class (sensitive_data for the run, say) never frees the page's handlers.
-    const also = pageShortcut ? { alsoNeeds: shortcutApproval } : {}
+    const also = shortcutActive ? { alsoNeeds: shortcutApproval } : {}
     // ... and 'permission' is listed beside the other classes (the record), while the class that ranks first still leads.
-    const stack = (list) => (pageShortcut && !list.includes('permission') ? [...list, 'permission'] : list)
+    const stack = (list) => (shortcutActive && !list.includes('permission') ? [...list, 'permission'] : list)
     const unique = [...new Set(classes)].sort((a, b) => PRECEDENCE.indexOf(a) - PRECEDENCE.indexOf(b))
     const needed = unique.filter((cls) => !preApproved(cls, url) || NEVER_PRE_APPROVED.includes(cls) || autofillClasses.includes(cls))
-    if (needed.length === 0 && pageShortcut) {
+    if (needed.length === 0 && shortcutActive) {
       return { decision: 'confirm', class: 'permission', classes: ['permission'], rule: 'page:shortcut', approvalKey: shortcutApproval, runOnly: true, reason: `press ${shortcutShown} on ${placeOf(url, target, context?.frontmostBundleId)}, a keyboard shortcut of the ${onDesktop ? 'app' : 'page'} - it decides what it does` }
     }
     if (needed.length === 0) {
       return { decision: 'allow', class: unique[0] ?? null, rule: unique.length > 0 ? 'pre_approved' : 'default', reason: '' }
     }
     const cls = needed[0]
-    if (pageShortcut && cls === 'permission') {
+    if (shortcutActive && cls === 'permission') {
       return { decision: 'confirm', class: cls, classes: needed, rule: 'page:shortcut', approvalKey: shortcutApproval, runOnly: true, reason: `press ${shortcutShown} on ${placeOf(url, target, context?.frontmostBundleId)}, a keyboard shortcut of the ${onDesktop ? 'app' : 'page'} - it decides what it does` }
     }
     if (mixedScript && cls === 'permission') {
@@ -1310,7 +1313,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       return { ...also, decision: 'confirm', class: cls, classes: stack(needed), rule: `autofill:${cls}`, reason: `submit a form the browser filled from your saved ${autofillCard ? 'card' : cls === 'credential' ? 'login' : 'details'} on ${originPattern(url)}` }
     }
     // `class` is the one that ranks first; `classes` lists every class that applied, for the evaluator's records.
-    return { ...also, decision: 'confirm', class: cls, classes: stack(needed), rule: `class:${cls}`, reason: `${describe(cls, action, target, url, context?.frontmostBundleId)}${pageShortcut ? `; the same keys may also trigger a keyboard shortcut of the ${onDesktop ? 'app' : 'page'}` : ''}` }
+    return { ...also, decision: 'confirm', class: cls, classes: stack(needed), rule: `class:${cls}`, reason: `${describe(cls, action, target, url, context?.frontmostBundleId)}${shortcutActive ? `; the same keys may also trigger a keyboard shortcut of the ${onDesktop ? 'app' : 'page'}` : ''}` }
   }
 
   return { classify, preApprovals: granted }

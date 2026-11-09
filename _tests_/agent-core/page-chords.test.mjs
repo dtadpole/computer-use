@@ -34,7 +34,7 @@ test('CU-365 negatives: the editing set, the browser chords, a menu item, and a 
   }
   assert.equal(judge(['CTRL', 'D'], { role: 'AXRow', name: 'm' }, 'app:com.example.mail', { boundMenuItem: { name: 'Duplicate' } }).decision, 'allow', 'a desktop chord that fires a menu item')
   assert.equal(judge(['CTRL', 'D'], { tag: 'input', role: 'textbox', name: 'Notes', editable: true }).decision, 'allow', 'a chord into a field')
-  assert.notEqual(judge(['META', 'O'], { role: 'AXRow', name: 'notes.txt' }, 'app:com.apple.finder', { boundMenuItem: { none: true } }).rule, 'page:shortcut', 'Command-O on the desktop is judged by what it opens (CU-252)')
+  assert.equal(judge(['META', 'O'], { role: 'AXRow', name: 'Projects' }, 'app:com.example.mail', { boundMenuItem: { none: true } }).rule, 'page:shortcut', 'Command-O with no selection read is still a fallback shortcut (the yield is narrow)')
 })
 
 test('CU-365 stacking: a page shortcut under another class names its own approval', () => {
@@ -68,4 +68,16 @@ test('CU-365 stacking in the loop: a run yes for the card in a field does not fr
   running = false
   await answering
   assert.equal(asked, 2, 'the card in the field asked once; on the link its shortcut half asked again')
+})
+
+test('CU-365 fallback: where CU-252 judges an open chord with the selection read, that judgement decides (the real createAppPolicy)', async () => {
+  const { createAppPolicy } = await import('../../_tools_/agent-core/app-policy.mjs')
+  const { createAppApprovals } = await import('../../_tools_/agent-core/app-approvals.mjs')
+  const FINDER = 'com.apple.finder'
+  const store = createAppApprovals({ path: join(tmp, 'finder-approvals.json') })
+  store.grantAlways(FINDER, { by: 'api' })
+  const app = createAppPolicy({ scope: [FINDER], approvals: store })
+  const open = (items) => app.classify({ type: 'keypress', keys: ['META', 'O'] }, { frontmostBundleId: FINDER, url: `app:${FINDER}`, target: { origin: FINDER, role: 'AXOutline', name: '' }, boundMenuItem: { none: true }, selection: { items } })
+  assert.equal(open([{ name: 'notes.txt', kind: 'file' }]).decision, 'allow', 'a document opens freely, as before CU-365')
+  assert.equal(open([{ name: 'Payload.app', kind: 'file' }]).class, 'launch_code', 'a launchable selection still asks launch_code')
 })
