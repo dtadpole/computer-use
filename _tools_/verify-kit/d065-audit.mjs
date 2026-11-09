@@ -5,9 +5,9 @@
 // cu-coordinator 04:53Z: the one shape); 'mutant: <verifier> <name>' (a mutant of _verifiers_/<verifier>/mutants.mjs) is read too.
 // Run from the repository root on a clean tree: `node _tools_/verify-kit/d065-audit.mjs`; exit 0 when every cell holds.
 import { execFileSync, spawnSync } from 'node:child_process'
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync, realpathSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { pathToFileURL } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 export const TABLES = Object.freeze(['_tests_/agent-core/consent-routes.test.mjs', '_tests_/agent-core/sensitive-classes.test.mjs'])
 
@@ -84,7 +84,7 @@ export function failingIds(titles, cells) {
   return cells.filter((c) => titles.some((t) => t === c.id || t.startsWith(`${c.id} `) || t.includes(` ${c.id} `) || t.includes(`'${c.id}'`))).map((c) => c.id)
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
+if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))) {
   const root = process.cwd()
   const dirty = execFileSync('git', ['status', '--porcelain', '--', '_tools_', '_tests_'], { cwd: root, encoding: 'utf8' }).trim()
   if (dirty) { console.error('d065-audit: _tools_ or _tests_ has uncommitted changes - run on a clean tree'); process.exit(2) }
