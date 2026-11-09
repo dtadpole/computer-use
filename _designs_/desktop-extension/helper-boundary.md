@@ -72,7 +72,9 @@ Accessibility client the user has granted.
 From 0.2.62:
 
 - **Read first.** The helper reads the attribute before writing. If it is already true, set by the user or another
-  assistive app, the helper writes nothing and remembers nothing.
+  assistive app, the helper writes nothing and remembers nothing. If the read fails - a timeout or any Accessibility
+  error other than "no value" or "unsupported", which mean unset - the helper also writes nothing, since a write it
+  could not judge is one it could not undo safely.
 - **Restore at every end.** Otherwise the helper writes true and remembers the pid. At every run end - `bye`, socket
   loss, the wall-time cap, and the CU-227 watchdog path - it writes false back for each remembered pid whose process
   still runs. Each write is bounded by the 0.5 s messaging timeout; a hung app costs at most that.
