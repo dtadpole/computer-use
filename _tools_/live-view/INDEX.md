@@ -1,8 +1,8 @@
 ---
 title: live-view
 created: 2026-11-01T17:20:00Z
-modified: 2026-11-08T03:05:00Z
-version: 0.3.7
+modified: 2026-11-09T15:00:00Z
+version: 0.3.8
 description: One run's watch and control page on 127.0.0.1 for browser and desktop runs - the live screen, run events, pause, take over (mouse and keys on a browser run only), hand back, stop, consent answers and guidance, the local-input pause, served over the run's view and control tokens under the fixed title marker - and the live probe that checks it on a live desktop run.
 grounded_in:
   - source: _designs_/system-architecture/live-control.md@0.8.1
@@ -31,7 +31,7 @@ live.attach(env)            // print live.viewUrl and live.controlUrl once; awai
 | [`app.js`](app.js), [`app.css`](app.css) | the page's wiring and style |
 | [`live-smoke.mjs`](live-smoke.mjs) | live check with one gated Chrome, 13 checks (browser runs) |
 | [`live-probe.mjs`](live-probe.mjs) | CU-12: three checks of a live desktop run from headless Chrome |
-| [`owner-checklist.md`](owner-checklist.md) | CU-37: the owner session - its two modes (the Confirm prompt at the Mac, five-minute breaks over Screen Sharing), before and what to report |
+| [`owner-checklist.md`](owner-checklist.md) | CU-37, CU-341: the owner session on one page - what the owner does, in order, how long; the Confirm prompt at the Mac or five-minute breaks over Screen Sharing; what to report |
 | [`owner-checklist-parts.md`](owner-checklist-parts.md) | the session's three parts (step 4, G2, the Replace chain) - what the owner presses and sees |
 
 **Desktop runs.** `/screen` streams app-scoped PNG frames at 2 fps, each part with `x-cu-frame-at` and `x-cu-scope`
