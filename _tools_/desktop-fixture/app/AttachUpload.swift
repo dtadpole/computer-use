@@ -57,7 +57,15 @@ enum AttachUpload {
     let upload = Kit.button("upload", "Upload")
     upload.frame = NSRect(x: 20, y: 196, width: 120, height: 32)
     content.addSubview(upload)
-    _ = Windows.open("main", title: title, content: content)
+    let window = Windows.open("main", title: title, content: content)
+    // `origin` {x, y} (global points, y down; as Keypad's) puts the window clear of another app's floating panel.
+    let fixture = Fixture.shared
+    if !fixture.offscreen, let origin = Keypad.origin(Screens.params), let screen = NSScreen.screens.first {
+      let contentRect = NSRect(x: origin.x, y: screen.frame.height - origin.y - content.frame.height, width: content.frame.width, height: content.frame.height)
+      let frame = window.frameRect(forContentRect: contentRect)
+      if screen.frame.contains(frame) { window.setFrame(frame, display: true); fixture.placements["main"] = Placement.check(window) }
+      else { fixture.record("origin-refused", ["x": origin.x, "y": origin.y]) }
+    }
   }
 
   static func upload() {
