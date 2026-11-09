@@ -1,5 +1,5 @@
 import { isMessagingApp } from './app-kinds.mjs'
-import { normaliseForPolicy } from './normalise.mjs'
+import { normaliseForPolicy, normaliseText } from './normalise.mjs'
 import { BIP39_ENGLISH } from './bip39-english.mjs'
 import { normalizeKey } from './keys.mjs'
 import { originPattern } from './sites.mjs'
@@ -46,18 +46,37 @@ const ZH_WORDS = Object.freeze({
     // CU-294: joining or starting a meeting, and placing a call, in a meeting app's words.
     '入会', '入會', '立即入会', '发起会议', '發起會議', '快速会议', '拨打', '撥打'],
 })
+// CU-352 (design note 0.1; cu-coordinator: High) and CU-345: the same name classes in German, French, Spanish, Russian,
+// Japanese and Korean, so a 'Zahlungspflichtig bestellen', 'Supprimer', 'Отправить' or '결제하기' button asks as its English
+// would. Latin and Cyrillic entries match whole words (namesWord's letter-aware boundary); Japanese and Korean ones match
+// inside a label, as Chinese does. Named over-asks: a label that merely contains a phrase ('削除線'). Other languages stay
+// a named limit.
+const LOCALE_WORDS = Object.freeze({
+  purchase: ['kaufen', 'jetzt kaufen', 'bezahlen', 'jetzt bezahlen', 'bestellen', 'zahlungspflichtig bestellen', 'kaufen und bezahlen', 'zur kasse',
+    'acheter', 'payer', 'commander', 'passer la commande', 'valider la commande', 'acheter maintenant',
+    'comprar', 'pagar', 'realizar pedido', 'finalizar compra', 'tramitar pedido', 'comprar ahora',
+    'купить', 'оплатить', 'заказать', 'оформить заказ',
+    '購入', '支払', '注文を確定', '注文する', 'レジに進む', '今すぐ買う',
+    '구매', '결제', '주문하기', '바로구매'],
+  delete: ['löschen', 'entfernen', 'verwerfen', 'supprimer', 'effacer', 'eliminar', 'borrar', 'удалить', 'стереть', '削除', '消去', '삭제', '지우기'],
+  submit: ['senden', 'absenden', 'abschicken', 'envoyer', 'soumettre', 'enviar', 'отправить', '送信', '보내기', '전송', '제출'],
+  // CU-345: a PIN, one-time code, security code or password field named in these languages.
+  secret: ['passwort', 'kennwort', 'sicherheitscode', 'prüfziffer', 'mot de passe', 'code de sécurité', 'cryptogramme',
+    'contraseña', 'código de seguridad', 'пароль', 'код безопасности', 'パスワード', '暗証番号', 'セキュリティコード', '認証コード',
+    '비밀번호', '보안코드', '인증번호'],
+})
 const WORDS = Object.freeze({
   purchase: ['buy', 'pay', 'order', 'place order', 'checkout', 'check out', 'subscribe', 'donate', 'purchase', 'transfer', 'withdraw', 'wire', 'send money',
     // CU-288 (cu-researcher's real-app wordings, round 2): a booking, an upgrade or a renewal commits money.
     'book now', 'book this', 'reserve now', 'upgrade plan', 'upgrade now', 'upgrade to pro', 'upgrade to premium', 'renew subscription', 'renew now',
-    'renew plan', ...ZH_WORDS.purchase],
+    'renew plan', ...ZH_WORDS.purchase, ...LOCALE_WORDS.purchase],
   // CU-135: replace and overwrite (a save panel's 'already exists' sheet), don't save (a close sheet discards work).
   delete: ['delete', 'remove', 'discard', 'erase', 'empty trash', 'cancel subscription', 'replace', 'overwrite', "don't save", 'don\u2019t save',
     // CU-146 (the CU-145 audit): destructive labels the list missed.
     'move to trash', 'move to bin', 'empty bin', 'clear history', 'clear all', 'reset all', 'reset settings', 'reset to defaults', 'uninstall', 'wipe', 'purge',
     'deactivate', 'close account', 'forget', 'factory reset',
     // cu-researcher's 13:23Z sweep: unsaved edits lost, like Discard Changes.
-    'revert to saved', 'revert all changes', ...ZH_WORDS.delete],
+    'revert to saved', 'revert all changes', ...ZH_WORDS.delete, ...LOCALE_WORDS.delete],
   permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke',
     // CU-258 (cu-researcher): standing choices an app keeps after the run, as whole phrases. A bare 'Allow' stays free so
     // cookie banners do not ask (named limit).
@@ -101,7 +120,7 @@ const WORDS = Object.freeze({
     // CU-286 (cu-researcher's real-app wordings): a request to join a meeting, and Slack's huddle (a call to the channel).
     'ask to join', 'start huddle', 'start a huddle', 'join huddle',
     // CU-288: a tax filing goes to the authority.
-    'file return', 'file tax return', 'file your return', 'file my return', 'e-file', 'efile', 'submit return', 'submit tax return', ...ZH_WORDS.submit],
+    'file return', 'file tax return', 'file your return', 'file my return', 'e-file', 'efile', 'submit return', 'submit tax return', ...ZH_WORDS.submit, ...LOCALE_WORDS.submit],
 })
 const PRECEDENCE = ['purchase', 'launch_code', 'delete', 'permission', 'page_dialog', 'credential', 'sensitive_data', 'submit', 'new_site', 'install']
 const POINTER = new Set(['click', 'double_click', 'triple_click'])
@@ -239,9 +258,18 @@ function withoutTaskValues(text, task) {
 const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 const normaliseName = (text) => String(text ?? '').toLowerCase().replace(/[\u2018\u2019]/g, "'").replace(/licence/g, 'license')
   .replace(/#/g, ' number ').replace(/\./g, '').replace(/\s+/g, ' ').trim()
+// CU-352: an entry with an accented Latin or a Cyrillic letter is bounded by any letter, so 'удалить' does not match inside
+// a longer word; ASCII entries keep the a-z boundary they always had.
+const LETTER_BOUNDED = /[\u00c0-\u024f\u0400-\u04ff]/
 function namesWord(name, words) {
   const text = normaliseName(name)
-  return words.some((word) => new RegExp(`(^|[^a-z])${escapeRegExp(normaliseName(word)).replace(/ /g, '[\\s-]+')}([^a-z]|$)`).test(text))
+  return words.some((word) => {
+    if (!LETTER_BOUNDED.test(word)) return new RegExp(`(^|[^a-z])${escapeRegExp(normaliseName(word)).replace(/ /g, '[\\s-]+')}([^a-z]|$)`).test(text)
+    // A judged name has passed normaliseText, which folds homoglyphs case by case (a Cyrillic 'К' reads as Latin 'K'), so the
+    // entry is folded the same way as written, capitalised and in capitals before it is compared.
+    const forms = new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))
+    return [...forms].some((form) => new RegExp(`(^|[^\\p{L}])${escapeRegExp(form).replace(/ /g, '[\\s-]+')}([^\\p{L}]|$)`, 'u').test(text))
+  })
 }
 
 // CU-157 (reply-text-entered.md): a control whose only submit word is 'reply' submits typed text only when some text
@@ -446,6 +474,8 @@ const SECRET_NAMES = Object.freeze(['recovery phrase', 'seed phrase', 'secret ph
   'national identity', 'aadhaar', 'card number', 'credit card', 'expiry', 'expiration date', 'mm/yy', 'vat number', 'vat id',
   '2fa', 'authenticator code', 'api key', 'access token', 'secret', 'medicare', 'health insurance', 'policy number',
   'medical record',
+  // CU-345: the same secrets named in German, French, Spanish, Russian, Japanese and Korean.
+  ...LOCALE_WORDS.secret,
   // D-062 (cu-coordinator): an e-mail or phone field, and a street-level address, ask by name; a city, postcode or ZIP
   // alone does not, and neither does an IP or web address.
   'email', 'e-mail', 'phone', 'mobile number', 'telephone', 'street', 'address line', 'home address', 'shipping address',
