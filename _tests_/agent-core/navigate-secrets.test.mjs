@@ -39,8 +39,9 @@ test('CU-260: on a new site the ask names both classes, sensitive_data first', (
   assert.deepEqual(verdict(go('https://other.example/page')), ['confirm', 'new_site', 'site:not_allowed'], 'no secret: the new-site ask as before')
 })
 
-test('CU-260 negatives: plain URLs, numeric ids in the path and short token values stay free; a commit hash is the named over-ask', () => {
-  for (const url of [`${ALLOWED}/item/4111111111111111`, `${ALLOWED}/status/1234567890123456789`, `${ALLOWED}/search?q=shoes&page=2`, `${ALLOWED}/reset?token=abc`, `${ALLOWED}/#section-2`]) {
+test('CU-260 negatives: plain URLs, numeric ids in the path (no card brand, CU-325) and short token values stay free; a commit hash is the named over-ask', () => {
+  // CU-325: a brand card in a path now asks (url-path-card.test.mjs); a numeric id with no card brand's prefix stays free.
+  for (const url of [`${ALLOWED}/status/1234567890123456789`, `${ALLOWED}/search?q=shoes&page=2`, `${ALLOWED}/reset?token=abc`, `${ALLOWED}/#section-2`]) {
     assert.deepEqual(verdict(go(url)), ['allow', null, 'site:allowed'], url)
   }
   assert.equal(urlSecret(`https://code.example/repo/commit/${HASH}`), 'key', 'named over-ask, kept (cu-coordinator)')

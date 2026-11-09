@@ -313,7 +313,13 @@ enum Accessibility {
       // the control itself has none (cu-developer-two's residual on CU-195).
       "caption": .optionalString(Caption.forTarget(own: caption(element, role: role), leaf: captionLeaf.flatMap { caption($0, role: string($0, "AXRole")) })),
     ]
-    if markPanel, let kind = panelKind(of: element) { shape["panel"] = .string(kind) }
+    if markPanel {
+      // One ancestor walk for both markers. CU-322 (D-089): `inWebArea` - true when the element is, or descends from,
+      // an AXWebArea; false at a clean top without one; null when the walk could not finish.
+      let walk = ancestorWalk(of: element)
+      if let kind = PanelMarker.kind(path: walk.path, ending: walk.ending) { shape["panel"] = .string(kind) }
+      shape["inWebArea"] = WebArea.contains(path: walk.path.map { $0.role }, ending: walk.ending).map { .bool($0) } ?? .null
+    }
     if client != nil { shape["hostedBy"] = .string(PanelAttribution.serviceBundleId) }
     // CU-154: a menu item's key equivalent, so Copy / Cut / Paste are known in any language (Command-V is a paste
     // whatever the title says).
@@ -471,22 +477,29 @@ enum Accessibility {
     return PanelFields(directory: folder?.isFileURL == true ? folder?.path : nil, fileName: name, shownFolderName: shown, nameFieldFocused: focused)
   }
 
-  /// The AppKit panel an element lies in, by its ancestors' AXIdentifier (`save-panel`, `open-panel`), at most
-  /// PanelMarker.maxDepth levels up; `unknown` when the walk ends in an Accessibility error or at the limit.
-  static func panelKind(of element: AXUIElement) -> String? {
+  /// An element and its ancestors, nearest first (AXIdentifier, AXRole), at most PanelMarker.maxDepth levels up to a
+  /// window or the application, and how the walk ended - read once for the panel marker and for `inWebArea` (CU-322).
+  static func ancestorWalk(of element: AXUIElement) -> (path: [(identifier: String?, role: String?)], ending: PanelMarker.Ending) {
     var path: [(identifier: String?, role: String?)] = []
     var node = element
     while path.count < PanelMarker.maxDepth {
       let role = string(node, "AXRole")
       path.append((string(node, "AXIdentifier"), role))
-      if role == "AXWindow" || role == "AXApplication" { return PanelMarker.kind(path: path, ending: .top) }
+      if role == "AXWindow" || role == "AXApplication" { return (path, .top) }
       var value: CFTypeRef?
       let error = AXUIElementCopyAttributeValue(node, "AXParent" as CFString, &value)
-      if error == .noValue || error == .attributeUnsupported { return PanelMarker.kind(path: path, ending: .top) }
-      guard error == .success, let value, CFGetTypeID(value) == AXUIElementGetTypeID() else { return PanelMarker.kind(path: path, ending: .error) }
+      if error == .noValue || error == .attributeUnsupported { return (path, .top) }
+      guard error == .success, let value, CFGetTypeID(value) == AXUIElementGetTypeID() else { return (path, .error) }
       node = value as! AXUIElement
     }
-    return PanelMarker.kind(path: path, ending: .limit)
+    return (path, .limit)
+  }
+
+  /// The AppKit panel an element lies in, by its ancestors' AXIdentifier (`save-panel`, `open-panel`), at most
+  /// PanelMarker.maxDepth levels up; `unknown` when the walk ends in an Accessibility error or at the limit.
+  static func panelKind(of element: AXUIElement) -> String? {
+    let walk = ancestorWalk(of: element)
+    return PanelMarker.kind(path: walk.path, ending: walk.ending)
   }
 
   /// Visible text of an app's focused window: titles, descriptions and the string values of text elements, breadth

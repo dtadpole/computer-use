@@ -497,7 +497,34 @@ function urlFieldName(name) {
  * or more). A path segment's card or phone match is a numeric id (a post or order number), not counted. Named over-ask:
  * a 40-hex commit hash in a code host's URL (the digest rule; cu-coordinator: keep it).
  */
-export function urlSecret(raw) {
+// CU-325 (cu-coordinator 06:30Z, High): a card number in a URL path. A path segment counts when it holds a card-shaped
+// digit run - bare or in card groupings, not touching other digits, so a file name ('<card>.pdf') or a suffix counts too
+// (cu-researcher on #245) - that passes Luhn and carries a card brand's prefix with that brand's length (a random numeric id
+// then trips about one time in a hundred, not one in ten), or when its digits hold a card-length run the run itself typed or
+// pasted (typedDigits, the loop's in-memory buffer, CU-267), whatever its prefix. Open under-ask CU-326: an untyped card as
+// a host label, split across two segments, or inside a longer digit run.
+const CARD_RUN = /(?<!\d)(\d{4}(?:[ -]\d{4}){3}(?:[ -]\d{3})?|\d{4}[ -]\d{6}[ -]\d{4,5}|\d{13,19})(?!\d)/g
+const CARD_BRANDS = [
+  [/^4/, [13, 16, 19]],
+  [/^(5[1-5]|222[1-9]|22[3-9]\d|2[3-6]\d\d|27[01]\d|2720)/, [16]],
+  [/^3[47]/, [15]],
+  [/^(6011|64[4-9]|65)/, [16, 17, 18, 19]],
+  [/^35(2[89]|[3-8]\d)/, [16, 17, 18, 19]],
+  [/^62/, [16, 17, 18, 19]],
+  [/^(36|38|30[0-5])/, [14, 15, 16, 17, 18, 19]],
+]
+const brandCard = (digits) => CARD_BRANDS.some(([prefix, lengths]) => prefix.test(digits) && lengths.includes(digits.length))
+export function pathCard(segment, typedDigits = []) {
+  const text = String(segment ?? '').trim()
+  const digits = text.replace(/\D/g, '')
+  for (const match of text.matchAll(CARD_RUN)) {
+    const run = match[0].replace(/\D/g, '')
+    if (luhn(run) && brandCard(run)) return true
+  }
+  return (Array.isArray(typedDigits) ? typedDigits : []).some((run) => typeof run === 'string' && run.length >= 13 && run.length <= 19 && digits.includes(run))
+}
+
+export function urlSecret(raw, typedDigits = []) {
   let url
   try {
     url = new URL(String(raw ?? ''))
@@ -528,8 +555,16 @@ export function urlSecret(raw) {
   const loose = looksSensitive(decode(fragment))
   if (loose !== null) return loose
   for (const segment of url.pathname.split('/').filter(Boolean)) {
+    if (pathCard(decode(segment), typedDigits)) return 'card'
     const kind = looksSensitive(decode(segment))
     if (kind !== null && kind !== 'card' && kind !== 'phone') return kind
+  }
+  // CU-325 follow-up (cu-coordinator 06:41Z): digits the run typed are matched against every digit of the address - host
+  // labels, the joined path, query and fragment - so a typed card split across segments or put in a host label asks too.
+  const typedRuns = (Array.isArray(typedDigits) ? typedDigits : []).filter((run) => typeof run === 'string' && run.length >= 13 && run.length <= 19)
+  if (typedRuns.length > 0) {
+    const every = decode(`${url.hostname}${url.pathname}${url.search}${url.hash}`).replace(/\D/g, '')
+    if (typedRuns.some((run) => every.includes(run))) return 'card'
   }
   return null
 }
@@ -692,7 +727,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       }
       // CU-260 (cu-researcher; cu-coordinator: High): a secret in the address leaves with the request, so the D-061 value
       // rules run over the decoded URL before the site verdict, and a new-site ask that carries one names the class too.
-      const secret = urlSecret(action.url)
+      const secret = urlSecret(action.url, context.typedDigits)
       const asks = [...(secret !== null ? ['sensitive_data'] : []), ...(next !== 'allow' ? ['new_site'] : [])]
       const needed = asks.filter((cls) => !preApproved(cls, action.url) || NEVER_PRE_APPROVED.includes(cls))
       if (asks.length === 0) return { decision: 'allow', class: null, rule: 'site:allowed', reason: '' }
@@ -915,14 +950,35 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // class: a folded look-alike already asks by its own ('Sеnd' asks submit). The desktop asks unknown_target in app-policy.
     const mixedScript = !url.startsWith('desktop:') && classes.length === 0 && (POINTER.has(action.type) || pressesEnter || keyboard.activates) && target?.mixedScriptName === true
     if (mixedScript) classes.push('permission')
+    // CU-302 (design note 0.1): a form the browser filled from saved logins or cards - a field matching :autofill, which
+    // typing clears - is submitted with the owner's saved secret by a click, Space or Return on what submits it. That
+    // submit asks by the filled fields' names (the credential and D-061 name rules, one source) and is never
+    // pre-approved: a caller's credential pre-approval covers secrets it supplied, not the owner's saved ones. The browser
+    // driver reports autofilledFields on the targets that submit a form (CU-319); a failed read (autofillRead false) asks
+    // credential. No field at all (an older driver, the desktop) keeps today's judgement.
+    const autofillClasses = []
+    let autofillCard = false
+    if (!desktopUrl && target && (POINTER.has(action.type) || pressesEnter || keyboard.activates)) {
+      for (const field of Array.isArray(target.autofilledFields) ? target.autofilledFields : []) {
+        if (/^cc-/i.test(String(field?.autocomplete ?? ''))) autofillCard = true
+        const filled = { ...asNamedEntry(String(field?.name ?? '')), inputType: field?.inputType ?? null, autocomplete: field?.autocomplete ?? null }
+        const cls = insertedClass(null, filled, context)
+        if (cls) autofillClasses.push(cls)
+      }
+      if (target.autofillRead === false) autofillClasses.push('credential')
+    }
+    classes.push(...autofillClasses)
     const unique = [...new Set(classes)].sort((a, b) => PRECEDENCE.indexOf(a) - PRECEDENCE.indexOf(b))
-    const needed = unique.filter((cls) => !preApproved(cls, url) || NEVER_PRE_APPROVED.includes(cls))
+    const needed = unique.filter((cls) => !preApproved(cls, url) || NEVER_PRE_APPROVED.includes(cls) || autofillClasses.includes(cls))
     if (needed.length === 0) {
       return { decision: 'allow', class: unique[0] ?? null, rule: unique.length > 0 ? 'pre_approved' : 'default', reason: '' }
     }
     const cls = needed[0]
     if (mixedScript && cls === 'permission') {
       return { decision: 'confirm', class: cls, classes: needed, rule: 'target:mixed_script', reason: `activate "${name}", whose name mixes scripts in one word (a disguised control?)` }
+    }
+    if (autofillClasses.includes(cls)) {
+      return { decision: 'confirm', class: cls, classes: needed, rule: `autofill:${cls}`, reason: `submit a form the browser filled from your saved ${autofillCard ? 'card' : cls === 'credential' ? 'login' : 'details'} on ${originPattern(url)}` }
     }
     // `class` is the one that ranks first; `classes` lists every class that applied, for the evaluator's records.
     return { decision: 'confirm', class: cls, classes: needed, rule: `class:${cls}`, reason: describe(cls, action, target, url, context?.frontmostBundleId) }
