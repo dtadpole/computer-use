@@ -80,8 +80,11 @@ test('P5: on an opaque target, Return or Space with any modifiers and typed line
     { type: 'type', text: 'ok\n' }, { type: 'type', text: 'a\rb' }]) {
     assert.equal(policy.classify(action, opaque).class, 'unknown_target', JSON.stringify(action))
   }
-  for (const action of [keypress('A'), keypress('ARROWDOWN'), { type: 'type', text: 'plain words' }]) {
-    assert.equal(policy.classify(action, opaque).decision, 'allow', JSON.stringify(action))
+  assert.equal(policy.classify(keypress('ARROWDOWN'), opaque).decision, 'allow', 'an arrow is no printable key')
+  // CU-363: a printable key or typed text on an opaque target fires no menu item and lands in no text entry - an app
+  // shortcut, asked once per key (a named over-ask).
+  for (const action of [keypress('A'), { type: 'type', text: 'plain words' }]) {
+    assert.equal(policy.classify(action, opaque).rule, 'page:shortcut', JSON.stringify(action))
   }
 })
 
@@ -161,10 +164,12 @@ test('P9: system-wide shortcuts are blocked by name whatever the modifier order;
     assert.deepEqual([policy.classify(held, ctx()).decision, policy.classify(held, ctx()).rule], ['block', 'system_shortcut'], `held ${keys.join('+')}`)
     assert.equal(systemShortcut(held), name, `held ${keys.join('+')}`)
   }
-  for (const keys of [['META', 'Q'], ['META', 'S'], ['META', 'SHIFT', 'T'], ['META', '3'], ['SHIFT', '3'], ['SPACE'], ['TAB'], ['CTRL', 'TAB'],
+  for (const keys of [['META', 'Q'], ['META', 'S'], ['META', 'SHIFT', 'T'], ['META', '3'], ['SPACE'], ['TAB'], ['CTRL', 'TAB'],
     ['META', 'ARROWLEFT'], ['ALT', 'ARROWRIGHT'], ['ESCAPE'], ['META', 'ESCAPE'], ['F5'], ['CTRL', 'A'], ['ALT', 'SPACE'], ['SHIFT', 'SPACE'], ['META', 'D'], ['CTRL', 'D'], ['ALT', 'D'], ['F1'], ['META', '='], ['META', '8']]) {
     assert.equal(policy.classify(keypress(...keys), ctx()).decision, 'allow', keys.join('+'))
   }
+  // CU-363: Shift+3 types '#' - with no text entry focused it is an app shortcut, asked once per key (a named over-ask).
+  assert.equal(policy.classify(keypress('SHIFT', '3'), ctx()).rule, 'page:shortcut', 'SHIFT+3')
 })
 
 test('P10: opening an app, script or installer confirms launch_code, never pre-approvable', () => {
