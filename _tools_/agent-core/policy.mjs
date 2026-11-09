@@ -995,7 +995,11 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // CU-382 (cu-coordinator 23:10Z; helper 0.2.66): a Finder Quick Action runs an owner's Automator workflow, like a Service,
     // so a press on an item marked quickActions (or a chord bound to one) asks; a menu whose context could not be walked
     // (menuContextUnread) asks unknown.
-    const quickAction = target?.quickActions === true || context.boundMenuItem?.quickActions === true
+    // Design 0.2 (cu-coordinator 23:12Z): Finder's built-in actions and the holder's own 'More…' / 'Customize…' stay free by
+    // name; a custom workflow's name asks.
+    const quickName = String(target?.name ?? context.boundMenuItem?.title ?? '').trim()
+    const builtInQuick = /^(?:rotate(?:\s+(?:left|right))?|markup|trim|compress|create\s+pdf|convert\s+image|remove\s+background|more(?:\u2026|\.\.\.)|customi[sz]e(?:\u2026|\.\.\.))$/i.test(quickName)
+    const quickAction = (target?.quickActions === true || context.boundMenuItem?.quickActions === true) && !builtInQuick
     const quickPress = action.type === 'click' || action.type === 'double_click' || action.type === 'keypress' || action.type === 'hold_key'
     if (quickPress && quickAction) {
       return { decision: 'confirm', class: 'permission', classes: ['permission'], rule: 'quick_action', reason: `run the Quick Action "${target?.name ?? context.boundMenuItem?.title ?? ''}", an Automator workflow` }

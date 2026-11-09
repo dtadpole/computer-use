@@ -20,5 +20,8 @@ test('CU-382: an item in a menu whose context could not be walked asks unknown',
 })
 
 test('CU-382 negatives: an unmarked menu item keeps its rules', () => {
+  for (const name of ['Rotate Left', 'Markup', 'Trim', 'Compress', 'Create PDF', 'More\u2026', 'Customize\u2026']) {
+    assert.equal(judge({ type: 'click', x: 1, y: 1, button: 'left' }, { origin: FINDER, role: 'AXMenuItem', name, quickActions: true }), 'allow', name)
+  }
   assert.equal(judge({ type: 'click', x: 1, y: 1, button: 'left' }, { origin: FINDER, role: 'AXMenuItem', name: 'Get Info' }), 'allow')
 })
