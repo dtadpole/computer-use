@@ -1,34 +1,35 @@
 ---
 title: Computer use on the Mac mini - one-page status for the owner
 created: 2026-11-06T04:55:00Z
-modified: 2026-11-09T20:45:00Z
+modified: 2026-11-09T21:00:00Z
 level: L2
-version: 1.7.0
+version: 1.7.1
 status: unverified
 description: 'What the [cu] team has built and proven, what is left, and the owner actions that are still open - one page, kept current by the coordinator.'
 grounded_in:
   - source: ULTIMATE_GOAL.md@2.0.0
-  - source: _seats_/cu-verifier/ultimate-goal-2-verdict.md@0.9.75
+  - source: _seats_/cu-verifier/ultimate-goal-2-verdict.md@0.9.76
   - source: _context_/team-operations/decision-log.yaml (D-034, D-052, D-063, D-079 to D-102)
 ---
 
 # Computer use on the Mac mini - status for the owner
 
-State at 9 November 2026, 20:45 UTC.
+State at 9 November 2026, 21:00 UTC.
 
 ## Where it stands
 
-Seven of the nine ULTIMATE_GOAL 2.0 rows hold on live evidence. Two are open, and both now wait on one session
-with you:
+Seven of the nine ULTIMATE_GOAL 2.0 rows hold on live evidence. Two are open:
 
-- **Consent and safety** holds only when no Urgent or High under-ask is open (D-063). **No Urgent or High item is
-  open** (verdict 0.9.75), and both consent tables are signed. Today the team's own audits found nine High gaps and
-  closed each live: CU-340, CU-347, CU-351, CU-352, CU-353 and CU-354 by mid-afternoon, then CU-363 (a website's own
-  one-key shortcuts, such as '#' to delete in a mail list, pressed or typed outside a text field), CU-365 (the
-  same with Ctrl or Command chords) and CU-370 (choosing 'Delete' in a list, menu or radio group by keyboard). Medium fixes closed live today include field names in six more languages,
-  personal-ID names, unusual separators, less common password forms and links carrying a password. What the row
-  still needs is CU-135, the Replace-sheet chain, which only you can answer (a scripted consent answer is refused by
-  design).
+- **Consent and safety** holds only when no Urgent or High under-ask is open (D-063). **One High item is open:
+  CU-373** (verdict 0.9.76) - on a website's account settings, 'Generate app password' and turning on mail
+  auto-forwarding went through without asking (reproduced live at 20:55 UTC); the fix is in progress. Both consent
+  tables are signed. Today the team's own audits found ten High gaps and closed nine live: CU-340, CU-347, CU-351,
+  CU-352, CU-353 and CU-354 by mid-afternoon, then CU-363 (a website's own one-key shortcuts, such as '#' to delete
+  in a mail list, pressed or typed outside a text field), CU-365 (the same with Ctrl or Command chords) and CU-370
+  (choosing 'Delete' in a drop-down, list box or radio group by keyboard). Medium fixes closed live today include
+  field names in six more languages, personal-ID names, unusual separators, less common password forms and links
+  carrying a password. Once CU-373 lands, what the row still needs is CU-135, the Replace-sheet chain, which only
+  you can answer (a scripted consent answer is refused by design).
   - Names are read in English, Chinese, German, French, Spanish, Russian, Japanese and Korean; Italian, Dutch,
     Portuguese and Turkish are in review. Other languages are a named limit (D-099).
 - **Human control** needs you once: runbook step 4 (CU-11), with the G2 key-hold row (CU-119), the Replace-sheet
@@ -40,8 +41,8 @@ with you:
 
 | Row | State |
 |---|---|
-| environment, perception, action contract, agent loop | hold live (CUHelper 0.2.62 installed 9 Nov; 0.2.63, which adds placeholder text, installs in the next idle window) |
-| consent and safety | no Urgent or High item open (0.9.75); both tables signed; waits on CU-135 in the owner session |
+| environment, perception, action contract, agent loop | hold live (CUHelper 0.2.63 installed 9 Nov, reading placeholder text; 0.2.64, which reads a label placed beside a box, is in review) |
+| consent and safety | one High open (CU-373, fix in progress, 0.9.76); both tables signed; then waits on CU-135 in the owner session |
 | human control | open: step 4 with you (CU-11, CU-119, CU-135, CU-203) |
 | integration | DSH and heddle each completed a fixture task (CU-15) |
 | trajectory | holds; capture stays inside approved apps |
@@ -60,7 +61,7 @@ with you:
 ## Open owner actions
 
 1. A time and mode (in person or Screen Sharing) for step 4 (CU-11, CU-119, CU-135, CU-203); checklist:
-   `_tools_/live-view/owner-checklist.md`. This one session is what both open rows wait for.
+   `_tools_/live-view/owner-checklist.md`. The human-control row waits only on it, and the consent row on it once CU-373 lands.
 2. Dismiss the notification alerts on the Mac mini (one sits at the screen centre) and quit Typeless before step 4.
 3. Long-running Chrome tabs on the Mac mini hold the load near 30 and slow the team's gates; closing them helps.
 4. Decide on the history clean-up the coordinator reported privately on 9 Nov.
