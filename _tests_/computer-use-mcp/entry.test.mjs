@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
+import { EventEmitter } from 'node:events'
 import { mkdtempSync, readFileSync, rmSync, symlinkSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
-import { CLEAN_EXEC_MARKER, isEntryPoint, needsCleanExec, withoutLoaders } from '../../_tools_/computer-use-mcp/server.mjs'
+import { CLEAN_EXEC_MARKER, execClean, isEntryPoint, needsCleanExec, withoutLoaders } from '../../_tools_/computer-use-mcp/server.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const SERVER = join(HERE, '..', '..', '_tools_', 'computer-use-mcp', 'server.mjs')
@@ -265,4 +266,75 @@ test('a child ended by a signal ends the parent by the same signal', { timeout: 
   } finally {
     server.cleanup()
   }
+})
+
+/**
+ * CU-239's unit seams: execClean against a stand-in process and spawn, so the order of its steps is visible. The
+ * process records stderr lines, exit and kill calls, each with how many listeners it held for the signal at that moment;
+ * the spawn records the listeners the parent held when the child came to exist.
+ */
+function fakeParent() {
+  const proc = new EventEmitter()
+  Object.assign(proc, { pid: 4242, lines: [], exits: [], kills: [] })
+  proc.stderr = { write: (line) => proc.lines.push(line) }
+  proc.exit = (code) => proc.exits.push({ code, listening: proc.listenerCount('SIGTERM') + proc.listenerCount('SIGINT') })
+  proc.kill = (pid, signal) => proc.kills.push({ pid, signal, listening: proc.listenerCount(signal) })
+  const spawned = []
+  const spawnChild = (file, args, options) => {
+    const child = Object.assign(new EventEmitter(), { pid: 777, signals: [] })
+    child.kill = (signal) => child.signals.push(signal)
+    spawned.push({ file, args, options, child, listening: { SIGTERM: proc.listenerCount('SIGTERM'), SIGINT: proc.listenerCount('SIGINT') } })
+    return child
+  }
+  const start = () => execClean({ argv: ['/bin/node', '/cu/server.mjs', '--seat', 'cu-test-seat'], env: { PATH: '/usr/bin', NODE_PATH: '/x', NODE_OPTIONS: '' }, execPath: '/bin/node', spawnChild, proc })
+  return { proc, spawned, start }
+}
+
+test('CU-239: the parent listens for SIGTERM and SIGINT before the child exists, so a signal at once after the spawn is forwarded', () => {
+  const { proc, spawned, start } = fakeParent()
+  const child = start()
+  assert.equal(spawned.length, 1)
+  // The child answers the client directly; a client that is quick, or a parent stalled under load, can send SIGTERM
+  // before the statement after spawn runs. With no listener then, node's default action ends the parent (CU-239).
+  assert.deepEqual(spawned[0].listening, { SIGTERM: 1, SIGINT: 1 }, 'both listeners were in place when the child came to exist')
+  assert.equal(spawned[0].file, '/bin/node')
+  assert.deepEqual(spawned[0].args, ['/cu/server.mjs', '--seat', 'cu-test-seat'])
+  assert.deepEqual(spawned[0].options, { stdio: 'inherit', env: { PATH: '/usr/bin', [CLEAN_EXEC_MARKER]: '1' } })
+  proc.emit('SIGTERM', 'SIGTERM')
+  assert.deepEqual(child.signals, ['SIGTERM'], 'forwarded to the child')
+  assert.deepEqual(proc.lines, ['computer-use-mcp: forwarding SIGTERM to the serving child (pid 777)\n'])
+  assert.deepEqual(proc.exits, [], 'the parent waits for the child')
+  child.emit('exit', 0, null)
+  assert.deepEqual(proc.exits, [{ code: 0, listening: 2 }], "the child's orderly code, and the listeners still held until the exit")
+  assert.deepEqual(proc.kills, [])
+})
+
+test("CU-239: a child that exits by a code keeps the parent's listeners to the end; one ended by a signal has them removed, then re-raised", () => {
+  const coded = fakeParent()
+  coded.start().emit('exit', 3, null)
+  assert.deepEqual(coded.proc.exits, [{ code: 3, listening: 2 }], 'no window without listeners before the exit')
+  const unknown = fakeParent()
+  unknown.start().emit('exit', null, null)
+  assert.deepEqual(unknown.proc.exits, [{ code: 1, listening: 2 }], 'no code and no signal: 1')
+  for (const [signal, number] of [['SIGTERM', 15], ['SIGKILL', 9]]) {
+    const { proc, start } = fakeParent()
+    start().emit('exit', null, signal)
+    assert.deepEqual(proc.kills, [{ pid: 4242, signal, listening: 0 }], `${signal}: listeners gone, so the re-raise takes the default action`)
+    assert.equal(proc.listenerCount('SIGINT'), 0)
+    assert.equal(proc.exitCode, 128 + number, 'the fallback code for a signal that does not end node by default')
+    assert.deepEqual(proc.exits, [])
+    assert.deepEqual(proc.lines, [`computer-use-mcp: the serving child (pid 777) ended by ${signal}; ending the same way\n`])
+  }
+})
+
+test('CU-239: a re-exec that never started ends the parent with 1; a failed forward to a live child does not', () => {
+  const never = fakeParent()
+  const child = never.start()
+  child.pid = undefined
+  child.emit('error', new Error('spawn EAGAIN'))
+  assert.deepEqual(never.proc.exits, [{ code: 1, listening: 2 }])
+  assert.deepEqual(never.proc.lines, ['computer-use-mcp: the clean re-exec failed: spawn EAGAIN\n'])
+  const live = fakeParent()
+  live.start().emit('error', new Error('kill ESRCH'))
+  assert.deepEqual(live.proc.exits, [], 'the child is still serving')
 })

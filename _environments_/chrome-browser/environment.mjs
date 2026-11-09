@@ -8,7 +8,10 @@ import { historyMove } from './input-plan.mjs'
 import { clipboardOp, executeAction, NAVIGATION_TIMEOUT_MS, navigateHistory, sendInput, settle } from './executor.mjs'
 import { planHumanInput } from './human-input.mjs'
 import { processCommandLine, sandboxProblem, SEAT_PATTERN, startChrome } from './launch.mjs'
-import { activatableAncestor, autofilledFields, clickLabel, closedRootHoldsEntry, collectPageText, deepActiveElement, describeElement, DRAG_TEXT_MAX, dragTextAt, implicitSubmitButton, pageExpression, selectionContainer, textEntered, TWO_FRAMES_EXPRESSION } from './page-scripts.mjs'
+import { activatableAncestor, autofilledFields, clickLabel, closedRootHoldsEntry, collectPageText, deepActiveElement, describeElement, DRAG_TEXT_MAX, dragTextAt, FRAME_FOCUS_EXPRESSION, implicitSubmitButton, pageExpression, selectionContainer, textEntered, TWO_FRAMES_EXPRESSION } from './page-scripts.mjs'
+
+/** CU-300: how long focusedElement may spend reading the focus inside a cross-site frame before it keeps the iframe. */
+export const FRAME_FOCUS_MS = 2000
 import { startProxy } from './proxy.mjs'
 import { BrowserSession } from './session.mjs'
 
@@ -395,32 +398,118 @@ class BrowserEnvironment {
     const frame = page.frameSessions?.get(node.frameId)
     if (frame === undefined || (await frame.ready) !== true) return undefined
     try {
-      const content = (await this.session.send(page, 'DOM.getBoxModel', { backendNodeId })).result.model.content
-      const xs = [content[0], content[2], content[4], content[6]]
-      const ys = [content[1], content[3], content[5], content[7]]
-      const origin = { x: Math.min(...xs), y: Math.min(...ys) }
-      if (point.x < origin.x || point.y < origin.y || point.x >= Math.max(...xs) || point.y >= Math.max(...ys)) return undefined
-      // Page-like for `session.send`, `isolatedContext` and `#describe`; a fresh world map, since no Page events
-      // reach this session to say when the frame navigated.
-      const target = { sessionId: frame.sessionId, targetId: frame.targetId, mainFrameId: frame.targetId, worlds: new Map(), loaders: new Map(), crashed: page.crashed }
+      const box = await this.#contentBox(page, backendNodeId)
+      const origin = { x: box.x, y: box.y }
+      if (point.x < box.x || point.y < box.y || point.x >= box.right || point.y >= box.bottom) return undefined
+      const target = await this.#frameTarget(page, frame)
       const located = await this.#locate(target, { x: point.x - origin.x, y: point.y - origin.y })
       if (located === null) return null
-      const walk = (tree) => {
-        if (tree?.frame === undefined) return
-        target.loaders.set(tree.frame.id, tree.frame.loaderId)
-        for (const child of tree.childFrames ?? []) walk(child)
-      }
-      // The frame's current loader keeps the fingerprint apart across its navigations, as on the page.
-      walk((await this.session.send(target, 'Page.getFrameTree').catch(() => null))?.result?.frameTree)
       const activating = await this.#activating(target, located.backendNodeId, located.frameId ?? frame.targetId)
       const described = await this.#describe(target, activating.id, located.frameId ?? frame.targetId, { offset: origin, fallbackName: activating.name })
-      return await this.#withAutofill(target, activating.id, located.frameId ?? frame.targetId, described)
+      // CU-319 inside the frame's own world, then CU-300's host facts.
+      const withAutofill = await this.#withAutofill(target, activating.id, located.frameId ?? frame.targetId, described)
+      return withAutofill === null ? null : { ...withAutofill, frameHost: await this.#hostFacts(page, node) }
     } catch {
       return undefined
     }
   }
 
-  /** The focused element (through same-origin frames and open shadow roots), or null. */
+  /** An iframe element's content box on `page`, in viewport CSS pixels (untransformed): `{ x, y, right, bottom }`. */
+  async #contentBox(page, backendNodeId) {
+    const content = (await this.session.send(page, 'DOM.getBoxModel', { backendNodeId })).result.model.content
+    const xs = [content[0], content[2], content[4], content[6]]
+    const ys = [content[1], content[3], content[5], content[7]]
+    return { x: Math.min(...xs), y: Math.min(...ys), right: Math.max(...xs), bottom: Math.max(...ys) }
+  }
+
+  /**
+   * A frame session as a page-like target for `session.send`, `isolatedContext` and `#describe`, with the frame's current
+   * loaders (they keep the fingerprint apart across its navigations, as on the page) and a fresh world map, since no Page
+   * events reach this session to say when the frame navigated. inspectPoint and focusedElement build it alike, so one
+   * field has one fingerprint and one fieldKey from either (CU-300).
+   */
+  async #frameTarget(page, frame) {
+    const target = { sessionId: frame.sessionId, targetId: frame.targetId, mainFrameId: frame.targetId, worlds: new Map(), loaders: new Map(), crashed: page.crashed }
+    const walk = (tree) => {
+      if (tree?.frame === undefined) return
+      target.loaders.set(tree.frame.id, tree.frame.loaderId)
+      for (const child of tree.childFrames ?? []) walk(child)
+    }
+    walk((await this.session.send(target, 'Page.getFrameTree').catch(() => null))?.result?.frameTree)
+    return target
+  }
+
+  /**
+   * CU-300: the host iframe's facts that agent core's frame-host rules read - `{ tag, role, name }` from the page's
+   * accessibility tree, role and name null when it cannot be read. Never recorded, outside the fingerprint.
+   */
+  async #hostFacts(page, node) {
+    let role = null
+    let name = null
+    try {
+      const nodes = (await this.session.send(page, 'Accessibility.getPartialAXTree', { backendNodeId: node.backendNodeId, fetchRelatives: false })).result.nodes
+      const ax = nodes.find((candidate) => candidate.backendDOMNodeId === node.backendNodeId) ?? nodes[0]
+      role = ax?.role?.value ?? null
+      name = ax?.name?.value ?? null
+    } catch {
+      // Unread: role and name stay null.
+    }
+    return { tag: String(node?.nodeName ?? '').toLowerCase(), role, name }
+  }
+
+  /**
+   * CU-300 (frame-focus.md): the element focused inside a cross-site iframe, through the frame's own session - the page's
+   * focus ends at `node`, an <iframe> whose document lives in another renderer. Undefined (the caller keeps the iframe
+   * element, so agent core's frame-host rules judge it, as before) when `node` is no such frame or the read fails: no frame
+   * session, one not ready, a protocol error, a read past FRAME_FOCUS_MS, or a frame whose focus is its plain body. One
+   * level deep: a cross-site frame inside it is described as its own iframe element. The answer carries `frameHost` and,
+   * like every focus, `defaultButton` with `defaultButtonRead` - here read in the frame's own world.
+   */
+  async #focusInsideFrame(page, node) {
+    const tag = String(node?.nodeName ?? '').toUpperCase()
+    if ((tag !== 'IFRAME' && tag !== 'FRAME') || typeof node.frameId !== 'string') return undefined
+    const frame = page.frameSessions?.get(node.frameId)
+    if (frame === undefined) return undefined
+    let timer
+    const bound = new Promise((resolve) => { timer = setTimeout(() => resolve(undefined), FRAME_FOCUS_MS) })
+    try {
+      return await Promise.race([this.#readFrameFocus(page, node, frame), bound])
+    } catch {
+      return undefined
+    } finally {
+      clearTimeout(timer)
+    }
+  }
+
+  async #readFrameFocus(page, node, frame) {
+    if ((await frame.ready) !== true) return undefined
+    const box = await this.#contentBox(page, node.backendNodeId)
+    const target = await this.#frameTarget(page, frame)
+    let remote = await this.session.evaluate(target, FRAME_FOCUS_EXPRESSION, { returnByValue: false, timeoutMs: FRAME_FOCUS_MS })
+    if (remote?.objectId === undefined) {
+      // The page already names the frame focused, but the frame's own renderer may not have handled the click that moved
+      // the focus there yet (measured in real Chrome: one smoke run in three read the host right after the click). Two of
+      // the frame's animation frames, then one more read; still nothing focused inside is the host, as before.
+      await this.session.evaluate(target, TWO_FRAMES_EXPRESSION, { timeoutMs: FRAME_FOCUS_MS })
+      remote = await this.session.evaluate(target, FRAME_FOCUS_EXPRESSION, { returnByValue: false, timeoutMs: FRAME_FOCUS_MS })
+      if (remote?.objectId === undefined) return undefined
+    }
+    const inner = (await this.session.send(target, 'DOM.describeNode', { objectId: remote.objectId })).result.node
+    const host = await this.#hostFacts(page, node)
+    // CU-319: a followed entry in a frame's form (a hosted sign-in) carries that form's autofilled fields, read in the
+    // frame's own world.
+    const described = await this.#withAutofill(target, inner.backendNodeId, frame.targetId,
+      await this.#describe(target, inner.backendNodeId, frame.targetId, { node: inner, offset: { x: box.x, y: box.y }, editableBody: true, fallbackName: String(inner.nodeName ?? '').toUpperCase() === 'BODY' ? host.name : null }))
+    if (described === null) return undefined
+    const submit = await this.#implicitSubmit(target, inner.backendNodeId)
+    return { ...described, frameHost: host, defaultButton: submit.button, defaultButtonRead: submit.read }
+  }
+
+  /**
+   * The focused element (through same-origin frames and open shadow roots, and one cross-site frame through its own
+   * session, CU-300), or null. `defaultButtonRead` says whether the default-button read ran (CU-300: a failed one is
+   * false, and agent core's CU-190 rule asks the Return as submit).
+   */
   async focusedElement() {
     this.#assertOpen()
     const page = this.session.foreground()
@@ -428,9 +517,12 @@ class BrowserEnvironment {
     const remote = await this.session.evaluate(page, pageExpression(deepActiveElement), { returnByValue: false })
     if (remote?.objectId === undefined) return null
     const node = (await this.session.send(page, 'DOM.describeNode', { objectId: remote.objectId })).result.node
+    const inner = await this.#focusInsideFrame(page, node)
+    if (inner !== undefined) return inner
     const element = await this.#withAutofill(page, node.backendNodeId, undefined, await this.#describe(page, node.backendNodeId, undefined))
     if (element === null) return null
-    return { ...element, defaultButton: await this.#implicitSubmit(page, node.backendNodeId) }
+    const submit = await this.#implicitSubmit(page, node.backendNodeId)
+    return { ...element, defaultButton: submit.button, defaultButtonRead: submit.read }
   }
 
   /**
@@ -490,12 +582,12 @@ class BrowserEnvironment {
       const found = (await this.session.send(page, 'Runtime.callFunctionOn', {
         objectId, functionDeclaration: `function () { return (${implicitSubmitButton.toString()})(this) }`, returnByValue: false,
       })).result.result
-      if (found?.objectId === undefined) return null
+      if (found?.objectId === undefined) return { button: null, read: true }
       const button = (await this.session.send(page, 'DOM.describeNode', { objectId: found.objectId })).result.node
       const described = await this.#describe(page, button.backendNodeId, undefined, { scanText: false })
-      return described === null ? null : { role: described.role, name: described.name, panel: null }
+      return { button: described === null ? null : { role: described.role, name: described.name, panel: null }, read: true }
     } catch {
-      return null
+      return { button: null, read: false }
     }
   }
 
@@ -520,10 +612,12 @@ class BrowserEnvironment {
    * The facts policy reads about one node of a page or frame session. `node` is its `DOM.describeNode` answer when
    * the caller already has it; `offset` moves a frame session's viewport coordinates into the page's.
    */
-  async #describe(page, backendNodeId, frameId, { node, offset = { x: 0, y: 0 }, scanText = true, fallbackName = null } = {}) {
+  async #describe(page, backendNodeId, frameId, { node, offset = { x: 0, y: 0 }, scanText = true, fallbackName = null, editableBody = false } = {}) {
     node ??= (await this.session.send(page, 'DOM.describeNode', { backendNodeId })).result.node
     const tagName = String(node.nodeName ?? '').toLowerCase()
-    if (tagName === 'html' || tagName === 'body' || tagName === '#document') return null
+    // CU-300: a frame's body is described only when the caller allows it and it takes text (an iframe editor).
+    const bodyAllowed = editableBody === true && tagName === 'body'
+    if (!bodyAllowed && (tagName === 'html' || tagName === 'body' || tagName === '#document')) return null
     const attributes = {}
     for (let index = 0; index + 1 < (node.attributes ?? []).length; index += 2) attributes[node.attributes[index]] = node.attributes[index + 1]
     const inputType = tagName === 'input' ? String(attributes.type ?? 'text').toLowerCase() : null
@@ -559,6 +653,7 @@ class BrowserEnvironment {
     } catch {
       // A node in a frame this world cannot reach keeps the protocol-side facts only (textEntered stays null: asks).
     }
+    if (bodyAllowed && extra.editable !== true) return null
     let box = null
     try {
       const quad = (await this.session.send(page, 'DOM.getBoxModel', { backendNodeId })).result.model.border
@@ -603,6 +698,8 @@ class BrowserEnvironment {
       isPassword: inputType === 'password',
       autocomplete: attributes.autocomplete ?? null,
       origin: extra.origin ?? null,
+      // CU-300: the frame document's origin and path, inside a frame only; outside the fingerprint, never recorded.
+      ...(typeof extra.frameUrl === 'string' && extra.frameUrl !== '' ? { frameUrl: extra.frameUrl } : {}),
       editable: extra.editable ?? null,
       // CU-157: context, not identity - outside the fingerprint.
       textEntered: entered,
