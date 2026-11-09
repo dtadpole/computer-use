@@ -112,7 +112,8 @@ final class NamedControls: NSObject {
     for (index, name) in checkboxNames.enumerated() {
       let box = NSButton(checkboxWithTitle: name, target: self, action: #selector(toggle(_:)))
       box.tag = index
-      box.frame = NSRect(x: 20, y: CGFloat(52 + fieldNames.count * 56 + areaNames.count * 92 + index * 32), width: 380, height: 24)
+      box.sizeToFit()  // the box's frame is its square and title only, so a click at its centre toggles it
+      box.frame = NSRect(x: 20, y: CGFloat(52 + fieldNames.count * 56 + areaNames.count * 92 + index * 32), width: min(box.frame.width, 380), height: 24)
       box.identifier = NSUserInterfaceItemIdentifier("checkbox-\(index)")
       Fixture.shared.controls["checkbox-\(index)"] = box
       content.addSubview(box)
@@ -184,10 +185,12 @@ final class NamedControls: NSObject {
          "enabled": (value(item, "AXEnabled") as? Bool) ?? NSNull(), "char": (value(item, "AXMenuItemCmdChar") as? String) ?? NSNull(),
          "modifiers": (value(item, "AXMenuItemCmdModifiers") as? NSNumber)?.intValue ?? NSNull()]
       }
-      // Where the menu bar shows it (global points), so a live row can open it with a click.
+      // Where the menu bar shows it, so a live row can open it with a click: global points from the primary display's
+      // top-left, as `windows` reports (in process, Accessibility gives AppKit's bottom-left origin; flipped here).
       let origin = (value(top, "AXPosition") as? NSValue)?.pointValue ?? .zero
       let size = (value(top, "AXSize") as? NSValue)?.sizeValue ?? .zero
-      return ["title": "Actions", "items": items, "frame": ["x": origin.x, "y": origin.y, "width": size.width, "height": size.height]]
+      let primaryHeight = NSScreen.screens.first?.frame.height ?? 0
+      return ["title": "Actions", "items": items, "frame": ["x": origin.x, "y": primaryHeight - origin.y - size.height, "width": size.width, "height": size.height]]
     }
   }
 

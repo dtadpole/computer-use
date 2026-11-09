@@ -99,6 +99,7 @@ describe('named-controls (live rows decided by a name)', () => {
       assert.deepEqual(actions.items.map(({ title, role }) => [title, role]), [['Cancel Meeting', 'AXMenuItem'], ['Revert to Saved', 'AXMenuItem'], [disguised, 'AXMenuItem']])
       assert.deepEqual([actions.items[2].char, actions.items[2].modifiers], ['U', 1], 'Command-Shift-U: char U, modifiers shift')
       assert.equal(actions.items[0].char, null, 'an unbound item has no key equivalent')
+      assert.ok(['x', 'y', 'width', 'height'].every((key) => typeof actions.frame?.[key] === 'number'), 'the bar item carries its frame (global points, top-left)')
       const bound = await fixture.call('menuItemForKey', { key: 'shift+cmd+u' })
       assert.deepEqual([bound.title, bound.action], [disguised, 'choose:'])
       assert.equal((await fixture.state()).fields.namedMenuItems, 3)
