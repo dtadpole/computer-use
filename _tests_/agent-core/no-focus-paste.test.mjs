@@ -133,7 +133,9 @@ test('CU-219: a no-focus paste of an IBAN-captioned own copy still asks by its s
 
 test('CU-219: the side read is only for a key copy, cut or paste with a null target - never for other keys, typing, or a target that carries its own count', async () => {
   const others = await run([{ type: 'keypress', keys: ['META', 'A'] }, { type: 'keypress', keys: ['ENTER'] }, { type: 'type', text: 'hello' }, { type: 'keypress', keys: ['V'] }])
-  assert.equal(others.events.length, 4, 'all four were judged')
+  // CU-363: with no text entry focused, typing is an app shortcut and asks; unattended, its decline ends the batch, so the
+  // bare V after it is not judged.
+  assert.equal(others.events.length, 3, 'Command-A, Return and the typing were judged')
   assert.deepEqual(others.reads, [], 'Command-A, Return, typing and a bare V read nothing beside')
   assert.ok(others.events.every((e) => e.pasteboard === undefined), 'and record no pasteboard judgement')
   const focusedRun = await run([COPY, PASTE], { focused: () => FIELD, read: () => 999 })

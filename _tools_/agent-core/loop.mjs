@@ -132,7 +132,7 @@ function noteFromEffect(effect) {
  * `runsDirectory`, `resolveSecret(name)`, `inspector`, `closeEnvironment`, `now`, and `onEvent(line)`, called with each
  * trajectory event line as it is written, secret values scrubbed as in the file (its errors are ignored). Desktop runs
  * also take `apps` (start apps: candidates, asked or always-covered before the first capture), `excludeApps` or
- * `exclusions`, `appApprovals`.
+ * `exclusions`, `appApprovals`, and `standInTurns` (CU-342, see standInTurnsOf: set by cli.mjs run alone).
  */
 /**
  * The diagnostics of a point no app could be verified for (CU-47, #104): the culprit is the reply's own process
@@ -170,6 +170,23 @@ const RUN_ENDING_JOIN_CODES = new Set(['no_app_window', 'helper_lost', 'display_
 export const NO_APP_WINDOW_MAX_MS = 15_000
 /** CU-99: what the model is told instead of being shown the helper's blank frame. */
 export const NO_APP_WINDOW_NOTE = 'No window of an approved app is on screen, so there is no screenshot; input cannot act. Wait if it is opening; otherwise end and say so.'
+
+/** CU-342: the note a stand-in owner input writes in the trajectory, before the input itself, word for word. */
+export const STAND_IN_NOTE = "STAND-IN owner input (CU-342): not the owner's"
+
+/**
+ * CU-342: runTask's `standInTurns` - the model turns after which a rehearsal posts one labelled stand-in for the owner's
+ * key press - as a sorted list of distinct positive integers ([] when absent); anything else is a TypeError. Only
+ * cli.mjs run sets it, after its gates (scripted adapter, private CU_HOME, the seat's own hold token, unattended,
+ * macos-desktop); nothing here or in a driver reads an environment variable for it.
+ */
+export function standInTurnsOf(value) {
+  if (value === undefined || value === null) return []
+  if (!Array.isArray(value) || value.some((turn) => !Number.isSafeInteger(turn) || turn < 1)) {
+    throw new TypeError('standInTurns is a list of positive whole turn numbers')
+  }
+  return [...new Set(value)].sort((a, b) => a - b)
+}
 
 // Actions that send no input to the screen: they leave a panel's Go to Folder state as it is (CU-139).
 const NO_INPUT_ACTIONS = new Set(['wait', 'screenshot', 'zoom', 'cursor_position'])
@@ -211,6 +228,11 @@ export async function runTask(options) {
   } = options
   const task = typeof options.task === 'string' ? { text: options.task, meta: null } : { text: options.task?.text, meta: options.task?.meta ?? null }
   if (typeof task.text !== 'string' || task.text.trim() === '') throw new TypeError('runTask needs a task')
+  // CU-342: a stand-in the environment cannot post is refused here, before anything runs - never found mid-run.
+  const standInTurns = standInTurnsOf(options.standInTurns)
+  if (standInTurns.length > 0 && typeof environment?.simulateLocalInput !== 'function') {
+    throw new TypeError('standInTurns needs an environment with simulateLocalInput (the macos-desktop driver); this one has none, so the run does not start')
+  }
   const bounds = { ...DEFAULT_BOUNDS, ...(options.bounds ?? {}) }
   // Desktop runs use the app policy (desktop-extension/app-policy.md): per-app scope and the always store in place of
   // the site filter, the hard exclusions (run config may only add), and no navigate.
@@ -373,6 +395,8 @@ export async function runTask(options) {
     policy: desktop
       ? { kind: 'app', scope: options.apps ?? [], excludedAdded: exclusions.added, preApprovals }
       : { preApprovals: policy.preApprovals ?? [] },
+    // CU-342: a rehearsal's stand-in turns, so a run directory read on its own never takes their pauses for the owner's.
+    ...(standInTurns.length > 0 ? { standInTurns } : {}),
     build,
     startedAt,
   }
@@ -1129,7 +1153,7 @@ export async function runTask(options) {
       }
       // On the desktop, approvals key by bundle id, never by the driver's app: URL.
       const origin = desktop ? (context.target?.origin ?? context.frontmostBundleId) : originPattern(context.url)
-      if (decision.decision === 'confirm' && decision.class !== 'new_site' && decision.class !== 'new_app' && decision.class !== 'file_choice' && decision.askEachTime !== true && approvals.covers(decision.class, origin)) {
+      if (decision.decision === 'confirm' && decision.class !== 'new_site' && decision.class !== 'new_app' && decision.class !== 'file_choice' && decision.askEachTime !== true && approvals.covers(decision.approvalKey ?? decision.class, origin)) {
         decision = { ...decision, decision: 'allow', rule: `approved:${decision.class}` }
       }
       // Text meant for a secure field, or typed while secure input is on, is redacted like a credential, whatever the
@@ -1239,7 +1263,7 @@ export async function runTask(options) {
           logEvent('action', step, { ...base, status: 'declined', answeredBy: answer.answeredBy, attempted: false, completed: false })
           continue
         }
-        if (decision.class !== 'new_app' && decision.class !== 'file_choice' && decision.askEachTime !== true) approvals.grant({ cls: decision.class, origin, lifetime: answer.lifetime })
+        if (decision.class !== 'new_app' && decision.class !== 'file_choice' && decision.askEachTime !== true) approvals.grant({ cls: decision.approvalKey ?? decision.class, origin, lifetime: decision.runOnly === true && answer.lifetime === 'always' ? 'run' : answer.lifetime })
         if (decision.class === 'new_site') sitePolicy?.allowOrigin?.(action.url)
         if (decision.class === 'new_app') {
           policy.grantScope?.(decision.app, answer)
@@ -1460,10 +1484,20 @@ export async function runTask(options) {
       openedFrame = JSON.stringify(environment.frame ?? null)
       session = await model.open({ instructions, task: task.text, frame: environment.frame, tools: { navigate: !desktop, press: desktop, holdKey: holdKeyOffered }, signal: control.signal })
       let input = { task: task.text, screenshot: first.shot, url: first.shot.url }
+      let standInDone = 0
       for (;;) {
         if (!(await control.checkpoint())) {
           status = 'cancelled'
           break
+        }
+        // CU-342: once a named turn is over, one stand-in for the owner's key press - labelled first, then a real untagged
+        // event the helper's guards find as they find a person's. It is posted only here, with the run running (the
+        // checkpoint just passed); its pause is the ordinary local-input pause, which that checkpoint then waits out.
+        if (requests > standInDone && standInTurns.includes(requests)) {
+          standInDone = requests
+          logEvent('note', requests, { message: STAND_IN_NOTE, standIn: { kind: 'key', via: 'untagged' } })
+          await environment.simulateLocalInput({ kind: 'key', via: 'untagged' })
+          continue
         }
         if (activeMs() >= bounds.maxWallMs) {
           status = 'max_time'
