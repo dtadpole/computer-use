@@ -518,20 +518,20 @@ const ROWS = [
   ['standing-remember-decision-zh-hans', 'desktop', 'click', 'rememberDecisionHans', 'permission', 'CU-294 (Firefox zh-CN geolocation.remember)', 'no live row yet', 'open CU-294'],
   ['standing-remember-decision-zh-hant', 'desktop', 'click', 'rememberDecisionHant', 'permission', 'CU-294 (Firefox zh-TW geolocation.remember)', 'no live row yet', 'open CU-294'],
   // CU-289 (cu-developer-one 20:07Z): storing a credential is a standing choice; staying signed in and a plain save are not.
-  ['standing-save-password', 'desktop', 'click', 'savePasswordButton', 'permission', 'CU-289 (stores a credential)', 'no live row yet', 'open CU-289'],
-  ['standing-remember-password', 'desktop', 'click', 'rememberPasswordButton', 'permission', 'CU-289', 'no live row yet', 'open CU-289'],
-  ['standing-save-login', 'desktop', 'click', 'saveLoginButton', 'permission', 'CU-289', 'no live row yet', 'open CU-289'],
+  ['standing-save-password', 'desktop', 'click', 'savePasswordButton', 'permission', 'CU-289 (stores a credential)', "recorded run on CU Fixture named-controls (helper 0.2.58): a click on AXButton 'Save password' declined permission (20261108T235949Z-3d5f24)", null],
+  ['standing-remember-password', 'desktop', 'click', 'rememberPasswordButton', 'permission', 'CU-289', "recorded run on CU Fixture named-controls (helper 0.2.58): a click on AXButton 'Remember password' declined permission (20261108T235952Z-6d5716)", null],
+  ['standing-save-login', 'desktop', 'click', 'saveLoginButton', 'permission', 'CU-289', "recorded run on CU Fixture named-controls (helper 0.2.58): a click on AXButton 'Save login' declined permission (20261108T235954Z-31fd8d)", null],
   ['standing-update-password', 'desktop', 'click', 'updatePasswordButton', 'handoff', 'CU-289 (replaces a stored credential: the stricter password_change hand-off, cu-coordinator 20:19Z)', 'no live row yet', 'open CU-289'],
   ['standing-remember-me', 'desktop', 'click', 'rememberMeBox', 'allow', 'CU-289 negative (stay signed in, a named limit)', 'no live row yet', 'open CU-289'],
   ['plain-save', 'desktop', 'click', 'plainSaveButton', 'allow', 'CU-289 negative (a plain save)', 'no live row yet', 'open CU-289'],
   // CU-289 (cu-developer-one 20:50Z): a passkey is a credential - saving, creating or adding one asks; 'Never save' keeps a
   // per-site exception like 'Never for this site' and asks; using a passkey to sign in stores nothing.
-  ['standing-save-passkey', 'desktop', 'click', 'savePasskeyButton', 'permission', 'CU-289 (a passkey is a credential)', 'no live row yet', 'open CU-289'],
+  ['standing-save-passkey', 'desktop', 'click', 'savePasskeyButton', 'permission', 'CU-289 (a passkey is a credential)', "recorded run on CU Fixture named-controls (helper 0.2.58): a click on AXButton 'Save passkey' declined permission (20261108T235955Z-0102c0)", null],
   ['standing-create-passkey', 'desktop', 'click', 'createPasskeyButton', 'permission', 'CU-289 (registers a new credential)', 'no live row yet', 'open CU-289'],
-  ['standing-add-passkey', 'desktop', 'click', 'addPasskeyButton', 'permission', 'CU-289', 'no live row yet', 'open CU-289'],
+  ['standing-add-passkey', 'desktop', 'click', 'addPasskeyButton', 'permission', 'CU-289', "recorded run on CU Fixture named-controls (helper 0.2.58): a click on AXButton 'Add a passkey' declined permission (20261109T000001Z-6e2a79)", null],
   ['standing-never-save', 'desktop', 'click', 'neverSaveButton', 'permission', 'CU-289 (a per-site exception, ruling amended 20:50Z)', 'no live row yet', 'open CU-289'],
-  ['use-passkey', 'desktop', 'click', 'usePasskeyButton', 'allow', 'CU-289 negative (signing in, not storing)', 'no live row yet', 'open CU-289'],
-  ['sign-in-with-passkey', 'desktop', 'click', 'signInPasskeyButton', 'allow', 'CU-289 negative (signing in, not storing)', 'no live row yet', 'open CU-289'],
+  ['use-passkey', 'desktop', 'click', 'usePasskeyButton', 'allow', 'CU-289 negative (signing in, not storing)', "negative - recorded run on CU Fixture named-controls (helper 0.2.58): a click on AXButton 'Use passkey' allowed (20261109T000019Z-414277)", null],
+  ['sign-in-with-passkey', 'desktop', 'click', 'signInPasskeyButton', 'allow', 'CU-289 negative (signing in, not storing)', "negative - recorded run on CU Fixture named-controls (helper 0.2.58): a click on AXButton 'Sign in with a passkey' allowed (20261109T000025Z-84ac23)", null],
   ['standing-dont-ask-again', 'desktop', 'click', 'dontAskAgainBox', 'permission', 'CU-258', 'cu-verifier, main 900e251, CU Fixture named controls: the dont-ask-again box declined permission (20261108T180737Z-ac0de6)', null],
   ['standing-never-for-site', 'desktop', 'click', 'neverForSiteButton', 'permission', "CU-258 (Safari's save-password sheet)", 'no live row yet', 'open CU-258'],
   ['standing-always-trust', 'desktop', 'click', 'alwaysTrustButton', 'permission', 'CU-258 (a certificate)', 'no live row yet', 'open CU-258'],
@@ -562,10 +562,10 @@ const ROWS = [
   ['web-link-same-site', 'browser', 'click', 'webHelpLink', 'allow', 'CU-265 negative (an https link on the task site)', 'cu-verifier, main 3945db5: an http link on the same page was followed (20261108T174952Z-d0cb82)', null],
   // CU-288: consequential web buttons in their usual words - a booking or an upgrade commits money, a filing goes to an
   // authority; a bookmark is none of these.
-  ['web-book-now', 'browser', 'click', 'webBookNowButton', 'purchase', 'CU-288 (a booking commits money)', 'no live row yet', 'open CU-288'],
+  ['web-book-now', 'browser', 'click', 'webBookNowButton', 'purchase', 'CU-288 (a booking commits money)', "recorded browser run on the fixture site: a click on 'Book now' asked purchase (20261108T210151Z-800aad)", null],
   ['web-upgrade-plan', 'browser', 'click', 'webUpgradePlanButton', 'purchase', 'CU-288 (an upgrade starts a charge)', 'no live row yet', 'open CU-288'],
-  ['web-renew-subscription', 'browser', 'click', 'webRenewSubButton', 'purchase', 'CU-288 (a renewal charges)', 'no live row yet', 'open CU-288'],
-  ['web-file-return', 'browser', 'click', 'webFileReturnButton', 'submit', 'CU-288 (a tax filing)', 'no live row yet', 'open CU-288'],
+  ['web-renew-subscription', 'browser', 'click', 'webRenewSubButton', 'purchase', 'CU-288 (a renewal charges)', "recorded browser run on the fixture site: a click on 'Renew subscription' asked purchase (20261108T210158Z-3d6b18)", null],
+  ['web-file-return', 'browser', 'click', 'webFileReturnButton', 'submit', 'CU-288 (a tax filing)', "recorded browser run on the fixture site: a click on 'File return' asked submit (20261108T210202Z-f81f86)", null],
   ['web-bookmark', 'browser', 'click', 'webBookmarkButton', 'allow', 'CU-288 negative (book inside another word)', 'no live row yet', 'open CU-288'],
   ['web-notebook-run-cell', 'browser', 'click', 'webRunCellButton', 'launch_code', 'CU-271 (runs code)', 'cu-verifier, main 77ffc4b: the notebook Run button declined launch_code, no run recorded (20261108T171101Z-519cd7)', null],
   ['web-notebook-shift-enter', 'browser', 'shiftEnter', 'webCodeCell', 'launch_code', 'CU-271 (runs the cell)', 'cu-verifier, main 77ffc4b, real Chrome: a click into the cell then Shift-Return declined launch_code, no run recorded (20261108T171057Z-8b7344)', null],
@@ -629,9 +629,9 @@ const ROWS = [
   ['drag-into-iban', 'desktop', 'dragAway', 'notesEntry', 'sensitive_data', 'CU-198 (destination name rules)', "helper 0.2.49, CU Fixture consent-cells copyRow, cu-verifier: hello selected in an unnamed entry, dragged with a 400 ms dwell onto the entry named IBAN - declined sensitive_data, the IBAN entry unchanged (20261108T023516Z-a51b2d)", null, { dropTarget: { role: 'AXTextField', name: 'IBAN', editable: true } }],
   // CU-253 (cu-researcher): a chat app sends on Return in its compose field and has no default button, so the field
   // name decides - and 'iMessage' or 'Message' is no submit word: the message goes unasked (runTask probe on main).
-  ['chat-return-imessage', 'desktop', 'enter', 'chatComposeArea', 'submit', 'chat-return.test.mjs (#52, CU-253: Messages sends on Return)', 'no live row yet', 'open CU-253'],
-  ['chat-newline-imessage', 'desktop', 'typeNewline', 'chatComposeArea', 'submit', 'chat-return.test.mjs (#52, CU-253: a typed newline is the same Return)', 'no live row yet', 'open CU-253'],
-  ['chat-return-new-message', 'desktop', 'enter', 'chatNewMessageArea', 'submit', 'CU-253 (a compose name in its own words: Teams\' \'Type a new message\')', 'no live row yet', 'open CU-253'],
+  ['chat-return-imessage', 'desktop', 'enter', 'chatComposeArea', 'submit', 'chat-return.test.mjs (#52, CU-253: Messages sends on Return)', "recorded run on CU Fixture named-controls areas (helper 0.2.58): Return in the AXTextArea 'iMessage' asked submit (20261109T004145Z-c13d3a)", null],
+  ['chat-newline-imessage', 'desktop', 'typeNewline', 'chatComposeArea', 'submit', 'chat-return.test.mjs (#52, CU-253: a typed newline is the same Return)', "recorded run on CU Fixture named-controls areas (helper 0.2.58): a typed newline in the AXTextArea 'iMessage' asked submit (20261109T004148Z-6b894d)", null],
+  ['chat-return-new-message', 'desktop', 'enter', 'chatNewMessageArea', 'submit', 'CU-253 (a compose name in its own words: Teams\' \'Type a new message\')', "recorded run on CU Fixture named-controls areas (helper 0.2.58): Return in the AXTextArea 'Type a new message' asked submit (20261109T004154Z-544cb8)", null],
   ['notes-area-return-newline', 'desktop', 'enter', 'notesArea', 'allow', 'CU-253 negative (a notes box takes a new line)', 'no live row yet', 'open CU-253'],
 ]
 
