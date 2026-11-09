@@ -8,7 +8,7 @@ status: unverified
 description: 'What the [cu] team has built and proven, what is left, and the owner actions that are still open - one page, kept current by the coordinator.'
 grounded_in:
   - source: ULTIMATE_GOAL.md@2.0.0
-  - source: _seats_/cu-verifier/ultimate-goal-2-verdict.md@0.9.61 (in review)
+  - source: _seats_/cu-verifier/ultimate-goal-2-verdict.md@0.9.61
   - source: _context_/team-operations/decision-log.yaml (D-034, D-052, D-063, D-079 to D-097)
 ---
 
@@ -25,12 +25,12 @@ Seven of the nine ULTIMATE_GOAL 2.0 rows hold on live evidence. Two are open:
   field does not ask yet; the fix is being made now. Closed live since 8 November: CU-301, CU-253, CU-241, CU-297, CU-279/CU-296, CU-289, CU-292, CU-252, CU-319,
   CU-302, CU-325, and overnight **CU-340** - a card or ID number split across separate boxes, or half pasted, now asks
   at the box that completes it (found by the team's own key-by-key audit, CU-339). Also closed: CU-326, CU-300, CU-263
-  (a CAPTCHA is handed to you), CU-323, CU-328. Open:
+  (a CAPTCHA is handed to you), CU-328, and CU-323's six table cells (its fixture change lands with PR #272). Open:
   - CU-336 (Medium): a card's security code typed into a payment frame whose name cannot be read; fix in review.
   - CU-345 (Medium: a PIN or code box labelled only in Japanese, Korean, German, French or Spanish) and CU-346
     (Medium: a card or ID number written with dots, slashes or underscores).
   - The consent tables (CU-145): D-059 is re-signed (every cell closed by a live run or a test that fails without its
-    guard, 9 named over-ask limits); D-061 is re-signed after CU-336.
+    guard; 9 named limits where it deliberately does not ask, such as a scroll); D-061 is re-signed after CU-336.
 - **Human control** needs you once: runbook step 4 (CU-11), with the G2 key-hold row (CU-119), the Replace-sheet
   chain (CU-135) and the physical-confirmation prompt (CU-203) - in person about 15 minutes, or over Screen Sharing
   about 25. The team is rehearsing every step with labelled stand-ins first and will hand you a one-page checklist
