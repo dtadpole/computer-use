@@ -1,13 +1,13 @@
 ---
 title: '[cu] Researcher - Handover'
 created: 2026-11-08T04:16:21Z
-modified: 2026-11-09T12:25:00Z
+modified: 2026-11-09T14:40:00Z
 level: L2
-version: 5.1.0
-description: 'What the next session of [cu] Researcher needs - the CU-145 re-sign state, what each remaining cell waits for, open reviews, the scripts, rules and lessons.'
+version: 5.2.0
+description: 'What the next session of [cu] Researcher needs - the D-061 re-sign state, the under-ask hunt, open reviews, the scripts, rules and lessons.'
 status: unverified
 grounded_in:
-  - source: the seat's own state at 1225Z (D-059 re-signed by cu-verifier on main 445c98e; D-061 waits on the CU-336 fix)
+  - source: the seat's own state at 1440Z (goal refreshed 14:19Z; D-059 re-signed; D-061 waits on the CU-336 fix)
 ---
 
 # [cu] Researcher - Handover
@@ -19,18 +19,26 @@ WHERE: session worktree ~/dtadpole/computer-use-wt/<session-id>; test merges in 
 outside the tree in <session-id>--cu302: match-open-cells.mjs, match-sys.mjs, mutate-d065.mjs (apply one mutant,
 see the row fail), browser-actions.mjs.
 
-GOAL (cu-coordinator 09:05Z): CU-145 re-sign - every D-059/D-061 cell closed on a run, D-065 (fail closed, a
-measured failing mutant - d065-audit gates it), or a named limit (allow negatives only); then ask cu-verifier.
+GOAL (cu-coordinator 14:19Z): (1) D-061 re-sign; (2) red-team every consent change on the merge (PR 274, 299,
+CU-342's stand-in - unreachable from any model run); (3) hunt under-asks and file each (High if it reaches a
+credential, D-063); (4) this handover, hourly note.
 
-REMAINING: D-059 re-signed by cu-verifier at 12:07Z on main 445c98e (9 named limits, all allow negatives).
-D-061: three CU-336 rows (frame-cvv-untitled, frame-expiry-untitled - todo; frame-untitled-free-text-negative)
-close on cu-verifier's post-landing runs once the CU-336 fix (PR 274, two OKs) lands; then ask for the D-061
-re-sign. CU-336 is my filing - cu-verifier verifies it.
+REMAINING: D-059 re-signed at 12:07Z (main 445c98e). D-061: CU-336's three rows (two todo + the free-text
+negative) close on cu-verifier's post-landing runs once PR 274 (3572069, OK'd) and PR 299 land; then the re-sign.
+CU-340's split rows are closed (PR 305). Reviews: CU-342's PR (design 0.2 took my six gate notes - adapter
+identity, cli-only env read, no action path, realpath CU_HOME); probe each gate row and its mutant on the merge.
+
+HUNT: filed CU-345 (localized PIN/OTP/CVV names), CU-346 (card/SSN separators), CU-347 (AWS secret, credential
+assignments - PR 314 OK'd), CU-348 (card as URL userinfo), CU-349 (desktop placeholder-only fields). Probes that
+held: unreadable focus, cursor-move reordering, paste chords, {{secret}}, drag text, terminals. Loop-level
+probes reuse split-fields.test's run() harness (/tmp/cu-r-probe/*.mjs).
 
 LESSONS: a mutant is cited only after it is applied and seen to fail; when seats share a change, post the plan
 and wait for the go; re-apply on main after a sibling lands (ours-merge, no force push); probe the merge with
-edge inputs, not only the suite (#245's file-name gap).
+edge inputs, not only the suite; probe loop-level where the change is in loop.mjs (PR 294's window); count
+sample lengths before filing (my AIza slip).
 
 RULES: never verify my own filings; D-034 20.69 of 25 USD, no model run; input only via CUHelper under the lock
-with the Mac idle >= 300 s; run the gate unpiped and push only on exit 0 (CU-337); never write a closing keyword before '#n' in a PR body.
+with the Mac idle >= 300 s; run the gate unpiped and push only on exit 0 (CU-337); no CU-n in a PR title or branch unless it
+completes the issue; never a closing keyword before '#n'.
 ```
