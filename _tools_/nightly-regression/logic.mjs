@@ -36,11 +36,13 @@ export const TIMEOUTS = Object.freeze({
 const DEFAULTS = Object.freeze({
   repo: null, ref: 'origin/main', out: '/tmp/cu-nightly', fetch: true, nodeOnly: false, lockWait: 900,
   yieldFlag: null, onLock: null, onRelease: null, keepWorktree: false, seat: 'cu-integrator', lockDir: null, worktreeRoot: '/tmp',
+  worktreePrefix: 'cu-nightly-wt-',
   help: false,
 })
 const VALUE_FLAGS = Object.freeze({
   '--repo': 'repo', '--ref': 'ref', '--out': 'out', '--lock-wait': 'lockWait', '--yield-flag': 'yieldFlag',
   '--on-lock': 'onLock', '--on-release': 'onRelease', '--seat': 'seat', '--lock-dir': 'lockDir', '--worktree-root': 'worktreeRoot',
+  '--worktree-prefix': 'worktreePrefix',
 })
 const BOOL_FLAGS = Object.freeze({
   '--no-fetch': ['fetch', false], '--node-only': ['nodeOnly', true], '--keep-worktree': ['keepWorktree', true], '--help': ['help', true],
@@ -74,6 +76,8 @@ export function parseArgs(argv) {
   for (const [key, flag] of Object.entries(PATH_OPTIONS)) {
     if (opts[key] !== null && !opts[key].startsWith('/')) throw new Error(`${flag} needs an absolute path`)
   }
+  // A name, not a path: the worktree stays one level below --worktree-root (helper 0.2.60 admits one-level children).
+  if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(opts.worktreePrefix)) throw new Error('--worktree-prefix needs a plain name (letters, digits, . _ -)')
   return opts
 }
 

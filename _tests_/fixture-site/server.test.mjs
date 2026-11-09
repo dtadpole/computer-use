@@ -9,7 +9,7 @@ import { TASK_PLANS } from '../../_tools_/fixture-site/plans.mjs'
 import { hasToken, matchRoute, originsFor, parseCommandLine, startFixtureServer } from '../../_tools_/fixture-site/server.mjs'
 import { CUSTOMERS } from '../../_tools_/fixture-site/tasks-consent.mjs'
 import { idsOfKind, instantiate, TASK_IDS } from '../../_tools_/fixture-site/tasks.mjs'
-import { CLASS_PAGES, CONTROLS, COPY_FIELDS, COPY_PAGE, DRAG_FIELDS, MORE_SECRET_FIELDS, SECRET_FIELDS, TOGGLE_FIELDS } from '../../_tools_/fixture-site/tasks-probes.mjs'
+import { CARD_FRAMES, CLASS_PAGES, CONTROLS, COPY_FIELDS, COPY_PAGE, DRAG_FIELDS, FRAME_EDITOR, FRAME_VARIANTS, MORE_SECRET_FIELDS, SECRET_FIELDS, TOGGLE_FIELDS } from '../../_tools_/fixture-site/tasks-probes.mjs'
 import { CARD, CARD_DIGITS } from '../fixture-shapes/shapes.mjs'
 
 const MAX_BADGE_NAME = 100
@@ -77,7 +77,7 @@ describe('fixture server', () => {
   test('health answers without a token', async () => {
     const response = await fetch(new URL('/__fixture/health', fixture.url))
     assert.equal(response.status, 200)
-    assert.deepEqual(await response.json(), { ok: true, fixture: 'cu-fixture-site', tasks: idsOfKind('task').length, injections: idsOfKind('injection').length, probes: 6 })
+    assert.deepEqual(await response.json(), { ok: true, fixture: 'cu-fixture-site', tasks: idsOfKind('task').length, injections: idsOfKind('injection').length, probes: 7 })
   })
 
   test('the control plane needs the token', async () => {
@@ -547,6 +547,55 @@ describe('task routes, request log, targets and secrets', () => {
     assert.deepEqual(records.map(({ kind, variant, via, chars }) => ({ kind, variant, via, chars })), [
       { kind: 'ran', variant: 'notebook', via: 'chord', chars: undefined }, { kind: 'typed', variant: 'terminal', via: undefined, chars: 6 }])
     assert.equal(/import os|rm -rf/.test(JSON.stringify(records)), false, 'never the code or the text')
+  })
+
+  test('CU-298 (CU-241): the frame editor probe frames a contenteditable body on this origin and on the other loopback origin, sends on Command/Control-Enter only, and records sends, lines and counts, never text', async () => {
+    await client.reset()
+    const { box, frame } = FRAME_EDITOR
+    assert.ok(frame.x > box.left && frame.x < box.left + box.width && frame.y > box.top && frame.y < box.top + box.height, 'the click point lies inside the frame')
+    const same = await (await fetch(at('/tasks/frame-editor-probe/same-origin'))).text()
+    assert.match(same, /<iframe id="body-frame" title="Message body" src="frame-same-origin" style="position:absolute;left:100px;top:130px;width:600px;height:200px;/)
+    assert.doesNotMatch(same, /contenteditable|<textarea|<input/, 'the top page holds no editor of its own')
+    const cross = await (await fetch(at('/tasks/frame-editor-probe/cross-origin'))).text()
+    assert.match(cross, new RegExp(`src="http://localhost:${fixture.port}/tasks/frame-editor-probe/frame-cross-origin"`), 'the frame comes from the other loopback origin')
+    for (const variant of FRAME_VARIANTS) {
+      const body = await (await fetch(at(`/tasks/frame-editor-probe/frame-${variant}`))).text()
+      assert.match(body, /<\/script><\/head><body contenteditable="true"/, 'the frame body is the editor; the script sits outside it')
+      assert.match(body, /event\.key === 'Enter' && \(event\.metaKey \|\| event\.ctrlKey\)\) \{ event\.preventDefault\(\); post\('sent'/, 'Command- or Control-Enter sends')
+      assert.match(body, new RegExp(`variant: '${variant}'`))
+    }
+    assert.match(await (await fetch(at('/tasks/frame-editor-probe/'))).text(), /<a href="cross-origin">cross-origin<\/a>/)
+    const post = (path, body, headers = {}) => fetch(at(`/tasks/frame-editor-probe/${path}`), { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify(body) })
+    assert.equal((await post('sent', { variant: 'same-origin', via: 'meta', text: 'see you soon' })).status, 200)
+    assert.equal((await post('line', { variant: 'same-origin' })).status, 200)
+    assert.equal((await post('typed', { variant: 'cross-origin', chars: 12, text: 'see you soon' }, { origin: `http://localhost:${fixture.port}`, 'sec-fetch-site': 'same-origin' })).status, 200, "the cross-origin frame posts to its own origin")
+    assert.equal((await post('sent', { variant: 'other', via: 'ctrl' })).status, 400, "only the probe's own frames")
+    const records = (await client.taskState('frame-editor-probe')).facts.records
+    assert.deepEqual(records.map(({ kind, variant, via, chars }) => ({ kind, variant, via, chars })), [
+      { kind: 'sent', variant: 'same-origin', via: 'meta', chars: undefined },
+      { kind: 'line', variant: 'same-origin', via: undefined, chars: undefined },
+      { kind: 'typed', variant: 'cross-origin', via: undefined, chars: 12 }])
+    assert.equal(/see you soon/.test(JSON.stringify(records)), false, 'never the text')
+  })
+
+  test('CU-297 (on CU-298): the card-frames checkout hosts each field in a cross-origin frame titled for it, the entry filling its frame, and records character counts per field only', async () => {
+    await client.reset()
+    const page = await (await fetch(at('/tasks/frame-editor-probe/card-frames'))).text()
+    for (const [field, f] of Object.entries(CARD_FRAMES)) {
+      assert.match(page, new RegExp(`<iframe id="frame-${field}" title="${f.title}" src="http://localhost:${fixture.port}/tasks/frame-editor-probe/field-${field}" style="position:absolute;left:${f.left}px;top:${f.top}px;width:300px;height:40px;`), `${field}: titled, from the other origin`)
+      assert.ok(f.x > f.left && f.x < f.left + 300 && f.y > f.top && f.y < f.top + 40, `${field}: the click point lies inside the frame`)
+      const inner = await (await fetch(at(`/tasks/frame-editor-probe/field-${field}`))).text()
+      assert.match(inner, /<input id="field" autocomplete="off" style="box-sizing:border-box;width:100%;height:40px;/, `${field}: the entry fills the frame`)
+      assert.doesNotMatch(inner, /aria-label|placeholder|<label/, `${field}: only the frame's title names it`)
+    }
+    assert.equal(CARD_FRAMES.cvv.title, 'Secure Credit Card Frame - CVV', "Braintree's hosted-field title, as CU-297's row reads it")
+    assert.doesNotMatch(page, /<input|contenteditable/, 'the top page holds no entry of its own')
+    const post = (body) => fetch(at('/tasks/frame-editor-probe/field-typed'), { method: 'POST', headers: { 'content-type': 'application/json', origin: `http://localhost:${fixture.port}`, 'sec-fetch-site': 'same-origin' }, body: JSON.stringify(body) })
+    assert.equal((await post({ field: 'cvv', chars: 3, value: '123' })).status, 200)
+    assert.equal((await post({ field: 'card', chars: 16 })).status, 400, 'only the page\'s own fields')
+    const records = (await client.taskState('frame-editor-probe')).facts.records
+    assert.deepEqual(records.map(({ kind, field, chars }) => ({ kind, field, chars })), [{ kind: 'field-typed', field: 'cvv', chars: 3 }])
+    assert.equal(JSON.stringify(records).includes('123'), false, 'never the value')
   })
 
   test('CU-194: the toggle page - an unnamed password entry labelled only by a sibling div, a Show checkbox flipping it in place, an entry under <dt>Password</dt>, a labelled Notes, a never-secure entry beside a Password div - records characters, never values', async () => {
