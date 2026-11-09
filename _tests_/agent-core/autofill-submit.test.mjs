@@ -40,9 +40,12 @@ test('CU-302 (cu-verifier): a field the browser autofilled and the run then edit
   assert.equal(judge(click, signIn([{ ...password, edited: true }])), 'credential/autofill:credential')
 })
 
-test('CU-302 (cu-verifier\'s pin): typing into an autofilled password asks by itself; once typed, the browser drops it from the list', () => {
+test('CU-302 (cu-verifier\'s pin): typing into an autofilled password asks by itself, and the submit asks again', () => {
   assert.equal(judge({ type: 'type', text: 'x' }, { tag: 'input', inputType: 'password', role: 'textbox', name: 'Password', editable: true }), 'credential/class:credential', 'the edit itself asks')
-  assert.equal(judge(click, signIn([{ tag: 'input', inputType: 'text', name: 'Username', autocomplete: 'username' }])), 'allow', 'Sign in afterwards: only the username is still autofilled')
+  // The driver keeps reporting a field once seen autofilled, marked edited (#200). Asked again at the submit by choice:
+  // the edit's approval covered a keystroke, not sending the rest of the saved secret.
+  assert.equal(judge(click, signIn([{ ...password, edited: true }])), 'credential/autofill:credential', 'Sign in afterwards')
+  assert.equal(judge(click, signIn([{ tag: 'input', inputType: 'text', name: 'Username', autocomplete: 'username', edited: true }])), 'allow', 'an edited username alone stays free')
 })
 
 test('CU-302 (cu-researcher N1): a saved card is named as one in the reason', () => {
