@@ -6,6 +6,8 @@
  * Browser targets: what the chrome-browser driver's #describe returns (role and name from the accessibility tree,
  * the rest from page-scripts.mjs describeElement and environment.mjs). Desktop targets: what macos-desktop
  * environment.mjs maps from the helper's reply. Contexts: the fields loop.mjs's contextFor puts beside the target.
+ * The browser driver also sends href, autocomplete, origin, textEntered, caption, box and fingerprint on every target
+ * (cu-developer-two, 23:24Z); add them to a builder when a rule under probe reads them.
  * The values are fixture words only; build secret-shaped values from _tests_/fixture-shapes/shapes.mjs, never here.
  */
 
@@ -28,6 +30,10 @@ export const web = Object.freeze({
   radio: (name, checked) => ({ tag: 'input', inputType: 'radio', role: 'radio', name, editable: false, ...flag('checked', checked) }),
   /** An ARIA switch: its checked comes from aria-checked, which the page writes (CU-373: never trusted to free). */
   ariaSwitch: (name, checked) => ({ tag: 'button', role: 'switch', name, editable: false, ...flag('checked', checked) }),
+  /** A toggle button: pressed from aria-pressed (PR #393; true, false or 'mixed'; omitted when unknown). */
+  toggleButton: (name, pressed) => ({ tag: 'button', role: 'button', name, editable: false, ...flag('pressed', pressed) }),
+  /** A same-origin frame editor's body: focusedElement answers it as an editable body (#369); a plain body is null. */
+  frameEditorBody: () => ({ tag: 'body', role: '', name: '', editable: true }),
   /** A closed native select: a control, never editable; Chrome's accessibility role is combobox (CU-370). */
   select: (name = 'Bulk actions') => ({ tag: 'select', role: 'combobox', name, editable: false }),
   /** keyTarget's answers (CU-370, environment.mjs): the option or radio a key lands on, or an unread choice. */
@@ -92,6 +98,7 @@ export const SOURCES = Object.freeze([
   { field: 'optionUnread', file: '_environments_/chrome-browser/environment.mjs' },
   { field: 'readFailed', file: '_environments_/chrome-browser/environment.mjs' },
   { field: 'checked', file: '_environments_/chrome-browser/page-scripts.mjs', pending: 'PR #393' },
+  { field: 'pressed', file: '_environments_/chrome-browser/page-scripts.mjs', pending: 'PR #393' },
   { field: 'sheet', file: '_environments_/macos-desktop/environment.mjs' },
   { field: 'defaultButton', file: '_environments_/macos-desktop/environment.mjs' },
   { field: 'caption', file: '_environments_/macos-desktop/environment.mjs' },
