@@ -990,6 +990,11 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (scheme !== '' && !WEB_SCHEMES.has(scheme) && pressesLink) classes.push('permission')
     const keyboard = keyboardActivation(action, target, context)
     if (keyboard.deletes) classes.push('delete')
+    // CU-381 (High; cu-coordinator 22:09Z): on a web page Delete or Backspace with no text entry focused - a null or
+    // role-less focus, the page body, a row the driver could not name - reaches the page's own handler, which may delete
+    // (cu-verifier's live row) - it asks delete, at CU-363's level. A text entry and a frame host keep their rules.
+    if (context.url != null && !/^(app|desktop):/.test(String(context.url ?? '')) && (action.type === 'keypress' || action.type === 'hold_key')
+      && [...keysOf(action)].some((key) => key === 'DELETE' || key === 'BACKSPACE') && !isTextEntry(target) && !framesHost(target)) classes.push('delete')
     // CU-370 (design note 0.1; cu-developer-two's driver contract): the option a key lands on is judged like a click on it.
     // A keypress's keyTarget answers the option itself (selectOption: true) - or the select with optionUnread: true when an
     // open popup's highlight cannot be read, which asks. A type is judged by every option its prefix passes through
