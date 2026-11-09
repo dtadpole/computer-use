@@ -2,7 +2,7 @@
 title: Desktop fixture tests
 created: 2026-11-02T08:34:00Z
 modified: 2026-11-09T21:40:00Z
-version: 0.8.0
+version: 0.9.0
 description: Tests of the desktop fixture - its judges, bundle identity and channel framing, and its screens in the real CU Fixture app, which they launch; run them only under the desktop-run lock (CU-305).
 grounded_in:
   - source: _tools_/desktop-fixture/INDEX.md
