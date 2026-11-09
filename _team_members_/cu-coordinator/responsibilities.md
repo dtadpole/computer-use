@@ -1,9 +1,9 @@
 ---
 title: '[cu] Coordinator - Responsibilities'
 created: 2026-11-01T09:06:25Z
-modified: 2026-11-06T11:23:46Z
+modified: 2026-11-08T23:24:41Z
 level: L2
-version: 1.2.0
+version: 1.3.0
 description: 'The responsibilities of [cu] Coordinator, with the owner statements for this team and its current task.'
 status: unverified
 grounded_in:
@@ -43,7 +43,7 @@ Every 15 minutes, from a schedule you create for yourself (`schedule_create`, ev
    [member review](../../../../../../shared/_conventions_/session-team-coordination/member-review.md) from raw
    evidence (commits, files, test output), append the verdict to `execution-review-log.jsonl`, send it by inbox.
 4. Unblock: answer design questions, settle scope conflicts, hand the next item to an idle member.
-5. Record lasting decisions; land record changes from `~/reflection--cu-coordinator` (D-004).
+5. Record lasting decisions; record changes go by PR from your session worktree, landed by cu-integrator (D-076, D-077).
 
 ## Linear duties (linear-workflow.md, D-055)
 
