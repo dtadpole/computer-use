@@ -47,7 +47,7 @@ caller (CLI, MCP tool) -> agent core loop <-> model adapter (claude-gateway | re
 | [password-memory](password-memory.md) | a seen password field stays one when shown |
 | [text-entry-focus-click](text-entry-focus-click.md) | a focus click takes no class from the entry's name |
 | [reply-text-entered](reply-text-entered.md) | a bare Reply free only with every entry empty |
-| [consent-routes](consent-routes.md) | the D-059 route audit, its sign-off and matrix |
+| [consent-routes](consent-routes.md) | the D-059 route audit and sign-off; [limits](consent-limits.md) |
 | [sensitive-classes](sensitive-classes.md) | D-061: sensitive classes' value and name rules |
 | [open-questions](open-questions.md) | questions, defaults, review state |
 
