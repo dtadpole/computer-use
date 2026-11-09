@@ -704,12 +704,28 @@ export async function runTask(options) {
     return typeof app === 'string' && app !== '' && app !== 'null' ? `nofocus:${app}` : null
   }
   const typedIn = (key) => (key !== null && typedByField.has(key) ? typedByField.get(key) : '')
+  // CU-340: a value a page splits across boxes (an SSN in 3/2/4, a card in 4x4) - each box's buffer holds only its part.
+  // Each field remembers the scope it was typed in (the page's origin and path, or the frontmost app) and when (a count
+  // of field changes); the policy gets the last three other fields typed in the same scope within the last eight field
+  // changes (a box typed key by key counts once), oldest first, with this action's own before and next, and judges them joined. In memory only (D-031).
+  const typedMeta = new Map()
+  let typedClock = 0
+  let typedLastKey = null
+  let typedScopeNow = null
+  const typedScopeOf = (state) => {
+    if (typeof state?.frontmostBundleId === 'string' && state.frontmostBundleId !== '') return `app:${state.frontmostBundleId}`
+    try { const u = new URL(String(state?.url ?? '')); return `page:${u.origin}${u.pathname}` } catch { return null }
+  }
+  const typedRecentFor = (key, scope) => {
+    if (scope === null) return []
+    return [...typedByField.keys()].filter((k) => k !== key && typedByField.get(k) !== '' && typedMeta.get(k)?.scope === scope && typedClock - typedMeta.get(k).at <= 8).slice(-3).map((k) => typedByField.get(k))
+  }
   const typedCardRuns = () => [...new Set([...typedByField.values()].flatMap((text) => [...String(text).matchAll(/(?:\d[ -]?){13,19}/g)].map((m) => m[0].replace(/\D/g, '')).filter((d) => d.length >= 13 && d.length <= 19)))]
   const setTyped = (key, text) => {
     if (key === null) return
     typedByField.delete(key)
     typedByField.set(key, text.slice(-TYPED_CHARS_MAX))
-    while (typedByField.size > TYPED_FIELDS_MAX) typedByField.delete(typedByField.keys().next().value)
+    while (typedByField.size > TYPED_FIELDS_MAX) { const oldest = typedByField.keys().next().value; typedByField.delete(oldest); typedMeta.delete(oldest) }
   }
   const typedCharOf = (action) => {
     if (action.type !== 'keypress') return null
@@ -727,11 +743,24 @@ export async function runTask(options) {
   const typedFor = (action, target, pasted = null, state = null) => {
     const key = typedKeyOf(target, state)
     typedKeyNow = key
+    typedScopeNow = typedScopeOf(state)
     const before = typedIn(key)
     const next = typedNextOf(action, pasted)
+    if (next !== '' && unreadPaste.has(key)) return { before, next, afterUnreadPaste: true }
     return before !== '' && next !== '' ? { before, next } : null
   }
-  const noteTyped = (action, target, pasted = null) => {
+  const typedSplitFor = (action, target, pasted = null) => {
+    const next = typedNextOf(action, pasted)
+    if (next === '' || typedKeyNow === null) return null
+    const parts = typedRecentFor(typedKeyNow, typedScopeNow)
+    return parts.length ? { parts, before: typedIn(typedKeyNow), next } : null
+  }
+  // CU-340 (cu-researcher, cu-coordinator 12:59Z): on the desktop a paste carries only its source class (D-031), so its
+  // text never reaches the buffer and a card pasted in half and typed in half leaves half a card. A field that took such a
+  // paste is marked; digits typed into it afterwards ask (named over-ask: digits typed after any desktop paste there).
+  const unreadPaste = new Set()
+  const noteTyped = (action, target, pasted = null, pastedUnread = false) => {
+    if (pastedUnread) { const at = typedKeyNow ?? typedKeyOf(target); if (at !== null) unreadPaste.add(at); return }
     const key = typedKeyNow ?? typedKeyOf(target)
     // No readable focus: a pointer action, Return, Tab or Escape may have moved it.
     const keysNow = action.type === 'keypress' ? (keySetOf(action) ?? new Set()) : new Set()
@@ -739,7 +768,7 @@ export async function runTask(options) {
       for (const field of [...typedByField.keys()]) if (field.startsWith('nofocus:')) typedByField.delete(field)
       if (String(key ?? '').startsWith('nofocus:')) return
     }
-    const add = (text) => setTyped(key, typedIn(key) + text)
+    const add = (text) => { setTyped(key, typedIn(key) + text); if (key !== null) { if (key !== typedLastKey) { typedClock += 1; typedLastKey = key } typedMeta.set(key, { scope: typedScopeNow, at: typedClock }) } }
     if (action.type === 'type') return add(String(action.text ?? ''))
     if (typeof pasted === 'string') return add(pasted)
     if (action.type === 'keypress') {
@@ -747,7 +776,7 @@ export async function runTask(options) {
       const keys = keySetOf(action) ?? new Set()
       if (char !== null) add(char)
       else if (keys.size === 1 && keys.has('BACKSPACE')) setTyped(key, typedIn(key).slice(0, -1))
-      else if (keys.size === 2 && (keys.has('META') || keys.has('CTRL')) && keys.has('A')) setTyped(key, '')
+      else if (keys.size === 2 && (keys.has('META') || keys.has('CTRL')) && keys.has('A')) { setTyped(key, ''); unreadPaste.delete(key) }
     }
   }
   const contextFor = async (action, previous = null) => {
@@ -839,10 +868,11 @@ export async function runTask(options) {
       ? selectedItemsOf(await Promise.resolve(environment.selectedItems()).catch(() => null))
       : undefined
     const typed = typedFor(action, target, !desktop && paste ? paste.text : null, state)
+    const typedSplit = typedSplitFor(action, target, !desktop && paste ? paste.text : null)
     // CU-325: a navigate carries the card-length digit runs this run typed or pasted (in memory, never recorded), so a URL
     // path that holds one asks whatever its prefix.
     const typedDigits = action.type === 'navigate' ? typedCardRuns() : []
-    return { url: state.url, target: remembered(target), ...(typed ? { typed } : {}), ...(typedDigits.length ? { typedDigits } : {}), ...(boundMenuItem ? { boundMenuItem } : {}), ...(selection ? { selection } : {}), ...(dropTarget ? { dropTarget: remembered(dropTarget) } : {}), ...(dragText !== undefined ? { dragText } : {}), ...(afterClose ? { afterClose: true } : {}), ...(resubmits ? { resubmits: historyMove } : {}), ...(historyJudged ? { historyJudged } : {}), ...(paste ? { paste } : {}), ...(pasteboardJudged ? { pasteboardJudged } : {}), ...(state.interstitial === true ? { interstitial: true } : {}), dialog: state.dialog ?? null, task: task.text, ...app }
+    return { url: state.url, target: remembered(target), ...(typed ? { typed } : {}), ...(typedSplit ? { typedSplit } : {}), ...(typedDigits.length ? { typedDigits } : {}), ...(boundMenuItem ? { boundMenuItem } : {}), ...(selection ? { selection } : {}), ...(dropTarget ? { dropTarget: remembered(dropTarget) } : {}), ...(dragText !== undefined ? { dragText } : {}), ...(afterClose ? { afterClose: true } : {}), ...(resubmits ? { resubmits: historyMove } : {}), ...(historyJudged ? { historyJudged } : {}), ...(paste ? { paste } : {}), ...(pasteboardJudged ? { pasteboardJudged } : {}), ...(state.interstitial === true ? { interstitial: true } : {}), dialog: state.dialog ?? null, task: task.text, ...app }
   }
 
   let consecutiveBlocks = 0
@@ -1289,7 +1319,7 @@ export async function runTask(options) {
         if (action.type === 'drag') lastPointer = action.path[action.path.length - 1]
         notes.push(...noteFromEffect(effect))
         Object.assign(result, { status: 'done', ...(action.type === 'hold_key' ? { message: heldMessage(action) } : {}) })
-        noteTyped(judged, context.target, !desktop && context.paste && typeof context.paste.text === 'string' ? context.paste.text : null)
+        noteTyped(judged, context.target, !desktop && context.paste && typeof context.paste.text === 'string' ? context.paste.text : null, desktop && Boolean(context.paste) && !Object.prototype.hasOwnProperty.call(context.paste, 'destination'))
         // A desktop driver reports how frame pixels mapped to screen points (scale, originPt); replay needs it.
         const mapping = desktop && effect?.mapping ? { mapping: effect.mapping } : {}
         logEvent('action', step, { ...base, status: 'done', effect, ...mapping, ms: performMs(), ...(retry ? { retry } : {}), attempted: true, completed: true })
