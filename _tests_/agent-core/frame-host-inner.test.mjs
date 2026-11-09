@@ -29,6 +29,14 @@ test('CU-300: an unnamed inner field is judged by its frame host\'s name - typed
   assert.equal(judge(type('correct-horse'), inner('', 'Password')), 'credential', 'a framed password')
 })
 
+test('CU-300: text dragged onto an unnamed inner field meets the host\'s name too (cu-researcher on 248f060)', () => {
+  const drag = { type: 'drag', path: [{ x: 10, y: 10 }, { x: 300, y: 40 }] }
+  const source = { tag: 'p', role: 'paragraph', name: 'Your code', origin: 'https://shop.example' }
+  const decide = (dropTarget) => judge(drag, source, { dropTarget, dragText: '123' })
+  assert.equal(decide(inner('', 'Secure Credit Card Frame - CVV')), 'sensitive_data', 'a drop into the framed CVV')
+  assert.equal(decide(inner('Order notes', 'Comments')), 'allow', 'a drop into a neutral framed field')
+})
+
 test('CU-300: the field\'s own name decides by itself - the host never weakens it; two neutral names stay free', () => {
   assert.equal(judge(type('4'), inner('Card number', 'Comments')), 'sensitive_data', 'a card-number field in a comments-titled frame')
   assert.equal(judge(type('hello there'), inner('Order notes', 'Comments')), 'allow', 'both neutral')
