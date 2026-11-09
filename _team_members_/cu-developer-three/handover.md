@@ -1,44 +1,43 @@
 ---
 title: '[cu] Developer Three (macOS helper) - handover'
 created: 2026-11-08T04:20:00Z
-modified: 2026-11-08T18:53:00Z
+modified: 2026-11-08T23:12:00Z
 level: L1
-version: 1.3.0
+version: 1.4.0
 description: 'What a fresh [cu] Developer Three session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
-  - source: cu-coordinator decision 2026-11-08 (workspace move; each seat refreshes handover.md, at most 300 words)
-  - source: Linear CU-235, CU-238, CU-240, CU-250, CU-252, CU-262, CU-264 (8 Nov)
+  - source: cu-coordinator decision 2026-11-08 (owner's order - one successor per seat; handover before stand-down)
+  - source: Linear CU-227, CU-240, CU-252, CU-289, CU-292, CU-295 (8 Nov)
 ---
 
 # [cu] Developer Three (macOS helper) - handover
 
-Seat `cu-developer-three`; goal unchanged. Code: `~/computer-use--cu-developer-three` (new root `6314c0c`). Scratch
-scripts in `/tmp/cu-developer-three-scratch`: `install-held.sh` (a clean worktree is fast-forwarded to origin/main;
-it waits for owner idle, a free lock, no hold or waiting gate - D-073, CU-276), `install-slot.sh`, `locked.mjs`
-(lock code from `/tmp/cu-dev3-origin-main`). A fresh session re-reads them before use.
+Seat `cu-developer-three`. Scratch scripts in `/tmp/cu-developer-three-scratch` (re-read before use):
+`install-held.sh <version>` (idle check, no gate or waiter, hold, install, READBACK), `held-run.sh <script> <purpose>`
+(an idle-checked hold around one scripted CU Fixture measurement), `locked.mjs` (run under the desktop-run lock).
 
 ## Live state
 
-- Installed helper: 0.2.56 (Info.plist, running and source 0.2.56; self-test 40; sha256 7e276fa7), from main 69570e6.
-- 8 Nov in order: 0.2.52 menuKey (CU-235), 0.2.53 menuPath and servicesMenu (CU-250), 0.2.54 selectedItems
-  (CU-262), 0.2.55 whole-Mac tools in the floor (CU-264), 0.2.56 one grant read per gate with re-check (CU-240).
+- Installed helper: 0.2.56 (READBACK OK, sha256 7e276fa7). 0.2.57 (CU-227) is on main, not yet installed; install it
+  and 0.2.58 back to back.
+- #150 (0.2.58: CU-292's floor, CU-295's helperCheckouts allowlist) was taken over by the successor at 727226c. After
+  it lands: add the two helperCheckouts entries to this Mac's local config, install, then show hd-coordinator READBACK,
+  the start-log `checkouts:` line, and noInput runs admitted from a new worktree and an old path, one refused.
 
-## Issues and PRs
+## CU-252 (in flight)
 
-- Verify: CU-250, CU-262, CU-240 (cu-verifier's rows). CU-235 and CU-238 are Done (CU-232 verified live).
-- In Progress: CU-203 (the owner's in-person Confirm).
-- Open: #104, the CU Fixture Finder stand-in for CU-252 and CU-269 (OK'd at a39f4e6).
-- Backlog: CU-227 (the end watchdog: design branch b670297, code c112045; it takes the next free version, 0.2.57+).
+The stand-in's rows gave the helper nothing (probes 215355Z, 221544Z): every row hit-tests as an unnamed AXStaticText,
+and selectedItems reads unreadable. An NSView's AXFilename and AXURL do reach the helper (the AXImage target). Fix
+on branch `cu/cu-developer-three-cu-252-finder-shape` (worktree `/tmp/cu-dev3-wt-252b`): the row view drops its
+role override, and the cell (NSTableCellView) carries AXFilename and AXURL. Probe 4 on that fixture decides it; then
+open the PR. cu-developer-one's fail-closed rule (#153) asks on an unreadable read in any app.
+
+## Issues
+
+Verify: CU-227, CU-240, CU-250, CU-262, CU-289. In Progress: CU-292, CU-295 (#150). Todo: CU-203 (owner session).
 
 ## Rules learned
 
-Every CUHelper-starting run goes under the desktop-run lock. No force-push, and never merge main into a PR already in
-cu-integrator's chain. Check a live row's chords against macOS hotkeys and Services shortcuts. The helper reads
-Accessibility only: no URL resource values, never an AXValue as a name.
-
-## Next step
-
-1. Answer helper defects and reviews first.
-2. CU-227: design PR, then code.
-3. Every install: `install-held.sh <version>` with `CU_DEV3_INSTALL_BODY` set. Announce only after `READBACK OK`, with the sha256.
+Every CUHelper-starting run goes under the lock; announce a hold only after it succeeds. Never merge main into a PR in
+cu-integrator's chain. A config-read allowlist matches real paths only. Check live-row chords against macOS hotkeys.

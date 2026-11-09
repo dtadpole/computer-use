@@ -23,6 +23,30 @@ export const MESSAGING_APPS = Object.freeze([
 
 const MESSAGING_IDS = new Set(MESSAGING_APPS.flatMap((entry) => entry.ids))
 
+/**
+ * IDEs (CU-271, CU-279): an id, or a prefix ending in '.' for a vendor's family. Running code there is the owner's call,
+ * and an integrated terminal runs what is typed. Sources: cu-researcher on CU-279 (Fleet's software catalog); the rest
+ * kept from #119's list. Cursor only by its exact id: com.todesktop. is every ToDesktop-built app.
+ */
+export const IDE_APPS = Object.freeze([
+  Object.freeze({ app: 'Visual Studio Code', ids: Object.freeze(['com.microsoft.VSCode']), source: "Fleet's software catalog (cu-researcher on CU-279)" }),
+  Object.freeze({ app: 'VS Code family', ids: Object.freeze(['com.microsoft.VSCodeInsiders', 'com.visualstudio.code.oss', 'com.vscodium']), source: "#119's list" }),
+  Object.freeze({ app: 'Cursor', ids: Object.freeze(['com.todesktop.230313mzl4w4u92']), source: "Fleet's software catalog (cu-researcher on CU-279)" }),
+  Object.freeze({ app: 'Zed', ids: Object.freeze(['dev.zed.Zed']), source: "Fleet's software catalog (cu-researcher on CU-279)" }),
+  Object.freeze({ app: 'JetBrains IDEs', ids: Object.freeze(['com.jetbrains.']), source: "Fleet's software catalog (cu-researcher on CU-279: intellij, pycharm, pycharm.ce, WebStorm, goland under com.jetbrains.)" }),
+  Object.freeze({ app: 'Other IDEs', ids: Object.freeze(['com.apple.dt.Xcode', 'com.google.android.studio', 'com.sublimetext.', 'com.panic.nova']), source: "#119's list" }),
+])
+
+/** Whether `bundleId` is an IDE's: an exact id (or one below it), or a family prefix ending in '.'. */
+export function isIdeApp(bundleId) {
+  const id = String(bundleId ?? '').toLowerCase()
+  if (id === '') return false
+  return IDE_APPS.some((entry) => entry.ids.some((one) => {
+    const known = one.toLowerCase()
+    return known.endsWith('.') ? id.startsWith(known) : id === known || id.startsWith(`${known}.`)
+  }))
+}
+
 /** Whether `bundleId` is a messaging app's, by exact id. */
 export function isMessagingApp(bundleId) {
   return typeof bundleId === 'string' && MESSAGING_IDS.has(bundleId)

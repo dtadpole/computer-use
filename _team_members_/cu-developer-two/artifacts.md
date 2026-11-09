@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - artifacts'
 created: 2026-11-01T09:28:00Z
-modified: 2026-11-08T18:14:00Z
+modified: 2026-11-08T22:39:00Z
 level: L1
-version: 1.115.0
+version: 1.116.0
 description: 'Pointers to the persistent work of [cu] Developer Two (environments) - proposals, code, tests and run records - written by the seat itself.'
 status: unverified
 grounded_in:
@@ -16,6 +16,14 @@ Pointers only; each target is its own authority.
 
 | Date | Artifact | State |
 |---|---|---|
+| 2026-11-08 | #130 merged 9a374e83c | Part of CU-227 (driver half): a helper its end watchdog stopped writes stopped.json beside the held-keys marker and exits 70; the driver reads it once on link loss and ends the run helper_lost with details.stopped, worded as the helper stopping, and removes the file (helper half #133). |
+| 2026-11-08 | #137 merged 51bc62d41 | Fixes CU-290: the two load-flaky wall-clock rows (no-app-window appears-within; the MCP end-to-end timing) bound what they prove - a 10 s wait that ends at the first window, and a run below 2 x the wait. In Verify. |
+| 2026-11-08 | #135 merged df20b4b8e | Fixes CU-287: messaging apps judged by kind - app-kinds.mjs lists their exact bundle ids with sources; Return in any non-search field there asks send whatever the field is called. In Verify. |
+| 2026-11-08 | #134 merged 4c8a6c154 | Fixes CU-286 (cu-developer-one's draft, adopted as one PR): 'Ask to join' and 'Start huddle' ask submit; 'Allow always' and 'Remember this decision' ask permission. In Verify. |
+| 2026-11-08 | #131 merged 62acf7861 | Fixes CU-253's last gap: 'Type a new message' (Teams), 'Write a message…' (Telegram) and 'Type a message here' ask submit on Return; search fields stay free. In Verify. |
+| 2026-11-08 | #122 merged 42727f870 | Fixes CU-282: the live-view MJPEG row waits for the screencast stop with a deadline, not a fixed 50 ms tick. In Verify. |
+| 2026-11-08 | #114 merged b348966ab | Part of CU-252: seam rows - an open of the selection through the real driver's selectedItems asks for a script, a bundle or an unreadable read and opens a document freely. |
+| 2026-11-08 | #18 merged 8cf739b8b | Part of CU-226 (closed as measured): the focus-after-click measurement tool, its start guard mirroring the lock's own-hold rule. |
 | 2026-11-08 | #109 merged ea0e004eb | Part of CU-271: the run-code probe's terminal focuses its helper textarea on a press and uses xterm.js 5's real CSS. This settled R3: the driver reads a focused 0x0 off-screen helper textarea as terminal: true, so real web terminals are refused (live 20261108T182143Z-364a13, 20261108T182149Z-c4f5be on main). |
 | 2026-11-08 | #113 merged 2aa515a56 | Fixes CU-240 (driver half, on helper 0.2.56): a not_granted after the grant read true earlier in the run keeps its code but says so, and no longer asks the owner to grant what is on; a capture refused that way is retried once, input never. In Verify. |
 | 2026-11-08 | #105 merged 453bc465f | Records: handover 3.0.0 (state at 17:00Z). |
