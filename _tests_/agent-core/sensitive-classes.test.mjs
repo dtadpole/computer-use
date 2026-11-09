@@ -570,9 +570,9 @@ const FRAME_ROWS = [
   ['frame-password', 'correct-horse', 'Password', 'credential', null, 'cu-verifier, real Chrome, main cecb828, #171 card-frames page: typing into the Password frame declined credential (20261109T010450Z-f3980c)'],
   ['frame-card-value', CARD, 'Secure card number input frame', 'sensitive_data', null, "cu-verifier, main 7d31df5, headless browser route: a card value typed into a cross-origin iframe titled with the row's frame name declined sensitive_data, the target read as the iframe host by its title, no input reached the frame (20261109T084009Z-e0c556)"],
   // CU-336: a cross-origin frame whose title is unread - a short card code (CVV, expiry) asks sensitive_data (design note 0.2).
-  ['frame-cvv-untitled', '123', null, 'sensitive_data', 'open CU-336', 'no live row yet'],
-  ['frame-expiry-untitled', '12/29', null, 'sensitive_data', 'open CU-336', 'no live row yet'],
-  ['frame-untitled-free-text-negative', 'hello there', null, 'allow', 'open CU-336', 'no live row yet'],
+  ['frame-cvv-untitled', '123', null, 'sensitive_data', null, "cu-verifier, main 2db7042 (PR #274 in), headless browser route, a loopback page with an untitled cross-origin iframe whose input has no name: '123' declined sensitive_data, nothing reached the frame (20261109T150419Z-3f055b)"],
+  ['frame-expiry-untitled', '12/29', null, 'sensitive_data', null, "cu-verifier, main 2db7042 (PR #274 in), headless browser route, a loopback page with an untitled cross-origin iframe whose input has no name: '12/29' declined, nothing reached the frame (20261109T150426Z-74e409)"],
+  ['frame-untitled-free-text-negative', 'hello there', null, 'allow', null, "negative - cu-verifier, main 2db7042 (PR #274 in), headless browser route, a loopback page with an untitled cross-origin iframe whose input has no name: 'hello there' done (20261109T150432Z-c9bdd1)"],
   ['frame-order-notes-negative', 'hello there', 'Order notes', 'allow', null, 'negative - cu-verifier, real Chrome, main cecb828, #171 card-frames page: text typed into the Order notes frame went in (20261109T010501Z-279786)'],
 ]
 
