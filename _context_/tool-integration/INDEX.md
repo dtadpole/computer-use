@@ -1,11 +1,11 @@
 ---
 title: Tool integration for computer use
 created: 2026-11-01T16:58:52Z
-modified: 2026-11-01T16:58:52Z
-version: 1.0.0
+modified: 2026-11-09T13:47:48Z
+version: 1.0.1
 description: 'How a DSH session and a heddle session can call the [cu] computer-use agent as a tool (milestone M4), from source reading and a stub-server probe.'
 grounded_in:
-  - source: _team_members_/cu-researcher/responsibilities.md (2.0.0, items 1 and 2)
+  - source: _seats_/cu-researcher/responsibilities.md (2.0.0, items 1 and 2)
   - source: _designs_/system-architecture/integration-surface.md (design 0.8.1)
 ---
 

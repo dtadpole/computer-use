@@ -1,12 +1,12 @@
 ---
 title: Computer-use fixture site
 created: 2026-11-01T09:33:46Z
-modified: 2026-11-07T04:55:49Z
-version: 1.5.0
+modified: 2026-11-09T13:47:48Z
+version: 1.5.1
 description: A dependency-free loopback web server with 35 tasks, 14 prompt-injection pages and 3 probe pages, each judged from page and server state through a token-protected state endpoint, for evaluating the computer-use agent.
 grounded_in:
   - source: developers.openai.com/api/docs/guides/tools-computer-use (fetched 2026-11-01), the pickup, visitor badge and Filters examples
-  - source: _team_members_/cu-verifier/responsibilities.md@1.0.0
+  - source: _seats_/cu-verifier/responsibilities.md@1.0.0
   - source: _designs_/system-architecture/goal-checks.md@0.8.0
 ---
 

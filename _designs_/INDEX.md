@@ -1,12 +1,12 @@
 ---
 title: computer-use designs
 created: 2026-11-01T09:24:10Z
-modified: 2026-11-08T23:08:40Z
-version: 0.9.2
+modified: 2026-11-09T13:47:48Z
+version: 0.9.3
 description: Formal designs of the computer-use project - the contracts the [cu] seats build against.
 grounded_in:
   - source: REPO.yaml (registers _designs_)
-  - source: _team_members_/cu-developer-one/responsibilities.md@3.3.0
+  - source: _seats_/cu-developer-one/responsibilities.md@3.3.0
   - source: _context_/team-operations/decision-log.yaml (D-015 approval of system-architecture; D-027 and D-030 approval of desktop-extension)
 ---
 

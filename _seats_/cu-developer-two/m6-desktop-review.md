@@ -1,14 +1,14 @@
 ---
 title: M6 desktop design review - environment side
 created: 2026-11-02T08:40:00Z
-modified: 2026-11-05T16:22:58Z
+modified: 2026-11-09T13:47:48Z
 level: L1
 status: unverified
-version: 1.0.2
+version: 1.0.3
 description: cu-developer-two's review of desktop-extension revision 0.1 from the helper and driver side - what holds against the measurements, and five changes or open questions before approval.
 grounded_in:
   - source: dtadpole/computer-use _designs_/desktop-extension/INDEX.md@0.1.0
-  - source: _team_members_/cu-developer-two/macos-helper-measurements.md@1.0.0
+  - source: _seats_/cu-developer-two/macos-helper-measurements.md@1.0.0
 ---
 
 # M6 desktop design review - environment side

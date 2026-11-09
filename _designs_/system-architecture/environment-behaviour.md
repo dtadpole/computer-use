@@ -1,21 +1,21 @@
 ---
 title: Browser environment behaviour and decisions
 created: 2026-11-01T09:39:00Z
-modified: 2026-11-05T16:23:12Z
+modified: 2026-11-09T13:47:48Z
 level: L1
-version: 0.8.1
+version: 0.8.2
 description: The design's answers to cu-developer-two's eight interface decisions, and the runtime rules the browser environment follows - adopted rules, sandbox refusal, per-run clipboard, network layers and the launch gate.
 status: unverified
 grounded_in:
-  - source: _team_members_/cu-developer-two/environment-interface-proposal.md@1.0.0
-  - source: _team_members_/cu-developer-two/environment-behaviour-proposal.md@1.0.0
-  - source: _team_members_/cu-developer-two/headless-chrome-measurements.md@1.1.0
+  - source: _seats_/cu-developer-two/environment-interface-proposal.md@1.0.0
+  - source: _seats_/cu-developer-two/environment-behaviour-proposal.md@1.0.0
+  - source: _seats_/cu-developer-two/headless-chrome-measurements.md@1.1.0
   - source: _context_/team-operations/decision-log.yaml (D-005, D-008, D-011, D-012, D-014)
 ---
 
 # Browser environment behaviour and decisions
 
-The runtime rules of cu-developer-two's [behaviour proposal](../../_team_members_/cu-developer-two/environment-behaviour-proposal.md)
+The runtime rules of cu-developer-two's [behaviour proposal](../../_seats_/cu-developer-two/environment-behaviour-proposal.md)
 version 1.0.0 are adopted (settle, held keys, `type`, `drag`, `scroll`, popups, isolation) except where this article
 says otherwise. Engine: Chrome over CDP, not Playwright (D-008).
 

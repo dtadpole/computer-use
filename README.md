@@ -1,9 +1,9 @@
 ---
 title: computer-use
 created: 2026-11-05T14:50:00Z
-modified: 2026-11-08T10:00:00Z
+modified: 2026-11-09T13:47:48Z
 level: L2
-version: 2.0.0
+version: 2.0.1
 description: What the computer-use repository is, for a reader arriving cold - a computer-use agent for native macOS and the team's records.
 status: unverified
 grounded_in:
@@ -29,7 +29,7 @@ starts from a scrubbed tree, and the earlier history is kept privately.
 | `_evaluators_/` | the desktop task suite and its runner |
 | `_vendor_/` | `browser-use`, the dependency-free Chrome DevTools client, copied unmodified with its provenance (CU-1) |
 | `_context_/` | research (ChatGPT computer use, desktop mechanics, model capabilities, evaluation design) and the team's operating records |
-| `_team_members_/` | one record per seat |
+| `_seats_/` | one record per seat |
 | `ULTIMATE_GOAL.md` | what completes the project, one row per verifiable part |
 
 ## Working here
