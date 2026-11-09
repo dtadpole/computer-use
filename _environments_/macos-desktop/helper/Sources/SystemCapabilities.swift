@@ -73,7 +73,9 @@ final class SystemCapabilities: Capabilities {
     lock.unlock()
     guard fresh else { return }
     // CU-329: read first; write - and remember for the run's end - only when the app does not already have it set.
-    if ManualAccessibilityRestore.shouldWrite(prior: Accessibility.manualAccessibility(pid: pid)) {
+    let prior = Accessibility.manualAccessibility(pid: pid)
+    ManualAccessibilityRestore.recordRead(prior)
+    if ManualAccessibilityRestore.shouldWrite(prior: prior) {
       Accessibility.setManualAccessibility(pid: pid)
       ManualAccessibilityRestore.remember(pid)
     }

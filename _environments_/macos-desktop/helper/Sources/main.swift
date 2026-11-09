@@ -141,7 +141,7 @@ dispatcherOptions.heldMarkerPath = options.dryRun ? options.heldMarker : (option
 /// CU-329: give back the one Accessibility write at the run's end (each write bounded by its 0.5 s timeout).
 func restoreManualAccessibility() {
   let restored = ManualAccessibilityRestore.restoreAll(write: { Accessibility.setManualAccessibility(pid: $0, on: false) }, isRunning: ManualAccessibilityRestore.processRuns)
-  if !restored.isEmpty { note("restored AXManualAccessibility on \(restored.count) app(s)") }
+  if let reads = ManualAccessibilityRestore.readSummary() { note("AXManualAccessibility reads: \(reads); restored \(restored.count)") }
 }
 let requests = DispatchQueue(label: "com.reflection.cu-helper.requests")
 /// Taken once by whichever end comes first; a second end waits here until the process is gone.

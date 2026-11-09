@@ -2016,6 +2016,10 @@ func testManualAccessibilityRestore() {
   check(restored == [101, 303] && written == [101, 303], "every remembered pid still running gets false back, once, in order; a quit app is skipped")
   check(ManualAccessibilityRestore.restoreAll(write: { written.append($0) }, isRunning: { _ in true }).isEmpty && written.count == 2,
         "a second end (bye racing a broken link) writes nothing again")
+  ManualAccessibilityRestore.clearReads()
+  check(ManualAccessibilityRestore.readSummary() == nil, "no reads: no log line")
+  for prior: ManualAccessibilityRestore.Prior in [.unset, .unset, .on, .unreadable] { ManualAccessibilityRestore.recordRead(prior) }
+  check(ManualAccessibilityRestore.readSummary() == "unset 2, on 1, unreadable 1", "the end's log line counts the read outcomes, never a name")
   check(ManualAccessibilityRestore.processRuns(getpid()) && !ManualAccessibilityRestore.processRuns(99_999_999), "processRuns: this process yes, an impossible pid no")
 }
 

@@ -235,7 +235,7 @@ enum ManualAccessibilityRestore {
   private static var remembered = Set<pid_t>()
 
   /// What the read before the write found: set, unset (false, or "no value"/"unsupported"), or a failed read.
-  enum Prior: Equatable { case on, unset, unreadable }
+  enum Prior: Hashable { case on, unset, unreadable }
 
   /// Whether to write true (and remember the pid): only when the read says unset. Already on - the user's or another
   /// assistive app's - is left alone, and a failed read writes nothing (cu-developer-one, helper-boundary 0.3.12).
@@ -243,6 +243,17 @@ enum ManualAccessibilityRestore {
 
   static func remember(_ pid: pid_t) {
     lock.lock(); remembered.insert(pid); lock.unlock()
+  }
+
+  /// How the reads before the write came out this run, for the end's log line (cu-researcher: which error an Electron
+  /// app returns for an unset attribute shows up here after any run that touched one). Counts only, never a name.
+  private static var reads: [Prior: Int] = [:]
+  static func recordRead(_ prior: Prior) { lock.lock(); reads[prior, default: 0] += 1; lock.unlock() }
+  static func clearReads() { lock.lock(); reads = [:]; lock.unlock() }
+  static func readSummary() -> String? {
+    lock.lock(); let counts = reads; lock.unlock()
+    guard !counts.isEmpty else { return nil }
+    return "unset \(counts[.unset] ?? 0), on \(counts[.on] ?? 0), unreadable \(counts[.unreadable] ?? 0)"
   }
 
   /// The remembered pids to write false back to: those still running, in order.
