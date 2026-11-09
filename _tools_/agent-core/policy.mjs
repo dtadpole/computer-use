@@ -171,6 +171,21 @@ function keyboardActivation(action, target, context = {}) {
 const SECRET = /\{\{secret:[a-z0-9_-]+\}\}/i
 
 /**
+ * CU-301: the character a printable key puts into the focused field - a keypress or a hold whose one non-modifier key is
+ * a single character or Space, with Shift and/or Option at most (Option types the Mac's special characters); null for
+ * anything else. Command or Control make it a shortcut, judged by the rules for chords.
+ */
+function printableKeyChar(action) {
+  if (action.type !== 'keypress' && action.type !== 'hold_key') return null
+  const keys = keysOf(action)
+  if (keys.has('META') || keys.has('CTRL')) return null
+  const main = [...keys].filter((key) => key !== 'SHIFT' && key !== 'ALT')
+  if (main.length !== 1) return null
+  if (main[0] === 'SPACE') return ' '
+  return main[0].length === 1 ? main[0] : null
+}
+
+/**
  * A reference to an existing order ('Order #4344', 'Order 4344' with three or more digits, 'Order details') names a record;
  * it is dropped before the purchase words are matched, so the verb ('Order', 'Order now', 'Place order') still confirms
  * and any other purchase word in the same name still counts (CU-8: a double-click on a list cell 'Order #4344').
@@ -331,6 +346,14 @@ const PASSWORD_NAMES = Object.freeze(['password', 'passcode', 'passphrase', 'pin
 // cu-researcher on #112: data: and blob: stay in the browser (blob: is how sites serve a generated 'Download CSV'); a
 // download they start still meets the page's download handling.
 const WEB_SCHEMES = new Set(['http', 'https', 'javascript', 'about', 'data', 'blob'])
+// CU-241 (cu-researcher's amendment): the elements that host another document - the page's focus read stops at them
+// when the document inside is cross-origin (a fenced frame always is), so what the key reaches is unread.
+const FRAME_HOST_TAGS = new Set(['iframe', 'frame', 'object', 'embed', 'fencedframe'])
+const FRAME_HOST_ROLES = new Set(['iframe', 'iframepresentational', 'embeddedobject', 'pluginobject'])
+function framesHost(target) {
+  if (!target || typeof target !== 'object') return false
+  return FRAME_HOST_TAGS.has(String(target.tag ?? '').toLowerCase()) || FRAME_HOST_ROLES.has(String(target.role ?? '').toLowerCase())
+}
 // CU-263 (design note 0.2): a human check - a CAPTCHA - is the person's to solve, as Operator hands it over. Known by the
 // pressed target's name (also inside a longer label: 'Press & Hold to confirm you are a human'), the providers' Chinese
 // labels included; a bare 'Verify' or 'I agree' stays judged by its own words (named limit).
@@ -343,23 +366,36 @@ const CAPTCHA_NAME = new RegExp([
   '\\bselect\\s+all\\s+(?:images|squares)\\s+with\\b',
   '我不是机器人', '我不是機器人', '我是人类', '我是人類', '人机验证', '人機驗證', '人机身份验证', '人機身份驗證', '确认您是真人', '確認您是真人',
 ].join('|'), 'i')
-// ... a text CAPTCHA's entry, where typing the shown characters is solving it (a bare 验证码 is as often a one-time code,
-// which the D-061 value rules judge) ...
-const CAPTCHA_ENTRY = /\bcaptcha\b|\btype\s+the\s+(?:characters|letters|text)\s+(?:you\s+see|shown|in\s+the\s+(?:image|picture))\b|图形验证码|圖形驗證碼|图片验证码|圖片驗證碼/i
-// ... and the challenge providers' own frames, by the target document's origin (the browser driver describes an element
-// inside a cross-site frame through its frame session). www.google.com is left out: its frames carry maps and sign-in too,
-// so reCAPTCHA's image challenge inside it is the bare-Verify limit; its checkbox is caught by name.
-const CAPTCHA_HOSTS = Object.freeze(['challenges.cloudflare.com', 'hcaptcha.com', 'recaptcha.net', 'arkoselabs.com', 'geetest.com'])
-function captchaFrame(origin) {
-  if (typeof origin !== 'string' || !/^https?:\/\//i.test(origin.trim())) return false
-  let host
+// ... a text CAPTCHA's entry, where typing the shown characters (or the heard ones) is solving it (a bare 验证码 is as often a
+// one-time code, which the D-061 value rules judge) ...
+const CAPTCHA_ENTRY = /\bcaptcha\b|\btype\s+the\s+(?:characters|letters|text)\s+(?:you\s+see|shown|in\s+the\s+(?:image|picture))\b|\benter\s+what\s+you\s+hear\b|图形验证码|圖形驗證碼|图片验证码|圖片驗證碼/i
+// ... the challenge providers' own frames, by the target document's origin (the browser driver describes an element
+// inside a cross-site frame through its frame session) or, once the driver reports it (CU-300), its frame URL - read in
+// memory, never recorded - which lets reCAPTCHA's frames under www.google.com/recaptcha/ count without a google.com-wide
+// rule (cu-researcher's F2); DataDome serves its challenges from captcha-delivery.com (F3) ...
+const CAPTCHA_HOSTS = Object.freeze(['challenges.cloudflare.com', 'hcaptcha.com', 'recaptcha.net', 'arkoselabs.com', 'geetest.com', 'captcha-delivery.com'])
+function hostAndPath(url) {
+  if (typeof url !== 'string' || !/^https?:\/\//i.test(url.trim())) return null
   try {
-    host = new URL(origin.trim()).hostname.toLowerCase()
+    const parsed = new URL(url.trim())
+    return { host: parsed.hostname.toLowerCase(), path: parsed.pathname }
   } catch {
-    return false
+    return null
   }
-  return CAPTCHA_HOSTS.some((provider) => host === provider || host.endsWith(`.${provider}`))
 }
+function captchaFrame(target) {
+  for (const url of [target?.origin, target?.frameUrl]) {
+    const at = hostAndPath(url)
+    if (at === null) continue
+    if (CAPTCHA_HOSTS.some((provider) => at.host === provider || at.host.endsWith(`.${provider}`))) return true
+    if ((at.host === 'www.google.com' || at.host === 'google.com') && at.path.startsWith('/recaptcha/')) return true
+  }
+  return false
+}
+// ... and a frame host titled for a challenge (cu-researcher's F1): the focus read stops at the provider's iframe, titled
+// 'reCAPTCHA', 'Widget containing checkbox for hCaptcha security challenge' or 'Widget containing a Cloudflare security
+// challenge', so a Space or Return after Tab reaches the check box through it; CU-300's frameHost carries the same title.
+const CAPTCHA_FRAME_TITLE = /\b(?:re)?captcha\b|\bhcaptcha\b|\bsecurity\s+challenge\b|\bhuman\s+verification\b|\bturnstile\b/i
 // CU-253, CU-287: messaging apps are known by kind (app-kinds.mjs, exact bundle ids with sources), and the names of compose
 // fields judge every other app.
 // CU-287: a search field takes Return to search, in a messaging app too ('Search Acme' in Slack).
@@ -720,13 +756,17 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       || context.paste?.intoTerminal === true) {
       return { decision: 'block', class: null, rule: 'terminal_view', reason: 'typing into a web terminal is refused, as in a terminal app' }
     }
-    // CU-263 (design note 0.2): a human check is handed to the person - never pre-approvable; unattended the run ends
-    // refused. Any click, drag, key or typing inside a challenge provider's frame; a click, drag, Space or Return on a
-    // target named as one (the desktop has names only - its origin is a bundle id); typing into a text CAPTCHA's entry.
+    // CU-263 (design note 0.3): a human check is handed to the person - never pre-approvable; unattended the loop declines
+    // it (handoff_unavailable). Any click, drag, key or typing inside a challenge provider's frame or on a frame host titled
+    // for one (the keyboard route after Tab); a click, drag, Space or Return on a target named as one (the desktop has
+    // names only - its origin is a bundle id); typing into a text CAPTCHA's entry. Named limit: a slider or picture
+    // puzzle drawn into the page itself, outside any provider frame and unnamed (cu-researcher's F4).
     {
       const captcha = { decision: 'handoff', class: null, rule: 'captcha', reason: 'a human check (CAPTCHA) is the person\'s to solve' }
       const acts = POINTER.has(action.type) || ['drag', 'type', 'keypress', 'hold_key'].includes(action.type)
-      if (acts && captchaFrame(target?.origin)) return captcha
+      const onWeb = context.url != null && !/^(app|desktop):/.test(String(context.url))
+      const titledFrame = onWeb && ((framesHost(target) && CAPTCHA_FRAME_TITLE.test(name)) || CAPTCHA_FRAME_TITLE.test(String(target?.frameHost?.name ?? '')))
+      if (acts && (captchaFrame(target) || titledFrame)) return captcha
       const presses = POINTER.has(action.type) || action.type === 'drag' || keysOf(action).has('ENTER') || keyboardActivation(action, target, context).activates
       if (presses && CAPTCHA_NAME.test(name)) return captcha
       if (action.type === 'type' && isTextEntry(target) && CAPTCHA_ENTRY.test(name)) return captcha
@@ -819,7 +859,31 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // to judge, so it asks submit. Named over-ask: code editors. The desktop keeps its default-button reading (CU-142).
     const webTag = /^(app|desktop):/.test(String(context.url ?? '')) ? '' : String(target?.tag ?? '').toLowerCase()
     const multiLineWeb = target?.editable === true && webTag !== '' && webTag !== 'input'
-    if (multiLineWeb && keysOf(action).has('ENTER') && (keysOf(action).has('META') || keysOf(action).has('CTRL'))) classes.push('submit')
+    // CU-241 (cu-researcher, 12:47Z): an iframe-body editor (TinyMCE, CKEditor 4, many webmail composers) keeps the caret
+    // in a same-origin frame's <body>, which the browser driver does not describe - the focus reads null; a cross-origin
+    // frame (an iframe, frame, object, embed or fenced frame) stops the read at its host element. Either way the chord
+    // lands in content the gate cannot read, and in an editor it is the send, so on a web page it asks submit too, with
+    // any extra modifier. Named over-ask: the chord with nothing focused, or in a cross-origin widget frame. A focus read
+    // that fails never reaches here: the loop refuses the key as target_unknown.
+    const webPage = context.url != null && !desktopUrl
+    const unreadWebFocus = webPage && !held && (target == null || framesHost(target))
+    if ((multiLineWeb || unreadWebFocus) && keysOf(action).has('ENTER') && (keysOf(action).has('META') || keysOf(action).has('CTRL'))) classes.push('submit')
+    // CU-297 (design note 0.1): a frame host's document is unread, so on a web page (1) text typed or keystroke-pasted into
+    // it meets the field-name rules by the frame's own name - hosted payment and sign-in fields title each frame for its
+    // field (Braintree's 'Secure Credit Card Frame - CVV', Stripe's 'Secure CVC input frame'); and (2) a Return or typed
+    // line break there asks submit, CU-190's web twin: the frame's form and its submit button are unread, and a hosted
+    // checkout or sign-in submits on Return. A null focus keeps today's rule (a focused body has no form). Named over-asks:
+    // a vendor prefix naming every frame for the card ('... Frame - Postal Code'); a Return in a framed comments editor.
+    const framedWeb = unreadWebFocus && target != null
+    // Every route that puts text into the focused field reads the frame host as an entry named by it: typing, a printable
+    // key (CU-301), a keystroke paste, and a menu paste whose read destination is a frame host (cu-researcher).
+    const asFrameEntry = (into) => (webPage && !held && framesHost(into) ? asNamedEntry(String(into.name ?? '')) : null)
+    const frameEntry = framedWeb ? asFrameEntry(target) : null
+    if (framedWeb && pressesEnter) classes.push('submit')
+    // ... and Space presses whatever control is focused inside the frame - a hosted Pay or Submit button, a CAPTCHA's
+    // check box (CU-263's keyboard route) - so it asks submit too until the driver follows the focus (CU-300). Named
+    // over-ask: a lone Space keypress in a framed editor (typed text goes as 'type').
+    if (framedWeb && keysOf(action).has('SPACE') && !['META', 'CTRL'].some((k) => keysOf(action).has(k))) classes.push('submit')
     // CU-253 (cu-researcher): a chat app sends on a plain Return from its compose field - a text area too, and with no
     // default button to read (Messages' 'iMessage', Slack, WhatsApp). So a plain Return or typed line break asks submit
     // in any text entry of a known chat app, or in an entry named as a compose field; Shift- or Option-Return types
@@ -843,7 +907,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // Only a menu paste carries a destination; a keystroke paste is judged at its target as before (a null target there
       // is not 'unknown' - cu-verifier's desktop-consent S4b caught that over-ask).
       const viaMenu = Object.prototype.hasOwnProperty.call(context.paste, 'destination')
-      const into = viaMenu ? context.paste.destination : target
+      const into = viaMenu ? (asFrameEntry(context.paste.destination) ?? context.paste.destination) : (frameEntry ?? target)
       // The driver's no-focus placeholder (role and name null) is no field either (cu-developer-two).
       if (viaMenu && (into === null || !into?.role || MENU_ROLE.test(String(into.role)))) classes.push('sensitive_data')
       else {
@@ -883,7 +947,17 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (inserted) classes.push(inserted)
     }
     if (action.type === 'type') {
-      const inserted = insertedClass(String(action.text ?? ''), target, context)
+      const inserted = insertedClass(String(action.text ?? ''), frameEntry ?? target, context)
+      if (inserted) classes.push(inserted)
+    }
+    // CU-301 (design note 0.1): a printable key pressed into a text entry puts its character there as typing does, so the
+    // same rules judge it - a credential field or a password name asks credential, a D-061 name sensitive_data - else a
+    // password, CVV or SSN pressed key by key goes in unasked. The whole value stays CU-267's buffer (below). Only on a text
+    // entry: a letter that selects in a list, or Space on a check box, is not text.
+    const keyChar = printableKeyChar(action)
+    const keyInto = frameEntry ?? target
+    if (keyChar !== null && (isTextEntry(keyInto) || credentialField(keyInto))) {
+      const inserted = insertedClass(keyChar, keyInto, context)
       if (inserted) classes.push(inserted)
     }
     // CU-267: a value typed in pieces is judged whole - what this run typed into the field before (the loop's buffer) with

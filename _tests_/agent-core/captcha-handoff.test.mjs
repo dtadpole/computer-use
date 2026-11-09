@@ -67,6 +67,37 @@ test('CU-263: inside a challenge provider\'s frame any click, drag, key or typin
   }
 })
 
+test('CU-263 round 2 (F1): the keyboard route - a key, typing or a click on a frame host titled for a challenge hands off', () => {
+  const host = (name) => ({ tag: 'iframe', role: 'Iframe', name, editable: false, origin: 'https://shop.example' })
+  for (const title of ['reCAPTCHA', 'Widget containing checkbox for hCaptcha security challenge', 'Widget containing a Cloudflare security challenge', 'DataDome CAPTCHA']) {
+    for (const action of [key('SPACE'), key('ENTER'), type('x'), click]) {
+      assert.equal(judge(action, host(title)), 'handoff:captcha', `${title}: ${action.type} ${action.keys?.join('+') ?? ''}`)
+    }
+  }
+  // CU-300's followed focus: the inner check box carries its frame's title as frameHost.
+  assert.equal(judge(key('SPACE'), { tag: 'div', role: 'checkbox', name: '', origin: 'https://shop.example', frameHost: { tag: 'iframe', role: 'Iframe', name: 'reCAPTCHA' } }), 'handoff:captcha', 'an inner check box under a reCAPTCHA frame')
+  assert.notEqual(judge(key('SPACE'), host('Comments')), 'handoff:captcha', 'a comments frame is no challenge')
+  assert.equal(judge(click, { role: 'AXGroup', name: 'reCAPTCHA', tag: 'iframe' }, DESKTOP), 'allow', 'the desktop reads no frame host')
+})
+
+test('CU-263 round 2 (F2, F3, F5): reCAPTCHA by frame path, DataDome by host, and the audio challenge entry', () => {
+  const verifyIn = (frameUrl) => ({ tag: 'button', role: 'button', name: 'Verify', origin: 'https://www.google.com', frameUrl })
+  for (const url of ['https://www.google.com/recaptcha/api2/bframe', 'https://www.google.com/recaptcha/enterprise/anchor', 'https://google.com/recaptcha/api2/anchor']) {
+    assert.equal(judge(click, verifyIn(url)), 'handoff:captcha', url)
+  }
+  for (const url of ['https://www.google.com/maps/embed', 'https://www.google.com/', 'https://www.google.com.evil.example/recaptcha/api2/anchor']) {
+    assert.equal(judge(click, verifyIn(url)), 'allow', `${url}: not a challenge`)
+  }
+  assert.equal(judge(click, { tag: 'button', role: 'button', name: 'Continue', origin: 'https://geo.captcha-delivery.com' }), 'handoff:captcha', 'a DataDome frame')
+  assert.equal(judge(type('seven three'), { tag: 'input', role: 'textbox', name: 'Enter what you hear', editable: true, origin: 'https://shop.example' }), 'handoff:captcha', 'the audio challenge entry')
+})
+
+test('CU-263 round 2 (F6): the subdomain boundary holds', () => {
+  for (const origin of ['https://myhcaptcha.com', 'https://recaptcha.net.evil.example', 'https://captcha-delivery.com.evil.example', 'https://notgeetest.com']) {
+    assert.equal(judge(click, { tag: 'button', role: 'button', name: 'Continue', origin }), 'allow', origin)
+  }
+})
+
 test('CU-263 negatives: a bare Verify, a terms box, a google.com frame, look-alike hosts and plain words stay as judged', () => {
   assert.equal(judge(click, { tag: 'button', role: 'button', name: 'Verify', origin: 'https://bank.example' }), 'allow', 'a bare Verify (named limit)')
   assert.equal(judge(click, box('I agree to the terms')), 'allow', 'a terms box')

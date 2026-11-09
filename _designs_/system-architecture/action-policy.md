@@ -1,9 +1,9 @@
 ---
 title: Action policy
 created: 2026-11-01T09:24:10Z
-modified: 2026-11-08T23:50:00Z
+modified: 2026-11-09T00:25:00Z
 level: L1
-version: 0.9.1
+version: 0.9.2
 description: How every action is classified allow, confirm, block or hand-off from its target and context, the consequential-action classes including new sites and dialogs, and caller pre-approvals.
 status: unverified
 grounded_in:
@@ -21,10 +21,13 @@ grounded_in:
 1. **block**: the [site filter](site-filter.md) refuses the foreground page or a `navigate` target, except for `not_allowed`.
 2. **handoff**: any `chrome-error:` page or driver-reported warning (certificate or network; the latter an accepted over-ask), or a password-change form's final submit; the person acts (R28). Safe Browsing never warns here.
    A human check (CAPTCHA, CU-263) too: any click, drag, key or typing whose target sits in a challenge provider's frame
-   (challenges.cloudflare.com, hcaptcha.com, recaptcha.net, arkoselabs.com, geetest.com and their subdomains, by the
-   target document's origin; not www.google.com); a click, drag, Space or Return on a target named as one ("I'm not a
-   robot", "Verify you are human", "Select all images with", their Chinese labels); typing into a text CAPTCHA's entry.
-   Never pre-approvable. Named limits: a bare "Verify" outside those frames; a quoted check phrase over-asks.
+   (challenges.cloudflare.com, hcaptcha.com, recaptcha.net, arkoselabs.com, geetest.com, captcha-delivery.com and their
+   subdomains by the document's origin; www.google.com only under /recaptcha/, by the frame URL the driver reports, read
+   in memory and never recorded) or on a frame host titled for one ('reCAPTCHA', '... security challenge' - the
+   keyboard route after Tab); a click, drag, Space or Return on a target named as one ("I'm not a robot", "Verify you
+   are human", "Select all images with", their Chinese labels); typing into a text or audio CAPTCHA's entry. Never
+   pre-approvable. Named limits: a bare "Verify" outside those frames; a slider or picture puzzle drawn into the page
+   itself; a quoted check phrase over-asks.
 3. **confirm**: a class below applies and no pre-approval covers it.
 4. **allow**: everything else.
 
