@@ -239,27 +239,38 @@ export function needsCleanExec(env, execArgv = []) {
  * child ended: its exit code, or the same signal raised again. Killed unforwardable (SIGKILL), this process leaves the
  * child to end as any server does - when the client goes, its stdin closes. CU-239: a forwarded signal and a child that
  * ended by a signal each leave one stderr line (signal names and pids only), so an exit no test expected names its path.
+ *
+ * CU-239, the fix: this process is never without its listeners while the child lives. They go in before the spawn,
+ * because the child answers the client directly: once spawn returns, the client can initialize, list tools and send
+ * SIGTERM before this process runs its next statement (a stall under load), and a SIGTERM with no listener ends node by
+ * its default action - the client sees `signal: SIGTERM` and the child is left serving alone. Exiting with the child's
+ * code keeps them too; only the re-raise removes them, since there the default action is the point. `spawnChild` and
+ * `proc` are seams for the unit tests, which assert that order; the shipped start passes neither.
  */
-export function execClean({ argv = process.argv, env = process.env, execPath = process.execPath } = {}) {
-  const child = spawn(execPath, [argv[1], ...argv.slice(2)], { stdio: 'inherit', env: { ...withoutLoaders(env), [CLEAN_EXEC_MARKER]: '1' } })
+export function execClean({ argv = process.argv, env = process.env, execPath = process.execPath, spawnChild = spawn, proc = process } = {}) {
   const signals = ['SIGTERM', 'SIGINT']
+  let child = null
   const forward = (signal) => {
-    process.stderr.write(`computer-use-mcp: forwarding ${signal} to the serving child (pid ${child.pid ?? 'none'})\n`)
-    child.kill(signal)
+    proc.stderr.write(`computer-use-mcp: forwarding ${signal} to the serving child (pid ${child?.pid ?? 'none'})\n`)
+    child?.kill(signal)
   }
-  for (const signal of signals) process.on(signal, forward)
+  for (const signal of signals) proc.on(signal, forward)
+  child = spawnChild(execPath, [argv[1], ...argv.slice(2)], { stdio: 'inherit', env: { ...withoutLoaders(env), [CLEAN_EXEC_MARKER]: '1' } })
   child.once('error', (error) => {
-    process.stderr.write(`computer-use-mcp: the clean re-exec failed: ${error.message}\n`)
-    if (child.pid === undefined) process.exit(1) // never started; a failed forward alone leaves the child serving
+    proc.stderr.write(`computer-use-mcp: the clean re-exec failed: ${error.message}\n`)
+    if (child.pid === undefined) proc.exit(1) // never started; a failed forward alone leaves the child serving
   })
   child.once('exit', (code, signal) => {
-    for (const name of signals) process.removeListener(name, forward)
-    if (signal === null) process.exit(code ?? 1)
-    process.stderr.write(`computer-use-mcp: the serving child (pid ${child.pid}) ended by ${signal}; ending the same way\n`)
+    if (signal === null) {
+      proc.exit(code ?? 1)
+      return
+    }
+    for (const name of signals) proc.removeListener(name, forward)
+    proc.stderr.write(`computer-use-mcp: the serving child (pid ${child.pid}) ended by ${signal}; ending the same way\n`)
     // With the listeners gone the signal takes its default action and the client sees what the child saw; one that does
     // not end node by default (SIGPIPE is ignored) leaves the shell's 128 + its number as the exit code instead.
-    process.exitCode = 128 + (constants.signals[signal] ?? 0)
-    process.kill(process.pid, signal)
+    proc.exitCode = 128 + (constants.signals[signal] ?? 0)
+    proc.kill(proc.pid, signal)
   })
   return child
 }
