@@ -5,7 +5,7 @@ import Foundation
 /// The helper's identity; `build.sh` writes the same bundle id into Info.plist.
 enum HelperIdentity {
   static let bundleId = "com.reflection.cu-helper"
-  static let version = "0.2.62"
+  static let version = "0.2.63"
   /// The value every synthetic event carries in `kCGEventSourceUserData`: 0x43555345, ASCII "CUSE"
   /// (input-and-targets.md, verify-kit's SYNTHETIC_TAG). Not a secret: an event from another process with this tag
   /// could only fail to pause the run, never act.
@@ -457,6 +457,20 @@ enum AXRead: Equatable {
 /// text of other elements only - never the element's own value - trimmed and capped at 80 characters; null for a text
 /// entry (its name already says) or when none is found. A first-column datum can sit inside the caption (never
 /// recorded, meets only word rules - a named limit).
+/// CU-349: a field's placeholder (AXPlaceholderValue) - the words a page or app shows in an empty box ('One-time code',
+/// 'CVV') - reported beside the name so the consent field rules can ask where no title or caption was read. Entry roles
+/// only (and a secure field); trimmed; more than 80 characters reads as none, never cut mid-word; empty reads as none.
+/// Never the field's value: describe() reads AXPlaceholderValue, not AXValue, for an entry.
+enum Placeholder {
+  static let maxLength = 80
+  static func applies(role: String?) -> Bool { role.map { TextEntries.entryRoles.contains($0) || $0 == "AXSecureTextField" } ?? false }
+  static func pick(role: String?, raw: String?) -> String? {
+    guard applies(role: role) else { return nil }
+    guard let text = raw?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty, text.count <= maxLength else { return nil }
+    return text
+  }
+}
+
 enum Caption {
   /// CU-209: which elements count as text entries for the caption rule - an entry role whose value can be set (or a
   /// secure field, always). A read-only text view (AXTextArea, value not settable) shows text like a label does, so it

@@ -81,5 +81,5 @@ test('every other keyboard route to a focused control is judged too (cu-research
   assert.equal(decide({ type: 'type', text: ' ' }, button('Delete')).class, 'delete')
   assert.equal(decide({ type: 'type', text: 'ok\n' }, { role: 'AXCheckBox', name: 'Remove originals' }).class, 'delete')
   assert.equal(decide({ type: 'type', text: 'Delete the old draft\n' }, { role: 'AXTextArea', name: 'Notes' }).decision, 'allow', 'text typed into a field')
-  assert.equal(decide({ type: 'type', text: 'abc' }, button('Delete')).decision, 'allow', 'letters press nothing')
+  assert.equal(decide({ type: 'type', text: 'abc' }, button('Delete')).rule, 'page:shortcut', 'letters press no button; they may be an app shortcut (CU-363, asked once per key)')
 })

@@ -123,6 +123,11 @@ const server = http.createServer((req, res) => {
     res.end('not a disk image')
     return
   }
+  // CU-370: a 'Bulk actions' select, a text field, and an ARIA listbox whose active option is Delete.
+  if (req.url.startsWith('/select-page')) {
+    res.end('<!doctype html><style>body{margin:0}.at{position:absolute;left:20px;width:300px;height:30px}</style><select class="at" style="top:20px" id="bulk"><option>Bulk actions</option><option>Archive</option><option>Delete</option><option>Details</option><option>Sort: Newest</option></select><input class="at" style="top:70px" id="note"><div class="at" style="top:120px" id="lb" role="listbox" tabindex="0" aria-label="Actions" aria-activedescendant="lb-del"><div role="option" id="lb-arc">Archive</div><div role="option" id="lb-del">Delete</div></div><select class="at" style="top:170px" id="multi" multiple><option>Archive</option><option>Delete</option></select><form class="at" style="top:230px"><label><input type="radio" name="account" id="keep" checked> Keep my account</label><label><input type="radio" name="account" id="del"> Delete my account</label></form>')
+    return
+  }
   // CU-319: a card form for Chrome's own autofill (CDP Autofill.trigger with a test card built at runtime).
   if (req.url.startsWith('/autofill-form')) {
     res.end('<!doctype html><style>body{margin:0}input,button{position:absolute;left:20px;width:300px;height:30px}</style><form onsubmit="event.preventDefault()"><input id="cardnumber" autocomplete="cc-number" aria-label="Card number" style="top:20px"><input autocomplete="cc-name" aria-label="Name on card" style="top:70px"><input autocomplete="cc-exp" aria-label="Expiry" style="top:120px"><input aria-label="Notes" style="top:170px"><button type="submit" style="top:220px">Pay now</button></form>')
@@ -317,6 +322,29 @@ try {
   if (!downloadEffect.notices?.some((n) => n.kind === 'download_refused')) downloadEffect = await env.perform({ type: 'wait', ms: 500 })
   const refused = (downloadEffect.notices ?? []).find((n) => n.kind === 'download_refused')
   check('a refused download is on the effect, without its query', refused !== undefined && refused.url === `${origin}/app.dmg`, downloadEffect.notices ?? null)
+  // CU-370: a key on a focused select is judged by the option it lands on; a type by every option it passes through.
+  await env.perform({ type: 'navigate', url: `${origin}/select-page` })
+  await evaluate("document.getElementById('bulk').focus()")
+  const keyD = await env.keyTarget({ type: 'keypress', keys: ['d'] })
+  const keyDown = await env.keyTarget({ type: 'keypress', keys: ['ArrowDown'] })
+  const keyEnter = await env.keyTarget({ type: 'keypress', keys: ['Return'] })
+  const typed = await env.typeOptions({ type: 'type', text: 'Det' })
+  check("a key on a focused select names the option it lands on ('d' Delete, ArrowDown Archive); Enter is unread", keyD?.selectOption === true && keyD?.name === 'Delete' && keyDown?.name === 'Archive' && keyEnter?.optionUnread === true, { d: keyD && { name: keyD.name, role: keyD.role, tag: keyD.tag }, down: keyDown?.name, enter: keyEnter?.optionUnread })
+  check("a type into a focused select names every option it passes through ('Det': Delete, then Details)", Array.isArray(typed) && typed.map((o) => o.name).join('|') === 'Delete|Details' && typed.every((o) => o.selectOption === true), typed && typed.map((o) => o.name))
+  await evaluate("document.getElementById('note').focus()")
+  const typedField = await env.typeOptions({ type: 'type', text: 'Det' })
+  await evaluate("document.getElementById('lb').focus()")
+  const listEnter = await env.keyTarget({ type: 'keypress', keys: ['Enter'] })
+  const listUp = await env.keyTarget({ type: 'keypress', keys: ['ArrowUp'] })
+  check('a type into a text field has no options; on an ARIA listbox Enter names its active option, ArrowUp the one above', typedField === null && listEnter?.selectOption === true && listEnter?.name === 'Delete' && listUp?.name === 'Archive', { typedField, enter: listEnter && { name: listEnter.name, role: listEnter.role }, up: listUp?.name })
+  await evaluate("document.getElementById('bulk').focus()")
+  const pageDown = await env.keyTarget({ type: 'keypress', keys: ['PageDown'] })
+  await evaluate("document.getElementById('multi').focus()")
+  const multiDown = await env.keyTarget({ type: 'keypress', keys: ['ArrowDown'] })
+  const multiType = await env.typeOptions({ type: 'type', text: 'Del' })
+  await evaluate("document.getElementById('keep').focus()")
+  const radioDown = await env.keyTarget({ type: 'keypress', keys: ['ArrowDown'] })
+  check("PageDown and a multiple select are unread (asked); ArrowDown on 'Keep my account' names 'Delete my account'", pageDown?.optionUnread === true && multiDown?.optionUnread === true && multiType?.unread === true && radioDown?.selectOption === true && radioDown?.radioChoice === true && /Delete my account/.test(radioDown?.name ?? ''), { pageDown: pageDown?.optionUnread, multiDown: multiDown?.optionUnread, multiType, radio: radioDown && { name: radioDown.name, role: radioDown.role, inputType: radioDown.inputType } })
   await env.perform({ type: 'navigate', url: `${origin}/autofill-form` })
   const payAt = { x: 128, y: 176 }
   const payBefore = await env.inspectPoint(payAt)
