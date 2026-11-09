@@ -4,8 +4,11 @@
 // leaves the row passing. A citation reads 'mutant: table-mutants <name>' (a mutant of _tests_/agent-core/table-mutants.mjs,
 // cu-coordinator 04:53Z: the one shape); 'mutant: <verifier> <name>' (a mutant of _verifiers_/<verifier>/mutants.mjs) is read too.
 // Run from the repository root on a clean tree: `node _tools_/verify-kit/d065-audit.mjs`; exit 0 when every cell holds.
+// A mutant's originals are journalled before any write - inside the git directory, never in the tree, so it can be
+// neither committed nor pushed - and the journal is removed after the restore; an interrupted run (an alarm, SIGTERM, even SIGKILL) is repaired from it at the next start, and a catchable
+// signal restores before exiting.
 import { execFileSync, spawnSync } from 'node:child_process'
-import { readFileSync, realpathSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
@@ -47,6 +50,28 @@ export async function auditCells(cells, { loadMutant, runWith }) {
 }
 
 /** Real loaders for a repository root. */
+export const JOURNAL = 'd065-audit-journal.json'
+
+/** Where the journal lives: the repository's git directory (a worktree's own), else the root (a bare test folder). */
+export function journalPath(root) {
+  const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim()
+  try {
+    if (realpathSync(git('rev-parse', '--show-toplevel')) === realpathSync(root)) return join(git('rev-parse', '--absolute-git-dir'), JOURNAL)
+  } catch {}
+  return join(root, JOURNAL)
+}
+
+/** Put back the files an interrupted run left mutated; returns the paths restored ([] when there was no journal). */
+export function recoverJournal(root) {
+  const journal = journalPath(root)
+  if (!existsSync(journal)) return []
+  let entries = []
+  try { entries = JSON.parse(readFileSync(journal, 'utf8')) } catch { entries = [] }
+  for (const { path, text } of entries) writeFileSync(path, text)
+  rmSync(journal, { force: true })
+  return entries.map(({ path }) => path)
+}
+
 export function repoAdapters(root) {
   const loadMutant = async (verifier, name) => {
       try {
@@ -64,16 +89,20 @@ export function repoAdapters(root) {
     loadMutant,
     async runWith(mutations, file) {
       const originals = mutations.map((u) => [join(root, u.file), readFileSync(join(root, u.file), 'utf8')])
+      writeFileSync(journalPath(root), JSON.stringify(originals.map(([path, text]) => ({ path, text }))))
       try {
         for (const u of mutations) {
           const path = join(root, u.file); const text = readFileSync(path, 'utf8')
           if (!text.includes(u.find)) return []
           writeFileSync(path, text.replace(u.find, u.replace))
         }
-        const r = spawnSync(process.execPath, ['--test', '--test-reporter=tap', file], { cwd: root, encoding: 'utf8', timeout: 110000 })
+        // A clean environment for the row test: inside another test run, NODE_TEST_CONTEXT would turn its TAP into IPC.
+        const env = { ...process.env }; delete env.NODE_TEST_CONTEXT
+        const r = spawnSync(process.execPath, ['--test', '--test-reporter=tap', file], { cwd: root, encoding: 'utf8', timeout: 110000, env })
         return [...String(r.stdout).matchAll(/^not ok \d+ - (.*)$/gm)].map((m) => m[1])
       } finally {
         for (const [path, text] of originals) writeFileSync(path, text)
+        rmSync(journalPath(root), { force: true })
       }
     },
   }
@@ -86,6 +115,12 @@ export function failingIds(titles, cells) {
 
 if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))) {
   const root = process.cwd()
+  const repaired = recoverJournal(root)
+  if (repaired.length) console.error(`d065-audit: restored ${repaired.length} file(s) an interrupted run left mutated`)
+  // A catchable signal waits for the running table test (spawnSync), then restores and exits - never leaves a mutant.
+  for (const [signal, code] of [['SIGINT', 130], ['SIGTERM', 143], ['SIGHUP', 129], ['SIGALRM', 142]]) {
+    process.on(signal, () => { recoverJournal(root); process.exit(code) })
+  }
   const dirty = execFileSync('git', ['status', '--porcelain', '--', '_tools_', '_tests_'], { cwd: root, encoding: 'utf8' }).trim()
   if (dirty) { console.error('d065-audit: _tools_ or _tests_ has uncommitted changes - run on a clean tree'); process.exit(2) }
   const cells = TABLES.flatMap((file) => parseD065Cells(readFileSync(join(root, file), 'utf8'), file))
