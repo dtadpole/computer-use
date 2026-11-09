@@ -8,7 +8,7 @@ import { historyMove } from './input-plan.mjs'
 import { clipboardOp, executeAction, NAVIGATION_TIMEOUT_MS, navigateHistory, sendInput, settle } from './executor.mjs'
 import { planHumanInput } from './human-input.mjs'
 import { processCommandLine, sandboxProblem, SEAT_PATTERN, startChrome } from './launch.mjs'
-import { activatableAncestor, clickLabel, closedRootHoldsEntry, collectPageText, deepActiveElement, describeElement, DRAG_TEXT_MAX, dragTextAt, implicitSubmitButton, pageExpression, selectionContainer, textEntered, TWO_FRAMES_EXPRESSION } from './page-scripts.mjs'
+import { activatableAncestor, autofilledFields, clickLabel, closedRootHoldsEntry, collectPageText, deepActiveElement, describeElement, DRAG_TEXT_MAX, dragTextAt, implicitSubmitButton, pageExpression, selectionContainer, textEntered, TWO_FRAMES_EXPRESSION } from './page-scripts.mjs'
 import { startProxy } from './proxy.mjs'
 import { BrowserSession } from './session.mjs'
 
@@ -289,7 +289,48 @@ class BrowserEnvironment {
     const inner = await this.#insideFrame(page, located.backendNodeId, node, point)
     if (inner !== undefined) return inner
     const activating = await this.#activating(page, located.backendNodeId, located.frameId)
-    return this.#describe(page, activating.id, located.frameId, { ...(activating.id === located.backendNodeId ? { node } : {}), fallbackName: activating.name })
+    const described = await this.#describe(page, activating.id, located.frameId, { ...(activating.id === located.backendNodeId ? { node } : {}), fallbackName: activating.name })
+    return this.#withAutofill(page, activating.id, located.frameId, described)
+  }
+
+  /**
+   * CU-319 (CU-302's driver half): on a submit-like target, the fields its submit would send that the browser autofilled
+   * (see autofilledFields) as `autofilledFields` - descriptors from #describe, never a value - with `autofillRead: true`;
+   * absent when none. A failed read on a control or entry is `autofillRead: false, autofilledFields: null`, which agent
+   * core asks on a submit (fail closed, as CU-190). No submit-like target: `described` unchanged. Outside the
+   * fingerprint, never recorded.
+   */
+  async #withAutofill(target, backendNodeId, frameId, described) {
+    if (described === null || described === undefined) return described
+    try {
+      const world = await this.session.isolatedContext(target, frameId ?? target.mainFrameId)
+      const objectId = (await this.session.send(target, 'DOM.resolveNode', { backendNodeId, executionContextId: world })).result.object.objectId
+      const found = (await this.session.send(target, 'Runtime.callFunctionOn', {
+        objectId, functionDeclaration: `function () { return (${autofilledFields.toString()})(this) }`, returnByValue: false,
+      })).result.result
+      if (found?.subtype === 'null' || found?.objectId === undefined) return described
+      const part = (name, returnByValue) => this.session.send(target, 'Runtime.callFunctionOn', { objectId: found.objectId, functionDeclaration: `function () { return this.${name} }`, returnByValue })
+      // A walk the page's size stopped answers truncated: fail closed rather than trust a partial list (cu-researcher).
+      if ((await part('truncated', true)).result.result.value === true) return { ...described, autofillRead: false, autofilledFields: null }
+      const edited = (await part('edited', true)).result.result.value
+      const list = (await part('fields', false)).result.result
+      if (!Array.isArray(edited) || typeof list?.objectId !== 'string') throw new Error('autofill read: no field list')
+      const properties = (await this.session.send(target, 'Runtime.getProperties', { objectId: list.objectId, ownProperties: true })).result.result
+      const fields = []
+      for (const property of properties ?? []) {
+        if (!/^\d+$/.test(String(property.name)) || typeof property.value?.objectId !== 'string') continue
+        const node = (await this.session.send(target, 'DOM.describeNode', { objectId: property.value.objectId })).result.node
+        const field = await this.#describe(target, node.backendNodeId, frameId, { node, scanText: false })
+        // An autofilled field the run then edited (Chrome cleared its :autofill) stays reported, marked edited (cu-verifier).
+        if (field !== null) fields.push({ tag: field.tag, inputType: field.inputType, name: field.name, autocomplete: field.autocomplete, caption: field.caption, ...(edited[Number(property.name)] === true ? { edited: true } : {}) })
+      }
+      return fields.length > 0 ? { ...described, autofillRead: true, autofilledFields: fields } : { ...described, autofillRead: true }
+    } catch {
+      const tag = String(described.tag ?? '')
+      const role = String(described.role ?? '').toLowerCase()
+      const mayCarry = ['button', 'input', 'textarea', 'a'].includes(tag) || role === 'button' || role === 'link'
+      return mayCarry ? { ...described, autofillRead: false, autofilledFields: null } : described
+    }
   }
 
   /**
@@ -372,7 +413,8 @@ class BrowserEnvironment {
       // The frame's current loader keeps the fingerprint apart across its navigations, as on the page.
       walk((await this.session.send(target, 'Page.getFrameTree').catch(() => null))?.result?.frameTree)
       const activating = await this.#activating(target, located.backendNodeId, located.frameId ?? frame.targetId)
-      return await this.#describe(target, activating.id, located.frameId ?? frame.targetId, { offset: origin, fallbackName: activating.name })
+      const described = await this.#describe(target, activating.id, located.frameId ?? frame.targetId, { offset: origin, fallbackName: activating.name })
+      return await this.#withAutofill(target, activating.id, located.frameId ?? frame.targetId, described)
     } catch {
       return undefined
     }
@@ -386,7 +428,7 @@ class BrowserEnvironment {
     const remote = await this.session.evaluate(page, pageExpression(deepActiveElement), { returnByValue: false })
     if (remote?.objectId === undefined) return null
     const node = (await this.session.send(page, 'DOM.describeNode', { objectId: remote.objectId })).result.node
-    const element = await this.#describe(page, node.backendNodeId, undefined)
+    const element = await this.#withAutofill(page, node.backendNodeId, undefined, await this.#describe(page, node.backendNodeId, undefined))
     if (element === null) return null
     return { ...element, defaultButton: await this.#implicitSubmit(page, node.backendNodeId) }
   }

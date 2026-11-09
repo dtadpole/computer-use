@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - artifacts'
 created: 2026-11-01T09:28:00Z
-modified: 2026-11-08T22:39:00Z
+modified: 2026-11-09T03:15:00Z
 level: L1
-version: 1.116.0
+version: 1.118.0
 description: 'Pointers to the persistent work of [cu] Developer Two (environments) - proposals, code, tests and run records - written by the seat itself.'
 status: unverified
 grounded_in:
@@ -16,6 +16,13 @@ Pointers only; each target is its own authority.
 
 | Date | Artifact | State |
 |---|---|---|
+| 2026-11-09 | #211 merged 898725f87 | Part of CU-305: design note fixture-launch-lock 0.2 - CU Fixture launches only inside a desktop run held by the process or an ancestor, or under a live hold of the seat it declares (CU_DESKTOP_SEAT). Code: #212. |
+| 2026-11-09 | #177 merged 51e96be27 | Part of CU-300: design note frame-focus 0.2 - the browser focus followed into a cross-origin frame, frameUrl, frameHost, defaultButtonRead, never weaker than the frame-host rules. Code: #181. |
+| 2026-11-09 | #189 merged 0c61ce654 | Records: artifacts 1.117.0, the action-log lines for #146 and #149, handover 4.1.0. |
+| 2026-11-09 | #158 merged 22db83a5a | Records: artifacts 1.116.0 (eight rows) and #130's action-log line. |
+| 2026-11-08 | #149 merged e7043bc12 | Fixes CU-296 (stacked on #146): Chinese, Japanese and Korean debug consoles are terminals (调试控制台 / 偵錯主控台; console words in IDEs only, terminal words anywhere); the IDE terminal shape takes VS Code's fullwidth comma. In Verify; the IDE half closes under D-065. |
+| 2026-11-08 | #163 merged c7fb86205 | Records: handover 4.0.0 for the successor session. |
+| 2026-11-08 | #146 merged 2c0bacb0e | Fixes CU-279: an IDE's terminal in any language - the '<word> <n>, <title>' shape in IDEs by kind (app-kinds.mjs), CJK and European terminal words in any app; desktop-consent's terminal-typed mutant follows the new line. In Verify; the IDE half closes under D-065. |
 | 2026-11-08 | #130 merged 9a374e83c | Part of CU-227 (driver half): a helper its end watchdog stopped writes stopped.json beside the held-keys marker and exits 70; the driver reads it once on link loss and ends the run helper_lost with details.stopped, worded as the helper stopping, and removes the file (helper half #133). |
 | 2026-11-08 | #137 merged 51bc62d41 | Fixes CU-290: the two load-flaky wall-clock rows (no-app-window appears-within; the MCP end-to-end timing) bound what they prove - a 10 s wait that ends at the first window, and a run below 2 x the wait. In Verify. |
 | 2026-11-08 | #135 merged df20b4b8e | Fixes CU-287: messaging apps judged by kind - app-kinds.mjs lists their exact bundle ids with sources; Return in any non-search field there asks send whatever the field is called. In Verify. |
