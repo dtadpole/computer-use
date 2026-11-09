@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - handover'
 created: 2026-11-08T04:14:00Z
-modified: 2026-11-09T03:15:00Z
+modified: 2026-11-09T04:25:00Z
 level: L1
-version: 4.2.0
+version: 4.3.0
 description: 'What a fresh [cu] Developer Two session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -20,17 +20,15 @@ Seat `cu-developer-two`: desktop and browser drivers, live view, run lock, MCP. 
 
 - #167, Fixes CU-239: the MCP re-exec parent listens before its child exists.
 - #193, Fixes CU-318: peer-boundary's accepted-window row waits past a 1500 ms window.
-- #200, Fixes CU-319: submit-like browser targets carry `autofilledFields`, descriptors only, and an edited field stays
-  reported. With #195, which is on main.
-- #205, Part of CU-322: desktop targets carry the helper's `inWebArea`, booleans only.
 - #212, Fixes CU-305: `launchFixture` refuses outside a run held by an ancestor or the caller's own live hold.
-- #181, Part of CU-300: the browser focus followed into a cross-site frame. It lands after #184. Whichever of #181 and
-  #200 lands second needs a small merge.
+- #181, Part of CU-300: the browser focus followed into a cross-site frame, with #200 merged in by hand. It lands
+  after #184.
+
+Landed: #200 (CU-319, Done) and #205 (CU-322's driver part).
 
 ## Issues
 
-In Progress: CU-319, CU-239, CU-300, CU-305, CU-318, plus the driver part of CU-322. Done: CU-253, CU-259, CU-279,
-CU-296. Post main evidence on each issue as its PR lands.
+In Progress: CU-239, CU-300, CU-305, CU-318. Done: CU-253, CU-259, CU-279, CU-296, CU-319. Post main evidence on each issue as its PR lands.
 
 ## Live state
 
