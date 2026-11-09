@@ -76,14 +76,12 @@ function lineChannel(readable, writable) {
     // fails naming that, instead of hanging the gate until its alarm.
     hello: (timeoutMs = 30_000) => (hello !== null ? Promise.resolve(hello) : new Promise((resolve, reject) => {
       const timer = setTimeout(() => reject(new Error(`no hello within ${timeoutMs} ms - the helper refused this peer or exited (see its stderr)`)), timeoutMs)
-      timer.unref?.()
       helloWaiter = (message) => { clearTimeout(timer); resolve(message) }
     })),
     request(type, fields = {}, timeoutMs = 60_000) {
       const id = nextId++
       return new Promise((resolve, reject) => {
         const timer = setTimeout(() => { replies.delete(id); reject(new Error(`no reply to ${type} within ${timeoutMs} ms`)) }, timeoutMs)
-        timer.unref?.()
         replies.set(id, (message) => { clearTimeout(timer); resolve(message) })
         writable.write(`${JSON.stringify({ id, type, ...fields })}\n`)
       })
@@ -100,7 +98,6 @@ function exitOf(child, timeoutMs = 30_000) {
   return new Promise((resolve, reject) => {
     if (child.exitCode !== null || child.signalCode !== null) return resolve(child.exitCode)
     const timer = setTimeout(() => reject(new Error(`the helper did not exit within ${timeoutMs} ms`)), timeoutMs)
-    timer.unref?.()
     child.once('exit', (code) => { clearTimeout(timer); resolve(code) })
   })
 }
