@@ -59,3 +59,9 @@ test('CU-377 in the loop: a Finder row with no filename is a file source - dragg
     assert.equal(dragged.status, 'declined')
   } finally { rmSync(tmp, { recursive: true, force: true }) }
 })
+
+test('CU-377 paste half: a file copied in Finder and pasted into Slack asks; a TextEdit copy pasted there stays as today', () => {
+  const paste = (source) => { const v = policy.classify({ type: 'keypress', keys: ['META', 'V'] }, { url: 'app:com.tinyspeck.slackmacgap', frontmostBundleId: 'com.tinyspeck.slackmacgap', target: { origin: 'com.tinyspeck.slackmacgap', role: 'AXTextArea', name: 'Message', editable: true }, paste: { fromOwner: false, source } }); return v.decision === 'allow' ? 'allow' : v.class }
+  assert.equal(paste({ origin: 'com.apple.finder', role: 'AXRow', name: 'report' }), 'permission')
+  assert.equal(paste({ origin: 'com.apple.TextEdit', role: 'AXTextArea', name: 'Untitled' }), 'allow')
+})

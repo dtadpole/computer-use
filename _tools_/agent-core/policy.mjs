@@ -1204,6 +1204,18 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // (insertedClass), so a paste into a field named IBAN, Password or Passport asks as typing there does - also a desktop
     // paste of the run's own copy, whose text the run does not read (the name rules need none).
     if (context.paste?.fromOwner === true) classes.push('sensitive_data')
+    // CU-377 paste half (cu-coordinator 21:45Z/21:47Z): on the desktop a run's paste whose copied source is a file item (a
+    // filename or file URL, or a file browser's / file panel's row, cell or icon) into another app hands that file over - it
+    // asks. A copy from TextEdit stays as today.
+    if (context.paste && context.paste.fromOwner === false && /^(app|desktop):/.test(String(context.url ?? ''))) {
+      const src = context.paste.source ?? null
+      const into = (typeof target?.origin === 'string' && target.origin !== '') ? target.origin : String(context.frontmostBundleId ?? '')
+      const fileSource = src && ((typeof src.filename === 'string' && src.filename !== '') || /^file:/i.test(String(src.url ?? ''))
+        || ((src.origin === 'com.apple.finder' || src.panel) && /row|cell|icon|outline|image|statictext|textfield|group/i.test(String(src.role ?? ''))))
+      // An unattributed run paste (no source recorded: a copy with nothing focused) keeps today's judgement - asking on it
+      // re-judged CU-219's own-copy rows; it is the named follow-up with the helper's pasteboardHasFile read.
+      if (fileSource && src.origin !== into) classes.push('permission')
+    }
     if (context.paste) {
       // CU-186: a menu paste is judged at the field it lands in; one that could not be read, or a menu, is unknown and asks.
       // Only a menu paste carries a destination; a keystroke paste is judged at its target as before (a null target there
