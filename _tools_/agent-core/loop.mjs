@@ -678,8 +678,14 @@ export async function runTask(options) {
   // after 'Show password' is still judged as one. The key comes from the driver (fieldKey), outside the fingerprint and
   // never recorded; it carries the page's loader or the app's process, so a navigation or a relaunch forgets it.
   const passwordKeys = new Set()
-  const remembered = (t) => {
-    if (!t || typeof t !== 'object' || typeof t.fieldKey !== 'string' || t.fieldKey === '') return t
+  // CU-349 (cu-researcher): some web and Electron fields drop their placeholder once a value is typed, so the placeholder a
+  // field showed is kept by its key - the first key and a later one into the same box are judged under the same names.
+  const placeholderKeys = new Map()
+  const remembered = (given) => {
+    if (!given || typeof given !== 'object' || typeof given.fieldKey !== 'string' || given.fieldKey === '') return given
+    let t = given
+    if (typeof t.placeholder === 'string' && t.placeholder.trim() !== '') placeholderKeys.set(t.fieldKey, t.placeholder)
+    else if (placeholderKeys.has(t.fieldKey)) t = { ...t, placeholder: placeholderKeys.get(t.fieldKey) }
     if (t.isPassword === true || t.secure === true || t.inputType === 'password' || namesPasswordField(t)) { passwordKeys.add(t.fieldKey); return t }
     return passwordKeys.has(t.fieldKey) ? { ...t, seenAsPassword: true } : t
   }
@@ -831,6 +837,12 @@ export async function runTask(options) {
     const dropTarget = last ? await environment.inspectPoint(last).catch(() => null) : null
     // CU-198 (drag-text.md): the browser reads what a drag moves - once, and only when it lands on a text entry: a string,
     // { unknown: true } on a failed read, or null (nothing selected under the press). Never recorded; the desktop reads none.
+    // CU-370 (cu-developer-two's contract): before a type into a native select the browser driver answers every option the
+    // typed prefix passes through (Chrome's type-ahead); null when the focus is no select. A failed read is null too - the
+    // policy then judges the typed text itself and asks it as a page shortcut.
+    const typeOptions = !desktop && action.type === 'type' && typeof environment.typeOptions === 'function'
+      ? await Promise.resolve(environment.typeOptions(action)).catch(() => null)
+      : null
     const dragText = !desktop && last && isTextEntry(dropTarget) && typeof environment.dragText === 'function'
       ? await Promise.resolve(environment.dragText(action.path[0])).then(
         (text) => (typeof text === 'string' ? text.slice(0, 4096) : text?.unknown === true ? { unknown: true } : null),
@@ -903,7 +915,7 @@ export async function runTask(options) {
     // CU-325: a navigate carries the card-length digit runs this run typed or pasted (in memory, never recorded), so a URL
     // path that holds one asks whatever its prefix.
     const typedDigits = action.type === 'navigate' ? typedCardRuns() : []
-    return { url: state.url, target: remembered(target), ...(typed ? { typed } : {}), ...(typedSplit ? { typedSplit } : {}), ...(typedDigits.length ? { typedDigits } : {}), ...(boundMenuItem ? { boundMenuItem } : {}), ...(selection ? { selection } : {}), ...(dropTarget ? { dropTarget: remembered(dropTarget) } : {}), ...(dragText !== undefined ? { dragText } : {}), ...(afterClose ? { afterClose: true } : {}), ...(resubmits ? { resubmits: historyMove } : {}), ...(historyJudged ? { historyJudged } : {}), ...(paste ? { paste } : {}), ...(pasteboardJudged ? { pasteboardJudged } : {}), ...(state.interstitial === true ? { interstitial: true } : {}), dialog: state.dialog ?? null, task: task.text, ...app }
+    return { url: state.url, target: remembered(target), ...(Array.isArray(typeOptions) || typeOptions?.unread === true ? { typeOptions } : {}), ...(typed ? { typed } : {}), ...(typedSplit ? { typedSplit } : {}), ...(typedDigits.length ? { typedDigits } : {}), ...(boundMenuItem ? { boundMenuItem } : {}), ...(selection ? { selection } : {}), ...(dropTarget ? { dropTarget: remembered(dropTarget) } : {}), ...(dragText !== undefined ? { dragText } : {}), ...(afterClose ? { afterClose: true } : {}), ...(resubmits ? { resubmits: historyMove } : {}), ...(historyJudged ? { historyJudged } : {}), ...(paste ? { paste } : {}), ...(pasteboardJudged ? { pasteboardJudged } : {}), ...(state.interstitial === true ? { interstitial: true } : {}), dialog: state.dialog ?? null, task: task.text, ...app }
   }
 
   let consecutiveBlocks = 0

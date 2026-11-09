@@ -139,6 +139,7 @@ const WORDS = Object.freeze({
     // CU-288: a tax filing goes to the authority.
     'file return', 'file tax return', 'file your return', 'file my return', 'e-file', 'efile', 'submit return', 'submit tax return', ...ZH_WORDS.submit, ...LOCALE_WORDS.submit],
 })
+const ACCOUNT_SECURITY = /\b(?:(?:generate|create|new|add)\s+(?:an?\s+)?app[\s-]?(?:specific[\s-]?)?passwords?|app[\s-]?(?:specific[\s-]?)?passwords?|(?:enable|disable|turn\s+(?:on|off)|set\s+up|add\s+(?:a\s+)?)?\s*(?:auto[\s-]?forward(?:ing)?|forwarding(?:\s+address)?|forward\s+(?:a\s+copy|incoming|all|to)\b)|two[\s-]?(?:factor|step)(?:\s+(?:authentication|verification|login))?|2[\s-]?step\s+verification|create\s+(?:a\s+|new\s+)?filter|2fa|multi[\s-]?factor(?:\s+authentication)?|recovery\s+(?:e-?mail|phone|codes?))\b/i
 const PRECEDENCE = ['purchase', 'launch_code', 'delete', 'permission', 'page_dialog', 'credential', 'sensitive_data', 'submit', 'new_site', 'install']
 const POINTER = new Set(['click', 'double_click', 'triple_click'])
 // CU-135 (keyboard-activation.md): a focused button; any control a click activates (Space presses or toggles it); and a
@@ -373,7 +374,7 @@ const BANK_OR_TAX_FIELD = Object.freeze(['iban', 'account number', 'account no',
   // CU-293: a bank account or tax id in Chinese.
   '银行账号', '銀行帳號', '银行账户', '銀行帳戶', '开户行', '開戶行', '税号', '稅號', '纳税人识别号', '納稅人識別號', '统一社会信用代码'])
 function bankOrTaxField(target) {
-  return namesWord(target?.name, BANK_OR_TAX_FIELD)
+  return entryNamesOf(target).some((name) => namesWord(name, BANK_OR_TAX_FIELD))
 }
 
 // CU-164: a text entry - the browser's editable flag, or a desktop text role - named for a password asks credential, and
@@ -535,11 +536,16 @@ function plainTextEntry(target) {
   return target.editable === true && (['input', 'textarea'].includes(String(target.tag ?? '').toLowerCase()) || ['textbox', 'searchbox'].includes(target.role))
 }
 
-const passwordNamedEntry = (target) => isTextEntry(target) && namesWord(target.name, PASSWORD_NAMES)
+// CU-349 (cu-coordinator 15:55Z: upgrade only): an entry's placeholder (helper 0.2.63, target.placeholder) is an extra
+// name for the field-name rules below - it can make a field ask ('Notes' with placeholder 'CVV' asks, a named over-ask),
+// never stop one asking, and never replaces the name a question shows. Each rule tests the name and the placeholder apart.
+const entryNamesOf = (target) => [target?.name, typeof target?.placeholder === 'string' && target.placeholder.trim() !== '' ? target.placeholder : null]
+  .filter((name) => name !== null && name !== undefined)
+const passwordNamedEntry = (target) => isTextEntry(target) && entryNamesOf(target).some((name) => namesWord(name, PASSWORD_NAMES))
 // CU-184 (desktop-rules.md): a text entry named for a password - shown or not, it holds one - unless its name says it is
 // a hint; the desktop hands a key action into it to the person, as it does a secure field (R83).
-export const namesPasswordField = (target) => passwordNamedEntry(target) && !namesWord(target.name, ['hint'])
-const secretNamedEntry = (target) => isTextEntry(target) && (namesWord(target.name, SECRET_NAMES) || namesAcronym(target.name))
+export const namesPasswordField = (target) => isTextEntry(target) && entryNamesOf(target).some((name) => namesWord(name, PASSWORD_NAMES) && !namesWord(name, ['hint']))
+const secretNamedEntry = (target) => isTextEntry(target) && entryNamesOf(target).some((name) => namesWord(name, SECRET_NAMES) || namesAcronym(name))
 
 // CU-164: a wallet recovery phrase - twelve or more words in a row, every one on the BIP39 list; ordinary prose breaks
 // the run with words the list does not hold (the, is, to, of, a).
@@ -984,6 +990,38 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (scheme !== '' && !WEB_SCHEMES.has(scheme) && pressesLink) classes.push('permission')
     const keyboard = keyboardActivation(action, target, context)
     if (keyboard.deletes) classes.push('delete')
+    // CU-370 (design note 0.1; cu-developer-two's driver contract): the option a key lands on is judged like a click on it.
+    // A keypress's keyTarget answers the option itself (selectOption: true) - or the select with optionUnread: true when an
+    // open popup's highlight cannot be read, which asks. A type is judged by every option its prefix passes through
+    // (context.typeOptions); with no such read, a type into a non-editable choice takes its text as the option's name.
+    if (target?.optionUnread === true && ['keypress', 'hold_key'].includes(action.type)) {
+      return { decision: 'confirm', class: 'unknown_target', classes: ['unknown_target'], rule: 'select:option_unread', reason: `press ${(action.keys ?? []).join('+')} on "${target?.name ?? 'a list'}", whose highlighted option could not be read` }
+    }
+    const choiceTarget = target && /combo|listbox|select/i.test(String(target.role ?? '')) && target.editable !== true
+    // cu-coordinator 20:15Z, both asks (the safe direction): a type whose options the driver could not read
+    // (typeOptions { unread: true }), and on a web page a navigation key on a bare select-like focus - keyTarget threw or
+    // read no option, so where the key lands is unknown.
+    if (action.type === 'type' && choiceTarget && context.typeOptions?.unread === true) {
+      return { decision: 'confirm', class: 'unknown_target', classes: ['unknown_target'], rule: 'select:options_unread', reason: `type into "${target?.name ?? 'a list'}", whose options could not be read` }
+    }
+    const onWebPage = context.url != null && !/^(app|desktop):/.test(String(context.url ?? ''))
+    const NAV_KEY = /^(ARROW(UP|DOWN|LEFT|RIGHT)|PAGEUP|PAGEDOWN|HOME|END|ENTER|RETURN|SPACE)$/
+    if (onWebPage && choiceTarget && target.selectOption !== true && target.radioChoice !== true && ['keypress', 'hold_key'].includes(action.type) && [...keysOf(action)].some((key) => NAV_KEY.test(key))) {
+      return { decision: 'confirm', class: 'unknown_target', classes: ['unknown_target'], rule: 'select:option_unknown', reason: `press ${(action.keys ?? []).join('+')} on "${target?.name ?? 'a list'}", where the option it lands on could not be read` }
+    }
+    // The driver marks a radio the key checks with radioChoice (cu-coordinator 20:11Z): judged the same way by its name.
+    const optionRead = (target?.selectOption === true || target?.radioChoice === true) && action.type !== 'type'
+    // A choice whose landing the driver read (the option, the radio, or every option a type passes through) is judged by
+    // what it lands on, so a benign landing types freely - no page-shortcut fallback (cu-verifier's 'Archive' over-ask).
+    const choiceRead = optionRead || (action.type === 'type' && choiceTarget && Array.isArray(context.typeOptions) && context.typeOptions.length > 0)
+    const optionNames = optionRead ? [String(target.name ?? '')]
+      : action.type === 'type' && Array.isArray(context.typeOptions) ? context.typeOptions.map((option) => String(option?.name ?? ''))
+        : action.type === 'type' && choiceTarget ? [String(action.text ?? '').trim()] : []
+    for (const optionName of optionNames.filter((name) => name.trim() !== '')) {
+      if (namesPurchase(optionName)) classes.push('purchase')
+      if (namesDelete(optionName)) classes.push('delete')
+      if (namesWord(optionName, WORDS.permission)) classes.push('permission')
+    }
     // CU-363 (design note 0.1; High pending a live row): on a web page a printable key pressed outside text entry goes to
     // the page, whose own handler may delete, archive or send (Gmail '#', 'e', '!') - its effect cannot be read, so it asks
     // once per key, site and run (permission, never pre-approved; the answer keys 'permission:page-shortcut:<key>' -
@@ -1004,7 +1042,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         if (text.trim() === '') return null
         // A control is no text entry: its typed text reaches the page's handlers as a keypress would (cu-researcher: rows are
         // often links). Only an entry-like role the driver reports read-only is left to its own rules.
-        if (target && /text|search|combo/i.test(String(target.role ?? ''))) return null
+        // CU-370: a select is a choice, not a text entry - a combobox or listbox the driver reports not editable (a native
+        // <select>) keeps no exemption: its type-ahead picks an option (judged below) and reaches the page's handlers.
+        const choice = target && /combo|listbox/i.test(String(target.role ?? '')) && target.editable !== true
+        if (target && !choice && /text|search|combo/i.test(String(target.role ?? ''))) return null
         return text
       }
       const keys = keysOf(action)
@@ -1039,7 +1080,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // cu-verifier 180522Z: 'ok #' typed on a focused link row - its space presses the link, its other characters still reach
     // the page's handlers - so a typed text is an activation only when it holds nothing but spaces and line breaks.
     const activationOnly = keyboard.activates && !(action.type === 'type' && /\S/.test(String(action.text ?? '')))
-    const pageShortcut = (browserRoute || desktopTarget) && shortcutKey !== null && !isTextEntry(target) && !framesHost(target) && !keyboard.deletes && !activationOnly
+    const pageShortcut = !choiceRead && (browserRoute || desktopTarget) && shortcutKey !== null && !isTextEntry(target) && !framesHost(target) && !keyboard.deletes && !activationOnly
     // CU-140 (press-and-drop.md): a drag pressed on a control - a long press, or any drag starting there - is judged like
     // a click on it; a file, row, cell or image at the press point is not judged by its name (dragging it moves it).
     const pressesTarget = POINTER.has(action.type) || (action.type === 'drag' && CONTROL_ROLE.test(String(target?.role ?? '')))
@@ -1055,6 +1096,14 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         if ((cls === 'purchase' ? namesPurchase(name) : cls === 'delete' ? namesDelete(name) : namesWord(name, WORDS[cls]))) classes.push(cls)
       }
       if (judgesSubmit(name, target)) classes.push('submit')
+      // CU-373 (design note 0.1): a control named for account security reaches a credential (D-063) - an app password, mail
+      // auto-forwarding, two-factor or recovery settings - so a press asks credential, whatever a toggle's direction.
+      // Turning two-factor or recovery protection ON by an explicit name stays free (CU-270); a bare toggle, whose direction
+      // the driver does not report yet, asks.
+      const protectionOn = /\b(?:turn\s+on|enable|set\s+up|activate)\b/i.test(name) && !/forward|app[\s-]?password/i.test(name)
+      // Turning forwarding OFF is the safe direction (cu-coordinator 21:00Z).
+      const forwardingOff = /\b(?:disable|turn\s+off|stop)\b/i.test(name) && /forward/i.test(name)
+      if (!focusesEntry && ACCOUNT_SECURITY.test(name) && !protectionOn && !forwardingOff) classes.push('credential')
       // CU-146: 'Trash' or 'Bin' alone deletes on a control (a toolbar button, a menu item); a sidebar row of that name
       // only opens the folder.
       if (TRASH_ROLE.test(String(target?.role ?? '')) && namesWord(name, CONTROL_DELETE)) classes.push('delete')
