@@ -734,9 +734,18 @@ export function looksSensitive(text) {
   for (const m of value.matchAll(/(?<![A-Za-z0-9/+])[A-Za-z0-9/+]{40}(?![A-Za-z0-9/+=])/g)) {
     if (/[A-Z]/.test(m[0]) && /[a-z]/.test(m[0]) && /\d/.test(m[0])) return 'key'
   }
-  for (const m of value.matchAll(/(?<![A-Za-z0-9])(?:password|passwd|pwd|secret|token|api[_-]?key|access[_-]?key|client[_-]?secret)["']?\s*[=:]\s*["']?([^\s"',}]{6,})/gi)) {
+  for (const m of value.matchAll(/(?<![A-Za-z0-9])(?:password|passwd|passphrase|pwd|secret|token|api[_-]?key|access[_-]?key|client[_-]?secret)["']?\s*[=:]\s*["']?([^\s"',}]{6,})/gi)) {
     if (/[\d\W_]/.test(m[1])) return 'key'
   }
+  // CU-350 (design note 0.1): an UPPER_SNAKE or run-together upper-case name ending in PASSWORD, PASSWD, SECRET or TOKEN
+  // (PGPASSWORD=, MYSQL_ROOT_PASSWORD=), a bearer token, and a password glued to a database client's flag.
+  for (const m of value.matchAll(/(?<![A-Za-z0-9])[A-Z][A-Z0-9_]*(?:PASSWORD|PASSWD|SECRET|TOKEN)["']?\s*[=:]\s*["']?([^\s"',}]{6,})/g)) {
+    if (/[\d\W_]/.test(m[1])) return 'key'
+  }
+  for (const m of value.matchAll(/\bbearer\s+([A-Za-z0-9._~+/-]{16,}=*)/gi)) {
+    if (/\d/.test(m[1])) return 'key'
+  }
+  if (/\b(?:mysql|mariadb|mysqldump|psql|pg_dump|mongo|mongosh|redis-cli)\b[^\n]*?(?:\s-p(?!\s)\S{4,}|\s--password=\S{4,})/i.test(value)) return 'key'
   // CU-164: a 0x-prefixed 64-hex private key (the word boundary after 'x' kept the rule above from seeing it); a 0x + 40
   // hex wallet address is public and stays allowed.
   if (/\b0x[0-9a-fA-F]{64}\b/.test(value)) return 'key'
