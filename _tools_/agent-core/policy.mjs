@@ -901,6 +901,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (read?.unknown === true) classes.push('sensitive_data')
       const inserted = insertedClass(typeof read === 'string' ? read : null, context.dropTarget, context)
       if (inserted) classes.push(inserted)
+      throughHost(typeof read === 'string' ? read : null, hostEntryOf(context.dropTarget))
     }
     if (action.type === 'type') {
       const inserted = insertedClass(String(action.text ?? ''), frameEntry ?? target, context)
