@@ -27,6 +27,10 @@ createInterface({ input: process.stdin }).on('line', (line) => {
 })
 `)
 
+// The other calls' bound here (hello included) is 3 s: a loaded gate (load average 17) took longer than 200 ms just to
+// start the stand-in and answer hello (cu-integrator, 18:03Z). Each row keeps its ratio: open's delay outruns that bound.
+const CALL_MS = 3000
+
 async function launch(env, bounds) {
   for (const [key, value] of Object.entries(env)) process.env[key] = value
   const sandbox = mkdtempSync(join(dir, 'sandbox-'))
@@ -34,7 +38,7 @@ async function launch(env, bounds) {
 }
 
 test('CU-333: an open slower than the other calls\' bound still answers - open has its own, longer bound (the loaded-gate case, scaled down)', async () => {
-  const fixture = await launch({ OPEN_DELAY_MS: '600', STATE_DELAY_MS: '0' }, { timeoutMs: 200, openTimeoutMs: 3000 })
+  const fixture = await launch({ OPEN_DELAY_MS: String(CALL_MS + 1000), STATE_DELAY_MS: '0' }, { timeoutMs: CALL_MS, openTimeoutMs: CALL_MS * 4 })
   try {
     assert.deepEqual(await fixture.open('grid-sheet', {}), { windows: ['open'] }, 'the slow build is waited for')
     assert.deepEqual(await fixture.state(), { windows: ['state'] })
@@ -44,20 +48,20 @@ test('CU-333: an open slower than the other calls\' bound still answers - open h
 })
 
 test('CU-333: open stays bounded - a fixture that never answers fails with the open bound in the message', async () => {
-  const fixture = await launch({ OPEN_DELAY_MS: 'never', STATE_DELAY_MS: '0' }, { timeoutMs: 200, openTimeoutMs: 400 })
+  const fixture = await launch({ OPEN_DELAY_MS: 'never', STATE_DELAY_MS: '0' }, { timeoutMs: CALL_MS, openTimeoutMs: CALL_MS + 1000 })
   try {
     const started = Date.now()
-    await assert.rejects(fixture.open('grid-sheet', {}), /fixture open got no answer within 400 ms/)
-    assert.ok(Date.now() - started < 3000, 'it gave up at its bound')
+    await assert.rejects(fixture.open('grid-sheet', {}), new RegExp(`fixture open got no answer within ${CALL_MS + 1000} ms`))
+    assert.ok(Date.now() - started < (CALL_MS + 1000) * 3, 'it gave up at its bound')
   } finally {
     await fixture.close()
   }
 })
 
 test('CU-333: every other call keeps its own bound - a slow state fails at timeoutMs, not at the open bound', async () => {
-  const fixture = await launch({ OPEN_DELAY_MS: '0', STATE_DELAY_MS: '1500' }, { timeoutMs: 200, openTimeoutMs: 5000 })
+  const fixture = await launch({ OPEN_DELAY_MS: '0', STATE_DELAY_MS: 'never' }, { timeoutMs: CALL_MS, openTimeoutMs: CALL_MS * 10 })
   try {
-    await assert.rejects(fixture.state(), /fixture state got no answer within 200 ms/)
+    await assert.rejects(fixture.state(), new RegExp(`fixture state got no answer within ${CALL_MS} ms`))
   } finally {
     await fixture.close()
   }
