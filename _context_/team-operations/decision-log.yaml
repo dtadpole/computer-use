@@ -486,3 +486,8 @@ decisions:
     topic: blocking-finding-holds-landing
     decision: 'A reviewer''s blocking finding on a head (an inbox or PR message saying not OK, with the finding) holds that pull request until the author answers it and the reviewer re-OKs or withdraws it, even when another non-author OK exists; cu-integrator checks for open findings as part of the OK check. And a D-065 cell cites a mutant only after the mutant has been applied and seen to fail that cell - a named mutant that does not exist or fails nothing is no evidence.'
     rationale: '#229 landed on one OK a minute after cu-verifier measured that its cited mutants did not exist or failed none of their cells; the fix had to follow on main.'
+  - id: D-094
+    date: 2026-11-09
+    topic: tooling-only-prs-phase1
+    decision: 'D-082''s phase-1 landing extends to verification tooling and test data that no desktop phase-2 step executes: a pull request that changes nothing in the helper, the desktop driver, the fixture apps or agent core''s runtime code - for example table-mutants.mjs and its runner, or _tools_/verify-kit/d065-audit.mjs and its fake-driven tests - lands after phase 1 and the public-hygiene gate, with D-079/D-090 merges as needed, without waiting for the owner''s idle slot. If cu-integrator finds a phase-2 step that runs such a file, the pull request waits for the full gate.'
+    rationale: '#237 and #236 (CU-324) sat behind helper 0.2.60''s idle wait for half an hour although no desktop step touches them, and CU-145''s re-sign stacks on them.'
