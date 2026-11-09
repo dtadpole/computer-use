@@ -1,40 +1,37 @@
 ---
 title: '[cu] Verifier - Handover'
 created: 2026-11-08T04:15:13Z
-modified: 2026-11-09T00:22:00Z
+modified: 2026-11-09T06:22:00Z
 level: L2
-version: 4.0.0
+version: 4.1.0
 description: 'What a fresh session of [cu] Verifier needs - live state, open PRs and asks, the scripts, and the next step.'
 status: unverified
 grounded_in:
-  - source: the seat's own state, 2026-11-09 0022Z, the successor session in the dtadpole/computer-use workspace (supersedes 3.0.0, #161)
+  - source: the seat's own state, 2026-11-09 0622Z, the successor session in the dtadpole/computer-use workspace (supersedes 4.0.0)
 ---
 
 # [cu] Verifier - Handover
 
-Start here, then [responsibilities](responsibilities.md) and the [verdict](ultimate-goal-2-verdict.md) (0.9.54).
+Start here, then [responsibilities](responsibilities.md) and the [verdict](ultimate-goal-2-verdict.md) (0.9.55).
 
 ```text
-WHERE: session worktree ~/dtadpole/computer-use-wt/<session id>; purpose worktrees beside it (--pr132, --cu298,
---records, --tm* test merges). CUHelper 0.2.58 admits the worktrees folder, so live runs start from the session
-worktree. Hygiene gate before every push; one _logs_/repo-actions line per PR.
+WHERE: session worktree ~/dtadpole/computer-use-wt/<session id>; purpose worktrees beside it (--records, --cu324,
+--tm* test merges). Hygiene gate before every push; one _logs_/repo-actions line per PR; never soft-reset a branch
+onto a moved main (it reverts others' lines) - merge origin/main instead.
 
-LIVE: helper 0.2.58; post-install passed (contents, Q-D15 5/5 at 00:07Z, step 4 235934Z-d47196). D-081: no model run
-off the fixture apps until CU-301 is verified.
+LIVE: helper 0.2.58 installed; 0.2.59-0.2.61 land as one chain (#201 -> #230 -> #206) and one install. Then: the
+post-install set, CU-303, and CU-322's rows on portable CfT (cu-coordinator 05:22Z: C1-C8 with and without
+--force-renderer-accessibility, no Safari row), then close CU-322 and CU-302 and send verdict 0.9.56.
 
-MY PRS: #132 (named-controls areas, merged with main at 1c417fd; one grid.test failure under investigation), #171
-(Fixes CU-298: frame-editor-probe, same-origin and cross-origin frame editors plus card-frames; OK'd at ad666c2).
+CU-145: back In Progress until its open cells close - CU-323 (named-controls check boxes + menu items, mine, after
+#171 lands), CU-263 (#174), D-061 batches B4/B5, two D-065 cells in a follow-up pair. Run ids so far: 65 cells live.
 
-VERIFY NEXT: CU-301 live rows (desktop named-controls keys, browser loopback page; scripts in /tmp/cu-verifier-ab3d/),
-CU-279/CU-296 (fixture rows; the IDE half needs Cursor approved by the owner), CU-295 (stand-ins with NODE_PATH
-stripped), CU-253 after #132, CU-241/CU-297 on #171 after #168/#175, CU-252/259/262 after #165, CU-263 after #174
-(not OK'd: keypresses skip the CAPTCHA-entry hand-off). Owner session: CU-11, CU-119, CU-135, CU-203.
+D-065: a cell counts only if its 'mutant: table-mutants <name>' applied alone fails it (D-093); the table lane runs
+_tools_/verify-kit/d065-audit.mjs (CU-324, Done). Review citations by running it, never by name.
 
-REVIEWS OWED: #182 (helper 0.2.59, CU-303) after its macos-helper run; re-OK #174 on its fix.
+SCRIPTS: /tmp/cu-verifier-ab3d/ (batch*.sh hold wrappers, cells-live, web-cells-live, web-keys-live, cu322-cft,
+test-merge.sh); git copies of the hold helper in the reflection seat folder. /tmp is lost on reboot.
 
-SCRIPTS: /tmp/cu-verifier-hold.sh, /tmp/cu-verifier-proofs/ (predecessor's; the Q-D15 probes still use
-~/computer-use--cu-verifier), /tmp/cu-verifier-ab3d/ (batch scripts, test-merge.sh). Lost on reboot.
-
-LESSONS: run node tests with --test-reporter=tap (the default reporter prints no counts); a test merge per review;
-a run's 'declined' may be approval, not policy - read its notes; dry-run helper bursts can exhaust tccd (CU-303).
+LESSONS: yield idle slots to a waiting code gate (D-073); an open blocking finding holds a landing (D-093); run
+node tests with --test-reporter=tap; a test merge per review, re-run when a head moves.
 ```
