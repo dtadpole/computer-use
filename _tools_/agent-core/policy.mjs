@@ -998,11 +998,14 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // Design 0.2 (cu-coordinator 23:12Z): Finder's built-in actions and the holder's own 'More…' / 'Customize…' stay free by
     // name; a custom workflow's name asks.
     const quickName = String(target?.name ?? context.boundMenuItem?.title ?? '').trim()
+    // 'Open in Terminal' (and New Terminal at Folder) hands a shell to the folder - asks like a Quick Action.
+    const terminalOpen = /^(?:open\s+in\s+terminal|new\s+terminal\s+(?:tab\s+)?at\s+folder)$/i.test(quickName)
     const builtInQuick = /^(?:rotate(?:\s+(?:left|right))?|markup|trim|compress|create\s+pdf|convert\s+image|remove\s+background|more(?:\u2026|\.\.\.)|customi[sz]e(?:\u2026|\.\.\.))$/i.test(quickName)
-    const quickAction = (target?.quickActions === true || context.boundMenuItem?.quickActions === true) && !builtInQuick
+    const quickAction = ((target?.quickActions === true || context.boundMenuItem?.quickActions === true) && !builtInQuick) || terminalOpen
     const quickPress = action.type === 'click' || action.type === 'double_click' || action.type === 'keypress' || action.type === 'hold_key'
     if (quickPress && quickAction) {
-      return { decision: 'confirm', class: 'permission', classes: ['permission'], rule: 'quick_action', reason: `run the Quick Action "${target?.name ?? context.boundMenuItem?.title ?? ''}", an Automator workflow` }
+      // cu-coordinator 23:18Z: each workflow is different code - asked each time, so a yes never covers another ask.
+      return { decision: 'confirm', class: 'permission', classes: ['permission'], rule: 'quick_action', askEachTime: true, reason: `run the Quick Action "${target?.name ?? context.boundMenuItem?.title ?? ''}", an Automator workflow` }
     }
     if (quickPress && (target?.menuContextUnread === true || context.boundMenuItem?.menuContextUnread === true)) {
       return { decision: 'confirm', class: 'unknown_target', classes: ['unknown_target'], rule: 'menu:context_unread', reason: `press "${target?.name ?? ''}" in a menu whose context could not be read` }

@@ -25,3 +25,9 @@ test('CU-382 negatives: an unmarked menu item keeps its rules', () => {
   }
   assert.equal(judge({ type: 'click', x: 1, y: 1, button: 'left' }, { origin: FINDER, role: 'AXMenuItem', name: 'Get Info' }), 'allow')
 })
+
+test('CU-382: a Quick Action asks each time (once only), and Open in Terminal asks', () => {
+  const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: `app:${FINDER}`, target: { origin: FINDER, role: 'AXMenuItem', name: 'Resize Images', quickActions: true } })
+  assert.equal(v.askEachTime, true)
+  assert.equal(judge({ type: 'click', x: 1, y: 1, button: 'left' }, { origin: FINDER, role: 'AXMenuItem', name: 'Open in Terminal' }), 'permission/quick_action')
+})
