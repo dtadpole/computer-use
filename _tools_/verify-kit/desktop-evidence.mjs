@@ -81,13 +81,14 @@ export function stuckInput(input, { tag = SYNTHETIC_TAG } = {}) {
  * order: `press`, the person's first untagged key-down (or modifier change) at or after `since`; `held`, each key the
  * agent held at that moment (a tagged key-down not yet up) with the time its tagged key-up came after the press
  * (`upAt`, null if it never came); `modifiers`, the agent's tagged modifier flags at the press and the time a tagged
- * flags change cleared them (`clearedAt`); and `after`, every other tagged event after the press - what the pause must
+ * flags change cleared them (`clearedAt`); `repeats`, auto-repeats of a held key before its key-up; and `after`, every
+ * other tagged event after the press - what the pause must
  * keep at zero. `ok` when the press exists, the agent held something at it, all of that came up after the press and
  * nothing else tagged followed. The person's key is located by position only; its key code is not reported.
  */
 export function heldKeyOrder(input, { since = 0, tag = SYNTHETIC_TAG } = {}) {
   const at = input.findIndex((event) => event.t >= since && event.tag !== tag && !event.repeat && (event.kind === 'keyDown' || event.kind === 'flagsChanged'))
-  if (at < 0) return { press: null, held: [], modifiers: { atPress: 0, clearedAt: null }, after: [], ok: false }
+  if (at < 0) return { press: null, held: [], modifiers: { atPress: 0, clearedAt: null }, repeats: [], after: [], ok: false }
   const down = new Map()
   let flags = 0
   for (const event of input.slice(0, at)) {
@@ -105,10 +106,14 @@ export function heldKeyOrder(input, { since = 0, tag = SYNTHETIC_TAG } = {}) {
   })
   const cleared = flags === 0 ? null : later.find((event) => event.kind === 'flagsChanged' && (event.modifiers ?? 0) === 0) ?? null
   if (cleared) releases.add(cleared)
+  // An auto-repeat of a key still held, landing before that key's own key-up, is the hold winding down within the
+  // helper's slice, not new input (cu-developer-three's note): reported as `repeats`, kept out of `after`.
+  const repeats = later.filter((event) => event.kind === 'keyDown' && event.repeat && held.some((h) => h.keyCode === event.keyCode && (h.upAt === null || event.t <= h.upAt)))
+  for (const event of repeats) releases.add(event)
   const after = later.filter((event) => !releases.has(event))
   const press = { t: input[at].t, kind: input[at].kind, index: at }
   const ok = (held.length > 0 || flags !== 0) && held.every((h) => h.upAt !== null) && (flags === 0 || cleared !== null) && after.length === 0
-  return { press, held, modifiers: { atPress: flags, clearedAt: cleared?.t ?? null }, after, ok }
+  return { press, held, modifiers: { atPress: flags, clearedAt: cleared?.t ?? null }, repeats, after, ok }
 }
 
 /** True for a pixel matching the stand-in marker colour (sRGB #FF00FF, tolerant of display profiles). */

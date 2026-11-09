@@ -122,6 +122,20 @@ describe('the owner\'s press during a hold (CU-341 Part 2, G2)', () => {
     assert.equal(order.ok, true)
     assert.deepEqual(order.modifiers, { atPress: 0x20000, clearedAt: 6.01 })
   })
+  test('an auto-repeat of the held key before its key-up is the hold winding down, not new input; after its key-up it is', () => {
+    const input = [
+      { kind: 'keyDown', keyCode: 0, t: 1, tag: T },
+      { kind: 'keyDown', keyCode: 49, t: 2, tag: 0 },
+      { kind: 'keyDown', keyCode: 0, t: 2.05, tag: T, repeat: true },
+      { kind: 'keyUp', keyCode: 0, t: 2.08, tag: T },
+    ]
+    const order = heldKeyOrder(input)
+    assert.equal(order.ok, true)
+    assert.equal(order.repeats.length, 1)
+    const late = heldKeyOrder([...input, { kind: 'keyDown', keyCode: 0, t: 2.5, tag: T, repeat: true }])
+    assert.equal(late.ok, false, 'a repeat after the key came up is synthetic input after the press')
+    assert.equal(late.after.length, 1)
+  })
   test('a key left down, a tagged event after the press, no press, or nothing held is not ok', () => {
     const held = { kind: 'keyDown', keyCode: 0, t: 1, tag: T }
     const press = { kind: 'keyDown', keyCode: 49, t: 2, tag: 0 }
