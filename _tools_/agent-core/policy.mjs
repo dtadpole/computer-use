@@ -992,7 +992,12 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       return { decision: 'confirm', class: 'unknown_target', classes: ['unknown_target'], rule: 'select:option_unread', reason: `press ${(action.keys ?? []).join('+')} on "${target?.name ?? 'a list'}", whose highlighted option could not be read` }
     }
     const choiceTarget = target && /combo|listbox|select/i.test(String(target.role ?? '')) && target.editable !== true
-    const optionNames = target?.selectOption === true && action.type !== 'type' ? [String(target.name ?? '')]
+    // The driver marks a radio the key checks with radioChoice (cu-coordinator 20:11Z): judged the same way by its name.
+    const optionRead = (target?.selectOption === true || target?.radioChoice === true) && action.type !== 'type'
+    // A choice whose landing the driver read (the option, the radio, or every option a type passes through) is judged by
+    // what it lands on, so a benign landing types freely - no page-shortcut fallback (cu-verifier's 'Archive' over-ask).
+    const choiceRead = optionRead || (action.type === 'type' && choiceTarget && Array.isArray(context.typeOptions) && context.typeOptions.length > 0)
+    const optionNames = optionRead ? [String(target.name ?? '')]
       : action.type === 'type' && Array.isArray(context.typeOptions) ? context.typeOptions.map((option) => String(option?.name ?? ''))
         : action.type === 'type' && choiceTarget ? [String(action.text ?? '').trim()] : []
     for (const optionName of optionNames.filter((name) => name.trim() !== '')) {
@@ -1058,7 +1063,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // cu-verifier 180522Z: 'ok #' typed on a focused link row - its space presses the link, its other characters still reach
     // the page's handlers - so a typed text is an activation only when it holds nothing but spaces and line breaks.
     const activationOnly = keyboard.activates && !(action.type === 'type' && /\S/.test(String(action.text ?? '')))
-    const pageShortcut = (browserRoute || desktopTarget) && shortcutKey !== null && !isTextEntry(target) && !framesHost(target) && !keyboard.deletes && !activationOnly
+    const pageShortcut = !choiceRead && (browserRoute || desktopTarget) && shortcutKey !== null && !isTextEntry(target) && !framesHost(target) && !keyboard.deletes && !activationOnly
     // CU-140 (press-and-drop.md): a drag pressed on a control - a long press, or any drag starting there - is judged like
     // a click on it; a file, row, cell or image at the press point is not judged by its name (dragging it moves it).
     const pressesTarget = POINTER.has(action.type) || (action.type === 'drag' && CONTROL_ROLE.test(String(target?.role ?? '')))

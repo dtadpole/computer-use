@@ -19,11 +19,14 @@ test("CU-370: the driver's keyTarget (the option a key lands on, selectOption) i
   assert.equal(judge({ type: 'keypress', keys: ['ENTER'] }, { role: 'option', name: 'Delete', selectOption: true }), 'delete/class:delete', 'an ARIA listbox Enter on an active Delete')
   assert.equal(judge({ type: 'keypress', keys: ['ARROWDOWN'] }, { role: 'option', name: 'Buy now', selectOption: true }), 'purchase/class:purchase')
   assert.equal(judge({ type: 'keypress', keys: ['ENTER'] }, { ...BULK, optionUnread: true }), 'unknown_target/select:option_unread', 'an open popup whose highlight cannot be read asks')
+  assert.equal(judge({ type: 'keypress', keys: ['ARROWDOWN'] }, { tag: 'input', inputType: 'radio', role: 'radio', name: 'Delete my account', radioChoice: true }), 'delete/class:delete', 'a radio the key checks (radioChoice)')
+  assert.equal(judge({ type: 'keypress', keys: ['ARROWDOWN'] }, { tag: 'input', inputType: 'radio', role: 'radio', name: 'Keep my account', radioChoice: true }), 'allow', 'a benign radio')
 })
 
 test('CU-370: a type is judged by every option its prefix passes through (typeOptions), keeping the strongest class', () => {
   assert.equal(judge({ type: 'type', text: 'Del' }, BULK, { typeOptions: [{ role: 'option', name: 'Details' }, { role: 'option', name: 'Delete' }] }), 'delete/class:delete')
-  assert.equal(judge({ type: 'type', text: 'Ar' }, BULK, { typeOptions: [{ role: 'option', name: 'Archive' }] }), 'permission/page:shortcut', 'a harmless option: the shortcut fallback still asks once')
+  assert.equal(judge({ type: 'type', text: 'Ar' }, BULK, { typeOptions: [{ role: 'option', name: 'Archive' }] }), 'allow', "a benign landing the driver read types freely (cu-verifier's over-ask)")
+  assert.equal(judge({ type: 'type', text: 'Ar' }, BULK, { typeOptions: [] }), 'permission/page:shortcut', 'no option read: the shortcut fallback still asks')
 })
 
 test('CU-370 negatives and named over-ask: an editable combobox is text entry; a harmless option name asks once as a shortcut', () => {
