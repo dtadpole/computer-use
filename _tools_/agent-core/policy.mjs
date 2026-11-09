@@ -139,7 +139,7 @@ const WORDS = Object.freeze({
     // CU-288: a tax filing goes to the authority.
     'file return', 'file tax return', 'file your return', 'file my return', 'e-file', 'efile', 'submit return', 'submit tax return', ...ZH_WORDS.submit, ...LOCALE_WORDS.submit],
 })
-const ACCOUNT_SECURITY = /\b(?:(?:generate|create|new|add)\s+(?:an?\s+)?app[\s-]?passwords?|app[\s-]?passwords?|(?:enable|disable|turn\s+(?:on|off)|set\s+up|add\s+(?:a\s+)?)?\s*(?:auto[\s-]?forward(?:ing)?|forwarding(?:\s+address)?|forward\s+(?:a\s+copy|incoming|all|to)\b)|two[\s-]?(?:factor|step)(?:\s+(?:authentication|verification|login))?|2[\s-]?step\s+verification|2fa|multi[\s-]?factor(?:\s+authentication)?|recovery\s+(?:e-?mail|phone|codes?))\b/i
+const ACCOUNT_SECURITY = /\b(?:(?:generate|create|new|add)\s+(?:an?\s+)?app[\s-]?(?:specific[\s-]?)?passwords?|app[\s-]?(?:specific[\s-]?)?passwords?|(?:enable|disable|turn\s+(?:on|off)|set\s+up|add\s+(?:a\s+)?)?\s*(?:auto[\s-]?forward(?:ing)?|forwarding(?:\s+address)?|forward\s+(?:a\s+copy|incoming|all|to)\b)|two[\s-]?(?:factor|step)(?:\s+(?:authentication|verification|login))?|2[\s-]?step\s+verification|create\s+(?:a\s+|new\s+)?filter|2fa|multi[\s-]?factor(?:\s+authentication)?|recovery\s+(?:e-?mail|phone|codes?))\b/i
 const PRECEDENCE = ['purchase', 'launch_code', 'delete', 'permission', 'page_dialog', 'credential', 'sensitive_data', 'submit', 'new_site', 'install']
 const POINTER = new Set(['click', 'double_click', 'triple_click'])
 // CU-135 (keyboard-activation.md): a focused button; any control a click activates (Space presses or toggles it); and a
@@ -1101,7 +1101,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // Turning two-factor or recovery protection ON by an explicit name stays free (CU-270); a bare toggle, whose direction
       // the driver does not report yet, asks.
       const protectionOn = /\b(?:turn\s+on|enable|set\s+up|activate)\b/i.test(name) && !/forward|app[\s-]?password/i.test(name)
-      if (!focusesEntry && ACCOUNT_SECURITY.test(name) && !protectionOn) classes.push('credential')
+      // Turning forwarding OFF is the safe direction (cu-coordinator 21:00Z).
+      const forwardingOff = /\b(?:disable|turn\s+off|stop)\b/i.test(name) && /forward/i.test(name)
+      if (!focusesEntry && ACCOUNT_SECURITY.test(name) && !protectionOn && !forwardingOff) classes.push('credential')
       // CU-146: 'Trash' or 'Bin' alone deletes on a control (a toolbar button, a menu item); a sidebar row of that name
       // only opens the folder.
       if (TRASH_ROLE.test(String(target?.role ?? '')) && namesWord(name, CONTROL_DELETE)) classes.push('delete')

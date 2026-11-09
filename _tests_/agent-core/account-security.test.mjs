@@ -9,7 +9,7 @@ const policy = createPolicy({ sitePolicy: () => 'allow' })
 const click = (role, name) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: 'https://mail.example/settings', target: { role, name } }); return v.decision === 'allow' ? 'allow' : v.class }
 
 test('CU-373: app passwords, auto-forwarding, two-factor and recovery controls ask credential on any control kind', () => {
-  for (const [role, name] of [['button', 'Generate app password'], ['link', 'App passwords'], ['button', 'Add a forwarding address'], ['checkbox', 'Forward a copy of incoming mail to'], ['switch', 'Two-factor authentication'], ['switch', '2-Step Verification'], ['button', 'Recovery codes']]) {
+  for (const [role, name] of [['button', 'Generate app password'], ['link', 'App passwords'], ['button', 'Add a forwarding address'], ['checkbox', 'Forward a copy of incoming mail to'], ['switch', 'Two-factor authentication'], ['switch', '2-Step Verification'], ['button', 'Recovery codes'], ['button', 'Create app-specific password'], ['button', 'Create filter']]) {
     assert.equal(click(role, name), 'credential', `${role} ${name}`)
   }
   assert.notEqual(click('button', 'Turn off 2FA'), 'allow', 'a stronger class may lead, it still asks')
@@ -17,4 +17,5 @@ test('CU-373: app passwords, auto-forwarding, two-factor and recovery controls a
 
 test('CU-373 negatives: a bare Forward on one message and other mail controls keep their rules', () => {
   for (const name of ['Forward', 'Archive', 'Forwarded messages']) assert.equal(click('button', name), 'allow', name)
+  assert.equal(click('switch', 'Disable forwarding'), 'allow', 'turning forwarding off is the safe direction')
 })
