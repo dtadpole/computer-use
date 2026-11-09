@@ -16,10 +16,12 @@ const freshLock = () => mkdtempSync(join(scratch, 'lock-'))
 // The real clock, so a launchFixture row (which reads the hold at the real time) sees the same hold as the check rows.
 const NOW = Date.now()
 const now = () => NOW
-const holdOf = (dir, seat, minutes = 10) => writeFileSync(join(dir, 'hold.json'), `${JSON.stringify({ seat, since: new Date(NOW).toISOString(), heldAt: new Date(NOW).toISOString(), until: new Date(NOW + minutes * 60_000).toISOString(), reason: 'test' })}\n`)
+// keeperPid defaults to this test process: alive for the stubbed and the real liveness check alike.
+const holdOf = (dir, seat, minutes = 10, keeper = { keeperPid: process.pid }) => writeFileSync(join(dir, 'hold.json'), `${JSON.stringify({ seat, since: new Date(NOW).toISOString(), heldAt: new Date(NOW).toISOString(), until: new Date(NOW + minutes * 60_000).toISOString(), reason: 'test', ...keeper })}\n`)
 const runOf = (dir, entry) => writeFileSync(join(dir, 'run.json'), `${JSON.stringify({ seat: 'cu-integrator', runId: 'nightly-1', startedAt: new Date(NOW).toISOString(), ...entry })}\n`)
-// A process tree: 5000 (this test) <- 4000 (node --test) <- 3000 (the nightly, holding the run) <- 1.
-const TREE = { 5000: 4000, 4000: 3000, 3000: 1, 7000: 1 }
+// A process tree: 5000 (this test) <- 4000 (node --test) <- 3000 (the nightly, holding the run) <- 1; 4500 a sibling
+// (another child of 4000), 3600 a cousin (under 3500, another child of 3000), 7000 another tree.
+const TREE = { 5000: 4000, 4000: 3000, 3000: 1, 4500: 4000, 3500: 3000, 3600: 3500, 7000: 1 }
 const parentOf = (pid) => TREE[pid] ?? null
 const alive = (pid) => pid !== 6666
 const check = (dir, extra = {}) => fixtureLaunchAllowed({ lockDir: dir, pid: 5000, now, isAlive: alive, parentOf, ...extra })
@@ -73,6 +75,22 @@ test("CU-305: another seat's hold refuses; one's own hold launches; an expired h
   const expired = freshLock()
   holdOf(expired, 'cu-verifier', -1)
   assert.equal(check(expired, { seat: 'cu-verifier' }).ok, false, 'a hold whose minutes ran out')
+  const stale = freshLock()
+  holdOf(stale, 'cu-verifier', 10, { keeperPid: 6666 })
+  assert.equal(check(stale, { seat: 'cu-verifier' }).ok, false, 'minutes left but its keeper is dead: a stale hold.json')
+  holdOf(stale, 'cu-verifier', 10, {})
+  assert.equal(check(stale, { seat: 'cu-verifier' }).ok, false, 'no keeper at all: not an enforced hold')
+})
+
+test('CU-305: the refusal names the seat it found holding and both ways in - no pid, path or time', () => {
+  const dir = freshLock()
+  holdOf(dir, 'cu-researcher')
+  const { message } = check(dir, { seat: 'cu-developer-two' })
+  assert.match(message, /held by cu-researcher/)
+  assert.match(message, /run-lock\.mjs hold --seat S/)
+  assert.match(message, /CU_DESKTOP_SEAT=S/)
+  assert.match(message, /a process that holds the run/)
+  assert.doesNotMatch(message, /\/tmp|(?<![-\d])\d{3,}(?!\d)|T\d\d:/, 'no lock path, pid or timestamp (CU-n and D-n references aside)')
 })
 
 test('CU-305: the declared seat defaults to CU_DESKTOP_SEAT, the variable a holder exports to its series', () => {
@@ -102,6 +120,14 @@ test("CU-305: a run held by this process's ancestor (the nightly's phase 2) laun
   assert.equal(check(dir).ok, false, 'a run whose process is gone')
   runOf(dir, { pid: 7000 })
   assert.equal(check(dir).ok, false, "another process tree's live run: not inside it")
+  runOf(dir, { pid: 4500 })
+  assert.equal(check(dir).ok, false, "a sibling's run (the gate's old holder shape): the walk, not 'any live run'")
+  runOf(dir, { pid: 3600 })
+  assert.equal(check(dir).ok, false, "a cousin's run")
+  runOf(dir, { pid: 3000 })
+  assert.equal(check(dir, { parentOf: () => null }).ok, false, 'a ps walk that fails finds no ancestor: refused, not admitted')
+  const deep = (pid) => (pid < 5040 ? pid + 1 : 3000)
+  assert.equal(check(dir, { pid: 5000, parentOf: deep }).ok, false, 'the run 41 steps up, past the 32-step walk: refused')
   writeFileSync(join(dir, 'run.json'), 'not json')
   assert.equal(check(dir).ok, false, 'an unreadable entry')
 })

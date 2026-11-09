@@ -8,7 +8,7 @@ import { execFileSync, spawn } from 'node:child_process'
 import { mkdtempSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-import { ENTRY_NAME, readHold, RUN_LOCK_DIR, SEAT_PATTERN } from '../../_environments_/macos-desktop/run-lock.mjs'
+import { ENTRY_NAME, HOLD_NAME, readHold, RUN_LOCK_DIR, SEAT_PATTERN } from '../../_environments_/macos-desktop/run-lock.mjs'
 import { pidAlive } from '../agent-core/resource-gate.mjs'
 
 /** Split a stream into whole JSON lines; returns `push(chunk) -> messages`. */
@@ -46,8 +46,9 @@ export function ancestorsOf(pid, { parentOf = psParent, limit = 32 } = {}) {
 /**
  * CU-305 (fixture-launch-lock.md): may this process start CU Fixture now? Yes inside a run - run.json holds a live,
  * non-sentinel run whose pid is this process or an ancestor (the nightly's and the gate's phase 2, an agent run) - or
- * under the caller's own hold: hold.json holds a live hold of the seat it declares (`seat`, else CU_DESKTOP_SEAT; the
- * holder exports it to its series, since the hold's keeper is detached and never an ancestor). Read-only, no mutex:
+ * under the caller's own hold: hold.json holds a live hold - its minutes running and its keeper alive - of the seat it
+ * declares (`seat`, else CU_DESKTOP_SEAT; the holder exports it to its series, since the hold's keeper is detached and
+ * never an ancestor). A ps walk that fails or passes 32 steps finds no ancestor, so it refuses (fail closed). Read-only, no mutex:
  * launching is not admission. Resolves to `{ ok: true, via }` or `{ ok: false, message }`.
  */
 export function fixtureLaunchAllowed({ seat = process.env.CU_DESKTOP_SEAT, lockDir = RUN_LOCK_DIR, pid = process.pid, now = Date.now, isAlive = pidAlive, parentOf = psParent } = {}) {
@@ -61,10 +62,18 @@ export function fixtureLaunchAllowed({ seat = process.env.CU_DESKTOP_SEAT, lockD
     && ancestorsOf(pid, { parentOf }).includes(entry.pid)) {
     return { ok: true, via: `run ${entry.runId ?? '?'} of ${entry.seat ?? '?'}` }
   }
-  const hold = readHold({ dir: lockDir, now })
+  // A hold counts while its minutes run and its keeper lives (cu-verifier): a hold.json whose keeper died is stale.
+  const live = readHold({ dir: lockDir, now })
+  let keeperPid = null
+  try {
+    keeperPid = JSON.parse(readFileSync(join(lockDir, HOLD_NAME), 'utf8')).keeperPid
+  } catch {
+    // Unreadable: no keeper to trust.
+  }
+  const hold = live !== null && Number.isInteger(keeperPid) && isAlive(keeperPid) ? live : null
   const declared = typeof seat === 'string' && SEAT_PATTERN.test(seat) ? seat : null
   if (hold !== null && declared !== null && hold.seat === declared) return { ok: true, via: `hold of ${declared}` }
-  const held = hold !== null ? `the Mac is held by ${hold.seat} until ${hold.until}` : 'no seat holds the Mac'
+  const held = hold !== null ? `the Mac is held by ${hold.seat}` : 'no seat holds the Mac'
   return {
     ok: false,
     message: `CU Fixture launches only under the desktop-run lock (CU-305, D-053, D-066): ${held}${declared !== null ? ` and this process declares ${declared}` : ' and this process declares no seat'}. ` +
