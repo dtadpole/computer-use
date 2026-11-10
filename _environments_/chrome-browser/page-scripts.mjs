@@ -512,10 +512,19 @@ export function describeElement(el) {
   const pressed = typeof el.getAttribute === 'function' ? tristate(el.getAttribute('aria-pressed')) : null
   // CU-400: a button that submits a form is judged with the choices beside it - an exchange's bare 'Sell' next to an
   // asset select and an amount field. Bounded: at most 3 selected option or combobox texts of 24 characters each, and
-  // whether an amount-shaped entry is present (never its value). Only for button-like elements inside a <form>.
+  // whether an amount-shaped entry is present (never its value). Only for button-like elements inside a form (below).
   const formContext = (() => {
     const buttonLike = tag === 'button' || (tag === 'input' && ['submit', 'button', 'image'].includes(type)) || role === 'button'
-    const form = buttonLike && el.closest ? el.closest('form') : null
+    // The form the control belongs to (el.form: a <form> ancestor, or one named by its form= attribute when the button
+    // sits outside it), else an explicit [role=form]; else (cu-researcher 05:24Z: React forms are divs) the nearest <fieldset>,
+    // <dialog> or [role=dialog] that holds exactly this one submit-like control - so a page-wide section never lends
+    // its selects (bounded fallback, cu-coordinator 05:26Z).
+    let form = buttonLike ? (el.form && el.form.querySelectorAll ? el.form : null) || (el.closest ? el.closest('form') || el.closest('[role="form"]') : null) : null
+    if (!form && buttonLike && el.closest) {
+      const box = el.closest('fieldset, dialog, [role="dialog"]')
+      const SUBMITS = 'button, input[type="submit"], input[type="button"], input[type="image"], [role="button"]'
+      if (box && box.querySelectorAll(SUBMITS).length === 1) form = box
+    }
     if (!form) return null
     const short = (text) => String(text || '').replace(/\s+/g, ' ').trim()
     const options = []

@@ -809,3 +809,25 @@ test('CU-400: a button inside a form carries formContext - up to 3 short selecte
   assert.deepEqual(Object.keys(sell.formContext), ['options', 'amountEntry'], 'the amount field is a boolean kind, never its name or value')
   assert.equal(sell.formContext.options.includes('amount'), false)
 })
+
+test('CU-402: without a <form>, formContext falls back to [role=form], else a fieldset or dialog holding exactly one submit-like control', () => {
+  const select = (text) => ({ tagName: 'SELECT', selectedOptions: [{ textContent: text }] })
+  const box = (controls, submits) => ({ querySelectorAll: (sel) => (sel === 'input' ? [] : sel.startsWith('select') ? controls : submits) })
+  const within = (map) => el('BUTTON', { children: ['Sell'], closest: (sel) => map[sel] ?? null })
+  const roleForm = box([select('ETH')], [{}, {}])
+  assert.deepEqual(describeElement(within({ form: null, '[role="form"]': roleForm })).formContext, { options: ['ETH'], amountEntry: false })
+  const dialog = box([select('BTC')], [{}])
+  assert.deepEqual(describeElement(within({ 'fieldset, dialog, [role="dialog"]': dialog })).formContext, { options: ['BTC'], amountEntry: false })
+  const busy = box([select('BTC')], [{}, {}])
+  assert.equal('formContext' in describeElement(within({ 'fieldset, dialog, [role="dialog"]': busy })), false, 'a fieldset with two submit-like controls lends nothing')
+  assert.equal('formContext' in describeElement(within({})), false, 'no form, no role=form, no bounded box: none')
+})
+
+test('CU-402: a submit button outside its form but tied by form= (el.form) reads that form', () => {
+  const select = (text) => ({ tagName: 'SELECT', selectedOptions: [{ textContent: text }] })
+  const trade = { querySelectorAll: (sel) => (sel === 'input' ? [] : [select('BTC')]) }
+  const outside = el('BUTTON', { children: ['Sell'], form: trade, closest: () => null })
+  assert.deepEqual(describeElement(outside).formContext, { options: ['BTC'], amountEntry: false })
+  const loose = el('BUTTON', { children: ['Sell'], form: null, closest: () => null })
+  assert.equal('formContext' in describeElement(loose), false, 'an unassociated button outside any form: a named limit')
+})
