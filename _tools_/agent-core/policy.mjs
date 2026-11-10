@@ -1323,6 +1323,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (!focusesEntry && /\b(?:sell|convert|deposit)\b/i.test(name) && (/\d|[$\u20ac\u00a3\u00a5\u20bf]/.test(name) || TRADE_ASSET.test(name) || formTrade)) classes.push('purchase')
       // CU-428: 'Join / Go / Get / Unlock / Try <tier>' (Prime, Plus, Premium, Pro, Gold ...) ends the name - a paid tier.
       if (!focusesEntry && /^\s*(?:join|go|get|unlock|try)\s+(?:\S+\s+)?(?:prime|plus|premium|pro|gold|platinum|vip|elite|unlimited|max|ultra|membership)(?:\s+(?:now|today|free|for\s+\S+))?\s*$/i.test(name)) classes.push('purchase')
+      // cu-coordinator 17:00Z (round 2): 'Upgrade to <any tier or noun>', 'Join the club' and 'Become a <tier> member' ask purchase.
+      if (!focusesEntry && (/^\s*upgrade\s+(?:to\s+\S|now\b|plan\b|account\b|membership\b)/i.test(name) || /^\s*join\s+(?:the\s+)?club\b/i.test(name)
+        || /^\s*become\s+(?:a|an)\s+(?:\S+\s+)?member\b/i.test(name))) classes.push('purchase')
       // CU-415 (cu-coordinator 13:12Z): 'Reserve seat / table' asks purchase on the name alone (a booking commits the owner; a
       // free table's over-ask is named); 'Book appointment' asks purchase with a price or deposit in its name, else submit.
       if (!focusesEntry && /^\s*reserve\s+(?:a\s+)?(?:seat|table|spot)\b/i.test(name)) classes.push('purchase')

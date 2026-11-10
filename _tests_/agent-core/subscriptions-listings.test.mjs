@@ -29,3 +29,11 @@ test('CU-428: List now, Relist and Accept return submit', () => {
 test('CU-428 negatives: plans, membership, features, Compare plans, Learn more, Manage subscription, Join group stay free', () => {
   for (const name of ['Plans', 'Membership', 'Premium features', 'Compare plans', 'Learn more', 'Manage subscription', 'Join group', 'Get started', 'Pro tips']) assert.equal(click(name), 'allow', name)
 })
+
+test('CU-428 round 2 (17:00Z): Upgrade to <any tier>, Join the club and Become a <tier> member ask purchase', () => {
+  for (const name of ['Upgrade to Gold', 'Upgrade to Family', 'Upgrade to Business', 'Join the club', 'Become a Plus member', 'Become a Gold member']) {
+    assert.equal(click(name), 'purchase', name)
+    assert.equal(enter(name), 'purchase', `Return: ${name}`)
+  }
+  for (const name of ['Upgrade guide', 'Club rules', 'Member benefits']) assert.equal(click(name), 'allow', name)
+})
