@@ -34,3 +34,14 @@ test('CU-426 chat forms (19:25Z): bare Unsend deletes; Dismiss as admin and Expo
   for (const name of ['Dismiss as admin', 'Export chat']) assert.equal(click(name), 'permission', name)
   for (const name of ['Export data', 'Dismiss']) assert.equal(click(name), 'allow', name)
 })
+
+test('CU-438 (19:52Z): admin acts on another person ask permission; assigning licences asks purchase', () => {
+  for (const name of ['Suspend user', 'Unsuspend user', 'Change user role', 'Make admin', 'Sign out all sessions', 'Reset sign-in cookies', 'Add alias', 'Add email alias', 'Transfer ownership']) {
+    assert.equal(click(name), 'permission', name)
+    assert.equal(enter(name), 'permission', `Return: ${name}`)
+  }
+  for (const name of ['Assign license', 'Add licenses', 'Buy licenses']) assert.equal(click(name), 'purchase', name)
+  // Named: 'Remove admin' keeps the older 'remove' delete, which leads by precedence (it asks either way).
+  assert.equal(click('Remove admin'), 'delete', 'older rule leads')
+  for (const name of ['Users', 'User details', 'Licenses', 'Roles', 'Audit log', 'Sign out', 'Aliases']) assert.equal(click(name), 'allow', name)
+})

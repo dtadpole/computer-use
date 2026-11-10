@@ -18,7 +18,11 @@ const FILLER = new Set(['<n>', 'all', 'new', 'now', 'it', 'them', 'everyone', 'a
 
 const US_WORDS = new Set(['antivirus', 'virus', 'status', 'bonus', 'campus', 'focus', 'census', 'corpus', 'plus', 'minus', 'surplus', 'genius', 'radius', 'nexus', 'menus', 'bus'])
 
+// Words whose final -s is not a plural (CU-438: 'Add alias').
+const NOT_PLURAL = new Set(['alias', 'canvas', 'atlas', 'bias', 'gas', 'lens', 'news', 'series', 'species', 'chassis', 'axis', 'basis', 'analysis', 'thesis', 'crisis', 'diagnosis'])
+
 function singular(token) {
+  if (NOT_PLURAL.has(token)) return token
   if (token.length > 4 && token.endsWith('ies')) return `${token.slice(0, -3)}y`
   if (token.length > 4 && /(?:ss|sh|ch|x)es$/.test(token)) return token.slice(0, -2)
   // -us stays only on its Latin / short words (antivirus, status, bonus ...); an acronym plural folds ('GPUs' = 'gpu', cu-coordinator 19:22Z).
@@ -204,6 +208,23 @@ function insuranceClass(list) {
   return null
 }
 
+// CU-438's admin rows (verb x object -> class); 'Remove admin' keeps the older 'remove' delete, which leads by precedence (named).
+const PEOPLE = new Set(['user', 'member', 'employee', 'account', 'student', 'guest', 'teammate'])
+function adminClass(list) {
+  if (list.length < 2 || list.length > 6) return null
+  const [verb, ...rest] = list
+  const core = rest.filter((t) => !FILLER.has(t))
+  const last = core[core.length - 1]
+  if ((verb === 'suspend' || verb === 'unsuspend' || verb === 'disable' || verb === 'lock') && core.length <= 2 && PEOPLE.has(last)) return 'permission'
+  if (['change', 'edit', 'update', 'set'].includes(verb) && core.length <= 3 && last === 'role' && core.some((t) => PEOPLE.has(t))) return 'permission'
+  if ((verb === 'sign' || verb === 'log') && rest[0] === 'out' && (rest.includes('session') || rest.includes('device') || rest.includes('everywhere'))) return 'permission'
+  if (verb === 'reset' && rest.includes('sign') && rest.includes('cooky')) return 'permission'
+  if (verb === 'reset' && rest.includes('cookie')) return 'permission'
+  if (verb === 'add' && core.length <= 2 && last === 'alias') return 'permission'
+  if (verb === 'assign' && core.length <= 2 && last === 'license') return 'purchase'
+  return null
+}
+
 const DIVERSION_VERBS = new Set(['change', 'update', 'edit', 'add', 'set', 'replace', 'switch'])
 const DIVERSION_OBJECTS = [['direct', 'deposit'], ['bank', 'detail'], ['deposit', 'account'], ['routing', 'number'], ['account', 'number'],
   ['payout', 'account'], ['payout', 'method'], ['bank', 'account'], ['payout', 'detail']]
@@ -230,6 +251,9 @@ export function grammarClasses(name, role = '') {
   // CU-437 (High; cu-coordinator 19:39Z): redirecting pay or payouts - direct deposit, bank details, routing / account number,
   // payout account or method - is an account takeover (credential). Checked before the guards ('details' is a tail elsewhere).
   if (payDiversion(list)) return ['credential']
+  // CU-438 (High; cu-coordinator 19:52Z): an admin act on another person's account (CU-416 family).
+  const admin = adminClass(list)
+  if (admin) return [admin]
   // Guards: a trailing list / settings / UI noun; a bare plural noun (a tab); settings-sense apply; 'Sign in as guest'.
   if (FREE_TAIL.has(last) || (list.length >= 2 && FREE_TAIL.has(list[list.length - 2]))) return []
   if (UI_TAIL.has(last) && list.length >= 2) return []
