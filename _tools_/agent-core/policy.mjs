@@ -1188,9 +1188,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // trade; a marketplace 'Sell' and a file 'Convert' stay free (named).
       // CU-402 (High; cu-coordinator 05:21Z): a bare 'Sell'/'Convert'/'Deposit' submit inside a form reads its form's context
       // (cu-developer-two's driver: formContext {options: up to 3 selected texts, amountEntry}) - an asset among the selected
-      // options, or an amount entry in the form, makes it a trade. Named over-ask: a marketplace listing form with a price.
+      // options makes it a trade; an amount entry alone never does (cu-coordinator 05:26Z - a marketplace 'Sell' stays free).
       const form = target?.formContext
-      const formTrade = form && typeof form === 'object' && ((Array.isArray(form.options) && form.options.some((text) => TRADE_ASSET.test(String(text)))) || form.amountEntry === true)
+      const formTrade = form && typeof form === 'object' && Array.isArray(form.options) && form.options.some((text) => TRADE_ASSET.test(String(text)))
       if (!focusesEntry && /\b(?:sell|convert|deposit)\b/i.test(name) && (/\d|[$\u20ac\u00a3\u00a5\u20bf]/.test(name) || TRADE_ASSET.test(name) || formTrade)) classes.push('purchase')
       // cu-coordinator 04:50Z: a trading word beside a navigation noun ('Trade history', 'Swap settings', 'Staking FAQ') opens
       // a page - free, unless another purchase word is in the name.

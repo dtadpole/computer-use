@@ -19,16 +19,18 @@ const press = (name, formContext) => { const v = policy.classify({ type: 'click'
 const tmp = mkdtempSync(join(tmpdir(), 'cu-402-'))
 after(() => rmSync(tmp, { recursive: true, force: true }))
 
-test('CU-402: a bare Sell/Convert/Deposit with an asset among the selected options, or an amount entry, asks purchase', () => {
+test('CU-402: a bare Sell/Convert/Deposit with an asset among the selected options asks purchase', () => {
   assert.equal(press('Sell', { options: ['BTC'], amountEntry: false }), 'purchase')
   assert.equal(press('Convert', { options: ['Ethereum'], amountEntry: true }), 'purchase')
-  assert.equal(press('Deposit', { options: [], amountEntry: true }), 'purchase')
+  assert.equal(press('Deposit', { options: ['USDC'], amountEntry: false }), 'purchase')
 })
 
 test('CU-402 negatives: no form context, or options that name no asset and no amount entry, stay free', () => {
   assert.equal(press('Sell'), 'allow')
   assert.equal(press('Sell', { options: ['Used - good'], amountEntry: false }), 'allow')
   assert.equal(press('Convert', { options: ['PDF'], amountEntry: false }), 'allow')
+  assert.equal(press('Sell', { options: [], amountEntry: true }), 'allow', 'an amount entry alone (a marketplace price) never counts')
+  assert.equal(press('Sell', { options: ['Used - good'], amountEntry: true }), 'allow')
 })
 
 test('CU-402 through the loop: the inspected button carries formContext and the click is declined', async () => {
