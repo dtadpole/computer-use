@@ -107,6 +107,8 @@ final class Files: NSObject, NSTableViewDataSource, NSTableViewDelegate {
     table.dataSource = self
     table.delegate = self
     table.setDraggingSourceOperationMask([.move, .copy], forLocal: true)
+    // CU-387: and a copy to another process, so a drop in CU Ledger is offered an operation.
+    table.setDraggingSourceOperationMask(.copy, forLocal: false)
     scroll.documentView = table
     scroll.hasVerticalScroller = true
     scroll.autohidesScrollers = false
