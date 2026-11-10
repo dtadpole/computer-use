@@ -90,6 +90,8 @@ const WORDS = Object.freeze({
     'add bag', 'add bags', 'add checked bag', 'add a checked bag', 'add checked bags', 'add insurance', 'add travel insurance',
     'upgrade seat', 'upgrade my seat', 'use miles', 'use points', 'redeem miles', 'change flight', 'change my flight', 'change dates',
     'change travel dates',
+    // cu-coordinator 17:20Z (round 2): trip insurance.
+    'add trip insurance', 'add flight insurance',
     // CU-415 (High; cu-coordinator 13:10Z): bookings commit money.
     'book flight', 'book a flight', 'book hotel', 'book room', 'book a room', 'confirm booking', 'complete booking',
     // cu-coordinator 13:19Z (round 3).
@@ -137,7 +139,7 @@ const WORDS = Object.freeze({
   // CU-135: replace and overwrite (a save panel's 'already exists' sheet), don't save (a close sheet discards work).
   delete: ['delete', 'remove', 'discard', 'erase', 'empty trash', 'cancel subscription', 'replace', 'overwrite', "don't save", 'don\u2019t save',
     // CU-430 (CU-415 family): cancelling a flight cancels a trip.
-    'cancel flight', 'cancel my flight', 'cancel this flight',
+    'cancel flight', 'cancel my flight', 'cancel this flight', 'cancel this trip', 'cancel my trip', 'cancel the trip',
     // CU-415: cancelling a booking is often fee-bearing and not undoable.
     'cancel reservation', 'cancel booking', 'cancel my booking', 'cancel my reservation',
     'cancel trip', 'cancel my trip', 'cancel appointment', 'cancel my appointment',
@@ -1330,6 +1332,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (!focusesEntry && /\b(?:sell|convert|deposit)\b/i.test(name) && (/\d|[$\u20ac\u00a3\u00a5\u20bf]/.test(name) || TRADE_ASSET.test(name) || formTrade)) classes.push('purchase')
       // CU-430: 'Upgrade to <cabin>' (Business, First, Premium Economy ...) spends money.
       if (!focusesEntry && /^\s*upgrade\s+to\s+(?:business|first|premium(?:\s+economy)?|economy\s+plus|comfort|main\s+cabin|extra\s+legroom)\b/i.test(name)) classes.push('purchase')
+      // Round 2: 'Add <n> bags' (a count).
+      if (!focusesEntry && /^\s*add\s+\d+\s+(?:checked\s+|carry[\s-]?on\s+)?bags?\b/i.test(name)) classes.push('purchase')
       // CU-420: exporting, revealing, showing, viewing or copying passwords or secrets and getting recovery codes expose credentials;
       // 'Show password' asks everywhere, the sign-in eye toggle included - the plaintext reaches the next screenshot (cu-coordinator
       // 15:16Z, superseding 15:13Z); 15:18Z adds keychain / credentials exports, secrets and 'Get backup codes'.

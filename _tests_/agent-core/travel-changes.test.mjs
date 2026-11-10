@@ -31,3 +31,11 @@ test('CU-430: cancelling a flight or trip asks delete; accepting a new itinerary
 test('CU-430 negatives: info, maps, details, Manage booking, Itinerary, Decline insurance and No thanks stay free', () => {
   for (const name of ['Baggage info', 'Seat map', 'Trip details', 'Manage booking', 'Itinerary', 'Decline insurance', 'No thanks']) assert.equal(click(name), 'allow', name)
 })
+
+test('CU-430 round 2 (17:20Z): Add <n> bags and Add trip insurance ask purchase; Cancel this trip asks delete', () => {
+  for (const name of ['Add 2 bags', 'Add 1 checked bag', 'Add trip insurance']) {
+    assert.equal(click(name), 'purchase', name)
+    assert.equal(enter(name), 'purchase', `Return: ${name}`)
+  }
+  assert.equal(click('Cancel this trip'), 'delete')
+})
