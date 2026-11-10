@@ -609,7 +609,8 @@ export async function runTask(options) {
       // CU-250 (cu-developer-two's seam finding): an item under a Services submenu keeps its mark, which app-policy refuses;
       // anything but false reads as marked (fail closed, as the driver does).
       const servicesMenu = one.servicesMenu !== undefined && one.servicesMenu !== false
-      items.push({ role: 'AXMenuItem', name: one.name.trim().slice(0, 80), ...(key ? { keyEquivalent: key } : {}), ...(typeof one.enabled === 'boolean' ? { enabled: one.enabled } : {}), ...(appleMenu ? { appleMenu: true } : {}), ...(servicesMenu ? { servicesMenu: true } : {}) })
+      // CU-382 (cu-researcher 08:07Z, D-103): a Quick Action item's mark and an unwalked menu context ride along, as appleMenu does.
+      items.push({ role: 'AXMenuItem', name: one.name.trim().slice(0, 80), ...(key ? { keyEquivalent: key } : {}), ...(typeof one.enabled === 'boolean' ? { enabled: one.enabled } : {}), ...(appleMenu ? { appleMenu: true } : {}), ...(servicesMenu ? { servicesMenu: true } : {}), ...(one.quickActions === true ? { quickActions: true } : {}), ...(one.menuContextUnread === true ? { menuContextUnread: true } : {}) })
     }
     return items.length === 1 ? items[0] : { items }
   }
@@ -1036,6 +1037,9 @@ export async function runTask(options) {
   const recordedWebTarget = (target, allowed) => {
     if (!target) return null
     const recorded = { origin: target.origin ?? null, role: target.role ?? null }
+    // CU-373 audit (cu-verifier, cu-coordinator 21:13Z): a toggle's state before the action - booleans or 'mixed', never a
+    // value - so a record shows why a protection toggle went free.
+    for (const key of ['checked', 'pressed']) if (target[key] === true || target[key] === false || target[key] === 'mixed') recorded[key] = target[key]
     return allowed === true ? { ...recorded, name: target.name ?? '' } : recorded
   }
 
@@ -1213,7 +1217,21 @@ export async function runTask(options) {
       // never a name, so a stand-in miss is diagnosable from the record.
       const selectionRead = context.selection ? (context.selection.none ? { none: true } : context.selection.notCollection ? { notCollection: true } : !Array.isArray(context.selection.items) ? { unreadable: true }
         : { items: context.selection.items.length, kinds: context.selection.items.reduce((acc, item) => ({ ...acc, [item.kind]: (acc[item.kind] ?? 0) + 1 }), {}), ...(context.selection.truncated ? { truncated: true } : {}) }) : null
-      const base = { index, action: record, ...(composedOf[index] ? { composedFrom: composedOf[index] } : {}), site: environment.site, decision: decision.decision, class: decision.class, rule: decision.rule, ...(decision.app ? { app: decision.app } : {}), ...(selectionRead ? { selectionRead } : {}), ...(target ? { target } : {}), ...(blind ? { targetUnnamed: true } : {}), ...(dropBlind ? { dropTargetUnnamed: true } : {}), ...(defaultBlind ? { defaultButtonUnnamed: true } : {}), ...(context.historyJudged ? { history: context.historyJudged } : {}), ...(context.pasteboardJudged ? { pasteboard: context.pasteboardJudged } : {}), ...(context.boundMenuItem ? { boundMenuItem: context.boundMenuItem } : {}), ...(context.target && (context.target.textEntered === true || context.target.textEntered === false || context.target.textEntered === null) ? { textEntered: context.target.textEntered } : {}) }
+      // CU-391 (D-103): the loop-derived context the policy judged on, as kinds and booleans only - never a name or a value.
+      const derived = {
+        ...(context.dragSource ? { dragSource: context.dragSource } : {}),
+        ...(context.paste ? { paste: context.paste.fromOwner === true ? 'owner' : (context.paste.source ? 'run_attributed' : 'run_unattributed') } : {}),
+        ...(context.typeOptions ? { typeOptions: context.typeOptions.unread === true ? 'unread' : 'read' } : {}),
+        ...(context.boundMenuItem !== undefined ? { boundMenuItem: context.boundMenuItem?.unreadable === true ? 'unreadable' : context.boundMenuItem && context.boundMenuItem.none !== true ? 'bound' : 'none' } : {}),
+        ...(action.type === 'drag' && Array.isArray(action.path) && action.path.length > 1 ? { dropTarget: !context.dropTarget || !context.dropTarget.origin || !context.target?.origin ? 'unread' : context.dropTarget.origin === context.target.origin ? 'same_app' : 'other_app' } : {}),
+        ...(context.target?.menuOpen === true ? { menuOpen: true } : {}),
+        // CU-398 (cu-verifier 04:37Z): the helper's Apple-menu mark, so a hover row can show it without pressing anything.
+        ...(context.target?.appleMenu === true ? { appleMenu: true } : {}),
+        // CU-387 (cu-coordinator 01:59Z): a drag that rode on a file name lent by its row (helper 0.2.67, #443) says so.
+        ...(context.target?.fileFrom === 'ancestor' ? { fileFrom: 'ancestor' } : {}),
+        ...(context.target?.selectOption === true ? { keyTarget: 'option' } : context.target?.optionUnread === true ? { keyTarget: 'unread' } : {}),
+      }
+      const base = { index, action: record, ...(Object.keys(derived).length > 0 ? { derived } : {}), ...(composedOf[index] ? { composedFrom: composedOf[index] } : {}), site: environment.site, decision: decision.decision, class: decision.class, rule: decision.rule, ...(decision.app ? { app: decision.app } : {}), ...(selectionRead ? { selectionRead } : {}), ...(target ? { target } : {}), ...(blind ? { targetUnnamed: true } : {}), ...(dropBlind ? { dropTargetUnnamed: true } : {}), ...(defaultBlind ? { defaultButtonUnnamed: true } : {}), ...(context.historyJudged ? { history: context.historyJudged } : {}), ...(context.pasteboardJudged ? { pasteboard: context.pasteboardJudged } : {}), ...(context.boundMenuItem ? { boundMenuItem: context.boundMenuItem } : {}), ...(context.target && (context.target.textEntered === true || context.target.textEntered === false || context.target.textEntered === null) ? { textEntered: context.target.textEntered } : {}) }
       if (decision.decision !== 'block') consecutiveBlocks = 0
 
       if (decision.decision === 'block') {
