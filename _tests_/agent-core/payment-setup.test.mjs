@@ -27,3 +27,10 @@ test('CU-413: linking PayPal, a bank or a card and adding a bank account or paym
 test('CU-413 negatives: lists, balances and turning 1-Click off stay free', () => {
   for (const name of ['Payment methods', 'Bank accounts', 'Points balance', 'Gift cards', 'Turn off 1-Click']) assert.equal(click(name), 'allow', name)
 })
+
+test('CU-413 near forms (12:28Z): Redeem 500 points and Redeem rewards ask purchase; Add new payment method asks credential', () => {
+  for (const name of ['Redeem 500 points', 'Redeem 1,000 points', 'Redeem rewards']) assert.equal(click(name), 'purchase', name)
+  assert.equal(click('Add new payment method'), 'credential')
+  assert.equal(enter('Redeem rewards'), 'purchase', 'Return: Redeem rewards')
+  for (const name of ['Rewards', 'Points history']) assert.equal(click(name), 'allow', name)
+})

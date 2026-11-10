@@ -200,7 +200,7 @@ const KEY_TOKEN_ACT = /^\s*(?:(?:rotate|regenerate|revoke)\s+(?:the\s+|your\s+)?
 const RESET_PASSWORD = /^\s*reset\s+(?:your\s+|my\s+)?password\s*$/i
 // CU-411 round 2: my / your / the between the verb and account / data ('Close your account', 'Clear my data').
 const ACCOUNT_WIPE = /^\s*(?:(?:close|terminate|reset|erase)\s+(?:my\s+|your\s+|the\s+)account|(?:clear|wipe|erase)\s+(?:all\s+)?(?:my\s+|your\s+|the\s+)(?:all\s+)?data)\b/i
-const PAYMENT_LINK = /^\s*(?:(?:link|connect)\s+(?:a\s+|your\s+)?(?:paypal|bank(?:\s+account)?|card)|add\s+(?:a\s+)?(?:bank\s+account|payment\s+method))\b/i
+const PAYMENT_LINK = /^\s*(?:(?:link|connect)\s+(?:a\s+|your\s+)?(?:paypal|bank(?:\s+account)?|card)|add\s+(?:a\s+)?(?:new\s+)?(?:bank\s+account|payment\s+method))\b/i
 const PRECEDENCE = ['physical', 'purchase', 'launch_code', 'delete', 'permission', 'page_dialog', 'credential', 'sensitive_data', 'submit', 'new_site', 'install']
 const PHYSICAL = ['unlatch', 'disarm', 'disarm security system', 'disarm alarm',
   'turn off alarm', 'open garage', 'open garage door', 'open gate', 'open the gate', 'mark as lost', 'erase device',
@@ -1274,6 +1274,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (!focusesEntry && /\b(?:sell|convert|deposit)\b/i.test(name) && (/\d|[$\u20ac\u00a3\u00a5\u20bf]/.test(name) || TRADE_ASSET.test(name) || formTrade)) classes.push('purchase')
       // CU-413: linking a bank, card or PayPal, or adding a payment method, hands over account numbers - credential leads (it
       // drops a 'connect' permission word beside it).
+      // cu-coordinator 12:28Z: 'Redeem <N> points' and 'Redeem rewards' too.
+      if (!focusesEntry && /^\s*redeem\s+(?:\d[\d,.]*\s+)?(?:points|rewards)\b/i.test(name)) classes.push('purchase')
       if (!focusesEntry && PAYMENT_LINK.test(name)) {
         for (let i = classes.length - 1; i >= 0; i -= 1) if (classes[i] === 'permission') classes.splice(i, 1)
         classes.push('credential')
