@@ -80,7 +80,7 @@ const VERBS = new Map(Object.entries({
   capture: ['pay'], gift: ['pay'], reactivate: ['pay'], resume: ['pay'], market: ['pay'], relaunch: ['install'],
   place: ['pay', 'send'], mint: ['pay'], bridge: ['pay'], back: ['pay'], request: ['pay'],
   unstake: ['pay'], downgrade: ['pay'], unlink: ['grant'], distribute: ['send'], upload: ['send'], go: ['grant'], boost: ['pay'],
-  fund: ['pay'], lend: ['pay'], borrow: ['pay'], repay: ['pay'], list: ['pay'], use: ['pay'],
+  fund: ['pay'], lend: ['pay'], borrow: ['pay'], repay: ['pay'], list: ['pay'], use: ['pay'], bind: ['pay'],
 }))
 
 const PERSON = new Set(['driver', 'plumber', 'contractor', 'friend', 'seller', 'vendor', 'merchant', 'host', 'creator', 'streamer',
@@ -174,6 +174,25 @@ const PRICED_ROLES = new Set(['gridcell', 'option', 'radio', 'checkbox', 'button
 const PRICED_NOUNS = new Set(['seat', 'option', 'legroom', 'bag', 'baggage'])
 const CURRENCY = /[$\u20ac\u00a3\u00a5]\s?\d|\d\s?(?:usd|eur|gbp)\b/i
 
+// CU-435's insurance rows: verb x object -> class, within the usual two-token window.
+const INSURANCE_ROWS = [
+  [['bind', 'buy', 'purchase', 'renew'], ['policy'], 'purchase'], [['increase', 'add', 'extend', 'raise'], ['coverage'], 'purchase'],
+  [['lower', 'reduce', 'decrease'], ['deductible'], 'purchase'], [['accept'], ['quote'], 'purchase'], [['cancel'], ['policy'], 'delete'],
+  [['accept'], ['settlement', 'offer'], 'submit'], [['file', 'submit'], ['claim'], 'submit'],
+]
+function insuranceClass(list) {
+  if (list.length < 2 || list.length > 5) return null
+  const window = list.slice(1).filter((t) => !FILLER.has(t)).slice(0, 3)
+  const objectIndex = (objects) => window.findIndex((t) => objects.includes(t))
+  for (const [verbs, objects, cls] of INSURANCE_ROWS) {
+    if (!verbs.includes(list[0])) continue
+    const i = objectIndex(objects)
+    // The object ends the name (optionally one trailing token like 'now'), so 'Renew policy settings' stays a guard case.
+    if (i >= 0 && i >= window.length - 1) return cls
+  }
+  return null
+}
+
 // The classes the grammar asks for a control's name (and its role, for the priced cell); [] when it asks nothing.
 export function grammarClasses(name, role = '') {
   const raw = String(name ?? '').trim()
@@ -183,6 +202,11 @@ export function grammarClasses(name, role = '') {
   if (list.length === 0) return []
   const lower = raw.toLowerCase()
   const last = list[list.length - 1]
+  // CU-435 (High; cu-coordinator 18:51Z): an insurance contract - binding, buying, renewing or cancelling a policy, widening
+  // coverage, lowering a deductible, accepting a quote or a settlement, filing a claim. Checked before the guards: 'policy' is
+  // a list / settings tail elsewhere ('Privacy policy'), a contract only after these verbs.
+  const insurance = insuranceClass(list)
+  if (insurance) return [insurance]
   // Guards: a trailing list / settings / UI noun; a bare plural noun (a tab); settings-sense apply; 'Sign in as guest'.
   if (FREE_TAIL.has(last) || (list.length >= 2 && FREE_TAIL.has(list[list.length - 2]))) return []
   if (UI_TAIL.has(last) && list.length >= 2) return []
