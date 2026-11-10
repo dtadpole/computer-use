@@ -149,6 +149,10 @@ const WORDS = Object.freeze({
     // cu-researcher's 13:23Z sweep: unsaved edits lost, like Discard Changes.
     'revert to saved', 'revert all changes', ...ZH_WORDS.delete, ...LOCALE_WORDS.delete],
   permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke',
+    // CU-420 (High; cu-coordinator 15:00Z): turning machine protection off, or trusting a device.
+    'disable filevault', 'turn off filevault', 'turn off firewall', 'disable firewall', 'disable the firewall', 'disable antivirus',
+    'turn off antivirus', 'turn off real-time protection', 'disable real-time protection', 'trust this device', 'trust device',
+    'disable defender', 'turn off defender', 'pause protection', 'remember this device',
     // CU-415: signatures bind the owner; releasing records shares personal data.
     'sign document', 'sign the document', 'e-sign', 'esign', 'adopt and sign', 'sign and submit', 'accept terms', 'accept the terms',
     'accept agreement', 'accept the agreement', 'authorize release', 'authorise release', 'release records',
@@ -1316,6 +1320,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const form = target?.formContext
       const formTrade = form && typeof form === 'object' && Array.isArray(form.options) && form.options.some((text) => TRADE_ASSET.test(String(text)))
       if (!focusesEntry && /\b(?:sell|convert|deposit)\b/i.test(name) && (/\d|[$\u20ac\u00a3\u00a5\u20bf]/.test(name) || TRADE_ASSET.test(name) || formTrade)) classes.push('purchase')
+      // CU-420: exporting, revealing, showing, viewing or copying passwords or secrets and getting recovery codes expose credentials;
+      // 'Show password' asks everywhere, the sign-in eye toggle included - the plaintext reaches the next screenshot (cu-coordinator
+      // 15:16Z, superseding 15:13Z); 15:18Z adds keychain / credentials exports, secrets and 'Get backup codes'.
+      if (!focusesEntry && /^\s*(?:export\s+(?:all\s+|my\s+)?(?:passwords?|vault|logins?|keychain|credentials)|(?:reveal|show|copy|view)\s+(?:the\s+)?(?:saved\s+)?(?:passwords?|secrets?)|(?:download|view|show|copy|print|get)\s+(?:your\s+|my\s+)?(?:backup|recovery)\s+codes?)\b/i.test(name)) classes.push('credential')
       // CU-415 (cu-coordinator 13:12Z): 'Reserve seat / table' asks purchase on the name alone (a booking commits the owner; a
       // free table's over-ask is named); 'Book appointment' asks purchase with a price or deposit in its name, else submit.
       if (!focusesEntry && /^\s*reserve\s+(?:a\s+)?(?:seat|table|spot)\b/i.test(name)) classes.push('purchase')
