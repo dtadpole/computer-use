@@ -29,14 +29,18 @@ test('no prompting, pasteboard or legacy capture API appears in the helper code,
     /kCGWindowName/, /kCGWindowOwnerName/, /NSAppleScript/, /Process\(\)/, /SecKeychain/, /SecItemCopyMatching/,
   ]
   for (const pattern of forbidden) assert.deepEqual(where(pattern), [], String(pattern))
-  // CU-151: the pasteboard appears exactly once, as its change count - a number, never content (D-031, D-056) - and no
-  // content or write API appears anywhere.
+  // CU-151: the pasteboard appears as its change count - a number, never content (D-031, D-056) - and, since CU-377
+  // (cu-coordinator 21:45Z, helper 0.2.65), once as its type names, which go straight into PasteboardTypes.hasFile so
+  // only a Bool leaves (a file URL type present or not: no path, no content, D-060). No content or write API anywhere.
   const pasteboardUses = Object.entries(code).flatMap(([name, text]) => [...text.matchAll(/NSPasteboard[\w.]*/g)].map((match) => `${name}: ${match[0]}`))
-  assert.deepEqual(pasteboardUses, ['SystemCapabilities.swift: NSPasteboard.general.changeCount'], 'only the change count')
+  assert.deepEqual(pasteboardUses, ['SystemCapabilities.swift: NSPasteboard.general.changeCount', 'SystemCapabilities.swift: NSPasteboard.general.types'], 'only the change count and the type names')
   for (const pattern of [/\.string\(forType/, /\.data\(forType/, /propertyList\(forType/, /readObjects\(/, /pasteboardItems/, /clearContents\(/,
-    /setString\(/, /setData\(/, /writeObjects\(/, /declareTypes\(/, /\.types\b/]) {
+    /setString\(/, /setData\(/, /writeObjects\(/, /declareTypes\(/]) {
     assert.deepEqual(where(pattern), [], `no pasteboard content or write API: ${pattern}`)
   }
+  const typeReads = Object.entries(code).flatMap(([name, text]) => text.split('\n').filter((line) => /\.types\b/.test(line)).map((line) => `${name}: ${line.trim()}`))
+  assert.deepEqual(typeReads, ['SystemCapabilities.swift: func pasteboardHasFile() -> Bool? { PasteboardTypes.hasFile(NSPasteboard.general.types?.map { $0.rawValue }) }'],
+    'the type names are read in one place, and only a Bool (PasteboardTypes.hasFile) leaves it')
   // The two prompts the owner asked for (2026-11-05) live in RequestGrants.swift alone, reached only from main.swift's
   // --request-grants case - never from serving, the self-test or the dry run.
   for (const pattern of [/CGRequestScreenCaptureAccess\(\)/, /AXIsProcessTrustedWithOptions\(/, /kAXTrustedCheckOptionPrompt/]) {
@@ -273,4 +277,37 @@ test('CU-361: describe() reports a nearby label only for an unnamed entry, from 
   assert.match(helper, /string\(label, "AXValue"\)/, 'a candidate\'s words are the static text\'s AXValue')
   assert.doesNotMatch(helper, /string\(element, "AXValue"\)|attribute\(element, "AXValue"\)/, 'the entry\'s own value is never read')
   assert.match(helper, /NearbyLabel\.pick\(box: box, candidates: candidates\)/)
+})
+
+test('CU-409: describe() reports a formContext only for a button, from a bounded scan that never reads an entry\'s value', () => {
+  const access = files['Accessibility.swift']
+  assert.match(access, /if role == "AXButton", !FormContext\.windowButtonSubroles\.contains\(subrole \?\? ""\), let form = formContext\(of: element\) \{ shape\["formContext"\] = form \}/,
+    'only an AXButton (not a window button) asks for its form')
+  const start = access.indexOf('private static func scanForm(')
+  assert.ok(start > 0, 'the scan exists')
+  const scan = access.slice(start, access.indexOf('\n  }\n', start))
+  assert.match(scan, /guard seen < FormContext\.maxScan, Date\(\) < deadline else \{ container\.truncated = true; return \}/, 'bounded in elements and time, and a cut-short scan is marked')
+  assert.match(access, /let deadline = Date\(\)\.addingTimeInterval\(FormContext\.budgetSeconds\)/, 'one budget for the whole walk')
+  assert.match(files['Policy.swift'], /static let budgetSeconds = 0\.08/)
+  assert.match(scan, /if next\.depth < 4/, 'at most 4 deep')
+  assert.match(scan, /\["AXDescription", "AXPlaceholderValue", "AXTitle", "AXHelp"\]\.map \{ string\(next\.element, \$0\) \}/, 'an entry gives its label words')
+  const entry = scan.slice(scan.indexOf('if role == "AXTextField"'), scan.indexOf('continue', scan.indexOf('if role == "AXTextField"')))
+  assert.doesNotMatch(entry, /AXValue/, 'never a text entry\'s value')
+  assert.match(scan, /if role == "AXComboBox" \{ container\.selected\.append\(comboText\(next\.element\)\); continue \}/, 'F1: a combo box only through comboText')
+  const combo = access.slice(access.indexOf('private static func comboText('), access.indexOf('\n  }\n', access.indexOf('private static func comboText(')))
+  assert.match(combo, /return FormContext\.comboText\(value: value, editable: editable, items: items\)/, 'an editable combo gives its value only when it equals an item')
+  const walk = access.slice(access.indexOf('static func formContext(of element: AXUIElement) -> JSON? {'))
+  assert.match(walk.slice(0, 1200), /containers\.count < FormContext\.maxLevels/, 'at most FormContext.maxLevels ancestors')
+  assert.match(files['Policy.swift'], /static let maxLevels = 3\n  static let maxScan = 60\n  static let maxOptions = 3\n  static let maxOptionLength = 24/)
+})
+
+test('CU-412: Return candidates come only from a web area whose window reads a positive none, through bounded scans of enabled buttons', () => {
+  const caps = files['SystemCapabilities.swift']
+  assert.match(caps, /guard DefaultCandidates\.looks\(defaultTitle: read\.button\.object\?\["title"\]\?\.string, defaultRead: read\.read\), Accessibility\.inWebArea\(element\) else \{ return read \}\n        return webCandidates\(of: element, scope: scope, beside: read\.button\)/,
+    'a named default, a failed read or a focus outside a web page keeps today\'s answer')
+  const access = files['Accessibility.swift']
+  const scan = access.slice(access.indexOf('private static func submitButtons('), access.indexOf('\n  }\n', access.indexOf('private static func submitButtons(')))
+  assert.match(scan, /guard seen < FormContext\.maxScan, Date\(\) < deadline else \{ return \(buttons, true\) \}/, 'bounded; cut short is truncated')
+  assert.match(scan, /\(attribute\(next\.element, "AXEnabled"\) as\? NSNumber\)\?\.boolValue == false/, 'a disabled button is no candidate')
+  assert.match(files['Dispatcher.swift'], /if defaultButton\.more \{ reply\["defaultCandidatesMore"\] = \.bool\(true\) \}/)
 })

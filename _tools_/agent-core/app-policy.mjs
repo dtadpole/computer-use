@@ -167,7 +167,8 @@ function launchesCode(action, target) {
 // named file (a list, a column or icon view, nothing), asks launch_code: the selected file is unread. Named over-ask:
 // opening a document that way. (2) A menu item titled as an excluded runner (Open With > Terminal, Script Editor ...)
 // is refused anywhere: opening anything with it runs it outside the approved app.
-const FILE_BROWSERS = new Set(['com.apple.finder'])
+// CU-377 follow-up (cu-coordinator 22:41Z): Finder and the common third-party file browsers - a row there is a file.
+export const FILE_BROWSERS = new Set(['com.apple.finder', 'com.cocoatech.PathFinder', 'com.binarynights.ForkLift-3', 'com.binarynights.ForkLift', 'com.eltima.cmd1', 'com.mrrsoftware.marta', 'org.yanex.marta'])
 const OPEN_ITEM = /^(open|打开|打開)$/i
 const RUNNER_TITLES = /^(terminal|iterm2?|warp|ghostty|kitty|alacritty|hyper|wezterm|script editor|automator|shortcuts|alfred|raycast|终端|終端機|脚本编辑器|工序指令編寫程式|自动操作|自動操作|快捷指令|捷徑)$/i
 const isMenuItem = (target) => /^(ax)?menuitem$/i.test(String(target?.role ?? ''))
@@ -485,6 +486,17 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     const appleItem = bound && typeof bound === 'object' ? (Array.isArray(bound.items) ? bound.items : [bound]).find((one) => one?.appleMenu === true) : undefined
     if (appleItem) {
       return { decision: 'block', class: null, rule: 'system_shortcut', reason: `${(action.keys ?? []).join('+')} fires the Apple menu's ${appleItem.name}; it acts beyond the approved app` }
+    }
+    // CU-398 (High; cu-coordinator 04:16Z): a click, or Return/Space, on an Apple-menu item (the helper marks appleMenu by
+    // structure - the menu bar's first item) acts beyond the approved app like its chord; so does a button of the session's
+    // own Restart / Shut Down / Log Out confirmation (loginwindow). An app's own 'Log Out' or 'Restart Level' stays as today.
+    const activatesTarget = ['click', 'double_click', 'triple_click'].includes(action.type)
+      || (action.type === 'keypress' && Array.isArray(action.keys) && action.keys.some((key) => /^(return|enter|space)$/i.test(String(key))))
+    if (activatesTarget && target?.appleMenu === true) {
+      return { decision: 'block', class: null, rule: 'system_shortcut', reason: `${action.type === 'keypress' ? (action.keys ?? []).join('+') : action.type} on the Apple menu's "${String(target.name ?? '').trim()}"; it acts beyond the approved app` }
+    }
+    if (activatesTarget && target?.origin === 'com.apple.loginwindow') {
+      return { decision: 'block', class: null, rule: 'system_shortcut', reason: 'a button of the session\'s restart, shut down or log out confirmation; it acts beyond the approved app' }
     }
     // Aiming at an excluded app is refused, and so is a target that names no app (fail closed); an excluded app that
     // came to the front is the person's (R65, R79).
