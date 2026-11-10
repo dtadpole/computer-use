@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - artifacts'
 created: 2026-11-01T09:28:00Z
-modified: 2026-11-09T22:44:10Z
+modified: 2026-11-10T06:11:17Z
 level: L1
-version: 1.128.0
+version: 1.129.0
 description: 'Pointers to the persistent work of [cu] Developer Two (environments) - proposals, code, tests and run records - written by the seat itself.'
 status: unverified
 grounded_in:
@@ -16,6 +16,9 @@ Pointers only; each target is its own authority.
 
 | Date | Artifact | State |
 |---|---|---|
+| 2026-11-10 | #355 merged 8f07af96e | CU-360 (driver half): a page's navigation to another app's scheme is an external_protocol session notice (scheme only) with a best-effort stop; full two-phase gate. |
+| 2026-11-10 | #339 merged b07ae04e9 | CU-357 (in Verify): an action's effect carries the session's notices since the last one (download_refused, alert_accepted length, file_chooser_refused); Chrome's own refused traffic stays out. |
+| 2026-11-10 | #369 merged 4f2cf7982 | CU-368 (in Verify): a same-origin frame editor's focused body is a text entry (contentEditable or designMode); first of the six-PR stack. |
 | 2026-11-09 | #385 merged 27cb2d702 | CU-370 (High, in Verify; driver half, with cu-developer-one's #382): a key or typed string that chooses is answered with what it chooses - a select's option, the radio an arrow checks, an ARIA option (selectOption), unreadable choices and failed reads as optionUnread; typeOptions gives every option a type passes through; real-Chrome smoke 53/53, every matrix 0, live rows by cu-verifier |
 | 2026-11-09 | #304 merged f235671f2 | CU-333 (in Verify): the fixture's open waits up to 30 s, every other call 10 s; stand-in rows with a 3 s floor pass under full load; landed through the full two-phase gate. |
 | 2026-11-09 | #325 merged 9e225a291 | CU-353 (in Verify; defensive pin, D-098): keyTarget answers a Control-Option chord with the accesskey element; the policy reads it as a press; the chord does not fire through this driver (smoke-recorded). |

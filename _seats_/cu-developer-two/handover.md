@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - handover'
 created: 2026-11-08T04:14:00Z
-modified: 2026-11-09T22:44:10Z
+modified: 2026-11-10T06:11:17Z
 level: L1
-version: 4.12.0
+version: 4.13.0
 description: 'What a fresh [cu] Developer Two session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -16,30 +16,31 @@ grounded_in:
 Seat `cu-developer-two`: desktop and browser drivers, live view, run lock, MCP. Code: the session worktree
 `~/dtadpole/computer-use-wt/<session-id>`, one purpose worktree per PR. Records: [artifacts.md](artifacts.md).
 
-## Open PRs - one stack, landed back to back in this order (cu-coordinator 20:39Z)
+## Open PRs, in lane order (cu-coordinator 05:42Z)
 
-1. #369, Fixes CU-368: a same-origin frame editor's body is a text entry.
-2. #339, Fixes CU-357: an effect reports the session's notices.
-3. #355, Part of CU-360: another app's scheme is a notice; `noticeOf` keeps reason, stop, launched.
-4. #299, Part of CU-336: an unread iframe name comes from aria-labelledby, aria-label or title.
-5. #393, Part of CU-373: a toggle's `checked`/`pressed` reaches the target.
-6. #402, Ref CU-370: an ARIA listbox's active option falls back to aria-selected; multiselectable is unread.
+1. #443, Part of CU-387: `fileFrom: 'ancestor'` through macos-desktop `#describe` (helper unit).
+2. #299, Part of CU-336; then #393, Part of CU-373; then #402, Ref CU-370 - the rest of the chrome-browser stack,
+   back to back. Landed: #369 (CU-368), #339 (CU-357), #355 (CU-360 driver half).
+3. CU-402 unit on #402: #472 (formContext on a form's submit button, Part of CU-402) with cu-developer-one's #474.
 
-Each is merged on the one below; a landing that moves main into a conflict means re-stacking and one re-OK round.
-After #299: the `__privateStripeFrame5` policy row (local commit). After #339: the page-WebSocket lifetime fix.
+## Ready locally, open after #402
+
+- CU-383: chrome-browser INDEX, one line per behaviour.
+- The page-WebSocket lifetime fix (Ref CU-357), full D-102 done.
+- The `__privateStripeFrame5` row, re-cut onto main after #299 (Part of CU-336).
 
 ## Issues
 
-In Progress: CU-357, CU-360, CU-368. Verify: CU-370 and ten more.
+In Progress: CU-360. Verify: CU-357, CU-368, CU-370 and more.
 
 ## Live state
 
-Schedules: the hourly pass and the 23:00Z reflection. D-102 suites run through a script that checks the run-lock
-before every step and stops while a gate holds it.
+Hourly pass and 23:00Z reflection. D-102 runner `/tmp/cu-dev2/d102-run.sh`: checks run-lock before each step and
+kills a running step within 2 s of a gate run.
 
 ## Lessons
 
-- Read the inbox for an open GATE PHASE 2 before any suite, and guard the run itself (22:17Z slip).
-- Set CU_VERIFY_SEAT on local verifier runs.
-- A probe through the real loop finds where a fix really sits (CU-370's Enter: the loop, not the driver).
-- D-097: run the gate unpiped, then `&& git push`.
+- Search open PRs for a symbol before adding one (#443 duplicated #438's networkVolume).
+- Write 'hypothesis' in the subject of an unmeasured step.
+- Guard each suite step against a gate start, not only between steps.
+- Every command: `cd <own worktree> || exit 1`, `git -C` (D-104).
