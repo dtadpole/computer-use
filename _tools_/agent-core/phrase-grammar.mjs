@@ -325,7 +325,7 @@ function adSpend(list) {
   const rest = list.slice(twoWord ? 2 : 1)
   const core = rest.filter((t) => !FILLER.has(t))
   const last = core[core.length - 1]
-  if (['launch', 'publish', 'resume', 'start', 'run', 'activate', 'enable', 'turn on', 'unpause', 'restart'].includes(verb) && core.length <= 3 && AD_OBJECTS.has(last)) return true
+  if (['launch', 'publish', 'resume', 'start', 'run', 'activate', 'enable', 'turn on', 'unpause', 'restart'].includes(verb) && core.length <= 3 && (AD_OBJECTS.has(last) || (last === 'set' && core.includes('ad')))) return true
   if (['increase', 'raise', 'up', 'double', 'boost'].includes(verb) && core.length <= 3 && ['budget', 'bid', 'spend'].includes(last)) return true
   if ((verb === 'set' || verb === 'change' || verb === 'update') && core.includes('budget') && rest.includes('<n>')) return true
   return false
@@ -342,7 +342,9 @@ function cameraPrivacyOff(list) {
   if (['enable', 'turn on', 'start', 'activate'].includes(verb) && core.length <= 3) {
     const tail = core.join(' ')
     if (/(?:^|\s)(?:audio|sound|continuous|nonstop)\s+recording$/.test(tail) || /^recording$/.test(tail) && rest.includes('<n>')) return true
-    if (/^(?:face|facial)\s+recognition$|^familiar\s+face$|^face\s+detection$/.test(tail)) return true
+    if (/^(?:face|facial|person|people)\s+recognition$|^familiar\s+face$|^face\s+detection$/.test(tail)) return true
+    // #580 round 2: 'Enable microphone' on a camera opens its audio (CU-445).
+    if (/^(?:microphone|mic)$/.test(tail)) return true
   }
   return false
 }
@@ -396,8 +398,13 @@ export function grammarClasses(name, role = '') {
   const raw = String(name ?? '').trim()
   if (raw === '' || raw.length > 400) return []
   if (CURRENCY.test(raw) && PRICED_ROLES.has(String(role ?? '').toLowerCase()) && tokens(raw).some((t) => PRICED_NOUNS.has(t))) return ['purchase']
-  const list = tokens(raw)
-  if (list.length === 0) return []
+  const split = tokens(raw)
+  if (split.length === 0) return []
+  // #580 round 2 (cu-coordinator 21:52Z): a split particle - 'turn / switch X on|off' reads as 'turn / switch on|off X'
+  // ('Turn ads on', 'Turn privacy mode off'); additive, for every switch verb.
+  const particle = split[split.length - 1]
+  const list = split.length >= 3 && (split[0] === 'turn' || split[0] === 'switch') && (particle === 'on' || particle === 'off') && split[1] !== 'on' && split[1] !== 'off'
+    ? [split[0], particle, ...split.slice(1, -1)] : split
   const lower = raw.toLowerCase()
   const last = list[list.length - 1]
   // CU-435 (High; cu-coordinator 18:51Z): an insurance contract - binding, buying, renewing or cancelling a policy, widening
