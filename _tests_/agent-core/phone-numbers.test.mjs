@@ -31,3 +31,10 @@ test('CU-443 negatives: numbers, call history, voicemail, turning forwarding off
   for (const name of ['Numbers', 'Call history', 'Voicemail', 'Turn off call forwarding', 'Dial pad', 'Call log', 'Call settings', 'Call waiting', 'Call Stack', 'Call tree']) assert.equal(click(name), 'allow', name)
   assert.deepEqual(grammarClasses('Call back'), [], 'with #462')
 })
+
+test('CU-443 (20:52Z): Start recording on a call page asks permission; the call-forwarding switch agrees with CU-373 (off -> on asks)', () => {
+  assert.equal(click('Start recording'), 'permission', 'call page by URL')
+  const sw = (checked) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: URL, target: { name: 'Call forwarding', tag: 'input', inputType: 'checkbox', role: 'switch', checked } }); return v.decision === 'allow' ? 'allow' : v.class }
+  assert.equal(sw(false), 'credential', 'off -> on forwards calls away')
+  assert.equal(sw(true), 'allow', 'on -> off is free')
+})
