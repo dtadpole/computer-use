@@ -95,6 +95,8 @@ const WORDS = Object.freeze({
     'renew plan', ...ZH_WORDS.purchase, ...LOCALE_WORDS.purchase],
   // CU-135: replace and overwrite (a save panel's 'already exists' sheet), don't save (a close sheet discards work).
   delete: ['delete', 'remove', 'discard', 'erase', 'empty trash', 'cancel subscription', 'replace', 'overwrite', "don't save", 'don\u2019t save',
+    // CU-399: Mail's Apply Rules runs rules that may delete or move messages.
+    'apply rules',
     // CU-146 (the CU-145 audit): destructive labels the list missed.
     'move to trash', 'move to bin', 'empty bin', 'clear history', 'clear all', 'reset all', 'reset settings', 'reset to defaults', 'uninstall', 'wipe', 'purge',
     'deactivate', 'close account', 'forget', 'factory reset',
@@ -327,7 +329,8 @@ const REPLY_WORDS = new Set(['reply', '回复', '回覆'])
 const SUBMIT_BUT_REPLY = Object.freeze(WORDS.submit.filter((word) => !REPLY_WORDS.has(word)))
 // CU-261: a control named only Call, Answer or Merge submits; inside a longer name ('Call Stack', 'Merge Cells') it does not.
 // CU-293: the same whole names in Chinese - 合并单元格 (Merge Cells) stays free like its English.
-const SUBMIT_WHOLE_NAMES = new Set(['call', 'answer', 'merge', '呼叫', '接听', '接聽', '合并', '合併'])
+// CU-399 (Low; cu-coordinator 04:39Z): Mail's 'Bounce' sends a reply to the sender - by exact name ('Bounce rate' stays free).
+const SUBMIT_WHOLE_NAMES = new Set(['bounce', 'bounce to sender', 'call', 'answer', 'merge', '呼叫', '接听', '接聽', '合并', '合併'])
 function judgesSubmit(name, target) {
   if (SUBMIT_WHOLE_NAMES.has(normaliseName(name).trim())) return true
   if (!namesWord(withoutPastState(name), WORDS.submit)) return false
