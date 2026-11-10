@@ -10,7 +10,7 @@ import { FILE_BROWSERS, createAppPolicy, opensSelection, panelDestination, panel
 import { normaliseText } from './normalise.mjs'
 import { createPanelFolder } from './panel-folder.mjs'
 import { createExclusions } from './exclusions.mjs'
-import { createApprovalStore, createPolicy, isTextEntry, namesPasswordField, screenTask, textNamedSource } from './policy.mjs'
+import { createApprovalStore, createPolicy, isTextEntry, namesPasswordField, screenTask, textNamedSource, looksSensitive } from './policy.mjs'
 import { originPattern } from './sites.mjs'
 import { buildInfo, createRecorder, redactAction, redactTyped, runsDir } from './trajectory.mjs'
 import { MODIFIER_KEYS, normalizeKey } from './keys.mjs'
@@ -850,7 +850,8 @@ export async function runTask(options) {
     // CU-370 (cu-developer-two's contract): before a type into a native select the browser driver answers every option the
     // typed prefix passes through (Chrome's type-ahead); null when the focus is no select. A failed read is null too - the
     // policy then judges the typed text itself and asks it as a page shortcut.
-    const typeOptions = !desktop && action.type === 'type' && typeof environment.typeOptions === 'function'
+    // CU-372: the desktop driver answers typeOptions for a popup button too (helper 0.2.65), so both routes ask it.
+    const typeOptions = action.type === 'type' && typeof environment.typeOptions === 'function'
       ? await Promise.resolve(environment.typeOptions(action)).catch(() => null)
       : null
     const dragText = !desktop && last && isTextEntry(dropTarget) && typeof environment.dragText === 'function'
@@ -1013,7 +1014,10 @@ export async function runTask(options) {
   const recordedTarget = (target, decision) => {
     if (!target) return null
     const app = { origin: target.origin ?? null, role: target.role ?? null }
-    return inScope(target.origin) && !String(decision.rule ?? '').startsWith('excluded') ? { ...app, name: target.name ?? '' } : app
+    // CU-372 privacy (cu-researcher, cu-coordinator 22:43Z): the raw title is judged, and only the record is redacted - a
+    // value-shaped name (a card, an e-mail address) is recorded as '[redacted]'.
+    const name = typeof target.name === 'string' && looksSensitive(target.name.trim()) ? '[redacted]' : (target.name ?? '')
+    return inScope(target.origin) && !String(decision.rule ?? '').startsWith('excluded') ? { ...app, name } : app
   }
 
   // CU-182: a browser record names the target's frame origin and role, and its accessible name only when the site

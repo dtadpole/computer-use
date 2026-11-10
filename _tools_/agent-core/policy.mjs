@@ -1020,7 +1020,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (target?.optionUnread === true && ['keypress', 'hold_key'].includes(action.type)) {
       return { decision: 'confirm', class: 'unknown_target', classes: ['unknown_target'], rule: 'select:option_unread', reason: `press ${(action.keys ?? []).join('+')} on "${target?.name ?? 'a list'}", whose highlighted option could not be read` }
     }
-    const choiceTarget = target && /combo|listbox|select/i.test(String(target.role ?? '')) && target.editable !== true
+    const choiceTarget = target && /combo|listbox|select|popup/i.test(String(target.role ?? '')) && target.editable !== true
     // cu-coordinator 20:15Z, both asks (the safe direction): a type whose options the driver could not read
     // (typeOptions { unread: true }), and on a web page a navigation key on a bare select-like focus - keyTarget threw or
     // read no option, so where the key lands is unknown.
@@ -1029,7 +1029,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     }
     const onWebPage = context.url != null && !/^(app|desktop):/.test(String(context.url ?? ''))
     const NAV_KEY = /^(ARROW(UP|DOWN|LEFT|RIGHT)|PAGEUP|PAGEDOWN|HOME|END|ENTER|RETURN|SPACE)$/
-    if (onWebPage && choiceTarget && target.selectOption !== true && target.radioChoice !== true && ['keypress', 'hold_key'].includes(action.type) && [...keysOf(action)].some((key) => NAV_KEY.test(key))) {
+    // CU-372 parity (cu-coordinator 01:17Z): a bare desktop popup or menu button (keyTarget answered no option) on a
+    // navigation key asks unknown like a bare web select.
+    const bareDesktopPopup = target && /^AX(?:PopUp|Menu)Button$/i.test(String(target.role ?? '')) && target.optionUnread !== true
+    if (((onWebPage && choiceTarget) || bareDesktopPopup) && target.selectOption !== true && target.radioChoice !== true && ['keypress', 'hold_key'].includes(action.type) && [...keysOf(action)].some((key) => NAV_KEY.test(key))) {
       return { decision: 'confirm', class: 'unknown_target', classes: ['unknown_target'], rule: 'select:option_unknown', reason: `press ${(action.keys ?? []).join('+')} on "${target?.name ?? 'a list'}", where the option it lands on could not be read` }
     }
     // The driver marks a radio the key checks with radioChoice (cu-coordinator 20:11Z): judged the same way by its name.
@@ -1073,7 +1076,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         // often links). Only an entry-like role the driver reports read-only is left to its own rules.
         // CU-370: a select is a choice, not a text entry - a combobox or listbox the driver reports not editable (a native
         // <select>) keeps no exemption: its type-ahead picks an option (judged below) and reaches the page's handlers.
-        const choice = target && /combo|listbox/i.test(String(target.role ?? '')) && target.editable !== true
+        const choice = target && /combo|listbox|popup/i.test(String(target.role ?? '')) && target.editable !== true
         if (target && !choice && /text|search|combo/i.test(String(target.role ?? ''))) return null
         return text
       }
