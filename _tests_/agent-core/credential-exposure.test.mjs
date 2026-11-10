@@ -12,20 +12,20 @@ const enter = (name) => { const v = policy.classify({ type: 'keypress', keys: ['
 const space = (name) => { const v = policy.classify({ type: 'keypress', keys: ['SPACE'] }, { url: URL, target: { tag: 'button', role: 'button', name } }); return v.decision === 'allow' ? 'allow' : v.class }
 
 test('CU-420: exporting, revealing or copying passwords and backup/recovery codes ask credential', () => {
-  for (const name of ['Export passwords', 'Export vault', 'Reveal password', 'Show password', 'Copy password', 'Download backup codes', 'View recovery codes']) {
+  for (const name of ['Export passwords', 'Export vault', 'Reveal password', 'Show password', 'Copy password', 'View password', 'Show saved passwords', 'Download backup codes', 'View recovery codes', 'Export keychain', 'Export credentials', 'Show passwords', 'Reveal secret', 'Get backup codes']) {
     assert.equal(click(name), 'credential', name)
     assert.equal(enter(name), 'credential', `Return: ${name}`)
   }
 })
 
 test('CU-420: turning FileVault, the firewall or antivirus off and trusting a device ask permission', () => {
-  for (const name of ['Disable FileVault', 'Turn off FileVault', 'Turn off firewall', 'Disable firewall', 'Disable antivirus', 'Turn off real-time protection', 'Trust this device']) {
+  for (const name of ['Disable FileVault', 'Turn off FileVault', 'Turn off firewall', 'Disable firewall', 'Disable antivirus', 'Turn off real-time protection', 'Trust this device', 'Disable Defender', 'Pause protection', 'Remember this device']) {
     assert.equal(click(name), 'permission', name)
     assert.equal(space(name), 'permission', `Space: ${name}`)
   }
 })
 
 test('CU-420 negatives: lists, labels and Hide password stay free; a bare Security keeps its older permission ask (15:08Z: a High never lowers an older rule)', () => {
-  for (const name of ['Passwords', 'Vault', 'Firewall', 'Backup codes', 'Hide password']) assert.equal(click(name), 'allow', name)
+  for (const name of ['Passwords', 'Vault', 'Firewall', 'Backup codes', 'Hide password', 'Keychain', 'Secrets']) assert.equal(click(name), 'allow', name)
   assert.equal(click('Security'), 'permission', 'unchanged older ask')
 })
