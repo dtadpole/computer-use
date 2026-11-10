@@ -33,3 +33,12 @@ test('#580 round 3 (cu-verifier 22:41Z): switch as well as turn - Switch ads on 
   }
   assert.deepEqual(grammarClasses('Switch ads off'), [], 'off stays free')
 })
+
+test('#580 round 4 (cu-coordinator 22:44Z): flip and toggle read beside turn and switch, both word orders; the off / on safe directions stay free', () => {
+  for (const [name, cls] of [['Toggle ads on', 'purchase'], ['Flip ads on', 'purchase'], ['Flip privacy mode off', 'permission'], ['Toggle domain lock off', 'credential'],
+    ['Flip CloudTrail off', 'permission'], ['Toggle off parental controls', 'permission'], ['Flip on ads', 'purchase']]) {
+    assert.deepEqual(grammarClasses(name), [cls], name)
+    assert.equal(click(name), cls, `hook: ${name}`)
+  }
+  for (const name of ['Toggle ads off', 'Flip privacy mode on', 'Toggle domain lock on', 'Flip CloudTrail on', 'Toggle dark mode', 'Flip card']) assert.deepEqual(grammarClasses(name), [], name)
+})
