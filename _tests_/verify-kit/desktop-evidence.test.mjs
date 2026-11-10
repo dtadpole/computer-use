@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { deflateSync } from 'node:zlib'
 import { describe, test } from 'node:test'
 
-import { bySource, filesHolding, isMarker, landedOn, landings, markerShare, pngsWithMarker, stuckInput, SYNTHETIC_TAG, taggedAfter } from '../../_tools_/verify-kit/desktop-evidence.mjs'
+import { bySource, filesHolding, heldKeyOrder, isMarker, landedOn, landings, markerShare, pngsWithMarker, stuckInput, SYNTHETIC_TAG, taggedAfter } from '../../_tools_/verify-kit/desktop-evidence.mjs'
 
 /** A tiny RGBA PNG filled with one colour (test data only). */
 function solidPng(width, height, [r, g, b]) {
@@ -93,5 +93,59 @@ describe('every down has its up (D-028, R86)', () => {
     assert.equal(stuckInput([{ kind: 'flagsChanged', modifiers: 131072, tag: T }]).modifiers, 131072)
     assert.equal(stuckInput([{ kind: 'mouseDown', button: 0, tag: 0 }]).clean, true, 'the person\'s own press is not the agent\'s')
     assert.equal(stuckInput([{ kind: 'mouseDown', button: 0, tag: 0 }], { tag: null }).clean, false)
+  })
+})
+
+describe('the owner\'s press during a hold (CU-341 Part 2, G2)', () => {
+  const T = SYNTHETIC_TAG
+  test('a held key comes up after the person\'s key and nothing tagged follows: ok', () => {
+    const input = [
+      { kind: 'keyDown', keyCode: 0, t: 10.0, tag: T },
+      { kind: 'keyDown', keyCode: 0, t: 10.5, tag: T, repeat: true },
+      { kind: 'keyDown', keyCode: 49, t: 12.0, tag: 0 },
+      { kind: 'keyUp', keyCode: 0, t: 12.02, tag: T },
+      { kind: 'keyUp', keyCode: 49, t: 12.1, tag: 0 },
+    ]
+    const order = heldKeyOrder(input, { since: 11 })
+    assert.equal(order.ok, true)
+    assert.deepEqual(order.held, [{ keyCode: 0, downAt: 10.0, upAt: 12.02 }])
+    assert.deepEqual(order.press, { t: 12.0, kind: 'keyDown', index: 2 })
+    assert.equal(JSON.stringify(order.press).includes('49'), false, 'the person\'s key code is not reported')
+  })
+  test('a held modifier is cleared by a tagged flags change after the press', () => {
+    const input = [
+      { kind: 'flagsChanged', modifiers: 0x20000, t: 5, tag: T },
+      { kind: 'keyDown', keyCode: 49, t: 6, tag: 0 },
+      { kind: 'flagsChanged', modifiers: 0, t: 6.01, tag: T },
+    ]
+    const order = heldKeyOrder(input)
+    assert.equal(order.ok, true)
+    assert.deepEqual(order.modifiers, { atPress: 0x20000, clearedAt: 6.01 })
+  })
+  test('an auto-repeat of the held key before its key-up is the hold winding down, not new input; after its key-up it is', () => {
+    const input = [
+      { kind: 'keyDown', keyCode: 0, t: 1, tag: T },
+      { kind: 'keyDown', keyCode: 49, t: 2, tag: 0 },
+      { kind: 'keyDown', keyCode: 0, t: 2.05, tag: T, repeat: true },
+      { kind: 'keyUp', keyCode: 0, t: 2.08, tag: T },
+    ]
+    const order = heldKeyOrder(input)
+    assert.equal(order.ok, true)
+    assert.equal(order.repeats.length, 1)
+    const late = heldKeyOrder([...input, { kind: 'keyDown', keyCode: 0, t: 2.5, tag: T, repeat: true }])
+    assert.equal(late.ok, false, 'a repeat after the key came up is synthetic input after the press')
+    assert.equal(late.after.length, 1)
+  })
+  test('a key left down, a tagged event after the press, no press, or nothing held is not ok', () => {
+    const held = { kind: 'keyDown', keyCode: 0, t: 1, tag: T }
+    const press = { kind: 'keyDown', keyCode: 49, t: 2, tag: 0 }
+    const stuck = heldKeyOrder([held, press])
+    assert.equal(stuck.ok, false)
+    assert.equal(stuck.held[0].upAt, null)
+    const more = heldKeyOrder([held, press, { kind: 'keyUp', keyCode: 0, t: 2.01, tag: T }, { kind: 'mouseDown', button: 0, t: 2.5, tag: T }])
+    assert.equal(more.ok, false)
+    assert.equal(more.after.length, 1, 'a synthetic click after the press is what the pause forbids')
+    assert.equal(heldKeyOrder([held, { kind: 'keyUp', keyCode: 0, t: 3, tag: T }]).press, null)
+    assert.equal(heldKeyOrder([press, { kind: 'keyUp', keyCode: 49, t: 2.1, tag: 0 }]).ok, false, 'nothing was held')
   })
 })

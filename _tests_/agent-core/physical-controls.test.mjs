@@ -21,7 +21,9 @@ test('CU-395: Unlock, Open Garage Door, Disarm and Mark As Lost ask physical, ea
 })
 
 test('CU-395 negatives: Lock, Open and Arm stay free', () => {
-  for (const name of ['Lock', 'Open', 'Arm', 'Close Garage Door', 'Lock screen', 'Open document', 'Lock Front Door', 'Unlock', 'Unlock Premium', 'Unlock all features', 'Unlock full article', 'Unlock account', 'Unlock Pro']) assert.equal(click(name).decision, 'allow', name)
+  for (const name of ['Lock', 'Open', 'Arm', 'Close Garage Door', 'Lock screen', 'Open document', 'Lock Front Door', 'Unlock', 'Unlock all features', 'Unlock full article', 'Unlock account']) assert.equal(click(name).decision, 'allow', name)
+  // CU-428 (cu-coordinator 16:45Z) re-judges a paid tier: 'Unlock Pro' / 'Unlock Premium' ask purchase, never physical (D-100).
+  for (const name of ['Unlock Premium', 'Unlock Pro']) assert.equal(click(name).class, 'purchase', name)
 })
 
 test('CU-395: Home and Find My are excluded as physical_control', () => {
