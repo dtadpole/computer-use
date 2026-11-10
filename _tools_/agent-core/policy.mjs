@@ -142,6 +142,13 @@ const WORDS = Object.freeze({
     // cu-researcher's 13:23Z sweep: unsaved edits lost, like Discard Changes.
     'revert to saved', 'revert all changes', ...ZH_WORDS.delete, ...LOCALE_WORDS.delete],
   permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke',
+    // CU-424 (High; cu-coordinator 16:02Z): OAuth grants, delegates and location sharing hand an outside party the owner's
+    // account, mail or location. It carries #448's (CU-393) OAuth phrases as duplicates so the High closes alone.
+    'authorize', 'authorise', 'authorize app', 'authorize access', 'allow access', 'connect app', 'connect account',
+    'connect your account', 'link account', 'link your account', 'sign in with google', 'sign in with apple',
+    'sign in with microsoft', 'sign in with github', 'sign in with facebook', 'continue with google', 'continue with apple',
+    'continue with microsoft', 'continue with github', 'continue with facebook', 'log in with google', 'log in with apple',
+    'add delegate', 'add a delegate', 'grant mailbox access', 'share my location', 'share location', 'start sharing location',
     // CU-415: signatures bind the owner; releasing records shares personal data.
     'sign document', 'sign the document', 'e-sign', 'esign', 'adopt and sign', 'sign and submit', 'accept terms', 'accept the terms',
     'accept agreement', 'accept the agreement', 'authorize release', 'authorise release', 'release records',
@@ -1306,6 +1313,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const form = target?.formContext
       const formTrade = form && typeof form === 'object' && Array.isArray(form.options) && form.options.some((text) => TRADE_ASSET.test(String(text)))
       if (!focusesEntry && /\b(?:sell|convert|deposit)\b/i.test(name) && (/\d|[$\u20ac\u00a3\u00a5\u20bf]/.test(name) || TRADE_ASSET.test(name) || formTrade)) classes.push('purchase')
+      // CU-424 (carried from #448, CU-393 02:31Z): 'Continue as <name>' is the one-tap provider sign-in ('Continue as guest' stays free).
+      if (!focusesEntry && /^continue\s+as\s+(?!guest\b)\S/i.test(name.trim())) classes.push('permission')
       // CU-415 (cu-coordinator 13:12Z): 'Reserve seat / table' asks purchase on the name alone (a booking commits the owner; a
       // free table's over-ask is named); 'Book appointment' asks purchase with a price or deposit in its name, else submit.
       if (!focusesEntry && /^\s*reserve\s+(?:a\s+)?(?:seat|table|spot)\b/i.test(name)) classes.push('purchase')
