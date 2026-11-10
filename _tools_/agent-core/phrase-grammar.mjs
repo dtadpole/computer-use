@@ -420,8 +420,6 @@ function walletClass(list) {
   if (verb === 'set' && core[0] === 'approval' && rest.includes('all')) return 'purchase'
   if (verb === 'approve' && core.length <= 2 && ['spending', 'unlimited', 'token', 'allowance', 'spend'].includes(core[core.length - 1])) return 'purchase'
   if (verb === 'connect' && core.length <= 2 && core[core.length - 1] === 'wallet') return 'permission'
-  // The grammar's own 'Sign message' row asked purchase; the ruling makes a message signature permission (a transaction stays purchase).
-  if (verb === 'sign' && core.length <= 2 && core[core.length - 1] === 'message') return 'permission'
   if (verb === 'claim' && core.length <= 2 && ['airdrop', 'token', 'drop'].includes(core[core.length - 1])) return 'submit'
   return null
 }

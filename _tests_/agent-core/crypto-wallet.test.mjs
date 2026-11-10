@@ -22,10 +22,9 @@ test('CU-452: wallet secrets credential, approvals and transactions purchase, co
     assert.equal(enter(name), cls, `Return: ${name}`)
     assert.equal(space(name), cls, `Space: ${name}`)
   }
-  // Named: a bare 'Mint' and 'Sign message' keep the older crypto purchase words (ruled submit / permission; purchase leads, they
-  // ask either way). The grammar's own row for a message signature gives permission when no older word is there.
-  for (const name of ['Mint', 'Sign message']) assert.equal(click(name), 'purchase', `${name}: older class leads`)
-  assert.deepEqual(grammarClasses('Sign message'), ['permission'])
+  // cu-coordinator 22:30Z / 22:31Z: a bare 'Mint', 'Sign message' and 'Sign this message' stay PURCHASE - the older words and the
+  // grammar's own row agree; no reclass (they ask either way).
+  for (const name of ['Mint', 'Sign message', 'Sign this message']) assert.equal(click(name), 'purchase', `${name}: purchase stays`)
   for (const [name, cls] of [['Reveal the secret phrase', 'credential'], ['Connect your wallet', 'permission'], ['Approve token', 'purchase']]) assert.deepEqual(grammarClasses(name), [cls], `table row: ${name}`)
 })
 
