@@ -12,7 +12,8 @@ import { isIP } from 'node:net'
 export const FIXED_DENY_LOOPBACK_PORTS = Object.freeze([3080, 8080, 8082, 3097, 8088])
 // CU-394 (cu-coordinator 02:57Z): a remote-desktop web client is a window onto another machine, like the remote_surface
 // apps - denied whatever the allow list says (subdomains too).
-export const FIXED_DENY_HOSTS = Object.freeze(['remotedesktop.google.com'])
+// cu-coordinator 03:05Z: the named web remote clients too - TeamViewer's web client and Parsec (subdomains included).
+export const FIXED_DENY_HOSTS = Object.freeze(['remotedesktop.google.com', 'start.teamviewer.com', 'login.teamviewer.com', 'parsec.app'])
 
 const NETWORK_SCHEMES = new Set(['http:', 'https:', 'ws:', 'wss:'])
 const MATCH_SCHEME = Object.freeze({ 'http:': 'http', 'https:': 'https', 'ws:': 'http', 'wss:': 'https' })
