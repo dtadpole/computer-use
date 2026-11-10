@@ -36,3 +36,9 @@ test('CU-412 union (11:35Z): candidates beside a hidden or nameless default are 
   assert.equal(enter({ defaultButton: { role: 'button', name: 'Search' }, defaultCandidatesMore: true }).class, 'unknown_target', 'more than three beside a harmless default asks unknown')
   assert.equal(enter({ defaultButton: { role: 'button', name: 'Buy now' }, defaultCandidatesMore: true }).class, 'purchase', 'a default that asks keeps its class')
 })
+
+test('CU-412 (cu-researcher 11:54Z): a nameless candidate is unreadable and asks unknown - it never drops out', () => {
+  assert.equal(enter({ defaultCandidates: [{ role: 'button', name: 'Cancel' }, { role: 'AXButton', name: null }] }).class, 'unknown_target')
+  assert.equal(enter({ defaultCandidates: [{ role: 'button', name: 'Cancel' }, { role: 'button', name: '  ' }] }).class, 'unknown_target')
+  assert.equal(enter({ defaultCandidates: [{ role: 'button', name: 'Delete account' }, { role: 'button', name: '' }] }).class, 'delete', 'a named risky candidate still leads')
+})

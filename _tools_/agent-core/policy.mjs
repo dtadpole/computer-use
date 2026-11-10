@@ -1314,12 +1314,13 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // CU-412 (High; cu-coordinator 11:25Z): implicit submission past role=button controls - two or three candidates
     // (target.defaultCandidates, each shaped like defaultButton) are each judged by the click classifier and every class
     // asked (the strictest leads, fail closed); more than three (defaultCandidatesMore) asks unknown.
-    const candidates = Array.isArray(target?.defaultCandidates) ? target.defaultCandidates.filter((one) => one && typeof one === 'object' && typeof one.name === 'string' && one.name.trim() !== '').slice(0, 3) : []
+    const candidateList = Array.isArray(target?.defaultCandidates) ? target.defaultCandidates : []
+    const candidates = candidateList.filter((one) => one && typeof one === 'object' && typeof one.name === 'string' && one.name.trim() !== '').slice(0, 3)
+    // cu-researcher 11:54Z (fail closed): a candidate with no name (an icon-only control, maybe a trash glyph) is unreadable -
+    // it asks unknown like more-than-three, never drops out of the list.
+    const candidateUnread = target?.defaultCandidatesMore === true || candidateList.some((one) => !one || typeof one !== 'object' || typeof one.name !== 'string' || one.name.trim() === '')
     const candidateReturn = pressesEnter && (!inTextArea || commandReturn) && context.defaultButtonProbe !== true
     const classesBeforeDefault = classes.length
-    if (defaultName === '' && target?.defaultCandidatesMore === true && candidateReturn) {
-      return { decision: 'confirm', class: 'unknown_target', classes: ['unknown_target'], rule: 'default:candidates_unread', reason: `press ${(action.keys ?? ['Return']).join('+')} in a form whose Return may submit through one of several controls the agent cannot tell apart` }
-    }
     // cu-coordinator 11:35Z: the UNION - candidates are judged whenever present, beside a defaultButton too (a hidden or nameless
     // default submit), and can only add asks.
     if (candidates.length > 0 && candidateReturn) {
@@ -1342,8 +1343,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         if (cls !== 'permission' || probe.rule !== 'page:shortcut') classes.push(cls)
       }
     }
-    // More than three candidates beside a named default: if neither the default nor the listed candidates asked, ask unknown.
-    if (defaultName !== '' && target?.defaultCandidatesMore === true && candidateReturn && classes.length === classesBeforeDefault) {
+    // More than three candidates or a nameless one: if neither the default nor the listed candidates asked, ask unknown.
+    if (candidateUnread && candidateReturn && classes.length === classesBeforeDefault) {
       return { decision: 'confirm', class: 'unknown_target', classes: ['unknown_target'], rule: 'default:candidates_unread', reason: `press ${(action.keys ?? ['Return']).join('+')} in a form whose Return may submit through one of several controls the agent cannot tell apart` }
     }
     // CU-190 (keyboard-activation.md): a default button the helper could not read may well be there, so the Return asks
