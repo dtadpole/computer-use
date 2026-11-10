@@ -28,3 +28,15 @@ test('CU-411: ownership and admin grants ask permission; key and token acts ask 
 test('CU-411 negatives: lists, labels, search and filter resets stay free', () => {
   for (const name of ['Account', 'Owners', 'Tokens', 'API keys', 'Data & privacy', 'Clear search', 'Clear filters', 'Reset filters', 'Reset zoom', 'Clear']) assert.equal(click(name), 'allow', name)
 })
+
+test('CU-411 near forms (11:13Z): my/your/the forms ask delete; Make co-owner permission; Rotate secret, Regenerate token, New token, Reset password credential', () => {
+  for (const name of ['Close your account', 'Terminate my account', 'Reset my account', 'Clear my data', 'Clear all my data']) {
+    assert.equal(click(name), 'delete', name)
+    assert.equal(enter(name), 'delete', `Return: ${name}`)
+  }
+  assert.equal(click('Make co-owner'), 'permission')
+  for (const name of ['Rotate secret', 'Regenerate token', 'New token', 'Reset password']) assert.equal(click(name), 'credential', name)
+  for (const name of ['Forgot password?', 'Password', 'Reset filters', 'Clear search']) assert.equal(click(name), 'allow', name)
+  const link = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: URL, target: { role: 'link', name: 'Reset password' } })
+  assert.equal(link.decision, 'allow', 'a Reset password link (the login page) stays free')
+})
