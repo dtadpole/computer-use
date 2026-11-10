@@ -15,16 +15,18 @@ import { createAppApprovals } from '../agent-core/app-approvals.mjs'
 import { readRun } from '../agent-core/trajectory.mjs'
 
 /**
- * Runs `actions` in one model turn. `targets({x, y})` answers what each point holds (a desk.* or web.* shape);
+ * Runs `actions` in one model turn. `targets({x, y})` answers what each point holds (a desk.* or web.* shape); `focused`
+ * is the focused element - a keypress's target is the loop's own pick (keyTarget, else the focus, loop.mjs), so a key
+ * probe sets `focused` and never hands the policy a target by hand;
  * `apps` are approved 'always'. Returns [{ type, status, class, rule, code? }] for every action event - 'declined' is an
  * ask the unattended run refused, 'done' a free action, 'refused' an action the loop rejected before judging (its code,
  * e.g. 'malformed' or 'batch_refused', says why - a probe whose rows read 'refused' tested nothing).
  */
-export async function throughLoop({ kind = 'desktop', frontmost, apps = [], targets, actions }) {
+export async function throughLoop({ kind = 'desktop', frontmost, apps = [], targets, focused, actions }) {
   const tmp = mkdtempSync(join(tmpdir(), 'cu-probe-kit-loop-'))
   try {
     const control = createRunControl()
-    const environment = createFakeEnvironment({ kind, control, frontmost, targets })
+    const environment = createFakeEnvironment({ kind, control, frontmost, targets, ...(focused !== undefined ? { focused } : {}) })
     const appApprovals = createAppApprovals({ path: join(tmp, 'approvals.json') })
     for (const app of apps) appApprovals.grantAlways(app, { by: 'api' })
     const model = createScriptedAdapter({ frame: { width: 1440, height: 900 }, turns: [{ actions }, { final: 'done' }] })

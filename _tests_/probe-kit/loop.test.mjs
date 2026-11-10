@@ -16,3 +16,9 @@ test('a file moved within Finder is done through the loop', async () => {
   const events = await throughLoop({ frontmost: FINDER, apps: [FINDER], targets: ({ x }) => (x < 200 ? desk.row(FINDER, 'report') : desk.row(FINDER, 'Archive')), actions: drag })
   assert.equal(lastStatus(events), 'done')
 })
+
+test('a keypress is judged on the focus the loop reads: Return on a focused Delete button is declined', async () => {
+  const del = desk.button(FINDER, 'Delete')
+  const events = await throughLoop({ frontmost: FINDER, apps: [FINDER], targets: () => del, focused: del, actions: [{ type: 'keypress', keys: ['ENTER'] }] })
+  assert.equal(lastStatus(events), 'declined')
+})
