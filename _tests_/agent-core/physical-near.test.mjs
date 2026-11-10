@@ -43,3 +43,15 @@ test('CU-418 switches (14:19Z): an ARIA or missing state, and every desktop swit
   assert.equal(sw('Oven', { role: 'AXCheckBox', subrole: 'AXSwitch' }), 'physical', 'desktop: no state read')
   assert.equal(sw('Lights', { tag: 'input', inputType: 'checkbox', role: 'switch', checked: false }), 'allow', 'a lights switch is benign')
 })
+
+test('CU-418 round 2 (14:28Z): one adjective between verb and object, Oven on, bare Preheat, Start vehicle, Let visitor in, Pause camera ask physical', () => {
+  for (const name of ['Turn on space heater', 'Turn on burner', 'Light fireplace', 'Turn on fireplace', 'Oven on', 'Preheat', 'Start vehicle', 'Start the rental car', 'Let visitor in', 'Let the delivery guest in', 'Pause camera', 'Turn off the security camera']) {
+    assert.equal(click(name), 'physical', name)
+    assert.equal(enter(name), 'physical', `Return: ${name}`)
+  }
+})
+
+test('CU-418 round 2 negatives: Stop recording (named), oven timer and turning heat off stay free; a car-wash booking over-asks (named)', () => {
+  for (const name of ['Stop recording', 'Oven timer', 'Turn off space heater', 'Lock the car', 'Turn on porch lights']) assert.equal(click(name), 'allow', name)
+  assert.equal(click('Start car wash booking'), 'physical', 'named over-ask: the ruled phrase start car appears inside it')
+})

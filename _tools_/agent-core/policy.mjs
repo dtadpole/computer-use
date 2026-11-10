@@ -215,6 +215,16 @@ const PHYSICAL_NEAR = ['disable alarm', 'disable the alarm', 'turn off camera', 
   'start car', 'start the car', 'remote start', 'start engine', 'start the engine', 'turn on oven', 'turn on the oven', 'preheat oven',
   'preheat the oven', 'turn on heater', 'turn on the heater', 'turn on stove', 'turn on the stove', 'buzz in', 'let guest in',
   'let the guest in', 'open gate']
+// cu-coordinator 14:28Z: one adjective may sit between the verb and these physical objects ('Turn on space heater', 'Start
+// the rental car'), the object ends the name (optionally 'now'); plus 'Oven on' and a bare 'Preheat'. Bare 'Stop recording'
+// stays free (named: screen and media recorders share the words).
+const PHYSICAL_GRAMMAR = new RegExp([
+  '^\\s*(?:turn\\s+on|preheat|light|switch\\s+on)\\s+(?:the\\s+)?(?:\\S+\\s+)?(?:oven|heater|stove|burner|fireplace)(?:\\s+now)?\\s*$',
+  '^\\s*(?:remote\\s+)?start\\s+(?:the\\s+)?(?:\\S+\\s+)?(?:car|engine|vehicle)(?:\\s+now)?\\s*$',
+  '^\\s*let\\s+(?:the\\s+)?(?:\\S+\\s+)?(?:guest|visitor)s?\\s+in\\s*$',
+  '^\\s*(?:disable|turn\\s+off|pause)\\s+(?:the\\s+)?(?:\\S+\\s+)?(?:alarm|camera|cameras)(?:\\s+now)?\\s*$',
+  '^\\s*(?:oven\\s+on|preheat)\\s*$',
+].join('|'), 'i')
 const PHYSICAL = ['unlatch', 'disarm', 'disarm security system', 'disarm alarm',
   'turn off alarm', 'open garage', 'open garage door', 'open gate', 'open the gate', 'mark as lost', 'erase device',
   'erase this device', 'lock mode',
@@ -1336,7 +1346,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         for (let i = classes.length - 1; i >= 0; i -= 1) if (classes[i] === 'purchase') classes.splice(i, 1)
       }
       // A bare 'Garage Door' tile toggles either way (exact name); 'Close Garage Door' stays free.
-      if (!focusesEntry && (namesWord(name, PHYSICAL) || namesWord(name, PHYSICAL_NEAR) || PHYSICAL_PATTERN.test(name) || UNLOCK_PHYSICAL.test(name) || /^garage\s+door$/i.test(name.trim()))) classes.push('physical')
+      if (!focusesEntry && (namesWord(name, PHYSICAL) || namesWord(name, PHYSICAL_NEAR) || PHYSICAL_GRAMMAR.test(name) || PHYSICAL_PATTERN.test(name) || UNLOCK_PHYSICAL.test(name) || /^garage\s+door$/i.test(name.trim()))) classes.push('physical')
       // CU-418 switches (cu-coordinator 14:17Z / 14:19Z): a bare security switch ('Camera', 'Alarm', 'Security') turned OFF and a
       // heat or vehicle switch ('Oven', 'Heater', 'Stove', 'Engine') turned ON ask physical. The direction is trusted only from a
       // native checkbox read (CU-373); an ARIA, mixed or missing state - and every desktop switch, which carries no state
