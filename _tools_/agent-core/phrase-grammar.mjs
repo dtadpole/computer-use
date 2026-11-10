@@ -486,6 +486,26 @@ function taxFiling(list) {
   return false
 }
 
+function vehicleClass(list) {
+  if (list.length > 6) return null
+  const two = SWITCH_VERBS.has(list[0]) && (list[1] === 'off' || list[1] === 'on')
+  const verb = two ? `turn ${list[1]}` : list[0]
+  const rest = list.slice(two ? 2 : 1)
+  const core = rest.filter((t) => !FILLER.has(t))
+  const last = core[core.length - 1]
+  const tail = core.join(' ')
+  if ((list.length === 1 && list[0] === 'summon') || (list.length === 2 && list[0] === 'smart' && list[1] === 'summon')) return 'physical'
+  if (list.length === 1 && list[0] === 'honk') return 'physical'
+  if (verb === 'open' && core.length <= 2 && ['trunk', 'frunk', 'window', 'tailgate', 'liftgate'].includes(last)) return 'physical'
+  if (verb === 'vent' && core.length <= 2 && last === 'window') return 'physical'
+  if (verb === 'start' && core.length <= 2 && ['climate', 'preconditioning', 'defrost'].includes(last)) return 'physical'
+  if ((verb === 'flash' && core.length <= 1 && last === 'light') || (verb === 'honk' && core.length <= 1 && last === 'horn')) return 'physical'
+  if (['turn off', 'disable', 'deactivate'].includes(verb) && /^sentry(?:\s+mode)?$/.test(tail)) return 'permission'
+  if (['turn off', 'disable', 'remove'].includes(verb) && rest.join(' ') === 'pin to drive') return 'credential'
+  if (verb === 'add' && core.length <= 2 && last === 'key' && (core.length === 1 || ['phone', 'digital', 'car'].includes(core[0]))) return 'credential'
+  return null
+}
+
 const DIVERSION_VERBS = new Set(['change', 'update', 'edit', 'add', 'set', 'replace', 'switch'])
 const DIVERSION_OBJECTS = [['direct', 'deposit'], ['bank', 'detail'], ['deposit', 'account'], ['routing', 'number'], ['account', 'number'],
   ['payout', 'account'], ['payout', 'method'], ['bank', 'account'], ['payout', 'detail']]
@@ -571,6 +591,10 @@ export function grammarClasses(name, role = '') {
   // CU-459 (High; cu-coordinator 23:11Z): filing a tax return or extension by other verbs files a legal document in the
   // person's name (submit; the 'File return' family).
   if (taxFiling(list)) return ['submit']
+  // CU-460 (High; cu-coordinator 23:18Z): a connected car - moving or opening it (physical, CU-418 family), switching off its theft
+  // protection (permission) or its PIN to drive, or adding a key (credential).
+  const vehicle = vehicleClass(list)
+  if (vehicle) return [vehicle]
   // F2 guard (cu-coordinator 20:28Z): declining, denying or rejecting a request answers no - the grammar's own over-ask since
   // #554 ('Decline request'); older asks ('Decline invitation', CU-422's 'Decline offer') are untouched (the hook never sees them).
   if (['decline', 'deny', 'reject'].includes(list[0]) && list.slice(1).filter((t) => !FILLER.has(t)).every((t) => t === 'request' || t === 'this' || t === 'all')
