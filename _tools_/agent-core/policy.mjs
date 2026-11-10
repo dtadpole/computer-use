@@ -1315,10 +1315,14 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // (target.defaultCandidates, each shaped like defaultButton) are each judged by the click classifier and every class
     // asked (the strictest leads, fail closed); more than three (defaultCandidatesMore) asks unknown.
     const candidates = Array.isArray(target?.defaultCandidates) ? target.defaultCandidates.filter((one) => one && typeof one === 'object' && typeof one.name === 'string' && one.name.trim() !== '').slice(0, 3) : []
-    if (defaultName === '' && target?.defaultCandidatesMore === true && pressesEnter && (!inTextArea || commandReturn) && context.defaultButtonProbe !== true) {
+    const candidateReturn = pressesEnter && (!inTextArea || commandReturn) && context.defaultButtonProbe !== true
+    const classesBeforeDefault = classes.length
+    if (defaultName === '' && target?.defaultCandidatesMore === true && candidateReturn) {
       return { decision: 'confirm', class: 'unknown_target', classes: ['unknown_target'], rule: 'default:candidates_unread', reason: `press ${(action.keys ?? ['Return']).join('+')} in a form whose Return may submit through one of several controls the agent cannot tell apart` }
     }
-    if (defaultName === '' && pressesEnter && (!inTextArea || commandReturn) && context.defaultButtonProbe !== true) {
+    // cu-coordinator 11:35Z: the UNION - candidates are judged whenever present, beside a defaultButton too (a hidden or nameless
+    // default submit), and can only add asks.
+    if (candidates.length > 0 && candidateReturn) {
       const { dialog: _cd, paste: _cp, dropTarget: _cdt, dragSource: _cds, ...candidateContext } = context
       for (const one of candidates) {
         const pressedOne = { ...one, role: one.role ?? 'button', ...(target?.textEntered !== undefined ? { textEntered: target.textEntered } : {}) }
@@ -1337,6 +1341,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       for (const cls of probe.decision === 'confirm' ? (probe.classes ?? [probe.class]) : (probe.class ? [probe.class] : [])) {
         if (cls !== 'permission' || probe.rule !== 'page:shortcut') classes.push(cls)
       }
+    }
+    // More than three candidates beside a named default: if neither the default nor the listed candidates asked, ask unknown.
+    if (defaultName !== '' && target?.defaultCandidatesMore === true && candidateReturn && classes.length === classesBeforeDefault) {
+      return { decision: 'confirm', class: 'unknown_target', classes: ['unknown_target'], rule: 'default:candidates_unread', reason: `press ${(action.keys ?? ['Return']).join('+')} in a form whose Return may submit through one of several controls the agent cannot tell apart` }
     }
     // CU-190 (keyboard-activation.md): a default button the helper could not read may well be there, so the Return asks
     // submit - focused or not; only a read with none (true) keeps the rule above. D-069: on the desktop (url app:...) no

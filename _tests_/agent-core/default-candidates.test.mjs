@@ -28,3 +28,11 @@ test('CU-412: more than three candidates ask unknown; a search form with no cont
   assert.equal(enter({}).decision, 'allow')
   assert.equal(enter({ defaultCandidates: [{ role: 'button', name: 'Search' }, { role: 'button', name: 'Clear' }] }).decision, 'allow')
 })
+
+test('CU-412 union (11:35Z): candidates beside a hidden or nameless default are judged too - a hidden Submit + a Delete account div asks delete', () => {
+  const v = enter({ defaultButton: { role: 'button', name: 'Submit' }, defaultCandidates: [{ role: 'button', name: 'Delete account' }] })
+  assert.equal(v.class, 'delete')
+  assert.ok(v.classes.includes('submit'), 'the default keeps its own class beside')
+  assert.equal(enter({ defaultButton: { role: 'button', name: 'Search' }, defaultCandidatesMore: true }).class, 'unknown_target', 'more than three beside a harmless default asks unknown')
+  assert.equal(enter({ defaultButton: { role: 'button', name: 'Buy now' }, defaultCandidatesMore: true }).class, 'purchase', 'a default that asks keeps its class')
+})
