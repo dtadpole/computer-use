@@ -982,6 +982,8 @@ class BrowserEnvironment {
       // CU-443: a row with no verb of its own carries what the page offers around it (describeElement): dialHref (a
       // tel:/sip:/callto:/facetime: href on it, above it or inside it - a boolean) and rowContext (its list's name, up to 3
       // action names). Context, outside the fingerprint; never recorded.
+      // Round 2: inRow - the hit element has no verb of its own and sits inside such a row (read through it). A boolean.
+      ...(extra.inRow === true ? { inRow: true } : {}),
       ...(extra.dialHref === true ? { dialHref: true } : {}),
       ...(rowContextOf(extra.rowContext) ? { rowContext: rowContextOf(extra.rowContext) } : {}),
       // CU-157: context, not identity - outside the fingerprint.
