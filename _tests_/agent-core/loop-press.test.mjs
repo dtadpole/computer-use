@@ -24,7 +24,8 @@ afterEach(() => { rmSync(dir, { recursive: true, force: true }) })
 
 async function run(actions, { kind = 'desktop', actionTypes, fail } = {}) {
   const control = createRunControl()
-  const environment = createFakeEnvironment({ kind, control, ...(fail ? { fail } : {}) })
+  // CU-377: a desktop drag pressed on nothing at all is an unknown source and asks; these rows press the fixture's canvas.
+  const environment = createFakeEnvironment({ kind, control, ...(kind === 'desktop' ? { targets: () => ({ origin: 'ai.reflection.cu.fixture', role: 'AXGroup', name: 'Canvas' }) } : {}), ...(fail ? { fail } : {}) })
   if (actionTypes) environment.actionTypes = actionTypes
   const store = createAppApprovals({ path: join(dir, 'app-approvals.json') })
   store.grantAlways(FIXTURE, { by: 'api' })
