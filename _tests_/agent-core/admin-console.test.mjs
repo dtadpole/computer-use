@@ -29,3 +29,12 @@ test('CU-416: impersonation asks permission; termination and offboarding ask del
 test('CU-416 negatives: lists, history and signing in as a guest stay free', () => {
   for (const name of ['Payroll', 'Payments', 'Employees', 'Cards', 'Credit limits', 'Users', 'Payment history', 'Sign in as guest']) assert.equal(click(name), 'allow', name)
 })
+
+test('CU-416 near forms (13:43Z): plurals and synonyms ask purchase; Send payments / Approve payment purchase; Login as / Act as user permission', () => {
+  for (const name of ['Release payments', 'Process refunds', 'Run payrolls', 'Process payroll', 'Refund customer', 'Raise limit', 'Increase spending limit', 'Issue virtual card', 'Reimburse', 'Send payments', 'Approve payment']) {
+    assert.equal(click(name), 'purchase', name)
+    assert.equal(enter(name), 'purchase', `Return: ${name}`)
+  }
+  for (const name of ['Login as user', 'Act as user', 'Act as Jane']) assert.equal(click(name), 'permission', name)
+  for (const name of ['Login as guest', 'Act as a guest', 'Reimbursements', 'Spending limits']) assert.equal(click(name), 'allow', name)
+})

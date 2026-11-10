@@ -87,6 +87,10 @@ const WORDS = Object.freeze({
     // CU-416 (High; cu-coordinator 13:32Z): admin consoles move other people's money.
     'run payroll', 'release payment', 'send payment', 'approve payment run', 'process refund', 'issue card', 'issue a card',
     'issue new card', 'raise credit limit', 'increase credit limit',
+    // cu-coordinator 13:43Z: plurals and synonyms.
+    'release payments', 'process refunds', 'run payrolls', 'process payroll', 'refund customer', 'raise limit', 'increase limit',
+    'increase spending limit', 'raise spending limit', 'issue virtual card', 'reimburse', 'send payments', 'approve payment',
+    'approve payments',
     // CU-410 (High; cu-coordinator 10:17Z): billing wordings one word from the asking ones.
     'add seats', 'add licenses', 'add credits', 'top up credits', 'resume subscription', 'upgrade seats', 'gift a subscription',
     'send gift', 'get tickets',
@@ -1276,7 +1280,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const formTrade = form && typeof form === 'object' && Array.isArray(form.options) && form.options.some((text) => TRADE_ASSET.test(String(text)))
       if (!focusesEntry && /\b(?:sell|convert|deposit)\b/i.test(name) && (/\d|[$\u20ac\u00a3\u00a5\u20bf]/.test(name) || TRADE_ASSET.test(name) || formTrade)) classes.push('purchase')
       // CU-416: 'Log in as' / 'Sign in as' <someone> acts as that person ('as guest' signs in as nobody).
-      if (!focusesEntry && /^\s*(?:log|sign)\s+in\s+as\b(?!\s+(?:a\s+)?guest\b)/i.test(name)) classes.push('permission')
+      if (!focusesEntry && /^\s*(?:(?:log|sign)\s+in|login|act)\s+as\b(?!\s+(?:a\s+)?guest\b)/i.test(name)) classes.push('permission')
       // CU-410: renting ('Rent', 'Rent now', 'Rent <title>'; 'Rentals' stays free), a bare 'Renew', reactivating a subscription,
       // turning auto-renew on and switching the billing period ask purchase.
       if (!focusesEntry && (/^\s*rent\b/i.test(name) || /^\s*renew\s*$/i.test(name)
