@@ -5,7 +5,7 @@ import Foundation
 /// The helper's identity; `build.sh` writes the same bundle id into Info.plist.
 enum HelperIdentity {
   static let bundleId = "com.reflection.cu-helper"
-  static let version = "0.2.66"
+  static let version = "0.2.67"
   /// The value every synthetic event carries in `kCGEventSourceUserData`: 0x43555345, ASCII "CUSE"
   /// (input-and-targets.md, verify-kit's SYNTHETIC_TAG). Not a secret: an event from another process with this tag
   /// could only fail to pause the run, never act.
@@ -1060,6 +1060,74 @@ struct ServicesMenu: Equatable {
   }
 }
 
+/// CU-387 (fix a, cu-coordinator 01:37Z): a hit on a file row's text, icon or cell child carries no AXFilename/AXURL of
+/// its own - AppKit serves those on the row or cell - so the hit element lends the nearest file-bearing ancestor's
+/// values. The walk reads at most 4 levels, never past a window, and stops at the first row or cell, so a sidebar's or a
+/// list's container never lends its URL to an unrelated child. Controls keep their own (an info button in a row is no
+/// file).
+enum FileAncestor {
+  struct Level: Equatable {
+    var role: String?
+    var filename: String?
+    var url: String?
+  }
+  static let maxLevels = 4
+  /// The roles that take a file from an ancestor: a row's content, not a control.
+  static let lendingRoles: Set<String> = ["AXStaticText", "AXImage", "AXCell", "AXGroup", "AXTextField", "AXUnknown"]
+  static let stopRoles: Set<String> = ["AXRow", "AXCell", "AXOutlineRow"]
+
+  /// `levels`: the ancestors nearest first. Nil when none within the bounds carries a filename or a url.
+  static func pick(_ levels: [Level]) -> Level? {
+    for level in levels.prefix(maxLevels) {
+      if level.role == "AXWindow" || level.role == "AXApplication" { return nil }
+      if level.filename != nil || level.url != nil { return level }
+      if let role = level.role, stopRoles.contains(role) { return nil }
+    }
+    return nil
+  }
+}
+
+/// CU-392 (helper half, design 0.1 OK'd 01:33Z): where a drop in Finder sends a file - 'airdrop', 'shared' or 'server' -
+/// from Finder's own strings (Finder.app's LocalizableMerged: TL35 'AirDrop'; SD11.4 and CS197 'Shared'; FF22.1 and
+/// NE85.2.5 'Network'), current language beside English. The raw title never leaves the helper; only the value does.
+struct DropDestination: Equatable {
+  var airdrop: Set<String>
+  var shared: Set<String>
+  var server: Set<String>
+
+  static let english = DropDestination(airdrop: ["AirDrop"], shared: ["Shared"], server: ["Network"])
+  static let current: DropDestination = {
+    var table = english
+    if let finder = Bundle(path: "/System/Library/CoreServices/Finder.app") {
+      let read = { (key: String) -> String? in
+        let value = finder.localizedString(forKey: key, value: "\u{1}", table: "LocalizableMerged")
+        return value == "\u{1}" || value.isEmpty ? nil : value
+      }
+      if let v = read("TL35") { table.airdrop.insert(v) }
+      for key in ["SD11.4", "CS197"] { if let v = read(key) { table.shared.insert(v) } }
+      for key in ["FF22.1", "NE85.2.5"] { if let v = read(key) { table.server.insert(v) } }
+    }
+    return table
+  }()
+
+  /// The value for a title (a Finder window's, or a sidebar row's), nil for anything else.
+  func of(_ title: String?) -> String? {
+    guard let title = title?.trimmingCharacters(in: .whitespacesAndNewlines), !title.isEmpty else { return nil }
+    if airdrop.contains(title) { return "airdrop" }
+    if shared.contains(title) { return "shared" }
+    if server.contains(title) { return "server" }
+    return nil
+  }
+
+  /// Finder only: its window's title first (every tile in the AirDrop window, every host in the Network browser), else
+  /// the element's own sidebar-row title - the row, its cell or its text - inside an outline.
+  func of(inFinder: Bool, windowTitle: String?, rowTitle: String?, inOutline: Bool) -> String? {
+    guard inFinder else { return nil }
+    if let value = of(windowTitle) { return value }
+    return inOutline ? of(rowTitle) : nil
+  }
+}
+
 /// CU-382: Finder's Quick Actions - a submenu (and the preview pane's button row) listing the owner's Automator and
 /// Shortcuts workflows, which can run any script outside the approved app, as a service does. No AX attribute tells it
 /// apart, so it counts by Finder's own strings (Finder.app's LocalizableMerged table: N270 and QK1 'Quick Actions',
@@ -1130,6 +1198,9 @@ struct MenuContext: Equatable {
   var quickActions: Bool = false
   /// CU-382: a read on the walk up failed, so the path may stop short of a Services or Quick Actions level - policy asks.
   var unread: Bool = false
+  /// CU-398: the item sits under the menu bar's first item, the Apple menu (Restart..., Shut Down..., Log Out...) - the
+  /// same structural rule as the menu-key walk's appleMenu, so no title is matched and a localised menu is covered.
+  var appleMenu: Bool = false
 
   static let maxDepth = 10
 
@@ -1141,12 +1212,12 @@ struct MenuContext: Equatable {
   }
 
   static func of(itemTitle: String?, levels: [Level], services: ServicesMenu = .current, quick: QuickActionsMenu = .current,
-                 inFinder: Bool = false, unread: Bool = false) -> MenuContext {
+                 inFinder: Bool = false, unread: Bool = false, underAppleMenu: Bool = false) -> MenuContext {
     let capped = Array(levels.prefix(maxDepth))
     let holders = capped.compactMap { $0.holderTitle }
     let flagged = capped.contains { level in level.holderTitle != nil && services.isServices(itemTitle: level.holderTitle, childTitles: level.childTitles) }
     let quickLevel = capped.contains { level in level.holderTitle != nil && quick.isQuickActions(itemTitle: level.holderTitle, childTitles: level.childTitles, inFinder: inFinder) }
-    return MenuContext(path: holders.reversed() + [itemTitle ?? ""], servicesMenu: flagged, quickActions: quickLevel && !quick.isExempt(itemTitle), unread: unread)
+    return MenuContext(path: holders.reversed() + [itemTitle ?? ""], servicesMenu: flagged, quickActions: quickLevel && !quick.isExempt(itemTitle), unread: unread, appleMenu: underAppleMenu)
   }
 
   var json: [String: JSON] {
@@ -1154,6 +1225,7 @@ struct MenuContext: Equatable {
     if servicesMenu { object["servicesMenu"] = .bool(true) }
     if quickActions { object["quickActions"] = .bool(true) }
     if unread { object["menuContextUnread"] = .bool(true) }
+    if appleMenu { object["appleMenu"] = .bool(true) }
     return object
   }
 }

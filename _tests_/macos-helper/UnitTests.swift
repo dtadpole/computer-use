@@ -697,7 +697,7 @@ func button(_ kind: String, _ x: Int, _ y: Int) -> JSON { ["kind": .string(kind)
 func testDispatcherBasics() {
   let h = Harness(fixtureWorld)
   let hello = h.dispatcher.hello(token: "t0k")
-  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.66", "the hello opens the run")
+  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.67", "the hello opens the run")
   check(hello["mode"] == "dry-run" && hello["grants"] == ["screen": true, "accessibility": true, "postEvents": true, "listenEvents": false], "a dry-run hello says so, with all four grants")
   check(h.ask("capture", ["maxSize": size800])["code"] == "no_scope", "capture needs a scope")
   check(h.ask("input", ["events": [key("keyDown", 1)], "mode": "global"])["code"] == "no_scope", "input needs a scope")
@@ -2128,6 +2128,37 @@ func testQuickActions() {
   check(short.unread && short.json["menuContextUnread"] == true && !short.quickActions, "a failed read on the walk says menuContextUnread, never a plain item")
 }
 
+func testFileAncestorAndDropDestination() {
+  // CU-387 fix (a): a row's child lends the nearest file-bearing ancestor's file, within the bounds.
+  typealias L = FileAncestor.Level
+  check(FileAncestor.pick([L(role: "AXCell", filename: "install.command", url: "file:///tmp/x/install.command")])?.filename == "install.command", "the cell above a text lends its file")
+  check(FileAncestor.pick([L(role: "AXGroup", filename: nil, url: nil), L(role: "AXRow", filename: "notes.txt", url: nil)])?.filename == "notes.txt", "up to the row")
+  check(FileAncestor.pick([L(role: "AXRow", filename: nil, url: nil), L(role: "AXOutline", filename: nil, url: "file:///Users/x/")]) == nil, "the walk stops at the first row: the list never lends its URL")
+  check(FileAncestor.pick([L(role: "AXWindow", filename: nil, url: "file:///Users/x/doc.txt")]) == nil, "never a window's document")
+  check(FileAncestor.pick([L(role: "AXGroup", filename: nil, url: nil), L(role: "AXGroup", filename: nil, url: nil), L(role: "AXGroup", filename: nil, url: nil), L(role: "AXGroup", filename: nil, url: nil), L(role: "AXRow", filename: "far.txt", url: nil)]) == nil, "at most 4 levels")
+  check(FileAncestor.lendingRoles.contains("AXStaticText") && !FileAncestor.lendingRoles.contains("AXButton"), "content lends, controls do not")
+  // CU-392: Finder's drop destinations from its own strings - the value only.
+  let table = DropDestination.english
+  check(table.of(inFinder: true, windowTitle: "AirDrop", rowTitle: nil, inOutline: false) == "airdrop", "every tile in the AirDrop window")
+  check(table.of(inFinder: true, windowTitle: "Network", rowTitle: nil, inOutline: false) == "server", "a host in the Network browser")
+  check(table.of(inFinder: true, windowTitle: "Documents", rowTitle: "Shared", inOutline: true) == "shared", "the sidebar's Shared row")
+  check(table.of(inFinder: true, windowTitle: "Documents", rowTitle: "AirDrop", inOutline: false) == nil, "a row title outside an outline does not count")
+  check(table.of(inFinder: false, windowTitle: "AirDrop", rowTitle: nil, inOutline: false) == nil, "another app's window titled AirDrop gives none")
+  check(table.of(inFinder: true, windowTitle: "Projects", rowTitle: "Archive", inOutline: true) == nil, "an ordinary folder gives none")
+  check(table.of(" AirDrop ") == "airdrop" && table.of("") == nil && table.of(nil) == nil, "trimmed; empty is none")
+}
+
+func testAppleMenuClickTarget() {
+  // CU-398: a clicked item under the menu bar's first item carries appleMenu - structure, never titles.
+  let levels = [MenuContext.Level(holderTitle: "Apple", childTitles: ["About This Mac", "Restart…", "Shut Down…"])]
+  let apple = MenuContext.of(itemTitle: "Restart…", levels: levels, underAppleMenu: true)
+  check(apple.appleMenu && apple.json["appleMenu"] == .bool(true), "an Apple-menu item is marked")
+  let app = MenuContext.of(itemTitle: "Restart…", levels: [MenuContext.Level(holderTitle: "Game", childTitles: ["Restart…"])])
+  check(!app.appleMenu && app.json["appleMenu"] == nil, "an app's own 'Restart…' is not - no title matching")
+  let nested = MenuContext.of(itemTitle: "notes.txt", levels: [MenuContext.Level(holderTitle: "Recent Items", childTitles: ["notes.txt"]), MenuContext.Level(holderTitle: "Apple", childTitles: ["Recent Items"])], underAppleMenu: true)
+  check(nested.appleMenu && nested.path == ["Apple", "Recent Items", "notes.txt"], "a nested Apple-menu item keeps its path and the mark")
+}
+
 @main
 struct UnitTests {
   static func main() {
@@ -2175,6 +2206,8 @@ struct UnitTests {
     testPasteboardTypes()
     testMenuTracking()
     testQuickActions()
+    testFileAncestorAndDropDestination()
+    testAppleMenuClickTarget()
     testEndWatchdog()
     // Informational: whether the process that ran these tests is genuine node (true for Node.js Foundation builds).
     let parentIsNode = PeerCheck.satisfiesNodeRequirement(pid: getppid(), token: nil)

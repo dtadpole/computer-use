@@ -1892,10 +1892,15 @@ class DesktopEnvironment {
       // CU-250 (helper 0.2.53): a menu item under the Services menu, and its menu path - outside the fingerprint, and never in
       // run records (an event's target keeps origin, role and name).
       ...(servicesMenuOf(element.servicesMenu) ? { servicesMenu: true } : {}),
+      // CU-398 (helper 0.2.67): a menu item under the Apple menu (Restart..., Shut Down..., Log Out...), structural.
+      ...(element.appleMenu === true ? { appleMenu: true } : {}),
       // CU-382 (helper 0.2.66): under Finder's Quick Actions (a submenu or the preview pane's row), and a menu walk
       // that could not finish - each present only when true; outside the fingerprint, and never in run records.
       ...(element.quickActions === true ? { quickActions: true } : {}),
       ...(element.menuContextUnread === true ? { menuContextUnread: true } : {}),
+      // CU-392 (helper 0.2.67): where a drop in Finder sends a file - 'airdrop', 'shared' or 'server' - from Finder's own
+      // strings in the helper (the raw title never leaves it); present only when one of those.
+      ...(['airdrop', 'shared', 'server'].includes(element.dropDestination) ? { dropDestination: element.dropDestination } : {}),
       menuPath: menuPathOf(element.menuPath),
       // CU-187: the label that captions a non-entry element (AXTitleUIElement's title, else its row's or cell's sibling
       // title, as the helper reads it) - never its value or its own title. A string of at most 80 characters, null when
