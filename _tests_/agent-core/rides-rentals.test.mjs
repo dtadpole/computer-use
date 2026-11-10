@@ -32,3 +32,11 @@ test('CU-434 negatives: lists, history, estimates, pickup, destination stay free
   // lowering family; a High never lowers an older rule.
   assert.equal(click('Track order'), 'purchase', 'named over-ask (older rule)')
 })
+
+test('cu-coordinator 18:55Z: the four live-sample escapes of #554 are table rows', () => {
+  for (const [name, cls] of [['Reserve a cabin', 'purchase'], ['Admit all attendees', 'permission'], ['Grant edit rights', 'permission'], ['Preheat the grill', 'physical']]) {
+    assert.deepEqual(grammarClasses(name), [cls], name)
+    assert.equal(click(name), cls, `hook: ${name}`)
+  }
+  for (const name of ['Attendees', 'Cabin details', 'Grill settings']) assert.equal(click(name), 'allow', name)
+})

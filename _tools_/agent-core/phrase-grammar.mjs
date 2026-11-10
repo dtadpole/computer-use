@@ -102,10 +102,14 @@ const OBJECTS = {
     'project', 'bet', 'swap', 'trial', 'collateral', 'allowance', 'spending', 'cap', 'long', 'short', 'annual', 'monthly', 'yearly',
     'tip', 'recurring', 'bag', 'baggage', 'insurance', 'mile', 'domain',
     // CU-434: a paid ride, delivery or rental.
-    'ride', 'delivery', 'scooter', 'bike', 'ebike', 'moped']),
+    'ride', 'delivery', 'scooter', 'bike', 'ebike', 'moped',
+    // cu-coordinator 18:55Z: lodging (reserve x lodging).
+    'cabin', 'lodge', 'villa', 'campsite', 'suite', 'apartment']),
   access: new Set(['organization', 'team', 'workspace', 'server', 'people', 'account', 'owner', 'coowner', 'co', 'admin', 'host',
     'cohost', 'collaborator', 'member', 'access', 'guest', 'visitor', 'device', 'public', 'ownership', 'payee', 'recipient',
-    'beneficiary', 'everyone']),
+    'beneficiary', 'everyone',
+    // cu-coordinator 18:55Z: admitting attendees (CU-414 family), granting edit rights (CU-423 family).
+    'attendee', 'participant', 'right']),
   agree: new Set(['term', 'agreement', 'contract', 'condition']),
   signable: new Set(['document', 'agreement', 'contract', 'form', 'consent', 'lease', 'waiver', 'nda']),
   records: new Set(['record', 'release', 'medical']),
@@ -114,7 +118,7 @@ const OBJECTS = {
   guard: new Set(['accessibility', 'protection', 'firewall', 'antivirus', 'defender', 'filevault', 'sip', 'integrity', '2fa', 'factor',
     'verification', 'alert', 'notification']),
   phys: new Set(['door', 'garage', 'gate', 'alarm', 'camera', 'security', 'car', 'engine', 'vehicle', 'oven', 'stove', 'heater',
-    'burner', 'fireplace', 'guest', 'visitor']),
+    'burner', 'fireplace', 'guest', 'visitor', 'grill', 'smoker']),
   physGuard: new Set(['alarm', 'camera', 'security']),
   install: new Set(['package', 'theme', 'extension', 'plugin', 'update', 'profile', 'helper', 'configuration', 'chrome']),
   sendObject: new Set(['app', 'store', 'ballot', 'vote', 'petition', 'application', 'job', 'offer', 'tax', 'return', 'review', 'star',
