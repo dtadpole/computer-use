@@ -131,6 +131,8 @@ const WORDS = Object.freeze({
     'open long', 'open short', 'close all positions', 'market close', 'list nft', 'list item', 'repay loan',
     // CU-401 (High; cu-coordinator 05:16Z): ending a paid plan.
     'cancel plan', 'cancel membership', 'downgrade', 'end trial',
+    // CU-404: a promoted or boosted post is paid.
+    'promote', 'promote post', 'boost post',
     // CU-400 (High; cu-coordinator 04:39Z): a trade, swap, stake or signature moves money and cannot be taken back.
     'confirm transaction', 'sign transaction', 'sign message', 'swap', 'stake', 'trade', 'sell now', 'confirm swap', 'confirm trade', 'confirm sale',
     // cu-coordinator 04:44Z (cu-verifier's stand-in: 'Bridge' acted unasked): a bridge moves tokens between chains.
@@ -221,6 +223,8 @@ const WORDS = Object.freeze({
     'add payee', 'add a payee', 'add recipient', 'add beneficiary',
     // CU-401: leaving a shared space or unlinking an account.
     'leave workspace', 'leave organization', 'leave organisation', 'leave org', 'leave team', 'leave server', 'unlink account',
+    // CU-404: going public exposes the account.
+    'go public', 'make profile public',
     // CU-386 (cu-coordinator 23:54Z): asking someone else for money.
     'request money',
     // CU-258 (cu-researcher): standing choices an app keeps after the run, as whole phrases. A bare 'Allow' stays free so
@@ -252,6 +256,8 @@ const WORDS = Object.freeze({
       'password', 'passkey', 'passkeys', 'security key', 'security keys', 'login alerts', 'sign in alerts', 'account recovery', 'find my',
       'less secure apps', 'less secure app access'].map((what) => `${verb} ${what}`)), ...ZH_WORDS.permission],
   submit: ['send', 'post', 'submit', 'publish', 'reply', 'sign up', 'register',
+    // CU-404 (cu-coordinator 06:12Z): reposting and endorsing publish under the owner's name; a report is a message sent for them.
+    'repost', 'retweet', 'reblog', 'endorse', 'report user', 'report post',
     // CU-261 (cu-researcher; cu-coordinator: High): actions that reach other people or commit shared work, as whole
     // phrases. A bare Accept, Connect, Join or Follow stays free (cookie banners, Wi-Fi, generic joins: named limits).
     'facetime', 'video call', 'audio call', 'voice call', 'start call', 'start a call', 'join meeting', 'join call',
@@ -475,7 +481,7 @@ const REPLY_WORDS = new Set(['reply', '回复', '回覆'])
 const SUBMIT_BUT_REPLY = Object.freeze(WORDS.submit.filter((word) => !REPLY_WORDS.has(word)))
 // CU-261: a control named only Call, Answer or Merge submits; inside a longer name ('Call Stack', 'Merge Cells') it does not.
 // CU-293: the same whole names in Chinese - 合并单元格 (Merge Cells) stays free like its English.
-const SUBMIT_WHOLE_NAMES = new Set(['call', 'answer', 'merge', '呼叫', '接听', '接聽', '合并', '合併'])
+const SUBMIT_WHOLE_NAMES = new Set(['boost', 'report', 'call', 'answer', 'merge', '呼叫', '接听', '接聽', '合并', '合併'])
 function judgesSubmit(name, target) {
   if (SUBMIT_WHOLE_NAMES.has(normaliseName(name).trim())) return true
   if (!namesWord(withoutPastState(name), WORDS.submit)) return false
@@ -1360,6 +1366,15 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const isProtection = /two[\s-]?(?:factor|step)|2[\s-]?step|\b2fa\b|multi[\s-]?factor|recovery\s+(?:e-?mail|phone|codes?)/i.test(name)
       const safeToggle = (isProtection && nativeOff) || (isForwarding && nativeOn)
       if (!focusesEntry && ACCOUNT_SECURITY.test(name) && !protectionOn && !forwardingOff && !safeToggle) classes.push('credential')
+      // CU-404 edges (cu-coordinator 06:20Z): 'Promote to <role>' grants a role (permission, not purchase); undoing or removing
+      // a repost is free.
+      if (/\bpromote\s+to\s+\S/i.test(name)) {
+        for (let i = classes.length - 1; i >= 0; i -= 1) if (classes[i] === 'purchase') classes.splice(i, 1)
+        if (!classes.includes('permission')) classes.push('permission')
+      }
+      if (/^\s*(?:undo|remove)\s+(?:repost|retweet|reblog|boost)\b/i.test(name)) {
+        for (let i = classes.length - 1; i >= 0; i -= 1) if (classes[i] === 'submit' || classes[i] === 'delete') classes.splice(i, 1)
+      }
       // CU-401 round 2 (cu-coordinator): a plan word beside a navigation noun ('Downgrade options', 'Cancel plan details')
       // opens a page - free unless another purchase word remains.
       if (/\b(?:downgrade|cancel\s+(?:plan|membership)|end\s+trial)\b[\s\S]*\b(?:options|settings|details|faq|guide|policy|info)\b/i.test(name)
