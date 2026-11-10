@@ -70,3 +70,8 @@ test('CU-372 in the loop: the desktop route asks typeOptions - Ar into a popup l
     assert.equal(typed.status, 'done', 'read landing on a benign item: no shortcut fallback')
   } finally { rmSync(tmp, { recursive: true, force: true }) }
 })
+
+test('CU-372 parity: ArrowDown on a bare AXPopUpButton or AXMenuButton (no option read) asks unknown', () => {
+  for (const role of ['AXPopUpButton', 'AXMenuButton']) assert.equal(judge({ type: 'keypress', keys: ['ARROWDOWN'] }, { origin: APP, role, name: 'Action', editable: false }), 'unknown_target', role)
+  assert.equal(judge({ type: 'keypress', keys: ['TAB'] }, { origin: APP, role: 'AXPopUpButton', name: 'Action', editable: false }), 'allow', 'Tab moves focus')
+})

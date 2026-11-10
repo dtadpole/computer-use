@@ -1029,7 +1029,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     }
     const onWebPage = context.url != null && !/^(app|desktop):/.test(String(context.url ?? ''))
     const NAV_KEY = /^(ARROW(UP|DOWN|LEFT|RIGHT)|PAGEUP|PAGEDOWN|HOME|END|ENTER|RETURN|SPACE)$/
-    if (onWebPage && choiceTarget && target.selectOption !== true && target.radioChoice !== true && ['keypress', 'hold_key'].includes(action.type) && [...keysOf(action)].some((key) => NAV_KEY.test(key))) {
+    // CU-372 parity (cu-coordinator 01:17Z): a bare desktop popup or menu button (keyTarget answered no option) on a
+    // navigation key asks unknown like a bare web select.
+    const bareDesktopPopup = target && /^AX(?:PopUp|Menu)Button$/i.test(String(target.role ?? '')) && target.optionUnread !== true
+    if (((onWebPage && choiceTarget) || bareDesktopPopup) && target.selectOption !== true && target.radioChoice !== true && ['keypress', 'hold_key'].includes(action.type) && [...keysOf(action)].some((key) => NAV_KEY.test(key))) {
       return { decision: 'confirm', class: 'unknown_target', classes: ['unknown_target'], rule: 'select:option_unknown', reason: `press ${(action.keys ?? []).join('+')} on "${target?.name ?? 'a list'}", where the option it lands on could not be read` }
     }
     // The driver marks a radio the key checks with radioChoice (cu-coordinator 20:11Z): judged the same way by its name.

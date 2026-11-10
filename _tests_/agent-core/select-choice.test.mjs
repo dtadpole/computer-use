@@ -32,7 +32,7 @@ test('CU-370: a type is judged by every option its prefix passes through (typeOp
 test('CU-370: an unread option list and a bare select on a navigation key ask unknown (cu-coordinator 20:15Z)', () => {
   assert.equal(judge({ type: 'type', text: 'Del' }, BULK, { typeOptions: { unread: true } }), 'unknown_target/select:options_unread')
   for (const key of ['ARROWDOWN', 'PAGEDOWN', 'END', 'ENTER']) assert.equal(judge({ type: 'keypress', keys: [key] }, BULK), 'unknown_target/select:option_unknown', key)
-  assert.equal(policy.classify({ type: 'keypress', keys: ['ARROWDOWN'] }, { url: 'app:com.example.app', target: { role: 'AXPopUpButton', name: 'Sort' } }).rule === 'select:option_unknown', false, 'the desktop route keeps its rules')
+  assert.equal(policy.classify({ type: 'keypress', keys: ['ARROWDOWN'] }, { url: 'app:com.example.app', target: { role: 'AXPopUpButton', name: 'Sort' } }).rule === 'select:option_unknown', true, 'CU-372 parity (cu-coordinator 01:17Z): a bare desktop popup asks too')
 })
 
 test('CU-370 negatives and named over-ask: an editable combobox is text entry; a harmless option name asks once as a shortcut', () => {
