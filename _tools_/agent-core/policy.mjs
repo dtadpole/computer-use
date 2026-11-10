@@ -173,7 +173,9 @@ const UNLOCK_PHYSICAL = new RegExp(`\\bunlock\\b.*\\b${PHYSICAL_NOUN}\\b|\\b${PH
 const TRADE_ASSET = /\b(?:btc|eth|usd|eur|gbp|jpy|usdt|usdc|dai|sol|xrp|ada|doge|bnb|bitcoin|ethereum|crypto|coins?|tokens?|shares?|stocks?)\b/i
 const TRADE_WORDS = /\b(?:trade|trading|swap|swaps|stake|staking|unstake|sell|selling|bridge|mint|minting)\b/gi
 const TRADE_NAV = /\b(?:trade|trading|swap|swaps|stake|staking|unstake|sell|selling|bridge|mint|minting)\b[\s\S]*\b(?:history|settings|faq|guide|policy|fees|rates|limits)\b/i
-const INSTALL_NAME = /^(?:install\s+(?:an?\s+)?(?:extension|plug-?in|add-?on|update|updates)|install\s+and\s+relaunch|update\s+now|restart\s+to\s+update|add\s+to\s+(?:chrome|firefox|edge|safari)|add\s+extension)\b/i
+// cu-coordinator 09:26Z adds the same-act wordings: Download & Install, Install Now, Relaunch to update, Enable Extension /
+// Plugin, Install Package / Theme.
+const INSTALL_NAME = /^(?:install\s+(?:an?\s+)?(?:extension|plug-?in|add-?on|update|updates|package|theme)|install\s+and\s+relaunch|install\s+now|download\s*(?:&|and)\s*install|update\s+now|(?:restart|relaunch)\s+to\s+update|enable\s+(?:extension|plug-?in)|add\s+to\s+(?:chrome|firefox|edge|safari)|add\s+extension)\b/i
 const PRECEDENCE = ['physical', 'purchase', 'launch_code', 'delete', 'permission', 'page_dialog', 'credential', 'sensitive_data', 'submit', 'new_site', 'install']
 const PHYSICAL = ['unlatch', 'disarm', 'disarm security system', 'disarm alarm',
   'turn off alarm', 'open garage', 'open garage door', 'open gate', 'open the gate', 'mark as lost', 'erase device',
