@@ -32,10 +32,8 @@ is cu-developer-three's #510 (OK'd at 2ff3d0d09); my #508 was closed for it (one
 
 ## Parity sweep (block 08:20Z, item 3)
 
-A local probe runner: real loop, real chrome-browser driver, one page per control, all asks declined. The typed pass
-(every mode types first: click, Return, Tab+Space, double-click) is complete: 62 rows, 0 off-parity. Next come the
-empty-field column (click vs one-step Return), then a variant pass (input, link, role=button div; plus Tab+Return).
-High live rows take the browser slot first.
+Real loop and browser driver, one page per control. Typed pass (click, Return, Tab+Space, double-click) done: 62 rows,
+0 off-parity. Next: the empty-field column, then input/link/div variants. High live rows take the browser slot first.
 
 ## Live state
 
