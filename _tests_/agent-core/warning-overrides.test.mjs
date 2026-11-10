@@ -31,3 +31,10 @@ test('CU-421 negatives: Profiles and Cancel stay free; older asks stay (15:08Z):
   for (const name of ['Move to Trash', 'Delete download']) assert.equal(click(name), 'delete', `${name} (CU-146, unchanged)`)
   assert.equal(click('Privacy & Security'), 'permission', 'unchanged older ask')
 })
+
+test('CU-421 round 2 (15:25Z): Keep dangerous file asks install; Trust / Install certificate and Always trust ask permission', () => {
+  assert.equal(click('Keep dangerous file'), 'install')
+  assert.equal(enter('Keep dangerous file'), 'install', 'Return: Keep dangerous file')
+  for (const name of ['Trust certificate', 'Install certificate', 'Always trust']) assert.equal(click(name), 'permission', name)
+  for (const name of ['Certificates', 'View certificate']) assert.equal(click(name), 'allow', name)
+})

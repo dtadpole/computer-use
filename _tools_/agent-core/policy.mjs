@@ -138,6 +138,8 @@ const WORDS = Object.freeze({
     // CU-421 (High; cu-coordinator 15:00Z): system-level control - SIP off, full disk access, accessibility.
     'disable sip', 'disable system integrity protection', 'grant full disk access', 'allow full disk access', 'enable full disk access',
     'enable accessibility', 'allow accessibility access', 'grant accessibility access',
+    // cu-coordinator 15:25Z: trusting or installing a root certificate.
+    'trust certificate', 'trust this certificate', 'install certificate', 'install the certificate', 'always trust',
     // CU-415: signatures bind the owner; releasing records shares personal data.
     'sign document', 'sign the document', 'e-sign', 'esign', 'adopt and sign', 'sign and submit', 'accept terms', 'accept the terms',
     'accept agreement', 'accept the agreement', 'authorize release', 'authorise release', 'release records',
@@ -1285,7 +1287,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const formTrade = form && typeof form === 'object' && Array.isArray(form.options) && form.options.some((text) => TRADE_ASSET.test(String(text)))
       if (!focusesEntry && /\b(?:sell|convert|deposit)\b/i.test(name) && (/\d|[$\u20ac\u00a3\u00a5\u20bf]/.test(name) || TRADE_ASSET.test(name) || formTrade)) classes.push('purchase')
       // CU-421: overriding a malware warning or installing a profile or helper asks install (CU-254's class).
-      if (!focusesEntry && /^\s*(?:(?:open|run|keep|download|install)\s+anyway|install\s+(?:the\s+)?(?:configuration\s+)?(?:profile|helper))\b/i.test(name)) classes.push('install')
+      // cu-coordinator 15:25Z adds a page's 'Keep dangerous file' (Chrome's own shelf stays the named limit).
+      if (!focusesEntry && /^\s*(?:(?:open|run|keep|download|install)\s+anyway|keep\s+(?:the\s+)?dangerous\s+file|install\s+(?:the\s+)?(?:configuration\s+)?(?:profile|helper))\b/i.test(name)) classes.push('install')
       // CU-415 (cu-coordinator 13:12Z): 'Reserve seat / table' asks purchase on the name alone (a booking commits the owner; a
       // free table's over-ask is named); 'Book appointment' asks purchase with a price or deposit in its name, else submit.
       if (!focusesEntry && /^\s*reserve\s+(?:a\s+)?(?:seat|table|spot)\b/i.test(name)) classes.push('purchase')
