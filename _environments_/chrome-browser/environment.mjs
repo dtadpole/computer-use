@@ -814,7 +814,7 @@ class BrowserEnvironment {
    * CU-412 (11:27Z contract, D-107): two or more script submit controls a Return may press (implicitSubmitControls;
    * one alone is the defaultButton) as `{ candidates: [{ role, name, formContext? }] (at most 3), more }` - more true
    * past 3, which agent core asks as unknown; it asks the strictest class among the candidates otherwise. Empty object
-   * when there are fewer; a failure reads as none, because the default-button read itself succeeded.
+   * when there are fewer. Fail closed: a control that cannot be described, or a read that fails, sets more (unknown).
    */
   async #implicitCandidates(page, fieldObjectId) {
     try {
@@ -826,15 +826,18 @@ class BrowserEnvironment {
       const items = props.filter((p) => /^\d+$/.test(p.name)).sort((a, b) => Number(a.name) - Number(b.name))
       if (items.length < 2) return {}
       const controls = []
+      let unread = false
       for (const item of items.slice(0, 3)) {
-        if (item.value?.objectId === undefined) continue
+        if (item.value?.objectId === undefined) { unread = true; continue }
         const node = (await this.session.send(page, 'DOM.describeNode', { objectId: item.value.objectId })).result.node
         const described = await this.#describe(page, node.backendNodeId, undefined, { scanText: false })
-        if (described !== null) controls.push({ role: described.role, name: described.name, ...(described.formContext ? { formContext: described.formContext } : {}) })
+        if (described === null) unread = true
+        else controls.push({ role: described.role, name: described.name, ...(described.formContext ? { formContext: described.formContext } : {}) })
       }
-      return controls.length > 0 ? { candidates: controls, more: items.length > 3 } : {}
+      // Fail closed (D-107: candidates only add asks): a control that could not be read makes the list unjudgeable.
+      return { ...(controls.length > 0 ? { candidates: controls } : {}), more: items.length > 3 || unread }
     } catch {
-      return {}
+      return { more: true }
     }
   }
 

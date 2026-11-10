@@ -1003,3 +1003,21 @@ test('CU-412: more than three script controls list the first three and set defau
     await env.close()
   }
 })
+
+test('CU-412 fail closed: a candidates read that fails sets defaultCandidatesMore (agent core asks unknown), never silence', async () => {
+  const handlers = checkoutHandlers({ submit: false })
+  const baseCall = handlers['Runtime.callFunctionOn']
+  handlers['Runtime.callFunctionOn'] = (params) => (String(params.functionDeclaration).includes('implicitSubmitControls') && !String(params.functionDeclaration).includes('implicitSubmitButton') ? { result: { result: { type: 'object', subtype: 'array', objectId: 'list' } } } : baseCall(params))
+  handlers['Runtime.getProperties'] = ({ objectId }) => (objectId === 'list' ? { result: { result: [{ name: '0', value: { objectId: 'c0' } }, { name: '1', value: { objectId: 'c1' } }, { name: 'length', value: { value: 2 } }] } } : { result: { result: [] } })
+  const baseDescribe = handlers['DOM.describeNode']
+  handlers['DOM.describeNode'] = (params) => { if (params.objectId === 'c0' || params.objectId === 'c1') throw new Error('node gone'); return baseDescribe(params) }
+  const run = harness({ handlers })
+  const env = await launchBrowserEnvironment(run.options)
+  try {
+    const target = await env.focusedElement()
+    assert.equal(target.defaultButton, null)
+    assert.equal(target.defaultCandidatesMore, true)
+  } finally {
+    await env.close()
+  }
+})
