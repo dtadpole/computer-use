@@ -320,7 +320,8 @@ function phoneClass(list) {
 const AD_OBJECTS = new Set(['campaign', 'ad', 'ads', 'promotion', 'advert', 'advertisement'])
 function adSpend(list) {
   if (list.length > 7) return false
-  const twoWord = list[0] === 'turn' && list[1] === 'on'
+  // #580 round 3 (cu-verifier 22:41Z): 'switch on' as well as 'turn on' ('Switch ads on' after the split-particle normaliser).
+  const twoWord = (list[0] === 'turn' || list[0] === 'switch') && list[1] === 'on'
   const verb = twoWord ? 'turn on' : list[0]
   const rest = list.slice(twoWord ? 2 : 1)
   const core = rest.filter((t) => !FILLER.has(t))
