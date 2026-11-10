@@ -265,6 +265,21 @@ function childProtectionOff(list) {
   return false
 }
 
+const MEDS = new Set(['prescription', 'medication', 'medicine', 'rx', 'refill', 'prescriptions'])
+function medicalClass(list) {
+  if (list.length > 6) return null
+  const [verb, ...rest] = list
+  const core = rest.filter((t) => !FILLER.has(t))
+  const last = core[core.length - 1]
+  if (verb === 'refill' && core.length <= 2 && (core.length === 0 || MEDS.has(last))) return core.length === 0 ? null : 'submit'
+  if (verb === 'request' && core.length <= 2 && (MEDS.has(last) || last === 'appointment' || last === 'visit')) return 'submit'
+  if (verb === 'consent' && rest[0] === 'to' && ['treatment', 'procedure', 'surgery', 'care', 'vaccination', 'telehealth'].includes(last)) return 'submit'
+  if (verb === 'cancel' && core.length <= 2 && MEDS.has(last)) return 'delete'
+  if (verb === 'join' && core.length <= 2 && (last === 'visit' || last === 'telehealth' || last === 'consultation')) return 'permission'
+  if (verb === 'add' && core.length <= 2 && (last === 'proxy' || last === 'caregiver')) return 'permission'
+  return null
+}
+
 const DIVERSION_VERBS = new Set(['change', 'update', 'edit', 'add', 'set', 'replace', 'switch'])
 const DIVERSION_OBJECTS = [['direct', 'deposit'], ['bank', 'detail'], ['deposit', 'account'], ['routing', 'number'], ['account', 'number'],
   ['payout', 'account'], ['payout', 'method'], ['bank', 'account'], ['payout', 'detail']]
@@ -299,6 +314,10 @@ export function grammarClasses(name, role = '') {
   if (currencyAct(list)) return ['purchase']
   // CU-440 (High; cu-coordinator 20:26Z): switching off a protection on a child's account (permission).
   if (childProtectionOff(list)) return ['permission']
+  // CU-441 (High; cu-coordinator 20:33Z): patient-portal acts - medical orders and consent (submit), cancelling a prescription
+  // (delete), joining a video visit or adding a proxy (permission).
+  const medical = medicalClass(list)
+  if (medical) return [medical]
   // F2 guard (cu-coordinator 20:28Z): declining, denying or rejecting a request answers no - the grammar's own over-ask since
   // #554 ('Decline request'); older asks ('Decline invitation', CU-422's 'Decline offer') are untouched (the hook never sees them).
   if (['decline', 'deny', 'reject'].includes(list[0]) && list.slice(1).filter((t) => !FILLER.has(t)).every((t) => t === 'request' || t === 'this' || t === 'all')
