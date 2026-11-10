@@ -278,3 +278,25 @@ test('CU-361: describe() reports a nearby label only for an unnamed entry, from 
   assert.doesNotMatch(helper, /string\(element, "AXValue"\)|attribute\(element, "AXValue"\)/, 'the entry\'s own value is never read')
   assert.match(helper, /NearbyLabel\.pick\(box: box, candidates: candidates\)/)
 })
+
+test('CU-409: describe() reports a formContext only for a button, from a bounded scan that never reads an entry\'s value', () => {
+  const access = files['Accessibility.swift']
+  assert.match(access, /if role == "AXButton", !FormContext\.windowButtonSubroles\.contains\(subrole \?\? ""\), let form = formContext\(of: element\) \{ shape\["formContext"\] = form \}/,
+    'only an AXButton (not a window button) asks for its form')
+  const start = access.indexOf('private static func scanForm(')
+  assert.ok(start > 0, 'the scan exists')
+  const scan = access.slice(start, access.indexOf('\n  }\n', start))
+  assert.match(scan, /guard seen < FormContext\.maxScan, Date\(\) < deadline else \{ container\.truncated = true; return \}/, 'bounded in elements and time, and a cut-short scan is marked')
+  assert.match(access, /let deadline = Date\(\)\.addingTimeInterval\(FormContext\.budgetSeconds\)/, 'one budget for the whole walk')
+  assert.match(files['Policy.swift'], /static let budgetSeconds = 0\.08/)
+  assert.match(scan, /if next\.depth < 4/, 'at most 4 deep')
+  assert.match(scan, /\["AXDescription", "AXPlaceholderValue", "AXTitle", "AXHelp"\]\.map \{ string\(next\.element, \$0\) \}/, 'an entry gives its label words')
+  const entry = scan.slice(scan.indexOf('if role == "AXTextField"'), scan.indexOf('continue', scan.indexOf('if role == "AXTextField"')))
+  assert.doesNotMatch(entry, /AXValue/, 'never a text entry\'s value')
+  assert.match(scan, /if role == "AXComboBox" \{ container\.selected\.append\(comboText\(next\.element\)\); continue \}/, 'F1: a combo box only through comboText')
+  const combo = access.slice(access.indexOf('private static func comboText('), access.indexOf('\n  }\n', access.indexOf('private static func comboText(')))
+  assert.match(combo, /return FormContext\.comboText\(value: value, editable: editable, items: items\)/, 'an editable combo gives its value only when it equals an item')
+  const walk = access.slice(access.indexOf('static func formContext(of element: AXUIElement) -> JSON? {'))
+  assert.match(walk.slice(0, 1200), /containers\.count < FormContext\.maxLevels/, 'at most FormContext.maxLevels ancestors')
+  assert.match(files['Policy.swift'], /static let maxLevels = 3\n  static let maxScan = 60\n  static let maxOptions = 3\n  static let maxOptionLength = 24/)
+})

@@ -638,7 +638,24 @@ function defaultButtonOf(value) {
   const text = (v) => typeof v === 'string' && v.length > 0 ? v : null
   const role = text(value.role)
   if (role === null) return null
-  return { role, name: text(value.title), panel: panelOf(value.panel) }
+  // CU-409: the default button's form context too, so Return is judged by the click's classifier with it (D-106).
+  const form = formContextOf(value.formContext)
+  return { role, name: text(value.title), panel: panelOf(value.panel), ...(form !== null ? { formContext: form } : {}) }
+}
+
+/**
+ * CU-409 (helper 0.2.68): a button's form context as the helper reads it (FormContext: the nearest form, sheet, dialog or
+ * group that lends within 3 levels) - `options`, at most 3 selected pop-up or combo box texts of at most 24 characters,
+ * and `amountEntry`, whether an entry's label words name an amount (never its value). The same shape the chrome driver
+ * gives (CU-402), so agent core's trade rules read it alike. Malformed, or neither part present: null.
+ */
+export function formContextOf(value) {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return null
+  if (!Array.isArray(value.options) || typeof value.amountEntry !== 'boolean') return null
+  const options = value.options.filter((text) => typeof text === 'string').map((text) => text.replace(/\s+/g, ' ').trim())
+    .filter((text) => text !== '' && text.length <= 24).slice(0, 3)
+  if (options.length === 0 && !value.amountEntry) return null
+  return { options, amountEntry: value.amountEntry }
 }
 
 /**
@@ -1905,6 +1922,10 @@ class DesktopEnvironment {
       // CU-392 (helper 0.2.67): where a drop in Finder sends a file - 'airdrop', 'shared' or 'server' - from Finder's own
       // strings in the helper (the raw title never leaves it); present only when one of those.
       ...(['airdrop', 'shared', 'server'].includes(element.dropDestination) ? { dropDestination: element.dropDestination } : {}),
+      // CU-409 (helper 0.2.68): a button's form context (formContextOf) - what CU-402's trade rules read beside a bare
+      // 'Sell' or 'Long'. Present only when the helper found a form with a selected text or an amount entry; outside the
+      // fingerprint, and never in run records.
+      ...(formContextOf(element.formContext) !== null ? { formContext: formContextOf(element.formContext) } : {}),
       menuPath: menuPathOf(element.menuPath),
       // CU-187: the label that captions a non-entry element (AXTitleUIElement's title, else its row's or cell's sibling
       // title, as the helper reads it) - never its value or its own title. A string of at most 80 characters, null when
