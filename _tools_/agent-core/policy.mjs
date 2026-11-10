@@ -86,6 +86,8 @@ const WORDS = Object.freeze({
   purchase: ['buy', 'pay', 'order', 'place order', 'checkout', 'check out', 'subscribe', 'donate', 'purchase', 'transfer', 'withdraw', 'wire', 'send money',
     // CU-400 (High; cu-coordinator 04:39Z): a trade, swap, stake or signature moves money and cannot be taken back.
     'confirm transaction', 'sign transaction', 'sign message', 'swap', 'stake', 'trade', 'sell now', 'confirm swap', 'confirm trade', 'confirm sale',
+    // cu-coordinator 04:44Z (cu-verifier's stand-in: 'Bridge' acted unasked): a bridge moves tokens between chains.
+    'bridge', 'bridge tokens', 'confirm bridge',
     // CU-386 (High pending a live row; cu-coordinator 23:42Z): money committed outside a checkout - an irreversible spend
     // (D-063), as whole phrases.
     'place bid', 'bid now', 'make offer', 'make an offer', 'accept offer', 'pledge', 'top up', 'top-up', 'add funds', 'add money',
