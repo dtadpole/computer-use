@@ -101,6 +101,9 @@ const WORDS = Object.freeze({
     // cu-researcher's 13:23Z sweep: unsaved edits lost, like Discard Changes.
     'revert to saved', 'revert all changes', ...ZH_WORDS.delete, ...LOCALE_WORDS.delete],
   permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke',
+    // CU-389 (cu-researcher): access widened without the word share; CU-375: a profile made public.
+    'anyone can edit', 'anyone can view', 'anyone can comment', 'anyone on the web', 'make editor', 'can edit', 'allow guests',
+    'allow anyone to join', 'shared folder', 'make my profile public', 'profile public',
     // CU-386 (cu-coordinator 23:54Z): asking someone else for money.
     'request money',
     // CU-258 (cu-researcher): standing choices an app keeps after the run, as whole phrases. A bare 'Allow' stays free so
@@ -151,7 +154,7 @@ const WORDS = Object.freeze({
 })
 // CU-377 follow-up: the file browsers whose rows are files (the same set as app-policy's FILE_BROWSERS).
 const FILE_BROWSER_APPS = new Set(['com.apple.finder', 'com.cocoatech.PathFinder', 'com.binarynights.ForkLift-3', 'com.binarynights.ForkLift', 'com.eltima.cmd1', 'com.mrrsoftware.marta', 'org.yanex.marta'])
-const ACCOUNT_SECURITY = /\b(?:(?:generate|create|new|add)\s+(?:an?\s+)?app[\s-]?(?:specific[\s-]?)?passwords?|app[\s-]?(?:specific[\s-]?)?passwords?|(?:enable|disable|turn\s+(?:on|off)|set\s+up|add\s+(?:a\s+)?)?\s*(?:auto[\s-]?forward(?:ing)?|automatic(?:ally)?\s+forward(?:ing)?|forwarding(?:\s+address)?|forward\s+(?:a\s+copy|incoming|all|to)\b)|two[\s-]?(?:factor|step)(?:\s+(?:authentication|verification|login))?|2[\s-]?step\s+verification|create\s+(?:a\s+|new\s+)?filter|2fa|multi[\s-]?factor(?:\s+authentication)?|recovery\s+(?:e-?mail|phone|codes?))\b/i
+const ACCOUNT_SECURITY = /\b(?:(?:generate|create|new|add)\s+(?:an?\s+)?app[\s-]?(?:specific[\s-]?)?passwords?|app[\s-]?(?:specific[\s-]?)?passwords?|(?:enable|disable|turn\s+(?:on|off)|set\s+up|add\s+(?:a\s+)?)?\s*(?:auto[\s-]?forward(?:ing)?|automatic(?:ally)?\s+forward(?:ing)?|forwarding(?:\s+address)?|forward\s+(?:a\s+copy|incoming|all|to)\b)|two[\s-]?(?:factor|step)(?:\s+(?:authentication|verification|login))?|2[\s-]?step\s+verification|create\s+(?:a\s+|new\s+)?filter|2fa|multi[\s-]?factor(?:\s+authentication)?|recovery\s+(?:e-?mail|phone|codes?)|imap(?:\s+access)?|enable\s+pop3?|pop3?\s+(?:access|download)|login\s+(?:alerts|notifications)|security\s+alerts|app-passwort|weiterleitung(?:sadresse)?|forward\s+my\s+(?:e-?mail|mail))\b/i
 const PRECEDENCE = ['purchase', 'launch_code', 'delete', 'permission', 'page_dialog', 'credential', 'sensitive_data', 'submit', 'new_site', 'install']
 const POINTER = new Set(['click', 'double_click', 'triple_click'])
 // CU-135 (keyboard-activation.md): a focused button; any control a click activates (Space presses or toggles it); and a
@@ -177,7 +180,9 @@ const PAST_STATE = /已(?:经|經)?(?:发送|發送|傳送|删除|刪除|提交|
 const withoutPastState = (name) => String(name ?? '').replace(PAST_STATE, ' ')
 const namesDelete = (name) => namesWord(withoutPastState(name).replace(/永不(保存|儲存|存储)/g, ''), WORDS.delete)
 const namesPurchase = (name) => namesWord(withoutOrderReferences(withoutPastState(name)), WORDS.purchase) || TRIAL_NAME.test(String(name ?? '').trim())
-const DROP_DELETE = [...WORDS.delete, 'trash', 'bin']
+// CU-385 (cu-researcher): mail and localized trash and spam folders delete or discard what lands there.
+const PROTECTION_NAME = /two[\s-]?(?:factor|step)|2[\s-]?step|\b2fa\b|multi[\s-]?factor|recovery\s+(?:e-?mail|phone|codes?)|login\s+(?:alerts|notifications)|security\s+alerts/i
+const DROP_DELETE = [...WORDS.delete, 'trash', 'bin', 'deleted items', 'papierkorb', '\u5783\u573e\u7bb1', '\u5e9f\u7eb8\u7bd3', 'spam', 'junk', 'junk e-mail', 'junk email']
 const TEXT_ROLE = /^(ax)?(textfield|textarea|searchfield|combobox|textbox|searchbox)$/i
 
 /**
@@ -1053,7 +1058,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // CU-388 (High; cu-coordinator 00:28Z): a choice reached by key is judged like a click on it, CU-373's account-security
       // names included - turning forwarding on, an app password, a bare two-factor or recovery option ask credential; the
       // safe directions by name (protection on, forwarding off) stay free as on a click.
-      const protectionOnByName = /\b(?:turn\s+on|enable|set\s+up|activate)\b/i.test(optionName) && !/forward|app[\s-]?(?:specific[\s-]?)?password/i.test(optionName)
+      const protectionOnByName = /\b(?:turn\s+on|enable|set\s+up|activate)\b/i.test(optionName) && PROTECTION_NAME.test(optionName)
       const forwardingOffByName = /\b(?:disable|turn\s+off|stop|off)\b/i.test(optionName) && /forward/i.test(optionName)
       if (ACCOUNT_SECURITY.test(optionName) && !protectionOnByName && !forwardingOffByName) classes.push('credential')
     }
@@ -1146,10 +1151,13 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // auto-forwarding, two-factor or recovery settings - so a press asks credential, whatever a toggle's direction.
       // Turning two-factor or recovery protection ON by an explicit name stays free (CU-270); a bare toggle, whose direction
       // the driver does not report yet, asks.
-      const protectionOn = /\b(?:turn\s+on|enable|set\s+up|activate)\b/i.test(name) && !/forward|app[\s-]?password/i.test(name)
+      // CU-375: only a protection (two-factor, recovery, login alerts) goes free when turned on by name - 'Enable IMAP' opens access.
+      const protectionOn = /\b(?:turn\s+on|enable|set\s+up|activate)\b/i.test(name) && PROTECTION_NAME.test(name)
       // Turning forwarding OFF is the safe direction (cu-coordinator 21:00Z).
       const forwardingOff = /\b(?:disable|turn\s+off|stop)\b/i.test(name) && /forward/i.test(name)
       if (!focusesEntry && ACCOUNT_SECURITY.test(name) && !protectionOn && !forwardingOff) classes.push('credential')
+      // CU-375: a bare 'Passkeys' TOGGLE (direction unknown) asks; a 'Passkeys' button and 'Sign in with passkey' keep CU-289's rule.
+      if (!focusesEntry && /^passkeys?$/i.test(name.trim()) && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))) classes.push('credential')
       // CU-146: 'Trash' or 'Bin' alone deletes on a control (a toolbar button, a menu item); a sidebar row of that name
       // only opens the folder.
       if (TRASH_ROLE.test(String(target?.role ?? '')) && namesWord(name, CONTROL_DELETE)) classes.push('delete')
