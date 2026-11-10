@@ -30,3 +30,12 @@ test('CU-422: votes, petitions, resignation, offers, applications and enrolment 
 test('CU-422 negatives: lists, settings, Apply filters / changes, bare Apply and I agree (CU-415 named) stay free', () => {
   for (const name of ['Ballot', 'Petitions', 'Jobs', 'Offers', 'Tip settings', 'Apply filters', 'Apply changes', 'Apply', 'I agree', 'Vote history']) assert.equal(click(name), 'allow', name)
 })
+
+test('CU-422 round 2 (15:42Z): article / possessive folds submit; Leave a tip, Tip $<n>, Give $<n> purchase; named forms stay free', () => {
+  for (const name of ['Cast my vote', 'Submit your ballot', 'Decline the offer', 'Accept the offer', 'Accept the job offer', 'Sign this petition']) {
+    assert.equal(click(name), 'submit', name)
+    assert.equal(enter(name), 'submit', `Return: ${name}`)
+  }
+  for (const name of ['Leave a tip', 'Tip $5', 'Give $10']) assert.equal(click(name), 'purchase', name)
+  for (const name of ['Renew passport', 'Apply to job', 'Enroll in course', 'Tip calculator', 'Offer details']) assert.equal(click(name), 'allow', `${name} (named for the grammar)`)
+})

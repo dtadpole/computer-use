@@ -1287,7 +1287,13 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const formTrade = form && typeof form === 'object' && Array.isArray(form.options) && form.options.some((text) => TRADE_ASSET.test(String(text)))
       if (!focusesEntry && /\b(?:sell|convert|deposit)\b/i.test(name) && (/\d|[$\u20ac\u00a3\u00a5\u20bf]/.test(name) || TRADE_ASSET.test(name) || formTrade)) classes.push('purchase')
       // CU-422: a bare 'Give' / 'Give now' pays; a bare 'Vote' (or 'Vote for <x>'), 'Resign' and 'Apply for <noun>' submit.
-      if (!focusesEntry && /^\s*give(?:\s+now)?\s*$/i.test(name)) classes.push('purchase')
+      // cu-coordinator 15:42Z (round 2): money forms 'Leave a tip', 'Tip $<n>', 'Give $<n>'.
+      if (!focusesEntry && (/^\s*give(?:\s+now)?\s*$/i.test(name) || /^\s*leave\s+(?:a\s+)?tip\b/i.test(name)
+        || /^\s*(?:tip|give)\s+(?:[A-Z]{3}\s*)?[$\u20ac\u00a3\u00a5]\s*\d/i.test(name))) classes.push('purchase')
+      // Round 2: an article or possessive between the verb and the object ('Cast my vote', 'Decline the offer').
+      if (!focusesEntry && (/^\s*(?:cast|submit)\s+(?:my|your|the|a|our)\s+(?:vote|ballot)\b/i.test(name)
+        || /^\s*(?:accept|decline)\s+(?:the|this|my|your|an?)\s+(?:job\s+)?offer\b/i.test(name)
+        || /^\s*sign\s+(?:this|a|our)\s+petition\b/i.test(name) || /^\s*quit\s+(?:the|this)\s+job\b/i.test(name))) classes.push('submit')
       if (!focusesEntry && (/^\s*vote(?:\s+now|\s+for\s+\S.*)?\s*$/i.test(name) || /^\s*resign(?:\s+now)?\s*$/i.test(name) || /^\s*apply\s+for\s+(?!(?:a\s+)?refund\s+policy)\S/i.test(name))) classes.push('submit')
       // CU-415 (cu-coordinator 13:12Z): 'Reserve seat / table' asks purchase on the name alone (a booking commits the owner; a
       // free table's over-ask is named); 'Book appointment' asks purchase with a price or deposit in its name, else submit.
