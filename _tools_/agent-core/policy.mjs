@@ -1189,7 +1189,19 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const protectionOn = /\b(?:turn\s+on|enable|set\s+up|activate)\b/i.test(name) && !/forward|app[\s-]?password/i.test(name)
       // Turning forwarding OFF is the safe direction (cu-coordinator 21:00Z).
       const forwardingOff = /\b(?:disable|turn\s+off|stop)\b/i.test(name) && /forward/i.test(name)
-      if (!focusesEntry && ACCOUNT_SECURITY.test(name) && !protectionOn && !forwardingOff) classes.push('credential')
+      // CU-373 refinement (fail closed, cu-researcher 20:56Z): the driver's state before the press decides a toggle's
+      // direction only when the read is native (an input of type checkbox or radio) - an ARIA-sourced, 'mixed' or missing
+      // state asks. A native two-factor/recovery box that is off turns protection ON; a native forwarding box that is on
+      // turns forwarding OFF - both the safe direction, so free.
+      // A native CHECKBOX only - a radio has no on/off direction; its label decides (cu-researcher 21:15Z).
+      const nativeToggle = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
+      const nativeOn = nativeToggle && target.checked === true
+      const nativeOff = nativeToggle && target.checked === false
+      const isForwarding = /forward/i.test(name)
+      // The explicit protection list (CU-270's two-factor and recovery names), never 'every security name but a few'.
+      const isProtection = /two[\s-]?(?:factor|step)|2[\s-]?step|\b2fa\b|multi[\s-]?factor|recovery\s+(?:e-?mail|phone|codes?)/i.test(name)
+      const safeToggle = (isProtection && nativeOff) || (isForwarding && nativeOn)
+      if (!focusesEntry && ACCOUNT_SECURITY.test(name) && !protectionOn && !forwardingOff && !safeToggle) classes.push('credential')
       // CU-401 round 2 (cu-coordinator): a plan word beside a navigation noun ('Downgrade options', 'Cancel plan details')
       // opens a page - free unless another purchase word remains.
       if (/\b(?:downgrade|cancel\s+(?:plan|membership)|end\s+trial)\b[\s\S]*\b(?:options|settings|details|faq|guide|policy|info)\b/i.test(name)
