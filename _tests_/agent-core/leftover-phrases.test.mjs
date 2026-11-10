@@ -21,10 +21,10 @@ test('CU-375 negatives: protection turned on by name and passkey sign-in stay fr
 })
 
 test('CU-389: access-widening labels ask permission', () => {
-  for (const name of ['Anyone can edit', 'Anyone can view', 'Make editor', 'Can edit', 'Allow guests', 'Allow anyone to join', 'Shared folder']) assert.equal(click(name), 'permission', name)
+  for (const name of ['Anyone can edit', 'Anyone can view', 'Make editor', 'Can edit', 'Allow guests', 'Allow anyone to join', 'Shared folder', 'Make owner']) assert.equal(click(name), 'permission', name)
 })
 
 test('CU-385: a drop on Deleted Items, Papierkorb, a Chinese trash, Junk or Spam asks delete; Archive stays free', () => {
-  for (const name of ['Deleted Items', 'Papierkorb', '\u5783\u573e\u7bb1', 'Junk E-mail', 'Spam']) assert.equal(drop(name), 'delete', name)
+  for (const name of ['Deleted Items', 'Papierkorb', '\u5783\u573e\u7bb1', 'Junk E-mail', 'Spam', 'Corbeille', 'Papelera', 'Cestino', 'Prullenbak', 'Lixeira', '\u041a\u043e\u0440\u0437\u0438\u043d\u0430', '\u30b4\u30df\u7bb1', '\ud734\uc9c0\ud1b5']) assert.equal(drop(name), 'delete', name)
   assert.equal(drop('Archive'), 'allow')
 })

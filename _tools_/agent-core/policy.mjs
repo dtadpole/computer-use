@@ -103,7 +103,7 @@ const WORDS = Object.freeze({
   permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke',
     // CU-389 (cu-researcher): access widened without the word share; CU-375: a profile made public.
     'anyone can edit', 'anyone can view', 'anyone can comment', 'anyone on the web', 'make editor', 'can edit', 'allow guests',
-    'allow anyone to join', 'shared folder', 'make my profile public', 'profile public',
+    'allow anyone to join', 'shared folder', 'make my profile public', 'profile public', 'make owner',
     // CU-386 (cu-coordinator 23:54Z): asking someone else for money.
     'request money',
     // CU-258 (cu-researcher): standing choices an app keeps after the run, as whole phrases. A bare 'Allow' stays free so
@@ -182,7 +182,9 @@ const namesDelete = (name) => namesWord(withoutPastState(name).replace(/永不(�
 const namesPurchase = (name) => namesWord(withoutOrderReferences(withoutPastState(name)), WORDS.purchase) || TRIAL_NAME.test(String(name ?? '').trim())
 // CU-385 (cu-researcher): mail and localized trash and spam folders delete or discard what lands there.
 const PROTECTION_NAME = /two[\s-]?(?:factor|step)|2[\s-]?step|\b2fa\b|multi[\s-]?factor|recovery\s+(?:e-?mail|phone|codes?)|login\s+(?:alerts|notifications)|security\s+alerts/i
-const DROP_DELETE = [...WORDS.delete, 'trash', 'bin', 'deleted items', 'papierkorb', '\u5783\u573e\u7bb1', '\u5e9f\u7eb8\u7bd3', 'spam', 'junk', 'junk e-mail', 'junk email']
+const DROP_DELETE = [...WORDS.delete, 'trash', 'bin', 'deleted items', 'papierkorb', '\u5783\u573e\u7bb1', '\u5e9f\u7eb8\u7bd3', 'spam', 'junk', 'junk e-mail', 'junk email',
+  // D-099 per side (cu-coordinator 02:27Z): the trash folders of LOCALE_WORDS' own languages.
+  'corbeille', 'papelera', 'cestino', 'prullenbak', 'lixeira', 'papierkorb', '\u043a\u043e\u0440\u0437\u0438\u043d\u0430', '\u30b4\u30df\u7bb1', '\ud734\uc9c0\ud1b5']
 const TEXT_ROLE = /^(ax)?(textfield|textarea|searchfield|combobox|textbox|searchbox)$/i
 
 /**
