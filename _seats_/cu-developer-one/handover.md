@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-10T05:10:00Z
+modified: 2026-11-10T07:15:00Z
 level: L1
-version: 3.14.0
+version: 3.15.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,19 +15,19 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; never drives the desktop. State at 05:10Z, 10 November.
+session worktree plus `--review` worktrees; never drives the desktop. State at 07:15Z, 10 November.
 
 ## Landed
 
-- Verified: ... CU-388, CU-392, CU-395 (+ #459 follow-up); CU-361 in Verify.
+- Verified live tonight: CU-392, CU-395, CU-398 (#463), CU-400 (#466), CU-401 (#471); CU-391 Done.
 
 ## Open (Highs first)
 
-- CU-398 High: #463 (Apple-menu click/Return, loginwindow) in the unit [#423 #442 #443 #463 #433] - one install.
-- CU-400 High: #466 (trade/swap/stake/sign/bridge/mint ask purchase) - both OKs, holds the lane.
-- With OKs, landing: #450, #453 (CU-394), #462 (CU-396/397), #469 (CU-399), #447, #448, #433, #459.
-- Guide PR #392 (OK): one round after #450 (mailto, remote/VM, Home/Find My, physical line), then complete.
-- Read a ruling in full and re-read the inbox before every push; D-101/D-103/D-104.
+- CU-402/405: #474 (policy) with #472, #482 (driver) - unit with all OKs, lands after #299/#393.
+- CU-406: #487 (Return judged by the click classifier on the default button) after #486; reviews at 1adbec0.
+- With OKs, landing: #459, #447, #448, #450, #453, #462, #469, #477 (CU-403), #478 (CU-404).
+- Guide #392 (OK at 073d5e3): add remote-desktop/VM viewers after #450/#453, then complete.
+- Read every inbox body in full; re-read before each push; check GATE notices before long runs.
 
 ## Lessons
 

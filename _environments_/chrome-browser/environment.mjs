@@ -9,7 +9,7 @@ import { clipboardOp, executeAction, NAVIGATION_TIMEOUT_MS, navigateHistory, sen
 import { planHumanInput } from './human-input.mjs'
 import { processCommandLine, sandboxProblem, SEAT_PATTERN, startChrome } from './launch.mjs'
 import { normalizeKey } from './keys.mjs'
-import { accessKeyElement, accessKeyOf, activatableAncestor, autofilledFields, clickLabel, closedRootHoldsEntry, collectPageText, deepActiveElement, describeElement, DRAG_TEXT_MAX, dragTextAt, FRAME_FOCUS_EXPRESSION, implicitSubmitButton, keyChoice, selectKeyOption, selectTypeOptions, pageExpression, selectionContainer, textEntered, TWO_FRAMES_EXPRESSION } from './page-scripts.mjs'
+import { accessKeyElement, accessKeyOf, activatableAncestor, autofilledFields, clickLabel, closedRootHoldsEntry, collectPageText, deepActiveElement, describeElement, DRAG_TEXT_MAX, dragTextAt, FRAME_FOCUS_EXPRESSION, frameLabel, frameLabelFromAttributes, implicitSubmitButton, keyChoice, pageExpression, selectionContainer, selectKeyOption, selectTypeOptions, textEntered, TWO_FRAMES_EXPRESSION } from './page-scripts.mjs'
 
 /** CU-300: how long focusedElement may spend reading the focus inside a cross-site frame before it keeps the iframe. */
 export const FRAME_FOCUS_MS = 2000
@@ -162,6 +162,14 @@ export async function launchBrowserEnvironment(options = {}) {
     release()
     throw error
   }
+}
+
+/** CU-400: describeElement's formContext, re-validated at the boundary - else null. */
+export function formContextOf(value) {
+  if (value === null || typeof value !== 'object') return null
+  const options = Array.isArray(value.options) ? value.options.filter((text) => typeof text === 'string' && text !== '' && text.length <= 24).slice(0, 3) : []
+  const amountEntry = value.amountEntry === true
+  return options.length > 0 || amountEntry ? { options, amountEntry } : null
 }
 
 class BrowserEnvironment {
@@ -497,7 +505,30 @@ class BrowserEnvironment {
     } catch {
       // Unread: role and name stay null.
     }
+    // CU-336: an unread host name falls back to the words the page gives the frame element (labelledby, aria-label, title).
+    if (name === null || name === '') name = (await this.#frameLabel(page, node)) ?? name
     return { tag: String(node?.nodeName ?? '').toLowerCase(), role, name }
+  }
+
+  /**
+   * CU-336: the words the page gives an <iframe>/<frame> element whose accessibility name is unread or empty -
+   * aria-labelledby's text, aria-label, then title (page-scripts frameLabel; never the name attribute, an id), read in
+   * the isolated world; when the node does not resolve there, the same order from its describeNode attributes without
+   * aria-labelledby. Null when the element carries none, so the policy's unnamed-frame rule still judges it.
+   */
+  async #frameLabel(page, node, frameId = page.mainFrameId) {
+    const tag = String(node?.nodeName ?? '').toUpperCase()
+    if (tag !== 'IFRAME' && tag !== 'FRAME') return null
+    try {
+      const world = await this.session.isolatedContext(page, frameId ?? page.mainFrameId)
+      const objectId = (await this.session.send(page, 'DOM.resolveNode', { backendNodeId: node.backendNodeId, executionContextId: world })).result.object.objectId
+      const value = (await this.session.send(page, 'Runtime.callFunctionOn', {
+        objectId, functionDeclaration: `function () { return (${frameLabel.toString()})(this) }`, returnByValue: true,
+      })).result.result.value
+      return typeof value === 'string' && value !== '' ? value : null
+    } catch {
+      return frameLabelFromAttributes(node?.attributes ?? [])
+    }
   }
 
   /**
@@ -758,7 +789,8 @@ class BrowserEnvironment {
    * judges a Return in a checkout's Quantity box by 'Place order' (CU-142's rule) with no policy change. Found in an
    * isolated world, where the page's own scripts cannot redefine the DOM, and described like any target. Null when
    * there is none, and on any failure (a frame this world cannot reach): the Return is then judged by the field's own
-   * name, as before. Context, not identity: it stays out of the fingerprint.
+   * name, as before. Context, not identity: it stays out of the fingerprint. CU-406: the button's formContext rides
+   * along when it has one.
    */
   async #implicitSubmit(page, backendNodeId) {
     try {
@@ -770,7 +802,9 @@ class BrowserEnvironment {
       if (found?.objectId === undefined) return { button: null, read: true }
       const button = (await this.session.send(page, 'DOM.describeNode', { objectId: found.objectId })).result.node
       const described = await this.#describe(page, button.backendNodeId, undefined, { scanText: false })
-      return { button: described === null ? null : { role: described.role, name: described.name, panel: null }, read: true }
+      // CU-406: the Return target carries the same bounded formContext a click on that button would (CU-402/CU-405), so a
+      // Return in a trade form's amount field is judged with the form's asset beside a bare 'Sell' default.
+      return { button: described === null ? null : { role: described.role, name: described.name, panel: null, ...(described.formContext ? { formContext: described.formContext } : {}) }, read: true }
     } catch {
       return { button: null, read: false }
     }
@@ -816,6 +850,8 @@ class BrowserEnvironment {
     } catch {
       // A node without an accessibility object keeps role and name null.
     }
+    // CU-336: a frame element the accessibility tree leaves unnamed (or unread) takes the words the page gives it.
+    if ((name === null || name === '') && (tagName === 'iframe' || tagName === 'frame')) name = (await this.#frameLabel(page, node, frameId)) ?? name
     // CU-175: a click target the accessibility tree leaves unnamed takes the words it shows (see clickLabel).
     if ((name === null || name === '') && typeof fallbackName === 'string' && fallbackName !== '') name = fallbackName
     let extra = {}
@@ -886,6 +922,13 @@ class BrowserEnvironment {
       // CU-300: the frame document's origin and path, inside a frame only; outside the fingerprint, never recorded.
       ...(typeof extra.frameUrl === 'string' && extra.frameUrl !== '' ? { frameUrl: extra.frameUrl } : {}),
       editable: extra.editable ?? null,
+      // CU-373: a toggle's state before the action (checked: true, false or 'mixed'; pressed for a toggle button) -
+      // state, not identity, so outside the fingerprint; absent when the element has none.
+      ...(extra.checked !== undefined ? { checked: extra.checked } : {}),
+      ...(extra.pressed !== undefined ? { pressed: extra.pressed } : {}),
+      // CU-400: the choices beside a form's submit button (describeElement's formContext) - up to 3 short option texts
+      // and whether an amount entry is present. Context, outside the fingerprint; run records keep origin, role, name.
+      ...(formContextOf(extra.formContext) ? { formContext: formContextOf(extra.formContext) } : {}),
       // CU-157: context, not identity - outside the fingerprint.
       textEntered: entered,
       // CU-187: the label that captions a non-entry element (see describeElement); CU-194 rule 5: an entry's structural
