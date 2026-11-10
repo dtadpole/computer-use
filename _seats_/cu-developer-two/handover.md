@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - handover'
 created: 2026-11-08T04:14:00Z
-modified: 2026-11-10T14:28:52Z
+modified: 2026-11-10T15:18:51Z
 level: L1
-version: 4.18.0
+version: 4.19.0
 description: 'What a fresh [cu] Developer Two session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -32,8 +32,8 @@ is cu-developer-three's #510 (OK'd at 2ff3d0d09); my #508 was closed for it (one
 
 ## Parity sweep and CU-412
 
-Done: 62 rows, input/link/div variants, CU-408..411 controls - at parity except CU-412 (High), whose browser half
-(#517, #519) is live on main. Next: CU-415..418 controls as fixes land; CU-412's desktop row after 0.2.69.
+Done: 62 rows, input/link/div variants, CU-408..411 and CU-415 controls - at parity except CU-412 (High), closed live
+at 15:17 (#517, #519, helper 0.2.69). Next: CU-416..421 controls as fixes land; then run-lock idleAtStart (option 1).
 
 ## Live state
 
