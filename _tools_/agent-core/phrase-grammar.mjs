@@ -57,7 +57,9 @@ const VERBS = new Map(Object.entries({
   pay: ['pay'], buy: ['pay'], purchase: ['pay'], order: ['pay'], book: ['pay'], reserve: ['pay'], rent: ['pay'], redeem: ['pay'],
   refund: ['pay'], reimburse: ['pay'], release: ['pay', 'share'], send: ['pay', 'send'], transfer: ['pay', 'grant'], withdraw: ['pay'],
   tip: ['pay'], give: ['pay'], donate: ['pay'], pledge: ['pay'], renew: ['pay'], run: ['pay', 'exec'], process: ['pay'], issue: ['pay'],
-  raise: ['pay'], increase: ['pay'], approve: ['pay', 'send'], confirm: ['pay', 'send'], complete: ['pay'], enable: ['enable', 'grant'],
+  raise: ['pay'], increase: ['pay'], approve: ['pay', 'send'], confirm: ['pay', 'send'], complete: ['pay'], enable: ['enable', 'grant', 'pay'],
+  // CU-436 (High; cu-coordinator 19:06Z): activating a paid account and committing to a term start cloud spending.
+  activate: ['pay'], commit: ['pay'],
   add: ['pay', 'grant', 'cred'], swap: ['pay'], trade: ['pay'], stake: ['pay'], bid: ['pay'], rebid: ['pay'],
   subscribe: ['pay'], upgrade: ['pay'], checkout: ['pay'], charge: ['pay'], grant: ['grant'], make: ['grant', 'pay'], invite: ['grant'],
   assign: ['grant'], promote: ['grant', 'pay'], share: ['share'], admit: ['grant'], let: ['grant', 'phys_on'], allow: ['grant'],
@@ -104,7 +106,9 @@ const OBJECTS = {
     // CU-434: a paid ride, delivery or rental.
     'ride', 'delivery', 'scooter', 'bike', 'ebike', 'moped',
     // cu-coordinator 18:55Z: lodging (reserve x lodging).
-    'cabin', 'lodge', 'villa', 'campsite', 'suite', 'apartment']),
+    'cabin', 'lodge', 'villa', 'campsite', 'suite', 'apartment',
+    // CU-436: cloud billing objects.
+    'billing', 'quota', 'gpu', 'tpu', 'commitment', 'paid']),
   access: new Set(['organization', 'team', 'workspace', 'server', 'people', 'account', 'owner', 'coowner', 'co', 'admin', 'host',
     'cohost', 'collaborator', 'member', 'access', 'guest', 'visitor', 'device', 'public', 'ownership', 'payee', 'recipient',
     'beneficiary', 'everyone',
@@ -329,6 +333,10 @@ export function grammarClasses(name, role = '') {
     else if (rest.includes('now') && classes.has('pay') && verb !== 'set up') pushOnce(out, 'purchase')
   }
   if (verb === 'sign' && rest.some((t) => t === 'message' || t === 'transaction')) pushOnce(out, 'purchase')
+  // CU-436: activating a full or paid account; committing to <n> year(s) / month(s); lifting a spending cap or limit.
+  if (verb === 'activate' && rest.includes('account') && rest.some((t) => t === 'full' || t === 'paid' || t === 'billing')) pushOnce(out, 'purchase')
+  if (verb === 'commit' && rest.some((t) => t === 'year' || t === 'month' || t === 'term')) pushOnce(out, 'purchase')
+  if (['turn off', 'remove', 'disable', 'lift', 'raise', 'increase'].includes(verb) && rest.includes('spending') && rest.some((t) => t === 'cap' || t === 'limit')) pushOnce(out, 'purchase')
   // CU-434: 'Order again' reorders; cancelling a ride may charge a fee (submit).
   if (verb === 'order' && rest.length === 1 && rest[0] === 'again') pushOnce(out, 'purchase')
   if (verb === 'cancel' && rest.some((t) => t === 'ride' || t === 'delivery')) pushOnce(out, 'submit')
