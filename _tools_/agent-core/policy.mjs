@@ -11,8 +11,8 @@ import { originPattern } from './sites.mjs'
  * or the page; `purchase`, `delete` and `permission` always confirm at action time.
  */
 
-export const CLASSES = Object.freeze(['submit', 'purchase', 'delete', 'permission', 'credential', 'sensitive_data', 'new_site', 'page_dialog', 'install', 'file_choice', 'launch_code'])
-export const NEVER_PRE_APPROVED = Object.freeze(['purchase', 'delete', 'permission', 'file_choice', 'launch_code'])
+export const CLASSES = Object.freeze(['submit', 'purchase', 'delete', 'permission', 'credential', 'sensitive_data', 'new_site', 'page_dialog', 'install', 'file_choice', 'launch_code', 'physical'])
+export const NEVER_PRE_APPROVED = Object.freeze(['purchase', 'delete', 'permission', 'file_choice', 'launch_code', 'physical'])
 
 /** Word lists matched on a target's accessible name, case-insensitively, at word boundaries; they err toward confirm. */
 // CU-293 (cu-developer-one; cu-coordinator: Urgent - the owner works in Chinese): each name class in Simplified and
@@ -84,6 +84,12 @@ const LOCALE_ID_NAMES = Object.freeze(['reisepass', '…passnummer', 'geburtsdat
   '여권', '여권번호', '생년월일', '주민등록번호', '계좌번호', '사업자등록번호'])
 const WORDS = Object.freeze({
   purchase: ['buy', 'pay', 'order', 'place order', 'checkout', 'check out', 'subscribe', 'donate', 'purchase', 'transfer', 'withdraw', 'wire', 'send money',
+    // CU-400 (High; cu-coordinator 04:39Z): a trade, swap, stake or signature moves money and cannot be taken back.
+    'confirm transaction', 'sign transaction', 'sign message', 'swap', 'stake', 'trade', 'sell now', 'confirm swap', 'confirm trade', 'confirm sale',
+    // cu-coordinator 04:44Z (cu-verifier's stand-in: 'Bridge' acted unasked): a bridge moves tokens between chains.
+    'bridge', 'bridge tokens', 'confirm bridge',
+    // cu-coordinator 04:50Z: minting and unstaking, selling all, converting now.
+    'mint', 'mint nft', 'confirm mint', 'unstake', 'sell all', 'convert now',
     // CU-386 (High pending a live row; cu-coordinator 23:42Z): money committed outside a checkout - an irreversible spend
     // (D-063), as whole phrases.
     'place bid', 'bid now', 'make offer', 'make an offer', 'accept offer', 'pledge', 'top up', 'top-up', 'add funds', 'add money',
@@ -153,7 +159,18 @@ const WORDS = Object.freeze({
 const FILE_BROWSER_APPS = new Set(['com.apple.finder', 'com.cocoatech.PathFinder', 'com.binarynights.ForkLift-3', 'com.binarynights.ForkLift', 'com.eltima.cmd1', 'com.mrrsoftware.marta', 'org.yanex.marta'])
 const SHARE_DESTINATION = /\b(?:airdrop|shared(?:\s+(?:folder|with\s+me|with\s+you))?|drop\s+box|dropbox|public\s+folder|server|network|(?:smb|afp|nfs|webdav):)/i
 const ACCOUNT_SECURITY = /\b(?:(?:generate|create|new|add)\s+(?:an?\s+)?app[\s-]?(?:specific[\s-]?)?passwords?|app[\s-]?(?:specific[\s-]?)?passwords?|(?:enable|disable|turn\s+(?:on|off)|set\s+up|add\s+(?:a\s+)?)?\s*(?:auto[\s-]?forward(?:ing)?|automatic(?:ally)?\s+forward(?:ing)?|forwarding(?:\s+address)?|forward\s+(?:a\s+copy|incoming|all|to)\b)|two[\s-]?(?:factor|step)(?:\s+(?:authentication|verification|login))?|2[\s-]?step\s+verification|create\s+(?:a\s+|new\s+)?filter|2fa|multi[\s-]?factor(?:\s+authentication)?|recovery\s+(?:e-?mail|phone|codes?))\b/i
-const PRECEDENCE = ['purchase', 'launch_code', 'delete', 'permission', 'page_dialog', 'credential', 'sensitive_data', 'submit', 'new_site', 'install']
+// CU-395 (High; cu-coordinator 03:01Z): 'physical' - a control that acts in the physical world (a lock, a garage door, an
+// alarm, a lost device) - leads every class, is never pre-approved and asks each time.
+// cu-coordinator 03:14Z: 'unlock' only beside a physical noun - paywalls ('Unlock Premium', 'Unlock all features') stay free.
+const PHYSICAL_NOUN = '(?:door|doors|lock|locks|deadbolt|gate|garage|front|back|side|car|vehicle|trunk)'
+const UNLOCK_PHYSICAL = new RegExp(`\\bunlock\\b.*\\b${PHYSICAL_NOUN}\\b|\\b${PHYSICAL_NOUN}\\b.*\\bunlock\\b`, 'i')
+const TRADE_ASSET = /\b(?:btc|eth|usd|eur|gbp|jpy|usdt|usdc|dai|sol|xrp|ada|doge|bnb|bitcoin|ethereum|crypto|coins?|tokens?|shares?|stocks?)\b/i
+const TRADE_WORDS = /\b(?:trade|trading|swap|swaps|stake|staking|unstake|sell|selling|bridge|mint|minting)\b/gi
+const TRADE_NAV = /\b(?:trade|trading|swap|swaps|stake|staking|unstake|sell|selling|bridge|mint|minting)\b[\s\S]*\b(?:history|settings|faq|guide|policy|fees|rates|limits)\b/i
+const PRECEDENCE = ['physical', 'purchase', 'launch_code', 'delete', 'permission', 'page_dialog', 'credential', 'sensitive_data', 'submit', 'new_site', 'install']
+const PHYSICAL = ['unlatch', 'disarm', 'disarm security system', 'disarm alarm',
+  'turn off alarm', 'open garage', 'open garage door', 'open gate', 'open the gate', 'mark as lost', 'erase device',
+  'erase this device', 'lock mode']
 const POINTER = new Set(['click', 'double_click', 'triple_click'])
 // CU-135 (keyboard-activation.md): a focused button; any control a click activates (Space presses or toggles it); and a
 // text input, as the environments name their roles.
@@ -1167,6 +1184,16 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // Turning forwarding OFF is the safe direction (cu-coordinator 21:00Z).
       const forwardingOff = /\b(?:disable|turn\s+off|stop)\b/i.test(name) && /forward/i.test(name)
       if (!focusesEntry && ACCOUNT_SECURITY.test(name) && !protectionOn && !forwardingOff) classes.push('credential')
+      // CU-400: 'Sell', 'Convert' or 'Deposit' beside an asset or an amount (Sell BTC, Convert 0.5 ETH, Deposit USD) is a
+      // trade; a marketplace 'Sell' and a file 'Convert' stay free (named).
+      if (!focusesEntry && /\b(?:sell|convert|deposit)\b/i.test(name) && (/\d|[$\u20ac\u00a3\u00a5\u20bf]/.test(name) || TRADE_ASSET.test(name))) classes.push('purchase')
+      // cu-coordinator 04:50Z: a trading word beside a navigation noun ('Trade history', 'Swap settings', 'Staking FAQ') opens
+      // a page - free, unless another purchase word is in the name.
+      if (TRADE_NAV.test(name) && !namesPurchase(name.replace(TRADE_WORDS, ' '))) {
+        for (let i = classes.length - 1; i >= 0; i -= 1) if (classes[i] === 'purchase') classes.splice(i, 1)
+      }
+      // A bare 'Garage Door' tile toggles either way (exact name); 'Close Garage Door' stays free.
+      if (!focusesEntry && (namesWord(name, PHYSICAL) || UNLOCK_PHYSICAL.test(name) || /^garage\s+door$/i.test(name.trim()))) classes.push('physical')
       // CU-146: 'Trash' or 'Bin' alone deletes on a control (a toolbar button, a menu item); a sidebar row of that name
       // only opens the folder.
       if (TRASH_ROLE.test(String(target?.role ?? '')) && namesWord(name, CONTROL_DELETE)) classes.push('delete')
@@ -1450,7 +1477,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       return { ...also, decision: 'confirm', class: cls, classes: stack(needed), rule: `autofill:${cls}`, reason: `submit a form the browser filled from your saved ${autofillCard ? 'card' : cls === 'credential' ? 'login' : 'details'} on ${originPattern(url)}` }
     }
     // `class` is the one that ranks first; `classes` lists every class that applied, for the evaluator's records.
-    return { ...also, decision: 'confirm', class: cls, classes: stack(needed), rule: `class:${cls}`, reason: `${describe(cls, action, target, url, context?.frontmostBundleId)}${shortcutActive ? `; the same keys may also trigger a keyboard shortcut of the ${onDesktop ? 'app' : 'page'}` : ''}` }
+    return { ...also, ...(cls === 'physical' ? { askEachTime: true } : {}), decision: 'confirm', class: cls, classes: stack(needed), rule: `class:${cls}`, reason: `${describe(cls, action, target, url, context?.frontmostBundleId)}${shortcutActive ? `; the same keys may also trigger a keyboard shortcut of the ${onDesktop ? 'app' : 'page'}` : ''}` }
   }
 
   return { classify, preApprovals: granted }

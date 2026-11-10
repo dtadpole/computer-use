@@ -379,6 +379,26 @@ export class BrowserSession extends EventEmitter {
       if (message?.sessionId === page.sessionId) handler(params ?? {})
     })
     on('Page.frameAttached', ({ frameId }) => page.frames.add(frameId))
+    // CU-360: a navigation to a scheme Chrome hands to another app (shortcuts:, zoommtg:, ...) never reaches Fetch and
+    // needs no action of the run - a page script can start it. Chrome reports the request first (measured: reason
+    // scriptInitiated, then 'Failed to launch ...' for a scheme with no handler); it becomes a notice, the scheme only.
+    // Then a best-effort stop: Page.stopLoading at once (`stop`: sent, then sent_ok - Chrome took the command - or failed; `launched` stays 'unknown'). Chrome opens
+    // mailto: (only mailto:) through the OS with no prompt (cu-researcher's reading of external_protocol_handler.cc)
+    // after an asynchronous handler lookup, so the stop may or may not win that race; it is not measured against a real
+    // launch (no app may be opened here), which is why the notice says what was tried, not that the launch was stopped.
+    on('Page.frameRequestedNavigation', ({ url, reason }) => {
+      let scheme
+      try {
+        scheme = new URL(String(url)).protocol
+      } catch {
+        return
+      }
+      if (['http:', 'https:', 'about:', 'data:', 'blob:', 'javascript:', 'chrome-error:'].includes(scheme)) return
+      const notice = { kind: 'external_navigation_requested', url: scheme, reason: typeof reason === 'string' ? reason : null, at: Date.now(), stop: 'sent', launched: 'unknown' }
+      this.notices.push(notice)
+      this.emit('notice', notice)
+      void this.send(page, 'Page.stopLoading').then(() => { notice.stop = 'sent_ok' }, () => { notice.stop = 'failed' })
+    })
     on('Page.frameDetached', ({ frameId }) => {
       page.frames.delete(frameId)
       page.worlds.delete(frameId)
