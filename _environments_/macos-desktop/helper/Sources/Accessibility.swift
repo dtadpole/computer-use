@@ -419,6 +419,7 @@ enum Accessibility {
   static func menuContext(of item: AXUIElement, title: String?) -> MenuContext {
     var levels: [MenuContext.Level] = []
     var unread = false
+    var underApple = false
     func parent(_ element: AXUIElement) -> AXUIElement? {
       let (outcome, value) = elementRead(element, "AXParent")
       if outcome == .failed { unread = true }
@@ -431,11 +432,15 @@ enum Accessibility {
       let holds = holderRole == "AXMenuItem" || holderRole == "AXMenuBarItem"
       let childTitles = children(menu).prefix(60).compactMap { string($0, "AXTitle") }
       levels.append(MenuContext.Level(holderTitle: holds ? holder.flatMap { string($0, "AXTitle") } ?? "" : nil, childTitles: childTitles))
+      // CU-398: the walk's top is a menu bar item - the Apple menu when it is the menu bar's first child (the menu-key
+      // walk's rule). Attributes only: the bar and its first child.
+      if holderRole == "AXMenuBarItem", let holder, let bar = parent(holder), string(bar, "AXRole") == "AXMenuBar",
+         let first = children(bar).first { underApple = CFEqual(first, holder) }
       guard holds, holderRole == "AXMenuItem", let holder else { break }
       node = parent(holder)
     }
     let inFinder = pid(item).flatMap { bundleId(pid: $0) } == QuickActionsMenu.finderBundleId
-    return MenuContext.of(itemTitle: title, levels: levels, inFinder: inFinder, unread: unread)
+    return MenuContext.of(itemTitle: title, levels: levels, inFinder: inFinder, unread: unread, underAppleMenu: underApple)
   }
 
   /// CU-387: an element's own AXFilename/AXURL, else - for a row's content (FileAncestor.lendingRoles) - the nearest

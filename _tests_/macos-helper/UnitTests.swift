@@ -2148,6 +2148,17 @@ func testFileAncestorAndDropDestination() {
   check(table.of(" AirDrop ") == "airdrop" && table.of("") == nil && table.of(nil) == nil, "trimmed; empty is none")
 }
 
+func testAppleMenuClickTarget() {
+  // CU-398: a clicked item under the menu bar's first item carries appleMenu - structure, never titles.
+  let levels = [MenuContext.Level(holderTitle: "Apple", childTitles: ["About This Mac", "Restart…", "Shut Down…"])]
+  let apple = MenuContext.of(itemTitle: "Restart…", levels: levels, underAppleMenu: true)
+  check(apple.appleMenu && apple.json["appleMenu"] == .bool(true), "an Apple-menu item is marked")
+  let app = MenuContext.of(itemTitle: "Restart…", levels: [MenuContext.Level(holderTitle: "Game", childTitles: ["Restart…"])])
+  check(!app.appleMenu && app.json["appleMenu"] == nil, "an app's own 'Restart…' is not - no title matching")
+  let nested = MenuContext.of(itemTitle: "notes.txt", levels: [MenuContext.Level(holderTitle: "Recent Items", childTitles: ["notes.txt"]), MenuContext.Level(holderTitle: "Apple", childTitles: ["Recent Items"])], underAppleMenu: true)
+  check(nested.appleMenu && nested.path == ["Apple", "Recent Items", "notes.txt"], "a nested Apple-menu item keeps its path and the mark")
+}
+
 @main
 struct UnitTests {
   static func main() {
@@ -2196,6 +2207,7 @@ struct UnitTests {
     testMenuTracking()
     testQuickActions()
     testFileAncestorAndDropDestination()
+    testAppleMenuClickTarget()
     testEndWatchdog()
     // Informational: whether the process that ran these tests is genuine node (true for Node.js Foundation builds).
     let parentIsNode = PeerCheck.satisfiesNodeRequirement(pid: getppid(), token: nil)

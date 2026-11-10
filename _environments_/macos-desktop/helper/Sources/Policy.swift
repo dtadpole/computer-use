@@ -1198,6 +1198,9 @@ struct MenuContext: Equatable {
   var quickActions: Bool = false
   /// CU-382: a read on the walk up failed, so the path may stop short of a Services or Quick Actions level - policy asks.
   var unread: Bool = false
+  /// CU-398: the item sits under the menu bar's first item, the Apple menu (Restart..., Shut Down..., Log Out...) - the
+  /// same structural rule as the menu-key walk's appleMenu, so no title is matched and a localised menu is covered.
+  var appleMenu: Bool = false
 
   static let maxDepth = 10
 
@@ -1209,12 +1212,12 @@ struct MenuContext: Equatable {
   }
 
   static func of(itemTitle: String?, levels: [Level], services: ServicesMenu = .current, quick: QuickActionsMenu = .current,
-                 inFinder: Bool = false, unread: Bool = false) -> MenuContext {
+                 inFinder: Bool = false, unread: Bool = false, underAppleMenu: Bool = false) -> MenuContext {
     let capped = Array(levels.prefix(maxDepth))
     let holders = capped.compactMap { $0.holderTitle }
     let flagged = capped.contains { level in level.holderTitle != nil && services.isServices(itemTitle: level.holderTitle, childTitles: level.childTitles) }
     let quickLevel = capped.contains { level in level.holderTitle != nil && quick.isQuickActions(itemTitle: level.holderTitle, childTitles: level.childTitles, inFinder: inFinder) }
-    return MenuContext(path: holders.reversed() + [itemTitle ?? ""], servicesMenu: flagged, quickActions: quickLevel && !quick.isExempt(itemTitle), unread: unread)
+    return MenuContext(path: holders.reversed() + [itemTitle ?? ""], servicesMenu: flagged, quickActions: quickLevel && !quick.isExempt(itemTitle), unread: unread, appleMenu: underAppleMenu)
   }
 
   var json: [String: JSON] {
@@ -1222,6 +1225,7 @@ struct MenuContext: Equatable {
     if servicesMenu { object["servicesMenu"] = .bool(true) }
     if quickActions { object["quickActions"] = .bool(true) }
     if unread { object["menuContextUnread"] = .bool(true) }
+    if appleMenu { object["appleMenu"] = .bool(true) }
     return object
   }
 }

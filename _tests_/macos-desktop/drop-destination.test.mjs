@@ -39,3 +39,9 @@ test('CU-387: a row text carrying its row\'s file (shape 1) reaches the target a
   const text = await hit({ ...TILE, role: 'AXStaticText', title: null, filename: 'install.command', url: 'file:///tmp/cu-fixture-sandbox/install.command', fileFrom: 'ancestor' })
   assert.deepEqual([text.role, text.filename, text.url], ['AXStaticText', 'install.command', 'install.command'])
 })
+
+test('CU-398: an Apple-menu item carries appleMenu true; any other value carries none', async () => {
+  const item = { ...TILE, role: 'AXMenuItem', title: 'Restart…' }
+  assert.equal((await hit({ ...item, appleMenu: true })).appleMenu, true)
+  for (const value of [false, 'true', 1, null]) assert.equal((await hit({ ...item, appleMenu: value })).appleMenu, undefined, String(value))
+})
