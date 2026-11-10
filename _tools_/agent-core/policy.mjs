@@ -88,6 +88,13 @@ const WORDS = Object.freeze({
     'book flight', 'book a flight', 'book hotel', 'book room', 'book a room', 'confirm booking', 'complete booking',
     // cu-coordinator 13:19Z (round 3).
     'book tickets', 'book car', 'book a car', 'book trip', 'book a trip', 'confirm reservation',
+    // CU-416 (High; cu-coordinator 13:32Z): admin consoles move other people's money.
+    'run payroll', 'release payment', 'send payment', 'approve payment run', 'process refund', 'issue card', 'issue a card',
+    'issue new card', 'raise credit limit', 'increase credit limit',
+    // cu-coordinator 13:43Z: plurals and synonyms.
+    'release payments', 'process refunds', 'run payrolls', 'process payroll', 'refund customer', 'raise limit', 'increase limit',
+    'increase spending limit', 'raise spending limit', 'issue virtual card', 'reimburse', 'send payments', 'approve payment',
+    'approve payments',
     // CU-417 (High; cu-coordinator 14:03Z): launching or creating cloud resources spends money.
     'launch instance', 'launch an instance', 'create instance', 'create an instance', 'create cluster', 'create a cluster',
     // cu-coordinator 14:34Z (round 3): plurals and synonyms.
@@ -126,6 +133,8 @@ const WORDS = Object.freeze({
     // CU-415: cancelling a booking is often fee-bearing and not undoable.
     'cancel reservation', 'cancel booking', 'cancel my booking', 'cancel my reservation',
     'cancel trip', 'cancel my trip', 'cancel appointment', 'cancel my appointment',
+    // CU-416: ending someone's employment or access.
+    'terminate employee', 'offboard user', 'offboard employee', 'offboard',
     // CU-417: dropping or terminating data and infrastructure; 'Force push' (CU-403's #477, carried so CU-417 closes alone).
     'drop database', 'drop table', 'drop schema', 'terminate instance', 'terminate instances', 'force push',
     'drop collection', 'truncate table', 'terminate server', 'terminate servers', 'terminate cluster', 'terminate clusters',
@@ -144,6 +153,8 @@ const WORDS = Object.freeze({
     'sign document', 'sign the document', 'e-sign', 'esign', 'adopt and sign', 'sign and submit', 'accept terms', 'accept the terms',
     'accept agreement', 'accept the agreement', 'authorize release', 'authorise release', 'release records',
     'sign agreement', 'sign the agreement', 'sign contract', 'sign the contract', 'release my records',
+    // CU-416: acting as another person.
+    'impersonate', 'impersonate user', 'view as user', 'view as this user',
     // CU-417: collaborators (CU-403's #477, carried) and branch protection open access.
     'add collaborator', 'add collaborators', 'disable branch protection', 'remove branch protection',
     'add member', 'add members', 'disable protection', 'unprotect branch',
@@ -1311,6 +1322,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (!focusesEntry && /^\s*book\s+(?:an?\s+)?appointment\b/i.test(name)) {
         classes.push(/[$\u20ac\u00a3\u00a5]\s*\d|\d\s*[$\u20ac\u00a3\u00a5]|\bdeposit\b|\b(?:usd|eur|gbp)\s*\d/i.test(name) ? 'purchase' : 'submit')
       }
+      // CU-416: 'Log in as' / 'Sign in as' <someone> acts as that person ('as guest' signs in as nobody).
+      if (!focusesEntry && /^\s*(?:(?:log|sign)\s+in|login|act)\s+as\b(?!\s+(?:a\s+)?guest\b)/i.test(name)) classes.push('permission')
       // CU-417: an SSH, deploy or access key hands over credentials; a 'Destroy' button destroys (a link stays free).
       // cu-coordinator 14:12Z: rotating, regenerating or resetting credentials too.
       if (!focusesEntry && /^\s*(?:(?:add|new)\s+(?:an?\s+)?(?:new\s+)?(?:ssh|deploy|gpg)\s+keys?|create\s+(?:an?\s+)?(?:new\s+)?access\s+keys?|(?:rotate|regenerate|reset)\s+(?:the\s+|your\s+|all\s+)?(?:credentials?|keys)|new\s+ssh\s+key)\b/i.test(name)) classes.push('credential')
