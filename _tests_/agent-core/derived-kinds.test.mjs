@@ -61,3 +61,18 @@ test('CU-391: a null drop logs dropTarget unread; an unreadable bound menu logs 
   const pressed = readRun(result2.trajectoryDir).events.find((e) => e.kind === 'action' && e.action?.type === 'keypress')
   assert.equal(pressed.derived?.boundMenuItem, 'unreadable')
 })
+
+test('CU-391: a press target whose file name was lent by its row logs fileFrom ancestor (a kind, never the name)', async () => {
+  const FINDER = 'com.apple.finder'
+  const SLACK = 'com.tinyspeck.slackmacgap'
+  const control = createRunControl()
+  const environment = createFakeEnvironment({ kind: 'desktop', control, frontmost: FINDER, targets: ({ x }) => (x < 200 ? { origin: FINDER, role: 'AXStaticText', name: 'plan', filename: 'secret-plan.pdf', fileFrom: 'ancestor' } : { origin: SLACK, role: 'AXGroup', name: 'Message' }) })
+  const approvals = createAppApprovals({ path: join(tmp, 'c.json') })
+  for (const app of [FINDER, SLACK]) approvals.grantAlways(app, { by: 'api' })
+  const model = createScriptedAdapter({ frame: { width: 1440, height: 900 }, turns: [{ actions: [{ type: 'drag', path: [{ x: 100, y: 100 }, { x: 600, y: 400 }] }] }, { final: 'done' }] })
+  const result = await runTask({ task: 'tidy', environment, model, control, runsDirectory: join(tmp, 'lent'), build: { commit: 'test', dirty: false }, apps: [FINDER, SLACK], appApprovals: approvals })
+  const drag = readRun(result.trajectoryDir).events.find((e) => e.kind === 'action' && e.action?.type === 'drag')
+  assert.equal(drag.derived?.fileFrom, 'ancestor')
+  assert.equal(drag.derived?.dragSource, 'file')
+  assert.equal(JSON.stringify(drag.derived).includes('secret'), false)
+})
