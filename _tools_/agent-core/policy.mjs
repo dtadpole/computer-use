@@ -1263,7 +1263,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (context.paste && context.paste.fromOwner === false && /^(app|desktop):/.test(String(context.url ?? ''))) {
       const src = context.paste.source ?? null
       const into = (typeof target?.origin === 'string' && target.origin !== '') ? target.origin : String(context.frontmostBundleId ?? '')
-      const fileSource = src && ((typeof src.filename === 'string' && src.filename !== '') || /^file:/i.test(String(src.url ?? ''))
+      // CU-387: on the desktop a copied element's url is a file URL's leaf, so any non-empty url is a file.
+      const fileSource = src && ((typeof src.filename === 'string' && src.filename !== '') || (typeof src.url === 'string' && src.url.trim() !== '')
         || ((FILE_BROWSER_APPS.has(String(src.origin ?? '')) || src.panel) && /row|cell|icon|outline|image|statictext|textfield|group/i.test(String(src.role ?? ''))))
       // An unattributed run paste (no source recorded: a copy with nothing focused) keeps today's judgement - asking on it
       // re-judged CU-219's own-copy rows; it is the named follow-up with the helper's pasteboardHasFile read.
