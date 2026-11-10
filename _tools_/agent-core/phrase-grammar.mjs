@@ -473,6 +473,19 @@ function mailProtectionClass(list) {
   return null
 }
 
+function taxFiling(list) {
+  if (list.length > 6) return false
+  const [verb, ...rest] = list
+  const core = rest.filter((t) => !FILLER.has(t))
+  const last = core[core.length - 1]
+  if (verb === 'sign' && rest[0] === 'and' && rest[1] === 'file' && rest.length <= 3) return true
+  if (['transmit', 'submit', 'send', 'e'].includes(verb) && core.length <= 3 && last === 'return' && verb !== 'send') return true
+  if (verb === 'e' && core[0] === 'file') return true
+  if (['file', 'request', 'submit'].includes(verb) && core.length <= 2 && last === 'extension') return true
+  if (verb === 'file' && core.length <= 3 && last === 'return') return true
+  return false
+}
+
 const DIVERSION_VERBS = new Set(['change', 'update', 'edit', 'add', 'set', 'replace', 'switch'])
 const DIVERSION_OBJECTS = [['direct', 'deposit'], ['bank', 'detail'], ['deposit', 'account'], ['routing', 'number'], ['account', 'number'],
   ['payout', 'account'], ['payout', 'method'], ['bank', 'account'], ['payout', 'detail']]
@@ -555,6 +568,9 @@ export function grammarClasses(name, role = '') {
   // (credential).
   const mail = mailProtectionClass(list)
   if (mail) return [mail]
+  // CU-459 (High; cu-coordinator 23:11Z): filing a tax return or extension by other verbs files a legal document in the
+  // person's name (submit; the 'File return' family).
+  if (taxFiling(list)) return ['submit']
   // F2 guard (cu-coordinator 20:28Z): declining, denying or rejecting a request answers no - the grammar's own over-ask since
   // #554 ('Decline request'); older asks ('Decline invitation', CU-422's 'Decline offer') are untouched (the hook never sees them).
   if (['decline', 'deny', 'reject'].includes(list[0]) && list.slice(1).filter((t) => !FILLER.has(t)).every((t) => t === 'request' || t === 'this' || t === 'all')
