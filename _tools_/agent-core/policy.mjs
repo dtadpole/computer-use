@@ -1213,7 +1213,19 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const protectionOn = /\b(?:turn\s+on|enable|set\s+up|activate)\b/i.test(name) && !/forward|app[\s-]?password/i.test(name)
       // Turning forwarding OFF is the safe direction (cu-coordinator 21:00Z).
       const forwardingOff = /\b(?:disable|turn\s+off|stop)\b/i.test(name) && /forward/i.test(name)
-      if (!focusesEntry && ACCOUNT_SECURITY.test(name) && !protectionOn && !forwardingOff) classes.push('credential')
+      // CU-373 refinement (fail closed, cu-researcher 20:56Z): the driver's state before the press decides a toggle's
+      // direction only when the read is native (an input of type checkbox or radio) - an ARIA-sourced, 'mixed' or missing
+      // state asks. A native two-factor/recovery box that is off turns protection ON; a native forwarding box that is on
+      // turns forwarding OFF - both the safe direction, so free.
+      // A native CHECKBOX only - a radio has no on/off direction; its label decides (cu-researcher 21:15Z).
+      const nativeToggle = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
+      const nativeOn = nativeToggle && target.checked === true
+      const nativeOff = nativeToggle && target.checked === false
+      const isForwarding = /forward/i.test(name)
+      // The explicit protection list (CU-270's two-factor and recovery names), never 'every security name but a few'.
+      const isProtection = /two[\s-]?(?:factor|step)|2[\s-]?step|\b2fa\b|multi[\s-]?factor|recovery\s+(?:e-?mail|phone|codes?)/i.test(name)
+      const safeToggle = (isProtection && nativeOff) || (isForwarding && nativeOn)
+      if (!focusesEntry && ACCOUNT_SECURITY.test(name) && !protectionOn && !forwardingOff && !safeToggle) classes.push('credential')
       // CU-401 round 2 (cu-coordinator): a plan word beside a navigation noun ('Downgrade options', 'Cancel plan details')
       // opens a page - free unless another purchase word remains.
       if (/\b(?:downgrade|cancel\s+(?:plan|membership)|end\s+trial)\b[\s\S]*\b(?:options|settings|details|faq|guide|policy|info)\b/i.test(name)
@@ -1222,7 +1234,15 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       }
       // CU-400: 'Sell', 'Convert' or 'Deposit' beside an asset or an amount (Sell BTC, Convert 0.5 ETH, Deposit USD) is a
       // trade; a marketplace 'Sell' and a file 'Convert' stay free (named).
-      if (!focusesEntry && /\b(?:sell|convert|deposit)\b/i.test(name) && (/\d|[$\u20ac\u00a3\u00a5\u20bf]/.test(name) || TRADE_ASSET.test(name))) classes.push('purchase')
+      // CU-402 (High; cu-coordinator 05:21Z): a bare 'Sell'/'Convert'/'Deposit' submit inside a form reads its form's context
+      // (cu-developer-two's driver: formContext {options: up to 3 selected texts, amountEntry}) - an asset among the selected
+      // options makes it a trade; an amount entry alone never does (cu-coordinator 05:26Z - a marketplace 'Sell' stays free).
+      const form = target?.formContext
+      const formTrade = form && typeof form === 'object' && Array.isArray(form.options) && form.options.some((text) => TRADE_ASSET.test(String(text)))
+      if (!focusesEntry && /\b(?:sell|convert|deposit)\b/i.test(name) && (/\d|[$\u20ac\u00a3\u00a5\u20bf]/.test(name) || TRADE_ASSET.test(name) || formTrade)) classes.push('purchase')
+      // cu-coordinator 05:30Z: the form's own submit - 'Place', 'Place order', 'Confirm', 'Submit' - beside an asset option is
+      // the trade too; 'Continue', 'Next' and 'Review' stay free (the review step's Confirm asks).
+      if (!focusesEntry && formTrade && /\b(?:place|confirm|submit)\b/i.test(name)) classes.push('purchase')
       // cu-coordinator 04:50Z: a trading word beside a navigation noun ('Trade history', 'Swap settings', 'Staking FAQ') opens
       // a page - free, unless another purchase word is in the name.
       if (TRADE_NAV.test(name) && !namesPurchase(name.replace(TRADE_WORDS, ' '))) {
@@ -1253,11 +1273,18 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const defaultName = typeof target?.defaultButton?.name === 'string' ? target.defaultButton.name : ''
     const inTextArea = TEXT_AREA_ROLE.test(String(target?.role ?? ''))
     const commandReturn = keysOf(action).has('META') && keysOf(action).has('ENTER')
-    if (defaultName !== '' && pressesEnter && (!inTextArea || commandReturn)) {
-      for (const cls of ['purchase', 'delete', 'permission']) {
-        if ((cls === 'purchase' ? namesPurchase(defaultName) : cls === 'delete' ? namesDelete(defaultName) : namesWord(defaultName, WORDS[cls]))) classes.push(cls)
+    // CU-406 (High; cu-coordinator 07:03Z): Return presses the default button, so it is judged by the CLICK's full classifier
+    // on that button - its name and its formContext (cu-developer-two's driver attaches the bounded read) - instead of a
+    // hand-kept subset: the trade clause, credential ('Change email'), and whatever the click rules gain later. The field's
+    // textEntered rides along (an empty field's Return keeps CU-241's reading). A handoff or block on the button stands.
+    if (defaultName !== '' && pressesEnter && (!inTextArea || commandReturn) && context.defaultButtonProbe !== true) {
+      const { dialog: _dialog, paste: _paste, dropTarget: _drop, dragSource: _source, ...probeContext } = context
+      const pressed = { ...target.defaultButton, role: target.defaultButton.role ?? 'button', ...(target?.textEntered !== undefined ? { textEntered: target.textEntered } : {}) }
+      const probe = classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...probeContext, target: pressed, defaultButtonProbe: true })
+      if (probe.decision === 'block' || probe.decision === 'handoff') return probe
+      for (const cls of probe.decision === 'confirm' ? (probe.classes ?? [probe.class]) : (probe.class ? [probe.class] : [])) {
+        if (cls !== 'permission' || probe.rule !== 'page:shortcut') classes.push(cls)
       }
-      if (judgesSubmit(defaultName, target)) classes.push('submit')
     }
     // CU-190 (keyboard-activation.md): a default button the helper could not read may well be there, so the Return asks
     // submit - focused or not; only a read with none (true) keeps the rule above. D-069: on the desktop (url app:...) no

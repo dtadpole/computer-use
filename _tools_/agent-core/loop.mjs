@@ -1037,6 +1037,9 @@ export async function runTask(options) {
   const recordedWebTarget = (target, allowed) => {
     if (!target) return null
     const recorded = { origin: target.origin ?? null, role: target.role ?? null }
+    // CU-373 audit (cu-verifier, cu-coordinator 21:13Z): a toggle's state before the action - booleans or 'mixed', never a
+    // value - so a record shows why a protection toggle went free.
+    for (const key of ['checked', 'pressed']) if (target[key] === true || target[key] === false || target[key] === 'mixed') recorded[key] = target[key]
     return allowed === true ? { ...recorded, name: target.name ?? '' } : recorded
   }
 

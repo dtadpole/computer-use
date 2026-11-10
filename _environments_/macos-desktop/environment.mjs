@@ -774,6 +774,9 @@ function boundEntryOf(item, scope) {
   if (item.appleMenu !== undefined && typeof item.appleMenu !== 'boolean') return null
   // CU-250 (helper 0.2.53): an item under the Services menu acts outside the approved app; app-policy refuses it.
   if (item.servicesMenu !== undefined && typeof item.servicesMenu !== 'boolean') return null
+  // CU-382 (helper 0.2.66): an item in Finder's Quick Actions runs a user-installed workflow - the menu-key list marks it
+  // as the clicked item's describe() does, and a chord bound to it is judged as a click on it.
+  if (item.quickActions !== undefined && typeof item.quickActions !== 'boolean') return null
   const name = menuTitleOf(item.title)
   if (name === null) return null
   const path = Array.isArray(item.path) ? item.path.slice(0, 8).map(menuTitleOf).filter((step) => step !== null) : []
@@ -782,6 +785,7 @@ function boundEntryOf(item, scope) {
     enabled: typeof item.enabled === 'boolean' ? item.enabled : null,
     ...(item.appleMenu === true ? { appleMenu: true } : {}),
     ...(item.servicesMenu === true ? { servicesMenu: true } : {}),
+    ...(item.quickActions === true ? { quickActions: true } : {}),
   }
 }
 
