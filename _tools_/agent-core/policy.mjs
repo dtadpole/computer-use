@@ -1275,7 +1275,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const formTrade = form && typeof form === 'object' && Array.isArray(form.options) && form.options.some((text) => TRADE_ASSET.test(String(text)))
       if (!focusesEntry && /\b(?:sell|convert|deposit)\b/i.test(name) && (/\d|[$\u20ac\u00a3\u00a5\u20bf]/.test(name) || TRADE_ASSET.test(name) || formTrade)) classes.push('purchase')
       // CU-417: an SSH, deploy or access key hands over credentials; a 'Destroy' button destroys (a link stays free).
-      if (!focusesEntry && /^\s*(?:add\s+(?:an?\s+)?(?:new\s+)?(?:ssh|deploy)\s+key|create\s+(?:an?\s+)?(?:new\s+)?access\s+key)\b/i.test(name)) classes.push('credential')
+      // cu-coordinator 14:12Z: rotating, regenerating or resetting credentials too.
+      if (!focusesEntry && /^\s*(?:add\s+(?:an?\s+)?(?:new\s+)?(?:ssh|deploy)\s+key|create\s+(?:an?\s+)?(?:new\s+)?access\s+key|(?:rotate|regenerate|reset)\s+(?:the\s+|your\s+|all\s+)?credentials?)\b/i.test(name)) classes.push('credential')
       if (!focusesEntry && /^\s*destroy\b/i.test(name) && !/link/i.test(String(target?.role ?? ''))) classes.push('delete')
       // CU-410: renting ('Rent', 'Rent now', 'Rent <title>'; 'Rentals' stays free), a bare 'Renew', reactivating a subscription,
       // turning auto-renew on and switching the billing period ask purchase.

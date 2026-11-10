@@ -36,3 +36,11 @@ test('CU-417 negatives: lists, Settings and a Destroy link stay free', () => {
   for (const name of ['Databases', 'Instances', 'SSH keys', 'Collaborators', 'Branches', 'Settings']) assert.equal(click(name), 'allow', name)
   assert.equal(click('Destroy', 'link'), 'allow', 'a Destroy link (docs) stays free')
 })
+
+test('CU-417 (14:12Z): Rotate, Regenerate and Reset credentials ask credential', () => {
+  for (const name of ['Rotate credentials', 'Regenerate credentials', 'Reset credentials']) {
+    assert.equal(click(name), 'credential', name)
+    assert.equal(enter(name), 'credential', `Return: ${name}`)
+  }
+  assert.equal(click('Credentials'), 'allow')
+})
