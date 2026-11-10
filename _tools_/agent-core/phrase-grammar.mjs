@@ -396,6 +396,20 @@ function streamingPurchase(list) {
   return false
 }
 
+const DEAL_PARTIES = new Set(['agent', 'realtor', 'seller', 'landlord', 'recruiter', 'broker', 'lender', 'host', 'owner'])
+function dealSubmit(list) {
+  if (list.length > 6) return false
+  const [verb, ...rest] = list
+  const core = rest.filter((t) => !FILLER.has(t))
+  const last = core[core.length - 1]
+  if (list.length === 2 && verb === 'easy' && rest[0] === 'apply') return true
+  if (verb === 'lock' && core.length <= 3 && last === 'rate') return true
+  if ((verb === 'get' || verb === 'start' || verb === 'begin') && core[0] === 'pre' && ['approved', 'approval', 'qualified', 'qualification'].includes(core[1]) && core.length === 2) return true
+  if (['schedule', 'request', 'book'].includes(verb) && core.length <= 3 && ['tour', 'showing', 'viewing'].includes(last)) return true
+  if (['contact', 'message', 'email'].includes(verb) && core.length <= 2 && DEAL_PARTIES.has(last)) return true
+  return false
+}
+
 const DIVERSION_VERBS = new Set(['change', 'update', 'edit', 'add', 'set', 'replace', 'switch'])
 const DIVERSION_OBJECTS = [['direct', 'deposit'], ['bank', 'detail'], ['deposit', 'account'], ['routing', 'number'], ['account', 'number'],
   ['payout', 'account'], ['payout', 'method'], ['bank', 'account'], ['payout', 'detail']]
@@ -455,6 +469,9 @@ export function grammarClasses(name, role = '') {
   if (cloud) return [cloud]
   // CU-449 (High; cu-coordinator 21:47Z): streaming add-ons, episode / season unlocks, rentals and gifts (purchase, CU-428 family).
   if (streamingPurchase(list)) return ['purchase']
+  // CU-451 (High; cu-coordinator 22:22Z): a rate lock, pre-approval, Easy Apply, a tour request or contacting an agent sends
+  // personal or financial data to another party or commits to a rate / booking (submit; CU-415 / CU-422 families).
+  if (dealSubmit(list)) return ['submit']
   // F2 guard (cu-coordinator 20:28Z): declining, denying or rejecting a request answers no - the grammar's own over-ask since
   // #554 ('Decline request'); older asks ('Decline invitation', CU-422's 'Decline offer') are untouched (the hook never sees them).
   if (['decline', 'deny', 'reject'].includes(list[0]) && list.slice(1).filter((t) => !FILLER.has(t)).every((t) => t === 'request' || t === 'this' || t === 'all')
