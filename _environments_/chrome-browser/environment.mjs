@@ -802,6 +802,16 @@ class BrowserEnvironment {
       if (found?.objectId === undefined) return { button: null, read: true, ...(await this.#implicitCandidates(page, objectId)) }
       const button = (await this.session.send(page, 'DOM.describeNode', { objectId: found.objectId })).result.node
       const described = await this.#describe(page, button.backendNodeId, undefined, { scanText: false })
+      // CU-412 (11:56Z, fail closed): a lone script control with no accessible name cannot be judged as the default -
+      // it asks unknown (defaultCandidatesMore). A nameless real submit button keeps the CU-150 path (a search form's
+      // icon submit stays as it was).
+      if (described !== null && (typeof described.name !== 'string' || described.name.trim() === '')) {
+        const script = (await this.session.send(page, 'Runtime.callFunctionOn', {
+          objectId: found.objectId, returnByValue: true,
+          functionDeclaration: "function () { const t = String(this.type).toLowerCase(); return !((this.tagName === 'BUTTON' && t === 'submit') || (this.tagName === 'INPUT' && (t === 'submit' || t === 'image'))) }",
+        })).result.result?.value === true
+        if (script) return { button: null, read: true, more: true }
+      }
       // CU-406: the Return target carries the same bounded formContext a click on that button would (CU-402/CU-405), so a
       // Return in a trade form's amount field is judged with the form's asset beside a bare 'Sell' default.
       return { button: described === null ? null : { role: described.role, name: described.name, panel: null, ...(described.formContext ? { formContext: described.formContext } : {}) }, read: true }
@@ -831,7 +841,8 @@ class BrowserEnvironment {
         if (item.value?.objectId === undefined) { unread = true; continue }
         const node = (await this.session.send(page, 'DOM.describeNode', { objectId: item.value.objectId })).result.node
         const described = await this.#describe(page, node.backendNodeId, undefined, { scanText: false })
-        if (described === null) unread = true
+        // CU-412 (11:56Z): a control with no accessible name (an icon-only div) cannot be judged - unreadable, never dropped.
+        if (described === null || typeof described.name !== 'string' || described.name.trim() === '') unread = true
         else controls.push({ role: described.role, name: described.name, ...(described.formContext ? { formContext: described.formContext } : {}) })
       }
       // Fail closed (D-107: candidates only add asks): a control that could not be read makes the list unjudgeable.

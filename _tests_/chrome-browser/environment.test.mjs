@@ -1021,3 +1021,49 @@ test('CU-412 fail closed: a candidates read that fails sets defaultCandidatesMor
     await env.close()
   }
 })
+
+test('CU-412 (11:56Z): a nameless candidate is unreadable - [Cancel, icon-only] lists Cancel and sets defaultCandidatesMore', async () => {
+  const handlers = checkoutHandlers({ submit: false })
+  const node = (id) => ({ backendNodeId: id, nodeName: 'DIV', attributes: ['role', 'button'] })
+  const names = { 51: 'Cancel', 52: '' }
+  const baseDescribe = handlers['DOM.describeNode']
+  handlers['DOM.describeNode'] = (params) => (params.objectId === 'c0' ? { result: { node: node(51) } } : params.objectId === 'c1' ? { result: { node: node(52) } } : names[params.backendNodeId] !== undefined ? { result: { node: node(params.backendNodeId) } } : baseDescribe(params))
+  const baseAx = handlers['Accessibility.getPartialAXTree']
+  handlers['Accessibility.getPartialAXTree'] = (params) => (names[params.backendNodeId] !== undefined ? { result: { nodes: [{ backendDOMNodeId: params.backendNodeId, role: { value: 'button' }, name: { value: names[params.backendNodeId] } }] } } : baseAx(params))
+  const baseCall = handlers['Runtime.callFunctionOn']
+  handlers['Runtime.callFunctionOn'] = (params) => (String(params.functionDeclaration).includes('implicitSubmitControls') && !String(params.functionDeclaration).includes('implicitSubmitButton') ? { result: { result: { type: 'object', subtype: 'array', objectId: 'list' } } } : baseCall(params))
+  handlers['Runtime.getProperties'] = ({ objectId }) => (objectId === 'list' ? { result: { result: [{ name: '0', value: { objectId: 'c0' } }, { name: '1', value: { objectId: 'c1' } }] } } : { result: { result: [] } })
+  const run = harness({ handlers })
+  const env = await launchBrowserEnvironment(run.options)
+  try {
+    const target = await env.focusedElement()
+    assert.deepEqual(target.defaultCandidates, [{ role: 'button', name: 'Cancel' }])
+    assert.equal(target.defaultCandidatesMore, true, 'the icon-only control is unreadable, never dropped')
+  } finally {
+    await env.close()
+  }
+})
+
+test('CU-412 (11:56Z): a lone script control with no accessible name is no default - defaultCandidatesMore (unknown); a nameless real submit keeps the CU-150 path', async () => {
+  for (const script of [true, false]) {
+    const handlers = checkoutHandlers({ submit: true })
+    const baseAx = handlers['Accessibility.getPartialAXTree']
+    handlers['Accessibility.getPartialAXTree'] = (params) => { const r = baseAx(params); const n = r?.result?.nodes?.[0]; return n && n.role?.value === 'button' ? { result: { nodes: [{ ...n, name: { value: '' } }] } } : r }
+    const baseCall = handlers['Runtime.callFunctionOn']
+    handlers['Runtime.callFunctionOn'] = (params) => (String(params.functionDeclaration).includes("this.tagName === 'BUTTON' && t === 'submit'") && params.returnByValue === true ? { result: { result: { type: 'boolean', value: script } } } : baseCall(params))
+    const run = harness({ handlers })
+    const env = await launchBrowserEnvironment(run.options)
+    try {
+      const target = await env.focusedElement()
+      if (script) {
+        assert.equal(target.defaultButton, null, 'a nameless script control is no default')
+        assert.equal(target.defaultCandidatesMore, true)
+      } else {
+        assert.notEqual(target.defaultButton, null, 'a nameless real submit stays the default (CU-150)')
+        assert.equal('defaultCandidatesMore' in target, false)
+      }
+    } finally {
+      await env.close()
+    }
+  }
+})
