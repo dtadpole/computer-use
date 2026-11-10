@@ -134,6 +134,18 @@ describe('named-controls (live rows decided by a name)', () => {
     })
   })
 
+  test('menuTitle (CU-382): the menu takes the given title, as a stand-in for Finder\'s Quick Actions submenu; the default stays Actions', async () => {
+    await withNamed({ fields: ['Message'], menuTitle: 'Quick Actions', menuItems: ['Fixture Workflow', { name: 'Fixture Upload', key: 'U', shift: true }] }, async (fixture) => {
+      const menus = (await fixture.call('menuAX')).menus
+      const quick = menus.find((menu) => menu.title === 'Quick Actions')
+      assert.ok(quick, 'the menu bar shows Quick Actions')
+      assert.deepEqual(quick.items.map(({ title }) => title), ['Fixture Workflow', 'Fixture Upload'])
+      assert.equal(menus.some((menu) => menu.title === 'Actions'), false, 'no Actions menu beside it')
+      const bound = await fixture.call('menuItemForKey', { key: 'shift+cmd+u' })
+      assert.deepEqual([bound.title, bound.action], ['Fixture Upload', 'choose:'])
+    })
+  })
+
   test('the Actions menu exists only while named-controls is open', async () => {
     const fixture = await launchFixture(executable, { offscreen: true })
     try {

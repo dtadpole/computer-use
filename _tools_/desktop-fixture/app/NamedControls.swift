@@ -9,7 +9,7 @@ import AppKit
 /// secret never comes back through the harness. `areas` (CU-253's cells) adds up to six multi-line text areas named the
 /// same way - an AXTextArea named 'iMessage' or 'Type a new message', as a chat app's composer is - reporting only
 /// their length and line count. `checkboxes` (CU-323) adds up to six check boxes titled by the harness (AXCheckBox; a
-/// toggle records only 'toggled' with its index and new state), and `menuItems` up to six items of an 'Actions' menu in
+/// toggle records only 'toggled' with its index and new state), and `menuItems` up to six items of an 'Actions' menu (its title `menuTitle`, CU-382) in
 /// the menu bar (AXMenuItem; choosing one records only 'chosen' with its index). A menu item is a name, or
 /// `{name, key, shift, option}` for one bound to Command plus `key` - CU-268's disguised item is a mixed-script name
 /// bound to Command-Shift-U. The menu exists only while this screen is open. `placeholders` (CU-349) adds up to six
@@ -169,9 +169,18 @@ final class NamedControls: NSObject {
     Fixture.shared.record("chosen", ["index": sender.tag])
   }
 
+  /// CU-382 (cu-coordinator 08:59Z): the menu's title, `menuTitle` (default 'Actions', at most 40 characters) - 'Quick
+  /// Actions' makes it a stand-in for Finder's Quick Actions submenu, which the helper marks by its holder's title in any
+  /// app (QuickActionsMenu.isQuickActions), so a live row needs no Finder and no owner workflow.
+  static func menuTitle() -> String {
+    let given = (Screens.params["menuTitle"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    return given.isEmpty ? "Actions" : String(given.prefix(40))
+  }
+
   private func installMenu(_ entries: [MenuEntry]) {
     guard !entries.isEmpty, let main = NSApp.mainMenu else { return }
-    let menu = NSMenu(title: "Actions")
+    let title = Self.menuTitle()
+    let menu = NSMenu(title: title)
     for (index, entry) in entries.enumerated() {
       let item = NSMenuItem(title: entry.name, action: #selector(choose(_:)), keyEquivalent: entry.key)
       item.keyEquivalentModifierMask = entry.modifiers
@@ -180,7 +189,7 @@ final class NamedControls: NSObject {
       menu.addItem(item)
     }
     let top = NSMenuItem()
-    top.title = "Actions"
+    top.title = title
     top.submenu = menu
     main.addItem(top)
     menuItem = top
@@ -194,7 +203,8 @@ final class NamedControls: NSObject {
     func value(_ element: AnyObject, _ name: String) -> Any? { element.accessibilityAttributeValue(NSAccessibility.Attribute(rawValue: name)) }
     func kids(_ element: AnyObject) -> [AnyObject] { (value(element, "AXChildren") as? [AnyObject]) ?? [] }
     return kids(bar).compactMap { top -> [String: Any]? in
-      guard value(top, "AXTitle") as? String == "Actions" else { return nil }
+      let title = value(top, "AXTitle") as? String
+      guard let title, title == screen.menuItem?.title else { return nil }
       let items = kids(top).flatMap(kids).filter { value($0, "AXRole") as? String == "AXMenuItem" }.map { item -> [String: Any] in
         ["title": value(item, "AXTitle") as? String ?? "", "role": value(item, "AXRole") as? String ?? "",
          "enabled": (value(item, "AXEnabled") as? Bool) ?? NSNull(), "char": (value(item, "AXMenuItemCmdChar") as? String) ?? NSNull(),
@@ -205,7 +215,7 @@ final class NamedControls: NSObject {
       let origin = (value(top, "AXPosition") as? NSValue)?.pointValue ?? .zero
       let size = (value(top, "AXSize") as? NSValue)?.sizeValue ?? .zero
       let primaryHeight = NSScreen.screens.first?.frame.height ?? 0
-      return ["title": "Actions", "items": items, "frame": ["x": origin.x, "y": primaryHeight - origin.y - size.height, "width": size.width, "height": size.height]]
+      return ["title": title, "items": items, "frame": ["x": origin.x, "y": primaryHeight - origin.y - size.height, "width": size.width, "height": size.height]]
     }
   }
 
