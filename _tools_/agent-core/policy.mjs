@@ -149,6 +149,10 @@ const WORDS = Object.freeze({
     // cu-researcher's 13:23Z sweep: unsaved edits lost, like Discard Changes.
     'revert to saved', 'revert all changes', ...ZH_WORDS.delete, ...LOCALE_WORDS.delete],
   permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke',
+    // CU-425 (cu-coordinator 16:18Z): file-sharing near forms widen access to an owner file. #417's 'anyone with the link' and
+    // #447's 'make editor' stay with those PRs.
+    'allow anyone to edit', 'anyone with the link can edit', 'turn on link sharing', 'give edit access', 'change to editor',
+    'disable download protection', 'allow download', 'allow downloads',
     // CU-415: signatures bind the owner; releasing records shares personal data.
     'sign document', 'sign the document', 'e-sign', 'esign', 'adopt and sign', 'sign and submit', 'accept terms', 'accept the terms',
     'accept agreement', 'accept the agreement', 'authorize release', 'authorise release', 'release records',
