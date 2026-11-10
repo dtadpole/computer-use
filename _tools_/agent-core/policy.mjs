@@ -1198,7 +1198,15 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       }
       // CU-400: 'Sell', 'Convert' or 'Deposit' beside an asset or an amount (Sell BTC, Convert 0.5 ETH, Deposit USD) is a
       // trade; a marketplace 'Sell' and a file 'Convert' stay free (named).
-      if (!focusesEntry && /\b(?:sell|convert|deposit)\b/i.test(name) && (/\d|[$\u20ac\u00a3\u00a5\u20bf]/.test(name) || TRADE_ASSET.test(name))) classes.push('purchase')
+      // CU-402 (High; cu-coordinator 05:21Z): a bare 'Sell'/'Convert'/'Deposit' submit inside a form reads its form's context
+      // (cu-developer-two's driver: formContext {options: up to 3 selected texts, amountEntry}) - an asset among the selected
+      // options makes it a trade; an amount entry alone never does (cu-coordinator 05:26Z - a marketplace 'Sell' stays free).
+      const form = target?.formContext
+      const formTrade = form && typeof form === 'object' && Array.isArray(form.options) && form.options.some((text) => TRADE_ASSET.test(String(text)))
+      if (!focusesEntry && /\b(?:sell|convert|deposit)\b/i.test(name) && (/\d|[$\u20ac\u00a3\u00a5\u20bf]/.test(name) || TRADE_ASSET.test(name) || formTrade)) classes.push('purchase')
+      // cu-coordinator 05:30Z: the form's own submit - 'Place', 'Place order', 'Confirm', 'Submit' - beside an asset option is
+      // the trade too; 'Continue', 'Next' and 'Review' stay free (the review step's Confirm asks).
+      if (!focusesEntry && formTrade && /\b(?:place|confirm|submit)\b/i.test(name)) classes.push('purchase')
       // cu-coordinator 04:50Z: a trading word beside a navigation noun ('Trade history', 'Swap settings', 'Staking FAQ') opens
       // a page - free, unless another purchase word is in the name.
       if (TRADE_NAV.test(name) && !namesPurchase(name.replace(TRADE_WORDS, ' '))) {
