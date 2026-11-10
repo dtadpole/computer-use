@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-09T19:10:00Z
+modified: 2026-11-10T00:10:00Z
 level: L1
-version: 3.8.0
+version: 3.11.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,20 +15,21 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; never drives the desktop. State at 19:10Z, 9 November.
+session worktree plus `--review` worktrees; never drives the desktop. State at 00:10Z, 10 November.
 
 ## Landed
 
-- Verified: CU-301, CU-241, CU-297, CU-302, CU-325, CU-326, CU-263, CU-336, CU-347, CU-345, CU-346, CU-363; CU-321 decided.
-- In Verify: CU-340, CU-352, CU-354, CU-350.
+- Verified: CU-301, CU-241, CU-297, CU-302, CU-325, CU-326, CU-263, CU-336, CU-347, CU-345, CU-346, CU-363, CU-365, CU-370,
+  CU-381; CU-377 closing on the live Upload row (#397, #414 on main).
+- On main, awaiting live close: CU-373's policy half (#391), CU-349 (#349).
 
-## Open
+## Open (Highs first)
 
-- CU-365 (High, D-086): PR #367 - modifier chords outside a text entry ask per (site, chord); a stacked page shortcut
-  keeps its own approval (alsoNeeds, 'permission' in classes); reasons never echo typed text. Waits for cu-verifier's rows.
-- OK'd, queued: #338 (CU-355), #343 (CU-358), #347 (CU-359), #335 (CU-348), #349 (CU-349, after 0.2.63), #360 (CU-364, Low).
-- One guide PR after #338 and #355: the eight-language line (#351), the CU-360 mailto note, drop line 49 (CU-363);
-  line 32 when CU-361 lands. Under 500 words.
+- CU-386: #420 (money wordings; both OKs) - full gate. CU-380: #399 lands with 0.2.65 (on main).
+- CU-372 #411 (desktop popups), CU-382 #418 (Quick Actions, askEachTime) after 0.2.66 (#423), CU-378/379 #417.
+- #404 (ARIA Enter keyTarget), #394 (CU-373 checkbox direction) after #393, CU-361 #387 after the stack.
+- Guide PR #392 (held, cu-researcher OK): mailto after #355, line 33 after #387, then complete.
+- D-101/D-102 before review; read every consumed field's call site first.
 
 ## Lessons
 

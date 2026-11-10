@@ -255,6 +255,27 @@ enum Accessibility {
     elementAttribute(AXUIElementCreateSystemWide(), "AXFocusedUIElement")
   }
 
+  /// CU-380: the highlighted item of an open menu in an app - its open context or pop-up menu (an AXMenu among the
+  /// app's children), else the menu under its selected menu bar item - through each AXMenu's AXSelectedChildren, into an
+  /// open submenu at most 6 deep. Attributes only: nothing is pressed, opened or moved. nil when none can be read.
+  static func highlightedMenuItem(pid: pid_t) -> AXUIElement? {
+    let app = AXUIElementCreateApplication(pid)
+    var menu = children(app).first { string($0, "AXRole") == "AXMenu" }
+    if menu == nil, let bar = elementAttribute(app, "AXMenuBar"),
+       let open = children(bar).first(where: { (attribute($0, "AXSelected") as? NSNumber)?.boolValue == true }) {
+      menu = children(open).first { string($0, "AXRole") == "AXMenu" }
+    }
+    var item: AXUIElement? = nil
+    var depth = 0
+    while let current = menu, depth < 6 {
+      guard let selected = elements(current, "AXSelectedChildren").first(where: { string($0, "AXRole") == "AXMenuItem" }) else { break }
+      item = selected
+      menu = children(selected).first { string($0, "AXRole") == "AXMenu" }
+      depth += 1
+    }
+    return item
+  }
+
   /// CU-190: an element-valued attribute with what the read said - the element, a positive none, or a failure.
   static func elementRead(_ element: AXUIElement, _ name: String) -> (AXRead, AXUIElement?) {
     var value: CFTypeRef?
@@ -307,6 +328,8 @@ enum Accessibility {
     let own = string(element, "AXTitle").flatMap { $0.isEmpty ? nil : $0 } ?? string(element, "AXDescription").flatMap { $0.isEmpty ? nil : $0 }
     let title = TargetName.pick(own: own, role: role, actionable: Actionable.isActionable(Actionable.Node(role: role, actions: actionNames(element), titled: false), press: pressSignal),
                                 displayText: { displayText(element) }, staticValue: { string(element, "AXValue") })
+    let captionValue = Caption.forTarget(own: caption(element, role: role), leaf: captionLeaf.flatMap { caption($0, role: string($0, "AXRole")) })
+    let placeholderValue = Placeholder.applies(role: role) ? Placeholder.pick(role: role, raw: string(element, "AXPlaceholderValue")) : nil
     var shape: [String: JSON] = [
       "bundleId": .string(bundle),
       "pid": owner.map { .int(Int($0)) } ?? .null,
@@ -326,9 +349,12 @@ enum Accessibility {
       // CU-187: the label that captions a non-entry element (the driver carries it like the name, outside the fingerprint).
       // A target lifted from a captioned value (a value inside a pressable row or card) keeps the value's caption when
       // the control itself has none (cu-developer-two's residual on CU-195).
-      "caption": .optionalString(Caption.forTarget(own: caption(element, role: role), leaf: captionLeaf.flatMap { caption($0, role: string($0, "AXRole")) })),
+      "caption": .optionalString(captionValue),
       // CU-349: an entry's placeholder (AXPlaceholderValue, never its AXValue), for the consent field rules' extra name.
-      "placeholder": .optionalString(Placeholder.applies(role: role) ? Placeholder.pick(role: role, raw: string(element, "AXPlaceholderValue")) : nil),
+      "placeholder": .optionalString(placeholderValue),
+      // CU-361: an entry with no title, caption or placeholder - the static text beside it in layout (NearbyLabel), read
+      // from its window's static texts, never the entry's own value; agent core uses it upgrade-only.
+      "nearbyLabel": .optionalString(Placeholder.applies(role: role) && title == nil && captionValue == nil && placeholderValue == nil ? nearbyLabel(element) : nil),
     ]
     if markPanel {
       // One ancestor walk for both markers. CU-322 (D-089): `inWebArea` - true when the element is, or descends from,
@@ -347,7 +373,36 @@ enum Accessibility {
     // CU-250: a menu item says where it sits - its menu path, and whether a submenu on the way is the Services menu -
     // so policy refuses a clicked service (an owner-installed one included), not only the default services' titles.
     if role == "AXMenuItem" { for (key, value) in menuContext(of: element, title: string(element, "AXTitle")).json { shape[key] = value } }
+    // CU-372: a pop-up button takes type-ahead and arrows without opening its menu, so it says what it holds - its menu
+    // items as AX shows them closed (PopUpItems), never by opening the menu.
+    // A pull-down button is AXMenuButton in AppKit: the same read, marked pullsDown (its title is a label, not a value).
+    if role == "AXPopUpButton" || role == "AXMenuButton" { shape["popUp"] = popUp(element, pullsDown: role == "AXMenuButton") }
     return .object(shape)
+  }
+
+  /// CU-372: a pop-up button's selected title (its AXValue) and its menu's items, read from the AXMenu among its
+  /// AXChildren (at most 200 children read) - attributes only; nothing is pressed or opened. No menu child: unread.
+  private static func popUp(_ element: AXUIElement, pullsDown: Bool) -> JSON {
+    let selected = pullsDown ? string(element, "AXTitle") : string(element, "AXValue")
+    guard let menu = children(element).first(where: { string($0, "AXRole") == "AXMenu" }) else { return PopUpItems.shape(selected: selected, items: nil, pullsDown: pullsDown) }
+    let entries = children(menu)
+    guard entries.count <= 200 else { return PopUpItems.shape(selected: selected, items: nil, pullsDown: pullsDown) }
+    let items = entries.filter { string($0, "AXRole") == "AXMenuItem" }
+      .map { PopUpItems.Item(title: string($0, "AXTitle"), enabled: (attribute($0, "AXEnabled") as? NSNumber)?.boolValue) }
+    return PopUpItems.shape(selected: selected, items: items, pullsDown: pullsDown)
+  }
+
+  /// CU-361: the static text beside an entry in layout (NearbyLabel.pick) - its window's AXStaticText descendants (at
+  /// most 400 read), each by its shown words (a static text's AXValue) and frame. The entry's own value is never read.
+  private static func nearbyLabel(_ element: AXUIElement) -> String? {
+    guard let box = frame(element), let window = elementAttribute(element, "AXWindow") else { return nil }
+    let candidates = descendants(of: window, limit: 400)
+      .filter { string($0, "AXRole") == "AXStaticText" }
+      .compactMap { label -> NearbyLabel.Candidate? in
+        guard let text = string(label, "AXValue"), let rect = frame(label) else { return nil }
+        return NearbyLabel.Candidate(text: text, frame: rect)
+      }
+    return NearbyLabel.pick(box: box, candidates: candidates)
   }
 
   /// CU-250: the menus above a menu item, nearest first, up to the menu bar (or a context menu's top): each submenu's

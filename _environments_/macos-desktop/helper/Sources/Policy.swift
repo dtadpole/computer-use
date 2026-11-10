@@ -5,7 +5,7 @@ import Foundation
 /// The helper's identity; `build.sh` writes the same bundle id into Info.plist.
 enum HelperIdentity {
   static let bundleId = "com.reflection.cu-helper"
-  static let version = "0.2.63"
+  static let version = "0.2.65"
   /// The value every synthetic event carries in `kCGEventSourceUserData`: 0x43555345, ASCII "CUSE"
   /// (input-and-targets.md, verify-kit's SYNTHETIC_TAG). Not a secret: an event from another process with this tag
   /// could only fail to pause the run, never act.
@@ -467,6 +467,95 @@ enum Placeholder {
   static func pick(role: String?, raw: String?) -> String? {
     guard applies(role: role) else { return nil }
     guard let text = raw?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty, text.count <= maxLength else { return nil }
+    return text
+  }
+}
+
+/// CU-380: whether a menu is tracking - any on-screen window at the pop-up menu level (kCGPopUpMenuWindowLevel, 101),
+/// which every open menu bar menu, context menu and pop-up button menu is drawn in, whoever owns it. Visible windows only
+/// (alpha above 0, a non-empty frame). Another window at that level counts too - the named over-ask (Return then asks).
+enum MenuTracking {
+  static let popUpMenuLevel = 101
+  static func open(_ windows: [(layer: Int, alpha: Double, bounds: CGRect)]) -> Bool {
+    windows.contains { $0.layer == popUpMenuLevel && $0.alpha > 0 && $0.bounds.width > 0 && $0.bounds.height > 0 }
+  }
+}
+
+/// CU-377: whether a pasteboard's type names say it holds a file - a file URL (public.file-url) or the legacy filenames
+/// type. Type names only: no path, no content (D-060). nil when the types could not be read (the caller asks).
+enum PasteboardTypes {
+  static let fileTypes: Set<String> = ["public.file-url", "NSFilenamesPboardType"]
+  static func hasFile(_ types: [String]?) -> Bool? {
+    guard let types else { return nil }
+    return types.contains { fileTypes.contains($0) }
+  }
+}
+
+/// CU-372: a pop-up button's menu items as AX shows them while it is closed - read from its AXMenu child, never by
+/// opening it (attributes only, no action performed). The driver turns the shape into the items a type or an arrow moves the button
+/// through (typeOptions / keyTarget, as CU-370 does for a web select). Unread is never an empty list: no menu child, a
+/// failed read, no titled item, or more than 50 items give `unread: true`, which agent core asks on. Pure, so the unit
+/// tests decide it.
+enum PopUpItems {
+  static let maxItems = 50
+  static let maxTitle = 80
+  struct Item {
+    let title: String?
+    let enabled: Bool?
+  }
+
+  /// `items` nil when no AXMenu child could be read. Separators (no title) are skipped; titles are trimmed and cut at
+  /// 80 characters; an item whose AXEnabled cannot be read counts as enabled (it may be landed on - the safe side).
+  /// `pullsDown`: a pull-down button (AppKit gives it AXMenuButton) - its title is a fixed label and Return or Space
+  /// opens a menu of actions, so the shape says so and its selected index is never read (cu-researcher's case 2).
+  static func shape(selected: String?, items: [Item]?, pullsDown: Bool = false) -> JSON {
+    let chosen = selected.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.flatMap { $0.isEmpty ? nil : String($0.prefix(maxTitle)) }
+    var unreadShape: [String: JSON] = ["unread": .bool(true), "selected": .optionalString(chosen)]
+    if pullsDown { unreadShape["pullsDown"] = .bool(true) }
+    let unread = JSON.object(unreadShape)
+    guard let items else { return unread }
+    let titled = items.compactMap { item -> (title: String, enabled: Bool)? in
+      guard let title = item.title?.trimmingCharacters(in: .whitespacesAndNewlines), !title.isEmpty else { return nil }
+      return (String(title.prefix(maxTitle)), item.enabled ?? true)
+    }
+    guard !titled.isEmpty, titled.count <= maxItems else { return unread }
+    // cu-researcher's case 1: a selected title two items share leaves the neighbour of an arrow unknown - unread.
+    if let chosen, titled.filter({ $0.title == chosen }).count > 1 { return unread }
+    let index = pullsDown ? nil : chosen.flatMap { name in titled.firstIndex { $0.title == name } }
+    var read: [String: JSON] = [
+      "items": .array(titled.map { .object(["title": .string($0.title), "enabled": .bool($0.enabled)]) }),
+      "selected": .optionalString(chosen),
+      "selectedIndex": index.map { .int($0) } ?? .null,
+    ]
+    if pullsDown { read["pullsDown"] = .bool(true) }
+    return .object(read)
+  }
+}
+
+/// CU-361: the layout label of an unnamed entry - a static text beside it on screen, as VoiceOver reads one when no
+/// AXTitleUIElement links them: a plain box whose only label sits to its left ('Password  [      ]') or just above it.
+/// describe() asks for it only for an entry with no title, no caption and no placeholder; agent core uses it
+/// upgrade-only (it can make a field ask, never stop one asking). Frames are global top-left points (y grows down).
+/// Left: the candidate ends at or before the box's left edge (2 pt slack), at most `leftGap` away, its centre within
+/// half the box's height of the box's centre (the same row); the nearest wins. Else above: the candidate ends at or
+/// before the box's top (2 pt slack), at most `aboveGap` away, overlapping the box horizontally; the nearest wins. Left
+/// beats above. Trimmed; empty or more than 80 characters reads as none, never cut. Static texts' shown words only -
+/// never the entry's own value. Named limits (cu-researcher, #386): a right-to-left layout's label on the right is not
+/// read; a window past the 400-descendant walk gives none (today's behaviour). The driver drops a sensitive-looking value.
+enum NearbyLabel {
+  static let maxLength = 80
+  static let leftGap: CGFloat = 120
+  static let aboveGap: CGFloat = 24
+  struct Candidate { let text: String; let frame: CGRect }
+
+  static func pick(box: CGRect, candidates: [Candidate]) -> String? {
+    let left = candidates
+      .filter { $0.frame.maxX <= box.minX + 2 && box.minX - $0.frame.maxX <= leftGap && abs($0.frame.midY - box.midY) <= box.height / 2 }
+      .min { box.minX - $0.frame.maxX < box.minX - $1.frame.maxX }
+    let above = candidates
+      .filter { $0.frame.maxY <= box.minY + 2 && box.minY - $0.frame.maxY <= aboveGap && $0.frame.maxX > box.minX && $0.frame.minX < box.maxX }
+      .min { box.minY - $0.frame.maxY < box.minY - $1.frame.maxY }
+    guard let text = (left ?? above)?.text.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty, text.count <= maxLength else { return nil }
     return text
   }
 }

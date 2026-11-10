@@ -1,9 +1,9 @@
 ---
 title: Desktop fixture contract
 created: 2026-11-02T08:34:00Z
-modified: 2026-11-09T14:05:00Z
+modified: 2026-11-09T17:33:00Z
 level: L1
-version: 0.14.0
+version: 0.15.0
 description: What CU Fixture guarantees to the desktop driver, the verifiers and the evaluator - identity, placement, the private control channel, what the agent can and cannot see, and how a screen's outcome is judged.
 status: unverified
 grounded_in:
@@ -39,8 +39,10 @@ grounded_in:
   'toggled' with the index and new state; `menuItems` (CU-323) up to six items of an Actions menu in the menu bar
   (AXMenuItem), each a name or `{name, key, shift, option}` bound to Command plus `key`, choosing one recording only
   'chosen' with its index - the menu exists only while the screen is open, and `menuAX` serves it with the bar item's
-  frame. Its state reports entry and area lengths (and area line counts), never their text, plus check-box states and
-  the chosen indices.
+  frame; `placeholders` (CU-349) up to six entries labelled only by a placeholder - no caption, no label or title
+  element - as a native one-time-code or CVV box often is. Its state reports entry and area lengths (and area line
+  counts), placeholder-entry lengths, never their text, plus check-box states and the chosen indices. `axAudit` serves
+  each target's placeholder apart from its name.
 - **AXManualAccessibility (CU-329).** The application element answers `AXManualAccessibility` as an Electron app does:
   no value until set, then the stored boolean; listed and settable. Every outside write is kept in order (value only;
   never in the general events, which a helper run must not change); `manualAX` reports the value and the writes, `manualAXPreset {on}` sets true or clears it
