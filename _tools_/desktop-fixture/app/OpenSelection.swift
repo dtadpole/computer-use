@@ -131,6 +131,8 @@ final class OpenSelection: NSObject, NSTableViewDataSource, NSTableViewDelegate 
     table.setAccessibilityLabel("Sandbox files")
     table.identifier = NSUserInterfaceItemIdentifier("sandbox-files")
     table.setDraggingSourceOperationMask(.copy, forLocal: true)
+    // CU-387: a drop in another process (CU Ledger's zone) is offered a copy too - the non-local mask decides there.
+    table.setDraggingSourceOperationMask(.copy, forLocal: false)
     table.onOpen = { [weak self] via in self?.openSelected(via: via, with: nil) }
     scroll.documentView = table
     scroll.borderType = .bezelBorder
@@ -167,7 +169,12 @@ final class OpenSelection: NSObject, NSTableViewDataSource, NSTableViewDelegate 
     label.translatesAutoresizingMaskIntoConstraints = false
     cell.addSubview(label)
     cell.textField = label
-    NSLayoutConstraint.activate([label.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: 4), label.centerYAnchor.constraint(equalTo: cell.centerYAnchor)])
+    // CU-387: the name spans the row, so a press anywhere on it lands on the element carrying AXFilename and AXURL, and
+    // each row's name is a named target ('sandbox-file-<row>') a live row can aim at instead of guessing a point.
+    NSLayoutConstraint.activate([label.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: 4),
+                                 label.trailingAnchor.constraint(equalTo: cell.trailingAnchor, constant: -4),
+                                 label.centerYAnchor.constraint(equalTo: cell.centerYAnchor)])
+    Fixture.shared.controls["sandbox-file-\(row)"] = label
     return cell
   }
 

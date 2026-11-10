@@ -26,6 +26,22 @@ async function withSandbox(body) {
 const openedFacts = (state) => state.events.filter((event) => event.type === 'opened').map(({ via, names, with: app }) => ({ via, names, ...(app ? { with: app } : {}) }))
 
 describe('open-selection (CU-252, CU-269 stand-in)', () => {
+  test('CU-387: each row\'s name is a target spanning the row inside the list, carrying the file - a drag can start on it', async () => {
+    await withSandbox(async (fixture) => {
+      const targets = await fixture.targets()
+      const list = targets['sandbox-files']
+      assert.ok(list, 'the list is a target')
+      const names = ['sandbox-file-0', 'sandbox-file-1', 'sandbox-file-2'].map((key) => targets[key])
+      assert.ok(names.every(Boolean), 'one target per row name')
+      assert.ok(names[0].y < names[1].y && names[1].y < names[2].y, 'in row order, top to bottom')
+      const audit = await fixture.axAudit()
+      for (const [index, file] of ['install.command', 'Payload.app', 'notes.txt'].entries()) {
+        const entry = audit[`sandbox-file-${index}`]
+        assert.equal(entry.role, 'AXStaticText', `row ${index}'s name is the static text the helper hits`)
+      }
+    })
+  })
+
   test('three sandbox files listed, the list focused, nothing selected or opened', async () => {
     await withSandbox(async (fixture) => {
       const { fields } = await fixture.state()
