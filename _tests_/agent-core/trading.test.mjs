@@ -8,7 +8,7 @@ const policy = createPolicy({ sitePolicy: () => 'allow' })
 const click = (name) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: 'https://exchange.example/trade', target: { role: 'button', name } }); return v.decision === 'allow' ? 'allow' : v.class }
 
 test('CU-400: confirm/sign transaction, sign message, swap, stake, trade, place order, sell now and confirm swap/trade/sale ask purchase', () => {
-  for (const name of ['Confirm transaction', 'Sign transaction', 'Sign message', 'Swap', 'Stake', 'Trade', 'Place order', 'Sell now', 'Confirm swap', 'Confirm trade', 'Confirm sale', 'Bridge', 'Bridge tokens']) assert.equal(click(name), 'purchase', name)
+  for (const name of ['Confirm transaction', 'Sign transaction', 'Sign message', 'Swap', 'Stake', 'Trade', 'Place order', 'Sell now', 'Confirm swap', 'Confirm trade', 'Confirm sale', 'Bridge', 'Bridge tokens', 'Mint', 'Mint NFT', 'Confirm mint', 'Unstake', 'Sell all', 'Convert now', 'Trade-in', 'Trade now']) assert.equal(click(name), 'purchase', name)
 })
 
 test('CU-400: Sell, Convert and Deposit beside an asset or an amount ask purchase', () => {
@@ -16,5 +16,5 @@ test('CU-400: Sell, Convert and Deposit beside an asset or an amount ask purchas
 })
 
 test('CU-400 negatives: a marketplace Sell, a file Convert and a bare Deposit stay free', () => {
-  for (const name of ['Sell', 'Sell an item', 'Convert', 'Convert to PDF', 'Deposit']) assert.equal(click(name), 'allow', name)
+  for (const name of ['Sell', 'Sell an item', 'Convert', 'Convert to PDF', 'Deposit', 'Trade history', 'Swap settings', 'Staking FAQ', 'Sell fees', 'Trading limits']) assert.equal(click(name), 'allow', name)
 })
