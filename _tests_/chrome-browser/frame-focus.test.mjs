@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
 import { FRAME_FOCUS_MS, launchBrowserEnvironment } from '../../_environments_/chrome-browser/environment.mjs'
-import { describeElement } from '../../_environments_/chrome-browser/page-scripts.mjs'
+import { describeElement, frameLabel, frameLabelFromAttributes } from '../../_environments_/chrome-browser/page-scripts.mjs'
 import { createPolicy } from '../../_tools_/agent-core/policy.mjs'
 import { FakeConnection } from './fake-cdp.mjs'
 
@@ -51,15 +51,20 @@ function harness(world) {
       result: { model: sessionId === FRAME ? { border: [20, 30, 120, 30, 120, 70, 20, 70] } : { content: [200, 100, 600, 100, 600, 400, 200, 400], border: [190, 90, 610, 90, 610, 410, 190, 410] } },
     }),
     'Accessibility.getPartialAXTree': (params, sessionId) => {
+      // CU-336: world.hostAxFails makes the page's read of the host iframe throw (an AX failure).
+      if (sessionId === PAGE && world.hostAxFails && params.backendNodeId === 40) throw Object.assign(new Error('No node with given id found'), { code: -32000 })
       const ax = AX[sessionId]?.[params.backendNodeId] ?? { role: null, name: '' }
       return { result: { nodes: [{ backendDOMNodeId: params.backendNodeId, role: { value: ax.role }, name: { value: ax.name } }] } }
     },
     'DOM.resolveNode': (params, sessionId) => {
       if (sessionId === FRAME && world.resolveFails) throw Object.assign(new Error('Cannot find context with specified id'), { code: -32000 })
+      if (sessionId === PAGE && world.pageResolveFails && params.backendNodeId === 40) throw Object.assign(new Error('Cannot find context with specified id'), { code: -32000 })
       return { result: { object: { objectId: `node-${params.backendNodeId}` } } }
     },
     'Runtime.callFunctionOn': (params, sessionId) => {
       const fn = params.functionDeclaration
+      // CU-336's frameLabel on the host: what the page gives the iframe element, as world.hostLabel says.
+      if (fn.includes('function frameLabel')) return { result: { result: { value: world.hostLabel ?? null } } }
       // CU-319's read, inside the frame only when world.frameAutofill lists backend ids of the frame's autofilled fields.
       if (fn.includes(':-webkit-autofill')) return { result: { result: sessionId === FRAME && Array.isArray(world.frameAutofill) ? { type: 'object', objectId: 'scope-1' } : { type: 'object', subtype: 'null', value: null } } }
       if (fn.includes('return this.truncated')) return { result: { result: { type: 'boolean', value: false } } }
@@ -311,4 +316,82 @@ test('CU-300 x CU-319: a focus followed into a cross-site frame carries the auto
   } finally {
     AX[FRAME][9] = saved
   }
+})
+
+test('CU-336: a host whose AX read fails is named from the words the page gives the iframe - the page script first, the attribute list when the node does not resolve, null when it carries none', async () => {
+  const world = { frameFocus: focusOn(5), hostAxFails: true, hostLabel: 'Card security code' }
+  const { options, attach } = harness(world)
+  const savedAttributes = HOST.attributes
+  try {
+    const env = await launchBrowserEnvironment(options)
+    await attach(env)
+    assert.deepEqual((await env.focusedElement()).frameHost, { tag: 'iframe', role: null, name: 'Card security code' }, 'aria-labelledby text (or aria-label, title) read in the page')
+    world.pageResolveFails = true
+    assert.equal((await env.focusedElement()).frameHost.name, 'Secure CVC input frame', 'the node does not resolve: the title from its describeNode attributes')
+    assert.equal((await env.inspectPoint({ x: 240, y: 120 })).frameHost.name, 'Secure CVC input frame', 'inspectPoint through the frame alike')
+    HOST.attributes = []
+    assert.equal((await env.focusedElement()).frameHost.name, null, 'no words at all: still unread, for the policy\'s own rules')
+    HOST.attributes = ['name', '__privateStripeFrame5', 'src', 'https://js.stripe.example/v3/elements-inner-cvc.html']
+    assert.equal((await env.focusedElement()).frameHost.name, null, 'a name attribute is an id for scripts, never a label: the frame stays unnamed (cu-researcher)')
+    HOST.attributes = savedAttributes
+    world.pageResolveFails = false
+    world.hostLabel = null
+    assert.equal((await env.focusedElement()).frameHost.name, null, 'the page script found none: null, not a guess')
+    world.hostAxFails = false
+    assert.equal((await env.focusedElement()).frameHost.name, 'Secure CVC input frame', 'a read AX name is kept as before')
+    await env.close()
+  } finally {
+    HOST.attributes = savedAttributes
+  }
+})
+
+test('CU-336: the iframe itself as the target (the focus not followed) takes the same fallback when its AX read fails', async () => {
+  const world = { frameFocus: focusOn(5), hostAxFails: true, hostLabel: 'Secure Credit Card Frame - CVV' }
+  const { options } = harness(world)
+  const env = await launchBrowserEnvironment(options)
+  const host = await env.focusedElement()
+  assert.deepEqual([host.tag, host.name, host.frameHost], ['iframe', 'Secure Credit Card Frame - CVV', undefined], 'no frame session: the iframe element, named from the page')
+  world.pageResolveFails = true
+  assert.equal((await env.focusedElement()).name, 'Secure CVC input frame', 'from its attributes when it does not resolve')
+  await env.close()
+})
+
+test("CU-336 end to end: a CVV frame whose AX name is unread still asks once the driver reads its title (the red-team's unread case)", async () => {
+  const policy = createPolicy({ sitePolicy: () => 'allow' })
+  const judge = (action, target) => {
+    const verdict = policy.classify(action, { url: 'https://shop.example/checkout', target })
+    return verdict.decision === 'allow' ? 'allow' : verdict.class
+  }
+  const world = { frameFocus: focusOn(9), hostAxFails: true, pageResolveFails: true }
+  const { options, attach } = harness(world)
+  const savedAttributes = HOST.attributes
+  try {
+    HOST.attributes = ['title', 'Secure Credit Card Frame - CVV']
+    const env = await launchBrowserEnvironment(options)
+    await attach(env)
+    world.submit = false
+    const cvv = await env.focusedElement()
+    assert.deepEqual([cvv.name, cvv.frameHost.name], ['', 'Secure Credit Card Frame - CVV'])
+    assert.equal(judge({ type: 'type', text: '123' }, cvv), 'sensitive_data', 'typed into the unnamed inner field: the host title asks')
+    await env.close()
+  } finally {
+    HOST.attributes = savedAttributes
+  }
+})
+
+test('CU-336: frameLabel takes aria-labelledby text, then aria-label, then title - never the name attribute; collapsed, at most 80 characters, self-contained; the attribute form skips labelledby', () => {
+  const doc = { getElementById: (id) => ({ a: { textContent: '  Card  ' }, b: { textContent: 'security code' } })[id] ?? null }
+  const el = (attrs) => ({ nodeType: 1, ownerDocument: doc, getAttribute: (name) => attrs[name] ?? null })
+  assert.equal(frameLabel(el({ 'aria-labelledby': 'a b missing', 'aria-label': 'x', title: 'y' })), 'Card security code')
+  assert.equal(frameLabel(el({ 'aria-label': '  Secure   CVC ', title: 'y' })), 'Secure CVC')
+  assert.equal(frameLabel(el({ title: 'Secure Credit Card Frame - CVV', name: 'n' })), 'Secure Credit Card Frame - CVV')
+  assert.equal(frameLabel(el({ name: '__privateStripeFrame5' })), null, 'an id is no label')
+  assert.equal(frameLabel(el({ 'aria-labelledby': 'missing' })), null)
+  assert.equal(frameLabel(el({ title: 'x'.repeat(200) })).length, 80)
+  assert.equal(frameLabel(null), null)
+  const isolated = new Function(`return (${frameLabel.toString()})`)()
+  assert.equal(isolated(el({ title: 'T' })), 'T', 'runs serialized in the page')
+  assert.equal(frameLabelFromAttributes(['aria-labelledby', 'a', 'title', ' T ', 'name', 'n']), 'T')
+  assert.equal(frameLabelFromAttributes(['src', 'https://pay.example/']), null)
+  assert.equal(frameLabelFromAttributes(['name', 'frame1']), null, 'never the name attribute')
 })

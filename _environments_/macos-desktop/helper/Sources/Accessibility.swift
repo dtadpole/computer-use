@@ -330,6 +330,8 @@ enum Accessibility {
                                 displayText: { displayText(element) }, staticValue: { string(element, "AXValue") })
     let captionValue = Caption.forTarget(own: caption(element, role: role), leaf: captionLeaf.flatMap { caption($0, role: string($0, "AXRole")) })
     let placeholderValue = Placeholder.applies(role: role) ? Placeholder.pick(role: role, raw: string(element, "AXPlaceholderValue")) : nil
+    // CU-387: the file a row's child shows is its row's or cell's (FileAncestor) when it has none of its own.
+    let file = fileOf(element, role: role)
     var shape: [String: JSON] = [
       "bundleId": .string(bundle),
       "pid": owner.map { .int(Int($0)) } ?? .null,
@@ -340,8 +342,8 @@ enum Accessibility {
       "secure": .bool(subrole == secureSubrole || role == secureSubrole),
       "opaque": .bool(title == nil && genericRoles.contains(role ?? "AXUnknown")),
       // What a launch_code check reads (design 0.3.4): the file an element shows and its URL, approved apps only.
-      "filename": .optionalString(string(element, "AXFilename")),
-      "url": .optionalString(urlString(element)),
+      "filename": .optionalString(file.filename),
+      "url": .optionalString(file.url),
       "editable": .bool(editable),
       // CU-194: where the element's window (or sheet) sits, so the driver can key a field by its frame within it - a
       // window moved between two reads keeps the key. Global top-left points; null when AXWindow cannot be read.
@@ -373,6 +375,11 @@ enum Accessibility {
     // CU-250: a menu item says where it sits - its menu path, and whether a submenu on the way is the Services menu -
     // so policy refuses a clicked service (an owner-installed one included), not only the default services' titles.
     if role == "AXMenuItem" { for (key, value) in menuContext(of: element, title: string(element, "AXTitle")).json { shape[key] = value } }
+    // CU-382: a button in Finder's preview-pane Quick Actions row is marked like a Quick Actions menu item.
+    if role == "AXButton", inQuickActionsRow(element, title: string(element, "AXTitle") ?? string(element, "AXDescription")) { shape["quickActions"] = .bool(true) }
+    if file.fromAncestor { shape["fileFrom"] = .string("ancestor") }
+    // CU-392: a Finder drop destination that sends a file away (DropDestination), the value only.
+    if let destination = dropDestination(element, bundle: bundle, role: role) { shape["dropDestination"] = .string(destination) }
     // CU-372: a pop-up button takes type-ahead and arrows without opening its menu, so it says what it holds - its menu
     // items as AX shows them closed (PopUpItems), never by opening the menu.
     // A pull-down button is AXMenuButton in AppKit: the same read, marked pullsDown (its title is a label, not a value).
@@ -407,19 +414,82 @@ enum Accessibility {
 
   /// CU-250: the menus above a menu item, nearest first, up to the menu bar (or a context menu's top): each submenu's
   /// holding item title and its items' titles (at most 60 read, for the Services markers). Names only.
+  /// CU-382: the walk notes a failed AXParent read (menuContextUnread) and whether the item is Finder's (Quick Actions'
+  /// structural marker counts only there); child titles keep their order, as the marker is the submenu's last item.
   static func menuContext(of item: AXUIElement, title: String?) -> MenuContext {
     var levels: [MenuContext.Level] = []
-    var node = elementAttribute(item, "AXParent")
+    var unread = false
+    var underApple = false
+    func parent(_ element: AXUIElement) -> AXUIElement? {
+      let (outcome, value) = elementRead(element, "AXParent")
+      if outcome == .failed { unread = true }
+      return value
+    }
+    var node = parent(item)
     while let menu = node, levels.count < MenuContext.maxDepth, string(menu, "AXRole") == "AXMenu" {
-      let holder = elementAttribute(menu, "AXParent")
+      let holder = parent(menu)
       let holderRole = holder.flatMap { string($0, "AXRole") }
       let holds = holderRole == "AXMenuItem" || holderRole == "AXMenuBarItem"
       let childTitles = children(menu).prefix(60).compactMap { string($0, "AXTitle") }
       levels.append(MenuContext.Level(holderTitle: holds ? holder.flatMap { string($0, "AXTitle") } ?? "" : nil, childTitles: childTitles))
+      // CU-398: the walk's top is a menu bar item - the Apple menu when it is the menu bar's first child (the menu-key
+      // walk's rule). Attributes only: the bar and its first child.
+      if holderRole == "AXMenuBarItem", let holder, let bar = parent(holder), string(bar, "AXRole") == "AXMenuBar",
+         let first = children(bar).first { underApple = CFEqual(first, holder) }
       guard holds, holderRole == "AXMenuItem", let holder else { break }
-      node = elementAttribute(holder, "AXParent")
+      node = parent(holder)
     }
-    return MenuContext.of(itemTitle: title, levels: levels)
+    let inFinder = pid(item).flatMap { bundleId(pid: $0) } == QuickActionsMenu.finderBundleId
+    return MenuContext.of(itemTitle: title, levels: levels, inFinder: inFinder, unread: unread, underAppleMenu: underApple)
+  }
+
+  /// CU-387: an element's own AXFilename/AXURL, else - for a row's content (FileAncestor.lendingRoles) - the nearest
+  /// file-bearing ancestor's within FileAncestor's bounds. Attributes only.
+  static func fileOf(_ element: AXUIElement, role: String?) -> (filename: String?, url: String?, fromAncestor: Bool) {
+    let own = (string(element, "AXFilename"), urlString(element))
+    if own.0 != nil || own.1 != nil { return (own.0, own.1, false) }
+    guard let role, FileAncestor.lendingRoles.contains(role) else { return (nil, nil, false) }
+    var levels: [FileAncestor.Level] = []
+    var node = elementAttribute(element, "AXParent")
+    while let current = node, levels.count < FileAncestor.maxLevels {
+      let level = FileAncestor.Level(role: string(current, "AXRole"), filename: string(current, "AXFilename"), url: urlString(current))
+      levels.append(level)
+      if level.role == "AXWindow" || level.filename != nil || level.url != nil || FileAncestor.stopRoles.contains(level.role ?? "") { break }
+      node = elementAttribute(current, "AXParent")
+    }
+    guard let picked = FileAncestor.pick(levels) else { return (nil, nil, false) }
+    return (picked.filename, picked.url, true)
+  }
+
+  /// CU-392: in Finder, where a drop on this element sends a file (DropDestination): the window's title, else the
+  /// element's own sidebar-row title (the row, its cell or its text, up to 3 levels) inside an outline. Titles stay here.
+  static func dropDestination(_ element: AXUIElement, bundle: String?, role: String?, table: DropDestination = .current) -> String? {
+    guard bundle == QuickActionsMenu.finderBundleId else { return nil }
+    var rowTitle: String? = role == "AXStaticText" ? string(element, "AXValue") : string(element, "AXTitle")
+    var inOutline = false
+    var node = elementAttribute(element, "AXParent")
+    for _ in 0..<4 {
+      guard let current = node else { break }
+      let currentRole = string(current, "AXRole")
+      if currentRole == "AXOutline" { inOutline = true; break }
+      if currentRole == "AXWindow" { break }
+      if rowTitle == nil || rowTitle?.isEmpty == true { rowTitle = string(current, "AXTitle") ?? string(current, "AXDescription") }
+      node = elementAttribute(current, "AXParent")
+    }
+    return table.of(inFinder: true, windowTitle: windowTitle(of: element), rowTitle: rowTitle, inOutline: inOutline)
+  }
+
+  /// CU-382: a button in a Quick Actions row (Finder's preview pane) - a group named 'Quick Actions' (AXTitle or
+  /// AXDescription) at most 4 levels up, the button itself not 'More…'. Titles and descriptions only.
+  static func inQuickActionsRow(_ element: AXUIElement, title: String?, quick: QuickActionsMenu = .current) -> Bool {
+    guard !quick.isExempt(title) else { return false }
+    var node = elementAttribute(element, "AXParent")
+    for _ in 0..<4 {
+      guard let current = node else { return false }
+      for name in ["AXTitle", "AXDescription"] { if let label = string(current, name), quick.titles.contains(label) { return true } }
+      node = elementAttribute(current, "AXParent")
+    }
+    return false
   }
 
   /// The subroles of an element and its ancestors up to its window, nearest first (CU-76: a system dialog marks itself
