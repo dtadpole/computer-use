@@ -103,7 +103,7 @@ const WORDS = Object.freeze({
   permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke',
     // CU-396 (cu-coordinator 03:58Z): presenting, broadcasting, streaming, recording others and calling back reach others
     // like 'Share screen' and 'Call' - a bare 'Present' in slide apps stays free (named).
-    'present now', 'present a tab', 'present a window', 'present your screen', 'present entire screen', 'go live',
+    'present now', 'present a tab', 'present a window', 'present your screen', 'present entire screen', 'present to everyone', 'go live',
     'start broadcast', 'start streaming', 'start livestream', 'start live stream', 'start recording', 'call back',
     // CU-386 (cu-coordinator 23:54Z): asking someone else for money.
     'request money',
@@ -336,7 +336,7 @@ const SUBMIT_BUT_REPLY = Object.freeze(WORDS.submit.filter((word) => !REPLY_WORD
 const SUBMIT_WHOLE_NAMES = new Set(['call', 'answer', 'merge', '呼叫', '接听', '接聽', '合并', '合併'])
 function judgesSubmit(name, target) {
   // CU-397 (cu-coordinator 03:58Z): declining to send is not a send - "Don't Send", "Don't send updates" stay free.
-  if (/^\s*(?:don['\u2019]?t|do\s+not)\s+send\b/i.test(String(name ?? ''))) return false
+  if (/^\s*(?:don['\u2019]?t|do\s+not)\s+(?:send|notify)\b/i.test(String(name ?? ''))) return false
   if (SUBMIT_WHOLE_NAMES.has(normaliseName(name).trim())) return true
   if (!namesWord(withoutPastState(name), WORDS.submit)) return false
   return !(target?.textEntered === false && !namesWord(name, SUBMIT_BUT_REPLY))

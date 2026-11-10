@@ -8,7 +8,7 @@ const policy = createPolicy({ sitePolicy: () => 'allow' })
 const click = (name) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: 'https://meet.example/abc', target: { role: 'button', name } }); return v.decision === 'allow' ? 'allow' : v.class }
 
 test('CU-396: Present now/a tab/a window/your screen, Go live, Start broadcast/streaming/livestream, Start recording and Call back ask permission', () => {
-  for (const name of ['Present now', 'Present a tab', 'Present a window', 'Present your screen', 'Present entire screen', 'Go live', 'Start broadcast', 'Start streaming', 'Start livestream', 'Start recording', 'Call back']) assert.equal(click(name), 'permission', name)
+  for (const name of ['Present now', 'Present a tab', 'Present a window', 'Present your screen', 'Present entire screen', 'Present to everyone', 'Go live', 'Start broadcast', 'Start streaming', 'Start livestream', 'Start recording', 'Call back']) assert.equal(click(name), 'permission', name)
 })
 
 test('CU-396 negatives: a bare Present, Stop recording and Live captions stay free', () => {
@@ -17,6 +17,8 @@ test('CU-396 negatives: a bare Present, Stop recording and Live captions stay fr
 
 test("CU-397: messages to guests ask submit; Don't Send and Don't send updates are free", () => {
   for (const name of ['Email All Invitees', 'Email guests', 'Notify Guests', 'Send updates', 'Forward Invitation', 'Propose New Time']) assert.equal(click(name), 'submit', name)
-  for (const name of ["Don't Send", 'Don\u2019t Send', "Don't send updates", 'Do not send']) assert.equal(click(name), 'allow', name)
+  for (const name of ["Don't Send", 'Don\u2019t Send', "Don't send updates", 'Do not send', "Don't notify guests"]) assert.equal(click(name), 'allow', name)
   assert.equal(click('Send'), 'submit', 'a plain Send still asks')
+  assert.equal(click('Send without notifying'), 'submit', 'it still sends the change (ruled)')
+  assert.equal(click('Request a callback'), 'allow', 'one-word callback stays free (named)')
 })
