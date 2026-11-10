@@ -382,6 +382,20 @@ function cloudExposureClass(list, lower) {
   return null
 }
 
+const TITLES = new Set(['movie', 'film', 'show', 'episode', 'season', 'series', 'title', 'documentary', 'subscription'])
+function streamingPurchase(list) {
+  if (list.length > 6) return false
+  const [verb, ...rest] = list
+  const core = rest.filter((t) => !FILLER.has(t))
+  const last = core[core.length - 1]
+  if (verb === 'add' && core.length >= 1 && core.length <= 3 && last === 'channel' && !rest.includes('to')) return true
+  // 'on' is filler, so the add-on is read from rest ('Add premium add-on').
+  if (verb === 'add' && rest.length <= 4 && rest.slice(-2).join(' ') === 'add on') return true
+  if (verb === 'unlock' && core.length <= 2 && ['episode', 'season', 'chapter', 'series'].includes(last)) return true
+  if ((verb === 'gift' || verb === 'rent') && core.length <= 2 && TITLES.has(last)) return true
+  return false
+}
+
 const DIVERSION_VERBS = new Set(['change', 'update', 'edit', 'add', 'set', 'replace', 'switch'])
 const DIVERSION_OBJECTS = [['direct', 'deposit'], ['bank', 'detail'], ['deposit', 'account'], ['routing', 'number'], ['account', 'number'],
   ['payout', 'account'], ['payout', 'method'], ['bank', 'account'], ['payout', 'detail']]
@@ -439,6 +453,8 @@ export function grammarClasses(name, role = '') {
   // minting a service-account or access key (credential).
   const cloud = cloudExposureClass(list, lower)
   if (cloud) return [cloud]
+  // CU-449 (High; cu-coordinator 21:47Z): streaming add-ons, episode / season unlocks, rentals and gifts (purchase, CU-428 family).
+  if (streamingPurchase(list)) return ['purchase']
   // F2 guard (cu-coordinator 20:28Z): declining, denying or rejecting a request answers no - the grammar's own over-ask since
   // #554 ('Decline request'); older asks ('Decline invitation', CU-422's 'Decline offer') are untouched (the hook never sees them).
   if (['decline', 'deny', 'reject'].includes(list[0]) && list.slice(1).filter((t) => !FILLER.has(t)).every((t) => t === 'request' || t === 'this' || t === 'all')
