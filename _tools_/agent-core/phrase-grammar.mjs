@@ -530,11 +530,19 @@ function exposureClass(list, lower = '') {
   const core = rest.filter((t) => !FILLER.has(t))
   if (verb === 'make' && core.length <= 2 && core[core.length - 1] === 'private' && (core.length === 1 || ['account', 'profile'].includes(core[0]))) return 'free'
   if ((verb === 'switch' || verb === 'change' || verb === 'set') && rest[0] === 'to' && core.length <= 2 && core[0] === 'public') return 'permission'
-  if ((verb === 'change' || verb === 'set') && core[0] === 'audience' && core[1] === 'public' && core.length === 2) return 'permission'
+  // #592 round 2 (cu-researcher 23:44Z): 'Set posts to Public'.
+  if ((verb === 'set' || verb === 'change' || verb === 'make') && rest.length <= 3 && ['post', 'profile', 'account', 'story', 'photo'].includes(rest[0]) && rest[rest.length - 1] === 'public' && (rest.length === 2 || rest[1] === 'to')) return 'permission'
+  // 'everyone' / 'anyone' are filler words, so the audience is read on rest ('Change audience to Everyone').
+  if ((verb === 'change' || verb === 'set') && rest[0] === 'audience' && rest.length <= 3 && ['public', 'everyone', 'anyone'].includes(rest[rest.length - 1])) return 'permission'
   if (verb === 'turn off' && core.length <= 2 && core[0] === 'private' && (core.length === 1 || ['account', 'profile', 'mode'].includes(core[1]))) return 'permission'
   // 'my' marks a profile field shown to others ('Show my email'); a bare 'Show email' opens a message (F1/F5 stays free).
   if (['show', 'display', 'reveal'].includes(verb) && /\bmy\b/.test(lower) && core.length <= 2 && CONTACT_DETAILS.some((seq) => seq.length === core.length && seq.every((w, i) => core[i] === w))) return 'permission'
-  if (verb === 'allow' && (rest[0] === 'anyone' || rest[0] === 'everyone') && rest.includes('message') && rest.length <= 5) return 'permission'
+  // #592 round 2: a detail shown on the profile or to everyone ('Show my phone number on profile', 'Show phone number to everyone').
+  const detail = rest.filter((t) => !['on', 'to', 'profile', 'everyone', 'anyone', 'public'].includes(t) && !FILLER.has(t))
+  const audience = (rest.includes('everyone') || rest.includes('anyone') || rest.includes('public')) || (/\bmy\b/.test(lower) && rest.includes('profile'))
+  if (['show', 'display', 'reveal'].includes(verb) && audience && detail.length <= 2 && CONTACT_DETAILS.some((seq) => seq.length === detail.length && seq.every((w, i) => detail[i] === w))) return 'permission'
+  if (verb === 'allow' && (rest[0] === 'anyone' || rest[0] === 'everyone') && ['message', 'contact', 'call', 'find', 'dm'].some((w) => rest.includes(w)) && rest.length <= 5) return 'permission'
+  if (verb === 'allow' && ['message', 'call', 'request'].includes(rest[0]) && rest[1] === 'from' && ['anyone', 'everyone'].includes(rest[2]) && rest.length === 3) return 'permission'
   return null
 }
 

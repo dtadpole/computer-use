@@ -35,3 +35,12 @@ test('CU-461: the private-account switch asks OFF, free ON; unread asks; a deskt
 test('CU-461 negatives: privacy settings, making the account private, friends-only audiences and hiding details stay free', () => {
   for (const name of ['Privacy settings', 'Make account private', 'Make private', 'Change audience to Friends', 'Change audience to Only me', 'Hide my phone number', 'Show more', 'Show replies']) assert.equal(click(name), 'allow', name)
 })
+
+test('#592 round 2 (cu-coordinator 23:49Z): the six held-out escapes ask permission; bare details and friends audiences stay free', () => {
+  for (const name of ['Change audience to Everyone', 'Set posts to Public', 'Show my phone number on profile', 'Show phone number to everyone', 'Allow anyone to contact me',
+    'Allow messages from anyone']) {
+    assert.deepEqual(grammarClasses(name), ['permission'], name)
+    assert.equal(click(name), 'permission', `hook: ${name}`)
+  }
+  for (const name of ['Show email', 'Show phone number', 'Change audience to Friends', 'Show profile', 'Set to Friends', 'Allow contacts']) assert.equal(click(name), 'allow', name)
+})
