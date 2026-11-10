@@ -10,7 +10,7 @@ import { FILE_BROWSERS, createAppPolicy, opensSelection, panelDestination, panel
 import { normaliseText } from './normalise.mjs'
 import { createPanelFolder } from './panel-folder.mjs'
 import { createExclusions } from './exclusions.mjs'
-import { createApprovalStore, createPolicy, isTextEntry, namesPasswordField, screenTask, textNamedSource } from './policy.mjs'
+import { createApprovalStore, createPolicy, isTextEntry, namesPasswordField, screenTask, textNamedSource, looksSensitive } from './policy.mjs'
 import { originPattern } from './sites.mjs'
 import { buildInfo, createRecorder, redactAction, redactTyped, runsDir } from './trajectory.mjs'
 import { MODIFIER_KEYS, normalizeKey } from './keys.mjs'
@@ -682,6 +682,8 @@ export async function runTask(options) {
   // field showed is kept by its key - the first key and a later one into the same box are judged under the same names.
   const placeholderKeys = new Map()
   const remembered = (given) => {
+    // CU-361: a value-shaped nearbyLabel (card, IBAN, key, e-mail) never becomes a name and never reaches a record.
+    if (given && typeof given === 'object' && typeof given.nearbyLabel === 'string' && looksSensitive(given.nearbyLabel.trim())) { const { nearbyLabel, ...rest } = given; given = rest }
     if (!given || typeof given !== 'object' || typeof given.fieldKey !== 'string' || given.fieldKey === '') return given
     let t = given
     if (typeof t.placeholder === 'string' && t.placeholder.trim() !== '') placeholderKeys.set(t.fieldKey, t.placeholder)
@@ -838,8 +840,13 @@ export async function runTask(options) {
     // CU-377 (cu-coordinator 21:35Z): what a desktop drag carries - 'file' (the press target names a file: a filename or a
     // file URL), 'unknown' (nothing read, a role-less shape, or another app's element), else 'other'.
     const dragSource = action.type === 'drag' && desktop
-      ? (!target || !target.role ? 'unknown'
-        : (typeof target.filename === 'string' && target.filename !== '') || /^file:/i.test(String(target.url ?? '')) ? 'file'
+      // CU-387 round 2 (cu-coordinator 00:58Z): a press target with no name, filename or url is a blind source - unknown;
+      // a name ending in a file extension ('main.py' in an IDE's tree, Electron file lists) is a file.
+      ? (!target || !target.role || (!String(target.name ?? '').trim() && !String(target.filename ?? '').trim() && !String(target.url ?? '').trim()) ? 'unknown'
+        : /\.[a-z][a-z0-9]{0,7}$/i.test(String(target.name ?? '').trim()) ? 'file'
+        // CU-387 (cu-developer-three): the desktop driver passes a file URL's LEAF as target.url ('notes.txt'), null for any
+        // other scheme - so on the desktop a non-empty url is a file.
+        : (typeof target.filename === 'string' && target.filename !== '') || (typeof target.url === 'string' && target.url.trim() !== '') ? 'file'
           // In a file browser (Finder) or a file panel, any row, cell, icon, outline item or name is a file unless known
           // otherwise - fail closed, no unmeasured attribute (cu-coordinator 21:43Z).
           : (FILE_BROWSERS.has(String(state?.frontmostBundleId ?? '')) || FILE_BROWSERS.has(String(target.origin ?? '')) || target.panel) && /row|cell|icon|outline|image|statictext|textfield|group/i.test(String(target.role ?? '')) ? 'file'

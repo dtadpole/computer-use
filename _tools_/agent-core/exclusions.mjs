@@ -35,6 +35,8 @@ export const EXCLUDED_APPS = Object.freeze([
       'in.sinew.*', 'me.proton.pass', 'com.keepersecurity.*',
     ]),
   }),
+  // CU-395 (High; cu-coordinator 03:01Z): Home and Find My act on doors, locks, alarms and devices in the physical world.
+  Object.freeze({ kind: 'physical_control', ids: Object.freeze(['com.apple.Home', 'com.apple.findmy']) }),
   // A clipboard history shows what the person copied before the run; D-031 allows copy and paste, not reading that.
   Object.freeze({
     kind: 'clipboard_manager',
