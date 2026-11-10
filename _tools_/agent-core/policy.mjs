@@ -384,8 +384,11 @@ function printableKeyChar(action) {
  */
 const ORDER_REFERENCE = /(^|[^a-z])order\s*(?:#|no\.|number\b|id\b)\s*#?[\w-]*\d[\w-]*|(^|[^a-z])order\s+\d{3,}[\w-]*|(^|[^a-z])order\s+(?:details|history|status|summary|tracking|lookup)([^a-z]|$)/gi
 
+// CU-443 (cu-coordinator 20:54Z, a class fold): transferring a phone number is a port-out (credential, from the grammar's phone
+// rows), not a money transfer - the 'transfer' purchase word does not read it.
+const NUMBER_TRANSFER = /(^|[^a-z])transfer\s+(?:my\s+|this\s+|your\s+|the\s+)?(?:phone\s+|mobile\s+)?number([^a-z]|$)/gi
 function withoutOrderReferences(name) {
-  return String(name ?? '').replace(ORDER_REFERENCE, ' ')
+  return String(name ?? '').replace(ORDER_REFERENCE, ' ').replace(NUMBER_TRANSFER, ' ')
 }
 
 /**

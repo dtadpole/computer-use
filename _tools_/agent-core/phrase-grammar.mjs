@@ -301,7 +301,7 @@ function phoneClass(list) {
   const [verb, ...rest] = list
   const core = rest.filter((t) => !FILLER.has(t))
   const last = core[core.length - 1]
-  if (verb === 'port' && core.length <= 2 && last === 'number') return 'credential'
+  if ((verb === 'port' || verb === 'transfer') && core.length <= 2 && last === 'number') return 'credential'
   if (verb === 'get' && rest.includes('port') && last === 'pin') return 'credential'
   if (verb === 'forward' && core.length <= 2 && ['call', 'text', 'sms'].includes(last)) return 'credential'
   if ((verb === 'release' || verb === 'cancel' || verb === 'delete') && core.length <= 2 && (last === 'number' || last === 'line') && !core.includes('account')) return 'delete'

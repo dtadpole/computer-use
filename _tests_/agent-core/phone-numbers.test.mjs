@@ -22,8 +22,9 @@ test('CU-443: port-out and forwarding ask credential, releasing a number deletes
     assert.equal(enter(name), cls, `Return: ${name}`)
     assert.equal(space(name), cls, `Space: ${name}`)
   }
-  // Named: 'Transfer number' keeps the older 'transfer' purchase ask, which leads by precedence (it asks either way).
-  assert.equal(click('Transfer number'), 'purchase', 'older class leads')
+  // Class fold (20:54Z): 'Transfer number' is a port-out (credential); a money transfer keeps purchase.
+  for (const name of ['Transfer number', 'Transfer my number']) assert.equal(click(name), 'credential', name)
+  for (const name of ['Transfer money', 'Transfer $50', 'Transfer to savings', 'Transfer order number 12345']) assert.equal(click(name), 'purchase', name)
   for (const [name, cls] of [['Port my phone number', 'credential'], ['Release this line', 'delete'], ['Call the office', 'submit']]) assert.deepEqual(grammarClasses(name), [cls], `table row: ${name}`)
 })
 
