@@ -14,6 +14,7 @@ const press = (target, url) => {
 
 test('dial row (b): a tel:/sip: href on or near the row asks submit on any page', () => {
   for (const url of ['https://crm.example/people/42', 'https://phone.example/contacts', 'https://app.example/settings']) assert.equal(press({ dialHref: true }, url), 'submit', url)
+  for (const role of ['option', 'treeitem', 'row']) assert.equal(press({ role, dialHref: true }, 'https://crm.example/people'), 'submit', `role ${role}`)
 })
 
 test('dial row (c): a call-verb hint asks on a call / voice / phone / dial URL', () => {

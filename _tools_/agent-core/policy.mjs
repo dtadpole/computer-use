@@ -1769,7 +1769,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // a call places a call (submit) - (b) a tel:/sip:/callto: href on or near it (dialHref) on ANY page; (c) a 'Call' / 'Dial' /
     // 'Phone' hint on a /call|voice|phone|dial/ URL; (a) a bare row click on a /call|dial/ URL (fail closed on a dialer page; named
     // over-ask: opening a profile from a dialer list). A list name alone is not a signal. Booleans and short names only (D-107).
-    if (grammarEligible && classes.length === 0 && /^(?:listitem|row|gridcell|option|cell|generic|group)?$/i.test(String(target?.role ?? ''))) {
+    if (grammarEligible && classes.length === 0 && /^(?:listitem|row|gridcell|option|treeitem|cell|generic|group)?$/i.test(String(target?.role ?? ''))) {
       const url = String(context?.url ?? '')
       const row = target?.rowContext && typeof target.rowContext === 'object' ? target.rowContext : {}
       const hints = Array.isArray(row.hints) ? row.hints.map((h) => String(h ?? '').slice(0, 40)) : []
