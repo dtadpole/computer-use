@@ -411,6 +411,8 @@ function dealSubmit(list) {
   if (list.length === 2 && verb === 'easy' && rest[0] === 'apply') return true
   if (verb === 'lock' && core.length <= 3 && last === 'rate') return true
   if ((verb === 'get' || verb === 'start' || verb === 'begin') && core[0] === 'pre' && ['approved', 'approval', 'qualified', 'qualification'].includes(core[1]) && core.length === 2) return true
+  // #590 round 2: the one-word forms ('Get prequalified').
+  if ((verb === 'get' || verb === 'start' || verb === 'begin') && core.length === 1 && ['preapproved', 'preapproval', 'prequalified', 'prequalification'].includes(core[0])) return true
   if (['schedule', 'request', 'book'].includes(verb) && core.length <= 3 && ['tour', 'showing', 'viewing'].includes(last)) return true
   if (['contact', 'message', 'email'].includes(verb) && core.length <= 2 && DEAL_PARTIES.has(last)) return true
   return false
@@ -423,6 +425,8 @@ function walletClass(list) {
   const tail = core.join(' ')
   if (['show', 'reveal', 'view', 'copy', 'export', 'display'].includes(verb) && /^(?:(?:seed|recovery|secret|mnemonic)\s+phrase|private\s+key|secret\s+key|seed)$/.test(tail)) return 'credential'
   if (['import', 'restore', 'recover'].includes(verb) && core.length <= 2 && core[core.length - 1] === 'wallet') return 'credential'
+  // #590 round 2: 'Restore from seed phrase' - typing a seed phrase in.
+  if (['import', 'restore', 'recover'].includes(verb) && /(?:seed|recovery|secret|mnemonic)\s+phrase$|private\s+key$/.test(tail)) return 'credential'
   if (verb === 'set' && core[0] === 'approval' && rest.includes('all')) return 'purchase'
   if (verb === 'approve' && core.length <= 2 && ['spending', 'unlimited', 'token', 'allowance', 'spend'].includes(core[core.length - 1])) return 'purchase'
   if (verb === 'connect' && core.length <= 2 && core[core.length - 1] === 'wallet') return 'permission'
@@ -456,12 +460,15 @@ function workspaceClass(list) {
   if (['allow', 'approve', 'authorize', 'authorise'].includes(verb) && core.length <= 2 && APP_OBJECTS.has(last)) return 'permission'
   // #590 round 2: kick and ban only - blocking is the safe direction (CU-404's 'Block user' stays free).
   if (['kick', 'ban'].includes(verb) && core.length <= 2 && ['member', 'user', 'participant', 'guest'].includes(last)) return 'permission'
+  // #590 round 2: 'Kick from channel', 'Add app to Slack'.
+  if (['kick', 'ban'].includes(verb) && rest[0] === 'from' && core.length <= 2) return 'permission'
+  if (verb === 'add' && APP_OBJECTS.has(core[0]) && rest.includes('to') && core.length <= 3) return 'install'
   if (verb === 'install' && core.length <= 2 && APP_OBJECTS.has(last)) return 'install'
   return null
 }
 
 const MAIL_PROTECTIONS = [['spam', 'filter'], ['safe', 'browsing'], ['external', 'sender', 'warning'], ['sign', 'in', 'notification'], ['security', 'alert'],
-  ['phishing', 'protection'], ['login', 'alert'], ['sign', 'in', 'alert']]
+  ['phishing', 'protection'], ['login', 'alert'], ['sign', 'in', 'alert'], ['junk', 'filter'], ['phishing', 'warning']]
 function mailProtectionClass(list) {
   if (list.length > 8) return null
   const two = SWITCH_VERBS.has(list[0]) && (list[1] === 'off' || list[1] === 'on')
@@ -469,6 +476,9 @@ function mailProtectionClass(list) {
   const rest = list.slice(two ? 2 : 1)
   if (['turn off', 'disable', 'deactivate', 'pause'].includes(verb) && rest.length <= 4 && MAIL_PROTECTIONS.some((seq) => endsWithSeq(rest, seq))) return 'permission'
   if (verb === 'allow' && rest.length === 2 && rest[0] === 'all' && rest[1] === 'sender') return 'permission'
+  // #590 round 2: 'Allow mail from all senders'; 'Turn on access for less secure apps'.
+  if (verb === 'allow' && endsWithSeq(rest, ['all', 'sender']) && rest.length <= 5) return 'permission'
+  if (['turn on', 'enable', 'allow'].includes(verb) && endsWithSeq(rest, ['less', 'secure', 'app']) && rest.length <= 6) return 'credential'
   if (verb === 'add' && rest.includes('domain') && endsWithSeq(rest, ['safe', 'sender'])) return 'permission'
   if (['turn on', 'enable', 'allow'].includes(verb) && rest.slice(0, 3).join(' ') === 'less secure app') return 'credential'
   return null
@@ -496,6 +506,8 @@ function vehicleClass(list) {
   const last = core[core.length - 1]
   const tail = core.join(' ')
   if ((list.length === 1 && list[0] === 'summon') || (list.length === 2 && list[0] === 'smart' && list[1] === 'summon')) return 'physical'
+  // #590 round 2: 'Summon car', 'Start Summon'.
+  if ((list[0] === 'summon' && list.length <= 3 && ['car', 'vehicle'].includes(list[list.length - 1])) || (['start', 'use'].includes(list[0]) && list.length <= 3 && list[list.length - 1] === 'summon')) return 'physical'
   if (list.length === 1 && list[0] === 'honk') return 'physical'
   if (verb === 'open' && core.length <= 2 && ['trunk', 'frunk', 'tailgate', 'liftgate'].includes(last)) return 'physical'
   // #590 round 2 (cu-researcher 23:26Z): a car's windows, never a browser window ('Open link in new window', 'Open in new window').
