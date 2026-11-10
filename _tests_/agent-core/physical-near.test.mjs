@@ -79,3 +79,11 @@ test('CU-418 option (b): the CU-373 account toggles and the CU-408 Autopay switc
   assert.equal(sw('Mail forwarding', desk(true)), 'allow', 'forwarding on -> off')
   assert.equal(sw('Mail forwarding', desk(false)), 'credential', 'forwarding off -> on')
 })
+
+test('CU-418 option (b): CU-431 router switches read a desktop native state the same way - ON asks permission, OFF is free', () => {
+  const desk = (checked, extra = {}) => ({ role: 'AXCheckBox', subrole: 'AXSwitch', checked, inWebArea: false, ...extra })
+  assert.equal(sw('Remote management', desk(false)), 'permission', 'off -> on exposes the router')
+  assert.equal(sw('Remote management', desk(true)), 'allow', 'on -> off')
+  assert.equal(sw('UPnP', desk(true, { inWebArea: true })), 'permission', 'web area: untrusted')
+  assert.equal(sw('SSH', { role: 'AXCheckBox', subrole: 'AXSwitch' }), 'permission', 'older helper: no state')
+})
