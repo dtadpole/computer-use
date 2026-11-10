@@ -869,6 +869,19 @@ export function fileNameOf(value) {
  * directory or bundle keeping its trailing '/' (Payload.app/); never the path, which names the owner's folders. Null for
  * any other scheme, a malformed URL or a leaf fileNameOf refuses.
  */
+/**
+ * CU-392 (cu-coordinator 01:21Z): whether an element's AXURL names a network volume or server - its scheme is one of
+ * smb, cifs, afp, nfs, webdav, davs or ftp (a server row in a file browser, a share on it). A boolean only: the URL, host
+ * and share never leave the driver. A mounted share reads as a file: URL under /Volumes and is not seen here (a named
+ * limit), nor is a WebDAV volume addressed by http(s).
+ */
+export const NETWORK_VOLUME_SCHEMES = Object.freeze(['smb', 'cifs', 'afp', 'nfs', 'webdav', 'davs', 'ftp'])
+export function networkVolumeOf(value) {
+  if (typeof value !== 'string') return false
+  const scheme = /^([a-z][a-z0-9+.-]{0,15}):/i.exec(value.trim())?.[1]?.toLowerCase()
+  return scheme !== undefined && NETWORK_VOLUME_SCHEMES.includes(scheme)
+}
+
 export function fileUrlLeafOf(value) {
   if (typeof value !== 'string') return null
   let url
@@ -1910,6 +1923,8 @@ class DesktopEnvironment {
       // nearest row's or cell's AXFilename/AXURL - a kind for the run record (CU-391), judged exactly as an own file name.
       // Present only then; outside the fingerprint.
       ...(element.fileFrom === 'ancestor' ? { fileFrom: 'ancestor' } : {}),
+      // CU-392: a drop onto a server or network share sends the file away - a boolean from AXURL's scheme, only when true.
+      ...(networkVolumeOf(element.url) ? { networkVolume: true } : {}),
       // CU-265: a link's scheme (AXLink's AXURL), so a facetime:, tel: or mailto: link is not a plain click. Links only - a
       // file browser's items carry file: URLs and are judged by launch_code - and the scheme only, never the URL.
       linkScheme: element.role === 'AXLink' ? linkSchemeOf(element.url) : null,
