@@ -1,19 +1,20 @@
 ---
 title: Consent phrase grammar (draft)
 created: 2026-11-10T15:40:00Z
-modified: 2026-11-10T15:45:00Z
-version: 0.2.0
+modified: 2026-11-10T16:00:00Z
+version: 0.3.0
 description: Draft design note - replace agent-core's enumerated consent phrases with a verb-class x object-class grammar plus folding rules and free guards, so the next near form is caught by structure instead of a new filing. Doc only; cu-developer-one owns any code, cu-coordinator rules first.
 grounded_in:
   - source: cu-coordinator's requests of 2026-11-10 14:14Z and 15:23Z (pattern of word-list Highs CU-408..422; draft the note now, doc only)
   - source: cu-coordinator's ruling of 2026-11-10 15:31Z on draft 0.1 (window ceiling, person objects, device class, plan accepted in principle)
+  - source: cu-coordinator's rulings of 2026-11-10 15:34Z and 15:36Z on cu-developer-one's review (F1, F2, F3, F5; backup class)
   - source: Linear CU-386, CU-400, CU-401, CU-403, CU-404, CU-407..CU-422 (the rulings whose rows are replayed below)
   - source: _context_/team-operations/decision-log.yaml (D-099 both routes, D-106 keys judged by the click classifier, D-107)
 ---
 
-# Consent phrase grammar (draft 0.2)
+# Consent phrase grammar (draft 0.3)
 
-**State: draft 0.2. cu-coordinator's 15:31Z ruling on 0.1 is folded in, and the plan is accepted in principle. Code starts only after the open Highs land and cu-developer-one has reviewed 0.2. Nothing here is built.**
+**State: draft 0.3. cu-coordinator's 15:31Z ruling on 0.1 and 15:34Z/15:36Z ruling on cu-developer-one's review (F1, F2, F3, F5, the backup class) are folded in, and the plan is accepted in principle. Code starts only after the open Highs land and cu-developer-one has reviewed 0.2. Nothing here is built.**
 
 ## Problem
 
@@ -153,6 +154,90 @@ direction and loop context, not names, so they stay as they are.
 Each future filing adds its near forms to a new held-out set before any tuning pass. A set that has informed a
 change is retired from measurement and kept only as regression rows. v1 is retired; v2 is the current measure.
 
-## Open question for 0.3
+## Review findings folded in 0.3 (cu-developer-one's review, cu-coordinator 15:34Z / 15:36Z)
 
-1. Should `backup` (and `snapshot`, `archive`) join the data class? Held-out v2 missed `Delete all backups`.
+### F1 - object homonyms need a sense table
+
+Some object words have a risky sense and a harmless one. I measured the 0.2 prototype on a homonym list. It
+over-asks on `Reset table view` (delete), `Clear table` (delete), `Show card` (credential), `Copy email`
+(credential), `Change key` (credential), `Open order` (purchase) and `Post office` (submit). It stays free on
+`Change sort order`, `Release notes`, `Record video`, `Edit profile`, `Flip card`, `Find a branch`, `Floor plan`
+and `Raise rate limit`. The sense table resolves each homonym by its verb class, a qualifier, or a trailing UI noun:
+
+| Object | Risky sense (asks) | Harmless sense (free) | Resolver |
+|---|---|---|---|
+| table | database table (destroy) | UI table, view, layout; restaurant table only with a pay verb | trailing UI noun (view, layout, column, row, filter, sort) is a free guard; `clear` needs a data qualifier |
+| card | payment card (credential, pay) | UI card, flashcard | credential only with add, link, remove, or a qualifier (number, details, credit, debit) |
+| email | address (credential: change, edit, update, remove, recovery) | a message (copy, email support) | credential only with the change family |
+| key | API, SSH, GPG, access, deploy, security, secret key | keyboard key, music key | credential only with a key qualifier |
+| profile | configuration profile (install) | user profile (edit, view) | install sense only with install, download |
+| order | a purchase (place, submit, confirm) | sort order, open orders list | `open` is not a pay verb for order; sort order is a free guard |
+| post | a verb at the start with nothing or an object after it | a noun before another noun (post office, post card) | a noun-noun pair is free |
+| limit, invoice, branch, plan, record, release | pay, destroy or share senses as in the ask table | rate limit, view invoice, bank branch, floor plan, record video, release notes | qualifier or verb class, as listed |
+
+### F2 - guards suppress grammar asks only
+
+A free guard can only stop an ask that the grammar itself would add. It never removes an ask from an older rule.
+The grammar runs after the existing rules and can only add classes, so every older ask survives (15:08Z), including
+the over-asks that the 0.1 replay listed as superseded or older.
+
+### F3 - bounded tokenising (CU-272 budget)
+
+Names are cut to the first 12 tokens before folding. Tokenising is one linear pass with no backtracking regex, and
+the tables are precompiled sets. Measured on the Python prototype: 40 us per name over the 584 replay names, and
+202 us for a 48-word name. A JavaScript build with precompiled sets should be well under that, and inside the
+CU-272 per-action classification budget. The conformance suite records this timing.
+
+### Backup class (15:36Z)
+
+backup, snapshot and archive join the data class. `Delete all backups`, held-out v2's one miss, now asks delete.
+v2 informed that change, so v2 retires to regression rows, and the next filing's held-out set (v3) becomes the
+measure.
+
+### F5 - real-name false-positive rate
+
+The cost of breadth is new over-asks on names that no current rule asks. F5 measures it on two sources. The first is
+target names from recorded trajectories of real-site and real-app runs. The second is cu-developer-two's sweep
+controls. The method runs the grammar and the current policy on each distinct (role, name), and counts the names
+where only the grammar asks. A reader then marks each one as right (an under-ask the grammar catches) or false (an
+over-ask). The proposed ceiling is at most 1 false new ask per 200 distinct real names; above it, the table entry
+responsible is narrowed before any code lands.
+
+No real-site trajectories exist (no model runs under D-034), and cu-developer-two's sweep names are curated. So the
+real-name corpus is the English UI strings shipped in 25 installed Apple apps (Mail, Calendar, Notes, Music,
+Photos, Maps, Home, Keynote, Pages, Numbers, System Settings and others). That gives 16,394 distinct strings of 1 to
+5 words. It includes labels as well as buttons, so it is a stress test rather than a sample of clicked targets.
+
+| Measure (0.3 prototype, untuned on this corpus) | Count |
+|---|---|
+| Strings the grammar asks on | 235 |
+| ... that the current policy (main a1f3cb5e) already asks | 110 |
+| ... grammar-only new asks | 125 |
+| ... of those, right: under-asks the grammar catches | 50 |
+| ... of those, false: new over-asks | **75, about 1 per 218 strings, just inside the 1-per-200 ceiling** |
+
+The 75 false asks fall into a few clusters, each a sense-table entry rather than a phrase:
+
+- `open` as a pay verb (12: Open Message, Open Project, Open Profile ...): limit `open` to trading objects
+  (position, long, short).
+- show, copy, edit or export with card, code or token (11): needs a qualifier (access, backup, recovery,
+  verification code; card number or details; API token).
+- add or make with item, point, credit, license, room, table, position or cap (14): these objects are money only
+  after a pay verb.
+- accept change(s), apply to all, and accept all in track changes (9): `change` and `all` leave the send objects.
+- move to with a table or columns (4): needs trash or bin. View as (3): needs a person or user.
+- cancel with a download or message, resume all, get all new mail, set up now, start audio (11): cancel is a pay
+  verb only for subscription, plan or membership; the rest are bare-quantifier or UI forms.
+
+The 50 right asks include strings that the current policy leaves free today:
+
+- credential: `Change Access Code`, `Create Access Code` and `Edit Access Code` (Home), `Update iCloud Account
+  Password`, `Add Password`, `New Password`;
+- permission: `Allow Photo Library Access`, `Make Playlist Public Anyway`;
+- submit: `Message All Participants`.
+
+Some are already covered by open PRs: update forms in #501, push in #477, star ratings in #538. The rest are
+reported separately as a filing.
+
+To keep this honest, the corpus that exposed these clusters is now spent, like a held-out set. After the sense
+table is applied, F5 must be re-measured on a fresh corpus (other apps, or the first real-site trajectories).

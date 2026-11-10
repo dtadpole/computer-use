@@ -19,7 +19,7 @@ Each instance is one contract; cu-developer-one owns them, every seat reviews, t
 |---|---|---|
 | [`system-architecture`](system-architecture/INDEX.md) | code layout and ownership, action schema, environment driver, model adapters, loop, policy and consent, trajectory, live control, integration | approved at design 0.8.1 (D-015); the current revision is in its INDEX |
 | [`desktop-extension`](desktop-extension/INDEX.md) | M6 desktop computer use on macOS (D-024): helper app and protocol, app-scoped capture, tagged input, per-app approval, exclusions, local-input pause, agent-core changes | approved at 0.2 (D-027), re-approved at 0.3 after the safety revision (D-030); the current revision is in its INDEX |
-| [`consent-phrase-grammar`](consent-phrase-grammar/INDEX.md) | verb-class x object-class grammar for consent asks by control name, with folding rules, free guards and a replay of the kept matrices | draft 0.2 (cu-researcher), for cu-developer-one's review and cu-coordinator's ruling |
+| [`consent-phrase-grammar`](consent-phrase-grammar/INDEX.md) | verb-class x object-class grammar for consent asks by control name, with folding rules, free guards and a replay of the kept matrices | draft 0.3 (cu-researcher), for cu-developer-one's review and cu-coordinator's ruling |
 
 A change to an approved contract is proposed by message to cu-developer-one and lands as a version bump with the
 reason in the action log.
