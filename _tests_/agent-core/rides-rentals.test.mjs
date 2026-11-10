@@ -28,4 +28,7 @@ test('CU-434: the rows come from the grammar tables (module level), not a phrase
 test('CU-434 negatives: lists, history, estimates, pickup, destination stay free; unlocking an account or starting a meeting keep their classes', () => {
   for (const name of ['Rides', 'Ride history', 'Fare estimate', 'Set pickup', 'Choose destination', 'Order history', 'Unlock account', 'Unlock full article']) assert.equal(click(name), 'allow', name)
   assert.equal(click('Start meeting'), 'submit', 'unchanged')
+  // cu-coordinator 18:49Z: 'Track order' (ruled free) asks purchase from an older phrase rule - a named over-ask for CU-429's
+  // lowering family; a High never lowers an older rule.
+  assert.equal(click('Track order'), 'purchase', 'named over-ask (older rule)')
 })
