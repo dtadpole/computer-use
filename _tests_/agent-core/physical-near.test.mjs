@@ -87,3 +87,11 @@ test('CU-418 option (b): CU-431 router switches read a desktop native state the 
   assert.equal(sw('UPnP', desk(true, { inWebArea: true })), 'permission', 'web area: untrusted')
   assert.equal(sw('SSH', { role: 'AXCheckBox', subrole: 'AXSwitch' }), 'permission', 'older helper: no state')
 })
+
+test('CU-418 option (b): CU-436 spending-cap switch reads a desktop native state the same way - OFF asks purchase, ON is free', () => {
+  const desk = (checked, extra = {}) => ({ role: 'AXCheckBox', subrole: 'AXSwitch', checked, inWebArea: false, ...extra })
+  assert.equal(sw('Spending cap', desk(true)), 'purchase', 'on -> off lifts the cap')
+  assert.equal(sw('Spending cap', desk(false)), 'allow', 'off -> on protects')
+  assert.equal(sw('Spending cap', desk(false, { inWebArea: true })), 'purchase', 'web area: untrusted')
+  assert.equal(sw('Spending cap', { role: 'AXCheckBox', subrole: 'AXSwitch' }), 'purchase', 'older helper: no state')
+})
