@@ -280,6 +280,19 @@ function medicalClass(list) {
   return null
 }
 
+const METERED = new Set(['charging', 'charger', 'charge', 'parking', 'meter'])
+function meteredClass(list) {
+  if (list.length > 6) return null
+  const [verb, ...rest] = list
+  const core = rest.filter((t) => !FILLER.has(t))
+  const hasObject = core.some((t) => METERED.has(t))
+  if (['start', 'unlock', 'reserve', 'book', 'extend', 'pay', 'begin', 'renew'].includes(verb) && hasObject && core.length <= 3 && !core.includes('history')) return 'purchase'
+  // '<n>' is filler in core, so the amount is read from rest ('Add 30 minutes').
+  if (verb === 'add' && rest.length === 2 && rest[0] === '<n>' && ['minute', 'hour', 'min', 'hr'].includes(rest[1])) return 'purchase'
+  if ((verb === 'stop' || verb === 'end' || verb === 'finish') && hasObject && core.length <= 3) return 'submit'
+  return null
+}
+
 const DIVERSION_VERBS = new Set(['change', 'update', 'edit', 'add', 'set', 'replace', 'switch'])
 const DIVERSION_OBJECTS = [['direct', 'deposit'], ['bank', 'detail'], ['deposit', 'account'], ['routing', 'number'], ['account', 'number'],
   ['payout', 'account'], ['payout', 'method'], ['bank', 'account'], ['payout', 'detail']]
@@ -318,6 +331,9 @@ export function grammarClasses(name, role = '') {
   // (delete), joining a video visit or adding a proxy (permission).
   const medical = medicalClass(list)
   if (medical) return [medical]
+  // CU-442 (High; cu-coordinator 20:37Z): a metered paid session - EV charging and parking (CU-434 family, new objects).
+  const metered = meteredClass(list)
+  if (metered) return [metered]
   // F2 guard (cu-coordinator 20:28Z): declining, denying or rejecting a request answers no - the grammar's own over-ask since
   // #554 ('Decline request'); older asks ('Decline invitation', CU-422's 'Decline offer') are untouched (the hook never sees them).
   if (['decline', 'deny', 'reject'].includes(list[0]) && list.slice(1).filter((t) => !FILLER.has(t)).every((t) => t === 'request' || t === 'this' || t === 'all')
