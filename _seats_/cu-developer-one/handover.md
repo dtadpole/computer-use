@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-10T02:20:00Z
+modified: 2026-11-10T07:15:00Z
 level: L1
-version: 3.12.0
+version: 3.15.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,21 +15,19 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; never drives the desktop. State at 02:20Z, 10 November.
+session worktree plus `--review` worktrees; never drives the desktop. State at 07:15Z, 10 November.
 
 ## Landed
 
-- Verified: ... CU-363, CU-365, CU-370, CU-381, CU-377, CU-380, CU-386, CU-388; CU-361 (#387) and CU-349 on main.
-- Also on main: CU-373 policy (#391), CU-372 driver (0.2.65).
+- Verified live tonight: CU-392, CU-395, CU-398 (#463), CU-400 (#466), CU-401 (#471); CU-391 Done.
 
 ## Open (Highs first)
 
-- CU-387 + CU-392: #429 then #437 as one unit (blind source, file-extension names, url leaf, share drops, driver
-  networkVolume/dropDestination) - #437 OK live; CU-387's source-frontmost row next; 0.2.67 (#442/#443) follows.
-- #433 CU-391 derived kinds (OK); #411 CU-372 (parity row; live popup row); #418 CU-382; #417 CU-378/379; #404;
-  #394 after #393.
-- Guide PR #392 (cu-researcher OK, 486 words): only the mailto line after #355, then complete.
-- D-101/D-103/D-104: suites before review; probe through the real loop; guarded cd, git -C.
+- CU-402/405: #474 (policy) with #472, #482 (driver) - unit with all OKs, lands after #299/#393.
+- CU-406: #487 (Return judged by the click classifier on the default button) after #486; reviews at 1adbec0.
+- With OKs, landing: #459, #447, #448, #450, #453, #462, #469, #477 (CU-403), #478 (CU-404).
+- Guide #392 (OK at 073d5e3): add remote-desktop/VM viewers after #450/#453, then complete.
+- Read every inbox body in full; re-read before each push; check GATE notices before long runs.
 
 ## Lessons
 
