@@ -1125,7 +1125,11 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const to = appOf(context.dropTarget)
       // CU-392 (High pending a live row; cu-coordinator 01:13Z): a drop onto a share destination sends the file away even
       // inside one app - AirDrop (or a person in its window), a Shared folder, a Drop Box, a server or network volume.
-      const shareDrop = SHARE_DESTINATION.test(String(context.dropTarget?.name ?? '')) || SHARE_DESTINATION.test(String(context.dropTarget?.windowTitle ?? ''))
+      // A server named by its host ('fileserver.local', an IPv4 address) counts too; a person in the AirDrop window is named
+      // only by the person, so it needs the driver's flag (shareDestination: true, cu-developer-three's helper half).
+      const dropName = String(context.dropTarget?.name ?? '').trim()
+      const hostShaped = /^[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:local|lan|home|corp|internal|intranet)$/i.test(dropName) || /^\d{1,3}(?:\.\d{1,3}){3}$/.test(dropName)
+      const shareDrop = context.dropTarget?.shareDestination === true || SHARE_DESTINATION.test(dropName) || hostShaped
       if (to === '' || from === '' || from !== to || shareDrop) classes.push('permission')
     }
     if (pressesTarget || pressesEnter || keyboard.activates) {
