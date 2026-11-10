@@ -440,3 +440,19 @@ test('a file_choice request carries the target\'s panel kind, and the live view\
     assert.equal(JSON.stringify(choice).includes('"title"'), false, 'a kind marker, never a title')
   }
 })
+
+test('CU-395: a physical control asks once each time - two clicks on Unlock, two questions, only once offered (D-103)', async () => {
+  const requests = []
+  const unlock = { origin: FIXTURE, role: 'AXButton', name: 'Unlock Front Door', fingerprint: 'unlock' }
+  const run = setup({ turns: [{ actions: [click()] }, { actions: [click()] }, { final: 'done' }], appApprovals: approved(FIXTURE) })
+  run.control.subscribe((event) => {
+    if (event.type !== 'consent_request') return
+    requests.push(event.request)
+    run.control.answer?.(event.request.id, { approved: true, lifetime: 'once' })
+  })
+  run.environment.inspectPoint = async () => unlock
+  await run.run()
+  const asks = requests.filter((r) => r.class === 'physical')
+  assert.equal(asks.length, 2, 'no answer covers the next physical act')
+  assert.deepEqual(asks[0].lifetimes, ['once'])
+})

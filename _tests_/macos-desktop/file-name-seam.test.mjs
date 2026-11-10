@@ -110,3 +110,25 @@ test('CU-255 driver: fileNameOf and fileUrlLeafOf keep a bare name and a file UR
   assert.equal(fileUrlLeafOf('file:///Users/someone/Downloads/install%20me.command'), 'install me.command', 'decoded; no folder')
   for (const bad of [undefined, 'https://example.com/a.dmg', 'file:///', 'not a url', 'file:///a/%E0%A4%A', 'file:///a/b%2Fc']) assert.equal(fileUrlLeafOf(bad), null, JSON.stringify(bad))
 })
+
+test('CU-387 driver: a file name the helper lent from the row (fileFrom ancestor) reaches the target with its kind; an own or odd value carries none', async () => {
+  const control = createRunControl()
+  const lent = { ...ITEM, role: 'AXStaticText', title: 'Report', filename: 'Report.pdf', fileFrom: 'ancestor' }
+  const own = { ...ITEM, frame: { x: 300, y: 100, width: 64, height: 64 }, filename: 'Notes.txt' }
+  const odd = { ...ITEM, frame: { x: 500, y: 100, width: 64, height: 64 }, filename: 'Odd.txt', fileFrom: 'parent' }
+  const { env, child } = await launchOnFake({ ...world(lent), elements: [{ rect: lent.frame, element: lent }, { rect: own.frame, element: own }, { rect: odd.frame, element: odd }] }, { control })
+  await logged(child, 3)
+  try {
+    await env.addApp(FIXTURE)
+    const a = await env.inspectPoint({ x: 132, y: 132 })
+    assert.deepEqual([a.role, a.filename, a.fileFrom], ['AXStaticText', 'Report.pdf', 'ancestor'])
+    const b = await env.inspectPoint({ x: 332, y: 132 })
+    assert.equal('fileFrom' in b, false, 'an own file name carries no kind')
+    const c = await env.inspectPoint({ x: 532, y: 132 })
+    assert.equal('fileFrom' in c, false, 'only the one known value passes')
+    assert.equal(a.fingerprint, (await env.inspectPoint({ x: 132, y: 132 })).fingerprint)
+  } finally {
+    await env.close()
+    await stopFake(child)
+  }
+})

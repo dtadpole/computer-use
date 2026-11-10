@@ -35,6 +35,8 @@ export const EXCLUDED_APPS = Object.freeze([
       'in.sinew.*', 'me.proton.pass', 'com.keepersecurity.*',
     ]),
   }),
+  // CU-395 (High; cu-coordinator 03:01Z): Home and Find My act on doors, locks, alarms and devices in the physical world.
+  Object.freeze({ kind: 'physical_control', ids: Object.freeze(['com.apple.Home', 'com.apple.findmy']) }),
   // CU-394 (cu-coordinator 02:50Z): a remote desktop, screen share or virtual machine shows another computer as one opaque
   // canvas - every click there is an unknown target on a machine no approval covered (like CU-252's terminals).
   Object.freeze({
