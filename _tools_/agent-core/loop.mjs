@@ -1214,6 +1214,8 @@ export async function runTask(options) {
         ...(context.boundMenuItem !== undefined ? { boundMenuItem: context.boundMenuItem?.unreadable === true ? 'unreadable' : context.boundMenuItem && context.boundMenuItem.none !== true ? 'bound' : 'none' } : {}),
         ...(action.type === 'drag' && Array.isArray(action.path) && action.path.length > 1 ? { dropTarget: !context.dropTarget || !context.dropTarget.origin || !context.target?.origin ? 'unread' : context.dropTarget.origin === context.target.origin ? 'same_app' : 'other_app' } : {}),
         ...(context.target?.menuOpen === true ? { menuOpen: true } : {}),
+        // CU-398 (cu-verifier 04:37Z): the helper's Apple-menu mark, so a hover row can show it without pressing anything.
+        ...(context.target?.appleMenu === true ? { appleMenu: true } : {}),
         // CU-387 (cu-coordinator 01:59Z): a drag that rode on a file name lent by its row (helper 0.2.67, #443) says so.
         ...(context.target?.fileFrom === 'ancestor' ? { fileFrom: 'ancestor' } : {}),
         ...(context.target?.selectOption === true ? { keyTarget: 'option' } : context.target?.optionUnread === true ? { keyTarget: 'unread' } : {}),

@@ -76,3 +76,15 @@ test('CU-391: a press target whose file name was lent by its row logs fileFrom a
   assert.equal(drag.derived?.dragSource, 'file')
   assert.equal(JSON.stringify(drag.derived).includes('secret'), false)
 })
+
+test('CU-391: a move over an Apple-menu item logs appleMenu true (a hover row shows the mark, nothing pressed)', async () => {
+  const FIX = 'ai.reflection.cu.fixture'
+  const control = createRunControl()
+  const environment = createFakeEnvironment({ kind: 'desktop', control, frontmost: FIX, targets: () => ({ origin: FIX, role: 'AXMenuItem', name: 'Restart\u2026', appleMenu: true }) })
+  const approvals = createAppApprovals({ path: join(tmp, 'd.json') })
+  approvals.grantAlways(FIX, { by: 'api' })
+  const model = createScriptedAdapter({ frame: { width: 1440, height: 900 }, turns: [{ actions: [{ type: 'move', x: 40, y: 60 }] }, { final: 'done' }] })
+  const result = await runTask({ task: 'look', environment, model, control, runsDirectory: join(tmp, 'hover'), build: { commit: 'test', dirty: false }, apps: [FIX], appApprovals: approvals })
+  const move = readRun(result.trajectoryDir).events.find((e) => e.kind === 'action' && e.action?.type === 'move')
+  assert.equal(move?.derived?.appleMenu, true)
+})
