@@ -293,6 +293,24 @@ function meteredClass(list) {
   return null
 }
 
+// 'Call' as a noun inside a longer name stays free (CU-261: 'Call Stack'), as do a call's own settings and lists.
+const CALL_FREE = new Set(['history', 'log', 'setting', 'forwarding', 'waiting', 'center', 'recording', 'list', 'detail', 'back', 'id', 'screening', 'quality',
+  'duration', 'summary', 'stack', 'tree', 'graph', 'chain', 'site', 'frame', 'hierarchy', 'out', 'action', 'option', 'function', 'type', 'volume'])
+function phoneClass(list) {
+  if (list.length > 6) return null
+  const [verb, ...rest] = list
+  const core = rest.filter((t) => !FILLER.has(t))
+  const last = core[core.length - 1]
+  if (verb === 'port' && core.length <= 2 && last === 'number') return 'credential'
+  if (verb === 'get' && rest.includes('port') && last === 'pin') return 'credential'
+  if (verb === 'forward' && core.length <= 2 && ['call', 'text', 'sms'].includes(last)) return 'credential'
+  if ((verb === 'release' || verb === 'cancel' || verb === 'delete') && core.length <= 2 && (last === 'number' || last === 'line') && !core.includes('account')) return 'delete'
+  // The free words are read on rest, not core ('back' is filler; 'Call back' stays with #462); a bare 'Call' stays free.
+  if (verb === 'call' && rest.length >= 1 && core.length <= 2 && !rest.some((t) => CALL_FREE.has(t))) return 'submit'
+  if (verb === 'record' && core.length === 1 && (last === 'call' || last === 'meeting')) return 'permission'
+  return null
+}
+
 const DIVERSION_VERBS = new Set(['change', 'update', 'edit', 'add', 'set', 'replace', 'switch'])
 const DIVERSION_OBJECTS = [['direct', 'deposit'], ['bank', 'detail'], ['deposit', 'account'], ['routing', 'number'], ['account', 'number'],
   ['payout', 'account'], ['payout', 'method'], ['bank', 'account'], ['payout', 'detail']]
@@ -334,6 +352,10 @@ export function grammarClasses(name, role = '') {
   // CU-442 (High; cu-coordinator 20:37Z): a metered paid session - EV charging and parking (CU-434 family, new objects).
   const metered = meteredClass(list)
   if (metered) return [metered]
+  // CU-443 (High; cu-coordinator 20:49Z): moving a phone number or its calls away (credential), releasing a number (delete),
+  // placing a call (submit), recording one (permission). 'Start recording' and 'Call back' stay with #462.
+  const phone = phoneClass(list)
+  if (phone) return [phone]
   // F2 guard (cu-coordinator 20:28Z): declining, denying or rejecting a request answers no - the grammar's own over-ask since
   // #554 ('Decline request'); older asks ('Decline invitation', CU-422's 'Decline offer') are untouched (the hook never sees them).
   if (['decline', 'deny', 'reject'].includes(list[0]) && list.slice(1).filter((t) => !FILLER.has(t)).every((t) => t === 'request' || t === 'this' || t === 'all')
