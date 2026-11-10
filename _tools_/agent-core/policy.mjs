@@ -84,6 +84,8 @@ const LOCALE_ID_NAMES = Object.freeze(['reisepass', '…passnummer', 'geburtsdat
   '여권', '여권번호', '생년월일', '주민등록번호', '계좌번호', '사업자등록번호'])
 const WORDS = Object.freeze({
   purchase: ['buy', 'pay', 'order', 'place order', 'checkout', 'check out', 'subscribe', 'donate', 'purchase', 'transfer', 'withdraw', 'wire', 'send money',
+    // CU-417 (High; cu-coordinator 14:03Z): launching or creating cloud resources spends money.
+    'launch instance', 'launch an instance', 'create instance', 'create an instance', 'create cluster', 'create a cluster',
     // CU-410 (High; cu-coordinator 10:17Z): billing wordings one word from the asking ones.
     'add seats', 'add licenses', 'add credits', 'top up credits', 'resume subscription', 'upgrade seats', 'gift a subscription',
     'send gift', 'get tickets',
@@ -115,6 +117,8 @@ const WORDS = Object.freeze({
     'renew plan', ...ZH_WORDS.purchase, ...LOCALE_WORDS.purchase],
   // CU-135: replace and overwrite (a save panel's 'already exists' sheet), don't save (a close sheet discards work).
   delete: ['delete', 'remove', 'discard', 'erase', 'empty trash', 'cancel subscription', 'replace', 'overwrite', "don't save", 'don\u2019t save',
+    // CU-417: dropping or terminating data and infrastructure; 'Force push' (CU-403's #477, carried so CU-417 closes alone).
+    'drop database', 'drop table', 'drop schema', 'terminate instance', 'terminate instances', 'force push',
     // CU-411 (High; cu-coordinator 11:00Z): closing, terminating, resetting or wiping an account or its data.
     'close my account', 'close account', 'terminate account', 'reset account', 'clear data', 'clear all data', 'wipe data',
     'erase account', 'factory reset',
@@ -126,6 +130,8 @@ const WORDS = Object.freeze({
     // cu-researcher's 13:23Z sweep: unsaved edits lost, like Discard Changes.
     'revert to saved', 'revert all changes', ...ZH_WORDS.delete, ...LOCALE_WORDS.delete],
   permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke',
+    // CU-417: collaborators (CU-403's #477, carried) and branch protection open access.
+    'add collaborator', 'add collaborators', 'disable branch protection', 'remove branch protection',
     // CU-411: ownership and admin grants widen access.
     'make owner', 'make co-owner', 'transfer ownership', 'make admin', 'grant admin',
     // CU-408: adding a payee widens who can be paid.
@@ -1268,6 +1274,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const form = target?.formContext
       const formTrade = form && typeof form === 'object' && Array.isArray(form.options) && form.options.some((text) => TRADE_ASSET.test(String(text)))
       if (!focusesEntry && /\b(?:sell|convert|deposit)\b/i.test(name) && (/\d|[$\u20ac\u00a3\u00a5\u20bf]/.test(name) || TRADE_ASSET.test(name) || formTrade)) classes.push('purchase')
+      // CU-417: an SSH, deploy or access key hands over credentials; a 'Destroy' button destroys (a link stays free).
+      if (!focusesEntry && /^\s*(?:add\s+(?:an?\s+)?(?:new\s+)?(?:ssh|deploy)\s+key|create\s+(?:an?\s+)?(?:new\s+)?access\s+key)\b/i.test(name)) classes.push('credential')
+      if (!focusesEntry && /^\s*destroy\b/i.test(name) && !/link/i.test(String(target?.role ?? ''))) classes.push('delete')
       // CU-410: renting ('Rent', 'Rent now', 'Rent <title>'; 'Rentals' stays free), a bare 'Renew', reactivating a subscription,
       // turning auto-renew on and switching the billing period ask purchase.
       if (!focusesEntry && (/^\s*rent\b/i.test(name) || /^\s*renew\s*$/i.test(name)
