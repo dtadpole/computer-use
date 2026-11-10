@@ -185,7 +185,7 @@ final class SystemCapabilities: Capabilities {
     limitTimeouts()
     let (outcome, menuBar) = Accessibility.elementRead(AXUIElementCreateApplication(front.pid), "AXMenuBar")
     guard outcome == .value, let menuBar else { return .unreadable("the app's menu bar could not be read") }
-    guard let walk = MenuWalk.entries(of: menuBar) else { return .unreadable("the app's menu bar could not be read in full") }
+    guard let walk = MenuWalk.entries(of: menuBar, inFinder: bundleId == QuickActionsMenu.finderBundleId) else { return .unreadable("the app's menu bar could not be read in full") }
     let chars = KeyLayout.characters(keyCode: keyCode, command: flags & 0x0010_0000 != 0)
     let chord = MenuKey.Chord(keyCode: keyCode, flags: flags, unshifted: chars.unshifted, shifted: chars.shifted)
     return MenuKey.read(bundleId: bundleId, entries: walk.entries, emptyMenus: walk.emptyMenus, chord: chord)
@@ -779,7 +779,7 @@ enum MenuWalk {
   static let maxItems = 4000
   static let attributes = ["AXRole", "AXTitle", "AXEnabled", "AXMenuItemCmdChar", "AXMenuItemCmdModifiers", "AXMenuItemCmdVirtualKey", "AXMenuItemCmdGlyph", "AXChildren"] as CFArray
 
-  static func entries(of menuBar: AXUIElement) -> (entries: [MenuKey.Entry], emptyMenus: [String])? {
+  static func entries(of menuBar: AXUIElement, inFinder: Bool = false) -> (entries: [MenuKey.Entry], emptyMenus: [String])? {
     var entries: [MenuKey.Entry] = []
     var emptyMenus: [String] = []
     var visited = 0
@@ -819,7 +819,11 @@ enum MenuWalk {
       let start = entries.count
       for (index, child) in children.enumerated() where !walk(child, path: here, depth: depth + 1, apple: apple || (role == "AXMenuBar" && index == 0)) { return false }
       // CU-250: the items of a submenu that is the Services menu are marked servicesMenu.
-      if role == "AXMenu" { MenuKey.markServices(&entries, from: start, holderTitle: path.last, depth: path.count + 1, services: .current) }
+      if role == "AXMenu" {
+        MenuKey.markServices(&entries, from: start, holderTitle: path.last, depth: path.count + 1, services: .current)
+        // CU-382: and of a Finder Quick Actions submenu, quickActions.
+        MenuKey.markQuickActions(&entries, from: start, holderTitle: path.last, depth: path.count + 1, quick: .current, inFinder: inFinder)
+      }
       return true
     }
     guard walk(menuBar, path: [], depth: 0, apple: false) else { return nil }
