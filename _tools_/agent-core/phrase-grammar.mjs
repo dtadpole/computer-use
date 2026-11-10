@@ -459,6 +459,20 @@ function workspaceClass(list) {
   return null
 }
 
+const MAIL_PROTECTIONS = [['spam', 'filter'], ['safe', 'browsing'], ['external', 'sender', 'warning'], ['sign', 'in', 'notification'], ['security', 'alert'],
+  ['phishing', 'protection'], ['login', 'alert'], ['sign', 'in', 'alert']]
+function mailProtectionClass(list) {
+  if (list.length > 8) return null
+  const two = SWITCH_VERBS.has(list[0]) && (list[1] === 'off' || list[1] === 'on')
+  const verb = two ? `turn ${list[1]}` : list[0]
+  const rest = list.slice(two ? 2 : 1)
+  if (['turn off', 'disable', 'deactivate', 'pause'].includes(verb) && rest.length <= 4 && MAIL_PROTECTIONS.some((seq) => endsWithSeq(rest, seq))) return 'permission'
+  if (verb === 'allow' && rest.length === 2 && rest[0] === 'all' && rest[1] === 'sender') return 'permission'
+  if (verb === 'add' && rest.includes('domain') && endsWithSeq(rest, ['safe', 'sender'])) return 'permission'
+  if (['turn on', 'enable', 'allow'].includes(verb) && rest.slice(0, 3).join(' ') === 'less secure app') return 'credential'
+  return null
+}
+
 const DIVERSION_VERBS = new Set(['change', 'update', 'edit', 'add', 'set', 'replace', 'switch'])
 const DIVERSION_OBJECTS = [['direct', 'deposit'], ['bank', 'detail'], ['deposit', 'account'], ['routing', 'number'], ['account', 'number'],
   ['payout', 'account'], ['payout', 'method'], ['bank', 'account'], ['payout', 'detail']]
@@ -537,6 +551,10 @@ export function grammarClasses(name, role = '') {
   // other members (permission), installing an app (install). Desktop and web share the classifier.
   const workspace = workspaceClass(list)
   if (workspace) return [workspace]
+  // CU-456 (High; cu-coordinator 22:56Z): turning a mail / account protection off (permission); less secure app access on
+  // (credential).
+  const mail = mailProtectionClass(list)
+  if (mail) return [mail]
   // F2 guard (cu-coordinator 20:28Z): declining, denying or rejecting a request answers no - the grammar's own over-ask since
   // #554 ('Decline request'); older asks ('Decline invitation', CU-422's 'Decline offer') are untouched (the hook never sees them).
   if (['decline', 'deny', 'reject'].includes(list[0]) && list.slice(1).filter((t) => !FILLER.has(t)).every((t) => t === 'request' || t === 'this' || t === 'all')
