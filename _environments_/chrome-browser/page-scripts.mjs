@@ -524,6 +524,12 @@ export function describeElement(el) {
       const box = el.closest('fieldset, dialog, [role="dialog"]')
       const SUBMITS = 'button, input[type="submit"], input[type="button"], input[type="image"], [role="button"]'
       if (box && box.querySelectorAll(SUBMITS).length === 1) form = box
+      // A div trade panel (cu-coordinator 05:36Z): the button's nearest ancestor within 3 levels that holds exactly
+      // this one submit-like control and at least one select or combobox - a page-wide container with two submit
+      // buttons never qualifies.
+      for (let node = el.parentElement, depth = 0; !form && node && depth < 3; node = node.parentElement, depth += 1) {
+        if (node.querySelectorAll && node.querySelectorAll(SUBMITS).length === 1 && node.querySelectorAll('select, [role="combobox"]').length > 0) form = node
+      }
     }
     if (!form) return null
     const short = (text) => String(text || '').replace(/\s+/g, ' ').trim()

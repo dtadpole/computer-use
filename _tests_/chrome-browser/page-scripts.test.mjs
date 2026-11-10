@@ -831,3 +831,23 @@ test('CU-402: a submit button outside its form but tied by form= (el.form) reads
   const loose = el('BUTTON', { children: ['Sell'], form: null, closest: () => null })
   assert.equal('formContext' in describeElement(loose), false, 'an unassociated button outside any form: a named limit')
 })
+
+test('CU-402: a div trade panel - the nearest ancestor within 3 levels holding one submit-like control and a select lends its choices; a page-wide box with two submits does not', () => {
+  const select = (text) => ({ tagName: 'SELECT', selectedOptions: [{ textContent: text }] })
+  const amount = { type: 'text', name: 'amount', id: '', placeholder: '', getAttribute: () => null }
+  const panel = (selects, submits, inputs = [amount], parentElement = null) => ({
+    parentElement,
+    querySelectorAll: (sel) => (sel === 'input' ? inputs : sel.startsWith('select') ? selects : submits),
+  })
+  const wrap = { parentElement: null, querySelectorAll: () => [] }
+  const trade = panel([select('BTC')], [{}], [amount])
+  wrap.parentElement = trade
+  const button = (parentElement) => ({ ...el('BUTTON', { children: ['Sell'], closest: () => null }), parentElement })
+  assert.deepEqual(describeElement(button(wrap)).formContext, { options: ['BTC'], amountEntry: true }, 'two levels up: the panel')
+  const page = panel([select('BTC')], [{}, {}])
+  assert.equal('formContext' in describeElement(button(page)), false, 'two submit-like controls: none')
+  const deep = { parentElement: { parentElement: { parentElement: trade, querySelectorAll: () => [] }, querySelectorAll: () => [] }, querySelectorAll: () => [] }
+  assert.equal('formContext' in describeElement(button(deep)), false, 'beyond 3 levels: none')
+  const noSelect = panel([], [{}], [amount])
+  assert.equal('formContext' in describeElement(button(noSelect)), false, 'a panel with no select or combobox: none')
+})
