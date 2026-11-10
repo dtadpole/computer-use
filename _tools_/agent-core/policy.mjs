@@ -1765,6 +1765,20 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // Consent phrase grammar (_designs_/consent-phrase-grammar 0.3.1; cu-coordinator 16:46Z) - the ONE additive hook: when no
     // older rule asked on a pressed named control, the grammar's verb-class x object-class structure may add classes. It
     // never removes or changes an older rule's class (15:08Z, D-063); its free guards stop only its own asks (F2).
+    // CU-443 (cu-coordinator 21:03Z, final; lands with the browser driver's dialHref / rowContext read): a verb-less row that starts
+    // a call places a call (submit) - (b) a tel:/sip:/callto: href on or near it (dialHref) on ANY page; (c) a 'Call' / 'Dial' /
+    // 'Phone' hint on a /call|voice|phone|dial/ URL; (a) a bare row click on a /call|dial/ URL (fail closed on a dialer page; named
+    // over-ask: opening a profile from a dialer list). A list name alone is not a signal. Booleans and short names only (D-107).
+    if (grammarEligible && classes.length === 0 && /^(?:listitem|row|gridcell|option|treeitem|cell|generic|group)?$/i.test(String(target?.role ?? ''))) {
+      const url = String(context?.url ?? '')
+      const row = target?.rowContext && typeof target.rowContext === 'object' ? target.rowContext : {}
+      const hints = Array.isArray(row.hints) ? row.hints.map((h) => String(h ?? '').slice(0, 40)) : []
+      const pathOf = (() => { try { return new URL(url).pathname } catch { return '' } })()
+      const verbless = /^(?:listitem|row|gridcell)$/i.test(String(target?.role ?? ''))
+      if (target?.dialHref === true
+        || (/call|voice|phone|dial/i.test(pathOf) && hints.some((h) => /^\s*(?:call|dial|phone|voice\s+call|video\s+call)\b/i.test(h)))
+        || (verbless && /call|dial/i.test(pathOf))) classes.push('submit')
+    }
     if (grammarEligible && classes.length === 0) for (const cls of grammarClasses(name, target?.role)) classes.push(cls)
     const mixedScript = !url.startsWith('desktop:') && classes.length === 0 && (POINTER.has(action.type) || pressesEnter || keyboard.activates) && target?.mixedScriptName === true
     if (mixedScript) classes.push('permission')
