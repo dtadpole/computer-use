@@ -440,6 +440,19 @@ function identityClass(list) {
   return null
 }
 
+const APP_OBJECTS = new Set(['app', 'integration', 'bot', 'plugin', 'connector', 'extension'])
+function workspaceClass(list) {
+  if (list.length > 6) return null
+  const [verb, ...rest] = list
+  const core = rest.filter((t) => !FILLER.has(t))
+  const last = core[core.length - 1]
+  if (verb === 'convert' && core.includes('public') && core.length <= 3) return 'permission'
+  if (['allow', 'approve', 'authorize', 'authorise'].includes(verb) && core.length <= 2 && APP_OBJECTS.has(last)) return 'permission'
+  if (['kick', 'ban', 'block'].includes(verb) && core.length <= 2 && ['member', 'user', 'participant', 'guest'].includes(last)) return 'permission'
+  if (verb === 'install' && core.length <= 2 && APP_OBJECTS.has(last)) return 'install'
+  return null
+}
+
 const DIVERSION_VERBS = new Set(['change', 'update', 'edit', 'add', 'set', 'replace', 'switch'])
 const DIVERSION_OBJECTS = [['direct', 'deposit'], ['bank', 'detail'], ['deposit', 'account'], ['routing', 'number'], ['account', 'number'],
   ['payout', 'account'], ['payout', 'method'], ['bank', 'account'], ['payout', 'detail']]
@@ -509,6 +522,10 @@ export function grammarClasses(name, role = '') {
   // certifying a benefit claim (submit).
   const identity = identityClass(list)
   if (identity) return [identity]
+  // CU-454 (High; cu-coordinator 22:39Z): a chat workspace - exposing a private channel, granting an app access, acting on
+  // other members (permission), installing an app (install). Desktop and web share the classifier.
+  const workspace = workspaceClass(list)
+  if (workspace) return [workspace]
   // F2 guard (cu-coordinator 20:28Z): declining, denying or rejecting a request answers no - the grammar's own over-ask since
   // #554 ('Decline request'); older asks ('Decline invitation', CU-422's 'Decline offer') are untouched (the hook never sees them).
   if (['decline', 'deny', 'reject'].includes(list[0]) && list.slice(1).filter((t) => !FILLER.has(t)).every((t) => t === 'request' || t === 'this' || t === 'all')
