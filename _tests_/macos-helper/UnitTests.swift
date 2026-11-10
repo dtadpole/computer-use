@@ -2185,6 +2185,9 @@ func testDefaultCandidates() {
   check(DefaultCandidates.outcome(count: 2, truncated: false) == .some(2) && DefaultCandidates.outcome(count: 3, truncated: false) == .some(3), "two or three are candidates")
   check(DefaultCandidates.outcome(count: 4, truncated: false) == .more && DefaultCandidates.outcome(count: 1, truncated: true) == .more, "more than three, or a scan cut short, is more")
   check(DefaultButtonRead.failed.candidates.isEmpty && !DefaultButtonRead.failed.more, "a failed read carries no candidates")
+  // cu-coordinator 11:35Z: a nameless default also looks for candidates; a named one stands alone; a failed read never.
+  check(DefaultCandidates.looks(defaultTitle: nil, defaultRead: true) && DefaultCandidates.looks(defaultTitle: "  ", defaultRead: true), "no default, or a nameless one, looks")
+  check(!DefaultCandidates.looks(defaultTitle: "Submit", defaultRead: true) && !DefaultCandidates.looks(defaultTitle: nil, defaultRead: false), "a named default stands alone; a failed read stays failed")
 }
 
 func testFileAncestorAndDropDestination() {

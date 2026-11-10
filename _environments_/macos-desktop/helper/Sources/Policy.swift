@@ -480,6 +480,12 @@ enum DefaultCandidates {
     }
     return .none
   }
+  /// cu-coordinator 11:35Z (the policy takes the union): a default button that has no name - nothing for agent core to
+  /// judge - also looks for the form's candidates; a named one stands alone.
+  static func looks(defaultTitle: String?, defaultRead: Bool) -> Bool {
+    guard defaultRead else { return false }
+    return (defaultTitle ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+  }
   enum Outcome: Equatable { case none, one, some(Int), more }
   static func outcome(count: Int, truncated: Bool) -> Outcome {
     if truncated || count > maxCandidates { return .more }

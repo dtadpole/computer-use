@@ -303,8 +303,8 @@ test('CU-409: describe() reports a formContext only for a button, from a bounded
 
 test('CU-412: Return candidates come only from a web area whose window reads a positive none, through bounded scans of enabled buttons', () => {
   const caps = files['SystemCapabilities.swift']
-  assert.match(caps, /guard read\.read, read\.button == \.null, Accessibility\.inWebArea\(element\) else \{ return read \}\n        return webCandidates\(of: element, scope: scope\)/,
-    'a native default, a failed read or a focus outside a web page keeps today\'s answer')
+  assert.match(caps, /guard DefaultCandidates\.looks\(defaultTitle: read\.button\.object\?\["title"\]\?\.string, defaultRead: read\.read\), Accessibility\.inWebArea\(element\) else \{ return read \}\n        return webCandidates\(of: element, scope: scope, beside: read\.button\)/,
+    'a named default, a failed read or a focus outside a web page keeps today\'s answer')
   const access = files['Accessibility.swift']
   const scan = access.slice(access.indexOf('private static func submitButtons('), access.indexOf('\n  }\n', access.indexOf('private static func submitButtons(')))
   assert.match(scan, /guard seen < FormContext\.maxScan, Date\(\) < deadline else \{ return \(buttons, true\) \}/, 'bounded; cut short is truncated')
