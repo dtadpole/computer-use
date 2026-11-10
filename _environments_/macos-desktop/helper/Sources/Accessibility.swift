@@ -384,7 +384,57 @@ enum Accessibility {
     // items as AX shows them closed (PopUpItems), never by opening the menu.
     // A pull-down button is AXMenuButton in AppKit: the same read, marked pullsDown (its title is a label, not a value).
     if role == "AXPopUpButton" || role == "AXMenuButton" { shape["popUp"] = popUp(element, pullsDown: role == "AXMenuButton") }
+    // CU-409: a button inside a form says what the form holds (FormContext) - the selected texts beside it and whether
+    // an amount entry is there - so a bare 'Sell' or 'Long' in a native or web trading panel is judged like the chrome
+    // driver's (CU-402). Present only when the form has either.
+    if role == "AXButton", !FormContext.windowButtonSubroles.contains(subrole ?? ""), let form = formContext(of: element) { shape["formContext"] = form }
     return .object(shape)
+  }
+
+  /// CU-409: the button's ancestors, nearest first (at most FormContext.maxLevels), each scanned until the walk finds its
+  /// form or stops (FormContext.outcome). Attributes only.
+  static func formContext(of element: AXUIElement) -> JSON? {
+    var containers: [FormContext.Container] = []
+    var node = elementAttribute(element, "AXParent")
+    while let current = node, containers.count < FormContext.maxLevels {
+      let role = string(current, "AXRole")
+      let subrole = string(current, "AXSubrole")
+      var container = FormContext.Container(role: role, subrole: subrole, submitVerbs: [], selected: [], entryLabels: [], truncated: false)
+      let stops = role.map { FormContext.stopRoles.contains($0) } ?? false
+      let dialog = role == "AXWindow" && ["AXDialog", "AXSystemDialog"].contains(subrole ?? "")
+      if !stops || dialog { scanForm(current, into: &container) }
+      containers.append(container)
+      guard FormContext.outcome(container) == .next else { break }
+      node = elementAttribute(current, "AXParent")
+    }
+    return FormContext.pick(containers)
+  }
+
+  /// One container's submit-like controls (their words: title, description, else their label children), its pop-ups'
+  /// and combo boxes' selected texts and its text entries' label words (description, placeholder, title, help - never
+  /// the value), breadth first, at most FormContext.maxScan elements 4 deep; more marks the scan truncated.
+  private static func scanForm(_ root: AXUIElement, into container: inout FormContext.Container) {
+    var queue: [(element: AXUIElement, depth: Int)] = children(root).map { ($0, 1) }
+    var seen = 0
+    while !queue.isEmpty {
+      guard seen < FormContext.maxScan else { container.truncated = true; return }
+      let next = queue.removeFirst()
+      seen += 1
+      let role = string(next.element, "AXRole")
+      if let role, FormContext.submitRoles.contains(role) {
+        if FormContext.windowButtonSubroles.contains(string(next.element, "AXSubrole") ?? "") { continue }
+        let own = string(next.element, "AXTitle").flatMap { $0.isEmpty ? nil : $0 } ?? string(next.element, "AXDescription").flatMap { $0.isEmpty ? nil : $0 }
+        container.submitVerbs.append(own ?? displayText(next.element))
+        continue
+      }
+      if role == "AXPopUpButton" { container.selected.append(string(next.element, "AXValue") ?? string(next.element, "AXTitle")); continue }
+      if role == "AXComboBox" { container.selected.append(string(next.element, "AXValue")); continue }
+      if role == "AXTextField" {
+        container.entryLabels.append(["AXDescription", "AXPlaceholderValue", "AXTitle", "AXHelp"].map { string(next.element, $0) })
+        continue
+      }
+      if next.depth < 4 { queue += children(next.element).map { ($0, next.depth + 1) } }
+    }
   }
 
   /// CU-372: a pop-up button's selected title (its AXValue) and its menu's items, read from the AXMenu among its

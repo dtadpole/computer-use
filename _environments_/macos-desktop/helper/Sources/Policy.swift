@@ -5,7 +5,7 @@ import Foundation
 /// The helper's identity; `build.sh` writes the same bundle id into Info.plist.
 enum HelperIdentity {
   static let bundleId = "com.reflection.cu-helper"
-  static let version = "0.2.67"
+  static let version = "0.2.68"
   /// The value every synthetic event carries in `kCGEventSourceUserData`: 0x43555345, ASCII "CUSE"
   /// (input-and-targets.md, verify-kit's SYNTHETIC_TAG). Not a secret: an event from another process with this tag
   /// could only fail to pause the run, never act.
@@ -1082,6 +1082,98 @@ enum FileAncestor {
       if level.role == "AXWindow" || level.role == "AXApplication" { return nil }
       if level.filename != nil || level.url != nil { return level }
       if let role = level.role, stopRoles.contains(role) { return nil }
+    }
+    return nil
+  }
+}
+
+/// CU-409 (the desktop half of CU-402/CU-405's formContext; cu-developer-two's chrome page-scripts rules on the AX
+/// tree): a pressed button is judged with the choices beside it - an exchange's bare 'Sell' or 'Long' next to an asset
+/// pop-up and an amount field. Structural and bounded: the nearest ancestor within 3 levels that is a form landmark, a
+/// sheet or dialog that lends, or a group that lends and holds a pop-up or combo box; at most 3 selected texts of 24
+/// characters, and whether an amount-shaped entry is present - an entry's label words only, never its value.
+enum FormContext {
+  static let maxLevels = 3
+  static let maxScan = 60
+  static let maxOptions = 3
+  static let maxOptionLength = 24
+  /// CU-405: the trade verbs a panel's other buttons may carry, and the order-panel helpers that never void it.
+  static let tradeVerb = #"^(?:buy|sell|swap|convert|trade|deposit|withdraw|transfer)(?:\s|$)"#
+  static let neutralVerb = #"^(?:max|min|half|all|\d{1,3}\s?%|limit|market|stop(?:[\s-]limit)?|oco)$"#
+  static let amountWords = #"amount|qty|quantity|price|total|sum"#
+  /// Where the walk stops without lending: past these nothing belongs to the button's form.
+  static let stopRoles: Set<String> = ["AXWindow", "AXWebArea", "AXApplication", "AXMenuBar", "AXMenu"]
+  /// The submit-like controls of a container (a pop-up, check box or radio is a choice, not a submit).
+  static let submitRoles: Set<String> = ["AXButton"]
+  static let windowButtonSubroles: Set<String> = ["AXCloseButton", "AXMinimizeButton", "AXZoomButton", "AXFullScreenButton"]
+  static let selectRoles: Set<String> = ["AXPopUpButton", "AXComboBox"]
+
+  enum Kind: Equatable { case trade, neutral, other }
+
+  /// A submit-like control's words: a trade verb, a neutral helper (or an unlabelled icon button - CU-405's fail-closed
+  /// reading, as one symbol or arrow), or anything else.
+  static func kind(_ verb: String?) -> Kind {
+    let words = (verb ?? "").split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
+    if words.count <= 30, words.range(of: tradeVerb, options: [.regularExpression, .caseInsensitive]) != nil { return .trade }
+    if words.isEmpty { return .neutral }
+    if words.count <= 2, !words.unicodeScalars.contains(where: { CharacterSet.letters.contains($0) || CharacterSet.decimalDigits.contains($0) }) { return .neutral }
+    return words.range(of: neutralVerb, options: [.regularExpression, .caseInsensitive]) != nil ? .neutral : .other
+  }
+
+  /// A container lends its choices when it holds exactly the pressed control, or only trade verbs and neutral helpers.
+  static func lends(submitVerbs: [String?]) -> Bool {
+    if submitVerbs.count == 1 { return true }
+    let kinds = submitVerbs.map(kind)
+    return kinds.contains(.trade) && !kinds.contains(.other)
+  }
+
+  /// One candidate container as the walk read it.
+  struct Container: Equatable {
+    var role: String?
+    var subrole: String?
+    var submitVerbs: [String?]
+    var selected: [String?]
+    var entryLabels: [[String?]]
+    var truncated: Bool
+  }
+
+  enum Outcome: Equatable { case form, next, stop }
+
+  /// What the walk does at `container`: a form landmark is the form; a sheet or dialog is the form when it lends, and
+  /// the walk ends there either way; a stop role ends it; any other group is the form when it lends and holds a pop-up
+  /// or combo box. A scan cut short by the bound never lends (it may have missed a second submit).
+  static func outcome(_ container: Container) -> Outcome {
+    if let role = container.role, stopRoles.contains(role) {
+      if role == "AXWindow", ["AXDialog", "AXSystemDialog"].contains(container.subrole ?? ""), !container.truncated, lends(submitVerbs: container.submitVerbs) { return .form }
+      return .stop
+    }
+    if container.subrole == "AXLandmarkForm" { return container.truncated ? .stop : .form }
+    if container.role == "AXSheet" { return !container.truncated && lends(submitVerbs: container.submitVerbs) ? .form : .stop }
+    return !container.truncated && lends(submitVerbs: container.submitVerbs) && !container.selected.isEmpty ? .form : .next
+  }
+
+  /// The JSON a form gives: its selected texts (at most 3 of at most 24 characters, empty ones skipped) and whether an
+  /// entry's label words name an amount. Nil when it has neither.
+  static func shape(_ container: Container) -> JSON? {
+    let options = container.selected.compactMap { text -> String? in
+      let words = (text ?? "").split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
+      return words.isEmpty || words.count > maxOptionLength ? nil : words
+    }.prefix(maxOptions)
+    let amountEntry = container.entryLabels.contains { labels in
+      labels.contains { ($0 ?? "").range(of: amountWords, options: [.regularExpression, .caseInsensitive]) != nil }
+    }
+    guard !options.isEmpty || amountEntry else { return nil }
+    return .object(["options": .array(options.map { .string($0) }), "amountEntry": .bool(amountEntry)])
+  }
+
+  /// `containers`: the button's ancestors, nearest first, as read. The first that is a form gives the shape.
+  static func pick(_ containers: [Container]) -> JSON? {
+    for container in containers.prefix(maxLevels) {
+      switch outcome(container) {
+      case .form: return shape(container)
+      case .stop: return nil
+      case .next: continue
+      }
     }
     return nil
   }
