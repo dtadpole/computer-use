@@ -1212,7 +1212,7 @@ export async function runTask(options) {
         ...(context.paste ? { paste: context.paste.fromOwner === true ? 'owner' : (context.paste.source ? 'run_attributed' : 'run_unattributed') } : {}),
         ...(context.typeOptions ? { typeOptions: context.typeOptions.unread === true ? 'unread' : 'read' } : {}),
         ...(context.boundMenuItem !== undefined ? { boundMenuItem: context.boundMenuItem?.unreadable === true ? 'unreadable' : context.boundMenuItem && context.boundMenuItem.none !== true ? 'bound' : 'none' } : {}),
-        ...(action.type === 'drag' && Array.isArray(action.path) && action.path.length > 1 ? { dropTarget: !context.dropTarget ? 'unread' : (context.dropTarget.origin ?? null) === (context.target?.origin ?? null) ? 'same_app' : 'other_app' } : {}),
+        ...(action.type === 'drag' && Array.isArray(action.path) && action.path.length > 1 ? { dropTarget: !context.dropTarget || !context.dropTarget.origin || !context.target?.origin ? 'unread' : context.dropTarget.origin === context.target.origin ? 'same_app' : 'other_app' } : {}),
         ...(context.target?.menuOpen === true ? { menuOpen: true } : {}),
         ...(context.target?.selectOption === true ? { keyTarget: 'option' } : context.target?.optionUnread === true ? { keyTarget: 'unread' } : {}),
       }
