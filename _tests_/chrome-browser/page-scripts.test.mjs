@@ -935,3 +935,33 @@ test('CU-412 (D-107): a default submit that is hidden, layout-less, aria-hidden 
   const only = field(); only.form = form([only], [div('Delete account', true), buy])
   assert.equal(ib(only), buy, 'the aria-hidden control is dropped, the one left is the default')
 })
+
+test('CU-443: a pressed row with no verb carries dialHref (a tel:/sip: link on, above or inside it - boolean) and rowContext (list name, up to 3 action names)', () => {
+  const link = (href, label) => el('A', { attrs: { href, ...(label ? { 'aria-label': label } : {}) }, children: [label ?? 'x'] })
+  const icon = (label) => el('BUTTON', { attrs: { 'aria-label': label } })
+  const contacts = el('UL', { attrs: { 'aria-label': 'Contacts' } })
+  const row = (children, { list = contacts, tag = 'LI', attrs = {} } = {}) => el(tag, {
+    attrs, children,
+    querySelectorAll: (selector) => children.filter((child) => typeof child !== 'string' && (selector.includes('a[href]') ? child.tagName === 'A' || child.tagName === 'BUTTON' || child.getAttribute('aria-label') : true)),
+    closest: (selector) => (selector.includes('role="list"') ? list : null),
+  })
+  const dialing = describeElement(row(['Alex Morgan', link('tel:+15550100', 'Call Alex')]))
+  assert.equal(dialing.dialHref, true)
+  assert.deepEqual(dialing.rowContext, { list: 'Contacts', hints: ['Call Alex'] })
+  const iconOnly = describeElement(row(['Alex Morgan', icon('Call'), icon('Message'), icon('Video'), icon('More')]))
+  assert.equal('dialHref' in iconOnly, false, 'no dial link: no dialHref')
+  assert.deepEqual(iconOnly.rowContext, { list: 'Contacts', hints: ['Call', 'Message', 'Video'] }, 'at most three action names')
+  const bare = describeElement(row(['Alex Morgan'], { list: el('UL') }))
+  assert.equal('rowContext' in bare, false, 'a bare row in an unnamed list: nothing to add')
+  assert.equal('dialHref' in bare, false)
+  const inTelLink = el('LI', { attrs: { role: 'listitem' }, children: ['Alex Morgan'], querySelectorAll: () => [], closest: () => null })
+  el('A', { attrs: { href: 'tel:+15550100' }, children: [el('DIV', { children: [inTelLink] })] })
+  assert.equal(describeElement(inTelLink).dialHref, true, 'a dial link two levels up counts')
+  const byRole = describeElement(row(['Alex Morgan'], { tag: 'DIV', attrs: { role: 'listitem' } }))
+  assert.deepEqual(byRole.rowContext, { list: 'Contacts', hints: [] }, 'an ARIA list item counts too')
+  const longName = describeElement(row(['Alex Morgan', icon('x'.repeat(41))], { list: el('UL', { attrs: { 'aria-label': 'y'.repeat(61) } }) }))
+  assert.equal('rowContext' in longName, false, 'over-long names are dropped, not cut')
+  const button = describeElement(el('BUTTON', { attrs: { href: 'tel:+15550100' }, children: ['Call'], querySelectorAll: () => [], closest: (selector) => (selector.includes('role="list"') ? contacts : null) }))
+  assert.equal('rowContext' in button || 'dialHref' in button, false, 'a button is no row: it has its own verb')
+  assert.equal(JSON.stringify(dialing).includes('5550100'), false, 'never the number')
+})

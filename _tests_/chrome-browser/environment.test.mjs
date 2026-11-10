@@ -1067,3 +1067,11 @@ test('CU-412 (11:56Z): a lone script control with no accessible name is no defau
     }
   }
 })
+
+test('CU-443: rowContextOf re-validates the page\'s rowContext at the boundary', async () => {
+  const { rowContextOf } = await import('../../_environments_/chrome-browser/environment.mjs')
+  assert.deepEqual(rowContextOf({ list: 'Contacts', hints: ['Call', 7, 'x'.repeat(41), 'Message', 'Video', 'More'] }), { list: 'Contacts', hints: ['Call', 'Message', 'Video'] })
+  assert.deepEqual(rowContextOf({ list: 'z'.repeat(61), hints: [] }), null, 'an over-long list name is dropped; nothing left')
+  assert.equal(rowContextOf(null), null)
+  assert.equal(rowContextOf('Contacts'), null)
+})

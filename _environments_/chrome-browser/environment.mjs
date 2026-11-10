@@ -172,6 +172,14 @@ export function formContextOf(value) {
   return options.length > 0 || amountEntry ? { options, amountEntry } : null
 }
 
+/** CU-443: describeElement's rowContext, re-validated at the boundary - else null. */
+export function rowContextOf(value) {
+  if (value === null || typeof value !== 'object') return null
+  const list = typeof value.list === 'string' && value.list !== '' && value.list.length <= 60 ? value.list : null
+  const hints = Array.isArray(value.hints) ? value.hints.filter((text) => typeof text === 'string' && text !== '' && text.length <= 40).slice(0, 3) : []
+  return list !== null || hints.length > 0 ? { ...(list !== null ? { list } : {}), hints } : null
+}
+
 class BrowserEnvironment {
   constructor({ running, connection, session, proxy, viewport, release, signal, control, navigationTimeoutMs, limits }) {
     this.kind = 'browser'
@@ -971,6 +979,11 @@ class BrowserEnvironment {
       // CU-400: the choices beside a form's submit button (describeElement's formContext) - up to 3 short option texts
       // and whether an amount entry is present. Context, outside the fingerprint; run records keep origin, role, name.
       ...(formContextOf(extra.formContext) ? { formContext: formContextOf(extra.formContext) } : {}),
+      // CU-443: a row with no verb of its own carries what the page offers around it (describeElement): dialHref (a
+      // tel:/sip:/callto:/facetime: href on it, above it or inside it - a boolean) and rowContext (its list's name, up to 3
+      // action names). Context, outside the fingerprint; never recorded.
+      ...(extra.dialHref === true ? { dialHref: true } : {}),
+      ...(rowContextOf(extra.rowContext) ? { rowContext: rowContextOf(extra.rowContext) } : {}),
       // CU-157: context, not identity - outside the fingerprint.
       textEntered: entered,
       // CU-187: the label that captions a non-entry element (see describeElement); CU-194 rule 5: an entry's structural

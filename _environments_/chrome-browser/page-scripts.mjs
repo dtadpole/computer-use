@@ -601,10 +601,47 @@ export function describeElement(el) {
       || AMOUNT.test([input.name, input.id, input.getAttribute('aria-label'), input.placeholder].filter(Boolean).join(' ')))
     return options.length > 0 || amountEntry ? { options, amountEntry } : null
   })()
+  // CU-443 (cu-coordinator 21:01Z, 21:03Z): a pressed row with no verb of its own - a contact list item that dials on
+  // click - is judged with what the page offers around it. Only for list items, rows, grid cells, options and tree
+  // items. dialHref: whether the row, an ancestor within 4 levels or a link inside it carries a tel:, sip:, callto: or
+  // facetime: href (a boolean, never the number). rowContext: the accessible name of its list (60 characters at most)
+  // and the names of up to 3 action controls inside it (aria-label or title, 40 characters each). Context, not
+  // identity: outside the fingerprint, never recorded.
+  const rowLike = ['listitem', 'row', 'gridcell', 'option', 'treeitem'].includes(role) || tag === 'li' || tag === 'tr'
+  const DIAL_HREF = /^(?:tel|sips?|callto|facetime(?:-audio)?):/i
+  const dialHref = rowLike && (() => {
+    for (let node = el, depth = 0; node && node.nodeType === 1 && depth <= 4; node = node.parentElement, depth += 1) {
+      if (DIAL_HREF.test(String((node.getAttribute && node.getAttribute('href')) || ''))) return true
+    }
+    return typeof el.querySelectorAll === 'function' && [...el.querySelectorAll('a[href]')].some((a) => DIAL_HREF.test(String((a.getAttribute && a.getAttribute('href')) || '')))
+  })()
+  const rowContext = (() => {
+    if (!rowLike || typeof el.querySelectorAll !== 'function') return null
+    const clip = (text, max) => {
+      const short = String(text || '').replace(/\s+/g, ' ').trim()
+      return short !== '' && short.length <= max ? short : null
+    }
+    const box = el.closest ? el.closest('[role="list"], [role="listbox"], [role="grid"], [role="table"], [role="tree"], ul, ol, table') : null
+    let list = null
+    if (box && box.getAttribute) {
+      const own = box.getAttribute('aria-label')
+      const ids = box.getAttribute('aria-labelledby')
+      const doc = box.ownerDocument
+      list = own ? clip(own, 60)
+        : ids && doc && doc.getElementById ? clip(ids.split(/\s+/).map((id) => doc.getElementById(id)).filter(Boolean).map((node) => node.textContent).join(' '), 60) : null
+    }
+    const hints = []
+    for (const control of el.querySelectorAll('button, a[href], [role="button"], [aria-label], [title]')) {
+      if (hints.length >= 3) break
+      const name = clip(control.getAttribute ? control.getAttribute('aria-label') || control.getAttribute('title') : '', 40)
+      if (name !== null && !hints.includes(name)) hints.push(name)
+    }
+    return list !== null || hints.length > 0 ? { ...(list !== null ? { list } : {}), hints } : null
+  })()
   return { tag, inputType: type, isPassword: type === 'password', autocomplete: autocomplete || null, href: link, origin, editable, caption: editable ? null : caption, entryCaption: editable ? caption : null,
     ...(frameUrl ? { frameUrl } : {}), ...(terminal ? { terminal } : {}), ...(notebookCell ? { notebookCell } : {}), ...(notebookSurface ? { notebookSurface } : {}), ...(codeSurface ? { codeSurface } : {}),
     ...(checked !== null ? { checked } : {}), ...(pressed !== null ? { pressed } : {}),
-    ...(formContext !== null ? { formContext } : {}) }
+    ...(formContext !== null ? { formContext } : {}), ...(dialHref === true ? { dialHref: true } : {}), ...(rowContext !== null ? { rowContext } : {}) }
 }
 
 /**
