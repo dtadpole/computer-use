@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-10T12:20:00Z
+modified: 2026-11-10T22:15:00Z
 level: L1
-version: 3.17.0
+version: 3.21.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,19 +15,20 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; never drives the desktop. State at 12:20Z, 10 November.
+session worktree plus `--review` worktrees; never drives the desktop. State at 22:15Z, 10 November.
 
 ## Landed
 
-- Closed live: CU-398, 400, 401, 402/405, 406, 382, 395, 408, 409 (web), 410; CU-411 (#514) in Verify.
+- Closed live through CU-436 and CU-428 (#563, #551); the grammar is on main.
 
 ## Open (Highs first)
 
-- CU-412: #519 (Return default candidates; union; a nameless candidate asks unknown) pairs with #517 (browser) and #520 (helper 0.2.69).
-- CU-409 desktop: no policy part ([#510 #520] + install).
-- Batch, main merged and OK'd: #447 #448 #450 #453 #462 #469 #477 #478 #417; #497 (Bid) and #501 (CU-407) re-merged; #523 (CU-413) new.
-- Guide #392: add remote-desktop/VM viewers after #450/#453, then complete.
-- Practice: confirm each push reached the remote; propose field contracts before driver seams.
+- Lane: #575 (CU-437..443), #576 (dial row, with cu-developer-two), #580 (CU-444..447), #584 (CU-450); each stacked PR retargets to main when its base lands.
+- Table PR 4 (CU-449) is built locally on #580.
+- New Highs are grammar table rows (D-108); page context is the URL, never the title.
+- Push only on a full suite with exit code 0 (the 21:10Z slip).
+- #523 narrows to 'Send to bank'; #538 is test rows only.
+- Guide #392: add remote-desktop/VM viewers after #450, then complete.
 
 ## Lessons
 
