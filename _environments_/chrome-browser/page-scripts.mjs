@@ -195,7 +195,34 @@ export function implicitSubmitButton(el) {
     const submits = (candidate.tagName === 'BUTTON' && type === 'submit') || (candidate.tagName === 'INPUT' && (type === 'submit' || type === 'image'))
     if (submits) return candidate.disabled ? null : candidate
   }
-  return null
+  // CU-412: no submit button, yet HTML implicit submission still submits a form with exactly one field that blocks it -
+  // and the form's own submit control may be a script-driven [role=button] (or a <button type=button>) whose handler
+  // calls requestSubmit(). When the form holds exactly one such control, it is what this Return effectively presses.
+  // A search form with no button stays none; two or more such controls report none (a named limit).
+  const blocking = Array.from(form.elements).filter((f) => f.tagName === 'INPUT' && IMPLICIT.includes(String(f.type).toLowerCase()))
+  if (blocking.length !== 1) return null
+  const controls = Array.from(form.querySelectorAll ? form.querySelectorAll('[role="button"], button[type="button"]') : [])
+    .filter((c) => !(c.disabled === true || (c.getAttribute && c.getAttribute('aria-disabled') === 'true')))
+  return controls.length === 1 ? controls[0] : null
+}
+
+/**
+ * CU-412 (cu-coordinator 11:25Z): the same form's script submit controls when there are two or more - the Return then
+ * presses one of them, the driver cannot tell which, so agent core asks the strictest class among them (fail closed).
+ * Empty when a real submit button exists, implicit submission would not submit, or there are fewer than two.
+ */
+export function implicitSubmitControls(el) {
+  const IMPLICIT = ['text', 'search', 'email', 'url', 'tel', 'password', 'number', 'date', 'datetime-local', 'month', 'time', 'week']
+  if (!el || el.tagName !== 'INPUT' || !IMPLICIT.includes(String(el.type).toLowerCase())) return []
+  const form = el.form
+  if (!form || !form.elements) return []
+  const elements = Array.from(form.elements)
+  const realSubmit = elements.some((c) => { const t = String(c.type).toLowerCase(); return (c.tagName === 'BUTTON' && t === 'submit') || (c.tagName === 'INPUT' && (t === 'submit' || t === 'image')) })
+  if (realSubmit) return []
+  if (elements.filter((f) => f.tagName === 'INPUT' && IMPLICIT.includes(String(f.type).toLowerCase())).length !== 1) return []
+  const controls = Array.from(form.querySelectorAll ? form.querySelectorAll('[role="button"], button[type="button"]') : [])
+    .filter((c) => !(c.disabled === true || (c.getAttribute && c.getAttribute('aria-disabled') === 'true')))
+  return controls.length >= 2 ? controls : []
 }
 
 /**

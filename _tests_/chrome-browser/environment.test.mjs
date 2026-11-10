@@ -954,3 +954,25 @@ test('CU-406: the Return target (defaultButton) carries the submit button\'s for
     await env.close()
   }
 })
+
+test('CU-412: a Return whose implicit submission may press one of two script controls carries defaultCandidates (names, at most 3), outside the fingerprint', async () => {
+  const handlers = checkoutHandlers({ submit: false })
+  const nodes = { 51: { backendNodeId: 51, nodeName: 'DIV', attributes: ['role', 'button'] }, 52: { backendNodeId: 52, nodeName: 'DIV', attributes: ['role', 'button'] } }
+  const ax = { 51: 'Buy', 52: 'Delete account' }
+  const baseDescribe = handlers['DOM.describeNode']
+  handlers['DOM.describeNode'] = (params) => (params.objectId === 'c0' ? { result: { node: nodes[51] } } : params.objectId === 'c1' ? { result: { node: nodes[52] } } : nodes[params.backendNodeId] ? { result: { node: nodes[params.backendNodeId] } } : baseDescribe(params))
+  const baseAx = handlers['Accessibility.getPartialAXTree']
+  handlers['Accessibility.getPartialAXTree'] = (params) => (ax[params.backendNodeId] ? { result: { nodes: [{ backendDOMNodeId: params.backendNodeId, role: { value: 'button' }, name: { value: ax[params.backendNodeId] } }] } } : baseAx(params))
+  const baseCall = handlers['Runtime.callFunctionOn']
+  handlers['Runtime.callFunctionOn'] = (params) => (String(params.functionDeclaration).includes('implicitSubmitControls') ? { result: { result: { type: 'object', subtype: 'array', objectId: 'list' } } } : baseCall(params))
+  handlers['Runtime.getProperties'] = ({ objectId }) => (objectId === 'list' ? { result: { result: [{ name: '0', value: { objectId: 'c0' } }, { name: '1', value: { objectId: 'c1' } }, { name: 'length', value: { value: 2 } }] } } : { result: { result: [] } })
+  const run = harness({ handlers })
+  const env = await launchBrowserEnvironment(run.options)
+  try {
+    const target = await env.focusedElement()
+    assert.equal(target.defaultButton, null, 'no single control')
+    assert.deepEqual(target.defaultCandidates, { controls: [{ role: 'button', name: 'Buy' }, { role: 'button', name: 'Delete account' }], more: false })
+  } finally {
+    await env.close()
+  }
+})
