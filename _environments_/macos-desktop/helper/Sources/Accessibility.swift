@@ -373,6 +373,8 @@ enum Accessibility {
     // CU-250: a menu item says where it sits - its menu path, and whether a submenu on the way is the Services menu -
     // so policy refuses a clicked service (an owner-installed one included), not only the default services' titles.
     if role == "AXMenuItem" { for (key, value) in menuContext(of: element, title: string(element, "AXTitle")).json { shape[key] = value } }
+    // CU-382: a button in Finder's preview-pane Quick Actions row is marked like a Quick Actions menu item.
+    if role == "AXButton", inQuickActionsRow(element, title: string(element, "AXTitle") ?? string(element, "AXDescription")) { shape["quickActions"] = .bool(true) }
     // CU-372: a pop-up button takes type-ahead and arrows without opening its menu, so it says what it holds - its menu
     // items as AX shows them closed (PopUpItems), never by opening the menu.
     // A pull-down button is AXMenuButton in AppKit: the same read, marked pullsDown (its title is a label, not a value).
@@ -407,19 +409,41 @@ enum Accessibility {
 
   /// CU-250: the menus above a menu item, nearest first, up to the menu bar (or a context menu's top): each submenu's
   /// holding item title and its items' titles (at most 60 read, for the Services markers). Names only.
+  /// CU-382: the walk notes a failed AXParent read (menuContextUnread) and whether the item is Finder's (Quick Actions'
+  /// structural marker counts only there); child titles keep their order, as the marker is the submenu's last item.
   static func menuContext(of item: AXUIElement, title: String?) -> MenuContext {
     var levels: [MenuContext.Level] = []
-    var node = elementAttribute(item, "AXParent")
+    var unread = false
+    func parent(_ element: AXUIElement) -> AXUIElement? {
+      let (outcome, value) = elementRead(element, "AXParent")
+      if outcome == .failed { unread = true }
+      return value
+    }
+    var node = parent(item)
     while let menu = node, levels.count < MenuContext.maxDepth, string(menu, "AXRole") == "AXMenu" {
-      let holder = elementAttribute(menu, "AXParent")
+      let holder = parent(menu)
       let holderRole = holder.flatMap { string($0, "AXRole") }
       let holds = holderRole == "AXMenuItem" || holderRole == "AXMenuBarItem"
       let childTitles = children(menu).prefix(60).compactMap { string($0, "AXTitle") }
       levels.append(MenuContext.Level(holderTitle: holds ? holder.flatMap { string($0, "AXTitle") } ?? "" : nil, childTitles: childTitles))
       guard holds, holderRole == "AXMenuItem", let holder else { break }
-      node = elementAttribute(holder, "AXParent")
+      node = parent(holder)
     }
-    return MenuContext.of(itemTitle: title, levels: levels)
+    let inFinder = pid(item).flatMap { bundleId(pid: $0) } == QuickActionsMenu.finderBundleId
+    return MenuContext.of(itemTitle: title, levels: levels, inFinder: inFinder, unread: unread)
+  }
+
+  /// CU-382: a button in a Quick Actions row (Finder's preview pane) - a group named 'Quick Actions' (AXTitle or
+  /// AXDescription) at most 4 levels up, the button itself not 'More…'. Titles and descriptions only.
+  static func inQuickActionsRow(_ element: AXUIElement, title: String?, quick: QuickActionsMenu = .current) -> Bool {
+    guard !quick.isExempt(title) else { return false }
+    var node = elementAttribute(element, "AXParent")
+    for _ in 0..<4 {
+      guard let current = node else { return false }
+      for name in ["AXTitle", "AXDescription"] { if let label = string(current, name), quick.titles.contains(label) { return true } }
+      node = elementAttribute(current, "AXParent")
+    }
+    return false
   }
 
   /// The subroles of an element and its ancestors up to its window, nearest first (CU-76: a system dialog marks itself

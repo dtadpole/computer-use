@@ -5,7 +5,7 @@ import Foundation
 /// The helper's identity; `build.sh` writes the same bundle id into Info.plist.
 enum HelperIdentity {
   static let bundleId = "com.reflection.cu-helper"
-  static let version = "0.2.65"
+  static let version = "0.2.66"
   /// The value every synthetic event carries in `kCGEventSourceUserData`: 0x43555345, ASCII "CUSE"
   /// (input-and-targets.md, verify-kit's SYNTHETIC_TAG). Not a secret: an event from another process with this tag
   /// could only fail to pause the run, never act.
@@ -892,6 +892,8 @@ enum MenuKey {
     var appleMenu: Bool = false
     /// Under a Services submenu (CU-250): a service acts in another app, so agent core refuses it.
     var servicesMenu: Bool = false
+    /// Under Finder's Quick Actions (CU-382): an owner-installed workflow may run any script, so agent core asks.
+    var quickActions: Bool = false
 
     /// Whether the item has a key equivalent at all.
     var hasKey: Bool { cmdVirtualKey != nil || !(cmdChar ?? "").isEmpty }
@@ -974,6 +976,7 @@ enum MenuKey {
                                   "enabled": entry.enabled.map { .bool($0) } ?? .null]
     if entry.appleMenu { object["appleMenu"] = .bool(true) }
     if entry.servicesMenu { object["servicesMenu"] = .bool(true) }
+    if entry.quickActions { object["quickActions"] = .bool(true) }
     return .object(object)
   }
 
@@ -1057,6 +1060,46 @@ struct ServicesMenu: Equatable {
   }
 }
 
+/// CU-382: Finder's Quick Actions - a submenu (and the preview pane's button row) listing the owner's Automator and
+/// Shortcuts workflows, which can run any script outside the approved app, as a service does. No AX attribute tells it
+/// apart, so it counts by Finder's own strings (Finder.app's LocalizableMerged table: N270 and QK1 'Quick Actions',
+/// N274 'Customize…' - the submenu's last item, QK8 'More…' - the pane's last button), read for the current language
+/// beside the English ones. Structure first: a Finder submenu whose last item is the marker. Title second: a submenu
+/// or a button group named 'Quick Actions' in any app (the named over-mark).
+struct QuickActionsMenu: Equatable {
+  var titles: Set<String>
+  var markers: Set<String>
+  var exempt: Set<String>
+
+  static let finderBundleId = "com.apple.finder"
+  static let english = QuickActionsMenu(titles: ["Quick Actions"], markers: ["Customize\u{2026}", "Customize..."],
+                                        exempt: ["Customize\u{2026}", "Customize...", "More\u{2026}", "More..."])
+
+  static let current: QuickActionsMenu = {
+    var menu = english
+    if let finder = Bundle(path: "/System/Library/CoreServices/Finder.app") {
+      let read = { (key: String) -> String? in
+        let value = finder.localizedString(forKey: key, value: "\u{1}", table: "LocalizableMerged")
+        return value == "\u{1}" || value.isEmpty ? nil : value
+      }
+      for key in ["N270", "QK1"] { if let title = read(key) { menu.titles.insert(title) } }
+      if let marker = read("N274") { menu.markers.insert(marker); menu.exempt.insert(marker) }
+      if let more = read("QK8") { menu.exempt.insert(more) }
+    }
+    return menu
+  }()
+
+  /// A submenu held by an item titled `itemTitle`, whose own items are `childTitles` (in order), in Finder or not.
+  func isQuickActions(itemTitle: String?, childTitles: [String], inFinder: Bool) -> Bool {
+    if inFinder, let last = childTitles.last, markers.contains(last) { return true }
+    if let itemTitle, titles.contains(itemTitle) { return true }
+    return false
+  }
+
+  /// 'Customize…' and 'More…' open Extensions settings (System Settings, excluded) - never marked themselves.
+  func isExempt(_ title: String?) -> Bool { title.map { exempt.contains($0) } ?? false }
+}
+
 extension MenuKey {
   /// CU-250: marks every entry from `start` on as under a Services submenu when the submenu holding them - held by an
   /// item titled `holderTitle`, its direct items at path depth `depth` - is the Services menu.
@@ -1066,6 +1109,16 @@ extension MenuKey {
     guard services.isServices(itemTitle: holderTitle, childTitles: direct) else { return }
     for index in start..<entries.count { entries[index].servicesMenu = true }
   }
+
+  /// CU-382: marks every entry from `start` on as under Finder's Quick Actions when the submenu holding them is one
+  /// (QuickActionsMenu: its last direct item the marker in Finder, or its holder's title) - its 'Customize…' and
+  /// 'More…' items excepted. So a chord bound to a Quick Action is read as one (boundMenuItem.quickActions).
+  static func markQuickActions(_ entries: inout [Entry], from start: Int, holderTitle: String?, depth: Int, quick: QuickActionsMenu, inFinder: Bool) {
+    guard start < entries.count, holderTitle != nil else { return }
+    let direct = entries[start...].filter { $0.path.count == depth }.compactMap { $0.title }
+    guard quick.isQuickActions(itemTitle: holderTitle, childTitles: direct, inFinder: inFinder) else { return }
+    for index in start..<entries.count where !quick.isExempt(entries[index].title) { entries[index].quickActions = true }
+  }
 }
 
 /// CU-250: where a clicked menu item sits - the titles from the menu bar (or a context menu's top) down to the item, and
@@ -1073,6 +1126,10 @@ extension MenuKey {
 struct MenuContext: Equatable {
   var path: [String]
   var servicesMenu: Bool
+  /// CU-382: a submenu on the way is Finder's Quick Actions (QuickActionsMenu), the item itself not its 'Customize…'.
+  var quickActions: Bool = false
+  /// CU-382: a read on the walk up failed, so the path may stop short of a Services or Quick Actions level - policy asks.
+  var unread: Bool = false
 
   static let maxDepth = 10
 
@@ -1083,16 +1140,20 @@ struct MenuContext: Equatable {
     var childTitles: [String]
   }
 
-  static func of(itemTitle: String?, levels: [Level], services: ServicesMenu = .current) -> MenuContext {
+  static func of(itemTitle: String?, levels: [Level], services: ServicesMenu = .current, quick: QuickActionsMenu = .current,
+                 inFinder: Bool = false, unread: Bool = false) -> MenuContext {
     let capped = Array(levels.prefix(maxDepth))
     let holders = capped.compactMap { $0.holderTitle }
     let flagged = capped.contains { level in level.holderTitle != nil && services.isServices(itemTitle: level.holderTitle, childTitles: level.childTitles) }
-    return MenuContext(path: holders.reversed() + [itemTitle ?? ""], servicesMenu: flagged)
+    let quickLevel = capped.contains { level in level.holderTitle != nil && quick.isQuickActions(itemTitle: level.holderTitle, childTitles: level.childTitles, inFinder: inFinder) }
+    return MenuContext(path: holders.reversed() + [itemTitle ?? ""], servicesMenu: flagged, quickActions: quickLevel && !quick.isExempt(itemTitle), unread: unread)
   }
 
   var json: [String: JSON] {
     var object: [String: JSON] = ["menuPath": .array(path.map { .string($0) })]
     if servicesMenu { object["servicesMenu"] = .bool(true) }
+    if quickActions { object["quickActions"] = .bool(true) }
+    if unread { object["menuContextUnread"] = .bool(true) }
     return object
   }
 }
