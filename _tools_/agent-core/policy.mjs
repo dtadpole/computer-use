@@ -1846,9 +1846,14 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // Split particles for the OLDER lists (cu-coordinator 22:02Z, a High follow-up to #580): 'Turn location sharing on' / 'Turn
     // Find My off' / 'Switch the heater on' are judged as their canonical 'turn on X' form by every rule - one probe, only when
     // nothing has asked yet, so it can only add an ask; a native checkbox already on never probes (its direction rules decide).
-    const splitForm = context.splitParticleProbe === true ? null : /^\s*(turn|switch)\s+(?!(?:on|off)\b)(.+?)\s+(on|off)\s*$/i.exec(name)
-    if (grammarEligible && classes.length === 0 && !nativeOn && splitForm) {
-      const canonical = `${splitForm[1]} ${splitForm[3]} ${splitForm[2]}`
+    // CU-455 (cu-coordinator 22:48Z): the switch-verb synonyms too - 'switch / flip / toggle' (+ on|off, either word order) read
+    // as 'turn on|off X', the form the older lists know ('Switch off firewall', 'Flip parental controls off').
+    const splitMatch = /^\s*(?:turn|switch|flip|toggle)\s+(?!(?:on|off)\b)(.+?)\s+(on|off)\s*$/i.exec(name)
+    const leadMatch = /^\s*(?:switch|flip|toggle)\s+(on|off)\s+(.+?)\s*$/i.exec(name)
+    const switchForm = context.splitParticleProbe === true ? null
+      : splitMatch ? { particle: splitMatch[2], object: splitMatch[1] } : leadMatch ? { particle: leadMatch[1], object: leadMatch[2] } : null
+    if (grammarEligible && classes.length === 0 && !nativeOn && switchForm) {
+      const canonical = `turn ${switchForm.particle} ${switchForm.object}`
       const probe = classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { ...target, name: canonical }, splitParticleProbe: true })
       if (probe.decision === 'block' || probe.decision === 'handoff') return probe
       if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) classes.push(cls)
