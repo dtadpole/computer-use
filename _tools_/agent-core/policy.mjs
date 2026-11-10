@@ -142,6 +142,9 @@ const WORDS = Object.freeze({
     // cu-researcher's 13:23Z sweep: unsaved edits lost, like Discard Changes.
     'revert to saved', 'revert all changes', ...ZH_WORDS.delete, ...LOCALE_WORDS.delete],
   permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke',
+    // CU-423 (High; cu-coordinator 15:50Z): home access codes and keys, photo-library grants.
+    'create access code', 'create an access code', 'share access code', 'add home key', 'share home key', 'invite to home',
+    'allow access to all photos', 'grant photo library access', 'allow full photo access',
     // CU-415: signatures bind the owner; releasing records shares personal data.
     'sign document', 'sign the document', 'e-sign', 'esign', 'adopt and sign', 'sign and submit', 'accept terms', 'accept the terms',
     'accept agreement', 'accept the agreement', 'authorize release', 'authorise release', 'release records',
@@ -1306,6 +1309,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const form = target?.formContext
       const formTrade = form && typeof form === 'object' && Array.isArray(form.options) && form.options.some((text) => TRADE_ASSET.test(String(text)))
       if (!focusesEntry && /\b(?:sell|convert|deposit)\b/i.test(name) && (/\d|[$\u20ac\u00a3\u00a5\u20bf]/.test(name) || TRADE_ASSET.test(name) || formTrade)) classes.push('purchase')
+      // CU-423: 'Make <noun> public anyway' grants access; a password change with an object between ('Change my password',
+      // 'Change account password', 'Update your password') asks credential - the bare 'Change password' keeps its hand-off.
+      if (!focusesEntry && /^\s*make\s+(?:\S+\s+){0,2}public\s+anyway\s*$/i.test(name)) classes.push('permission')
+      if (!focusesEntry && /^\s*(?:change|update|reset)\s+(?:(?:my|your|the|this)\s+(?:account\s+|apple\s+id\s+|login\s+|icloud\s+(?:account\s+)?)?|(?:account|apple\s+id|login|icloud(?:\s+account)?)\s+)password\s*$/i.test(name)) classes.push('credential')
       // CU-415 (cu-coordinator 13:12Z): 'Reserve seat / table' asks purchase on the name alone (a booking commits the owner; a
       // free table's over-ask is named); 'Book appointment' asks purchase with a price or deposit in its name, else submit.
       if (!focusesEntry && /^\s*reserve\s+(?:a\s+)?(?:seat|table|spot)\b/i.test(name)) classes.push('purchase')
