@@ -225,6 +225,28 @@ function adminClass(list) {
   return null
 }
 
+const GAME_CURRENCY = new Set(['gem', 'coin', 'diamond', 'crystal', 'robux', 'buck', 'credit', 'gold', 'point', 'ruby', 'jewel'])
+const PASS_TIERS = new Set(['battle', 'premium', 'season', 'vip', 'elite', 'gold', 'plus'])
+const CURRENCY_VERBS = new Set(['get', 'buy', 'unlock', 'gift', 'spend', 'continue', 'revive', 'use', 'pay', 'claim', 'purchase', 'redeem', 'skip'])
+function currencyAct(list) {
+  if (list.length > 6) return false
+  const [verb, ...rest] = list
+  if (list.length === 2 && verb === 'super' && rest[0] === 'like') return true
+  if (list.length === 1 && verb === 'superlike') return true
+  if (!CURRENCY_VERBS.has(verb) && verb !== 'boost') return false
+  // An amount of currency ('Continue for 100 gems', 'Spend 50 coins', 'Unlock with 200 gems', 'Get 500 gems').
+  if (rest.includes('<n>') && rest.some((t) => GAME_CURRENCY.has(t))) return true
+  // Currency bought outright ('Buy gems', 'Get diamonds') - not 'Get points' (rewards) or 'Use credit' (a card).
+  if ((verb === 'buy' || verb === 'get' || verb === 'purchase') && rest.length <= 2 && ['gem', 'coin', 'diamond', 'crystal', 'robux', 'buck', 'jewel', 'ruby'].includes(rest[rest.length - 1])) return true
+  // A paid pass ('Unlock battle pass', 'Get premium pass') - a bare 'Battle pass' or 'Pass' stays free.
+  if (rest[rest.length - 1] === 'pass' && rest.some((t) => PASS_TIERS.has(t))) return true
+  // Paid reach on a dating or social app ('Get more likes', 'Boost profile') and cosmetics ('Gift skin').
+  if (verb === 'get' && rest[0] === 'more' && ['like', 'view', 'follower', 'match', 'swipe', 'life'].includes(rest[1])) return true
+  if (verb === 'boost' && rest.length <= 2 && ['profile', 'post', 'listing', 'me'].includes(rest[rest.length - 1])) return true
+  if ((verb === 'gift' || verb === 'buy' || verb === 'unlock') && rest.length <= 2 && ['skin', 'emote', 'outfit', 'bundle', 'lootbox', 'crate'].includes(rest[rest.length - 1])) return true
+  return false
+}
+
 const DIVERSION_VERBS = new Set(['change', 'update', 'edit', 'add', 'set', 'replace', 'switch'])
 const DIVERSION_OBJECTS = [['direct', 'deposit'], ['bank', 'detail'], ['deposit', 'account'], ['routing', 'number'], ['account', 'number'],
   ['payout', 'account'], ['payout', 'method'], ['bank', 'account'], ['payout', 'detail']]
@@ -254,6 +276,9 @@ export function grammarClasses(name, role = '') {
   // CU-438 (High; cu-coordinator 19:52Z): an admin act on another person's account (CU-416 family).
   const admin = adminClass(list)
   if (admin) return [admin]
+  // CU-439 (High; cu-coordinator 20:19Z): in-app currency and passes are bought with real money, and a currency spend is the
+  // purchase at one remove.
+  if (currencyAct(list)) return ['purchase']
   // Guards: a trailing list / settings / UI noun; a bare plural noun (a tab); settings-sense apply; 'Sign in as guest'.
   if (FREE_TAIL.has(last) || (list.length >= 2 && FREE_TAIL.has(list[list.length - 2]))) return []
   if (UI_TAIL.has(last) && list.length >= 2) return []
