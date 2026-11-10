@@ -37,6 +37,18 @@ export const EXCLUDED_APPS = Object.freeze([
   }),
   // CU-395 (High; cu-coordinator 03:01Z): Home and Find My act on doors, locks, alarms and devices in the physical world.
   Object.freeze({ kind: 'physical_control', ids: Object.freeze(['com.apple.Home', 'com.apple.findmy']) }),
+  // CU-394 (cu-coordinator 02:50Z): a remote desktop, screen share or virtual machine shows another computer as one opaque
+  // canvas - every click there is an unknown target on a machine no approval covered (like CU-252's terminals).
+  Object.freeze({
+    kind: 'remote_surface',
+    ids: Object.freeze([
+      'com.apple.ScreenSharing', 'com.microsoft.rdc.*', 'com.teamviewer.*', 'com.philandro.anydesk', 'com.parallels.*',
+      'com.vmware.fusion', 'com.utmapp.UTM', 'org.virtualbox.app.*', 'com.p5sys.jump.*', 'com.realvnc.*',
+      'com.lemonmojo.RoyalTSX.*', 'com.splashtop.*',
+      // cu-researcher 02:55Z: Chrome Remote Desktop's host app (its web client is remotedesktop.google.com - CU-394's named line).
+      'com.google.chrome.remotedesktop',
+    ]),
+  }),
   // A clipboard history shows what the person copied before the run; D-031 allows copy and paste, not reading that.
   Object.freeze({
     kind: 'clipboard_manager',
