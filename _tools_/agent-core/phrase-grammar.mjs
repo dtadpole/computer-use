@@ -80,7 +80,7 @@ const VERBS = new Map(Object.entries({
   file: ['send'], submit: ['send', 'pay'], post: ['send'], publish: ['send'], broadcast: ['send'], message: ['send'], email: ['send'],
   notify: ['send'], text: ['send'], deploy: ['send'], end: ['send', 'pay'], rate: ['send'], leave: ['send', 'grant'], repost: ['send'],
   retweet: ['send'], reblog: ['send'], report: ['send'], endorse: ['send'], push: ['send'], sync: ['send'], schedule: ['send', 'pay'],
-  join: ['send'], answer: ['send'], call: ['send'], execute: ['exec'], unsend: ['destroy'], exit: ['send'],
+  join: ['send'], answer: ['send'], call: ['send'], execute: ['exec'], unsend: ['destroy'], exit: ['send'], dismiss: [],
   // Context verbs stay out (Sell, Convert, Deposit, Leverage, Bet, Long, Short: CU-400 / CU-409's asset context decides).
   capture: ['pay'], gift: ['pay'], reactivate: ['pay'], resume: ['pay'], market: ['pay'], relaunch: ['install'],
   place: ['pay', 'send'], mint: ['pay'], bridge: ['pay'], back: ['pay'], request: ['pay'],
@@ -142,7 +142,7 @@ const STANDALONE = new Map(Object.entries({
   promote: 'purchase', 'top up': 'purchase', 'cash out': 'purchase', 'factory reset': 'delete',
   'buzz in': 'physical', 'remote start': 'physical', 'let in': 'permission', refund: 'purchase', renew: 'purchase', book: 'purchase',
   // A bare Install / Update / Get is CU-254's (the App Store rule keeps its own record).
-  enroll: 'submit', reactivate: 'purchase', pay: 'purchase', 'restart to update': 'install', reorder: 'purchase',
+  enroll: 'submit', reactivate: 'purchase', pay: 'purchase', 'restart to update': 'install', reorder: 'purchase', unsend: 'delete',
   'install and relaunch': 'install', buy: 'purchase', retweet: 'submit', reblog: 'submit', endorse: 'submit', esign: 'permission',
   give: 'purchase',
 }))
@@ -160,7 +160,7 @@ const KEY_QUALIFIER = new Set(['api', 'ssh', 'gpg', 'access', 'deploy', 'securit
 const EMAIL_VERBS = new Set(['change', 'edit', 'update', 'remove', 'reset'])
 // F5 cluster 3: these objects are money only after a pay verb, never after add / make.
 const ADD_MAKE_NOT_MONEY = new Set(['item', 'point', 'credit', 'license', 'room', 'table', 'position', 'cap', 'card', 'project', 'post',
-  'customer', 'vendor', 'payee', 'order'])
+  'customer', 'vendor', 'payee', 'order', 'bank'])
 // F1 / F5: 'limit' is money only beside credit or spending; 'open' pays only for trading objects; 'cancel' pays only for a plan.
 const LIMIT_QUALIFIER = new Set(['credit', 'spending', 'card', 'trading', 'borrow', 'withdrawal', 'transfer'])
 const TRADING_OBJECTS = new Set(['position', 'long', 'short', 'trade'])
@@ -204,6 +204,15 @@ function insuranceClass(list) {
   return null
 }
 
+const DIVERSION_VERBS = new Set(['change', 'update', 'edit', 'add', 'set', 'replace', 'switch'])
+const DIVERSION_OBJECTS = [['direct', 'deposit'], ['bank', 'detail'], ['deposit', 'account'], ['routing', 'number'], ['account', 'number'],
+  ['payout', 'account'], ['payout', 'method'], ['bank', 'account'], ['payout', 'detail']]
+function payDiversion(list) {
+  if (list.length < 3 || list.length > 6 || !DIVERSION_VERBS.has(list[0])) return false
+  const rest = list.slice(1).filter((t) => !FILLER.has(t))
+  return DIVERSION_OBJECTS.some(([a, b]) => rest.length <= 3 && rest[rest.length - 2] === a && rest[rest.length - 1] === b)
+}
+
 // The classes the grammar asks for a control's name (and its role, for the priced cell); [] when it asks nothing.
 export function grammarClasses(name, role = '') {
   const raw = String(name ?? '').trim()
@@ -218,6 +227,9 @@ export function grammarClasses(name, role = '') {
   // a list / settings tail elsewhere ('Privacy policy'), a contract only after these verbs.
   const insurance = insuranceClass(list)
   if (insurance) return [insurance]
+  // CU-437 (High; cu-coordinator 19:39Z): redirecting pay or payouts - direct deposit, bank details, routing / account number,
+  // payout account or method - is an account takeover (credential). Checked before the guards ('details' is a tail elsewhere).
+  if (payDiversion(list)) return ['credential']
   // Guards: a trailing list / settings / UI noun; a bare plural noun (a tab); settings-sense apply; 'Sign in as guest'.
   if (FREE_TAIL.has(last) || (list.length >= 2 && FREE_TAIL.has(list[list.length - 2]))) return []
   if (UI_TAIL.has(last) && list.length >= 2) return []
@@ -343,6 +355,9 @@ export function grammarClasses(name, role = '') {
   // cu-coordinator 19:22Z: linking a billing account starts charges to it.
   if (verb === 'link' && rest.includes('billing')) pushOnce(out, 'purchase')
   if (['turn off', 'remove', 'disable', 'lift', 'raise', 'increase'].includes(verb) && rest.includes('spending') && rest.some((t) => t === 'cap' || t === 'limit')) pushOnce(out, 'purchase')
+  // CU-426's three chat forms (cu-coordinator 19:25Z): dismissing someone as admin and exporting a chat ask permission.
+  if (verb === 'dismiss' && rest.includes('admin')) pushOnce(out, 'permission')
+  if (verb === 'export' && rest.some((t) => t === 'chat' || t === 'conversation')) pushOnce(out, 'permission')
   // CU-434: 'Order again' reorders; cancelling a ride may charge a fee (submit).
   if (verb === 'order' && rest.length === 1 && rest[0] === 'again') pushOnce(out, 'purchase')
   if (verb === 'cancel' && rest.some((t) => t === 'ride' || t === 'delivery')) pushOnce(out, 'submit')
