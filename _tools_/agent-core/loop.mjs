@@ -825,7 +825,16 @@ export async function runTask(options) {
     else if (action.type === 'drag') target = await environment.inspectPoint(action.path[0])
     else if ((action.type === 'keypress' || action.type === 'type') && previous?.type === 'keypress' && Array.isArray(previous.keys) && previous.keys.some((key) => MOVES_FOCUS.test(String(key)))
       // CU-147: Backspace or Delete after Tab onto a list removes the selection there - judged on the settled focus too.
-      && (action.type === 'type' || (Array.isArray(action.keys) && action.keys.some((key) => /^(space|enter|return|backspace|delete)$/i.test(String(key)))))) target = await settledFocus()
+      && (action.type === 'type' || (Array.isArray(action.keys) && action.keys.some((key) => /^(space|enter|return|backspace|delete)$/i.test(String(key)))))) {
+      // cu-coordinator 22:17Z: settle first, then for a keypress ask keyTarget what the key acts on (an aria-activedescendant
+      // option, CU-370) - the settled focus only when keyTarget is missing or throws.
+      target = await settledFocus()
+      if (action.type === 'keypress' && typeof environment.keyTarget === 'function') {
+        const keyed = await Promise.resolve(environment.keyTarget(action)).catch(() => null)
+        // Only an answer that names an option (CU-370's flags) replaces the settled focus (cu-coordinator 22:23Z).
+        if (keyed && (keyed.selectOption === true || keyed.radioChoice === true || keyed.optionUnread === true)) target = keyed
+      }
+    }
     // CU-353: a keypress is judged on what it acts on - the browser driver's keyTarget answers an accesskey chord with the
     // element it fires (marked accessKey), else the focus; an environment without it (the desktop, fakes) gives the focus.
     // A keyTarget that throws (a page navigating, a frame detached) falls back to the focus, as before CU-353, and a focus
