@@ -35,3 +35,10 @@ test('dial row negatives: a /contacts or /settings URL without dialHref, a list 
   assert.equal(press({ rowContext: { hints: ['Message', 'Email'] } }, 'https://phone.example/voice'), 'allow', 'message hints')
   assert.equal(press({ role: 'textbox' }, 'https://phone.example/call'), 'allow', 'an entry field is not a row')
 })
+
+test('#576 round 2: a span inside a listener-only row (inRow) asks on a /call URL; off a dialer page it stays free', () => {
+  assert.equal(press({ role: 'StaticText', name: 'Alex Morgan', inRow: true }, 'https://phone.example/call/recents'), 'submit', 'rule (a) via inRow')
+  assert.equal(press({ role: '', name: 'Alex Morgan', inRow: true, dialHref: true }, 'https://crm.example/people'), 'submit', 'rule (b) read from the row')
+  assert.equal(press({ role: 'StaticText', name: 'Alex Morgan', inRow: true }, 'https://phone.example/contacts'), 'allow', 'not a dialer URL')
+  assert.equal(press({ role: 'StaticText', name: 'Alex Morgan' }, 'https://phone.example/call'), 'allow', 'no row: a text click on a dialer page stays free (not (ii))')
+})
