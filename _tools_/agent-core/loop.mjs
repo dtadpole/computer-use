@@ -609,7 +609,8 @@ export async function runTask(options) {
       // CU-250 (cu-developer-two's seam finding): an item under a Services submenu keeps its mark, which app-policy refuses;
       // anything but false reads as marked (fail closed, as the driver does).
       const servicesMenu = one.servicesMenu !== undefined && one.servicesMenu !== false
-      items.push({ role: 'AXMenuItem', name: one.name.trim().slice(0, 80), ...(key ? { keyEquivalent: key } : {}), ...(typeof one.enabled === 'boolean' ? { enabled: one.enabled } : {}), ...(appleMenu ? { appleMenu: true } : {}), ...(servicesMenu ? { servicesMenu: true } : {}) })
+      // CU-382 (cu-researcher 08:07Z, D-103): a Quick Action item's mark and an unwalked menu context ride along, as appleMenu does.
+      items.push({ role: 'AXMenuItem', name: one.name.trim().slice(0, 80), ...(key ? { keyEquivalent: key } : {}), ...(typeof one.enabled === 'boolean' ? { enabled: one.enabled } : {}), ...(appleMenu ? { appleMenu: true } : {}), ...(servicesMenu ? { servicesMenu: true } : {}), ...(one.quickActions === true ? { quickActions: true } : {}), ...(one.menuContextUnread === true ? { menuContextUnread: true } : {}) })
     }
     return items.length === 1 ? items[0] : { items }
   }

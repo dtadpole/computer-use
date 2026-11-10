@@ -1030,6 +1030,30 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const scheme = typeof target?.linkScheme === 'string' ? target.linkScheme.trim().toLowerCase().replace(/:$/, '') : ''
     const pressesLink = ['click', 'double_click', 'triple_click'].includes(action.type) || keysOf(action).has('ENTER')
     if (scheme !== '' && !WEB_SCHEMES.has(scheme) && pressesLink) classes.push('permission')
+    // CU-382 (cu-coordinator 23:10Z; helper 0.2.66): a Finder Quick Action runs an owner's Automator workflow, like a Service,
+    // so a press on an item marked quickActions (or a chord bound to one) asks; a menu whose context could not be walked
+    // (menuContextUnread) asks unknown.
+    // Design 0.2 (cu-coordinator 23:12Z): Finder's built-in actions and the holder's own 'More…' / 'Customize…' stay free by
+    // name; a custom workflow's name asks.
+    // The loop's bound item is one item or { items } (boundItemOf); the marked one is found in the list, as app-policy's
+    // appleItem is, and its name decides the built-in exemption (cu-researcher 08:07Z).
+    const boundList = context.boundMenuItem && typeof context.boundMenuItem === 'object' ? (Array.isArray(context.boundMenuItem.items) ? context.boundMenuItem.items : [context.boundMenuItem]) : []
+    const boundQuick = boundList.find((one) => one?.quickActions === true)
+    const boundUnread = boundList.some((one) => one?.menuContextUnread === true)
+    const chordPress = action.type === 'keypress' || action.type === 'hold_key'
+    const quickName = String((chordPress ? boundQuick?.name : undefined) ?? target?.name ?? boundQuick?.name ?? context.boundMenuItem?.title ?? '').trim()
+    // 'Open in Terminal' (and New Terminal at Folder) hands a shell to the folder - asks like a Quick Action.
+    const terminalOpen = /^(?:open\s+in\s+terminal|new\s+terminal\s+(?:tab\s+)?at\s+folder)$/i.test(quickName)
+    const builtInQuick = /^(?:rotate(?:\s+(?:left|right))?|markup|trim|compress|create\s+pdf|convert\s+image|remove\s+background|more(?:\u2026|\.\.\.)|customi[sz]e(?:\u2026|\.\.\.))$/i.test(quickName)
+    const quickAction = ((target?.quickActions === true || boundQuick !== undefined) && !builtInQuick) || terminalOpen
+    const quickPress = action.type === 'click' || action.type === 'double_click' || action.type === 'keypress' || action.type === 'hold_key'
+    if (quickPress && quickAction) {
+      // cu-coordinator 23:18Z: each workflow is different code - asked each time, so a yes never covers another ask.
+      return { decision: 'confirm', class: 'permission', classes: ['permission'], rule: 'quick_action', askEachTime: true, reason: `run the Quick Action "${target?.name ?? boundQuick?.name ?? context.boundMenuItem?.title ?? ''}", an Automator workflow` }
+    }
+    if (quickPress && (target?.menuContextUnread === true || boundUnread)) {
+      return { decision: 'confirm', class: 'unknown_target', classes: ['unknown_target'], rule: 'menu:context_unread', reason: `press "${target?.name ?? ''}" in a menu whose context could not be read` }
+    }
     // Open-menu focus (cu-coordinator 22:03Z; Medium until cu-verifier's live row): with a menu open the helper reads only the
     // system-wide focus, never the highlighted item, so Return or Space there commits an item the policy cannot see - asks.
     if ((action.type === 'keypress' || action.type === 'hold_key') && (target?.menuOpen === true || target?.role === 'AXMenu')
