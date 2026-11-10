@@ -18,6 +18,9 @@ const FILLER = new Set(['<n>', 'all', 'new', 'now', 'it', 'them', 'everyone', 'a
 
 const US_WORDS = new Set(['antivirus', 'virus', 'status', 'bonus', 'campus', 'focus', 'census', 'corpus', 'plus', 'minus', 'surplus', 'genius', 'radius', 'nexus', 'menus', 'bus'])
 
+// #580 round 4 (cu-coordinator 22:44Z): the switch verbs read beside 'turn' - 'Switch / Flip / Toggle X on|off'.
+const SWITCH_VERBS = new Set(['turn', 'switch', 'flip', 'toggle'])
+
 // Words whose final -s is not a plural (CU-438: 'Add alias').
 const NOT_PLURAL = new Set(['alias', 'whois', 'canvas', 'atlas', 'bias', 'gas', 'lens', 'news', 'series', 'species', 'chassis', 'axis', 'basis', 'analysis', 'thesis', 'crisis', 'diagnosis'])
 
@@ -255,7 +258,7 @@ function endsWithSeq(rest, seq) { return rest.length >= seq.length && seq.every(
 function childProtectionOff(list) {
   if (list.length > 7) return false
   // 'turn off' / 'switch off' arrive as two tokens here (the multi-word verbs are folded later).
-  const twoWord = (list[0] === 'turn' || list[0] === 'switch') && list[1] === 'off'
+  const twoWord = SWITCH_VERBS.has(list[0]) && list[1] === 'off'
   const verb = twoWord ? 'turn off' : list[0]
   const rest = list.slice(twoWord ? 2 : 1)
   const core = rest.filter((t) => !FILLER.has(t))
@@ -320,12 +323,13 @@ function phoneClass(list) {
 const AD_OBJECTS = new Set(['campaign', 'ad', 'ads', 'promotion', 'advert', 'advertisement'])
 function adSpend(list) {
   if (list.length > 7) return false
-  const twoWord = list[0] === 'turn' && list[1] === 'on'
+  // #580 round 3 (cu-verifier 22:41Z): 'switch on' as well as 'turn on' ('Switch ads on' after the split-particle normaliser).
+  const twoWord = SWITCH_VERBS.has(list[0]) && list[1] === 'on'
   const verb = twoWord ? 'turn on' : list[0]
   const rest = list.slice(twoWord ? 2 : 1)
   const core = rest.filter((t) => !FILLER.has(t))
   const last = core[core.length - 1]
-  if (['launch', 'publish', 'resume', 'start', 'run', 'activate', 'enable', 'turn on', 'unpause', 'restart'].includes(verb) && core.length <= 3 && AD_OBJECTS.has(last)) return true
+  if (['launch', 'publish', 'resume', 'start', 'run', 'activate', 'enable', 'turn on', 'unpause', 'restart'].includes(verb) && core.length <= 3 && (AD_OBJECTS.has(last) || (last === 'set' && core.includes('ad')))) return true
   if (['increase', 'raise', 'up', 'double', 'boost'].includes(verb) && core.length <= 3 && ['budget', 'bid', 'spend'].includes(last)) return true
   if ((verb === 'set' || verb === 'change' || verb === 'update') && core.includes('budget') && rest.includes('<n>')) return true
   return false
@@ -333,7 +337,7 @@ function adSpend(list) {
 
 function cameraPrivacyOff(list) {
   if (list.length > 7) return false
-  const two = (list[0] === 'turn' || list[0] === 'switch') && (list[1] === 'off' || list[1] === 'on')
+  const two = SWITCH_VERBS.has(list[0]) && (list[1] === 'off' || list[1] === 'on')
   const verb = two ? `turn ${list[1]}` : list[0]
   const rest = list.slice(two ? 2 : 1)
   const core = rest.filter((t) => !FILLER.has(t))
@@ -342,14 +346,16 @@ function cameraPrivacyOff(list) {
   if (['enable', 'turn on', 'start', 'activate'].includes(verb) && core.length <= 3) {
     const tail = core.join(' ')
     if (/(?:^|\s)(?:audio|sound|continuous|nonstop)\s+recording$/.test(tail) || /^recording$/.test(tail) && rest.includes('<n>')) return true
-    if (/^(?:face|facial)\s+recognition$|^familiar\s+face$|^face\s+detection$/.test(tail)) return true
+    if (/^(?:face|facial|person|people)\s+recognition$|^familiar\s+face$|^face\s+detection$/.test(tail)) return true
+    // #580 round 2: 'Enable microphone' on a camera opens its audio (CU-445).
+    if (/^(?:microphone|mic)$/.test(tail)) return true
   }
   return false
 }
 
 function domainClass(list) {
   if (list.length > 7) return null
-  const two = (list[0] === 'turn' || list[0] === 'switch') && list[1] === 'off'
+  const two = SWITCH_VERBS.has(list[0]) && list[1] === 'off'
   const verb = two ? 'turn off' : list[0]
   const rest = list.slice(two ? 2 : 1)
   const core = rest.filter((t) => !FILLER.has(t))
@@ -368,7 +374,7 @@ function domainClass(list) {
 const AUDIT_OBJECTS = [['cloudtrail'], ['audit', 'log'], ['audit', 'logging'], ['logging'], ['guardduty'], ['flow', 'log'], ['security', 'hub'], ['defender'], ['activity', 'log']]
 function cloudExposureClass(list, lower) {
   if (list.length > 8) return null
-  const two = (list[0] === 'turn' || list[0] === 'switch') && list[1] === 'off'
+  const two = SWITCH_VERBS.has(list[0]) && list[1] === 'off'
   const verb = two ? 'turn off' : list[0]
   const rest = list.slice(two ? 2 : 1)
   const core = rest.filter((t) => !FILLER.has(t))
@@ -467,8 +473,13 @@ export function grammarClasses(name, role = '') {
   const raw = String(name ?? '').trim()
   if (raw === '' || raw.length > 400) return []
   if (CURRENCY.test(raw) && PRICED_ROLES.has(String(role ?? '').toLowerCase()) && tokens(raw).some((t) => PRICED_NOUNS.has(t))) return ['purchase']
-  const list = tokens(raw)
-  if (list.length === 0) return []
+  const split = tokens(raw)
+  if (split.length === 0) return []
+  // #580 round 2 (cu-coordinator 21:52Z): a split particle - 'turn / switch X on|off' reads as 'turn / switch on|off X'
+  // ('Turn ads on', 'Turn privacy mode off'); additive, for every switch verb.
+  const particle = split[split.length - 1]
+  const list = split.length >= 3 && SWITCH_VERBS.has(split[0]) && (particle === 'on' || particle === 'off') && split[1] !== 'on' && split[1] !== 'off'
+    ? [split[0], particle, ...split.slice(1, -1)] : split
   const lower = raw.toLowerCase()
   const last = list[list.length - 1]
   // CU-435 (High; cu-coordinator 18:51Z): an insurance contract - binding, buying, renewing or cancelling a policy, widening
