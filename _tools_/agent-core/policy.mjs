@@ -387,8 +387,8 @@ function printableKeyChar(action) {
 const ORDER_REFERENCE = /(^|[^a-z])order\s*(?:#|no\.|number\b|id\b)\s*#?[\w-]*\d[\w-]*|(^|[^a-z])order\s+\d{3,}[\w-]*|(^|[^a-z])order\s+(?:details|history|status|summary|tracking|lookup)([^a-z]|$)/gi
 
 // CU-443 (cu-coordinator 20:54Z, a class fold): transferring a phone number is a port-out (credential, from the grammar's phone
-// rows), not a money transfer - the 'transfer' purchase word does not read it.
-const NUMBER_TRANSFER = /(^|[^a-z])transfer\s+(?:my\s+|this\s+|your\s+|the\s+)?(?:phone\s+|mobile\s+)?number([^a-z]|$)/gi
+// rows), not a money transfer - the 'transfer' purchase word does not read it; CU-446 adds a domain's transfer lock.
+const NUMBER_TRANSFER = /(^|[^a-z])transfer\s+(?:(?:my\s+|this\s+|your\s+|the\s+)?(?:phone\s+|mobile\s+)?number|lock)([^a-z]|$)/gi
 function withoutOrderReferences(name) {
   return String(name ?? '').replace(ORDER_REFERENCE, ' ').replace(NUMBER_TRANSFER, ' ')
 }
@@ -1764,6 +1764,14 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (/^\s*privacy\s+(?:mode|shutter|cover)\s*$/i.test(name) && (!read || target.checked === true)) classes.push('permission')
       if (/^\s*(?:audio\s+recording|record\s+audio|continuous\s+recording|24\/7\s+recording|face\s+recognition|facial\s+recognition|familiar\s+faces)\s*$/i.test(name)
         && (!read || target.checked === false)) classes.push('permission')
+    }
+    // CU-446 (cu-coordinator 21:05Z): a domain-lock / transfer-lock switch turned OFF asks credential, a WHOIS-privacy switch turned
+    // OFF asks permission; ON is free on a native read; an unread state asks both ways.
+    if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))) {
+      const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
+      const turningOff = !(nativeBox && typeof target.checked === 'boolean') || target.checked === true
+      if (turningOff && /^\s*(?:domain\s+lock|transfer\s+lock|registrar\s+lock)\s*$/i.test(name)) classes.push('credential')
+      if (turningOff && /^\s*(?:whois\s+privacy|domain\s+privacy|privacy\s+protection)\s*$/i.test(name)) classes.push('permission')
     }
     // Consent phrase grammar (_designs_/consent-phrase-grammar 0.3.1; cu-coordinator 16:46Z) - the ONE additive hook: when no
     // older rule asked on a pressed named control, the grammar's verb-class x object-class structure may add classes. It

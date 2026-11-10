@@ -19,7 +19,7 @@ const FILLER = new Set(['<n>', 'all', 'new', 'now', 'it', 'them', 'everyone', 'a
 const US_WORDS = new Set(['antivirus', 'virus', 'status', 'bonus', 'campus', 'focus', 'census', 'corpus', 'plus', 'minus', 'surplus', 'genius', 'radius', 'nexus', 'menus', 'bus'])
 
 // Words whose final -s is not a plural (CU-438: 'Add alias').
-const NOT_PLURAL = new Set(['alias', 'canvas', 'atlas', 'bias', 'gas', 'lens', 'news', 'series', 'species', 'chassis', 'axis', 'basis', 'analysis', 'thesis', 'crisis', 'diagnosis'])
+const NOT_PLURAL = new Set(['alias', 'whois', 'canvas', 'atlas', 'bias', 'gas', 'lens', 'news', 'series', 'species', 'chassis', 'axis', 'basis', 'analysis', 'thesis', 'crisis', 'diagnosis'])
 
 function singular(token) {
   if (NOT_PLURAL.has(token) || token.endsWith('ous')) return token
@@ -341,6 +341,24 @@ function cameraPrivacyOff(list) {
   return false
 }
 
+function domainClass(list) {
+  if (list.length > 7) return null
+  const two = (list[0] === 'turn' || list[0] === 'switch') && list[1] === 'off'
+  const verb = two ? 'turn off' : list[0]
+  const rest = list.slice(two ? 2 : 1)
+  const core = rest.filter((t) => !FILLER.has(t))
+  const last = core[core.length - 1]
+  if (verb === 'unlock' && core.length <= 2 && last === 'domain') return 'credential'
+  if (['turn off', 'disable', 'remove'].includes(verb) && core.length <= 3 && last === 'lock' && (core.includes('domain') || core.includes('transfer') || core.includes('registrar'))) return 'credential'
+  if (['get', 'show', 'view', 'copy', 'reveal', 'send', 'request'].includes(verb) && last === 'code' && core.some((t) => ['auth', 'epp', 'authorization', 'transfer'].includes(t))) return 'credential'
+  if (['change', 'update', 'edit', 'transfer'].includes(verb) && core.length <= 3 && (last === 'registrant' || (last === 'owner' && core.some((t) => t === 'account' || t === 'domain')))) return 'credential'
+  if (verb === 'push' && core.length <= 2 && last === 'domain') return 'credential'
+  if (['change', 'use', 'set', 'edit', 'update'].includes(verb) && core.length <= 3 && last === 'nameserver') return 'permission'
+  if (['edit', 'change', 'update', 'delete', 'add'].includes(verb) && core.length <= 3 && last === 'record' && core.includes('dns')) return 'permission'
+  if (['turn off', 'disable', 'remove'].includes(verb) && core.length <= 3 && last === 'privacy' && (core.includes('whois') || core.includes('domain'))) return 'permission'
+  return null
+}
+
 const DIVERSION_VERBS = new Set(['change', 'update', 'edit', 'add', 'set', 'replace', 'switch'])
 const DIVERSION_OBJECTS = [['direct', 'deposit'], ['bank', 'detail'], ['deposit', 'account'], ['routing', 'number'], ['account', 'number'],
   ['payout', 'account'], ['payout', 'method'], ['bank', 'account'], ['payout', 'detail']]
@@ -390,6 +408,10 @@ export function grammarClasses(name, role = '') {
   if (adSpend(list)) return ['purchase']
   // CU-445 (High; cu-coordinator 20:59Z): opening a home camera's view, audio or biometrics (permission, CU-418 family).
   if (cameraPrivacyOff(list)) return ['permission']
+  // CU-446 (High; cu-coordinator 21:05Z): the domain-takeover path - unlocking, auth / EPP codes, registrant or owner change, push
+  // (credential); nameservers, DNS records, WHOIS privacy off (permission).
+  const domain = domainClass(list)
+  if (domain) return [domain]
   // F2 guard (cu-coordinator 20:28Z): declining, denying or rejecting a request answers no - the grammar's own over-ask since
   // #554 ('Decline request'); older asks ('Decline invitation', CU-422's 'Decline offer') are untouched (the hook never sees them).
   if (['decline', 'deny', 'reject'].includes(list[0]) && list.slice(1).filter((t) => !FILLER.has(t)).every((t) => t === 'request' || t === 'this' || t === 'all')
