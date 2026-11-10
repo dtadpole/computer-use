@@ -697,7 +697,7 @@ func button(_ kind: String, _ x: Int, _ y: Int) -> JSON { ["kind": .string(kind)
 func testDispatcherBasics() {
   let h = Harness(fixtureWorld)
   let hello = h.dispatcher.hello(token: "t0k")
-  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.68", "the hello opens the run")
+  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.69", "the hello opens the run")
   check(hello["mode"] == "dry-run" && hello["grants"] == ["screen": true, "accessibility": true, "postEvents": true, "listenEvents": false], "a dry-run hello says so, with all four grants")
   check(h.ask("capture", ["maxSize": size800])["code"] == "no_scope", "capture needs a scope")
   check(h.ask("input", ["events": [key("keyDown", 1)], "mode": "global"])["code"] == "no_scope", "input needs a scope")
@@ -2170,6 +2170,26 @@ func testFormContext() {
   check(FormContext.comboText(value: nil, editable: false, items: []) == nil, "no value, nothing")
 }
 
+func testDefaultCandidates() {
+  // CU-412: a web form's Return candidates when the window names no default button.
+  typealias L = DefaultCandidates.Level
+  check(DefaultCandidates.pick([L(role: "AXGroup", subrole: nil, buttons: 0, truncated: false), L(role: "AXGroup", subrole: nil, buttons: 2, truncated: false)]) == .form(1), "the nearest ancestor holding a button is the form")
+  check(DefaultCandidates.pick([L(role: "AXGroup", subrole: "AXLandmarkForm", buttons: 0, truncated: false)]) == .form(0), "a form landmark is the form even with no button (none found keeps the positive none)")
+  check(DefaultCandidates.pick([L(role: "AXGroup", subrole: nil, buttons: 0, truncated: false), L(role: "AXWebArea", subrole: nil, buttons: 0, truncated: false)]) == .none, "never past the page's root")
+  check(DefaultCandidates.pick([L(role: "AXWindow", subrole: nil, buttons: 3, truncated: false)]) == .none, "never the window")
+  check(DefaultCandidates.pick([L(role: "AXSheet", subrole: nil, buttons: 0, truncated: false), L(role: "AXGroup", subrole: nil, buttons: 1, truncated: false)]) == .none, "a sheet without a button ends the walk")
+  check(DefaultCandidates.pick([L(role: "AXGroup", subrole: nil, buttons: 0, truncated: true), L(role: "AXGroup", subrole: nil, buttons: 1, truncated: false)]) == .unread, "a scan cut short is unread (asks unknown), not a pass")
+  check(DefaultCandidates.pick(Array(repeating: L(role: "AXGroup", subrole: nil, buttons: 0, truncated: false), count: 4) + [L(role: "AXGroup", subrole: nil, buttons: 1, truncated: false)]) == .none, "at most 4 levels")
+  check(!DefaultCandidates.scans(role: "AXWebArea") && !DefaultCandidates.scans(role: "AXWindow") && DefaultCandidates.scans(role: "AXGroup") && DefaultCandidates.scans(role: nil), "the root and the window are never scanned")
+  check(DefaultCandidates.outcome(count: 0, truncated: false) == .none && DefaultCandidates.outcome(count: 1, truncated: false) == .one, "none, one")
+  check(DefaultCandidates.outcome(count: 2, truncated: false) == .some(2) && DefaultCandidates.outcome(count: 3, truncated: false) == .some(3), "two or three are candidates")
+  check(DefaultCandidates.outcome(count: 4, truncated: false) == .more && DefaultCandidates.outcome(count: 1, truncated: true) == .more, "more than three, or a scan cut short, is more")
+  check(DefaultButtonRead.failed.candidates.isEmpty && !DefaultButtonRead.failed.more, "a failed read carries no candidates")
+  // cu-coordinator 11:35Z: a nameless default also looks for candidates; a named one stands alone; a failed read never.
+  check(DefaultCandidates.looks(defaultTitle: nil, defaultRead: true) && DefaultCandidates.looks(defaultTitle: "  ", defaultRead: true), "no default, or a nameless one, looks")
+  check(!DefaultCandidates.looks(defaultTitle: "Submit", defaultRead: true) && !DefaultCandidates.looks(defaultTitle: nil, defaultRead: false), "a named default stands alone; a failed read stays failed")
+}
+
 func testFileAncestorAndDropDestination() {
   // CU-387 fix (a): a row's child lends the nearest file-bearing ancestor's file, within the bounds.
   typealias L = FileAncestor.Level
@@ -2250,6 +2270,7 @@ struct UnitTests {
     testQuickActions()
     testFileAncestorAndDropDestination()
     testFormContext()
+    testDefaultCandidates()
     testAppleMenuClickTarget()
     testEndWatchdog()
     // Informational: whether the process that ran these tests is genuine node (true for Node.js Foundation builds).

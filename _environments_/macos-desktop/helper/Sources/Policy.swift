@@ -5,7 +5,7 @@ import Foundation
 /// The helper's identity; `build.sh` writes the same bundle id into Info.plist.
 enum HelperIdentity {
   static let bundleId = "com.reflection.cu-helper"
-  static let version = "0.2.68"
+  static let version = "0.2.69"
   /// The value every synthetic event carries in `kCGEventSourceUserData`: 0x43555345, ASCII "CUSE"
   /// (input-and-targets.md, verify-kit's SYNTHETIC_TAG). Not a secret: an event from another process with this tag
   /// could only fail to pause the run, never act.
@@ -433,7 +433,68 @@ enum TargetName {
 struct DefaultButtonRead: Equatable {
   var button: JSON
   var read: Bool
+  /// CU-412: with no native default in a web area, the focus's form's submit-like buttons when two or three
+  /// (DefaultCandidates), and `more` when there are more or the scan was cut short - agent core asks the strictest class
+  /// among them, or unknown.
+  var candidates: [JSON] = []
+  var more = false
   static let failed = DefaultButtonRead(button: .null, read: false)
+}
+
+/// CU-412 (cu-coordinator 11:27Z, the desktop half): HTML submits a form on Return in a field even when its only submit
+/// controls are role=button divs, which the window's AXDefaultButton never names. In a web area whose window reads no
+/// default button, the focus's form - the nearest ancestor within 4 levels that is a form landmark or holds a
+/// submit-like button, never past the page's root, a sheet or the window - gives its enabled AXButtons as Return's
+/// candidates: one is the default button, two or three are candidates, more (or a scan cut short) is unknown. AX shows a
+/// <button type=submit> and a div role=button alike (both AXButton), so every enabled button counts (fail closed).
+enum DefaultCandidates {
+  static let maxLevels = 4
+  static let maxCandidates = 3
+  struct Level: Equatable {
+    var role: String?
+    var subrole: String?
+    var buttons: Int
+    var truncated: Bool
+  }
+  enum Step: Equatable { case form, stop, unread, next }
+  /// One ancestor: the page's root, a stop role or the window ends the walk; a scan cut short is unread; a form landmark
+  /// or a level holding a submit-like button is the form; a sheet without one ends the walk; anything else passes it on.
+  static func step(_ level: Level) -> Step {
+    if let role = level.role, FormContext.stopRoles.contains(role) || role == "AXWindow" { return .stop }
+    if level.truncated { return .unread }
+    if level.subrole == "AXLandmarkForm" || level.buttons > 0 { return .form }
+    return level.role == "AXSheet" ? .stop : .next
+  }
+  /// Whether a level is scanned at all (never the page's root, a stop role or the window).
+  static func scans(role: String?) -> Bool { !(role.map { FormContext.stopRoles.contains($0) || $0 == "AXWindow" } ?? false) }
+  enum Pick: Equatable { case form(Int), none, unread }
+  /// `levels`: the focus's ancestors, nearest first, each with its enabled submit-like buttons counted.
+  static func pick(_ levels: [Level]) -> Pick {
+    for (index, level) in levels.prefix(maxLevels).enumerated() {
+      switch step(level) {
+      case .form: return .form(index)
+      case .stop: return .none
+      case .unread: return .unread
+      case .next: continue
+      }
+    }
+    return .none
+  }
+  /// cu-coordinator 11:35Z (the policy takes the union): a default button that has no name - nothing for agent core to
+  /// judge - also looks for the form's candidates; a named one stands alone.
+  static func looks(defaultTitle: String?, defaultRead: Bool) -> Bool {
+    guard defaultRead else { return false }
+    return (defaultTitle ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+  }
+  enum Outcome: Equatable { case none, one, some(Int), more }
+  static func outcome(count: Int, truncated: Bool) -> Outcome {
+    if truncated || count > maxCandidates { return .more }
+    switch count {
+    case 0: return .none
+    case 1: return .one
+    default: return .some(count)
+    }
+  }
 }
 
 /// CU-190: what an Accessibility read's error code says - a value, a positive none, or a failure.

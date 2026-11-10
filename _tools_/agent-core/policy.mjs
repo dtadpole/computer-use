@@ -219,6 +219,22 @@ const RESET_PASSWORD = /^\s*reset\s+(?:your\s+|my\s+)?password\s*$/i
 // CU-411 round 2: my / your / the between the verb and account / data ('Close your account', 'Clear my data').
 const ACCOUNT_WIPE = /^\s*(?:(?:close|terminate|reset|erase)\s+(?:my\s+|your\s+|the\s+)account|(?:clear|wipe|erase)\s+(?:all\s+)?(?:my\s+|your\s+|the\s+)(?:all\s+)?data)\b/i
 const PRECEDENCE = ['physical', 'purchase', 'launch_code', 'delete', 'permission', 'page_dialog', 'credential', 'sensitive_data', 'submit', 'new_site', 'install']
+// CU-418 (High; cu-coordinator 14:14Z): the physical near forms - disabling an alarm or a security camera, starting a car,
+// heating an oven, heater or stove, buzzing someone in.
+const PHYSICAL_NEAR = ['disable alarm', 'disable the alarm', 'turn off camera', 'turn off cameras', 'disable camera', 'disable cameras',
+  'start car', 'start the car', 'remote start', 'start engine', 'start the engine', 'turn on oven', 'turn on the oven', 'preheat oven',
+  'preheat the oven', 'turn on heater', 'turn on the heater', 'turn on stove', 'turn on the stove', 'buzz in', 'let guest in',
+  'let the guest in', 'open gate']
+// cu-coordinator 14:28Z: one adjective may sit between the verb and these physical objects ('Turn on space heater', 'Start
+// the rental car'), the object ends the name (optionally 'now'); plus 'Oven on' and a bare 'Preheat'. Bare 'Stop recording'
+// stays free (named: screen and media recorders share the words).
+const PHYSICAL_GRAMMAR = new RegExp([
+  '^\\s*(?:turn\\s+on|preheat|light|switch\\s+on)\\s+(?:the\\s+)?(?:\\S+\\s+)?(?:oven|heater|stove|burner|fireplace)(?:\\s+now)?\\s*$',
+  '^\\s*(?:remote\\s+)?start\\s+(?:the\\s+)?(?:\\S+\\s+)?(?:car|engine|vehicle)(?:\\s+now)?\\s*$',
+  '^\\s*let\\s+(?:the\\s+)?(?:\\S+\\s+)?(?:guest|visitor)s?\\s+in\\s*$',
+  '^\\s*(?:disable|turn\\s+off|pause)\\s+(?:the\\s+)?(?:\\S+\\s+)?(?:alarm|camera|cameras)(?:\\s+now)?\\s*$',
+  '^\\s*(?:oven\\s+on|preheat)\\s*$',
+].join('|'), 'i')
 const PHYSICAL = ['unlatch', 'disarm', 'disarm security system', 'disarm alarm',
   'turn off alarm', 'open garage', 'open garage door', 'open gate', 'open the gate', 'mark as lost', 'erase device',
   'erase this device', 'lock mode',
@@ -1346,7 +1362,22 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         for (let i = classes.length - 1; i >= 0; i -= 1) if (classes[i] === 'purchase') classes.splice(i, 1)
       }
       // A bare 'Garage Door' tile toggles either way (exact name); 'Close Garage Door' stays free.
-      if (!focusesEntry && (namesWord(name, PHYSICAL) || PHYSICAL_PATTERN.test(name) || UNLOCK_PHYSICAL.test(name) || /^garage\s+door$/i.test(name.trim()))) classes.push('physical')
+      if (!focusesEntry && (namesWord(name, PHYSICAL) || namesWord(name, PHYSICAL_NEAR) || PHYSICAL_GRAMMAR.test(name) || PHYSICAL_PATTERN.test(name) || UNLOCK_PHYSICAL.test(name) || /^garage\s+door$/i.test(name.trim()))) classes.push('physical')
+      // CU-418 switches (cu-coordinator 14:17Z / 14:19Z): a bare security switch ('Camera', 'Alarm', 'Security') turned OFF and a
+      // heat or vehicle switch ('Oven', 'Heater', 'Stove', 'Engine') turned ON ask physical. The direction is trusted only from a
+      // native checkbox read (CU-373); an ARIA, mixed or missing state - and every desktop switch, which carries no state
+      // today - asks in both directions (named over-ask: 'Camera' on / 'Oven' off there).
+      if (!focusesEntry && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))) {
+        const security = /^\s*(?:security\s+)?(?:cameras?|alarm|security)\s*$/i.test(name)
+        const heat = /^\s*(?:oven|heater|stove|engine)\s*$/i.test(name)
+        if (security || heat) {
+          const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
+          const known = nativeBox && typeof target.checked === 'boolean'
+          const turnsOff = known && target.checked === true
+          const turnsOn = known && target.checked === false
+          if (!known || (security && turnsOff) || (heat && turnsOn)) classes.push('physical')
+        }
+      }
       // CU-146: 'Trash' or 'Bin' alone deletes on a control (a toolbar button, a menu item); a sidebar row of that name
       // only opens the folder.
       if (TRASH_ROLE.test(String(target?.role ?? '')) && namesWord(name, CONTROL_DELETE)) classes.push('delete')
