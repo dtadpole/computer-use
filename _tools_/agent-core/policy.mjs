@@ -1230,6 +1230,13 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         if ((cls === 'purchase' ? namesPurchase(defaultName) : cls === 'delete' ? namesDelete(defaultName) : namesWord(defaultName, WORDS[cls]))) classes.push(cls)
       }
       if (judgesSubmit(defaultName, target)) classes.push('submit')
+      // CU-406 (High; cu-coordinator 06:53Z): Return presses the default button, so CU-400/402's trade clause reads its name
+      // and its formContext (cu-developer-two's driver attaches the bounded read to the reported default button) exactly as
+      // a click does - 'Sell BTC', or a bare 'Sell' / 'Place order' / 'Confirm' beside an asset option, asks purchase.
+      const defaultForm = target?.defaultButton?.formContext
+      const defaultFormTrade = defaultForm && typeof defaultForm === 'object' && Array.isArray(defaultForm.options) && defaultForm.options.some((text) => TRADE_ASSET.test(String(text)))
+      if (/\b(?:sell|convert|deposit)\b/i.test(defaultName) && (/\d|[$\u20ac\u00a3\u00a5\u20bf]/.test(defaultName) || TRADE_ASSET.test(defaultName) || defaultFormTrade)) classes.push('purchase')
+      if (defaultFormTrade && /\b(?:place|confirm|submit)\b/i.test(defaultName)) classes.push('purchase')
     }
     // CU-190 (keyboard-activation.md): a default button the helper could not read may well be there, so the Return asks
     // submit - focused or not; only a read with none (true) keeps the rule above. D-069: on the desktop (url app:...) no
