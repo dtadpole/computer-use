@@ -427,6 +427,59 @@ enum Accessibility {
     return FormContext.comboText(value: value, editable: editable, items: items)
   }
 
+  /// CU-412: whether the element is inside a web page (an AXWebArea among its ancestors, CU-322's walk).
+  static func inWebArea(_ element: AXUIElement) -> Bool {
+    let walk = ancestorWalk(of: element)
+    return WebArea.contains(path: walk.path.map { $0.role }, ending: walk.ending) == true
+  }
+
+  /// CU-412: the focus's form (DefaultCandidates.pick over at most 4 ancestors) and its enabled submit-like buttons -
+  /// each scan within FormContext's element and depth bounds and one time budget for the walk; a scan cut short is
+  /// `truncated` (agent core asks unknown). Attributes only.
+  static func formCandidates(of focus: AXUIElement) -> (buttons: [AXUIElement], truncated: Bool) {
+    let deadline = Date().addingTimeInterval(FormContext.budgetSeconds)
+    var levels: [DefaultCandidates.Level] = []
+    var found: [[AXUIElement]] = []
+    var node = elementAttribute(focus, "AXParent")
+    while let current = node, levels.count < DefaultCandidates.maxLevels {
+      let role = string(current, "AXRole")
+      var buttons: [AXUIElement] = []
+      var truncated = false
+      if DefaultCandidates.scans(role: role) { (buttons, truncated) = submitButtons(in: current, deadline: deadline) }
+      levels.append(DefaultCandidates.Level(role: role, subrole: string(current, "AXSubrole"), buttons: buttons.count, truncated: truncated))
+      found.append(buttons)
+      switch DefaultCandidates.step(levels[levels.count - 1]) {
+      case .form: return (buttons, false)
+      case .stop: return ([], false)
+      case .unread: return ([], true)
+      case .next: node = elementAttribute(current, "AXParent")
+      }
+    }
+    return ([], false)
+  }
+
+  /// CU-412: a container's enabled submit-like AXButtons (not window buttons, not AXEnabled false), breadth first, at most
+  /// FormContext.maxScan elements 4 deep before `deadline`; a button's children are not entered.
+  private static func submitButtons(in root: AXUIElement, deadline: Date) -> (buttons: [AXUIElement], truncated: Bool) {
+    var queue: [(element: AXUIElement, depth: Int)] = children(root).map { ($0, 1) }
+    var seen = 0
+    var buttons: [AXUIElement] = []
+    while !queue.isEmpty {
+      guard seen < FormContext.maxScan, Date() < deadline else { return (buttons, true) }
+      let next = queue.removeFirst()
+      seen += 1
+      let role = string(next.element, "AXRole")
+      if let role, FormContext.submitRoles.contains(role) {
+        let windowButton = FormContext.windowButtonSubroles.contains(string(next.element, "AXSubrole") ?? "")
+        let disabled = (attribute(next.element, "AXEnabled") as? NSNumber)?.boolValue == false
+        if !windowButton && !disabled { buttons.append(next.element) }
+        continue
+      }
+      if next.depth < 4 { queue += children(next.element).map { ($0, next.depth + 1) } }
+    }
+    return (buttons, false)
+  }
+
   /// One container's submit-like controls (their words: title, description, else their label children), its pop-ups'
   /// and combo boxes' selected texts and its text entries' label words (description, placeholder, title, help - never
   /// the value), breadth first, at most FormContext.maxScan elements 4 deep and within the walk's time budget; more marks
