@@ -410,8 +410,11 @@ function printableKeyChar(action) {
  */
 const ORDER_REFERENCE = /(^|[^a-z])order\s*(?:#|no\.|number\b|id\b)\s*#?[\w-]*\d[\w-]*|(^|[^a-z])order\s+\d{3,}[\w-]*|(^|[^a-z])order\s+(?:details|history|status|summary|tracking|lookup)([^a-z]|$)/gi
 
+// CU-443 (cu-coordinator 20:54Z, a class fold): transferring a phone number is a port-out (credential, from the grammar's phone
+// rows), not a money transfer - the 'transfer' purchase word does not read it.
+const NUMBER_TRANSFER = /(^|[^a-z])transfer\s+(?:my\s+|this\s+|your\s+|the\s+)?(?:phone\s+|mobile\s+)?number([^a-z]|$)/gi
 function withoutOrderReferences(name) {
-  return String(name ?? '').replace(ORDER_REFERENCE, ' ')
+  return String(name ?? '').replace(ORDER_REFERENCE, ' ').replace(NUMBER_TRANSFER, ' ')
 }
 
 /**
@@ -1785,6 +1788,19 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
       if (!(nativeBox && typeof target.checked === 'boolean') || target.checked === true) classes.push('purchase')
     }
+    // CU-440 (cu-coordinator 20:26Z): a child-protection switch (parental controls, content filter, SafeSearch, purchase approval,
+    // Screen Time) turned OFF asks permission; ON is free on a native checkbox read; an unread state asks both ways.
+    if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))
+      && /^\s*(?:parental\s+controls?|content\s+(?:filter|restrictions?)|safe\s*search|purchase\s+approval|ask\s+to\s+buy|screen\s+time)\s*$/i.test(name)) {
+      const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
+      if (!(nativeBox && typeof target.checked === 'boolean') || target.checked === true) classes.push('permission')
+    }
+    // CU-442 (cu-coordinator 20:37Z): a bare 'Add time' tops up a metered session on a parking / charging page. The page title
+    // never reaches the policy (a title is private), so the page is read from the URL; elsewhere it stays free (named limit).
+    if (grammarEligible && classes.length === 0 && /^\s*add\s+(?:more\s+)?time\s*$/i.test(name) && /park|charg|meter/i.test(String(context?.url ?? ''))) classes.push('purchase')
+    // CU-443 (cu-coordinator 20:52Z): 'Start recording' on a call page records the other party (permission); the page is read from
+    // the URL (/call|voice|phone/), never the title. Elsewhere #462 keeps its own rows.
+    if (grammarEligible && classes.length === 0 && /^\s*start\s+(?:call\s+)?recording\s*$/i.test(name) && /call|voice|phone/i.test(String(context?.url ?? ''))) classes.push('permission')
     // Consent phrase grammar (_designs_/consent-phrase-grammar 0.3.1; cu-coordinator 16:46Z) - the ONE additive hook: when no
     // older rule asked on a pressed named control, the grammar's verb-class x object-class structure may add classes. It
     // never removes or changes an older rule's class (15:08Z, D-063); its free guards stop only its own asks (F2).
@@ -1804,7 +1820,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         || (/call|voice|phone|dial/i.test(pathOf) && hints.some((h) => /^\s*(?:call|dial|phone|voice\s+call|video\s+call)\b/i.test(h)))
         || (verbless && /call|dial/i.test(pathOf))) classes.push('submit')
     }
-    if (grammarEligible && classes.length === 0) for (const cls of grammarClasses(name, target?.role)) classes.push(cls)
+    // #575 round 2 (cu-coordinator 21:26Z): a native checkbox or switch already ON is being turned OFF - the grammar reads the
+    // name as an act ('Forward calls') and must not ask for switching it off. The direction rules above decide such switches.
+    const nativeOn = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? '')) && target?.checked === true
+    if (grammarEligible && classes.length === 0 && !nativeOn) for (const cls of grammarClasses(name, target?.role)) classes.push(cls)
     const mixedScript = !url.startsWith('desktop:') && classes.length === 0 && (POINTER.has(action.type) || pressesEnter || keyboard.activates) && target?.mixedScriptName === true
     if (mixedScript) classes.push('permission')
     // CU-302 (design note 0.1): a form the browser filled from saved logins or cards - a field matching :autofill, which
