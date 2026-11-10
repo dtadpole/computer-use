@@ -16,10 +16,13 @@ const DETERMINERS = new Set(['a', 'an', 'the', 'my', 'your', 'our', 'their', 'th
 const FILLER = new Set(['<n>', 'all', 'new', 'now', 'it', 'them', 'everyone', 'again', 'here', 'to', 'for', 'of', 'and', 'with',
   'from', 'on', 'in', 'as', 'out', 'up', 'off', 'down', 'back'])
 
+const US_WORDS = new Set(['antivirus', 'virus', 'status', 'bonus', 'campus', 'focus', 'census', 'corpus', 'plus', 'minus', 'surplus', 'genius', 'radius', 'nexus', 'menus', 'bus'])
+
 function singular(token) {
   if (token.length > 4 && token.endsWith('ies')) return `${token.slice(0, -3)}y`
   if (token.length > 4 && /(?:ss|sh|ch|x)es$/.test(token)) return token.slice(0, -2)
-  if (token.length > 3 && token.endsWith('s') && !token.endsWith('ss') && !token.endsWith('us')) return token.slice(0, -1)
+  // -us stays only on its Latin / short words (antivirus, status, bonus ...); an acronym plural folds ('GPUs' = 'gpu', cu-coordinator 19:22Z).
+  if (token.length > 3 && token.endsWith('s') && !token.endsWith('ss') && !(token.endsWith('us') && US_WORDS.has(token))) return token.slice(0, -1)
   return token
 }
 
@@ -57,7 +60,9 @@ const VERBS = new Map(Object.entries({
   pay: ['pay'], buy: ['pay'], purchase: ['pay'], order: ['pay'], book: ['pay'], reserve: ['pay'], rent: ['pay'], redeem: ['pay'],
   refund: ['pay'], reimburse: ['pay'], release: ['pay', 'share'], send: ['pay', 'send'], transfer: ['pay', 'grant'], withdraw: ['pay'],
   tip: ['pay'], give: ['pay'], donate: ['pay'], pledge: ['pay'], renew: ['pay'], run: ['pay', 'exec'], process: ['pay'], issue: ['pay'],
-  raise: ['pay'], increase: ['pay'], approve: ['pay', 'send'], confirm: ['pay', 'send'], complete: ['pay'], enable: ['enable', 'grant'],
+  raise: ['pay'], increase: ['pay'], approve: ['pay', 'send'], confirm: ['pay', 'send'], complete: ['pay'], enable: ['enable', 'grant', 'pay'],
+  // CU-436 (High; cu-coordinator 19:06Z): activating a paid account and committing to a term start cloud spending.
+  activate: ['pay'], commit: ['pay'],
   add: ['pay', 'grant', 'cred'], swap: ['pay'], trade: ['pay'], stake: ['pay'], bid: ['pay'], rebid: ['pay'],
   subscribe: ['pay'], upgrade: ['pay'], checkout: ['pay'], charge: ['pay'], grant: ['grant'], make: ['grant', 'pay'], invite: ['grant'],
   assign: ['grant'], promote: ['grant', 'pay'], share: ['share'], admit: ['grant'], let: ['grant', 'phys_on'], allow: ['grant'],
@@ -67,7 +72,9 @@ const VERBS = new Map(Object.entries({
   export: ['cred'], reveal: ['cred'], show: ['cred'], view: ['cred'], copy: ['cred'], get: ['cred', 'pay'], download: ['cred', 'install'],
   print: ['cred'], link: ['cred'], connect: ['cred'], change: ['cred'], update: ['cred', 'install'], edit: ['cred'],
   // F5 cluster 1: 'open' leads pay only for trading objects; its install sense is only '... anyway'.
-  unlock: ['phys_on'], open: ['phys_on', 'pay'], start: ['phys_on', 'send'], preheat: ['phys_on'], light: ['phys_on'],
+  // CU-434 (High; cu-coordinator 18:44Z): unlock / start lead pay too, for the ride and rental objects below.
+  unlock: ['phys_on', 'pay'], open: ['phys_on', 'pay'], start: ['phys_on', 'send', 'pay'], preheat: ['phys_on'], light: ['phys_on'],
+  reorder: ['pay'],
   install: ['install'], keep: ['install'],
   vote: ['send'], cast: ['send'], resign: ['send'], quit: ['send'], decline: ['send'], apply: ['send'], enroll: ['send', 'pay'],
   file: ['send'], submit: ['send', 'pay'], post: ['send'], publish: ['send'], broadcast: ['send'], message: ['send'], email: ['send'],
@@ -78,7 +85,7 @@ const VERBS = new Map(Object.entries({
   capture: ['pay'], gift: ['pay'], reactivate: ['pay'], resume: ['pay'], market: ['pay'], relaunch: ['install'],
   place: ['pay', 'send'], mint: ['pay'], bridge: ['pay'], back: ['pay'], request: ['pay'],
   unstake: ['pay'], downgrade: ['pay'], unlink: ['grant'], distribute: ['send'], upload: ['send'], go: ['grant'], boost: ['pay'],
-  fund: ['pay'], lend: ['pay'], borrow: ['pay'], repay: ['pay'], list: ['pay'], use: ['pay'],
+  fund: ['pay'], lend: ['pay'], borrow: ['pay'], repay: ['pay'], list: ['pay'], use: ['pay'], bind: ['pay'],
 }))
 
 const PERSON = new Set(['driver', 'plumber', 'contractor', 'friend', 'seller', 'vendor', 'merchant', 'host', 'creator', 'streamer',
@@ -98,10 +105,18 @@ const OBJECTS = {
     'customer', 'vendor', 'subscription', 'plan', 'membership', 'liquidity', 'position', 'loan', 'nft', 'item', 'offer', 'bid', 'usdc',
     'eth', 'weth', 'sol', 'btc', 'usdt', 'dai', 'wbtc', 'matic', 'transaction', 'trade', 'leverage', 'sale', 'payee', 'fund', 'money',
     'project', 'bet', 'swap', 'trial', 'collateral', 'allowance', 'spending', 'cap', 'long', 'short', 'annual', 'monthly', 'yearly',
-    'tip', 'recurring', 'bag', 'baggage', 'insurance', 'mile', 'domain']),
+    'tip', 'recurring', 'bag', 'baggage', 'insurance', 'mile', 'domain',
+    // CU-434: a paid ride, delivery or rental.
+    'ride', 'delivery', 'scooter', 'bike', 'ebike', 'moped', 'taxi', 'cab',
+    // cu-coordinator 18:55Z: lodging (reserve x lodging).
+    'cabin', 'lodge', 'villa', 'campsite', 'suite', 'apartment',
+    // CU-436: cloud billing objects.
+    'billing', 'quota', 'gpu', 'tpu', 'commitment', 'paid']),
   access: new Set(['organization', 'team', 'workspace', 'server', 'people', 'account', 'owner', 'coowner', 'co', 'admin', 'host',
     'cohost', 'collaborator', 'member', 'access', 'guest', 'visitor', 'device', 'public', 'ownership', 'payee', 'recipient',
-    'beneficiary', 'everyone']),
+    'beneficiary', 'everyone',
+    // cu-coordinator 18:55Z: admitting attendees (CU-414 family), granting edit rights (CU-423 family).
+    'attendee', 'participant', 'right']),
   agree: new Set(['term', 'agreement', 'contract', 'condition']),
   signable: new Set(['document', 'agreement', 'contract', 'form', 'consent', 'lease', 'waiver', 'nda']),
   records: new Set(['record', 'release', 'medical']),
@@ -110,7 +125,7 @@ const OBJECTS = {
   guard: new Set(['accessibility', 'protection', 'firewall', 'antivirus', 'defender', 'filevault', 'sip', 'integrity', '2fa', 'factor',
     'verification', 'alert', 'notification']),
   phys: new Set(['door', 'garage', 'gate', 'alarm', 'camera', 'security', 'car', 'engine', 'vehicle', 'oven', 'stove', 'heater',
-    'burner', 'fireplace', 'guest', 'visitor']),
+    'burner', 'fireplace', 'guest', 'visitor', 'grill', 'smoker']),
   physGuard: new Set(['alarm', 'camera', 'security']),
   install: new Set(['package', 'theme', 'extension', 'plugin', 'update', 'profile', 'helper', 'configuration', 'chrome']),
   sendObject: new Set(['app', 'store', 'ballot', 'vote', 'petition', 'application', 'job', 'offer', 'tax', 'return', 'review', 'star',
@@ -127,7 +142,7 @@ const STANDALONE = new Map(Object.entries({
   promote: 'purchase', 'top up': 'purchase', 'cash out': 'purchase', 'factory reset': 'delete',
   'buzz in': 'physical', 'remote start': 'physical', 'let in': 'permission', refund: 'purchase', renew: 'purchase', book: 'purchase',
   // A bare Install / Update / Get is CU-254's (the App Store rule keeps its own record).
-  enroll: 'submit', reactivate: 'purchase', pay: 'purchase', 'restart to update': 'install',
+  enroll: 'submit', reactivate: 'purchase', pay: 'purchase', 'restart to update': 'install', reorder: 'purchase',
   'install and relaunch': 'install', buy: 'purchase', retweet: 'submit', reblog: 'submit', endorse: 'submit', esign: 'permission',
   give: 'purchase',
 }))
@@ -170,6 +185,25 @@ const PRICED_ROLES = new Set(['gridcell', 'option', 'radio', 'checkbox', 'button
 const PRICED_NOUNS = new Set(['seat', 'option', 'legroom', 'bag', 'baggage'])
 const CURRENCY = /[$\u20ac\u00a3\u00a5]\s?\d|\d\s?(?:usd|eur|gbp)\b/i
 
+// CU-435's insurance rows: verb x object -> class, within the usual two-token window.
+const INSURANCE_ROWS = [
+  [['bind', 'buy', 'purchase', 'renew'], ['policy', 'coverage'], 'purchase'], [['increase', 'add', 'extend', 'raise'], ['coverage'], 'purchase'],
+  [['lower', 'reduce', 'decrease'], ['deductible'], 'purchase'], [['accept'], ['quote'], 'purchase'], [['cancel'], ['policy'], 'delete'],
+  [['accept'], ['settlement', 'offer'], 'submit'], [['file', 'submit'], ['claim'], 'submit'],
+]
+function insuranceClass(list) {
+  if (list.length < 2 || list.length > 5) return null
+  const window = list.slice(1).filter((t) => !FILLER.has(t)).slice(0, 3)
+  const objectIndex = (objects) => window.findIndex((t) => objects.includes(t))
+  for (const [verbs, objects, cls] of INSURANCE_ROWS) {
+    if (!verbs.includes(list[0])) continue
+    const i = objectIndex(objects)
+    // The object ends the name (optionally one trailing token like 'now'), so 'Renew policy settings' stays a guard case.
+    if (i >= 0 && i >= window.length - 1) return cls
+  }
+  return null
+}
+
 // The classes the grammar asks for a control's name (and its role, for the priced cell); [] when it asks nothing.
 export function grammarClasses(name, role = '') {
   const raw = String(name ?? '').trim()
@@ -179,10 +213,16 @@ export function grammarClasses(name, role = '') {
   if (list.length === 0) return []
   const lower = raw.toLowerCase()
   const last = list[list.length - 1]
+  // CU-435 (High; cu-coordinator 18:51Z): an insurance contract - binding, buying, renewing or cancelling a policy, widening
+  // coverage, lowering a deductible, accepting a quote or a settlement, filing a claim. Checked before the guards: 'policy' is
+  // a list / settings tail elsewhere ('Privacy policy'), a contract only after these verbs.
+  const insurance = insuranceClass(list)
+  if (insurance) return [insurance]
   // Guards: a trailing list / settings / UI noun; a bare plural noun (a tab); settings-sense apply; 'Sign in as guest'.
   if (FREE_TAIL.has(last) || (list.length >= 2 && FREE_TAIL.has(list[list.length - 2]))) return []
   if (UI_TAIL.has(last) && list.length >= 2) return []
-  if (list.length === 1 && /[a-z]s$/.test(lower) && !lower.endsWith('ss')) return []
+  const oneWord = raw.split(/\s+/).length === 1
+  if (list.length === 1 && oneWord && /[a-z]s$/.test(lower) && !lower.endsWith('ss')) return []
   if (list[0] === 'apply' && list.length >= 2 && APPLY_SETTINGS.has(list[1])) return []
   if (list[0] === 'sign' && list[1] === 'in' && list[2] === 'as' && list[3] === 'guest') return []
   if (list.length === 2 && /s$/.test(lower) && ['gift', 'trade', 'tip', 'bet', 'call', 'post', 'report', 'list'].includes(list[0])) return []
@@ -292,11 +332,20 @@ export function grammarClasses(name, role = '') {
   if (verb === 'book' && rest.includes('appointment')) return ['submit']
   // '<pay verb> now' and the bare standalone verbs (F5 cluster 6: 'set up now' stays free).
   if (core.length === 0 && out.length === 0) {
-    const pluralNoun = rest.length === 0 && /[a-z]s$/.test(lower) && !lower.endsWith('ss')
+    const pluralNoun = rest.length === 0 && oneWord && /[a-z]s$/.test(lower) && !lower.endsWith('ss')
     if (STANDALONE.has(verb) && !pluralNoun) pushOnce(out, STANDALONE.get(verb))
     else if (rest.includes('now') && classes.has('pay') && verb !== 'set up') pushOnce(out, 'purchase')
   }
   if (verb === 'sign' && rest.some((t) => t === 'message' || t === 'transaction')) pushOnce(out, 'purchase')
+  // CU-436: activating a full or paid account; committing to <n> year(s) / month(s); lifting a spending cap or limit.
+  if (verb === 'activate' && rest.includes('account') && rest.some((t) => t === 'full' || t === 'paid' || t === 'billing')) pushOnce(out, 'purchase')
+  if (verb === 'commit' && rest.some((t) => t === 'year' || t === 'month' || t === 'term')) pushOnce(out, 'purchase')
+  // cu-coordinator 19:22Z: linking a billing account starts charges to it.
+  if (verb === 'link' && rest.includes('billing')) pushOnce(out, 'purchase')
+  if (['turn off', 'remove', 'disable', 'lift', 'raise', 'increase'].includes(verb) && rest.includes('spending') && rest.some((t) => t === 'cap' || t === 'limit')) pushOnce(out, 'purchase')
+  // CU-434: 'Order again' reorders; cancelling a ride may charge a fee (submit).
+  if (verb === 'order' && rest.length === 1 && rest[0] === 'again') pushOnce(out, 'purchase')
+  if (verb === 'cancel' && rest.some((t) => t === 'ride' || t === 'delivery')) pushOnce(out, 'submit')
   // CU-426 (cu-coordinator 16:28Z), where structure can: unsending a message and turning on disappearing messages delete;
   // leaving or exiting a group, chat or channel, and 'Report and block', submit.
   if (verb === 'unsend' && rest.some((t) => t === 'message' || t === 'chat')) pushOnce(out, 'delete')
