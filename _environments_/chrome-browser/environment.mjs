@@ -88,6 +88,10 @@ export function noticeOf(notice) {
     at: notice?.at ?? null,
     ...(typeof notice?.url === 'string' && notice.url !== '' ? { url: bare(notice.url) } : {}),
     ...(typeof notice?.rule === 'string' ? { rule: notice.rule } : {}),
+    // CU-360: an external navigation's reason, its best-effort stop and launched ('unknown') say what was tried.
+    ...(typeof notice?.reason === 'string' ? { reason: notice.reason } : {}),
+    ...(typeof notice?.stop === 'string' ? { stop: notice.stop } : {}),
+    ...(typeof notice?.launched === 'string' ? { launched: notice.launched } : {}),
     ...(typeof notice?.message === 'string' ? (notice.kind === 'alert_accepted' ? { messageLength: notice.message.length } : { message: notice.message.slice(0, 200) }) : {}),
   }
 }

@@ -117,6 +117,23 @@ test('a start URL refused by the site filter fails the launch and cleans up', as
   assert.deepEqual([counts.started, counts.stopped, counts.released], [1, 1, 1])
 })
 
+test('CU-360: a page\'s navigation to another app\'s scheme is a notice (the scheme only, the reason); web schemes are not', async () => {
+  const { connection, options } = harness()
+  const env = await launchBrowserEnvironment(options)
+  const before = env.session.notices.length
+  connection.emit('Page.frameRequestedNavigation', { frameId: 'F-S1', reason: 'scriptInitiated', url: 'shortcuts://run-shortcut?name=Wipe', disposition: 'currentTab' }, 'S1')
+  connection.emit('Page.frameRequestedNavigation', { frameId: 'F-S1', reason: 'anchorClick', url: 'https://shop.example/next', disposition: 'currentTab' }, 'S1')
+  connection.emit('Page.frameRequestedNavigation', { frameId: 'F-S9', reason: 'scriptInitiated', url: 'zoommtg://zoom.us/join', disposition: 'currentTab' }, 'S9')
+  const added = env.session.notices.slice(before).map(({ kind, url, reason }) => [kind, url, reason])
+  assert.deepEqual(added, [['external_navigation_requested', 'shortcuts:', 'scriptInitiated']], 'the app scheme of this page; not the web navigation, not another session\'s')
+  await new Promise((resolve) => setImmediate(resolve))
+  assert.equal(connection.of('Page.stopLoading', 'S1').length, 1, 'the best-effort stop is sent once, on the page\'s session, for the app scheme only')
+  assert.equal(connection.of('Page.stopLoading', 'S9').length, 0)
+  assert.equal(env.session.notices.slice(before)[0].stop, 'sent_ok', 'Chrome took the stop command - what was tried')
+  assert.equal(env.session.notices.slice(before)[0].launched, 'unknown', 'never that a launch was prevented: that race is not measured')
+  await env.close()
+})
+
 test('CU-357: an effect reports the session notices since the last one - a refused download (no query), an accepted alert - once each; one between actions lands on the next', async () => {
   const { connection, options } = harness()
   const env = await launchBrowserEnvironment(options)
@@ -140,6 +157,7 @@ test('CU-357: noticeOf keeps kind, time, rule and a driver message; an alert kee
   assert.deepEqual(noticeOf({ kind: 'alert_accepted', message: `Your new API key is ${key}`, at: 2 }), { kind: 'alert_accepted', at: 2, messageLength: 20 + key.length }, 'an alert carrying a key: its length only')
   assert.equal(noticeOf({ kind: 'page_setup_failed', message: 'm'.repeat(300), at: 2 }).message.length, 200)
   assert.deepEqual(noticeOf({ kind: 'page_setup_failed', message: 'boom', at: 3 }), { kind: 'page_setup_failed', at: 3, message: 'boom' })
+  assert.deepEqual(noticeOf({ kind: 'external_navigation_requested', url: 'mailto:', reason: 'scriptInitiated', at: 4, stop: 'sent_ok', launched: 'unknown' }), { kind: 'external_navigation_requested', at: 4, url: 'mailto:', reason: 'scriptInitiated', stop: 'sent_ok', launched: 'unknown' }, 'CU-360: the external navigation keeps its reason, stop and launched in the effect')
 })
 
 test('while a dialog is held: the last screenshot comes back stale, page text is the dialog, targets are refused', async () => {
