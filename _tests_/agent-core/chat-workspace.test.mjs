@@ -34,6 +34,8 @@ test('CU-454: public conversion, app grants and member removals ask permission; 
 test('CU-454 negatives: channels, members, the app directory and mention chips stay free; Leave channel keeps an older ask', () => {
   // '@channel' / '@here' insert a mention chip into the composer; the send that follows asks submit (named in the PR).
   for (const name of ['Channels', 'Members', 'Apps', '@channel', '@here', 'Install', 'Kick off meeting']) assert.equal(click(name), 'allow', name)
+  // #590 round 2: blocking is the safe direction (CU-404's 'Block user' stays free); only kick and ban were ruled.
+  for (const name of ['Block user', 'Block member']) assert.equal(click(name), 'allow', name)
   // Named over-ask (older submit class rule; CU-429's family).
   assert.equal(click('Leave channel'), 'submit', 'older rule')
 })

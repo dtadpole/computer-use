@@ -39,4 +39,6 @@ test('CU-460: Sentry Mode and PIN to drive switches ask OFF, free ON; unread ask
 
 test('CU-460 negatives: the vehicle page, location, locking, closing windows, Sentry on and charging stay free', () => {
   for (const name of ['Vehicle', 'Location', 'Lock car', 'Close windows', 'Turn on Sentry Mode', 'Charging', 'Open map', 'Keys']) assert.equal(click(name), 'allow', name)
+  // #590 round 2 (cu-researcher 23:26Z): a browser window is not a car window.
+  for (const name of ['Open Link in New Window', 'Open in new window', 'New window', 'Open in new tab']) assert.equal(click(name), 'allow', name)
 })

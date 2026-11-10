@@ -454,7 +454,8 @@ function workspaceClass(list) {
   const last = core[core.length - 1]
   if (verb === 'convert' && core.includes('public') && core.length <= 3) return 'permission'
   if (['allow', 'approve', 'authorize', 'authorise'].includes(verb) && core.length <= 2 && APP_OBJECTS.has(last)) return 'permission'
-  if (['kick', 'ban', 'block'].includes(verb) && core.length <= 2 && ['member', 'user', 'participant', 'guest'].includes(last)) return 'permission'
+  // #590 round 2: kick and ban only - blocking is the safe direction (CU-404's 'Block user' stays free).
+  if (['kick', 'ban'].includes(verb) && core.length <= 2 && ['member', 'user', 'participant', 'guest'].includes(last)) return 'permission'
   if (verb === 'install' && core.length <= 2 && APP_OBJECTS.has(last)) return 'install'
   return null
 }
@@ -496,7 +497,9 @@ function vehicleClass(list) {
   const tail = core.join(' ')
   if ((list.length === 1 && list[0] === 'summon') || (list.length === 2 && list[0] === 'smart' && list[1] === 'summon')) return 'physical'
   if (list.length === 1 && list[0] === 'honk') return 'physical'
-  if (verb === 'open' && core.length <= 2 && ['trunk', 'frunk', 'window', 'tailgate', 'liftgate'].includes(last)) return 'physical'
+  if (verb === 'open' && core.length <= 2 && ['trunk', 'frunk', 'tailgate', 'liftgate'].includes(last)) return 'physical'
+  // #590 round 2 (cu-researcher 23:26Z): a car's windows, never a browser window ('Open link in new window', 'Open in new window').
+  if (verb === 'open' && last === 'window' && !rest.includes('new') && !rest.includes('link') && !rest.includes('tab') && (core.length === 1 || (core.length === 2 && ['car', 'rear', 'front', 'all', 'driver', 'passenger'].includes(core[0])))) return 'physical'
   if (verb === 'vent' && core.length <= 2 && last === 'window') return 'physical'
   if (verb === 'start' && core.length <= 2 && ['climate', 'preconditioning', 'defrost'].includes(last)) return 'physical'
   if ((verb === 'flash' && core.length <= 1 && last === 'light') || (verb === 'honk' && core.length <= 1 && last === 'horn')) return 'physical'
