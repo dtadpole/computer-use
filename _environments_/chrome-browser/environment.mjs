@@ -9,7 +9,7 @@ import { clipboardOp, executeAction, NAVIGATION_TIMEOUT_MS, navigateHistory, sen
 import { planHumanInput } from './human-input.mjs'
 import { processCommandLine, sandboxProblem, SEAT_PATTERN, startChrome } from './launch.mjs'
 import { normalizeKey } from './keys.mjs'
-import { accessKeyElement, accessKeyOf, activatableAncestor, autofilledFields, clickLabel, closedRootHoldsEntry, collectPageText, deepActiveElement, describeElement, DRAG_TEXT_MAX, dragTextAt, FRAME_FOCUS_EXPRESSION, implicitSubmitButton, keyChoice, selectKeyOption, selectTypeOptions, pageExpression, selectionContainer, textEntered, TWO_FRAMES_EXPRESSION } from './page-scripts.mjs'
+import { accessKeyElement, accessKeyOf, activatableAncestor, autofilledFields, clickLabel, closedRootHoldsEntry, collectPageText, deepActiveElement, describeElement, DRAG_TEXT_MAX, dragTextAt, FRAME_FOCUS_EXPRESSION, frameLabel, frameLabelFromAttributes, implicitSubmitButton, keyChoice, pageExpression, selectionContainer, selectKeyOption, selectTypeOptions, textEntered, TWO_FRAMES_EXPRESSION } from './page-scripts.mjs'
 
 /** CU-300: how long focusedElement may spend reading the focus inside a cross-site frame before it keeps the iframe. */
 export const FRAME_FOCUS_MS = 2000
@@ -66,6 +66,34 @@ async function passGate(resourceGate, seat) {
     throw new EnvironmentError('resource_refused', 'the resource gate did not grant a slot')
   }
   return slot
+}
+
+/**
+ * CU-357: a session notice as an effect reports it - its kind and time, the rule when there is one, a URL without its
+ * query or fragment (a download link's token stays out of the record), and a driver message (a failed set-up, at most
+ * 200 characters). An alert's message is page text the run never typed and may carry a secret ('Your new API key is
+ * ...'), so only its length is kept (cu-researcher).
+ */
+export function noticeOf(notice) {
+  const bare = (value) => {
+    try {
+      const url = new URL(String(value))
+      return ['http:', 'https:', 'ws:', 'wss:', 'file:'].includes(url.protocol) ? `${url.origin === 'null' ? url.protocol + '//' : url.origin}${url.pathname}` : `${url.protocol}`
+    } catch {
+      return String(value).split(/[?#]/)[0].slice(0, 200)
+    }
+  }
+  return {
+    kind: notice?.kind ?? 'notice',
+    at: notice?.at ?? null,
+    ...(typeof notice?.url === 'string' && notice.url !== '' ? { url: bare(notice.url) } : {}),
+    ...(typeof notice?.rule === 'string' ? { rule: notice.rule } : {}),
+    // CU-360: an external navigation's reason, its best-effort stop and launched ('unknown') say what was tried.
+    ...(typeof notice?.reason === 'string' ? { reason: notice.reason } : {}),
+    ...(typeof notice?.stop === 'string' ? { stop: notice.stop } : {}),
+    ...(typeof notice?.launched === 'string' ? { launched: notice.launched } : {}),
+    ...(typeof notice?.message === 'string' ? (notice.kind === 'alert_accepted' ? { messageLength: notice.message.length } : { message: notice.message.slice(0, 200) }) : {}),
+  }
 }
 
 /**
@@ -233,10 +261,16 @@ class BrowserEnvironment {
     }
   }
 
-  /** One validated canonical action in frame pixels; resolves to its `ActionEffect`. */
+  /**
+   * One validated canonical action in frame pixels; resolves to its `ActionEffect`, with `notices` (CU-357): the
+   * session's notices that arrived since the last effect reported them - a refused download, an accepted alert, a
+   * refused file chooser, a page that failed set-up; not Chrome's own blocked background traffic - so the trajectory (which logs the
+   * effect whole) shows them. A notice that arrives between actions, or after the action settles, lands on the next
+   * effect; a URL loses its query and fragment (see noticeOf). Absent when there is none. The model is not shown them.
+   */
   async perform(action) {
     this.#assertOpen()
-    return executeAction(action, {
+    const effect = await executeAction(action, {
       session: this.session,
       frame: this.frame,
       clipboard: this.clipboard,
@@ -245,7 +279,15 @@ class BrowserEnvironment {
       navigationTimeoutMs: this.navigationTimeoutMs,
       screenshot: (args) => this.screenshot(args),
     })
+    // Chrome's own background traffic (update checks, clock sync - a dozen at start-up, measured) is no effect of the
+    // run's actions: it stays in session.notices and the smoke, out of the effect.
+    const fresh = this.session.notices.slice(this.#noticesReported).filter((notice) => notice.kind !== 'browser_traffic_blocked')
+    this.#noticesReported = this.session.notices.length
+    return fresh.length > 0 ? { ...effect, notices: fresh.map(noticeOf) } : effect
   }
+
+  /** How many of the session's notices an effect has reported (CU-357). */
+  #noticesReported = 0
 
   /** Synchronous: it reads the session's cached state, as the loop and the fake environment expect. */
   state() {
@@ -455,7 +497,30 @@ class BrowserEnvironment {
     } catch {
       // Unread: role and name stay null.
     }
+    // CU-336: an unread host name falls back to the words the page gives the frame element (labelledby, aria-label, title).
+    if (name === null || name === '') name = (await this.#frameLabel(page, node)) ?? name
     return { tag: String(node?.nodeName ?? '').toLowerCase(), role, name }
+  }
+
+  /**
+   * CU-336: the words the page gives an <iframe>/<frame> element whose accessibility name is unread or empty -
+   * aria-labelledby's text, aria-label, then title (page-scripts frameLabel; never the name attribute, an id), read in
+   * the isolated world; when the node does not resolve there, the same order from its describeNode attributes without
+   * aria-labelledby. Null when the element carries none, so the policy's unnamed-frame rule still judges it.
+   */
+  async #frameLabel(page, node, frameId = page.mainFrameId) {
+    const tag = String(node?.nodeName ?? '').toUpperCase()
+    if (tag !== 'IFRAME' && tag !== 'FRAME') return null
+    try {
+      const world = await this.session.isolatedContext(page, frameId ?? page.mainFrameId)
+      const objectId = (await this.session.send(page, 'DOM.resolveNode', { backendNodeId: node.backendNodeId, executionContextId: world })).result.object.objectId
+      const value = (await this.session.send(page, 'Runtime.callFunctionOn', {
+        objectId, functionDeclaration: `function () { return (${frameLabel.toString()})(this) }`, returnByValue: true,
+      })).result.result.value
+      return typeof value === 'string' && value !== '' ? value : null
+    } catch {
+      return frameLabelFromAttributes(node?.attributes ?? [])
+    }
   }
 
   /**
@@ -659,7 +724,10 @@ class BrowserEnvironment {
     const node = (await this.session.send(page, 'DOM.describeNode', { objectId: remote.objectId })).result.node
     const inner = await this.#focusInsideFrame(page, node)
     if (inner !== undefined) return inner
-    const element = await this.#withAutofill(page, node.backendNodeId, undefined, await this.#describe(page, node.backendNodeId, undefined))
+    // deepActiveElement answers a body only for a same-origin frame editor (contentEditable or designMode); the top
+    // document's own body is null there. So a body here is a text entry, described as CU-300's cross-site case is.
+    const editableBody = String(node.nodeName ?? '').toUpperCase() === 'BODY'
+    const element = await this.#withAutofill(page, node.backendNodeId, undefined, await this.#describe(page, node.backendNodeId, undefined, { node, editableBody }))
     if (element === null) return null
     const submit = await this.#implicitSubmit(page, node.backendNodeId)
     return { ...element, defaultButton: submit.button, defaultButtonRead: submit.read }
@@ -771,6 +839,8 @@ class BrowserEnvironment {
     } catch {
       // A node without an accessibility object keeps role and name null.
     }
+    // CU-336: a frame element the accessibility tree leaves unnamed (or unread) takes the words the page gives it.
+    if ((name === null || name === '') && (tagName === 'iframe' || tagName === 'frame')) name = (await this.#frameLabel(page, node, frameId)) ?? name
     // CU-175: a click target the accessibility tree leaves unnamed takes the words it shows (see clickLabel).
     if ((name === null || name === '') && typeof fallbackName === 'string' && fallbackName !== '') name = fallbackName
     let extra = {}
@@ -841,6 +911,10 @@ class BrowserEnvironment {
       // CU-300: the frame document's origin and path, inside a frame only; outside the fingerprint, never recorded.
       ...(typeof extra.frameUrl === 'string' && extra.frameUrl !== '' ? { frameUrl: extra.frameUrl } : {}),
       editable: extra.editable ?? null,
+      // CU-373: a toggle's state before the action (checked: true, false or 'mixed'; pressed for a toggle button) -
+      // state, not identity, so outside the fingerprint; absent when the element has none.
+      ...(extra.checked !== undefined ? { checked: extra.checked } : {}),
+      ...(extra.pressed !== undefined ? { pressed: extra.pressed } : {}),
       // CU-157: context, not identity - outside the fingerprint.
       textEntered: entered,
       // CU-187: the label that captions a non-entry element (see describeElement); CU-194 rule 5: an entry's structural

@@ -1,15 +1,16 @@
 ---
 title: Desktop-run lock
 created: 2026-11-02T09:53:32Z
-modified: 2026-11-09T08:10:00Z
+modified: 2026-11-09T23:10:00Z
 level: L1
-version: 0.7.0
+version: 0.7.1
 description: One desktop run team-wide on the shared Mac (D-024, D-028) - the lock in /tmp/cu-desktop-run, its refusal that names the holder but never the pid, stale takeover, why desktop runs need a seat, and the hold whose token says who may end it (CU-327).
 status: unverified
 grounded_in:
   - source: _context_/team-operations/decision-log.yaml (D-024, D-028)
   - source: _environments_/macos-desktop/run-lock.mjs
   - source: Linear CU-327 (a nested script's exit trap freed its seat's outer hold, 9 Nov)
+  - source: Linear CU-341 (R1c's first window lost to Homebrew's node under _VOLTA_TOOL_RECURSION, 9 Nov); cu-coordinator 23:03Z
 ---
 
 # Desktop-run lock
@@ -49,6 +50,12 @@ A fresh hold prints its `token` (CU-327). The seat holding again with it extends
 gets its own token, and can neither shorten nor end the outer hold. `release --token` ends the hold with the holder's
 token, only that nested holder with its own, and refuses any other; a tokenless release removes the newest nested
 holder first, else ends the hold. So a nested script's exit trap frees only itself, and the minutes still run out.
+
+A held script's driver must be the agent's own node: the helper's boundary admits only the Node.js Foundation's signed
+binary. Under the harness, `_VOLTA_TOOL_RECURSION=1` makes `~/.volta/bin/node` pass through to the next node on PATH -
+Homebrew's when `/opt/homebrew/bin` follows - which the helper refuses (`not a genuine node binary`) and the hold window
+is lost. So a held script unsets `_VOLTA_TOOL_RECURSION`, puts `volta which node`'s folder first on PATH, and refuses to
+start unless `process.execPath` is under `~/.volta/tools/image/node` (CU-341 R1c, 9 Nov).
 
 A waiting phase 2 goes first (D-073, CU-276): `run-lock.mjs wait --seat S` registers `waiting.json` `{ seat, pid,
 since }` while its process lives (at most 30 minutes), and another seat's fresh hold, re-hold or extension is then
