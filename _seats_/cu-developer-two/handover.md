@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - handover'
 created: 2026-11-08T04:14:00Z
-modified: 2026-11-10T20:11:54Z
+modified: 2026-11-10T23:18:25Z
 level: L1
-version: 4.21.0
+version: 4.22.0
 description: 'What a fresh [cu] Developer Two session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -32,8 +32,8 @@ is cu-developer-three's #510 (OK'd at 2ff3d0d09); my #508 was closed for it (one
 
 ## Second OKs, sweeps, idle (A)
 
-Second OK on each consent-High policy PR: live rows on a seam tree, click and Return. Done: #539, #540, #542, #544,
-#546, #550, #553, #554, #555, #558. Next: #563, #551, the CU-437/438 table PR; then run-lock idleAtStart.
+Live second OKs on every consent-High policy PR through #575; any free seat runs the kit (D-109; CU-458 moves it into
+the repo). #576: CU-443's dial-row unit. Next: landed-fix parity CU-416 on, then idleAtStart.
 
 ## Live state
 
