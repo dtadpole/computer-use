@@ -63,6 +63,29 @@ describe('named-controls (live rows decided by a name)', () => {
     })
   })
 
+  test('placeholders (CU-349): entries labelled only by a placeholder - AXTextField, the placeholder served apart from the name; lengths only', async () => {
+    const names = ['One-time code', 'CVV', 'Search']
+    await withNamed({ fields: ['Bank account'], placeholders: names, buttons: ['Continue'] }, async (fixture) => {
+      const audit = await fixture.axAudit()
+      names.forEach((name, index) => {
+        const entry = audit[`placeholder-${index}`]
+        assert.equal(entry.role, 'AXTextField')
+        // No caption or label is set; what AppKit serves as a name is not the placeholder's words (the policy must find
+        // them in the placeholder, CU-349).
+        assert.notEqual(entry.name, name, `placeholder-${index} must not carry its placeholder as its name`)
+        assert.equal(entry.placeholder, name)
+      })
+      assert.equal(audit['field-0'].name, 'Bank account', 'the named entry keeps its name above them')
+      const targets = await fixture.targets()
+      for (const key of ['placeholder-0', 'placeholder-1', 'placeholder-2', 'field-0', 'button-0']) assert.ok(targets[key], `no target for ${key}`)
+      assert.ok(targets['placeholder-0'].y > targets['field-0'].y && targets['button-0'].y > targets['placeholder-2'].y, 'they sit between the named entries and the buttons')
+      await fixture.act({ set: 'placeholder-1', value: '123' })
+      const { fields } = await fixture.state()
+      assert.deepEqual(fields.placeholderFieldLengths, [0, 3, 0])
+      assert.doesNotMatch(JSON.stringify(await fixture.state()), /"123"/, 'the text never comes back through the channel')
+    })
+  })
+
   test('at most six of each, names trimmed and capped at 60, empty names dropped', async () => {
     const long = 'x'.repeat(80)
     await withNamed({ fields: ['  Debit card  ', '', long, 'a', 'b', 'c', 'd', 'e'], buttons: [] }, async (fixture) => {
@@ -108,6 +131,17 @@ describe('named-controls (live rows decided by a name)', () => {
       assert.deepEqual(after.fields.namedChosen, [1])
       assert.deepEqual(after.events.filter((event) => event.type === 'chosen').map((event) => event.index), [1])
       assert.equal(after.events.filter((event) => event.type === 'menu').length, 0, 'not recorded by title')
+    })
+  })
+
+  test('popUps (CU-409): a native order panel - an asset pop-up (first item selected), an Amount entry and a bare Sell, all the window\'s own children', async () => {
+    await withNamed({ fields: ['Amount'], popUps: [{ name: 'Asset', items: ['BTC', 'ETH'] }, { name: '', items: ['x'] }, { name: 'Empty', items: [] }], buttons: ['Sell'] }, async (fixture) => {
+      const state = await fixture.state()
+      assert.deepEqual(state.fields.namedPopUpSelected, [0], 'one valid pop-up (an unnamed or empty one is skipped), its first item selected')
+      const targets = await fixture.targets()
+      assert.ok(targets['popup-0'] && targets['button-0'] && targets['field-0'], 'the pop-up, the Sell button and the Amount entry are named targets')
+      await fixture.act({ press: 'button-0' })
+      assert.deepEqual((await fixture.state()).fields.namedPressed, [0])
     })
   })
 
