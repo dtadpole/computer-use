@@ -39,6 +39,8 @@ const ZH_WORDS = Object.freeze({
     // CU-294 (cu-researcher; Firefox's own 'Remember this decision' checkbox, mozilla-l10n).
     '记住此决定', '記住此決定'],
   submit: ['发送', '發送', '傳送', '发布', '發佈', '發布', '提交', '注册', '註冊', '送出', '发表', '發表', '加入会议', '加入會議', '加入通话',
+    // CU-421: running a script.
+    'run script', 'run the script',
     '视频通话', '視訊通話', '语音通话', '語音通話', '开始会议', '開始會議', '接受邀请', '接受邀請', '拒绝邀请', '拒絕邀請',
     '部署', '退出群聊', '退出群組', '取消会议', '取消會議', '举报', '檢舉', '申请加入', '申請加入', '报税', '報稅',
     // cu-researcher on #145: Reply (回复 / 回覆) - judged like English 'reply', by CU-157's text-entered rule.
@@ -153,6 +155,11 @@ const WORDS = Object.freeze({
     'disable filevault', 'turn off filevault', 'turn off firewall', 'disable firewall', 'disable the firewall', 'disable antivirus',
     'turn off antivirus', 'turn off real-time protection', 'disable real-time protection', 'trust this device', 'trust device',
     'disable defender', 'turn off defender', 'pause protection', 'remember this device',
+    // CU-421 (High; cu-coordinator 15:00Z): system-level control - SIP off, full disk access, accessibility.
+    'disable sip', 'disable system integrity protection', 'grant full disk access', 'allow full disk access', 'enable full disk access',
+    'enable accessibility', 'allow accessibility access', 'grant accessibility access',
+    // cu-coordinator 15:25Z: trusting or installing a root certificate.
+    'trust certificate', 'trust this certificate', 'install certificate', 'install the certificate', 'always trust',
     // CU-415: signatures bind the owner; releasing records shares personal data.
     'sign document', 'sign the document', 'e-sign', 'esign', 'adopt and sign', 'sign and submit', 'accept terms', 'accept the terms',
     'accept agreement', 'accept the agreement', 'authorize release', 'authorise release', 'release records',
@@ -1324,6 +1331,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // 'Show password' asks everywhere, the sign-in eye toggle included - the plaintext reaches the next screenshot (cu-coordinator
       // 15:16Z, superseding 15:13Z); 15:18Z adds keychain / credentials exports, secrets and 'Get backup codes'.
       if (!focusesEntry && /^\s*(?:export\s+(?:all\s+|my\s+)?(?:passwords?|vault|logins?|keychain|credentials)|(?:reveal|show|copy|view)\s+(?:the\s+)?(?:saved\s+)?(?:passwords?|secrets?)|(?:download|view|show|copy|print|get)\s+(?:your\s+|my\s+)?(?:backup|recovery)\s+codes?)\b/i.test(name)) classes.push('credential')
+      // CU-421: overriding a malware warning or installing a profile or helper asks install (CU-254's class).
+      // cu-coordinator 15:25Z adds a page's 'Keep dangerous file' (Chrome's own shelf stays the named limit).
+      if (!focusesEntry && /^\s*(?:(?:open|run|keep|download|install)\s+anyway|keep\s+(?:the\s+)?dangerous\s+file|install\s+(?:the\s+)?(?:configuration\s+)?(?:profile|helper))\b/i.test(name)) classes.push('install')
       // CU-415 (cu-coordinator 13:12Z): 'Reserve seat / table' asks purchase on the name alone (a booking commits the owner; a
       // free table's over-ask is named); 'Book appointment' asks purchase with a price or deposit in its name, else submit.
       if (!focusesEntry && /^\s*reserve\s+(?:a\s+)?(?:seat|table|spot)\b/i.test(name)) classes.push('purchase')
