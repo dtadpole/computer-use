@@ -46,3 +46,13 @@ test('CU-431 switches (17:27Z): turning a router exposure switch ON asks permiss
   assert.equal(sw('Port forwarding', native(false)), 'permission', 'off -> on')
   assert.equal(sw('Port forwarding', native(true)), 'allow', 'on -> off (CU-373 reads the native direction too)')
 })
+
+test('CU-431 round 2 (17:39Z): the six held-out escapes ask', () => {
+  for (const name of ['Turn on remote management', 'Allow remote access', 'Turn on UPnP', 'Open ports', 'Enable the DMZ']) {
+    assert.equal(click(name), 'permission', name)
+    assert.equal(enter(name), 'permission', `Return: ${name}`)
+  }
+  assert.equal(click('Change router password'), 'credential')
+  const bare = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: URL, target: { role: 'button', name: 'Change password' } })
+  assert.equal(bare.decision, 'handoff', 'the bare Change password keeps its stricter hand-off')
+})

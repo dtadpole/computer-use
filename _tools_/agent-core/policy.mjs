@@ -152,6 +152,9 @@ const WORDS = Object.freeze({
     // CU-431 (High; cu-coordinator 17:23Z): router / NAS admin acts that expose the home network or its admin access.
     'enable remote management', 'enable remote access', 'enable ssh', 'enable telnet', 'open port', 'open a port', 'add port forwarding',
     'add port forward', 'enable dmz', 'enable upnp', 'expose to internet', 'expose to the internet', 'allow wan access',
+    // cu-coordinator 17:39Z (round 2): verb synonyms, a plural and an article.
+    'turn on remote management', 'turn on remote access', 'allow remote access', 'allow remote management', 'turn on upnp',
+    'turn on ssh', 'open ports', 'enable the dmz', 'turn on dmz', 'turn on the dmz',
     // CU-420 (High; cu-coordinator 15:00Z): turning machine protection off, or trusting a device.
     'disable filevault', 'turn off filevault', 'turn off firewall', 'disable firewall', 'disable the firewall', 'disable antivirus',
     'turn off antivirus', 'turn off real-time protection', 'disable real-time protection', 'trust this device', 'trust device',
@@ -1324,7 +1327,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const formTrade = form && typeof form === 'object' && Array.isArray(form.options) && form.options.some((text) => TRADE_ASSET.test(String(text)))
       if (!focusesEntry && /\b(?:sell|convert|deposit)\b/i.test(name) && (/\d|[$\u20ac\u00a3\u00a5\u20bf]/.test(name) || TRADE_ASSET.test(name) || formTrade)) classes.push('purchase')
       // CU-431: changing or resetting an admin password asks credential; updating, uploading or flashing firmware asks install.
-      if (!focusesEntry && /^\s*(?:change|reset|set)\s+(?:the\s+)?(?:router\s+|device\s+)?admin(?:istrator)?\s+password\b/i.test(name)) classes.push('credential')
+      if (!focusesEntry && /^\s*(?:change|reset|set)\s+(?:the\s+)?(?:(?:router|device|wi-?fi|nas)\s+(?:admin(?:istrator)?\s+)?|admin(?:istrator)?\s+)password\b/i.test(name)) classes.push('credential')
       if (!focusesEntry && /^\s*(?:update|upload|flash|install|upgrade)\s+(?:the\s+)?(?:router\s+|new\s+)?firmware\b/i.test(name)) classes.push('install')
       // CU-431 switches (cu-coordinator 17:27Z, CU-418's switch rule): a router switch named Remote management / access, SSH,
       // Telnet, UPnP, DMZ, WAN access or Port forwarding turned ON asks permission and OFF is free - the direction is trusted
