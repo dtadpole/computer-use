@@ -1311,6 +1311,24 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // on that button - its name and its formContext (cu-developer-two's driver attaches the bounded read) - instead of a
     // hand-kept subset: the trade clause, credential ('Change email'), and whatever the click rules gain later. The field's
     // textEntered rides along (an empty field's Return keeps CU-241's reading). A handoff or block on the button stands.
+    // CU-412 (High; cu-coordinator 11:25Z): implicit submission past role=button controls - two or three candidates
+    // (target.defaultCandidates, each shaped like defaultButton) are each judged by the click classifier and every class
+    // asked (the strictest leads, fail closed); more than three (defaultCandidatesMore) asks unknown.
+    const candidates = Array.isArray(target?.defaultCandidates) ? target.defaultCandidates.filter((one) => one && typeof one === 'object' && typeof one.name === 'string' && one.name.trim() !== '').slice(0, 3) : []
+    if (defaultName === '' && target?.defaultCandidatesMore === true && pressesEnter && (!inTextArea || commandReturn) && context.defaultButtonProbe !== true) {
+      return { decision: 'confirm', class: 'unknown_target', classes: ['unknown_target'], rule: 'default:candidates_unread', reason: `press ${(action.keys ?? ['Return']).join('+')} in a form whose Return may submit through one of several controls the agent cannot tell apart` }
+    }
+    if (defaultName === '' && pressesEnter && (!inTextArea || commandReturn) && context.defaultButtonProbe !== true) {
+      const { dialog: _cd, paste: _cp, dropTarget: _cdt, dragSource: _cds, ...candidateContext } = context
+      for (const one of candidates) {
+        const pressedOne = { ...one, role: one.role ?? 'button', ...(target?.textEntered !== undefined ? { textEntered: target.textEntered } : {}) }
+        const verdictOne = classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...candidateContext, target: pressedOne, defaultButtonProbe: true })
+        if (verdictOne.decision === 'block' || verdictOne.decision === 'handoff') return verdictOne
+        for (const cls of verdictOne.decision === 'confirm' ? (verdictOne.classes ?? [verdictOne.class]) : (verdictOne.class ? [verdictOne.class] : [])) {
+          if (cls !== 'permission' || verdictOne.rule !== 'page:shortcut') classes.push(cls)
+        }
+      }
+    }
     if (defaultName !== '' && pressesEnter && (!inTextArea || commandReturn) && context.defaultButtonProbe !== true) {
       const { dialog: _dialog, paste: _paste, dropTarget: _drop, dragSource: _source, ...probeContext } = context
       const pressed = { ...target.defaultButton, role: target.defaultButton.role ?? 'button', ...(target?.textEntered !== undefined ? { textEntered: target.textEntered } : {}) }
