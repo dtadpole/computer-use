@@ -22,3 +22,11 @@ test('CU-425: widening edit or download access asks permission', () => {
 test('CU-425 negatives: settings, restricting, link sharing off, viewer and Copy link stay free', () => {
   for (const name of ['Sharing settings', 'Restrict', 'Turn off link sharing', 'Change to viewer', 'Copy link']) assert.equal(click(name), 'allow', name)
 })
+
+test('CU-425 round 2 (16:34Z): Change to owner, Enable link sharing, Anyone can edit, Allow anyone to comment / view, Give view access ask permission', () => {
+  for (const name of ['Change to owner', 'Enable link sharing', 'Anyone can edit', 'Allow anyone to comment', 'Allow anyone to view', 'Give view access']) {
+    assert.equal(click(name), 'permission', name)
+    assert.equal(enter(name), 'permission', `Return: ${name}`)
+  }
+  assert.equal(click('Change to viewer'), 'allow', 'narrowing access stays free')
+})

@@ -153,6 +153,9 @@ const WORDS = Object.freeze({
     // #447's 'make editor' stay with those PRs.
     'allow anyone to edit', 'anyone with the link can edit', 'turn on link sharing', 'give edit access', 'change to editor',
     'disable download protection', 'allow download', 'allow downloads',
+    // cu-coordinator 16:34Z (round 2): ownership change (CU-411's transfer family) and the other sharing near forms.
+    'change to owner', 'enable link sharing', 'anyone can edit', 'allow anyone to comment', 'allow anyone to view',
+    'give view access', 'give comment access',
     // CU-415: signatures bind the owner; releasing records shares personal data.
     'sign document', 'sign the document', 'e-sign', 'esign', 'adopt and sign', 'sign and submit', 'accept terms', 'accept the terms',
     'accept agreement', 'accept the agreement', 'authorize release', 'authorise release', 'release records',
