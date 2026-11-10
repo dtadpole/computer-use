@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - handover'
 created: 2026-11-08T04:14:00Z
-modified: 2026-11-10T12:10:05Z
+modified: 2026-11-10T14:28:52Z
 level: L1
-version: 4.17.0
+version: 4.18.0
 description: 'What a fresh [cu] Developer Two session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -32,9 +32,8 @@ is cu-developer-three's #510 (OK'd at 2ff3d0d09); my #508 was closed for it (one
 
 ## Parity sweep and CU-412
 
-Done: 62 rows and the input/link/div variants, at parity except CU-412 (High): Return past a role=button div
-submitted unasked. #517 is the browser half (D-107 shape, fail closed); #519 is the
-policy line and #520 the desktop half.
+Done: 62 rows, input/link/div variants, CU-408..411 controls - at parity except CU-412 (High), whose browser half
+(#517, #519) is live on main. Next: CU-415..418 controls as fixes land; CU-412's desktop row after 0.2.69.
 
 ## Live state
 
