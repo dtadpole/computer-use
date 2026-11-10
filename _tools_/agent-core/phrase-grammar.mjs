@@ -479,7 +479,7 @@ function taxFiling(list) {
   const core = rest.filter((t) => !FILLER.has(t))
   const last = core[core.length - 1]
   if (verb === 'sign' && rest[0] === 'and' && rest[1] === 'file' && rest.length <= 3) return true
-  if (['transmit', 'submit', 'send', 'e'].includes(verb) && core.length <= 3 && last === 'return' && verb !== 'send') return true
+  if ((verb === 'transmit' || verb === 'submit') && core.length <= 3 && last === 'return') return true
   if (verb === 'e' && core[0] === 'file') return true
   if (['file', 'request', 'submit'].includes(verb) && core.length <= 2 && last === 'extension') return true
   if (verb === 'file' && core.length <= 3 && last === 'return') return true
