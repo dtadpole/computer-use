@@ -30,6 +30,7 @@ Writer: cu-developer-two. Contract: [environment driver](../../_designs_/system-
 **Behaviours.** One line per issue, sorted by issue number. A driver change adds its own line, and no shared line or
 count changes (CU-383).
 
+- CU-336: an iframe whose accessible name is unread is named from aria-labelledby, aria-label or title.
 - CU-351: a click on a `<label>` is judged as the control it activates, named by the label when it has no name of its own.
 - CU-353: `keyTarget` answers an accesskey chord with the element it fires.
 - CU-357: an effect reports the session's notices since the last one - a refused download, an accepted alert.
