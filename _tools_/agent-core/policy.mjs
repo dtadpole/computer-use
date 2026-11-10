@@ -102,6 +102,8 @@ const WORDS = Object.freeze({
     'change travel dates',
     // cu-coordinator 17:20Z (round 2): trip insurance.
     'add trip insurance', 'add flight insurance',
+    // CU-436 (cu-coordinator 19:06Z): removing a spending limit lifts cloud spending - purchase leads over the older 'remove' delete.
+    'remove spending limit', 'remove the spending limit', 'remove spending cap', 'remove the spending cap',
     // CU-428 (High; cu-coordinator 16:45Z): memberships and trials start a recurring charge; a counteroffer binds a sale.
     'become a member', 'become a premium member', 'start my trial', 'start trial', 'start your trial', 'start my free trial',
     'accept counteroffer', 'accept counter offer', 'accept the counteroffer',
@@ -1776,6 +1778,13 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // CU-268: in the browser a control whose name has one word mixing scripts asks permission - never pre-approved, so a
     // pre-approved submit cannot wave a disguised Delete or Pay through (cu-developer-one's ruling) - where no rule found a
     // class: a folded look-alike already asks by its own ('Sеnd' asks submit). The desktop asks unknown_target in app-policy.
+    // CU-436 (cu-coordinator 19:06Z): a spending-cap switch turned OFF lifts the limit on cloud spending (purchase); ON is free on a
+    // native checkbox read; an ARIA, mixed or missing state asks both ways (the named toggle limit) - the inverse of CU-431's.
+    if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))
+      && /^\s*(?:spending|budget|billing)\s+(?:cap|limit|alert\s+cap)\s*$/i.test(name)) {
+      const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
+      if (!(nativeBox && typeof target.checked === 'boolean') || target.checked === true) classes.push('purchase')
+    }
     // Consent phrase grammar (_designs_/consent-phrase-grammar 0.3.1; cu-coordinator 16:46Z) - the ONE additive hook: when no
     // older rule asked on a pressed named control, the grammar's verb-class x object-class structure may add classes. It
     // never removes or changes an older rule's class (15:08Z, D-063); its free guards stop only its own asks (F2).
