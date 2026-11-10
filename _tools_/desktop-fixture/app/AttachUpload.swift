@@ -58,7 +58,12 @@ enum AttachUpload {
     upload.frame = NSRect(x: 20, y: 196, width: 120, height: 32)
     content.addSubview(upload)
     let window = Windows.open("main", title: title, content: content)
-    // `origin` {x, y} (global points, y down; as Keypad's) puts the window clear of another app's floating panel.
+    placeAtOrigin(window, content: content)
+  }
+
+  /// `origin` {x, y} (global points, y down; as Keypad's) puts a window clear of another app's windows - a drag that
+  /// crosses one is stopped by the helper. Used by attach-upload and the open-selection list (CU-377's two ends).
+  static func placeAtOrigin(_ window: NSWindow, content: NSView) {
     let fixture = Fixture.shared
     if !fixture.offscreen, let origin = Keypad.origin(Screens.params), let screen = NSScreen.screens.first {
       let contentRect = NSRect(x: origin.x, y: screen.frame.height - origin.y - content.frame.height, width: content.frame.width, height: content.frame.height)
