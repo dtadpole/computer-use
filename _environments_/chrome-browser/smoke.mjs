@@ -135,7 +135,12 @@ const server = http.createServer((req, res) => {
   }
   // CU-370: a 'Bulk actions' select, a text field, and an ARIA listbox whose active option is Delete.
   if (req.url.startsWith('/select-page')) {
-    res.end('<!doctype html><style>body{margin:0}.at{position:absolute;left:20px;width:300px;height:30px}</style><select class="at" style="top:20px" id="bulk"><option>Bulk actions</option><option>Archive</option><option>Delete</option><option>Details</option><option>Sort: Newest</option></select><input class="at" style="top:70px" id="note"><div class="at" style="top:120px" id="lb" role="listbox" tabindex="0" aria-label="Actions" aria-activedescendant="lb-del"><div role="option" id="lb-arc">Archive</div><div role="option" id="lb-del">Delete</div></div><select class="at" style="top:170px" id="multi" multiple><option>Archive</option><option>Delete</option></select><form class="at" style="top:230px"><label><input type="radio" name="account" id="keep" checked> Keep my account</label><label><input type="radio" name="account" id="del"> Delete my account</label></form>')
+    res.end('<!doctype html><style>body{margin:0}.at{position:absolute;left:20px;width:300px;height:30px}</style><select class="at" style="top:20px" id="bulk"><option>Bulk actions</option><option>Archive</option><option>Delete</option><option>Details</option><option>Sort: Newest</option></select><input class="at" style="top:70px" id="note"><div class="at" style="top:120px" id="lb" role="listbox" tabindex="0" aria-label="Actions" aria-activedescendant="lb-del"><div role="option" id="lb-arc">Archive</div><div role="option" id="lb-del">Delete</div></div><select class="at" style="top:170px" id="multi" multiple><option>Archive</option><option>Delete</option></select><form class="at" style="top:230px"><label><input type="radio" name="account" id="keep" checked> Keep my account</label><label><input type="radio" name="account" id="del"> Delete my account</label></form><div class="at" style="top:300px" id="lb2" role="listbox" tabindex="0" aria-label="Actions by selection"><div role="option" aria-selected="true">Delete</div><div role="option">Archive</div></div><div class="at" style="top:360px" id="lb3" role="listbox" tabindex="0" aria-label="Many" aria-multiselectable="true"><div role="option" aria-selected="true">Delete</div><div role="option" aria-selected="true">Archive</div></div>')
+    return
+  }
+  // CU-373: a checked checkbox and an ARIA switch that is off.
+  if (req.url.startsWith('/toggle-page')) {
+    res.end('<!doctype html><style>body{margin:0}.at{position:absolute;left:20px;width:300px;height:30px}</style><label class="at" style="top:20px"><input type="checkbox" id="twofa" checked> Two-factor authentication</label><button class="at" style="top:70px" role="switch" aria-checked="false" id="fwd">Forward incoming mail</button>')
     return
   }
   // CU-319: a card form for Chrome's own autofill (CDP Autofill.trigger with a test card built at runtime).
@@ -371,7 +376,18 @@ try {
   const multiType = await env.typeOptions({ type: 'type', text: 'Del' })
   await evaluate("document.getElementById('keep').focus()")
   const radioDown = await env.keyTarget({ type: 'keypress', keys: ['ArrowDown'] })
+  await evaluate("document.getElementById('lb2').focus()")
+  const selEnter = await env.keyTarget({ type: 'keypress', keys: ['Enter'] })
+  const selDown = await env.keyTarget({ type: 'keypress', keys: ['ArrowDown'] })
+  await evaluate("document.getElementById('lb3').focus()")
+  const multiEnter = await env.keyTarget({ type: 'keypress', keys: ['Enter'] })
+  check('an ARIA listbox that marks its active option by aria-selected only: Enter names it, ArrowDown the next; a multiselectable one is unread', selEnter?.selectOption === true && selEnter?.name === 'Delete' && selDown?.name === 'Archive' && multiEnter?.optionUnread === true, { enter: selEnter && { name: selEnter.name, role: selEnter.role }, down: selDown?.name, multi: multiEnter?.optionUnread })
   check("PageDown and a multiple select are unread (asked); ArrowDown on 'Keep my account' names 'Delete my account'", pageDown?.optionUnread === true && multiDown?.optionUnread === true && multiType?.unread === true && radioDown?.selectOption === true && radioDown?.radioChoice === true && /Delete my account/.test(radioDown?.name ?? ''), { pageDown: pageDown?.optionUnread, multiDown: multiDown?.optionUnread, multiType, radio: radioDown && { name: radioDown.name, role: radioDown.role, inputType: radioDown.inputType } })
+  // CU-373: a toggle's state reaches the target - a checked box is checked, an ARIA switch that is off is not.
+  await env.perform({ type: 'navigate', url: `${origin}/toggle-page` })
+  const twofa = await env.inspectPoint({ x: 30, y: 35 })
+  const forward = await env.inspectPoint({ x: 100, y: 64 })
+  check("a toggle's state reaches the target: the 2FA box is checked, the forwarding switch is off", twofa?.checked === true && forward?.checked === false, { twofa: twofa && { tag: twofa.tag, role: twofa.role, checked: twofa.checked }, forward: forward && { tag: forward.tag, role: forward.role, checked: forward.checked } })
   await env.perform({ type: 'navigate', url: `${origin}/autofill-form` })
   const payAt = { x: 128, y: 176 }
   const payBefore = await env.inspectPoint(payAt)
