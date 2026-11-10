@@ -1,13 +1,13 @@
 ---
 title: '[cu] Researcher - Handover'
 created: 2026-11-08T04:16:21Z
-modified: 2026-11-09T18:00:00Z
+modified: 2026-11-10T18:18:00Z
 level: L2
-version: 5.4.0
+version: 5.15.0
 description: 'What the next session of [cu] Researcher needs - the D-061 re-sign state, the under-ask hunt, open reviews, the scripts, rules and lessons.'
 status: unverified
 grounded_in:
-  - source: the seat's own state at 1800Z (guide limits audited; CU-361/363/364 filed; the desktop target-shape lesson)
+  - source: the seat's own state at 1818Z 10 Nov (CU-420..431 filed; grammar #554 ruled in; held-out sets per filing)
 ---
 
 # [cu] Researcher - Handover
@@ -15,26 +15,24 @@ grounded_in:
 Start here, then [responsibilities](responsibilities.md) and [red-team-consent-tables](red-team-consent-tables.md).
 
 ```text
-WHERE: session worktree ~/dtadpole/computer-use-wt/<session-id>; test merges in <session-id>--probe.
+WHERE: session worktree ~/dtadpole/computer-use-wt/<session-id>; test merges in <session-id>--probe (default dir).
 
-GOAL (cu-coordinator 14:19Z): (1) D-061 re-sign; (2) red-team every consent change on the merge (PR 274, 299,
-CU-342's stand-in - unreachable from any model run); (3) hunt under-asks and file each (High if it reaches a
-credential, D-063); (4) this handover, hourly note.
+GOAL (cu-coordinator 06:00Z 10 Nov): (1) red-team every consent PR on one merge, loop-derived fields through the
+loop (D-100, D-103); rerun the kept matrices on each policy merge; (2) hunt under-asks, queue first, probe vs live (D-098); never press
+a real Restart/Shut Down; (3) guide limits honest (D-092); (4) hourly report, this handover.
 
-DONE: D-059 re-signed 12:07Z (main 445c98e); D-061 re-signed 16:23Z (main fc72439c5) - CU-145's acceptance met;
-cu-coordinator moves it to Verify, cu-verifier closes it (never me). Open reviews: CU-349's agent-core half
-(placeholder upgrades only); recheck each OK'd PR on main after it lands.
+HUNT: closed CU-345..349, 352, 354, 355, 363, 365, 370, 377, 380-382, 386, 392, 395, 398, 400, 401, 406, 408-412, 415-418, 420-422; open
+361, 364, 373, 374, 378, 379, 385, 387-389, 393, 394, 396, 397, 399, 403, 404, 407, 413, 414, 419, 423-431. Kit: _tools_/probe-kit (#419, #432).
+GRAMMAR: design #543; module #554 ruled in (v4 and fresh F5 spent). Each new filing: a private held-out set before its PR, measured once, then retired.
 
-HUNT: filed CU-345..355 (fixed or OK'd); from the guide's limits CU-361 (layout label), CU-363 (page
-shortcuts, High, PR 356 - type on a link/button and desktop null focus still open), CU-364 (Low). CU-348,
-356 and 364 were stand-in probes the real components already decide.
+EVERY COMMAND: /tmp/cu-r-probe/probe.sh (run-lock file and inbox guard, cd, set -e, a 1 s kill watcher; D-104, D-106). Poll: /tmp/cu-r-probe/poll.sh (full bodies
+and ids; read a ruling in full before asking again). Matrices and seams: /tmp/cu-r-probe/*-matrix.mjs, seam-*.mjs.
 
-LESSONS: a mutant is cited only after it is applied and seen to fail; when seats share a change, post the plan
-and wait for the go; re-apply on main after a sibling lands; probe the merge with
-edge inputs, not only the suite; probe loop-level where the change is in loop.mjs (PR 294's window); count
-sample lengths; probe with the real createSitePolicy/createAppPolicy and targets carrying every field the driver sends (desktop: sheet, defaultButton, caption, placeholder; loop: boundMenuItem; browser: linkScheme), focus null too (D-100).
+LESSONS: measure before any number or claim; probe the merge with edge inputs; kit targets carry every driver
+field; a key's target and other loop fields go through throughLoop; a policy fix inert without its driver field
+shows only in the real-driver seam (#463 vs #442); dupcheck.sh before filing (queue, PR bodies,
+open PR policy diffs).
 
-RULES: never verify my own filings; D-034 20.69 of 25 USD, no model run; input only via CUHelper under the lock
-with the Mac idle >= 300 s; run the gate unpiped and push only on exit 0 (CU-337); no CU-n in a PR title or branch unless it
-completes the issue; never a closing keyword before '#n'.
+RULES: every OK a signed PR comment naming the head; carry only by /tmp/cu-r-probe/carry.sh (merge trees), and a policy.mjs hand-merge gets its matrix on the merge; never verify my own filings; CU_VERIFY_SEAT=cu-researcher; D-034 20.69 of 21 USD, no model run; gate
+unpiped, push on exit 0; no CU-n in a title or branch unless it completes the issue.
 ```

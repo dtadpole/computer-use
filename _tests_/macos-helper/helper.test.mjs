@@ -143,7 +143,7 @@ describe('build', () => {
     assert.equal(plist.CFBundleIdentifier, 'com.reflection.cu-helper')
     assert.equal(plist.CFBundleExecutable, 'CUHelper')
     assert.equal(plist.LSUIElement, true)
-    assert.equal(plist.CFBundleShortVersionString, '0.2.62')
+    assert.equal(plist.CFBundleShortVersionString, '0.2.69')
     const details = execFileSync('/bin/sh', ['-c', `codesign -dv "${built.app}" 2>&1`]).toString()
     assert.match(details, /Identifier=com\.reflection\.cu-helper/)
     assert.match(details, /Signature=adhoc/)
