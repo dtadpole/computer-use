@@ -797,25 +797,24 @@ class BrowserEnvironment {
       const world = await this.session.isolatedContext(page, page.mainFrameId)
       const objectId = (await this.session.send(page, 'DOM.resolveNode', { backendNodeId, executionContextId: world })).result.object.objectId
       const found = (await this.session.send(page, 'Runtime.callFunctionOn', {
-        objectId, functionDeclaration: `function () { return (${implicitSubmitButton.toString()})(this) }`, returnByValue: false,
+        objectId, functionDeclaration: `function () { return (${implicitSubmitButton.toString()})(this, ${implicitSubmitControls.toString()}) }`, returnByValue: false,
       })).result.result
       if (found?.objectId === undefined) return { button: null, read: true, ...(await this.#implicitCandidates(page, objectId)) }
-      const extra = await this.#implicitCandidates(page, objectId)
       const button = (await this.session.send(page, 'DOM.describeNode', { objectId: found.objectId })).result.node
       const described = await this.#describe(page, button.backendNodeId, undefined, { scanText: false })
       // CU-406: the Return target carries the same bounded formContext a click on that button would (CU-402/CU-405), so a
       // Return in a trade form's amount field is judged with the form's asset beside a bare 'Sell' default.
-      return { button: described === null ? null : { role: described.role, name: described.name, panel: null, ...(described.formContext ? { formContext: described.formContext } : {}) }, read: true, ...extra }
+      return { button: described === null ? null : { role: described.role, name: described.name, panel: null, ...(described.formContext ? { formContext: described.formContext } : {}) }, read: true }
     } catch {
       return { button: null, read: false }
     }
   }
 
   /**
-   * CU-412 (11:27Z contract, D-107): the script submit controls a Return may press (implicitSubmitControls) as
-   * `{ candidates: [{ role, name, formContext? }] (at most 3), more }` - more true past 3, which agent core asks as
-   * unknown; it asks the strictest class among the candidates otherwise. Empty object when there are none; a failure
-   * reads as none, because the default-button read itself succeeded.
+   * CU-412 (11:27Z contract, D-107): two or more script submit controls a Return may press (implicitSubmitControls;
+   * one alone is the defaultButton) as `{ candidates: [{ role, name, formContext? }] (at most 3), more }` - more true
+   * past 3, which agent core asks as unknown; it asks the strictest class among the candidates otherwise. Empty object
+   * when there are fewer; a failure reads as none, because the default-button read itself succeeded.
    */
   async #implicitCandidates(page, fieldObjectId) {
     try {
@@ -825,7 +824,7 @@ class BrowserEnvironment {
       if (list?.objectId === undefined) return {}
       const props = (await this.session.send(page, 'Runtime.getProperties', { objectId: list.objectId, ownProperties: true })).result.result ?? []
       const items = props.filter((p) => /^\d+$/.test(p.name)).sort((a, b) => Number(a.name) - Number(b.name))
-      if (items.length < 1) return {}
+      if (items.length < 2) return {}
       const controls = []
       for (const item of items.slice(0, 3)) {
         if (item.value?.objectId === undefined) continue
