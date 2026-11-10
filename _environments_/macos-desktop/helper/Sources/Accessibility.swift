@@ -400,9 +400,7 @@ enum Accessibility {
       let role = string(current, "AXRole")
       let subrole = string(current, "AXSubrole")
       var container = FormContext.Container(role: role, subrole: subrole, submitVerbs: [], selected: [], entryLabels: [], truncated: false)
-      let stops = role.map { FormContext.stopRoles.contains($0) } ?? false
-      let dialog = role == "AXWindow" && ["AXDialog", "AXSystemDialog"].contains(subrole ?? "")
-      if !stops || dialog { scanForm(current, into: &container) }
+      if !(role.map { FormContext.stopRoles.contains($0) } ?? false) { scanForm(current, into: &container) }
       containers.append(container)
       guard FormContext.outcome(container) == .next else { break }
       node = elementAttribute(current, "AXParent")

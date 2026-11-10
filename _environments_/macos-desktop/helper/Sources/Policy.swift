@@ -1101,8 +1101,10 @@ enum FormContext {
   static let tradeVerb = #"^(?:buy|sell|swap|convert|trade|deposit|withdraw|transfer)(?:\s|$)"#
   static let neutralVerb = #"^(?:max|min|half|all|\d{1,3}\s?%|limit|market|stop(?:[\s-]limit)?|oco)$"#
   static let amountWords = #"amount|qty|quantity|price|total|sum"#
-  /// Where the walk stops without lending: past these nothing belongs to the button's form.
-  static let stopRoles: Set<String> = ["AXWindow", "AXWebArea", "AXApplication", "AXMenuBar", "AXMenu"]
+  /// Where the walk stops without lending: past these nothing belongs to the button's form. (A window is read, then
+  /// ends the walk: AppKit's plain container views are no AX elements, so a native panel's controls are often the
+  /// window's own children.)
+  static let stopRoles: Set<String> = ["AXWebArea", "AXApplication", "AXMenuBar", "AXMenu"]
   /// The submit-like controls of a container (a pop-up, check box or radio is a choice, not a submit).
   static let submitRoles: Set<String> = ["AXButton"]
   static let windowButtonSubroles: Set<String> = ["AXCloseButton", "AXMinimizeButton", "AXZoomButton", "AXFullScreenButton"]
@@ -1139,17 +1141,19 @@ enum FormContext {
 
   enum Outcome: Equatable { case form, next, stop }
 
-  /// What the walk does at `container`: a form landmark is the form; a sheet or dialog is the form when it lends, and
-  /// the walk ends there either way; a stop role ends it; any other group is the form when it lends and holds a pop-up
-  /// or combo box. A scan cut short by the bound never lends (it may have missed a second submit).
+  /// What the walk does at `container`: a stop role ends it; a form landmark is the form; a sheet or dialog window is
+  /// the form when it lends; any other window, and any group, is the form when it lends and holds a pop-up or combo box
+  /// - and the walk ends at a sheet or window either way. A scan cut short by the bound never lends (it may have missed
+  /// a second submit).
   static func outcome(_ container: Container) -> Outcome {
-    if let role = container.role, stopRoles.contains(role) {
-      if role == "AXWindow", ["AXDialog", "AXSystemDialog"].contains(container.subrole ?? ""), !container.truncated, lends(submitVerbs: container.submitVerbs) { return .form }
-      return .stop
-    }
-    if container.subrole == "AXLandmarkForm" { return container.truncated ? .stop : .form }
-    if container.role == "AXSheet" { return !container.truncated && lends(submitVerbs: container.submitVerbs) ? .form : .stop }
-    return !container.truncated && lends(submitVerbs: container.submitVerbs) && !container.selected.isEmpty ? .form : .next
+    if let role = container.role, stopRoles.contains(role) { return .stop }
+    if container.truncated { return container.subrole == "AXLandmarkForm" || ["AXSheet", "AXWindow"].contains(container.role ?? "") ? .stop : .next }
+    if container.subrole == "AXLandmarkForm" { return .form }
+    let lendsHere = lends(submitVerbs: container.submitVerbs)
+    let dialog = container.role == "AXSheet" || (container.role == "AXWindow" && ["AXDialog", "AXSystemDialog"].contains(container.subrole ?? ""))
+    if dialog { return lendsHere ? .form : .stop }
+    if container.role == "AXWindow" { return lendsHere && !container.selected.isEmpty ? .form : .stop }
+    return lendsHere && !container.selected.isEmpty ? .form : .next
   }
 
   /// The JSON a form gives: its selected texts (at most 3 of at most 24 characters, empty ones skipped) and whether an
