@@ -1,9 +1,9 @@
 ---
 title: Owner checklist - the owner session (step 4, G2, the Replace chain)
 created: 2026-11-05T17:25:00Z
-modified: 2026-11-09T20:10:00Z
+modified: 2026-11-10T00:35:00Z
 level: L1
-version: 0.4.1
+version: 0.4.2
 description: 'One page for the owner - what you do in the owner session, in order, and how long each step takes, at the Mac mini (the Confirm prompt) or over Screen Sharing; the per-part tables are in owner-checklist-parts.md. Rehearsed on helper 0.2.62 with labelled stand-ins (CU-341).'
 status: unverified
 grounded_in:
@@ -13,14 +13,15 @@ grounded_in:
   - source: _environments_/macos-desktop/helper/Sources/ConfirmPrompt.swift (never key; no key equivalent)
   - source: _tools_/live-view/ui-logic.mjs (the texts quoted in owner-checklist-parts.md)
   - source: _verifiers_/desktop-human-control/owner-step4.mjs (the step 4 run)
-  - source: Linear CU-11, CU-119, CU-135, CU-203 and CU-341 (rehearsal R1, R1b and R1c on helper 0.2.62, 9 Nov; 0.2.63 installed 20:07Z)
+  - source: Linear CU-11, CU-119, CU-135, CU-203 and CU-341 (rehearsal R1, R1b and R1c on helper 0.2.62, 9 Nov; 0.2.65 installed 10 Nov 00:30Z)
 ---
 
 # Owner checklist - the owner session
 
 One sitting, three parts. cu-verifier runs each part as an announced scripted run in **CU Fixture** and calls every
-step. Nothing you own is touched, no setting changes, and the helper is CUHelper 0.2.63 (installed 9 Nov 20:07Z; the rehearsal ran on 0.2.62, and 0.2.63 adds only
-the placeholder read). What each press shows:
+step. Nothing you own is touched, no setting changes, and the helper is CUHelper 0.2.65 (installed 10 Nov 00:30Z). The
+rehearsal ran on 0.2.62; 0.2.63-0.2.65 add only reads (placeholders, nearby labels, pop-up items, a file on the
+clipboard, an open menu), none of them in these steps. What each press shows:
 [owner-checklist-parts](owner-checklist-parts.md).
 
 ## Before (2 minutes)
