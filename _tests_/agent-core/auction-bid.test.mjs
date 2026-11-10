@@ -10,12 +10,12 @@ const click = (name) => { const v = policy.classify({ type: 'click', x: 1, y: 1,
 const enter = (name) => { const v = policy.classify({ type: 'keypress', keys: ['ENTER'] }, { url: 'https://auction.example/item/1', target: { tag: 'input', role: 'textbox', name: 'Your bid', defaultButtonRead: true, defaultButton: { role: 'button', name } } }); return v.decision === 'allow' ? 'allow' : v.class }
 
 test('auction: Bid and Bid now ask purchase on a click and on Return', () => {
-  for (const name of ['Bid', 'Bid now', 'bid now']) {
+  for (const name of ['Bid', 'Bid now', 'bid now', 'Bid 5', 'Bid US 5.00', 'Bid $12.50', 'Bid!', 'Rebid']) {
     assert.equal(click(name), 'purchase', name)
     assert.equal(enter(name), 'purchase', `Return: ${name}`)
   }
 })
 
 test('auction negatives: Bid history, Bids and a bidder profile stay free', () => {
-  for (const name of ['Bid history', 'Bids', 'Bidder profile', 'Forbid']) assert.equal(click(name), 'allow', name)
+  for (const name of ['Bid history', 'Bids', 'Bidder profile', 'Forbid', 'Max bid', 'Bidding', 'Bid increment']) assert.equal(click(name), 'allow', name)
 })
