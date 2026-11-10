@@ -774,6 +774,9 @@ function boundEntryOf(item, scope) {
   if (item.appleMenu !== undefined && typeof item.appleMenu !== 'boolean') return null
   // CU-250 (helper 0.2.53): an item under the Services menu acts outside the approved app; app-policy refuses it.
   if (item.servicesMenu !== undefined && typeof item.servicesMenu !== 'boolean') return null
+  // CU-382 (helper 0.2.66): an item in Finder's Quick Actions runs a user-installed workflow - the menu-key list marks it
+  // as the clicked item's describe() does, and a chord bound to it is judged as a click on it.
+  if (item.quickActions !== undefined && typeof item.quickActions !== 'boolean') return null
   const name = menuTitleOf(item.title)
   if (name === null) return null
   const path = Array.isArray(item.path) ? item.path.slice(0, 8).map(menuTitleOf).filter((step) => step !== null) : []
@@ -782,6 +785,7 @@ function boundEntryOf(item, scope) {
     enabled: typeof item.enabled === 'boolean' ? item.enabled : null,
     ...(item.appleMenu === true ? { appleMenu: true } : {}),
     ...(item.servicesMenu === true ? { servicesMenu: true } : {}),
+    ...(item.quickActions === true ? { quickActions: true } : {}),
   }
 }
 
@@ -869,6 +873,19 @@ export function fileNameOf(value) {
  * directory or bundle keeping its trailing '/' (Payload.app/); never the path, which names the owner's folders. Null for
  * any other scheme, a malformed URL or a leaf fileNameOf refuses.
  */
+/**
+ * CU-392 (cu-coordinator 01:21Z): whether an element's AXURL names a network volume or server - its scheme is one of
+ * smb, cifs, afp, nfs, webdav, davs or ftp (a server row in a file browser, a share on it). A boolean only: the URL, host
+ * and share never leave the driver. A mounted share reads as a file: URL under /Volumes and is not seen here (a named
+ * limit), nor is a WebDAV volume addressed by http(s).
+ */
+export const NETWORK_VOLUME_SCHEMES = Object.freeze(['smb', 'cifs', 'afp', 'nfs', 'webdav', 'davs', 'ftp'])
+export function networkVolumeOf(value) {
+  if (typeof value !== 'string') return false
+  const scheme = /^([a-z][a-z0-9+.-]{0,15}):/i.exec(value.trim())?.[1]?.toLowerCase()
+  return scheme !== undefined && NETWORK_VOLUME_SCHEMES.includes(scheme)
+}
+
 export function fileUrlLeafOf(value) {
   if (typeof value !== 'string') return null
   let url
@@ -1879,6 +1896,15 @@ class DesktopEnvironment {
       // CU-250 (helper 0.2.53): a menu item under the Services menu, and its menu path - outside the fingerprint, and never in
       // run records (an event's target keeps origin, role and name).
       ...(servicesMenuOf(element.servicesMenu) ? { servicesMenu: true } : {}),
+      // CU-398 (helper 0.2.67): a menu item under the Apple menu (Restart..., Shut Down..., Log Out...), structural.
+      ...(element.appleMenu === true ? { appleMenu: true } : {}),
+      // CU-382 (helper 0.2.66): under Finder's Quick Actions (a submenu or the preview pane's row), and a menu walk
+      // that could not finish - each present only when true; outside the fingerprint, and never in run records.
+      ...(element.quickActions === true ? { quickActions: true } : {}),
+      ...(element.menuContextUnread === true ? { menuContextUnread: true } : {}),
+      // CU-392 (helper 0.2.67): where a drop in Finder sends a file - 'airdrop', 'shared' or 'server' - from Finder's own
+      // strings in the helper (the raw title never leaves it); present only when one of those.
+      ...(['airdrop', 'shared', 'server'].includes(element.dropDestination) ? { dropDestination: element.dropDestination } : {}),
       menuPath: menuPathOf(element.menuPath),
       // CU-187: the label that captions a non-entry element (AXTitleUIElement's title, else its row's or cell's sibling
       // title, as the helper reads it) - never its value or its own title. A string of at most 80 characters, null when
@@ -1906,6 +1932,12 @@ class DesktopEnvironment {
       // never in run records (an event's target keeps origin, role and name); the URL's path never leaves the driver.
       filename: fileNameOf(element.filename),
       url: fileUrlLeafOf(element.url),
+      // CU-387 (helper 0.2.67): 'ancestor' when the helper lent a content element (a row's text, image or cell) the
+      // nearest row's or cell's AXFilename/AXURL - a kind for the run record (CU-391), judged exactly as an own file name.
+      // Present only then; outside the fingerprint.
+      ...(element.fileFrom === 'ancestor' ? { fileFrom: 'ancestor' } : {}),
+      // CU-392: a drop onto a server or network share sends the file away - a boolean from AXURL's scheme, only when true.
+      ...(networkVolumeOf(element.url) ? { networkVolume: true } : {}),
       // CU-265: a link's scheme (AXLink's AXURL), so a facetime:, tel: or mailto: link is not a plain click. Links only - a
       // file browser's items carry file: URLs and are judged by launch_code - and the scheme only, never the URL.
       linkScheme: element.role === 'AXLink' ? linkSchemeOf(element.url) : null,

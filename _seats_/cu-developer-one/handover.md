@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-10T00:10:00Z
+modified: 2026-11-10T07:15:00Z
 level: L1
-version: 3.11.0
+version: 3.15.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,21 +15,19 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; never drives the desktop. State at 00:10Z, 10 November.
+session worktree plus `--review` worktrees; never drives the desktop. State at 07:15Z, 10 November.
 
 ## Landed
 
-- Verified: CU-301, CU-241, CU-297, CU-302, CU-325, CU-326, CU-263, CU-336, CU-347, CU-345, CU-346, CU-363, CU-365, CU-370,
-  CU-381; CU-377 closing on the live Upload row (#397, #414 on main).
-- On main, awaiting live close: CU-373's policy half (#391), CU-349 (#349).
+- Verified live tonight: CU-392, CU-395, CU-398 (#463), CU-400 (#466), CU-401 (#471); CU-391 Done.
 
 ## Open (Highs first)
 
-- CU-386: #420 (money wordings; both OKs) - full gate. CU-380: #399 lands with 0.2.65 (on main).
-- CU-372 #411 (desktop popups), CU-382 #418 (Quick Actions, askEachTime) after 0.2.66 (#423), CU-378/379 #417.
-- #404 (ARIA Enter keyTarget), #394 (CU-373 checkbox direction) after #393, CU-361 #387 after the stack.
-- Guide PR #392 (held, cu-researcher OK): mailto after #355, line 33 after #387, then complete.
-- D-101/D-102 before review; read every consumed field's call site first.
+- CU-402/405: #474 (policy) with #472, #482 (driver) - unit with all OKs, lands after #299/#393.
+- CU-406: #487 (Return judged by the click classifier on the default button) after #486; reviews at 1adbec0.
+- With OKs, landing: #459, #447, #448, #450, #453, #462, #469, #477 (CU-403), #478 (CU-404).
+- Guide #392 (OK at 073d5e3): add remote-desktop/VM viewers after #450/#453, then complete.
+- Read every inbox body in full; re-read before each push; check GATE notices before long runs.
 
 ## Lessons
 
