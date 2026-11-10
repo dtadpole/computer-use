@@ -110,7 +110,7 @@ const WORDS = Object.freeze({
     'revert to saved', 'revert all changes', ...ZH_WORDS.delete, ...LOCALE_WORDS.delete],
   permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke',
     // CU-403: adding a collaborator opens the repository to them.
-    'add collaborator', 'invite collaborator',
+    'add collaborator', 'invite collaborator', 'add member', 'add members', 'add people',
     // CU-386 (cu-coordinator 23:54Z): asking someone else for money.
     'request money',
     // CU-258 (cu-researcher): standing choices an app keeps after the run, as whole phrases. A bare 'Allow' stays free so
