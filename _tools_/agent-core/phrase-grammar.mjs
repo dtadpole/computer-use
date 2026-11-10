@@ -247,6 +247,24 @@ function currencyAct(list) {
   return false
 }
 
+const PROTECTIONS = [['parental', 'control'], ['screen', 'time'], ['content', 'filter'], ['safesearch'], ['safe', 'search'], ['family', 'filter'],
+  ['content', 'restriction'], ['restriction'], ['kid', 'mode'], ['purchase', 'approval'], ['ask', 'to', 'buy']]
+function endsWithSeq(rest, seq) { return rest.length >= seq.length && seq.every((t, i) => rest[rest.length - seq.length + i] === t) }
+function childProtectionOff(list) {
+  if (list.length > 7) return false
+  // 'turn off' / 'switch off' arrive as two tokens here (the multi-word verbs are folded later).
+  const twoWord = (list[0] === 'turn' || list[0] === 'switch') && list[1] === 'off'
+  const verb = twoWord ? 'turn off' : list[0]
+  const rest = list.slice(twoWord ? 2 : 1)
+  const core = rest.filter((t) => !FILLER.has(t))
+  if (['turn off', 'disable', 'pause', 'remove', 'deactivate'].includes(verb) && PROTECTIONS.some((seq) => endsWithSeq(core, seq))) return true
+  if (verb === 'allow' && core[core.length - 1] === 'content' && core.some((t) => t === 'explicit' || t === 'mature' || t === 'adult')) return true
+  if (verb === 'allow' && core[core.length - 1] === 'purchase' && core.length <= 3) return true
+  if (verb === 'extend' && core.length === 1 && (core[0] === 'time' || core[0] === 'screen')) return true
+  if (verb === 'add' && core[core.length - 1] === 'time' && core.length <= 3 && (core.includes('more') || core.includes('screen') || core.includes('<n>'))) return true
+  return false
+}
+
 const DIVERSION_VERBS = new Set(['change', 'update', 'edit', 'add', 'set', 'replace', 'switch'])
 const DIVERSION_OBJECTS = [['direct', 'deposit'], ['bank', 'detail'], ['deposit', 'account'], ['routing', 'number'], ['account', 'number'],
   ['payout', 'account'], ['payout', 'method'], ['bank', 'account'], ['payout', 'detail']]
@@ -279,6 +297,8 @@ export function grammarClasses(name, role = '') {
   // CU-439 (High; cu-coordinator 20:19Z): in-app currency and passes are bought with real money, and a currency spend is the
   // purchase at one remove.
   if (currencyAct(list)) return ['purchase']
+  // CU-440 (High; cu-coordinator 20:26Z): switching off a protection on a child's account (permission).
+  if (childProtectionOff(list)) return ['permission']
   // Guards: a trailing list / settings / UI noun; a bare plural noun (a tab); settings-sense apply; 'Sign in as guest'.
   if (FREE_TAIL.has(last) || (list.length >= 2 && FREE_TAIL.has(list[list.length - 2]))) return []
   if (UI_TAIL.has(last) && list.length >= 2) return []
