@@ -839,7 +839,9 @@ export async function runTask(options) {
     // file URL), 'unknown' (nothing read, a role-less shape, or another app's element), else 'other'.
     const dragSource = action.type === 'drag' && desktop
       ? (!target || !target.role ? 'unknown'
-        : (typeof target.filename === 'string' && target.filename !== '') || /^file:/i.test(String(target.url ?? '')) ? 'file'
+        // CU-387 (cu-developer-three): the desktop driver passes a file URL's LEAF as target.url ('notes.txt'), null for any
+        // other scheme - so on the desktop a non-empty url is a file.
+        : (typeof target.filename === 'string' && target.filename !== '') || (typeof target.url === 'string' && target.url.trim() !== '') ? 'file'
           // In a file browser (Finder) or a file panel, any row, cell, icon, outline item or name is a file unless known
           // otherwise - fail closed, no unmeasured attribute (cu-coordinator 21:43Z).
           : (FILE_BROWSERS.has(String(state?.frontmostBundleId ?? '')) || FILE_BROWSERS.has(String(target.origin ?? '')) || target.panel) && /row|cell|icon|outline|image|statictext|textfield|group/i.test(String(target.role ?? '')) ? 'file'
