@@ -1097,6 +1097,9 @@ enum FormContext {
   static let maxScan = 60
   static let maxOptions = 3
   static let maxOptionLength = 24
+  /// cu-researcher 10:35Z (describe()'s cost on a busy window): the whole walk's time budget; past it a scan stops as
+  /// truncated (never lends), so a slow app costs at most this much more per button described.
+  static let budgetSeconds = 0.08
   /// CU-405: the trade verbs a panel's other buttons may carry, and the order-panel helpers that never void it.
   static let tradeVerb = #"^(?:buy|sell|swap|convert|trade|deposit|withdraw|transfer)(?:\s|$)"#
   static let neutralVerb = #"^(?:max|min|half|all|\d{1,3}\s?%|limit|market|stop(?:[\s-]limit)?|oco)$"#

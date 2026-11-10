@@ -395,12 +395,13 @@ enum Accessibility {
   /// form or stops (FormContext.outcome). Attributes only.
   static func formContext(of element: AXUIElement) -> JSON? {
     var containers: [FormContext.Container] = []
+    let deadline = Date().addingTimeInterval(FormContext.budgetSeconds)
     var node = elementAttribute(element, "AXParent")
     while let current = node, containers.count < FormContext.maxLevels {
       let role = string(current, "AXRole")
       let subrole = string(current, "AXSubrole")
       var container = FormContext.Container(role: role, subrole: subrole, submitVerbs: [], selected: [], entryLabels: [], truncated: false)
-      if !(role.map { FormContext.stopRoles.contains($0) } ?? false) { scanForm(current, into: &container) }
+      if !(role.map { FormContext.stopRoles.contains($0) } ?? false) { scanForm(current, into: &container, deadline: deadline) }
       containers.append(container)
       guard FormContext.outcome(container) == .next else { break }
       node = elementAttribute(current, "AXParent")
@@ -428,12 +429,13 @@ enum Accessibility {
 
   /// One container's submit-like controls (their words: title, description, else their label children), its pop-ups'
   /// and combo boxes' selected texts and its text entries' label words (description, placeholder, title, help - never
-  /// the value), breadth first, at most FormContext.maxScan elements 4 deep; more marks the scan truncated.
-  private static func scanForm(_ root: AXUIElement, into container: inout FormContext.Container) {
+  /// the value), breadth first, at most FormContext.maxScan elements 4 deep and within the walk's time budget; more marks
+  /// the scan truncated.
+  private static func scanForm(_ root: AXUIElement, into container: inout FormContext.Container, deadline: Date) {
     var queue: [(element: AXUIElement, depth: Int)] = children(root).map { ($0, 1) }
     var seen = 0
     while !queue.isEmpty {
-      guard seen < FormContext.maxScan else { container.truncated = true; return }
+      guard seen < FormContext.maxScan, Date() < deadline else { container.truncated = true; return }
       let next = queue.removeFirst()
       seen += 1
       let role = string(next.element, "AXRole")
