@@ -875,7 +875,7 @@ test('CU-405: trade verbs beside order-panel helpers (N%, Max/Min/Half, Limit/Ma
   assert.equal('formContext' in describeElement(sellIn(panel([btn('Max'), btn('25%')]))), false, 'helpers alone, no trade verb: none')
   assert.deepEqual(describeElement(sellIn(panel([...real, btn('Transfer')]))).formContext.options, ['ETH'], 'Transfer is a trade verb (06:43Z)')
   assert.equal('formContext' in describeElement(sellIn(panel([...real, btn('Settings')]))), false, 'any other worded button voids')
-  assert.equal('formContext' in describeElement(sellIn(panel([btn('Buy'), btn('Sell'), btn('All')]))), false, "'All' is not a listed helper")
+  assert.deepEqual(describeElement(sellIn(panel([btn('Buy'), btn('Sell'), btn('All')]))).formContext.options, ['ETH'], "'All' is a helper (cu-coordinator 06:45Z)")
   assert.equal('formContext' in describeElement(sellIn(panel([btn('Buy'), btn('Sell'), btn('<<<')]))), false, 'three symbols are not one symbol')
   assert.equal('formContext' in describeElement(sellIn(panel([btn('Sell'), btn('Cancel')]))), false, 'Sell + Cancel: none')
 })
