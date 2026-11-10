@@ -101,12 +101,16 @@ const WORDS = Object.freeze({
     'renew plan', ...ZH_WORDS.purchase, ...LOCALE_WORDS.purchase],
   // CU-135: replace and overwrite (a save panel's 'already exists' sheet), don't save (a close sheet discards work).
   delete: ['delete', 'remove', 'discard', 'erase', 'empty trash', 'cancel subscription', 'replace', 'overwrite', "don't save", 'don\u2019t save',
+    // CU-403: a force push rewrites shared history.
+    'force push', 'force push with lease', 'force-push',
     // CU-146 (the CU-145 audit): destructive labels the list missed.
     'move to trash', 'move to bin', 'empty bin', 'clear history', 'clear all', 'reset all', 'reset settings', 'reset to defaults', 'uninstall', 'wipe', 'purge',
     'deactivate', 'close account', 'forget', 'factory reset',
     // cu-researcher's 13:23Z sweep: unsaved edits lost, like Discard Changes.
     'revert to saved', 'revert all changes', ...ZH_WORDS.delete, ...LOCALE_WORDS.delete],
   permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke',
+    // CU-403: adding a collaborator opens the repository to them.
+    'add collaborator', 'invite collaborator',
     // CU-386 (cu-coordinator 23:54Z): asking someone else for money.
     'request money',
     // CU-258 (cu-researcher): standing choices an app keeps after the run, as whole phrases. A bare 'Allow' stays free so
@@ -138,6 +142,8 @@ const WORDS = Object.freeze({
       'password', 'passkey', 'passkeys', 'security key', 'security keys', 'login alerts', 'sign in alerts', 'account recovery', 'find my',
       'less secure apps', 'less secure app access'].map((what) => `${verb} ${what}`)), ...ZH_WORDS.permission],
   submit: ['send', 'post', 'submit', 'publish', 'reply', 'sign up', 'register',
+    // CU-403 (cu-coordinator 06:02Z): pushing code and distributing an app publish it.
+    'push', 'push origin', 'sync changes', 'upload to app store', 'distribute app', 'submit for review',
     // CU-261 (cu-researcher; cu-coordinator: High): actions that reach other people or commit shared work, as whole
     // phrases. A bare Accept, Connect, Join or Follow stays free (cookie banners, Wi-Fi, generic joins: named limits).
     'facetime', 'video call', 'audio call', 'voice call', 'start call', 'start a call', 'join meeting', 'join call',
@@ -1184,6 +1190,11 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // Turning forwarding OFF is the safe direction (cu-coordinator 21:00Z).
       const forwardingOff = /\b(?:disable|turn\s+off|stop)\b/i.test(name) && /forward/i.test(name)
       if (!focusesEntry && ACCOUNT_SECURITY.test(name) && !protectionOn && !forwardingOff) classes.push('credential')
+      // CU-403: 'Push' beside a navigation noun ('Push notifications', 'Push settings') is a setting - free unless another
+      // send word remains.
+      if (/\bpush\b[\s\S]*\b(?:notifications?|settings|preferences|alerts)\b/i.test(name) && !namesWord(name.replace(/\bpush\b/gi, ' '), WORDS.submit)) {
+        for (let i = classes.length - 1; i >= 0; i -= 1) if (classes[i] === 'submit') classes.splice(i, 1)
+      }
       // CU-400: 'Sell', 'Convert' or 'Deposit' beside an asset or an amount (Sell BTC, Convert 0.5 ETH, Deposit USD) is a
       // trade; a marketplace 'Sell' and a file 'Convert' stay free (named).
       if (!focusesEntry && /\b(?:sell|convert|deposit)\b/i.test(name) && (/\d|[$\u20ac\u00a3\u00a5\u20bf]/.test(name) || TRADE_ASSET.test(name))) classes.push('purchase')
