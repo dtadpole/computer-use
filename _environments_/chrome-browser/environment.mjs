@@ -9,7 +9,7 @@ import { clipboardOp, executeAction, NAVIGATION_TIMEOUT_MS, navigateHistory, sen
 import { planHumanInput } from './human-input.mjs'
 import { processCommandLine, sandboxProblem, SEAT_PATTERN, startChrome } from './launch.mjs'
 import { normalizeKey } from './keys.mjs'
-import { accessKeyElement, accessKeyOf, activatableAncestor, autofilledFields, clickLabel, closedRootHoldsEntry, collectPageText, deepActiveElement, describeElement, DRAG_TEXT_MAX, dragTextAt, FRAME_FOCUS_EXPRESSION, implicitSubmitButton, keyChoice, selectKeyOption, selectTypeOptions, pageExpression, selectionContainer, textEntered, TWO_FRAMES_EXPRESSION } from './page-scripts.mjs'
+import { accessKeyElement, accessKeyOf, activatableAncestor, autofilledFields, clickLabel, closedRootHoldsEntry, collectPageText, deepActiveElement, describeElement, DRAG_TEXT_MAX, dragTextAt, FRAME_FOCUS_EXPRESSION, frameLabel, frameLabelFromAttributes, implicitSubmitButton, keyChoice, pageExpression, selectionContainer, selectKeyOption, selectTypeOptions, textEntered, TWO_FRAMES_EXPRESSION } from './page-scripts.mjs'
 
 /** CU-300: how long focusedElement may spend reading the focus inside a cross-site frame before it keeps the iframe. */
 export const FRAME_FOCUS_MS = 2000
@@ -497,7 +497,30 @@ class BrowserEnvironment {
     } catch {
       // Unread: role and name stay null.
     }
+    // CU-336: an unread host name falls back to the words the page gives the frame element (labelledby, aria-label, title).
+    if (name === null || name === '') name = (await this.#frameLabel(page, node)) ?? name
     return { tag: String(node?.nodeName ?? '').toLowerCase(), role, name }
+  }
+
+  /**
+   * CU-336: the words the page gives an <iframe>/<frame> element whose accessibility name is unread or empty -
+   * aria-labelledby's text, aria-label, then title (page-scripts frameLabel; never the name attribute, an id), read in
+   * the isolated world; when the node does not resolve there, the same order from its describeNode attributes without
+   * aria-labelledby. Null when the element carries none, so the policy's unnamed-frame rule still judges it.
+   */
+  async #frameLabel(page, node, frameId = page.mainFrameId) {
+    const tag = String(node?.nodeName ?? '').toUpperCase()
+    if (tag !== 'IFRAME' && tag !== 'FRAME') return null
+    try {
+      const world = await this.session.isolatedContext(page, frameId ?? page.mainFrameId)
+      const objectId = (await this.session.send(page, 'DOM.resolveNode', { backendNodeId: node.backendNodeId, executionContextId: world })).result.object.objectId
+      const value = (await this.session.send(page, 'Runtime.callFunctionOn', {
+        objectId, functionDeclaration: `function () { return (${frameLabel.toString()})(this) }`, returnByValue: true,
+      })).result.result.value
+      return typeof value === 'string' && value !== '' ? value : null
+    } catch {
+      return frameLabelFromAttributes(node?.attributes ?? [])
+    }
   }
 
   /**
@@ -816,6 +839,8 @@ class BrowserEnvironment {
     } catch {
       // A node without an accessibility object keeps role and name null.
     }
+    // CU-336: a frame element the accessibility tree leaves unnamed (or unread) takes the words the page gives it.
+    if ((name === null || name === '') && (tagName === 'iframe' || tagName === 'frame')) name = (await this.#frameLabel(page, node, frameId)) ?? name
     // CU-175: a click target the accessibility tree leaves unnamed takes the words it shows (see clickLabel).
     if ((name === null || name === '') && typeof fallbackName === 'string' && fallbackName !== '') name = fallbackName
     let extra = {}
