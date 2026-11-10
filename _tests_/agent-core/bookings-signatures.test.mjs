@@ -33,3 +33,16 @@ test('CU-415 negatives: lists, viewing and downloading, Terms and Accept cookies
   for (const name of ['Bookings', 'My reservations', 'View document', 'Review document', 'Terms', 'Download PDF', 'Accept cookies']) assert.equal(click(name), 'allow', name)
 })
 
+
+test('CU-415 round 3 (13:19Z): Sign agreement/contract and Release my records ask permission; Book tickets/car/trip and Confirm reservation purchase; Cancel trip/appointment delete', () => {
+  for (const name of ['Sign agreement', 'Sign contract', 'Release my records']) assert.equal(click(name), 'permission', name)
+  for (const name of ['Book tickets', 'Book car', 'Book trip', 'Confirm reservation']) {
+    assert.equal(click(name), 'purchase', name)
+    assert.equal(enter(name), 'purchase', `Return: ${name}`)
+  }
+  for (const name of ['Cancel trip', 'Cancel appointment']) assert.equal(click(name), 'delete', name)
+})
+
+test('CU-415 named limit (13:19Z): I agree, Agree and continue, Accept & continue, bare Sign and Sign here stay free', () => {
+  for (const name of ['I agree', 'Agree and continue', 'Accept & continue', 'Sign', 'Sign here']) assert.equal(click(name), 'allow', name)
+})

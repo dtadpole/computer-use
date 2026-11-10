@@ -86,6 +86,8 @@ const WORDS = Object.freeze({
   purchase: ['buy', 'pay', 'order', 'place order', 'checkout', 'check out', 'subscribe', 'donate', 'purchase', 'transfer', 'withdraw', 'wire', 'send money',
     // CU-415 (High; cu-coordinator 13:10Z): bookings commit money.
     'book flight', 'book a flight', 'book hotel', 'book room', 'book a room', 'confirm booking', 'complete booking',
+    // cu-coordinator 13:19Z (round 3).
+    'book tickets', 'book car', 'book a car', 'book trip', 'book a trip', 'confirm reservation',
     // CU-410 (High; cu-coordinator 10:17Z): billing wordings one word from the asking ones.
     'add seats', 'add licenses', 'add credits', 'top up credits', 'resume subscription', 'upgrade seats', 'gift a subscription',
     'send gift', 'get tickets',
@@ -119,6 +121,7 @@ const WORDS = Object.freeze({
   delete: ['delete', 'remove', 'discard', 'erase', 'empty trash', 'cancel subscription', 'replace', 'overwrite', "don't save", 'don\u2019t save',
     // CU-415: cancelling a booking is often fee-bearing and not undoable.
     'cancel reservation', 'cancel booking', 'cancel my booking', 'cancel my reservation',
+    'cancel trip', 'cancel my trip', 'cancel appointment', 'cancel my appointment',
     // CU-411 (High; cu-coordinator 11:00Z): closing, terminating, resetting or wiping an account or its data.
     'close my account', 'close account', 'terminate account', 'reset account', 'clear data', 'clear all data', 'wipe data',
     'erase account', 'factory reset',
@@ -133,6 +136,7 @@ const WORDS = Object.freeze({
     // CU-415: signatures bind the owner; releasing records shares personal data.
     'sign document', 'sign the document', 'e-sign', 'esign', 'adopt and sign', 'sign and submit', 'accept terms', 'accept the terms',
     'accept agreement', 'accept the agreement', 'authorize release', 'authorise release', 'release records',
+    'sign agreement', 'sign the agreement', 'sign contract', 'sign the contract', 'release my records',
     // CU-411: ownership and admin grants widen access.
     'make owner', 'make co-owner', 'transfer ownership', 'make admin', 'grant admin',
     // CU-408: adding a payee widens who can be paid.
