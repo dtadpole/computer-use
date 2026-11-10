@@ -173,6 +173,7 @@ const UNLOCK_PHYSICAL = new RegExp(`\\bunlock\\b.*\\b${PHYSICAL_NOUN}\\b|\\b${PH
 const TRADE_ASSET = /\b(?:btc|eth|usd|eur|gbp|jpy|usdt|usdc|dai|sol|xrp|ada|doge|bnb|bitcoin|ethereum|crypto|coins?|tokens?|shares?|stocks?)\b/i
 const TRADE_WORDS = /\b(?:trade|trading|swap|swaps|stake|staking|unstake|sell|selling|bridge|mint|minting)\b/gi
 const TRADE_NAV = /\b(?:trade|trading|swap|swaps|stake|staking|unstake|sell|selling|bridge|mint|minting)\b[\s\S]*\b(?:history|settings|faq|guide|policy|fees|rates|limits)\b/i
+const INSTALL_NAME = /^(?:install\s+(?:an?\s+)?(?:extension|plug-?in|add-?on|update|updates)|install\s+and\s+relaunch|update\s+now|restart\s+to\s+update|add\s+to\s+(?:chrome|firefox|edge|safari)|add\s+extension)\b/i
 const PRECEDENCE = ['physical', 'purchase', 'launch_code', 'delete', 'permission', 'page_dialog', 'credential', 'sensitive_data', 'submit', 'new_site', 'install']
 const PHYSICAL = ['unlatch', 'disarm', 'disarm security system', 'disarm alarm',
   'turn off alarm', 'open garage', 'open garage door', 'open gate', 'open the gate', 'mark as lost', 'erase device',
@@ -1240,6 +1241,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const form = target?.formContext
       const formTrade = form && typeof form === 'object' && Array.isArray(form.options) && form.options.some((text) => TRADE_ASSET.test(String(text)))
       if (!focusesEntry && /\b(?:sell|convert|deposit)\b/i.test(name) && (/\d|[$\u20ac\u00a3\u00a5\u20bf]/.test(name) || TRADE_ASSET.test(name) || formTrade)) classes.push('purchase')
+      // CU-407 (cu-coordinator 09:03Z): installing an extension, a plug-in or an update in any approved app is the same act
+      // as the App Store's Get/Install (CU-254's install class); so is a web store's 'Add to Chrome'. Browsing them stays free.
+      if (!focusesEntry && INSTALL_NAME.test(name.trim())) classes.push('install')
       // cu-coordinator 05:30Z: the form's own submit - 'Place', 'Place order', 'Confirm', 'Submit' - beside an asset option is
       // the trade too; 'Continue', 'Next' and 'Review' stay free (the review step's Confirm asks).
       if (!focusesEntry && formTrade && /\b(?:place|confirm|submit)\b/i.test(name)) classes.push('purchase')
