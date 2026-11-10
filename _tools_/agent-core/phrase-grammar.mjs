@@ -424,6 +424,22 @@ function walletClass(list) {
   return null
 }
 
+function identityClass(list) {
+  if (list.length > 6) return null
+  // 'Temporarily lift freeze': an adverb before the verb is dropped.
+  const words = list[0] === 'temporarily' || list[0] === 'permanently' ? list.slice(1) : list
+  const [verb, ...rest] = words
+  const core = rest.filter((t) => !FILLER.has(t))
+  const last = core[core.length - 1]
+  if (['change', 'update', 'edit'].includes(verb) && core.length <= 2 && (last === 'address' && (core.length === 1 || ['mailing', 'home', 'billing', 'postal', 'shipping'].includes(core[0])))) return 'credential'
+  if (['change', 'update', 'edit'].includes(verb) && core.length <= 3 && core.join(' ').match(/^contact\s+(?:info|information|detail)$/)) return 'credential'
+  if (verb === 'forward' && core.length <= 2 && last === 'mail' && !core.includes('e')) return 'credential'
+  if (verb === 'unfreeze' && core.length <= 2 && (last === 'credit' || last === 'report' || core.length === 0)) return 'credential'
+  if ((verb === 'lift' || verb === 'remove' || verb === 'thaw') && core.length <= 2 && last === 'freeze') return 'credential'
+  if (verb === 'certify' && core.length <= 3 && last === 'claim') return 'submit'
+  return null
+}
+
 const DIVERSION_VERBS = new Set(['change', 'update', 'edit', 'add', 'set', 'replace', 'switch'])
 const DIVERSION_OBJECTS = [['direct', 'deposit'], ['bank', 'detail'], ['deposit', 'account'], ['routing', 'number'], ['account', 'number'],
   ['payout', 'account'], ['payout', 'method'], ['bank', 'account'], ['payout', 'detail']]
@@ -489,6 +505,10 @@ export function grammarClasses(name, role = '') {
   // CU-452 (High; cu-coordinator 22:28Z): wallet secrets and token approvals move money irreversibly.
   const wallet = walletClass(list)
   if (wallet) return [wallet]
+  // CU-453 (High; cu-coordinator 22:35Z): the identity-takeover path - moving where mail, codes or credit go (credential);
+  // certifying a benefit claim (submit).
+  const identity = identityClass(list)
+  if (identity) return [identity]
   // F2 guard (cu-coordinator 20:28Z): declining, denying or rejecting a request answers no - the grammar's own over-ask since
   // #554 ('Decline request'); older asks ('Decline invitation', CU-422's 'Decline offer') are untouched (the hook never sees them).
   if (['decline', 'deny', 'reject'].includes(list[0]) && list.slice(1).filter((t) => !FILLER.has(t)).every((t) => t === 'request' || t === 'this' || t === 'all')
