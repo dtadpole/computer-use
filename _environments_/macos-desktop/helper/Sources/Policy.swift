@@ -5,7 +5,7 @@ import Foundation
 /// The helper's identity; `build.sh` writes the same bundle id into Info.plist.
 enum HelperIdentity {
   static let bundleId = "com.reflection.cu-helper"
-  static let version = "0.2.64"
+  static let version = "0.2.67"
   /// The value every synthetic event carries in `kCGEventSourceUserData`: 0x43555345, ASCII "CUSE"
   /// (input-and-targets.md, verify-kit's SYNTHETIC_TAG). Not a secret: an event from another process with this tag
   /// could only fail to pause the run, never act.
@@ -471,6 +471,67 @@ enum Placeholder {
   }
 }
 
+/// CU-380: whether a menu is tracking - any on-screen window at the pop-up menu level (kCGPopUpMenuWindowLevel, 101),
+/// which every open menu bar menu, context menu and pop-up button menu is drawn in, whoever owns it. Visible windows only
+/// (alpha above 0, a non-empty frame). Another window at that level counts too - the named over-ask (Return then asks).
+enum MenuTracking {
+  static let popUpMenuLevel = 101
+  static func open(_ windows: [(layer: Int, alpha: Double, bounds: CGRect)]) -> Bool {
+    windows.contains { $0.layer == popUpMenuLevel && $0.alpha > 0 && $0.bounds.width > 0 && $0.bounds.height > 0 }
+  }
+}
+
+/// CU-377: whether a pasteboard's type names say it holds a file - a file URL (public.file-url) or the legacy filenames
+/// type. Type names only: no path, no content (D-060). nil when the types could not be read (the caller asks).
+enum PasteboardTypes {
+  static let fileTypes: Set<String> = ["public.file-url", "NSFilenamesPboardType"]
+  static func hasFile(_ types: [String]?) -> Bool? {
+    guard let types else { return nil }
+    return types.contains { fileTypes.contains($0) }
+  }
+}
+
+/// CU-372: a pop-up button's menu items as AX shows them while it is closed - read from its AXMenu child, never by
+/// opening it (attributes only, no action performed). The driver turns the shape into the items a type or an arrow moves the button
+/// through (typeOptions / keyTarget, as CU-370 does for a web select). Unread is never an empty list: no menu child, a
+/// failed read, no titled item, or more than 50 items give `unread: true`, which agent core asks on. Pure, so the unit
+/// tests decide it.
+enum PopUpItems {
+  static let maxItems = 50
+  static let maxTitle = 80
+  struct Item {
+    let title: String?
+    let enabled: Bool?
+  }
+
+  /// `items` nil when no AXMenu child could be read. Separators (no title) are skipped; titles are trimmed and cut at
+  /// 80 characters; an item whose AXEnabled cannot be read counts as enabled (it may be landed on - the safe side).
+  /// `pullsDown`: a pull-down button (AppKit gives it AXMenuButton) - its title is a fixed label and Return or Space
+  /// opens a menu of actions, so the shape says so and its selected index is never read (cu-researcher's case 2).
+  static func shape(selected: String?, items: [Item]?, pullsDown: Bool = false) -> JSON {
+    let chosen = selected.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.flatMap { $0.isEmpty ? nil : String($0.prefix(maxTitle)) }
+    var unreadShape: [String: JSON] = ["unread": .bool(true), "selected": .optionalString(chosen)]
+    if pullsDown { unreadShape["pullsDown"] = .bool(true) }
+    let unread = JSON.object(unreadShape)
+    guard let items else { return unread }
+    let titled = items.compactMap { item -> (title: String, enabled: Bool)? in
+      guard let title = item.title?.trimmingCharacters(in: .whitespacesAndNewlines), !title.isEmpty else { return nil }
+      return (String(title.prefix(maxTitle)), item.enabled ?? true)
+    }
+    guard !titled.isEmpty, titled.count <= maxItems else { return unread }
+    // cu-researcher's case 1: a selected title two items share leaves the neighbour of an arrow unknown - unread.
+    if let chosen, titled.filter({ $0.title == chosen }).count > 1 { return unread }
+    let index = pullsDown ? nil : chosen.flatMap { name in titled.firstIndex { $0.title == name } }
+    var read: [String: JSON] = [
+      "items": .array(titled.map { .object(["title": .string($0.title), "enabled": .bool($0.enabled)]) }),
+      "selected": .optionalString(chosen),
+      "selectedIndex": index.map { .int($0) } ?? .null,
+    ]
+    if pullsDown { read["pullsDown"] = .bool(true) }
+    return .object(read)
+  }
+}
+
 /// CU-361: the layout label of an unnamed entry - a static text beside it on screen, as VoiceOver reads one when no
 /// AXTitleUIElement links them: a plain box whose only label sits to its left ('Password  [      ]') or just above it.
 /// describe() asks for it only for an entry with no title, no caption and no placeholder; agent core uses it
@@ -831,6 +892,8 @@ enum MenuKey {
     var appleMenu: Bool = false
     /// Under a Services submenu (CU-250): a service acts in another app, so agent core refuses it.
     var servicesMenu: Bool = false
+    /// Under Finder's Quick Actions (CU-382): an owner-installed workflow may run any script, so agent core asks.
+    var quickActions: Bool = false
 
     /// Whether the item has a key equivalent at all.
     var hasKey: Bool { cmdVirtualKey != nil || !(cmdChar ?? "").isEmpty }
@@ -913,6 +976,7 @@ enum MenuKey {
                                   "enabled": entry.enabled.map { .bool($0) } ?? .null]
     if entry.appleMenu { object["appleMenu"] = .bool(true) }
     if entry.servicesMenu { object["servicesMenu"] = .bool(true) }
+    if entry.quickActions { object["quickActions"] = .bool(true) }
     return .object(object)
   }
 
@@ -996,6 +1060,114 @@ struct ServicesMenu: Equatable {
   }
 }
 
+/// CU-387 (fix a, cu-coordinator 01:37Z): a hit on a file row's text, icon or cell child carries no AXFilename/AXURL of
+/// its own - AppKit serves those on the row or cell - so the hit element lends the nearest file-bearing ancestor's
+/// values. The walk reads at most 4 levels, never past a window, and stops at the first row or cell, so a sidebar's or a
+/// list's container never lends its URL to an unrelated child. Controls keep their own (an info button in a row is no
+/// file).
+enum FileAncestor {
+  struct Level: Equatable {
+    var role: String?
+    var filename: String?
+    var url: String?
+  }
+  static let maxLevels = 4
+  /// The roles that take a file from an ancestor: a row's content, not a control.
+  static let lendingRoles: Set<String> = ["AXStaticText", "AXImage", "AXCell", "AXGroup", "AXTextField", "AXUnknown"]
+  static let stopRoles: Set<String> = ["AXRow", "AXCell", "AXOutlineRow"]
+
+  /// `levels`: the ancestors nearest first. Nil when none within the bounds carries a filename or a url.
+  static func pick(_ levels: [Level]) -> Level? {
+    for level in levels.prefix(maxLevels) {
+      if level.role == "AXWindow" || level.role == "AXApplication" { return nil }
+      if level.filename != nil || level.url != nil { return level }
+      if let role = level.role, stopRoles.contains(role) { return nil }
+    }
+    return nil
+  }
+}
+
+/// CU-392 (helper half, design 0.1 OK'd 01:33Z): where a drop in Finder sends a file - 'airdrop', 'shared' or 'server' -
+/// from Finder's own strings (Finder.app's LocalizableMerged: TL35 'AirDrop'; SD11.4 and CS197 'Shared'; FF22.1 and
+/// NE85.2.5 'Network'), current language beside English. The raw title never leaves the helper; only the value does.
+struct DropDestination: Equatable {
+  var airdrop: Set<String>
+  var shared: Set<String>
+  var server: Set<String>
+
+  static let english = DropDestination(airdrop: ["AirDrop"], shared: ["Shared"], server: ["Network"])
+  static let current: DropDestination = {
+    var table = english
+    if let finder = Bundle(path: "/System/Library/CoreServices/Finder.app") {
+      let read = { (key: String) -> String? in
+        let value = finder.localizedString(forKey: key, value: "\u{1}", table: "LocalizableMerged")
+        return value == "\u{1}" || value.isEmpty ? nil : value
+      }
+      if let v = read("TL35") { table.airdrop.insert(v) }
+      for key in ["SD11.4", "CS197"] { if let v = read(key) { table.shared.insert(v) } }
+      for key in ["FF22.1", "NE85.2.5"] { if let v = read(key) { table.server.insert(v) } }
+    }
+    return table
+  }()
+
+  /// The value for a title (a Finder window's, or a sidebar row's), nil for anything else.
+  func of(_ title: String?) -> String? {
+    guard let title = title?.trimmingCharacters(in: .whitespacesAndNewlines), !title.isEmpty else { return nil }
+    if airdrop.contains(title) { return "airdrop" }
+    if shared.contains(title) { return "shared" }
+    if server.contains(title) { return "server" }
+    return nil
+  }
+
+  /// Finder only: its window's title first (every tile in the AirDrop window, every host in the Network browser), else
+  /// the element's own sidebar-row title - the row, its cell or its text - inside an outline.
+  func of(inFinder: Bool, windowTitle: String?, rowTitle: String?, inOutline: Bool) -> String? {
+    guard inFinder else { return nil }
+    if let value = of(windowTitle) { return value }
+    return inOutline ? of(rowTitle) : nil
+  }
+}
+
+/// CU-382: Finder's Quick Actions - a submenu (and the preview pane's button row) listing the owner's Automator and
+/// Shortcuts workflows, which can run any script outside the approved app, as a service does. No AX attribute tells it
+/// apart, so it counts by Finder's own strings (Finder.app's LocalizableMerged table: N270 and QK1 'Quick Actions',
+/// N274 'Customize…' - the submenu's last item, QK8 'More…' - the pane's last button), read for the current language
+/// beside the English ones. Structure first: a Finder submenu whose last item is the marker. Title second: a submenu
+/// or a button group named 'Quick Actions' in any app (the named over-mark).
+struct QuickActionsMenu: Equatable {
+  var titles: Set<String>
+  var markers: Set<String>
+  var exempt: Set<String>
+
+  static let finderBundleId = "com.apple.finder"
+  static let english = QuickActionsMenu(titles: ["Quick Actions"], markers: ["Customize\u{2026}", "Customize..."],
+                                        exempt: ["Customize\u{2026}", "Customize...", "More\u{2026}", "More..."])
+
+  static let current: QuickActionsMenu = {
+    var menu = english
+    if let finder = Bundle(path: "/System/Library/CoreServices/Finder.app") {
+      let read = { (key: String) -> String? in
+        let value = finder.localizedString(forKey: key, value: "\u{1}", table: "LocalizableMerged")
+        return value == "\u{1}" || value.isEmpty ? nil : value
+      }
+      for key in ["N270", "QK1"] { if let title = read(key) { menu.titles.insert(title) } }
+      if let marker = read("N274") { menu.markers.insert(marker); menu.exempt.insert(marker) }
+      if let more = read("QK8") { menu.exempt.insert(more) }
+    }
+    return menu
+  }()
+
+  /// A submenu held by an item titled `itemTitle`, whose own items are `childTitles` (in order), in Finder or not.
+  func isQuickActions(itemTitle: String?, childTitles: [String], inFinder: Bool) -> Bool {
+    if inFinder, let last = childTitles.last, markers.contains(last) { return true }
+    if let itemTitle, titles.contains(itemTitle) { return true }
+    return false
+  }
+
+  /// 'Customize…' and 'More…' open Extensions settings (System Settings, excluded) - never marked themselves.
+  func isExempt(_ title: String?) -> Bool { title.map { exempt.contains($0) } ?? false }
+}
+
 extension MenuKey {
   /// CU-250: marks every entry from `start` on as under a Services submenu when the submenu holding them - held by an
   /// item titled `holderTitle`, its direct items at path depth `depth` - is the Services menu.
@@ -1005,6 +1177,16 @@ extension MenuKey {
     guard services.isServices(itemTitle: holderTitle, childTitles: direct) else { return }
     for index in start..<entries.count { entries[index].servicesMenu = true }
   }
+
+  /// CU-382: marks every entry from `start` on as under Finder's Quick Actions when the submenu holding them is one
+  /// (QuickActionsMenu: its last direct item the marker in Finder, or its holder's title) - its 'Customize…' and
+  /// 'More…' items excepted. So a chord bound to a Quick Action is read as one (boundMenuItem.quickActions).
+  static func markQuickActions(_ entries: inout [Entry], from start: Int, holderTitle: String?, depth: Int, quick: QuickActionsMenu, inFinder: Bool) {
+    guard start < entries.count, holderTitle != nil else { return }
+    let direct = entries[start...].filter { $0.path.count == depth }.compactMap { $0.title }
+    guard quick.isQuickActions(itemTitle: holderTitle, childTitles: direct, inFinder: inFinder) else { return }
+    for index in start..<entries.count where !quick.isExempt(entries[index].title) { entries[index].quickActions = true }
+  }
 }
 
 /// CU-250: where a clicked menu item sits - the titles from the menu bar (or a context menu's top) down to the item, and
@@ -1012,6 +1194,13 @@ extension MenuKey {
 struct MenuContext: Equatable {
   var path: [String]
   var servicesMenu: Bool
+  /// CU-382: a submenu on the way is Finder's Quick Actions (QuickActionsMenu), the item itself not its 'Customize…'.
+  var quickActions: Bool = false
+  /// CU-382: a read on the walk up failed, so the path may stop short of a Services or Quick Actions level - policy asks.
+  var unread: Bool = false
+  /// CU-398: the item sits under the menu bar's first item, the Apple menu (Restart..., Shut Down..., Log Out...) - the
+  /// same structural rule as the menu-key walk's appleMenu, so no title is matched and a localised menu is covered.
+  var appleMenu: Bool = false
 
   static let maxDepth = 10
 
@@ -1022,16 +1211,21 @@ struct MenuContext: Equatable {
     var childTitles: [String]
   }
 
-  static func of(itemTitle: String?, levels: [Level], services: ServicesMenu = .current) -> MenuContext {
+  static func of(itemTitle: String?, levels: [Level], services: ServicesMenu = .current, quick: QuickActionsMenu = .current,
+                 inFinder: Bool = false, unread: Bool = false, underAppleMenu: Bool = false) -> MenuContext {
     let capped = Array(levels.prefix(maxDepth))
     let holders = capped.compactMap { $0.holderTitle }
     let flagged = capped.contains { level in level.holderTitle != nil && services.isServices(itemTitle: level.holderTitle, childTitles: level.childTitles) }
-    return MenuContext(path: holders.reversed() + [itemTitle ?? ""], servicesMenu: flagged)
+    let quickLevel = capped.contains { level in level.holderTitle != nil && quick.isQuickActions(itemTitle: level.holderTitle, childTitles: level.childTitles, inFinder: inFinder) }
+    return MenuContext(path: holders.reversed() + [itemTitle ?? ""], servicesMenu: flagged, quickActions: quickLevel && !quick.isExempt(itemTitle), unread: unread, appleMenu: underAppleMenu)
   }
 
   var json: [String: JSON] {
     var object: [String: JSON] = ["menuPath": .array(path.map { .string($0) })]
     if servicesMenu { object["servicesMenu"] = .bool(true) }
+    if quickActions { object["quickActions"] = .bool(true) }
+    if unread { object["menuContextUnread"] = .bool(true) }
+    if appleMenu { object["appleMenu"] = .bool(true) }
     return object
   }
 }

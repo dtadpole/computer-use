@@ -29,14 +29,18 @@ test('no prompting, pasteboard or legacy capture API appears in the helper code,
     /kCGWindowName/, /kCGWindowOwnerName/, /NSAppleScript/, /Process\(\)/, /SecKeychain/, /SecItemCopyMatching/,
   ]
   for (const pattern of forbidden) assert.deepEqual(where(pattern), [], String(pattern))
-  // CU-151: the pasteboard appears exactly once, as its change count - a number, never content (D-031, D-056) - and no
-  // content or write API appears anywhere.
+  // CU-151: the pasteboard appears as its change count - a number, never content (D-031, D-056) - and, since CU-377
+  // (cu-coordinator 21:45Z, helper 0.2.65), once as its type names, which go straight into PasteboardTypes.hasFile so
+  // only a Bool leaves (a file URL type present or not: no path, no content, D-060). No content or write API anywhere.
   const pasteboardUses = Object.entries(code).flatMap(([name, text]) => [...text.matchAll(/NSPasteboard[\w.]*/g)].map((match) => `${name}: ${match[0]}`))
-  assert.deepEqual(pasteboardUses, ['SystemCapabilities.swift: NSPasteboard.general.changeCount'], 'only the change count')
+  assert.deepEqual(pasteboardUses, ['SystemCapabilities.swift: NSPasteboard.general.changeCount', 'SystemCapabilities.swift: NSPasteboard.general.types'], 'only the change count and the type names')
   for (const pattern of [/\.string\(forType/, /\.data\(forType/, /propertyList\(forType/, /readObjects\(/, /pasteboardItems/, /clearContents\(/,
-    /setString\(/, /setData\(/, /writeObjects\(/, /declareTypes\(/, /\.types\b/]) {
+    /setString\(/, /setData\(/, /writeObjects\(/, /declareTypes\(/]) {
     assert.deepEqual(where(pattern), [], `no pasteboard content or write API: ${pattern}`)
   }
+  const typeReads = Object.entries(code).flatMap(([name, text]) => text.split('\n').filter((line) => /\.types\b/.test(line)).map((line) => `${name}: ${line.trim()}`))
+  assert.deepEqual(typeReads, ['SystemCapabilities.swift: func pasteboardHasFile() -> Bool? { PasteboardTypes.hasFile(NSPasteboard.general.types?.map { $0.rawValue }) }'],
+    'the type names are read in one place, and only a Bool (PasteboardTypes.hasFile) leaves it')
   // The two prompts the owner asked for (2026-11-05) live in RequestGrants.swift alone, reached only from main.swift's
   // --request-grants case - never from serving, the self-test or the dry run.
   for (const pattern of [/CGRequestScreenCaptureAccess\(\)/, /AXIsProcessTrustedWithOptions\(/, /kAXTrustedCheckOptionPrompt/]) {
