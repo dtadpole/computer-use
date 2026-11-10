@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - handover'
 created: 2026-11-08T04:14:00Z
-modified: 2026-11-10T08:17:51Z
+modified: 2026-11-10T10:46:10Z
 level: L1
-version: 4.15.0
+version: 4.16.0
 description: 'What a fresh [cu] Developer Two session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -27,7 +27,15 @@ On main: the six-PR stack (#369 #339 #355 #299 #393 #402), #443, and the form-co
 
 ## Issues
 
-In Progress: CU-360. Verify: CU-357, CU-368, CU-370 and more. CU-402 and CU-405 closed live; CU-406 completes with #487.
+In Progress: CU-360. Verify: CU-357, CU-368, CU-370 and more. CU-402, CU-405 and CU-406 closed live. CU-409 (desktop side)
+is cu-developer-three's #510 (OK'd at 2ff3d0d09); my #508 was closed for it (one desktop driver half, his file).
+
+## Parity sweep (block 08:20Z, item 3)
+
+A local probe runner: real loop, real chrome-browser driver, one page per control, all asks declined. The typed pass
+(every mode types first: click, Return, Tab+Space, double-click) is complete: 62 rows, 0 off-parity. Next come the
+empty-field column (click vs one-step Return), then a variant pass (input, link, role=button div; plus Tab+Return).
+High live rows take the browser slot first.
 
 ## Live state
 
@@ -40,4 +48,5 @@ kills a running step within 2 s of any other seat's run or live hold (D-106), an
 - Write 'hypothesis' in the subject of an unmeasured step.
 - Guard each suite step against a gate start, not only between steps.
 - A PR body names only its own closing line; every OK also goes on the PR as a comment.
+- Check a file's owning seat before writing in it.
 - Every command: `cd <own worktree> || exit 1`, `git -C` (D-104).
