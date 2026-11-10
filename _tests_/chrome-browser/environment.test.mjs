@@ -937,3 +937,20 @@ test('CU-400: formContextOf re-validates the page\'s formContext at the boundary
   assert.equal(formContextOf(null), null)
   assert.equal(formContextOf('BTC'), null)
 })
+
+test('CU-406: the Return target (defaultButton) carries the submit button\'s formContext - a bare \'Sell\' default beside an asset select', async () => {
+  const handlers = checkoutHandlers()
+  const base = handlers['Runtime.callFunctionOn']
+  handlers['Runtime.callFunctionOn'] = (params) => (String(params.functionDeclaration).includes('describeElement') && /-41$/.test(String(params.objectId))
+    ? { result: { result: { value: { formContext: { options: ['BTC'], amountEntry: true } } } } }
+    : base(params))
+  const run = harness({ handlers })
+  const env = await launchBrowserEnvironment(run.options)
+  try {
+    const target = await env.focusedElement()
+    assert.deepEqual(target.defaultButton, { role: 'button', name: 'Place order', panel: null, formContext: { options: ['BTC'], amountEntry: true } })
+    assert.equal('formContext' in target, false, 'the focused field itself carries none')
+  } finally {
+    await env.close()
+  }
+})
