@@ -1275,10 +1275,11 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const form = target?.formContext
       const formTrade = form && typeof form === 'object' && Array.isArray(form.options) && form.options.some((text) => TRADE_ASSET.test(String(text)))
       if (!focusesEntry && /\b(?:sell|convert|deposit)\b/i.test(name) && (/\d|[$\u20ac\u00a3\u00a5\u20bf]/.test(name) || TRADE_ASSET.test(name) || formTrade)) classes.push('purchase')
-      // CU-415: 'Reserve seat / table' and 'Book appointment' ask purchase with a price or a deposit, else submit.
-      if (!focusesEntry && /^\s*(?:reserve\s+(?:a\s+)?(?:seat|table|spot)|book\s+(?:an?\s+)?appointment)\b/i.test(name)) {
-        // A price shown in the same form (driver formContext.priceShown, a boolean; cu-developer-three 13:11Z) counts too.
-        classes.push(/[$\u20ac\u00a3\u00a5]\s*\d|\d\s*[$\u20ac\u00a3\u00a5]|\bdeposit\b|\b(?:usd|eur|gbp)\s*\d/i.test(name) || target?.formContext?.priceShown === true ? 'purchase' : 'submit')
+      // CU-415 (cu-coordinator 13:12Z): 'Reserve seat / table' asks purchase on the name alone (a booking commits the owner; a
+      // free table's over-ask is named); 'Book appointment' asks purchase with a price or deposit in its name, else submit.
+      if (!focusesEntry && /^\s*reserve\s+(?:a\s+)?(?:seat|table|spot)\b/i.test(name)) classes.push('purchase')
+      if (!focusesEntry && /^\s*book\s+(?:an?\s+)?appointment\b/i.test(name)) {
+        classes.push(/[$\u20ac\u00a3\u00a5]\s*\d|\d\s*[$\u20ac\u00a3\u00a5]|\bdeposit\b|\b(?:usd|eur|gbp)\s*\d/i.test(name) ? 'purchase' : 'submit')
       }
       // CU-410: renting ('Rent', 'Rent now', 'Rent <title>'; 'Rentals' stays free), a bare 'Renew', reactivating a subscription,
       // turning auto-renew on and switching the billing period ask purchase.

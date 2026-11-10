@@ -25,18 +25,11 @@ test('CU-415: cancelling a booking asks delete; signing and releasing records as
     assert.equal(click(name), 'permission', name)
     assert.equal(space(name), 'permission', `Space: ${name}`)
   }
-  for (const name of ['Book appointment', 'Reserve table', 'Reserve seat']) assert.equal(click(name), 'submit', name)
+  assert.equal(click('Book appointment'), 'submit', 'an appointment without a price submits')
+  for (const name of ['Reserve table', 'Reserve seat', 'Reserve a table']) assert.equal(click(name), 'purchase', `${name} (13:12Z: unconditional)`)
 })
 
 test('CU-415 negatives: lists, viewing and downloading, Terms and Accept cookies stay free', () => {
   for (const name of ['Bookings', 'My reservations', 'View document', 'Review document', 'Terms', 'Download PDF', 'Accept cookies']) assert.equal(click(name), 'allow', name)
 })
 
-test('CU-415: a price shown in the same form (formContext.priceShown) makes Reserve table / Book appointment a purchase, on a click and on Return', () => {
-  const at = (name, priceShown) => policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: URL, target: { role: 'button', name, formContext: { options: [], amountEntry: false, priceShown } } }).class
-  assert.equal(at('Reserve table', true), 'purchase')
-  assert.equal(at('Book appointment', true), 'purchase')
-  assert.equal(at('Reserve table', false), 'submit')
-  const ret = policy.classify({ type: 'keypress', keys: ['ENTER'] }, { url: URL, target: { tag: 'input', role: 'textbox', name: 'Party size', defaultButtonRead: true, defaultButton: { role: 'button', name: 'Reserve table', formContext: { options: [], amountEntry: false, priceShown: true } } } })
-  assert.equal(ret.class, 'purchase')
-})
