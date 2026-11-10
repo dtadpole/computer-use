@@ -76,7 +76,7 @@ const VERBS = new Map(Object.entries({
   capture: ['pay'], gift: ['pay'], reactivate: ['pay'], resume: ['pay'], market: ['pay'], relaunch: ['install'],
   place: ['pay', 'send'], mint: ['pay'], bridge: ['pay'], back: ['pay'], request: ['pay'],
   unstake: ['pay'], downgrade: ['pay'], unlink: ['grant'], distribute: ['send'], upload: ['send'], go: ['grant'], boost: ['pay'],
-  fund: ['pay'], lend: ['pay'], borrow: ['pay'], repay: ['pay'], list: ['pay'],
+  fund: ['pay'], lend: ['pay'], borrow: ['pay'], repay: ['pay'], list: ['pay'], use: ['pay'],
 }))
 
 const PERSON = new Set(['driver', 'plumber', 'contractor', 'friend', 'seller', 'vendor', 'merchant', 'host', 'creator', 'streamer',
@@ -96,7 +96,7 @@ const OBJECTS = {
     'customer', 'vendor', 'subscription', 'plan', 'membership', 'liquidity', 'position', 'loan', 'nft', 'item', 'offer', 'bid', 'usdc',
     'eth', 'weth', 'sol', 'btc', 'usdt', 'dai', 'wbtc', 'matic', 'transaction', 'trade', 'leverage', 'sale', 'payee', 'fund', 'money',
     'project', 'bet', 'swap', 'trial', 'collateral', 'allowance', 'spending', 'cap', 'long', 'short', 'annual', 'monthly', 'yearly',
-    'tip', 'recurring']),
+    'tip', 'recurring', 'bag', 'baggage', 'insurance', 'mile']),
   access: new Set(['organization', 'team', 'workspace', 'server', 'people', 'account', 'owner', 'coowner', 'co', 'admin', 'host',
     'cohost', 'collaborator', 'member', 'access', 'guest', 'visitor', 'device', 'public', 'ownership', 'payee', 'recipient',
     'beneficiary', 'everyone']),
@@ -160,10 +160,19 @@ function verbOf(list) {
 
 const pushOnce = (out, cls) => { if (!out.includes(cls)) out.push(cls) }
 
-// The classes the grammar asks for a control's name; [] when it asks nothing.
-export function grammarClasses(name) {
+// cu-coordinator 17:18Z (cu-researcher's (a)): a priced choice cell - a currency amount AND a seat / option / legroom / bag
+// noun AND a choice role - selects a paid option by name with no verb. Links never (named limit). The desktop's AX roles
+// are listed beside the browser's ARIA roles (D-099, cu-developer-three 17:19Z).
+const PRICED_ROLES = new Set(['gridcell', 'option', 'radio', 'checkbox', 'button', 'axcell', 'axrow', 'axradiobutton', 'axcheckbox',
+  'axbutton', 'axmenuitem'])
+const PRICED_NOUNS = new Set(['seat', 'option', 'legroom', 'bag', 'baggage'])
+const CURRENCY = /[$\u20ac\u00a3\u00a5]\s?\d|\d\s?(?:usd|eur|gbp)\b/i
+
+// The classes the grammar asks for a control's name (and its role, for the priced cell); [] when it asks nothing.
+export function grammarClasses(name, role = '') {
   const raw = String(name ?? '').trim()
   if (raw === '' || raw.length > 400) return []
+  if (CURRENCY.test(raw) && PRICED_ROLES.has(String(role ?? '').toLowerCase()) && tokens(raw).some((t) => PRICED_NOUNS.has(t))) return ['purchase']
   const list = tokens(raw)
   if (list.length === 0) return []
   const lower = raw.toLowerCase()
