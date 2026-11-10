@@ -59,7 +59,7 @@ test('CU-289: storing a credential asks permission - desktop button and web page
   }
   const update = desktop.classify(click, { frontmostBundleId: FIXTURE, target: button('Update password') })
   assert.deepEqual([update.decision, update.rule], ['handoff', 'password_change'], 'Update password: the stricter hand-off stands')
-  for (const name of ['Remember me', 'Save', 'Save draft', 'Save as draft', 'Save changes', 'Password', 'Forgot password?', 'Show password', 'Not now', 'Passkeys', 'Use passkey', 'Sign in with a passkey', 'Never']) {
+  for (const name of ['Remember me', 'Save', 'Save draft', 'Save as draft', 'Save changes', 'Password', 'Forgot password?', 'Show password', 'Not now', 'Passkeys', 'Never']) {
     assert.equal(judged(desktop.classify(click, { frontmostBundleId: FIXTURE, target: button(name) })), 'allow', name)
   }
 })

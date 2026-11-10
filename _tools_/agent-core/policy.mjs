@@ -113,6 +113,14 @@ const WORDS = Object.freeze({
   permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke',
     // CU-401: leaving a shared space or unlinking an account.
     'leave workspace', 'leave organization', 'leave organisation', 'leave org', 'leave team', 'leave server', 'unlink account',
+    // CU-393 (cu-researcher): an OAuth grant or a linked account hands the account's data or identity to another service,
+    // as whole phrases - a bare 'Allow' stays free (cookie banners; named limit).
+    'authorize', 'authorise', 'authorize app', 'authorize access', 'link account', 'link bank account', 'link your account',
+    'connect account', 'connect your account', 'connect bank', 'sign in with google', 'sign in with apple', 'sign in with microsoft',
+    'sign in with github', 'sign in with facebook', 'continue with google', 'continue with apple', 'continue with microsoft',
+    'continue with github', 'continue with facebook', 'log in with google', 'log in with apple',
+    // cu-coordinator 02:29Z: a passkey sign-in uses the owner's identity too - it asks (CU-289's 'signing in' negatives re-judged).
+    'sign in with passkey', 'sign in with a passkey', 'use passkey', 'use a passkey', 'continue with passkey', 'continue with a passkey',
     // CU-386 (cu-coordinator 23:54Z): asking someone else for money.
     'request money',
     // CU-258 (cu-researcher): standing choices an app keeps after the run, as whole phrases. A bare 'Allow' stays free so
@@ -1226,6 +1234,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const isProtection = /two[\s-]?(?:factor|step)|2[\s-]?step|\b2fa\b|multi[\s-]?factor|recovery\s+(?:e-?mail|phone|codes?)/i.test(name)
       const safeToggle = (isProtection && nativeOff) || (isForwarding && nativeOn)
       if (!focusesEntry && ACCOUNT_SECURITY.test(name) && !protectionOn && !forwardingOff && !safeToggle) classes.push('credential')
+      // CU-393 (cu-coordinator 02:31Z): 'Continue as <name>' is the one-tap provider sign-in, the same act as 'Continue with Google'
+      // ('Continue as guest' signs in as nobody and stays free).
+      if (!focusesEntry && /^continue\s+as\s+(?!guest\b)\S/i.test(name.trim())) classes.push('permission')
       // CU-401 round 2 (cu-coordinator): a plan word beside a navigation noun ('Downgrade options', 'Cancel plan details')
       // opens a page - free unless another purchase word remains.
       if (/\b(?:downgrade|cancel\s+(?:plan|membership)|end\s+trial)\b[\s\S]*\b(?:options|settings|details|faq|guide|policy|info)\b/i.test(name)
