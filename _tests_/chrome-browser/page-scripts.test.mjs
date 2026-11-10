@@ -864,3 +864,18 @@ test('CU-405: a panel whose submit-like controls are all trade verbs (Buy and Se
   assert.equal('formContext' in describeElement(sellIn(panel([btn('Buy'), btn('Sell'), btn('Help'), btn('Settings')]))), false, 'trade verbs plus other buttons (a page-wide box): none')
   assert.equal('formContext' in describeElement(sellIn(panel([btn('Buyer protection'), btn('Sell')]))), false, "'Buyer protection' is not the verb Buy")
 })
+
+test('CU-405: trade verbs beside order-panel helpers (N%, Max/Min/Half, Limit/Market/Stop-limit/OCO, one symbol or arrow) still lend; any other button voids', () => {
+  const select = (text) => ({ tagName: 'SELECT', selectedOptions: [{ textContent: text }] })
+  const btn = (text) => ({ textContent: text, getAttribute: () => null })
+  const panel = (submits) => ({ parentElement: null, querySelectorAll: (sel) => (sel === 'input' ? [] : sel.startsWith('select') ? [select('ETH')] : submits) })
+  const sellIn = (box) => ({ ...el('BUTTON', { children: ['Sell'], closest: () => null }), parentElement: box })
+  const real = [btn('Buy'), btn('Sell'), btn('25%'), btn('50 %'), btn('100%'), btn('Max'), btn('Half'), btn('Limit'), btn('Market'), btn('Stop-limit'), btn('OCO'), btn('\u21c5'), btn('')]
+  assert.deepEqual(describeElement(sellIn(panel(real))).formContext, { options: ['ETH'], amountEntry: false }, 'a real order panel lends')
+  assert.equal('formContext' in describeElement(sellIn(panel([btn('Max'), btn('25%')]))), false, 'helpers alone, no trade verb: none')
+  assert.deepEqual(describeElement(sellIn(panel([...real, btn('Transfer')]))).formContext.options, ['ETH'], 'Transfer is a trade verb (06:43Z)')
+  assert.equal('formContext' in describeElement(sellIn(panel([...real, btn('Settings')]))), false, 'any other worded button voids')
+  assert.equal('formContext' in describeElement(sellIn(panel([btn('Buy'), btn('Sell'), btn('All')]))), false, "'All' is not a listed helper")
+  assert.equal('formContext' in describeElement(sellIn(panel([btn('Buy'), btn('Sell'), btn('<<<')]))), false, 'three symbols are not one symbol')
+  assert.equal('formContext' in describeElement(sellIn(panel([btn('Sell'), btn('Cancel')]))), false, 'Sell + Cancel: none')
+})

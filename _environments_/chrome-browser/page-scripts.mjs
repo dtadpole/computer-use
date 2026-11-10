@@ -523,13 +523,21 @@ export function describeElement(el) {
     if (!form && buttonLike && el.closest) {
       const box = el.closest('fieldset, dialog, [role="dialog"]')
       const SUBMITS = 'button, input[type="submit"], input[type="button"], input[type="image"], [role="button"]'
-      // CU-405 (cu-coordinator 06:39Z): a container also counts when every submit-like control in it is a trade verb -
-      // an exchange's Buy and Sell side by side. Any other button (Cancel, Help, a nav link styled as a button) voids it.
-      const TRADE_VERB = /^(?:buy|sell|swap|convert|trade|deposit|withdraw)(?:\s|$)/i
+      // CU-405 (cu-coordinator 06:39Z, 06:43Z): a container also counts when, order-panel helpers ignored (a percentage,
+      // Max/Min/Half, Limit/Market/Stop/Stop-limit/OCO, a label of one symbol or arrow - and an unlabelled icon button,
+      // the fail-closed reading), every remaining submit-like control is a trade verb. Any other button voids it.
+      const TRADE_VERB = /^(?:buy|sell|swap|convert|trade|deposit|withdraw|transfer)(?:\s|$)/i
+      const NEUTRAL = /^(?:max|min|half|\d{1,3}\s?%|limit|market|stop(?:[\s-]limit)?|oco)$/i
       const verbOf = (control) => String((control.getAttribute && control.getAttribute('aria-label')) || control.value || control.textContent || '').replace(/\s+/g, ' ').trim()
       const lends = (node) => {
         const submits = [...node.querySelectorAll(SUBMITS)]
-        return submits.length === 1 || (submits.length > 1 && submits.every((control) => { const verb = verbOf(control); return verb.length <= 30 && TRADE_VERB.test(verb) }))
+        if (submits.length === 1) return true
+        const kinds = submits.map((control) => {
+          const verb = verbOf(control)
+          if (verb.length <= 30 && TRADE_VERB.test(verb)) return 'trade'
+          return verb === '' || ([...verb].length <= 2 && !/[\p{L}\p{N}]/u.test(verb)) || NEUTRAL.test(verb) ? 'neutral' : 'other'
+        })
+        return kinds.includes('trade') && !kinds.includes('other')
       }
       if (box && lends(box)) form = box
       // A div trade panel (cu-coordinator 05:36Z): the button's nearest ancestor within 3 levels that holds exactly
