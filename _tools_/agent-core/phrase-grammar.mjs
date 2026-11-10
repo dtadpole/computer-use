@@ -216,12 +216,14 @@ function adminClass(list) {
   const core = rest.filter((t) => !FILLER.has(t))
   const last = core[core.length - 1]
   if ((verb === 'suspend' || verb === 'unsuspend' || verb === 'disable' || verb === 'lock') && core.length <= 2 && PEOPLE.has(last)) return 'permission'
-  if (['change', 'edit', 'update', 'set'].includes(verb) && core.length <= 3 && last === 'role' && core.some((t) => PEOPLE.has(t))) return 'permission'
+  if (['change', 'edit', 'update', 'set'].includes(verb) && core.length <= 3 && last === 'role' && (core.length === 1 || core.some((t) => PEOPLE.has(t)))) return 'permission'
   if ((verb === 'sign' || verb === 'log') && rest[0] === 'out' && (rest.includes('session') || rest.includes('device') || rest.includes('everywhere'))) return 'permission'
   if (verb === 'reset' && rest.includes('sign') && rest.includes('cooky')) return 'permission'
   if (verb === 'reset' && rest.includes('cookie')) return 'permission'
   if (verb === 'add' && core.length <= 2 && last === 'alias') return 'permission'
   if (verb === 'assign' && core.length <= 2 && last === 'license') return 'purchase'
+  // #575 round 2 (21:26Z): 'Add 5 licenses' / 'Buy 10 seats' - an amount of licences.
+  if ((verb === 'add' || verb === 'buy') && rest.includes('<n>') && core.length <= 2 && (last === 'license' || last === 'seat')) return 'purchase'
   return null
 }
 
@@ -241,7 +243,7 @@ function currencyAct(list) {
   // A paid pass ('Unlock battle pass', 'Get premium pass') - a bare 'Battle pass' or 'Pass' stays free.
   if (rest[rest.length - 1] === 'pass' && rest.some((t) => PASS_TIERS.has(t))) return true
   // Paid reach on a dating or social app ('Get more likes', 'Boost profile') and cosmetics ('Gift skin').
-  if (verb === 'get' && rest[0] === 'more' && ['like', 'view', 'follower', 'match', 'swipe', 'life'].includes(rest[1])) return true
+  if (verb === 'get' && (rest[0] === 'more' || rest[0] === 'unlimited' || rest[0] === 'extra') && ['like', 'view', 'follower', 'match', 'swipe', 'life', 'rewind'].includes(rest[1])) return true
   if (verb === 'boost' && rest.length <= 2 && ['profile', 'post', 'listing', 'me'].includes(rest[rest.length - 1])) return true
   if ((verb === 'gift' || verb === 'buy' || verb === 'unlock') && rest.length <= 2 && ['skin', 'emote', 'outfit', 'bundle', 'lootbox', 'crate'].includes(rest[rest.length - 1])) return true
   return false
@@ -260,7 +262,11 @@ function childProtectionOff(list) {
   if (['turn off', 'disable', 'pause', 'remove', 'deactivate'].includes(verb) && PROTECTIONS.some((seq) => endsWithSeq(core, seq))) return true
   if (verb === 'allow' && core[core.length - 1] === 'content' && core.some((t) => t === 'explicit' || t === 'mature' || t === 'adult')) return true
   if (verb === 'allow' && core[core.length - 1] === 'purchase' && core.length <= 3) return true
-  if (verb === 'extend' && core.length === 1 && (core[0] === 'time' || core[0] === 'screen')) return true
+  // #575 round 2 (21:26Z): 'Allow purchases without approval', 'Allow in-app buying'.
+  if (verb === 'allow' && core.length <= 4 && (core[0] === 'purchase' || core.includes('buying')) && (core.includes('approval') || core.includes('buying'))) return true
+  if (verb === 'extend' && core.length <= 2 && core[core.length - 1] === 'time' && (core.length === 1 || core[0] === 'screen')) return true
+  if (verb === 'extend' && core.length === 1 && core[0] === 'screen') return true
+  if (verb === 'give' && rest.includes('<n>') && core.length <= 2 && ['minute', 'hour'].includes(core[core.length - 1]) && (core.includes('more') || core.length === 1)) return true
   if (verb === 'add' && core[core.length - 1] === 'time' && core.length <= 3 && (core.includes('more') || core.includes('screen') || core.includes('<n>'))) return true
   return false
 }
@@ -302,8 +308,8 @@ function phoneClass(list) {
   const core = rest.filter((t) => !FILLER.has(t))
   const last = core[core.length - 1]
   if ((verb === 'port' || verb === 'transfer') && core.length <= 2 && last === 'number') return 'credential'
-  if (verb === 'get' && rest.includes('port') && last === 'pin') return 'credential'
-  if (verb === 'forward' && core.length <= 2 && ['call', 'text', 'sms'].includes(last)) return 'credential'
+  if ((verb === 'get' || verb === 'request' || verb === 'generate' || verb === 'show') && rest.includes('port') && last === 'pin') return 'credential'
+  if (verb === 'forward' && core.length <= 2 && (['call', 'text', 'sms'].includes(last) || (last === 'message' && (core[0] === 'text' || core[0] === 'sms')))) return 'credential'
   if ((verb === 'release' || verb === 'cancel' || verb === 'delete') && core.length <= 2 && (last === 'number' || last === 'line') && !core.includes('account')) return 'delete'
   // The free words are read on rest, not core ('back' is filler; 'Call back' stays with #462); a bare 'Call' stays free.
   if (verb === 'call' && rest.length >= 1 && core.length <= 2 && !rest.some((t) => CALL_FREE.has(t))) return 'submit'
