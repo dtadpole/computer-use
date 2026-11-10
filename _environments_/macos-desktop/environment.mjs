@@ -1906,6 +1906,10 @@ class DesktopEnvironment {
       // never in run records (an event's target keeps origin, role and name); the URL's path never leaves the driver.
       filename: fileNameOf(element.filename),
       url: fileUrlLeafOf(element.url),
+      // CU-387 (helper 0.2.67): 'ancestor' when the helper lent a content element (a row's text, image or cell) the
+      // nearest row's or cell's AXFilename/AXURL - a kind for the run record (CU-391), judged exactly as an own file name.
+      // Present only then; outside the fingerprint.
+      ...(element.fileFrom === 'ancestor' ? { fileFrom: 'ancestor' } : {}),
       // CU-265: a link's scheme (AXLink's AXURL), so a facetime:, tel: or mailto: link is not a plain click. Links only - a
       // file browser's items carry file: URLs and are judged by launch_code - and the scheme only, never the URL.
       linkScheme: element.role === 'AXLink' ? linkSchemeOf(element.url) : null,
