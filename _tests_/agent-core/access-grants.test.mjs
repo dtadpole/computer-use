@@ -30,3 +30,12 @@ test('CU-423: password changes with an object between ask credential; the bare C
 test('CU-423 negatives: lists, Select photos, Keep private and Limit access stay free', () => {
   for (const name of ['Access codes', 'Home keys', 'Photos', 'Select photos', 'Keep private', 'Limit access', 'Password']) assert.equal(click(name), 'allow', name)
 })
+
+test('CU-423 round 2 (16:11Z): Change / Edit / Create new access code and Allow full access ask permission; New / Add Password ask credential', () => {
+  for (const name of ['Change access code', 'Edit access code', 'Create new access code', 'Allow full access']) assert.equal(click(name), 'permission', name)
+  for (const name of ['New Password', 'Add Password']) {
+    assert.equal(click(name), 'credential', name)
+    assert.equal(enter(name), 'credential', `Return: ${name}`)
+  }
+  for (const name of ['Passwords', 'Access code settings']) assert.equal(click(name), 'allow', name)
+})
