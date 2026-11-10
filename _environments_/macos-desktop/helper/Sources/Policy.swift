@@ -1122,6 +1122,15 @@ enum FormContext {
     return words.range(of: neutralVerb, options: [.regularExpression, .caseInsensitive]) != nil ? .neutral : .other
   }
 
+  /// cu-coordinator 10:35Z (#510 F1): a combo box's selected text is its AXValue only when it is not editable, or when
+  /// the value equals one of its list items exactly - an editable combo's free text (a symbol search) is typed text, a
+  /// field's value, and gives nothing.
+  static func comboText(value: String?, editable: Bool, items: [String]) -> String? {
+    guard let value else { return nil }
+    if !editable { return value }
+    return items.contains(value) ? value : nil
+  }
+
   /// A container lends its choices when it holds exactly the pressed control, or only trade verbs and neutral helpers.
   static func lends(submitVerbs: [String?]) -> Bool {
     if submitVerbs.count == 1 { return true }

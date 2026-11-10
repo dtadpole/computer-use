@@ -408,6 +408,24 @@ enum Accessibility {
     return FormContext.pick(containers)
   }
 
+  /// #510 F1: a combo box's selected text (FormContext.comboText) - editable when its AXValue is settable or it holds a
+  /// text field; its list items are the titles or values of its list's children (at most 50), read without opening it.
+  private static func comboText(_ combo: AXUIElement) -> String? {
+    var settable: DarwinBoolean = false
+    let kids = children(combo)
+    let editable = (AXUIElementIsAttributeSettable(combo, "AXValue" as CFString, &settable) == .success && settable.boolValue)
+      || kids.contains { string($0, "AXRole") == "AXTextField" }
+    let value = string(combo, "AXValue")
+    guard editable, value != nil else { return FormContext.comboText(value: value, editable: editable, items: []) }
+    let lists = kids.filter { ["AXList", "AXListBox", "AXMenu", "AXScrollArea"].contains(string($0, "AXRole") ?? "") }
+    let rows = lists.flatMap { list -> [AXUIElement] in
+      let inner = children(list)
+      return string(list, "AXRole") == "AXScrollArea" ? inner.flatMap { children($0) } : inner
+    }.prefix(50)
+    let items = rows.compactMap { row in string(row, "AXTitle").flatMap { $0.isEmpty ? nil : $0 } ?? string(row, "AXValue") }
+    return FormContext.comboText(value: value, editable: editable, items: items)
+  }
+
   /// One container's submit-like controls (their words: title, description, else their label children), its pop-ups'
   /// and combo boxes' selected texts and its text entries' label words (description, placeholder, title, help - never
   /// the value), breadth first, at most FormContext.maxScan elements 4 deep; more marks the scan truncated.
@@ -426,7 +444,7 @@ enum Accessibility {
         continue
       }
       if role == "AXPopUpButton" { container.selected.append(string(next.element, "AXValue") ?? string(next.element, "AXTitle")); continue }
-      if role == "AXComboBox" { container.selected.append(string(next.element, "AXValue")); continue }
+      if role == "AXComboBox" { container.selected.append(comboText(next.element)); continue }
       if role == "AXTextField" {
         container.entryLabels.append(["AXDescription", "AXPlaceholderValue", "AXTitle", "AXHelp"].map { string(next.element, $0) })
         continue

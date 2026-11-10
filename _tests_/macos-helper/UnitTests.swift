@@ -2162,6 +2162,12 @@ func testFormContext() {
   check(FormContext.pick([group(["Sell"], selected: ["", "x".padding(toLength: 25, withPad: "x", startingAt: 0)], entries: [["Note", nil, nil, nil]])]) == nil, "empty and over-long texts are skipped; a non-amount entry is no amount; nothing left is nil")
   check(FormContext.shape(group(["Sell"], selected: ["A", "B", "C", "D"])) == .object(["options": .array([.string("A"), .string("B"), .string("C")]), "amountEntry": .bool(false)]), "at most 3 options")
   check(FormContext.windowButtonSubroles.contains("AXCloseButton") && !FormContext.submitRoles.contains("AXPopUpButton"), "window buttons and pop-ups are not submits")
+  // #510 F1 (cu-coordinator 10:35Z): a combo box's value only when it is not editable, or equals one of its items.
+  check(FormContext.comboText(value: "BTC", editable: false, items: []) == "BTC", "a non-editable combo gives its value")
+  check(FormContext.comboText(value: "BTC", editable: true, items: ["BTC", "ETH"]) == "BTC", "an editable combo whose value is one of its items gives it")
+  check(FormContext.comboText(value: "my secret note", editable: true, items: ["BTC", "ETH"]) == nil, "an editable combo's free text (typed) gives nothing")
+  check(FormContext.comboText(value: "btc", editable: true, items: ["BTC"]) == nil && FormContext.comboText(value: "BTC", editable: true, items: []) == nil, "exact match only; no items read, nothing")
+  check(FormContext.comboText(value: nil, editable: false, items: []) == nil, "no value, nothing")
 }
 
 func testFileAncestorAndDropDestination() {
