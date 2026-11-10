@@ -29,3 +29,11 @@ test('CU-414: Accept call, Join call, New meeting, Start meeting, Start call and
 test('CU-414 negatives: Participants, Waiting room, Leave meeting, Mute and Chat stay free', () => {
   for (const name of ['Participants', 'Waiting room', 'Leave meeting', 'Mute', 'Chat']) assert.equal(click(name), 'allow', name)
 })
+
+test('CU-414 near forms (13:15Z): Let them in, Let everyone in, Assign host, Promote to host ask permission; Join with computer audio submits; Kick asks delete', () => {
+  for (const name of ['Let them in', 'Let everyone in', 'Assign host', 'Promote to host']) assert.equal(click(name), 'permission', name)
+  assert.equal(click('Join with computer audio'), 'submit')
+  assert.equal(enter('Join with computer audio'), 'submit', 'Return: Join with computer audio')
+  assert.equal(click('Kick'), 'delete')
+  for (const name of ['Host controls', 'Audio settings']) assert.equal(click(name), 'allow', name)
+})
