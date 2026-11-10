@@ -1,35 +1,39 @@
 ---
 title: Computer use on the Mac mini - one-page status for the owner
 created: 2026-11-06T04:55:00Z
-modified: 2026-11-09T21:00:00Z
+modified: 2026-11-10T01:10:00Z
 level: L2
-version: 1.7.1
+version: 1.7.4
 status: unverified
 description: 'What the [cu] team has built and proven, what is left, and the owner actions that are still open - one page, kept current by the coordinator.'
 grounded_in:
   - source: ULTIMATE_GOAL.md@2.0.0
-  - source: _seats_/cu-verifier/ultimate-goal-2-verdict.md@0.9.76
+  - source: _seats_/cu-verifier/ultimate-goal-2-verdict.md@0.9.87
   - source: _context_/team-operations/decision-log.yaml (D-034, D-052, D-063, D-079 to D-102)
 ---
 
 # Computer use on the Mac mini - status for the owner
 
-State at 9 November 2026, 21:00 UTC.
+State at 10 November 2026, 01:10 UTC.
 
 ## Where it stands
 
 Seven of the nine ULTIMATE_GOAL 2.0 rows hold on live evidence. Two are open:
 
-- **Consent and safety** holds only when no Urgent or High under-ask is open (D-063). **One High item is open:
-  CU-373** (verdict 0.9.76) - on a website's account settings, 'Generate app password' and turning on mail
-  auto-forwarding went through without asking (reproduced live at 20:55 UTC); the fix is in progress. Both consent
-  tables are signed. Today the team's own audits found ten High gaps and closed nine live: CU-340, CU-347, CU-351,
-  CU-352, CU-353 and CU-354 by mid-afternoon, then CU-363 (a website's own one-key shortcuts, such as '#' to delete
-  in a mail list, pressed or typed outside a text field), CU-365 (the same with Ctrl or Command chords) and CU-370
-  (choosing 'Delete' in a drop-down, list box or radio group by keyboard). Medium fixes closed live today include
-  field names in six more languages, personal-ID names, unusual separators, less common password forms and links
-  carrying a password. Once CU-373 lands, what the row still needs is CU-135, the Replace-sheet chain, which only
-  you can answer (a scripted consent answer is refused by design).
+- **Consent and safety** holds only when no Urgent or High under-ask is open (D-063). **One High item is open,
+  with its fix reviewed:** CU-387 - on the desktop, a file dragged from an approved app's file list into another
+  approved app was attached without asking, because the drag's source was not recognised as a file (seen live at
+  00:32 UTC; the fix makes an unrecognised or file-named source ask, and waits for one live check). Closed live since
+  the last status: CU-377 (a file sent with 'Upload'), CU-380 (Return in an open menu chose 'Erase All'), CU-386
+  (money buttons such as 'Place bid', 'Top up' and 'Cash out') and CU-388 (choosing mail auto-forwarding with the
+  arrow keys). Both consent tables are signed. Since 9 November the team's own audits
+  have found sixteen High gaps and closed fifteen live, among them CU-363 (a website's own one-key shortcuts, such as '#'
+  to delete in a mail list), CU-365 (the same with Ctrl or Command chords), CU-370 (choosing 'Delete' in a
+  drop-down, list box or radio group by keyboard), CU-373 ('Generate app password' and mail auto-forwarding on a
+  website's account settings) and CU-381 (Delete or Backspace on a web page outside a text field). Medium fixes
+  closed live that day include field names in six more languages, personal-ID names, unusual separators, less common
+  password forms and links carrying a password. Once it lands, what the row still needs is CU-135, the
+  Replace-sheet chain, which only you can answer (a scripted consent answer is refused by design).
   - Names are read in English, Chinese, German, French, Spanish, Russian, Japanese and Korean; Italian, Dutch,
     Portuguese and Turkish are in review. Other languages are a named limit (D-099).
 - **Human control** needs you once: runbook step 4 (CU-11), with the G2 key-hold row (CU-119), the Replace-sheet
@@ -41,8 +45,8 @@ Seven of the nine ULTIMATE_GOAL 2.0 rows hold on live evidence. Two are open:
 
 | Row | State |
 |---|---|
-| environment, perception, action contract, agent loop | hold live (CUHelper 0.2.63 installed 9 Nov, reading placeholder text; 0.2.64, which reads a label placed beside a box, is in review) |
-| consent and safety | one High open (CU-373, fix in progress, 0.9.76); both tables signed; then waits on CU-135 in the owner session |
+| environment, perception, action contract, agent loop | hold live (CUHelper 0.2.65 installed 10 Nov, reading placeholder text, a label placed beside a box, pop-up menus, open menus and whether the clipboard holds a file; 0.2.66, which marks Finder's Quick Actions, is in review) |
+| consent and safety | one High open (CU-387), fix reviewed; both tables signed; then waits on CU-135 in the owner session |
 | human control | open: step 4 with you (CU-11, CU-119, CU-135, CU-203) |
 | integration | DSH and heddle each completed a fixture task (CU-15) |
 | trajectory | holds; capture stays inside approved apps |
@@ -61,8 +65,8 @@ Seven of the nine ULTIMATE_GOAL 2.0 rows hold on live evidence. Two are open:
 ## Open owner actions
 
 1. A time and mode (in person or Screen Sharing) for step 4 (CU-11, CU-119, CU-135, CU-203); checklist:
-   `_tools_/live-view/owner-checklist.md`. The human-control row waits only on it, and the consent row on it once CU-373 lands.
-2. Dismiss the notification alerts on the Mac mini (one sits at the screen centre) and quit Typeless before step 4.
+   `_tools_/live-view/owner-checklist.md`. The human-control row waits only on it, and the consent row on it once CU-387 lands.
+2. Dismiss the notification alerts on the Mac mini (one sits at the screen centre; at 21:37 UTC one intercepted a live check's click) and quit Typeless before step 4.
 3. Long-running Chrome tabs on the Mac mini hold the load near 30 and slow the team's gates; closing them helps.
 4. Decide on the history clean-up the coordinator reported privately on 9 Nov.
 5. Confirm the Mac-wide "Paste from other apps" setting (D-052).

@@ -13,6 +13,9 @@ import { runTask } from '../../_tools_/agent-core/loop.mjs'
 import { createPolicy } from '../../_tools_/agent-core/policy.mjs'
 import { readRun } from '../../_tools_/agent-core/trajectory.mjs'
 
+// CU-377: a drag pressed on nothing at all is an unknown source and asks; these rows press a control (the frontmost app's).
+const PRESS_ELEMENT = () => ({ origin: 'ai.reflection.cu.fixture', role: 'AXGroup', name: 'Canvas' })
+
 // CU-148: with a sheet or alert up, Command-D and Command-Delete press Don't Save whatever holds the focus.
 
 const policy = createPolicy({ sitePolicy: () => 'allow' })
@@ -46,7 +49,7 @@ async function pair(first) {
   try {
     const FIXTURE = 'ai.reflection.cu.fixture'
     const control = createRunControl()
-    const environment = createFakeEnvironment({ kind: 'desktop', control })
+    const environment = createFakeEnvironment({ targets: PRESS_ELEMENT, kind: 'desktop', control })
     environment.focusedElement = async () => ({ origin: FIXTURE, role: 'AXWindow', name: 'Untitled', fingerprint: 'w', sheet: false })
     const store = createAppApprovals({ path: join(dir, 'a.json') })
     store.grantAlways(FIXTURE, { by: 'api' })
@@ -81,7 +84,7 @@ test('in the loop on the desktop: a drag released on a zone named Trash asks del
   try {
     const FIXTURE = 'ai.reflection.cu.fixture'
     const control = createRunControl()
-    const environment = createFakeEnvironment({ kind: 'desktop', control })
+    const environment = createFakeEnvironment({ targets: PRESS_ELEMENT, kind: 'desktop', control })
     environment.inspectPoint = async ({ x }) => (x < 100 ? { origin: FIXTURE, role: 'AXRow', name: 'doc-104', fingerprint: 'row' } : { origin: FIXTURE, role: 'AXGroup', name: 'Trash', fingerprint: 'zone' })
     const store = createAppApprovals({ path: join(dir, 'a.json') })
     store.grantAlways(FIXTURE, { by: 'api' })
