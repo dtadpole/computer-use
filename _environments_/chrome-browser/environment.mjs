@@ -911,6 +911,10 @@ class BrowserEnvironment {
       // CU-300: the frame document's origin and path, inside a frame only; outside the fingerprint, never recorded.
       ...(typeof extra.frameUrl === 'string' && extra.frameUrl !== '' ? { frameUrl: extra.frameUrl } : {}),
       editable: extra.editable ?? null,
+      // CU-373: a toggle's state before the action (checked: true, false or 'mixed'; pressed for a toggle button) -
+      // state, not identity, so outside the fingerprint; absent when the element has none.
+      ...(extra.checked !== undefined ? { checked: extra.checked } : {}),
+      ...(extra.pressed !== undefined ? { pressed: extra.pressed } : {}),
       // CU-157: context, not identity - outside the fingerprint.
       textEntered: entered,
       // CU-187: the label that captions a non-entry element (see describeElement); CU-194 rule 5: an entry's structural
