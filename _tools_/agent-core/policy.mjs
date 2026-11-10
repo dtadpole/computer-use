@@ -151,6 +151,7 @@ const WORDS = Object.freeze({
 })
 // CU-377 follow-up: the file browsers whose rows are files (the same set as app-policy's FILE_BROWSERS).
 const FILE_BROWSER_APPS = new Set(['com.apple.finder', 'com.cocoatech.PathFinder', 'com.binarynights.ForkLift-3', 'com.binarynights.ForkLift', 'com.eltima.cmd1', 'com.mrrsoftware.marta', 'org.yanex.marta'])
+const SHARE_DESTINATION = /\b(?:airdrop|shared(?:\s+(?:folder|with\s+me|with\s+you))?|drop\s+box|dropbox|public\s+folder|server|network|(?:smb|afp|nfs|webdav):)/i
 const ACCOUNT_SECURITY = /\b(?:(?:generate|create|new|add)\s+(?:an?\s+)?app[\s-]?(?:specific[\s-]?)?passwords?|app[\s-]?(?:specific[\s-]?)?passwords?|(?:enable|disable|turn\s+(?:on|off)|set\s+up|add\s+(?:a\s+)?)?\s*(?:auto[\s-]?forward(?:ing)?|automatic(?:ally)?\s+forward(?:ing)?|forwarding(?:\s+address)?|forward\s+(?:a\s+copy|incoming|all|to)\b)|two[\s-]?(?:factor|step)(?:\s+(?:authentication|verification|login))?|2[\s-]?step\s+verification|create\s+(?:a\s+|new\s+)?filter|2fa|multi[\s-]?factor(?:\s+authentication)?|recovery\s+(?:e-?mail|phone|codes?))\b/i
 const PRECEDENCE = ['purchase', 'launch_code', 'delete', 'permission', 'page_dialog', 'credential', 'sensitive_data', 'submit', 'new_site', 'install']
 const POINTER = new Set(['click', 'double_click', 'triple_click'])
@@ -1122,7 +1123,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const appOf = (element) => (element ? (typeof element.origin === 'string' && element.origin !== '' ? element.origin : String(context.frontmostBundleId ?? '')) : '')
       const from = appOf(target)
       const to = appOf(context.dropTarget)
-      if (to === '' || from === '' || from !== to) classes.push('permission')
+      // CU-392 (High pending a live row; cu-coordinator 01:13Z): a drop onto a share destination sends the file away even
+      // inside one app - AirDrop (or a person in its window), a Shared folder, a Drop Box, a server or network volume.
+      const shareDrop = SHARE_DESTINATION.test(String(context.dropTarget?.name ?? '')) || SHARE_DESTINATION.test(String(context.dropTarget?.windowTitle ?? ''))
+      if (to === '' || from === '' || from !== to || shareDrop) classes.push('permission')
     }
     if (pressesTarget || pressesEnter || keyboard.activates) {
       if (POINTER.has(action.type) && /change\s+password|update\s+password|修改密码|更改密码|修改密碼|更改密碼|重设密码|重設密碼/i.test(name)) {
