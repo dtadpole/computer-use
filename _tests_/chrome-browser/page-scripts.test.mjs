@@ -99,6 +99,18 @@ test('the focused element is found through shadow roots and same-origin frames; 
   assert.equal(deepActiveElement({ activeElement: null }), null)
 })
 
+test('a same-origin frame editor\'s focus is its body when it takes text (contentEditable or designMode); a plain frame body stays null', () => {
+  const editableBody = el('BODY', { isContentEditable: true })
+  assert.equal(deepActiveElement({ activeElement: el('IFRAME', { contentDocument: { activeElement: editableBody, body: editableBody } }) }), editableBody, 'a contentEditable body')
+  const designBody = el('BODY', { isContentEditable: false })
+  assert.equal(deepActiveElement({ activeElement: el('IFRAME', { contentDocument: { activeElement: designBody, body: designBody, designMode: 'on' } }) }), designBody, 'a designMode document')
+  const htmlFocus = el('HTML')
+  assert.equal(deepActiveElement({ activeElement: el('IFRAME', { contentDocument: { activeElement: htmlFocus, body: designBody, designMode: 'on' } }) }), designBody, 'focus on the root of a designMode document is its body')
+  const plainBody = el('BODY', { isContentEditable: false })
+  assert.equal(deepActiveElement({ activeElement: el('IFRAME', { contentDocument: { activeElement: plainBody, body: plainBody, designMode: 'off' } }) }), null, 'a frame whose body takes no text: nothing focused, as before')
+  assert.equal(deepActiveElement({ activeElement: el('BODY', { isContentEditable: true }) }), null, 'the top document\'s own body is unchanged')
+})
+
 test('describeElement is self-contained: rebuilt from its own source, as the driver runs it in the page, it judges every case the same', () => {
   // environment.mjs runs (describeElement.toString())(this) in the page, where nothing from this module exists; a free
   // reference to a module-level name throws there and the target loses editable (CU-173's real-Chrome check caught it).
