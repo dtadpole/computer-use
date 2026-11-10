@@ -164,6 +164,14 @@ export async function launchBrowserEnvironment(options = {}) {
   }
 }
 
+/** CU-400: describeElement's formContext, re-validated at the boundary - else null. */
+export function formContextOf(value) {
+  if (value === null || typeof value !== 'object') return null
+  const options = Array.isArray(value.options) ? value.options.filter((text) => typeof text === 'string' && text !== '' && text.length <= 24).slice(0, 3) : []
+  const amountEntry = value.amountEntry === true
+  return options.length > 0 || amountEntry ? { options, amountEntry } : null
+}
+
 class BrowserEnvironment {
   constructor({ running, connection, session, proxy, viewport, release, signal, control, navigationTimeoutMs, limits }) {
     this.kind = 'browser'
@@ -915,6 +923,9 @@ class BrowserEnvironment {
       // state, not identity, so outside the fingerprint; absent when the element has none.
       ...(extra.checked !== undefined ? { checked: extra.checked } : {}),
       ...(extra.pressed !== undefined ? { pressed: extra.pressed } : {}),
+      // CU-400: the choices beside a form's submit button (describeElement's formContext) - up to 3 short option texts
+      // and whether an amount entry is present. Context, outside the fingerprint; run records keep origin, role, name.
+      ...(formContextOf(extra.formContext) ? { formContext: formContextOf(extra.formContext) } : {}),
       // CU-157: context, not identity - outside the fingerprint.
       textEntered: entered,
       // CU-187: the label that captions a non-entry element (see describeElement); CU-194 rule 5: an entry's structural

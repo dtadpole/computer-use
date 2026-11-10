@@ -789,3 +789,23 @@ test('CU-370: an aria-multiselectable listbox is unread for keys that change or 
   assert.equal(keyChoice(listbox, ' ', selectKeyOption), 'unread')
   assert.equal(keyChoice(listbox, 'Tab', selectKeyOption), null)
 })
+
+test('CU-400: a button inside a form carries formContext - up to 3 short selected option texts and whether an amount entry is present; never a value', () => {
+  const select = (text) => ({ tagName: 'SELECT', selectedOptions: [{ textContent: text }] })
+  const form = (controls, inputs) => ({ querySelectorAll: (sel) => (sel === 'input' ? inputs : controls) })
+  const amount = { type: 'text', name: 'amount', id: '', placeholder: '', getAttribute: () => null }
+  const plain = { type: 'text', name: 'note', id: '', placeholder: 'Note', getAttribute: () => null }
+  const button = (f, extra = {}) => el('BUTTON', { children: ['Sell'], closest: (sel) => (sel === 'form' ? f : null), ...extra })
+  const sell = describeElement(button(form([select('BTC'), select('  Market  ')], [amount])))
+  assert.deepEqual(sell.formContext, { options: ['BTC', 'Market'], amountEntry: true })
+  const numeric = describeElement(button(form([], [{ ...amount, name: 'x', type: 'number' }])))
+  assert.deepEqual(numeric.formContext, { options: [], amountEntry: true }, 'a number input is amount-shaped by its type')
+  const many = describeElement(button(form([select('A'), select('B'), select('C'), select('D')], [plain])))
+  assert.deepEqual(many.formContext.options, ['A', 'B', 'C'], 'at most three')
+  const long = describeElement(button(form([select('x'.repeat(25))], [plain])))
+  assert.equal('formContext' in long, false, 'a long option text is not a short word; nothing else beside it')
+  assert.equal('formContext' in describeElement(button(null)), false, 'outside a form: none')
+  assert.equal('formContext' in describeElement(el('DIV', { children: ['Sell'], closest: () => form([select('BTC')], []) })), false, 'a plain div is no submit control')
+  assert.deepEqual(Object.keys(sell.formContext), ['options', 'amountEntry'], 'the amount field is a boolean kind, never its name or value')
+  assert.equal(sell.formContext.options.includes('amount'), false)
+})

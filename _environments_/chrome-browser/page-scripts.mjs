@@ -510,9 +510,32 @@ export function describeElement(el) {
   const ariaChecked = typeof el.getAttribute === 'function' ? tristate(el.getAttribute('aria-checked')) : null
   const checked = tag === 'input' && (type === 'checkbox' || type === 'radio') ? (el.indeterminate ? 'mixed' : Boolean(el.checked)) : ariaChecked
   const pressed = typeof el.getAttribute === 'function' ? tristate(el.getAttribute('aria-pressed')) : null
+  // CU-400: a button that submits a form is judged with the choices beside it - an exchange's bare 'Sell' next to an
+  // asset select and an amount field. Bounded: at most 3 selected option or combobox texts of 24 characters each, and
+  // whether an amount-shaped entry is present (never its value). Only for button-like elements inside a <form>.
+  const formContext = (() => {
+    const buttonLike = tag === 'button' || (tag === 'input' && ['submit', 'button', 'image'].includes(type)) || role === 'button'
+    const form = buttonLike && el.closest ? el.closest('form') : null
+    if (!form) return null
+    const short = (text) => String(text || '').replace(/\s+/g, ' ').trim()
+    const options = []
+    for (const control of form.querySelectorAll('select, [role="combobox"]')) {
+      if (options.length >= 3) break
+      const text = control.tagName === 'SELECT'
+        ? short(control.selectedOptions && control.selectedOptions[0] ? control.selectedOptions[0].textContent : '')
+        : short(control.value !== undefined && control.value !== '' ? control.value : control.textContent)
+      if (text !== '' && text.length <= 24) options.push(text)
+    }
+    const AMOUNT = /amount|qty|quantity|price|total|sum/i
+    const amountEntry = [...form.querySelectorAll('input')].some((input) => input.type === 'number'
+      || ['decimal', 'numeric'].includes(String(input.getAttribute('inputmode') || '').toLowerCase())
+      || AMOUNT.test([input.name, input.id, input.getAttribute('aria-label'), input.placeholder].filter(Boolean).join(' ')))
+    return options.length > 0 || amountEntry ? { options, amountEntry } : null
+  })()
   return { tag, inputType: type, isPassword: type === 'password', autocomplete: autocomplete || null, href: link, origin, editable, caption: editable ? null : caption, entryCaption: editable ? caption : null,
     ...(frameUrl ? { frameUrl } : {}), ...(terminal ? { terminal } : {}), ...(notebookCell ? { notebookCell } : {}), ...(notebookSurface ? { notebookSurface } : {}), ...(codeSurface ? { codeSurface } : {}),
-    ...(checked !== null ? { checked } : {}), ...(pressed !== null ? { pressed } : {}) }
+    ...(checked !== null ? { checked } : {}), ...(pressed !== null ? { pressed } : {}),
+    ...(formContext !== null ? { formContext } : {}) }
 }
 
 /**
