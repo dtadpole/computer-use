@@ -1132,10 +1132,11 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // The driver owner's names bind (cu-coordinator 01:23Z): networkVolume (a drop target whose AXURL is smb/afp/nfs/webdav/
       // ftp, a boolean) and, from helper 0.2.67, dropDestination in {airdrop, shared, server}.
       const driverShare = context.dropTarget?.networkVolume === true || ['airdrop', 'shared', 'server'].includes(String(context.dropTarget?.dropDestination ?? ''))
-      // Interim fail-closed rule until 0.2.67 (cu-coordinator 01:21Z): a drop into Finder onto a person or device cell - a
-      // button, group or cell with no file name, url or file-like name - asks (named over-ask: other Finder buttons).
+      // Interim fail-closed rule until 0.2.67 (cu-coordinator 01:21Z): a drop into Finder onto a person or device button with
+      // no file name, url or file-like name asks (named over-ask: a file dropped on another Finder button).
       const dropRole = String(context.dropTarget?.role ?? '')
-      const personCell = context.dropTarget?.origin === 'com.apple.finder' && /^AX(?:Button|Group|Cell)$/i.test(dropRole)
+      // Narrowed to buttons (cu-researcher 01:29Z): column-view folder cells and the icon-view background are ordinary moves.
+      const personCell = context.dropTarget?.origin === 'com.apple.finder' && /^AXButton$/i.test(dropRole)
         && !String(context.dropTarget?.filename ?? '').trim() && !String(context.dropTarget?.url ?? '').trim() && !/\.[a-z][a-z0-9]{0,7}$/i.test(dropName)
       const shareDrop = driverShare || personCell || SHARE_DESTINATION.test(dropName) || hostShaped
       if (to === '' || from === '' || from !== to || shareDrop) classes.push('permission')

@@ -28,11 +28,13 @@ const drop = async (dropTarget) => {
 }
 
 test('CU-392: a Finder file dropped on AirDrop, a person in the AirDrop window, Shared, a Drop Box or a server volume is declined', async () => {
-  for (const target of [{ role: 'AXRow', name: 'AirDrop' }, { role: 'AXCell', name: 'Pat\u2019s MacBook' }, { role: 'AXRow', name: 'Team', networkVolume: true }, { role: 'AXRow', name: 'Projects', dropDestination: 'airdrop' }, { role: 'AXRow', name: 'fileserver.local' }, { role: 'AXRow', name: ['203', '0', '113', '20'].join('.') }, { role: 'AXRow', name: 'Shared' }, { role: 'AXRow', name: 'Drop Box' }, { role: 'AXRow', name: 'Network' }]) {
+  for (const target of [{ role: 'AXRow', name: 'AirDrop' }, { role: 'AXButton', name: 'Pat\u2019s MacBook' }, { role: 'AXRow', name: 'Team', networkVolume: true }, { role: 'AXRow', name: 'Projects', dropDestination: 'airdrop' }, { role: 'AXRow', name: 'fileserver.local' }, { role: 'AXRow', name: ['203', '0', '113', '20'].join('.') }, { role: 'AXRow', name: 'Shared' }, { role: 'AXRow', name: 'Drop Box' }, { role: 'AXRow', name: 'Network' }]) {
     assert.equal(await drop(target), 'declined', JSON.stringify(target))
   }
 })
 
 test('CU-392 negatives: a Finder file moved into an ordinary folder stays a free move', async () => {
   for (const name of ['Projects', 'Documents', 'Desktop']) assert.equal(await drop({ role: 'AXRow', name }), 'done', name)
+  assert.equal(await drop({ role: 'AXCell', name: 'Projects' }), 'done', 'a column-view folder cell')
+  assert.equal(await drop({ role: 'AXGroup', name: '' }), 'done', 'the icon-view background')
 })
