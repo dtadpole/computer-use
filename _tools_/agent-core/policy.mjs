@@ -996,6 +996,18 @@ function credentialField(target) {
  * Create the policy. `sitePolicy` is the run's site filter; `preApprovals` are `[{ class, origin }]` from the caller,
  * with `origin` an origin pattern such as `http://127.0.0.1:43117` (default: any origin the site filter allows).
  */
+/**
+ * A toggle's state before the press, trusted for its direction only from a native read (CU-373, fail closed): a web
+ * `<input type=checkbox>`, or (CU-418 option b, helper 0.2.70) a desktop AXCheckBox - a checkbox, switch or toggle -
+ * outside any web area, whose AXValue AppKit reports. Inside a web area the desktop state is the page's aria-checked claim,
+ * untrusted like an ARIA state on the web; an older helper sends none. true or false, else null (the caller asks).
+ */
+export function nativeToggleState(target) {
+  const webNative = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
+  const desktopNative = String(target?.role ?? '') === 'AXCheckBox' && target?.inWebArea === false
+  return (webNative || desktopNative) && typeof target?.checked === 'boolean' ? target.checked : null
+}
+
 export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
   if (typeof sitePolicy !== 'function') throw new TypeError('the policy needs the run site policy')
   const granted = preApprovals
@@ -1284,9 +1296,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // state asks. A native two-factor/recovery box that is off turns protection ON; a native forwarding box that is on
       // turns forwarding OFF - both the safe direction, so free.
       // A native CHECKBOX only - a radio has no on/off direction; its label decides (cu-researcher 21:15Z).
-      const nativeToggle = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
-      const nativeOn = nativeToggle && target.checked === true
-      const nativeOff = nativeToggle && target.checked === false
+      const toggleState = nativeToggleState(target)
+      const nativeOn = toggleState === true
+      const nativeOff = toggleState === false
       const isForwarding = /forward/i.test(name)
       // The explicit protection list (CU-270's two-factor and recovery names), never 'every security name but a few'.
       const isProtection = /two[\s-]?(?:factor|step)|2[\s-]?step|\b2fa\b|multi[\s-]?factor|recovery\s+(?:e-?mail|phone|codes?)/i.test(name)
@@ -1342,8 +1354,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // CU-408 (cu-coordinator 09:50Z): a bare 'Autopay' switch mirrors CU-373 - only a NATIVE checkbox read as on (the press
       // turns autopay off) is free; native off (turning it on), an ARIA-sourced, 'mixed' or missing state asks purchase.
       if (!focusesEntry && /^\s*auto[\s-]?pay\s*$/i.test(name) && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))) {
-        const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
-        if (!(nativeBox && target.checked === true)) classes.push('purchase')
+        if (nativeToggleState(target) !== true) classes.push('purchase')
       }
       // CU-409: bare 'Long', 'Short', 'Borrow', 'Lend', 'Supply', 'Repay' ask only in asset context - an asset word or a currency
       // sign in the name, or an asset among the form's options (CU-402); a video 'Short' or a library 'Borrow 2 books' stays free.
@@ -1362,16 +1373,17 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (!focusesEntry && (namesWord(name, PHYSICAL) || namesWord(name, PHYSICAL_NEAR) || PHYSICAL_GRAMMAR.test(name) || PHYSICAL_PATTERN.test(name) || UNLOCK_PHYSICAL.test(name) || /^garage\s+door$/i.test(name.trim()))) classes.push('physical')
       // CU-418 switches (cu-coordinator 14:17Z / 14:19Z): a bare security switch ('Camera', 'Alarm', 'Security') turned OFF and a
       // heat or vehicle switch ('Oven', 'Heater', 'Stove', 'Engine') turned ON ask physical. The direction is trusted only from a
-      // native checkbox read (CU-373); an ARIA, mixed or missing state - and every desktop switch, which carries no state
-      // today - asks in both directions (named over-ask: 'Camera' on / 'Oven' off there).
+      // native read (nativeToggleState: a web checkbox input, or since helper 0.2.70 a desktop AXCheckBox outside any web
+      // area); an ARIA, mixed or missing state - and a desktop switch from an older helper or inside a web area - asks in
+      // both directions (named over-ask: 'Camera' on / 'Oven' off there).
       if (!focusesEntry && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))) {
         const security = /^\s*(?:security\s+)?(?:cameras?|alarm|security)\s*$/i.test(name)
         const heat = /^\s*(?:oven|heater|stove|engine)\s*$/i.test(name)
         if (security || heat) {
-          const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
-          const known = nativeBox && typeof target.checked === 'boolean'
-          const turnsOff = known && target.checked === true
-          const turnsOn = known && target.checked === false
+          const state = nativeToggleState(target)
+          const known = state !== null
+          const turnsOff = state === true
+          const turnsOn = state === false
           if (!known || (security && turnsOff) || (heat && turnsOn)) classes.push('physical')
         }
       }

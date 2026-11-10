@@ -36,11 +36,11 @@ test('CU-418 switches (14:17Z): a security switch turned OFF and a heat/vehicle 
   assert.equal(sw('Heater', native(true)), 'allow', 'heater on -> off')
 })
 
-test('CU-418 switches (14:19Z): an ARIA or missing state, and every desktop switch, ask in both directions (named over-ask)', () => {
+test('CU-418 switches (14:19Z): an ARIA or missing state, and a desktop switch without a native state, ask in both directions (named over-ask)', () => {
   assert.equal(sw('Camera', { tag: 'div', role: 'switch', checked: false }), 'physical', 'ARIA state is not trusted')
   assert.equal(sw('Oven', { tag: 'button', role: 'switch' }), 'physical', 'missing state')
-  assert.equal(sw('Camera', { role: 'AXCheckBox', subrole: 'AXSwitch' }), 'physical', 'desktop: no state read')
-  assert.equal(sw('Oven', { role: 'AXCheckBox', subrole: 'AXSwitch' }), 'physical', 'desktop: no state read')
+  assert.equal(sw('Camera', { role: 'AXCheckBox', subrole: 'AXSwitch' }), 'physical', 'desktop: no state read (older helper)')
+  assert.equal(sw('Oven', { role: 'AXCheckBox', subrole: 'AXSwitch' }), 'physical', 'desktop: no state read (older helper)')
   assert.equal(sw('Lights', { tag: 'input', inputType: 'checkbox', role: 'switch', checked: false }), 'allow', 'a lights switch is benign')
 })
 
@@ -54,4 +54,28 @@ test('CU-418 round 2 (14:28Z): one adjective between verb and object, Oven on, b
 test('CU-418 round 2 negatives: Stop recording (named), oven timer and turning heat off stay free; a car-wash booking over-asks (named)', () => {
   for (const name of ['Stop recording', 'Oven timer', 'Turn off space heater', 'Lock the car', 'Turn on porch lights']) assert.equal(click(name), 'allow', name)
   assert.equal(click('Start car wash booking'), 'physical', 'named over-ask: the ruled phrase start car appears inside it')
+})
+
+test('CU-418 option (b) (helper 0.2.70): a desktop AXCheckBox outside any web area carries a native state, so the safe direction is free', () => {
+  const desk = (checked, extra = {}) => ({ role: 'AXCheckBox', subrole: 'AXSwitch', checked, inWebArea: false, ...extra })
+  assert.equal(sw('Camera', desk(true)), 'physical', 'camera on -> off')
+  assert.equal(sw('Camera', desk(false)), 'allow', 'camera off -> on (protects)')
+  assert.equal(sw('Oven', desk(false)), 'physical', 'oven off -> on')
+  assert.equal(sw('Oven', desk(true)), 'allow', 'oven on -> off')
+  // Fail closed: inside a web area the state is the page's aria-checked claim; an unread web area, 'mixed', or another role ask.
+  assert.equal(sw('Camera', desk(false, { inWebArea: true })), 'physical', 'web area: the state is untrusted')
+  assert.equal(sw('Camera', { role: 'AXCheckBox', subrole: 'AXSwitch', checked: false }), 'physical', 'web area unread')
+  assert.equal(sw('Camera', desk('mixed')), 'physical', 'mixed')
+  assert.equal(sw('Camera', desk(false, { role: 'AXRadioButton' })), 'physical', 'a radio button has no on/off direction')
+})
+
+test('CU-418 option (b): the CU-373 account toggles and the CU-408 Autopay switch read a desktop native state the same way', () => {
+  const desk = (checked, extra = {}) => ({ role: 'AXCheckBox', subrole: 'AXSwitch', checked, inWebArea: false, ...extra })
+  assert.equal(sw('Autopay', desk(true)), 'allow', 'autopay on -> off')
+  assert.equal(sw('Autopay', desk(false)), 'purchase', 'autopay off -> on')
+  assert.equal(sw('Autopay', desk(true, { inWebArea: true })), 'purchase', 'web area: untrusted')
+  assert.equal(sw('Two-factor authentication', desk(false)), 'allow', 'protection off -> on')
+  assert.equal(sw('Two-factor authentication', desk(true)), 'credential', 'protection on -> off')
+  assert.equal(sw('Mail forwarding', desk(true)), 'allow', 'forwarding on -> off')
+  assert.equal(sw('Mail forwarding', desk(false)), 'credential', 'forwarding off -> on')
 })
