@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - artifacts'
 created: 2026-11-01T09:28:00Z
-modified: 2026-11-10T06:11:17Z
+modified: 2026-11-10T07:40:52Z
 level: L1
-version: 1.129.0
+version: 1.130.0
 description: 'Pointers to the persistent work of [cu] Developer Two (environments) - proposals, code, tests and run records - written by the seat itself.'
 status: unverified
 grounded_in:
@@ -16,6 +16,10 @@ Pointers only; each target is its own authority.
 
 | Date | Artifact | State |
 |---|---|---|
+| 2026-11-10 | #402 merged eb6405715 | Ref CU-370: an ARIA listbox's active option falls back to aria-selected, then a focused option; multiselectable stays unread. Last of the six-PR stack. |
+| 2026-11-10 | #393 merged c1d9841e2 | CU-373 (driver half): a toggle's checked (native, indeterminate as 'mixed', else aria-checked) or pressed (aria-pressed) reaches the target, outside the fingerprint. |
+| 2026-11-10 | #299 merged f344e2265 | CU-336 (driver half): an iframe whose accessible name is unread is named from aria-labelledby, aria-label or title. |
+| 2026-11-10 | #443 merged 982ae9875 | CU-387 (client half): a file name the helper lends from the row reaches the desktop target as fileFrom 'ancestor'; in the CU-398 helper unit. |
 | 2026-11-10 | #355 merged 8f07af96e | CU-360 (driver half): a page's navigation to another app's scheme is an external_protocol session notice (scheme only) with a best-effort stop; full two-phase gate. |
 | 2026-11-10 | #339 merged b07ae04e9 | CU-357 (in Verify): an action's effect carries the session's notices since the last one (download_refused, alert_accepted length, file_chooser_refused); Chrome's own refused traffic stays out. |
 | 2026-11-10 | #369 merged 4f2cf7982 | CU-368 (in Verify): a same-origin frame editor's focused body is a text entry (contentEditable or designMode); first of the six-PR stack. |

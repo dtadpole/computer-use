@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - handover'
 created: 2026-11-08T04:14:00Z
-modified: 2026-11-10T06:11:17Z
+modified: 2026-11-10T07:40:52Z
 level: L1
-version: 4.13.0
+version: 4.14.0
 description: 'What a fresh [cu] Developer Two session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -16,27 +16,26 @@ grounded_in:
 Seat `cu-developer-two`: desktop and browser drivers, live view, run lock, MCP. Code: the session worktree
 `~/dtadpole/computer-use-wt/<session-id>`, one purpose worktree per PR. Records: [artifacts.md](artifacts.md).
 
-## Open PRs, in lane order (cu-coordinator 05:42Z)
+## Open PRs, in lane order (cu-integrator 07:39Z)
 
-1. #443, Part of CU-387: `fileFrom: 'ancestor'` through macos-desktop `#describe` (helper unit).
-2. #299, Part of CU-336; then #393, Part of CU-373; then #402, Ref CU-370 - the rest of the chrome-browser stack,
-   back to back. Landed: #369 (CU-368), #339 (CU-357), #355 (CU-360 driver half).
-3. CU-402 unit on #402: #472 (formContext on a form's submit button, Part of CU-402) with cu-developer-one's #474.
+1. CU-402 + CU-405 unit: #472 (formContext on a submit button, Part of CU-402) -> #482 (trade panels with helpers,
+   Fixes CU-405) -> cu-developer-one's #474.
+2. CU-406 pair: #486 (defaultButton carries formContext, Part of CU-406) with cu-developer-one's #487.
+3. After the Highs: #489 (Stripe frame row, Part of CU-336), #491 (Fixes CU-383, INDEX Behaviours list).
+   The six-PR chrome-browser stack is on main (#369 #339 #355 #299 #393 #402), and so is #443.
 
-## Ready locally, open after #402
+## Ready locally, open after the Highs
 
-- CU-383: chrome-browser INDEX, one line per behaviour.
 - The page-WebSocket lifetime fix (Ref CU-357), full D-102 done.
-- The `__privateStripeFrame5` row, re-cut onto main after #299 (Part of CU-336).
 
 ## Issues
 
-In Progress: CU-360. Verify: CU-357, CU-368, CU-370 and more.
+In Progress: CU-405, CU-360. Verify: CU-357, CU-368, CU-370 and more.
 
 ## Live state
 
 Hourly pass and 23:00Z reflection. D-102 runner `/tmp/cu-dev2/d102-run.sh`: checks run-lock before each step and
-kills a running step within 2 s of a gate run.
+kills a running step within 2 s of any other seat's run or live hold (D-106), and on its own stop.
 
 ## Lessons
 
