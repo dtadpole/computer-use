@@ -108,14 +108,16 @@ test('CU-409 seam: Return in the amount field presses a default Sell that carrie
   assert.doesNotMatch(String(plain.event?.class ?? plain.event?.rule ?? ''), /purchase/, summary(plain.event))
 })
 
-test('CU-412 driver: defaultCandidatesOf keeps two or three readable buttons (role, name, panel, formContext); fewer, more or malformed is null', () => {
+test('CU-412 driver: defaultCandidatesOf keeps two or three readable buttons (role, name, panel, formContext); a list it cannot use whole is more (fail closed); none is null', () => {
   const del = { role: 'AXButton', title: 'Delete account' }
   const keep = { role: 'AXButton', title: 'Keep account', formContext: { options: ['Pro'], amountEntry: false } }
-  assert.deepEqual(defaultCandidatesOf([del, keep]), [{ role: 'AXButton', name: 'Delete account', panel: null }, { role: 'AXButton', name: 'Keep account', panel: null, formContext: { options: ['Pro'], amountEntry: false } }])
-  assert.equal(defaultCandidatesOf([del]), null, 'one is the default button, never a candidate list')
-  assert.equal(defaultCandidatesOf([del, keep, del, keep]), null, 'four are more (the helper says defaultCandidatesMore)')
-  assert.equal(defaultCandidatesOf([del, { title: 'x' }]), null, 'an unreadable entry voids the list')
-  assert.equal(defaultCandidatesOf('Delete'), null)
+  assert.deepEqual(defaultCandidatesOf([del, keep]), { candidates: [{ role: 'AXButton', name: 'Delete account', panel: null }, { role: 'AXButton', name: 'Keep account', panel: null, formContext: { options: ['Pro'], amountEntry: false } }] })
+  assert.deepEqual(defaultCandidatesOf([del]), { more: true }, 'one is never a candidate list (the helper sends it as the default): unknown')
+  assert.deepEqual(defaultCandidatesOf([del, keep, del, keep]), { more: true }, 'four are more')
+  assert.deepEqual(defaultCandidatesOf([del, { title: 'x' }]), { more: true }, 'an unreadable entry makes the list unknown, never free (cu-developer-two F1)')
+  assert.deepEqual(defaultCandidatesOf('Delete'), { more: true }, 'malformed: unknown')
+  assert.equal(defaultCandidatesOf(undefined), null, 'an older helper: nothing')
+  assert.equal(defaultCandidatesOf([]), null)
 })
 
 test('CU-412 driver: the focused target carries defaultCandidates and defaultCandidatesMore from the helper; an older helper carries neither', async () => {
@@ -134,4 +136,6 @@ test('CU-412 driver: the focused target carries defaultCandidates and defaultCan
   assert.equal(more.defaultCandidates, undefined)
   const old = await focus({})
   assert.equal(Object.hasOwn(old, 'defaultCandidates') || Object.hasOwn(old, 'defaultCandidatesMore'), false)
+  const broken = await focus({ defaultCandidates: [del, { ...keep, role: null }] })
+  assert.deepEqual([broken.defaultCandidates, broken.defaultCandidatesMore], [undefined, true], 'an unreadable entry: unknown, never free')
 })
