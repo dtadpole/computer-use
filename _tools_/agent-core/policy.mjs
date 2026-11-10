@@ -1769,12 +1769,14 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // a call places a call (submit) - (b) a tel:/sip:/callto: href on or near it (dialHref) on ANY page; (c) a 'Call' / 'Dial' /
     // 'Phone' hint on a /call|voice|phone|dial/ URL; (a) a bare row click on a /call|dial/ URL (fail closed on a dialer page; named
     // over-ask: opening a profile from a dialer list). A list name alone is not a signal. Booleans and short names only (D-107).
-    if (grammarEligible && classes.length === 0 && /^(?:listitem|row|gridcell|option|treeitem|cell|generic|group)?$/i.test(String(target?.role ?? ''))) {
+    // #576 round 2 (cu-coordinator 21:37Z): target.inRow - the hit element has no verb of its own and sits in a row-like ancestor
+    // within 3 levels (a listener-only contact <li> clicked on its name span); dialHref / rowContext are then read from that row.
+    if (grammarEligible && classes.length === 0 && (target?.inRow === true || /^(?:listitem|row|gridcell|option|treeitem|cell|generic|group)?$/i.test(String(target?.role ?? '')))) {
       const url = String(context?.url ?? '')
       const row = target?.rowContext && typeof target.rowContext === 'object' ? target.rowContext : {}
       const hints = Array.isArray(row.hints) ? row.hints.map((h) => String(h ?? '').slice(0, 40)) : []
       const pathOf = (() => { try { return new URL(url).pathname } catch { return '' } })()
-      const verbless = /^(?:listitem|row|gridcell)$/i.test(String(target?.role ?? ''))
+      const verbless = target?.inRow === true || /^(?:listitem|row|gridcell)$/i.test(String(target?.role ?? ''))
       if (target?.dialHref === true
         || (/call|voice|phone|dial/i.test(pathOf) && hints.some((h) => /^\s*(?:call|dial|phone|voice\s+call|video\s+call)\b/i.test(h)))
         || (verbless && /call|dial/i.test(pathOf))) classes.push('submit')
