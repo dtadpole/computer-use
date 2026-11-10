@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-10T12:20:00Z
+modified: 2026-11-10T14:35:00Z
 level: L1
-version: 3.17.0
+version: 3.18.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,19 +15,20 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; never drives the desktop. State at 12:20Z, 10 November.
+session worktree plus `--review` worktrees; never drives the desktop. State at 14:35Z, 10 November.
 
 ## Landed
 
-- Closed live: CU-398, 400, 401, 402/405, 406, 382, 395, 408, 409 (web), 410; CU-411 (#514) in Verify.
+- Closed live through CU-411; CU-412 web half and CU-415 landed.
 
 ## Open (Highs first)
 
-- CU-412: #519 (Return default candidates; union; a nameless candidate asks unknown) pairs with #517 (browser) and #520 (helper 0.2.69).
-- CU-409 desktop: no policy part ([#510 #520] + install).
-- Batch, main merged and OK'd: #447 #448 #450 #453 #462 #469 #477 #478 #417; #497 (Bid) and #501 (CU-407) re-merged; #523 (CU-413) new.
+- CU-416 #531, CU-417 #534, CU-418 #535.
+- CU-412/409 desktop: no policy part (helper chain + install).
+- After the Highs: a design note on a verb x object grammar; no code before the ruling.
+- Batch (main merged, OK'd): #447 #448 #450 #453 #462 #469 #477 #478 #417; then #497 #501 #523 #527.
 - Guide #392: add remote-desktop/VM viewers after #450/#453, then complete.
-- Practice: confirm each push reached the remote; propose field contracts before driver seams.
+- Practice: read the full inbox as its own step before each commit.
 
 ## Lessons
 
