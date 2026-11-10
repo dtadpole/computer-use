@@ -134,6 +134,17 @@ describe('named-controls (live rows decided by a name)', () => {
     })
   })
 
+  test('popUps (CU-409): a native order panel - an asset pop-up (first item selected), an Amount entry and a bare Sell, all the window\'s own children', async () => {
+    await withNamed({ fields: ['Amount'], popUps: [{ name: 'Asset', items: ['BTC', 'ETH'] }, { name: '', items: ['x'] }, { name: 'Empty', items: [] }], buttons: ['Sell'] }, async (fixture) => {
+      const state = await fixture.state()
+      assert.deepEqual(state.fields.namedPopUpSelected, [0], 'one valid pop-up (an unnamed or empty one is skipped), its first item selected')
+      const targets = await fixture.targets()
+      assert.ok(targets['popup-0'] && targets['button-0'] && targets['field-0'], 'the pop-up, the Sell button and the Amount entry are named targets')
+      await fixture.act({ press: 'button-0' })
+      assert.deepEqual((await fixture.state()).fields.namedPressed, [0])
+    })
+  })
+
   test('the Actions menu exists only while named-controls is open', async () => {
     const fixture = await launchFixture(executable, { offscreen: true })
     try {
