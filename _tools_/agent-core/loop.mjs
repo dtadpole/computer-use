@@ -1206,7 +1206,16 @@ export async function runTask(options) {
       // never a name, so a stand-in miss is diagnosable from the record.
       const selectionRead = context.selection ? (context.selection.none ? { none: true } : context.selection.notCollection ? { notCollection: true } : !Array.isArray(context.selection.items) ? { unreadable: true }
         : { items: context.selection.items.length, kinds: context.selection.items.reduce((acc, item) => ({ ...acc, [item.kind]: (acc[item.kind] ?? 0) + 1 }), {}), ...(context.selection.truncated ? { truncated: true } : {}) }) : null
-      const base = { index, action: record, ...(composedOf[index] ? { composedFrom: composedOf[index] } : {}), site: environment.site, decision: decision.decision, class: decision.class, rule: decision.rule, ...(decision.app ? { app: decision.app } : {}), ...(selectionRead ? { selectionRead } : {}), ...(target ? { target } : {}), ...(blind ? { targetUnnamed: true } : {}), ...(dropBlind ? { dropTargetUnnamed: true } : {}), ...(defaultBlind ? { defaultButtonUnnamed: true } : {}), ...(context.historyJudged ? { history: context.historyJudged } : {}), ...(context.pasteboardJudged ? { pasteboard: context.pasteboardJudged } : {}), ...(context.boundMenuItem ? { boundMenuItem: context.boundMenuItem } : {}), ...(context.target && (context.target.textEntered === true || context.target.textEntered === false || context.target.textEntered === null) ? { textEntered: context.target.textEntered } : {}) }
+      // CU-391 (D-103): the loop-derived context the policy judged on, as kinds and booleans only - never a name or a value.
+      const derived = {
+        ...(context.dragSource ? { dragSource: context.dragSource } : {}),
+        ...(context.paste ? { paste: context.paste.fromOwner === true ? 'owner' : (context.paste.source ? 'run_attributed' : 'run_unattributed') } : {}),
+        ...(context.typeOptions ? { typeOptions: context.typeOptions.unread === true ? 'unread' : 'read' } : {}),
+        ...(context.boundMenuItem !== undefined ? { boundMenuItem: context.boundMenuItem && context.boundMenuItem.none !== true ? 'bound' : 'none' } : {}),
+        ...(context.target?.menuOpen === true ? { menuOpen: true } : {}),
+        ...(context.target?.selectOption === true ? { keyTarget: 'option' } : context.target?.optionUnread === true ? { keyTarget: 'unread' } : {}),
+      }
+      const base = { index, action: record, ...(Object.keys(derived).length > 0 ? { derived } : {}), ...(composedOf[index] ? { composedFrom: composedOf[index] } : {}), site: environment.site, decision: decision.decision, class: decision.class, rule: decision.rule, ...(decision.app ? { app: decision.app } : {}), ...(selectionRead ? { selectionRead } : {}), ...(target ? { target } : {}), ...(blind ? { targetUnnamed: true } : {}), ...(dropBlind ? { dropTargetUnnamed: true } : {}), ...(defaultBlind ? { defaultButtonUnnamed: true } : {}), ...(context.historyJudged ? { history: context.historyJudged } : {}), ...(context.pasteboardJudged ? { pasteboard: context.pasteboardJudged } : {}), ...(context.boundMenuItem ? { boundMenuItem: context.boundMenuItem } : {}), ...(context.target && (context.target.textEntered === true || context.target.textEntered === false || context.target.textEntered === null) ? { textEntered: context.target.textEntered } : {}) }
       if (decision.decision !== 'block') consecutiveBlocks = 0
 
       if (decision.decision === 'block') {
