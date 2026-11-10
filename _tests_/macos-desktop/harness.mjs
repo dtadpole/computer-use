@@ -89,10 +89,12 @@ export async function stopFake(child) {
   }
 }
 
-/** A throwaway directory under the OS temp dir, short enough for a Unix socket path; `remove()` deletes it. */
+/** A throwaway directory under the OS temp dir, short enough for a Unix socket path; `remove()` deletes it. A process
+ * that is still exiting (a fake helper, a hold keeper) can write one last file while the tree is removed, which fails
+ * ENOTEMPTY (cu-integrator, #420's gate, 10 Nov); Node retries that, EBUSY and EPERM with a short back-off. */
 export function scratch() {
   const dir = mkdtempSync(join(tmpdir(), 'cu-desktop-'))
-  return { dir, remove: () => rmSync(dir, { recursive: true, force: true }) }
+  return { dir, remove: () => rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }) }
 }
 
 /**
