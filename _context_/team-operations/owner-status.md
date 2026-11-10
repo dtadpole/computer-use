@@ -1,34 +1,32 @@
 ---
 title: Computer use on the Mac mini - one-page status for the owner
 created: 2026-11-06T04:55:00Z
-modified: 2026-11-10T09:50:00Z
+modified: 2026-11-10T14:46:00Z
 level: L2
-version: 1.8.3
+version: 1.8.8
 status: unverified
 description: 'What the [cu] team has built and proven, what is left, and the owner actions that are still open - one page, kept current by the coordinator.'
 grounded_in:
   - source: ULTIMATE_GOAL.md@2.0.0
-  - source: _seats_/cu-verifier/ultimate-goal-2-verdict.md@0.9.104
+  - source: _seats_/cu-verifier/ultimate-goal-2-verdict.md@0.9.112
   - source: _context_/team-operations/decision-log.yaml (D-034, D-052, D-063, D-079 to D-102)
 ---
 
 # Computer use on the Mac mini - status for the owner
 
-State at 10 November 2026, 09:50 UTC.
+State at 10 November 2026, 14:46 UTC.
 
 ## Where it stands
 
 Seven of the nine ULTIMATE_GOAL 2.0 rows hold on live evidence. Two are open:
 
-- **Consent and safety** holds only when no Urgent or High under-ask is open (D-063). **One High item is open: CU-408**
-  (on a payments page, 'Confirm payment', 'Authorize payment', 'Schedule payment', autopay, 'Add payee', refunds and
-  charges went through unasked; reproduced 09:44 UTC, fix in progress).
-  Closed live tonight: CU-392, CU-395, CU-398 (the Apple menu's Restart, Shut Down and Log Out, on helper 0.2.67),
-  CU-400 (crypto 'Swap', 'Stake', 'Sign transaction'), CU-401 ('Change email', 'Cancel plan', 'Disable account'),
-  CU-402 and CU-405 (a plain 'Sell' next to an asset list, in forms, form-less panels and Buy-and-Sell panels) and
-  CU-406 (Return in a trade form's amount field or a 'New email' field now asks as a click does). CU-387 (a file
-  dragged between apps) is Medium. The team keeps hunting, now with a sweep that checks every key against a click. Both consent tables are signed. Since 9 November the team's own audits
-  have found twenty-five High gaps, closed twenty-three live and lowered one to Medium, among them CU-363 (a website's own one-key shortcuts, such as '#'
+- **Consent and safety** holds only when no Urgent or High under-ask is open (D-063). **Five High items are open**,
+  all with fixes written: CU-409 (exchange page) and CU-412 (Return past a script button) have every fix on main and
+  helper 0.2.69 installed - only their desktop closing rows remain; CU-416 (admin console payroll, payments,
+  impersonation), CU-417 (dev and cloud consoles: drop, destroy, keys, branch protection) and CU-418 (physical near
+  forms: disable alarm, start car, oven on) have reviewed fixes queued. Closed live today: CU-408 (payments), CU-410
+  (billing), CU-411 (account and keys) and CU-415 (bookings, e-signatures, record releases). Both consent tables are signed. Since 9 November the team's own audits
+  have found thirty-three High gaps, closed twenty-seven live and lowered one to Medium, among them CU-363 (a website's own one-key shortcuts, such as '#'
   to delete in a mail list), CU-365 (the same with Ctrl or Command chords), CU-370 (choosing 'Delete' in a
   drop-down, list box or radio group by keyboard), CU-373 ('Generate app password' and mail auto-forwarding on a
   website's account settings) and CU-381 (Delete or Backspace on a web page outside a text field). Medium fixes
@@ -47,7 +45,7 @@ Seven of the nine ULTIMATE_GOAL 2.0 rows hold on live evidence. Two are open:
 | Row | State |
 |---|---|
 | environment, perception, action contract, agent loop | hold live (CUHelper 0.2.65 installed 10 Nov, reading placeholder text, a label placed beside a box, pop-up menus, open menus and whether the clipboard holds a file; 0.2.66, which marks Finder's Quick Actions, and 0.2.67, which reads the file a row names and Finder's AirDrop, Shared and Network destinations, are in review) |
-| consent and safety | one High open (CU-408, payments), fix in progress; both tables signed; then waits on CU-135 in the owner session |
+| consent and safety | five High open (CU-409, CU-412, CU-416, CU-417, CU-418), fixes written; both tables signed; then waits on CU-135 in the owner session |
 | human control | open: step 4 with you (CU-11, CU-119, CU-135, CU-203) |
 | integration | DSH and heddle each completed a fixture task (CU-15) |
 | trajectory | holds; capture stays inside approved apps |
@@ -66,7 +64,7 @@ Seven of the nine ULTIMATE_GOAL 2.0 rows hold on live evidence. Two are open:
 ## Open owner actions
 
 1. A time and mode (in person or Screen Sharing) for step 4 (CU-11, CU-119, CU-135, CU-203); checklist:
-   `_tools_/live-view/owner-checklist.md`. The human-control row waits only on it, and the consent row on it once CU-408 closes (CU-135).
+   `_tools_/live-view/owner-checklist.md`. The human-control row waits only on it, and the consent row on it once the open Highs close (CU-135).
 2. Dismiss the notification alerts on the Mac mini (one sits at the screen centre; at 21:37 UTC one intercepted a live check's click) and quit Typeless before step 4.
 3. Long-running Chrome tabs on the Mac mini hold the load near 30 and slow the team's gates; closing them helps.
 4. Decide on the history clean-up the coordinator reported privately on 9 Nov.
