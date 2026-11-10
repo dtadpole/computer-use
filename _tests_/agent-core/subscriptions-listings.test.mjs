@@ -37,3 +37,12 @@ test('CU-428 round 2 (17:00Z): Upgrade to <any tier>, Join the club and Become a
   }
   for (const name of ['Upgrade guide', 'Club rules', 'Member benefits']) assert.equal(click(name), 'allow', name)
 })
+
+test('CU-428 round 3 (17:16Z): a software upgrade asks install, a paid tier stays purchase', () => {
+  for (const name of ['Upgrade to the latest version', 'Upgrade to macOS Sequoia', 'Upgrade to version 2.0', 'Upgrade to iOS 18']) {
+    assert.equal(click(name), 'install', name)
+    assert.equal(enter(name), 'install', `Return: ${name}`)
+  }
+  for (const name of ['Upgrade to Gold', 'Upgrade to Pro', 'Upgrade to Business']) assert.equal(click(name), 'purchase', name)
+  assert.equal(click('Upgrade now'), 'purchase', "the bare 'Upgrade now' keeps CU-288's older purchase (no update-prompt context is read)")
+})
