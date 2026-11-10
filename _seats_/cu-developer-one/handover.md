@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-09T18:10:00Z
+modified: 2026-11-09T22:10:00Z
 level: L1
-version: 3.7.0
+version: 3.10.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,20 +15,21 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; never drives the desktop. State at 18:10Z, 9 November.
+session worktree plus `--review` worktrees; never drives the desktop. State at 22:10Z, 9 November.
 
 ## Landed
 
-- Verified: CU-301, CU-241, CU-297, CU-302, CU-325, CU-326, CU-263, CU-336, CU-347, CU-345, CU-346; CU-321 decided.
-- In Verify: CU-340, CU-352, CU-354, CU-350.
+- Verified: CU-301, CU-241, CU-297, CU-302, CU-325, CU-326, CU-263, CU-336, CU-347, CU-345, CU-346, CU-363, CU-365, CU-370.
+- On main, awaiting live close: CU-373's policy half (#391), CU-349 (#349).
 
 ## Open
 
-- CU-363 (High, D-086): PR #356 round 5 - page and app shortcuts (keypress/type/hold, both routes, unread focus, per-key
-  run-capped approvals); waits for cu-verifier's link rows. Next: modifier chords on a row (cu-researcher files it).
-- OK'd, queued: #338 (CU-355), #343 (CU-358), #347 (CU-359), #335 (CU-348), #349 (CU-349, after #344), #360 (CU-364, Low).
-- PR #351 (guide 0.1.23, eight languages) lands after #338; add it/nl/pt/tr when #343 lands.
-- CU-361: read the helper's nearbyLabel upgrade-only; drop guide line 32 when it lands.
+- CU-377 (High pending live): PR #397 - file/unknown-source desktop drag or a file paste into another app asks; Upload,
+  Attach, Share file ask. Residual (named limit): an unattributed paste until pasteboardHasFile (0.2.65).
+- CU-373: #393 (driver) then #394 (native-checkbox direction, record field). Open-menu Return/Space: PR #399.
+- CU-361: #386 + #387 after the 0.2.64 install. CU-372 (desktop popups) after 0.2.65.
+- Guide PR #392 (held): mailto after #355, line 33 after CU-361, CU-377's paste limit.
+- D-101/D-102: agent-core, macos-desktop and every node verifier (CU_VERIFY_SEAT=cu-developer-one) before review.
 
 ## Lessons
 

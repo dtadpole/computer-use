@@ -167,7 +167,8 @@ function launchesCode(action, target) {
 // named file (a list, a column or icon view, nothing), asks launch_code: the selected file is unread. Named over-ask:
 // opening a document that way. (2) A menu item titled as an excluded runner (Open With > Terminal, Script Editor ...)
 // is refused anywhere: opening anything with it runs it outside the approved app.
-const FILE_BROWSERS = new Set(['com.apple.finder'])
+// CU-377 follow-up (cu-coordinator 22:41Z): Finder and the common third-party file browsers - a row there is a file.
+export const FILE_BROWSERS = new Set(['com.apple.finder', 'com.cocoatech.PathFinder', 'com.binarynights.ForkLift-3', 'com.binarynights.ForkLift', 'com.eltima.cmd1', 'com.mrrsoftware.marta', 'org.yanex.marta'])
 const OPEN_ITEM = /^(open|打开|打開)$/i
 const RUNNER_TITLES = /^(terminal|iterm2?|warp|ghostty|kitty|alacritty|hyper|wezterm|script editor|automator|shortcuts|alfred|raycast|终端|終端機|脚本编辑器|工序指令編寫程式|自动操作|自動操作|快捷指令|捷徑)$/i
 const isMenuItem = (target) => /^(ax)?menuitem$/i.test(String(target?.role ?? ''))
@@ -590,6 +591,9 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     if (opensFiles && selectionRunsCode(context.selection) && verdict.decision !== 'handoff') {
       return { decision: 'confirm', class: 'launch_code', classes: ['launch_code', ...(verdict.classes ?? [])], rule: 'selection:launch_code', reason: 'open the selection, which this run cannot read - it may run code', app }
     }
+    // CU-365 (cu-coordinator 19:19Z): the chord shortcut is a fallback - where CU-252's open-selection judgement applies
+    // (an open chord with the selection read), that judgement decides; a selection that cannot run code opens freely.
+    if (opensFiles && verdict.rule === 'page:shortcut') return { decision: 'allow', class: null, rule: 'selection:opens', reason: '', app }
     // CU-269 (cu-researcher): a drop onto an app's icon - a Finder .app item or a Dock app item - opens the dragged item
     // with that app (Finder's 'open with'). A terminal or code runner by name is refused as its app would be; a launchable
     // item asks launch_code (never pre-approved); a document asks new_app.

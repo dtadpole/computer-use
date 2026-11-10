@@ -29,14 +29,18 @@ test('no prompting, pasteboard or legacy capture API appears in the helper code,
     /kCGWindowName/, /kCGWindowOwnerName/, /NSAppleScript/, /Process\(\)/, /SecKeychain/, /SecItemCopyMatching/,
   ]
   for (const pattern of forbidden) assert.deepEqual(where(pattern), [], String(pattern))
-  // CU-151: the pasteboard appears exactly once, as its change count - a number, never content (D-031, D-056) - and no
-  // content or write API appears anywhere.
+  // CU-151: the pasteboard appears as its change count - a number, never content (D-031, D-056) - and, since CU-377
+  // (cu-coordinator 21:45Z, helper 0.2.65), once as its type names, which go straight into PasteboardTypes.hasFile so
+  // only a Bool leaves (a file URL type present or not: no path, no content, D-060). No content or write API anywhere.
   const pasteboardUses = Object.entries(code).flatMap(([name, text]) => [...text.matchAll(/NSPasteboard[\w.]*/g)].map((match) => `${name}: ${match[0]}`))
-  assert.deepEqual(pasteboardUses, ['SystemCapabilities.swift: NSPasteboard.general.changeCount'], 'only the change count')
+  assert.deepEqual(pasteboardUses, ['SystemCapabilities.swift: NSPasteboard.general.changeCount', 'SystemCapabilities.swift: NSPasteboard.general.types'], 'only the change count and the type names')
   for (const pattern of [/\.string\(forType/, /\.data\(forType/, /propertyList\(forType/, /readObjects\(/, /pasteboardItems/, /clearContents\(/,
-    /setString\(/, /setData\(/, /writeObjects\(/, /declareTypes\(/, /\.types\b/]) {
+    /setString\(/, /setData\(/, /writeObjects\(/, /declareTypes\(/]) {
     assert.deepEqual(where(pattern), [], `no pasteboard content or write API: ${pattern}`)
   }
+  const typeReads = Object.entries(code).flatMap(([name, text]) => text.split('\n').filter((line) => /\.types\b/.test(line)).map((line) => `${name}: ${line.trim()}`))
+  assert.deepEqual(typeReads, ['SystemCapabilities.swift: func pasteboardHasFile() -> Bool? { PasteboardTypes.hasFile(NSPasteboard.general.types?.map { $0.rawValue }) }'],
+    'the type names are read in one place, and only a Bool (PasteboardTypes.hasFile) leaves it')
   // The two prompts the owner asked for (2026-11-05) live in RequestGrants.swift alone, reached only from main.swift's
   // --request-grants case - never from serving, the self-test or the dry run.
   for (const pattern of [/CGRequestScreenCaptureAccess\(\)/, /AXIsProcessTrustedWithOptions\(/, /kAXTrustedCheckOptionPrompt/]) {
@@ -242,4 +246,35 @@ test('every end but bye arms the end watchdog before anything that can wait on a
     assert.ok(body.indexOf(waits) > arm, `the watchdog is armed before ${waits}`)
   }
   assert.match(body, /_exit\(EndWatchdog\.exitCode\)/, 'the watchdog exits with _exit, which runs no atexit handler and takes no lock of ours')
+})
+
+test('CU-349: describe() reports an entry\'s placeholder from AXPlaceholderValue and never reads its AXValue for it', () => {
+  const access = readFileSync(join(SOURCES, 'Accessibility.swift'), 'utf8')
+  const key = access.split('\n').find((l) => l.includes('"placeholder":'))
+  assert.ok(key, 'describe() has a placeholder key')
+  // CU-361 (helper 0.2.64): the value is computed once into a local, which the nearbyLabel guard reads too.
+  assert.match(key, /"placeholder": \.optionalString\(placeholderValue\),/)
+  const line = access.split('\n').find((l) => l.includes('let placeholderValue ='))
+  assert.ok(line, 'describe() computes the placeholder into a local')
+  assert.match(line, /Placeholder\.applies\(role: role\) \? Placeholder\.pick\(role: role, raw: string\(element, "AXPlaceholderValue"\)\) : nil/)
+  for (const l of [key, line]) assert.doesNotMatch(l, /AXValue"/, 'the placeholder is never the field\'s value')
+})
+
+test('CU-361: describe() reports a nearby label only for an unnamed entry, from its window\'s static texts, never the entry\'s own value', () => {
+  const access = readFileSync(join(SOURCES, 'Accessibility.swift'), 'utf8')
+  const line = access.split('\n').find((l) => l.includes('"nearbyLabel":'))
+  assert.ok(line, 'describe() has a nearbyLabel key')
+  assert.match(line, /Placeholder\.applies\(role: role\) && title == nil && captionValue == nil && placeholderValue == nil \? nearbyLabel\(element\) : nil/,
+    'only an entry with no title, caption or placeholder asks for one')
+  assert.doesNotMatch(line, /AXValue"/, 'the key\'s line never reads the entry\'s own value')
+  assert.match(access, /"caption": \.optionalString\(captionValue\),/, 'the guard reads the same caption describe() reports')
+  const start = access.indexOf('private static func nearbyLabel(_ element: AXUIElement) -> String? {')
+  assert.ok(start > 0, 'the nearbyLabel helper exists')
+  const helper = access.slice(start, access.indexOf('\n  }\n', start))
+  assert.match(helper, /guard let box = frame\(element\), let window = elementAttribute\(element, "AXWindow"\)/)
+  assert.match(helper, /descendants\(of: window, limit: 400\)/)
+  assert.match(helper, /\.filter \{ string\(\$0, "AXRole"\) == "AXStaticText" \}/, 'only static texts are candidates')
+  assert.match(helper, /string\(label, "AXValue"\)/, 'a candidate\'s words are the static text\'s AXValue')
+  assert.doesNotMatch(helper, /string\(element, "AXValue"\)|attribute\(element, "AXValue"\)/, 'the entry\'s own value is never read')
+  assert.match(helper, /NearbyLabel\.pick\(box: box, candidates: candidates\)/)
 })

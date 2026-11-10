@@ -6,7 +6,7 @@ import { validateBatch } from './actions.mjs'
 import { unattendedController } from './consent.mjs'
 import { createRunControl } from './control.mjs'
 import { inspectPageText } from './inspect.mjs'
-import { createAppPolicy, opensSelection, panelDestination, panelKind, protectedPath } from './app-policy.mjs'
+import { FILE_BROWSERS, createAppPolicy, opensSelection, panelDestination, panelKind, protectedPath } from './app-policy.mjs'
 import { normaliseText } from './normalise.mjs'
 import { createPanelFolder } from './panel-folder.mjs'
 import { createExclusions } from './exclusions.mjs'
@@ -678,8 +678,14 @@ export async function runTask(options) {
   // after 'Show password' is still judged as one. The key comes from the driver (fieldKey), outside the fingerprint and
   // never recorded; it carries the page's loader or the app's process, so a navigation or a relaunch forgets it.
   const passwordKeys = new Set()
-  const remembered = (t) => {
-    if (!t || typeof t !== 'object' || typeof t.fieldKey !== 'string' || t.fieldKey === '') return t
+  // CU-349 (cu-researcher): some web and Electron fields drop their placeholder once a value is typed, so the placeholder a
+  // field showed is kept by its key - the first key and a later one into the same box are judged under the same names.
+  const placeholderKeys = new Map()
+  const remembered = (given) => {
+    if (!given || typeof given !== 'object' || typeof given.fieldKey !== 'string' || given.fieldKey === '') return given
+    let t = given
+    if (typeof t.placeholder === 'string' && t.placeholder.trim() !== '') placeholderKeys.set(t.fieldKey, t.placeholder)
+    else if (placeholderKeys.has(t.fieldKey)) t = { ...t, placeholder: placeholderKeys.get(t.fieldKey) }
     if (t.isPassword === true || t.secure === true || t.inputType === 'password' || namesPasswordField(t)) { passwordKeys.add(t.fieldKey); return t }
     return passwordKeys.has(t.fieldKey) ? { ...t, seenAsPassword: true } : t
   }
@@ -829,8 +835,24 @@ export async function runTask(options) {
     // off the frame) leaves it unjudged there, never fails the drag - the helper's scope check refuses such a drop.
     const last = action.type === 'drag' && Array.isArray(action.path) && action.path.length > 1 ? action.path[action.path.length - 1] : null
     const dropTarget = last ? await environment.inspectPoint(last).catch(() => null) : null
+    // CU-377 (cu-coordinator 21:35Z): what a desktop drag carries - 'file' (the press target names a file: a filename or a
+    // file URL), 'unknown' (nothing read, a role-less shape, or another app's element), else 'other'.
+    const dragSource = action.type === 'drag' && desktop
+      ? (!target || !target.role ? 'unknown'
+        : (typeof target.filename === 'string' && target.filename !== '') || /^file:/i.test(String(target.url ?? '')) ? 'file'
+          // In a file browser (Finder) or a file panel, any row, cell, icon, outline item or name is a file unless known
+          // otherwise - fail closed, no unmeasured attribute (cu-coordinator 21:43Z).
+          : (FILE_BROWSERS.has(String(state?.frontmostBundleId ?? '')) || FILE_BROWSERS.has(String(target.origin ?? '')) || target.panel) && /row|cell|icon|outline|image|statictext|textfield|group/i.test(String(target.role ?? '')) ? 'file'
+          : (typeof target.origin === 'string' && target.origin !== '' && state?.frontmostBundleId && target.origin !== state.frontmostBundleId) ? 'unknown' : 'other')
+      : null
     // CU-198 (drag-text.md): the browser reads what a drag moves - once, and only when it lands on a text entry: a string,
     // { unknown: true } on a failed read, or null (nothing selected under the press). Never recorded; the desktop reads none.
+    // CU-370 (cu-developer-two's contract): before a type into a native select the browser driver answers every option the
+    // typed prefix passes through (Chrome's type-ahead); null when the focus is no select. A failed read is null too - the
+    // policy then judges the typed text itself and asks it as a page shortcut.
+    const typeOptions = !desktop && action.type === 'type' && typeof environment.typeOptions === 'function'
+      ? await Promise.resolve(environment.typeOptions(action)).catch(() => null)
+      : null
     const dragText = !desktop && last && isTextEntry(dropTarget) && typeof environment.dragText === 'function'
       ? await Promise.resolve(environment.dragText(action.path[0])).then(
         (text) => (typeof text === 'string' ? text.slice(0, 4096) : text?.unknown === true ? { unknown: true } : null),
@@ -903,7 +925,7 @@ export async function runTask(options) {
     // CU-325: a navigate carries the card-length digit runs this run typed or pasted (in memory, never recorded), so a URL
     // path that holds one asks whatever its prefix.
     const typedDigits = action.type === 'navigate' ? typedCardRuns() : []
-    return { url: state.url, target: remembered(target), ...(typed ? { typed } : {}), ...(typedSplit ? { typedSplit } : {}), ...(typedDigits.length ? { typedDigits } : {}), ...(boundMenuItem ? { boundMenuItem } : {}), ...(selection ? { selection } : {}), ...(dropTarget ? { dropTarget: remembered(dropTarget) } : {}), ...(dragText !== undefined ? { dragText } : {}), ...(afterClose ? { afterClose: true } : {}), ...(resubmits ? { resubmits: historyMove } : {}), ...(historyJudged ? { historyJudged } : {}), ...(paste ? { paste } : {}), ...(pasteboardJudged ? { pasteboardJudged } : {}), ...(state.interstitial === true ? { interstitial: true } : {}), dialog: state.dialog ?? null, task: task.text, ...app }
+    return { url: state.url, target: remembered(target), ...(dragSource ? { dragSource } : {}), ...(Array.isArray(typeOptions) || typeOptions?.unread === true ? { typeOptions } : {}), ...(typed ? { typed } : {}), ...(typedSplit ? { typedSplit } : {}), ...(typedDigits.length ? { typedDigits } : {}), ...(boundMenuItem ? { boundMenuItem } : {}), ...(selection ? { selection } : {}), ...(dropTarget ? { dropTarget: remembered(dropTarget) } : {}), ...(dragText !== undefined ? { dragText } : {}), ...(afterClose ? { afterClose: true } : {}), ...(resubmits ? { resubmits: historyMove } : {}), ...(historyJudged ? { historyJudged } : {}), ...(paste ? { paste } : {}), ...(pasteboardJudged ? { pasteboardJudged } : {}), ...(state.interstitial === true ? { interstitial: true } : {}), dialog: state.dialog ?? null, task: task.text, ...app }
   }
 
   let consecutiveBlocks = 0
@@ -1153,7 +1175,7 @@ export async function runTask(options) {
       }
       // On the desktop, approvals key by bundle id, never by the driver's app: URL.
       const origin = desktop ? (context.target?.origin ?? context.frontmostBundleId) : originPattern(context.url)
-      if (decision.decision === 'confirm' && decision.class !== 'new_site' && decision.class !== 'new_app' && decision.class !== 'file_choice' && decision.askEachTime !== true && approvals.covers(decision.approvalKey ?? decision.class, origin)) {
+      if (decision.decision === 'confirm' && decision.class !== 'new_site' && decision.class !== 'new_app' && decision.class !== 'file_choice' && decision.askEachTime !== true && approvals.covers(decision.approvalKey ?? decision.class, origin) && (decision.alsoNeeds == null || approvals.covers(decision.alsoNeeds, origin))) {
         decision = { ...decision, decision: 'allow', rule: `approved:${decision.class}` }
       }
       // Text meant for a secure field, or typed while secure input is on, is redacted like a credential, whatever the
@@ -1264,6 +1286,8 @@ export async function runTask(options) {
           continue
         }
         if (decision.class !== 'new_app' && decision.class !== 'file_choice' && decision.askEachTime !== true) approvals.grant({ cls: decision.approvalKey ?? decision.class, origin, lifetime: decision.runOnly === true && answer.lifetime === 'always' ? 'run' : answer.lifetime })
+        // CU-365: the shortcut half of a stacked ask is granted beside it, capped at the run like any page-shortcut yes.
+        if (decision.alsoNeeds != null && decision.class !== 'new_app' && decision.class !== 'file_choice' && decision.askEachTime !== true) approvals.grant({ cls: decision.alsoNeeds, origin, lifetime: answer.lifetime === 'always' ? 'run' : answer.lifetime })
         if (decision.class === 'new_site') sitePolicy?.allowOrigin?.(action.url)
         if (decision.class === 'new_app') {
           policy.grantScope?.(decision.app, answer)
