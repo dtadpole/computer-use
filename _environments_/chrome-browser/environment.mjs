@@ -576,7 +576,7 @@ class BrowserEnvironment {
       await this.#describe(target, inner.backendNodeId, frame.targetId, { node: inner, offset: { x: box.x, y: box.y }, editableBody: true, fallbackName: String(inner.nodeName ?? '').toUpperCase() === 'BODY' ? host.name : null }))
     if (described === null) return undefined
     const submit = await this.#implicitSubmit(target, inner.backendNodeId)
-    return { ...described, frameHost: host, defaultButton: submit.button, defaultButtonRead: submit.read, ...(submit.candidates ? { defaultCandidates: submit.candidates } : {}) }
+    return { ...described, frameHost: host, defaultButton: submit.button, defaultButtonRead: submit.read, ...(submit.candidates ? { defaultCandidates: submit.candidates } : {}), ...(submit.more ? { defaultCandidatesMore: true } : {}) }
   }
 
   /**
@@ -738,7 +738,7 @@ class BrowserEnvironment {
     const element = await this.#withAutofill(page, node.backendNodeId, undefined, await this.#describe(page, node.backendNodeId, undefined, { node, editableBody }))
     if (element === null) return null
     const submit = await this.#implicitSubmit(page, node.backendNodeId)
-    return { ...element, defaultButton: submit.button, defaultButtonRead: submit.read, ...(submit.candidates ? { defaultCandidates: submit.candidates } : {}) }
+    return { ...element, defaultButton: submit.button, defaultButtonRead: submit.read, ...(submit.candidates ? { defaultCandidates: submit.candidates } : {}), ...(submit.more ? { defaultCandidatesMore: true } : {}) }
   }
 
   /**
@@ -800,21 +800,22 @@ class BrowserEnvironment {
         objectId, functionDeclaration: `function () { return (${implicitSubmitButton.toString()})(this) }`, returnByValue: false,
       })).result.result
       if (found?.objectId === undefined) return { button: null, read: true, ...(await this.#implicitCandidates(page, objectId)) }
+      const extra = await this.#implicitCandidates(page, objectId)
       const button = (await this.session.send(page, 'DOM.describeNode', { objectId: found.objectId })).result.node
       const described = await this.#describe(page, button.backendNodeId, undefined, { scanText: false })
       // CU-406: the Return target carries the same bounded formContext a click on that button would (CU-402/CU-405), so a
       // Return in a trade form's amount field is judged with the form's asset beside a bare 'Sell' default.
-      return { button: described === null ? null : { role: described.role, name: described.name, panel: null, ...(described.formContext ? { formContext: described.formContext } : {}) }, read: true }
+      return { button: described === null ? null : { role: described.role, name: described.name, panel: null, ...(described.formContext ? { formContext: described.formContext } : {}) }, read: true, ...extra }
     } catch {
       return { button: null, read: false }
     }
   }
 
   /**
-   * CU-412: two or more script submit controls a Return's implicit submission may press - `{ candidates: { controls,
-   * more } }` with at most 3 `{ role, name }` and `more` true past 3 (agent core asks the strictest class among them, or
-   * unknown when there are more). Empty object when there are none; a failure reads as none, because the default-button
-   * read itself succeeded.
+   * CU-412 (11:27Z contract, D-107): the script submit controls a Return may press (implicitSubmitControls) as
+   * `{ candidates: [{ role, name, formContext? }] (at most 3), more }` - more true past 3, which agent core asks as
+   * unknown; it asks the strictest class among the candidates otherwise. Empty object when there are none; a failure
+   * reads as none, because the default-button read itself succeeded.
    */
   async #implicitCandidates(page, fieldObjectId) {
     try {
@@ -824,15 +825,15 @@ class BrowserEnvironment {
       if (list?.objectId === undefined) return {}
       const props = (await this.session.send(page, 'Runtime.getProperties', { objectId: list.objectId, ownProperties: true })).result.result ?? []
       const items = props.filter((p) => /^\d+$/.test(p.name)).sort((a, b) => Number(a.name) - Number(b.name))
-      if (items.length < 2) return {}
+      if (items.length < 1) return {}
       const controls = []
       for (const item of items.slice(0, 3)) {
         if (item.value?.objectId === undefined) continue
         const node = (await this.session.send(page, 'DOM.describeNode', { objectId: item.value.objectId })).result.node
         const described = await this.#describe(page, node.backendNodeId, undefined, { scanText: false })
-        if (described !== null) controls.push({ role: described.role, name: described.name })
+        if (described !== null) controls.push({ role: described.role, name: described.name, ...(described.formContext ? { formContext: described.formContext } : {}) })
       }
-      return { candidates: { controls, more: items.length > 3 } }
+      return controls.length > 0 ? { candidates: controls, more: items.length > 3 } : {}
     } catch {
       return {}
     }

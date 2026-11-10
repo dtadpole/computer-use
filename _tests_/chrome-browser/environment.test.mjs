@@ -955,7 +955,7 @@ test('CU-406: the Return target (defaultButton) carries the submit button\'s for
   }
 })
 
-test('CU-412: a Return whose implicit submission may press one of two script controls carries defaultCandidates (names, at most 3), outside the fingerprint', async () => {
+test('CU-412: a Return whose implicit submission may press one of two script controls carries defaultCandidates [{role, name}] (11:27Z contract)', async () => {
   const handlers = checkoutHandlers({ submit: false })
   const nodes = { 51: { backendNodeId: 51, nodeName: 'DIV', attributes: ['role', 'button'] }, 52: { backendNodeId: 52, nodeName: 'DIV', attributes: ['role', 'button'] } }
   const ax = { 51: 'Buy', 52: 'Delete account' }
@@ -971,7 +971,51 @@ test('CU-412: a Return whose implicit submission may press one of two script con
   try {
     const target = await env.focusedElement()
     assert.equal(target.defaultButton, null, 'no single control')
-    assert.deepEqual(target.defaultCandidates, { controls: [{ role: 'button', name: 'Buy' }, { role: 'button', name: 'Delete account' }], more: false })
+    assert.deepEqual(target.defaultCandidates, [{ role: 'button', name: 'Buy' }, { role: 'button', name: 'Delete account' }])
+    assert.equal('defaultCandidatesMore' in target, false, 'two: no More flag')
+  } finally {
+    await env.close()
+  }
+})
+
+test('CU-412: more than three script controls list the first three and set defaultCandidatesMore (agent core asks unknown)', async () => {
+  const handlers = checkoutHandlers({ submit: false })
+  const ids = { c0: 51, c1: 52, c2: 53, c3: 54 }
+  const names = { 51: 'Buy', 52: 'Sell', 53: 'Delete account', 54: 'Transfer' }
+  const node = (id) => ({ backendNodeId: id, nodeName: 'DIV', attributes: ['role', 'button'] })
+  const baseDescribe = handlers['DOM.describeNode']
+  handlers['DOM.describeNode'] = (params) => (ids[params.objectId] ? { result: { node: node(ids[params.objectId]) } } : names[params.backendNodeId] ? { result: { node: node(params.backendNodeId) } } : baseDescribe(params))
+  const baseAx = handlers['Accessibility.getPartialAXTree']
+  handlers['Accessibility.getPartialAXTree'] = (params) => (names[params.backendNodeId] ? { result: { nodes: [{ backendDOMNodeId: params.backendNodeId, role: { value: 'button' }, name: { value: names[params.backendNodeId] } }] } } : baseAx(params))
+  const baseCall = handlers['Runtime.callFunctionOn']
+  handlers['Runtime.callFunctionOn'] = (params) => (String(params.functionDeclaration).includes('implicitSubmitControls') ? { result: { result: { type: 'object', subtype: 'array', objectId: 'list' } } } : baseCall(params))
+  handlers['Runtime.getProperties'] = ({ objectId }) => (objectId === 'list' ? { result: { result: [...Object.keys(ids).map((k, i) => ({ name: String(i), value: { objectId: k } })), { name: 'length', value: { value: 4 } }] } } : { result: { result: [] } })
+  const run = harness({ handlers })
+  const env = await launchBrowserEnvironment(run.options)
+  try {
+    const target = await env.focusedElement()
+    assert.deepEqual(target.defaultCandidates.map((c) => c.name), ['Buy', 'Sell', 'Delete account'])
+    assert.equal(target.defaultCandidatesMore, true)
+  } finally {
+    await env.close()
+  }
+})
+
+test('CU-412 (D-107): beside a default submit the page script judges unrendered or nameless, the visible script control rides as a candidate', async () => {
+  const handlers = checkoutHandlers({ submit: true })
+  const baseDescribe = handlers['DOM.describeNode']
+  handlers['DOM.describeNode'] = (params) => (params.objectId === 'c0' || params.backendNodeId === 51 ? { result: { node: { backendNodeId: 51, nodeName: 'DIV', attributes: ['role', 'button'] } } } : baseDescribe(params))
+  const baseAx = handlers['Accessibility.getPartialAXTree']
+  handlers['Accessibility.getPartialAXTree'] = (params) => (params.backendNodeId === 51 ? { result: { nodes: [{ backendDOMNodeId: 51, role: { value: 'button' }, name: { value: 'Delete account' } }] } } : baseAx(params))
+  const baseCall = handlers['Runtime.callFunctionOn']
+  handlers['Runtime.callFunctionOn'] = (params) => (String(params.functionDeclaration).includes('implicitSubmitControls') ? { result: { result: { type: 'object', subtype: 'array', objectId: 'list' } } } : baseCall(params))
+  handlers['Runtime.getProperties'] = ({ objectId }) => (objectId === 'list' ? { result: { result: [{ name: '0', value: { objectId: 'c0' } }, { name: 'length', value: { value: 1 } }] } } : { result: { result: [] } })
+  const run = harness({ handlers })
+  const env = await launchBrowserEnvironment(run.options)
+  try {
+    const target = await env.focusedElement()
+    assert.notEqual(target.defaultButton, null, 'the default submit is still reported')
+    assert.deepEqual(target.defaultCandidates, [{ role: 'button', name: 'Delete account' }])
   } finally {
     await env.close()
   }

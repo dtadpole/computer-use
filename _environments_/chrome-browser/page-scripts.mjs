@@ -203,13 +203,17 @@ export function implicitSubmitButton(el) {
   if (blocking.length !== 1) return null
   const controls = Array.from(form.querySelectorAll ? form.querySelectorAll('[role="button"], button[type="button"]') : [])
     .filter((c) => !(c.disabled === true || (c.getAttribute && c.getAttribute('aria-disabled') === 'true')))
+    .filter((c) => !(c.closest && c.closest('[aria-hidden="true"]')))
   return controls.length === 1 ? controls[0] : null
 }
 
 /**
- * CU-412 (cu-coordinator 11:25Z): the same form's script submit controls when there are two or more - the Return then
- * presses one of them, the driver cannot tell which, so agent core asks the strictest class among them (fail closed).
- * Empty when a real submit button exists, implicit submission would not submit, or there are fewer than two.
+ * CU-412 (cu-coordinator 11:27Z, D-107): the form's script submit controls a Return may press besides, or instead of,
+ * its default button - agent core asks the strictest class among them (fail closed). Two or more when the form has no
+ * submit button and implicit submission would still submit it (exactly one blocking field; one control alone is the
+ * defaultButton path); one or more when its default submit button is not rendered, is aria-hidden or has no accessible
+ * name (that nameless default would hide the visible control's class). Disabled, aria-disabled and aria-hidden controls
+ * are never candidates. Empty otherwise.
  */
 export function implicitSubmitControls(el) {
   const IMPLICIT = ['text', 'search', 'email', 'url', 'tel', 'password', 'number', 'date', 'datetime-local', 'month', 'time', 'week']
@@ -217,11 +221,22 @@ export function implicitSubmitControls(el) {
   const form = el.form
   if (!form || !form.elements) return []
   const elements = Array.from(form.elements)
-  const realSubmit = elements.some((c) => { const t = String(c.type).toLowerCase(); return (c.tagName === 'BUTTON' && t === 'submit') || (c.tagName === 'INPUT' && (t === 'submit' || t === 'image')) })
-  if (realSubmit) return []
-  if (elements.filter((f) => f.tagName === 'INPUT' && IMPLICIT.includes(String(f.type).toLowerCase())).length !== 1) return []
+  const attr = (c, k) => (c.getAttribute ? c.getAttribute(k) : null)
   const controls = Array.from(form.querySelectorAll ? form.querySelectorAll('[role="button"], button[type="button"]') : [])
-    .filter((c) => !(c.disabled === true || (c.getAttribute && c.getAttribute('aria-disabled') === 'true')))
+    .filter((c) => !(c.disabled === true || attr(c, 'aria-disabled') === 'true'))
+    .filter((c) => !(c.closest && c.closest('[aria-hidden="true"]')))
+  const submit = elements.find((c) => { const t = String(c.type).toLowerCase(); return (c.tagName === 'BUTTON' && t === 'submit') || (c.tagName === 'INPUT' && (t === 'submit' || t === 'image')) })
+  if (submit) {
+    if (submit.disabled) return []
+    const unrendered = submit.hidden === true || (typeof getComputedStyle === 'function' && getComputedStyle(submit).display === 'none')
+      || (typeof submit.getClientRects === 'function' && submit.getClientRects().length === 0)
+    const ariaHidden = Boolean(submit.closest && submit.closest('[aria-hidden="true"]'))
+    const label = String(attr(submit, 'aria-label') || attr(submit, 'title') || (submit.tagName === 'INPUT'
+      ? (String(submit.type).toLowerCase() === 'image' ? attr(submit, 'alt') : (submit.hasAttribute && submit.hasAttribute('value') ? submit.value : 'Submit'))
+      : submit.textContent) || '').trim()
+    return unrendered || ariaHidden || label === '' ? controls : []
+  }
+  if (elements.filter((f) => f.tagName === 'INPUT' && IMPLICIT.includes(String(f.type).toLowerCase())).length !== 1) return []
   return controls.length >= 2 ? controls : []
 }
 

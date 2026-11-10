@@ -912,9 +912,31 @@ test('CU-412: implicitSubmitControls lists two or more script submit controls of
   assert.deepEqual(implicitSubmitControls(f), [buy, del])
   const single = field(); single.form = form([single], [del])
   assert.deepEqual(implicitSubmitControls(single), [], 'one control is the defaultButton path, not candidates')
-  const sub = { tagName: 'BUTTON', type: 'submit' }
+  const sub = { tagName: 'BUTTON', type: 'submit', textContent: 'Save' }
   const withSubmit = field(); withSubmit.form = form([withSubmit, sub], [buy, del])
-  assert.deepEqual(implicitSubmitControls(withSubmit), [], 'a real submit button: none')
+  assert.deepEqual(implicitSubmitControls(withSubmit), [], 'a rendered, named submit button: none')
   const a = field(); const b = field(); a.form = form([a, b], [buy, del])
   assert.deepEqual(implicitSubmitControls(a), [], 'two blocking fields: no implicit submission')
+})
+
+test('CU-412 (11:27Z, D-107): a default submit that is hidden, aria-hidden or nameless also reports the script controls - even one; aria-hidden controls never count', () => {
+  const field = () => ({ tagName: 'INPUT', type: 'text', form: null })
+  const div = (name, hidden = false) => ({ tagName: 'DIV', textContent: name, getAttribute: (k) => (k === 'role' ? 'button' : null), closest: (sel) => (hidden && sel === '[aria-hidden="true"]' ? {} : null) })
+  const form = (elements, controls) => ({ elements, querySelectorAll: () => controls })
+  const del = div('Delete account')
+  const cases = [
+    ['hidden attribute', { tagName: 'INPUT', type: 'submit', hidden: true, hasAttribute: () => false }],
+    ['no layout box', { tagName: 'BUTTON', type: 'submit', textContent: 'Go', getClientRects: () => [] }],
+    ['aria-hidden', { tagName: 'BUTTON', type: 'submit', textContent: 'Go', closest: (sel) => (sel === '[aria-hidden="true"]' ? {} : null) }],
+    ['nameless value=""', { tagName: 'INPUT', type: 'submit', value: '', hasAttribute: (k) => k === 'value', getAttribute: () => null }],
+  ]
+  for (const [label, submit] of cases) {
+    const f = field(); f.form = form([f, submit], [del])
+    assert.deepEqual(implicitSubmitControls(f), [del], label)
+  }
+  const plain = { tagName: 'INPUT', type: 'submit', hasAttribute: () => false, getAttribute: () => null }
+  const p = field(); p.form = form([p, plain], [del])
+  assert.deepEqual(implicitSubmitControls(p), [], 'an input submit with no value attribute reads as Submit: named')
+  const only = field(); only.form = form([only], [div('Delete account', true), div('Buy')])
+  assert.deepEqual(implicitSubmitControls(only).map((c) => c.textContent), [], 'one control left after aria-hidden is dropped: the defaultButton path, not candidates')
 })
