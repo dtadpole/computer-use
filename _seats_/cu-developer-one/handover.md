@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-10T07:15:00Z
+modified: 2026-11-10T10:15:00Z
 level: L1
-version: 3.15.0
+version: 3.16.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,19 +15,18 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; never drives the desktop. State at 07:15Z, 10 November.
+session worktree plus `--review` worktrees; never drives the desktop. State at 10:15Z, 10 November.
 
 ## Landed
 
-- Verified live tonight: CU-392, CU-395, CU-398 (#463), CU-400 (#466), CU-401 (#471); CU-391 Done.
+- Closed live: CU-398, CU-400, CU-401, CU-402/405, CU-406, CU-382, CU-395; #394, #418, #459 on main.
 
 ## Open (Highs first)
 
-- CU-402/405: #474 (policy) with #472, #482 (driver) - unit with all OKs, lands after #299/#393.
-- CU-406: #487 (Return judged by the click classifier on the default button) after #486; reviews at 1adbec0.
-- With OKs, landing: #459, #447, #448, #450, #453, #462, #469, #477 (CU-403), #478 (CU-404).
-- Guide #392 (OK at 073d5e3): add remote-desktop/VM viewers after #450/#453, then complete.
-- Read every inbox body in full; re-read before each push; check GATE notices before long runs.
+- CU-408: #504 (payments) both OKs, lands first. CU-409: #505 (positions, lending, approvals) in review.
+- Batch, main merged and OK'd: #447 #448 #450 #453 #462 #469 #477 #478 #417; then #497 (Bid), #501 (CU-407).
+- Guide #392 (OK): add remote-desktop/VM viewers after #450/#453, then complete.
+- Practice: read inbox bodies in full; OKs as signed PR comments; run long/browser steps under the run-lock file guard; name each hand-resolved hunk.
 
 ## Lessons
 
