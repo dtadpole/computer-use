@@ -697,7 +697,7 @@ func button(_ kind: String, _ x: Int, _ y: Int) -> JSON { ["kind": .string(kind)
 func testDispatcherBasics() {
   let h = Harness(fixtureWorld)
   let hello = h.dispatcher.hello(token: "t0k")
-  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.67", "the hello opens the run")
+  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.68", "the hello opens the run")
   check(hello["mode"] == "dry-run" && hello["grants"] == ["screen": true, "accessibility": true, "postEvents": true, "listenEvents": false], "a dry-run hello says so, with all four grants")
   check(h.ask("capture", ["maxSize": size800])["code"] == "no_scope", "capture needs a scope")
   check(h.ask("input", ["events": [key("keyDown", 1)], "mode": "global"])["code"] == "no_scope", "input needs a scope")
@@ -2128,6 +2128,48 @@ func testQuickActions() {
   check(short.unread && short.json["menuContextUnread"] == true && !short.quickActions, "a failed read on the walk says menuContextUnread, never a plain item")
 }
 
+func testFormContext() {
+  // CU-409: the desktop half of CU-402/CU-405's formContext - structural, bounded, never an entry's value.
+  typealias C = FormContext.Container
+  func group(_ verbs: [String?], selected: [String?] = [], entries: [[String?]] = [], role: String? = "AXGroup", subrole: String? = nil, truncated: Bool = false) -> C {
+    C(role: role, subrole: subrole, submitVerbs: verbs, selected: selected, entryLabels: entries, truncated: truncated)
+  }
+  check(FormContext.kind("Sell") == .trade && FormContext.kind("Buy BTC") == .trade && FormContext.kind("Withdraw") == .trade, "trade verbs")
+  check(FormContext.kind("Max") == .neutral && FormContext.kind("25%") == .neutral && FormContext.kind("Stop-limit") == .neutral && FormContext.kind(nil) == .neutral && FormContext.kind("→") == .neutral, "order-panel helpers and an unlabelled icon are neutral")
+  check(FormContext.kind("Cancel") == .other && FormContext.kind("Sell everything you own and more words than thirty") == .other, "anything else, and a long label, is other")
+  check(FormContext.lends(submitVerbs: ["Sell"]), "a container with only the pressed button lends")
+  check(FormContext.lends(submitVerbs: ["Buy", "Sell", "Max", nil]), "CU-405: only trade verbs and neutral helpers lend")
+  check(!FormContext.lends(submitVerbs: ["Sell", "Cancel"]), "a Cancel beside it voids the panel")
+  check(!FormContext.lends(submitVerbs: ["Max", "25%"]), "neutral helpers alone (no trade verb, two submits) do not lend")
+  // The walk.
+  let panel = group(["Sell"], selected: ["BTC"], entries: [["Amount", nil, nil, nil]])
+  check(FormContext.pick([panel]) == .object(["options": .array([.string("BTC")]), "amountEntry": .bool(true)]), "a bare Sell beside an asset pop-up and an amount entry")
+  check(FormContext.pick([group(["Sell"]), panel]) == FormContext.pick([panel]), "a group without a pop-up passes the walk on to its parent")
+  check(FormContext.pick([group(["Buy", "Sell", "Help"], selected: ["ETH"])]) == nil, "a page-wide group with another button never lends (the walk goes on, then ends)")
+  check(FormContext.pick([group(["Sell"]), group(["Sell", "Settings"], selected: ["BTC"]), group(["Sell"], selected: ["ETH"])]) == .object(["options": .array([.string("ETH")]), "amountEntry": .bool(false)]), "up to 3 levels")
+  check(FormContext.pick([group(["Sell"]), group(["Sell"]), group(["Sell"]), group(["Sell"], selected: ["BTC"])]) == nil, "never past 3 levels")
+  check(FormContext.pick([group(["Sell"], selected: ["BTC"], truncated: true)]) == nil, "a scan cut short never lends")
+  check(FormContext.pick([group(["Sell"], selected: ["BTC"], role: "AXWindow", truncated: true)]) == nil, "nor does a window scanned only in part")
+  check(FormContext.pick([group(["Sell", "Settings"], selected: ["BTC"], role: "AXWindow"), panel]) == nil, "the walk stops at a window that does not lend")
+  check(FormContext.pick([group(["Sell"], selected: ["BTC"], entries: [["Amount", nil, nil, nil]], role: "AXWindow")]) == FormContext.pick([panel]), "a native panel's controls are the window's own children: a window that lends and holds a pop-up is the form")
+  check(FormContext.pick([group(["Sell"], role: "AXWindow"), panel]) == nil, "a window with no pop-up is no form, and the walk ends there")
+  check(FormContext.pick([group(["Sell"], selected: ["BTC"], truncated: true), panel]) == FormContext.pick([panel]), "a group scanned only in part passes the walk on")
+  check(FormContext.pick([group([], role: "AXWebArea"), panel]) == nil, "and at a page's root")
+  check(FormContext.pick([group(["Sell", "Cancel"], selected: ["BTC"], role: "AXSheet")]) == nil, "a sheet that does not lend ends the walk")
+  check(FormContext.pick([group(["Confirm"], entries: [[nil, "Quantity", nil, nil]], role: "AXSheet")]) == .object(["options": .array([]), "amountEntry": .bool(true)]), "a sheet that lends needs no pop-up")
+  check(FormContext.pick([group(["Confirm", "Cancel"], selected: ["USDC"], subrole: "AXLandmarkForm")]) == .object(["options": .array([.string("USDC")]), "amountEntry": .bool(false)]), "a form landmark is the form whatever else it holds")
+  check(FormContext.pick([group(["Sell"], selected: ["BTC"], role: "AXWindow", subrole: "AXDialog")]) != nil, "a dialog window that lends is the form")
+  check(FormContext.pick([group(["Sell"], selected: ["", "x".padding(toLength: 25, withPad: "x", startingAt: 0)], entries: [["Note", nil, nil, nil]])]) == nil, "empty and over-long texts are skipped; a non-amount entry is no amount; nothing left is nil")
+  check(FormContext.shape(group(["Sell"], selected: ["A", "B", "C", "D"])) == .object(["options": .array([.string("A"), .string("B"), .string("C")]), "amountEntry": .bool(false)]), "at most 3 options")
+  check(FormContext.windowButtonSubroles.contains("AXCloseButton") && !FormContext.submitRoles.contains("AXPopUpButton"), "window buttons and pop-ups are not submits")
+  // #510 F1 (cu-coordinator 10:35Z): a combo box's value only when it is not editable, or equals one of its items.
+  check(FormContext.comboText(value: "BTC", editable: false, items: []) == "BTC", "a non-editable combo gives its value")
+  check(FormContext.comboText(value: "BTC", editable: true, items: ["BTC", "ETH"]) == "BTC", "an editable combo whose value is one of its items gives it")
+  check(FormContext.comboText(value: "my secret note", editable: true, items: ["BTC", "ETH"]) == nil, "an editable combo's free text (typed) gives nothing")
+  check(FormContext.comboText(value: "btc", editable: true, items: ["BTC"]) == nil && FormContext.comboText(value: "BTC", editable: true, items: []) == nil, "exact match only; no items read, nothing")
+  check(FormContext.comboText(value: nil, editable: false, items: []) == nil, "no value, nothing")
+}
+
 func testFileAncestorAndDropDestination() {
   // CU-387 fix (a): a row's child lends the nearest file-bearing ancestor's file, within the bounds.
   typealias L = FileAncestor.Level
@@ -2207,6 +2249,7 @@ struct UnitTests {
     testMenuTracking()
     testQuickActions()
     testFileAncestorAndDropDestination()
+    testFormContext()
     testAppleMenuClickTarget()
     testEndWatchdog()
     // Informational: whether the process that ran these tests is genuine node (true for Node.js Foundation builds).
