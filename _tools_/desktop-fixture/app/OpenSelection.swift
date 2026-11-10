@@ -150,6 +150,7 @@ final class OpenSelection: NSObject, NSTableViewDataSource, NSTableViewDelegate 
     content.addSubview(status)
     installMenus()
     let window = Windows.open("main", title: title, content: content)
+    AttachUpload.placeAtOrigin(window, content: content)
     window.makeFirstResponder(table)
   }
 
