@@ -487,6 +487,17 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     if (appleItem) {
       return { decision: 'block', class: null, rule: 'system_shortcut', reason: `${(action.keys ?? []).join('+')} fires the Apple menu's ${appleItem.name}; it acts beyond the approved app` }
     }
+    // CU-398 (High; cu-coordinator 04:16Z): a click, or Return/Space, on an Apple-menu item (the helper marks appleMenu by
+    // structure - the menu bar's first item) acts beyond the approved app like its chord; so does a button of the session's
+    // own Restart / Shut Down / Log Out confirmation (loginwindow). An app's own 'Log Out' or 'Restart Level' stays as today.
+    const activatesTarget = ['click', 'double_click', 'triple_click'].includes(action.type)
+      || (action.type === 'keypress' && Array.isArray(action.keys) && action.keys.some((key) => /^(return|enter|space)$/i.test(String(key))))
+    if (activatesTarget && target?.appleMenu === true) {
+      return { decision: 'block', class: null, rule: 'system_shortcut', reason: `${action.type === 'keypress' ? (action.keys ?? []).join('+') : action.type} on the Apple menu's "${String(target.name ?? '').trim()}"; it acts beyond the approved app` }
+    }
+    if (activatesTarget && target?.origin === 'com.apple.loginwindow') {
+      return { decision: 'block', class: null, rule: 'system_shortcut', reason: 'a button of the session\'s restart, shut down or log out confirmation; it acts beyond the approved app' }
+    }
     // Aiming at an excluded app is refused, and so is a target that names no app (fail closed); an excluded app that
     // came to the front is the person's (R65, R79).
     const aimed = target === null ? null : exclusions.isExcludedApp(target.origin)
