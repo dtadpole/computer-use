@@ -1,7 +1,16 @@
 import assert from 'node:assert/strict'
-import { test } from 'node:test'
+import { after, test } from 'node:test'
 
 import { createPolicy } from '../../_tools_/agent-core/policy.mjs'
+import { mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { createScriptedAdapter } from '../../_tools_/agent-core/adapter-scripted.mjs'
+import { createAppApprovals } from '../../_tools_/agent-core/app-approvals.mjs'
+import { createRunControl } from '../../_tools_/agent-core/control.mjs'
+import { createFakeEnvironment } from '../../_tools_/agent-core/fake-env.mjs'
+import { runTask } from '../../_tools_/agent-core/loop.mjs'
+import { readRun } from '../../_tools_/agent-core/trajectory.mjs'
 
 // CU-382 (Medium): a Finder Quick Action runs an owner's Automator workflow, like a Service - it asks; a menu whose
 // context could not be walked asks unknown.
@@ -30,4 +39,30 @@ test('CU-382: a Quick Action asks each time (once only), and Open in Terminal as
   const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: `app:${FINDER}`, target: { origin: FINDER, role: 'AXMenuItem', name: 'Resize Images', quickActions: true } })
   assert.equal(v.askEachTime, true)
   assert.equal(judge({ type: 'click', x: 1, y: 1, button: 'left' }, { origin: FINDER, role: 'AXMenuItem', name: 'Open in Terminal' }), 'permission/quick_action')
+})
+
+// D-103 (cu-researcher 08:07Z): the chord path end to end - the loop's bound item keeps the Quick Action mark and the
+// policy finds it in the bound list by name, so a chord bound to a custom workflow asks and a built-in one stays free.
+const chordTmp = mkdtempSync(join(tmpdir(), 'cu-382-chord-'))
+after(() => rmSync(chordTmp, { recursive: true, force: true }))
+const chordRun = async (label, answer) => {
+  const FINDER = 'com.apple.finder'
+  const control = createRunControl()
+  const environment = createFakeEnvironment({ kind: 'desktop', control, frontmost: FINDER, focused: { origin: FINDER, role: 'AXRow', name: 'report.pdf' } })
+  environment.menuItemForChord = async () => answer
+  const approvals = createAppApprovals({ path: join(chordTmp, `${label}.json`) })
+  approvals.grantAlways(FINDER, { by: 'api' })
+  const model = createScriptedAdapter({ frame: { width: 1440, height: 900 }, turns: [{ actions: [{ type: 'keypress', keys: ['META', 'SHIFT', 'U'] }] }, { final: 'done' }] })
+  const result = await runTask({ task: 'tidy', environment, model, control, runsDirectory: join(chordTmp, label), build: { commit: 'test', dirty: false }, apps: [FINDER], appApprovals: approvals })
+  return readRun(result.trajectoryDir).events.find((e) => e.kind === 'action' && e.action?.type === 'keypress')
+}
+
+test('CU-382 through the loop: a chord bound to a custom Quick Action asks; one bound to a built-in stays free', async () => {
+  const custom = await chordRun('custom', { items: [{ name: 'Upload to S3', quickActions: true, keyEquivalent: { char: 'U', modifiers: 1 } }] })
+  assert.equal(custom.rule, 'quick_action')
+  assert.notEqual(custom.status, 'done')
+  const single = await chordRun('single', { name: 'Upload to S3', quickActions: true, keyEquivalent: { char: 'U', modifiers: 1 } })
+  assert.equal(single.rule, 'quick_action')
+  const builtIn = await chordRun('builtin', { items: [{ name: 'Rotate Left', quickActions: true, keyEquivalent: { char: 'U', modifiers: 1 } }] })
+  assert.notEqual(builtIn.rule, 'quick_action')
 })
