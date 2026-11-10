@@ -359,6 +359,23 @@ function domainClass(list) {
   return null
 }
 
+const AUDIT_OBJECTS = [['cloudtrail'], ['audit', 'log'], ['audit', 'logging'], ['logging'], ['guardduty'], ['flow', 'log'], ['security', 'hub'], ['defender'], ['activity', 'log']]
+function cloudExposureClass(list, lower) {
+  if (list.length > 8) return null
+  const two = (list[0] === 'turn' || list[0] === 'switch') && list[1] === 'off'
+  const verb = two ? 'turn off' : list[0]
+  const rest = list.slice(two ? 2 : 1)
+  const core = rest.filter((t) => !FILLER.has(t))
+  const offVerb = ['turn off', 'disable', 'remove', 'stop', 'pause', 'deactivate', 'delete'].includes(verb)
+  if (offVerb && endsWithSeq(core, ['block', 'public', 'access'])) return 'permission'
+  if (offVerb && core.length <= 3 && AUDIT_OBJECTS.some((seq) => endsWithSeq(core, seq))) return 'permission'
+  if (verb === 'open' && core.length <= 2 && ['internet', 'world', 'public'].includes(core[core.length - 1])) return 'permission'
+  if (verb === 'allow' && (/(?:^|\s)(?:0\.0\.0\.0\/0|::\/0)(?:\s|$)/.test(lower) || (rest.includes('all') && ['traffic', 'inbound', 'ip', 'port', 'source'].includes(core[core.length - 1])))) return 'permission'
+  if (verb === 'create' && core[core.length - 1] === 'key' && core.length <= 3 && (core.includes('service') || core.includes('access') || core.includes('api'))) return 'credential'
+  if (verb === 'download' && core.length <= 2 && core[core.length - 1] === 'key') return 'credential'
+  return null
+}
+
 const DIVERSION_VERBS = new Set(['change', 'update', 'edit', 'add', 'set', 'replace', 'switch'])
 const DIVERSION_OBJECTS = [['direct', 'deposit'], ['bank', 'detail'], ['deposit', 'account'], ['routing', 'number'], ['account', 'number'],
   ['payout', 'account'], ['payout', 'method'], ['bank', 'account'], ['payout', 'detail']]
@@ -412,6 +429,10 @@ export function grammarClasses(name, role = '') {
   // (credential); nameservers, DNS records, WHOIS privacy off (permission).
   const domain = domainClass(list)
   if (domain) return [domain]
+  // CU-447 (High; cu-coordinator 21:12Z): exposing cloud resources or blinding their audit (permission, CU-417 family);
+  // minting a service-account or access key (credential).
+  const cloud = cloudExposureClass(list, lower)
+  if (cloud) return [cloud]
   // F2 guard (cu-coordinator 20:28Z): declining, denying or rejecting a request answers no - the grammar's own over-ask since
   // #554 ('Decline request'); older asks ('Decline invitation', CU-422's 'Decline offer') are untouched (the hook never sees them).
   if (['decline', 'deny', 'reject'].includes(list[0]) && list.slice(1).filter((t) => !FILLER.has(t)).every((t) => t === 'request' || t === 'this' || t === 'all')
