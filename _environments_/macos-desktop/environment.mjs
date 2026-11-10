@@ -1920,6 +1920,9 @@ class DesktopEnvironment {
       // core reads as unread and refuses in a browser (#204: 'absent means unread' - never null, which a strict check
       // could take for a read). Outside the fingerprint, never in run records.
       ...(typeof element.inWebArea === 'boolean' ? { inWebArea: element.inWebArea } : {}),
+      // CU-418 (b) (helper 0.2.70): a checkbox, switch or radio button's state before the action - true, false or
+      // 'mixed' as the helper read its AXValue; absent from an older helper or another role. Outside the fingerprint.
+      ...(element.checked === true || element.checked === false || element.checked === 'mixed' ? { checked: element.checked } : {}),
       // CU-76: part of a system privacy or permission prompt (the helper's, from structure); agent core hands it off.
       systemPrompt: element.systemPrompt === true,
       // CU-154: a menu item's key equivalent ({ char, modifiers }), so agent core knows Copy, Cut and Paste by the

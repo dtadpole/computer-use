@@ -5,7 +5,7 @@ import Foundation
 /// The helper's identity; `build.sh` writes the same bundle id into Info.plist.
 enum HelperIdentity {
   static let bundleId = "com.reflection.cu-helper"
-  static let version = "0.2.69"
+  static let version = "0.2.70"
   /// The value every synthetic event carries in `kCGEventSourceUserData`: 0x43555345, ASCII "CUSE"
   /// (input-and-targets.md, verify-kit's SYNTHETIC_TAG). Not a secret: an event from another process with this tag
   /// could only fail to pause the run, never act.
@@ -439,6 +439,23 @@ struct DefaultButtonRead: Equatable {
   var candidates: [JSON] = []
   var more = false
   static let failed = DefaultButtonRead(button: .null, read: false)
+}
+
+/// CU-418 option (b) (cu-coordinator 14:19Z, the Medium batch): a toggle's state from its AXValue - an AXCheckBox (also a
+/// switch or a toggle by subrole) or an AXRadioButton: 0 off, 1 on, 2 mixed. Only these roles' AXValue is ever read (a
+/// toggle's state, never text); any other value, or another role, gives nothing.
+enum ToggleState {
+  static let roles: Set<String> = ["AXCheckBox", "AXRadioButton"]
+  static func reads(role: String?) -> Bool { role.map { roles.contains($0) } ?? false }
+  static func checked(role: String?, value: Int?) -> JSON? {
+    guard reads(role: role), let value else { return nil }
+    switch value {
+    case 0: return .bool(false)
+    case 1: return .bool(true)
+    case 2: return .string("mixed")
+    default: return nil
+    }
+  }
 }
 
 /// CU-412 (cu-coordinator 11:27Z, the desktop half): HTML submits a form on Return in a field even when its only submit

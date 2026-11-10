@@ -366,6 +366,10 @@ enum Accessibility {
       shape["inWebArea"] = WebArea.contains(path: walk.path.map { $0.role }, ending: walk.ending).map { .bool($0) } ?? .null
     }
     if client != nil { shape["hostedBy"] = .string(PanelAttribution.serviceBundleId) }
+    // CU-418 (b): a checkbox, switch or radio button's state - AXValue read only behind the role check (ToggleState).
+    if ToggleState.reads(role: role), let checked = ToggleState.checked(role: role, value: (attribute(element, "AXValue") as? NSNumber)?.intValue) {
+      shape["checked"] = checked
+    }
     // CU-154: a menu item's key equivalent, so Copy / Cut / Paste are known in any language (Command-V is a paste
     // whatever the title says).
     if role == "AXMenuItem", let key = KeyEquivalent.shape(char: string(element, "AXMenuItemCmdChar"),

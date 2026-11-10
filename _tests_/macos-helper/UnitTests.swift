@@ -697,7 +697,7 @@ func button(_ kind: String, _ x: Int, _ y: Int) -> JSON { ["kind": .string(kind)
 func testDispatcherBasics() {
   let h = Harness(fixtureWorld)
   let hello = h.dispatcher.hello(token: "t0k")
-  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.69", "the hello opens the run")
+  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.70", "the hello opens the run")
   check(hello["mode"] == "dry-run" && hello["grants"] == ["screen": true, "accessibility": true, "postEvents": true, "listenEvents": false], "a dry-run hello says so, with all four grants")
   check(h.ask("capture", ["maxSize": size800])["code"] == "no_scope", "capture needs a scope")
   check(h.ask("input", ["events": [key("keyDown", 1)], "mode": "global"])["code"] == "no_scope", "input needs a scope")
@@ -2170,6 +2170,16 @@ func testFormContext() {
   check(FormContext.comboText(value: nil, editable: false, items: []) == nil, "no value, nothing")
 }
 
+func testToggleState() {
+  // CU-418 (b): a toggle's state from AXValue, and only for a checkbox (switch, toggle) or radio button.
+  check(ToggleState.checked(role: "AXCheckBox", value: 0) == .bool(false) && ToggleState.checked(role: "AXCheckBox", value: 1) == .bool(true), "off, on")
+  check(ToggleState.checked(role: "AXCheckBox", value: 2) == .string("mixed"), "mixed")
+  check(ToggleState.checked(role: "AXRadioButton", value: 1) == .bool(true), "a radio button too")
+  check(ToggleState.checked(role: "AXCheckBox", value: 7) == nil && ToggleState.checked(role: "AXCheckBox", value: nil) == nil, "an odd or missing value gives nothing")
+  check(ToggleState.checked(role: "AXTextField", value: 1) == nil && !ToggleState.reads(role: "AXTextField") && !ToggleState.reads(role: nil), "never another role's AXValue (an entry's value is text)")
+  check(ToggleState.reads(role: "AXCheckBox") && ToggleState.reads(role: "AXRadioButton"), "the two toggle roles")
+}
+
 func testDefaultCandidates() {
   // CU-412: a web form's Return candidates when the window names no default button.
   typealias L = DefaultCandidates.Level
@@ -2271,6 +2281,7 @@ struct UnitTests {
     testFileAncestorAndDropDestination()
     testFormContext()
     testDefaultCandidates()
+    testToggleState()
     testAppleMenuClickTarget()
     testEndWatchdog()
     // Informational: whether the process that ran these tests is genuine node (true for Node.js Foundation builds).

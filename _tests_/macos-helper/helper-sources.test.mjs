@@ -311,3 +311,10 @@ test('CU-412: Return candidates come only from a web area whose window reads a p
   assert.match(scan, /\(attribute\(next\.element, "AXEnabled"\) as\? NSNumber\)\?\.boolValue == false/, 'a disabled button is no candidate')
   assert.match(files['Dispatcher.swift'], /if defaultButton\.more \{ reply\["defaultCandidatesMore"\] = \.bool\(true\) \}/)
 })
+
+test('CU-418 (b): a toggle state is read from AXValue only behind the toggle-role check', () => {
+  const access = files['Accessibility.swift']
+  assert.match(access, /if ToggleState\.reads\(role: role\), let checked = ToggleState\.checked\(role: role, value: \(attribute\(element, "AXValue"\) as\? NSNumber\)\?\.intValue\) \{/,
+    'the role check comes before the AXValue read')
+  assert.match(files['Policy.swift'], /static let roles: Set<String> = \["AXCheckBox", "AXRadioButton"\]/)
+})
