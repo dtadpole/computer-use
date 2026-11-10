@@ -2,7 +2,7 @@
 title: Consent phrase grammar (draft)
 created: 2026-11-10T15:40:00Z
 modified: 2026-11-10T16:00:00Z
-version: 0.3.0
+version: 0.3.1
 description: Draft design note - replace agent-core's enumerated consent phrases with a verb-class x object-class grammar plus folding rules and free guards, so the next near form is caught by structure instead of a new filing. Doc only; cu-developer-one owns any code, cu-coordinator rules first.
 grounded_in:
   - source: cu-coordinator's requests of 2026-11-10 14:14Z and 15:23Z (pattern of word-list Highs CU-408..422; draft the note now, doc only)
@@ -231,8 +231,8 @@ The 75 false asks fall into a few clusters, each a sense-table entry rather than
 
 The 50 right asks include strings that the current policy leaves free today:
 
-- credential: `Change Access Code`, `Create Access Code` and `Edit Access Code` (Home), `Update iCloud Account
-  Password`, `Add Password`, `New Password`;
+- credential: `Update iCloud Account Password`, `Add Password`, `New Password`; access codes (`Change`, `Create`
+  and `Edit Access Code` in Home) now ask permission, as CU-423 rules (15:50Z). Ruled classes win in the tables;
 - permission: `Allow Photo Library Access`, `Make Playlist Public Anyway`;
 - submit: `Message All Participants`.
 
