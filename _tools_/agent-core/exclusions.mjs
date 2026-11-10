@@ -35,6 +35,16 @@ export const EXCLUDED_APPS = Object.freeze([
       'in.sinew.*', 'me.proton.pass', 'com.keepersecurity.*',
     ]),
   }),
+  // CU-394 (cu-coordinator 02:50Z): a remote desktop, screen share or virtual machine shows another computer as one opaque
+  // canvas - every click there is an unknown target on a machine no approval covered (like CU-252's terminals).
+  Object.freeze({
+    kind: 'remote_surface',
+    ids: Object.freeze([
+      'com.apple.ScreenSharing', 'com.microsoft.rdc.*', 'com.teamviewer.*', 'com.philandro.anydesk', 'com.parallels.*',
+      'com.vmware.fusion', 'com.utmapp.UTM', 'org.virtualbox.app.*', 'com.p5sys.jump.*', 'com.realvnc.*',
+      'com.lemonmojo.RoyalTSX.*', 'com.splashtop.*',
+    ]),
+  }),
   // A clipboard history shows what the person copied before the run; D-031 allows copy and paste, not reading that.
   Object.freeze({
     kind: 'clipboard_manager',
