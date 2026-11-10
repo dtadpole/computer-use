@@ -644,6 +644,22 @@ function defaultButtonOf(value) {
 }
 
 /**
+ * CU-412 (helper 0.2.69): Return's candidates in a web form with no native default - two or three buttons, each read as
+ * defaultButtonOf reads one (role, name, panel, formContext) - as `{ candidates }`. Fail closed (cu-developer-two's F1 on
+ * #520): a list the driver cannot use whole - more than three, fewer than two, or any unreadable or nameless entry - is `{ more: true }`
+ * (agent core asks unknown), never dropped; no list at all (an older helper, or none sent) is null.
+ */
+export function defaultCandidatesOf(value) {
+  if (value === undefined || value === null) return null
+  if (!Array.isArray(value)) return { more: true }
+  if (value.length === 0) return null
+  // cu-researcher 11:54Z: a candidate with no name (an icon-only button) is unreadable too - it may be the risky one.
+  const read = value.map(defaultButtonOf)
+  if (value.length < 2 || value.length > 3 || read.some((one) => one === null || one.name === null || one.name.trim() === '')) return { more: true }
+  return { candidates: read }
+}
+
+/**
  * CU-409 (helper 0.2.68): a button's form context as the helper reads it (FormContext: the nearest form, sheet, dialog or
  * group that lends within 3 levels) - `options`, at most 3 selected pop-up or combo box texts of at most 24 characters,
  * and `amountEntry`, whether an entry's label words name an amount (never its value). The same shape the chrome driver
@@ -2030,6 +2046,11 @@ class DesktopEnvironment {
   #focusedOf(reply) {
     const element = this.#describe(reply.element)
     const defaultButton = defaultButtonOf(reply.defaultButton)
+    // CU-412 (helper 0.2.69): in a web form whose window names no default button, Return's candidates - two or three
+    // ({role, name, formContext?}, as defaultButtonOf reads each) - or more than can be judged (agent core asks unknown).
+    const candidates = defaultCandidatesOf(reply.defaultCandidates)
+    const more = reply.defaultCandidatesMore === true || candidates?.more === true
+    const candidatesFields = { ...(candidates?.candidates ? { defaultCandidates: candidates.candidates } : {}), ...(more ? { defaultCandidatesMore: true } : {}) }
     const defaultButtonRead = defaultButtonReadOf(reply.defaultButtonRead)
     const sheet = sheetOf(reply.sheet)
     const pasteboardChangeCount = changeCountOf(reply.changeCount)
@@ -2049,7 +2070,7 @@ class DesktopEnvironment {
       if (sheet !== true && defaultButton === null && defaultButtonRead !== false) return null
       return { ...this.#describe(appOf(reply.app)), noFocus: true, defaultButton, defaultButtonRead, sheet, pasteboardChangeCount, pasteboardHasFile, textEntered }
     }
-    return { ...element, defaultButton, defaultButtonRead, sheet, pasteboardChangeCount, pasteboardHasFile, textEntered }
+    return { ...element, defaultButton, defaultButtonRead, ...candidatesFields, sheet, pasteboardChangeCount, pasteboardHasFile, textEntered }
   }
 
   /**
