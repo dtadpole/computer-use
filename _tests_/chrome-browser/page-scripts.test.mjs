@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import vm from 'node:vm'
 
-import { accessKeyElement, accessKeyOf, keyChoice, selectKeyOption, selectTypeOptions, activatableAncestor, clickLabel, closedRootHoldsEntry, collectPageText, deepActiveElement, describeElement, DRAG_TEXT_MAX, dragTextAt, implicitSubmitButton, pageExpression, selectionContainer, textEntered } from '../../_environments_/chrome-browser/page-scripts.mjs'
+import { implicitSubmitControls, accessKeyElement, accessKeyOf, keyChoice, selectKeyOption, selectTypeOptions, activatableAncestor, clickLabel, closedRootHoldsEntry, collectPageText, deepActiveElement, describeElement, DRAG_TEXT_MAX, dragTextAt, implicitSubmitButton, pageExpression, selectionContainer, textEntered } from '../../_environments_/chrome-browser/page-scripts.mjs'
 import { CARD } from '../fixture-shapes/shapes.mjs'
 
 const DEFAULT_STYLE = { visibility: 'visible', opacity: '1', fontSize: '16px', color: 'rgb(0, 0, 0)', backgroundColor: 'rgba(0, 0, 0, 0)' }
@@ -878,4 +878,60 @@ test('CU-405: trade verbs beside order-panel helpers (N%, Max/Min/Half, Limit/Ma
   assert.deepEqual(describeElement(sellIn(panel([btn('Buy'), btn('Sell'), btn('All')]))).formContext.options, ['ETH'], "'All' is a helper (cu-coordinator 06:45Z)")
   assert.equal('formContext' in describeElement(sellIn(panel([btn('Buy'), btn('Sell'), btn('<<<')]))), false, 'three symbols are not one symbol')
   assert.equal('formContext' in describeElement(sellIn(panel([btn('Sell'), btn('Cancel')]))), false, 'Sell + Cancel: none')
+})
+
+test('CU-412 (D-107): with no submit button, a one-field form whose only script submit control is a [role=button] (or button type=button) makes it the Return target', () => {
+  const ib = (el) => implicitSubmitButton(el, implicitSubmitControls)
+  const field = (type = 'text') => ({ tagName: 'INPUT', type, form: null })
+  const div = (name, attrs = {}) => ({ tagName: 'DIV', textContent: name, getAttribute: (k) => (k in attrs ? attrs[k] : null) })
+  const form = (elements, controls) => ({ elements, querySelectorAll: () => controls })
+  const one = field(); const del = div('Delete account', { role: 'button' })
+  one.form = form([one], [del])
+  assert.equal(ib(one), del, 'the div is what the Return presses')
+  assert.equal(implicitSubmitButton(one), null, 'without the controls reader the CU-150 path is unchanged')
+  const typeButton = { tagName: 'BUTTON', type: 'button', disabled: false }
+  const f2 = field(); f2.form = form([f2, typeButton], [typeButton])
+  assert.equal(ib(f2), typeButton, 'a button type=button counts too')
+  const search = field('search'); search.form = form([search], [])
+  assert.equal(ib(search), null, 'a search form with no control: none (stays free)')
+  const two = field(); two.form = form([two], [div('Buy', { role: 'button' }), div('Sell', { role: 'button' })])
+  assert.equal(ib(two), null, 'two controls: no single default (they are candidates)')
+  assert.equal(implicitSubmitControls(two).length, 2)
+  const a = field(); const b = field(); a.form = form([a, b], [del])
+  assert.equal(ib(a), null, 'two blocking fields: implicit submission does not submit')
+  assert.deepEqual(implicitSubmitControls(a), [])
+  const off = field(); off.form = form([off], [div('Delete account', { role: 'button', 'aria-disabled': 'true' })])
+  assert.equal(ib(off), null, 'an aria-disabled control: none')
+  const sub = { tagName: 'BUTTON', type: 'submit', disabled: false, textContent: 'Save' }
+  const real = field(); real.form = form([real, sub], [del])
+  assert.equal(ib(real), sub, 'a rendered, named submit button still wins')
+  assert.deepEqual(implicitSubmitControls(real), [])
+})
+
+test('CU-412 (D-107): a default submit that is hidden, layout-less, aria-hidden or nameless yields to the script controls; aria-hidden controls never count', () => {
+  const ib = (el) => implicitSubmitButton(el, implicitSubmitControls)
+  const field = () => ({ tagName: 'INPUT', type: 'text', form: null })
+  const div = (name, hidden = false) => ({ tagName: 'DIV', textContent: name, getAttribute: (k) => (k === 'role' ? 'button' : null), closest: (sel) => (hidden && sel === '[aria-hidden="true"]' ? {} : null) })
+  const form = (elements, controls) => ({ elements, querySelectorAll: () => controls })
+  const del = div('Delete account'); const buy = div('Buy')
+  const cases = [
+    ['hidden attribute', { tagName: 'INPUT', type: 'submit', hidden: true, hasAttribute: () => false }],
+    ['no layout box', { tagName: 'BUTTON', type: 'submit', textContent: 'Go', getClientRects: () => [] }],
+    ['aria-hidden', { tagName: 'BUTTON', type: 'submit', textContent: 'Go', closest: (sel) => (sel === '[aria-hidden="true"]' ? {} : null) }],
+    ['nameless value=""', { tagName: 'INPUT', type: 'submit', value: '', hasAttribute: (k) => k === 'value', getAttribute: () => null }],
+  ]
+  for (const [label, submit] of cases) {
+    const f = field(); f.form = form([f, submit], [del])
+    assert.equal(ib(f), del, `${label}: the visible div is the default`)
+    const g = field(); g.form = form([g, submit], [buy, del])
+    assert.equal(ib(g), null, `${label}: two controls are candidates`)
+    assert.deepEqual(implicitSubmitControls(g), [buy, del])
+    const h = field(); h.form = form([h, submit], [])
+    assert.equal(ib(h), submit, `${label}: no control - the submit itself, as before`)
+  }
+  const plain = { tagName: 'INPUT', type: 'submit', hasAttribute: () => false, getAttribute: () => null }
+  const p = field(); p.form = form([p, plain], [del])
+  assert.equal(ib(p), plain, 'an input submit with no value attribute reads as Submit: named, it stays the default')
+  const only = field(); only.form = form([only], [div('Delete account', true), buy])
+  assert.equal(ib(only), buy, 'the aria-hidden control is dropped, the one left is the default')
 })
