@@ -330,6 +330,8 @@ enum Accessibility {
                                 displayText: { displayText(element) }, staticValue: { string(element, "AXValue") })
     let captionValue = Caption.forTarget(own: caption(element, role: role), leaf: captionLeaf.flatMap { caption($0, role: string($0, "AXRole")) })
     let placeholderValue = Placeholder.applies(role: role) ? Placeholder.pick(role: role, raw: string(element, "AXPlaceholderValue")) : nil
+    // CU-387: the file a row's child shows is its row's or cell's (FileAncestor) when it has none of its own.
+    let file = fileOf(element, role: role)
     var shape: [String: JSON] = [
       "bundleId": .string(bundle),
       "pid": owner.map { .int(Int($0)) } ?? .null,
@@ -340,8 +342,8 @@ enum Accessibility {
       "secure": .bool(subrole == secureSubrole || role == secureSubrole),
       "opaque": .bool(title == nil && genericRoles.contains(role ?? "AXUnknown")),
       // What a launch_code check reads (design 0.3.4): the file an element shows and its URL, approved apps only.
-      "filename": .optionalString(string(element, "AXFilename")),
-      "url": .optionalString(urlString(element)),
+      "filename": .optionalString(file.filename),
+      "url": .optionalString(file.url),
       "editable": .bool(editable),
       // CU-194: where the element's window (or sheet) sits, so the driver can key a field by its frame within it - a
       // window moved between two reads keeps the key. Global top-left points; null when AXWindow cannot be read.
@@ -375,6 +377,9 @@ enum Accessibility {
     if role == "AXMenuItem" { for (key, value) in menuContext(of: element, title: string(element, "AXTitle")).json { shape[key] = value } }
     // CU-382: a button in Finder's preview-pane Quick Actions row is marked like a Quick Actions menu item.
     if role == "AXButton", inQuickActionsRow(element, title: string(element, "AXTitle") ?? string(element, "AXDescription")) { shape["quickActions"] = .bool(true) }
+    if file.fromAncestor { shape["fileFrom"] = .string("ancestor") }
+    // CU-392: a Finder drop destination that sends a file away (DropDestination), the value only.
+    if let destination = dropDestination(element, bundle: bundle, role: role) { shape["dropDestination"] = .string(destination) }
     // CU-372: a pop-up button takes type-ahead and arrows without opening its menu, so it says what it holds - its menu
     // items as AX shows them closed (PopUpItems), never by opening the menu.
     // A pull-down button is AXMenuButton in AppKit: the same read, marked pullsDown (its title is a label, not a value).
@@ -431,6 +436,42 @@ enum Accessibility {
     }
     let inFinder = pid(item).flatMap { bundleId(pid: $0) } == QuickActionsMenu.finderBundleId
     return MenuContext.of(itemTitle: title, levels: levels, inFinder: inFinder, unread: unread)
+  }
+
+  /// CU-387: an element's own AXFilename/AXURL, else - for a row's content (FileAncestor.lendingRoles) - the nearest
+  /// file-bearing ancestor's within FileAncestor's bounds. Attributes only.
+  static func fileOf(_ element: AXUIElement, role: String?) -> (filename: String?, url: String?, fromAncestor: Bool) {
+    let own = (string(element, "AXFilename"), urlString(element))
+    if own.0 != nil || own.1 != nil { return (own.0, own.1, false) }
+    guard let role, FileAncestor.lendingRoles.contains(role) else { return (nil, nil, false) }
+    var levels: [FileAncestor.Level] = []
+    var node = elementAttribute(element, "AXParent")
+    while let current = node, levels.count < FileAncestor.maxLevels {
+      let level = FileAncestor.Level(role: string(current, "AXRole"), filename: string(current, "AXFilename"), url: urlString(current))
+      levels.append(level)
+      if level.role == "AXWindow" || level.filename != nil || level.url != nil || FileAncestor.stopRoles.contains(level.role ?? "") { break }
+      node = elementAttribute(current, "AXParent")
+    }
+    guard let picked = FileAncestor.pick(levels) else { return (nil, nil, false) }
+    return (picked.filename, picked.url, true)
+  }
+
+  /// CU-392: in Finder, where a drop on this element sends a file (DropDestination): the window's title, else the
+  /// element's own sidebar-row title (the row, its cell or its text, up to 3 levels) inside an outline. Titles stay here.
+  static func dropDestination(_ element: AXUIElement, bundle: String?, role: String?, table: DropDestination = .current) -> String? {
+    guard bundle == QuickActionsMenu.finderBundleId else { return nil }
+    var rowTitle: String? = role == "AXStaticText" ? string(element, "AXValue") : string(element, "AXTitle")
+    var inOutline = false
+    var node = elementAttribute(element, "AXParent")
+    for _ in 0..<4 {
+      guard let current = node else { break }
+      let currentRole = string(current, "AXRole")
+      if currentRole == "AXOutline" { inOutline = true; break }
+      if currentRole == "AXWindow" { break }
+      if rowTitle == nil || rowTitle?.isEmpty == true { rowTitle = string(current, "AXTitle") ?? string(current, "AXDescription") }
+      node = elementAttribute(current, "AXParent")
+    }
+    return table.of(inFinder: true, windowTitle: windowTitle(of: element), rowTitle: rowTitle, inOutline: inOutline)
   }
 
   /// CU-382: a button in a Quick Actions row (Finder's preview pane) - a group named 'Quick Actions' (AXTitle or

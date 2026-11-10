@@ -1883,6 +1883,9 @@ class DesktopEnvironment {
       // that could not finish - each present only when true; outside the fingerprint, and never in run records.
       ...(element.quickActions === true ? { quickActions: true } : {}),
       ...(element.menuContextUnread === true ? { menuContextUnread: true } : {}),
+      // CU-392 (helper 0.2.67): where a drop in Finder sends a file - 'airdrop', 'shared' or 'server' - from Finder's own
+      // strings in the helper (the raw title never leaves it); present only when one of those.
+      ...(['airdrop', 'shared', 'server'].includes(element.dropDestination) ? { dropDestination: element.dropDestination } : {}),
       menuPath: menuPathOf(element.menuPath),
       // CU-187: the label that captions a non-entry element (AXTitleUIElement's title, else its row's or cell's sibling
       // title, as the helper reads it) - never its value or its own title. A string of at most 80 characters, null when
