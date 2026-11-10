@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-10T03:50:00Z
+modified: 2026-11-10T05:10:00Z
 level: L1
-version: 3.13.0
+version: 3.14.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,19 +15,19 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; never drives the desktop. State at 03:50Z, 10 November.
+session worktree plus `--review` worktrees; never drives the desktop. State at 05:10Z, 10 November.
 
 ## Landed
 
-- Verified: ... CU-377, CU-380, CU-386, CU-388, CU-392; CU-361 in Verify. On main: #429, #437 (CU-387 Medium pin).
+- Verified: ... CU-388, CU-392, CU-395 (+ #459 follow-up); CU-361 in Verify.
 
 ## Open (Highs first)
 
-- CU-395 High: #454 (physical class asks each time; Home and Find My excluded) - reviews, stand-in row, full gate.
-- CU-394: #450 (remote_surface) and #453 (remotedesktop.google.com fixed-deny) - OKs, landing.
-- With OKs, landing: #447 (CU-375/385/389), #448 (CU-393), #433 (CU-391). Also #411, #417, #418, #404, #394.
-- Guide PR #392 (486 words, OK): only the mailto line after #355, then complete.
-- D-101/D-103/D-104: suites before review; probe through the real loop; guarded cd, git -C.
+- CU-398 High: #463 (Apple-menu click/Return, loginwindow) in the unit [#423 #442 #443 #463 #433] - one install.
+- CU-400 High: #466 (trade/swap/stake/sign/bridge/mint ask purchase) - both OKs, holds the lane.
+- With OKs, landing: #450, #453 (CU-394), #462 (CU-396/397), #469 (CU-399), #447, #448, #433, #459.
+- Guide PR #392 (OK): one round after #450 (mailto, remote/VM, Home/Find My, physical line), then complete.
+- Read a ruling in full and re-read the inbox before every push; D-101/D-103/D-104.
 
 ## Lessons
 
