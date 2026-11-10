@@ -84,6 +84,9 @@ const LOCALE_ID_NAMES = Object.freeze(['reisepass', '…passnummer', 'geburtsdat
   '여권', '여권번호', '생년월일', '주민등록번호', '계좌번호', '사업자등록번호'])
 const WORDS = Object.freeze({
   purchase: ['buy', 'pay', 'order', 'place order', 'checkout', 'check out', 'subscribe', 'donate', 'purchase', 'transfer', 'withdraw', 'wire', 'send money',
+    // CU-410 (High; cu-coordinator 10:17Z): billing wordings one word from the asking ones.
+    'add seats', 'add licenses', 'add credits', 'top up credits', 'resume subscription', 'upgrade seats', 'gift a subscription',
+    'send gift', 'get tickets',
     // CU-408 (High; cu-coordinator 09:43Z): payments, schedules, autopay, refunds and charges move money.
     'confirm payment', 'authorize payment', 'authorise payment', 'submit payment', 'make payment', 'make a payment', 'pay now',
     'schedule payment', 'schedule a payment', 'set up autopay', 'enable autopay', 'turn on autopay', 'issue refund', 'issue a refund',
@@ -112,6 +115,9 @@ const WORDS = Object.freeze({
     'renew plan', ...ZH_WORDS.purchase, ...LOCALE_WORDS.purchase],
   // CU-135: replace and overwrite (a save panel's 'already exists' sheet), don't save (a close sheet discards work).
   delete: ['delete', 'remove', 'discard', 'erase', 'empty trash', 'cancel subscription', 'replace', 'overwrite', "don't save", 'don\u2019t save',
+    // CU-411 (High; cu-coordinator 11:00Z): closing, terminating, resetting or wiping an account or its data.
+    'close my account', 'close account', 'terminate account', 'reset account', 'clear data', 'clear all data', 'wipe data',
+    'erase account', 'factory reset',
     // CU-401: disabling an account, like deactivating it.
     'disable account', 'disable my account',
     // CU-146 (the CU-145 audit): destructive labels the list missed.
@@ -120,6 +126,8 @@ const WORDS = Object.freeze({
     // cu-researcher's 13:23Z sweep: unsaved edits lost, like Discard Changes.
     'revert to saved', 'revert all changes', ...ZH_WORDS.delete, ...LOCALE_WORDS.delete],
   permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke',
+    // CU-411: ownership and admin grants widen access.
+    'make owner', 'make co-owner', 'transfer ownership', 'make admin', 'grant admin',
     // CU-408: adding a payee widens who can be paid.
     'add payee', 'add a payee', 'add recipient', 'add beneficiary',
     // CU-401: leaving a shared space or unlinking an account.
@@ -184,6 +192,11 @@ const UNLOCK_PHYSICAL = new RegExp(`\\bunlock\\b.*\\b${PHYSICAL_NOUN}\\b|\\b${PH
 const TRADE_ASSET = /\b(?:btc|eth|usd|eur|gbp|jpy|usdt|usdc|dai|sol|xrp|ada|doge|bnb|bitcoin|ethereum|crypto|coins?|tokens?|shares?|stocks?)\b/i
 const TRADE_WORDS = /\b(?:trade|trading|swap|swaps|stake|staking|unstake|sell|selling|bridge|mint|minting)\b/gi
 const TRADE_NAV = /\b(?:trade|trading|swap|swaps|stake|staking|unstake|sell|selling|bridge|mint|minting)\b[\s\S]*\b(?:history|settings|faq|guide|policy|fees|rates|limits)\b/i
+// cu-coordinator 11:13Z adds 'Rotate secret', 'Regenerate token', 'New token' and a settings 'Reset password' (CU-401's family).
+const KEY_TOKEN_ACT = /^\s*(?:(?:rotate|regenerate|revoke)\s+(?:the\s+|your\s+)?(?:api\s+|access\s+|secret\s+)?(?:key|secret|token)|(?:generate|create|revoke|new)\s+(?:an?\s+|new\s+)?(?:api\s+|access\s+|personal\s+access\s+)?token|new\s+api\s+key)\b/i
+const RESET_PASSWORD = /^\s*reset\s+(?:your\s+|my\s+)?password\s*$/i
+// CU-411 round 2: my / your / the between the verb and account / data ('Close your account', 'Clear my data').
+const ACCOUNT_WIPE = /^\s*(?:(?:close|terminate|reset|erase)\s+(?:my\s+|your\s+|the\s+)account|(?:clear|wipe|erase)\s+(?:all\s+)?(?:my\s+|your\s+|the\s+)(?:all\s+)?data)\b/i
 const PRECEDENCE = ['physical', 'purchase', 'launch_code', 'delete', 'permission', 'page_dialog', 'credential', 'sensitive_data', 'submit', 'new_site', 'install']
 const PHYSICAL = ['unlatch', 'disarm', 'disarm security system', 'disarm alarm',
   'turn off alarm', 'open garage', 'open garage door', 'open gate', 'open the gate', 'mark as lost', 'erase device',
@@ -1255,6 +1268,23 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const form = target?.formContext
       const formTrade = form && typeof form === 'object' && Array.isArray(form.options) && form.options.some((text) => TRADE_ASSET.test(String(text)))
       if (!focusesEntry && /\b(?:sell|convert|deposit)\b/i.test(name) && (/\d|[$\u20ac\u00a3\u00a5\u20bf]/.test(name) || TRADE_ASSET.test(name) || formTrade)) classes.push('purchase')
+      // CU-410: renting ('Rent', 'Rent now', 'Rent <title>'; 'Rentals' stays free), a bare 'Renew', reactivating a subscription,
+      // turning auto-renew on and switching the billing period ask purchase.
+      if (!focusesEntry && (/^\s*rent\b/i.test(name) || /^\s*renew\s*$/i.test(name)
+        || /^\s*reactivate(?:\s+(?:my\s+|your\s+)?(?:subscription|plan|membership))?\s*$/i.test(name)
+        || /^\s*(?:turn\s+on|enable)\s+auto[\s-]?renew(?:al)?\b/i.test(name)
+        || /^\s*switch\s+to\s+(?:annual|yearly|monthly)\b/i.test(name))) classes.push('purchase')
+      // CU-411: rotating, regenerating, generating, creating or revoking a key or token is a credential act (it asks credential,
+      // not the 'api key' / 'revoke' permission words).
+      // 'Transfer ownership' hands the account over (permission), not money - its 'transfer' is not a purchase.
+      if (/\btransfer\s+ownership\b/i.test(name) && !namesPurchase(name.replace(/\btransfer\b/gi, ' '))) {
+        for (let i = classes.length - 1; i >= 0; i -= 1) if (classes[i] === 'purchase') classes.splice(i, 1)
+      }
+      if (!focusesEntry && ACCOUNT_WIPE.test(name)) classes.push('delete')
+      if (!focusesEntry && (KEY_TOKEN_ACT.test(name) || (RESET_PASSWORD.test(name) && !/link/i.test(String(target?.role ?? ''))))) {
+        for (let i = classes.length - 1; i >= 0; i -= 1) if (classes[i] === 'permission') classes.splice(i, 1)
+        classes.push('credential')
+      }
       // CU-408: a bare 'Refund' issues one (exact name; 'Refund policy' stays free).
       // cu-coordinator 09:52Z (near forms): a refund or a charge with an amount, a partial or full refund, a recurring payment, and
       // 'turn autopay on' move money too.
