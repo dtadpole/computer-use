@@ -10,7 +10,7 @@ const policy = createPolicy({ sitePolicy: () => 'allow', preApproved: [{ class: 
 const click = (name, url = 'https://home.example/') => policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url, target: { role: 'button', name } })
 
 test('CU-395: Unlock, Open Garage Door, Disarm and Mark As Lost ask physical, each time, and cannot be pre-approved', () => {
-  for (const name of ['Unlock Front Door', 'Unlock door', 'Front Door: Unlock', 'Open Garage Door', 'Disarm', 'Disarm Security System', 'Mark As Lost', 'Erase This Device', 'Garage Door']) {
+  for (const name of ['Unlock Front Door', 'Unlock door', 'Front Door: Unlock', 'Open Garage Door', 'Disarm', 'Disarm Security System', 'Mark As Lost', 'Erase This Device', 'Garage Door', 'Arm Away', 'Arm Stay', 'Arm alarm', 'Arm Night', 'Arm Home', 'Lock this device', 'Lock iPhone', 'Lock this Mac', 'Open front door', 'Open door', 'Open the door', 'Open back door']) {
     const v = click(name)
     assert.equal(v.class, 'physical', name)
     assert.equal(v.askEachTime, true, name)
@@ -21,7 +21,7 @@ test('CU-395: Unlock, Open Garage Door, Disarm and Mark As Lost ask physical, ea
 })
 
 test('CU-395 negatives: Lock, Open and Arm stay free', () => {
-  for (const name of ['Lock', 'Open', 'Arm Away', 'Close Garage Door', 'Unlock', 'Unlock Premium', 'Unlock all features', 'Unlock full article', 'Unlock account', 'Unlock Pro']) assert.equal(click(name).decision, 'allow', name)
+  for (const name of ['Lock', 'Open', 'Arm', 'Close Garage Door', 'Lock screen', 'Open document', 'Lock Front Door', 'Unlock', 'Unlock Premium', 'Unlock all features', 'Unlock full article', 'Unlock account', 'Unlock Pro']) assert.equal(click(name).decision, 'allow', name)
 })
 
 test('CU-395: Home and Find My are excluded as physical_control', () => {

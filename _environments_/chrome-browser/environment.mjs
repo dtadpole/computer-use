@@ -9,7 +9,7 @@ import { clipboardOp, executeAction, NAVIGATION_TIMEOUT_MS, navigateHistory, sen
 import { planHumanInput } from './human-input.mjs'
 import { processCommandLine, sandboxProblem, SEAT_PATTERN, startChrome } from './launch.mjs'
 import { normalizeKey } from './keys.mjs'
-import { accessKeyElement, accessKeyOf, activatableAncestor, autofilledFields, clickLabel, closedRootHoldsEntry, collectPageText, deepActiveElement, describeElement, DRAG_TEXT_MAX, dragTextAt, FRAME_FOCUS_EXPRESSION, frameLabel, frameLabelFromAttributes, implicitSubmitButton, keyChoice, pageExpression, selectionContainer, selectKeyOption, selectTypeOptions, textEntered, TWO_FRAMES_EXPRESSION } from './page-scripts.mjs'
+import { accessKeyElement, accessKeyOf, activatableAncestor, autofilledFields, clickLabel, closedRootHoldsEntry, collectPageText, deepActiveElement, describeElement, DRAG_TEXT_MAX, dragTextAt, FRAME_FOCUS_EXPRESSION, frameLabel, frameLabelFromAttributes, implicitSubmitButton, implicitSubmitControls, keyChoice, pageExpression, selectionContainer, selectKeyOption, selectTypeOptions, textEntered, TWO_FRAMES_EXPRESSION } from './page-scripts.mjs'
 
 /** CU-300: how long focusedElement may spend reading the focus inside a cross-site frame before it keeps the iframe. */
 export const FRAME_FOCUS_MS = 2000
@@ -576,7 +576,7 @@ class BrowserEnvironment {
       await this.#describe(target, inner.backendNodeId, frame.targetId, { node: inner, offset: { x: box.x, y: box.y }, editableBody: true, fallbackName: String(inner.nodeName ?? '').toUpperCase() === 'BODY' ? host.name : null }))
     if (described === null) return undefined
     const submit = await this.#implicitSubmit(target, inner.backendNodeId)
-    return { ...described, frameHost: host, defaultButton: submit.button, defaultButtonRead: submit.read }
+    return { ...described, frameHost: host, defaultButton: submit.button, defaultButtonRead: submit.read, ...(submit.candidates ? { defaultCandidates: submit.candidates } : {}), ...(submit.more ? { defaultCandidatesMore: true } : {}) }
   }
 
   /**
@@ -738,7 +738,7 @@ class BrowserEnvironment {
     const element = await this.#withAutofill(page, node.backendNodeId, undefined, await this.#describe(page, node.backendNodeId, undefined, { node, editableBody }))
     if (element === null) return null
     const submit = await this.#implicitSubmit(page, node.backendNodeId)
-    return { ...element, defaultButton: submit.button, defaultButtonRead: submit.read }
+    return { ...element, defaultButton: submit.button, defaultButtonRead: submit.read, ...(submit.candidates ? { defaultCandidates: submit.candidates } : {}), ...(submit.more ? { defaultCandidatesMore: true } : {}) }
   }
 
   /**
@@ -797,16 +797,58 @@ class BrowserEnvironment {
       const world = await this.session.isolatedContext(page, page.mainFrameId)
       const objectId = (await this.session.send(page, 'DOM.resolveNode', { backendNodeId, executionContextId: world })).result.object.objectId
       const found = (await this.session.send(page, 'Runtime.callFunctionOn', {
-        objectId, functionDeclaration: `function () { return (${implicitSubmitButton.toString()})(this) }`, returnByValue: false,
+        objectId, functionDeclaration: `function () { return (${implicitSubmitButton.toString()})(this, ${implicitSubmitControls.toString()}) }`, returnByValue: false,
       })).result.result
-      if (found?.objectId === undefined) return { button: null, read: true }
+      if (found?.objectId === undefined) return { button: null, read: true, ...(await this.#implicitCandidates(page, objectId)) }
       const button = (await this.session.send(page, 'DOM.describeNode', { objectId: found.objectId })).result.node
       const described = await this.#describe(page, button.backendNodeId, undefined, { scanText: false })
+      // CU-412 (11:56Z, fail closed): a lone script control with no accessible name cannot be judged as the default -
+      // it asks unknown (defaultCandidatesMore). A nameless real submit button keeps the CU-150 path (a search form's
+      // icon submit stays as it was).
+      if (described !== null && (typeof described.name !== 'string' || described.name.trim() === '')) {
+        const script = (await this.session.send(page, 'Runtime.callFunctionOn', {
+          objectId: found.objectId, returnByValue: true,
+          functionDeclaration: "function () { const t = String(this.type).toLowerCase(); return !((this.tagName === 'BUTTON' && t === 'submit') || (this.tagName === 'INPUT' && (t === 'submit' || t === 'image'))) }",
+        })).result.result?.value === true
+        if (script) return { button: null, read: true, more: true }
+      }
       // CU-406: the Return target carries the same bounded formContext a click on that button would (CU-402/CU-405), so a
       // Return in a trade form's amount field is judged with the form's asset beside a bare 'Sell' default.
       return { button: described === null ? null : { role: described.role, name: described.name, panel: null, ...(described.formContext ? { formContext: described.formContext } : {}) }, read: true }
     } catch {
       return { button: null, read: false }
+    }
+  }
+
+  /**
+   * CU-412 (11:27Z contract, D-107): two or more script submit controls a Return may press (implicitSubmitControls;
+   * one alone is the defaultButton) as `{ candidates: [{ role, name, formContext? }] (at most 3), more }` - more true
+   * past 3, which agent core asks as unknown; it asks the strictest class among the candidates otherwise. Empty object
+   * when there are fewer. Fail closed: a control that cannot be described, or a read that fails, sets more (unknown).
+   */
+  async #implicitCandidates(page, fieldObjectId) {
+    try {
+      const list = (await this.session.send(page, 'Runtime.callFunctionOn', {
+        objectId: fieldObjectId, functionDeclaration: `function () { return (${implicitSubmitControls.toString()})(this) }`, returnByValue: false,
+      })).result.result
+      if (list?.objectId === undefined) return {}
+      const props = (await this.session.send(page, 'Runtime.getProperties', { objectId: list.objectId, ownProperties: true })).result.result ?? []
+      const items = props.filter((p) => /^\d+$/.test(p.name)).sort((a, b) => Number(a.name) - Number(b.name))
+      if (items.length < 2) return {}
+      const controls = []
+      let unread = false
+      for (const item of items.slice(0, 3)) {
+        if (item.value?.objectId === undefined) { unread = true; continue }
+        const node = (await this.session.send(page, 'DOM.describeNode', { objectId: item.value.objectId })).result.node
+        const described = await this.#describe(page, node.backendNodeId, undefined, { scanText: false })
+        // CU-412 (11:56Z): a control with no accessible name (an icon-only div) cannot be judged - unreadable, never dropped.
+        if (described === null || typeof described.name !== 'string' || described.name.trim() === '') unread = true
+        else controls.push({ role: described.role, name: described.name, ...(described.formContext ? { formContext: described.formContext } : {}) })
+      }
+      // Fail closed (D-107: candidates only add asks): a control that could not be read makes the list unjudgeable.
+      return { ...(controls.length > 0 ? { candidates: controls } : {}), more: items.length > 3 || unread }
+    } catch {
+      return { more: true }
     }
   }
 

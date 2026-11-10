@@ -365,13 +365,17 @@ final class Dispatcher {
       // target takes its origin from it (cu-developer-two's #347), else app-policy blocks it.
       let read = capabilities.sheetPresent(scope: scope)
       let defaultButton = capabilities.defaultButton(scope: scope)
-      ok(id, ["element": capabilities.focused(scope: scope), "defaultButton": defaultButton.button, "defaultButtonRead": .bool(defaultButton.read),
+      var reply: [String: JSON] = ["element": capabilities.focused(scope: scope), "defaultButton": defaultButton.button, "defaultButtonRead": .bool(defaultButton.read),
               "sheet": read.map { .bool($0.sheet) } ?? .null,
               "app": read.map { .object(["bundleId": .string($0.bundleId), "pid": .int(Int($0.pid))]) } ?? .null,
               "changeCount": capabilities.pasteboardChangeCount().map { .int($0) } ?? .null,
               // CU-377: a file on the clipboard (type names only), so a paste into another app can ask like a drop.
               "pasteboardHasFile": capabilities.pasteboardHasFile().map { .bool($0) } ?? .null,
-              "textEntered": capabilities.textEntered(at: nil, scope: scope).map { .bool($0) } ?? .null])
+              "textEntered": capabilities.textEntered(at: nil, scope: scope).map { .bool($0) } ?? .null]
+      // CU-412: Return's candidates in a web form with no native default (two or three), or more than can be judged.
+      if !defaultButton.candidates.isEmpty { reply["defaultCandidates"] = .array(defaultButton.candidates) }
+      if defaultButton.more { reply["defaultCandidatesMore"] = .bool(true) }
+      ok(id, reply)
     case .cursor:
       // CU-64: the real pointer, in global points, and the display it is on (null between displays).
       guard scope != nil else { return refuse(id, Refusal(code: "no_scope", message: "no scope is set")) }
