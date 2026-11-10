@@ -107,6 +107,8 @@ const WORDS = Object.freeze({
     'connect account', 'connect your account', 'connect bank', 'sign in with google', 'sign in with apple', 'sign in with microsoft',
     'sign in with github', 'sign in with facebook', 'continue with google', 'continue with apple', 'continue with microsoft',
     'continue with github', 'continue with facebook', 'log in with google', 'log in with apple',
+    // cu-coordinator 02:29Z: a passkey sign-in uses the owner's identity too - it asks (CU-289's 'signing in' negatives re-judged).
+    'sign in with passkey', 'sign in with a passkey', 'use passkey', 'use a passkey', 'continue with passkey', 'continue with a passkey',
     // CU-386 (cu-coordinator 23:54Z): asking someone else for money.
     'request money',
     // CU-258 (cu-researcher): standing choices an app keeps after the run, as whole phrases. A bare 'Allow' stays free so
