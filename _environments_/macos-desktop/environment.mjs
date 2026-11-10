@@ -854,6 +854,18 @@ export function servicesMenuOf(value) {
 }
 
 /**
+ * CU-392 (cu-coordinator 01:23Z, read by agent core's share-drop rule): true when an element's AXURL names a network
+ * share - its scheme is smb, afp, nfs, cifs, webdav(s)/dav(s) or ftp(s) - so a drop onto a server volume in a sidebar
+ * asks as a send. Only the scheme is read; the URL never leaves the driver. A share mounted under /Volumes reports a
+ * file: URL and reads false here (a named limit; helper 0.2.67's dropDestination 'server' covers Finder's own label).
+ */
+export function networkVolumeOf(url) {
+  if (typeof url !== 'string') return false
+  const scheme = /^([a-z][a-z0-9+.-]*):/i.exec(url.trim())?.[1]?.toLowerCase()
+  return ['smb', 'afp', 'nfs', 'cifs', 'webdav', 'webdavs', 'dav', 'davs', 'ftp', 'ftps'].includes(scheme ?? '')
+}
+
+/**
  * CU-255: the file an element shows (the helper's `filename`, AXFilename) as launch_code reads it - a bare file name
  * of 1 to 255 characters with no '/' or control character; null otherwise or when absent (an older helper, a non-file
  * element). Finder may hide the extension in the element's title (Payload for Payload.app), never in this.
@@ -1910,6 +1922,8 @@ class DesktopEnvironment {
       // nearest row's or cell's AXFilename/AXURL - a kind for the run record (CU-391), judged exactly as an own file name.
       // Present only then; outside the fingerprint.
       ...(element.fileFrom === 'ancestor' ? { fileFrom: 'ancestor' } : {}),
+      // CU-392: a drop target on a network share (networkVolumeOf: the AXURL's scheme only). Present only when true.
+      ...(networkVolumeOf(element.url) ? { networkVolume: true } : {}),
       // CU-265: a link's scheme (AXLink's AXURL), so a facetime:, tel: or mailto: link is not a plain click. Links only - a
       // file browser's items carry file: URLs and are judged by launch_code - and the scheme only, never the URL.
       linkScheme: element.role === 'AXLink' ? linkSchemeOf(element.url) : null,

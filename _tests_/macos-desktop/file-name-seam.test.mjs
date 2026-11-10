@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { after, test } from 'node:test'
 
-import { fileNameOf, fileUrlLeafOf } from '../../_environments_/macos-desktop/environment.mjs'
+import { fileNameOf, fileUrlLeafOf, networkVolumeOf } from '../../_environments_/macos-desktop/environment.mjs'
 import { createScriptedAdapter } from '../../_tools_/agent-core/adapter-scripted.mjs'
 import { createAppApprovals } from '../../_tools_/agent-core/app-approvals.mjs'
 import { createRunControl } from '../../_tools_/agent-core/control.mjs'
@@ -127,6 +127,30 @@ test('CU-387 driver: a file name the helper lent from the row (fileFrom ancestor
     const c = await env.inspectPoint({ x: 532, y: 132 })
     assert.equal('fileFrom' in c, false, 'only the one known value passes')
     assert.equal(a.fingerprint, (await env.inspectPoint({ x: 132, y: 132 })).fingerprint)
+  } finally {
+    await env.close()
+    await stopFake(child)
+  }
+})
+
+test('CU-392: networkVolumeOf reads a network share by its AXURL scheme only', () => {
+  for (const url of ['smb://fileserver.local/Shared', 'AFP://nas/Team', 'nfs://nas.example/export', 'webdavs://dav.example.com/x', 'ftp://host/pub', 'cifs://srv/s']) assert.equal(networkVolumeOf(url), true, url)
+  for (const url of ['file:///Volumes/Shared/', 'file:///Users/someone/Report.pdf', 'https://example.com/', '', null, undefined, 'smb']) assert.equal(networkVolumeOf(url), false, String(url))
+})
+
+test('CU-392 driver: a sidebar server whose AXURL is smb: reaches the target as networkVolume true, the URL\'s path never; a file: item carries none', async () => {
+  const control = createRunControl()
+  const server = { ...ITEM, role: 'AXRow', title: 'fileserver', url: 'smb://fileserver.local/Shared' }
+  const local = { ...ITEM, frame: { x: 300, y: 100, width: 64, height: 64 }, url: 'file:///Users/someone/Report.pdf' }
+  const { env, child } = await launchOnFake({ ...world(server), elements: [{ rect: server.frame, element: server }, { rect: local.frame, element: local }] }, { control })
+  await logged(child, 3)
+  try {
+    await env.addApp(FIXTURE)
+    const a = await env.inspectPoint({ x: 132, y: 132 })
+    assert.equal(a.networkVolume, true)
+    assert.doesNotMatch(JSON.stringify(a), /fileserver\.local|Shared/, 'the share URL never leaves the driver')
+    const b = await env.inspectPoint({ x: 332, y: 132 })
+    assert.equal('networkVolume' in b, false)
   } finally {
     await env.close()
     await stopFake(child)
