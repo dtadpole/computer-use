@@ -1126,10 +1126,18 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // CU-392 (High pending a live row; cu-coordinator 01:13Z): a drop onto a share destination sends the file away even
       // inside one app - AirDrop (or a person in its window), a Shared folder, a Drop Box, a server or network volume.
       // A server named by its host ('fileserver.local', an IPv4 address) counts too; a person in the AirDrop window is named
-      // only by the person, so it needs the driver's flag (shareDestination: true, cu-developer-three's helper half).
+      // only by the person - the interim cell rule below until helper 0.2.67's dropDestination.
       const dropName = String(context.dropTarget?.name ?? '').trim()
       const hostShaped = /^[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:local|lan|home|corp|internal|intranet)$/i.test(dropName) || /^\d{1,3}(?:\.\d{1,3}){3}$/.test(dropName)
-      const shareDrop = context.dropTarget?.shareDestination === true || SHARE_DESTINATION.test(dropName) || hostShaped
+      // The driver owner's names bind (cu-coordinator 01:23Z): networkVolume (a drop target whose AXURL is smb/afp/nfs/webdav/
+      // ftp, a boolean) and, from helper 0.2.67, dropDestination in {airdrop, shared, server}.
+      const driverShare = context.dropTarget?.networkVolume === true || ['airdrop', 'shared', 'server'].includes(String(context.dropTarget?.dropDestination ?? ''))
+      // Interim fail-closed rule until 0.2.67 (cu-coordinator 01:21Z): a drop into Finder onto a person or device cell - a
+      // button, group or cell with no file name, url or file-like name - asks (named over-ask: other Finder buttons).
+      const dropRole = String(context.dropTarget?.role ?? '')
+      const personCell = context.dropTarget?.origin === 'com.apple.finder' && /^AX(?:Button|Group|Cell)$/i.test(dropRole)
+        && !String(context.dropTarget?.filename ?? '').trim() && !String(context.dropTarget?.url ?? '').trim() && !/\.[a-z][a-z0-9]{0,7}$/i.test(dropName)
+      const shareDrop = driverShare || personCell || SHARE_DESTINATION.test(dropName) || hostShaped
       if (to === '' || from === '' || from !== to || shareDrop) classes.push('permission')
     }
     if (pressesTarget || pressesEnter || keyboard.activates) {
