@@ -27,7 +27,7 @@ session worktree plus `--review` worktrees; never drives the desktop. State at 1
 - CU-409 desktop: no policy part ([#510 #520] + install).
 - Batch, main merged and OK'd: #447 #448 #450 #453 #462 #469 #477 #478 #417; #497 (Bid) and #501 (CU-407) re-merged; #523 (CU-413) new.
 - Guide #392: add remote-desktop/VM viewers after #450/#453, then complete.
-- Practice: confirm a push reached the remote; propose a field contract before a driver seam; candidates only add asks.
+- Practice: confirm each push reached the remote; propose field contracts before driver seams.
 
 ## Lessons
 
