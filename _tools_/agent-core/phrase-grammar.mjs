@@ -299,6 +299,10 @@ export function grammarClasses(name, role = '') {
   if (currencyAct(list)) return ['purchase']
   // CU-440 (High; cu-coordinator 20:26Z): switching off a protection on a child's account (permission).
   if (childProtectionOff(list)) return ['permission']
+  // F2 guard (cu-coordinator 20:28Z): declining, denying or rejecting a request answers no - the grammar's own over-ask since
+  // #554 ('Decline request'); older asks ('Decline invitation', CU-422's 'Decline offer') are untouched (the hook never sees them).
+  if (['decline', 'deny', 'reject'].includes(list[0]) && list.slice(1).filter((t) => !FILLER.has(t)).every((t) => t === 'request' || t === 'this' || t === 'all')
+    && list.includes('request')) return []
   // Guards: a trailing list / settings / UI noun; a bare plural noun (a tab); settings-sense apply; 'Sign in as guest'.
   if (FREE_TAIL.has(last) || (list.length >= 2 && FREE_TAIL.has(list[list.length - 2]))) return []
   if (UI_TAIL.has(last) && list.length >= 2) return []

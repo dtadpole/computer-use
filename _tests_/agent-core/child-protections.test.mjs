@@ -39,6 +39,9 @@ test('CU-440: a protection switch turned OFF asks permission, ON is free on a na
 
 test('CU-440 negatives: family settings, reports and turning protections on stay free', () => {
   for (const name of ['Family settings', 'Screen time report', 'Turn on SafeSearch', 'Turn on parental controls', 'Allow cookies', 'Extend trial', 'Add time zone', 'Turn off notifications']) assert.equal(click(name), 'allow', name)
-  // Named over-ask (older grammar row): 'Decline request' asks submit; ruled free - for CU-429's family.
-  assert.equal(click('Decline request'), 'submit', 'named over-ask')
+  // F2 guard (20:28Z): the grammar's own 'Decline request' ask is cancelled; the older asks keep asking.
+  for (const name of ['Decline request', 'Deny request', 'Reject request', 'Decline']) assert.equal(click(name), 'allow', name)
+  assert.deepEqual(grammarClasses('Decline request'), [])
+  assert.notEqual(click('Decline offer'), 'allow', 'CU-422 keeps asking')
+  assert.notEqual(click('Decline invitation'), 'allow', 'older rule keeps asking')
 })
