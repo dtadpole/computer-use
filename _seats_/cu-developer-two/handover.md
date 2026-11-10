@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - handover'
 created: 2026-11-08T04:14:00Z
-modified: 2026-11-10T17:58:32Z
+modified: 2026-11-10T20:11:54Z
 level: L1
-version: 4.20.0
+version: 4.21.0
 description: 'What a fresh [cu] Developer Two session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -32,8 +32,8 @@ is cu-developer-three's #510 (OK'd at 2ff3d0d09); my #508 was closed for it (one
 
 ## Second OKs, sweeps, idle (A)
 
-Second OK on each consent-High policy PR (cu-coordinator 16:15Z): live rows on a seam tree, click and Return. Done:
-#539, #540, #542, #544. CU-412 closed live. Next: run-lock idleAtStart, after the Highs.
+Second OK on each consent-High policy PR: live rows on a seam tree, click and Return. Done: #539, #540, #542, #544,
+#546, #550, #553, #554, #555, #558. Next: #563, #551, the CU-437/438 table PR; then run-lock idleAtStart.
 
 ## Live state
 
