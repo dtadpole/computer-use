@@ -23,6 +23,7 @@ test('CU-402: a bare Sell/Convert/Deposit with an asset among the selected optio
   assert.equal(press('Sell', { options: ['BTC'], amountEntry: false }), 'purchase')
   assert.equal(press('Convert', { options: ['Ethereum'], amountEntry: true }), 'purchase')
   assert.equal(press('Deposit', { options: ['USDC'], amountEntry: false }), 'purchase')
+  for (const name of ['Place', 'Place order', 'Confirm', 'Submit']) assert.equal(press(name, { options: ['ETH'], amountEntry: true }), 'purchase', name)
 })
 
 test('CU-402 negatives: no form context, or options that name no asset and no amount entry, stay free', () => {
@@ -31,6 +32,8 @@ test('CU-402 negatives: no form context, or options that name no asset and no am
   assert.equal(press('Convert', { options: ['PDF'], amountEntry: false }), 'allow')
   assert.equal(press('Sell', { options: [], amountEntry: true }), 'allow', 'an amount entry alone (a marketplace price) never counts')
   assert.equal(press('Sell', { options: ['Used - good'], amountEntry: true }), 'allow')
+  for (const name of ['Continue', 'Next', 'Review']) assert.equal(press(name, { options: ['ETH'], amountEntry: true }), 'allow', name)
+  assert.equal(press('Submit', { options: ['Medium'], amountEntry: false }), 'submit', 'a size form keeps its plain submit')
 })
 
 test('CU-402 through the loop: the inspected button carries formContext and the click is declined', async () => {
