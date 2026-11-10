@@ -8,7 +8,7 @@ import { createExclusions } from '../../_tools_/agent-core/exclusions.mjs'
 const { isExcludedApp } = createExclusions()
 
 test('CU-394: remote-desktop, screen-sharing and VM viewers are excluded as remote_surface', () => {
-  for (const id of ['com.apple.ScreenSharing', 'com.microsoft.rdc.macos', 'com.teamviewer.TeamViewer', 'com.philandro.anydesk', 'com.parallels.desktop.console', 'com.vmware.fusion', 'com.utmapp.UTM', 'org.virtualbox.app.VirtualBoxVM', 'com.p5sys.jump.mac.viewer', 'com.realvnc.vncviewer']) {
+  for (const id of ['com.apple.ScreenSharing', 'com.microsoft.rdc.macos', 'com.teamviewer.TeamViewer', 'com.philandro.anydesk', 'com.parallels.desktop.console', 'com.vmware.fusion', 'com.utmapp.UTM', 'org.virtualbox.app.VirtualBoxVM', 'com.p5sys.jump.mac.viewer', 'com.realvnc.vncviewer', 'com.google.chrome.remotedesktop']) {
     const verdict = isExcludedApp(id)
     assert.equal(verdict.excluded, true, id)
     assert.equal(verdict.kind, 'remote_surface', id)

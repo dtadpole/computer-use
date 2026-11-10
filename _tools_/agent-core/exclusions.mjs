@@ -43,6 +43,8 @@ export const EXCLUDED_APPS = Object.freeze([
       'com.apple.ScreenSharing', 'com.microsoft.rdc.*', 'com.teamviewer.*', 'com.philandro.anydesk', 'com.parallels.*',
       'com.vmware.fusion', 'com.utmapp.UTM', 'org.virtualbox.app.*', 'com.p5sys.jump.*', 'com.realvnc.*',
       'com.lemonmojo.RoyalTSX.*', 'com.splashtop.*',
+      // cu-researcher 02:55Z: Chrome Remote Desktop's host app (its web client is remotedesktop.google.com - CU-394's named line).
+      'com.google.chrome.remotedesktop',
     ]),
   }),
   // A clipboard history shows what the person copied before the run; D-031 allows copy and paste, not reading that.
