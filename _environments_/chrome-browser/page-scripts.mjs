@@ -309,7 +309,12 @@ export function deepActiveElement(doc) {
         inner = null
       }
       if (!inner || !inner.activeElement) return active
-      active = inner.activeElement
+      const innerActive = inner.activeElement
+      // A same-origin frame editor (TinyMCE, CKEditor classic, webmail composers): its focus is the frame's body, which
+      // takes text when contentEditable or in designMode - a text entry, as FRAME_FOCUS_EXPRESSION already answers for
+      // a cross-site frame (CU-300). Without this the focus read null, and a null focus makes typed text a page shortcut.
+      if ((innerActive.tagName === 'BODY' || innerActive.tagName === 'HTML') && (innerActive.isContentEditable || inner.designMode === 'on')) return inner.body || innerActive
+      active = innerActive
       continue
     }
     break
@@ -498,8 +503,16 @@ export function describeElement(el) {
   } catch {
     // A detached or cross-origin document: no page-level flags.
   }
+  // CU-373: a toggle's state - a native checkbox or radio (indeterminate is 'mixed'), else aria-checked on a checkbox,
+  // switch, radio or menu item; aria-pressed on a toggle button - so a click on a security switch can be judged by the
+  // direction it flips. Absent when the element carries neither.
+  const tristate = (value) => (value === 'true' ? true : value === 'false' ? false : value === 'mixed' ? 'mixed' : null)
+  const ariaChecked = typeof el.getAttribute === 'function' ? tristate(el.getAttribute('aria-checked')) : null
+  const checked = tag === 'input' && (type === 'checkbox' || type === 'radio') ? (el.indeterminate ? 'mixed' : Boolean(el.checked)) : ariaChecked
+  const pressed = typeof el.getAttribute === 'function' ? tristate(el.getAttribute('aria-pressed')) : null
   return { tag, inputType: type, isPassword: type === 'password', autocomplete: autocomplete || null, href: link, origin, editable, caption: editable ? null : caption, entryCaption: editable ? caption : null,
-    ...(frameUrl ? { frameUrl } : {}), ...(terminal ? { terminal } : {}), ...(notebookCell ? { notebookCell } : {}), ...(notebookSurface ? { notebookSurface } : {}), ...(codeSurface ? { codeSurface } : {}) }
+    ...(frameUrl ? { frameUrl } : {}), ...(terminal ? { terminal } : {}), ...(notebookCell ? { notebookCell } : {}), ...(notebookSurface ? { notebookSurface } : {}), ...(codeSurface ? { codeSurface } : {}),
+    ...(checked !== null ? { checked } : {}), ...(pressed !== null ? { pressed } : {}) }
 }
 
 /**
@@ -553,6 +566,38 @@ export function activatableAncestor(el) {
   node = next(el)
   for (let depth = 0; node && depth < 64 && !top(node) && pointer(node); depth += 1, node = next(node)) highest = node
   return highest
+}
+
+/**
+ * CU-336: a name for an <iframe>/<frame> element whose accessibility name could not be read - the words the page gives
+ * it, in the order accessible names take them: the text of the elements its aria-labelledby names, its aria-label, then
+ * its title. Never its name attribute: that is an id for scripts ('__privateStripeFrame5'), and an id taken as a name
+ * would switch off the policy's unnamed-frame rule (cu-researcher's red team). Whitespace collapsed, at most 80
+ * characters; null when there is none. Self-contained: it runs serialized in the page.
+ */
+export function frameLabel(el) {
+  if (!el || el.nodeType !== 1) return null
+  const clean = (value) => String(value || '').replace(/\s+/g, ' ').trim().slice(0, 80)
+  const attr = (name) => (el.getAttribute ? el.getAttribute(name) : null)
+  const doc = el.ownerDocument
+  const ids = String(attr('aria-labelledby') || '').split(/\s+/).filter(Boolean)
+  const labelled = clean(ids.map((id) => {
+    const node = doc && doc.getElementById ? doc.getElementById(id) : null
+    return node ? node.textContent : ''
+  }).join(' '))
+  return labelled || clean(attr('aria-label')) || clean(attr('title')) || null
+}
+
+/**
+ * CU-336: the same order from a DOM.describeNode attribute list, for when the page script cannot run (the node does
+ * not resolve): aria-label, then title - aria-labelledby needs the document and is skipped; never name. Null when
+ * there is none.
+ */
+export function frameLabelFromAttributes(attributes = []) {
+  const map = {}
+  for (let index = 0; index + 1 < attributes.length; index += 2) map[attributes[index]] = attributes[index + 1]
+  const clean = (value) => String(value || '').replace(/\s+/g, ' ').trim().slice(0, 80)
+  return clean(map['aria-label']) || clean(map.title) || null
 }
 
 /**

@@ -697,7 +697,7 @@ func button(_ kind: String, _ x: Int, _ y: Int) -> JSON { ["kind": .string(kind)
 func testDispatcherBasics() {
   let h = Harness(fixtureWorld)
   let hello = h.dispatcher.hello(token: "t0k")
-  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.65", "the hello opens the run")
+  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.67", "the hello opens the run")
   check(hello["mode"] == "dry-run" && hello["grants"] == ["screen": true, "accessibility": true, "postEvents": true, "listenEvents": false], "a dry-run hello says so, with all four grants")
   check(h.ask("capture", ["maxSize": size800])["code"] == "no_scope", "capture needs a scope")
   check(h.ask("input", ["events": [key("keyDown", 1)], "mode": "global"])["code"] == "no_scope", "input needs a scope")
@@ -2102,6 +2102,63 @@ func testMenuTracking() {
   check(SystemCapabilities.markedMenuOpen(.null) == .null, "no shape stays none")
 }
 
+func testQuickActions() {
+  // CU-382: Finder's Quick Actions submenu, by its own strings - structure (the 'Customize…' marker last) in Finder, title anywhere.
+  let quick = QuickActionsMenu.english
+  let submenu = ["Rotate Left", "Run Shell Script", "Customize\u{2026}"]
+  check(quick.isQuickActions(itemTitle: "Schnellaktionen", childTitles: submenu, inFinder: true), "in Finder, a submenu ending in the marker is Quick Actions whatever its holder's title")
+  check(!quick.isQuickActions(itemTitle: "Tools", childTitles: submenu, inFinder: false), "the marker alone outside Finder does not count (structure needs Finder)")
+  check(quick.isQuickActions(itemTitle: "Quick Actions", childTitles: ["Run Shell Script"], inFinder: false), "the holder's title counts in any app")
+  check(!quick.isQuickActions(itemTitle: "View", childTitles: ["Customize Toolbar\u{2026}", "Show Sidebar"], inFinder: true), "'Customize Toolbar…' not last and not the marker: View is not Quick Actions")
+  check(quick.isExempt("Customize\u{2026}") && quick.isExempt("More...") && !quick.isExempt("Run Shell Script") && !quick.isExempt(nil), "Customize… and More… are exempt")
+  let level = MenuContext.Level(holderTitle: "Quick Actions", childTitles: submenu)
+  let run = MenuContext.of(itemTitle: "Run Shell Script", levels: [level, .init(holderTitle: nil, childTitles: ["Open", "Quick Actions"])], services: .english, quick: quick, inFinder: true)
+  check(run.quickActions && !run.servicesMenu && run.path == ["Quick Actions", "Run Shell Script"], "an item under Quick Actions is marked, its path kept")
+  check(run.json["quickActions"] == true && run.json["menuContextUnread"] == nil, "the json says quickActions, no unread")
+  check(!MenuContext.of(itemTitle: "Customize\u{2026}", levels: [level], services: .english, quick: quick, inFinder: true).quickActions, "the marker item itself is not marked")
+  check(!MenuContext.of(itemTitle: "Copy", levels: [.init(holderTitle: "Edit", childTitles: ["Undo", "Copy"])], services: .english, quick: quick).quickActions, "an ordinary submenu is not")
+  // A chord bound to a Quick Action: the menu-key walk marks the submenu's entries (its marker excepted).
+  func entry(_ title: String, _ path: [String]) -> MenuKey.Entry {
+    MenuKey.Entry(title: title, path: path, enabled: true, cmdChar: nil, cmdModifiers: nil, cmdVirtualKey: nil, cmdGlyph: nil, appleMenu: false)
+  }
+  var walked = [entry("Run Shell Script", ["File", "Quick Actions", "Run Shell Script"]), entry("Customize\u{2026}", ["File", "Quick Actions", "Customize\u{2026}"])]
+  MenuKey.markQuickActions(&walked, from: 0, holderTitle: "Quick Actions", depth: 3, quick: quick, inFinder: true)
+  check(walked[0].quickActions && !walked[1].quickActions && MenuKey.json(walked[0])["quickActions"] == true, "a bound Quick Action is marked in the menu-key walk; Customize… is not")
+  let short = MenuContext.of(itemTitle: "Run Shell Script", levels: [], services: .english, quick: quick, unread: true)
+  check(short.unread && short.json["menuContextUnread"] == true && !short.quickActions, "a failed read on the walk says menuContextUnread, never a plain item")
+}
+
+func testFileAncestorAndDropDestination() {
+  // CU-387 fix (a): a row's child lends the nearest file-bearing ancestor's file, within the bounds.
+  typealias L = FileAncestor.Level
+  check(FileAncestor.pick([L(role: "AXCell", filename: "install.command", url: "file:///tmp/x/install.command")])?.filename == "install.command", "the cell above a text lends its file")
+  check(FileAncestor.pick([L(role: "AXGroup", filename: nil, url: nil), L(role: "AXRow", filename: "notes.txt", url: nil)])?.filename == "notes.txt", "up to the row")
+  check(FileAncestor.pick([L(role: "AXRow", filename: nil, url: nil), L(role: "AXOutline", filename: nil, url: "file:///Users/x/")]) == nil, "the walk stops at the first row: the list never lends its URL")
+  check(FileAncestor.pick([L(role: "AXWindow", filename: nil, url: "file:///Users/x/doc.txt")]) == nil, "never a window's document")
+  check(FileAncestor.pick([L(role: "AXGroup", filename: nil, url: nil), L(role: "AXGroup", filename: nil, url: nil), L(role: "AXGroup", filename: nil, url: nil), L(role: "AXGroup", filename: nil, url: nil), L(role: "AXRow", filename: "far.txt", url: nil)]) == nil, "at most 4 levels")
+  check(FileAncestor.lendingRoles.contains("AXStaticText") && !FileAncestor.lendingRoles.contains("AXButton"), "content lends, controls do not")
+  // CU-392: Finder's drop destinations from its own strings - the value only.
+  let table = DropDestination.english
+  check(table.of(inFinder: true, windowTitle: "AirDrop", rowTitle: nil, inOutline: false) == "airdrop", "every tile in the AirDrop window")
+  check(table.of(inFinder: true, windowTitle: "Network", rowTitle: nil, inOutline: false) == "server", "a host in the Network browser")
+  check(table.of(inFinder: true, windowTitle: "Documents", rowTitle: "Shared", inOutline: true) == "shared", "the sidebar's Shared row")
+  check(table.of(inFinder: true, windowTitle: "Documents", rowTitle: "AirDrop", inOutline: false) == nil, "a row title outside an outline does not count")
+  check(table.of(inFinder: false, windowTitle: "AirDrop", rowTitle: nil, inOutline: false) == nil, "another app's window titled AirDrop gives none")
+  check(table.of(inFinder: true, windowTitle: "Projects", rowTitle: "Archive", inOutline: true) == nil, "an ordinary folder gives none")
+  check(table.of(" AirDrop ") == "airdrop" && table.of("") == nil && table.of(nil) == nil, "trimmed; empty is none")
+}
+
+func testAppleMenuClickTarget() {
+  // CU-398: a clicked item under the menu bar's first item carries appleMenu - structure, never titles.
+  let levels = [MenuContext.Level(holderTitle: "Apple", childTitles: ["About This Mac", "Restart…", "Shut Down…"])]
+  let apple = MenuContext.of(itemTitle: "Restart…", levels: levels, underAppleMenu: true)
+  check(apple.appleMenu && apple.json["appleMenu"] == .bool(true), "an Apple-menu item is marked")
+  let app = MenuContext.of(itemTitle: "Restart…", levels: [MenuContext.Level(holderTitle: "Game", childTitles: ["Restart…"])])
+  check(!app.appleMenu && app.json["appleMenu"] == nil, "an app's own 'Restart…' is not - no title matching")
+  let nested = MenuContext.of(itemTitle: "notes.txt", levels: [MenuContext.Level(holderTitle: "Recent Items", childTitles: ["notes.txt"]), MenuContext.Level(holderTitle: "Apple", childTitles: ["Recent Items"])], underAppleMenu: true)
+  check(nested.appleMenu && nested.path == ["Apple", "Recent Items", "notes.txt"], "a nested Apple-menu item keeps its path and the mark")
+}
+
 @main
 struct UnitTests {
   static func main() {
@@ -2148,6 +2205,9 @@ struct UnitTests {
     testPopUpItems()
     testPasteboardTypes()
     testMenuTracking()
+    testQuickActions()
+    testFileAncestorAndDropDestination()
+    testAppleMenuClickTarget()
     testEndWatchdog()
     // Informational: whether the process that ran these tests is genuine node (true for Node.js Foundation builds).
     let parentIsNode = PeerCheck.satisfiesNodeRequirement(pid: getppid(), token: nil)
