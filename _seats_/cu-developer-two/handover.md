@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - handover'
 created: 2026-11-08T04:14:00Z
-modified: 2026-11-10T10:46:10Z
+modified: 2026-11-10T12:10:05Z
 level: L1
-version: 4.16.0
+version: 4.17.0
 description: 'What a fresh [cu] Developer Two session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -30,10 +30,11 @@ On main: the six-PR stack (#369 #339 #355 #299 #393 #402), #443, and the form-co
 In Progress: CU-360. Verify: CU-357, CU-368, CU-370 and more. CU-402, CU-405 and CU-406 closed live. CU-409 (desktop side)
 is cu-developer-three's #510 (OK'd at 2ff3d0d09); my #508 was closed for it (one desktop driver half, his file).
 
-## Parity sweep (block 08:20Z, item 3)
+## Parity sweep and CU-412
 
-Real loop and browser driver, one page per control. Typed pass (click, Return, Tab+Space, double-click) done: 62 rows,
-0 off-parity. Next: the empty-field column, then input/link/div variants. High live rows take the browser slot first.
+Done: 62 rows and the input/link/div variants, at parity except CU-412 (High): Return past a role=button div
+submitted unasked. #517 is the browser half (D-107 shape, fail closed); #519 is the
+policy line and #520 the desktop half.
 
 ## Live state
 
