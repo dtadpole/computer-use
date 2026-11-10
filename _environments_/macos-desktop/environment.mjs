@@ -638,7 +638,40 @@ function defaultButtonOf(value) {
   const text = (v) => typeof v === 'string' && v.length > 0 ? v : null
   const role = text(value.role)
   if (role === null) return null
-  return { role, name: text(value.title), panel: panelOf(value.panel) }
+  // CU-409: the default button's form context too, so Return is judged by the click's classifier with it (D-106).
+  const form = formContextOf(value.formContext)
+  return { role, name: text(value.title), panel: panelOf(value.panel), ...(form !== null ? { formContext: form } : {}) }
+}
+
+/**
+ * CU-412 (helper 0.2.69): Return's candidates in a web form with no native default - two or three buttons, each read as
+ * defaultButtonOf reads one (role, name, panel, formContext) - as `{ candidates }`. Fail closed (cu-developer-two's F1 on
+ * #520): a list the driver cannot use whole - more than three, fewer than two, or any unreadable or nameless entry - is `{ more: true }`
+ * (agent core asks unknown), never dropped; no list at all (an older helper, or none sent) is null.
+ */
+export function defaultCandidatesOf(value) {
+  if (value === undefined || value === null) return null
+  if (!Array.isArray(value)) return { more: true }
+  if (value.length === 0) return null
+  // cu-researcher 11:54Z: a candidate with no name (an icon-only button) is unreadable too - it may be the risky one.
+  const read = value.map(defaultButtonOf)
+  if (value.length < 2 || value.length > 3 || read.some((one) => one === null || one.name === null || one.name.trim() === '')) return { more: true }
+  return { candidates: read }
+}
+
+/**
+ * CU-409 (helper 0.2.68): a button's form context as the helper reads it (FormContext: the nearest form, sheet, dialog or
+ * group that lends within 3 levels) - `options`, at most 3 selected pop-up or combo box texts of at most 24 characters,
+ * and `amountEntry`, whether an entry's label words name an amount (never its value). The same shape the chrome driver
+ * gives (CU-402), so agent core's trade rules read it alike. Malformed, or neither part present: null.
+ */
+export function formContextOf(value) {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return null
+  if (!Array.isArray(value.options) || typeof value.amountEntry !== 'boolean') return null
+  const options = value.options.filter((text) => typeof text === 'string').map((text) => text.replace(/\s+/g, ' ').trim())
+    .filter((text) => text !== '' && text.length <= 24).slice(0, 3)
+  if (options.length === 0 && !value.amountEntry) return null
+  return { options, amountEntry: value.amountEntry }
 }
 
 /**
@@ -774,6 +807,9 @@ function boundEntryOf(item, scope) {
   if (item.appleMenu !== undefined && typeof item.appleMenu !== 'boolean') return null
   // CU-250 (helper 0.2.53): an item under the Services menu acts outside the approved app; app-policy refuses it.
   if (item.servicesMenu !== undefined && typeof item.servicesMenu !== 'boolean') return null
+  // CU-382 (helper 0.2.66): an item in Finder's Quick Actions runs a user-installed workflow - the menu-key list marks it
+  // as the clicked item's describe() does, and a chord bound to it is judged as a click on it.
+  if (item.quickActions !== undefined && typeof item.quickActions !== 'boolean') return null
   const name = menuTitleOf(item.title)
   if (name === null) return null
   const path = Array.isArray(item.path) ? item.path.slice(0, 8).map(menuTitleOf).filter((step) => step !== null) : []
@@ -782,6 +818,7 @@ function boundEntryOf(item, scope) {
     enabled: typeof item.enabled === 'boolean' ? item.enabled : null,
     ...(item.appleMenu === true ? { appleMenu: true } : {}),
     ...(item.servicesMenu === true ? { servicesMenu: true } : {}),
+    ...(item.quickActions === true ? { quickActions: true } : {}),
   }
 }
 
@@ -869,6 +906,19 @@ export function fileNameOf(value) {
  * directory or bundle keeping its trailing '/' (Payload.app/); never the path, which names the owner's folders. Null for
  * any other scheme, a malformed URL or a leaf fileNameOf refuses.
  */
+/**
+ * CU-392 (cu-coordinator 01:21Z): whether an element's AXURL names a network volume or server - its scheme is one of
+ * smb, cifs, afp, nfs, webdav(s), dav(s) or ftp(s) (a server row in a file browser, a share on it). A boolean only: the URL, host
+ * and share never leave the driver. A mounted share reads as a file: URL under /Volumes and is not seen here (a named
+ * limit), nor is a WebDAV volume addressed by http(s).
+ */
+export const NETWORK_VOLUME_SCHEMES = Object.freeze(['smb', 'cifs', 'afp', 'nfs', 'webdav', 'webdavs', 'dav', 'davs', 'ftp', 'ftps'])
+export function networkVolumeOf(value) {
+  if (typeof value !== 'string') return false
+  const scheme = /^([a-z][a-z0-9+.-]{0,15}):/i.exec(value.trim())?.[1]?.toLowerCase()
+  return scheme !== undefined && NETWORK_VOLUME_SCHEMES.includes(scheme)
+}
+
 export function fileUrlLeafOf(value) {
   if (typeof value !== 'string') return null
   let url
@@ -1879,6 +1929,19 @@ class DesktopEnvironment {
       // CU-250 (helper 0.2.53): a menu item under the Services menu, and its menu path - outside the fingerprint, and never in
       // run records (an event's target keeps origin, role and name).
       ...(servicesMenuOf(element.servicesMenu) ? { servicesMenu: true } : {}),
+      // CU-398 (helper 0.2.67): a menu item under the Apple menu (Restart..., Shut Down..., Log Out...), structural.
+      ...(element.appleMenu === true ? { appleMenu: true } : {}),
+      // CU-382 (helper 0.2.66): under Finder's Quick Actions (a submenu or the preview pane's row), and a menu walk
+      // that could not finish - each present only when true; outside the fingerprint, and never in run records.
+      ...(element.quickActions === true ? { quickActions: true } : {}),
+      ...(element.menuContextUnread === true ? { menuContextUnread: true } : {}),
+      // CU-392 (helper 0.2.67): where a drop in Finder sends a file - 'airdrop', 'shared' or 'server' - from Finder's own
+      // strings in the helper (the raw title never leaves it); present only when one of those.
+      ...(['airdrop', 'shared', 'server'].includes(element.dropDestination) ? { dropDestination: element.dropDestination } : {}),
+      // CU-409 (helper 0.2.68): a button's form context (formContextOf) - what CU-402's trade rules read beside a bare
+      // 'Sell' or 'Long'. Present only when the helper found a form with a selected text or an amount entry; outside the
+      // fingerprint, and never in run records.
+      ...(formContextOf(element.formContext) !== null ? { formContext: formContextOf(element.formContext) } : {}),
       menuPath: menuPathOf(element.menuPath),
       // CU-187: the label that captions a non-entry element (AXTitleUIElement's title, else its row's or cell's sibling
       // title, as the helper reads it) - never its value or its own title. A string of at most 80 characters, null when
@@ -1906,6 +1969,12 @@ class DesktopEnvironment {
       // never in run records (an event's target keeps origin, role and name); the URL's path never leaves the driver.
       filename: fileNameOf(element.filename),
       url: fileUrlLeafOf(element.url),
+      // CU-387 (helper 0.2.67): 'ancestor' when the helper lent a content element (a row's text, image or cell) the
+      // nearest row's or cell's AXFilename/AXURL - a kind for the run record (CU-391), judged exactly as an own file name.
+      // Present only then; outside the fingerprint.
+      ...(element.fileFrom === 'ancestor' ? { fileFrom: 'ancestor' } : {}),
+      // CU-392: a drop onto a server or network share sends the file away - a boolean from AXURL's scheme, only when true.
+      ...(networkVolumeOf(element.url) ? { networkVolume: true } : {}),
       // CU-265: a link's scheme (AXLink's AXURL), so a facetime:, tel: or mailto: link is not a plain click. Links only - a
       // file browser's items carry file: URLs and are judged by launch_code - and the scheme only, never the URL.
       linkScheme: element.role === 'AXLink' ? linkSchemeOf(element.url) : null,
@@ -1977,6 +2046,11 @@ class DesktopEnvironment {
   #focusedOf(reply) {
     const element = this.#describe(reply.element)
     const defaultButton = defaultButtonOf(reply.defaultButton)
+    // CU-412 (helper 0.2.69): in a web form whose window names no default button, Return's candidates - two or three
+    // ({role, name, formContext?}, as defaultButtonOf reads each) - or more than can be judged (agent core asks unknown).
+    const candidates = defaultCandidatesOf(reply.defaultCandidates)
+    const more = reply.defaultCandidatesMore === true || candidates?.more === true
+    const candidatesFields = { ...(candidates?.candidates ? { defaultCandidates: candidates.candidates } : {}), ...(more ? { defaultCandidatesMore: true } : {}) }
     const defaultButtonRead = defaultButtonReadOf(reply.defaultButtonRead)
     const sheet = sheetOf(reply.sheet)
     const pasteboardChangeCount = changeCountOf(reply.changeCount)
@@ -1996,7 +2070,7 @@ class DesktopEnvironment {
       if (sheet !== true && defaultButton === null && defaultButtonRead !== false) return null
       return { ...this.#describe(appOf(reply.app)), noFocus: true, defaultButton, defaultButtonRead, sheet, pasteboardChangeCount, pasteboardHasFile, textEntered }
     }
-    return { ...element, defaultButton, defaultButtonRead, sheet, pasteboardChangeCount, pasteboardHasFile, textEntered }
+    return { ...element, defaultButton, defaultButtonRead, ...candidatesFields, sheet, pasteboardChangeCount, pasteboardHasFile, textEntered }
   }
 
   /**

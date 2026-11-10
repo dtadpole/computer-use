@@ -1,39 +1,39 @@
 ---
 title: Computer use on the Mac mini - one-page status for the owner
 created: 2026-11-06T04:55:00Z
-modified: 2026-11-10T00:00:00Z
+modified: 2026-11-10T18:47:00Z
 level: L2
-version: 1.7.3
+version: 1.8.10
 status: unverified
 description: 'What the [cu] team has built and proven, what is left, and the owner actions that are still open - one page, kept current by the coordinator.'
 grounded_in:
   - source: ULTIMATE_GOAL.md@2.0.0
-  - source: _seats_/cu-verifier/ultimate-goal-2-verdict.md@0.9.81
+  - source: _seats_/cu-verifier/ultimate-goal-2-verdict.md@0.9.119
   - source: _context_/team-operations/decision-log.yaml (D-034, D-052, D-063, D-079 to D-102)
 ---
 
 # Computer use on the Mac mini - status for the owner
 
-State at 10 November 2026, 00:00 UTC.
+State at 10 November 2026, 18:47 UTC.
 
 ## Where it stands
 
 Seven of the nine ULTIMATE_GOAL 2.0 rows hold on live evidence. Two are open:
 
-- **Consent and safety** holds only when no Urgent or High under-ask is open (D-063). **Three High items are open,
-  each with its fix reviewed or landed:** CU-377 - on the desktop, a file sent from an approved app with 'Upload'
-  went without asking (seen live), and by a policy probe a drag or paste from Finder into another approved app would
-  too (fix on main, closing live); CU-380 - with an app's menu open, Return chose the highlighted item ('Erase All'
-  in the team's test app) without asking, because the helper read the text field behind the menu (helper 0.2.65 on
-  main, the policy half next, then one install); and CU-386 - money-committing buttons outside the purchase list
-  ('Place bid', 'Pledge', 'Top up', 'Add funds', 'Cash out', and Return on a form whose default button is one of
-  them) acted without asking (seen live at 23:45 UTC; fix reviewed). Both consent tables are signed. On 9 November the team's own audits
-  found fourteen High gaps and closed eleven live, among them CU-363 (a website's own one-key shortcuts, such as '#'
+- **Consent and safety** holds only when no Urgent or High under-ask is open (D-063). **Five High items are open**
+  in verdict 0.9.119, every one reproduced on a named stand-in and every one with a reviewed fix PR: CU-424 (OAuth
+  grants, delegates, location sharing), CU-427 (running commands, approving another agent), CU-428 (subscriptions,
+  trials, seller offers), CU-430 (travel add-ons, seat upgrades, flight changes) and CU-431 (router admin: remote
+  access, ports, firmware). Since that verdict one more was filed (CU-434 rides, deliveries, scooter rentals). Closed
+  live today, thirteen: CU-408, CU-409, CU-410, CU-411, CU-412, CU-415, CU-416, CU-417, CU-418, CU-420, CU-421, CU-422
+  and CU-423. A phrase-grammar module that catches near forms by structure (held-out 28 of 31 against the word lists'
+  15 of 31) has both reviews and is next in the lane. Both consent tables are signed. Since 9 November the team's own audits
+  have found forty-two High gaps, closed thirty-six live and lowered one to Medium, among them CU-363 (a website's own one-key shortcuts, such as '#'
   to delete in a mail list), CU-365 (the same with Ctrl or Command chords), CU-370 (choosing 'Delete' in a
   drop-down, list box or radio group by keyboard), CU-373 ('Generate app password' and mail auto-forwarding on a
   website's account settings) and CU-381 (Delete or Backspace on a web page outside a text field). Medium fixes
   closed live that day include field names in six more languages, personal-ID names, unusual separators, less common
-  password forms and links carrying a password. Once these three land, what the row still needs is CU-135, the
+  password forms and links carrying a password. What the row still needs is CU-135, the
   Replace-sheet chain, which only you can answer (a scripted consent answer is refused by design).
   - Names are read in English, Chinese, German, French, Spanish, Russian, Japanese and Korean; Italian, Dutch,
     Portuguese and Turkish are in review. Other languages are a named limit (D-099).
@@ -46,8 +46,8 @@ Seven of the nine ULTIMATE_GOAL 2.0 rows hold on live evidence. Two are open:
 
 | Row | State |
 |---|---|
-| environment, perception, action contract, agent loop | hold live (CUHelper 0.2.64 installed 9 Nov, reading placeholder text and a label placed beside a box; 0.2.65, which reads pop-up menus, open menus and whether the clipboard holds a file, is on main and installs next) |
-| consent and safety | three High open (CU-377, CU-380, CU-386), fixes reviewed or landed; both tables signed; then waits on CU-135 in the owner session |
+| environment, perception, action contract, agent loop | hold live (CUHelper 0.2.65 installed 10 Nov, reading placeholder text, a label placed beside a box, pop-up menus, open menus and whether the clipboard holds a file; 0.2.66, which marks Finder's Quick Actions, and 0.2.67, which reads the file a row names and Finder's AirDrop, Shared and Network destinations, are in review) |
+| consent and safety | five High open in 0.9.119 (CU-424, CU-427, CU-428, CU-430, CU-431), all with reviewed fixes; both tables signed; then waits on CU-135 in the owner session |
 | human control | open: step 4 with you (CU-11, CU-119, CU-135, CU-203) |
 | integration | DSH and heddle each completed a fixture task (CU-15) |
 | trajectory | holds; capture stays inside approved apps |
@@ -66,7 +66,7 @@ Seven of the nine ULTIMATE_GOAL 2.0 rows hold on live evidence. Two are open:
 ## Open owner actions
 
 1. A time and mode (in person or Screen Sharing) for step 4 (CU-11, CU-119, CU-135, CU-203); checklist:
-   `_tools_/live-view/owner-checklist.md`. The human-control row waits only on it, and the consent row on it once CU-377, CU-380 and CU-386 land.
+   `_tools_/live-view/owner-checklist.md`. The human-control row waits only on it, and the consent row on it once the open Highs close (CU-135).
 2. Dismiss the notification alerts on the Mac mini (one sits at the screen centre; at 21:37 UTC one intercepted a live check's click) and quit Typeless before step 4.
 3. Long-running Chrome tabs on the Mac mini hold the load near 30 and slow the team's gates; closing them helps.
 4. Decide on the history clean-up the coordinator reported privately on 9 Nov.

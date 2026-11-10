@@ -185,7 +185,7 @@ final class SystemCapabilities: Capabilities {
     limitTimeouts()
     let (outcome, menuBar) = Accessibility.elementRead(AXUIElementCreateApplication(front.pid), "AXMenuBar")
     guard outcome == .value, let menuBar else { return .unreadable("the app's menu bar could not be read") }
-    guard let walk = MenuWalk.entries(of: menuBar) else { return .unreadable("the app's menu bar could not be read in full") }
+    guard let walk = MenuWalk.entries(of: menuBar, inFinder: bundleId == QuickActionsMenu.finderBundleId) else { return .unreadable("the app's menu bar could not be read in full") }
     let chars = KeyLayout.characters(keyCode: keyCode, command: flags & 0x0010_0000 != 0)
     let chord = MenuKey.Chord(keyCode: keyCode, flags: flags, unshifted: chars.unshifted, shifted: chars.shifted)
     return MenuKey.read(bundleId: bundleId, entries: walk.entries, emptyMenus: walk.emptyMenus, chord: chord)
@@ -321,7 +321,13 @@ final class SystemCapabilities: Capabilities {
       let role = Accessibility.string(node, "AXRole")
       // The first sheet or window up from the focus decides. A sheet is modal, so its Return cannot press the window's
       // default button: a sheet without one answers null, never the window's (cu-developer-one, -two, cu-verifier).
-      if role == "AXSheet" || role == "AXWindow" { return readDefaultButton(of: node, scope: scope) }
+      if role == "AXSheet" || role == "AXWindow" {
+        // CU-412: a web page's form submits on Return past role=button divs the window never names - in a web area
+        // whose window reads no default button, the focus's form gives Return's candidates (DefaultCandidates).
+        let read = readDefaultButton(of: node, scope: scope)
+        guard DefaultCandidates.looks(defaultTitle: read.button.object?["title"]?.string, defaultRead: read.read), Accessibility.inWebArea(element) else { return read }
+        return webCandidates(of: element, scope: scope, beside: read.button)
+      }
       // The top of the tree with no sheet or window on the way (a focus in a menu or a status item) is a positive none:
       // no window holds this focus, so Return has no default button there (cu-developer-two). Only a failed read is false.
       let (outcome, parent) = Accessibility.elementRead(node, "AXParent")
@@ -330,6 +336,20 @@ final class SystemCapabilities: Capabilities {
       node = parent
     }
     return .failed
+  }
+
+  /// CU-412: the focus's form's buttons as Return's default (one), candidates (two or three, each described), or more
+  /// (unknown); none found keeps the positive none.
+  /// `beside`: a nameless default the window named, kept as it is next to two or more candidates (agent core judges
+  /// both, the union); a lone candidate takes its place, as it gives the only name.
+  private func webCandidates(of focus: AXUIElement, scope: [String], beside nameless: JSON) -> DefaultButtonRead {
+    let form = Accessibility.formCandidates(of: focus)
+    switch DefaultCandidates.outcome(count: form.buttons.count, truncated: form.truncated) {
+    case .none: return DefaultButtonRead(button: nameless, read: true)
+    case .one: return DefaultButtonRead(button: Accessibility.describe(form.buttons[0], scope: scope, markPanel: true), read: true)
+    case .some: return DefaultButtonRead(button: nameless, read: true, candidates: form.buttons.map { Accessibility.describe($0, scope: scope, markPanel: true) })
+    case .more: return DefaultButtonRead(button: nameless, read: true, more: true)
+    }
   }
 
   /// CU-190: AXDefaultButton of a sheet or window - a button (read), a positive none (read, null), or a failure.
@@ -779,7 +799,7 @@ enum MenuWalk {
   static let maxItems = 4000
   static let attributes = ["AXRole", "AXTitle", "AXEnabled", "AXMenuItemCmdChar", "AXMenuItemCmdModifiers", "AXMenuItemCmdVirtualKey", "AXMenuItemCmdGlyph", "AXChildren"] as CFArray
 
-  static func entries(of menuBar: AXUIElement) -> (entries: [MenuKey.Entry], emptyMenus: [String])? {
+  static func entries(of menuBar: AXUIElement, inFinder: Bool = false) -> (entries: [MenuKey.Entry], emptyMenus: [String])? {
     var entries: [MenuKey.Entry] = []
     var emptyMenus: [String] = []
     var visited = 0
@@ -819,7 +839,11 @@ enum MenuWalk {
       let start = entries.count
       for (index, child) in children.enumerated() where !walk(child, path: here, depth: depth + 1, apple: apple || (role == "AXMenuBar" && index == 0)) { return false }
       // CU-250: the items of a submenu that is the Services menu are marked servicesMenu.
-      if role == "AXMenu" { MenuKey.markServices(&entries, from: start, holderTitle: path.last, depth: path.count + 1, services: .current) }
+      if role == "AXMenu" {
+        MenuKey.markServices(&entries, from: start, holderTitle: path.last, depth: path.count + 1, services: .current)
+        // CU-382: and of a Finder Quick Actions submenu, quickActions.
+        MenuKey.markQuickActions(&entries, from: start, holderTitle: path.last, depth: path.count + 1, quick: .current, inFinder: inFinder)
+      }
       return true
     }
     guard walk(menuBar, path: [], depth: 0, apple: false) else { return nil }
