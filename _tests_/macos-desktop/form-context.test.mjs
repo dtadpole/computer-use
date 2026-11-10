@@ -115,6 +115,8 @@ test('CU-412 driver: defaultCandidatesOf keeps two or three readable buttons (ro
   assert.deepEqual(defaultCandidatesOf([del]), { more: true }, 'one is never a candidate list (the helper sends it as the default): unknown')
   assert.deepEqual(defaultCandidatesOf([del, keep, del, keep]), { more: true }, 'four are more')
   assert.deepEqual(defaultCandidatesOf([del, { title: 'x' }]), { more: true }, 'an unreadable entry makes the list unknown, never free (cu-developer-two F1)')
+  assert.deepEqual(defaultCandidatesOf([{ role: 'AXButton', title: 'Cancel' }, { role: 'AXButton', title: null }]), { more: true }, 'a nameless (icon-only) candidate is unreadable: unknown, never dropped (cu-researcher 11:54Z)')
+  assert.deepEqual(defaultCandidatesOf([{ role: 'AXButton', title: 'Cancel' }, { role: 'AXButton', title: '' }]), { more: true })
   assert.deepEqual(defaultCandidatesOf('Delete'), { more: true }, 'malformed: unknown')
   assert.equal(defaultCandidatesOf(undefined), null, 'an older helper: nothing')
   assert.equal(defaultCandidatesOf([]), null)

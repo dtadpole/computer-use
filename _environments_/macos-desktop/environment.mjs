@@ -646,15 +646,16 @@ function defaultButtonOf(value) {
 /**
  * CU-412 (helper 0.2.69): Return's candidates in a web form with no native default - two or three buttons, each read as
  * defaultButtonOf reads one (role, name, panel, formContext) - as `{ candidates }`. Fail closed (cu-developer-two's F1 on
- * #520): a list the driver cannot use whole - more than three, fewer than two, or any unreadable entry - is `{ more: true }`
+ * #520): a list the driver cannot use whole - more than three, fewer than two, or any unreadable or nameless entry - is `{ more: true }`
  * (agent core asks unknown), never dropped; no list at all (an older helper, or none sent) is null.
  */
 export function defaultCandidatesOf(value) {
   if (value === undefined || value === null) return null
   if (!Array.isArray(value)) return { more: true }
   if (value.length === 0) return null
+  // cu-researcher 11:54Z: a candidate with no name (an icon-only button) is unreadable too - it may be the risky one.
   const read = value.map(defaultButtonOf)
-  if (value.length < 2 || value.length > 3 || read.some((one) => one === null)) return { more: true }
+  if (value.length < 2 || value.length > 3 || read.some((one) => one === null || one.name === null || one.name.trim() === '')) return { more: true }
   return { candidates: read }
 }
 
