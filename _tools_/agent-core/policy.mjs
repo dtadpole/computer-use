@@ -88,6 +88,13 @@ const WORDS = Object.freeze({
     'book flight', 'book a flight', 'book hotel', 'book room', 'book a room', 'confirm booking', 'complete booking',
     // cu-coordinator 13:19Z (round 3).
     'book tickets', 'book car', 'book a car', 'book trip', 'book a trip', 'confirm reservation',
+    // CU-416 (High; cu-coordinator 13:32Z): admin consoles move other people's money.
+    'run payroll', 'release payment', 'send payment', 'approve payment run', 'process refund', 'issue card', 'issue a card',
+    'issue new card', 'raise credit limit', 'increase credit limit',
+    // cu-coordinator 13:43Z: plurals and synonyms.
+    'release payments', 'process refunds', 'run payrolls', 'process payroll', 'refund customer', 'raise limit', 'increase limit',
+    'increase spending limit', 'raise spending limit', 'issue virtual card', 'reimburse', 'send payments', 'approve payment',
+    'approve payments',
     // CU-410 (High; cu-coordinator 10:17Z): billing wordings one word from the asking ones.
     'add seats', 'add licenses', 'add credits', 'top up credits', 'resume subscription', 'upgrade seats', 'gift a subscription',
     'send gift', 'get tickets',
@@ -122,6 +129,8 @@ const WORDS = Object.freeze({
     // CU-415: cancelling a booking is often fee-bearing and not undoable.
     'cancel reservation', 'cancel booking', 'cancel my booking', 'cancel my reservation',
     'cancel trip', 'cancel my trip', 'cancel appointment', 'cancel my appointment',
+    // CU-416: ending someone's employment or access.
+    'terminate employee', 'offboard user', 'offboard employee', 'offboard',
     // CU-411 (High; cu-coordinator 11:00Z): closing, terminating, resetting or wiping an account or its data.
     'close my account', 'close account', 'terminate account', 'reset account', 'clear data', 'clear all data', 'wipe data',
     'erase account', 'factory reset',
@@ -137,6 +146,8 @@ const WORDS = Object.freeze({
     'sign document', 'sign the document', 'e-sign', 'esign', 'adopt and sign', 'sign and submit', 'accept terms', 'accept the terms',
     'accept agreement', 'accept the agreement', 'authorize release', 'authorise release', 'release records',
     'sign agreement', 'sign the agreement', 'sign contract', 'sign the contract', 'release my records',
+    // CU-416: acting as another person.
+    'impersonate', 'impersonate user', 'view as user', 'view as this user',
     // CU-411: ownership and admin grants widen access.
     'make owner', 'make co-owner', 'transfer ownership', 'make admin', 'grant admin',
     // CU-408: adding a payee widens who can be paid.
@@ -1301,6 +1312,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (!focusesEntry && /^\s*book\s+(?:an?\s+)?appointment\b/i.test(name)) {
         classes.push(/[$\u20ac\u00a3\u00a5]\s*\d|\d\s*[$\u20ac\u00a3\u00a5]|\bdeposit\b|\b(?:usd|eur|gbp)\s*\d/i.test(name) ? 'purchase' : 'submit')
       }
+      // CU-416: 'Log in as' / 'Sign in as' <someone> acts as that person ('as guest' signs in as nobody).
+      if (!focusesEntry && /^\s*(?:(?:log|sign)\s+in|login|act)\s+as\b(?!\s+(?:a\s+)?guest\b)/i.test(name)) classes.push('permission')
       // CU-410: renting ('Rent', 'Rent now', 'Rent <title>'; 'Rentals' stays free), a bare 'Renew', reactivating a subscription,
       // turning auto-renew on and switching the billing period ask purchase.
       if (!focusesEntry && (/^\s*rent\b/i.test(name) || /^\s*renew\s*$/i.test(name)
