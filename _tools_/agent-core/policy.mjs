@@ -1251,7 +1251,13 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const formTrade = form && typeof form === 'object' && Array.isArray(form.options) && form.options.some((text) => TRADE_ASSET.test(String(text)))
       if (!focusesEntry && /\b(?:sell|convert|deposit)\b/i.test(name) && (/\d|[$\u20ac\u00a3\u00a5\u20bf]/.test(name) || TRADE_ASSET.test(name) || formTrade)) classes.push('purchase')
       // CU-408: a bare 'Refund' issues one (exact name; 'Refund policy' stays free).
-      if (!focusesEntry && /^\s*refund\s*$/i.test(name)) classes.push('purchase')
+      // cu-coordinator 09:52Z (near forms): a refund or a charge with an amount, a partial or full refund, a recurring payment, and
+      // 'turn autopay on' move money too.
+      if (!focusesEntry && (/^\s*refund\s*$/i.test(name) || /^\s*(?:refund|charge)\s+(?:[A-Z]{3}\s*)?[$\u20ac\u00a3\u00a5]?\s*\d/i.test(name)
+        || /^\s*(?:partial|full)\s+refund\b/i.test(name) || /\b(?:set\s+up|schedule|create|start)\s+(?:a\s+)?recurring\s+payment\b/i.test(name)
+        || /^\s*turn\s+auto[\s-]?pay\s+on\s*$/i.test(name))) classes.push('purchase')
+      // An article or an adjective before payee / recipient / beneficiary ('Add new payee', 'Add a recipient', 'Add bank recipient').
+      if (!focusesEntry && /^\s*add\s+(?:[^\s]+\s+){1,2}(?:payee|recipient|beneficiary)\b/i.test(name)) classes.push('permission')
       // CU-408 (cu-coordinator 09:50Z): a bare 'Autopay' switch mirrors CU-373 - only a NATIVE checkbox read as on (the press
       // turns autopay off) is free; native off (turning it on), an ARIA-sourced, 'mixed' or missing state asks purchase.
       if (!focusesEntry && /^\s*auto[\s-]?pay\s*$/i.test(name) && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))) {

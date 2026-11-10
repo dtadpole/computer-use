@@ -40,3 +40,10 @@ test('CU-408 (09:50Z): a bare Autopay switch mirrors CU-373 - native on is free,
   assert.equal(toggle({ tag: 'div', role: 'switch' }), 'purchase', 'missing state asks')
   assert.equal(toggle({ tag: 'a', role: 'link' }), 'allow', 'an Autopay link or tab is navigation')
 })
+
+test('CU-408 near forms: refund/charge with an amount, partial/full refund, recurring payment, Turn autopay on ask purchase; payee with an article or adjective asks permission', () => {
+  for (const name of ['Refund $20', 'Partial refund', 'Full refund', 'Charge $40', 'Set up recurring payment', 'Turn autopay on']) assert.equal(click(name), 'purchase', name)
+  for (const name of ['Add new payee', 'Add a recipient', 'Add bank recipient', 'Add a new beneficiary', 'Add international payee']) assert.equal(click(name), 'permission', name)
+  for (const name of ['Refund $20', 'Turn autopay on']) assert.equal(enter(name), 'purchase', `Return: ${name}`)
+  for (const name of ['Charge', 'Charges', 'Recurring payments', 'Refunds', 'Payment confirmed', 'Turn autopay off']) assert.equal(click(name), 'allow', name)
+})
