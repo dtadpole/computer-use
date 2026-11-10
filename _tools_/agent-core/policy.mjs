@@ -151,7 +151,7 @@ const WORDS = Object.freeze({
 })
 // CU-377 follow-up: the file browsers whose rows are files (the same set as app-policy's FILE_BROWSERS).
 const FILE_BROWSER_APPS = new Set(['com.apple.finder', 'com.cocoatech.PathFinder', 'com.binarynights.ForkLift-3', 'com.binarynights.ForkLift', 'com.eltima.cmd1', 'com.mrrsoftware.marta', 'org.yanex.marta'])
-const ACCOUNT_SECURITY = /\b(?:(?:generate|create|new|add)\s+(?:an?\s+)?app[\s-]?(?:specific[\s-]?)?passwords?|app[\s-]?(?:specific[\s-]?)?passwords?|(?:enable|disable|turn\s+(?:on|off)|set\s+up|add\s+(?:a\s+)?)?\s*(?:auto[\s-]?forward(?:ing)?|forwarding(?:\s+address)?|forward\s+(?:a\s+copy|incoming|all|to)\b)|two[\s-]?(?:factor|step)(?:\s+(?:authentication|verification|login))?|2[\s-]?step\s+verification|create\s+(?:a\s+|new\s+)?filter|2fa|multi[\s-]?factor(?:\s+authentication)?|recovery\s+(?:e-?mail|phone|codes?))\b/i
+const ACCOUNT_SECURITY = /\b(?:(?:generate|create|new|add)\s+(?:an?\s+)?app[\s-]?(?:specific[\s-]?)?passwords?|app[\s-]?(?:specific[\s-]?)?passwords?|(?:enable|disable|turn\s+(?:on|off)|set\s+up|add\s+(?:a\s+)?)?\s*(?:auto[\s-]?forward(?:ing)?|automatic(?:ally)?\s+forward(?:ing)?|forwarding(?:\s+address)?|forward\s+(?:a\s+copy|incoming|all|to)\b)|two[\s-]?(?:factor|step)(?:\s+(?:authentication|verification|login))?|2[\s-]?step\s+verification|create\s+(?:a\s+|new\s+)?filter|2fa|multi[\s-]?factor(?:\s+authentication)?|recovery\s+(?:e-?mail|phone|codes?))\b/i
 const PRECEDENCE = ['purchase', 'launch_code', 'delete', 'permission', 'page_dialog', 'credential', 'sensitive_data', 'submit', 'new_site', 'install']
 const POINTER = new Set(['click', 'double_click', 'triple_click'])
 // CU-135 (keyboard-activation.md): a focused button; any control a click activates (Space presses or toggles it); and a
@@ -1044,6 +1044,12 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (namesPurchase(optionName)) classes.push('purchase')
       if (namesDelete(optionName)) classes.push('delete')
       if (namesWord(optionName, WORDS.permission)) classes.push('permission')
+      // CU-388 (High; cu-coordinator 00:28Z): a choice reached by key is judged like a click on it, CU-373's account-security
+      // names included - turning forwarding on, an app password, a bare two-factor or recovery option ask credential; the
+      // safe directions by name (protection on, forwarding off) stay free as on a click.
+      const protectionOnByName = /\b(?:turn\s+on|enable|set\s+up|activate)\b/i.test(optionName) && !/forward|app[\s-]?(?:specific[\s-]?)?password/i.test(optionName)
+      const forwardingOffByName = /\b(?:disable|turn\s+off|stop|off)\b/i.test(optionName) && /forward/i.test(optionName)
+      if (ACCOUNT_SECURITY.test(optionName) && !protectionOnByName && !forwardingOffByName) classes.push('credential')
     }
     // CU-363 (design note 0.1; High pending a live row): on a web page a printable key pressed outside text entry goes to
     // the page, whose own handler may delete, archive or send (Gmail '#', 'e', '!') - its effect cannot be read, so it asks
