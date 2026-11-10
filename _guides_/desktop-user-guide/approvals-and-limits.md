@@ -39,7 +39,7 @@ keychains, shell start-up files, login items or `/Applications`. Password fields
 ## Approvals
 
 It asks before using a new app (once, this run, or always), running code (opening an app, script, installer or items it cannot read; App Store installs; Run in an IDE or notebook), sending, calling or joining a meeting, opening a link to another app (tel:, FaceTime), buying (free trials too), deleting or overwriting, physical unlocking, opening or disarming (every time), granting a permission (saving a password or passkey too) or switching off account protection, submitting a form your browser autofilled,
-entering credentials or sensitive data in a field or embedded card frame (street address, e-mail, phone; not city or postcode) or in a web address (also keys, passports, tax ids and bank accounts), pasting your own clipboard, copying a sensitive field's text, or labelled text (Passport, IBAN), into another field, and choosing a file (asked every time). Buying, deleting, permissions and
+entering credentials or sensitive data in a field or embedded card frame (street address, e-mail, phone; not city or postcode) or in a web address (also cards, keys, passports, tax ids and bank accounts), pasting your own clipboard, copying a sensitive field's text, or labelled text (Passport, IBAN), into another field, and choosing a file (asked every time). Buying, deleting, permissions and
 file choices are never pre-approved. Typed sensitive text stays out of run files. Unattended (`--consent unattended`), every question is declined. Manage "always" apps: `cli.mjs apps list`, `apps revoke <bundle id>`.
 
 ## Known limits
@@ -47,8 +47,7 @@ file choices are never pre-approved. Typed sensitive text stays out of run files
 - Names are read in English, Chinese, German, French, Spanish, Russian, Japanese and Korean only.
 - A file panel's question names the folder only if the agent opened it.
 - One display, at its starting size; moving it ends the run.
-- A leftover notification blocks clicks beneath it.
-- A page's mailto: link may open your mail app (used only if approved).
+- A page script can open your mail app (mailto:); a clicked one asks, and the agent acts there only if approved.
 - A shortcut is judged by the menu item it fires; other letters and non-editing chords outside a text field ask.
 - Bare Accept, Connect, Join, Follow, Reject: free.
 - A file the agent copied with nothing selected, pasted elsewhere, is not asked.
