@@ -84,6 +84,10 @@ const LOCALE_ID_NAMES = Object.freeze(['reisepass', '…passnummer', 'geburtsdat
   '여권', '여권번호', '생년월일', '주민등록번호', '계좌번호', '사업자등록번호'])
 const WORDS = Object.freeze({
   purchase: ['buy', 'pay', 'order', 'place order', 'checkout', 'check out', 'subscribe', 'donate', 'purchase', 'transfer', 'withdraw', 'wire', 'send money',
+    // CU-408 (High; cu-coordinator 09:43Z): payments, schedules, autopay, refunds and charges move money.
+    'confirm payment', 'authorize payment', 'authorise payment', 'submit payment', 'make payment', 'make a payment', 'pay now',
+    'schedule payment', 'schedule a payment', 'set up autopay', 'enable autopay', 'turn on autopay', 'issue refund', 'issue a refund',
+    'charge card', 'charge customer', 'capture payment', 'send invoice payment',
     // CU-401 (High; cu-coordinator 05:16Z): ending a paid plan.
     'cancel plan', 'cancel membership', 'downgrade', 'end trial',
     // CU-400 (High; cu-coordinator 04:39Z): a trade, swap, stake or signature moves money and cannot be taken back.
@@ -111,6 +115,8 @@ const WORDS = Object.freeze({
     // cu-researcher's 13:23Z sweep: unsaved edits lost, like Discard Changes.
     'revert to saved', 'revert all changes', ...ZH_WORDS.delete, ...LOCALE_WORDS.delete],
   permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke',
+    // CU-408: adding a payee widens who can be paid.
+    'add payee', 'add a payee', 'add recipient', 'add beneficiary',
     // CU-401: leaving a shared space or unlinking an account.
     'leave workspace', 'leave organization', 'leave organisation', 'leave org', 'leave team', 'leave server', 'unlink account',
     // CU-386 (cu-coordinator 23:54Z): asking someone else for money.
@@ -1244,6 +1250,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const form = target?.formContext
       const formTrade = form && typeof form === 'object' && Array.isArray(form.options) && form.options.some((text) => TRADE_ASSET.test(String(text)))
       if (!focusesEntry && /\b(?:sell|convert|deposit)\b/i.test(name) && (/\d|[$\u20ac\u00a3\u00a5\u20bf]/.test(name) || TRADE_ASSET.test(name) || formTrade)) classes.push('purchase')
+      // CU-408: a bare 'Refund' issues one (exact name; 'Refund policy' stays free).
+      if (!focusesEntry && /^\s*refund\s*$/i.test(name)) classes.push('purchase')
       // cu-coordinator 05:30Z: the form's own submit - 'Place', 'Place order', 'Confirm', 'Submit' - beside an asset option is
       // the trade too; 'Continue', 'Next' and 'Review' stay free (the review step's Confirm asks).
       if (!focusesEntry && formTrade && /\b(?:place|confirm|submit)\b/i.test(name)) classes.push('purchase')
