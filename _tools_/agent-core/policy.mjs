@@ -45,6 +45,8 @@ const ZH_WORDS = Object.freeze({
     // CU-422: civic, legal and employment acts in the owner's name.
     'cast ballot', 'cast your ballot', 'cast vote', 'sign petition', 'sign the petition', 'quit job', 'quit my job', 'decline offer',
     'accept offer', 'apply now', 'enroll now', 'submit vote',
+    // CU-430: accepting an airline's new itinerary or schedule change binds the trip.
+    'accept new itinerary', 'accept the new itinerary', 'accept schedule change', 'accept the schedule change', 'accept itinerary change',
     '视频通话', '視訊通話', '语音通话', '語音通話', '开始会议', '開始會議', '接受邀请', '接受邀請', '拒绝邀请', '拒絕邀請',
     '部署', '退出群聊', '退出群組', '取消会议', '取消會議', '举报', '檢舉', '申请加入', '申請加入', '报税', '報稅',
     // cu-researcher on #145: Reply (回复 / 回覆) - judged like English 'reply', by CU-157's text-entered rule.
@@ -92,6 +94,12 @@ const WORDS = Object.freeze({
   purchase: ['buy', 'pay', 'order', 'place order', 'checkout', 'check out', 'subscribe', 'donate', 'purchase', 'transfer', 'withdraw', 'wire', 'send money',
     // CU-422 (High; cu-coordinator 15:23Z): tips and renewals spend money.
     'add tip', 'add a tip', 'renew license', 'renew my license',
+    // CU-430 (High; cu-coordinator 17:09Z): travel add-ons, seat upgrades, miles and flight changes spend money or points.
+    'add bag', 'add bags', 'add checked bag', 'add a checked bag', 'add checked bags', 'add insurance', 'add travel insurance',
+    'upgrade seat', 'upgrade my seat', 'use miles', 'use points', 'redeem miles', 'change flight', 'change my flight', 'change dates',
+    'change travel dates',
+    // cu-coordinator 17:20Z (round 2): trip insurance.
+    'add trip insurance', 'add flight insurance',
     // CU-415 (High; cu-coordinator 13:10Z): bookings commit money.
     'book flight', 'book a flight', 'book hotel', 'book room', 'book a room', 'confirm booking', 'complete booking',
     // cu-coordinator 13:19Z (round 3).
@@ -138,6 +146,8 @@ const WORDS = Object.freeze({
     'renew plan', ...ZH_WORDS.purchase, ...LOCALE_WORDS.purchase],
   // CU-135: replace and overwrite (a save panel's 'already exists' sheet), don't save (a close sheet discards work).
   delete: ['delete', 'remove', 'discard', 'erase', 'empty trash', 'cancel subscription', 'replace', 'overwrite', "don't save", 'don\u2019t save',
+    // CU-430 (CU-415 family): cancelling a flight cancels a trip.
+    'cancel flight', 'cancel my flight', 'cancel this flight', 'cancel this trip', 'cancel my trip', 'cancel the trip',
     // CU-415: cancelling a booking is often fee-bearing and not undoable.
     'cancel reservation', 'cancel booking', 'cancel my booking', 'cancel my reservation',
     'cancel trip', 'cancel my trip', 'cancel appointment', 'cancel my appointment',
@@ -157,6 +167,12 @@ const WORDS = Object.freeze({
     // cu-researcher's 13:23Z sweep: unsaved edits lost, like Discard Changes.
     'revert to saved', 'revert all changes', ...ZH_WORDS.delete, ...LOCALE_WORDS.delete],
   permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke',
+    // CU-431 (High; cu-coordinator 17:23Z): router / NAS admin acts that expose the home network or its admin access.
+    'enable remote management', 'enable remote access', 'enable ssh', 'enable telnet', 'open port', 'open a port', 'add port forwarding',
+    'add port forward', 'enable dmz', 'enable upnp', 'expose to internet', 'expose to the internet', 'allow wan access',
+    // cu-coordinator 17:39Z (round 2): verb synonyms, a plural and an article.
+    'turn on remote management', 'turn on remote access', 'allow remote access', 'allow remote management', 'turn on upnp',
+    'turn on ssh', 'open ports', 'enable the dmz', 'turn on dmz', 'turn on the dmz',
     // CU-420 (High; cu-coordinator 15:00Z): turning machine protection off, or trusting a device.
     'disable filevault', 'turn off filevault', 'turn off firewall', 'disable firewall', 'disable the firewall', 'disable antivirus',
     'turn off antivirus', 'turn off real-time protection', 'disable real-time protection', 'trust this device', 'trust device',
@@ -183,6 +199,11 @@ const WORDS = Object.freeze({
     // cu-coordinator 16:36Z (round 2).
     'link accounts', 'delegate access', 'grant inbox access', 'grant calendar access', 'start sharing my location',
     'turn on location sharing',
+    // CU-427 (High; cu-coordinator 16:36Z): approving another agent's actions - a one-click route for an injected command.
+    'allow tool', 'allow this tool', 'always allow', 'trust workspace', 'trust this workspace', 'trust folder', 'trust this folder',
+    'turn on yolo mode', 'enable yolo mode', 'auto-approve', 'auto approve', 'accept all edits', 'accept all changes', 'apply all changes',
+    // cu-coordinator 16:52Z (round 2): VS Code's workspace-trust button and the bulk-accept forms.
+    'trust the authors', 'yes, i trust the authors', 'accept all suggestions', 'apply all edits',
     // CU-415: signatures bind the owner; releasing records shares personal data.
     'sign document', 'sign the document', 'e-sign', 'esign', 'adopt and sign', 'sign and submit', 'accept terms', 'accept the terms',
     'accept agreement', 'accept the agreement', 'authorize release', 'authorise release', 'release records',
@@ -1363,6 +1384,22 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const form = target?.formContext
       const formTrade = form && typeof form === 'object' && Array.isArray(form.options) && form.options.some((text) => TRADE_ASSET.test(String(text)))
       if (!focusesEntry && /\b(?:sell|convert|deposit)\b/i.test(name) && (/\d|[$\u20ac\u00a3\u00a5\u20bf]/.test(name) || TRADE_ASSET.test(name) || formTrade)) classes.push('purchase')
+      // CU-430: 'Upgrade to <cabin>' (Business, First, Premium Economy ...) spends money.
+      if (!focusesEntry && /^\s*upgrade\s+to\s+(?:business|first|premium(?:\s+economy)?|economy\s+plus|comfort|main\s+cabin|extra\s+legroom)\b/i.test(name)) classes.push('purchase')
+      // Round 2: 'Add <n> bags' (a count).
+      if (!focusesEntry && /^\s*add\s+\d+\s+(?:checked\s+|carry[\s-]?on\s+)?bags?\b/i.test(name)) classes.push('purchase')
+      // CU-431: changing or resetting an admin password asks credential; updating, uploading or flashing firmware asks install.
+      if (!focusesEntry && /^\s*(?:change|reset|set)\s+(?:the\s+)?(?:(?:router|device|wi-?fi|nas)\s+(?:admin(?:istrator)?\s+)?|admin(?:istrator)?\s+)password\b/i.test(name)) classes.push('credential')
+      if (!focusesEntry && /^\s*(?:update|upload|flash|install|upgrade)\s+(?:the\s+)?(?:router\s+|new\s+)?firmware\b/i.test(name)) classes.push('install')
+      // CU-431 switches (cu-coordinator 17:27Z, CU-418's switch rule): a router switch named Remote management / access, SSH,
+      // Telnet, UPnP, DMZ, WAN access or Port forwarding turned ON asks permission and OFF is free - the direction is trusted
+      // only from a native checkbox read; an ARIA, mixed or missing state (and a desktop web area without it) asks both ways.
+      if (!focusesEntry && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))
+        && /^\s*(?:remote\s+(?:management|access|administration)|ssh|telnet|upnp|dmz|wan\s+access|port\s+forwarding)\s*$/i.test(name)) {
+        const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
+        const known = nativeBox && typeof target.checked === 'boolean'
+        if (!known || target.checked === false) classes.push('permission')
+      }
       // CU-420: exporting, revealing, showing, viewing or copying passwords or secrets and getting recovery codes expose credentials;
       // 'Show password' asks everywhere, the sign-in eye toggle included - the plaintext reaches the next screenshot (cu-coordinator
       // 15:16Z, superseding 15:13Z); 15:18Z adds keychain / credentials exports, secrets and 'Get backup codes'.
@@ -1391,6 +1428,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // (Wi-Fi, network, printer, Bluetooth, display, TV, speaker).
       if (!focusesEntry && (/^\s*(?:log\s*in|login|sign\s*in|sign\s*up|continue)\s+with\s+(?:google|apple|microsoft|github|gitlab|facebook|twitter|x|linkedin|slack|amazon)\b/i.test(name)
         || /^\s*connect\s+(?:to|with)\s+(?!(?:a\s+|the\s+)?(?:wi-?fi|network|printer|bluetooth|display|tv|speaker|airplay|hotspot)\b)\S/i.test(name))) classes.push('permission')
+      // CU-427: running a command on this Mac asks install (code runs here).
+      // Round 2 adds 'Run in shell' and 'Run this script'.
+      if (!focusesEntry && /^\s*(?:run|execute)\s+(?:this\s+|the\s+)?(?:command|script|in\s+(?:terminal|shell)|shell\s+command)\b/i.test(name)) classes.push('install')
       // CU-415 (cu-coordinator 13:12Z): 'Reserve seat / table' asks purchase on the name alone (a booking commits the owner; a
       // free table's over-ask is named); 'Book appointment' asks purchase with a price or deposit in its name, else submit.
       if (!focusesEntry && /^\s*reserve\s+(?:a\s+)?(?:seat|table|spot)\b/i.test(name)) classes.push('purchase')
