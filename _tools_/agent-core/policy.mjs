@@ -101,6 +101,10 @@ const WORDS = Object.freeze({
     // cu-researcher's 13:23Z sweep: unsaved edits lost, like Discard Changes.
     'revert to saved', 'revert all changes', ...ZH_WORDS.delete, ...LOCALE_WORDS.delete],
   permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke',
+    // CU-396 (cu-coordinator 03:58Z): presenting, broadcasting, streaming, recording others and calling back reach others
+    // like 'Share screen' and 'Call' - a bare 'Present' in slide apps stays free (named).
+    'present now', 'present a tab', 'present a window', 'present your screen', 'present entire screen', 'go live',
+    'start broadcast', 'start streaming', 'start livestream', 'start live stream', 'start recording', 'call back',
     // CU-386 (cu-coordinator 23:54Z): asking someone else for money.
     'request money',
     // CU-258 (cu-researcher): standing choices an app keeps after the run, as whole phrases. A bare 'Allow' stays free so
@@ -132,6 +136,8 @@ const WORDS = Object.freeze({
       'password', 'passkey', 'passkeys', 'security key', 'security keys', 'login alerts', 'sign in alerts', 'account recovery', 'find my',
       'less secure apps', 'less secure app access'].map((what) => `${verb} ${what}`)), ...ZH_WORDS.permission],
   submit: ['send', 'post', 'submit', 'publish', 'reply', 'sign up', 'register',
+    // CU-397 (cu-coordinator 03:58Z): a message to a calendar event's guests is a send.
+    'email all invitees', 'email guests', 'notify guests', 'send updates', 'forward invitation', 'propose new time',
     // CU-261 (cu-researcher; cu-coordinator: High): actions that reach other people or commit shared work, as whole
     // phrases. A bare Accept, Connect, Join or Follow stays free (cookie banners, Wi-Fi, generic joins: named limits).
     'facetime', 'video call', 'audio call', 'voice call', 'start call', 'start a call', 'join meeting', 'join call',
@@ -329,6 +335,8 @@ const SUBMIT_BUT_REPLY = Object.freeze(WORDS.submit.filter((word) => !REPLY_WORD
 // CU-293: the same whole names in Chinese - 合并单元格 (Merge Cells) stays free like its English.
 const SUBMIT_WHOLE_NAMES = new Set(['call', 'answer', 'merge', '呼叫', '接听', '接聽', '合并', '合併'])
 function judgesSubmit(name, target) {
+  // CU-397 (cu-coordinator 03:58Z): declining to send is not a send - "Don't Send", "Don't send updates" stay free.
+  if (/^\s*(?:don['\u2019]?t|do\s+not)\s+send\b/i.test(String(name ?? ''))) return false
   if (SUBMIT_WHOLE_NAMES.has(normaliseName(name).trim())) return true
   if (!namesWord(withoutPastState(name), WORDS.submit)) return false
   return !(target?.textEntered === false && !namesWord(name, SUBMIT_BUT_REPLY))
