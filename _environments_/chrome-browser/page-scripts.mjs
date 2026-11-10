@@ -794,8 +794,13 @@ export function keyChoice(el, key, selectKeyOptionFn) {
     current = el
   }
   if (!box || typeof box.querySelectorAll !== 'function') return null
+  // An aria-multiselectable listbox acts on every selected option at once - the ARIA twin of a multiple select: unread
+  // for any key that may change or commit the selection (cu-researcher 22:13Z).
+  if (attr(box, 'aria-multiselectable') === 'true') return navigation || key === 'Enter' || key === ' ' || key.length === 1 ? 'unread' : null
   const options = Array.from(box.querySelectorAll('[role="option"]')).filter((o) => attr(o, 'aria-disabled') !== 'true')
   if (current === null) current = byId(attr(el, 'aria-activedescendant'))
+  // Pages that mark the active option without aria-activedescendant: the selected one, else a focused option inside.
+  if (current === null || !options.includes(current)) current = options.find((o) => attr(o, 'aria-selected') === 'true') || options.find((o) => doc && o === doc.activeElement) || null
   const index = current ? options.indexOf(current) : -1
   if (key === 'Enter') return role === 'option' ? null : index >= 0 ? options[index] : null
   if (!navigation || key === 'PageUp' || key === 'PageDown') return navigation ? 'unread' : null
