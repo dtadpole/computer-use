@@ -84,10 +84,18 @@ const LOCALE_ID_NAMES = Object.freeze(['reisepass', '…passnummer', 'geburtsdat
   '여권', '여권번호', '생년월일', '주민등록번호', '계좌번호', '사업자등록번호'])
 const WORDS = Object.freeze({
   purchase: ['buy', 'pay', 'order', 'place order', 'checkout', 'check out', 'subscribe', 'donate', 'purchase', 'transfer', 'withdraw', 'wire', 'send money',
+    // CU-410 (High; cu-coordinator 10:17Z): billing wordings one word from the asking ones.
+    'add seats', 'add licenses', 'add credits', 'top up credits', 'resume subscription', 'upgrade seats', 'gift a subscription',
+    'send gift', 'get tickets',
     // CU-408 (High; cu-coordinator 09:43Z): payments, schedules, autopay, refunds and charges move money.
     'confirm payment', 'authorize payment', 'authorise payment', 'submit payment', 'make payment', 'make a payment', 'pay now',
     'schedule payment', 'schedule a payment', 'set up autopay', 'enable autopay', 'turn on autopay', 'issue refund', 'issue a refund',
     'charge card', 'charge customer', 'capture payment', 'send invoice payment',
+    // CU-409 (High; cu-coordinator 10:08Z): positions, liquidity, listings and offers, and token-spend approvals move money.
+    'open position', 'close position', 'add liquidity', 'remove liquidity', 'list for sale', 'make offer', 'make an offer', 'accept offer',
+    'set spending cap', 'increase allowance', 'approve spending',
+    // cu-coordinator 10:19Z: the near forms.
+    'open long', 'open short', 'close all positions', 'market close', 'list nft', 'list item', 'repay loan',
     // CU-401 (High; cu-coordinator 05:16Z): ending a paid plan.
     'cancel plan', 'cancel membership', 'downgrade', 'end trial',
     // CU-400 (High; cu-coordinator 04:39Z): a trade, swap, stake or signature moves money and cannot be taken back.
@@ -1260,6 +1268,12 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const form = target?.formContext
       const formTrade = form && typeof form === 'object' && Array.isArray(form.options) && form.options.some((text) => TRADE_ASSET.test(String(text)))
       if (!focusesEntry && /\b(?:sell|convert|deposit)\b/i.test(name) && (/\d|[$\u20ac\u00a3\u00a5\u20bf]/.test(name) || TRADE_ASSET.test(name) || formTrade)) classes.push('purchase')
+      // CU-410: renting ('Rent', 'Rent now', 'Rent <title>'; 'Rentals' stays free), a bare 'Renew', reactivating a subscription,
+      // turning auto-renew on and switching the billing period ask purchase.
+      if (!focusesEntry && (/^\s*rent\b/i.test(name) || /^\s*renew\s*$/i.test(name)
+        || /^\s*reactivate(?:\s+(?:my\s+|your\s+)?(?:subscription|plan|membership))?\s*$/i.test(name)
+        || /^\s*(?:turn\s+on|enable)\s+auto[\s-]?renew(?:al)?\b/i.test(name)
+        || /^\s*switch\s+to\s+(?:annual|yearly|monthly)\b/i.test(name))) classes.push('purchase')
       // CU-411: rotating, regenerating, generating, creating or revoking a key or token is a credential act (it asks credential,
       // not the 'api key' / 'revoke' permission words).
       // 'Transfer ownership' hands the account over (permission), not money - its 'transfer' is not a purchase.
@@ -1285,6 +1299,11 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
         if (!(nativeBox && target.checked === true)) classes.push('purchase')
       }
+      // CU-409: bare 'Long', 'Short', 'Borrow', 'Lend', 'Supply', 'Repay' ask only in asset context - an asset word or a currency
+      // sign in the name, or an asset among the form's options (CU-402); a video 'Short' or a library 'Borrow 2 books' stays free.
+      if (!focusesEntry && /\b(?:long|short|borrow|lend|supply|repay)\b/i.test(name) && (/[$\u20ac\u00a3\u00a5\u20bf]/.test(name) || TRADE_ASSET.test(name) || formTrade)) classes.push('purchase')
+      // CU-409: 'Leverage <N>x' and 'Approve <TICKER>' (an all-caps token after Approve, e.g. 'Approve USDC') ask anywhere.
+      if (!focusesEntry && (/\bleverage\s+\d+(?:\.\d+)?\s*x\b|\b\d+(?:\.\d+)?\s*x\s+leverage\b/i.test(name) || /^\s*(?:approve|Approve|APPROVE)\s+[A-Z][A-Z0-9]{1,9}\s*$/.test(String(target?.name ?? '')) || /^\s*approve\s+(?:usdc|usdt|dai|eth|weth|wbtc|btc|sol|matic)\s*$/i.test(name))) classes.push('purchase')
       // cu-coordinator 05:30Z: the form's own submit - 'Place', 'Place order', 'Confirm', 'Submit' - beside an asset option is
       // the trade too; 'Continue', 'Next' and 'Review' stay free (the review step's Confirm asks).
       if (!focusesEntry && formTrade && /\b(?:place|confirm|submit)\b/i.test(name)) classes.push('purchase')
