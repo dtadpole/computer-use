@@ -1843,6 +1843,16 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // #575 round 2 (cu-coordinator 21:26Z): a native checkbox or switch already ON is being turned OFF - the grammar reads the
     // name as an act ('Forward calls') and must not ask for switching it off. The direction rules above decide such switches.
     const nativeOn = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? '')) && target?.checked === true
+    // Split particles for the OLDER lists (cu-coordinator 22:02Z, a High follow-up to #580): 'Turn location sharing on' / 'Turn
+    // Find My off' / 'Switch the heater on' are judged as their canonical 'turn on X' form by every rule - one probe, only when
+    // nothing has asked yet, so it can only add an ask; a native checkbox already on never probes (its direction rules decide).
+    const splitForm = context.splitParticleProbe === true ? null : /^\s*(turn|switch)\s+(?!(?:on|off)\b)(.+?)\s+(on|off)\s*$/i.exec(name)
+    if (grammarEligible && classes.length === 0 && !nativeOn && splitForm) {
+      const canonical = `${splitForm[1]} ${splitForm[3]} ${splitForm[2]}`
+      const probe = classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { ...target, name: canonical }, splitParticleProbe: true })
+      if (probe.decision === 'block' || probe.decision === 'handoff') return probe
+      if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) classes.push(cls)
+    }
     if (grammarEligible && classes.length === 0 && !nativeOn) for (const cls of grammarClasses(name, target?.role)) classes.push(cls)
     const mixedScript = !url.startsWith('desktop:') && classes.length === 0 && (POINTER.has(action.type) || pressesEnter || keyboard.activates) && target?.mixedScriptName === true
     if (mixedScript) classes.push('permission')
