@@ -113,6 +113,16 @@ const server = http.createServer((req, res) => {
     res.end('<!doctype html><style>body{margin:0}.at{position:absolute;left:20px;width:300px;height:30px}</style><input class="at" style="top:20px" id="notes" value=""><button class="at" style="top:100px" accesskey="d" onclick="window.fired=(window.fired||[]).concat(\'delete\')">Delete account</button><input type="checkbox" id="hb" style="position:absolute;left:20px;top:200px"><label class="at" style="top:200px;left:50px" for="hb" accesskey="h">Verify you are human</label>')
     return
   }
+  // CU-357: a download link (refused by the driver) and the file it names.
+  if (req.url.startsWith('/download-page')) {
+    res.end('<!doctype html><style>body{margin:0}a{position:absolute;left:20px;top:20px;width:300px;height:30px;display:block}</style><a href="/app.dmg?token=t0k3n" download>Download the app</a>')
+    return
+  }
+  if (req.url.startsWith('/app.dmg')) {
+    res.writeHead(200, { 'content-type': 'application/octet-stream', 'content-disposition': 'attachment; filename="app.dmg"' })
+    res.end('not a disk image')
+    return
+  }
   // A same-origin frame editor: a srcdoc iframe whose body is contentEditable, and one in designMode.
   if (req.url.startsWith('/frame-editor-page')) {
     res.end('<!doctype html><style>body{margin:0}iframe{position:absolute;left:20px;width:400px;height:120px;border:1px solid #888}</style><iframe id="ce" style="top:20px" srcdoc="<body contenteditable>hello</body>"></iframe><iframe id="dm" style="top:180px" srcdoc="<body>draft</body>"></iframe><script>const dm = document.getElementById(\'dm\'); dm.addEventListener(\'load\', () => { dm.contentDocument.designMode = \'on\' })</script>')
@@ -311,6 +321,12 @@ try {
   // Blink matches access keys on a keyDown with text - so the chord does not fire here today; keyTarget judges it anyway,
   // should the plan change. A change in Chrome or the plan fails this check and is looked at.
   check('the chord does not fire the accesskey through this driver today (rawKeyDown, no text)', JSON.stringify(await evaluate('window.fired || []')) === '[]', await evaluate('window.fired || []'))
+  // CU-357: the refused download is reported on the effect (so the trajectory shows it), its token left out.
+  await env.perform({ type: 'navigate', url: `${origin}/download-page` })
+  let downloadEffect = await env.perform({ type: 'click', x: 100, y: 26, button: 'left' })
+  if (!downloadEffect.notices?.some((n) => n.kind === 'download_refused')) downloadEffect = await env.perform({ type: 'wait', ms: 500 })
+  const refused = (downloadEffect.notices ?? []).find((n) => n.kind === 'download_refused')
+  check('a refused download is on the effect, without its query', refused !== undefined && refused.url === `${origin}/app.dmg`, downloadEffect.notices ?? null)
   // A same-origin frame editor's focus is its body, a text entry - contentEditable and designMode alike.
   await env.perform({ type: 'navigate', url: `${origin}/frame-editor-page` })
   await env.perform({ type: 'wait', ms: 200 })
