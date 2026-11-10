@@ -101,6 +101,12 @@ const WORDS = Object.freeze({
     // cu-researcher's 13:23Z sweep: unsaved edits lost, like Discard Changes.
     'revert to saved', 'revert all changes', ...ZH_WORDS.delete, ...LOCALE_WORDS.delete],
   permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke',
+    // CU-393 (cu-researcher): an OAuth grant or a linked account hands the account's data or identity to another service,
+    // as whole phrases - a bare 'Allow' stays free (cookie banners; named limit).
+    'authorize', 'authorise', 'authorize app', 'authorize access', 'link account', 'link bank account', 'link your account',
+    'connect account', 'connect your account', 'connect bank', 'sign in with google', 'sign in with apple', 'sign in with microsoft',
+    'sign in with github', 'sign in with facebook', 'continue with google', 'continue with apple', 'continue with microsoft',
+    'continue with github', 'continue with facebook', 'log in with google', 'log in with apple',
     // CU-386 (cu-coordinator 23:54Z): asking someone else for money.
     'request money',
     // CU-258 (cu-researcher): standing choices an app keeps after the run, as whole phrases. A bare 'Allow' stays free so
