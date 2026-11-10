@@ -21,7 +21,7 @@ grounded_in:
 One sitting, three parts. cu-verifier runs each part as an announced scripted run in **CU Fixture** and calls every
 step. Nothing you own is touched, no setting changes, and the helper is CUHelper 0.2.65 (installed 10 Nov 00:30Z). The
 rehearsal ran on 0.2.62; 0.2.63-0.2.65 add only reads (placeholders, nearby labels, pop-up items, a file on the
-clipboard, an open menu), none of them in these steps. What each press shows:
+clipboard, an open menu); none changes Pause, Take over, Stop or the Confirm prompt. What each press shows:
 [owner-checklist-parts](owner-checklist-parts.md).
 
 ## Before (2 minutes)
