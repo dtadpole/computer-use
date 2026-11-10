@@ -90,6 +90,8 @@ const WORDS = Object.freeze({
     'book tickets', 'book car', 'book a car', 'book trip', 'book a trip', 'confirm reservation',
     // CU-417 (High; cu-coordinator 14:03Z): launching or creating cloud resources spends money.
     'launch instance', 'launch an instance', 'create instance', 'create an instance', 'create cluster', 'create a cluster',
+    // cu-coordinator 14:34Z (round 3): plurals and synonyms.
+    'launch instances', 'create instances', 'create vm', 'create a vm', 'spin up', 'scale up',
     // CU-410 (High; cu-coordinator 10:17Z): billing wordings one word from the asking ones.
     'add seats', 'add licenses', 'add credits', 'top up credits', 'resume subscription', 'upgrade seats', 'gift a subscription',
     'send gift', 'get tickets',
@@ -126,6 +128,7 @@ const WORDS = Object.freeze({
     'cancel trip', 'cancel my trip', 'cancel appointment', 'cancel my appointment',
     // CU-417: dropping or terminating data and infrastructure; 'Force push' (CU-403's #477, carried so CU-417 closes alone).
     'drop database', 'drop table', 'drop schema', 'terminate instance', 'terminate instances', 'force push',
+    'drop collection', 'truncate table', 'terminate server', 'terminate servers', 'terminate cluster', 'terminate clusters',
     // CU-411 (High; cu-coordinator 11:00Z): closing, terminating, resetting or wiping an account or its data.
     'close my account', 'close account', 'terminate account', 'reset account', 'clear data', 'clear all data', 'wipe data',
     'erase account', 'factory reset',
@@ -143,6 +146,7 @@ const WORDS = Object.freeze({
     'sign agreement', 'sign the agreement', 'sign contract', 'sign the contract', 'release my records',
     // CU-417: collaborators (CU-403's #477, carried) and branch protection open access.
     'add collaborator', 'add collaborators', 'disable branch protection', 'remove branch protection',
+    'add member', 'add members', 'disable protection', 'unprotect branch',
     // CU-411: ownership and admin grants widen access.
     'make owner', 'make co-owner', 'transfer ownership', 'make admin', 'grant admin',
     // CU-408: adding a payee widens who can be paid.
@@ -1293,7 +1297,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       }
       // CU-417: an SSH, deploy or access key hands over credentials; a 'Destroy' button destroys (a link stays free).
       // cu-coordinator 14:12Z: rotating, regenerating or resetting credentials too.
-      if (!focusesEntry && /^\s*(?:add\s+(?:an?\s+)?(?:new\s+)?(?:ssh|deploy)\s+key|create\s+(?:an?\s+)?(?:new\s+)?access\s+key|(?:rotate|regenerate|reset)\s+(?:the\s+|your\s+|all\s+)?credentials?)\b/i.test(name)) classes.push('credential')
+      if (!focusesEntry && /^\s*(?:(?:add|new)\s+(?:an?\s+)?(?:new\s+)?(?:ssh|deploy|gpg)\s+keys?|create\s+(?:an?\s+)?(?:new\s+)?access\s+keys?|(?:rotate|regenerate|reset)\s+(?:the\s+|your\s+|all\s+)?(?:credentials?|keys)|new\s+ssh\s+key)\b/i.test(name)) classes.push('credential')
+      // 'Make <noun> public' (an object between the verb and 'public', cu-coordinator 14:34Z).
+      if (!focusesEntry && /^\s*make\s+(?:the\s+|this\s+)?(?:\S+\s+){1,2}public\s*$/i.test(name)) classes.push('permission')
       if (!focusesEntry && /^\s*destroy\b/i.test(name) && !/link/i.test(String(target?.role ?? ''))) classes.push('delete')
       // CU-410: renting ('Rent', 'Rent now', 'Rent <title>'; 'Rentals' stays free), a bare 'Renew', reactivating a subscription,
       // turning auto-renew on and switching the billing period ask purchase.

@@ -44,3 +44,14 @@ test('CU-417 (14:12Z): Rotate, Regenerate and Reset credentials ask credential',
   }
   assert.equal(click('Credentials'), 'allow')
 })
+
+test('CU-417 round 3 (14:34Z): the fifteen near forms ask with their parent class', () => {
+  for (const name of ['Drop collection', 'Truncate table', 'Terminate server', 'Terminate cluster']) assert.equal(click(name), 'delete', name)
+  for (const name of ['Add GPG key', 'New SSH key', 'Rotate keys']) assert.equal(click(name), 'credential', name)
+  for (const name of ['Add member', 'Disable protection', 'Unprotect branch', 'Make repository public', 'Make this project public']) assert.equal(click(name), 'permission', name)
+  for (const name of ['Launch instances', 'Create VM', 'Spin up', 'Scale up']) {
+    assert.equal(click(name), 'purchase', name)
+    assert.equal(enter(name), 'purchase', `Return: ${name}`)
+  }
+  for (const name of ['Members', 'GPG keys', 'Public repositories', 'Scale settings']) assert.equal(click(name), 'allow', name)
+})
