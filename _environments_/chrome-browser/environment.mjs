@@ -789,7 +789,8 @@ class BrowserEnvironment {
    * judges a Return in a checkout's Quantity box by 'Place order' (CU-142's rule) with no policy change. Found in an
    * isolated world, where the page's own scripts cannot redefine the DOM, and described like any target. Null when
    * there is none, and on any failure (a frame this world cannot reach): the Return is then judged by the field's own
-   * name, as before. Context, not identity: it stays out of the fingerprint.
+   * name, as before. Context, not identity: it stays out of the fingerprint. CU-406: the button's formContext rides
+   * along when it has one.
    */
   async #implicitSubmit(page, backendNodeId) {
     try {
@@ -801,7 +802,9 @@ class BrowserEnvironment {
       if (found?.objectId === undefined) return { button: null, read: true }
       const button = (await this.session.send(page, 'DOM.describeNode', { objectId: found.objectId })).result.node
       const described = await this.#describe(page, button.backendNodeId, undefined, { scanText: false })
-      return { button: described === null ? null : { role: described.role, name: described.name, panel: null }, read: true }
+      // CU-406: the Return target carries the same bounded formContext a click on that button would (CU-402/CU-405), so a
+      // Return in a trade form's amount field is judged with the form's asset beside a bare 'Sell' default.
+      return { button: described === null ? null : { role: described.role, name: described.name, panel: null, ...(described.formContext ? { formContext: described.formContext } : {}) }, read: true }
     } catch {
       return { button: null, read: false }
     }
