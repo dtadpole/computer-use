@@ -161,7 +161,9 @@ const UNLOCK_PHYSICAL = new RegExp(`\\bunlock\\b.*\\b${PHYSICAL_NOUN}\\b|\\b${PH
 const PRECEDENCE = ['physical', 'purchase', 'launch_code', 'delete', 'permission', 'page_dialog', 'credential', 'sensitive_data', 'submit', 'new_site', 'install']
 const PHYSICAL = ['unlatch', 'disarm', 'disarm security system', 'disarm alarm',
   'turn off alarm', 'open garage', 'open garage door', 'open gate', 'open the gate', 'mark as lost', 'erase device',
-  'erase this device', 'lock mode']
+  'erase this device', 'lock mode',
+  // D-105 ruling (b), cu-coordinator 03:45Z: arming can dispatch responders; 'Lock this device' is Mark As Lost's web twin.
+  'arm away', 'arm stay', 'arm alarm', 'arm system', 'arm security system', 'lock this device', 'lock device', 'open door', 'open front door']
 const POINTER = new Set(['click', 'double_click', 'triple_click'])
 // CU-135 (keyboard-activation.md): a focused button; any control a click activates (Space presses or toggles it); and a
 // text input, as the environments name their roles.
