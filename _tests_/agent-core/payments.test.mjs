@@ -29,3 +29,14 @@ test('CU-408: adding a payee, recipient or beneficiary asks permission', () => {
 test('CU-408 negatives: history, methods, lists, policies, viewing and turning autopay off stay free', () => {
   for (const name of FREE) assert.equal(click(name), 'allow', name)
 })
+
+const toggle = (target) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: URL, target: { name: 'Autopay', ...target } }); return v.decision === 'allow' ? 'allow' : v.class }
+
+test('CU-408 (09:50Z): a bare Autopay switch mirrors CU-373 - native on is free, native off / ARIA / mixed / missing ask purchase', () => {
+  assert.equal(toggle({ tag: 'input', inputType: 'checkbox', role: 'checkbox', checked: true }), 'allow', 'native on: the press turns it off')
+  assert.equal(toggle({ tag: 'input', inputType: 'checkbox', role: 'checkbox', checked: false }), 'purchase', 'native off: the press turns it on')
+  assert.equal(toggle({ tag: 'button', role: 'switch', checked: true }), 'purchase', 'ARIA-sourced on is not trusted')
+  assert.equal(toggle({ tag: 'input', inputType: 'checkbox', role: 'checkbox', checked: 'mixed' }), 'purchase')
+  assert.equal(toggle({ tag: 'div', role: 'switch' }), 'purchase', 'missing state asks')
+  assert.equal(toggle({ tag: 'a', role: 'link' }), 'allow', 'an Autopay link or tab is navigation')
+})
