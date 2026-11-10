@@ -43,8 +43,7 @@ kills a running step within 2 s of any other seat's run or live hold (D-106), an
 ## Lessons
 
 - Search open PRs for a symbol before adding one (#443 duplicated #438's networkVolume).
-- Write 'hypothesis' in the subject of an unmeasured step.
-- Guard each suite step against a gate start, not only between steps.
+- Guard each run step on the run-lock file (D-106).
 - A PR body names only its own closing line; every OK also goes on the PR as a comment.
 - Check a file's owning seat before writing in it.
 - Every command: `cd <own worktree> || exit 1`, `git -C` (D-104).
