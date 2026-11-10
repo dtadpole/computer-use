@@ -789,3 +789,65 @@ test('CU-370: an aria-multiselectable listbox is unread for keys that change or 
   assert.equal(keyChoice(listbox, ' ', selectKeyOption), 'unread')
   assert.equal(keyChoice(listbox, 'Tab', selectKeyOption), null)
 })
+
+test('CU-400: a button inside a form carries formContext - up to 3 short selected option texts and whether an amount entry is present; never a value', () => {
+  const select = (text) => ({ tagName: 'SELECT', selectedOptions: [{ textContent: text }] })
+  const form = (controls, inputs) => ({ querySelectorAll: (sel) => (sel === 'input' ? inputs : controls) })
+  const amount = { type: 'text', name: 'amount', id: '', placeholder: '', getAttribute: () => null }
+  const plain = { type: 'text', name: 'note', id: '', placeholder: 'Note', getAttribute: () => null }
+  const button = (f, extra = {}) => el('BUTTON', { children: ['Sell'], closest: (sel) => (sel === 'form' ? f : null), ...extra })
+  const sell = describeElement(button(form([select('BTC'), select('  Market  ')], [amount])))
+  assert.deepEqual(sell.formContext, { options: ['BTC', 'Market'], amountEntry: true })
+  const numeric = describeElement(button(form([], [{ ...amount, name: 'x', type: 'number' }])))
+  assert.deepEqual(numeric.formContext, { options: [], amountEntry: true }, 'a number input is amount-shaped by its type')
+  const many = describeElement(button(form([select('A'), select('B'), select('C'), select('D')], [plain])))
+  assert.deepEqual(many.formContext.options, ['A', 'B', 'C'], 'at most three')
+  const long = describeElement(button(form([select('x'.repeat(25))], [plain])))
+  assert.equal('formContext' in long, false, 'a long option text is not a short word; nothing else beside it')
+  assert.equal('formContext' in describeElement(button(null)), false, 'outside a form: none')
+  assert.equal('formContext' in describeElement(el('DIV', { children: ['Sell'], closest: () => form([select('BTC')], []) })), false, 'a plain div is no submit control')
+  assert.deepEqual(Object.keys(sell.formContext), ['options', 'amountEntry'], 'the amount field is a boolean kind, never its name or value')
+  assert.equal(sell.formContext.options.includes('amount'), false)
+})
+
+test('CU-402: without a <form>, formContext falls back to [role=form], else a fieldset or dialog holding exactly one submit-like control', () => {
+  const select = (text) => ({ tagName: 'SELECT', selectedOptions: [{ textContent: text }] })
+  const box = (controls, submits) => ({ querySelectorAll: (sel) => (sel === 'input' ? [] : sel.startsWith('select') ? controls : submits) })
+  const within = (map) => el('BUTTON', { children: ['Sell'], closest: (sel) => map[sel] ?? null })
+  const roleForm = box([select('ETH')], [{}, {}])
+  assert.deepEqual(describeElement(within({ form: null, '[role="form"]': roleForm })).formContext, { options: ['ETH'], amountEntry: false })
+  const dialog = box([select('BTC')], [{}])
+  assert.deepEqual(describeElement(within({ 'fieldset, dialog, [role="dialog"]': dialog })).formContext, { options: ['BTC'], amountEntry: false })
+  const busy = box([select('BTC')], [{}, {}])
+  assert.equal('formContext' in describeElement(within({ 'fieldset, dialog, [role="dialog"]': busy })), false, 'a fieldset with two submit-like controls lends nothing')
+  assert.equal('formContext' in describeElement(within({})), false, 'no form, no role=form, no bounded box: none')
+})
+
+test('CU-402: a submit button outside its form but tied by form= (el.form) reads that form', () => {
+  const select = (text) => ({ tagName: 'SELECT', selectedOptions: [{ textContent: text }] })
+  const trade = { querySelectorAll: (sel) => (sel === 'input' ? [] : [select('BTC')]) }
+  const outside = el('BUTTON', { children: ['Sell'], form: trade, closest: () => null })
+  assert.deepEqual(describeElement(outside).formContext, { options: ['BTC'], amountEntry: false })
+  const loose = el('BUTTON', { children: ['Sell'], form: null, closest: () => null })
+  assert.equal('formContext' in describeElement(loose), false, 'an unassociated button outside any form: a named limit')
+})
+
+test('CU-402: a div trade panel - the nearest ancestor within 3 levels holding one submit-like control and a select lends its choices; a page-wide box with two submits does not', () => {
+  const select = (text) => ({ tagName: 'SELECT', selectedOptions: [{ textContent: text }] })
+  const amount = { type: 'text', name: 'amount', id: '', placeholder: '', getAttribute: () => null }
+  const panel = (selects, submits, inputs = [amount], parentElement = null) => ({
+    parentElement,
+    querySelectorAll: (sel) => (sel === 'input' ? inputs : sel.startsWith('select') ? selects : submits),
+  })
+  const wrap = { parentElement: null, querySelectorAll: () => [] }
+  const trade = panel([select('BTC')], [{}], [amount])
+  wrap.parentElement = trade
+  const button = (parentElement) => ({ ...el('BUTTON', { children: ['Sell'], closest: () => null }), parentElement })
+  assert.deepEqual(describeElement(button(wrap)).formContext, { options: ['BTC'], amountEntry: true }, 'two levels up: the panel')
+  const page = panel([select('BTC')], [{}, {}])
+  assert.equal('formContext' in describeElement(button(page)), false, 'two submit-like controls: none')
+  const deep = { parentElement: { parentElement: { parentElement: trade, querySelectorAll: () => [] }, querySelectorAll: () => [] }, querySelectorAll: () => [] }
+  assert.equal('formContext' in describeElement(button(deep)), false, 'beyond 3 levels: none')
+  const noSelect = panel([], [{}], [amount])
+  assert.equal('formContext' in describeElement(button(noSelect)), false, 'a panel with no select or combobox: none')
+})

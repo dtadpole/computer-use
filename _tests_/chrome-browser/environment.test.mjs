@@ -929,3 +929,11 @@ test('CU-265: a target carries its link\'s scheme only (facetime, tel, mailto, h
   assert.equal((await env.inspectPoint({ x: 120, y: 240 })).fingerprint, first.fingerprint, 'outside the fingerprint')
   await env.close()
 })
+
+test('CU-400: formContextOf re-validates the page\'s formContext at the boundary', async () => {
+  const { formContextOf } = await import('../../_environments_/chrome-browser/environment.mjs')
+  assert.deepEqual(formContextOf({ options: ['BTC', 'x'.repeat(30), 7, 'ETH', 'SOL', 'ADA'], amountEntry: true }), { options: ['BTC', 'ETH', 'SOL'], amountEntry: true })
+  assert.deepEqual(formContextOf({ options: [], amountEntry: 'yes' }), null)
+  assert.equal(formContextOf(null), null)
+  assert.equal(formContextOf('BTC'), null)
+})

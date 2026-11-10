@@ -510,9 +510,47 @@ export function describeElement(el) {
   const ariaChecked = typeof el.getAttribute === 'function' ? tristate(el.getAttribute('aria-checked')) : null
   const checked = tag === 'input' && (type === 'checkbox' || type === 'radio') ? (el.indeterminate ? 'mixed' : Boolean(el.checked)) : ariaChecked
   const pressed = typeof el.getAttribute === 'function' ? tristate(el.getAttribute('aria-pressed')) : null
+  // CU-400: a button that submits a form is judged with the choices beside it - an exchange's bare 'Sell' next to an
+  // asset select and an amount field. Bounded: at most 3 selected option or combobox texts of 24 characters each, and
+  // whether an amount-shaped entry is present (never its value). Only for button-like elements inside a form (below).
+  const formContext = (() => {
+    const buttonLike = tag === 'button' || (tag === 'input' && ['submit', 'button', 'image'].includes(type)) || role === 'button'
+    // The form the control belongs to (el.form: a <form> ancestor, or one named by its form= attribute when the button
+    // sits outside it), else an explicit [role=form]; else (cu-researcher 05:24Z: React forms are divs) the nearest <fieldset>,
+    // <dialog> or [role=dialog] that holds exactly this one submit-like control - so a page-wide section never lends
+    // its selects (bounded fallback, cu-coordinator 05:26Z).
+    let form = buttonLike ? (el.form && el.form.querySelectorAll ? el.form : null) || (el.closest ? el.closest('form') || el.closest('[role="form"]') : null) : null
+    if (!form && buttonLike && el.closest) {
+      const box = el.closest('fieldset, dialog, [role="dialog"]')
+      const SUBMITS = 'button, input[type="submit"], input[type="button"], input[type="image"], [role="button"]'
+      if (box && box.querySelectorAll(SUBMITS).length === 1) form = box
+      // A div trade panel (cu-coordinator 05:36Z): the button's nearest ancestor within 3 levels that holds exactly
+      // this one submit-like control and at least one select or combobox - a page-wide container with two submit
+      // buttons never qualifies.
+      for (let node = el.parentElement, depth = 0; !form && node && depth < 3; node = node.parentElement, depth += 1) {
+        if (node.querySelectorAll && node.querySelectorAll(SUBMITS).length === 1 && node.querySelectorAll('select, [role="combobox"]').length > 0) form = node
+      }
+    }
+    if (!form) return null
+    const short = (text) => String(text || '').replace(/\s+/g, ' ').trim()
+    const options = []
+    for (const control of form.querySelectorAll('select, [role="combobox"]')) {
+      if (options.length >= 3) break
+      const text = control.tagName === 'SELECT'
+        ? short(control.selectedOptions && control.selectedOptions[0] ? control.selectedOptions[0].textContent : '')
+        : short(control.value !== undefined && control.value !== '' ? control.value : control.textContent)
+      if (text !== '' && text.length <= 24) options.push(text)
+    }
+    const AMOUNT = /amount|qty|quantity|price|total|sum/i
+    const amountEntry = [...form.querySelectorAll('input')].some((input) => input.type === 'number'
+      || ['decimal', 'numeric'].includes(String(input.getAttribute('inputmode') || '').toLowerCase())
+      || AMOUNT.test([input.name, input.id, input.getAttribute('aria-label'), input.placeholder].filter(Boolean).join(' ')))
+    return options.length > 0 || amountEntry ? { options, amountEntry } : null
+  })()
   return { tag, inputType: type, isPassword: type === 'password', autocomplete: autocomplete || null, href: link, origin, editable, caption: editable ? null : caption, entryCaption: editable ? caption : null,
     ...(frameUrl ? { frameUrl } : {}), ...(terminal ? { terminal } : {}), ...(notebookCell ? { notebookCell } : {}), ...(notebookSurface ? { notebookSurface } : {}), ...(codeSurface ? { codeSurface } : {}),
-    ...(checked !== null ? { checked } : {}), ...(pressed !== null ? { pressed } : {}) }
+    ...(checked !== null ? { checked } : {}), ...(pressed !== null ? { pressed } : {}),
+    ...(formContext !== null ? { formContext } : {}) }
 }
 
 /**
