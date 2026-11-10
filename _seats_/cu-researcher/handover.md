@@ -1,13 +1,13 @@
 ---
 title: '[cu] Researcher - Handover'
 created: 2026-11-08T04:16:21Z
-modified: 2026-11-10T03:35:00Z
+modified: 2026-11-10T05:00:00Z
 level: L2
-version: 5.9.0
+version: 5.10.0
 description: 'What the next session of [cu] Researcher needs - the D-061 re-sign state, the under-ask hunt, open reviews, the scripts, rules and lessons.'
 status: unverified
 grounded_in:
-  - source: the seat's own state at 0335Z 10 Nov (CU-392 closed live; CU-393..397 filed; probe kit #419/#432)
+  - source: the seat's own state at 0500Z 10 Nov (CU-395 closed live; CU-398/CU-400 High open; matrices in /tmp/cu-r-probe)
 ---
 
 # [cu] Researcher - Handover
@@ -23,8 +23,8 @@ limits honest (D-092); (4) hourly report, this handover.
 
 DONE: D-059 and D-061 re-signed; CU-145 Done. Recheck each OK'd PR on main after it lands.
 
-HUNT: closed CU-345..349, 352, 354, 355, 363, 365, 370, 377, 380, 381, 386, 392; open 361 (Verify), 364, 373, 374,
-378, 379, 382, 385, 387 (Medium), 388, 389, 393-397. Probe kit (_tools_/probe-kit, #419; throughLoop #432) for every probe; matrices in /tmp/cu-r-probe.
+HUNT: closed CU-345..349, 352, 354, 355, 363, 365, 370, 377, 380, 381, 386, 392, 395; open 361 (Verify), 364, 373,
+374, 378, 379, 382, 385, 387, 388, 389, 393, 394, 396, 397, 398 (High), 399, 400 (High). Probe kit (_tools_/probe-kit, #419; throughLoop #432) for every probe; matrices in /tmp/cu-r-probe.
 EVERY COMMAND: /tmp/cu-r-probe/probe.sh '<steps>' (guard || exit; cd worktree || exit; set -e) - D-104; default dir is
 the probe worktree (working_directory). 01:41Z 10 Nov a fall-through ran git in the main checkout; restored, owned.
 
