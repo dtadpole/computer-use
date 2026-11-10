@@ -25,9 +25,11 @@ test('CU-454: public conversion, app grants and member removals ask permission; 
     assert.equal(enter(name), cls, `Return: ${name}`)
     assert.equal(space(name), cls, `Space: ${name}`)
   }
-  // Named (older classes lead; each asks either way): 'Remove from channel' and 'Deactivate account' keep delete, 'Add app to
-  // workspace' keeps permission (ruled install).
-  for (const [name, cls] of [['Remove from channel', 'delete'], ['Deactivate account', 'delete'], ['Add app to workspace', 'permission']]) assert.equal(click(name), cls, `${name}: older class`)
+  // Named (older classes lead; each asks either way): 'Remove from channel' and 'Deactivate account' keep delete.
+  for (const [name, cls] of [['Remove from channel', 'delete'], ['Deactivate account', 'delete']]) assert.equal(click(name), cls, `${name}: older class`)
+  // #590 round 2: 'Add app to workspace' asked permission from the grammar's own add-to row, not an older rule; the 'add app to X'
+  // row (the 'Add app to Slack' escape) gives it its ruled install class.
+  assert.equal(click('Add app to workspace'), 'install', 'ruled install')
   for (const [name, cls] of [['Convert this channel to public', 'permission'], ['Approve the integration', 'permission'], ['Install a bot', 'install']]) assert.deepEqual(grammarClasses(name), [cls], `table row: ${name}`)
 })
 
