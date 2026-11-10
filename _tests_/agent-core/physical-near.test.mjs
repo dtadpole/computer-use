@@ -95,3 +95,32 @@ test('CU-418 option (b): CU-436 spending-cap switch reads a desktop native state
   assert.equal(sw('Spending cap', desk(false, { inWebArea: true })), 'purchase', 'web area: untrusted')
   assert.equal(sw('Spending cap', { role: 'AXCheckBox', subrole: 'AXSwitch' }), 'purchase', 'older helper: no state')
 })
+
+// CU-418 option (b), folds after #575 and #580: CU-440, CU-444..447 and the grammar's native-ON skip read nativeToggleState,
+// so a desktop AXCheckBox outside a web area with a boolean state reads the same direction as a web native checkbox.
+const dsw = (name, checked, extra = {}) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: 'app:com.example.settings', target: { role: 'AXCheckBox', subrole: 'AXSwitch', name, checked, inWebArea: false, ...extra } }); return v.decision === 'allow' ? 'allow' : v.class }
+test('nativeToggleState folds: desktop native switches read their direction (CU-440, CU-444..447)', () => {
+  for (const [name, offCls, onCls] of [
+    ['Parental controls', 'permission', 'allow'], // CU-440: on -> off asks
+    ['Privacy mode', 'permission', 'allow'], // CU-445
+    ['Domain lock', 'credential', 'allow'], // CU-446
+    ['WHOIS privacy', 'permission', 'allow'], // CU-446
+    ['Block public access', 'permission', 'allow'], // CU-447
+  ]) {
+    assert.equal(dsw(name, true), offCls, `${name}: on -> off`)
+    assert.equal(dsw(name, false), onCls, `${name}: off -> on`)
+    assert.equal(dsw(name, false, { inWebArea: true }), offCls, `${name}: web area untrusted`)
+    assert.equal(dsw(name, 'mixed'), offCls, `${name}: mixed asks`)
+  }
+  for (const name of ['Ads', 'Face recognition']) { // CU-444, CU-445: off -> on asks
+    const cls = name === 'Ads' ? 'purchase' : 'permission'
+    assert.equal(dsw(name, false), cls, `${name}: off -> on`)
+    assert.equal(dsw(name, true), 'allow', `${name}: on -> off`)
+    assert.equal(dsw(name, true, { inWebArea: true }), cls, `${name}: web area untrusted`)
+  }
+})
+test('nativeToggleState folds: the grammar native-ON skip holds on desktop only for a trusted read', () => {
+  assert.equal(dsw('Forward calls', true), 'allow', 'desktop native on -> off: the direction rules decide')
+  assert.notEqual(dsw('Forward calls', true, { inWebArea: true }), 'allow', 'web area: the grammar still asks')
+  assert.notEqual(dsw('Forward calls', undefined), 'allow', 'no state: the grammar still asks')
+})
