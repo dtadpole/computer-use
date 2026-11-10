@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { after, test } from 'node:test'
 
-import { formContextOf } from '../../_environments_/macos-desktop/environment.mjs'
+import { defaultCandidatesOf, formContextOf } from '../../_environments_/macos-desktop/environment.mjs'
 import { createScriptedAdapter } from '../../_tools_/agent-core/adapter-scripted.mjs'
 import { createAppApprovals } from '../../_tools_/agent-core/app-approvals.mjs'
 import { createRunControl } from '../../_tools_/agent-core/control.mjs'
@@ -106,4 +106,32 @@ test('CU-409 seam: Return in the amount field presses a default Sell that carrie
   // The same Return with the default Sell read but no form beside it: what decides is the form context.
   const plain = await runOnFake(world([amount, SELL], { focused: amount, defaultButton: SELL }), { type: 'keypress', keys: ['Return'] })
   assert.doesNotMatch(String(plain.event?.class ?? plain.event?.rule ?? ''), /purchase/, summary(plain.event))
+})
+
+test('CU-412 driver: defaultCandidatesOf keeps two or three readable buttons (role, name, panel, formContext); fewer, more or malformed is null', () => {
+  const del = { role: 'AXButton', title: 'Delete account' }
+  const keep = { role: 'AXButton', title: 'Keep account', formContext: { options: ['Pro'], amountEntry: false } }
+  assert.deepEqual(defaultCandidatesOf([del, keep]), [{ role: 'AXButton', name: 'Delete account', panel: null }, { role: 'AXButton', name: 'Keep account', panel: null, formContext: { options: ['Pro'], amountEntry: false } }])
+  assert.equal(defaultCandidatesOf([del]), null, 'one is the default button, never a candidate list')
+  assert.equal(defaultCandidatesOf([del, keep, del, keep]), null, 'four are more (the helper says defaultCandidatesMore)')
+  assert.equal(defaultCandidatesOf([del, { title: 'x' }]), null, 'an unreadable entry voids the list')
+  assert.equal(defaultCandidatesOf('Delete'), null)
+})
+
+test('CU-412 driver: the focused target carries defaultCandidates and defaultCandidatesMore from the helper; an older helper carries neither', async () => {
+  const field = { bundleId: FIXTURE, pid: 601, role: 'AXTextField', subrole: null, title: 'Confirm', frame: { x: 100, y: 60, width: 120, height: 24 }, secure: false, editable: true, inWebArea: true }
+  const del = { ...SELL, title: 'Delete account' }
+  const keep = { ...SELL, title: 'Cancel' }
+  async function focus(extra) {
+    const { env, child } = await launchOnFake(world([field], { focused: field, defaultButton: null, ...extra }))
+    try { await logged(child, 3); return await env.focusedElement() } finally { await env.close(); await stopFake(child) }
+  }
+  const two = await focus({ defaultCandidates: [del, keep] })
+  assert.deepEqual(two.defaultCandidates.map((one) => one.name), ['Delete account', 'Cancel'])
+  assert.equal(two.defaultCandidatesMore, undefined)
+  const more = await focus({ defaultCandidatesMore: true })
+  assert.equal(more.defaultCandidatesMore, true)
+  assert.equal(more.defaultCandidates, undefined)
+  const old = await focus({})
+  assert.equal(Object.hasOwn(old, 'defaultCandidates') || Object.hasOwn(old, 'defaultCandidatesMore'), false)
 })
