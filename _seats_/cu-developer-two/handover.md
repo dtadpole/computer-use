@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - handover'
 created: 2026-11-08T04:14:00Z
-modified: 2026-11-10T15:18:51Z
+modified: 2026-11-10T17:58:32Z
 level: L1
-version: 4.19.0
+version: 4.20.0
 description: 'What a fresh [cu] Developer Two session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -30,10 +30,10 @@ On main: the six-PR stack (#369 #339 #355 #299 #393 #402), #443, and the form-co
 In Progress: CU-360. Verify: CU-357, CU-368, CU-370 and more. CU-402, CU-405 and CU-406 closed live. CU-409 (desktop side)
 is cu-developer-three's #510 (OK'd at 2ff3d0d09); my #508 was closed for it (one desktop driver half, his file).
 
-## Parity sweep and CU-412
+## Second OKs, sweeps, idle (A)
 
-Done: 62 rows, input/link/div variants, CU-408..411 and CU-415 controls - at parity except CU-412 (High), closed live
-at 15:17 (#517, #519, helper 0.2.69). Next: CU-416..421 controls as fixes land; then run-lock idleAtStart (option 1).
+Second OK on each consent-High policy PR (cu-coordinator 16:15Z): live rows on a seam tree, click and Return. Done:
+#539, #540, #542, #544. CU-412 closed live. Next: run-lock idleAtStart, after the Highs.
 
 ## Live state
 
