@@ -25,3 +25,11 @@ test('split particles: the normaliser keeps each direction and touches nothing e
   assert.deepEqual(grammarClasses('Switch content filter off'), ['permission'], 'CU-440 via the normaliser')
   assert.deepEqual(grammarClasses('Turn on'), [], 'a bare particle stays free')
 })
+
+test('#580 round 3 (cu-verifier 22:41Z): switch as well as turn - Switch ads on / Switch on ads ask purchase; Switch ads off stays free', () => {
+  for (const name of ['Switch ads on', 'Switch on ads', 'Switch on the campaign']) {
+    assert.deepEqual(grammarClasses(name), ['purchase'], name)
+    assert.equal(click(name), 'purchase', `hook: ${name}`)
+  }
+  assert.deepEqual(grammarClasses('Switch ads off'), [], 'off stays free')
+})
