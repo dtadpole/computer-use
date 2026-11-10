@@ -12,8 +12,8 @@ import { createPolicy } from '../../_tools_/agent-core/policy.mjs'
 import { createSitePolicy } from '../../_tools_/agent-core/sites.mjs'
 import { readRun } from '../../_tools_/agent-core/trajectory.mjs'
 
-// CU-406 (High): Return in a trade form's amount field presses the default button; the trade clause reads the default
-// button's name and formContext as a click does. Both sides; one row through runTask (D-103).
+// CU-406 (High): Return presses the default button; the click's full classifier judges it (name and formContext), so the
+// trade clause and credential apply on Return as on a click. Both sides; one row through runTask (D-103).
 const policy = createPolicy({ sitePolicy: () => 'allow' })
 const enter = (defaultButton) => { const v = policy.classify({ type: 'keypress', keys: ['ENTER'] }, { url: 'https://exchange.example/trade', target: { tag: 'input', role: 'textbox', name: 'Amount', defaultButtonRead: true, defaultButton } }); return v.decision === 'allow' ? 'allow' : v.class }
 const tmp = mkdtempSync(join(tmpdir(), 'cu-406-'))
@@ -25,6 +25,14 @@ test('CU-406: Return with a trade default button asks purchase', () => {
   assert.equal(enter({ name: 'Sell', formContext: { options: ['BTC'], amountEntry: true } }), 'purchase')
   assert.equal(enter({ name: 'Place order', formContext: { options: ['ETH'], amountEntry: true } }), 'purchase')
   assert.equal(enter({ name: 'Confirm', formContext: { options: ['USDC'], amountEntry: false } }), 'purchase')
+})
+
+test('CU-406 (07:03Z): the click classifier judges the default - Change email / Update email ask credential, Cancel plan purchase, Leave workspace permission', () => {
+  assert.equal(enter({ name: 'Change email' }), 'credential')
+  assert.equal(enter({ name: 'Update email' }), 'credential')
+  assert.equal(enter({ name: 'Cancel plan' }), 'purchase')
+  assert.equal(enter({ name: 'Leave workspace' }), 'permission')
+  assert.equal(enter({ name: 'Search' }), 'allow')
 })
 
 test('CU-406 negatives: a non-trade default, or no asset option, keeps today\'s judgement', () => {

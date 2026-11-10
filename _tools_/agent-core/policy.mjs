@@ -1237,18 +1237,18 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const defaultName = typeof target?.defaultButton?.name === 'string' ? target.defaultButton.name : ''
     const inTextArea = TEXT_AREA_ROLE.test(String(target?.role ?? ''))
     const commandReturn = keysOf(action).has('META') && keysOf(action).has('ENTER')
-    if (defaultName !== '' && pressesEnter && (!inTextArea || commandReturn)) {
-      for (const cls of ['purchase', 'delete', 'permission']) {
-        if ((cls === 'purchase' ? namesPurchase(defaultName) : cls === 'delete' ? namesDelete(defaultName) : namesWord(defaultName, WORDS[cls]))) classes.push(cls)
+    // CU-406 (High; cu-coordinator 07:03Z): Return presses the default button, so it is judged by the CLICK's full classifier
+    // on that button - its name and its formContext (cu-developer-two's driver attaches the bounded read) - instead of a
+    // hand-kept subset: the trade clause, credential ('Change email'), and whatever the click rules gain later. The field's
+    // textEntered rides along (an empty field's Return keeps CU-241's reading). A handoff or block on the button stands.
+    if (defaultName !== '' && pressesEnter && (!inTextArea || commandReturn) && context.defaultButtonProbe !== true) {
+      const { dialog: _dialog, paste: _paste, dropTarget: _drop, dragSource: _source, ...probeContext } = context
+      const pressed = { ...target.defaultButton, role: target.defaultButton.role ?? 'button', ...(target?.textEntered !== undefined ? { textEntered: target.textEntered } : {}) }
+      const probe = classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...probeContext, target: pressed, defaultButtonProbe: true })
+      if (probe.decision === 'block' || probe.decision === 'handoff') return probe
+      for (const cls of probe.decision === 'confirm' ? (probe.classes ?? [probe.class]) : (probe.class ? [probe.class] : [])) {
+        if (cls !== 'permission' || probe.rule !== 'page:shortcut') classes.push(cls)
       }
-      if (judgesSubmit(defaultName, target)) classes.push('submit')
-      // CU-406 (High; cu-coordinator 06:53Z): Return presses the default button, so CU-400/402's trade clause reads its name
-      // and its formContext (cu-developer-two's driver attaches the bounded read to the reported default button) exactly as
-      // a click does - 'Sell BTC', or a bare 'Sell' / 'Place order' / 'Confirm' beside an asset option, asks purchase.
-      const defaultForm = target?.defaultButton?.formContext
-      const defaultFormTrade = defaultForm && typeof defaultForm === 'object' && Array.isArray(defaultForm.options) && defaultForm.options.some((text) => TRADE_ASSET.test(String(text)))
-      if (/\b(?:sell|convert|deposit)\b/i.test(defaultName) && (/\d|[$\u20ac\u00a3\u00a5\u20bf]/.test(defaultName) || TRADE_ASSET.test(defaultName) || defaultFormTrade)) classes.push('purchase')
-      if (defaultFormTrade && /\b(?:place|confirm|submit)\b/i.test(defaultName)) classes.push('purchase')
     }
     // CU-190 (keyboard-activation.md): a default button the helper could not read may well be there, so the Return asks
     // submit - focused or not; only a read with none (true) keeps the rule above. D-069: on the desktop (url app:...) no
