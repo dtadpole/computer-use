@@ -48,7 +48,8 @@ test('CU-261 with cu-researcher\'s 13:23Z sweep: unsubscribe, report spam and le
   for (const name of ['Unsubscribe', 'Report Spam', 'Report Junk', 'Leave Group', 'Leave conversation', 'Leave channel']) assert.equal(onDesktop(name), 'submit', name)
   for (const name of ['Revert to Saved', 'Revert All Changes']) assert.equal(onDesktop(name), 'delete', name)
   for (const name of ['Sign Out of All Devices', 'Log out everywhere']) assert.equal(onDesktop(name), 'permission', name)
-  for (const name of ['Revert', 'Sign Out', 'Report', 'Leave']) assert.equal(onDesktop(name), 'allow', `${name} alone`)
+  for (const name of ['Revert', 'Sign Out', 'Leave']) assert.equal(onDesktop(name), 'allow', `${name} alone`)
+  assert.equal(onDesktop('Report'), 'submit', 'CU-404 (cu-coordinator 06:27Z): a bare Report sends the report - re-judged from free')
 })
 
 test('CU-286 (real-app wordings): Ask to join and Start huddle submit; Allow always and Remember this decision ask permission - desktop and web; the deliberate exclusions stay free', () => {
