@@ -88,6 +88,13 @@ const WORDS = Object.freeze({
     'book flight', 'book a flight', 'book hotel', 'book room', 'book a room', 'confirm booking', 'complete booking',
     // cu-coordinator 13:19Z (round 3).
     'book tickets', 'book car', 'book a car', 'book trip', 'book a trip', 'confirm reservation',
+    // CU-416 (High; cu-coordinator 13:32Z): admin consoles move other people's money.
+    'run payroll', 'release payment', 'send payment', 'approve payment run', 'process refund', 'issue card', 'issue a card',
+    'issue new card', 'raise credit limit', 'increase credit limit',
+    // cu-coordinator 13:43Z: plurals and synonyms.
+    'release payments', 'process refunds', 'run payrolls', 'process payroll', 'refund customer', 'raise limit', 'increase limit',
+    'increase spending limit', 'raise spending limit', 'issue virtual card', 'reimburse', 'send payments', 'approve payment',
+    'approve payments',
     // CU-410 (High; cu-coordinator 10:17Z): billing wordings one word from the asking ones.
     'add seats', 'add licenses', 'add credits', 'top up credits', 'resume subscription', 'upgrade seats', 'gift a subscription',
     'send gift', 'get tickets',
@@ -122,6 +129,8 @@ const WORDS = Object.freeze({
     // CU-415: cancelling a booking is often fee-bearing and not undoable.
     'cancel reservation', 'cancel booking', 'cancel my booking', 'cancel my reservation',
     'cancel trip', 'cancel my trip', 'cancel appointment', 'cancel my appointment',
+    // CU-416: ending someone's employment or access.
+    'terminate employee', 'offboard user', 'offboard employee', 'offboard',
     // CU-411 (High; cu-coordinator 11:00Z): closing, terminating, resetting or wiping an account or its data.
     'close my account', 'close account', 'terminate account', 'reset account', 'clear data', 'clear all data', 'wipe data',
     'erase account', 'factory reset',
@@ -137,6 +146,8 @@ const WORDS = Object.freeze({
     'sign document', 'sign the document', 'e-sign', 'esign', 'adopt and sign', 'sign and submit', 'accept terms', 'accept the terms',
     'accept agreement', 'accept the agreement', 'authorize release', 'authorise release', 'release records',
     'sign agreement', 'sign the agreement', 'sign contract', 'sign the contract', 'release my records',
+    // CU-416: acting as another person.
+    'impersonate', 'impersonate user', 'view as user', 'view as this user',
     // CU-411: ownership and admin grants widen access.
     'make owner', 'make co-owner', 'transfer ownership', 'make admin', 'grant admin',
     // CU-408: adding a payee widens who can be paid.
@@ -209,6 +220,22 @@ const RESET_PASSWORD = /^\s*reset\s+(?:your\s+|my\s+)?password\s*$/i
 // CU-411 round 2: my / your / the between the verb and account / data ('Close your account', 'Clear my data').
 const ACCOUNT_WIPE = /^\s*(?:(?:close|terminate|reset|erase)\s+(?:my\s+|your\s+|the\s+)account|(?:clear|wipe|erase)\s+(?:all\s+)?(?:my\s+|your\s+|the\s+)(?:all\s+)?data)\b/i
 const PRECEDENCE = ['physical', 'purchase', 'launch_code', 'delete', 'permission', 'page_dialog', 'credential', 'sensitive_data', 'submit', 'new_site', 'install']
+// CU-418 (High; cu-coordinator 14:14Z): the physical near forms - disabling an alarm or a security camera, starting a car,
+// heating an oven, heater or stove, buzzing someone in.
+const PHYSICAL_NEAR = ['disable alarm', 'disable the alarm', 'turn off camera', 'turn off cameras', 'disable camera', 'disable cameras',
+  'start car', 'start the car', 'remote start', 'start engine', 'start the engine', 'turn on oven', 'turn on the oven', 'preheat oven',
+  'preheat the oven', 'turn on heater', 'turn on the heater', 'turn on stove', 'turn on the stove', 'buzz in', 'let guest in',
+  'let the guest in', 'open gate']
+// cu-coordinator 14:28Z: one adjective may sit between the verb and these physical objects ('Turn on space heater', 'Start
+// the rental car'), the object ends the name (optionally 'now'); plus 'Oven on' and a bare 'Preheat'. Bare 'Stop recording'
+// stays free (named: screen and media recorders share the words).
+const PHYSICAL_GRAMMAR = new RegExp([
+  '^\\s*(?:turn\\s+on|preheat|light|switch\\s+on)\\s+(?:the\\s+)?(?:\\S+\\s+)?(?:oven|heater|stove|burner|fireplace)(?:\\s+now)?\\s*$',
+  '^\\s*(?:remote\\s+)?start\\s+(?:the\\s+)?(?:\\S+\\s+)?(?:car|engine|vehicle)(?:\\s+now)?\\s*$',
+  '^\\s*let\\s+(?:the\\s+)?(?:\\S+\\s+)?(?:guest|visitor)s?\\s+in\\s*$',
+  '^\\s*(?:disable|turn\\s+off|pause)\\s+(?:the\\s+)?(?:\\S+\\s+)?(?:alarm|camera|cameras)(?:\\s+now)?\\s*$',
+  '^\\s*(?:oven\\s+on|preheat)\\s*$',
+].join('|'), 'i')
 const PHYSICAL = ['unlatch', 'disarm', 'disarm security system', 'disarm alarm',
   'turn off alarm', 'open garage', 'open garage door', 'open gate', 'open the gate', 'mark as lost', 'erase device',
   'erase this device', 'lock mode',
@@ -1285,6 +1312,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (!focusesEntry && /^\s*book\s+(?:an?\s+)?appointment\b/i.test(name)) {
         classes.push(/[$\u20ac\u00a3\u00a5]\s*\d|\d\s*[$\u20ac\u00a3\u00a5]|\bdeposit\b|\b(?:usd|eur|gbp)\s*\d/i.test(name) ? 'purchase' : 'submit')
       }
+      // CU-416: 'Log in as' / 'Sign in as' <someone> acts as that person ('as guest' signs in as nobody).
+      if (!focusesEntry && /^\s*(?:(?:log|sign)\s+in|login|act)\s+as\b(?!\s+(?:a\s+)?guest\b)/i.test(name)) classes.push('permission')
       // CU-410: renting ('Rent', 'Rent now', 'Rent <title>'; 'Rentals' stays free), a bare 'Renew', reactivating a subscription,
       // turning auto-renew on and switching the billing period ask purchase.
       if (!focusesEntry && (/^\s*rent\b/i.test(name) || /^\s*renew\s*$/i.test(name)
@@ -1330,7 +1359,22 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         for (let i = classes.length - 1; i >= 0; i -= 1) if (classes[i] === 'purchase') classes.splice(i, 1)
       }
       // A bare 'Garage Door' tile toggles either way (exact name); 'Close Garage Door' stays free.
-      if (!focusesEntry && (namesWord(name, PHYSICAL) || PHYSICAL_PATTERN.test(name) || UNLOCK_PHYSICAL.test(name) || /^garage\s+door$/i.test(name.trim()))) classes.push('physical')
+      if (!focusesEntry && (namesWord(name, PHYSICAL) || namesWord(name, PHYSICAL_NEAR) || PHYSICAL_GRAMMAR.test(name) || PHYSICAL_PATTERN.test(name) || UNLOCK_PHYSICAL.test(name) || /^garage\s+door$/i.test(name.trim()))) classes.push('physical')
+      // CU-418 switches (cu-coordinator 14:17Z / 14:19Z): a bare security switch ('Camera', 'Alarm', 'Security') turned OFF and a
+      // heat or vehicle switch ('Oven', 'Heater', 'Stove', 'Engine') turned ON ask physical. The direction is trusted only from a
+      // native checkbox read (CU-373); an ARIA, mixed or missing state - and every desktop switch, which carries no state
+      // today - asks in both directions (named over-ask: 'Camera' on / 'Oven' off there).
+      if (!focusesEntry && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))) {
+        const security = /^\s*(?:security\s+)?(?:cameras?|alarm|security)\s*$/i.test(name)
+        const heat = /^\s*(?:oven|heater|stove|engine)\s*$/i.test(name)
+        if (security || heat) {
+          const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
+          const known = nativeBox && typeof target.checked === 'boolean'
+          const turnsOff = known && target.checked === true
+          const turnsOn = known && target.checked === false
+          if (!known || (security && turnsOff) || (heat && turnsOn)) classes.push('physical')
+        }
+      }
       // CU-146: 'Trash' or 'Bin' alone deletes on a control (a toolbar button, a menu item); a sidebar row of that name
       // only opens the folder.
       if (TRASH_ROLE.test(String(target?.role ?? '')) && namesWord(name, CONTROL_DELETE)) classes.push('delete')
