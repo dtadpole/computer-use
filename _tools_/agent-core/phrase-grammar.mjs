@@ -22,7 +22,7 @@ const US_WORDS = new Set(['antivirus', 'virus', 'status', 'bonus', 'campus', 'fo
 const NOT_PLURAL = new Set(['alias', 'canvas', 'atlas', 'bias', 'gas', 'lens', 'news', 'series', 'species', 'chassis', 'axis', 'basis', 'analysis', 'thesis', 'crisis', 'diagnosis'])
 
 function singular(token) {
-  if (NOT_PLURAL.has(token)) return token
+  if (NOT_PLURAL.has(token) || token.endsWith('ous')) return token
   if (token.length > 4 && token.endsWith('ies')) return `${token.slice(0, -3)}y`
   if (token.length > 4 && /(?:ss|sh|ch|x)es$/.test(token)) return token.slice(0, -2)
   // -us stays only on its Latin / short words (antivirus, status, bonus ...); an acronym plural folds ('GPUs' = 'gpu', cu-coordinator 19:22Z).
@@ -325,6 +325,22 @@ function adSpend(list) {
   return false
 }
 
+function cameraPrivacyOff(list) {
+  if (list.length > 7) return false
+  const two = (list[0] === 'turn' || list[0] === 'switch') && (list[1] === 'off' || list[1] === 'on')
+  const verb = two ? `turn ${list[1]}` : list[0]
+  const rest = list.slice(two ? 2 : 1)
+  const core = rest.filter((t) => !FILLER.has(t))
+  if (['turn off', 'disable', 'deactivate', 'pause'].includes(verb) && core[0] === 'privacy' && core.length <= 2) return true
+  if (verb === 'open' && core.length <= 2 && (core[core.length - 1] === 'shutter' || (core[0] === 'privacy' && core[1] === 'cover'))) return true
+  if (['enable', 'turn on', 'start', 'activate'].includes(verb) && core.length <= 3) {
+    const tail = core.join(' ')
+    if (/(?:^|\s)(?:audio|sound|continuous|nonstop)\s+recording$/.test(tail) || /^recording$/.test(tail) && rest.includes('<n>')) return true
+    if (/^(?:face|facial)\s+recognition$|^familiar\s+face$|^face\s+detection$/.test(tail)) return true
+  }
+  return false
+}
+
 const DIVERSION_VERBS = new Set(['change', 'update', 'edit', 'add', 'set', 'replace', 'switch'])
 const DIVERSION_OBJECTS = [['direct', 'deposit'], ['bank', 'detail'], ['deposit', 'account'], ['routing', 'number'], ['account', 'number'],
   ['payout', 'account'], ['payout', 'method'], ['bank', 'account'], ['payout', 'detail']]
@@ -372,6 +388,8 @@ export function grammarClasses(name, role = '') {
   if (phone) return [phone]
   // CU-444 (High; cu-coordinator 20:54Z): starting or raising paid ad spend (purchase).
   if (adSpend(list)) return ['purchase']
+  // CU-445 (High; cu-coordinator 20:59Z): opening a home camera's view, audio or biometrics (permission, CU-418 family).
+  if (cameraPrivacyOff(list)) return ['permission']
   // F2 guard (cu-coordinator 20:28Z): declining, denying or rejecting a request answers no - the grammar's own over-ask since
   // #554 ('Decline request'); older asks ('Decline invitation', CU-422's 'Decline offer') are untouched (the hook never sees them).
   if (['decline', 'deny', 'reject'].includes(list[0]) && list.slice(1).filter((t) => !FILLER.has(t)).every((t) => t === 'request' || t === 'this' || t === 'all')
