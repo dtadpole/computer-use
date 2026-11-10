@@ -121,7 +121,7 @@ export const SOURCES = Object.freeze([
   { field: 'servicesMenu', file: '_environments_/macos-desktop/environment.mjs' },
   { field: 'menuOpen', file: '_environments_/macos-desktop/environment.mjs' },
   { field: 'pasteboardHasFile', file: '_environments_/macos-desktop/environment.mjs' },
-  { field: 'quickActions', file: '_environments_/macos-desktop/environment.mjs', pending: 'helper 0.2.66 / PR #418' },
+  { field: 'quickActions', file: '_environments_/macos-desktop/environment.mjs' },
   { field: 'boundMenuItem', file: '_tools_/agent-core/loop.mjs' },
   { field: 'selection', file: '_tools_/agent-core/loop.mjs' },
   { field: 'typeOptions', file: '_tools_/agent-core/loop.mjs' },
