@@ -523,12 +523,20 @@ export function describeElement(el) {
     if (!form && buttonLike && el.closest) {
       const box = el.closest('fieldset, dialog, [role="dialog"]')
       const SUBMITS = 'button, input[type="submit"], input[type="button"], input[type="image"], [role="button"]'
-      if (box && box.querySelectorAll(SUBMITS).length === 1) form = box
+      // CU-405 (cu-coordinator 06:39Z): a container also counts when every submit-like control in it is a trade verb -
+      // an exchange's Buy and Sell side by side. Any other button (Cancel, Help, a nav link styled as a button) voids it.
+      const TRADE_VERB = /^(?:buy|sell|swap|convert|trade|deposit|withdraw)(?:\s|$)/i
+      const verbOf = (control) => String((control.getAttribute && control.getAttribute('aria-label')) || control.value || control.textContent || '').replace(/\s+/g, ' ').trim()
+      const lends = (node) => {
+        const submits = [...node.querySelectorAll(SUBMITS)]
+        return submits.length === 1 || (submits.length > 1 && submits.every((control) => { const verb = verbOf(control); return verb.length <= 30 && TRADE_VERB.test(verb) }))
+      }
+      if (box && lends(box)) form = box
       // A div trade panel (cu-coordinator 05:36Z): the button's nearest ancestor within 3 levels that holds exactly
       // this one submit-like control and at least one select or combobox - a page-wide container with two submit
       // buttons never qualifies.
       for (let node = el.parentElement, depth = 0; !form && node && depth < 3; node = node.parentElement, depth += 1) {
-        if (node.querySelectorAll && node.querySelectorAll(SUBMITS).length === 1 && node.querySelectorAll('select, [role="combobox"]').length > 0) form = node
+        if (node.querySelectorAll && lends(node) && node.querySelectorAll('select, [role="combobox"]').length > 0) form = node
       }
     }
     if (!form) return null

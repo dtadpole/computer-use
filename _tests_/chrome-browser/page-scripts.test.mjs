@@ -851,3 +851,16 @@ test('CU-402: a div trade panel - the nearest ancestor within 3 levels holding o
   const noSelect = panel([], [{}], [amount])
   assert.equal('formContext' in describeElement(button(noSelect)), false, 'a panel with no select or combobox: none')
 })
+
+test('CU-405: a panel whose submit-like controls are all trade verbs (Buy and Sell side by side) lends its choices; one other button voids it', () => {
+  const select = (text) => ({ tagName: 'SELECT', selectedOptions: [{ textContent: text }] })
+  const btn = (text, attrs = {}) => ({ textContent: text, getAttribute: (name) => (name in attrs ? attrs[name] : null) })
+  const amount = { type: 'text', name: 'amount', id: '', placeholder: '', getAttribute: () => null }
+  const panel = (submits) => ({ parentElement: null, querySelectorAll: (sel) => (sel === 'input' ? [amount] : sel.startsWith('select') ? [select('BTC')] : submits) })
+  const sellIn = (box) => ({ ...el('BUTTON', { children: ['Sell'], closest: () => null }), parentElement: box })
+  assert.deepEqual(describeElement(sellIn(panel([btn('Buy'), btn('Sell')]))).formContext, { options: ['BTC'], amountEntry: true }, 'Buy + Sell')
+  assert.deepEqual(describeElement(sellIn(panel([btn(' Buy BTC '), btn('Sell BTC'), btn('', { 'aria-label': 'Swap' })]))).formContext.options, ['BTC'], 'verbs with an asset, and an aria-label')
+  assert.equal('formContext' in describeElement(sellIn(panel([btn('Sell'), btn('Cancel')]))), false, 'Sell + Cancel: none')
+  assert.equal('formContext' in describeElement(sellIn(panel([btn('Buy'), btn('Sell'), btn('Help'), btn('Settings')]))), false, 'trade verbs plus other buttons (a page-wide box): none')
+  assert.equal('formContext' in describeElement(sellIn(panel([btn('Buyer protection'), btn('Sell')]))), false, "'Buyer protection' is not the verb Buy")
+})
