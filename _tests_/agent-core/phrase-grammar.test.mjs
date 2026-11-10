@@ -52,7 +52,8 @@ test('grammar F1 / F5: object homonyms and the six false-ask clusters stay free'
     'Send invoice', 'Clear table filters', 'Reset table view', 'Close branch', 'Open Message', 'Open Project', 'Open order',
     'Accept all changes in document', 'Apply to all', 'Move to columns', 'View as list', 'Cancel download', 'Resume all',
     'Get all new mail', 'Set up now', 'Start audio', 'Allow all', 'Post office', 'Copy link', 'Join group', 'Close message',
-    'Add item to list', 'Make a copy', 'Refunds', 'Payroll settings', 'Delete old filter history', 'Sign in as guest']) {
+    'Add item to list', 'Make a copy', 'Refunds', 'Payroll settings', 'Delete old filter history', 'Sign in as guest', 'Back Up Now',
+    'Back up my files']) {
     assert.deepEqual(grammarClasses(name), [], name)
   }
 })
@@ -88,4 +89,13 @@ test('grammar: a priced choice cell asks purchase on a choice role (browser and 
 
 test('grammar: CU-430 held-out folds - a count, a synonym, a demonstrative', () => {
   for (const [name, cls] of [['Add 2 bags', 'purchase'], ['Add trip insurance', 'purchase'], ['Cancel this trip', 'delete'], ['Use points', 'purchase']]) assert.equal(click(name), cls, name)
+})
+
+test('grammar round 2 (17:29Z): the three held-out misses, and Gift card $50 stands', () => {
+  for (const [name, cls] of [['Renew the domain', 'purchase'], ['Sign the lease', 'permission'], ['Message all subscribers', 'submit']]) {
+    assert.deepEqual(grammarClasses(name), [cls], name)
+    assert.equal(click(name), cls, `hook: ${name}`)
+  }
+  assert.equal(click('Gift card $50'), 'purchase')
+  assert.equal(click('Message subscriber'), 'allow', 'one recipient is not many')
 })

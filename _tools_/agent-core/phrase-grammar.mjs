@@ -46,6 +46,8 @@ const MULTI_VERBS = [
   [['login', 'as'], ['actas']], [['act', 'as'], ['actas']], [['view', 'as'], ['actas']], [['set', 'up'], ['pay']], [['move', 'to'], ['destroy']],
   [['switch', 'to'], ['pay']], [['let', 'in'], ['grant']], [['remote', 'start'], ['phys_on']], [['buzz', 'in'], ['phys_on']],
   [['e', 'sign'], ['sign']], [['i', 'consent'], ['consent']], [['give', 'consent'], ['consent']],
+  // cu-researcher's F5 (fresh corpus): 'back up' is a phrasal verb (a backup), never the pay verb 'back'.
+  [['back', 'up'], []],
 ]
 const VERBS = new Map(Object.entries({
   delete: ['destroy'], remove: ['destroy', 'unguard', 'pay'], drop: ['destroy'], truncate: ['destroy'], terminate: ['destroy'],
@@ -96,12 +98,12 @@ const OBJECTS = {
     'customer', 'vendor', 'subscription', 'plan', 'membership', 'liquidity', 'position', 'loan', 'nft', 'item', 'offer', 'bid', 'usdc',
     'eth', 'weth', 'sol', 'btc', 'usdt', 'dai', 'wbtc', 'matic', 'transaction', 'trade', 'leverage', 'sale', 'payee', 'fund', 'money',
     'project', 'bet', 'swap', 'trial', 'collateral', 'allowance', 'spending', 'cap', 'long', 'short', 'annual', 'monthly', 'yearly',
-    'tip', 'recurring', 'bag', 'baggage', 'insurance', 'mile']),
+    'tip', 'recurring', 'bag', 'baggage', 'insurance', 'mile', 'domain']),
   access: new Set(['organization', 'team', 'workspace', 'server', 'people', 'account', 'owner', 'coowner', 'co', 'admin', 'host',
     'cohost', 'collaborator', 'member', 'access', 'guest', 'visitor', 'device', 'public', 'ownership', 'payee', 'recipient',
     'beneficiary', 'everyone']),
   agree: new Set(['term', 'agreement', 'contract', 'condition']),
-  signable: new Set(['document', 'agreement', 'contract', 'form', 'consent']),
+  signable: new Set(['document', 'agreement', 'contract', 'form', 'consent', 'lease', 'waiver', 'nda']),
   records: new Set(['record', 'release', 'medical']),
   secret: new Set(['key', 'token', 'credential', 'password', 'keychain', 'vault', 'secret', 'code', 'bank', 'card', 'paypal', 'method',
     'email', 'phone', 'api']),
@@ -284,6 +286,8 @@ export function grammarClasses(name, role = '') {
   // submit
   if (classes.has('send') && (has('sendObject') || ['vote', 'resign', 'broadcast', 'submit', 'publish', 'repost', 'retweet'].includes(verb) || (verb === 'post' && core.length === 0))) pushOnce(out, 'submit')
   if (verb === 'apply' && (rest[0] === 'for' || rest[0] === 'now')) pushOnce(out, 'submit')
+  // cu-coordinator 17:29Z: messaging all or everyone ('Message all subscribers') speaks for the owner to many (CU-419).
+  if (['message', 'email', 'text', 'notify', 'send'].includes(verb) && rest.some((t) => t === 'all' || t === 'everyone')) pushOnce(out, 'submit')
   if (verb === 'sign' && rest.includes('petition')) return ['submit']
   if (verb === 'book' && rest.includes('appointment')) return ['submit']
   // '<pay verb> now' and the bare standalone verbs (F5 cluster 6: 'set up now' stays free).
