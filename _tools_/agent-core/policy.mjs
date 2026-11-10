@@ -3,6 +3,7 @@ import { normaliseForPolicy, normaliseText } from './normalise.mjs'
 import { BIP39_ENGLISH } from './bip39-english.mjs'
 import { normalizeKey } from './keys.mjs'
 import { originPattern } from './sites.mjs'
+import { grammarClasses } from './phrase-grammar.mjs'
 
 /**
  * The action policy (design: action-policy.md, consent-gate.md). `classify` runs in the dispatcher for every action,
@@ -1303,6 +1304,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const shareDrop = driverShare || personCell || SHARE_DESTINATION.test(dropName) || hostShaped
       if (to === '' || from === '' || from !== to || shareDrop) classes.push('permission')
     }
+    let grammarEligible = false
     if (pressesTarget || pressesEnter || keyboard.activates) {
       if (POINTER.has(action.type) && /change\s+password|update\s+password|修改密码|更改密码|修改密碼|更改密碼|重设密码|重設密碼/i.test(name)) {
         return { decision: 'handoff', class: null, rule: 'password_change', reason: 'the final step of a password change is the person\'s' }
@@ -1455,6 +1457,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // CU-146: 'Trash' or 'Bin' alone deletes on a control (a toolbar button, a menu item); a sidebar row of that name
       // only opens the folder.
       if (TRASH_ROLE.test(String(target?.role ?? '')) && namesWord(name, CONTROL_DELETE)) classes.push('delete')
+      // The phrase grammar may judge this press below, after every older rule (not on an entry, not on a link - a link
+      // navigates, and the older rules keep their link exceptions).
+      grammarEligible = !focusesEntry && !/link/i.test(String(target?.role ?? ''))
     }
     // CU-232 (menu-key.md): a desktop chord that is a menu item's key equivalent fires that item, so the item's name is
     // judged as a click on it would be, beside the keys - Shift-Command-D bound to Send asks submit. Every matching item
@@ -1717,6 +1722,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // CU-268: in the browser a control whose name has one word mixing scripts asks permission - never pre-approved, so a
     // pre-approved submit cannot wave a disguised Delete or Pay through (cu-developer-one's ruling) - where no rule found a
     // class: a folded look-alike already asks by its own ('Sеnd' asks submit). The desktop asks unknown_target in app-policy.
+    // Consent phrase grammar (_designs_/consent-phrase-grammar 0.3.1; cu-coordinator 16:46Z) - the ONE additive hook: when no
+    // older rule asked on a pressed named control, the grammar's verb-class x object-class structure may add classes. It
+    // never removes or changes an older rule's class (15:08Z, D-063); its free guards stop only its own asks (F2).
+    if (grammarEligible && classes.length === 0) for (const cls of grammarClasses(name, target?.role)) classes.push(cls)
     const mixedScript = !url.startsWith('desktop:') && classes.length === 0 && (POINTER.has(action.type) || pressesEnter || keyboard.activates) && target?.mixedScriptName === true
     if (mixedScript) classes.push('permission')
     // CU-302 (design note 0.1): a form the browser filled from saved logins or cards - a field matching :autofill, which
