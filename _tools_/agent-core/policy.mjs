@@ -84,6 +84,18 @@ const LOCALE_ID_NAMES = Object.freeze(['reisepass', '…passnummer', 'geburtsdat
   '여권', '여권번호', '생년월일', '주민등록번호', '계좌번호', '사업자등록번호'])
 const WORDS = Object.freeze({
   purchase: ['buy', 'pay', 'order', 'place order', 'checkout', 'check out', 'subscribe', 'donate', 'purchase', 'transfer', 'withdraw', 'wire', 'send money',
+    // CU-410 (High; cu-coordinator 10:17Z): billing wordings one word from the asking ones.
+    'add seats', 'add licenses', 'add credits', 'top up credits', 'resume subscription', 'upgrade seats', 'gift a subscription',
+    'send gift', 'get tickets',
+    // CU-408 (High; cu-coordinator 09:43Z): payments, schedules, autopay, refunds and charges move money.
+    'confirm payment', 'authorize payment', 'authorise payment', 'submit payment', 'make payment', 'make a payment', 'pay now',
+    'schedule payment', 'schedule a payment', 'set up autopay', 'enable autopay', 'turn on autopay', 'issue refund', 'issue a refund',
+    'charge card', 'charge customer', 'capture payment', 'send invoice payment',
+    // CU-409 (High; cu-coordinator 10:08Z): positions, liquidity, listings and offers, and token-spend approvals move money.
+    'open position', 'close position', 'add liquidity', 'remove liquidity', 'list for sale', 'make offer', 'make an offer', 'accept offer',
+    'set spending cap', 'increase allowance', 'approve spending',
+    // cu-coordinator 10:19Z: the near forms.
+    'open long', 'open short', 'close all positions', 'market close', 'list nft', 'list item', 'repay loan',
     // CU-401 (High; cu-coordinator 05:16Z): ending a paid plan.
     'cancel plan', 'cancel membership', 'downgrade', 'end trial',
     // CU-400 (High; cu-coordinator 04:39Z): a trade, swap, stake or signature moves money and cannot be taken back.
@@ -103,6 +115,9 @@ const WORDS = Object.freeze({
     'renew plan', ...ZH_WORDS.purchase, ...LOCALE_WORDS.purchase],
   // CU-135: replace and overwrite (a save panel's 'already exists' sheet), don't save (a close sheet discards work).
   delete: ['delete', 'remove', 'discard', 'erase', 'empty trash', 'cancel subscription', 'replace', 'overwrite', "don't save", 'don\u2019t save',
+    // CU-411 (High; cu-coordinator 11:00Z): closing, terminating, resetting or wiping an account or its data.
+    'close my account', 'close account', 'terminate account', 'reset account', 'clear data', 'clear all data', 'wipe data',
+    'erase account', 'factory reset',
     // CU-401: disabling an account, like deactivating it.
     'disable account', 'disable my account',
     // CU-146 (the CU-145 audit): destructive labels the list missed.
@@ -111,6 +126,10 @@ const WORDS = Object.freeze({
     // cu-researcher's 13:23Z sweep: unsaved edits lost, like Discard Changes.
     'revert to saved', 'revert all changes', ...ZH_WORDS.delete, ...LOCALE_WORDS.delete],
   permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke',
+    // CU-411: ownership and admin grants widen access.
+    'make owner', 'make co-owner', 'transfer ownership', 'make admin', 'grant admin',
+    // CU-408: adding a payee widens who can be paid.
+    'add payee', 'add a payee', 'add recipient', 'add beneficiary',
     // CU-401: leaving a shared space or unlinking an account.
     'leave workspace', 'leave organization', 'leave organisation', 'leave org', 'leave team', 'leave server', 'unlink account',
     // CU-386 (cu-coordinator 23:54Z): asking someone else for money.
@@ -173,10 +192,19 @@ const UNLOCK_PHYSICAL = new RegExp(`\\bunlock\\b.*\\b${PHYSICAL_NOUN}\\b|\\b${PH
 const TRADE_ASSET = /\b(?:btc|eth|usd|eur|gbp|jpy|usdt|usdc|dai|sol|xrp|ada|doge|bnb|bitcoin|ethereum|crypto|coins?|tokens?|shares?|stocks?)\b/i
 const TRADE_WORDS = /\b(?:trade|trading|swap|swaps|stake|staking|unstake|sell|selling|bridge|mint|minting)\b/gi
 const TRADE_NAV = /\b(?:trade|trading|swap|swaps|stake|staking|unstake|sell|selling|bridge|mint|minting)\b[\s\S]*\b(?:history|settings|faq|guide|policy|fees|rates|limits)\b/i
+// cu-coordinator 11:13Z adds 'Rotate secret', 'Regenerate token', 'New token' and a settings 'Reset password' (CU-401's family).
+const KEY_TOKEN_ACT = /^\s*(?:(?:rotate|regenerate|revoke)\s+(?:the\s+|your\s+)?(?:api\s+|access\s+|secret\s+)?(?:key|secret|token)|(?:generate|create|revoke|new)\s+(?:an?\s+|new\s+)?(?:api\s+|access\s+|personal\s+access\s+)?token|new\s+api\s+key)\b/i
+const RESET_PASSWORD = /^\s*reset\s+(?:your\s+|my\s+)?password\s*$/i
+// CU-411 round 2: my / your / the between the verb and account / data ('Close your account', 'Clear my data').
+const ACCOUNT_WIPE = /^\s*(?:(?:close|terminate|reset|erase)\s+(?:my\s+|your\s+|the\s+)account|(?:clear|wipe|erase)\s+(?:all\s+)?(?:my\s+|your\s+|the\s+)(?:all\s+)?data)\b/i
 const PRECEDENCE = ['physical', 'purchase', 'launch_code', 'delete', 'permission', 'page_dialog', 'credential', 'sensitive_data', 'submit', 'new_site', 'install']
 const PHYSICAL = ['unlatch', 'disarm', 'disarm security system', 'disarm alarm',
   'turn off alarm', 'open garage', 'open garage door', 'open gate', 'open the gate', 'mark as lost', 'erase device',
-  'erase this device', 'lock mode']
+  'erase this device', 'lock mode',
+  // D-105 ruling (b), cu-coordinator 03:45Z: arming can dispatch responders; 'Lock this device' is Mark As Lost's web twin.
+  'arm security system']
+// cu-coordinator 03:52Z: the patterns, whole-word and case-insensitive - 'Lock Front Door' and a bare Arm/Open/Lock stay free.
+const PHYSICAL_PATTERN = /\barm\s+(?:away|stay|night|home|alarm|system)\b|\bopen\s+(?:the\s+|front\s+|back\s+|side\s+)?door\b|\block\s+(?:this\s+)?(?:device|iphone|ipad|mac|watch)\b/i
 const POINTER = new Set(['click', 'double_click', 'triple_click'])
 // CU-135 (keyboard-activation.md): a focused button; any control a click activates (Space presses or toggles it); and a
 // text input, as the environments name their roles.
@@ -1030,6 +1058,30 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const scheme = typeof target?.linkScheme === 'string' ? target.linkScheme.trim().toLowerCase().replace(/:$/, '') : ''
     const pressesLink = ['click', 'double_click', 'triple_click'].includes(action.type) || keysOf(action).has('ENTER')
     if (scheme !== '' && !WEB_SCHEMES.has(scheme) && pressesLink) classes.push('permission')
+    // CU-382 (cu-coordinator 23:10Z; helper 0.2.66): a Finder Quick Action runs an owner's Automator workflow, like a Service,
+    // so a press on an item marked quickActions (or a chord bound to one) asks; a menu whose context could not be walked
+    // (menuContextUnread) asks unknown.
+    // Design 0.2 (cu-coordinator 23:12Z): Finder's built-in actions and the holder's own 'More…' / 'Customize…' stay free by
+    // name; a custom workflow's name asks.
+    // The loop's bound item is one item or { items } (boundItemOf); the marked one is found in the list, as app-policy's
+    // appleItem is, and its name decides the built-in exemption (cu-researcher 08:07Z).
+    const boundList = context.boundMenuItem && typeof context.boundMenuItem === 'object' ? (Array.isArray(context.boundMenuItem.items) ? context.boundMenuItem.items : [context.boundMenuItem]) : []
+    const boundQuick = boundList.find((one) => one?.quickActions === true)
+    const boundUnread = boundList.some((one) => one?.menuContextUnread === true)
+    const chordPress = action.type === 'keypress' || action.type === 'hold_key'
+    const quickName = String((chordPress ? boundQuick?.name : undefined) ?? target?.name ?? boundQuick?.name ?? context.boundMenuItem?.title ?? '').trim()
+    // 'Open in Terminal' (and New Terminal at Folder) hands a shell to the folder - asks like a Quick Action.
+    const terminalOpen = /^(?:open\s+in\s+terminal|new\s+terminal\s+(?:tab\s+)?at\s+folder)$/i.test(quickName)
+    const builtInQuick = /^(?:rotate(?:\s+(?:left|right))?|markup|trim|compress|create\s+pdf|convert\s+image|remove\s+background|more(?:\u2026|\.\.\.)|customi[sz]e(?:\u2026|\.\.\.))$/i.test(quickName)
+    const quickAction = ((target?.quickActions === true || boundQuick !== undefined) && !builtInQuick) || terminalOpen
+    const quickPress = action.type === 'click' || action.type === 'double_click' || action.type === 'keypress' || action.type === 'hold_key'
+    if (quickPress && quickAction) {
+      // cu-coordinator 23:18Z: each workflow is different code - asked each time, so a yes never covers another ask.
+      return { decision: 'confirm', class: 'permission', classes: ['permission'], rule: 'quick_action', askEachTime: true, reason: `run the Quick Action "${target?.name ?? boundQuick?.name ?? context.boundMenuItem?.title ?? ''}", an Automator workflow` }
+    }
+    if (quickPress && (target?.menuContextUnread === true || boundUnread)) {
+      return { decision: 'confirm', class: 'unknown_target', classes: ['unknown_target'], rule: 'menu:context_unread', reason: `press "${target?.name ?? ''}" in a menu whose context could not be read` }
+    }
     // Open-menu focus (cu-coordinator 22:03Z; Medium until cu-verifier's live row): with a menu open the helper reads only the
     // system-wide focus, never the highlighted item, so Return or Space there commits an item the policy cannot see - asks.
     if ((action.type === 'keypress' || action.type === 'hold_key') && (target?.menuOpen === true || target?.role === 'AXMenu')
@@ -1189,7 +1241,19 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const protectionOn = /\b(?:turn\s+on|enable|set\s+up|activate)\b/i.test(name) && !/forward|app[\s-]?password/i.test(name)
       // Turning forwarding OFF is the safe direction (cu-coordinator 21:00Z).
       const forwardingOff = /\b(?:disable|turn\s+off|stop)\b/i.test(name) && /forward/i.test(name)
-      if (!focusesEntry && ACCOUNT_SECURITY.test(name) && !protectionOn && !forwardingOff) classes.push('credential')
+      // CU-373 refinement (fail closed, cu-researcher 20:56Z): the driver's state before the press decides a toggle's
+      // direction only when the read is native (an input of type checkbox or radio) - an ARIA-sourced, 'mixed' or missing
+      // state asks. A native two-factor/recovery box that is off turns protection ON; a native forwarding box that is on
+      // turns forwarding OFF - both the safe direction, so free.
+      // A native CHECKBOX only - a radio has no on/off direction; its label decides (cu-researcher 21:15Z).
+      const nativeToggle = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
+      const nativeOn = nativeToggle && target.checked === true
+      const nativeOff = nativeToggle && target.checked === false
+      const isForwarding = /forward/i.test(name)
+      // The explicit protection list (CU-270's two-factor and recovery names), never 'every security name but a few'.
+      const isProtection = /two[\s-]?(?:factor|step)|2[\s-]?step|\b2fa\b|multi[\s-]?factor|recovery\s+(?:e-?mail|phone|codes?)/i.test(name)
+      const safeToggle = (isProtection && nativeOff) || (isForwarding && nativeOn)
+      if (!focusesEntry && ACCOUNT_SECURITY.test(name) && !protectionOn && !forwardingOff && !safeToggle) classes.push('credential')
       // CU-401 round 2 (cu-coordinator): a plan word beside a navigation noun ('Downgrade options', 'Cancel plan details')
       // opens a page - free unless another purchase word remains.
       if (/\b(?:downgrade|cancel\s+(?:plan|membership)|end\s+trial)\b[\s\S]*\b(?:options|settings|details|faq|guide|policy|info)\b/i.test(name)
@@ -1204,6 +1268,42 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const form = target?.formContext
       const formTrade = form && typeof form === 'object' && Array.isArray(form.options) && form.options.some((text) => TRADE_ASSET.test(String(text)))
       if (!focusesEntry && /\b(?:sell|convert|deposit)\b/i.test(name) && (/\d|[$\u20ac\u00a3\u00a5\u20bf]/.test(name) || TRADE_ASSET.test(name) || formTrade)) classes.push('purchase')
+      // CU-410: renting ('Rent', 'Rent now', 'Rent <title>'; 'Rentals' stays free), a bare 'Renew', reactivating a subscription,
+      // turning auto-renew on and switching the billing period ask purchase.
+      if (!focusesEntry && (/^\s*rent\b/i.test(name) || /^\s*renew\s*$/i.test(name)
+        || /^\s*reactivate(?:\s+(?:my\s+|your\s+)?(?:subscription|plan|membership))?\s*$/i.test(name)
+        || /^\s*(?:turn\s+on|enable)\s+auto[\s-]?renew(?:al)?\b/i.test(name)
+        || /^\s*switch\s+to\s+(?:annual|yearly|monthly)\b/i.test(name))) classes.push('purchase')
+      // CU-411: rotating, regenerating, generating, creating or revoking a key or token is a credential act (it asks credential,
+      // not the 'api key' / 'revoke' permission words).
+      // 'Transfer ownership' hands the account over (permission), not money - its 'transfer' is not a purchase.
+      if (/\btransfer\s+ownership\b/i.test(name) && !namesPurchase(name.replace(/\btransfer\b/gi, ' '))) {
+        for (let i = classes.length - 1; i >= 0; i -= 1) if (classes[i] === 'purchase') classes.splice(i, 1)
+      }
+      if (!focusesEntry && ACCOUNT_WIPE.test(name)) classes.push('delete')
+      if (!focusesEntry && (KEY_TOKEN_ACT.test(name) || (RESET_PASSWORD.test(name) && !/link/i.test(String(target?.role ?? ''))))) {
+        for (let i = classes.length - 1; i >= 0; i -= 1) if (classes[i] === 'permission') classes.splice(i, 1)
+        classes.push('credential')
+      }
+      // CU-408: a bare 'Refund' issues one (exact name; 'Refund policy' stays free).
+      // cu-coordinator 09:52Z (near forms): a refund or a charge with an amount, a partial or full refund, a recurring payment, and
+      // 'turn autopay on' move money too.
+      if (!focusesEntry && (/^\s*refund\s*$/i.test(name) || /^\s*(?:refund|charge)\s+(?:[A-Z]{3}\s*)?[$\u20ac\u00a3\u00a5]?\s*\d/i.test(name)
+        || /^\s*(?:partial|full)\s+refund\b/i.test(name) || /\b(?:set\s+up|schedule|create|start)\s+(?:a\s+)?recurring\s+payment\b/i.test(name)
+        || /^\s*turn\s+auto[\s-]?pay\s+on\s*$/i.test(name))) classes.push('purchase')
+      // An article or an adjective before payee / recipient / beneficiary ('Add new payee', 'Add a recipient', 'Add bank recipient').
+      if (!focusesEntry && /^\s*add\s+(?:[^\s]+\s+){1,2}(?:payee|recipient|beneficiary)\b/i.test(name)) classes.push('permission')
+      // CU-408 (cu-coordinator 09:50Z): a bare 'Autopay' switch mirrors CU-373 - only a NATIVE checkbox read as on (the press
+      // turns autopay off) is free; native off (turning it on), an ARIA-sourced, 'mixed' or missing state asks purchase.
+      if (!focusesEntry && /^\s*auto[\s-]?pay\s*$/i.test(name) && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))) {
+        const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
+        if (!(nativeBox && target.checked === true)) classes.push('purchase')
+      }
+      // CU-409: bare 'Long', 'Short', 'Borrow', 'Lend', 'Supply', 'Repay' ask only in asset context - an asset word or a currency
+      // sign in the name, or an asset among the form's options (CU-402); a video 'Short' or a library 'Borrow 2 books' stays free.
+      if (!focusesEntry && /\b(?:long|short|borrow|lend|supply|repay)\b/i.test(name) && (/[$\u20ac\u00a3\u00a5\u20bf]/.test(name) || TRADE_ASSET.test(name) || formTrade)) classes.push('purchase')
+      // CU-409: 'Leverage <N>x' and 'Approve <TICKER>' (an all-caps token after Approve, e.g. 'Approve USDC') ask anywhere.
+      if (!focusesEntry && (/\bleverage\s+\d+(?:\.\d+)?\s*x\b|\b\d+(?:\.\d+)?\s*x\s+leverage\b/i.test(name) || /^\s*(?:approve|Approve|APPROVE)\s+[A-Z][A-Z0-9]{1,9}\s*$/.test(String(target?.name ?? '')) || /^\s*approve\s+(?:usdc|usdt|dai|eth|weth|wbtc|btc|sol|matic)\s*$/i.test(name))) classes.push('purchase')
       // Parity sweep (cu-coordinator 08:24Z): an auction bid commits money - a bare 'Bid' or 'Bid now' asks purchase by exact
       // name; 'Bid history' and 'Bids' stay free.
       // cu-coordinator 08:38Z: the quick-bid forms too - 'Bid 5', 'Bid US 5.00', 'Bid!', 'Rebid' (cu-researcher's shape).
@@ -1217,7 +1317,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         for (let i = classes.length - 1; i >= 0; i -= 1) if (classes[i] === 'purchase') classes.splice(i, 1)
       }
       // A bare 'Garage Door' tile toggles either way (exact name); 'Close Garage Door' stays free.
-      if (!focusesEntry && (namesWord(name, PHYSICAL) || UNLOCK_PHYSICAL.test(name) || /^garage\s+door$/i.test(name.trim()))) classes.push('physical')
+      if (!focusesEntry && (namesWord(name, PHYSICAL) || PHYSICAL_PATTERN.test(name) || UNLOCK_PHYSICAL.test(name) || /^garage\s+door$/i.test(name.trim()))) classes.push('physical')
       // CU-146: 'Trash' or 'Bin' alone deletes on a control (a toolbar button, a menu item); a sidebar row of that name
       // only opens the folder.
       if (TRASH_ROLE.test(String(target?.role ?? '')) && namesWord(name, CONTROL_DELETE)) classes.push('delete')

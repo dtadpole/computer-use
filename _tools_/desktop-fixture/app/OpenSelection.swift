@@ -131,6 +131,8 @@ final class OpenSelection: NSObject, NSTableViewDataSource, NSTableViewDelegate 
     table.setAccessibilityLabel("Sandbox files")
     table.identifier = NSUserInterfaceItemIdentifier("sandbox-files")
     table.setDraggingSourceOperationMask(.copy, forLocal: true)
+    // CU-387: a drop in another process (CU Ledger's zone) is offered a copy too - the non-local mask decides there.
+    table.setDraggingSourceOperationMask(.copy, forLocal: false)
     table.onOpen = { [weak self] via in self?.openSelected(via: via, with: nil) }
     scroll.documentView = table
     scroll.borderType = .bezelBorder
@@ -150,6 +152,7 @@ final class OpenSelection: NSObject, NSTableViewDataSource, NSTableViewDelegate 
     content.addSubview(status)
     installMenus()
     let window = Windows.open("main", title: title, content: content)
+    AttachUpload.placeAtOrigin(window, content: content)
     window.makeFirstResponder(table)
   }
 
@@ -159,14 +162,29 @@ final class OpenSelection: NSObject, NSTableViewDataSource, NSTableViewDelegate 
     let cell = SandboxFileCell()
     cell.fileName = files[row]
     cell.fileURL = Self.url(files[row])
-    let label = SandboxFileName(labelWithString: files[row])
-    label.fileName = files[row]
-    label.fileURL = Self.url(files[row])
+    // CU-387 (helper 0.2.67's fix a): `fileOn: "row"` gives the name a plain label with no AXFilename/AXURL of its own -
+    // only its cell and row carry the file, as some apps' lists do - so a press on the name shows the helper lending the
+    // cell's file (fileFrom 'ancestor'). By default the name carries the file itself, as Finder's does.
+    let plainName = (Screens.params["fileOn"] as? String) == "row"
+    let label: NSTextField
+    if plainName {
+      label = NSTextField(labelWithString: files[row])
+    } else {
+      let named = SandboxFileName(labelWithString: files[row])
+      named.fileName = files[row]
+      named.fileURL = Self.url(files[row])
+      label = named
+    }
     label.font = NSFont.systemFont(ofSize: 13)
     label.translatesAutoresizingMaskIntoConstraints = false
     cell.addSubview(label)
     cell.textField = label
-    NSLayoutConstraint.activate([label.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: 4), label.centerYAnchor.constraint(equalTo: cell.centerYAnchor)])
+    // CU-387: the name spans the row, so a press anywhere on it lands on the element carrying AXFilename and AXURL, and
+    // each row's name is a named target ('sandbox-file-<row>') a live row can aim at instead of guessing a point.
+    NSLayoutConstraint.activate([label.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: 4),
+                                 label.trailingAnchor.constraint(equalTo: cell.trailingAnchor, constant: -4),
+                                 label.centerYAnchor.constraint(equalTo: cell.centerYAnchor)])
+    Fixture.shared.controls["sandbox-file-\(row)"] = label
     return cell
   }
 

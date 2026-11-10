@@ -609,7 +609,8 @@ export async function runTask(options) {
       // CU-250 (cu-developer-two's seam finding): an item under a Services submenu keeps its mark, which app-policy refuses;
       // anything but false reads as marked (fail closed, as the driver does).
       const servicesMenu = one.servicesMenu !== undefined && one.servicesMenu !== false
-      items.push({ role: 'AXMenuItem', name: one.name.trim().slice(0, 80), ...(key ? { keyEquivalent: key } : {}), ...(typeof one.enabled === 'boolean' ? { enabled: one.enabled } : {}), ...(appleMenu ? { appleMenu: true } : {}), ...(servicesMenu ? { servicesMenu: true } : {}) })
+      // CU-382 (cu-researcher 08:07Z, D-103): a Quick Action item's mark and an unwalked menu context ride along, as appleMenu does.
+      items.push({ role: 'AXMenuItem', name: one.name.trim().slice(0, 80), ...(key ? { keyEquivalent: key } : {}), ...(typeof one.enabled === 'boolean' ? { enabled: one.enabled } : {}), ...(appleMenu ? { appleMenu: true } : {}), ...(servicesMenu ? { servicesMenu: true } : {}), ...(one.quickActions === true ? { quickActions: true } : {}), ...(one.menuContextUnread === true ? { menuContextUnread: true } : {}) })
     }
     return items.length === 1 ? items[0] : { items }
   }
@@ -1036,6 +1037,9 @@ export async function runTask(options) {
   const recordedWebTarget = (target, allowed) => {
     if (!target) return null
     const recorded = { origin: target.origin ?? null, role: target.role ?? null }
+    // CU-373 audit (cu-verifier, cu-coordinator 21:13Z): a toggle's state before the action - booleans or 'mixed', never a
+    // value - so a record shows why a protection toggle went free.
+    for (const key of ['checked', 'pressed']) if (target[key] === true || target[key] === false || target[key] === 'mixed') recorded[key] = target[key]
     return allowed === true ? { ...recorded, name: target.name ?? '' } : recorded
   }
 
