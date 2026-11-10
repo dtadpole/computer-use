@@ -245,6 +245,8 @@ enum Extra {
       return ConsentKeys.open(title: title)
     case WebButtons.task:
       return WebButtons.open(title: title)
+    case WebForm.task:
+      return WebForm.open(title: title)
     case ConsentCells.task:
       return ConsentCells.open(title: title)
     case MenuCompose.task:
@@ -363,6 +365,7 @@ enum Extra {
     let fixture = Fixture.shared
     if ConsentKeys.act(step) { return true }
     if WebButtons.act(step) { return true }
+    if WebForm.act(step) { return true }
     if ConsentCells.act(step) { return true }
     if MenuCompose.act(step) { return true }
     if OpenSelection.act(step) { return true }
