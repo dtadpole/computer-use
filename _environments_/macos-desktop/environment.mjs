@@ -6,6 +6,7 @@ import { dirname, isAbsolute, join } from 'node:path'
 
 import { createExclusions } from '../../_tools_/agent-core/exclusions.mjs'
 import { cuHome } from '../../_tools_/agent-core/lib.mjs'
+import { looksSensitive } from '../../_tools_/agent-core/policy.mjs'
 import { captureMatchesFrame, checkPoint, displayFrame, fitFactor, pngSize, rectToFrame, regionToGlobal, sizeAt, toFrame, toGlobal } from './coords.mjs'
 import { EnvironmentError, invalid, notGranted } from './errors.mjs'
 import {
@@ -13,7 +14,7 @@ import {
   SETTLE_CAP_MS, SETTLE_MS,
 } from './helper-link.mjs'
 import { ACTION_TYPES, chordKeyDowns, hitTestPoints, NAVIGATE_REFUSAL, planAction, planBatch } from './input-plan.mjs'
-import { keyName } from './keys.mjs'
+import { keyName, normalizeKey } from './keys.mjs'
 import { defaultBundlePath, driverIdentity, driverLaunchProblems, helperExecutablePath, launchHelper } from './launch.mjs'
 import { acquireDesktopRun, RUN_ID_PATTERN, SEAT_PATTERN } from './run-lock.mjs'
 
@@ -645,6 +646,89 @@ function defaultButtonOf(value) {
  * control characters) and `modifiers` (AXMenuItemCmdModifiers: an integer 0-15 - Command alone is 0; +1 Shift,
  * +2 Option, +4 Control, +8 no Command). A part that is malformed is null; nothing usable at all is null.
  */
+/**
+ * CU-361 (cu-researcher): a layout label as placeholderOf reads it, except that text the value rules class as sensitive
+ * (a card, an IBAN, a bank account: policy.mjs looksSensitive) is a displayed value, not a label, and reads as none - so
+ * a summary screen's 'Card 4111...' beside a box never becomes a name anywhere.
+ */
+export function nearbyLabelOf(value) {
+  const text = placeholderOf(value)
+  return text !== null && looksSensitive(text) === null ? text : null
+}
+
+/**
+ * CU-372 (helper 0.2.65): a pop-up button's menu as the helper read it closed - `{ items: [{ title, enabled }], selected,
+ * selectedIndex }`, or `{ unread: true, selected }`; null when absent (an older helper, another role). Anything malformed
+ * reads as unread, never as an empty list (unread asks). Outside the fingerprint, and never in run records.
+ */
+export function popUpOf(value) {
+  if (value === null || value === undefined || typeof value !== 'object' || Array.isArray(value)) return null
+  const selected = typeof value.selected === 'string' && value.selected.trim() !== '' ? value.selected.trim().slice(0, 80) : null
+  // A pull-down button (pullsDown: its title a label, Return or Space opening a menu of actions) keeps the mark either way.
+  const pull = value.pullsDown === true ? { pullsDown: true } : {}
+  const unread = { unread: true, selected, ...pull }
+  if (value.unread === true || !Array.isArray(value.items) || value.items.length === 0 || value.items.length > 50) return unread
+  const items = []
+  for (const item of value.items) {
+    if (item === null || typeof item !== 'object' || typeof item.title !== 'string' || item.title.trim() === '') return unread
+    items.push({ title: item.title.trim().slice(0, 80), enabled: item.enabled !== false })
+  }
+  // cu-researcher: a selected title two items share leaves an arrow's neighbour unknown - unread, as the helper says.
+  if (selected !== null && items.filter((item) => item.title === selected).length > 1) return unread
+  const index = value.selectedIndex
+  const known = value.pullsDown !== true && Number.isInteger(index) && index >= 0 && index < items.length && items[index].title === selected
+  return { items, selected, selectedIndex: known ? index : null, ...pull }
+}
+
+/**
+ * CU-372: the items a typed string may select in a closed pop-up button, in menu order - conservatively every enabled
+ * item whose title starts (case-insensitively) with any prefix of the typed text, not only AppKit's first match (named
+ * over-ask). [] when none matches (the button keeps its item); `{ unread: true }` for an unread menu.
+ */
+export function popUpTypeItems(popUp, text) {
+  if (popUp === null || popUp.unread === true || popUp.pullsDown === true) return { unread: true }
+  const typed = String(text ?? '').toLocaleLowerCase()
+  const prefixes = []
+  for (let end = 1; end <= typed.length; end += 1) prefixes.push(typed.slice(0, end))
+  return popUp.items.filter((item) => item.enabled && prefixes.some((prefix) => item.title.toLocaleLowerCase().startsWith(prefix)))
+}
+
+/**
+ * CU-372: the item one plain key lands on in a closed pop-up button, from its selected item - Down/Right the next
+ * enabled item, Up/Left the previous, Home the first, End the last (no wrap); a letter or digit the one enabled item it
+ * type-selects, unread when several could. PageUp/PageDown and an unknown selected index read as unread (they ask).
+ * Returns `{ item }`, `{ unread: true }`, or null when the key chooses nothing (the focus stays the target).
+ */
+export function popUpKeyItem(popUp, key) {
+  if (popUp === null || popUp.unread === true || popUp.pullsDown === true) return { unread: true }
+  const enabled = popUp.items.map((item, index) => ({ item, index })).filter(({ item }) => item.enabled)
+  if (/^[A-Z0-9]$/.test(key)) {
+    const matches = enabled.filter(({ item }) => item.title.toLocaleUpperCase().startsWith(key))
+    if (matches.length === 0) return null
+    return matches.length === 1 ? { item: matches[0].item } : { unread: true }
+  }
+  if (key === 'HOME' || key === 'END') {
+    if (enabled.length === 0) return null
+    return { item: (key === 'HOME' ? enabled[0] : enabled[enabled.length - 1]).item }
+  }
+  if (key === 'PAGEUP' || key === 'PAGEDOWN') return { unread: true }
+  const down = key === 'ARROWDOWN' || key === 'ARROWRIGHT'
+  if (!down && key !== 'ARROWUP' && key !== 'ARROWLEFT') return null
+  if (popUp.selectedIndex === null) return { unread: true }
+  const next = down ? enabled.find(({ index }) => index > popUp.selectedIndex) : enabled.filter(({ index }) => index < popUp.selectedIndex).pop()
+  return next === undefined ? null : { item: next.item }
+}
+
+/** CU-372: the roles that carry a closed menu - a pop-up button, and a pull-down (AppKit's AXMenuButton). */
+const POPUP_ROLES = ['AXPopUpButton', 'AXMenuButton']
+
+/** CU-372: a pop-up button's menu item as a target - the button's own context, the item's title as its name, marked as a choice. */
+function popUpItemTarget(focus, item) {
+  const { popUp, fieldKey, placeholder, nearbyLabel, ...context } = focus
+  const fingerprint = createHash('sha256').update(`${focus.fingerprint}|popUpItem=${item.title}`).digest('hex').slice(0, 32)
+  return { ...context, role: 'AXMenuItem', subrole: null, name: item.title, editable: false, placeholder: null, nearbyLabel: null, selectOption: true, fingerprint }
+}
+
 /** CU-349: a placeholder string, trimmed, at most 80 characters (longer is none, never cut), else null. */
 export function placeholderOf(value) {
   if (typeof value !== 'string') return null
@@ -690,6 +774,9 @@ function boundEntryOf(item, scope) {
   if (item.appleMenu !== undefined && typeof item.appleMenu !== 'boolean') return null
   // CU-250 (helper 0.2.53): an item under the Services menu acts outside the approved app; app-policy refuses it.
   if (item.servicesMenu !== undefined && typeof item.servicesMenu !== 'boolean') return null
+  // CU-382 (helper 0.2.66): an item in Finder's Quick Actions runs a user-installed workflow - the menu-key list marks it
+  // as the clicked item's describe() does, and a chord bound to it is judged as a click on it.
+  if (item.quickActions !== undefined && typeof item.quickActions !== 'boolean') return null
   const name = menuTitleOf(item.title)
   if (name === null) return null
   const path = Array.isArray(item.path) ? item.path.slice(0, 8).map(menuTitleOf).filter((step) => step !== null) : []
@@ -698,6 +785,7 @@ function boundEntryOf(item, scope) {
     enabled: typeof item.enabled === 'boolean' ? item.enabled : null,
     ...(item.appleMenu === true ? { appleMenu: true } : {}),
     ...(item.servicesMenu === true ? { servicesMenu: true } : {}),
+    ...(item.quickActions === true ? { quickActions: true } : {}),
   }
 }
 
@@ -785,6 +873,19 @@ export function fileNameOf(value) {
  * directory or bundle keeping its trailing '/' (Payload.app/); never the path, which names the owner's folders. Null for
  * any other scheme, a malformed URL or a leaf fileNameOf refuses.
  */
+/**
+ * CU-392 (cu-coordinator 01:21Z): whether an element's AXURL names a network volume or server - its scheme is one of
+ * smb, cifs, afp, nfs, webdav, davs or ftp (a server row in a file browser, a share on it). A boolean only: the URL, host
+ * and share never leave the driver. A mounted share reads as a file: URL under /Volumes and is not seen here (a named
+ * limit), nor is a WebDAV volume addressed by http(s).
+ */
+export const NETWORK_VOLUME_SCHEMES = Object.freeze(['smb', 'cifs', 'afp', 'nfs', 'webdav', 'davs', 'ftp'])
+export function networkVolumeOf(value) {
+  if (typeof value !== 'string') return false
+  const scheme = /^([a-z][a-z0-9+.-]{0,15}):/i.exec(value.trim())?.[1]?.toLowerCase()
+  return scheme !== undefined && NETWORK_VOLUME_SCHEMES.includes(scheme)
+}
+
 export function fileUrlLeafOf(value) {
   if (typeof value !== 'string') return null
   let url
@@ -1795,6 +1896,15 @@ class DesktopEnvironment {
       // CU-250 (helper 0.2.53): a menu item under the Services menu, and its menu path - outside the fingerprint, and never in
       // run records (an event's target keeps origin, role and name).
       ...(servicesMenuOf(element.servicesMenu) ? { servicesMenu: true } : {}),
+      // CU-398 (helper 0.2.67): a menu item under the Apple menu (Restart..., Shut Down..., Log Out...), structural.
+      ...(element.appleMenu === true ? { appleMenu: true } : {}),
+      // CU-382 (helper 0.2.66): under Finder's Quick Actions (a submenu or the preview pane's row), and a menu walk
+      // that could not finish - each present only when true; outside the fingerprint, and never in run records.
+      ...(element.quickActions === true ? { quickActions: true } : {}),
+      ...(element.menuContextUnread === true ? { menuContextUnread: true } : {}),
+      // CU-392 (helper 0.2.67): where a drop in Finder sends a file - 'airdrop', 'shared' or 'server' - from Finder's own
+      // strings in the helper (the raw title never leaves it); present only when one of those.
+      ...(['airdrop', 'shared', 'server'].includes(element.dropDestination) ? { dropDestination: element.dropDestination } : {}),
       menuPath: menuPathOf(element.menuPath),
       // CU-187: the label that captions a non-entry element (AXTitleUIElement's title, else its row's or cell's sibling
       // title, as the helper reads it) - never its value or its own title. A string of at most 80 characters, null when
@@ -1805,11 +1915,29 @@ class DesktopEnvironment {
       // characters (longer reads as none), null when absent (an older helper) or malformed. Outside the fingerprint, and
       // never in run records.
       placeholder: placeholderOf(element.placeholder),
+      // CU-361 (helper 0.2.64): a static text beside an entry in layout (left on its row, else just above it), as the
+      // helper reads it only when the entry has no title, caption or placeholder - a layout label agent core uses
+      // upgrade-only. Trimmed, at most 80 characters (longer reads as none), else null (absent from an older helper, or
+      // malformed). Outside the fingerprint, and never in run records.
+      nearbyLabel: nearbyLabelOf(element.nearbyLabel),
+      // CU-372 (helper 0.2.65): a pop-up button's menu items as the helper read them closed (popUpOf) - what keyTarget and
+      // typeOptions turn into the item a key or a type selects. Outside the fingerprint, and never in run records.
+      ...(element.role === 'AXPopUpButton' || element.role === 'AXMenuButton' ? { popUp: popUpOf(element.popUp) } : {}),
+      // CU-380 (helper 0.2.65): a menu is tracking - set by the helper on whatever focus it returns then (the highlighted
+      // item, a stale first responder, or an AXMenu placeholder), so agent core asks on Return or Space unless it can
+      // judge the item. Present only when true; outside the fingerprint, and never in run records.
+      ...(element.menuOpen === true ? { menuOpen: true } : {}),
       // CU-255: the file the element shows and its URL's last component, what launch_code reads besides the name - Finder
       // may hide an extension in the title (Payload for Payload.app or install.command). Outside the fingerprint, and
       // never in run records (an event's target keeps origin, role and name); the URL's path never leaves the driver.
       filename: fileNameOf(element.filename),
       url: fileUrlLeafOf(element.url),
+      // CU-387 (helper 0.2.67): 'ancestor' when the helper lent a content element (a row's text, image or cell) the
+      // nearest row's or cell's AXFilename/AXURL - a kind for the run record (CU-391), judged exactly as an own file name.
+      // Present only then; outside the fingerprint.
+      ...(element.fileFrom === 'ancestor' ? { fileFrom: 'ancestor' } : {}),
+      // CU-392: a drop onto a server or network share sends the file away - a boolean from AXURL's scheme, only when true.
+      ...(networkVolumeOf(element.url) ? { networkVolume: true } : {}),
       // CU-265: a link's scheme (AXLink's AXURL), so a facetime:, tel: or mailto: link is not a plain click. Links only - a
       // file browser's items carry file: URLs and are judged by launch_code - and the scheme only, never the URL.
       linkScheme: element.role === 'AXLink' ? linkSchemeOf(element.url) : null,
@@ -1843,6 +1971,40 @@ class DesktopEnvironment {
     return this.#focusedOf(await this.link.request('focused', {}))
   }
 
+  /**
+   * CU-372: a plain key on a focused pop-up button is judged by the item it selects (popUpKeyItem) - the item as a target
+   * with selectOption: true, or the button with optionUnread: true when the menu or the landing cannot be read. Any other
+   * key, or any other focus, gives the focus as before (agent core's keyTarget contract, as on the browser route).
+   */
+  async keyTarget(action) {
+    const focus = await this.focusedElement()
+    if (focus === null || !POPUP_ROLES.includes(focus.role) || action?.type !== 'keypress' || !Array.isArray(action.keys)) return focus
+    let keys
+    try {
+      keys = action.keys.map((key) => normalizeKey(String(key)))
+    } catch {
+      return focus
+    }
+    const main = keys.filter((key) => !['SHIFT', 'CONTROL', 'ALT', 'META'].includes(key))
+    if (main.length !== 1 || keys.some((key) => ['CONTROL', 'ALT', 'META'].includes(key))) return focus
+    const landed = popUpKeyItem(focus.popUp ?? null, main[0])
+    if (landed === null) return focus
+    return landed.unread === true ? { ...focus, optionUnread: true } : popUpItemTarget(focus, landed.item)
+  }
+
+  /**
+   * CU-372: for a type whose focus is a pop-up button, every item the typed string may select (popUpTypeItems), each a
+   * target with selectOption: true, in menu order; [] when none matches; `{ unread: true }` when the menu cannot be read.
+   * null for any other focus (the type is judged as before). The shape of the browser route's typeOptions (CU-370).
+   */
+  async typeOptions(action) {
+    if (action?.type !== 'type' || typeof action.text !== 'string') return null
+    const focus = await this.focusedElement()
+    if (focus === null || !POPUP_ROLES.includes(focus.role)) return null
+    const items = popUpTypeItems(focus.popUp ?? null, action.text)
+    return Array.isArray(items) ? items.map((item) => popUpItemTarget(focus, item)) : items
+  }
+
   /** The target focusedElement() makes of a 'focused' reply: the element, the no-focus placeholder, or null. */
   #focusedOf(reply) {
     const element = this.#describe(reply.element)
@@ -1851,6 +2013,10 @@ class DesktopEnvironment {
     const sheet = sheetOf(reply.sheet)
     const pasteboardChangeCount = changeCountOf(reply.changeCount)
     const textEntered = textEnteredOf(reply.textEntered)
+    // CU-377 (helper 0.2.65): whether the clipboard holds a file, from its type names only (never a path or content) -
+    // true, false, or null when unread or from an older helper (agent core reads null as unknown). Context beside the
+    // change count: outside the fingerprint, and never in run records.
+    const pasteboardHasFile = typeof reply.pasteboardHasFile === 'boolean' ? reply.pasteboardHasFile : null
     if (element === null) {
       // CU-148: no focused element - with keyboard navigation off the focus is the window itself - yet the helper read
       // the window: a sheet is up, or Return has a default button to press. A placeholder target (the shape of any
@@ -1860,9 +2026,9 @@ class DesktopEnvironment {
       // CU-190: a default button the helper could not read makes one too - Return still presses the window's default
       // button, so agent core must see the failed read (cu-developer-one); a positive none or an older helper does not.
       if (sheet !== true && defaultButton === null && defaultButtonRead !== false) return null
-      return { ...this.#describe(appOf(reply.app)), noFocus: true, defaultButton, defaultButtonRead, sheet, pasteboardChangeCount, textEntered }
+      return { ...this.#describe(appOf(reply.app)), noFocus: true, defaultButton, defaultButtonRead, sheet, pasteboardChangeCount, pasteboardHasFile, textEntered }
     }
-    return { ...element, defaultButton, defaultButtonRead, sheet, pasteboardChangeCount, textEntered }
+    return { ...element, defaultButton, defaultButtonRead, sheet, pasteboardChangeCount, pasteboardHasFile, textEntered }
   }
 
   /**
