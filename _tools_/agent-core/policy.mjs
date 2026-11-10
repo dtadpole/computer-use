@@ -342,7 +342,7 @@ const REPLY_WORDS = new Set(['reply', '回复', '回覆'])
 const SUBMIT_BUT_REPLY = Object.freeze(WORDS.submit.filter((word) => !REPLY_WORDS.has(word)))
 // CU-261: a control named only Call, Answer or Merge submits; inside a longer name ('Call Stack', 'Merge Cells') it does not.
 // CU-293: the same whole names in Chinese - 合并单元格 (Merge Cells) stays free like its English.
-const SUBMIT_WHOLE_NAMES = new Set(['call', 'answer', 'merge', '呼叫', '接听', '接聽', '合并', '合併'])
+const SUBMIT_WHOLE_NAMES = new Set(['boost', 'call', 'answer', 'merge', '呼叫', '接听', '接聽', '合并', '合併'])
 function judgesSubmit(name, target) {
   if (SUBMIT_WHOLE_NAMES.has(normaliseName(name).trim())) return true
   if (!namesWord(withoutPastState(name), WORDS.submit)) return false
@@ -1190,6 +1190,15 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // Turning forwarding OFF is the safe direction (cu-coordinator 21:00Z).
       const forwardingOff = /\b(?:disable|turn\s+off|stop)\b/i.test(name) && /forward/i.test(name)
       if (!focusesEntry && ACCOUNT_SECURITY.test(name) && !protectionOn && !forwardingOff) classes.push('credential')
+      // CU-404 edges (cu-coordinator 06:20Z): 'Promote to <role>' grants a role (permission, not purchase); undoing or removing
+      // a repost is free.
+      if (/\bpromote\s+to\s+\S/i.test(name)) {
+        for (let i = classes.length - 1; i >= 0; i -= 1) if (classes[i] === 'purchase') classes.splice(i, 1)
+        if (!classes.includes('permission')) classes.push('permission')
+      }
+      if (/^\s*(?:undo|remove)\s+(?:repost|retweet|reblog|boost)\b/i.test(name)) {
+        for (let i = classes.length - 1; i >= 0; i -= 1) if (classes[i] === 'submit' || classes[i] === 'delete') classes.splice(i, 1)
+      }
       // CU-400: 'Sell', 'Convert' or 'Deposit' beside an asset or an amount (Sell BTC, Convert 0.5 ETH, Deposit USD) is a
       // trade; a marketplace 'Sell' and a file 'Convert' stay free (named).
       if (!focusesEntry && /\b(?:sell|convert|deposit)\b/i.test(name) && (/\d|[$\u20ac\u00a3\u00a5\u20bf]/.test(name) || TRADE_ASSET.test(name))) classes.push('purchase')
