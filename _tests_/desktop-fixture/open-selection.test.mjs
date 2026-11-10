@@ -26,6 +26,22 @@ async function withSandbox(body) {
 const openedFacts = (state) => state.events.filter((event) => event.type === 'opened').map(({ via, names, with: app }) => ({ via, names, ...(app ? { with: app } : {}) }))
 
 describe('open-selection (CU-252, CU-269 stand-in)', () => {
+  test('CU-387 variant fileOn row: the name is a plain label (no file of its own) while its cell and row carry the file', async () => {
+    const fixture = await launchFixture(executable, { offscreen: true })
+    try {
+      await fixture.open('open-selection', { title: 'Sandbox', fileOn: 'row' })
+      await fixture.act({ sandboxSelect: ['install.command'] })
+      const { rows } = await fixture.call('sandboxAX')
+      assert.equal(rows.length, 1)
+      assert.equal(rows[0].nameFilename, null, 'the name carries no AXFilename of its own')
+      assert.equal(rows[0].cellFilename, 'install.command', 'its cell does - the ancestor 0.2.67 lends from')
+      const audit = await fixture.axAudit()
+      assert.equal(audit['sandbox-file-0'].role, 'AXStaticText', 'still the static text a press hits')
+    } finally {
+      await fixture.close()
+    }
+  })
+
   test('CU-387: each row\'s name is a target spanning the row inside the list, carrying the file - a drag can start on it', async () => {
     await withSandbox(async (fixture) => {
       const targets = await fixture.targets()

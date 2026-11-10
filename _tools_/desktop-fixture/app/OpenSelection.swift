@@ -162,9 +162,19 @@ final class OpenSelection: NSObject, NSTableViewDataSource, NSTableViewDelegate 
     let cell = SandboxFileCell()
     cell.fileName = files[row]
     cell.fileURL = Self.url(files[row])
-    let label = SandboxFileName(labelWithString: files[row])
-    label.fileName = files[row]
-    label.fileURL = Self.url(files[row])
+    // CU-387 (helper 0.2.67's fix a): `fileOn: "row"` gives the name a plain label with no AXFilename/AXURL of its own -
+    // only its cell and row carry the file, as some apps' lists do - so a press on the name shows the helper lending the
+    // cell's file (fileFrom 'ancestor'). By default the name carries the file itself, as Finder's does.
+    let plainName = (Screens.params["fileOn"] as? String) == "row"
+    let label: NSTextField
+    if plainName {
+      label = NSTextField(labelWithString: files[row])
+    } else {
+      let named = SandboxFileName(labelWithString: files[row])
+      named.fileName = files[row]
+      named.fileURL = Self.url(files[row])
+      label = named
+    }
     label.font = NSFont.systemFont(ofSize: 13)
     label.translatesAutoresizingMaskIntoConstraints = false
     cell.addSubview(label)
