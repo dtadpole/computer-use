@@ -67,7 +67,9 @@ const VERBS = new Map(Object.entries({
   export: ['cred'], reveal: ['cred'], show: ['cred'], view: ['cred'], copy: ['cred'], get: ['cred', 'pay'], download: ['cred', 'install'],
   print: ['cred'], link: ['cred'], connect: ['cred'], change: ['cred'], update: ['cred', 'install'], edit: ['cred'],
   // F5 cluster 1: 'open' leads pay only for trading objects; its install sense is only '... anyway'.
-  unlock: ['phys_on'], open: ['phys_on', 'pay'], start: ['phys_on', 'send'], preheat: ['phys_on'], light: ['phys_on'],
+  // CU-434 (High; cu-coordinator 18:44Z): unlock / start lead pay too, for the ride and rental objects below.
+  unlock: ['phys_on', 'pay'], open: ['phys_on', 'pay'], start: ['phys_on', 'send', 'pay'], preheat: ['phys_on'], light: ['phys_on'],
+  reorder: ['pay'],
   install: ['install'], keep: ['install'],
   vote: ['send'], cast: ['send'], resign: ['send'], quit: ['send'], decline: ['send'], apply: ['send'], enroll: ['send', 'pay'],
   file: ['send'], submit: ['send', 'pay'], post: ['send'], publish: ['send'], broadcast: ['send'], message: ['send'], email: ['send'],
@@ -98,7 +100,9 @@ const OBJECTS = {
     'customer', 'vendor', 'subscription', 'plan', 'membership', 'liquidity', 'position', 'loan', 'nft', 'item', 'offer', 'bid', 'usdc',
     'eth', 'weth', 'sol', 'btc', 'usdt', 'dai', 'wbtc', 'matic', 'transaction', 'trade', 'leverage', 'sale', 'payee', 'fund', 'money',
     'project', 'bet', 'swap', 'trial', 'collateral', 'allowance', 'spending', 'cap', 'long', 'short', 'annual', 'monthly', 'yearly',
-    'tip', 'recurring', 'bag', 'baggage', 'insurance', 'mile', 'domain']),
+    'tip', 'recurring', 'bag', 'baggage', 'insurance', 'mile', 'domain',
+    // CU-434: a paid ride, delivery or rental.
+    'ride', 'delivery', 'scooter', 'bike', 'ebike', 'moped']),
   access: new Set(['organization', 'team', 'workspace', 'server', 'people', 'account', 'owner', 'coowner', 'co', 'admin', 'host',
     'cohost', 'collaborator', 'member', 'access', 'guest', 'visitor', 'device', 'public', 'ownership', 'payee', 'recipient',
     'beneficiary', 'everyone']),
@@ -127,7 +131,7 @@ const STANDALONE = new Map(Object.entries({
   promote: 'purchase', 'top up': 'purchase', 'cash out': 'purchase', 'factory reset': 'delete',
   'buzz in': 'physical', 'remote start': 'physical', 'let in': 'permission', refund: 'purchase', renew: 'purchase', book: 'purchase',
   // A bare Install / Update / Get is CU-254's (the App Store rule keeps its own record).
-  enroll: 'submit', reactivate: 'purchase', pay: 'purchase', 'restart to update': 'install',
+  enroll: 'submit', reactivate: 'purchase', pay: 'purchase', 'restart to update': 'install', reorder: 'purchase',
   'install and relaunch': 'install', buy: 'purchase', retweet: 'submit', reblog: 'submit', endorse: 'submit', esign: 'permission',
   give: 'purchase',
 }))
@@ -297,6 +301,9 @@ export function grammarClasses(name, role = '') {
     else if (rest.includes('now') && classes.has('pay') && verb !== 'set up') pushOnce(out, 'purchase')
   }
   if (verb === 'sign' && rest.some((t) => t === 'message' || t === 'transaction')) pushOnce(out, 'purchase')
+  // CU-434: 'Order again' reorders; cancelling a ride may charge a fee (submit).
+  if (verb === 'order' && rest.length === 1 && rest[0] === 'again') pushOnce(out, 'purchase')
+  if (verb === 'cancel' && rest.some((t) => t === 'ride' || t === 'delivery')) pushOnce(out, 'submit')
   // CU-426 (cu-coordinator 16:28Z), where structure can: unsending a message and turning on disappearing messages delete;
   // leaving or exiting a group, chat or channel, and 'Report and block', submit.
   if (verb === 'unsend' && rest.some((t) => t === 'message' || t === 'chat')) pushOnce(out, 'delete')
