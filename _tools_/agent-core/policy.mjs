@@ -84,6 +84,8 @@ const LOCALE_ID_NAMES = Object.freeze(['reisepass', '…passnummer', 'geburtsdat
   '여권', '여권번호', '생년월일', '주민등록번호', '계좌번호', '사업자등록번호'])
 const WORDS = Object.freeze({
   purchase: ['buy', 'pay', 'order', 'place order', 'checkout', 'check out', 'subscribe', 'donate', 'purchase', 'transfer', 'withdraw', 'wire', 'send money',
+    // CU-404: a promoted or boosted post is paid.
+    'promote', 'promote post', 'boost post',
     // CU-400 (High; cu-coordinator 04:39Z): a trade, swap, stake or signature moves money and cannot be taken back.
     'confirm transaction', 'sign transaction', 'sign message', 'swap', 'stake', 'trade', 'sell now', 'confirm swap', 'confirm trade', 'confirm sale',
     // cu-coordinator 04:44Z (cu-verifier's stand-in: 'Bridge' acted unasked): a bridge moves tokens between chains.
@@ -107,6 +109,8 @@ const WORDS = Object.freeze({
     // cu-researcher's 13:23Z sweep: unsaved edits lost, like Discard Changes.
     'revert to saved', 'revert all changes', ...ZH_WORDS.delete, ...LOCALE_WORDS.delete],
   permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke',
+    // CU-404: going public exposes the account.
+    'go public', 'make profile public',
     // CU-386 (cu-coordinator 23:54Z): asking someone else for money.
     'request money',
     // CU-258 (cu-researcher): standing choices an app keeps after the run, as whole phrases. A bare 'Allow' stays free so
@@ -138,6 +142,8 @@ const WORDS = Object.freeze({
       'password', 'passkey', 'passkeys', 'security key', 'security keys', 'login alerts', 'sign in alerts', 'account recovery', 'find my',
       'less secure apps', 'less secure app access'].map((what) => `${verb} ${what}`)), ...ZH_WORDS.permission],
   submit: ['send', 'post', 'submit', 'publish', 'reply', 'sign up', 'register',
+    // CU-404 (cu-coordinator 06:12Z): reposting and endorsing publish under the owner's name; a report is a message sent for them.
+    'repost', 'retweet', 'reblog', 'endorse', 'report user', 'report post',
     // CU-261 (cu-researcher; cu-coordinator: High): actions that reach other people or commit shared work, as whole
     // phrases. A bare Accept, Connect, Join or Follow stays free (cookie banners, Wi-Fi, generic joins: named limits).
     'facetime', 'video call', 'audio call', 'voice call', 'start call', 'start a call', 'join meeting', 'join call',
