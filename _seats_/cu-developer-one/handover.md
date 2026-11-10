@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-09T20:10:00Z
+modified: 2026-11-10T05:10:00Z
 level: L1
-version: 3.9.0
+version: 3.14.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,22 +15,19 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; never drives the desktop. State at 20:10Z, 9 November.
+session worktree plus `--review` worktrees; never drives the desktop. State at 05:10Z, 10 November.
 
 ## Landed
 
-- Verified: CU-301, CU-241, CU-297, CU-302, CU-325, CU-326, CU-263, CU-336, CU-347, CU-345, CU-346, CU-363, CU-365.
-- In Verify: CU-340, CU-352, CU-354, CU-350, CU-355, CU-359.
+- Verified: ... CU-388, CU-392, CU-395 (+ #459 follow-up); CU-361 in Verify.
 
-## Open
+## Open (Highs first)
 
-- CU-370 (High, D-086 slot 2): PR #382 - a non-editable select is a choice; keyTarget's selectOption is judged as a click
-  on that option, optionUnread asks; the loop passes typeOptions. Lands with cu-developer-two's driver PR.
-- Queued: #343 (CU-358, waits for cu-verifier), #349 (CU-349, after 0.2.63), #360 (CU-364, Low).
-- One guide PR after #351 lands: drop line 49 (CU-363/CU-365), the CU-360 mailto note after #355 (no 'records'
-  clause until #339 too); line 32 when CU-361 lands. Under 500 words.
-- D-101/D-102: run agent-core, _tests_/macos-desktop and every node verifier (CU_VERIFY_SEAT=cu-developer-one) before
-  review; name skips and live scenarios in the body.
+- CU-398 High: #463 (Apple-menu click/Return, loginwindow) in the unit [#423 #442 #443 #463 #433] - one install.
+- CU-400 High: #466 (trade/swap/stake/sign/bridge/mint ask purchase) - both OKs, holds the lane.
+- With OKs, landing: #450, #453 (CU-394), #462 (CU-396/397), #469 (CU-399), #447, #448, #433, #459.
+- Guide PR #392 (OK): one round after #450 (mailto, remote/VM, Home/Find My, physical line), then complete.
+- Read a ruling in full and re-read the inbox before every push; D-101/D-103/D-104.
 
 ## Lessons
 

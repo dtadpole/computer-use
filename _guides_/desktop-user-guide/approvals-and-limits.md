@@ -1,8 +1,8 @@
 ---
 title: What it does, approvals and known limits
 created: 2026-11-07T21:18:46Z
-modified: 2026-11-09T15:30:00Z
-version: 0.1.22
+modified: 2026-11-09T16:45:00Z
+version: 0.1.23
 level: L1
 status: unverified
 description: What the agent can and cannot do on your Mac, what it asks you, and its known limits.
@@ -18,6 +18,7 @@ grounded_in:
   - source: 'computer-use #250 (CU-326 - a card in a host label, split across all-digit segments or zero-padded now asks; the limit line goes) and CU-336 (a short code into an unnamed payment frame now asks - PR #274; its over-ask named)'
   - source: 'computer-use #174 (CU-263 - a human check is handed to the person: provider frames, frame hosts titled for one, pressed names, text and audio entries)'
   - source: 'computer-use PR #294 (CU-340 - a value split across boxes asks at the completing box; digits typed after a desktop paste the run cannot read ask, a named over-ask)'
+  - source: 'computer-use PR #323 and PR #331 (CU-352, CU-345 - action and field names in German, French, Spanish, Russian, Japanese and Korean; D-099 lists the rest by name)'
 ---
 
 # What it does, approvals and known limits
@@ -39,13 +40,13 @@ file choices are never pre-approved. Typed sensitive text stays out of run files
 
 ## Known limits
 
-- Names are read in English and Chinese only.
+- Names are read in English, Chinese, German, French, Spanish, Russian, Japanese and Korean only.
 - A file panel's question names the folder only if the agent opened it.
 - One display, at its starting size; moving display ends the run.
 - A leftover notification blocks clicks beneath it.
 - A run stopped mid-hold names the key; pressing it releases it.
 - A shortcut is judged as the menu item it fires; a window button's or view's own keys are not.
-- An approved app's built-in AI counts as part of the app.
+- An approved app's built-in AI counts as the app.
 - A website's own shortcuts are judged by the focus, not their effect.
 - A 3- or 4-digit number or expiry typed into another site's untitled frame is asked.
 - Digits typed after an unreadable paste ask.

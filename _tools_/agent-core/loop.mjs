@@ -6,11 +6,11 @@ import { validateBatch } from './actions.mjs'
 import { unattendedController } from './consent.mjs'
 import { createRunControl } from './control.mjs'
 import { inspectPageText } from './inspect.mjs'
-import { createAppPolicy, opensSelection, panelDestination, panelKind, protectedPath } from './app-policy.mjs'
+import { FILE_BROWSERS, createAppPolicy, opensSelection, panelDestination, panelKind, protectedPath } from './app-policy.mjs'
 import { normaliseText } from './normalise.mjs'
 import { createPanelFolder } from './panel-folder.mjs'
 import { createExclusions } from './exclusions.mjs'
-import { createApprovalStore, createPolicy, isTextEntry, namesPasswordField, screenTask, textNamedSource } from './policy.mjs'
+import { createApprovalStore, createPolicy, isTextEntry, namesPasswordField, screenTask, textNamedSource, looksSensitive } from './policy.mjs'
 import { originPattern } from './sites.mjs'
 import { buildInfo, createRecorder, redactAction, redactTyped, runsDir } from './trajectory.mjs'
 import { MODIFIER_KEYS, normalizeKey } from './keys.mjs'
@@ -682,6 +682,8 @@ export async function runTask(options) {
   // field showed is kept by its key - the first key and a later one into the same box are judged under the same names.
   const placeholderKeys = new Map()
   const remembered = (given) => {
+    // CU-361: a value-shaped nearbyLabel (card, IBAN, key, e-mail) never becomes a name and never reaches a record.
+    if (given && typeof given === 'object' && typeof given.nearbyLabel === 'string' && looksSensitive(given.nearbyLabel.trim())) { const { nearbyLabel, ...rest } = given; given = rest }
     if (!given || typeof given !== 'object' || typeof given.fieldKey !== 'string' || given.fieldKey === '') return given
     let t = given
     if (typeof t.placeholder === 'string' && t.placeholder.trim() !== '') placeholderKeys.set(t.fieldKey, t.placeholder)
@@ -835,8 +837,29 @@ export async function runTask(options) {
     // off the frame) leaves it unjudged there, never fails the drag - the helper's scope check refuses such a drop.
     const last = action.type === 'drag' && Array.isArray(action.path) && action.path.length > 1 ? action.path[action.path.length - 1] : null
     const dropTarget = last ? await environment.inspectPoint(last).catch(() => null) : null
+    // CU-377 (cu-coordinator 21:35Z): what a desktop drag carries - 'file' (the press target names a file: a filename or a
+    // file URL), 'unknown' (nothing read, a role-less shape, or another app's element), else 'other'.
+    const dragSource = action.type === 'drag' && desktop
+      // CU-387 round 2 (cu-coordinator 00:58Z): a press target with no name, filename or url is a blind source - unknown;
+      // a name ending in a file extension ('main.py' in an IDE's tree, Electron file lists) is a file.
+      ? (!target || !target.role || (!String(target.name ?? '').trim() && !String(target.filename ?? '').trim() && !String(target.url ?? '').trim()) ? 'unknown'
+        : /\.[a-z][a-z0-9]{0,7}$/i.test(String(target.name ?? '').trim()) ? 'file'
+        // CU-387 (cu-developer-three): the desktop driver passes a file URL's LEAF as target.url ('notes.txt'), null for any
+        // other scheme - so on the desktop a non-empty url is a file.
+        : (typeof target.filename === 'string' && target.filename !== '') || (typeof target.url === 'string' && target.url.trim() !== '') ? 'file'
+          // In a file browser (Finder) or a file panel, any row, cell, icon, outline item or name is a file unless known
+          // otherwise - fail closed, no unmeasured attribute (cu-coordinator 21:43Z).
+          : (FILE_BROWSERS.has(String(state?.frontmostBundleId ?? '')) || FILE_BROWSERS.has(String(target.origin ?? '')) || target.panel) && /row|cell|icon|outline|image|statictext|textfield|group/i.test(String(target.role ?? '')) ? 'file'
+          : (typeof target.origin === 'string' && target.origin !== '' && state?.frontmostBundleId && target.origin !== state.frontmostBundleId) ? 'unknown' : 'other')
+      : null
     // CU-198 (drag-text.md): the browser reads what a drag moves - once, and only when it lands on a text entry: a string,
     // { unknown: true } on a failed read, or null (nothing selected under the press). Never recorded; the desktop reads none.
+    // CU-370 (cu-developer-two's contract): before a type into a native select the browser driver answers every option the
+    // typed prefix passes through (Chrome's type-ahead); null when the focus is no select. A failed read is null too - the
+    // policy then judges the typed text itself and asks it as a page shortcut.
+    const typeOptions = !desktop && action.type === 'type' && typeof environment.typeOptions === 'function'
+      ? await Promise.resolve(environment.typeOptions(action)).catch(() => null)
+      : null
     const dragText = !desktop && last && isTextEntry(dropTarget) && typeof environment.dragText === 'function'
       ? await Promise.resolve(environment.dragText(action.path[0])).then(
         (text) => (typeof text === 'string' ? text.slice(0, 4096) : text?.unknown === true ? { unknown: true } : null),
@@ -909,7 +932,7 @@ export async function runTask(options) {
     // CU-325: a navigate carries the card-length digit runs this run typed or pasted (in memory, never recorded), so a URL
     // path that holds one asks whatever its prefix.
     const typedDigits = action.type === 'navigate' ? typedCardRuns() : []
-    return { url: state.url, target: remembered(target), ...(typed ? { typed } : {}), ...(typedSplit ? { typedSplit } : {}), ...(typedDigits.length ? { typedDigits } : {}), ...(boundMenuItem ? { boundMenuItem } : {}), ...(selection ? { selection } : {}), ...(dropTarget ? { dropTarget: remembered(dropTarget) } : {}), ...(dragText !== undefined ? { dragText } : {}), ...(afterClose ? { afterClose: true } : {}), ...(resubmits ? { resubmits: historyMove } : {}), ...(historyJudged ? { historyJudged } : {}), ...(paste ? { paste } : {}), ...(pasteboardJudged ? { pasteboardJudged } : {}), ...(state.interstitial === true ? { interstitial: true } : {}), dialog: state.dialog ?? null, task: task.text, ...app }
+    return { url: state.url, target: remembered(target), ...(dragSource ? { dragSource } : {}), ...(Array.isArray(typeOptions) || typeOptions?.unread === true ? { typeOptions } : {}), ...(typed ? { typed } : {}), ...(typedSplit ? { typedSplit } : {}), ...(typedDigits.length ? { typedDigits } : {}), ...(boundMenuItem ? { boundMenuItem } : {}), ...(selection ? { selection } : {}), ...(dropTarget ? { dropTarget: remembered(dropTarget) } : {}), ...(dragText !== undefined ? { dragText } : {}), ...(afterClose ? { afterClose: true } : {}), ...(resubmits ? { resubmits: historyMove } : {}), ...(historyJudged ? { historyJudged } : {}), ...(paste ? { paste } : {}), ...(pasteboardJudged ? { pasteboardJudged } : {}), ...(state.interstitial === true ? { interstitial: true } : {}), dialog: state.dialog ?? null, task: task.text, ...app }
   }
 
   let consecutiveBlocks = 0
@@ -1190,7 +1213,21 @@ export async function runTask(options) {
       // never a name, so a stand-in miss is diagnosable from the record.
       const selectionRead = context.selection ? (context.selection.none ? { none: true } : context.selection.notCollection ? { notCollection: true } : !Array.isArray(context.selection.items) ? { unreadable: true }
         : { items: context.selection.items.length, kinds: context.selection.items.reduce((acc, item) => ({ ...acc, [item.kind]: (acc[item.kind] ?? 0) + 1 }), {}), ...(context.selection.truncated ? { truncated: true } : {}) }) : null
-      const base = { index, action: record, ...(composedOf[index] ? { composedFrom: composedOf[index] } : {}), site: environment.site, decision: decision.decision, class: decision.class, rule: decision.rule, ...(decision.app ? { app: decision.app } : {}), ...(selectionRead ? { selectionRead } : {}), ...(target ? { target } : {}), ...(blind ? { targetUnnamed: true } : {}), ...(dropBlind ? { dropTargetUnnamed: true } : {}), ...(defaultBlind ? { defaultButtonUnnamed: true } : {}), ...(context.historyJudged ? { history: context.historyJudged } : {}), ...(context.pasteboardJudged ? { pasteboard: context.pasteboardJudged } : {}), ...(context.boundMenuItem ? { boundMenuItem: context.boundMenuItem } : {}), ...(context.target && (context.target.textEntered === true || context.target.textEntered === false || context.target.textEntered === null) ? { textEntered: context.target.textEntered } : {}) }
+      // CU-391 (D-103): the loop-derived context the policy judged on, as kinds and booleans only - never a name or a value.
+      const derived = {
+        ...(context.dragSource ? { dragSource: context.dragSource } : {}),
+        ...(context.paste ? { paste: context.paste.fromOwner === true ? 'owner' : (context.paste.source ? 'run_attributed' : 'run_unattributed') } : {}),
+        ...(context.typeOptions ? { typeOptions: context.typeOptions.unread === true ? 'unread' : 'read' } : {}),
+        ...(context.boundMenuItem !== undefined ? { boundMenuItem: context.boundMenuItem?.unreadable === true ? 'unreadable' : context.boundMenuItem && context.boundMenuItem.none !== true ? 'bound' : 'none' } : {}),
+        ...(action.type === 'drag' && Array.isArray(action.path) && action.path.length > 1 ? { dropTarget: !context.dropTarget || !context.dropTarget.origin || !context.target?.origin ? 'unread' : context.dropTarget.origin === context.target.origin ? 'same_app' : 'other_app' } : {}),
+        ...(context.target?.menuOpen === true ? { menuOpen: true } : {}),
+        // CU-398 (cu-verifier 04:37Z): the helper's Apple-menu mark, so a hover row can show it without pressing anything.
+        ...(context.target?.appleMenu === true ? { appleMenu: true } : {}),
+        // CU-387 (cu-coordinator 01:59Z): a drag that rode on a file name lent by its row (helper 0.2.67, #443) says so.
+        ...(context.target?.fileFrom === 'ancestor' ? { fileFrom: 'ancestor' } : {}),
+        ...(context.target?.selectOption === true ? { keyTarget: 'option' } : context.target?.optionUnread === true ? { keyTarget: 'unread' } : {}),
+      }
+      const base = { index, action: record, ...(Object.keys(derived).length > 0 ? { derived } : {}), ...(composedOf[index] ? { composedFrom: composedOf[index] } : {}), site: environment.site, decision: decision.decision, class: decision.class, rule: decision.rule, ...(decision.app ? { app: decision.app } : {}), ...(selectionRead ? { selectionRead } : {}), ...(target ? { target } : {}), ...(blind ? { targetUnnamed: true } : {}), ...(dropBlind ? { dropTargetUnnamed: true } : {}), ...(defaultBlind ? { defaultButtonUnnamed: true } : {}), ...(context.historyJudged ? { history: context.historyJudged } : {}), ...(context.pasteboardJudged ? { pasteboard: context.pasteboardJudged } : {}), ...(context.boundMenuItem ? { boundMenuItem: context.boundMenuItem } : {}), ...(context.target && (context.target.textEntered === true || context.target.textEntered === false || context.target.textEntered === null) ? { textEntered: context.target.textEntered } : {}) }
       if (decision.decision !== 'block') consecutiveBlocks = 0
 
       if (decision.decision === 'block') {
