@@ -638,7 +638,29 @@ function defaultButtonOf(value) {
   const text = (v) => typeof v === 'string' && v.length > 0 ? v : null
   const role = text(value.role)
   if (role === null) return null
-  return { role, name: text(value.title), panel: panelOf(value.panel) }
+  // CU-409 (D-106): Return presses this button, so it carries the button's own form context exactly as a click would.
+  const formContext = formContextOf(value.formContext)
+  return { role, name: text(value.title), panel: panelOf(value.panel), ...(formContext ? { formContext } : {}) }
+}
+
+/**
+ * CU-409 (desktop side of CU-402's asset context; helper 0.2.68, cu-coordinator 10:12Z): the form context the helper
+ * reads beside a submit-like control - `options`, the selected titles of the container's pop-up buttons, combo boxes or
+ * radio groups (a control's visible label, never a text field's value), and `amountEntry`, whether an amount-shaped entry
+ * is there (a shape match on its description, placeholder, title or help - a boolean, never its value). The same shape
+ * and bounds as the browser driver's formContextOf, so agent core reads both alike: at most 3 strings of at most 24
+ * characters, whitespace collapsed; amountEntry strictly true. Null when neither is left. Context, not identity: outside
+ * the fingerprint, and never in run records.
+ */
+export function formContextOf(value) {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return null
+  const options = (Array.isArray(value.options) ? value.options : [])
+    .filter((text) => typeof text === 'string')
+    .map((text) => text.replace(/\s+/g, ' ').trim())
+    .filter((text) => text.length > 0 && text.length <= 24)
+    .slice(0, 3)
+  const amountEntry = value.amountEntry === true
+  return options.length > 0 || amountEntry ? { options, amountEntry } : null
 }
 
 /**
@@ -1938,6 +1960,9 @@ class DesktopEnvironment {
       ...(element.fileFrom === 'ancestor' ? { fileFrom: 'ancestor' } : {}),
       // CU-392: a drop onto a server or network share sends the file away - a boolean from AXURL's scheme, only when true.
       ...(networkVolumeOf(element.url) ? { networkVolume: true } : {}),
+      // CU-409 (helper 0.2.68): a submit-like control's form context - selected choice titles and an amount-entry flag,
+      // bounded and re-validated here; present only when the helper sends a usable one.
+      ...(formContextOf(element.formContext) ? { formContext: formContextOf(element.formContext) } : {}),
       // CU-265: a link's scheme (AXLink's AXURL), so a facetime:, tel: or mailto: link is not a plain click. Links only - a
       // file browser's items carry file: URLs and are judged by launch_code - and the scheme only, never the URL.
       linkScheme: element.role === 'AXLink' ? linkSchemeOf(element.url) : null,
