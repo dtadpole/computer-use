@@ -16,10 +16,13 @@ const DETERMINERS = new Set(['a', 'an', 'the', 'my', 'your', 'our', 'their', 'th
 const FILLER = new Set(['<n>', 'all', 'new', 'now', 'it', 'them', 'everyone', 'again', 'here', 'to', 'for', 'of', 'and', 'with',
   'from', 'on', 'in', 'as', 'out', 'up', 'off', 'down', 'back'])
 
+const US_WORDS = new Set(['antivirus', 'virus', 'status', 'bonus', 'campus', 'focus', 'census', 'corpus', 'plus', 'minus', 'surplus', 'genius', 'radius', 'nexus', 'menus', 'bus'])
+
 function singular(token) {
   if (token.length > 4 && token.endsWith('ies')) return `${token.slice(0, -3)}y`
   if (token.length > 4 && /(?:ss|sh|ch|x)es$/.test(token)) return token.slice(0, -2)
-  if (token.length > 3 && token.endsWith('s') && !token.endsWith('ss') && !token.endsWith('us')) return token.slice(0, -1)
+  // -us stays only on its Latin / short words (antivirus, status, bonus ...); an acronym plural folds ('GPUs' = 'gpu', cu-coordinator 19:22Z).
+  if (token.length > 3 && token.endsWith('s') && !token.endsWith('ss') && !(token.endsWith('us') && US_WORDS.has(token))) return token.slice(0, -1)
   return token
 }
 
@@ -104,7 +107,7 @@ const OBJECTS = {
     'project', 'bet', 'swap', 'trial', 'collateral', 'allowance', 'spending', 'cap', 'long', 'short', 'annual', 'monthly', 'yearly',
     'tip', 'recurring', 'bag', 'baggage', 'insurance', 'mile', 'domain',
     // CU-434: a paid ride, delivery or rental.
-    'ride', 'delivery', 'scooter', 'bike', 'ebike', 'moped',
+    'ride', 'delivery', 'scooter', 'bike', 'ebike', 'moped', 'taxi', 'cab',
     // cu-coordinator 18:55Z: lodging (reserve x lodging).
     'cabin', 'lodge', 'villa', 'campsite', 'suite', 'apartment',
     // CU-436: cloud billing objects.
@@ -184,7 +187,7 @@ const CURRENCY = /[$\u20ac\u00a3\u00a5]\s?\d|\d\s?(?:usd|eur|gbp)\b/i
 
 // CU-435's insurance rows: verb x object -> class, within the usual two-token window.
 const INSURANCE_ROWS = [
-  [['bind', 'buy', 'purchase', 'renew'], ['policy'], 'purchase'], [['increase', 'add', 'extend', 'raise'], ['coverage'], 'purchase'],
+  [['bind', 'buy', 'purchase', 'renew'], ['policy', 'coverage'], 'purchase'], [['increase', 'add', 'extend', 'raise'], ['coverage'], 'purchase'],
   [['lower', 'reduce', 'decrease'], ['deductible'], 'purchase'], [['accept'], ['quote'], 'purchase'], [['cancel'], ['policy'], 'delete'],
   [['accept'], ['settlement', 'offer'], 'submit'], [['file', 'submit'], ['claim'], 'submit'],
 ]
@@ -218,7 +221,8 @@ export function grammarClasses(name, role = '') {
   // Guards: a trailing list / settings / UI noun; a bare plural noun (a tab); settings-sense apply; 'Sign in as guest'.
   if (FREE_TAIL.has(last) || (list.length >= 2 && FREE_TAIL.has(list[list.length - 2]))) return []
   if (UI_TAIL.has(last) && list.length >= 2) return []
-  if (list.length === 1 && /[a-z]s$/.test(lower) && !lower.endsWith('ss')) return []
+  const oneWord = raw.split(/\s+/).length === 1
+  if (list.length === 1 && oneWord && /[a-z]s$/.test(lower) && !lower.endsWith('ss')) return []
   if (list[0] === 'apply' && list.length >= 2 && APPLY_SETTINGS.has(list[1])) return []
   if (list[0] === 'sign' && list[1] === 'in' && list[2] === 'as' && list[3] === 'guest') return []
   if (list.length === 2 && /s$/.test(lower) && ['gift', 'trade', 'tip', 'bet', 'call', 'post', 'report', 'list'].includes(list[0])) return []
@@ -328,7 +332,7 @@ export function grammarClasses(name, role = '') {
   if (verb === 'book' && rest.includes('appointment')) return ['submit']
   // '<pay verb> now' and the bare standalone verbs (F5 cluster 6: 'set up now' stays free).
   if (core.length === 0 && out.length === 0) {
-    const pluralNoun = rest.length === 0 && /[a-z]s$/.test(lower) && !lower.endsWith('ss')
+    const pluralNoun = rest.length === 0 && oneWord && /[a-z]s$/.test(lower) && !lower.endsWith('ss')
     if (STANDALONE.has(verb) && !pluralNoun) pushOnce(out, STANDALONE.get(verb))
     else if (rest.includes('now') && classes.has('pay') && verb !== 'set up') pushOnce(out, 'purchase')
   }
@@ -336,6 +340,8 @@ export function grammarClasses(name, role = '') {
   // CU-436: activating a full or paid account; committing to <n> year(s) / month(s); lifting a spending cap or limit.
   if (verb === 'activate' && rest.includes('account') && rest.some((t) => t === 'full' || t === 'paid' || t === 'billing')) pushOnce(out, 'purchase')
   if (verb === 'commit' && rest.some((t) => t === 'year' || t === 'month' || t === 'term')) pushOnce(out, 'purchase')
+  // cu-coordinator 19:22Z: linking a billing account starts charges to it.
+  if (verb === 'link' && rest.includes('billing')) pushOnce(out, 'purchase')
   if (['turn off', 'remove', 'disable', 'lift', 'raise', 'increase'].includes(verb) && rest.includes('spending') && rest.some((t) => t === 'cap' || t === 'limit')) pushOnce(out, 'purchase')
   // CU-434: 'Order again' reorders; cancelling a ride may charge a fee (submit).
   if (verb === 'order' && rest.length === 1 && rest[0] === 'again') pushOnce(out, 'purchase')

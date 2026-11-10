@@ -40,3 +40,13 @@ test('cu-coordinator 18:55Z: the four live-sample escapes of #554 are table rows
   }
   for (const name of ['Attendees', 'Cabin details', 'Grill settings']) assert.equal(click(name), 'allow', name)
 })
+
+test('#563 round 2 (cu-coordinator 19:22Z): the six held-out escapes - taxi, a demonstrative, possessive coverage, a GPU plural, a billing link', () => {
+  for (const [name, cls] of [['Request taxi', 'purchase'], ['Book a taxi', 'purchase'], ['Reorder this', 'purchase'], ['Bind my coverage', 'purchase'],
+    ['Enable GPUs', 'purchase'], ['Link a billing account', 'purchase']]) {
+    assert.deepEqual(grammarClasses(name), [cls], name)
+    assert.equal(click(name), cls, `hook: ${name}`)
+  }
+  // The normaliser fixes keep their guards: a one-word plural is a tab; the Latin -us words stay whole.
+  for (const name of ['Reorders', 'Refunds', 'Antivirus', 'Status', 'Menus']) assert.deepEqual(grammarClasses(name), [], name)
+})
