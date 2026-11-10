@@ -10,6 +10,9 @@ import { isIP } from 'node:net'
 
 /** Loopback ports no configuration can open: DSH Web, its gate, heddle (two builds), the gateway. */
 export const FIXED_DENY_LOOPBACK_PORTS = Object.freeze([3080, 8080, 8082, 3097, 8088])
+// CU-394 (cu-coordinator 02:57Z): a remote-desktop web client is a window onto another machine, like the remote_surface
+// apps - denied whatever the allow list says (subdomains too).
+export const FIXED_DENY_HOSTS = Object.freeze(['remotedesktop.google.com'])
 
 const NETWORK_SCHEMES = new Set(['http:', 'https:', 'ws:', 'wss:'])
 const MATCH_SCHEME = Object.freeze({ 'http:': 'http', 'https:': 'https', 'ws:': 'http', 'wss:': 'https' })
@@ -132,6 +135,8 @@ export function isFixedDenied(url, extraPorts = []) {
   if (parts === null) return true
   if (!NETWORK_SCHEMES.has(parts.protocol)) return !passesWithoutNetwork(parts)
   if (parts.kind === 'link_local') return true
+  const host = String(parts.hostname ?? parts.host ?? '').toLowerCase().replace(/\.$/, '')
+  if (FIXED_DENY_HOSTS.some((denied) => host === denied || host.endsWith(`.${denied}`))) return true
   if (parts.kind === 'loopback') {
     return FIXED_DENY_LOOPBACK_PORTS.includes(parts.port) || extraPorts.includes(parts.port)
   }
