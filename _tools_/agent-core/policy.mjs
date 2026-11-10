@@ -176,7 +176,11 @@ const TRADE_NAV = /\b(?:trade|trading|swap|swaps|stake|staking|unstake|sell|sell
 const PRECEDENCE = ['physical', 'purchase', 'launch_code', 'delete', 'permission', 'page_dialog', 'credential', 'sensitive_data', 'submit', 'new_site', 'install']
 const PHYSICAL = ['unlatch', 'disarm', 'disarm security system', 'disarm alarm',
   'turn off alarm', 'open garage', 'open garage door', 'open gate', 'open the gate', 'mark as lost', 'erase device',
-  'erase this device', 'lock mode']
+  'erase this device', 'lock mode',
+  // D-105 ruling (b), cu-coordinator 03:45Z: arming can dispatch responders; 'Lock this device' is Mark As Lost's web twin.
+  'arm security system']
+// cu-coordinator 03:52Z: the patterns, whole-word and case-insensitive - 'Lock Front Door' and a bare Arm/Open/Lock stay free.
+const PHYSICAL_PATTERN = /\barm\s+(?:away|stay|night|home|alarm|system)\b|\bopen\s+(?:the\s+|front\s+|back\s+|side\s+)?door\b|\block\s+(?:this\s+)?(?:device|iphone|ipad|mac|watch)\b/i
 const POINTER = new Set(['click', 'double_click', 'triple_click'])
 // CU-135 (keyboard-activation.md): a focused button; any control a click activates (Space presses or toggles it); and a
 // text input, as the environments name their roles.
@@ -1249,7 +1253,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         for (let i = classes.length - 1; i >= 0; i -= 1) if (classes[i] === 'purchase') classes.splice(i, 1)
       }
       // A bare 'Garage Door' tile toggles either way (exact name); 'Close Garage Door' stays free.
-      if (!focusesEntry && (namesWord(name, PHYSICAL) || UNLOCK_PHYSICAL.test(name) || /^garage\s+door$/i.test(name.trim()))) classes.push('physical')
+      if (!focusesEntry && (namesWord(name, PHYSICAL) || PHYSICAL_PATTERN.test(name) || UNLOCK_PHYSICAL.test(name) || /^garage\s+door$/i.test(name.trim()))) classes.push('physical')
       // CU-146: 'Trash' or 'Bin' alone deletes on a control (a toolbar button, a menu item); a sidebar row of that name
       // only opens the folder.
       if (TRASH_ROLE.test(String(target?.role ?? '')) && namesWord(name, CONTROL_DELETE)) classes.push('delete')
