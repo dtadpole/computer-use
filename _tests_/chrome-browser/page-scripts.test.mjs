@@ -99,6 +99,18 @@ test('the focused element is found through shadow roots and same-origin frames; 
   assert.equal(deepActiveElement({ activeElement: null }), null)
 })
 
+test('a same-origin frame editor\'s focus is its body when it takes text (contentEditable or designMode); a plain frame body stays null', () => {
+  const editableBody = el('BODY', { isContentEditable: true })
+  assert.equal(deepActiveElement({ activeElement: el('IFRAME', { contentDocument: { activeElement: editableBody, body: editableBody } }) }), editableBody, 'a contentEditable body')
+  const designBody = el('BODY', { isContentEditable: false })
+  assert.equal(deepActiveElement({ activeElement: el('IFRAME', { contentDocument: { activeElement: designBody, body: designBody, designMode: 'on' } }) }), designBody, 'a designMode document')
+  const htmlFocus = el('HTML')
+  assert.equal(deepActiveElement({ activeElement: el('IFRAME', { contentDocument: { activeElement: htmlFocus, body: designBody, designMode: 'on' } }) }), designBody, 'focus on the root of a designMode document is its body')
+  const plainBody = el('BODY', { isContentEditable: false })
+  assert.equal(deepActiveElement({ activeElement: el('IFRAME', { contentDocument: { activeElement: plainBody, body: plainBody, designMode: 'off' } }) }), null, 'a frame whose body takes no text: nothing focused, as before')
+  assert.equal(deepActiveElement({ activeElement: el('BODY', { isContentEditable: true }) }), null, 'the top document\'s own body is unchanged')
+})
+
 test('describeElement is self-contained: rebuilt from its own source, as the driver runs it in the page, it judges every case the same', () => {
   // environment.mjs runs (describeElement.toString())(this) in the page, where nothing from this module exists; a free
   // reference to a module-level name throws there and the target loses editable (CU-173's real-Chrome check caught it).
@@ -741,4 +753,129 @@ test('CU-370: keyChoice - an arrow on a radio lands on the next one of its group
   assert.equal(keyChoice(del, 'ArrowRight', selectKeyOption), keep)
   assert.equal(keyChoice(keep, 'Enter', selectKeyOption), null, 'Enter chooses no radio')
   assert.equal(keyChoice(other, 'ArrowDown', selectKeyOption), null, 'a group of one')
+})
+
+test('CU-373: describeElement reports a toggle\'s state - native checkbox/radio (indeterminate mixed), aria-checked, aria-pressed; none for other elements', () => {
+  const box = (extra) => el('INPUT', { type: 'checkbox', ...extra })
+  assert.equal(describeElement(box({ checked: true })).checked, true)
+  assert.equal(describeElement(box({ checked: false })).checked, false)
+  assert.equal(describeElement(box({ checked: false, indeterminate: true })).checked, 'mixed')
+  assert.equal(describeElement(el('INPUT', { type: 'radio', checked: true })).checked, true)
+  assert.equal(describeElement(el('BUTTON', { attrs: { role: 'switch', 'aria-checked': 'true' } })).checked, true, 'an ARIA switch that is on')
+  assert.equal(describeElement(el('DIV', { attrs: { role: 'checkbox', 'aria-checked': 'mixed' } })).checked, 'mixed')
+  assert.equal(describeElement(el('BUTTON', { attrs: { 'aria-pressed': 'false' } })).pressed, false, 'a toggle button that is off')
+  const plain = describeElement(el('BUTTON'))
+  assert.equal('checked' in plain, false)
+  assert.equal('pressed' in plain, false)
+  assert.equal('checked' in describeElement(el('INPUT', { type: 'text' })), false)
+})
+
+test('CU-370: an ARIA listbox without aria-activedescendant - Enter answers the aria-selected option, arrows move from it', () => {
+  const node = (role, attrs = {}) => ({ getAttribute: (name) => (name === 'role' ? role : attrs[name] ?? null) })
+  const archive = node('option', { 'aria-selected': 'true' })
+  const del = node('option')
+  const listbox = { ...node('listbox'), tagName: 'DIV', ownerDocument: { getElementById: () => null, activeElement: null }, getRootNode: () => null, querySelectorAll: () => [archive, del] }
+  assert.equal(keyChoice(listbox, 'Enter', selectKeyOption), archive, 'Enter commits the aria-selected option')
+  assert.equal(keyChoice(listbox, 'ArrowDown', selectKeyOption), del, 'ArrowDown moves from it to Delete')
+})
+
+test('CU-370: an aria-multiselectable listbox is unread for keys that change or commit the selection', () => {
+  const node = (role, attrs = {}) => ({ getAttribute: (name) => (name === 'role' ? role : attrs[name] ?? null) })
+  const a = node('option', { 'aria-selected': 'true' })
+  const b = node('option', { 'aria-selected': 'true' })
+  const listbox = { ...node('listbox', { 'aria-multiselectable': 'true' }), tagName: 'DIV', ownerDocument: { getElementById: () => null, activeElement: null }, getRootNode: () => null, querySelectorAll: () => [a, b] }
+  assert.equal(keyChoice(listbox, 'Enter', selectKeyOption), 'unread')
+  assert.equal(keyChoice(listbox, 'ArrowDown', selectKeyOption), 'unread')
+  assert.equal(keyChoice(listbox, ' ', selectKeyOption), 'unread')
+  assert.equal(keyChoice(listbox, 'Tab', selectKeyOption), null)
+})
+
+test('CU-400: a button inside a form carries formContext - up to 3 short selected option texts and whether an amount entry is present; never a value', () => {
+  const select = (text) => ({ tagName: 'SELECT', selectedOptions: [{ textContent: text }] })
+  const form = (controls, inputs) => ({ querySelectorAll: (sel) => (sel === 'input' ? inputs : controls) })
+  const amount = { type: 'text', name: 'amount', id: '', placeholder: '', getAttribute: () => null }
+  const plain = { type: 'text', name: 'note', id: '', placeholder: 'Note', getAttribute: () => null }
+  const button = (f, extra = {}) => el('BUTTON', { children: ['Sell'], closest: (sel) => (sel === 'form' ? f : null), ...extra })
+  const sell = describeElement(button(form([select('BTC'), select('  Market  ')], [amount])))
+  assert.deepEqual(sell.formContext, { options: ['BTC', 'Market'], amountEntry: true })
+  const numeric = describeElement(button(form([], [{ ...amount, name: 'x', type: 'number' }])))
+  assert.deepEqual(numeric.formContext, { options: [], amountEntry: true }, 'a number input is amount-shaped by its type')
+  const many = describeElement(button(form([select('A'), select('B'), select('C'), select('D')], [plain])))
+  assert.deepEqual(many.formContext.options, ['A', 'B', 'C'], 'at most three')
+  const long = describeElement(button(form([select('x'.repeat(25))], [plain])))
+  assert.equal('formContext' in long, false, 'a long option text is not a short word; nothing else beside it')
+  assert.equal('formContext' in describeElement(button(null)), false, 'outside a form: none')
+  assert.equal('formContext' in describeElement(el('DIV', { children: ['Sell'], closest: () => form([select('BTC')], []) })), false, 'a plain div is no submit control')
+  assert.deepEqual(Object.keys(sell.formContext), ['options', 'amountEntry'], 'the amount field is a boolean kind, never its name or value')
+  assert.equal(sell.formContext.options.includes('amount'), false)
+})
+
+test('CU-402: without a <form>, formContext falls back to [role=form], else a fieldset or dialog holding exactly one submit-like control', () => {
+  const select = (text) => ({ tagName: 'SELECT', selectedOptions: [{ textContent: text }] })
+  const box = (controls, submits) => ({ querySelectorAll: (sel) => (sel === 'input' ? [] : sel.startsWith('select') ? controls : submits) })
+  const within = (map) => el('BUTTON', { children: ['Sell'], closest: (sel) => map[sel] ?? null })
+  const roleForm = box([select('ETH')], [{}, {}])
+  assert.deepEqual(describeElement(within({ form: null, '[role="form"]': roleForm })).formContext, { options: ['ETH'], amountEntry: false })
+  const dialog = box([select('BTC')], [{}])
+  assert.deepEqual(describeElement(within({ 'fieldset, dialog, [role="dialog"]': dialog })).formContext, { options: ['BTC'], amountEntry: false })
+  const busy = box([select('BTC')], [{}, {}])
+  assert.equal('formContext' in describeElement(within({ 'fieldset, dialog, [role="dialog"]': busy })), false, 'a fieldset with two submit-like controls lends nothing')
+  assert.equal('formContext' in describeElement(within({})), false, 'no form, no role=form, no bounded box: none')
+})
+
+test('CU-402: a submit button outside its form but tied by form= (el.form) reads that form', () => {
+  const select = (text) => ({ tagName: 'SELECT', selectedOptions: [{ textContent: text }] })
+  const trade = { querySelectorAll: (sel) => (sel === 'input' ? [] : [select('BTC')]) }
+  const outside = el('BUTTON', { children: ['Sell'], form: trade, closest: () => null })
+  assert.deepEqual(describeElement(outside).formContext, { options: ['BTC'], amountEntry: false })
+  const loose = el('BUTTON', { children: ['Sell'], form: null, closest: () => null })
+  assert.equal('formContext' in describeElement(loose), false, 'an unassociated button outside any form: a named limit')
+})
+
+test('CU-402: a div trade panel - the nearest ancestor within 3 levels holding one submit-like control and a select lends its choices; a page-wide box with two submits does not', () => {
+  const select = (text) => ({ tagName: 'SELECT', selectedOptions: [{ textContent: text }] })
+  const amount = { type: 'text', name: 'amount', id: '', placeholder: '', getAttribute: () => null }
+  const panel = (selects, submits, inputs = [amount], parentElement = null) => ({
+    parentElement,
+    querySelectorAll: (sel) => (sel === 'input' ? inputs : sel.startsWith('select') ? selects : submits),
+  })
+  const wrap = { parentElement: null, querySelectorAll: () => [] }
+  const trade = panel([select('BTC')], [{}], [amount])
+  wrap.parentElement = trade
+  const button = (parentElement) => ({ ...el('BUTTON', { children: ['Sell'], closest: () => null }), parentElement })
+  assert.deepEqual(describeElement(button(wrap)).formContext, { options: ['BTC'], amountEntry: true }, 'two levels up: the panel')
+  const page = panel([select('BTC')], [{}, {}])
+  assert.equal('formContext' in describeElement(button(page)), false, 'two submit-like controls: none')
+  const deep = { parentElement: { parentElement: { parentElement: trade, querySelectorAll: () => [] }, querySelectorAll: () => [] }, querySelectorAll: () => [] }
+  assert.equal('formContext' in describeElement(button(deep)), false, 'beyond 3 levels: none')
+  const noSelect = panel([], [{}], [amount])
+  assert.equal('formContext' in describeElement(button(noSelect)), false, 'a panel with no select or combobox: none')
+})
+
+test('CU-405: a panel whose submit-like controls are all trade verbs (Buy and Sell side by side) lends its choices; one other button voids it', () => {
+  const select = (text) => ({ tagName: 'SELECT', selectedOptions: [{ textContent: text }] })
+  const btn = (text, attrs = {}) => ({ textContent: text, getAttribute: (name) => (name in attrs ? attrs[name] : null) })
+  const amount = { type: 'text', name: 'amount', id: '', placeholder: '', getAttribute: () => null }
+  const panel = (submits) => ({ parentElement: null, querySelectorAll: (sel) => (sel === 'input' ? [amount] : sel.startsWith('select') ? [select('BTC')] : submits) })
+  const sellIn = (box) => ({ ...el('BUTTON', { children: ['Sell'], closest: () => null }), parentElement: box })
+  assert.deepEqual(describeElement(sellIn(panel([btn('Buy'), btn('Sell')]))).formContext, { options: ['BTC'], amountEntry: true }, 'Buy + Sell')
+  assert.deepEqual(describeElement(sellIn(panel([btn(' Buy BTC '), btn('Sell BTC'), btn('', { 'aria-label': 'Swap' })]))).formContext.options, ['BTC'], 'verbs with an asset, and an aria-label')
+  assert.equal('formContext' in describeElement(sellIn(panel([btn('Sell'), btn('Cancel')]))), false, 'Sell + Cancel: none')
+  assert.equal('formContext' in describeElement(sellIn(panel([btn('Buy'), btn('Sell'), btn('Help'), btn('Settings')]))), false, 'trade verbs plus other buttons (a page-wide box): none')
+  assert.equal('formContext' in describeElement(sellIn(panel([btn('Buyer protection'), btn('Sell')]))), false, "'Buyer protection' is not the verb Buy")
+})
+
+test('CU-405: trade verbs beside order-panel helpers (N%, Max/Min/Half, Limit/Market/Stop-limit/OCO, one symbol or arrow) still lend; any other button voids', () => {
+  const select = (text) => ({ tagName: 'SELECT', selectedOptions: [{ textContent: text }] })
+  const btn = (text) => ({ textContent: text, getAttribute: () => null })
+  const panel = (submits) => ({ parentElement: null, querySelectorAll: (sel) => (sel === 'input' ? [] : sel.startsWith('select') ? [select('ETH')] : submits) })
+  const sellIn = (box) => ({ ...el('BUTTON', { children: ['Sell'], closest: () => null }), parentElement: box })
+  const real = [btn('Buy'), btn('Sell'), btn('25%'), btn('50 %'), btn('100%'), btn('Max'), btn('Half'), btn('Limit'), btn('Market'), btn('Stop-limit'), btn('OCO'), btn('\u21c5'), btn('')]
+  assert.deepEqual(describeElement(sellIn(panel(real))).formContext, { options: ['ETH'], amountEntry: false }, 'a real order panel lends')
+  assert.equal('formContext' in describeElement(sellIn(panel([btn('Max'), btn('25%')]))), false, 'helpers alone, no trade verb: none')
+  assert.deepEqual(describeElement(sellIn(panel([...real, btn('Transfer')]))).formContext.options, ['ETH'], 'Transfer is a trade verb (06:43Z)')
+  assert.equal('formContext' in describeElement(sellIn(panel([...real, btn('Settings')]))), false, 'any other worded button voids')
+  assert.deepEqual(describeElement(sellIn(panel([btn('Buy'), btn('Sell'), btn('All')]))).formContext.options, ['ETH'], "'All' is a helper (cu-coordinator 06:45Z)")
+  assert.equal('formContext' in describeElement(sellIn(panel([btn('Buy'), btn('Sell'), btn('<<<')]))), false, 'three symbols are not one symbol')
+  assert.equal('formContext' in describeElement(sellIn(panel([btn('Sell'), btn('Cancel')]))), false, 'Sell + Cancel: none')
 })
