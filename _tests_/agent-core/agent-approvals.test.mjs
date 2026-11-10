@@ -29,3 +29,12 @@ test('CU-427: approving tools, trusting a workspace, YOLO / auto-approve and acc
 test('CU-427 negatives: lists, Reject, Deny, Review changes and the bare Accept all (cookie banners, named) stay free', () => {
   for (const name of ['Commands', 'Terminal', 'Tools', 'Reject', 'Deny', 'Review changes', 'Accept all']) assert.equal(click(name), 'allow', name)
 })
+
+test('CU-427 round 2 (16:52Z): Run in shell, Run this script install; Trust the authors, Accept all suggestions, Apply all edits permission', () => {
+  for (const name of ['Run in shell', 'Run this script']) {
+    assert.equal(click(name), 'install', name)
+    assert.equal(enter(name), 'install', `Return: ${name}`)
+  }
+  for (const name of ['Trust the authors', 'Yes, I trust the authors', 'Accept all suggestions', 'Apply all edits']) assert.equal(click(name), 'permission', name)
+  for (const name of ['Scripts', 'Suggestions', 'Shell']) assert.equal(click(name), 'allow', name)
+})
