@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-09T20:10:00Z
+modified: 2026-11-10T12:20:00Z
 level: L1
-version: 3.9.0
+version: 3.17.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,22 +15,19 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; never drives the desktop. State at 20:10Z, 9 November.
+session worktree plus `--review` worktrees; never drives the desktop. State at 12:20Z, 10 November.
 
 ## Landed
 
-- Verified: CU-301, CU-241, CU-297, CU-302, CU-325, CU-326, CU-263, CU-336, CU-347, CU-345, CU-346, CU-363, CU-365.
-- In Verify: CU-340, CU-352, CU-354, CU-350, CU-355, CU-359.
+- Closed live: CU-398, 400, 401, 402/405, 406, 382, 395, 408, 409 (web), 410; CU-411 (#514) in Verify.
 
-## Open
+## Open (Highs first)
 
-- CU-370 (High, D-086 slot 2): PR #382 - a non-editable select is a choice; keyTarget's selectOption is judged as a click
-  on that option, optionUnread asks; the loop passes typeOptions. Lands with cu-developer-two's driver PR.
-- Queued: #343 (CU-358, waits for cu-verifier), #349 (CU-349, after 0.2.63), #360 (CU-364, Low).
-- One guide PR after #351 lands: drop line 49 (CU-363/CU-365), the CU-360 mailto note after #355 (no 'records'
-  clause until #339 too); line 32 when CU-361 lands. Under 500 words.
-- D-101/D-102: run agent-core, _tests_/macos-desktop and every node verifier (CU_VERIFY_SEAT=cu-developer-one) before
-  review; name skips and live scenarios in the body.
+- CU-412: #519 (Return default candidates; union; a nameless candidate asks unknown) pairs with #517 (browser) and #520 (helper 0.2.69).
+- CU-409 desktop: no policy part ([#510 #520] + install).
+- Batch, main merged and OK'd: #447 #448 #450 #453 #462 #469 #477 #478 #417; #497 (Bid) and #501 (CU-407) re-merged; #523 (CU-413) new.
+- Guide #392: add remote-desktop/VM viewers after #450/#453, then complete.
+- Practice: confirm each push reached the remote; propose field contracts before driver seams.
 
 ## Lessons
 

@@ -217,7 +217,9 @@ function focusedNow() {
 function counted() {
   const named = 'changeCount' in config || (config.phases ?? []).some((phase) => 'changeCount' in phase)
   const entered = 'textEntered' in config || (config.phases ?? []).some((phase) => 'textEntered' in phase)
-  return { ...(named ? { changeCount: phased('changeCount') } : {}), ...(entered ? { textEntered: phased('textEntered') } : {}) }
+  // CU-377: a file on the clipboard (type names only), when the world names it.
+  const file = 'pasteboardHasFile' in config || (config.phases ?? []).some((phase) => 'pasteboardHasFile' in phase)
+  return { ...(named ? { changeCount: phased('changeCount') } : {}), ...(entered ? { textEntered: phased('textEntered') } : {}), ...(file ? { pasteboardHasFile: phased('pasteboardHasFile') } : {}) }
 }
 function phased(key) {
   let value = config[key]
@@ -743,7 +745,7 @@ function handle(message) {
       // config.focusedReads (CU-135's race): successive answers, the last one repeating - a focus the app moves late.
       if (Array.isArray(config.focusedReads) && config.focusedReads.length > 0) return send({ id, ok: true, element: elementShape(config.focusedReads.length > 1 ? config.focusedReads.shift() : config.focusedReads[0]) })
       // CU-142: config.defaultButton, the button Return presses there; absent from the reply when the world has none (an older helper).
-      return send({ id, ok: true, element: elementShape(focusedNow() ?? null), ...('defaultButton' in config ? { defaultButton: elementShape(config.defaultButton) } : {}), ...(quirks.omitDefaultButtonRead ? {} : { defaultButtonRead: 'defaultButtonRead' in config ? config.defaultButtonRead : true }), ...('sheet' in config ? { sheet: config.sheet } : {}), ...('focusedApp' in config ? { app: config.focusedApp } : {}), ...counted() })
+      return send({ id, ok: true, element: elementShape(focusedNow() ?? null), ...('defaultButton' in config ? { defaultButton: elementShape(config.defaultButton) } : {}), ...(Array.isArray(config.defaultCandidates) ? { defaultCandidates: config.defaultCandidates.map(elementShape) } : {}), ...(config.defaultCandidatesMore === true ? { defaultCandidatesMore: true } : {}), ...(quirks.omitDefaultButtonRead ? {} : { defaultButtonRead: 'defaultButtonRead' in config ? config.defaultButtonRead : true }), ...('sheet' in config ? { sheet: config.sheet } : {}), ...('focusedApp' in config ? { app: config.focusedApp } : {}), ...counted() })
     case 'screenText': {
       if (!Number.isInteger(fields.maxChars) || fields.maxChars < 1) return refuse(id, 'invalid_argument', 'maxChars must be a positive integer', { field: 'maxChars' })
       if (scope === null) return refuse(id, 'no_scope', 'no scope is set')
