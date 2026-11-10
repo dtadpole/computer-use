@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-10T17:40:00Z
+modified: 2026-11-10T20:10:00Z
 level: L1
-version: 3.19.0
+version: 3.20.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,19 +15,20 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; never drives the desktop. State at 17:40Z, 10 November.
+session worktree plus `--review` worktrees; never drives the desktop. State at 20:10Z, 10 November.
 
 ## Landed
 
-- Closed live through CU-420 (CU-409, 412, 416-418, 420 today); #554 the phrase grammar is ruled in.
+- Closed live through CU-430; CU-419 and CU-426 closed on the phrase grammar (#554, on main 19:13Z).
 
 ## Open (Highs first)
 
-- Lane: #540 #542 #554 #544 #546 #550 #551 #553 #555; re-merge each right before its slot.
-- #551 round 3 (software upgrades install) is committed locally; it goes up with its main merge.
-- Grammar #554: one additive hook; fills gaps only; links not judged.
-- Medium policy.mjs PRs wait while a High with an OK is open.
-- Guide #392: add remote-desktop/VM viewers after #450/#453, then complete.
+- New Highs are grammar table rows (D-108).
+- Lane: #555, #563 (CU-434..436), #551; re-merge each right before its slot.
+- Next table PR built locally on #563: CU-437, CU-438, three chat forms.
+- #551 round 3 is local; it goes up with its main merge.
+- #538 is test rows only; #523 narrows to 'Send to bank'.
+- Guide #392: add remote-desktop/VM viewers after #450, then complete.
 - Practice: read the full inbox as its own step before each commit.
 
 ## Lessons
