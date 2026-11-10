@@ -69,6 +69,34 @@ async function passGate(resourceGate, seat) {
 }
 
 /**
+ * CU-357: a session notice as an effect reports it - its kind and time, the rule when there is one, a URL without its
+ * query or fragment (a download link's token stays out of the record), and a driver message (a failed set-up, at most
+ * 200 characters). An alert's message is page text the run never typed and may carry a secret ('Your new API key is
+ * ...'), so only its length is kept (cu-researcher).
+ */
+export function noticeOf(notice) {
+  const bare = (value) => {
+    try {
+      const url = new URL(String(value))
+      return ['http:', 'https:', 'ws:', 'wss:', 'file:'].includes(url.protocol) ? `${url.origin === 'null' ? url.protocol + '//' : url.origin}${url.pathname}` : `${url.protocol}`
+    } catch {
+      return String(value).split(/[?#]/)[0].slice(0, 200)
+    }
+  }
+  return {
+    kind: notice?.kind ?? 'notice',
+    at: notice?.at ?? null,
+    ...(typeof notice?.url === 'string' && notice.url !== '' ? { url: bare(notice.url) } : {}),
+    ...(typeof notice?.rule === 'string' ? { rule: notice.rule } : {}),
+    // CU-360: an external navigation's reason, its best-effort stop and launched ('unknown') say what was tried.
+    ...(typeof notice?.reason === 'string' ? { reason: notice.reason } : {}),
+    ...(typeof notice?.stop === 'string' ? { stop: notice.stop } : {}),
+    ...(typeof notice?.launched === 'string' ? { launched: notice.launched } : {}),
+    ...(typeof notice?.message === 'string' ? (notice.kind === 'alert_accepted' ? { messageLength: notice.message.length } : { message: notice.message.slice(0, 200) }) : {}),
+  }
+}
+
+/**
  * CU-265: the scheme of a link's URL, what agent core asks about when it is not a web scheme (facetime:, tel:, zoommtg:,
  * mailto: start another app) - lower case, no colon, the scheme only and never the rest of the URL. Null when there is
  * no URL or it does not parse.
@@ -233,10 +261,16 @@ class BrowserEnvironment {
     }
   }
 
-  /** One validated canonical action in frame pixels; resolves to its `ActionEffect`. */
+  /**
+   * One validated canonical action in frame pixels; resolves to its `ActionEffect`, with `notices` (CU-357): the
+   * session's notices that arrived since the last effect reported them - a refused download, an accepted alert, a
+   * refused file chooser, a page that failed set-up; not Chrome's own blocked background traffic - so the trajectory (which logs the
+   * effect whole) shows them. A notice that arrives between actions, or after the action settles, lands on the next
+   * effect; a URL loses its query and fragment (see noticeOf). Absent when there is none. The model is not shown them.
+   */
   async perform(action) {
     this.#assertOpen()
-    return executeAction(action, {
+    const effect = await executeAction(action, {
       session: this.session,
       frame: this.frame,
       clipboard: this.clipboard,
@@ -245,7 +279,15 @@ class BrowserEnvironment {
       navigationTimeoutMs: this.navigationTimeoutMs,
       screenshot: (args) => this.screenshot(args),
     })
+    // Chrome's own background traffic (update checks, clock sync - a dozen at start-up, measured) is no effect of the
+    // run's actions: it stays in session.notices and the smoke, out of the effect.
+    const fresh = this.session.notices.slice(this.#noticesReported).filter((notice) => notice.kind !== 'browser_traffic_blocked')
+    this.#noticesReported = this.session.notices.length
+    return fresh.length > 0 ? { ...effect, notices: fresh.map(noticeOf) } : effect
   }
+
+  /** How many of the session's notices an effect has reported (CU-357). */
+  #noticesReported = 0
 
   /** Synchronous: it reads the session's cached state, as the loop and the fake environment expect. */
   state() {
