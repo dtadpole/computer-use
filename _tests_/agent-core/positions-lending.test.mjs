@@ -29,3 +29,11 @@ test('CU-409 negatives: lists, labels and a bare verb with no asset context stay
   for (const name of ['Positions', 'Markets', 'Leverage', 'Borrow rates', 'Liquidity pools', 'Offers', 'Long', 'Short', 'Borrow', 'Borrow 2 books']) assert.equal(click(name), 'allow', name)
   for (const name of ['Approve', 'Approve changes']) assert.equal(click(name), 'submit', `${name} keeps its submit (not a token approval)`)
 })
+
+test('CU-409 near forms (10:19Z): Open long/short, Close all positions, Market close, List NFT/item, Repay loan, lowercase known-token approvals ask purchase', () => {
+  for (const name of ['Open long', 'Open short', 'Close all positions', 'Market close', 'List NFT', 'List item', 'Repay loan', 'Approve usdc', 'approve weth', 'Approve Matic']) {
+    assert.equal(click(name), 'purchase', name)
+    assert.equal(enter(name), 'purchase', `Return: ${name}`)
+  }
+  for (const name of ['Approve post', 'Approve request', 'Approve changes']) assert.notEqual(click(name), 'purchase', `${name} stays as it is`)
+})
