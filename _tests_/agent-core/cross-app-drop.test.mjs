@@ -94,3 +94,59 @@ test('CU-377 follow-up in the loop: a Path Finder row dragged into Slack is decl
     assert.equal(readRun(result.trajectoryDir).events.filter((e) => e.kind === 'action' && e.action?.type === 'drag').at(-1).status, 'declined')
   } finally { rmSync(tmp, { recursive: true, force: true }) }
 })
+
+test('CU-387: a desktop row known only by its url leaf (AXURL) is a file - dragged into another app it is declined; pasted, it asks', async () => {
+  const { mkdtempSync, rmSync } = await import('node:fs')
+  const { tmpdir } = await import('node:os')
+  const { join } = await import('node:path')
+  const { createScriptedAdapter } = await import('../../_tools_/agent-core/adapter-scripted.mjs')
+  const { createRunControl } = await import('../../_tools_/agent-core/control.mjs')
+  const { createFakeEnvironment } = await import('../../_tools_/agent-core/fake-env.mjs')
+  const { runTask } = await import('../../_tools_/agent-core/loop.mjs')
+  const { createAppApprovals } = await import('../../_tools_/agent-core/app-approvals.mjs')
+  const { readRun } = await import('../../_tools_/agent-core/trajectory.mjs')
+  const tmp = mkdtempSync(join(tmpdir(), 'cu-387-'))
+  try {
+    const FIX = 'ai.reflection.cu.fixture'
+    const LEDGER = 'ai.reflection.cu.ledger'
+    const control = createRunControl()
+    const environment = createFakeEnvironment({ kind: 'desktop', control, frontmost: FIX, targets: ({ x }) => (x < 200 ? { origin: FIX, role: 'AXStaticText', name: 'notes', url: 'notes.txt' } : { origin: LEDGER, role: 'AXGroup', name: 'Drop here' }) })
+    const approvals = createAppApprovals({ path: join(tmp, 'a.json') })
+    for (const app of [FIX, LEDGER]) approvals.grantAlways(app, { by: 'api' })
+    const model = createScriptedAdapter({ frame: { width: 1440, height: 900 }, turns: [{ actions: [{ type: 'drag', path: [{ x: 100, y: 100 }, { x: 600, y: 400 }] }] }, { final: 'done' }] })
+    const result = await runTask({ task: 'file the notes', environment, model, control, runsDirectory: join(tmp, 'runs'), build: { commit: 'test', dirty: false }, apps: [FIX, LEDGER], appApprovals: approvals })
+    assert.equal(readRun(result.trajectoryDir).events.filter((e) => e.kind === 'action' && e.action?.type === 'drag').at(-1).status, 'declined')
+  } finally { rmSync(tmp, { recursive: true, force: true }) }
+  const v = policy.classify({ type: 'keypress', keys: ['META', 'V'] }, { url: 'app:ai.reflection.cu.ledger', frontmostBundleId: 'ai.reflection.cu.ledger', target: { origin: 'ai.reflection.cu.ledger', role: 'AXTextArea', name: 'Note', editable: true }, paste: { fromOwner: false, source: { origin: 'ai.reflection.cu.fixture', role: 'AXStaticText', name: 'notes', url: 'notes.txt' } } })
+  assert.equal(v.class, 'permission')
+})
+
+test('CU-387 round 2 in the loop: a blind source (no name, filename or url) and a file-extension name dragged cross-app are declined; same-app stays done', async () => {
+  const { mkdtempSync, rmSync } = await import('node:fs')
+  const { tmpdir } = await import('node:os')
+  const { join } = await import('node:path')
+  const { createScriptedAdapter } = await import('../../_tools_/agent-core/adapter-scripted.mjs')
+  const { createRunControl } = await import('../../_tools_/agent-core/control.mjs')
+  const { createFakeEnvironment } = await import('../../_tools_/agent-core/fake-env.mjs')
+  const { runTask } = await import('../../_tools_/agent-core/loop.mjs')
+  const { createAppApprovals } = await import('../../_tools_/agent-core/app-approvals.mjs')
+  const { readRun } = await import('../../_tools_/agent-core/trajectory.mjs')
+  const FIX = 'ai.reflection.cu.fixture'
+  const LEDGER = 'ai.reflection.cu.ledger'
+  const CODE = 'com.microsoft.VSCode'
+  const run = async (source, dropApp, label) => {
+    const tmp = mkdtempSync(join(tmpdir(), 'cu-387b-'))
+    try {
+      const control = createRunControl()
+      const environment = createFakeEnvironment({ kind: 'desktop', control, frontmost: source.origin, targets: ({ x }) => (x < 200 ? source : { origin: dropApp, role: 'AXGroup', name: 'Drop here' }) })
+      const approvals = createAppApprovals({ path: join(tmp, 'a.json') })
+      for (const app of new Set([source.origin, dropApp])) approvals.grantAlways(app, { by: 'api' })
+      const model = createScriptedAdapter({ frame: { width: 1440, height: 900 }, turns: [{ actions: [{ type: 'drag', path: [{ x: 100, y: 100 }, { x: 600, y: 400 }] }] }, { final: 'done' }] })
+      const result = await runTask({ task: label, environment, model, control, runsDirectory: join(tmp, 'runs'), build: { commit: 'test', dirty: false }, apps: [...new Set([source.origin, dropApp])], appApprovals: approvals })
+      return readRun(result.trajectoryDir).events.filter((e) => e.kind === 'action' && e.action?.type === 'drag').at(-1).status
+    } finally { rmSync(tmp, { recursive: true, force: true }) }
+  }
+  assert.equal(await run({ origin: FIX, role: 'AXStaticText', name: '' }, LEDGER, 'blind'), 'declined', 'the live shape: AXStaticText, empty name')
+  assert.equal(await run({ origin: CODE, role: 'AXRow', name: 'main.py' }, LEDGER, 'ide'), 'declined', 'a file row in an IDE tree')
+  assert.equal(await run({ origin: FIX, role: 'AXStaticText', name: '' }, FIX, 'same'), 'done', 'a blind drag inside one app stays free')
+})
