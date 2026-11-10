@@ -851,3 +851,31 @@ test('CU-402: a div trade panel - the nearest ancestor within 3 levels holding o
   const noSelect = panel([], [{}], [amount])
   assert.equal('formContext' in describeElement(button(noSelect)), false, 'a panel with no select or combobox: none')
 })
+
+test('CU-405: a panel whose submit-like controls are all trade verbs (Buy and Sell side by side) lends its choices; one other button voids it', () => {
+  const select = (text) => ({ tagName: 'SELECT', selectedOptions: [{ textContent: text }] })
+  const btn = (text, attrs = {}) => ({ textContent: text, getAttribute: (name) => (name in attrs ? attrs[name] : null) })
+  const amount = { type: 'text', name: 'amount', id: '', placeholder: '', getAttribute: () => null }
+  const panel = (submits) => ({ parentElement: null, querySelectorAll: (sel) => (sel === 'input' ? [amount] : sel.startsWith('select') ? [select('BTC')] : submits) })
+  const sellIn = (box) => ({ ...el('BUTTON', { children: ['Sell'], closest: () => null }), parentElement: box })
+  assert.deepEqual(describeElement(sellIn(panel([btn('Buy'), btn('Sell')]))).formContext, { options: ['BTC'], amountEntry: true }, 'Buy + Sell')
+  assert.deepEqual(describeElement(sellIn(panel([btn(' Buy BTC '), btn('Sell BTC'), btn('', { 'aria-label': 'Swap' })]))).formContext.options, ['BTC'], 'verbs with an asset, and an aria-label')
+  assert.equal('formContext' in describeElement(sellIn(panel([btn('Sell'), btn('Cancel')]))), false, 'Sell + Cancel: none')
+  assert.equal('formContext' in describeElement(sellIn(panel([btn('Buy'), btn('Sell'), btn('Help'), btn('Settings')]))), false, 'trade verbs plus other buttons (a page-wide box): none')
+  assert.equal('formContext' in describeElement(sellIn(panel([btn('Buyer protection'), btn('Sell')]))), false, "'Buyer protection' is not the verb Buy")
+})
+
+test('CU-405: trade verbs beside order-panel helpers (N%, Max/Min/Half, Limit/Market/Stop-limit/OCO, one symbol or arrow) still lend; any other button voids', () => {
+  const select = (text) => ({ tagName: 'SELECT', selectedOptions: [{ textContent: text }] })
+  const btn = (text) => ({ textContent: text, getAttribute: () => null })
+  const panel = (submits) => ({ parentElement: null, querySelectorAll: (sel) => (sel === 'input' ? [] : sel.startsWith('select') ? [select('ETH')] : submits) })
+  const sellIn = (box) => ({ ...el('BUTTON', { children: ['Sell'], closest: () => null }), parentElement: box })
+  const real = [btn('Buy'), btn('Sell'), btn('25%'), btn('50 %'), btn('100%'), btn('Max'), btn('Half'), btn('Limit'), btn('Market'), btn('Stop-limit'), btn('OCO'), btn('\u21c5'), btn('')]
+  assert.deepEqual(describeElement(sellIn(panel(real))).formContext, { options: ['ETH'], amountEntry: false }, 'a real order panel lends')
+  assert.equal('formContext' in describeElement(sellIn(panel([btn('Max'), btn('25%')]))), false, 'helpers alone, no trade verb: none')
+  assert.deepEqual(describeElement(sellIn(panel([...real, btn('Transfer')]))).formContext.options, ['ETH'], 'Transfer is a trade verb (06:43Z)')
+  assert.equal('formContext' in describeElement(sellIn(panel([...real, btn('Settings')]))), false, 'any other worded button voids')
+  assert.deepEqual(describeElement(sellIn(panel([btn('Buy'), btn('Sell'), btn('All')]))).formContext.options, ['ETH'], "'All' is a helper (cu-coordinator 06:45Z)")
+  assert.equal('formContext' in describeElement(sellIn(panel([btn('Buy'), btn('Sell'), btn('<<<')]))), false, 'three symbols are not one symbol')
+  assert.equal('formContext' in describeElement(sellIn(panel([btn('Sell'), btn('Cancel')]))), false, 'Sell + Cancel: none')
+})
