@@ -410,6 +410,22 @@ function dealSubmit(list) {
   return false
 }
 
+function walletClass(list) {
+  if (list.length > 6) return null
+  const [verb, ...rest] = list
+  const core = rest.filter((t) => !FILLER.has(t))
+  const tail = core.join(' ')
+  if (['show', 'reveal', 'view', 'copy', 'export', 'display'].includes(verb) && /^(?:(?:seed|recovery|secret|mnemonic)\s+phrase|private\s+key|secret\s+key|seed)$/.test(tail)) return 'credential'
+  if (['import', 'restore', 'recover'].includes(verb) && core.length <= 2 && core[core.length - 1] === 'wallet') return 'credential'
+  if (verb === 'set' && core[0] === 'approval' && rest.includes('all')) return 'purchase'
+  if (verb === 'approve' && core.length <= 2 && ['spending', 'unlimited', 'token', 'allowance', 'spend'].includes(core[core.length - 1])) return 'purchase'
+  if (verb === 'connect' && core.length <= 2 && core[core.length - 1] === 'wallet') return 'permission'
+  // The grammar's own 'Sign message' row asked purchase; the ruling makes a message signature permission (a transaction stays purchase).
+  if (verb === 'sign' && core.length <= 2 && core[core.length - 1] === 'message') return 'permission'
+  if (verb === 'claim' && core.length <= 2 && ['airdrop', 'token', 'drop'].includes(core[core.length - 1])) return 'submit'
+  return null
+}
+
 const DIVERSION_VERBS = new Set(['change', 'update', 'edit', 'add', 'set', 'replace', 'switch'])
 const DIVERSION_OBJECTS = [['direct', 'deposit'], ['bank', 'detail'], ['deposit', 'account'], ['routing', 'number'], ['account', 'number'],
   ['payout', 'account'], ['payout', 'method'], ['bank', 'account'], ['payout', 'detail']]
@@ -472,6 +488,9 @@ export function grammarClasses(name, role = '') {
   // CU-451 (High; cu-coordinator 22:22Z): a rate lock, pre-approval, Easy Apply, a tour request or contacting an agent sends
   // personal or financial data to another party or commits to a rate / booking (submit; CU-415 / CU-422 families).
   if (dealSubmit(list)) return ['submit']
+  // CU-452 (High; cu-coordinator 22:28Z): wallet secrets and token approvals move money irreversibly.
+  const wallet = walletClass(list)
+  if (wallet) return [wallet]
   // F2 guard (cu-coordinator 20:28Z): declining, denying or rejecting a request answers no - the grammar's own over-ask since
   // #554 ('Decline request'); older asks ('Decline invitation', CU-422's 'Decline offer') are untouched (the hook never sees them).
   if (['decline', 'deny', 'reject'].includes(list[0]) && list.slice(1).filter((t) => !FILLER.has(t)).every((t) => t === 'request' || t === 'this' || t === 'all')
