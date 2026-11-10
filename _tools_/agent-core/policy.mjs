@@ -39,6 +39,11 @@ const ZH_WORDS = Object.freeze({
     // CU-294 (cu-researcher; Firefox's own 'Remember this decision' checkbox, mozilla-l10n).
     '记住此决定', '記住此決定'],
   submit: ['发送', '發送', '傳送', '发布', '發佈', '發布', '提交', '注册', '註冊', '送出', '发表', '發表', '加入会议', '加入會議', '加入通话',
+    // CU-421: running a script.
+    'run script', 'run the script',
+    // CU-422: civic, legal and employment acts in the owner's name.
+    'cast ballot', 'cast your ballot', 'cast vote', 'sign petition', 'sign the petition', 'quit job', 'quit my job', 'decline offer',
+    'accept offer', 'apply now', 'enroll now', 'submit vote',
     '视频通话', '視訊通話', '语音通话', '語音通話', '开始会议', '開始會議', '接受邀请', '接受邀請', '拒绝邀请', '拒絕邀請',
     '部署', '退出群聊', '退出群組', '取消会议', '取消會議', '举报', '檢舉', '申请加入', '申請加入', '报税', '報稅',
     // cu-researcher on #145: Reply (回复 / 回覆) - judged like English 'reply', by CU-157's text-entered rule.
@@ -84,6 +89,8 @@ const LOCALE_ID_NAMES = Object.freeze(['reisepass', '…passnummer', 'geburtsdat
   '여권', '여권번호', '생년월일', '주민등록번호', '계좌번호', '사업자등록번호'])
 const WORDS = Object.freeze({
   purchase: ['buy', 'pay', 'order', 'place order', 'checkout', 'check out', 'subscribe', 'donate', 'purchase', 'transfer', 'withdraw', 'wire', 'send money',
+    // CU-422 (High; cu-coordinator 15:23Z): tips and renewals spend money.
+    'add tip', 'add a tip', 'renew license', 'renew my license',
     // CU-415 (High; cu-coordinator 13:10Z): bookings commit money.
     'book flight', 'book a flight', 'book hotel', 'book room', 'book a room', 'confirm booking', 'complete booking',
     // cu-coordinator 13:19Z (round 3).
@@ -95,6 +102,10 @@ const WORDS = Object.freeze({
     'release payments', 'process refunds', 'run payrolls', 'process payroll', 'refund customer', 'raise limit', 'increase limit',
     'increase spending limit', 'raise spending limit', 'issue virtual card', 'reimburse', 'send payments', 'approve payment',
     'approve payments',
+    // CU-417 (High; cu-coordinator 14:03Z): launching or creating cloud resources spends money.
+    'launch instance', 'launch an instance', 'create instance', 'create an instance', 'create cluster', 'create a cluster',
+    // cu-coordinator 14:34Z (round 3): plurals and synonyms.
+    'launch instances', 'create instances', 'create vm', 'create a vm', 'spin up', 'scale up',
     // CU-410 (High; cu-coordinator 10:17Z): billing wordings one word from the asking ones.
     'add seats', 'add licenses', 'add credits', 'top up credits', 'resume subscription', 'upgrade seats', 'gift a subscription',
     'send gift', 'get tickets',
@@ -131,6 +142,9 @@ const WORDS = Object.freeze({
     'cancel trip', 'cancel my trip', 'cancel appointment', 'cancel my appointment',
     // CU-416: ending someone's employment or access.
     'terminate employee', 'offboard user', 'offboard employee', 'offboard',
+    // CU-417: dropping or terminating data and infrastructure; 'Force push' (CU-403's #477, carried so CU-417 closes alone).
+    'drop database', 'drop table', 'drop schema', 'terminate instance', 'terminate instances', 'force push',
+    'drop collection', 'truncate table', 'terminate server', 'terminate servers', 'terminate cluster', 'terminate clusters',
     // CU-411 (High; cu-coordinator 11:00Z): closing, terminating, resetting or wiping an account or its data.
     'close my account', 'close account', 'terminate account', 'reset account', 'clear data', 'clear all data', 'wipe data',
     'erase account', 'factory reset',
@@ -142,6 +156,17 @@ const WORDS = Object.freeze({
     // cu-researcher's 13:23Z sweep: unsaved edits lost, like Discard Changes.
     'revert to saved', 'revert all changes', ...ZH_WORDS.delete, ...LOCALE_WORDS.delete],
   permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke',
+    // CU-420 (High; cu-coordinator 15:00Z): turning machine protection off, or trusting a device.
+    'disable filevault', 'turn off filevault', 'turn off firewall', 'disable firewall', 'disable the firewall', 'disable antivirus',
+    'turn off antivirus', 'turn off real-time protection', 'disable real-time protection', 'trust this device', 'trust device',
+    'disable defender', 'turn off defender', 'pause protection', 'remember this device',
+    // CU-421 (High; cu-coordinator 15:00Z): system-level control - SIP off, full disk access, accessibility.
+    'disable sip', 'disable system integrity protection', 'grant full disk access', 'allow full disk access', 'enable full disk access',
+    'enable accessibility', 'allow accessibility access', 'grant accessibility access',
+    // cu-coordinator 15:25Z: trusting or installing a root certificate.
+    'trust certificate', 'trust this certificate', 'install certificate', 'install the certificate', 'always trust',
+    // CU-422: a specific legal consent (unlike CU-415's named 'I agree' click-through limit, which stays free).
+    'i consent', 'give consent', 'give my consent',
     // CU-423 (High; cu-coordinator 15:50Z): home access codes and keys, photo-library grants.
     'create access code', 'create an access code', 'share access code', 'add home key', 'share home key', 'invite to home',
     'allow access to all photos', 'grant photo library access', 'allow full photo access',
@@ -153,6 +178,9 @@ const WORDS = Object.freeze({
     'sign agreement', 'sign the agreement', 'sign contract', 'sign the contract', 'release my records',
     // CU-416: acting as another person.
     'impersonate', 'impersonate user', 'view as user', 'view as this user',
+    // CU-417: collaborators (CU-403's #477, carried) and branch protection open access.
+    'add collaborator', 'add collaborators', 'disable branch protection', 'remove branch protection',
+    'add member', 'add members', 'disable protection', 'unprotect branch',
     // CU-411: ownership and admin grants widen access.
     'make owner', 'make co-owner', 'transfer ownership', 'make admin', 'grant admin',
     // CU-408: adding a payee widens who can be paid.
@@ -1311,6 +1339,22 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const form = target?.formContext
       const formTrade = form && typeof form === 'object' && Array.isArray(form.options) && form.options.some((text) => TRADE_ASSET.test(String(text)))
       if (!focusesEntry && /\b(?:sell|convert|deposit)\b/i.test(name) && (/\d|[$\u20ac\u00a3\u00a5\u20bf]/.test(name) || TRADE_ASSET.test(name) || formTrade)) classes.push('purchase')
+      // CU-420: exporting, revealing, showing, viewing or copying passwords or secrets and getting recovery codes expose credentials;
+      // 'Show password' asks everywhere, the sign-in eye toggle included - the plaintext reaches the next screenshot (cu-coordinator
+      // 15:16Z, superseding 15:13Z); 15:18Z adds keychain / credentials exports, secrets and 'Get backup codes'.
+      if (!focusesEntry && /^\s*(?:export\s+(?:all\s+|my\s+)?(?:passwords?|vault|logins?|keychain|credentials)|(?:reveal|show|copy|view)\s+(?:the\s+)?(?:saved\s+)?(?:passwords?|secrets?)|(?:download|view|show|copy|print|get)\s+(?:your\s+|my\s+)?(?:backup|recovery)\s+codes?)\b/i.test(name)) classes.push('credential')
+      // CU-421: overriding a malware warning or installing a profile or helper asks install (CU-254's class).
+      // cu-coordinator 15:25Z adds a page's 'Keep dangerous file' (Chrome's own shelf stays the named limit).
+      if (!focusesEntry && /^\s*(?:(?:open|run|keep|download|install)\s+anyway|keep\s+(?:the\s+)?dangerous\s+file|install\s+(?:the\s+)?(?:configuration\s+)?(?:profile|helper))\b/i.test(name)) classes.push('install')
+      // CU-422: a bare 'Give' / 'Give now' pays; a bare 'Vote' (or 'Vote for <x>'), 'Resign' and 'Apply for <noun>' submit.
+      // cu-coordinator 15:42Z (round 2): money forms 'Leave a tip', 'Tip $<n>', 'Give $<n>'.
+      if (!focusesEntry && (/^\s*give(?:\s+now)?\s*$/i.test(name) || /^\s*leave\s+(?:a\s+)?tip\b/i.test(name)
+        || /^\s*(?:tip|give)\s+(?:[A-Z]{3}\s*)?[$\u20ac\u00a3\u00a5]\s*\d/i.test(name))) classes.push('purchase')
+      // Round 2: an article or possessive between the verb and the object ('Cast my vote', 'Decline the offer').
+      if (!focusesEntry && (/^\s*(?:cast|submit)\s+(?:my|your|the|a|our)\s+(?:vote|ballot)\b/i.test(name)
+        || /^\s*(?:accept|decline)\s+(?:the|this|my|your|an?)\s+(?:job\s+)?offer\b/i.test(name)
+        || /^\s*sign\s+(?:this|a|our)\s+petition\b/i.test(name) || /^\s*quit\s+(?:the|this)\s+job\b/i.test(name))) classes.push('submit')
+      if (!focusesEntry && (/^\s*vote(?:\s+now|\s+for\s+\S.*)?\s*$/i.test(name) || /^\s*resign(?:\s+now)?\s*$/i.test(name) || /^\s*apply\s+for\s+(?!(?:a\s+)?refund\s+policy)\S/i.test(name))) classes.push('submit')
       // CU-423: 'Make <noun> public anyway' grants access; a password change with an object between ('Change my password',
       // 'Change account password', 'Update your password') asks credential - the bare 'Change password' keeps its hand-off.
       if (!focusesEntry && /^\s*make\s+(?:\S+\s+){0,2}public\s+anyway\s*$/i.test(name)) classes.push('permission')
@@ -1325,6 +1369,12 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       }
       // CU-416: 'Log in as' / 'Sign in as' <someone> acts as that person ('as guest' signs in as nobody).
       if (!focusesEntry && /^\s*(?:(?:log|sign)\s+in|login|act)\s+as\b(?!\s+(?:a\s+)?guest\b)/i.test(name)) classes.push('permission')
+      // CU-417: an SSH, deploy or access key hands over credentials; a 'Destroy' button destroys (a link stays free).
+      // cu-coordinator 14:12Z: rotating, regenerating or resetting credentials too.
+      if (!focusesEntry && /^\s*(?:(?:add|new)\s+(?:an?\s+)?(?:new\s+)?(?:ssh|deploy|gpg)\s+keys?|create\s+(?:an?\s+)?(?:new\s+)?access\s+keys?|(?:rotate|regenerate|reset)\s+(?:the\s+|your\s+|all\s+)?(?:credentials?|keys)|new\s+ssh\s+key)\b/i.test(name)) classes.push('credential')
+      // 'Make <noun> public' (an object between the verb and 'public', cu-coordinator 14:34Z).
+      if (!focusesEntry && /^\s*make\s+(?:the\s+|this\s+)?(?:\S+\s+){1,2}public\s*$/i.test(name)) classes.push('permission')
+      if (!focusesEntry && /^\s*destroy\b/i.test(name) && !/link/i.test(String(target?.role ?? ''))) classes.push('delete')
       // CU-410: renting ('Rent', 'Rent now', 'Rent <title>'; 'Rentals' stays free), a bare 'Renew', reactivating a subscription,
       // turning auto-renew on and switching the billing period ask purchase.
       if (!focusesEntry && (/^\s*rent\b/i.test(name) || /^\s*renew\s*$/i.test(name)
