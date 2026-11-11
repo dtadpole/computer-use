@@ -1937,6 +1937,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // #600 round 3: the full strip (ellipsis, '!', '(recommended)', leading icons) reaches the older exact rows too ('Join Prime…'). A
     // Quick Actions menu item is judged by its exact built-in name (CU-382 - 'More…'), so it never takes the probe.
     // #609 round 2: each canonical form in turn (the unwrapped name, then its first sentence), stopping at the first that asks.
+    // #617 (cu-researcher 03:58Z): a money amount in the name AS WRITTEN keeps purchase - 'Start e-visit ($25 copay)' must not lose
+    // its copay to the canonical form 'Start e-visit'. Only the amount row goes first; every other row keeps the probe's order (the
+    // firstLine form of a card still decides its class).
+    if (grammarEligible && classes.length === 0 && !nativeOn && context.confirmProbe !== true && amountClass(name, target?.role)) classes.push('purchase')
     // CU-473 pair (cu-coordinator 02:35Z): the driver's target.firstLine (the first rendered line of a multi-line name, which
     // Chrome's accessible name flattens to spaces) is one more form, tried last - additive.
     const firstLine = typeof target?.firstLine === 'string' ? target.firstLine.trim() : ''
