@@ -614,8 +614,9 @@ async function admitDesktopRun({
       replaceEntry(join(root, LAST_INPUT_NAME), { seat, at: new Date(now()).toISOString() })
     },
     // Idle (A), the driver's half (cu-developer-three, environment.mjs): `armed` is true only after an arm reply whose via
-    // includes eventTap, and false in the same call as any disarm (consent ask, pause, takeover, settle, local_input stop);
-    // `lastOwnerInputAt` (epoch ms) is stamped from the helper's localInput events while armed. Only this run's own entry
+    // includes eventTap, and false once the local-input stop is off (a local_input stop, the run's end). The guards stay
+    // armed through a consent ask, a pause and a takeover, and `lastOwnerInputAt` (epoch ms) is stamped from every
+    // helper localInput event while armed - so the owner's own hand there restarts the count. Only this run's own entry
     // (same seat, run id, pid and start) is updated, under the mutex; nothing else is accepted; a no-op once released.
     async mark(patch) {
       const clean = markPatch(patch)
@@ -650,8 +651,9 @@ function markPatch(patch) {
  * ends it on the first untagged event (via includes eventTap) - the owner's idle is
  *   now - max(admittedAt - idleAtStart, lastOwnerInputAt)
  * (the idle it was admitted at plus the time since, or the time since the owner's last own input, whichever is shorter).
- * Anything else reads HIDIdleTime alone: no run, a released or noInput run, a dead pid, an unarmed run (a consent ask
- * disarms it: the owner answers by hand), an idleAtStart outside [0, 86400], or a clock behind the admission. A plain HOLD
+ * Anything else reads HIDIdleTime alone: no run, a released or noInput run, a dead pid, an unarmed run (its local-input
+ * stop is off), an idleAtStart outside [0, 86400], or a clock behind the admission. While armed, every owner event (a
+ * consent answer typed by hand included) is stamped as lastOwnerInputAt, so it restarts the count. A plain HOLD
  * has no local-input stop, so it never stands in (named over-wait until a helper stamp exists). `idleSeconds` defaults to
  * this lock's own reader (none for a scratch dir, CU-117). Returns { seconds, rule } with rule 'armed_run' or 'hid';
  * seconds is null when HIDIdleTime cannot be read and no armed run stands in.

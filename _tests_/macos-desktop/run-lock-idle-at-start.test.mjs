@@ -45,7 +45,7 @@ test('idle (A) row: a run admitted at idle 400 s that then posts synthetic input
   run.slot.release()
 })
 
-test('idle (A) row: the owner\'s own input, stamped while armed, restarts the count from that moment', async () => {
+test('idle (A) row: the owner\'s own input, stamped while armed (a consent answer typed by hand included), restarts the count from that moment', async () => {
   const run = await admitted(400)
   await run.slot.mark({ armed: true })
   await run.slot.mark({ lastOwnerInputAt: T0 + 60_000 })
@@ -54,14 +54,14 @@ test('idle (A) row: the owner\'s own input, stamped while armed, restarts the co
   run.slot.release()
 })
 
-test('idle (A) row: not armed (never, or disarmed for a consent ask) reads HIDIdleTime only - the owner answers by hand', async () => {
+test('idle (A) row: not armed (never, or disarmed once its local-input stop is off) reads HIDIdleTime only', async () => {
   const run = await admitted(400)
   run.clock.at = T0 + 30_000
   assert.deepEqual(run.read(3.9), { seconds: 3, rule: 'hid' }, 'never armed')
   await run.slot.mark({ armed: true })
   assert.equal(run.read(3.9).rule, 'armed_run')
   await run.slot.mark({ armed: false })
-  assert.deepEqual(run.read(3.9), { seconds: 3, rule: 'hid' }, 'a consent ask disarms it in the same write')
+  assert.deepEqual(run.read(3.9), { seconds: 3, rule: 'hid' }, 'disarmed: HIDIdleTime only')
   run.slot.release()
 })
 
