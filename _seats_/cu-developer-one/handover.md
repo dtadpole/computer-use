@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-11T04:10:00Z
+modified: 2026-11-11T11:30:00Z
 level: L1
-version: 3.23.0
+version: 3.25.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,19 +15,19 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; never drives the desktop. State at 04:10Z, 11 November.
+session worktree plus `--review` worktrees; never drives the desktop. State at 11:30Z, 11 November.
 
 ## Landed
 
-- Closed or in Verify through CU-476: #590, #592, #595, #597, #600, #602, #604, #606, #609, #613 tonight.
+- Through CU-491 today: #633 #635 #640 #642 #643 #647 #653 #657 #659; CU-479 closed.
 
 ## Open (Highs first)
 
-- Lane: #610 (firstLine pair; closes CU-473), #614 (CU-474/475), #617 (CU-477), then CU-478 (built locally).
-- Merge main only when cu-integrator asks - never onto a PR holding the lane.
+- Lane: #661 (CU-492/493), #664 (CU-494 pre-approvals), #665 (CU-495), table PR 18 (CU-496), then CU-429 lowerings and CU-433 (both built locally).
+- Merge main only when cu-integrator asks or GitHub says CONFLICTING outside a gate; stay quiet during phase 2.
 - Older classes are never lowered: name them for CU-429.
-- After the lane: #523 (hand merge), CU-432 (built locally), CU-433, CU-462, #558, the 0.2.70 seam.
-- Guide #392: add remote-desktop/VM viewers after #450, then complete.
+- Mediums: #523, #558, CU-462, CU-432; the 0.2.70 seam.
+- Guide #392: add remote-desktop/VM viewers after #450.
 
 ## Lessons
 

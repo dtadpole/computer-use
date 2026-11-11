@@ -512,6 +512,35 @@ export function describeElement(el) {
         if (parts.length > 0) caption = clip(parts.join(' · '))
       }
     }
+    // CU-488: a CONTROL in a two-part setting row - its label, then the control ('Seed phrase' [Show], 'Two-factor
+    // authentication' [Turn off]) - takes the label's text, as a key | value table row does above. Bounded: the control
+    // or an ancestor within two levels has exactly ONE element sibling, which holds only text (no link, button, field
+    // or role control inside it) and comes first; nothing past a container. Still no 'nearest preceding text': a heading
+    // over a section, or the row before, stays out (a named limit).
+    if (caption === null && control) {
+      const INTERACTIVE = ['a', 'button', 'input', 'select', 'textarea', 'summary', 'details']
+      const quiet = (node) => {
+        for (const k of kids(node)) {
+          const r = String((k.getAttribute && k.getAttribute('role')) || '').toLowerCase()
+          if (INTERACTIVE.includes(tagOf(k)) || CONTROL_ROLES.includes(r) || (k.getAttribute && k.getAttribute('tabindex') !== null) || !quiet(k)) return false
+        }
+        return true
+      }
+      let node = el
+      for (let depth = 0; node && node.parentElement && depth <= 2; depth += 1, node = node.parentElement) {
+        const parent = node.parentElement
+        const parentRole = String((parent.getAttribute && parent.getAttribute('role')) || '').toLowerCase()
+        if (CONTAINERS.includes(tagOf(parent)) || CONTAINER_ROLES.includes(parentRole)) break
+        const siblings = kids(parent)
+        if (siblings.length !== 2) continue
+        const label = siblings[0] === node ? null : siblings[0]
+        if (label && quiet(label)) {
+          const text = words(label)
+          if (text && text.length <= 80) caption = text
+        }
+        break
+      }
+    }
   }
   // CU-271 (cu-coordinator's ruling, cu-researcher's review): where the element sits, from DOM shape alone - never a
   // value. terminal: inside a web terminal (xterm.js and its helper textarea, role=terminal). notebookCell: inside a
