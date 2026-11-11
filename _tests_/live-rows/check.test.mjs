@@ -30,3 +30,11 @@ test('checkResults: invalid cells are ignored (the sweep re-runs them)', () => {
   assert.equal(report.cells, 0)
   assert.deepEqual(report.missing, ['x'])
 })
+
+test('checkResults: a two-class expectation matches as a set; an over-ask is reported (cu-developer-three, #636)', () => {
+  const rows = [{ id: 'a1', name: 'Please disable two-factor authentication', expect: 'permission+credential' }, { id: 'a2', name: 'Sign waiver', expect: 'permission' }]
+  const results = [cell('a1', 'click', ['credential', 'permission'], false), cell('a1', 'return', ['permission', 'credential'], false), cell('a2', 'click', ['permission', 'credential'], false), cell('a2', 'return', ['permission', 'credential'], false)]
+  const report = checkResults(results, rows)
+  assert.equal(report.problems.some((p) => /two-factor/.test(p)), false, 'the two-class row matches')
+  assert.ok(report.problems.some((p) => /Sign waiver\/click: expected permission, got permission\+credential/.test(p)), 'the over-ask is reported')
+})

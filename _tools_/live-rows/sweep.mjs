@@ -3,13 +3,14 @@
  * Live rows (CU-458): press each row's control on its own loopback page through the real loop and the real Chrome
  * driver, decline every ask, and record what was asked and whether the press posted.
  *
- *   node sweep.mjs --rows <rows.json> --out <results.json> --seat <seat> [--modes click,return]
+ *   node sweep.mjs --rows <rows.json> --out <results.json> --seat <seat> [--modes click,return] [--keep-runs]
  *
  * The system under test is verify-kit's loadSut (CU_VERIFY_SUT, else this tree). Results resume: valid cells already in
  * --out are kept and skipped, invalid ones (rows.mjs isInvalid) run again. A cell the team's browser cap refuses
  * (D-005, D-014) waits 20 s and retries in place, up to 8 attempts. D-106: the run lock is read before every run and
  * every 2 s during it; another seat's run or live hold stops the sweep at once. Exit 0 when the sweep finished, 3 when
- * it stopped for the lock or the rows are invalid.
+ * it stopped for the lock or the rows are invalid - after a lock stop, run it again: it resumes. --keep-runs leaves the
+ * runs directory (each run's events.jsonl) in place and prints its path; the default removes it.
  */
 import http from 'node:http'
 import { execFileSync } from 'node:child_process'
@@ -18,7 +19,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { loadSut } from '../verify-kit/sut.mjs'
-import { isInvalid, modeSteps, pageHtml, rowIdOf, rowUrl, skipsReturn, validateRows } from './rows.mjs'
+import { isInvalid, modeSteps, pageHtml, rowIndexOf, rowUrl, skipsReturn, validateRows } from './rows.mjs'
 
 const arg = (name) => {
   const i = process.argv.indexOf(`--${name}`)
@@ -28,8 +29,9 @@ const ROWS = arg('rows')
 const OUT = arg('out')
 const SEAT = arg('seat') ?? process.env.CU_VERIFY_SEAT
 const MODES = (arg('modes') ?? 'click,return').split(',')
+const KEEP_RUNS = process.argv.includes('--keep-runs')
 if (!ROWS || !OUT || !SEAT) {
-  console.error('usage: node sweep.mjs --rows <rows.json> --out <results.json> --seat <seat> [--modes click,return]')
+  console.error('usage: node sweep.mjs --rows <rows.json> --out <results.json> --seat <seat> [--modes click,return] [--keep-runs]')
   process.exit(2)
 }
 for (const mode of MODES) modeSteps(mode) // an unknown mode fails here, before any browser starts
@@ -55,14 +57,14 @@ function otherSeatHolds() {
 const sut = await loadSut()
 const effects = []
 const server = http.createServer((req, res) => {
-  const id = req.method === 'GET' ? rowIdOf(req.url) : null
-  if (id !== null) {
-    const row = rows.find((r) => r.id === id)
+  const index = req.method === 'GET' ? rowIndexOf(req.url) : null
+  if (index !== null) {
+    const row = rows[index]
     res.writeHead(row ? 200 : 404, { 'content-type': 'text/html; charset=utf-8' })
-    return res.end(row ? pageHtml(row) : 'none')
+    return res.end(row ? pageHtml(row, index) : 'none')
   }
-  if (req.method === 'GET' && req.url.startsWith('/effect-get/')) effects.push({ id: req.url.slice(12), via: 'GET' })
-  else if (req.method === 'POST' && req.url.startsWith('/effect/')) effects.push({ id: req.url.slice(8), via: 'POST' })
+  if (req.method === 'GET' && req.url.startsWith('/effect-get/r')) effects.push({ index: Number(req.url.slice(13)), via: 'GET' })
+  else if (req.method === 'POST' && req.url.startsWith('/effect/r')) effects.push({ index: Number(req.url.slice(9)), via: 'POST' })
   else { res.writeHead(404); return res.end() }
   res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' })
   res.end('<p>done</p>')
@@ -77,7 +79,7 @@ const save = () => writeFileSync(OUT, JSON.stringify(results, null, 1))
 let stopped = false
 
 try {
-  rowLoop: for (const row of rows) {
+  rowLoop: for (const [index, row] of rows.entries()) {
     for (const mode of MODES) {
       if (done.has(`${row.id}|${mode}`) || (mode === 'return' && skipsReturn(row.kind))) continue
       for (let attempt = 1; attempt <= 8; attempt += 1) {
@@ -87,7 +89,7 @@ try {
         const plan = modeSteps(mode)
         const handle = await sut.lib.startRun({
           task: { text: 'Live rows: press the control on this page once.', meta: { probe: 'live-rows', row: row.id, mode } },
-          startUrl: rowUrl(base, row),
+          startUrl: rowUrl(base, row, index),
           seat: SEAT,
           model: sut.lib.createScriptedAdapter(async (input, { index }) => (index < plan.length ? { actions: plan[index] } : { final: 'Done.' })),
           controller,
@@ -131,6 +133,7 @@ try {
 } finally {
   save()
   server.close()
-  if (/^cu-live-rows-[A-Za-z0-9]{6}$/.test(runsDirectory.split('/').pop())) rmSync(runsDirectory, { recursive: true, force: true })
+  if (KEEP_RUNS) console.log(`runs kept in ${runsDirectory}`)
+  else if (/^cu-live-rows-[A-Za-z0-9]{6}$/.test(runsDirectory.split('/').pop())) rmSync(runsDirectory, { recursive: true, force: true })
 }
 process.exit(stopped ? 3 : 0)

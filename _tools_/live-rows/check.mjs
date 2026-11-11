@@ -4,7 +4,8 @@
  *
  *   node check.mjs <results.json> <rows.json> [--modes click,return]
  *
- * For each row: the click asks a class that includes `expect` (or asks nothing when `expect` is 'free'); every other
+ * For each row: the click asks exactly the classes of `expect` ('purchase', 'permission+credential'; nothing when
+ * `expect` is 'free') - an extra class is an over-ask and is reported, as a missing one is; every other
  * mode asks the same classes as the click; nothing posts while an ask was declined; every expected cell is present
  * (no Return cell for link kinds, checkboxes and rows). Exit 0 when there is no problem and nothing is missing.
  */
@@ -12,7 +13,7 @@ import { readFileSync } from 'node:fs'
 import { pathToFileURL } from 'node:url'
 import { isInvalid, skipsReturn } from './rows.mjs'
 
-const sameClasses = (a, b) => JSON.stringify([...a].sort()) === JSON.stringify([...b].sort())
+const sameClasses = (a, b) => JSON.stringify([...new Set(a)].sort()) === JSON.stringify([...new Set(b)].sort())
 
 /**
  * `{ cells, controls, total, missing: [name], problems: [string], classes: { class: count }, postedWhileDeclined,
@@ -35,9 +36,9 @@ export function checkResults(results, rows, modes = ['click', 'return']) {
     if (wanted.some((mode) => !cells[mode])) missing.push(row.name)
     const click = cells.click
     if (!click) continue
-    const key = click.asked.length ? click.asked.join('+') : 'free'
+    const key = click.asked.length ? [...new Set(click.asked)].join('+') : 'free'
     classes[key] = (classes[key] ?? 0) + 1
-    const asksExpected = row.expect === 'free' ? click.asked.length === 0 : click.asked.includes(row.expect)
+    const asksExpected = row.expect === 'free' ? click.asked.length === 0 : sameClasses(click.asked, row.expect.split('+'))
     if (!asksExpected) problems.push(`${row.name}/click: expected ${row.expect}, got ${click.asked.join('+') || 'free'} (${click.runId})`)
     for (const mode of wanted) {
       if (mode === 'click' || !cells[mode]) continue

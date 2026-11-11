@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { cellCount, isInvalid, KINDS, modeSteps, pageHtml, rowIdOf, rowUrl, skipsReturn, validateRows } from '../../_tools_/live-rows/rows.mjs'
+import { cellCount, isInvalid, KINDS, modeSteps, pageHtml, rowIndexOf, rowUrl, skipsReturn, validateRows } from '../../_tools_/live-rows/rows.mjs'
 
 test('validateRows: a good row set has no problems', () => {
   assert.deepEqual(validateRows([
@@ -11,10 +11,21 @@ test('validateRows: a good row set has no problems', () => {
   ]), [])
 })
 
-test('validateRows: an id carrying a route word is refused - the id sits in the pathname', () => {
-  const [problem] = validateRows([{ id: 'd476-hash-call-bare', name: 'Alex Morgan', expect: 'submit', kind: 'row' }])
-  assert.match(problem, /route word 'call'/)
-  assert.deepEqual(validateRows([{ id: 'recall-1', name: 'x', expect: 'free' }]), [], 'only whole dash-separated parts count')
+test('the id never reaches the URL: page context comes only from path, suffix and host (cu-verifier, #636)', () => {
+  for (const id of ['d476-hash-call-bare', 'recharge-wallet', 'meter-topup', 'password-reset', 'place-order']) {
+    const url = rowUrl('http://127.0.0.1:4100', { id, name: 'x', expect: 'free' }, 7)
+    assert.equal(url, 'http://127.0.0.1:4100/page/r7', id)
+    const html = pageHtml({ id, name: 'x', expect: 'free', kind: 'link' }, 7)
+    assert.equal(html.includes(id), false, `${id} stays out of the page too`)
+  }
+})
+
+test('lines: one block per line on a text control; refused on input and checkbox, and when empty', () => {
+  const html = pageHtml({ id: 'a1', name: 'Change Direct Deposit Takes Effect Immediately', expect: 'credential', lines: ['Change Direct Deposit', 'Takes Effect Immediately'] }, 0)
+  assert.match(html, /<button type="submit"[^>]*><div>Change Direct Deposit<\/div><div>Takes Effect Immediately<\/div><\/button>/)
+  assert.deepEqual(validateRows([{ id: 'a1', name: 'x', expect: 'free', lines: ['A', 'B'], kind: 'div' }]), [])
+  assert.match(validateRows([{ id: 'a1', name: 'x', expect: 'free', lines: ['A'], kind: 'input' }])[0], /renders text/)
+  assert.match(validateRows([{ id: 'a1', name: 'x', expect: 'free', lines: [] }])[0], /non-empty strings/)
 })
 
 test('validateRows: bad ids, duplicates, unknown kinds, a checkbox without its state, bad path/suffix/host', () => {
@@ -35,28 +46,29 @@ test('validateRows: bad ids, duplicates, unknown kinds, a checkbox without its s
   assert.deepEqual(validateRows('nope'), ['rows: not an array'])
 })
 
-test('rowUrl and rowIdOf: path, suffix and host give page context; the server finds the id back', () => {
+test('rowUrl and rowIndexOf: path, suffix and host give page context; the server finds the row back by index', () => {
   const base = 'http://127.0.0.1:4100'
-  assert.equal(rowUrl(base, { id: 'a1' }), 'http://127.0.0.1:4100/page/a1')
-  assert.equal(rowUrl(base, { id: 'a1', path: 'call' }), 'http://127.0.0.1:4100/call/page/a1')
-  assert.equal(rowUrl(base, { id: 'a1', suffix: '#/call' }), 'http://127.0.0.1:4100/page/a1#/call')
-  assert.equal(rowUrl(base, { id: 'a1', host: 'call.localhost' }), 'http://call.localhost:4100/page/a1')
-  assert.equal(rowIdOf('/call/page/a1'), 'a1')
-  assert.equal(rowIdOf('/page/a1?page=call'), 'a1')
-  assert.equal(rowIdOf('/effect/a1'), null)
+  assert.equal(rowUrl(base, { id: 'a1' }, 0), 'http://127.0.0.1:4100/page/r0')
+  assert.equal(rowUrl(base, { id: 'a1', path: 'call' }, 3), 'http://127.0.0.1:4100/call/page/r3')
+  assert.equal(rowUrl(base, { id: 'a1', suffix: '#/call' }, 3), 'http://127.0.0.1:4100/page/r3#/call')
+  assert.equal(rowUrl(base, { id: 'a1', host: 'call.localhost' }, 3), 'http://call.localhost:4100/page/r3')
+  assert.equal(rowIndexOf('/call/page/r3'), 3)
+  assert.equal(rowIndexOf('/page/r12?page=call'), 12)
+  assert.equal(rowIndexOf('/page/a1'), null)
+  assert.equal(rowIndexOf('/effect/r3'), null)
 })
 
 test('pageHtml: UTF-8, the field, and one control per kind', () => {
   for (const kind of KINDS) {
-    const html = pageHtml({ id: 'a1', name: 'Unlock scooter →', expect: 'purchase', kind, checked: false })
+    const html = pageHtml({ id: 'a1', name: 'Unlock scooter →', expect: 'purchase', kind, checked: false }, 4)
     assert.match(html, /<meta charset="utf-8">/)
     assert.match(html, /aria-label="Note"/)
-    assert.match(html, /action="\/effect\/a1"/)
+    assert.match(html, /action="\/effect\/r4"/)
     assert.ok(html.includes('Unlock scooter →'), kind)
   }
   assert.match(pageHtml({ id: 'a1', name: 'x', expect: 'free', kind: 'hash-link' }), /href="#"/)
   assert.match(pageHtml({ id: 'a1', name: 'x', expect: 'free', kind: 'js-link' }), /href="javascript:void\(0\)"/)
-  assert.match(pageHtml({ id: 'a1', name: 'x', expect: 'free', kind: 'link' }), /href="\/effect-get\/a1"/)
+  assert.match(pageHtml({ id: 'a1', name: 'x', expect: 'free', kind: 'link' }, 2), /href="\/effect-get\/r2"/)
   assert.match(pageHtml({ id: 'a1', name: 'x', expect: 'free', kind: 'row' }), /role="listitem"/)
   assert.match(pageHtml({ id: 'a1', name: 'x', expect: 'free', kind: 'checkbox', checked: true }), / checked /)
   assert.match(pageHtml({ id: 'a1', name: 'Sell', expect: 'free', select: ['New', 'Used'] }), /<select name="asset"/)
