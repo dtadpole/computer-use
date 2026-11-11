@@ -1146,6 +1146,16 @@ function grammarClassesOf(name, role = '') {
   // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
   // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
   if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
+  // CU-525 (High; cu-coordinator 21:36Z), table PR 32, as verb families with object synonyms - a database console. PERMISSION: disable
+  // / turn off RLS (row-level security's acronym), allow all IPs / any IP / every IP, add 0.0.0.0/0 (or ::/0), disable / turn off SSL /
+  // TLS enforcement (or 'require SSL'). DELETE: restore (a / the / from) backup / snapshot, restore to a point in time (it overwrites the
+  // live data). CREDENTIAL: reveal / show / copy / view the service role key / secret, show / copy / view / reveal the connection string /
+  // URI / URL. #746 r2 (cu-researcher 21:39Z): 'Disable / Turn off SSL', 'Restore to this point', 'service_role key';
+  // cu-developer-two 21:40Z: singular 'any IP address' / 'any address', and 'database URI / URL' (it carries the password).
+  // #746 r3 (cu-researcher 21:46Z): 'Restore to a snapshot', 'Roll back to snapshot', 'Restore database'.
+  if (/^\s*(?:disable|turn\s+off|switch\s+off|bypass)\s+(?:the\s+)?rls\s*$|^\s*(?:allow|permit|whitelist|allowlist)\s+(?:all|any|every)\s+(?:ips?|ip\s+address(?:es)?|address(?:es)?|networks?|sources?)\s*$|^\s*(?:add|allow)\s+0\.0\.0\.0\/0\s*$|^\s*(?:add|allow)\s+::\/0\s*$|^\s*(?:disable|turn\s+off|remove|switch\s+off)\s+(?:the\s+)?(?:ssl|tls|https)\s+(?:enforcement|requirement|only|mode)\s*$|^\s*(?:disable|turn\s+off)\s+(?:require|enforce)\s+(?:ssl|tls)\s*$|^\s*(?:disable|turn\s+off|switch\s+off)\s+(?:the\s+)?(?:ssl|tls)\s*$/i.test(raw)) return ['permission']
+  if (/^\s*restore\s+(?:from\s+)?(?:a\s+|the\s+|this\s+)?(?:backup|snapshot)\s*$|^\s*restore\s+(?:the\s+)?(?:database\s+)?to\s+(?:a\s+|the\s+)?point[-\s]in[-\s]time\s*$|^\s*point[-\s]in[-\s]time\s+restore\s*$|^\s*restore\s+(?:the\s+database\s+)?to\s+(?:this|that|the\s+selected)\s+(?:point|time|moment|snapshot|version)\s*$|^\s*(?:restore|roll\s*back|revert)\s+(?:the\s+database\s+)?to\s+(?:a\s+|an\s+|the\s+)?(?:earlier\s+|previous\s+)?(?:snapshot|backup)\s*$|^\s*restore\s+(?:the\s+|this\s+)?(?:database|db)\s*$/i.test(raw)) return ['delete']
+  if (/^\s*(?:reveal|show|copy|view|display|get)\s+(?:the\s+)?(?:service[-_\s]role|service)\s+(?:key|secret|token)\s*$|^\s*(?:reveal|show|copy|view|display|get)\s+(?:the\s+)?(?:database\s+|db\s+)?connection\s+(?:string|uri|url)\s*$|^\s*(?:reveal|show|copy|view|display|get)\s+(?:the\s+)?(?:database|db|postgres(?:ql)?|mysql|mongodb)\s+(?:uri|url|dsn)\s*$/i.test(raw)) return ['credential']
   // CU-524 (High; cu-coordinator 21:06Z), table PR 31, as verb families with object synonyms - a new recovery channel lets someone
   // else take the account back. CREDENTIAL: add / register / set (up) a trusted / backup / recovery / alternate / secondary / additional
   // phone (number) / number / email (address); set up (account) recovery (options); add / set up a backup / recovery / sign-in method /
