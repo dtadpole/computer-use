@@ -1213,6 +1213,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // suppressor ('Don't ask again', 'Don't show this again', 'Don't warn me', 'Don't notify me', 'Don't confirm'), and never with a
     // second clause ('Do not cancel - pay now', 'No thanks, remove 2FA', 'No, remove it' still ask).
     // cu-coordinator 13:04Z: an exchange's 'Order book' (a view; the older 'order' purchase) is lowered here too.
+    // Round 2 (17:21Z) adds the named list below; KEPT as ruled: 'Sign up', 'Remove recovery contact', 'Remove location from posts',
+    // 'Remove address', 'Quit all apps', 'Close on all devices', Mail's compose 'Sign' toggle and Preview's 'Sign' tool.
     if (!held && context.confirmProbe !== true && name !== '' && classes.length === 0 && target && !isTextEntry(target)) {
       const presses = POINTER.has(action.type) || keysOf(action).has('ENTER') || keyboardActivation(action, target, context).activates
       const role = String(target.role ?? '') + ' ' + String(target.subrole ?? '')
@@ -1221,6 +1223,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         const plain = name.trim().replace(/\s+/g, ' ')
         const link = /\b(link|AXLink)\b/.test(role)
         const exact = /^(?:security|privacy & security|uninstall instructions|pay history|pay stub preview|view pay rate|edit post|raise (?:a )?ticket|require multi-factor authentication|order book)$/i.test(plain)
+          // CU-429 round 2 (cu-coordinator 17:21Z): navigation, labels and views, exactly these names.
+          || /^(?:go to your account|back to this project|open in this window|view api docs|clear all filters|(?:note:\s*)?rent is due|find and replace(?:\u2026|\.\.\.)?|search and replace|unmute all|open all windows|privacy and security|uninstall guide|edit draft post|pay slip preview|raise a support ticket)$/i.test(plain)
           || (link && /^unsubscribe(?: link)?$/i.test(plain))
         let refusal = false
         if (!exact && !/\s[-\u2013\u2014]\s|[,;:](?!\s*$)|\b(?:and|then|but)\b/i.test(plain.replace(/^\s*no,\s*/i, ''))) {
