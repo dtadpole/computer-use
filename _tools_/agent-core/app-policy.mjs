@@ -578,7 +578,9 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     const verdict = classes.classify(action, { ...context, url: 'desktop://', target, dialog: context.dialog ?? null })
     // Never pre-approvable: preApprovals are not consulted. Only a hand-off (a password change) outranks it.
     const store = storeInstall(action, target, app)
-    if (store !== null && verdict.decision === 'allow') {
+    // CU-467: a price button now asks purchase in the class policy too; the App Store's own never-pre-approvable verdict still
+    // decides when that is the only class asked.
+    if (store !== null && (verdict.decision === 'allow' || (verdict.decision === 'confirm' && (verdict.classes ?? [verdict.class]).every((cls) => cls === store)))) {
       return { decision: 'confirm', class: store, classes: [store], rule: `target:${store}`, reason: `"${String(target.name).trim()}" in the App Store ${store === 'purchase' ? 'buys an app' : 'installs or updates software'}`, app }
     }
     if (launchesCode(action, target) && verdict.decision !== 'handoff') {

@@ -190,6 +190,14 @@ const pushOnce = (out, cls) => { if (!out.includes(cls)) out.push(cls) }
 const PRICED_ROLES = new Set(['gridcell', 'option', 'radio', 'checkbox', 'button', 'axcell', 'axrow', 'axradiobutton', 'axcheckbox',
   'axbutton', 'axmenuitem'])
 const PRICED_NOUNS = new Set(['seat', 'option', 'legroom', 'bag', 'baggage'])
+const AMOUNT = /(?:[$\u20ac\u00a3\u00a5\u20b9]\s?(\d[\d,]*(?:\.\d+)?))|(?:\b(\d[\d,]*(?:\.\d+)?)\s?(?:usd|eur|gbp|jpy|cad|aud|inr|chf)\b)|(?:\b(?:usd|eur|gbp|jpy|cad|aud|inr|chf)\s?(\d[\d,]*(?:\.\d+)?))/gi
+// Links stay out (17:18Z: a priced link navigates to the item - a listing row - so it never asks for its price alone).
+const AMOUNT_ROLES = new Set(['button', 'menuitem', 'axbutton', 'axmenuitem', 'axpopupbutton'])
+/** CU-467: whether a name carries a positive money amount (a currency symbol or ISO code beside a number). */
+export function namesAmount(name) {
+  const amounts = [...String(name ?? '').matchAll(AMOUNT)].map((m) => Number(String(m[1] ?? m[2] ?? m[3] ?? '').replace(/,/g, '')))
+  return amounts.some((n) => Number.isFinite(n) && n > 0)
+}
 const CURRENCY = /[$\u20ac\u00a3\u00a5]\s?\d|\d\s?(?:usd|eur|gbp)\b/i
 
 // CU-435's insurance rows: verb x object -> class, within the usual two-token window.
@@ -597,6 +605,9 @@ export function grammarClasses(name, role = '') {
   const raw = String(name ?? '').trim()
   if (raw === '' || raw.length > 400) return []
   if (CURRENCY.test(raw) && PRICED_ROLES.has(String(role ?? '').toLowerCase()) && tokens(raw).some((t) => PRICED_NOUNS.has(t))) return ['purchase']
+  // CU-467 (High; cu-coordinator 00:49Z): a pressed control that names a money amount commits a charge whatever its verb - a
+  // currency symbol or ISO code beside a number ('Continue for $9.99', 'Confirm 12.00 EUR', '$4.99/month'); a zero amount is free.
+  if (namesAmount(raw) && AMOUNT_ROLES.has(String(role ?? '').toLowerCase())) return ['purchase']
   const split = tokens(raw)
   if (split.length === 0) return []
   // #580 round 2 (cu-coordinator 21:52Z): a split particle - 'turn / switch X on|off' reads as 'turn / switch on|off X'

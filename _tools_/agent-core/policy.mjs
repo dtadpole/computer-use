@@ -1877,6 +1877,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (/^\s*(?:branch\s+protection|secret\s+scanning|push\s+protection)\s*$/i.test(name) && (!read || target.checked === true)) classes.push('permission')
       if (/^\s*allow\s+(?:force\s+pushes|deletions)\s*$/i.test(name) && (!read || target.checked === false)) classes.push('permission')
     }
+    // CU-467 (cu-coordinator 00:49Z): paid creator and dating features on a creator or dating page (purchase, CU-439's family); the
+    // page is read from the URL. Older submit asks ('Send Super Chat', 'Unlock post') keep their class.
+    if (grammarEligible && classes.length === 0 && /^\s*(?:cheer|boost|get\s+(?:a\s+)?boost|super\s+like|unlock\s+(?:likes?|messages?|post|this\s+post))\s*$/i.test(name)
+      && /dat(?:e|ing)|match|tinder|bumble|hinge|okcupid|twitch|patreon|creator|fans|live|stream/i.test(String(context?.url ?? ''))) classes.push('purchase')
     // Consent phrase grammar (_designs_/consent-phrase-grammar 0.3.1; cu-coordinator 16:46Z) - the ONE additive hook: when no
     // older rule asked on a pressed named control, the grammar's verb-class x object-class structure may add classes. It
     // never removes or changes an older rule's class (15:08Z, D-063); its free guards stop only its own asks (F2).
