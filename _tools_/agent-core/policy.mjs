@@ -1203,6 +1203,36 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if ((isKeys && ((runChord && inCell) || (colabChord && target?.notebookSurface === true))) || runControl) classes.push('launch_code')
     }
     const held = context.dialog && ['confirm', 'prompt', 'beforeunload'].includes(context.dialog.type)
+    // CU-429 (cu-coordinator 09:34Z; D-108 rule 1 - older asks lowered only by this ruling): a press on a named button or link,
+    // outside a held page dialog and never on a toggle (its label names a state, so a press can do the opposite - cu-developer-three
+    // 09:35Z), is free for (A) pane names, help links and views, (C) 'Edit post', (E) 'Raise a ticket', (G) 'Require multi-factor
+    // authentication', an 'Unsubscribe' LINK (a button keeps submit), and (D) a refusal: don't / do not / never / no, don't / I don't
+    // want to + a ruled risky verb phrase that itself asks, or keep + a protection whose turning off asks. Never for a safeguard
+    // suppressor ('Don't ask again', 'Don't show this again', 'Don't warn me', 'Don't notify me', 'Don't confirm'), and never with a
+    // second clause ('Do not cancel - pay now', 'No thanks, remove 2FA', 'No, remove it' still ask).
+    // cu-coordinator 13:04Z: an exchange's 'Order book' (a view; the older 'order' purchase) is lowered here too.
+    if (!held && context.confirmProbe !== true && name !== '' && classes.length === 0 && target && !isTextEntry(target)) {
+      const presses = POINTER.has(action.type) || keysOf(action).has('ENTER') || keyboardActivation(action, target, context).activates
+      const role = String(target.role ?? '') + ' ' + String(target.subrole ?? '')
+      const toggle = /switch|checkbox|toggle|radio/i.test(role) || /^(checkbox|radio)$/i.test(String(target.inputType ?? '')) || typeof target.checked === 'boolean'
+      if (presses && !toggle) {
+        const plain = name.trim().replace(/\s+/g, ' ')
+        const link = /\b(link|AXLink)\b/.test(role)
+        const exact = /^(?:security|privacy & security|uninstall instructions|pay history|pay stub preview|view pay rate|edit post|raise (?:a )?ticket|require multi-factor authentication|order book)$/i.test(plain)
+          || (link && /^unsubscribe(?: link)?$/i.test(plain))
+        let refusal = false
+        if (!exact && !/\s[-\u2013\u2014]\s|[,;:](?!\s*$)|\b(?:and|then|but)\b/i.test(plain.replace(/^\s*no,\s*/i, ''))) {
+          const neg = plain.match(/^(?:no,?\s+)?(?:don'?t|do\s+not|never|i\s+(?:don'?t|do\s+not)\s+want\s+to)\s+(.+)$/i)
+          const keep = plain.match(/^(?:no,?\s+)?keep\s+(.+?)(?:\s+(?:on|enabled|turned\s+on|active))?$/i)
+          const risky = /^(?:turn\s+off|switch\s+off|disable|remove|delete|deactivate|revoke|reset|cancel|unlink|disconnect|erase|close|sign\s+out|log\s+out|turn\s+on|enable|share|send|pay|buy|purchase|install|allow|grant|transfer|unsubscribe|leave|stop)\b/i
+          const suppressor = /^(?:ask|show|warn|notify|confirm|remind|prompt)\b/i
+          const asks = (probeName) => classify(action, { ...context, target: { ...target, name: probeName }, confirmProbe: true }).decision === 'confirm'
+          if (neg && !suppressor.test(neg[1]) && risky.test(neg[1]) && asks(neg[1])) refusal = true
+          else if (keep && !/^(?:sharing|me\b|my\s+location|location)/i.test(keep[1]) && asks(`Turn off ${keep[1]}`)) refusal = true
+        }
+        if (exact || refusal) return { decision: 'allow', class: null, rule: 'cu429:lowered', reason: '' }
+      }
+    }
     // Canonical keys (cu-researcher): 'RETURN', 'Return', 'enter' are ENTER too, whoever the caller is; a hold of it too.
     // CU-142: a typed newline presses the same Return as ENTER, so it is judged as ENTER on the focused element - in a
     // text input too ('hi\n' into a 'Send a message' field asks submit, as ENTER there does).

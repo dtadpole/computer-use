@@ -18,10 +18,10 @@ test('CU-487: bonuses, raises, salary changes and employee-data exports ask in t
     assert.equal(at(name, true), cls, `Space: ${name}`)
   }
   // Named (older classes kept; each asks either way): 'Change pay rate' and 'Download all pay stubs' keep the older purchase (ruled
-  // submit / permission); 'Pay history' asks purchase on main (an older over-ask, ruled free - CU-429).
+  // submit / permission); 'Pay history' was an older over-ask, lowered to free by CU-429.
   assert.equal(at('Change pay rate'), 'purchase')
   assert.equal(at('Download all pay stubs'), 'purchase')
-  assert.equal(at('Pay history'), 'purchase')
+  assert.equal(at('Pay history'), 'allow')
 })
 
 test('CU-487 negatives: compensation views stay free', () => {

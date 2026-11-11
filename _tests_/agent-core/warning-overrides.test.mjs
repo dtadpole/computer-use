@@ -29,7 +29,7 @@ test('CU-421: SIP off, full disk access and accessibility ask permission; Run sc
 test('CU-421 negatives: Profiles and Cancel stay free; older asks stay (15:08Z): Move to Trash / Delete download delete, Privacy & Security permission', () => {
   for (const name of ['Profiles', 'Cancel']) assert.equal(click(name), 'allow', name)
   for (const name of ['Move to Trash', 'Delete download']) assert.equal(click(name), 'delete', `${name} (CU-146, unchanged)`)
-  assert.equal(click('Privacy & Security'), 'permission', 'unchanged older ask')
+  assert.equal(click('Privacy & Security'), 'allow', 'CU-429 (09:34Z): a pane name is lowered to free')
 })
 
 test('CU-421 round 2 (15:25Z): Keep dangerous file asks install; Trust / Install certificate and Always trust ask permission', () => {
