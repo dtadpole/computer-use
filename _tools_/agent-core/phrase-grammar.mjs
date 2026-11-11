@@ -546,6 +546,26 @@ function exposureClass(list, lower = '') {
   return null
 }
 
+const REMOTE_ACCESS = [['screen', 'sharing'], ['remote', 'login'], ['remote', 'desktop'], ['remote', 'connection'], ['file', 'sharing'], ['internet', 'sharing'],
+  ['remote', 'apple', 'event'], ['remote', 'control']]
+function remoteAccess(list) {
+  if (list.length > 6) return false
+  const two = SWITCH_VERBS.has(list[0]) && list[1] === 'on'
+  const verb = two ? 'turn on' : list[0]
+  const rest = list.slice(two ? 2 : 1).filter((t) => !FILLER.has(t))
+  return ['turn on', 'enable', 'allow', 'start', 'activate'].includes(verb) && rest.length <= 3 && REMOTE_ACCESS.some((seq) => endsWithSeq(rest, seq))
+}
+function agentBlanket(list) {
+  if (list.length > 6) return false
+  const [verb, ...rest] = list
+  if (verb === 'allow' && rest[0] === 'all' && ['tool', 'command'].includes(rest[1]) && rest.length === 2) return true
+  if (verb === 'run' && rest[0] === 'without' && ['confirmation', 'approval', 'asking'].includes(rest[1]) && rest.length === 2) return true
+  if (verb === 'run' && endsWithSeq(rest, ['yolo', 'mode']) && rest.length <= 3) return true
+  if (verb === 'auto' && ['accept', 'approve', 'run'].includes(rest[0]) && rest.length <= 2) return true
+  if (verb === 'skip' && ['approval', 'confirmation', 'permission'].includes(rest[rest.length - 1]) && rest.length <= 2) return true
+  return false
+}
+
 const DIVERSION_VERBS = new Set(['change', 'update', 'edit', 'add', 'set', 'replace', 'switch'])
 const DIVERSION_OBJECTS = [['direct', 'deposit'], ['bank', 'detail'], ['deposit', 'account'], ['routing', 'number'], ['account', 'number'],
   ['payout', 'account'], ['payout', 'method'], ['bank', 'account'], ['payout', 'detail']]
@@ -640,6 +660,9 @@ export function grammarClasses(name, role = '') {
   const exposure = exposureClass(list, lower)
   if (exposure === 'free') return []
   if (exposure) return [exposure]
+  // CU-464 (High; cu-coordinator 00:04Z): a remote-access switch on a web or app admin page (permission); macOS System Settings
+  // stays excluded by app policy. CU-465 (00:19Z): a blanket approval for an agent to run commands (permission, CU-427's family).
+  if (remoteAccess(list) || agentBlanket(list)) return ['permission']
   // F2 guard (cu-coordinator 20:28Z): declining, denying or rejecting a request answers no - the grammar's own over-ask since
   // #554 ('Decline request'); older asks ('Decline invitation', CU-422's 'Decline offer') are untouched (the hook never sees them).
   if (['decline', 'deny', 'reject'].includes(list[0]) && list.slice(1).filter((t) => !FILLER.has(t)).every((t) => t === 'request' || t === 'this' || t === 'all')
