@@ -33,3 +33,14 @@ test('#609 round 2: additive - a Title-Case object is never lost to the sentence
     assert.equal(click(wrapped), want, wrapped)
   }
 })
+
+test('#609 round 3: a trailing key hint comes off for the whole classifier', () => {
+  const at = (name, url) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url, target: { role: 'button', name } }); return v.decision === 'allow' ? 'allow' : v.class }
+  for (const [wrapped, row, url] of [['Add time \u2318\u23ce', 'Add time', 'https://parking.example/session'], ['Change direct deposit \u2318S', 'Change direct deposit', 'https://app.example/pay'],
+    ['Change direct deposit Ctrl+Enter', 'Change direct deposit', 'https://app.example/pay']]) {
+    const want = at(row, url)
+    assert.notEqual(want, 'allow', `${row} asks`)
+    assert.equal(at(wrapped, url), want, wrapped)
+  }
+  for (const name of ['Search \u2318K', 'Next Ctrl+Enter']) assert.equal(at(name, 'https://app.example/page'), 'allow', name)
+})

@@ -606,6 +606,8 @@ const TRAILING_WRAP = /(?:\s*(?:right\s+now|now|please|\.{2,}|\u2026|!+|\((?:rec
 // ('New', 'Beta', 'Preview', 'Updated'); a trailing parenthetical ('(opens in a new window)', '(3)').
 const TRAILING_BADGE = /(?:\s+(?:new|beta|preview|updated|hot)!?)+\s*$/i
 const TRAILING_PAREN = /(?:\s*\([^()]{1,40}\))+\s*$/
+// #609 round 3 (cu-researcher 02:30Z): a trailing key hint ('Send \u2318\u23ce', 'Save \u2318S', 'Submit Ctrl+Enter').
+const TRAILING_KEYS = /(?:\s+(?:[\u2318\u2325\u21e7\u2303]+\s*[A-Za-z0-9\u23ce\u21a9\u232b]?|[\u23ce\u21a9]|(?:ctrl|cmd|command|alt|option|shift)\s*\+\s*(?:enter|return|[a-z0-9])))+\s*$/i
 function firstSentence(text) {
   const words = text.split(/\s+/)
   if (words.length < 3 || !/^[A-Z]/.test(words[0])) return text
@@ -617,7 +619,7 @@ function firstSentence(text) {
 export function canonicalConfirm(name) {
   const lines = String(name ?? '').split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean)
   const text = lines[0] ?? ''
-  return text.replace(LEADING_ICONS, '').replace(CONFIRM_PREFIX, '').replace(TRAILING_WRAP, '').replace(TRAILING_PAREN, '').replace(TRAILING_BADGE, '').replace(TRAILING_WRAP, '').trim()
+  return text.replace(LEADING_ICONS, '').replace(CONFIRM_PREFIX, '').replace(TRAILING_KEYS, '').replace(TRAILING_WRAP, '').replace(TRAILING_PAREN, '').replace(TRAILING_BADGE, '').replace(TRAILING_WRAP, '').trim()
 }
 /** #609 round 2 (cu-researcher 02:24Z): the canonical forms to try, in order - the unwrapped name, then (only if that asks nothing)
  * its first sentence. Additive: a Title-Case object ('Turn off Safe Browsing') is never lost to the sentence cut. */
