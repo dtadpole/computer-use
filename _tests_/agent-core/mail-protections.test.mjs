@@ -39,6 +39,8 @@ test('CU-456: protection switches OFF ask permission, less secure app access ON 
 })
 
 test('CU-456 negatives: the spam folder, turning the filter on, blocking a sender and a single safe sender stay free; Security settings keeps an older ask', () => {
-  for (const name of ['Spam', 'Turn on spam filter', 'Block sender', 'Add to safe senders']) assert.equal(click(name), 'allow', name)
+  for (const name of ['Spam', 'Turn on spam filter', 'Block sender']) assert.equal(click(name), 'allow', name)
+  // cu-coordinator 17:36Z (CU-511): one safe sender now asks permission - an explicit raise of the 01:36Z free pin.
+  assert.equal(click('Add to safe senders'), 'permission', 'raised by CU-511 (17:36Z)')
   assert.equal(click('Security settings'), 'permission', 'older security word (CU-429)')
 })

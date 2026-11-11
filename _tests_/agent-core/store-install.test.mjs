@@ -36,6 +36,7 @@ test('#635 round 2 (cu-researcher 07:08Z): the Install now family under every va
 
 test("#635 round 3 (cu-developer-three 07:19Z): 'add-on' / 'plug-in' hyphen forms; 'Install now on this device' is a named limit (07:21Z)", () => {
   for (const name of ['Get add-on', 'Get the add-on', 'Get add on', 'Get plug-in', 'Activate add-on', 'Enable plug-in']) assert.equal(at(name), 'install', name)
-  assert.equal(at('Install now on this device'), 'allow', 'double qualifier - named limit (cu-coordinator 07:21Z)')
+  // CU-509 (cu-coordinator 16:51Z): the trailing scope phrase is stripped, so the 07:21Z named limit closes - it asks like 'Install now'.
+  assert.equal(at('Install now on this device'), 'install', 'double qualifier - closed by CU-509')
   for (const name of ['Add-ons', 'Plug-in settings', 'Get help']) assert.equal(at(name), 'allow', name)
 })
