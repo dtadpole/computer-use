@@ -24,7 +24,7 @@ test('CU-494 residual: a caller secret typed into an unlabelled money field is n
 test('CU-494 residual: other unlabelled fields and a labelled name are unchanged', () => {
   assert.equal(type('hello', { name: '', fieldAttr: 'nickname' }).decision, 'allow')
   assert.equal(type('{{secret:pw}}', { name: '', fieldAttr: 'password', isPassword: true }).decision, 'allow', 'a caller secret into a secret field rides the grant')
-  assert.equal(type('DE89', { name: 'Nickname', fieldAttr: 'iban' }).decision, 'allow', 'a name wins over the raw attribute')
+  assert.equal(type('DE89', { name: 'Nickname', fieldAttr: 'iban' }).decision, 'confirm', 'a union (#675 r2): a hostile name does not win over the raw attribute')
 })
 
 test('CU-494 residual r2: bank_account, a bare wallet, forward_to and a card autocomplete token ask under the grant', () => {
@@ -53,5 +53,5 @@ test('CU-494 follow-up: an unnamed entry with a money placeholder or layout labe
   assert.equal(type('4000', { name: '', fieldAttr: 'cc_number' }).decision, 'confirm', 'cc_number')
   assert.equal(type('4000', { name: '', fieldAttr: 'ccNumber' }).decision, 'confirm', 'ccNumber')
   assert.equal(type('Mira', { name: '', placeholder: 'Search' }).decision, 'allow', 'an ordinary placeholder')
-  assert.equal(type('Mira', { name: 'Nickname', placeholder: 'IBAN' }).decision, 'allow', 'the name wins')
+  assert.equal(type('DE89', { name: 'Nickname', placeholder: 'IBAN' }).decision, 'confirm', 'a union: a hostile name does not win over a money placeholder')
 })

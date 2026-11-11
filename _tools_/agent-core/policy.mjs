@@ -26,15 +26,13 @@ const MONEY_IDENTITY_FIELD = /\b(?:iban|routing\s*(?:number|no\.?|#)?|account\s*
 // token marks a money field whatever the name says.
 const MONEY_FIELD_ATTR_ONLY = /\b(?:wallet|cc\s*(?:number|num|no))\b/i
 const MONEY_AUTOCOMPLETE = /\bcc-(?:number|csc|exp)|\btransaction-amount\b/i
-/** Whether a typing target is a money or identity field: its name, else its placeholder, layout label or raw name/id attribute, or its autocomplete token. */
+/** Whether a typing target is a money or identity field: any of its name, placeholder, layout label, raw name/id attribute or autocomplete token says so. */
 export function moneyIdentityField(target, name = target?.name) {
   if (MONEY_AUTOCOMPLETE.test(String(target?.autocomplete ?? ''))) return true
-  const named = String(name ?? '')
-  if (named.trim() !== '') return MONEY_IDENTITY_FIELD.test(named)
-  // CU-494 follow-up (cu-coordinator 12:21Z, cu-developer-three 12:05Z): an unnamed entry's placeholder (AXPlaceholderValue on
-  // the desktop) and its layout label (nearbyLabel, CU-361) count too - the name wins when there is one; any of these hints
-  // marks a money field (a raise only).
-  for (const hint of [target?.placeholder, target?.nearbyLabel]) {
+  // #675 r2 (cu-coordinator 12:36Z): a UNION, not first-wins - any of the name, the placeholder (AXPlaceholderValue on the
+  // desktop), the layout label (nearbyLabel, CU-361) or the raw name/id attribute marking a money or identity field makes it
+  // one, so a hostile page naming an IBAN field 'Nickname' does not win.
+  for (const hint of [name, target?.placeholder, target?.nearbyLabel]) {
     if (typeof hint === 'string' && hint.trim() !== '' && MONEY_IDENTITY_FIELD.test(hint)) return true
   }
   const attr = String(target?.fieldAttr ?? '').replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2').replace(/[_-]+/g, ' ')
