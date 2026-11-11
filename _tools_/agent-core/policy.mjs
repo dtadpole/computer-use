@@ -3,7 +3,7 @@ import { normaliseForPolicy, normaliseText } from './normalise.mjs'
 import { BIP39_ENGLISH } from './bip39-english.mjs'
 import { normalizeKey } from './keys.mjs'
 import { originPattern } from './sites.mjs'
-import { amountClass, canonicalForms, grammarClasses, grammarClassesBase, inertLinkAmountClass, quantifierDropped, sectionLabelStripped, synonymForms, toggleExpansion } from './phrase-grammar.mjs'
+import { amountClass, canonicalForms, clauseSplit, clauseVerbLed, grammarClasses, grammarClassesBase, inertLinkAmountClass, quantifierDropped, sectionLabelStripped, synonymForms, toggleExpansion } from './phrase-grammar.mjs'
 
 /**
  * The action policy (design: action-policy.md, consent-gate.md). `classify` runs in the dispatcher for every action,
@@ -2246,6 +2246,17 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       for (const form of [...quantifierDropped(String(name ?? '').trim()), ...sectionLabelStripped(name)]) {
         const probe = classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { ...target, name: form }, confirmProbe: true })
         if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) if (!classes.includes(cls)) classes.push(cls)
+      }
+    }
+    // CU-506 (compound sweep): a name of verb-led clauses ('Review and confirm withdrawal') asks the union of its clauses - tried last,
+    // adds only, whether or not the whole name already asked.
+    // A name that is itself a ruled table row ('Sign and file', CU-459: submit) keeps its ruled class set (D-108: reclass 0).
+    if (grammarEligible && context.confirmProbe !== true && grammarClassesBase(name).length === 0) {
+      const clauses = clauseSplit(name)
+      const probes = clauses.map((clause) => classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { ...target, name: clause }, confirmProbe: true }))
+      // #699 round 2 (cu-researcher 15:43Z): every clause must be verb-led - a listed UI verb, or a clause that asks on its own.
+      if (clauses.length > 0 && clauses.every((clause, i) => clauseVerbLed(clause) || probes[i].decision === 'confirm')) {
+        for (const probe of probes) if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) if (!classes.includes(cls)) classes.push(cls)
       }
     }
     const unique = [...new Set(classes)].sort((a, b) => PRECEDENCE.indexOf(a) - PRECEDENCE.indexOf(b))
