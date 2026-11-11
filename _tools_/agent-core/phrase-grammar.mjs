@@ -759,6 +759,16 @@ const CONFIRM_PREFIX = /^\s*(?:(?:yes(?:\s+please)?|ok|okay|sure|confirm|continu
 // cu-researcher 05:02Z: trailing qualifiers too - 'anyway', 'instantly', 'on this device', 'for me', 'here', 'too', 'again'.
 // #630 round 2: a trailing ', please' too ('Add time, please').
 const TRAILING_QUALIFIER = /(?:\s*,\s*please|\s+(?:anyway|anyways|instantly|immediately|on\s+this\s+(?:device|computer|browser|phone)|for\s+me|here|too|again))+\s*[.!]?\s*$/i
+// CU-508 (qualifier sweep): a trailing WIDENING qualifier - 'permanently', 'forever', 'for good', 'completely', 'for all users /
+// members / accounts', 'for everyone', 'on all (my) devices', 'everywhere', 'across all devices' - is stripped in a canonical form
+// (the trailing twin of CU-502's quantifier), so the row decides. Adds asks only.
+const WIDENING_QUALIFIER = /(?:\s*,)?\s+(?:permanently|forever|for\s+good|completely|entirely|for\s+(?:all|every)\s+(?:users?|members?|accounts?|devices?|people|employees|seats?)|for\s+everyone|for\s+everybody|(?:on|across|from)\s+(?:all|every)\s+(?:(?:my|your|our)\s+)?(?:devices?|computers?|browsers?|sessions?|accounts?)|everywhere|org(?:anization)?[-\s]wide|company[-\s]wide)\s*[.!]?\s*$/i
+export function widenedStripped(name) {
+  const first = String(name ?? '').split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean)[0] ?? ''
+  let text = first
+  for (let i = 0; i < 3 && WIDENING_QUALIFIER.test(text); i += 1) text = text.replace(WIDENING_QUALIFIER, '').trim()
+  return text !== first && /\s|^\p{L}{3,}$/u.test(text) ? [text] : []
+}
 // #630 round 2 (cu-researcher 05:22Z): "I'd like to" (the contraction), 'let us', 'kindly'.
 const CTA_LEAD_IN = /^\s*(?:please\s+|kindly\s+|(?:click|tap|press|select)\s+(?:here\s+)?to\s+|let(?:'|\u2019)?s\s+|let\s+us\s+|go\s+ahead\s+and\s+|i(?:\s+want|\s+would\s+like|(?:'|\u2019)d\s+like)\s+to\s+)+/iu
 const TRAILING_WRAP = /(?:\s*(?:right\s+now|now|please|\.{2,}|\u2026|!+|\((?:recommended|suggested|best\s+value)\)|[\u2192\u203a\u00bb>\u2794\u27f6\u279c\u27a1]|\p{Extended_Pictographic}|\uFE0F))+\s*$/iu
@@ -893,7 +903,7 @@ export function canonicalForms(name) {
   const unwrapped = canonicalConfirm(name)
   const cut = firstSentence(unwrapped)
   const bare = withoutDeterminers(unwrapped)
-  const forms = [unwrapped, cut, bare, withoutDeterminers(cut), leadingStripped(name), acknowledgementStripped(name)]
+  const forms = [unwrapped, cut, bare, withoutDeterminers(cut), leadingStripped(name), acknowledgementStripped(name), ...widenedStripped(name).flatMap((f) => [f, canonicalConfirm(f)])]
   // The compound forms only for a name a row could match (<= 200 characters): the F3 budget (CU-272) holds for an 80k-character name.
   const compounds = String(name ?? '').length <= 200 ? [...forms.map(compoundJoined), ...forms.map(compoundSplit)] : []
   return [...new Set([...forms, ...compounds])].filter((form) => form !== '' && form !== String(name ?? '').trim())
