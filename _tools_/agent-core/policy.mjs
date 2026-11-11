@@ -3,7 +3,7 @@ import { normaliseForPolicy, normaliseText } from './normalise.mjs'
 import { BIP39_ENGLISH } from './bip39-english.mjs'
 import { normalizeKey } from './keys.mjs'
 import { originPattern } from './sites.mjs'
-import { amountClass, canonicalForms, grammarClasses, grammarClassesBase, inertLinkAmountClass, synonymForms } from './phrase-grammar.mjs'
+import { amountClass, canonicalForms, grammarClasses, grammarClassesBase, inertLinkAmountClass, synonymForms, toggleExpansion } from './phrase-grammar.mjs'
 
 /**
  * The action policy (design: action-policy.md, consent-gate.md). `classify` runs in the dispatcher for every action,
@@ -1971,6 +1971,15 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     for (const confirmForm of confirmForms) {
       if (!(grammarEligible && classes.length === 0 && !nativeOn)) break
       const probe = classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { ...target, name: confirmForm }, confirmProbe: true })
+      if (probe.decision === 'block' || probe.decision === 'handoff') return probe
+      if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) classes.push(cls)
+    }
+    // #653 round 2 (cu-developer-three 09:10Z): a switch named by a bare acronym ('RDP', 'MFA', '2SV') is judged as the setting it stands
+    // for - re-run with the expanded name, so the switch rules give it direction (also when a native switch reads on).
+    const toggleTarget = /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? '')) || /^checkbox$/i.test(String(target?.inputType ?? ''))
+    const toggleName = toggleTarget && classes.length === 0 && context.confirmProbe !== true ? toggleExpansion(name) : ''
+    if (toggleName !== '') {
+      const probe = classify(action, { ...context, target: { ...target, name: toggleName }, confirmProbe: true })
       if (probe.decision === 'block' || probe.decision === 'handoff') return probe
       if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) classes.push(cls)
     }

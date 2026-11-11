@@ -832,9 +832,42 @@ export function canonicalForms(name) {
 }
 /** CU-481: the verb-synonym forms of a name (and of its canonical forms) - tried LAST, only when the name and its own canonical forms
  * get no class, so a synonym never outranks a row the name already matches ('Create service account key' stays credential). */
+// CU-489 (High; cu-coordinator 08:49Z): abbreviations of ruled rows' objects - IBAN / ACH -> direct deposit, 2SV / TOTP / MFA / 2FA /
+// login approvals -> two-factor authentication, WPA -> Wi-Fi password, RDP -> Remote Desktop. Word-edged and case-sensitive for the
+// acronyms (an 'ach' inside a word never counts); tried last, with the verb synonyms.
+// Each expansion only after the verbs its ruled rows use, so a protection being raised ('Require MFA') never takes the row of one being
+// lowered (#606 pins 'Require MFA' free).
+// #653 round 2 (cu-researcher 09:11Z; cu-developer-three 09:10Z): ACH / IBAN with a trailing info / details / number / account; WPA
+// reaches the 'Wi-Fi security' row (permission); 'open RDP' is opening port 3389 (CU-464), 'start' joins the RDP verbs; a bare
+// acronym on a TOGGLE (a verbless switch named 'RDP' / 'MFA' / '2SV') expands without a verb, so the switch rules give it direction.
+const ABBREVIATIONS = [
+  [/^\s*(?:change|update|edit|add|set\s+up|replace)\b/i, /\b(?:IBAN|ACH)(?:\s+(?:info|information|details|number|account))?\b/g, 'direct deposit'],
+  [/^\s*(?:turn\s+off|disable|remove|deactivate|reset|bypass|skip|switch\s+off)\b/i, /\b(?:2SV|TOTP|MFA|2FA)\b|\b[Ll]ogin\s+approvals?\b/g, 'two-factor authentication'],
+  // #653 round 3 (cu-developer-two 09:14Z): showing or changing a WPA key is the Wi-Fi password (credential); turning WPA off is the
+  // Wi-Fi security row (permission).
+  [/^\s*(?:show|reveal|view|change|copy)\b/i, /\bWPA[23]?(?:\s+(?:key|password|passphrase))?\b/g, 'Wi-Fi password'],
+  [/^\s*(?:turn\s+off|disable|remove)\b/i, /\bWPA[23]?\b/g, 'Wi-Fi security'],
+  // cu-researcher 09:15Z: only 'Open RDP (port)' at the END of the name - 'Open RDP guide' stays free.
+  [/^\s*open\b/i, /\bRDP(?:\s+port)?\s*$/g, 'port 3389'],
+  [/^\s*(?:turn\s+on|enable|allow|activate|start|switch\s+on)\b/i, /\bRDP\b/g, 'Remote Desktop']]
+const TOGGLE_ACRONYMS = [[/^\s*(?:2SV|TOTP|MFA|2FA)\s*$/, 'Two-factor authentication'], [/^\s*RDP\s*$/, 'Remote Desktop'], [/^\s*WPA[23]?\s*$/, 'Wi-Fi security']]
+/** #653 round 2: a toggle named by a bare acronym ('RDP', 'MFA') is judged as the setting it stands for. */
+export function toggleExpansion(name) {
+  for (const [pattern, expansion] of TOGGLE_ACRONYMS) if (pattern.test(String(name ?? ''))) return expansion
+  return ''
+}
+function withAbbreviations(text) {
+  let out = text
+  for (const [verb, acronym, expansion] of ABBREVIATIONS) if (verb.test(out) && acronym.test(out)) { acronym.lastIndex = 0; out = out.replace(acronym, expansion) }
+  return out
+}
 export function synonymForms(name) {
   const own = String(name ?? '').trim()
-  return [...new Set([own, ...canonicalForms(name)].map(withVerbSynonym))].filter((form) => form !== '' && form !== own && !canonicalForms(name).includes(form))
+  if (own.length > 200) return []
+  const base = [own, ...canonicalForms(name)]
+  const forms = [...base.map(withVerbSynonym), ...base.map(withAbbreviations), ...base.map((f) => withVerbSynonym(withAbbreviations(f)))]
+  const known = new Set(canonicalForms(name))
+  return [...new Set(forms)].filter((form) => form !== '' && form !== own && !known.has(form))
 }
 
 /** The grammar on the name and its own canonical forms - no verb synonyms (policy.mjs reads it before probing synonym forms). */
