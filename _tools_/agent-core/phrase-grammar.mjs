@@ -1033,7 +1033,8 @@ function grammarClassesOf(name, role = '') {
   if (/^\s*(?:make|set)\s+(?:my\s+)?(?:phone(?:\s+number)?|email(?:\s+address)?|e-mail|birthday|location|address)\s+(?:visible|public|discoverable)(?:\s+to\s+(?:everyone|anyone|all))?\s*$/i.test(raw)
     || /^\s*(?:let|allow)\s+(?:anyone|everyone|people|others)\s+(?:to\s+)?find\s+me\s+(?:by|with|using)\s+(?:my\s+)?(?:phone(?:\s+number)?|email(?:\s+address)?|e-mail|contacts?)\s*$/i.test(raw)
     || /^\s*(?:turn\s+on|enable|add|allow)\s+(?:my\s+)?location\s+(?:in|on|to)\s+(?:my\s+)?(?:posts?|photos?|stories|tweets?|profile)\s*$/i.test(raw)
-    || /^\s*(?:show|share)\s+my\s+(?:location|phone(?:\s+number)?|email(?:\s+address)?)(?:\s+(?:publicly|on\s+(?:my\s+)?profile|with\s+everyone))?\s*$/i.test(raw)
+    // #672 round 2 (cu-researcher 12:00Z): without 'my', and 'to everyone / anyone / the public'.
+    || /^\s*(?:show|share|display)\s+(?:my\s+)?(?:location|phone(?:\s+number)?|email(?:\s+address)?)\s+(?:publicly|on\s+(?:my\s+)?profile|(?:with|to)\s+(?:everyone|anyone|the\s+public|all))\s*$|^\s*(?:show|share)\s+my\s+(?:location|phone(?:\s+number)?|email(?:\s+address)?)\s*$/i.test(raw)
     || /^\s*(?:link|connect)\s+(?:my\s+|your\s+|an?\s+)?(?!(?:bank|card|device|wallet|email|phone|billing|payment|payout|merchant|ads?|credit|debit|brokerage|savings|checking)\b)[a-z][\w.+-]{1,20}\s+account\s*$/i.test(raw)
     || /^\s*(?:link|connect)\s+(?:my\s+|your\s+)?(?:instagram|facebook|twitter|x|tiktok|spotify|google|apple|github|linkedin|discord|twitch|youtube|snapchat|strava|venmo|paypal|threads|bluesky|mastodon)\s*$/i.test(raw)) return ['permission']
   // CU-496 (High; cu-coordinator 11:21Z): a recovery, trusted or legacy contact can take the account over (permission); a vault's

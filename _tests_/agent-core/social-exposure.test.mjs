@@ -22,3 +22,8 @@ test('CU-497 negatives: privacy settings, the picker, hiding, and lowercase link
   for (const name of ['Privacy settings', 'Who can see my phone number', 'Hide phone number', 'Link copied', 'Connect', 'Show my posts']) assert.equal(at(name), 'allow', name)
   assert.equal(at('Link a billing account'), 'purchase', 'the older #563 billing-link row keeps its class')
 })
+
+test('#672 round 2 (cu-researcher 12:00Z): the held-out escapes fold', () => {
+  for (const name of ['Show phone number on profile', 'Show my location to everyone', 'Share location with everyone', 'Display email publicly']) assert.equal(at(name), 'permission', name)
+  for (const name of ['Show location history', 'Phone number']) assert.equal(at(name), 'allow', name)
+})
