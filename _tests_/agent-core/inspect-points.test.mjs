@@ -150,6 +150,23 @@ test('CU-387/CU-392/CU-398: inspect prints the file, fileFrom, appleMenu, dropDe
   for (const key of ['filename', 'url', 'fileFrom', 'appleMenu', 'dropDestination', 'networkVolume']) assert.equal(Object.hasOwn(read[4], key), false, `${key}: no key when unread`)
 })
 
+test('CU-372: inspect prints a closed pop-up button\'s popUp read (items, selected, selectedIndex) when the driver passes it', async () => {
+  const popUp = { items: [{ title: 'BTC', enabled: true }, { title: 'ETH', enabled: true }], selected: 'BTC', selectedIndex: 0 }
+  const targets = [
+    { role: 'AXPopUpButton', name: 'Asset', popUp },
+    { role: 'AXPopUpButton', name: 'Empty', popUp: { unread: true, selected: null } },
+    { role: 'AXPopUpButton', name: 'Old helper' },
+    { role: 'AXButton', name: 'Sell', popUp: null },
+  ]
+  const { launch } = fakeDesktop({ describe: (point) => targets[point.x] ?? null })
+  const result = await inspectPoints({ seat: 'cu-verifier', apps: [FIXTURE], points: targets.map((_, x) => ({ x, y: 0 })), env: {}, launch, appApprovals: { covers: () => true } })
+  const read = result.points.map((p) => p.target)
+  assert.deepEqual(read[0].popUp, popUp)
+  assert.deepEqual(read[1].popUp, { unread: true, selected: null }, 'an unread menu prints as unread, never as an empty list')
+  assert.equal(Object.hasOwn(read[2], 'popUp'), false, 'no key when the driver passes none')
+  assert.equal(Object.hasOwn(read[3], 'popUp'), false, 'null passes no key')
+})
+
 test('CU-328: inspect --focused reads the focused element once (role, name, inWebArea); still no input', async () => {
   const fake = fakeDesktop()
   let reads = 0
