@@ -1840,6 +1840,22 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // Consent phrase grammar (_designs_/consent-phrase-grammar 0.3.1; cu-coordinator 16:46Z) - the ONE additive hook: when no
     // older rule asked on a pressed named control, the grammar's verb-class x object-class structure may add classes. It
     // never removes or changes an older rule's class (15:08Z, D-063); its free guards stop only its own asks (F2).
+    // CU-443 (cu-coordinator 21:03Z, final; lands with the browser driver's dialHref / rowContext read): a verb-less row that starts
+    // a call places a call (submit) - (b) a tel:/sip:/callto: href on or near it (dialHref) on ANY page; (c) a 'Call' / 'Dial' /
+    // 'Phone' hint on a /call|voice|phone|dial/ URL; (a) a bare row click on a /call|dial/ URL (fail closed on a dialer page; named
+    // over-ask: opening a profile from a dialer list). A list name alone is not a signal. Booleans and short names only (D-107).
+    // #576 round 2 (cu-coordinator 21:37Z): target.inRow - the hit element has no verb of its own and sits in a row-like ancestor
+    // within 3 levels (a listener-only contact <li> clicked on its name span); dialHref / rowContext are then read from that row.
+    if (grammarEligible && classes.length === 0 && (target?.inRow === true || /^(?:listitem|row|gridcell|option|treeitem|cell|generic|group)?$/i.test(String(target?.role ?? '')))) {
+      const url = String(context?.url ?? '')
+      const row = target?.rowContext && typeof target.rowContext === 'object' ? target.rowContext : {}
+      const hints = Array.isArray(row.hints) ? row.hints.map((h) => String(h ?? '').slice(0, 40)) : []
+      const pathOf = (() => { try { return new URL(url).pathname } catch { return '' } })()
+      const verbless = target?.inRow === true || /^(?:listitem|row|gridcell)$/i.test(String(target?.role ?? ''))
+      if (target?.dialHref === true
+        || (/call|voice|phone|dial/i.test(pathOf) && hints.some((h) => /^\s*(?:call|dial|phone|voice\s+call|video\s+call)\b/i.test(h)))
+        || (verbless && /call|dial/i.test(pathOf))) classes.push('submit')
+    }
     // #575 round 2 (cu-coordinator 21:26Z): a native checkbox or switch already ON is being turned OFF - the grammar reads the
     // name as an act ('Forward calls') and must not ask for switching it off. The direction rules above decide such switches.
     const nativeOn = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? '')) && target?.checked === true
