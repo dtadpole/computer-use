@@ -1160,6 +1160,11 @@ function grammarClassesOf(name, role = '') {
   // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
   // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
   if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
+  // CU-529 (High; cu-coordinator 22:51Z), table PR 34, as verb families with object synonyms - a browser / site permission grant.
+  // PERMISSION: allow (it / this extension) in incognito / private windows / private browsing; (allow) on all sites / websites; a site
+  // prompt's allow (access to) (the / your) camera / microphone / mic / location / notifications. 'Block' and 'Not now' stay free.
+  // #754 r2 (cu-researcher 22:54Z): run / enable in, InPrivate, and on every site.
+  if (/^\s*(?:allow|run|enable)\s+(?:it\s+|this\s+extension\s+|the\s+extension\s+)?in\s+(?:incognito|inprivate|private\s+(?:windows?|browsing|mode))(?:\s+mode)?\s*$|^\s*(?:allow\s+)?on\s+(?:all|every)\s+(?:sites?|websites?)\s*$|^\s*allow\s+(?:access\s+to\s+)?(?:the\s+|your\s+|my\s+)?(?:camera|microphone|mic|location|notifications|camera\s+and\s+microphone)\s*$/i.test(raw)) return ['permission']
   // CU-527 (High; cu-coordinator 22:06Z), table PR 33, as verb families with object synonyms - a package registry. DELETE: unpublish /
   // yank (the / this) package / version / release. PERMISSION: add (a / an) maintainer / owner / collaborator / publisher, add a trusted
   // publisher. CREDENTIAL: create / generate / new (a) granular / automation / publish (access) token. SUBMIT: deprecate (the / this)
