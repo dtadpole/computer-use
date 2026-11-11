@@ -269,10 +269,10 @@ const seamRequests = (requests) => requests.filter((r) => r.type === 'simulateLo
 test('(e) every gate met, on the real driver and the fake helper: exactly one untagged key per named turn, each labelled first', async () => {
   const { result, events, states, requests, header } = await rehearse({ turns: [{ actions: [WAIT] }, { actions: [WAIT] }, { actions: [WAIT] }, { final: 'done\nOUTCOME: done' }], standInTurns: [3, 1] })
   assert.equal(result.status, 'completed', result.error)
-  assert.deepEqual(seamRequests(requests), [{ type: 'simulateLocalInput', kind: 'key', via: 'untagged' }, { type: 'simulateLocalInput', kind: 'key', via: 'untagged' }])
+  assert.deepEqual(seamRequests(requests), [{ type: 'simulateLocalInput', kind: 'pointer', via: 'untagged' }, { type: 'simulateLocalInput', kind: 'pointer', via: 'untagged' }])
   const notes = events.filter((e) => e.kind === 'note' && e.message === STAND_IN_NOTE)
   assert.deepEqual(notes.map((e) => e.step), [1, 3], 'one note after turn 1 and one after turn 3')
-  assert.equal(STAND_IN_NOTE, "STAND-IN owner input (CU-342): not the owner's")
+  assert.equal(STAND_IN_NOTE, "STAND-IN owner input (CU-342, an untagged pointer move): not the owner's")
   const pauses = events.filter((e) => e.kind === 'local_input')
   assert.equal(pauses.length, 2)
   notes.forEach((note, i) => assert.ok(note.seq < pauses[i].seq, 'the label comes before the pause it explains'))
@@ -287,7 +287,7 @@ test('(e) every gate met, on the real driver and the fake helper: exactly one un
   const model = createScriptedAdapter((input, { index }) => { asked += 1; return index < 4 ? { actions: [WAIT] } : { final: 'done' } })
   const fake = await runTask({ task: 'rehearse', environment: env, model, control, runsDirectory: join(root, 'runs'), build: { commit: 'test', dirty: false }, apps: [FIXTURE], appApprovals: approvals(), standInTurns: [2, 4, 9] })
   assert.equal(fake.status, 'completed')
-  assert.deepEqual(calls, [{ args: { kind: 'key', via: 'untagged' }, asked: 2 }, { args: { kind: 'key', via: 'untagged' }, asked: 4 }], 'turn 9 never came')
+  assert.deepEqual(calls, [{ args: { kind: 'pointer', via: 'untagged' }, asked: 2 }, { args: { kind: 'pointer', via: 'untagged' }, asked: 4 }], 'turn 9 never came')
 })
 
 test('(f) the stand-in\'s pause is the ordinary local-input pause: the same control source, stop and trajectory record as a person\'s key on the fake helper', async () => {
@@ -295,14 +295,15 @@ test('(f) the stand-in\'s pause is the ordinary local-input pause: the same cont
   // The fake helper's person: a key pressed during the next posted input (quirk localInputAfter), no stand-in at all.
   const person = await rehearse({ config: world({ quirks: { localInputAfter: 0 } }), turns: [{ actions: [{ type: 'click', button: 'left', x: 100, y: 100 }] }, { actions: [WAIT] }, { final: 'done' }] })
   assert.equal(seamRequests(person.requests).length, 0)
-  for (const run of [standIn, person]) {
+  for (const [run, kind] of [[standIn, 'pointer'], [person, 'key']]) {
     assert.equal(run.result.status, 'completed', run.result.error)
     assert.deepEqual(run.states.filter((s) => s.state === 'paused'), [{ state: 'paused', source: 'local_input', stopHeld: true }], 'paused by local_input with the driver\'s stop held')
-    assert.deepEqual(run.reports, ['key'], 'the driver heard one key')
+    // CU-342 (cu-verifier, R1c): the seam posts one untagged pointer move, so the stand-in is heard as a pointer.
+    assert.deepEqual(run.reports, [kind], `the driver heard one ${kind}`)
   }
-  const record = (run) => run.events.filter((e) => e.kind === 'local_input').map(({ seq, t, step, ...rest }) => rest)
-  assert.deepEqual(record(standIn), record(person))
-  assert.deepEqual(record(standIn), [{ kind: 'local_input', inputKind: 'key' }])
+  const record = (run) => run.events.filter((e) => e.kind === 'local_input').map(({ seq, t, step, inputKind, ...rest }) => rest)
+  assert.deepEqual(record(standIn), record(person), 'the same record but for the input kind')
+  assert.deepEqual(standIn.events.filter((e) => e.kind === 'local_input').map((e) => e.inputKind), ['pointer'])
   // Only the label tells them apart.
   assert.equal(standIn.events.filter((e) => e.message === STAND_IN_NOTE).length, 1)
   assert.equal(person.events.filter((e) => e.message === STAND_IN_NOTE).length, 0)
@@ -389,7 +390,7 @@ test('(h) no model action reaches simulateLocalInput: no action type names it, p
     assert.doesNotMatch(type, /simulate|local|seam|untagged/i, type)
     assert.equal(Object.hasOwn(SEAM_REQUESTS, type), false, type)
   }
-  const seamAction = { type: 'simulateLocalInput', kind: 'key', via: 'untagged' }
+  const seamAction = { type: 'simulateLocalInput', kind: 'pointer', via: 'untagged' }
   assert.equal(validateBatch([seamAction], { frame: { width: 800, height: 600 }, extensions: EXTENSION_ACTIONS }).ok, false)
   // The driver's perform dispatches by the canonical type through planAction, never by a method name.
   const environmentSource = readFileSync(join(REPO, '_environments_', 'macos-desktop', 'environment.mjs'), 'utf8')
