@@ -22,6 +22,12 @@ export const NEVER_PRE_APPROVED = Object.freeze(['purchase', 'delete', 'permissi
 const MONEY_IDENTITY_FIELD = /\b(?:iban|routing|account\s*(?:number|no\.?|#)|swift|bic|sort\s*code|card|wallet\s*address|forwarding\s*address|recovery\s*(?:e-?mail|phone|number))\b/i
 // CU-494 (3): the install rows ruled High (CU-484's store wording) never ride an install grant.
 const HIGH_INSTALL = /^\s*(?:install(?:\s+(?:now|app|it|extension|add-?on|plug-?in|for\s+free))?|add\s+to\s+(?:chrome|firefox|edge|safari|browser|slack|teams|workspace)|get\s+(?:the\s+)?(?:extension|add-?on|plug-?in|addon|plugin|app)|(?:activate|enable)\s+(?:the\s+)?(?:plug-?in|add-?on|extension))\s*!?\s*$/i
+/** CU-494 round 2 (cu-developer-three 11:09Z): whether a grant of `cls` may never cover a control named `name` - the High submit and
+ * install rows. The desktop's app-scoped pre-approval asks the same question (app-policy.mjs scopedPreApproval). */
+export function neverCoveredByGrant(cls, name) {
+  const text = String(name ?? '')
+  return (cls === 'submit' && HIGH_SUBMIT.test(text)) || (cls === 'install' && HIGH_INSTALL.test(text))
+}
 // CU-494 (2): the submit rows ruled High carry a never-pre-approved marker - a submit pre-approval never covers them, while ordinary
 // submits stay pre-approvable: a salary or compensation change, a raise, a resubscribe-all, and the mass sends.
 const HIGH_SUBMIT = /^\s*(?:change|update|edit|adjust|set)\s+(?:my\s+|the\s+|their\s+|his\s+|her\s+)?(?:salary|compensation|wages?|pay\s+rate)\b|^\s*(?:give|grant)\s+(?:an?\s+)?raise\b|^\s*re-?subscribe\s+(?:all|everyone|entire|contacts?|list|subscribers?)\b|^\s*(?:send|message|email|text)\s+(?:it\s+)?(?:to\s+)?(?:all|everyone|every\s+contact|entire\s+list|whole\s+list)\b|^\s*(?:send\s+)?blast\b|^\s*mass\s+(?:send|email|message|text)\b/i
