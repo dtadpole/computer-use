@@ -42,8 +42,8 @@ test('CU-507: the desktop sheet shape (AXSheet title + static text in the same f
   assert.equal(v.decision, 'confirm')
 })
 
-test('CU-507: the driver half\'s target.dialogContext feeds the same judgement; question-shaped titles (cu-researcher 16:09Z)', () => {
-  const ctxPress = (name, dialogContext) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: 'https://cloud.example/storage', target: { role: 'button', name, dialogContext } }); return v.decision === 'allow' ? [] : (v.classes ?? [v.class]) }
+test('CU-507: question-shaped titles (cu-researcher 16:09Z); one field shape on both routes', () => {
+  const ctxPress = (name, { name: dialogName, description: dialogDescription }) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: 'https://cloud.example/storage', target: { role: 'button', name, dialogName, dialogDescription } }); return v.decision === 'allow' ? [] : (v.classes ?? [v.class]) }
   assert.ok(ctxPress('OK', { kind: 'alertdialog', name: 'Delete account?', description: 'This removes all your data.' }).includes('delete'))
   assert.ok(ctxPress('Confirm', { kind: 'dialog', name: 'Are you sure you want to empty bucket?' }).includes('delete'))
   assert.ok(ctxPress('Yes', { kind: 'dialog', name: 'Empty bucket?' }).includes('delete'))

@@ -2205,12 +2205,11 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // on the desktop an AXSheet / AXDialog) asks the classes the modal's title and description get as a name - never fewer than the
     // button alone; a modal whose text gets no class stays free. The driver reports target.dialogName / target.dialogDescription.
     {
-      // cu-developer-two's driver half: target.dialogContext { kind, name, description }; the desktop seam (cu-developer-three):
-      // target.dialogName / target.dialogDescription. Either feeds the same judgement.
-      const ctx = target?.dialogContext && typeof target.dialogContext === 'object' ? target.dialogContext : {}
-      const pick = (...values) => (values.find((v) => typeof v === 'string' && v.trim() !== '') ?? '').trim().slice(0, 300)
-      const dialogName = pick(ctx.name, target?.dialogName)
-      const dialogDescription = pick(ctx.description, target?.dialogDescription)
+      // One shape on both routes (cu-developer-two 16:12Z, option a): the web driver and the desktop helper fill
+      // target.dialogName / target.dialogDescription.
+      const pick = (value) => (typeof value === 'string' ? value.trim().slice(0, 300) : '')
+      const dialogName = pick(target?.dialogName)
+      const dialogDescription = pick(target?.dialogDescription)
       const presses = POINTER.has(action.type) || keysOf(action).has('ENTER') || keysOf(action).has('SPACE')
       if (context.confirmProbe !== true && presses && (dialogName !== '' || dialogDescription !== '') && GENERIC_CONFIRM.test(String(name ?? ''))) {
         // cu-researcher 16:09Z: a title is a question more often than a row - 'Are you sure you want to <row>?', 'Really <row>?',
