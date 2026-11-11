@@ -33,3 +33,8 @@ test('#746 round 2 (cu-developer-two 21:40Z): singular IP forms; database URI / 
   for (const name of ['Get database URI', 'Copy database URL', 'Show DB URL']) assert.ok(classesOf(name).includes('credential'), name)
   for (const name of ['Database URL format', 'IP address']) assert.deepEqual(classesOf(name), [], name)
 })
+
+test('#746 round 3 (cu-researcher 21:46Z): the remaining restore forms', () => {
+  for (const name of ['Restore to a snapshot', 'Roll back to snapshot', 'Rollback to a previous backup', 'Restore database']) assert.ok(classesOf(name).includes('delete'), name)
+  for (const name of ['Snapshots', 'Restore', 'Database']) assert.ok(!classesOf(name).includes('delete'), name)
+})
