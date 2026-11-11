@@ -17,6 +17,7 @@ import { MODIFIER_KEYS, normalizeKey } from './keys.mjs'
 import { composePresses, expandResults } from './press.mjs'
 import { joinSplitResults, splitTypesAtTabs } from './type-split.mjs'
 import { answerLinePattern } from './answer-line.mjs'
+import { isScriptedAdapter } from './adapter-scripted.mjs'
 import { RETRY, transientCapture, transientFront, transientGrant, transientInput } from './retry.mjs'
 
 /**
@@ -230,6 +231,11 @@ export async function runTask(options) {
   if (typeof task.text !== 'string' || task.text.trim() === '') throw new TypeError('runTask needs a task')
   // CU-342: a stand-in the environment cannot post is refused here, before anything runs - never found mid-run.
   const standInTurns = standInTurnsOf(options.standInTurns)
+  // CU-367 (cu-researcher): 'unreachable from a model run' is the loop's own property, not only cli.mjs's gate - any
+  // caller pairing standInTurns with an adapter createScriptedAdapter did not build is refused before turn 1.
+  if (standInTurns.length > 0 && !isScriptedAdapter(model)) {
+    throw new TypeError('standInTurns needs the scripted adapter (createScriptedAdapter); a model-driven run never carries the owner-input stand-in, so the run does not start')
+  }
   if (standInTurns.length > 0 && typeof environment?.simulateLocalInput !== 'function') {
     throw new TypeError('standInTurns needs an environment with simulateLocalInput (the macos-desktop driver); this one has none, so the run does not start')
   }
