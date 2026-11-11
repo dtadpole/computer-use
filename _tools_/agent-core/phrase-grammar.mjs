@@ -388,6 +388,139 @@ function cloudExposureClass(list, lower) {
   return null
 }
 
+const TITLES = new Set(['movie', 'film', 'show', 'episode', 'season', 'series', 'title', 'documentary', 'subscription'])
+function streamingPurchase(list) {
+  if (list.length > 6) return false
+  const [verb, ...rest] = list
+  const core = rest.filter((t) => !FILLER.has(t))
+  const last = core[core.length - 1]
+  if (verb === 'add' && core.length >= 1 && core.length <= 3 && last === 'channel' && !rest.includes('to')) return true
+  // 'on' is filler, so the add-on is read from rest ('Add premium add-on').
+  if (verb === 'add' && rest.length <= 4 && rest.slice(-2).join(' ') === 'add on') return true
+  if (verb === 'unlock' && core.length <= 2 && ['episode', 'season', 'chapter', 'series'].includes(last)) return true
+  if ((verb === 'gift' || verb === 'rent') && core.length <= 2 && TITLES.has(last)) return true
+  return false
+}
+
+const DEAL_PARTIES = new Set(['agent', 'realtor', 'seller', 'landlord', 'recruiter', 'broker', 'lender', 'host', 'owner'])
+function dealSubmit(list) {
+  if (list.length > 6) return false
+  const [verb, ...rest] = list
+  const core = rest.filter((t) => !FILLER.has(t))
+  const last = core[core.length - 1]
+  if (list.length === 2 && verb === 'easy' && rest[0] === 'apply') return true
+  if (verb === 'lock' && core.length <= 3 && last === 'rate') return true
+  if ((verb === 'get' || verb === 'start' || verb === 'begin') && core[0] === 'pre' && ['approved', 'approval', 'qualified', 'qualification'].includes(core[1]) && core.length === 2) return true
+  // #590 round 2: the one-word forms ('Get prequalified').
+  if ((verb === 'get' || verb === 'start' || verb === 'begin') && core.length === 1 && ['preapproved', 'preapproval', 'prequalified', 'prequalification'].includes(core[0])) return true
+  if (['schedule', 'request', 'book'].includes(verb) && core.length <= 3 && ['tour', 'showing', 'viewing'].includes(last)) return true
+  if (['contact', 'message', 'email'].includes(verb) && core.length <= 2 && DEAL_PARTIES.has(last)) return true
+  return false
+}
+
+function walletClass(list) {
+  if (list.length > 6) return null
+  const [verb, ...rest] = list
+  const core = rest.filter((t) => !FILLER.has(t))
+  const tail = core.join(' ')
+  if (['show', 'reveal', 'view', 'copy', 'export', 'display'].includes(verb) && /^(?:(?:seed|recovery|secret|mnemonic)\s+phrase|private\s+key|secret\s+key|seed)$/.test(tail)) return 'credential'
+  if (['import', 'restore', 'recover'].includes(verb) && core.length <= 2 && core[core.length - 1] === 'wallet') return 'credential'
+  // #590 round 2: 'Restore from seed phrase' - typing a seed phrase in.
+  if (['import', 'restore', 'recover'].includes(verb) && /(?:seed|recovery|secret|mnemonic)\s+phrase$|private\s+key$/.test(tail)) return 'credential'
+  if (verb === 'set' && core[0] === 'approval' && rest.includes('all')) return 'purchase'
+  if (verb === 'approve' && core.length <= 2 && ['spending', 'unlimited', 'token', 'allowance', 'spend'].includes(core[core.length - 1])) return 'purchase'
+  if (verb === 'connect' && core.length <= 2 && core[core.length - 1] === 'wallet') return 'permission'
+  if (verb === 'claim' && core.length <= 2 && ['airdrop', 'token', 'drop'].includes(core[core.length - 1])) return 'submit'
+  return null
+}
+
+function identityClass(list) {
+  if (list.length > 6) return null
+  // 'Temporarily lift freeze': an adverb before the verb is dropped.
+  const words = list[0] === 'temporarily' || list[0] === 'permanently' ? list.slice(1) : list
+  const [verb, ...rest] = words
+  const core = rest.filter((t) => !FILLER.has(t))
+  const last = core[core.length - 1]
+  if (['change', 'update', 'edit'].includes(verb) && core.length <= 2 && (last === 'address' && (core.length === 1 || ['mailing', 'home', 'billing', 'postal', 'shipping'].includes(core[0])))) return 'credential'
+  if (['change', 'update', 'edit'].includes(verb) && core.length <= 3 && core.join(' ').match(/^contact\s+(?:info|information|detail)$/)) return 'credential'
+  if (verb === 'forward' && core.length <= 2 && last === 'mail' && !core.includes('e')) return 'credential'
+  if (verb === 'unfreeze' && core.length <= 2 && (last === 'credit' || last === 'report' || core.length === 0)) return 'credential'
+  if ((verb === 'lift' || verb === 'remove' || verb === 'thaw') && core.length <= 2 && last === 'freeze') return 'credential'
+  if (verb === 'certify' && core.length <= 3 && last === 'claim') return 'submit'
+  return null
+}
+
+const APP_OBJECTS = new Set(['app', 'integration', 'bot', 'plugin', 'connector', 'extension'])
+function workspaceClass(list) {
+  if (list.length > 6) return null
+  const [verb, ...rest] = list
+  const core = rest.filter((t) => !FILLER.has(t))
+  const last = core[core.length - 1]
+  if (verb === 'convert' && core.includes('public') && core.length <= 3) return 'permission'
+  if (['allow', 'approve', 'authorize', 'authorise'].includes(verb) && core.length <= 2 && APP_OBJECTS.has(last)) return 'permission'
+  // #590 round 2: kick and ban only - blocking is the safe direction (CU-404's 'Block user' stays free).
+  if (['kick', 'ban'].includes(verb) && core.length <= 2 && ['member', 'user', 'participant', 'guest'].includes(last)) return 'permission'
+  // #590 round 2: 'Kick from channel', 'Add app to Slack'.
+  if (['kick', 'ban'].includes(verb) && rest[0] === 'from' && core.length <= 2) return 'permission'
+  if (verb === 'add' && APP_OBJECTS.has(core[0]) && rest.includes('to') && core.length <= 3) return 'install'
+  if (verb === 'install' && core.length <= 2 && APP_OBJECTS.has(last)) return 'install'
+  return null
+}
+
+const MAIL_PROTECTIONS = [['spam', 'filter'], ['safe', 'browsing'], ['external', 'sender', 'warning'], ['sign', 'in', 'notification'], ['security', 'alert'],
+  ['phishing', 'protection'], ['login', 'alert'], ['sign', 'in', 'alert'], ['junk', 'filter'], ['phishing', 'warning']]
+function mailProtectionClass(list) {
+  if (list.length > 8) return null
+  const two = SWITCH_VERBS.has(list[0]) && (list[1] === 'off' || list[1] === 'on')
+  const verb = two ? `turn ${list[1]}` : list[0]
+  const rest = list.slice(two ? 2 : 1)
+  if (['turn off', 'disable', 'deactivate', 'pause'].includes(verb) && rest.length <= 4 && MAIL_PROTECTIONS.some((seq) => endsWithSeq(rest, seq))) return 'permission'
+  if (verb === 'allow' && rest.length === 2 && rest[0] === 'all' && rest[1] === 'sender') return 'permission'
+  // #590 round 2: 'Allow mail from all senders'; 'Turn on access for less secure apps'.
+  if (verb === 'allow' && endsWithSeq(rest, ['all', 'sender']) && rest.length <= 5) return 'permission'
+  if (['turn on', 'enable', 'allow'].includes(verb) && endsWithSeq(rest, ['less', 'secure', 'app']) && rest.length <= 6) return 'credential'
+  if (verb === 'add' && rest.includes('domain') && endsWithSeq(rest, ['safe', 'sender'])) return 'permission'
+  if (['turn on', 'enable', 'allow'].includes(verb) && rest.slice(0, 3).join(' ') === 'less secure app') return 'credential'
+  return null
+}
+
+function taxFiling(list) {
+  if (list.length > 6) return false
+  const [verb, ...rest] = list
+  const core = rest.filter((t) => !FILLER.has(t))
+  const last = core[core.length - 1]
+  if (verb === 'sign' && rest[0] === 'and' && rest[1] === 'file' && rest.length <= 3) return true
+  if ((verb === 'transmit' || verb === 'submit') && core.length <= 3 && last === 'return') return true
+  if (verb === 'e' && core[0] === 'file') return true
+  if (['file', 'request', 'submit'].includes(verb) && core.length <= 2 && last === 'extension') return true
+  if (verb === 'file' && core.length <= 3 && last === 'return') return true
+  return false
+}
+
+function vehicleClass(list) {
+  if (list.length > 6) return null
+  const two = SWITCH_VERBS.has(list[0]) && (list[1] === 'off' || list[1] === 'on')
+  const verb = two ? `turn ${list[1]}` : list[0]
+  const rest = list.slice(two ? 2 : 1)
+  const core = rest.filter((t) => !FILLER.has(t))
+  const last = core[core.length - 1]
+  const tail = core.join(' ')
+  if ((list.length === 1 && list[0] === 'summon') || (list.length === 2 && list[0] === 'smart' && list[1] === 'summon')) return 'physical'
+  // #590 round 2: 'Summon car', 'Start Summon'.
+  if ((list[0] === 'summon' && list.length <= 3 && ['car', 'vehicle'].includes(list[list.length - 1])) || (['start', 'use'].includes(list[0]) && list.length <= 3 && list[list.length - 1] === 'summon')) return 'physical'
+  if (list.length === 1 && list[0] === 'honk') return 'physical'
+  if (verb === 'open' && core.length <= 2 && ['trunk', 'frunk', 'tailgate', 'liftgate'].includes(last)) return 'physical'
+  // #590 round 2 (cu-researcher 23:26Z): a car's windows, never a browser window ('Open link in new window', 'Open in new window').
+  if (verb === 'open' && last === 'window' && !rest.includes('new') && !rest.includes('link') && !rest.includes('tab') && (core.length === 1 || (core.length === 2 && ['car', 'rear', 'front', 'all', 'driver', 'passenger'].includes(core[0])))) return 'physical'
+  if (verb === 'vent' && core.length <= 2 && last === 'window') return 'physical'
+  if (verb === 'start' && core.length <= 2 && ['climate', 'preconditioning', 'defrost'].includes(last)) return 'physical'
+  if ((verb === 'flash' && core.length <= 1 && last === 'light') || (verb === 'honk' && core.length <= 1 && last === 'horn')) return 'physical'
+  if (['turn off', 'disable', 'deactivate'].includes(verb) && /^sentry(?:\s+mode)?$/.test(tail)) return 'permission'
+  if (['turn off', 'disable', 'remove'].includes(verb) && rest.join(' ') === 'pin to drive') return 'credential'
+  if (verb === 'add' && core.length <= 2 && last === 'key' && (core.length === 1 || ['phone', 'digital', 'car'].includes(core[0]))) return 'credential'
+  return null
+}
+
 const DIVERSION_VERBS = new Set(['change', 'update', 'edit', 'add', 'set', 'replace', 'switch'])
 const DIVERSION_OBJECTS = [['direct', 'deposit'], ['bank', 'detail'], ['deposit', 'account'], ['routing', 'number'], ['account', 'number'],
   ['payout', 'account'], ['payout', 'method'], ['bank', 'account'], ['payout', 'detail']]
@@ -450,6 +583,33 @@ export function grammarClasses(name, role = '') {
   // minting a service-account or access key (credential).
   const cloud = cloudExposureClass(list, lower)
   if (cloud) return [cloud]
+  // CU-449 (High; cu-coordinator 21:47Z): streaming add-ons, episode / season unlocks, rentals and gifts (purchase, CU-428 family).
+  if (streamingPurchase(list)) return ['purchase']
+  // CU-451 (High; cu-coordinator 22:22Z): a rate lock, pre-approval, Easy Apply, a tour request or contacting an agent sends
+  // personal or financial data to another party or commits to a rate / booking (submit; CU-415 / CU-422 families).
+  if (dealSubmit(list)) return ['submit']
+  // CU-452 (High; cu-coordinator 22:28Z): wallet secrets and token approvals move money irreversibly.
+  const wallet = walletClass(list)
+  if (wallet) return [wallet]
+  // CU-453 (High; cu-coordinator 22:35Z): the identity-takeover path - moving where mail, codes or credit go (credential);
+  // certifying a benefit claim (submit).
+  const identity = identityClass(list)
+  if (identity) return [identity]
+  // CU-454 (High; cu-coordinator 22:39Z): a chat workspace - exposing a private channel, granting an app access, acting on
+  // other members (permission), installing an app (install). Desktop and web share the classifier.
+  const workspace = workspaceClass(list)
+  if (workspace) return [workspace]
+  // CU-456 (High; cu-coordinator 22:56Z): turning a mail / account protection off (permission); less secure app access on
+  // (credential).
+  const mail = mailProtectionClass(list)
+  if (mail) return [mail]
+  // CU-459 (High; cu-coordinator 23:11Z): filing a tax return or extension by other verbs files a legal document in the
+  // person's name (submit; the 'File return' family).
+  if (taxFiling(list)) return ['submit']
+  // CU-460 (High; cu-coordinator 23:18Z): a connected car - moving or opening it (physical, CU-418 family), switching off its theft
+  // protection (permission) or its PIN to drive, or adding a key (credential).
+  const vehicle = vehicleClass(list)
+  if (vehicle) return [vehicle]
   // F2 guard (cu-coordinator 20:28Z): declining, denying or rejecting a request answers no - the grammar's own over-ask since
   // #554 ('Decline request'); older asks ('Decline invitation', CU-422's 'Decline offer') are untouched (the hook never sees them).
   if (['decline', 'deny', 'reject'].includes(list[0]) && list.slice(1).filter((t) => !FILLER.has(t)).every((t) => t === 'request' || t === 'this' || t === 'all')
