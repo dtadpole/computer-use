@@ -1961,8 +1961,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const firstLine = typeof target?.firstLine === 'string' ? target.firstLine.trim() : ''
     // CU-488 (prepared; cu-researcher 07:44Z): a verb-only control beside its setting's label ('Two-factor authentication [Turn off]')
     // - the driver's target.caption completes it ('Turn off Two-factor authentication'), one more form, tried last (adds only).
-    const captionText = typeof target?.caption === 'string' ? target.caption.trim() : ''
-    const verbOnly = /^\s*(?:turn\s+(?:on|off)|switch\s+(?:on|off)|enable|disable|activate|deactivate|show|reveal|view|remove|delete|revoke|reset|unlock|change|edit|manage|export|download|add)\s*$/i.test(name)
+    // #643 round 2 (cu-researcher 07:56Z): a table caption joins the column header and the row's text with ' · ' ('Action · Remote
+    // management') - the row's own text, the last part, is the setting.
+    const captionText = typeof target?.caption === 'string' ? (target.caption.split(/\s+[\u00b7|]\s+/).pop() ?? '').trim() : ''
+    const verbOnly = /^\s*(?:turn\s+(?:on|off)|switch\s+(?:on|off)|enable|disable|activate|deactivate|show|reveal|view|remove|delete|revoke|reset|unlock|change|edit|update|manage|export|download|add)\s*$/i.test(name)
     const captionForm = verbOnly && captionText !== '' && captionText.length <= 80 ? `${String(name).trim()} ${captionText}` : ''
     const confirmForms = context.confirmProbe === true || target?.quickActions === true ? []
       : [...new Set([...canonicalForms(name), ...(firstLine !== '' && firstLine !== String(name ?? '').trim() ? [firstLine, ...canonicalForms(firstLine)] : []), ...(captionForm !== '' ? [captionForm, ...canonicalForms(captionForm)] : [])])]
