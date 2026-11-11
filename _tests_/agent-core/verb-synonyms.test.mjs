@@ -53,3 +53,9 @@ test('CU-481 residual (cu-coordinator 06:49Z): firmware, DNS on a registrar URL,
   assert.equal(at('Update SIM', 'https://carrier.example/account'), 'credential')
   for (const name of ['Edit name', 'Change theme', 'View grants']) assert.equal(at(name, 'https://app.example/settings'), 'allow', name)
 })
+
+test("#640 round 2 (cu-researcher 07:15Z): 'Update DNS settings' joins the registrar row", () => {
+  const at = (name, url) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url, target: { role: 'button', name } }); return v.decision === 'allow' ? 'allow' : v.class }
+  assert.equal(at('Update DNS settings', 'https://registrar.example/domain/x'), 'permission')
+  assert.equal(at('Update DNS settings', 'https://app.example/settings'), 'allow', 'off a registrar URL (named limit)')
+})
