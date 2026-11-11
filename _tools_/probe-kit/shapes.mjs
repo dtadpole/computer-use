@@ -89,7 +89,8 @@ export const ctx = Object.freeze({
 
 /** The actions the drivers accept, in the loop's shape. */
 export const act = Object.freeze({
-  click: (x = 1, y = 1) => ({ type: 'click', x, y }),
+  /** The loop refuses a click without a button (malformed), so the kit sends 'left' as the model's actions do. */
+  click: (x = 1, y = 1, button = 'left') => ({ type: 'click', x, y, button }),
   type: (text) => ({ type: 'type', text }),
   key: (...keys) => ({ type: 'keypress', keys }),
   hold: (...keys) => ({ type: 'hold_key', keys, duration: 1 }),
