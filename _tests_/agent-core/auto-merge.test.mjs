@@ -32,3 +32,11 @@ test('#747 round 2 (cu-researcher 21:43Z): the scheduled merge in one row', () =
 test('CU-531 follow-up (cu-researcher 23:20Z): third-person merge-later verbs', () => {
   for (const name of ['Merge once the build succeeds', 'Merge when the build succeeds', 'Merge when the pipeline completes', 'Merge after CI finishes', 'Merge when checks passes']) assert.deepEqual(classesOf(name), ['submit'], name)
 })
+
+test('CU-532 (cu-coordinator 23:51Z): the merge-later conditions in every tense', () => {
+  for (const name of ['Merge after tests passed', 'Merge once checks have passed', 'Merge when the build succeeded', 'Merge after CI completed', 'Merge once the pipeline finished', 'Merge when checks are passing', 'Merge after CI went green', 'Merge when tests are done']) {
+    assert.deepEqual(classesOf(name), ['submit'], name)
+    assert.deepEqual(classesOf(name, true), ['submit'], `Space: ${name}`)
+  }
+  for (const name of ['Tests passed', 'Checks completed', 'Build succeeded']) assert.deepEqual(classesOf(name), [], name)
+})
