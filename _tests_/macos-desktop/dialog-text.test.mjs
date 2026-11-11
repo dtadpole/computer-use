@@ -1,7 +1,14 @@
 import assert from 'node:assert/strict'
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { after, test } from 'node:test'
 
 import { dialogTextOf } from '../../_environments_/macos-desktop/environment.mjs'
+import { createScriptedAdapter } from '../../_tools_/agent-core/adapter-scripted.mjs'
+import { createAppApprovals } from '../../_tools_/agent-core/app-approvals.mjs'
+import { createRunControl } from '../../_tools_/agent-core/control.mjs'
+import { runTask } from '../../_tools_/agent-core/loop.mjs'
 import { fakeLauncher, logged, scratchLocks, stopFake } from './harness.mjs'
 
 /**
@@ -13,7 +20,8 @@ import { fakeLauncher, logged, scratchLocks, stopFake } from './harness.mjs'
 
 const FIXTURE = 'ai.reflection.cu.fixture'
 const locks = scratchLocks()
-after(() => locks.remove())
+const dir = mkdtempSync(join(tmpdir(), 'cu-dialog-text-'))
+after(() => { locks.remove(); rmSync(dir, { recursive: true, force: true }) })
 const launchOnFake = fakeLauncher(locks, { apps: [FIXTURE] })
 
 const OK = { bundleId: FIXTURE, pid: 601, role: 'AXButton', subrole: null, title: 'OK', frame: { x: 100, y: 100, width: 80, height: 30 }, secure: false, editable: false }
@@ -70,4 +78,45 @@ test('CU-507 driver: Return\'s default button carries its dialog words too (D-10
     await env.close()
     await stopFake(child)
   }
+})
+
+let runs = 0
+async function runOnFake(config, action) {
+  const control = createRunControl()
+  const { env, child } = await launchOnFake(config, { control })
+  await logged(child, 3)
+  try {
+    const store = createAppApprovals({ path: join(dir, `approvals-${runs += 1}.json`) })
+    store.grantAlways(FIXTURE, { by: 'api' })
+    const model = createScriptedAdapter({ frame: { width: env.frame.width, height: env.frame.height }, turns: [{ actions: [action] }, { final: 'done' }] })
+    const result = await runTask({ task: 'answer the dialog', environment: env, model, control, runsDirectory: join(dir, 'runs'), build: { commit: 'test', dirty: false }, apps: [FIXTURE], appApprovals: store, askPermission: async () => ({ approved: false, answeredBy: 'test' }) })
+    const text = readFileSync(join(result.trajectoryDir, 'events.jsonl'), 'utf8')
+    const events = text.trim().split('\n').map((line) => JSON.parse(line))
+    const event = events.filter((e) => e.kind === 'action' && e.action?.type === action.type && e.status !== 'attempted').pop()
+    return { event, posted: child.requests.filter((r) => r.type === 'input').length, text }
+  } finally {
+    await env.close()
+    await stopFake(child)
+  }
+}
+
+const summary = (e) => JSON.stringify({ decision: e?.decision, rule: e?.rule, class: e?.class, status: e?.status })
+const CLICK = { type: 'click', button: 'left', x: 140, y: 115 }
+
+test('CU-507 seam: a generic OK in an erase sheet (dialog words from the helper) asks delete and, declined, posts nothing; the same OK under a benign dialog stays free', async () => {
+  const asked = await runOnFake(world([{ ...OK, ...ERASE }]), CLICK)
+  assert.notEqual(asked.event?.decision, 'allow', summary(asked.event))
+  assert.match(String(asked.event?.class ?? asked.event?.rule ?? ''), /delete/, summary(asked.event))
+  assert.equal(asked.posted, 0)
+  assert.ok(!asked.text.includes('This will erase all data'), 'the dialog words never reach the run records')
+  const free = await runOnFake(world([{ ...OK, dialogName: 'Software Update', dialogDescription: 'Restart later to finish.' }]), CLICK)
+  assert.equal(free.event?.decision, 'allow', summary(free.event))
+})
+
+test('CU-507 seam: Return in the sheet presses its default OK, which carries the dialog words - asked like the click (D-106)', async () => {
+  const field = { bundleId: FIXTURE, pid: 601, role: 'AXTextField', subrole: null, title: 'Name', frame: { x: 100, y: 60, width: 120, height: 24 }, secure: false, editable: true }
+  const { event, posted } = await runOnFake(world([field, { ...OK, ...ERASE }], { focused: field, defaultButton: { ...OK, ...ERASE } }), { type: 'keypress', keys: ['Return'] })
+  assert.notEqual(event?.decision, 'allow', summary(event))
+  assert.match(String(event?.class ?? event?.rule ?? ''), /delete/, summary(event))
+  assert.equal(posted, 0)
 })
