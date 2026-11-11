@@ -176,3 +176,11 @@ test('CU-489 abbreviations on native switches take their setting\'s direction (0
   assert.equal(dsw('MFA', true), 'credential')
   assert.equal(dsw('MFA', false), 'allow')
 })
+test('CU-496 autofill-on-page-load switch reads a desktop native state (0.2.70 + #669): turning it ON asks permission, OFF is free', () => {
+  for (const name of ['Autofill on page load', 'Auto-fill on page load']) {
+    assert.equal(dsw(name, false), 'permission', `${name}: off -> on asks`)
+    assert.equal(dsw(name, true), 'allow', `${name}: on -> off is free`)
+    assert.equal(dsw(name, true, { inWebArea: true }), 'permission', `${name}: web area untrusted`)
+    assert.equal(dsw(name, 'mixed'), 'permission', `${name}: mixed asks`)
+  }
+})

@@ -1942,9 +1942,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (autofill) {
         // #669 round 2 (cu-developer-three 11:32Z): direction only from the NATIVE read (CU-373: a web <input type=checkbox> with a
         // boolean checked); an ARIA, missing or mixed state - or a desktop switch with no read - fails closed and asks.
-        const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? '')) && typeof target?.checked === 'boolean'
+        // Helper 0.2.70: the native read is nativeToggleState's, so a desktop AXSwitch with a real AXValue gives the direction too.
+        const nativeState = nativeToggleState(target)
         const toggleRole = /switch|checkbox|toggle/i.test(String(target?.role ?? '') + ' ' + String(target?.subrole ?? ''))
-        if (nativeBox ? target.checked === false : (Boolean(autofill[1]) || toggleRole)) classes.push('permission')
+        if (nativeState !== null ? nativeState === false : (Boolean(autofill[1]) || toggleRole)) classes.push('permission')
       }
     }
     // CU-495 (High; cu-coordinator 11:06Z): on an e-signature page - a whole /sign, /signing, /envelope or /esign segment of an http(s)
