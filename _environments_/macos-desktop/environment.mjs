@@ -387,7 +387,10 @@ async function holdDesktopRun(acquire, { seat, runId, noInput = false, confirmWi
   // Mac while it was, so the lock judges an armed run's owner idle from the run's own record, not from HIDIdleTime
   // (which a run's own synthetic input resets). Best effort and optional: a lock without mark() (older code, a seam)
   // keeps judging as before.
-  release.mark = typeof slot.mark === 'function' ? (patch) => { try { slot.mark(patch) } catch { /* best effort */ } } : () => {}
+  // run-lock's mark() is async (it takes the lock's mutex): its rejection is swallowed too, never left unhandled.
+  release.mark = typeof slot.mark === 'function'
+    ? (patch) => { try { Promise.resolve(slot.mark(patch)).catch(() => {}) } catch { /* best effort */ } }
+    : () => {}
   return release
 }
 

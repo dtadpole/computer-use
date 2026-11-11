@@ -103,3 +103,20 @@ test('idle (A): an arm without the event tap (idle counter only) never marks the
   }
   assert.deepEqual(lock.calls, [{ released: true }], 'no armed, no stamp, no disarm - only the release')
 })
+
+test('idle (A): an async mark() that rejects (the lock\'s mutex timing out) is swallowed - no unhandled rejection, the run goes on', async () => {
+  const unhandled = []
+  const onUnhandled = (reason) => unhandled.push(reason)
+  process.on('unhandledRejection', onUnhandled)
+  const { env, child } = await launchOnFake(WORLD, { runLock: () => ({ release() {}, async mark() { throw new Error('mutex timed out') } }) })
+  try {
+    await logged(child, 3)
+    await env.perform({ type: 'click', x: 140, y: 315, button: 'left' })
+  } finally {
+    await env.close()
+    await stopFake(child)
+  }
+  await pause(20)
+  process.off('unhandledRejection', onUnhandled)
+  assert.deepEqual(unhandled, [])
+})
