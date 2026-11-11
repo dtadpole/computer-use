@@ -1146,6 +1146,10 @@ function grammarClassesOf(name, role = '') {
   // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
   // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
   if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
+  // CU-523 (High; cu-coordinator 20:36Z), table PR 30, as verb families with object synonyms - an identity-provider admin hands over an
+  // account. CREDENTIAL: set / create / issue / generate a temporary / one-time password / passcode; unlock (the / this) user (account).
+  // The URL-bound 'Add to group' family (permission) lives in policy.mjs.
+  if (/^\s*(?:set|create|issue|generate|assign)\s+(?:a\s+|an\s+|the\s+)?(?:new\s+)?(?:temporary|temp|one[-\s]time|initial)\s+(?:password|passcode|pin)\s*$|^\s*unlock\s+(?:the\s+|this\s+|selected\s+)?users?(?:\s+account)?\s*$/i.test(raw)) return ['credential']
   // CU-521 (High; cu-coordinator 20:06Z), table PR 29, as verb families with object synonyms - a code host's admin-bypass merge.
   // PERMISSION + SUBMIT: merge without waiting (for the requirements / checks / reviews to be met / pass), bypass the (branch protection)
   // rules / protections / requirements / checks (and merge), use your administrator / admin privileges to merge, force(-)merge, merge
