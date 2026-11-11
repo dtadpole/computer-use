@@ -997,10 +997,11 @@ class BrowserEnvironment {
       // Round 2: inRow - the hit element has no verb of its own and sits inside such a row (read through it). A boolean.
       // CU-472: a link that does not navigate (no / empty / '#' / '#fragment' / 'javascript:' href) - a boolean.
       ...(extra.inertLink === true ? { inertLink: true } : {}),
-      // CU-494 (typing path): an UNNAMED entry's own name, else id, attribute - lower-cased, [a-z0-9_-], at most 40
-      // characters - so a typing grant can tell <input name="iban"> or name="wallet_address" from a secret field. A raw
-      // page attribute, re-validated here; outside the fingerprint, never recorded; absent when the entry has a name.
-      ...(extra.editable === true && unnamed && fieldAttrOf(attributes) !== null ? { fieldAttr: fieldAttrOf(attributes) } : {}),
+      // CU-494 (typing path): an entry's own name, else id, attribute - lower-cased, [a-z0-9_-], at most 40 characters - so
+      // a typing grant can tell <input name="iban"> or name="wallet_address" from a secret field. #675 r2 (12:36Z): sent for
+      // a named entry too, since money detection is a union and a hostile accessible name must not hide it. A raw page
+      // attribute, re-validated here; outside the fingerprint, never recorded.
+      ...(extra.editable === true && fieldAttrOf(attributes) !== null ? { fieldAttr: fieldAttrOf(attributes) } : {}),
       // CU-473: the first rendered line of a multi-line name - a string, re-bounded to 80 characters.
       ...(typeof extra.firstLine === 'string' && extra.firstLine.trim() !== '' ? { firstLine: extra.firstLine.replace(/\s+/g, ' ').trim().slice(0, 80) } : {}),
       ...(extra.inRow === true ? { inRow: true } : {}),
