@@ -899,6 +899,10 @@ function grammarClassesOf(name, role = '') {
   // or release and booking care (submit), research opt-in (permission); a copay-charging e-visit asks purchase through the amount row.
   const portal = portalClass(list)
   if (portal) return [portal]
+  // CU-479 (High rows; cu-coordinator 04:20Z): a send to people who opted out or to the whole list - 'Resubscribe all' and a bare
+  // 'Blast' (submit). Imports and exports belong to CU-462.
+  if (list[0] === 'resubscribe' && list[1] === 'all' && list.length <= 3) return ['submit']
+  if (/^\s*blast\s*!?\s*$/i.test(raw)) return ['submit']
   // F2 guard (cu-coordinator 20:28Z): declining, denying or rejecting a request answers no - the grammar's own over-ask since
   // #554 ('Decline request'); older asks ('Decline invitation', CU-422's 'Decline offer') are untouched (the hook never sees them).
   if (['decline', 'deny', 'reject'].includes(list[0]) && list.slice(1).filter((t) => !FILLER.has(t)).every((t) => t === 'request' || t === 'this' || t === 'all')
