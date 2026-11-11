@@ -89,12 +89,34 @@ export async function stopFake(child) {
   }
 }
 
+/** Codes a late writer causes while a tree is being removed. */
+const REMOVE_RETRY_CODES = new Set(['ENOTEMPTY', 'EBUSY', 'EPERM'])
+
+/**
+ * Remove `dir`, retrying a late writer's ENOTEMPTY / EBUSY / EPERM after a real pause: up to `tries` attempts,
+ * `delayMs` apart. rmSync's own maxRetries / retryDelay do not back off on Node 24 (cu-verifier's probe on #436: it
+ * gave up after 34 ms against a writer that ran 250 ms), so the pause is taken here with Atomics.wait. Any other error,
+ * or the last failed try, is thrown.
+ */
+export function removeTree(dir, { tries = 6, delayMs = 100 } = {}) {
+  const pause = new Int32Array(new SharedArrayBuffer(4))
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      rmSync(dir, { recursive: true, force: true })
+      return attempt
+    } catch (error) {
+      if (!REMOVE_RETRY_CODES.has(error?.code) || attempt >= tries) throw error
+      Atomics.wait(pause, 0, 0, delayMs)
+    }
+  }
+}
+
 /** A throwaway directory under the OS temp dir, short enough for a Unix socket path; `remove()` deletes it. A process
  * that is still exiting (a fake helper, a hold keeper) can write one last file while the tree is removed, which fails
- * ENOTEMPTY (cu-integrator, #420's gate, 10 Nov); Node retries that, EBUSY and EPERM with a short back-off. */
+ * ENOTEMPTY (cu-integrator, #420's gate, 10 Nov); removeTree retries that, EBUSY and EPERM with a real pause. */
 export function scratch() {
   const dir = mkdtempSync(join(tmpdir(), 'cu-desktop-'))
-  return { dir, remove: () => rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }) }
+  return { dir, remove: () => removeTree(dir) }
 }
 
 /**
