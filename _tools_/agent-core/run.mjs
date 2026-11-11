@@ -178,6 +178,12 @@ const inspected = (target) => (target === null || target === undefined ? null : 
   // selectedIndex } or { unread: true, selected }; pullsDown kept) - the read a key on it is judged by, so its first live
   // row can be read through this admitted entry point. Item titles only; no key when the driver passes none.
   ...(target.popUp !== null && typeof target.popUp === 'object' && !Array.isArray(target.popUp) ? { popUp: target.popUp } : {}),
+  // CU-507 (helper 0.2.70): a button's dialog words (the nearest AXSheet / AXDialog / alert's title, else its first static
+  // text, and the next) and CU-418's native toggle state (a desktop AXCheckBox's AXValue as checked), each only when the
+  // driver passes it - the reads a verifier checks live on a real sheet or switch through this admitted entry point.
+  ...(typeof target.dialogName === 'string' ? { dialogName: target.dialogName } : {}),
+  ...(typeof target.dialogDescription === 'string' ? { dialogDescription: target.dialogDescription } : {}),
+  ...(typeof target.checked === 'boolean' ? { checked: target.checked } : {}),
 })
 
 /**

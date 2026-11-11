@@ -1,33 +1,34 @@
 ---
 title: '[cu] Integrator - handover'
 created: 2026-11-08T04:22:00Z
-modified: 2026-11-10T22:05:00Z
+modified: 2026-11-11T22:05:00Z
 level: L2
-version: 5.0.0
-description: 'What the next [cu] Integrator needs to take over the landing lanes of dtadpole/computer-use mid-flight, at the 10 Nov evening.'
+version: 6.0.0
+description: 'What the next [cu] Integrator needs to take over the landing lanes of dtadpole/computer-use mid-flight, at the 11 Nov evening.'
 status: unverified
 grounded_in:
-  - source: 'cu-coordinator goal of 2026-11-10 20:00Z (High lane under D-108, rule 2, records between Highs)'
-  - source: 'decisions D-079, D-085, D-086, D-090, D-093, D-095, D-097, D-100, D-105, D-108'
+  - source: 'cu-coordinator goal of 2026-11-11 13:05Z (High lane, fillers, nightly CU-59, keep-closed watch)'
+  - source: 'decisions D-079, D-085, D-090, D-093, D-095, D-097, D-101, D-108'
 ---
 
 # [cu] Integrator - handover
 
 **Goal.** Land every reviewed PR at its exact head through the hygiene gate and the two-phase gate (merge-tree
-equality, `pr-merge.py --expect-sha`). Under D-108: Highs one `policy.mjs` PR at a time, each with two signed
-PR-comment OKs and a main merge right before its slot; rule 2 holds Medium `policy.mjs` PRs while a High with an OK
-is open; non-policy PRs and records fill the gaps.
+equality, `pr-merge.py --expect-sha`); phase 2 only with the owner idle >= 300 s. Highs go one at a time in the
+coordinator's lane order, each with two signed PR-comment OKs; the first High ready takes the slot and no High
+pre-empts another; fillers yield to Highs and to live-row runs.
 
-**Live state (22:05Z).** Twenty-one Highs closed live today; the phrase grammar (#554) is on main. High lane: #575
-(table PR 2) after cu-developer-two's live rows, #576 (dial-row unit, round 2), #580 (table PR 3, round 2). Filler:
-#345 waits for owner idle, then #368, #371, #436. Held under rule 2: #447 #448 #462 #469 #477 #478 #417 #411 #360
-#343 #497 #501 #523 #527 #547.
+**Live state (22:05Z).** Since 13:05Z: table PRs 23-31, the CU-429 lowering, CU-433 and CU-507's web and dialog
+halves landed; the nightly CU-59 run on main was GREEN with phase 2. Lane: #737 (helper 0.2.70: helper chain in
+checks-only mode, then its gate and an idle-checked install) -> #739 -> CU-507 read-only row -> #746 -> #747 -> #735
+(CU-429 round 2) -> #734 (CU-522). Fillers: #624, #621, #500, #491, #742 (CU-462).
 
-**Machinery** (`/tmp/cu-integrator-*`, gone on a reboot): `land-together.sh` (wait-until-ready slots, joint check
-and readiness at the turn), `land-cu.sh`, `queue-cu.sh`, `chain-lib.sh`, `records-next.sh` (FIFO), `reviewed.py`
-(signed PR comments; a message older than the PR is ignored), `both-ok.sh`, `audit.sh`, `selfcheck.sh`, `holds-lib.sh`.
+**Machinery** (`/tmp/cu-integrator-*`, gone on a reboot): `land-together.sh`, `land-cu.sh`, `queue-cu.sh`,
+`chain-helper.sh` (`CHECKS_ONLY=1` for build, selftest and prove-failing), `records-next.sh`, `reviewed.py` (D-085
+carries), `both-ok.sh`, `selfcheck.sh` (audit and base-first sweep), `base-sweep-loop.sh` (every 60 s),
+`premerge-snap.py` with `record-cu.sh` (restore what link automation closed, a 20-minute keep-closed watch, every
+merge answer copied to cu-verifier) and a move log of every Linear state change.
 
-**Lessons.** Move a cached run aside before a flake re-run. Trust GitHub's mergeable only once main has been still
-for two minutes, and keep the tickets while waiting. Check that a High's ticket exists before pre-empting for it.
-Pre-empting a filler already in phase 2 gains nothing while the High still needs its phase 1. Audit re-queues land
-at the tail; move their tickets back to the old slot.
+**Lessons.** Lift a base-first hold the minute its PR is retargeted (one High sat 22 minutes). Take every
+'Fixes CU-n' in a title, not the last. Check that a slot number is unused before arming it. Read a HOLD's failing
+test before calling it environmental. Announce a desktop hold as waiting for idle until it is actually taken.
