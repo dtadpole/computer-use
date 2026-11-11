@@ -159,9 +159,16 @@ test('stop from the harness: the run ends cancelled and no press follows', { tim
   const started = await start('input-recorder', clickForever({ delayMs: 250 }))
   if (started.refused) return skipUnless(t, false, started.refused)
   const { handle } = started
+  // A run that ends before pressing twice (the browser refused at launch, e.g. the seat's previous browser still
+  // closing after check 4) is reported by its own end, not as 'never pressed twice' after a 15 s wait.
+  let ended = null
+  handle.done.then((result) => { ended = result }, () => {})
   const deadline = Date.now() + 15_000
-  while ((await presses()) < 2 && Date.now() < deadline) await new Promise((resolve) => setTimeout(resolve, 100))
-  assert.ok((await presses()) >= 2, 'the run never pressed twice, so a stop would prove nothing')
+  while ((await presses()) < 2 && ended === null && Date.now() < deadline) await new Promise((resolve) => setTimeout(resolve, 100))
+  if (ended !== null && launchRefusal(ended)) return skipUnless(t, false, launchRefusal(ended))
+  assert.ok((await presses()) >= 2, ended !== null
+    ? `the run ended (${ended.status}${ended.error ? `: ${ended.error}` : ''}) before pressing twice, so a stop would prove nothing`
+    : 'the run never pressed twice, so a stop would prove nothing')
   const answer = handle.control.send({ command: 'stop', reason: 'agent-loop verifier' }, { source: 'api' })
   assert.equal(answer.ok, true, `stop was refused: ${answer.error}`)
   const atStop = await presses()
