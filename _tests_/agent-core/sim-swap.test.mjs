@@ -13,12 +13,14 @@ const enter = (name) => { const v = policy.classify({ type: 'keypress', keys: ['
 const space = (name) => { const v = policy.classify({ type: 'keypress', keys: ['SPACE'] }, { url: URL, target: { tag: 'button', role: 'button', name } }); return v.decision === 'allow' ? 'allow' : v.class }
 
 test('CU-470: porting out, eSIM codes and conversions, a new SIM and moving the number ask credential', () => {
-  for (const name of ['Port out', 'Get eSIM QR code', 'Convert to eSIM', 'Activate new SIM', 'Move number to new device', 'Change SIM', 'Transfer eSIM']) {
+  for (const name of ['Port out', 'Get eSIM QR code', 'Convert to eSIM', 'Activate new SIM', 'Move number to new device', 'Change SIM']) {
     assert.equal(click(name), 'credential', name)
     assert.equal(enter(name), 'credential', `Return: ${name}`)
     assert.equal(space(name), 'credential', `Space: ${name}`)
   }
   for (const name of ['Get an eSIM', 'Swap SIM', 'Add eSIM']) assert.deepEqual(grammarClasses(name), ['credential'], `table row: ${name}`)
+  // Named (cu-researcher 01:22Z; no reclass): 'Transfer eSIM' keeps the older purchase 'transfer' word - it asks either way.
+  assert.equal(click('Transfer eSIM'), 'purchase')
 })
 
 test('CU-470 negatives: lines and SIM status stay free; a money transfer stays purchase', () => {
