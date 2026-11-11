@@ -28,3 +28,7 @@ test('#747 round 2 (cu-researcher 21:43Z): the scheduled merge in one row', () =
   for (const name of ['Merge automatically', 'Auto-merge when checks pass', 'Schedule merge', 'Queue for merge', 'Add to merge queue', 'Merge when all checks pass', 'Merge once CI is green']) assert.deepEqual(classesOf(name), ['submit'], name)
   for (const name of ['Merge queue', 'Auto-merge settings', 'View merge queue', 'Cancel auto-merge']) assert.deepEqual(classesOf(name), [], name)
 })
+
+test('CU-531 follow-up (cu-researcher 23:20Z): third-person merge-later verbs', () => {
+  for (const name of ['Merge once the build succeeds', 'Merge when the pipeline completes', 'Merge after CI finishes', 'Merge when checks passes']) assert.deepEqual(classesOf(name), ['submit'], name)
+})
