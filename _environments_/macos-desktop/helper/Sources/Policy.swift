@@ -549,6 +549,34 @@ enum Placeholder {
   }
 }
 
+/// CU-507 (desktop half): what a dialog asks, for a button inside it - so agent core can judge a generic 'OK' or
+/// 'Continue' by the dialog's words, as the web route does with role=dialog / alertdialog. The container is the nearest
+/// AXSheet, or an AXWindow whose subrole is AXDialog / AXSystemDialog (an NSAlert's window is one). dialogName is the
+/// container's title when it has one, else its first static text; dialogDescription the next static text. Static texts
+/// only (their shown words) - never a field's value. Whitespace collapsed, trimmed, at most 300 characters (cut, as the
+/// words that decide come first); empty reads as none.
+enum DialogText {
+  static let maxLength = 300
+  static let maxDepth = 12
+  static let maxTexts = 60
+  static let containerSubroles: Set<String> = ["AXDialog", "AXSystemDialog"]
+  /// Only a button carries it: the generic confirm control CU-507 judges (and Return's default button).
+  static func applies(role: String?) -> Bool { role == "AXButton" }
+  static func isContainer(role: String?, subrole: String?) -> Bool {
+    role == "AXSheet" || (role == "AXWindow" && containerSubroles.contains(subrole ?? ""))
+  }
+  static func clean(_ raw: String?) -> String? {
+    guard let raw else { return nil }
+    let text = raw.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
+    return text.isEmpty ? nil : String(text.prefix(maxLength))
+  }
+  static func pick(title: String?, texts: [String?]) -> (name: String?, description: String?) {
+    let words = texts.compactMap(clean)
+    if let title = clean(title) { return (title, words.first) }
+    return (words.first, words.dropFirst().first)
+  }
+}
+
 /// CU-380: whether a menu is tracking - any on-screen window at the pop-up menu level (kCGPopUpMenuWindowLevel, 101),
 /// which every open menu bar menu, context menu and pop-up button menu is drawn in, whoever owns it. Visible windows only
 /// (alpha above 0, a non-empty frame). Another window at that level counts too - the named over-ask (Return then asks).

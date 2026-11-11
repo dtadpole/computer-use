@@ -290,6 +290,23 @@ test('CU-361: describe() reports a nearby label only for an unnamed entry, from 
   assert.match(helper, /NearbyLabel\.pick\(box: box, candidates: candidates\)/)
 })
 
+test('CU-507: describe() gives a button inside a sheet or dialog window its dialog words, from a bounded walk and the dialog\'s static texts only', () => {
+  const access = readFileSync(join(SOURCES, 'Accessibility.swift'), 'utf8')
+  assert.match(access, /if DialogText\.applies\(role: role\), let words = dialogWords\(of: element\) \{/, 'buttons only, through the walk')
+  assert.match(access, /shape\["dialogName"\] = \.string\(name\)/)
+  assert.match(access, /shape\["dialogDescription"\] = \.string\(description\)/)
+  const start = access.indexOf('private static func dialogWords(of element: AXUIElement)')
+  assert.ok(start > 0, 'the dialogWords helper exists')
+  const helper = access.slice(start, access.indexOf('\n  }\n', start))
+  assert.match(helper, /for _ in 0\.\.<DialogText\.maxDepth \{/, 'a bounded ancestor walk')
+  assert.match(helper, /DialogText\.isContainer\(role: role, subrole: string\(parent, "AXSubrole"\)\)/)
+  assert.match(helper, /descendants\(of: parent, limit: DialogText\.maxTexts\)\.filter \{ string\(\$0, "AXRole"\) == "AXStaticText" \}/, 'only the dialog\'s static texts')
+  assert.doesNotMatch(helper, /string\(element, "AXValue"\)|attribute\(element, "AXValue"\)/, 'the button\'s own value is never read')
+  const policy = readFileSync(join(SOURCES, 'Policy.swift'), 'utf8')
+  assert.match(policy, /static let maxLength = 300\n  static let maxDepth = 12\n  static let maxTexts = 60/)
+  assert.match(policy, /role == "AXSheet" \|\| \(role == "AXWindow" && containerSubroles\.contains\(subrole \?\? ""\)\)/)
+})
+
 test('CU-409: describe() reports a formContext only for a button, from a bounded scan that never reads an entry\'s value', () => {
   const access = files['Accessibility.swift']
   assert.match(access, /if role == "AXButton", !FormContext\.windowButtonSubroles\.contains\(subrole \?\? ""\), let form = formContext\(of: element\) \{ shape\["formContext"\] = form \}/,
