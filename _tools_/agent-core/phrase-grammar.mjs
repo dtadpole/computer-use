@@ -755,12 +755,13 @@ const LEADING_ICONS = /^\s*(?:[\p{Extended_Pictographic}\uFE0F\p{S}\u2022\u2023\
 const ACK_CONNECTOR = /^\s*i\s+(?:understand|acknowledge|accept|agree)(?:\s+(?:the|all|these)\s+(?:consequences|risks?|terms|warnings?))?\s*,?\s+and\s+(?:still\s+)?(?:want|wish|choose|would\s+like|intend|agree)\s+to\s+/i
 // CU-517 (High; cu-coordinator 19:06Z): 'I'm sure' / 'I am sure' / 'I'm certain' as an acknowledgement too - "I'm sure, <row>",
 // "Yes, I'm sure, <row>" (the prefix repeats) and '<row>, I'm sure' (TRAILING_QUALIFIER); curly apostrophes read straight (#721).
-const CONFIRM_PREFIX = /^\s*(?:(?:yes(?:\s+please)?|ok|okay|sure|confirm|continue|got\s+it|please|understood|i(?:'m|\s+am)\s+(?:sure|certain|positive)|i\s+(?:understand|acknowledge|accept|agree)(?:\s+(?:the|all|these)\s+(?:consequences|risks?|terms|warnings?))?|i(?:'ve|\s+have)\s+read\s+and\s+understand(?:\s+(?:the|this|these)\s+\w+)?)\s*[,:!.\u2013\u2014-]+\s*)+/iu
+// #725 round 3 (cu-researcher 19:14Z): 'Yes I'm sure' without the comma, and the intensifiers (really / absolutely / totally / 100% sure).
+const CONFIRM_PREFIX = /^\s*(?:(?:yes(?:\s+please)?|ok|okay|sure|confirm|continue|got\s+it|please|understood|(?:yes\s+)?i(?:'m|\s+am)\s+(?:(?:really|absolutely|totally|completely|quite|very|fully|100\s?%)\s+)?(?:sure|certain|positive)|i\s+(?:understand|acknowledge|accept|agree)(?:\s+(?:the|all|these)\s+(?:consequences|risks?|terms|warnings?))?|i(?:'ve|\s+have)\s+read\s+and\s+understand(?:\s+(?:the|this|these)\s+\w+)?)\s*[,:!.\u2013\u2014-]+\s*)+/iu
 // CU-482 (proposed High; cu-researcher 04:58Z): a call-to-action lead-in before a ruled row - 'please', 'click (here) to', 'tap to',
 // 'let's', 'go ahead and', 'I want to'.
 // cu-researcher 05:02Z: trailing qualifiers too - 'anyway', 'instantly', 'on this device', 'for me', 'here', 'too', 'again'.
 // #630 round 2: a trailing ', please' too ('Add time, please').
-const TRAILING_QUALIFIER = /(?:\s*,\s*please|\s*[,\u2013\u2014-]\s*(?:yes,?\s+)?i(?:'m|\s+am)\s+(?:sure|certain|positive)|\s+(?:anyway|anyways|instantly|immediately|on\s+this\s+(?:device|computer|browser|phone)|for\s+me|here|too|again))+\s*[.!]?\s*$/i
+const TRAILING_QUALIFIER = /(?:\s*,\s*please|\s*[,\u2013\u2014-]\s*(?:yes,?\s+)?i(?:'m|\s+am)\s+(?:(?:really|absolutely|totally|completely|quite|very|fully|100\s?%)\s+)?(?:sure|certain|positive)|\s+(?:anyway|anyways|instantly|immediately|on\s+this\s+(?:device|computer|browser|phone)|for\s+me|here|too|again))+\s*[.!]?\s*$/i
 // CU-508 (qualifier sweep): a trailing WIDENING qualifier - 'permanently', 'forever', 'for good', 'completely', 'for all users /
 // members / accounts', 'for everyone', 'on all (my) devices', 'everywhere', 'across all devices' - is stripped in a canonical form
 // (the trailing twin of CU-502's quantifier), so the row decides. Adds asks only.
@@ -863,7 +864,7 @@ function acknowledgementStripped(name) {
   const first = String(name ?? '').split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean)[0] ?? ''
   // #725 round 2 (cu-developer-three 19:12Z): the trailing "<row>, I'm sure" stripped alone too, keeping the row's own words -
   // 'Install now, I'm sure' is judged as 'Install now', not only as the qualifier-stripped 'Install'.
-  return first.replace(ACK_CONNECTOR, '').replace(CONFIRM_PREFIX, '').replace(/\s*[,\u2013\u2014-]\s*(?:yes,?\s+)?i(?:'m|\s+am)\s+(?:sure|certain|positive)\s*[.!]?\s*$/i, '').trim()
+  return first.replace(ACK_CONNECTOR, '').replace(CONFIRM_PREFIX, '').replace(/\s*[,\u2013\u2014-]\s*(?:yes,?\s+)?i(?:'m|\s+am)\s+(?:(?:really|absolutely|totally|completely|quite|very|fully|100\s?%)\s+)?(?:sure|certain|positive)\s*[.!]?\s*$/i, '').trim()
 }
 // CU-505 (label sweep): a short section label before the row - '<Label>: <row>' or '<Label> - <row>' (one to three words, a colon
 // or a spaced dash) - and brackets or quotes around the whole name are stripped, so the row decides ('Danger zone: Make this

@@ -25,3 +25,8 @@ test("CU-517 negatives: an acknowledgement with no row stays free", () => {
 test("#725 round 2 (cu-developer-three 19:12Z): the trailing form keeps the row's own words", () => {
   for (const name of ["Install now, I'm sure", "Install now - I'm certain", "Install now on this device, I'm sure", "Yes, I'm sure, install now"]) assert.ok(classesOf(name).includes('install'), name)
 })
+
+test("#725 round 3 (cu-researcher 19:14Z): no comma after 'Yes', and the intensifiers", () => {
+  for (const name of ["Yes I'm sure, empty bucket", "I'm really sure, delete account", "I'm absolutely sure, delete repository", "I'm 100% sure, empty bucket", "I'm totally sure - delete account", "Delete account, I'm absolutely sure"]) assert.ok(classesOf(name).includes('delete'), name)
+  for (const name of ["I'm absolutely sure", "Yes I'm sure", "I'm not really sure"]) assert.deepEqual(classesOf(name), [], name)
+})
