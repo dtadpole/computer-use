@@ -2303,6 +2303,18 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         for (const probe of probes) if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) if (!classes.includes(cls)) classes.push(cls)
       }
     }
+    // CU-523 (High; cu-coordinator 20:36Z): on an identity-provider / admin-console page (D-109: host or path, never a title) adding a
+    // user to a group / the admins asks PERMISSION; a chat app's 'Add to group' stays free. IdP pages: a vendor host token (okta, auth0,
+    // onelogin, jumpcloud, keycloak, pingone, pingidentity, entra, duo) or an admin / iam / directory / identity / idp / sso path segment
+    // or host label (admin.example, /admin/users).
+    if (grammarEligible && !classes.includes('permission') && /^(?:add|assign)\s+(?:the\s+|this\s+|selected\s+)?(?:users?\s+|members?\s+)?to\s+(?:a\s+|the\s+)?(?:groups?|admins?|administrators?|admin\s+group)$/i.test(String(name ?? '').trim())) {
+      let idpPage = false
+      try {
+        const u = new URL(url)
+        idpPage = /^https?:$/.test(u.protocol) && (/(?:^|\.)(?:okta|auth0|onelogin|jumpcloud|keycloak|pingone|pingidentity|entra|duo|admin|iam|idp|sso|directory)(?:\.|$)/i.test(u.hostname) || /(?:^|\/)(?:admin|iam|directory|identity|idp|sso)(?=$|[/?#])/i.test(u.pathname))
+      } catch { idpPage = false }
+      if (idpPage) classes.push('permission')
+    }
     // CU-521 (cu-coordinator 20:06Z): 'Merge anyway' keeps its older submit and unions permission (a merge past the requirements).
     if (grammarEligible && classes.length > 0 && !classes.includes('permission') && /^(?:merge\s+anyway|force[-\s]?merge)$/i.test(String(name ?? '').trim())) classes.push('permission')
     // #729 round 2 (cu-coordinator 19:51Z, the 18:06Z precedent): 'Reset account PIN' keeps the older reset row's delete and unions
