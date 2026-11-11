@@ -577,6 +577,18 @@ function remoteAccess(list) {
   const rest = list.slice(two ? 2 : 1).filter((t) => !FILLER.has(t))
   return ['turn on', 'enable', 'allow', 'start', 'activate'].includes(verb) && rest.length <= 4 && REMOTE_ACCESS.some((seq) => endsWithSeq(rest, seq))
 }
+function simSwap(list) {
+  if (list.length > 7) return false
+  const [verb, ...rest] = list
+  const last = rest[rest.length - 1]
+  if (verb === 'port' && rest.length === 1 && rest[0] === 'out') return true
+  if (verb === 'get' && rest[0] === 'esim' && rest.length <= 3) return true
+  if (verb === 'convert' && rest.length <= 2 && last === 'esim') return true
+  if (['activate', 'add', 'set'].includes(verb) && rest.length <= 2 && (last === 'sim' || last === 'esim')) return true
+  if (verb === 'move' && rest[0] === 'number' && rest.includes('device') && rest.length <= 4) return true
+  if ((verb === 'change' || verb === 'replace' || verb === 'swap' || verb === 'transfer') && rest.length <= 2 && (last === 'sim' || last === 'esim')) return true
+  return false
+}
 function lockClass(list) {
   if (list.length > 7) return null
   const two = SWITCH_VERBS.has(list[0]) && (list[1] === 'off' || list[1] === 'on')
@@ -724,6 +736,9 @@ export function grammarClasses(name, role = '') {
   // a timed unlock (physical, CU-418's closed family); adding a lock user (credential).
   const lock = lockClass(list)
   if (lock) return [lock]
+  // CU-470 (High; cu-coordinator 01:19Z): the SIM-swap path - porting out, eSIM QR codes and conversions, a new SIM, moving the
+  // number to a new device (credential, CU-443's family).
+  if (simSwap(list)) return ['credential']
   // F2 guard (cu-coordinator 20:28Z): declining, denying or rejecting a request answers no - the grammar's own over-ask since
   // #554 ('Decline request'); older asks ('Decline invitation', CU-422's 'Decline offer') are untouched (the hook never sees them).
   if (['decline', 'deny', 'reject'].includes(list[0]) && list.slice(1).filter((t) => !FILLER.has(t)).every((t) => t === 'request' || t === 'this' || t === 'all')
