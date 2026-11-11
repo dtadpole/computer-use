@@ -25,3 +25,11 @@ test('CU-473 negatives: free names with badges, counts and second lines stay fre
   for (const name of ['Notifications (3)', 'Help (opens in a new window)', 'Dark mode Beta', 'Inbox New', 'Settings\nManage your account', 'View plans Compare features']) assert.equal(click(name), 'allow', name)
   assert.equal(canonicalConfirm('Change Direct Deposit'), 'Change Direct Deposit')
 })
+
+test('#609 round 2: additive - a Title-Case object is never lost to the sentence cut; CU-469 forms keep asking', () => {
+  for (const [wrapped, row] of [['Turn off Safe Browsing now', 'Turn off Safe Browsing'], ['\ud83d\udd13 Login with Google', 'Login with Google'], ['Turn off Screen Time Beta', 'Turn off Screen Time']]) {
+    const want = click(row)
+    assert.notEqual(want, 'allow', `${row} asks`)
+    assert.equal(click(wrapped), want, wrapped)
+  }
+})

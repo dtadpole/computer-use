@@ -617,15 +617,24 @@ function firstSentence(text) {
 export function canonicalConfirm(name) {
   const lines = String(name ?? '').split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean)
   const text = lines[0] ?? ''
-  const unwrapped = text.replace(LEADING_ICONS, '').replace(CONFIRM_PREFIX, '').replace(TRAILING_WRAP, '').replace(TRAILING_PAREN, '').replace(TRAILING_BADGE, '').replace(TRAILING_WRAP, '').trim()
-  return firstSentence(unwrapped)
+  return text.replace(LEADING_ICONS, '').replace(CONFIRM_PREFIX, '').replace(TRAILING_WRAP, '').replace(TRAILING_PAREN, '').replace(TRAILING_BADGE, '').replace(TRAILING_WRAP, '').trim()
+}
+/** #609 round 2 (cu-researcher 02:24Z): the canonical forms to try, in order - the unwrapped name, then (only if that asks nothing)
+ * its first sentence. Additive: a Title-Case object ('Turn off Safe Browsing') is never lost to the sentence cut. */
+export function canonicalForms(name) {
+  const unwrapped = canonicalConfirm(name)
+  const cut = firstSentence(unwrapped)
+  return [...new Set([unwrapped, cut])].filter((form) => form !== '' && form !== String(name ?? '').trim())
 }
 
 export function grammarClasses(name, role = '') {
   const asWritten = grammarClassesOf(name, role)
   if (asWritten.length > 0) return asWritten
-  const canonical = canonicalConfirm(name)
-  return canonical !== '' && canonical !== String(name ?? '').trim() ? grammarClassesOf(canonical, role) : asWritten
+  for (const form of canonicalForms(name)) {
+    const classes = grammarClassesOf(form, role)
+    if (classes.length > 0) return classes
+  }
+  return asWritten
 }
 
 function grammarClassesOf(name, role = '') {
