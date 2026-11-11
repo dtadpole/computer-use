@@ -313,7 +313,8 @@ function childProtectionOff(list) {
   if (verb === 'allow' && core.length <= 4 && (core[0] === 'purchase' || core.includes('buying')) && (core.includes('approval') || core.includes('buying'))) return true
   if (verb === 'extend' && core.length <= 2 && core[core.length - 1] === 'time' && (core.length === 1 || core[0] === 'screen')) return true
   if (verb === 'extend' && core.length === 1 && core[0] === 'screen') return true
-  if (verb === 'give' && rest.includes('<n>') && core.length <= 2 && ['minute', 'hour'].includes(core[core.length - 1]) && (core.includes('more') || core.length === 1)) return true
+  // CU-481 residual (06:49Z, d): 'Grant <n> more minutes' joins the CU-440 'Give <n> more minutes' row.
+  if (['give', 'grant'].includes(verb) && rest.includes('<n>') && core.length <= 2 && ['minute', 'hour'].includes(core[core.length - 1]) && (core.includes('more') || core.length === 1)) return true
   if (verb === 'add' && core[core.length - 1] === 'time' && core.length <= 3 && (core.includes('more') || core.includes('screen') || core.includes('<n>'))) return true
   return false
 }

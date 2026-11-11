@@ -38,3 +38,18 @@ test('CU-481 follow-up (cu-coordinator 06:34Z): update / edit -> change, tried l
   for (const name of ['Update profile', 'Update app', 'Edit profile', 'Edit photo', 'Update all', 'Update now']) assert.equal(click(name), 'allow', name)
   assert.equal(click('Update direct deposit'), 'credential', 'its own row leads')
 })
+
+test('CU-481 residual (cu-coordinator 06:49Z): firmware, DNS on a registrar URL, and granted minutes', () => {
+  const at = (name, url) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url, target: { role: 'button', name } }); return v.decision === 'allow' ? 'allow' : v.class }
+  for (const name of ['Edit firmware', 'Modify firmware', 'Change firmware']) assert.equal(at(name, 'http://router.example/admin'), 'install', name)
+  for (const name of ['Update DNS', 'Change DNS']) {
+    assert.equal(at(name, 'https://registrar.example/domain/x'), 'permission', name)
+    assert.equal(at(name, 'https://app.example/settings'), 'allow', `${name} off a registrar URL (named limit)`)
+  }
+  // '... DNS records' is already a grammar row on any page (permission); 'Update DNS records' matches it as written.
+  assert.equal(at('Update DNS records', 'https://registrar.example/domain/x'), 'permission')
+  assert.equal(at('Grant 30 more minutes', 'https://families.example/child'), 'permission')
+  assert.equal(at('Give 30 more minutes', 'https://families.example/child'), 'permission')
+  assert.equal(at('Update SIM', 'https://carrier.example/account'), 'credential')
+  for (const name of ['Edit name', 'Change theme', 'View grants']) assert.equal(at(name, 'https://app.example/settings'), 'allow', name)
+})
