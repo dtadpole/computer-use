@@ -31,3 +31,11 @@ test('CU-502: ruled Highs with a quantifier ask in their class', () => {
 test('CU-502 negatives: the list-handling verbs stay free', () => {
   for (const name of ['Select all', 'Mark all as read', 'Expand all', 'Show all', 'See all', 'View all', 'Show all results', 'Collapse all sections', 'Select all items']) assert.equal(at(name), 'allow', name)
 })
+
+test('#683 round 2 (cu-coordinator 13:36Z): open is not a list verb; a quantified name takes its singular row\'s full class set', () => {
+  for (const name of ['Open all ports', 'Open every port']) assert.notEqual(at(name), 'allow', name)
+  const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: 'https://app.example/x', target: { role: 'button', name: 'Approve each sign-in' } })
+  const single = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: 'https://app.example/x', target: { role: 'button', name: 'Approve sign-in' } })
+  for (const cls of single.classes ?? [single.class]) assert.ok((v.classes ?? [v.class]).includes(cls), cls)
+  assert.equal(at('Open all tabs'), 'allow', 'a benign open stays free')
+})

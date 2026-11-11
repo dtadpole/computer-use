@@ -825,7 +825,9 @@ function compoundSplit(text) {
 // '<verb> every <noun>' - is judged as the verb on the object, plural kept and singular, so 'Silence all alarms', 'Empty all buckets',
 // 'Cancel all orders' reach their rows. Never for the list-handling verbs ('Select all', 'Mark all as read', 'Expand all', 'Show all
 // results'), and only when a noun follows the quantifier.
-const QUANTIFIER_SAFE_VERBS = /^(?:select|deselect|unselect|mark|view|show|see|expand|collapse|open|read|check|uncheck|filter|sort|hide|load|browse|list|clear\s+filters?|reply)$/i
+// #683 round 2 (cu-coordinator 13:36Z): 'open' is not a list verb ('Open all ports' asks); and a name that already asks takes the
+// full class set of its quantifier-dropped row too (policy.mjs: 'Approve each sign-in' = permission + submit like 'Approve sign-in').
+const QUANTIFIER_SAFE_VERBS = /^(?:select|deselect|unselect|mark|view|show|see|expand|collapse|read|check|uncheck|filter|sort|hide|load|browse|list|clear\s+filters?|reply)$/i
 export function quantifierDropped(form) {
   const m = /^\s*((?:turn\s+(?:on|off)|switch\s+(?:on|off)|set\s+up|log\s+out\s+of|sign\s+out\s+of|[a-z][a-z-]*))\s+(?:all|every|each)(?:\s+(?:of\s+)?(?:the|your|my|these|those))?\s+([a-z][\w-]*(?:\s+[a-z][\w-]*){0,3})\s*$/i.exec(String(form ?? ''))
   if (!m || QUANTIFIER_SAFE_VERBS.test(m[1].trim())) return []
