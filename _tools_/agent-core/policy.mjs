@@ -195,6 +195,8 @@ const WORDS = Object.freeze({
     // cu-researcher's 13:23Z sweep: unsaved edits lost, like Discard Changes.
     'revert to saved', 'revert all changes', ...ZH_WORDS.delete, ...LOCALE_WORDS.delete],
   permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke',
+    // CU-496 (High; cu-coordinator 11:21Z): approving an access request lets another person in (raises the older submit 'approve').
+    'approve access request', 'approve access', 'approve the access request',
     // #661 round 2 (prepared; cu-developer-three 10:38Z): approving a sign-in grants an outside session access - permission, which is never
     // pre-approved, so an MFA-fatigue push cannot ride an earlier submit 'always' (raises the older submit row; D-108 allows a raise).
     'approve sign-in', 'approve sign in', 'approve signin', 'approve login', 'approve log in', 'approve log-in', 'approve this sign-in', 'approve this login',
@@ -1927,6 +1929,17 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         if (/^https?:$/.test(u.protocol)) tradingPage = /(?:^|[/?#&=])(?:trade|trades|trading|order|orders|brokerage|portfolio)(?=$|[/?#&])/i.test(`${u.pathname}${u.search}${u.hash}`)
       } catch { tradingPage = false }
       if (tradingPage) classes.push('purchase')
+    }
+    // CU-496 (High; cu-coordinator 11:21Z): on a password vault's page (the CU-474 URL test) a 'Download backup' takes the vault's
+    // secrets out (credential); turning ON 'Autofill on page load' lets any page take a filled secret (permission) - a native switch asks
+    // only when the press turns it on; a button asks when it says turn on / enable.
+    if (grammarEligible && classes.length === 0 && /^\s*(?:download|export|save)\s+(?:a\s+|the\s+)?(?:vault\s+)?backup\s*$/i.test(name) && /vault|password|1password|bitwarden|lastpass|dashlane|keeper|proton\.me\/pass/i.test(String(context?.url ?? ''))) classes.push('credential')
+    if (grammarEligible && classes.length === 0) {
+      const autofill = /^\s*(?:(turn\s+on|enable|switch\s+on|allow)\s+)?auto-?fill\s+on\s+page\s+load\s*$/i.exec(name)
+      if (autofill) {
+        const nativeBox = typeof target?.checked === 'boolean'
+        if (nativeBox ? target.checked === false : Boolean(autofill[1])) classes.push('permission')
+      }
     }
     // CU-495 (High; cu-coordinator 11:06Z): on an e-signature page - a whole /sign, /signing, /envelope or /esign segment of an http(s)
     // URL - a bare 'Finish', 'Complete' or 'Confirm' completes the signing (permission). Off that URL they keep their own rows.

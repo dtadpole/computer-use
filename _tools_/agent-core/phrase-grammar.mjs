@@ -1027,6 +1027,10 @@ function grammarClassesOf(name, role = '') {
     if (v === 'allow' && ((r[0] === 'unknown' && r[1] === 'source' && r.length === 2) || (r[0] === 'app' && r[1] === 'from' && ['anywhere', 'unknown'].includes(r[2]) && (r.length === 3 || (r[2] === 'unknown' && r[3] === 'source' && r.length === 4))))) return ['permission']
   }
   if (/^\s*install\s+now\s*!?\s*$/i.test(raw)) return ['install']
+  // CU-496 (High; cu-coordinator 11:21Z): a recovery, trusted or legacy contact can take the account over (permission); a vault's
+  // emergency kit prints its secrets (credential).
+  if (/^\s*(?:add|set\s+up|choose|invite|assign)\s+(?:an?\s+)?(?:recovery|trusted|legacy)\s+contacts?\s*$/i.test(raw)) return ['permission']
+  if (/^\s*(?:print|download|save)\s+(?:the\s+|your\s+)?emergency\s+kit\s*$/i.test(raw)) return ['credential']
   // CU-495 (High; cu-coordinator 11:06Z): an e-signature commits the signer - 'Sign', 'Sign here', 'Click to sign', 'Agree and sign',
   // 'Apply signature', 'Complete signing', 'Sign all' ask permission anywhere, like 'Adopt and Sign'. 'Sign in' / 'Sign up' keep their rows.
   // #665 round 2 (cu-researcher 11:16Z): 'Add my / Place / Insert signature', 'Sign electronically / digitally'.
