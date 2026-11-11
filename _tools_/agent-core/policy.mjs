@@ -2172,6 +2172,17 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const also = shortcutActive ? { alsoNeeds: shortcutApproval } : {}
     // ... and 'permission' is listed beside the other classes (the record), while the class that ranks first still leads.
     const stack = (list) => (shortcutActive && !list.includes('permission') ? [...list, 'permission'] : list)
+    // CU-501 (High; cu-coordinator 13:21Z), as verb families with object synonyms: at a registrar, pushing a domain to another account or
+    // changing its registrant hands the domain over (the class of 'Transfer out', purchase); changing MX records or nameservers, turning
+    // off DNSSEC and unlocking the domain redirect or expose it (permission). Only where nothing asked yet: the rows CU-446 ruled
+    // ('Push domain', 'Change registrant', 'Unlock domain', 'Turn off domain lock' credential; 'Transfer ownership' permission) keep
+    // their class exactly (D-108; reclass 0). 'DNS records' stays free.
+    if (grammarEligible) {
+      const domainHandover = /^\s*(?:push|move|give|hand\s+over)\s+(?:the\s+|this\s+|my\s+)?domains?(?:\s+(?:name|names))?(?:\s+to\s+(?:another|a\s+different|a\s+new|other|an\s+external)\s+(?:account|registrar|user|owner|customer))?\s*$|^\s*(?:change|update|edit|transfer)\s+(?:the\s+|domain\s+)?(?:registrant|domain\s+owner|ownership)(?:\s+(?:contact|details|name|information|info))?\s*$/i
+      const domainExposure = /^\s*(?:change|edit|update|modify|set|replace|use\s+custom)\s+(?:the\s+|custom\s+|your\s+)?(?:mx\s+records?|mail\s+(?:exchange|server)\s+records?|name\s*servers?|dns\s+servers?)\s*$|^\s*(?:disable|turn\s+off|deactivate|remove|switch\s+off)\s+(?:the\s+)?(?:dnssec|domain\s+(?:lock|protection)|registrar\s+lock|transfer\s+lock)\s*$|^\s*unlock\s+(?:the\s+|this\s+|my\s+)?domains?(?:\s+for\s+transfer)?\s*$/i
+      if (classes.length === 0 && domainHandover.test(name)) classes.push('purchase')
+      else if (classes.length === 0 && domainExposure.test(name)) classes.push('permission')
+    }
     // #683 round 2 (cu-coordinator 13:36Z): a quantified name that already asks takes the full class set of its quantifier-dropped row
     // too ('Approve each sign-in' asks permission beside the older submit, like 'Approve sign-in') - adds only.
     if (grammarEligible && classes.length > 0 && context.confirmProbe !== true && String(name ?? '').length <= 200) {
