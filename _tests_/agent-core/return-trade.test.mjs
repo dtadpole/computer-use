@@ -15,7 +15,7 @@ import { readRun } from '../../_tools_/agent-core/trajectory.mjs'
 // CU-406 (High): Return presses the default button; the click's full classifier judges it (name and formContext), so the
 // trade clause and credential apply on Return as on a click. Both sides; one row through runTask (D-103).
 const policy = createPolicy({ sitePolicy: () => 'allow' })
-const enter = (defaultButton) => { const v = policy.classify({ type: 'keypress', keys: ['ENTER'] }, { url: 'https://exchange.example/trade', target: { tag: 'input', role: 'textbox', name: 'Amount', defaultButtonRead: true, defaultButton } }); return v.decision === 'allow' ? 'allow' : v.class }
+const enter = (defaultButton, url = 'https://exchange.example/trade') => { const v = policy.classify({ type: 'keypress', keys: ['ENTER'] }, { url, target: { tag: 'input', role: 'textbox', name: 'Amount', defaultButtonRead: true, defaultButton } }); return v.decision === 'allow' ? 'allow' : v.class }
 const tmp = mkdtempSync(join(tmpdir(), 'cu-406-'))
 after(() => rmSync(tmp, { recursive: true, force: true }))
 
@@ -37,8 +37,9 @@ test('CU-406 (07:03Z): the click classifier judges the default - Change email / 
 
 test('CU-406 negatives: a non-trade default, or no asset option, keeps today\'s judgement', () => {
   assert.notEqual(enter({ name: 'Search', formContext: { options: ['BTC'], amountEntry: false } }), 'purchase')
-  assert.notEqual(enter({ name: 'Sell', formContext: { options: ['Used - good'], amountEntry: true } }), 'purchase')
-  assert.notEqual(enter({ name: 'Sell', formContext: { options: [], amountEntry: true } }), 'purchase', 'an amount entry alone never counts (05:26Z)')
+  // CU-483 (cu-coordinator 06:05Z, (a)): the marketplace Sell negatives read a marketplace URL (a trading URL now asks).
+  assert.notEqual(enter({ name: 'Sell', formContext: { options: ['Used - good'], amountEntry: true } }, 'https://market.example/listings'), 'purchase')
+  assert.notEqual(enter({ name: 'Sell', formContext: { options: [], amountEntry: true } }, 'https://market.example/listings'), 'purchase', 'an amount entry alone never counts (05:26Z)')
   assert.notEqual(enter({ name: 'Convert', formContext: { options: ['PDF'], amountEntry: false } }), 'purchase')
 })
 

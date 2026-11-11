@@ -18,11 +18,14 @@ const FILLER = new Set(['<n>', 'all', 'new', 'now', 'it', 'them', 'everyone', 'a
 
 const US_WORDS = new Set(['antivirus', 'virus', 'status', 'bonus', 'campus', 'focus', 'census', 'corpus', 'plus', 'minus', 'surplus', 'genius', 'radius', 'nexus', 'menus', 'bus'])
 
+// #580 round 4 (cu-coordinator 22:44Z): the switch verbs read beside 'turn' - 'Switch / Flip / Toggle X on|off'.
+const SWITCH_VERBS = new Set(['turn', 'switch', 'flip', 'toggle'])
+
 // Words whose final -s is not a plural (CU-438: 'Add alias').
-const NOT_PLURAL = new Set(['alias', 'canvas', 'atlas', 'bias', 'gas', 'lens', 'news', 'series', 'species', 'chassis', 'axis', 'basis', 'analysis', 'thesis', 'crisis', 'diagnosis'])
+const NOT_PLURAL = new Set(['alias', 'whois', 'canvas', 'atlas', 'bias', 'gas', 'lens', 'news', 'series', 'species', 'chassis', 'axis', 'basis', 'analysis', 'thesis', 'crisis', 'diagnosis'])
 
 function singular(token) {
-  if (NOT_PLURAL.has(token)) return token
+  if (NOT_PLURAL.has(token) || token.endsWith('ous')) return token
   if (token.length > 4 && token.endsWith('ies')) return `${token.slice(0, -3)}y`
   if (token.length > 4 && /(?:ss|sh|ch|x)es$/.test(token)) return token.slice(0, -2)
   // -us stays only on its Latin / short words (antivirus, status, bonus ...); an acronym plural folds ('GPUs' = 'gpu', cu-coordinator 19:22Z).
@@ -187,6 +190,50 @@ const pushOnce = (out, cls) => { if (!out.includes(cls)) out.push(cls) }
 const PRICED_ROLES = new Set(['gridcell', 'option', 'radio', 'checkbox', 'button', 'axcell', 'axrow', 'axradiobutton', 'axcheckbox',
   'axbutton', 'axmenuitem'])
 const PRICED_NOUNS = new Set(['seat', 'option', 'legroom', 'bag', 'baggage'])
+// #602 round 2 (cu-researcher 01:31Z): a symbol after the number with a comma decimal too ('Weiter f\u00fcr 4,99 \u20ac').
+const AMOUNT = /(?:[$\u20ac\u00a3\u00a5\u20b9]\s?(\d[\d,]*(?:\.\d+)?))|(?:\b(\d[\d,]*(?:\.\d+)?)\s?(?:usd|eur|gbp|jpy|cad|aud|inr|chf)\b)|(?:\b(?:usd|eur|gbp|jpy|cad|aud|inr|chf)\s?(\d[\d,]*(?:\.\d+)?))|(?:\b(\d[\d.]*(?:,\d{1,2})?)\s?[\u20ac$\u00a3\u00a5\u20b9])/gi
+// A price filter or range commits nothing ('Under $25', '$10 - $20', 'Over EUR 100', 'Up to $50'; cu-researcher 00:51Z).
+const PRICE_FILTER = /^\s*(?:under|over|below|above|less\s+than|more\s+than|up\s+to|from|max(?:imum)?|min(?:imum)?)\b|\d\s*(?:-|\u2013|\u2014|to)\s*[$\u20ac\u00a3\u00a5\u20b9]?\s*\d|\b(?:and\s+(?:up|above|under|below)|or\s+(?:less|more))\s*$/i
+// Links and list items stay out of the plain pattern (17:18Z; cu-coordinator 01:04Z): a priced link navigates to the item.
+// cu-developer-three 01:39Z (D-099): a desktop pull-down AXMenuButton asks; a closed AXPopUpButton only opens its menu (its chosen
+// AXMenuItem asks), so it stays out; desktop list rows AXRow / AXCell take the commit-verb form like links.
+const AMOUNT_ROLES = new Set(['button', 'menuitem', 'axbutton', 'axmenuitem', 'axmenubutton', 'alertdialog', 'dialog'])
+const COMMIT_LINK_ROLES = new Set(['link', 'listitem', 'axlink', 'option', 'axrow', 'axcell'])
+const PRICE_LABEL = /^\s*(?:price|was|now|from|save|sale|regular|list\s+price|msrp)\b|\boff\s*$|\bdiscount\b/i
+const AMOUNT_COMMIT = /^\s*(?:buy|pay|purchase|subscribe|order|donate|tip|rent|upgrade|renew|checkout|check\s+out|charge|get\s+(?:it|premium|pro|plus))\b/i
+/** CU-467 (cu-coordinator 00:49Z, 01:04Z): 'purchase' when a pressed control names a money amount - any button, menu item or dialog
+ * control; a link or list item only with a commit verb ('Buy for $5', not a 'Blue mug, $12.99' tile); price filters and ranges never. */
+export function amountClass(name, role = '') {
+  const raw = String(name ?? '')
+  if (!namesAmount(raw) || PRICE_FILTER.test(raw)) return null
+  // #602 round 2 (A): a price label or discount badge is not a commit ('Price: $35', 'Sale - $35 off', 'Was $50', 'Save $10') - unless a
+  // commit verb leads.
+  if (PRICE_LABEL.test(raw) && !AMOUNT_COMMIT.test(raw)) return null
+  const r = String(role ?? '').toLowerCase()
+  if (AMOUNT_ROLES.has(r)) return 'purchase'
+  if (COMMIT_LINK_ROLES.has(r) && AMOUNT_COMMIT.test(raw)) return 'purchase'
+  return null
+}
+// cu-coordinator 02:35Z (cu-researcher's recommendation): an INERT link (CU-472) takes the button amount pattern when its name leads
+// with a generic or commit verb, or carries an amount with a period; a product tile drawn as an inert link stays free.
+// #602 round 4 (cu-researcher 02:36Z): 'add' (the ruled list) and the EU continue / buy words ('Weiter f\u00fcr 4,99 \u20ac').
+const GENERIC_AMOUNT_VERB = /^\s*(?:continue|confirm|yes|ok|okay|next|proceed|submit|complete|place|start|try|join|unlock|get|add|upgrade|renew|subscribe|pay|buy|purchase|order|donate|tip|checkout|check\s+out|charge|weiter|jetzt|kaufen|bezahlen|continuer|payer|acheter|continuar|pagar|comprar)\b/i
+const AMOUNT_PERIOD = /(?:\/\s*(?:mo|month|yr|year|wk|week|day)|\b(?:per|a|an|each)\s+(?:month|year|week|day)|\b(?:monthly|yearly|annually|weekly))\b/i
+export function inertLinkAmountClass(name) {
+  const raw = String(name ?? '')
+  if (!namesAmount(raw) || PRICE_FILTER.test(raw)) return null
+  if (PRICE_LABEL.test(raw) && !AMOUNT_COMMIT.test(raw)) return null
+  return GENERIC_AMOUNT_VERB.test(raw) || AMOUNT_PERIOD.test(raw) || /^\s*[$\u20ac\u00a3\u00a5\u20b9]?\s*\d[\d.,]*\s*(?:[$\u20ac\u00a3\u00a5\u20b9]|usd|eur|gbp)?\s*$/i.test(raw) ? 'purchase' : null
+}
+/** CU-467: whether a name carries a positive money amount (a currency symbol or ISO code beside a number). */
+export function namesAmount(name) {
+  const amounts = [...String(name ?? '').matchAll(AMOUNT)].map((m) => {
+    const text = String(m[1] ?? m[2] ?? m[3] ?? m[4] ?? '')
+    // '4,99' (a comma decimal) reads as 4.99; '1,000' (a thousands comma) as 1000.
+    return Number(/^\d+,\d{1,2}$/.test(text) ? text.replace(',', '.') : text.replace(/,/g, ''))
+  })
+  return amounts.some((n) => Number.isFinite(n) && n > 0)
+}
 const CURRENCY = /[$\u20ac\u00a3\u00a5]\s?\d|\d\s?(?:usd|eur|gbp)\b/i
 
 // CU-435's insurance rows: verb x object -> class, within the usual two-token window.
@@ -255,7 +302,7 @@ function endsWithSeq(rest, seq) { return rest.length >= seq.length && seq.every(
 function childProtectionOff(list) {
   if (list.length > 7) return false
   // 'turn off' / 'switch off' arrive as two tokens here (the multi-word verbs are folded later).
-  const twoWord = (list[0] === 'turn' || list[0] === 'switch') && list[1] === 'off'
+  const twoWord = SWITCH_VERBS.has(list[0]) && list[1] === 'off'
   const verb = twoWord ? 'turn off' : list[0]
   const rest = list.slice(twoWord ? 2 : 1)
   const core = rest.filter((t) => !FILLER.has(t))
@@ -266,7 +313,8 @@ function childProtectionOff(list) {
   if (verb === 'allow' && core.length <= 4 && (core[0] === 'purchase' || core.includes('buying')) && (core.includes('approval') || core.includes('buying'))) return true
   if (verb === 'extend' && core.length <= 2 && core[core.length - 1] === 'time' && (core.length === 1 || core[0] === 'screen')) return true
   if (verb === 'extend' && core.length === 1 && core[0] === 'screen') return true
-  if (verb === 'give' && rest.includes('<n>') && core.length <= 2 && ['minute', 'hour'].includes(core[core.length - 1]) && (core.includes('more') || core.length === 1)) return true
+  // CU-481 residual (06:49Z, d): 'Grant <n> more minutes' joins the CU-440 'Give <n> more minutes' row.
+  if (['give', 'grant'].includes(verb) && rest.includes('<n>') && core.length <= 2 && ['minute', 'hour'].includes(core[core.length - 1]) && (core.includes('more') || core.length === 1)) return true
   if (verb === 'add' && core[core.length - 1] === 'time' && core.length <= 3 && (core.includes('more') || core.includes('screen') || core.includes('<n>'))) return true
   return false
 }
@@ -317,6 +365,372 @@ function phoneClass(list) {
   return null
 }
 
+const AD_OBJECTS = new Set(['campaign', 'ad', 'ads', 'promotion', 'advert', 'advertisement'])
+function adSpend(list) {
+  if (list.length > 7) return false
+  // #580 round 3 (cu-verifier 22:41Z): 'switch on' as well as 'turn on' ('Switch ads on' after the split-particle normaliser).
+  const twoWord = SWITCH_VERBS.has(list[0]) && list[1] === 'on'
+  const verb = twoWord ? 'turn on' : list[0]
+  const rest = list.slice(twoWord ? 2 : 1)
+  const core = rest.filter((t) => !FILLER.has(t))
+  const last = core[core.length - 1]
+  if (['launch', 'publish', 'resume', 'start', 'run', 'activate', 'enable', 'turn on', 'unpause', 'restart'].includes(verb) && core.length <= 3 && (AD_OBJECTS.has(last) || (last === 'set' && core.includes('ad')))) return true
+  if (['increase', 'raise', 'up', 'double', 'boost'].includes(verb) && core.length <= 3 && ['budget', 'bid', 'spend'].includes(last)) return true
+  if ((verb === 'set' || verb === 'change' || verb === 'update') && core.includes('budget') && rest.includes('<n>')) return true
+  return false
+}
+
+function cameraPrivacyOff(list) {
+  if (list.length > 7) return false
+  const two = SWITCH_VERBS.has(list[0]) && (list[1] === 'off' || list[1] === 'on')
+  const verb = two ? `turn ${list[1]}` : list[0]
+  const rest = list.slice(two ? 2 : 1)
+  const core = rest.filter((t) => !FILLER.has(t))
+  if (['turn off', 'disable', 'deactivate', 'pause'].includes(verb) && core[0] === 'privacy' && core.length <= 2) return true
+  if (verb === 'open' && core.length <= 2 && (core[core.length - 1] === 'shutter' || (core[0] === 'privacy' && core[1] === 'cover'))) return true
+  if (['enable', 'turn on', 'start', 'activate'].includes(verb) && core.length <= 3) {
+    const tail = core.join(' ')
+    if (/(?:^|\s)(?:audio|sound|continuous|nonstop)\s+recording$/.test(tail) || /^recording$/.test(tail) && rest.includes('<n>')) return true
+    if (/^(?:face|facial|person|people)\s+recognition$|^familiar\s+face$|^face\s+detection$/.test(tail)) return true
+    // #580 round 2: 'Enable microphone' on a camera opens its audio (CU-445).
+    if (/^(?:microphone|mic)$/.test(tail)) return true
+  }
+  return false
+}
+
+function domainClass(list) {
+  if (list.length > 7) return null
+  const two = SWITCH_VERBS.has(list[0]) && list[1] === 'off'
+  const verb = two ? 'turn off' : list[0]
+  const rest = list.slice(two ? 2 : 1)
+  const core = rest.filter((t) => !FILLER.has(t))
+  const last = core[core.length - 1]
+  if (verb === 'unlock' && core.length <= 2 && last === 'domain') return 'credential'
+  if (['turn off', 'disable', 'remove'].includes(verb) && core.length <= 3 && last === 'lock' && (core.includes('domain') || core.includes('transfer') || core.includes('registrar'))) return 'credential'
+  if (['get', 'show', 'view', 'copy', 'reveal', 'send', 'request'].includes(verb) && last === 'code' && core.some((t) => ['auth', 'epp', 'authorization', 'transfer'].includes(t))) return 'credential'
+  if (['change', 'update', 'edit', 'transfer'].includes(verb) && core.length <= 3 && (last === 'registrant' || (last === 'owner' && core.some((t) => t === 'account' || t === 'domain')))) return 'credential'
+  if (verb === 'push' && core.length <= 2 && last === 'domain') return 'credential'
+  if (['change', 'use', 'set', 'edit', 'update'].includes(verb) && core.length <= 3 && last === 'nameserver') return 'permission'
+  if (['edit', 'change', 'update', 'delete', 'add'].includes(verb) && core.length <= 3 && last === 'record' && core.includes('dns')) return 'permission'
+  if (['turn off', 'disable', 'remove'].includes(verb) && core.length <= 3 && last === 'privacy' && (core.includes('whois') || core.includes('domain'))) return 'permission'
+  return null
+}
+
+const AUDIT_OBJECTS = [['cloudtrail'], ['audit', 'log'], ['audit', 'logging'], ['logging'], ['guardduty'], ['flow', 'log'], ['security', 'hub'], ['defender'], ['activity', 'log']]
+function cloudExposureClass(list, lower) {
+  if (list.length > 8) return null
+  const two = SWITCH_VERBS.has(list[0]) && list[1] === 'off'
+  const verb = two ? 'turn off' : list[0]
+  const rest = list.slice(two ? 2 : 1)
+  const core = rest.filter((t) => !FILLER.has(t))
+  const offVerb = ['turn off', 'disable', 'remove', 'stop', 'pause', 'deactivate', 'delete'].includes(verb)
+  if (offVerb && endsWithSeq(core, ['block', 'public', 'access'])) return 'permission'
+  if (offVerb && core.length <= 3 && AUDIT_OBJECTS.some((seq) => endsWithSeq(core, seq))) return 'permission'
+  if (verb === 'open' && core.length <= 2 && ['internet', 'world', 'public'].includes(core[core.length - 1])) return 'permission'
+  if (verb === 'allow' && (/(?:^|\s)(?:0\.0\.0\.0\/0|::\/0)(?:\s|$)/.test(lower) || (rest.includes('all') && ['traffic', 'inbound', 'ip', 'port', 'source'].includes(core[core.length - 1])))) return 'permission'
+  if (verb === 'create' && core[core.length - 1] === 'key' && core.length <= 3 && (core.includes('service') || core.includes('access') || core.includes('api'))) return 'credential'
+  if (verb === 'download' && core.length <= 2 && core[core.length - 1] === 'key') return 'credential'
+  return null
+}
+
+const TITLES = new Set(['movie', 'film', 'show', 'episode', 'season', 'series', 'title', 'documentary', 'subscription'])
+function streamingPurchase(list) {
+  if (list.length > 6) return false
+  const [verb, ...rest] = list
+  const core = rest.filter((t) => !FILLER.has(t))
+  const last = core[core.length - 1]
+  if (verb === 'add' && core.length >= 1 && core.length <= 3 && last === 'channel' && !rest.includes('to')) return true
+  // 'on' is filler, so the add-on is read from rest ('Add premium add-on').
+  if (verb === 'add' && rest.length <= 4 && rest.slice(-2).join(' ') === 'add on') return true
+  if (verb === 'unlock' && core.length <= 2 && ['episode', 'season', 'chapter', 'series'].includes(last)) return true
+  if ((verb === 'gift' || verb === 'rent') && core.length <= 2 && TITLES.has(last)) return true
+  return false
+}
+
+const DEAL_PARTIES = new Set(['agent', 'realtor', 'seller', 'landlord', 'recruiter', 'broker', 'lender', 'host', 'owner'])
+function dealSubmit(list) {
+  if (list.length > 6) return false
+  const [verb, ...rest] = list
+  const core = rest.filter((t) => !FILLER.has(t))
+  const last = core[core.length - 1]
+  if (list.length === 2 && verb === 'easy' && rest[0] === 'apply') return true
+  if (verb === 'lock' && core.length <= 3 && last === 'rate') return true
+  if ((verb === 'get' || verb === 'start' || verb === 'begin') && core[0] === 'pre' && ['approved', 'approval', 'qualified', 'qualification'].includes(core[1]) && core.length === 2) return true
+  // #590 round 2: the one-word forms ('Get prequalified').
+  if ((verb === 'get' || verb === 'start' || verb === 'begin') && core.length === 1 && ['preapproved', 'preapproval', 'prequalified', 'prequalification'].includes(core[0])) return true
+  if (['schedule', 'request', 'book'].includes(verb) && core.length <= 3 && ['tour', 'showing', 'viewing'].includes(last)) return true
+  if (['contact', 'message', 'email'].includes(verb) && core.length <= 2 && DEAL_PARTIES.has(last)) return true
+  return false
+}
+
+function walletClass(list) {
+  if (list.length > 6) return null
+  const [verb, ...rest] = list
+  const core = rest.filter((t) => !FILLER.has(t))
+  const tail = core.join(' ')
+  if (['show', 'reveal', 'view', 'copy', 'export', 'display'].includes(verb) && /^(?:(?:seed|recovery|secret|mnemonic)\s+phrase|private\s+key|secret\s+key|seed)$/.test(tail)) return 'credential'
+  if (['import', 'restore', 'recover'].includes(verb) && core.length <= 2 && core[core.length - 1] === 'wallet') return 'credential'
+  // #590 round 2: 'Restore from seed phrase' - typing a seed phrase in.
+  if (['import', 'restore', 'recover'].includes(verb) && /(?:seed|recovery|secret|mnemonic)\s+phrase$|private\s+key$/.test(tail)) return 'credential'
+  if (verb === 'set' && core[0] === 'approval' && rest.includes('all')) return 'purchase'
+  if (verb === 'approve' && core.length <= 2 && ['spending', 'unlimited', 'token', 'allowance', 'spend'].includes(core[core.length - 1])) return 'purchase'
+  if (verb === 'connect' && core.length <= 2 && core[core.length - 1] === 'wallet') return 'permission'
+  if (verb === 'claim' && core.length <= 2 && ['airdrop', 'token', 'drop'].includes(core[core.length - 1])) return 'submit'
+  return null
+}
+
+function identityClass(list) {
+  if (list.length > 6) return null
+  // 'Temporarily lift freeze': an adverb before the verb is dropped.
+  const words = list[0] === 'temporarily' || list[0] === 'permanently' ? list.slice(1) : list
+  const [verb, ...rest] = words
+  const core = rest.filter((t) => !FILLER.has(t))
+  const last = core[core.length - 1]
+  if (['change', 'update', 'edit'].includes(verb) && core.length <= 2 && (last === 'address' && (core.length === 1 || ['mailing', 'home', 'billing', 'postal', 'shipping'].includes(core[0])))) return 'credential'
+  if (['change', 'update', 'edit'].includes(verb) && core.length <= 3 && core.join(' ').match(/^contact\s+(?:info|information|detail)$/)) return 'credential'
+  if (verb === 'forward' && core.length <= 2 && last === 'mail' && !core.includes('e')) return 'credential'
+  if (verb === 'unfreeze' && core.length <= 2 && (last === 'credit' || last === 'report' || core.length === 0)) return 'credential'
+  if ((verb === 'lift' || verb === 'remove' || verb === 'thaw') && core.length <= 2 && last === 'freeze') return 'credential'
+  if (verb === 'certify' && core.length <= 3 && last === 'claim') return 'submit'
+  return null
+}
+
+const APP_OBJECTS = new Set(['app', 'integration', 'bot', 'plugin', 'connector', 'extension'])
+function workspaceClass(list) {
+  if (list.length > 6) return null
+  const [verb, ...rest] = list
+  const core = rest.filter((t) => !FILLER.has(t))
+  const last = core[core.length - 1]
+  if (verb === 'convert' && core.includes('public') && core.length <= 3) return 'permission'
+  if (['allow', 'approve', 'authorize', 'authorise'].includes(verb) && core.length <= 2 && APP_OBJECTS.has(last)) return 'permission'
+  // #590 round 2: kick and ban only - blocking is the safe direction (CU-404's 'Block user' stays free).
+  if (['kick', 'ban'].includes(verb) && core.length <= 2 && ['member', 'user', 'participant', 'guest'].includes(last)) return 'permission'
+  // #590 round 2: 'Kick from channel', 'Add app to Slack'.
+  if (['kick', 'ban'].includes(verb) && rest[0] === 'from' && core.length <= 2) return 'permission'
+  if (verb === 'add' && APP_OBJECTS.has(core[0]) && rest.includes('to') && core.length <= 3) return 'install'
+  if (verb === 'install' && core.length <= 2 && APP_OBJECTS.has(last)) return 'install'
+  return null
+}
+
+const MAIL_PROTECTIONS = [['spam', 'filter'], ['safe', 'browsing'], ['external', 'sender', 'warning'], ['sign', 'in', 'notification'], ['security', 'alert'],
+  ['phishing', 'protection'], ['login', 'alert'], ['sign', 'in', 'alert'], ['junk', 'filter'], ['phishing', 'warning']]
+function mailProtectionClass(list, lower = '') {
+  if (list.length > 8) return null
+  const two = SWITCH_VERBS.has(list[0]) && (list[1] === 'off' || list[1] === 'on')
+  const verb = two ? `turn ${list[1]}` : list[0]
+  const rest = list.slice(two ? 2 : 1)
+  if (['turn off', 'disable', 'deactivate', 'pause'].includes(verb) && rest.length <= 4 && MAIL_PROTECTIONS.some((seq) => endsWithSeq(rest, seq))) return 'permission'
+  if (verb === 'allow' && rest.length === 2 && rest[0] === 'all' && rest[1] === 'sender') return 'permission'
+  // #590 round 2: 'Allow mail from all senders'; 'Turn on access for less secure apps'.
+  if (verb === 'allow' && endsWithSeq(rest, ['all', 'sender']) && rest.length <= 5) return 'permission'
+  if (['turn on', 'enable', 'allow'].includes(verb) && endsWithSeq(rest, ['less', 'secure', 'app']) && rest.length <= 6) return 'credential'
+  if (verb === 'add' && rest.includes('domain') && endsWithSeq(rest, ['safe', 'sender'])) return 'permission'
+  // #602 round 2 (cu-coordinator 01:36Z): a concrete domain ('Add example.com to safe senders', 'Add @example.com ...') - not one
+  // sender's address ('alice@example.com').
+  if (/^\s*add\s+(?:@[a-z0-9-]+(?:\.[a-z0-9-]+)+|(?<![\w@])[a-z0-9-]+(?:\.[a-z0-9-]+)+)\s+to\s+(?:the\s+)?safe\s+senders?(?:\s+list)?\s*$/i.test(lower)) return 'permission'
+  if (['turn on', 'enable', 'allow'].includes(verb) && rest.slice(0, 3).join(' ') === 'less secure app') return 'credential'
+  return null
+}
+
+function taxFiling(list) {
+  if (list.length > 6) return false
+  const [verb, ...rest] = list
+  const core = rest.filter((t) => !FILLER.has(t))
+  const last = core[core.length - 1]
+  if (verb === 'sign' && rest[0] === 'and' && rest[1] === 'file' && rest.length <= 3) return true
+  if ((verb === 'transmit' || verb === 'submit') && core.length <= 3 && last === 'return') return true
+  if (verb === 'e' && core[0] === 'file') return true
+  if (['file', 'request', 'submit'].includes(verb) && core.length <= 2 && last === 'extension') return true
+  if (verb === 'file' && core.length <= 3 && last === 'return') return true
+  return false
+}
+
+function vehicleClass(list) {
+  if (list.length > 6) return null
+  const two = SWITCH_VERBS.has(list[0]) && (list[1] === 'off' || list[1] === 'on')
+  const verb = two ? `turn ${list[1]}` : list[0]
+  const rest = list.slice(two ? 2 : 1)
+  const core = rest.filter((t) => !FILLER.has(t))
+  const last = core[core.length - 1]
+  const tail = core.join(' ')
+  if ((list.length === 1 && list[0] === 'summon') || (list.length === 2 && list[0] === 'smart' && list[1] === 'summon')) return 'physical'
+  // #590 round 2: 'Summon car', 'Start Summon'.
+  if ((list[0] === 'summon' && list.length <= 3 && ['car', 'vehicle'].includes(list[list.length - 1])) || (['start', 'use'].includes(list[0]) && list.length <= 3 && list[list.length - 1] === 'summon')) return 'physical'
+  if (list.length === 1 && list[0] === 'honk') return 'physical'
+  if (verb === 'open' && core.length <= 2 && ['trunk', 'frunk', 'tailgate', 'liftgate'].includes(last)) return 'physical'
+  // #590 round 2 (cu-researcher 23:26Z): a car's windows, never a browser window ('Open link in new window', 'Open in new window').
+  if (verb === 'open' && last === 'window' && !rest.includes('new') && !rest.includes('link') && !rest.includes('tab') && (core.length === 1 || (core.length === 2 && ['car', 'rear', 'front', 'all', 'driver', 'passenger'].includes(core[0])))) return 'physical'
+  if (verb === 'vent' && core.length <= 2 && last === 'window') return 'physical'
+  if (verb === 'start' && core.length <= 2 && ['climate', 'preconditioning', 'defrost'].includes(last)) return 'physical'
+  if ((verb === 'flash' && core.length <= 1 && last === 'light') || (verb === 'honk' && core.length <= 1 && last === 'horn')) return 'physical'
+  if (['turn off', 'disable', 'deactivate'].includes(verb) && /^sentry(?:\s+mode)?$/.test(tail)) return 'permission'
+  if (['turn off', 'disable', 'remove'].includes(verb) && rest.join(' ') === 'pin to drive') return 'credential'
+  if (verb === 'add' && core.length <= 2 && last === 'key' && (core.length === 1 || ['phone', 'digital', 'car'].includes(core[0]))) return 'credential'
+  return null
+}
+
+const CONTACT_DETAILS = [['phone', 'number'], ['email'], ['email', 'address'], ['address'], ['birthday'], ['phone']]
+function exposureClass(list, lower = '') {
+  if (list.length > 7) return null
+  const two = SWITCH_VERBS.has(list[0]) && (list[1] === 'off' || list[1] === 'on')
+  const verb = two ? `turn ${list[1]}` : list[0]
+  const rest = list.slice(two ? 2 : 1)
+  const core = rest.filter((t) => !FILLER.has(t))
+  if (verb === 'make' && core.length <= 2 && core[core.length - 1] === 'private' && (core.length === 1 || ['account', 'profile'].includes(core[0]))) return 'free'
+  if ((verb === 'switch' || verb === 'change' || verb === 'set') && rest[0] === 'to' && core.length <= 2 && core[0] === 'public') return 'permission'
+  // #592 round 2 (cu-researcher 23:44Z): 'Set posts to Public'.
+  if ((verb === 'set' || verb === 'change' || verb === 'make') && rest.length <= 3 && ['post', 'profile', 'account', 'story', 'photo'].includes(rest[0]) && rest[rest.length - 1] === 'public' && (rest.length === 2 || rest[1] === 'to')) return 'permission'
+  // 'everyone' / 'anyone' are filler words, so the audience is read on rest ('Change audience to Everyone').
+  if ((verb === 'change' || verb === 'set') && rest[0] === 'audience' && rest.length <= 3 && ['public', 'everyone', 'anyone'].includes(rest[rest.length - 1])) return 'permission'
+  if (verb === 'turn off' && core.length <= 2 && core[0] === 'private' && (core.length === 1 || ['account', 'profile', 'mode'].includes(core[1]))) return 'permission'
+  // 'my' marks a profile field shown to others ('Show my email'); a bare 'Show email' opens a message (F1/F5 stays free).
+  if (['show', 'display', 'reveal'].includes(verb) && /\bmy\b/.test(lower) && core.length <= 2 && CONTACT_DETAILS.some((seq) => seq.length === core.length && seq.every((w, i) => core[i] === w))) return 'permission'
+  // #592 round 2: a detail shown on the profile or to everyone ('Show my phone number on profile', 'Show phone number to everyone').
+  const detail = rest.filter((t) => !['on', 'to', 'profile', 'everyone', 'anyone', 'public'].includes(t) && !FILLER.has(t))
+  const audience = (rest.includes('everyone') || rest.includes('anyone') || rest.includes('public')) || (/\bmy\b/.test(lower) && rest.includes('profile'))
+  if (['show', 'display', 'reveal'].includes(verb) && audience && detail.length <= 2 && CONTACT_DETAILS.some((seq) => seq.length === detail.length && seq.every((w, i) => detail[i] === w))) return 'permission'
+  if (verb === 'allow' && (rest[0] === 'anyone' || rest[0] === 'everyone') && ['message', 'contact', 'call', 'find', 'dm'].some((w) => rest.includes(w)) && rest.length <= 5) return 'permission'
+  if (verb === 'allow' && ['message', 'call', 'request'].includes(rest[0]) && rest[1] === 'from' && ['anyone', 'everyone'].includes(rest[2]) && rest.length === 3) return 'permission'
+  return null
+}
+
+const REMOTE_ACCESS = [['screen', 'sharing'], ['remote', 'login'], ['remote', 'desktop'], ['remote', 'connection'], ['file', 'sharing'], ['internet', 'sharing'],
+  ['remote', 'apple', 'event'], ['remote', 'control'], ['smb'], ['remote', 'desktop', 'connection'], ['file', 'sharing', 'service'], ['smb', 'service']]
+function remoteAccess(list) {
+  if (list.length > 6) return false
+  const two = SWITCH_VERBS.has(list[0]) && list[1] === 'on'
+  const verb = two ? 'turn on' : list[0]
+  const rest = list.slice(two ? 2 : 1).filter((t) => !FILLER.has(t))
+  return ['turn on', 'enable', 'allow', 'start', 'activate'].includes(verb) && rest.length <= 4 && REMOTE_ACCESS.some((seq) => endsWithSeq(rest, seq))
+}
+function portalClass(list) {
+  if (list.length > 7) return null
+  const [verb, ...rest] = list
+  // #617 round 2 (cu-researcher 03:38Z): 'Give someone access to my account', 'Give access to my chart', 'Join research program',
+  // 'Schedule follow-up'.
+  if (verb === 'give' && rest.includes('access') && rest.length <= 5 && ['account', 'chart', 'record', 'portal'].includes(rest[rest.length - 1])) return 'credential'
+  // 'Sign waiver' keeps the grammar's existing permission on main (cu-developer-three 04:15Z) - only the ruled authorization / release.
+  if (verb === 'sign' && rest.length <= 3 && ['authorization', 'release'].includes(rest[rest.length - 1])) return 'submit'
+  if (['schedule', 'request'].includes(verb) && rest.length <= 3 && (['appointment', 'visit'].includes(rest[rest.length - 1]) || (rest.includes('follow') && rest[rest.length - 1] === 'up'))) return 'submit'
+  if (verb === 'start' && rest.length <= 3 && rest.includes('visit') && (rest.includes('e') || rest.includes('video') || rest.includes('virtual'))) return 'submit'
+  if (verb === 'opt' && rest[0] === 'in' && rest.length <= 4 && ['research', 'study', 'trial'].includes(rest[rest.length - 1])) return 'permission'
+  // cu-coordinator 03:51Z: checking in for a visit is submit ('Check in', 'eCheck-in', 'Check in for appointment', 'Check in online').
+  if ((verb === 'check' || verb === 'echeck') && rest[0] === 'in' && rest.length <= 3 && (rest.length === 1 || ['appointment', 'visit', 'online'].includes(rest[rest.length - 1]))) return 'submit'
+  if (['join', 'enroll', 'enrol'].includes(verb) && rest.length <= 3 && (rest.includes('research') || rest.includes('study') || rest.includes('trial'))) return 'permission'
+  return null
+}
+function vaultClass(list) {
+  if (list.length > 7) return null
+  const two = SWITCH_VERBS.has(list[0]) && (list[1] === 'off' || list[1] === 'on')
+  const verb = two ? `turn ${list[1]}` : list[0]
+  const rest = list.slice(two ? 2 : 1)
+  // #614 round 2 (cu-researcher 03:18Z): plaintext for unencrypted; reprompt without 'master password'; a timeout to never without
+  // 'vault' (not a screen timeout); vault auto-lock off by word order; an emergency contact with no page condition.
+  if (['download', 'export', 'save'].includes(verb) && (rest.includes('unencrypted') || rest.includes('plaintext')) && rest.length <= 4) return 'credential'
+  if (verb === 'add' && rest.length <= 3 && rest.includes('emergency') && ['contact', 'access'].includes(rest[rest.length - 1])) return 'credential'
+  if (['turn off', 'disable'].includes(verb) && rest.includes('reprompt') && rest.length <= 4) return 'permission'
+  if (verb === 'never' && rest[0] === 'lock' && rest.length <= 3) return 'permission'
+  if (verb === 'set' && rest.includes('timeout') && rest[rest.length - 1] === 'never' && rest.length <= 5 && !rest.includes('screen') && !rest.includes('display')) return 'permission'
+  if (['turn off', 'disable'].includes(verb) && rest[0] === 'vault' && rest.includes('lock') && rest.length <= 4) return 'permission'
+  return null
+}
+function merchantClass(list) {
+  if (list.length > 8) return null
+  const [verb, ...rest] = list
+  // #614 round 2: 'instant payout' anywhere in a short name; accept all (open) disputes / chargebacks; set all / every price to an
+  // amount; apply a discount to all (products); risk rules too.
+  if (list.length <= 5 && list.some((t, i) => t === 'instant' && list[i + 1] === 'payout')) return 'purchase'
+  if (verb === 'accept' && rest[0] === 'all' && rest.length <= 3 && ['dispute', 'chargeback'].includes(rest[rest.length - 1])) return 'purchase'
+  if (verb === 'set' && ['all', 'every'].includes(rest[0]) && rest[1] === 'price' && rest[2] === 'to' && rest.length <= 4) return 'purchase'
+  if (verb === 'apply' && rest.includes('discount') && rest.includes('all') && rest.length <= 6) return 'purchase'
+  if (verb === 'issue' && rest[0] === 'refund' && rest[rest.length - 1] === 'all' && rest.length <= 4) return 'purchase'
+  if (['disable', 'remove', 'delete'].includes(verb) && rest.length <= 3 && ['fraud', 'risk', 'radar'].includes(rest[0]) && ['filter', 'rule', 'protection', 'check'].includes(rest[rest.length - 1])) return 'permission'
+  if (verb === 'turn' && rest[0] === 'off' && rest.length <= 3 && (rest.includes('radar') || rest.includes('fraud')) && ['rule', 'filter', 'protection'].includes(rest[rest.length - 1])) return 'permission'
+  if (verb === 'close' && rest.length === 1 && ['store', 'shop'].includes(rest[0])) return 'delete'
+  // #614 round 2 (cu-coordinator 03:19Z): pausing the store and changing the payout schedule (permission).
+  if (verb === 'pause' && rest.length === 1 && ['store', 'shop'].includes(rest[0])) return 'permission'
+  if (['change', 'edit', 'update', 'set'].includes(verb) && rest.length <= 3 && rest.includes('payout') && rest[rest.length - 1] === 'schedule') return 'permission'
+  return null
+}
+const TENANT_PROTECTIONS = ['conditional', 'dlp', 'security', 'mfa', 'retention', 'compliance', 'audit', 'sign', 'session', 'data']
+function tenantClass(list) {
+  if (list.length > 7) return null
+  const two = SWITCH_VERBS.has(list[0]) && (list[1] === 'off' || list[1] === 'on')
+  const verb = two ? `turn ${list[1]}` : list[0]
+  const rest = list.slice(two ? 2 : 1)
+  const last = rest[rest.length - 1]
+  if (['disable', 'turn off', 'deactivate', 'delete', 'remove'].includes(verb) && rest.length <= 4 && ['policy', 'default'].includes(last) && TENANT_PROTECTIONS.includes(rest[0])) return 'permission'
+  // #606 round 2: 'Turn off conditional access' (no 'policy'), 'Exclude from conditional access', 'Allow basic authentication',
+  // 'Make Global Administrator'.
+  if (['disable', 'turn off', 'deactivate'].includes(verb) && rest.length === 2 && rest[0] === 'conditional' && rest[1] === 'access') return 'permission'
+  if (verb === 'exclude' && rest[0] === 'from' && rest.length <= 4 && (rest.includes('conditional') || rest.includes('mfa') || rest.includes('policy'))) return 'permission'
+  if (verb === 'make' && rest.length <= 3 && rest.includes('global') && (rest.includes('administrator') || rest.includes('admin'))) return 'permission'
+  if (verb === 'exclude' && ['user', 'group', 'account', 'member'].includes(rest[0]) && rest.includes('from') && rest.length <= 5) return 'permission'
+  if (verb === 'allow' && (rest[0] === 'legacy' || rest[0] === 'basic') && ['authentication', 'auth', 'protocol'].includes(rest[1]) && rest.length === 2) return 'permission'
+  if (verb === 'assign' && rest.length <= 3 && (rest.includes('administrator') || rest.includes('admin'))) return 'permission'
+  if (verb === 'add' && rest.length === 2 && rest[0] === 'role' && rest[1] === 'assignment') return 'permission'
+  if (verb === 'reset' && rest.length <= 2 && ['mfa', '2fa', 'authenticator', 'authentication', 'security'].includes(rest[0])) return 'credential'
+  return null
+}
+function simSwap(list) {
+  if (list.length > 7) return false
+  const [verb, ...rest] = list
+  const last = rest[rest.length - 1]
+  if (verb === 'port' && rest.length === 1 && rest[0] === 'out') return true
+  if (['get', 'download', 'show', 'view', 'scan'].includes(verb) && rest[0] === 'esim' && rest.length <= 3) return true
+  if (verb === 'convert' && rest.length <= 4 && last === 'esim') return true
+  // #602 round 2: 'Transfer number to another phone', 'Move my line to a new phone', 'Change my SIM card'.
+  if ((verb === 'transfer' || verb === 'move' || verb === 'port') && ['number', 'line'].includes(rest[0]) && rest.includes('to') && ['phone', 'device', 'carrier'].includes(last) && rest.length <= 5) return true
+  if (['change', 'replace', 'swap'].includes(verb) && rest.length <= 2 && rest[0] === 'sim' && last === 'card') return true
+  if (['activate', 'add', 'set'].includes(verb) && rest.length <= 2 && (last === 'sim' || last === 'esim')) return true
+  if (verb === 'move' && rest[0] === 'number' && rest.includes('device') && rest.length <= 4) return true
+  if ((verb === 'change' || verb === 'replace' || verb === 'swap' || verb === 'transfer') && rest.length <= 2 && (last === 'sim' || last === 'esim')) return true
+  return false
+}
+function lockClass(list) {
+  if (list.length > 7) return null
+  const two = SWITCH_VERBS.has(list[0]) && (list[1] === 'off' || list[1] === 'on')
+  const verb = two ? `turn ${list[1]}` : list[0]
+  const rest = list.slice(two ? 2 : 1)
+  if (['turn off', 'disable', 'deactivate', 'pause'].includes(verb) && rest.length === 2 && rest[0] === 'auto' && rest[1] === 'lock') return 'physical'
+  if (verb === 'set' && rest[0] === 'to' && rest.length === 2 && ['disarmed', 'disarm', 'off'].includes(rest[1])) return 'physical'
+  // #602 round 2: 'Set system to Disarmed', 'Set mode to Off', 'Turn off Auto-Lock timer'.
+  if (verb === 'set' && rest.length === 3 && ['system', 'mode', 'alarm', 'security'].includes(rest[0]) && rest[1] === 'to' && ['disarmed', 'disarm', 'off'].includes(rest[2])) return 'physical'
+  if (['turn off', 'disable', 'deactivate', 'pause'].includes(verb) && rest.length === 3 && rest[0] === 'auto' && rest[1] === 'lock' && rest[2] === 'timer') return 'physical'
+  if (verb === 'bypass' && rest.length <= 2 && ['zone', 'sensor'].includes(rest[rest.length - 1])) return 'physical'
+  if (verb === 'grant' && rest.length === 1 && rest[0] === 'entry') return 'physical'
+  if (verb === 'unlock' && rest[0] === 'for' && rest.includes('<n>') && ['minute', 'hour', 'second'].includes(rest[rest.length - 1]) && rest.length <= 3) return 'physical'
+  if (verb === 'add' && rest.length <= 4 && ['user', 'guest', 'person', 'member'].includes(rest[0]) && rest.includes('to') && ['lock', 'door'].includes(rest[rest.length - 1])) return 'credential'
+  return null
+}
+function repoProtectionOff(list) {
+  if (list.length > 7) return false
+  // #597 round 2: the two-word switch verbs too ('Turn off secret scanning').
+  const two = SWITCH_VERBS.has(list[0]) && (list[1] === 'off' || list[1] === 'on')
+  const verb = two ? `turn ${list[1]}` : list[0]
+  const rest = list.slice(two ? 2 : 1)
+  if (verb === 'allow' && rest.length <= 2 && ['force', 'deletion'].includes(rest[0]) && (rest.length === 1 || rest[1] === 'push')) return true
+  if (verb === 'allow' && rest.length === 2 && rest[0] === 'branch' && rest[1] === 'deletion') return true
+  if (['disable', 'remove', 'turn off', 'skip'].includes(verb) && rest[0] === 'required' && ['review', 'status', 'check', 'approval'].includes(rest[1]) && rest.length <= 3) return true
+  if (verb === 'allow' && rest[0] === 'all' && rest[1] === 'action' && rest.length <= 5) return true
+  if (['disable', 'remove', 'turn off'].includes(verb) && rest.length <= 2 && endsWithSeq(rest, ['scanning']) && rest[0] === 'secret') return true
+  if ((verb === 'add' || verb === 'create') && rest.length === 1 && rest[0] === 'webhook') return true
+  return false
+}
+function agentBlanket(list) {
+  if (list.length > 6) return false
+  const [verb, ...rest] = list
+  // #597 round 2: 'Allow all tool calls', 'Allow all terminal commands', 'Execute without approval', 'Switch to YOLO mode', 'Trust this project'.
+  if (verb === 'allow' && rest[0] === 'all' && ['tool', 'command', 'terminal'].includes(rest[1]) && rest.length <= 3) return true
+  if ((verb === 'run' || verb === 'execute') && rest[0] === 'without' && ['confirmation', 'approval', 'asking'].includes(rest[1]) && rest.length === 2) return true
+  if (verb === 'switch' && rest[0] === 'to' && endsWithSeq(rest, ['yolo', 'mode']) && rest.length <= 3) return true
+  if (verb === 'trust' && rest.length === 1 && ['project', 'folder', 'repository', 'repo', 'directory'].includes(rest[0])) return true
+  if (verb === 'run' && endsWithSeq(rest, ['yolo', 'mode']) && rest.length <= 3) return true
+  if (verb === 'auto' && ['accept', 'approve', 'run'].includes(rest[0]) && rest.length <= 2) return true
+  if (verb === 'skip' && ['approval', 'confirmation', 'permission'].includes(rest[rest.length - 1]) && rest.length <= 2) return true
+  return false
+}
+
 const DIVERSION_VERBS = new Set(['change', 'update', 'edit', 'add', 'set', 'replace', 'switch'])
 const DIVERSION_OBJECTS = [['direct', 'deposit'], ['bank', 'detail'], ['deposit', 'account'], ['routing', 'number'], ['account', 'number'],
   ['payout', 'account'], ['payout', 'method'], ['bank', 'account'], ['payout', 'detail']]
@@ -327,12 +741,137 @@ function payDiversion(list) {
 }
 
 // The classes the grammar asks for a control's name (and its role, for the priced cell); [] when it asks nothing.
+// CU-469 (High; cu-coordinator 01:19Z): a confirmation prefix ('Yes,', 'OK,', 'Sure,', 'Confirm:') and trailing words or glyphs
+// ('now', '...', arrows, icons) wrap a ruled row in a dialog. The table rows read from the first word, so the wrapper is taken off
+// and the row judged again - only when the name as written gets no class, so it adds only.
+// #600 round 2 (cu-researcher 01:26Z): 'Yes please,' / 'Yes, please' and a trailing 'right now' too.
+// #600 round 3 (cu-researcher 01:33Z): a leading icon alone, and a trailing '!' or '(recommended)' too.
+const LEADING_ICONS = /^\s*(?:[\p{Extended_Pictographic}\uFE0F]\s*)+/u
+const CONFIRM_PREFIX = /^\s*(?:(?:yes(?:\s+please)?|ok|okay|sure|confirm|continue|got\s+it|please)\s*[,:!.\u2013\u2014-]+\s*)+/iu
+// CU-482 (proposed High; cu-researcher 04:58Z): a call-to-action lead-in before a ruled row - 'please', 'click (here) to', 'tap to',
+// 'let's', 'go ahead and', 'I want to'.
+// cu-researcher 05:02Z: trailing qualifiers too - 'anyway', 'instantly', 'on this device', 'for me', 'here', 'too', 'again'.
+// #630 round 2: a trailing ', please' too ('Add time, please').
+const TRAILING_QUALIFIER = /(?:\s*,\s*please|\s+(?:anyway|anyways|instantly|immediately|on\s+this\s+(?:device|computer|browser|phone)|for\s+me|here|too|again))+\s*[.!]?\s*$/i
+// #630 round 2 (cu-researcher 05:22Z): "I'd like to" (the contraction), 'let us', 'kindly'.
+const CTA_LEAD_IN = /^\s*(?:please\s+|kindly\s+|(?:click|tap|press|select)\s+(?:here\s+)?to\s+|let(?:'|\u2019)?s\s+|let\s+us\s+|go\s+ahead\s+and\s+|i(?:\s+want|\s+would\s+like|(?:'|\u2019)d\s+like)\s+to\s+)+/iu
+const TRAILING_WRAP = /(?:\s*(?:right\s+now|now|please|\.{2,}|\u2026|!+|\((?:recommended|suggested|best\s+value)\)|[\u2192\u203a\u00bb>\u2794\u27f6\u279c\u27a1]|\p{Extended_Pictographic}|\uFE0F))+\s*$/iu
+// CU-473 (cu-researcher 02:15Z): a second line, a badge or a count after a ruled name - the first line of a multi-line name; a
+// sentence-case name followed by a capitalised second sentence ('Change direct deposit Takes effect immediately'); a trailing badge
+// ('New', 'Beta', 'Preview', 'Updated'); a trailing parenthetical ('(opens in a new window)', '(3)').
+const TRAILING_BADGE = /(?:\s+(?:new|beta|preview|updated|hot)!?)+\s*$/i
+const TRAILING_PAREN = /(?:\s*\([^()]{1,40}\))+\s*$/
+// #609 round 4 (cu-coordinator 02:35Z): an added leading name part - 'Action: ', 'Confirm action: ', 'Step 2: ', 'Step 2 of 3: '.
+const LEADING_PART = /^\s*(?:(?:confirm\s+)?action|step\s+\d+(?:\s+of\s+\d+)?)\s*[:\u2013\u2014-]\s*/i
+// #609 round 3 (cu-researcher 02:30Z): a trailing key hint ('Send \u2318\u23ce', 'Save \u2318S', 'Submit Ctrl+Enter').
+const TRAILING_KEYS = /(?:\s+(?:[\u2318\u2325\u21e7\u2303]+\s*[A-Za-z0-9\u23ce\u21a9\u232b]?|[\u23ce\u21a9]|(?:ctrl|cmd|command|alt|option|shift)\s*\+\s*(?:enter|return|[a-z0-9])))+\s*$/i
+function firstSentence(text) {
+  const words = text.split(/\s+/)
+  if (words.length < 3 || !/^[A-Z]/.test(words[0])) return text
+  for (let i = 1; i < words.length; i += 1) {
+    if (/^[A-Z][a-z]/.test(words[i])) return i >= 2 && words.slice(1, i).every((w) => !/^[A-Z]/.test(w)) ? words.slice(0, i).join(' ') : text
+  }
+  return text
+}
+/** #635 round 2 (cu-researcher 07:08Z): the lead-ins only, with the trailing words kept - 'Yes, install now' keeps its 'now' for the
+ * 'Install now' row (the full canonical form strips a trailing 'now'). */
+function leadingStripped(name) {
+  const lines = String(name ?? '').split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean)
+  return (lines[0] ?? '').replace(LEADING_ICONS, '').replace(LEADING_PART, '').replace(CONFIRM_PREFIX, '').replace(CTA_LEAD_IN, '').trim()
+}
+export function canonicalConfirm(name) {
+  const lines = String(name ?? '').split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean)
+  const text = lines[0] ?? ''
+  return text.replace(LEADING_ICONS, '').replace(LEADING_PART, '').replace(CONFIRM_PREFIX, '').replace(CTA_LEAD_IN, '').replace(TRAILING_QUALIFIER, '').replace(TRAILING_KEYS, '').replace(TRAILING_WRAP, '').replace(TRAILING_PAREN, '').replace(TRAILING_BADGE, '').replace(TRAILING_WRAP, '').trim()
+}
+/** #609 round 2 (cu-researcher 02:24Z): the canonical forms to try, in order - the unwrapped name, then (only if that asks nothing)
+ * its first sentence. Additive: a Title-Case object ('Turn off Safe Browsing') is never lost to the sentence cut. */
+// CU-478 (High; cu-coordinator 03:51Z): a determiner after the verb breaks the older exact-phrase rows ('Update my firmware', 'Accept
+// my counteroffer', 'Turn on my location sharing', 'Open the ports') - one more form drops the / my / your / our / this / these / a / an.
+const DETERMINER_WORDS = /\b(?:the|my|your|our|this|these|those|a|an)\s+/gi
+function withoutDeterminers(text) {
+  const words = text.split(/\s+/)
+  if (words.length < 2) return text
+  // Keep the first word (the verb) as written; drop determiners after it.
+  return `${words[0]} ${words.slice(1).join(' ').replace(DETERMINER_WORDS, '')}`.replace(/\s+/g, ' ').trim()
+}
+// CU-481 (High; cu-coordinator 04:51Z): a leading-verb synonym of a ruled row - modify -> change, display / reveal -> show,
+// give -> grant, begin -> start, ask for -> request, create -> add - one more form, like CU-455 / CU-463, adds only.
+// cu-coordinator 06:34Z (CU-481 follow-up): update / edit -> change too, tried last like the others - never 'Update all / now' (the
+// App Store's own verdict decides those, CU-254).
+const VERB_SYNONYMS = [[/^(\s*)modify\b/i, '$1change'], [/^(\s*)(?:update|edit)\b(?!\s+(?:all|now|available)\b)/i, '$1change'], [/^(\s*)(?:display|reveal)\b/i, '$1show'], [/^(\s*)give\b/i, '$1grant'],
+  [/^(\s*)begin\b/i, '$1start'], [/^(\s*)ask\s+for\b/i, '$1request'],
+  // #627 round 2 (cu-researcher 05:08Z): creating an account is not adding one ('Create account' stays free).
+  [/^(\s*)create\b(?!\s+(?:an?\s+|new\s+|your\s+|my\s+)?accounts?\b)/i, '$1add']]
+function withVerbSynonym(text) {
+  for (const [pattern, replacement] of VERB_SYNONYMS) if (pattern.test(text)) return text.replace(pattern, replacement)
+  return text
+}
+// CU-486 (High; cu-coordinator 07:36Z): known compounds are joined and split both ways - autolock / auto-lock, e-mail / email, log-in /
+// login, e-sim / esim, opt-in / optin, check-in / checkin, add-on / addon, plug-in / plugin, sign-in / signin, set-up / setup.
+// #642 round 2 (cu-researcher 07:54Z): auto-invest too, and a SPACED compound joins as well ('Remote log in', 'plug in').
+const COMPOUNDS = [['auto', 'lock'], ['auto', 'invest'], ['e', 'mail'], ['log', 'in'], ['e', 'sim'], ['opt', 'in'], ['check', 'in'], ['add', 'on'], ['plug', 'in'], ['sign', 'in'], ['set', 'up']]
+function compoundJoined(text) {
+  let out = text
+  for (const [a, b] of COMPOUNDS) out = out.replace(new RegExp(`\\b${a}[-\\u2010\\u2011 ](${b})\\b`, 'gi'), (m) => m.replace(/[-\u2010\u2011 ]/, ''))
+  return out
+}
+function compoundSplit(text) {
+  let out = text
+  for (const [a, b] of COMPOUNDS) out = out.replace(new RegExp(`\\b(${a})(${b})\\b`, 'gi'), '$1-$2')
+  return out
+}
+export function canonicalForms(name) {
+  const unwrapped = canonicalConfirm(name)
+  const cut = firstSentence(unwrapped)
+  const bare = withoutDeterminers(unwrapped)
+  const forms = [unwrapped, cut, bare, withoutDeterminers(cut), leadingStripped(name)]
+  // The compound forms only for a name a row could match (<= 200 characters): the F3 budget (CU-272) holds for an 80k-character name.
+  const compounds = String(name ?? '').length <= 200 ? [...forms.map(compoundJoined), ...forms.map(compoundSplit)] : []
+  return [...new Set([...forms, ...compounds])].filter((form) => form !== '' && form !== String(name ?? '').trim())
+}
+/** CU-481: the verb-synonym forms of a name (and of its canonical forms) - tried LAST, only when the name and its own canonical forms
+ * get no class, so a synonym never outranks a row the name already matches ('Create service account key' stays credential). */
+export function synonymForms(name) {
+  const own = String(name ?? '').trim()
+  return [...new Set([own, ...canonicalForms(name)].map(withVerbSynonym))].filter((form) => form !== '' && form !== own && !canonicalForms(name).includes(form))
+}
+
+/** The grammar on the name and its own canonical forms - no verb synonyms (policy.mjs reads it before probing synonym forms). */
+export function grammarClassesBase(name, role = '') {
+  const asWritten = grammarClassesOf(name, role)
+  if (asWritten.length > 0) return asWritten
+  for (const form of canonicalForms(name)) {
+    const classes = grammarClassesOf(form, role)
+    if (classes.length > 0) return classes
+  }
+  return asWritten
+}
+
 export function grammarClasses(name, role = '') {
+  const base = grammarClassesBase(name, role)
+  if (base.length > 0) return base
+  for (const form of synonymForms(name)) {
+    const classes = grammarClassesOf(form, role)
+    if (classes.length > 0) return classes
+  }
+  return base
+}
+
+function grammarClassesOf(name, role = '') {
   const raw = String(name ?? '').trim()
   if (raw === '' || raw.length > 400) return []
   if (CURRENCY.test(raw) && PRICED_ROLES.has(String(role ?? '').toLowerCase()) && tokens(raw).some((t) => PRICED_NOUNS.has(t))) return ['purchase']
-  const list = tokens(raw)
-  if (list.length === 0) return []
+  // CU-467 (High; cu-coordinator 00:49Z): a pressed control that names a money amount commits a charge whatever its verb - a
+  // currency symbol or ISO code beside a number ('Continue for $9.99', 'Confirm 12.00 EUR', '$4.99/month'); a zero amount is free.
+  if (amountClass(raw, role)) return ['purchase']
+  const split = tokens(raw)
+  if (split.length === 0) return []
+  // #580 round 2 (cu-coordinator 21:52Z): a split particle - 'turn / switch X on|off' reads as 'turn / switch on|off X'
+  // ('Turn ads on', 'Turn privacy mode off'); additive, for every switch verb.
+  const particle = split[split.length - 1]
+  const list = split.length >= 3 && SWITCH_VERBS.has(split[0]) && (particle === 'on' || particle === 'off') && split[1] !== 'on' && split[1] !== 'off'
+    ? [split[0], particle, ...split.slice(1, -1)] : split
   const lower = raw.toLowerCase()
   const last = list[list.length - 1]
   // CU-435 (High; cu-coordinator 18:51Z): an insurance contract - binding, buying, renewing or cancelling a policy, widening
@@ -362,6 +901,124 @@ export function grammarClasses(name, role = '') {
   // placing a call (submit), recording one (permission). 'Start recording' and 'Call back' stay with #462.
   const phone = phoneClass(list)
   if (phone) return [phone]
+  // CU-444 (High; cu-coordinator 20:54Z): starting or raising paid ad spend (purchase).
+  if (adSpend(list)) return ['purchase']
+  // CU-445 (High; cu-coordinator 20:59Z): opening a home camera's view, audio or biometrics (permission, CU-418 family).
+  if (cameraPrivacyOff(list)) return ['permission']
+  // CU-446 (High; cu-coordinator 21:05Z): the domain-takeover path - unlocking, auth / EPP codes, registrant or owner change, push
+  // (credential); nameservers, DNS records, WHOIS privacy off (permission).
+  const domain = domainClass(list)
+  if (domain) return [domain]
+  // CU-447 (High; cu-coordinator 21:12Z): exposing cloud resources or blinding their audit (permission, CU-417 family);
+  // minting a service-account or access key (credential).
+  const cloud = cloudExposureClass(list, lower)
+  if (cloud) return [cloud]
+  // CU-449 (High; cu-coordinator 21:47Z): streaming add-ons, episode / season unlocks, rentals and gifts (purchase, CU-428 family).
+  if (streamingPurchase(list)) return ['purchase']
+  // CU-451 (High; cu-coordinator 22:22Z): a rate lock, pre-approval, Easy Apply, a tour request or contacting an agent sends
+  // personal or financial data to another party or commits to a rate / booking (submit; CU-415 / CU-422 families).
+  if (dealSubmit(list)) return ['submit']
+  // CU-452 (High; cu-coordinator 22:28Z): wallet secrets and token approvals move money irreversibly.
+  const wallet = walletClass(list)
+  if (wallet) return [wallet]
+  // CU-453 (High; cu-coordinator 22:35Z): the identity-takeover path - moving where mail, codes or credit go (credential);
+  // certifying a benefit claim (submit).
+  const identity = identityClass(list)
+  if (identity) return [identity]
+  // CU-454 (High; cu-coordinator 22:39Z): a chat workspace - exposing a private channel, granting an app access, acting on
+  // other members (permission), installing an app (install). Desktop and web share the classifier.
+  const workspace = workspaceClass(list)
+  if (workspace) return [workspace]
+  // CU-456 (High; cu-coordinator 22:56Z): turning a mail / account protection off (permission); less secure app access on
+  // (credential).
+  const mail = mailProtectionClass(list, lower)
+  if (mail) return [mail]
+  // CU-459 (High; cu-coordinator 23:11Z): filing a tax return or extension by other verbs files a legal document in the
+  // person's name (submit; the 'File return' family).
+  if (taxFiling(list)) return ['submit']
+  // CU-460 (High; cu-coordinator 23:18Z): a connected car - moving or opening it (physical, CU-418 family), switching off its theft
+  // protection (permission) or its PIN to drive, or adding a key (credential).
+  const vehicle = vehicleClass(list)
+  if (vehicle) return [vehicle]
+  // CU-461 (High; cu-coordinator 23:34Z): exposing an account or contact detail by other wordings (permission, CU-424's
+  // closed family); making an account private is the safe direction - an F2 guard on the grammar's own make-row ask.
+  const exposure = exposureClass(list, lower)
+  if (exposure === 'free') return []
+  if (exposure) return [exposure]
+  // CU-464 (High; cu-coordinator 00:04Z): a remote-access switch on a web or app admin page (permission); macOS System Settings
+  // stays excluded by app policy. CU-465 (00:19Z): a blanket approval for an agent to run commands (permission, CU-427's family).
+  if (remoteAccess(list) || agentBlanket(list)) return ['permission']
+  // CU-466 (High; cu-coordinator 00:34Z): removing a repository's protections (permission).
+  if (repoProtectionOff(list)) return ['permission']
+  // CU-468 (High; cu-coordinator triage): smart-lock and alarm acts - auto-lock off, disarming, bypassing a zone, granting entry,
+  // a timed unlock (physical, CU-418's closed family); adding a lock user (credential).
+  const lock = lockClass(list)
+  if (lock) return [lock]
+  // CU-470 (High; cu-coordinator 01:19Z): the SIM-swap path - porting out, eSIM QR codes and conversions, a new SIM, moving the
+  // number to a new device (credential, CU-443's family).
+  if (simSwap(list)) return ['credential']
+  // CU-471 (High; cu-coordinator 01:19Z): removing a tenant's admin protections (permission); resetting a user's MFA (credential).
+  const tenant = tenantClass(list)
+  if (tenant) return [tenant]
+  // CU-474 / CU-475 (High; cu-coordinator 03:05Z): a password vault's protections and a merchant console's bulk money acts.
+  const vault = vaultClass(list)
+  if (vault) return [vault]
+  const merchant = merchantClass(list)
+  if (merchant) return [merchant]
+  // #642 round 3 (cu-coordinator 08:05Z): 'Install add-on / addon / plug-in / extension' asks install (the older install row did not
+  // read add-ons; the compound forms reach this row).
+  if (list[0] === 'install' && list.length <= 4 && (['addon', 'plugin', 'extension'].includes(list[list.length - 1]) || (list[list.length - 2] === 'add' && list[list.length - 1] === 'on') || (list[list.length - 2] === 'plug' && list[list.length - 1] === 'in'))) return ['install']
+  // CU-477 (High; cu-coordinator 03:36Z): a patient portal - account access to another person (credential), signing an authorization
+  // or release and booking care (submit), research opt-in (permission); a copay-charging e-visit asks purchase through the amount row.
+  const portal = portalClass(list)
+  if (portal) return [portal]
+  // CU-479 (High rows; cu-coordinator 04:20Z): a send to people who opted out or to the whole list - 'Resubscribe all' and a bare
+  // 'Blast' (submit). Imports and exports belong to CU-462.
+  // #633 round 2 (cu-researcher 07:05Z): everyone / entire list / contacts, and 'Blast it / now'. The hyphenated 'Re-subscribe all'
+  // keeps the older subscribe -> purchase (it asks either way; named).
+  if (list[0] === 'resubscribe' && list.length <= 3 && ['all', 'everyone', 'entire', 'contact', 'list', 'subscriber'].includes(list[1])) return ['submit']
+  // CU-484 (High; cu-coordinator 06:05Z): installing by store wording - an OAuth install into a workspace app, a browser add-on, a bare
+  // 'Install now', an installer or a plugin activation (install); sideloading and unknown sources (permission). 'Uninstall' keeps delete.
+  if (list.length <= 5) {
+    const [v, ...r] = list
+    if (v === 'add' && r[0] === 'to' && r.length === 2 && ['slack', 'discord', 'telegram', 'teams', 'zoom', 'notion', 'trello', 'asana', 'jira', 'github', 'gitlab', 'workspace', 'firefox', 'chrome', 'edge', 'safari', 'opera', 'brave', 'browser'].includes(r[1])) return ['install']
+    // #635 round 3 (cu-developer-three 07:19Z): 'add-on' / 'plug-in' tokenize at the hyphen ('add on', 'plug in').
+    const addOn = r.length >= 2 && ((r[r.length - 2] === 'add' && r[r.length - 1] === 'on') || (r[r.length - 2] === 'plug' && r[r.length - 1] === 'in'))
+    if (v === 'get' && ((r.length <= 2 && ['extension', 'addon', 'plugin'].includes(r[r.length - 1])) || (r.length === 2 && addOn))) return ['install']
+    // #635 round 2 (cu-researcher 07:08Z): launch for run, extension / add-on for plugin, 'apps from' inside 'Allow unknown sources', and
+    // the 'Install now' family as a token row (format and lead-in variants reach it).
+    if (['run', 'launch', 'open'].includes(v) && r.length === 1 && r[0] === 'installer') return ['install']
+    if (v === 'install' && ((r.length === 1 && ['now', 'it'].includes(r[0])) || (r.length === 2 && r[0] === 'now' && r[1] === 'please') || (r.length === 2 && r[0] === 'for' && r[1] === 'free'))) return ['install']
+    if (['activate', 'enable'].includes(v) && ((r.length <= 2 && ['plugin', 'addon', 'extension'].includes(r[r.length - 1])) || (r.length === 2 && addOn))) return ['install']
+    if (v === 'sideload' && r.length <= 2) return ['permission']
+    if (v === 'allow' && ((r[0] === 'unknown' && r[1] === 'source' && r.length === 2) || (r[0] === 'app' && r[1] === 'from' && ['anywhere', 'unknown'].includes(r[2]) && (r.length === 3 || (r[2] === 'unknown' && r[3] === 'source' && r.length === 4))))) return ['permission']
+  }
+  if (/^\s*install\s+now\s*!?\s*$/i.test(raw)) return ['install']
+  // CU-487 (High; cu-coordinator 07:36Z): payroll compensation - a bonus pays out (purchase); a raise or a salary / compensation change is
+  // submitted (submit); employee data and tax forms leave the account (permission). Older classes keep their own rows (named).
+  if (list.length <= 4) {
+    const [v, ...r] = list
+    // #647 round 2 (cu-researcher 08:27Z): plural bonuses, 'Grant raise', payroll data / reports / records.
+    if (['issue', 'grant', 'send'].includes(v) && r.length <= 2 && ['bonus', 'bonuse', 'bonuses'].includes(r[r.length - 1])) return ['purchase']
+    if (['give', 'grant'].includes(v) && r.length <= 2 && r[r.length - 1] === 'raise') return ['submit']
+    if (['change', 'update', 'edit', 'adjust'].includes(v) && r.length <= 2 && ['salary', 'compensation', 'wage'].includes(r[r.length - 1])) return ['submit']
+    if (['export', 'download'].includes(v) && r.length <= 3 && (r.includes('employee') || r.includes('payroll')) && ['data', 'record', 'list', 'detail', 'report'].includes(r[r.length - 1])) return ['permission']
+  }
+  if (/^\s*download\s+(?:all\s+)?(?:w-?2s?|1099s?|tax\s+forms?)\s*$/i.test(raw)) return ['permission']
+  // CU-483 (High; cu-coordinator 05:34Z): brokerage - orders and automatic trading spend money (purchase); margin and options trading
+  // widen what the account may do (permission). A bare 'Sell' is page-bound (policy.mjs reads the trading URL).
+  if (list.length <= 3) {
+    const [v, ...r] = list
+    if (v === 'sell' && r[0] === 'short' && r.length <= 2) return ['purchase']
+    if (v === 'short' && r[0] === 'sell' && r.length <= 2) return ['purchase']
+    if (v === 'liquidate' && (r.length === 0 || (r.length <= 2 && ['all', 'position', 'portfolio', 'everything'].includes(r[r.length - 1])))) return ['purchase']
+    if (v === 'exercise' && r.length <= 2 && ['option', 'contract'].includes(r[r.length - 1])) return ['purchase']
+    if (v === 'auto' && r[0] === 'invest' && r.length === 1) return ['purchase']
+    if (v === 'rebalance' && r.length <= 2 && (r.length === 0 || r[r.length - 1] === 'portfolio')) return ['purchase']
+    if (['enable', 'activate'].includes(v) && r.length <= 2 && (['margin', 'leverage'].includes(r[0]) || (r[0] === 'option' && (r.length === 1 || r[1] === 'trading')))) return ['permission']
+    if (v === 'turn' && r[0] === 'on' && r.length <= 3 && (['margin', 'leverage'].includes(r[1]) || (r[1] === 'option' && (r.length === 2 || r[2] === 'trading')))) return ['permission']
+  }
+  if (/^\s*blast(?:\s+(?:it|now))?\s*!?\s*$/i.test(raw)) return ['submit']
   // F2 guard (cu-coordinator 20:28Z): declining, denying or rejecting a request answers no - the grammar's own over-ask since
   // #554 ('Decline request'); older asks ('Decline invitation', CU-422's 'Decline offer') are untouched (the hook never sees them).
   if (['decline', 'deny', 'reject'].includes(list[0]) && list.slice(1).filter((t) => !FILLER.has(t)).every((t) => t === 'request' || t === 'this' || t === 'all')
