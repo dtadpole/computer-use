@@ -25,3 +25,10 @@ test('CU-481 negatives: synonyms of free rows stay free', () => {
 test('CU-481: a synonym never outranks a row the name already matches', () => {
   assert.equal(click('Create service account key'), 'credential', 'CU-447 keeps credential (not the synonym form Add ... permission)')
 })
+
+test("#627 round 2 (cu-researcher 05:08Z; cu-verifier 05:09Z): 'Create account' stays free; cu-verifier's stand-in synonyms ask", () => {
+  for (const name of ['Create account', 'Create an account', 'Create new account']) assert.equal(click(name), 'allow', name)
+  for (const name of ['Modify user role', 'Reveal eSIM QR code']) assert.notEqual(click(name), 'allow', name)
+  // Named (outside the six ruled mappings): 'Update audience to Public' stays free.
+  assert.equal(click('Update audience to Public'), 'allow')
+})
