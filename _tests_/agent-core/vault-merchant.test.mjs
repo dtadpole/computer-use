@@ -22,7 +22,7 @@ test('CU-474: vault protections ask - credential for an unencrypted export and a
   assert.equal(click('Turn off auto-lock', 'https://home.example/lock/front-door'), 'physical', 'a door keeps CU-468 physical')
   for (const name of ['Export (encrypted)', 'Lock now', 'Vault']) assert.equal(click(name, VAULT), 'allow', name)
   // Named for CU-429 (older 'Security' rule, identical on main): a bare 'Security' tab asks permission.
-  assert.equal(click('Security', VAULT), 'permission')
+  assert.equal(click('Security', VAULT), 'allow', 'CU-429 (09:34Z): lowered to free')
 })
 
 test('CU-475: merchant bulk money acts ask purchase, fraud filters off permission, closing the store delete; views free', () => {
