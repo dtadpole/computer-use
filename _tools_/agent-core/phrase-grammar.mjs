@@ -547,28 +547,36 @@ function exposureClass(list, lower = '') {
 }
 
 const REMOTE_ACCESS = [['screen', 'sharing'], ['remote', 'login'], ['remote', 'desktop'], ['remote', 'connection'], ['file', 'sharing'], ['internet', 'sharing'],
-  ['remote', 'apple', 'event'], ['remote', 'control'], ['smb']]
+  ['remote', 'apple', 'event'], ['remote', 'control'], ['smb'], ['remote', 'desktop', 'connection'], ['file', 'sharing', 'service'], ['smb', 'service']]
 function remoteAccess(list) {
   if (list.length > 6) return false
   const two = SWITCH_VERBS.has(list[0]) && list[1] === 'on'
   const verb = two ? 'turn on' : list[0]
   const rest = list.slice(two ? 2 : 1).filter((t) => !FILLER.has(t))
-  return ['turn on', 'enable', 'allow', 'start', 'activate'].includes(verb) && rest.length <= 3 && REMOTE_ACCESS.some((seq) => endsWithSeq(rest, seq))
+  return ['turn on', 'enable', 'allow', 'start', 'activate'].includes(verb) && rest.length <= 4 && REMOTE_ACCESS.some((seq) => endsWithSeq(rest, seq))
 }
 function repoProtectionOff(list) {
   if (list.length > 7) return false
-  const [verb, ...rest] = list
+  // #597 round 2: the two-word switch verbs too ('Turn off secret scanning').
+  const two = SWITCH_VERBS.has(list[0]) && (list[1] === 'off' || list[1] === 'on')
+  const verb = two ? `turn ${list[1]}` : list[0]
+  const rest = list.slice(two ? 2 : 1)
   if (verb === 'allow' && rest.length <= 2 && ['force', 'deletion'].includes(rest[0]) && (rest.length === 1 || rest[1] === 'push')) return true
+  if (verb === 'allow' && rest.length === 2 && rest[0] === 'branch' && rest[1] === 'deletion') return true
+  if (['disable', 'remove', 'turn off', 'skip'].includes(verb) && rest[0] === 'required' && ['review', 'status', 'check', 'approval'].includes(rest[1]) && rest.length <= 3) return true
   if (verb === 'allow' && rest[0] === 'all' && rest[1] === 'action' && rest.length <= 5) return true
   if (['disable', 'remove', 'turn off'].includes(verb) && rest.length <= 2 && endsWithSeq(rest, ['scanning']) && rest[0] === 'secret') return true
-  if (verb === 'add' && rest.length === 1 && rest[0] === 'webhook') return true
+  if ((verb === 'add' || verb === 'create') && rest.length === 1 && rest[0] === 'webhook') return true
   return false
 }
 function agentBlanket(list) {
   if (list.length > 6) return false
   const [verb, ...rest] = list
-  if (verb === 'allow' && rest[0] === 'all' && ['tool', 'command'].includes(rest[1]) && rest.length === 2) return true
-  if (verb === 'run' && rest[0] === 'without' && ['confirmation', 'approval', 'asking'].includes(rest[1]) && rest.length === 2) return true
+  // #597 round 2: 'Allow all tool calls', 'Allow all terminal commands', 'Execute without approval', 'Switch to YOLO mode', 'Trust this project'.
+  if (verb === 'allow' && rest[0] === 'all' && ['tool', 'command', 'terminal'].includes(rest[1]) && rest.length <= 3) return true
+  if ((verb === 'run' || verb === 'execute') && rest[0] === 'without' && ['confirmation', 'approval', 'asking'].includes(rest[1]) && rest.length === 2) return true
+  if (verb === 'switch' && rest[0] === 'to' && endsWithSeq(rest, ['yolo', 'mode']) && rest.length <= 3) return true
+  if (verb === 'trust' && rest.length === 1 && ['project', 'folder', 'repository', 'repo', 'directory'].includes(rest[0])) return true
   if (verb === 'run' && endsWithSeq(rest, ['yolo', 'mode']) && rest.length <= 3) return true
   if (verb === 'auto' && ['accept', 'approve', 'run'].includes(rest[0]) && rest.length <= 2) return true
   if (verb === 'skip' && ['approval', 'confirmation', 'permission'].includes(rest[rest.length - 1]) && rest.length <= 2) return true

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
+import { createExclusions } from '../../_tools_/agent-core/exclusions.mjs'
 import { grammarClasses } from '../../_tools_/agent-core/phrase-grammar.mjs'
 import { createPolicy } from '../../_tools_/agent-core/policy.mjs'
 
@@ -67,4 +68,25 @@ test('CU-466: removing repository protections asks permission, a deploy key cred
   assert.equal(sw('Allow force pushes', native(false)), 'permission', 'force push off -> on')
   assert.equal(sw('Allow force pushes', native(true)), 'allow', 'force push on -> off')
   for (const checked of [true, false]) assert.equal(sw('Secret scanning', { role: 'AXCheckBox', subrole: 'AXSwitch', checked }), 'permission', `desktop pin ${checked}`)
+})
+
+test('CU-464 (cu-developer-three 00:41Z): macOS System Settings stays REFUSED as os_security, not merely asked', () => {
+  const exclusions = createExclusions()
+  assert.deepEqual(exclusions.isExcludedApp('com.apple.systempreferences'), { excluded: true, kind: 'os_security', rule: 'com.apple.systempreferences' })
+  const window = exclusions.isExcludedWindow({ bundleId: 'com.apple.systempreferences', title: 'Sharing' })
+  assert.equal(window.excluded, true)
+  assert.equal(window.kind, 'os_security')
+})
+
+test('#597 round 2: the eleven held-out escapes ask permission; their free counterparts stay free', () => {
+  for (const name of ['Allow remote desktop connections', 'Enable SMB file sharing service', 'Allow all tool calls', 'Allow all terminal commands', 'Switch to YOLO mode',
+    'Trust this project', 'Execute without approval', 'Allow branch deletions', 'Turn off secret scanning', 'Create webhook', 'Disable required reviews']) {
+    assert.deepEqual(grammarClasses(name), ['permission'], name)
+    assert.equal(click(name), 'permission', `hook: ${name}`)
+  }
+  for (const name of ['Turn on secret scanning', 'Webhooks', 'Switch to dark mode', 'Trust', 'Create', 'Allow all']) assert.equal(click(name), 'allow', name)
+  // Named (cu-coordinator 00:49Z; older classes lead, each asks either way): 'Run commands without confirmation' keeps install,
+  // 'Allow force push' (singular) keeps delete.
+  assert.equal(click('Run commands without confirmation'), 'install')
+  assert.equal(click('Allow force push'), 'delete')
 })
