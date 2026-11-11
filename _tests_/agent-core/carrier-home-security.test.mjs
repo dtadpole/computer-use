@@ -35,3 +35,11 @@ test('CU-519: guest codes ask physical, recording / camera / disarm ask permissi
   for (const name of ['Stop recording', 'Pause recording', 'Generate guest PIN', 'Disable recording']) assert.ok(!classesOf(name, MEET).includes('permission') && !classesOf(name, MEET).includes('physical'), `meeting page: ${name}`)
   for (const name of ['Cameras', 'View recording', 'Guest access', 'Arm']) assert.ok(!classesOf(name, ALARM).includes('permission'), `${name} gains no permission`)
 })
+
+test("#729 round 2 (cu-researcher 19:42Z): number to a new eSIM; CU-491's /security pages bind CU-519 too", () => {
+  for (const name of ['Move number to new eSIM', 'Transfer my number to a new phone', 'Port number to new SIM']) assert.ok(classesOf(name, CARRIER).includes('credential'), name)
+  const SEC = 'https://home.fixture.example/security'
+  assert.ok(classesOf('Generate guest PIN', SEC).includes('physical'))
+  assert.ok(classesOf('Disable recording', SEC).includes('permission'))
+  assert.ok(classesOf('Silence alarm', SEC).includes('physical'), 'CU-491 unchanged')
+})

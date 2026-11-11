@@ -1151,6 +1151,8 @@ function grammarClassesOf(name, role = '') {
   // / a different / a new number; show / reveal / view / change / reset the account / port-out / transfer PIN; disable / turn off / remove
   // the number lock / port-out protection / SIM protection. PERMISSION: add an authorized user.
   if (/^\s*(?:activate|set\s+up|move|transfer|port)\s+(?:the\s+|my\s+|your\s+)?(?:e-?sim|sim(?:\s+card)?|phone\s+number|number|line)\s+(?:on|to)\s+(?:a\s+|the\s+)?(?:new|another|different|other)\s+(?:device|phone)\s*$|^\s*(?:forward|redirect|divert)\s+(?:all\s+|my\s+)?calls\s+to\s+(?:a\s+|an\s+)?(?:another|different|new|other)\s+number\s*$|^\s*(?:show|reveal|view|change|reset|update)\s+(?:the\s+|my\s+|your\s+)?(?:account|port[-\s]?out|transfer|number\s+transfer)\s+(?:pin|passcode)\s*$|^\s*(?:disable|turn\s+off|remove|switch\s+off)\s+(?:the\s+)?(?:number\s+lock|port[-\s]?out\s+(?:protection|lock)|sim\s+(?:protection|lock)|number\s+transfer\s+lock)\s*$/i.test(raw)) return ['credential']
+  // #729 round 2 (cu-researcher 19:42Z): move / transfer / port the number to a new eSIM / SIM / device / phone.
+  if (/^\s*(?:move|transfer|port|switch)\s+(?:my\s+|the\s+|your\s+)?(?:phone\s+)?number\s+to\s+(?:a\s+|an\s+|the\s+)?(?:new|another|different)\s+(?:e-?sim|sim(?:\s+card)?|device|phone)\s*$/i.test(raw)) return ['credential']
   if (/^\s*add\s+(?:an?\s+)?authori[sz]ed\s+(?:user|account\s+user|manager)\s*$/i.test(raw)) return ['permission']
   // CU-516 (High; cu-coordinator 18:51Z), table PR 27, as verb families with object synonyms - a seller dashboard's money and data
   // controls. PURCHASE: mark (the order / invoice) (as) paid, void the authorization / payment / charge / invoice, accept / concede /

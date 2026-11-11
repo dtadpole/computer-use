@@ -2302,7 +2302,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (grammarEligible) {
       let pageParts = ''
       try { const u = new URL(url); pageParts = `${u.hostname} ${u.pathname}` } catch { pageParts = '' }
-      const homeSecurity = /(?:^|[\s./-])(?:ring|simplisafe|adt|arlo|nest|wyze|blink|eufy|august|schlage|yale|vivint|alarm|alarms|cameras?|cams?|locks?|smartlock|doorbell|home-?security|security-?system)(?:[\s./-]|$)/i.test(pageParts)
+      // #729 round 2 (cu-researcher 19:42Z): CU-491's own home-security path segments (/security, /alarm, /cameras, /home-security) count too.
+      let cu491Page = false
+      try { const u = new URL(url); cu491Page = /^https?:$/.test(u.protocol) && /(?:^|\/)(?:security|alarm|cameras|home-security)(?=$|[/?#])/i.test(u.pathname) } catch { cu491Page = false }
+      const homeSecurity = cu491Page || /(?:^|[\s./-])(?:ring|simplisafe|adt|arlo|nest|wyze|blink|eufy|august|schlage|yale|vivint|alarm|alarms|cameras?|cams?|locks?|smartlock|doorbell|home-?security|security-?system)(?:[\s./-]|$)/i.test(pageParts)
       const label = String(name ?? '').trim()
       if (homeSecurity) {
         if (/^(?:generate|create|add|make|share|send)\s+(?:a\s+|an\s+|new\s+)?(?:guest|temporary|temp|one[-\s]time|visitor)\s+(?:pin|code|passcode|key|access\s+code)$|^share\s+(?:the\s+|an\s+)?access\s+code$/i.test(label) && !classes.includes('physical')) classes.push('physical')
