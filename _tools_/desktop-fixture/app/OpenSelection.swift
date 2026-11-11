@@ -41,6 +41,19 @@ final class SandboxFileName: NSTextField {
 }
 
 /// The list: Command-Down opens the selection, as in Finder.
+/// CU-387 (fileOn 'row'): the container a plain name sits in, carrying the row's file as an AX element of its own -
+/// measured 10 Nov 08:34Z: AppKit does not surface accessibilityFilename/URL overrides on NSTableCellView or
+/// NSTableRowView across processes, but does on an NSView that is itself an accessibility element (as SandboxIcon),
+/// so this is the ancestor helper 0.2.67's walk can lend the file from (fileFrom 'ancestor').
+final class SandboxFileBox: NSView {
+  var fileName = ""
+  var fileURL: URL?
+  override func isAccessibilityElement() -> Bool { true }
+  override func accessibilityRole() -> NSAccessibility.Role? { .group }
+  override func accessibilityFilename() -> String? { fileName }
+  override func accessibilityURL() -> URL? { fileURL }
+}
+
 final class SandboxFileTable: NSTableView {
   var onOpen: ((String) -> Void)?
   override func keyDown(with event: NSEvent) {
@@ -177,13 +190,29 @@ final class OpenSelection: NSObject, NSTableViewDataSource, NSTableViewDelegate 
     }
     label.font = NSFont.systemFont(ofSize: 13)
     label.translatesAutoresizingMaskIntoConstraints = false
-    cell.addSubview(label)
+    // CU-387 (fileOn 'row'): the plain name sits in a box that carries the file as its own AX element (SandboxFileBox).
+    let holder: NSView
+    if plainName {
+      let box = SandboxFileBox()
+      box.fileName = files[row]
+      box.fileURL = Self.url(files[row])
+      box.translatesAutoresizingMaskIntoConstraints = false
+      cell.addSubview(box)
+      NSLayoutConstraint.activate([box.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: 2),
+                                   box.trailingAnchor.constraint(equalTo: cell.trailingAnchor, constant: -2),
+                                   box.topAnchor.constraint(equalTo: cell.topAnchor),
+                                   box.bottomAnchor.constraint(equalTo: cell.bottomAnchor)])
+      holder = box
+    } else {
+      holder = cell
+    }
+    holder.addSubview(label)
     cell.textField = label
     // CU-387: the name spans the row, so a press anywhere on it lands on the element carrying AXFilename and AXURL, and
     // each row's name is a named target ('sandbox-file-<row>') a live row can aim at instead of guessing a point.
-    NSLayoutConstraint.activate([label.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: 4),
-                                 label.trailingAnchor.constraint(equalTo: cell.trailingAnchor, constant: -4),
-                                 label.centerYAnchor.constraint(equalTo: cell.centerYAnchor)])
+    NSLayoutConstraint.activate([label.leadingAnchor.constraint(equalTo: holder.leadingAnchor, constant: plainName ? 2 : 4),
+                                 label.trailingAnchor.constraint(equalTo: holder.trailingAnchor, constant: plainName ? -2 : -4),
+                                 label.centerYAnchor.constraint(equalTo: holder.centerYAnchor)])
     Fixture.shared.controls["sandbox-file-\(row)"] = label
     return cell
   }
@@ -270,7 +299,8 @@ final class OpenSelection: NSObject, NSTableViewDataSource, NSTableViewDelegate 
       let name = cell?.textField as? SandboxFileName
       return ["role": row.accessibilityRole()?.rawValue ?? NSNull(), "filename": row.accessibilityFilename() ?? NSNull(), "url": row.accessibilityURL()?.absoluteString ?? NSNull(),
               "cellFilename": cell?.accessibilityFilename() ?? NSNull(), "cellURL": cell?.accessibilityURL()?.absoluteString ?? NSNull(),
-              "nameFilename": name?.accessibilityFilename() ?? NSNull(), "nameURL": name?.accessibilityURL()?.absoluteString ?? NSNull()]
+              "nameFilename": name?.accessibilityFilename() ?? NSNull(), "nameURL": name?.accessibilityURL()?.absoluteString ?? NSNull(),
+              "boxFilename": (cell?.textField?.superview as? SandboxFileBox)?.accessibilityFilename() ?? NSNull()]
     }
   }
 

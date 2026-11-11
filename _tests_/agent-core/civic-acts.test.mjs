@@ -37,5 +37,7 @@ test('CU-422 round 2 (15:42Z): article / possessive folds submit; Leave a tip, T
     assert.equal(enter(name), 'submit', `Return: ${name}`)
   }
   for (const name of ['Leave a tip', 'Tip $5', 'Give $10']) assert.equal(click(name), 'purchase', name)
-  for (const name of ['Renew passport', 'Apply to job', 'Enroll in course', 'Tip calculator', 'Offer details']) assert.equal(click(name), 'allow', `${name} (named for the grammar)`)
+  for (const name of ['Renew passport', 'Enroll in course', 'Tip calculator', 'Offer details']) assert.equal(click(name), 'allow', `${name} (named for the grammar)`)
+  // The phrase grammar (#554) now catches one of the three named forms by structure: apply + job (D-100 re-expectation).
+  assert.equal(click('Apply to job'), 'submit', 'caught by the grammar')
 })

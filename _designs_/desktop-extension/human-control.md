@@ -1,9 +1,9 @@
 ---
 title: Human control on a real display
 created: 2026-11-02T08:29:12Z
-modified: 2026-11-09T14:50:21Z
+modified: 2026-11-09T19:10:00Z
 level: L1
-version: 0.5.0
+version: 0.5.1
 description: The local-input pause, what take over and hand back mean when the person shares the display with the agent, and how the live view watches a desktop run without becoming a target.
 status: unverified
 grounded_in:
@@ -41,7 +41,7 @@ through either guard or posts a real untagged event; it can only pause a run.
 
 An owner-session rehearsal needs the owner's key press without the owner. `CU_STAND_IN_OWNER_INPUT` (turn numbers,
 such as `3` or `3,9`) asks `cli.mjs run` for a labelled stand-in: after each named turn, agent core writes the note
-`STAND-IN owner input (CU-342): not the owner's` and calls `simulateLocalInput {kind: 'key', via: 'untagged'}` once -
+`STAND-IN owner input (CU-342, an untagged pointer move): not the owner's` and calls `simulateLocalInput {kind: 'pointer', via: 'untagged'}` once (the seam posts one pointer move, so a rehearsal of H1 measures the pointer path; the owner's own key press is the key path) -
 one real untagged event the guards detect exactly as they detect a person, so the pause it causes is the ordinary
 local-input pause, with no branch of its own; the run header lists the turns. Only `cli.mjs run` reads the variable
 (and `CU_DESKTOP_HOLD_TOKEN`) and hands runTask an explicit `standInTurns`; the loop, the driver and the MCP server read

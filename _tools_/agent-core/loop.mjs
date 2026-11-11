@@ -17,6 +17,7 @@ import { MODIFIER_KEYS, normalizeKey } from './keys.mjs'
 import { composePresses, expandResults } from './press.mjs'
 import { joinSplitResults, splitTypesAtTabs } from './type-split.mjs'
 import { answerLinePattern } from './answer-line.mjs'
+import { isScriptedAdapter } from './adapter-scripted.mjs'
 import { RETRY, transientCapture, transientFront, transientGrant, transientInput } from './retry.mjs'
 
 /**
@@ -172,7 +173,7 @@ export const NO_APP_WINDOW_MAX_MS = 15_000
 export const NO_APP_WINDOW_NOTE = 'No window of an approved app is on screen, so there is no screenshot; input cannot act. Wait if it is opening; otherwise end and say so.'
 
 /** CU-342: the note a stand-in owner input writes in the trajectory, before the input itself, word for word. */
-export const STAND_IN_NOTE = "STAND-IN owner input (CU-342): not the owner's"
+export const STAND_IN_NOTE = "STAND-IN owner input (CU-342, an untagged pointer move): not the owner's"
 
 /**
  * CU-342: runTask's `standInTurns` - the model turns after which a rehearsal posts one labelled stand-in for the owner's
@@ -230,6 +231,11 @@ export async function runTask(options) {
   if (typeof task.text !== 'string' || task.text.trim() === '') throw new TypeError('runTask needs a task')
   // CU-342: a stand-in the environment cannot post is refused here, before anything runs - never found mid-run.
   const standInTurns = standInTurnsOf(options.standInTurns)
+  // CU-367 (cu-researcher): 'unreachable from a model run' is the loop's own property, not only cli.mjs's gate - any
+  // caller pairing standInTurns with an adapter createScriptedAdapter did not build is refused before turn 1.
+  if (standInTurns.length > 0 && !isScriptedAdapter(model)) {
+    throw new TypeError('standInTurns needs the scripted adapter (createScriptedAdapter); a model-driven run never carries the owner-input stand-in, so the run does not start')
+  }
   if (standInTurns.length > 0 && typeof environment?.simulateLocalInput !== 'function') {
     throw new TypeError('standInTurns needs an environment with simulateLocalInput (the macos-desktop driver); this one has none, so the run does not start')
   }
@@ -825,7 +831,16 @@ export async function runTask(options) {
     else if (action.type === 'drag') target = await environment.inspectPoint(action.path[0])
     else if ((action.type === 'keypress' || action.type === 'type') && previous?.type === 'keypress' && Array.isArray(previous.keys) && previous.keys.some((key) => MOVES_FOCUS.test(String(key)))
       // CU-147: Backspace or Delete after Tab onto a list removes the selection there - judged on the settled focus too.
-      && (action.type === 'type' || (Array.isArray(action.keys) && action.keys.some((key) => /^(space|enter|return|backspace|delete)$/i.test(String(key)))))) target = await settledFocus()
+      && (action.type === 'type' || (Array.isArray(action.keys) && action.keys.some((key) => /^(space|enter|return|backspace|delete)$/i.test(String(key)))))) {
+      // cu-coordinator 22:17Z: settle first, then for a keypress ask keyTarget what the key acts on (an aria-activedescendant
+      // option, CU-370) - the settled focus only when keyTarget is missing or throws.
+      target = await settledFocus()
+      if (action.type === 'keypress' && typeof environment.keyTarget === 'function') {
+        const keyed = await Promise.resolve(environment.keyTarget(action)).catch(() => null)
+        // Only an answer that names an option (CU-370's flags) replaces the settled focus (cu-coordinator 22:23Z).
+        if (keyed && (keyed.selectOption === true || keyed.radioChoice === true || keyed.optionUnread === true)) target = keyed
+      }
+    }
     // CU-353: a keypress is judged on what it acts on - the browser driver's keyTarget answers an accesskey chord with the
     // element it fires (marked accessKey), else the focus; an environment without it (the desktop, fakes) gives the focus.
     // A keyTarget that throws (a page navigating, a frame detached) falls back to the focus, as before CU-353, and a focus
@@ -1544,8 +1559,9 @@ export async function runTask(options) {
         // checkpoint just passed); its pause is the ordinary local-input pause, which that checkpoint then waits out.
         if (requests > standInDone && standInTurns.includes(requests)) {
           standInDone = requests
-          logEvent('note', requests, { message: STAND_IN_NOTE, standIn: { kind: 'key', via: 'untagged' } })
-          await environment.simulateLocalInput({ kind: 'key', via: 'untagged' })
+          logEvent('note', requests, { message: STAND_IN_NOTE, standIn: { kind: 'pointer', via: 'untagged' } })
+          // CU-342 (cu-verifier, R1c): the untagged seam posts one pointer move, so the request and the note say pointer.
+          await environment.simulateLocalInput({ kind: 'pointer', via: 'untagged' })
           continue
         }
         if (activeMs() >= bounds.maxWallMs) {

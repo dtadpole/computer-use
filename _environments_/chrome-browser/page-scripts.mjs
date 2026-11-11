@@ -601,10 +601,86 @@ export function describeElement(el) {
       || AMOUNT.test([input.name, input.id, input.getAttribute('aria-label'), input.placeholder].filter(Boolean).join(' ')))
     return options.length > 0 || amountEntry ? { options, amountEntry } : null
   })()
+  // CU-443 (cu-coordinator 21:01Z, 21:03Z): a pressed row with no verb of its own - a contact list item that dials on
+  // click - is judged with what the page offers around it. Only for list items, rows, grid cells, options and tree
+  // items. dialHref: whether the row, an ancestor within 4 levels or a link inside it carries a tel:, sip:, callto: or
+  // facetime: href (a boolean, never the number). rowContext: the accessible name of its list (60 characters at most)
+  // and the names of up to 3 action controls inside it (aria-label or title, 40 characters each). Context, not
+  // identity: outside the fingerprint, never recorded.
+  // Round 2 (cu-researcher 21:35Z): a listener-only row clicked on its name span hits the span, not the row - so a hit
+  // element with no verb of its own (no button, link, form control or ARIA widget) inside a row within 3 levels is read
+  // through that row, and the target says so (inRow: true). A verb on the way up (a button or link around the span)
+  // ends the walk: that control is the target's own verb.
+  const ROW_ROLES = ['listitem', 'row', 'gridcell', 'option', 'treeitem']
+  const WIDGET_ROLES = /^(?:button|link|checkbox|radio|switch|menuitem(?:checkbox|radio)?|tab|textbox|searchbox|combobox|slider|spinbutton)$/
+  const nodeRole = (node) => String((node.getAttribute && node.getAttribute('role')) || '').toLowerCase()
+  const nodeTag = (node) => String(node.tagName || '').toLowerCase()
+  const isRow = (node) => ROW_ROLES.includes(nodeRole(node)) || nodeTag(node) === 'li' || nodeTag(node) === 'tr'
+  const hasVerb = (node) => ['a', 'button', 'input', 'select', 'textarea', 'summary', 'label'].includes(nodeTag(node)) || WIDGET_ROLES.test(nodeRole(node))
+  let rowEl = isRow(el) ? el : null
+  if (rowEl === null && !hasVerb(el)) {
+    for (let node = el.parentElement, depth = 1; node && node.nodeType === 1 && depth <= 3; node = node.parentElement, depth += 1) {
+      if (isRow(node)) { rowEl = node; break }
+      if (hasVerb(node)) break
+    }
+  }
+  const rowLike = rowEl !== null
+  const inRow = rowLike && rowEl !== el
+  const DIAL_HREF = /^(?:tel|sips?|callto|facetime(?:-audio)?):/i
+  const dialHref = rowLike && (() => {
+    for (let node = rowEl, depth = 0; node && node.nodeType === 1 && depth <= 4; node = node.parentElement, depth += 1) {
+      if (DIAL_HREF.test(String((node.getAttribute && node.getAttribute('href')) || ''))) return true
+    }
+    return typeof rowEl.querySelectorAll === 'function' && [...rowEl.querySelectorAll('a[href]')].some((a) => DIAL_HREF.test(String((a.getAttribute && a.getAttribute('href')) || '')))
+  })()
+  const rowContext = (() => {
+    if (!rowLike || typeof rowEl.querySelectorAll !== 'function') return null
+    const clip = (text, max) => {
+      const short = String(text || '').replace(/\s+/g, ' ').trim()
+      return short !== '' && short.length <= max ? short : null
+    }
+    const box = rowEl.closest ? rowEl.closest('[role="list"], [role="listbox"], [role="grid"], [role="table"], [role="tree"], ul, ol, table') : null
+    let list = null
+    if (box && box.getAttribute) {
+      const own = box.getAttribute('aria-label')
+      const ids = box.getAttribute('aria-labelledby')
+      const doc = box.ownerDocument
+      list = own ? clip(own, 60)
+        : ids && doc && doc.getElementById ? clip(ids.split(/\s+/).map((id) => doc.getElementById(id)).filter(Boolean).map((node) => node.textContent).join(' '), 60) : null
+    }
+    const hints = []
+    for (const control of rowEl.querySelectorAll('button, a[href], [role="button"], [aria-label], [title]')) {
+      if (hints.length >= 3) break
+      const name = clip(control.getAttribute ? control.getAttribute('aria-label') || control.getAttribute('title') : '', 40)
+      if (name !== null && !hints.includes(name)) hints.push(name)
+    }
+    return list !== null || hints.length > 0 ? { ...(list !== null ? { list } : {}), hints } : null
+  })()
+  // CU-472: a link that does not navigate - no href attribute, an empty one, '#' or a same-page '#fragment', or a
+  // 'javascript:' URL - acts like a button (its click handler does the work), but `href` is the resolved URL, so '#'
+  // reaches policy as the page's own address. inertLink reads the RAW attribute of the closest <a> (or an ARIA link
+  // with no <a>): a boolean, outside the fingerprint, never recorded.
+  const inertLink = (() => {
+    const anchor = el.closest ? el.closest('a') : null
+    if (!anchor) return role === 'link'
+    const raw = anchor.getAttribute ? anchor.getAttribute('href') : null
+    if (raw === null) return true
+    const trimmed = String(raw).trim()
+    return trimmed === '' || trimmed.startsWith('#') || /^javascript:/i.test(trimmed)
+  })()
+  // CU-473: Chrome's accessible name flattens a second line (<br>, block children, a <small> note) into spaces, so
+  // 'Change Direct Deposit' over 'Takes Effect Immediately' reaches policy as one name nothing can split. innerText keeps
+  // the rendered line breaks: firstLine is the first non-empty line when there are two or more, at most 80 characters -
+  // a string outside the fingerprint, never recorded.
+  const firstLine = (() => {
+    const text = typeof el.innerText === 'string' ? el.innerText : ''
+    const lines = text.split(/[\r\n]+/).map((line) => line.replace(/\s+/g, ' ').trim()).filter(Boolean)
+    return lines.length >= 2 ? lines[0].slice(0, 80) : null
+  })()
   return { tag, inputType: type, isPassword: type === 'password', autocomplete: autocomplete || null, href: link, origin, editable, caption: editable ? null : caption, entryCaption: editable ? caption : null,
     ...(frameUrl ? { frameUrl } : {}), ...(terminal ? { terminal } : {}), ...(notebookCell ? { notebookCell } : {}), ...(notebookSurface ? { notebookSurface } : {}), ...(codeSurface ? { codeSurface } : {}),
     ...(checked !== null ? { checked } : {}), ...(pressed !== null ? { pressed } : {}),
-    ...(formContext !== null ? { formContext } : {}) }
+    ...(formContext !== null ? { formContext } : {}), ...(firstLine !== null ? { firstLine } : {}), ...(inertLink ? { inertLink: true } : {}), ...(inRow ? { inRow: true } : {}), ...(dialHref === true ? { dialHref: true } : {}), ...(rowContext !== null ? { rowContext } : {}) }
 }
 
 /**

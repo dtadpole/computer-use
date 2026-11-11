@@ -1067,3 +1067,28 @@ test('CU-412 (11:56Z): a lone script control with no accessible name is no defau
     }
   }
 })
+
+test('CU-443: rowContextOf re-validates the page\'s rowContext at the boundary', async () => {
+  const { rowContextOf } = await import('../../_environments_/chrome-browser/environment.mjs')
+  assert.deepEqual(rowContextOf({ list: 'Contacts', hints: ['Call', 7, 'x'.repeat(41), 'Message', 'Video', 'More'] }), { list: 'Contacts', hints: ['Call', 'Message', 'Video'] })
+  assert.deepEqual(rowContextOf({ list: 'z'.repeat(61), hints: [] }), null, 'an over-long list name is dropped; nothing left')
+  assert.equal(rowContextOf(null), null)
+  assert.equal(rowContextOf('Contacts'), null)
+})
+
+test('CU-473 (Return route): the Return target (defaultButton) carries the submit button\'s firstLine, as a click on it would', async () => {
+  const handlers = checkoutHandlers()
+  const base = handlers['Runtime.callFunctionOn']
+  handlers['Runtime.callFunctionOn'] = (params) => (String(params.functionDeclaration).includes('describeElement') && /-41$/.test(String(params.objectId))
+    ? { result: { result: { value: { firstLine: 'Change Direct Deposit' } } } }
+    : base(params))
+  const run = harness({ handlers })
+  const env = await launchBrowserEnvironment(run.options)
+  try {
+    const target = await env.focusedElement()
+    assert.deepEqual(target.defaultButton, { role: 'button', name: 'Place order', panel: null, firstLine: 'Change Direct Deposit' })
+    assert.equal('firstLine' in target, false, 'the focused field itself carries none')
+  } finally {
+    await env.close()
+  }
+})
