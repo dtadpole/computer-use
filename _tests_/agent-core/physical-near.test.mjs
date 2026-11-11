@@ -153,3 +153,10 @@ test('nativeToggleState folds after #597: CU-464/465 remote access and blanket a
   assert.equal(dsw('Allow force pushes', true), 'allow', 'force push on -> off is free')
   assert.equal(dsw('Allow force pushes', 'mixed'), 'permission', 'mixed asks')
 })
+test('nativeToggleState fold after #602: CU-468 auto-lock / armed switches read a desktop native state (OFF asks physical)', () => {
+  for (const name of ['Auto-lock', 'Armed', 'Alarm armed']) {
+    assert.equal(dsw(name, true), 'physical', `${name}: on -> off`)
+    assert.equal(dsw(name, false), 'allow', `${name}: off -> on`)
+    assert.equal(dsw(name, false, { inWebArea: true }), 'physical', `${name}: web area untrusted`)
+  }
+})
