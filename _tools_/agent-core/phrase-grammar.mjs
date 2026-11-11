@@ -195,8 +195,10 @@ const AMOUNT = /(?:[$\u20ac\u00a3\u00a5\u20b9]\s?(\d[\d,]*(?:\.\d+)?))|(?:\b(\d[
 // A price filter or range commits nothing ('Under $25', '$10 - $20', 'Over EUR 100', 'Up to $50'; cu-researcher 00:51Z).
 const PRICE_FILTER = /^\s*(?:under|over|below|above|less\s+than|more\s+than|up\s+to|from|max(?:imum)?|min(?:imum)?)\b|\d\s*(?:-|\u2013|\u2014|to)\s*[$\u20ac\u00a3\u00a5\u20b9]?\s*\d|\b(?:and\s+(?:up|above|under|below)|or\s+(?:less|more))\s*$/i
 // Links and list items stay out of the plain pattern (17:18Z; cu-coordinator 01:04Z): a priced link navigates to the item.
-const AMOUNT_ROLES = new Set(['button', 'menuitem', 'axbutton', 'axmenuitem', 'axpopupbutton', 'alertdialog', 'dialog'])
-const COMMIT_LINK_ROLES = new Set(['link', 'listitem', 'axlink', 'option'])
+// cu-developer-three 01:39Z (D-099): a desktop pull-down AXMenuButton asks; a closed AXPopUpButton only opens its menu (its chosen
+// AXMenuItem asks), so it stays out; desktop list rows AXRow / AXCell take the commit-verb form like links.
+const AMOUNT_ROLES = new Set(['button', 'menuitem', 'axbutton', 'axmenuitem', 'axmenubutton', 'alertdialog', 'dialog'])
+const COMMIT_LINK_ROLES = new Set(['link', 'listitem', 'axlink', 'option', 'axrow', 'axcell'])
 const PRICE_LABEL = /^\s*(?:price|was|now|from|save|sale|regular|list\s+price|msrp)\b|\boff\s*$|\bdiscount\b/i
 const AMOUNT_COMMIT = /^\s*(?:buy|pay|purchase|subscribe|order|donate|tip|rent|upgrade|renew|checkout|check\s+out|charge|get\s+(?:it|premium|pro|plus))\b/i
 /** CU-467 (cu-coordinator 00:49Z, 01:04Z): 'purchase' when a pressed control names a money amount - any button, menu item or dialog

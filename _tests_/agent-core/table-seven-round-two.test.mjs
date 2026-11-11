@@ -31,3 +31,13 @@ test('#602 round 2 (cu-coordinator 01:36Z): EU amount forms ask; CU-456 concrete
   for (const name of ['Add example.com to safe senders', 'Add @example.com to safe senders']) assert.equal(at(name, 'https://mail.example/settings'), 'permission', name)
   for (const name of ['Add to safe senders', 'Add alice@example.com to safe senders']) assert.equal(at(name, 'https://mail.example/settings'), 'allow', name)
 })
+
+test('#602 round 2 (cu-developer-three 01:39Z): desktop roles - a menu button asks, list rows take the commit-verb form, a pop-up stays out', () => {
+  const desk = (name, role) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: 'app:com.example.store', target: { role, name } }); return v.decision === 'allow' ? 'allow' : v.class }
+  assert.equal(desk('Buy for $4.99', 'AXMenuButton'), 'purchase')
+  assert.equal(desk('Buy for $5', 'AXRow'), 'purchase')
+  assert.equal(desk('Blue mug, $12.99', 'AXRow'), 'allow')
+  // Named: a closed pop-up showing a priced choice only opens its menu; the chosen AXMenuItem asks.
+  assert.equal(desk('Monthly - $4.99', 'AXPopUpButton'), 'allow')
+  assert.equal(desk('Monthly - $4.99', 'AXMenuItem'), 'purchase')
+})
