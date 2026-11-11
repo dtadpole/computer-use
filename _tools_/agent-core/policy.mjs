@@ -3,7 +3,7 @@ import { normaliseForPolicy, normaliseText } from './normalise.mjs'
 import { BIP39_ENGLISH } from './bip39-english.mjs'
 import { normalizeKey } from './keys.mjs'
 import { originPattern } from './sites.mjs'
-import { amountClass, canonicalConfirm, grammarClasses } from './phrase-grammar.mjs'
+import { amountClass, canonicalConfirm, grammarClasses, inertLinkAmountClass } from './phrase-grammar.mjs'
 
 /**
  * The action policy (design: action-policy.md, consent-gate.md). `classify` runs in the dispatcher for every action,
@@ -1522,9 +1522,13 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (TRASH_ROLE.test(String(target?.role ?? '')) && namesWord(name, CONTROL_DELETE)) classes.push('delete')
       // The phrase grammar may judge this press below, after every older rule (not on an entry, not on a link - a link
       // navigates, and the older rules keep their link exceptions).
-      grammarEligible = !focusesEntry && !/link/i.test(String(target?.role ?? ''))
-      // CU-467 (cu-coordinator 01:04Z): the grammar skips links, so a link's money amount with a commit verb is read here ('Buy for $5').
-      if (!focusesEntry && /link/i.test(String(target?.role ?? '')) && amountClass(name, 'link')) classes.push('purchase')
+      // CU-472 (High; cu-coordinator 01:36Z): a link that does not navigate (target.inertLink - no / empty / '#' / 'javascript:' href,
+      // or an ARIA link with no <a>) is judged like a button; a real-URL link stays navigation (named limit).
+      grammarEligible = !focusesEntry && (!/link/i.test(String(target?.role ?? '')) || target?.inertLink === true)
+      // CU-467 (cu-coordinator 01:04Z): a real-URL link's money amount asks only with a commit verb ('Buy for $5'). An inert link
+      // (CU-472) takes the button pattern when a generic or commit verb leads or the amount has a period (cu-coordinator 02:35Z:
+      // 'Continue for $9.99', '$4.99/month'); a product tile drawn as <a href='#'> ('Blue mug, $12.99') stays free.
+      if (!focusesEntry && /link/i.test(String(target?.role ?? '')) && (target?.inertLink === true ? inertLinkAmountClass(name) : amountClass(name, 'link'))) classes.push('purchase')
     }
     // CU-232 (menu-key.md): a desktop chord that is a menu item's key equivalent fires that item, so the item's name is
     // judged as a click on it would be, beside the keys - Shift-Command-D bound to Send asks submit. Every matching item

@@ -41,3 +41,13 @@ test('#602 round 2 (cu-developer-three 01:39Z): desktop roles - a menu button as
   assert.equal(desk('Monthly - $4.99', 'AXPopUpButton'), 'allow')
   assert.equal(desk('Monthly - $4.99', 'AXMenuItem'), 'purchase')
 })
+
+test('#602 x #604: an inert link takes the button amount pattern with a generic or commit verb or a period; a product tile stays free', () => {
+  const inert = (name) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: 'https://shop.example/search', target: { role: 'link', name, inertLink: true } }); return v.decision === 'allow' ? 'allow' : v.class }
+  assert.equal(inert('Buy for $5'), 'purchase')
+  assert.equal(inert('Blue mug, $12.99'), 'allow')
+  // cu-coordinator 02:35Z: a generic or commit verb, an amount with a period, or a bare amount takes the button pattern.
+  for (const name of ['Continue for $9.99', 'Confirm $12.00', '$4.99/month', 'Yes, charge $25', '$9.99', 'Add for $5', 'Weiter f\u00fcr 4,99 \u20ac']) assert.equal(inert(name), 'purchase', name)
+  for (const name of ['Wireless mouse $25', 'Price: $35', 'Under $25']) assert.equal(inert(name), 'allow', name)
+  assert.equal(inert('Show seed phrase'), 'credential', 'the other table rows still judge an inert link like a button')
+})

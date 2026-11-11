@@ -214,6 +214,17 @@ export function amountClass(name, role = '') {
   if (COMMIT_LINK_ROLES.has(r) && AMOUNT_COMMIT.test(raw)) return 'purchase'
   return null
 }
+// cu-coordinator 02:35Z (cu-researcher's recommendation): an INERT link (CU-472) takes the button amount pattern when its name leads
+// with a generic or commit verb, or carries an amount with a period; a product tile drawn as an inert link stays free.
+// #602 round 4 (cu-researcher 02:36Z): 'add' (the ruled list) and the EU continue / buy words ('Weiter f\u00fcr 4,99 \u20ac').
+const GENERIC_AMOUNT_VERB = /^\s*(?:continue|confirm|yes|ok|okay|next|proceed|submit|complete|place|start|try|join|unlock|get|add|upgrade|renew|subscribe|pay|buy|purchase|order|donate|tip|checkout|check\s+out|charge|weiter|jetzt|kaufen|bezahlen|continuer|payer|acheter|continuar|pagar|comprar)\b/i
+const AMOUNT_PERIOD = /(?:\/\s*(?:mo|month|yr|year|wk|week|day)|\b(?:per|a|an|each)\s+(?:month|year|week|day)|\b(?:monthly|yearly|annually|weekly))\b/i
+export function inertLinkAmountClass(name) {
+  const raw = String(name ?? '')
+  if (!namesAmount(raw) || PRICE_FILTER.test(raw)) return null
+  if (PRICE_LABEL.test(raw) && !AMOUNT_COMMIT.test(raw)) return null
+  return GENERIC_AMOUNT_VERB.test(raw) || AMOUNT_PERIOD.test(raw) || /^\s*[$\u20ac\u00a3\u00a5\u20b9]?\s*\d[\d.,]*\s*(?:[$\u20ac\u00a3\u00a5\u20b9]|usd|eur|gbp)?\s*$/i.test(raw) ? 'purchase' : null
+}
 /** CU-467: whether a name carries a positive money amount (a currency symbol or ISO code beside a number). */
 export function namesAmount(name) {
   const amounts = [...String(name ?? '').matchAll(AMOUNT)].map((m) => {
