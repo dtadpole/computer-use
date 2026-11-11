@@ -3,7 +3,7 @@ import { normaliseForPolicy, normaliseText } from './normalise.mjs'
 import { BIP39_ENGLISH } from './bip39-english.mjs'
 import { normalizeKey } from './keys.mjs'
 import { originPattern } from './sites.mjs'
-import { amountClass, canonicalForms, grammarClasses, grammarClassesBase, inertLinkAmountClass, synonymForms, toggleExpansion, quantifierDropped } from './phrase-grammar.mjs'
+import { amountClass, canonicalForms, grammarClasses, grammarClassesBase, inertLinkAmountClass, quantifierDropped, sectionLabelStripped, synonymForms, toggleExpansion } from './phrase-grammar.mjs'
 
 /**
  * The action policy (design: action-policy.md, consent-gate.md). `classify` runs in the dispatcher for every action,
@@ -2189,10 +2189,12 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (classes.length === 0 && domainHandover.test(name)) classes.push('purchase')
       else if (classes.length === 0 && domainExposure.test(name)) classes.push('permission')
     }
-    // #683 round 2 (cu-coordinator 13:36Z): a quantified name that already asks takes the full class set of its quantifier-dropped row
+    // #683 round 2 (cu-coordinator 13:36Z): a quantified (or, #694 r2, labelled) name that already asks takes the full class set of its row
     // too ('Approve each sign-in' asks permission beside the older submit, like 'Approve sign-in') - adds only.
     if (grammarEligible && classes.length > 0 && context.confirmProbe !== true && String(name ?? '').length <= 200) {
-      for (const form of quantifierDropped(String(name ?? '').trim())) {
+      // #694 round 2 (cu-researcher 15:05Z; the 13:36Z union): the section-label rest too - 'Pay settings: Change direct deposit'
+      // keeps the older purchase from 'pay' and takes credential from its rest.
+      for (const form of [...quantifierDropped(String(name ?? '').trim()), ...sectionLabelStripped(name)]) {
         const probe = classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { ...target, name: form }, confirmProbe: true })
         if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) if (!classes.includes(cls)) classes.push(cls)
       }

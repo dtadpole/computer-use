@@ -854,11 +854,13 @@ function acknowledgementStripped(name) {
 // repository public', 'Payroll - Change direct deposit', '[Delete account]').
 // cu-coordinator 14:49Z: a label of up to five words; tried LAST (after the verb-synonym and quantifier forms), so the label never
 // lowers and a free rest stays free; a time or ratio ('10:30', '16:9') is never split (no colon before a digit).
-function sectionLabelStripped(name) {
+export function sectionLabelStripped(name) {
   const first = String(name ?? '').split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean)[0] ?? ''
   const forms = []
   const label = /^\s*[\p{L}][\p{L}\p{N}&'.]*(?:\s+[\p{L}\p{N}&'.]+){0,4}\s*(?::(?!\d)|\s[-\u2013\u2014|]\s)\s*(\S.*)$/u.exec(first)
-  if (label && /\s/.test(label[1].trim()) ) forms.push(label[1].trim())
+  // #694 round 2 (cu-researcher 15:05Z): a one-word rest counts too ('Movie - Rent', 'Controls: Honk').
+  // The rest must start with a letter: a price or score after a label ('Price: $35', 'Score: 3-1') is never a row.
+  if (label && /^\p{L}/u.test(label[1].trim())) forms.push(label[1].trim())
   const wrapped = /^\s*[\[("'\u201c\u2018\u00ab\u2039](.+?)[\])"'\u201d\u2019\u00bb\u203a]\s*$/u.exec(first)
   if (wrapped) forms.push(wrapped[1].trim())
   return forms

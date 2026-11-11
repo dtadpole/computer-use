@@ -29,3 +29,10 @@ test('CU-505 (14:49Z): a label of up to five words; times and ratios never split
   assert.equal(at('Repository settings danger zone area: Make this repository public'), at('Make this repository public'))
   for (const name of ['Meeting at 10:30', 'Aspect 16:9', 'Ratio 4:3 - 16:9']) assert.equal(at(name), 'allow', name)
 })
+
+test('#694 round 2 (cu-researcher 15:05Z): one-word rests; the label never replaces the row\'s class (union)', () => {
+  const classesOf = (name, url = 'https://app.example/settings') => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url, target: { role: 'button', name } }); return v.decision === 'allow' ? [] : (v.classes ?? [v.class]) }
+  assert.ok(classesOf('Pay settings: Change direct deposit').includes('credential'))
+  assert.equal(at('Car - Honk'), at('Honk'))
+  assert.equal(at('Settings: General'), 'allow')
+})
