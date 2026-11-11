@@ -24,3 +24,11 @@ test('CU-433: recall, report phishing, empty spam, create rule, release message 
 test('CU-433 negatives: views and help stay free', () => {
   for (const name of ['Rules', 'Spam', 'Phishing tips', 'Quarantine', 'Message details', 'Release notes']) assert.equal(at(name), 'allow', name)
 })
+
+test('CU-433: a bare Add rule stays free (CU-492 pin); Add mail rule asks credential', () => {
+  const p = createPolicy({ sitePolicy: () => 'allow' })
+  const at = (name) => { const v = p.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: 'https://mail.example/settings', target: { role: 'button', name } }); return v.decision === 'allow' ? 'allow' : v.class }
+  assert.equal(at('Add rule'), 'allow')
+  assert.equal(at('Add mail rule'), 'credential')
+  assert.equal(at('Create rule'), 'credential')
+})

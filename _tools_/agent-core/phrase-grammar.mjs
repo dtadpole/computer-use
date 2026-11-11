@@ -1049,13 +1049,14 @@ function grammarClassesOf(name, role = '') {
   // CU-433 (cu-coordinator 09:51Z): mail near forms ask as their ruled neighbours - recalling a sent message deletes it ('Unsend
   // message'); reporting phishing submits a report ('Report spam'); emptying spam / junk deletes ('Empty trash'); a mail rule can
   // forward mail out ('Create filter', credential); releasing a held message from quarantine lets it through (permission).
+  // A bare 'Add rule' stays free (CU-492 pins it: a cloud console's form opener); 'Create rule' / 'Add mail rule' ask.
   if (list.length <= 4) {
     const [v, ...r] = list
     const last = r[r.length - 1]
     if (v === 'recall' && r.length >= 1 && r.length <= 2 && ['message', 'email', 'mail'].includes(last)) return ['delete']
     if (v === 'report' && r.length <= 2 && last === 'phishing') return ['submit']
     if (v === 'empty' && r.length <= 2 && ['spam', 'junk'].includes(last)) return ['delete']
-    if (['create', 'add', 'new'].includes(v) && r.length <= 2 && ['rule', 'forwarding'].includes(last) && (r.length === 1 || ['mail', 'inbox', 'email', 'forwarding', 'message'].includes(r[0]))) return ['credential']
+    if (['create', 'add', 'new'].includes(v) && r.length <= 2 && ['rule', 'forwarding'].includes(last) && (r.length === 1 ? v !== 'add' : ['mail', 'inbox', 'email', 'forwarding', 'message'].includes(r[0]))) return ['credential']
     if (v === 'release' && r.length >= 1 && r.length <= 3 && (['message', 'email', 'mail'].includes(last) || last === 'quarantine')) return ['permission']
   }
   // CU-500 (High; cu-coordinator 12:49Z), as verb families with object synonyms: on an exchange, confirming a withdrawal, a market
