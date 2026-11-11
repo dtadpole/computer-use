@@ -19,7 +19,7 @@ export const NEVER_PRE_APPROVED = Object.freeze(['purchase', 'delete', 'permissi
 // the task's declared secret placeholder ({{secret:name}}, resolved after the policy) - into a secret field; never a press, never other
 // text, and never into a money or identity field (IBAN, routing / account number, SWIFT, card, wallet address, forwarding address,
 // recovery email / phone), which asks credential even under the grant. The desktop already never pre-approves credential (app-policy).
-const MONEY_IDENTITY_FIELD = /\b(?:iban|routing|account\s*(?:number|no\.?|#)|swift|bic|sort\s*code|card|wallet\s*address|forwarding\s*address|recovery\s*(?:e-?mail|phone|number))\b/i
+const MONEY_IDENTITY_FIELD = /\b(?:iban|routing\s*(?:number|no\.?|#)?|account\s*(?:number|no\.?|#)|swift(?:\s*code)?|bic|sort\s*code|card\s*(?:number|no\.?|#)|wallet\s*address|forwarding\s*address|recovery\s*(?:e-?mail|phone|number))\b/i
 // CU-494 (3): the install rows ruled High (CU-484's store wording) never ride an install grant.
 const HIGH_INSTALL = /^\s*(?:install(?:\s+(?:now|app|it|extension|add-?on|plug-?in|for\s+free))?|add\s+to\s+(?:chrome|firefox|edge|safari|browser|slack|teams|workspace)|get\s+(?:the\s+)?(?:extension|add-?on|plug-?in|addon|plugin|app)|(?:activate|enable)\s+(?:the\s+)?(?:plug-?in|add-?on|extension))\s*!?\s*$/i
 /** CU-494 round 2 (cu-developer-three 11:09Z): whether a grant of `cls` may never cover a control named `name` - the High submit and
@@ -2097,7 +2097,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const needed = unique.filter((cls) => !preApproved(cls, url) || NEVER_PRE_APPROVED.includes(cls) || autofillClasses.includes(cls) || (cls === 'submit' && highSubmit) || (cls === 'credential' && !typesSecret) || (cls === 'install' && highInstall))
     // CU-494 (11:06Z): typing into a money or identity field is never carried by a grant - it asks credential at the typing step
     // (an attacker IBAN typed under a credential or sensitive_data grant, then a bare 'Save', must not pass).
-    if (needed.length === 0 && unique.length > 0 && action.type === 'type' && target && isTextEntry(target) && MONEY_IDENTITY_FIELD.test(String(name ?? ''))) needed.push('credential')
+    // #664 round 3 (cu-researcher 11:11Z): also when no class asked at all ('SWIFT code', 'Wallet address' typed with or without a grant).
+    if (needed.length === 0 && action.type === 'type' && target && isTextEntry(target) && MONEY_IDENTITY_FIELD.test(String(name ?? ''))) { needed.push('credential'); if (!unique.includes('credential')) unique.push('credential') }
     if (needed.length === 0 && shortcutActive) {
       return { decision: 'confirm', class: 'permission', classes: ['permission'], rule: 'page:shortcut', approvalKey: shortcutApproval, runOnly: true, reason: `press ${shortcutShown} on ${placeOf(url, target, context?.frontmostBundleId)}, a keyboard shortcut of the ${onDesktop ? 'app' : 'page'} - it decides what it does` }
     }

@@ -50,3 +50,11 @@ test('CU-494 (3): the High install rows never ride an install grant', () => {
     if (v.class === 'install' || (v.classes ?? []).includes('install')) assert.equal(v.decision, 'confirm', name)
   }
 })
+
+test('#664 round 3 (cu-researcher 11:11Z): SWIFT and wallet-address typing ask credential, with or without a grant', () => {
+  const plain = createPolicy({ sitePolicy: () => 'allow' })
+  for (const policy of [plain, granted]) for (const name of ['SWIFT code', 'Wallet address', 'BIC']) {
+    const v = policy.classify({ type: 'type', text: 'ABCDEF12' }, { url: URL, target: { tag: 'input', inputType: 'text', role: 'textbox', name, editable: true } })
+    assert.equal(v.decision, 'confirm', name)
+  }
+})
