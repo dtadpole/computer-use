@@ -35,3 +35,12 @@ test('CU-498 / CU-499 negatives: off their URLs the bare rows stay free; views a
   for (const name of ['View return', 'Lock', 'Vehicle status']) assert.equal(at(name, name === 'View return' ? TAX : CAR), 'allow', name)
   assert.equal(at('Unlock', 'https://app.example/unlocks'), 'allow', 'not a whole segment')
 })
+
+test('#677 round 2 (cu-researcher 12:42Z): the ruled acts as families', () => {
+  for (const name of ['Certify my eligibility', 'Certify weekly claim', 'Report hours worked', 'Update voter registration', 'Update your voter registration']) assert.equal(at(name, TAX), 'submit', name)
+  for (const name of ['Set up automatic withdrawal', 'Create a debit mandate']) assert.equal(at(name, 'https://shop.example/account'), 'purchase', name)
+  const authorise = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: 'https://shop.example/account', target: { role: 'button', name: 'Authorise recurring withdrawals' } })
+  assert.ok((authorise.classes ?? [authorise.class]).includes('purchase'), 'purchase joins the older authorise permission')
+  for (const name of ['Add secondary driver', 'Add a guest driver']) assert.equal(at(name, CAR), 'permission', name)
+  assert.equal(at('Report hours worked', 'https://shop.example/x'), 'allow', 'off a gov/tax URL')
+})
