@@ -5,7 +5,7 @@ import Foundation
 /// The helper's identity; `build.sh` writes the same bundle id into Info.plist.
 enum HelperIdentity {
   static let bundleId = "com.reflection.cu-helper"
-  static let version = "0.2.63"
+  static let version = "0.2.69"
   /// The value every synthetic event carries in `kCGEventSourceUserData`: 0x43555345, ASCII "CUSE"
   /// (input-and-targets.md, verify-kit's SYNTHETIC_TAG). Not a secret: an event from another process with this tag
   /// could only fail to pause the run, never act.
@@ -433,7 +433,68 @@ enum TargetName {
 struct DefaultButtonRead: Equatable {
   var button: JSON
   var read: Bool
+  /// CU-412: with no native default in a web area, the focus's form's submit-like buttons when two or three
+  /// (DefaultCandidates), and `more` when there are more or the scan was cut short - agent core asks the strictest class
+  /// among them, or unknown.
+  var candidates: [JSON] = []
+  var more = false
   static let failed = DefaultButtonRead(button: .null, read: false)
+}
+
+/// CU-412 (cu-coordinator 11:27Z, the desktop half): HTML submits a form on Return in a field even when its only submit
+/// controls are role=button divs, which the window's AXDefaultButton never names. In a web area whose window reads no
+/// default button, the focus's form - the nearest ancestor within 4 levels that is a form landmark or holds a
+/// submit-like button, never past the page's root, a sheet or the window - gives its enabled AXButtons as Return's
+/// candidates: one is the default button, two or three are candidates, more (or a scan cut short) is unknown. AX shows a
+/// <button type=submit> and a div role=button alike (both AXButton), so every enabled button counts (fail closed).
+enum DefaultCandidates {
+  static let maxLevels = 4
+  static let maxCandidates = 3
+  struct Level: Equatable {
+    var role: String?
+    var subrole: String?
+    var buttons: Int
+    var truncated: Bool
+  }
+  enum Step: Equatable { case form, stop, unread, next }
+  /// One ancestor: the page's root, a stop role or the window ends the walk; a scan cut short is unread; a form landmark
+  /// or a level holding a submit-like button is the form; a sheet without one ends the walk; anything else passes it on.
+  static func step(_ level: Level) -> Step {
+    if let role = level.role, FormContext.stopRoles.contains(role) || role == "AXWindow" { return .stop }
+    if level.truncated { return .unread }
+    if level.subrole == "AXLandmarkForm" || level.buttons > 0 { return .form }
+    return level.role == "AXSheet" ? .stop : .next
+  }
+  /// Whether a level is scanned at all (never the page's root, a stop role or the window).
+  static func scans(role: String?) -> Bool { !(role.map { FormContext.stopRoles.contains($0) || $0 == "AXWindow" } ?? false) }
+  enum Pick: Equatable { case form(Int), none, unread }
+  /// `levels`: the focus's ancestors, nearest first, each with its enabled submit-like buttons counted.
+  static func pick(_ levels: [Level]) -> Pick {
+    for (index, level) in levels.prefix(maxLevels).enumerated() {
+      switch step(level) {
+      case .form: return .form(index)
+      case .stop: return .none
+      case .unread: return .unread
+      case .next: continue
+      }
+    }
+    return .none
+  }
+  /// cu-coordinator 11:35Z (the policy takes the union): a default button that has no name - nothing for agent core to
+  /// judge - also looks for the form's candidates; a named one stands alone.
+  static func looks(defaultTitle: String?, defaultRead: Bool) -> Bool {
+    guard defaultRead else { return false }
+    return (defaultTitle ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+  }
+  enum Outcome: Equatable { case none, one, some(Int), more }
+  static func outcome(count: Int, truncated: Bool) -> Outcome {
+    if truncated || count > maxCandidates { return .more }
+    switch count {
+    case 0: return .none
+    case 1: return .one
+    default: return .some(count)
+    }
+  }
 }
 
 /// CU-190: what an Accessibility read's error code says - a value, a positive none, or a failure.
@@ -467,6 +528,95 @@ enum Placeholder {
   static func pick(role: String?, raw: String?) -> String? {
     guard applies(role: role) else { return nil }
     guard let text = raw?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty, text.count <= maxLength else { return nil }
+    return text
+  }
+}
+
+/// CU-380: whether a menu is tracking - any on-screen window at the pop-up menu level (kCGPopUpMenuWindowLevel, 101),
+/// which every open menu bar menu, context menu and pop-up button menu is drawn in, whoever owns it. Visible windows only
+/// (alpha above 0, a non-empty frame). Another window at that level counts too - the named over-ask (Return then asks).
+enum MenuTracking {
+  static let popUpMenuLevel = 101
+  static func open(_ windows: [(layer: Int, alpha: Double, bounds: CGRect)]) -> Bool {
+    windows.contains { $0.layer == popUpMenuLevel && $0.alpha > 0 && $0.bounds.width > 0 && $0.bounds.height > 0 }
+  }
+}
+
+/// CU-377: whether a pasteboard's type names say it holds a file - a file URL (public.file-url) or the legacy filenames
+/// type. Type names only: no path, no content (D-060). nil when the types could not be read (the caller asks).
+enum PasteboardTypes {
+  static let fileTypes: Set<String> = ["public.file-url", "NSFilenamesPboardType"]
+  static func hasFile(_ types: [String]?) -> Bool? {
+    guard let types else { return nil }
+    return types.contains { fileTypes.contains($0) }
+  }
+}
+
+/// CU-372: a pop-up button's menu items as AX shows them while it is closed - read from its AXMenu child, never by
+/// opening it (attributes only, no action performed). The driver turns the shape into the items a type or an arrow moves the button
+/// through (typeOptions / keyTarget, as CU-370 does for a web select). Unread is never an empty list: no menu child, a
+/// failed read, no titled item, or more than 50 items give `unread: true`, which agent core asks on. Pure, so the unit
+/// tests decide it.
+enum PopUpItems {
+  static let maxItems = 50
+  static let maxTitle = 80
+  struct Item {
+    let title: String?
+    let enabled: Bool?
+  }
+
+  /// `items` nil when no AXMenu child could be read. Separators (no title) are skipped; titles are trimmed and cut at
+  /// 80 characters; an item whose AXEnabled cannot be read counts as enabled (it may be landed on - the safe side).
+  /// `pullsDown`: a pull-down button (AppKit gives it AXMenuButton) - its title is a fixed label and Return or Space
+  /// opens a menu of actions, so the shape says so and its selected index is never read (cu-researcher's case 2).
+  static func shape(selected: String?, items: [Item]?, pullsDown: Bool = false) -> JSON {
+    let chosen = selected.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.flatMap { $0.isEmpty ? nil : String($0.prefix(maxTitle)) }
+    var unreadShape: [String: JSON] = ["unread": .bool(true), "selected": .optionalString(chosen)]
+    if pullsDown { unreadShape["pullsDown"] = .bool(true) }
+    let unread = JSON.object(unreadShape)
+    guard let items else { return unread }
+    let titled = items.compactMap { item -> (title: String, enabled: Bool)? in
+      guard let title = item.title?.trimmingCharacters(in: .whitespacesAndNewlines), !title.isEmpty else { return nil }
+      return (String(title.prefix(maxTitle)), item.enabled ?? true)
+    }
+    guard !titled.isEmpty, titled.count <= maxItems else { return unread }
+    // cu-researcher's case 1: a selected title two items share leaves the neighbour of an arrow unknown - unread.
+    if let chosen, titled.filter({ $0.title == chosen }).count > 1 { return unread }
+    let index = pullsDown ? nil : chosen.flatMap { name in titled.firstIndex { $0.title == name } }
+    var read: [String: JSON] = [
+      "items": .array(titled.map { .object(["title": .string($0.title), "enabled": .bool($0.enabled)]) }),
+      "selected": .optionalString(chosen),
+      "selectedIndex": index.map { .int($0) } ?? .null,
+    ]
+    if pullsDown { read["pullsDown"] = .bool(true) }
+    return .object(read)
+  }
+}
+
+/// CU-361: the layout label of an unnamed entry - a static text beside it on screen, as VoiceOver reads one when no
+/// AXTitleUIElement links them: a plain box whose only label sits to its left ('Password  [      ]') or just above it.
+/// describe() asks for it only for an entry with no title, no caption and no placeholder; agent core uses it
+/// upgrade-only (it can make a field ask, never stop one asking). Frames are global top-left points (y grows down).
+/// Left: the candidate ends at or before the box's left edge (2 pt slack), at most `leftGap` away, its centre within
+/// half the box's height of the box's centre (the same row); the nearest wins. Else above: the candidate ends at or
+/// before the box's top (2 pt slack), at most `aboveGap` away, overlapping the box horizontally; the nearest wins. Left
+/// beats above. Trimmed; empty or more than 80 characters reads as none, never cut. Static texts' shown words only -
+/// never the entry's own value. Named limits (cu-researcher, #386): a right-to-left layout's label on the right is not
+/// read; a window past the 400-descendant walk gives none (today's behaviour). The driver drops a sensitive-looking value.
+enum NearbyLabel {
+  static let maxLength = 80
+  static let leftGap: CGFloat = 120
+  static let aboveGap: CGFloat = 24
+  struct Candidate { let text: String; let frame: CGRect }
+
+  static func pick(box: CGRect, candidates: [Candidate]) -> String? {
+    let left = candidates
+      .filter { $0.frame.maxX <= box.minX + 2 && box.minX - $0.frame.maxX <= leftGap && abs($0.frame.midY - box.midY) <= box.height / 2 }
+      .min { box.minX - $0.frame.maxX < box.minX - $1.frame.maxX }
+    let above = candidates
+      .filter { $0.frame.maxY <= box.minY + 2 && box.minY - $0.frame.maxY <= aboveGap && $0.frame.maxX > box.minX && $0.frame.minX < box.maxX }
+      .min { box.minY - $0.frame.maxY < box.minY - $1.frame.maxY }
+    guard let text = (left ?? above)?.text.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty, text.count <= maxLength else { return nil }
     return text
   }
 }
@@ -803,6 +953,8 @@ enum MenuKey {
     var appleMenu: Bool = false
     /// Under a Services submenu (CU-250): a service acts in another app, so agent core refuses it.
     var servicesMenu: Bool = false
+    /// Under Finder's Quick Actions (CU-382): an owner-installed workflow may run any script, so agent core asks.
+    var quickActions: Bool = false
 
     /// Whether the item has a key equivalent at all.
     var hasKey: Bool { cmdVirtualKey != nil || !(cmdChar ?? "").isEmpty }
@@ -885,6 +1037,7 @@ enum MenuKey {
                                   "enabled": entry.enabled.map { .bool($0) } ?? .null]
     if entry.appleMenu { object["appleMenu"] = .bool(true) }
     if entry.servicesMenu { object["servicesMenu"] = .bool(true) }
+    if entry.quickActions { object["quickActions"] = .bool(true) }
     return .object(object)
   }
 
@@ -968,6 +1121,222 @@ struct ServicesMenu: Equatable {
   }
 }
 
+/// CU-387 (fix a, cu-coordinator 01:37Z): a hit on a file row's text, icon or cell child carries no AXFilename/AXURL of
+/// its own - AppKit serves those on the row or cell - so the hit element lends the nearest file-bearing ancestor's
+/// values. The walk reads at most 4 levels, never past a window, and stops at the first row or cell, so a sidebar's or a
+/// list's container never lends its URL to an unrelated child. Controls keep their own (an info button in a row is no
+/// file).
+enum FileAncestor {
+  struct Level: Equatable {
+    var role: String?
+    var filename: String?
+    var url: String?
+  }
+  static let maxLevels = 4
+  /// The roles that take a file from an ancestor: a row's content, not a control.
+  static let lendingRoles: Set<String> = ["AXStaticText", "AXImage", "AXCell", "AXGroup", "AXTextField", "AXUnknown"]
+  static let stopRoles: Set<String> = ["AXRow", "AXCell", "AXOutlineRow"]
+
+  /// `levels`: the ancestors nearest first. Nil when none within the bounds carries a filename or a url.
+  static func pick(_ levels: [Level]) -> Level? {
+    for level in levels.prefix(maxLevels) {
+      if level.role == "AXWindow" || level.role == "AXApplication" { return nil }
+      if level.filename != nil || level.url != nil { return level }
+      if let role = level.role, stopRoles.contains(role) { return nil }
+    }
+    return nil
+  }
+}
+
+/// CU-409 (the desktop half of CU-402/CU-405's formContext; cu-developer-two's chrome page-scripts rules on the AX
+/// tree): a pressed button is judged with the choices beside it - an exchange's bare 'Sell' or 'Long' next to an asset
+/// pop-up and an amount field. Structural and bounded: the nearest ancestor within 3 levels that is a form landmark, a
+/// sheet or dialog that lends, or a group that lends and holds a pop-up or combo box; at most 3 selected texts of 24
+/// characters, and whether an amount-shaped entry is present - an entry's label words only, never its value.
+enum FormContext {
+  static let maxLevels = 3
+  static let maxScan = 60
+  static let maxOptions = 3
+  static let maxOptionLength = 24
+  /// cu-researcher 10:35Z (describe()'s cost on a busy window): the whole walk's time budget; past it a scan stops as
+  /// truncated (never lends), so a slow app costs at most this much more per button described.
+  static let budgetSeconds = 0.08
+  /// CU-405: the trade verbs a panel's other buttons may carry, and the order-panel helpers that never void it.
+  static let tradeVerb = #"^(?:buy|sell|swap|convert|trade|deposit|withdraw|transfer)(?:\s|$)"#
+  static let neutralVerb = #"^(?:max|min|half|all|\d{1,3}\s?%|limit|market|stop(?:[\s-]limit)?|oco)$"#
+  static let amountWords = #"amount|qty|quantity|price|total|sum"#
+  /// Where the walk stops without lending: past these nothing belongs to the button's form. (A window is read, then
+  /// ends the walk: AppKit's plain container views are no AX elements, so a native panel's controls are often the
+  /// window's own children.)
+  static let stopRoles: Set<String> = ["AXWebArea", "AXApplication", "AXMenuBar", "AXMenu"]
+  /// The submit-like controls of a container (a pop-up, check box or radio is a choice, not a submit).
+  static let submitRoles: Set<String> = ["AXButton"]
+  static let windowButtonSubroles: Set<String> = ["AXCloseButton", "AXMinimizeButton", "AXZoomButton", "AXFullScreenButton"]
+  static let selectRoles: Set<String> = ["AXPopUpButton", "AXComboBox"]
+
+  enum Kind: Equatable { case trade, neutral, other }
+
+  /// A submit-like control's words: a trade verb, a neutral helper (or an unlabelled icon button - CU-405's fail-closed
+  /// reading, as one symbol or arrow), or anything else.
+  static func kind(_ verb: String?) -> Kind {
+    let words = (verb ?? "").split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
+    if words.count <= 30, words.range(of: tradeVerb, options: [.regularExpression, .caseInsensitive]) != nil { return .trade }
+    if words.isEmpty { return .neutral }
+    if words.count <= 2, !words.unicodeScalars.contains(where: { CharacterSet.letters.contains($0) || CharacterSet.decimalDigits.contains($0) }) { return .neutral }
+    return words.range(of: neutralVerb, options: [.regularExpression, .caseInsensitive]) != nil ? .neutral : .other
+  }
+
+  /// cu-coordinator 10:35Z (#510 F1): a combo box's selected text is its AXValue only when it is not editable, or when
+  /// the value equals one of its list items exactly - an editable combo's free text (a symbol search) is typed text, a
+  /// field's value, and gives nothing.
+  static func comboText(value: String?, editable: Bool, items: [String]) -> String? {
+    guard let value else { return nil }
+    if !editable { return value }
+    return items.contains(value) ? value : nil
+  }
+
+  /// A container lends its choices when it holds exactly the pressed control, or only trade verbs and neutral helpers.
+  static func lends(submitVerbs: [String?]) -> Bool {
+    if submitVerbs.count == 1 { return true }
+    let kinds = submitVerbs.map(kind)
+    return kinds.contains(.trade) && !kinds.contains(.other)
+  }
+
+  /// One candidate container as the walk read it.
+  struct Container: Equatable {
+    var role: String?
+    var subrole: String?
+    var submitVerbs: [String?]
+    var selected: [String?]
+    var entryLabels: [[String?]]
+    var truncated: Bool
+  }
+
+  enum Outcome: Equatable { case form, next, stop }
+
+  /// What the walk does at `container`: a stop role ends it; a form landmark is the form; a sheet or dialog window is
+  /// the form when it lends; any other window, and any group, is the form when it lends and holds a pop-up or combo box
+  /// - and the walk ends at a sheet or window either way. A scan cut short by the bound never lends (it may have missed
+  /// a second submit).
+  static func outcome(_ container: Container) -> Outcome {
+    if let role = container.role, stopRoles.contains(role) { return .stop }
+    if container.truncated { return container.subrole == "AXLandmarkForm" || ["AXSheet", "AXWindow"].contains(container.role ?? "") ? .stop : .next }
+    if container.subrole == "AXLandmarkForm" { return .form }
+    let lendsHere = lends(submitVerbs: container.submitVerbs)
+    let dialog = container.role == "AXSheet" || (container.role == "AXWindow" && ["AXDialog", "AXSystemDialog"].contains(container.subrole ?? ""))
+    if dialog { return lendsHere ? .form : .stop }
+    if container.role == "AXWindow" { return lendsHere && !container.selected.isEmpty ? .form : .stop }
+    return lendsHere && !container.selected.isEmpty ? .form : .next
+  }
+
+  /// The JSON a form gives: its selected texts (at most 3 of at most 24 characters, empty ones skipped) and whether an
+  /// entry's label words name an amount. Nil when it has neither.
+  static func shape(_ container: Container) -> JSON? {
+    let options = container.selected.compactMap { text -> String? in
+      let words = (text ?? "").split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
+      return words.isEmpty || words.count > maxOptionLength ? nil : words
+    }.prefix(maxOptions)
+    let amountEntry = container.entryLabels.contains { labels in
+      labels.contains { ($0 ?? "").range(of: amountWords, options: [.regularExpression, .caseInsensitive]) != nil }
+    }
+    guard !options.isEmpty || amountEntry else { return nil }
+    return .object(["options": .array(options.map { .string($0) }), "amountEntry": .bool(amountEntry)])
+  }
+
+  /// `containers`: the button's ancestors, nearest first, as read. The first that is a form gives the shape.
+  static func pick(_ containers: [Container]) -> JSON? {
+    for container in containers.prefix(maxLevels) {
+      switch outcome(container) {
+      case .form: return shape(container)
+      case .stop: return nil
+      case .next: continue
+      }
+    }
+    return nil
+  }
+}
+
+/// CU-392 (helper half, design 0.1 OK'd 01:33Z): where a drop in Finder sends a file - 'airdrop', 'shared' or 'server' -
+/// from Finder's own strings (Finder.app's LocalizableMerged: TL35 'AirDrop'; SD11.4 and CS197 'Shared'; FF22.1 and
+/// NE85.2.5 'Network'), current language beside English. The raw title never leaves the helper; only the value does.
+struct DropDestination: Equatable {
+  var airdrop: Set<String>
+  var shared: Set<String>
+  var server: Set<String>
+
+  static let english = DropDestination(airdrop: ["AirDrop"], shared: ["Shared"], server: ["Network"])
+  static let current: DropDestination = {
+    var table = english
+    if let finder = Bundle(path: "/System/Library/CoreServices/Finder.app") {
+      let read = { (key: String) -> String? in
+        let value = finder.localizedString(forKey: key, value: "\u{1}", table: "LocalizableMerged")
+        return value == "\u{1}" || value.isEmpty ? nil : value
+      }
+      if let v = read("TL35") { table.airdrop.insert(v) }
+      for key in ["SD11.4", "CS197"] { if let v = read(key) { table.shared.insert(v) } }
+      for key in ["FF22.1", "NE85.2.5"] { if let v = read(key) { table.server.insert(v) } }
+    }
+    return table
+  }()
+
+  /// The value for a title (a Finder window's, or a sidebar row's), nil for anything else.
+  func of(_ title: String?) -> String? {
+    guard let title = title?.trimmingCharacters(in: .whitespacesAndNewlines), !title.isEmpty else { return nil }
+    if airdrop.contains(title) { return "airdrop" }
+    if shared.contains(title) { return "shared" }
+    if server.contains(title) { return "server" }
+    return nil
+  }
+
+  /// Finder only: its window's title first (every tile in the AirDrop window, every host in the Network browser), else
+  /// the element's own sidebar-row title - the row, its cell or its text - inside an outline.
+  func of(inFinder: Bool, windowTitle: String?, rowTitle: String?, inOutline: Bool) -> String? {
+    guard inFinder else { return nil }
+    if let value = of(windowTitle) { return value }
+    return inOutline ? of(rowTitle) : nil
+  }
+}
+
+/// CU-382: Finder's Quick Actions - a submenu (and the preview pane's button row) listing the owner's Automator and
+/// Shortcuts workflows, which can run any script outside the approved app, as a service does. No AX attribute tells it
+/// apart, so it counts by Finder's own strings (Finder.app's LocalizableMerged table: N270 and QK1 'Quick Actions',
+/// N274 'Customize…' - the submenu's last item, QK8 'More…' - the pane's last button), read for the current language
+/// beside the English ones. Structure first: a Finder submenu whose last item is the marker. Title second: a submenu
+/// or a button group named 'Quick Actions' in any app (the named over-mark).
+struct QuickActionsMenu: Equatable {
+  var titles: Set<String>
+  var markers: Set<String>
+  var exempt: Set<String>
+
+  static let finderBundleId = "com.apple.finder"
+  static let english = QuickActionsMenu(titles: ["Quick Actions"], markers: ["Customize\u{2026}", "Customize..."],
+                                        exempt: ["Customize\u{2026}", "Customize...", "More\u{2026}", "More..."])
+
+  static let current: QuickActionsMenu = {
+    var menu = english
+    if let finder = Bundle(path: "/System/Library/CoreServices/Finder.app") {
+      let read = { (key: String) -> String? in
+        let value = finder.localizedString(forKey: key, value: "\u{1}", table: "LocalizableMerged")
+        return value == "\u{1}" || value.isEmpty ? nil : value
+      }
+      for key in ["N270", "QK1"] { if let title = read(key) { menu.titles.insert(title) } }
+      if let marker = read("N274") { menu.markers.insert(marker); menu.exempt.insert(marker) }
+      if let more = read("QK8") { menu.exempt.insert(more) }
+    }
+    return menu
+  }()
+
+  /// A submenu held by an item titled `itemTitle`, whose own items are `childTitles` (in order), in Finder or not.
+  func isQuickActions(itemTitle: String?, childTitles: [String], inFinder: Bool) -> Bool {
+    if inFinder, let last = childTitles.last, markers.contains(last) { return true }
+    if let itemTitle, titles.contains(itemTitle) { return true }
+    return false
+  }
+
+  /// 'Customize…' and 'More…' open Extensions settings (System Settings, excluded) - never marked themselves.
+  func isExempt(_ title: String?) -> Bool { title.map { exempt.contains($0) } ?? false }
+}
+
 extension MenuKey {
   /// CU-250: marks every entry from `start` on as under a Services submenu when the submenu holding them - held by an
   /// item titled `holderTitle`, its direct items at path depth `depth` - is the Services menu.
@@ -977,6 +1346,16 @@ extension MenuKey {
     guard services.isServices(itemTitle: holderTitle, childTitles: direct) else { return }
     for index in start..<entries.count { entries[index].servicesMenu = true }
   }
+
+  /// CU-382: marks every entry from `start` on as under Finder's Quick Actions when the submenu holding them is one
+  /// (QuickActionsMenu: its last direct item the marker in Finder, or its holder's title) - its 'Customize…' and
+  /// 'More…' items excepted. So a chord bound to a Quick Action is read as one (boundMenuItem.quickActions).
+  static func markQuickActions(_ entries: inout [Entry], from start: Int, holderTitle: String?, depth: Int, quick: QuickActionsMenu, inFinder: Bool) {
+    guard start < entries.count, holderTitle != nil else { return }
+    let direct = entries[start...].filter { $0.path.count == depth }.compactMap { $0.title }
+    guard quick.isQuickActions(itemTitle: holderTitle, childTitles: direct, inFinder: inFinder) else { return }
+    for index in start..<entries.count where !quick.isExempt(entries[index].title) { entries[index].quickActions = true }
+  }
 }
 
 /// CU-250: where a clicked menu item sits - the titles from the menu bar (or a context menu's top) down to the item, and
@@ -984,6 +1363,13 @@ extension MenuKey {
 struct MenuContext: Equatable {
   var path: [String]
   var servicesMenu: Bool
+  /// CU-382: a submenu on the way is Finder's Quick Actions (QuickActionsMenu), the item itself not its 'Customize…'.
+  var quickActions: Bool = false
+  /// CU-382: a read on the walk up failed, so the path may stop short of a Services or Quick Actions level - policy asks.
+  var unread: Bool = false
+  /// CU-398: the item sits under the menu bar's first item, the Apple menu (Restart..., Shut Down..., Log Out...) - the
+  /// same structural rule as the menu-key walk's appleMenu, so no title is matched and a localised menu is covered.
+  var appleMenu: Bool = false
 
   static let maxDepth = 10
 
@@ -994,16 +1380,21 @@ struct MenuContext: Equatable {
     var childTitles: [String]
   }
 
-  static func of(itemTitle: String?, levels: [Level], services: ServicesMenu = .current) -> MenuContext {
+  static func of(itemTitle: String?, levels: [Level], services: ServicesMenu = .current, quick: QuickActionsMenu = .current,
+                 inFinder: Bool = false, unread: Bool = false, underAppleMenu: Bool = false) -> MenuContext {
     let capped = Array(levels.prefix(maxDepth))
     let holders = capped.compactMap { $0.holderTitle }
     let flagged = capped.contains { level in level.holderTitle != nil && services.isServices(itemTitle: level.holderTitle, childTitles: level.childTitles) }
-    return MenuContext(path: holders.reversed() + [itemTitle ?? ""], servicesMenu: flagged)
+    let quickLevel = capped.contains { level in level.holderTitle != nil && quick.isQuickActions(itemTitle: level.holderTitle, childTitles: level.childTitles, inFinder: inFinder) }
+    return MenuContext(path: holders.reversed() + [itemTitle ?? ""], servicesMenu: flagged, quickActions: quickLevel && !quick.isExempt(itemTitle), unread: unread, appleMenu: underAppleMenu)
   }
 
   var json: [String: JSON] {
     var object: [String: JSON] = ["menuPath": .array(path.map { .string($0) })]
     if servicesMenu { object["servicesMenu"] = .bool(true) }
+    if quickActions { object["quickActions"] = .bool(true) }
+    if unread { object["menuContextUnread"] = .bool(true) }
+    if appleMenu { object["appleMenu"] = .bool(true) }
     return object
   }
 }

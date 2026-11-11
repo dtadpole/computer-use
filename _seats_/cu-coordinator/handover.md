@@ -1,38 +1,38 @@
 ---
 title: '[cu] Coordinator - handover'
 created: 2026-11-08T04:15:00Z
-modified: 2026-11-09T04:00:29Z
+modified: 2026-11-11T04:02:00Z
 level: L2
-version: 3.3.0
+version: 3.5.0
 status: unverified
-description: 'What the next [cu] Coordinator session needs to take the seat mid-flight - state at 9 Nov 04:00Z.'
+description: 'What the next [cu] Coordinator session needs to take the seat mid-flight - state at 11 Nov 04:00Z.'
 grounded_in:
   - source: owner's orders of 2026-11-08 via hd-coordinator (8 Nov conventions; dedicated workspace and seats)
-  - source: decision log D-063, D-079 to D-091
+  - source: decision log D-063, D-098 to D-109
 ---
 
 # [cu] Coordinator - handover
 
-**Where things are.** Main checkout `~/dtadpole/computer-use`; edits and CUHelper starts in session worktrees
-`~/dtadpole/computer-use-wt/<session-id>` (D-080; all old seat worktrees removed). Private: the roster (3.4.0),
-seat files, review log and my helpers beside TEAM.yaml in the reflection bank. Exceptions: D-077.
+**Where things are.** Main checkout `~/dtadpole/computer-use` is the sync's; every command starts in the session
+worktree `~/dtadpole/computer-use-wt/<session-id>` with `git -C` (D-104). Private: the roster, seat files, review
+log and my helpers beside TEAM.yaml in the reflection bank.
 
-**Goal.** ULTIMATE_GOAL 2.0 (verdict 0.9.55). Consent waits on one High item, CU-302 (a saved login autofills a
-sign-in form): browser half live and verified (CU-319), desktop half live under D-089; it closes when helper 0.2.61
-(#206, CU-322) is installed once and cu-verifier's Safari row passes - then D-088 ends. CU-145's re-sign: D-091
-ruled the D-065 sweep; cu-verifier runs the producible cells in batches. Human control waits on the owner session
-(Epic CU-315: CU-11, CU-119, CU-135, CU-203).
+**Goal.** ULTIMATE_GOAL 2.0 (verdict 0.9.140): four High open, all reproduced (CU-473 to CU-476), plus CU-477 and
+CU-478 filed since; fifty-three Highs closed live on 10 Nov. Consent then waits on CU-135; human control waits on
+the owner session (CU-11, CU-119, CU-135).
 
-**Linear.** Epics CU-314 (consent), CU-315 (owner session), CU-316 (evaluation), CU-317 (Maintenance 2026-11),
-plus [hd]'s CU-306. Triage sets the parent.
+**Lane.** #609, then the firstLine pair (#610 with its policy half, one unit), #614 (CU-474, CU-475), #617
+(CU-477), a small CU-478 PR. After the Highs: helper 0.2.70 with nativeToggleState, CU-372's first live row,
+CU-429 lowerings, CU-462, CU-433, #523, #558, CU-458.
 
-**Every 15 minutes.** Read BOTH inbox stores (the store split is open with hd-coordinator), health with revive
-after a host restart, triage, one member review (last: cu-developer-two, 14th), decisions (last D-091), a Chinese
-summary.
+**Every 15 minutes.** Inbox (read, then confirm with its --done token), triage, one seat review (next:
+cu-integrator, 52nd), decisions (last D-109; D-110 candidates in the pass prompt), a Chinese summary. Hourly:
+health (re-arm near 205 of 256; integrator and verifier next), owner-status (1.8.19), the review batch.
 
 **Rules that bite.** No ask_user_question (D-031). Input only through CUHelper under the lock with the owner idle
-(D-056, D-066, D-068). Model runs announced with cost (D-034: 20.69 of 25 USD). Records and table PRs land on phase 1;
-the integrator merges log-only conflicts (D-079, D-082, D-090); High consent fixes may land on phase 1 (D-086).
+(D-056, D-066). Model runs announced with cost (D-034: 20.69 of 21 USD). Two OKs per High, the live one from a
+named non-author seat (D-108, D-109). Never push onto a PR that holds the lane. Long triage rulings also go by
+inbox; Linear truncates comments.
 
-**Owner items.** The owner session; overlays and Typeless; the paste setting (D-052); Linear initiative; CU-66;
-an objection to D-089 if any; a word to resume my goal (disarmed by the 01:58Z restart).
+**Owner items.** The goal cap (1200 reached) and its stale text; the owner session; Chrome tab; notifications and
+Typeless; the GitHub purge decision; other app languages.

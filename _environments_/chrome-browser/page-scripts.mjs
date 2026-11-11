@@ -185,17 +185,55 @@ export function autofilledFields(el) {
   return { fields, edited }
 }
 
-export function implicitSubmitButton(el) {
+export function implicitSubmitButton(el, controlsOf = () => []) {
   const IMPLICIT = ['text', 'search', 'email', 'url', 'tel', 'password', 'number', 'date', 'datetime-local', 'month', 'time', 'week']
   if (!el || el.tagName !== 'INPUT' || !IMPLICIT.includes(String(el.type).toLowerCase())) return null
   const form = el.form
   if (!form || !form.elements) return null
+  // CU-412 (D-107): where script submit controls stand in for the default (implicitSubmitControls), exactly one is the
+  // Return's target; two or more are agent core's candidates, so none is the default here.
+  const controls = controlsOf(el)
+  if (controls.length === 1) return controls[0]
+  if (controls.length > 1) return null
   for (const candidate of Array.from(form.elements)) {
     const type = String(candidate.type).toLowerCase()
     const submits = (candidate.tagName === 'BUTTON' && type === 'submit') || (candidate.tagName === 'INPUT' && (type === 'submit' || type === 'image'))
     if (submits) return candidate.disabled ? null : candidate
   }
   return null
+}
+
+/**
+ * CU-412 (cu-coordinator 11:27Z, D-107): the form's script submit controls - `[role=button]` or `<button type=button>`,
+ * not disabled, aria-disabled or aria-hidden - when they, not a submit button, are what a Return in this field presses:
+ * the form has no submit button and implicit submission would still submit it (exactly one field that blocks it), or
+ * its default submit button is not rendered, is aria-hidden or has no accessible name. Empty otherwise. One control is
+ * the Return's defaultButton (implicitSubmitButton); two or more are agent core's defaultCandidates (it asks the
+ * strictest class among them, or unknown past three).
+ */
+export function implicitSubmitControls(el) {
+  const IMPLICIT = ['text', 'search', 'email', 'url', 'tel', 'password', 'number', 'date', 'datetime-local', 'month', 'time', 'week']
+  if (!el || el.tagName !== 'INPUT' || !IMPLICIT.includes(String(el.type).toLowerCase())) return []
+  const form = el.form
+  if (!form || !form.elements) return []
+  const elements = Array.from(form.elements)
+  const attr = (c, k) => (c.getAttribute ? c.getAttribute(k) : null)
+  const submit = elements.find((c) => { const t = String(c.type).toLowerCase(); return (c.tagName === 'BUTTON' && t === 'submit') || (c.tagName === 'INPUT' && (t === 'submit' || t === 'image')) })
+  if (submit) {
+    if (submit.disabled) return []
+    const unrendered = submit.hidden === true || (typeof getComputedStyle === 'function' && getComputedStyle(submit).display === 'none')
+      || (typeof submit.getClientRects === 'function' && submit.getClientRects().length === 0)
+    const ariaHidden = Boolean(submit.closest && submit.closest('[aria-hidden="true"]'))
+    const label = String(attr(submit, 'aria-label') || attr(submit, 'title') || (submit.tagName === 'INPUT'
+      ? (String(submit.type).toLowerCase() === 'image' ? attr(submit, 'alt') : (submit.hasAttribute && submit.hasAttribute('value') ? submit.value : 'Submit'))
+      : submit.textContent) || '').trim()
+    if (!unrendered && !ariaHidden && label !== '') return []
+  } else if (elements.filter((f) => f.tagName === 'INPUT' && IMPLICIT.includes(String(f.type).toLowerCase())).length !== 1) {
+    return []
+  }
+  return Array.from(form.querySelectorAll ? form.querySelectorAll('[role="button"], button[type="button"]') : [])
+    .filter((c) => !(c.disabled === true || attr(c, 'aria-disabled') === 'true'))
+    .filter((c) => !(c.closest && c.closest('[aria-hidden="true"]')))
 }
 
 /**
@@ -510,9 +548,139 @@ export function describeElement(el) {
   const ariaChecked = typeof el.getAttribute === 'function' ? tristate(el.getAttribute('aria-checked')) : null
   const checked = tag === 'input' && (type === 'checkbox' || type === 'radio') ? (el.indeterminate ? 'mixed' : Boolean(el.checked)) : ariaChecked
   const pressed = typeof el.getAttribute === 'function' ? tristate(el.getAttribute('aria-pressed')) : null
+  // CU-400: a button that submits a form is judged with the choices beside it - an exchange's bare 'Sell' next to an
+  // asset select and an amount field. Bounded: at most 3 selected option or combobox texts of 24 characters each, and
+  // whether an amount-shaped entry is present (never its value). Only for button-like elements inside a form (below).
+  const formContext = (() => {
+    const buttonLike = tag === 'button' || (tag === 'input' && ['submit', 'button', 'image'].includes(type)) || role === 'button'
+    // The form the control belongs to (el.form: a <form> ancestor, or one named by its form= attribute when the button
+    // sits outside it), else an explicit [role=form]; else (cu-researcher 05:24Z: React forms are divs) the nearest <fieldset>,
+    // <dialog> or [role=dialog] that holds exactly this one submit-like control - so a page-wide section never lends
+    // its selects (bounded fallback, cu-coordinator 05:26Z).
+    let form = buttonLike ? (el.form && el.form.querySelectorAll ? el.form : null) || (el.closest ? el.closest('form') || el.closest('[role="form"]') : null) : null
+    if (!form && buttonLike && el.closest) {
+      const box = el.closest('fieldset, dialog, [role="dialog"]')
+      const SUBMITS = 'button, input[type="submit"], input[type="button"], input[type="image"], [role="button"]'
+      // CU-405 (cu-coordinator 06:39Z, 06:43Z): a container also counts when, order-panel helpers ignored (a percentage,
+      // Max/Min/Half/All, Limit/Market/Stop/Stop-limit/OCO, a label of one symbol or arrow - and an unlabelled icon button,
+      // the fail-closed reading), every remaining submit-like control is a trade verb. Any other button voids it.
+      const TRADE_VERB = /^(?:buy|sell|swap|convert|trade|deposit|withdraw|transfer)(?:\s|$)/i
+      const NEUTRAL = /^(?:max|min|half|all|\d{1,3}\s?%|limit|market|stop(?:[\s-]limit)?|oco)$/i
+      const verbOf = (control) => String((control.getAttribute && control.getAttribute('aria-label')) || control.value || control.textContent || '').replace(/\s+/g, ' ').trim()
+      const lends = (node) => {
+        const submits = [...node.querySelectorAll(SUBMITS)]
+        if (submits.length === 1) return true
+        const kinds = submits.map((control) => {
+          const verb = verbOf(control)
+          if (verb.length <= 30 && TRADE_VERB.test(verb)) return 'trade'
+          return verb === '' || ([...verb].length <= 2 && !/[\p{L}\p{N}]/u.test(verb)) || NEUTRAL.test(verb) ? 'neutral' : 'other'
+        })
+        return kinds.includes('trade') && !kinds.includes('other')
+      }
+      if (box && lends(box)) form = box
+      // A div trade panel (cu-coordinator 05:36Z): the button's nearest ancestor within 3 levels that holds exactly
+      // this one submit-like control and at least one select or combobox - a page-wide container with two submit
+      // buttons never qualifies.
+      for (let node = el.parentElement, depth = 0; !form && node && depth < 3; node = node.parentElement, depth += 1) {
+        if (node.querySelectorAll && lends(node) && node.querySelectorAll('select, [role="combobox"]').length > 0) form = node
+      }
+    }
+    if (!form) return null
+    const short = (text) => String(text || '').replace(/\s+/g, ' ').trim()
+    const options = []
+    for (const control of form.querySelectorAll('select, [role="combobox"]')) {
+      if (options.length >= 3) break
+      const text = control.tagName === 'SELECT'
+        ? short(control.selectedOptions && control.selectedOptions[0] ? control.selectedOptions[0].textContent : '')
+        : short(control.value !== undefined && control.value !== '' ? control.value : control.textContent)
+      if (text !== '' && text.length <= 24) options.push(text)
+    }
+    const AMOUNT = /amount|qty|quantity|price|total|sum/i
+    const amountEntry = [...form.querySelectorAll('input')].some((input) => input.type === 'number'
+      || ['decimal', 'numeric'].includes(String(input.getAttribute('inputmode') || '').toLowerCase())
+      || AMOUNT.test([input.name, input.id, input.getAttribute('aria-label'), input.placeholder].filter(Boolean).join(' ')))
+    return options.length > 0 || amountEntry ? { options, amountEntry } : null
+  })()
+  // CU-443 (cu-coordinator 21:01Z, 21:03Z): a pressed row with no verb of its own - a contact list item that dials on
+  // click - is judged with what the page offers around it. Only for list items, rows, grid cells, options and tree
+  // items. dialHref: whether the row, an ancestor within 4 levels or a link inside it carries a tel:, sip:, callto: or
+  // facetime: href (a boolean, never the number). rowContext: the accessible name of its list (60 characters at most)
+  // and the names of up to 3 action controls inside it (aria-label or title, 40 characters each). Context, not
+  // identity: outside the fingerprint, never recorded.
+  // Round 2 (cu-researcher 21:35Z): a listener-only row clicked on its name span hits the span, not the row - so a hit
+  // element with no verb of its own (no button, link, form control or ARIA widget) inside a row within 3 levels is read
+  // through that row, and the target says so (inRow: true). A verb on the way up (a button or link around the span)
+  // ends the walk: that control is the target's own verb.
+  const ROW_ROLES = ['listitem', 'row', 'gridcell', 'option', 'treeitem']
+  const WIDGET_ROLES = /^(?:button|link|checkbox|radio|switch|menuitem(?:checkbox|radio)?|tab|textbox|searchbox|combobox|slider|spinbutton)$/
+  const nodeRole = (node) => String((node.getAttribute && node.getAttribute('role')) || '').toLowerCase()
+  const nodeTag = (node) => String(node.tagName || '').toLowerCase()
+  const isRow = (node) => ROW_ROLES.includes(nodeRole(node)) || nodeTag(node) === 'li' || nodeTag(node) === 'tr'
+  const hasVerb = (node) => ['a', 'button', 'input', 'select', 'textarea', 'summary', 'label'].includes(nodeTag(node)) || WIDGET_ROLES.test(nodeRole(node))
+  let rowEl = isRow(el) ? el : null
+  if (rowEl === null && !hasVerb(el)) {
+    for (let node = el.parentElement, depth = 1; node && node.nodeType === 1 && depth <= 3; node = node.parentElement, depth += 1) {
+      if (isRow(node)) { rowEl = node; break }
+      if (hasVerb(node)) break
+    }
+  }
+  const rowLike = rowEl !== null
+  const inRow = rowLike && rowEl !== el
+  const DIAL_HREF = /^(?:tel|sips?|callto|facetime(?:-audio)?):/i
+  const dialHref = rowLike && (() => {
+    for (let node = rowEl, depth = 0; node && node.nodeType === 1 && depth <= 4; node = node.parentElement, depth += 1) {
+      if (DIAL_HREF.test(String((node.getAttribute && node.getAttribute('href')) || ''))) return true
+    }
+    return typeof rowEl.querySelectorAll === 'function' && [...rowEl.querySelectorAll('a[href]')].some((a) => DIAL_HREF.test(String((a.getAttribute && a.getAttribute('href')) || '')))
+  })()
+  const rowContext = (() => {
+    if (!rowLike || typeof rowEl.querySelectorAll !== 'function') return null
+    const clip = (text, max) => {
+      const short = String(text || '').replace(/\s+/g, ' ').trim()
+      return short !== '' && short.length <= max ? short : null
+    }
+    const box = rowEl.closest ? rowEl.closest('[role="list"], [role="listbox"], [role="grid"], [role="table"], [role="tree"], ul, ol, table') : null
+    let list = null
+    if (box && box.getAttribute) {
+      const own = box.getAttribute('aria-label')
+      const ids = box.getAttribute('aria-labelledby')
+      const doc = box.ownerDocument
+      list = own ? clip(own, 60)
+        : ids && doc && doc.getElementById ? clip(ids.split(/\s+/).map((id) => doc.getElementById(id)).filter(Boolean).map((node) => node.textContent).join(' '), 60) : null
+    }
+    const hints = []
+    for (const control of rowEl.querySelectorAll('button, a[href], [role="button"], [aria-label], [title]')) {
+      if (hints.length >= 3) break
+      const name = clip(control.getAttribute ? control.getAttribute('aria-label') || control.getAttribute('title') : '', 40)
+      if (name !== null && !hints.includes(name)) hints.push(name)
+    }
+    return list !== null || hints.length > 0 ? { ...(list !== null ? { list } : {}), hints } : null
+  })()
+  // CU-472: a link that does not navigate - no href attribute, an empty one, '#' or a same-page '#fragment', or a
+  // 'javascript:' URL - acts like a button (its click handler does the work), but `href` is the resolved URL, so '#'
+  // reaches policy as the page's own address. inertLink reads the RAW attribute of the closest <a> (or an ARIA link
+  // with no <a>): a boolean, outside the fingerprint, never recorded.
+  const inertLink = (() => {
+    const anchor = el.closest ? el.closest('a') : null
+    if (!anchor) return role === 'link'
+    const raw = anchor.getAttribute ? anchor.getAttribute('href') : null
+    if (raw === null) return true
+    const trimmed = String(raw).trim()
+    return trimmed === '' || trimmed.startsWith('#') || /^javascript:/i.test(trimmed)
+  })()
+  // CU-473: Chrome's accessible name flattens a second line (<br>, block children, a <small> note) into spaces, so
+  // 'Change Direct Deposit' over 'Takes Effect Immediately' reaches policy as one name nothing can split. innerText keeps
+  // the rendered line breaks: firstLine is the first non-empty line when there are two or more, at most 80 characters -
+  // a string outside the fingerprint, never recorded.
+  const firstLine = (() => {
+    const text = typeof el.innerText === 'string' ? el.innerText : ''
+    const lines = text.split(/[\r\n]+/).map((line) => line.replace(/\s+/g, ' ').trim()).filter(Boolean)
+    return lines.length >= 2 ? lines[0].slice(0, 80) : null
+  })()
   return { tag, inputType: type, isPassword: type === 'password', autocomplete: autocomplete || null, href: link, origin, editable, caption: editable ? null : caption, entryCaption: editable ? caption : null,
     ...(frameUrl ? { frameUrl } : {}), ...(terminal ? { terminal } : {}), ...(notebookCell ? { notebookCell } : {}), ...(notebookSurface ? { notebookSurface } : {}), ...(codeSurface ? { codeSurface } : {}),
-    ...(checked !== null ? { checked } : {}), ...(pressed !== null ? { pressed } : {}) }
+    ...(checked !== null ? { checked } : {}), ...(pressed !== null ? { pressed } : {}),
+    ...(formContext !== null ? { formContext } : {}), ...(firstLine !== null ? { firstLine } : {}), ...(inertLink ? { inertLink: true } : {}), ...(inRow ? { inRow: true } : {}), ...(dialHref === true ? { dialHref: true } : {}), ...(rowContext !== null ? { rowContext } : {}) }
 }
 
 /**

@@ -1,14 +1,14 @@
 ---
 title: '[cu] Developer Three (macOS helper) - handover'
 created: 2026-11-08T04:20:00Z
-modified: 2026-11-09T19:30:00Z
+modified: 2026-11-09T22:45:00Z
 level: L1
-version: 1.12.0
+version: 1.13.0
 description: 'What a fresh [cu] Developer Three session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
-  - source: Linear CU-341, CU-342, CU-349, CU-361, CU-367 (9 Nov)
-  - source: owner-session-rehearsal.md (#370) and the one-page owner checklist (#324)
+  - source: Linear CU-341, CU-349, CU-361, CU-372, CU-377, CU-380 (9 Nov)
+  - source: PRs #405, #383, #370, #368, #371, #316, #411 (9 Nov)
 ---
 
 # [cu] Developer Three (macOS helper) - handover
@@ -18,26 +18,30 @@ Seat `cu-developer-three`. Edits and CUHelper launches run from the session work
 
 ## Live state
 
-- Installed helper: 0.2.62 (main 3f1cd68, sha256 1586992b). 0.2.63 (#344, placeholder) installs once, right after
-  it lands, from a queued job.
-- CU-341: the rehearsal is done. R1 and R1b covered the control link; R1c covered H1 with CU-342's labelled stand-in, a
-  pointer move. The checklist is on main (#324); the record #370 closes the issue.
+- Installed helper: 0.2.64 (main 32aeced3, sha256 9c1284af, installed 9 Nov 22:31Z, boundary proof valid).
+- CU-349 is done: the placeholder read shipped in 0.2.63, and cu-verifier ran the live rows. The CU-361 nearbyLabel
+  live row (cu-verifier, #408) runs on 0.2.64.
 
 ## In flight
 
-- #370 (Fixes CU-341, record), #371 (the stand-in labelled 'pointer'), #368 (Fixes CU-367, the loop refuses the
-  stand-in for any model run), #344 (CU-349 helper half, 0.2.63) and #316 (Return pin) are reviewed or in review.
-- CU-361 (layout label 'nearbyLabel', 0.2.64) is coded at 7660f19c, stacked on #344. Open its PR when #344 lands.
-- After the 0.2.63 install: cu-verifier's placeholder fixture row, and the checklist's helper version line.
+- #405, helper 0.2.65, one install. OKs: cu-verifier at 2f6949c3; cu-researcher and cu-developer-one at ba6c6848, with only
+  comments changed since. It carries:
+  - CU-372: the menu items of pop-up and pull-down buttons;
+  - CU-377: pasteboardHasFile;
+  - CU-380: menuOpen, for which Return in an open menu fired 'Erase All' live (High).
+  It lands with #399. Install it once, right after it merges, outside any announced gate phase 2.
+- Review: #411, the CU-372 agent-core half. Two gaps are open: AXMenuButton is not treated as a choice, and Return or
+  Space on a pull-down.
+- Mine, waiting: #383 (checklist version line), #370 (rehearsal record, closes CU-341), #368 (CU-367), #371
+  (stand-in labelled 'pointer'), #316 (Return pin, main merged).
 
 ## Next
 
-Land the above; then ask cu-coordinator for the next item.
+Land and install 0.2.65; then cu-verifier's pop-up, open-menu and paste rows; then ask cu-coordinator.
 
 ## Rules learned
 
-- The harness sets _VOLTA_TOOL_RECURSION, so the volta shim can resolve to Homebrew's node, which the boundary
-  refuses. Scripts unset it, put `volta which node` first, and refuse any other node.
-- After a requested main merge, leave the union-merged action log as git wrote it, so D-085 carries the OKs.
-- Hold scripts export CU_DESKTOP_SEAT and release by token. Run the gate unpiped and push on exit 0. Defer builds and
-  full suites during an announced gate phase 2.
+- Scripts pin volta's own node; the harness's _VOLTA_TOOL_RECURSION otherwise resolves to Homebrew's node.
+- Match the inbox subject prefix 'GATE PHASE 2 END:'. A START subject also contains those words.
+- Answer helper questions from the code, and name what is unmeasured.
+- Never assume a guard's scope: read refusal codes from the run's events before explaining a failure.

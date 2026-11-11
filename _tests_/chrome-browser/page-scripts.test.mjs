@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import vm from 'node:vm'
 
-import { accessKeyElement, accessKeyOf, keyChoice, selectKeyOption, selectTypeOptions, activatableAncestor, clickLabel, closedRootHoldsEntry, collectPageText, deepActiveElement, describeElement, DRAG_TEXT_MAX, dragTextAt, implicitSubmitButton, pageExpression, selectionContainer, textEntered } from '../../_environments_/chrome-browser/page-scripts.mjs'
+import { implicitSubmitControls, accessKeyElement, accessKeyOf, keyChoice, selectKeyOption, selectTypeOptions, activatableAncestor, clickLabel, closedRootHoldsEntry, collectPageText, deepActiveElement, describeElement, DRAG_TEXT_MAX, dragTextAt, implicitSubmitButton, pageExpression, selectionContainer, textEntered } from '../../_environments_/chrome-browser/page-scripts.mjs'
 import { CARD } from '../fixture-shapes/shapes.mjs'
 
 const DEFAULT_STYLE = { visibility: 'visible', opacity: '1', fontSize: '16px', color: 'rgb(0, 0, 0)', backgroundColor: 'rgba(0, 0, 0, 0)' }
@@ -788,4 +788,228 @@ test('CU-370: an aria-multiselectable listbox is unread for keys that change or 
   assert.equal(keyChoice(listbox, 'ArrowDown', selectKeyOption), 'unread')
   assert.equal(keyChoice(listbox, ' ', selectKeyOption), 'unread')
   assert.equal(keyChoice(listbox, 'Tab', selectKeyOption), null)
+})
+
+test('CU-400: a button inside a form carries formContext - up to 3 short selected option texts and whether an amount entry is present; never a value', () => {
+  const select = (text) => ({ tagName: 'SELECT', selectedOptions: [{ textContent: text }] })
+  const form = (controls, inputs) => ({ querySelectorAll: (sel) => (sel === 'input' ? inputs : controls) })
+  const amount = { type: 'text', name: 'amount', id: '', placeholder: '', getAttribute: () => null }
+  const plain = { type: 'text', name: 'note', id: '', placeholder: 'Note', getAttribute: () => null }
+  const button = (f, extra = {}) => el('BUTTON', { children: ['Sell'], closest: (sel) => (sel === 'form' ? f : null), ...extra })
+  const sell = describeElement(button(form([select('BTC'), select('  Market  ')], [amount])))
+  assert.deepEqual(sell.formContext, { options: ['BTC', 'Market'], amountEntry: true })
+  const numeric = describeElement(button(form([], [{ ...amount, name: 'x', type: 'number' }])))
+  assert.deepEqual(numeric.formContext, { options: [], amountEntry: true }, 'a number input is amount-shaped by its type')
+  const many = describeElement(button(form([select('A'), select('B'), select('C'), select('D')], [plain])))
+  assert.deepEqual(many.formContext.options, ['A', 'B', 'C'], 'at most three')
+  const long = describeElement(button(form([select('x'.repeat(25))], [plain])))
+  assert.equal('formContext' in long, false, 'a long option text is not a short word; nothing else beside it')
+  assert.equal('formContext' in describeElement(button(null)), false, 'outside a form: none')
+  assert.equal('formContext' in describeElement(el('DIV', { children: ['Sell'], closest: () => form([select('BTC')], []) })), false, 'a plain div is no submit control')
+  assert.deepEqual(Object.keys(sell.formContext), ['options', 'amountEntry'], 'the amount field is a boolean kind, never its name or value')
+  assert.equal(sell.formContext.options.includes('amount'), false)
+})
+
+test('CU-402: without a <form>, formContext falls back to [role=form], else a fieldset or dialog holding exactly one submit-like control', () => {
+  const select = (text) => ({ tagName: 'SELECT', selectedOptions: [{ textContent: text }] })
+  const box = (controls, submits) => ({ querySelectorAll: (sel) => (sel === 'input' ? [] : sel.startsWith('select') ? controls : submits) })
+  const within = (map) => el('BUTTON', { children: ['Sell'], closest: (sel) => map[sel] ?? null })
+  const roleForm = box([select('ETH')], [{}, {}])
+  assert.deepEqual(describeElement(within({ form: null, '[role="form"]': roleForm })).formContext, { options: ['ETH'], amountEntry: false })
+  const dialog = box([select('BTC')], [{}])
+  assert.deepEqual(describeElement(within({ 'fieldset, dialog, [role="dialog"]': dialog })).formContext, { options: ['BTC'], amountEntry: false })
+  const busy = box([select('BTC')], [{}, {}])
+  assert.equal('formContext' in describeElement(within({ 'fieldset, dialog, [role="dialog"]': busy })), false, 'a fieldset with two submit-like controls lends nothing')
+  assert.equal('formContext' in describeElement(within({})), false, 'no form, no role=form, no bounded box: none')
+})
+
+test('CU-402: a submit button outside its form but tied by form= (el.form) reads that form', () => {
+  const select = (text) => ({ tagName: 'SELECT', selectedOptions: [{ textContent: text }] })
+  const trade = { querySelectorAll: (sel) => (sel === 'input' ? [] : [select('BTC')]) }
+  const outside = el('BUTTON', { children: ['Sell'], form: trade, closest: () => null })
+  assert.deepEqual(describeElement(outside).formContext, { options: ['BTC'], amountEntry: false })
+  const loose = el('BUTTON', { children: ['Sell'], form: null, closest: () => null })
+  assert.equal('formContext' in describeElement(loose), false, 'an unassociated button outside any form: a named limit')
+})
+
+test('CU-402: a div trade panel - the nearest ancestor within 3 levels holding one submit-like control and a select lends its choices; a page-wide box with two submits does not', () => {
+  const select = (text) => ({ tagName: 'SELECT', selectedOptions: [{ textContent: text }] })
+  const amount = { type: 'text', name: 'amount', id: '', placeholder: '', getAttribute: () => null }
+  const panel = (selects, submits, inputs = [amount], parentElement = null) => ({
+    parentElement,
+    querySelectorAll: (sel) => (sel === 'input' ? inputs : sel.startsWith('select') ? selects : submits),
+  })
+  const wrap = { parentElement: null, querySelectorAll: () => [] }
+  const trade = panel([select('BTC')], [{}], [amount])
+  wrap.parentElement = trade
+  const button = (parentElement) => ({ ...el('BUTTON', { children: ['Sell'], closest: () => null }), parentElement })
+  assert.deepEqual(describeElement(button(wrap)).formContext, { options: ['BTC'], amountEntry: true }, 'two levels up: the panel')
+  const page = panel([select('BTC')], [{}, {}])
+  assert.equal('formContext' in describeElement(button(page)), false, 'two submit-like controls: none')
+  const deep = { parentElement: { parentElement: { parentElement: trade, querySelectorAll: () => [] }, querySelectorAll: () => [] }, querySelectorAll: () => [] }
+  assert.equal('formContext' in describeElement(button(deep)), false, 'beyond 3 levels: none')
+  const noSelect = panel([], [{}], [amount])
+  assert.equal('formContext' in describeElement(button(noSelect)), false, 'a panel with no select or combobox: none')
+})
+
+test('CU-405: a panel whose submit-like controls are all trade verbs (Buy and Sell side by side) lends its choices; one other button voids it', () => {
+  const select = (text) => ({ tagName: 'SELECT', selectedOptions: [{ textContent: text }] })
+  const btn = (text, attrs = {}) => ({ textContent: text, getAttribute: (name) => (name in attrs ? attrs[name] : null) })
+  const amount = { type: 'text', name: 'amount', id: '', placeholder: '', getAttribute: () => null }
+  const panel = (submits) => ({ parentElement: null, querySelectorAll: (sel) => (sel === 'input' ? [amount] : sel.startsWith('select') ? [select('BTC')] : submits) })
+  const sellIn = (box) => ({ ...el('BUTTON', { children: ['Sell'], closest: () => null }), parentElement: box })
+  assert.deepEqual(describeElement(sellIn(panel([btn('Buy'), btn('Sell')]))).formContext, { options: ['BTC'], amountEntry: true }, 'Buy + Sell')
+  assert.deepEqual(describeElement(sellIn(panel([btn(' Buy BTC '), btn('Sell BTC'), btn('', { 'aria-label': 'Swap' })]))).formContext.options, ['BTC'], 'verbs with an asset, and an aria-label')
+  assert.equal('formContext' in describeElement(sellIn(panel([btn('Sell'), btn('Cancel')]))), false, 'Sell + Cancel: none')
+  assert.equal('formContext' in describeElement(sellIn(panel([btn('Buy'), btn('Sell'), btn('Help'), btn('Settings')]))), false, 'trade verbs plus other buttons (a page-wide box): none')
+  assert.equal('formContext' in describeElement(sellIn(panel([btn('Buyer protection'), btn('Sell')]))), false, "'Buyer protection' is not the verb Buy")
+})
+
+test('CU-405: trade verbs beside order-panel helpers (N%, Max/Min/Half, Limit/Market/Stop-limit/OCO, one symbol or arrow) still lend; any other button voids', () => {
+  const select = (text) => ({ tagName: 'SELECT', selectedOptions: [{ textContent: text }] })
+  const btn = (text) => ({ textContent: text, getAttribute: () => null })
+  const panel = (submits) => ({ parentElement: null, querySelectorAll: (sel) => (sel === 'input' ? [] : sel.startsWith('select') ? [select('ETH')] : submits) })
+  const sellIn = (box) => ({ ...el('BUTTON', { children: ['Sell'], closest: () => null }), parentElement: box })
+  const real = [btn('Buy'), btn('Sell'), btn('25%'), btn('50 %'), btn('100%'), btn('Max'), btn('Half'), btn('Limit'), btn('Market'), btn('Stop-limit'), btn('OCO'), btn('\u21c5'), btn('')]
+  assert.deepEqual(describeElement(sellIn(panel(real))).formContext, { options: ['ETH'], amountEntry: false }, 'a real order panel lends')
+  assert.equal('formContext' in describeElement(sellIn(panel([btn('Max'), btn('25%')]))), false, 'helpers alone, no trade verb: none')
+  assert.deepEqual(describeElement(sellIn(panel([...real, btn('Transfer')]))).formContext.options, ['ETH'], 'Transfer is a trade verb (06:43Z)')
+  assert.equal('formContext' in describeElement(sellIn(panel([...real, btn('Settings')]))), false, 'any other worded button voids')
+  assert.deepEqual(describeElement(sellIn(panel([btn('Buy'), btn('Sell'), btn('All')]))).formContext.options, ['ETH'], "'All' is a helper (cu-coordinator 06:45Z)")
+  assert.equal('formContext' in describeElement(sellIn(panel([btn('Buy'), btn('Sell'), btn('<<<')]))), false, 'three symbols are not one symbol')
+  assert.equal('formContext' in describeElement(sellIn(panel([btn('Sell'), btn('Cancel')]))), false, 'Sell + Cancel: none')
+})
+
+test('CU-412 (D-107): with no submit button, a one-field form whose only script submit control is a [role=button] (or button type=button) makes it the Return target', () => {
+  const ib = (el) => implicitSubmitButton(el, implicitSubmitControls)
+  const field = (type = 'text') => ({ tagName: 'INPUT', type, form: null })
+  const div = (name, attrs = {}) => ({ tagName: 'DIV', textContent: name, getAttribute: (k) => (k in attrs ? attrs[k] : null) })
+  const form = (elements, controls) => ({ elements, querySelectorAll: () => controls })
+  const one = field(); const del = div('Delete account', { role: 'button' })
+  one.form = form([one], [del])
+  assert.equal(ib(one), del, 'the div is what the Return presses')
+  assert.equal(implicitSubmitButton(one), null, 'without the controls reader the CU-150 path is unchanged')
+  const typeButton = { tagName: 'BUTTON', type: 'button', disabled: false }
+  const f2 = field(); f2.form = form([f2, typeButton], [typeButton])
+  assert.equal(ib(f2), typeButton, 'a button type=button counts too')
+  const search = field('search'); search.form = form([search], [])
+  assert.equal(ib(search), null, 'a search form with no control: none (stays free)')
+  const two = field(); two.form = form([two], [div('Buy', { role: 'button' }), div('Sell', { role: 'button' })])
+  assert.equal(ib(two), null, 'two controls: no single default (they are candidates)')
+  assert.equal(implicitSubmitControls(two).length, 2)
+  const a = field(); const b = field(); a.form = form([a, b], [del])
+  assert.equal(ib(a), null, 'two blocking fields: implicit submission does not submit')
+  assert.deepEqual(implicitSubmitControls(a), [])
+  const off = field(); off.form = form([off], [div('Delete account', { role: 'button', 'aria-disabled': 'true' })])
+  assert.equal(ib(off), null, 'an aria-disabled control: none')
+  const sub = { tagName: 'BUTTON', type: 'submit', disabled: false, textContent: 'Save' }
+  const real = field(); real.form = form([real, sub], [del])
+  assert.equal(ib(real), sub, 'a rendered, named submit button still wins')
+  assert.deepEqual(implicitSubmitControls(real), [])
+})
+
+test('CU-412 (D-107): a default submit that is hidden, layout-less, aria-hidden or nameless yields to the script controls; aria-hidden controls never count', () => {
+  const ib = (el) => implicitSubmitButton(el, implicitSubmitControls)
+  const field = () => ({ tagName: 'INPUT', type: 'text', form: null })
+  const div = (name, hidden = false) => ({ tagName: 'DIV', textContent: name, getAttribute: (k) => (k === 'role' ? 'button' : null), closest: (sel) => (hidden && sel === '[aria-hidden="true"]' ? {} : null) })
+  const form = (elements, controls) => ({ elements, querySelectorAll: () => controls })
+  const del = div('Delete account'); const buy = div('Buy')
+  const cases = [
+    ['hidden attribute', { tagName: 'INPUT', type: 'submit', hidden: true, hasAttribute: () => false }],
+    ['no layout box', { tagName: 'BUTTON', type: 'submit', textContent: 'Go', getClientRects: () => [] }],
+    ['aria-hidden', { tagName: 'BUTTON', type: 'submit', textContent: 'Go', closest: (sel) => (sel === '[aria-hidden="true"]' ? {} : null) }],
+    ['nameless value=""', { tagName: 'INPUT', type: 'submit', value: '', hasAttribute: (k) => k === 'value', getAttribute: () => null }],
+  ]
+  for (const [label, submit] of cases) {
+    const f = field(); f.form = form([f, submit], [del])
+    assert.equal(ib(f), del, `${label}: the visible div is the default`)
+    const g = field(); g.form = form([g, submit], [buy, del])
+    assert.equal(ib(g), null, `${label}: two controls are candidates`)
+    assert.deepEqual(implicitSubmitControls(g), [buy, del])
+    const h = field(); h.form = form([h, submit], [])
+    assert.equal(ib(h), submit, `${label}: no control - the submit itself, as before`)
+  }
+  const plain = { tagName: 'INPUT', type: 'submit', hasAttribute: () => false, getAttribute: () => null }
+  const p = field(); p.form = form([p, plain], [del])
+  assert.equal(ib(p), plain, 'an input submit with no value attribute reads as Submit: named, it stays the default')
+  const only = field(); only.form = form([only], [div('Delete account', true), buy])
+  assert.equal(ib(only), buy, 'the aria-hidden control is dropped, the one left is the default')
+})
+
+test('CU-443: a pressed row with no verb carries dialHref (a tel:/sip: link on, above or inside it - boolean) and rowContext (list name, up to 3 action names)', () => {
+  const link = (href, label) => el('A', { attrs: { href, ...(label ? { 'aria-label': label } : {}) }, children: [label ?? 'x'] })
+  const icon = (label) => el('BUTTON', { attrs: { 'aria-label': label } })
+  const contacts = el('UL', { attrs: { 'aria-label': 'Contacts' } })
+  const row = (children, { list = contacts, tag = 'LI', attrs = {} } = {}) => el(tag, {
+    attrs, children,
+    querySelectorAll: (selector) => children.filter((child) => typeof child !== 'string' && (selector.includes('a[href]') ? child.tagName === 'A' || child.tagName === 'BUTTON' || child.getAttribute('aria-label') : true)),
+    closest: (selector) => (selector.includes('role="list"') ? list : null),
+  })
+  const dialing = describeElement(row(['Alex Morgan', link('tel:+15550100', 'Call Alex')]))
+  assert.equal(dialing.dialHref, true)
+  assert.deepEqual(dialing.rowContext, { list: 'Contacts', hints: ['Call Alex'] })
+  const iconOnly = describeElement(row(['Alex Morgan', icon('Call'), icon('Message'), icon('Video'), icon('More')]))
+  assert.equal('dialHref' in iconOnly, false, 'no dial link: no dialHref')
+  assert.deepEqual(iconOnly.rowContext, { list: 'Contacts', hints: ['Call', 'Message', 'Video'] }, 'at most three action names')
+  const bare = describeElement(row(['Alex Morgan'], { list: el('UL') }))
+  assert.equal('rowContext' in bare, false, 'a bare row in an unnamed list: nothing to add')
+  assert.equal('dialHref' in bare, false)
+  const inTelLink = el('LI', { attrs: { role: 'listitem' }, children: ['Alex Morgan'], querySelectorAll: () => [], closest: () => null })
+  el('A', { attrs: { href: 'tel:+15550100' }, children: [el('DIV', { children: [inTelLink] })] })
+  assert.equal(describeElement(inTelLink).dialHref, true, 'a dial link two levels up counts')
+  const byRole = describeElement(row(['Alex Morgan'], { tag: 'DIV', attrs: { role: 'listitem' } }))
+  assert.deepEqual(byRole.rowContext, { list: 'Contacts', hints: [] }, 'an ARIA list item counts too')
+  const longName = describeElement(row(['Alex Morgan', icon('x'.repeat(41))], { list: el('UL', { attrs: { 'aria-label': 'y'.repeat(61) } }) }))
+  assert.equal('rowContext' in longName, false, 'over-long names are dropped, not cut')
+  const button = describeElement(el('BUTTON', { attrs: { href: 'tel:+15550100' }, children: ['Call'], querySelectorAll: () => [], closest: (selector) => (selector.includes('role="list"') ? contacts : null) }))
+  assert.equal('rowContext' in button || 'dialHref' in button, false, 'a button is no row: it has its own verb')
+  assert.equal(JSON.stringify(dialing).includes('5550100'), false, 'never the number')
+})
+
+test('CU-443 round 2: a verb-less element inside a row (a name span in a listener-only li) is read through that row and says inRow', () => {
+  const contacts = el('UL', { attrs: { 'aria-label': 'Contacts' } })
+  const name = el('SPAN', { children: ['Alex Morgan'] })
+  const tel = el('A', { attrs: { href: 'tel:+15550100' }, children: ['mobile'] })
+  el('LI', { children: [name, tel], querySelectorAll: () => [tel], closest: (selector) => (selector.includes('role="list"') ? contacts : null) })
+  const viaSpan = describeElement(name)
+  assert.equal(viaSpan.inRow, true)
+  assert.equal(viaSpan.dialHref, true, 'the dial link is read from the row, not the span')
+  assert.deepEqual(viaSpan.rowContext, { list: 'Contacts', hints: [] })
+  const deep = el('SPAN', { children: ['Alex'] })
+  el('LI', { children: [el('DIV', { children: [el('DIV', { children: [el('DIV', { children: [deep] })] })] })], querySelectorAll: () => [], closest: () => contacts })
+  assert.equal('inRow' in describeElement(deep), false, 'beyond 3 levels: no row')
+  const label = el('SPAN', { children: ['Call'] })
+  el('LI', { children: [el('BUTTON', { children: [label] })], querySelectorAll: () => [], closest: () => contacts })
+  const inButton = describeElement(label)
+  assert.equal('inRow' in inButton || 'dialHref' in inButton || 'rowContext' in inButton, false, 'a button on the way up is the verb: the walk ends')
+  const own = describeElement(el('LI', { attrs: { role: 'listitem' }, children: ['Alex'], querySelectorAll: () => [], closest: () => contacts }))
+  assert.equal('inRow' in own, false, 'the row itself is not inRow')
+})
+
+test('CU-472: a link that does not navigate says inertLink - no, empty, "#", "#fragment" or "javascript:" href, or an ARIA link with no <a>; a real URL does not', () => {
+  const linkWith = (href) => {
+    const a = el('A', { attrs: href === undefined ? {} : { href }, children: ['Continue'], closest: (selector) => (selector === 'a' ? a : null) })
+    return a
+  }
+  for (const href of [undefined, '', '#', ' # ', '#pay', 'javascript:void(0)', 'JavaScript:go()']) {
+    assert.equal(describeElement(linkWith(href)).inertLink, true, `href ${JSON.stringify(href)}`)
+  }
+  for (const href of ['https://example.com/pay', '/checkout', 'checkout.html', 'mailto:a@example.com']) {
+    assert.equal('inertLink' in describeElement(linkWith(href)), false, `href ${href}`)
+  }
+  const inner = el('SPAN', { children: ['Pay'] })
+  const outer = el('A', { attrs: { href: '#' }, children: [inner] })
+  inner.closest = (selector) => (selector === 'a' ? outer : null)
+  assert.equal(describeElement(inner).inertLink, true, 'a span inside an inert <a>')
+  assert.equal(describeElement(el('DIV', { attrs: { role: 'link' }, children: ['Pay'], closest: () => null })).inertLink, true, 'an ARIA link with no <a>')
+  assert.equal('inertLink' in describeElement(el('BUTTON', { children: ['Pay'], closest: () => null })), false, 'a button is no link')
+})
+
+test('CU-473: a control whose rendered text has two or more lines says firstLine (the first non-empty one, at most 80 characters); one line says nothing', () => {
+  const withText = (innerText) => { const b = el('BUTTON', { children: [innerText.replace(/\n/g, ' ')], closest: () => null }); b.innerText = innerText; return b }
+  assert.equal(describeElement(withText('Change Direct Deposit\nTakes Effect Immediately')).firstLine, 'Change Direct Deposit')
+  assert.equal(describeElement(withText('\n  Lock   rate \n\nToday only')).firstLine, 'Lock rate')
+  assert.equal(describeElement(withText(`${'x'.repeat(100)}\nsecond`)).firstLine.length, 80)
+  assert.equal('firstLine' in describeElement(withText('Change direct deposit')), false, 'one line')
+  assert.equal('firstLine' in describeElement(el('BUTTON', { children: ['Pay'], closest: () => null })), false, 'no innerText (a fake node)')
 })

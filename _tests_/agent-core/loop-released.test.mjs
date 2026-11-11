@@ -10,6 +10,9 @@ import { createRunControl } from '../../_tools_/agent-core/control.mjs'
 import { createFakeEnvironment } from '../../_tools_/agent-core/fake-env.mjs'
 import { runTask } from '../../_tools_/agent-core/loop.mjs'
 
+// CU-377: a drag pressed on nothing at all is an unknown source and asks; these rows press a control (the frontmost app's).
+const PRESS_ELEMENT = () => ({ origin: 'ai.reflection.cu.fixture', role: 'AXGroup', name: 'Canvas' })
+
 // CU-45: a stopped drag reports where its held button came up, and says the drop may have happened unless it came up
 // where it went down - in the trajectory and to the model, rather than a bare refusal.
 
@@ -22,7 +25,7 @@ afterEach(() => { rmSync(dir, { recursive: true, force: true }) })
 
 async function runStoppedDrag(details) {
   const control = createRunControl()
-  const environment = createFakeEnvironment({ kind: 'desktop', control })
+  const environment = createFakeEnvironment({ targets: PRESS_ELEMENT, kind: 'desktop', control })
   const store = createAppApprovals({ path: join(dir, 'app-approvals.json') })
   store.grantAlways(FIXTURE, { by: 'api' })
   const inputs = []
