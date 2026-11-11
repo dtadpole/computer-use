@@ -35,3 +35,20 @@ test('CU-475: merchant bulk money acts ask purchase, fraud filters off permissio
   assert.equal(click('Refund order', MERCHANT), 'purchase', 'a single-order action keeps its own class')
   assert.deepEqual(grammarClasses('Close shop'), ['delete'])
 })
+
+test('#614 round 2: the held-out escapes fold as patterns; an emergency contact asks without a page; screen timeouts stay free', () => {
+  for (const [name, cls] of [['Download plaintext export', 'credential'], ['Turn off reprompt', 'permission'], ['Set timeout to never', 'permission'], ['Turn off vault auto-lock', 'permission']]) assert.equal(click(name, VAULT), cls, name)
+  assert.deepEqual(grammarClasses('Add emergency contact'), ['credential'], 'no page condition')
+  for (const [name, cls] of [['Get instant payout', 'purchase'], ['Instant payout to bank', 'purchase'], ['Accept all chargebacks', 'purchase'], ['Accept all open disputes', 'purchase'],
+    ['Set every price to $0', 'purchase'], ['Apply 50% discount to all products', 'purchase'], ['Disable risk rules', 'permission']]) assert.equal(click(name, MERCHANT), cls, name)
+  for (const name of ['Set screen timeout to never', 'Accept', 'Apply discount code']) assert.equal(click(name, 'https://app.example/settings'), 'allow', name)
+})
+
+test('#614 round 2 (cu-coordinator 03:19Z): pausing the store and changing the payout schedule ask permission; desktop vault class comes from the bundle id', () => {
+  for (const name of ['Pause store', 'Change payout schedule']) assert.equal(click(name, MERCHANT), 'permission', name)
+  // Named (cu-developer-three 03:20Z): on the desktop route the vault test reads the app: context, so a vault app's bundle id gives
+  // permission and any other app gives CU-468's physical - it asks either way; a later http-only guard would change it visibly.
+  const desk = (url) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url, target: { role: 'AXButton', name: 'Turn off auto-lock' } }); return v.decision === 'allow' ? 'allow' : v.class }
+  assert.equal(desk('app:com.1password.1password'), 'permission')
+  assert.equal(desk('app:com.example.homecontrol'), 'physical')
+})

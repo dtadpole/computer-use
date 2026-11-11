@@ -607,23 +607,32 @@ function vaultClass(list) {
   const two = SWITCH_VERBS.has(list[0]) && (list[1] === 'off' || list[1] === 'on')
   const verb = two ? `turn ${list[1]}` : list[0]
   const rest = list.slice(two ? 2 : 1)
-  if (['download', 'export', 'save'].includes(verb) && rest.includes('unencrypted') && rest.length <= 4) return 'credential'
-  if (['turn off', 'disable'].includes(verb) && rest.includes('master') && rest.includes('password') && rest.includes('reprompt') && rest.length <= 4) return 'permission'
+  // #614 round 2 (cu-researcher 03:18Z): plaintext for unencrypted; reprompt without 'master password'; a timeout to never without
+  // 'vault' (not a screen timeout); vault auto-lock off by word order; an emergency contact with no page condition.
+  if (['download', 'export', 'save'].includes(verb) && (rest.includes('unencrypted') || rest.includes('plaintext')) && rest.length <= 4) return 'credential'
+  if (verb === 'add' && rest.length <= 3 && rest.includes('emergency') && ['contact', 'access'].includes(rest[rest.length - 1])) return 'credential'
+  if (['turn off', 'disable'].includes(verb) && rest.includes('reprompt') && rest.length <= 4) return 'permission'
   if (verb === 'never' && rest[0] === 'lock' && rest.length <= 3) return 'permission'
-  if (verb === 'set' && rest.includes('vault') && rest.includes('timeout') && rest[rest.length - 1] === 'never' && rest.length <= 5) return 'permission'
+  if (verb === 'set' && rest.includes('timeout') && rest[rest.length - 1] === 'never' && rest.length <= 5 && !rest.includes('screen') && !rest.includes('display')) return 'permission'
+  if (['turn off', 'disable'].includes(verb) && rest[0] === 'vault' && rest.includes('lock') && rest.length <= 4) return 'permission'
   return null
 }
 function merchantClass(list) {
   if (list.length > 8) return null
   const [verb, ...rest] = list
-  if (verb === 'instant' && rest.length === 1 && rest[0] === 'payout') return 'purchase'
-  if (verb === 'accept' && rest[0] === 'all' && rest[1] === 'dispute' && rest.length === 2) return 'purchase'
-  if (verb === 'set' && rest[0] === 'all' && rest[1] === 'price' && rest[2] === 'to' && rest.length <= 4) return 'purchase'
-  if (verb === 'apply' && rest.includes('discount') && rest[rest.length - 1] === 'all' && rest.length <= 5) return 'purchase'
+  // #614 round 2: 'instant payout' anywhere in a short name; accept all (open) disputes / chargebacks; set all / every price to an
+  // amount; apply a discount to all (products); risk rules too.
+  if (list.length <= 5 && list.some((t, i) => t === 'instant' && list[i + 1] === 'payout')) return 'purchase'
+  if (verb === 'accept' && rest[0] === 'all' && rest.length <= 3 && ['dispute', 'chargeback'].includes(rest[rest.length - 1])) return 'purchase'
+  if (verb === 'set' && ['all', 'every'].includes(rest[0]) && rest[1] === 'price' && rest[2] === 'to' && rest.length <= 4) return 'purchase'
+  if (verb === 'apply' && rest.includes('discount') && rest.includes('all') && rest.length <= 6) return 'purchase'
   if (verb === 'issue' && rest[0] === 'refund' && rest[rest.length - 1] === 'all' && rest.length <= 4) return 'purchase'
-  if (['disable', 'remove', 'delete'].includes(verb) && rest.length <= 3 && rest[0] === 'fraud' && ['filter', 'rule', 'protection', 'check'].includes(rest[rest.length - 1])) return 'permission'
+  if (['disable', 'remove', 'delete'].includes(verb) && rest.length <= 3 && ['fraud', 'risk', 'radar'].includes(rest[0]) && ['filter', 'rule', 'protection', 'check'].includes(rest[rest.length - 1])) return 'permission'
   if (verb === 'turn' && rest[0] === 'off' && rest.length <= 3 && (rest.includes('radar') || rest.includes('fraud')) && ['rule', 'filter', 'protection'].includes(rest[rest.length - 1])) return 'permission'
   if (verb === 'close' && rest.length === 1 && ['store', 'shop'].includes(rest[0])) return 'delete'
+  // #614 round 2 (cu-coordinator 03:19Z): pausing the store and changing the payout schedule (permission).
+  if (verb === 'pause' && rest.length === 1 && ['store', 'shop'].includes(rest[0])) return 'permission'
+  if (['change', 'edit', 'update', 'set'].includes(verb) && rest.length <= 3 && rest.includes('payout') && rest[rest.length - 1] === 'schedule') return 'permission'
   return null
 }
 const TENANT_PROTECTIONS = ['conditional', 'dlp', 'security', 'mfa', 'retention', 'compliance', 'audit', 'sign', 'session', 'data']
