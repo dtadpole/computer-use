@@ -191,8 +191,22 @@ const PRICED_ROLES = new Set(['gridcell', 'option', 'radio', 'checkbox', 'button
   'axbutton', 'axmenuitem'])
 const PRICED_NOUNS = new Set(['seat', 'option', 'legroom', 'bag', 'baggage'])
 const AMOUNT = /(?:[$\u20ac\u00a3\u00a5\u20b9]\s?(\d[\d,]*(?:\.\d+)?))|(?:\b(\d[\d,]*(?:\.\d+)?)\s?(?:usd|eur|gbp|jpy|cad|aud|inr|chf)\b)|(?:\b(?:usd|eur|gbp|jpy|cad|aud|inr|chf)\s?(\d[\d,]*(?:\.\d+)?))/gi
-// Links stay out (17:18Z: a priced link navigates to the item - a listing row - so it never asks for its price alone).
-const AMOUNT_ROLES = new Set(['button', 'menuitem', 'axbutton', 'axmenuitem', 'axpopupbutton'])
+// A price filter or range commits nothing ('Under $25', '$10 - $20', 'Over EUR 100', 'Up to $50'; cu-researcher 00:51Z).
+const PRICE_FILTER = /^\s*(?:under|over|below|above|less\s+than|more\s+than|up\s+to|from|max(?:imum)?|min(?:imum)?)\b|\d\s*(?:-|\u2013|\u2014|to)\s*[$\u20ac\u00a3\u00a5\u20b9]?\s*\d|\b(?:and\s+(?:up|above|under|below)|or\s+(?:less|more))\s*$/i
+// Links and list items stay out of the plain pattern (17:18Z; cu-coordinator 01:04Z): a priced link navigates to the item.
+const AMOUNT_ROLES = new Set(['button', 'menuitem', 'axbutton', 'axmenuitem', 'axpopupbutton', 'alertdialog', 'dialog'])
+const COMMIT_LINK_ROLES = new Set(['link', 'listitem', 'axlink', 'option'])
+const AMOUNT_COMMIT = /^\s*(?:buy|pay|purchase|subscribe|order|donate|tip|rent|upgrade|renew|checkout|check\s+out|charge|get\s+(?:it|premium|pro|plus))\b/i
+/** CU-467 (cu-coordinator 00:49Z, 01:04Z): 'purchase' when a pressed control names a money amount - any button, menu item or dialog
+ * control; a link or list item only with a commit verb ('Buy for $5', not a 'Blue mug, $12.99' tile); price filters and ranges never. */
+export function amountClass(name, role = '') {
+  const raw = String(name ?? '')
+  if (!namesAmount(raw) || PRICE_FILTER.test(raw)) return null
+  const r = String(role ?? '').toLowerCase()
+  if (AMOUNT_ROLES.has(r)) return 'purchase'
+  if (COMMIT_LINK_ROLES.has(r) && AMOUNT_COMMIT.test(raw)) return 'purchase'
+  return null
+}
 /** CU-467: whether a name carries a positive money amount (a currency symbol or ISO code beside a number). */
 export function namesAmount(name) {
   const amounts = [...String(name ?? '').matchAll(AMOUNT)].map((m) => Number(String(m[1] ?? m[2] ?? m[3] ?? '').replace(/,/g, '')))
@@ -607,7 +621,7 @@ export function grammarClasses(name, role = '') {
   if (CURRENCY.test(raw) && PRICED_ROLES.has(String(role ?? '').toLowerCase()) && tokens(raw).some((t) => PRICED_NOUNS.has(t))) return ['purchase']
   // CU-467 (High; cu-coordinator 00:49Z): a pressed control that names a money amount commits a charge whatever its verb - a
   // currency symbol or ISO code beside a number ('Continue for $9.99', 'Confirm 12.00 EUR', '$4.99/month'); a zero amount is free.
-  if (namesAmount(raw) && AMOUNT_ROLES.has(String(role ?? '').toLowerCase())) return ['purchase']
+  if (amountClass(raw, role)) return ['purchase']
   const split = tokens(raw)
   if (split.length === 0) return []
   // #580 round 2 (cu-coordinator 21:52Z): a split particle - 'turn / switch X on|off' reads as 'turn / switch on|off X'

@@ -17,8 +17,10 @@ test('CU-467: a button naming a money amount asks purchase, any verb, any curren
     assert.equal(enter(name), 'purchase', `Return: ${name}`)
     assert.equal(space(name), 'purchase', `Space: ${name}`)
   }
-  // Named: a priced LINK stays free (17:18Z - it navigates to the item; a listing row 'Mouse $19.99').
-  assert.equal(verdict('Continue for $9.99', 'https://shop.example/checkout', 'link'), 'allow', 'a link (17:18Z)')
+  // cu-coordinator 01:04Z: a link or list item carrying a price asks only with a commit verb; a product tile stays free.
+  assert.equal(verdict('Buy for $5', 'https://shop.example/item', 'link'), 'purchase', 'a commit-verb link')
+  assert.equal(verdict('Subscribe for $4.99/month', 'https://shop.example/item', 'link'), 'purchase', 'a commit-verb link')
+  for (const [name, role] of [['Blue mug, $12.99', 'link'], ['Continue for $9.99', 'link'], ['Blue mug, $12.99', 'listitem']]) assert.equal(verdict(name, 'https://shop.example/search', role), 'allow', `${role}: ${name}`)
   assert.equal(verdict('Continue for $9.99', 'app:com.example.store', 'AXButton'), 'purchase', 'desktop button')
 })
 
@@ -26,6 +28,8 @@ test('CU-467 negatives: prices as text, price views, zero amounts and Free stay 
   for (const name of ['See price', 'Compare plans', '$0', 'Get it for $0.00', 'Free', 'Plans from $5']) assert.equal(verdict(name, 'https://shop.example/pricing', name === 'Plans from $5' ? 'statictext' : 'button'), 'allow', name)
   assert.deepEqual(grammarClasses('$9.99', 'statictext'), [], 'a price shown as text is not a control')
   assert.deepEqual(grammarClasses('Step 2 of 3'), [], 'a number without a currency')
+  // cu-researcher 00:51Z: price filters and ranges commit nothing.
+  for (const name of ['Under $25', '$10 - $20', '$10 \u2013 $20', 'Over EUR 100', 'Up to $50', '$50 and up', '$25 or less']) assert.equal(verdict(name, 'https://shop.example/search'), 'allow', name)
 })
 
 test('CU-467: paid creator and dating features ask purchase on a creator or dating page; older submit asks keep their class', () => {
