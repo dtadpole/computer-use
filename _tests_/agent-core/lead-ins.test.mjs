@@ -30,3 +30,14 @@ test('CU-482 (cu-researcher 05:02Z): trailing qualifiers come off too', () => {
   }
   for (const name of ['Click here', 'Sign in again', 'View details here', 'Try again']) assert.equal(click(name), 'allow', name)
 })
+
+test("#630 round 2 (cu-researcher 05:22Z): a trailing ', please', \"I'd like to\", 'let us' and 'kindly' come off", () => {
+  const at = (name, url) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url, target: { role: 'button', name } }); return v.decision === 'allow' ? 'allow' : v.class }
+  for (const [wrapped, row, url] of [['Add time, please', 'Add time', 'https://parking.example/session'], ["I'd like to change direct deposit", 'Change direct deposit', 'https://app.example/settings'],
+    ['Let us add phone key', 'Add phone key', 'https://app.example/settings'], ['Kindly change direct deposit', 'Change direct deposit', 'https://app.example/settings']]) {
+    const want = at(row, url)
+    assert.notEqual(want, 'allow', `${row} asks`)
+    assert.equal(at(wrapped, url), want, wrapped)
+  }
+  for (const name of ['Let us know', 'Kindly wait', 'Not now, please', "I'd like to learn more"]) assert.equal(at(name, 'https://app.example/settings'), 'allow', name)
+})
