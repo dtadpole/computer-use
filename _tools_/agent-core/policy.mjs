@@ -2205,12 +2205,19 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // on the desktop an AXSheet / AXDialog) asks the classes the modal's title and description get as a name - never fewer than the
     // button alone; a modal whose text gets no class stays free. The driver reports target.dialogName / target.dialogDescription.
     {
-      const dialogName = typeof target?.dialogName === 'string' ? target.dialogName.trim().slice(0, 300) : ''
-      const dialogDescription = typeof target?.dialogDescription === 'string' ? target.dialogDescription.trim().slice(0, 300) : ''
+      // cu-developer-two's driver half: target.dialogContext { kind, name, description }; the desktop seam (cu-developer-three):
+      // target.dialogName / target.dialogDescription. Either feeds the same judgement.
+      const ctx = target?.dialogContext && typeof target.dialogContext === 'object' ? target.dialogContext : {}
+      const pick = (...values) => (values.find((v) => typeof v === 'string' && v.trim() !== '') ?? '').trim().slice(0, 300)
+      const dialogName = pick(ctx.name, target?.dialogName)
+      const dialogDescription = pick(ctx.description, target?.dialogDescription)
       const presses = POINTER.has(action.type) || keysOf(action).has('ENTER') || keysOf(action).has('SPACE')
       if (context.confirmProbe !== true && presses && (dialogName !== '' || dialogDescription !== '') && GENERIC_CONFIRM.test(String(name ?? ''))) {
+        // cu-researcher 16:09Z: a title is a question more often than a row - 'Are you sure you want to <row>?', 'Really <row>?',
+        // '<row>?' - so a title canonical step strips the question frame before the title is judged as a name.
+        const titleRow = (text) => text.replace(/[?!.:\s]+$/, '').replace(/^\s*(?:(?:are\s+you\s+(?:sure|certain)|you\s+are\s+about|you're\s+about)(?:\s+(?:that\s+)?you\s+(?:want|wish))?\s+to|do\s+you\s+(?:really\s+)?(?:want|wish)\s+to|(?:would|do)\s+you\s+like\s+to|really|confirm(?:\s+that\s+you\s+want\s+to)?|permanently)\s+/i, '').trim()
         const firstSentence = dialogDescription.split(/(?<=[.!?])\s+/)[0] ?? ''
-        const texts = [...new Set([dialogName, dialogName.replace(/[?!.:]+$/, ''), firstSentence, firstSentence.replace(/[?!.:]+$/, ''), `${dialogName} ${dialogDescription}`.trim()].filter((t) => t !== ''))]
+        const texts = [...new Set([dialogName, titleRow(dialogName), firstSentence, titleRow(firstSentence), `${titleRow(dialogName)} ${dialogDescription}`.trim()].filter((t) => t !== ''))]
         for (const text of texts) {
           const probe = classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { role: 'button', name: text, ...(target?.origin ? { origin: target.origin } : {}) }, confirmProbe: true })
           if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) if (!classes.includes(cls)) classes.push(cls)
