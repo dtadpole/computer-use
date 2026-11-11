@@ -25,3 +25,12 @@ test("CU-524: a bare 'Add phone number' asks on an account-security page only", 
   for (const name of ['Review recovery options', 'Recovery', 'Phone numbers']) assert.deepEqual(classesOf(name, SEC), [], name)
   assert.ok(classesOf('Change trusted phone number', SEC).includes('credential'), 'older row unchanged')
 })
+
+test("#741 round 2 (cu-researcher 21:10Z): '... for verification' and '(another) email (address)' on an account-security page", () => {
+  for (const name of ['Add phone number for verification', 'Add another email address', 'Add email address', 'Add an email']) {
+    assert.ok(classesOf(name, SEC).includes('credential'), name)
+    assert.deepEqual(classesOf(name, SHOP), [], `free off a security page: ${name}`)
+  }
+  assert.ok(classesOf('Add phone for 2-step verification', SEC).includes('credential'))
+  assert.ok(classesOf('Add phone for 2-step verification', SHOP).includes('credential'), 'the older 2-step row asks anywhere')
+})

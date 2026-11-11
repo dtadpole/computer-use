@@ -2303,9 +2303,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         for (const probe of probes) if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) if (!classes.includes(cls)) classes.push(cls)
       }
     }
-    // CU-524 (High; cu-coordinator 21:06Z): a bare 'Add phone number' on an account-security page (D-109: host or path, never a
+    // CU-524 (High; cu-coordinator 21:06Z; #741 r2 adds '... for verification' and '(another) email (address)'): a bare 'Add phone number' on an account-security page (D-109: host or path, never a
     // title) adds a recovery / sign-in channel - credential; a checkout or contact form's 'Add phone number' stays free.
-    if (grammarEligible && !classes.includes('credential') && /^add\s+(?:a\s+|an\s+|another\s+)?(?:new\s+)?(?:phone|mobile)(?:\s+number)?$/i.test(String(name ?? '').trim())) {
+    if (grammarEligible && !classes.includes('credential') && /^add\s+(?:a\s+|an\s+|another\s+)?(?:new\s+)?(?:(?:phone|mobile)(?:\s+number)?|e-?mail(?:\s+address)?)(?:\s+for\s+(?:verification|sign[-\s]?in|signing\s+in|2-?step(?:\s+verification)?|two[-\s]step(?:\s+verification)?|recovery|security|account\s+recovery))?$/i.test(String(name ?? '').trim())) {
       let securityPage = false
       try {
         const u = new URL(url)
