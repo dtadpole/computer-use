@@ -38,3 +38,12 @@ test('#653 round 2 (cu-researcher 09:11Z; cu-developer-three 09:10Z): trailing n
   assert.equal(sw('MFA', false), sw('Two-factor authentication', false), 'MFA switch turned on')
   for (const name of ['Require MFA', 'MFA settings', 'ACH history', 'RDP guide', 'WPA2 info']) assert.equal(at(name), 'allow', name)
 })
+
+test("#653 round 3 (cu-developer-two 09:14Z): 'Show WPA key' keeps the Wi-Fi password row (credential); turning WPA off is Wi-Fi security", () => {
+  const at = (name) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: 'http://router.example/admin', target: { role: 'button', name } }); return v.decision === 'allow' ? 'allow' : v.class }
+  assert.equal(at('Show WPA key'), at('Show Wi-Fi password'))
+  assert.equal(at('Show WPA key'), 'credential')
+  assert.equal(at('Disable WPA'), at('Disable Wi-Fi security'))
+  assert.equal(at('Open RDP guide'), 'allow', 'cu-researcher 09:15Z: a guide is not the port')
+  assert.notEqual(at('Open RDP port'), 'allow')
+})
