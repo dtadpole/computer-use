@@ -788,9 +788,6 @@ export function grammarClasses(name, role = '') {
   return asWritten
 }
 
-/** The grammar on the name exactly as written - no canonical retries (policy.mjs reads it before its whole-classifier probe). */
-export function grammarClassesAsWritten(name, role = '') { return grammarClassesOf(name, role) }
-
 function grammarClassesOf(name, role = '') {
   const raw = String(name ?? '').trim()
   if (raw === '' || raw.length > 400) return []
