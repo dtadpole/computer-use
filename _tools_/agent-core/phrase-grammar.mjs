@@ -1128,6 +1128,8 @@ function grammarClassesOf(name, role = '') {
   // CU-462 (Medium; cu-coordinator 00:04Z triage + 04:20Z, CU-479's rest): an address book or a mailing list leaves the account -
   // uploads, syncs, imports and exports of contacts, subscribers or an audience, and a shareable link (permission). 'Contacts' and the
   // user's own 'Export my data' stay free.
+  // #742 round 2 (cu-researcher 21:13Z): the two-word object 'address book' reads as one ('Export address book', 'Sync my address book').
+  if (/^\s*(?:upload|sync|import|export|download|share)\s+(?:all\s+|my\s+|your\s+|the\s+)?address\s+books?\s*$/i.test(raw)) return ['permission']
   if (list.length <= 4) {
     const [v, ...r] = list
     const people = ['contact', 'subscriber', 'audience', 'list', 'address', 'addressbook']

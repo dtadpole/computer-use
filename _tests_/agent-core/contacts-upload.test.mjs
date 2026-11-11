@@ -23,3 +23,10 @@ test('CU-462: contact and list uploads / exports and shareable links ask permiss
 test('CU-462 negatives: the contacts view and the user\'s own data export stay free', () => {
   for (const name of ['Contacts', 'Export my data', 'Contact list', 'Download invoice', 'Export report']) assert.equal(at(name), 'allow', name)
 })
+
+test('#742 round 2 (cu-researcher 21:13Z): the two-word address book', () => {
+  const policy2 = createPolicy({ sitePolicy: () => 'allow' })
+  const at = (name) => { const v = policy2.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: 'https://mail.example/contacts', target: { role: 'button', name } }); return v.decision === 'allow' ? [] : (v.classes ?? [v.class]) }
+  for (const name of ['Export address book', 'Sync my address book', 'Upload address book', 'Import address book', 'Share address book']) assert.ok(at(name).includes('permission'), name)
+  for (const name of ['Address book', 'Open address book']) assert.deepEqual(at(name), [], name)
+})
