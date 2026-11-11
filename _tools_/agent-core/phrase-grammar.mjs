@@ -1027,6 +1027,8 @@ function grammarClassesOf(name, role = '') {
     if (v === 'allow' && ((r[0] === 'unknown' && r[1] === 'source' && r.length === 2) || (r[0] === 'app' && r[1] === 'from' && ['anywhere', 'unknown'].includes(r[2]) && (r.length === 3 || (r[2] === 'unknown' && r[3] === 'source' && r.length === 4))))) return ['permission']
   }
   if (/^\s*install\s+now\s*!?\s*$/i.test(raw)) return ['install']
+  // CU-490 (High; cu-coordinator 09:51Z): booking a ride is a purchase anywhere - 'Confirm ride', 'Book ride', 'Request ride'.
+  if (list.length >= 2 && list.length <= 3 && ['confirm', 'book', 'request'].includes(list[0]) && ['ride', 'trip'].includes(list[list.length - 1])) return ['purchase']
   // CU-483 (High; cu-coordinator 05:34Z): brokerage - orders and automatic trading spend money (purchase); margin and options trading
   // widen what the account may do (permission). A bare 'Sell' is page-bound (policy.mjs reads the trading URL).
   if (list.length <= 3) {

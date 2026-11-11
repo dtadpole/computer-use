@@ -1908,6 +1908,17 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       } catch { tradingPage = false }
       if (tradingPage) classes.push('purchase')
     }
+    // CU-490 (High; cu-coordinator 09:51Z): a ride-share or delivery booking commit asks purchase - 'Confirm pickup', 'Confirm <product>'
+    // and 'Request <product>' (one or two words: 'Request UberX', 'Confirm Comfort') on a ride / delivery page, a whole /ride, /rides,
+    // /trip, /book or /request segment of an http(s) URL; 'Confirm ride', 'Book ride' and 'Request ride' ask anywhere (the grammar row).
+    if (grammarEligible && classes.length === 0 && /^\s*(?:confirm|request)\s+\S+(?:\s+\S+)?\s*$/i.test(name) && !/^\s*(?:confirm|request)\s+(?:password|email|e-mail|code|changes?|details|access|refund|a\s+refund|help|support|demo|quote|callback|info|information)\b/i.test(name)) {
+      let ridePage = false
+      try {
+        const u = new URL(String(context?.url ?? ''))
+        if (/^https?:$/.test(u.protocol)) ridePage = /(?:^|\/)(?:ride|rides|trip|trips|book|request)(?=$|[/?#])/i.test(u.pathname)
+      } catch { ridePage = false }
+      if (ridePage) classes.push('purchase')
+    }
     // CU-474 (cu-coordinator 03:05Z): on a password vault's page (read from the URL), auto-lock off asks PERMISSION (doors keep
     // CU-468's physical). An emergency contact asks credential with no page condition (#614 round 2; the grammar row).
     if (grammarEligible && classes.length === 0 && /vault|password|1password|bitwarden|lastpass|dashlane|keeper|proton\.me\/pass/i.test(String(context?.url ?? ''))) {
