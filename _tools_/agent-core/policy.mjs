@@ -2260,7 +2260,14 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const dialogName = pick(target?.dialogName)
       const dialogDescription = pick(target?.dialogDescription)
       const presses = POINTER.has(action.type) || keysOf(action).has('ENTER') || keysOf(action).has('SPACE')
-      if (context.confirmProbe !== true && presses && (dialogName !== '' || dialogDescription !== '') && GENERIC_CONFIRM.test(String(name ?? ''))) {
+      // CU-507 follow-up (cu-coordinator 18:21Z): a 'Continue to <rest>' / 'Proceed to <rest>' control inside a dialog asks the union of
+      // its own rest (judged as a name) and the dialog title's class; the page-level navigation ruling for 'Continue to' stays.
+      const continueTo = /^\s*(?:continue|proceed|go\s+on|move\s+on)\s+to\s+(\S.*)$/i.exec(String(name ?? ''))
+      if (context.confirmProbe !== true && presses && (dialogName !== '' || dialogDescription !== '') && continueTo) {
+        const restProbe = classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { role: 'button', name: continueTo[1].trim(), ...(target?.origin ? { origin: target.origin } : {}) } })
+        if (restProbe.decision === 'confirm') for (const cls of restProbe.classes ?? [restProbe.class]) if (!classes.includes(cls)) classes.push(cls)
+      }
+      if (context.confirmProbe !== true && presses && (dialogName !== '' || dialogDescription !== '') && (GENERIC_CONFIRM.test(String(name ?? '')) || continueTo)) {
         // cu-researcher 16:09Z: a title is a question more often than a row - 'Are you sure you want to <row>?', 'Really <row>?',
         // '<row>?' - so a title canonical step strips the question frame before the title is judged as a name.
         // #702 round 2 (cu-researcher 16:24Z): descriptions lead with 'This will / This action will / You are about to / Doing this will'.
