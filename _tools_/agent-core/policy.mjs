@@ -1906,7 +1906,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const url = String(context?.url ?? '')
       const row = target?.rowContext && typeof target.rowContext === 'object' ? target.rowContext : {}
       const hints = Array.isArray(row.hints) ? row.hints.map((h) => String(h ?? '').slice(0, 40)) : []
-      const pathOf = (() => { try { return new URL(url).pathname } catch { return '' } })()
+      // CU-476 (High; cu-coordinator 03:05Z): the page is the WHOLE web URL - host, path, query and hash ('/#/call', '?page=call', a
+      // 'call.' host) - like Add time / Start recording / Edit DNS; only an http(s) URL is a page (cu-developer-three 03:05Z: an
+      // 'app:com.apple.FaceTime' context is never a dialer page).
+      const pathOf = (() => { try { const u = new URL(url); return /^https?:$/.test(u.protocol) ? `${u.host}${u.pathname}${u.search}${u.hash}` : '' } catch { return '' } })()
       const verbless = target?.inRow === true || /^(?:listitem|row|gridcell)$/i.test(String(target?.role ?? ''))
       if (target?.dialHref === true
         || (/call|voice|phone|dial/i.test(pathOf) && hints.some((h) => /^\s*(?:call|dial|phone|voice\s+call|video\s+call)\b/i.test(h)))
