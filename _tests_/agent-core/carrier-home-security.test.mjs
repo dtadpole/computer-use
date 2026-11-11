@@ -42,4 +42,18 @@ test("#729 round 2 (cu-researcher 19:42Z): number to a new eSIM; CU-491's /secur
   assert.ok(classesOf('Generate guest PIN', SEC).includes('physical'))
   assert.ok(classesOf('Disable recording', SEC).includes('permission'))
   assert.ok(classesOf('Silence alarm', SEC).includes('physical'), 'CU-491 unchanged')
+  assert.deepEqual(classesOf('Generate guest PIN', 'https://clock.example/alarms'), [], "a clock's /alarms page is not home security")
+})
+
+test('#729 round 2 (cu-coordinator 19:51Z): Reset account PIN unions credential; CU-520 one home-security test for CU-491 and CU-519', () => {
+  const got = classesOf('Reset account PIN', CARRIER)
+  assert.ok(got.includes('delete') && got.includes('credential'), String(got))
+  for (const url of ['https://alarm.example/home', 'https://app.ring.example/devices/1', 'https://my.example/cameras/front']) {
+    assert.ok(classesOf('Silence alarm', url).includes('physical'), `CU-491 on ${url}`)
+    assert.ok(classesOf('Generate guest PIN', url).includes('physical'), `CU-519 on ${url}`)
+  }
+  for (const url of ['https://clock.example/alarms', 'https://app.ringcentral.example/meetings/1']) {
+    assert.ok(!classesOf('Snooze alarm', url).includes('physical'), `free on ${url}`)
+    assert.ok(!classesOf('Stop recording', url).includes('physical') && !classesOf('Stop recording', url).includes('permission'), `free on ${url}`)
+  }
 })
