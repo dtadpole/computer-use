@@ -19,12 +19,12 @@ test('CU-500: purchase - confirm a withdrawal, a market order, convert everythin
 })
 
 test('CU-500: credential - a withdrawal address added or allowlisted; permission - the allowlist turned off', () => {
-  for (const name of ['Add withdrawal address', 'Add new withdrawal address', 'Save wallet address', 'Whitelist address', 'Allowlist this address', 'Add to whitelist', 'Add address to withdrawal allowlist']) assert.equal(at(name), 'credential', name)
+  for (const name of ['Add withdrawal address', 'Add new withdrawal address', 'Save wallet address', 'Whitelist address', 'Allowlist this address', 'Add to withdrawal whitelist', 'Add address to withdrawal allowlist']) assert.equal(at(name), 'credential', name)
   for (const name of ['Disable withdrawal whitelist', 'Turn off address allowlist', 'Switch off withdrawal whitelist']) assert.equal(at(name), 'permission', name)
 })
 
 test('CU-500 negatives: deposit address, markets, an ad-blocker whitelist, a bare Convert stay free', () => {
-  for (const name of ['Deposit address', 'Markets', 'Copy deposit address', 'Convert', 'Disable whitelist', 'Leverage info']) assert.equal(at(name), 'allow', name)
+  for (const name of ['Deposit address', 'Markets', 'Copy deposit address', 'Convert', 'Disable whitelist', 'Leverage info', 'Add to allowlist', 'Add to whitelist']) assert.equal(at(name), 'allow', name)
 })
 
 test('CU-500: an older class stays (D-108) - Deactivate withdrawal lock keeps delete; Order book keeps its older order row (named for CU-429)', () => {
