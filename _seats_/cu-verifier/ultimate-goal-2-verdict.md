@@ -219,7 +219,7 @@ transfer and DNS acts: 130734Z-8cf848 ..; closed live on #688, main 3393f9a: 150
 (an acknowledgement prefix drops ruled rows: 134744Z-e4c5f8 ..; closed live on #685, main 11ef6de: 143946Z-5c96e8 ..), CU-414's
 'Give remote control' (ruled High 13:51Z: 135130Z-80cfc7; closed live on #688: 150717Z-85ff41; CU-414's Medium rows ride #527),
 CU-504 (a leading glyph drops ruled rows: 143309Z-e35dcd .., 143416Z-278ff0 ..; closed live on #691, main e3dc594: 151420Z-5d75ba ..), CU-505 (a section label drops ruled rows: 145232Z-1cff68 ..; closed live on #694, main 8e04235: 155035Z-d2a96a ..; 'Bucket actions -
-Empty' ruled free 15:21Z) , CU-506 (a compound clause drops ruled rows: 152406Z-4b6f8a ..; closed live on #699, main cc37338: 163016Z-d9d765 ..), CU-507
+Empty' ruled free 15:21Z), CU-506 (a compound clause drops ruled rows: 152406Z-4b6f8a ..; closed live on #699, main cc37338: 163016Z-d9d765 ..), CU-507
 (an in-page modal's generic Confirm / OK / Yes: 155626Z-e2431e ..; the web unit #702 landed and is live on main 174b26e: 173542Z-f4f891 ..,
 a benign modal stays free; #720 - 'Continue to <row>' inside a dialog asks the union - landed and is live on main a3da144: 185312Z-e2a063 ..;
 the desktop half rides helper 0.2.70), CU-508 (a trailing 'permanently' drops ruled rows: 161454Z-e77fbd ..; closed live on #705, main 35fa22d: 171439Z-962758 ..),
