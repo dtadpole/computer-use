@@ -160,3 +160,9 @@ test('nativeToggleState fold after #602: CU-468 auto-lock / armed switches read 
     assert.equal(dsw(name, false, { inWebArea: true }), 'physical', `${name}: web area untrusted`)
   }
 })
+test('CU-464 switch rule reads the compound spellings too: a native Remote Log-in / Log in switch has the Remote Login direction', () => {
+  for (const name of ['Remote Log-in', 'Remote Log in', 'Remote Login']) {
+    assert.equal(dsw(name, false), 'permission', `${name}: off -> on asks`)
+    assert.equal(dsw(name, true), 'allow', `${name}: on -> off is free`)
+  }
+})
