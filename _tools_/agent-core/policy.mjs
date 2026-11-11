@@ -3,7 +3,7 @@ import { normaliseForPolicy, normaliseText } from './normalise.mjs'
 import { BIP39_ENGLISH } from './bip39-english.mjs'
 import { normalizeKey } from './keys.mjs'
 import { originPattern } from './sites.mjs'
-import { amountClass, canonicalConfirm, grammarClasses, inertLinkAmountClass } from './phrase-grammar.mjs'
+import { amountClass, canonicalForms, grammarClasses, grammarClassesBase, inertLinkAmountClass, synonymForms } from './phrase-grammar.mjs'
 
 /**
  * The action policy (design: action-policy.md, consent-gate.md). `classify` runs in the dispatcher for every action,
@@ -1404,7 +1404,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (!focusesEntry && /^\s*add\s+\d+\s+(?:checked\s+|carry[\s-]?on\s+)?bags?\b/i.test(name)) classes.push('purchase')
       // CU-431: changing or resetting an admin password asks credential; updating, uploading or flashing firmware asks install.
       if (!focusesEntry && /^\s*(?:change|reset|set)\s+(?:the\s+)?(?:(?:router|device|wi-?fi|nas)\s+(?:admin(?:istrator)?\s+)?|admin(?:istrator)?\s+)password\b/i.test(name)) classes.push('credential')
-      if (!focusesEntry && /^\s*(?:update|upload|flash|install|upgrade)\s+(?:the\s+)?(?:router\s+|new\s+)?firmware\b/i.test(name)) classes.push('install')
+      // CU-481 residual (cu-coordinator 06:49Z, b): change / edit / modify the firmware asks install like 'Update firmware'.
+      if (!focusesEntry && /^\s*(?:update|upload|flash|install|upgrade|change|edit|modify)\s+(?:the\s+)?(?:router\s+|new\s+)?firmware\b/i.test(name)) classes.push('install')
       // CU-431 switches (cu-coordinator 17:27Z, CU-418's switch rule): a router switch named Remote management / access, SSH,
       // Telnet, UPnP, DMZ, WAN access or Port forwarding turned ON asks permission and OFF is free - the direction is trusted
       // only from a native read (nativeToggleState); an ARIA, mixed or missing state (and a desktop web area without it) asks
@@ -1850,7 +1851,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     }
     // #580 round 2 (cu-coordinator 21:52Z): a bare 'Edit DNS' on a registrar page changes where the domain points (permission,
     // CU-446); the page is read from the URL.
-    if (grammarEligible && classes.length === 0 && /^\s*(?:edit|change|manage)\s+dns\s*$/i.test(name) && /registrar|domain|dns/i.test(String(context?.url ?? ''))) classes.push('permission')
+    // CU-481 residual (06:49Z, c): 'Update DNS', '... DNS records' and (#640 round 2) '... DNS settings' join the row on its registrar
+    // URL (off it, the named limit).
+    if (grammarEligible && classes.length === 0 && /^\s*(?:edit|change|manage|update)\s+dns(?:\s+(?:records?|settings))?\s*$/i.test(name) && /registrar|domain|dns/i.test(String(context?.url ?? ''))) classes.push('permission')
     // CU-456 (cu-coordinator 22:56Z): a mail-protection switch turned OFF asks permission; 'Less secure app access' turned ON asks
     // credential; the safe directions are free on a native read; an unread state asks both ways.
     if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))) {
@@ -1893,6 +1896,23 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       && /^\s*(?:auto-?lock|armed|alarm|alarm\s+system|alarm\s+armed|system\s+armed)\s*$/i.test(name)) {
       if (nativeToggleState(target) !== false) classes.push('physical')
     }
+    // CU-483 (cu-coordinator 05:34Z): a bare 'Sell' / 'Sell all' on a trading page asks purchase - the whole http(s) URL, as #613 reads
+    // it (a whole /trade, /order, /brokerage or /portfolio segment in path, query or hash - '/trade-in', '/trademark' do not count). Off a
+    // trading URL a bare 'Sell' stays
+    // free (marketplace tabs; named limit).
+    if (grammarEligible && classes.length === 0 && /^\s*sell(?:\s+all)?\s*$/i.test(name)) {
+      let tradingPage = false
+      try {
+        const u = new URL(String(context?.url ?? ''))
+        if (/^https?:$/.test(u.protocol)) tradingPage = /(?:^|[/?#&=])(?:trade|trades|trading|order|orders|brokerage|portfolio)(?=$|[/?#&])/i.test(`${u.pathname}${u.search}${u.hash}`)
+      } catch { tradingPage = false }
+      if (tradingPage) classes.push('purchase')
+    }
+    // CU-474 (cu-coordinator 03:05Z): on a password vault's page (read from the URL), auto-lock off asks PERMISSION (doors keep
+    // CU-468's physical). An emergency contact asks credential with no page condition (#614 round 2; the grammar row).
+    if (grammarEligible && classes.length === 0 && /vault|password|1password|bitwarden|lastpass|dashlane|keeper|proton\.me\/pass/i.test(String(context?.url ?? ''))) {
+      if (/^\s*(?:turn\s+off|disable|switch\s+off)\s+auto-?lock\s*$/i.test(name)) classes.push('permission')
+    }
     // Consent phrase grammar (_designs_/consent-phrase-grammar 0.3.1; cu-coordinator 16:46Z) - the ONE additive hook: when no
     // older rule asked on a pressed named control, the grammar's verb-class x object-class structure may add classes. It
     // never removes or changes an older rule's class (15:08Z, D-063); its free guards stop only its own asks (F2).
@@ -1906,11 +1926,17 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const url = String(context?.url ?? '')
       const row = target?.rowContext && typeof target.rowContext === 'object' ? target.rowContext : {}
       const hints = Array.isArray(row.hints) ? row.hints.map((h) => String(h ?? '').slice(0, 40)) : []
-      const pathOf = (() => { try { return new URL(url).pathname } catch { return '' } })()
+      // CU-476 (High; cu-coordinator 03:05Z): the page is the WHOLE web URL - host, path, query and hash ('/#/call', '?page=call', a
+      // 'call.' host) - like Add time / Start recording / Edit DNS; only an http(s) URL is a page (cu-developer-three 03:05Z: an
+      // 'app:com.apple.FaceTime' context is never a dialer page).
+      // The path keeps its substring test (as before); the added parts (host, query, hash) need a word edge, so 'dialogflow.example'
+      // or '?callback=' is not a dialer page.
+      const page = (() => { try { const u = new URL(url); return /^https?:$/.test(u.protocol) ? { path: u.pathname, extra: `${u.host} ${u.search} ${u.hash}` } : { path: '', extra: '' } } catch { return { path: '', extra: '' } } })()
+      const onPage = (words) => new RegExp(words, 'i').test(page.path) || new RegExp(`(?:^|[^a-z])(?:${words})(?:s|er|ing)?(?:[^a-z]|$)`, 'i').test(page.extra)
       const verbless = target?.inRow === true || /^(?:listitem|row|gridcell)$/i.test(String(target?.role ?? ''))
       if (target?.dialHref === true
-        || (/call|voice|phone|dial/i.test(pathOf) && hints.some((h) => /^\s*(?:call|dial|phone|voice\s+call|video\s+call)\b/i.test(h)))
-        || (verbless && /call|dial/i.test(pathOf))) classes.push('submit')
+        || (onPage('call|voice|phone|dial') && hints.some((h) => /^\s*(?:call|dial|phone|voice\s+call|video\s+call)\b/i.test(h)))
+        || (verbless && onPage('call|dial'))) classes.push('submit')
     }
     // #575 round 2 (cu-coordinator 21:26Z): a native checkbox or switch already ON is being turned OFF - the grammar reads the
     // name as an act ('Forward calls') and must not ask for switching it off. The direction rules above decide such switches.
@@ -1925,11 +1951,31 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // asked yet (adds only); the canonical form may still take the switch-verb probe below.
     // #600 round 3: the full strip (ellipsis, '!', '(recommended)', leading icons) reaches the older exact rows too ('Join Prime…'). A
     // Quick Actions menu item is judged by its exact built-in name (CU-382 - 'More…'), so it never takes the probe.
-    const confirmForm = context.confirmProbe === true || target?.quickActions === true ? '' : canonicalConfirm(name)
-    if (grammarEligible && classes.length === 0 && !nativeOn && confirmForm !== '' && confirmForm !== String(name ?? '').trim()) {
+    // #609 round 2: each canonical form in turn (the unwrapped name, then its first sentence), stopping at the first that asks.
+    // #617 (cu-researcher 03:58Z): a money amount in the name AS WRITTEN keeps purchase - 'Start e-visit ($25 copay)' must not lose
+    // its copay to the canonical form 'Start e-visit'. Only the amount row goes first; every other row keeps the probe's order (the
+    // firstLine form of a card still decides its class).
+    if (grammarEligible && classes.length === 0 && !nativeOn && context.confirmProbe !== true && amountClass(name, target?.role)) classes.push('purchase')
+    // CU-473 pair (cu-coordinator 02:35Z): the driver's target.firstLine (the first rendered line of a multi-line name, which
+    // Chrome's accessible name flattens to spaces) is one more form, tried last - additive.
+    const firstLine = typeof target?.firstLine === 'string' ? target.firstLine.trim() : ''
+    const confirmForms = context.confirmProbe === true || target?.quickActions === true ? []
+      : [...new Set([...canonicalForms(name), ...(firstLine !== '' && firstLine !== String(name ?? '').trim() ? [firstLine, ...canonicalForms(firstLine)] : [])])]
+    for (const confirmForm of confirmForms) {
+      if (!(grammarEligible && classes.length === 0 && !nativeOn)) break
       const probe = classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { ...target, name: confirmForm }, confirmProbe: true })
       if (probe.decision === 'block' || probe.decision === 'handoff') return probe
       if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) classes.push(cls)
+    }
+    // CU-481 (cu-coordinator 04:51Z): the verb-synonym forms go LAST - only when nothing above asked and the grammar on the name and its
+    // own canonical forms has no row, so a synonym never outranks a row the name already matches.
+    if (grammarEligible && classes.length === 0 && !nativeOn && context.confirmProbe !== true && target?.quickActions !== true && grammarClassesBase(name, target?.role).length === 0) {
+      for (const synonymForm of synonymForms(name)) {
+        if (classes.length > 0) break
+        const probe = classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { ...target, name: synonymForm }, confirmProbe: true })
+        if (probe.decision === 'block' || probe.decision === 'handoff') return probe
+        if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) classes.push(cls)
+      }
     }
     const splitMatch = /^\s*(?:turn|switch|flip|toggle)\s+(?!(?:on|off)\b)(.+?)\s+(on|off)\s*$/i.exec(name)
     const leadMatch = /^\s*(?:switch|flip|toggle)\s+(on|off)\s+(.+?)\s*$/i.exec(name)

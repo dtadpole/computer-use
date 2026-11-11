@@ -313,7 +313,8 @@ function childProtectionOff(list) {
   if (verb === 'allow' && core.length <= 4 && (core[0] === 'purchase' || core.includes('buying')) && (core.includes('approval') || core.includes('buying'))) return true
   if (verb === 'extend' && core.length <= 2 && core[core.length - 1] === 'time' && (core.length === 1 || core[0] === 'screen')) return true
   if (verb === 'extend' && core.length === 1 && core[0] === 'screen') return true
-  if (verb === 'give' && rest.includes('<n>') && core.length <= 2 && ['minute', 'hour'].includes(core[core.length - 1]) && (core.includes('more') || core.length === 1)) return true
+  // CU-481 residual (06:49Z, d): 'Grant <n> more minutes' joins the CU-440 'Give <n> more minutes' row.
+  if (['give', 'grant'].includes(verb) && rest.includes('<n>') && core.length <= 2 && ['minute', 'hour'].includes(core[core.length - 1]) && (core.includes('more') || core.length === 1)) return true
   if (verb === 'add' && core[core.length - 1] === 'time' && core.length <= 3 && (core.includes('more') || core.includes('screen') || core.includes('<n>'))) return true
   return false
 }
@@ -602,6 +603,75 @@ function remoteAccess(list) {
   const rest = list.slice(two ? 2 : 1).filter((t) => !FILLER.has(t))
   return ['turn on', 'enable', 'allow', 'start', 'activate'].includes(verb) && rest.length <= 4 && REMOTE_ACCESS.some((seq) => endsWithSeq(rest, seq))
 }
+function portalClass(list) {
+  if (list.length > 7) return null
+  const [verb, ...rest] = list
+  // #617 round 2 (cu-researcher 03:38Z): 'Give someone access to my account', 'Give access to my chart', 'Join research program',
+  // 'Schedule follow-up'.
+  if (verb === 'give' && rest.includes('access') && rest.length <= 5 && ['account', 'chart', 'record', 'portal'].includes(rest[rest.length - 1])) return 'credential'
+  // 'Sign waiver' keeps the grammar's existing permission on main (cu-developer-three 04:15Z) - only the ruled authorization / release.
+  if (verb === 'sign' && rest.length <= 3 && ['authorization', 'release'].includes(rest[rest.length - 1])) return 'submit'
+  if (['schedule', 'request'].includes(verb) && rest.length <= 3 && (['appointment', 'visit'].includes(rest[rest.length - 1]) || (rest.includes('follow') && rest[rest.length - 1] === 'up'))) return 'submit'
+  if (verb === 'start' && rest.length <= 3 && rest.includes('visit') && (rest.includes('e') || rest.includes('video') || rest.includes('virtual'))) return 'submit'
+  if (verb === 'opt' && rest[0] === 'in' && rest.length <= 4 && ['research', 'study', 'trial'].includes(rest[rest.length - 1])) return 'permission'
+  // cu-coordinator 03:51Z: checking in for a visit is submit ('Check in', 'eCheck-in', 'Check in for appointment', 'Check in online').
+  if ((verb === 'check' || verb === 'echeck') && rest[0] === 'in' && rest.length <= 3 && (rest.length === 1 || ['appointment', 'visit', 'online'].includes(rest[rest.length - 1]))) return 'submit'
+  if (['join', 'enroll', 'enrol'].includes(verb) && rest.length <= 3 && (rest.includes('research') || rest.includes('study') || rest.includes('trial'))) return 'permission'
+  return null
+}
+function vaultClass(list) {
+  if (list.length > 7) return null
+  const two = SWITCH_VERBS.has(list[0]) && (list[1] === 'off' || list[1] === 'on')
+  const verb = two ? `turn ${list[1]}` : list[0]
+  const rest = list.slice(two ? 2 : 1)
+  // #614 round 2 (cu-researcher 03:18Z): plaintext for unencrypted; reprompt without 'master password'; a timeout to never without
+  // 'vault' (not a screen timeout); vault auto-lock off by word order; an emergency contact with no page condition.
+  if (['download', 'export', 'save'].includes(verb) && (rest.includes('unencrypted') || rest.includes('plaintext')) && rest.length <= 4) return 'credential'
+  if (verb === 'add' && rest.length <= 3 && rest.includes('emergency') && ['contact', 'access'].includes(rest[rest.length - 1])) return 'credential'
+  if (['turn off', 'disable'].includes(verb) && rest.includes('reprompt') && rest.length <= 4) return 'permission'
+  if (verb === 'never' && rest[0] === 'lock' && rest.length <= 3) return 'permission'
+  if (verb === 'set' && rest.includes('timeout') && rest[rest.length - 1] === 'never' && rest.length <= 5 && !rest.includes('screen') && !rest.includes('display')) return 'permission'
+  if (['turn off', 'disable'].includes(verb) && rest[0] === 'vault' && rest.includes('lock') && rest.length <= 4) return 'permission'
+  return null
+}
+function merchantClass(list) {
+  if (list.length > 8) return null
+  const [verb, ...rest] = list
+  // #614 round 2: 'instant payout' anywhere in a short name; accept all (open) disputes / chargebacks; set all / every price to an
+  // amount; apply a discount to all (products); risk rules too.
+  if (list.length <= 5 && list.some((t, i) => t === 'instant' && list[i + 1] === 'payout')) return 'purchase'
+  if (verb === 'accept' && rest[0] === 'all' && rest.length <= 3 && ['dispute', 'chargeback'].includes(rest[rest.length - 1])) return 'purchase'
+  if (verb === 'set' && ['all', 'every'].includes(rest[0]) && rest[1] === 'price' && rest[2] === 'to' && rest.length <= 4) return 'purchase'
+  if (verb === 'apply' && rest.includes('discount') && rest.includes('all') && rest.length <= 6) return 'purchase'
+  if (verb === 'issue' && rest[0] === 'refund' && rest[rest.length - 1] === 'all' && rest.length <= 4) return 'purchase'
+  if (['disable', 'remove', 'delete'].includes(verb) && rest.length <= 3 && ['fraud', 'risk', 'radar'].includes(rest[0]) && ['filter', 'rule', 'protection', 'check'].includes(rest[rest.length - 1])) return 'permission'
+  if (verb === 'turn' && rest[0] === 'off' && rest.length <= 3 && (rest.includes('radar') || rest.includes('fraud')) && ['rule', 'filter', 'protection'].includes(rest[rest.length - 1])) return 'permission'
+  if (verb === 'close' && rest.length === 1 && ['store', 'shop'].includes(rest[0])) return 'delete'
+  // #614 round 2 (cu-coordinator 03:19Z): pausing the store and changing the payout schedule (permission).
+  if (verb === 'pause' && rest.length === 1 && ['store', 'shop'].includes(rest[0])) return 'permission'
+  if (['change', 'edit', 'update', 'set'].includes(verb) && rest.length <= 3 && rest.includes('payout') && rest[rest.length - 1] === 'schedule') return 'permission'
+  return null
+}
+const TENANT_PROTECTIONS = ['conditional', 'dlp', 'security', 'mfa', 'retention', 'compliance', 'audit', 'sign', 'session', 'data']
+function tenantClass(list) {
+  if (list.length > 7) return null
+  const two = SWITCH_VERBS.has(list[0]) && (list[1] === 'off' || list[1] === 'on')
+  const verb = two ? `turn ${list[1]}` : list[0]
+  const rest = list.slice(two ? 2 : 1)
+  const last = rest[rest.length - 1]
+  if (['disable', 'turn off', 'deactivate', 'delete', 'remove'].includes(verb) && rest.length <= 4 && ['policy', 'default'].includes(last) && TENANT_PROTECTIONS.includes(rest[0])) return 'permission'
+  // #606 round 2: 'Turn off conditional access' (no 'policy'), 'Exclude from conditional access', 'Allow basic authentication',
+  // 'Make Global Administrator'.
+  if (['disable', 'turn off', 'deactivate'].includes(verb) && rest.length === 2 && rest[0] === 'conditional' && rest[1] === 'access') return 'permission'
+  if (verb === 'exclude' && rest[0] === 'from' && rest.length <= 4 && (rest.includes('conditional') || rest.includes('mfa') || rest.includes('policy'))) return 'permission'
+  if (verb === 'make' && rest.length <= 3 && rest.includes('global') && (rest.includes('administrator') || rest.includes('admin'))) return 'permission'
+  if (verb === 'exclude' && ['user', 'group', 'account', 'member'].includes(rest[0]) && rest.includes('from') && rest.length <= 5) return 'permission'
+  if (verb === 'allow' && (rest[0] === 'legacy' || rest[0] === 'basic') && ['authentication', 'auth', 'protocol'].includes(rest[1]) && rest.length === 2) return 'permission'
+  if (verb === 'assign' && rest.length <= 3 && (rest.includes('administrator') || rest.includes('admin'))) return 'permission'
+  if (verb === 'add' && rest.length === 2 && rest[0] === 'role' && rest[1] === 'assignment') return 'permission'
+  if (verb === 'reset' && rest.length <= 2 && ['mfa', '2fa', 'authenticator', 'authentication', 'security'].includes(rest[0])) return 'credential'
+  return null
+}
 function simSwap(list) {
   if (list.length > 7) return false
   const [verb, ...rest] = list
@@ -678,17 +748,91 @@ function payDiversion(list) {
 // #600 round 3 (cu-researcher 01:33Z): a leading icon alone, and a trailing '!' or '(recommended)' too.
 const LEADING_ICONS = /^\s*(?:[\p{Extended_Pictographic}\uFE0F]\s*)+/u
 const CONFIRM_PREFIX = /^\s*(?:(?:yes(?:\s+please)?|ok|okay|sure|confirm|continue|got\s+it|please)\s*[,:!.\u2013\u2014-]+\s*)+/iu
+// CU-482 (proposed High; cu-researcher 04:58Z): a call-to-action lead-in before a ruled row - 'please', 'click (here) to', 'tap to',
+// 'let's', 'go ahead and', 'I want to'.
+// cu-researcher 05:02Z: trailing qualifiers too - 'anyway', 'instantly', 'on this device', 'for me', 'here', 'too', 'again'.
+// #630 round 2: a trailing ', please' too ('Add time, please').
+const TRAILING_QUALIFIER = /(?:\s*,\s*please|\s+(?:anyway|anyways|instantly|immediately|on\s+this\s+(?:device|computer|browser|phone)|for\s+me|here|too|again))+\s*[.!]?\s*$/i
+// #630 round 2 (cu-researcher 05:22Z): "I'd like to" (the contraction), 'let us', 'kindly'.
+const CTA_LEAD_IN = /^\s*(?:please\s+|kindly\s+|(?:click|tap|press|select)\s+(?:here\s+)?to\s+|let(?:'|\u2019)?s\s+|let\s+us\s+|go\s+ahead\s+and\s+|i(?:\s+want|\s+would\s+like|(?:'|\u2019)d\s+like)\s+to\s+)+/iu
 const TRAILING_WRAP = /(?:\s*(?:right\s+now|now|please|\.{2,}|\u2026|!+|\((?:recommended|suggested|best\s+value)\)|[\u2192\u203a\u00bb>\u2794\u27f6\u279c\u27a1]|\p{Extended_Pictographic}|\uFE0F))+\s*$/iu
+// CU-473 (cu-researcher 02:15Z): a second line, a badge or a count after a ruled name - the first line of a multi-line name; a
+// sentence-case name followed by a capitalised second sentence ('Change direct deposit Takes effect immediately'); a trailing badge
+// ('New', 'Beta', 'Preview', 'Updated'); a trailing parenthetical ('(opens in a new window)', '(3)').
+const TRAILING_BADGE = /(?:\s+(?:new|beta|preview|updated|hot)!?)+\s*$/i
+const TRAILING_PAREN = /(?:\s*\([^()]{1,40}\))+\s*$/
+// #609 round 4 (cu-coordinator 02:35Z): an added leading name part - 'Action: ', 'Confirm action: ', 'Step 2: ', 'Step 2 of 3: '.
+const LEADING_PART = /^\s*(?:(?:confirm\s+)?action|step\s+\d+(?:\s+of\s+\d+)?)\s*[:\u2013\u2014-]\s*/i
+// #609 round 3 (cu-researcher 02:30Z): a trailing key hint ('Send \u2318\u23ce', 'Save \u2318S', 'Submit Ctrl+Enter').
+const TRAILING_KEYS = /(?:\s+(?:[\u2318\u2325\u21e7\u2303]+\s*[A-Za-z0-9\u23ce\u21a9\u232b]?|[\u23ce\u21a9]|(?:ctrl|cmd|command|alt|option|shift)\s*\+\s*(?:enter|return|[a-z0-9])))+\s*$/i
+function firstSentence(text) {
+  const words = text.split(/\s+/)
+  if (words.length < 3 || !/^[A-Z]/.test(words[0])) return text
+  for (let i = 1; i < words.length; i += 1) {
+    if (/^[A-Z][a-z]/.test(words[i])) return i >= 2 && words.slice(1, i).every((w) => !/^[A-Z]/.test(w)) ? words.slice(0, i).join(' ') : text
+  }
+  return text
+}
 export function canonicalConfirm(name) {
-  const text = String(name ?? '')
-  return text.replace(LEADING_ICONS, '').replace(CONFIRM_PREFIX, '').replace(TRAILING_WRAP, '').trim()
+  const lines = String(name ?? '').split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean)
+  const text = lines[0] ?? ''
+  return text.replace(LEADING_ICONS, '').replace(LEADING_PART, '').replace(CONFIRM_PREFIX, '').replace(CTA_LEAD_IN, '').replace(TRAILING_QUALIFIER, '').replace(TRAILING_KEYS, '').replace(TRAILING_WRAP, '').replace(TRAILING_PAREN, '').replace(TRAILING_BADGE, '').replace(TRAILING_WRAP, '').trim()
+}
+/** #609 round 2 (cu-researcher 02:24Z): the canonical forms to try, in order - the unwrapped name, then (only if that asks nothing)
+ * its first sentence. Additive: a Title-Case object ('Turn off Safe Browsing') is never lost to the sentence cut. */
+// CU-478 (High; cu-coordinator 03:51Z): a determiner after the verb breaks the older exact-phrase rows ('Update my firmware', 'Accept
+// my counteroffer', 'Turn on my location sharing', 'Open the ports') - one more form drops the / my / your / our / this / these / a / an.
+const DETERMINER_WORDS = /\b(?:the|my|your|our|this|these|those|a|an)\s+/gi
+function withoutDeterminers(text) {
+  const words = text.split(/\s+/)
+  if (words.length < 2) return text
+  // Keep the first word (the verb) as written; drop determiners after it.
+  return `${words[0]} ${words.slice(1).join(' ').replace(DETERMINER_WORDS, '')}`.replace(/\s+/g, ' ').trim()
+}
+// CU-481 (High; cu-coordinator 04:51Z): a leading-verb synonym of a ruled row - modify -> change, display / reveal -> show,
+// give -> grant, begin -> start, ask for -> request, create -> add - one more form, like CU-455 / CU-463, adds only.
+// cu-coordinator 06:34Z (CU-481 follow-up): update / edit -> change too, tried last like the others - never 'Update all / now' (the
+// App Store's own verdict decides those, CU-254).
+const VERB_SYNONYMS = [[/^(\s*)modify\b/i, '$1change'], [/^(\s*)(?:update|edit)\b(?!\s+(?:all|now|available)\b)/i, '$1change'], [/^(\s*)(?:display|reveal)\b/i, '$1show'], [/^(\s*)give\b/i, '$1grant'],
+  [/^(\s*)begin\b/i, '$1start'], [/^(\s*)ask\s+for\b/i, '$1request'],
+  // #627 round 2 (cu-researcher 05:08Z): creating an account is not adding one ('Create account' stays free).
+  [/^(\s*)create\b(?!\s+(?:an?\s+|new\s+|your\s+|my\s+)?accounts?\b)/i, '$1add']]
+function withVerbSynonym(text) {
+  for (const [pattern, replacement] of VERB_SYNONYMS) if (pattern.test(text)) return text.replace(pattern, replacement)
+  return text
+}
+export function canonicalForms(name) {
+  const unwrapped = canonicalConfirm(name)
+  const cut = firstSentence(unwrapped)
+  const bare = withoutDeterminers(unwrapped)
+  return [...new Set([unwrapped, cut, bare, withoutDeterminers(cut)])].filter((form) => form !== '' && form !== String(name ?? '').trim())
+}
+/** CU-481: the verb-synonym forms of a name (and of its canonical forms) - tried LAST, only when the name and its own canonical forms
+ * get no class, so a synonym never outranks a row the name already matches ('Create service account key' stays credential). */
+export function synonymForms(name) {
+  const own = String(name ?? '').trim()
+  return [...new Set([own, ...canonicalForms(name)].map(withVerbSynonym))].filter((form) => form !== '' && form !== own && !canonicalForms(name).includes(form))
+}
+
+/** The grammar on the name and its own canonical forms - no verb synonyms (policy.mjs reads it before probing synonym forms). */
+export function grammarClassesBase(name, role = '') {
+  const asWritten = grammarClassesOf(name, role)
+  if (asWritten.length > 0) return asWritten
+  for (const form of canonicalForms(name)) {
+    const classes = grammarClassesOf(form, role)
+    if (classes.length > 0) return classes
+  }
+  return asWritten
 }
 
 export function grammarClasses(name, role = '') {
-  const asWritten = grammarClassesOf(name, role)
-  if (asWritten.length > 0) return asWritten
-  const canonical = canonicalConfirm(name)
-  return canonical !== '' && canonical !== String(name ?? '').trim() ? grammarClassesOf(canonical, role) : asWritten
+  const base = grammarClassesBase(name, role)
+  if (base.length > 0) return base
+  for (const form of synonymForms(name)) {
+    const classes = grammarClassesOf(form, role)
+    if (classes.length > 0) return classes
+  }
+  return base
 }
 
 function grammarClassesOf(name, role = '') {
@@ -790,6 +934,37 @@ function grammarClassesOf(name, role = '') {
   // CU-470 (High; cu-coordinator 01:19Z): the SIM-swap path - porting out, eSIM QR codes and conversions, a new SIM, moving the
   // number to a new device (credential, CU-443's family).
   if (simSwap(list)) return ['credential']
+  // CU-471 (High; cu-coordinator 01:19Z): removing a tenant's admin protections (permission); resetting a user's MFA (credential).
+  const tenant = tenantClass(list)
+  if (tenant) return [tenant]
+  // CU-474 / CU-475 (High; cu-coordinator 03:05Z): a password vault's protections and a merchant console's bulk money acts.
+  const vault = vaultClass(list)
+  if (vault) return [vault]
+  const merchant = merchantClass(list)
+  if (merchant) return [merchant]
+  // CU-477 (High; cu-coordinator 03:36Z): a patient portal - account access to another person (credential), signing an authorization
+  // or release and booking care (submit), research opt-in (permission); a copay-charging e-visit asks purchase through the amount row.
+  const portal = portalClass(list)
+  if (portal) return [portal]
+  // CU-479 (High rows; cu-coordinator 04:20Z): a send to people who opted out or to the whole list - 'Resubscribe all' and a bare
+  // 'Blast' (submit). Imports and exports belong to CU-462.
+  // #633 round 2 (cu-researcher 07:05Z): everyone / entire list / contacts, and 'Blast it / now'. The hyphenated 'Re-subscribe all'
+  // keeps the older subscribe -> purchase (it asks either way; named).
+  if (list[0] === 'resubscribe' && list.length <= 3 && ['all', 'everyone', 'entire', 'contact', 'list', 'subscriber'].includes(list[1])) return ['submit']
+  // CU-483 (High; cu-coordinator 05:34Z): brokerage - orders and automatic trading spend money (purchase); margin and options trading
+  // widen what the account may do (permission). A bare 'Sell' is page-bound (policy.mjs reads the trading URL).
+  if (list.length <= 3) {
+    const [v, ...r] = list
+    if (v === 'sell' && r[0] === 'short' && r.length <= 2) return ['purchase']
+    if (v === 'short' && r[0] === 'sell' && r.length <= 2) return ['purchase']
+    if (v === 'liquidate' && (r.length === 0 || (r.length <= 2 && ['all', 'position', 'portfolio', 'everything'].includes(r[r.length - 1])))) return ['purchase']
+    if (v === 'exercise' && r.length <= 2 && ['option', 'contract'].includes(r[r.length - 1])) return ['purchase']
+    if (v === 'auto' && r[0] === 'invest' && r.length === 1) return ['purchase']
+    if (v === 'rebalance' && r.length <= 2 && (r.length === 0 || r[r.length - 1] === 'portfolio')) return ['purchase']
+    if (['enable', 'activate'].includes(v) && r.length <= 2 && (['margin', 'leverage'].includes(r[0]) || (r[0] === 'option' && (r.length === 1 || r[1] === 'trading')))) return ['permission']
+    if (v === 'turn' && r[0] === 'on' && r.length <= 3 && (['margin', 'leverage'].includes(r[1]) || (r[1] === 'option' && (r.length === 2 || r[2] === 'trading')))) return ['permission']
+  }
+  if (/^\s*blast(?:\s+(?:it|now))?\s*!?\s*$/i.test(raw)) return ['submit']
   // F2 guard (cu-coordinator 20:28Z): declining, denying or rejecting a request answers no - the grammar's own over-ask since
   // #554 ('Decline request'); older asks ('Decline invitation', CU-422's 'Decline offer') are untouched (the hook never sees them).
   if (['decline', 'deny', 'reject'].includes(list[0]) && list.slice(1).filter((t) => !FILLER.has(t)).every((t) => t === 'request' || t === 'this' || t === 'all')

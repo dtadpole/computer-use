@@ -668,10 +668,19 @@ export function describeElement(el) {
     const trimmed = String(raw).trim()
     return trimmed === '' || trimmed.startsWith('#') || /^javascript:/i.test(trimmed)
   })()
+  // CU-473: Chrome's accessible name flattens a second line (<br>, block children, a <small> note) into spaces, so
+  // 'Change Direct Deposit' over 'Takes Effect Immediately' reaches policy as one name nothing can split. innerText keeps
+  // the rendered line breaks: firstLine is the first non-empty line when there are two or more, at most 80 characters -
+  // a string outside the fingerprint, never recorded.
+  const firstLine = (() => {
+    const text = typeof el.innerText === 'string' ? el.innerText : ''
+    const lines = text.split(/[\r\n]+/).map((line) => line.replace(/\s+/g, ' ').trim()).filter(Boolean)
+    return lines.length >= 2 ? lines[0].slice(0, 80) : null
+  })()
   return { tag, inputType: type, isPassword: type === 'password', autocomplete: autocomplete || null, href: link, origin, editable, caption: editable ? null : caption, entryCaption: editable ? caption : null,
     ...(frameUrl ? { frameUrl } : {}), ...(terminal ? { terminal } : {}), ...(notebookCell ? { notebookCell } : {}), ...(notebookSurface ? { notebookSurface } : {}), ...(codeSurface ? { codeSurface } : {}),
     ...(checked !== null ? { checked } : {}), ...(pressed !== null ? { pressed } : {}),
-    ...(formContext !== null ? { formContext } : {}), ...(inertLink ? { inertLink: true } : {}), ...(inRow ? { inRow: true } : {}), ...(dialHref === true ? { dialHref: true } : {}), ...(rowContext !== null ? { rowContext } : {}) }
+    ...(formContext !== null ? { formContext } : {}), ...(firstLine !== null ? { firstLine } : {}), ...(inertLink ? { inertLink: true } : {}), ...(inRow ? { inRow: true } : {}), ...(dialHref === true ? { dialHref: true } : {}), ...(rowContext !== null ? { rowContext } : {}) }
 }
 
 /**
