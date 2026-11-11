@@ -27,3 +27,14 @@ test('CU-471: tenant protections off, exclusions, legacy auth and admin assignme
 test('CU-471 negatives: views and enabling a policy stay free', () => {
   for (const name of ['Enable policy', 'Conditional access', 'Policies', 'Users', 'Roles', 'Reset filters', 'Disable notifications']) assert.equal(click(name), 'allow', name)
 })
+
+test('#606 round 2: the five held-out escapes ask permission; older over-asks named for CU-429', () => {
+  for (const name of ['Turn off conditional access', 'Exclude from conditional access', 'Disable data loss prevention policy', 'Allow basic authentication', 'Make Global Administrator']) {
+    assert.deepEqual(grammarClasses(name), ['permission'], name)
+    assert.equal(click(name), 'permission', `hook: ${name}`)
+  }
+  // Named (older rules, identical on main; CU-429): 'Security policies' and 'Turn on security defaults' (older security word),
+  // 'Require multi-factor authentication' (older 2FA rule).
+  for (const name of ['Security policies', 'Turn on security defaults', 'Require multi-factor authentication']) assert.notEqual(click(name), 'allow', name)
+  assert.equal(click('Require MFA'), 'allow')
+})

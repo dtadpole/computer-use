@@ -591,7 +591,7 @@ function remoteAccess(list) {
   const rest = list.slice(two ? 2 : 1).filter((t) => !FILLER.has(t))
   return ['turn on', 'enable', 'allow', 'start', 'activate'].includes(verb) && rest.length <= 4 && REMOTE_ACCESS.some((seq) => endsWithSeq(rest, seq))
 }
-const TENANT_PROTECTIONS = ['conditional', 'dlp', 'security', 'mfa', 'retention', 'compliance', 'audit', 'sign', 'session']
+const TENANT_PROTECTIONS = ['conditional', 'dlp', 'security', 'mfa', 'retention', 'compliance', 'audit', 'sign', 'session', 'data']
 function tenantClass(list) {
   if (list.length > 7) return null
   const two = SWITCH_VERBS.has(list[0]) && (list[1] === 'off' || list[1] === 'on')
@@ -599,8 +599,13 @@ function tenantClass(list) {
   const rest = list.slice(two ? 2 : 1)
   const last = rest[rest.length - 1]
   if (['disable', 'turn off', 'deactivate', 'delete', 'remove'].includes(verb) && rest.length <= 4 && ['policy', 'default'].includes(last) && TENANT_PROTECTIONS.includes(rest[0])) return 'permission'
+  // #606 round 2: 'Turn off conditional access' (no 'policy'), 'Exclude from conditional access', 'Allow basic authentication',
+  // 'Make Global Administrator'.
+  if (['disable', 'turn off', 'deactivate'].includes(verb) && rest.length === 2 && rest[0] === 'conditional' && rest[1] === 'access') return 'permission'
+  if (verb === 'exclude' && rest[0] === 'from' && rest.length <= 4 && (rest.includes('conditional') || rest.includes('mfa') || rest.includes('policy'))) return 'permission'
+  if (verb === 'make' && rest.length <= 3 && rest.includes('global') && (rest.includes('administrator') || rest.includes('admin'))) return 'permission'
   if (verb === 'exclude' && ['user', 'group', 'account', 'member'].includes(rest[0]) && rest.includes('from') && rest.length <= 5) return 'permission'
-  if (verb === 'allow' && rest[0] === 'legacy' && ['authentication', 'auth', 'protocol'].includes(rest[1]) && rest.length === 2) return 'permission'
+  if (verb === 'allow' && (rest[0] === 'legacy' || rest[0] === 'basic') && ['authentication', 'auth', 'protocol'].includes(rest[1]) && rest.length === 2) return 'permission'
   if (verb === 'assign' && rest.length <= 3 && (rest.includes('administrator') || rest.includes('admin'))) return 'permission'
   if (verb === 'add' && rest.length === 2 && rest[0] === 'role' && rest[1] === 'assignment') return 'permission'
   if (verb === 'reset' && rest.length <= 2 && ['mfa', '2fa', 'authenticator', 'authentication', 'security'].includes(rest[0])) return 'credential'
