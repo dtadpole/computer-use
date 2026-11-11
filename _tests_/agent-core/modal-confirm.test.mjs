@@ -69,3 +69,13 @@ test('#702 round 2 (cu-researcher 16:24Z): the title gets the full canonical for
   assert.ok(at('https://cloud.example/x', 'OK', 'Careful', 'This cannot be undone and will delete this repository.').includes('delete'))
   assert.deepEqual(at('https://cloud.example/x', 'OK', 'Heads up', 'This will refresh the page.'), [])
 })
+
+test('CU-507 follow-up (cu-coordinator 18:21Z): Continue to / Proceed to inside a dialog asks the union of its rest and the title', () => {
+  const at = (name, dialogName, dialogDescription) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: 'https://cloud.example/storage', target: { role: 'button', name, dialogName, dialogDescription } }); return v.decision === 'allow' ? [] : (v.classes ?? [v.class]) }
+  assert.ok(at('Continue to empty bucket', 'Empty bucket?', '').includes('delete'), 'rest + title')
+  assert.ok(at('Proceed to checkout', 'Delete account?', 'This cannot be undone.').includes('delete'), 'the title carries delete')
+  assert.ok(at('Continue to delete account', 'Heads up', '').includes('delete'), 'the rest carries delete')
+  assert.deepEqual(at('Continue to dashboard', 'Saved', 'Your changes were saved.'), [], 'benign rest + benign dialog stay free')
+  const page = (() => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: 'https://cloud.example/storage', target: { role: 'button', name: 'Continue to dashboard' } }); return v.decision })()
+  assert.equal(page, 'allow', 'outside a dialog the navigation ruling stays')
+})
