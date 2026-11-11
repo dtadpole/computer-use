@@ -924,6 +924,16 @@ function grammarClassesOf(name, role = '') {
     if (v === 'allow' && ((r[0] === 'unknown' && r[1] === 'source' && r.length === 2) || (r[0] === 'app' && r[1] === 'from' && r[2] === 'anywhere' && r.length === 3))) return ['permission']
   }
   if (/^\s*install\s+now\s*!?\s*$/i.test(raw)) return ['install']
+  // CU-462 (Medium; cu-coordinator 00:04Z triage + 04:20Z, CU-479's rest): an address book or a mailing list leaves the account -
+  // uploads, syncs, imports and exports of contacts, subscribers or an audience, and a shareable link (permission). 'Contacts' and the
+  // user's own 'Export my data' stay free.
+  if (list.length <= 4) {
+    const [v, ...r] = list
+    const people = ['contact', 'subscriber', 'audience', 'list', 'address', 'addressbook']
+    if (['upload', 'sync', 'import', 'export', 'download'].includes(v) && r.length >= 1 && r.length <= 3 && people.includes(r[r.length - 1]) && !(v === 'upload' && r[r.length - 1] === 'list' && r.length > 1)) return ['permission']
+    if (v === 'find' && r[0] === 'friend' && r.includes('contact') && r.length <= 3) return ['permission']
+    if (v === 'get' && r.length <= 2 && r[r.length - 1] === 'link' && (r.includes('shareable') || r.includes('share') || r.includes('public'))) return ['permission']
+  }
   // CU-483 (High; cu-coordinator 05:34Z): brokerage - orders and automatic trading spend money (purchase); margin and options trading
   // widen what the account may do (permission). A bare 'Sell' is page-bound (policy.mjs reads the trading URL).
   if (list.length <= 3) {
