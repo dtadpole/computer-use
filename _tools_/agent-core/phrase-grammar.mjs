@@ -826,7 +826,9 @@ export function canonicalForms(name) {
   const cut = firstSentence(unwrapped)
   const bare = withoutDeterminers(unwrapped)
   const forms = [unwrapped, cut, bare, withoutDeterminers(cut), leadingStripped(name)]
-  return [...new Set([...forms, ...forms.map(compoundJoined), ...forms.map(compoundSplit)])].filter((form) => form !== '' && form !== String(name ?? '').trim())
+  // The compound forms only for a name a row could match (<= 200 characters): the F3 budget (CU-272) holds for an 80k-character name.
+  const compounds = String(name ?? '').length <= 200 ? [...forms.map(compoundJoined), ...forms.map(compoundSplit)] : []
+  return [...new Set([...forms, ...compounds])].filter((form) => form !== '' && form !== String(name ?? '').trim())
 }
 /** CU-481: the verb-synonym forms of a name (and of its canonical forms) - tried LAST, only when the name and its own canonical forms
  * get no class, so a synonym never outranks a row the name already matches ('Create service account key' stays credential). */
