@@ -521,6 +521,31 @@ function vehicleClass(list) {
   return null
 }
 
+const CONTACT_DETAILS = [['phone', 'number'], ['email'], ['email', 'address'], ['address'], ['birthday'], ['phone']]
+function exposureClass(list, lower = '') {
+  if (list.length > 7) return null
+  const two = SWITCH_VERBS.has(list[0]) && (list[1] === 'off' || list[1] === 'on')
+  const verb = two ? `turn ${list[1]}` : list[0]
+  const rest = list.slice(two ? 2 : 1)
+  const core = rest.filter((t) => !FILLER.has(t))
+  if (verb === 'make' && core.length <= 2 && core[core.length - 1] === 'private' && (core.length === 1 || ['account', 'profile'].includes(core[0]))) return 'free'
+  if ((verb === 'switch' || verb === 'change' || verb === 'set') && rest[0] === 'to' && core.length <= 2 && core[0] === 'public') return 'permission'
+  // #592 round 2 (cu-researcher 23:44Z): 'Set posts to Public'.
+  if ((verb === 'set' || verb === 'change' || verb === 'make') && rest.length <= 3 && ['post', 'profile', 'account', 'story', 'photo'].includes(rest[0]) && rest[rest.length - 1] === 'public' && (rest.length === 2 || rest[1] === 'to')) return 'permission'
+  // 'everyone' / 'anyone' are filler words, so the audience is read on rest ('Change audience to Everyone').
+  if ((verb === 'change' || verb === 'set') && rest[0] === 'audience' && rest.length <= 3 && ['public', 'everyone', 'anyone'].includes(rest[rest.length - 1])) return 'permission'
+  if (verb === 'turn off' && core.length <= 2 && core[0] === 'private' && (core.length === 1 || ['account', 'profile', 'mode'].includes(core[1]))) return 'permission'
+  // 'my' marks a profile field shown to others ('Show my email'); a bare 'Show email' opens a message (F1/F5 stays free).
+  if (['show', 'display', 'reveal'].includes(verb) && /\bmy\b/.test(lower) && core.length <= 2 && CONTACT_DETAILS.some((seq) => seq.length === core.length && seq.every((w, i) => core[i] === w))) return 'permission'
+  // #592 round 2: a detail shown on the profile or to everyone ('Show my phone number on profile', 'Show phone number to everyone').
+  const detail = rest.filter((t) => !['on', 'to', 'profile', 'everyone', 'anyone', 'public'].includes(t) && !FILLER.has(t))
+  const audience = (rest.includes('everyone') || rest.includes('anyone') || rest.includes('public')) || (/\bmy\b/.test(lower) && rest.includes('profile'))
+  if (['show', 'display', 'reveal'].includes(verb) && audience && detail.length <= 2 && CONTACT_DETAILS.some((seq) => seq.length === detail.length && seq.every((w, i) => detail[i] === w))) return 'permission'
+  if (verb === 'allow' && (rest[0] === 'anyone' || rest[0] === 'everyone') && ['message', 'contact', 'call', 'find', 'dm'].some((w) => rest.includes(w)) && rest.length <= 5) return 'permission'
+  if (verb === 'allow' && ['message', 'call', 'request'].includes(rest[0]) && rest[1] === 'from' && ['anyone', 'everyone'].includes(rest[2]) && rest.length === 3) return 'permission'
+  return null
+}
+
 const DIVERSION_VERBS = new Set(['change', 'update', 'edit', 'add', 'set', 'replace', 'switch'])
 const DIVERSION_OBJECTS = [['direct', 'deposit'], ['bank', 'detail'], ['deposit', 'account'], ['routing', 'number'], ['account', 'number'],
   ['payout', 'account'], ['payout', 'method'], ['bank', 'account'], ['payout', 'detail']]
@@ -610,6 +635,11 @@ export function grammarClasses(name, role = '') {
   // protection (permission) or its PIN to drive, or adding a key (credential).
   const vehicle = vehicleClass(list)
   if (vehicle) return [vehicle]
+  // CU-461 (High; cu-coordinator 23:34Z): exposing an account or contact detail by other wordings (permission, CU-424's
+  // closed family); making an account private is the safe direction - an F2 guard on the grammar's own make-row ask.
+  const exposure = exposureClass(list, lower)
+  if (exposure === 'free') return []
+  if (exposure) return [exposure]
   // F2 guard (cu-coordinator 20:28Z): declining, denying or rejecting a request answers no - the grammar's own over-ask since
   // #554 ('Decline request'); older asks ('Decline invitation', CU-422's 'Decline offer') are untouched (the hook never sees them).
   if (['decline', 'deny', 'reject'].includes(list[0]) && list.slice(1).filter((t) => !FILLER.has(t)).every((t) => t === 'request' || t === 'this' || t === 'all')
