@@ -7,6 +7,14 @@ import { act, ctx, web } from './shapes.mjs'
 import { webPolicy } from './policies.mjs'
 
 const lc = (n) => n.charAt(0).toLowerCase() + n.slice(1)
+const plural = (w) => (/(s|x|ch|sh)$/i.test(w) ? w + 'es' : /[^aeiou]y$/i.test(w) ? w.slice(0, -1) + 'ies' : w + 's')
+// CU-502's shape only: a two-word '<Verb> <noun>' row with a singular noun; any other row is returned unchanged (and skipped).
+const NOT_NOUN = /^(now|time|like|apply|up|in|out|off|on|all|it|here|me|back|away|prequalified|electronically|digitally)$/
+const quantify = (n, every) => {
+  const m = n.match(/^([A-Z][a-z]+)\s+([a-z]{3,})$/)
+  if (!m || /s$/.test(m[2]) || NOT_NOUN.test(m[2])) return n
+  return every ? `${m[1]} every ${m[2]}` : `${m[1]} all ${plural(m[2])}`
+}
 
 /**
  * Each family: `ruled` is true when a ruling makes the form keep the row's class (it must stay at 0 free); the rulings are
@@ -14,7 +22,7 @@ const lc = (n) => n.charAt(0).toLowerCase() + n.slice(1)
  * written-out name.
  */
 export const FAMILIES = {
-  quantifier: { ruled: true, forms: { all: (n) => n.replace(/^(\S+)\s+/, '$1 all '), every: (n) => n.replace(/^(\S+)\s+/, '$1 every ') } },
+  quantifier: { ruled: true, forms: { all: (n) => quantify(n, false), every: (n) => quantify(n, true) } },
   acknowledgement: {
     ruled: true,
     forms: { yes: (n) => `Yes, ${lc(n)}`, anyway: (n) => `${n} anyway`, confirmColon: (n) => `Confirm: ${lc(n)}`, understand: (n) => `I understand, ${lc(n)}`, okDash: (n) => `OK - ${lc(n)}`, connector: (n) => `I understand and want to ${lc(n)}` },
