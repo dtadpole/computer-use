@@ -25,10 +25,20 @@ test('CU-433 negatives: views and help stay free', () => {
   for (const name of ['Rules', 'Spam', 'Phishing tips', 'Quarantine', 'Message details', 'Release notes']) assert.equal(at(name), 'allow', name)
 })
 
-test('CU-433: a bare Add rule stays free (CU-492 pin); Add mail rule asks credential', () => {
+test('CU-433: a bare Add rule stays free off a mail page (CU-492 pin); Add mail rule asks credential', () => {
   const p = createPolicy({ sitePolicy: () => 'allow' })
-  const at = (name) => { const v = p.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: 'https://mail.example/settings', target: { role: 'button', name } }); return v.decision === 'allow' ? 'allow' : v.class }
+  const at = (name) => { const v = p.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: 'https://app.example/settings', target: { role: 'button', name } }); return v.decision === 'allow' ? 'allow' : v.class }
   assert.equal(at('Add rule'), 'allow')
   assert.equal(at('Add mail rule'), 'credential')
   assert.equal(at('Create rule'), 'credential')
+})
+
+test('#693 round 2 (cu-researcher 14:53Z): the CU-433 rows as verb families; a bare Add rule asks on a mail page only', () => {
+  const p = createPolicy({ sitePolicy: () => 'allow' })
+  const at = (name, url = 'https://webmail.example/settings') => { const v = p.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url, target: { role: 'button', name } }); return v.decision === 'allow' ? 'allow' : v.class }
+  for (const [name, cls] of [['Empty Spam folder', 'delete'], ['Empty junk folder', 'delete'], ['Report phishing attempt', 'submit'], ['Report as phishing', 'submit'], ['Create new rule', 'credential'], ['New rule', 'credential'], ['Release all', 'permission'], ['Release all messages', 'permission']]) assert.equal(at(name), cls, name)
+  assert.equal(at('Add rule', 'https://mail.example/settings'), 'credential', 'a mail host')
+  assert.equal(at('Add rule', 'https://app.example/mail/rules'), 'credential', 'a mail path')
+  assert.equal(at('Add rule', 'https://console.example/vpc/security-groups'), 'allow', 'CU-492: a cloud console')
+  for (const name of ['Rules', 'Spam', 'Quarantine', 'Phishing tips']) assert.equal(at(name), 'allow', name)
 })
