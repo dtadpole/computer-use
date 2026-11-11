@@ -30,3 +30,16 @@ test('CU-496 negatives: recovery options, a non-vault backup, and views stay fre
   for (const name of ['Recovery options', 'Trusted contacts', 'Emergency kit help']) assert.equal(at(name), 'allow', name)
   assert.equal(at('Download backup', 'https://blog.example/wp-admin/tools'), 'allow', 'off a vault URL')
 })
+
+test('#669 round 2 (cu-developer-three 11:32Z): only a native read gives the switch direction; an ARIA or unread switch asks', () => {
+  assert.equal(at('Autofill on page load', VAULT, false, { role: 'switch', checked: true }), 'permission', 'an ARIA state is page-supplied')
+  assert.equal(at('Autofill on page load', VAULT, false, { role: 'switch' }), 'permission', 'no state read')
+  assert.equal(at('Autofill on page load', 'desktop://com.example.vault', false, { role: 'AXSwitch' }), 'permission', 'desktop switch with no read')
+  assert.equal(at('Autofill on page load', VAULT, false, { role: 'switch', tag: 'input', inputType: 'checkbox', checked: true }), 'allow', 'native on -> off')
+})
+
+test('#669 round 2 (cu-researcher 11:33Z): emergency access requests and the for-all-items form', () => {
+  assert.equal(at('Approve emergency access request'), 'permission')
+  assert.equal(at('Turn on autofill on page load for all items'), 'permission')
+  assert.equal(at('Autofill on page load for all items', VAULT, false, { role: 'switch', tag: 'input', inputType: 'checkbox', checked: false }), 'permission')
+})

@@ -197,6 +197,8 @@ const WORDS = Object.freeze({
   permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke',
     // CU-496 (High; cu-coordinator 11:21Z): approving an access request lets another person in (raises the older submit 'approve').
     'approve access request', 'approve access', 'approve the access request',
+    // #669 round 2 (cu-researcher 11:33Z): an emergency-access request too.
+    'approve emergency access request', 'approve emergency access', 'grant emergency access',
     // #661 round 2 (prepared; cu-developer-three 10:38Z): approving a sign-in grants an outside session access - permission, which is never
     // pre-approved, so an MFA-fatigue push cannot ride an earlier submit 'always' (raises the older submit row; D-108 allows a raise).
     'approve sign-in', 'approve sign in', 'approve signin', 'approve login', 'approve log in', 'approve log-in', 'approve this sign-in', 'approve this login',
@@ -1935,10 +1937,13 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // only when the press turns it on; a button asks when it says turn on / enable.
     if (grammarEligible && classes.length === 0 && /^\s*(?:download|export|save)\s+(?:a\s+|the\s+)?(?:vault\s+)?backup\s*$/i.test(name) && /vault|password|1password|bitwarden|lastpass|dashlane|keeper|proton\.me\/pass/i.test(String(context?.url ?? ''))) classes.push('credential')
     if (grammarEligible && classes.length === 0) {
-      const autofill = /^\s*(?:(turn\s+on|enable|switch\s+on|allow)\s+)?auto-?fill\s+on\s+page\s+load\s*$/i.exec(name)
+      const autofill = /^\s*(?:(turn\s+on|enable|switch\s+on|allow)\s+)?auto-?fill\s+on\s+page\s+load(?:\s+for\s+all\s+(?:items|logins|sites|websites))?\s*$/i.exec(name)
       if (autofill) {
-        const nativeBox = typeof target?.checked === 'boolean'
-        if (nativeBox ? target.checked === false : Boolean(autofill[1])) classes.push('permission')
+        // #669 round 2 (cu-developer-three 11:32Z): direction only from the NATIVE read (CU-373: a web <input type=checkbox> with a
+        // boolean checked); an ARIA, missing or mixed state - or a desktop switch with no read - fails closed and asks.
+        const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? '')) && typeof target?.checked === 'boolean'
+        const toggleRole = /switch|checkbox|toggle/i.test(String(target?.role ?? '') + ' ' + String(target?.subrole ?? ''))
+        if (nativeBox ? target.checked === false : (Boolean(autofill[1]) || toggleRole)) classes.push('permission')
       }
     }
     // CU-495 (High; cu-coordinator 11:06Z): on an e-signature page - a whole /sign, /signing, /envelope or /esign segment of an http(s)
