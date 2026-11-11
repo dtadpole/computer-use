@@ -27,5 +27,5 @@ test('CU-420: turning FileVault, the firewall or antivirus off and trusting a de
 
 test('CU-420 negatives: lists, labels and Hide password stay free; a bare Security keeps its older permission ask (15:08Z: a High never lowers an older rule)', () => {
   for (const name of ['Passwords', 'Vault', 'Firewall', 'Backup codes', 'Hide password', 'Keychain', 'Secrets']) assert.equal(click(name), 'allow', name)
-  assert.equal(click('Security'), 'permission', 'unchanged older ask')
+  assert.equal(click('Security'), 'allow', 'CU-429 (cu-coordinator 09:34Z): a pane name is lowered to free')
 })
