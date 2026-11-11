@@ -3,7 +3,7 @@ import { normaliseForPolicy, normaliseText } from './normalise.mjs'
 import { BIP39_ENGLISH } from './bip39-english.mjs'
 import { normalizeKey } from './keys.mjs'
 import { originPattern } from './sites.mjs'
-import { amountClass, canonicalConfirm, grammarClasses, inertLinkAmountClass } from './phrase-grammar.mjs'
+import { amountClass, canonicalForms, grammarClasses, inertLinkAmountClass } from './phrase-grammar.mjs'
 
 /**
  * The action policy (design: action-policy.md, consent-gate.md). `classify` runs in the dispatcher for every action,
@@ -1911,11 +1911,17 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const url = String(context?.url ?? '')
       const row = target?.rowContext && typeof target.rowContext === 'object' ? target.rowContext : {}
       const hints = Array.isArray(row.hints) ? row.hints.map((h) => String(h ?? '').slice(0, 40)) : []
-      const pathOf = (() => { try { return new URL(url).pathname } catch { return '' } })()
+      // CU-476 (High; cu-coordinator 03:05Z): the page is the WHOLE web URL - host, path, query and hash ('/#/call', '?page=call', a
+      // 'call.' host) - like Add time / Start recording / Edit DNS; only an http(s) URL is a page (cu-developer-three 03:05Z: an
+      // 'app:com.apple.FaceTime' context is never a dialer page).
+      // The path keeps its substring test (as before); the added parts (host, query, hash) need a word edge, so 'dialogflow.example'
+      // or '?callback=' is not a dialer page.
+      const page = (() => { try { const u = new URL(url); return /^https?:$/.test(u.protocol) ? { path: u.pathname, extra: `${u.host} ${u.search} ${u.hash}` } : { path: '', extra: '' } } catch { return { path: '', extra: '' } } })()
+      const onPage = (words) => new RegExp(words, 'i').test(page.path) || new RegExp(`(?:^|[^a-z])(?:${words})(?:s|er|ing)?(?:[^a-z]|$)`, 'i').test(page.extra)
       const verbless = target?.inRow === true || /^(?:listitem|row|gridcell)$/i.test(String(target?.role ?? ''))
       if (target?.dialHref === true
-        || (/call|voice|phone|dial/i.test(pathOf) && hints.some((h) => /^\s*(?:call|dial|phone|voice\s+call|video\s+call)\b/i.test(h)))
-        || (verbless && /call|dial/i.test(pathOf))) classes.push('submit')
+        || (onPage('call|voice|phone|dial') && hints.some((h) => /^\s*(?:call|dial|phone|voice\s+call|video\s+call)\b/i.test(h)))
+        || (verbless && onPage('call|dial'))) classes.push('submit')
     }
     // #575 round 2 (cu-coordinator 21:26Z): a native checkbox or switch already ON is being turned OFF - the grammar reads the
     // name as an act ('Forward calls') and must not ask for switching it off. The direction rules above decide such switches.
@@ -1930,8 +1936,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // asked yet (adds only); the canonical form may still take the switch-verb probe below.
     // #600 round 3: the full strip (ellipsis, '!', '(recommended)', leading icons) reaches the older exact rows too ('Join Prime…'). A
     // Quick Actions menu item is judged by its exact built-in name (CU-382 - 'More…'), so it never takes the probe.
-    const confirmForm = context.confirmProbe === true || target?.quickActions === true ? '' : canonicalConfirm(name)
-    if (grammarEligible && classes.length === 0 && !nativeOn && confirmForm !== '' && confirmForm !== String(name ?? '').trim()) {
+    // #609 round 2: each canonical form in turn (the unwrapped name, then its first sentence), stopping at the first that asks.
+    const confirmForms = context.confirmProbe === true || target?.quickActions === true ? [] : canonicalForms(name)
+    for (const confirmForm of confirmForms) {
+      if (!(grammarEligible && classes.length === 0 && !nativeOn)) break
       const probe = classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { ...target, name: confirmForm }, confirmProbe: true })
       if (probe.decision === 'block' || probe.decision === 'handoff') return probe
       if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) classes.push(cls)
