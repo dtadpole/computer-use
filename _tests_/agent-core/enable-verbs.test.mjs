@@ -47,7 +47,7 @@ test('#595 round 2: allow / start / opt in to X read as turn on X; permit-for-me
   for (const [name, canonical] of [['Allow location sharing', 'Turn on location sharing'], ['Start location sharing', 'Turn on location sharing'],
     ['Opt in to location sharing', 'Turn on location sharing'], ['Allow UPnP', 'Turn on UPnP'], ['Allow YOLO mode', 'Turn on YOLO mode']]) assert.equal(verdict(name), verdict(canonical), name)
   // cu-researcher 00:15Z: 'allow' before a site's own prompt object means permit-for-me, not switch a feature on.
-  for (const name of ['Allow ads', 'Allow camera', 'Allow microphone', 'Allow location', 'Allow tracking', 'Allow cookies', 'Allow pop-ups', 'Allow notifications',
+  for (const name of ['Allow ads', 'Allow acceptable ads', 'Allow non-intrusive ads', 'Allow camera', 'Allow microphone', 'Allow location', 'Allow tracking', 'Allow cookies', 'Allow pop-ups', 'Allow notifications',
     'Start tour', 'Start over', 'Start timer', 'Opt in to emails']) assert.equal(verdict(name), 'allow', name)
   for (const name of ['Start trial', 'Start free trial']) assert.equal(verdict(name), 'purchase', `${name} keeps its own class`)
 })
