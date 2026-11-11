@@ -38,3 +38,12 @@ test('#699 round 2 (cu-coordinator 15:49Z): the verb set comes from the ruled ro
   for (const clause of ['Terms', 'Pros', 'Privacy', 'Rock']) assert.ok(!clauseVerbLed(clause), clause)
   assert.ok(classesOf('Terminate instance and continue').length > 0)
 })
+
+test('#699 round 3 (cu-researcher 15:57Z): a free-clause verb lets the asking clause decide', () => {
+  const bare = classesOf('Add withdrawal address')
+  assert.ok(bare.length > 0, 'the row asks')
+  for (const lead of ['Check', 'Test', 'Validate', 'Inspect', 'Preview', 'Refresh', 'Paste', 'Select', 'Read', 'Double-check', 'Look up', 'Search', 'Name', 'Label', 'Tag']) {
+    for (const cls of bare) assert.ok(classesOf(`${lead} and add withdrawal address`).includes(cls), `${lead} and add withdrawal address`)
+  }
+  for (const name of ['Search and filter', 'Check and continue', 'Preview and close']) assert.deepEqual(classesOf(name), [], name)
+})

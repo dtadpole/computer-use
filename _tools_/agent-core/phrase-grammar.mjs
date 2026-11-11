@@ -858,7 +858,9 @@ function acknowledgementStripped(name) {
 // withdrawal', 'Save and disable encryption', 'Turn off backups & close') is judged clause by clause and asks the union, tried last.
 // Only when every clause starts with a verb or asks on its own - so 'Terms and conditions', 'Privacy & Security' and 'Rock and roll'
 // never split.
-const CLAUSE_VERBS = /^(?:save|review|scan|confirm|continue|close|submit|send|delete|remove|disable|enable|turn|switch|link|unlink|sign|pay|buy|apply|accept|agree|approve|transfer|export|download|install|uninstall|open|update|change|create|add|reset|cancel|archive|publish|share|allow|grant|unlock|lock|restart|finish|complete|verify|upload|connect|disconnect|erase|empty|clear|move|copy|exit|quit|leave|join|start|stop|run|deploy|merge|push|release|revoke|deny|block|unblock|activate|deactivate|back|restore|sync|import|print|rename|edit|set|make|give|withdraw|deposit|sell|order|book|schedule|invite|register|log)\b/i
+// #699 round 3 (cu-researcher 15:57Z): the free-clause verbs too - check, test, validate, inspect, preview, refresh, paste, select, read,
+// double-check, look up, search, name, label, tag, and their kin (find, compare, choose, pick, enter, type, fill, verify).
+const CLAUSE_VERBS = /^(?:check|double-check|test|validate|inspect|preview|refresh|paste|select|read|look\s+up|search|name|label|tag|find|compare|choose|pick|enter|type|fill|verify|confirm|save|review|scan|confirm|continue|close|submit|send|delete|remove|disable|enable|turn|switch|link|unlink|sign|pay|buy|apply|accept|agree|approve|transfer|export|download|install|uninstall|open|update|change|create|add|reset|cancel|archive|publish|share|allow|grant|unlock|lock|restart|finish|complete|verify|upload|connect|disconnect|erase|empty|clear|move|copy|exit|quit|leave|join|start|stop|run|deploy|merge|push|release|revoke|deny|block|unblock|activate|deactivate|back|restore|sync|import|print|rename|edit|set|make|give|withdraw|deposit|sell|order|book|schedule|invite|register|log)\b/i
 export function clauseSplit(name) {
   const first = String(name ?? '').split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean)[0] ?? ''
   if (first.length > 200) return []
