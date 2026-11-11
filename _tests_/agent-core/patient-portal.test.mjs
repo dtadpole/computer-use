@@ -30,3 +30,8 @@ test('#617 round 2: the four held-out escapes ask; video visits keep the older c
   assert.equal(click('Start video visit'), 'permission', 'older camera / video rule (ruled submit; asks either way)')
   for (const name of ['Follow-up notes', 'Research news', 'Give feedback']) assert.equal(click(name), 'allow', name)
 })
+
+test('#617 round 2 (cu-coordinator 03:51Z): checking in asks submit; downloads and messages stay free', () => {
+  for (const name of ['Check in', 'eCheck-in', 'Check in for appointment', 'Check in online']) assert.equal(click(name), 'submit', name)
+  for (const name of ['Download records', 'Download my records', 'Download visit summary', 'Message provider']) assert.equal(click(name), 'allow', name)
+})

@@ -612,6 +612,8 @@ function portalClass(list) {
   if (['schedule', 'request'].includes(verb) && rest.length <= 3 && (['appointment', 'visit'].includes(rest[rest.length - 1]) || (rest.includes('follow') && rest[rest.length - 1] === 'up'))) return 'submit'
   if (verb === 'start' && rest.length <= 3 && rest.includes('visit') && (rest.includes('e') || rest.includes('video') || rest.includes('virtual'))) return 'submit'
   if (verb === 'opt' && rest[0] === 'in' && rest.length <= 4 && ['research', 'study', 'trial'].includes(rest[rest.length - 1])) return 'permission'
+  // cu-coordinator 03:51Z: checking in for a visit is submit ('Check in', 'eCheck-in', 'Check in for appointment', 'Check in online').
+  if ((verb === 'check' || verb === 'echeck') && rest[0] === 'in' && rest.length <= 3 && (rest.length === 1 || ['appointment', 'visit', 'online'].includes(rest[rest.length - 1]))) return 'submit'
   if (['join', 'enroll', 'enrol'].includes(verb) && rest.length <= 3 && (rest.includes('research') || rest.includes('study') || rest.includes('trial'))) return 'permission'
   return null
 }
