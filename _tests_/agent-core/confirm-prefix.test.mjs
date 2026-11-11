@@ -38,3 +38,16 @@ test('#600 round 2: the wrapper comes off for the whole classifier - older exact
   // Named: 'Confirm, add deploy key' keeps the older 'confirm' submit (asks either way; the probe runs only when nothing asked).
   assert.equal(at('Confirm, add deploy key', 'https://git.example/settings'), 'submit')
 })
+
+test('#600 round 3: trailing ellipsis, "!", "(recommended)" and a leading icon come off for older exact rows and URL rows', () => {
+  const at = (name, url) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url, target: { role: 'button', name } }); return v.decision === 'allow' ? 'allow' : v.class }
+  for (const [wrapped, row, url] of [['Add time...', 'Add time', 'https://parking.example/session'], ['Add time!', 'Add time', 'https://parking.example/session'],
+    ['\ud83d\udd13 Change direct deposit', 'Change direct deposit', 'https://app.example/pay'], ['Change direct deposit (recommended)', 'Change direct deposit', 'https://app.example/pay'],
+    ['Change direct deposit\u2026', 'Change direct deposit', 'https://app.example/pay']]) {
+    const want = at(row, url)
+    assert.notEqual(want, 'allow', `${row} asks`)
+    assert.equal(at(wrapped, url), want, wrapped)
+  }
+  assert.equal(canonicalConfirm('\ud83d\udd13 Unlock Pro (recommended)'), 'Unlock Pro')
+  for (const name of ['More\u2026', 'Next!', 'Learn more (recommended)']) assert.equal(at(name, 'https://app.example/page'), 'allow', name)
+})

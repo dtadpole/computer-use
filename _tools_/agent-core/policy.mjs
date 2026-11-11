@@ -1892,9 +1892,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // #600 round 2 (cu-researcher 01:26Z): the confirmation wrapper comes off for the WHOLE classifier too, like #584's word order -
     // the older exact-phrase lists and the URL-bound rows then read 'Yes, join Prime' or 'OK, add time'. One probe, only when nothing
     // asked yet (adds only); the canonical form may still take the switch-verb probe below.
-    // A trailing ellipsis stays on for the older rules ('More…' opens a dialog - CU-382 judges it as written).
-    const ellipsis = /\s*(?:\.{2,}|\u2026)\s*$/.exec(String(name ?? ''))
-    const confirmForm = context.confirmProbe === true ? '' : canonicalConfirm(name) + (ellipsis ? ellipsis[0].trim() : '')
+    // #600 round 3: the full strip (ellipsis, '!', '(recommended)', leading icons) reaches the older exact rows too ('Join Prime…'). A
+    // Quick Actions menu item is judged by its exact built-in name (CU-382 - 'More…'), so it never takes the probe.
+    const confirmForm = context.confirmProbe === true || target?.quickActions === true ? '' : canonicalConfirm(name)
     if (grammarEligible && classes.length === 0 && !nativeOn && confirmForm !== '' && confirmForm !== String(name ?? '').trim()) {
       const probe = classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { ...target, name: confirmForm }, confirmProbe: true })
       if (probe.decision === 'block' || probe.decision === 'handoff') return probe

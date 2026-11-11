@@ -560,11 +560,13 @@ function payDiversion(list) {
 // ('now', '...', arrows, icons) wrap a ruled row in a dialog. The table rows read from the first word, so the wrapper is taken off
 // and the row judged again - only when the name as written gets no class, so it adds only.
 // #600 round 2 (cu-researcher 01:26Z): 'Yes please,' / 'Yes, please' and a trailing 'right now' too.
-const CONFIRM_PREFIX = /^\s*(?:\p{Extended_Pictographic}\s*)*(?:(?:yes(?:\s+please)?|ok|okay|sure|confirm|continue|got\s+it|please)\s*[,:!.\u2013\u2014-]+\s*)+/iu
-const TRAILING_WRAP = /(?:\s*(?:right\s+now|now|please|\.{2,}|\u2026|[\u2192\u203a\u00bb>\u2794\u27f6\u279c\u27a1]|\p{Extended_Pictographic}|\uFE0F))+\s*$/iu
+// #600 round 3 (cu-researcher 01:33Z): a leading icon alone, and a trailing '!' or '(recommended)' too.
+const LEADING_ICONS = /^\s*(?:[\p{Extended_Pictographic}\uFE0F]\s*)+/u
+const CONFIRM_PREFIX = /^\s*(?:(?:yes(?:\s+please)?|ok|okay|sure|confirm|continue|got\s+it|please)\s*[,:!.\u2013\u2014-]+\s*)+/iu
+const TRAILING_WRAP = /(?:\s*(?:right\s+now|now|please|\.{2,}|\u2026|!+|\((?:recommended|suggested|best\s+value)\)|[\u2192\u203a\u00bb>\u2794\u27f6\u279c\u27a1]|\p{Extended_Pictographic}|\uFE0F))+\s*$/iu
 export function canonicalConfirm(name) {
   const text = String(name ?? '')
-  return text.replace(CONFIRM_PREFIX, '').replace(TRAILING_WRAP, '').trim()
+  return text.replace(LEADING_ICONS, '').replace(CONFIRM_PREFIX, '').replace(TRAILING_WRAP, '').trim()
 }
 
 export function grammarClasses(name, role = '') {
