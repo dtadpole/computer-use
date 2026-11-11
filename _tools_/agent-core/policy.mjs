@@ -1522,7 +1522,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (TRASH_ROLE.test(String(target?.role ?? '')) && namesWord(name, CONTROL_DELETE)) classes.push('delete')
       // The phrase grammar may judge this press below, after every older rule (not on an entry, not on a link - a link
       // navigates, and the older rules keep their link exceptions).
-      grammarEligible = !focusesEntry && !/link/i.test(String(target?.role ?? ''))
+      // CU-472 (High; cu-coordinator 01:36Z): a link that does not navigate (target.inertLink - no / empty / '#' / 'javascript:' href,
+      // or an ARIA link with no <a>) is judged like a button; a real-URL link stays navigation (named limit).
+      grammarEligible = !focusesEntry && (!/link/i.test(String(target?.role ?? '')) || target?.inertLink === true)
     }
     // CU-232 (menu-key.md): a desktop chord that is a menu item's key equivalent fires that item, so the item's name is
     // judged as a click on it would be, beside the keys - Shift-Command-D bound to Send asks submit. Every matching item
@@ -1936,7 +1938,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (probe.decision === 'block' || probe.decision === 'handoff') return probe
       if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) classes.push(cls)
     }
-    if (grammarEligible && classes.length === 0 && !nativeOn) for (const cls of grammarClasses(name, target?.role)) classes.push(cls)
+    if (grammarEligible && classes.length === 0 && !nativeOn) for (const cls of grammarClasses(name, target?.inertLink === true ? 'button' : target?.role)) classes.push(cls)
     const mixedScript = !url.startsWith('desktop:') && classes.length === 0 && (POINTER.has(action.type) || pressesEnter || keyboard.activates) && target?.mixedScriptName === true
     if (mixedScript) classes.push('permission')
     // CU-302 (design note 0.1): a form the browser filled from saved logins or cards - a field matching :autofill, which

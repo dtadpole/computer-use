@@ -656,10 +656,22 @@ export function describeElement(el) {
     }
     return list !== null || hints.length > 0 ? { ...(list !== null ? { list } : {}), hints } : null
   })()
+  // CU-472: a link that does not navigate - no href attribute, an empty one, '#' or a same-page '#fragment', or a
+  // 'javascript:' URL - acts like a button (its click handler does the work), but `href` is the resolved URL, so '#'
+  // reaches policy as the page's own address. inertLink reads the RAW attribute of the closest <a> (or an ARIA link
+  // with no <a>): a boolean, outside the fingerprint, never recorded.
+  const inertLink = (() => {
+    const anchor = el.closest ? el.closest('a') : null
+    if (!anchor) return role === 'link'
+    const raw = anchor.getAttribute ? anchor.getAttribute('href') : null
+    if (raw === null) return true
+    const trimmed = String(raw).trim()
+    return trimmed === '' || trimmed.startsWith('#') || /^javascript:/i.test(trimmed)
+  })()
   return { tag, inputType: type, isPassword: type === 'password', autocomplete: autocomplete || null, href: link, origin, editable, caption: editable ? null : caption, entryCaption: editable ? caption : null,
     ...(frameUrl ? { frameUrl } : {}), ...(terminal ? { terminal } : {}), ...(notebookCell ? { notebookCell } : {}), ...(notebookSurface ? { notebookSurface } : {}), ...(codeSurface ? { codeSurface } : {}),
     ...(checked !== null ? { checked } : {}), ...(pressed !== null ? { pressed } : {}),
-    ...(formContext !== null ? { formContext } : {}), ...(inRow ? { inRow: true } : {}), ...(dialHref === true ? { dialHref: true } : {}), ...(rowContext !== null ? { rowContext } : {}) }
+    ...(formContext !== null ? { formContext } : {}), ...(inertLink ? { inertLink: true } : {}), ...(inRow ? { inRow: true } : {}), ...(dialHref === true ? { dialHref: true } : {}), ...(rowContext !== null ? { rowContext } : {}) }
 }
 
 /**
