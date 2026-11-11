@@ -23,3 +23,11 @@ test('CU-506: a compound of verb-led clauses asks the union', () => {
 test('CU-506 negatives: noun pairs never split; benign compounds stay free', () => {
   for (const name of ['Terms and conditions', 'Rock and roll', 'Save and continue', 'Review and close', 'Search and filter']) assert.deepEqual(classesOf(name), [], name)
 })
+
+test('#699 round 2 (cu-researcher 15:43Z): a clause that asks on its own counts as verb-led', () => {
+  for (const [name, row] of [['Suspend user and continue', 'Suspend user'], ['Wipe device and continue', 'Wipe device'], ['Suspend user & close', 'Suspend user']]) {
+    assert.ok(classesOf(row).length > 0, row)
+    for (const cls of classesOf(row)) assert.ok(classesOf(name).includes(cls), `${name} has ${cls}`)
+  }
+  for (const name of ['Terms and conditions', 'Pros and cons', 'Rock and roll']) assert.deepEqual(classesOf(name), [], name)
+})

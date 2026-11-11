@@ -856,15 +856,20 @@ function acknowledgementStripped(name) {
 // lowers and a free rest stays free; a time or ratio ('10:30', '16:9') is never split (no colon before a digit).
 // CU-506 (compound sweep): a name of two or three verb-led clauses joined by 'and' / '&' / 'then' / '+' ('Review and confirm
 // withdrawal', 'Save and disable encryption', 'Turn off backups & close') is judged clause by clause and asks the union, tried last.
-// Only when every clause starts with a verb - so 'Terms and conditions', 'Privacy & Security' and 'Rock and roll' never split.
+// Only when every clause starts with a verb or asks on its own - so 'Terms and conditions', 'Privacy & Security' and 'Rock and roll'
+// never split.
 const CLAUSE_VERBS = /^(?:save|review|scan|confirm|continue|close|submit|send|delete|remove|disable|enable|turn|switch|link|unlink|sign|pay|buy|apply|accept|agree|approve|transfer|export|download|install|uninstall|open|update|change|create|add|reset|cancel|archive|publish|share|allow|grant|unlock|lock|restart|finish|complete|verify|upload|connect|disconnect|erase|empty|clear|move|copy|exit|quit|leave|join|start|stop|run|deploy|merge|push|release|revoke|deny|block|unblock|activate|deactivate|back|restore|sync|import|print|rename|edit|set|make|give|withdraw|deposit|sell|order|book|schedule|invite|register|log)\b/i
 export function clauseSplit(name) {
   const first = String(name ?? '').split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean)[0] ?? ''
   if (first.length > 200) return []
   const parts = first.split(/\s+(?:and|&|then|\+)\s+|\s*,\s*(?:and|then)\s+/i).map((part) => part.trim()).filter(Boolean)
   if (parts.length < 2 || parts.length > 3) return []
-  if (!parts.every((part) => CLAUSE_VERBS.test(part))) return []
   return parts
+}
+/** #699 round 2 (cu-researcher 15:43Z): whether a clause starts with a listed UI verb; the policy also accepts a clause that asks on
+ * its own ('Suspend user', 'Silence alarm' - their first word starts an asking row). */
+export function clauseVerbLed(part) {
+  return CLAUSE_VERBS.test(String(part ?? '').trim())
 }
 export function sectionLabelStripped(name) {
   const first = String(name ?? '').split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean)[0] ?? ''
