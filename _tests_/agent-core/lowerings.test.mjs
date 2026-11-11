@@ -33,3 +33,11 @@ test('CU-429 kept: the ruled keeps, safeguard suppressors, second clauses and to
   const sw = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: URL, target: { tag: 'input', inputType: 'checkbox', role: 'switch', name: 'Keep 2FA on', checked: true } })
   assert.notEqual(sw.rule, 'cu429:lowered')
 })
+
+test('CU-429 (cu-coordinator 13:04Z): an exchange\'s Order book is a view - free; Deactivate withdrawal lock keeps its ask', () => {
+  const p = createPolicy({ sitePolicy: () => 'allow' })
+  const at = (name) => { const v = p.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: 'https://exchange.example/markets', target: { role: 'button', name } }); return v.decision === 'allow' ? 'allow' : v.class }
+  assert.equal(at('Order book'), 'allow')
+  assert.notEqual(at('Deactivate withdrawal lock'), 'allow')
+  assert.equal(at('Place order'), 'purchase', 'the order row itself stays')
+})
