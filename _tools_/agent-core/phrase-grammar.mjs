@@ -1027,6 +1027,18 @@ function grammarClassesOf(name, role = '') {
     if (v === 'allow' && ((r[0] === 'unknown' && r[1] === 'source' && r.length === 2) || (r[0] === 'app' && r[1] === 'from' && ['anywhere', 'unknown'].includes(r[2]) && (r.length === 3 || (r[2] === 'unknown' && r[3] === 'source' && r.length === 4))))) return ['permission']
   }
   if (/^\s*install\s+now\s*!?\s*$/i.test(raw)) return ['install']
+  // CU-433 (cu-coordinator 09:51Z): mail near forms ask as their ruled neighbours - recalling a sent message deletes it ('Unsend
+  // message'); reporting phishing submits a report ('Report spam'); emptying spam / junk deletes ('Empty trash'); a mail rule can
+  // forward mail out ('Create filter', credential); releasing a held message from quarantine lets it through (permission).
+  if (list.length <= 4) {
+    const [v, ...r] = list
+    const last = r[r.length - 1]
+    if (v === 'recall' && r.length >= 1 && r.length <= 2 && ['message', 'email', 'mail'].includes(last)) return ['delete']
+    if (v === 'report' && r.length <= 2 && last === 'phishing') return ['submit']
+    if (v === 'empty' && r.length <= 2 && ['spam', 'junk'].includes(last)) return ['delete']
+    if (['create', 'add', 'new'].includes(v) && r.length <= 2 && ['rule', 'forwarding'].includes(last) && (r.length === 1 || ['mail', 'inbox', 'email', 'forwarding', 'message'].includes(r[0]))) return ['credential']
+    if (v === 'release' && r.length >= 1 && r.length <= 3 && (['message', 'email', 'mail'].includes(last) || last === 'quarantine')) return ['permission']
+  }
   // CU-490 (High; cu-coordinator 09:51Z): booking a ride is a purchase anywhere - 'Confirm ride', 'Book ride', 'Request ride'.
   if (list.length >= 2 && list.length <= 3 && ['confirm', 'book', 'request'].includes(list[0]) && ['ride', 'trip'].includes(list[list.length - 1])) return ['purchase']
   // CU-483 (High; cu-coordinator 05:34Z): brokerage - orders and automatic trading spend money (purchase); margin and options trading
