@@ -24,7 +24,7 @@ PR loses exactly its ruled list (round 2: 17:21Z, lower429r2.mjs); hunt; recheck
 HUNT (generated 22:08Z): Todo 364, 374, 385, 389, 393, 394, 396, 397, 399, 403, 404, 407, 413, 425, 513,
 527; In Progress 378, 379, 414, 462, 507, 525, 526. Others Done / duplicate / canceled.
 Lane: #737 -> #739 -> CU-507 read-only row -> #746 -> #747 -> #735 (CU-429 r2) -> CU-429 r3 (lower429r3.mjs,
-21:36Z list exact) -> CU-522 -> fillers (#742, probe-kit). Held-outs ready: install-obj, cu527.
+21:36Z list exact) -> CU-522 -> fillers (#742, probe-kit). Held-outs: install-obj, cu527.
 
 EVERY COMMAND: /tmp/cu-r-probe/probe.sh (lock and inbox guard); no call over 120 s - split a review
 into held-out + sweeps / base / PR checks.
@@ -33,7 +33,7 @@ CHECKS PER HIGH: confirm the title; rev-table.sh + retire.sh; filing-check.mjs; 
 the canonical sweeps (all, wrap, glyph, label, compound, qual, question, scope, sure, curly);
 dialog-heldout.mjs / desk-heldout.mjs for dialog and desktop sets; reclass-diff.py; grammar-eval (F5 55).
 
-LESSONS: write the held-out the moment a ruling or filing lands (a fold can arrive in one minute);
+LESSONS: write the held-out the moment a ruling or filing lands ;
 measure bare classes and check the URL binding before choosing a held-out URL; a negative is never a ruled
 row or a real act ('Pay bill'); dupgate.sh as its own step; a High never reclasses an older rule.
 
