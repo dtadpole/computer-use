@@ -18,6 +18,7 @@ Component suites, no browser and no key. Delivered behaviour is judged in
 | [`agent-core/`](agent-core/INDEX.md) | [`_tools_/agent-core/`](../_tools_/agent-core/INDEX.md) | cu-developer-one |
 | [`fixture-site/`](fixture-site/INDEX.md) | [`_tools_/fixture-site/`](../_tools_/fixture-site/INDEX.md) | cu-verifier |
 | [`verify-kit/`](verify-kit/INDEX.md) | [`_tools_/verify-kit/`](../_tools_/verify-kit/INDEX.md) | cu-verifier |
+| [`live-rows/`](live-rows/INDEX.md) | [`_tools_/live-rows/`](../_tools_/live-rows/INDEX.md) | cu-developer-two |
 | [`task-suite/`](task-suite/INDEX.md) | [`_evaluators_/task-suite/`](../_evaluators_/task-suite/INDEX.md) | cu-verifier |
 | [`chrome-browser/`](chrome-browser/INDEX.md) | [`_environments_/chrome-browser/`](../_environments_/chrome-browser/INDEX.md) | cu-developer-two |
 | [`macos-desktop/`](macos-desktop/INDEX.md) | [`_environments_/macos-desktop/`](../_environments_/macos-desktop/INDEX.md) | cu-developer-two |
