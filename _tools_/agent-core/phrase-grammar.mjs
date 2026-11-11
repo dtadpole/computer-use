@@ -1125,6 +1125,23 @@ function grammarClassesOf(name, role = '') {
     if (v === 'allow' && ((r[0] === 'unknown' && r[1] === 'source' && r.length === 2) || (r[0] === 'app' && r[1] === 'from' && ['anywhere', 'unknown'].includes(r[2]) && (r.length === 3 || (r[2] === 'unknown' && r[3] === 'source' && r.length === 4))))) return ['permission']
   }
   if (/^\s*install\s+now\s*!?\s*$/i.test(raw)) return ['install']
+  // CU-462 (Medium; cu-coordinator 00:04Z triage + 04:20Z, CU-479's rest): an address book or a mailing list leaves the account -
+  // uploads, syncs, imports and exports of contacts, subscribers or an audience, and a shareable link (permission). 'Contacts' and the
+  // user's own 'Export my data' stay free.
+  // #742 round 3 (cu-coordinator 21:21Z): the rest of CU-462's shareable-link words - create / generate / make a shareable / share /
+  // public / sharing link, and 'Anyone with the link' (can view / edit / comment) - permission like 'Get shareable link'.
+  if (/^\s*(?:create|generate|make|turn\s+on)\s+(?:a\s+|the\s+)?(?:shareable|share|public|sharing)\s+link\s*$|^\s*anyone\s+with\s+(?:the\s+)?link(?:\s+can\s+(?:view|edit|comment))?\s*$/i.test(raw)) return ['permission']
+  // #742 round 2 (cu-researcher 21:13Z): the two-word object 'address book' reads as one ('Export address book', 'Sync my address book').
+  if (/^\s*(?:upload|sync|import|export|download|share)\s+(?:all\s+|my\s+|your\s+|the\s+)?address\s+books?\s*$/i.test(raw)) return ['permission']
+  if (list.length <= 4) {
+    const [v, ...r] = list
+    const people = ['contact', 'subscriber', 'audience', 'list', 'address', 'addressbook']
+    if (['upload', 'sync', 'import', 'export', 'download'].includes(v) && r.length >= 1 && r.length <= 3 && people.includes(r[r.length - 1]) && !(v === 'upload' && r[r.length - 1] === 'list' && r.length > 1)) return ['permission']
+    if (v === 'find' && r[0] === 'friend' && r.includes('contact') && r.length <= 3) return ['permission']
+    // cu-coordinator 06:49Z: 'Archive all contacts' is permission too (reversible, not delete).
+    if (v === 'archive' && r[0] === 'all' && r.length === 2 && ['contact', 'subscriber'].includes(r[1])) return ['permission']
+    if (v === 'get' && r.length <= 2 && r[r.length - 1] === 'link' && (r.includes('shareable') || r.includes('share') || r.includes('public'))) return ['permission']
+  }
   // #693 round 2 (cu-researcher 14:53Z): the CU-433 rows as verb families with object synonyms.
   if (/^\s*empty\s+(?:the\s+|my\s+)?(?:spam|junk)(?:\s+(?:folder|mail|box))?\s*$/i.test(raw)) return ['delete']
   if (/^\s*report\s+(?:as\s+|this\s+as\s+)?phishing(?:\s+(?:attempt|email|e-mail|message|mail))?\s*$/i.test(raw)) return ['submit']
