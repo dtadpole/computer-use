@@ -40,3 +40,7 @@ test('#617 x #609: the grammar on the full name goes before the canonical probe 
   assert.equal(click('Start e-visit ($25 copay)'), 'purchase')
   assert.equal(click('Start e-visit (opens in a new window)'), 'submit', 'a parenthetical with no amount still comes off')
 })
+
+test("#617 round 4 (cu-developer-three 04:15Z): 'Sign waiver' keeps main's permission - no reclass", () => {
+  assert.equal(click('Sign waiver'), 'permission')
+})

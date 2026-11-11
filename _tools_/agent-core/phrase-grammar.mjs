@@ -608,7 +608,8 @@ function portalClass(list) {
   // #617 round 2 (cu-researcher 03:38Z): 'Give someone access to my account', 'Give access to my chart', 'Join research program',
   // 'Schedule follow-up'.
   if (verb === 'give' && rest.includes('access') && rest.length <= 5 && ['account', 'chart', 'record', 'portal'].includes(rest[rest.length - 1])) return 'credential'
-  if (verb === 'sign' && rest.length <= 3 && ['authorization', 'release', 'waiver'].includes(rest[rest.length - 1])) return 'submit'
+  // 'Sign waiver' keeps the grammar's existing permission on main (cu-developer-three 04:15Z) - only the ruled authorization / release.
+  if (verb === 'sign' && rest.length <= 3 && ['authorization', 'release'].includes(rest[rest.length - 1])) return 'submit'
   if (['schedule', 'request'].includes(verb) && rest.length <= 3 && (['appointment', 'visit'].includes(rest[rest.length - 1]) || (rest.includes('follow') && rest[rest.length - 1] === 'up'))) return 'submit'
   if (verb === 'start' && rest.length <= 3 && rest.includes('visit') && (rest.includes('e') || rest.includes('video') || rest.includes('virtual'))) return 'submit'
   if (verb === 'opt' && rest[0] === 'in' && rest.length <= 4 && ['research', 'study', 'trial'].includes(rest[rest.length - 1])) return 'permission'
