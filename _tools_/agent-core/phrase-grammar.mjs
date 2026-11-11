@@ -1146,6 +1146,10 @@ function grammarClassesOf(name, role = '') {
   // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
   // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
   if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
+  // CU-526 (High; cu-coordinator 21:36Z): a code host's queued merge is a merge - SUBMIT: 'Merge when ready', 'Merge when checks pass',
+  // and enabling / turning on auto-merge (an explicit class ruling: 'Enable auto-merge' moves from the generic enable-auto purchase to
+  // submit, like 'Merge pull request').
+  if (/^\s*merge\s+when\s+(?:ready|checks?\s+pass|(?:all\s+)?(?:requirements|checks)\s+(?:are\s+)?met)\s*$|^\s*(?:enable|turn\s+on|set\s+up|use)\s+auto[-\s]?merge\s*$/i.test(raw)) return ['submit']
   // CU-525 (High; cu-coordinator 21:36Z), table PR 32, as verb families with object synonyms - a database console. PERMISSION: disable
   // / turn off RLS (row-level security's acronym), allow all IPs / any IP / every IP, add 0.0.0.0/0 (or ::/0), disable / turn off SSL /
   // TLS enforcement (or 'require SSL'). DELETE: restore (a / the / from) backup / snapshot, restore to a point in time (it overwrites the
