@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-10T07:15:00Z
+modified: 2026-11-11T00:10:00Z
 level: L1
-version: 3.15.0
+version: 3.22.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,19 +15,19 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; never drives the desktop. State at 07:15Z, 10 November.
+session worktree plus `--review` worktrees; never drives the desktop. State at 00:10Z, 11 November.
 
 ## Landed
 
-- Verified live tonight: CU-392, CU-395, CU-398 (#463), CU-400 (#466), CU-401 (#471); CU-391 Done.
+- Closed or in Verify through CU-455: #575, #576, #580, #584, #587 landed tonight.
 
 ## Open (Highs first)
 
-- CU-402/405: #474 (policy) with #472, #482 (driver) - unit with all OKs, lands after #299/#393.
-- CU-406: #487 (Return judged by the click classifier on the default button) after #486; reviews at 1adbec0.
-- With OKs, landing: #459, #447, #448, #450, #453, #462, #469, #477 (CU-403), #478 (CU-404).
-- Guide #392 (OK at 073d5e3): add remote-desktop/VM viewers after #450/#453, then complete.
-- Read every inbox body in full; re-read before each push; check GATE notices before long runs.
+- Lane: #590 (CU-449..460 table rows), #592 (CU-461, on #590), #595 (CU-463); CU-464 becomes table PR 6.
+- Re-merge main right before each slot; a plain merge carries the OKs.
+- Older classes are never lowered: name them for CU-429.
+- After the lane: #523, CU-432 (built locally), CU-433, CU-462, #558.
+- Guide #392: add remote-desktop/VM viewers after #450, then complete.
 
 ## Lessons
 

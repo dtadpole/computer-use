@@ -9,7 +9,7 @@ import { clipboardOp, executeAction, NAVIGATION_TIMEOUT_MS, navigateHistory, sen
 import { planHumanInput } from './human-input.mjs'
 import { processCommandLine, sandboxProblem, SEAT_PATTERN, startChrome } from './launch.mjs'
 import { normalizeKey } from './keys.mjs'
-import { accessKeyElement, accessKeyOf, activatableAncestor, autofilledFields, clickLabel, closedRootHoldsEntry, collectPageText, deepActiveElement, describeElement, DRAG_TEXT_MAX, dragTextAt, FRAME_FOCUS_EXPRESSION, frameLabel, frameLabelFromAttributes, implicitSubmitButton, keyChoice, pageExpression, selectionContainer, selectKeyOption, selectTypeOptions, textEntered, TWO_FRAMES_EXPRESSION } from './page-scripts.mjs'
+import { accessKeyElement, accessKeyOf, activatableAncestor, autofilledFields, clickLabel, closedRootHoldsEntry, collectPageText, deepActiveElement, describeElement, DRAG_TEXT_MAX, dragTextAt, FRAME_FOCUS_EXPRESSION, frameLabel, frameLabelFromAttributes, implicitSubmitButton, implicitSubmitControls, keyChoice, pageExpression, selectionContainer, selectKeyOption, selectTypeOptions, textEntered, TWO_FRAMES_EXPRESSION } from './page-scripts.mjs'
 
 /** CU-300: how long focusedElement may spend reading the focus inside a cross-site frame before it keeps the iframe. */
 export const FRAME_FOCUS_MS = 2000
@@ -162,6 +162,22 @@ export async function launchBrowserEnvironment(options = {}) {
     release()
     throw error
   }
+}
+
+/** CU-400: describeElement's formContext, re-validated at the boundary - else null. */
+export function formContextOf(value) {
+  if (value === null || typeof value !== 'object') return null
+  const options = Array.isArray(value.options) ? value.options.filter((text) => typeof text === 'string' && text !== '' && text.length <= 24).slice(0, 3) : []
+  const amountEntry = value.amountEntry === true
+  return options.length > 0 || amountEntry ? { options, amountEntry } : null
+}
+
+/** CU-443: describeElement's rowContext, re-validated at the boundary - else null. */
+export function rowContextOf(value) {
+  if (value === null || typeof value !== 'object') return null
+  const list = typeof value.list === 'string' && value.list !== '' && value.list.length <= 60 ? value.list : null
+  const hints = Array.isArray(value.hints) ? value.hints.filter((text) => typeof text === 'string' && text !== '' && text.length <= 40).slice(0, 3) : []
+  return list !== null || hints.length > 0 ? { ...(list !== null ? { list } : {}), hints } : null
 }
 
 class BrowserEnvironment {
@@ -568,7 +584,7 @@ class BrowserEnvironment {
       await this.#describe(target, inner.backendNodeId, frame.targetId, { node: inner, offset: { x: box.x, y: box.y }, editableBody: true, fallbackName: String(inner.nodeName ?? '').toUpperCase() === 'BODY' ? host.name : null }))
     if (described === null) return undefined
     const submit = await this.#implicitSubmit(target, inner.backendNodeId)
-    return { ...described, frameHost: host, defaultButton: submit.button, defaultButtonRead: submit.read }
+    return { ...described, frameHost: host, defaultButton: submit.button, defaultButtonRead: submit.read, ...(submit.candidates ? { defaultCandidates: submit.candidates } : {}), ...(submit.more ? { defaultCandidatesMore: true } : {}) }
   }
 
   /**
@@ -730,7 +746,7 @@ class BrowserEnvironment {
     const element = await this.#withAutofill(page, node.backendNodeId, undefined, await this.#describe(page, node.backendNodeId, undefined, { node, editableBody }))
     if (element === null) return null
     const submit = await this.#implicitSubmit(page, node.backendNodeId)
-    return { ...element, defaultButton: submit.button, defaultButtonRead: submit.read }
+    return { ...element, defaultButton: submit.button, defaultButtonRead: submit.read, ...(submit.candidates ? { defaultCandidates: submit.candidates } : {}), ...(submit.more ? { defaultCandidatesMore: true } : {}) }
   }
 
   /**
@@ -781,21 +797,66 @@ class BrowserEnvironment {
    * judges a Return in a checkout's Quantity box by 'Place order' (CU-142's rule) with no policy change. Found in an
    * isolated world, where the page's own scripts cannot redefine the DOM, and described like any target. Null when
    * there is none, and on any failure (a frame this world cannot reach): the Return is then judged by the field's own
-   * name, as before. Context, not identity: it stays out of the fingerprint.
+   * name, as before. Context, not identity: it stays out of the fingerprint. CU-406: the button's formContext rides
+   * along when it has one.
    */
   async #implicitSubmit(page, backendNodeId) {
     try {
       const world = await this.session.isolatedContext(page, page.mainFrameId)
       const objectId = (await this.session.send(page, 'DOM.resolveNode', { backendNodeId, executionContextId: world })).result.object.objectId
       const found = (await this.session.send(page, 'Runtime.callFunctionOn', {
-        objectId, functionDeclaration: `function () { return (${implicitSubmitButton.toString()})(this) }`, returnByValue: false,
+        objectId, functionDeclaration: `function () { return (${implicitSubmitButton.toString()})(this, ${implicitSubmitControls.toString()}) }`, returnByValue: false,
       })).result.result
-      if (found?.objectId === undefined) return { button: null, read: true }
+      if (found?.objectId === undefined) return { button: null, read: true, ...(await this.#implicitCandidates(page, objectId)) }
       const button = (await this.session.send(page, 'DOM.describeNode', { objectId: found.objectId })).result.node
       const described = await this.#describe(page, button.backendNodeId, undefined, { scanText: false })
-      return { button: described === null ? null : { role: described.role, name: described.name, panel: null }, read: true }
+      // CU-412 (11:56Z, fail closed): a lone script control with no accessible name cannot be judged as the default -
+      // it asks unknown (defaultCandidatesMore). A nameless real submit button keeps the CU-150 path (a search form's
+      // icon submit stays as it was).
+      if (described !== null && (typeof described.name !== 'string' || described.name.trim() === '')) {
+        const script = (await this.session.send(page, 'Runtime.callFunctionOn', {
+          objectId: found.objectId, returnByValue: true,
+          functionDeclaration: "function () { const t = String(this.type).toLowerCase(); return !((this.tagName === 'BUTTON' && t === 'submit') || (this.tagName === 'INPUT' && (t === 'submit' || t === 'image'))) }",
+        })).result.result?.value === true
+        if (script) return { button: null, read: true, more: true }
+      }
+      // CU-406: the Return target carries the same bounded formContext a click on that button would (CU-402/CU-405), so a
+      // Return in a trade form's amount field is judged with the form's asset beside a bare 'Sell' default.
+      return { button: described === null ? null : { role: described.role, name: described.name, panel: null, ...(described.formContext ? { formContext: described.formContext } : {}) }, read: true }
     } catch {
       return { button: null, read: false }
+    }
+  }
+
+  /**
+   * CU-412 (11:27Z contract, D-107): two or more script submit controls a Return may press (implicitSubmitControls;
+   * one alone is the defaultButton) as `{ candidates: [{ role, name, formContext? }] (at most 3), more }` - more true
+   * past 3, which agent core asks as unknown; it asks the strictest class among the candidates otherwise. Empty object
+   * when there are fewer. Fail closed: a control that cannot be described, or a read that fails, sets more (unknown).
+   */
+  async #implicitCandidates(page, fieldObjectId) {
+    try {
+      const list = (await this.session.send(page, 'Runtime.callFunctionOn', {
+        objectId: fieldObjectId, functionDeclaration: `function () { return (${implicitSubmitControls.toString()})(this) }`, returnByValue: false,
+      })).result.result
+      if (list?.objectId === undefined) return {}
+      const props = (await this.session.send(page, 'Runtime.getProperties', { objectId: list.objectId, ownProperties: true })).result.result ?? []
+      const items = props.filter((p) => /^\d+$/.test(p.name)).sort((a, b) => Number(a.name) - Number(b.name))
+      if (items.length < 2) return {}
+      const controls = []
+      let unread = false
+      for (const item of items.slice(0, 3)) {
+        if (item.value?.objectId === undefined) { unread = true; continue }
+        const node = (await this.session.send(page, 'DOM.describeNode', { objectId: item.value.objectId })).result.node
+        const described = await this.#describe(page, node.backendNodeId, undefined, { scanText: false })
+        // CU-412 (11:56Z): a control with no accessible name (an icon-only div) cannot be judged - unreadable, never dropped.
+        if (described === null || typeof described.name !== 'string' || described.name.trim() === '') unread = true
+        else controls.push({ role: described.role, name: described.name, ...(described.formContext ? { formContext: described.formContext } : {}) })
+      }
+      // Fail closed (D-107: candidates only add asks): a control that could not be read makes the list unjudgeable.
+      return { ...(controls.length > 0 ? { candidates: controls } : {}), more: items.length > 3 || unread }
+    } catch {
+      return { more: true }
     }
   }
 
@@ -915,6 +976,16 @@ class BrowserEnvironment {
       // state, not identity, so outside the fingerprint; absent when the element has none.
       ...(extra.checked !== undefined ? { checked: extra.checked } : {}),
       ...(extra.pressed !== undefined ? { pressed: extra.pressed } : {}),
+      // CU-400: the choices beside a form's submit button (describeElement's formContext) - up to 3 short option texts
+      // and whether an amount entry is present. Context, outside the fingerprint; run records keep origin, role, name.
+      ...(formContextOf(extra.formContext) ? { formContext: formContextOf(extra.formContext) } : {}),
+      // CU-443: a row with no verb of its own carries what the page offers around it (describeElement): dialHref (a
+      // tel:/sip:/callto:/facetime: href on it, above it or inside it - a boolean) and rowContext (its list's name, up to 3
+      // action names). Context, outside the fingerprint; never recorded.
+      // Round 2: inRow - the hit element has no verb of its own and sits inside such a row (read through it). A boolean.
+      ...(extra.inRow === true ? { inRow: true } : {}),
+      ...(extra.dialHref === true ? { dialHref: true } : {}),
+      ...(rowContextOf(extra.rowContext) ? { rowContext: rowContextOf(extra.rowContext) } : {}),
       // CU-157: context, not identity - outside the fingerprint.
       textEntered: entered,
       // CU-187: the label that captions a non-entry element (see describeElement); CU-194 rule 5: an entry's structural
