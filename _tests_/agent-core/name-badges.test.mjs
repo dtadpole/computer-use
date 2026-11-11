@@ -44,3 +44,17 @@ test('#609 round 3: a trailing key hint comes off for the whole classifier', () 
   }
   for (const name of ['Search \u2318K', 'Next Ctrl+Enter']) assert.equal(at(name, 'https://app.example/page'), 'allow', name)
 })
+
+test('#609 round 4: an added leading part (Action:, Confirm action:, Step N:) comes off', () => {
+  const at = (name, url) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url, target: { role: 'button', name } }); return v.decision === 'allow' ? 'allow' : v.class }
+  for (const [wrapped, row, url] of [['Action: Change direct deposit', 'Change direct deposit', 'https://app.example/pay'], ['Confirm action: Add time', 'Add time', 'https://parking.example/session'],
+    ['Step 2 of 3 - Add phone key', 'Add phone key', 'https://app.example/pay']]) {
+    const want = at(row, url)
+    assert.notEqual(want, 'allow', `${row} asks`)
+    assert.equal(at(wrapped, url), want, wrapped)
+  }
+  for (const name of ['Action: View details', 'Step 2: Review', 'Actions']) assert.equal(at(name, 'https://app.example/page'), 'allow', name)
+  // Named: 'Step 2: Change direct deposit' already asks purchase as written (an older rule reads the number beside 'deposit'), so the
+  // probe never runs; it asks either way.
+  assert.equal(at('Step 2: Change direct deposit', 'https://app.example/pay'), 'purchase')
+})
