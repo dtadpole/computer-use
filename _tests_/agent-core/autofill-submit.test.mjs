@@ -64,7 +64,7 @@ test('CU-302: an autofilled card or D-061 field asks too; an autofilled username
 test('CU-302: never pre-approved - a caller\'s credential pre-approval covers its own secrets, not saved ones', () => {
   const lenient = createPolicy({ sitePolicy: () => 'allow', preApprovals: [{ class: 'credential' }, { class: 'submit' }, { class: 'sensitive_data' }] })
   assert.equal(judge(click, signIn([password]), WEB, lenient), 'credential/autofill:credential')
-  assert.equal(judge({ type: 'type', text: 'hunter2' }, { tag: 'input', inputType: 'password', role: 'textbox', name: 'Password', editable: true }, WEB, lenient), 'allow', 'a typed caller secret stays pre-approvable')
+  assert.equal(judge({ type: 'type', text: '{{secret:login_password}}' }, { tag: 'input', inputType: 'password', role: 'textbox', name: 'Password', editable: true }, WEB, lenient), 'allow', 'a typed caller secret stays pre-approvable (CU-494: value-bound)')
 })
 
 test('CU-302: a failed autofill read asks credential; no report, the desktop and non-submit actions are unchanged', () => {
