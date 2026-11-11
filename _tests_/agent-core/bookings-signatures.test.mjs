@@ -43,6 +43,7 @@ test('CU-415 round 3 (13:19Z): Sign agreement/contract and Release my records as
   for (const name of ['Cancel trip', 'Cancel appointment']) assert.equal(click(name), 'delete', name)
 })
 
-test('CU-415 named limit (13:19Z): I agree, Agree and continue, Accept & continue, bare Sign and Sign here stay free', () => {
-  for (const name of ['I agree', 'Agree and continue', 'Accept & continue', 'Sign', 'Sign here']) assert.equal(click(name), 'allow', name)
+test('CU-415 named limit (13:19Z): I agree, Agree and continue, Accept & continue stay free; bare Sign / Sign here ask permission since CU-495 (11:06Z, a raise)', () => {
+  for (const name of ['I agree', 'Agree and continue', 'Accept & continue']) assert.equal(click(name), 'allow', name)
+  for (const name of ['Sign', 'Sign here']) assert.equal(click(name), 'permission', name)
 })

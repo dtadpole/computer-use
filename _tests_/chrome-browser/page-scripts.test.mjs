@@ -1004,3 +1004,61 @@ test('CU-472: a link that does not navigate says inertLink - no, empty, "#", "#f
   assert.equal(describeElement(el('DIV', { attrs: { role: 'link' }, children: ['Pay'], closest: () => null })).inertLink, true, 'an ARIA link with no <a>')
   assert.equal('inertLink' in describeElement(el('BUTTON', { children: ['Pay'], closest: () => null })), false, 'a button is no link')
 })
+
+test('CU-473: a control whose rendered text has two or more lines says firstLine (the first non-empty one, at most 80 characters); one line says nothing', () => {
+  const withText = (innerText) => { const b = el('BUTTON', { children: [innerText.replace(/\n/g, ' ')], closest: () => null }); b.innerText = innerText; return b }
+  assert.equal(describeElement(withText('Change Direct Deposit\nTakes Effect Immediately')).firstLine, 'Change Direct Deposit')
+  assert.equal(describeElement(withText('\n  Lock   rate \n\nToday only')).firstLine, 'Lock rate')
+  assert.equal(describeElement(withText(`${'x'.repeat(100)}\nsecond`)).firstLine.length, 80)
+  assert.equal('firstLine' in describeElement(withText('Change direct deposit')), false, 'one line')
+  assert.equal('firstLine' in describeElement(el('BUTTON', { children: ['Pay'], closest: () => null })), false, 'no innerText (a fake node)')
+})
+
+test('CU-488: a control in a two-part setting row takes its label as caption - bounded to one quiet sibling before it', () => {
+  const show = el('BUTTON', { children: ['Show'] })
+  el('DIV', { children: [el('SPAN', { children: ['Seed phrase'] }), show] })
+  assert.equal(describeElement(show).caption, 'Seed phrase', 'label then control')
+  const off = el('BUTTON', { children: ['Turn off'] })
+  el('DIV', { children: [el('DIV', { children: [el('STRONG', { children: ['Two-factor'] }), ' authentication'] }), el('DIV', { children: [off] })] })
+  assert.equal(describeElement(off).caption, 'Two-factor authentication', 'the control one level down in its own cell')
+  const first = el('BUTTON', { children: ['Enable'] })
+  el('DIV', { children: [first, el('SPAN', { children: ['Remote management'] })] })
+  assert.equal(describeElement(first).caption, null, 'the control before the text: none')
+  const busy = el('BUTTON', { children: ['Turn off'] })
+  el('DIV', { children: [el('SPAN', { children: ['Two-factor ', el('A', { attrs: { href: '/help' }, children: ['help'] })] }), busy] })
+  assert.equal(describeElement(busy).caption, null, 'a label holding a link is no label')
+  const crowd = el('BUTTON', { children: ['Turn off'] })
+  el('DIV', { children: [el('H3', { children: ['Two-factor authentication'] }), el('P', { children: ['Protects your account.'] }), crowd] })
+  assert.equal(describeElement(crowd).caption, null, 'a heading over a section stays out (named limit): three children')
+  const value = el('SPAN', { children: ['DE89 3704'] })
+  el('DIV', { children: [el('SPAN', { children: ['IBAN'] }), value] })
+  assert.equal(describeElement(value).caption, null, 'controls only: a shown value keeps the CU-187 rules')
+  const long = el('BUTTON', { children: ['Show'] })
+  el('DIV', { children: [el('SPAN', { children: ['x'.repeat(81)] }), long] })
+  assert.equal(describeElement(long).caption, null, 'over 80 characters: none')
+})
+
+test('CU-507: a control inside a role=dialog / alertdialog / <dialog> carries the dialog name and description (dialogName / dialogDescription)', () => {
+  const inside = (dialogAttrs, { title = null, para = null, ids = {} } = {}) => {
+    const ok = el('BUTTON', { children: ['OK'], closest: () => null })
+    const heading = title === null ? null : el('H2', { children: [title], innerText: title, contains: () => false })
+    const p = para === null ? null : el('P', { children: [para], innerText: para, contains: () => false })
+    el(dialogAttrs.tag ?? 'DIV', { attrs: dialogAttrs.attrs ?? {}, children: [ok],
+      querySelector: (s) => (s === 'p' ? p : heading),
+      getRootNode: () => ({ getElementById: (id) => (id in ids ? el('SPAN', { innerText: ids[id], contains: () => false }) : null) }) })
+    const d = describeElement(ok)
+    return { name: d.dialogName, description: d.dialogDescription }
+  }
+  assert.deepEqual(inside({ attrs: { role: 'alertdialog', 'aria-labelledby': 't', 'aria-describedby': 'd' } }, { ids: { t: 'Delete account?', d: 'This removes all your data.' } }),
+    { name: 'Delete account?', description: 'This removes all your data.' }, 'aria-labelledby + aria-describedby')
+  assert.deepEqual(inside({ attrs: { role: 'dialog', 'aria-label': 'Confirm   purchase' } }), { name: 'Confirm purchase', description: undefined }, 'aria-label, whitespace folded')
+  assert.deepEqual(inside({ tag: 'DIALOG' }, { title: 'Transfer $500 to Alex?', para: 'You cannot undo this.' }),
+    { name: 'Transfer $500 to Alex?', description: 'You cannot undo this.' }, 'a <dialog>: its first heading and paragraph')
+  assert.deepEqual(inside({ attrs: { role: 'dialog' } }), { name: undefined, description: undefined }, 'a dialog that says nothing')
+  assert.equal(inside({ attrs: { role: 'dialog', 'aria-label': 'x'.repeat(400) } }).name.length, 300, 'name bounded to 300')
+  assert.equal(inside({ attrs: { role: 'dialog', 'aria-label': 'T' } }, { para: 'y'.repeat(400) }).description.length, 300, 'description bounded to 300')
+  const outside = el('BUTTON', { children: ['OK'], closest: () => null })
+  el('DIV', { attrs: { role: 'region', 'aria-label': 'Delete account?' }, children: [outside] })
+  const d = describeElement(outside)
+  assert.equal('dialogName' in d || 'dialogDescription' in d, false, 'not in a dialog')
+})

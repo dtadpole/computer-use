@@ -165,6 +165,19 @@ const inspected = (target) => (target === null || target === undefined ? null : 
   // CU-328: the helper's inWebArea (CU-322) exactly as the driver passes it - true or false, or no key when the driver
   // has no read (an older helper, or a walk that could not finish). Unread is never printed as false.
   ...(Object.hasOwn(target, 'inWebArea') ? { inWebArea: target.inWebArea } : {}),
+  // CU-387/CU-392/CU-398 (helper 0.2.67): the decision-relevant reads a verifier checks live, each only when the driver
+  // passes it - the file the target names (filename, the url's file leaf) and whether the helper lent it from a row
+  // (fileFrom), the Apple-menu mark, a Finder drop destination, a network volume. The driver already drops anything else.
+  ...(typeof target.filename === 'string' ? { filename: target.filename } : {}),
+  ...(typeof target.url === 'string' ? { url: target.url } : {}),
+  ...(target.fileFrom === 'ancestor' ? { fileFrom: 'ancestor' } : {}),
+  ...(target.appleMenu === true ? { appleMenu: true } : {}),
+  ...(typeof target.dropDestination === 'string' ? { dropDestination: target.dropDestination } : {}),
+  ...(target.networkVolume === true ? { networkVolume: true } : {}),
+  // CU-372 (helper 0.2.65): a closed pop-up button's menu as the driver's popUpOf shaped it ({ items, selected,
+  // selectedIndex } or { unread: true, selected }; pullsDown kept) - the read a key on it is judged by, so its first live
+  // row can be read through this admitted entry point. Item titles only; no key when the driver passes none.
+  ...(target.popUp !== null && typeof target.popUp === 'object' && !Array.isArray(target.popUp) ? { popUp: target.popUp } : {}),
 })
 
 /**

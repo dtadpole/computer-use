@@ -512,6 +512,35 @@ export function describeElement(el) {
         if (parts.length > 0) caption = clip(parts.join(' · '))
       }
     }
+    // CU-488: a CONTROL in a two-part setting row - its label, then the control ('Seed phrase' [Show], 'Two-factor
+    // authentication' [Turn off]) - takes the label's text, as a key | value table row does above. Bounded: the control
+    // or an ancestor within two levels has exactly ONE element sibling, which holds only text (no link, button, field
+    // or role control inside it) and comes first; nothing past a container. Still no 'nearest preceding text': a heading
+    // over a section, or the row before, stays out (a named limit).
+    if (caption === null && control) {
+      const INTERACTIVE = ['a', 'button', 'input', 'select', 'textarea', 'summary', 'details']
+      const quiet = (node) => {
+        for (const k of kids(node)) {
+          const r = String((k.getAttribute && k.getAttribute('role')) || '').toLowerCase()
+          if (INTERACTIVE.includes(tagOf(k)) || CONTROL_ROLES.includes(r) || (k.getAttribute && k.getAttribute('tabindex') !== null) || !quiet(k)) return false
+        }
+        return true
+      }
+      let node = el
+      for (let depth = 0; node && node.parentElement && depth <= 2; depth += 1, node = node.parentElement) {
+        const parent = node.parentElement
+        const parentRole = String((parent.getAttribute && parent.getAttribute('role')) || '').toLowerCase()
+        if (CONTAINERS.includes(tagOf(parent)) || CONTAINER_ROLES.includes(parentRole)) break
+        const siblings = kids(parent)
+        if (siblings.length !== 2) continue
+        const label = siblings[0] === node ? null : siblings[0]
+        if (label && quiet(label)) {
+          const text = words(label)
+          if (text && text.length <= 80) caption = text
+        }
+        break
+      }
+    }
   }
   // CU-271 (cu-coordinator's ruling, cu-researcher's review): where the element sits, from DOM shape alone - never a
   // value. terminal: inside a web terminal (xterm.js and its helper textarea, role=terminal). notebookCell: inside a
@@ -668,10 +697,51 @@ export function describeElement(el) {
     const trimmed = String(raw).trim()
     return trimmed === '' || trimmed.startsWith('#') || /^javascript:/i.test(trimmed)
   })()
+  // CU-473: Chrome's accessible name flattens a second line (<br>, block children, a <small> note) into spaces, so
+  // 'Change Direct Deposit' over 'Takes Effect Immediately' reaches policy as one name nothing can split. innerText keeps
+  // the rendered line breaks: firstLine is the first non-empty line when there are two or more, at most 80 characters -
+  // a string outside the fingerprint, never recorded.
+  const firstLine = (() => {
+    const text = typeof el.innerText === 'string' ? el.innerText : ''
+    const lines = text.split(/[\r\n]+/).map((line) => line.replace(/\s+/g, ' ').trim()).filter(Boolean)
+    return lines.length >= 2 ? lines[0].slice(0, 80) : null
+  })()
+  // CU-507 (High; cu-coordinator 16:06Z; seam agreed with cu-developer-one and cu-developer-three 16:06-16:09Z): a generic
+  // confirm ('OK', 'Continue', 'Yes') inside an in-page modal is judged with the modal's own words. For the closest
+  // enclosing role=dialog / alertdialog / <dialog> (walked over the flat tree, shadow hosts included): dialogName is its
+  // aria-labelledby text, else aria-label, else its first heading; dialogDescription is its aria-describedby text, else its
+  // first paragraph - trimmed, at most 300 characters each, text the control itself is not part of. Context, outside the
+  // fingerprint, never recorded; absent outside a dialog or when the dialog says nothing.
+  const dialogText = (() => {
+    let node = el
+    let dialog = null
+    for (let steps = 0; node && steps < 40 && dialog === null; steps++) {
+      if (node !== el && node.nodeType === 1) {
+        const r = String((node.getAttribute && node.getAttribute('role')) || '').trim().toLowerCase().split(/\s+/)[0]
+        if (r === 'dialog' || r === 'alertdialog' || String(node.tagName || '').toLowerCase() === 'dialog') dialog = node
+      }
+      if (dialog === null) {
+        const rootNode = typeof node.getRootNode === 'function' ? node.getRootNode() : null
+        node = node.parentElement || (rootNode && rootNode !== node && rootNode.host) || null
+      }
+    }
+    if (dialog === null) return null
+    const clean = (text, max) => String(text ?? '').replace(/\s+/g, ' ').trim().slice(0, max)
+    const textOf = (n) => (n && !(typeof n.contains === 'function' && n.contains(el)) ? (typeof n.innerText === 'string' ? n.innerText : n.textContent) : '')
+    const scope = typeof dialog.getRootNode === 'function' ? dialog.getRootNode() : null
+    const first = (selector) => (typeof dialog.querySelector === 'function' ? dialog.querySelector(selector) : null)
+    const byIds = (attr) => String(dialog.getAttribute(attr) || '').trim().split(/\s+/).filter(Boolean)
+      .map((id) => textOf(scope && typeof scope.getElementById === 'function' ? scope.getElementById(id) : null)).join(' ')
+    let name = clean(byIds('aria-labelledby'), 300) || clean(dialog.getAttribute('aria-label'), 300)
+    if (!name) name = clean(textOf(first('h1, h2, h3, h4, h5, h6, [role="heading"]')), 300)
+    let description = clean(byIds('aria-describedby'), 300)
+    if (!description) description = clean(textOf(first('p')), 300)
+    return { ...(name ? { dialogName: name } : {}), ...(description ? { dialogDescription: description } : {}) }
+  })()
   return { tag, inputType: type, isPassword: type === 'password', autocomplete: autocomplete || null, href: link, origin, editable, caption: editable ? null : caption, entryCaption: editable ? caption : null,
     ...(frameUrl ? { frameUrl } : {}), ...(terminal ? { terminal } : {}), ...(notebookCell ? { notebookCell } : {}), ...(notebookSurface ? { notebookSurface } : {}), ...(codeSurface ? { codeSurface } : {}),
     ...(checked !== null ? { checked } : {}), ...(pressed !== null ? { pressed } : {}),
-    ...(formContext !== null ? { formContext } : {}), ...(inertLink ? { inertLink: true } : {}), ...(inRow ? { inRow: true } : {}), ...(dialHref === true ? { dialHref: true } : {}), ...(rowContext !== null ? { rowContext } : {}) }
+    ...(formContext !== null ? { formContext } : {}), ...(firstLine !== null ? { firstLine } : {}), ...(inertLink ? { inertLink: true } : {}), ...(inRow ? { inRow: true } : {}), ...(dialHref === true ? { dialHref: true } : {}), ...(rowContext !== null ? { rowContext } : {}), ...(dialogText ?? {}) }
 }
 
 /**
