@@ -46,3 +46,12 @@ test('#671 r3: a camelCase fieldAttr is split, and payout_account asks', () => {
     assert.equal(type('Mira', { name: '', fieldAttr }).decision, 'allow', fieldAttr)
   }
 })
+
+test('CU-494 follow-up: an unnamed entry with a money placeholder or layout label asks; cc_number without autocomplete asks', () => {
+  assert.equal(type('DE89370400440532013000', { name: '', placeholder: 'IBAN' }).decision, 'confirm', 'placeholder')
+  assert.equal(type('021000021', { name: '', nearbyLabel: 'Routing number' }).decision, 'confirm', 'nearbyLabel')
+  assert.equal(type('4000', { name: '', fieldAttr: 'cc_number' }).decision, 'confirm', 'cc_number')
+  assert.equal(type('4000', { name: '', fieldAttr: 'ccNumber' }).decision, 'confirm', 'ccNumber')
+  assert.equal(type('Mira', { name: '', placeholder: 'Search' }).decision, 'allow', 'an ordinary placeholder')
+  assert.equal(type('Mira', { name: 'Nickname', placeholder: 'IBAN' }).decision, 'allow', 'the name wins')
+})
