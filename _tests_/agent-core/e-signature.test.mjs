@@ -29,3 +29,8 @@ test('CU-495 negatives: review, next, decline, and the login rows keep their cla
   assert.equal(at('Sign in'), 'allow', 'Sign in keeps its login row')
   assert.equal(at('Sign up'), at('Sign up', 'https://app.example/home'), 'Sign up keeps its row')
 })
+
+test('#665 round 2 (cu-researcher 11:16Z): the held-out escapes fold', () => {
+  for (const name of ['Add my signature', 'Place signature', 'Insert signature', 'Sign electronically', 'Sign digitally']) assert.equal(at(name, 'https://app.example/home'), 'permission', name)
+  for (const name of ['Signature settings', 'Signatures', 'Email signature']) assert.equal(at(name, 'https://app.example/home'), 'allow', name)
+})

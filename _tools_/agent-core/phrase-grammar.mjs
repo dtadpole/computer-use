@@ -1029,7 +1029,8 @@ function grammarClassesOf(name, role = '') {
   if (/^\s*install\s+now\s*!?\s*$/i.test(raw)) return ['install']
   // CU-495 (High; cu-coordinator 11:06Z): an e-signature commits the signer - 'Sign', 'Sign here', 'Click to sign', 'Agree and sign',
   // 'Apply signature', 'Complete signing', 'Sign all' ask permission anywhere, like 'Adopt and Sign'. 'Sign in' / 'Sign up' keep their rows.
-  if (/^\s*(?:sign(?:\s+(?:here|all|now|it|below))?|click\s+(?:here\s+)?to\s+sign|(?:agree|accept)\s+(?:and|&)\s+sign|apply\s+(?:my\s+|your\s+)?signature|(?:complete|finish)\s+signing|e-?sign(?:\s+now)?)\s*!?\s*$/i.test(raw)) return ['permission']
+  // #665 round 2 (cu-researcher 11:16Z): 'Add my / Place / Insert signature', 'Sign electronically / digitally'.
+  if (/^\s*(?:sign(?:\s+(?:here|all|now|it|below))?|click\s+(?:here\s+)?to\s+sign|(?:agree|accept)\s+(?:and|&)\s+sign|(?:apply|add|place|insert)\s+(?:my\s+|your\s+|a\s+)?signature|(?:complete|finish)\s+signing|e-?sign(?:\s+now)?|sign\s+(?:electronically|digitally))\s*!?\s*$/i.test(raw)) return ['permission']
   // CU-492 (High; cu-coordinator 10:36Z): cloud console - emptying a bucket deletes every object (delete); a rule open to the whole
   // internet, and turning off encryption or versioning, widen access (permission). A bare 'Add rule' opens a form (free).
   if (/^\s*empty\s+(?:the\s+|this\s+)?(?:bucket|container)\s*$/i.test(raw)) return ['delete']
