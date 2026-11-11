@@ -773,6 +773,12 @@ function firstSentence(text) {
   }
   return text
 }
+/** #635 round 2 (cu-researcher 07:08Z): the lead-ins only, with the trailing words kept - 'Yes, install now' keeps its 'now' for the
+ * 'Install now' row (the full canonical form strips a trailing 'now'). */
+function leadingStripped(name) {
+  const lines = String(name ?? '').split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean)
+  return (lines[0] ?? '').replace(LEADING_ICONS, '').replace(LEADING_PART, '').replace(CONFIRM_PREFIX, '').replace(CTA_LEAD_IN, '').trim()
+}
 export function canonicalConfirm(name) {
   const lines = String(name ?? '').split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean)
   const text = lines[0] ?? ''
@@ -801,11 +807,28 @@ function withVerbSynonym(text) {
   for (const [pattern, replacement] of VERB_SYNONYMS) if (pattern.test(text)) return text.replace(pattern, replacement)
   return text
 }
+// CU-486 (High; cu-coordinator 07:36Z): known compounds are joined and split both ways - autolock / auto-lock, e-mail / email, log-in /
+// login, e-sim / esim, opt-in / optin, check-in / checkin, add-on / addon, plug-in / plugin, sign-in / signin, set-up / setup.
+// #642 round 2 (cu-researcher 07:54Z): auto-invest too, and a SPACED compound joins as well ('Remote log in', 'plug in').
+const COMPOUNDS = [['auto', 'lock'], ['auto', 'invest'], ['e', 'mail'], ['log', 'in'], ['e', 'sim'], ['opt', 'in'], ['check', 'in'], ['add', 'on'], ['plug', 'in'], ['sign', 'in'], ['set', 'up']]
+function compoundJoined(text) {
+  let out = text
+  for (const [a, b] of COMPOUNDS) out = out.replace(new RegExp(`\\b${a}[-\\u2010\\u2011 ](${b})\\b`, 'gi'), (m) => m.replace(/[-\u2010\u2011 ]/, ''))
+  return out
+}
+function compoundSplit(text) {
+  let out = text
+  for (const [a, b] of COMPOUNDS) out = out.replace(new RegExp(`\\b(${a})(${b})\\b`, 'gi'), '$1-$2')
+  return out
+}
 export function canonicalForms(name) {
   const unwrapped = canonicalConfirm(name)
   const cut = firstSentence(unwrapped)
   const bare = withoutDeterminers(unwrapped)
-  return [...new Set([unwrapped, cut, bare, withoutDeterminers(cut)])].filter((form) => form !== '' && form !== String(name ?? '').trim())
+  const forms = [unwrapped, cut, bare, withoutDeterminers(cut), leadingStripped(name)]
+  // The compound forms only for a name a row could match (<= 200 characters): the F3 budget (CU-272) holds for an 80k-character name.
+  const compounds = String(name ?? '').length <= 200 ? [...forms.map(compoundJoined), ...forms.map(compoundSplit)] : []
+  return [...new Set([...forms, ...compounds])].filter((form) => form !== '' && form !== String(name ?? '').trim())
 }
 /** CU-481: the verb-synonym forms of a name (and of its canonical forms) - tried LAST, only when the name and its own canonical forms
  * get no class, so a synonym never outranks a row the name already matches ('Create service account key' stays credential). */
@@ -942,6 +965,9 @@ function grammarClassesOf(name, role = '') {
   if (vault) return [vault]
   const merchant = merchantClass(list)
   if (merchant) return [merchant]
+  // #642 round 3 (cu-coordinator 08:05Z): 'Install add-on / addon / plug-in / extension' asks install (the older install row did not
+  // read add-ons; the compound forms reach this row).
+  if (list[0] === 'install' && list.length <= 4 && (['addon', 'plugin', 'extension'].includes(list[list.length - 1]) || (list[list.length - 2] === 'add' && list[list.length - 1] === 'on') || (list[list.length - 2] === 'plug' && list[list.length - 1] === 'in'))) return ['install']
   // CU-477 (High; cu-coordinator 03:36Z): a patient portal - account access to another person (credential), signing an authorization
   // or release and booking care (submit), research opt-in (permission); a copay-charging e-visit asks purchase through the amount row.
   const portal = portalClass(list)
@@ -951,6 +977,23 @@ function grammarClassesOf(name, role = '') {
   // #633 round 2 (cu-researcher 07:05Z): everyone / entire list / contacts, and 'Blast it / now'. The hyphenated 'Re-subscribe all'
   // keeps the older subscribe -> purchase (it asks either way; named).
   if (list[0] === 'resubscribe' && list.length <= 3 && ['all', 'everyone', 'entire', 'contact', 'list', 'subscriber'].includes(list[1])) return ['submit']
+  // CU-484 (High; cu-coordinator 06:05Z): installing by store wording - an OAuth install into a workspace app, a browser add-on, a bare
+  // 'Install now', an installer or a plugin activation (install); sideloading and unknown sources (permission). 'Uninstall' keeps delete.
+  if (list.length <= 5) {
+    const [v, ...r] = list
+    if (v === 'add' && r[0] === 'to' && r.length === 2 && ['slack', 'discord', 'telegram', 'teams', 'zoom', 'notion', 'trello', 'asana', 'jira', 'github', 'gitlab', 'workspace', 'firefox', 'chrome', 'edge', 'safari', 'opera', 'brave', 'browser'].includes(r[1])) return ['install']
+    // #635 round 3 (cu-developer-three 07:19Z): 'add-on' / 'plug-in' tokenize at the hyphen ('add on', 'plug in').
+    const addOn = r.length >= 2 && ((r[r.length - 2] === 'add' && r[r.length - 1] === 'on') || (r[r.length - 2] === 'plug' && r[r.length - 1] === 'in'))
+    if (v === 'get' && ((r.length <= 2 && ['extension', 'addon', 'plugin'].includes(r[r.length - 1])) || (r.length === 2 && addOn))) return ['install']
+    // #635 round 2 (cu-researcher 07:08Z): launch for run, extension / add-on for plugin, 'apps from' inside 'Allow unknown sources', and
+    // the 'Install now' family as a token row (format and lead-in variants reach it).
+    if (['run', 'launch', 'open'].includes(v) && r.length === 1 && r[0] === 'installer') return ['install']
+    if (v === 'install' && ((r.length === 1 && ['now', 'it'].includes(r[0])) || (r.length === 2 && r[0] === 'now' && r[1] === 'please') || (r.length === 2 && r[0] === 'for' && r[1] === 'free'))) return ['install']
+    if (['activate', 'enable'].includes(v) && ((r.length <= 2 && ['plugin', 'addon', 'extension'].includes(r[r.length - 1])) || (r.length === 2 && addOn))) return ['install']
+    if (v === 'sideload' && r.length <= 2) return ['permission']
+    if (v === 'allow' && ((r[0] === 'unknown' && r[1] === 'source' && r.length === 2) || (r[0] === 'app' && r[1] === 'from' && ['anywhere', 'unknown'].includes(r[2]) && (r.length === 3 || (r[2] === 'unknown' && r[3] === 'source' && r.length === 4))))) return ['permission']
+  }
+  if (/^\s*install\s+now\s*!?\s*$/i.test(raw)) return ['install']
   // CU-483 (High; cu-coordinator 05:34Z): brokerage - orders and automatic trading spend money (purchase); margin and options trading
   // widen what the account may do (permission). A bare 'Sell' is page-bound (policy.mjs reads the trading URL).
   if (list.length <= 3) {
