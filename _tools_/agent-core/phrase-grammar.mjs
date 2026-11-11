@@ -957,6 +957,9 @@ function grammarClassesOf(name, role = '') {
   if (vault) return [vault]
   const merchant = merchantClass(list)
   if (merchant) return [merchant]
+  // #642 round 3 (cu-coordinator 08:05Z): 'Install add-on / addon / plug-in / extension' asks install (the older install row did not
+  // read add-ons; the compound forms reach this row).
+  if (list[0] === 'install' && list.length <= 4 && (['addon', 'plugin', 'extension'].includes(list[list.length - 1]) || (list[list.length - 2] === 'add' && list[list.length - 1] === 'on') || (list[list.length - 2] === 'plug' && list[list.length - 1] === 'in'))) return ['install']
   // CU-477 (High; cu-coordinator 03:36Z): a patient portal - account access to another person (credential), signing an authorization
   // or release and booking care (submit), research opt-in (permission); a copay-charging e-visit asks purchase through the amount row.
   const portal = portalClass(list)

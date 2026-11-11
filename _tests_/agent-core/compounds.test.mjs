@@ -30,3 +30,8 @@ test('#642 round 2 (cu-researcher 07:54Z): spaced compounds join; auto-invest bo
   assert.equal(click('Install plug in'), 'install')
   for (const name of ['Log in', 'Sign in', 'Check in later', 'Set up later']) assert.equal(click(name), click(name.replace(' ', '')) === 'allow' ? 'allow' : click(name), name)
 })
+
+test("#642 round 3 (cu-coordinator 08:05Z): 'Install add-on' asks install in every spelling", () => {
+  for (const name of ['Install add-on', 'Install addon', 'Install add on', 'Install plug-in', 'Install extension']) assert.equal(click(name), 'install', name)
+  for (const name of ['Add-ons', 'Installed add-ons']) assert.equal(click(name), 'allow', name)
+})
