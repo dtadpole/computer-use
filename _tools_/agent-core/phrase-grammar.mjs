@@ -1027,6 +1027,18 @@ function grammarClassesOf(name, role = '') {
     if (v === 'allow' && ((r[0] === 'unknown' && r[1] === 'source' && r.length === 2) || (r[0] === 'app' && r[1] === 'from' && ['anywhere', 'unknown'].includes(r[2]) && (r.length === 3 || (r[2] === 'unknown' && r[3] === 'source' && r.length === 4))))) return ['permission']
   }
   if (/^\s*install\s+now\s*!?\s*$/i.test(raw)) return ['install']
+  // CU-500 (High; cu-coordinator 12:49Z), as verb families with object synonyms: on an exchange, confirming a withdrawal, a market
+  // order, converting everything and setting leverage move money (purchase); adding or allowlisting a withdrawal address redirects it
+  // (credential); turning off the withdrawal allowlist opens the account (permission). 'Deposit address' and 'Markets' stay free.
+  // #680 round 2 (cu-developer-three 12:55Z): a bare 'Add to allowlist / whitelist' (an ad blocker's, a mail sender's, a firewall's)
+  // stays free - the credential row needs an address / wallet / withdrawal object.
+  if (/^\s*confirm\s+(?:the\s+|this\s+|your\s+|my\s+)?(?:withdrawals?|withdraw(?:al)?\s+request|crypto\s+withdrawal|payout)\s*$/i.test(raw)
+    || /^\s*(?:market\s+(?:sell|buy|order)|(?:sell|buy)\s+(?:at\s+|by\s+)?market(?:\s+price)?|(?:place|submit)\s+(?:a\s+)?market\s+(?:sell|buy|order))\s*$/i.test(raw)
+    || /^\s*convert\s+(?:all|everything|max|(?:my\s+|the\s+)?(?:entire|whole|full|max(?:imum)?)\s+(?:balance|amount|portfolio))(?:\s+to\s+[a-z0-9]{2,10})?\s*$/i.test(raw)
+    || /^\s*(?:set|change|increase|raise|use|apply)\s+(?:the\s+|my\s+)?leverage(?:\s+to\s+\d+(?:\.\d+)?\s*x)?\s*$|^\s*(?:set|use|apply)\s+\d+(?:\.\d+)?\s*x(?:\s+leverage)?\s*$/i.test(raw)) return ['purchase']
+  if (/^\s*(?:add|save|register|create)\s+(?:a\s+|an\s+|new\s+|a\s+new\s+)?(?:withdrawal|withdraw|payout|crypto|wallet|external|whitelisted|allowlisted|trusted)\s+(?:wallet\s+)?address(?:es)?\s*$/i.test(raw)
+    || /^\s*(?:whitelist|allowlist|trust)\s+(?:an?\s+|this\s+|the\s+|new\s+)?(?:withdrawal\s+)?(?:address|wallet)\s*$|^\s*add\s+(?:this\s+|the\s+)?(?:address|wallet)\s+to\s+(?:the\s+)?(?:withdrawal\s+|address\s+)?(?:whitelist|allowlist)\s*$|^\s*add\s+to\s+(?:the\s+)?(?:withdrawal|address|wallet)\s+(?:whitelist|allowlist)\s*$/i.test(raw)) return ['credential']
+  if (/^\s*(?:disable|turn\s+off|switch\s+off|deactivate|remove|pause)\s+(?:the\s+)?(?:withdrawal|address|wallet|crypto)\s+(?:whitelist|allowlist|lock|protection)(?:ing)?\s*$/i.test(raw)) return ['permission']
   // CU-497 (High; cu-coordinator 11:49Z, the CU-461 exposure family): exposing a phone number, email or location on a profile, or linking
   // another service's account, asks permission - 'Make phone number visible', 'Let anyone find me by phone / email', 'Turn on location in
   // posts', 'Show my location', 'Link Instagram account', 'Connect Instagram'. 'Hide phone number' and pickers stay free.
