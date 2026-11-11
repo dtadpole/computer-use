@@ -29,7 +29,8 @@ test('#602 round 2: the CU-468 and CU-470 held-out escapes ask with their family
 test('#602 round 2 (cu-coordinator 01:36Z): EU amount forms ask; CU-456 concrete-domain safe senders ask, one sender stays free', () => {
   for (const name of ['4,99 EUR', '4,99 \u20ac', 'Weiter f\u00fcr 4,99 \u20ac']) assert.equal(at(name, 'https://shop.example/checkout'), 'purchase', name)
   for (const name of ['Add example.com to safe senders', 'Add @example.com to safe senders']) assert.equal(at(name, 'https://mail.example/settings'), 'permission', name)
-  for (const name of ['Add to safe senders', 'Add alice@example.com to safe senders']) assert.equal(at(name, 'https://mail.example/settings'), 'allow', name)
+  // cu-coordinator 17:36Z (CU-511): one sender asks permission too - an explicit raise of this 01:36Z free pin.
+  for (const name of ['Add to safe senders', 'Add alice@example.com to safe senders']) assert.equal(at(name, 'https://mail.example/settings'), 'permission', name)
 })
 
 test('#602 round 2 (cu-developer-three 01:39Z): desktop roles - a menu button asks, list rows take the commit-verb form, a pop-up stays out', () => {

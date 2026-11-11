@@ -753,12 +753,15 @@ const LEADING_ICONS = /^\s*(?:[\p{Extended_Pictographic}\uFE0F\p{S}\u2022\u2023\
 // consequences, <row>', 'I acknowledge the risk, <row>', 'Understood, <row>' - is stripped like 'Yes, <row>', so the row decides.
 // #685 round 2 (cu-researcher 13:54Z): the connector form - 'I understand (the risks) and (still) want / wish / choose to <row>'.
 const ACK_CONNECTOR = /^\s*i\s+(?:understand|acknowledge|accept|agree)(?:\s+(?:the|all|these)\s+(?:consequences|risks?|terms|warnings?))?\s*,?\s+and\s+(?:still\s+)?(?:want|wish|choose|would\s+like|intend|agree)\s+to\s+/i
-const CONFIRM_PREFIX = /^\s*(?:(?:yes(?:\s+please)?|ok|okay|sure|confirm|continue|got\s+it|please|understood|i\s+(?:understand|acknowledge|accept|agree)(?:\s+(?:the|all|these)\s+(?:consequences|risks?|terms|warnings?))?|i(?:'ve|\s+have)\s+read\s+and\s+understand(?:\s+(?:the|this|these)\s+\w+)?)\s*[,:!.\u2013\u2014-]+\s*)+/iu
+// CU-517 (High; cu-coordinator 19:06Z): 'I'm sure' / 'I am sure' / 'I'm certain' as an acknowledgement too - "I'm sure, <row>",
+// "Yes, I'm sure, <row>" (the prefix repeats) and '<row>, I'm sure' (TRAILING_QUALIFIER); curly apostrophes read straight (#721).
+// #725 round 3 (cu-researcher 19:14Z): 'Yes I'm sure' without the comma, and the intensifiers (really / absolutely / totally / 100% sure).
+const CONFIRM_PREFIX = /^\s*(?:(?:yes(?:\s+please)?|ok|okay|sure|confirm|continue|got\s+it|please|understood|(?:yes\s+)?i(?:'m|\s+am)\s+(?:(?:really|absolutely|totally|completely|quite|very|fully|100\s?%)\s+)?(?:sure|certain|positive)|i\s+(?:understand|acknowledge|accept|agree)(?:\s+(?:the|all|these)\s+(?:consequences|risks?|terms|warnings?))?|i(?:'ve|\s+have)\s+read\s+and\s+understand(?:\s+(?:the|this|these)\s+\w+)?)\s*[,:!.\u2013\u2014-]+\s*)+/iu
 // CU-482 (proposed High; cu-researcher 04:58Z): a call-to-action lead-in before a ruled row - 'please', 'click (here) to', 'tap to',
 // 'let's', 'go ahead and', 'I want to'.
 // cu-researcher 05:02Z: trailing qualifiers too - 'anyway', 'instantly', 'on this device', 'for me', 'here', 'too', 'again'.
 // #630 round 2: a trailing ', please' too ('Add time, please').
-const TRAILING_QUALIFIER = /(?:\s*,\s*please|\s+(?:anyway|anyways|instantly|immediately|on\s+this\s+(?:device|computer|browser|phone)|for\s+me|here|too|again))+\s*[.!]?\s*$/i
+const TRAILING_QUALIFIER = /(?:\s*,\s*please|\s*[,\u2013\u2014-]\s*(?:yes,?\s+)?i(?:'m|\s+am)\s+(?:(?:really|absolutely|totally|completely|quite|very|fully|100\s?%)\s+)?(?:sure|certain|positive)|\s+(?:anyway|anyways|instantly|immediately|on\s+this\s+(?:device|computer|browser|phone)|for\s+me|here|too|again))+\s*[.!]?\s*$/i
 // CU-508 (qualifier sweep): a trailing WIDENING qualifier - 'permanently', 'forever', 'for good', 'completely', 'for all users /
 // members / accounts', 'for everyone', 'on all (my) devices', 'everywhere', 'across all devices' - is stripped in a canonical form
 // (the trailing twin of CU-502's quantifier), so the row decides. Adds asks only.
@@ -859,7 +862,9 @@ export function quantifierDropped(form) {
 // want to open anyway' is judged as 'open anyway' (Gatekeeper's install row), not only as the qualifier-stripped 'open'.
 function acknowledgementStripped(name) {
   const first = String(name ?? '').split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean)[0] ?? ''
-  return first.replace(ACK_CONNECTOR, '').replace(CONFIRM_PREFIX, '').trim()
+  // #725 round 2 (cu-developer-three 19:12Z): the trailing "<row>, I'm sure" stripped alone too, keeping the row's own words -
+  // 'Install now, I'm sure' is judged as 'Install now', not only as the qualifier-stripped 'Install'.
+  return first.replace(ACK_CONNECTOR, '').replace(CONFIRM_PREFIX, '').replace(/\s*[,\u2013\u2014-]\s*(?:yes,?\s+)?i(?:'m|\s+am)\s+(?:(?:really|absolutely|totally|completely|quite|very|fully|100\s?%)\s+)?(?:sure|certain|positive)\s*[.!]?\s*$/i, '').trim()
 }
 // CU-505 (label sweep): a short section label before the row - '<Label>: <row>' or '<Label> - <row>' (one to three words, a colon
 // or a spaced dash) - and brackets or quotes around the whole name are stripped, so the row decides ('Danger zone: Make this
@@ -955,8 +960,15 @@ export function synonymForms(name) {
   return [...new Set([...forms, ...last])].filter((form) => form !== '' && form !== own && !known.has(form))
 }
 
+/** #721 round 3 (cu-coordinator 18:51Z): curly apostrophes and quotes read as straight ones, so a typographic twin of a ruled row
+ *  ('Yes, it\u2019s me', 'Don\u2019t require a passcode') matches the row; policy.mjs applies it to the name before any rule. */
+export function straightQuotes(text) {
+  return String(text ?? '').replace(/[\u2018\u2019\u02BC\uFF07]/g, "'").replace(/[\u201C\u201D\uFF02]/g, '"')
+}
+
 /** The grammar on the name and its own canonical forms - no verb synonyms (policy.mjs reads it before probing synonym forms). */
 export function grammarClassesBase(name, role = '') {
+  name = straightQuotes(name)
   const asWritten = grammarClassesOf(name, role)
   if (asWritten.length > 0) return asWritten
   for (const form of canonicalForms(name)) {
@@ -967,6 +979,7 @@ export function grammarClassesBase(name, role = '') {
 }
 
 export function grammarClasses(name, role = '') {
+  name = straightQuotes(name)
   const base = grammarClassesBase(name, role)
   if (base.length > 0) return base
   for (const form of synonymForms(name)) {
@@ -977,7 +990,7 @@ export function grammarClasses(name, role = '') {
 }
 
 function grammarClassesOf(name, role = '') {
-  const raw = String(name ?? '').trim()
+  const raw = straightQuotes(name).trim()
   if (raw === '' || raw.length > 400) return []
   if (CURRENCY.test(raw) && PRICED_ROLES.has(String(role ?? '').toLowerCase()) && tokens(raw).some((t) => PRICED_NOUNS.has(t))) return ['purchase']
   // CU-467 (High; cu-coordinator 00:49Z): a pressed control that names a money amount commits a charge whatever its verb - a
@@ -1145,6 +1158,55 @@ function grammarClassesOf(name, role = '') {
   // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
   // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
   if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
+  // CU-518 (High; cu-coordinator 19:36Z), table PR 28, as verb families with object synonyms - a carrier account hands over the number.
+  // CREDENTIAL: activate / set up / move / transfer the (e)SIM or number on / to a new / another device; forward / redirect calls to another
+  // / a different / a new number; show / reveal / view / change / reset the account / port-out / transfer PIN; disable / turn off / remove
+  // the number lock / port-out protection / SIM protection. PERMISSION: add an authorized user.
+  if (/^\s*(?:activate|set\s+up|move|transfer|port)\s+(?:the\s+|my\s+|your\s+)?(?:e-?sim|sim(?:\s+card)?|phone\s+number|number|line)\s+(?:on|to)\s+(?:a\s+|the\s+)?(?:new|another|different|other)\s+(?:device|phone)\s*$|^\s*(?:forward|redirect|divert)\s+(?:all\s+|my\s+)?calls\s+to\s+(?:a\s+|an\s+)?(?:another|different|new|other)\s+number\s*$|^\s*(?:show|reveal|view|change|reset|update)\s+(?:the\s+|my\s+|your\s+)?(?:account|port[-\s]?out|transfer|number\s+transfer)\s+(?:pin|passcode)\s*$|^\s*(?:disable|turn\s+off|remove|switch\s+off)\s+(?:the\s+)?(?:number\s+lock|port[-\s]?out\s+(?:protection|lock)|sim\s+(?:protection|lock)|number\s+transfer\s+lock)\s*$/i.test(raw)) return ['credential']
+  // #729 round 2 (cu-researcher 19:42Z): move / transfer / port the number to a new eSIM / SIM / device / phone.
+  if (/^\s*(?:move|transfer|port|switch)\s+(?:my\s+|the\s+|your\s+)?(?:phone\s+)?number\s+to\s+(?:a\s+|an\s+|the\s+)?(?:new|another|different)\s+(?:e-?sim|sim(?:\s+card)?|device|phone)\s*$/i.test(raw)) return ['credential']
+  if (/^\s*add\s+(?:an?\s+)?authori[sz]ed\s+(?:user|account\s+user|manager)\s*$/i.test(raw)) return ['permission']
+  // CU-516 (High; cu-coordinator 18:51Z), table PR 27, as verb families with object synonyms - a seller dashboard's money and data
+  // controls. PURCHASE: mark (the order / invoice) (as) paid, void the authorization / payment / charge / invoice, accept / concede /
+  // forfeit / give up (#723 r2) the dispute /
+  // chargeback, apply a 100% / full discount, waive the (late / shipping) fee(s). SUBMIT + PURCHASE: ship to a new / different address.
+  // PERMISSION: export / download the customer (list / emails / data / contacts).
+  if (/^\s*mark\s+(?:the\s+|this\s+)?(?:order\s+|invoice\s+|payment\s+)?(?:as\s+)?paid\s*$|^\s*void\s+(?:the\s+|this\s+)?(?:authori[sz]ation|payment|charge|invoice|transaction)\s*$|^\s*(?:accept|concede|forfeit|give\s+up)\s+(?:the\s+|this\s+)?(?:dispute|chargeback)\s*$|^\s*apply\s+(?:a\s+)?(?:100\s?%|full)\s+(?:discount|off|refund)\s*$|^\s*waive\s+(?:the\s+|this\s+|all\s+)?(?:(?:late|shipping|service|processing|cancellation)\s+)?(?:fees?|charges?)\s*$/i.test(raw)) return ['purchase']
+  if (/^\s*ship\s+(?:it\s+|order\s+)?to\s+(?:a\s+)?(?:new|different|another)\s+address\s*$/i.test(raw)) return ['submit', 'purchase']
+  if (/^\s*(?:export|download)\s+(?:the\s+|all\s+)?(?:customer|customers|buyer|buyers|client|clients)(?:\s+(?:list|emails?|e-mails?|data|contacts|addresses))?\s*$/i.test(raw)) return ['permission']
+  // CU-514 (High; cu-coordinator 18:21Z; r2 18:36Z adds the present tense 'Confirm it's you'), table PR 26, as verb families with object synonyms - vouching for a suspicious sign-in or unblocking
+  // one lets someone else in, like 'Approve sign-in' / 'Yes, it was me' (permission): confirm / verify the sign-in (attempt), confirm it
+  // was you / me, unblock / unlock the sign-in (unblock the account), allow sign-in(s) from a new location / device / country, trust this
+  // device / browser ('Trust this computer' stays free: CU-286's deliberate exclusion). CREDENTIAL (an explicit raise of CU-395 / CU-434's free pin, 18:21Z): unlock (the / my / your) account.
+  if (/^\s*(?:confirm|verify|approve)\s+(?:the\s+|this\s+|my\s+)?(?:sign[-\s]?in|log[-\s]?in|login)(?:\s+attempt)?\s*$|^\s*(?:confirm|verify)\s+(?:that\s+)?(?:(?:it|this|that)\s+(?:was|is)|it'?s|that'?s)\s+(?:you|me)\s*$|^\s*(?:unblock|unlock)\s+(?:the\s+|this\s+|my\s+|your\s+)?(?:sign[-\s]?in|log[-\s]?in|login)\s*$|^\s*unblock\s+(?:the\s+|this\s+|my\s+|your\s+)?account\s*$|^\s*trust\s+(?:this\s+|the\s+)?(?:device|browser)\s*$|^\s*allow\s+(?:sign[-\s]?ins?|log[-\s]?ins?|logins?|access)\s+from\s+(?:a\s+|this\s+|the\s+)?new\s+(?:location|device|country|browser|ip(?:\s+address)?)\s*$/i.test(raw)) return ['permission']
+  if (/^\s*unlock\s+(?:the\s+|this\s+|my\s+|your\s+)?account\s*$/i.test(raw)) return ['credential']
+  // CU-515 (High; cu-coordinator 18:36Z, folded into table PR 26): copying or revealing a one-time code hands over the second factor
+  // (credential): copy / show / reveal / view the TOTP, one-time code / password, verification / 2FA / MFA / authentication / security code, OTP.
+  if (/^\s*(?:copy|show|reveal|view|display|get)\s+(?:the\s+|this\s+|my\s+)?(?:totp(?:\s+code)?|otp(?:\s+code)?|one[-\s]time\s+(?:code|password|passcode)|(?:verification|2fa|mfa|two[-\s]factor|authentication|authenticator|security|login|sign[-\s]in)\s+code)\s*$/i.test(raw)) return ['credential']
+  // CU-511 (High; cu-coordinator 17:21Z), table PR 24, as verb families with object synonyms. INSTALL - running a document's code:
+  // enable content / (all) macros, run (the / this) macro(s), trust (this / the) document, enable editing (leaving Protected View).
+  // PERMISSION - overriding a mail or OS safety check: trust this sender, this is not phishing / junk, add (sender) to safe senders,
+  // mark as not spam / junk, always show images / remote content from this sender, disable / turn off Gatekeeper, allow apps from anywhere.
+  // cu-coordinator 17:36Z: this RAISES CU-456 / #602's 01:36Z free pin - one sender ('Add to safe senders', 'Add <address> to safe
+  // senders') asks permission like 'Trust this sender' (one trusted sender is the phishing path); an explicit raise, not D-108's case.
+  // #713 round 2 (cu-researcher 17:44Z): Office's own yellow-bar wording 'Enable Macros and Content' / 'Content and Macros'; 'Mark as
+  // safe' / '(this message) is safe' and the contraction forms of 'not phishing'.
+  if (/^\s*enable\s+(?:macros\s+(?:and|&)\s+content|content\s+(?:and|&)\s+macros)\s*$/i.test(raw)) return ['install']
+  if (/^\s*mark\s+(?:it\s+|this\s+)?(?:as\s+)?safe\s*$|^\s*(?:this\s+(?:message|email|e-mail|sender)\s+)?is\s+safe\s*$|^\s*(?:it'?s|it\s+is|this\s+is|that'?s|that\s+is)\s+not\s+(?:phishing|junk|spam|a\s+scam)\s*$/i.test(raw)) return ['permission']
+  if (/^\s*(?:enable|allow|turn\s+on)\s+(?:the\s+)?(?:content|(?:all\s+)?macros?|vba(?:\s+macros?)?|active\s+content)\s*$|^\s*run\s+(?:the\s+|this\s+|all\s+)?macros?\s*$|^\s*trust\s+(?:this\s+|the\s+)?(?:document|file|workbook|presentation)\s*$|^\s*enable\s+editing\s*$/i.test(raw)) return ['install']
+  if (/^\s*(?:trust|always\s+trust)\s+(?:this\s+|the\s+)?sender\s*$|^\s*(?:this\s+is\s+)?not\s+(?:phishing|junk|a\s+scam)\s*$|^\s*(?:mark|report)\s+(?:it\s+|this\s+)?as\s+not\s+(?:spam|junk|phishing)\s*$|^\s*not\s+spam\s*$|^\s*add\s+(?:the\s+|this\s+)?(?:sender\s+|address\s+|domain\s+|[\w.+-]+@[\w.-]+\s+)?to\s+(?:the\s+|my\s+)?(?:safe|trusted)\s+senders?(?:\s+list)?\s*$|^\s*always\s+(?:show|load|display|download)\s+(?:images|pictures|remote\s+(?:content|images))\s+from\s+(?:this\s+)?(?:sender|domain)\s*$/i.test(raw)) return ['permission']
+  if (/^\s*(?:disable|turn\s+off|switch\s+off|bypass)\s+(?:the\s+)?gatekeeper\s*$|^\s*allow\s+apps\s+(?:downloaded\s+)?from\s+anywhere\s*$/i.test(raw)) return ['permission']
+  // CU-510 (High; cu-coordinator 16:51Z), table PR 23, as verb families with object synonyms - a developer console's widening of an API
+  // key or OAuth app: an unrestricted key, all scopes, all origins, unsigned webhooks and localhost redirects open the account
+  // (permission); a new redirect / callback URL sends the authorisation code elsewhere (credential). 'API keys' and 'Restrict key' stay free.
+  if (/^\s*(?:make|set|leave|mark)\s+(?:the\s+|this\s+|my\s+)?(?:api\s+)?(?:key|token|credential)s?\s+(?:as\s+)?unrestricted\s*$|^\s*(?:remove|clear|delete|disable|turn\s+off)\s+(?:all\s+)?(?:the\s+)?(?:api\s+)?(?:key|token)\s+restrictions?\s*$|^\s*unrestrict\s+(?:the\s+|this\s+)?(?:api\s+)?(?:key|token)s?\s*$/i.test(raw)) return ['permission']
+  if (/^\s*(?:give|grant|select|enable|allow|request|add)\s+(?:all|every|full|unlimited)\s+(?:the\s+)?(?:scopes?|permissions?|access\s+scopes?)(?:\s+to\s+(?:the\s+|this\s+)?(?:app|key|token|client|integration))?\s*$|^\s*select\s+all\s+scopes\s*$/i.test(raw)) return ['permission']
+  // #710 round 2 (cu-researcher 17:05Z): 'wildcard' / '*' origins, and the signature-check family without 'webhook'.
+  if (/^\s*(?:allow|accept|permit|enable)\s+(?:all|any|every|wildcard|'\*'|"\*"|\*)\s+(?:cors\s+)?origins?\s*$|^\s*(?:disable|turn\s+off|remove)\s+(?:the\s+)?(?:cors|origin)\s+(?:check|checks|restrictions?|allowlist|whitelist)\s*$/i.test(raw)) return ['permission']
+  if (/^\s*(?:disable|turn\s+off|skip|remove|stop)\s+(?:the\s+)?webhook\s+(?:signing|signatures?|signature\s+(?:verification|validation|checks?)|secret|verification)\s*$/i.test(raw)) return ['permission']
+  if (/^\s*(?:skip|bypass|disable|turn\s+off|ignore)\s+(?:the\s+)?(?:webhook\s+|request\s+)?signature\s+(?:verification|validation|checks?)\s*$|^\s*(?:skip|bypass)\s+(?:the\s+)?(?:webhook\s+)?signing\s*$/i.test(raw)) return ['permission']
+  if (/^\s*(?:allow|enable|permit|accept)\s+(?:localhost|loopback|http|insecure|wildcard)\s+(?:redirects?|redirect\s+(?:uris?|urls?)|callbacks?)\s*$/i.test(raw)) return ['permission']
+  if (/^\s*(?:add|new|register|create|set|edit|change|update)\s+(?:a\s+|an\s+|the\s+)?(?:new\s+)?(?:oauth\s+|authorized\s+|allowed\s+)?(?:redirect|callback)\s+(?:uri|url)s?\s*$/i.test(raw)) return ['credential']
   // CU-500 (High; cu-coordinator 12:49Z), as verb families with object synonyms: on an exchange, confirming a withdrawal, a market
   // order, converting everything and setting leverage move money (purchase); adding or allowlisting a withdrawal address redirects it
   // (credential); turning off the withdrawal allowlist opens the account (permission). 'Deposit address' and 'Markets' stay free.

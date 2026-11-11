@@ -3,7 +3,7 @@ import { normaliseForPolicy, normaliseText } from './normalise.mjs'
 import { BIP39_ENGLISH } from './bip39-english.mjs'
 import { normalizeKey } from './keys.mjs'
 import { originPattern } from './sites.mjs'
-import { amountClass, canonicalForms, clauseSplit, clauseVerbLed, grammarClasses, grammarClassesBase, inertLinkAmountClass, quantifierDropped, sectionLabelStripped, synonymForms, toggleExpansion } from './phrase-grammar.mjs'
+import { amountClass, canonicalForms, clauseSplit, clauseVerbLed, grammarClasses, grammarClassesBase, inertLinkAmountClass, quantifierDropped, sectionLabelStripped, straightQuotes, synonymForms, toggleExpansion } from './phrase-grammar.mjs'
 
 /**
  * The action policy (design: action-policy.md, consent-gate.md). `classify` runs in the dispatcher for every action,
@@ -1120,6 +1120,19 @@ function credentialField(target) {
  * Create the policy. `sitePolicy` is the run's site filter; `preApprovals` are `[{ class, origin }]` from the caller,
  * with `origin` an origin pattern such as `http://127.0.0.1:43117` (default: any origin the site filter allows).
  */
+// CU-520 (High; cu-coordinator 19:51Z, folded into #729 r2): ONE home-security page test for CU-491's and CU-519's rows - CU-491's
+// path segments (/security, /alarm, /cameras, /home-security) or a home-security vendor / device token in the host or path (ring, arlo,
+// simplisafe, adt, nest, wyze, blink, eufy, august, schlage, yale, vivint, alarm, camera(s), cam(s), lock(s), smartlock, doorbell,
+// home-security, security-system). Exact tokens between separators ('ringcentral' never matches 'ring'); never 'alarms' (a clock's page).
+export function isHomeSecurityPage(url) {
+  try {
+    const u = new URL(String(url ?? ''))
+    if (!/^https?:$/.test(u.protocol)) return false
+    if (/(?:^|\/)(?:security|alarm|cameras|home-security)(?=$|[/?#])/i.test(u.pathname)) return true
+    return /(?:^|[\s./-])(?:ring|simplisafe|adt|arlo|nest|wyze|blink|eufy|august|schlage|yale|vivint|alarm|cameras?|cams?|locks?|smartlock|doorbell|home-?security|security-?system)(?:[\s./-]|$)/i.test(`${u.hostname} ${u.pathname}`)
+  } catch { return false }
+}
+
 export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
   if (typeof sitePolicy !== 'function') throw new TypeError('the policy needs the run site policy')
   const granted = preApprovals
@@ -1162,7 +1175,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     }
 
     const target = context.target ?? null
-    const name = target?.name ?? ''
+    // #721 round 3 (cu-coordinator 18:51Z): curly apostrophes / quotes read as straight before any rule.
+    const name = typeof target?.name === 'string' ? straightQuotes(target.name) : (target?.name ?? '')
     const classes = []
     // CU-271 (cu-coordinator's ruling): a web terminal runs every line it is given, so a key or text into it - typed, a
     // paste, a chord, a page menu's Paste with the terminal focused - or text dropped on it is refused, as a terminal view
@@ -2071,12 +2085,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // #659 round 2 (cu-researcher 10:26Z): the segments exactly as ruled (a phone clock's /alarms is not /alarm); a trailing
     // on / for / from phrase ('on all cameras', 'for 1 hour') keeps the row.
     if (grammarEligible && classes.length === 0 && /^\s*(?:silence|mute|snooze|hush)\s+(?:the\s+)?(?:alarms?|sirens?|chimes?)(?:\s+(?:on|for|from)\s+[\w\s-]{1,40})?\s*$|^\s*(?:pause|stop)\s+(?:the\s+)?(?:recording|camera\s+recording|cameras?)(?:\s+(?:on|for|from)\s+[\w\s-]{1,40})?\s*$/i.test(name)) {
-      let securityPage = false
-      try {
-        const u = new URL(String(context?.url ?? ''))
-        if (/^https?:$/.test(u.protocol)) securityPage = /(?:^|\/)(?:security|alarm|cameras|home-security)(?=$|[/?#])/i.test(u.pathname)
-      } catch { securityPage = false }
-      if (securityPage) classes.push('physical')
+      // CU-520 (19:51Z): the shared home-security page test (vendor / camera hosts too).
+      if (isHomeSecurityPage(context?.url)) classes.push('physical')
     }
     // CU-490 (High; cu-coordinator 09:51Z): a ride-share or delivery booking commit asks purchase - 'Confirm pickup', 'Confirm <product>'
     // and 'Request <product>' (one or two words: 'Request UberX', 'Confirm Comfort') on a ride / delivery page, a whole /ride, /rides,
@@ -2260,7 +2270,14 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const dialogName = pick(target?.dialogName)
       const dialogDescription = pick(target?.dialogDescription)
       const presses = POINTER.has(action.type) || keysOf(action).has('ENTER') || keysOf(action).has('SPACE')
-      if (context.confirmProbe !== true && presses && (dialogName !== '' || dialogDescription !== '') && GENERIC_CONFIRM.test(String(name ?? ''))) {
+      // CU-507 follow-up (cu-coordinator 18:21Z): a 'Continue to <rest>' / 'Proceed to <rest>' control inside a dialog asks the union of
+      // its own rest (judged as a name) and the dialog title's class; the page-level navigation ruling for 'Continue to' stays.
+      const continueTo = /^\s*(?:continue|proceed|go\s+on|move\s+on)\s+to\s+(\S.*)$/i.exec(String(name ?? ''))
+      if (context.confirmProbe !== true && presses && (dialogName !== '' || dialogDescription !== '') && continueTo) {
+        const restProbe = classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { role: 'button', name: continueTo[1].trim(), ...(target?.origin ? { origin: target.origin } : {}) } })
+        if (restProbe.decision === 'confirm') for (const cls of restProbe.classes ?? [restProbe.class]) if (!classes.includes(cls)) classes.push(cls)
+      }
+      if (context.confirmProbe !== true && presses && (dialogName !== '' || dialogDescription !== '') && (GENERIC_CONFIRM.test(String(name ?? '')) || continueTo)) {
         // cu-researcher 16:09Z: a title is a question more often than a row - 'Are you sure you want to <row>?', 'Really <row>?',
         // '<row>?' - so a title canonical step strips the question frame before the title is judged as a name.
         // #702 round 2 (cu-researcher 16:24Z): descriptions lead with 'This will / This action will / You are about to / Doing this will'.
@@ -2285,6 +2302,48 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (clauses.length > 0 && clauses.every((clause, i) => clauseVerbLed(clause) || probes[i].decision === 'confirm')) {
         for (const probe of probes) if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) if (!classes.includes(cls)) classes.push(cls)
       }
+    }
+    // #729 round 2 (cu-coordinator 19:51Z, the 18:06Z precedent): 'Reset account PIN' keeps the older reset row's delete and unions
+    // CU-518's credential.
+    if (grammarEligible && classes.length > 0 && !classes.includes('credential') && /^reset\s+(?:the\s+|my\s+|your\s+)?(?:account|port[-\s]?out|transfer|number\s+transfer)\s+(?:pin|passcode)$/i.test(String(name ?? '').trim())) classes.push('credential')
+    // CU-519 (High; cu-coordinator 19:36Z), table PR 28, bound on the page URL (host or path, D-109; never a title): on a home-security,
+    // lock or camera page, generating / creating / sharing a guest or access PIN / code asks PHYSICAL (someone gets in), and disabling /
+    // stopping recording, turning off a camera and disarming ask PERMISSION. The ruled class is UNIONED onto any older one ('Create guest
+    // code' keeps permission and adds physical; 'Turn off camera' / 'Disarm' keep physical and add permission). Meeting pages stay free;
+    // CU-468's 'Create access code' row is untouched (only guest / temporary / one-time / visitor codes, and sharing an access code).
+    if (grammarEligible) {
+      const homeSecurity = isHomeSecurityPage(url)
+      const label = String(name ?? '').trim()
+      if (homeSecurity) {
+        if (/^(?:generate|create|add|make|share|send)\s+(?:a\s+|an\s+|new\s+)?(?:guest|temporary|temp|one[-\s]time|visitor)\s+(?:pin|code|passcode|key|access\s+code)$|^share\s+(?:the\s+|an\s+)?access\s+code$/i.test(label) && !classes.includes('physical')) classes.push('physical')
+        if (/^(?:disable|stop|turn\s+off|end)\s+(?:the\s+)?recording$|^(?:turn\s+off|disable|switch\s+off)\s+(?:the\s+|all\s+)?cameras?$|^disarm(?:\s+(?:the\s+)?(?:system|alarm|home|security(?:\s+system)?))?$/i.test(label) && !classes.includes('permission')) classes.push('permission')
+      }
+    }
+    // #721 round 3 (cu-coordinator 18:51Z; CU-515's desktop gap, cu-developer-three 18:37Z): in a native authenticator app the
+    // control beside a TOTP is just 'Copy' / 'Copy code' / 'Show code' - it puts the second factor on the clipboard, so it asks
+    // credential there, bound on the app (target.origin, else frontmostBundleId; never an 'app:' url). The apps are matched by a
+    // bundle-id segment (authy*, *authenticator*, otp*, *totp*, steptwo / step-two, raivo*, 2fas*), not by guessed exact ids;
+    // elsewhere a bare 'Copy' stays free, and password managers stay BLOCKED by the app policy, unchanged.
+    if (grammarEligible && classes.length === 0) {
+      const appId = (typeof target?.origin === 'string' && target.origin !== '' && !/^https?:/i.test(target.origin)) ? target.origin : String(context?.frontmostBundleId ?? '')
+      const authenticator = appId.split('.').some((segment) => /^(?:authy[\w-]*|[\w-]*authenticator[\w-]*|otp[\w-]*|[\w-]*totp[\w-]*|step-?two[\w-]*|raivo[\w-]*|2fas[\w-]*)$/i.test(segment))
+      if (authenticator && /^(?:copy|show|reveal|view)(?:\s+(?:the\s+)?(?:code|otp|totp|token|password))?$/i.test(String(name ?? '').trim())) classes.push('credential')
+    }
+    // CU-512 (High; cu-coordinator 17:51Z), table PR 25, as verb families with object synonyms - an MDM console's device controls.
+    // CREDENTIAL: clearing / bypassing Activation Lock or a passcode, dropping the passcode requirement. PERMISSION: turning off Lost
+    // Mode, unenrolling / retiring a device, pushing / installing / deploying a profile. Older classes lead (13:36Z): these fire only
+    // where nothing asked yet ('Install profile' keeps install, 'Deploy profile' submit, 'Remove passcode' delete).
+    // #716 round 2 (cu-coordinator 18:06Z, explicit raises): the two older-delete forms union credential, and 'Deploy profile' unions
+    // permission onto its older submit - the older class stays, the ruled class is added.
+    if (grammarEligible) {
+      const raised = String(name ?? '').trim()
+      if (/^(?:remove|clear)\s+(?:the\s+)?(?:activation\s+lock|device\s+passcode)$/i.test(raised) && !classes.includes('credential') && classes.length > 0) classes.push('credential')
+      if (/^deploy\s+(?:the\s+|a\s+|this\s+)?(?:configuration\s+|config\s+|mdm\s+|management\s+)?profiles?$/i.test(raised) && !classes.includes('permission') && classes.length > 0) classes.push('permission')
+    }
+    if (grammarEligible && classes.length === 0) {
+      const mdm = String(name ?? '').trim()
+      if (/^(?:clear|bypass|remove|disable|turn\s+off|reset|skip)\s+(?:the\s+)?activation\s+lock(?:\s+bypass\s+code)?$|^(?:clear|reset|bypass)\s+(?:the\s+|device\s+)?passcode$|^(?:disable|turn\s+off|remove|drop)\s+(?:the\s+)?passcode\s+(?:requirement|policy)$|^(?:don'?t|do\s+not)\s+require\s+(?:a\s+)?passcode$/i.test(mdm)) classes.push('credential')
+      else if (/^(?:turn\s+off|disable|exit|end|stop|leave)\s+lost\s+mode$|^(?:unenroll|un-enroll|retire|deregister|unmanage|release)\s+(?:the\s+|this\s+|selected\s+)?devices?$|^remove\s+(?:the\s+|this\s+)?devices?\s+from\s+management$|^(?:push|install|deploy|send|assign)\s+(?:the\s+|a\s+|this\s+)?(?:configuration\s+|config\s+|mdm\s+|management\s+)?profiles?$/i.test(mdm)) classes.push('permission')
     }
     const unique = [...new Set(classes)].sort((a, b) => PRECEDENCE.indexOf(a) - PRECEDENCE.indexOf(b))
     // CU-494 residual (cu-coordinator 11:36Z): moneyIdentityField also reads an unlabelled entry's raw name/id attribute.
