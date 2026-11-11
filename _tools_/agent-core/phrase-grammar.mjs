@@ -703,10 +703,20 @@ export function canonicalConfirm(name) {
 }
 /** #609 round 2 (cu-researcher 02:24Z): the canonical forms to try, in order - the unwrapped name, then (only if that asks nothing)
  * its first sentence. Additive: a Title-Case object ('Turn off Safe Browsing') is never lost to the sentence cut. */
+// CU-478 (High; cu-coordinator 03:51Z): a determiner after the verb breaks the older exact-phrase rows ('Update my firmware', 'Accept
+// my counteroffer', 'Turn on my location sharing', 'Open the ports') - one more form drops the / my / your / our / this / these / a / an.
+const DETERMINER_WORDS = /\b(?:the|my|your|our|this|these|those|a|an)\s+/gi
+function withoutDeterminers(text) {
+  const words = text.split(/\s+/)
+  if (words.length < 2) return text
+  // Keep the first word (the verb) as written; drop determiners after it.
+  return `${words[0]} ${words.slice(1).join(' ').replace(DETERMINER_WORDS, '')}`.replace(/\s+/g, ' ').trim()
+}
 export function canonicalForms(name) {
   const unwrapped = canonicalConfirm(name)
   const cut = firstSentence(unwrapped)
-  return [...new Set([unwrapped, cut])].filter((form) => form !== '' && form !== String(name ?? '').trim())
+  const bare = withoutDeterminers(unwrapped)
+  return [...new Set([unwrapped, cut, bare, withoutDeterminers(cut)])].filter((form) => form !== '' && form !== String(name ?? '').trim())
 }
 
 export function grammarClasses(name, role = '') {
