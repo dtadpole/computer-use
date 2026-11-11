@@ -837,14 +837,24 @@ export function canonicalForms(name) {
 // acronyms (an 'ach' inside a word never counts); tried last, with the verb synonyms.
 // Each expansion only after the verbs its ruled rows use, so a protection being raised ('Require MFA') never takes the row of one being
 // lowered (#606 pins 'Require MFA' free).
+// #653 round 2 (cu-researcher 09:11Z; cu-developer-three 09:10Z): ACH / IBAN with a trailing info / details / number / account; WPA
+// reaches the 'Wi-Fi security' row (permission); 'open RDP' is opening port 3389 (CU-464), 'start' joins the RDP verbs; a bare
+// acronym on a TOGGLE (a verbless switch named 'RDP' / 'MFA' / '2SV') expands without a verb, so the switch rules give it direction.
 const ABBREVIATIONS = [
-  [/^\s*(?:change|update|edit|add|set\s+up|replace)\b/i, /\b(?:IBAN|ACH)\b/g, 'direct deposit'],
+  [/^\s*(?:change|update|edit|add|set\s+up|replace)\b/i, /\b(?:IBAN|ACH)(?:\s+(?:info|information|details|number|account))?\b/g, 'direct deposit'],
   [/^\s*(?:turn\s+off|disable|remove|deactivate|reset|bypass|skip|switch\s+off)\b/i, /\b(?:2SV|TOTP|MFA|2FA)\b|\b[Ll]ogin\s+approvals?\b/g, 'two-factor authentication'],
-  [/^\s*(?:turn\s+off|disable|remove|change|show|reveal|view)\b/i, /\bWPA[23]?\b/g, 'Wi-Fi password'],
-  [/^\s*(?:turn\s+on|enable|allow|open|activate|switch\s+on)\b/i, /\bRDP\b/g, 'Remote Desktop']]
+  [/^\s*(?:turn\s+off|disable|remove|change|show|reveal|view)\b/i, /\bWPA[23]?\b/g, 'Wi-Fi security'],
+  [/^\s*open\b/i, /\bRDP\b/g, 'port 3389'],
+  [/^\s*(?:turn\s+on|enable|allow|activate|start|switch\s+on)\b/i, /\bRDP\b/g, 'Remote Desktop']]
+const TOGGLE_ACRONYMS = [[/^\s*(?:2SV|TOTP|MFA|2FA)\s*$/, 'Two-factor authentication'], [/^\s*RDP\s*$/, 'Remote Desktop'], [/^\s*WPA[23]?\s*$/, 'Wi-Fi security']]
+/** #653 round 2: a toggle named by a bare acronym ('RDP', 'MFA') is judged as the setting it stands for. */
+export function toggleExpansion(name) {
+  for (const [pattern, expansion] of TOGGLE_ACRONYMS) if (pattern.test(String(name ?? ''))) return expansion
+  return ''
+}
 function withAbbreviations(text) {
   let out = text
-  for (const [verb, acronym, expansion] of ABBREVIATIONS) if (verb.test(out)) out = out.replace(acronym, expansion)
+  for (const [verb, acronym, expansion] of ABBREVIATIONS) if (verb.test(out) && acronym.test(out)) { acronym.lastIndex = 0; out = out.replace(acronym, expansion) }
   return out
 }
 export function synonymForms(name) {
