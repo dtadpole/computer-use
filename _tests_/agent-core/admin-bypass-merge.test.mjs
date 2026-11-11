@@ -31,3 +31,11 @@ test('CU-521 negatives and older rows', () => {
   for (const name of ['Re-run checks', 'View checks', 'Checks', 'Reviews', 'Request review']) assert.deepEqual(classesOf(name), [], name)
   assert.deepEqual(classesOf('Merge pull request'), ['submit'], 'older row unchanged')
 })
+
+test('#731 round 2 (cu-researcher 20:15Z): merge without checks / reviews, admin merge, skip checks and merge', () => {
+  for (const name of ['Merge without checks', 'Merge without required checks', 'Merge without review', 'Admin merge', 'Skip checks and merge', 'Ignore checks and merge']) {
+    const got = classesOf(name)
+    assert.ok(got.includes('permission') && got.includes('submit'), `${name}: ${got}`)
+  }
+  for (const name of ['Skip checks', 'Admin', 'Merge options']) assert.ok(!classesOf(name).includes('permission'), name)
+})
