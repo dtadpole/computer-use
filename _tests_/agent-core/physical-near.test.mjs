@@ -166,3 +166,13 @@ test('CU-464 switch rule reads the compound spellings too: a native Remote Log-i
     assert.equal(dsw(name, true), 'allow', `${name}: on -> off is free`)
   }
 })
+test('CU-489 abbreviations on native switches take their setting\'s direction (0.2.70 + #653): RDP like Remote Desktop, MFA / 2SV like two-factor', () => {
+  for (const [abbr, full] of [['RDP', 'Remote Desktop'], ['MFA', 'Two-factor authentication'], ['2SV', 'Two-factor authentication']]) {
+    assert.equal(dsw(abbr, true), dsw(full, true), `${abbr} on -> off as ${full}`)
+    assert.equal(dsw(abbr, false), dsw(full, false), `${abbr} off -> on as ${full}`)
+  }
+  assert.equal(dsw('RDP', false), 'permission')
+  assert.equal(dsw('RDP', true), 'allow')
+  assert.equal(dsw('MFA', true), 'credential')
+  assert.equal(dsw('MFA', false), 'allow')
+})
