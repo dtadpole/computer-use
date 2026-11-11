@@ -1937,7 +1937,11 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // #600 round 3: the full strip (ellipsis, '!', '(recommended)', leading icons) reaches the older exact rows too ('Join Prime…'). A
     // Quick Actions menu item is judged by its exact built-in name (CU-382 - 'More…'), so it never takes the probe.
     // #609 round 2: each canonical form in turn (the unwrapped name, then its first sentence), stopping at the first that asks.
-    const confirmForms = context.confirmProbe === true || target?.quickActions === true ? [] : canonicalForms(name)
+    // CU-473 pair (cu-coordinator 02:35Z): the driver's target.firstLine (the first rendered line of a multi-line name, which
+    // Chrome's accessible name flattens to spaces) is one more form, tried last - additive.
+    const firstLine = typeof target?.firstLine === 'string' ? target.firstLine.trim() : ''
+    const confirmForms = context.confirmProbe === true || target?.quickActions === true ? []
+      : [...new Set([...canonicalForms(name), ...(firstLine !== '' && firstLine !== String(name ?? '').trim() ? [firstLine, ...canonicalForms(firstLine)] : [])])]
     for (const confirmForm of confirmForms) {
       if (!(grammarEligible && classes.length === 0 && !nativeOn)) break
       const probe = classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { ...target, name: confirmForm }, confirmProbe: true })
