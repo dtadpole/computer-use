@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { after, test } from 'node:test'
 
+import { boundMenuItemOf } from '../../_environments_/macos-desktop/environment.mjs'
 import { fakeLauncher, logged, scratchLocks, stopFake } from './harness.mjs'
 
 // CU-382 (helper 0.2.66): the driver carries the helper's quickActions mark (an item under Finder's Quick Actions, or a
@@ -44,4 +45,13 @@ test('CU-382: absent or anything but true carries no mark', async () => {
     const target = await hit({ ...ITEM, ...extra })
     assert.deepEqual([target.quickActions, target.menuContextUnread], [undefined, undefined], JSON.stringify(extra))
   }
+})
+
+test('CU-382 driver: a menu-key entry carries quickActions when the helper marks it (cu-researcher 08:07Z drop 1); a non-boolean mark makes the list unreadable', () => {
+  const reply = { bundleId: FIXTURE, items: [{ title: 'Upload to S3', path: ['CU Fixture', 'Quick Actions', 'Upload to S3'], keyEquivalent: { char: 'U', modifiers: 1 }, enabled: true, quickActions: true }] }
+  assert.equal(boundMenuItemOf(reply, [FIXTURE]).items[0].quickActions, true)
+  assert.equal(Object.hasOwn(boundMenuItemOf({ ...reply, items: [{ ...reply.items[0], quickActions: false }] }, [FIXTURE]).items[0], 'quickActions'), false)
+  assert.deepEqual(boundMenuItemOf({ ...reply, items: [{ ...reply.items[0], quickActions: 'yes' }] }, [FIXTURE]), { unreadable: true })
+  const plain = { ...reply, items: [{ ...reply.items[0], quickActions: undefined }] }
+  assert.equal(Object.hasOwn(boundMenuItemOf(plain, [FIXTURE]).items[0], 'quickActions'), false)
 })

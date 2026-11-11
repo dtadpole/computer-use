@@ -8,7 +8,7 @@ import { fakeLauncher, logged, scratchLocks, stopFake } from './harness.mjs'
 // URL itself never reaches the target (url stays null for a non-file scheme).
 
 test('CU-392: networkVolumeOf - server schemes true; file, web, malformed and non-strings false', () => {
-  for (const url of ['smb://fileserver.local/share', 'SMB://nas.example/x', 'afp://nas/Public', 'nfs://host/export', 'ftp://host/', 'cifs://h/s', 'webdav://h/', 'davs://h/x'])
+  for (const url of ['smb://fileserver.local/share', 'SMB://nas.example/x', 'afp://nas/Public', 'nfs://host/export', 'ftp://host/', 'cifs://h/s', 'webdav://h/', 'davs://h/x', 'webdavs://h/x', 'dav://h/', 'ftps://h/'])
     assert.equal(networkVolumeOf(url), true, url)
   for (const url of ['file:///Volumes/share/', 'https://example.com/', 'mailto:a@b.c', 'smbx://h', 'not a url', '', null, undefined, 7])
     assert.equal(networkVolumeOf(url), false, String(url))

@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - handover'
 created: 2026-11-08T04:14:00Z
-modified: 2026-11-09T18:41:26Z
+modified: 2026-11-11T05:40:36Z
 level: L1
-version: 4.11.0
+version: 4.23.0
 description: 'What a fresh [cu] Developer Two session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -16,29 +16,34 @@ grounded_in:
 Seat `cu-developer-two`: desktop and browser drivers, live view, run lock, MCP. Code: the session worktree
 `~/dtadpole/computer-use-wt/<session-id>`, one purpose worktree per PR. Records: [artifacts.md](artifacts.md).
 
-## Open PRs (all OK'd; cu-integrator lands)
+## Open PRs (Medium lane, after the Highs)
 
-- #299, Part of CU-336: an iframe whose AX name is unread is named from aria-labelledby, aria-label or title, never
-  the name attribute. After it lands: the `__privateStripeFrame5` row's policy assertion (written, local).
-- #339, Fixes CU-357: an action effect reports the session's notices (refused download; an alert by length only).
-- #355, Part of CU-360: a page's navigation to another app's scheme is a notice, with a best-effort stop
-  (`launched` stays unknown). Its merge after #339 extends `noticeOf` to keep reason, stop and launched.
+- #495, Ref CU-357: a page's WebSocket claims a proxy refusal for the page's lifetime.
+- #491, Fixes CU-383: chrome-browser INDEX Behaviours list, one line per issue.
+- #489, Part of CU-336: the __privateStripeFrame5 row asks sensitive_data end to end.
 
-Landed today: #181, #167, #193, #212, #288, #289, #298, #304 (CU-333, open bound 30 s), #306, #320, #325.
+On main: the six-PR stack (#369 #339 #355 #299 #393 #402), #443, and the form-context driver halves #472
+(CU-402), #482 (CU-405) and #486 (CU-406, its policy half #487 in the lane).
 
 ## Issues
 
-In Progress: CU-357, CU-360 (PRs above; CU-360's guide note drafted for cu-developer-one). Verify: CU-239, CU-300,
-CU-305, CU-318, CU-327, CU-332, CU-333, CU-337, CU-351, CU-353.
+In Progress: CU-360. Verify: CU-357, CU-368, CU-370 and more. CU-402, CU-405 and CU-406 closed live. CU-409 (desktop side)
+is cu-developer-three's #510 (OK'd at 2ff3d0d09); my #508 was closed for it (one desktop driver half, his file).
+
+## Second OKs, sweeps, idle (A)
+
+Live second OKs on the High table PRs (D-109, kit in /tmp until CU-458); driver halves CU-472 (#604), CU-473
+(#610, #622) landed; landed-fix parity CU-416..424 done, 0 gaps. Next: CU-458, then idleAtStart.
 
 ## Live state
 
-Schedules: the hourly pass and the 23:00Z Session reflection. No hold, run or stray process. LaunchServices does not
-route a probe scheme to a scratch bundle, so the launch half of CU-360 is not measurable here.
+Hourly pass and 23:00Z reflection. D-102 runner `/tmp/cu-dev2/d102-run.sh`: checks run-lock before each step and
+kills a running step within 2 s of any other seat's run or live hold (D-106), and on its own stop.
 
 ## Lessons
 
-- Add a control before reading a probe's negative (CU-360: LaunchServices, not Chrome, said no).
-- Check a filing's premise live before claiming a fix (D-098, D-100).
-- A scaled-down test bound must leave room for start-up on a loaded gate.
-- D-097: run the gate unpiped, then `&& git push`.
+- Search open PRs for a symbol before adding one (#443 duplicated #438's networkVolume).
+- Guard each run step on the run-lock file (D-106).
+- A PR body names only its own closing line; every OK also goes on the PR as a comment.
+- Check a file's owning seat before writing in it.
+- Every command: `cd <own worktree> || exit 1`, `git -C` (D-104).
