@@ -985,6 +985,8 @@ class BrowserEnvironment {
       // Round 2: inRow - the hit element has no verb of its own and sits inside such a row (read through it). A boolean.
       // CU-472: a link that does not navigate (no / empty / '#' / '#fragment' / 'javascript:' href) - a boolean.
       ...(extra.inertLink === true ? { inertLink: true } : {}),
+      // CU-473: the first rendered line of a multi-line name - a string, re-bounded to 80 characters.
+      ...(typeof extra.firstLine === 'string' && extra.firstLine.trim() !== '' ? { firstLine: extra.firstLine.replace(/\s+/g, ' ').trim().slice(0, 80) } : {}),
       ...(extra.inRow === true ? { inRow: true } : {}),
       ...(extra.dialHref === true ? { dialHref: true } : {}),
       ...(rowContextOf(extra.rowContext) ? { rowContext: rowContextOf(extra.rowContext) } : {}),

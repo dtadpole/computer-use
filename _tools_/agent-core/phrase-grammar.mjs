@@ -602,6 +602,59 @@ function remoteAccess(list) {
   const rest = list.slice(two ? 2 : 1).filter((t) => !FILLER.has(t))
   return ['turn on', 'enable', 'allow', 'start', 'activate'].includes(verb) && rest.length <= 4 && REMOTE_ACCESS.some((seq) => endsWithSeq(rest, seq))
 }
+function vaultClass(list) {
+  if (list.length > 7) return null
+  const two = SWITCH_VERBS.has(list[0]) && (list[1] === 'off' || list[1] === 'on')
+  const verb = two ? `turn ${list[1]}` : list[0]
+  const rest = list.slice(two ? 2 : 1)
+  // #614 round 2 (cu-researcher 03:18Z): plaintext for unencrypted; reprompt without 'master password'; a timeout to never without
+  // 'vault' (not a screen timeout); vault auto-lock off by word order; an emergency contact with no page condition.
+  if (['download', 'export', 'save'].includes(verb) && (rest.includes('unencrypted') || rest.includes('plaintext')) && rest.length <= 4) return 'credential'
+  if (verb === 'add' && rest.length <= 3 && rest.includes('emergency') && ['contact', 'access'].includes(rest[rest.length - 1])) return 'credential'
+  if (['turn off', 'disable'].includes(verb) && rest.includes('reprompt') && rest.length <= 4) return 'permission'
+  if (verb === 'never' && rest[0] === 'lock' && rest.length <= 3) return 'permission'
+  if (verb === 'set' && rest.includes('timeout') && rest[rest.length - 1] === 'never' && rest.length <= 5 && !rest.includes('screen') && !rest.includes('display')) return 'permission'
+  if (['turn off', 'disable'].includes(verb) && rest[0] === 'vault' && rest.includes('lock') && rest.length <= 4) return 'permission'
+  return null
+}
+function merchantClass(list) {
+  if (list.length > 8) return null
+  const [verb, ...rest] = list
+  // #614 round 2: 'instant payout' anywhere in a short name; accept all (open) disputes / chargebacks; set all / every price to an
+  // amount; apply a discount to all (products); risk rules too.
+  if (list.length <= 5 && list.some((t, i) => t === 'instant' && list[i + 1] === 'payout')) return 'purchase'
+  if (verb === 'accept' && rest[0] === 'all' && rest.length <= 3 && ['dispute', 'chargeback'].includes(rest[rest.length - 1])) return 'purchase'
+  if (verb === 'set' && ['all', 'every'].includes(rest[0]) && rest[1] === 'price' && rest[2] === 'to' && rest.length <= 4) return 'purchase'
+  if (verb === 'apply' && rest.includes('discount') && rest.includes('all') && rest.length <= 6) return 'purchase'
+  if (verb === 'issue' && rest[0] === 'refund' && rest[rest.length - 1] === 'all' && rest.length <= 4) return 'purchase'
+  if (['disable', 'remove', 'delete'].includes(verb) && rest.length <= 3 && ['fraud', 'risk', 'radar'].includes(rest[0]) && ['filter', 'rule', 'protection', 'check'].includes(rest[rest.length - 1])) return 'permission'
+  if (verb === 'turn' && rest[0] === 'off' && rest.length <= 3 && (rest.includes('radar') || rest.includes('fraud')) && ['rule', 'filter', 'protection'].includes(rest[rest.length - 1])) return 'permission'
+  if (verb === 'close' && rest.length === 1 && ['store', 'shop'].includes(rest[0])) return 'delete'
+  // #614 round 2 (cu-coordinator 03:19Z): pausing the store and changing the payout schedule (permission).
+  if (verb === 'pause' && rest.length === 1 && ['store', 'shop'].includes(rest[0])) return 'permission'
+  if (['change', 'edit', 'update', 'set'].includes(verb) && rest.length <= 3 && rest.includes('payout') && rest[rest.length - 1] === 'schedule') return 'permission'
+  return null
+}
+const TENANT_PROTECTIONS = ['conditional', 'dlp', 'security', 'mfa', 'retention', 'compliance', 'audit', 'sign', 'session', 'data']
+function tenantClass(list) {
+  if (list.length > 7) return null
+  const two = SWITCH_VERBS.has(list[0]) && (list[1] === 'off' || list[1] === 'on')
+  const verb = two ? `turn ${list[1]}` : list[0]
+  const rest = list.slice(two ? 2 : 1)
+  const last = rest[rest.length - 1]
+  if (['disable', 'turn off', 'deactivate', 'delete', 'remove'].includes(verb) && rest.length <= 4 && ['policy', 'default'].includes(last) && TENANT_PROTECTIONS.includes(rest[0])) return 'permission'
+  // #606 round 2: 'Turn off conditional access' (no 'policy'), 'Exclude from conditional access', 'Allow basic authentication',
+  // 'Make Global Administrator'.
+  if (['disable', 'turn off', 'deactivate'].includes(verb) && rest.length === 2 && rest[0] === 'conditional' && rest[1] === 'access') return 'permission'
+  if (verb === 'exclude' && rest[0] === 'from' && rest.length <= 4 && (rest.includes('conditional') || rest.includes('mfa') || rest.includes('policy'))) return 'permission'
+  if (verb === 'make' && rest.length <= 3 && rest.includes('global') && (rest.includes('administrator') || rest.includes('admin'))) return 'permission'
+  if (verb === 'exclude' && ['user', 'group', 'account', 'member'].includes(rest[0]) && rest.includes('from') && rest.length <= 5) return 'permission'
+  if (verb === 'allow' && (rest[0] === 'legacy' || rest[0] === 'basic') && ['authentication', 'auth', 'protocol'].includes(rest[1]) && rest.length === 2) return 'permission'
+  if (verb === 'assign' && rest.length <= 3 && (rest.includes('administrator') || rest.includes('admin'))) return 'permission'
+  if (verb === 'add' && rest.length === 2 && rest[0] === 'role' && rest[1] === 'assignment') return 'permission'
+  if (verb === 'reset' && rest.length <= 2 && ['mfa', '2fa', 'authenticator', 'authentication', 'security'].includes(rest[0])) return 'credential'
+  return null
+}
 function simSwap(list) {
   if (list.length > 7) return false
   const [verb, ...rest] = list
@@ -828,6 +881,14 @@ function grammarClassesOf(name, role = '') {
   // CU-470 (High; cu-coordinator 01:19Z): the SIM-swap path - porting out, eSIM QR codes and conversions, a new SIM, moving the
   // number to a new device (credential, CU-443's family).
   if (simSwap(list)) return ['credential']
+  // CU-471 (High; cu-coordinator 01:19Z): removing a tenant's admin protections (permission); resetting a user's MFA (credential).
+  const tenant = tenantClass(list)
+  if (tenant) return [tenant]
+  // CU-474 / CU-475 (High; cu-coordinator 03:05Z): a password vault's protections and a merchant console's bulk money acts.
+  const vault = vaultClass(list)
+  if (vault) return [vault]
+  const merchant = merchantClass(list)
+  if (merchant) return [merchant]
   // F2 guard (cu-coordinator 20:28Z): declining, denying or rejecting a request answers no - the grammar's own over-ask since
   // #554 ('Decline request'); older asks ('Decline invitation', CU-422's 'Decline offer') are untouched (the hook never sees them).
   if (['decline', 'deny', 'reject'].includes(list[0]) && list.slice(1).filter((t) => !FILLER.has(t)).every((t) => t === 'request' || t === 'this' || t === 'all')
