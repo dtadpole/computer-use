@@ -174,6 +174,10 @@ const inspected = (target) => (target === null || target === undefined ? null : 
   ...(target.appleMenu === true ? { appleMenu: true } : {}),
   ...(typeof target.dropDestination === 'string' ? { dropDestination: target.dropDestination } : {}),
   ...(target.networkVolume === true ? { networkVolume: true } : {}),
+  // CU-372 (helper 0.2.65): a closed pop-up button's menu as the driver's popUpOf shaped it ({ items, selected,
+  // selectedIndex } or { unread: true, selected }; pullsDown kept) - the read a key on it is judged by, so its first live
+  // row can be read through this admitted entry point. Item titles only; no key when the driver passes none.
+  ...(target.popUp !== null && typeof target.popUp === 'object' && !Array.isArray(target.popUp) ? { popUp: target.popUp } : {}),
 })
 
 /**

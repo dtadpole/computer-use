@@ -313,7 +313,8 @@ function childProtectionOff(list) {
   if (verb === 'allow' && core.length <= 4 && (core[0] === 'purchase' || core.includes('buying')) && (core.includes('approval') || core.includes('buying'))) return true
   if (verb === 'extend' && core.length <= 2 && core[core.length - 1] === 'time' && (core.length === 1 || core[0] === 'screen')) return true
   if (verb === 'extend' && core.length === 1 && core[0] === 'screen') return true
-  if (verb === 'give' && rest.includes('<n>') && core.length <= 2 && ['minute', 'hour'].includes(core[core.length - 1]) && (core.includes('more') || core.length === 1)) return true
+  // CU-481 residual (06:49Z, d): 'Grant <n> more minutes' joins the CU-440 'Give <n> more minutes' row.
+  if (['give', 'grant'].includes(verb) && rest.includes('<n>') && core.length <= 2 && ['minute', 'hour'].includes(core[core.length - 1]) && (core.includes('more') || core.length === 1)) return true
   if (verb === 'add' && core[core.length - 1] === 'time' && core.length <= 3 && (core.includes('more') || core.includes('screen') || core.includes('<n>'))) return true
   return false
 }
@@ -745,8 +746,33 @@ function payDiversion(list) {
 // and the row judged again - only when the name as written gets no class, so it adds only.
 // #600 round 2 (cu-researcher 01:26Z): 'Yes please,' / 'Yes, please' and a trailing 'right now' too.
 // #600 round 3 (cu-researcher 01:33Z): a leading icon alone, and a trailing '!' or '(recommended)' too.
-const LEADING_ICONS = /^\s*(?:[\p{Extended_Pictographic}\uFE0F]\s*)+/u
-const CONFIRM_PREFIX = /^\s*(?:(?:yes(?:\s+please)?|ok|okay|sure|confirm|continue|got\s+it|please)\s*[,:!.\u2013\u2014-]+\s*)+/iu
+// CU-504 (glyph sweep): a leading arrow, bullet, check or other symbol character ('→ Edit DNS', '• Delete', '✓ Download W-2s') is
+// stripped like an emoji - symbols (\p{S}) and list punctuation (bullets, dashes, '>' and '»'), never letters or digits.
+const LEADING_ICONS = /^\s*(?:[\p{Extended_Pictographic}\uFE0F\p{S}\u2022\u2023\u2043\u2219\u25aa\u25ab\u25cf\u25e6\u00b7\u203a\u00bb>*\-\u2013\u2014]\s*)+/u
+// CU-503 (wrapper sweep): the acknowledgement on a dangerous dialog's final button - 'I understand, <row>', 'I understand the
+// consequences, <row>', 'I acknowledge the risk, <row>', 'Understood, <row>' - is stripped like 'Yes, <row>', so the row decides.
+// #685 round 2 (cu-researcher 13:54Z): the connector form - 'I understand (the risks) and (still) want / wish / choose to <row>'.
+const ACK_CONNECTOR = /^\s*i\s+(?:understand|acknowledge|accept|agree)(?:\s+(?:the|all|these)\s+(?:consequences|risks?|terms|warnings?))?\s*,?\s+and\s+(?:still\s+)?(?:want|wish|choose|would\s+like|intend|agree)\s+to\s+/i
+const CONFIRM_PREFIX = /^\s*(?:(?:yes(?:\s+please)?|ok|okay|sure|confirm|continue|got\s+it|please|understood|i\s+(?:understand|acknowledge|accept|agree)(?:\s+(?:the|all|these)\s+(?:consequences|risks?|terms|warnings?))?|i(?:'ve|\s+have)\s+read\s+and\s+understand(?:\s+(?:the|this|these)\s+\w+)?)\s*[,:!.\u2013\u2014-]+\s*)+/iu
+// CU-482 (proposed High; cu-researcher 04:58Z): a call-to-action lead-in before a ruled row - 'please', 'click (here) to', 'tap to',
+// 'let's', 'go ahead and', 'I want to'.
+// cu-researcher 05:02Z: trailing qualifiers too - 'anyway', 'instantly', 'on this device', 'for me', 'here', 'too', 'again'.
+// #630 round 2: a trailing ', please' too ('Add time, please').
+const TRAILING_QUALIFIER = /(?:\s*,\s*please|\s+(?:anyway|anyways|instantly|immediately|on\s+this\s+(?:device|computer|browser|phone)|for\s+me|here|too|again))+\s*[.!]?\s*$/i
+// CU-508 (qualifier sweep): a trailing WIDENING qualifier - 'permanently', 'forever', 'for good', 'completely', 'for all users /
+// members / accounts', 'for everyone', 'on all (my) devices', 'everywhere', 'across all devices' - is stripped in a canonical form
+// (the trailing twin of CU-502's quantifier), so the row decides. Adds asks only.
+// CU-509 (scope sweep): a trailing scope phrase - 'for this project / bucket / account', 'in this workspace', 'on this device' - is
+// stripped the same way: it narrows, but it must not free the row.
+const WIDENING_QUALIFIER = /(?:\s*,)?\s+(?:permanently|forever|for\s+good|completely|entirely|for\s+(?:all|every)\s+(?:users?|members?|accounts?|devices?|people|employees|seats?)|for\s+everyone|for\s+everybody|(?:on|across|from)\s+(?:all|every)\s+(?:(?:my|your|our)\s+)?(?:devices?|computers?|browsers?|sessions?|accounts?)|everywhere|org(?:anization)?[-\s]wide|company[-\s]wide|(?:for|in|on|from|across|to|into|within)\s+(?:this|the\s+current|the|my|your|our|that)\s+(?:project|workspace|account|bucket|repository|repo|org(?:anization)?|team|site|space|folder|channel|server|cluster|database|device|computer|browser|profile|page|app|domain|tenant|environment|subscription|vault|wallet|store|group))\s*[.!]?\s*$/i
+export function widenedStripped(name) {
+  const first = String(name ?? '').split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean)[0] ?? ''
+  let text = first
+  for (let i = 0; i < 3 && WIDENING_QUALIFIER.test(text); i += 1) text = text.replace(WIDENING_QUALIFIER, '').trim()
+  return text !== first && /\s|^\p{L}{3,}$/u.test(text) ? [text] : []
+}
+// #630 round 2 (cu-researcher 05:22Z): "I'd like to" (the contraction), 'let us', 'kindly'.
+const CTA_LEAD_IN = /^\s*(?:please\s+|kindly\s+|(?:click|tap|press|select)\s+(?:here\s+)?to\s+|let(?:'|\u2019)?s\s+|let\s+us\s+|go\s+ahead\s+and\s+|i(?:\s+want|\s+would\s+like|(?:'|\u2019)d\s+like)\s+to\s+)+/iu
 const TRAILING_WRAP = /(?:\s*(?:right\s+now|now|please|\.{2,}|\u2026|!+|\((?:recommended|suggested|best\s+value)\)|[\u2192\u203a\u00bb>\u2794\u27f6\u279c\u27a1]|\p{Extended_Pictographic}|\uFE0F))+\s*$/iu
 // CU-473 (cu-researcher 02:15Z): a second line, a badge or a count after a ruled name - the first line of a multi-line name; a
 // sentence-case name followed by a capitalised second sentence ('Change direct deposit Takes effect immediately'); a trailing badge
@@ -765,10 +791,16 @@ function firstSentence(text) {
   }
   return text
 }
+/** #635 round 2 (cu-researcher 07:08Z): the lead-ins only, with the trailing words kept - 'Yes, install now' keeps its 'now' for the
+ * 'Install now' row (the full canonical form strips a trailing 'now'). */
+function leadingStripped(name) {
+  const lines = String(name ?? '').split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean)
+  return (lines[0] ?? '').replace(LEADING_ICONS, '').replace(LEADING_PART, '').replace(CONFIRM_PREFIX, '').replace(CTA_LEAD_IN, '').trim()
+}
 export function canonicalConfirm(name) {
   const lines = String(name ?? '').split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean)
   const text = lines[0] ?? ''
-  return text.replace(LEADING_ICONS, '').replace(LEADING_PART, '').replace(CONFIRM_PREFIX, '').replace(TRAILING_KEYS, '').replace(TRAILING_WRAP, '').replace(TRAILING_PAREN, '').replace(TRAILING_BADGE, '').replace(TRAILING_WRAP, '').trim()
+  return text.replace(LEADING_ICONS, '').replace(LEADING_PART, '').replace(ACK_CONNECTOR, '').replace(CONFIRM_PREFIX, '').replace(CTA_LEAD_IN, '').replace(TRAILING_QUALIFIER, '').replace(TRAILING_KEYS, '').replace(TRAILING_WRAP, '').replace(TRAILING_PAREN, '').replace(TRAILING_BADGE, '').replace(TRAILING_WRAP, '').trim()
 }
 /** #609 round 2 (cu-researcher 02:24Z): the canonical forms to try, in order - the unwrapped name, then (only if that asks nothing)
  * its first sentence. Additive: a Title-Case object ('Turn off Safe Browsing') is never lost to the sentence cut. */
@@ -781,14 +813,150 @@ function withoutDeterminers(text) {
   // Keep the first word (the verb) as written; drop determiners after it.
   return `${words[0]} ${words.slice(1).join(' ').replace(DETERMINER_WORDS, '')}`.replace(/\s+/g, ' ').trim()
 }
+// CU-481 (High; cu-coordinator 04:51Z): a leading-verb synonym of a ruled row - modify -> change, display / reveal -> show,
+// give -> grant, begin -> start, ask for -> request, create -> add - one more form, like CU-455 / CU-463, adds only.
+// cu-coordinator 06:34Z (CU-481 follow-up): update / edit -> change too, tried last like the others - never 'Update all / now' (the
+// App Store's own verdict decides those, CU-254).
+const VERB_SYNONYMS = [[/^(\s*)modify\b/i, '$1change'], [/^(\s*)(?:update|edit)\b(?!\s+(?:all|now|available)\b)/i, '$1change'], [/^(\s*)(?:display|reveal)\b/i, '$1show'], [/^(\s*)give\b/i, '$1grant'],
+  [/^(\s*)begin\b/i, '$1start'], [/^(\s*)ask\s+for\b/i, '$1request'],
+  // #627 round 2 (cu-researcher 05:08Z): creating an account is not adding one ('Create account' stays free).
+  [/^(\s*)create\b(?!\s+(?:an?\s+|new\s+|your\s+|my\s+)?accounts?\b)/i, '$1add']]
+function withVerbSynonym(text) {
+  for (const [pattern, replacement] of VERB_SYNONYMS) if (pattern.test(text)) return text.replace(pattern, replacement)
+  return text
+}
+// CU-486 (High; cu-coordinator 07:36Z): known compounds are joined and split both ways - autolock / auto-lock, e-mail / email, log-in /
+// login, e-sim / esim, opt-in / optin, check-in / checkin, add-on / addon, plug-in / plugin, sign-in / signin, set-up / setup.
+// #642 round 2 (cu-researcher 07:54Z): auto-invest too, and a SPACED compound joins as well ('Remote log in', 'plug in').
+const COMPOUNDS = [['auto', 'lock'], ['auto', 'invest'], ['e', 'mail'], ['log', 'in'], ['e', 'sim'], ['opt', 'in'], ['check', 'in'], ['add', 'on'], ['plug', 'in'], ['sign', 'in'], ['set', 'up']]
+function compoundJoined(text) {
+  let out = text
+  for (const [a, b] of COMPOUNDS) out = out.replace(new RegExp(`\\b${a}[-\\u2010\\u2011 ](${b})\\b`, 'gi'), (m) => m.replace(/[-\u2010\u2011 ]/, ''))
+  return out
+}
+function compoundSplit(text) {
+  let out = text
+  for (const [a, b] of COMPOUNDS) out = out.replace(new RegExp(`\\b(${a})(${b})\\b`, 'gi'), '$1-$2')
+  return out
+}
+// CU-502 (High; cu-coordinator 13:21Z; canonical-form sweep, tried LAST - after the verb-synonym forms): a quantifier between the verb and its object - '<verb> all (the / of the / your / my) <nouns>' or
+// '<verb> every <noun>' - is judged as the verb on the object, plural kept and singular, so 'Silence all alarms', 'Empty all buckets',
+// 'Cancel all orders' reach their rows. Never for the list-handling verbs ('Select all', 'Mark all as read', 'Expand all', 'Show all
+// results'), and only when a noun follows the quantifier.
+// #683 round 2 (cu-coordinator 13:36Z): 'open' is not a list verb ('Open all ports' asks); and a name that already asks takes the
+// full class set of its quantifier-dropped row too (policy.mjs: 'Approve each sign-in' = permission + submit like 'Approve sign-in').
+const QUANTIFIER_SAFE_VERBS = /^(?:select|deselect|unselect|mark|view|show|see|expand|collapse|read|check|uncheck|filter|sort|hide|load|browse|list|clear\s+filters?|reply)$/i
+export function quantifierDropped(form) {
+  const m = /^\s*((?:turn\s+(?:on|off)|switch\s+(?:on|off)|set\s+up|log\s+out\s+of|sign\s+out\s+of|[a-z][a-z-]*))\s+(?:all|every|each)(?:\s+(?:of\s+)?(?:the|your|my|these|those))?\s+([a-z][\w-]*(?:\s+[a-z][\w-]*){0,3})\s*$/i.exec(String(form ?? ''))
+  if (!m || QUANTIFIER_SAFE_VERBS.test(m[1].trim())) return []
+  if (/^(?:as|to|from|in|on|at|of|for|with|that|which|read|unread|done)\b/i.test(m[2])) return []
+  const words = m[2].split(/\s+/)
+  const last = words[words.length - 1]
+  const one = [...words.slice(0, -1), singular(last)].join(' ')
+  return [...new Set([`${m[1]} ${m[2]}`, `${m[1]} ${one}`])]
+}
+// #685 round 3 (cu-developer-three 13:57Z): the acknowledgement stripped alone, keeping the row's own trailing words - 'I understand and
+// want to open anyway' is judged as 'open anyway' (Gatekeeper's install row), not only as the qualifier-stripped 'open'.
+function acknowledgementStripped(name) {
+  const first = String(name ?? '').split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean)[0] ?? ''
+  return first.replace(ACK_CONNECTOR, '').replace(CONFIRM_PREFIX, '').trim()
+}
+// CU-505 (label sweep): a short section label before the row - '<Label>: <row>' or '<Label> - <row>' (one to three words, a colon
+// or a spaced dash) - and brackets or quotes around the whole name are stripped, so the row decides ('Danger zone: Make this
+// repository public', 'Payroll - Change direct deposit', '[Delete account]').
+// cu-coordinator 14:49Z: a label of up to five words; tried LAST (after the verb-synonym and quantifier forms), so the label never
+// lowers and a free rest stays free; a time or ratio ('10:30', '16:9') is never split (no colon before a digit).
+// CU-506 (compound sweep): a name of two or three verb-led clauses joined by 'and' / '&' / 'then' / '+' ('Review and confirm
+// withdrawal', 'Save and disable encryption', 'Turn off backups & close') is judged clause by clause and asks the union, tried last.
+// Only when every clause starts with a verb or asks on its own - so 'Terms and conditions', 'Privacy & Security' and 'Rock and roll'
+// never split.
+// #699 round 3 (cu-researcher 15:57Z): the free-clause verbs too - check, test, validate, inspect, preview, refresh, paste, select, read,
+// double-check, look up, search, name, label, tag, and their kin (find, compare, choose, pick, enter, type, fill, verify).
+const CLAUSE_VERBS = /^(?:check|double-check|test|validate|inspect|preview|refresh|paste|select|read|look\s+up|search|name|label|tag|find|compare|choose|pick|enter|type|fill|verify|confirm|save|review|scan|confirm|continue|close|submit|send|delete|remove|disable|enable|turn|switch|link|unlink|sign|pay|buy|apply|accept|agree|approve|transfer|export|download|install|uninstall|open|update|change|create|add|reset|cancel|archive|publish|share|allow|grant|unlock|lock|restart|finish|complete|verify|upload|connect|disconnect|erase|empty|clear|move|copy|exit|quit|leave|join|start|stop|run|deploy|merge|push|release|revoke|deny|block|unblock|activate|deactivate|back|restore|sync|import|print|rename|edit|set|make|give|withdraw|deposit|sell|order|book|schedule|invite|register|log)\b/i
+export function clauseSplit(name) {
+  const first = String(name ?? '').split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean)[0] ?? ''
+  if (first.length > 200) return []
+  const parts = first.split(/\s+(?:and|&|then|\+)\s+|\s*,\s*(?:and|then)\s+/i).map((part) => part.trim()).filter(Boolean)
+  if (parts.length < 2 || parts.length > 3) return []
+  return parts
+}
+/** #699 round 2 (cu-researcher 15:43Z): whether a clause starts with a listed UI verb; the policy also accepts a clause that asks on
+ * its own ('Suspend user', 'Silence alarm' - their first word starts an asking row). */
+// cu-coordinator 15:49Z: the verb set is derived from the ruled rows' own verb tables (VERBS, MULTI_VERBS, SWITCH_VERBS and the
+// family verb sets), not a fixed list; CLAUSE_VERBS adds the plain UI verbs that lead a free clause ('save', 'review', 'scan').
+const ROW_VERBS = new Set([...VERBS.keys(), ...MULTI_VERBS.map(([words]) => words[0]), ...SWITCH_VERBS, ...PERSON_PAY_VERBS, ...EMAIL_VERBS, ...CURRENCY_VERBS, ...DIVERSION_VERBS])
+export function clauseVerbLed(part) {
+  const text = String(part ?? '').trim()
+  const first = (text.toLowerCase().match(/^[a-z][a-z-]*/) ?? [''])[0]
+  return ROW_VERBS.has(first) || CLAUSE_VERBS.test(text)
+}
+export function sectionLabelStripped(name) {
+  const first = String(name ?? '').split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean)[0] ?? ''
+  const forms = []
+  const label = /^\s*[\p{L}][\p{L}\p{N}&'.]*(?:\s+[\p{L}\p{N}&'.]+){0,4}\s*(?::(?!\d)|\s[-\u2013\u2014|]\s)\s*(\S.*)$/u.exec(first)
+  // #694 round 2 (cu-researcher 15:05Z): a one-word rest counts too ('Movie - Rent', 'Controls: Honk').
+  // The rest must start with a letter: a price or score after a label ('Price: $35', 'Score: 3-1') is never a row.
+  if (label && /^\p{L}/u.test(label[1].trim())) forms.push(label[1].trim())
+  const wrapped = /^\s*[\[("'\u201c\u2018\u00ab\u2039](.+?)[\])"'\u201d\u2019\u00bb\u203a]\s*$/u.exec(first)
+  if (wrapped) forms.push(wrapped[1].trim())
+  return forms
+}
 export function canonicalForms(name) {
   const unwrapped = canonicalConfirm(name)
   const cut = firstSentence(unwrapped)
   const bare = withoutDeterminers(unwrapped)
-  return [...new Set([unwrapped, cut, bare, withoutDeterminers(cut)])].filter((form) => form !== '' && form !== String(name ?? '').trim())
+  const forms = [unwrapped, cut, bare, withoutDeterminers(cut), leadingStripped(name), acknowledgementStripped(name), ...widenedStripped(name).flatMap((f) => [f, canonicalConfirm(f)])]
+  // The compound forms only for a name a row could match (<= 200 characters): the F3 budget (CU-272) holds for an 80k-character name.
+  const compounds = String(name ?? '').length <= 200 ? [...forms.map(compoundJoined), ...forms.map(compoundSplit)] : []
+  return [...new Set([...forms, ...compounds])].filter((form) => form !== '' && form !== String(name ?? '').trim())
+}
+/** CU-481: the verb-synonym forms of a name (and of its canonical forms) - tried LAST, only when the name and its own canonical forms
+ * get no class, so a synonym never outranks a row the name already matches ('Create service account key' stays credential). */
+// CU-489 (High; cu-coordinator 08:49Z): abbreviations of ruled rows' objects - IBAN / ACH -> direct deposit, 2SV / TOTP / MFA / 2FA /
+// login approvals -> two-factor authentication, WPA -> Wi-Fi password, RDP -> Remote Desktop. Word-edged and case-sensitive for the
+// acronyms (an 'ach' inside a word never counts); tried last, with the verb synonyms.
+// Each expansion only after the verbs its ruled rows use, so a protection being raised ('Require MFA') never takes the row of one being
+// lowered (#606 pins 'Require MFA' free).
+// #653 round 2 (cu-researcher 09:11Z; cu-developer-three 09:10Z): ACH / IBAN with a trailing info / details / number / account; WPA
+// reaches the 'Wi-Fi security' row (permission); 'open RDP' is opening port 3389 (CU-464), 'start' joins the RDP verbs; a bare
+// acronym on a TOGGLE (a verbless switch named 'RDP' / 'MFA' / '2SV') expands without a verb, so the switch rules give it direction.
+const ABBREVIATIONS = [
+  [/^\s*(?:change|update|edit|add|set\s+up|replace)\b/i, /\b(?:IBAN|ACH)(?:\s+(?:info|information|details|number|account))?\b/g, 'direct deposit'],
+  [/^\s*(?:turn\s+off|disable|remove|deactivate|reset|bypass|skip|switch\s+off)\b/i, /\b(?:2SV|TOTP|MFA|2FA)\b|\b[Ll]ogin\s+approvals?\b/g, 'two-factor authentication'],
+  // #653 round 3 (cu-developer-two 09:14Z): showing or changing a WPA key is the Wi-Fi password (credential); turning WPA off is the
+  // Wi-Fi security row (permission).
+  [/^\s*(?:show|reveal|view|change|copy)\b/i, /\bWPA[23]?(?:\s+(?:key|password|passphrase))?\b/g, 'Wi-Fi password'],
+  [/^\s*(?:turn\s+off|disable|remove)\b/i, /\bWPA[23]?\b/g, 'Wi-Fi security'],
+  // cu-researcher 09:15Z: only 'Open RDP (port)' at the END of the name - 'Open RDP guide' stays free.
+  [/^\s*open\b/i, /\bRDP(?:\s+port)?\s*$/g, 'port 3389'],
+  [/^\s*(?:turn\s+on|enable|allow|activate|start|switch\s+on)\b/i, /\bRDP\b/g, 'Remote Desktop']]
+const TOGGLE_ACRONYMS = [[/^\s*(?:2SV|TOTP|MFA|2FA)\s*$/, 'Two-factor authentication'], [/^\s*RDP\s*$/, 'Remote Desktop'], [/^\s*WPA[23]?\s*$/, 'Wi-Fi security']]
+/** #653 round 2: a toggle named by a bare acronym ('RDP', 'MFA') is judged as the setting it stands for. */
+export function toggleExpansion(name) {
+  for (const [pattern, expansion] of TOGGLE_ACRONYMS) if (pattern.test(String(name ?? ''))) return expansion
+  return ''
+}
+function withAbbreviations(text) {
+  let out = text
+  for (const [verb, acronym, expansion] of ABBREVIATIONS) if (verb.test(out) && acronym.test(out)) { acronym.lastIndex = 0; out = out.replace(acronym, expansion) }
+  return out
+}
+export function synonymForms(name) {
+  const own = String(name ?? '').trim()
+  if (own.length > 200) return []
+  const base = [own, ...canonicalForms(name)]
+  const forms = [...base.map(withVerbSynonym), ...base.map(withAbbreviations), ...base.map((f) => withVerbSynonym(withAbbreviations(f)))]
+  const known = new Set(canonicalForms(name))
+  // CU-502: the quantifier-dropped forms go last of all (and their verb synonyms after them).
+  const quantified = [...new Set(base.flatMap(quantifierDropped))]
+  // CU-505: the section-label forms after them, last of all.
+  const labelled = sectionLabelStripped(name)
+  const last = [...quantified, ...quantified.map(withVerbSynonym), ...labelled, ...labelled.flatMap((f) => [f, ...canonicalForms(f)])]
+  return [...new Set([...forms, ...last])].filter((form) => form !== '' && form !== own && !known.has(form))
 }
 
-export function grammarClasses(name, role = '') {
+/** The grammar on the name and its own canonical forms - no verb synonyms (policy.mjs reads it before probing synonym forms). */
+export function grammarClassesBase(name, role = '') {
   const asWritten = grammarClassesOf(name, role)
   if (asWritten.length > 0) return asWritten
   for (const form of canonicalForms(name)) {
@@ -796,6 +964,16 @@ export function grammarClasses(name, role = '') {
     if (classes.length > 0) return classes
   }
   return asWritten
+}
+
+export function grammarClasses(name, role = '') {
+  const base = grammarClassesBase(name, role)
+  if (base.length > 0) return base
+  for (const form of synonymForms(name)) {
+    const classes = grammarClassesOf(form, role)
+    if (classes.length > 0) return classes
+  }
+  return base
 }
 
 function grammarClassesOf(name, role = '') {
@@ -905,10 +1083,123 @@ function grammarClassesOf(name, role = '') {
   if (vault) return [vault]
   const merchant = merchantClass(list)
   if (merchant) return [merchant]
+  // #642 round 3 (cu-coordinator 08:05Z): 'Install add-on / addon / plug-in / extension' asks install (the older install row did not
+  // read add-ons; the compound forms reach this row).
+  if (list[0] === 'install' && list.length <= 4 && (['addon', 'plugin', 'extension'].includes(list[list.length - 1]) || (list[list.length - 2] === 'add' && list[list.length - 1] === 'on') || (list[list.length - 2] === 'plug' && list[list.length - 1] === 'in'))) return ['install']
   // CU-477 (High; cu-coordinator 03:36Z): a patient portal - account access to another person (credential), signing an authorization
   // or release and booking care (submit), research opt-in (permission); a copay-charging e-visit asks purchase through the amount row.
   const portal = portalClass(list)
   if (portal) return [portal]
+  // CU-479 (High rows; cu-coordinator 04:20Z): a send to people who opted out or to the whole list - 'Resubscribe all' and a bare
+  // 'Blast' (submit). Imports and exports belong to CU-462.
+  // #633 round 2 (cu-researcher 07:05Z): everyone / entire list / contacts, and 'Blast it / now'. The hyphenated 'Re-subscribe all'
+  // keeps the older subscribe -> purchase (it asks either way; named).
+  if (list[0] === 'resubscribe' && list.length <= 3 && ['all', 'everyone', 'entire', 'contact', 'list', 'subscriber'].includes(list[1])) return ['submit']
+  // CU-484 (High; cu-coordinator 06:05Z): installing by store wording - an OAuth install into a workspace app, a browser add-on, a bare
+  // 'Install now', an installer or a plugin activation (install); sideloading and unknown sources (permission). 'Uninstall' keeps delete.
+  if (list.length <= 5) {
+    const [v, ...r] = list
+    if (v === 'add' && r[0] === 'to' && r.length === 2 && ['slack', 'discord', 'telegram', 'teams', 'zoom', 'notion', 'trello', 'asana', 'jira', 'github', 'gitlab', 'workspace', 'firefox', 'chrome', 'edge', 'safari', 'opera', 'brave', 'browser'].includes(r[1])) return ['install']
+    // #635 round 3 (cu-developer-three 07:19Z): 'add-on' / 'plug-in' tokenize at the hyphen ('add on', 'plug in').
+    const addOn = r.length >= 2 && ((r[r.length - 2] === 'add' && r[r.length - 1] === 'on') || (r[r.length - 2] === 'plug' && r[r.length - 1] === 'in'))
+    if (v === 'get' && ((r.length <= 2 && ['extension', 'addon', 'plugin'].includes(r[r.length - 1])) || (r.length === 2 && addOn))) return ['install']
+    // #635 round 2 (cu-researcher 07:08Z): launch for run, extension / add-on for plugin, 'apps from' inside 'Allow unknown sources', and
+    // the 'Install now' family as a token row (format and lead-in variants reach it).
+    if (['run', 'launch', 'open'].includes(v) && r.length === 1 && r[0] === 'installer') return ['install']
+    if (v === 'install' && ((r.length === 1 && ['now', 'it'].includes(r[0])) || (r.length === 2 && r[0] === 'now' && r[1] === 'please') || (r.length === 2 && r[0] === 'for' && r[1] === 'free'))) return ['install']
+    if (['activate', 'enable'].includes(v) && ((r.length <= 2 && ['plugin', 'addon', 'extension'].includes(r[r.length - 1])) || (r.length === 2 && addOn))) return ['install']
+    if (v === 'sideload' && r.length <= 2) return ['permission']
+    if (v === 'allow' && ((r[0] === 'unknown' && r[1] === 'source' && r.length === 2) || (r[0] === 'app' && r[1] === 'from' && ['anywhere', 'unknown'].includes(r[2]) && (r.length === 3 || (r[2] === 'unknown' && r[3] === 'source' && r.length === 4))))) return ['permission']
+  }
+  if (/^\s*install\s+now\s*!?\s*$/i.test(raw)) return ['install']
+  // #693 round 2 (cu-researcher 14:53Z): the CU-433 rows as verb families with object synonyms.
+  if (/^\s*empty\s+(?:the\s+|my\s+)?(?:spam|junk)(?:\s+(?:folder|mail|box))?\s*$/i.test(raw)) return ['delete']
+  if (/^\s*report\s+(?:as\s+|this\s+as\s+)?phishing(?:\s+(?:attempt|email|e-mail|message|mail))?\s*$/i.test(raw)) return ['submit']
+  if (/^\s*(?:create|new|make)\s+(?:a\s+|an\s+)?(?:new\s+)?(?:inbox\s+|mail\s+|email\s+|message\s+|forwarding\s+)?rule\s*$|^\s*add\s+(?:a\s+|an\s+)?(?:new\s+)?(?:inbox|mail|email|message|forwarding)\s+rule\s*$/i.test(raw)) return ['credential']
+  if (/^\s*release\s+(?:all|all\s+messages|messages?|emails?|(?:it\s+)?from\s+quarantine|selected)\s*$/i.test(raw)) return ['permission']
+  // CU-433 (cu-coordinator 09:51Z): mail near forms ask as their ruled neighbours - recalling a sent message deletes it ('Unsend
+  // message'); reporting phishing submits a report ('Report spam'); emptying spam / junk deletes ('Empty trash'); a mail rule can
+  // forward mail out ('Create filter', credential); releasing a held message from quarantine lets it through (permission).
+  // A bare 'Add rule' stays free (CU-492 pins it: a cloud console's form opener); 'Create rule' / 'Add mail rule' ask.
+  if (list.length <= 4) {
+    const [v, ...r] = list
+    const last = r[r.length - 1]
+    if (v === 'recall' && r.length >= 1 && r.length <= 2 && ['message', 'email', 'mail'].includes(last)) return ['delete']
+    if (v === 'report' && r.length <= 2 && last === 'phishing') return ['submit']
+    if (v === 'empty' && r.length <= 2 && ['spam', 'junk'].includes(last)) return ['delete']
+    if (['create', 'add', 'new'].includes(v) && r.length <= 2 && ['rule', 'forwarding'].includes(last) && (r.length === 1 ? v !== 'add' : ['mail', 'inbox', 'email', 'forwarding', 'message'].includes(r[0]))) return ['credential']
+    if (v === 'release' && r.length >= 1 && r.length <= 3 && (['message', 'email', 'mail'].includes(last) || last === 'quarantine')) return ['permission']
+  }
+  // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
+  // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
+  if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
+  // CU-500 (High; cu-coordinator 12:49Z), as verb families with object synonyms: on an exchange, confirming a withdrawal, a market
+  // order, converting everything and setting leverage move money (purchase); adding or allowlisting a withdrawal address redirects it
+  // (credential); turning off the withdrawal allowlist opens the account (permission). 'Deposit address' and 'Markets' stay free.
+  // #680 round 2 (cu-developer-three 12:55Z): a bare 'Add to allowlist / whitelist' (an ad blocker's, a mail sender's, a firewall's)
+  // stays free - the credential row needs an address / wallet / withdrawal object.
+  if (/^\s*confirm\s+(?:the\s+|this\s+|your\s+|my\s+)?(?:withdrawals?|withdraw(?:al)?\s+request|crypto\s+withdrawal|payout)\s*$/i.test(raw)
+    || /^\s*(?:market\s+(?:sell|buy|order)|(?:sell|buy)\s+(?:at\s+|by\s+)?market(?:\s+price)?|(?:place|submit)\s+(?:a\s+)?market\s+(?:sell|buy|order))\s*$/i.test(raw)
+    || /^\s*convert\s+(?:all|everything|max|(?:my\s+|the\s+)?(?:entire|whole|full|max(?:imum)?)\s+(?:balance|amount|portfolio))(?:\s+to\s+[a-z0-9]{2,10})?\s*$/i.test(raw)
+    || /^\s*(?:set|change|increase|raise|use|apply)\s+(?:the\s+|my\s+)?leverage(?:\s+to\s+\d+(?:\.\d+)?\s*x)?\s*$|^\s*(?:set|use|apply)\s+\d+(?:\.\d+)?\s*x(?:\s+leverage)?\s*$/i.test(raw)) return ['purchase']
+  if (/^\s*(?:add|save|register|create)\s+(?:a\s+|an\s+|new\s+|a\s+new\s+)?(?:withdrawal|withdraw|payout|crypto|wallet|external|whitelisted|allowlisted|trusted)\s+(?:wallet\s+)?address(?:es)?\s*$/i.test(raw)
+    || /^\s*(?:whitelist|allowlist|trust)\s+(?:an?\s+|this\s+|the\s+|new\s+)?(?:withdrawal\s+)?(?:address|wallet)\s*$|^\s*add\s+(?:this\s+|the\s+)?(?:address|wallet)\s+to\s+(?:the\s+)?(?:withdrawal\s+|address\s+)?(?:whitelist|allowlist)\s*$|^\s*add\s+to\s+(?:the\s+)?(?:withdrawal|address|wallet)\s+(?:whitelist|allowlist)\s*$/i.test(raw)) return ['credential']
+  if (/^\s*(?:disable|turn\s+off|switch\s+off|deactivate|remove|pause)\s+(?:the\s+)?(?:withdrawal|address|wallet|crypto)\s+(?:whitelist|allowlist|lock|protection)(?:ing)?\s*$/i.test(raw)) return ['permission']
+  // CU-497 (High; cu-coordinator 11:49Z, the CU-461 exposure family): exposing a phone number, email or location on a profile, or linking
+  // another service's account, asks permission - 'Make phone number visible', 'Let anyone find me by phone / email', 'Turn on location in
+  // posts', 'Show my location', 'Link Instagram account', 'Connect Instagram'. 'Hide phone number' and pickers stay free.
+  // #672 round 3 (cu-coordinator 12:21Z): '... visible publicly' and '... visible on my profile' too.
+  if (/^\s*(?:make|set)\s+(?:my\s+)?(?:phone(?:\s+number)?|email(?:\s+address)?|e-mail|birthday|location|address)\s+(?:visible|public|discoverable)(?:\s+(?:to\s+(?:everyone|anyone|all|the\s+public)|publicly|on\s+(?:my\s+)?profile))?\s*$/i.test(raw)
+    || /^\s*(?:let|allow)\s+(?:anyone|everyone|people|others)\s+(?:to\s+)?find\s+me\s+(?:by|with|using)\s+(?:my\s+)?(?:phone(?:\s+number)?|email(?:\s+address)?|e-mail|contacts?)\s*$/i.test(raw)
+    || /^\s*(?:turn\s+on|enable|add|allow)\s+(?:my\s+)?location\s+(?:in|on|to)\s+(?:my\s+)?(?:posts?|photos?|stories|tweets?|profile)\s*$/i.test(raw)
+    // #672 round 2 (cu-researcher 12:00Z): without 'my', and 'to everyone / anyone / the public'.
+    || /^\s*(?:show|share|display)\s+(?:my\s+)?(?:location|phone(?:\s+number)?|email(?:\s+address)?)\s+(?:publicly|on\s+(?:my\s+)?profile|(?:with|to)\s+(?:everyone|anyone|the\s+public|all))\s*$|^\s*(?:show|share)\s+my\s+(?:location|phone(?:\s+number)?|email(?:\s+address)?)\s*$/i.test(raw)
+    || /^\s*(?:link|connect)\s+(?:my\s+|your\s+|an?\s+)?(?!(?:bank|card|device|wallet|email|phone|billing|payment|payout|merchant|ads?|credit|debit|brokerage|savings|checking)\b)[a-z][\w.+-]{1,20}\s+account\s*$/i.test(raw)
+    || /^\s*(?:link|connect)\s+(?:my\s+|your\s+)?(?:instagram|facebook|twitter|x|tiktok|spotify|google|apple|github|linkedin|discord|twitch|youtube|snapchat|strava|venmo|paypal|threads|bluesky|mastodon)\s*$/i.test(raw)) return ['permission']
+  // CU-496 (High; cu-coordinator 11:21Z): a recovery, trusted or legacy contact can take the account over (permission); a vault's
+  // emergency kit prints its secrets (credential).
+  if (/^\s*(?:add|set\s+up|choose|invite|assign)\s+(?:an?\s+)?(?:recovery|trusted|legacy)\s+contacts?\s*$/i.test(raw)) return ['permission']
+  if (/^\s*(?:print|download|save)\s+(?:the\s+|your\s+)?emergency\s+kit\s*$/i.test(raw)) return ['credential']
+  // CU-495 (High; cu-coordinator 11:06Z): an e-signature commits the signer - 'Sign', 'Sign here', 'Click to sign', 'Agree and sign',
+  // 'Apply signature', 'Complete signing', 'Sign all' ask permission anywhere, like 'Adopt and Sign'. 'Sign in' / 'Sign up' keep their rows.
+  // #665 round 2 (cu-researcher 11:16Z): 'Add my / Place / Insert signature', 'Sign electronically / digitally'.
+  if (/^\s*(?:sign(?:\s+(?:here|all|now|it|below))?|click\s+(?:here\s+)?to\s+sign|(?:agree|accept)\s+(?:and|&)\s+sign|(?:apply|add|place|insert)\s+(?:my\s+|your\s+|a\s+)?signature|(?:complete|finish)\s+signing|e-?sign(?:\s+now)?|sign\s+(?:electronically|digitally))\s*!?\s*$/i.test(raw)) return ['permission']
+  // CU-492 (High; cu-coordinator 10:36Z): cloud console - emptying a bucket deletes every object (delete); a rule open to the whole
+  // internet, and turning off encryption or versioning, widen access (permission). A bare 'Add rule' opens a form (free).
+  if (/^\s*empty\s+(?:the\s+|this\s+)?(?:bucket|container)\s*$/i.test(raw)) return ['delete']
+  if (/^\s*add\s+(?:an?\s+)?(?:inbound\s+|outbound\s+|firewall\s+|security\s+)?rule\s+(?:for\s+|from\s+)?(?:0\.0\.0\.0\/0|::\/0|anywhere|any\s+ip)\s*$/i.test(raw)) return ['permission']
+  if (/^\s*(?:disable|turn\s+off|remove)\s+(?:bucket\s+|default\s+|server-side\s+)?(?:encryption|versioning)\s*$|^\s*suspend\s+(?:bucket\s+)?versioning\s*$/i.test(raw)) return ['permission']
+  // CU-493 (High; cu-coordinator 10:36Z): an MFA-fatigue approval answers a sign-in prompt - 'Yes, it's me', 'This was me', 'It was me',
+  // 'Allow sign-in' ask in the class of 'Approve sign-in' (permission since #661 round 2), anywhere; linking a device asks as 'Add device'.
+  if (/^\s*(?:yes,?\s+)?(?:it'?s|it\s+is|it\s+was|this'?s|this\s+(?:is|was)|that'?s|that\s+(?:is|was))\s+me\s*!?\s*$/i.test(raw) || /^\s*allow\s+(?:this\s+|the\s+)?(?:sign-?\s?in|log-?\s?in|login)\s*$/i.test(raw)) return ['permission']
+  if (/^\s*link\s+(?:a\s+|this\s+|new\s+|another\s+)?device\s*$/i.test(raw)) return ['permission']
+  // CU-490 (High; cu-coordinator 09:51Z): booking a ride is a purchase anywhere - 'Confirm ride', 'Book ride', 'Request ride'.
+  if (list.length >= 2 && list.length <= 3 && ['confirm', 'book', 'request'].includes(list[0]) && ['ride', 'trip'].includes(list[list.length - 1])) return ['purchase']
+  // CU-487 (High; cu-coordinator 07:36Z): payroll compensation - a bonus pays out (purchase); a raise or a salary / compensation change is
+  // submitted (submit); employee data and tax forms leave the account (permission). Older classes keep their own rows (named).
+  if (list.length <= 4) {
+    const [v, ...r] = list
+    // #647 round 2 (cu-researcher 08:27Z): plural bonuses, 'Grant raise', payroll data / reports / records.
+    if (['issue', 'grant', 'send'].includes(v) && r.length <= 2 && ['bonus', 'bonuse', 'bonuses'].includes(r[r.length - 1])) return ['purchase']
+    if (['give', 'grant'].includes(v) && r.length <= 2 && r[r.length - 1] === 'raise') return ['submit']
+    if (['change', 'update', 'edit', 'adjust'].includes(v) && r.length <= 2 && ['salary', 'compensation', 'wage'].includes(r[r.length - 1])) return ['submit']
+    if (['export', 'download'].includes(v) && r.length <= 3 && (r.includes('employee') || r.includes('payroll')) && ['data', 'record', 'list', 'detail', 'report'].includes(r[r.length - 1])) return ['permission']
+  }
+  if (/^\s*download\s+(?:all\s+)?(?:w-?2s?|1099s?|tax\s+forms?)\s*$/i.test(raw)) return ['permission']
+  // CU-483 (High; cu-coordinator 05:34Z): brokerage - orders and automatic trading spend money (purchase); margin and options trading
+  // widen what the account may do (permission). A bare 'Sell' is page-bound (policy.mjs reads the trading URL).
+  if (list.length <= 3) {
+    const [v, ...r] = list
+    if (v === 'sell' && r[0] === 'short' && r.length <= 2) return ['purchase']
+    if (v === 'short' && r[0] === 'sell' && r.length <= 2) return ['purchase']
+    if (v === 'liquidate' && (r.length === 0 || (r.length <= 2 && ['all', 'position', 'portfolio', 'everything'].includes(r[r.length - 1])))) return ['purchase']
+    if (v === 'exercise' && r.length <= 2 && ['option', 'contract'].includes(r[r.length - 1])) return ['purchase']
+    if (v === 'auto' && r[0] === 'invest' && r.length === 1) return ['purchase']
+    if (v === 'rebalance' && r.length <= 2 && (r.length === 0 || r[r.length - 1] === 'portfolio')) return ['purchase']
+    if (['enable', 'activate'].includes(v) && r.length <= 2 && (['margin', 'leverage'].includes(r[0]) || (r[0] === 'option' && (r.length === 1 || r[1] === 'trading')))) return ['permission']
+    if (v === 'turn' && r[0] === 'on' && r.length <= 3 && (['margin', 'leverage'].includes(r[1]) || (r[1] === 'option' && (r.length === 2 || r[2] === 'trading')))) return ['permission']
+  }
+  if (/^\s*blast(?:\s+(?:it|now))?\s*!?\s*$/i.test(raw)) return ['submit']
   // F2 guard (cu-coordinator 20:28Z): declining, denying or rejecting a request answers no - the grammar's own over-ask since
   // #554 ('Decline request'); older asks ('Decline invitation', CU-422's 'Decline offer') are untouched (the hook never sees them).
   if (['decline', 'deny', 'reject'].includes(list[0]) && list.slice(1).filter((t) => !FILLER.has(t)).every((t) => t === 'request' || t === 'this' || t === 'all')
