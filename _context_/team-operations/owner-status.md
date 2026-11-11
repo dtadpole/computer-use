@@ -1,33 +1,32 @@
 ---
 title: Computer use on the Mac mini - one-page status for the owner
 created: 2026-11-06T04:55:00Z
-modified: 2026-11-11T12:21:00Z
+modified: 2026-11-11T13:21:00Z
 level: L2
-version: 1.8.27
+version: 1.8.28
 status: unverified
 description: 'What the [cu] team has built and proven, what is left, and the owner actions that are still open - one page, kept current by the coordinator.'
 grounded_in:
   - source: ULTIMATE_GOAL.md@2.0.0
-  - source: _seats_/cu-verifier/ultimate-goal-2-verdict.md@0.9.159
+  - source: _seats_/cu-verifier/ultimate-goal-2-verdict.md@0.9.164
   - source: _context_/team-operations/decision-log.yaml (D-034, D-052, D-063, D-079 to D-102)
 ---
 
 # Computer use on the Mac mini - status for the owner
 
-State at 11 November 2026, 12:21 UTC.
+State at 11 November 2026, 13:21 UTC.
 
 ## Where it stands
 
 Seven of the nine ULTIMATE_GOAL 2.0 rows hold on live evidence. Two are open:
 
 - **Consent and safety** holds only when no Urgent or High under-ask is open (D-063). **Three High items are open**
-  in verdict 0.9.159, all reproduced: CU-494 (a caller pre-approval must not carry ruled High rows; #664 - landed
-  and closed live after that verdict; its unlabelled-field residual #671 has both reviews), CU-495 (e-signature;
-  #665) and CU-496 (account recovery and vault backup; #669) - both with both reviews in. Filed and ruled since:
-  CU-497 (phone and location exposure; #672), CU-498 (government and tax acts) and CU-499 (car controls and smart
-  locks). Closed live on 10 November, fifty-three; on 11 November so far, twenty: CU-473 to CU-479 and CU-481 to
-  CU-493. Both consent tables are signed. Since 9 November the team's own audits
-  have found one hundred High gaps, closed ninety-six live and lowered one to Medium, among them CU-363 (a website's own one-key shortcuts, such as '#'
+  in verdict 0.9.164, all reproduced: CU-498 (government and tax acts) and CU-499 (car controls and smart locks)
+  in table PR 20, #677 - both reviews in - and CU-500 (crypto exchanges; table PR 21, #680). Filed and ruled since:
+  CU-501 (domain registrar) and CU-502 (a quantifier such as 'all' dropping ruled rows). Every earlier ruled High
+  is closed live: fifty-three on 10 November and twenty-four on 11 November so far (CU-473 to CU-479 and CU-481 to
+  CU-497). Both consent tables are signed. Since 9 November the team's own audits
+  have found one hundred and four High gaps, closed one hundred live and lowered one to Medium, among them CU-363 (a website's own one-key shortcuts, such as '#'
   to delete in a mail list), CU-365 (the same with Ctrl or Command chords), CU-370 (choosing 'Delete' in a
   drop-down, list box or radio group by keyboard), CU-373 ('Generate app password' and mail auto-forwarding on a
   website's account settings) and CU-381 (Delete or Backspace on a web page outside a text field). Medium fixes
@@ -46,7 +45,7 @@ Seven of the nine ULTIMATE_GOAL 2.0 rows hold on live evidence. Two are open:
 | Row | State |
 |---|---|
 | environment, perception, action contract, agent loop | hold live (CUHelper 0.2.65 installed 10 Nov, reading placeholder text, a label placed beside a box, pop-up menus, open menus and whether the clipboard holds a file; 0.2.66, which marks Finder's Quick Actions, and 0.2.67, which reads the file a row names and Finder's AirDrop, Shared and Network destinations, are in review) |
-| consent and safety | three High open in 0.9.159 (CU-494 to CU-496), all reproduced, fixes landed or with both reviews; CU-497 to CU-499 ruled; both tables signed; then waits on CU-135 in the owner session |
+| consent and safety | three High open in 0.9.164 (CU-498 to CU-500), all reproduced, fixes with both reviews or in review; CU-501 and CU-502 ruled; both tables signed; then waits on CU-135 in the owner session |
 | human control | open: step 4 with you (CU-11, CU-119, CU-135, CU-203) |
 | integration | DSH and heddle each completed a fixture task (CU-15) |
 | trajectory | holds; capture stays inside approved apps |

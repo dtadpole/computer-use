@@ -3,7 +3,7 @@ import { normaliseForPolicy, normaliseText } from './normalise.mjs'
 import { BIP39_ENGLISH } from './bip39-english.mjs'
 import { normalizeKey } from './keys.mjs'
 import { originPattern } from './sites.mjs'
-import { amountClass, canonicalForms, grammarClasses, grammarClassesBase, inertLinkAmountClass, synonymForms, toggleExpansion } from './phrase-grammar.mjs'
+import { amountClass, canonicalForms, grammarClasses, grammarClassesBase, inertLinkAmountClass, synonymForms, toggleExpansion, quantifierDropped } from './phrase-grammar.mjs'
 
 /**
  * The action policy (design: action-policy.md, consent-gate.md). `classify` runs in the dispatcher for every action,
@@ -24,13 +24,17 @@ const MONEY_IDENTITY_FIELD = /\b(?:iban|routing\s*(?:number|no\.?|#)?|account\s*
 // CU-494 residual r2 (cu-developer-one 11:55Z, cu-researcher 11:54Z): an unlabelled entry is read by its raw name/id attribute
 // (the chrome driver's fieldAttr, '_'/'-' read as spaces), where a bare 'wallet' counts too; and a card or amount autocomplete
 // token marks a money field whatever the name says.
-const MONEY_FIELD_ATTR_ONLY = /\b(?:wallet)\b/i
+const MONEY_FIELD_ATTR_ONLY = /\b(?:wallet|cc\s*(?:number|num|no))\b/i
 const MONEY_AUTOCOMPLETE = /\bcc-(?:number|csc|exp)|\btransaction-amount\b/i
-/** Whether a typing target is a money or identity field: its name, else its raw name/id attribute, or its autocomplete token. */
+/** Whether a typing target is a money or identity field: any of its name, placeholder, layout label, raw name/id attribute or autocomplete token says so. */
 export function moneyIdentityField(target, name = target?.name) {
   if (MONEY_AUTOCOMPLETE.test(String(target?.autocomplete ?? ''))) return true
-  const named = String(name ?? '')
-  if (named.trim() !== '') return MONEY_IDENTITY_FIELD.test(named)
+  // #675 r2 (cu-coordinator 12:36Z): a UNION, not first-wins - any of the name, the placeholder (AXPlaceholderValue on the
+  // desktop), the layout label (nearbyLabel, CU-361) or the raw name/id attribute marking a money or identity field makes it
+  // one, so a hostile page naming an IBAN field 'Nickname' does not win.
+  for (const hint of [name, target?.placeholder, target?.nearbyLabel]) {
+    if (typeof hint === 'string' && hint.trim() !== '' && MONEY_IDENTITY_FIELD.test(hint)) return true
+  }
   const attr = String(target?.fieldAttr ?? '').replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2').replace(/[_-]+/g, ' ')
   return attr !== '' && (MONEY_IDENTITY_FIELD.test(attr) || MONEY_FIELD_ATTR_ONLY.test(attr))
 }
@@ -123,7 +127,9 @@ const LOCALE_ID_NAMES = Object.freeze(['reisepass', '…passnummer', 'geburtsdat
   'パスポート', '旅券番号', '生年月日', 'マイナンバー', '個人番号', '口座番号',
   '여권', '여권번호', '생년월일', '주민등록번호', '계좌번호', '사업자등록번호'])
 const WORDS = Object.freeze({
-  purchase: ['buy', 'pay', 'order', 'place order', 'checkout', 'check out', 'subscribe', 'donate', 'purchase', 'transfer', 'withdraw', 'wire', 'send money',
+  // CU-498 (High; cu-coordinator 12:21Z): a direct debit mandate pulls money from the account (purchase), anywhere.
+  // (a separate line so the purchase list below stays as it was)
+  purchase: ['set up direct debit', 'set up a direct debit', 'authorize direct debit', 'authorise direct debit', 'authorize a direct debit', 'authorise a direct debit', 'buy', 'pay', 'order', 'place order', 'checkout', 'check out', 'subscribe', 'donate', 'purchase', 'transfer', 'withdraw', 'wire', 'send money',
     // CU-452 (cu-coordinator 22:28Z): an unlimited token approval lets a contract drain the wallet - purchase leads over the older submit.
     'approve unlimited', 'approve unlimited spending', 'allow unlimited spending',
     // CU-444 (cu-coordinator 20:54Z): publishing a campaign starts paid spend - purchase leads over the older 'publish' submit.
@@ -2000,6 +2006,44 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       } catch { signingPage = false }
       if (signingPage) classes.push('permission')
     }
+    // CU-498 (High; cu-coordinator 12:21Z): on a government or tax page - a .gov / gov.<cc> / gouv / gc.ca host, or a whole /tax, /taxes,
+    // /benefits, /unemployment, /voter, /elections or /return(s) segment of an http(s) URL - amending a return, reporting income,
+    // certifying for benefits and changing a voter registration ask in the class of 'File return' (submit). 'View return' stays free.
+    // CU-499 (High; cu-coordinator 12:21Z): on a car or smart-lock page - a whole /vehicle(s), /car(s), /lock(s), /smart-lock, /door(s)
+    // or /garage segment - a bare 'Unlock' asks PHYSICAL like 'Unlock car', and adding a driver or sharing a key asks PERMISSION.
+    // 'Lock' and 'Vehicle status' stay free. Named limits: a native tax or car app (no URL).
+    if (grammarEligible && classes.length === 0) {
+      let govPage = false
+      let carPage = false
+      try {
+        const u = new URL(String(context?.url ?? ''))
+        if (/^https?:$/.test(u.protocol)) {
+          govPage = /(?:^|\.)gov(?:\.[a-z]{2})?$|(?:^|\.)gouv\.[a-z]{2}$|(?:^|\.)gc\.ca$/i.test(u.hostname) || /(?:^|\/)(?:tax|taxes|benefits|unemployment|voter|elections|returns?)(?=$|[/?#])/i.test(u.pathname)
+          carPage = /(?:^|\/)(?:vehicles?|cars?|locks?|smart-lock|doors?|garage)(?=$|[/?#])/i.test(u.pathname)
+        }
+      } catch { govPage = false; carPage = false }
+      // #677 round 2 (cu-researcher 12:42Z): the ruled acts as families - certify (for) benefits / eligibility / a (weekly) claim;
+      // report income / earnings / hours (worked) / wages; change / update a voter registration.
+      if (govPage && /^\s*(?:amend\s+(?:my\s+|your\s+|the\s+)?(?:tax\s+)?return|report\s+(?:my\s+|your\s+)?(?:income|earnings|wages|hours(?:\s+worked)?)|certify\s+(?:for\s+)?(?:(?:my|your|weekly)\s+)*(?:benefits|unemployment|eligibility|(?:weekly\s+)?claim)|(?:change|update)\s+(?:my\s+|your\s+|the\s+)?voter\s+registration)\s*$/i.test(name)) classes.push('submit')
+      if (carPage && /^\s*unlock(?:\s+now)?\s*!?\s*$/i.test(name)) classes.push('physical')
+      if (carPage && /^\s*(?:add|invite)\s+(?:a\s+|an\s+|another\s+)?(?:secondary\s+|guest\s+|additional\s+|new\s+)?driver\s*$|^\s*share\s+(?:a\s+|my\s+|the\s+)?(?:digital\s+)?key\s*$/i.test(name)) classes.push('permission')
+    }
+    // #677 round 2 (cu-researcher 12:42Z): the direct-debit act in other words - a debit mandate or automatic / recurring withdrawals
+    // set up, authorised or created - asks purchase anywhere, like 'Set up direct debit'.
+    // #677 round 3 (cu-developer-three 12:47Z): allow / enable / turn on / activate too.
+    // An older 'authorize' permission stays beside it (D-108: never lower).
+    if (grammarEligible && !classes.includes('purchase') && /^\s*(?:set\s+up|authori[sz]e|create|start|allow|enable|turn\s+on|activate)\s+(?:an?\s+|the\s+)?(?:direct\s+debit|debit\s+mandate|automatic\s+(?:withdrawals?|debits?)|recurring\s+(?:withdrawals?|debits?))\s*$/i.test(name)) classes.push('purchase')
+    // #680 round 3 (cu-researcher 13:02Z): on an exchange's wallet page - a whole /withdraw, /withdrawal(s), /wallet(s), /addresses or
+    // /address-book segment of an http(s) URL - a bare 'Add to allowlist / whitelist' is the money redirect and asks credential; on a
+    // mail or ad-block page it stays free. Named limit: a native exchange app (no URL) keeps the bare form free.
+    if (grammarEligible && classes.length === 0 && /^\s*add\s+to\s+(?:the\s+)?(?:whitelist|allowlist|white\s+list|allow\s+list)\s*$/i.test(name)) {
+      let walletPage = false
+      try {
+        const u = new URL(String(context?.url ?? ''))
+        if (/^https?:$/.test(u.protocol)) walletPage = /(?:^|\/)(?:withdraw|withdrawals?|wallets?|addresses|address-book)(?=$|[/?#])/i.test(u.pathname)
+      } catch { walletPage = false }
+      if (walletPage) classes.push('credential')
+    }
     // CU-491 (High; cu-coordinator 10:19Z): on a home-security page - a whole /security, /alarm, /cameras or /home-security
     // segment of an http(s) URL - silencing, muting, snoozing an alarm or siren and pausing / stopping a recording ask PHYSICAL, like
     // 'Turn off alarm'. Off that URL a meeting's 'Stop recording' stays free (#462). Named limit: a native security app (no URL).
@@ -2162,6 +2206,14 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const also = shortcutActive ? { alsoNeeds: shortcutApproval } : {}
     // ... and 'permission' is listed beside the other classes (the record), while the class that ranks first still leads.
     const stack = (list) => (shortcutActive && !list.includes('permission') ? [...list, 'permission'] : list)
+    // #683 round 2 (cu-coordinator 13:36Z): a quantified name that already asks takes the full class set of its quantifier-dropped row
+    // too ('Approve each sign-in' asks permission beside the older submit, like 'Approve sign-in') - adds only.
+    if (grammarEligible && classes.length > 0 && context.confirmProbe !== true && String(name ?? '').length <= 200) {
+      for (const form of quantifierDropped(String(name ?? '').trim())) {
+        const probe = classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { ...target, name: form }, confirmProbe: true })
+        if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) if (!classes.includes(cls)) classes.push(cls)
+      }
+    }
     const unique = [...new Set(classes)].sort((a, b) => PRECEDENCE.indexOf(a) - PRECEDENCE.indexOf(b))
     // CU-494 residual (cu-coordinator 11:36Z): moneyIdentityField also reads an unlabelled entry's raw name/id attribute.
     const moneyField = moneyIdentityField(target, name)
