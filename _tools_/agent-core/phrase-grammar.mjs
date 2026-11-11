@@ -190,18 +190,25 @@ const pushOnce = (out, cls) => { if (!out.includes(cls)) out.push(cls) }
 const PRICED_ROLES = new Set(['gridcell', 'option', 'radio', 'checkbox', 'button', 'axcell', 'axrow', 'axradiobutton', 'axcheckbox',
   'axbutton', 'axmenuitem'])
 const PRICED_NOUNS = new Set(['seat', 'option', 'legroom', 'bag', 'baggage'])
-const AMOUNT = /(?:[$\u20ac\u00a3\u00a5\u20b9]\s?(\d[\d,]*(?:\.\d+)?))|(?:\b(\d[\d,]*(?:\.\d+)?)\s?(?:usd|eur|gbp|jpy|cad|aud|inr|chf)\b)|(?:\b(?:usd|eur|gbp|jpy|cad|aud|inr|chf)\s?(\d[\d,]*(?:\.\d+)?))/gi
+// #602 round 2 (cu-researcher 01:31Z): a symbol after the number with a comma decimal too ('Weiter f\u00fcr 4,99 \u20ac').
+const AMOUNT = /(?:[$\u20ac\u00a3\u00a5\u20b9]\s?(\d[\d,]*(?:\.\d+)?))|(?:\b(\d[\d,]*(?:\.\d+)?)\s?(?:usd|eur|gbp|jpy|cad|aud|inr|chf)\b)|(?:\b(?:usd|eur|gbp|jpy|cad|aud|inr|chf)\s?(\d[\d,]*(?:\.\d+)?))|(?:\b(\d[\d.]*(?:,\d{1,2})?)\s?[\u20ac$\u00a3\u00a5\u20b9])/gi
 // A price filter or range commits nothing ('Under $25', '$10 - $20', 'Over EUR 100', 'Up to $50'; cu-researcher 00:51Z).
 const PRICE_FILTER = /^\s*(?:under|over|below|above|less\s+than|more\s+than|up\s+to|from|max(?:imum)?|min(?:imum)?)\b|\d\s*(?:-|\u2013|\u2014|to)\s*[$\u20ac\u00a3\u00a5\u20b9]?\s*\d|\b(?:and\s+(?:up|above|under|below)|or\s+(?:less|more))\s*$/i
 // Links and list items stay out of the plain pattern (17:18Z; cu-coordinator 01:04Z): a priced link navigates to the item.
-const AMOUNT_ROLES = new Set(['button', 'menuitem', 'axbutton', 'axmenuitem', 'axpopupbutton', 'alertdialog', 'dialog'])
-const COMMIT_LINK_ROLES = new Set(['link', 'listitem', 'axlink', 'option'])
+// cu-developer-three 01:39Z (D-099): a desktop pull-down AXMenuButton asks; a closed AXPopUpButton only opens its menu (its chosen
+// AXMenuItem asks), so it stays out; desktop list rows AXRow / AXCell take the commit-verb form like links.
+const AMOUNT_ROLES = new Set(['button', 'menuitem', 'axbutton', 'axmenuitem', 'axmenubutton', 'alertdialog', 'dialog'])
+const COMMIT_LINK_ROLES = new Set(['link', 'listitem', 'axlink', 'option', 'axrow', 'axcell'])
+const PRICE_LABEL = /^\s*(?:price|was|now|from|save|sale|regular|list\s+price|msrp)\b|\boff\s*$|\bdiscount\b/i
 const AMOUNT_COMMIT = /^\s*(?:buy|pay|purchase|subscribe|order|donate|tip|rent|upgrade|renew|checkout|check\s+out|charge|get\s+(?:it|premium|pro|plus))\b/i
 /** CU-467 (cu-coordinator 00:49Z, 01:04Z): 'purchase' when a pressed control names a money amount - any button, menu item or dialog
  * control; a link or list item only with a commit verb ('Buy for $5', not a 'Blue mug, $12.99' tile); price filters and ranges never. */
 export function amountClass(name, role = '') {
   const raw = String(name ?? '')
   if (!namesAmount(raw) || PRICE_FILTER.test(raw)) return null
+  // #602 round 2 (A): a price label or discount badge is not a commit ('Price: $35', 'Sale - $35 off', 'Was $50', 'Save $10') - unless a
+  // commit verb leads.
+  if (PRICE_LABEL.test(raw) && !AMOUNT_COMMIT.test(raw)) return null
   const r = String(role ?? '').toLowerCase()
   if (AMOUNT_ROLES.has(r)) return 'purchase'
   if (COMMIT_LINK_ROLES.has(r) && AMOUNT_COMMIT.test(raw)) return 'purchase'
@@ -209,7 +216,11 @@ export function amountClass(name, role = '') {
 }
 /** CU-467: whether a name carries a positive money amount (a currency symbol or ISO code beside a number). */
 export function namesAmount(name) {
-  const amounts = [...String(name ?? '').matchAll(AMOUNT)].map((m) => Number(String(m[1] ?? m[2] ?? m[3] ?? '').replace(/,/g, '')))
+  const amounts = [...String(name ?? '').matchAll(AMOUNT)].map((m) => {
+    const text = String(m[1] ?? m[2] ?? m[3] ?? m[4] ?? '')
+    // '4,99' (a comma decimal) reads as 4.99; '1,000' (a thousands comma) as 1000.
+    return Number(/^\d+,\d{1,2}$/.test(text) ? text.replace(',', '.') : text.replace(/,/g, ''))
+  })
   return amounts.some((n) => Number.isFinite(n) && n > 0)
 }
 const CURRENCY = /[$\u20ac\u00a3\u00a5]\s?\d|\d\s?(?:usd|eur|gbp)\b/i
@@ -491,7 +502,7 @@ function workspaceClass(list) {
 
 const MAIL_PROTECTIONS = [['spam', 'filter'], ['safe', 'browsing'], ['external', 'sender', 'warning'], ['sign', 'in', 'notification'], ['security', 'alert'],
   ['phishing', 'protection'], ['login', 'alert'], ['sign', 'in', 'alert'], ['junk', 'filter'], ['phishing', 'warning']]
-function mailProtectionClass(list) {
+function mailProtectionClass(list, lower = '') {
   if (list.length > 8) return null
   const two = SWITCH_VERBS.has(list[0]) && (list[1] === 'off' || list[1] === 'on')
   const verb = two ? `turn ${list[1]}` : list[0]
@@ -502,6 +513,9 @@ function mailProtectionClass(list) {
   if (verb === 'allow' && endsWithSeq(rest, ['all', 'sender']) && rest.length <= 5) return 'permission'
   if (['turn on', 'enable', 'allow'].includes(verb) && endsWithSeq(rest, ['less', 'secure', 'app']) && rest.length <= 6) return 'credential'
   if (verb === 'add' && rest.includes('domain') && endsWithSeq(rest, ['safe', 'sender'])) return 'permission'
+  // #602 round 2 (cu-coordinator 01:36Z): a concrete domain ('Add example.com to safe senders', 'Add @example.com ...') - not one
+  // sender's address ('alice@example.com').
+  if (/^\s*add\s+(?:@[a-z0-9-]+(?:\.[a-z0-9-]+)+|(?<![\w@])[a-z0-9-]+(?:\.[a-z0-9-]+)+)\s+to\s+(?:the\s+)?safe\s+senders?(?:\s+list)?\s*$/i.test(lower)) return 'permission'
   if (['turn on', 'enable', 'allow'].includes(verb) && rest.slice(0, 3).join(' ') === 'less secure app') return 'credential'
   return null
 }
@@ -597,8 +611,11 @@ function simSwap(list) {
   const [verb, ...rest] = list
   const last = rest[rest.length - 1]
   if (verb === 'port' && rest.length === 1 && rest[0] === 'out') return true
-  if (verb === 'get' && rest[0] === 'esim' && rest.length <= 3) return true
-  if (verb === 'convert' && rest.length <= 2 && last === 'esim') return true
+  if (['get', 'download', 'show', 'view', 'scan'].includes(verb) && rest[0] === 'esim' && rest.length <= 3) return true
+  if (verb === 'convert' && rest.length <= 4 && last === 'esim') return true
+  // #602 round 2: 'Transfer number to another phone', 'Move my line to a new phone', 'Change my SIM card'.
+  if ((verb === 'transfer' || verb === 'move' || verb === 'port') && ['number', 'line'].includes(rest[0]) && rest.includes('to') && ['phone', 'device', 'carrier'].includes(last) && rest.length <= 5) return true
+  if (['change', 'replace', 'swap'].includes(verb) && rest.length <= 2 && rest[0] === 'sim' && last === 'card') return true
   if (['activate', 'add', 'set'].includes(verb) && rest.length <= 2 && (last === 'sim' || last === 'esim')) return true
   if (verb === 'move' && rest[0] === 'number' && rest.includes('device') && rest.length <= 4) return true
   if ((verb === 'change' || verb === 'replace' || verb === 'swap' || verb === 'transfer') && rest.length <= 2 && (last === 'sim' || last === 'esim')) return true
@@ -611,6 +628,9 @@ function lockClass(list) {
   const rest = list.slice(two ? 2 : 1)
   if (['turn off', 'disable', 'deactivate', 'pause'].includes(verb) && rest.length === 2 && rest[0] === 'auto' && rest[1] === 'lock') return 'physical'
   if (verb === 'set' && rest[0] === 'to' && rest.length === 2 && ['disarmed', 'disarm', 'off'].includes(rest[1])) return 'physical'
+  // #602 round 2: 'Set system to Disarmed', 'Set mode to Off', 'Turn off Auto-Lock timer'.
+  if (verb === 'set' && rest.length === 3 && ['system', 'mode', 'alarm', 'security'].includes(rest[0]) && rest[1] === 'to' && ['disarmed', 'disarm', 'off'].includes(rest[2])) return 'physical'
+  if (['turn off', 'disable', 'deactivate', 'pause'].includes(verb) && rest.length === 3 && rest[0] === 'auto' && rest[1] === 'lock' && rest[2] === 'timer') return 'physical'
   if (verb === 'bypass' && rest.length <= 2 && ['zone', 'sensor'].includes(rest[rest.length - 1])) return 'physical'
   if (verb === 'grant' && rest.length === 1 && rest[0] === 'entry') return 'physical'
   if (verb === 'unlock' && rest[0] === 'for' && rest.includes('<n>') && ['minute', 'hour', 'second'].includes(rest[rest.length - 1]) && rest.length <= 3) return 'physical'
@@ -728,7 +748,7 @@ export function grammarClasses(name, role = '') {
   if (workspace) return [workspace]
   // CU-456 (High; cu-coordinator 22:56Z): turning a mail / account protection off (permission); less secure app access on
   // (credential).
-  const mail = mailProtectionClass(list)
+  const mail = mailProtectionClass(list, lower)
   if (mail) return [mail]
   // CU-459 (High; cu-coordinator 23:11Z): filing a tax return or extension by other verbs files a legal document in the
   // person's name (submit; the 'File return' family).

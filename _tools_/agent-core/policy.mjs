@@ -1885,7 +1885,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       && /dat(?:e|ing)|match|tinder|bumble|hinge|okcupid|twitch|patreon|creator|fans|live|stream/i.test(String(context?.url ?? ''))) classes.push('purchase')
     // CU-468: an auto-lock or armed / alarm switch turned OFF asks physical; ON is free on a native read; an unread state asks both ways.
     if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))
-      && /^\s*(?:auto-?lock|armed|alarm|alarm\s+system)\s*$/i.test(name)) {
+      && /^\s*(?:auto-?lock|armed|alarm|alarm\s+system|alarm\s+armed|system\s+armed)\s*$/i.test(name)) {
       const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
       if (!(nativeBox && typeof target.checked === 'boolean') || target.checked === true) classes.push('physical')
     }
