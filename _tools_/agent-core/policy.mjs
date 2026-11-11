@@ -1865,6 +1865,21 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       && /^\s*private\s+(?:account|profile)\s*$/i.test(name)) {
       if (nativeToggleState(target) !== false) classes.push('permission')
     }
+    // CU-464 / CU-465 (cu-coordinator 00:04Z / 00:19Z): a remote-access or agent blanket-approval switch turned ON asks permission;
+    // OFF is free on a native read; an unread state asks both ways.
+    if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))
+      && /^\s*(?:screen\s+sharing|remote\s+(?:login|desktop|apple\s+events|management|access)|file\s+sharing|internet\s+sharing|auto-?accept\s+edits|auto-?approve|yolo\s+mode|skip\s+approvals|run\s+without\s+confirmation)\s*$/i.test(name)) {
+      const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
+      if (!(nativeBox && typeof target.checked === 'boolean') || target.checked === false) classes.push('permission')
+    }
+    // CU-466 (cu-coordinator 00:34Z): a repository protection switch turned OFF asks permission; an allow-force-push or
+    // allow-deletions switch turned ON asks; the safe directions are free on a native read; an unread state asks both ways.
+    if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))) {
+      const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
+      const read = nativeBox && typeof target.checked === 'boolean'
+      if (/^\s*(?:branch\s+protection|secret\s+scanning|push\s+protection)\s*$/i.test(name) && (!read || target.checked === true)) classes.push('permission')
+      if (/^\s*allow\s+(?:force\s+pushes|deletions)\s*$/i.test(name) && (!read || target.checked === false)) classes.push('permission')
+    }
     // Consent phrase grammar (_designs_/consent-phrase-grammar 0.3.1; cu-coordinator 16:46Z) - the ONE additive hook: when no
     // older rule asked on a pressed named control, the grammar's verb-class x object-class structure may add classes. It
     // never removes or changes an older rule's class (15:08Z, D-063); its free guards stop only its own asks (F2).
@@ -1894,8 +1909,17 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // as 'turn on|off X', the form the older lists know ('Switch off firewall', 'Flip parental controls off').
     const splitMatch = /^\s*(?:turn|switch|flip|toggle)\s+(?!(?:on|off)\b)(.+?)\s+(on|off)\s*$/i.exec(name)
     const leadMatch = /^\s*(?:switch|flip|toggle)\s+(on|off)\s+(.+?)\s*$/i.exec(name)
+    // CU-463 (High; cu-coordinator 00:04Z): 'enable / activate X' read as 'turn on X' and 'disable / deactivate X' as 'turn off X'
+    // ('Enable location sharing', 'Activate remote management'), through the same single probe - adds only.
+    // #595 round 2 (cu-researcher 00:11Z): the natural forms 'Allow X', 'Start X' and 'Opt in to X' read as 'turn on X' too.
+    // 'Allow' means permit-for-me before a site's own prompt objects (ads on an ad-blocker allowlist, camera, microphone, location,
+    // tracking, cookies, pop-ups, notifications): those never take the turn-on reading (cu-researcher 00:15Z).
+    // #595 round 3 (cu-researcher 00:20Z): any words before the object too ('Allow acceptable ads').
+    const allowForMe = /^\s*allow\s+(?:\S+\s+){0,3}(?:ads?|camera|microphone|mic|location|tracking|cookies?|pop-?ups?|notifications?)\s*$/i.test(name)
+    const verbMatch = allowForMe ? null : /^\s*(enable|activate|allow|start|opt\s+in\s+to|disable|deactivate)\s+(.+?)\s*$/i.exec(name)
     const switchForm = context.splitParticleProbe === true ? null
-      : splitMatch ? { particle: splitMatch[2], object: splitMatch[1] } : leadMatch ? { particle: leadMatch[1], object: leadMatch[2] } : null
+      : splitMatch ? { particle: splitMatch[2], object: splitMatch[1] } : leadMatch ? { particle: leadMatch[1], object: leadMatch[2] }
+        : verbMatch ? { particle: /^(?:disable|deactivate)$/i.test(verbMatch[1]) ? 'off' : 'on', object: verbMatch[2] } : null
     if (grammarEligible && classes.length === 0 && !nativeOn && switchForm) {
       const canonical = `turn ${switchForm.particle} ${switchForm.object}`
       const probe = classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { ...target, name: canonical }, splitParticleProbe: true })
