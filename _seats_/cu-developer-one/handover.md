@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-10T22:15:00Z
+modified: 2026-11-11T00:10:00Z
 level: L1
-version: 3.21.0
+version: 3.22.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,19 +15,18 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; never drives the desktop. State at 22:15Z, 10 November.
+session worktree plus `--review` worktrees; never drives the desktop. State at 00:10Z, 11 November.
 
 ## Landed
 
-- Closed live through CU-436 and CU-428 (#563, #551); the grammar is on main.
+- Closed or in Verify through CU-455: #575, #576, #580, #584, #587 landed tonight.
 
 ## Open (Highs first)
 
-- Lane: #575 (CU-437..443), #576 (dial row, with cu-developer-two), #580 (CU-444..447), #584 (CU-450); each stacked PR retargets to main when its base lands.
-- Table PR 4 (CU-449) is built locally on #580.
-- New Highs are grammar table rows (D-108); page context is the URL, never the title.
-- Push only on a full suite with exit code 0 (the 21:10Z slip).
-- #523 narrows to 'Send to bank'; #538 is test rows only.
+- Lane: #590 (CU-449..460 table rows), #592 (CU-461, on #590), #595 (CU-463); CU-464 becomes table PR 6.
+- Re-merge main right before each slot; a plain merge carries the OKs.
+- Older classes are never lowered: name them for CU-429.
+- After the lane: #523, CU-432 (built locally), CU-433, CU-462, #558.
 - Guide #392: add remote-desktop/VM viewers after #450, then complete.
 
 ## Lessons
