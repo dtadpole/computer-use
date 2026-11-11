@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-11T11:30:00Z
+modified: 2026-11-11T15:10:00Z
 level: L1
-version: 3.25.0
+version: 3.26.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,19 +15,19 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; never drives the desktop. State at 11:30Z, 11 November.
+session worktree plus `--review` worktrees; never drives the desktop. State at 15:10Z, 11 November.
 
 ## Landed
 
-- Through CU-491 today: #633 #635 #640 #642 #643 #647 #653 #657 #659; CU-479 closed.
+- Today CU-483..503 and CU-494's units (#633..#688); handover 3.25.0.
 
 ## Open (Highs first)
 
-- Lane: #661 (CU-492/493), #664 (CU-494 pre-approvals), #665 (CU-495), table PR 18 (CU-496), then CU-429 lowerings and CU-433 (both built locally).
-- Merge main only when cu-integrator asks or GitHub says CONFLICTING outside a gate; stay quiet during phase 2.
-- Older classes are never lowered: name them for CU-429.
-- Mediums: #523, #558, CU-462, CU-432; the 0.2.70 seam.
-- Guide #392: add remote-desktop/VM viewers after #450.
+- Lane: #691 (CU-504), #694 (CU-505), CU-372 row, #690 (CU-429), #693 (CU-433); fillers after.
+- Table rows are verb families with object synonyms; check each round against the ruled context; app-keyed rows test through createAppPolicy.
+- Merge main only when cu-integrator asks or GitHub says CONFLICTING outside a gate; quiet during phase 2.
+- Mediums: #523, #558, CU-462, CU-432 (both main-merged locally); the 0.2.70 seam.
+- Guide #392: remote-desktop/VM viewers after #450.
 
 ## Lessons
 
