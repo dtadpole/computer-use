@@ -84,7 +84,8 @@ test('grammar: a priced choice cell asks purchase on a choice role (browser and 
   for (const role of ['gridcell', 'option', 'radio', 'button', 'AXCell', 'AXRadioButton', 'AXButton']) assert.equal(click('12A, extra legroom, $35', role), 'purchase', role)
   assert.equal(click('12A, extra legroom, $35', 'link'), 'allow', 'links never (named limit)')
   assert.equal(click('12A, window seat', 'gridcell'), 'allow', 'no amount, no ask')
-  assert.equal(click('Wireless mouse $25', 'button'), 'allow', 'an amount without a seat / option / bag noun stays free')
+  // CU-467 (cu-coordinator 00:49Z) supersedes this row: any BUTTON naming a money amount asks purchase; links stay free (line above).
+  assert.equal(click('Wireless mouse $25', 'button'), 'purchase', 'a button naming an amount asks (CU-467)')
 })
 
 test('grammar: CU-430 held-out folds - a count, a synonym, a demonstrative', () => {
