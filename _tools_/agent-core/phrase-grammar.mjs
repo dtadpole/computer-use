@@ -1142,10 +1142,11 @@ function grammarClassesOf(name, role = '') {
   // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
   if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
   // CU-516 (High; cu-coordinator 18:51Z), table PR 27, as verb families with object synonyms - a seller dashboard's money and data
-  // controls. PURCHASE: mark (the order / invoice) (as) paid, void the authorization / payment / charge / invoice, accept the dispute /
+  // controls. PURCHASE: mark (the order / invoice) (as) paid, void the authorization / payment / charge / invoice, accept / concede /
+  // forfeit / give up (#723 r2) the dispute /
   // chargeback, apply a 100% / full discount, waive the (late / shipping) fee(s). SUBMIT + PURCHASE: ship to a new / different address.
   // PERMISSION: export / download the customer (list / emails / data / contacts).
-  if (/^\s*mark\s+(?:the\s+|this\s+)?(?:order\s+|invoice\s+|payment\s+)?(?:as\s+)?paid\s*$|^\s*void\s+(?:the\s+|this\s+)?(?:authori[sz]ation|payment|charge|invoice|transaction)\s*$|^\s*accept\s+(?:the\s+|this\s+)?(?:dispute|chargeback)\s*$|^\s*apply\s+(?:a\s+)?(?:100\s?%|full)\s+(?:discount|off|refund)\s*$|^\s*waive\s+(?:the\s+|this\s+|all\s+)?(?:(?:late|shipping|service|processing|cancellation)\s+)?(?:fees?|charges?)\s*$/i.test(raw)) return ['purchase']
+  if (/^\s*mark\s+(?:the\s+|this\s+)?(?:order\s+|invoice\s+|payment\s+)?(?:as\s+)?paid\s*$|^\s*void\s+(?:the\s+|this\s+)?(?:authori[sz]ation|payment|charge|invoice|transaction)\s*$|^\s*(?:accept|concede|forfeit|give\s+up)\s+(?:the\s+|this\s+)?(?:dispute|chargeback)\s*$|^\s*apply\s+(?:a\s+)?(?:100\s?%|full)\s+(?:discount|off|refund)\s*$|^\s*waive\s+(?:the\s+|this\s+|all\s+)?(?:(?:late|shipping|service|processing|cancellation)\s+)?(?:fees?|charges?)\s*$/i.test(raw)) return ['purchase']
   if (/^\s*ship\s+(?:it\s+|order\s+)?to\s+(?:a\s+)?(?:new|different|another)\s+address\s*$/i.test(raw)) return ['submit', 'purchase']
   if (/^\s*(?:export|download)\s+(?:the\s+|all\s+)?(?:customer|customers|buyer|buyers|client|clients)(?:\s+(?:list|emails?|e-mails?|data|contacts|addresses))?\s*$/i.test(raw)) return ['permission']
   // CU-514 (High; cu-coordinator 18:21Z; r2 18:36Z adds the present tense 'Confirm it's you'), table PR 26, as verb families with object synonyms - vouching for a suspicious sign-in or unblocking

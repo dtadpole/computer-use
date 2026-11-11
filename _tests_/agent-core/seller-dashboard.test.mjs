@@ -34,3 +34,8 @@ test('CU-516 negatives and older rows', () => {
   assert.deepEqual(classesOf('Issue refund'), ['purchase'], 'older row unchanged')
   assert.deepEqual(classesOf('Change address'), ['credential'], 'older row unchanged')
 })
+
+test('#723 round 2 (cu-researcher 19:00Z): conceding a dispute is the same family', () => {
+  for (const name of ['Concede dispute', 'Forfeit dispute', 'Give up dispute', 'Concede chargeback']) assert.ok(classesOf(name).includes('purchase'), name)
+  for (const name of ['Dispute details', 'Respond to dispute', 'Disputes']) assert.deepEqual(classesOf(name), [], name)
+})
