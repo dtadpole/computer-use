@@ -985,3 +985,22 @@ test('CU-443 round 2: a verb-less element inside a row (a name span in a listene
   const own = describeElement(el('LI', { attrs: { role: 'listitem' }, children: ['Alex'], querySelectorAll: () => [], closest: () => contacts }))
   assert.equal('inRow' in own, false, 'the row itself is not inRow')
 })
+
+test('CU-472: a link that does not navigate says inertLink - no, empty, "#", "#fragment" or "javascript:" href, or an ARIA link with no <a>; a real URL does not', () => {
+  const linkWith = (href) => {
+    const a = el('A', { attrs: href === undefined ? {} : { href }, children: ['Continue'], closest: (selector) => (selector === 'a' ? a : null) })
+    return a
+  }
+  for (const href of [undefined, '', '#', ' # ', '#pay', 'javascript:void(0)', 'JavaScript:go()']) {
+    assert.equal(describeElement(linkWith(href)).inertLink, true, `href ${JSON.stringify(href)}`)
+  }
+  for (const href of ['https://example.com/pay', '/checkout', 'checkout.html', 'mailto:a@example.com']) {
+    assert.equal('inertLink' in describeElement(linkWith(href)), false, `href ${href}`)
+  }
+  const inner = el('SPAN', { children: ['Pay'] })
+  const outer = el('A', { attrs: { href: '#' }, children: [inner] })
+  inner.closest = (selector) => (selector === 'a' ? outer : null)
+  assert.equal(describeElement(inner).inertLink, true, 'a span inside an inert <a>')
+  assert.equal(describeElement(el('DIV', { attrs: { role: 'link' }, children: ['Pay'], closest: () => null })).inertLink, true, 'an ARIA link with no <a>')
+  assert.equal('inertLink' in describeElement(el('BUTTON', { children: ['Pay'], closest: () => null })), false, 'a button is no link')
+})
