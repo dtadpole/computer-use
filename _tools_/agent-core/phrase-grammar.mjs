@@ -1146,6 +1146,13 @@ function grammarClassesOf(name, role = '') {
   // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
   // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
   if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
+  // CU-521 (High; cu-coordinator 20:06Z), table PR 29, as verb families with object synonyms - a code host's admin-bypass merge.
+  // PERMISSION + SUBMIT: merge without waiting (for the requirements / checks / reviews to be met / pass), bypass the (branch protection)
+  // rules / protections / requirements / checks (and merge), use your administrator / admin privileges to merge, force(-)merge, merge
+  // anyway, merge as / with admin, override and merge. PERMISSION: dismiss the review(s), dismiss stale approvals / reviews, override the
+  // (required) (status) check(s), skip the required checks.
+  if (/^\s*merge\s+without\s+waiting(?:\s+for\s+(?:the\s+)?(?:requirements|checks|reviews|approvals?|ci)(?:\s+to\s+(?:be\s+met|pass|complete|finish))?)?\s*$|^\s*bypass\s+(?:the\s+)?(?:branch\s+)?(?:protection\s+)?(?:rules|protections?|requirements|checks|rulesets?)(?:\s+and\s+merge)?\s*$|^\s*use\s+(?:your\s+)?(?:administrator|admin)\s+(?:privileges|rights|override)\s+to\s+merge\s*$|^\s*force[-\s]?merge\s*$|^\s*merge\s+anyway\s*$|^\s*merge\s+(?:as|with)\s+(?:an?\s+)?admin(?:istrator)?(?:\s+override)?\s*$|^\s*override\s+and\s+merge\s*$/i.test(raw)) return ['permission', 'submit']
+  if (/^\s*dismiss\s+(?:the\s+|this\s+|all\s+)?(?:stale\s+)?(?:reviews?|approvals?)\s*$|^\s*override\s+(?:the\s+|this\s+)?(?:required\s+)?(?:status\s+)?checks?\s*$|^\s*skip\s+(?:the\s+)?required\s+(?:status\s+)?checks?\s*$/i.test(raw)) return ['permission']
   // CU-518 (High; cu-coordinator 19:36Z), table PR 28, as verb families with object synonyms - a carrier account hands over the number.
   // CREDENTIAL: activate / set up / move / transfer the (e)SIM or number on / to a new / another device; forward / redirect calls to another
   // / a different / a new number; show / reveal / view / change / reset the account / port-out / transfer PIN; disable / turn off / remove
