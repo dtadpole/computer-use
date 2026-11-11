@@ -58,3 +58,33 @@ test('#664 round 3 (cu-researcher 11:11Z): SWIFT and wallet-address typing ask c
     assert.equal(v.decision, 'confirm', name)
   }
 })
+
+test('CU-494 round 3 (11:21Z): install is never pre-approved; the run-command, firmware and app-install rows ask under any grant', () => {
+  assert.ok(NEVER_PRE_APPROVED.includes('install'))
+  for (const name of ['Run in terminal', 'Run this command', 'Update firmware', 'Flash firmware', 'Add app to Slack', 'Add to Discord', 'Run installer', 'Install now']) {
+    const v = decide(granted, name)
+    if (v.decision === 'allow') assert.equal(decide(createPolicy({ sitePolicy: () => 'allow' }), name).decision, 'allow', `${name} only passes when it asks nothing at all`)
+  }
+})
+
+test('CU-494 round 3 (11:21Z, generated): every submit row in the agent-core test corpus asks under a submit grant unless it is a generic submit', async () => {
+  const { readdirSync, readFileSync } = await import('node:fs')
+  const dir = new globalThis.URL('.', import.meta.url)
+  const names = new Set()
+  for (const file of readdirSync(dir).filter((f) => f.endsWith('.test.mjs'))) {
+    for (const m of readFileSync(new globalThis.URL(file, dir), 'utf8').matchAll(/['"]([A-Z][A-Za-z' ]{2,40})['"]/g)) names.add(m[1])
+  }
+  const plain = createPolicy({ sitePolicy: () => 'allow' })
+  const submitOnly = createPolicy({ sitePolicy: () => 'allow', preApprovals: [{ class: 'submit' }] })
+  let checked = 0
+  for (const name of names) {
+    const v = decide(plain, name)
+    if (v.decision !== 'confirm' || (v.classes ?? [v.class]).some((c) => c !== 'submit')) continue
+    if (/^(?:\S )+\S$/.test(name)) continue // letter-spaced disguises normalise to their word (CU-266); judged as that word
+    checked += 1
+    const generic = /^\s*(?:submit|send|send\s+(?:message|reply|email|comment)|reply|post|post\s+(?:comment|reply)|comment|save|save\s+changes|apply|search|go|ok|done|continue|next|report\s+spam|sign\s+up|register|create\s+account)\s*!?\s*$/i.test(name)
+    assert.equal(decide(submitOnly, name).decision, generic ? 'allow' : 'confirm', name)
+  }
+  assert.ok(checked > 50, `enumerated ${checked} submit rows`)
+  for (const name of ['Approve request', 'Refill prescription', 'Consent to treatment', 'Lock rate', 'Accept return', 'Cancel ride', 'Relist']) assert.equal(decide(submitOnly, name).decision, 'confirm', name)
+})
