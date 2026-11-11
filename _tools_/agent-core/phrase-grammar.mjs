@@ -18,7 +18,14 @@ const FILLER = new Set(['<n>', 'all', 'new', 'now', 'it', 'them', 'everyone', 'a
 
 const US_WORDS = new Set(['antivirus', 'virus', 'status', 'bonus', 'campus', 'focus', 'census', 'corpus', 'plus', 'minus', 'surplus', 'genius', 'radius', 'nexus', 'menus', 'bus'])
 
+// #580 round 4 (cu-coordinator 22:44Z): the switch verbs read beside 'turn' - 'Switch / Flip / Toggle X on|off'.
+const SWITCH_VERBS = new Set(['turn', 'switch', 'flip', 'toggle'])
+
+// Words whose final -s is not a plural (CU-438: 'Add alias').
+const NOT_PLURAL = new Set(['alias', 'whois', 'canvas', 'atlas', 'bias', 'gas', 'lens', 'news', 'series', 'species', 'chassis', 'axis', 'basis', 'analysis', 'thesis', 'crisis', 'diagnosis'])
+
 function singular(token) {
+  if (NOT_PLURAL.has(token) || token.endsWith('ous')) return token
   if (token.length > 4 && token.endsWith('ies')) return `${token.slice(0, -3)}y`
   if (token.length > 4 && /(?:ss|sh|ch|x)es$/.test(token)) return token.slice(0, -2)
   // -us stays only on its Latin / short words (antivirus, status, bonus ...); an acronym plural folds ('GPUs' = 'gpu', cu-coordinator 19:22Z).
@@ -80,7 +87,7 @@ const VERBS = new Map(Object.entries({
   file: ['send'], submit: ['send', 'pay'], post: ['send'], publish: ['send'], broadcast: ['send'], message: ['send'], email: ['send'],
   notify: ['send'], text: ['send'], deploy: ['send'], end: ['send', 'pay'], rate: ['send'], leave: ['send', 'grant'], repost: ['send'],
   retweet: ['send'], reblog: ['send'], report: ['send'], endorse: ['send'], push: ['send'], sync: ['send'], schedule: ['send', 'pay'],
-  join: ['send'], answer: ['send'], call: ['send'], execute: ['exec'], unsend: ['destroy'], exit: ['send'],
+  join: ['send'], answer: ['send'], call: ['send'], execute: ['exec'], unsend: ['destroy'], exit: ['send'], dismiss: [],
   // Context verbs stay out (Sell, Convert, Deposit, Leverage, Bet, Long, Short: CU-400 / CU-409's asset context decides).
   capture: ['pay'], gift: ['pay'], reactivate: ['pay'], resume: ['pay'], market: ['pay'], relaunch: ['install'],
   place: ['pay', 'send'], mint: ['pay'], bridge: ['pay'], back: ['pay'], request: ['pay'],
@@ -142,7 +149,7 @@ const STANDALONE = new Map(Object.entries({
   promote: 'purchase', 'top up': 'purchase', 'cash out': 'purchase', 'factory reset': 'delete',
   'buzz in': 'physical', 'remote start': 'physical', 'let in': 'permission', refund: 'purchase', renew: 'purchase', book: 'purchase',
   // A bare Install / Update / Get is CU-254's (the App Store rule keeps its own record).
-  enroll: 'submit', reactivate: 'purchase', pay: 'purchase', 'restart to update': 'install', reorder: 'purchase',
+  enroll: 'submit', reactivate: 'purchase', pay: 'purchase', 'restart to update': 'install', reorder: 'purchase', unsend: 'delete',
   'install and relaunch': 'install', buy: 'purchase', retweet: 'submit', reblog: 'submit', endorse: 'submit', esign: 'permission',
   give: 'purchase',
 }))
@@ -160,7 +167,7 @@ const KEY_QUALIFIER = new Set(['api', 'ssh', 'gpg', 'access', 'deploy', 'securit
 const EMAIL_VERBS = new Set(['change', 'edit', 'update', 'remove', 'reset'])
 // F5 cluster 3: these objects are money only after a pay verb, never after add / make.
 const ADD_MAKE_NOT_MONEY = new Set(['item', 'point', 'credit', 'license', 'room', 'table', 'position', 'cap', 'card', 'project', 'post',
-  'customer', 'vendor', 'payee', 'order'])
+  'customer', 'vendor', 'payee', 'order', 'bank'])
 // F1 / F5: 'limit' is money only beside credit or spending; 'open' pays only for trading objects; 'cancel' pays only for a plan.
 const LIMIT_QUALIFIER = new Set(['credit', 'spending', 'card', 'trading', 'borrow', 'withdrawal', 'transfer'])
 const TRADING_OBJECTS = new Set(['position', 'long', 'short', 'trade'])
@@ -204,13 +211,204 @@ function insuranceClass(list) {
   return null
 }
 
+// CU-438's admin rows (verb x object -> class); 'Remove admin' keeps the older 'remove' delete, which leads by precedence (named).
+const PEOPLE = new Set(['user', 'member', 'employee', 'account', 'student', 'guest', 'teammate'])
+function adminClass(list) {
+  if (list.length < 2 || list.length > 6) return null
+  const [verb, ...rest] = list
+  const core = rest.filter((t) => !FILLER.has(t))
+  const last = core[core.length - 1]
+  if ((verb === 'suspend' || verb === 'unsuspend' || verb === 'disable' || verb === 'lock') && core.length <= 2 && PEOPLE.has(last)) return 'permission'
+  if (['change', 'edit', 'update', 'set'].includes(verb) && core.length <= 3 && last === 'role' && (core.length === 1 || core.some((t) => PEOPLE.has(t)))) return 'permission'
+  if ((verb === 'sign' || verb === 'log') && rest[0] === 'out' && (rest.includes('session') || rest.includes('device') || rest.includes('everywhere'))) return 'permission'
+  if (verb === 'reset' && rest.includes('sign') && rest.includes('cooky')) return 'permission'
+  if (verb === 'reset' && rest.includes('cookie')) return 'permission'
+  if (verb === 'add' && core.length <= 2 && last === 'alias') return 'permission'
+  if (verb === 'assign' && core.length <= 2 && last === 'license') return 'purchase'
+  // #575 round 2 (21:26Z): 'Add 5 licenses' / 'Buy 10 seats' - an amount of licences.
+  if ((verb === 'add' || verb === 'buy') && rest.includes('<n>') && core.length <= 2 && (last === 'license' || last === 'seat')) return 'purchase'
+  return null
+}
+
+const GAME_CURRENCY = new Set(['gem', 'coin', 'diamond', 'crystal', 'robux', 'buck', 'credit', 'gold', 'point', 'ruby', 'jewel'])
+const PASS_TIERS = new Set(['battle', 'premium', 'season', 'vip', 'elite', 'gold', 'plus'])
+const CURRENCY_VERBS = new Set(['get', 'buy', 'unlock', 'gift', 'spend', 'continue', 'revive', 'use', 'pay', 'claim', 'purchase', 'redeem', 'skip'])
+function currencyAct(list) {
+  if (list.length > 6) return false
+  const [verb, ...rest] = list
+  if (list.length === 2 && verb === 'super' && rest[0] === 'like') return true
+  if (list.length === 1 && verb === 'superlike') return true
+  if (!CURRENCY_VERBS.has(verb) && verb !== 'boost') return false
+  // An amount of currency ('Continue for 100 gems', 'Spend 50 coins', 'Unlock with 200 gems', 'Get 500 gems').
+  if (rest.includes('<n>') && rest.some((t) => GAME_CURRENCY.has(t))) return true
+  // Currency bought outright ('Buy gems', 'Get diamonds') - not 'Get points' (rewards) or 'Use credit' (a card).
+  if ((verb === 'buy' || verb === 'get' || verb === 'purchase') && rest.length <= 2 && ['gem', 'coin', 'diamond', 'crystal', 'robux', 'buck', 'jewel', 'ruby'].includes(rest[rest.length - 1])) return true
+  // A paid pass ('Unlock battle pass', 'Get premium pass') - a bare 'Battle pass' or 'Pass' stays free.
+  if (rest[rest.length - 1] === 'pass' && rest.some((t) => PASS_TIERS.has(t))) return true
+  // Paid reach on a dating or social app ('Get more likes', 'Boost profile') and cosmetics ('Gift skin').
+  if (verb === 'get' && (rest[0] === 'more' || rest[0] === 'unlimited' || rest[0] === 'extra') && ['like', 'view', 'follower', 'match', 'swipe', 'life', 'rewind'].includes(rest[1])) return true
+  if (verb === 'boost' && rest.length <= 2 && ['profile', 'post', 'listing', 'me'].includes(rest[rest.length - 1])) return true
+  if ((verb === 'gift' || verb === 'buy' || verb === 'unlock') && rest.length <= 2 && ['skin', 'emote', 'outfit', 'bundle', 'lootbox', 'crate'].includes(rest[rest.length - 1])) return true
+  return false
+}
+
+const PROTECTIONS = [['parental', 'control'], ['screen', 'time'], ['content', 'filter'], ['safesearch'], ['safe', 'search'], ['family', 'filter'],
+  ['content', 'restriction'], ['restriction'], ['kid', 'mode'], ['purchase', 'approval'], ['ask', 'to', 'buy']]
+function endsWithSeq(rest, seq) { return rest.length >= seq.length && seq.every((t, i) => rest[rest.length - seq.length + i] === t) }
+function childProtectionOff(list) {
+  if (list.length > 7) return false
+  // 'turn off' / 'switch off' arrive as two tokens here (the multi-word verbs are folded later).
+  const twoWord = SWITCH_VERBS.has(list[0]) && list[1] === 'off'
+  const verb = twoWord ? 'turn off' : list[0]
+  const rest = list.slice(twoWord ? 2 : 1)
+  const core = rest.filter((t) => !FILLER.has(t))
+  if (['turn off', 'disable', 'pause', 'remove', 'deactivate'].includes(verb) && PROTECTIONS.some((seq) => endsWithSeq(core, seq))) return true
+  if (verb === 'allow' && core[core.length - 1] === 'content' && core.some((t) => t === 'explicit' || t === 'mature' || t === 'adult')) return true
+  if (verb === 'allow' && core[core.length - 1] === 'purchase' && core.length <= 3) return true
+  // #575 round 2 (21:26Z): 'Allow purchases without approval', 'Allow in-app buying'.
+  if (verb === 'allow' && core.length <= 4 && (core[0] === 'purchase' || core.includes('buying')) && (core.includes('approval') || core.includes('buying'))) return true
+  if (verb === 'extend' && core.length <= 2 && core[core.length - 1] === 'time' && (core.length === 1 || core[0] === 'screen')) return true
+  if (verb === 'extend' && core.length === 1 && core[0] === 'screen') return true
+  if (verb === 'give' && rest.includes('<n>') && core.length <= 2 && ['minute', 'hour'].includes(core[core.length - 1]) && (core.includes('more') || core.length === 1)) return true
+  if (verb === 'add' && core[core.length - 1] === 'time' && core.length <= 3 && (core.includes('more') || core.includes('screen') || core.includes('<n>'))) return true
+  return false
+}
+
+const MEDS = new Set(['prescription', 'medication', 'medicine', 'rx', 'refill', 'prescriptions'])
+function medicalClass(list) {
+  if (list.length > 6) return null
+  const [verb, ...rest] = list
+  const core = rest.filter((t) => !FILLER.has(t))
+  const last = core[core.length - 1]
+  if (verb === 'refill' && core.length <= 2 && (core.length === 0 || MEDS.has(last))) return core.length === 0 ? null : 'submit'
+  if (verb === 'request' && core.length <= 2 && (MEDS.has(last) || last === 'appointment' || last === 'visit')) return 'submit'
+  if (verb === 'consent' && rest[0] === 'to' && ['treatment', 'procedure', 'surgery', 'care', 'vaccination', 'telehealth'].includes(last)) return 'submit'
+  if (verb === 'cancel' && core.length <= 2 && MEDS.has(last)) return 'delete'
+  if (verb === 'join' && core.length <= 2 && (last === 'visit' || last === 'telehealth' || last === 'consultation')) return 'permission'
+  if (verb === 'add' && core.length <= 2 && (last === 'proxy' || last === 'caregiver')) return 'permission'
+  return null
+}
+
+const METERED = new Set(['charging', 'charger', 'charge', 'parking', 'meter'])
+function meteredClass(list) {
+  if (list.length > 6) return null
+  const [verb, ...rest] = list
+  const core = rest.filter((t) => !FILLER.has(t))
+  const hasObject = core.some((t) => METERED.has(t))
+  if (['start', 'unlock', 'reserve', 'book', 'extend', 'pay', 'begin', 'renew'].includes(verb) && hasObject && core.length <= 3 && !core.includes('history')) return 'purchase'
+  // '<n>' is filler in core, so the amount is read from rest ('Add 30 minutes').
+  if (verb === 'add' && rest.length === 2 && rest[0] === '<n>' && ['minute', 'hour', 'min', 'hr'].includes(rest[1])) return 'purchase'
+  if ((verb === 'stop' || verb === 'end' || verb === 'finish') && hasObject && core.length <= 3) return 'submit'
+  return null
+}
+
+// 'Call' as a noun inside a longer name stays free (CU-261: 'Call Stack'), as do a call's own settings and lists.
+const CALL_FREE = new Set(['history', 'log', 'setting', 'forwarding', 'waiting', 'center', 'recording', 'list', 'detail', 'back', 'id', 'screening', 'quality',
+  'duration', 'summary', 'stack', 'tree', 'graph', 'chain', 'site', 'frame', 'hierarchy', 'out', 'action', 'option', 'function', 'type', 'volume'])
+function phoneClass(list) {
+  if (list.length > 6) return null
+  const [verb, ...rest] = list
+  const core = rest.filter((t) => !FILLER.has(t))
+  const last = core[core.length - 1]
+  if ((verb === 'port' || verb === 'transfer') && core.length <= 2 && last === 'number') return 'credential'
+  if ((verb === 'get' || verb === 'request' || verb === 'generate' || verb === 'show') && rest.includes('port') && last === 'pin') return 'credential'
+  if (verb === 'forward' && core.length <= 2 && (['call', 'text', 'sms'].includes(last) || (last === 'message' && (core[0] === 'text' || core[0] === 'sms')))) return 'credential'
+  if ((verb === 'release' || verb === 'cancel' || verb === 'delete') && core.length <= 2 && (last === 'number' || last === 'line') && !core.includes('account')) return 'delete'
+  // The free words are read on rest, not core ('back' is filler; 'Call back' stays with #462); a bare 'Call' stays free.
+  if (verb === 'call' && rest.length >= 1 && core.length <= 2 && !rest.some((t) => CALL_FREE.has(t))) return 'submit'
+  if (verb === 'record' && core.length === 1 && (last === 'call' || last === 'meeting')) return 'permission'
+  return null
+}
+
+const AD_OBJECTS = new Set(['campaign', 'ad', 'ads', 'promotion', 'advert', 'advertisement'])
+function adSpend(list) {
+  if (list.length > 7) return false
+  // #580 round 3 (cu-verifier 22:41Z): 'switch on' as well as 'turn on' ('Switch ads on' after the split-particle normaliser).
+  const twoWord = SWITCH_VERBS.has(list[0]) && list[1] === 'on'
+  const verb = twoWord ? 'turn on' : list[0]
+  const rest = list.slice(twoWord ? 2 : 1)
+  const core = rest.filter((t) => !FILLER.has(t))
+  const last = core[core.length - 1]
+  if (['launch', 'publish', 'resume', 'start', 'run', 'activate', 'enable', 'turn on', 'unpause', 'restart'].includes(verb) && core.length <= 3 && (AD_OBJECTS.has(last) || (last === 'set' && core.includes('ad')))) return true
+  if (['increase', 'raise', 'up', 'double', 'boost'].includes(verb) && core.length <= 3 && ['budget', 'bid', 'spend'].includes(last)) return true
+  if ((verb === 'set' || verb === 'change' || verb === 'update') && core.includes('budget') && rest.includes('<n>')) return true
+  return false
+}
+
+function cameraPrivacyOff(list) {
+  if (list.length > 7) return false
+  const two = SWITCH_VERBS.has(list[0]) && (list[1] === 'off' || list[1] === 'on')
+  const verb = two ? `turn ${list[1]}` : list[0]
+  const rest = list.slice(two ? 2 : 1)
+  const core = rest.filter((t) => !FILLER.has(t))
+  if (['turn off', 'disable', 'deactivate', 'pause'].includes(verb) && core[0] === 'privacy' && core.length <= 2) return true
+  if (verb === 'open' && core.length <= 2 && (core[core.length - 1] === 'shutter' || (core[0] === 'privacy' && core[1] === 'cover'))) return true
+  if (['enable', 'turn on', 'start', 'activate'].includes(verb) && core.length <= 3) {
+    const tail = core.join(' ')
+    if (/(?:^|\s)(?:audio|sound|continuous|nonstop)\s+recording$/.test(tail) || /^recording$/.test(tail) && rest.includes('<n>')) return true
+    if (/^(?:face|facial|person|people)\s+recognition$|^familiar\s+face$|^face\s+detection$/.test(tail)) return true
+    // #580 round 2: 'Enable microphone' on a camera opens its audio (CU-445).
+    if (/^(?:microphone|mic)$/.test(tail)) return true
+  }
+  return false
+}
+
+function domainClass(list) {
+  if (list.length > 7) return null
+  const two = SWITCH_VERBS.has(list[0]) && list[1] === 'off'
+  const verb = two ? 'turn off' : list[0]
+  const rest = list.slice(two ? 2 : 1)
+  const core = rest.filter((t) => !FILLER.has(t))
+  const last = core[core.length - 1]
+  if (verb === 'unlock' && core.length <= 2 && last === 'domain') return 'credential'
+  if (['turn off', 'disable', 'remove'].includes(verb) && core.length <= 3 && last === 'lock' && (core.includes('domain') || core.includes('transfer') || core.includes('registrar'))) return 'credential'
+  if (['get', 'show', 'view', 'copy', 'reveal', 'send', 'request'].includes(verb) && last === 'code' && core.some((t) => ['auth', 'epp', 'authorization', 'transfer'].includes(t))) return 'credential'
+  if (['change', 'update', 'edit', 'transfer'].includes(verb) && core.length <= 3 && (last === 'registrant' || (last === 'owner' && core.some((t) => t === 'account' || t === 'domain')))) return 'credential'
+  if (verb === 'push' && core.length <= 2 && last === 'domain') return 'credential'
+  if (['change', 'use', 'set', 'edit', 'update'].includes(verb) && core.length <= 3 && last === 'nameserver') return 'permission'
+  if (['edit', 'change', 'update', 'delete', 'add'].includes(verb) && core.length <= 3 && last === 'record' && core.includes('dns')) return 'permission'
+  if (['turn off', 'disable', 'remove'].includes(verb) && core.length <= 3 && last === 'privacy' && (core.includes('whois') || core.includes('domain'))) return 'permission'
+  return null
+}
+
+const AUDIT_OBJECTS = [['cloudtrail'], ['audit', 'log'], ['audit', 'logging'], ['logging'], ['guardduty'], ['flow', 'log'], ['security', 'hub'], ['defender'], ['activity', 'log']]
+function cloudExposureClass(list, lower) {
+  if (list.length > 8) return null
+  const two = SWITCH_VERBS.has(list[0]) && list[1] === 'off'
+  const verb = two ? 'turn off' : list[0]
+  const rest = list.slice(two ? 2 : 1)
+  const core = rest.filter((t) => !FILLER.has(t))
+  const offVerb = ['turn off', 'disable', 'remove', 'stop', 'pause', 'deactivate', 'delete'].includes(verb)
+  if (offVerb && endsWithSeq(core, ['block', 'public', 'access'])) return 'permission'
+  if (offVerb && core.length <= 3 && AUDIT_OBJECTS.some((seq) => endsWithSeq(core, seq))) return 'permission'
+  if (verb === 'open' && core.length <= 2 && ['internet', 'world', 'public'].includes(core[core.length - 1])) return 'permission'
+  if (verb === 'allow' && (/(?:^|\s)(?:0\.0\.0\.0\/0|::\/0)(?:\s|$)/.test(lower) || (rest.includes('all') && ['traffic', 'inbound', 'ip', 'port', 'source'].includes(core[core.length - 1])))) return 'permission'
+  if (verb === 'create' && core[core.length - 1] === 'key' && core.length <= 3 && (core.includes('service') || core.includes('access') || core.includes('api'))) return 'credential'
+  if (verb === 'download' && core.length <= 2 && core[core.length - 1] === 'key') return 'credential'
+  return null
+}
+
+const DIVERSION_VERBS = new Set(['change', 'update', 'edit', 'add', 'set', 'replace', 'switch'])
+const DIVERSION_OBJECTS = [['direct', 'deposit'], ['bank', 'detail'], ['deposit', 'account'], ['routing', 'number'], ['account', 'number'],
+  ['payout', 'account'], ['payout', 'method'], ['bank', 'account'], ['payout', 'detail']]
+function payDiversion(list) {
+  if (list.length < 3 || list.length > 6 || !DIVERSION_VERBS.has(list[0])) return false
+  const rest = list.slice(1).filter((t) => !FILLER.has(t))
+  return DIVERSION_OBJECTS.some(([a, b]) => rest.length <= 3 && rest[rest.length - 2] === a && rest[rest.length - 1] === b)
+}
+
 // The classes the grammar asks for a control's name (and its role, for the priced cell); [] when it asks nothing.
 export function grammarClasses(name, role = '') {
   const raw = String(name ?? '').trim()
   if (raw === '' || raw.length > 400) return []
   if (CURRENCY.test(raw) && PRICED_ROLES.has(String(role ?? '').toLowerCase()) && tokens(raw).some((t) => PRICED_NOUNS.has(t))) return ['purchase']
-  const list = tokens(raw)
-  if (list.length === 0) return []
+  const split = tokens(raw)
+  if (split.length === 0) return []
+  // #580 round 2 (cu-coordinator 21:52Z): a split particle - 'turn / switch X on|off' reads as 'turn / switch on|off X'
+  // ('Turn ads on', 'Turn privacy mode off'); additive, for every switch verb.
+  const particle = split[split.length - 1]
+  const list = split.length >= 3 && SWITCH_VERBS.has(split[0]) && (particle === 'on' || particle === 'off') && split[1] !== 'on' && split[1] !== 'off'
+    ? [split[0], particle, ...split.slice(1, -1)] : split
   const lower = raw.toLowerCase()
   const last = list[list.length - 1]
   // CU-435 (High; cu-coordinator 18:51Z): an insurance contract - binding, buying, renewing or cancelling a policy, widening
@@ -218,6 +416,44 @@ export function grammarClasses(name, role = '') {
   // a list / settings tail elsewhere ('Privacy policy'), a contract only after these verbs.
   const insurance = insuranceClass(list)
   if (insurance) return [insurance]
+  // CU-437 (High; cu-coordinator 19:39Z): redirecting pay or payouts - direct deposit, bank details, routing / account number,
+  // payout account or method - is an account takeover (credential). Checked before the guards ('details' is a tail elsewhere).
+  if (payDiversion(list)) return ['credential']
+  // CU-438 (High; cu-coordinator 19:52Z): an admin act on another person's account (CU-416 family).
+  const admin = adminClass(list)
+  if (admin) return [admin]
+  // CU-439 (High; cu-coordinator 20:19Z): in-app currency and passes are bought with real money, and a currency spend is the
+  // purchase at one remove.
+  if (currencyAct(list)) return ['purchase']
+  // CU-440 (High; cu-coordinator 20:26Z): switching off a protection on a child's account (permission).
+  if (childProtectionOff(list)) return ['permission']
+  // CU-441 (High; cu-coordinator 20:33Z): patient-portal acts - medical orders and consent (submit), cancelling a prescription
+  // (delete), joining a video visit or adding a proxy (permission).
+  const medical = medicalClass(list)
+  if (medical) return [medical]
+  // CU-442 (High; cu-coordinator 20:37Z): a metered paid session - EV charging and parking (CU-434 family, new objects).
+  const metered = meteredClass(list)
+  if (metered) return [metered]
+  // CU-443 (High; cu-coordinator 20:49Z): moving a phone number or its calls away (credential), releasing a number (delete),
+  // placing a call (submit), recording one (permission). 'Start recording' and 'Call back' stay with #462.
+  const phone = phoneClass(list)
+  if (phone) return [phone]
+  // CU-444 (High; cu-coordinator 20:54Z): starting or raising paid ad spend (purchase).
+  if (adSpend(list)) return ['purchase']
+  // CU-445 (High; cu-coordinator 20:59Z): opening a home camera's view, audio or biometrics (permission, CU-418 family).
+  if (cameraPrivacyOff(list)) return ['permission']
+  // CU-446 (High; cu-coordinator 21:05Z): the domain-takeover path - unlocking, auth / EPP codes, registrant or owner change, push
+  // (credential); nameservers, DNS records, WHOIS privacy off (permission).
+  const domain = domainClass(list)
+  if (domain) return [domain]
+  // CU-447 (High; cu-coordinator 21:12Z): exposing cloud resources or blinding their audit (permission, CU-417 family);
+  // minting a service-account or access key (credential).
+  const cloud = cloudExposureClass(list, lower)
+  if (cloud) return [cloud]
+  // F2 guard (cu-coordinator 20:28Z): declining, denying or rejecting a request answers no - the grammar's own over-ask since
+  // #554 ('Decline request'); older asks ('Decline invitation', CU-422's 'Decline offer') are untouched (the hook never sees them).
+  if (['decline', 'deny', 'reject'].includes(list[0]) && list.slice(1).filter((t) => !FILLER.has(t)).every((t) => t === 'request' || t === 'this' || t === 'all')
+    && list.includes('request')) return []
   // Guards: a trailing list / settings / UI noun; a bare plural noun (a tab); settings-sense apply; 'Sign in as guest'.
   if (FREE_TAIL.has(last) || (list.length >= 2 && FREE_TAIL.has(list[list.length - 2]))) return []
   if (UI_TAIL.has(last) && list.length >= 2) return []
@@ -343,6 +579,9 @@ export function grammarClasses(name, role = '') {
   // cu-coordinator 19:22Z: linking a billing account starts charges to it.
   if (verb === 'link' && rest.includes('billing')) pushOnce(out, 'purchase')
   if (['turn off', 'remove', 'disable', 'lift', 'raise', 'increase'].includes(verb) && rest.includes('spending') && rest.some((t) => t === 'cap' || t === 'limit')) pushOnce(out, 'purchase')
+  // CU-426's three chat forms (cu-coordinator 19:25Z): dismissing someone as admin and exporting a chat ask permission.
+  if (verb === 'dismiss' && rest.includes('admin')) pushOnce(out, 'permission')
+  if (verb === 'export' && rest.some((t) => t === 'chat' || t === 'conversation')) pushOnce(out, 'permission')
   // CU-434: 'Order again' reorders; cancelling a ride may charge a fee (submit).
   if (verb === 'order' && rest.length === 1 && rest[0] === 'again') pushOnce(out, 'purchase')
   if (verb === 'cancel' && rest.some((t) => t === 'ride' || t === 'delivery')) pushOnce(out, 'submit')
