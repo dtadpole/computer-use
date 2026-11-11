@@ -822,7 +822,9 @@ class BrowserEnvironment {
       }
       // CU-406: the Return target carries the same bounded formContext a click on that button would (CU-402/CU-405), so a
       // Return in a trade form's amount field is judged with the form's asset beside a bare 'Sell' default.
-      return { button: described === null ? null : { role: described.role, name: described.name, panel: null, ...(described.formContext ? { formContext: described.formContext } : {}) }, read: true }
+      // CU-473 (Return route, cu-coordinator 04:20Z): the default button's first rendered line rides along as on a click, so a
+      // Title-case two-line default ('Change Direct Deposit' over 'Takes Effect Immediately') is judged the same either way.
+      return { button: described === null ? null : { role: described.role, name: described.name, panel: null, ...(described.formContext ? { formContext: described.formContext } : {}), ...(typeof described.firstLine === 'string' ? { firstLine: described.firstLine } : {}) }, read: true }
     } catch {
       return { button: null, read: false }
     }
@@ -851,7 +853,7 @@ class BrowserEnvironment {
         const described = await this.#describe(page, node.backendNodeId, undefined, { scanText: false })
         // CU-412 (11:56Z): a control with no accessible name (an icon-only div) cannot be judged - unreadable, never dropped.
         if (described === null || typeof described.name !== 'string' || described.name.trim() === '') unread = true
-        else controls.push({ role: described.role, name: described.name, ...(described.formContext ? { formContext: described.formContext } : {}) })
+        else controls.push({ role: described.role, name: described.name, ...(described.formContext ? { formContext: described.formContext } : {}), ...(typeof described.firstLine === 'string' ? { firstLine: described.firstLine } : {}) })
       }
       // Fail closed (D-107: candidates only add asks): a control that could not be read makes the list unjudgeable.
       return { ...(controls.length > 0 ? { candidates: controls } : {}), more: items.length > 3 || unread }

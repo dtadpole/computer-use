@@ -1075,3 +1075,20 @@ test('CU-443: rowContextOf re-validates the page\'s rowContext at the boundary',
   assert.equal(rowContextOf(null), null)
   assert.equal(rowContextOf('Contacts'), null)
 })
+
+test('CU-473 (Return route): the Return target (defaultButton) carries the submit button\'s firstLine, as a click on it would', async () => {
+  const handlers = checkoutHandlers()
+  const base = handlers['Runtime.callFunctionOn']
+  handlers['Runtime.callFunctionOn'] = (params) => (String(params.functionDeclaration).includes('describeElement') && /-41$/.test(String(params.objectId))
+    ? { result: { result: { value: { firstLine: 'Change Direct Deposit' } } } }
+    : base(params))
+  const run = harness({ handlers })
+  const env = await launchBrowserEnvironment(run.options)
+  try {
+    const target = await env.focusedElement()
+    assert.deepEqual(target.defaultButton, { role: 'button', name: 'Place order', panel: null, firstLine: 'Change Direct Deposit' })
+    assert.equal('firstLine' in target, false, 'the focused field itself carries none')
+  } finally {
+    await env.close()
+  }
+})
