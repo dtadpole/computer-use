@@ -1121,3 +1121,12 @@ test('CU-494: an entry carries its raw name (else id) attribute as fieldAttr; a 
   const b = await describe(['type', 'text', 'name', 'wallet'], '')
   assert.equal(a.fingerprint, b.fingerprint, 'outside the fingerprint')
 })
+
+test('CU-507: dialogTextOf re-validates a page string (trimmed, folded, at most 300) and drops anything else', async () => {
+  const { dialogTextOf } = await import('../../_environments_/chrome-browser/environment.mjs')
+  assert.equal(dialogTextOf(' Delete  account? '), 'Delete account?')
+  assert.equal(dialogTextOf('n'.repeat(400)).length, 300)
+  assert.equal(dialogTextOf('   '), null)
+  assert.equal(dialogTextOf(7), null)
+  assert.equal(dialogTextOf(null), null)
+})
