@@ -398,3 +398,23 @@ test('CU-494 round 2 (cu-developer-three 11:09Z): an app-scoped grant never cove
   const plain = pre.classify(click, ctx({ target: target('Submit') }))
   assert.equal(plain.decision, 'allow', 'an ordinary Submit stays pre-approvable per app')
 })
+
+test('CU-494 residual r2: an app-scoped sensitive_data grant never covers typing into a money field; ordinary typing rides it', () => {
+  const policy = approvedPolicy({ preApprovals: [{ class: 'sensitive_data', app: FIXTURE }, { class: 'credential', app: FIXTURE }] })
+  const iban = policy.classify({ type: 'type', text: 'DE89370400440532013000' }, ctx({ target: target('IBAN', FIXTURE, { role: 'AXTextField' }) }))
+  assert.equal(iban.decision, 'confirm')
+  const display = policy.classify({ type: 'type', text: 'ana@example.test' }, ctx({ target: target('Display name', FIXTURE, { role: 'AXTextField' }) }))
+  assert.equal(display.decision, 'allow')
+})
+
+test('CU-494 follow-up: an unnamed AXTextField with a money placeholder or layout label asks under either grant; Display name types', () => {
+  for (const preApprovals of [[{ class: 'sensitive_data' }, { class: 'credential' }], [{ class: 'sensitive_data', app: FIXTURE }, { class: 'credential', app: FIXTURE }]]) {
+    const policy = approvedPolicy({ preApprovals })
+    for (const extra of [{ placeholder: 'IBAN' }, { nearbyLabel: 'IBAN' }, { placeholder: 'Routing number' }]) {
+      const v = policy.classify({ type: 'type', text: 'DE89370400440532013000' }, ctx({ target: target('', FIXTURE, { role: 'AXTextField', ...extra }) }))
+      assert.equal(v.decision, 'confirm', JSON.stringify({ extra, scoped: preApprovals[0].app ?? null }))
+    }
+    const display = policy.classify({ type: 'type', text: 'Ana' }, ctx({ target: target('Display name', FIXTURE, { role: 'AXTextField' }) }))
+    assert.equal(display.decision, 'allow', 'Display name')
+  }
+})

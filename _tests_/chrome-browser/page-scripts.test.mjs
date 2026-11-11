@@ -1037,3 +1037,28 @@ test('CU-488: a control in a two-part setting row takes its label as caption - b
   el('DIV', { children: [el('SPAN', { children: ['x'.repeat(81)] }), long] })
   assert.equal(describeElement(long).caption, null, 'over 80 characters: none')
 })
+
+test('CU-507: a control inside a role=dialog / alertdialog / <dialog> carries the dialog name and description (dialogName / dialogDescription)', () => {
+  const inside = (dialogAttrs, { title = null, para = null, ids = {} } = {}) => {
+    const ok = el('BUTTON', { children: ['OK'], closest: () => null })
+    const heading = title === null ? null : el('H2', { children: [title], innerText: title, contains: () => false })
+    const p = para === null ? null : el('P', { children: [para], innerText: para, contains: () => false })
+    el(dialogAttrs.tag ?? 'DIV', { attrs: dialogAttrs.attrs ?? {}, children: [ok],
+      querySelector: (s) => (s === 'p' ? p : heading),
+      getRootNode: () => ({ getElementById: (id) => (id in ids ? el('SPAN', { innerText: ids[id], contains: () => false }) : null) }) })
+    const d = describeElement(ok)
+    return { name: d.dialogName, description: d.dialogDescription }
+  }
+  assert.deepEqual(inside({ attrs: { role: 'alertdialog', 'aria-labelledby': 't', 'aria-describedby': 'd' } }, { ids: { t: 'Delete account?', d: 'This removes all your data.' } }),
+    { name: 'Delete account?', description: 'This removes all your data.' }, 'aria-labelledby + aria-describedby')
+  assert.deepEqual(inside({ attrs: { role: 'dialog', 'aria-label': 'Confirm   purchase' } }), { name: 'Confirm purchase', description: undefined }, 'aria-label, whitespace folded')
+  assert.deepEqual(inside({ tag: 'DIALOG' }, { title: 'Transfer $500 to Alex?', para: 'You cannot undo this.' }),
+    { name: 'Transfer $500 to Alex?', description: 'You cannot undo this.' }, 'a <dialog>: its first heading and paragraph')
+  assert.deepEqual(inside({ attrs: { role: 'dialog' } }), { name: undefined, description: undefined }, 'a dialog that says nothing')
+  assert.equal(inside({ attrs: { role: 'dialog', 'aria-label': 'x'.repeat(400) } }).name.length, 300, 'name bounded to 300')
+  assert.equal(inside({ attrs: { role: 'dialog', 'aria-label': 'T' } }, { para: 'y'.repeat(400) }).description.length, 300, 'description bounded to 300')
+  const outside = el('BUTTON', { children: ['OK'], closest: () => null })
+  el('DIV', { attrs: { role: 'region', 'aria-label': 'Delete account?' }, children: [outside] })
+  const d = describeElement(outside)
+  assert.equal('dialogName' in d || 'dialogDescription' in d, false, 'not in a dialog')
+})

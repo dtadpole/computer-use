@@ -3,7 +3,7 @@ import { normaliseForPolicy, normaliseText } from './normalise.mjs'
 import { BIP39_ENGLISH } from './bip39-english.mjs'
 import { normalizeKey } from './keys.mjs'
 import { originPattern } from './sites.mjs'
-import { amountClass, canonicalForms, grammarClasses, grammarClassesBase, inertLinkAmountClass, synonymForms, toggleExpansion } from './phrase-grammar.mjs'
+import { amountClass, canonicalForms, clauseSplit, clauseVerbLed, grammarClasses, grammarClassesBase, inertLinkAmountClass, quantifierDropped, sectionLabelStripped, synonymForms, toggleExpansion } from './phrase-grammar.mjs'
 
 /**
  * The action policy (design: action-policy.md, consent-gate.md). `classify` runs in the dispatcher for every action,
@@ -20,7 +20,24 @@ export const NEVER_PRE_APPROVED = Object.freeze(['purchase', 'delete', 'permissi
 // the task's declared secret placeholder ({{secret:name}}, resolved after the policy) - into a secret field; never a press, never other
 // text, and never into a money or identity field (IBAN, routing / account number, SWIFT, card, wallet address, forwarding address,
 // recovery email / phone), which asks credential even under the grant. The desktop already never pre-approves credential (app-policy).
-const MONEY_IDENTITY_FIELD = /\b(?:iban|routing\s*(?:number|no\.?|#)?|account\s*(?:number|no\.?|#)|swift(?:\s*code)?|bic|sort\s*code|card\s*(?:number|no\.?|#)|wallet\s*address|forwarding\s*address|recovery\s*(?:e-?mail|phone|number))\b/i
+const MONEY_IDENTITY_FIELD = /\b(?:iban|routing\s*(?:number|no\.?|#)?|account\s*(?:number|no\.?|#)|swift(?:\s*code)?|bic|sort\s*code|card\s*(?:number|no\.?|#)|wallet\s*address|forwarding\s*address|forward\s*to|bank\s*account|payout\s*account|recovery\s*(?:e-?mail|phone|number))\b/i
+// CU-494 residual r2 (cu-developer-one 11:55Z, cu-researcher 11:54Z): an unlabelled entry is read by its raw name/id attribute
+// (the chrome driver's fieldAttr, '_'/'-' read as spaces), where a bare 'wallet' counts too; and a card or amount autocomplete
+// token marks a money field whatever the name says.
+const MONEY_FIELD_ATTR_ONLY = /\b(?:wallet|cc\s*(?:number|num|no))\b/i
+const MONEY_AUTOCOMPLETE = /\bcc-(?:number|csc|exp)|\btransaction-amount\b/i
+/** Whether a typing target is a money or identity field: any of its name, placeholder, layout label, raw name/id attribute or autocomplete token says so. */
+export function moneyIdentityField(target, name = target?.name) {
+  if (MONEY_AUTOCOMPLETE.test(String(target?.autocomplete ?? ''))) return true
+  // #675 r2 (cu-coordinator 12:36Z): a UNION, not first-wins - any of the name, the placeholder (AXPlaceholderValue on the
+  // desktop), the layout label (nearbyLabel, CU-361) or the raw name/id attribute marking a money or identity field makes it
+  // one, so a hostile page naming an IBAN field 'Nickname' does not win.
+  for (const hint of [name, target?.placeholder, target?.nearbyLabel]) {
+    if (typeof hint === 'string' && hint.trim() !== '' && MONEY_IDENTITY_FIELD.test(hint)) return true
+  }
+  const attr = String(target?.fieldAttr ?? '').replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2').replace(/[_-]+/g, ' ')
+  return attr !== '' && (MONEY_IDENTITY_FIELD.test(attr) || MONEY_FIELD_ATTR_ONLY.test(attr))
+}
 /** CU-494 round 2/3 (cu-developer-three 11:09Z; cu-coordinator 11:21Z): whether a grant of `cls` may never cover a control named
  * `name` - every submit row but the generic ones (install is never pre-approved at all). The desktop's app-scoped pre-approval asks the same question (app-policy.mjs scopedPreApproval). */
 export function neverCoveredByGrant(cls, name) {
@@ -30,6 +47,8 @@ export function neverCoveredByGrant(cls, name) {
 // hand list of High names: the grant covers ONLY the generic submits a task means by 'submit' - a bare form submit, send, reply, post,
 // comment, save, apply, search - and every other submit row (each one added by a ruled High: parental approvals, portal consent, rate
 // locks, dial rows, mass sends, compensation, returns, relists, ride cancels) asks under any submit grant.
+// CU-507 (High; cu-coordinator 16:06Z): the generic final buttons of a confirm modal - judged by the modal's own title and text.
+const GENERIC_CONFIRM = /^\s*(?:confirm|ok|okay|yes|yes,?\s+(?:continue|confirm|proceed|i'?m\s+sure|do\s+it)|continue|proceed|submit|done|apply|accept|agree|i\s+agree|i\s+understand|got\s+it|i'?m\s+sure|do\s+it|go\s+ahead|confirm\s+and\s+continue)\s*[.!]?\s*$/i
 const GENERIC_SUBMIT = /^\s*(?:submit|send|send\s+(?:message|reply|email|comment)|reply|post|post\s+(?:comment|reply)|comment|save|save\s+changes|apply|search|go|ok|done|continue|next|report\s+spam|sign\s+up|register|create\s+account)\s*!?\s*$/i
 
 /** Word lists matched on a target's accessible name, case-insensitively, at word boundaries; they err toward confirm. */
@@ -110,7 +129,9 @@ const LOCALE_ID_NAMES = Object.freeze(['reisepass', '…passnummer', 'geburtsdat
   'パスポート', '旅券番号', '生年月日', 'マイナンバー', '個人番号', '口座番号',
   '여권', '여권번호', '생년월일', '주민등록번호', '계좌번호', '사업자등록번호'])
 const WORDS = Object.freeze({
-  purchase: ['buy', 'pay', 'order', 'place order', 'checkout', 'check out', 'subscribe', 'donate', 'purchase', 'transfer', 'withdraw', 'wire', 'send money',
+  // CU-498 (High; cu-coordinator 12:21Z): a direct debit mandate pulls money from the account (purchase), anywhere.
+  // (a separate line so the purchase list below stays as it was)
+  purchase: ['set up direct debit', 'set up a direct debit', 'authorize direct debit', 'authorise direct debit', 'authorize a direct debit', 'authorise a direct debit', 'buy', 'pay', 'order', 'place order', 'checkout', 'check out', 'subscribe', 'donate', 'purchase', 'transfer', 'withdraw', 'wire', 'send money',
     // CU-452 (cu-coordinator 22:28Z): an unlimited token approval lets a contract drain the wallet - purchase leads over the older submit.
     'approve unlimited', 'approve unlimited spending', 'allow unlimited spending',
     // CU-444 (cu-coordinator 20:54Z): publishing a campaign starts paid spend - purchase leads over the older 'publish' submit.
@@ -195,6 +216,10 @@ const WORDS = Object.freeze({
     // cu-researcher's 13:23Z sweep: unsaved edits lost, like Discard Changes.
     'revert to saved', 'revert all changes', ...ZH_WORDS.delete, ...LOCALE_WORDS.delete],
   permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke',
+    // CU-496 (High; cu-coordinator 11:21Z): approving an access request lets another person in (raises the older submit 'approve').
+    'approve access request', 'approve access', 'approve the access request',
+    // #669 round 2 (cu-researcher 11:33Z): an emergency-access request too.
+    'approve emergency access request', 'approve emergency access', 'grant emergency access',
     // #661 round 2 (prepared; cu-developer-three 10:38Z): approving a sign-in grants an outside session access - permission, which is never
     // pre-approved, so an MFA-fatigue push cannot ride an earlier submit 'always' (raises the older submit row; D-108 allows a raise).
     'approve sign-in', 'approve sign in', 'approve signin', 'approve login', 'approve log in', 'approve log-in', 'approve this sign-in', 'approve this login',
@@ -1180,6 +1205,36 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if ((isKeys && ((runChord && inCell) || (colabChord && target?.notebookSurface === true))) || runControl) classes.push('launch_code')
     }
     const held = context.dialog && ['confirm', 'prompt', 'beforeunload'].includes(context.dialog.type)
+    // CU-429 (cu-coordinator 09:34Z; D-108 rule 1 - older asks lowered only by this ruling): a press on a named button or link,
+    // outside a held page dialog and never on a toggle (its label names a state, so a press can do the opposite - cu-developer-three
+    // 09:35Z), is free for (A) pane names, help links and views, (C) 'Edit post', (E) 'Raise a ticket', (G) 'Require multi-factor
+    // authentication', an 'Unsubscribe' LINK (a button keeps submit), and (D) a refusal: don't / do not / never / no, don't / I don't
+    // want to + a ruled risky verb phrase that itself asks, or keep + a protection whose turning off asks. Never for a safeguard
+    // suppressor ('Don't ask again', 'Don't show this again', 'Don't warn me', 'Don't notify me', 'Don't confirm'), and never with a
+    // second clause ('Do not cancel - pay now', 'No thanks, remove 2FA', 'No, remove it' still ask).
+    // cu-coordinator 13:04Z: an exchange's 'Order book' (a view; the older 'order' purchase) is lowered here too.
+    if (!held && context.confirmProbe !== true && name !== '' && classes.length === 0 && target && !isTextEntry(target)) {
+      const presses = POINTER.has(action.type) || keysOf(action).has('ENTER') || keyboardActivation(action, target, context).activates
+      const role = String(target.role ?? '') + ' ' + String(target.subrole ?? '')
+      const toggle = /switch|checkbox|toggle|radio/i.test(role) || /^(checkbox|radio)$/i.test(String(target.inputType ?? '')) || typeof target.checked === 'boolean'
+      if (presses && !toggle) {
+        const plain = name.trim().replace(/\s+/g, ' ')
+        const link = /\b(link|AXLink)\b/.test(role)
+        const exact = /^(?:security|privacy & security|uninstall instructions|pay history|pay stub preview|view pay rate|edit post|raise (?:a )?ticket|require multi-factor authentication|order book)$/i.test(plain)
+          || (link && /^unsubscribe(?: link)?$/i.test(plain))
+        let refusal = false
+        if (!exact && !/\s[-\u2013\u2014]\s|[,;:](?!\s*$)|\b(?:and|then|but)\b/i.test(plain.replace(/^\s*no,\s*/i, ''))) {
+          const neg = plain.match(/^(?:no,?\s+)?(?:don'?t|do\s+not|never|i\s+(?:don'?t|do\s+not)\s+want\s+to)\s+(.+)$/i)
+          const keep = plain.match(/^(?:no,?\s+)?keep\s+(.+?)(?:\s+(?:on|enabled|turned\s+on|active))?$/i)
+          const risky = /^(?:turn\s+off|switch\s+off|disable|remove|delete|deactivate|revoke|reset|cancel|unlink|disconnect|erase|close|sign\s+out|log\s+out|turn\s+on|enable|share|send|pay|buy|purchase|install|allow|grant|transfer|unsubscribe|leave|stop)\b/i
+          const suppressor = /^(?:ask|show|warn|notify|confirm|remind|prompt)\b/i
+          const asks = (probeName) => classify(action, { ...context, target: { ...target, name: probeName }, confirmProbe: true }).decision === 'confirm'
+          if (neg && !suppressor.test(neg[1]) && risky.test(neg[1]) && asks(neg[1])) refusal = true
+          else if (keep && !/^(?:sharing|me\b|my\s+location|location)/i.test(keep[1]) && asks(`Turn off ${keep[1]}`)) refusal = true
+        }
+        if (exact || refusal) return { decision: 'allow', class: null, rule: 'cu429:lowered', reason: '' }
+      }
+    }
     // Canonical keys (cu-researcher): 'RETURN', 'Return', 'enter' are ENTER too, whoever the caller is; a hold of it too.
     // CU-142: a typed newline presses the same Return as ENTER, so it is judged as ENTER on the focused element - in a
     // text input too ('hi\n' into a 'Send a message' field asks submit, as ENTER there does).
@@ -1928,6 +1983,88 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       } catch { tradingPage = false }
       if (tradingPage) classes.push('purchase')
     }
+    // CU-496 (High; cu-coordinator 11:21Z): on a password vault's page (the CU-474 URL test) a 'Download backup' takes the vault's
+    // secrets out (credential); turning ON 'Autofill on page load' lets any page take a filled secret (permission) - a native switch asks
+    // only when the press turns it on; a button asks when it says turn on / enable.
+    if (grammarEligible && classes.length === 0 && /^\s*(?:download|export|save)\s+(?:a\s+|the\s+)?(?:vault\s+)?backup\s*$/i.test(name) && /vault|password|1password|bitwarden|lastpass|dashlane|keeper|proton\.me\/pass/i.test(String(context?.url ?? ''))) classes.push('credential')
+    if (grammarEligible && classes.length === 0) {
+      const autofill = /^\s*(?:(turn\s+on|enable|switch\s+on|allow|let)(?:\s+(?:this\s+|the\s+|these\s+|all\s+)?(?:items?|logins?|passwords?|entry|entries|accounts?))?(?:\s+to)?\s+)?auto-?fill\s+on\s+page\s+load(?:\s+for\s+all\s+(?:items|logins|sites|websites))?\s*$/i.exec(name)
+      // #669 round 3 (cu-verifier 11:50Z): an object and 'to' between the verb and 'autofill' - the issue title's 'Allow item to autofill on page load'.
+      if (autofill) {
+        // #669 round 2 (cu-developer-three 11:32Z): direction only from the NATIVE read (CU-373: a web <input type=checkbox> with a
+        // boolean checked); an ARIA, missing or mixed state - or a desktop switch with no read - fails closed and asks.
+        const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? '')) && typeof target?.checked === 'boolean'
+        const toggleRole = /switch|checkbox|toggle/i.test(String(target?.role ?? '') + ' ' + String(target?.subrole ?? ''))
+        if (nativeBox ? target.checked === false : (Boolean(autofill[1]) || toggleRole)) classes.push('permission')
+      }
+    }
+    // CU-495 (High; cu-coordinator 11:06Z): on an e-signature page - a whole /sign, /signing, /envelope or /esign segment of an http(s)
+    // URL - a bare 'Finish', 'Complete' or 'Confirm' completes the signing (permission). Off that URL they keep their own rows.
+    if (grammarEligible && classes.length === 0 && /^\s*(?:finish|complete|confirm)\s*!?\s*$/i.test(name)) {
+      let signingPage = false
+      try {
+        const u = new URL(String(context?.url ?? ''))
+        if (/^https?:$/.test(u.protocol)) signingPage = /(?:^|\/)(?:sign|signing|envelope|envelopes|esign)(?=$|[/?#])/i.test(u.pathname)
+      } catch { signingPage = false }
+      if (signingPage) classes.push('permission')
+    }
+    // CU-498 (High; cu-coordinator 12:21Z): on a government or tax page - a .gov / gov.<cc> / gouv / gc.ca host, or a whole /tax, /taxes,
+    // /benefits, /unemployment, /voter, /elections or /return(s) segment of an http(s) URL - amending a return, reporting income,
+    // certifying for benefits and changing a voter registration ask in the class of 'File return' (submit). 'View return' stays free.
+    // CU-499 (High; cu-coordinator 12:21Z): on a car or smart-lock page - a whole /vehicle(s), /car(s), /lock(s), /smart-lock, /door(s)
+    // or /garage segment - a bare 'Unlock' asks PHYSICAL like 'Unlock car', and adding a driver or sharing a key asks PERMISSION.
+    // 'Lock' and 'Vehicle status' stay free. Named limits: a native tax or car app (no URL).
+    if (grammarEligible && classes.length === 0) {
+      let govPage = false
+      let carPage = false
+      try {
+        const u = new URL(String(context?.url ?? ''))
+        if (/^https?:$/.test(u.protocol)) {
+          govPage = /(?:^|\.)gov(?:\.[a-z]{2})?$|(?:^|\.)gouv\.[a-z]{2}$|(?:^|\.)gc\.ca$/i.test(u.hostname) || /(?:^|\/)(?:tax|taxes|benefits|unemployment|voter|elections|returns?)(?=$|[/?#])/i.test(u.pathname)
+          carPage = /(?:^|\/)(?:vehicles?|cars?|locks?|smart-lock|doors?|garage)(?=$|[/?#])/i.test(u.pathname)
+        }
+      } catch { govPage = false; carPage = false }
+      // #677 round 2 (cu-researcher 12:42Z): the ruled acts as families - certify (for) benefits / eligibility / a (weekly) claim;
+      // report income / earnings / hours (worked) / wages; change / update a voter registration.
+      if (govPage && /^\s*(?:amend\s+(?:my\s+|your\s+|the\s+)?(?:tax\s+)?return|report\s+(?:my\s+|your\s+)?(?:income|earnings|wages|hours(?:\s+worked)?)|certify\s+(?:for\s+)?(?:(?:my|your|weekly)\s+)*(?:benefits|unemployment|eligibility|(?:weekly\s+)?claim)|(?:change|update)\s+(?:my\s+|your\s+|the\s+)?voter\s+registration)\s*$/i.test(name)) classes.push('submit')
+      if (carPage && /^\s*unlock(?:\s+now)?\s*!?\s*$/i.test(name)) classes.push('physical')
+      if (carPage && /^\s*(?:add|invite)\s+(?:a\s+|an\s+|another\s+)?(?:secondary\s+|guest\s+|additional\s+|new\s+)?driver\s*$|^\s*share\s+(?:a\s+|my\s+|the\s+)?(?:digital\s+)?key\s*$/i.test(name)) classes.push('permission')
+    }
+    // #677 round 2 (cu-researcher 12:42Z): the direct-debit act in other words - a debit mandate or automatic / recurring withdrawals
+    // set up, authorised or created - asks purchase anywhere, like 'Set up direct debit'.
+    // #677 round 3 (cu-developer-three 12:47Z): allow / enable / turn on / activate too.
+    // An older 'authorize' permission stays beside it (D-108: never lower).
+    if (grammarEligible && !classes.includes('purchase') && /^\s*(?:set\s+up|authori[sz]e|create|start|allow|enable|turn\s+on|activate)\s+(?:an?\s+|the\s+)?(?:direct\s+debit|debit\s+mandate|automatic\s+(?:withdrawals?|debits?)|recurring\s+(?:withdrawals?|debits?))\s*$/i.test(name)) classes.push('purchase')
+    // #680 round 3 (cu-researcher 13:02Z): on an exchange's wallet page - a whole /withdraw, /withdrawal(s), /wallet(s), /addresses or
+    // /address-book segment of an http(s) URL - a bare 'Add to allowlist / whitelist' is the money redirect and asks credential; on a
+    // mail or ad-block page it stays free. Named limit: a native exchange app (no URL) keeps the bare form free.
+    if (grammarEligible && classes.length === 0 && /^\s*add\s+to\s+(?:the\s+)?(?:whitelist|allowlist|white\s+list|allow\s+list)\s*$/i.test(name)) {
+      let walletPage = false
+      try {
+        const u = new URL(String(context?.url ?? ''))
+        if (/^https?:$/.test(u.protocol)) walletPage = /(?:^|\/)(?:withdraw|withdrawals?|wallets?|addresses|address-book)(?=$|[/?#])/i.test(u.pathname)
+      } catch { walletPage = false }
+      if (walletPage) classes.push('credential')
+    }
+    // #693 round 2 (cu-researcher 14:53Z): a bare 'Add rule' on a mail page - a mail host or a whole /mail, /inbox, /rules, /filters
+    // segment of an http(s) URL - is a mail rule (credential, like 'Create rule'); elsewhere it stays free (CU-492: a cloud console's
+    // form opener).
+    if (grammarEligible && classes.length === 0 && /^\s*add\s+(?:a\s+|new\s+|a\s+new\s+)?rule\s*$/i.test(name)) {
+      let mailPage = false
+      try {
+        const u = new URL(String(context?.url ?? ''))
+        if (/^https?:$/.test(u.protocol)) mailPage = /(?:^|\.)(?:mail|outlook|inbox)\./i.test(u.hostname) || /(?:^|\/)(?:mail|inbox|rules|filters)(?=$|[/?#])/i.test(u.pathname)
+      } catch { mailPage = false }
+      // #693 round 3 (cu-developer-three 14:56Z): a native mail client is a mail page too - Apple Mail's Rules pane titles its button
+      // exactly 'Add Rule'.
+      // #693 round 4 (cu-developer-three 15:02Z): on the real desktop route the url is a bare 'desktop://' - the app is read the way
+      // the policy reads it elsewhere, from target.origin, else context.frontmostBundleId (and from an 'app:' url, the tests' shape).
+      const mailClients = /^(?:com\.apple\.mail|com\.microsoft\.outlook|com\.readdle\.smartemail-mac|com\.readdle\.spark|it\.bloop\.airmail2|com\.mimestream\.mimestream|org\.mozilla\.thunderbird|com\.superhuman\.electron)$/i
+      const appBundle = (typeof target?.origin === 'string' && target.origin !== '' && !/^https?:/i.test(target.origin)) ? target.origin : String(context?.frontmostBundleId ?? '')
+      const urlBundle = (/^(?:app:|desktop:\/\/)([\w.-]+)/i.exec(String(context?.url ?? '')) ?? [])[1] ?? ''
+      if (!mailPage) mailPage = mailClients.test(appBundle) || mailClients.test(urlBundle)
+      if (mailPage) classes.push('credential')
+    }
     // CU-491 (High; cu-coordinator 10:19Z): on a home-security page - a whole /security, /alarm, /cameras or /home-security
     // segment of an http(s) URL - silencing, muting, snoozing an alarm or siren and pausing / stopping a recording ask PHYSICAL, like
     // 'Turn off alarm'. Off that URL a meeting's 'Stop recording' stays free (#462). Named limit: a native security app (no URL).
@@ -2090,13 +2227,74 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const also = shortcutActive ? { alsoNeeds: shortcutApproval } : {}
     // ... and 'permission' is listed beside the other classes (the record), while the class that ranks first still leads.
     const stack = (list) => (shortcutActive && !list.includes('permission') ? [...list, 'permission'] : list)
+    // CU-501 (High; cu-coordinator 13:21Z), as verb families with object synonyms: at a registrar, pushing a domain to another account or
+    // changing its registrant hands the domain over (the class of 'Transfer out', purchase); changing MX records or nameservers, turning
+    // off DNSSEC and unlocking the domain redirect or expose it (permission). Only where nothing asked yet: the rows CU-446 ruled
+    // ('Push domain', 'Change registrant', 'Unlock domain', 'Turn off domain lock' credential; 'Transfer ownership' permission) keep
+    // their class exactly (D-108; reclass 0). 'DNS records' stays free.
+    if (grammarEligible) {
+      // #688 round 2 (cu-researcher 14:21Z): object synonyms - 'Push to another account' (no object), 'Change domain owner (account)',
+      // 'Update mail servers / exchangers'.
+      const domainHandover = /^\s*(?:push|move|transfer)\s+(?:the\s+|this\s+|my\s+)?(?:domains?\s+(?:names?\s+)?)?to\s+(?:another|a\s+different|a\s+new|other|an\s+external)\s+(?:account|registrar|user|owner|customer)\s*$|^\s*change\s+(?:the\s+)?domain\s+owner(?:\s+account)?\s*$|^\s*(?:push|move|give|hand\s+over)\s+(?:the\s+|this\s+|my\s+)?domains?(?:\s+(?:name|names))?(?:\s+to\s+(?:another|a\s+different|a\s+new|other|an\s+external)\s+(?:account|registrar|user|owner|customer))?\s*$|^\s*(?:change|update|edit|transfer)\s+(?:the\s+|domain\s+)?(?:registrant|domain\s+owner|ownership)(?:\s+(?:contact|details|name|information|info))?\s*$/i
+      const domainExposure = /^\s*(?:change|edit|update|modify|set|replace|use\s+custom)\s+(?:the\s+|custom\s+|your\s+)?(?:mx\s+records?|mail\s+(?:exchange|server)\s+records?|mail\s+servers?|mail\s+exchangers?|name\s*servers?|dns\s+servers?)\s*$|^\s*(?:disable|turn\s+off|deactivate|remove|switch\s+off)\s+(?:the\s+)?(?:dnssec|domain\s+(?:lock|protection)|registrar\s+lock|transfer\s+lock)\s*$|^\s*unlock\s+(?:the\s+|this\s+|my\s+)?domains?(?:\s+for\s+transfer)?\s*$/i
+      if (classes.length === 0 && domainHandover.test(name)) classes.push('purchase')
+      else if (classes.length === 0 && domainExposure.test(name)) classes.push('permission')
+    }
+    // #683 round 2 (cu-coordinator 13:36Z): a quantified (or, #694 r2, labelled) name that already asks takes the full class set of its row
+    // too ('Approve each sign-in' asks permission beside the older submit, like 'Approve sign-in') - adds only.
+    if (grammarEligible && classes.length > 0 && context.confirmProbe !== true && String(name ?? '').length <= 200) {
+      // #694 round 2 (cu-researcher 15:05Z; the 13:36Z union): the section-label rest too - 'Pay settings: Change direct deposit'
+      // keeps the older purchase from 'pay' and takes credential from its rest.
+      for (const form of [...quantifierDropped(String(name ?? '').trim()), ...sectionLabelStripped(name)]) {
+        const probe = classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { ...target, name: form }, confirmProbe: true })
+        if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) if (!classes.includes(cls)) classes.push(cls)
+      }
+    }
+    // CU-507 (High; cu-coordinator 16:06Z): a generic confirm control inside an in-page modal (role=dialog / alertdialog / <dialog>;
+    // on the desktop an AXSheet / AXDialog) asks the classes the modal's title and description get as a name - never fewer than the
+    // button alone; a modal whose text gets no class stays free. The driver reports target.dialogName / target.dialogDescription.
+    {
+      // One shape on both routes (cu-developer-two 16:12Z, option a): the web driver and the desktop helper fill
+      // target.dialogName / target.dialogDescription.
+      const pick = (value) => (typeof value === 'string' ? value.trim().slice(0, 300) : '')
+      const dialogName = pick(target?.dialogName)
+      const dialogDescription = pick(target?.dialogDescription)
+      const presses = POINTER.has(action.type) || keysOf(action).has('ENTER') || keysOf(action).has('SPACE')
+      if (context.confirmProbe !== true && presses && (dialogName !== '' || dialogDescription !== '') && GENERIC_CONFIRM.test(String(name ?? ''))) {
+        // cu-researcher 16:09Z: a title is a question more often than a row - 'Are you sure you want to <row>?', 'Really <row>?',
+        // '<row>?' - so a title canonical step strips the question frame before the title is judged as a name.
+        // #702 round 2 (cu-researcher 16:24Z): descriptions lead with 'This will / This action will / You are about to / Doing this will'.
+        const titleRow = (text) => text.replace(/[?!.:\s]+$/, '').replace(/^\s*(?:(?:are\s+you\s+(?:sure|certain)|you\s+are\s+about|you're\s+about)(?:\s+(?:that\s+)?you\s+(?:want|wish))?\s+to|do\s+you\s+(?:really\s+)?(?:want|wish)\s+to|(?:would|do)\s+you\s+like\s+to|(?:this|this\s+action|doing\s+this|that|it)(?:\s+cannot\s+be\s+undone\s+and)?\s+will(?:\s+permanently)?|really|confirm(?:\s+that\s+you\s+want\s+to)?|permanently)\s+/i, '').trim()
+        const firstSentence = dialogDescription.split(/(?<=[.!?])\s+/)[0] ?? ''
+        const texts = [...new Set([dialogName, titleRow(dialogName), firstSentence, titleRow(firstSentence), `${titleRow(dialogName)} ${dialogDescription}`.trim()].filter((t) => t !== ''))]
+        for (const text of texts) {
+          // #702 round 2: the title is judged with the FULL canonical form (synonym, quantifier, label and clause steps run only
+          // outside a confirm probe), so no confirmProbe flag here; the probe target carries no dialog fields, so it cannot recurse.
+          const probe = classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { role: 'button', name: text, ...(target?.origin ? { origin: target.origin } : {}) } })
+          if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) if (!classes.includes(cls)) classes.push(cls)
+        }
+      }
+    }
+    // CU-506 (compound sweep): a name of verb-led clauses ('Review and confirm withdrawal') asks the union of its clauses - tried last,
+    // adds only, whether or not the whole name already asked.
+    // A name that is itself a ruled table row ('Sign and file', CU-459: submit) keeps its ruled class set (D-108: reclass 0).
+    if (grammarEligible && context.confirmProbe !== true && grammarClassesBase(name).length === 0) {
+      const clauses = clauseSplit(name)
+      const probes = clauses.map((clause) => classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { ...target, name: clause }, confirmProbe: true }))
+      // #699 round 2 (cu-researcher 15:43Z): every clause must be verb-led - a listed UI verb, or a clause that asks on its own.
+      if (clauses.length > 0 && clauses.every((clause, i) => clauseVerbLed(clause) || probes[i].decision === 'confirm')) {
+        for (const probe of probes) if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) if (!classes.includes(cls)) classes.push(cls)
+      }
+    }
     const unique = [...new Set(classes)].sort((a, b) => PRECEDENCE.indexOf(a) - PRECEDENCE.indexOf(b))
-    const typesSecret = action.type === 'type' && /^\s*(?:\{\{secret:[a-z0-9_-]+\}\}\s*)+$/i.test(String(action.text ?? '')) && !MONEY_IDENTITY_FIELD.test(String(name ?? ''))
+    // CU-494 residual (cu-coordinator 11:36Z): moneyIdentityField also reads an unlabelled entry's raw name/id attribute.
+    const moneyField = moneyIdentityField(target, name)
+    const typesSecret = action.type === 'type' && /^\s*(?:\{\{secret:[a-z0-9_-]+\}\}\s*)+$/i.test(String(action.text ?? '')) && !moneyField
     const needed = unique.filter((cls) => !preApproved(cls, url) || NEVER_PRE_APPROVED.includes(cls) || autofillClasses.includes(cls) || neverCoveredByGrant(cls, name) || (cls === 'credential' && !typesSecret))
     // CU-494 (11:06Z): typing into a money or identity field is never carried by a grant - it asks credential at the typing step
     // (an attacker IBAN typed under a credential or sensitive_data grant, then a bare 'Save', must not pass).
     // #664 round 3 (cu-researcher 11:11Z): also when no class asked at all ('SWIFT code', 'Wallet address' typed with or without a grant).
-    if (needed.length === 0 && action.type === 'type' && target && isTextEntry(target) && MONEY_IDENTITY_FIELD.test(String(name ?? ''))) { needed.push('credential'); if (!unique.includes('credential')) unique.push('credential') }
+    if (needed.length === 0 && action.type === 'type' && target && isTextEntry(target) && moneyField) { needed.push('credential'); if (!unique.includes('credential')) unique.push('credential') }
     if (needed.length === 0 && shortcutActive) {
       return { decision: 'confirm', class: 'permission', classes: ['permission'], rule: 'page:shortcut', approvalKey: shortcutApproval, runOnly: true, reason: `press ${shortcutShown} on ${placeOf(url, target, context?.frontmostBundleId)}, a keyboard shortcut of the ${onDesktop ? 'app' : 'page'} - it decides what it does` }
     }
