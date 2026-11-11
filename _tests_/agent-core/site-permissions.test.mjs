@@ -22,3 +22,8 @@ test('CU-529 negatives and older rows', () => {
   for (const name of ['Block', 'Not now', 'Allow', 'Site settings', 'Camera', 'On click', 'On specific sites']) assert.deepEqual(classesOf(name), [], name)
   assert.ok(classesOf('Allow access to all websites').includes('permission'), 'older row unchanged')
 })
+
+test('#754 round 2 (cu-researcher 22:54Z): run / enable in, InPrivate, every site', () => {
+  for (const name of ['Allow in InPrivate', 'Run in private windows', 'Enable in incognito', 'Allow on every site', 'On every website', 'Run in InPrivate mode']) assert.ok(classesOf(name).includes('permission'), name)
+  for (const name of ['Site access', 'On click', 'InPrivate', 'Every site']) assert.deepEqual(classesOf(name), [], name)
+})

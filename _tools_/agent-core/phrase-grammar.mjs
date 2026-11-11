@@ -1163,7 +1163,8 @@ function grammarClassesOf(name, role = '') {
   // CU-529 (High; cu-coordinator 22:51Z), table PR 34, as verb families with object synonyms - a browser / site permission grant.
   // PERMISSION: allow (it / this extension) in incognito / private windows / private browsing; (allow) on all sites / websites; a site
   // prompt's allow (access to) (the / your) camera / microphone / mic / location / notifications. 'Block' and 'Not now' stay free.
-  if (/^\s*allow\s+(?:it\s+|this\s+extension\s+|the\s+extension\s+)?in\s+(?:incognito(?:\s+mode)?|private\s+(?:windows?|browsing|mode))\s*$|^\s*(?:allow\s+)?on\s+all\s+(?:sites|websites)\s*$|^\s*allow\s+(?:access\s+to\s+)?(?:the\s+|your\s+|my\s+)?(?:camera|microphone|mic|location|notifications|camera\s+and\s+microphone)\s*$/i.test(raw)) return ['permission']
+  // #754 r2 (cu-researcher 22:54Z): run / enable in, InPrivate, and on every site.
+  if (/^\s*(?:allow|run|enable)\s+(?:it\s+|this\s+extension\s+|the\s+extension\s+)?in\s+(?:incognito|inprivate|private\s+(?:windows?|browsing|mode))(?:\s+mode)?\s*$|^\s*(?:allow\s+)?on\s+(?:all|every)\s+(?:sites?|websites?)\s*$|^\s*allow\s+(?:access\s+to\s+)?(?:the\s+|your\s+|my\s+)?(?:camera|microphone|mic|location|notifications|camera\s+and\s+microphone)\s*$/i.test(raw)) return ['permission']
   // CU-527 (High; cu-coordinator 22:06Z), table PR 33, as verb families with object synonyms - a package registry. DELETE: unpublish /
   // yank (the / this) package / version / release. PERMISSION: add (a / an) maintainer / owner / collaborator / publisher, add a trusted
   // publisher. CREDENTIAL: create / generate / new (a) granular / automation / publish (access) token. SUBMIT: deprecate (the / this)
