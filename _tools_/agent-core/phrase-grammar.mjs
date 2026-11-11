@@ -1146,6 +1146,11 @@ function grammarClassesOf(name, role = '') {
   // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
   // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
   if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
+  // CU-524 (High; cu-coordinator 21:06Z), table PR 31, as verb families with object synonyms - a new recovery channel lets someone
+  // else take the account back. CREDENTIAL: add / register / set (up) a trusted / backup / recovery / alternate / secondary / additional
+  // phone (number) / number / email (address); set up (account) recovery (options); add / set up a backup / recovery / sign-in method /
+  // option. The URL-bound bare 'Add phone number' (account-security pages) lives in policy.mjs.
+  if (/^\s*(?:add|register|set(?:\s+up)?|enter)\s+(?:a\s+|an\s+|the\s+)?(?:new\s+)?(?:trusted|backup|recovery|alternate|alternative|secondary|additional)\s+(?:phone(?:\s+number)?|mobile(?:\s+number)?|number|e-?mail(?:\s+address)?|address)\s*$|^\s*set\s+up\s+(?:your\s+|the\s+)?(?:account\s+)?recovery(?:\s+(?:options?|methods?|info(?:rmation)?))?\s*$|^\s*(?:add|set\s+up)\s+(?:a\s+|an\s+|another\s+)?(?:backup|recovery|sign[-\s]?in|alternative)\s+(?:method|option|factor)\s*$/i.test(raw)) return ['credential']
   // CU-523 (High; cu-coordinator 20:36Z), table PR 30, as verb families with object synonyms - an identity-provider admin hands over an
   // account. CREDENTIAL: set / create / issue / generate a temporary / one-time password / passcode; unlock (the / this) user (account).
   // The URL-bound 'Add to group' family (permission) lives in policy.mjs.

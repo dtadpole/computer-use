@@ -2303,6 +2303,16 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         for (const probe of probes) if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) if (!classes.includes(cls)) classes.push(cls)
       }
     }
+    // CU-524 (High; cu-coordinator 21:06Z): a bare 'Add phone number' on an account-security page (D-109: host or path, never a
+    // title) adds a recovery / sign-in channel - credential; a checkout or contact form's 'Add phone number' stays free.
+    if (grammarEligible && !classes.includes('credential') && /^add\s+(?:a\s+|an\s+|another\s+)?(?:new\s+)?(?:phone|mobile)(?:\s+number)?$/i.test(String(name ?? '').trim())) {
+      let securityPage = false
+      try {
+        const u = new URL(url)
+        securityPage = /^https?:$/.test(u.protocol) && (/(?:^|\/)(?:security|account-security|signin|sign-in|signin-options|login|login-security|recovery|two-step|two-factor|2fa|mfa|authentication|privacy-security)(?=$|[/?#-])/i.test(u.pathname) || /^(?:myaccount|accounts?|id|login|signin)\./i.test(u.hostname))
+      } catch { securityPage = false }
+      if (securityPage) classes.push('credential')
+    }
     // CU-523 (High; cu-coordinator 20:36Z): on an identity-provider / admin-console page (D-109: host or path, never a title) adding a
     // user to a group / the admins asks PERMISSION; a chat app's 'Add to group' stays free. IdP pages: a vendor host token (okta, auth0,
     // onelogin, jumpcloud, keycloak, pingone, pingidentity, entra, duo) or an admin / iam / directory / identity / idp / sso path segment
