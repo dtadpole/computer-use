@@ -34,3 +34,10 @@ test("CU-493: 'Yes, it's me' and its kin ask as 'Approve sign-in'; linking a dev
 test('CU-492 + CU-493 negatives stay free', () => {
   for (const name of ['Bucket details', 'Add rule', "No, it wasn't me", "This wasn't me", 'Review activity', 'Encryption settings', 'Versioning']) assert.equal(at(name), 'allow', name)
 })
+
+test('#661 round 2 (cu-developer-three 10:38Z): the MFA approval family and Approve sign-in ask permission, never pre-approvable', () => {
+  for (const name of ['Approve sign-in', "Yes, it's me", 'This was me', 'It was me', 'Allow sign-in', "That's me", "Yes, that's me"]) assert.equal(at(name), 'permission', name)
+  // An 'always' for submit (and an attempted one for permission, which the policy drops) does not cover them.
+  const pre = createPolicy({ sitePolicy: () => 'allow', preApprovals: [{ class: 'submit' }, { class: 'permission' }] })
+  for (const name of ['Approve sign-in', "Yes, it's me"]) assert.equal(pre.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: URL, target: { role: 'button', name } }).decision, 'confirm', `${name}: an 'always' never covers it`)
+})
