@@ -978,10 +978,11 @@ function grammarClassesOf(name, role = '') {
   // submitted (submit); employee data and tax forms leave the account (permission). Older classes keep their own rows (named).
   if (list.length <= 4) {
     const [v, ...r] = list
-    if (['issue', 'grant', 'send'].includes(v) && r.length <= 2 && r[r.length - 1] === 'bonus') return ['purchase']
-    if (v === 'give' && r.length <= 2 && r[r.length - 1] === 'raise') return ['submit']
+    // #647 round 2 (cu-researcher 08:27Z): plural bonuses, 'Grant raise', payroll data / reports / records.
+    if (['issue', 'grant', 'send'].includes(v) && r.length <= 2 && ['bonus', 'bonuse', 'bonuses'].includes(r[r.length - 1])) return ['purchase']
+    if (['give', 'grant'].includes(v) && r.length <= 2 && r[r.length - 1] === 'raise') return ['submit']
     if (['change', 'update', 'edit', 'adjust'].includes(v) && r.length <= 2 && ['salary', 'compensation', 'wage'].includes(r[r.length - 1])) return ['submit']
-    if (['export', 'download'].includes(v) && r.length <= 3 && r.includes('employee') && ['data', 'record', 'list', 'detail'].includes(r[r.length - 1])) return ['permission']
+    if (['export', 'download'].includes(v) && r.length <= 3 && (r.includes('employee') || r.includes('payroll')) && ['data', 'record', 'list', 'detail', 'report'].includes(r[r.length - 1])) return ['permission']
   }
   if (/^\s*download\s+(?:all\s+)?(?:w-?2s?|1099s?|tax\s+forms?)\s*$/i.test(raw)) return ['permission']
   // CU-483 (High; cu-coordinator 05:34Z): brokerage - orders and automatic trading spend money (purchase); margin and options trading

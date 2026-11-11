@@ -27,3 +27,10 @@ test('CU-487: bonuses, raises, salary changes and employee-data exports ask in t
 test('CU-487 negatives: compensation views stay free', () => {
   for (const name of ['Compensation', 'Employees', 'Salary bands', 'Bonus policy']) assert.equal(at(name), 'allow', name)
 })
+
+test('#647 round 2 (cu-researcher 08:27Z): the held-out escapes fold', () => {
+  for (const [name, cls] of [['Issue bonuses', 'purchase'], ['Grant raise', 'submit'], ['Export payroll data', 'permission'], ['Download payroll report', 'permission']]) assert.equal(at(name), cls, name)
+  // Named (older classes lead): 'Send bonus' keeps the older send -> submit; 'Set pay rate', 'Download pay stubs' the older pay -> purchase.
+  assert.equal(at('Send bonus'), 'submit')
+  for (const name of ['Payroll', 'Payroll calendar', 'Payroll settings']) assert.equal(at(name), 'allow', name)
+})
