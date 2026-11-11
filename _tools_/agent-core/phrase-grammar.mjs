@@ -1146,6 +1146,14 @@ function grammarClassesOf(name, role = '') {
   // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
   // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
   if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
+  // CU-527 (High; cu-coordinator 22:06Z), table PR 33, as verb families with object synonyms - a package registry. DELETE: unpublish /
+  // yank (the / this) package / version / release. PERMISSION: add (a / an) maintainer / owner / collaborator / publisher, add a trusted
+  // publisher. CREDENTIAL: create / generate / new (a) granular / automation / publish (access) token. SUBMIT: deprecate (the / this)
+  // package / version / release.
+  if (/^\s*(?:unpublish|yank)\s+(?:the\s+|this\s+|a\s+)?(?:package|version|release|crate|gem|module)s?\s*$/i.test(raw)) return ['delete']
+  if (/^\s*add\s+(?:a\s+|an\s+|new\s+)?(?:maintainer|co-?maintainer|package\s+owner|collaborator|publisher)s?\s*$|^\s*add\s+(?:a\s+|an\s+|new\s+)?trusted\s+publish(?:er|ing)\s*$/i.test(raw)) return ['permission']
+  if (/^\s*(?:create|generate|new|add)\s+(?:a\s+|an\s+)?(?:new\s+)?(?:granular|automation|publish|fine[-\s]grained)\s+(?:access\s+)?token\s*$/i.test(raw)) return ['credential']
+  if (/^\s*deprecate\s+(?:the\s+|this\s+|a\s+)?(?:package|version|release|crate|gem|module)s?\s*$/i.test(raw)) return ['submit']
   // CU-526 (High; cu-coordinator 21:36Z): a code host's queued merge is a merge - SUBMIT: 'Merge when ready', 'Merge when checks pass',
   // and enabling / turning on auto-merge (an explicit class ruling: 'Enable auto-merge' moves from the generic enable-auto purchase to
   // submit, like 'Merge pull request').
