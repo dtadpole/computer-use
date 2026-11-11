@@ -140,3 +140,16 @@ test('nativeToggleState fold after #592: CU-461 private-account switch reads a d
   assert.equal(dsw('Private account', false, { inWebArea: true }), 'permission', 'web area untrusted')
   assert.equal(dsw('Private account', undefined), 'permission', 'no state asks')
 })
+test('nativeToggleState folds after #597: CU-464/465 remote access and blanket approvals (ON asks), CU-466 repo protections', () => {
+  // 'Auto-approve' is an older CU-427 phrase that asks both ways on the web too, so it is not a direction row here.
+  for (const name of ['Screen Sharing', 'Remote Login', 'YOLO mode']) {
+    assert.equal(dsw(name, false), 'permission', `${name}: off -> on asks`)
+    assert.equal(dsw(name, true), 'allow', `${name}: on -> off is free`)
+    assert.equal(dsw(name, true, { inWebArea: true }), 'permission', `${name}: web area untrusted`)
+  }
+  assert.equal(dsw('Branch protection', true), 'permission', 'protection on -> off asks')
+  assert.equal(dsw('Branch protection', false), 'allow', 'protection off -> on is free')
+  assert.equal(dsw('Allow force pushes', false), 'permission', 'force push off -> on asks')
+  assert.equal(dsw('Allow force pushes', true), 'allow', 'force push on -> off is free')
+  assert.equal(dsw('Allow force pushes', 'mixed'), 'permission', 'mixed asks')
+})
