@@ -1027,6 +1027,9 @@ function grammarClassesOf(name, role = '') {
     if (v === 'allow' && ((r[0] === 'unknown' && r[1] === 'source' && r.length === 2) || (r[0] === 'app' && r[1] === 'from' && ['anywhere', 'unknown'].includes(r[2]) && (r.length === 3 || (r[2] === 'unknown' && r[3] === 'source' && r.length === 4))))) return ['permission']
   }
   if (/^\s*install\s+now\s*!?\s*$/i.test(raw)) return ['install']
+  // CU-495 (High; cu-coordinator 11:06Z): an e-signature commits the signer - 'Sign', 'Sign here', 'Click to sign', 'Agree and sign',
+  // 'Apply signature', 'Complete signing', 'Sign all' ask permission anywhere, like 'Adopt and Sign'. 'Sign in' / 'Sign up' keep their rows.
+  if (/^\s*(?:sign(?:\s+(?:here|all|now|it|below))?|click\s+(?:here\s+)?to\s+sign|(?:agree|accept)\s+(?:and|&)\s+sign|apply\s+(?:my\s+|your\s+)?signature|(?:complete|finish)\s+signing|e-?sign(?:\s+now)?)\s*!?\s*$/i.test(raw)) return ['permission']
   // CU-492 (High; cu-coordinator 10:36Z): cloud console - emptying a bucket deletes every object (delete); a rule open to the whole
   // internet, and turning off encryption or versioning, widen access (permission). A bare 'Add rule' opens a form (free).
   if (/^\s*empty\s+(?:the\s+|this\s+)?(?:bucket|container)\s*$/i.test(raw)) return ['delete']

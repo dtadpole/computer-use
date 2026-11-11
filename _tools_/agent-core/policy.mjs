@@ -1922,6 +1922,16 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       } catch { tradingPage = false }
       if (tradingPage) classes.push('purchase')
     }
+    // CU-495 (High; cu-coordinator 11:06Z): on an e-signature page - a whole /sign, /signing, /envelope or /esign segment of an http(s)
+    // URL - a bare 'Finish', 'Complete' or 'Confirm' completes the signing (permission). Off that URL they keep their own rows.
+    if (grammarEligible && classes.length === 0 && /^\s*(?:finish|complete|confirm)\s*!?\s*$/i.test(name)) {
+      let signingPage = false
+      try {
+        const u = new URL(String(context?.url ?? ''))
+        if (/^https?:$/.test(u.protocol)) signingPage = /(?:^|\/)(?:sign|signing|envelope|envelopes|esign)(?=$|[/?#])/i.test(u.pathname)
+      } catch { signingPage = false }
+      if (signingPage) classes.push('permission')
+    }
     // CU-491 (High; cu-coordinator 10:19Z): on a home-security page - a whole /security, /alarm, /cameras or /home-security
     // segment of an http(s) URL - silencing, muting, snoozing an alarm or siren and pausing / stopping a recording ask PHYSICAL, like
     // 'Turn off alarm'. Off that URL a meeting's 'Stop recording' stays free (#462). Named limit: a native security app (no URL).
