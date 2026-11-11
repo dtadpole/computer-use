@@ -1133,6 +1133,17 @@ function grammarClassesOf(name, role = '') {
   // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
   // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
   if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
+  // CU-510 (High; cu-coordinator 16:51Z), table PR 23, as verb families with object synonyms - a developer console's widening of an API
+  // key or OAuth app: an unrestricted key, all scopes, all origins, unsigned webhooks and localhost redirects open the account
+  // (permission); a new redirect / callback URL sends the authorisation code elsewhere (credential). 'API keys' and 'Restrict key' stay free.
+  if (/^\s*(?:make|set|leave|mark)\s+(?:the\s+|this\s+|my\s+)?(?:api\s+)?(?:key|token|credential)s?\s+(?:as\s+)?unrestricted\s*$|^\s*(?:remove|clear|delete|disable|turn\s+off)\s+(?:all\s+)?(?:the\s+)?(?:api\s+)?(?:key|token)\s+restrictions?\s*$|^\s*unrestrict\s+(?:the\s+|this\s+)?(?:api\s+)?(?:key|token)s?\s*$/i.test(raw)) return ['permission']
+  if (/^\s*(?:give|grant|select|enable|allow|request|add)\s+(?:all|every|full|unlimited)\s+(?:the\s+)?(?:scopes?|permissions?|access\s+scopes?)(?:\s+to\s+(?:the\s+|this\s+)?(?:app|key|token|client|integration))?\s*$|^\s*select\s+all\s+scopes\s*$/i.test(raw)) return ['permission']
+  // #710 round 2 (cu-researcher 17:05Z): 'wildcard' / '*' origins, and the signature-check family without 'webhook'.
+  if (/^\s*(?:allow|accept|permit|enable)\s+(?:all|any|every|wildcard|'\*'|"\*"|\*)\s+(?:cors\s+)?origins?\s*$|^\s*(?:disable|turn\s+off|remove)\s+(?:the\s+)?(?:cors|origin)\s+(?:check|checks|restrictions?|allowlist|whitelist)\s*$/i.test(raw)) return ['permission']
+  if (/^\s*(?:disable|turn\s+off|skip|remove|stop)\s+(?:the\s+)?webhook\s+(?:signing|signatures?|signature\s+(?:verification|validation|checks?)|secret|verification)\s*$/i.test(raw)) return ['permission']
+  if (/^\s*(?:skip|bypass|disable|turn\s+off|ignore)\s+(?:the\s+)?(?:webhook\s+|request\s+)?signature\s+(?:verification|validation|checks?)\s*$|^\s*(?:skip|bypass)\s+(?:the\s+)?(?:webhook\s+)?signing\s*$/i.test(raw)) return ['permission']
+  if (/^\s*(?:allow|enable|permit|accept)\s+(?:localhost|loopback|http|insecure|wildcard)\s+(?:redirects?|redirect\s+(?:uris?|urls?)|callbacks?)\s*$/i.test(raw)) return ['permission']
+  if (/^\s*(?:add|new|register|create|set|edit|change|update)\s+(?:a\s+|an\s+|the\s+)?(?:new\s+)?(?:oauth\s+|authorized\s+|allowed\s+)?(?:redirect|callback)\s+(?:uri|url)s?\s*$/i.test(raw)) return ['credential']
   // CU-500 (High; cu-coordinator 12:49Z), as verb families with object synonyms: on an exchange, confirming a withdrawal, a market
   // order, converting everything and setting leverage move money (purchase); adding or allowlisting a withdrawal address redirects it
   // (credential); turning off the withdrawal allowlist opens the account (permission). 'Deposit address' and 'Markets' stay free.
