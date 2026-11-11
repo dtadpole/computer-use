@@ -124,3 +124,13 @@ test('nativeToggleState folds: the grammar native-ON skip holds on desktop only 
   assert.notEqual(dsw('Forward calls', true, { inWebArea: true }), 'allow', 'web area: the grammar still asks')
   assert.notEqual(dsw('Forward calls', undefined), 'allow', 'no state: the grammar still asks')
 })
+test('nativeToggleState folds after #590: CU-456 mail protections and CU-460 Sentry / PIN to drive read a desktop native state', () => {
+  for (const [name, offCls] of [['Spam filter', 'permission'], ['Sentry Mode', 'permission'], ['PIN to drive', 'credential']]) {
+    assert.equal(dsw(name, true), offCls, `${name}: on -> off`)
+    assert.equal(dsw(name, false), 'allow', `${name}: off -> on`)
+    assert.equal(dsw(name, false, { inWebArea: true }), offCls, `${name}: web area untrusted`)
+  }
+  assert.equal(dsw('Less secure app access', false), 'credential', 'off -> on asks')
+  assert.equal(dsw('Less secure app access', true), 'allow', 'on -> off is free')
+  assert.equal(dsw('Less secure app access', true, { inWebArea: true }), 'credential', 'web area untrusted')
+})
