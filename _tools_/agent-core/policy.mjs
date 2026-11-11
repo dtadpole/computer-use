@@ -98,6 +98,8 @@ const WORDS = Object.freeze({
     'approve unlimited', 'approve unlimited spending', 'allow unlimited spending',
     // CU-444 (cu-coordinator 20:54Z): publishing a campaign starts paid spend - purchase leads over the older 'publish' submit.
     'publish campaign', 'publish the campaign', 'publish ad', 'publish ads', 'publish the ad',
+    // CU-413 (narrowed after the grammar, cu-coordinator 18:40Z): sending money to a bank is a purchase - it leads over the older 'send' submit.
+    'send to bank', 'send to my bank', 'transfer to bank', 'withdraw to bank',
     // CU-422 (High; cu-coordinator 15:23Z): tips and renewals spend money.
     'add tip', 'add a tip', 'renew license', 'renew my license',
     // CU-430 (High; cu-coordinator 17:09Z): travel add-ons, seat upgrades, miles and flight changes spend money or points.
