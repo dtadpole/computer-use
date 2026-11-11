@@ -749,6 +749,8 @@ function payDiversion(list) {
 const LEADING_ICONS = /^\s*(?:[\p{Extended_Pictographic}\uFE0F]\s*)+/u
 // CU-503 (wrapper sweep): the acknowledgement on a dangerous dialog's final button - 'I understand, <row>', 'I understand the
 // consequences, <row>', 'I acknowledge the risk, <row>', 'Understood, <row>' - is stripped like 'Yes, <row>', so the row decides.
+// #685 round 2 (cu-researcher 13:54Z): the connector form - 'I understand (the risks) and (still) want / wish / choose to <row>'.
+const ACK_CONNECTOR = /^\s*i\s+(?:understand|acknowledge|accept|agree)(?:\s+(?:the|all|these)\s+(?:consequences|risks?|terms|warnings?))?\s*,?\s+and\s+(?:still\s+)?(?:want|wish|choose|would\s+like|intend|agree)\s+to\s+/i
 const CONFIRM_PREFIX = /^\s*(?:(?:yes(?:\s+please)?|ok|okay|sure|confirm|continue|got\s+it|please|understood|i\s+(?:understand|acknowledge|accept|agree)(?:\s+(?:the|all|these)\s+(?:consequences|risks?|terms|warnings?))?|i(?:'ve|\s+have)\s+read\s+and\s+understand(?:\s+(?:the|this|these)\s+\w+)?)\s*[,:!.\u2013\u2014-]+\s*)+/iu
 // CU-482 (proposed High; cu-researcher 04:58Z): a call-to-action lead-in before a ruled row - 'please', 'click (here) to', 'tap to',
 // 'let's', 'go ahead and', 'I want to'.
@@ -784,7 +786,7 @@ function leadingStripped(name) {
 export function canonicalConfirm(name) {
   const lines = String(name ?? '').split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean)
   const text = lines[0] ?? ''
-  return text.replace(LEADING_ICONS, '').replace(LEADING_PART, '').replace(CONFIRM_PREFIX, '').replace(CTA_LEAD_IN, '').replace(TRAILING_QUALIFIER, '').replace(TRAILING_KEYS, '').replace(TRAILING_WRAP, '').replace(TRAILING_PAREN, '').replace(TRAILING_BADGE, '').replace(TRAILING_WRAP, '').trim()
+  return text.replace(LEADING_ICONS, '').replace(LEADING_PART, '').replace(ACK_CONNECTOR, '').replace(CONFIRM_PREFIX, '').replace(CTA_LEAD_IN, '').replace(TRAILING_QUALIFIER, '').replace(TRAILING_KEYS, '').replace(TRAILING_WRAP, '').replace(TRAILING_PAREN, '').replace(TRAILING_BADGE, '').replace(TRAILING_WRAP, '').trim()
 }
 /** #609 round 2 (cu-researcher 02:24Z): the canonical forms to try, in order - the unwrapped name, then (only if that asks nothing)
  * its first sentence. Additive: a Title-Case object ('Turn off Safe Browsing') is never lost to the sentence cut. */
