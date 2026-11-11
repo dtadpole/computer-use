@@ -9,8 +9,8 @@
  * mode asks the same classes as the click; nothing posts while an ask was declined; every expected cell is present
  * (no Return cell for link kinds, checkboxes and rows). Exit 0 when there is no problem and nothing is missing.
  */
-import { readFileSync } from 'node:fs'
-import { pathToFileURL } from 'node:url'
+import { readFileSync, realpathSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { isInvalid, skipsReturn } from './rows.mjs'
 
 const sameClasses = (a, b) => JSON.stringify([...new Set(a)].sort()) === JSON.stringify([...new Set(b)].sort())
@@ -61,7 +61,8 @@ export function checkResults(results, rows, modes = ['click', 'return']) {
   }
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
+// Started as a program: compare real paths (macOS /tmp is /private/tmp), as main's entry-guards test requires.
+if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))) {
   const [resultsFile, rowsFile] = process.argv.slice(2).filter((a) => !a.startsWith('--'))
   const modesArg = process.argv.find((a) => a.startsWith('--modes='))
   if (!resultsFile || !rowsFile) {
