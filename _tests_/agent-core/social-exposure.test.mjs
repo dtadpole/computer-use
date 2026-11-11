@@ -27,3 +27,7 @@ test('#672 round 2 (cu-researcher 12:00Z): the held-out escapes fold', () => {
   for (const name of ['Show phone number on profile', 'Show my location to everyone', 'Share location with everyone', 'Display email publicly']) assert.equal(at(name), 'permission', name)
   for (const name of ['Show location history', 'Phone number']) assert.equal(at(name), 'allow', name)
 })
+
+test('#672 round 3 (cu-coordinator 12:21Z): email / phone visibility with publicly / on my profile', () => {
+  for (const name of ['Make email visible on my profile', 'Make phone number visible publicly', 'Make my email public to everyone']) assert.equal(at(name), 'permission', name)
+})

@@ -1030,7 +1030,8 @@ function grammarClassesOf(name, role = '') {
   // CU-497 (High; cu-coordinator 11:49Z, the CU-461 exposure family): exposing a phone number, email or location on a profile, or linking
   // another service's account, asks permission - 'Make phone number visible', 'Let anyone find me by phone / email', 'Turn on location in
   // posts', 'Show my location', 'Link Instagram account', 'Connect Instagram'. 'Hide phone number' and pickers stay free.
-  if (/^\s*(?:make|set)\s+(?:my\s+)?(?:phone(?:\s+number)?|email(?:\s+address)?|e-mail|birthday|location|address)\s+(?:visible|public|discoverable)(?:\s+to\s+(?:everyone|anyone|all))?\s*$/i.test(raw)
+  // #672 round 3 (cu-coordinator 12:21Z): '... visible publicly' and '... visible on my profile' too.
+  if (/^\s*(?:make|set)\s+(?:my\s+)?(?:phone(?:\s+number)?|email(?:\s+address)?|e-mail|birthday|location|address)\s+(?:visible|public|discoverable)(?:\s+(?:to\s+(?:everyone|anyone|all|the\s+public)|publicly|on\s+(?:my\s+)?profile))?\s*$/i.test(raw)
     || /^\s*(?:let|allow)\s+(?:anyone|everyone|people|others)\s+(?:to\s+)?find\s+me\s+(?:by|with|using)\s+(?:my\s+)?(?:phone(?:\s+number)?|email(?:\s+address)?|e-mail|contacts?)\s*$/i.test(raw)
     || /^\s*(?:turn\s+on|enable|add|allow)\s+(?:my\s+)?location\s+(?:in|on|to)\s+(?:my\s+)?(?:posts?|photos?|stories|tweets?|profile)\s*$/i.test(raw)
     // #672 round 2 (cu-researcher 12:00Z): without 'my', and 'to everyone / anyone / the public'.
