@@ -697,7 +697,7 @@ func button(_ kind: String, _ x: Int, _ y: Int) -> JSON { ["kind": .string(kind)
 func testDispatcherBasics() {
   let h = Harness(fixtureWorld)
   let hello = h.dispatcher.hello(token: "t0k")
-  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.69", "the hello opens the run")
+  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.70", "the hello opens the run")
   check(hello["mode"] == "dry-run" && hello["grants"] == ["screen": true, "accessibility": true, "postEvents": true, "listenEvents": false], "a dry-run hello says so, with all four grants")
   check(h.ask("capture", ["maxSize": size800])["code"] == "no_scope", "capture needs a scope")
   check(h.ask("input", ["events": [key("keyDown", 1)], "mode": "global"])["code"] == "no_scope", "input needs a scope")
@@ -2032,6 +2032,21 @@ func testPlaceholder() {
   check(Placeholder.pick(role: "AXTextField", raw: "   ") == nil && Placeholder.pick(role: "AXTextField", raw: nil) == nil, "empty or absent reads as none")
 }
 
+func testDialogText() {
+  // CU-507 (desktop half): a button inside a sheet or dialog window carries the dialog's words.
+  check(DialogText.applies(role: "AXButton") && !DialogText.applies(role: "AXTextField") && !DialogText.applies(role: nil), "buttons only")
+  check(DialogText.isContainer(role: "AXSheet", subrole: nil) && DialogText.isContainer(role: "AXWindow", subrole: "AXDialog") && DialogText.isContainer(role: "AXWindow", subrole: "AXSystemDialog"), "a sheet, a dialog window, a system dialog")
+  check(!DialogText.isContainer(role: "AXWindow", subrole: "AXStandardWindow") && !DialogText.isContainer(role: "AXGroup", subrole: nil) && !DialogText.isContainer(role: nil, subrole: nil), "a standard window or a group is no dialog")
+  let alert = DialogText.pick(title: nil, texts: ["Erase \"Untitled\"?", "This will erase all data on the disk.", "Extra"])
+  check(alert.name == "Erase \"Untitled\"?" && alert.description == "This will erase all data on the disk.", "an untitled alert: first static text, then the next")
+  let titled = DialogText.pick(title: "Software Update", texts: ["Restart later to finish."])
+  check(titled.name == "Software Update" && titled.description == "Restart later to finish.", "a titled dialog: its title, then its first static text")
+  let blanks = DialogText.pick(title: "  ", texts: [nil, "  ", "Delete  3\nitems?"])
+  check(blanks.name == "Delete 3 items?" && blanks.description == nil, "blank title and texts skipped; whitespace collapsed")
+  check(DialogText.pick(title: nil, texts: []).name == nil && DialogText.pick(title: nil, texts: [nil]).description == nil, "nothing read: none")
+  check(DialogText.clean(String(repeating: "x", count: 301))?.count == 300, "at most 300 characters")
+}
+
 func testNearbyLabel() {
   // CU-361: the static text beside an unnamed entry in layout - left on its row, else just above it; global top-left frames.
   let box = CGRect(x: 200, y: 100, width: 200, height: 24) // minX 200, maxX 400, minY 100, midY 112
@@ -2170,6 +2185,16 @@ func testFormContext() {
   check(FormContext.comboText(value: nil, editable: false, items: []) == nil, "no value, nothing")
 }
 
+func testToggleState() {
+  // CU-418 (b): a toggle's state from AXValue, and only for a checkbox (switch, toggle) or radio button.
+  check(ToggleState.checked(role: "AXCheckBox", value: 0) == .bool(false) && ToggleState.checked(role: "AXCheckBox", value: 1) == .bool(true), "off, on")
+  check(ToggleState.checked(role: "AXCheckBox", value: 2) == .string("mixed"), "mixed")
+  check(ToggleState.checked(role: "AXRadioButton", value: 1) == .bool(true), "a radio button too")
+  check(ToggleState.checked(role: "AXCheckBox", value: 7) == nil && ToggleState.checked(role: "AXCheckBox", value: nil) == nil, "an odd or missing value gives nothing")
+  check(ToggleState.checked(role: "AXTextField", value: 1) == nil && !ToggleState.reads(role: "AXTextField") && !ToggleState.reads(role: nil), "never another role's AXValue (an entry's value is text)")
+  check(ToggleState.reads(role: "AXCheckBox") && ToggleState.reads(role: "AXRadioButton"), "the two toggle roles")
+}
+
 func testDefaultCandidates() {
   // CU-412: a web form's Return candidates when the window names no default button.
   typealias L = DefaultCandidates.Level
@@ -2263,6 +2288,7 @@ struct UnitTests {
     testWebArea()
     testManualAccessibilityRestore()
     testPlaceholder()
+    testDialogText()
     testNearbyLabel()
     testPopUpItems()
     testPasteboardTypes()
@@ -2271,6 +2297,7 @@ struct UnitTests {
     testFileAncestorAndDropDestination()
     testFormContext()
     testDefaultCandidates()
+    testToggleState()
     testAppleMenuClickTarget()
     testEndWatchdog()
     // Informational: whether the process that ran these tests is genuine node (true for Node.js Foundation builds).
