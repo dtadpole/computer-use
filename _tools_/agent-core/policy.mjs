@@ -3,7 +3,7 @@ import { normaliseForPolicy, normaliseText } from './normalise.mjs'
 import { BIP39_ENGLISH } from './bip39-english.mjs'
 import { normalizeKey } from './keys.mjs'
 import { originPattern } from './sites.mjs'
-import { amountClass, canonicalForms, grammarClasses, grammarClassesBase, inertLinkAmountClass, quantifierDropped, sectionLabelStripped, synonymForms, toggleExpansion } from './phrase-grammar.mjs'
+import { amountClass, canonicalForms, clauseSplit, grammarClasses, grammarClassesBase, inertLinkAmountClass, quantifierDropped, sectionLabelStripped, synonymForms, toggleExpansion } from './phrase-grammar.mjs'
 
 /**
  * The action policy (design: action-policy.md, consent-gate.md). `classify` runs in the dispatcher for every action,
@@ -2196,6 +2196,14 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // keeps the older purchase from 'pay' and takes credential from its rest.
       for (const form of [...quantifierDropped(String(name ?? '').trim()), ...sectionLabelStripped(name)]) {
         const probe = classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { ...target, name: form }, confirmProbe: true })
+        if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) if (!classes.includes(cls)) classes.push(cls)
+      }
+    }
+    // CU-506 (compound sweep): a name of verb-led clauses ('Review and confirm withdrawal') asks the union of its clauses - tried last,
+    // adds only, whether or not the whole name already asked.
+    if (grammarEligible && context.confirmProbe !== true) {
+      for (const clause of clauseSplit(name)) {
+        const probe = classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { ...target, name: clause }, confirmProbe: true })
         if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) if (!classes.includes(cls)) classes.push(cls)
       }
     }
