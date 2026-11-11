@@ -1149,7 +1149,10 @@ function grammarClassesOf(name, role = '') {
   // CU-526 (High; cu-coordinator 21:36Z): a code host's queued merge is a merge - SUBMIT: 'Merge when ready', 'Merge when checks pass',
   // and enabling / turning on auto-merge (an explicit class ruling: 'Enable auto-merge' moves from the generic enable-auto purchase to
   // submit, like 'Merge pull request').
-  if (/^\s*merge\s+when\s+(?:ready|checks?\s+pass|(?:all\s+)?(?:requirements|checks)\s+(?:are\s+)?met)\s*$|^\s*(?:enable|turn\s+on|set\s+up|use)\s+auto[-\s]?merge\s*$/i.test(raw)) return ['submit']
+  // #747 round 2 (cu-researcher 21:43Z): the scheduled merge in one row - merge automatically, auto-merge when / after / once ...,
+  // schedule (a / the) merge, merge when / after / once (all) (the) CI / checks / tests / builds pass / succeed / are green / complete,
+  // queue / add (this / the) (PR / pull request) for / to (the) merge (queue).
+  if (/^\s*merge\s+when\s+(?:ready|checks?\s+pass|(?:all\s+)?(?:requirements|checks)\s+(?:are\s+)?met)\s*$|^\s*(?:enable|turn\s+on|set\s+up|use)\s+auto[-\s]?merge\s*$|^\s*merge\s+automatically\s*$|^\s*auto[-\s]?merge\s+(?:when|after|once)\s+\S.{0,60}$|^\s*schedule\s+(?:a\s+|the\s+)?merge\s*$|^\s*merge\s+(?:when|after|once)\s+(?:all\s+)?(?:the\s+)?(?:ci|checks?|tests?|builds?)\s+(?:pass(?:es)?|succeed|are\s+green|is\s+green|complete)\s*$|^\s*(?:queue|add)\s+(?:this\s+|the\s+)?(?:pr\s+|pull\s+request\s+)?(?:for|to)\s+(?:the\s+)?merge(?:\s+queue)?\s*$/i.test(raw)) return ['submit']
   // CU-525 (High; cu-coordinator 21:36Z), table PR 32, as verb families with object synonyms - a database console. PERMISSION: disable
   // / turn off RLS (row-level security's acronym), allow all IPs / any IP / every IP, add 0.0.0.0/0 (or ::/0), disable / turn off SSL /
   // TLS enforcement (or 'require SSL'). DELETE: restore (a / the / from) backup / snapshot, restore to a point in time (it overwrites the

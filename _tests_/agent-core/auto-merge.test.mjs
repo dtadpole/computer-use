@@ -23,3 +23,8 @@ test('CU-526 negatives and neighbours', () => {
   assert.deepEqual(classesOf('Enable auto-renew'), ['purchase'], 'the enable-auto purchase row stays for renewals')
   assert.deepEqual(classesOf('Merge pull request'), ['submit'])
 })
+
+test('#747 round 2 (cu-researcher 21:43Z): the scheduled merge in one row', () => {
+  for (const name of ['Merge automatically', 'Auto-merge when checks pass', 'Schedule merge', 'Queue for merge', 'Add to merge queue', 'Merge when all checks pass', 'Merge once CI is green']) assert.deepEqual(classesOf(name), ['submit'], name)
+  for (const name of ['Merge queue', 'Auto-merge settings', 'View merge queue', 'Cancel auto-merge']) assert.deepEqual(classesOf(name), [], name)
+})
