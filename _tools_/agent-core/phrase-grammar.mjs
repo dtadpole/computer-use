@@ -765,14 +765,29 @@ function withoutDeterminers(text) {
   // Keep the first word (the verb) as written; drop determiners after it.
   return `${words[0]} ${words.slice(1).join(' ').replace(DETERMINER_WORDS, '')}`.replace(/\s+/g, ' ').trim()
 }
+// CU-481 (High; cu-coordinator 04:51Z): a leading-verb synonym of a ruled row - modify -> change, display / reveal -> show,
+// give -> grant, begin -> start, ask for -> request, create -> add - one more form, like CU-455 / CU-463, adds only.
+const VERB_SYNONYMS = [[/^(\s*)modify\b/i, '$1change'], [/^(\s*)(?:display|reveal)\b/i, '$1show'], [/^(\s*)give\b/i, '$1grant'],
+  [/^(\s*)begin\b/i, '$1start'], [/^(\s*)ask\s+for\b/i, '$1request'], [/^(\s*)create\b/i, '$1add']]
+function withVerbSynonym(text) {
+  for (const [pattern, replacement] of VERB_SYNONYMS) if (pattern.test(text)) return text.replace(pattern, replacement)
+  return text
+}
 export function canonicalForms(name) {
   const unwrapped = canonicalConfirm(name)
   const cut = firstSentence(unwrapped)
   const bare = withoutDeterminers(unwrapped)
   return [...new Set([unwrapped, cut, bare, withoutDeterminers(cut)])].filter((form) => form !== '' && form !== String(name ?? '').trim())
 }
+/** CU-481: the verb-synonym forms of a name (and of its canonical forms) - tried LAST, only when the name and its own canonical forms
+ * get no class, so a synonym never outranks a row the name already matches ('Create service account key' stays credential). */
+export function synonymForms(name) {
+  const own = String(name ?? '').trim()
+  return [...new Set([own, ...canonicalForms(name)].map(withVerbSynonym))].filter((form) => form !== '' && form !== own && !canonicalForms(name).includes(form))
+}
 
-export function grammarClasses(name, role = '') {
+/** The grammar on the name and its own canonical forms - no verb synonyms (policy.mjs reads it before probing synonym forms). */
+export function grammarClassesBase(name, role = '') {
   const asWritten = grammarClassesOf(name, role)
   if (asWritten.length > 0) return asWritten
   for (const form of canonicalForms(name)) {
@@ -780,6 +795,16 @@ export function grammarClasses(name, role = '') {
     if (classes.length > 0) return classes
   }
   return asWritten
+}
+
+export function grammarClasses(name, role = '') {
+  const base = grammarClassesBase(name, role)
+  if (base.length > 0) return base
+  for (const form of synonymForms(name)) {
+    const classes = grammarClassesOf(form, role)
+    if (classes.length > 0) return classes
+  }
+  return base
 }
 
 function grammarClassesOf(name, role = '') {
