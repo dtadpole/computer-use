@@ -1160,6 +1160,10 @@ function grammarClassesOf(name, role = '') {
   // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
   // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
   if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
+  // CU-530 (High; cu-coordinator 23:21Z), table PR 35, as verb families with object synonyms - a crypto wallet's allowance or permit
+  // lets a contract spend the tokens - PURCHASE like 'Approve unlimited': set / grant / give (a / an / the) (unlimited / max / maximum /
+  // infinite / custom) (spending / token) allowance; sign (the) typed data; sign (a / the) permit / Permit2 (message / signature).
+  if (/^\s*(?:set|grant|give)\s+(?:a\s+|an\s+|the\s+)?(?:unlimited\s+|max\s+|maximum\s+|infinite\s+|custom\s+)?(?:spending\s+|token\s+)?allowance\s*$|^\s*sign\s+(?:the\s+)?typed\s+data\s*$|^\s*sign\s+(?:a\s+|the\s+)?permit2?(?:\s+(?:message|signature))?\s*$/i.test(raw)) return ['purchase']
   // CU-529 (High; cu-coordinator 22:51Z), table PR 34, as verb families with object synonyms - a browser / site permission grant.
   // PERMISSION: allow (it / this extension) in incognito / private windows / private browsing; (allow) on all sites / websites; a site
   // prompt's allow (access to) (the / your) camera / microphone / mic / location / notifications. 'Block' and 'Not now' stay free.
