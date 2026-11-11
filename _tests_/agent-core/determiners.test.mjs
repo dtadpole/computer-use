@@ -22,3 +22,9 @@ test('CU-478: the determiner forms ask as their row does', () => {
 test('CU-478 negatives: free names with determiners stay free', () => {
   for (const name of ['View my account', 'Open the menu', 'Show the details', 'Go to my profile']) assert.equal(click(name), 'allow', name)
 })
+
+test("CU-478: cu-verifier's ten stand-in rows (04:04Z) ask; 'Update my profile' and 'Open the menu' stay free", () => {
+  for (const name of ['Update my firmware', 'Flash my firmware', 'Accept my counteroffer', 'Turn on my location sharing', 'Turn on the location sharing', 'Turn on my YOLO mode',
+    'Open the ports', 'Open my ports', 'Enable the remote management', 'Turn on the UPnP']) assert.notEqual(click(name), 'allow', name)
+  for (const name of ['Update my profile', 'Open the menu']) assert.equal(click(name), 'allow', name)
+})
