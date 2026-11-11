@@ -18,9 +18,13 @@ test('CU-491: on a security URL the alarm and recording rows ask physical, like 
     assert.equal(at(name, HOME, true), 'physical', `Space: ${name}`)
   }
   for (const url of ['https://x.example/alarm', 'https://x.example/cameras/front', 'https://x.example/home-security']) assert.equal(at('Silence alarm', url), 'physical', url)
+  // #659 round 2 (cu-researcher 10:26Z): a trailing on / for / from phrase keeps the row.
+  for (const name of ['Stop recording on all cameras', 'Stop recording on front camera', 'Pause recording for 1 hour', 'Silence alarm for 10 minutes']) assert.equal(at(name), 'physical', name)
 })
 
 test("CU-491 negatives: off a security URL (#462's meeting Stop recording), lookalike segments, and views stay free", () => {
   for (const url of ['https://meet.example/call/42', 'https://x.example/securityguide', 'app:com.example.security']) assert.equal(at('Stop recording', url), 'allow', url)
+  // A phone clock's /alarms is not a security page (the ruled segments exactly).
+  for (const url of ['https://clock.example/alarms', 'https://clock.example/clock/alarms']) assert.equal(at('Snooze alarm', url), 'allow', url)
   for (const name of ['Alarm history', 'Recordings', 'Camera settings', 'Siren test schedule']) assert.equal(at(name), 'allow', name)
 })
