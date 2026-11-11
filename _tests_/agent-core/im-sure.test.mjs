@@ -21,3 +21,7 @@ test("CU-517: \"I'm sure, <row>\" and its kin ask the row's class", () => {
 test("CU-517 negatives: an acknowledgement with no row stays free", () => {
   for (const name of ["I'm sure", "Yes, I'm sure", "I'm sure, go back", "Are you sure?", "I'm not sure"]) assert.deepEqual(classesOf(name), [], name)
 })
+
+test("#725 round 2 (cu-developer-three 19:12Z): the trailing form keeps the row's own words", () => {
+  for (const name of ["Install now, I'm sure", "Install now - I'm certain", "Install now on this device, I'm sure", "Yes, I'm sure, install now"]) assert.ok(classesOf(name).includes('install'), name)
+})

@@ -861,7 +861,9 @@ export function quantifierDropped(form) {
 // want to open anyway' is judged as 'open anyway' (Gatekeeper's install row), not only as the qualifier-stripped 'open'.
 function acknowledgementStripped(name) {
   const first = String(name ?? '').split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean)[0] ?? ''
-  return first.replace(ACK_CONNECTOR, '').replace(CONFIRM_PREFIX, '').trim()
+  // #725 round 2 (cu-developer-three 19:12Z): the trailing "<row>, I'm sure" stripped alone too, keeping the row's own words -
+  // 'Install now, I'm sure' is judged as 'Install now', not only as the qualifier-stripped 'Install'.
+  return first.replace(ACK_CONNECTOR, '').replace(CONFIRM_PREFIX, '').replace(/\s*[,\u2013\u2014-]\s*(?:yes,?\s+)?i(?:'m|\s+am)\s+(?:sure|certain|positive)\s*[.!]?\s*$/i, '').trim()
 }
 // CU-505 (label sweep): a short section label before the row - '<Label>: <row>' or '<Label> - <row>' (one to three words, a colon
 // or a spaced dash) - and brackets or quotes around the whole name are stripped, so the row decides ('Danger zone: Make this
