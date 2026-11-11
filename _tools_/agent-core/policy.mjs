@@ -178,6 +178,9 @@ const WORDS = Object.freeze({
     // cu-researcher's 13:23Z sweep: unsaved edits lost, like Discard Changes.
     'revert to saved', 'revert all changes', ...ZH_WORDS.delete, ...LOCALE_WORDS.delete],
   permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke',
+    // #661 round 2 (prepared; cu-developer-three 10:38Z): approving a sign-in grants an outside session access - permission, which is never
+    // pre-approved, so an MFA-fatigue push cannot ride an earlier submit 'always' (raises the older submit row; D-108 allows a raise).
+    'approve sign-in', 'approve sign in', 'approve signin', 'approve login', 'approve log in', 'approve log-in', 'approve this sign-in', 'approve this login',
     // CU-431 (High; cu-coordinator 17:23Z): router / NAS admin acts that expose the home network or its admin access.
     'enable remote management', 'enable remote access', 'enable ssh', 'enable telnet', 'open port', 'open a port', 'add port forwarding',
     'add port forward', 'enable dmz', 'enable upnp', 'expose to internet', 'expose to the internet', 'allow wan access',
