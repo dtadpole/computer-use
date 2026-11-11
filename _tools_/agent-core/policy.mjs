@@ -2263,6 +2263,13 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // CREDENTIAL: clearing / bypassing Activation Lock or a passcode, dropping the passcode requirement. PERMISSION: turning off Lost
     // Mode, unenrolling / retiring a device, pushing / installing / deploying a profile. Older classes lead (13:36Z): these fire only
     // where nothing asked yet ('Install profile' keeps install, 'Deploy profile' submit, 'Remove passcode' delete).
+    // #716 round 2 (cu-coordinator 18:06Z, explicit raises): the two older-delete forms union credential, and 'Deploy profile' unions
+    // permission onto its older submit - the older class stays, the ruled class is added.
+    if (grammarEligible) {
+      const raised = String(name ?? '').trim()
+      if (/^(?:remove|clear)\s+(?:the\s+)?(?:activation\s+lock|device\s+passcode)$/i.test(raised) && !classes.includes('credential') && classes.length > 0) classes.push('credential')
+      if (/^deploy\s+(?:the\s+|a\s+|this\s+)?(?:configuration\s+|config\s+|mdm\s+|management\s+)?profiles?$/i.test(raised) && !classes.includes('permission') && classes.length > 0) classes.push('permission')
+    }
     if (grammarEligible && classes.length === 0) {
       const mdm = String(name ?? '').trim()
       if (/^(?:clear|bypass|remove|disable|turn\s+off|reset|skip)\s+(?:the\s+)?activation\s+lock(?:\s+bypass\s+code)?$|^(?:clear|reset|bypass)\s+(?:the\s+|device\s+)?passcode$|^(?:disable|turn\s+off|remove|drop)\s+(?:the\s+)?passcode\s+(?:requirement|policy)$|^(?:don'?t|do\s+not)\s+require\s+(?:a\s+)?passcode$/i.test(mdm)) classes.push('credential')

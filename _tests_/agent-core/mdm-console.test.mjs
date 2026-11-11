@@ -27,8 +27,18 @@ test('CU-512: permission rows', () => {
 
 test('CU-512: older classes lead; views stay free', () => {
   assert.deepEqual(classesOf('Install profile'), ['install'])
-  assert.deepEqual(classesOf('Deploy profile'), ['submit'])
+  // #716 round 2 (cu-coordinator 18:06Z): 'Deploy profile' unions permission onto its older submit.
+  assert.ok(classesOf('Deploy profile').includes('submit') && classesOf('Deploy profile').includes('permission'))
   assert.deepEqual(classesOf('Remove passcode'), ['delete'])
   assert.deepEqual(classesOf('Remove device from management'), ['delete'], 'the older remove row leads; it asks')
   for (const name of ['Devices', 'Activation Lock status', 'Lost Mode', 'Profiles', 'Passcode policy']) assert.deepEqual(classesOf(name), [], name)
+})
+
+test('#716 round 2 (cu-coordinator 18:06Z): the older-delete forms union credential', () => {
+  for (const name of ['Remove Activation Lock', 'Clear device passcode']) {
+    const got = classesOf(name)
+    assert.ok(got.includes('delete') && got.includes('credential'), `${name}: ${got}`)
+  }
+  assert.deepEqual(classesOf('Install profile'), ['install'], 'not in the ruling: unchanged')
+  assert.deepEqual(classesOf('Remove passcode'), ['delete'], 'not in the ruling: unchanged')
 })
