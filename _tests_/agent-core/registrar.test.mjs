@@ -33,3 +33,11 @@ test("CU-414's split (13:51Z): giving remote control asks permission like Allow 
   for (const name of ['Give remote control', 'Give control', 'Give remote control to Alex', 'Grant mouse and keyboard control']) assert.ok(classesOf(name).includes('permission'), name)
   assert.deepEqual(classesOf('Remote control settings'), [], 'a view stays free')
 })
+
+test('#688 round 2 (cu-researcher 14:21Z): object synonyms', () => {
+  for (const name of ['Push to another account', 'Transfer to a different account', 'Change domain owner account']) assert.ok(classesOf(name).includes('purchase'), name)
+  assert.deepEqual(classesOf('Change domain owner').slice(0, 1), ['credential'], 'CU-446\'s older credential leads')
+  assert.ok(classesOf('Push to another account').includes('purchase'))
+  for (const name of ['Update mail servers', 'Change mail exchangers', 'Edit mail server']) assert.ok(classesOf(name).includes('permission'), name)
+  assert.deepEqual(classesOf('Replace mail server'), ['delete'], 'the older replace row keeps its class (D-108)')
+})
