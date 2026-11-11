@@ -30,3 +30,11 @@ test('#742 round 2 (cu-researcher 21:13Z): the two-word address book', () => {
   for (const name of ['Export address book', 'Sync my address book', 'Upload address book', 'Import address book', 'Share address book']) assert.ok(at(name).includes('permission'), name)
   for (const name of ['Address book', 'Open address book']) assert.deepEqual(at(name), [], name)
 })
+
+test("#742 round 3 (cu-coordinator 21:21Z): the rest of CU-462's shareable-link words", () => {
+  const policy3 = createPolicy({ sitePolicy: () => 'allow' })
+  const at = (name) => { const v = policy3.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: 'https://docs.example/d/1', target: { role: 'button', name } }); return v.decision === 'allow' ? [] : (v.classes ?? [v.class]) }
+  for (const name of ['Create shareable link', 'Generate share link', 'Anyone with the link', 'Anyone with the link can edit']) assert.ok(at(name).includes('permission'), name)
+  for (const name of ['Link settings', 'Restricted']) assert.deepEqual(at(name), [], name)
+  assert.deepEqual(at('Share'), ['permission'], 'an older ask, unchanged')
+})
