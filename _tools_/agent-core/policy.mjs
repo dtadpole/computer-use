@@ -1850,8 +1850,12 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // as 'turn on|off X', the form the older lists know ('Switch off firewall', 'Flip parental controls off').
     const splitMatch = /^\s*(?:turn|switch|flip|toggle)\s+(?!(?:on|off)\b)(.+?)\s+(on|off)\s*$/i.exec(name)
     const leadMatch = /^\s*(?:switch|flip|toggle)\s+(on|off)\s+(.+?)\s*$/i.exec(name)
+    // CU-463 (High; cu-coordinator 00:04Z): 'enable / activate X' read as 'turn on X' and 'disable / deactivate X' as 'turn off X'
+    // ('Enable location sharing', 'Activate remote management'), through the same single probe - adds only.
+    const verbMatch = /^\s*(enable|activate|disable|deactivate)\s+(.+?)\s*$/i.exec(name)
     const switchForm = context.splitParticleProbe === true ? null
-      : splitMatch ? { particle: splitMatch[2], object: splitMatch[1] } : leadMatch ? { particle: leadMatch[1], object: leadMatch[2] } : null
+      : splitMatch ? { particle: splitMatch[2], object: splitMatch[1] } : leadMatch ? { particle: leadMatch[1], object: leadMatch[2] }
+        : verbMatch ? { particle: /^(?:enable|activate)$/i.test(verbMatch[1]) ? 'on' : 'off', object: verbMatch[2] } : null
     if (grammarEligible && classes.length === 0 && !nativeOn && switchForm) {
       const canonical = `turn ${switchForm.particle} ${switchForm.object}`
       const probe = classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { ...target, name: canonical }, splitParticleProbe: true })
