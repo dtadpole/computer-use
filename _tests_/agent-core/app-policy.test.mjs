@@ -387,3 +387,14 @@ test('inside a panel, navigation into a protected place it cannot report is refu
   assert.notEqual(at(keypress('CMD', 'SHIFT', 'A'), target('Create')).rule, 'panel:protected_place', 'outside a panel the rule does not apply')
 })
 
+
+test('CU-494 round 2 (cu-developer-three 11:09Z): an app-scoped grant never covers a High submit or install row; ordinary submits stay covered', () => {
+  const pre = approvedPolicy({ preApprovals: [{ class: 'submit', app: FIXTURE }, { class: 'install', app: FIXTURE }] })
+  for (const name of ['Change salary', 'Update compensation', 'Send to all contacts', 'Install now', 'Add to Chrome']) {
+    const v = pre.classify(click, ctx({ target: target(name) }))
+    if (v.decision !== 'allow' || !String(v.rule ?? '').startsWith('preapproved:')) assert.equal(v.decision, 'confirm', name)
+    assert.ok(!String(v.rule ?? '').startsWith('preapproved:'), `${name} is not carried by an app-scoped grant`)
+  }
+  const plain = pre.classify(click, ctx({ target: target('Submit') }))
+  assert.equal(plain.decision, 'allow', 'an ordinary Submit stays pre-approvable per app')
+})

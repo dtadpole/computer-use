@@ -13,7 +13,24 @@ import { amountClass, canonicalForms, grammarClasses, grammarClassesBase, inertL
  */
 
 export const CLASSES = Object.freeze(['submit', 'purchase', 'delete', 'permission', 'credential', 'sensitive_data', 'new_site', 'page_dialog', 'install', 'file_choice', 'launch_code', 'physical'])
-export const NEVER_PRE_APPROVED = Object.freeze(['purchase', 'delete', 'permission', 'file_choice', 'launch_code', 'physical'])
+// CU-494 round 3 (cu-coordinator 11:21Z (A)): install joins outright - every install row is a ruled High (CU-427, CU-431, CU-454, CU-484).
+export const NEVER_PRE_APPROVED = Object.freeze(['purchase', 'delete', 'permission', 'install', 'file_choice', 'launch_code', 'physical'])
+// CU-494 (High; cu-coordinator 10:51Z, 11:06Z): a credential 'always' with any origin let direct deposit, IBAN, forwarding and
+// seed-phrase controls through. A credential grant now covers ONLY typing a caller-supplied secret - VALUE-BOUND: the typed text is
+// the task's declared secret placeholder ({{secret:name}}, resolved after the policy) - into a secret field; never a press, never other
+// text, and never into a money or identity field (IBAN, routing / account number, SWIFT, card, wallet address, forwarding address,
+// recovery email / phone), which asks credential even under the grant. The desktop already never pre-approves credential (app-policy).
+const MONEY_IDENTITY_FIELD = /\b(?:iban|routing\s*(?:number|no\.?|#)?|account\s*(?:number|no\.?|#)|swift(?:\s*code)?|bic|sort\s*code|card\s*(?:number|no\.?|#)|wallet\s*address|forwarding\s*address|recovery\s*(?:e-?mail|phone|number))\b/i
+/** CU-494 round 2/3 (cu-developer-three 11:09Z; cu-coordinator 11:21Z): whether a grant of `cls` may never cover a control named
+ * `name` - every submit row but the generic ones (install is never pre-approved at all). The desktop's app-scoped pre-approval asks the same question (app-policy.mjs scopedPreApproval). */
+export function neverCoveredByGrant(cls, name) {
+  return cls === 'submit' && !GENERIC_SUBMIT.test(String(name ?? ''))
+}
+// CU-494 round 3 (cu-coordinator 11:21Z (B)): a submit grant never covers a row whose provenance is a High issue. Generated, not a
+// hand list of High names: the grant covers ONLY the generic submits a task means by 'submit' - a bare form submit, send, reply, post,
+// comment, save, apply, search - and every other submit row (each one added by a ruled High: parental approvals, portal consent, rate
+// locks, dial rows, mass sends, compensation, returns, relists, ride cancels) asks under any submit grant.
+const GENERIC_SUBMIT = /^\s*(?:submit|send|send\s+(?:message|reply|email|comment)|reply|post|post\s+(?:comment|reply)|comment|save|save\s+changes|apply|search|go|ok|done|continue|next|report\s+spam|sign\s+up|register|create\s+account)\s*!?\s*$/i
 
 /** Word lists matched on a target's accessible name, case-insensitively, at word boundaries; they err toward confirm. */
 // CU-293 (cu-developer-one; cu-coordinator: Urgent - the owner works in Chinese): each name class in Simplified and
@@ -178,6 +195,9 @@ const WORDS = Object.freeze({
     // cu-researcher's 13:23Z sweep: unsaved edits lost, like Discard Changes.
     'revert to saved', 'revert all changes', ...ZH_WORDS.delete, ...LOCALE_WORDS.delete],
   permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke',
+    // #661 round 2 (prepared; cu-developer-three 10:38Z): approving a sign-in grants an outside session access - permission, which is never
+    // pre-approved, so an MFA-fatigue push cannot ride an earlier submit 'always' (raises the older submit row; D-108 allows a raise).
+    'approve sign-in', 'approve sign in', 'approve signin', 'approve login', 'approve log in', 'approve log-in', 'approve this sign-in', 'approve this login',
     // CU-431 (High; cu-coordinator 17:23Z): router / NAS admin acts that expose the home network or its admin access.
     'enable remote management', 'enable remote access', 'enable ssh', 'enable telnet', 'open port', 'open a port', 'add port forwarding',
     'add port forward', 'enable dmz', 'enable upnp', 'expose to internet', 'expose to the internet', 'allow wan access',
@@ -1908,6 +1928,19 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       } catch { tradingPage = false }
       if (tradingPage) classes.push('purchase')
     }
+    // CU-491 (High; cu-coordinator 10:19Z): on a home-security page - a whole /security, /alarm, /cameras or /home-security
+    // segment of an http(s) URL - silencing, muting, snoozing an alarm or siren and pausing / stopping a recording ask PHYSICAL, like
+    // 'Turn off alarm'. Off that URL a meeting's 'Stop recording' stays free (#462). Named limit: a native security app (no URL).
+    // #659 round 2 (cu-researcher 10:26Z): the segments exactly as ruled (a phone clock's /alarms is not /alarm); a trailing
+    // on / for / from phrase ('on all cameras', 'for 1 hour') keeps the row.
+    if (grammarEligible && classes.length === 0 && /^\s*(?:silence|mute|snooze|hush)\s+(?:the\s+)?(?:alarms?|sirens?|chimes?)(?:\s+(?:on|for|from)\s+[\w\s-]{1,40})?\s*$|^\s*(?:pause|stop)\s+(?:the\s+)?(?:recording|camera\s+recording|cameras?)(?:\s+(?:on|for|from)\s+[\w\s-]{1,40})?\s*$/i.test(name)) {
+      let securityPage = false
+      try {
+        const u = new URL(String(context?.url ?? ''))
+        if (/^https?:$/.test(u.protocol)) securityPage = /(?:^|\/)(?:security|alarm|cameras|home-security)(?=$|[/?#])/i.test(u.pathname)
+      } catch { securityPage = false }
+      if (securityPage) classes.push('physical')
+    }
     // CU-490 (High; cu-coordinator 09:51Z): a ride-share or delivery booking commit asks purchase - 'Confirm pickup', 'Confirm <product>'
     // and 'Request <product>' (one or two words: 'Request UberX', 'Confirm Comfort') on a ride / delivery page, a whole /ride, /rides,
     // /trip, /book or /request segment of an http(s) URL; 'Confirm ride', 'Book ride' and 'Request ride' ask anywhere (the grammar row).
@@ -2058,7 +2091,12 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // ... and 'permission' is listed beside the other classes (the record), while the class that ranks first still leads.
     const stack = (list) => (shortcutActive && !list.includes('permission') ? [...list, 'permission'] : list)
     const unique = [...new Set(classes)].sort((a, b) => PRECEDENCE.indexOf(a) - PRECEDENCE.indexOf(b))
-    const needed = unique.filter((cls) => !preApproved(cls, url) || NEVER_PRE_APPROVED.includes(cls) || autofillClasses.includes(cls))
+    const typesSecret = action.type === 'type' && /^\s*(?:\{\{secret:[a-z0-9_-]+\}\}\s*)+$/i.test(String(action.text ?? '')) && !MONEY_IDENTITY_FIELD.test(String(name ?? ''))
+    const needed = unique.filter((cls) => !preApproved(cls, url) || NEVER_PRE_APPROVED.includes(cls) || autofillClasses.includes(cls) || neverCoveredByGrant(cls, name) || (cls === 'credential' && !typesSecret))
+    // CU-494 (11:06Z): typing into a money or identity field is never carried by a grant - it asks credential at the typing step
+    // (an attacker IBAN typed under a credential or sensitive_data grant, then a bare 'Save', must not pass).
+    // #664 round 3 (cu-researcher 11:11Z): also when no class asked at all ('SWIFT code', 'Wallet address' typed with or without a grant).
+    if (needed.length === 0 && action.type === 'type' && target && isTextEntry(target) && MONEY_IDENTITY_FIELD.test(String(name ?? ''))) { needed.push('credential'); if (!unique.includes('credential')) unique.push('credential') }
     if (needed.length === 0 && shortcutActive) {
       return { decision: 'confirm', class: 'permission', classes: ['permission'], rule: 'page:shortcut', approvalKey: shortcutApproval, runOnly: true, reason: `press ${shortcutShown} on ${placeOf(url, target, context?.frontmostBundleId)}, a keyboard shortcut of the ${onDesktop ? 'app' : 'page'} - it decides what it does` }
     }
