@@ -88,3 +88,18 @@ test('idle (A): a mark() that throws is best effort - the run is not stopped by 
     await stopFake(child)
   }
 })
+
+test('idle (A): an arm without the event tap (idle counter only) never marks the entry armed - the lock keeps reading HIDIdleTime', async () => {
+  const lock = markingSeam()
+  const { env, child } = await launchOnFake({ ...WORLD, grants: { screen: true, accessibility: false, listenEvents: false }, quirks: { localInputAfter: 1 } }, { runLock: lock.seam })
+  try {
+    await logged(child, 3)
+    assert.equal(env.state().pauseArmed, true, 'the pause itself is armed (idle counter)')
+    await env.perform({ type: 'click', x: 140, y: 315, button: 'left' }).catch(() => {})
+    await pause(20)
+  } finally {
+    await env.close()
+    await stopFake(child)
+  }
+  assert.deepEqual(lock.calls, [{ released: true }], 'no armed, no stamp, no disarm - only the release')
+})

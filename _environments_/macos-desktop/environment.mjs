@@ -1050,6 +1050,8 @@ class DesktopEnvironment {
   #releaseRun
   #noteInput
   #markRun
+  // Idle (A): true while the run's lock entry says the pause is armed through the event tap (marked, not yet cleared).
+  #markedArmed = false
   #exclusions
   /** Scope changes run one at a time, so each sends the union of every approval before it (see `addApp`). */
   #scopeQueue = Promise.resolve()
@@ -1175,7 +1177,12 @@ class DesktopEnvironment {
     this.frame = this.#launchFrame()
     const armed = await this.link.request('pauseOnLocalInput', { on: true })
     this.pauseArmed = armed.armed === true
-    if (this.pauseArmed) this.#markRun({ armed: true })
+    // Idle (A): only an event-tap guard sees every key and click as the person's, so only then may the lock judge the
+    // owner's idle from this run's record (the settled contract, 16:30Z); an idle-counter-only arm leaves HIDIdleTime.
+    if (this.pauseArmed && Array.isArray(armed.via) && armed.via.includes('eventTap')) {
+      this.#markedArmed = true
+      this.#markRun({ armed: true })
+    }
     if (!this.pauseArmed && this.mode === 'global') {
       throw new EnvironmentError('blocked_by_policy', 'the local-input pause could not be armed, and global input never runs without it (D-024)', { reason: 'pause_not_armed' })
     }
@@ -1494,7 +1501,7 @@ class DesktopEnvironment {
     if (this.lostReason !== null) return
     this.lostReason = reason
     // Idle (A): a lost helper's event tap is gone with it, so the run's entry no longer claims an armed pause.
-    if (this.pauseArmed) this.#markRun({ armed: false })
+    this.#clearArmedMark()
     // The helper exits after `bye`; that end is the close this driver asked for, not a crash.
     if (this.closing) return
     this.#events.emit('crash', { code: 'helper_lost', reason })
@@ -1536,9 +1543,16 @@ class DesktopEnvironment {
     this.#stopForLocalInput(new Date().toISOString(), null)
   }
 
+  /** Idle (A): the run's lock entry no longer claims an armed pause (once; best effort). */
+  #clearArmedMark() {
+    if (!this.#markedArmed) return
+    this.#markedArmed = false
+    this.#markRun({ armed: false })
+  }
+
   /** Idle (A): the person's last input while the pause is armed, as epoch ms in the run's lock entry (best effort). */
   #stampOwnerInput(at) {
-    if (!this.pauseArmed) return
+    if (!this.#markedArmed) return
     const ms = at === null ? NaN : Date.parse(at)
     this.#markRun({ lastOwnerInputAt: Number.isFinite(ms) ? ms : Date.now() })
   }
@@ -2347,7 +2361,7 @@ class DesktopEnvironment {
       await this.server?.close()
     } finally {
       // Idle (A): the helper is gone or going, so its pause is no longer armed; recorded before the lock is released.
-      if (this.pauseArmed) this.#markRun({ armed: false })
+      this.#clearArmedMark()
       this.#releaseRun()
     }
   }
