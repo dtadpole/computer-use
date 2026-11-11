@@ -383,6 +383,11 @@ async function holdDesktopRun(acquire, { seat, runId, noInput = false, confirmWi
   // CU-204: the lock's record of this seat's last input, best effort - a missed note can only make a later run inside
   // the hold refuse (the safe side), never admit one.
   release.noteInput = typeof slot.noteInput === 'function' ? () => { try { slot.noteInput() } catch { /* best effort */ } } : () => {}
+  // Idle (A): the run's own entry learns whether the local-input pause is armed and when the person last touched the
+  // Mac while it was, so the lock judges an armed run's owner idle from the run's own record, not from HIDIdleTime
+  // (which a run's own synthetic input resets). Best effort and optional: a lock without mark() (older code, a seam)
+  // keeps judging as before.
+  release.mark = typeof slot.mark === 'function' ? (patch) => { try { slot.mark(patch) } catch { /* best effort */ } } : () => {}
   return release
 }
 
@@ -1044,6 +1049,7 @@ class DesktopEnvironment {
   #unsubscribeControl = null
   #releaseRun
   #noteInput
+  #markRun
   #exclusions
   /** Scope changes run one at a time, so each sends the union of every approval before it (see `addApp`). */
   #scopeQueue = Promise.resolve()
@@ -1094,6 +1100,7 @@ class DesktopEnvironment {
     this.limits = limits
     this.#releaseRun = releaseRun ?? (() => {})
     this.#noteInput = typeof releaseRun?.noteInput === 'function' ? releaseRun.noteInput : () => {}
+    this.#markRun = typeof releaseRun?.mark === 'function' ? releaseRun.mark : () => {}
     this.#exclusions = exclusions
     this.run = Object.freeze({ seat: run?.seat ?? null, runId: run?.runId ?? null })
     this.simulateScale = simulateScale
@@ -1168,6 +1175,7 @@ class DesktopEnvironment {
     this.frame = this.#launchFrame()
     const armed = await this.link.request('pauseOnLocalInput', { on: true })
     this.pauseArmed = armed.armed === true
+    if (this.pauseArmed) this.#markRun({ armed: true })
     if (!this.pauseArmed && this.mode === 'global') {
       throw new EnvironmentError('blocked_by_policy', 'the local-input pause could not be armed, and global input never runs without it (D-024)', { reason: 'pause_not_armed' })
     }
@@ -1485,6 +1493,8 @@ class DesktopEnvironment {
   #onLost(reason) {
     if (this.lostReason !== null) return
     this.lostReason = reason
+    // Idle (A): a lost helper's event tap is gone with it, so the run's entry no longer claims an armed pause.
+    if (this.pauseArmed) this.#markRun({ armed: false })
     // The helper exits after `bye`; that end is the close this driver asked for, not a crash.
     if (this.closing) return
     this.#events.emit('crash', { code: 'helper_lost', reason })
@@ -1503,6 +1513,8 @@ class DesktopEnvironment {
    * decides (past the cap, `local_input` at step 0 pauses through `#localInputAnswer`).
    */
   #onLocalInput(payload) {
+    // Idle (A): every event is the person at the Mac, a settle's included, so the run's entry records it while armed.
+    this.#stampOwnerInput(typeof payload?.at === 'string' ? payload.at : null)
     if (this.#settling > 0) {
       this.#settleLocalInputs += 1
       return
@@ -1520,7 +1532,15 @@ class DesktopEnvironment {
    */
   #localInputAnswer(error) {
     if (error?.details?.reason !== 'local_input' || this.localInputAt !== null) return
+    this.#stampOwnerInput(null)
     this.#stopForLocalInput(new Date().toISOString(), null)
+  }
+
+  /** Idle (A): the person's last input while the pause is armed, as epoch ms in the run's lock entry (best effort). */
+  #stampOwnerInput(at) {
+    if (!this.pauseArmed) return
+    const ms = at === null ? NaN : Date.parse(at)
+    this.#markRun({ lastOwnerInputAt: Number.isFinite(ms) ? ms : Date.now() })
   }
 
   /** The stop, the pause request and the listeners' report of one local input, at `at`, of `kind` (or null). */
@@ -2326,6 +2346,8 @@ class DesktopEnvironment {
       this.link.close()
       await this.server?.close()
     } finally {
+      // Idle (A): the helper is gone or going, so its pause is no longer armed; recorded before the lock is released.
+      if (this.pauseArmed) this.#markRun({ armed: false })
       this.#releaseRun()
     }
   }

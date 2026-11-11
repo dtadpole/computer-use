@@ -1,8 +1,8 @@
 ---
 title: macos-desktop test suite
 created: 2026-11-02T09:00:00Z
-modified: 2026-11-09T08:10:00Z
-version: 0.10.0
+modified: 2026-11-11T20:09:26Z
+version: 0.11.0
 description: Unit tests of the macos-desktop environment - keys, coordinates, input planning and batch refusal, the helper link with the helper's peer boundary and the driver's peer check, launch and helper arguments, the desktop-run lock, the empty launch scope and addApp, the frame known at launch, effect mappings, the design's seams, the settle after a human resume, grants and targets, the environment end to end - against a fake helper, with no app, no grant and no screen.
 grounded_in:
   - source: _environments_/macos-desktop/INDEX.md@0.6.3
@@ -33,6 +33,7 @@ per local input, guards armed meanwhile, with seams `personActiveMs` (the person
 | [`run-lock.test.mjs`](run-lock.test.mjs), [`add-app.test.mjs`](add-app.test.mjs) | one run team-wide; `addApp` unions, excluded ids unsent |
 | [`run-lock-sentinel.test.mjs`](run-lock-sentinel.test.mjs) | CU-106: a CLI hold binds the pre-hold run-lock module (from git) through a keeper's run.json sentinel; swaps by rename with no gap (a tight-loop reader); a killed holder's run restored within a second; the keeper leaves at the end; a killed keeper; --wait-free and status |
 | [`run-lock-token.test.mjs`](run-lock-token.test.mjs) | CU-327: only a hold's token ends it - a nested script's tokenless release leaves the outer hold live; nested, unknown and extending tokens; minutes still run out; the CLI |
+| [`idle-a-mark.test.mjs`](idle-a-mark.test.mjs) | idle (A), the driver's half: the slot's optional `mark()` hears `{ armed: true }` once the pause is confirmed, `{ lastOwnerInputAt }` (epoch ms, time only) per local input, `{ armed: false }` before release; a slot without `mark` or one that throws changes nothing |
 | [`seams.test.mjs`](seams.test.mjs) | captures by path; `simulateScale`; local input per guard, pause `via` |
 | [`grants-and-targets.test.mjs`](grants-and-targets.test.mjs) | both `secure_input` forms; `postEvents`; `opaque`, fingerprints; clipboard policy before or after C9's revert |
 | [`web-area.test.mjs`](web-area.test.mjs) | CU-322: the helper's `inWebArea` on targets at a point and where focus is; absent unless the helper sends a boolean (its null for a failed walk, or an older helper's silence); outside the fingerprint |
