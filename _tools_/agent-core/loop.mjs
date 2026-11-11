@@ -6,17 +6,18 @@ import { validateBatch } from './actions.mjs'
 import { unattendedController } from './consent.mjs'
 import { createRunControl } from './control.mjs'
 import { inspectPageText } from './inspect.mjs'
-import { createAppPolicy, opensSelection, panelDestination, panelKind, protectedPath } from './app-policy.mjs'
+import { FILE_BROWSERS, createAppPolicy, opensSelection, panelDestination, panelKind, protectedPath } from './app-policy.mjs'
 import { normaliseText } from './normalise.mjs'
 import { createPanelFolder } from './panel-folder.mjs'
 import { createExclusions } from './exclusions.mjs'
-import { createApprovalStore, createPolicy, isTextEntry, namesPasswordField, screenTask, textNamedSource } from './policy.mjs'
+import { createApprovalStore, createPolicy, isTextEntry, namesPasswordField, screenTask, textNamedSource, looksSensitive } from './policy.mjs'
 import { originPattern } from './sites.mjs'
 import { buildInfo, createRecorder, redactAction, redactTyped, runsDir } from './trajectory.mjs'
 import { MODIFIER_KEYS, normalizeKey } from './keys.mjs'
 import { composePresses, expandResults } from './press.mjs'
 import { joinSplitResults, splitTypesAtTabs } from './type-split.mjs'
 import { answerLinePattern } from './answer-line.mjs'
+import { isScriptedAdapter } from './adapter-scripted.mjs'
 import { RETRY, transientCapture, transientFront, transientGrant, transientInput } from './retry.mjs'
 
 /**
@@ -172,7 +173,7 @@ export const NO_APP_WINDOW_MAX_MS = 15_000
 export const NO_APP_WINDOW_NOTE = 'No window of an approved app is on screen, so there is no screenshot; input cannot act. Wait if it is opening; otherwise end and say so.'
 
 /** CU-342: the note a stand-in owner input writes in the trajectory, before the input itself, word for word. */
-export const STAND_IN_NOTE = "STAND-IN owner input (CU-342): not the owner's"
+export const STAND_IN_NOTE = "STAND-IN owner input (CU-342, an untagged pointer move): not the owner's"
 
 /**
  * CU-342: runTask's `standInTurns` - the model turns after which a rehearsal posts one labelled stand-in for the owner's
@@ -230,6 +231,11 @@ export async function runTask(options) {
   if (typeof task.text !== 'string' || task.text.trim() === '') throw new TypeError('runTask needs a task')
   // CU-342: a stand-in the environment cannot post is refused here, before anything runs - never found mid-run.
   const standInTurns = standInTurnsOf(options.standInTurns)
+  // CU-367 (cu-researcher): 'unreachable from a model run' is the loop's own property, not only cli.mjs's gate - any
+  // caller pairing standInTurns with an adapter createScriptedAdapter did not build is refused before turn 1.
+  if (standInTurns.length > 0 && !isScriptedAdapter(model)) {
+    throw new TypeError('standInTurns needs the scripted adapter (createScriptedAdapter); a model-driven run never carries the owner-input stand-in, so the run does not start')
+  }
   if (standInTurns.length > 0 && typeof environment?.simulateLocalInput !== 'function') {
     throw new TypeError('standInTurns needs an environment with simulateLocalInput (the macos-desktop driver); this one has none, so the run does not start')
   }
@@ -609,7 +615,8 @@ export async function runTask(options) {
       // CU-250 (cu-developer-two's seam finding): an item under a Services submenu keeps its mark, which app-policy refuses;
       // anything but false reads as marked (fail closed, as the driver does).
       const servicesMenu = one.servicesMenu !== undefined && one.servicesMenu !== false
-      items.push({ role: 'AXMenuItem', name: one.name.trim().slice(0, 80), ...(key ? { keyEquivalent: key } : {}), ...(typeof one.enabled === 'boolean' ? { enabled: one.enabled } : {}), ...(appleMenu ? { appleMenu: true } : {}), ...(servicesMenu ? { servicesMenu: true } : {}) })
+      // CU-382 (cu-researcher 08:07Z, D-103): a Quick Action item's mark and an unwalked menu context ride along, as appleMenu does.
+      items.push({ role: 'AXMenuItem', name: one.name.trim().slice(0, 80), ...(key ? { keyEquivalent: key } : {}), ...(typeof one.enabled === 'boolean' ? { enabled: one.enabled } : {}), ...(appleMenu ? { appleMenu: true } : {}), ...(servicesMenu ? { servicesMenu: true } : {}), ...(one.quickActions === true ? { quickActions: true } : {}), ...(one.menuContextUnread === true ? { menuContextUnread: true } : {}) })
     }
     return items.length === 1 ? items[0] : { items }
   }
@@ -678,8 +685,16 @@ export async function runTask(options) {
   // after 'Show password' is still judged as one. The key comes from the driver (fieldKey), outside the fingerprint and
   // never recorded; it carries the page's loader or the app's process, so a navigation or a relaunch forgets it.
   const passwordKeys = new Set()
-  const remembered = (t) => {
-    if (!t || typeof t !== 'object' || typeof t.fieldKey !== 'string' || t.fieldKey === '') return t
+  // CU-349 (cu-researcher): some web and Electron fields drop their placeholder once a value is typed, so the placeholder a
+  // field showed is kept by its key - the first key and a later one into the same box are judged under the same names.
+  const placeholderKeys = new Map()
+  const remembered = (given) => {
+    // CU-361: a value-shaped nearbyLabel (card, IBAN, key, e-mail) never becomes a name and never reaches a record.
+    if (given && typeof given === 'object' && typeof given.nearbyLabel === 'string' && looksSensitive(given.nearbyLabel.trim())) { const { nearbyLabel, ...rest } = given; given = rest }
+    if (!given || typeof given !== 'object' || typeof given.fieldKey !== 'string' || given.fieldKey === '') return given
+    let t = given
+    if (typeof t.placeholder === 'string' && t.placeholder.trim() !== '') placeholderKeys.set(t.fieldKey, t.placeholder)
+    else if (placeholderKeys.has(t.fieldKey)) t = { ...t, placeholder: placeholderKeys.get(t.fieldKey) }
     if (t.isPassword === true || t.secure === true || t.inputType === 'password' || namesPasswordField(t)) { passwordKeys.add(t.fieldKey); return t }
     return passwordKeys.has(t.fieldKey) ? { ...t, seenAsPassword: true } : t
   }
@@ -816,7 +831,16 @@ export async function runTask(options) {
     else if (action.type === 'drag') target = await environment.inspectPoint(action.path[0])
     else if ((action.type === 'keypress' || action.type === 'type') && previous?.type === 'keypress' && Array.isArray(previous.keys) && previous.keys.some((key) => MOVES_FOCUS.test(String(key)))
       // CU-147: Backspace or Delete after Tab onto a list removes the selection there - judged on the settled focus too.
-      && (action.type === 'type' || (Array.isArray(action.keys) && action.keys.some((key) => /^(space|enter|return|backspace|delete)$/i.test(String(key)))))) target = await settledFocus()
+      && (action.type === 'type' || (Array.isArray(action.keys) && action.keys.some((key) => /^(space|enter|return|backspace|delete)$/i.test(String(key)))))) {
+      // cu-coordinator 22:17Z: settle first, then for a keypress ask keyTarget what the key acts on (an aria-activedescendant
+      // option, CU-370) - the settled focus only when keyTarget is missing or throws.
+      target = await settledFocus()
+      if (action.type === 'keypress' && typeof environment.keyTarget === 'function') {
+        const keyed = await Promise.resolve(environment.keyTarget(action)).catch(() => null)
+        // Only an answer that names an option (CU-370's flags) replaces the settled focus (cu-coordinator 22:23Z).
+        if (keyed && (keyed.selectOption === true || keyed.radioChoice === true || keyed.optionUnread === true)) target = keyed
+      }
+    }
     // CU-353: a keypress is judged on what it acts on - the browser driver's keyTarget answers an accesskey chord with the
     // element it fires (marked accessKey), else the focus; an environment without it (the desktop, fakes) gives the focus.
     // A keyTarget that throws (a page navigating, a frame detached) falls back to the focus, as before CU-353, and a focus
@@ -829,8 +853,29 @@ export async function runTask(options) {
     // off the frame) leaves it unjudged there, never fails the drag - the helper's scope check refuses such a drop.
     const last = action.type === 'drag' && Array.isArray(action.path) && action.path.length > 1 ? action.path[action.path.length - 1] : null
     const dropTarget = last ? await environment.inspectPoint(last).catch(() => null) : null
+    // CU-377 (cu-coordinator 21:35Z): what a desktop drag carries - 'file' (the press target names a file: a filename or a
+    // file URL), 'unknown' (nothing read, a role-less shape, or another app's element), else 'other'.
+    const dragSource = action.type === 'drag' && desktop
+      // CU-387 round 2 (cu-coordinator 00:58Z): a press target with no name, filename or url is a blind source - unknown;
+      // a name ending in a file extension ('main.py' in an IDE's tree, Electron file lists) is a file.
+      ? (!target || !target.role || (!String(target.name ?? '').trim() && !String(target.filename ?? '').trim() && !String(target.url ?? '').trim()) ? 'unknown'
+        : /\.[a-z][a-z0-9]{0,7}$/i.test(String(target.name ?? '').trim()) ? 'file'
+        // CU-387 (cu-developer-three): the desktop driver passes a file URL's LEAF as target.url ('notes.txt'), null for any
+        // other scheme - so on the desktop a non-empty url is a file.
+        : (typeof target.filename === 'string' && target.filename !== '') || (typeof target.url === 'string' && target.url.trim() !== '') ? 'file'
+          // In a file browser (Finder) or a file panel, any row, cell, icon, outline item or name is a file unless known
+          // otherwise - fail closed, no unmeasured attribute (cu-coordinator 21:43Z).
+          : (FILE_BROWSERS.has(String(state?.frontmostBundleId ?? '')) || FILE_BROWSERS.has(String(target.origin ?? '')) || target.panel) && /row|cell|icon|outline|image|statictext|textfield|group/i.test(String(target.role ?? '')) ? 'file'
+          : (typeof target.origin === 'string' && target.origin !== '' && state?.frontmostBundleId && target.origin !== state.frontmostBundleId) ? 'unknown' : 'other')
+      : null
     // CU-198 (drag-text.md): the browser reads what a drag moves - once, and only when it lands on a text entry: a string,
     // { unknown: true } on a failed read, or null (nothing selected under the press). Never recorded; the desktop reads none.
+    // CU-370 (cu-developer-two's contract): before a type into a native select the browser driver answers every option the
+    // typed prefix passes through (Chrome's type-ahead); null when the focus is no select. A failed read is null too - the
+    // policy then judges the typed text itself and asks it as a page shortcut.
+    const typeOptions = !desktop && action.type === 'type' && typeof environment.typeOptions === 'function'
+      ? await Promise.resolve(environment.typeOptions(action)).catch(() => null)
+      : null
     const dragText = !desktop && last && isTextEntry(dropTarget) && typeof environment.dragText === 'function'
       ? await Promise.resolve(environment.dragText(action.path[0])).then(
         (text) => (typeof text === 'string' ? text.slice(0, 4096) : text?.unknown === true ? { unknown: true } : null),
@@ -903,7 +948,7 @@ export async function runTask(options) {
     // CU-325: a navigate carries the card-length digit runs this run typed or pasted (in memory, never recorded), so a URL
     // path that holds one asks whatever its prefix.
     const typedDigits = action.type === 'navigate' ? typedCardRuns() : []
-    return { url: state.url, target: remembered(target), ...(typed ? { typed } : {}), ...(typedSplit ? { typedSplit } : {}), ...(typedDigits.length ? { typedDigits } : {}), ...(boundMenuItem ? { boundMenuItem } : {}), ...(selection ? { selection } : {}), ...(dropTarget ? { dropTarget: remembered(dropTarget) } : {}), ...(dragText !== undefined ? { dragText } : {}), ...(afterClose ? { afterClose: true } : {}), ...(resubmits ? { resubmits: historyMove } : {}), ...(historyJudged ? { historyJudged } : {}), ...(paste ? { paste } : {}), ...(pasteboardJudged ? { pasteboardJudged } : {}), ...(state.interstitial === true ? { interstitial: true } : {}), dialog: state.dialog ?? null, task: task.text, ...app }
+    return { url: state.url, target: remembered(target), ...(dragSource ? { dragSource } : {}), ...(Array.isArray(typeOptions) || typeOptions?.unread === true ? { typeOptions } : {}), ...(typed ? { typed } : {}), ...(typedSplit ? { typedSplit } : {}), ...(typedDigits.length ? { typedDigits } : {}), ...(boundMenuItem ? { boundMenuItem } : {}), ...(selection ? { selection } : {}), ...(dropTarget ? { dropTarget: remembered(dropTarget) } : {}), ...(dragText !== undefined ? { dragText } : {}), ...(afterClose ? { afterClose: true } : {}), ...(resubmits ? { resubmits: historyMove } : {}), ...(historyJudged ? { historyJudged } : {}), ...(paste ? { paste } : {}), ...(pasteboardJudged ? { pasteboardJudged } : {}), ...(state.interstitial === true ? { interstitial: true } : {}), dialog: state.dialog ?? null, task: task.text, ...app }
   }
 
   let consecutiveBlocks = 0
@@ -1007,6 +1052,9 @@ export async function runTask(options) {
   const recordedWebTarget = (target, allowed) => {
     if (!target) return null
     const recorded = { origin: target.origin ?? null, role: target.role ?? null }
+    // CU-373 audit (cu-verifier, cu-coordinator 21:13Z): a toggle's state before the action - booleans or 'mixed', never a
+    // value - so a record shows why a protection toggle went free.
+    for (const key of ['checked', 'pressed']) if (target[key] === true || target[key] === false || target[key] === 'mixed') recorded[key] = target[key]
     return allowed === true ? { ...recorded, name: target.name ?? '' } : recorded
   }
 
@@ -1184,7 +1232,21 @@ export async function runTask(options) {
       // never a name, so a stand-in miss is diagnosable from the record.
       const selectionRead = context.selection ? (context.selection.none ? { none: true } : context.selection.notCollection ? { notCollection: true } : !Array.isArray(context.selection.items) ? { unreadable: true }
         : { items: context.selection.items.length, kinds: context.selection.items.reduce((acc, item) => ({ ...acc, [item.kind]: (acc[item.kind] ?? 0) + 1 }), {}), ...(context.selection.truncated ? { truncated: true } : {}) }) : null
-      const base = { index, action: record, ...(composedOf[index] ? { composedFrom: composedOf[index] } : {}), site: environment.site, decision: decision.decision, class: decision.class, rule: decision.rule, ...(decision.app ? { app: decision.app } : {}), ...(selectionRead ? { selectionRead } : {}), ...(target ? { target } : {}), ...(blind ? { targetUnnamed: true } : {}), ...(dropBlind ? { dropTargetUnnamed: true } : {}), ...(defaultBlind ? { defaultButtonUnnamed: true } : {}), ...(context.historyJudged ? { history: context.historyJudged } : {}), ...(context.pasteboardJudged ? { pasteboard: context.pasteboardJudged } : {}), ...(context.boundMenuItem ? { boundMenuItem: context.boundMenuItem } : {}), ...(context.target && (context.target.textEntered === true || context.target.textEntered === false || context.target.textEntered === null) ? { textEntered: context.target.textEntered } : {}) }
+      // CU-391 (D-103): the loop-derived context the policy judged on, as kinds and booleans only - never a name or a value.
+      const derived = {
+        ...(context.dragSource ? { dragSource: context.dragSource } : {}),
+        ...(context.paste ? { paste: context.paste.fromOwner === true ? 'owner' : (context.paste.source ? 'run_attributed' : 'run_unattributed') } : {}),
+        ...(context.typeOptions ? { typeOptions: context.typeOptions.unread === true ? 'unread' : 'read' } : {}),
+        ...(context.boundMenuItem !== undefined ? { boundMenuItem: context.boundMenuItem?.unreadable === true ? 'unreadable' : context.boundMenuItem && context.boundMenuItem.none !== true ? 'bound' : 'none' } : {}),
+        ...(action.type === 'drag' && Array.isArray(action.path) && action.path.length > 1 ? { dropTarget: !context.dropTarget || !context.dropTarget.origin || !context.target?.origin ? 'unread' : context.dropTarget.origin === context.target.origin ? 'same_app' : 'other_app' } : {}),
+        ...(context.target?.menuOpen === true ? { menuOpen: true } : {}),
+        // CU-398 (cu-verifier 04:37Z): the helper's Apple-menu mark, so a hover row can show it without pressing anything.
+        ...(context.target?.appleMenu === true ? { appleMenu: true } : {}),
+        // CU-387 (cu-coordinator 01:59Z): a drag that rode on a file name lent by its row (helper 0.2.67, #443) says so.
+        ...(context.target?.fileFrom === 'ancestor' ? { fileFrom: 'ancestor' } : {}),
+        ...(context.target?.selectOption === true ? { keyTarget: 'option' } : context.target?.optionUnread === true ? { keyTarget: 'unread' } : {}),
+      }
+      const base = { index, action: record, ...(Object.keys(derived).length > 0 ? { derived } : {}), ...(composedOf[index] ? { composedFrom: composedOf[index] } : {}), site: environment.site, decision: decision.decision, class: decision.class, rule: decision.rule, ...(decision.app ? { app: decision.app } : {}), ...(selectionRead ? { selectionRead } : {}), ...(target ? { target } : {}), ...(blind ? { targetUnnamed: true } : {}), ...(dropBlind ? { dropTargetUnnamed: true } : {}), ...(defaultBlind ? { defaultButtonUnnamed: true } : {}), ...(context.historyJudged ? { history: context.historyJudged } : {}), ...(context.pasteboardJudged ? { pasteboard: context.pasteboardJudged } : {}), ...(context.boundMenuItem ? { boundMenuItem: context.boundMenuItem } : {}), ...(context.target && (context.target.textEntered === true || context.target.textEntered === false || context.target.textEntered === null) ? { textEntered: context.target.textEntered } : {}) }
       if (decision.decision !== 'block') consecutiveBlocks = 0
 
       if (decision.decision === 'block') {
@@ -1497,8 +1559,9 @@ export async function runTask(options) {
         // checkpoint just passed); its pause is the ordinary local-input pause, which that checkpoint then waits out.
         if (requests > standInDone && standInTurns.includes(requests)) {
           standInDone = requests
-          logEvent('note', requests, { message: STAND_IN_NOTE, standIn: { kind: 'key', via: 'untagged' } })
-          await environment.simulateLocalInput({ kind: 'key', via: 'untagged' })
+          logEvent('note', requests, { message: STAND_IN_NOTE, standIn: { kind: 'pointer', via: 'untagged' } })
+          // CU-342 (cu-verifier, R1c): the untagged seam posts one pointer move, so the request and the note say pointer.
+          await environment.simulateLocalInput({ kind: 'pointer', via: 'untagged' })
           continue
         }
         if (activeMs() >= bounds.maxWallMs) {

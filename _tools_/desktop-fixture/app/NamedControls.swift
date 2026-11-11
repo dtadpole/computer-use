@@ -14,7 +14,8 @@ import AppKit
 /// `{name, key, shift, option}` for one bound to Command plus `key` - CU-268's disguised item is a mixed-script name
 /// bound to Command-Shift-U. The menu exists only while this screen is open. `placeholders` (CU-349) adds up to six
 /// entries labelled ONLY by their placeholder - no caption, no accessibility label or title element - as a native
-/// one-time-code or CVV box often is; they report their length only, like the named entries.
+/// one-time-code or CVV box often is; they report their length only, like the named entries. `popUps` (CU-409) adds up
+/// to six pop-up buttons `{name, items}`, the first item selected, reporting the selected index only.
 /// An entry of this screen: the generic state skips it, so what is typed never leaves the app (lengths only, below).
 final class NamedField: NSTextField {}
 /// A text area of this screen: like NamedField, only its length and line count leave the app.
@@ -33,6 +34,7 @@ final class NamedControls: NSObject {
   var buttons: [NSButton] = []
   var pressed: [Int] = []
   var checkboxes: [NSButton] = []
+  var popUps: [NSPopUpButton] = []
   var toggled: [Int] = []
   var chosen: [Int] = []
   var menuItem: NSMenuItem?
@@ -60,10 +62,25 @@ final class NamedControls: NSObject {
     return given.map { String($0.trimmingCharacters(in: .whitespacesAndNewlines).prefix(maxName)) }.filter { !$0.isEmpty }.prefix(maxControls).map { $0 }
   }
 
+  /// CU-409: up to six pop-up buttons, each `{name, items}` (an accessibility label and at most 8 item titles; the first
+  /// is selected) - with `buttons` and `fields`, a native order panel: an asset pop-up, an Amount entry and a bare Sell,
+  /// all the window's own children, as AppKit lays out a panel of plain views.
+  struct PopUpSpec { let name: String; let items: [String] }
+
+  static func popUpSpecs() -> [PopUpSpec] {
+    let given = Screens.params["popUps"] as? [Any] ?? []
+    return given.compactMap { raw -> PopUpSpec? in
+      guard let spec = raw as? [String: Any], let name = spec["name"] as? String else { return nil }
+      let items = (spec["items"] as? [Any] ?? []).compactMap { $0 as? String }.map { String($0.prefix(maxName)) }.filter { !$0.isEmpty }.prefix(8).map { $0 }
+      let trimmed = String(name.trimmingCharacters(in: .whitespacesAndNewlines).prefix(maxName))
+      return trimmed.isEmpty || items.isEmpty ? nil : PopUpSpec(name: trimmed, items: items)
+    }.prefix(maxControls).map { $0 }
+  }
+
   static func open(title: String) -> Bool {
     let screen = NamedControls()
     shared = screen
-    screen.build(title: title, fieldNames: names("fields"), placeholderNames: names("placeholders"), layoutSpecs: layoutSpecs(), areaNames: names("areas"), buttonTitles: names("buttons"), checkboxNames: names("checkboxes"))
+    screen.build(title: title, fieldNames: names("fields"), placeholderNames: names("placeholders"), layoutSpecs: layoutSpecs(), areaNames: names("areas"), buttonTitles: names("buttons"), checkboxNames: names("checkboxes"), popUpSpecs: popUpSpecs())
     screen.installMenu(menuEntries())
     return true
   }
@@ -80,10 +97,10 @@ final class NamedControls: NSObject {
     }
   }
 
-  private func build(title: String, fieldNames: [String], placeholderNames: [String], layoutSpecs: [(name: String, above: Bool)], areaNames: [String], buttonTitles: [String], checkboxNames: [String]) {
+  private func build(title: String, fieldNames: [String], placeholderNames: [String], layoutSpecs: [(name: String, above: Bool)], areaNames: [String], buttonTitles: [String], checkboxNames: [String], popUpSpecs: [PopUpSpec] = []) {
     // CU-349's placeholder-only entries sit under the named ones; everything below moves down by their rows.
     let shift = CGFloat(placeholderNames.count * 40 + layoutSpecs.count * 48)
-    let height = CGFloat(60 + fieldNames.count * 56 + areaNames.count * 92 + checkboxNames.count * 32 + (buttonTitles.isEmpty ? 0 : 50)) + shift
+    let height = CGFloat(60 + fieldNames.count * 56 + areaNames.count * 92 + checkboxNames.count * 32 + popUpSpecs.count * 36 + (buttonTitles.isEmpty ? 0 : 50)) + shift
     let content = FlippedView(frame: NSRect(x: 0, y: 0, width: 420, height: max(height, 120)))
     content.wantsLayer = true
     content.layer?.backgroundColor = NSColor.white.cgColor
@@ -166,7 +183,17 @@ final class NamedControls: NSObject {
       content.addSubview(box)
       checkboxes.append(box)
     }
-    let buttonsY = CGFloat(56 + fieldNames.count * 56 + areaNames.count * 92 + checkboxNames.count * 32) + shift
+    for (index, spec) in popUpSpecs.enumerated() {
+      let popUp = NSPopUpButton(frame: NSRect(x: 20, y: CGFloat(52 + fieldNames.count * 56 + areaNames.count * 92 + checkboxNames.count * 32 + index * 36) + shift, width: 200, height: 28), pullsDown: false)
+      popUp.addItems(withTitles: spec.items)
+      popUp.selectItem(at: 0)
+      popUp.setAccessibilityLabel(spec.name)
+      popUp.identifier = NSUserInterfaceItemIdentifier("popup-\(index)")
+      Fixture.shared.controls["popup-\(index)"] = popUp
+      content.addSubview(popUp)
+      popUps.append(popUp)
+    }
+    let buttonsY = CGFloat(56 + fieldNames.count * 56 + areaNames.count * 92 + checkboxNames.count * 32 + popUpSpecs.count * 36) + shift
     var x: CGFloat = 20
     for (index, name) in buttonTitles.enumerated() {
       let button = NSButton(title: name, target: self, action: #selector(press(_:)))
@@ -253,6 +280,7 @@ final class NamedControls: NSObject {
             "namedAreaLengths": screen.areas.map { $0.string.count },
             "namedAreaLines": screen.areas.map { $0.string.components(separatedBy: "\n").count }, "namedPressed": screen.pressed,
             "namedChecked": screen.checkboxes.map { $0.state == .on ? 1 : 0 }, "namedToggled": screen.toggled, "namedChosen": screen.chosen,
-            "namedMenuItems": screen.menuItem?.submenu?.items.count ?? 0]
+            "namedMenuItems": screen.menuItem?.submenu?.items.count ?? 0,
+            "namedPopUpSelected": screen.popUps.map { $0.indexOfSelectedItem }]
   }
 }

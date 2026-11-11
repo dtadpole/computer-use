@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-09T19:10:00Z
+modified: 2026-11-11T00:10:00Z
 level: L1
-version: 3.8.0
+version: 3.22.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,20 +15,19 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; never drives the desktop. State at 19:10Z, 9 November.
+session worktree plus `--review` worktrees; never drives the desktop. State at 00:10Z, 11 November.
 
 ## Landed
 
-- Verified: CU-301, CU-241, CU-297, CU-302, CU-325, CU-326, CU-263, CU-336, CU-347, CU-345, CU-346, CU-363; CU-321 decided.
-- In Verify: CU-340, CU-352, CU-354, CU-350.
+- Closed or in Verify through CU-455: #575, #576, #580, #584, #587 landed tonight.
 
-## Open
+## Open (Highs first)
 
-- CU-365 (High, D-086): PR #367 - modifier chords outside a text entry ask per (site, chord); a stacked page shortcut
-  keeps its own approval (alsoNeeds, 'permission' in classes); reasons never echo typed text. Waits for cu-verifier's rows.
-- OK'd, queued: #338 (CU-355), #343 (CU-358), #347 (CU-359), #335 (CU-348), #349 (CU-349, after 0.2.63), #360 (CU-364, Low).
-- One guide PR after #338 and #355: the eight-language line (#351), the CU-360 mailto note, drop line 49 (CU-363);
-  line 32 when CU-361 lands. Under 500 words.
+- Lane: #590 (CU-449..460 table rows), #592 (CU-461, on #590), #595 (CU-463); CU-464 becomes table PR 6.
+- Re-merge main right before each slot; a plain merge carries the OKs.
+- Older classes are never lowered: name them for CU-429.
+- After the lane: #523, CU-432 (built locally), CU-433, CU-462, #558.
+- Guide #392: add remote-desktop/VM viewers after #450, then complete.
 
 ## Lessons
 

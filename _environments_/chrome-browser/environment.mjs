@@ -8,7 +8,8 @@ import { historyMove } from './input-plan.mjs'
 import { clipboardOp, executeAction, NAVIGATION_TIMEOUT_MS, navigateHistory, sendInput, settle } from './executor.mjs'
 import { planHumanInput } from './human-input.mjs'
 import { processCommandLine, sandboxProblem, SEAT_PATTERN, startChrome } from './launch.mjs'
-import { accessKeyElement, accessKeyOf, activatableAncestor, autofilledFields, clickLabel, closedRootHoldsEntry, collectPageText, deepActiveElement, describeElement, DRAG_TEXT_MAX, dragTextAt, FRAME_FOCUS_EXPRESSION, implicitSubmitButton, pageExpression, selectionContainer, textEntered, TWO_FRAMES_EXPRESSION } from './page-scripts.mjs'
+import { normalizeKey } from './keys.mjs'
+import { accessKeyElement, accessKeyOf, activatableAncestor, autofilledFields, clickLabel, closedRootHoldsEntry, collectPageText, deepActiveElement, describeElement, DRAG_TEXT_MAX, dragTextAt, FRAME_FOCUS_EXPRESSION, frameLabel, frameLabelFromAttributes, implicitSubmitButton, implicitSubmitControls, keyChoice, pageExpression, selectionContainer, selectKeyOption, selectTypeOptions, textEntered, TWO_FRAMES_EXPRESSION } from './page-scripts.mjs'
 
 /** CU-300: how long focusedElement may spend reading the focus inside a cross-site frame before it keeps the iframe. */
 export const FRAME_FOCUS_MS = 2000
@@ -65,6 +66,34 @@ async function passGate(resourceGate, seat) {
     throw new EnvironmentError('resource_refused', 'the resource gate did not grant a slot')
   }
   return slot
+}
+
+/**
+ * CU-357: a session notice as an effect reports it - its kind and time, the rule when there is one, a URL without its
+ * query or fragment (a download link's token stays out of the record), and a driver message (a failed set-up, at most
+ * 200 characters). An alert's message is page text the run never typed and may carry a secret ('Your new API key is
+ * ...'), so only its length is kept (cu-researcher).
+ */
+export function noticeOf(notice) {
+  const bare = (value) => {
+    try {
+      const url = new URL(String(value))
+      return ['http:', 'https:', 'ws:', 'wss:', 'file:'].includes(url.protocol) ? `${url.origin === 'null' ? url.protocol + '//' : url.origin}${url.pathname}` : `${url.protocol}`
+    } catch {
+      return String(value).split(/[?#]/)[0].slice(0, 200)
+    }
+  }
+  return {
+    kind: notice?.kind ?? 'notice',
+    at: notice?.at ?? null,
+    ...(typeof notice?.url === 'string' && notice.url !== '' ? { url: bare(notice.url) } : {}),
+    ...(typeof notice?.rule === 'string' ? { rule: notice.rule } : {}),
+    // CU-360: an external navigation's reason, its best-effort stop and launched ('unknown') say what was tried.
+    ...(typeof notice?.reason === 'string' ? { reason: notice.reason } : {}),
+    ...(typeof notice?.stop === 'string' ? { stop: notice.stop } : {}),
+    ...(typeof notice?.launched === 'string' ? { launched: notice.launched } : {}),
+    ...(typeof notice?.message === 'string' ? (notice.kind === 'alert_accepted' ? { messageLength: notice.message.length } : { message: notice.message.slice(0, 200) }) : {}),
+  }
 }
 
 /**
@@ -133,6 +162,22 @@ export async function launchBrowserEnvironment(options = {}) {
     release()
     throw error
   }
+}
+
+/** CU-400: describeElement's formContext, re-validated at the boundary - else null. */
+export function formContextOf(value) {
+  if (value === null || typeof value !== 'object') return null
+  const options = Array.isArray(value.options) ? value.options.filter((text) => typeof text === 'string' && text !== '' && text.length <= 24).slice(0, 3) : []
+  const amountEntry = value.amountEntry === true
+  return options.length > 0 || amountEntry ? { options, amountEntry } : null
+}
+
+/** CU-443: describeElement's rowContext, re-validated at the boundary - else null. */
+export function rowContextOf(value) {
+  if (value === null || typeof value !== 'object') return null
+  const list = typeof value.list === 'string' && value.list !== '' && value.list.length <= 60 ? value.list : null
+  const hints = Array.isArray(value.hints) ? value.hints.filter((text) => typeof text === 'string' && text !== '' && text.length <= 40).slice(0, 3) : []
+  return list !== null || hints.length > 0 ? { ...(list !== null ? { list } : {}), hints } : null
 }
 
 class BrowserEnvironment {
@@ -232,10 +277,16 @@ class BrowserEnvironment {
     }
   }
 
-  /** One validated canonical action in frame pixels; resolves to its `ActionEffect`. */
+  /**
+   * One validated canonical action in frame pixels; resolves to its `ActionEffect`, with `notices` (CU-357): the
+   * session's notices that arrived since the last effect reported them - a refused download, an accepted alert, a
+   * refused file chooser, a page that failed set-up; not Chrome's own blocked background traffic - so the trajectory (which logs the
+   * effect whole) shows them. A notice that arrives between actions, or after the action settles, lands on the next
+   * effect; a URL loses its query and fragment (see noticeOf). Absent when there is none. The model is not shown them.
+   */
   async perform(action) {
     this.#assertOpen()
-    return executeAction(action, {
+    const effect = await executeAction(action, {
       session: this.session,
       frame: this.frame,
       clipboard: this.clipboard,
@@ -244,7 +295,15 @@ class BrowserEnvironment {
       navigationTimeoutMs: this.navigationTimeoutMs,
       screenshot: (args) => this.screenshot(args),
     })
+    // Chrome's own background traffic (update checks, clock sync - a dozen at start-up, measured) is no effect of the
+    // run's actions: it stays in session.notices and the smoke, out of the effect.
+    const fresh = this.session.notices.slice(this.#noticesReported).filter((notice) => notice.kind !== 'browser_traffic_blocked')
+    this.#noticesReported = this.session.notices.length
+    return fresh.length > 0 ? { ...effect, notices: fresh.map(noticeOf) } : effect
   }
+
+  /** How many of the session's notices an effect has reported (CU-357). */
+  #noticesReported = 0
 
   /** Synchronous: it reads the session's cached state, as the loop and the fake environment expect. */
   state() {
@@ -454,7 +513,30 @@ class BrowserEnvironment {
     } catch {
       // Unread: role and name stay null.
     }
+    // CU-336: an unread host name falls back to the words the page gives the frame element (labelledby, aria-label, title).
+    if (name === null || name === '') name = (await this.#frameLabel(page, node)) ?? name
     return { tag: String(node?.nodeName ?? '').toLowerCase(), role, name }
+  }
+
+  /**
+   * CU-336: the words the page gives an <iframe>/<frame> element whose accessibility name is unread or empty -
+   * aria-labelledby's text, aria-label, then title (page-scripts frameLabel; never the name attribute, an id), read in
+   * the isolated world; when the node does not resolve there, the same order from its describeNode attributes without
+   * aria-labelledby. Null when the element carries none, so the policy's unnamed-frame rule still judges it.
+   */
+  async #frameLabel(page, node, frameId = page.mainFrameId) {
+    const tag = String(node?.nodeName ?? '').toUpperCase()
+    if (tag !== 'IFRAME' && tag !== 'FRAME') return null
+    try {
+      const world = await this.session.isolatedContext(page, frameId ?? page.mainFrameId)
+      const objectId = (await this.session.send(page, 'DOM.resolveNode', { backendNodeId: node.backendNodeId, executionContextId: world })).result.object.objectId
+      const value = (await this.session.send(page, 'Runtime.callFunctionOn', {
+        objectId, functionDeclaration: `function () { return (${frameLabel.toString()})(this) }`, returnByValue: true,
+      })).result.result.value
+      return typeof value === 'string' && value !== '' ? value : null
+    } catch {
+      return frameLabelFromAttributes(node?.attributes ?? [])
+    }
   }
 
   /**
@@ -502,7 +584,7 @@ class BrowserEnvironment {
       await this.#describe(target, inner.backendNodeId, frame.targetId, { node: inner, offset: { x: box.x, y: box.y }, editableBody: true, fallbackName: String(inner.nodeName ?? '').toUpperCase() === 'BODY' ? host.name : null }))
     if (described === null) return undefined
     const submit = await this.#implicitSubmit(target, inner.backendNodeId)
-    return { ...described, frameHost: host, defaultButton: submit.button, defaultButtonRead: submit.read }
+    return { ...described, frameHost: host, defaultButton: submit.button, defaultButtonRead: submit.read, ...(submit.candidates ? { defaultCandidates: submit.candidates } : {}), ...(submit.more ? { defaultCandidatesMore: true } : {}) }
   }
 
   /**
@@ -531,7 +613,117 @@ class BrowserEnvironment {
         // The page's world is gone: the focused element, as before (a named limit).
       }
     }
+    if (page.dialog === null && BrowserEnvironment.#plainKey(action) !== null) {
+      try {
+        const option = await this.#keyOption(page, action)
+        if (option !== undefined) return option
+      } catch {
+        // A failed read never falls back silently on a control that chooses: the policy asks (cu-researcher's point 4).
+        const focus = await this.focusedElement()
+        if (BrowserEnvironment.#choosing(focus)) return { ...focus, optionUnread: true, readFailed: true }
+        return focus
+      }
+    }
     return this.focusedElement()
+  }
+
+  /** CU-370: a focus whose keys can choose something - a select, listbox, combobox that takes no text, radio. */
+  static #choosing(focus) {
+    if (focus === null || focus === undefined) return false
+    if (focus.tag === 'select' || focus.inputType === 'radio') return true
+    return ['listbox', 'combobox', 'radio', 'option', 'radiogroup'].includes(String(focus.role ?? '')) && focus.editable !== true
+  }
+
+  /**
+   * CU-370: the main key of a keypress with no modifier but Shift, canonical (keys.mjs), or null.
+   */
+  static #plainKey(action) {
+    if (action?.type !== 'keypress' || !Array.isArray(action.keys)) return null
+    let keys
+    try {
+      keys = action.keys.map((key) => normalizeKey(String(key)))
+    } catch {
+      return null
+    }
+    const main = keys.filter((key) => !['Shift', 'Control', 'Alt', 'Meta'].includes(key))
+    if (main.length !== 1 || keys.some((key) => ['Control', 'Alt', 'Meta'].includes(key))) return null
+    return main[0]
+  }
+
+  /**
+   * CU-370: a key that chooses is judged by what it chooses (keyChoice): a native select's option, the radio an arrow
+   * checks, the ARIA listbox/combobox option it moves to or commits - described, with selectOption: true (an option) or
+   * radioChoice: true (a radio); a choice that cannot be read returns the focus with optionUnread: true. undefined when
+   * the key chooses nothing - the caller falls back to the focus. A throw means a failed read (the caller asks). The focus is read in the page's world through open
+   * shadow roots and same-origin frames (deepActiveElement); a cross-site frame's select is a named limit.
+   */
+  async #keyOption(page, action) {
+    const key = BrowserEnvironment.#plainKey(action)
+    if (key === null) return undefined
+    const world = await this.session.isolatedContext(page, page.mainFrameId)
+    const expression = `(() => {
+      const el = (${deepActiveElement.toString()})(document)
+      return (${keyChoice.toString()})(el, ${JSON.stringify(key)}, ${selectKeyOption.toString()})
+    })()`
+    const found = (await this.session.send(page, 'Runtime.evaluate', { expression, contextId: world, returnByValue: false })).result.result
+    if (found?.type === 'string' && found.value === 'unread') {
+      const focus = await this.focusedElement()
+      return focus === null ? undefined : { ...focus, optionUnread: true }
+    }
+    if (typeof found?.objectId !== 'string') return undefined
+    return this.#describeOption(page, found.objectId)
+  }
+
+
+  /** CU-370: an option element, described as a target - its own text the name when the AX tree has none for it. */
+  async #describeOption(page, objectId) {
+    const node = (await this.session.send(page, 'DOM.describeNode', { objectId })).result.node
+    const text = (await this.session.send(page, 'Runtime.callFunctionOn', {
+      objectId, functionDeclaration: 'function () { const own = this.labels && this.labels[0] ? this.labels[0].textContent : null; return String(this.label || own || this.textContent || \'\').replace(/\\s+/g, \' \').trim().slice(0, 200) }', returnByValue: true,
+    })).result.result?.value ?? null
+    const described = await this.#describe(page, node.backendNodeId, page.mainFrameId, { node, fallbackName: text })
+    if (described === null || described === undefined) return undefined
+    const radio = described.inputType === 'radio' || described.role === 'radio'
+    // Option or radio, the chosen element carries selectOption (one flag for the policy; cu-coordinator 20:11Z).
+    return { ...described, name: described.name || text, selectOption: true, ...(radio ? { radioChoice: true } : {}) }
+  }
+
+  /**
+   * CU-370: for a type action whose focus is a native single <select>, every option the typed string moves it through
+   * (selectTypeOptions: Chrome's accumulated type-ahead, each step selecting), each described with selectOption: true,
+   * in order; [] when nothing matches; `{ unread: true }` for a multiple or size>1 select, or a failed read on a select
+   * (the policy asks); null when the focus is no select (the type is judged as before). Agent core judges each option
+   * like a click on it, keeping the strongest class.
+   */
+  async typeOptions(action) {
+    this.#assertOpen()
+    if (action?.type !== 'type' || typeof action.text !== 'string') return null
+    const page = this.session.foreground()
+    if (page.dialog !== null) return null
+    try {
+      const world = await this.session.isolatedContext(page, page.mainFrameId)
+      const expression = `(() => {
+        const el = (${deepActiveElement.toString()})(document)
+        if (el && String(el.tagName || '').toUpperCase() === 'SELECT' && !el.disabled && (el.multiple || Number(el.size) > 1)) return 'unread'
+        const indices = (${selectTypeOptions.toString()})(el, ${JSON.stringify(action.text)})
+        return indices === null ? null : indices.map((index) => el.options[index])
+      })()`
+      const found = (await this.session.send(page, 'Runtime.evaluate', { expression, contextId: world, returnByValue: false })).result.result
+      if (found?.type === 'string' && found.value === 'unread') return { unread: true }
+      if (typeof found?.objectId !== 'string') return null
+      const properties = (await this.session.send(page, 'Runtime.getProperties', { objectId: found.objectId, ownProperties: true })).result.result ?? []
+      const elements = properties.filter((entry) => /^\d+$/.test(entry.name) && typeof entry.value?.objectId === 'string').sort((a, b) => Number(a.name) - Number(b.name))
+      const options = []
+      for (const entry of elements) {
+        const option = await this.#describeOption(page, entry.value.objectId)
+        if (option !== undefined) options.push(option)
+      }
+      return options
+    } catch {
+      // A failed read on a select is no 'not a select': it asks (cu-researcher's point 4).
+      const focus = await this.focusedElement().catch(() => null)
+      return focus?.tag === 'select' ? { unread: true, readFailed: true } : null
+    }
   }
 
   /**
@@ -548,10 +740,13 @@ class BrowserEnvironment {
     const node = (await this.session.send(page, 'DOM.describeNode', { objectId: remote.objectId })).result.node
     const inner = await this.#focusInsideFrame(page, node)
     if (inner !== undefined) return inner
-    const element = await this.#withAutofill(page, node.backendNodeId, undefined, await this.#describe(page, node.backendNodeId, undefined))
+    // deepActiveElement answers a body only for a same-origin frame editor (contentEditable or designMode); the top
+    // document's own body is null there. So a body here is a text entry, described as CU-300's cross-site case is.
+    const editableBody = String(node.nodeName ?? '').toUpperCase() === 'BODY'
+    const element = await this.#withAutofill(page, node.backendNodeId, undefined, await this.#describe(page, node.backendNodeId, undefined, { node, editableBody }))
     if (element === null) return null
     const submit = await this.#implicitSubmit(page, node.backendNodeId)
-    return { ...element, defaultButton: submit.button, defaultButtonRead: submit.read }
+    return { ...element, defaultButton: submit.button, defaultButtonRead: submit.read, ...(submit.candidates ? { defaultCandidates: submit.candidates } : {}), ...(submit.more ? { defaultCandidatesMore: true } : {}) }
   }
 
   /**
@@ -602,21 +797,66 @@ class BrowserEnvironment {
    * judges a Return in a checkout's Quantity box by 'Place order' (CU-142's rule) with no policy change. Found in an
    * isolated world, where the page's own scripts cannot redefine the DOM, and described like any target. Null when
    * there is none, and on any failure (a frame this world cannot reach): the Return is then judged by the field's own
-   * name, as before. Context, not identity: it stays out of the fingerprint.
+   * name, as before. Context, not identity: it stays out of the fingerprint. CU-406: the button's formContext rides
+   * along when it has one.
    */
   async #implicitSubmit(page, backendNodeId) {
     try {
       const world = await this.session.isolatedContext(page, page.mainFrameId)
       const objectId = (await this.session.send(page, 'DOM.resolveNode', { backendNodeId, executionContextId: world })).result.object.objectId
       const found = (await this.session.send(page, 'Runtime.callFunctionOn', {
-        objectId, functionDeclaration: `function () { return (${implicitSubmitButton.toString()})(this) }`, returnByValue: false,
+        objectId, functionDeclaration: `function () { return (${implicitSubmitButton.toString()})(this, ${implicitSubmitControls.toString()}) }`, returnByValue: false,
       })).result.result
-      if (found?.objectId === undefined) return { button: null, read: true }
+      if (found?.objectId === undefined) return { button: null, read: true, ...(await this.#implicitCandidates(page, objectId)) }
       const button = (await this.session.send(page, 'DOM.describeNode', { objectId: found.objectId })).result.node
       const described = await this.#describe(page, button.backendNodeId, undefined, { scanText: false })
-      return { button: described === null ? null : { role: described.role, name: described.name, panel: null }, read: true }
+      // CU-412 (11:56Z, fail closed): a lone script control with no accessible name cannot be judged as the default -
+      // it asks unknown (defaultCandidatesMore). A nameless real submit button keeps the CU-150 path (a search form's
+      // icon submit stays as it was).
+      if (described !== null && (typeof described.name !== 'string' || described.name.trim() === '')) {
+        const script = (await this.session.send(page, 'Runtime.callFunctionOn', {
+          objectId: found.objectId, returnByValue: true,
+          functionDeclaration: "function () { const t = String(this.type).toLowerCase(); return !((this.tagName === 'BUTTON' && t === 'submit') || (this.tagName === 'INPUT' && (t === 'submit' || t === 'image'))) }",
+        })).result.result?.value === true
+        if (script) return { button: null, read: true, more: true }
+      }
+      // CU-406: the Return target carries the same bounded formContext a click on that button would (CU-402/CU-405), so a
+      // Return in a trade form's amount field is judged with the form's asset beside a bare 'Sell' default.
+      return { button: described === null ? null : { role: described.role, name: described.name, panel: null, ...(described.formContext ? { formContext: described.formContext } : {}) }, read: true }
     } catch {
       return { button: null, read: false }
+    }
+  }
+
+  /**
+   * CU-412 (11:27Z contract, D-107): two or more script submit controls a Return may press (implicitSubmitControls;
+   * one alone is the defaultButton) as `{ candidates: [{ role, name, formContext? }] (at most 3), more }` - more true
+   * past 3, which agent core asks as unknown; it asks the strictest class among the candidates otherwise. Empty object
+   * when there are fewer. Fail closed: a control that cannot be described, or a read that fails, sets more (unknown).
+   */
+  async #implicitCandidates(page, fieldObjectId) {
+    try {
+      const list = (await this.session.send(page, 'Runtime.callFunctionOn', {
+        objectId: fieldObjectId, functionDeclaration: `function () { return (${implicitSubmitControls.toString()})(this) }`, returnByValue: false,
+      })).result.result
+      if (list?.objectId === undefined) return {}
+      const props = (await this.session.send(page, 'Runtime.getProperties', { objectId: list.objectId, ownProperties: true })).result.result ?? []
+      const items = props.filter((p) => /^\d+$/.test(p.name)).sort((a, b) => Number(a.name) - Number(b.name))
+      if (items.length < 2) return {}
+      const controls = []
+      let unread = false
+      for (const item of items.slice(0, 3)) {
+        if (item.value?.objectId === undefined) { unread = true; continue }
+        const node = (await this.session.send(page, 'DOM.describeNode', { objectId: item.value.objectId })).result.node
+        const described = await this.#describe(page, node.backendNodeId, undefined, { scanText: false })
+        // CU-412 (11:56Z): a control with no accessible name (an icon-only div) cannot be judged - unreadable, never dropped.
+        if (described === null || typeof described.name !== 'string' || described.name.trim() === '') unread = true
+        else controls.push({ role: described.role, name: described.name, ...(described.formContext ? { formContext: described.formContext } : {}) })
+      }
+      // Fail closed (D-107: candidates only add asks): a control that could not be read makes the list unjudgeable.
+      return { ...(controls.length > 0 ? { candidates: controls } : {}), more: items.length > 3 || unread }
+    } catch {
+      return { more: true }
     }
   }
 
@@ -660,6 +900,8 @@ class BrowserEnvironment {
     } catch {
       // A node without an accessibility object keeps role and name null.
     }
+    // CU-336: a frame element the accessibility tree leaves unnamed (or unread) takes the words the page gives it.
+    if ((name === null || name === '') && (tagName === 'iframe' || tagName === 'frame')) name = (await this.#frameLabel(page, node, frameId)) ?? name
     // CU-175: a click target the accessibility tree leaves unnamed takes the words it shows (see clickLabel).
     if ((name === null || name === '') && typeof fallbackName === 'string' && fallbackName !== '') name = fallbackName
     let extra = {}
@@ -730,6 +972,20 @@ class BrowserEnvironment {
       // CU-300: the frame document's origin and path, inside a frame only; outside the fingerprint, never recorded.
       ...(typeof extra.frameUrl === 'string' && extra.frameUrl !== '' ? { frameUrl: extra.frameUrl } : {}),
       editable: extra.editable ?? null,
+      // CU-373: a toggle's state before the action (checked: true, false or 'mixed'; pressed for a toggle button) -
+      // state, not identity, so outside the fingerprint; absent when the element has none.
+      ...(extra.checked !== undefined ? { checked: extra.checked } : {}),
+      ...(extra.pressed !== undefined ? { pressed: extra.pressed } : {}),
+      // CU-400: the choices beside a form's submit button (describeElement's formContext) - up to 3 short option texts
+      // and whether an amount entry is present. Context, outside the fingerprint; run records keep origin, role, name.
+      ...(formContextOf(extra.formContext) ? { formContext: formContextOf(extra.formContext) } : {}),
+      // CU-443: a row with no verb of its own carries what the page offers around it (describeElement): dialHref (a
+      // tel:/sip:/callto:/facetime: href on it, above it or inside it - a boolean) and rowContext (its list's name, up to 3
+      // action names). Context, outside the fingerprint; never recorded.
+      // Round 2: inRow - the hit element has no verb of its own and sits inside such a row (read through it). A boolean.
+      ...(extra.inRow === true ? { inRow: true } : {}),
+      ...(extra.dialHref === true ? { dialHref: true } : {}),
+      ...(rowContextOf(extra.rowContext) ? { rowContext: rowContextOf(extra.rowContext) } : {}),
       // CU-157: context, not identity - outside the fingerprint.
       textEntered: entered,
       // CU-187: the label that captions a non-entry element (see describeElement); CU-194 rule 5: an entry's structural
