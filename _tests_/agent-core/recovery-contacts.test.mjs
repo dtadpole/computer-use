@@ -47,3 +47,7 @@ test('#669 round 2 (cu-researcher 11:33Z): emergency access requests and the for
 test("#669 round 3 (cu-verifier 11:50Z): the title's 'Allow item to autofill on page load' asks permission", () => {
   for (const name of ['Allow item to autofill on page load', 'Allow this item to autofill on page load', 'Let this login autofill on page load']) assert.equal(at(name), 'permission', name)
 })
+
+test('#669 round 4 (cu-researcher 11:56Z): the plurals', () => {
+  for (const name of ['Allow items to autofill on page load', 'Allow logins to autofill on page load', 'Allow all items to autofill on page load']) assert.equal(at(name), 'permission', name)
+})
