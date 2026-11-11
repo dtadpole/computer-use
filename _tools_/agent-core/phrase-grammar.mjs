@@ -762,7 +762,9 @@ const TRAILING_QUALIFIER = /(?:\s*,\s*please|\s+(?:anyway|anyways|instantly|imme
 // CU-508 (qualifier sweep): a trailing WIDENING qualifier - 'permanently', 'forever', 'for good', 'completely', 'for all users /
 // members / accounts', 'for everyone', 'on all (my) devices', 'everywhere', 'across all devices' - is stripped in a canonical form
 // (the trailing twin of CU-502's quantifier), so the row decides. Adds asks only.
-const WIDENING_QUALIFIER = /(?:\s*,)?\s+(?:permanently|forever|for\s+good|completely|entirely|for\s+(?:all|every)\s+(?:users?|members?|accounts?|devices?|people|employees|seats?)|for\s+everyone|for\s+everybody|(?:on|across|from)\s+(?:all|every)\s+(?:(?:my|your|our)\s+)?(?:devices?|computers?|browsers?|sessions?|accounts?)|everywhere|org(?:anization)?[-\s]wide|company[-\s]wide)\s*[.!]?\s*$/i
+// CU-509 (scope sweep): a trailing scope phrase - 'for this project / bucket / account', 'in this workspace', 'on this device' - is
+// stripped the same way: it narrows, but it must not free the row.
+const WIDENING_QUALIFIER = /(?:\s*,)?\s+(?:permanently|forever|for\s+good|completely|entirely|for\s+(?:all|every)\s+(?:users?|members?|accounts?|devices?|people|employees|seats?)|for\s+everyone|for\s+everybody|(?:on|across|from)\s+(?:all|every)\s+(?:(?:my|your|our)\s+)?(?:devices?|computers?|browsers?|sessions?|accounts?)|everywhere|org(?:anization)?[-\s]wide|company[-\s]wide|(?:for|in|on|from|across)\s+(?:this|the\s+current|the|my|your|our|that)\s+(?:project|workspace|account|bucket|repository|repo|org(?:anization)?|team|site|space|folder|channel|server|cluster|database|device|computer|browser|profile|page|app|domain|tenant|environment|subscription|vault|wallet|store|group))\s*[.!]?\s*$/i
 export function widenedStripped(name) {
   const first = String(name ?? '').split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean)[0] ?? ''
   let text = first

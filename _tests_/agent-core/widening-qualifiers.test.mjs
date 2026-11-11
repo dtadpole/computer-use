@@ -27,3 +27,10 @@ test('CU-508: a widening qualifier after a ruled row asks the row\'s classes', (
 test('CU-508 negatives: a widening qualifier after a free label stays free', () => {
   for (const name of ['Show for all users', 'Available everywhere', 'Sync on all devices', 'View permanently', 'Keep forever']) assert.deepEqual(classesOf(name), [], name)
 })
+
+test('CU-509: a trailing scope phrase never frees the row', () => {
+  for (const [name, row] of [['Disable encryption for this bucket', 'Disable encryption'], ['Make this repository public for this org', 'Make this repository public'], ['Empty bucket in this project', 'Empty bucket'], ['Disable two-factor authentication for this account', 'Disable two-factor authentication']]) {
+    for (const cls of classesOf(row)) assert.ok(classesOf(name).includes(cls), `${name} has ${cls}`)
+  }
+  for (const name of ['Settings for this project', 'Members in this workspace', 'Show for this account']) assert.deepEqual(classesOf(name), [], name)
+})
