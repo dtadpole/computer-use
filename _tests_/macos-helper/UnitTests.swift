@@ -2045,6 +2045,26 @@ func testDialogText() {
   check(blanks.name == "Delete 3 items?" && blanks.description == nil, "blank title and texts skipped; whitespace collapsed")
   check(DialogText.pick(title: nil, texts: []).name == nil && DialogText.pick(title: nil, texts: [nil]).description == nil, "nothing read: none")
   check(DialogText.clean(String(repeating: "x", count: 301))?.count == 300, "at most 300 characters")
+  // #737 note: a control's own label is never read as the dialog's words - the walk does not descend into controls.
+  struct Node { let role: String; let value: String?; let kids: [Node] }
+  let swiftUISheet = Node(role: "AXSheet", value: nil, kids: [
+    Node(role: "AXButton", value: nil, kids: [Node(role: "AXStaticText", value: "Delete", kids: [])]),
+    Node(role: "AXButton", value: nil, kids: [Node(role: "AXStaticText", value: "Continue", kids: [])]),
+  ])
+  let read = { (root: Node) -> [String?] in
+    DialogText.walk(root, limit: DialogText.maxTexts, children: { $0.kids }, role: { $0.role }).filter { $0.role == "AXStaticText" }.map { $0.value }
+  }
+  check(read(swiftUISheet).isEmpty, "a sheet of buttons alone has no dialog words - a button's label is not one")
+  check(DialogText.pick(title: nil, texts: read(swiftUISheet)).name == nil, "so 'Continue' beside 'Delete' reads no dialogName")
+  let alertSheet = Node(role: "AXSheet", value: nil, kids: [
+    Node(role: "AXStaticText", value: "Erase \"Untitled\"?", kids: []),
+    Node(role: "AXGroup", value: nil, kids: [Node(role: "AXStaticText", value: "This will erase all data on the disk.", kids: [])]),
+    Node(role: "AXButton", value: nil, kids: [Node(role: "AXStaticText", value: "Erase", kids: [])]),
+  ])
+  let words = DialogText.pick(title: nil, texts: read(alertSheet))
+  check(words.name == "Erase \"Untitled\"?" && words.description == "This will erase all data on the disk.", "texts in groups are still read; the button's label is not")
+  check(DialogText.walk(alertSheet, limit: 2, children: { $0.kids }, role: { $0.role }).count == 2, "the walk stops at its limit")
+  check(DialogText.controlRoles.contains("AXPopUpButton") && DialogText.controlRoles.contains("AXCheckBox") && !DialogText.controlRoles.contains("AXGroup"), "controls, not containers")
 }
 
 func testNearbyLabel() {

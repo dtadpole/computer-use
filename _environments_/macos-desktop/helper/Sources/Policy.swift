@@ -575,6 +575,21 @@ enum DialogText {
     if let title = clean(title) { return (title, words.first) }
     return (words.first, words.dropFirst().first)
   }
+  /// A control's own label is never the dialog's words (cu-developer-two's #737 note): the walk below a dialog does not
+  /// descend into these roles, so a SwiftUI button's AXStaticText child ('Delete') cannot become a sibling button's
+  /// dialogName in a sheet with no title and no message text.
+  static let controlRoles: Set<String> = ["AXButton", "AXPopUpButton", "AXMenuButton", "AXCheckBox", "AXRadioButton", "AXDisclosureTriangle", "AXLink"]
+  /// Breadth first below `root`, at most `limit` nodes, never into a control's subtree (the control itself is listed).
+  static func walk<Node>(_ root: Node, limit: Int, children: (Node) -> [Node], role: (Node) -> String?) -> [Node] {
+    var out: [Node] = []
+    var queue = children(root)
+    while !queue.isEmpty, out.count < limit {
+      let next = queue.removeFirst()
+      out.append(next)
+      if !controlRoles.contains(role(next) ?? "") { queue += children(next) }
+    }
+    return out
+  }
 }
 
 /// CU-380: whether a menu is tracking - any on-screen window at the pop-up menu level (kCGPopUpMenuWindowLevel, 101),
