@@ -43,3 +43,7 @@ test('#669 round 2 (cu-researcher 11:33Z): emergency access requests and the for
   assert.equal(at('Turn on autofill on page load for all items'), 'permission')
   assert.equal(at('Autofill on page load for all items', VAULT, false, { role: 'switch', tag: 'input', inputType: 'checkbox', checked: false }), 'permission')
 })
+
+test("#669 round 3 (cu-verifier 11:50Z): the title's 'Allow item to autofill on page load' asks permission", () => {
+  for (const name of ['Allow item to autofill on page load', 'Allow this item to autofill on page load', 'Let this login autofill on page load']) assert.equal(at(name), 'permission', name)
+})
