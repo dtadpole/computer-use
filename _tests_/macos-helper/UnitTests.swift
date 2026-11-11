@@ -697,7 +697,7 @@ func button(_ kind: String, _ x: Int, _ y: Int) -> JSON { ["kind": .string(kind)
 func testDispatcherBasics() {
   let h = Harness(fixtureWorld)
   let hello = h.dispatcher.hello(token: "t0k")
-  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.70", "the hello opens the run")
+  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.71", "the hello opens the run")
   check(hello["mode"] == "dry-run" && hello["grants"] == ["screen": true, "accessibility": true, "postEvents": true, "listenEvents": false], "a dry-run hello says so, with all four grants")
   check(h.ask("capture", ["maxSize": size800])["code"] == "no_scope", "capture needs a scope")
   check(h.ask("input", ["events": [key("keyDown", 1)], "mode": "global"])["code"] == "no_scope", "input needs a scope")
