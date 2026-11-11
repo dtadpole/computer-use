@@ -165,10 +165,11 @@ export async function launchBrowserEnvironment(options = {}) {
 }
 
 /** CU-400: describeElement's formContext, re-validated at the boundary - else null. */
-/** CU-494: an entry's raw name, else id, attribute when it is a plain token ([a-z0-9_-], at most 40 characters), else null. */
+/** CU-494: an entry's raw name, else id, attribute when it is a plain token ([a-z0-9_-], at most 40 characters, camelCase split by '_'), else null. */
 export function fieldAttrOf(attributes) {
   for (const key of ['name', 'id']) {
-    const value = String(attributes?.[key] ?? '').trim().toLowerCase()
+    // camelCase keeps its word breaks as '_' ('BankAccountNumber' -> 'bank_account_number') before lower-casing.
+    const value = String(attributes?.[key] ?? '').trim().replace(/([a-z0-9])([A-Z])/g, '$1_$2').replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2').toLowerCase()
     if (/^[a-z0-9_-]{1,40}$/.test(value)) return value
   }
   return null

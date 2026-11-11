@@ -37,3 +37,12 @@ test('CU-494 residual r2: bank_account, a bare wallet, forward_to and a card aut
   assert.equal(type('Mira', { name: 'Forward to' }).decision, 'confirm', "a named 'Forward to' field")
   assert.equal(type('Mira', { name: 'Wallet' }).decision, 'allow', "a bare 'Wallet' name stays as it was - the attribute-only word")
 })
+
+test('#671 r3: a camelCase fieldAttr is split, and payout_account asks', () => {
+  for (const fieldAttr of ['BankAccountNumber', 'bank_account_number', 'payout_account', 'IBANNumber']) {
+    assert.equal(type('021000021', { name: '', fieldAttr }).decision, 'confirm', fieldAttr)
+  }
+  for (const fieldAttr of ['accountName', 'displayName', 'wallpaper']) {
+    assert.equal(type('Mira', { name: '', fieldAttr }).decision, 'allow', fieldAttr)
+  }
+})

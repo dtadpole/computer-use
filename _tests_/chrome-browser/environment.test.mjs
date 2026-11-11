@@ -1111,6 +1111,8 @@ test('CU-494: an unnamed entry carries its raw name (else id) attribute as field
   assert.equal((await describe(['type', 'text', 'name', 'iban'], '')).fieldAttr, 'iban')
   assert.equal((await describe(['type', 'text', 'name', 'Wallet_Address'], '')).fieldAttr, 'wallet_address', 'lower-cased')
   assert.equal((await describe(['type', 'text', 'id', 'routing-number'], '')).fieldAttr, 'routing-number', 'id when no name')
+  assert.equal((await describe(['type', 'text', 'name', 'BankAccountNumber'], '')).fieldAttr, 'bank_account_number', 'camelCase keeps its word breaks')
+  assert.equal((await describe(['type', 'text', 'name', 'IBANNumber'], '')).fieldAttr, 'iban_number', 'an acronym run keeps its break')
   assert.equal('fieldAttr' in (await describe(['type', 'text', 'name', 'iban'], 'IBAN')), false, 'a named entry: its name already says it')
   assert.equal('fieldAttr' in (await describe(['type', 'text', 'name', 'a b<c>'], '')), false, 'not a plain token')
   assert.equal('fieldAttr' in (await describe(['type', 'text', 'name', 'x'.repeat(41)], '')), false, 'over 40 characters')

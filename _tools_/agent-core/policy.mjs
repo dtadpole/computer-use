@@ -20,7 +20,7 @@ export const NEVER_PRE_APPROVED = Object.freeze(['purchase', 'delete', 'permissi
 // the task's declared secret placeholder ({{secret:name}}, resolved after the policy) - into a secret field; never a press, never other
 // text, and never into a money or identity field (IBAN, routing / account number, SWIFT, card, wallet address, forwarding address,
 // recovery email / phone), which asks credential even under the grant. The desktop already never pre-approves credential (app-policy).
-const MONEY_IDENTITY_FIELD = /\b(?:iban|routing\s*(?:number|no\.?|#)?|account\s*(?:number|no\.?|#)|swift(?:\s*code)?|bic|sort\s*code|card\s*(?:number|no\.?|#)|wallet\s*address|forwarding\s*address|forward\s*to|bank\s*account|recovery\s*(?:e-?mail|phone|number))\b/i
+const MONEY_IDENTITY_FIELD = /\b(?:iban|routing\s*(?:number|no\.?|#)?|account\s*(?:number|no\.?|#)|swift(?:\s*code)?|bic|sort\s*code|card\s*(?:number|no\.?|#)|wallet\s*address|forwarding\s*address|forward\s*to|bank\s*account|payout\s*account|recovery\s*(?:e-?mail|phone|number))\b/i
 // CU-494 residual r2 (cu-developer-one 11:55Z, cu-researcher 11:54Z): an unlabelled entry is read by its raw name/id attribute
 // (the chrome driver's fieldAttr, '_'/'-' read as spaces), where a bare 'wallet' counts too; and a card or amount autocomplete
 // token marks a money field whatever the name says.
@@ -31,7 +31,7 @@ export function moneyIdentityField(target, name = target?.name) {
   if (MONEY_AUTOCOMPLETE.test(String(target?.autocomplete ?? ''))) return true
   const named = String(name ?? '')
   if (named.trim() !== '') return MONEY_IDENTITY_FIELD.test(named)
-  const attr = String(target?.fieldAttr ?? '').replace(/[_-]+/g, ' ')
+  const attr = String(target?.fieldAttr ?? '').replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2').replace(/[_-]+/g, ' ')
   return attr !== '' && (MONEY_IDENTITY_FIELD.test(attr) || MONEY_FIELD_ATTR_ONLY.test(attr))
 }
 /** CU-494 round 2/3 (cu-developer-three 11:09Z; cu-coordinator 11:21Z): whether a grant of `cls` may never cover a control named
