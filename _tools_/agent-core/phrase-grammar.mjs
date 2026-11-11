@@ -602,6 +602,22 @@ function remoteAccess(list) {
   const rest = list.slice(two ? 2 : 1).filter((t) => !FILLER.has(t))
   return ['turn on', 'enable', 'allow', 'start', 'activate'].includes(verb) && rest.length <= 4 && REMOTE_ACCESS.some((seq) => endsWithSeq(rest, seq))
 }
+function portalClass(list) {
+  if (list.length > 7) return null
+  const [verb, ...rest] = list
+  // #617 round 2 (cu-researcher 03:38Z): 'Give someone access to my account', 'Give access to my chart', 'Join research program',
+  // 'Schedule follow-up'.
+  if (verb === 'give' && rest.includes('access') && rest.length <= 5 && ['account', 'chart', 'record', 'portal'].includes(rest[rest.length - 1])) return 'credential'
+  // 'Sign waiver' keeps the grammar's existing permission on main (cu-developer-three 04:15Z) - only the ruled authorization / release.
+  if (verb === 'sign' && rest.length <= 3 && ['authorization', 'release'].includes(rest[rest.length - 1])) return 'submit'
+  if (['schedule', 'request'].includes(verb) && rest.length <= 3 && (['appointment', 'visit'].includes(rest[rest.length - 1]) || (rest.includes('follow') && rest[rest.length - 1] === 'up'))) return 'submit'
+  if (verb === 'start' && rest.length <= 3 && rest.includes('visit') && (rest.includes('e') || rest.includes('video') || rest.includes('virtual'))) return 'submit'
+  if (verb === 'opt' && rest[0] === 'in' && rest.length <= 4 && ['research', 'study', 'trial'].includes(rest[rest.length - 1])) return 'permission'
+  // cu-coordinator 03:51Z: checking in for a visit is submit ('Check in', 'eCheck-in', 'Check in for appointment', 'Check in online').
+  if ((verb === 'check' || verb === 'echeck') && rest[0] === 'in' && rest.length <= 3 && (rest.length === 1 || ['appointment', 'visit', 'online'].includes(rest[rest.length - 1]))) return 'submit'
+  if (['join', 'enroll', 'enrol'].includes(verb) && rest.length <= 3 && (rest.includes('research') || rest.includes('study') || rest.includes('trial'))) return 'permission'
+  return null
+}
 function vaultClass(list) {
   if (list.length > 7) return null
   const two = SWITCH_VERBS.has(list[0]) && (list[1] === 'off' || list[1] === 'on')
@@ -879,6 +895,10 @@ function grammarClassesOf(name, role = '') {
   if (vault) return [vault]
   const merchant = merchantClass(list)
   if (merchant) return [merchant]
+  // CU-477 (High; cu-coordinator 03:36Z): a patient portal - account access to another person (credential), signing an authorization
+  // or release and booking care (submit), research opt-in (permission); a copay-charging e-visit asks purchase through the amount row.
+  const portal = portalClass(list)
+  if (portal) return [portal]
   // F2 guard (cu-coordinator 20:28Z): declining, denying or rejecting a request answers no - the grammar's own over-ask since
   // #554 ('Decline request'); older asks ('Decline invitation', CU-422's 'Decline offer') are untouched (the hook never sees them).
   if (['decline', 'deny', 'reject'].includes(list[0]) && list.slice(1).filter((t) => !FILLER.has(t)).every((t) => t === 'request' || t === 'this' || t === 'all')
