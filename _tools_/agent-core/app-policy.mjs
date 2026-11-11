@@ -5,7 +5,7 @@ import { posix } from 'node:path'
 
 import { createExclusions } from './exclusions.mjs'
 import { normalizeKey } from './keys.mjs'
-import { NEVER_PRE_APPROVED, createPolicy, namesPasswordField } from './policy.mjs'
+import { NEVER_PRE_APPROVED, createPolicy, namesPasswordField, neverCoveredByGrant } from './policy.mjs'
 
 /**
  * The desktop action policy (design: desktop-extension/app-policy.md): per-app scope and approval in place of the
@@ -425,9 +425,11 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
    * A confirm from the class policy becomes an allow when app-scoped pre-approvals for the action's app cover every
    * class it still needs (those naming no app were already applied there); otherwise the confirm stands.
    */
-  function scopedPreApproval(verdict, app) {
+  function scopedPreApproval(verdict, app, name = '') {
     if (verdict.decision !== 'confirm' || typeof app !== 'string') return verdict
     const needed = verdict.classes ?? [verdict.class]
+    // CU-494 round 2 (cu-developer-three 11:09Z): an app-scoped grant never covers a High submit or install row either.
+    if (needed.some((cls) => neverCoveredByGrant(cls, name))) return verdict
     if (needed.length === 0 || !needed.every((cls) => preApprovedIn(cls, app, { scopedOnly: true }))) return verdict
     return { decision: 'allow', class: verdict.class, classes: needed, rule: `preapproved:${verdict.class}@${app.trim().toLowerCase()}`, reason: '' }
   }
@@ -650,7 +652,7 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     if (activates(action) && target?.opaque === true && !preApprovedIn('unknown_target', app)) {
       return { decision: 'confirm', class: 'unknown_target', classes: ['unknown_target'], rule: 'target:opaque', reason: `act on an element ${app} does not describe`, app }
     }
-    return scopedPreApproval(verdict, app)
+    return scopedPreApproval(verdict, app, target?.name ?? '')
   }
 
   /** Grow the run scope after a person approved `new_app` through a human channel; anything else changes nothing. */
