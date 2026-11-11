@@ -912,6 +912,18 @@ function grammarClassesOf(name, role = '') {
   // CU-479 (High rows; cu-coordinator 04:20Z): a send to people who opted out or to the whole list - 'Resubscribe all' and a bare
   // 'Blast' (submit). Imports and exports belong to CU-462.
   if (list[0] === 'resubscribe' && list[1] === 'all' && list.length <= 3) return ['submit']
+  // CU-484 (High; cu-coordinator 06:05Z): installing by store wording - an OAuth install into a workspace app, a browser add-on, a bare
+  // 'Install now', an installer or a plugin activation (install); sideloading and unknown sources (permission). 'Uninstall' keeps delete.
+  if (list.length <= 4) {
+    const [v, ...r] = list
+    if (v === 'add' && r[0] === 'to' && r.length === 2 && ['slack', 'discord', 'zoom', 'notion', 'trello', 'asana', 'jira', 'github', 'gitlab', 'workspace', 'firefox', 'chrome', 'edge', 'safari', 'opera', 'brave', 'browser'].includes(r[1])) return ['install']
+    if (v === 'get' && r.length <= 2 && ['extension', 'addon', 'plugin'].includes(r[r.length - 1])) return ['install']
+    if (v === 'run' && r.length === 1 && r[0] === 'installer') return ['install']
+    if (['activate', 'enable'].includes(v) && r.length <= 2 && ['plugin', 'addon'].includes(r[r.length - 1])) return ['install']
+    if (v === 'sideload' && r.length <= 2) return ['permission']
+    if (v === 'allow' && ((r[0] === 'unknown' && r[1] === 'source' && r.length === 2) || (r[0] === 'app' && r[1] === 'from' && r[2] === 'anywhere' && r.length === 3))) return ['permission']
+  }
+  if (/^\s*install\s+now\s*!?\s*$/i.test(raw)) return ['install']
   // CU-483 (High; cu-coordinator 05:34Z): brokerage - orders and automatic trading spend money (purchase); margin and options trading
   // widen what the account may do (permission). A bare 'Sell' is page-bound (policy.mjs reads the trading URL).
   if (list.length <= 3) {
