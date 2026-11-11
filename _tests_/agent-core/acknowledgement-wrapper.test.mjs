@@ -32,3 +32,10 @@ test('#685 round 2 (cu-researcher 13:54Z): the connector form is judged as the r
   }
   assert.equal(at('I understand and want to continue'), 'allow')
 })
+
+test('#685 round 3 (cu-developer-three 13:57Z): the connector keeps the row\'s trailing words (Gatekeeper)', () => {
+  const desk = (name) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: 'desktop://com.apple.systempreferences', target: { role: 'AXButton', name } }); return v.decision === 'allow' ? 'allow' : v.class }
+  for (const name of ['I understand and want to open anyway', 'I understand and still wish to open anyway', 'I understand and want to install anyway']) assert.equal(desk(name), desk(name.replace(/^.*?to /, '')), name)
+  assert.notEqual(desk('I understand and want to open anyway'), 'allow')
+  assert.equal(desk('I understand and want to continue'), 'allow')
+})
