@@ -1056,6 +1056,9 @@ function grammarClassesOf(name, role = '') {
     if (v === 'allow' && ((r[0] === 'unknown' && r[1] === 'source' && r.length === 2) || (r[0] === 'app' && r[1] === 'from' && ['anywhere', 'unknown'].includes(r[2]) && (r.length === 3 || (r[2] === 'unknown' && r[3] === 'source' && r.length === 4))))) return ['permission']
   }
   if (/^\s*install\s+now\s*!?\s*$/i.test(raw)) return ['install']
+  // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
+  // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
+  if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
   // CU-500 (High; cu-coordinator 12:49Z), as verb families with object synonyms: on an exchange, confirming a withdrawal, a market
   // order, converting everything and setting leverage move money (purchase); adding or allowlisting a withdrawal address redirects it
   // (credential); turning off the withdrawal allowlist opens the account (permission). 'Deposit address' and 'Markets' stay free.
