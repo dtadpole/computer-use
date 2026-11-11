@@ -746,7 +746,9 @@ function payDiversion(list) {
 // and the row judged again - only when the name as written gets no class, so it adds only.
 // #600 round 2 (cu-researcher 01:26Z): 'Yes please,' / 'Yes, please' and a trailing 'right now' too.
 // #600 round 3 (cu-researcher 01:33Z): a leading icon alone, and a trailing '!' or '(recommended)' too.
-const LEADING_ICONS = /^\s*(?:[\p{Extended_Pictographic}\uFE0F]\s*)+/u
+// CU-504 (glyph sweep): a leading arrow, bullet, check or other symbol character ('→ Edit DNS', '• Delete', '✓ Download W-2s') is
+// stripped like an emoji - symbols (\p{S}) and list punctuation (bullets, dashes, '>' and '»'), never letters or digits.
+const LEADING_ICONS = /^\s*(?:[\p{Extended_Pictographic}\uFE0F\p{S}\u2022\u2023\u2043\u2219\u25aa\u25ab\u25cf\u25e6\u00b7\u203a\u00bb>*\-\u2013\u2014]\s*)+/u
 // CU-503 (wrapper sweep): the acknowledgement on a dangerous dialog's final button - 'I understand, <row>', 'I understand the
 // consequences, <row>', 'I acknowledge the risk, <row>', 'Understood, <row>' - is stripped like 'Yes, <row>', so the row decides.
 // #685 round 2 (cu-researcher 13:54Z): the connector form - 'I understand (the risks) and (still) want / wish / choose to <row>'.
