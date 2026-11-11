@@ -22,3 +22,14 @@ test('CU-525 negatives and older rows', () => {
   for (const name of ['Backups', 'RLS policies', 'Connection pooling', 'SSL certificate', 'View backups', 'Network restrictions']) assert.deepEqual(classesOf(name), [], name)
   assert.ok(classesOf('Disable row level security').includes('permission'), 'older row unchanged')
 })
+
+test('#746 round 2 (cu-researcher 21:39Z): bare SSL, restore to this point, service_role', () => {
+  for (const [name, cls] of [['Disable SSL', 'permission'], ['Turn off SSL', 'permission'], ['Restore to this point', 'delete'], ['Restore to the selected point', 'delete'], ['Show service_role key', 'credential'], ['Reveal service_role key', 'credential']]) assert.ok(classesOf(name).includes(cls), name)
+  for (const name of ['SSL', 'Restore points', 'anon key', 'Show anon key']) assert.deepEqual(classesOf(name), [], name)
+})
+
+test('#746 round 2 (cu-developer-two 21:40Z): singular IP forms; database URI / URL', () => {
+  for (const name of ['Allowlist any IP address', 'Allow any address']) assert.ok(classesOf(name).includes('permission'), name)
+  for (const name of ['Get database URI', 'Copy database URL', 'Show DB URL']) assert.ok(classesOf(name).includes('credential'), name)
+  for (const name of ['Database URL format', 'IP address']) assert.deepEqual(classesOf(name), [], name)
+})
