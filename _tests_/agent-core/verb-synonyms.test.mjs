@@ -29,6 +29,12 @@ test('CU-481: a synonym never outranks a row the name already matches', () => {
 test("#627 round 2 (cu-researcher 05:08Z; cu-verifier 05:09Z): 'Create account' stays free; cu-verifier's stand-in synonyms ask", () => {
   for (const name of ['Create account', 'Create an account', 'Create new account']) assert.equal(click(name), 'allow', name)
   for (const name of ['Modify user role', 'Reveal eSIM QR code']) assert.notEqual(click(name), 'allow', name)
-  // Named (outside the six ruled mappings): 'Update audience to Public' stays free.
-  assert.equal(click('Update audience to Public'), 'allow')
+  // 'Update audience to Public' was named free here (outside the six); the 06:34Z follow-up maps update -> change (test below).
+})
+
+test('CU-481 follow-up (cu-coordinator 06:34Z): update / edit -> change, tried last', () => {
+  assert.equal(click('Update audience to Public'), click('Change audience to Public'))
+  assert.notEqual(click('Update audience to Public'), 'allow')
+  for (const name of ['Update profile', 'Update app', 'Edit profile', 'Edit photo', 'Update all', 'Update now']) assert.equal(click(name), 'allow', name)
+  assert.equal(click('Update direct deposit'), 'credential', 'its own row leads')
 })

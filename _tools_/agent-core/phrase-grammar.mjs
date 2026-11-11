@@ -783,7 +783,9 @@ function withoutDeterminers(text) {
 }
 // CU-481 (High; cu-coordinator 04:51Z): a leading-verb synonym of a ruled row - modify -> change, display / reveal -> show,
 // give -> grant, begin -> start, ask for -> request, create -> add - one more form, like CU-455 / CU-463, adds only.
-const VERB_SYNONYMS = [[/^(\s*)modify\b/i, '$1change'], [/^(\s*)(?:display|reveal)\b/i, '$1show'], [/^(\s*)give\b/i, '$1grant'],
+// cu-coordinator 06:34Z (CU-481 follow-up): update / edit -> change too, tried last like the others - never 'Update all / now' (the
+// App Store's own verdict decides those, CU-254).
+const VERB_SYNONYMS = [[/^(\s*)modify\b/i, '$1change'], [/^(\s*)(?:update|edit)\b(?!\s+(?:all|now|available)\b)/i, '$1change'], [/^(\s*)(?:display|reveal)\b/i, '$1show'], [/^(\s*)give\b/i, '$1grant'],
   [/^(\s*)begin\b/i, '$1start'], [/^(\s*)ask\s+for\b/i, '$1request'],
   // #627 round 2 (cu-researcher 05:08Z): creating an account is not adding one ('Create account' stays free).
   [/^(\s*)create\b(?!\s+(?:an?\s+|new\s+|your\s+|my\s+)?accounts?\b)/i, '$1add']]
