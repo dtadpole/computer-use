@@ -35,3 +35,8 @@ test('#617 round 2 (cu-coordinator 03:51Z): checking in asks submit; downloads a
   for (const name of ['Check in', 'eCheck-in', 'Check in for appointment', 'Check in online']) assert.equal(click(name), 'submit', name)
   for (const name of ['Download records', 'Download my records', 'Download visit summary', 'Message provider']) assert.equal(click(name), 'allow', name)
 })
+
+test('#617 x #609: the grammar on the full name goes before the canonical probe - a named copay keeps purchase', () => {
+  assert.equal(click('Start e-visit ($25 copay)'), 'purchase')
+  assert.equal(click('Start e-visit (opens in a new window)'), 'submit', 'a parenthetical with no amount still comes off')
+})

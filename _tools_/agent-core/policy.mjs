@@ -3,7 +3,7 @@ import { normaliseForPolicy, normaliseText } from './normalise.mjs'
 import { BIP39_ENGLISH } from './bip39-english.mjs'
 import { normalizeKey } from './keys.mjs'
 import { originPattern } from './sites.mjs'
-import { amountClass, canonicalForms, grammarClasses, inertLinkAmountClass } from './phrase-grammar.mjs'
+import { amountClass, canonicalForms, grammarClasses, grammarClassesAsWritten, inertLinkAmountClass } from './phrase-grammar.mjs'
 
 /**
  * The action policy (design: action-policy.md, consent-gate.md). `classify` runs in the dispatcher for every action,
@@ -1937,6 +1937,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // #600 round 3: the full strip (ellipsis, '!', '(recommended)', leading icons) reaches the older exact rows too ('Join Prime…'). A
     // Quick Actions menu item is judged by its exact built-in name (CU-382 - 'More…'), so it never takes the probe.
     // #609 round 2: each canonical form in turn (the unwrapped name, then its first sentence), stopping at the first that asks.
+    // #617 (cu-researcher 03:58Z): the grammar on the name AS WRITTEN goes first - its rows read the full name ('Start e-visit ($25
+    // copay)' asks purchase through the amount row); the whole-classifier probe of a canonical form runs only when that gets nothing.
+    if (grammarEligible && classes.length === 0 && !nativeOn && context.confirmProbe !== true) for (const cls of grammarClassesAsWritten(name, target?.role)) classes.push(cls)
     const confirmForms = context.confirmProbe === true || target?.quickActions === true ? [] : canonicalForms(name)
     for (const confirmForm of confirmForms) {
       if (!(grammarEligible && classes.length === 0 && !nativeOn)) break
