@@ -960,6 +960,20 @@ export function synonymForms(name) {
   return [...new Set([...forms, ...last])].filter((form) => form !== '' && form !== own && !known.has(form))
 }
 
+/** CU-528 (High; cu-coordinator 22:21Z + 22:22Z addendum): a trailing '?' / '.' / '!' and the question lead-ins ('Are you sure you want
+ *  to <row>?', 'Really <row>?', 'Do you (really) want to <row>?') stripped, so the row decides; '' when nothing changes. policy.mjs runs
+ *  the whole classify on this form and UNIONS its classes (adds only, never lowers). */
+export function questionStripped(name) {
+  const first = String(name ?? '').split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean)[0] ?? ''
+  if (first === '' || first.length > 200) return ''
+  const led = first.replace(/^(?:are\s+you\s+(?:sure|certain)\s+(?:that\s+)?you\s+(?:want|wish)\s+to|do\s+you\s+(?:really\s+)?want\s+to|really)\s+(?=\S)/i, '')
+  // A real question stays a question ('Is this safe?', 'How do I reset my PIN?'): no strip after an interrogative lead word. An ellipsis
+  // ('More…', 'Export...') marks a menu item that opens a dialog, not sentence punctuation - never stripped.
+  if (led === first && /^(?:is|are|was|were|am|how|what|why|where|when|who|whom|whose|which|can|could|should|shall|would|will|does|do|did|have|has|may|might|must)\b/i.test(led)) return ''
+  const stripped = led.replace(/\s*(?:[?!]+|(?<!\.)\.)\s*$/u, '').trim()
+  return stripped !== '' && stripped !== first ? stripped : ''
+}
+
 /** #721 round 3 (cu-coordinator 18:51Z): curly apostrophes and quotes read as straight ones, so a typographic twin of a ruled row
  *  ('Yes, it\u2019s me', 'Don\u2019t require a passcode') matches the row; policy.mjs applies it to the name before any rule. */
 export function straightQuotes(text) {
