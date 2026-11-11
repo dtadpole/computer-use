@@ -1983,8 +1983,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     }
     // #677 round 2 (cu-researcher 12:42Z): the direct-debit act in other words - a debit mandate or automatic / recurring withdrawals
     // set up, authorised or created - asks purchase anywhere, like 'Set up direct debit'.
+    // #677 round 3 (cu-developer-three 12:47Z): allow / enable / turn on / activate too.
     // An older 'authorize' permission stays beside it (D-108: never lower).
-    if (grammarEligible && !classes.includes('purchase') && /^\s*(?:set\s+up|authori[sz]e|create|start)\s+(?:an?\s+|the\s+)?(?:direct\s+debit|debit\s+mandate|automatic\s+(?:withdrawals?|debits?)|recurring\s+(?:withdrawals?|debits?))\s*$/i.test(name)) classes.push('purchase')
+    if (grammarEligible && !classes.includes('purchase') && /^\s*(?:set\s+up|authori[sz]e|create|start|allow|enable|turn\s+on|activate)\s+(?:an?\s+|the\s+)?(?:direct\s+debit|debit\s+mandate|automatic\s+(?:withdrawals?|debits?)|recurring\s+(?:withdrawals?|debits?))\s*$/i.test(name)) classes.push('purchase')
     // CU-491 (High; cu-coordinator 10:19Z): on a home-security page - a whole /security, /alarm, /cameras or /home-security
     // segment of an http(s) URL - silencing, muting, snoozing an alarm or siren and pausing / stopping a recording ask PHYSICAL, like
     // 'Turn off alarm'. Off that URL a meeting's 'Stop recording' stays free (#462). Named limit: a native security app (no URL).

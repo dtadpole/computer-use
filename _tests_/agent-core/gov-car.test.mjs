@@ -44,3 +44,10 @@ test('#677 round 2 (cu-researcher 12:42Z): the ruled acts as families', () => {
   for (const name of ['Add secondary driver', 'Add a guest driver']) assert.equal(at(name, CAR), 'permission', name)
   assert.equal(at('Report hours worked', 'https://shop.example/x'), 'allow', 'off a gov/tax URL')
 })
+
+test('#677 round 3 (cu-developer-three 12:47Z): allow / enable / turn on the automatic withdrawals', () => {
+  for (const name of ['Allow automatic withdrawals', 'Enable automatic withdrawals', 'Turn on automatic withdrawals']) {
+    const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: 'https://bank.example/account', target: { role: 'button', name } })
+    assert.ok((v.classes ?? [v.class]).includes('purchase'), name)
+  }
+})
