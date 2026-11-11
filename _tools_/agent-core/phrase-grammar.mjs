@@ -747,6 +747,13 @@ function payDiversion(list) {
 // #600 round 3 (cu-researcher 01:33Z): a leading icon alone, and a trailing '!' or '(recommended)' too.
 const LEADING_ICONS = /^\s*(?:[\p{Extended_Pictographic}\uFE0F]\s*)+/u
 const CONFIRM_PREFIX = /^\s*(?:(?:yes(?:\s+please)?|ok|okay|sure|confirm|continue|got\s+it|please)\s*[,:!.\u2013\u2014-]+\s*)+/iu
+// CU-482 (proposed High; cu-researcher 04:58Z): a call-to-action lead-in before a ruled row - 'please', 'click (here) to', 'tap to',
+// 'let's', 'go ahead and', 'I want to'.
+// cu-researcher 05:02Z: trailing qualifiers too - 'anyway', 'instantly', 'on this device', 'for me', 'here', 'too', 'again'.
+// #630 round 2: a trailing ', please' too ('Add time, please').
+const TRAILING_QUALIFIER = /(?:\s*,\s*please|\s+(?:anyway|anyways|instantly|immediately|on\s+this\s+(?:device|computer|browser|phone)|for\s+me|here|too|again))+\s*[.!]?\s*$/i
+// #630 round 2 (cu-researcher 05:22Z): "I'd like to" (the contraction), 'let us', 'kindly'.
+const CTA_LEAD_IN = /^\s*(?:please\s+|kindly\s+|(?:click|tap|press|select)\s+(?:here\s+)?to\s+|let(?:'|\u2019)?s\s+|let\s+us\s+|go\s+ahead\s+and\s+|i(?:\s+want|\s+would\s+like|(?:'|\u2019)d\s+like)\s+to\s+)+/iu
 const TRAILING_WRAP = /(?:\s*(?:right\s+now|now|please|\.{2,}|\u2026|!+|\((?:recommended|suggested|best\s+value)\)|[\u2192\u203a\u00bb>\u2794\u27f6\u279c\u27a1]|\p{Extended_Pictographic}|\uFE0F))+\s*$/iu
 // CU-473 (cu-researcher 02:15Z): a second line, a badge or a count after a ruled name - the first line of a multi-line name; a
 // sentence-case name followed by a capitalised second sentence ('Change direct deposit Takes effect immediately'); a trailing badge
@@ -768,7 +775,7 @@ function firstSentence(text) {
 export function canonicalConfirm(name) {
   const lines = String(name ?? '').split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean)
   const text = lines[0] ?? ''
-  return text.replace(LEADING_ICONS, '').replace(LEADING_PART, '').replace(CONFIRM_PREFIX, '').replace(TRAILING_KEYS, '').replace(TRAILING_WRAP, '').replace(TRAILING_PAREN, '').replace(TRAILING_BADGE, '').replace(TRAILING_WRAP, '').trim()
+  return text.replace(LEADING_ICONS, '').replace(LEADING_PART, '').replace(CONFIRM_PREFIX, '').replace(CTA_LEAD_IN, '').replace(TRAILING_QUALIFIER, '').replace(TRAILING_KEYS, '').replace(TRAILING_WRAP, '').replace(TRAILING_PAREN, '').replace(TRAILING_BADGE, '').replace(TRAILING_WRAP, '').trim()
 }
 /** #609 round 2 (cu-researcher 02:24Z): the canonical forms to try, in order - the unwrapped name, then (only if that asks nothing)
  * its first sentence. Additive: a Title-Case object ('Turn off Safe Browsing') is never lost to the sentence cut. */
