@@ -1093,7 +1093,7 @@ test('CU-473 (Return route): the Return target (defaultButton) carries the submi
   }
 })
 
-test('CU-494: an unnamed entry carries its raw name (else id) attribute as fieldAttr; a named entry, a non-token value and a non-entry carry none', async () => {
+test('CU-494: an entry carries its raw name (else id) attribute as fieldAttr; a non-token value and a non-entry carry none', async () => {
   const describe = async (attributes, axName, editable = true) => {
     const { options } = harness({
       handlers: {
@@ -1113,7 +1113,7 @@ test('CU-494: an unnamed entry carries its raw name (else id) attribute as field
   assert.equal((await describe(['type', 'text', 'id', 'routing-number'], '')).fieldAttr, 'routing-number', 'id when no name')
   assert.equal((await describe(['type', 'text', 'name', 'BankAccountNumber'], '')).fieldAttr, 'bank_account_number', 'camelCase keeps its word breaks')
   assert.equal((await describe(['type', 'text', 'name', 'IBANNumber'], '')).fieldAttr, 'iban_number', 'an acronym run keeps its break')
-  assert.equal('fieldAttr' in (await describe(['type', 'text', 'name', 'iban'], 'IBAN')), false, 'a named entry: its name already says it')
+  assert.equal((await describe(['type', 'text', 'name', 'iban'], 'Nickname')).fieldAttr, 'iban', 'a named entry carries it too (#675 r2: a union)')
   assert.equal('fieldAttr' in (await describe(['type', 'text', 'name', 'a b<c>'], '')), false, 'not a plain token')
   assert.equal('fieldAttr' in (await describe(['type', 'text', 'name', 'x'.repeat(41)], '')), false, 'over 40 characters')
   assert.equal('fieldAttr' in (await describe(['type', 'button', 'name', 'iban'], '', false)), false, 'not an entry')
