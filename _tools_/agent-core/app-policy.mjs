@@ -5,7 +5,7 @@ import { posix } from 'node:path'
 
 import { createExclusions } from './exclusions.mjs'
 import { normalizeKey } from './keys.mjs'
-import { NEVER_PRE_APPROVED, createPolicy, namesPasswordField } from './policy.mjs'
+import { NEVER_PRE_APPROVED, createPolicy, isTextEntry, moneyIdentityField, namesPasswordField, neverCoveredByGrant } from './policy.mjs'
 
 /**
  * The desktop action policy (design: desktop-extension/app-policy.md): per-app scope and approval in place of the
@@ -167,7 +167,8 @@ function launchesCode(action, target) {
 // named file (a list, a column or icon view, nothing), asks launch_code: the selected file is unread. Named over-ask:
 // opening a document that way. (2) A menu item titled as an excluded runner (Open With > Terminal, Script Editor ...)
 // is refused anywhere: opening anything with it runs it outside the approved app.
-const FILE_BROWSERS = new Set(['com.apple.finder'])
+// CU-377 follow-up (cu-coordinator 22:41Z): Finder and the common third-party file browsers - a row there is a file.
+export const FILE_BROWSERS = new Set(['com.apple.finder', 'com.cocoatech.PathFinder', 'com.binarynights.ForkLift-3', 'com.binarynights.ForkLift', 'com.eltima.cmd1', 'com.mrrsoftware.marta', 'org.yanex.marta'])
 const OPEN_ITEM = /^(open|打开|打開)$/i
 const RUNNER_TITLES = /^(terminal|iterm2?|warp|ghostty|kitty|alacritty|hyper|wezterm|script editor|automator|shortcuts|alfred|raycast|终端|終端機|脚本编辑器|工序指令編寫程式|自动操作|自動操作|快捷指令|捷徑)$/i
 const isMenuItem = (target) => /^(ax)?menuitem$/i.test(String(target?.role ?? ''))
@@ -424,9 +425,14 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
    * A confirm from the class policy becomes an allow when app-scoped pre-approvals for the action's app cover every
    * class it still needs (those naming no app were already applied there); otherwise the confirm stands.
    */
-  function scopedPreApproval(verdict, app) {
+  function scopedPreApproval(verdict, app, name = '', action = null, target = null) {
     if (verdict.decision !== 'confirm' || typeof app !== 'string') return verdict
     const needed = verdict.classes ?? [verdict.class]
+    // CU-494 round 2 (cu-developer-three 11:09Z): an app-scoped grant never covers a High submit or install row either.
+    if (needed.some((cls) => neverCoveredByGrant(cls, name))) return verdict
+    // CU-494 residual r2 (cu-developer-three 11:52Z): nor typing into a money or identity field - the class policy raises
+    // those only under grants naming no app, so an app-scoped sensitive_data or credential grant must not turn them into allows.
+    if (action?.type === 'type' && target && isTextEntry(target) && moneyIdentityField(target, name)) return verdict
     if (needed.length === 0 || !needed.every((cls) => preApprovedIn(cls, app, { scopedOnly: true }))) return verdict
     return { decision: 'allow', class: verdict.class, classes: needed, rule: `preapproved:${verdict.class}@${app.trim().toLowerCase()}`, reason: '' }
   }
@@ -485,6 +491,17 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     const appleItem = bound && typeof bound === 'object' ? (Array.isArray(bound.items) ? bound.items : [bound]).find((one) => one?.appleMenu === true) : undefined
     if (appleItem) {
       return { decision: 'block', class: null, rule: 'system_shortcut', reason: `${(action.keys ?? []).join('+')} fires the Apple menu's ${appleItem.name}; it acts beyond the approved app` }
+    }
+    // CU-398 (High; cu-coordinator 04:16Z): a click, or Return/Space, on an Apple-menu item (the helper marks appleMenu by
+    // structure - the menu bar's first item) acts beyond the approved app like its chord; so does a button of the session's
+    // own Restart / Shut Down / Log Out confirmation (loginwindow). An app's own 'Log Out' or 'Restart Level' stays as today.
+    const activatesTarget = ['click', 'double_click', 'triple_click'].includes(action.type)
+      || (action.type === 'keypress' && Array.isArray(action.keys) && action.keys.some((key) => /^(return|enter|space)$/i.test(String(key))))
+    if (activatesTarget && target?.appleMenu === true) {
+      return { decision: 'block', class: null, rule: 'system_shortcut', reason: `${action.type === 'keypress' ? (action.keys ?? []).join('+') : action.type} on the Apple menu's "${String(target.name ?? '').trim()}"; it acts beyond the approved app` }
+    }
+    if (activatesTarget && target?.origin === 'com.apple.loginwindow') {
+      return { decision: 'block', class: null, rule: 'system_shortcut', reason: 'a button of the session\'s restart, shut down or log out confirmation; it acts beyond the approved app' }
     }
     // Aiming at an excluded app is refused, and so is a target that names no app (fail closed); an excluded app that
     // came to the front is the person's (R65, R79).
@@ -566,7 +583,9 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     const verdict = classes.classify(action, { ...context, url: 'desktop://', target, dialog: context.dialog ?? null })
     // Never pre-approvable: preApprovals are not consulted. Only a hand-off (a password change) outranks it.
     const store = storeInstall(action, target, app)
-    if (store !== null && verdict.decision === 'allow') {
+    // CU-467: a price button now asks purchase in the class policy too; the App Store's own never-pre-approvable verdict still
+    // decides when that is the only class asked.
+    if (store !== null && (verdict.decision === 'allow' || (verdict.decision === 'confirm' && (verdict.classes ?? [verdict.class]).every((cls) => cls === store)))) {
       return { decision: 'confirm', class: store, classes: [store], rule: `target:${store}`, reason: `"${String(target.name).trim()}" in the App Store ${store === 'purchase' ? 'buys an app' : 'installs or updates software'}`, app }
     }
     if (launchesCode(action, target) && verdict.decision !== 'handoff') {
@@ -636,7 +655,7 @@ export function createAppPolicy({ scope = [], approvals = null, exclusions = cre
     if (activates(action) && target?.opaque === true && !preApprovedIn('unknown_target', app)) {
       return { decision: 'confirm', class: 'unknown_target', classes: ['unknown_target'], rule: 'target:opaque', reason: `act on an element ${app} does not describe`, app }
     }
-    return scopedPreApproval(verdict, app)
+    return scopedPreApproval(verdict, app, target?.name ?? '', action, target)
   }
 
   /** Grow the run scope after a person approved `new_app` through a human channel; anything else changes nothing. */

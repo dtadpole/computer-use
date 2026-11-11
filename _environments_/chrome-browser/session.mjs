@@ -93,8 +93,10 @@ export class BrowserSession extends EventEmitter {
    *
    * Every page HTTP(S) request is judged by `Fetch` first, so a refusal from the proxy is either a page's WebSocket
    * or Chrome's own background traffic (measured: update checks, clock sync, google.com pre-connects). A proxy refusal
-   * whose host and port match a WebSocket a page created in the last 15 s (`Network.webSocketCreated`) is the page's
-   * and goes into `blocked` under that WebSocket's URL; any other is a `browser_traffic_blocked` notice.
+   * whose host and port match a WebSocket an open page created (`Network.webSocketCreated`, the page's last 50) is the
+   * page's and goes into `blocked` under that WebSocket's URL - for the page's lifetime, so a socket the page opened
+   * long before its refused reconnect still claims it (cu-researcher's #339 corner); any other is a
+   * `browser_traffic_blocked` notice.
    */
   recordBlocked(entry) {
     const at = entry.at ?? Date.now()
@@ -123,8 +125,8 @@ export class BrowserSession extends EventEmitter {
     }
     const port = (parsed) => parsed.port || ({ 'http:': '80', 'ws:': '80', 'https:': '443', 'wss:': '443' })[parsed.protocol]
     for (const page of this.pages.values()) {
-      const socket = page.webSockets.find((candidate) => {
-        if (at - candidate.at > 15_000) return false
+      const socket = page.webSockets.findLast((candidate) => {
+        if (candidate.at > at) return false
         try {
           const parsed = new URL(candidate.url)
           return parsed.hostname === target.hostname && port(parsed) === port(target)
@@ -379,6 +381,26 @@ export class BrowserSession extends EventEmitter {
       if (message?.sessionId === page.sessionId) handler(params ?? {})
     })
     on('Page.frameAttached', ({ frameId }) => page.frames.add(frameId))
+    // CU-360: a navigation to a scheme Chrome hands to another app (shortcuts:, zoommtg:, ...) never reaches Fetch and
+    // needs no action of the run - a page script can start it. Chrome reports the request first (measured: reason
+    // scriptInitiated, then 'Failed to launch ...' for a scheme with no handler); it becomes a notice, the scheme only.
+    // Then a best-effort stop: Page.stopLoading at once (`stop`: sent, then sent_ok - Chrome took the command - or failed; `launched` stays 'unknown'). Chrome opens
+    // mailto: (only mailto:) through the OS with no prompt (cu-researcher's reading of external_protocol_handler.cc)
+    // after an asynchronous handler lookup, so the stop may or may not win that race; it is not measured against a real
+    // launch (no app may be opened here), which is why the notice says what was tried, not that the launch was stopped.
+    on('Page.frameRequestedNavigation', ({ url, reason }) => {
+      let scheme
+      try {
+        scheme = new URL(String(url)).protocol
+      } catch {
+        return
+      }
+      if (['http:', 'https:', 'about:', 'data:', 'blob:', 'javascript:', 'chrome-error:'].includes(scheme)) return
+      const notice = { kind: 'external_navigation_requested', url: scheme, reason: typeof reason === 'string' ? reason : null, at: Date.now(), stop: 'sent', launched: 'unknown' }
+      this.notices.push(notice)
+      this.emit('notice', notice)
+      void this.send(page, 'Page.stopLoading').then(() => { notice.stop = 'sent_ok' }, () => { notice.stop = 'failed' })
+    })
     on('Page.frameDetached', ({ frameId }) => {
       page.frames.delete(frameId)
       page.worlds.delete(frameId)

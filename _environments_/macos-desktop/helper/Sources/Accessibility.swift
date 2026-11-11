@@ -255,6 +255,27 @@ enum Accessibility {
     elementAttribute(AXUIElementCreateSystemWide(), "AXFocusedUIElement")
   }
 
+  /// CU-380: the highlighted item of an open menu in an app - its open context or pop-up menu (an AXMenu among the
+  /// app's children), else the menu under its selected menu bar item - through each AXMenu's AXSelectedChildren, into an
+  /// open submenu at most 6 deep. Attributes only: nothing is pressed, opened or moved. nil when none can be read.
+  static func highlightedMenuItem(pid: pid_t) -> AXUIElement? {
+    let app = AXUIElementCreateApplication(pid)
+    var menu = children(app).first { string($0, "AXRole") == "AXMenu" }
+    if menu == nil, let bar = elementAttribute(app, "AXMenuBar"),
+       let open = children(bar).first(where: { (attribute($0, "AXSelected") as? NSNumber)?.boolValue == true }) {
+      menu = children(open).first { string($0, "AXRole") == "AXMenu" }
+    }
+    var item: AXUIElement? = nil
+    var depth = 0
+    while let current = menu, depth < 6 {
+      guard let selected = elements(current, "AXSelectedChildren").first(where: { string($0, "AXRole") == "AXMenuItem" }) else { break }
+      item = selected
+      menu = children(selected).first { string($0, "AXRole") == "AXMenu" }
+      depth += 1
+    }
+    return item
+  }
+
   /// CU-190: an element-valued attribute with what the read said - the element, a positive none, or a failure.
   static func elementRead(_ element: AXUIElement, _ name: String) -> (AXRead, AXUIElement?) {
     var value: CFTypeRef?
@@ -309,6 +330,8 @@ enum Accessibility {
                                 displayText: { displayText(element) }, staticValue: { string(element, "AXValue") })
     let captionValue = Caption.forTarget(own: caption(element, role: role), leaf: captionLeaf.flatMap { caption($0, role: string($0, "AXRole")) })
     let placeholderValue = Placeholder.applies(role: role) ? Placeholder.pick(role: role, raw: string(element, "AXPlaceholderValue")) : nil
+    // CU-387: the file a row's child shows is its row's or cell's (FileAncestor) when it has none of its own.
+    let file = fileOf(element, role: role)
     var shape: [String: JSON] = [
       "bundleId": .string(bundle),
       "pid": owner.map { .int(Int($0)) } ?? .null,
@@ -319,8 +342,8 @@ enum Accessibility {
       "secure": .bool(subrole == secureSubrole || role == secureSubrole),
       "opaque": .bool(title == nil && genericRoles.contains(role ?? "AXUnknown")),
       // What a launch_code check reads (design 0.3.4): the file an element shows and its URL, approved apps only.
-      "filename": .optionalString(string(element, "AXFilename")),
-      "url": .optionalString(urlString(element)),
+      "filename": .optionalString(file.filename),
+      "url": .optionalString(file.url),
       "editable": .bool(editable),
       // CU-194: where the element's window (or sheet) sits, so the driver can key a field by its frame within it - a
       // window moved between two reads keeps the key. Global top-left points; null when AXWindow cannot be read.
@@ -352,7 +375,149 @@ enum Accessibility {
     // CU-250: a menu item says where it sits - its menu path, and whether a submenu on the way is the Services menu -
     // so policy refuses a clicked service (an owner-installed one included), not only the default services' titles.
     if role == "AXMenuItem" { for (key, value) in menuContext(of: element, title: string(element, "AXTitle")).json { shape[key] = value } }
+    // CU-382: a button in Finder's preview-pane Quick Actions row is marked like a Quick Actions menu item.
+    if role == "AXButton", inQuickActionsRow(element, title: string(element, "AXTitle") ?? string(element, "AXDescription")) { shape["quickActions"] = .bool(true) }
+    if file.fromAncestor { shape["fileFrom"] = .string("ancestor") }
+    // CU-392: a Finder drop destination that sends a file away (DropDestination), the value only.
+    if let destination = dropDestination(element, bundle: bundle, role: role) { shape["dropDestination"] = .string(destination) }
+    // CU-372: a pop-up button takes type-ahead and arrows without opening its menu, so it says what it holds - its menu
+    // items as AX shows them closed (PopUpItems), never by opening the menu.
+    // A pull-down button is AXMenuButton in AppKit: the same read, marked pullsDown (its title is a label, not a value).
+    if role == "AXPopUpButton" || role == "AXMenuButton" { shape["popUp"] = popUp(element, pullsDown: role == "AXMenuButton") }
+    // CU-409: a button inside a form says what the form holds (FormContext) - the selected texts beside it and whether
+    // an amount entry is there - so a bare 'Sell' or 'Long' in a native or web trading panel is judged like the chrome
+    // driver's (CU-402). Present only when the form has either.
+    if role == "AXButton", !FormContext.windowButtonSubroles.contains(subrole ?? ""), let form = formContext(of: element) { shape["formContext"] = form }
     return .object(shape)
+  }
+
+  /// CU-409: the button's ancestors, nearest first (at most FormContext.maxLevels), each scanned until the walk finds its
+  /// form or stops (FormContext.outcome). Attributes only.
+  static func formContext(of element: AXUIElement) -> JSON? {
+    var containers: [FormContext.Container] = []
+    let deadline = Date().addingTimeInterval(FormContext.budgetSeconds)
+    var node = elementAttribute(element, "AXParent")
+    while let current = node, containers.count < FormContext.maxLevels {
+      let role = string(current, "AXRole")
+      let subrole = string(current, "AXSubrole")
+      var container = FormContext.Container(role: role, subrole: subrole, submitVerbs: [], selected: [], entryLabels: [], truncated: false)
+      if !(role.map { FormContext.stopRoles.contains($0) } ?? false) { scanForm(current, into: &container, deadline: deadline) }
+      containers.append(container)
+      guard FormContext.outcome(container) == .next else { break }
+      node = elementAttribute(current, "AXParent")
+    }
+    return FormContext.pick(containers)
+  }
+
+  /// #510 F1: a combo box's selected text (FormContext.comboText) - editable when its AXValue is settable or it holds a
+  /// text field; its list items are the titles or values of its list's children (at most 50), read without opening it.
+  private static func comboText(_ combo: AXUIElement) -> String? {
+    var settable: DarwinBoolean = false
+    let kids = children(combo)
+    let editable = (AXUIElementIsAttributeSettable(combo, "AXValue" as CFString, &settable) == .success && settable.boolValue)
+      || kids.contains { string($0, "AXRole") == "AXTextField" }
+    let value = string(combo, "AXValue")
+    guard editable, value != nil else { return FormContext.comboText(value: value, editable: editable, items: []) }
+    let lists = kids.filter { ["AXList", "AXListBox", "AXMenu", "AXScrollArea"].contains(string($0, "AXRole") ?? "") }
+    let rows = lists.flatMap { list -> [AXUIElement] in
+      let inner = children(list)
+      return string(list, "AXRole") == "AXScrollArea" ? inner.flatMap { children($0) } : inner
+    }.prefix(50)
+    let items = rows.compactMap { row in string(row, "AXTitle").flatMap { $0.isEmpty ? nil : $0 } ?? string(row, "AXValue") }
+    return FormContext.comboText(value: value, editable: editable, items: items)
+  }
+
+  /// CU-412: whether the element is inside a web page (an AXWebArea among its ancestors, CU-322's walk).
+  static func inWebArea(_ element: AXUIElement) -> Bool {
+    let walk = ancestorWalk(of: element)
+    return WebArea.contains(path: walk.path.map { $0.role }, ending: walk.ending) == true
+  }
+
+  /// CU-412: the focus's form (DefaultCandidates.pick over at most 4 ancestors) and its enabled submit-like buttons -
+  /// each scan within FormContext's element and depth bounds and one time budget for the walk; a scan cut short is
+  /// `truncated` (agent core asks unknown). Attributes only.
+  static func formCandidates(of focus: AXUIElement) -> (buttons: [AXUIElement], truncated: Bool) {
+    let deadline = Date().addingTimeInterval(FormContext.budgetSeconds)
+    var levels: [DefaultCandidates.Level] = []
+    var found: [[AXUIElement]] = []
+    var node = elementAttribute(focus, "AXParent")
+    while let current = node, levels.count < DefaultCandidates.maxLevels {
+      let role = string(current, "AXRole")
+      var buttons: [AXUIElement] = []
+      var truncated = false
+      if DefaultCandidates.scans(role: role) { (buttons, truncated) = submitButtons(in: current, deadline: deadline) }
+      levels.append(DefaultCandidates.Level(role: role, subrole: string(current, "AXSubrole"), buttons: buttons.count, truncated: truncated))
+      found.append(buttons)
+      switch DefaultCandidates.step(levels[levels.count - 1]) {
+      case .form: return (buttons, false)
+      case .stop: return ([], false)
+      case .unread: return ([], true)
+      case .next: node = elementAttribute(current, "AXParent")
+      }
+    }
+    return ([], false)
+  }
+
+  /// CU-412: a container's enabled submit-like AXButtons (not window buttons, not AXEnabled false), breadth first, at most
+  /// FormContext.maxScan elements 4 deep before `deadline`; a button's children are not entered.
+  private static func submitButtons(in root: AXUIElement, deadline: Date) -> (buttons: [AXUIElement], truncated: Bool) {
+    var queue: [(element: AXUIElement, depth: Int)] = children(root).map { ($0, 1) }
+    var seen = 0
+    var buttons: [AXUIElement] = []
+    while !queue.isEmpty {
+      guard seen < FormContext.maxScan, Date() < deadline else { return (buttons, true) }
+      let next = queue.removeFirst()
+      seen += 1
+      let role = string(next.element, "AXRole")
+      if let role, FormContext.submitRoles.contains(role) {
+        let windowButton = FormContext.windowButtonSubroles.contains(string(next.element, "AXSubrole") ?? "")
+        let disabled = (attribute(next.element, "AXEnabled") as? NSNumber)?.boolValue == false
+        if !windowButton && !disabled { buttons.append(next.element) }
+        continue
+      }
+      if next.depth < 4 { queue += children(next.element).map { ($0, next.depth + 1) } }
+    }
+    return (buttons, false)
+  }
+
+  /// One container's submit-like controls (their words: title, description, else their label children), its pop-ups'
+  /// and combo boxes' selected texts and its text entries' label words (description, placeholder, title, help - never
+  /// the value), breadth first, at most FormContext.maxScan elements 4 deep and within the walk's time budget; more marks
+  /// the scan truncated.
+  private static func scanForm(_ root: AXUIElement, into container: inout FormContext.Container, deadline: Date) {
+    var queue: [(element: AXUIElement, depth: Int)] = children(root).map { ($0, 1) }
+    var seen = 0
+    while !queue.isEmpty {
+      guard seen < FormContext.maxScan, Date() < deadline else { container.truncated = true; return }
+      let next = queue.removeFirst()
+      seen += 1
+      let role = string(next.element, "AXRole")
+      if let role, FormContext.submitRoles.contains(role) {
+        if FormContext.windowButtonSubroles.contains(string(next.element, "AXSubrole") ?? "") { continue }
+        let own = string(next.element, "AXTitle").flatMap { $0.isEmpty ? nil : $0 } ?? string(next.element, "AXDescription").flatMap { $0.isEmpty ? nil : $0 }
+        container.submitVerbs.append(own ?? displayText(next.element))
+        continue
+      }
+      if role == "AXPopUpButton" { container.selected.append(string(next.element, "AXValue") ?? string(next.element, "AXTitle")); continue }
+      if role == "AXComboBox" { container.selected.append(comboText(next.element)); continue }
+      if role == "AXTextField" {
+        container.entryLabels.append(["AXDescription", "AXPlaceholderValue", "AXTitle", "AXHelp"].map { string(next.element, $0) })
+        continue
+      }
+      if next.depth < 4 { queue += children(next.element).map { ($0, next.depth + 1) } }
+    }
+  }
+
+  /// CU-372: a pop-up button's selected title (its AXValue) and its menu's items, read from the AXMenu among its
+  /// AXChildren (at most 200 children read) - attributes only; nothing is pressed or opened. No menu child: unread.
+  private static func popUp(_ element: AXUIElement, pullsDown: Bool) -> JSON {
+    let selected = pullsDown ? string(element, "AXTitle") : string(element, "AXValue")
+    guard let menu = children(element).first(where: { string($0, "AXRole") == "AXMenu" }) else { return PopUpItems.shape(selected: selected, items: nil, pullsDown: pullsDown) }
+    let entries = children(menu)
+    guard entries.count <= 200 else { return PopUpItems.shape(selected: selected, items: nil, pullsDown: pullsDown) }
+    let items = entries.filter { string($0, "AXRole") == "AXMenuItem" }
+      .map { PopUpItems.Item(title: string($0, "AXTitle"), enabled: (attribute($0, "AXEnabled") as? NSNumber)?.boolValue) }
+    return PopUpItems.shape(selected: selected, items: items, pullsDown: pullsDown)
   }
 
   /// CU-361: the static text beside an entry in layout (NearbyLabel.pick) - its window's AXStaticText descendants (at
@@ -370,19 +535,82 @@ enum Accessibility {
 
   /// CU-250: the menus above a menu item, nearest first, up to the menu bar (or a context menu's top): each submenu's
   /// holding item title and its items' titles (at most 60 read, for the Services markers). Names only.
+  /// CU-382: the walk notes a failed AXParent read (menuContextUnread) and whether the item is Finder's (Quick Actions'
+  /// structural marker counts only there); child titles keep their order, as the marker is the submenu's last item.
   static func menuContext(of item: AXUIElement, title: String?) -> MenuContext {
     var levels: [MenuContext.Level] = []
-    var node = elementAttribute(item, "AXParent")
+    var unread = false
+    var underApple = false
+    func parent(_ element: AXUIElement) -> AXUIElement? {
+      let (outcome, value) = elementRead(element, "AXParent")
+      if outcome == .failed { unread = true }
+      return value
+    }
+    var node = parent(item)
     while let menu = node, levels.count < MenuContext.maxDepth, string(menu, "AXRole") == "AXMenu" {
-      let holder = elementAttribute(menu, "AXParent")
+      let holder = parent(menu)
       let holderRole = holder.flatMap { string($0, "AXRole") }
       let holds = holderRole == "AXMenuItem" || holderRole == "AXMenuBarItem"
       let childTitles = children(menu).prefix(60).compactMap { string($0, "AXTitle") }
       levels.append(MenuContext.Level(holderTitle: holds ? holder.flatMap { string($0, "AXTitle") } ?? "" : nil, childTitles: childTitles))
+      // CU-398: the walk's top is a menu bar item - the Apple menu when it is the menu bar's first child (the menu-key
+      // walk's rule). Attributes only: the bar and its first child.
+      if holderRole == "AXMenuBarItem", let holder, let bar = parent(holder), string(bar, "AXRole") == "AXMenuBar",
+         let first = children(bar).first { underApple = CFEqual(first, holder) }
       guard holds, holderRole == "AXMenuItem", let holder else { break }
-      node = elementAttribute(holder, "AXParent")
+      node = parent(holder)
     }
-    return MenuContext.of(itemTitle: title, levels: levels)
+    let inFinder = pid(item).flatMap { bundleId(pid: $0) } == QuickActionsMenu.finderBundleId
+    return MenuContext.of(itemTitle: title, levels: levels, inFinder: inFinder, unread: unread, underAppleMenu: underApple)
+  }
+
+  /// CU-387: an element's own AXFilename/AXURL, else - for a row's content (FileAncestor.lendingRoles) - the nearest
+  /// file-bearing ancestor's within FileAncestor's bounds. Attributes only.
+  static func fileOf(_ element: AXUIElement, role: String?) -> (filename: String?, url: String?, fromAncestor: Bool) {
+    let own = (string(element, "AXFilename"), urlString(element))
+    if own.0 != nil || own.1 != nil { return (own.0, own.1, false) }
+    guard let role, FileAncestor.lendingRoles.contains(role) else { return (nil, nil, false) }
+    var levels: [FileAncestor.Level] = []
+    var node = elementAttribute(element, "AXParent")
+    while let current = node, levels.count < FileAncestor.maxLevels {
+      let level = FileAncestor.Level(role: string(current, "AXRole"), filename: string(current, "AXFilename"), url: urlString(current))
+      levels.append(level)
+      if level.role == "AXWindow" || level.filename != nil || level.url != nil || FileAncestor.stopRoles.contains(level.role ?? "") { break }
+      node = elementAttribute(current, "AXParent")
+    }
+    guard let picked = FileAncestor.pick(levels) else { return (nil, nil, false) }
+    return (picked.filename, picked.url, true)
+  }
+
+  /// CU-392: in Finder, where a drop on this element sends a file (DropDestination): the window's title, else the
+  /// element's own sidebar-row title (the row, its cell or its text, up to 3 levels) inside an outline. Titles stay here.
+  static func dropDestination(_ element: AXUIElement, bundle: String?, role: String?, table: DropDestination = .current) -> String? {
+    guard bundle == QuickActionsMenu.finderBundleId else { return nil }
+    var rowTitle: String? = role == "AXStaticText" ? string(element, "AXValue") : string(element, "AXTitle")
+    var inOutline = false
+    var node = elementAttribute(element, "AXParent")
+    for _ in 0..<4 {
+      guard let current = node else { break }
+      let currentRole = string(current, "AXRole")
+      if currentRole == "AXOutline" { inOutline = true; break }
+      if currentRole == "AXWindow" { break }
+      if rowTitle == nil || rowTitle?.isEmpty == true { rowTitle = string(current, "AXTitle") ?? string(current, "AXDescription") }
+      node = elementAttribute(current, "AXParent")
+    }
+    return table.of(inFinder: true, windowTitle: windowTitle(of: element), rowTitle: rowTitle, inOutline: inOutline)
+  }
+
+  /// CU-382: a button in a Quick Actions row (Finder's preview pane) - a group named 'Quick Actions' (AXTitle or
+  /// AXDescription) at most 4 levels up, the button itself not 'More…'. Titles and descriptions only.
+  static func inQuickActionsRow(_ element: AXUIElement, title: String?, quick: QuickActionsMenu = .current) -> Bool {
+    guard !quick.isExempt(title) else { return false }
+    var node = elementAttribute(element, "AXParent")
+    for _ in 0..<4 {
+      guard let current = node else { return false }
+      for name in ["AXTitle", "AXDescription"] { if let label = string(current, name), quick.titles.contains(label) { return true } }
+      node = elementAttribute(current, "AXParent")
+    }
+    return false
   }
 
   /// The subroles of an element and its ancestors up to its window, nearest first (CU-76: a system dialog marks itself
