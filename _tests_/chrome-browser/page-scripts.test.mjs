@@ -1004,3 +1004,12 @@ test('CU-472: a link that does not navigate says inertLink - no, empty, "#", "#f
   assert.equal(describeElement(el('DIV', { attrs: { role: 'link' }, children: ['Pay'], closest: () => null })).inertLink, true, 'an ARIA link with no <a>')
   assert.equal('inertLink' in describeElement(el('BUTTON', { children: ['Pay'], closest: () => null })), false, 'a button is no link')
 })
+
+test('CU-473: a control whose rendered text has two or more lines says firstLine (the first non-empty one, at most 80 characters); one line says nothing', () => {
+  const withText = (innerText) => { const b = el('BUTTON', { children: [innerText.replace(/\n/g, ' ')], closest: () => null }); b.innerText = innerText; return b }
+  assert.equal(describeElement(withText('Change Direct Deposit\nTakes Effect Immediately')).firstLine, 'Change Direct Deposit')
+  assert.equal(describeElement(withText('\n  Lock   rate \n\nToday only')).firstLine, 'Lock rate')
+  assert.equal(describeElement(withText(`${'x'.repeat(100)}\nsecond`)).firstLine.length, 80)
+  assert.equal('firstLine' in describeElement(withText('Change direct deposit')), false, 'one line')
+  assert.equal('firstLine' in describeElement(el('BUTTON', { children: ['Pay'], closest: () => null })), false, 'no innerText (a fake node)')
+})
