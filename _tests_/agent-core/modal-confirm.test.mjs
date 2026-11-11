@@ -57,3 +57,15 @@ test('CU-507 desktop rows each way (cu-developer-three 16:09Z), fed the shape di
   assert.ok(desk('Erase "Untitled"?', 'This will erase all data.').includes('delete'))
   assert.deepEqual(desk('Software Update', 'Restart later'), [])
 })
+
+test('#702 round 2 (cu-researcher 16:24Z): the title gets the full canonical form; descriptions lose their lead-in', () => {
+  const at = (url, name, dialogName, dialogDescription) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url, target: { role: 'button', name, dialogName, dialogDescription } }); return v.decision === 'allow' ? [] : (v.classes ?? [v.class]) }
+  const sec = 'https://home.example/security/alarms'
+  const bare = (() => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: sec, target: { role: 'button', name: 'Silence all alarms' } }); return v.classes ?? [v.class] })()
+  for (const cls of bare) assert.ok(at(sec, 'OK', 'Silence all alarms?', '').includes(cls), `quantified title: ${cls}`)
+  assert.ok(at('https://cloud.example/x', 'Continue', 'Heads up', 'This will empty bucket.').includes('delete'), 'This will <row>')
+  assert.ok(at('https://cloud.example/x', 'OK', 'Warning', 'You are about to delete this repository.').includes('delete'), 'You are about to <row>')
+  assert.ok(at('https://cloud.example/x', 'Confirm', 'Are you sure?', 'This will empty the bucket.').includes('delete'), 'determiner in the rest')
+  assert.ok(at('https://cloud.example/x', 'OK', 'Careful', 'This cannot be undone and will delete this repository.').includes('delete'))
+  assert.deepEqual(at('https://cloud.example/x', 'OK', 'Heads up', 'This will refresh the page.'), [])
+})
