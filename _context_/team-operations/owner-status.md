@@ -1,32 +1,32 @@
 ---
 title: Computer use on the Mac mini - one-page status for the owner
 created: 2026-11-06T04:55:00Z
-modified: 2026-11-11T15:21:00Z
+modified: 2026-11-11T16:21:00Z
 level: L2
-version: 1.8.30
+version: 1.8.31
 status: unverified
 description: 'What the [cu] team has built and proven, what is left, and the owner actions that are still open - one page, kept current by the coordinator.'
 grounded_in:
   - source: ULTIMATE_GOAL.md@2.0.0
-  - source: _seats_/cu-verifier/ultimate-goal-2-verdict.md@0.9.169
+  - source: _seats_/cu-verifier/ultimate-goal-2-verdict.md@0.9.171
   - source: _context_/team-operations/decision-log.yaml (D-034, D-052, D-063, D-079 to D-102)
 ---
 
 # Computer use on the Mac mini - status for the owner
 
-State at 11 November 2026, 15:21 UTC.
+State at 11 November 2026, 16:21 UTC.
 
 ## Where it stands
 
 Seven of the nine ULTIMATE_GOAL 2.0 rows hold on live evidence. Two are open:
 
-- **Consent and safety** holds only when no Urgent or High under-ask is open (D-063). **Two High items are open** in
-  verdict 0.9.169, both reproduced: CU-504 (a leading glyph such as an arrow or tick dropping ruled rows; #691 -
-  landed and closed live after that verdict) and CU-505 (a section label such as 'Danger zone:' dropping ruled
-  rows; #694 - both reviews in). Every earlier ruled High is closed live: fifty-three on 10 November and
-  thirty-one on 11 November so far (CU-473 to CU-479, CU-481 to CU-503 and CU-414's remote-control row). After
-  the Highs, one ruled PR lowers the named older over-asks (CU-429, #690 - both reviews in). Both consent tables are signed. Since 9 November the team's own audits
-  have found one hundred and ten High gaps, closed one hundred and seven live and lowered one to Medium, among them CU-363 (a website's own one-key shortcuts, such as '#'
+- **Consent and safety** holds only when no Urgent or High under-ask is open (D-063). **One High item is open** in
+  verdict 0.9.171: CU-506 (a compound name such as 'Review and confirm withdrawal' hiding a ruled row; #699 -
+  cu-researcher's OK at r3, the live re-run pending). Filed and ruled since: CU-507 (a generic confirm button in an
+  in-page dialog; the web unit #702, the desktop read in helper 0.2.70) and CU-508 (a widening trailing qualifier
+  such as 'permanently' or 'for all users'). Every earlier ruled High is closed live: fifty-three on 10 November
+  and thirty-three on 11 November so far. The named older over-asks were lowered by the ruled CU-429 PR (#690). Both consent tables are signed. Since 9 November the team's own audits
+  have found one hundred and eleven High gaps, closed one hundred and nine live and lowered one to Medium, among them CU-363 (a website's own one-key shortcuts, such as '#'
   to delete in a mail list), CU-365 (the same with Ctrl or Command chords), CU-370 (choosing 'Delete' in a
   drop-down, list box or radio group by keyboard), CU-373 ('Generate app password' and mail auto-forwarding on a
   website's account settings) and CU-381 (Delete or Backspace on a web page outside a text field). Medium fixes
@@ -45,7 +45,7 @@ Seven of the nine ULTIMATE_GOAL 2.0 rows hold on live evidence. Two are open:
 | Row | State |
 |---|---|
 | environment, perception, action contract, agent loop | hold live (CUHelper 0.2.65 installed 10 Nov, reading placeholder text, a label placed beside a box, pop-up menus, open menus and whether the clipboard holds a file; 0.2.66, which marks Finder's Quick Actions, and 0.2.67, which reads the file a row names and Finder's AirDrop, Shared and Network destinations, are in review) |
-| consent and safety | two High open in 0.9.169 (CU-504, CU-505), both reproduced, one fix landed and one with both reviews; both tables signed; then waits on CU-135 in the owner session |
+| consent and safety | one High open in 0.9.171 (CU-506), reproduced, its fix in review; CU-507 and CU-508 ruled; both tables signed; then waits on CU-135 in the owner session |
 | human control | open: step 4 with you (CU-11, CU-119, CU-135, CU-203) |
 | integration | DSH and heddle each completed a fixture task (CU-15) |
 | trajectory | holds; capture stays inside approved apps |
