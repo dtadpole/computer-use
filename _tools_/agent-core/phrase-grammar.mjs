@@ -746,7 +746,9 @@ function payDiversion(list) {
 // and the row judged again - only when the name as written gets no class, so it adds only.
 // #600 round 2 (cu-researcher 01:26Z): 'Yes please,' / 'Yes, please' and a trailing 'right now' too.
 // #600 round 3 (cu-researcher 01:33Z): a leading icon alone, and a trailing '!' or '(recommended)' too.
-const LEADING_ICONS = /^\s*(?:[\p{Extended_Pictographic}\uFE0F]\s*)+/u
+// CU-504 (glyph sweep): a leading arrow, bullet, check or other symbol character ('→ Edit DNS', '• Delete', '✓ Download W-2s') is
+// stripped like an emoji - symbols (\p{S}) and list punctuation (bullets, dashes, '>' and '»'), never letters or digits.
+const LEADING_ICONS = /^\s*(?:[\p{Extended_Pictographic}\uFE0F\p{S}\u2022\u2023\u2043\u2219\u25aa\u25ab\u25cf\u25e6\u00b7\u203a\u00bb>*\-\u2013\u2014]\s*)+/u
 // CU-503 (wrapper sweep): the acknowledgement on a dangerous dialog's final button - 'I understand, <row>', 'I understand the
 // consequences, <row>', 'I acknowledge the risk, <row>', 'Understood, <row>' - is stripped like 'Yes, <row>', so the row decides.
 // #685 round 2 (cu-researcher 13:54Z): the connector form - 'I understand (the risks) and (still) want / wish / choose to <row>'.
@@ -847,6 +849,22 @@ function acknowledgementStripped(name) {
   const first = String(name ?? '').split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean)[0] ?? ''
   return first.replace(ACK_CONNECTOR, '').replace(CONFIRM_PREFIX, '').trim()
 }
+// CU-505 (label sweep): a short section label before the row - '<Label>: <row>' or '<Label> - <row>' (one to three words, a colon
+// or a spaced dash) - and brackets or quotes around the whole name are stripped, so the row decides ('Danger zone: Make this
+// repository public', 'Payroll - Change direct deposit', '[Delete account]').
+// cu-coordinator 14:49Z: a label of up to five words; tried LAST (after the verb-synonym and quantifier forms), so the label never
+// lowers and a free rest stays free; a time or ratio ('10:30', '16:9') is never split (no colon before a digit).
+export function sectionLabelStripped(name) {
+  const first = String(name ?? '').split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean)[0] ?? ''
+  const forms = []
+  const label = /^\s*[\p{L}][\p{L}\p{N}&'.]*(?:\s+[\p{L}\p{N}&'.]+){0,4}\s*(?::(?!\d)|\s[-\u2013\u2014|]\s)\s*(\S.*)$/u.exec(first)
+  // #694 round 2 (cu-researcher 15:05Z): a one-word rest counts too ('Movie - Rent', 'Controls: Honk').
+  // The rest must start with a letter: a price or score after a label ('Price: $35', 'Score: 3-1') is never a row.
+  if (label && /^\p{L}/u.test(label[1].trim())) forms.push(label[1].trim())
+  const wrapped = /^\s*[\[("'\u201c\u2018\u00ab\u2039](.+?)[\])"'\u201d\u2019\u00bb\u203a]\s*$/u.exec(first)
+  if (wrapped) forms.push(wrapped[1].trim())
+  return forms
+}
 export function canonicalForms(name) {
   const unwrapped = canonicalConfirm(name)
   const cut = firstSentence(unwrapped)
@@ -895,7 +913,9 @@ export function synonymForms(name) {
   const known = new Set(canonicalForms(name))
   // CU-502: the quantifier-dropped forms go last of all (and their verb synonyms after them).
   const quantified = [...new Set(base.flatMap(quantifierDropped))]
-  const last = [...quantified, ...quantified.map(withVerbSynonym)]
+  // CU-505: the section-label forms after them, last of all.
+  const labelled = sectionLabelStripped(name)
+  const last = [...quantified, ...quantified.map(withVerbSynonym), ...labelled, ...labelled.flatMap((f) => [f, ...canonicalForms(f)])]
   return [...new Set([...forms, ...last])].filter((form) => form !== '' && form !== own && !known.has(form))
 }
 
@@ -1056,6 +1076,9 @@ function grammarClassesOf(name, role = '') {
     if (v === 'allow' && ((r[0] === 'unknown' && r[1] === 'source' && r.length === 2) || (r[0] === 'app' && r[1] === 'from' && ['anywhere', 'unknown'].includes(r[2]) && (r.length === 3 || (r[2] === 'unknown' && r[3] === 'source' && r.length === 4))))) return ['permission']
   }
   if (/^\s*install\s+now\s*!?\s*$/i.test(raw)) return ['install']
+  // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
+  // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
+  if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
   // CU-500 (High; cu-coordinator 12:49Z), as verb families with object synonyms: on an exchange, confirming a withdrawal, a market
   // order, converting everything and setting leverage move money (purchase); adding or allowlisting a withdrawal address redirects it
   // (credential); turning off the withdrawal allowlist opens the account (permission). 'Deposit address' and 'Markets' stay free.
