@@ -706,10 +706,42 @@ export function describeElement(el) {
     const lines = text.split(/[\r\n]+/).map((line) => line.replace(/\s+/g, ' ').trim()).filter(Boolean)
     return lines.length >= 2 ? lines[0].slice(0, 80) : null
   })()
+  // CU-507 (High; cu-coordinator 16:06Z; seam agreed with cu-developer-one and cu-developer-three 16:06-16:09Z): a generic
+  // confirm ('OK', 'Continue', 'Yes') inside an in-page modal is judged with the modal's own words. For the closest
+  // enclosing role=dialog / alertdialog / <dialog> (walked over the flat tree, shadow hosts included): dialogName is its
+  // aria-labelledby text, else aria-label, else its first heading; dialogDescription is its aria-describedby text, else its
+  // first paragraph - trimmed, at most 300 characters each, text the control itself is not part of. Context, outside the
+  // fingerprint, never recorded; absent outside a dialog or when the dialog says nothing.
+  const dialogText = (() => {
+    let node = el
+    let dialog = null
+    for (let steps = 0; node && steps < 40 && dialog === null; steps++) {
+      if (node !== el && node.nodeType === 1) {
+        const r = String((node.getAttribute && node.getAttribute('role')) || '').trim().toLowerCase().split(/\s+/)[0]
+        if (r === 'dialog' || r === 'alertdialog' || String(node.tagName || '').toLowerCase() === 'dialog') dialog = node
+      }
+      if (dialog === null) {
+        const rootNode = typeof node.getRootNode === 'function' ? node.getRootNode() : null
+        node = node.parentElement || (rootNode && rootNode !== node && rootNode.host) || null
+      }
+    }
+    if (dialog === null) return null
+    const clean = (text, max) => String(text ?? '').replace(/\s+/g, ' ').trim().slice(0, max)
+    const textOf = (n) => (n && !(typeof n.contains === 'function' && n.contains(el)) ? (typeof n.innerText === 'string' ? n.innerText : n.textContent) : '')
+    const scope = typeof dialog.getRootNode === 'function' ? dialog.getRootNode() : null
+    const first = (selector) => (typeof dialog.querySelector === 'function' ? dialog.querySelector(selector) : null)
+    const byIds = (attr) => String(dialog.getAttribute(attr) || '').trim().split(/\s+/).filter(Boolean)
+      .map((id) => textOf(scope && typeof scope.getElementById === 'function' ? scope.getElementById(id) : null)).join(' ')
+    let name = clean(byIds('aria-labelledby'), 300) || clean(dialog.getAttribute('aria-label'), 300)
+    if (!name) name = clean(textOf(first('h1, h2, h3, h4, h5, h6, [role="heading"]')), 300)
+    let description = clean(byIds('aria-describedby'), 300)
+    if (!description) description = clean(textOf(first('p')), 300)
+    return { ...(name ? { dialogName: name } : {}), ...(description ? { dialogDescription: description } : {}) }
+  })()
   return { tag, inputType: type, isPassword: type === 'password', autocomplete: autocomplete || null, href: link, origin, editable, caption: editable ? null : caption, entryCaption: editable ? caption : null,
     ...(frameUrl ? { frameUrl } : {}), ...(terminal ? { terminal } : {}), ...(notebookCell ? { notebookCell } : {}), ...(notebookSurface ? { notebookSurface } : {}), ...(codeSurface ? { codeSurface } : {}),
     ...(checked !== null ? { checked } : {}), ...(pressed !== null ? { pressed } : {}),
-    ...(formContext !== null ? { formContext } : {}), ...(firstLine !== null ? { firstLine } : {}), ...(inertLink ? { inertLink: true } : {}), ...(inRow ? { inRow: true } : {}), ...(dialHref === true ? { dialHref: true } : {}), ...(rowContext !== null ? { rowContext } : {}) }
+    ...(formContext !== null ? { formContext } : {}), ...(firstLine !== null ? { firstLine } : {}), ...(inertLink ? { inertLink: true } : {}), ...(inRow ? { inRow: true } : {}), ...(dialHref === true ? { dialHref: true } : {}), ...(rowContext !== null ? { rowContext } : {}), ...(dialogText ?? {}) }
 }
 
 /**
