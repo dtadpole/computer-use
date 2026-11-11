@@ -182,14 +182,11 @@ export function formContextOf(value) {
   return options.length > 0 || amountEntry ? { options, amountEntry } : null
 }
 
-/** CU-507: describeElement's dialogContext, re-validated at the boundary - else null. */
-export function dialogContextOf(value) {
-  if (value === null || typeof value !== 'object') return null
-  const kind = ['dialog', 'alertdialog'].includes(value.kind) ? value.kind : null
-  const text = (v, max) => (typeof v === 'string' ? v.replace(/\s+/g, ' ').trim().slice(0, max) : '')
-  const name = text(value.name, 80)
-  const description = text(value.description, 160)
-  return kind !== null && (name !== '' || description !== '') ? { kind, ...(name !== '' ? { name } : {}), ...(description !== '' ? { description } : {}) } : null
+/** CU-507: describeElement's dialogName / dialogDescription, re-validated at the boundary - a trimmed string of at most 300 characters, else null. */
+export function dialogTextOf(value) {
+  if (typeof value !== 'string') return null
+  const text = value.replace(/\s+/g, ' ').trim().slice(0, 300)
+  return text === '' ? null : text
 }
 
 /** CU-443: describeElement's rowContext, re-validated at the boundary - else null. */
@@ -844,7 +841,7 @@ class BrowserEnvironment {
       // Return in a trade form's amount field is judged with the form's asset beside a bare 'Sell' default.
       // CU-473 (Return route, cu-coordinator 04:20Z): the default button's first rendered line rides along as on a click, so a
       // Title-case two-line default ('Change Direct Deposit' over 'Takes Effect Immediately') is judged the same either way.
-      return { button: described === null ? null : { role: described.role, name: described.name, panel: null, ...(described.formContext ? { formContext: described.formContext } : {}), ...(typeof described.firstLine === 'string' ? { firstLine: described.firstLine } : {}), ...(described.dialogContext ? { dialogContext: described.dialogContext } : {}) }, read: true }
+      return { button: described === null ? null : { role: described.role, name: described.name, panel: null, ...(described.formContext ? { formContext: described.formContext } : {}), ...(typeof described.firstLine === 'string' ? { firstLine: described.firstLine } : {}), ...(described.dialogName ? { dialogName: described.dialogName } : {}), ...(described.dialogDescription ? { dialogDescription: described.dialogDescription } : {}) }, read: true }
     } catch {
       return { button: null, read: false }
     }
@@ -873,7 +870,7 @@ class BrowserEnvironment {
         const described = await this.#describe(page, node.backendNodeId, undefined, { scanText: false })
         // CU-412 (11:56Z): a control with no accessible name (an icon-only div) cannot be judged - unreadable, never dropped.
         if (described === null || typeof described.name !== 'string' || described.name.trim() === '') unread = true
-        else controls.push({ role: described.role, name: described.name, ...(described.formContext ? { formContext: described.formContext } : {}), ...(typeof described.firstLine === 'string' ? { firstLine: described.firstLine } : {}), ...(described.dialogContext ? { dialogContext: described.dialogContext } : {}) })
+        else controls.push({ role: described.role, name: described.name, ...(described.formContext ? { formContext: described.formContext } : {}), ...(typeof described.firstLine === 'string' ? { firstLine: described.firstLine } : {}), ...(described.dialogName ? { dialogName: described.dialogName } : {}), ...(described.dialogDescription ? { dialogDescription: described.dialogDescription } : {}) })
       }
       // Fail closed (D-107: candidates only add asks): a control that could not be read makes the list unjudgeable.
       return { ...(controls.length > 0 ? { candidates: controls } : {}), more: items.length > 3 || unread }
@@ -1017,9 +1014,10 @@ class BrowserEnvironment {
       ...(extra.inRow === true ? { inRow: true } : {}),
       ...(extra.dialHref === true ? { dialHref: true } : {}),
       ...(rowContextOf(extra.rowContext) ? { rowContext: rowContextOf(extra.rowContext) } : {}),
-      // CU-507: the enclosing modal's name and description (describeElement's dialogContext) - context, outside the
-      // fingerprint, never recorded.
-      ...(dialogContextOf(extra.dialogContext) ? { dialogContext: dialogContextOf(extra.dialogContext) } : {}),
+      // CU-507: the enclosing modal's name and description (describeElement's dialogName / dialogDescription) - context,
+      // outside the fingerprint, never recorded.
+      ...(dialogTextOf(extra.dialogName) !== null ? { dialogName: dialogTextOf(extra.dialogName) } : {}),
+      ...(dialogTextOf(extra.dialogDescription) !== null ? { dialogDescription: dialogTextOf(extra.dialogDescription) } : {}),
       // CU-157: context, not identity - outside the fingerprint.
       textEntered: entered,
       // CU-187: the label that captions a non-entry element (see describeElement); CU-194 rule 5: an entry's structural
