@@ -110,7 +110,9 @@ const LOCALE_ID_NAMES = Object.freeze(['reisepass', '…passnummer', 'geburtsdat
   'パスポート', '旅券番号', '生年月日', 'マイナンバー', '個人番号', '口座番号',
   '여권', '여권번호', '생년월일', '주민등록번호', '계좌번호', '사업자등록번호'])
 const WORDS = Object.freeze({
-  purchase: ['buy', 'pay', 'order', 'place order', 'checkout', 'check out', 'subscribe', 'donate', 'purchase', 'transfer', 'withdraw', 'wire', 'send money',
+  // CU-498 (High; cu-coordinator 12:21Z): a direct debit mandate pulls money from the account (purchase), anywhere.
+  // (a separate line so the purchase list below stays as it was)
+  purchase: ['set up direct debit', 'set up a direct debit', 'authorize direct debit', 'authorise direct debit', 'authorize a direct debit', 'authorise a direct debit', 'buy', 'pay', 'order', 'place order', 'checkout', 'check out', 'subscribe', 'donate', 'purchase', 'transfer', 'withdraw', 'wire', 'send money',
     // CU-452 (cu-coordinator 22:28Z): an unlimited token approval lets a contract drain the wallet - purchase leads over the older submit.
     'approve unlimited', 'approve unlimited spending', 'allow unlimited spending',
     // CU-444 (cu-coordinator 20:54Z): publishing a campaign starts paid spend - purchase leads over the older 'publish' submit.
@@ -1956,6 +1958,26 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         if (/^https?:$/.test(u.protocol)) signingPage = /(?:^|\/)(?:sign|signing|envelope|envelopes|esign)(?=$|[/?#])/i.test(u.pathname)
       } catch { signingPage = false }
       if (signingPage) classes.push('permission')
+    }
+    // CU-498 (High; cu-coordinator 12:21Z): on a government or tax page - a .gov / gov.<cc> / gouv / gc.ca host, or a whole /tax, /taxes,
+    // /benefits, /unemployment, /voter, /elections or /return(s) segment of an http(s) URL - amending a return, reporting income,
+    // certifying for benefits and changing a voter registration ask in the class of 'File return' (submit). 'View return' stays free.
+    // CU-499 (High; cu-coordinator 12:21Z): on a car or smart-lock page - a whole /vehicle(s), /car(s), /lock(s), /smart-lock, /door(s)
+    // or /garage segment - a bare 'Unlock' asks PHYSICAL like 'Unlock car', and adding a driver or sharing a key asks PERMISSION.
+    // 'Lock' and 'Vehicle status' stay free. Named limits: a native tax or car app (no URL).
+    if (grammarEligible && classes.length === 0) {
+      let govPage = false
+      let carPage = false
+      try {
+        const u = new URL(String(context?.url ?? ''))
+        if (/^https?:$/.test(u.protocol)) {
+          govPage = /(?:^|\.)gov(?:\.[a-z]{2})?$|(?:^|\.)gouv\.[a-z]{2}$|(?:^|\.)gc\.ca$/i.test(u.hostname) || /(?:^|\/)(?:tax|taxes|benefits|unemployment|voter|elections|returns?)(?=$|[/?#])/i.test(u.pathname)
+          carPage = /(?:^|\/)(?:vehicles?|cars?|locks?|smart-lock|doors?|garage)(?=$|[/?#])/i.test(u.pathname)
+        }
+      } catch { govPage = false; carPage = false }
+      if (govPage && /^\s*(?:amend\s+(?:my\s+|your\s+|the\s+)?(?:tax\s+)?return|report\s+(?:my\s+)?(?:income|earnings|wages)|certify\s+(?:for\s+)?(?:(?:weekly|my)\s+)?(?:benefits|unemployment)|(?:change|update)\s+(?:my\s+)?voter\s+registration)\s*$/i.test(name)) classes.push('submit')
+      if (carPage && /^\s*unlock(?:\s+now)?\s*!?\s*$/i.test(name)) classes.push('physical')
+      if (carPage && /^\s*(?:add|invite)\s+(?:a\s+|another\s+)?driver\s*$|^\s*share\s+(?:a\s+|my\s+|the\s+)?(?:digital\s+)?key\s*$/i.test(name)) classes.push('permission')
     }
     // CU-491 (High; cu-coordinator 10:19Z): on a home-security page - a whole /security, /alarm, /cameras or /home-security
     // segment of an http(s) URL - silencing, muting, snoozing an alarm or siren and pausing / stopping a recording ask PHYSICAL, like
