@@ -18,11 +18,18 @@ test('CU-484: store installs ask install; sideloading asks permission', () => {
     assert.equal(at(name), cls, name)
     assert.equal(at(name, true), cls, `Space: ${name}`)
   }
-  // Named (older classes kept): 'Add to Teams' keeps permission; 'Uninstall' keeps delete.
+  // Named (older classes kept): 'Add to Teams' keeps permission (the older rule leads); 'Uninstall' keeps delete.
   assert.equal(at('Add to Teams'), 'permission')
   assert.equal(at('Uninstall'), 'delete')
 })
 
 test('CU-484 negatives: store views and other add-to lists stay free', () => {
   for (const name of ['Extensions', 'Details', 'Add to playlist', 'Add to calendar', 'Add to favorites', 'Get started', 'Installation guide']) assert.equal(at(name), 'allow', name)
+})
+
+test('#635 round 2 (cu-researcher 07:08Z): the Install now family under every variant, and the held-out escapes', () => {
+  for (const name of ['Install now…', 'Install now...', 'Install now (recommended)', '🔓 Install now', 'Install now →', 'Yes, install now', 'Please install now', 'Click to install now',
+    'Install now, please', 'Install for free', 'Install it', 'Launch installer', 'Activate extension', 'Add to Telegram']) assert.equal(at(name), 'install', name)
+  assert.equal(at('Allow apps from unknown sources'), 'permission')
+  for (const name of ['Install', 'Installed', 'Install guide', 'Now playing']) assert.equal(at(name), 'allow', name)
 })
