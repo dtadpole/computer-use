@@ -841,11 +841,17 @@ export function quantifierDropped(form) {
   const one = [...words.slice(0, -1), singular(last)].join(' ')
   return [...new Set([`${m[1]} ${m[2]}`, `${m[1]} ${one}`])]
 }
+// #685 round 3 (cu-developer-three 13:57Z): the acknowledgement stripped alone, keeping the row's own trailing words - 'I understand and
+// want to open anyway' is judged as 'open anyway' (Gatekeeper's install row), not only as the qualifier-stripped 'open'.
+function acknowledgementStripped(name) {
+  const first = String(name ?? '').split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean)[0] ?? ''
+  return first.replace(ACK_CONNECTOR, '').replace(CONFIRM_PREFIX, '').trim()
+}
 export function canonicalForms(name) {
   const unwrapped = canonicalConfirm(name)
   const cut = firstSentence(unwrapped)
   const bare = withoutDeterminers(unwrapped)
-  const forms = [unwrapped, cut, bare, withoutDeterminers(cut), leadingStripped(name)]
+  const forms = [unwrapped, cut, bare, withoutDeterminers(cut), leadingStripped(name), acknowledgementStripped(name)]
   // The compound forms only for a name a row could match (<= 200 characters): the F3 budget (CU-272) holds for an 80k-character name.
   const compounds = String(name ?? '').length <= 200 ? [...forms.map(compoundJoined), ...forms.map(compoundSplit)] : []
   return [...new Set([...forms, ...compounds])].filter((form) => form !== '' && form !== String(name ?? '').trim())
