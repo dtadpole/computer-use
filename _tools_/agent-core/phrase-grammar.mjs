@@ -746,7 +746,9 @@ function payDiversion(list) {
 // and the row judged again - only when the name as written gets no class, so it adds only.
 // #600 round 2 (cu-researcher 01:26Z): 'Yes please,' / 'Yes, please' and a trailing 'right now' too.
 // #600 round 3 (cu-researcher 01:33Z): a leading icon alone, and a trailing '!' or '(recommended)' too.
-const LEADING_ICONS = /^\s*(?:[\p{Extended_Pictographic}\uFE0F]\s*)+/u
+// CU-504 (glyph sweep): a leading arrow, bullet, check or other symbol character ('→ Edit DNS', '• Delete', '✓ Download W-2s') is
+// stripped like an emoji - symbols (\p{S}) and list punctuation (bullets, dashes, '>' and '»'), never letters or digits.
+const LEADING_ICONS = /^\s*(?:[\p{Extended_Pictographic}\uFE0F\p{S}\u2022\u2023\u2043\u2219\u25aa\u25ab\u25cf\u25e6\u00b7\u203a\u00bb>*\-\u2013\u2014]\s*)+/u
 // CU-503 (wrapper sweep): the acknowledgement on a dangerous dialog's final button - 'I understand, <row>', 'I understand the
 // consequences, <row>', 'I acknowledge the risk, <row>', 'Understood, <row>' - is stripped like 'Yes, <row>', so the row decides.
 // #685 round 2 (cu-researcher 13:54Z): the connector form - 'I understand (the risks) and (still) want / wish / choose to <row>'.
@@ -1074,6 +1076,9 @@ function grammarClassesOf(name, role = '') {
     if (['create', 'add', 'new'].includes(v) && r.length <= 2 && ['rule', 'forwarding'].includes(last) && (r.length === 1 ? v !== 'add' : ['mail', 'inbox', 'email', 'forwarding', 'message'].includes(r[0]))) return ['credential']
     if (v === 'release' && r.length >= 1 && r.length <= 3 && (['message', 'email', 'mail'].includes(last) || last === 'quarantine')) return ['permission']
   }
+  // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
+  // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
+  if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
   // CU-500 (High; cu-coordinator 12:49Z), as verb families with object synonyms: on an exchange, confirming a withdrawal, a market
   // order, converting everything and setting leverage move money (purchase); adding or allowlisting a withdrawal address redirects it
   // (credential); turning off the withdrawal allowlist opens the account (permission). 'Deposit address' and 'Markets' stay free.
