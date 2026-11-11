@@ -1133,6 +1133,10 @@ function grammarClassesOf(name, role = '') {
   // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
   // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
   if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
+  // CU-514 (prototype; cu-coordinator to rule), as verb families with object synonyms - vouching for a suspicious sign-in or unblocking
+  // one lets someone else in, like 'Approve sign-in' / 'Yes, it was me' (permission): confirm / verify the sign-in (attempt), confirm it
+  // was you / me, unblock / unlock the sign-in or the account, allow sign-in(s) from a new location / device / country.
+  if (/^\s*(?:confirm|verify|approve)\s+(?:the\s+|this\s+|my\s+)?(?:sign[-\s]?in|log[-\s]?in|login)(?:\s+attempt)?\s*$|^\s*(?:confirm|verify)\s+(?:that\s+)?(?:it|this)\s+was\s+(?:you|me)\s*$|^\s*(?:unblock|unlock)\s+(?:the\s+|this\s+|my\s+|your\s+)?(?:sign[-\s]?in|log[-\s]?in|login|account)\s*$|^\s*allow\s+(?:sign[-\s]?ins?|log[-\s]?ins?|logins?|access)\s+from\s+(?:a\s+|this\s+|the\s+)?new\s+(?:location|device|country|browser|ip(?:\s+address)?)\s*$/i.test(raw)) return ['permission']
   // CU-511 (High; cu-coordinator 17:21Z), table PR 24, as verb families with object synonyms. INSTALL - running a document's code:
   // enable content / (all) macros, run (the / this) macro(s), trust (this / the) document, enable editing (leaving Protected View).
   // PERMISSION - overriding a mail or OS safety check: trust this sender, this is not phishing / junk, add (sender) to safe senders,
