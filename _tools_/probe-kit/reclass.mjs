@@ -1,7 +1,7 @@
 // The reclass map and diff (Part of CU-458; the D-108 guard): classify every name of a set of matrices on its own page for one
 // tree, then compare two trees' maps. A High may only ADD asks; a lowering PR may only lose the asks its ruling lists.
 // Policy level only (D-098). Run the map once on the base tree and once on the head tree (each in its own checkout).
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync, statSync, writeFileSync } from 'node:fs'
 
 import { act, ctx, web } from './shapes.mjs'
 import { webPolicy } from './policies.mjs'
@@ -54,9 +54,14 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     const map = reclassMap(files.map((p) => JSON.parse(readFileSync(p, 'utf8'))))
     writeFileSync(out, JSON.stringify(map)); console.log(`RECLASS MAP ${Object.keys(map).length} names -> ${out}`)
   } else if (cmd === 'diff') {
+    // Refuse a stale input: a map older than --max-age minutes (default 60) may stand in for a step that failed.
+    const i = rest.indexOf('--max-age'); const maxAge = i >= 0 ? Number(rest[i + 1]) : 60
+    const stale = rest.slice(0, 2).filter((f) => (Date.now() - statSync(f).mtimeMs) / 60000 > maxAge)
+    if (stale.length) { console.error(`REFUSED: ${stale.join(', ')} older than ${maxAge} min; rebuild the map(s)`); process.exitCode = 2 } else {
     const d = reclassDiff(JSON.parse(readFileSync(rest[0], 'utf8')), JSON.parse(readFileSync(rest[1], 'utf8')))
     console.log(`RECLASS over ${d.shared} names: ${d.lost.length} asks lost, ${d.narrowed.length} classes narrowed, ${d.changed.length} changed, ${d.gained.length} gained`)
     for (const [label, list] of [['lost', d.lost], ['narrowed', d.narrowed]]) if (list.length) console.log(`  ${label}: ${list.slice(0, 20).join(' | ')}`)
     process.exitCode = d.lost.length || d.narrowed.length ? 1 : 0
+    }
   } else { console.error('usage: reclass.mjs map OUT.json MATRIX.json... | reclass.mjs diff BASE.json HEAD.json'); process.exitCode = 2 }
 }

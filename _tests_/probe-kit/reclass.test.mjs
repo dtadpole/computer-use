@@ -28,3 +28,15 @@ test('lostEquals is exact: nothing missing, nothing extra', () => {
   assert.equal(lostEquals(d, ['View order']), false)
   assert.equal(lostEquals(d, ['View order', 'Security checkup', 'Call forwarding']), false)
 })
+
+test('the diff CLI refuses a stale map (older than --max-age) and reads fresh ones', async () => {
+  const { mkdtempSync, writeFileSync, utimesSync } = await import('node:fs')
+  const { tmpdir } = await import('node:os'); const { join } = await import('node:path'); const { spawnSync } = await import('node:child_process')
+  const dir = mkdtempSync(join(tmpdir(), 'reclass-')); const a = join(dir, 'a.json'); const b = join(dir, 'b.json')
+  writeFileSync(a, JSON.stringify({ 'x@p': 'delete' })); writeFileSync(b, JSON.stringify({ 'x@p': 'delete' }))
+  const cli = new URL('../../_tools_/probe-kit/reclass.mjs', import.meta.url).pathname
+  assert.equal(spawnSync(process.execPath, [cli, 'diff', a, b]).status, 0)
+  const old = Date.now() / 1000 - 2 * 3600; utimesSync(a, old, old)
+  const r = spawnSync(process.execPath, [cli, 'diff', a, b], { encoding: 'utf8' })
+  assert.equal(r.status, 2); assert.match(r.stderr, /REFUSED/)
+})
