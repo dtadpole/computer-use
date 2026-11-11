@@ -42,3 +42,11 @@ test('#693 round 2 (cu-researcher 14:53Z): the CU-433 rows as verb families; a b
   assert.equal(at('Add rule', 'https://console.example/vpc/security-groups'), 'allow', 'CU-492: a cloud console')
   for (const name of ['Rules', 'Spam', 'Quarantine', 'Phishing tips']) assert.equal(at(name), 'allow', name)
 })
+
+test('#693 round 3 (cu-developer-three 14:56Z): Apple Mail\'s Add Rule asks credential; other apps keep it free', () => {
+  const p = createPolicy({ sitePolicy: () => 'allow' })
+  const at = (name, url) => { const v = p.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url, target: { role: 'AXButton', name } }); return v.decision === 'allow' ? 'allow' : v.class }
+  assert.equal(at('Add Rule', 'app:com.apple.mail'), 'credential')
+  assert.equal(at('Add Rule', 'desktop://com.microsoft.Outlook'), 'credential')
+  assert.equal(at('Add Rule', 'app:com.example.firewall'), 'allow', 'CU-492: elsewhere a form opener')
+})

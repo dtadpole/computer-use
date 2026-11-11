@@ -2023,6 +2023,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         const u = new URL(String(context?.url ?? ''))
         if (/^https?:$/.test(u.protocol)) mailPage = /(?:^|\.)(?:mail|outlook|inbox)\./i.test(u.hostname) || /(?:^|\/)(?:mail|inbox|rules|filters)(?=$|[/?#])/i.test(u.pathname)
       } catch { mailPage = false }
+      // #693 round 3 (cu-developer-three 14:56Z): a native mail client is a mail page too - Apple Mail's Rules pane titles its button
+      // exactly 'Add Rule'.
+      if (!mailPage) mailPage = /^(?:app:|desktop:\/\/)(?:com\.apple\.mail|com\.microsoft\.outlook|com\.readdle\.smartemail-mac|com\.readdle\.spark|it\.bloop\.airmail2|com\.mimestream\.mimestream|org\.mozilla\.thunderbird|com\.superhuman\.electron)\b/i.test(String(context?.url ?? ''))
       if (mailPage) classes.push('credential')
     }
     // CU-491 (High; cu-coordinator 10:19Z): on a home-security page - a whole /security, /alarm, /cameras or /home-security
