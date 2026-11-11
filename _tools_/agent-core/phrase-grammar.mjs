@@ -959,12 +959,14 @@ function grammarClassesOf(name, role = '') {
   if (list.length <= 5) {
     const [v, ...r] = list
     if (v === 'add' && r[0] === 'to' && r.length === 2 && ['slack', 'discord', 'telegram', 'teams', 'zoom', 'notion', 'trello', 'asana', 'jira', 'github', 'gitlab', 'workspace', 'firefox', 'chrome', 'edge', 'safari', 'opera', 'brave', 'browser'].includes(r[1])) return ['install']
-    if (v === 'get' && r.length <= 2 && ['extension', 'addon', 'plugin'].includes(r[r.length - 1])) return ['install']
+    // #635 round 3 (cu-developer-three 07:19Z): 'add-on' / 'plug-in' tokenize at the hyphen ('add on', 'plug in').
+    const addOn = r.length >= 2 && ((r[r.length - 2] === 'add' && r[r.length - 1] === 'on') || (r[r.length - 2] === 'plug' && r[r.length - 1] === 'in'))
+    if (v === 'get' && ((r.length <= 2 && ['extension', 'addon', 'plugin'].includes(r[r.length - 1])) || (r.length === 2 && addOn))) return ['install']
     // #635 round 2 (cu-researcher 07:08Z): launch for run, extension / add-on for plugin, 'apps from' inside 'Allow unknown sources', and
     // the 'Install now' family as a token row (format and lead-in variants reach it).
     if (['run', 'launch', 'open'].includes(v) && r.length === 1 && r[0] === 'installer') return ['install']
     if (v === 'install' && ((r.length === 1 && ['now', 'it'].includes(r[0])) || (r.length === 2 && r[0] === 'now' && r[1] === 'please') || (r.length === 2 && r[0] === 'for' && r[1] === 'free'))) return ['install']
-    if (['activate', 'enable'].includes(v) && r.length <= 2 && ['plugin', 'addon', 'extension'].includes(r[r.length - 1])) return ['install']
+    if (['activate', 'enable'].includes(v) && ((r.length <= 2 && ['plugin', 'addon', 'extension'].includes(r[r.length - 1])) || (r.length === 2 && addOn))) return ['install']
     if (v === 'sideload' && r.length <= 2) return ['permission']
     if (v === 'allow' && ((r[0] === 'unknown' && r[1] === 'source' && r.length === 2) || (r[0] === 'app' && r[1] === 'from' && ['anywhere', 'unknown'].includes(r[2]) && (r.length === 3 || (r[2] === 'unknown' && r[3] === 'source' && r.length === 4))))) return ['permission']
   }

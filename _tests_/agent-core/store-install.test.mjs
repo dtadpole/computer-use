@@ -33,3 +33,9 @@ test('#635 round 2 (cu-researcher 07:08Z): the Install now family under every va
   assert.equal(at('Allow apps from unknown sources'), 'permission')
   for (const name of ['Install', 'Installed', 'Install guide', 'Now playing']) assert.equal(at(name), 'allow', name)
 })
+
+test("#635 round 3 (cu-developer-three 07:19Z): 'add-on' / 'plug-in' hyphen forms; 'Install now on this device' is a named limit (07:21Z)", () => {
+  for (const name of ['Get add-on', 'Get the add-on', 'Get add on', 'Get plug-in', 'Activate add-on', 'Enable plug-in']) assert.equal(at(name), 'install', name)
+  assert.equal(at('Install now on this device'), 'allow', 'double qualifier - named limit (cu-coordinator 07:21Z)')
+  for (const name of ['Add-ons', 'Plug-in settings', 'Get help']) assert.equal(at(name), 'allow', name)
+})
