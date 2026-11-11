@@ -1027,6 +1027,15 @@ function grammarClassesOf(name, role = '') {
     if (v === 'allow' && ((r[0] === 'unknown' && r[1] === 'source' && r.length === 2) || (r[0] === 'app' && r[1] === 'from' && ['anywhere', 'unknown'].includes(r[2]) && (r.length === 3 || (r[2] === 'unknown' && r[3] === 'source' && r.length === 4))))) return ['permission']
   }
   if (/^\s*install\s+now\s*!?\s*$/i.test(raw)) return ['install']
+  // CU-497 (High; cu-coordinator 11:49Z, the CU-461 exposure family): exposing a phone number, email or location on a profile, or linking
+  // another service's account, asks permission - 'Make phone number visible', 'Let anyone find me by phone / email', 'Turn on location in
+  // posts', 'Show my location', 'Link Instagram account', 'Connect Instagram'. 'Hide phone number' and pickers stay free.
+  if (/^\s*(?:make|set)\s+(?:my\s+)?(?:phone(?:\s+number)?|email(?:\s+address)?|e-mail|birthday|location|address)\s+(?:visible|public|discoverable)(?:\s+to\s+(?:everyone|anyone|all))?\s*$/i.test(raw)
+    || /^\s*(?:let|allow)\s+(?:anyone|everyone|people|others)\s+(?:to\s+)?find\s+me\s+(?:by|with|using)\s+(?:my\s+)?(?:phone(?:\s+number)?|email(?:\s+address)?|e-mail|contacts?)\s*$/i.test(raw)
+    || /^\s*(?:turn\s+on|enable|add|allow)\s+(?:my\s+)?location\s+(?:in|on|to)\s+(?:my\s+)?(?:posts?|photos?|stories|tweets?|profile)\s*$/i.test(raw)
+    || /^\s*(?:show|share)\s+my\s+(?:location|phone(?:\s+number)?|email(?:\s+address)?)(?:\s+(?:publicly|on\s+(?:my\s+)?profile|with\s+everyone))?\s*$/i.test(raw)
+    || /^\s*(?:link|connect)\s+(?:my\s+|your\s+|an?\s+)?(?!(?:bank|card|device|wallet|email|phone|billing|payment|payout|merchant|ads?|credit|debit|brokerage|savings|checking)\b)[a-z][\w.+-]{1,20}\s+account\s*$/i.test(raw)
+    || /^\s*(?:link|connect)\s+(?:my\s+|your\s+)?(?:instagram|facebook|twitter|x|tiktok|spotify|google|apple|github|linkedin|discord|twitch|youtube|snapchat|strava|venmo|paypal|threads|bluesky|mastodon)\s*$/i.test(raw)) return ['permission']
   // CU-496 (High; cu-coordinator 11:21Z): a recovery, trusted or legacy contact can take the account over (permission); a vault's
   // emergency kit prints its secrets (credential).
   if (/^\s*(?:add|set\s+up|choose|invite|assign)\s+(?:an?\s+)?(?:recovery|trusted|legacy)\s+contacts?\s*$/i.test(raw)) return ['permission']
