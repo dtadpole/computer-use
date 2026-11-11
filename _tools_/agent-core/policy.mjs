@@ -3,7 +3,7 @@ import { normaliseForPolicy, normaliseText } from './normalise.mjs'
 import { BIP39_ENGLISH } from './bip39-english.mjs'
 import { normalizeKey } from './keys.mjs'
 import { originPattern } from './sites.mjs'
-import { canonicalConfirm, grammarClasses } from './phrase-grammar.mjs'
+import { amountClass, canonicalConfirm, grammarClasses, inertLinkAmountClass } from './phrase-grammar.mjs'
 
 /**
  * The action policy (design: action-policy.md, consent-gate.md). `classify` runs in the dispatcher for every action,
@@ -1525,6 +1525,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // CU-472 (High; cu-coordinator 01:36Z): a link that does not navigate (target.inertLink - no / empty / '#' / 'javascript:' href,
       // or an ARIA link with no <a>) is judged like a button; a real-URL link stays navigation (named limit).
       grammarEligible = !focusesEntry && (!/link/i.test(String(target?.role ?? '')) || target?.inertLink === true)
+      // CU-467 (cu-coordinator 01:04Z): a real-URL link's money amount asks only with a commit verb ('Buy for $5'). An inert link
+      // (CU-472) takes the button pattern when a generic or commit verb leads or the amount has a period (cu-coordinator 02:35Z:
+      // 'Continue for $9.99', '$4.99/month'); a product tile drawn as <a href='#'> ('Blue mug, $12.99') stays free.
+      if (!focusesEntry && /link/i.test(String(target?.role ?? '')) && (target?.inertLink === true ? inertLinkAmountClass(name) : amountClass(name, 'link'))) classes.push('purchase')
     }
     // CU-232 (menu-key.md): a desktop chord that is a menu item's key equivalent fires that item, so the item's name is
     // judged as a click on it would be, beside the keys - Shift-Command-D bound to Send asks submit. Every matching item
@@ -1879,6 +1883,16 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (/^\s*(?:branch\s+protection|secret\s+scanning|push\s+protection)\s*$/i.test(name) && (!read || target.checked === true)) classes.push('permission')
       if (/^\s*allow\s+(?:force\s+pushes|deletions)\s*$/i.test(name) && (!read || target.checked === false)) classes.push('permission')
     }
+    // CU-467 (cu-coordinator 00:49Z): paid creator and dating features on a creator or dating page (purchase, CU-439's family); the
+    // page is read from the URL. Older submit asks ('Send Super Chat', 'Unlock post') keep their class.
+    if (grammarEligible && classes.length === 0 && /^\s*(?:cheer|boost|get\s+(?:a\s+)?boost|super\s+like|unlock\s+(?:likes?|messages?|post|this\s+post))\s*$/i.test(name)
+      && /dat(?:e|ing)|match|tinder|bumble|hinge|okcupid|twitch|patreon|creator|fans|live|stream/i.test(String(context?.url ?? ''))) classes.push('purchase')
+    // CU-468: an auto-lock or armed / alarm switch turned OFF asks physical; ON is free on a native read; an unread state asks both ways.
+    if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))
+      && /^\s*(?:auto-?lock|armed|alarm|alarm\s+system|alarm\s+armed|system\s+armed)\s*$/i.test(name)) {
+      const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
+      if (!(nativeBox && typeof target.checked === 'boolean') || target.checked === true) classes.push('physical')
+    }
     // Consent phrase grammar (_designs_/consent-phrase-grammar 0.3.1; cu-coordinator 16:46Z) - the ONE additive hook: when no
     // older rule asked on a pressed named control, the grammar's verb-class x object-class structure may add classes. It
     // never removes or changes an older rule's class (15:08Z, D-063); its free guards stop only its own asks (F2).
@@ -1936,7 +1950,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (probe.decision === 'block' || probe.decision === 'handoff') return probe
       if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) classes.push(cls)
     }
-    if (grammarEligible && classes.length === 0 && !nativeOn) for (const cls of grammarClasses(name, target?.inertLink === true ? 'button' : target?.role)) classes.push(cls)
+    if (grammarEligible && classes.length === 0 && !nativeOn) for (const cls of grammarClasses(name, target?.role)) classes.push(cls)
     const mixedScript = !url.startsWith('desktop:') && classes.length === 0 && (POINTER.has(action.type) || pressesEnter || keyboard.activates) && target?.mixedScriptName === true
     if (mixedScript) classes.push('permission')
     // CU-302 (design note 0.1): a form the browser filled from saved logins or cards - a field matching :autofill, which
