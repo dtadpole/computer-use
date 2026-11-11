@@ -216,7 +216,8 @@ export function amountClass(name, role = '') {
 }
 // cu-coordinator 02:35Z (cu-researcher's recommendation): an INERT link (CU-472) takes the button amount pattern when its name leads
 // with a generic or commit verb, or carries an amount with a period; a product tile drawn as an inert link stays free.
-const GENERIC_AMOUNT_VERB = /^\s*(?:continue|confirm|yes|ok|okay|next|proceed|submit|complete|place|start|try|join|unlock|get|upgrade|renew|subscribe|pay|buy|purchase|order|donate|tip|checkout|check\s+out|charge)\b/i
+// #602 round 4 (cu-researcher 02:36Z): 'add' (the ruled list) and the EU continue / buy words ('Weiter f\u00fcr 4,99 \u20ac').
+const GENERIC_AMOUNT_VERB = /^\s*(?:continue|confirm|yes|ok|okay|next|proceed|submit|complete|place|start|try|join|unlock|get|add|upgrade|renew|subscribe|pay|buy|purchase|order|donate|tip|checkout|check\s+out|charge|weiter|jetzt|kaufen|bezahlen|continuer|payer|acheter|continuar|pagar|comprar)\b/i
 const AMOUNT_PERIOD = /(?:\/\s*(?:mo|month|yr|year|wk|week|day)|\b(?:per|a|an|each)\s+(?:month|year|week|day)|\b(?:monthly|yearly|annually|weekly))\b/i
 export function inertLinkAmountClass(name) {
   const raw = String(name ?? '')
