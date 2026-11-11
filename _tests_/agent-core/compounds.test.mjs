@@ -22,3 +22,11 @@ test('CU-486: compound spellings ask as their row does', () => {
 test('CU-486 negatives: compounds in free names stay free', () => {
   for (const name of ['E-mail settings', 'Log-in help', 'Set-up guide', 'Sign-in options', 'Add-ons']) assert.equal(click(name), 'allow', name)
 })
+
+test('#642 round 2 (cu-researcher 07:54Z): spaced compounds join; auto-invest both ways', () => {
+  assert.equal(click('Turn on Remote log in'), click('Turn on Remote login'))
+  assert.notEqual(click('Turn on Remote log in'), 'allow')
+  assert.equal(click('Autoinvest'), 'purchase')
+  assert.equal(click('Install plug in'), 'install')
+  for (const name of ['Log in', 'Sign in', 'Check in later', 'Set up later']) assert.equal(click(name), click(name.replace(' ', '')) === 'allow' ? 'allow' : click(name), name)
+})

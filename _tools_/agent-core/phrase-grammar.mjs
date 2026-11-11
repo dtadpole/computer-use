@@ -803,10 +803,11 @@ function withVerbSynonym(text) {
 }
 // CU-486 (High; cu-coordinator 07:36Z): known compounds are joined and split both ways - autolock / auto-lock, e-mail / email, log-in /
 // login, e-sim / esim, opt-in / optin, check-in / checkin, add-on / addon, plug-in / plugin, sign-in / signin, set-up / setup.
-const COMPOUNDS = [['auto', 'lock'], ['e', 'mail'], ['log', 'in'], ['e', 'sim'], ['opt', 'in'], ['check', 'in'], ['add', 'on'], ['plug', 'in'], ['sign', 'in'], ['set', 'up']]
+// #642 round 2 (cu-researcher 07:54Z): auto-invest too, and a SPACED compound joins as well ('Remote log in', 'plug in').
+const COMPOUNDS = [['auto', 'lock'], ['auto', 'invest'], ['e', 'mail'], ['log', 'in'], ['e', 'sim'], ['opt', 'in'], ['check', 'in'], ['add', 'on'], ['plug', 'in'], ['sign', 'in'], ['set', 'up']]
 function compoundJoined(text) {
   let out = text
-  for (const [a, b] of COMPOUNDS) out = out.replace(new RegExp(`\\b${a}[-\\u2010\\u2011](${b})\\b`, 'gi'), (m) => m.replace(/[-\u2010\u2011]/, ''))
+  for (const [a, b] of COMPOUNDS) out = out.replace(new RegExp(`\\b${a}[-\\u2010\\u2011 ](${b})\\b`, 'gi'), (m) => m.replace(/[-\u2010\u2011 ]/, ''))
   return out
 }
 function compoundSplit(text) {
