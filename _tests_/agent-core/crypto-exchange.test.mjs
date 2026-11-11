@@ -24,10 +24,16 @@ test('CU-500: credential - a withdrawal address added or allowlisted; permission
 })
 
 test('CU-500 negatives: deposit address, markets, an ad-blocker whitelist, a bare Convert stay free', () => {
-  for (const name of ['Deposit address', 'Markets', 'Copy deposit address', 'Convert', 'Disable whitelist', 'Leverage info', 'Add to allowlist', 'Add to whitelist']) assert.equal(at(name), 'allow', name)
+  for (const name of ['Deposit address', 'Markets', 'Copy deposit address', 'Convert', 'Disable whitelist', 'Leverage info']) assert.equal(at(name), 'allow', name)
 })
 
 test('CU-500: an older class stays (D-108) - Deactivate withdrawal lock keeps delete; Order book keeps its older order row (named for CU-429)', () => {
   assert.equal(at('Deactivate withdrawal lock'), 'delete')
   assert.equal(at('Order book'), 'purchase')
+})
+
+test('#680 round 3 (cu-researcher 13:02Z): a bare Add to allowlist asks credential on an exchange wallet URL, free elsewhere', () => {
+  const on = (name, url) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url, target: { role: 'button', name } }); return v.decision === 'allow' ? 'allow' : v.class }
+  for (const url of ['https://exchange.example/wallet/addresses', 'https://exchange.example/withdraw', 'https://exchange.example/account/address-book']) for (const name of ['Add to allowlist', 'Add to whitelist']) assert.equal(on(name, url), 'credential', `${name} on ${url}`)
+  for (const url of ['https://mail.example/settings/filters', 'https://adblock.example/options']) assert.equal(on('Add to allowlist', url), 'allow', url)
 })
