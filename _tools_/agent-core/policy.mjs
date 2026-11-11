@@ -2201,7 +2201,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     }
     // CU-506 (compound sweep): a name of verb-led clauses ('Review and confirm withdrawal') asks the union of its clauses - tried last,
     // adds only, whether or not the whole name already asked.
-    if (grammarEligible && context.confirmProbe !== true) {
+    // A name that is itself a ruled table row ('Sign and file', CU-459: submit) keeps its ruled class set (D-108: reclass 0).
+    if (grammarEligible && context.confirmProbe !== true && grammarClassesBase(name).length === 0) {
       const clauses = clauseSplit(name)
       const probes = clauses.map((clause) => classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { ...target, name: clause }, confirmProbe: true }))
       // #699 round 2 (cu-researcher 15:43Z): every clause must be verb-led - a listed UI verb, or a clause that asks on its own.

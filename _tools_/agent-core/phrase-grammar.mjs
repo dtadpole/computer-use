@@ -868,8 +868,13 @@ export function clauseSplit(name) {
 }
 /** #699 round 2 (cu-researcher 15:43Z): whether a clause starts with a listed UI verb; the policy also accepts a clause that asks on
  * its own ('Suspend user', 'Silence alarm' - their first word starts an asking row). */
+// cu-coordinator 15:49Z: the verb set is derived from the ruled rows' own verb tables (VERBS, MULTI_VERBS, SWITCH_VERBS and the
+// family verb sets), not a fixed list; CLAUSE_VERBS adds the plain UI verbs that lead a free clause ('save', 'review', 'scan').
+const ROW_VERBS = new Set([...VERBS.keys(), ...MULTI_VERBS.map(([words]) => words[0]), ...SWITCH_VERBS, ...PERSON_PAY_VERBS, ...EMAIL_VERBS, ...CURRENCY_VERBS, ...DIVERSION_VERBS])
 export function clauseVerbLed(part) {
-  return CLAUSE_VERBS.test(String(part ?? '').trim())
+  const text = String(part ?? '').trim()
+  const first = (text.toLowerCase().match(/^[a-z][a-z-]*/) ?? [''])[0]
+  return ROW_VERBS.has(first) || CLAUSE_VERBS.test(text)
 }
 export function sectionLabelStripped(name) {
   const first = String(name ?? '').split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean)[0] ?? ''

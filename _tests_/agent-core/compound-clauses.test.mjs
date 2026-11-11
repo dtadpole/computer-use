@@ -31,3 +31,10 @@ test('#699 round 2 (cu-researcher 15:43Z): a clause that asks on its own counts 
   }
   for (const name of ['Terms and conditions', 'Pros and cons', 'Rock and roll']) assert.deepEqual(classesOf(name), [], name)
 })
+
+test('#699 round 2 (cu-coordinator 15:49Z): the verb set comes from the ruled rows\' verb tables', async () => {
+  const { clauseVerbLed } = await import('../../_tools_/agent-core/phrase-grammar.mjs')
+  for (const clause of ['Terminate instance', 'Stake ETH', 'Purge cache', 'Rotate keys', 'Withdraw funds', 'Factory reset']) assert.ok(clauseVerbLed(clause), clause)
+  for (const clause of ['Terms', 'Pros', 'Privacy', 'Rock']) assert.ok(!clauseVerbLed(clause), clause)
+  assert.ok(classesOf('Terminate instance and continue').length > 0)
+})
