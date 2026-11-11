@@ -3,7 +3,7 @@ import { normaliseForPolicy, normaliseText } from './normalise.mjs'
 import { BIP39_ENGLISH } from './bip39-english.mjs'
 import { normalizeKey } from './keys.mjs'
 import { originPattern } from './sites.mjs'
-import { amountClass, canonicalConfirm, grammarClasses, inertLinkAmountClass } from './phrase-grammar.mjs'
+import { amountClass, canonicalForms, grammarClasses, inertLinkAmountClass } from './phrase-grammar.mjs'
 
 /**
  * The action policy (design: action-policy.md, consent-gate.md). `classify` runs in the dispatcher for every action,
@@ -1931,8 +1931,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // asked yet (adds only); the canonical form may still take the switch-verb probe below.
     // #600 round 3: the full strip (ellipsis, '!', '(recommended)', leading icons) reaches the older exact rows too ('Join Prime…'). A
     // Quick Actions menu item is judged by its exact built-in name (CU-382 - 'More…'), so it never takes the probe.
-    const confirmForm = context.confirmProbe === true || target?.quickActions === true ? '' : canonicalConfirm(name)
-    if (grammarEligible && classes.length === 0 && !nativeOn && confirmForm !== '' && confirmForm !== String(name ?? '').trim()) {
+    // #609 round 2: each canonical form in turn (the unwrapped name, then its first sentence), stopping at the first that asks.
+    const confirmForms = context.confirmProbe === true || target?.quickActions === true ? [] : canonicalForms(name)
+    for (const confirmForm of confirmForms) {
+      if (!(grammarEligible && classes.length === 0 && !nativeOn)) break
       const probe = classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { ...target, name: confirmForm }, confirmProbe: true })
       if (probe.decision === 'block' || probe.decision === 'handoff') return probe
       if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) classes.push(cls)
