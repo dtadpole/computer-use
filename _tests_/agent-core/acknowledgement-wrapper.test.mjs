@@ -24,3 +24,11 @@ test('CU-503: an acknowledgement before a ruled row asks in the row\'s class', (
 test('CU-503 negatives: a bare acknowledgement and a benign row stay free', () => {
   for (const name of ['I understand', 'Understood', 'I understand, continue', 'I agree, close']) assert.equal(at(name), 'allow', name)
 })
+
+test('#685 round 2 (cu-researcher 13:54Z): the connector form is judged as the row', () => {
+  for (const row of ['link a device', 'make this repository public']) {
+    const bare = at(row.charAt(0).toUpperCase() + row.slice(1))
+    for (const lead of ['I understand and want to ', 'I understand the risks and still want to ', 'I acknowledge and wish to ']) assert.equal(at(lead + row), bare, lead + row)
+  }
+  assert.equal(at('I understand and want to continue'), 'allow')
+})
