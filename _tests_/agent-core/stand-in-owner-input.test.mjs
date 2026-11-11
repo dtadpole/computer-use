@@ -343,9 +343,12 @@ test('(g) CU_STAND_IN_OWNER_INPUT in process.env without the standInTurns option
 
 test('a stand-in the environment cannot post fails at the start, never mid-run; malformed standInTurns are refused', async () => {
   const opened = { n: 0 }
+  // The spy wraps open in place: a copy of the adapter is not the one createScriptedAdapter built (CU-367 refuses it).
   const spyModel = () => {
     const model = createScriptedAdapter({ turns: [{ actions: [WAIT] }, { final: 'never' }] })
-    return { ...model, async open(options) { opened.n += 1; return model.open(options) } }
+    const open = model.open.bind(model)
+    model.open = async (options) => { opened.n += 1; return open(options) }
+    return model
   }
   const env = createFakeEnvironment({ kind: 'desktop', frontmost: FIXTURE })
   await assert.rejects(runTask({ task: 'rehearse', environment: env, model: spyModel(), runsDirectory: join(root, 'runs'), build: { commit: 'test', dirty: false }, apps: [FIXTURE], appApprovals: approvals(), standInTurns: [1] }), /simulateLocalInput/)
@@ -365,6 +368,19 @@ test('a stand-in the environment cannot post fails at the start, never mid-run; 
   }
   assert.deepEqual(standInTurnsOf([9, 3, 3]), [3, 9])
   assert.deepEqual([standInTurnsOf(undefined), standInTurnsOf(null)], [[], []])
+})
+
+test('CU-367: runTask itself refuses standInTurns with any adapter createScriptedAdapter did not build - before turn 1, nothing posted', async () => {
+  for (const model of [
+    { id: 'claude-gateway/fake', async open() { throw new Error('a model-driven adapter must never be opened') } },
+    { ...createScriptedAdapter({ turns: [{ final: 'x' }] }) },
+  ]) {
+    const env = createFakeEnvironment({ kind: 'desktop', frontmost: FIXTURE })
+    let posted = 0
+    env.simulateLocalInput = async () => { posted += 1; return { detectedBy: 'idle' } }
+    await assert.rejects(runTask({ task: 'rehearse', environment: env, model, runsDirectory: join(root, 'runs'), build: { commit: 'test', dirty: false }, apps: [FIXTURE], appApprovals: approvals(), standInTurns: [1] }), /standInTurns needs the scripted adapter/)
+    assert.deepEqual([posted, env.log.length, env.screenshotCount], [0, 0, 0])
+  }
 })
 
 test('(h) no model action reaches simulateLocalInput: no action type names it, perform refuses it, and a scripted turn holding it posts nothing', async () => {
