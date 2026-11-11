@@ -1133,6 +1133,15 @@ function grammarClassesOf(name, role = '') {
   // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
   // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
   if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
+  // CU-511 (High; cu-coordinator 17:21Z), table PR 24, as verb families with object synonyms. INSTALL - running a document's code:
+  // enable content / (all) macros, run (the / this) macro(s), trust (this / the) document, enable editing (leaving Protected View).
+  // PERMISSION - overriding a mail or OS safety check: trust this sender, this is not phishing / junk, add (sender) to safe senders,
+  // mark as not spam / junk, always show images / remote content from this sender, disable / turn off Gatekeeper, allow apps from anywhere.
+  // cu-coordinator 17:36Z: this RAISES CU-456 / #602's 01:36Z free pin - one sender ('Add to safe senders', 'Add <address> to safe
+  // senders') asks permission like 'Trust this sender' (one trusted sender is the phishing path); an explicit raise, not D-108's case.
+  if (/^\s*(?:enable|allow|turn\s+on)\s+(?:the\s+)?(?:content|(?:all\s+)?macros?|vba(?:\s+macros?)?|active\s+content)\s*$|^\s*run\s+(?:the\s+|this\s+|all\s+)?macros?\s*$|^\s*trust\s+(?:this\s+|the\s+)?(?:document|file|workbook|presentation)\s*$|^\s*enable\s+editing\s*$/i.test(raw)) return ['install']
+  if (/^\s*(?:trust|always\s+trust)\s+(?:this\s+|the\s+)?sender\s*$|^\s*(?:this\s+is\s+)?not\s+(?:phishing|junk|a\s+scam)\s*$|^\s*(?:mark|report)\s+(?:it\s+|this\s+)?as\s+not\s+(?:spam|junk|phishing)\s*$|^\s*not\s+spam\s*$|^\s*add\s+(?:the\s+|this\s+)?(?:sender\s+|address\s+|domain\s+|[\w.+-]+@[\w.-]+\s+)?to\s+(?:the\s+|my\s+)?(?:safe|trusted)\s+senders?(?:\s+list)?\s*$|^\s*always\s+(?:show|load|display|download)\s+(?:images|pictures|remote\s+(?:content|images))\s+from\s+(?:this\s+)?(?:sender|domain)\s*$/i.test(raw)) return ['permission']
+  if (/^\s*(?:disable|turn\s+off|switch\s+off|bypass)\s+(?:the\s+)?gatekeeper\s*$|^\s*allow\s+apps\s+(?:downloaded\s+)?from\s+anywhere\s*$/i.test(raw)) return ['permission']
   // CU-510 (High; cu-coordinator 16:51Z), table PR 23, as verb families with object synonyms - a developer console's widening of an API
   // key or OAuth app: an unrestricted key, all scopes, all origins, unsigned webhooks and localhost redirects open the account
   // (permission); a new redirect / callback URL sends the authorisation code elsewhere (credential). 'API keys' and 'Restrict key' stay free.
