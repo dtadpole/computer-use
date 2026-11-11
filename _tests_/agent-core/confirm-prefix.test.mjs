@@ -25,3 +25,16 @@ test('CU-469: adds only - a name that already asks keeps its class; bare confirm
   assert.equal(canonicalConfirm('Yes, change direct deposit now \u2192'), 'change direct deposit')
   assert.deepEqual(grammarClasses('Change direct deposit'), grammarClasses('Yes, change direct deposit'))
 })
+
+test('#600 round 2: the wrapper comes off for the whole classifier - older exact phrases and URL-bound rows read it too', () => {
+  const at = (name, url) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url, target: { role: 'button', name } }); return v.decision === 'allow' ? 'allow' : v.class }
+  for (const [wrapped, row, url] of [['Yes, allow 0.0.0.0/0', 'Allow 0.0.0.0/0', 'https://cloud.example/security'], ['OK, add time', 'Add time', 'https://parking.example/session'],
+    ['Yes, edit DNS', 'Edit DNS', 'https://registrar.example/domains'], ['Yes please, change direct deposit', 'Change direct deposit', 'https://app.example/pay'],
+    ['Change direct deposit right now', 'Change direct deposit', 'https://app.example/pay']]) {
+    const want = at(row, url)
+    assert.notEqual(want, 'allow', `${row} asks`)
+    assert.equal(at(wrapped, url), want, wrapped)
+  }
+  // Named: 'Confirm, add deploy key' keeps the older 'confirm' submit (asks either way; the probe runs only when nothing asked).
+  assert.equal(at('Confirm, add deploy key', 'https://git.example/settings'), 'submit')
+})
