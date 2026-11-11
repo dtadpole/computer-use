@@ -20,3 +20,13 @@ test('CU-482: lead-ins before a ruled row ask as the row does', () => {
 test('CU-482 negatives: lead-ins before free rows stay free', () => {
   for (const name of ['Click to view details', 'Tap to see more', "Let's go", 'I want to learn more']) assert.equal(click(name), 'allow', name)
 })
+
+test('CU-482 (cu-researcher 05:02Z): trailing qualifiers come off too', () => {
+  for (const [wrapped, row] of [['Turn off spam filter anyway', 'Turn off spam filter'], ['Change direct deposit instantly', 'Change direct deposit'], ['Show seed phrase on this device', 'Show seed phrase'],
+    ['Unlock domain for me', 'Unlock domain'], ['Add phone key again', 'Add phone key']]) {
+    const want = click(row)
+    assert.notEqual(want, 'allow', `${row} asks`)
+    assert.equal(click(wrapped), want, wrapped)
+  }
+  for (const name of ['Click here', 'Sign in again', 'View details here', 'Try again']) assert.equal(click(name), 'allow', name)
+})
