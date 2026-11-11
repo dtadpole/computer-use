@@ -1146,6 +1146,12 @@ function grammarClassesOf(name, role = '') {
   // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
   // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
   if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
+  // CU-518 (High; cu-coordinator 19:36Z), table PR 28, as verb families with object synonyms - a carrier account hands over the number.
+  // CREDENTIAL: activate / set up / move / transfer the (e)SIM or number on / to a new / another device; forward / redirect calls to another
+  // / a different / a new number; show / reveal / view / change / reset the account / port-out / transfer PIN; disable / turn off / remove
+  // the number lock / port-out protection / SIM protection. PERMISSION: add an authorized user.
+  if (/^\s*(?:activate|set\s+up|move|transfer|port)\s+(?:the\s+|my\s+|your\s+)?(?:e-?sim|sim(?:\s+card)?|phone\s+number|number|line)\s+(?:on|to)\s+(?:a\s+|the\s+)?(?:new|another|different|other)\s+(?:device|phone)\s*$|^\s*(?:forward|redirect|divert)\s+(?:all\s+|my\s+)?calls\s+to\s+(?:a\s+|an\s+)?(?:another|different|new|other)\s+number\s*$|^\s*(?:show|reveal|view|change|reset|update)\s+(?:the\s+|my\s+|your\s+)?(?:account|port[-\s]?out|transfer|number\s+transfer)\s+(?:pin|passcode)\s*$|^\s*(?:disable|turn\s+off|remove|switch\s+off)\s+(?:the\s+)?(?:number\s+lock|port[-\s]?out\s+(?:protection|lock)|sim\s+(?:protection|lock)|number\s+transfer\s+lock)\s*$/i.test(raw)) return ['credential']
+  if (/^\s*add\s+(?:an?\s+)?authori[sz]ed\s+(?:user|account\s+user|manager)\s*$/i.test(raw)) return ['permission']
   // CU-516 (High; cu-coordinator 18:51Z), table PR 27, as verb families with object synonyms - a seller dashboard's money and data
   // controls. PURCHASE: mark (the order / invoice) (as) paid, void the authorization / payment / charge / invoice, accept / concede /
   // forfeit / give up (#723 r2) the dispute /
