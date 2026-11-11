@@ -1883,6 +1883,12 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // page is read from the URL. Older submit asks ('Send Super Chat', 'Unlock post') keep their class.
     if (grammarEligible && classes.length === 0 && /^\s*(?:cheer|boost|get\s+(?:a\s+)?boost|super\s+like|unlock\s+(?:likes?|messages?|post|this\s+post))\s*$/i.test(name)
       && /dat(?:e|ing)|match|tinder|bumble|hinge|okcupid|twitch|patreon|creator|fans|live|stream/i.test(String(context?.url ?? ''))) classes.push('purchase')
+    // CU-468: an auto-lock or armed / alarm switch turned OFF asks physical; ON is free on a native read; an unread state asks both ways.
+    if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))
+      && /^\s*(?:auto-?lock|armed|alarm|alarm\s+system)\s*$/i.test(name)) {
+      const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
+      if (!(nativeBox && typeof target.checked === 'boolean') || target.checked === true) classes.push('physical')
+    }
     // Consent phrase grammar (_designs_/consent-phrase-grammar 0.3.1; cu-coordinator 16:46Z) - the ONE additive hook: when no
     // older rule asked on a pressed named control, the grammar's verb-class x object-class structure may add classes. It
     // never removes or changes an older rule's class (15:08Z, D-063); its free guards stop only its own asks (F2).

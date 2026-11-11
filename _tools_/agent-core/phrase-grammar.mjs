@@ -577,6 +577,19 @@ function remoteAccess(list) {
   const rest = list.slice(two ? 2 : 1).filter((t) => !FILLER.has(t))
   return ['turn on', 'enable', 'allow', 'start', 'activate'].includes(verb) && rest.length <= 4 && REMOTE_ACCESS.some((seq) => endsWithSeq(rest, seq))
 }
+function lockClass(list) {
+  if (list.length > 7) return null
+  const two = SWITCH_VERBS.has(list[0]) && (list[1] === 'off' || list[1] === 'on')
+  const verb = two ? `turn ${list[1]}` : list[0]
+  const rest = list.slice(two ? 2 : 1)
+  if (['turn off', 'disable', 'deactivate', 'pause'].includes(verb) && rest.length === 2 && rest[0] === 'auto' && rest[1] === 'lock') return 'physical'
+  if (verb === 'set' && rest[0] === 'to' && rest.length === 2 && ['disarmed', 'disarm', 'off'].includes(rest[1])) return 'physical'
+  if (verb === 'bypass' && rest.length <= 2 && ['zone', 'sensor'].includes(rest[rest.length - 1])) return 'physical'
+  if (verb === 'grant' && rest.length === 1 && rest[0] === 'entry') return 'physical'
+  if (verb === 'unlock' && rest[0] === 'for' && rest.includes('<n>') && ['minute', 'hour', 'second'].includes(rest[rest.length - 1]) && rest.length <= 3) return 'physical'
+  if (verb === 'add' && rest.length <= 4 && ['user', 'guest', 'person', 'member'].includes(rest[0]) && rest.includes('to') && ['lock', 'door'].includes(rest[rest.length - 1])) return 'credential'
+  return null
+}
 function repoProtectionOff(list) {
   if (list.length > 7) return false
   // #597 round 2: the two-word switch verbs too ('Turn off secret scanning').
@@ -707,6 +720,10 @@ export function grammarClasses(name, role = '') {
   if (remoteAccess(list) || agentBlanket(list)) return ['permission']
   // CU-466 (High; cu-coordinator 00:34Z): removing a repository's protections (permission).
   if (repoProtectionOff(list)) return ['permission']
+  // CU-468 (High; cu-coordinator triage): smart-lock and alarm acts - auto-lock off, disarming, bypassing a zone, granting entry,
+  // a timed unlock (physical, CU-418's closed family); adding a lock user (credential).
+  const lock = lockClass(list)
+  if (lock) return [lock]
   // F2 guard (cu-coordinator 20:28Z): declining, denying or rejecting a request answers no - the grammar's own over-ask since
   // #554 ('Decline request'); older asks ('Decline invitation', CU-422's 'Decline offer') are untouched (the hook never sees them).
   if (['decline', 'deny', 'reject'].includes(list[0]) && list.slice(1).filter((t) => !FILLER.has(t)).every((t) => t === 'request' || t === 'this' || t === 'all')
