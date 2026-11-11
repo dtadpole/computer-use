@@ -801,11 +801,25 @@ function withVerbSynonym(text) {
   for (const [pattern, replacement] of VERB_SYNONYMS) if (pattern.test(text)) return text.replace(pattern, replacement)
   return text
 }
+// CU-486 (High; cu-coordinator 07:36Z): known compounds are joined and split both ways - autolock / auto-lock, e-mail / email, log-in /
+// login, e-sim / esim, opt-in / optin, check-in / checkin, add-on / addon, plug-in / plugin, sign-in / signin, set-up / setup.
+const COMPOUNDS = [['auto', 'lock'], ['e', 'mail'], ['log', 'in'], ['e', 'sim'], ['opt', 'in'], ['check', 'in'], ['add', 'on'], ['plug', 'in'], ['sign', 'in'], ['set', 'up']]
+function compoundJoined(text) {
+  let out = text
+  for (const [a, b] of COMPOUNDS) out = out.replace(new RegExp(`\\b${a}[-\\u2010\\u2011](${b})\\b`, 'gi'), (m) => m.replace(/[-\u2010\u2011]/, ''))
+  return out
+}
+function compoundSplit(text) {
+  let out = text
+  for (const [a, b] of COMPOUNDS) out = out.replace(new RegExp(`\\b(${a})(${b})\\b`, 'gi'), '$1-$2')
+  return out
+}
 export function canonicalForms(name) {
   const unwrapped = canonicalConfirm(name)
   const cut = firstSentence(unwrapped)
   const bare = withoutDeterminers(unwrapped)
-  return [...new Set([unwrapped, cut, bare, withoutDeterminers(cut)])].filter((form) => form !== '' && form !== String(name ?? '').trim())
+  const forms = [unwrapped, cut, bare, withoutDeterminers(cut)]
+  return [...new Set([...forms, ...forms.map(compoundJoined), ...forms.map(compoundSplit)])].filter((form) => form !== '' && form !== String(name ?? '').trim())
 }
 /** CU-481: the verb-synonym forms of a name (and of its canonical forms) - tried LAST, only when the name and its own canonical forms
  * get no class, so a synonym never outranks a row the name already matches ('Create service account key' stays credential). */
