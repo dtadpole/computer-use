@@ -1865,15 +1865,36 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // Consent phrase grammar (_designs_/consent-phrase-grammar 0.3.1; cu-coordinator 16:46Z) - the ONE additive hook: when no
     // older rule asked on a pressed named control, the grammar's verb-class x object-class structure may add classes. It
     // never removes or changes an older rule's class (15:08Z, D-063); its free guards stop only its own asks (F2).
+    // CU-443 (cu-coordinator 21:03Z, final; lands with the browser driver's dialHref / rowContext read): a verb-less row that starts
+    // a call places a call (submit) - (b) a tel:/sip:/callto: href on or near it (dialHref) on ANY page; (c) a 'Call' / 'Dial' /
+    // 'Phone' hint on a /call|voice|phone|dial/ URL; (a) a bare row click on a /call|dial/ URL (fail closed on a dialer page; named
+    // over-ask: opening a profile from a dialer list). A list name alone is not a signal. Booleans and short names only (D-107).
+    // #576 round 2 (cu-coordinator 21:37Z): target.inRow - the hit element has no verb of its own and sits in a row-like ancestor
+    // within 3 levels (a listener-only contact <li> clicked on its name span); dialHref / rowContext are then read from that row.
+    if (grammarEligible && classes.length === 0 && (target?.inRow === true || /^(?:listitem|row|gridcell|option|treeitem|cell|generic|group)?$/i.test(String(target?.role ?? '')))) {
+      const url = String(context?.url ?? '')
+      const row = target?.rowContext && typeof target.rowContext === 'object' ? target.rowContext : {}
+      const hints = Array.isArray(row.hints) ? row.hints.map((h) => String(h ?? '').slice(0, 40)) : []
+      const pathOf = (() => { try { return new URL(url).pathname } catch { return '' } })()
+      const verbless = target?.inRow === true || /^(?:listitem|row|gridcell)$/i.test(String(target?.role ?? ''))
+      if (target?.dialHref === true
+        || (/call|voice|phone|dial/i.test(pathOf) && hints.some((h) => /^\s*(?:call|dial|phone|voice\s+call|video\s+call)\b/i.test(h)))
+        || (verbless && /call|dial/i.test(pathOf))) classes.push('submit')
+    }
     // #575 round 2 (cu-coordinator 21:26Z): a native checkbox or switch already ON is being turned OFF - the grammar reads the
     // name as an act ('Forward calls') and must not ask for switching it off. The direction rules above decide such switches.
     const nativeOn = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? '')) && target?.checked === true
     // Split particles for the OLDER lists (cu-coordinator 22:02Z, a High follow-up to #580): 'Turn location sharing on' / 'Turn
     // Find My off' / 'Switch the heater on' are judged as their canonical 'turn on X' form by every rule - one probe, only when
     // nothing has asked yet, so it can only add an ask; a native checkbox already on never probes (its direction rules decide).
-    const splitForm = context.splitParticleProbe === true ? null : /^\s*(turn|switch)\s+(?!(?:on|off)\b)(.+?)\s+(on|off)\s*$/i.exec(name)
-    if (grammarEligible && classes.length === 0 && !nativeOn && splitForm) {
-      const canonical = `${splitForm[1]} ${splitForm[3]} ${splitForm[2]}`
+    // CU-455 (cu-coordinator 22:48Z): the switch-verb synonyms too - 'switch / flip / toggle' (+ on|off, either word order) read
+    // as 'turn on|off X', the form the older lists know ('Switch off firewall', 'Flip parental controls off').
+    const splitMatch = /^\s*(?:turn|switch|flip|toggle)\s+(?!(?:on|off)\b)(.+?)\s+(on|off)\s*$/i.exec(name)
+    const leadMatch = /^\s*(?:switch|flip|toggle)\s+(on|off)\s+(.+?)\s*$/i.exec(name)
+    const switchForm = context.splitParticleProbe === true ? null
+      : splitMatch ? { particle: splitMatch[2], object: splitMatch[1] } : leadMatch ? { particle: leadMatch[1], object: leadMatch[2] } : null
+    if (grammarEligible && classes.length === 0 && !nativeOn && switchForm) {
+      const canonical = `turn ${switchForm.particle} ${switchForm.object}`
       const probe = classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { ...target, name: canonical }, splitParticleProbe: true })
       if (probe.decision === 'block' || probe.decision === 'handoff') return probe
       if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) classes.push(cls)
