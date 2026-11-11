@@ -547,13 +547,22 @@ function exposureClass(list, lower = '') {
 }
 
 const REMOTE_ACCESS = [['screen', 'sharing'], ['remote', 'login'], ['remote', 'desktop'], ['remote', 'connection'], ['file', 'sharing'], ['internet', 'sharing'],
-  ['remote', 'apple', 'event'], ['remote', 'control']]
+  ['remote', 'apple', 'event'], ['remote', 'control'], ['smb']]
 function remoteAccess(list) {
   if (list.length > 6) return false
   const two = SWITCH_VERBS.has(list[0]) && list[1] === 'on'
   const verb = two ? 'turn on' : list[0]
   const rest = list.slice(two ? 2 : 1).filter((t) => !FILLER.has(t))
   return ['turn on', 'enable', 'allow', 'start', 'activate'].includes(verb) && rest.length <= 3 && REMOTE_ACCESS.some((seq) => endsWithSeq(rest, seq))
+}
+function repoProtectionOff(list) {
+  if (list.length > 7) return false
+  const [verb, ...rest] = list
+  if (verb === 'allow' && rest.length <= 2 && ['force', 'deletion'].includes(rest[0]) && (rest.length === 1 || rest[1] === 'push')) return true
+  if (verb === 'allow' && rest[0] === 'all' && rest[1] === 'action' && rest.length <= 5) return true
+  if (['disable', 'remove', 'turn off'].includes(verb) && rest.length <= 2 && endsWithSeq(rest, ['scanning']) && rest[0] === 'secret') return true
+  if (verb === 'add' && rest.length === 1 && rest[0] === 'webhook') return true
+  return false
 }
 function agentBlanket(list) {
   if (list.length > 6) return false
@@ -663,6 +672,8 @@ export function grammarClasses(name, role = '') {
   // CU-464 (High; cu-coordinator 00:04Z): a remote-access switch on a web or app admin page (permission); macOS System Settings
   // stays excluded by app policy. CU-465 (00:19Z): a blanket approval for an agent to run commands (permission, CU-427's family).
   if (remoteAccess(list) || agentBlanket(list)) return ['permission']
+  // CU-466 (High; cu-coordinator 00:34Z): removing a repository's protections (permission).
+  if (repoProtectionOff(list)) return ['permission']
   // F2 guard (cu-coordinator 20:28Z): declining, denying or rejecting a request answers no - the grammar's own over-ask since
   // #554 ('Decline request'); older asks ('Decline invitation', CU-422's 'Decline offer') are untouched (the hook never sees them).
   if (['decline', 'deny', 'reject'].includes(list[0]) && list.slice(1).filter((t) => !FILLER.has(t)).every((t) => t === 'request' || t === 'this' || t === 'all')

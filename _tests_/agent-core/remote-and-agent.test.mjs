@@ -5,6 +5,7 @@ import { grammarClasses } from '../../_tools_/agent-core/phrase-grammar.mjs'
 import { createPolicy } from '../../_tools_/agent-core/policy.mjs'
 
 // CU-464 (High): remote-access switches on web and app admin pages ask permission (System Settings stays excluded by app policy).
+// CU-466 (High): removing a repository's protections asks permission.
 // CU-465 (High): blanket approvals for an agent to run commands ask permission (CU-427's family). Grammar table rows and
 // switches. Click, Return and Space (D-106). Both sides (D-099).
 const policy = createPolicy({ sitePolicy: () => 'allow' })
@@ -42,4 +43,28 @@ test('CU-464 / CU-465 switches: ON asks, OFF free on a native read; unread and d
     assert.equal(sw(name, native(true)), 'allow', `${name} on -> off`)
   }
   for (const checked of [true, false]) assert.equal(sw('Screen Sharing', { role: 'AXCheckBox', subrole: 'AXSwitch', checked }), 'permission', `desktop pin ${checked}`)
+})
+
+test('CU-464 full ruling (00:34Z): the named enable / allow forms and SMB ask; views stay free', () => {
+  for (const name of ['Enable Screen Sharing', 'Enable SSH', 'Allow Remote Desktop', 'Enable remote desktop', 'Enable SMB', 'Enable Remote Apple Events', 'Open port 22', 'Open port 3389']) assert.equal(click(name), 'permission', name)
+  for (const name of ['Sharing', 'Remote access', 'Connected devices']) assert.equal(click(name), 'allow', name)
+})
+
+test('CU-466: removing repository protections asks permission, a deploy key credential; protection switches OFF and allow switches ON ask', () => {
+  const repo = 'https://git.example/org/repo/settings'
+  const at = (name) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: repo, target: { role: 'button', name } }); return v.decision === 'allow' ? 'allow' : v.class }
+  for (const name of ['Allow force pushes', 'Allow deletions', 'Disable branch protection', 'Disable secret scanning', 'Disable push protection', 'Allow all actions and reusable workflows',
+    'Allow all actions', 'Add webhook']) {
+    assert.equal(at(name), 'permission', name)
+    assert.equal(space(name), 'permission', `Space: ${name}`)
+  }
+  assert.equal(at('Add deploy key'), 'credential')
+  // Named (older class leads; it asks either way): 'Delete protection rule' keeps its older delete.
+  assert.equal(at('Delete protection rule'), 'delete')
+  for (const name of ['Settings', 'Branches', 'Require pull request', 'Enable secret scanning', 'Webhooks']) assert.equal(at(name), 'allow', name)
+  assert.equal(sw('Branch protection', native(true)), 'permission', 'protection on -> off')
+  assert.equal(sw('Branch protection', native(false)), 'allow', 'protection off -> on')
+  assert.equal(sw('Allow force pushes', native(false)), 'permission', 'force push off -> on')
+  assert.equal(sw('Allow force pushes', native(true)), 'allow', 'force push on -> off')
+  for (const checked of [true, false]) assert.equal(sw('Secret scanning', { role: 'AXCheckBox', subrole: 'AXSwitch', checked }), 'permission', `desktop pin ${checked}`)
 })
