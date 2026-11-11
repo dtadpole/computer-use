@@ -27,9 +27,9 @@ test('CU-500 negatives: deposit address, markets, an ad-blocker whitelist, a bar
   for (const name of ['Deposit address', 'Markets', 'Copy deposit address', 'Convert', 'Disable whitelist', 'Leverage info']) assert.equal(at(name), 'allow', name)
 })
 
-test('CU-500: an older class stays (D-108) - Deactivate withdrawal lock keeps delete; Order book keeps its older order row (named for CU-429)', () => {
+test('CU-500: an older class stays (D-108) - Deactivate withdrawal lock keeps delete; Order book was lowered to free by CU-429 (13:04Z)', () => {
   assert.equal(at('Deactivate withdrawal lock'), 'delete')
-  assert.equal(at('Order book'), 'purchase')
+  assert.equal(at('Order book'), 'allow')
 })
 
 test('#680 round 3 (cu-researcher 13:02Z): a bare Add to allowlist asks credential on an exchange wallet URL, free elsewhere', () => {
