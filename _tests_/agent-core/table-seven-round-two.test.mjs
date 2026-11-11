@@ -41,3 +41,10 @@ test('#602 round 2 (cu-developer-three 01:39Z): desktop roles - a menu button as
   assert.equal(desk('Monthly - $4.99', 'AXPopUpButton'), 'allow')
   assert.equal(desk('Monthly - $4.99', 'AXMenuItem'), 'purchase')
 })
+
+test('#602 x #604: an inert link keeps link semantics for amounts - a commit verb asks, a product tile stays free', () => {
+  const inert = (name) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: 'https://shop.example/search', target: { role: 'link', name, inertLink: true } }); return v.decision === 'allow' ? 'allow' : v.class }
+  assert.equal(inert('Buy for $5'), 'purchase')
+  assert.equal(inert('Blue mug, $12.99'), 'allow')
+  assert.equal(inert('Show seed phrase'), 'credential', 'the other table rows still judge an inert link like a button')
+})

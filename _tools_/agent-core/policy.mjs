@@ -1525,9 +1525,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // CU-472 (High; cu-coordinator 01:36Z): a link that does not navigate (target.inertLink - no / empty / '#' / 'javascript:' href,
       // or an ARIA link with no <a>) is judged like a button; a real-URL link stays navigation (named limit).
       grammarEligible = !focusesEntry && (!/link/i.test(String(target?.role ?? '')) || target?.inertLink === true)
-      // CU-467 (cu-coordinator 01:04Z): a real-URL link's money amount with a commit verb is read here ('Buy for $5'); an inert link
-      // takes the button pattern through the grammar (CU-472).
-      if (!focusesEntry && /link/i.test(String(target?.role ?? '')) && target?.inertLink !== true && amountClass(name, 'link')) classes.push('purchase')
+      // CU-467 (cu-coordinator 01:04Z): a link's money amount asks only with a commit verb ('Buy for $5') - an inert link too: a
+      // product tile drawn as <a href='#'> ('Blue mug, $12.99') navigates in script and commits nothing.
+      if (!focusesEntry && /link/i.test(String(target?.role ?? '')) && amountClass(name, 'link')) classes.push('purchase')
     }
     // CU-232 (menu-key.md): a desktop chord that is a menu item's key equivalent fires that item, so the item's name is
     // judged as a click on it would be, beside the keys - Shift-Command-D bound to Send asks submit. Every matching item
@@ -1949,7 +1949,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (probe.decision === 'block' || probe.decision === 'handoff') return probe
       if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) classes.push(cls)
     }
-    if (grammarEligible && classes.length === 0 && !nativeOn) for (const cls of grammarClasses(name, target?.inertLink === true ? 'button' : target?.role)) classes.push(cls)
+    if (grammarEligible && classes.length === 0 && !nativeOn) for (const cls of grammarClasses(name, target?.role)) classes.push(cls)
     const mixedScript = !url.startsWith('desktop:') && classes.length === 0 && (POINTER.has(action.type) || pressesEnter || keyboard.activates) && target?.mixedScriptName === true
     if (mixedScript) classes.push('permission')
     // CU-302 (design note 0.1): a form the browser filled from saved logins or cards - a field matching :autofill, which
