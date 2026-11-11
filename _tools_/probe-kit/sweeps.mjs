@@ -49,7 +49,8 @@ export function sweep(matrices, { families = Object.keys(FAMILIES) } = {}) {
   const out = Object.fromEntries(families.map((f) => [f, { ruled: FAMILIES[f].ruled, asking: 0, free: Object.fromEntries(Object.keys(FAMILIES[f].forms).map((k) => [k, []])) }]))
   for (const m of matrices) {
     const policy = webPolicy([new URL(m.site).origin])
-    const asks = (name) => policy.classify(act.click(), ctx.web(m.site, web.button(name))).decision === 'confirm'
+    // Anything but allow keeps the person in the loop: confirm asks, handoff gives the control to the person, block refuses.
+    const asks = (name) => policy.classify(act.click(), ctx.web(m.site, web.button(name))).decision !== 'allow'
     for (const [, names] of m.rows) for (const name of names) {
       if (!asks(name)) continue
       for (const f of families) {

@@ -27,3 +27,10 @@ test('the unruled family is reported only, and every family names its forms', ()
   const result = sweep([{ id: 'fixture', site: SITE, rows: [['delete', ['Delete account']]] }], { families: ['unruled'] })
   assert.deepEqual(ruledGaps(result), [])
 })
+
+test('a form that hands off (stronger than asking) is not reported free', () => {
+  // 'Change password' hands off to the person; its wrapped forms hand off too, so no family may list them.
+  const result = sweep([{ id: 'fixture', site: SITE, rows: [['handoff', ['Change password']]] }])
+  assert.deepEqual(ruledGaps(result), [])
+  assert.equal(result.label.asking, 1)
+})
