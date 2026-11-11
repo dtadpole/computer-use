@@ -821,6 +821,20 @@ function compoundSplit(text) {
   for (const [a, b] of COMPOUNDS) out = out.replace(new RegExp(`\\b(${a})(${b})\\b`, 'gi'), '$1-$2')
   return out
 }
+// CU-502 (High; cu-coordinator 13:21Z; canonical-form sweep, tried LAST - after the verb-synonym forms): a quantifier between the verb and its object - '<verb> all (the / of the / your / my) <nouns>' or
+// '<verb> every <noun>' - is judged as the verb on the object, plural kept and singular, so 'Silence all alarms', 'Empty all buckets',
+// 'Cancel all orders' reach their rows. Never for the list-handling verbs ('Select all', 'Mark all as read', 'Expand all', 'Show all
+// results'), and only when a noun follows the quantifier.
+const QUANTIFIER_SAFE_VERBS = /^(?:select|deselect|unselect|mark|view|show|see|expand|collapse|open|read|check|uncheck|filter|sort|hide|load|browse|list|clear\s+filters?|reply)$/i
+export function quantifierDropped(form) {
+  const m = /^\s*((?:turn\s+(?:on|off)|switch\s+(?:on|off)|set\s+up|log\s+out\s+of|sign\s+out\s+of|[a-z][a-z-]*))\s+(?:all|every|each)(?:\s+(?:of\s+)?(?:the|your|my|these|those))?\s+([a-z][\w-]*(?:\s+[a-z][\w-]*){0,3})\s*$/i.exec(String(form ?? ''))
+  if (!m || QUANTIFIER_SAFE_VERBS.test(m[1].trim())) return []
+  if (/^(?:as|to|from|in|on|at|of|for|with|that|which|read|unread|done)\b/i.test(m[2])) return []
+  const words = m[2].split(/\s+/)
+  const last = words[words.length - 1]
+  const one = [...words.slice(0, -1), singular(last)].join(' ')
+  return [...new Set([`${m[1]} ${m[2]}`, `${m[1]} ${one}`])]
+}
 export function canonicalForms(name) {
   const unwrapped = canonicalConfirm(name)
   const cut = firstSentence(unwrapped)
@@ -867,7 +881,10 @@ export function synonymForms(name) {
   const base = [own, ...canonicalForms(name)]
   const forms = [...base.map(withVerbSynonym), ...base.map(withAbbreviations), ...base.map((f) => withVerbSynonym(withAbbreviations(f)))]
   const known = new Set(canonicalForms(name))
-  return [...new Set(forms)].filter((form) => form !== '' && form !== own && !known.has(form))
+  // CU-502: the quantifier-dropped forms go last of all (and their verb synonyms after them).
+  const quantified = [...new Set(base.flatMap(quantifierDropped))]
+  const last = [...quantified, ...quantified.map(withVerbSynonym)]
+  return [...new Set([...forms, ...last])].filter((form) => form !== '' && form !== own && !known.has(form))
 }
 
 /** The grammar on the name and its own canonical forms - no verb synonyms (policy.mjs reads it before probing synonym forms). */
