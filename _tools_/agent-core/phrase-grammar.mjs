@@ -902,6 +902,18 @@ function grammarClassesOf(name, role = '') {
   // CU-479 (High rows; cu-coordinator 04:20Z): a send to people who opted out or to the whole list - 'Resubscribe all' and a bare
   // 'Blast' (submit). Imports and exports belong to CU-462.
   if (list[0] === 'resubscribe' && list[1] === 'all' && list.length <= 3) return ['submit']
+  // CU-483 (High; cu-coordinator 05:34Z): brokerage - orders and automatic trading spend money (purchase); margin and options trading
+  // widen what the account may do (permission). A bare 'Sell' is page-bound (policy.mjs reads the trading URL).
+  if (list.length <= 3) {
+    const [v, ...r] = list
+    if (v === 'sell' && r[0] === 'short' && r.length <= 2) return ['purchase']
+    if (v === 'liquidate' && (r.length === 0 || (r.length <= 2 && ['all', 'position', 'portfolio', 'everything'].includes(r[r.length - 1])))) return ['purchase']
+    if (v === 'exercise' && r.length <= 2 && r[r.length - 1] === 'option') return ['purchase']
+    if (v === 'auto' && r[0] === 'invest' && r.length === 1) return ['purchase']
+    if (v === 'rebalance' && r.length <= 2 && (r.length === 0 || r[r.length - 1] === 'portfolio')) return ['purchase']
+    if (['enable', 'activate'].includes(v) && r.length <= 2 && (r[0] === 'margin' || (r[0] === 'option' && r[1] === 'trading'))) return ['permission']
+    if (v === 'turn' && r[0] === 'on' && r.length <= 3 && (r[1] === 'margin' || (r[1] === 'option' && r[2] === 'trading'))) return ['permission']
+  }
   if (/^\s*blast\s*!?\s*$/i.test(raw)) return ['submit']
   // F2 guard (cu-coordinator 20:28Z): declining, denying or rejecting a request answers no - the grammar's own over-ask since
   // #554 ('Decline request'); older asks ('Decline invitation', CU-422's 'Decline offer') are untouched (the hook never sees them).

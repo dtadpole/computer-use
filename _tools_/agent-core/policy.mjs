@@ -1893,6 +1893,18 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
       if (!(nativeBox && typeof target.checked === 'boolean') || target.checked === true) classes.push('physical')
     }
+    // CU-483 (cu-coordinator 05:34Z): a bare 'Sell' / 'Sell all' on a trading page asks purchase - the whole http(s) URL, as #613 reads
+    // it (a whole /trade, /order, /brokerage or /portfolio segment in path, query or hash - '/trade-in', '/trademark' do not count). Off a
+    // trading URL a bare 'Sell' stays
+    // free (marketplace tabs; named limit).
+    if (grammarEligible && classes.length === 0 && /^\s*sell(?:\s+all)?\s*$/i.test(name)) {
+      let tradingPage = false
+      try {
+        const u = new URL(String(context?.url ?? ''))
+        if (/^https?:$/.test(u.protocol)) tradingPage = /(?:^|[/?#&=])(?:trade|trades|trading|order|orders|brokerage|portfolio)(?=$|[/?#&])/i.test(`${u.pathname}${u.search}${u.hash}`)
+      } catch { tradingPage = false }
+      if (tradingPage) classes.push('purchase')
+    }
     // CU-474 (cu-coordinator 03:05Z): on a password vault's page (read from the URL), auto-lock off asks PERMISSION (doors keep
     // CU-468's physical). An emergency contact asks credential with no page condition (#614 round 2; the grammar row).
     if (grammarEligible && classes.length === 0 && /vault|password|1password|bitwarden|lastpass|dashlane|keeper|proton\.me\/pass/i.test(String(context?.url ?? ''))) {
