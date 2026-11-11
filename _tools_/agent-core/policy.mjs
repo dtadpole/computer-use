@@ -1120,6 +1120,19 @@ function credentialField(target) {
  * Create the policy. `sitePolicy` is the run's site filter; `preApprovals` are `[{ class, origin }]` from the caller,
  * with `origin` an origin pattern such as `http://127.0.0.1:43117` (default: any origin the site filter allows).
  */
+// CU-520 (High; cu-coordinator 19:51Z, folded into #729 r2): ONE home-security page test for CU-491's and CU-519's rows - CU-491's
+// path segments (/security, /alarm, /cameras, /home-security) or a home-security vendor / device token in the host or path (ring, arlo,
+// simplisafe, adt, nest, wyze, blink, eufy, august, schlage, yale, vivint, alarm, camera(s), cam(s), lock(s), smartlock, doorbell,
+// home-security, security-system). Exact tokens between separators ('ringcentral' never matches 'ring'); never 'alarms' (a clock's page).
+export function isHomeSecurityPage(url) {
+  try {
+    const u = new URL(String(url ?? ''))
+    if (!/^https?:$/.test(u.protocol)) return false
+    if (/(?:^|\/)(?:security|alarm|cameras|home-security)(?=$|[/?#])/i.test(u.pathname)) return true
+    return /(?:^|[\s./-])(?:ring|simplisafe|adt|arlo|nest|wyze|blink|eufy|august|schlage|yale|vivint|alarm|cameras?|cams?|locks?|smartlock|doorbell|home-?security|security-?system)(?:[\s./-]|$)/i.test(`${u.hostname} ${u.pathname}`)
+  } catch { return false }
+}
+
 export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
   if (typeof sitePolicy !== 'function') throw new TypeError('the policy needs the run site policy')
   const granted = preApprovals
@@ -2072,12 +2085,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // #659 round 2 (cu-researcher 10:26Z): the segments exactly as ruled (a phone clock's /alarms is not /alarm); a trailing
     // on / for / from phrase ('on all cameras', 'for 1 hour') keeps the row.
     if (grammarEligible && classes.length === 0 && /^\s*(?:silence|mute|snooze|hush)\s+(?:the\s+)?(?:alarms?|sirens?|chimes?)(?:\s+(?:on|for|from)\s+[\w\s-]{1,40})?\s*$|^\s*(?:pause|stop)\s+(?:the\s+)?(?:recording|camera\s+recording|cameras?)(?:\s+(?:on|for|from)\s+[\w\s-]{1,40})?\s*$/i.test(name)) {
-      let securityPage = false
-      try {
-        const u = new URL(String(context?.url ?? ''))
-        if (/^https?:$/.test(u.protocol)) securityPage = /(?:^|\/)(?:security|alarm|cameras|home-security)(?=$|[/?#])/i.test(u.pathname)
-      } catch { securityPage = false }
-      if (securityPage) classes.push('physical')
+      // CU-520 (19:51Z): the shared home-security page test (vendor / camera hosts too).
+      if (isHomeSecurityPage(context?.url)) classes.push('physical')
     }
     // CU-490 (High; cu-coordinator 09:51Z): a ride-share or delivery booking commit asks purchase - 'Confirm pickup', 'Confirm <product>'
     // and 'Request <product>' (one or two words: 'Request UberX', 'Confirm Comfort') on a ride / delivery page, a whole /ride, /rides,
@@ -2292,6 +2301,22 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // #699 round 2 (cu-researcher 15:43Z): every clause must be verb-led - a listed UI verb, or a clause that asks on its own.
       if (clauses.length > 0 && clauses.every((clause, i) => clauseVerbLed(clause) || probes[i].decision === 'confirm')) {
         for (const probe of probes) if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) if (!classes.includes(cls)) classes.push(cls)
+      }
+    }
+    // #729 round 2 (cu-coordinator 19:51Z, the 18:06Z precedent): 'Reset account PIN' keeps the older reset row's delete and unions
+    // CU-518's credential.
+    if (grammarEligible && classes.length > 0 && !classes.includes('credential') && /^reset\s+(?:the\s+|my\s+|your\s+)?(?:account|port[-\s]?out|transfer|number\s+transfer)\s+(?:pin|passcode)$/i.test(String(name ?? '').trim())) classes.push('credential')
+    // CU-519 (High; cu-coordinator 19:36Z), table PR 28, bound on the page URL (host or path, D-109; never a title): on a home-security,
+    // lock or camera page, generating / creating / sharing a guest or access PIN / code asks PHYSICAL (someone gets in), and disabling /
+    // stopping recording, turning off a camera and disarming ask PERMISSION. The ruled class is UNIONED onto any older one ('Create guest
+    // code' keeps permission and adds physical; 'Turn off camera' / 'Disarm' keep physical and add permission). Meeting pages stay free;
+    // CU-468's 'Create access code' row is untouched (only guest / temporary / one-time / visitor codes, and sharing an access code).
+    if (grammarEligible) {
+      const homeSecurity = isHomeSecurityPage(url)
+      const label = String(name ?? '').trim()
+      if (homeSecurity) {
+        if (/^(?:generate|create|add|make|share|send)\s+(?:a\s+|an\s+|new\s+)?(?:guest|temporary|temp|one[-\s]time|visitor)\s+(?:pin|code|passcode|key|access\s+code)$|^share\s+(?:the\s+|an\s+)?access\s+code$/i.test(label) && !classes.includes('physical')) classes.push('physical')
+        if (/^(?:disable|stop|turn\s+off|end)\s+(?:the\s+)?recording$|^(?:turn\s+off|disable|switch\s+off)\s+(?:the\s+|all\s+)?cameras?$|^disarm(?:\s+(?:the\s+)?(?:system|alarm|home|security(?:\s+system)?))?$/i.test(label) && !classes.includes('permission')) classes.push('permission')
       }
     }
     // #721 round 3 (cu-coordinator 18:51Z; CU-515's desktop gap, cu-developer-three 18:37Z): in a native authenticator app the
