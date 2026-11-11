@@ -2044,6 +2044,25 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       } catch { walletPage = false }
       if (walletPage) classes.push('credential')
     }
+    // #693 round 2 (cu-researcher 14:53Z): a bare 'Add rule' on a mail page - a mail host or a whole /mail, /inbox, /rules, /filters
+    // segment of an http(s) URL - is a mail rule (credential, like 'Create rule'); elsewhere it stays free (CU-492: a cloud console's
+    // form opener).
+    if (grammarEligible && classes.length === 0 && /^\s*add\s+(?:a\s+|new\s+|a\s+new\s+)?rule\s*$/i.test(name)) {
+      let mailPage = false
+      try {
+        const u = new URL(String(context?.url ?? ''))
+        if (/^https?:$/.test(u.protocol)) mailPage = /(?:^|\.)(?:mail|outlook|inbox)\./i.test(u.hostname) || /(?:^|\/)(?:mail|inbox|rules|filters)(?=$|[/?#])/i.test(u.pathname)
+      } catch { mailPage = false }
+      // #693 round 3 (cu-developer-three 14:56Z): a native mail client is a mail page too - Apple Mail's Rules pane titles its button
+      // exactly 'Add Rule'.
+      // #693 round 4 (cu-developer-three 15:02Z): on the real desktop route the url is a bare 'desktop://' - the app is read the way
+      // the policy reads it elsewhere, from target.origin, else context.frontmostBundleId (and from an 'app:' url, the tests' shape).
+      const mailClients = /^(?:com\.apple\.mail|com\.microsoft\.outlook|com\.readdle\.smartemail-mac|com\.readdle\.spark|it\.bloop\.airmail2|com\.mimestream\.mimestream|org\.mozilla\.thunderbird|com\.superhuman\.electron)$/i
+      const appBundle = (typeof target?.origin === 'string' && target.origin !== '' && !/^https?:/i.test(target.origin)) ? target.origin : String(context?.frontmostBundleId ?? '')
+      const urlBundle = (/^(?:app:|desktop:\/\/)([\w.-]+)/i.exec(String(context?.url ?? '')) ?? [])[1] ?? ''
+      if (!mailPage) mailPage = mailClients.test(appBundle) || mailClients.test(urlBundle)
+      if (mailPage) classes.push('credential')
+    }
     // CU-491 (High; cu-coordinator 10:19Z): on a home-security page - a whole /security, /alarm, /cameras or /home-security
     // segment of an http(s) URL - silencing, muting, snoozing an alarm or siren and pausing / stopping a recording ask PHYSICAL, like
     // 'Turn off alarm'. Off that URL a meeting's 'Stop recording' stays free (#462). Named limit: a native security app (no URL).
