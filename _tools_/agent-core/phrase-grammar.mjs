@@ -955,8 +955,15 @@ export function synonymForms(name) {
   return [...new Set([...forms, ...last])].filter((form) => form !== '' && form !== own && !known.has(form))
 }
 
+/** #721 round 3 (cu-coordinator 18:51Z): curly apostrophes and quotes read as straight ones, so a typographic twin of a ruled row
+ *  ('Yes, it\u2019s me', 'Don\u2019t require a passcode') matches the row; policy.mjs applies it to the name before any rule. */
+export function straightQuotes(text) {
+  return String(text ?? '').replace(/[\u2018\u2019\u02BC\uFF07]/g, "'").replace(/[\u201C\u201D\uFF02]/g, '"')
+}
+
 /** The grammar on the name and its own canonical forms - no verb synonyms (policy.mjs reads it before probing synonym forms). */
 export function grammarClassesBase(name, role = '') {
+  name = straightQuotes(name)
   const asWritten = grammarClassesOf(name, role)
   if (asWritten.length > 0) return asWritten
   for (const form of canonicalForms(name)) {
@@ -967,6 +974,7 @@ export function grammarClassesBase(name, role = '') {
 }
 
 export function grammarClasses(name, role = '') {
+  name = straightQuotes(name)
   const base = grammarClassesBase(name, role)
   if (base.length > 0) return base
   for (const form of synonymForms(name)) {
@@ -977,7 +985,7 @@ export function grammarClasses(name, role = '') {
 }
 
 function grammarClassesOf(name, role = '') {
-  const raw = String(name ?? '').trim()
+  const raw = straightQuotes(name).trim()
   if (raw === '' || raw.length > 400) return []
   if (CURRENCY.test(raw) && PRICED_ROLES.has(String(role ?? '').toLowerCase()) && tokens(raw).some((t) => PRICED_NOUNS.has(t))) return ['purchase']
   // CU-467 (High; cu-coordinator 00:49Z): a pressed control that names a money amount commits a charge whatever its verb - a
