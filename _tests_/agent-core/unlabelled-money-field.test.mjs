@@ -1,0 +1,28 @@
+import assert from 'node:assert/strict'
+import { test } from 'node:test'
+
+import { createPolicy } from '../../_tools_/agent-core/policy.mjs'
+
+// CU-494 residual (cu-coordinator 11:36Z): an unlabelled entry's raw name/id attribute (the chrome driver's target.fieldAttr)
+// identifies a money or identity field, so typing an attacker IBAN into <input name="iban"> under a grant still asks credential.
+const granted = createPolicy({ sitePolicy: () => 'allow', preApprovals: [{ class: 'credential' }, { class: 'sensitive_data' }] })
+const type = (text, target) => granted.classify({ type: 'type', text }, { url: 'https://bank.example/settings', target: { role: 'textbox', editable: true, isPassword: false, ...target } })
+
+test('CU-494 residual: an unlabelled money field asks credential under a credential + sensitive_data grant', () => {
+  for (const fieldAttr of ['iban', 'wallet_address', 'routing-number', 'account_number', 'swift_code']) {
+    const v = type('DE89370400440532013000', { name: '', fieldAttr })
+    assert.equal(v.decision, 'confirm', fieldAttr)
+    assert.ok([v.class, ...(v.classes ?? [])].includes('credential'), fieldAttr)
+  }
+})
+
+test('CU-494 residual: a caller secret typed into an unlabelled money field is not carried by the credential grant', () => {
+  const v = type('{{secret:bank_iban}}', { name: '', fieldAttr: 'iban' })
+  assert.equal(v.decision, 'confirm')
+})
+
+test('CU-494 residual: other unlabelled fields and a labelled name are unchanged', () => {
+  assert.equal(type('hello', { name: '', fieldAttr: 'nickname' }).decision, 'allow')
+  assert.equal(type('{{secret:pw}}', { name: '', fieldAttr: 'password', isPassword: true }).decision, 'allow', 'a caller secret into a secret field rides the grant')
+  assert.equal(type('DE89', { name: 'Nickname', fieldAttr: 'iban' }).decision, 'allow', 'a name wins over the raw attribute')
+})

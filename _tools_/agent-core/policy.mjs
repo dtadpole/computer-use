@@ -2091,12 +2091,15 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // ... and 'permission' is listed beside the other classes (the record), while the class that ranks first still leads.
     const stack = (list) => (shortcutActive && !list.includes('permission') ? [...list, 'permission'] : list)
     const unique = [...new Set(classes)].sort((a, b) => PRECEDENCE.indexOf(a) - PRECEDENCE.indexOf(b))
-    const typesSecret = action.type === 'type' && /^\s*(?:\{\{secret:[a-z0-9_-]+\}\}\s*)+$/i.test(String(action.text ?? '')) && !MONEY_IDENTITY_FIELD.test(String(name ?? ''))
+    // CU-494 residual (cu-coordinator 11:36Z): an unlabelled entry is read by its raw name/id attribute (the driver's fieldAttr,
+    // 'wallet_address' as 'wallet address'), so <input name="iban"> is a money field too.
+    const moneyFieldText = String(name ?? '') || String(target?.fieldAttr ?? '').replace(/[_-]+/g, ' ')
+    const typesSecret = action.type === 'type' && /^\s*(?:\{\{secret:[a-z0-9_-]+\}\}\s*)+$/i.test(String(action.text ?? '')) && !MONEY_IDENTITY_FIELD.test(moneyFieldText)
     const needed = unique.filter((cls) => !preApproved(cls, url) || NEVER_PRE_APPROVED.includes(cls) || autofillClasses.includes(cls) || neverCoveredByGrant(cls, name) || (cls === 'credential' && !typesSecret))
     // CU-494 (11:06Z): typing into a money or identity field is never carried by a grant - it asks credential at the typing step
     // (an attacker IBAN typed under a credential or sensitive_data grant, then a bare 'Save', must not pass).
     // #664 round 3 (cu-researcher 11:11Z): also when no class asked at all ('SWIFT code', 'Wallet address' typed with or without a grant).
-    if (needed.length === 0 && action.type === 'type' && target && isTextEntry(target) && MONEY_IDENTITY_FIELD.test(String(name ?? ''))) { needed.push('credential'); if (!unique.includes('credential')) unique.push('credential') }
+    if (needed.length === 0 && action.type === 'type' && target && isTextEntry(target) && MONEY_IDENTITY_FIELD.test(moneyFieldText)) { needed.push('credential'); if (!unique.includes('credential')) unique.push('credential') }
     if (needed.length === 0 && shortcutActive) {
       return { decision: 'confirm', class: 'permission', classes: ['permission'], rule: 'page:shortcut', approvalKey: shortcutApproval, runOnly: true, reason: `press ${shortcutShown} on ${placeOf(url, target, context?.frontmostBundleId)}, a keyboard shortcut of the ${onDesktop ? 'app' : 'page'} - it decides what it does` }
     }
