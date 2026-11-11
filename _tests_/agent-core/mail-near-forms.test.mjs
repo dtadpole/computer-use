@@ -50,3 +50,25 @@ test('#693 round 3 (cu-developer-three 14:56Z): Apple Mail\'s Add Rule asks cred
   assert.equal(at('Add Rule', 'desktop://com.microsoft.Outlook'), 'credential')
   assert.equal(at('Add Rule', 'app:com.example.firewall'), 'allow', 'CU-492: elsewhere a form opener')
 })
+
+test('#693 round 4 (cu-developer-three 15:02Z): through the real desktop route (createAppPolicy), Mail\'s Add Rule asks; Notes\' stays free', async () => {
+  const { createAppPolicy } = await import('../../_tools_/agent-core/app-policy.mjs')
+  const { createAppApprovals } = await import('../../_tools_/agent-core/app-approvals.mjs')
+  const { mkdtempSync, rmSync } = await import('node:fs')
+  const { tmpdir } = await import('node:os')
+  const { join } = await import('node:path')
+  const dir = mkdtempSync(join(tmpdir(), 'cu-693-'))
+  try {
+    const verdict = (bundle) => {
+      const approvals = createAppApprovals({ path: join(dir, `${bundle}.json`) })
+      approvals.grantAlways(bundle, { by: 'api' })
+      const policy = createAppPolicy({ scope: [bundle], approvals })
+      return policy.classify({ type: 'click', button: 'left', x: 10, y: 10 }, { frontmostBundleId: bundle, target: { origin: bundle, role: 'AXButton', name: 'Add Rule', fingerprint: 'Add Rule' } })
+    }
+    const mail = verdict('com.apple.mail')
+    assert.equal(mail.decision, 'confirm')
+    assert.ok((mail.classes ?? [mail.class]).includes('credential'), JSON.stringify(mail))
+    assert.equal(verdict('com.microsoft.Outlook').decision, 'confirm')
+    assert.equal(verdict('com.apple.Notes').decision, 'allow', 'CU-492: elsewhere a form opener')
+  } finally { rmSync(dir, { recursive: true, force: true }) }
+})
