@@ -1122,12 +1122,11 @@ test('CU-494: an entry carries its raw name (else id) attribute as fieldAttr; a 
   assert.equal(a.fingerprint, b.fingerprint, 'outside the fingerprint')
 })
 
-test('CU-507: dialogContextOf re-validates the page value (kind, bounded strings) and drops anything else', async () => {
-  const { dialogContextOf } = await import('../../_environments_/chrome-browser/environment.mjs')
-  assert.deepEqual(dialogContextOf({ kind: 'alertdialog', name: ' Delete  account? ', description: 'Gone for good.' }), { kind: 'alertdialog', name: 'Delete account?', description: 'Gone for good.' })
-  assert.equal(dialogContextOf({ kind: 'region', name: 'x' }), null, 'unknown kind')
-  assert.equal(dialogContextOf({ kind: 'dialog' }), null, 'no text')
-  assert.equal(dialogContextOf({ kind: 'dialog', name: 'n'.repeat(200) }).name.length, 80)
-  assert.equal(dialogContextOf({ kind: 'dialog', name: 7, description: 'd'.repeat(400) }).description.length, 160)
-  assert.equal(dialogContextOf(null), null)
+test('CU-507: dialogTextOf re-validates a page string (trimmed, folded, at most 300) and drops anything else', async () => {
+  const { dialogTextOf } = await import('../../_environments_/chrome-browser/environment.mjs')
+  assert.equal(dialogTextOf(' Delete  account? '), 'Delete account?')
+  assert.equal(dialogTextOf('n'.repeat(400)).length, 300)
+  assert.equal(dialogTextOf('   '), null)
+  assert.equal(dialogTextOf(7), null)
+  assert.equal(dialogTextOf(null), null)
 })
