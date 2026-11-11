@@ -27,3 +27,7 @@ test('CU-530 negatives and older rows', () => {
 test('#761 round 2 (cu-researcher 23:27Z): a purpose tail', () => {
   for (const name of ['Sign permit to deposit', 'Sign Permit2 for swap', 'Sign typed data for swap']) assert.ok(classesOf(name).includes('purchase'), name)
 })
+
+test('#761 round 3 (cu-researcher 23:54Z): the allowance takes a tail too', () => {
+  for (const name of ['Set allowance to unlimited', 'Set allowance for the router', 'Set max allowance for USDC']) assert.ok(classesOf(name).includes('purchase'), name)
+})

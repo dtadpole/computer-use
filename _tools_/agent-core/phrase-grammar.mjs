@@ -1163,8 +1163,9 @@ function grammarClassesOf(name, role = '') {
   // CU-530 (High; cu-coordinator 23:21Z), table PR 35, as verb families with object synonyms - a crypto wallet's allowance or permit
   // lets a contract spend the tokens - PURCHASE like 'Approve unlimited': set / grant / give (a / an / the) (unlimited / max / maximum /
   // infinite / custom) (spending / token) allowance; sign (the) typed data; sign (a / the) permit / Permit2 (message / signature).
-  // #761 r2 (cu-researcher 23:27Z): a purpose tail ('Sign permit to deposit', 'Sign typed data for swap').
-  if (/^\s*(?:set|grant|give)\s+(?:a\s+|an\s+|the\s+)?(?:unlimited\s+|max\s+|maximum\s+|infinite\s+|custom\s+)?(?:spending\s+|token\s+)?allowance\s*$|^\s*sign\s+(?:the\s+)?typed\s+data\s*$|^\s*sign\s+(?:a\s+|the\s+)?permit2?(?:\s+(?:message|signature))?(?:\s+(?:to|for)\s+\S.{0,40})?\s*$|^\s*sign\s+(?:the\s+)?typed\s+data\s+(?:to|for)\s+\S.{0,40}$/i.test(raw)) return ['purchase']
+  // #761 r2 (cu-researcher 23:27Z): a purpose tail ('Sign permit to deposit', 'Sign typed data for swap'); r3 (23:54Z): the allowance
+  // takes one too ('Set allowance to unlimited', 'Set max allowance for USDC').
+  if (/^\s*(?:set|grant|give)\s+(?:a\s+|an\s+|the\s+)?(?:unlimited\s+|max\s+|maximum\s+|infinite\s+|custom\s+)?(?:spending\s+|token\s+)?allowance(?:\s+(?:to|for)\s+\S.{0,40})?\s*$|^\s*sign\s+(?:the\s+)?typed\s+data\s*$|^\s*sign\s+(?:a\s+|the\s+)?permit2?(?:\s+(?:message|signature))?(?:\s+(?:to|for)\s+\S.{0,40})?\s*$|^\s*sign\s+(?:the\s+)?typed\s+data\s+(?:to|for)\s+\S.{0,40}$/i.test(raw)) return ['purchase']
   // CU-529 (High; cu-coordinator 22:51Z), table PR 34, as verb families with object synonyms - a browser / site permission grant.
   // PERMISSION: allow (it / this extension) in incognito / private windows / private browsing; (allow) on all sites / websites; a site
   // prompt's allow (access to) (the / your) camera / microphone / mic / location / notifications. 'Block' and 'Not now' stay free.
