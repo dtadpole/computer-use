@@ -932,6 +932,8 @@ function grammarClassesOf(name, role = '') {
     const people = ['contact', 'subscriber', 'audience', 'list', 'address', 'addressbook']
     if (['upload', 'sync', 'import', 'export', 'download'].includes(v) && r.length >= 1 && r.length <= 3 && people.includes(r[r.length - 1]) && !(v === 'upload' && r[r.length - 1] === 'list' && r.length > 1)) return ['permission']
     if (v === 'find' && r[0] === 'friend' && r.includes('contact') && r.length <= 3) return ['permission']
+    // cu-coordinator 06:49Z: 'Archive all contacts' is permission too (reversible, not delete).
+    if (v === 'archive' && r[0] === 'all' && r.length === 2 && ['contact', 'subscriber'].includes(r[1])) return ['permission']
     if (v === 'get' && r.length <= 2 && r[r.length - 1] === 'link' && (r.includes('shareable') || r.includes('share') || r.includes('public'))) return ['permission']
   }
   // CU-483 (High; cu-coordinator 05:34Z): brokerage - orders and automatic trading spend money (purchase); margin and options trading

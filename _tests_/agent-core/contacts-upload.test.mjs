@@ -14,7 +14,7 @@ const at = (name, key = false) => {
 
 test('CU-462: contact and list uploads / exports and shareable links ask permission', () => {
   for (const name of ['Upload contacts', 'Sync contacts', 'Find friends from contacts', 'Export contacts', 'Export all contacts', 'Download contacts', 'Get shareable link',
-    'Import contacts', 'Upload list', 'Export subscribers', 'Download audience']) {
+    'Import contacts', 'Upload list', 'Export subscribers', 'Download audience', 'Archive all contacts']) {
     assert.equal(at(name), 'permission', name)
     assert.equal(at(name, true), 'permission', `Space: ${name}`)
   }
