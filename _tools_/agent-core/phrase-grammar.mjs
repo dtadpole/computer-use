@@ -556,7 +556,24 @@ function payDiversion(list) {
 }
 
 // The classes the grammar asks for a control's name (and its role, for the priced cell); [] when it asks nothing.
+// CU-469 (High; cu-coordinator 01:19Z): a confirmation prefix ('Yes,', 'OK,', 'Sure,', 'Confirm:') and trailing words or glyphs
+// ('now', '...', arrows, icons) wrap a ruled row in a dialog. The table rows read from the first word, so the wrapper is taken off
+// and the row judged again - only when the name as written gets no class, so it adds only.
+const CONFIRM_PREFIX = /^\s*(?:\p{Extended_Pictographic}\s*)*(?:(?:yes|ok|okay|sure|confirm|continue|got\s+it)\s*[,:!.\u2013\u2014-]+\s*)+/iu
+const TRAILING_WRAP = /(?:\s*(?:now|please|\.{2,}|\u2026|[\u2192\u203a\u00bb>\u2794\u27f6\u279c\u27a1]|\p{Extended_Pictographic}|\uFE0F))+\s*$/iu
+export function canonicalConfirm(name) {
+  const text = String(name ?? '')
+  return text.replace(CONFIRM_PREFIX, '').replace(TRAILING_WRAP, '').trim()
+}
+
 export function grammarClasses(name, role = '') {
+  const asWritten = grammarClassesOf(name, role)
+  if (asWritten.length > 0) return asWritten
+  const canonical = canonicalConfirm(name)
+  return canonical !== '' && canonical !== String(name ?? '').trim() ? grammarClassesOf(canonical, role) : asWritten
+}
+
+function grammarClassesOf(name, role = '') {
   const raw = String(name ?? '').trim()
   if (raw === '' || raw.length > 400) return []
   if (CURRENCY.test(raw) && PRICED_ROLES.has(String(role ?? '').toLowerCase()) && tokens(raw).some((t) => PRICED_NOUNS.has(t))) return ['purchase']
