@@ -24,3 +24,12 @@ test('CU-514 negatives and older rows', () => {
   assert.deepEqual(classesOf('Yes, it was me'), ['permission'])
   for (const name of ['Unlock account', 'Unlock your account']) assert.deepEqual(classesOf(name), ['credential'], `${name}: raised (18:21Z)`)
 })
+
+test('#721 round 2 (cu-coordinator 18:36Z): the present tense, and CU-515 one-time codes ask credential', () => {
+  for (const name of ["Confirm it's you", 'Confirm it is you', "Confirm that's you", 'Verify it is me']) assert.ok(classesOf(name).includes('permission'), name)
+  for (const name of ['Copy TOTP', 'Copy one-time code', 'Copy verification code', 'Copy 2FA code', 'Show TOTP', 'Reveal one-time code', 'Copy authentication code', 'View OTP']) {
+    assert.ok(classesOf(name).includes('credential'), name)
+    assert.ok(classesOf(name, true).includes('credential'), `Space: ${name}`)
+  }
+  for (const name of ["No, it's not me", 'Copy link', 'Show QR code help', 'One-time codes']) assert.deepEqual(classesOf(name), [], name)
+})
