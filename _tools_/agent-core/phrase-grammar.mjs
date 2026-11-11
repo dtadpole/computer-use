@@ -605,11 +605,14 @@ function remoteAccess(list) {
 function portalClass(list) {
   if (list.length > 7) return null
   const [verb, ...rest] = list
-  if (verb === 'give' && rest[0] === 'access' && rest.includes('account') && rest.length <= 4) return 'credential'
+  // #617 round 2 (cu-researcher 03:38Z): 'Give someone access to my account', 'Give access to my chart', 'Join research program',
+  // 'Schedule follow-up'.
+  if (verb === 'give' && rest.includes('access') && rest.length <= 5 && ['account', 'chart', 'record', 'portal'].includes(rest[rest.length - 1])) return 'credential'
   if (verb === 'sign' && rest.length <= 3 && ['authorization', 'release', 'waiver'].includes(rest[rest.length - 1])) return 'submit'
-  if (['schedule', 'request'].includes(verb) && rest.length <= 2 && ['appointment', 'visit'].includes(rest[rest.length - 1])) return 'submit'
+  if (['schedule', 'request'].includes(verb) && rest.length <= 3 && (['appointment', 'visit'].includes(rest[rest.length - 1]) || (rest.includes('follow') && rest[rest.length - 1] === 'up'))) return 'submit'
   if (verb === 'start' && rest.length <= 3 && rest.includes('visit') && (rest.includes('e') || rest.includes('video') || rest.includes('virtual'))) return 'submit'
   if (verb === 'opt' && rest[0] === 'in' && rest.length <= 4 && ['research', 'study', 'trial'].includes(rest[rest.length - 1])) return 'permission'
+  if (['join', 'enroll', 'enrol'].includes(verb) && rest.length <= 3 && (rest.includes('research') || rest.includes('study') || rest.includes('trial'))) return 'permission'
   return null
 }
 function vaultClass(list) {

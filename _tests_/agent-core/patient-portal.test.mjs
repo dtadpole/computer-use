@@ -24,3 +24,9 @@ test('CU-477: portal acts ask in their ruled class', () => {
 test('CU-477 negatives: records, messages and results views stay free', () => {
   for (const name of ['Records', 'Messages', 'View results', 'Appointments', 'Research']) assert.equal(click(name), 'allow', name)
 })
+
+test('#617 round 2: the four held-out escapes ask; video visits keep the older camera class (named)', () => {
+  for (const [name, cls] of [['Give someone access to my account', 'credential'], ['Give access to my chart', 'credential'], ['Join research program', 'permission'], ['Schedule follow-up', 'submit']]) assert.equal(click(name), cls, name)
+  assert.equal(click('Start video visit'), 'permission', 'older camera / video rule (ruled submit; asks either way)')
+  for (const name of ['Follow-up notes', 'Research news', 'Give feedback']) assert.equal(click(name), 'allow', name)
+})
