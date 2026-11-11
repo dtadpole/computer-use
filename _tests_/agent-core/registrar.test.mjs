@@ -28,3 +28,8 @@ test('CU-501: MX / nameserver changes, DNSSEC off and a domain unlocked ask perm
 test('CU-501 negatives: views stay free', () => {
   for (const name of ['DNS records', 'Nameservers', 'Domain settings', 'MX records']) assert.deepEqual(classesOf(name), [], name)
 })
+
+test("CU-414's split (13:51Z): giving remote control asks permission like Allow remote control", () => {
+  for (const name of ['Give remote control', 'Give control', 'Give remote control to Alex', 'Grant mouse and keyboard control']) assert.ok(classesOf(name).includes('permission'), name)
+  assert.deepEqual(classesOf('Remote control settings'), [], 'a view stays free')
+})
