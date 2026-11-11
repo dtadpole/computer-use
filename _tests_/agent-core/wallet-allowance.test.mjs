@@ -23,3 +23,7 @@ test('CU-530 negatives and older rows', () => {
   assert.ok(classesOf('Approve unlimited').includes('purchase'), 'older row unchanged')
   assert.ok(classesOf('Increase allowance').includes('purchase'), 'older row unchanged')
 })
+
+test('#761 round 2 (cu-researcher 23:27Z): a purpose tail', () => {
+  for (const name of ['Sign permit to deposit', 'Sign Permit2 for swap', 'Sign typed data for swap']) assert.ok(classesOf(name).includes('purchase'), name)
+})
