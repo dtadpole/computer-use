@@ -601,9 +601,24 @@ function payDiversion(list) {
 const LEADING_ICONS = /^\s*(?:[\p{Extended_Pictographic}\uFE0F]\s*)+/u
 const CONFIRM_PREFIX = /^\s*(?:(?:yes(?:\s+please)?|ok|okay|sure|confirm|continue|got\s+it|please)\s*[,:!.\u2013\u2014-]+\s*)+/iu
 const TRAILING_WRAP = /(?:\s*(?:right\s+now|now|please|\.{2,}|\u2026|!+|\((?:recommended|suggested|best\s+value)\)|[\u2192\u203a\u00bb>\u2794\u27f6\u279c\u27a1]|\p{Extended_Pictographic}|\uFE0F))+\s*$/iu
+// CU-473 (cu-researcher 02:15Z): a second line, a badge or a count after a ruled name - the first line of a multi-line name; a
+// sentence-case name followed by a capitalised second sentence ('Change direct deposit Takes effect immediately'); a trailing badge
+// ('New', 'Beta', 'Preview', 'Updated'); a trailing parenthetical ('(opens in a new window)', '(3)').
+const TRAILING_BADGE = /(?:\s+(?:new|beta|preview|updated|hot)!?)+\s*$/i
+const TRAILING_PAREN = /(?:\s*\([^()]{1,40}\))+\s*$/
+function firstSentence(text) {
+  const words = text.split(/\s+/)
+  if (words.length < 3 || !/^[A-Z]/.test(words[0])) return text
+  for (let i = 1; i < words.length; i += 1) {
+    if (/^[A-Z][a-z]/.test(words[i])) return i >= 2 && words.slice(1, i).every((w) => !/^[A-Z]/.test(w)) ? words.slice(0, i).join(' ') : text
+  }
+  return text
+}
 export function canonicalConfirm(name) {
-  const text = String(name ?? '')
-  return text.replace(LEADING_ICONS, '').replace(CONFIRM_PREFIX, '').replace(TRAILING_WRAP, '').trim()
+  const lines = String(name ?? '').split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean)
+  const text = lines[0] ?? ''
+  const unwrapped = text.replace(LEADING_ICONS, '').replace(CONFIRM_PREFIX, '').replace(TRAILING_WRAP, '').replace(TRAILING_PAREN, '').replace(TRAILING_BADGE, '').replace(TRAILING_WRAP, '').trim()
+  return firstSentence(unwrapped)
 }
 
 export function grammarClasses(name, role = '') {
