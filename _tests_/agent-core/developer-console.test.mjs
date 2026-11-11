@@ -28,3 +28,12 @@ test('CU-510 negatives and older rows: listing and restricting stay free; the ol
   assert.ok(classesOf('Turn off signature verification').length > 0, 'older row asks')
   assert.deepEqual(classesOf('Remove key restrictions'), ['delete'], 'the older remove row keeps its class (D-108); it asks')
 })
+
+test('#710 round 2 (cu-researcher 17:05Z): wildcard origins and the signature-check family', () => {
+  for (const name of ['Permit wildcard origins', 'Allow wildcard origins', 'Skip signature verification', 'Bypass signature verification', 'Disable signature check', 'Ignore webhook signature checks']) {
+    assert.ok(classesOf(name).includes('permission'), name)
+    assert.ok(classesOf(name, true).includes('permission'), `Space: ${name}`)
+  }
+  assert.deepEqual(classesOf('Turn off signature verification'), ['permission'], 'the older row keeps its class')
+  for (const name of ['Signature verification', 'Verify signature', 'Wildcard origins help']) assert.deepEqual(classesOf(name), [], name)
+})
