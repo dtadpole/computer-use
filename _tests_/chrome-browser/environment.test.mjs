@@ -1121,3 +1121,13 @@ test('CU-494: an entry carries its raw name (else id) attribute as fieldAttr; a 
   const b = await describe(['type', 'text', 'name', 'wallet'], '')
   assert.equal(a.fingerprint, b.fingerprint, 'outside the fingerprint')
 })
+
+test('CU-507: dialogContextOf re-validates the page value (kind, bounded strings) and drops anything else', async () => {
+  const { dialogContextOf } = await import('../../_environments_/chrome-browser/environment.mjs')
+  assert.deepEqual(dialogContextOf({ kind: 'alertdialog', name: ' Delete  account? ', description: 'Gone for good.' }), { kind: 'alertdialog', name: 'Delete account?', description: 'Gone for good.' })
+  assert.equal(dialogContextOf({ kind: 'region', name: 'x' }), null, 'unknown kind')
+  assert.equal(dialogContextOf({ kind: 'dialog' }), null, 'no text')
+  assert.equal(dialogContextOf({ kind: 'dialog', name: 'n'.repeat(200) }).name.length, 80)
+  assert.equal(dialogContextOf({ kind: 'dialog', name: 7, description: 'd'.repeat(400) }).description.length, 160)
+  assert.equal(dialogContextOf(null), null)
+})
