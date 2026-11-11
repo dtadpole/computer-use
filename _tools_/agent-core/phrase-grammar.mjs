@@ -747,6 +747,13 @@ function payDiversion(list) {
 // #600 round 3 (cu-researcher 01:33Z): a leading icon alone, and a trailing '!' or '(recommended)' too.
 const LEADING_ICONS = /^\s*(?:[\p{Extended_Pictographic}\uFE0F]\s*)+/u
 const CONFIRM_PREFIX = /^\s*(?:(?:yes(?:\s+please)?|ok|okay|sure|confirm|continue|got\s+it|please)\s*[,:!.\u2013\u2014-]+\s*)+/iu
+// CU-482 (proposed High; cu-researcher 04:58Z): a call-to-action lead-in before a ruled row - 'please', 'click (here) to', 'tap to',
+// 'let's', 'go ahead and', 'I want to'.
+// cu-researcher 05:02Z: trailing qualifiers too - 'anyway', 'instantly', 'on this device', 'for me', 'here', 'too', 'again'.
+// #630 round 2: a trailing ', please' too ('Add time, please').
+const TRAILING_QUALIFIER = /(?:\s*,\s*please|\s+(?:anyway|anyways|instantly|immediately|on\s+this\s+(?:device|computer|browser|phone)|for\s+me|here|too|again))+\s*[.!]?\s*$/i
+// #630 round 2 (cu-researcher 05:22Z): "I'd like to" (the contraction), 'let us', 'kindly'.
+const CTA_LEAD_IN = /^\s*(?:please\s+|kindly\s+|(?:click|tap|press|select)\s+(?:here\s+)?to\s+|let(?:'|\u2019)?s\s+|let\s+us\s+|go\s+ahead\s+and\s+|i(?:\s+want|\s+would\s+like|(?:'|\u2019)d\s+like)\s+to\s+)+/iu
 const TRAILING_WRAP = /(?:\s*(?:right\s+now|now|please|\.{2,}|\u2026|!+|\((?:recommended|suggested|best\s+value)\)|[\u2192\u203a\u00bb>\u2794\u27f6\u279c\u27a1]|\p{Extended_Pictographic}|\uFE0F))+\s*$/iu
 // CU-473 (cu-researcher 02:15Z): a second line, a badge or a count after a ruled name - the first line of a multi-line name; a
 // sentence-case name followed by a capitalised second sentence ('Change direct deposit Takes effect immediately'); a trailing badge
@@ -768,7 +775,7 @@ function firstSentence(text) {
 export function canonicalConfirm(name) {
   const lines = String(name ?? '').split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean)
   const text = lines[0] ?? ''
-  return text.replace(LEADING_ICONS, '').replace(LEADING_PART, '').replace(CONFIRM_PREFIX, '').replace(TRAILING_KEYS, '').replace(TRAILING_WRAP, '').replace(TRAILING_PAREN, '').replace(TRAILING_BADGE, '').replace(TRAILING_WRAP, '').trim()
+  return text.replace(LEADING_ICONS, '').replace(LEADING_PART, '').replace(CONFIRM_PREFIX, '').replace(CTA_LEAD_IN, '').replace(TRAILING_QUALIFIER, '').replace(TRAILING_KEYS, '').replace(TRAILING_WRAP, '').replace(TRAILING_PAREN, '').replace(TRAILING_BADGE, '').replace(TRAILING_WRAP, '').trim()
 }
 /** #609 round 2 (cu-researcher 02:24Z): the canonical forms to try, in order - the unwrapped name, then (only if that asks nothing)
  * its first sentence. Additive: a Title-Case object ('Turn off Safe Browsing') is never lost to the sentence cut. */
@@ -781,14 +788,31 @@ function withoutDeterminers(text) {
   // Keep the first word (the verb) as written; drop determiners after it.
   return `${words[0]} ${words.slice(1).join(' ').replace(DETERMINER_WORDS, '')}`.replace(/\s+/g, ' ').trim()
 }
+// CU-481 (High; cu-coordinator 04:51Z): a leading-verb synonym of a ruled row - modify -> change, display / reveal -> show,
+// give -> grant, begin -> start, ask for -> request, create -> add - one more form, like CU-455 / CU-463, adds only.
+const VERB_SYNONYMS = [[/^(\s*)modify\b/i, '$1change'], [/^(\s*)(?:display|reveal)\b/i, '$1show'], [/^(\s*)give\b/i, '$1grant'],
+  [/^(\s*)begin\b/i, '$1start'], [/^(\s*)ask\s+for\b/i, '$1request'],
+  // #627 round 2 (cu-researcher 05:08Z): creating an account is not adding one ('Create account' stays free).
+  [/^(\s*)create\b(?!\s+(?:an?\s+|new\s+|your\s+|my\s+)?accounts?\b)/i, '$1add']]
+function withVerbSynonym(text) {
+  for (const [pattern, replacement] of VERB_SYNONYMS) if (pattern.test(text)) return text.replace(pattern, replacement)
+  return text
+}
 export function canonicalForms(name) {
   const unwrapped = canonicalConfirm(name)
   const cut = firstSentence(unwrapped)
   const bare = withoutDeterminers(unwrapped)
   return [...new Set([unwrapped, cut, bare, withoutDeterminers(cut)])].filter((form) => form !== '' && form !== String(name ?? '').trim())
 }
+/** CU-481: the verb-synonym forms of a name (and of its canonical forms) - tried LAST, only when the name and its own canonical forms
+ * get no class, so a synonym never outranks a row the name already matches ('Create service account key' stays credential). */
+export function synonymForms(name) {
+  const own = String(name ?? '').trim()
+  return [...new Set([own, ...canonicalForms(name)].map(withVerbSynonym))].filter((form) => form !== '' && form !== own && !canonicalForms(name).includes(form))
+}
 
-export function grammarClasses(name, role = '') {
+/** The grammar on the name and its own canonical forms - no verb synonyms (policy.mjs reads it before probing synonym forms). */
+export function grammarClassesBase(name, role = '') {
   const asWritten = grammarClassesOf(name, role)
   if (asWritten.length > 0) return asWritten
   for (const form of canonicalForms(name)) {
@@ -796,6 +820,16 @@ export function grammarClasses(name, role = '') {
     if (classes.length > 0) return classes
   }
   return asWritten
+}
+
+export function grammarClasses(name, role = '') {
+  const base = grammarClassesBase(name, role)
+  if (base.length > 0) return base
+  for (const form of synonymForms(name)) {
+    const classes = grammarClassesOf(form, role)
+    if (classes.length > 0) return classes
+  }
+  return base
 }
 
 function grammarClassesOf(name, role = '') {
@@ -911,7 +945,9 @@ function grammarClassesOf(name, role = '') {
   if (portal) return [portal]
   // CU-479 (High rows; cu-coordinator 04:20Z): a send to people who opted out or to the whole list - 'Resubscribe all' and a bare
   // 'Blast' (submit). Imports and exports belong to CU-462.
-  if (list[0] === 'resubscribe' && list[1] === 'all' && list.length <= 3) return ['submit']
+  // #633 round 2 (cu-researcher 07:05Z): everyone / entire list / contacts, and 'Blast it / now'. The hyphenated 'Re-subscribe all'
+  // keeps the older subscribe -> purchase (it asks either way; named).
+  if (list[0] === 'resubscribe' && list.length <= 3 && ['all', 'everyone', 'entire', 'contact', 'list', 'subscriber'].includes(list[1])) return ['submit']
   // CU-484 (High; cu-coordinator 06:05Z): installing by store wording - an OAuth install into a workspace app, a browser add-on, a bare
   // 'Install now', an installer or a plugin activation (install); sideloading and unknown sources (permission). 'Uninstall' keeps delete.
   if (list.length <= 4) {
@@ -929,14 +965,15 @@ function grammarClassesOf(name, role = '') {
   if (list.length <= 3) {
     const [v, ...r] = list
     if (v === 'sell' && r[0] === 'short' && r.length <= 2) return ['purchase']
+    if (v === 'short' && r[0] === 'sell' && r.length <= 2) return ['purchase']
     if (v === 'liquidate' && (r.length === 0 || (r.length <= 2 && ['all', 'position', 'portfolio', 'everything'].includes(r[r.length - 1])))) return ['purchase']
-    if (v === 'exercise' && r.length <= 2 && r[r.length - 1] === 'option') return ['purchase']
+    if (v === 'exercise' && r.length <= 2 && ['option', 'contract'].includes(r[r.length - 1])) return ['purchase']
     if (v === 'auto' && r[0] === 'invest' && r.length === 1) return ['purchase']
     if (v === 'rebalance' && r.length <= 2 && (r.length === 0 || r[r.length - 1] === 'portfolio')) return ['purchase']
-    if (['enable', 'activate'].includes(v) && r.length <= 2 && (r[0] === 'margin' || (r[0] === 'option' && r[1] === 'trading'))) return ['permission']
-    if (v === 'turn' && r[0] === 'on' && r.length <= 3 && (r[1] === 'margin' || (r[1] === 'option' && r[2] === 'trading'))) return ['permission']
+    if (['enable', 'activate'].includes(v) && r.length <= 2 && (['margin', 'leverage'].includes(r[0]) || (r[0] === 'option' && (r.length === 1 || r[1] === 'trading')))) return ['permission']
+    if (v === 'turn' && r[0] === 'on' && r.length <= 3 && (['margin', 'leverage'].includes(r[1]) || (r[1] === 'option' && (r.length === 2 || r[2] === 'trading')))) return ['permission']
   }
-  if (/^\s*blast\s*!?\s*$/i.test(raw)) return ['submit']
+  if (/^\s*blast(?:\s+(?:it|now))?\s*!?\s*$/i.test(raw)) return ['submit']
   // F2 guard (cu-coordinator 20:28Z): declining, denying or rejecting a request answers no - the grammar's own over-ask since
   // #554 ('Decline request'); older asks ('Decline invitation', CU-422's 'Decline offer') are untouched (the hook never sees them).
   if (['decline', 'deny', 'reject'].includes(list[0]) && list.slice(1).filter((t) => !FILLER.has(t)).every((t) => t === 'request' || t === 'this' || t === 'all')

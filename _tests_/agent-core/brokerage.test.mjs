@@ -33,3 +33,9 @@ test('CU-483: a bare Sell asks purchase on a trading URL (path, query or hash), 
 test('CU-483 negatives: quotes, positions and watchlists stay free', () => {
   for (const name of ['Quote', 'Positions', 'Watchlist', 'Portfolio', 'Orders']) assert.equal(at(name), 'allow', name)
 })
+
+test('#633 round 2 (cu-researcher 07:05Z): the held-out escapes fold', () => {
+  for (const [name, cls] of [['Short sell', 'purchase'], ['Exercise contract', 'purchase'], ['Exercise options', 'purchase'], ['Turn on leverage', 'permission'], ['Enable options', 'permission'],
+    ['Resubscribe everyone', 'submit'], ['Resubscribe entire list', 'submit'], ['Re-subscribe all', 'purchase'], ['Blast it', 'submit'], ['Blast now', 'submit']]) assert.equal(at(name, 'https://broker.example/account'), cls, name)
+  for (const name of ['Options chain', 'Leverage FAQ', 'Short interest', 'Blast radius']) assert.equal(at(name, 'https://broker.example/account'), 'allow', name)
+})
