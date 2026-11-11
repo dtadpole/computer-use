@@ -26,3 +26,14 @@ test('CU-494 residual: other unlabelled fields and a labelled name are unchanged
   assert.equal(type('{{secret:pw}}', { name: '', fieldAttr: 'password', isPassword: true }).decision, 'allow', 'a caller secret into a secret field rides the grant')
   assert.equal(type('DE89', { name: 'Nickname', fieldAttr: 'iban' }).decision, 'allow', 'a name wins over the raw attribute')
 })
+
+test('CU-494 residual r2: bank_account, a bare wallet, forward_to and a card autocomplete token ask under the grant', () => {
+  for (const fieldAttr of ['bank_account', 'wallet', 'forward_to']) {
+    const v = type('0x' + '5290'.repeat(10), { name: '', fieldAttr })
+    assert.equal(v.decision, 'confirm', fieldAttr)
+  }
+  assert.equal(type('{{secret:card}}', { name: '', autocomplete: 'cc-number' }).decision, 'confirm', 'cc-number')
+  assert.equal(type('120.00', { name: '', autocomplete: 'transaction-amount' }).decision, 'confirm', 'transaction-amount')
+  assert.equal(type('Mira', { name: 'Forward to' }).decision, 'confirm', "a named 'Forward to' field")
+  assert.equal(type('Mira', { name: 'Wallet' }).decision, 'allow', "a bare 'Wallet' name stays as it was - the attribute-only word")
+})
