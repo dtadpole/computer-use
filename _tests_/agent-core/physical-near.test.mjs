@@ -134,3 +134,9 @@ test('nativeToggleState folds after #590: CU-456 mail protections and CU-460 Sen
   assert.equal(dsw('Less secure app access', true), 'allow', 'on -> off is free')
   assert.equal(dsw('Less secure app access', true, { inWebArea: true }), 'credential', 'web area untrusted')
 })
+test('nativeToggleState fold after #592: CU-461 private-account switch reads a desktop native state', () => {
+  assert.equal(dsw('Private account', true), 'permission', 'on -> off makes the account public')
+  assert.equal(dsw('Private account', false), 'allow', 'off -> on is free')
+  assert.equal(dsw('Private account', false, { inWebArea: true }), 'permission', 'web area untrusted')
+  assert.equal(dsw('Private account', undefined), 'permission', 'no state asks')
+})
