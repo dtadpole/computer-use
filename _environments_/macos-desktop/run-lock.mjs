@@ -87,6 +87,8 @@ export const SEAT_PATTERN = /^cu-[a-z0-9]+(-[a-z0-9]+){0,3}$/
 export const RUN_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/
 /** CU-191: seconds without any local input before a fresh hold may take the Mac - the owner may be at it otherwise. */
 export const OWNER_IDLE_SECONDS = 300
+/** Idle (A): an admission's idleAtStart is trusted only in [0, 86400] seconds. */
+const IDLE_AT_START_MAX = 86400
 /** CU-327: a hold's token - 16 hex characters - names who may end it; a nested holder gets its own. */
 export const HOLD_TOKEN_PATTERN = /^[0-9a-f]{16}$/
 /** CU-327: at most this many nested holders under one hold; past it a nest is refused (a runaway loop, not nesting). */
@@ -536,6 +538,7 @@ async function admitDesktopRun({
   const entryPath = join(root, ENTRY_NAME)
   await takeMutex(lock, { now, sleep, lockTimeoutMs, staleLockMs, isAlive })
   let entry
+  let admittedIdle = null
   try {
     const hold = liveHold(readEntry(join(root, HOLD_NAME)), now())
     if (hold !== null && hold.seat !== seat) throw heldError(hold)
@@ -546,6 +549,7 @@ async function admitDesktopRun({
         : exempt !== null ? null : refuseUnlessIdle(root, { at, seat, runId, idleSeconds: readIdle, minIdleSeconds,
           subject: 'a desktop run that can post input', advice: 'try again once it has been left alone that long', notDone: 'not started', tag: 'D-066' })
       logHold(root, { at: new Date(at).toISOString(), action: 'run_admitted', seat, runId, rule: exempt ?? 'idle', ...(idle !== null ? { idleSeconds: idle } : {}), ...(confirmation !== null ? { confirmationId: confirmation.id, source: confirmation.source } : {}) })
+      admittedIdle = idle
     }
     const current = readEntry(entryPath)
     // CU-106: the holder's own live sentinel is swapped for this run's entry in one rename; a sentinel whose hold is no
@@ -556,7 +560,10 @@ async function admitDesktopRun({
     } else if (!swap && current !== null) {
       throw activeRunError(current)
     }
-    entry = Object.freeze({ seat, runId, pid, startedAt: new Date(now()).toISOString(), commit: typeof commit === 'string' ? commit : null, ...(noInput ? { noInput: true } : {}) })
+    // Idle (A), cu-coordinator 16:30Z: the idle seconds this admission read (run-lock's own reader, never the seat's) stay
+    // with the run as idleAtStart, so ownerIdleSeconds can count the owner's idle across our own synthetic input.
+    entry = Object.freeze({ seat, runId, pid, startedAt: new Date(now()).toISOString(), commit: typeof commit === 'string' ? commit : null, ...(noInput ? { noInput: true } : {}),
+      ...(typeof admittedIdle === 'number' && Number.isFinite(admittedIdle) && admittedIdle >= 0 && admittedIdle <= IDLE_AT_START_MAX ? { idleAtStart: admittedIdle } : {}) })
     if (swap) {
       replaceEntry(entryPath, entry)
       logHold(root, { at: entry.startedAt, action: 'sentinel_out', seat, runId })
@@ -606,7 +613,64 @@ async function admitDesktopRun({
       if (released) return
       replaceEntry(join(root, LAST_INPUT_NAME), { seat, at: new Date(now()).toISOString() })
     },
+    // Idle (A), the driver's half (cu-developer-three, environment.mjs): `armed` is true only after an arm reply whose via
+    // includes eventTap, and false in the same call as any disarm (consent ask, pause, takeover, settle, local_input stop);
+    // `lastOwnerInputAt` (epoch ms) is stamped from the helper's localInput events while armed. Only this run's own entry
+    // (same seat, run id, pid and start) is updated, under the mutex; nothing else is accepted; a no-op once released.
+    async mark(patch) {
+      const clean = markPatch(patch)
+      if (released) return false
+      await takeMutex(lock, { now, sleep, lockTimeoutMs, staleLockMs, isAlive })
+      try {
+        const current = readEntry(entryPath)
+        if (released || !sameEntry(current, entry)) return false
+        replaceEntry(entryPath, { ...current, ...clean })
+        return true
+      } finally {
+        dropMutex(lock)
+      }
+    },
   }
+}
+
+/** Idle (A): mark()'s patch, validated - only `armed` (boolean) and `lastOwnerInputAt` (epoch ms, a finite number >= 0). */
+function markPatch(patch) {
+  if (patch === null || typeof patch !== 'object' || Array.isArray(patch)) throw invalid('mark takes { armed?, lastOwnerInputAt? }', { field: 'patch' })
+  const keys = Object.keys(patch)
+  const unknown = keys.filter((key) => key !== 'armed' && key !== 'lastOwnerInputAt')
+  if (unknown.length > 0 || keys.length === 0) throw invalid(`mark takes only armed and lastOwnerInputAt${unknown.length > 0 ? `, not ${unknown.join(', ')}` : ''}`, { field: 'patch' })
+  if ('armed' in patch && typeof patch.armed !== 'boolean') throw invalid('armed is true or false', { field: 'armed' })
+  if ('lastOwnerInputAt' in patch && !(typeof patch.lastOwnerInputAt === 'number' && Number.isFinite(patch.lastOwnerInputAt) && patch.lastOwnerInputAt >= 0)) throw invalid('lastOwnerInputAt is epoch milliseconds', { field: 'lastOwnerInputAt' })
+  return { ...('armed' in patch ? { armed: patch.armed } : {}), ...('lastOwnerInputAt' in patch ? { lastOwnerInputAt: patch.lastOwnerInputAt } : {}) }
+}
+
+/**
+ * Idle (A) (cu-coordinator 14:48Z, settled 16:30Z / 16:32Z; contract with cu-developer-three): the owner's idle seconds as
+ * a waiting gate should read them. Our own synthetic input resets HIDIdleTime, so while a live run is ARMED - its helper
+ * ends it on the first untagged event (via includes eventTap) - the owner's idle is
+ *   now - max(admittedAt - idleAtStart, lastOwnerInputAt)
+ * (the idle it was admitted at plus the time since, or the time since the owner's last own input, whichever is shorter).
+ * Anything else reads HIDIdleTime alone: no run, a released or noInput run, a dead pid, an unarmed run (a consent ask
+ * disarms it: the owner answers by hand), an idleAtStart outside [0, 86400], or a clock behind the admission. A plain HOLD
+ * has no local-input stop, so it never stands in (named over-wait until a helper stamp exists). `idleSeconds` defaults to
+ * this lock's own reader (none for a scratch dir, CU-117). Returns { seconds, rule } with rule 'armed_run' or 'hid';
+ * seconds is null when HIDIdleTime cannot be read and no armed run stands in.
+ */
+export function ownerIdleSeconds({ dir = RUN_LOCK_DIR, now = Date.now, isAlive = pidAlive, idleSeconds } = {}) {
+  const root = resolve(dir)
+  const reader = idleSeconds === undefined ? ownerIdleReader(root) : idleSeconds
+  const hid = typeof reader === 'function' ? reader() : null
+  const hidSeconds = typeof hid === 'number' && Number.isFinite(hid) && hid >= 0 ? hid : null
+  const entry = readEntry(join(root, ENTRY_NAME))
+  const at = now()
+  if (entry && !isSentinel(entry) && entry.noInput !== true && entry.armed === true && isAlive(entry.pid)
+    && typeof entry.idleAtStart === 'number' && Number.isFinite(entry.idleAtStart) && entry.idleAtStart >= 0 && entry.idleAtStart <= IDLE_AT_START_MAX) {
+    const admittedAt = Date.parse(entry.startedAt)
+    const owner = typeof entry.lastOwnerInputAt === 'number' && Number.isFinite(entry.lastOwnerInputAt) ? entry.lastOwnerInputAt : -Infinity
+    const since = Math.max(admittedAt - entry.idleAtStart * 1000, owner)
+    if (Number.isFinite(admittedAt) && at >= admittedAt && at >= since) return { seconds: Math.floor((at - since) / 1000), rule: 'armed_run' }
+  }
+  return { seconds: hidSeconds === null ? null : Math.floor(hidSeconds), rule: 'hid' }
 }
 
 /** Validate the seat and dir shared by the hold's three calls; returns the prepared root. */
@@ -1011,7 +1075,7 @@ export async function main(argv, { write = (line) => process.stdout.write(`${lin
     } else if (command === 'status') {
       const current = readEntry(join(resolve(dir), ENTRY_NAME)) ?? undefined
       const run = isSentinel(current) ? null : (({ seat, runId, startedAt, commit } = {}) => (seat ? { seat, runId, startedAt, commit: commit ?? null } : null))(current)
-      write(JSON.stringify({ hold: readHold({ dir }), run, sentinel: isSentinel(current), waiter: readWaiter({ dir }) }))
+      write(JSON.stringify({ hold: readHold({ dir }), run, sentinel: isSentinel(current), waiter: readWaiter({ dir }), ownerIdle: ownerIdleSeconds({ dir, ...(seams.idleSeconds !== undefined ? { idleSeconds: seams.idleSeconds } : {}) }) }))
     } else {
       write(JSON.stringify({ error: 'usage: run-lock.mjs hold --seat S --minutes N [--reason R] [--token T] [--wait-free SECONDS] | release --seat S [--token T] | wait --seat S [--reason R] | status [--dir D] (exit 3 = held, a run still active: release it if you give up)' }))
       return 2
