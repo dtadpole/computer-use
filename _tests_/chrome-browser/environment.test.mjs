@@ -1092,3 +1092,32 @@ test('CU-473 (Return route): the Return target (defaultButton) carries the submi
     await env.close()
   }
 })
+
+test('CU-494: an entry carries its raw name (else id) attribute as fieldAttr; a non-token value and a non-entry carry none', async () => {
+  const describe = async (attributes, axName, editable = true) => {
+    const { options } = harness({
+      handlers: {
+        'DOM.getNodeForLocation': () => ({ result: { backendNodeId: 31, frameId: 'F-S1' } }),
+        'DOM.describeNode': () => ({ result: { node: { nodeName: 'INPUT', attributes } } }),
+        'Accessibility.getPartialAXTree': () => ({ result: { nodes: [{ backendDOMNodeId: 31, role: { value: 'textbox' }, name: { value: axName } }] } }),
+        'DOM.getBoxModel': () => ({ result: { model: { border: [20, 420, 320, 420, 320, 450, 20, 450] } } }),
+        'DOM.resolveNode': () => ({ result: { object: { objectId: 'o1' } } }),
+        'Runtime.callFunctionOn': () => ({ result: { result: { value: { origin: 'http://127.0.0.1:43117', editable, href: null } } } }),
+      },
+    })
+    const env = await launchBrowserEnvironment(options)
+    try { return await env.inspectPoint({ x: 127, y: 326 }) } finally { await env.close() }
+  }
+  assert.equal((await describe(['type', 'text', 'name', 'iban'], '')).fieldAttr, 'iban')
+  assert.equal((await describe(['type', 'text', 'name', 'Wallet_Address'], '')).fieldAttr, 'wallet_address', 'lower-cased')
+  assert.equal((await describe(['type', 'text', 'id', 'routing-number'], '')).fieldAttr, 'routing-number', 'id when no name')
+  assert.equal((await describe(['type', 'text', 'name', 'BankAccountNumber'], '')).fieldAttr, 'bank_account_number', 'camelCase keeps its word breaks')
+  assert.equal((await describe(['type', 'text', 'name', 'IBANNumber'], '')).fieldAttr, 'iban_number', 'an acronym run keeps its break')
+  assert.equal((await describe(['type', 'text', 'name', 'iban'], 'Nickname')).fieldAttr, 'iban', 'a named entry carries it too (#675 r2: a union)')
+  assert.equal('fieldAttr' in (await describe(['type', 'text', 'name', 'a b<c>'], '')), false, 'not a plain token')
+  assert.equal('fieldAttr' in (await describe(['type', 'text', 'name', 'x'.repeat(41)], '')), false, 'over 40 characters')
+  assert.equal('fieldAttr' in (await describe(['type', 'button', 'name', 'iban'], '', false)), false, 'not an entry')
+  const a = await describe(['type', 'text', 'name', 'iban'], '')
+  const b = await describe(['type', 'text', 'name', 'wallet'], '')
+  assert.equal(a.fingerprint, b.fingerprint, 'outside the fingerprint')
+})

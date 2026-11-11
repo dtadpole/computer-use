@@ -821,6 +821,22 @@ function compoundSplit(text) {
   for (const [a, b] of COMPOUNDS) out = out.replace(new RegExp(`\\b(${a})(${b})\\b`, 'gi'), '$1-$2')
   return out
 }
+// CU-502 (High; cu-coordinator 13:21Z; canonical-form sweep, tried LAST - after the verb-synonym forms): a quantifier between the verb and its object - '<verb> all (the / of the / your / my) <nouns>' or
+// '<verb> every <noun>' - is judged as the verb on the object, plural kept and singular, so 'Silence all alarms', 'Empty all buckets',
+// 'Cancel all orders' reach their rows. Never for the list-handling verbs ('Select all', 'Mark all as read', 'Expand all', 'Show all
+// results'), and only when a noun follows the quantifier.
+// #683 round 2 (cu-coordinator 13:36Z): 'open' is not a list verb ('Open all ports' asks); and a name that already asks takes the
+// full class set of its quantifier-dropped row too (policy.mjs: 'Approve each sign-in' = permission + submit like 'Approve sign-in').
+const QUANTIFIER_SAFE_VERBS = /^(?:select|deselect|unselect|mark|view|show|see|expand|collapse|read|check|uncheck|filter|sort|hide|load|browse|list|clear\s+filters?|reply)$/i
+export function quantifierDropped(form) {
+  const m = /^\s*((?:turn\s+(?:on|off)|switch\s+(?:on|off)|set\s+up|log\s+out\s+of|sign\s+out\s+of|[a-z][a-z-]*))\s+(?:all|every|each)(?:\s+(?:of\s+)?(?:the|your|my|these|those))?\s+([a-z][\w-]*(?:\s+[a-z][\w-]*){0,3})\s*$/i.exec(String(form ?? ''))
+  if (!m || QUANTIFIER_SAFE_VERBS.test(m[1].trim())) return []
+  if (/^(?:as|to|from|in|on|at|of|for|with|that|which|read|unread|done)\b/i.test(m[2])) return []
+  const words = m[2].split(/\s+/)
+  const last = words[words.length - 1]
+  const one = [...words.slice(0, -1), singular(last)].join(' ')
+  return [...new Set([`${m[1]} ${m[2]}`, `${m[1]} ${one}`])]
+}
 export function canonicalForms(name) {
   const unwrapped = canonicalConfirm(name)
   const cut = firstSentence(unwrapped)
@@ -867,7 +883,10 @@ export function synonymForms(name) {
   const base = [own, ...canonicalForms(name)]
   const forms = [...base.map(withVerbSynonym), ...base.map(withAbbreviations), ...base.map((f) => withVerbSynonym(withAbbreviations(f)))]
   const known = new Set(canonicalForms(name))
-  return [...new Set(forms)].filter((form) => form !== '' && form !== own && !known.has(form))
+  // CU-502: the quantifier-dropped forms go last of all (and their verb synonyms after them).
+  const quantified = [...new Set(base.flatMap(quantifierDropped))]
+  const last = [...quantified, ...quantified.map(withVerbSynonym)]
+  return [...new Set([...forms, ...last])].filter((form) => form !== '' && form !== own && !known.has(form))
 }
 
 /** The grammar on the name and its own canonical forms - no verb synonyms (policy.mjs reads it before probing synonym forms). */
@@ -1039,8 +1058,59 @@ function grammarClassesOf(name, role = '') {
     if (['create', 'add', 'new'].includes(v) && r.length <= 2 && ['rule', 'forwarding'].includes(last) && (r.length === 1 || ['mail', 'inbox', 'email', 'forwarding', 'message'].includes(r[0]))) return ['credential']
     if (v === 'release' && r.length >= 1 && r.length <= 3 && (['message', 'email', 'mail'].includes(last) || last === 'quarantine')) return ['permission']
   }
+  // CU-500 (High; cu-coordinator 12:49Z), as verb families with object synonyms: on an exchange, confirming a withdrawal, a market
+  // order, converting everything and setting leverage move money (purchase); adding or allowlisting a withdrawal address redirects it
+  // (credential); turning off the withdrawal allowlist opens the account (permission). 'Deposit address' and 'Markets' stay free.
+  // #680 round 2 (cu-developer-three 12:55Z): a bare 'Add to allowlist / whitelist' (an ad blocker's, a mail sender's, a firewall's)
+  // stays free - the credential row needs an address / wallet / withdrawal object.
+  if (/^\s*confirm\s+(?:the\s+|this\s+|your\s+|my\s+)?(?:withdrawals?|withdraw(?:al)?\s+request|crypto\s+withdrawal|payout)\s*$/i.test(raw)
+    || /^\s*(?:market\s+(?:sell|buy|order)|(?:sell|buy)\s+(?:at\s+|by\s+)?market(?:\s+price)?|(?:place|submit)\s+(?:a\s+)?market\s+(?:sell|buy|order))\s*$/i.test(raw)
+    || /^\s*convert\s+(?:all|everything|max|(?:my\s+|the\s+)?(?:entire|whole|full|max(?:imum)?)\s+(?:balance|amount|portfolio))(?:\s+to\s+[a-z0-9]{2,10})?\s*$/i.test(raw)
+    || /^\s*(?:set|change|increase|raise|use|apply)\s+(?:the\s+|my\s+)?leverage(?:\s+to\s+\d+(?:\.\d+)?\s*x)?\s*$|^\s*(?:set|use|apply)\s+\d+(?:\.\d+)?\s*x(?:\s+leverage)?\s*$/i.test(raw)) return ['purchase']
+  if (/^\s*(?:add|save|register|create)\s+(?:a\s+|an\s+|new\s+|a\s+new\s+)?(?:withdrawal|withdraw|payout|crypto|wallet|external|whitelisted|allowlisted|trusted)\s+(?:wallet\s+)?address(?:es)?\s*$/i.test(raw)
+    || /^\s*(?:whitelist|allowlist|trust)\s+(?:an?\s+|this\s+|the\s+|new\s+)?(?:withdrawal\s+)?(?:address|wallet)\s*$|^\s*add\s+(?:this\s+|the\s+)?(?:address|wallet)\s+to\s+(?:the\s+)?(?:withdrawal\s+|address\s+)?(?:whitelist|allowlist)\s*$|^\s*add\s+to\s+(?:the\s+)?(?:withdrawal|address|wallet)\s+(?:whitelist|allowlist)\s*$/i.test(raw)) return ['credential']
+  if (/^\s*(?:disable|turn\s+off|switch\s+off|deactivate|remove|pause)\s+(?:the\s+)?(?:withdrawal|address|wallet|crypto)\s+(?:whitelist|allowlist|lock|protection)(?:ing)?\s*$/i.test(raw)) return ['permission']
+  // CU-497 (High; cu-coordinator 11:49Z, the CU-461 exposure family): exposing a phone number, email or location on a profile, or linking
+  // another service's account, asks permission - 'Make phone number visible', 'Let anyone find me by phone / email', 'Turn on location in
+  // posts', 'Show my location', 'Link Instagram account', 'Connect Instagram'. 'Hide phone number' and pickers stay free.
+  // #672 round 3 (cu-coordinator 12:21Z): '... visible publicly' and '... visible on my profile' too.
+  if (/^\s*(?:make|set)\s+(?:my\s+)?(?:phone(?:\s+number)?|email(?:\s+address)?|e-mail|birthday|location|address)\s+(?:visible|public|discoverable)(?:\s+(?:to\s+(?:everyone|anyone|all|the\s+public)|publicly|on\s+(?:my\s+)?profile))?\s*$/i.test(raw)
+    || /^\s*(?:let|allow)\s+(?:anyone|everyone|people|others)\s+(?:to\s+)?find\s+me\s+(?:by|with|using)\s+(?:my\s+)?(?:phone(?:\s+number)?|email(?:\s+address)?|e-mail|contacts?)\s*$/i.test(raw)
+    || /^\s*(?:turn\s+on|enable|add|allow)\s+(?:my\s+)?location\s+(?:in|on|to)\s+(?:my\s+)?(?:posts?|photos?|stories|tweets?|profile)\s*$/i.test(raw)
+    // #672 round 2 (cu-researcher 12:00Z): without 'my', and 'to everyone / anyone / the public'.
+    || /^\s*(?:show|share|display)\s+(?:my\s+)?(?:location|phone(?:\s+number)?|email(?:\s+address)?)\s+(?:publicly|on\s+(?:my\s+)?profile|(?:with|to)\s+(?:everyone|anyone|the\s+public|all))\s*$|^\s*(?:show|share)\s+my\s+(?:location|phone(?:\s+number)?|email(?:\s+address)?)\s*$/i.test(raw)
+    || /^\s*(?:link|connect)\s+(?:my\s+|your\s+|an?\s+)?(?!(?:bank|card|device|wallet|email|phone|billing|payment|payout|merchant|ads?|credit|debit|brokerage|savings|checking)\b)[a-z][\w.+-]{1,20}\s+account\s*$/i.test(raw)
+    || /^\s*(?:link|connect)\s+(?:my\s+|your\s+)?(?:instagram|facebook|twitter|x|tiktok|spotify|google|apple|github|linkedin|discord|twitch|youtube|snapchat|strava|venmo|paypal|threads|bluesky|mastodon)\s*$/i.test(raw)) return ['permission']
+  // CU-496 (High; cu-coordinator 11:21Z): a recovery, trusted or legacy contact can take the account over (permission); a vault's
+  // emergency kit prints its secrets (credential).
+  if (/^\s*(?:add|set\s+up|choose|invite|assign)\s+(?:an?\s+)?(?:recovery|trusted|legacy)\s+contacts?\s*$/i.test(raw)) return ['permission']
+  if (/^\s*(?:print|download|save)\s+(?:the\s+|your\s+)?emergency\s+kit\s*$/i.test(raw)) return ['credential']
+  // CU-495 (High; cu-coordinator 11:06Z): an e-signature commits the signer - 'Sign', 'Sign here', 'Click to sign', 'Agree and sign',
+  // 'Apply signature', 'Complete signing', 'Sign all' ask permission anywhere, like 'Adopt and Sign'. 'Sign in' / 'Sign up' keep their rows.
+  // #665 round 2 (cu-researcher 11:16Z): 'Add my / Place / Insert signature', 'Sign electronically / digitally'.
+  if (/^\s*(?:sign(?:\s+(?:here|all|now|it|below))?|click\s+(?:here\s+)?to\s+sign|(?:agree|accept)\s+(?:and|&)\s+sign|(?:apply|add|place|insert)\s+(?:my\s+|your\s+|a\s+)?signature|(?:complete|finish)\s+signing|e-?sign(?:\s+now)?|sign\s+(?:electronically|digitally))\s*!?\s*$/i.test(raw)) return ['permission']
+  // CU-492 (High; cu-coordinator 10:36Z): cloud console - emptying a bucket deletes every object (delete); a rule open to the whole
+  // internet, and turning off encryption or versioning, widen access (permission). A bare 'Add rule' opens a form (free).
+  if (/^\s*empty\s+(?:the\s+|this\s+)?(?:bucket|container)\s*$/i.test(raw)) return ['delete']
+  if (/^\s*add\s+(?:an?\s+)?(?:inbound\s+|outbound\s+|firewall\s+|security\s+)?rule\s+(?:for\s+|from\s+)?(?:0\.0\.0\.0\/0|::\/0|anywhere|any\s+ip)\s*$/i.test(raw)) return ['permission']
+  if (/^\s*(?:disable|turn\s+off|remove)\s+(?:bucket\s+|default\s+|server-side\s+)?(?:encryption|versioning)\s*$|^\s*suspend\s+(?:bucket\s+)?versioning\s*$/i.test(raw)) return ['permission']
+  // CU-493 (High; cu-coordinator 10:36Z): an MFA-fatigue approval answers a sign-in prompt - 'Yes, it's me', 'This was me', 'It was me',
+  // 'Allow sign-in' ask in the class of 'Approve sign-in' (permission since #661 round 2), anywhere; linking a device asks as 'Add device'.
+  if (/^\s*(?:yes,?\s+)?(?:it'?s|it\s+is|it\s+was|this'?s|this\s+(?:is|was)|that'?s|that\s+(?:is|was))\s+me\s*!?\s*$/i.test(raw) || /^\s*allow\s+(?:this\s+|the\s+)?(?:sign-?\s?in|log-?\s?in|login)\s*$/i.test(raw)) return ['permission']
+  if (/^\s*link\s+(?:a\s+|this\s+|new\s+|another\s+)?device\s*$/i.test(raw)) return ['permission']
   // CU-490 (High; cu-coordinator 09:51Z): booking a ride is a purchase anywhere - 'Confirm ride', 'Book ride', 'Request ride'.
   if (list.length >= 2 && list.length <= 3 && ['confirm', 'book', 'request'].includes(list[0]) && ['ride', 'trip'].includes(list[list.length - 1])) return ['purchase']
+  // CU-487 (High; cu-coordinator 07:36Z): payroll compensation - a bonus pays out (purchase); a raise or a salary / compensation change is
+  // submitted (submit); employee data and tax forms leave the account (permission). Older classes keep their own rows (named).
+  if (list.length <= 4) {
+    const [v, ...r] = list
+    // #647 round 2 (cu-researcher 08:27Z): plural bonuses, 'Grant raise', payroll data / reports / records.
+    if (['issue', 'grant', 'send'].includes(v) && r.length <= 2 && ['bonus', 'bonuse', 'bonuses'].includes(r[r.length - 1])) return ['purchase']
+    if (['give', 'grant'].includes(v) && r.length <= 2 && r[r.length - 1] === 'raise') return ['submit']
+    if (['change', 'update', 'edit', 'adjust'].includes(v) && r.length <= 2 && ['salary', 'compensation', 'wage'].includes(r[r.length - 1])) return ['submit']
+    if (['export', 'download'].includes(v) && r.length <= 3 && (r.includes('employee') || r.includes('payroll')) && ['data', 'record', 'list', 'detail', 'report'].includes(r[r.length - 1])) return ['permission']
+  }
+  if (/^\s*download\s+(?:all\s+)?(?:w-?2s?|1099s?|tax\s+forms?)\s*$/i.test(raw)) return ['permission']
   // CU-483 (High; cu-coordinator 05:34Z): brokerage - orders and automatic trading spend money (purchase); margin and options trading
   // widen what the account may do (permission). A bare 'Sell' is page-bound (policy.mjs reads the trading URL).
   if (list.length <= 3) {

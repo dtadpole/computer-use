@@ -165,6 +165,16 @@ export async function launchBrowserEnvironment(options = {}) {
 }
 
 /** CU-400: describeElement's formContext, re-validated at the boundary - else null. */
+/** CU-494: an entry's raw name, else id, attribute when it is a plain token ([a-z0-9_-], at most 40 characters, camelCase split by '_'), else null. */
+export function fieldAttrOf(attributes) {
+  for (const key of ['name', 'id']) {
+    // camelCase keeps its word breaks as '_' ('BankAccountNumber' -> 'bank_account_number') before lower-casing.
+    const value = String(attributes?.[key] ?? '').trim().replace(/([a-z0-9])([A-Z])/g, '$1_$2').replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2').toLowerCase()
+    if (/^[a-z0-9_-]{1,40}$/.test(value)) return value
+  }
+  return null
+}
+
 export function formContextOf(value) {
   if (value === null || typeof value !== 'object') return null
   const options = Array.isArray(value.options) ? value.options.filter((text) => typeof text === 'string' && text !== '' && text.length <= 24).slice(0, 3) : []
@@ -987,6 +997,11 @@ class BrowserEnvironment {
       // Round 2: inRow - the hit element has no verb of its own and sits inside such a row (read through it). A boolean.
       // CU-472: a link that does not navigate (no / empty / '#' / '#fragment' / 'javascript:' href) - a boolean.
       ...(extra.inertLink === true ? { inertLink: true } : {}),
+      // CU-494 (typing path): an entry's own name, else id, attribute - lower-cased, [a-z0-9_-], at most 40 characters - so
+      // a typing grant can tell <input name="iban"> or name="wallet_address" from a secret field. #675 r2 (12:36Z): sent for
+      // a named entry too, since money detection is a union and a hostile accessible name must not hide it. A raw page
+      // attribute, re-validated here; outside the fingerprint, never recorded.
+      ...(extra.editable === true && fieldAttrOf(attributes) !== null ? { fieldAttr: fieldAttrOf(attributes) } : {}),
       // CU-473: the first rendered line of a multi-line name - a string, re-bounded to 80 characters.
       ...(typeof extra.firstLine === 'string' && extra.firstLine.trim() !== '' ? { firstLine: extra.firstLine.replace(/\s+/g, ' ').trim().slice(0, 80) } : {}),
       ...(extra.inRow === true ? { inRow: true } : {}),
