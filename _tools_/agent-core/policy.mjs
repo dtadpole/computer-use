@@ -1950,7 +1950,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // only when the press turns it on; a button asks when it says turn on / enable.
     if (grammarEligible && classes.length === 0 && /^\s*(?:download|export|save)\s+(?:a\s+|the\s+)?(?:vault\s+)?backup\s*$/i.test(name) && /vault|password|1password|bitwarden|lastpass|dashlane|keeper|proton\.me\/pass/i.test(String(context?.url ?? ''))) classes.push('credential')
     if (grammarEligible && classes.length === 0) {
-      const autofill = /^\s*(?:(turn\s+on|enable|switch\s+on|allow|let)(?:\s+(?:this\s+|the\s+)?(?:item|login|password|entry|account))?(?:\s+to)?\s+)?auto-?fill\s+on\s+page\s+load(?:\s+for\s+all\s+(?:items|logins|sites|websites))?\s*$/i.exec(name)
+      const autofill = /^\s*(?:(turn\s+on|enable|switch\s+on|allow|let)(?:\s+(?:this\s+|the\s+|these\s+|all\s+)?(?:items?|logins?|passwords?|entry|entries|accounts?))?(?:\s+to)?\s+)?auto-?fill\s+on\s+page\s+load(?:\s+for\s+all\s+(?:items|logins|sites|websites))?\s*$/i.exec(name)
       // #669 round 3 (cu-verifier 11:50Z): an object and 'to' between the verb and 'autofill' - the issue title's 'Allow item to autofill on page load'.
       if (autofill) {
         // #669 round 2 (cu-developer-three 11:32Z): direction only from the NATIVE read (CU-373: a web <input type=checkbox> with a
