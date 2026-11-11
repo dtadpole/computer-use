@@ -33,3 +33,12 @@ test('CU-511 negatives and older rows', () => {
   assert.deepEqual(web('Report phishing'), ['submit'], 'CU-433 keeps its class')
   assert.deepEqual(web('Mark as spam'), [], 'marking spam stays free')
 })
+
+test('#713 round 2 (cu-researcher 17:44Z): yellow-bar wording, mark as safe, contraction forms', () => {
+  for (const name of ['Enable Macros and Content', 'Enable Content and Macros', 'Enable macros & content']) assert.ok(desk(name, 'com.microsoft.Word').includes('install'), name)
+  for (const name of ['Mark as safe', 'Mark safe', 'This message is safe', "It's not phishing", 'It is not phishing', "That's not spam"]) {
+    assert.ok(web(name).includes('permission'), name)
+    assert.ok(desk(name, 'com.microsoft.Outlook').includes('permission'), `Outlook: ${name}`)
+  }
+  for (const name of ['Safety tips', 'Is this safe?', 'Phishing']) assert.deepEqual(web(name), [], name)
+})

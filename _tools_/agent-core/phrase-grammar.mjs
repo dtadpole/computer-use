@@ -1139,6 +1139,10 @@ function grammarClassesOf(name, role = '') {
   // mark as not spam / junk, always show images / remote content from this sender, disable / turn off Gatekeeper, allow apps from anywhere.
   // cu-coordinator 17:36Z: this RAISES CU-456 / #602's 01:36Z free pin - one sender ('Add to safe senders', 'Add <address> to safe
   // senders') asks permission like 'Trust this sender' (one trusted sender is the phishing path); an explicit raise, not D-108's case.
+  // #713 round 2 (cu-researcher 17:44Z): Office's own yellow-bar wording 'Enable Macros and Content' / 'Content and Macros'; 'Mark as
+  // safe' / '(this message) is safe' and the contraction forms of 'not phishing'.
+  if (/^\s*enable\s+(?:macros\s+(?:and|&)\s+content|content\s+(?:and|&)\s+macros)\s*$/i.test(raw)) return ['install']
+  if (/^\s*mark\s+(?:it\s+|this\s+)?(?:as\s+)?safe\s*$|^\s*(?:this\s+(?:message|email|e-mail|sender)\s+)?is\s+safe\s*$|^\s*(?:it'?s|it\s+is|this\s+is|that'?s|that\s+is)\s+not\s+(?:phishing|junk|spam|a\s+scam)\s*$/i.test(raw)) return ['permission']
   if (/^\s*(?:enable|allow|turn\s+on)\s+(?:the\s+)?(?:content|(?:all\s+)?macros?|vba(?:\s+macros?)?|active\s+content)\s*$|^\s*run\s+(?:the\s+|this\s+|all\s+)?macros?\s*$|^\s*trust\s+(?:this\s+|the\s+)?(?:document|file|workbook|presentation)\s*$|^\s*enable\s+editing\s*$/i.test(raw)) return ['install']
   if (/^\s*(?:trust|always\s+trust)\s+(?:this\s+|the\s+)?sender\s*$|^\s*(?:this\s+is\s+)?not\s+(?:phishing|junk|a\s+scam)\s*$|^\s*(?:mark|report)\s+(?:it\s+|this\s+)?as\s+not\s+(?:spam|junk|phishing)\s*$|^\s*not\s+spam\s*$|^\s*add\s+(?:the\s+|this\s+)?(?:sender\s+|address\s+|domain\s+|[\w.+-]+@[\w.-]+\s+)?to\s+(?:the\s+|my\s+)?(?:safe|trusted)\s+senders?(?:\s+list)?\s*$|^\s*always\s+(?:show|load|display|download)\s+(?:images|pictures|remote\s+(?:content|images))\s+from\s+(?:this\s+)?(?:sender|domain)\s*$/i.test(raw)) return ['permission']
   if (/^\s*(?:disable|turn\s+off|switch\s+off|bypass)\s+(?:the\s+)?gatekeeper\s*$|^\s*allow\s+apps\s+(?:downloaded\s+)?from\s+anywhere\s*$/i.test(raw)) return ['permission']
