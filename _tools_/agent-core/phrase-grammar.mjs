@@ -955,8 +955,15 @@ export function synonymForms(name) {
   return [...new Set([...forms, ...last])].filter((form) => form !== '' && form !== own && !known.has(form))
 }
 
+/** #721 round 3 (cu-coordinator 18:51Z): curly apostrophes and quotes read as straight ones, so a typographic twin of a ruled row
+ *  ('Yes, it\u2019s me', 'Don\u2019t require a passcode') matches the row; policy.mjs applies it to the name before any rule. */
+export function straightQuotes(text) {
+  return String(text ?? '').replace(/[\u2018\u2019\u02BC\uFF07]/g, "'").replace(/[\u201C\u201D\uFF02]/g, '"')
+}
+
 /** The grammar on the name and its own canonical forms - no verb synonyms (policy.mjs reads it before probing synonym forms). */
 export function grammarClassesBase(name, role = '') {
+  name = straightQuotes(name)
   const asWritten = grammarClassesOf(name, role)
   if (asWritten.length > 0) return asWritten
   for (const form of canonicalForms(name)) {
@@ -967,6 +974,7 @@ export function grammarClassesBase(name, role = '') {
 }
 
 export function grammarClasses(name, role = '') {
+  name = straightQuotes(name)
   const base = grammarClassesBase(name, role)
   if (base.length > 0) return base
   for (const form of synonymForms(name)) {
@@ -977,7 +985,7 @@ export function grammarClasses(name, role = '') {
 }
 
 function grammarClassesOf(name, role = '') {
-  const raw = String(name ?? '').trim()
+  const raw = straightQuotes(name).trim()
   if (raw === '' || raw.length > 400) return []
   if (CURRENCY.test(raw) && PRICED_ROLES.has(String(role ?? '').toLowerCase()) && tokens(raw).some((t) => PRICED_NOUNS.has(t))) return ['purchase']
   // CU-467 (High; cu-coordinator 00:49Z): a pressed control that names a money amount commits a charge whatever its verb - a
@@ -1133,6 +1141,15 @@ function grammarClassesOf(name, role = '') {
   // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
   // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
   if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
+  // CU-514 (High; cu-coordinator 18:21Z; r2 18:36Z adds the present tense 'Confirm it's you'), table PR 26, as verb families with object synonyms - vouching for a suspicious sign-in or unblocking
+  // one lets someone else in, like 'Approve sign-in' / 'Yes, it was me' (permission): confirm / verify the sign-in (attempt), confirm it
+  // was you / me, unblock / unlock the sign-in (unblock the account), allow sign-in(s) from a new location / device / country, trust this
+  // device / browser ('Trust this computer' stays free: CU-286's deliberate exclusion). CREDENTIAL (an explicit raise of CU-395 / CU-434's free pin, 18:21Z): unlock (the / my / your) account.
+  if (/^\s*(?:confirm|verify|approve)\s+(?:the\s+|this\s+|my\s+)?(?:sign[-\s]?in|log[-\s]?in|login)(?:\s+attempt)?\s*$|^\s*(?:confirm|verify)\s+(?:that\s+)?(?:(?:it|this|that)\s+(?:was|is)|it'?s|that'?s)\s+(?:you|me)\s*$|^\s*(?:unblock|unlock)\s+(?:the\s+|this\s+|my\s+|your\s+)?(?:sign[-\s]?in|log[-\s]?in|login)\s*$|^\s*unblock\s+(?:the\s+|this\s+|my\s+|your\s+)?account\s*$|^\s*trust\s+(?:this\s+|the\s+)?(?:device|browser)\s*$|^\s*allow\s+(?:sign[-\s]?ins?|log[-\s]?ins?|logins?|access)\s+from\s+(?:a\s+|this\s+|the\s+)?new\s+(?:location|device|country|browser|ip(?:\s+address)?)\s*$/i.test(raw)) return ['permission']
+  if (/^\s*unlock\s+(?:the\s+|this\s+|my\s+|your\s+)?account\s*$/i.test(raw)) return ['credential']
+  // CU-515 (High; cu-coordinator 18:36Z, folded into table PR 26): copying or revealing a one-time code hands over the second factor
+  // (credential): copy / show / reveal / view the TOTP, one-time code / password, verification / 2FA / MFA / authentication / security code, OTP.
+  if (/^\s*(?:copy|show|reveal|view|display|get)\s+(?:the\s+|this\s+|my\s+)?(?:totp(?:\s+code)?|otp(?:\s+code)?|one[-\s]time\s+(?:code|password|passcode)|(?:verification|2fa|mfa|two[-\s]factor|authentication|authenticator|security|login|sign[-\s]in)\s+code)\s*$/i.test(raw)) return ['credential']
   // CU-511 (High; cu-coordinator 17:21Z), table PR 24, as verb families with object synonyms. INSTALL - running a document's code:
   // enable content / (all) macros, run (the / this) macro(s), trust (this / the) document, enable editing (leaving Protected View).
   // PERMISSION - overriding a mail or OS safety check: trust this sender, this is not phishing / junk, add (sender) to safe senders,

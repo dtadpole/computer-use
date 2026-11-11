@@ -3,7 +3,7 @@ import { normaliseForPolicy, normaliseText } from './normalise.mjs'
 import { BIP39_ENGLISH } from './bip39-english.mjs'
 import { normalizeKey } from './keys.mjs'
 import { originPattern } from './sites.mjs'
-import { amountClass, canonicalForms, clauseSplit, clauseVerbLed, grammarClasses, grammarClassesBase, inertLinkAmountClass, quantifierDropped, sectionLabelStripped, synonymForms, toggleExpansion } from './phrase-grammar.mjs'
+import { amountClass, canonicalForms, clauseSplit, clauseVerbLed, grammarClasses, grammarClassesBase, inertLinkAmountClass, quantifierDropped, sectionLabelStripped, straightQuotes, synonymForms, toggleExpansion } from './phrase-grammar.mjs'
 
 /**
  * The action policy (design: action-policy.md, consent-gate.md). `classify` runs in the dispatcher for every action,
@@ -1162,7 +1162,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     }
 
     const target = context.target ?? null
-    const name = target?.name ?? ''
+    // #721 round 3 (cu-coordinator 18:51Z): curly apostrophes / quotes read as straight before any rule.
+    const name = typeof target?.name === 'string' ? straightQuotes(target.name) : (target?.name ?? '')
     const classes = []
     // CU-271 (cu-coordinator's ruling): a web terminal runs every line it is given, so a key or text into it - typed, a
     // paste, a chord, a page menu's Paste with the terminal focused - or text dropped on it is refused, as a terminal view
@@ -2292,6 +2293,16 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (clauses.length > 0 && clauses.every((clause, i) => clauseVerbLed(clause) || probes[i].decision === 'confirm')) {
         for (const probe of probes) if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) if (!classes.includes(cls)) classes.push(cls)
       }
+    }
+    // #721 round 3 (cu-coordinator 18:51Z; CU-515's desktop gap, cu-developer-three 18:37Z): in a native authenticator app the
+    // control beside a TOTP is just 'Copy' / 'Copy code' / 'Show code' - it puts the second factor on the clipboard, so it asks
+    // credential there, bound on the app (target.origin, else frontmostBundleId; never an 'app:' url). The apps are matched by a
+    // bundle-id segment (authy*, *authenticator*, otp*, *totp*, steptwo / step-two, raivo*, 2fas*), not by guessed exact ids;
+    // elsewhere a bare 'Copy' stays free, and password managers stay BLOCKED by the app policy, unchanged.
+    if (grammarEligible && classes.length === 0) {
+      const appId = (typeof target?.origin === 'string' && target.origin !== '' && !/^https?:/i.test(target.origin)) ? target.origin : String(context?.frontmostBundleId ?? '')
+      const authenticator = appId.split('.').some((segment) => /^(?:authy[\w-]*|[\w-]*authenticator[\w-]*|otp[\w-]*|[\w-]*totp[\w-]*|step-?two[\w-]*|raivo[\w-]*|2fas[\w-]*)$/i.test(segment))
+      if (authenticator && /^(?:copy|show|reveal|view)(?:\s+(?:the\s+)?(?:code|otp|totp|token|password))?$/i.test(String(name ?? '').trim())) classes.push('credential')
     }
     // CU-512 (High; cu-coordinator 17:51Z), table PR 25, as verb families with object synonyms - an MDM console's device controls.
     // CREDENTIAL: clearing / bypassing Activation Lock or a passcode, dropping the passcode requirement. PERMISSION: turning off Lost
