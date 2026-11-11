@@ -46,3 +46,8 @@ test("CU-531 (cu-coordinator 23:21Z): roll back / revert to this point and the d
   }
   for (const name of ['Roll back', 'Rollback', 'Revert', 'Revert changes', 'Roll back deploy']) assert.ok(!classesOf(name).includes('delete'), name)
 })
+
+test('#759 round 2 (cu-researcher 23:26Z): the determiner is optional', () => {
+  for (const name of ['Revert to point in time', 'Roll back to point in time', 'Roll back to the time', 'Restore to point in time']) assert.ok(classesOf(name).includes('delete'), name)
+  for (const name of ['Point in time', 'Roll back time']) assert.ok(!classesOf(name).includes('delete'), name)
+})
