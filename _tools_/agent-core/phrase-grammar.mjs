@@ -16,10 +16,20 @@ const DETERMINERS = new Set(['a', 'an', 'the', 'my', 'your', 'our', 'their', 'th
 const FILLER = new Set(['<n>', 'all', 'new', 'now', 'it', 'them', 'everyone', 'again', 'here', 'to', 'for', 'of', 'and', 'with',
   'from', 'on', 'in', 'as', 'out', 'up', 'off', 'down', 'back'])
 
+const US_WORDS = new Set(['antivirus', 'virus', 'status', 'bonus', 'campus', 'focus', 'census', 'corpus', 'plus', 'minus', 'surplus', 'genius', 'radius', 'nexus', 'menus', 'bus'])
+
+// #580 round 4 (cu-coordinator 22:44Z): the switch verbs read beside 'turn' - 'Switch / Flip / Toggle X on|off'.
+const SWITCH_VERBS = new Set(['turn', 'switch', 'flip', 'toggle'])
+
+// Words whose final -s is not a plural (CU-438: 'Add alias').
+const NOT_PLURAL = new Set(['alias', 'whois', 'canvas', 'atlas', 'bias', 'gas', 'lens', 'news', 'series', 'species', 'chassis', 'axis', 'basis', 'analysis', 'thesis', 'crisis', 'diagnosis'])
+
 function singular(token) {
+  if (NOT_PLURAL.has(token) || token.endsWith('ous')) return token
   if (token.length > 4 && token.endsWith('ies')) return `${token.slice(0, -3)}y`
   if (token.length > 4 && /(?:ss|sh|ch|x)es$/.test(token)) return token.slice(0, -2)
-  if (token.length > 3 && token.endsWith('s') && !token.endsWith('ss') && !token.endsWith('us')) return token.slice(0, -1)
+  // -us stays only on its Latin / short words (antivirus, status, bonus ...); an acronym plural folds ('GPUs' = 'gpu', cu-coordinator 19:22Z).
+  if (token.length > 3 && token.endsWith('s') && !token.endsWith('ss') && !(token.endsWith('us') && US_WORDS.has(token))) return token.slice(0, -1)
   return token
 }
 
@@ -57,7 +67,9 @@ const VERBS = new Map(Object.entries({
   pay: ['pay'], buy: ['pay'], purchase: ['pay'], order: ['pay'], book: ['pay'], reserve: ['pay'], rent: ['pay'], redeem: ['pay'],
   refund: ['pay'], reimburse: ['pay'], release: ['pay', 'share'], send: ['pay', 'send'], transfer: ['pay', 'grant'], withdraw: ['pay'],
   tip: ['pay'], give: ['pay'], donate: ['pay'], pledge: ['pay'], renew: ['pay'], run: ['pay', 'exec'], process: ['pay'], issue: ['pay'],
-  raise: ['pay'], increase: ['pay'], approve: ['pay', 'send'], confirm: ['pay', 'send'], complete: ['pay'], enable: ['enable', 'grant'],
+  raise: ['pay'], increase: ['pay'], approve: ['pay', 'send'], confirm: ['pay', 'send'], complete: ['pay'], enable: ['enable', 'grant', 'pay'],
+  // CU-436 (High; cu-coordinator 19:06Z): activating a paid account and committing to a term start cloud spending.
+  activate: ['pay'], commit: ['pay'],
   add: ['pay', 'grant', 'cred'], swap: ['pay'], trade: ['pay'], stake: ['pay'], bid: ['pay'], rebid: ['pay'],
   subscribe: ['pay'], upgrade: ['pay'], checkout: ['pay'], charge: ['pay'], grant: ['grant'], make: ['grant', 'pay'], invite: ['grant'],
   assign: ['grant'], promote: ['grant', 'pay'], share: ['share'], admit: ['grant'], let: ['grant', 'phys_on'], allow: ['grant'],
@@ -67,18 +79,20 @@ const VERBS = new Map(Object.entries({
   export: ['cred'], reveal: ['cred'], show: ['cred'], view: ['cred'], copy: ['cred'], get: ['cred', 'pay'], download: ['cred', 'install'],
   print: ['cred'], link: ['cred'], connect: ['cred'], change: ['cred'], update: ['cred', 'install'], edit: ['cred'],
   // F5 cluster 1: 'open' leads pay only for trading objects; its install sense is only '... anyway'.
-  unlock: ['phys_on'], open: ['phys_on', 'pay'], start: ['phys_on', 'send'], preheat: ['phys_on'], light: ['phys_on'],
+  // CU-434 (High; cu-coordinator 18:44Z): unlock / start lead pay too, for the ride and rental objects below.
+  unlock: ['phys_on', 'pay'], open: ['phys_on', 'pay'], start: ['phys_on', 'send', 'pay'], preheat: ['phys_on'], light: ['phys_on'],
+  reorder: ['pay'],
   install: ['install'], keep: ['install'],
   vote: ['send'], cast: ['send'], resign: ['send'], quit: ['send'], decline: ['send'], apply: ['send'], enroll: ['send', 'pay'],
   file: ['send'], submit: ['send', 'pay'], post: ['send'], publish: ['send'], broadcast: ['send'], message: ['send'], email: ['send'],
   notify: ['send'], text: ['send'], deploy: ['send'], end: ['send', 'pay'], rate: ['send'], leave: ['send', 'grant'], repost: ['send'],
   retweet: ['send'], reblog: ['send'], report: ['send'], endorse: ['send'], push: ['send'], sync: ['send'], schedule: ['send', 'pay'],
-  join: ['send'], answer: ['send'], call: ['send'], execute: ['exec'], unsend: ['destroy'], exit: ['send'],
+  join: ['send'], answer: ['send'], call: ['send'], execute: ['exec'], unsend: ['destroy'], exit: ['send'], dismiss: [],
   // Context verbs stay out (Sell, Convert, Deposit, Leverage, Bet, Long, Short: CU-400 / CU-409's asset context decides).
   capture: ['pay'], gift: ['pay'], reactivate: ['pay'], resume: ['pay'], market: ['pay'], relaunch: ['install'],
   place: ['pay', 'send'], mint: ['pay'], bridge: ['pay'], back: ['pay'], request: ['pay'],
   unstake: ['pay'], downgrade: ['pay'], unlink: ['grant'], distribute: ['send'], upload: ['send'], go: ['grant'], boost: ['pay'],
-  fund: ['pay'], lend: ['pay'], borrow: ['pay'], repay: ['pay'], list: ['pay'], use: ['pay'],
+  fund: ['pay'], lend: ['pay'], borrow: ['pay'], repay: ['pay'], list: ['pay'], use: ['pay'], bind: ['pay'],
 }))
 
 const PERSON = new Set(['driver', 'plumber', 'contractor', 'friend', 'seller', 'vendor', 'merchant', 'host', 'creator', 'streamer',
@@ -98,10 +112,18 @@ const OBJECTS = {
     'customer', 'vendor', 'subscription', 'plan', 'membership', 'liquidity', 'position', 'loan', 'nft', 'item', 'offer', 'bid', 'usdc',
     'eth', 'weth', 'sol', 'btc', 'usdt', 'dai', 'wbtc', 'matic', 'transaction', 'trade', 'leverage', 'sale', 'payee', 'fund', 'money',
     'project', 'bet', 'swap', 'trial', 'collateral', 'allowance', 'spending', 'cap', 'long', 'short', 'annual', 'monthly', 'yearly',
-    'tip', 'recurring', 'bag', 'baggage', 'insurance', 'mile', 'domain']),
+    'tip', 'recurring', 'bag', 'baggage', 'insurance', 'mile', 'domain',
+    // CU-434: a paid ride, delivery or rental.
+    'ride', 'delivery', 'scooter', 'bike', 'ebike', 'moped', 'taxi', 'cab',
+    // cu-coordinator 18:55Z: lodging (reserve x lodging).
+    'cabin', 'lodge', 'villa', 'campsite', 'suite', 'apartment',
+    // CU-436: cloud billing objects.
+    'billing', 'quota', 'gpu', 'tpu', 'commitment', 'paid']),
   access: new Set(['organization', 'team', 'workspace', 'server', 'people', 'account', 'owner', 'coowner', 'co', 'admin', 'host',
     'cohost', 'collaborator', 'member', 'access', 'guest', 'visitor', 'device', 'public', 'ownership', 'payee', 'recipient',
-    'beneficiary', 'everyone']),
+    'beneficiary', 'everyone',
+    // cu-coordinator 18:55Z: admitting attendees (CU-414 family), granting edit rights (CU-423 family).
+    'attendee', 'participant', 'right']),
   agree: new Set(['term', 'agreement', 'contract', 'condition']),
   signable: new Set(['document', 'agreement', 'contract', 'form', 'consent', 'lease', 'waiver', 'nda']),
   records: new Set(['record', 'release', 'medical']),
@@ -110,7 +132,7 @@ const OBJECTS = {
   guard: new Set(['accessibility', 'protection', 'firewall', 'antivirus', 'defender', 'filevault', 'sip', 'integrity', '2fa', 'factor',
     'verification', 'alert', 'notification']),
   phys: new Set(['door', 'garage', 'gate', 'alarm', 'camera', 'security', 'car', 'engine', 'vehicle', 'oven', 'stove', 'heater',
-    'burner', 'fireplace', 'guest', 'visitor']),
+    'burner', 'fireplace', 'guest', 'visitor', 'grill', 'smoker']),
   physGuard: new Set(['alarm', 'camera', 'security']),
   install: new Set(['package', 'theme', 'extension', 'plugin', 'update', 'profile', 'helper', 'configuration', 'chrome']),
   sendObject: new Set(['app', 'store', 'ballot', 'vote', 'petition', 'application', 'job', 'offer', 'tax', 'return', 'review', 'star',
@@ -127,7 +149,7 @@ const STANDALONE = new Map(Object.entries({
   promote: 'purchase', 'top up': 'purchase', 'cash out': 'purchase', 'factory reset': 'delete',
   'buzz in': 'physical', 'remote start': 'physical', 'let in': 'permission', refund: 'purchase', renew: 'purchase', book: 'purchase',
   // A bare Install / Update / Get is CU-254's (the App Store rule keeps its own record).
-  enroll: 'submit', reactivate: 'purchase', pay: 'purchase', 'restart to update': 'install',
+  enroll: 'submit', reactivate: 'purchase', pay: 'purchase', 'restart to update': 'install', reorder: 'purchase', unsend: 'delete',
   'install and relaunch': 'install', buy: 'purchase', retweet: 'submit', reblog: 'submit', endorse: 'submit', esign: 'permission',
   give: 'purchase',
 }))
@@ -145,7 +167,7 @@ const KEY_QUALIFIER = new Set(['api', 'ssh', 'gpg', 'access', 'deploy', 'securit
 const EMAIL_VERBS = new Set(['change', 'edit', 'update', 'remove', 'reset'])
 // F5 cluster 3: these objects are money only after a pay verb, never after add / make.
 const ADD_MAKE_NOT_MONEY = new Set(['item', 'point', 'credit', 'license', 'room', 'table', 'position', 'cap', 'card', 'project', 'post',
-  'customer', 'vendor', 'payee', 'order'])
+  'customer', 'vendor', 'payee', 'order', 'bank'])
 // F1 / F5: 'limit' is money only beside credit or spending; 'open' pays only for trading objects; 'cancel' pays only for a plan.
 const LIMIT_QUALIFIER = new Set(['credit', 'spending', 'card', 'trading', 'borrow', 'withdrawal', 'transfer'])
 const TRADING_OBJECTS = new Set(['position', 'long', 'short', 'trade'])
@@ -170,19 +192,525 @@ const PRICED_ROLES = new Set(['gridcell', 'option', 'radio', 'checkbox', 'button
 const PRICED_NOUNS = new Set(['seat', 'option', 'legroom', 'bag', 'baggage'])
 const CURRENCY = /[$\u20ac\u00a3\u00a5]\s?\d|\d\s?(?:usd|eur|gbp)\b/i
 
+// CU-435's insurance rows: verb x object -> class, within the usual two-token window.
+const INSURANCE_ROWS = [
+  [['bind', 'buy', 'purchase', 'renew'], ['policy', 'coverage'], 'purchase'], [['increase', 'add', 'extend', 'raise'], ['coverage'], 'purchase'],
+  [['lower', 'reduce', 'decrease'], ['deductible'], 'purchase'], [['accept'], ['quote'], 'purchase'], [['cancel'], ['policy'], 'delete'],
+  [['accept'], ['settlement', 'offer'], 'submit'], [['file', 'submit'], ['claim'], 'submit'],
+]
+function insuranceClass(list) {
+  if (list.length < 2 || list.length > 5) return null
+  const window = list.slice(1).filter((t) => !FILLER.has(t)).slice(0, 3)
+  const objectIndex = (objects) => window.findIndex((t) => objects.includes(t))
+  for (const [verbs, objects, cls] of INSURANCE_ROWS) {
+    if (!verbs.includes(list[0])) continue
+    const i = objectIndex(objects)
+    // The object ends the name (optionally one trailing token like 'now'), so 'Renew policy settings' stays a guard case.
+    if (i >= 0 && i >= window.length - 1) return cls
+  }
+  return null
+}
+
+// CU-438's admin rows (verb x object -> class); 'Remove admin' keeps the older 'remove' delete, which leads by precedence (named).
+const PEOPLE = new Set(['user', 'member', 'employee', 'account', 'student', 'guest', 'teammate'])
+function adminClass(list) {
+  if (list.length < 2 || list.length > 6) return null
+  const [verb, ...rest] = list
+  const core = rest.filter((t) => !FILLER.has(t))
+  const last = core[core.length - 1]
+  if ((verb === 'suspend' || verb === 'unsuspend' || verb === 'disable' || verb === 'lock') && core.length <= 2 && PEOPLE.has(last)) return 'permission'
+  if (['change', 'edit', 'update', 'set'].includes(verb) && core.length <= 3 && last === 'role' && (core.length === 1 || core.some((t) => PEOPLE.has(t)))) return 'permission'
+  if ((verb === 'sign' || verb === 'log') && rest[0] === 'out' && (rest.includes('session') || rest.includes('device') || rest.includes('everywhere'))) return 'permission'
+  if (verb === 'reset' && rest.includes('sign') && rest.includes('cooky')) return 'permission'
+  if (verb === 'reset' && rest.includes('cookie')) return 'permission'
+  if (verb === 'add' && core.length <= 2 && last === 'alias') return 'permission'
+  if (verb === 'assign' && core.length <= 2 && last === 'license') return 'purchase'
+  // #575 round 2 (21:26Z): 'Add 5 licenses' / 'Buy 10 seats' - an amount of licences.
+  if ((verb === 'add' || verb === 'buy') && rest.includes('<n>') && core.length <= 2 && (last === 'license' || last === 'seat')) return 'purchase'
+  return null
+}
+
+const GAME_CURRENCY = new Set(['gem', 'coin', 'diamond', 'crystal', 'robux', 'buck', 'credit', 'gold', 'point', 'ruby', 'jewel'])
+const PASS_TIERS = new Set(['battle', 'premium', 'season', 'vip', 'elite', 'gold', 'plus'])
+const CURRENCY_VERBS = new Set(['get', 'buy', 'unlock', 'gift', 'spend', 'continue', 'revive', 'use', 'pay', 'claim', 'purchase', 'redeem', 'skip'])
+function currencyAct(list) {
+  if (list.length > 6) return false
+  const [verb, ...rest] = list
+  if (list.length === 2 && verb === 'super' && rest[0] === 'like') return true
+  if (list.length === 1 && verb === 'superlike') return true
+  if (!CURRENCY_VERBS.has(verb) && verb !== 'boost') return false
+  // An amount of currency ('Continue for 100 gems', 'Spend 50 coins', 'Unlock with 200 gems', 'Get 500 gems').
+  if (rest.includes('<n>') && rest.some((t) => GAME_CURRENCY.has(t))) return true
+  // Currency bought outright ('Buy gems', 'Get diamonds') - not 'Get points' (rewards) or 'Use credit' (a card).
+  if ((verb === 'buy' || verb === 'get' || verb === 'purchase') && rest.length <= 2 && ['gem', 'coin', 'diamond', 'crystal', 'robux', 'buck', 'jewel', 'ruby'].includes(rest[rest.length - 1])) return true
+  // A paid pass ('Unlock battle pass', 'Get premium pass') - a bare 'Battle pass' or 'Pass' stays free.
+  if (rest[rest.length - 1] === 'pass' && rest.some((t) => PASS_TIERS.has(t))) return true
+  // Paid reach on a dating or social app ('Get more likes', 'Boost profile') and cosmetics ('Gift skin').
+  if (verb === 'get' && (rest[0] === 'more' || rest[0] === 'unlimited' || rest[0] === 'extra') && ['like', 'view', 'follower', 'match', 'swipe', 'life', 'rewind'].includes(rest[1])) return true
+  if (verb === 'boost' && rest.length <= 2 && ['profile', 'post', 'listing', 'me'].includes(rest[rest.length - 1])) return true
+  if ((verb === 'gift' || verb === 'buy' || verb === 'unlock') && rest.length <= 2 && ['skin', 'emote', 'outfit', 'bundle', 'lootbox', 'crate'].includes(rest[rest.length - 1])) return true
+  return false
+}
+
+const PROTECTIONS = [['parental', 'control'], ['screen', 'time'], ['content', 'filter'], ['safesearch'], ['safe', 'search'], ['family', 'filter'],
+  ['content', 'restriction'], ['restriction'], ['kid', 'mode'], ['purchase', 'approval'], ['ask', 'to', 'buy']]
+function endsWithSeq(rest, seq) { return rest.length >= seq.length && seq.every((t, i) => rest[rest.length - seq.length + i] === t) }
+function childProtectionOff(list) {
+  if (list.length > 7) return false
+  // 'turn off' / 'switch off' arrive as two tokens here (the multi-word verbs are folded later).
+  const twoWord = SWITCH_VERBS.has(list[0]) && list[1] === 'off'
+  const verb = twoWord ? 'turn off' : list[0]
+  const rest = list.slice(twoWord ? 2 : 1)
+  const core = rest.filter((t) => !FILLER.has(t))
+  if (['turn off', 'disable', 'pause', 'remove', 'deactivate'].includes(verb) && PROTECTIONS.some((seq) => endsWithSeq(core, seq))) return true
+  if (verb === 'allow' && core[core.length - 1] === 'content' && core.some((t) => t === 'explicit' || t === 'mature' || t === 'adult')) return true
+  if (verb === 'allow' && core[core.length - 1] === 'purchase' && core.length <= 3) return true
+  // #575 round 2 (21:26Z): 'Allow purchases without approval', 'Allow in-app buying'.
+  if (verb === 'allow' && core.length <= 4 && (core[0] === 'purchase' || core.includes('buying')) && (core.includes('approval') || core.includes('buying'))) return true
+  if (verb === 'extend' && core.length <= 2 && core[core.length - 1] === 'time' && (core.length === 1 || core[0] === 'screen')) return true
+  if (verb === 'extend' && core.length === 1 && core[0] === 'screen') return true
+  if (verb === 'give' && rest.includes('<n>') && core.length <= 2 && ['minute', 'hour'].includes(core[core.length - 1]) && (core.includes('more') || core.length === 1)) return true
+  if (verb === 'add' && core[core.length - 1] === 'time' && core.length <= 3 && (core.includes('more') || core.includes('screen') || core.includes('<n>'))) return true
+  return false
+}
+
+const MEDS = new Set(['prescription', 'medication', 'medicine', 'rx', 'refill', 'prescriptions'])
+function medicalClass(list) {
+  if (list.length > 6) return null
+  const [verb, ...rest] = list
+  const core = rest.filter((t) => !FILLER.has(t))
+  const last = core[core.length - 1]
+  if (verb === 'refill' && core.length <= 2 && (core.length === 0 || MEDS.has(last))) return core.length === 0 ? null : 'submit'
+  if (verb === 'request' && core.length <= 2 && (MEDS.has(last) || last === 'appointment' || last === 'visit')) return 'submit'
+  if (verb === 'consent' && rest[0] === 'to' && ['treatment', 'procedure', 'surgery', 'care', 'vaccination', 'telehealth'].includes(last)) return 'submit'
+  if (verb === 'cancel' && core.length <= 2 && MEDS.has(last)) return 'delete'
+  if (verb === 'join' && core.length <= 2 && (last === 'visit' || last === 'telehealth' || last === 'consultation')) return 'permission'
+  if (verb === 'add' && core.length <= 2 && (last === 'proxy' || last === 'caregiver')) return 'permission'
+  return null
+}
+
+const METERED = new Set(['charging', 'charger', 'charge', 'parking', 'meter'])
+function meteredClass(list) {
+  if (list.length > 6) return null
+  const [verb, ...rest] = list
+  const core = rest.filter((t) => !FILLER.has(t))
+  const hasObject = core.some((t) => METERED.has(t))
+  if (['start', 'unlock', 'reserve', 'book', 'extend', 'pay', 'begin', 'renew'].includes(verb) && hasObject && core.length <= 3 && !core.includes('history')) return 'purchase'
+  // '<n>' is filler in core, so the amount is read from rest ('Add 30 minutes').
+  if (verb === 'add' && rest.length === 2 && rest[0] === '<n>' && ['minute', 'hour', 'min', 'hr'].includes(rest[1])) return 'purchase'
+  if ((verb === 'stop' || verb === 'end' || verb === 'finish') && hasObject && core.length <= 3) return 'submit'
+  return null
+}
+
+// 'Call' as a noun inside a longer name stays free (CU-261: 'Call Stack'), as do a call's own settings and lists.
+const CALL_FREE = new Set(['history', 'log', 'setting', 'forwarding', 'waiting', 'center', 'recording', 'list', 'detail', 'back', 'id', 'screening', 'quality',
+  'duration', 'summary', 'stack', 'tree', 'graph', 'chain', 'site', 'frame', 'hierarchy', 'out', 'action', 'option', 'function', 'type', 'volume'])
+function phoneClass(list) {
+  if (list.length > 6) return null
+  const [verb, ...rest] = list
+  const core = rest.filter((t) => !FILLER.has(t))
+  const last = core[core.length - 1]
+  if ((verb === 'port' || verb === 'transfer') && core.length <= 2 && last === 'number') return 'credential'
+  if ((verb === 'get' || verb === 'request' || verb === 'generate' || verb === 'show') && rest.includes('port') && last === 'pin') return 'credential'
+  if (verb === 'forward' && core.length <= 2 && (['call', 'text', 'sms'].includes(last) || (last === 'message' && (core[0] === 'text' || core[0] === 'sms')))) return 'credential'
+  if ((verb === 'release' || verb === 'cancel' || verb === 'delete') && core.length <= 2 && (last === 'number' || last === 'line') && !core.includes('account')) return 'delete'
+  // The free words are read on rest, not core ('back' is filler; 'Call back' stays with #462); a bare 'Call' stays free.
+  if (verb === 'call' && rest.length >= 1 && core.length <= 2 && !rest.some((t) => CALL_FREE.has(t))) return 'submit'
+  if (verb === 'record' && core.length === 1 && (last === 'call' || last === 'meeting')) return 'permission'
+  return null
+}
+
+const AD_OBJECTS = new Set(['campaign', 'ad', 'ads', 'promotion', 'advert', 'advertisement'])
+function adSpend(list) {
+  if (list.length > 7) return false
+  // #580 round 3 (cu-verifier 22:41Z): 'switch on' as well as 'turn on' ('Switch ads on' after the split-particle normaliser).
+  const twoWord = SWITCH_VERBS.has(list[0]) && list[1] === 'on'
+  const verb = twoWord ? 'turn on' : list[0]
+  const rest = list.slice(twoWord ? 2 : 1)
+  const core = rest.filter((t) => !FILLER.has(t))
+  const last = core[core.length - 1]
+  if (['launch', 'publish', 'resume', 'start', 'run', 'activate', 'enable', 'turn on', 'unpause', 'restart'].includes(verb) && core.length <= 3 && (AD_OBJECTS.has(last) || (last === 'set' && core.includes('ad')))) return true
+  if (['increase', 'raise', 'up', 'double', 'boost'].includes(verb) && core.length <= 3 && ['budget', 'bid', 'spend'].includes(last)) return true
+  if ((verb === 'set' || verb === 'change' || verb === 'update') && core.includes('budget') && rest.includes('<n>')) return true
+  return false
+}
+
+function cameraPrivacyOff(list) {
+  if (list.length > 7) return false
+  const two = SWITCH_VERBS.has(list[0]) && (list[1] === 'off' || list[1] === 'on')
+  const verb = two ? `turn ${list[1]}` : list[0]
+  const rest = list.slice(two ? 2 : 1)
+  const core = rest.filter((t) => !FILLER.has(t))
+  if (['turn off', 'disable', 'deactivate', 'pause'].includes(verb) && core[0] === 'privacy' && core.length <= 2) return true
+  if (verb === 'open' && core.length <= 2 && (core[core.length - 1] === 'shutter' || (core[0] === 'privacy' && core[1] === 'cover'))) return true
+  if (['enable', 'turn on', 'start', 'activate'].includes(verb) && core.length <= 3) {
+    const tail = core.join(' ')
+    if (/(?:^|\s)(?:audio|sound|continuous|nonstop)\s+recording$/.test(tail) || /^recording$/.test(tail) && rest.includes('<n>')) return true
+    if (/^(?:face|facial|person|people)\s+recognition$|^familiar\s+face$|^face\s+detection$/.test(tail)) return true
+    // #580 round 2: 'Enable microphone' on a camera opens its audio (CU-445).
+    if (/^(?:microphone|mic)$/.test(tail)) return true
+  }
+  return false
+}
+
+function domainClass(list) {
+  if (list.length > 7) return null
+  const two = SWITCH_VERBS.has(list[0]) && list[1] === 'off'
+  const verb = two ? 'turn off' : list[0]
+  const rest = list.slice(two ? 2 : 1)
+  const core = rest.filter((t) => !FILLER.has(t))
+  const last = core[core.length - 1]
+  if (verb === 'unlock' && core.length <= 2 && last === 'domain') return 'credential'
+  if (['turn off', 'disable', 'remove'].includes(verb) && core.length <= 3 && last === 'lock' && (core.includes('domain') || core.includes('transfer') || core.includes('registrar'))) return 'credential'
+  if (['get', 'show', 'view', 'copy', 'reveal', 'send', 'request'].includes(verb) && last === 'code' && core.some((t) => ['auth', 'epp', 'authorization', 'transfer'].includes(t))) return 'credential'
+  if (['change', 'update', 'edit', 'transfer'].includes(verb) && core.length <= 3 && (last === 'registrant' || (last === 'owner' && core.some((t) => t === 'account' || t === 'domain')))) return 'credential'
+  if (verb === 'push' && core.length <= 2 && last === 'domain') return 'credential'
+  if (['change', 'use', 'set', 'edit', 'update'].includes(verb) && core.length <= 3 && last === 'nameserver') return 'permission'
+  if (['edit', 'change', 'update', 'delete', 'add'].includes(verb) && core.length <= 3 && last === 'record' && core.includes('dns')) return 'permission'
+  if (['turn off', 'disable', 'remove'].includes(verb) && core.length <= 3 && last === 'privacy' && (core.includes('whois') || core.includes('domain'))) return 'permission'
+  return null
+}
+
+const AUDIT_OBJECTS = [['cloudtrail'], ['audit', 'log'], ['audit', 'logging'], ['logging'], ['guardduty'], ['flow', 'log'], ['security', 'hub'], ['defender'], ['activity', 'log']]
+function cloudExposureClass(list, lower) {
+  if (list.length > 8) return null
+  const two = SWITCH_VERBS.has(list[0]) && list[1] === 'off'
+  const verb = two ? 'turn off' : list[0]
+  const rest = list.slice(two ? 2 : 1)
+  const core = rest.filter((t) => !FILLER.has(t))
+  const offVerb = ['turn off', 'disable', 'remove', 'stop', 'pause', 'deactivate', 'delete'].includes(verb)
+  if (offVerb && endsWithSeq(core, ['block', 'public', 'access'])) return 'permission'
+  if (offVerb && core.length <= 3 && AUDIT_OBJECTS.some((seq) => endsWithSeq(core, seq))) return 'permission'
+  if (verb === 'open' && core.length <= 2 && ['internet', 'world', 'public'].includes(core[core.length - 1])) return 'permission'
+  if (verb === 'allow' && (/(?:^|\s)(?:0\.0\.0\.0\/0|::\/0)(?:\s|$)/.test(lower) || (rest.includes('all') && ['traffic', 'inbound', 'ip', 'port', 'source'].includes(core[core.length - 1])))) return 'permission'
+  if (verb === 'create' && core[core.length - 1] === 'key' && core.length <= 3 && (core.includes('service') || core.includes('access') || core.includes('api'))) return 'credential'
+  if (verb === 'download' && core.length <= 2 && core[core.length - 1] === 'key') return 'credential'
+  return null
+}
+
+const TITLES = new Set(['movie', 'film', 'show', 'episode', 'season', 'series', 'title', 'documentary', 'subscription'])
+function streamingPurchase(list) {
+  if (list.length > 6) return false
+  const [verb, ...rest] = list
+  const core = rest.filter((t) => !FILLER.has(t))
+  const last = core[core.length - 1]
+  if (verb === 'add' && core.length >= 1 && core.length <= 3 && last === 'channel' && !rest.includes('to')) return true
+  // 'on' is filler, so the add-on is read from rest ('Add premium add-on').
+  if (verb === 'add' && rest.length <= 4 && rest.slice(-2).join(' ') === 'add on') return true
+  if (verb === 'unlock' && core.length <= 2 && ['episode', 'season', 'chapter', 'series'].includes(last)) return true
+  if ((verb === 'gift' || verb === 'rent') && core.length <= 2 && TITLES.has(last)) return true
+  return false
+}
+
+const DEAL_PARTIES = new Set(['agent', 'realtor', 'seller', 'landlord', 'recruiter', 'broker', 'lender', 'host', 'owner'])
+function dealSubmit(list) {
+  if (list.length > 6) return false
+  const [verb, ...rest] = list
+  const core = rest.filter((t) => !FILLER.has(t))
+  const last = core[core.length - 1]
+  if (list.length === 2 && verb === 'easy' && rest[0] === 'apply') return true
+  if (verb === 'lock' && core.length <= 3 && last === 'rate') return true
+  if ((verb === 'get' || verb === 'start' || verb === 'begin') && core[0] === 'pre' && ['approved', 'approval', 'qualified', 'qualification'].includes(core[1]) && core.length === 2) return true
+  // #590 round 2: the one-word forms ('Get prequalified').
+  if ((verb === 'get' || verb === 'start' || verb === 'begin') && core.length === 1 && ['preapproved', 'preapproval', 'prequalified', 'prequalification'].includes(core[0])) return true
+  if (['schedule', 'request', 'book'].includes(verb) && core.length <= 3 && ['tour', 'showing', 'viewing'].includes(last)) return true
+  if (['contact', 'message', 'email'].includes(verb) && core.length <= 2 && DEAL_PARTIES.has(last)) return true
+  return false
+}
+
+function walletClass(list) {
+  if (list.length > 6) return null
+  const [verb, ...rest] = list
+  const core = rest.filter((t) => !FILLER.has(t))
+  const tail = core.join(' ')
+  if (['show', 'reveal', 'view', 'copy', 'export', 'display'].includes(verb) && /^(?:(?:seed|recovery|secret|mnemonic)\s+phrase|private\s+key|secret\s+key|seed)$/.test(tail)) return 'credential'
+  if (['import', 'restore', 'recover'].includes(verb) && core.length <= 2 && core[core.length - 1] === 'wallet') return 'credential'
+  // #590 round 2: 'Restore from seed phrase' - typing a seed phrase in.
+  if (['import', 'restore', 'recover'].includes(verb) && /(?:seed|recovery|secret|mnemonic)\s+phrase$|private\s+key$/.test(tail)) return 'credential'
+  if (verb === 'set' && core[0] === 'approval' && rest.includes('all')) return 'purchase'
+  if (verb === 'approve' && core.length <= 2 && ['spending', 'unlimited', 'token', 'allowance', 'spend'].includes(core[core.length - 1])) return 'purchase'
+  if (verb === 'connect' && core.length <= 2 && core[core.length - 1] === 'wallet') return 'permission'
+  if (verb === 'claim' && core.length <= 2 && ['airdrop', 'token', 'drop'].includes(core[core.length - 1])) return 'submit'
+  return null
+}
+
+function identityClass(list) {
+  if (list.length > 6) return null
+  // 'Temporarily lift freeze': an adverb before the verb is dropped.
+  const words = list[0] === 'temporarily' || list[0] === 'permanently' ? list.slice(1) : list
+  const [verb, ...rest] = words
+  const core = rest.filter((t) => !FILLER.has(t))
+  const last = core[core.length - 1]
+  if (['change', 'update', 'edit'].includes(verb) && core.length <= 2 && (last === 'address' && (core.length === 1 || ['mailing', 'home', 'billing', 'postal', 'shipping'].includes(core[0])))) return 'credential'
+  if (['change', 'update', 'edit'].includes(verb) && core.length <= 3 && core.join(' ').match(/^contact\s+(?:info|information|detail)$/)) return 'credential'
+  if (verb === 'forward' && core.length <= 2 && last === 'mail' && !core.includes('e')) return 'credential'
+  if (verb === 'unfreeze' && core.length <= 2 && (last === 'credit' || last === 'report' || core.length === 0)) return 'credential'
+  if ((verb === 'lift' || verb === 'remove' || verb === 'thaw') && core.length <= 2 && last === 'freeze') return 'credential'
+  if (verb === 'certify' && core.length <= 3 && last === 'claim') return 'submit'
+  return null
+}
+
+const APP_OBJECTS = new Set(['app', 'integration', 'bot', 'plugin', 'connector', 'extension'])
+function workspaceClass(list) {
+  if (list.length > 6) return null
+  const [verb, ...rest] = list
+  const core = rest.filter((t) => !FILLER.has(t))
+  const last = core[core.length - 1]
+  if (verb === 'convert' && core.includes('public') && core.length <= 3) return 'permission'
+  if (['allow', 'approve', 'authorize', 'authorise'].includes(verb) && core.length <= 2 && APP_OBJECTS.has(last)) return 'permission'
+  // #590 round 2: kick and ban only - blocking is the safe direction (CU-404's 'Block user' stays free).
+  if (['kick', 'ban'].includes(verb) && core.length <= 2 && ['member', 'user', 'participant', 'guest'].includes(last)) return 'permission'
+  // #590 round 2: 'Kick from channel', 'Add app to Slack'.
+  if (['kick', 'ban'].includes(verb) && rest[0] === 'from' && core.length <= 2) return 'permission'
+  if (verb === 'add' && APP_OBJECTS.has(core[0]) && rest.includes('to') && core.length <= 3) return 'install'
+  if (verb === 'install' && core.length <= 2 && APP_OBJECTS.has(last)) return 'install'
+  return null
+}
+
+const MAIL_PROTECTIONS = [['spam', 'filter'], ['safe', 'browsing'], ['external', 'sender', 'warning'], ['sign', 'in', 'notification'], ['security', 'alert'],
+  ['phishing', 'protection'], ['login', 'alert'], ['sign', 'in', 'alert'], ['junk', 'filter'], ['phishing', 'warning']]
+function mailProtectionClass(list) {
+  if (list.length > 8) return null
+  const two = SWITCH_VERBS.has(list[0]) && (list[1] === 'off' || list[1] === 'on')
+  const verb = two ? `turn ${list[1]}` : list[0]
+  const rest = list.slice(two ? 2 : 1)
+  if (['turn off', 'disable', 'deactivate', 'pause'].includes(verb) && rest.length <= 4 && MAIL_PROTECTIONS.some((seq) => endsWithSeq(rest, seq))) return 'permission'
+  if (verb === 'allow' && rest.length === 2 && rest[0] === 'all' && rest[1] === 'sender') return 'permission'
+  // #590 round 2: 'Allow mail from all senders'; 'Turn on access for less secure apps'.
+  if (verb === 'allow' && endsWithSeq(rest, ['all', 'sender']) && rest.length <= 5) return 'permission'
+  if (['turn on', 'enable', 'allow'].includes(verb) && endsWithSeq(rest, ['less', 'secure', 'app']) && rest.length <= 6) return 'credential'
+  if (verb === 'add' && rest.includes('domain') && endsWithSeq(rest, ['safe', 'sender'])) return 'permission'
+  if (['turn on', 'enable', 'allow'].includes(verb) && rest.slice(0, 3).join(' ') === 'less secure app') return 'credential'
+  return null
+}
+
+function taxFiling(list) {
+  if (list.length > 6) return false
+  const [verb, ...rest] = list
+  const core = rest.filter((t) => !FILLER.has(t))
+  const last = core[core.length - 1]
+  if (verb === 'sign' && rest[0] === 'and' && rest[1] === 'file' && rest.length <= 3) return true
+  if ((verb === 'transmit' || verb === 'submit') && core.length <= 3 && last === 'return') return true
+  if (verb === 'e' && core[0] === 'file') return true
+  if (['file', 'request', 'submit'].includes(verb) && core.length <= 2 && last === 'extension') return true
+  if (verb === 'file' && core.length <= 3 && last === 'return') return true
+  return false
+}
+
+function vehicleClass(list) {
+  if (list.length > 6) return null
+  const two = SWITCH_VERBS.has(list[0]) && (list[1] === 'off' || list[1] === 'on')
+  const verb = two ? `turn ${list[1]}` : list[0]
+  const rest = list.slice(two ? 2 : 1)
+  const core = rest.filter((t) => !FILLER.has(t))
+  const last = core[core.length - 1]
+  const tail = core.join(' ')
+  if ((list.length === 1 && list[0] === 'summon') || (list.length === 2 && list[0] === 'smart' && list[1] === 'summon')) return 'physical'
+  // #590 round 2: 'Summon car', 'Start Summon'.
+  if ((list[0] === 'summon' && list.length <= 3 && ['car', 'vehicle'].includes(list[list.length - 1])) || (['start', 'use'].includes(list[0]) && list.length <= 3 && list[list.length - 1] === 'summon')) return 'physical'
+  if (list.length === 1 && list[0] === 'honk') return 'physical'
+  if (verb === 'open' && core.length <= 2 && ['trunk', 'frunk', 'tailgate', 'liftgate'].includes(last)) return 'physical'
+  // #590 round 2 (cu-researcher 23:26Z): a car's windows, never a browser window ('Open link in new window', 'Open in new window').
+  if (verb === 'open' && last === 'window' && !rest.includes('new') && !rest.includes('link') && !rest.includes('tab') && (core.length === 1 || (core.length === 2 && ['car', 'rear', 'front', 'all', 'driver', 'passenger'].includes(core[0])))) return 'physical'
+  if (verb === 'vent' && core.length <= 2 && last === 'window') return 'physical'
+  if (verb === 'start' && core.length <= 2 && ['climate', 'preconditioning', 'defrost'].includes(last)) return 'physical'
+  if ((verb === 'flash' && core.length <= 1 && last === 'light') || (verb === 'honk' && core.length <= 1 && last === 'horn')) return 'physical'
+  if (['turn off', 'disable', 'deactivate'].includes(verb) && /^sentry(?:\s+mode)?$/.test(tail)) return 'permission'
+  if (['turn off', 'disable', 'remove'].includes(verb) && rest.join(' ') === 'pin to drive') return 'credential'
+  if (verb === 'add' && core.length <= 2 && last === 'key' && (core.length === 1 || ['phone', 'digital', 'car'].includes(core[0]))) return 'credential'
+  return null
+}
+
+const CONTACT_DETAILS = [['phone', 'number'], ['email'], ['email', 'address'], ['address'], ['birthday'], ['phone']]
+function exposureClass(list, lower = '') {
+  if (list.length > 7) return null
+  const two = SWITCH_VERBS.has(list[0]) && (list[1] === 'off' || list[1] === 'on')
+  const verb = two ? `turn ${list[1]}` : list[0]
+  const rest = list.slice(two ? 2 : 1)
+  const core = rest.filter((t) => !FILLER.has(t))
+  if (verb === 'make' && core.length <= 2 && core[core.length - 1] === 'private' && (core.length === 1 || ['account', 'profile'].includes(core[0]))) return 'free'
+  if ((verb === 'switch' || verb === 'change' || verb === 'set') && rest[0] === 'to' && core.length <= 2 && core[0] === 'public') return 'permission'
+  // #592 round 2 (cu-researcher 23:44Z): 'Set posts to Public'.
+  if ((verb === 'set' || verb === 'change' || verb === 'make') && rest.length <= 3 && ['post', 'profile', 'account', 'story', 'photo'].includes(rest[0]) && rest[rest.length - 1] === 'public' && (rest.length === 2 || rest[1] === 'to')) return 'permission'
+  // 'everyone' / 'anyone' are filler words, so the audience is read on rest ('Change audience to Everyone').
+  if ((verb === 'change' || verb === 'set') && rest[0] === 'audience' && rest.length <= 3 && ['public', 'everyone', 'anyone'].includes(rest[rest.length - 1])) return 'permission'
+  if (verb === 'turn off' && core.length <= 2 && core[0] === 'private' && (core.length === 1 || ['account', 'profile', 'mode'].includes(core[1]))) return 'permission'
+  // 'my' marks a profile field shown to others ('Show my email'); a bare 'Show email' opens a message (F1/F5 stays free).
+  if (['show', 'display', 'reveal'].includes(verb) && /\bmy\b/.test(lower) && core.length <= 2 && CONTACT_DETAILS.some((seq) => seq.length === core.length && seq.every((w, i) => core[i] === w))) return 'permission'
+  // #592 round 2: a detail shown on the profile or to everyone ('Show my phone number on profile', 'Show phone number to everyone').
+  const detail = rest.filter((t) => !['on', 'to', 'profile', 'everyone', 'anyone', 'public'].includes(t) && !FILLER.has(t))
+  const audience = (rest.includes('everyone') || rest.includes('anyone') || rest.includes('public')) || (/\bmy\b/.test(lower) && rest.includes('profile'))
+  if (['show', 'display', 'reveal'].includes(verb) && audience && detail.length <= 2 && CONTACT_DETAILS.some((seq) => seq.length === detail.length && seq.every((w, i) => detail[i] === w))) return 'permission'
+  if (verb === 'allow' && (rest[0] === 'anyone' || rest[0] === 'everyone') && ['message', 'contact', 'call', 'find', 'dm'].some((w) => rest.includes(w)) && rest.length <= 5) return 'permission'
+  if (verb === 'allow' && ['message', 'call', 'request'].includes(rest[0]) && rest[1] === 'from' && ['anyone', 'everyone'].includes(rest[2]) && rest.length === 3) return 'permission'
+  return null
+}
+
+const REMOTE_ACCESS = [['screen', 'sharing'], ['remote', 'login'], ['remote', 'desktop'], ['remote', 'connection'], ['file', 'sharing'], ['internet', 'sharing'],
+  ['remote', 'apple', 'event'], ['remote', 'control'], ['smb'], ['remote', 'desktop', 'connection'], ['file', 'sharing', 'service'], ['smb', 'service']]
+function remoteAccess(list) {
+  if (list.length > 6) return false
+  const two = SWITCH_VERBS.has(list[0]) && list[1] === 'on'
+  const verb = two ? 'turn on' : list[0]
+  const rest = list.slice(two ? 2 : 1).filter((t) => !FILLER.has(t))
+  return ['turn on', 'enable', 'allow', 'start', 'activate'].includes(verb) && rest.length <= 4 && REMOTE_ACCESS.some((seq) => endsWithSeq(rest, seq))
+}
+function repoProtectionOff(list) {
+  if (list.length > 7) return false
+  // #597 round 2: the two-word switch verbs too ('Turn off secret scanning').
+  const two = SWITCH_VERBS.has(list[0]) && (list[1] === 'off' || list[1] === 'on')
+  const verb = two ? `turn ${list[1]}` : list[0]
+  const rest = list.slice(two ? 2 : 1)
+  if (verb === 'allow' && rest.length <= 2 && ['force', 'deletion'].includes(rest[0]) && (rest.length === 1 || rest[1] === 'push')) return true
+  if (verb === 'allow' && rest.length === 2 && rest[0] === 'branch' && rest[1] === 'deletion') return true
+  if (['disable', 'remove', 'turn off', 'skip'].includes(verb) && rest[0] === 'required' && ['review', 'status', 'check', 'approval'].includes(rest[1]) && rest.length <= 3) return true
+  if (verb === 'allow' && rest[0] === 'all' && rest[1] === 'action' && rest.length <= 5) return true
+  if (['disable', 'remove', 'turn off'].includes(verb) && rest.length <= 2 && endsWithSeq(rest, ['scanning']) && rest[0] === 'secret') return true
+  if ((verb === 'add' || verb === 'create') && rest.length === 1 && rest[0] === 'webhook') return true
+  return false
+}
+function agentBlanket(list) {
+  if (list.length > 6) return false
+  const [verb, ...rest] = list
+  // #597 round 2: 'Allow all tool calls', 'Allow all terminal commands', 'Execute without approval', 'Switch to YOLO mode', 'Trust this project'.
+  if (verb === 'allow' && rest[0] === 'all' && ['tool', 'command', 'terminal'].includes(rest[1]) && rest.length <= 3) return true
+  if ((verb === 'run' || verb === 'execute') && rest[0] === 'without' && ['confirmation', 'approval', 'asking'].includes(rest[1]) && rest.length === 2) return true
+  if (verb === 'switch' && rest[0] === 'to' && endsWithSeq(rest, ['yolo', 'mode']) && rest.length <= 3) return true
+  if (verb === 'trust' && rest.length === 1 && ['project', 'folder', 'repository', 'repo', 'directory'].includes(rest[0])) return true
+  if (verb === 'run' && endsWithSeq(rest, ['yolo', 'mode']) && rest.length <= 3) return true
+  if (verb === 'auto' && ['accept', 'approve', 'run'].includes(rest[0]) && rest.length <= 2) return true
+  if (verb === 'skip' && ['approval', 'confirmation', 'permission'].includes(rest[rest.length - 1]) && rest.length <= 2) return true
+  return false
+}
+
+const DIVERSION_VERBS = new Set(['change', 'update', 'edit', 'add', 'set', 'replace', 'switch'])
+const DIVERSION_OBJECTS = [['direct', 'deposit'], ['bank', 'detail'], ['deposit', 'account'], ['routing', 'number'], ['account', 'number'],
+  ['payout', 'account'], ['payout', 'method'], ['bank', 'account'], ['payout', 'detail']]
+function payDiversion(list) {
+  if (list.length < 3 || list.length > 6 || !DIVERSION_VERBS.has(list[0])) return false
+  const rest = list.slice(1).filter((t) => !FILLER.has(t))
+  return DIVERSION_OBJECTS.some(([a, b]) => rest.length <= 3 && rest[rest.length - 2] === a && rest[rest.length - 1] === b)
+}
+
 // The classes the grammar asks for a control's name (and its role, for the priced cell); [] when it asks nothing.
+// CU-469 (High; cu-coordinator 01:19Z): a confirmation prefix ('Yes,', 'OK,', 'Sure,', 'Confirm:') and trailing words or glyphs
+// ('now', '...', arrows, icons) wrap a ruled row in a dialog. The table rows read from the first word, so the wrapper is taken off
+// and the row judged again - only when the name as written gets no class, so it adds only.
+// #600 round 2 (cu-researcher 01:26Z): 'Yes please,' / 'Yes, please' and a trailing 'right now' too.
+// #600 round 3 (cu-researcher 01:33Z): a leading icon alone, and a trailing '!' or '(recommended)' too.
+const LEADING_ICONS = /^\s*(?:[\p{Extended_Pictographic}\uFE0F]\s*)+/u
+const CONFIRM_PREFIX = /^\s*(?:(?:yes(?:\s+please)?|ok|okay|sure|confirm|continue|got\s+it|please)\s*[,:!.\u2013\u2014-]+\s*)+/iu
+const TRAILING_WRAP = /(?:\s*(?:right\s+now|now|please|\.{2,}|\u2026|!+|\((?:recommended|suggested|best\s+value)\)|[\u2192\u203a\u00bb>\u2794\u27f6\u279c\u27a1]|\p{Extended_Pictographic}|\uFE0F))+\s*$/iu
+export function canonicalConfirm(name) {
+  const text = String(name ?? '')
+  return text.replace(LEADING_ICONS, '').replace(CONFIRM_PREFIX, '').replace(TRAILING_WRAP, '').trim()
+}
+
 export function grammarClasses(name, role = '') {
+  const asWritten = grammarClassesOf(name, role)
+  if (asWritten.length > 0) return asWritten
+  const canonical = canonicalConfirm(name)
+  return canonical !== '' && canonical !== String(name ?? '').trim() ? grammarClassesOf(canonical, role) : asWritten
+}
+
+function grammarClassesOf(name, role = '') {
   const raw = String(name ?? '').trim()
   if (raw === '' || raw.length > 400) return []
   if (CURRENCY.test(raw) && PRICED_ROLES.has(String(role ?? '').toLowerCase()) && tokens(raw).some((t) => PRICED_NOUNS.has(t))) return ['purchase']
-  const list = tokens(raw)
-  if (list.length === 0) return []
+  const split = tokens(raw)
+  if (split.length === 0) return []
+  // #580 round 2 (cu-coordinator 21:52Z): a split particle - 'turn / switch X on|off' reads as 'turn / switch on|off X'
+  // ('Turn ads on', 'Turn privacy mode off'); additive, for every switch verb.
+  const particle = split[split.length - 1]
+  const list = split.length >= 3 && SWITCH_VERBS.has(split[0]) && (particle === 'on' || particle === 'off') && split[1] !== 'on' && split[1] !== 'off'
+    ? [split[0], particle, ...split.slice(1, -1)] : split
   const lower = raw.toLowerCase()
   const last = list[list.length - 1]
+  // CU-435 (High; cu-coordinator 18:51Z): an insurance contract - binding, buying, renewing or cancelling a policy, widening
+  // coverage, lowering a deductible, accepting a quote or a settlement, filing a claim. Checked before the guards: 'policy' is
+  // a list / settings tail elsewhere ('Privacy policy'), a contract only after these verbs.
+  const insurance = insuranceClass(list)
+  if (insurance) return [insurance]
+  // CU-437 (High; cu-coordinator 19:39Z): redirecting pay or payouts - direct deposit, bank details, routing / account number,
+  // payout account or method - is an account takeover (credential). Checked before the guards ('details' is a tail elsewhere).
+  if (payDiversion(list)) return ['credential']
+  // CU-438 (High; cu-coordinator 19:52Z): an admin act on another person's account (CU-416 family).
+  const admin = adminClass(list)
+  if (admin) return [admin]
+  // CU-439 (High; cu-coordinator 20:19Z): in-app currency and passes are bought with real money, and a currency spend is the
+  // purchase at one remove.
+  if (currencyAct(list)) return ['purchase']
+  // CU-440 (High; cu-coordinator 20:26Z): switching off a protection on a child's account (permission).
+  if (childProtectionOff(list)) return ['permission']
+  // CU-441 (High; cu-coordinator 20:33Z): patient-portal acts - medical orders and consent (submit), cancelling a prescription
+  // (delete), joining a video visit or adding a proxy (permission).
+  const medical = medicalClass(list)
+  if (medical) return [medical]
+  // CU-442 (High; cu-coordinator 20:37Z): a metered paid session - EV charging and parking (CU-434 family, new objects).
+  const metered = meteredClass(list)
+  if (metered) return [metered]
+  // CU-443 (High; cu-coordinator 20:49Z): moving a phone number or its calls away (credential), releasing a number (delete),
+  // placing a call (submit), recording one (permission). 'Start recording' and 'Call back' stay with #462.
+  const phone = phoneClass(list)
+  if (phone) return [phone]
+  // CU-444 (High; cu-coordinator 20:54Z): starting or raising paid ad spend (purchase).
+  if (adSpend(list)) return ['purchase']
+  // CU-445 (High; cu-coordinator 20:59Z): opening a home camera's view, audio or biometrics (permission, CU-418 family).
+  if (cameraPrivacyOff(list)) return ['permission']
+  // CU-446 (High; cu-coordinator 21:05Z): the domain-takeover path - unlocking, auth / EPP codes, registrant or owner change, push
+  // (credential); nameservers, DNS records, WHOIS privacy off (permission).
+  const domain = domainClass(list)
+  if (domain) return [domain]
+  // CU-447 (High; cu-coordinator 21:12Z): exposing cloud resources or blinding their audit (permission, CU-417 family);
+  // minting a service-account or access key (credential).
+  const cloud = cloudExposureClass(list, lower)
+  if (cloud) return [cloud]
+  // CU-449 (High; cu-coordinator 21:47Z): streaming add-ons, episode / season unlocks, rentals and gifts (purchase, CU-428 family).
+  if (streamingPurchase(list)) return ['purchase']
+  // CU-451 (High; cu-coordinator 22:22Z): a rate lock, pre-approval, Easy Apply, a tour request or contacting an agent sends
+  // personal or financial data to another party or commits to a rate / booking (submit; CU-415 / CU-422 families).
+  if (dealSubmit(list)) return ['submit']
+  // CU-452 (High; cu-coordinator 22:28Z): wallet secrets and token approvals move money irreversibly.
+  const wallet = walletClass(list)
+  if (wallet) return [wallet]
+  // CU-453 (High; cu-coordinator 22:35Z): the identity-takeover path - moving where mail, codes or credit go (credential);
+  // certifying a benefit claim (submit).
+  const identity = identityClass(list)
+  if (identity) return [identity]
+  // CU-454 (High; cu-coordinator 22:39Z): a chat workspace - exposing a private channel, granting an app access, acting on
+  // other members (permission), installing an app (install). Desktop and web share the classifier.
+  const workspace = workspaceClass(list)
+  if (workspace) return [workspace]
+  // CU-456 (High; cu-coordinator 22:56Z): turning a mail / account protection off (permission); less secure app access on
+  // (credential).
+  const mail = mailProtectionClass(list)
+  if (mail) return [mail]
+  // CU-459 (High; cu-coordinator 23:11Z): filing a tax return or extension by other verbs files a legal document in the
+  // person's name (submit; the 'File return' family).
+  if (taxFiling(list)) return ['submit']
+  // CU-460 (High; cu-coordinator 23:18Z): a connected car - moving or opening it (physical, CU-418 family), switching off its theft
+  // protection (permission) or its PIN to drive, or adding a key (credential).
+  const vehicle = vehicleClass(list)
+  if (vehicle) return [vehicle]
+  // CU-461 (High; cu-coordinator 23:34Z): exposing an account or contact detail by other wordings (permission, CU-424's
+  // closed family); making an account private is the safe direction - an F2 guard on the grammar's own make-row ask.
+  const exposure = exposureClass(list, lower)
+  if (exposure === 'free') return []
+  if (exposure) return [exposure]
+  // CU-464 (High; cu-coordinator 00:04Z): a remote-access switch on a web or app admin page (permission); macOS System Settings
+  // stays excluded by app policy. CU-465 (00:19Z): a blanket approval for an agent to run commands (permission, CU-427's family).
+  if (remoteAccess(list) || agentBlanket(list)) return ['permission']
+  // CU-466 (High; cu-coordinator 00:34Z): removing a repository's protections (permission).
+  if (repoProtectionOff(list)) return ['permission']
+  // F2 guard (cu-coordinator 20:28Z): declining, denying or rejecting a request answers no - the grammar's own over-ask since
+  // #554 ('Decline request'); older asks ('Decline invitation', CU-422's 'Decline offer') are untouched (the hook never sees them).
+  if (['decline', 'deny', 'reject'].includes(list[0]) && list.slice(1).filter((t) => !FILLER.has(t)).every((t) => t === 'request' || t === 'this' || t === 'all')
+    && list.includes('request')) return []
   // Guards: a trailing list / settings / UI noun; a bare plural noun (a tab); settings-sense apply; 'Sign in as guest'.
   if (FREE_TAIL.has(last) || (list.length >= 2 && FREE_TAIL.has(list[list.length - 2]))) return []
   if (UI_TAIL.has(last) && list.length >= 2) return []
-  if (list.length === 1 && /[a-z]s$/.test(lower) && !lower.endsWith('ss')) return []
+  const oneWord = raw.split(/\s+/).length === 1
+  if (list.length === 1 && oneWord && /[a-z]s$/.test(lower) && !lower.endsWith('ss')) return []
   if (list[0] === 'apply' && list.length >= 2 && APPLY_SETTINGS.has(list[1])) return []
   if (list[0] === 'sign' && list[1] === 'in' && list[2] === 'as' && list[3] === 'guest') return []
   if (list.length === 2 && /s$/.test(lower) && ['gift', 'trade', 'tip', 'bet', 'call', 'post', 'report', 'list'].includes(list[0])) return []
@@ -292,11 +820,23 @@ export function grammarClasses(name, role = '') {
   if (verb === 'book' && rest.includes('appointment')) return ['submit']
   // '<pay verb> now' and the bare standalone verbs (F5 cluster 6: 'set up now' stays free).
   if (core.length === 0 && out.length === 0) {
-    const pluralNoun = rest.length === 0 && /[a-z]s$/.test(lower) && !lower.endsWith('ss')
+    const pluralNoun = rest.length === 0 && oneWord && /[a-z]s$/.test(lower) && !lower.endsWith('ss')
     if (STANDALONE.has(verb) && !pluralNoun) pushOnce(out, STANDALONE.get(verb))
     else if (rest.includes('now') && classes.has('pay') && verb !== 'set up') pushOnce(out, 'purchase')
   }
   if (verb === 'sign' && rest.some((t) => t === 'message' || t === 'transaction')) pushOnce(out, 'purchase')
+  // CU-436: activating a full or paid account; committing to <n> year(s) / month(s); lifting a spending cap or limit.
+  if (verb === 'activate' && rest.includes('account') && rest.some((t) => t === 'full' || t === 'paid' || t === 'billing')) pushOnce(out, 'purchase')
+  if (verb === 'commit' && rest.some((t) => t === 'year' || t === 'month' || t === 'term')) pushOnce(out, 'purchase')
+  // cu-coordinator 19:22Z: linking a billing account starts charges to it.
+  if (verb === 'link' && rest.includes('billing')) pushOnce(out, 'purchase')
+  if (['turn off', 'remove', 'disable', 'lift', 'raise', 'increase'].includes(verb) && rest.includes('spending') && rest.some((t) => t === 'cap' || t === 'limit')) pushOnce(out, 'purchase')
+  // CU-426's three chat forms (cu-coordinator 19:25Z): dismissing someone as admin and exporting a chat ask permission.
+  if (verb === 'dismiss' && rest.includes('admin')) pushOnce(out, 'permission')
+  if (verb === 'export' && rest.some((t) => t === 'chat' || t === 'conversation')) pushOnce(out, 'permission')
+  // CU-434: 'Order again' reorders; cancelling a ride may charge a fee (submit).
+  if (verb === 'order' && rest.length === 1 && rest[0] === 'again') pushOnce(out, 'purchase')
+  if (verb === 'cancel' && rest.some((t) => t === 'ride' || t === 'delivery')) pushOnce(out, 'submit')
   // CU-426 (cu-coordinator 16:28Z), where structure can: unsending a message and turning on disappearing messages delete;
   // leaving or exiting a group, chat or channel, and 'Report and block', submit.
   if (verb === 'unsend' && rest.some((t) => t === 'message' || t === 'chat')) pushOnce(out, 'delete')

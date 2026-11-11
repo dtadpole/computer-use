@@ -17,6 +17,7 @@ import { MODIFIER_KEYS, normalizeKey } from './keys.mjs'
 import { composePresses, expandResults } from './press.mjs'
 import { joinSplitResults, splitTypesAtTabs } from './type-split.mjs'
 import { answerLinePattern } from './answer-line.mjs'
+import { isScriptedAdapter } from './adapter-scripted.mjs'
 import { RETRY, transientCapture, transientFront, transientGrant, transientInput } from './retry.mjs'
 
 /**
@@ -172,7 +173,7 @@ export const NO_APP_WINDOW_MAX_MS = 15_000
 export const NO_APP_WINDOW_NOTE = 'No window of an approved app is on screen, so there is no screenshot; input cannot act. Wait if it is opening; otherwise end and say so.'
 
 /** CU-342: the note a stand-in owner input writes in the trajectory, before the input itself, word for word. */
-export const STAND_IN_NOTE = "STAND-IN owner input (CU-342): not the owner's"
+export const STAND_IN_NOTE = "STAND-IN owner input (CU-342, an untagged pointer move): not the owner's"
 
 /**
  * CU-342: runTask's `standInTurns` - the model turns after which a rehearsal posts one labelled stand-in for the owner's
@@ -230,6 +231,11 @@ export async function runTask(options) {
   if (typeof task.text !== 'string' || task.text.trim() === '') throw new TypeError('runTask needs a task')
   // CU-342: a stand-in the environment cannot post is refused here, before anything runs - never found mid-run.
   const standInTurns = standInTurnsOf(options.standInTurns)
+  // CU-367 (cu-researcher): 'unreachable from a model run' is the loop's own property, not only cli.mjs's gate - any
+  // caller pairing standInTurns with an adapter createScriptedAdapter did not build is refused before turn 1.
+  if (standInTurns.length > 0 && !isScriptedAdapter(model)) {
+    throw new TypeError('standInTurns needs the scripted adapter (createScriptedAdapter); a model-driven run never carries the owner-input stand-in, so the run does not start')
+  }
   if (standInTurns.length > 0 && typeof environment?.simulateLocalInput !== 'function') {
     throw new TypeError('standInTurns needs an environment with simulateLocalInput (the macos-desktop driver); this one has none, so the run does not start')
   }
@@ -1553,8 +1559,9 @@ export async function runTask(options) {
         // checkpoint just passed); its pause is the ordinary local-input pause, which that checkpoint then waits out.
         if (requests > standInDone && standInTurns.includes(requests)) {
           standInDone = requests
-          logEvent('note', requests, { message: STAND_IN_NOTE, standIn: { kind: 'key', via: 'untagged' } })
-          await environment.simulateLocalInput({ kind: 'key', via: 'untagged' })
+          logEvent('note', requests, { message: STAND_IN_NOTE, standIn: { kind: 'pointer', via: 'untagged' } })
+          // CU-342 (cu-verifier, R1c): the untagged seam posts one pointer move, so the request and the note say pointer.
+          await environment.simulateLocalInput({ kind: 'pointer', via: 'untagged' })
           continue
         }
         if (activeMs() >= bounds.maxWallMs) {
