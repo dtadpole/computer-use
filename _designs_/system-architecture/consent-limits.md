@@ -10,7 +10,7 @@ grounded_in:
   - source: consent-routes.md 1.0.11 (its Named limits section, moved here unchanged)
   - source: D-063 (a named limit is named in the verdict, not an open row) and D-072 (CU-241, a page's own shortcut keys)
   - source: CU-232 note 0.1.1 and menu-key.md (a window button's key equivalent, a view's own key handling)
-  - source: cu-coordinator's rulings of 10-11 Nov on CU-442, CU-443, CU-474, CU-476, CU-483, CU-485, CU-486 and CU-488, each closed live by cu-verifier with its run ids on the issue
+  - source: cu-coordinator's rulings of 10-11 Nov on CU-442, CU-443, CU-474, CU-476, CU-483 and CU-485, each closed live by cu-verifier with its run ids on the issue; CU-486 (#642) and CU-488 (#643) as of their PRs, both OK'd and not yet landed
 ---
 
 # Consent limits
@@ -46,17 +46,21 @@ row. The routes the rules do judge are in [consent-routes.md](consent-routes.md)
   policy); off that URL they stay free. A bare 'Add time' asks purchase only on a parking, charging or meter URL
   (CU-442). 'Start recording' asks permission only on a call, voice or phone URL (CU-443). 'Edit DNS', 'Update DNS',
   'Change DNS' and '... DNS records / settings' ask permission only on a registrar, domain or DNS URL (CU-485). A bare
-  'Sell' and the brokerage rows ask only on a trading URL, read with a whole-segment edge
-  (/trade, /order, /brokerage, /portfolio) so '/trade-in' or a marketplace 'Sell' stays free (CU-483). 'Turn off
-  auto-lock' asks permission on a password-vault URL; a door's auto-lock stays physical everywhere (CU-474, CU-468).
-  Only an http(s) URL counts as a page (CU-476); a 'call.' host cannot be run locally and is named, not measured.
-- A verb-only control takes its setting's label as its name when the label is its quiet sibling in a two-part row
-  (a span, <dt>/<dd>, a table row, aria-labelledby) (CU-488). A verb-only button under a section heading with text
-  between is not read that way and goes by its bare verb.
+  'Sell' or 'Sell all' asks purchase only on a trading URL, read with a whole-segment edge (/trade, /order,
+  /brokerage, /portfolio) so '/trade-in' or a marketplace 'Sell' stays free; the other brokerage rows ('Sell short',
+  'Liquidate', 'Enable margin' ...) ask on any page (CU-483). The dial row and the trading URL count only an http(s)
+  URL as a page (CU-476, CU-483); a 'call.' host cannot be run locally and is named, not measured. 'Turn off
+  auto-lock' asks permission on a password-vault page; a door's auto-lock stays physical everywhere (CU-474,
+  CU-468). The vault test reads the context URL as it is, so on the desktop route a vault app's bundle id counts as
+  a vault page (named in #614).
+- As of #643 (CU-488, not yet landed): a verb-only control in a browser takes its setting's label as its name when
+  the label is its quiet sibling in a two-part row (a span, <dt>/<dd>, a table row, aria-labelledby). A verb-only
+  button under a section heading with text between is not read that way and goes by its bare verb. On the desktop
+  the caption is broader - CU-187's title element or a table row's sibling text.
 - 'Grant <n> more minutes' and 'Give <n> more minutes' are not bound to the screen-time row; they keep the older
   permission ask on every page (CU-485).
-- Compound spellings (autolock, e-mail, log-in, e-sim, optin, checkin, add-on) are tried only for names of 200
-  characters or fewer, so the 80k-character budget holds (CU-486, CU-272).
+- As of #642 (CU-486, not yet landed): compound spellings (autolock, e-mail, log-in, e-sim, optin, checkin,
+  add-on) are tried only for names of 200 characters or fewer, so the 80k-character budget holds (CU-272).
 - An older class is kept when a new row would give another ('Click to add deploy key' asks submit, not credential):
   the name asks either way. Turning off biometric unlock on a vault page stays free - it leaves the master password as
   the only way in (CU-474).
