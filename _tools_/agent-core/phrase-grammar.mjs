@@ -602,6 +602,16 @@ function remoteAccess(list) {
   const rest = list.slice(two ? 2 : 1).filter((t) => !FILLER.has(t))
   return ['turn on', 'enable', 'allow', 'start', 'activate'].includes(verb) && rest.length <= 4 && REMOTE_ACCESS.some((seq) => endsWithSeq(rest, seq))
 }
+function portalClass(list) {
+  if (list.length > 7) return null
+  const [verb, ...rest] = list
+  if (verb === 'give' && rest[0] === 'access' && rest.includes('account') && rest.length <= 4) return 'credential'
+  if (verb === 'sign' && rest.length <= 3 && ['authorization', 'release', 'waiver'].includes(rest[rest.length - 1])) return 'submit'
+  if (['schedule', 'request'].includes(verb) && rest.length <= 2 && ['appointment', 'visit'].includes(rest[rest.length - 1])) return 'submit'
+  if (verb === 'start' && rest.length <= 3 && rest.includes('visit') && (rest.includes('e') || rest.includes('video') || rest.includes('virtual'))) return 'submit'
+  if (verb === 'opt' && rest[0] === 'in' && rest.length <= 4 && ['research', 'study', 'trial'].includes(rest[rest.length - 1])) return 'permission'
+  return null
+}
 function vaultClass(list) {
   if (list.length > 7) return null
   const two = SWITCH_VERBS.has(list[0]) && (list[1] === 'off' || list[1] === 'on')
@@ -851,6 +861,10 @@ function grammarClassesOf(name, role = '') {
   if (vault) return [vault]
   const merchant = merchantClass(list)
   if (merchant) return [merchant]
+  // CU-477 (High; cu-coordinator 03:36Z): a patient portal - account access to another person (credential), signing an authorization
+  // or release and booking care (submit), research opt-in (permission); a copay-charging e-visit asks purchase through the amount row.
+  const portal = portalClass(list)
+  if (portal) return [portal]
   // F2 guard (cu-coordinator 20:28Z): declining, denying or rejecting a request answers no - the grammar's own over-ask since
   // #554 ('Decline request'); older asks ('Decline invitation', CU-422's 'Decline offer') are untouched (the hook never sees them).
   if (['decline', 'deny', 'reject'].includes(list[0]) && list.slice(1).filter((t) => !FILLER.has(t)).every((t) => t === 'request' || t === 'this' || t === 'all')
