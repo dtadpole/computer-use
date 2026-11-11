@@ -25,7 +25,7 @@ HUNT (generated 12:10Z): Todo 364, 374, 385, 389, 393, 394, 396, 397, 399, 403, 
 462, 495, 496; In Progress 378, 379, 497; Verify 493, 494. The rest of CU-345..497 Done, duplicate or canceled.
 Lane: #665 (CU-495) -> #669 (CU-496) -> #671 (CU-494 fieldAttr) -> #672 (CU-497) -> CU-372 row -> CU-429 -> CU-433.
 
-EVERY COMMAND: /tmp/cu-r-probe/probe.sh (lock and inbox guard; D-104, D-106). Read a ruling in full.
+EVERY COMMAND: /tmp/cu-r-probe/probe.sh (lock and inbox guard; D-104, D-106); read rulings in full.
 
 CHECKS PER HIGH: rev-table.sh (matrix, url-bound, held-out, variants) + retire.sh; filing-check.mjs (every example
 the filing named as free); preapproval-matrix.mjs (High rows x every pre-approvable class, both scopes, must be 0);
