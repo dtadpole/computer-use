@@ -47,6 +47,8 @@ export function neverCoveredByGrant(cls, name) {
 // hand list of High names: the grant covers ONLY the generic submits a task means by 'submit' - a bare form submit, send, reply, post,
 // comment, save, apply, search - and every other submit row (each one added by a ruled High: parental approvals, portal consent, rate
 // locks, dial rows, mass sends, compensation, returns, relists, ride cancels) asks under any submit grant.
+// CU-507 (High; cu-coordinator 16:06Z): the generic final buttons of a confirm modal - judged by the modal's own title and text.
+const GENERIC_CONFIRM = /^\s*(?:confirm|ok|okay|yes|yes,?\s+(?:continue|confirm|proceed|i'?m\s+sure|do\s+it)|continue|proceed|submit|done|apply|accept|agree|i\s+agree|i\s+understand|got\s+it|i'?m\s+sure|do\s+it|go\s+ahead|confirm\s+and\s+continue)\s*[.!]?\s*$/i
 const GENERIC_SUBMIT = /^\s*(?:submit|send|send\s+(?:message|reply|email|comment)|reply|post|post\s+(?:comment|reply)|comment|save|save\s+changes|apply|search|go|ok|done|continue|next|report\s+spam|sign\s+up|register|create\s+account)\s*!?\s*$/i
 
 /** Word lists matched on a target's accessible name, case-insensitively, at word boundaries; they err toward confirm. */
@@ -2197,6 +2199,22 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       for (const form of [...quantifierDropped(String(name ?? '').trim()), ...sectionLabelStripped(name)]) {
         const probe = classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { ...target, name: form }, confirmProbe: true })
         if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) if (!classes.includes(cls)) classes.push(cls)
+      }
+    }
+    // CU-507 (High; cu-coordinator 16:06Z): a generic confirm control inside an in-page modal (role=dialog / alertdialog / <dialog>;
+    // on the desktop an AXSheet / AXDialog) asks the classes the modal's title and description get as a name - never fewer than the
+    // button alone; a modal whose text gets no class stays free. The driver reports target.dialogName / target.dialogDescription.
+    {
+      const dialogName = typeof target?.dialogName === 'string' ? target.dialogName.trim().slice(0, 300) : ''
+      const dialogDescription = typeof target?.dialogDescription === 'string' ? target.dialogDescription.trim().slice(0, 300) : ''
+      const presses = POINTER.has(action.type) || keysOf(action).has('ENTER') || keysOf(action).has('SPACE')
+      if (context.confirmProbe !== true && presses && (dialogName !== '' || dialogDescription !== '') && GENERIC_CONFIRM.test(String(name ?? ''))) {
+        const firstSentence = dialogDescription.split(/(?<=[.!?])\s+/)[0] ?? ''
+        const texts = [...new Set([dialogName, dialogName.replace(/[?!.:]+$/, ''), firstSentence, firstSentence.replace(/[?!.:]+$/, ''), `${dialogName} ${dialogDescription}`.trim()].filter((t) => t !== ''))]
+        for (const text of texts) {
+          const probe = classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { role: 'button', name: text, ...(target?.origin ? { origin: target.origin } : {}) }, confirmProbe: true })
+          if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) if (!classes.includes(cls)) classes.push(cls)
+        }
       }
     }
     const unique = [...new Set(classes)].sort((a, b) => PRECEDENCE.indexOf(a) - PRECEDENCE.indexOf(b))
