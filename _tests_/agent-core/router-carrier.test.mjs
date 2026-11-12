@@ -18,7 +18,8 @@ test('CU-549: router exposure asks permission', () => {
     assert.ok(classesOf(name, true).includes('permission'), `Space: ${name}`)
   }
   for (const name of ['Remote administration', 'WPS', 'Disable WPS', 'Client isolation']) assert.deepEqual(classesOf(name), [], name)
-  assert.notDeepEqual(classesOf('Port forwarding'), [], 'the older port-forwarding label keeps its ask')
+  // Pin moved by CU-556 round 5 (cu-coordinator 06:21Z, 12 Nov): the 'Port forwarding' label lowers to free.
+  assert.deepEqual(classesOf('Port forwarding'), [], 'round 5: the label is free')
 })
 
 test('CU-550: carrier plan / line / device changes ask purchase; suspend / pause ask delete', () => {
