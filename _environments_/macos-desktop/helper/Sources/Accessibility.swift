@@ -366,6 +366,16 @@ enum Accessibility {
       shape["inWebArea"] = WebArea.contains(path: walk.path.map { $0.role }, ending: walk.ending).map { .bool($0) } ?? .null
     }
     if client != nil { shape["hostedBy"] = .string(PanelAttribution.serviceBundleId) }
+    // CU-418 (b): a checkbox, switch or radio button's state - AXValue read only behind the role check (ToggleState).
+    if ToggleState.reads(role: role), let checked = ToggleState.checked(role: role, value: (attribute(element, "AXValue") as? NSNumber)?.intValue) {
+      shape["checked"] = checked
+    }
+    // CU-507 (desktop half): a button inside a sheet or dialog carries the dialog's words (DialogText) - what agent core
+    // judges a generic 'OK' or 'Continue' by. Static texts only; each key present only when read.
+    if DialogText.applies(role: role), let words = dialogWords(of: element) {
+      if let name = words.name { shape["dialogName"] = .string(name) }
+      if let description = words.description { shape["dialogDescription"] = .string(description) }
+    }
     // CU-154: a menu item's key equivalent, so Copy / Cut / Paste are known in any language (Command-V is a paste
     // whatever the title says).
     if role == "AXMenuItem", let key = KeyEquivalent.shape(char: string(element, "AXMenuItemCmdChar"),
@@ -518,6 +528,25 @@ enum Accessibility {
     let items = entries.filter { string($0, "AXRole") == "AXMenuItem" }
       .map { PopUpItems.Item(title: string($0, "AXTitle"), enabled: (attribute($0, "AXEnabled") as? NSNumber)?.boolValue) }
     return PopUpItems.shape(selected: selected, items: items, pullsDown: pullsDown)
+  }
+
+  /// CU-507: the nearest dialog container above an element (DialogText.isContainer: an AXSheet, or an AXWindow whose
+  /// subrole is AXDialog / AXSystemDialog), at most DialogText.maxDepth levels up, and its words - its title, else its
+  /// static texts (at most DialogText.maxTexts read, each by its shown words). nil outside a dialog or when none is read.
+  private static func dialogWords(of element: AXUIElement) -> (name: String?, description: String?)? {
+    var node = element
+    for _ in 0..<DialogText.maxDepth {
+      guard let parent = elementAttribute(node, "AXParent") else { return nil }
+      let role = string(parent, "AXRole")
+      if DialogText.isContainer(role: role, subrole: string(parent, "AXSubrole")) {
+        let texts = descendants(of: parent, limit: DialogText.maxTexts).filter { string($0, "AXRole") == "AXStaticText" }.map { string($0, "AXValue") }
+        let words = DialogText.pick(title: string(parent, "AXTitle"), texts: texts)
+        return words.name == nil && words.description == nil ? nil : words
+      }
+      if role == "AXApplication" { return nil }
+      node = parent
+    }
+    return nil
   }
 
   /// CU-361: the static text beside an entry in layout (NearbyLabel.pick) - its window's AXStaticText descendants (at
