@@ -1,9 +1,9 @@
 ---
 title: ULTIMATE_GOAL 2.0 verdict, row by row - live, in progress
 created: 2026-11-02T10:22:00Z
-modified: 2026-11-12T07:42:00Z
+modified: 2026-11-12T08:02:00Z
 level: L1
-version: 0.9.216
+version: 0.9.217
 description: cu-verifier's per-row state of the desktop ULTIMATE_GOAL after the owner's grant - live evidence so far from the runbook on the Mac mini beside the pre-grant verifiers, and what each row still needs. No row is held until its live half holds.
 status: unverified
 grounded_in:
@@ -229,8 +229,8 @@ allow in createAppPolicy on main 35fa22d - policy-level, no live desktop run; cl
 rows policy-level). CU-512 (MDM console acts: 175544Z-ec1f13 ..) closed live on #716, main fd67c5b (190713Z-4f6608 ..). CU-513 (a bare 'Get' / 'Install' on an add-on
 page: 180111Z-fb3a28 ..), CU-554 (site unpublish / offline / maintenance / disable: 060213Z-5402b2 .., 12 Nov),
 CU-555 (connected-car safety modes off: 061635Z-903482 .., 12 Nov), CU-557 (exchange futures / derivatives:
-063651Z-f6ec36 .., 12 Nov) and CU-558 (social privacy: 072131Z-c77192 .., 12 Nov) are reproduced; #821 is in its live
-second run. CU-552 (patient-portal record exports) and CU-553 (HR termination / promotion) closed live on #813 (r6, after two NOT OK rows
+063651Z-f6ec36 .., 12 Nov) and CU-558 (social privacy: 072131Z-c77192 .., 12 Nov) are reproduced; #821 has its live
+second OK at r4 (eight pages, the location binding included: 075306Z-d0e9a4 .. / 075955Z-04f07f ..). CU-552 (patient-portal record exports) and CU-553 (HR termination / promotion) closed live on #813 (r6, after two NOT OK rows
 were fixed), main f902ba7, ten pages (072839Z-0ab8f7 .., 12 Nov). CU-549 (router exposure) and CU-550 (carrier plan / line /
 device) closed live on #805, main 5d05a00 (063740Z-668c13 .. / 064759Z-eb280c .., 12 Nov); CU-551 (repository visibility / Pages) closed live
 on #807, main 6ad48fd (064647Z-65d686 .., 12 Nov). CU-548 (smart-home life-safety acts, switches by direction) closed live on #798, main 7354618
