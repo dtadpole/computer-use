@@ -1160,6 +1160,56 @@ function grammarClassesOf(name, role = '') {
   // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
   // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
   if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
+  // CU-545 (High; cu-coordinator 03:36Z), table PR 44 - a recovery kit / key carries the account's way back in, like 'Download recovery
+  // key' / 'Download emergency kit': CREDENTIAL for download / save / print / export / get (the / your / my) recovery kit / key / sheet /
+  // document (PDF), and save / print / export (the / your) recovery key.
+  if (/^\s*(?:download|save|print|export|get)\s+(?:the\s+|your\s+|my\s+|a\s+)?(?:account\s+)?recovery\s+(?:kit|key|sheet|document|file)(?:\s+(?:pdf|as\s+pdf|file))?\s*$/i.test(raw)) return ['credential']
+  // CU-544 (High; cu-coordinator 03:06Z), table PR 43 - a chat workspace's admin. PERMISSION: export (the / all) workspace data / messages /
+  // conversations / channels / history, export all messages; allow / enable / turn on external sharing. INSTALL: install / add (an / the /
+  // this) app / integration / bot to (the / this / your) workspace. Guest access is unioned in policy.mjs (an older class leads).
+  // #789 r3 (cu-researcher 03:17Z): 'Export (the) workspace', 'Export messages / message history', 'Download a full export of all channels'.
+  if (/^\s*export\s+(?:the\s+|all\s+)?(?:workspace|team|organization|org)\s+(?:data|messages|conversations|channels|history)\s*$|^\s*export\s+(?:the\s+|all\s+)?(?:workspace|messages|message\s+history|channels|conversations|chat\s+history)(?:\s+data)?\s*$|^\s*download\s+(?:a\s+|the\s+)?(?:full\s+|complete\s+)?(?:workspace\s+)?export(?:\s+of\s+\S.{0,40})?\s*$|^\s*export\s+all\s+(?:messages|conversations|channels|chats|workspace\s+data)\s*$|^\s*(?:allow|enable|turn\s+on|permit)\s+external\s+(?:sharing|channels|connections|access)\s*$/i.test(raw)) return ['permission']
+  if (/^\s*(?:install|add)\s+(?:an?\s+|the\s+|this\s+)?(?:app|application|integration|bot)\s+to\s+(?:the\s+|this\s+|your\s+|my\s+)?workspace\s*$/i.test(raw)) return ['install']
+  // CU-543 (High; cu-coordinator 02:36Z), table PR 42 - a kids / child profile's safeguards ask PERMISSION: turn off / disable / remove (the)
+  // profile PIN / lock / passcode; allow all maturity ratings / ratings / content; set (the) maturity (rating / level) to 18+ / adult / all /
+  // mature / R / TV-MA / unrestricted; turn off / disable (the) maturity / content filter / restrictions. 'Remove profile PIN / lock' keep
+  // their older delete (older classes lead) and gain nothing here. #786 r3 (cu-researcher 02:52Z): 'Allow all maturity levels', 'Show
+  // (titles of) all maturity levels' - #786 r4 (cu-researcher / cu-developer-two 02:58Z): 'titles of' is optional ('Show all maturity levels').
+  if (/^\s*(?:turn\s+off|disable|switch\s+off|deactivate)\s+(?:the\s+)?profile\s+(?:pin|lock|passcode|password)\s*$|^\s*allow\s+all\s+(?:maturity\s+)?(?:ratings|levels|content|titles)\s*$|^\s*(?:show|allow|display)\s+(?:(?:titles|content|shows|movies)\s+(?:of|from|for)\s+)?all\s+maturity\s+(?:levels|ratings)\s*$|^\s*(?:set|change)\s+(?:the\s+)?maturity(?:\s+(?:rating|level|setting))?\s+to\s+(?:18\+|adult|adults|all|mature|r|tv-ma|nc-17|unrestricted|everything)\s*$|^\s*(?:turn\s+off|disable|remove)\s+(?:the\s+)?(?:maturity|content)\s+(?:filter|filters|restrictions?|limits?)\s*$/i.test(raw)) return ['permission']
+  // CU-542 (High; cu-coordinator 02:21Z), table PR 41 - emergency help asks SUBMIT everywhere, like 'Call 911': (send / use / trigger)
+  // (an) emergency SOS / SOS; emergency assistance / help; contact / call / notify (the) emergency services; alert / notify / message (my)
+  // emergency contacts. A ride's 'Add stop' / 'Change destination' / 'Split fare' are URL-bound in policy.mjs (ride pages only).
+  if (/^\s*(?:(?:send|use|trigger|activate|start)\s+(?:an?\s+)?)?(?:emergency\s+)?sos(?:\s+(?:call|alert))?\s*$|^\s*(?:get\s+|request\s+)?emergency\s+(?:assistance|help)\s*$|^\s*(?:contact|call|notify|dial)\s+(?:the\s+|local\s+)?emergency\s+services\s*$|^\s*(?:alert|notify|message|text)\s+(?:my\s+|your\s+|all\s+)?emergency\s+contacts?\s*$/i.test(raw)) return ['submit']
+  // CU-540 (High; cu-coordinator 01:51Z), table PR 40 - a course site. SUBMIT: release / publish (the) grades (to students); change /
+  // override / edit (the / a / this) (final) grade(s), like 'Post grades'. PURCHASE: drop (the / this) course / class, like 'Withdraw
+  // from course'. PERMISSION: make (a / this) student a TA / teaching assistant / instructor, promote (a) student to TA.
+  // #780 r2 (cu-researcher 02:01Z): scores / marks / results as the grades' synonyms; a grader / instructor / TA role for a student or user.
+  if (/^\s*(?:release|publish)\s+(?:the\s+|all\s+)?(?:final\s+)?(?:grades|scores|marks|results)(?:\s+to\s+(?:the\s+)?students)?\s*$|^\s*(?:change|override|edit|update)\s+(?:the\s+|a\s+|this\s+)?(?:final\s+|student'?s?\s+)?grades?\s*$/i.test(raw)) return ['submit']
+  if (/^\s*drop\s+(?:the\s+|this\s+)?(?:course|class)\s*$/i.test(raw)) return ['purchase']
+  if (/^\s*make\s+(?:a\s+|the\s+|this\s+)?(?:student|user|learner|member)\s+(?:a\s+|an\s+)?(?:ta|teaching\s+assistant|instructor|co-?teacher|grader)\s*$|^\s*promote\s+(?:a\s+|the\s+|this\s+)?student\s+to\s+(?:ta|teaching\s+assistant|instructor)\s*$/i.test(raw)) return ['permission']
+  // CU-541 (High; cu-coordinator 01:51Z), table PR 40 - payroll. PURCHASE: (run / create / send / make) (an) off-cycle payment / payroll /
+  // run; change / update / edit (the / my / an employee's) tax withholding(s) / W-4 / W4; skip (this / the next) payroll / pay run.
+  if (/^\s*(?:(?:run|create|send|make|start|add)\s+(?:an?\s+)?)?off[-\s]cycle\s+(?:payment|payroll|run|pay\s+run)\s*$|^\s*(?:change|update|edit|modify|adjust)\s+(?:the\s+|my\s+|your\s+|employee'?s?\s+)?(?:federal\s+|state\s+)?(?:tax\s+withholdings?|withholdings?|w-?4)(?:\s+form)?\s*$|^\s*skip\s+(?:this\s+|the\s+(?:next\s+)?|next\s+)?(?:payroll|pay\s+run|pay\s+period)\s*$/i.test(raw)) return ['purchase']
+  // CU-538 (High; cu-coordinator 01:36Z), table PR 39 - accounting. PURCHASE: write off (an / the / this) invoice / bill / debt / balance,
+  // record / log / enter / apply (a / the) payment. SUBMIT: close (the) books / period / month / year. PERMISSION: reopen / unlock (the / a
+  // / this) (accounting / closed) period / month / year / books. DELETE: undo / reverse / unreconcile (the / this) reconciliation.
+  if (/^\s*write\s+off\s+(?:an?\s+|the\s+|this\s+)?(?:invoice|bill|debt|balance|bad\s+debt)s?\s*$|^\s*(?:record|log|enter|apply)\s+(?:a\s+|the\s+|this\s+)?(?:new\s+)?payment\s*$/i.test(raw)) return ['purchase']
+  if (/^\s*close\s+(?:the\s+)?(?:books|(?:accounting\s+)?period|month|year|fiscal\s+year)\s*$/i.test(raw)) return ['submit']
+  if (/^\s*(?:reopen|re-open|unlock)\s+(?:the\s+|a\s+|this\s+)?(?:accounting\s+|closed\s+)?(?:period|month|year|fiscal\s+year|books)\s*$/i.test(raw)) return ['permission']
+  // #778 r3 (cu-developer-two 01:42Z): the one-word 'Unreconcile' (an accounting app's literal button) and 'Unreconcile (this) transaction'.
+  if (/^\s*(?:undo|reverse|unreconcile)\s+(?:the\s+|this\s+)?reconciliation\s*$|^\s*unreconcile(?:\s+(?:the\s+|this\s+)?(?:transaction|entry|account|statement)s?)?\s*$/i.test(raw)) return ['delete']
+  // CU-539 (High; cu-coordinator 01:36Z), table PR 39 - CI/CD. SUBMIT: promote (this / the build / release) to production / prod / live.
+  // PERMISSION + SUBMIT: skip / bypass (the) deployment protection (rules). 'Add self-hosted runner' / 'Disable workflow' are URL-bound in
+  // policy.mjs (actions / workflows / runners / pipelines pages).
+  if (/^\s*promote\s+(?:this\s+|the\s+)?(?:build\s+|release\s+|deployment\s+)?to\s+(?:production|prod|live)\s*$/i.test(raw)) return ['submit']
+  // #778 r2 (cu-researcher 01:39Z): 'deployment' is optional when 'rules' says what it is ('Skip protection rules and deploy'); a bare
+  // 'Skip protection' (a checkout's insurance upsell) stays free.
+  if (/^\s*(?:skip|bypass|ignore|override)\s+(?:the\s+)?(?:deployment\s+protection(?:\s+rules?)?|(?:branch\s+|environment\s+)?protection\s+rules?)(?:\s+and\s+deploy(?:\s+now)?)?\s*$/i.test(raw)) return ['permission', 'submit']
+  // CU-537 (High; cu-coordinator 01:06Z), table PR 38 - registrar DNS. PERMISSION everywhere: add / create / new (a / an) typed record
+  // (MX, CNAME, TXT, NS, SRV, CAA, PTR, SPF, DKIM, DMARC, ALIAS; 'A' / 'AAAA' only in capitals, so 'Add a record' is not an A record);
+  // the generic 'Add / Edit / Save record' (DNS pages) and turning a domain's auto-renew off (domain / registrar pages; a subscription's
+  // 'Turn off auto-renew' stays free, CU-410) are URL-bound in policy.mjs.
+  if (/^\s*(?:add|create|new)\s+(?:an?\s+|new\s+)?(?:mx|cname|txt|ns|srv|caa|ptr|spf|dkim|dmarc|alias)\s+record\s*$/i.test(raw) || /^\s*(?:[Aa]dd|[Cc]reate|[Nn]ew)\s+(?:an?\s+|new\s+)?(?:A|AAAA)\s+[Rr]ecord\s*$/.test(raw)) return ['permission']
   // CU-534 (High; cu-coordinator 00:51Z), table PR 37, as verb families with object synonyms - a calendar's exposure and wipe (CU-461's
   // exposure family). PERMISSION: get / copy / show the public / secret / private (iCal) address (in iCal format); get / copy a
   // shareable / share / public link to (the / this / your) calendar / <object> (the object tail on CU-462's row). DELETE: clear / empty
