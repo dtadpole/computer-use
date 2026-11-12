@@ -42,3 +42,9 @@ test('#825 round 3 (cu-coordinator 08:21Z): wrappers after a glued parenthesis, 
   for (const name of ['Turn on options trading', 'Unlock options trading', 'Start trading options', 'Upgrade options level', 'Request options level 3', 'Increase my options approval']) assert.ok(classesOf(name).includes('permission'), name)
   for (const name of ['Options', 'Options chain', 'Continue to app', 'Continue to dashboard']) assert.deepEqual(classesOf(name), [], name)
 })
+
+test('#825 round 4 (cu-verifier 08:27Z): options levels in every order; borrow against a life insurance policy', () => {
+  for (const name of ['Upgrade to options level 2', 'Request level 3 options approval', 'Get tier 2 options', 'Unlock options']) assert.ok(classesOf(name).includes('permission'), name)
+  assert.ok(classesOf('Borrow against my life insurance policy').includes('purchase'))
+  for (const name of ['Options level', 'View statements']) assert.deepEqual(classesOf(name), [], name)
+})

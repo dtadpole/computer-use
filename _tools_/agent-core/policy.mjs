@@ -1985,6 +1985,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       try { const u = new URL(url); retirePage = /^https?:$/.test(u.protocol) && /(?:^|[./-])(?:retire|retirement|401k|403b|ira|pension|benefits|plans?)(?=$|[./?#-])/i.test(`${u.hostname}${u.pathname}`) } catch { retirePage = false }
       if (retirePage) classes.push('purchase')
     }
+    // CU-560 (#825 r4, cu-verifier 08:27Z): an options-level form an older 'upgrade to' row gives purchase keeps purchase and adds PERMISSION
+    // (a union, like 'Enable options trading').
+    if (grammarEligible && classes.length > 0 && !classes.includes('permission') && /^\s*(?:upgrade|move|switch)\s+to\s+(?:options\s+)?(?:level|tier)\s+\d(?:\s+options)?\s*$|^\s*(?:upgrade|increase|raise|change|request|apply\s+for|get)\s+(?:my\s+|the\s+|your\s+|an?\s+)?options\s+(?:trading\s+)?(?:level|tier|approval)(?:\s+\d)?\s*$/i.test(String(name ?? ''))) classes.push('permission')
     // CU-446 (cu-coordinator 21:05Z): a domain-lock / transfer-lock switch turned OFF asks credential, a WHOIS-privacy switch turned
     // OFF asks permission; ON is free on a native read; an unread state asks both ways.
     if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))) {
