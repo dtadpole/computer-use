@@ -1,7 +1,8 @@
 // The held-out runner (Part of CU-458): a private set written BEFORE the PR, measured ONCE on the test merge, then retired.
 // Web items carry their own page; dialog items add the dialog's words (CU-507 seam); desktop items name a bundle id.
 // Policy level only (D-098). The set file stays private (never in this tree) until it is spent.
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync, realpathSync, writeFileSync } from 'node:fs'
+import { pathToFileURL } from 'node:url'
 
 import { act, ctx, desk, web } from './shapes.mjs'
 import { deskPolicy, webPolicy } from './policies.mjs'
@@ -49,7 +50,8 @@ export const summary = (r) => `HELD-OUT ask ${r.asked}/${r.counted} (in class ${
   + (r.apart.length ? `\n  apart (out of scope): ${r.apart.join(' | ')}` : '')
 
 // CLI: node heldout.mjs SET.json [--retire PR] - prints the summary; --retire writes `spent` into the file so it is never measured again.
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Start the CLI only when run directly; resolve the typed path so a symlinked path (macOS /tmp -> /private/tmp) still runs it.
+if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) {
   const file = process.argv[2]; const set = JSON.parse(readFileSync(file, 'utf8'))
   if (set.spent) { console.error(`REFUSED: ${file} was spent on ${set.spent}`); process.exitCode = 2 } else {
     const r = measure(set); console.log(summary(r))

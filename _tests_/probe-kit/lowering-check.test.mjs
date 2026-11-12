@@ -23,3 +23,9 @@ test('link and desktop items are judged on their own shape', () => {
   assert.equal(r.keep.length, 2)
   for (const x of r.keep) assert.equal(typeof x.verdict, 'string')
 })
+
+test('a LOWER item that hands off (or blocks) is not freed - only allow is', () => {
+  // 'Change password' hands off to the person: it does not ask, but it is not free either.
+  const r = checkLowering({ lower: [{ name: 'Change password', site: SITE }], keep: [] })
+  assert.equal(r.lower[0].verdict, 'handoff'); assert.equal(r.ok, false)
+})

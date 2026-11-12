@@ -1,15 +1,17 @@
 // The reclass map and diff (Part of CU-458; the D-108 guard): classify every name of a set of matrices on its own page for one
 // tree, then compare two trees' maps. A High may only ADD asks; a lowering PR may only lose the asks its ruling lists.
 // Policy level only (D-098). Run the map once on the base tree and once on the head tree (each in its own checkout).
-import { readFileSync, statSync, writeFileSync } from 'node:fs'
+import { readFileSync, realpathSync, statSync, writeFileSync } from 'node:fs'
+import { pathToFileURL } from 'node:url'
 
 import { act, ctx, web } from './shapes.mjs'
 import { webPolicy } from './policies.mjs'
 
-/** The class set a name gets (sorted, '+'-joined), or 'allow'. */
+/** The class set a name gets (sorted, '+'-joined), 'allow', or the other decision as it is ('block', 'handoff'): only 'allow' is free. */
 const verdictOf = (policy, site, name) => {
   const r = policy.classify(act.click(), ctx.web(site, web.button(name)))
-  if (r.decision !== 'confirm') return 'allow'
+  if (r.decision === 'allow') return 'allow'
+  if (r.decision !== 'confirm') return String(r.decision)
   return (r.classes?.length ? [...r.classes] : [r.class]).sort().join('+')
 }
 
@@ -47,7 +49,8 @@ export const lostEquals = (diff, ruled) => {
 }
 
 // CLI: node reclass.mjs map OUT.json MATRIX.json...  |  node reclass.mjs diff BASE.json HEAD.json
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Start the CLI only when run directly; resolve the typed path so a symlinked path (macOS /tmp -> /private/tmp) still runs it.
+if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) {
   const [cmd, ...rest] = process.argv.slice(2)
   if (cmd === 'map') {
     const [out, ...files] = rest
@@ -56,6 +59,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   } else if (cmd === 'diff') {
     // Refuse a stale input: a map older than --max-age minutes (default 60) may stand in for a step that failed.
     const i = rest.indexOf('--max-age'); const maxAge = i >= 0 ? Number(rest[i + 1]) : 60
+    if (!Number.isFinite(maxAge) || maxAge < 0) { console.error(`REFUSED: --max-age needs a number of minutes (got ${rest[i + 1]})`); process.exit(2) }
     const stale = rest.slice(0, 2).filter((f) => (Date.now() - statSync(f).mtimeMs) / 60000 > maxAge)
     if (stale.length) { console.error(`REFUSED: ${stale.join(', ')} older than ${maxAge} min; rebuild the map(s)`); process.exitCode = 2 } else {
     const d = reclassDiff(JSON.parse(readFileSync(rest[0], 'utf8')), JSON.parse(readFileSync(rest[1], 'utf8')))

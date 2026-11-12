@@ -1,8 +1,8 @@
 ---
 title: probe-kit
 created: 2026-11-09T23:30:00Z
-modified: 2026-11-11T22:30:00Z
-version: 0.3.0
+modified: 2026-11-12T05:38:15Z
+version: 0.3.1
 description: "CU-384 (D-100): target and context builders shaped as the drivers and the loop send them, and the real deciding components, so a consent policy probe judges the shape a run will see; a drift test fails when a producing file stops naming a field."
 grounded_in:
   - source: _context_/team-operations/decision-log.yaml (D-100 - a probe builds its target as the driver sends it and runs the real deciding components)

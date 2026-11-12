@@ -1,7 +1,8 @@
 // Canonical-form sweeps (Part of CU-458): wrap every asking row of a ruled matrix in each written-out form of the canonical
 // families and report the forms that go free. A ruled family must stay at 0 free; an unruled family is reported, not judged.
 // Policy level only (D-098): a sweep says what the policy decides for a button shape on the row's page, not what a run does.
-import { readFileSync } from 'node:fs'
+import { readFileSync, realpathSync } from 'node:fs'
+import { pathToFileURL } from 'node:url'
 
 import { act, ctx, web } from './shapes.mjs'
 import { webPolicy } from './policies.mjs'
@@ -66,7 +67,8 @@ export function sweep(matrices, { families = Object.keys(FAMILIES) } = {}) {
 export const ruledGaps = (result) => Object.entries(result).filter(([, r]) => r.ruled && Object.values(r.free).some((l) => l.length > 0)).map(([f]) => f)
 
 // CLI: node sweeps.mjs <matrix.json>... - each file `{ site, rows }` (id = file name); prints a line per family, exits 1 on a ruled gap.
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Start the CLI only when run directly; resolve the typed path so a symlinked path (macOS /tmp -> /private/tmp) still runs it.
+if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) {
   const matrices = process.argv.slice(2).map((p) => ({ id: p.replace(/^.*\//, '').replace(/\.json$/, ''), ...JSON.parse(readFileSync(p, 'utf8')) }))
   const result = sweep(matrices)
   for (const [f, r] of Object.entries(result)) console.log(`${f}${r.ruled ? '' : ' (unruled)'}: ` + Object.entries(r.free).map(([k, l]) => `${k} ${l.length}`).join(', ') + (Object.values(r.free).flat().length ? `  e.g. ${Object.values(r.free).flat().slice(0, 3).join(' | ')}` : ''))
