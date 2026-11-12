@@ -48,3 +48,8 @@ test('#825 round 4 (cu-verifier 08:27Z): options levels in every order; borrow a
   assert.ok(classesOf('Borrow against my life insurance policy').includes('purchase'))
   for (const name of ['Options level', 'View statements']) assert.deepEqual(classesOf(name), [], name)
 })
+
+test('#825 round 5 (cu-researcher 08:30Z): the options-eligibility family', () => {
+  for (const name of ['Become eligible for options trading', 'Get approved for options', 'Qualify for options level 2', 'Apply to trade options']) assert.ok(classesOf(name).length > 0, name)
+  for (const name of ['Become eligible for options trading', 'Get approved for options', 'Qualify for options level 2']) assert.ok(classesOf(name).includes('permission'), name)
+})
