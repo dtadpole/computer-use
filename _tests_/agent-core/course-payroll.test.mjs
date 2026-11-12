@@ -28,3 +28,9 @@ test('CU-541: payroll rows ask purchase', () => {
   for (const name of ['Payroll', 'Tax documents', 'W-4 help']) assert.deepEqual(classesOf(name), [], name)
   assert.ok(classesOf('Run off-cycle payroll').includes('purchase'), 'older row unchanged')
 })
+
+test('#780 round 2 (cu-researcher 02:01Z): scores / marks, grader, user as instructor', () => {
+  for (const name of ['Release scores to students', 'Publish marks']) assert.ok(classesOf(name).includes('submit'), name)
+  for (const name of ['Make this student a grader', 'Make student a grader', 'Make user an instructor']) assert.ok(classesOf(name).includes('permission'), name)
+  for (const name of ['Scores', 'Graders', 'Instructors']) assert.deepEqual(classesOf(name), [], name)
+})
