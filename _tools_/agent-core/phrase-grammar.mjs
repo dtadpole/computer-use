@@ -1160,6 +1160,11 @@ function grammarClassesOf(name, role = '') {
   // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
   // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
   if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
+  // CU-554 (High; cu-coordinator 06:06Z), table PR 50 - taking a site down, SUBMIT: unpublish (the / this / my) site / website / store /
+  // shop / blog; take (the / this / my) site / website / store / shop / blog offline / down; enable / turn on / activate / switch to
+  // maintenance mode, put (the) site / store into maintenance mode; disable / deactivate / suspend / shut down (the / this / my) site /
+  // website / store / shop / blog. The switch forms are in policy.mjs.
+  if (/^\s*unpublish\s+(?:the\s+|this\s+|my\s+|your\s+)?(?:site|website|store|shop|blog)\s*$|^\s*take\s+(?:the\s+|this\s+|my\s+|your\s+)?(?:site|website|store|shop|blog)\s+(?:offline|down)\s*$|^\s*(?:enable|turn\s+on|activate|switch\s+(?:on|to))\s+(?:the\s+)?maintenance\s+mode\s*$|^\s*put\s+(?:the\s+|this\s+|my\s+)?(?:site|website|store|shop|blog)\s+(?:in|into)\s+maintenance(?:\s+mode)?\s*$|^\s*(?:disable|deactivate|suspend|shut\s+down)\s+(?:the\s+|this\s+|my\s+|your\s+)?(?:site|website|store|shop|blog)\s*$/i.test(raw)) return ['submit']
   // CU-552 (High, health data; cu-coordinator 05:21Z), table PR 49 - PERMISSION for downloading / exporting / printing / sending (all) (my)
   // medical / health records / summary / history / chart / data / visit notes / lab results. A bare 'Download all records' is URL-bound
   // in policy.mjs (patient-portal pages), since 'records' alone names a CRM's rows too.
