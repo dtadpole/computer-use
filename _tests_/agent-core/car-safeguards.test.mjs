@@ -49,3 +49,8 @@ test("#814 round 4 (cu-developer-two 06:54Z): 'Stop monitoring their / my drivin
   for (const name of ['Stop monitoring their driving', 'Stop monitoring my driving']) assert.ok(classesOf(name).includes('permission'), name)
   assert.ok(classesOf('Hide site from the public').includes('submit'), 'Hide site from the public')
 })
+
+test("#814 round 5 (cu-researcher 07:22Z): 'tracking' beside 'monitoring'", () => {
+  for (const name of ['Stop tracking driving', 'Pause tracking my teen\'s location', 'End tracking driving']) assert.ok(classesOf(name).includes('permission'), name)
+  assert.deepEqual(classesOf('Stop tracking'), [], 'Stop tracking')
+})
