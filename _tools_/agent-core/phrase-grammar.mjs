@@ -1160,6 +1160,13 @@ function grammarClassesOf(name, role = '') {
   // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
   // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
   if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
+  // CU-551 (High; cu-coordinator 05:06Z), table PR 48 - a repository's exposure. PERMISSION: change / set / make (the / this) (repository /
+  // repo) visibility to public, make (this / the) (repository / repo) public; the confirm 'I understand, change repository visibility'.
+  // SUBMIT: enable / turn on / publish (GitHub) Pages. Changing visibility to private stays free. #807 r2 (cu-researcher 05:18Z; ruled
+  // 05:21Z, fail-closed): the confirm's wrappers (ellipsis / please / now), 'I understand,' optional (so a bare 'Change repository
+  // visibility' asks), and 'Switch / Make / Set (the) (repository) (to) public'.
+  if (/^\s*(?:change|set|switch)\s+(?:the\s+|this\s+)?(?:repository\s+|repo\s+)?visibility\s+to\s+public\s*$|^\s*make\s+(?:this\s+|the\s+)?(?:repository|repo|project)\s+public\s*$|^\s*(?:i\s+understand,?\s+)?(?:please\s+)?(?:change|make)\s+(?:the\s+|this\s+)?(?:repository|repo)\s+(?:visibility|public)(?:\s+now)?\s*(?:\.{1,3}|\u2026|!)?\s*$|^\s*(?:switch|make|set)\s+(?:the\s+|this\s+)?(?:repository\s+|repo\s+)?(?:to\s+)?public\s*$/i.test(raw)) return ['permission']
+  if (/^\s*(?:enable|turn\s+on|publish|activate)\s+(?:github\s+|gitlab\s+)?pages(?:\s+site)?\s*$/i.test(raw)) return ['submit']
   // CU-549 (High; cu-coordinator 04:51Z), table PR 47 - a router's exposure, PERMISSION like 'Open port' / 'Enable remote management':
   // forward (a) port (N / range), add (a) port forward(ing) rule; allow / enable / turn on remote administration / admin / access /
   // management (from WAN / the internet); make (the) network / Wi-Fi open / public, set Wi-Fi security to open; disable / turn off (the)
