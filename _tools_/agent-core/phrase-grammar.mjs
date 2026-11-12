@@ -1160,6 +1160,12 @@ function grammarClassesOf(name, role = '') {
   // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
   // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
   if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
+  // CU-533 (High; cu-coordinator 00:21Z), table PR 36, as verb families with object synonyms - an organisation's security settings,
+  // PERMISSION like the older 'Disable two-factor requirement' / 'Remove IP allow list': disable / turn off / deactivate / remove (the)
+  // (SAML) SSO / single sign-on (enforcement / requirement); disable / turn off (the) IP allow list / allowlist / whitelist; disable /
+  // turn off / stop / pause (the) audit log streaming / stream / audit logging; allow forking of private / internal repositories.
+  // 'Test SSO connection' and 'Enable SSO' stay free.
+  if (/^\s*(?:disable|turn\s+off|deactivate|remove|switch\s+off|stop\s+enforcing)\s+(?:the\s+)?(?:saml\s+|oidc\s+)?(?:sso|single\s+sign[-\s]?on)(?:\s+(?:enforcement|requirement))?\s*$|^\s*(?:disable|turn\s+off|switch\s+off|deactivate)\s+(?:the\s+)?ip\s+(?:allow\s*list|allowlist|whitelist)\s*$|^\s*(?:disable|turn\s+off|stop|pause|switch\s+off)\s+(?:the\s+)?audit\s+(?:log\s+(?:streaming|stream)|logging)\s*$|^\s*allow\s+forking\s+(?:of\s+)?(?:private|internal)(?:\s+(?:and\s+internal\s+)?(?:repositories|repos))?\s*$/i.test(raw)) return ['permission']
   // CU-530 (High; cu-coordinator 23:21Z), table PR 35, as verb families with object synonyms - a crypto wallet's allowance or permit
   // lets a contract spend the tokens - PURCHASE like 'Approve unlimited': set / grant / give (a / an / the) (unlimited / max / maximum /
   // infinite / custom) (spending / token) allowance; sign (the) typed data; sign (a / the) permit / Permit2 (message / signature).
