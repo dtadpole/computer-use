@@ -1953,6 +1953,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (/^\s*(?:client|ap|wireless)\s+isolation\s*$/i.test(name) && nativeToggleState(target) !== false) classes.push('permission')
       else if (/^\s*wps(?:\s+(?:push\s+button|pin))?\s*$|^\s*wi-?fi\s+protected\s+setup\s*$/i.test(name) && nativeToggleState(target) !== true) classes.push('permission')
     }
+    // CU-555 (High; cu-coordinator 06:21Z), folded into table PR 50: a connected car's safeguard SWITCH - speed limit (mode) / limiter,
+    // curfew, driver monitoring, teen (driver) mode, valet mode, geofence - turned OFF (on -> off and unread) asks PERMISSION; off -> on free.
+    if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))
+      && /^\s*(?:speed\s+limit(?:\s+mode)?|speed\s+limiter|max(?:imum)?\s+speed\s+limit|curfew|driver\s+monitoring|driver\s+attention\s+monitoring|teen\s+(?:driver\s+)?mode|valet\s+mode|geofenc(?:e|ing)|driving\s+restrictions?)\s*$/i.test(name) && nativeToggleState(target) !== false) classes.push('permission')
     // CU-554 (High; cu-coordinator 06:06Z), table PR 50: a 'Maintenance mode' switch turned ON (off -> on and unread) asks SUBMIT, on -> off
     // free; a 'Site published / online / live' switch turned OFF (on -> off and unread) asks SUBMIT, off -> on free.
     if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))) {

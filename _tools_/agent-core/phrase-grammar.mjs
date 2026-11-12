@@ -1160,6 +1160,10 @@ function grammarClassesOf(name, role = '') {
   // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
   // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
   if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
+  // CU-555 (High, safety; cu-coordinator 06:21Z), folded into table PR 50 - a connected car's safeguards off, PERMISSION like 'Turn off
+  // speed alerts' / 'Turn off parental controls': disable / turn off / deactivate / switch off / exit (the) speed limit (mode / alerts) /
+  // speed limiter / curfew / driver monitoring / teen (driver) mode / valet mode / geofence. The switch forms are in policy.mjs.
+  if (/^\s*(?:disable|turn\s+off|deactivate|switch\s+off|exit|end|remove)\s+(?:the\s+)?(?:speed\s+limit(?:\s+mode)?|speed\s+limiter|max(?:imum)?\s+speed\s+limit|curfew|driver\s+monitoring|driver\s+attention\s+monitoring|teen\s+(?:driver\s+)?mode|valet\s+mode|geofenc(?:e|ing)|driving\s+restrictions?)\s*$/i.test(raw)) return ['permission']
   // CU-554 (High; cu-coordinator 06:06Z), table PR 50 - taking a site down, SUBMIT: unpublish (the / this / my) site / website / store /
   // shop / blog; take (the / this / my) site / website / store / shop / blog offline / down; enable / turn on / activate / switch to
   // maintenance mode, put (the) site / store into maintenance mode; disable / deactivate / suspend / shut down (the / this / my) site /
