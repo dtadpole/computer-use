@@ -2360,9 +2360,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // CU-550 (#805 r3, cu-coordinator 05:21Z): 'Change / Switch / Move / Upgrade / Downgrade to <plan name>' without the word 'plan' asks
     // PURCHASE on a carrier plan page only (D-106: a plan(s) / my-plan / change-plan / rate-plan / wireless path segment, or a carrier /
     // wireless / mobile host label); elsewhere ('Change to dark mode') it stays free.
-    // #805 r4: the target must read as a plan name - it starts with a capital or a digit ('Unlimited Plus', 'Premium', '5G Start') and is
-    // not a setting ('dark mode', 'Dark theme', 'list view', a language) - so a plan page's 'Change to dark mode' stays free.
-    const planTarget = String(name ?? '').trim().match(/^(?:[Cc]hange|[Ss]witch|[Mm]ove|[Uu]pgrade|[Dd]owngrade)\s+to\s+(?:the\s+|a\s+)?([A-Z0-9][\w+&.-]*(?:\s+[\w+&.-]+){0,3})$/)
+    // #805 r5 (cu-researcher 05:34Z): any case, any plan name ('CHANGE TO UNLIMITED PLUS', 'switch to basic') - only a setting target
+    // ('dark mode', 'Dark theme', 'list view', a language) stays free on a plan page (cu-verifier's r3 expectation; cu-coordinator's call).
+    const planTarget = String(name ?? '').trim().match(/^(?:change|switch|move|upgrade|downgrade)\s+to\s+(?:the\s+|a\s+)?([\w+&.-]+(?:\s+[\w+&.-]+){0,3})$/i)
     if (grammarEligible && !classes.includes('purchase') && planTarget && !/\b(?:mode|theme|view|layout|language|format|units?|font|size|color|colour|english|spanish|french|german|metric|imperial)\s*$/i.test(planTarget[1])) {
       let planPage = false
       try {

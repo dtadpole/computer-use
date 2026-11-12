@@ -58,3 +58,10 @@ test("#805 round 4: on a carrier plan page a setting target ('dark mode') stays 
   for (const name of ['Change to Unlimited Plus', 'Switch to Premium', 'Move to 5G Start']) assert.ok(at(name, PLAN).includes('purchase'), name)
   for (const name of ['Change to dark mode', 'Change to Dark theme', 'Switch to list view', 'Change to English']) assert.deepEqual(at(name, PLAN), [], name)
 })
+
+test('#805 round 5 (cu-researcher 05:34Z): any case / lowercase plan names ask on a plan page; settings stay free', () => {
+  const at = (name, url) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url, target: { role: 'button', name } }); return v.decision === 'allow' ? [] : (v.classes ?? [v.class]) }
+  const PLAN = 'https://carrier.example/wireless/change-plan'
+  for (const name of ['CHANGE TO UNLIMITED PLUS', 'switch to basic', 'Move to premium plus']) assert.ok(at(name, PLAN).includes('purchase'), name)
+  for (const name of ['change to dark mode', 'CHANGE TO DARK MODE']) assert.deepEqual(at(name, PLAN), [], name)
+})
