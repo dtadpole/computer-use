@@ -14,11 +14,21 @@ after(() => rmSync(dir, { recursive: true, force: true }))
 const pause = (ms) => new Promise((done) => setTimeout(done, ms))
 const unlocked = () => { const env = { ...process.env }; delete env.CU_HELPER_BUILD_LOCKED; return env }
 
-/** Hold `lock` for `seconds` in a sleeper; resolves once the sleeper holds it. */
+/**
+ * Hold `lock` for `seconds` in a sleeper; resolves once the sleeper holds it. A fixed 300 ms pause used to stand in for
+ * "holds it", and under load lockf had not yet taken the lock, so the row's own build took it at once (the timeout row's
+ * "Missing expected exception", #500's gate 07:09Z, 12 Nov). Now a non-blocking probe (`lockf -k -t 0`, which keeps the
+ * file, so the holder's inode stays the lock) is retried until it is refused (exit 75): only then does the sleeper hold it.
+ */
 async function holdLock(lock, seconds) {
   const holder = spawn('/usr/bin/lockf', ['-k', lock, '/bin/sleep', String(seconds)], { stdio: 'ignore' })
-  await pause(300)
-  return holder
+  const deadline = Date.now() + 10_000
+  for (;;) {
+    const probe = spawnSync('/usr/bin/lockf', ['-k', '-t', '0', lock, '/usr/bin/true'])
+    if (probe.status === 75) return holder
+    if (Date.now() > deadline) { holder.kill(); throw new Error(`the sleeper never took ${lock} (probe exit ${probe.status})`) }
+    await pause(25)
+  }
 }
 
 test('CU-335: a second build waits for the lock instead of compiling alongside', async () => {
