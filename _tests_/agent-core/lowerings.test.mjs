@@ -49,3 +49,16 @@ test('CU-429 round 2 (cu-coordinator 17:21Z): exactly the ruled names lower; the
   for (const name of ['Sign up', 'Remove recovery contact', 'Remove location from posts', 'Remove address', 'Quit all apps', 'Close on all devices']) assert.notEqual(at(name), 'allow', `kept: ${name}`)
   assert.notEqual(at('Open in this window', 'switch'), 'allow', 'never on a toggle')
 })
+
+test('CU-429 round 3 (cu-coordinator 21:36Z): exactly the ruled names lower; their neighbours keep asking', () => {
+  const p = createPolicy({ sitePolicy: () => 'allow' })
+  const at = (name, url, role = 'button') => { const v = p.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url, target: { role, name } }); return v.decision === 'allow' ? 'allow' : v.class }
+  assert.equal(at('View order', 'https://shop.example/orders'), 'allow')
+  assert.equal(at('Security checkup', 'https://account.example/security'), 'allow')
+  assert.equal(at('Security checkup', 'https://account.example/security', 'link'), 'allow')
+  assert.equal(at('Call forwarding', 'https://carrier.example/account'), 'allow')
+  assert.notEqual(at('Call forwarding', 'https://carrier.example/account', 'switch'), 'allow', 'the switch keeps its direction rule')
+  for (const url of ['https://chat.example/c/general', 'https://app.slack.example/client/T1']) for (const name of ['Add member to group', 'Add members to group']) assert.equal(at(name, url), 'allow', `${url}: ${name}`)
+  assert.notEqual(at('Add member to group', 'https://acme.okta.example/admin/groups/1'), 'allow', 'an IdP page keeps asking')
+  for (const name of ['Place order', 'Security settings', 'Call forwarding settings']) assert.notEqual(at(name, 'https://example.com/x'), 'allow', `kept: ${name}`)
+})
