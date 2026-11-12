@@ -2396,7 +2396,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       let u = null
       try { u = new URL(url) } catch { u = null }
       const web = u && /^https?:$/.test(u.protocol)
-      if (web && /^(?:download|export|save|print)\s+(?:all\s+)?(?:my\s+)?records(?:\s+as\s+(?:a\s+)?(?:pdf|file|document))?$/i.test(label) && /(?:^|[./-])(?:health|patient|patients|medical|mychart|clinic|hospital|ehr|records)(?=$|[./?#-])/i.test(`${u.hostname}${u.pathname}`)) classes.push('permission')
+      if (web && /^(?:download|export|save|print|email|e-mail|send)\s+(?:all\s+)?(?:of\s+)?(?:my\s+)?records(?:\s+as\s+(?:a\s+)?(?:pdf|file|document))?(?:\s+to\s+(?:my\s+)?(?:email|phone|device|computer))?$/i.test(label) && /(?:^|[./-])(?:health|patient|patients|medical|mychart|clinic|hospital|ehr|records)(?=$|[./?#-])/i.test(`${u.hostname}${u.pathname}`)) classes.push('permission')
       else if (web && /^(?:let\s+go|dismiss|lay\s+off)$/i.test(label) && /(?:^|\/)(?:hr|employees?|people|staff|workforce|personnel|team-members)(?=$|[/?#])/i.test(u.pathname)) classes.push('delete')
     }
     // CU-539 (High; cu-coordinator 01:36Z), table PR 39: on a CI / actions page (D-109: an actions / workflows / runners / pipelines / ci

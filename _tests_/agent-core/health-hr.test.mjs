@@ -77,3 +77,14 @@ test('#813 round 5 (cu-coordinator 06:51Z): the whole verb x object x tail famil
   for (const name of ['Request a copy of my medical records', 'Email my visit history as PDF', 'Send my health summary to my email', 'Obtain my chart', 'Download all of my clinical data as a zip']) assert.ok(at(name, PORTAL).includes('permission'), name)
   for (const name of ['Termination', 'Separation', 'Offboarding', 'Termination process', 'Move to folder', 'Chart']) assert.deepEqual(at(name, HR), [], name)
 })
+
+test("#813 round 6 (cu-developer-three 06:59Z): the promote family's object slot takes any pronoun or name", () => {
+  for (const name of ['Promote her to manager', 'Promote him to director', 'Promote Dana Lee to team lead', 'Elevate them to admin', 'Make him an admin', 'Make her a manager', 'Move her to supervisor']) assert.ok(at(name, HR).includes('permission'), name)
+  for (const name of ['Move file to admin', 'Promote post']) assert.ok(!at(name, HR).includes('permission'), name)
+})
+
+test("#813 round 6 (cu-researcher 07:01Z): 'Make director' and a portal's 'Email my records' ask permission", () => {
+  for (const name of ['Make director', 'Make supervisor', 'Make team lead', 'Make her a director']) assert.ok(at(name, HR).includes('permission'), name)
+  assert.ok(at('Email my records', PORTAL).includes('permission'), 'portal: Email my records')
+  assert.deepEqual(at('Email my records', CRM), [], 'CRM: Email my records stays free')
+})
