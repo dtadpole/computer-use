@@ -50,3 +50,30 @@ test('#813 round 3 (cu-researcher 06:26Z): the held-out escapes ask', () => {
   for (const name of ['Termination date', 'Visit history']) assert.deepEqual(at(name, HR), [], name)
   assert.deepEqual(at('Separation pay', HR), ['purchase'], 'an older pay row keeps purchase')
 })
+
+test("#813 round 4 (cu-verifier 06:31Z): 'Email my lab results' asks permission", () => {
+  for (const name of ['Email my lab results', 'Send my lab results', 'Save my test results']) assert.ok(at(name, PORTAL).length > 0, name)
+  assert.ok(at('Email my lab results', PORTAL).includes('permission'))
+})
+
+test("#813 round 5 (cu-coordinator 06:36Z): 'Download visit summary' asks permission", () => {
+  for (const name of ['Download visit summary', 'Print after-visit summary', 'Email my discharge summary']) assert.ok(at(name, PORTAL).includes('permission'), name)
+  assert.deepEqual(at('Visit summary', PORTAL), [], 'the label stays free')
+})
+
+test("#813 round 5 (06:36Z): 'Send my lab results' keeps the older submit and adds permission (a union)", () => {
+  for (const name of ['Send my lab results', 'Send my test results']) { const c = at(name, PORTAL); assert.ok(c.includes('submit') && c.includes('permission'), `${name}: ${c}`) }
+})
+
+test('#813 round 5 (cu-researcher 06:37Z): the r2-line shapes ask', () => {
+  for (const [name, cls, url] of [['Separate this person', 'delete', HR], ['Review and terminate', 'delete', HR], ['Move to director', 'permission', HR], ['Save my records as PDF', 'permission', PORTAL]]) assert.ok(at(name, url).includes(cls), name)
+  assert.deepEqual(at('Save my records as PDF', CRM), [], 'off a portal the bare records form stays free')
+})
+
+test('#813 round 5 (cu-coordinator 06:51Z): the whole verb x object x tail families', () => {
+  for (const name of ['Release this employee', 'Discharge worker', 'Lay off them', 'Fire this person from the company', 'Finalize separation', 'Approve and offboard', 'Confirm details and fire']) assert.ok(at(name, HR).includes('delete'), name)
+  assert.ok(at('Submit termination request', HR).length > 0, 'asks - an older submit row leads (named)')
+  for (const name of ['Advance to director', 'Move this employee to team lead', 'Promote them to head of sales']) assert.ok(at(name, HR).includes('permission'), name)
+  for (const name of ['Request a copy of my medical records', 'Email my visit history as PDF', 'Send my health summary to my email', 'Obtain my chart', 'Download all of my clinical data as a zip']) assert.ok(at(name, PORTAL).includes('permission'), name)
+  for (const name of ['Termination', 'Separation', 'Offboarding', 'Termination process', 'Move to folder', 'Chart']) assert.deepEqual(at(name, HR), [], name)
+})

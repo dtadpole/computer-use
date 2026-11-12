@@ -33,7 +33,9 @@ test('#617 round 2: the four held-out escapes ask; video visits keep the older c
 
 test('#617 round 2 (cu-coordinator 03:51Z): checking in asks submit; downloads and messages stay free', () => {
   for (const name of ['Check in', 'eCheck-in', 'Check in for appointment', 'Check in online']) assert.equal(click(name), 'submit', name)
-  for (const name of ['Download visit summary', 'Message provider']) assert.equal(click(name), 'allow', name)
+  assert.equal(click('Message provider'), 'allow', 'Message provider')
+  // Pin moved by #813 r5 (cu-coordinator 06:36Z, 12 Nov: 'Download visit summary' asks permission under CU-552), a raise over 03:51Z.
+  assert.equal(click('Download visit summary'), 'permission', 'CU-552 raise: Download visit summary')
   // Pin moved by CU-552 (cu-coordinator 05:21Z, 12 Nov: patient-portal record downloads / exports = permission), a raise over this
   // 03:51Z row: on a portal page 'Download records' / 'Download my records' now ask permission.
   for (const name of ['Download records', 'Download my records']) assert.equal(click(name), 'permission', `CU-552 raise: ${name}`)
