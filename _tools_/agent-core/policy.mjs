@@ -1978,6 +1978,13 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       } catch { socialPage = false }
       if (socialPage) classes.push('permission')
     }
+    // CU-559 (#825 r2, cu-researcher 08:12Z), URL-bound (D-106): a bare 'Roll over' / 'Rollover' / 'Start (a) rollover' asks PURCHASE on a
+    // retirement page only (a retire / retirement / 401k / 403b / ira / pension / benefits / plan(s) segment or host label).
+    if (grammarEligible && classes.length === 0 && /^\s*(?:roll\s+over|rollover|start\s+(?:a\s+)?rollover)\s*$/i.test(String(name ?? ''))) {
+      let retirePage = false
+      try { const u = new URL(url); retirePage = /^https?:$/.test(u.protocol) && /(?:^|[./-])(?:retire|retirement|401k|403b|ira|pension|benefits|plans?)(?=$|[./?#-])/i.test(`${u.hostname}${u.pathname}`) } catch { retirePage = false }
+      if (retirePage) classes.push('purchase')
+    }
     // CU-446 (cu-coordinator 21:05Z): a domain-lock / transfer-lock switch turned OFF asks credential, a WHOIS-privacy switch turned
     // OFF asks permission; ON is free on a native read; an unread state asks both ways.
     if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))) {

@@ -22,3 +22,16 @@ test('CU-559: beneficiary changes, retirement loans / rollovers and policy surre
   for (const name of ['Beneficiaries', 'Loans', 'Rollover options', 'Policy details', 'View beneficiary']) assert.deepEqual(classesOf(name), [], name)
   for (const [name, cls] of [['Add beneficiary', 'permission'], ['Request withdrawal', 'purchase'], ['Cancel policy', 'delete']]) assert.ok(classesOf(name).includes(cls), `older row: ${name}`)
 })
+
+test("#825 round 2 (cu-developer-three 08:09Z): 'Take a 401(k) loan', 'Roll over my IRA'", () => {
+  for (const name of ['Take a 401(k) loan', 'Request a retirement loan', 'Take out a 401k loan', 'Roll over my IRA', 'Roll over my old 401(k)', 'Transfer my pension']) assert.ok(classesOf(name).includes('purchase'), name)
+  for (const name of ['401(k) loan', 'IRA']) assert.deepEqual(classesOf(name), [], name)
+})
+
+test('#825 round 2 (cu-researcher 08:12Z): wrappers after 401(k), a new beneficiary, retirement savings, a bare Roll over on a retirement page', () => {
+  for (const name of ['Take a loan from 401(k)\u2026', 'Take a loan from 401(k) now', 'Take a loan from 401(k) please', 'Take a loan from 401(k) \u2192', 'Borrow against my retirement savings']) assert.ok(classesOf(name).includes('purchase'), name)
+  assert.ok(classesOf('Designate a new beneficiary').includes('permission'))
+  const at = (name, url) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url, target: { role: 'button', name } }); return v.decision === 'allow' ? [] : (v.classes ?? [v.class]) }
+  assert.ok(at('Roll over', 'https://retire.example/401k/rollover').includes('purchase'), 'retirement page: Roll over')
+  assert.deepEqual(at('Roll over', 'https://games.example/play'), [], 'elsewhere: Roll over stays free')
+})
