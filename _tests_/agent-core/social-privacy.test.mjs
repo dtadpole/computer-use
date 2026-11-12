@@ -36,3 +36,8 @@ test("#821 round 2 (cu-developer-three 07:30Z): a 'Location on posts' switch - o
     assert.deepEqual(sw(true), [], `${name}: on -> off is free`)
   }
 })
+
+test('#821 round 3 (cu-researcher 07:44Z): export / get forms, tags from anyone, add my location', () => {
+  for (const name of ['Export all data', "Export a copy of everything you've shared", 'Get a data download', 'Allow tags from anyone', 'Add my current location', 'Add city', 'Add location']) assert.ok(classesOf(name).includes('permission'), name)
+  assert.deepEqual(classesOf('Export data'), [], 'a bare Export data stays free (older pin)')
+})
