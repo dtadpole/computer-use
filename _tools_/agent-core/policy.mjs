@@ -2322,11 +2322,12 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // a ride-hailing host label - uber, lyft, bolt, grab, didi, cabify, ola, taxi), 'Add (a) stop', 'Change (the) destination' and 'Split
     // (the) fare' ask PURCHASE (the fare changes); in a maps app or a maps page they stay free. #784 r2 (cu-researcher 02:28Z): a ride /
     // rides host label; the names take a tail ('Add another stop on the way', 'Split fare with friends'); 'Update / Edit destination'.
+    // #784 r3 (cu-coordinator 02:36Z): a trip / trips path segment binds too (a travel booking's destination change costs money; fail-closed).
     if (grammarEligible && !classes.includes('purchase') && /^(?:add\s+(?:a\s+|another\s+)?stop|(?:change|update|edit)\s+(?:the\s+|my\s+)?destination|split\s+(?:the\s+)?fare)(?:\s+\S.{0,40})?$/i.test(String(name ?? '').trim())) {
       let ridePage = false
       try {
         const u = new URL(url)
-        ridePage = /^https?:$/.test(u.protocol) && (/(?:^|\/)(?:ride|rides|ride-request|trip-request|request-ride)(?=$|[/?#])/i.test(u.pathname) || /(?:^|\.)(?:uber|lyft|bolt|grab|didi|cabify|ola|taxi|ride|rides)(?:\.|$)/i.test(u.hostname))
+        ridePage = /^https?:$/.test(u.protocol) && (/(?:^|\/)(?:ride|rides|ride-request|trip-request|request-ride|trip|trips)(?=$|[/?#])/i.test(u.pathname) || /(?:^|\.)(?:uber|lyft|bolt|grab|didi|cabify|ola|taxi|ride|rides)(?:\.|$)/i.test(u.hostname))
       } catch { ridePage = false }
       if (ridePage) classes.push('purchase')
     }

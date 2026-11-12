@@ -38,3 +38,8 @@ test("#784 round 2 (cu-researcher 02:28Z): a ride host label; the ride names tak
     assert.deepEqual(classesOf(name, MAPS), [], `maps: ${name}`)
   }
 })
+
+test('#784 round 3 (cu-coordinator 02:36Z): a trip / trips path segment binds', () => {
+  for (const url of ['https://travel.example/trips/123', 'https://book.example/trip/edit']) for (const name of ['Change destination', 'Add stop']) assert.ok(classesOf(name, url).includes('purchase'), `${url}: ${name}`)
+  assert.deepEqual(classesOf('Change destination', MAPS), [], 'maps stays free')
+})
