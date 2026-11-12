@@ -31,3 +31,8 @@ test('CU-548: the life-safety switches take the safeguard direction rule (on -> 
     assert.deepEqual(desk(false), [], `${name}: desktop off -> on is free`)
   }
 })
+
+test("#798 round 2 (cu-researcher 04:10Z): 'Turn on / Open main water', 'Turn off the water detector'", () => {
+  for (const name of ['Turn on main water', 'Open main water', 'Turn on the water', 'Turn off the water detector', 'Disable flood sensor']) assert.ok(classesOf(name).includes('physical'), name)
+  for (const name of ['Water', 'Main water', 'Turn off water heater schedule']) assert.deepEqual(classesOf(name), [], name)
+})
