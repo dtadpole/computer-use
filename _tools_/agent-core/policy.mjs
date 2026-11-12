@@ -1239,6 +1239,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // suppressor ('Don't ask again', 'Don't show this again', 'Don't warn me', 'Don't notify me', 'Don't confirm'), and never with a
     // second clause ('Do not cancel - pay now', 'No thanks, remove 2FA', 'No, remove it' still ask).
     // cu-coordinator 13:04Z: an exchange's 'Order book' (a view; the older 'order' purchase) is lowered here too.
+    // Round 2 (17:21Z) adds the named list below; KEPT as ruled: 'Sign up', 'Remove recovery contact', 'Remove location from posts',
+    // 'Remove address', 'Quit all apps', 'Close on all devices', Mail's compose 'Sign' toggle and Preview's 'Sign' tool.
     if (!held && context.confirmProbe !== true && name !== '' && classes.length === 0 && target && !isTextEntry(target)) {
       const presses = POINTER.has(action.type) || keysOf(action).has('ENTER') || keyboardActivation(action, target, context).activates
       const role = String(target.role ?? '') + ' ' + String(target.subrole ?? '')
@@ -1247,6 +1249,13 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         const plain = name.trim().replace(/\s+/g, ' ')
         const link = /\b(link|AXLink)\b/.test(role)
         const exact = /^(?:security|privacy & security|uninstall instructions|pay history|pay stub preview|view pay rate|edit post|raise (?:a )?ticket|require multi-factor authentication|order book)$/i.test(plain)
+          // CU-429 round 2 (cu-coordinator 17:21Z): navigation, labels and views, exactly these names.
+          || /^(?:go to your account|back to this project|open in this window|view api docs|clear all filters|(?:note:\s*)?rent is due|find and replace(?:\u2026|\.\.\.)?|search and replace|unmute all|open all windows|privacy and security|uninstall guide|edit draft post|pay slip preview|raise a support ticket)$/i.test(plain)
+          // CU-429 round 3 (cu-coordinator 21:36Z): 'View order', 'Security checkup' and 'Call forwarding' as a button / link (the switch
+          // keeps its direction rule - toggles never reach here), and 'Add member(s) to group' in a chat app (a desktop messaging app, or a
+          // chat page by host / path), exactly these.
+          || /^(?:view order|security checkup|call forwarding)$/i.test(plain)
+          || (/^add members? to (?:the )?group$/i.test(plain) && (isMessagingApp(String(context.frontmostBundleId ?? target?.origin ?? '')) || (() => { try { const u = new URL(url); return /^https?:$/.test(u.protocol) && /(?:^|[./-])(?:chat|slack|discord|teams|messenger|whatsapp|telegram|signal|messages)(?:[./-]|$)/i.test(`${u.hostname} ${u.pathname}`) } catch { return false } })()))
           || (link && /^unsubscribe(?: link)?$/i.test(plain))
         let refusal = false
         if (!exact && !/\s[-\u2013\u2014]\s|[,;:](?!\s*$)|\b(?:and|then|but)\b/i.test(plain.replace(/^\s*no,\s*/i, ''))) {
@@ -1925,6 +1934,11 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (/^\s*(?:audio\s+recording|record\s+audio|continuous\s+recording|24\/7\s+recording|face\s+recognition|facial\s+recognition|familiar\s+faces)\s*$/i.test(name)
         && state !== true) classes.push('permission')
     }
+    // CU-535 (cu-coordinator 00:51Z; #773 r2, cu-developer-three 01:03Z): a VPN kill-switch SWITCH turned OFF asks permission, like the
+    // two-factor switch - on -> off and an unread state ask (nativeToggleState: a web ARIA state is untrusted), off -> on is free.
+    // CU-543 (#786 r2, cu-developer-three 02:39Z): a kids profile's 'Profile lock / PIN / passcode' switch takes the same direction rule.
+    if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))
+      && /^\s*(?:vpn\s+)?kill\s*switch\s*$|^\s*profile\s+(?:lock|pin|passcode)\s*$/i.test(name) && nativeToggleState(target) !== false) classes.push('permission')
     // CU-446 (cu-coordinator 21:05Z): a domain-lock / transfer-lock switch turned OFF asks credential, a WHOIS-privacy switch turned
     // OFF asks permission; ON is free on a native read; an unread state asks both ways.
     if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))) {
@@ -2293,8 +2307,13 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         // '<row>?' - so a title canonical step strips the question frame before the title is judged as a name.
         // #702 round 2 (cu-researcher 16:24Z): descriptions lead with 'This will / This action will / You are about to / Doing this will'.
         const titleRow = (text) => text.replace(/[?!.:\s]+$/, '').replace(/^\s*(?:(?:are\s+you\s+(?:sure|certain)|you\s+are\s+about|you're\s+about)(?:\s+(?:that\s+)?you\s+(?:want|wish))?\s+to|do\s+you\s+(?:really\s+)?(?:want|wish)\s+to|(?:would|do)\s+you\s+like\s+to|(?:this|this\s+action|doing\s+this|that|it)(?:\s+cannot\s+be\s+undone\s+and)?\s+will(?:\s+permanently)?|really|confirm(?:\s+that\s+you\s+want\s+to)?|permanently)\s+/i, '').trim()
-        const firstSentence = dialogDescription.split(/(?<=[.!?])\s+/)[0] ?? ''
-        const texts = [...new Set([dialogName, titleRow(dialogName), firstSentence, titleRow(firstSentence), `${titleRow(dialogName)} ${dialogDescription}`.trim()].filter((t) => t !== ''))]
+        // #702 round 3 (cu-developer-three 16:35Z): a sentence about what happens if the person does NOT confirm ('Your changes will be
+        // lost if you don't save them', '... unless you ...') describes the other button, so it is not judged for the confirm.
+        const consequenceOfNot = /\b(?:if\s+you\s+(?:don'?t|do\s+not|choose\s+not\s+to|cancel|leave|close)|unless\s+you|otherwise)\b/i
+        const kept = dialogDescription.split(/(?<=[.!?])\s+/).filter((sentence) => !consequenceOfNot.test(sentence))
+        const firstSentence = kept[0] ?? ''
+        const keptDescription = kept.join(' ')
+        const texts = [...new Set([dialogName, titleRow(dialogName), firstSentence, titleRow(firstSentence), `${titleRow(dialogName)} ${keptDescription}`.trim()].filter((t) => t !== ''))]
         for (const text of texts) {
           // #702 round 2: the title is judged with the FULL canonical form (synonym, quantifier, label and clause steps run only
           // outside a confirm probe), so no confirmProbe flag here; the probe target carries no dialog fields, so it cannot recurse.
@@ -2313,6 +2332,50 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (clauses.length > 0 && clauses.every((clause, i) => clauseVerbLed(clause) || probes[i].decision === 'confirm')) {
         for (const probe of probes) if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) if (!classes.includes(cls)) classes.push(cls)
       }
+    }
+    // CU-542 (High; cu-coordinator 02:21Z), table PR 41: on a RIDE page (D-109: a ride / rides / ride-request / trip-request path segment, or
+    // a ride-hailing host label - uber, lyft, bolt, grab, didi, cabify, ola, taxi), 'Add (a) stop', 'Change (the) destination' and 'Split
+    // (the) fare' ask PURCHASE (the fare changes); in a maps app or a maps page they stay free. #784 r2 (cu-researcher 02:28Z): a ride /
+    // rides host label; the names take a tail ('Add another stop on the way', 'Split fare with friends'); 'Update / Edit destination'.
+    // #784 r3 (cu-coordinator 02:36Z): a trip / trips path segment binds too (a travel booking's destination change costs money; fail-closed).
+    if (grammarEligible && !classes.includes('purchase') && /^(?:add\s+(?:a\s+|another\s+)?stop|(?:change|update|edit)\s+(?:the\s+|my\s+)?destination|split\s+(?:the\s+)?fare)(?:\s+\S.{0,40})?$/i.test(String(name ?? '').trim())) {
+      let ridePage = false
+      try {
+        const u = new URL(url)
+        ridePage = /^https?:$/.test(u.protocol) && (/(?:^|\/)(?:ride|rides|ride-request|trip-request|request-ride|trip|trips)(?=$|[/?#])/i.test(u.pathname) || /(?:^|\.)(?:uber|lyft|bolt|grab|didi|cabify|ola|taxi|ride|rides)(?:\.|$)/i.test(u.hostname))
+      } catch { ridePage = false }
+      if (ridePage) classes.push('purchase')
+    }
+    // CU-539 (High; cu-coordinator 01:36Z), table PR 39: on a CI / actions page (D-109: an actions / workflows / runners / pipelines / ci
+    // path segment), adding a self-hosted runner and disabling a workflow ask PERMISSION; elsewhere they stay free.
+    if (grammarEligible && !classes.includes('permission') && /^(?:add|register|new)\s+(?:a\s+|new\s+)?self[-\s]hosted\s+runner$|^(?:disable|turn\s+off|pause)\s+(?:this\s+|the\s+)?workflow$/i.test(String(name ?? '').trim())) {
+      let ciPage = false
+      try {
+        const u = new URL(url)
+        ciPage = /^https?:$/.test(u.protocol) && /(?:^|\/)(?:actions|workflows|runners|pipelines|ci|ci-cd)(?=$|[/?#])/i.test(u.pathname)
+      } catch { ciPage = false }
+      if (ciPage) classes.push('permission')
+    }
+    // CU-537 (High; cu-coordinator 01:06Z), table PR 38: the generic 'Add / Edit / Save record' asks PERMISSION on a DNS page only (D-109:
+    // a dns / zone(s) / nameserver(s) / records path segment or a dns host label); a CRM's 'Add record' stays free.
+    if (grammarEligible && !classes.includes('permission') && /^(?:add|edit|save|create|new|change|update|modify)\s+(?:a\s+|the\s+|new\s+|this\s+)?(?:dns\s+)?record$/i.test(String(name ?? '').trim())) {
+      let dnsPage = false
+      try {
+        const u = new URL(url)
+        dnsPage = /^https?:$/.test(u.protocol) && (/(?:^|\/)(?:dns|zones?|nameservers?|dns-records|dns-management|records)(?=$|[/?#])/i.test(u.pathname) || /(?:^|\.)dns(?:\.|$)/i.test(u.hostname))
+      } catch { dnsPage = false }
+      if (dnsPage) classes.push('permission')
+    }
+    // #774 r2 (cu-researcher 01:16Z): 'automatic renewal' and 'Change / Update record' too.
+    // CU-537: turning a DOMAIN's auto-renew off risks losing the domain - permission on a domain / registrar page only (a domains / domain /
+    // registrar / dns path segment or a registrar / domains host label); a subscription's 'Turn off auto-renew' stays free (CU-410 pin).
+    if (grammarEligible && !classes.includes('permission') && /^(?:disable|turn\s+off|switch\s+off|cancel|stop)\s+(?:the\s+)?(?:domain\s+)?(?:auto[-\s]?renew(?:al)?|automatic\s+renewal)$/i.test(String(name ?? '').trim())) {
+      let domainPage = false
+      try {
+        const u = new URL(url)
+        domainPage = /^https?:$/.test(u.protocol) && (/(?:^|\/)(?:domains?|registrar|dns|domain-management)(?=$|[/?#])/i.test(u.pathname) || /(?:^|\.)(?:registrar|domains)(?:\.|$)/i.test(u.hostname))
+      } catch { domainPage = false }
+      if (domainPage) classes.push('permission')
     }
     // CU-524 (High; cu-coordinator 21:06Z; #741 r2 adds '... for verification' and '(another) email (address)'): a bare 'Add phone number' on an account-security page (D-109: host or path, never a
     // title) adds a recovery / sign-in channel - credential; a checkout or contact form's 'Add phone number' stays free.
@@ -2336,6 +2399,19 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       } catch { idpPage = false }
       if (idpPage) classes.push('permission')
     }
+    // CU-544 (High; cu-coordinator 03:06Z), table PR 43: enabling / allowing guest access asks PERMISSION, unioned onto any older class
+    // ('Enable guest access' keeps its older physical and adds permission).
+    if (grammarEligible && !classes.includes('permission') && /^(?:allow|enable|turn\s+on|permit)\s+guest\s+(?:access|accounts?|users?)$/i.test(String(name ?? '').trim())) classes.push('permission')
+    // #789 r2 (cu-developer-three 03:10Z): a 'Guest access' SWITCH asks on the dangerous direction, like 'Remote Login' / 'Screen Sharing' -
+    // off -> on and an unread state ask permission (nativeToggleState: a web ARIA state is untrusted), on -> off is free.
+    if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))
+      && /^\s*guest\s+(?:access|accounts?|users?)\s*$/i.test(name) && nativeToggleState(target) !== true) classes.push('permission')
+    // CU-539 (#778 r2): skipping deployment protection asks PERMISSION + SUBMIT; the '... and deploy' forms reach an older submit rule
+    // first, so permission is unioned onto it here (the 'Merge anyway' pattern).
+    if (grammarEligible && !classes.includes('permission') && /^(?:skip|bypass|ignore|override)\s+(?:the\s+)?(?:deployment\s+protection(?:\s+rules?)?|(?:branch\s+|environment\s+)?protection\s+rules?)(?:\s+and\s+deploy(?:\s+now)?)?$/i.test(String(name ?? '').trim())) {
+      classes.push('permission')
+      if (!classes.includes('submit')) classes.push('submit')
+    }
     // CU-521 (cu-coordinator 20:06Z): 'Merge anyway' keeps its older submit and unions permission (a merge past the requirements).
     if (grammarEligible && classes.length > 0 && !classes.includes('permission') && /^(?:merge\s+anyway|force[-\s]?merge)$/i.test(String(name ?? '').trim())) classes.push('permission')
     // #729 round 2 (cu-coordinator 19:51Z, the 18:06Z precedent): 'Reset account PIN' keeps the older reset row's delete and unions
@@ -2352,6 +2428,11 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (homeSecurity) {
         if (/^(?:generate|create|add|make|share|send)\s+(?:a\s+|an\s+|new\s+)?(?:guest|temporary|temp|one[-\s]time|visitor)\s+(?:pin|code|passcode|key|access\s+code)$|^share\s+(?:the\s+|an\s+)?access\s+code$/i.test(label) && !classes.includes('physical')) classes.push('physical')
         if (/^(?:disable|stop|turn\s+off|end)\s+(?:the\s+)?recording$|^(?:turn\s+off|disable|switch\s+off)\s+(?:the\s+|all\s+)?cameras?$|^disarm(?:\s+(?:the\s+)?(?:system|alarm|home|security(?:\s+system)?))?$/i.test(label) && !classes.includes('permission')) classes.push('permission')
+        // CU-536 (High; cu-coordinator 01:06Z, folded into #773 r2), on isHomeSecurityPage only (an alarm clock's 'Silence alarm' stays
+        // free): silencing / muting the siren, motion detection off, pausing / stopping recording and cancelling monitoring ask PERMISSION;
+        // adding a user / a PIN code asks PHYSICAL (someone gets in). Unioned onto any older class.
+        if (/^(?:silence|mute|stop|turn\s+off|dismiss)\s+(?:the\s+)?(?:siren|alarm\s+siren|sirens)$|^(?:turn\s+off|disable|pause|stop)\s+(?:the\s+)?motion\s+(?:detection|alerts?|sensors?)$|^(?:pause|stop)\s+(?:the\s+)?(?:recording|video\s+recording|camera\s+recording)$|^(?:cancel|stop|end|pause|turn\s+off|disable)\s+(?:the\s+)?(?:professional\s+)?monitoring(?:\s+(?:service|plan|subscription))?$/i.test(label) && !classes.includes('permission')) classes.push('permission')
+        if (/^add\s+(?:a\s+|an\s+|new\s+)?(?:user|member|household\s+member|pin(?:\s+code)?|user\s+code|keypad\s+code|passcode)$/i.test(label) && !classes.includes('physical')) classes.push('physical')
       }
     }
     // #721 round 3 (cu-coordinator 18:51Z; CU-515's desktop gap, cu-developer-three 18:37Z): in a native authenticator app the
