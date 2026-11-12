@@ -640,7 +640,14 @@ function defaultButtonOf(value) {
   if (role === null) return null
   // CU-409: the default button's form context too, so Return is judged by the click's classifier with it (D-106).
   const form = formContextOf(value.formContext)
-  return { role, name: text(value.title), panel: panelOf(value.panel), ...(form !== null ? { formContext: form } : {}) }
+  // CU-507 (helper 0.2.70): the default button's dialog words too, so Return on a sheet's default 'OK' is judged by
+  // what the sheet asks, like a click on it (D-106).
+  const dialogName = dialogTextOf(value.dialogName)
+  const dialogDescription = dialogTextOf(value.dialogDescription)
+  return {
+    role, name: text(value.title), panel: panelOf(value.panel), ...(form !== null ? { formContext: form } : {}),
+    ...(dialogName !== null ? { dialogName } : {}), ...(dialogDescription !== null ? { dialogDescription } : {}),
+  }
 }
 
 /**
@@ -767,6 +774,17 @@ export function placeholderOf(value) {
   if (typeof value !== 'string') return null
   const text = value.trim()
   return text !== '' && text.length <= 80 ? text : null
+}
+
+/**
+ * CU-507 (helper 0.2.70): a dialog's words as the helper read them for a button inside an AXSheet or a dialog window
+ * (DialogText) - whitespace collapsed, trimmed, at most 300 characters, no control characters; else null. The same seam
+ * as the web route's target.dialogName / dialogDescription, which agent core reads beside a generic confirm control.
+ */
+export function dialogTextOf(value) {
+  if (typeof value !== 'string') return null
+  const text = value.replace(/[\u0000-\u001F\u007F]/gu, ' ').replace(/\s+/gu, ' ').trim()
+  return text === '' ? null : text.slice(0, 300)
 }
 
 function keyEquivalentOf(value) {
@@ -1920,6 +1938,9 @@ class DesktopEnvironment {
       // core reads as unread and refuses in a browser (#204: 'absent means unread' - never null, which a strict check
       // could take for a read). Outside the fingerprint, never in run records.
       ...(typeof element.inWebArea === 'boolean' ? { inWebArea: element.inWebArea } : {}),
+      // CU-418 (b) (helper 0.2.70): a checkbox, switch or radio button's state before the action - true, false or
+      // 'mixed' as the helper read its AXValue; absent from an older helper or another role. Outside the fingerprint.
+      ...(element.checked === true || element.checked === false || element.checked === 'mixed' ? { checked: element.checked } : {}),
       // CU-76: part of a system privacy or permission prompt (the helper's, from structure); agent core hands it off.
       systemPrompt: element.systemPrompt === true,
       // CU-154: a menu item's key equivalent ({ char, modifiers }), so agent core knows Copy, Cut and Paste by the
@@ -1942,6 +1963,11 @@ class DesktopEnvironment {
       // 'Sell' or 'Long'. Present only when the helper found a form with a selected text or an amount entry; outside the
       // fingerprint, and never in run records.
       ...(formContextOf(element.formContext) !== null ? { formContext: formContextOf(element.formContext) } : {}),
+      // CU-507 (helper 0.2.70): a button inside a sheet or dialog - the dialog's title (else first static text) and next
+      // static text (dialogTextOf), the seam agent core reads beside a generic 'OK' / 'Continue'. Each present only when
+      // read; outside the fingerprint, and never in run records.
+      ...(dialogTextOf(element.dialogName) !== null ? { dialogName: dialogTextOf(element.dialogName) } : {}),
+      ...(dialogTextOf(element.dialogDescription) !== null ? { dialogDescription: dialogTextOf(element.dialogDescription) } : {}),
       menuPath: menuPathOf(element.menuPath),
       // CU-187: the label that captions a non-entry element (AXTitleUIElement's title, else its row's or cell's sibling
       // title, as the helper reads it) - never its value or its own title. A string of at most 80 characters, null when
