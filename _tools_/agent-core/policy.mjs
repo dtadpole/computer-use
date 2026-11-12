@@ -2374,6 +2374,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       } catch { planPage = false }
       if (planPage) classes.push('purchase')
     }
+    // #813 r5 (cu-coordinator 06:36Z, 'Email / Send my lab results' = permission): a union - 'Send (my) lab / test results' keeps the
+    // older submit and adds permission.
+    if (grammarEligible && classes.includes('submit') && !classes.includes('permission') && /^\s*send\s+(?:all\s+)?(?:of\s+)?(?:my\s+|your\s+|the\s+)?(?:lab|test)\s+results\s*$/i.test(String(name ?? ''))) classes.push('permission')
     // CU-552 / CU-553 (High; cu-coordinator 05:21Z), table PR 49, URL-bound (D-106): a bare 'Download / Export all records' asks PERMISSION on
     // a patient-portal page (a health / patient / medical / mychart / clinic / hospital / ehr / records path segment or host label); a bare
     // 'Let go' / 'Dismiss' asks DELETE on an HR page (an hr / employees / people / staff / workforce / personnel / team-members segment).
@@ -2382,7 +2385,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       let u = null
       try { u = new URL(url) } catch { u = null }
       const web = u && /^https?:$/.test(u.protocol)
-      if (web && /^(?:download|export)\s+(?:all\s+)?(?:my\s+)?records$/i.test(label) && /(?:^|[./-])(?:health|patient|patients|medical|mychart|clinic|hospital|ehr|records)(?=$|[./?#-])/i.test(`${u.hostname}${u.pathname}`)) classes.push('permission')
+      if (web && /^(?:download|export|save|print)\s+(?:all\s+)?(?:my\s+)?records(?:\s+as\s+(?:a\s+)?(?:pdf|file|document))?$/i.test(label) && /(?:^|[./-])(?:health|patient|patients|medical|mychart|clinic|hospital|ehr|records)(?=$|[./?#-])/i.test(`${u.hostname}${u.pathname}`)) classes.push('permission')
       else if (web && /^(?:let\s+go|dismiss|lay\s+off)$/i.test(label) && /(?:^|\/)(?:hr|employees?|people|staff|workforce|personnel|team-members)(?=$|[/?#])/i.test(u.pathname)) classes.push('delete')
     }
     // CU-539 (High; cu-coordinator 01:36Z), table PR 39: on a CI / actions page (D-109: an actions / workflows / runners / pipelines / ci
