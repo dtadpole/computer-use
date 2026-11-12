@@ -86,6 +86,28 @@ describe('named-controls (live rows decided by a name)', () => {
     })
   })
 
+  test('layoutLabels (CU-361): entries named only by a text beside them - no label, title element or placeholder; lengths only', async () => {
+    await withNamed({ placeholders: ['Search'], layoutLabels: ['Password', { name: 'CVV', above: true }], buttons: ['Continue'] }, async (fixture) => {
+      const audit = await fixture.axAudit()
+      for (const [index, words] of [[0, 'Password'], [1, 'CVV']]) {
+        const entry = audit[`layout-${index}`]
+        assert.equal(entry.role, 'AXTextField')
+        // Nothing links the text to the box: the policy has to find it by position (helper 0.2.64's nearbyLabel).
+        assert.notEqual(entry.name, words, `layout-${index} must not carry its label as its name`)
+        assert.ok(!entry.placeholder, `layout-${index} has no placeholder`)
+      }
+      const targets = await fixture.targets()
+      const [left, above] = [targets['layout-0'], targets['layout-1']]
+      assert.ok(left && above && targets['button-0'], 'targets for both entries and the button')
+      assert.ok(left.y > targets['placeholder-0'].y && targets['button-0'].y > above.y, 'they sit under the placeholder entries, above the buttons')
+      assert.ok(left.x > above.x, 'the left-labelled box starts right of its text; the above-labelled one at the margin')
+      await fixture.act({ set: 'layout-0', value: 'abc' })
+      const { fields } = await fixture.state()
+      assert.deepEqual(fields.layoutFieldLengths, [3, 0])
+      assert.doesNotMatch(JSON.stringify(await fixture.state()), /"abc"/, 'the text never comes back through the channel')
+    })
+  })
+
   test('at most six of each, names trimmed and capped at 60, empty names dropped', async () => {
     const long = 'x'.repeat(80)
     await withNamed({ fields: ['  Debit card  ', '', long, 'a', 'b', 'c', 'd', 'e'], buttons: [] }, async (fixture) => {

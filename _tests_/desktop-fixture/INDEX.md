@@ -1,7 +1,7 @@
 ---
 title: Desktop fixture tests
 created: 2026-11-02T08:34:00Z
-modified: 2026-11-09T21:40:00Z
+modified: 2026-11-11T01:30:00Z
 version: 0.9.0
 description: Tests of the desktop fixture - its judges, bundle identity and channel framing, and its screens in the real CU Fixture app, which they launch; run them only under the desktop-run lock (CU-305).
 grounded_in:
@@ -23,7 +23,7 @@ Since CU-305 `launchFixture` refuses otherwise ([fixture-launch-lock](../../_des
 | [menu-compose.test.mjs](menu-compose.test.mjs) | CU-238: the compose screen's menu chords - Send, the disabled duplicate, Mail's plain Delete, the lazy menu - and what AppKit serves Accessibility for them |
 | [manual-ax.test.mjs](manual-ax.test.mjs) | CU-329: the app element answers AXManualAccessibility like an Electron app (no value, then stored; settable, listed); outside writes recorded in order; a preset is not a write |
 | [attach-upload.test.mjs](attach-upload.test.mjs) | CU-377: CU Ledger's attach-upload window - a named drop zone and an Upload button recording counts only |
-| [named-controls.test.mjs](named-controls.test.mjs) | CU-245/CU-258/CU-261/CU-323: entries, buttons, check boxes and Actions menu items named by the harness; a press, toggle or choice records its index only; entry lengths, never text; placeholder-only entries (CU-349) |
+| [named-controls.test.mjs](named-controls.test.mjs) | CU-245/CU-258/CU-261/CU-323: entries, buttons, check boxes and Actions menu items named by the harness; a press, toggle or choice records its index only; entry lengths, never text; placeholder-only entries (CU-349); layout-labelled entries (CU-361) |
 | [approve-always.test.mjs](approve-always.test.mjs) | only the two fixture apps; a y records them by tty, a rerun finds them, an n records nothing |
 
 ## Read next

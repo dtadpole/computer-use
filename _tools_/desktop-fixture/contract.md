@@ -1,7 +1,7 @@
 ---
 title: Desktop fixture contract
 created: 2026-11-02T08:34:00Z
-modified: 2026-11-09T21:40:00Z
+modified: 2026-11-11T01:30:00Z
 level: L1
 version: 0.16.0
 description: What CU Fixture guarantees to the desktop driver, the verifiers and the evaluator - identity, placement, the private control channel, what the agent can and cannot see, and how a screen's outcome is judged.
@@ -40,8 +40,9 @@ grounded_in:
   (AXMenuItem), each a name or `{name, key, shift, option}` bound to Command plus `key`, choosing one recording only
   'chosen' with its index - the menu exists only while the screen is open, and `menuAX` serves it with the bar item's
   frame; `placeholders` (CU-349) up to six entries labelled only by a placeholder - no caption, no label or title
-  element - as a native one-time-code or CVV box often is. Its state reports entry and area lengths (and area line
-  counts), placeholder-entry lengths, never their text, plus check-box states and the chosen indices. `axAudit` serves
+  element - as a native one-time-code or CVV box often is. `layoutLabels` (CU-361) up to six entries named only by a static text
+  beside them - to the left on the same row, or `{name, above: true}` just above - with nothing linking the two. Its state reports entry and area lengths (and area line
+  counts), placeholder- and layout-entry lengths, never their text, plus check-box states and the chosen indices. `axAudit` serves
   each target's placeholder apart from its name.
 - **Attach and upload (CU-377).** The `attach-upload` screen, meant for CU Ledger: a message window whose drop zone
   ('Drop files here to attach', an AXGroup) takes files dragged from CU Fixture's file browser, and an 'Upload' button;
