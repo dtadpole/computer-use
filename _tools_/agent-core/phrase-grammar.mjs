@@ -1160,6 +1160,16 @@ function grammarClassesOf(name, role = '') {
   // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
   // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
   if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
+  // CU-552 (High, health data; cu-coordinator 05:21Z), table PR 49 - PERMISSION for downloading / exporting / printing / sending (all) (my)
+  // medical / health records / summary / history / chart / data / visit notes / lab results. A bare 'Download all records' is URL-bound
+  // in policy.mjs (patient-portal pages), since 'records' alone names a CRM's rows too.
+  if (/^\s*(?:download|export|print|save|send|email)\s+(?:all\s+)?(?:of\s+)?(?:my\s+|your\s+|the\s+)?(?:full\s+|complete\s+)?(?:medical|health|patient|clinical)\s+(?:records?|summary|history|chart|data|information|file)\s*$|^\s*(?:download|export|print)\s+(?:all\s+)?(?:my\s+)?(?:lab\s+results|test\s+results|visit\s+notes|immunization\s+records?|health\s+summary)\s*$/i.test(raw)) return ['permission']
+  // CU-553 (High; cu-coordinator 05:21Z), table PR 49 - an HR system. DELETE, like 'Terminate employee': end (the / this / their)
+  // employment; dismiss / fire / let go (of) / lay off (this / the) employee / worker / staff member; process (the) termination; mark as
+  // terminated; start / begin / initiate offboarding. PERMISSION: promote (them / this employee) to manager; make (them) (a) manager /
+  // admin / supervisor. A bare 'Let go' / 'Dismiss' is URL-bound in policy.mjs (HR pages) - a dialog's 'Dismiss' stays free.
+  if (/^\s*end\s+(?:the\s+|this\s+|their\s+|his\s+|her\s+)?employment\s*$|^\s*(?:dismiss|fire|let\s+go(?:\s+of)?|lay\s+off)\s+(?:this\s+|the\s+)?(?:employee|worker|staff\s+member|team\s+member|contractor)\s*$|^\s*process\s+(?:the\s+|a\s+)?termination\s*$|^\s*mark\s+(?:as\s+)?terminated\s*$|^\s*(?:start|begin|initiate)\s+(?:the\s+)?offboarding\s*$/i.test(raw)) return ['delete']
+  if (/^\s*promote\s+(?:them\s+|this\s+employee\s+|the\s+employee\s+)?to\s+(?:a\s+)?(?:manager|admin|administrator|supervisor|team\s+lead|lead)\s*$|^\s*make\s+(?:them\s+|this\s+(?:employee|user)\s+)?(?:a\s+|an\s+)?(?:manager|admin|administrator|supervisor)\s*$/i.test(raw)) return ['permission']
   // CU-551 (High; cu-coordinator 05:06Z), table PR 48 - a repository's exposure. PERMISSION: change / set / make (the / this) (repository /
   // repo) visibility to public, make (this / the) (repository / repo) public; the confirm 'I understand, change repository visibility'.
   // SUBMIT: enable / turn on / publish (GitHub) Pages. Changing visibility to private stays free. #807 r2 (cu-researcher 05:18Z; ruled
