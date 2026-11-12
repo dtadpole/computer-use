@@ -1160,6 +1160,21 @@ function grammarClassesOf(name, role = '') {
   // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
   // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
   if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
+  // CU-538 (High; cu-coordinator 01:36Z), table PR 39 - accounting. PURCHASE: write off (an / the / this) invoice / bill / debt / balance,
+  // record / log / enter / apply (a / the) payment. SUBMIT: close (the) books / period / month / year. PERMISSION: reopen / unlock (the / a
+  // / this) (accounting / closed) period / month / year / books. DELETE: undo / reverse / unreconcile (the / this) reconciliation.
+  if (/^\s*write\s+off\s+(?:an?\s+|the\s+|this\s+)?(?:invoice|bill|debt|balance|bad\s+debt)s?\s*$|^\s*(?:record|log|enter|apply)\s+(?:a\s+|the\s+|this\s+)?(?:new\s+)?payment\s*$/i.test(raw)) return ['purchase']
+  if (/^\s*close\s+(?:the\s+)?(?:books|(?:accounting\s+)?period|month|year|fiscal\s+year)\s*$/i.test(raw)) return ['submit']
+  if (/^\s*(?:reopen|re-open|unlock)\s+(?:the\s+|a\s+|this\s+)?(?:accounting\s+|closed\s+)?(?:period|month|year|fiscal\s+year|books)\s*$/i.test(raw)) return ['permission']
+  // #778 r3 (cu-developer-two 01:42Z): the one-word 'Unreconcile' (an accounting app's literal button) and 'Unreconcile (this) transaction'.
+  if (/^\s*(?:undo|reverse|unreconcile)\s+(?:the\s+|this\s+)?reconciliation\s*$|^\s*unreconcile(?:\s+(?:the\s+|this\s+)?(?:transaction|entry|account|statement)s?)?\s*$/i.test(raw)) return ['delete']
+  // CU-539 (High; cu-coordinator 01:36Z), table PR 39 - CI/CD. SUBMIT: promote (this / the build / release) to production / prod / live.
+  // PERMISSION + SUBMIT: skip / bypass (the) deployment protection (rules). 'Add self-hosted runner' / 'Disable workflow' are URL-bound in
+  // policy.mjs (actions / workflows / runners / pipelines pages).
+  if (/^\s*promote\s+(?:this\s+|the\s+)?(?:build\s+|release\s+|deployment\s+)?to\s+(?:production|prod|live)\s*$/i.test(raw)) return ['submit']
+  // #778 r2 (cu-researcher 01:39Z): 'deployment' is optional when 'rules' says what it is ('Skip protection rules and deploy'); a bare
+  // 'Skip protection' (a checkout's insurance upsell) stays free.
+  if (/^\s*(?:skip|bypass|ignore|override)\s+(?:the\s+)?(?:deployment\s+protection(?:\s+rules?)?|(?:branch\s+|environment\s+)?protection\s+rules?)(?:\s+and\s+deploy(?:\s+now)?)?\s*$/i.test(raw)) return ['permission', 'submit']
   // CU-537 (High; cu-coordinator 01:06Z), table PR 38 - registrar DNS. PERMISSION everywhere: add / create / new (a / an) typed record
   // (MX, CNAME, TXT, NS, SRV, CAA, PTR, SPF, DKIM, DMARC, ALIAS; 'A' / 'AAAA' only in capitals, so 'Add a record' is not an A record);
   // the generic 'Add / Edit / Save record' (DNS pages) and turning a domain's auto-renew off (domain / registrar pages; a subscription's
