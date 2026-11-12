@@ -1160,6 +1160,17 @@ function grammarClassesOf(name, role = '') {
   // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
   // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
   if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
+  // CU-559 (High, money / fraud; cu-coordinator 08:06Z), table PR 52, whole verb families from r1. PERMISSION - change / update / edit /
+  // modify / replace / switch / set / designate / name / reassign (my / the / your) (primary / contingent / secondary) beneficiary /
+  // beneficiaries (percentages / allocation(s) / designation(s) / split / shares). PURCHASE - take (out) / request / apply for / start / get
+  // (a) loan from / against / on (my / your / the) 401(k) / 403(b) / 457 / TSP / IRA / retirement (account / plan / savings) / pension /
+  // life insurance (policy) / cash value; roll over / rollover / transfer / move (my / your / the) (401(k) / 403(b) / plan / funds /
+  // balance / retirement savings) to / into (a / an / my / a new) IRA / Roth (IRA) / new plan / another plan / 401(k); start / begin /
+  // request / initiate (a) rollover. DELETE, like 'Cancel policy' - surrender / lapse / let lapse / terminate (my / the / this / your)
+  // (life / insurance / whole life / term / annuity) policy / contract / annuity / coverage; let (the / my) policy lapse.
+  if (/^\s*(?:change|update|edit|modify|replace|switch|set|designate|name|reassign)\s+(?:my\s+|the\s+|your\s+|a\s+)?(?:primary\s+|contingent\s+|secondary\s+)?beneficiar(?:y|ies)(?:\s+(?:percentages?|allocations?|designations?|split|shares?|information|info|details))?\s*$/i.test(raw)) return ['permission']
+  if (/^\s*(?:take(?:\s+out)?|request|apply\s+for|start|get|borrow)\s+(?:a\s+|an\s+)?(?:new\s+)?loan\s+(?:from|against|on)\s+(?:my\s+|your\s+|the\s+)?(?:401\s*\(?k\)?|403\s*\(?b\)?|457|tsp|ira|retirement(?:\s+(?:account|plan|savings))?|pension|life\s+insurance(?:\s+policy)?|cash\s+value|policy)\s*$|^\s*borrow\s+(?:from|against)\s+(?:my\s+|your\s+|the\s+)?(?:401\s*\(?k\)?|403\s*\(?b\)?|retirement(?:\s+(?:account|plan))?|pension|policy)\s*$|^\s*(?:roll\s+over|rollover|transfer|move)\s+(?:my\s+|your\s+|the\s+)?(?:(?:401\s*\(?k\)?|403\s*\(?b\)?|457|tsp|plan|funds|balance|retirement\s+savings|old\s+401\s*\(?k\)?)\s+)?(?:to|into)\s+(?:a\s+|an\s+|my\s+|a\s+new\s+)?(?:ira|roth(?:\s+ira)?|traditional\s+ira|new\s+plan|another\s+plan|401\s*\(?k\)?)\s*$|^\s*(?:start|begin|request|initiate)\s+(?:a\s+|an\s+)?(?:ira\s+|401\s*\(?k\)?\s+)?rollover\s*$/i.test(raw)) return ['purchase']
+  if (/^\s*(?:surrender|lapse|let\s+lapse|terminate)\s+(?:my\s+|the\s+|this\s+|your\s+)?(?:(?:life|insurance|whole\s+life|term(?:\s+life)?|universal\s+life|annuity)\s+){0,2}(?:policy|contract|annuity|coverage)\s*$|^\s*let\s+(?:the\s+|my\s+|this\s+)?(?:(?:life|insurance|term)\s+){0,2}(?:policy|coverage)\s+lapse\s*$/i.test(raw)) return ['delete']
   // #821 r2 (cu-researcher 07:29Z; whole families per 06:51Z). CU-557: enable / turn on / activate / unlock / start / begin / apply for /
   // start trading / begin trading (the) futures / derivatives / perpetual(s) / perpetual contracts / perps / CFDs / swaps / options (trading /
   // wallet / account / contracts / access); open (a / an / my) futures / derivatives / margin / perpetual / CFD (trading) account. CU-558:
