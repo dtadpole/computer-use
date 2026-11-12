@@ -27,7 +27,8 @@ test('CU-437 negatives: Direct deposit, Bank accounts and Payout history stay fr
   for (const name of ['Direct deposit', 'Bank accounts', 'Payout history']) assert.equal(click(name), 'allow', name)
   // Named over-ask (older rule): the 'pay' word asks purchase on 'Pay stubs'. 'View pay stub' is lowered by CU-429 round 4
   // (cu-coordinator 03:36Z, CU-547); 'Pay stubs' was not in the ruling and keeps its older ask.
-  assert.equal(click('Pay stubs'), 'purchase', 'Pay stubs (older rule)')
+  // Pin moved by CU-556 round 5 (cu-coordinator 06:21Z, 12 Nov): the 'Pay stubs' label lowers to free, exactly that name.
+  assert.equal(click('Pay stubs'), 'allow', 'Pay stubs (round 5)')
   assert.equal(click('View pay stub'), 'allow', 'lowered by round 4 (03:36Z)')
 })
 

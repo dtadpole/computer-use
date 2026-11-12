@@ -30,7 +30,8 @@ test('CU-431: an admin password change asks credential; firmware updates ask ins
 
 test('CU-431 negatives: Firmware, Check for updates, Disable remote management, Close port and Status stay free', () => {
   for (const name of ['Firmware', 'Check for updates', 'Disable remote management', 'Close port', 'Status']) assert.equal(click(name), 'allow', name)
-  assert.equal(click('Port forwarding'), 'credential', "older ask kept (15:08Z): CU-373's forwarding rule still asks on the list label - named")
+  // Pin moved by CU-556 round 5 (cu-coordinator 06:21Z, 12 Nov): the 'Port forwarding' label (button / link) lowers to free; its switch keeps CU-373's direction rule.
+  assert.equal(click('Port forwarding'), 'allow', 'round 5: the label is free')
 })
 
 const sw = (name, extra) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: URL, target: { name, ...extra } }); return v.decision === 'allow' ? 'allow' : v.class }
