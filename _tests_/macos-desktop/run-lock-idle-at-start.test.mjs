@@ -121,3 +121,27 @@ test('idle (A): status prints ownerIdle with its rule', async () => {
   assert.ok(ownerIdle.seconds >= 400)
   run.slot.release()
 })
+
+test('idle (A): mark() calls apply in call order even when the mutex\'s waiters would retry out of order', async () => {
+  // A sleep seam that wakes later callers first: without the per-slot chain, 'armed: false' could land before
+  // 'armed: true' and leave a disarmed run claiming the armed formula (overstating the owner's idle).
+  let pending = 0
+  const reversing = () => new Promise((resolve) => setTimeout(resolve, 30 - Math.min(25, 5 * pending++)))
+  const run = await admitted(400, { sleep: reversing })
+  // The first call holds the mutex; the next two wait on it, and the seam wakes the later one ('armed: false') first.
+  const calls = [run.slot.mark({ lastOwnerInputAt: T0 + 10 }), run.slot.mark({ armed: true }), run.slot.mark({ armed: false })]
+  assert.deepEqual(await Promise.all(calls), [true, true, true])
+  assert.equal(run.entry().armed, false, 'the last call wins')
+  run.slot.release()
+})
+
+test('idle (A): lastOwnerInputAt never moves back - an older stamp written late keeps the newer one', async () => {
+  const run = await admitted(400)
+  await run.slot.mark({ armed: true })
+  await run.slot.mark({ lastOwnerInputAt: T0 + 50_000 })
+  await run.slot.mark({ lastOwnerInputAt: T0 + 20_000 })
+  assert.equal(run.entry().lastOwnerInputAt, T0 + 50_000)
+  run.clock.at = T0 + 60_000
+  assert.deepEqual(run.read(0), { seconds: 10, rule: 'armed_run' })
+  run.slot.release()
+})

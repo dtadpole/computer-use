@@ -597,6 +597,8 @@ async function admitDesktopRun({
   }
   onExit(removeEntry)
   let released = false
+  // Idle (A): mark() calls, applied one after another in call order.
+  let markChain = Promise.resolve()
   return {
     entry,
     entryPath,
@@ -618,18 +620,28 @@ async function admitDesktopRun({
     // armed through a consent ask, a pause and a takeover, and `lastOwnerInputAt` (epoch ms) is stamped from every
     // helper localInput event while armed - so the owner's own hand there restarts the count. Only this run's own entry
     // (same seat, run id, pid and start) is updated, under the mutex; nothing else is accepted; a no-op once released.
-    async mark(patch) {
-      const clean = markPatch(patch)
-      if (released) return false
-      await takeMutex(lock, { now, sleep, lockTimeoutMs, staleLockMs, isAlive })
-      try {
-        const current = readEntry(entryPath)
-        if (released || !sameEntry(current, entry)) return false
-        replaceEntry(entryPath, { ...current, ...clean })
-        return true
-      } finally {
-        dropMutex(lock)
-      }
+    // Calls apply in call order (the mutex's waiters retry in no set order, so a later 'armed: false' could otherwise
+    // land before an earlier 'armed: true'), and lastOwnerInputAt never moves back - either would overstate the owner's
+    // idle, the unsafe side for a waiting gate (cu-developer-two's review of the driver half, 03:12Z).
+    mark(patch) {
+      let clean
+      try { clean = markPatch(patch) } catch (error) { return Promise.reject(error) }
+      const run = markChain.then(async () => {
+        if (released) return false
+        await takeMutex(lock, { now, sleep, lockTimeoutMs, staleLockMs, isAlive })
+        try {
+          const current = readEntry(entryPath)
+          if (released || !sameEntry(current, entry)) return false
+          const kept = typeof current.lastOwnerInputAt === 'number' && typeof clean.lastOwnerInputAt === 'number' && clean.lastOwnerInputAt < current.lastOwnerInputAt
+            ? { lastOwnerInputAt: current.lastOwnerInputAt } : {}
+          replaceEntry(entryPath, { ...current, ...clean, ...kept })
+          return true
+        } finally {
+          dropMutex(lock)
+        }
+      })
+      markChain = run.catch(() => {})
+      return run
     },
   }
 }
