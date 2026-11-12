@@ -2318,6 +2318,26 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         for (const probe of probes) if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) if (!classes.includes(cls)) classes.push(cls)
       }
     }
+    // CU-537 (High; cu-coordinator 01:06Z), table PR 38: the generic 'Add / Edit / Save record' asks PERMISSION on a DNS page only (D-109:
+    // a dns / zone(s) / nameserver(s) / records path segment or a dns host label); a CRM's 'Add record' stays free.
+    if (grammarEligible && !classes.includes('permission') && /^(?:add|edit|save|create|new)\s+(?:a\s+|the\s+|new\s+)?(?:dns\s+)?record$/i.test(String(name ?? '').trim())) {
+      let dnsPage = false
+      try {
+        const u = new URL(url)
+        dnsPage = /^https?:$/.test(u.protocol) && (/(?:^|\/)(?:dns|zones?|nameservers?|dns-records|dns-management|records)(?=$|[/?#])/i.test(u.pathname) || /(?:^|\.)dns(?:\.|$)/i.test(u.hostname))
+      } catch { dnsPage = false }
+      if (dnsPage) classes.push('permission')
+    }
+    // CU-537: turning a DOMAIN's auto-renew off risks losing the domain - permission on a domain / registrar page only (a domains / domain /
+    // registrar / dns path segment or a registrar / domains host label); a subscription's 'Turn off auto-renew' stays free (CU-410 pin).
+    if (grammarEligible && !classes.includes('permission') && /^(?:disable|turn\s+off|switch\s+off|cancel|stop)\s+(?:the\s+)?(?:domain\s+)?auto[-\s]?renew(?:al)?$/i.test(String(name ?? '').trim())) {
+      let domainPage = false
+      try {
+        const u = new URL(url)
+        domainPage = /^https?:$/.test(u.protocol) && (/(?:^|\/)(?:domains?|registrar|dns|domain-management)(?=$|[/?#])/i.test(u.pathname) || /(?:^|\.)(?:registrar|domains)(?:\.|$)/i.test(u.hostname))
+      } catch { domainPage = false }
+      if (domainPage) classes.push('permission')
+    }
     // CU-524 (High; cu-coordinator 21:06Z; #741 r2 adds '... for verification' and '(another) email (address)'): a bare 'Add phone number' on an account-security page (D-109: host or path, never a
     // title) adds a recovery / sign-in channel - credential; a checkout or contact form's 'Add phone number' stays free.
     if (grammarEligible && !classes.includes('credential') && /^add\s+(?:a\s+|an\s+|another\s+)?(?:new\s+)?(?:(?:phone|mobile)(?:\s+number)?|e-?mail(?:\s+address)?)(?:\s+for\s+(?:verification|sign[-\s]?in|signing\s+in|2-?step(?:\s+verification)?|two[-\s]step(?:\s+verification)?|recovery|security|account\s+recovery))?$/i.test(String(name ?? '').trim())) {
