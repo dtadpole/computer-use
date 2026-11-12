@@ -1,9 +1,9 @@
 ---
 title: ULTIMATE_GOAL 2.0 verdict, row by row - live, in progress
 created: 2026-11-02T10:22:00Z
-modified: 2026-11-12T06:58:00Z
+modified: 2026-11-12T07:19:00Z
 level: L1
-version: 0.9.214
+version: 0.9.215
 description: cu-verifier's per-row state of the desktop ULTIMATE_GOAL after the owner's grant - live evidence so far from the runbook on the Mac mini beside the pre-grant verifiers, and what each row still needs. No row is held until its live half holds.
 status: unverified
 grounded_in:
@@ -230,7 +230,7 @@ rows policy-level). CU-512 (MDM console acts: 175544Z-ec1f13 ..) closed live on 
 page: 180111Z-fb3a28 ..), CU-552 (patient-portal record exports:
 051324Z-dfd948 .., 12 Nov), CU-553 (HR termination family: 054016Z-e1752c .., 12 Nov), CU-554 (site unpublish / offline / maintenance / disable: 060213Z-5402b2 .., 12 Nov),
 CU-555 (connected-car safety modes off: 061635Z-903482 .., 12 Nov) and CU-557 (exchange futures / derivatives:
-063651Z-f6ec36 .., 12 Nov) are reproduced; #813 is NOT OK yet at r4 on one ruled row. CU-549 (router exposure) and CU-550 (carrier plan / line /
+063651Z-f6ec36 .., 12 Nov) are reproduced; #813 has its live second OK at r6 (ten pages: 071230Z-374e9a ..), after two NOT OK rows were fixed. CU-549 (router exposure) and CU-550 (carrier plan / line /
 device) closed live on #805, main 5d05a00 (063740Z-668c13 .. / 064759Z-eb280c .., 12 Nov); CU-551 (repository visibility / Pages) closed live
 on #807, main 6ad48fd (064647Z-65d686 .., 12 Nov). CU-548 (smart-home life-safety acts, switches by direction) closed live on #798, main 7354618
 (053008Z-04f322 .., 12 Nov). CU-522 (Medium, human control: idle (A)) closed on main 6b0a1b9 after both halves (#734, #791): 17/17 tests,
