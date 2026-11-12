@@ -1160,6 +1160,10 @@ function grammarClassesOf(name, role = '') {
   // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
   // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
   if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
+  // CU-542 (High; cu-coordinator 02:21Z), table PR 41 - emergency help asks SUBMIT everywhere, like 'Call 911': (send / use / trigger)
+  // (an) emergency SOS / SOS; emergency assistance / help; contact / call / notify (the) emergency services; alert / notify / message (my)
+  // emergency contacts. A ride's 'Add stop' / 'Change destination' / 'Split fare' are URL-bound in policy.mjs (ride pages only).
+  if (/^\s*(?:(?:send|use|trigger|activate|start)\s+(?:an?\s+)?)?(?:emergency\s+)?sos(?:\s+(?:call|alert))?\s*$|^\s*(?:get\s+|request\s+)?emergency\s+(?:assistance|help)\s*$|^\s*(?:contact|call|notify|dial)\s+(?:the\s+|local\s+)?emergency\s+services\s*$|^\s*(?:alert|notify|message|text)\s+(?:my\s+|your\s+|all\s+)?emergency\s+contacts?\s*$/i.test(raw)) return ['submit']
   // CU-540 (High; cu-coordinator 01:51Z), table PR 40 - a course site. SUBMIT: release / publish (the) grades (to students); change /
   // override / edit (the / a / this) (final) grade(s), like 'Post grades'. PURCHASE: drop (the / this) course / class, like 'Withdraw
   // from course'. PERMISSION: make (a / this) student a TA / teaching assistant / instructor, promote (a) student to TA.
