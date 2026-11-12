@@ -1171,6 +1171,12 @@ function grammarClassesOf(name, role = '') {
   // (VPN / WireGuard / OpenVPN) config(uration) (file / profile) - it carries the private key. 'Disconnect', 'Pause VPN' and 'Change
   // server' stay free by design.
   if (/^\s*(?:turn\s+off|disable|deactivate|switch\s+off)\s+(?:the\s+)?(?:vpn\s+)?kill\s*switch\s*$|^\s*(?:enable|turn\s+on|use|activate)\s+split\s+tunnel(?:l?ing)?\s*$|^\s*exclude\s+(?:apps?|applications?|this\s+app|websites?|sites?)\s+from\s+(?:the\s+)?vpn\s*$|^\s*trust\s+(?:this|the)\s+(?:wi-?fi\s+)?network\s*$/i.test(raw)) return ['permission']
+  // #773 r2 (cu-developer-three 01:03Z): 'Download (VPN) configuration' asked install on main - the older class stays and credential is
+  // added (a union, never a lowering); the other config forms ask credential.
+  // cu-developer-two 01:06Z: every form that asked install on main ('Download configuration file', 'Download OpenVPN profile') keeps it;
+  // a VPN profile (.ovpn) carries the key like a config does.
+  if (/^\s*download\s+(?:the\s+)?(?:vpn\s+|openvpn\s+|wireguard\s+)?(?:configuration(?:\s+(?:file|profile))?|profile)\s*$/i.test(raw) && !/^\s*download\s+(?:the\s+)?profile\s*$/i.test(raw)) return ['install', 'credential']
+  if (/^\s*(?:export|save|download)\s+(?:the\s+)?(?:vpn|openvpn|wireguard)\s+profile\s*$/i.test(raw)) return ['credential']
   if (/^\s*(?:download|export|save)\s+(?:the\s+)?(?:vpn\s+|wireguard\s+|openvpn\s+)?config(?:uration)?(?:\s+(?:file|profile))?\s*$/i.test(raw)) return ['credential']
   // CU-533 (High; cu-coordinator 00:21Z), table PR 36, as verb families with object synonyms - an organisation's security settings,
   // PERMISSION like the older 'Disable two-factor requirement' / 'Remove IP allow list': disable / turn off / deactivate / remove (the)
