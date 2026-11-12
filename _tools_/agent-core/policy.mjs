@@ -2374,6 +2374,21 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       } catch { planPage = false }
       if (planPage) classes.push('purchase')
     }
+    // #813 r5 (cu-coordinator 06:36Z, 'Email / Send my lab results' = permission): a union - 'Send (my) lab / test results' keeps the
+    // older submit and adds permission.
+    // r5 family (06:51Z): every 'send / email' of the health-record family keeps an older submit and adds permission.
+    if (grammarEligible && classes.includes('submit') && !classes.includes('permission') && /^\s*(?:send|email|e-mail)\s+(?:a\s+cop(?:y|ies)\s+of\s+)?(?:all\s+)?(?:of\s+)?(?:my\s+|your\s+|the\s+)?(?:full\s+|complete\s+)?(?:lab\s+results|test\s+results|(?:medical|health|patient|clinical)\s+(?:records?|chart|history|summary|data|file|information)|visit\s+notes|(?:after[-\s]?)?visit\s+summar(?:y|ies)|discharge\s+summary|immunization\s+records?|(?:visit|appointment)\s+history)(?:\s+as\s+(?:a\s+)?(?:pdf|file|document|zip))?(?:\s+to\s+(?:my\s+)?(?:email|phone|device|computer|inbox))?\s*$/i.test(String(name ?? ''))) classes.push('permission')
+    // CU-552 / CU-553 (High; cu-coordinator 05:21Z), table PR 49, URL-bound (D-106): a bare 'Download / Export all records' asks PERMISSION on
+    // a patient-portal page (a health / patient / medical / mychart / clinic / hospital / ehr / records path segment or host label); a bare
+    // 'Let go' / 'Dismiss' asks DELETE on an HR page (an hr / employees / people / staff / workforce / personnel / team-members segment).
+    if (grammarEligible && classes.length === 0) {
+      const label = String(name ?? '').trim()
+      let u = null
+      try { u = new URL(url) } catch { u = null }
+      const web = u && /^https?:$/.test(u.protocol)
+      if (web && /^(?:download|export|save|print|email|e-mail|send)\s+(?:all\s+)?(?:of\s+)?(?:my\s+)?records(?:\s+as\s+(?:a\s+)?(?:pdf|file|document))?(?:\s+to\s+(?:my\s+)?(?:email|phone|device|computer))?$/i.test(label) && /(?:^|[./-])(?:health|patient|patients|medical|mychart|clinic|hospital|ehr|records)(?=$|[./?#-])/i.test(`${u.hostname}${u.pathname}`)) classes.push('permission')
+      else if (web && /^(?:let\s+go|dismiss|lay\s+off)$/i.test(label) && /(?:^|\/)(?:hr|employees?|people|staff|workforce|personnel|team-members)(?=$|[/?#])/i.test(u.pathname)) classes.push('delete')
+    }
     // CU-539 (High; cu-coordinator 01:36Z), table PR 39: on a CI / actions page (D-109: an actions / workflows / runners / pipelines / ci
     // path segment), adding a self-hosted runner and disabling a workflow ask PERMISSION; elsewhere they stay free.
     if (grammarEligible && !classes.includes('permission') && /^(?:add|register|new)\s+(?:a\s+|new\s+)?self[-\s]hosted\s+runner$|^(?:disable|turn\s+off|pause)\s+(?:this\s+|the\s+)?workflow$/i.test(String(name ?? '').trim())) {
