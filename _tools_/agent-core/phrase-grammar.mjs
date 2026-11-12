@@ -1160,6 +1160,19 @@ function grammarClassesOf(name, role = '') {
   // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
   // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
   if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
+  // CU-549 (High; cu-coordinator 04:51Z), table PR 47 - a router's exposure, PERMISSION like 'Open port' / 'Enable remote management':
+  // forward (a) port (N / range), add (a) port forward(ing) rule; allow / enable / turn on remote administration / admin / access /
+  // management (from WAN / the internet); make (the) network / Wi-Fi open / public, set Wi-Fi security to open; disable / turn off (the)
+  // client / AP / wireless isolation; enable / turn on WPS.
+  // #805 r2 (cu-researcher 05:05Z): 'Forward external port 3389 to this device', 'Turn on remote admin access'. #805 r3 (05:17Z): the
+  // forward target is any text, a dotted address included ('Forward ports 80 to 192.0.2.5').
+  if (/^\s*forward\s+(?:a\s+|the\s+|an\s+)?(?:external\s+|internal\s+|tcp\s+|udp\s+)?ports?(?:\s+\d{1,5}(?:\s*[-\u2013]\s*\d{1,5})?)?(?:\s+to\s+\S.{0,60})?\s*$|^\s*(?:allow|enable|turn\s+on|permit)\s+remote\s+admin(?:istration)?\s+(?:access|login|management)\s*$|^\s*add\s+(?:a\s+|new\s+)?port[-\s]+forward(?:ing)?(?:\s+rule)?\s*$|^\s*(?:allow|enable|turn\s+on|permit)\s+remote\s+(?:administration|admin|access|management)(?:\s+from\s+(?:wan|the\s+internet|anywhere))?\s*$|^\s*make\s+(?:the\s+|this\s+|my\s+)?(?:network|wi-?fi|wireless\s+network)\s+(?:open|public|unsecured)\s*$|^\s*set\s+(?:the\s+)?(?:wi-?fi\s+)?security\s+to\s+open\s*$|^\s*(?:disable|turn\s+off|switch\s+off)\s+(?:the\s+)?(?:client|ap|wireless|guest)\s+isolation\s*$|^\s*(?:enable|turn\s+on|activate)\s+wps\s*$/i.test(raw)) return ['permission']
+  // CU-550 (High; cu-coordinator 04:51Z), table PR 47 - a carrier account. PURCHASE: change / switch (my / your / this) plan; add (a / an /
+  // another / new) line; upgrade (my / your / this) device / phone. DELETE, like 'Cancel line': suspend (the / this / my) line(s); pause
+  // (my / the) service / line.
+  // #805 r2 (cu-researcher 05:05Z): 'Move to the Premium plan', 'Change to Unlimited plan' (a named plan with the word 'plan').
+  if (/^\s*(?:change|switch)\s+(?:my\s+|your\s+|this\s+|the\s+)?(?:plan|data\s+plan|phone\s+plan|rate\s+plan)s?\s*$|^\s*(?:change|switch|move|upgrade|downgrade)\s+to\s+(?:the\s+|a\s+)?\S+(?:\s+\S+){0,2}\s+plan\s*$|^\s*add\s+(?:a\s+|an\s+|another\s+|new\s+|a\s+new\s+)?(?:phone\s+)?line\s*$|^\s*upgrade\s+(?:my\s+|your\s+|this\s+|the\s+)?(?:device|phone)\s*$/i.test(raw)) return ['purchase']
+  if (/^\s*(?:temporarily\s+)?suspend\s+(?:the\s+|this\s+|my\s+)?(?:phone\s+)?(?:lines?|service)\s*$|^\s*(?:temporarily\s+)?pause\s+(?:my\s+|the\s+|this\s+)?(?:service|line|phone\s+service)\s*$/i.test(raw)) return ['delete']
   // CU-548 (High; cu-coordinator 04:06Z), table PR 46 - life safety, PHYSICAL everywhere: turn off / disable / deactivate / silence /
   // mute / hush / snooze (the) smoke / CO / carbon monoxide / fire (and CO) alarm / detector / sensor(s); turn off / disable / bypass (the)
   // (water) leak sensor / detector / detection / alerts; turn off / disable / bypass (the) (automatic) (water) shutoff (valve); open (the)
