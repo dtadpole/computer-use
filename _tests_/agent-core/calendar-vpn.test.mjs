@@ -48,3 +48,11 @@ test('CU-536 (cu-coordinator 01:06Z, #773 r2): home-security page rows; an alarm
   for (const name of ['Silence siren', 'Add user', 'Pause recording']) assert.deepEqual(at(name, 'https://clock.example/alarms'), [], `off a home-security page: ${name}`)
   assert.deepEqual(at('Silence alarm', 'https://clock.example/alarms'), [], 'an alarm clock stays free')
 })
+
+test('#773 round 3 (cu-researcher 01:11Z): public calendar URL, bypass VPN for an app, trusted networks, turn off monitoring', () => {
+  for (const name of ['Copy public calendar URL', 'Copy public iCal link', 'Bypass VPN for this app', 'Bypass VPN for a website', 'Add to trusted networks', 'Add this network to trusted networks']) assert.ok(classesOf(name).includes('permission'), name)
+  const sec = (name) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: 'https://alarm.simplisafe.example/home-security/system', target: { role: 'button', name } }); return v.decision === 'allow' ? [] : (v.classes ?? [v.class]) }
+  assert.ok(sec('Turn off monitoring').includes('permission'), 'home-security page')
+  assert.deepEqual(classesOf('Turn off monitoring'), [], 'off a home-security page')
+  for (const name of ['Trusted networks', 'VPN bypass list']) assert.deepEqual(classesOf(name), [], name)
+})

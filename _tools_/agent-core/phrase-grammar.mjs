@@ -1169,13 +1169,14 @@ function grammarClassesOf(name, role = '') {
   // exposure family). PERMISSION: get / copy / show the public / secret / private (iCal) address (in iCal format); get / copy a
   // shareable / share / public link to (the / this / your) calendar / <object> (the object tail on CU-462's row). DELETE: clear / empty
   // (the / this / your) (entire) calendar, delete all (calendar) events.
-  if (/^\s*(?:get|copy|show|view|reveal)\s+(?:the\s+)?(?:public|secret|private)\s+(?:ical\s+|ics\s+)?(?:address|url|link)(?:\s+in\s+(?:ical|ics)\s+format)?\s*$|^\s*(?:get|copy|create)\s+(?:a\s+|the\s+)?(?:shareable|share|public|sharing)\s+link\s+(?:to|for)\s+(?:the\s+|this\s+|your\s+|my\s+)?\S.{0,40}$/i.test(raw)) return ['permission']
+  if (/^\s*(?:get|copy|show|view|reveal)\s+(?:the\s+)?(?:public|secret|private)\s+(?:calendar\s+|ical\s+|ics\s+)?(?:address|url|link)(?:\s+in\s+(?:ical|ics)\s+format)?\s*$|^\s*(?:get|copy|create)\s+(?:a\s+|the\s+)?(?:shareable|share|public|sharing)\s+link\s+(?:to|for)\s+(?:the\s+|this\s+|your\s+|my\s+)?\S.{0,40}$/i.test(raw)) return ['permission']
   if (/^\s*(?:clear|empty|wipe)\s+(?:the\s+|this\s+|your\s+|my\s+)?(?:entire\s+|whole\s+)?calendar\s*$|^\s*delete\s+all\s+(?:calendar\s+)?events\s*$/i.test(raw)) return ['delete']
   // CU-535 (High; cu-coordinator 00:51Z), table PR 37 - a VPN's safeguards. PERMISSION: turn off / disable (the) kill switch; enable /
   // turn on / use split tunneling; exclude apps / an app from (the) VPN; trust this / the network. CREDENTIAL: download / export (the)
   // (VPN / WireGuard / OpenVPN) config(uration) (file / profile) - it carries the private key. 'Disconnect', 'Pause VPN' and 'Change
-  // server' stay free by design.
-  if (/^\s*(?:turn\s+off|disable|deactivate|switch\s+off)\s+(?:the\s+)?(?:vpn\s+)?kill\s*switch\s*$|^\s*(?:enable|turn\s+on|use|activate)\s+split\s+tunnel(?:l?ing)?\s*$|^\s*exclude\s+(?:apps?|applications?|this\s+app|websites?|sites?)\s+from\s+(?:the\s+)?vpn\s*$|^\s*trust\s+(?:this|the)\s+(?:wi-?fi\s+)?network\s*$/i.test(raw)) return ['permission']
+  // server' stay free by design. #773 r3 (cu-researcher 01:11Z): 'Copy public calendar URL', 'Bypass VPN for this app', 'Add to trusted
+  // networks'.
+  if (/^\s*(?:turn\s+off|disable|deactivate|switch\s+off)\s+(?:the\s+)?(?:vpn\s+)?kill\s*switch\s*$|^\s*(?:enable|turn\s+on|use|activate)\s+split\s+tunnel(?:l?ing)?\s*$|^\s*exclude\s+(?:apps?|applications?|this\s+app|websites?|sites?)\s+from\s+(?:the\s+)?vpn\s*$|^\s*trust\s+(?:this|the)\s+(?:wi-?fi\s+)?network\s*$|^\s*bypass\s+(?:the\s+)?vpn\s+for\s+(?:this\s+|an?\s+|the\s+)?(?:app|application|website|site)\s*$|^\s*add\s+(?:this\s+network\s+|the\s+network\s+)?to\s+(?:the\s+)?trusted\s+networks\s*$/i.test(raw)) return ['permission']
   // #773 r2 (cu-developer-three 01:03Z): 'Download (VPN) configuration' asked install on main - the older class stays and credential is
   // added (a union, never a lowering); the other config forms ask credential.
   // cu-developer-two 01:06Z: every form that asked install on main ('Download configuration file', 'Download OpenVPN profile') keeps it;
