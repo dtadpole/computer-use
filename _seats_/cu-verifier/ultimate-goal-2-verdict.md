@@ -1,9 +1,9 @@
 ---
 title: ULTIMATE_GOAL 2.0 verdict, row by row - live, in progress
 created: 2026-11-02T10:22:00Z
-modified: 2026-11-12T01:51:00Z
+modified: 2026-11-12T02:09:00Z
 level: L1
-version: 0.9.199
+version: 0.9.200
 description: cu-verifier's per-row state of the desktop ULTIMATE_GOAL after the owner's grant - live evidence so far from the runbook on the Mac mini beside the pre-grant verifiers, and what each row still needs. No row is held until its live half holds.
 status: unverified
 grounded_in:
@@ -227,14 +227,13 @@ CU-509 (a scope suffix drops ruled rows: 164528Z-a7f1da ..; closed live on #708,
 (developer-console key and webhook acts: 165004Z-e722b8 ..; closed live on #710, main a608e0b: 182219Z-63c0b9 ..) and CU-511 (mail-trust overrides act: 172141Z-ab8a6d ..; Office macro rows
 allow in createAppPolicy on main 35fa22d - policy-level, no live desktop run; closed live on #713, main f3dc47a: 184314Z-712c91 .., the desktop
 rows policy-level). CU-512 (MDM console acts: 175544Z-ec1f13 ..) closed live on #716, main fd67c5b (190713Z-4f6608 ..). CU-513 (a bare 'Get' / 'Install' on an add-on
-page: 180111Z-fb3a28 ..), CU-534 (calendar iCal address / clear / shareable link:
-004231Z-ed3cdc .., 12 Nov), CU-535 (VPN kill switch, split tunneling, trust network, config download: 004534Z-aadd58 .., 12 Nov),
-CU-536 (home-security panel: motion detection off, add user / PIN, cancel monitoring act even on a bound URL; siren / recording
-free off it: 005759Z-27a1bc .., 12 Nov; folded into #773) and CU-537 (registrar typed record adds, auto-renew off: 010540Z-638bd2 .., 12 Nov;
-table PR 38), CU-538 (accounting write-off / payment / close / reopen / undo: 013133Z-4cf72a .., 12 Nov; table PR 39), CU-539
+page: 180111Z-fb3a28 ..), CU-537 (registrar typed record adds, auto-renew off: 010540Z-638bd2 .., 12 Nov;
+#774), CU-538 (accounting write-off / payment / close / reopen / undo: 013133Z-4cf72a .., 12 Nov), CU-539
 (CI/CD promote / skip protection / runner / disable workflow: 013245Z-8bf83e .., 12 Nov), CU-540 (course grades / drop / TA: 014651Z-81eef4 ..,
-12 Nov) and CU-541 (payroll off-cycle / withholding / skip: 014840Z-393e7d .., 12 Nov) are reproduced; table PR 37 #773 r3 (CU-534 / 535 / 536)
-has its live second OK (013716Z-ea6763 .., 12 Nov). CU-533 (org security settings) closed live on #769, main 7388797 (014821Z-26f4b8 .., 12 Nov).
+12 Nov) and CU-541 (payroll off-cycle / withholding / skip: 014840Z-393e7d .., 12 Nov) are reproduced; table PR 39 #778 r3 (CU-538 / CU-539) has its live second OK
+(015905Z-19003e .., 12 Nov).
+CU-534 (calendar exposure / wipe), CU-535 (VPN safeguards) and CU-536 (home-security panel, bound URLs only) closed live on #773, main 1c034ab
+(015657Z-cc3e5b .., 015931Z-357842 .., 020129Z-1043cd .., 12 Nov). CU-533 (org security settings) closed live on #769, main 7388797 (014821Z-26f4b8 .., 12 Nov).
 CU-532 (merge conditions in every tense) closed live on #764, main 66f6931 (011619Z-b504fd .., 12 Nov). CU-530 (wallet allowance / permit signing) closed live on #761, main ebf5cf0
 (005752Z-a295bb .., 12 Nov). The CU-429 round-3 lowering (#768) has its live second OK each way: five ruled names free, five kept asks unchanged
 (002152Z-d4d0bd .. / 003002Z-736e39 .., 12 Nov). CU-531 (roll-back / revert forms, merge-after-build forms) closed live on #759, main 18cba5b (000444Z-c9ade8 .., 12 Nov).
@@ -282,8 +281,8 @@ Runs sit on each claim's CU issue, re-proven by the [evidence audit](evidence-au
 | perception | scale 1 at 1920x1080, 100+ runs; simulated Retina: precision 24/24 at 1.04 and 1.32 px/pt, keypad 18/18 across 1, 1.04 and 1.32, 42 rows re-judged with 0 discrepancies (CU-61, CU-70, CU-71, CU-74, CU-81, CU-83) | holds; a real Retina or second display not shown |
 | action contract | click, double-click, type, chords, drag, menus, scroll, right-click, timed holds, button down and up (CU-64); a drag crossing another app is refused (CU-36) | holds; the bare-desktop crossing is dry-run only |
 | agent loop | Sonnet and Opus unattended: 74 rows (CU-8) and 76 on 0.2.25, re-judged with 0 discrepancies; screenshot pruning is off by default when turns carry thinking (CU-65, CU-84) | holds |
-| consent and safety | injections 36/36 and 24/24 held; overlays, same-named apps, mid-drag windows, the owner's clipboard (CU-62) and system prompts (CU-76, CU-77) handled; D-059 routes each asserted beside a mutant, closed cells bound to their closing run (CU-145, D-064); sensitive classes closed live, main before each fix typing them unasked (CU-163, CU-164, CU-167, CU-172, CU-178, CU-179, CU-183, CU-185, CU-186, CU-187, CU-192, CU-194, CU-196); drags and copies carry their text's and caption's class, read-only text views included (CU-195, CU-198, CU-209, CU-223); a missing pasteboard count asks (CU-220); modified paste chords are pastes (CU-230); a chord is judged as the menu item it fires, and an unreadable menu asks (CU-232); modifier variants of judged keys (CU-234); system shortcuts and owner-setting hotkeys refused, pressed or held (CU-242, CU-244, CU-251); a click inside a control judged as it (CU-175, CU-176, CU-180); a focus click takes no class (CU-170); a bare Reply asks only after text is entered (CU-157); an unread default button asks (CU-190); typed pieces judged whole per field (CU-267, CU-273); names normalised before judging (CU-266, CU-268); owner services, Writing Tools and whole-Mac tools refused (CU-250, CU-264, CU-277); non-web links ask (CU-265) | does not hold yet: CU-534, CU-535 and CU-536 (High; #773), CU-537 (High; #774) and CU-538 (High; table PR 39) - all reproduced;
-CU-513, CU-539, CU-540 and CU-541 reproduced, in triage; every earlier ruled High is closed live; both tables are signed; CU-135's chain at step 4 remains (owner session). Named limits ([consent-limits.md](../../_designs_/system-architecture/consent-limits.md) 0.3.9, with today's URL-bound rows, CU-488's heading shape and the compound bound): a web page's own shortcut keys are judged by the focused element (CU-241, D-072); Safe Browsing never warns here; a custom-drawn editor beside an empty entry is not seen; a desktop window with no entry asks a bare Reply; a clickable card is judged by its own words |
+| consent and safety | injections 36/36 and 24/24 held; overlays, same-named apps, mid-drag windows, the owner's clipboard (CU-62) and system prompts (CU-76, CU-77) handled; D-059 routes each asserted beside a mutant, closed cells bound to their closing run (CU-145, D-064); sensitive classes closed live, main before each fix typing them unasked (CU-163, CU-164, CU-167, CU-172, CU-178, CU-179, CU-183, CU-185, CU-186, CU-187, CU-192, CU-194, CU-196); drags and copies carry their text's and caption's class, read-only text views included (CU-195, CU-198, CU-209, CU-223); a missing pasteboard count asks (CU-220); modified paste chords are pastes (CU-230); a chord is judged as the menu item it fires, and an unreadable menu asks (CU-232); modifier variants of judged keys (CU-234); system shortcuts and owner-setting hotkeys refused, pressed or held (CU-242, CU-244, CU-251); a click inside a control judged as it (CU-175, CU-176, CU-180); a focus click takes no class (CU-170); a bare Reply asks only after text is entered (CU-157); an unread default button asks (CU-190); typed pieces judged whole per field (CU-267, CU-273); names normalised before judging (CU-266, CU-268); owner services, Writing Tools and whole-Mac tools refused (CU-250, CU-264, CU-277); non-web links ask (CU-265) | does not hold yet: CU-537 (High; #774), CU-538 and CU-539 (High; #778), CU-540 and CU-541 (High; #780) - all reproduced;
+CU-513 reproduced, in triage; every earlier ruled High is closed live; both tables are signed; CU-135's chain at step 4 remains (owner session). Named limits ([consent-limits.md](../../_designs_/system-architecture/consent-limits.md) 0.3.9, with today's URL-bound rows, CU-488's heading shape and the compound bound): a web page's own shortcut keys are judged by the focused element (CU-241, D-072); Safe Browsing never warns here; a custom-drawn editor beside an empty entry is not seen; a desktop window with no entry asks a bare Reply; a clickable card is judged by its own words |
 | human control | live view pause, take over, hand back, stop (CU-12); a stale action never posts after Stop, pause or take-over (CU-272, CU-274, CU-275); owner-step4.mjs re-confirmed on each helper (0.2.58: 20261108T235934Z-d47196) | open: step 4 with the owner (CU-11; G2, CU-119) |
 | integration | DSH and heddle each completed a fixture task (CU-15) | holds |
 | trajectory | capture privacy; live-view frames stay in scope and the watch link cannot control (CU-12); latency and token use on every step (CU-54) | holds |
