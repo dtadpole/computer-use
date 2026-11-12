@@ -1255,6 +1255,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
           // keeps its direction rule - toggles never reach here), and 'Add member(s) to group' in a chat app (a desktop messaging app, or a
           // chat page by host / path), exactly these.
           || /^(?:view order|security checkup|call forwarding)$/i.test(plain)
+          // Round 4 (cu-coordinator 03:36Z; CU-547): 'Revoke allowance', 'View pay stub' and 'Security settings' as a button / link, exactly
+          // these; 'Roll back deploy' KEEPS submit (it changes what runs in production).
+          || /^(?:revoke allowance|view pay stub|security settings)$/i.test(plain)
           || (/^add members? to (?:the )?group$/i.test(plain) && (isMessagingApp(String(context.frontmostBundleId ?? target?.origin ?? '')) || (() => { try { const u = new URL(url); return /^https?:$/.test(u.protocol) && /(?:^|[./-])(?:chat|slack|discord|teams|messenger|whatsapp|telegram|signal|messages)(?:[./-]|$)/i.test(`${u.hostname} ${u.pathname}`) } catch { return false } })()))
           || (link && /^unsubscribe(?: link)?$/i.test(plain))
         let refusal = false
