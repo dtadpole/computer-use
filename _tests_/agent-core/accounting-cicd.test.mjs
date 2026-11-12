@@ -38,3 +38,8 @@ test("#778 round 2 (cu-researcher 01:39Z): 'deployment' optional with 'rules'; a
   }
   assert.deepEqual(classesOf('Skip protection', 'https://shop.example/checkout'), [], 'a checkout upsell decline stays free')
 })
+
+test("#778 round 3 (cu-developer-two 01:42Z): 'Unreconcile' and 'Unreconcile transaction' ask delete", () => {
+  for (const name of ['Unreconcile', 'Unreconcile transaction', 'Unreconcile this transaction']) assert.ok(classesOf(name, BOOKS).includes('delete'), name)
+  assert.deepEqual(classesOf('Write off', BOOKS), [], 'a bare Write off stays free unless ruled')
+})

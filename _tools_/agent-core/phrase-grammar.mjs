@@ -1166,7 +1166,8 @@ function grammarClassesOf(name, role = '') {
   if (/^\s*write\s+off\s+(?:an?\s+|the\s+|this\s+)?(?:invoice|bill|debt|balance|bad\s+debt)s?\s*$|^\s*(?:record|log|enter|apply)\s+(?:a\s+|the\s+|this\s+)?(?:new\s+)?payment\s*$/i.test(raw)) return ['purchase']
   if (/^\s*close\s+(?:the\s+)?(?:books|(?:accounting\s+)?period|month|year|fiscal\s+year)\s*$/i.test(raw)) return ['submit']
   if (/^\s*(?:reopen|re-open|unlock)\s+(?:the\s+|a\s+|this\s+)?(?:accounting\s+|closed\s+)?(?:period|month|year|fiscal\s+year|books)\s*$/i.test(raw)) return ['permission']
-  if (/^\s*(?:undo|reverse|unreconcile)\s+(?:the\s+|this\s+)?reconciliation\s*$/i.test(raw)) return ['delete']
+  // #778 r3 (cu-developer-two 01:42Z): the one-word 'Unreconcile' (an accounting app's literal button) and 'Unreconcile (this) transaction'.
+  if (/^\s*(?:undo|reverse|unreconcile)\s+(?:the\s+|this\s+)?reconciliation\s*$|^\s*unreconcile(?:\s+(?:the\s+|this\s+)?(?:transaction|entry|account|statement)s?)?\s*$/i.test(raw)) return ['delete']
   // CU-539 (High; cu-coordinator 01:36Z), table PR 39 - CI/CD. SUBMIT: promote (this / the build / release) to production / prod / live.
   // PERMISSION + SUBMIT: skip / bypass (the) deployment protection (rules). 'Add self-hosted runner' / 'Disable workflow' are URL-bound in
   // policy.mjs (actions / workflows / runners / pipelines pages).
