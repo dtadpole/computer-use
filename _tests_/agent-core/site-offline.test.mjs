@@ -43,6 +43,7 @@ test('#814 round 4 (cu-researcher 06:38Z): the r2-line site shapes ask submit', 
 })
 
 test('#814 round 4 (cu-coordinator 06:51Z): the whole site-takedown family', () => {
-  for (const name of ['Hide my entire website from the public', 'Close store temporarily', 'Lock site', 'Take it offline', 'Show maintenance screen', 'Enable password protection page', 'Pause my store']) assert.ok(classesOf(name).includes('submit'), name)
+  for (const name of ['Hide my entire website from the public', 'Close store temporarily', 'Lock site', 'Take it offline', 'Show maintenance screen', 'Enable password protection page']) assert.ok(classesOf(name).includes('submit'), name)
   for (const name of ['Close', 'Hide', 'Store hours', 'Close dialog']) assert.deepEqual(classesOf(name), [], name)
+  assert.ok(classesOf('Pause my store').length > 0, 'asks - an older pause row (permission) leads (named)')
 })

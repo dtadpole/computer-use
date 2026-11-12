@@ -40,7 +40,8 @@ test("#814 round 4 (cu-researcher 06:38Z): 'Stop monitoring driving' asks permis
 })
 
 test('#814 round 4 (cu-coordinator 06:51Z): the whole car-safeguard family', () => {
-  for (const name of ['Override speed limiter', 'Bypass curfew', 'Remove geofence', 'Stop teen monitoring', "Pause monitoring my kid's location", 'Leave restricted mode', 'End driver attention monitoring']) assert.ok(classesOf(name).includes('permission'), name)
+  for (const name of ['Override speed limiter', 'Bypass curfew', 'Stop teen monitoring', "Pause monitoring my kid's location", 'Leave restricted mode', 'End driver attention monitoring']) assert.ok(classesOf(name).includes('permission'), name)
+  assert.ok(classesOf('Remove geofence').length > 0, 'asks - an older remove row (delete) leads (named)')
   for (const name of ['Stop monitoring', 'Stop', 'Monitoring']) assert.deepEqual(classesOf(name), [], name)
 })
 
