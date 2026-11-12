@@ -20,3 +20,8 @@ test('CU-546: seller rows ask their ruled class', () => {
   for (const name of ['Payouts', 'Edit price', 'Apply discount', 'Apply 10% discount', 'End listing', 'Listings']) assert.deepEqual(classesOf(name), [], name)
   for (const [name, cls] of [['Instant payout', 'purchase'], ['Delete all listings', 'delete'], ['Publish listing', 'submit']]) assert.ok(classesOf(name).includes(cls), `older row: ${name}`)
 })
+
+test("#796 round 2 (cu-researcher 04:09Z): the 'N% off' phrasings", () => {
+  for (const name of ['Mark everything 75% off', 'Take 80% off all items', 'Mark all items 50% off', 'Take 90% off']) assert.ok(classesOf(name).includes('purchase'), name)
+  for (const name of ['Take 10% off', 'Mark everything 20% off', '75% off']) assert.deepEqual(classesOf(name), [], name)
+})
