@@ -29,3 +29,8 @@ test("#789 round 2 (cu-developer-three 03:10Z): the 'Guest access' switch asks o
   assert.ok(desk(false).includes('permission'), 'desktop off -> on asks')
   assert.deepEqual(desk(true), [], 'desktop on -> off is free')
 })
+
+test('#789 round 3 (cu-researcher 03:17Z): wider export forms', () => {
+  for (const name of ['Export workspace', 'Export the workspace', 'Export messages', 'Export message history', 'Export all channels', 'Download a full export of all channels', 'Download workspace export']) assert.ok(classesOf(name).includes('permission'), name)
+  for (const name of ['Export', 'Exports', 'Download']) assert.deepEqual(classesOf(name), [], name)
+})
