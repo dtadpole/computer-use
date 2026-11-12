@@ -35,7 +35,8 @@ test('CU-447: a block-public-access or logging switch turned OFF asks, ON free; 
 })
 
 test('CU-447 negatives: buckets, turning protection on, audit log views and key lists stay free; Security groups keeps an older ask', () => {
-  for (const name of ['Buckets', 'Turn on block public access', 'Audit logs', 'Keys', 'Open bucket', 'Allow notifications']) assert.equal(click(name), 'allow', name)
+  // CU-529 (cu-coordinator 22:51Z, an explicit raise): 'Allow notifications' left this free list - a site prompt's grant asks permission.
+  for (const name of ['Buckets', 'Turn on block public access', 'Audit logs', 'Keys', 'Open bucket']) assert.equal(click(name), 'allow', name)
   // Named over-ask (older 'security' permission word, kept by the 15:08Z rule; CU-429's family).
   assert.equal(click('Security groups'), 'permission', 'older rule')
 })

@@ -753,12 +753,15 @@ const LEADING_ICONS = /^\s*(?:[\p{Extended_Pictographic}\uFE0F\p{S}\u2022\u2023\
 // consequences, <row>', 'I acknowledge the risk, <row>', 'Understood, <row>' - is stripped like 'Yes, <row>', so the row decides.
 // #685 round 2 (cu-researcher 13:54Z): the connector form - 'I understand (the risks) and (still) want / wish / choose to <row>'.
 const ACK_CONNECTOR = /^\s*i\s+(?:understand|acknowledge|accept|agree)(?:\s+(?:the|all|these)\s+(?:consequences|risks?|terms|warnings?))?\s*,?\s+and\s+(?:still\s+)?(?:want|wish|choose|would\s+like|intend|agree)\s+to\s+/i
-const CONFIRM_PREFIX = /^\s*(?:(?:yes(?:\s+please)?|ok|okay|sure|confirm|continue|got\s+it|please|understood|i\s+(?:understand|acknowledge|accept|agree)(?:\s+(?:the|all|these)\s+(?:consequences|risks?|terms|warnings?))?|i(?:'ve|\s+have)\s+read\s+and\s+understand(?:\s+(?:the|this|these)\s+\w+)?)\s*[,:!.\u2013\u2014-]+\s*)+/iu
+// CU-517 (High; cu-coordinator 19:06Z): 'I'm sure' / 'I am sure' / 'I'm certain' as an acknowledgement too - "I'm sure, <row>",
+// "Yes, I'm sure, <row>" (the prefix repeats) and '<row>, I'm sure' (TRAILING_QUALIFIER); curly apostrophes read straight (#721).
+// #725 round 3 (cu-researcher 19:14Z): 'Yes I'm sure' without the comma, and the intensifiers (really / absolutely / totally / 100% sure).
+const CONFIRM_PREFIX = /^\s*(?:(?:yes(?:\s+please)?|ok|okay|sure|confirm|continue|got\s+it|please|understood|(?:yes\s+)?i(?:'m|\s+am)\s+(?:(?:really|absolutely|totally|completely|quite|very|fully|100\s?%)\s+)?(?:sure|certain|positive)|i\s+(?:understand|acknowledge|accept|agree)(?:\s+(?:the|all|these)\s+(?:consequences|risks?|terms|warnings?))?|i(?:'ve|\s+have)\s+read\s+and\s+understand(?:\s+(?:the|this|these)\s+\w+)?)\s*[,:!.\u2013\u2014-]+\s*)+/iu
 // CU-482 (proposed High; cu-researcher 04:58Z): a call-to-action lead-in before a ruled row - 'please', 'click (here) to', 'tap to',
 // 'let's', 'go ahead and', 'I want to'.
 // cu-researcher 05:02Z: trailing qualifiers too - 'anyway', 'instantly', 'on this device', 'for me', 'here', 'too', 'again'.
 // #630 round 2: a trailing ', please' too ('Add time, please').
-const TRAILING_QUALIFIER = /(?:\s*,\s*please|\s+(?:anyway|anyways|instantly|immediately|on\s+this\s+(?:device|computer|browser|phone)|for\s+me|here|too|again))+\s*[.!]?\s*$/i
+const TRAILING_QUALIFIER = /(?:\s*,\s*please|\s*[,\u2013\u2014-]\s*(?:yes,?\s+)?i(?:'m|\s+am)\s+(?:(?:really|absolutely|totally|completely|quite|very|fully|100\s?%)\s+)?(?:sure|certain|positive)|\s+(?:anyway|anyways|instantly|immediately|on\s+this\s+(?:device|computer|browser|phone)|for\s+me|here|too|again))+\s*[.!]?\s*$/i
 // CU-508 (qualifier sweep): a trailing WIDENING qualifier - 'permanently', 'forever', 'for good', 'completely', 'for all users /
 // members / accounts', 'for everyone', 'on all (my) devices', 'everywhere', 'across all devices' - is stripped in a canonical form
 // (the trailing twin of CU-502's quantifier), so the row decides. Adds asks only.
@@ -859,7 +862,9 @@ export function quantifierDropped(form) {
 // want to open anyway' is judged as 'open anyway' (Gatekeeper's install row), not only as the qualifier-stripped 'open'.
 function acknowledgementStripped(name) {
   const first = String(name ?? '').split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean)[0] ?? ''
-  return first.replace(ACK_CONNECTOR, '').replace(CONFIRM_PREFIX, '').trim()
+  // #725 round 2 (cu-developer-three 19:12Z): the trailing "<row>, I'm sure" stripped alone too, keeping the row's own words -
+  // 'Install now, I'm sure' is judged as 'Install now', not only as the qualifier-stripped 'Install'.
+  return first.replace(ACK_CONNECTOR, '').replace(CONFIRM_PREFIX, '').replace(/\s*[,\u2013\u2014-]\s*(?:yes,?\s+)?i(?:'m|\s+am)\s+(?:(?:really|absolutely|totally|completely|quite|very|fully|100\s?%)\s+)?(?:sure|certain|positive)\s*[.!]?\s*$/i, '').trim()
 }
 // CU-505 (label sweep): a short section label before the row - '<Label>: <row>' or '<Label> - <row>' (one to three words, a colon
 // or a spaced dash) - and brackets or quotes around the whole name are stripped, so the row decides ('Danger zone: Make this
@@ -953,6 +958,20 @@ export function synonymForms(name) {
   const labelled = sectionLabelStripped(name)
   const last = [...quantified, ...quantified.map(withVerbSynonym), ...labelled, ...labelled.flatMap((f) => [f, ...canonicalForms(f)])]
   return [...new Set([...forms, ...last])].filter((form) => form !== '' && form !== own && !known.has(form))
+}
+
+/** CU-528 (High; cu-coordinator 22:21Z + 22:22Z addendum): a trailing '?' / '.' / '!' and the question lead-ins ('Are you sure you want
+ *  to <row>?', 'Really <row>?', 'Do you (really) want to <row>?') stripped, so the row decides; '' when nothing changes. policy.mjs runs
+ *  the whole classify on this form and UNIONS its classes (adds only, never lowers). */
+export function questionStripped(name) {
+  const first = String(name ?? '').split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean)[0] ?? ''
+  if (first === '' || first.length > 200) return ''
+  const led = first.replace(/^(?:are\s+you\s+(?:sure|certain)\s+(?:that\s+)?you\s+(?:want|wish)\s+to|do\s+you\s+(?:really\s+)?want\s+to|really)\s+(?=\S)/i, '')
+  // A real question stays a question ('Is this safe?', 'How do I reset my PIN?'): no strip after an interrogative lead word. An ellipsis
+  // ('More…', 'Export...') marks a menu item that opens a dialog, not sentence punctuation - never stripped.
+  if (led === first && /^(?:is|are|was|were|am|how|what|why|where|when|who|whom|whose|which|can|could|should|shall|would|will|does|do|did|have|has|may|might|must)\b/i.test(led)) return ''
+  const stripped = led.replace(/\s*(?:[?!]+|(?<!\.)\.)\s*$/u, '').trim()
+  return stripped !== '' && stripped !== first ? stripped : ''
 }
 
 /** #721 round 3 (cu-coordinator 18:51Z): curly apostrophes and quotes read as straight ones, so a typographic twin of a ruled row
@@ -1141,6 +1160,73 @@ function grammarClassesOf(name, role = '') {
   // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
   // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
   if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
+  // CU-529 (High; cu-coordinator 22:51Z), table PR 34, as verb families with object synonyms - a browser / site permission grant.
+  // PERMISSION: allow (it / this extension) in incognito / private windows / private browsing; (allow) on all sites / websites; a site
+  // prompt's allow (access to) (the / your) camera / microphone / mic / location / notifications. 'Block' and 'Not now' stay free.
+  // #754 r2 (cu-researcher 22:54Z): run / enable in, InPrivate, and on every site.
+  if (/^\s*(?:allow|run|enable)\s+(?:it\s+|this\s+extension\s+|the\s+extension\s+)?in\s+(?:incognito|inprivate|private\s+(?:windows?|browsing|mode))(?:\s+mode)?\s*$|^\s*(?:allow\s+)?on\s+(?:all|every)\s+(?:sites?|websites?)\s*$|^\s*allow\s+(?:access\s+to\s+)?(?:the\s+|your\s+|my\s+)?(?:camera|microphone|mic|location|notifications|camera\s+and\s+microphone)\s*$/i.test(raw)) return ['permission']
+  // CU-527 (High; cu-coordinator 22:06Z), table PR 33, as verb families with object synonyms - a package registry. DELETE: unpublish /
+  // yank (the / this) package / version / release. PERMISSION: add (a / an) maintainer / owner / collaborator / publisher, add a trusted
+  // publisher. CREDENTIAL: create / generate / new (a) granular / automation / publish (access) token. SUBMIT: deprecate (the / this)
+  // package / version / release.
+  if (/^\s*(?:unpublish|yank)\s+(?:the\s+|this\s+|a\s+)?(?:package|version|release|crate|gem|module)s?\s*$/i.test(raw)) return ['delete']
+  if (/^\s*add\s+(?:a\s+|an\s+|new\s+)?(?:maintainer|co-?maintainer|package\s+owner|collaborator|publisher)s?\s*$|^\s*add\s+(?:a\s+|an\s+|new\s+)?trusted\s+publish(?:er|ing)\s*$/i.test(raw)) return ['permission']
+  if (/^\s*(?:create|generate|new|add)\s+(?:a\s+|an\s+)?(?:new\s+)?(?:granular|automation|publish|fine[-\s]grained)\s+(?:access\s+)?token\s*$/i.test(raw)) return ['credential']
+  if (/^\s*deprecate\s+(?:the\s+|this\s+|a\s+)?(?:package|version|release|crate|gem|module)s?\s*$/i.test(raw)) return ['submit']
+  // CU-526 (High; cu-coordinator 21:36Z): a code host's queued merge is a merge - SUBMIT: 'Merge when ready', 'Merge when checks pass',
+  // and enabling / turning on auto-merge (an explicit class ruling: 'Enable auto-merge' moves from the generic enable-auto purchase to
+  // submit, like 'Merge pull request').
+  // #747 round 2 (cu-researcher 21:43Z): the scheduled merge in one row - merge automatically, auto-merge when / after / once ...,
+  // schedule (a / the) merge, merge when / after / once (all) (the) CI / checks / tests / builds pass / succeed / are green / complete,
+  // queue / add (this / the) (PR / pull request) for / to (the) merge (queue).
+  // CU-531 follow-up (cu-researcher 23:20Z self-audit): third-person 'succeeds' / 'completes' / 'finishes' and a pipeline too.
+  if (/^\s*merge\s+when\s+(?:ready|checks?\s+pass|(?:all\s+)?(?:requirements|checks)\s+(?:are\s+)?met)\s*$|^\s*(?:enable|turn\s+on|set\s+up|use)\s+auto[-\s]?merge\s*$|^\s*merge\s+automatically\s*$|^\s*auto[-\s]?merge\s+(?:when|after|once)\s+\S.{0,60}$|^\s*schedule\s+(?:a\s+|the\s+)?merge\s*$|^\s*merge\s+(?:when|after|once)\s+(?:all\s+)?(?:the\s+)?(?:ci|checks?|tests?|builds?|pipelines?)\s+(?:pass(?:es)?|succeed(?:s)?|are\s+green|is\s+green|complete(?:s)?|finish(?:es)?)\s*$|^\s*(?:queue|add)\s+(?:this\s+|the\s+)?(?:pr\s+|pull\s+request\s+)?(?:for|to)\s+(?:the\s+)?merge(?:\s+queue)?\s*$/i.test(raw)) return ['submit']
+  // CU-525 (High; cu-coordinator 21:36Z), table PR 32, as verb families with object synonyms - a database console. PERMISSION: disable
+  // / turn off RLS (row-level security's acronym), allow all IPs / any IP / every IP, add 0.0.0.0/0 (or ::/0), disable / turn off SSL /
+  // TLS enforcement (or 'require SSL'). DELETE: restore (a / the / from) backup / snapshot, restore to a point in time (it overwrites the
+  // live data). CREDENTIAL: reveal / show / copy / view the service role key / secret, show / copy / view / reveal the connection string /
+  // URI / URL. #746 r2 (cu-researcher 21:39Z): 'Disable / Turn off SSL', 'Restore to this point', 'service_role key';
+  // cu-developer-two 21:40Z: singular 'any IP address' / 'any address', and 'database URI / URL' (it carries the password).
+  // #746 r3 (cu-researcher 21:46Z): 'Restore to a snapshot', 'Roll back to snapshot', 'Restore database'.
+  // CU-531 (High; cu-coordinator 23:21Z): 'Roll back / Revert to this point', 'Roll back / Revert database' - the ruled family; a bare
+  // 'Roll back' / 'Rollback' / 'Revert' stays free (deploys too). #759 r2 (cu-researcher 23:26Z): the determiner is optional ('Revert to
+  // point in time', 'Roll back to the time').
+  if (/^\s*(?:disable|turn\s+off|switch\s+off|bypass)\s+(?:the\s+)?rls\s*$|^\s*(?:allow|permit|whitelist|allowlist)\s+(?:all|any|every)\s+(?:ips?|ip\s+address(?:es)?|address(?:es)?|networks?|sources?)\s*$|^\s*(?:add|allow)\s+0\.0\.0\.0\/0\s*$|^\s*(?:add|allow)\s+::\/0\s*$|^\s*(?:disable|turn\s+off|remove|switch\s+off)\s+(?:the\s+)?(?:ssl|tls|https)\s+(?:enforcement|requirement|only|mode)\s*$|^\s*(?:disable|turn\s+off)\s+(?:require|enforce)\s+(?:ssl|tls)\s*$|^\s*(?:disable|turn\s+off|switch\s+off)\s+(?:the\s+)?(?:ssl|tls)\s*$/i.test(raw)) return ['permission']
+  if (/^\s*restore\s+(?:from\s+)?(?:a\s+|the\s+|this\s+)?(?:backup|snapshot)\s*$|^\s*restore\s+(?:the\s+)?(?:database\s+)?to\s+(?:a\s+|the\s+)?point[-\s]in[-\s]time\s*$|^\s*point[-\s]in[-\s]time\s+restore\s*$|^\s*restore\s+(?:the\s+database\s+)?to\s+(?:this|that|the\s+selected)\s+(?:point|time|moment|snapshot|version)\s*$|^\s*(?:restore|roll\s*back|revert)\s+(?:the\s+database\s+)?to\s+(?:a\s+|an\s+|the\s+)?(?:earlier\s+|previous\s+)?(?:snapshot|backup)\s*$|^\s*restore\s+(?:the\s+|this\s+)?(?:database|db)\s*$|^\s*(?:roll\s*back|revert|restore)\s+(?:the\s+database\s+)?to\s+(?:(?:this|that|the\s+selected|the|a|an\s+earlier|a\s+previous)\s+)?(?:point|time|moment|version)(?:\s+in\s+time)?\s*$|^\s*(?:roll\s*back|revert)\s+(?:the\s+|this\s+)?(?:database|db)\s*$/i.test(raw)) return ['delete']
+  if (/^\s*(?:reveal|show|copy|view|display|get)\s+(?:the\s+)?(?:service[-_\s]role|service)\s+(?:key|secret|token)\s*$|^\s*(?:reveal|show|copy|view|display|get)\s+(?:the\s+)?(?:database\s+|db\s+)?connection\s+(?:string|uri|url)\s*$|^\s*(?:reveal|show|copy|view|display|get)\s+(?:the\s+)?(?:database|db|postgres(?:ql)?|mysql|mongodb)\s+(?:uri|url|dsn)\s*$/i.test(raw)) return ['credential']
+  // CU-524 (High; cu-coordinator 21:06Z), table PR 31, as verb families with object synonyms - a new recovery channel lets someone
+  // else take the account back. CREDENTIAL: add / register / set (up) a trusted / backup / recovery / alternate / secondary / additional
+  // phone (number) / number / email (address); set up (account) recovery (options); add / set up a backup / recovery / sign-in method /
+  // option. The URL-bound bare 'Add phone number' (account-security pages) lives in policy.mjs.
+  if (/^\s*(?:add|register|set(?:\s+up)?|enter)\s+(?:a\s+|an\s+|the\s+)?(?:new\s+)?(?:trusted|backup|recovery|alternate|alternative|secondary|additional)\s+(?:phone(?:\s+number)?|mobile(?:\s+number)?|number|e-?mail(?:\s+address)?|address)\s*$|^\s*set\s+up\s+(?:your\s+|the\s+)?(?:account\s+)?recovery(?:\s+(?:options?|methods?|info(?:rmation)?))?\s*$|^\s*(?:add|set\s+up)\s+(?:a\s+|an\s+|another\s+)?(?:backup|recovery|sign[-\s]?in|alternative)\s+(?:method|option|factor)\s*$/i.test(raw)) return ['credential']
+  // CU-523 (High; cu-coordinator 20:36Z), table PR 30, as verb families with object synonyms - an identity-provider admin hands over an
+  // account. CREDENTIAL: set / create / issue / generate a temporary / one-time password / passcode; unlock (the / this) user (account).
+  // The URL-bound 'Add to group' family (permission) lives in policy.mjs.
+  if (/^\s*(?:set|create|issue|generate|assign)\s+(?:a\s+|an\s+|the\s+)?(?:new\s+)?(?:temporary|temp|one[-\s]time|initial)\s+(?:password|passcode|pin)\s*$|^\s*unlock\s+(?:the\s+|this\s+|selected\s+)?users?(?:\s+account)?\s*$/i.test(raw)) return ['credential']
+  // CU-521 (High; cu-coordinator 20:06Z), table PR 29, as verb families with object synonyms - a code host's admin-bypass merge.
+  // PERMISSION + SUBMIT: merge without waiting (for the requirements / checks / reviews to be met / pass), bypass the (branch protection)
+  // rules / protections / requirements / checks (and merge), use your administrator / admin privileges to merge, force(-)merge, merge
+  // anyway, merge as / with admin, override and merge; #731 r2 (cu-researcher 20:15Z): merge without (required) checks / reviews,
+  // admin merge, skip / ignore checks and merge. PERMISSION: dismiss the review(s), dismiss stale approvals / reviews, override the
+  // (required) (status) check(s), skip the required checks.
+  if (/^\s*merge\s+without\s+waiting(?:\s+for\s+(?:the\s+)?(?:requirements|checks|reviews|approvals?|ci)(?:\s+to\s+(?:be\s+met|pass|complete|finish))?)?\s*$|^\s*bypass\s+(?:the\s+)?(?:branch\s+)?(?:protection\s+)?(?:rules|protections?|requirements|checks|rulesets?)(?:\s+and\s+merge)?\s*$|^\s*use\s+(?:your\s+)?(?:administrator|admin)\s+(?:privileges|rights|override)\s+to\s+merge\s*$|^\s*force[-\s]?merge\s*$|^\s*merge\s+anyway\s*$|^\s*merge\s+(?:as|with)\s+(?:an?\s+)?admin(?:istrator)?(?:\s+override)?\s*$|^\s*override\s+and\s+merge\s*$|^\s*merge\s+without\s+(?:the\s+)?(?:required\s+)?(?:status\s+)?(?:checks?|reviews?|approvals?|ci)\s*$|^\s*admin(?:istrator)?\s+merge\s*$|^\s*(?:skip|ignore|bypass)\s+(?:the\s+)?(?:required\s+)?(?:status\s+)?(?:checks?|reviews?|ci)\s+and\s+merge\s*$/i.test(raw)) return ['permission', 'submit']
+  if (/^\s*dismiss\s+(?:the\s+|this\s+|all\s+)?(?:stale\s+)?(?:reviews?|approvals?)\s*$|^\s*override\s+(?:the\s+|this\s+)?(?:required\s+)?(?:status\s+)?checks?\s*$|^\s*skip\s+(?:the\s+)?required\s+(?:status\s+)?checks?\s*$/i.test(raw)) return ['permission']
+  // CU-518 (High; cu-coordinator 19:36Z), table PR 28, as verb families with object synonyms - a carrier account hands over the number.
+  // CREDENTIAL: activate / set up / move / transfer the (e)SIM or number on / to a new / another device; forward / redirect calls to another
+  // / a different / a new number; show / reveal / view / change / reset the account / port-out / transfer PIN; disable / turn off / remove
+  // the number lock / port-out protection / SIM protection. PERMISSION: add an authorized user.
+  if (/^\s*(?:activate|set\s+up|move|transfer|port)\s+(?:the\s+|my\s+|your\s+)?(?:e-?sim|sim(?:\s+card)?|phone\s+number|number|line)\s+(?:on|to)\s+(?:a\s+|the\s+)?(?:new|another|different|other)\s+(?:device|phone)\s*$|^\s*(?:forward|redirect|divert)\s+(?:all\s+|my\s+)?calls\s+to\s+(?:a\s+|an\s+)?(?:another|different|new|other)\s+number\s*$|^\s*(?:show|reveal|view|change|reset|update)\s+(?:the\s+|my\s+|your\s+)?(?:account|port[-\s]?out|transfer|number\s+transfer)\s+(?:pin|passcode)\s*$|^\s*(?:disable|turn\s+off|remove|switch\s+off)\s+(?:the\s+)?(?:number\s+lock|port[-\s]?out\s+(?:protection|lock)|sim\s+(?:protection|lock)|number\s+transfer\s+lock)\s*$/i.test(raw)) return ['credential']
+  // #729 round 2 (cu-researcher 19:42Z): move / transfer / port the number to a new eSIM / SIM / device / phone.
+  if (/^\s*(?:move|transfer|port|switch)\s+(?:my\s+|the\s+|your\s+)?(?:phone\s+)?number\s+to\s+(?:a\s+|an\s+|the\s+)?(?:new|another|different)\s+(?:e-?sim|sim(?:\s+card)?|device|phone)\s*$/i.test(raw)) return ['credential']
+  if (/^\s*add\s+(?:an?\s+)?authori[sz]ed\s+(?:user|account\s+user|manager)\s*$/i.test(raw)) return ['permission']
+  // CU-516 (High; cu-coordinator 18:51Z), table PR 27, as verb families with object synonyms - a seller dashboard's money and data
+  // controls. PURCHASE: mark (the order / invoice) (as) paid, void the authorization / payment / charge / invoice, accept / concede /
+  // forfeit / give up (#723 r2) the dispute /
+  // chargeback, apply a 100% / full discount, waive the (late / shipping) fee(s). SUBMIT + PURCHASE: ship to a new / different address.
+  // PERMISSION: export / download the customer (list / emails / data / contacts).
+  if (/^\s*mark\s+(?:the\s+|this\s+)?(?:order\s+|invoice\s+|payment\s+)?(?:as\s+)?paid\s*$|^\s*void\s+(?:the\s+|this\s+)?(?:authori[sz]ation|payment|charge|invoice|transaction)\s*$|^\s*(?:accept|concede|forfeit|give\s+up)\s+(?:the\s+|this\s+)?(?:dispute|chargeback)\s*$|^\s*apply\s+(?:a\s+)?(?:100\s?%|full)\s+(?:discount|off|refund)\s*$|^\s*waive\s+(?:the\s+|this\s+|all\s+)?(?:(?:late|shipping|service|processing|cancellation)\s+)?(?:fees?|charges?)\s*$/i.test(raw)) return ['purchase']
+  if (/^\s*ship\s+(?:it\s+|order\s+)?to\s+(?:a\s+)?(?:new|different|another)\s+address\s*$/i.test(raw)) return ['submit', 'purchase']
+  if (/^\s*(?:export|download)\s+(?:the\s+|all\s+)?(?:customer|customers|buyer|buyers|client|clients)(?:\s+(?:list|emails?|e-mails?|data|contacts|addresses))?\s*$/i.test(raw)) return ['permission']
   // CU-514 (High; cu-coordinator 18:21Z; r2 18:36Z adds the present tense 'Confirm it's you'), table PR 26, as verb families with object synonyms - vouching for a suspicious sign-in or unblocking
   // one lets someone else in, like 'Approve sign-in' / 'Yes, it was me' (permission): confirm / verify the sign-in (attempt), confirm it
   // was you / me, unblock / unlock the sign-in (unblock the account), allow sign-in(s) from a new location / device / country, trust this
