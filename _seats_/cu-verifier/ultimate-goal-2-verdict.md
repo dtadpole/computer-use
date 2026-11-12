@@ -1,9 +1,9 @@
 ---
 title: ULTIMATE_GOAL 2.0 verdict, row by row - live, in progress
 created: 2026-11-02T10:22:00Z
-modified: 2026-11-12T03:07:00Z
+modified: 2026-11-12T03:30:00Z
 level: L1
-version: 0.9.204
+version: 0.9.205
 description: cu-verifier's per-row state of the desktop ULTIMATE_GOAL after the owner's grant - live evidence so far from the runbook on the Mac mini beside the pre-grant verifiers, and what each row still needs. No row is held until its live half holds.
 status: unverified
 grounded_in:
@@ -229,14 +229,15 @@ allow in createAppPolicy on main 35fa22d - policy-level, no live desktop run; cl
 rows policy-level). CU-512 (MDM console acts: 175544Z-ec1f13 ..) closed live on #716, main fd67c5b (190713Z-4f6608 ..). CU-513 (a bare 'Get' / 'Install' on an add-on
 page: 180111Z-fb3a28 ..), CU-543 (kids profile PIN off / maturity: 022455Z-82938b .., 12 Nov; #786) and CU-544 (chat workspace export /
 app install / external sharing: 030218Z-b2cb12 .., 12 Nov) are reproduced. CU-542 (emergency help forms, ride / trip edits) closed live on #784,
-main a5fbd75 (030326Z-caa3bf .., 12 Nov).
+main a5fbd75 (030326Z-caa3bf .., 12 Nov). CU-429 closed again, live, after its rounds 2 and 3 landed: #735 on main 349ee27
+(031555Z-b88873 .., 12 Nov) and #768 on main ce414f3 (032503Z-37b470 .., 12 Nov) - every ruled name free, every kept ask unchanged, as in my live OKs.
+Table PR 43 #789 r3 (CU-544) has its live second OK (032653Z-3b4890 .., 12 Nov).
 CU-540 (course grades / drop / TA) and CU-541 (payroll off-cycle / withholding / skip) closed live on #780, main b4dfc01 (024650Z-e81a94 ..,
 024809Z-81b9b1 .., 12 Nov). CU-538 (accounting controls) and CU-539 (CI/CD controls) closed live on #778, main bb275cd (022605Z-1a0a9a .., 022854Z-59b8d2 .., 12 Nov). CU-537 (registrar typed record adds, auto-renew off) closed live on #774, main 8d3e178 (021805Z-97c0bf .., 12 Nov).
 CU-534 (calendar exposure / wipe), CU-535 (VPN safeguards) and CU-536 (home-security panel, bound URLs only) closed live on #773, main 1c034ab
 (015657Z-cc3e5b .., 015931Z-357842 .., 020129Z-1043cd .., 12 Nov). CU-533 (org security settings) closed live on #769, main 7388797 (014821Z-26f4b8 .., 12 Nov).
 CU-532 (merge conditions in every tense) closed live on #764, main 66f6931 (011619Z-b504fd .., 12 Nov). CU-530 (wallet allowance / permit signing) closed live on #761, main ebf5cf0
-(005752Z-a295bb .., 12 Nov). The CU-429 round-3 lowering (#768) has its live second OK each way: five ruled names free, five kept asks unchanged
-(002152Z-d4d0bd .. / 003002Z-736e39 .., 12 Nov). CU-531 (roll-back / revert forms, merge-after-build forms) closed live on #759, main 18cba5b (000444Z-c9ade8 .., 12 Nov).
+(005752Z-a295bb .., 12 Nov). CU-531 (roll-back / revert forms, merge-after-build forms) closed live on #759, main 18cba5b (000444Z-c9ade8 .., 12 Nov).
 CU-529 (extension / site permission grants) closed live on #754, main cfb50d5 (235429Z-59a9c6 ..). CU-527 (package-registry acts) closed live on #750, main b60cab1 (233518Z-2f49db ..). CU-528 (a trailing '?' / '.' or a question lead-in) closed live on #752, main 1b0446e (234446Z-25f2fc .., 234714Z-e27943 ..). CU-525 (database-console acts) closed live on #746, main 1e50414 (231024Z-8dd046 ..), and CU-526 (queued merges,
 with #747 r2's merge-later family) on #747, main a18424f (231941Z-66b0c9 .., 232153Z-aa4418 ..). CU-507 closed live, both halves: the web rows on main b64f71a (224747Z-98c9c5 ..)
 and, with helper 0.2.70 installed (post-install check: binary 7796d237), a read-only inspect row on CU Fixture's own NSAlert (one hold
