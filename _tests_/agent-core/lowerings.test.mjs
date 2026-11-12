@@ -72,6 +72,18 @@ test('Round 4 (cu-coordinator 03:36Z, CU-547): exactly Revoke allowance, View pa
     assert.deepEqual(at(name, url, 'link'), [], `link: ${name}`)
   }
   assert.ok(at('Roll back deploy', 'https://deploy.example/app').includes('submit'), 'KEPT: Roll back deploy')
-  for (const [name, url] of [['Pay stubs', 'https://payroll.example/pay'], ['Revoke all allowances', 'https://wallet.example/approvals'], ['Approve unlimited', 'https://wallet.example/approvals']]) assert.notDeepEqual(at(name, url), [], `neighbour keeps asking: ${name}`)
+  for (const [name, url] of [['Revoke all allowances', 'https://wallet.example/approvals'], ['Approve unlimited', 'https://wallet.example/approvals']]) assert.notDeepEqual(at(name, url), [], `neighbour keeps asking: ${name}`)
   assert.notDeepEqual(at('Security settings', 'https://mail.example/settings', 'switch'), [], 'a toggle never lowers')
+})
+
+test('CU-556 round 5 (cu-coordinator 06:21Z): exactly five labels lower to free; Wire transfer and every neighbour keep asking', () => {
+  const pay = (name, url, role = 'button') => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url, target: { role, name } }); return v.decision === 'allow' ? [] : (v.classes ?? [v.class]) }
+  for (const [name, url] of [['Port forwarding', 'https://router.example/admin'], ['Two-factor authentication', 'https://account.example/security'], ['Deploy keys', 'https://code.example/acme/app/settings'], ['Permissions', 'https://app.example/settings'], ['Pay stubs', 'https://payroll.example/pay']]) {
+    assert.deepEqual(pay(name, url), [], `button: ${name}`)
+    assert.deepEqual(pay(name, url, 'link'), [], `link: ${name}`)
+  }
+  assert.notDeepEqual(pay('Wire transfer', 'https://bank.example/transfers'), [], 'Wire transfer keeps asking (fail-closed)')
+  for (const [name, url] of [['Turn off two-factor authentication', 'https://account.example/security'], ['Add deploy key', 'https://code.example/acme/app/settings'], ['Add port forwarding rule', 'https://router.example/admin']]) assert.notDeepEqual(pay(name, url), [], `neighbour keeps asking: ${name}`)
+  const sw = (checked) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: 'https://account.example/security', target: { role: 'switch', name: 'Two-factor authentication', tag: 'input', inputType: 'checkbox', checked } }); return v.decision === 'allow' ? [] : (v.classes ?? [v.class]) }
+  assert.notDeepEqual(sw(true), [], 'the 2FA switch turned off keeps its direction rule')
 })
