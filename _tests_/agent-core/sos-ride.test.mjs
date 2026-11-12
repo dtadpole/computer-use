@@ -29,3 +29,12 @@ test("CU-542: a ride's stop / destination / fare split ask purchase on ride page
   }
   assert.ok(classesOf('Upgrade ride', MAPS).includes('purchase'), 'older row unchanged')
 })
+
+test("#784 round 2 (cu-researcher 02:28Z): a ride host label; the ride names take a tail", () => {
+  const FIX = 'https://ride.fixture.example/trip/active'
+  for (const name of ['Add stop', 'Add another stop', 'Change destination', 'Update destination', 'Split fare']) assert.ok(classesOf(name, FIX).includes('purchase'), `ride host: ${name}`)
+  for (const name of ['Add another stop on the way', 'Split fare with friends', 'Change destination to airport']) {
+    assert.ok(classesOf(name, 'https://taxi.example/ride/9').includes('purchase'), `tail: ${name}`)
+    assert.deepEqual(classesOf(name, MAPS), [], `maps: ${name}`)
+  }
+})
