@@ -50,3 +50,8 @@ test('#813 round 3 (cu-researcher 06:26Z): the held-out escapes ask', () => {
   for (const name of ['Termination date', 'Visit history']) assert.deepEqual(at(name, HR), [], name)
   assert.deepEqual(at('Separation pay', HR), ['purchase'], 'an older pay row keeps purchase')
 })
+
+test("#813 round 4 (cu-verifier 06:31Z): 'Email my lab results' asks permission", () => {
+  for (const name of ['Email my lab results', 'Send my lab results', 'Save my test results']) assert.ok(at(name, PORTAL).length > 0, name)
+  assert.ok(at('Email my lab results', PORTAL).includes('permission'))
+})

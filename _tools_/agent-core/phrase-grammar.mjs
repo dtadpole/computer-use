@@ -1162,8 +1162,9 @@ function grammarClassesOf(name, role = '') {
   if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
   // CU-552 (High, health data; cu-coordinator 05:21Z), table PR 49 - PERMISSION for downloading / exporting / printing / sending (all) (my)
   // medical / health records / summary / history / chart / data / visit notes / lab results. A bare 'Download all records' is URL-bound
-  // in policy.mjs (patient-portal pages), since 'records' alone names a CRM's rows too.
-  if (/^\s*(?:download|export|print|save|send|email)\s+(?:all\s+)?(?:of\s+)?(?:my\s+|your\s+|the\s+)?(?:full\s+|complete\s+)?(?:medical|health|patient|clinical)\s+(?:records?|summary|history|chart|data|information|file)\s*$|^\s*(?:download|export|print)\s+(?:all\s+)?(?:my\s+)?(?:lab\s+results|test\s+results|visit\s+notes|immunization\s+records?|health\s+summary)\s*$/i.test(raw)) return ['permission']
+  // in policy.mjs (patient-portal pages), since 'records' alone names a CRM's rows too. #813 r4 (cu-verifier 06:31Z): send / email / save
+  // join the lab / test results family ('Email my lab results').
+  if (/^\s*(?:download|export|print|save|send|email)\s+(?:all\s+)?(?:of\s+)?(?:my\s+|your\s+|the\s+)?(?:full\s+|complete\s+)?(?:medical|health|patient|clinical)\s+(?:records?|summary|history|chart|data|information|file)\s*$|^\s*(?:download|export|print|send|email|e-mail|save)\s+(?:all\s+)?(?:of\s+)?(?:my\s+|your\s+|the\s+)?(?:lab\s+results|test\s+results|visit\s+notes|immunization\s+records?|health\s+summary)\s*$/i.test(raw)) return ['permission']
   // CU-553 (High; cu-coordinator 05:21Z), table PR 49 - an HR system. DELETE, like 'Terminate employee': end (the / this / their)
   // employment; dismiss / fire / let go (of) / lay off (this / the) employee / worker / staff member; process (the) termination; mark as
   // terminated; start / begin / initiate offboarding. PERMISSION: promote (them / this employee) to manager; make (them) (a) manager /
