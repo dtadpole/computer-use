@@ -1160,6 +1160,11 @@ function grammarClassesOf(name, role = '') {
   // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
   // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
   if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
+  // CU-544 (High; cu-coordinator 03:06Z), table PR 43 - a chat workspace's admin. PERMISSION: export (the / all) workspace data / messages /
+  // conversations / channels / history, export all messages; allow / enable / turn on external sharing. INSTALL: install / add (an / the /
+  // this) app / integration / bot to (the / this / your) workspace. Guest access is unioned in policy.mjs (an older class leads).
+  if (/^\s*export\s+(?:the\s+|all\s+)?(?:workspace|team|organization|org)\s+(?:data|messages|conversations|channels|history)\s*$|^\s*export\s+all\s+(?:messages|conversations|channels|chats|workspace\s+data)\s*$|^\s*(?:allow|enable|turn\s+on|permit)\s+external\s+(?:sharing|channels|connections|access)\s*$/i.test(raw)) return ['permission']
+  if (/^\s*(?:install|add)\s+(?:an?\s+|the\s+|this\s+)?(?:app|application|integration|bot)\s+to\s+(?:the\s+|this\s+|your\s+|my\s+)?workspace\s*$/i.test(raw)) return ['install']
   // CU-543 (High; cu-coordinator 02:36Z), table PR 42 - a kids / child profile's safeguards ask PERMISSION: turn off / disable / remove (the)
   // profile PIN / lock / passcode; allow all maturity ratings / ratings / content; set (the) maturity (rating / level) to 18+ / adult / all /
   // mature / R / TV-MA / unrestricted; turn off / disable (the) maturity / content filter / restrictions. 'Remove profile PIN / lock' keep
