@@ -13,7 +13,11 @@ export const FIXED_DENY_LOOPBACK_PORTS = Object.freeze([3080, 8080, 8082, 3097, 
 // CU-394 (cu-coordinator 02:57Z): a remote-desktop web client is a window onto another machine, like the remote_surface
 // apps - denied whatever the allow list says (subdomains too).
 // cu-coordinator 03:05Z: the named web remote clients too - TeamViewer's web client and Parsec (subdomains included).
-export const FIXED_DENY_HOSTS = Object.freeze(['remotedesktop.google.com', 'start.teamviewer.com', 'login.teamviewer.com', 'parsec.app'])
+// CU-394 (cu-coordinator 18:02Z): the web clients of Azure Virtual Desktop (classic and the Windows App web client),
+// Windows 365, AnyDesk and Splashtop are windows onto another machine too. Named limit: self-hosted gateways (Apache
+// Guacamole, noVNC) live on arbitrary hosts and cannot be host-listed.
+export const FIXED_DENY_HOSTS = Object.freeze(['remotedesktop.google.com', 'start.teamviewer.com', 'login.teamviewer.com', 'parsec.app',
+  'client.wvd.microsoft.com', 'windows.cloud.microsoft', 'windows365.microsoft.com', 'web.anydesk.com', 'web.splashtop.com'])
 
 const NETWORK_SCHEMES = new Set(['http:', 'https:', 'ws:', 'wss:'])
 const MATCH_SCHEME = Object.freeze({ 'http:': 'http', 'https:': 'https', 'ws:': 'http', 'wss:': 'https' })
