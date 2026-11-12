@@ -1258,6 +1258,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
           // Round 4 (cu-coordinator 03:36Z; CU-547): 'Revoke allowance', 'View pay stub' and 'Security settings' as a button / link, exactly
           // these; 'Roll back deploy' KEEPS submit (it changes what runs in production).
           || /^(?:revoke allowance|view pay stub|security settings)$/i.test(plain)
+          // Round 5 (cu-coordinator 06:21Z; CU-556): the labels 'Port forwarding', 'Two-factor authentication' (a button / link - its switch
+          // keeps its direction rule; toggles never reach here), 'Deploy keys', 'Permissions' and 'Pay stubs', exactly these; 'Wire transfer'
+          // KEEPS asking (fail-closed).
+          || /^(?:port forwarding|two-factor authentication|deploy keys|permissions|pay stubs)$/i.test(plain)
           || (/^add members? to (?:the )?group$/i.test(plain) && (isMessagingApp(String(context.frontmostBundleId ?? target?.origin ?? '')) || (() => { try { const u = new URL(url); return /^https?:$/.test(u.protocol) && /(?:^|[./-])(?:chat|slack|discord|teams|messenger|whatsapp|telegram|signal|messages)(?:[./-]|$)/i.test(`${u.hostname} ${u.pathname}`) } catch { return false } })()))
           || (link && /^unsubscribe(?: link)?$/i.test(plain))
         let refusal = false
@@ -1952,6 +1956,31 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))) {
       if (/^\s*(?:client|ap|wireless)\s+isolation\s*$/i.test(name) && nativeToggleState(target) !== false) classes.push('permission')
       else if (/^\s*wps(?:\s+(?:push\s+button|pin))?\s*$|^\s*wi-?fi\s+protected\s+setup\s*$/i.test(name) && nativeToggleState(target) !== true) classes.push('permission')
+    }
+    // CU-555 (High; cu-coordinator 06:21Z), folded into table PR 50: a connected car's safeguard SWITCH - speed limit (mode) / limiter,
+    // curfew, driver monitoring, teen (driver) mode, valet mode, geofence - turned OFF (on -> off and unread) asks PERMISSION; off -> on free.
+    if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))
+      && /^\s*(?:speed\s+limit(?:\s+mode)?|speed\s+limiter|max(?:imum)?\s+speed\s+limit|curfew|driver\s+monitoring|driver\s+attention\s+monitoring|teen\s+(?:driver\s+)?mode|valet\s+mode|geofenc(?:e|ing)|driving\s+restrictions?)\s*$/i.test(name) && nativeToggleState(target) !== false) classes.push('permission')
+    // CU-554 (High; cu-coordinator 06:06Z), table PR 50: a 'Maintenance mode' switch turned ON (off -> on and unread) asks SUBMIT, on -> off
+    // free; a 'Site published / online / live' switch turned OFF (on -> off and unread) asks SUBMIT, off -> on free.
+    if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))) {
+      if (/^\s*(?:site\s+|store\s+)?maintenance(?:\s+mode)?\s*$/i.test(name) && nativeToggleState(target) !== true) classes.push('submit')
+      else if (/^\s*(?:site|website|store|shop|blog)\s+(?:published|online|live|visible|enabled)\s*$|^\s*(?:publish|enable)\s+(?:site|website|store|shop|blog)\s*$/i.test(name) && nativeToggleState(target) !== false) classes.push('submit')
+    }
+    // CU-558 (#821 r2, cu-developer-three 07:30Z): a 'Location on posts' / 'Location tagging' / 'Add location to posts' switch is an
+    // exposure - off -> on and unread ask PERMISSION, on -> off free (like 'Guest access').
+    if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))
+      && /^\s*(?:(?:show\s+|add\s+)?(?:my\s+)?location\s+(?:on|in|to)\s+(?:my\s+|new\s+)?(?:posts|photos|stories)|location\s+tagging|tag\s+my\s+location)\s*$/i.test(name) && nativeToggleState(target) !== true) classes.push('permission')
+    // CU-558 (#821 r4, cu-researcher 07:47Z), URL-bound (D-106): a bare 'Show (my) location' / 'Add (my) (current) location / city' asks
+    // PERMISSION on a social / post page only (a social / facebook / instagram / twitter / x / threads / tiktok / linkedin / snapchat /
+    // mastodon / bluesky host label, or a post(s) / compose / status / profile / stories / feed / share path segment).
+    if (grammarEligible && classes.length === 0 && /^\s*(?:show\s+(?:my\s+)?location|add\s+(?:my\s+)?(?:current\s+)?(?:location|city))\s*$/i.test(String(name ?? ''))) {
+      let socialPage = false
+      try {
+        const u = new URL(url)
+        socialPage = /^https?:$/.test(u.protocol) && (/(?:^|\.)(?:social|facebook|instagram|twitter|x|threads|tiktok|linkedin|snapchat|mastodon|bsky|bluesky)(?:\.|$)/i.test(u.hostname) || /(?:^|\/)(?:posts?|compose|status|profile|stories|feed|share)(?=$|[/?#])/i.test(u.pathname))
+      } catch { socialPage = false }
+      if (socialPage) classes.push('permission')
     }
     // CU-446 (cu-coordinator 21:05Z): a domain-lock / transfer-lock switch turned OFF asks credential, a WHOIS-privacy switch turned
     // OFF asks permission; ON is free on a native read; an unread state asks both ways.
