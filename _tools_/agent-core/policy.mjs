@@ -1967,6 +1967,17 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // exposure - off -> on and unread ask PERMISSION, on -> off free (like 'Guest access').
     if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))
       && /^\s*(?:(?:show\s+|add\s+)?(?:my\s+)?location\s+(?:on|in|to)\s+(?:my\s+|new\s+)?(?:posts|photos|stories)|location\s+tagging|tag\s+my\s+location)\s*$/i.test(name) && nativeToggleState(target) !== true) classes.push('permission')
+    // CU-558 (#821 r4, cu-researcher 07:47Z), URL-bound (D-106): a bare 'Show (my) location' / 'Add (my) (current) location / city' asks
+    // PERMISSION on a social / post page only (a social / facebook / instagram / twitter / x / threads / tiktok / linkedin / snapchat /
+    // mastodon / bluesky host label, or a post(s) / compose / status / profile / stories / feed / share path segment).
+    if (grammarEligible && classes.length === 0 && /^\s*(?:show\s+(?:my\s+)?location|add\s+(?:my\s+)?(?:current\s+)?(?:location|city))\s*$/i.test(String(name ?? ''))) {
+      let socialPage = false
+      try {
+        const u = new URL(url)
+        socialPage = /^https?:$/.test(u.protocol) && (/(?:^|\.)(?:social|facebook|instagram|twitter|x|threads|tiktok|linkedin|snapchat|mastodon|bsky|bluesky)(?:\.|$)/i.test(u.hostname) || /(?:^|\/)(?:posts?|compose|status|profile|stories|feed|share)(?=$|[/?#])/i.test(u.pathname))
+      } catch { socialPage = false }
+      if (socialPage) classes.push('permission')
+    }
     // CU-446 (cu-coordinator 21:05Z): a domain-lock / transfer-lock switch turned OFF asks credential, a WHOIS-privacy switch turned
     // OFF asks permission; ON is free on a native read; an unread state asks both ways.
     if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))) {

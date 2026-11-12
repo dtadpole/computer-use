@@ -41,3 +41,14 @@ test('#821 round 3 (cu-researcher 07:44Z): export / get forms, tags from anyone,
   for (const name of ['Export all data', "Export a copy of everything you've shared", 'Get a data download', 'Allow tags from anyone', 'Add my current location', 'Add city', 'Add location']) assert.ok(classesOf(name).includes('permission'), name)
   assert.deepEqual(classesOf('Export data'), [], 'a bare Export data stays free (older pin)')
 })
+
+test('#821 round 4 (cu-researcher 07:47Z): the bare location forms ask on a social page only', () => {
+  const at = (name, url) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url, target: { role: 'button', name } }); return v.decision === 'allow' ? [] : (v.classes ?? [v.class]) }
+  for (const name of ['Show my location', 'Show location', 'Add location', 'Add my current city']) assert.ok(at(name, 'https://social.example/compose').includes('permission'), `social: ${name}`)
+  for (const name of ['Show location', 'Add location', 'Add my current city']) {
+    assert.deepEqual(at(name, 'https://maps.example/search'), [], `maps: ${name}`)
+    assert.deepEqual(at(name, 'https://calendar.example/event/new'), [], `calendar: ${name}`)
+  }
+  assert.ok(at('Show my location', 'https://maps.example/search').includes('permission'), "an older location-sharing row asks on main already (named)")
+  assert.ok(at('Add my current city to new posts', 'https://maps.example/search').includes('permission'), 'an explicit posts object stays unbound')
+})
