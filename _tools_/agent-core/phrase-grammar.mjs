@@ -1160,6 +1160,11 @@ function grammarClassesOf(name, role = '') {
   // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
   // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
   if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
+  // CU-546 (High; cu-coordinator 03:51Z), table PR 45 - a seller's money and listings. PURCHASE: request (a / your / my) payout /
+  // withdrawal / disbursement; bulk edit / update / change (all) prices, bulk price edit / update; set (the / all) price(s) to $0 / 0 /
+  // zero / free; apply (a) deep discount - 50% to 100% off. DELETE: end / close / deactivate all (active / my) listings / items.
+  if (/^\s*request\s+(?:a\s+|an\s+|your\s+|my\s+)?(?:payout|withdrawal|disbursement|transfer\s+to\s+bank)\s*$|^\s*bulk\s+(?:edit|update|change)\s+(?:all\s+)?(?:the\s+)?prices\s*$|^\s*bulk\s+price\s+(?:edit|update|change)s?\s*$|^\s*set\s+(?:the\s+|all\s+)?prices?\s+to\s+(?:\$\s*0(?:\.00)?|0(?:\.00)?|zero|free)\s*$|^\s*apply\s+(?:an?\s+)?(?:(?:[5-9]\d|100)\s*%|deep)\s+(?:off\s+)?discount\s*$|^\s*apply\s+(?:an?\s+)?(?:[5-9]\d|100)\s*%\s+off\s*$/i.test(raw)) return ['purchase']
+  if (/^\s*(?:end|close|deactivate)\s+all\s+(?:active\s+|my\s+|of\s+my\s+)?(?:listings|items|ads)\s*$/i.test(raw)) return ['delete']
   // CU-545 (High; cu-coordinator 03:36Z), table PR 44 - a recovery kit / key carries the account's way back in, like 'Download recovery
   // key' / 'Download emergency kit': CREDENTIAL for download / save / print / export / get (the / your / my) recovery kit / key / sheet /
   // document (PDF), and save / print / export (the / your) recovery key.
