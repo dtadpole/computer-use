@@ -239,6 +239,7 @@ const readEvents = (dir) => readFileSync(join(dir, 'events.jsonl'), 'utf8').trim
  * live view's control channel shortly after it comes. Resolves the result, its events, the control's state changes,
  * the driver's localInput reports and the fake's requests.
  */
+const RESUME_MS = 250
 async function rehearse({ config = world(), turns, standInTurns }) {
   const control = createRunControl()
   const states = []
@@ -248,7 +249,11 @@ async function rehearse({ config = world(), turns, standInTurns }) {
   control.subscribe((event) => {
     if (event.type !== 'state') return
     states.push({ state: event.state, source: event.source, stopHeld: event.state === 'paused' ? env.localInputAt !== null : null })
-    if (event.state === 'paused') setTimeout(() => control.send({ command: 'resume' }, { source: 'control' }), 5)
+    // The person resumes RESUME_MS after the pause, as a person would - long enough for every echo of the same input
+    // (the helper's event and the input's local_input answer can arrive apart under CPU load) to land while still paused,
+    // where it pauses nothing. At 5 ms a late echo landed after the resume and paused the run a second time (row (f),
+    // three full agent-core runs on 11-12 Nov).
+    if (event.state === 'paused') setTimeout(() => control.send({ command: 'resume' }, { source: 'control' }), RESUME_MS)
   })
   await logged(child, 3)
   try {
@@ -297,7 +302,7 @@ test('(f) the stand-in\'s pause is the ordinary local-input pause: the same cont
   assert.equal(seamRequests(person.requests).length, 0)
   for (const [run, kind] of [[standIn, 'pointer'], [person, 'key']]) {
     assert.equal(run.result.status, 'completed', run.result.error)
-    assert.deepEqual(run.states.filter((s) => s.state === 'paused'), [{ state: 'paused', source: 'local_input', stopHeld: true }], 'paused by local_input with the driver\'s stop held')
+    assert.deepEqual(run.states.filter((s) => s.state === 'paused'), [{ state: 'paused', source: 'local_input', stopHeld: true }], `paused by local_input with the driver's stop held - states ${JSON.stringify(run.states)}, reports ${JSON.stringify(run.reports)}`)
     // CU-342 (cu-verifier, R1c): the seam posts one untagged pointer move, so the stand-in is heard as a pointer.
     assert.deepEqual(run.reports, [kind], `the driver heard one ${kind}`)
   }
