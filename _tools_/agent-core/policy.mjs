@@ -2320,7 +2320,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     }
     // CU-537 (High; cu-coordinator 01:06Z), table PR 38: the generic 'Add / Edit / Save record' asks PERMISSION on a DNS page only (D-109:
     // a dns / zone(s) / nameserver(s) / records path segment or a dns host label); a CRM's 'Add record' stays free.
-    if (grammarEligible && !classes.includes('permission') && /^(?:add|edit|save|create|new)\s+(?:a\s+|the\s+|new\s+)?(?:dns\s+)?record$/i.test(String(name ?? '').trim())) {
+    if (grammarEligible && !classes.includes('permission') && /^(?:add|edit|save|create|new|change|update|modify)\s+(?:a\s+|the\s+|new\s+|this\s+)?(?:dns\s+)?record$/i.test(String(name ?? '').trim())) {
       let dnsPage = false
       try {
         const u = new URL(url)
@@ -2328,9 +2328,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       } catch { dnsPage = false }
       if (dnsPage) classes.push('permission')
     }
+    // #774 r2 (cu-researcher 01:16Z): 'automatic renewal' and 'Change / Update record' too.
     // CU-537: turning a DOMAIN's auto-renew off risks losing the domain - permission on a domain / registrar page only (a domains / domain /
     // registrar / dns path segment or a registrar / domains host label); a subscription's 'Turn off auto-renew' stays free (CU-410 pin).
-    if (grammarEligible && !classes.includes('permission') && /^(?:disable|turn\s+off|switch\s+off|cancel|stop)\s+(?:the\s+)?(?:domain\s+)?auto[-\s]?renew(?:al)?$/i.test(String(name ?? '').trim())) {
+    if (grammarEligible && !classes.includes('permission') && /^(?:disable|turn\s+off|switch\s+off|cancel|stop)\s+(?:the\s+)?(?:domain\s+)?(?:auto[-\s]?renew(?:al)?|automatic\s+renewal)$/i.test(String(name ?? '').trim())) {
       let domainPage = false
       try {
         const u = new URL(url)

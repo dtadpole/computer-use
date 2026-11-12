@@ -35,3 +35,15 @@ test("CU-537: a domain's auto-renew off asks on a domain / registrar page; a sub
     assert.deepEqual(classesOf(name, 'https://stream.example/account/subscription'), [], `subscription: ${name}`)
   }
 })
+
+test('#774 round 2 (cu-researcher 01:16Z): automatic renewal; change / update record on DNS pages', () => {
+  for (const name of ['Turn off automatic renewal', 'Disable automatic renewal']) {
+    assert.ok(classesOf(name, DNS).includes('permission'), name)
+    assert.deepEqual(classesOf(name, 'https://stream.example/account/subscription'), [], `subscription: ${name}`)
+  }
+  for (const name of ['Change record', 'Update record']) {
+    assert.ok(classesOf(name, DNS).includes('permission'), name)
+    assert.deepEqual(classesOf(name, CRM), [], `CRM: ${name}`)
+  }
+  assert.ok(classesOf('Update DNS record', CRM).includes('permission'), 'the older DNS-record row asks anywhere')
+})
