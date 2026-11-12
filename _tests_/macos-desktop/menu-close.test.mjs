@@ -53,8 +53,11 @@ test('CU-201: a click that chooses a menu item resolves only once the menu has h
     const menu = await timed(env.perform({ type: 'click', x: 150, y: 110, button: 'left' }))
     assert.ok(menu >= WAIT - 20, `the menu item's click waited ${menu} ms`)
   })
-  // At the cap, a click or move that waited would take 5 s; one that did not is far under the bound, load or not.
+  // At the cap, a click or move that waited would take 5 s; one that did not is far under the bound, load or not. The
+  // item's click comes first, so a wait carried into the batch's next action is caught too (cu-developer-two's note).
   await withEnv({ menuCloseMs: CAP }, async (env) => {
+    const item = await timed(env.perform({ type: 'click', x: 150, y: 110, button: 'left' }))
+    assert.ok(item >= CAP - 20, `at the cap, the menu item's click waited ${item} ms`)
     const button = await timed(env.perform({ type: 'click', x: 140, y: 315, button: 'left' }))
     assert.ok(button < NO_WAIT_BOUND, `a button's click is not delayed (${button} ms, the wait would be ${CAP} ms)`)
     const hover = await timed(env.perform({ type: 'move', x: 150, y: 110 }))
