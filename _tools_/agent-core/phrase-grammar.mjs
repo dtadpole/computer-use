@@ -1160,6 +1160,12 @@ function grammarClassesOf(name, role = '') {
   // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
   // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
   if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
+  // CU-548 (High; cu-coordinator 04:06Z), table PR 46 - life safety, PHYSICAL everywhere: turn off / disable / deactivate / silence /
+  // mute / hush / snooze (the) smoke / CO / carbon monoxide / fire (and CO) alarm / detector / sensor(s); turn off / disable / bypass (the)
+  // (water) leak sensor / detector / detection / alerts; turn off / disable / bypass (the) (automatic) (water) shutoff (valve); open (the)
+  // (main) water valve / supply / main. A bare 'Silence alarm' (an alarm clock) stays free; the switch forms are in policy.mjs.
+  // #798 r2 (cu-researcher 04:10Z): 'Turn on / Open (the) main water'; 'Turn off the water / flood detector'.
+  if (/^\s*(?:turn\s+off|switch\s+off|disable|deactivate|silence|mute|hush|snooze|dismiss)\s+(?:the\s+|all\s+)?(?:smoke|co|carbon\s+monoxide|fire|smoke\s+(?:and|&|\/)\s+co)\s+(?:alarms?|detectors?|sensors?)\s*$|^\s*(?:turn\s+off|switch\s+off|disable|deactivate|bypass)\s+(?:the\s+)?(?:water\s+leak|leak|water|flood)\s+(?:sensors?|detectors?|detection|alerts?)\s*$|^\s*(?:turn\s+off|switch\s+off|disable|deactivate|bypass)\s+(?:the\s+)?(?:automatic\s+|auto\s+)?(?:water\s+)?shut-?off(?:\s+valve)?\s*$|^\s*(?:open|turn\s+on)\s+(?:the\s+)?(?:main\s+)?water(?:\s+(?:valve|supply|main))?\s*$/i.test(raw)) return ['physical']
   // CU-546 (High; cu-coordinator 03:51Z), table PR 45 - a seller's money and listings. PURCHASE: request (a / your / my) payout /
   // withdrawal / disbursement; bulk edit / update / change (all) prices, bulk price edit / update; set (the / all) price(s) to $0 / 0 /
   // zero / free; apply (a) deep discount - 50% to 100% off. DELETE: end / close / deactivate all (active / my) listings / items.
