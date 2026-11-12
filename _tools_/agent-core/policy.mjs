@@ -3,7 +3,7 @@ import { normaliseForPolicy, normaliseText } from './normalise.mjs'
 import { BIP39_ENGLISH } from './bip39-english.mjs'
 import { normalizeKey } from './keys.mjs'
 import { originPattern } from './sites.mjs'
-import { amountClass, canonicalForms, grammarClasses, inertLinkAmountClass } from './phrase-grammar.mjs'
+import { amountClass, canonicalForms, clauseSplit, clauseVerbLed, grammarClasses, grammarClassesBase, inertLinkAmountClass, quantifierDropped, questionStripped, sectionLabelStripped, straightQuotes, synonymForms, toggleExpansion } from './phrase-grammar.mjs'
 
 /**
  * The action policy (design: action-policy.md, consent-gate.md). `classify` runs in the dispatcher for every action,
@@ -13,7 +13,43 @@ import { amountClass, canonicalForms, grammarClasses, inertLinkAmountClass } fro
  */
 
 export const CLASSES = Object.freeze(['submit', 'purchase', 'delete', 'permission', 'credential', 'sensitive_data', 'new_site', 'page_dialog', 'install', 'file_choice', 'launch_code', 'physical'])
-export const NEVER_PRE_APPROVED = Object.freeze(['purchase', 'delete', 'permission', 'file_choice', 'launch_code', 'physical'])
+// CU-494 round 3 (cu-coordinator 11:21Z (A)): install joins outright - every install row is a ruled High (CU-427, CU-431, CU-454, CU-484).
+export const NEVER_PRE_APPROVED = Object.freeze(['purchase', 'delete', 'permission', 'install', 'file_choice', 'launch_code', 'physical'])
+// CU-494 (High; cu-coordinator 10:51Z, 11:06Z): a credential 'always' with any origin let direct deposit, IBAN, forwarding and
+// seed-phrase controls through. A credential grant now covers ONLY typing a caller-supplied secret - VALUE-BOUND: the typed text is
+// the task's declared secret placeholder ({{secret:name}}, resolved after the policy) - into a secret field; never a press, never other
+// text, and never into a money or identity field (IBAN, routing / account number, SWIFT, card, wallet address, forwarding address,
+// recovery email / phone), which asks credential even under the grant. The desktop already never pre-approves credential (app-policy).
+const MONEY_IDENTITY_FIELD = /\b(?:iban|routing\s*(?:number|no\.?|#)?|account\s*(?:number|no\.?|#)|swift(?:\s*code)?|bic|sort\s*code|card\s*(?:number|no\.?|#)|wallet\s*address|forwarding\s*address|forward\s*to|bank\s*account|payout\s*account|recovery\s*(?:e-?mail|phone|number))\b/i
+// CU-494 residual r2 (cu-developer-one 11:55Z, cu-researcher 11:54Z): an unlabelled entry is read by its raw name/id attribute
+// (the chrome driver's fieldAttr, '_'/'-' read as spaces), where a bare 'wallet' counts too; and a card or amount autocomplete
+// token marks a money field whatever the name says.
+const MONEY_FIELD_ATTR_ONLY = /\b(?:wallet|cc\s*(?:number|num|no))\b/i
+const MONEY_AUTOCOMPLETE = /\bcc-(?:number|csc|exp)|\btransaction-amount\b/i
+/** Whether a typing target is a money or identity field: any of its name, placeholder, layout label, raw name/id attribute or autocomplete token says so. */
+export function moneyIdentityField(target, name = target?.name) {
+  if (MONEY_AUTOCOMPLETE.test(String(target?.autocomplete ?? ''))) return true
+  // #675 r2 (cu-coordinator 12:36Z): a UNION, not first-wins - any of the name, the placeholder (AXPlaceholderValue on the
+  // desktop), the layout label (nearbyLabel, CU-361) or the raw name/id attribute marking a money or identity field makes it
+  // one, so a hostile page naming an IBAN field 'Nickname' does not win.
+  for (const hint of [name, target?.placeholder, target?.nearbyLabel]) {
+    if (typeof hint === 'string' && hint.trim() !== '' && MONEY_IDENTITY_FIELD.test(hint)) return true
+  }
+  const attr = String(target?.fieldAttr ?? '').replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2').replace(/[_-]+/g, ' ')
+  return attr !== '' && (MONEY_IDENTITY_FIELD.test(attr) || MONEY_FIELD_ATTR_ONLY.test(attr))
+}
+/** CU-494 round 2/3 (cu-developer-three 11:09Z; cu-coordinator 11:21Z): whether a grant of `cls` may never cover a control named
+ * `name` - every submit row but the generic ones (install is never pre-approved at all). The desktop's app-scoped pre-approval asks the same question (app-policy.mjs scopedPreApproval). */
+export function neverCoveredByGrant(cls, name) {
+  return cls === 'submit' && !GENERIC_SUBMIT.test(String(name ?? ''))
+}
+// CU-494 round 3 (cu-coordinator 11:21Z (B)): a submit grant never covers a row whose provenance is a High issue. Generated, not a
+// hand list of High names: the grant covers ONLY the generic submits a task means by 'submit' - a bare form submit, send, reply, post,
+// comment, save, apply, search - and every other submit row (each one added by a ruled High: parental approvals, portal consent, rate
+// locks, dial rows, mass sends, compensation, returns, relists, ride cancels) asks under any submit grant.
+// CU-507 (High; cu-coordinator 16:06Z): the generic final buttons of a confirm modal - judged by the modal's own title and text.
+const GENERIC_CONFIRM = /^\s*(?:confirm|ok|okay|yes|yes,?\s+(?:continue|confirm|proceed|i'?m\s+sure|do\s+it)|continue|proceed|submit|done|apply|accept|agree|i\s+agree|i\s+understand|got\s+it|i'?m\s+sure|do\s+it|go\s+ahead|confirm\s+and\s+continue)\s*[.!]?\s*$/i
+const GENERIC_SUBMIT = /^\s*(?:submit|send|send\s+(?:message|reply|email|comment)|reply|post|post\s+(?:comment|reply)|comment|save|save\s+changes|apply|search|go|ok|done|continue|next|report\s+spam|sign\s+up|register|create\s+account)\s*!?\s*$/i
 
 /** Word lists matched on a target's accessible name, case-insensitively, at word boundaries; they err toward confirm. */
 // CU-293 (cu-developer-one; cu-coordinator: Urgent - the owner works in Chinese): each name class in Simplified and
@@ -93,7 +129,9 @@ const LOCALE_ID_NAMES = Object.freeze(['reisepass', '…passnummer', 'geburtsdat
   'パスポート', '旅券番号', '生年月日', 'マイナンバー', '個人番号', '口座番号',
   '여권', '여권번호', '생년월일', '주민등록번호', '계좌번호', '사업자등록번호'])
 const WORDS = Object.freeze({
-  purchase: ['buy', 'pay', 'order', 'place order', 'checkout', 'check out', 'subscribe', 'donate', 'purchase', 'transfer', 'withdraw', 'wire', 'send money',
+  // CU-498 (High; cu-coordinator 12:21Z): a direct debit mandate pulls money from the account (purchase), anywhere.
+  // (a separate line so the purchase list below stays as it was)
+  purchase: ['set up direct debit', 'set up a direct debit', 'authorize direct debit', 'authorise direct debit', 'authorize a direct debit', 'authorise a direct debit', 'buy', 'pay', 'order', 'place order', 'checkout', 'check out', 'subscribe', 'donate', 'purchase', 'transfer', 'withdraw', 'wire', 'send money',
     // CU-452 (cu-coordinator 22:28Z): an unlimited token approval lets a contract drain the wallet - purchase leads over the older submit.
     'approve unlimited', 'approve unlimited spending', 'allow unlimited spending',
     // CU-444 (cu-coordinator 20:54Z): publishing a campaign starts paid spend - purchase leads over the older 'publish' submit.
@@ -178,6 +216,13 @@ const WORDS = Object.freeze({
     // cu-researcher's 13:23Z sweep: unsaved edits lost, like Discard Changes.
     'revert to saved', 'revert all changes', ...ZH_WORDS.delete, ...LOCALE_WORDS.delete],
   permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke',
+    // CU-496 (High; cu-coordinator 11:21Z): approving an access request lets another person in (raises the older submit 'approve').
+    'approve access request', 'approve access', 'approve the access request',
+    // #669 round 2 (cu-researcher 11:33Z): an emergency-access request too.
+    'approve emergency access request', 'approve emergency access', 'grant emergency access',
+    // #661 round 2 (prepared; cu-developer-three 10:38Z): approving a sign-in grants an outside session access - permission, which is never
+    // pre-approved, so an MFA-fatigue push cannot ride an earlier submit 'always' (raises the older submit row; D-108 allows a raise).
+    'approve sign-in', 'approve sign in', 'approve signin', 'approve login', 'approve log in', 'approve log-in', 'approve this sign-in', 'approve this login',
     // CU-431 (High; cu-coordinator 17:23Z): router / NAS admin acts that expose the home network or its admin access.
     'enable remote management', 'enable remote access', 'enable ssh', 'enable telnet', 'open port', 'open a port', 'add port forwarding',
     'add port forward', 'enable dmz', 'enable upnp', 'expose to internet', 'expose to the internet', 'allow wan access',
@@ -1072,6 +1117,31 @@ function credentialField(target) {
 }
 
 /**
+ * A toggle's state before the press, trusted for its direction only from a native read (CU-373, fail closed): a web
+ * `<input type=checkbox>`, or (CU-418 option b, helper 0.2.70) a desktop AXCheckBox - a checkbox, switch or toggle -
+ * outside any web area, whose AXValue AppKit reports. Inside a web area the desktop state is the page's aria-checked claim,
+ * untrusted like an ARIA state on the web; an older helper sends none. true or false, else null (the caller asks).
+ */
+export function nativeToggleState(target) {
+  const webNative = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
+  const desktopNative = String(target?.role ?? '') === 'AXCheckBox' && target?.inWebArea === false
+  return (webNative || desktopNative) && typeof target?.checked === 'boolean' ? target.checked : null
+}
+
+// CU-520 (High; cu-coordinator 19:51Z, folded into #729 r2): ONE home-security page test for CU-491's and CU-519's rows - CU-491's
+// path segments (/security, /alarm, /cameras, /home-security) or a home-security vendor / device token in the host or path (ring, arlo,
+// simplisafe, adt, nest, wyze, blink, eufy, august, schlage, yale, vivint, alarm, camera(s), cam(s), lock(s), smartlock, doorbell,
+// home-security, security-system). Exact tokens between separators ('ringcentral' never matches 'ring'); never 'alarms' (a clock's page).
+export function isHomeSecurityPage(url) {
+  try {
+    const u = new URL(String(url ?? ''))
+    if (!/^https?:$/.test(u.protocol)) return false
+    if (/(?:^|\/)(?:security|alarm|cameras|home-security)(?=$|[/?#])/i.test(u.pathname)) return true
+    return /(?:^|[\s./-])(?:ring|simplisafe|adt|arlo|nest|wyze|blink|eufy|august|schlage|yale|vivint|alarm|cameras?|cams?|locks?|smartlock|doorbell|home-?security|security-?system)(?:[\s./-]|$)/i.test(`${u.hostname} ${u.pathname}`)
+  } catch { return false }
+}
+
+/**
  * Create the policy. `sitePolicy` is the run's site filter; `preApprovals` are `[{ class, origin }]` from the caller,
  * with `origin` an origin pattern such as `http://127.0.0.1:43117` (default: any origin the site filter allows).
  */
@@ -1117,7 +1187,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     }
 
     const target = context.target ?? null
-    const name = target?.name ?? ''
+    // #721 round 3 (cu-coordinator 18:51Z): curly apostrophes / quotes read as straight before any rule.
+    const name = typeof target?.name === 'string' ? straightQuotes(target.name) : (target?.name ?? '')
     const classes = []
     // CU-271 (cu-coordinator's ruling): a web terminal runs every line it is given, so a key or text into it - typed, a
     // paste, a chord, a page menu's Paste with the terminal focused - or text dropped on it is refused, as a terminal view
@@ -1160,6 +1231,45 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if ((isKeys && ((runChord && inCell) || (colabChord && target?.notebookSurface === true))) || runControl) classes.push('launch_code')
     }
     const held = context.dialog && ['confirm', 'prompt', 'beforeunload'].includes(context.dialog.type)
+    // CU-429 (cu-coordinator 09:34Z; D-108 rule 1 - older asks lowered only by this ruling): a press on a named button or link,
+    // outside a held page dialog and never on a toggle (its label names a state, so a press can do the opposite - cu-developer-three
+    // 09:35Z), is free for (A) pane names, help links and views, (C) 'Edit post', (E) 'Raise a ticket', (G) 'Require multi-factor
+    // authentication', an 'Unsubscribe' LINK (a button keeps submit), and (D) a refusal: don't / do not / never / no, don't / I don't
+    // want to + a ruled risky verb phrase that itself asks, or keep + a protection whose turning off asks. Never for a safeguard
+    // suppressor ('Don't ask again', 'Don't show this again', 'Don't warn me', 'Don't notify me', 'Don't confirm'), and never with a
+    // second clause ('Do not cancel - pay now', 'No thanks, remove 2FA', 'No, remove it' still ask).
+    // cu-coordinator 13:04Z: an exchange's 'Order book' (a view; the older 'order' purchase) is lowered here too.
+    // Round 2 (17:21Z) adds the named list below; KEPT as ruled: 'Sign up', 'Remove recovery contact', 'Remove location from posts',
+    // 'Remove address', 'Quit all apps', 'Close on all devices', Mail's compose 'Sign' toggle and Preview's 'Sign' tool.
+    if (!held && context.confirmProbe !== true && name !== '' && classes.length === 0 && target && !isTextEntry(target)) {
+      const presses = POINTER.has(action.type) || keysOf(action).has('ENTER') || keyboardActivation(action, target, context).activates
+      const role = String(target.role ?? '') + ' ' + String(target.subrole ?? '')
+      const toggle = /switch|checkbox|toggle|radio/i.test(role) || /^(checkbox|radio)$/i.test(String(target.inputType ?? '')) || typeof target.checked === 'boolean'
+      if (presses && !toggle) {
+        const plain = name.trim().replace(/\s+/g, ' ')
+        const link = /\b(link|AXLink)\b/.test(role)
+        const exact = /^(?:security|privacy & security|uninstall instructions|pay history|pay stub preview|view pay rate|edit post|raise (?:a )?ticket|require multi-factor authentication|order book)$/i.test(plain)
+          // CU-429 round 2 (cu-coordinator 17:21Z): navigation, labels and views, exactly these names.
+          || /^(?:go to your account|back to this project|open in this window|view api docs|clear all filters|(?:note:\s*)?rent is due|find and replace(?:\u2026|\.\.\.)?|search and replace|unmute all|open all windows|privacy and security|uninstall guide|edit draft post|pay slip preview|raise a support ticket)$/i.test(plain)
+          // CU-429 round 3 (cu-coordinator 21:36Z): 'View order', 'Security checkup' and 'Call forwarding' as a button / link (the switch
+          // keeps its direction rule - toggles never reach here), and 'Add member(s) to group' in a chat app (a desktop messaging app, or a
+          // chat page by host / path), exactly these.
+          || /^(?:view order|security checkup|call forwarding)$/i.test(plain)
+          || (/^add members? to (?:the )?group$/i.test(plain) && (isMessagingApp(String(context.frontmostBundleId ?? target?.origin ?? '')) || (() => { try { const u = new URL(url); return /^https?:$/.test(u.protocol) && /(?:^|[./-])(?:chat|slack|discord|teams|messenger|whatsapp|telegram|signal|messages)(?:[./-]|$)/i.test(`${u.hostname} ${u.pathname}`) } catch { return false } })()))
+          || (link && /^unsubscribe(?: link)?$/i.test(plain))
+        let refusal = false
+        if (!exact && !/\s[-\u2013\u2014]\s|[,;:](?!\s*$)|\b(?:and|then|but)\b/i.test(plain.replace(/^\s*no,\s*/i, ''))) {
+          const neg = plain.match(/^(?:no,?\s+)?(?:don'?t|do\s+not|never|i\s+(?:don'?t|do\s+not)\s+want\s+to)\s+(.+)$/i)
+          const keep = plain.match(/^(?:no,?\s+)?keep\s+(.+?)(?:\s+(?:on|enabled|turned\s+on|active))?$/i)
+          const risky = /^(?:turn\s+off|switch\s+off|disable|remove|delete|deactivate|revoke|reset|cancel|unlink|disconnect|erase|close|sign\s+out|log\s+out|turn\s+on|enable|share|send|pay|buy|purchase|install|allow|grant|transfer|unsubscribe|leave|stop)\b/i
+          const suppressor = /^(?:ask|show|warn|notify|confirm|remind|prompt)\b/i
+          const asks = (probeName) => classify(action, { ...context, target: { ...target, name: probeName }, confirmProbe: true }).decision === 'confirm'
+          if (neg && !suppressor.test(neg[1]) && risky.test(neg[1]) && asks(neg[1])) refusal = true
+          else if (keep && !/^(?:sharing|me\b|my\s+location|location)/i.test(keep[1]) && asks(`Turn off ${keep[1]}`)) refusal = true
+        }
+        if (exact || refusal) return { decision: 'allow', class: null, rule: 'cu429:lowered', reason: '' }
+      }
+    }
     // Canonical keys (cu-researcher): 'RETURN', 'Return', 'enter' are ENTER too, whoever the caller is; a hold of it too.
     // CU-142: a typed newline presses the same Return as ENTER, so it is judged as ENTER on the focused element - in a
     // text input too ('hi\n' into a 'Send a message' field asks submit, as ENTER there does).
@@ -1364,9 +1474,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // state asks. A native two-factor/recovery box that is off turns protection ON; a native forwarding box that is on
       // turns forwarding OFF - both the safe direction, so free.
       // A native CHECKBOX only - a radio has no on/off direction; its label decides (cu-researcher 21:15Z).
-      const nativeToggle = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
-      const nativeOn = nativeToggle && target.checked === true
-      const nativeOff = nativeToggle && target.checked === false
+      const toggleState = nativeToggleState(target)
+      const nativeOn = toggleState === true
+      const nativeOff = toggleState === false
       const isForwarding = /forward/i.test(name)
       // The explicit protection list (CU-270's two-factor and recovery names), never 'every security name but a few'.
       const isProtection = /two[\s-]?(?:factor|step)|2[\s-]?step|\b2fa\b|multi[\s-]?factor|recovery\s+(?:e-?mail|phone|codes?)/i.test(name)
@@ -1392,15 +1502,15 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (!focusesEntry && /^\s*add\s+\d+\s+(?:checked\s+|carry[\s-]?on\s+)?bags?\b/i.test(name)) classes.push('purchase')
       // CU-431: changing or resetting an admin password asks credential; updating, uploading or flashing firmware asks install.
       if (!focusesEntry && /^\s*(?:change|reset|set)\s+(?:the\s+)?(?:(?:router|device|wi-?fi|nas)\s+(?:admin(?:istrator)?\s+)?|admin(?:istrator)?\s+)password\b/i.test(name)) classes.push('credential')
-      if (!focusesEntry && /^\s*(?:update|upload|flash|install|upgrade)\s+(?:the\s+)?(?:router\s+|new\s+)?firmware\b/i.test(name)) classes.push('install')
+      // CU-481 residual (cu-coordinator 06:49Z, b): change / edit / modify the firmware asks install like 'Update firmware'.
+      if (!focusesEntry && /^\s*(?:update|upload|flash|install|upgrade|change|edit|modify)\s+(?:the\s+)?(?:router\s+|new\s+)?firmware\b/i.test(name)) classes.push('install')
       // CU-431 switches (cu-coordinator 17:27Z, CU-418's switch rule): a router switch named Remote management / access, SSH,
       // Telnet, UPnP, DMZ, WAN access or Port forwarding turned ON asks permission and OFF is free - the direction is trusted
-      // only from a native checkbox read; an ARIA, mixed or missing state (and a desktop web area without it) asks both ways.
+      // only from a native read (nativeToggleState); an ARIA, mixed or missing state (and a desktop web area without it) asks
+      // both ways.
       if (!focusesEntry && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))
         && /^\s*(?:remote\s+(?:management|access|administration)|ssh|telnet|upnp|dmz|wan\s+access|port\s+forwarding)\s*$/i.test(name)) {
-        const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
-        const known = nativeBox && typeof target.checked === 'boolean'
-        if (!known || target.checked === false) classes.push('permission')
+        if (nativeToggleState(target) !== true) classes.push('permission')
       }
       // CU-420: exporting, revealing, showing, viewing or copying passwords or secrets and getting recovery codes expose credentials;
       // 'Show password' asks everywhere, the sign-in eye toggle included - the plaintext reaches the next screenshot (cu-coordinator
@@ -1484,8 +1594,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // CU-408 (cu-coordinator 09:50Z): a bare 'Autopay' switch mirrors CU-373 - only a NATIVE checkbox read as on (the press
       // turns autopay off) is free; native off (turning it on), an ARIA-sourced, 'mixed' or missing state asks purchase.
       if (!focusesEntry && /^\s*auto[\s-]?pay\s*$/i.test(name) && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))) {
-        const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
-        if (!(nativeBox && target.checked === true)) classes.push('purchase')
+        if (nativeToggleState(target) !== true) classes.push('purchase')
       }
       // CU-409: bare 'Long', 'Short', 'Borrow', 'Lend', 'Supply', 'Repay' ask only in asset context - an asset word or a currency
       // sign in the name, or an asset among the form's options (CU-402); a video 'Short' or a library 'Borrow 2 books' stays free.
@@ -1504,16 +1613,17 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (!focusesEntry && (namesWord(name, PHYSICAL) || namesWord(name, PHYSICAL_NEAR) || PHYSICAL_GRAMMAR.test(name) || PHYSICAL_PATTERN.test(name) || UNLOCK_PHYSICAL.test(name) || /^garage\s+door$/i.test(name.trim()))) classes.push('physical')
       // CU-418 switches (cu-coordinator 14:17Z / 14:19Z): a bare security switch ('Camera', 'Alarm', 'Security') turned OFF and a
       // heat or vehicle switch ('Oven', 'Heater', 'Stove', 'Engine') turned ON ask physical. The direction is trusted only from a
-      // native checkbox read (CU-373); an ARIA, mixed or missing state - and every desktop switch, which carries no state
-      // today - asks in both directions (named over-ask: 'Camera' on / 'Oven' off there).
+      // native read (nativeToggleState: a web checkbox input, or since helper 0.2.70 a desktop AXCheckBox outside any web
+      // area); an ARIA, mixed or missing state - and a desktop switch from an older helper or inside a web area - asks in
+      // both directions (named over-ask: 'Camera' on / 'Oven' off there).
       if (!focusesEntry && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))) {
         const security = /^\s*(?:security\s+)?(?:cameras?|alarm|security)\s*$/i.test(name)
         const heat = /^\s*(?:oven|heater|stove|engine)\s*$/i.test(name)
         if (security || heat) {
-          const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
-          const known = nativeBox && typeof target.checked === 'boolean'
-          const turnsOff = known && target.checked === true
-          const turnsOn = known && target.checked === false
+          const state = nativeToggleState(target)
+          const known = state !== null
+          const turnsOff = state === true
+          const turnsOn = state === false
           if (!known || (security && turnsOff) || (heat && turnsOn)) classes.push('physical')
         }
       }
@@ -1792,18 +1902,17 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // pre-approved submit cannot wave a disguised Delete or Pay through (cu-developer-one's ruling) - where no rule found a
     // class: a folded look-alike already asks by its own ('Sеnd' asks submit). The desktop asks unknown_target in app-policy.
     // CU-436 (cu-coordinator 19:06Z): a spending-cap switch turned OFF lifts the limit on cloud spending (purchase); ON is free on a
-    // native checkbox read; an ARIA, mixed or missing state asks both ways (the named toggle limit) - the inverse of CU-431's.
+    // native read (nativeToggleState); an ARIA, mixed or missing state asks both ways (the named toggle limit) - the inverse of
+    // CU-431's.
     if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))
       && /^\s*(?:spending|budget|billing)\s+(?:cap|limit|alert\s+cap)\s*$/i.test(name)) {
-      const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
-      if (!(nativeBox && typeof target.checked === 'boolean') || target.checked === true) classes.push('purchase')
+      if (nativeToggleState(target) !== false) classes.push('purchase')
     }
     // CU-440 (cu-coordinator 20:26Z): a child-protection switch (parental controls, content filter, SafeSearch, purchase approval,
     // Screen Time) turned OFF asks permission; ON is free on a native checkbox read; an unread state asks both ways.
     if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))
       && /^\s*(?:parental\s+controls?|content\s+(?:filter|restrictions?)|safe\s*search|purchase\s+approval|ask\s+to\s+buy|screen\s+time)\s*$/i.test(name)) {
-      const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
-      if (!(nativeBox && typeof target.checked === 'boolean') || target.checked === true) classes.push('permission')
+      if (nativeToggleState(target) !== false) classes.push('permission')
     }
     // CU-442 (cu-coordinator 20:37Z): a bare 'Add time' tops up a metered session on a parking / charging page. The page title
     // never reaches the policy (a title is private), so the page is read from the URL; elsewhere it stays free (named limit).
@@ -1815,23 +1924,25 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // checkbox read; an unread state asks both ways (the CU-431 direction).
     if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))
       && /^\s*(?:ads?|campaign(?:\s+status)?|ad\s+set|promotion|ad\s+delivery)\s*$/i.test(name)) {
-      const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
-      if (!(nativeBox && typeof target.checked === 'boolean') || target.checked === false) classes.push('purchase')
+      if (nativeToggleState(target) !== true) classes.push('purchase')
     }
     // CU-445 (cu-coordinator 20:59Z): a camera privacy-mode / shutter switch turned OFF asks permission (ON free); an audio,
     // continuous-recording or face-recognition switch turned ON asks (OFF free); an unread state asks both ways.
     if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))) {
-      const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
-      const read = nativeBox && typeof target.checked === 'boolean'
-      if (/^\s*privacy\s+(?:mode|shutter|cover)\s*$/i.test(name) && (!read || target.checked === true)) classes.push('permission')
+      const state = nativeToggleState(target)
+      if (/^\s*privacy\s+(?:mode|shutter|cover)\s*$/i.test(name) && state !== false) classes.push('permission')
       if (/^\s*(?:audio\s+recording|record\s+audio|continuous\s+recording|24\/7\s+recording|face\s+recognition|facial\s+recognition|familiar\s+faces)\s*$/i.test(name)
-        && (!read || target.checked === false)) classes.push('permission')
+        && state !== true) classes.push('permission')
     }
+    // CU-535 (cu-coordinator 00:51Z; #773 r2, cu-developer-three 01:03Z): a VPN kill-switch SWITCH turned OFF asks permission, like the
+    // two-factor switch - on -> off and an unread state ask (nativeToggleState: a web ARIA state is untrusted), off -> on is free.
+    // CU-543 (#786 r2, cu-developer-three 02:39Z): a kids profile's 'Profile lock / PIN / passcode' switch takes the same direction rule.
+    if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))
+      && /^\s*(?:vpn\s+)?kill\s*switch\s*$|^\s*profile\s+(?:lock|pin|passcode)\s*$/i.test(name) && nativeToggleState(target) !== false) classes.push('permission')
     // CU-446 (cu-coordinator 21:05Z): a domain-lock / transfer-lock switch turned OFF asks credential, a WHOIS-privacy switch turned
     // OFF asks permission; ON is free on a native read; an unread state asks both ways.
     if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))) {
-      const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
-      const turningOff = !(nativeBox && typeof target.checked === 'boolean') || target.checked === true
+      const turningOff = nativeToggleState(target) !== false
       if (turningOff && /^\s*(?:domain\s+lock|transfer\s+lock|registrar\s+lock)\s*$/i.test(name)) classes.push('credential')
       if (turningOff && /^\s*(?:whois\s+privacy|domain\s+privacy|privacy\s+protection)\s*$/i.test(name)) classes.push('permission')
     }
@@ -1839,25 +1950,24 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // read; an unread state asks both ways.
     if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))
       && /^\s*(?:block\s+(?:all\s+)?public\s+access|audit\s+log(?:s|ging)?|logging|cloudtrail|data\s+access\s+logs?|flow\s+logs?)\s*$/i.test(name)) {
-      const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
-      if (!(nativeBox && typeof target.checked === 'boolean') || target.checked === true) classes.push('permission')
+      if (nativeToggleState(target) !== false) classes.push('permission')
     }
     // #580 round 2 (cu-coordinator 21:52Z): a bare 'Edit DNS' on a registrar page changes where the domain points (permission,
     // CU-446); the page is read from the URL.
-    if (grammarEligible && classes.length === 0 && /^\s*(?:edit|change|manage)\s+dns\s*$/i.test(name) && /registrar|domain|dns/i.test(String(context?.url ?? ''))) classes.push('permission')
+    // CU-481 residual (06:49Z, c): 'Update DNS', '... DNS records' and (#640 round 2) '... DNS settings' join the row on its registrar
+    // URL (off it, the named limit).
+    if (grammarEligible && classes.length === 0 && /^\s*(?:edit|change|manage|update)\s+dns(?:\s+(?:records?|settings))?\s*$/i.test(name) && /registrar|domain|dns/i.test(String(context?.url ?? ''))) classes.push('permission')
     // CU-456 (cu-coordinator 22:56Z): a mail-protection switch turned OFF asks permission; 'Less secure app access' turned ON asks
     // credential; the safe directions are free on a native read; an unread state asks both ways.
     if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))) {
-      const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
-      const read = nativeBox && typeof target.checked === 'boolean'
-      if (/^\s*(?:spam\s+filter(?:ing)?|safe\s+browsing|external\s+sender\s+warnings?|sign-?in\s+notifications?|security\s+alerts?)\s*$/i.test(name) && (!read || target.checked === true)) classes.push('permission')
-      if (/^\s*less\s+secure\s+app(?:s|\s+access)?\s*$/i.test(name) && (!read || target.checked === false)) classes.push('credential')
+      const state = nativeToggleState(target)
+      if (/^\s*(?:spam\s+filter(?:ing)?|safe\s+browsing|external\s+sender\s+warnings?|sign-?in\s+notifications?|security\s+alerts?)\s*$/i.test(name) && state !== false) classes.push('permission')
+      if (/^\s*less\s+secure\s+app(?:s|\s+access)?\s*$/i.test(name) && state !== true) classes.push('credential')
     }
     // CU-460 (cu-coordinator 23:18Z): a Sentry Mode switch turned OFF asks permission, a PIN-to-drive switch turned OFF asks
     // credential; ON is free on a native read; an unread state asks both ways.
     if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))) {
-      const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
-      const offAsks = !(nativeBox && typeof target.checked === 'boolean') || target.checked === true
+      const offAsks = nativeToggleState(target) !== false
       if (offAsks && /^\s*sentry(?:\s+mode)?\s*$/i.test(name)) classes.push('permission')
       if (offAsks && /^\s*pin\s+to\s+drive\s*$/i.test(name)) classes.push('credential')
     }
@@ -1865,23 +1975,20 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // a native read; an unread state asks both ways.
     if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))
       && /^\s*private\s+(?:account|profile)\s*$/i.test(name)) {
-      const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
-      if (!(nativeBox && typeof target.checked === 'boolean') || target.checked === true) classes.push('permission')
+      if (nativeToggleState(target) !== false) classes.push('permission')
     }
     // CU-464 / CU-465 (cu-coordinator 00:04Z / 00:19Z): a remote-access or agent blanket-approval switch turned ON asks permission;
     // OFF is free on a native read; an unread state asks both ways.
     if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))
       && /^\s*(?:screen\s+sharing|remote\s+(?:login|desktop|apple\s+events|management|access)|file\s+sharing|internet\s+sharing|auto-?accept\s+edits|auto-?approve|yolo\s+mode|skip\s+approvals|run\s+without\s+confirmation)\s*$/i.test(name)) {
-      const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
-      if (!(nativeBox && typeof target.checked === 'boolean') || target.checked === false) classes.push('permission')
+      if (nativeToggleState(target) !== true) classes.push('permission')
     }
     // CU-466 (cu-coordinator 00:34Z): a repository protection switch turned OFF asks permission; an allow-force-push or
     // allow-deletions switch turned ON asks; the safe directions are free on a native read; an unread state asks both ways.
     if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))) {
-      const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
-      const read = nativeBox && typeof target.checked === 'boolean'
-      if (/^\s*(?:branch\s+protection|secret\s+scanning|push\s+protection)\s*$/i.test(name) && (!read || target.checked === true)) classes.push('permission')
-      if (/^\s*allow\s+(?:force\s+pushes|deletions)\s*$/i.test(name) && (!read || target.checked === false)) classes.push('permission')
+      const state = nativeToggleState(target)
+      if (/^\s*(?:branch\s+protection|secret\s+scanning|push\s+protection)\s*$/i.test(name) && state !== false) classes.push('permission')
+      if (/^\s*allow\s+(?:force\s+pushes|deletions)\s*$/i.test(name) && state !== true) classes.push('permission')
     }
     // CU-467 (cu-coordinator 00:49Z): paid creator and dating features on a creator or dating page (purchase, CU-439's family); the
     // page is read from the URL. Older submit asks ('Send Super Chat', 'Unlock post') keep their class.
@@ -1890,8 +1997,122 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // CU-468: an auto-lock or armed / alarm switch turned OFF asks physical; ON is free on a native read; an unread state asks both ways.
     if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))
       && /^\s*(?:auto-?lock|armed|alarm|alarm\s+system|alarm\s+armed|system\s+armed)\s*$/i.test(name)) {
-      const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
-      if (!(nativeBox && typeof target.checked === 'boolean') || target.checked === true) classes.push('physical')
+      if (nativeToggleState(target) !== false) classes.push('physical')
+    }
+    // CU-483 (cu-coordinator 05:34Z): a bare 'Sell' / 'Sell all' on a trading page asks purchase - the whole http(s) URL, as #613 reads
+    // it (a whole /trade, /order, /brokerage or /portfolio segment in path, query or hash - '/trade-in', '/trademark' do not count). Off a
+    // trading URL a bare 'Sell' stays
+    // free (marketplace tabs; named limit).
+    if (grammarEligible && classes.length === 0 && /^\s*sell(?:\s+all)?\s*$/i.test(name)) {
+      let tradingPage = false
+      try {
+        const u = new URL(String(context?.url ?? ''))
+        if (/^https?:$/.test(u.protocol)) tradingPage = /(?:^|[/?#&=])(?:trade|trades|trading|order|orders|brokerage|portfolio)(?=$|[/?#&])/i.test(`${u.pathname}${u.search}${u.hash}`)
+      } catch { tradingPage = false }
+      if (tradingPage) classes.push('purchase')
+    }
+    // CU-496 (High; cu-coordinator 11:21Z): on a password vault's page (the CU-474 URL test) a 'Download backup' takes the vault's
+    // secrets out (credential); turning ON 'Autofill on page load' lets any page take a filled secret (permission) - a native switch asks
+    // only when the press turns it on; a button asks when it says turn on / enable.
+    if (grammarEligible && classes.length === 0 && /^\s*(?:download|export|save)\s+(?:a\s+|the\s+)?(?:vault\s+)?backup\s*$/i.test(name) && /vault|password|1password|bitwarden|lastpass|dashlane|keeper|proton\.me\/pass/i.test(String(context?.url ?? ''))) classes.push('credential')
+    if (grammarEligible && classes.length === 0) {
+      const autofill = /^\s*(?:(turn\s+on|enable|switch\s+on|allow|let)(?:\s+(?:this\s+|the\s+|these\s+|all\s+)?(?:items?|logins?|passwords?|entry|entries|accounts?))?(?:\s+to)?\s+)?auto-?fill\s+on\s+page\s+load(?:\s+for\s+all\s+(?:items|logins|sites|websites))?\s*$/i.exec(name)
+      // #669 round 3 (cu-verifier 11:50Z): an object and 'to' between the verb and 'autofill' - the issue title's 'Allow item to autofill on page load'.
+      if (autofill) {
+        // #669 round 2 (cu-developer-three 11:32Z): direction only from the NATIVE read (CU-373: a web <input type=checkbox> with a
+        // boolean checked); an ARIA, missing or mixed state - or a desktop switch with no read - fails closed and asks.
+        // Helper 0.2.70: the native read is nativeToggleState's, so a desktop AXSwitch with a real AXValue gives the direction too.
+        const nativeState = nativeToggleState(target)
+        const toggleRole = /switch|checkbox|toggle/i.test(String(target?.role ?? '') + ' ' + String(target?.subrole ?? ''))
+        if (nativeState !== null ? nativeState === false : (Boolean(autofill[1]) || toggleRole)) classes.push('permission')
+      }
+    }
+    // CU-495 (High; cu-coordinator 11:06Z): on an e-signature page - a whole /sign, /signing, /envelope or /esign segment of an http(s)
+    // URL - a bare 'Finish', 'Complete' or 'Confirm' completes the signing (permission). Off that URL they keep their own rows.
+    if (grammarEligible && classes.length === 0 && /^\s*(?:finish|complete|confirm)\s*!?\s*$/i.test(name)) {
+      let signingPage = false
+      try {
+        const u = new URL(String(context?.url ?? ''))
+        if (/^https?:$/.test(u.protocol)) signingPage = /(?:^|\/)(?:sign|signing|envelope|envelopes|esign)(?=$|[/?#])/i.test(u.pathname)
+      } catch { signingPage = false }
+      if (signingPage) classes.push('permission')
+    }
+    // CU-498 (High; cu-coordinator 12:21Z): on a government or tax page - a .gov / gov.<cc> / gouv / gc.ca host, or a whole /tax, /taxes,
+    // /benefits, /unemployment, /voter, /elections or /return(s) segment of an http(s) URL - amending a return, reporting income,
+    // certifying for benefits and changing a voter registration ask in the class of 'File return' (submit). 'View return' stays free.
+    // CU-499 (High; cu-coordinator 12:21Z): on a car or smart-lock page - a whole /vehicle(s), /car(s), /lock(s), /smart-lock, /door(s)
+    // or /garage segment - a bare 'Unlock' asks PHYSICAL like 'Unlock car', and adding a driver or sharing a key asks PERMISSION.
+    // 'Lock' and 'Vehicle status' stay free. Named limits: a native tax or car app (no URL).
+    if (grammarEligible && classes.length === 0) {
+      let govPage = false
+      let carPage = false
+      try {
+        const u = new URL(String(context?.url ?? ''))
+        if (/^https?:$/.test(u.protocol)) {
+          govPage = /(?:^|\.)gov(?:\.[a-z]{2})?$|(?:^|\.)gouv\.[a-z]{2}$|(?:^|\.)gc\.ca$/i.test(u.hostname) || /(?:^|\/)(?:tax|taxes|benefits|unemployment|voter|elections|returns?)(?=$|[/?#])/i.test(u.pathname)
+          carPage = /(?:^|\/)(?:vehicles?|cars?|locks?|smart-lock|doors?|garage)(?=$|[/?#])/i.test(u.pathname)
+        }
+      } catch { govPage = false; carPage = false }
+      // #677 round 2 (cu-researcher 12:42Z): the ruled acts as families - certify (for) benefits / eligibility / a (weekly) claim;
+      // report income / earnings / hours (worked) / wages; change / update a voter registration.
+      if (govPage && /^\s*(?:amend\s+(?:my\s+|your\s+|the\s+)?(?:tax\s+)?return|report\s+(?:my\s+|your\s+)?(?:income|earnings|wages|hours(?:\s+worked)?)|certify\s+(?:for\s+)?(?:(?:my|your|weekly)\s+)*(?:benefits|unemployment|eligibility|(?:weekly\s+)?claim)|(?:change|update)\s+(?:my\s+|your\s+|the\s+)?voter\s+registration)\s*$/i.test(name)) classes.push('submit')
+      if (carPage && /^\s*unlock(?:\s+now)?\s*!?\s*$/i.test(name)) classes.push('physical')
+      if (carPage && /^\s*(?:add|invite)\s+(?:a\s+|an\s+|another\s+)?(?:secondary\s+|guest\s+|additional\s+|new\s+)?driver\s*$|^\s*share\s+(?:a\s+|my\s+|the\s+)?(?:digital\s+)?key\s*$/i.test(name)) classes.push('permission')
+    }
+    // #677 round 2 (cu-researcher 12:42Z): the direct-debit act in other words - a debit mandate or automatic / recurring withdrawals
+    // set up, authorised or created - asks purchase anywhere, like 'Set up direct debit'.
+    // #677 round 3 (cu-developer-three 12:47Z): allow / enable / turn on / activate too.
+    // An older 'authorize' permission stays beside it (D-108: never lower).
+    if (grammarEligible && !classes.includes('purchase') && /^\s*(?:set\s+up|authori[sz]e|create|start|allow|enable|turn\s+on|activate)\s+(?:an?\s+|the\s+)?(?:direct\s+debit|debit\s+mandate|automatic\s+(?:withdrawals?|debits?)|recurring\s+(?:withdrawals?|debits?))\s*$/i.test(name)) classes.push('purchase')
+    // #680 round 3 (cu-researcher 13:02Z): on an exchange's wallet page - a whole /withdraw, /withdrawal(s), /wallet(s), /addresses or
+    // /address-book segment of an http(s) URL - a bare 'Add to allowlist / whitelist' is the money redirect and asks credential; on a
+    // mail or ad-block page it stays free. Named limit: a native exchange app (no URL) keeps the bare form free.
+    if (grammarEligible && classes.length === 0 && /^\s*add\s+to\s+(?:the\s+)?(?:whitelist|allowlist|white\s+list|allow\s+list)\s*$/i.test(name)) {
+      let walletPage = false
+      try {
+        const u = new URL(String(context?.url ?? ''))
+        if (/^https?:$/.test(u.protocol)) walletPage = /(?:^|\/)(?:withdraw|withdrawals?|wallets?|addresses|address-book)(?=$|[/?#])/i.test(u.pathname)
+      } catch { walletPage = false }
+      if (walletPage) classes.push('credential')
+    }
+    // #693 round 2 (cu-researcher 14:53Z): a bare 'Add rule' on a mail page - a mail host or a whole /mail, /inbox, /rules, /filters
+    // segment of an http(s) URL - is a mail rule (credential, like 'Create rule'); elsewhere it stays free (CU-492: a cloud console's
+    // form opener).
+    if (grammarEligible && classes.length === 0 && /^\s*add\s+(?:a\s+|new\s+|a\s+new\s+)?rule\s*$/i.test(name)) {
+      let mailPage = false
+      try {
+        const u = new URL(String(context?.url ?? ''))
+        if (/^https?:$/.test(u.protocol)) mailPage = /(?:^|\.)(?:mail|outlook|inbox)\./i.test(u.hostname) || /(?:^|\/)(?:mail|inbox|rules|filters)(?=$|[/?#])/i.test(u.pathname)
+      } catch { mailPage = false }
+      // #693 round 3 (cu-developer-three 14:56Z): a native mail client is a mail page too - Apple Mail's Rules pane titles its button
+      // exactly 'Add Rule'.
+      // #693 round 4 (cu-developer-three 15:02Z): on the real desktop route the url is a bare 'desktop://' - the app is read the way
+      // the policy reads it elsewhere, from target.origin, else context.frontmostBundleId (and from an 'app:' url, the tests' shape).
+      const mailClients = /^(?:com\.apple\.mail|com\.microsoft\.outlook|com\.readdle\.smartemail-mac|com\.readdle\.spark|it\.bloop\.airmail2|com\.mimestream\.mimestream|org\.mozilla\.thunderbird|com\.superhuman\.electron)$/i
+      const appBundle = (typeof target?.origin === 'string' && target.origin !== '' && !/^https?:/i.test(target.origin)) ? target.origin : String(context?.frontmostBundleId ?? '')
+      const urlBundle = (/^(?:app:|desktop:\/\/)([\w.-]+)/i.exec(String(context?.url ?? '')) ?? [])[1] ?? ''
+      if (!mailPage) mailPage = mailClients.test(appBundle) || mailClients.test(urlBundle)
+      if (mailPage) classes.push('credential')
+    }
+    // CU-491 (High; cu-coordinator 10:19Z): on a home-security page - a whole /security, /alarm, /cameras or /home-security
+    // segment of an http(s) URL - silencing, muting, snoozing an alarm or siren and pausing / stopping a recording ask PHYSICAL, like
+    // 'Turn off alarm'. Off that URL a meeting's 'Stop recording' stays free (#462). Named limit: a native security app (no URL).
+    // #659 round 2 (cu-researcher 10:26Z): the segments exactly as ruled (a phone clock's /alarms is not /alarm); a trailing
+    // on / for / from phrase ('on all cameras', 'for 1 hour') keeps the row.
+    if (grammarEligible && classes.length === 0 && /^\s*(?:silence|mute|snooze|hush)\s+(?:the\s+)?(?:alarms?|sirens?|chimes?)(?:\s+(?:on|for|from)\s+[\w\s-]{1,40})?\s*$|^\s*(?:pause|stop)\s+(?:the\s+)?(?:recording|camera\s+recording|cameras?)(?:\s+(?:on|for|from)\s+[\w\s-]{1,40})?\s*$/i.test(name)) {
+      // CU-520 (19:51Z): the shared home-security page test (vendor / camera hosts too).
+      if (isHomeSecurityPage(context?.url)) classes.push('physical')
+    }
+    // CU-490 (High; cu-coordinator 09:51Z): a ride-share or delivery booking commit asks purchase - 'Confirm pickup', 'Confirm <product>'
+    // and 'Request <product>' (one or two words: 'Request UberX', 'Confirm Comfort') on a ride / delivery page, a whole /ride, /rides,
+    // /trip, /book or /request segment of an http(s) URL; 'Confirm ride', 'Book ride' and 'Request ride' ask anywhere (the grammar row).
+    if (grammarEligible && classes.length === 0 && /^\s*(?:confirm|request)\s+\S+(?:\s+\S+)?\s*$/i.test(name) && !/^\s*(?:confirm|request)\s+(?:password|email|e-mail|code|changes?|details|access|refund|a\s+refund|help|support|demo|quote|callback|info|information)\b/i.test(name)) {
+      let ridePage = false
+      try {
+        const u = new URL(String(context?.url ?? ''))
+        if (/^https?:$/.test(u.protocol)) ridePage = /(?:^|\/)(?:ride|rides|trip|trips|book|request)(?=$|[/?#])/i.test(u.pathname)
+      } catch { ridePage = false }
+      if (ridePage) classes.push('purchase')
     }
     // CU-474 (cu-coordinator 03:05Z): on a password vault's page (read from the URL), auto-lock off asks PERMISSION (doors keep
     // CU-468's physical). An emergency contact asks credential with no page condition (#614 round 2; the grammar row).
@@ -1925,7 +2146,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     }
     // #575 round 2 (cu-coordinator 21:26Z): a native checkbox or switch already ON is being turned OFF - the grammar reads the
     // name as an act ('Forward calls') and must not ask for switching it off. The direction rules above decide such switches.
-    const nativeOn = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? '')) && target?.checked === true
+    const nativeOn = nativeToggleState(target) === true
     // Split particles for the OLDER lists (cu-coordinator 22:02Z, a High follow-up to #580): 'Turn location sharing on' / 'Turn
     // Find My off' / 'Switch the heater on' are judged as their canonical 'turn on X' form by every rule - one probe, only when
     // nothing has asked yet, so it can only add an ask; a native checkbox already on never probes (its direction rules decide).
@@ -1937,16 +2158,56 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // #600 round 3: the full strip (ellipsis, '!', '(recommended)', leading icons) reaches the older exact rows too ('Join Prime…'). A
     // Quick Actions menu item is judged by its exact built-in name (CU-382 - 'More…'), so it never takes the probe.
     // #609 round 2: each canonical form in turn (the unwrapped name, then its first sentence), stopping at the first that asks.
+    // #617 (cu-researcher 03:58Z): a money amount in the name AS WRITTEN keeps purchase - 'Start e-visit ($25 copay)' must not lose
+    // its copay to the canonical form 'Start e-visit'. Only the amount row goes first; every other row keeps the probe's order (the
+    // firstLine form of a card still decides its class).
+    if (grammarEligible && classes.length === 0 && !nativeOn && context.confirmProbe !== true && amountClass(name, target?.role)) classes.push('purchase')
     // CU-473 pair (cu-coordinator 02:35Z): the driver's target.firstLine (the first rendered line of a multi-line name, which
     // Chrome's accessible name flattens to spaces) is one more form, tried last - additive.
     const firstLine = typeof target?.firstLine === 'string' ? target.firstLine.trim() : ''
+    // CU-488 (prepared; cu-researcher 07:44Z): a verb-only control beside its setting's label ('Two-factor authentication [Turn off]')
+    // - the driver's target.caption completes it ('Turn off Two-factor authentication'), one more form, tried last (adds only).
+    // #643 round 2 (cu-researcher 07:56Z): a table caption joins the column header and the row's text with ' · ' ('Action · Remote
+    // management') - the row's own text, the last part, is the setting.
+    const captionText = typeof target?.caption === 'string' ? (target.caption.split(/\s+[\u00b7|]\s+/).pop() ?? '').trim() : ''
+    const verbOnly = /^\s*(?:turn\s+(?:on|off)|switch\s+(?:on|off)|enable|disable|activate|deactivate|show|reveal|view|remove|delete|revoke|reset|unlock|change|edit|update|manage|export|download|add)\s*$/i.test(name)
+    const captionForm = verbOnly && captionText !== '' && captionText.length <= 80 ? `${String(name).trim()} ${captionText}` : ''
     const confirmForms = context.confirmProbe === true || target?.quickActions === true ? []
-      : [...new Set([...canonicalForms(name), ...(firstLine !== '' && firstLine !== String(name ?? '').trim() ? [firstLine, ...canonicalForms(firstLine)] : [])])]
+      : [...new Set([...canonicalForms(name), ...(firstLine !== '' && firstLine !== String(name ?? '').trim() ? [firstLine, ...canonicalForms(firstLine)] : []), ...(captionForm !== '' ? [captionForm, ...canonicalForms(captionForm)] : [])])]
     for (const confirmForm of confirmForms) {
       if (!(grammarEligible && classes.length === 0 && !nativeOn)) break
       const probe = classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { ...target, name: confirmForm }, confirmProbe: true })
       if (probe.decision === 'block' || probe.decision === 'handoff') return probe
       if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) classes.push(cls)
+    }
+    // CU-528 (High; cu-coordinator 22:21Z + 22:22Z): a trailing '?' / '.' / '!' or a question lead-in ('Are you sure you want to
+    // <row>?', 'Really <row>?', 'Do you (really) want to <row>?') never frees a row or drops its class off a union row - the whole
+    // classify runs once more on the stripped form and its classes are UNIONED in (adds only, never lowers; one level, no re-probe).
+    // A Quick Actions menu item is judged by its exact built-in name (CU-382), so it never takes the probe.
+    const questionForm = context.questionProbe === true || target?.quickActions === true ? '' : questionStripped(name)
+    if (grammarEligible && !nativeOn && questionForm !== '') {
+      const probe = classify(action, { ...context, target: { ...target, name: questionForm }, questionProbe: true })
+      if (probe.decision === 'block' || probe.decision === 'handoff') return probe
+      if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) classes.push(cls)
+    }
+    // #653 round 2 (cu-developer-three 09:10Z): a switch named by a bare acronym ('RDP', 'MFA', '2SV') is judged as the setting it stands
+    // for - re-run with the expanded name, so the switch rules give it direction (also when a native switch reads on).
+    const toggleTarget = /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? '')) || /^checkbox$/i.test(String(target?.inputType ?? ''))
+    const toggleName = toggleTarget && classes.length === 0 && context.confirmProbe !== true ? toggleExpansion(name) : ''
+    if (toggleName !== '') {
+      const probe = classify(action, { ...context, target: { ...target, name: toggleName }, confirmProbe: true })
+      if (probe.decision === 'block' || probe.decision === 'handoff') return probe
+      if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) classes.push(cls)
+    }
+    // CU-481 (cu-coordinator 04:51Z): the verb-synonym forms go LAST - only when nothing above asked and the grammar on the name and its
+    // own canonical forms has no row, so a synonym never outranks a row the name already matches.
+    if (grammarEligible && classes.length === 0 && !nativeOn && context.confirmProbe !== true && target?.quickActions !== true && grammarClassesBase(name, target?.role).length === 0) {
+      for (const synonymForm of synonymForms(name)) {
+        if (classes.length > 0) break
+        const probe = classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { ...target, name: synonymForm }, confirmProbe: true })
+        if (probe.decision === 'block' || probe.decision === 'handoff') return probe
+        if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) classes.push(cls)
+      }
     }
     const splitMatch = /^\s*(?:turn|switch|flip|toggle)\s+(?!(?:on|off)\b)(.+?)\s+(on|off)\s*$/i.exec(name)
     const leadMatch = /^\s*(?:switch|flip|toggle)\s+(on|off)\s+(.+?)\s*$/i.exec(name)
@@ -2001,8 +2262,214 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const also = shortcutActive ? { alsoNeeds: shortcutApproval } : {}
     // ... and 'permission' is listed beside the other classes (the record), while the class that ranks first still leads.
     const stack = (list) => (shortcutActive && !list.includes('permission') ? [...list, 'permission'] : list)
+    // CU-501 (High; cu-coordinator 13:21Z), as verb families with object synonyms: at a registrar, pushing a domain to another account or
+    // changing its registrant hands the domain over (the class of 'Transfer out', purchase); changing MX records or nameservers, turning
+    // off DNSSEC and unlocking the domain redirect or expose it (permission). Only where nothing asked yet: the rows CU-446 ruled
+    // ('Push domain', 'Change registrant', 'Unlock domain', 'Turn off domain lock' credential; 'Transfer ownership' permission) keep
+    // their class exactly (D-108; reclass 0). 'DNS records' stays free.
+    if (grammarEligible) {
+      // #688 round 2 (cu-researcher 14:21Z): object synonyms - 'Push to another account' (no object), 'Change domain owner (account)',
+      // 'Update mail servers / exchangers'.
+      const domainHandover = /^\s*(?:push|move|transfer)\s+(?:the\s+|this\s+|my\s+)?(?:domains?\s+(?:names?\s+)?)?to\s+(?:another|a\s+different|a\s+new|other|an\s+external)\s+(?:account|registrar|user|owner|customer)\s*$|^\s*change\s+(?:the\s+)?domain\s+owner(?:\s+account)?\s*$|^\s*(?:push|move|give|hand\s+over)\s+(?:the\s+|this\s+|my\s+)?domains?(?:\s+(?:name|names))?(?:\s+to\s+(?:another|a\s+different|a\s+new|other|an\s+external)\s+(?:account|registrar|user|owner|customer))?\s*$|^\s*(?:change|update|edit|transfer)\s+(?:the\s+|domain\s+)?(?:registrant|domain\s+owner|ownership)(?:\s+(?:contact|details|name|information|info))?\s*$/i
+      const domainExposure = /^\s*(?:change|edit|update|modify|set|replace|use\s+custom)\s+(?:the\s+|custom\s+|your\s+)?(?:mx\s+records?|mail\s+(?:exchange|server)\s+records?|mail\s+servers?|mail\s+exchangers?|name\s*servers?|dns\s+servers?)\s*$|^\s*(?:disable|turn\s+off|deactivate|remove|switch\s+off)\s+(?:the\s+)?(?:dnssec|domain\s+(?:lock|protection)|registrar\s+lock|transfer\s+lock)\s*$|^\s*unlock\s+(?:the\s+|this\s+|my\s+)?domains?(?:\s+for\s+transfer)?\s*$/i
+      if (classes.length === 0 && domainHandover.test(name)) classes.push('purchase')
+      else if (classes.length === 0 && domainExposure.test(name)) classes.push('permission')
+    }
+    // #683 round 2 (cu-coordinator 13:36Z): a quantified (or, #694 r2, labelled) name that already asks takes the full class set of its row
+    // too ('Approve each sign-in' asks permission beside the older submit, like 'Approve sign-in') - adds only.
+    if (grammarEligible && classes.length > 0 && context.confirmProbe !== true && String(name ?? '').length <= 200) {
+      // #694 round 2 (cu-researcher 15:05Z; the 13:36Z union): the section-label rest too - 'Pay settings: Change direct deposit'
+      // keeps the older purchase from 'pay' and takes credential from its rest.
+      for (const form of [...quantifierDropped(String(name ?? '').trim()), ...sectionLabelStripped(name)]) {
+        const probe = classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { ...target, name: form }, confirmProbe: true })
+        if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) if (!classes.includes(cls)) classes.push(cls)
+      }
+    }
+    // CU-507 (High; cu-coordinator 16:06Z): a generic confirm control inside an in-page modal (role=dialog / alertdialog / <dialog>;
+    // on the desktop an AXSheet / AXDialog) asks the classes the modal's title and description get as a name - never fewer than the
+    // button alone; a modal whose text gets no class stays free. The driver reports target.dialogName / target.dialogDescription.
+    {
+      // One shape on both routes (cu-developer-two 16:12Z, option a): the web driver and the desktop helper fill
+      // target.dialogName / target.dialogDescription.
+      const pick = (value) => (typeof value === 'string' ? value.trim().slice(0, 300) : '')
+      const dialogName = pick(target?.dialogName)
+      const dialogDescription = pick(target?.dialogDescription)
+      const presses = POINTER.has(action.type) || keysOf(action).has('ENTER') || keysOf(action).has('SPACE')
+      // CU-507 follow-up (cu-coordinator 18:21Z): a 'Continue to <rest>' / 'Proceed to <rest>' control inside a dialog asks the union of
+      // its own rest (judged as a name) and the dialog title's class; the page-level navigation ruling for 'Continue to' stays.
+      const continueTo = /^\s*(?:continue|proceed|go\s+on|move\s+on)\s+to\s+(\S.*)$/i.exec(String(name ?? ''))
+      if (context.confirmProbe !== true && presses && (dialogName !== '' || dialogDescription !== '') && continueTo) {
+        const restProbe = classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { role: 'button', name: continueTo[1].trim(), ...(target?.origin ? { origin: target.origin } : {}) } })
+        if (restProbe.decision === 'confirm') for (const cls of restProbe.classes ?? [restProbe.class]) if (!classes.includes(cls)) classes.push(cls)
+      }
+      if (context.confirmProbe !== true && presses && (dialogName !== '' || dialogDescription !== '') && (GENERIC_CONFIRM.test(String(name ?? '')) || continueTo)) {
+        // cu-researcher 16:09Z: a title is a question more often than a row - 'Are you sure you want to <row>?', 'Really <row>?',
+        // '<row>?' - so a title canonical step strips the question frame before the title is judged as a name.
+        // #702 round 2 (cu-researcher 16:24Z): descriptions lead with 'This will / This action will / You are about to / Doing this will'.
+        const titleRow = (text) => text.replace(/[?!.:\s]+$/, '').replace(/^\s*(?:(?:are\s+you\s+(?:sure|certain)|you\s+are\s+about|you're\s+about)(?:\s+(?:that\s+)?you\s+(?:want|wish))?\s+to|do\s+you\s+(?:really\s+)?(?:want|wish)\s+to|(?:would|do)\s+you\s+like\s+to|(?:this|this\s+action|doing\s+this|that|it)(?:\s+cannot\s+be\s+undone\s+and)?\s+will(?:\s+permanently)?|really|confirm(?:\s+that\s+you\s+want\s+to)?|permanently)\s+/i, '').trim()
+        // #702 round 3 (cu-developer-three 16:35Z): a sentence about what happens if the person does NOT confirm ('Your changes will be
+        // lost if you don't save them', '... unless you ...') describes the other button, so it is not judged for the confirm.
+        const consequenceOfNot = /\b(?:if\s+you\s+(?:don'?t|do\s+not|choose\s+not\s+to|cancel|leave|close)|unless\s+you|otherwise)\b/i
+        const kept = dialogDescription.split(/(?<=[.!?])\s+/).filter((sentence) => !consequenceOfNot.test(sentence))
+        const firstSentence = kept[0] ?? ''
+        const keptDescription = kept.join(' ')
+        const texts = [...new Set([dialogName, titleRow(dialogName), firstSentence, titleRow(firstSentence), `${titleRow(dialogName)} ${keptDescription}`.trim()].filter((t) => t !== ''))]
+        for (const text of texts) {
+          // #702 round 2: the title is judged with the FULL canonical form (synonym, quantifier, label and clause steps run only
+          // outside a confirm probe), so no confirmProbe flag here; the probe target carries no dialog fields, so it cannot recurse.
+          const probe = classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { role: 'button', name: text, ...(target?.origin ? { origin: target.origin } : {}) } })
+          if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) if (!classes.includes(cls)) classes.push(cls)
+        }
+      }
+    }
+    // CU-506 (compound sweep): a name of verb-led clauses ('Review and confirm withdrawal') asks the union of its clauses - tried last,
+    // adds only, whether or not the whole name already asked.
+    // A name that is itself a ruled table row ('Sign and file', CU-459: submit) keeps its ruled class set (D-108: reclass 0).
+    if (grammarEligible && context.confirmProbe !== true && grammarClassesBase(name).length === 0) {
+      const clauses = clauseSplit(name)
+      const probes = clauses.map((clause) => classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { ...target, name: clause }, confirmProbe: true }))
+      // #699 round 2 (cu-researcher 15:43Z): every clause must be verb-led - a listed UI verb, or a clause that asks on its own.
+      if (clauses.length > 0 && clauses.every((clause, i) => clauseVerbLed(clause) || probes[i].decision === 'confirm')) {
+        for (const probe of probes) if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) if (!classes.includes(cls)) classes.push(cls)
+      }
+    }
+    // CU-542 (High; cu-coordinator 02:21Z), table PR 41: on a RIDE page (D-109: a ride / rides / ride-request / trip-request path segment, or
+    // a ride-hailing host label - uber, lyft, bolt, grab, didi, cabify, ola, taxi), 'Add (a) stop', 'Change (the) destination' and 'Split
+    // (the) fare' ask PURCHASE (the fare changes); in a maps app or a maps page they stay free. #784 r2 (cu-researcher 02:28Z): a ride /
+    // rides host label; the names take a tail ('Add another stop on the way', 'Split fare with friends'); 'Update / Edit destination'.
+    // #784 r3 (cu-coordinator 02:36Z): a trip / trips path segment binds too (a travel booking's destination change costs money; fail-closed).
+    if (grammarEligible && !classes.includes('purchase') && /^(?:add\s+(?:a\s+|another\s+)?stop|(?:change|update|edit)\s+(?:the\s+|my\s+)?destination|split\s+(?:the\s+)?fare)(?:\s+\S.{0,40})?$/i.test(String(name ?? '').trim())) {
+      let ridePage = false
+      try {
+        const u = new URL(url)
+        ridePage = /^https?:$/.test(u.protocol) && (/(?:^|\/)(?:ride|rides|ride-request|trip-request|request-ride|trip|trips)(?=$|[/?#])/i.test(u.pathname) || /(?:^|\.)(?:uber|lyft|bolt|grab|didi|cabify|ola|taxi|ride|rides)(?:\.|$)/i.test(u.hostname))
+      } catch { ridePage = false }
+      if (ridePage) classes.push('purchase')
+    }
+    // CU-539 (High; cu-coordinator 01:36Z), table PR 39: on a CI / actions page (D-109: an actions / workflows / runners / pipelines / ci
+    // path segment), adding a self-hosted runner and disabling a workflow ask PERMISSION; elsewhere they stay free.
+    if (grammarEligible && !classes.includes('permission') && /^(?:add|register|new)\s+(?:a\s+|new\s+)?self[-\s]hosted\s+runner$|^(?:disable|turn\s+off|pause)\s+(?:this\s+|the\s+)?workflow$/i.test(String(name ?? '').trim())) {
+      let ciPage = false
+      try {
+        const u = new URL(url)
+        ciPage = /^https?:$/.test(u.protocol) && /(?:^|\/)(?:actions|workflows|runners|pipelines|ci|ci-cd)(?=$|[/?#])/i.test(u.pathname)
+      } catch { ciPage = false }
+      if (ciPage) classes.push('permission')
+    }
+    // CU-537 (High; cu-coordinator 01:06Z), table PR 38: the generic 'Add / Edit / Save record' asks PERMISSION on a DNS page only (D-109:
+    // a dns / zone(s) / nameserver(s) / records path segment or a dns host label); a CRM's 'Add record' stays free.
+    if (grammarEligible && !classes.includes('permission') && /^(?:add|edit|save|create|new|change|update|modify)\s+(?:a\s+|the\s+|new\s+|this\s+)?(?:dns\s+)?record$/i.test(String(name ?? '').trim())) {
+      let dnsPage = false
+      try {
+        const u = new URL(url)
+        dnsPage = /^https?:$/.test(u.protocol) && (/(?:^|\/)(?:dns|zones?|nameservers?|dns-records|dns-management|records)(?=$|[/?#])/i.test(u.pathname) || /(?:^|\.)dns(?:\.|$)/i.test(u.hostname))
+      } catch { dnsPage = false }
+      if (dnsPage) classes.push('permission')
+    }
+    // #774 r2 (cu-researcher 01:16Z): 'automatic renewal' and 'Change / Update record' too.
+    // CU-537: turning a DOMAIN's auto-renew off risks losing the domain - permission on a domain / registrar page only (a domains / domain /
+    // registrar / dns path segment or a registrar / domains host label); a subscription's 'Turn off auto-renew' stays free (CU-410 pin).
+    if (grammarEligible && !classes.includes('permission') && /^(?:disable|turn\s+off|switch\s+off|cancel|stop)\s+(?:the\s+)?(?:domain\s+)?(?:auto[-\s]?renew(?:al)?|automatic\s+renewal)$/i.test(String(name ?? '').trim())) {
+      let domainPage = false
+      try {
+        const u = new URL(url)
+        domainPage = /^https?:$/.test(u.protocol) && (/(?:^|\/)(?:domains?|registrar|dns|domain-management)(?=$|[/?#])/i.test(u.pathname) || /(?:^|\.)(?:registrar|domains)(?:\.|$)/i.test(u.hostname))
+      } catch { domainPage = false }
+      if (domainPage) classes.push('permission')
+    }
+    // CU-524 (High; cu-coordinator 21:06Z; #741 r2 adds '... for verification' and '(another) email (address)'): a bare 'Add phone number' on an account-security page (D-109: host or path, never a
+    // title) adds a recovery / sign-in channel - credential; a checkout or contact form's 'Add phone number' stays free.
+    if (grammarEligible && !classes.includes('credential') && /^add\s+(?:a\s+|an\s+|another\s+)?(?:new\s+)?(?:(?:phone|mobile)(?:\s+number)?|e-?mail(?:\s+address)?)(?:\s+for\s+(?:verification|sign[-\s]?in|signing\s+in|2-?step(?:\s+verification)?|two[-\s]step(?:\s+verification)?|recovery|security|account\s+recovery))?$/i.test(String(name ?? '').trim())) {
+      let securityPage = false
+      try {
+        const u = new URL(url)
+        securityPage = /^https?:$/.test(u.protocol) && (/(?:^|\/)(?:security|account-security|signin|sign-in|signin-options|login|login-security|recovery|two-step|two-factor|2fa|mfa|authentication|privacy-security)(?=$|[/?#-])/i.test(u.pathname) || /^(?:myaccount|accounts?|id|login|signin)\./i.test(u.hostname))
+      } catch { securityPage = false }
+      if (securityPage) classes.push('credential')
+    }
+    // CU-523 (High; cu-coordinator 20:36Z): on an identity-provider / admin-console page (D-109: host or path, never a title) adding a
+    // user to a group / the admins asks PERMISSION; a chat app's 'Add to group' stays free. IdP pages: a vendor host token (okta, auth0,
+    // onelogin, jumpcloud, keycloak, pingone, pingidentity, entra, duo) or an admin / iam / directory / identity / idp / sso path segment
+    // or host label (admin.example, /admin/users).
+    if (grammarEligible && !classes.includes('permission') && /^(?:add|assign)\s+(?:the\s+|this\s+|selected\s+)?(?:users?\s+|members?\s+)?to\s+(?:a\s+|the\s+)?(?:groups?|admins?|administrators?|admin\s+group)$/i.test(String(name ?? '').trim())) {
+      let idpPage = false
+      try {
+        const u = new URL(url)
+        idpPage = /^https?:$/.test(u.protocol) && (/(?:^|\.)(?:okta|auth0|onelogin|jumpcloud|keycloak|pingone|pingidentity|entra|duo|admin|iam|idp|sso|directory)(?:\.|$)/i.test(u.hostname) || /(?:^|\/)(?:admin|iam|directory|identity|idp|sso)(?=$|[/?#])/i.test(u.pathname))
+      } catch { idpPage = false }
+      if (idpPage) classes.push('permission')
+    }
+    // CU-544 (High; cu-coordinator 03:06Z), table PR 43: enabling / allowing guest access asks PERMISSION, unioned onto any older class
+    // ('Enable guest access' keeps its older physical and adds permission).
+    if (grammarEligible && !classes.includes('permission') && /^(?:allow|enable|turn\s+on|permit)\s+guest\s+(?:access|accounts?|users?)$/i.test(String(name ?? '').trim())) classes.push('permission')
+    // #789 r2 (cu-developer-three 03:10Z): a 'Guest access' SWITCH asks on the dangerous direction, like 'Remote Login' / 'Screen Sharing' -
+    // off -> on and an unread state ask permission (nativeToggleState: a web ARIA state is untrusted), on -> off is free.
+    if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))
+      && /^\s*guest\s+(?:access|accounts?|users?)\s*$/i.test(name) && nativeToggleState(target) !== true) classes.push('permission')
+    // CU-539 (#778 r2): skipping deployment protection asks PERMISSION + SUBMIT; the '... and deploy' forms reach an older submit rule
+    // first, so permission is unioned onto it here (the 'Merge anyway' pattern).
+    if (grammarEligible && !classes.includes('permission') && /^(?:skip|bypass|ignore|override)\s+(?:the\s+)?(?:deployment\s+protection(?:\s+rules?)?|(?:branch\s+|environment\s+)?protection\s+rules?)(?:\s+and\s+deploy(?:\s+now)?)?$/i.test(String(name ?? '').trim())) {
+      classes.push('permission')
+      if (!classes.includes('submit')) classes.push('submit')
+    }
+    // CU-521 (cu-coordinator 20:06Z): 'Merge anyway' keeps its older submit and unions permission (a merge past the requirements).
+    if (grammarEligible && classes.length > 0 && !classes.includes('permission') && /^(?:merge\s+anyway|force[-\s]?merge)$/i.test(String(name ?? '').trim())) classes.push('permission')
+    // #729 round 2 (cu-coordinator 19:51Z, the 18:06Z precedent): 'Reset account PIN' keeps the older reset row's delete and unions
+    // CU-518's credential.
+    if (grammarEligible && classes.length > 0 && !classes.includes('credential') && /^reset\s+(?:the\s+|my\s+|your\s+)?(?:account|port[-\s]?out|transfer|number\s+transfer)\s+(?:pin|passcode)$/i.test(String(name ?? '').trim())) classes.push('credential')
+    // CU-519 (High; cu-coordinator 19:36Z), table PR 28, bound on the page URL (host or path, D-109; never a title): on a home-security,
+    // lock or camera page, generating / creating / sharing a guest or access PIN / code asks PHYSICAL (someone gets in), and disabling /
+    // stopping recording, turning off a camera and disarming ask PERMISSION. The ruled class is UNIONED onto any older one ('Create guest
+    // code' keeps permission and adds physical; 'Turn off camera' / 'Disarm' keep physical and add permission). Meeting pages stay free;
+    // CU-468's 'Create access code' row is untouched (only guest / temporary / one-time / visitor codes, and sharing an access code).
+    if (grammarEligible) {
+      const homeSecurity = isHomeSecurityPage(url)
+      const label = String(name ?? '').trim()
+      if (homeSecurity) {
+        if (/^(?:generate|create|add|make|share|send)\s+(?:a\s+|an\s+|new\s+)?(?:guest|temporary|temp|one[-\s]time|visitor)\s+(?:pin|code|passcode|key|access\s+code)$|^share\s+(?:the\s+|an\s+)?access\s+code$/i.test(label) && !classes.includes('physical')) classes.push('physical')
+        if (/^(?:disable|stop|turn\s+off|end)\s+(?:the\s+)?recording$|^(?:turn\s+off|disable|switch\s+off)\s+(?:the\s+|all\s+)?cameras?$|^disarm(?:\s+(?:the\s+)?(?:system|alarm|home|security(?:\s+system)?))?$/i.test(label) && !classes.includes('permission')) classes.push('permission')
+        // CU-536 (High; cu-coordinator 01:06Z, folded into #773 r2), on isHomeSecurityPage only (an alarm clock's 'Silence alarm' stays
+        // free): silencing / muting the siren, motion detection off, pausing / stopping recording and cancelling monitoring ask PERMISSION;
+        // adding a user / a PIN code asks PHYSICAL (someone gets in). Unioned onto any older class.
+        if (/^(?:silence|mute|stop|turn\s+off|dismiss)\s+(?:the\s+)?(?:siren|alarm\s+siren|sirens)$|^(?:turn\s+off|disable|pause|stop)\s+(?:the\s+)?motion\s+(?:detection|alerts?|sensors?)$|^(?:pause|stop)\s+(?:the\s+)?(?:recording|video\s+recording|camera\s+recording)$|^(?:cancel|stop|end|pause|turn\s+off|disable)\s+(?:the\s+)?(?:professional\s+)?monitoring(?:\s+(?:service|plan|subscription))?$/i.test(label) && !classes.includes('permission')) classes.push('permission')
+        if (/^add\s+(?:a\s+|an\s+|new\s+)?(?:user|member|household\s+member|pin(?:\s+code)?|user\s+code|keypad\s+code|passcode)$/i.test(label) && !classes.includes('physical')) classes.push('physical')
+      }
+    }
+    // #721 round 3 (cu-coordinator 18:51Z; CU-515's desktop gap, cu-developer-three 18:37Z): in a native authenticator app the
+    // control beside a TOTP is just 'Copy' / 'Copy code' / 'Show code' - it puts the second factor on the clipboard, so it asks
+    // credential there, bound on the app (target.origin, else frontmostBundleId; never an 'app:' url). The apps are matched by a
+    // bundle-id segment (authy*, *authenticator*, otp*, *totp*, steptwo / step-two, raivo*, 2fas*), not by guessed exact ids;
+    // elsewhere a bare 'Copy' stays free, and password managers stay BLOCKED by the app policy, unchanged.
+    if (grammarEligible && classes.length === 0) {
+      const appId = (typeof target?.origin === 'string' && target.origin !== '' && !/^https?:/i.test(target.origin)) ? target.origin : String(context?.frontmostBundleId ?? '')
+      const authenticator = appId.split('.').some((segment) => /^(?:authy[\w-]*|[\w-]*authenticator[\w-]*|otp[\w-]*|[\w-]*totp[\w-]*|step-?two[\w-]*|raivo[\w-]*|2fas[\w-]*)$/i.test(segment))
+      if (authenticator && /^(?:copy|show|reveal|view)(?:\s+(?:the\s+)?(?:code|otp|totp|token|password))?$/i.test(String(name ?? '').trim())) classes.push('credential')
+    }
+    // CU-512 (High; cu-coordinator 17:51Z), table PR 25, as verb families with object synonyms - an MDM console's device controls.
+    // CREDENTIAL: clearing / bypassing Activation Lock or a passcode, dropping the passcode requirement. PERMISSION: turning off Lost
+    // Mode, unenrolling / retiring a device, pushing / installing / deploying a profile. Older classes lead (13:36Z): these fire only
+    // where nothing asked yet ('Install profile' keeps install, 'Deploy profile' submit, 'Remove passcode' delete).
+    // #716 round 2 (cu-coordinator 18:06Z, explicit raises): the two older-delete forms union credential, and 'Deploy profile' unions
+    // permission onto its older submit - the older class stays, the ruled class is added.
+    if (grammarEligible) {
+      const raised = String(name ?? '').trim()
+      if (/^(?:remove|clear)\s+(?:the\s+)?(?:activation\s+lock|device\s+passcode)$/i.test(raised) && !classes.includes('credential') && classes.length > 0) classes.push('credential')
+      if (/^deploy\s+(?:the\s+|a\s+|this\s+)?(?:configuration\s+|config\s+|mdm\s+|management\s+)?profiles?$/i.test(raised) && !classes.includes('permission') && classes.length > 0) classes.push('permission')
+    }
+    if (grammarEligible && classes.length === 0) {
+      const mdm = String(name ?? '').trim()
+      if (/^(?:clear|bypass|remove|disable|turn\s+off|reset|skip)\s+(?:the\s+)?activation\s+lock(?:\s+bypass\s+code)?$|^(?:clear|reset|bypass)\s+(?:the\s+|device\s+)?passcode$|^(?:disable|turn\s+off|remove|drop)\s+(?:the\s+)?passcode\s+(?:requirement|policy)$|^(?:don'?t|do\s+not)\s+require\s+(?:a\s+)?passcode$/i.test(mdm)) classes.push('credential')
+      else if (/^(?:turn\s+off|disable|exit|end|stop|leave)\s+lost\s+mode$|^(?:unenroll|un-enroll|retire|deregister|unmanage|release)\s+(?:the\s+|this\s+|selected\s+)?devices?$|^remove\s+(?:the\s+|this\s+)?devices?\s+from\s+management$|^(?:push|install|deploy|send|assign)\s+(?:the\s+|a\s+|this\s+)?(?:configuration\s+|config\s+|mdm\s+|management\s+)?profiles?$/i.test(mdm)) classes.push('permission')
+    }
     const unique = [...new Set(classes)].sort((a, b) => PRECEDENCE.indexOf(a) - PRECEDENCE.indexOf(b))
-    const needed = unique.filter((cls) => !preApproved(cls, url) || NEVER_PRE_APPROVED.includes(cls) || autofillClasses.includes(cls))
+    // CU-494 residual (cu-coordinator 11:36Z): moneyIdentityField also reads an unlabelled entry's raw name/id attribute.
+    const moneyField = moneyIdentityField(target, name)
+    const typesSecret = action.type === 'type' && /^\s*(?:\{\{secret:[a-z0-9_-]+\}\}\s*)+$/i.test(String(action.text ?? '')) && !moneyField
+    const needed = unique.filter((cls) => !preApproved(cls, url) || NEVER_PRE_APPROVED.includes(cls) || autofillClasses.includes(cls) || neverCoveredByGrant(cls, name) || (cls === 'credential' && !typesSecret))
+    // CU-494 (11:06Z): typing into a money or identity field is never carried by a grant - it asks credential at the typing step
+    // (an attacker IBAN typed under a credential or sensitive_data grant, then a bare 'Save', must not pass).
+    // #664 round 3 (cu-researcher 11:11Z): also when no class asked at all ('SWIFT code', 'Wallet address' typed with or without a grant).
+    if (needed.length === 0 && action.type === 'type' && target && isTextEntry(target) && moneyField) { needed.push('credential'); if (!unique.includes('credential')) unique.push('credential') }
     if (needed.length === 0 && shortcutActive) {
       return { decision: 'confirm', class: 'permission', classes: ['permission'], rule: 'page:shortcut', approvalKey: shortcutApproval, runOnly: true, reason: `press ${shortcutShown} on ${placeOf(url, target, context?.frontmostBundleId)}, a keyboard shortcut of the ${onDesktop ? 'app' : 'page'} - it decides what it does` }
     }

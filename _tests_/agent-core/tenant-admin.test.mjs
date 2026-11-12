@@ -35,6 +35,7 @@ test('#606 round 2: the five held-out escapes ask permission; older over-asks na
   }
   // Named (older rules, identical on main; CU-429): 'Security policies' and 'Turn on security defaults' (older security word),
   // 'Require multi-factor authentication' (older 2FA rule).
-  for (const name of ['Security policies', 'Turn on security defaults', 'Require multi-factor authentication']) assert.notEqual(click(name), 'allow', name)
+  for (const name of ['Security policies', 'Turn on security defaults']) assert.notEqual(click(name), 'allow', name)
+  assert.equal(click('Require multi-factor authentication'), 'allow', 'CU-429 (09:34Z): raising a protection is lowered to free')
   assert.equal(click('Require MFA'), 'allow')
 })

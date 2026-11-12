@@ -15,7 +15,7 @@ import { readRun } from '../../_tools_/agent-core/trajectory.mjs'
 // CU-402 (High): a bare 'Sell' beside an asset select in a form is a trade - the policy reads the driver's formContext
 // ({options, amountEntry}, cu-developer-two's #472). Both sides; one row through runTask (D-103).
 const policy = createPolicy({ sitePolicy: () => 'allow' })
-const press = (name, formContext) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: 'https://exchange.example/trade', target: { tag: 'button', role: 'button', name, ...(formContext ? { formContext } : {}) } }); return v.decision === 'allow' ? 'allow' : v.class }
+const press = (name, formContext, url = 'https://exchange.example/trade') => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url, target: { tag: 'button', role: 'button', name, ...(formContext ? { formContext } : {}) } }); return v.decision === 'allow' ? 'allow' : v.class }
 const tmp = mkdtempSync(join(tmpdir(), 'cu-402-'))
 after(() => rmSync(tmp, { recursive: true, force: true }))
 
@@ -27,11 +27,13 @@ test('CU-402: a bare Sell/Convert/Deposit with an asset among the selected optio
 })
 
 test('CU-402 negatives: no form context, or options that name no asset and no amount entry, stay free', () => {
-  assert.equal(press('Sell'), 'allow')
-  assert.equal(press('Sell', { options: ['Used - good'], amountEntry: false }), 'allow')
+  // CU-483 (cu-coordinator 06:05Z, (a)): a bare 'Sell' on a trading URL now asks purchase - the marketplace Sell negatives read a
+  // marketplace URL (their intent kept: a condition select or an amount entry alone never counts).
+  assert.equal(press('Sell', undefined, 'https://market.example/listings'), 'allow')
+  assert.equal(press('Sell', { options: ['Used - good'], amountEntry: false }, 'https://market.example/listings'), 'allow')
   assert.equal(press('Convert', { options: ['PDF'], amountEntry: false }), 'allow')
-  assert.equal(press('Sell', { options: [], amountEntry: true }), 'allow', 'an amount entry alone (a marketplace price) never counts')
-  assert.equal(press('Sell', { options: ['Used - good'], amountEntry: true }), 'allow')
+  assert.equal(press('Sell', { options: [], amountEntry: true }, 'https://market.example/listings'), 'allow', 'an amount entry alone (a marketplace price) never counts')
+  assert.equal(press('Sell', { options: ['Used - good'], amountEntry: true }, 'https://market.example/listings'), 'allow')
   for (const name of ['Continue', 'Next', 'Review']) assert.equal(press(name, { options: ['ETH'], amountEntry: true }), 'allow', name)
   assert.equal(press('Submit', { options: ['Medium'], amountEntry: false }), 'submit', 'a size form keeps its plain submit')
 })

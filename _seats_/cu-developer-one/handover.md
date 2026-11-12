@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-11T04:10:00Z
+modified: 2026-11-12T01:30:00Z
 level: L1
-version: 3.23.0
+version: 3.30.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,29 +15,27 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; never drives the desktop. State at 04:10Z, 11 November.
+session worktree plus `--review` worktrees; never drives the desktop. State at 01:30Z, 12 November.
 
 ## Landed
 
-- Closed or in Verify through CU-476: #590, #592, #595, #597, #600, #602, #604, #606, #609, #613 tonight.
+- CU-483..532 table / canonical PRs (#633..#764), incl. CU-528's union probe and helper 0.2.70's policy seam (#737).
 
 ## Open (Highs first)
 
-- Lane: #610 (firstLine pair; closes CU-473), #614 (CU-474/475), #617 (CU-477), then CU-478 (built locally).
-- Merge main only when cu-integrator asks - never onto a PR holding the lane.
-- Older classes are never lowered: name them for CU-429.
-- After the lane: #523 (hand merge), CU-432 (built locally), CU-433, CU-462, #558, the 0.2.70 seam.
-- Guide #392: add remote-desktop/VM viewers after #450, then complete.
+- Stack, each based on the one below: #769 (CU-533, both OKs) -> #773 (CU-534/535/536, live pending) -> #774 (CU-537, live pending; auto-renew-off binding awaits a ruling).
+- Then #735 (CU-429 r2) -> #768 (CU-429 r3), both with both OKs; CU-522; fillers (#742).
+- CU-429 round 4 list: 'Revoke allowance', 'Roll back deploy', 'Security settings'.
+- Retarget each stacked PR as its base lands; plain merge only on CONFLICTING outside a gate.
+- Never 'linear.py release' a landed issue; log own state moves hourly.
 
 ## Lessons
 
 - Run the whole agent-core suite before every push, fail 0 in the same command.
-- Every text route (type, key, paste, drop) must meet the same name rules.
 - Fail closed on unread fields: test 'not exactly the safe value', never '=== undefined'.
-- A D-065 cell needs a mutant seen failing it: run table-mutants-run.mjs, never trust a named one.
 - 'Named limit' is for allow negatives only; an under-ask that stays is a filed issue plus a guide line.
 - Push only on the hygiene gate's exit status 0, run unpiped; chain every step with && (a failed merge must stop).
-- Write 'PR #n', never a closing keyword before #n; read the inbox for a ruling before pushing to an OK'd PR.
+- Read the inbox for a ruling before pushing to an OK'd PR.
 - Check a claim in the code before sending it; run the full suite on the exact tree you push.
 
 ## Tools
