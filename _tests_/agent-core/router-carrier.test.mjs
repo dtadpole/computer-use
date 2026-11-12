@@ -41,3 +41,13 @@ test('#805 round 2 (05:05Z): the held-out forms; the router switches take their 
   assert.deepEqual(sw('WPS', true), [], 'WPS on -> off is free')
   for (const name of ['Plan details', 'Change to dark mode']) assert.deepEqual(classesOf(name), [], name)
 })
+
+test('#805 round 3 (cu-researcher 05:17Z): the forward target may be an address', () => {
+  for (const name of ['Forward ports 80 to 192.0.2.5', 'Forward port 443 to 198.51.100.12:8443', 'Forward port 22 to my NAS']) assert.ok(classesOf(name).includes('permission'), name)
+})
+
+test("#805 round 3 (cu-coordinator 05:21Z): 'Change to <plan name>' asks purchase on a carrier plan page only", () => {
+  const at = (name, url) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url, target: { role: 'button', name } }); return v.decision === 'allow' ? [] : (v.classes ?? [v.class]) }
+  for (const url of ['https://carrier.example/account/plans', 'https://www.example-wireless.example/wireless/my-plan']) for (const name of ['Change to Unlimited Plus', 'Switch to Basic', 'Move to Premium']) assert.ok(at(name, url).includes('purchase'), `${url}: ${name}`)
+  for (const name of ['Change to Unlimited Plus', 'Change to dark mode']) assert.deepEqual(at(name, 'https://app.example/settings'), [], `off a plan page: ${name}`)
+})

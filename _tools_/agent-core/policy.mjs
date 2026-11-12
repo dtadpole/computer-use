@@ -2343,6 +2343,17 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       } catch { ridePage = false }
       if (ridePage) classes.push('purchase')
     }
+    // CU-550 (#805 r3, cu-coordinator 05:21Z): 'Change / Switch / Move / Upgrade / Downgrade to <plan name>' without the word 'plan' asks
+    // PURCHASE on a carrier plan page only (D-106: a plan(s) / my-plan / change-plan / rate-plan / wireless path segment, or a carrier /
+    // wireless / mobile host label); elsewhere ('Change to dark mode') it stays free.
+    if (grammarEligible && !classes.includes('purchase') && /^(?:change|switch|move|upgrade|downgrade)\s+to\s+(?:the\s+|a\s+)?[\w+&.-]+(?:\s+[\w+&.-]+){0,3}$/i.test(String(name ?? '').trim())) {
+      let planPage = false
+      try {
+        const u = new URL(url)
+        planPage = /^https?:$/.test(u.protocol) && (/(?:^|\/)(?:plans?|my-plan|change-plan|rate-plans?|wireless|mobile-plans?)(?=$|[/?#])/i.test(u.pathname) || /(?:^|\.)(?:carrier|wireless|mobile)(?:\.|$)/i.test(u.hostname))
+      } catch { planPage = false }
+      if (planPage) classes.push('purchase')
+    }
     // CU-539 (High; cu-coordinator 01:36Z), table PR 39: on a CI / actions page (D-109: an actions / workflows / runners / pipelines / ci
     // path segment), adding a self-hosted runner and disabling a workflow ask PERMISSION; elsewhere they stay free.
     if (grammarEligible && !classes.includes('permission') && /^(?:add|register|new)\s+(?:a\s+|new\s+)?self[-\s]hosted\s+runner$|^(?:disable|turn\s+off|pause)\s+(?:this\s+|the\s+)?workflow$/i.test(String(name ?? '').trim())) {
