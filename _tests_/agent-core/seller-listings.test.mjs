@@ -25,3 +25,8 @@ test("#796 round 2 (cu-researcher 04:09Z): the 'N% off' phrasings", () => {
   for (const name of ['Mark everything 75% off', 'Take 80% off all items', 'Mark all items 50% off', 'Take 90% off']) assert.ok(classesOf(name).includes('purchase'), name)
   for (const name of ['Take 10% off', 'Mark everything 20% off', '75% off']) assert.deepEqual(classesOf(name), [], name)
 })
+
+test('#796 round 3 (04:13Z): any verb ... N% off, and N% off everything / all listings', () => {
+  for (const name of ['Mark 60% off', 'Mark 75% off', '75% off everything', '50% off all listings', '90% off all items', 'Apply a 70% off coupon to all']) assert.ok(classesOf(name).includes('purchase'), name)
+  for (const name of ['75% off', '50% off', 'Mark 10% off', '20% off everything']) assert.deepEqual(classesOf(name), [], name)
+})
