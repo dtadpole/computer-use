@@ -1160,6 +1160,12 @@ function grammarClassesOf(name, role = '') {
   // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
   // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
   if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
+  // CU-543 (High; cu-coordinator 02:36Z), table PR 42 - a kids / child profile's safeguards ask PERMISSION: turn off / disable / remove (the)
+  // profile PIN / lock / passcode; allow all maturity ratings / ratings / content; set (the) maturity (rating / level) to 18+ / adult / all /
+  // mature / R / TV-MA / unrestricted; turn off / disable (the) maturity / content filter / restrictions. 'Remove profile PIN / lock' keep
+  // their older delete (older classes lead) and gain nothing here. #786 r3 (cu-researcher 02:52Z): 'Allow all maturity levels', 'Show
+  // (titles of) all maturity levels' - #786 r4 (cu-researcher / cu-developer-two 02:58Z): 'titles of' is optional ('Show all maturity levels').
+  if (/^\s*(?:turn\s+off|disable|switch\s+off|deactivate)\s+(?:the\s+)?profile\s+(?:pin|lock|passcode|password)\s*$|^\s*allow\s+all\s+(?:maturity\s+)?(?:ratings|levels|content|titles)\s*$|^\s*(?:show|allow|display)\s+(?:(?:titles|content|shows|movies)\s+(?:of|from|for)\s+)?all\s+maturity\s+(?:levels|ratings)\s*$|^\s*(?:set|change)\s+(?:the\s+)?maturity(?:\s+(?:rating|level|setting))?\s+to\s+(?:18\+|adult|adults|all|mature|r|tv-ma|nc-17|unrestricted|everything)\s*$|^\s*(?:turn\s+off|disable|remove)\s+(?:the\s+)?(?:maturity|content)\s+(?:filter|filters|restrictions?|limits?)\s*$/i.test(raw)) return ['permission']
   // CU-542 (High; cu-coordinator 02:21Z), table PR 41 - emergency help asks SUBMIT everywhere, like 'Call 911': (send / use / trigger)
   // (an) emergency SOS / SOS; emergency assistance / help; contact / call / notify (the) emergency services; alert / notify / message (my)
   // emergency contacts. A ride's 'Add stop' / 'Change destination' / 'Split fare' are URL-bound in policy.mjs (ride pages only).
