@@ -1160,6 +1160,20 @@ function grammarClassesOf(name, role = '') {
   // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
   // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
   if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
+  // CU-548 (High; cu-coordinator 04:06Z), table PR 46 - life safety, PHYSICAL everywhere: turn off / disable / deactivate / silence /
+  // mute / hush / snooze (the) smoke / CO / carbon monoxide / fire (and CO) alarm / detector / sensor(s); turn off / disable / bypass (the)
+  // (water) leak sensor / detector / detection / alerts; turn off / disable / bypass (the) (automatic) (water) shutoff (valve); open (the)
+  // (main) water valve / supply / main. A bare 'Silence alarm' (an alarm clock) stays free; the switch forms are in policy.mjs.
+  // #798 r2 (cu-researcher 04:10Z): 'Turn on / Open (the) main water'; 'Turn off the water / flood detector'.
+  if (/^\s*(?:turn\s+off|switch\s+off|disable|deactivate|silence|mute|hush|snooze|dismiss)\s+(?:the\s+|all\s+)?(?:smoke|co|carbon\s+monoxide|fire|smoke\s+(?:and|&|\/)\s+co)\s+(?:alarms?|detectors?|sensors?)\s*$|^\s*(?:turn\s+off|switch\s+off|disable|deactivate|bypass)\s+(?:the\s+)?(?:water\s+leak|leak|water|flood)\s+(?:sensors?|detectors?|detection|alerts?)\s*$|^\s*(?:turn\s+off|switch\s+off|disable|deactivate|bypass)\s+(?:the\s+)?(?:automatic\s+|auto\s+)?(?:water\s+)?shut-?off(?:\s+valve)?\s*$|^\s*(?:open|turn\s+on)\s+(?:the\s+)?(?:main\s+)?water(?:\s+(?:valve|supply|main))?\s*$/i.test(raw)) return ['physical']
+  // CU-546 (High; cu-coordinator 03:51Z), table PR 45 - a seller's money and listings. PURCHASE: request (a / your / my) payout /
+  // withdrawal / disbursement; bulk edit / update / change (all) prices, bulk price edit / update; set (the / all) price(s) to $0 / 0 /
+  // zero / free; apply (a) deep discount - 50% to 100% off. DELETE: end / close / deactivate all (active / my) listings / items.
+  // #796 r2 (cu-researcher 04:09Z): the 'N% off' phrasings - 'Mark everything 75% off', 'Take 80% off all items' (50% to 100%).
+  // #796 r3 (cu-researcher / cu-developer-two 04:13Z): any 'mark / take / apply ... N% off', and 'N% off everything / all items /
+  // all listings'; a bare 'N% off' badge stays free.
+  if (/^\s*request\s+(?:a\s+|an\s+|your\s+|my\s+)?(?:payout|withdrawal|disbursement|transfer\s+to\s+bank)\s*$|^\s*bulk\s+(?:edit|update|change)\s+(?:all\s+)?(?:the\s+)?prices\s*$|^\s*bulk\s+price\s+(?:edit|update|change)s?\s*$|^\s*set\s+(?:the\s+|all\s+)?prices?\s+to\s+(?:\$\s*0(?:\.00)?|0(?:\.00)?|zero|free)\s*$|^\s*apply\s+(?:an?\s+)?(?:(?:[5-9]\d|100)\s*%|deep)\s+(?:off\s+)?discount\s*$|^\s*apply\s+(?:an?\s+)?(?:[5-9]\d|100)\s*%\s+off\s*$|^\s*(?:mark|set|put|price)\s+(?:everything|all(?:\s+(?:items|listings|products))?|the\s+(?:store|shop|catalog))\s+(?:at\s+)?(?:[5-9]\d|100)\s*%\s+off\s*$|^\s*(?:take|give|apply|knock)\s+(?:[5-9]\d|100)\s*%\s+off(?:\s+(?:of\s+)?(?:everything|all(?:\s+(?:items|listings|products))?|the\s+price|this\s+(?:item|listing|product)))?\s*$|^\s*(?:mark|take|apply|knock|give|set|price)\b.{0,40}?\b(?:[5-9]\d|100)\s*%\s+off\b.{0,40}$|^\s*(?:[5-9]\d|100)\s*%\s+off\s+(?:everything|all(?:\s+(?:items|listings|products))?)\s*$/i.test(raw)) return ['purchase']
+  if (/^\s*(?:end|close|deactivate)\s+all\s+(?:active\s+|my\s+|of\s+my\s+)?(?:listings|items|ads)\s*$/i.test(raw)) return ['delete']
   // CU-545 (High; cu-coordinator 03:36Z), table PR 44 - a recovery kit / key carries the account's way back in, like 'Download recovery
   // key' / 'Download emergency kit': CREDENTIAL for download / save / print / export / get (the / your / my) recovery kit / key / sheet /
   // document (PDF), and save / print / export (the / your) recovery key.
