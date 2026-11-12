@@ -3,7 +3,7 @@ import { normaliseForPolicy, normaliseText } from './normalise.mjs'
 import { BIP39_ENGLISH } from './bip39-english.mjs'
 import { normalizeKey } from './keys.mjs'
 import { originPattern } from './sites.mjs'
-import { amountClass, canonicalForms, clauseSplit, clauseVerbLed, grammarClasses, grammarClassesBase, inertLinkAmountClass, quantifierDropped, sectionLabelStripped, straightQuotes, synonymForms, toggleExpansion } from './phrase-grammar.mjs'
+import { amountClass, canonicalForms, clauseSplit, clauseVerbLed, grammarClasses, grammarClassesBase, inertLinkAmountClass, quantifierDropped, questionStripped, sectionLabelStripped, straightQuotes, synonymForms, toggleExpansion } from './phrase-grammar.mjs'
 
 /**
  * The action policy (design: action-policy.md, consent-gate.md). `classify` runs in the dispatcher for every action,
@@ -1925,6 +1925,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (/^\s*(?:audio\s+recording|record\s+audio|continuous\s+recording|24\/7\s+recording|face\s+recognition|facial\s+recognition|familiar\s+faces)\s*$/i.test(name)
         && state !== true) classes.push('permission')
     }
+    // CU-535 (cu-coordinator 00:51Z; #773 r2, cu-developer-three 01:03Z): a VPN kill-switch SWITCH turned OFF asks permission, like the
+    // two-factor switch - on -> off and an unread state ask (nativeToggleState: a web ARIA state is untrusted), off -> on is free.
+    if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))
+      && /^\s*(?:vpn\s+)?kill\s*switch\s*$/i.test(name) && nativeToggleState(target) !== false) classes.push('permission')
     // CU-446 (cu-coordinator 21:05Z): a domain-lock / transfer-lock switch turned OFF asks credential, a WHOIS-privacy switch turned
     // OFF asks permission; ON is free on a native read; an unread state asks both ways.
     if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))) {
@@ -2166,6 +2170,16 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (probe.decision === 'block' || probe.decision === 'handoff') return probe
       if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) classes.push(cls)
     }
+    // CU-528 (High; cu-coordinator 22:21Z + 22:22Z): a trailing '?' / '.' / '!' or a question lead-in ('Are you sure you want to
+    // <row>?', 'Really <row>?', 'Do you (really) want to <row>?') never frees a row or drops its class off a union row - the whole
+    // classify runs once more on the stripped form and its classes are UNIONED in (adds only, never lowers; one level, no re-probe).
+    // A Quick Actions menu item is judged by its exact built-in name (CU-382), so it never takes the probe.
+    const questionForm = context.questionProbe === true || target?.quickActions === true ? '' : questionStripped(name)
+    if (grammarEligible && !nativeOn && questionForm !== '') {
+      const probe = classify(action, { ...context, target: { ...target, name: questionForm }, questionProbe: true })
+      if (probe.decision === 'block' || probe.decision === 'handoff') return probe
+      if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) classes.push(cls)
+    }
     // #653 round 2 (cu-developer-three 09:10Z): a switch named by a bare acronym ('RDP', 'MFA', '2SV') is judged as the setting it stands
     // for - re-run with the expanded name, so the switch rules give it direction (also when a native switch reads on).
     const toggleTarget = /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? '')) || /^checkbox$/i.test(String(target?.inputType ?? ''))
@@ -2342,6 +2356,11 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (homeSecurity) {
         if (/^(?:generate|create|add|make|share|send)\s+(?:a\s+|an\s+|new\s+)?(?:guest|temporary|temp|one[-\s]time|visitor)\s+(?:pin|code|passcode|key|access\s+code)$|^share\s+(?:the\s+|an\s+)?access\s+code$/i.test(label) && !classes.includes('physical')) classes.push('physical')
         if (/^(?:disable|stop|turn\s+off|end)\s+(?:the\s+)?recording$|^(?:turn\s+off|disable|switch\s+off)\s+(?:the\s+|all\s+)?cameras?$|^disarm(?:\s+(?:the\s+)?(?:system|alarm|home|security(?:\s+system)?))?$/i.test(label) && !classes.includes('permission')) classes.push('permission')
+        // CU-536 (High; cu-coordinator 01:06Z, folded into #773 r2), on isHomeSecurityPage only (an alarm clock's 'Silence alarm' stays
+        // free): silencing / muting the siren, motion detection off, pausing / stopping recording and cancelling monitoring ask PERMISSION;
+        // adding a user / a PIN code asks PHYSICAL (someone gets in). Unioned onto any older class.
+        if (/^(?:silence|mute|stop|turn\s+off|dismiss)\s+(?:the\s+)?(?:siren|alarm\s+siren|sirens)$|^(?:turn\s+off|disable|pause|stop)\s+(?:the\s+)?motion\s+(?:detection|alerts?|sensors?)$|^(?:pause|stop)\s+(?:the\s+)?(?:recording|video\s+recording|camera\s+recording)$|^(?:cancel|stop|end|pause|turn\s+off|disable)\s+(?:the\s+)?(?:professional\s+)?monitoring(?:\s+(?:service|plan|subscription))?$/i.test(label) && !classes.includes('permission')) classes.push('permission')
+        if (/^add\s+(?:a\s+|an\s+|new\s+)?(?:user|member|household\s+member|pin(?:\s+code)?|user\s+code|keypad\s+code|passcode)$/i.test(label) && !classes.includes('physical')) classes.push('physical')
       }
     }
     // #721 round 3 (cu-coordinator 18:51Z; CU-515's desktop gap, cu-developer-three 18:37Z): in a native authenticator app the

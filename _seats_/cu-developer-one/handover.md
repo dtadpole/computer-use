@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-11T21:20:00Z
+modified: 2026-11-12T01:30:00Z
 level: L1
-version: 3.28.0
+version: 3.30.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,20 +15,19 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; never drives the desktop. State at 21:20Z, 11 November.
+session worktree plus `--review` worktrees; never drives the desktop. State at 01:30Z, 12 November.
 
 ## Landed
 
-- Today CU-483..521 table / canonical PRs (#633..#731), CU-507's web unit and 'Continue to'; handover 3.27.0.
+- CU-483..532 table / canonical PRs (#633..#764), incl. CU-528's union probe and helper 0.2.70's policy seam (#737).
 
 ## Open (Highs first)
 
-- Lane: #736 (CU-523), #741 (CU-524 r2), #737 (0.2.70; my policy OK given), #739, CU-507 read-only row, #735 (CU-429 r2, both OKs), CU-522, fillers (#742 CU-462 r2).
-- Asked cu-coordinator: 'Security checkup' (#741 r3 or CU-429 round 3); CU-462's shareable-link scope.
-- CU-429 round 3 list: 'View order', 'Call forwarding', 'Enable auto-merge', chat 'Add member(s) to group', authenticator 'View', 'Security checkup'.
-- Stacked PRs: retarget to main as each base lands; plain merge only on CONFLICTING outside a gate.
-- Never 'linear.py release' a landed issue (it sets Todo); log own state moves hourly.
-- Mediums after: #523, #558, CU-432.
+- Stack, each based on the one below: #769 (CU-533, both OKs) -> #773 (CU-534/535/536, live pending) -> #774 (CU-537, live pending; auto-renew-off binding awaits a ruling).
+- Then #735 (CU-429 r2) -> #768 (CU-429 r3), both with both OKs; CU-522; fillers (#742).
+- CU-429 round 4 list: 'Revoke allowance', 'Roll back deploy', 'Security settings'.
+- Retarget each stacked PR as its base lands; plain merge only on CONFLICTING outside a gate.
+- Never 'linear.py release' a landed issue; log own state moves hourly.
 
 ## Lessons
 
