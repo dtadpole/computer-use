@@ -1255,6 +1255,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
           // keeps its direction rule - toggles never reach here), and 'Add member(s) to group' in a chat app (a desktop messaging app, or a
           // chat page by host / path), exactly these.
           || /^(?:view order|security checkup|call forwarding)$/i.test(plain)
+          // Round 4 (cu-coordinator 03:36Z; CU-547): 'Revoke allowance', 'View pay stub' and 'Security settings' as a button / link, exactly
+          // these; 'Roll back deploy' KEEPS submit (it changes what runs in production).
+          || /^(?:revoke allowance|view pay stub|security settings)$/i.test(plain)
           || (/^add members? to (?:the )?group$/i.test(plain) && (isMessagingApp(String(context.frontmostBundleId ?? target?.origin ?? '')) || (() => { try { const u = new URL(url); return /^https?:$/.test(u.protocol) && /(?:^|[./-])(?:chat|slack|discord|teams|messenger|whatsapp|telegram|signal|messages)(?:[./-]|$)/i.test(`${u.hostname} ${u.pathname}`) } catch { return false } })()))
           || (link && /^unsubscribe(?: link)?$/i.test(plain))
         let refusal = false
@@ -1939,6 +1942,17 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // CU-543 (#786 r2, cu-developer-three 02:39Z): a kids profile's 'Profile lock / PIN / passcode' switch takes the same direction rule.
     if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))
       && /^\s*(?:vpn\s+)?kill\s*switch\s*$|^\s*profile\s+(?:lock|pin|passcode)\s*$/i.test(name) && nativeToggleState(target) !== false) classes.push('permission')
+    // CU-548 (High; cu-coordinator 04:06Z), table PR 46: a life-safety SWITCH - smoke / CO detector, leak sensor, water shutoff - turned
+    // OFF asks PHYSICAL (the safeguard direction rule: on -> off and an unread state ask; off -> on is free). #798 r3 (cu-developer-three
+    // 04:15Z): the 'Water / Flood detector' switches too.
+    if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))
+      && /^\s*(?:smoke|co|carbon\s+monoxide|fire|smoke\s+(?:and|&|\/)\s+co)\s+(?:alarm|detector|sensor)s?\s*$|^\s*(?:water\s+leak|leak|water|flood)\s+(?:sensor|detector|detection)s?\s*$|^\s*(?:automatic\s+|auto\s+)?(?:water\s+)?shut-?off(?:\s+valve)?\s*$/i.test(name) && nativeToggleState(target) !== false) classes.push('physical')
+    // CU-549 (#805 r2, cu-developer-three 05:05Z): a router's 'Client isolation' switch is a safeguard - on -> off and unread ask permission,
+    // off -> on free; its 'WPS' switch is an exposure - off -> on and unread ask permission, on -> off free (like 'Guest access').
+    if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))) {
+      if (/^\s*(?:client|ap|wireless)\s+isolation\s*$/i.test(name) && nativeToggleState(target) !== false) classes.push('permission')
+      else if (/^\s*wps(?:\s+(?:push\s+button|pin))?\s*$|^\s*wi-?fi\s+protected\s+setup\s*$/i.test(name) && nativeToggleState(target) !== true) classes.push('permission')
+    }
     // CU-446 (cu-coordinator 21:05Z): a domain-lock / transfer-lock switch turned OFF asks credential, a WHOIS-privacy switch turned
     // OFF asks permission; ON is free on a native read; an unread state asks both ways.
     if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))) {
@@ -2345,6 +2359,20 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         ridePage = /^https?:$/.test(u.protocol) && (/(?:^|\/)(?:ride|rides|ride-request|trip-request|request-ride|trip|trips)(?=$|[/?#])/i.test(u.pathname) || /(?:^|\.)(?:uber|lyft|bolt|grab|didi|cabify|ola|taxi|ride|rides)(?:\.|$)/i.test(u.hostname))
       } catch { ridePage = false }
       if (ridePage) classes.push('purchase')
+    }
+    // CU-550 (#805 r3, cu-coordinator 05:21Z): 'Change / Switch / Move / Upgrade / Downgrade to <plan name>' without the word 'plan' asks
+    // PURCHASE on a carrier plan page only (D-106: a plan(s) / my-plan / change-plan / rate-plan / wireless path segment, or a carrier /
+    // wireless / mobile host label); elsewhere ('Change to dark mode') it stays free.
+    // #805 r5 (cu-researcher 05:34Z): any case, any plan name ('CHANGE TO UNLIMITED PLUS', 'switch to basic') - only a setting target
+    // ('dark mode', 'Dark theme', 'list view', a language) stays free on a plan page (cu-verifier's r3 expectation; cu-coordinator's call).
+    const planTarget = String(name ?? '').trim().match(/^(?:change|switch|move|upgrade|downgrade)\s+to\s+(?:the\s+|a\s+)?([\w+&.-]+(?:\s+[\w+&.-]+){0,3})$/i)
+    if (grammarEligible && !classes.includes('purchase') && planTarget && !/\b(?:mode|theme|view|layout|language|format|units?|font|size|color|colour|english|spanish|french|german|metric|imperial)\s*$/i.test(planTarget[1])) {
+      let planPage = false
+      try {
+        const u = new URL(url)
+        planPage = /^https?:$/.test(u.protocol) && (/(?:^|\/)(?:plans?|my-plan|change-plan|rate-plans?|wireless|mobile-plans?)(?=$|[/?#])/i.test(u.pathname) || /(?:^|\.)(?:carrier|wireless|mobile)(?:\.|$)/i.test(u.hostname))
+      } catch { planPage = false }
+      if (planPage) classes.push('purchase')
     }
     // CU-539 (High; cu-coordinator 01:36Z), table PR 39: on a CI / actions page (D-109: an actions / workflows / runners / pipelines / ci
     // path segment), adding a self-hosted runner and disabling a workflow ask PERMISSION; elsewhere they stay free.
