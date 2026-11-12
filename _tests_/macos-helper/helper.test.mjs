@@ -905,18 +905,18 @@ describe('holds and the cursor (CU-64)', () => {
     })
   })
 
-  // The wall clock bounds only what load cannot break. Not before the person acted is a LOWER bound (280 ms). The upper
-  // bound is "inside the hold, far from its end": 792 passing gate runs (11-12 Nov) measured this row at p50 352 ms, p95
-  // 411 ms, max 534 ms, while a 450 ms bound failed it on main twice and on #555, #729 and #500 under suite load. A hold
-  // that ran to its end takes 5 s; HOLD_MS / 2 tells the two apart with room for a load spike.
-  it('R4: the person acting 300 ms into a 5 s hold stops it inside the hold, far before its end: local_input, heldKeys, Shift up', async () => {
+  // Not before the person acted is a LOWER bound (280 ms), which load cannot break. The upper bound keeps a responsiveness
+  // claim with room for load: 792 passing gate runs (11-12 Nov) measured this row at p50 352 ms, p95 411 ms, max 534 ms,
+  // while a 450 ms bound failed it on main twice and on #555, #729 and #500 under suite load. 1 s is about twice the worst
+  // measured, so a reaction slowed to a second or more still fails (cu-developer-two's review, #826), as the R3 row's does.
+  it('R4: the person acting 300 ms into a 5 s hold stops it inside the hold within 1 s: local_input, heldKeys, Shift up', async () => {
     const HOLD_MS = 5000
     await withHelper(world({ localInputAfterMs: 300 }), async ({ channel, posted, markerPath }) => {
       const started = Date.now()
       const reply = await channel.request('input', { mode: 'global', bundleId: FIXTURE, events: shiftHold(HOLD_MS) })
       const took = Date.now() - started
       assert.deepEqual([reply.done, reply.code, reply.failedAt, reply.heldKeys], [false, 'local_input', 1, [SHIFT]], JSON.stringify(reply))
-      assert.ok(took >= 280 && took < HOLD_MS / 2, `the hold stopped after ${took} ms (the person acted at 300 ms; the hold is ${HOLD_MS} ms)`)
+      assert.ok(took >= 280 && took < 1000, `the hold stopped after ${took} ms (the person acted at 300 ms; the hold is ${HOLD_MS} ms)`)
       assert.deepEqual(keys(posted()), SHIFT_DOWN_UP)
       assert.ok(!existsSync(markerPath))
     })
