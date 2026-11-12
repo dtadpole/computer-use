@@ -1239,6 +1239,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // suppressor ('Don't ask again', 'Don't show this again', 'Don't warn me', 'Don't notify me', 'Don't confirm'), and never with a
     // second clause ('Do not cancel - pay now', 'No thanks, remove 2FA', 'No, remove it' still ask).
     // cu-coordinator 13:04Z: an exchange's 'Order book' (a view; the older 'order' purchase) is lowered here too.
+    // Round 2 (17:21Z) adds the named list below; KEPT as ruled: 'Sign up', 'Remove recovery contact', 'Remove location from posts',
+    // 'Remove address', 'Quit all apps', 'Close on all devices', Mail's compose 'Sign' toggle and Preview's 'Sign' tool.
     if (!held && context.confirmProbe !== true && name !== '' && classes.length === 0 && target && !isTextEntry(target)) {
       const presses = POINTER.has(action.type) || keysOf(action).has('ENTER') || keyboardActivation(action, target, context).activates
       const role = String(target.role ?? '') + ' ' + String(target.subrole ?? '')
@@ -1247,6 +1249,16 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         const plain = name.trim().replace(/\s+/g, ' ')
         const link = /\b(link|AXLink)\b/.test(role)
         const exact = /^(?:security|privacy & security|uninstall instructions|pay history|pay stub preview|view pay rate|edit post|raise (?:a )?ticket|require multi-factor authentication|order book)$/i.test(plain)
+          // CU-429 round 2 (cu-coordinator 17:21Z): navigation, labels and views, exactly these names.
+          || /^(?:go to your account|back to this project|open in this window|view api docs|clear all filters|(?:note:\s*)?rent is due|find and replace(?:\u2026|\.\.\.)?|search and replace|unmute all|open all windows|privacy and security|uninstall guide|edit draft post|pay slip preview|raise a support ticket)$/i.test(plain)
+          // CU-429 round 3 (cu-coordinator 21:36Z): 'View order', 'Security checkup' and 'Call forwarding' as a button / link (the switch
+          // keeps its direction rule - toggles never reach here), and 'Add member(s) to group' in a chat app (a desktop messaging app, or a
+          // chat page by host / path), exactly these.
+          || /^(?:view order|security checkup|call forwarding)$/i.test(plain)
+          // Round 4 (cu-coordinator 03:36Z; CU-547): 'Revoke allowance', 'View pay stub' and 'Security settings' as a button / link, exactly
+          // these; 'Roll back deploy' KEEPS submit (it changes what runs in production).
+          || /^(?:revoke allowance|view pay stub|security settings)$/i.test(plain)
+          || (/^add members? to (?:the )?group$/i.test(plain) && (isMessagingApp(String(context.frontmostBundleId ?? target?.origin ?? '')) || (() => { try { const u = new URL(url); return /^https?:$/.test(u.protocol) && /(?:^|[./-])(?:chat|slack|discord|teams|messenger|whatsapp|telegram|signal|messages)(?:[./-]|$)/i.test(`${u.hostname} ${u.pathname}`) } catch { return false } })()))
           || (link && /^unsubscribe(?: link)?$/i.test(plain))
         let refusal = false
         if (!exact && !/\s[-\u2013\u2014]\s|[,;:](?!\s*$)|\b(?:and|then|but)\b/i.test(plain.replace(/^\s*no,\s*/i, ''))) {
@@ -2309,8 +2321,13 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         // '<row>?' - so a title canonical step strips the question frame before the title is judged as a name.
         // #702 round 2 (cu-researcher 16:24Z): descriptions lead with 'This will / This action will / You are about to / Doing this will'.
         const titleRow = (text) => text.replace(/[?!.:\s]+$/, '').replace(/^\s*(?:(?:are\s+you\s+(?:sure|certain)|you\s+are\s+about|you're\s+about)(?:\s+(?:that\s+)?you\s+(?:want|wish))?\s+to|do\s+you\s+(?:really\s+)?(?:want|wish)\s+to|(?:would|do)\s+you\s+like\s+to|(?:this|this\s+action|doing\s+this|that|it)(?:\s+cannot\s+be\s+undone\s+and)?\s+will(?:\s+permanently)?|really|confirm(?:\s+that\s+you\s+want\s+to)?|permanently)\s+/i, '').trim()
-        const firstSentence = dialogDescription.split(/(?<=[.!?])\s+/)[0] ?? ''
-        const texts = [...new Set([dialogName, titleRow(dialogName), firstSentence, titleRow(firstSentence), `${titleRow(dialogName)} ${dialogDescription}`.trim()].filter((t) => t !== ''))]
+        // #702 round 3 (cu-developer-three 16:35Z): a sentence about what happens if the person does NOT confirm ('Your changes will be
+        // lost if you don't save them', '... unless you ...') describes the other button, so it is not judged for the confirm.
+        const consequenceOfNot = /\b(?:if\s+you\s+(?:don'?t|do\s+not|choose\s+not\s+to|cancel|leave|close)|unless\s+you|otherwise)\b/i
+        const kept = dialogDescription.split(/(?<=[.!?])\s+/).filter((sentence) => !consequenceOfNot.test(sentence))
+        const firstSentence = kept[0] ?? ''
+        const keptDescription = kept.join(' ')
+        const texts = [...new Set([dialogName, titleRow(dialogName), firstSentence, titleRow(firstSentence), `${titleRow(dialogName)} ${keptDescription}`.trim()].filter((t) => t !== ''))]
         for (const text of texts) {
           // #702 round 2: the title is judged with the FULL canonical form (synonym, quantifier, label and clause steps run only
           // outside a confirm probe), so no confirmProbe flag here; the probe target carries no dialog fields, so it cannot recurse.
@@ -2346,7 +2363,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // CU-550 (#805 r3, cu-coordinator 05:21Z): 'Change / Switch / Move / Upgrade / Downgrade to <plan name>' without the word 'plan' asks
     // PURCHASE on a carrier plan page only (D-106: a plan(s) / my-plan / change-plan / rate-plan / wireless path segment, or a carrier /
     // wireless / mobile host label); elsewhere ('Change to dark mode') it stays free.
-    if (grammarEligible && !classes.includes('purchase') && /^(?:change|switch|move|upgrade|downgrade)\s+to\s+(?:the\s+|a\s+)?[\w+&.-]+(?:\s+[\w+&.-]+){0,3}$/i.test(String(name ?? '').trim())) {
+    // #805 r5 (cu-researcher 05:34Z): any case, any plan name ('CHANGE TO UNLIMITED PLUS', 'switch to basic') - only a setting target
+    // ('dark mode', 'Dark theme', 'list view', a language) stays free on a plan page (cu-verifier's r3 expectation; cu-coordinator's call).
+    const planTarget = String(name ?? '').trim().match(/^(?:change|switch|move|upgrade|downgrade)\s+to\s+(?:the\s+|a\s+)?([\w+&.-]+(?:\s+[\w+&.-]+){0,3})$/i)
+    if (grammarEligible && !classes.includes('purchase') && planTarget && !/\b(?:mode|theme|view|layout|language|format|units?|font|size|color|colour|english|spanish|french|german|metric|imperial)\s*$/i.test(planTarget[1])) {
       let planPage = false
       try {
         const u = new URL(url)
