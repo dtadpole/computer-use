@@ -36,3 +36,11 @@ test('CU-553: the HR termination family asks delete; promote / make manager asks
   for (const name of ['Employees', 'Offboarding checklist', 'Termination policy']) assert.deepEqual(at(name, HR), [], name)
   assert.ok(at('Terminate employee', HR).includes('delete'), 'older row unchanged')
 })
+
+test("#813 round 2 (cu-developer-three 06:16Z): 'Terminate employment' asks delete, 'Promote employee' asks permission", () => {
+  assert.ok(at('Terminate employment', HR).includes('delete'))
+  assert.ok(at('Promote employee', HR).includes('permission'))
+  assert.ok(at('Promote this employee', CRM).includes('permission'), 'unbound like the filed rows')
+  assert.deepEqual(at('Promotions', HR), [], 'Promotions')
+  assert.deepEqual(at('Promote post', HR), ['submit'], 'an older ad-promotion row keeps submit')
+})
