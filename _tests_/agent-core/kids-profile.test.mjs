@@ -38,3 +38,8 @@ test("#786 round 3 (cu-researcher 02:52Z): 'Allow all maturity levels', 'Show ti
   for (const name of ['Allow all maturity levels', 'Show titles of all maturity levels', 'Show content from all maturity ratings']) assert.ok(classesOf(name).includes('permission'), name)
   for (const name of ['Maturity levels', 'Show titles']) assert.deepEqual(classesOf(name), [], name)
 })
+
+test("#786 round 4 (02:58Z): 'Show all maturity levels / ratings' - 'titles of' is optional", () => {
+  for (const name of ['Show all maturity levels', 'Show all maturity ratings', 'Display all maturity levels']) assert.ok(classesOf(name).includes('permission'), name)
+  assert.deepEqual(classesOf('Show all'), [], 'a bare Show all stays free')
+})
