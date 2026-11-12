@@ -3,7 +3,7 @@ import { normaliseForPolicy, normaliseText } from './normalise.mjs'
 import { BIP39_ENGLISH } from './bip39-english.mjs'
 import { normalizeKey } from './keys.mjs'
 import { originPattern } from './sites.mjs'
-import { amountClass, canonicalForms, clauseSplit, clauseVerbLed, grammarClasses, grammarClassesBase, inertLinkAmountClass, quantifierDropped, sectionLabelStripped, straightQuotes, synonymForms, toggleExpansion } from './phrase-grammar.mjs'
+import { amountClass, canonicalForms, clauseSplit, clauseVerbLed, grammarClasses, grammarClassesBase, inertLinkAmountClass, quantifierDropped, questionStripped, sectionLabelStripped, straightQuotes, synonymForms, toggleExpansion } from './phrase-grammar.mjs'
 
 /**
  * The action policy (design: action-policy.md, consent-gate.md). `classify` runs in the dispatcher for every action,
@@ -1117,9 +1117,17 @@ function credentialField(target) {
 }
 
 /**
- * Create the policy. `sitePolicy` is the run's site filter; `preApprovals` are `[{ class, origin }]` from the caller,
- * with `origin` an origin pattern such as `http://127.0.0.1:43117` (default: any origin the site filter allows).
+ * A toggle's state before the press, trusted for its direction only from a native read (CU-373, fail closed): a web
+ * `<input type=checkbox>`, or (CU-418 option b, helper 0.2.70) a desktop AXCheckBox - a checkbox, switch or toggle -
+ * outside any web area, whose AXValue AppKit reports. Inside a web area the desktop state is the page's aria-checked claim,
+ * untrusted like an ARIA state on the web; an older helper sends none. true or false, else null (the caller asks).
  */
+export function nativeToggleState(target) {
+  const webNative = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
+  const desktopNative = String(target?.role ?? '') === 'AXCheckBox' && target?.inWebArea === false
+  return (webNative || desktopNative) && typeof target?.checked === 'boolean' ? target.checked : null
+}
+
 // CU-520 (High; cu-coordinator 19:51Z, folded into #729 r2): ONE home-security page test for CU-491's and CU-519's rows - CU-491's
 // path segments (/security, /alarm, /cameras, /home-security) or a home-security vendor / device token in the host or path (ring, arlo,
 // simplisafe, adt, nest, wyze, blink, eufy, august, schlage, yale, vivint, alarm, camera(s), cam(s), lock(s), smartlock, doorbell,
@@ -1133,6 +1141,10 @@ export function isHomeSecurityPage(url) {
   } catch { return false }
 }
 
+/**
+ * Create the policy. `sitePolicy` is the run's site filter; `preApprovals` are `[{ class, origin }]` from the caller,
+ * with `origin` an origin pattern such as `http://127.0.0.1:43117` (default: any origin the site filter allows).
+ */
 export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
   if (typeof sitePolicy !== 'function') throw new TypeError('the policy needs the run site policy')
   const granted = preApprovals
@@ -1453,9 +1465,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // state asks. A native two-factor/recovery box that is off turns protection ON; a native forwarding box that is on
       // turns forwarding OFF - both the safe direction, so free.
       // A native CHECKBOX only - a radio has no on/off direction; its label decides (cu-researcher 21:15Z).
-      const nativeToggle = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
-      const nativeOn = nativeToggle && target.checked === true
-      const nativeOff = nativeToggle && target.checked === false
+      const toggleState = nativeToggleState(target)
+      const nativeOn = toggleState === true
+      const nativeOff = toggleState === false
       const isForwarding = /forward/i.test(name)
       // The explicit protection list (CU-270's two-factor and recovery names), never 'every security name but a few'.
       const isProtection = /two[\s-]?(?:factor|step)|2[\s-]?step|\b2fa\b|multi[\s-]?factor|recovery\s+(?:e-?mail|phone|codes?)/i.test(name)
@@ -1485,12 +1497,11 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (!focusesEntry && /^\s*(?:update|upload|flash|install|upgrade|change|edit|modify)\s+(?:the\s+)?(?:router\s+|new\s+)?firmware\b/i.test(name)) classes.push('install')
       // CU-431 switches (cu-coordinator 17:27Z, CU-418's switch rule): a router switch named Remote management / access, SSH,
       // Telnet, UPnP, DMZ, WAN access or Port forwarding turned ON asks permission and OFF is free - the direction is trusted
-      // only from a native checkbox read; an ARIA, mixed or missing state (and a desktop web area without it) asks both ways.
+      // only from a native read (nativeToggleState); an ARIA, mixed or missing state (and a desktop web area without it) asks
+      // both ways.
       if (!focusesEntry && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))
         && /^\s*(?:remote\s+(?:management|access|administration)|ssh|telnet|upnp|dmz|wan\s+access|port\s+forwarding)\s*$/i.test(name)) {
-        const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
-        const known = nativeBox && typeof target.checked === 'boolean'
-        if (!known || target.checked === false) classes.push('permission')
+        if (nativeToggleState(target) !== true) classes.push('permission')
       }
       // CU-420: exporting, revealing, showing, viewing or copying passwords or secrets and getting recovery codes expose credentials;
       // 'Show password' asks everywhere, the sign-in eye toggle included - the plaintext reaches the next screenshot (cu-coordinator
@@ -1574,8 +1585,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // CU-408 (cu-coordinator 09:50Z): a bare 'Autopay' switch mirrors CU-373 - only a NATIVE checkbox read as on (the press
       // turns autopay off) is free; native off (turning it on), an ARIA-sourced, 'mixed' or missing state asks purchase.
       if (!focusesEntry && /^\s*auto[\s-]?pay\s*$/i.test(name) && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))) {
-        const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
-        if (!(nativeBox && target.checked === true)) classes.push('purchase')
+        if (nativeToggleState(target) !== true) classes.push('purchase')
       }
       // CU-409: bare 'Long', 'Short', 'Borrow', 'Lend', 'Supply', 'Repay' ask only in asset context - an asset word or a currency
       // sign in the name, or an asset among the form's options (CU-402); a video 'Short' or a library 'Borrow 2 books' stays free.
@@ -1594,16 +1604,17 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (!focusesEntry && (namesWord(name, PHYSICAL) || namesWord(name, PHYSICAL_NEAR) || PHYSICAL_GRAMMAR.test(name) || PHYSICAL_PATTERN.test(name) || UNLOCK_PHYSICAL.test(name) || /^garage\s+door$/i.test(name.trim()))) classes.push('physical')
       // CU-418 switches (cu-coordinator 14:17Z / 14:19Z): a bare security switch ('Camera', 'Alarm', 'Security') turned OFF and a
       // heat or vehicle switch ('Oven', 'Heater', 'Stove', 'Engine') turned ON ask physical. The direction is trusted only from a
-      // native checkbox read (CU-373); an ARIA, mixed or missing state - and every desktop switch, which carries no state
-      // today - asks in both directions (named over-ask: 'Camera' on / 'Oven' off there).
+      // native read (nativeToggleState: a web checkbox input, or since helper 0.2.70 a desktop AXCheckBox outside any web
+      // area); an ARIA, mixed or missing state - and a desktop switch from an older helper or inside a web area - asks in
+      // both directions (named over-ask: 'Camera' on / 'Oven' off there).
       if (!focusesEntry && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))) {
         const security = /^\s*(?:security\s+)?(?:cameras?|alarm|security)\s*$/i.test(name)
         const heat = /^\s*(?:oven|heater|stove|engine)\s*$/i.test(name)
         if (security || heat) {
-          const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
-          const known = nativeBox && typeof target.checked === 'boolean'
-          const turnsOff = known && target.checked === true
-          const turnsOn = known && target.checked === false
+          const state = nativeToggleState(target)
+          const known = state !== null
+          const turnsOff = state === true
+          const turnsOn = state === false
           if (!known || (security && turnsOff) || (heat && turnsOn)) classes.push('physical')
         }
       }
@@ -1882,18 +1893,17 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // pre-approved submit cannot wave a disguised Delete or Pay through (cu-developer-one's ruling) - where no rule found a
     // class: a folded look-alike already asks by its own ('Sеnd' asks submit). The desktop asks unknown_target in app-policy.
     // CU-436 (cu-coordinator 19:06Z): a spending-cap switch turned OFF lifts the limit on cloud spending (purchase); ON is free on a
-    // native checkbox read; an ARIA, mixed or missing state asks both ways (the named toggle limit) - the inverse of CU-431's.
+    // native read (nativeToggleState); an ARIA, mixed or missing state asks both ways (the named toggle limit) - the inverse of
+    // CU-431's.
     if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))
       && /^\s*(?:spending|budget|billing)\s+(?:cap|limit|alert\s+cap)\s*$/i.test(name)) {
-      const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
-      if (!(nativeBox && typeof target.checked === 'boolean') || target.checked === true) classes.push('purchase')
+      if (nativeToggleState(target) !== false) classes.push('purchase')
     }
     // CU-440 (cu-coordinator 20:26Z): a child-protection switch (parental controls, content filter, SafeSearch, purchase approval,
     // Screen Time) turned OFF asks permission; ON is free on a native checkbox read; an unread state asks both ways.
     if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))
       && /^\s*(?:parental\s+controls?|content\s+(?:filter|restrictions?)|safe\s*search|purchase\s+approval|ask\s+to\s+buy|screen\s+time)\s*$/i.test(name)) {
-      const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
-      if (!(nativeBox && typeof target.checked === 'boolean') || target.checked === true) classes.push('permission')
+      if (nativeToggleState(target) !== false) classes.push('permission')
     }
     // CU-442 (cu-coordinator 20:37Z): a bare 'Add time' tops up a metered session on a parking / charging page. The page title
     // never reaches the policy (a title is private), so the page is read from the URL; elsewhere it stays free (named limit).
@@ -1905,23 +1915,24 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // checkbox read; an unread state asks both ways (the CU-431 direction).
     if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))
       && /^\s*(?:ads?|campaign(?:\s+status)?|ad\s+set|promotion|ad\s+delivery)\s*$/i.test(name)) {
-      const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
-      if (!(nativeBox && typeof target.checked === 'boolean') || target.checked === false) classes.push('purchase')
+      if (nativeToggleState(target) !== true) classes.push('purchase')
     }
     // CU-445 (cu-coordinator 20:59Z): a camera privacy-mode / shutter switch turned OFF asks permission (ON free); an audio,
     // continuous-recording or face-recognition switch turned ON asks (OFF free); an unread state asks both ways.
     if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))) {
-      const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
-      const read = nativeBox && typeof target.checked === 'boolean'
-      if (/^\s*privacy\s+(?:mode|shutter|cover)\s*$/i.test(name) && (!read || target.checked === true)) classes.push('permission')
+      const state = nativeToggleState(target)
+      if (/^\s*privacy\s+(?:mode|shutter|cover)\s*$/i.test(name) && state !== false) classes.push('permission')
       if (/^\s*(?:audio\s+recording|record\s+audio|continuous\s+recording|24\/7\s+recording|face\s+recognition|facial\s+recognition|familiar\s+faces)\s*$/i.test(name)
-        && (!read || target.checked === false)) classes.push('permission')
+        && state !== true) classes.push('permission')
     }
+    // CU-535 (cu-coordinator 00:51Z; #773 r2, cu-developer-three 01:03Z): a VPN kill-switch SWITCH turned OFF asks permission, like the
+    // two-factor switch - on -> off and an unread state ask (nativeToggleState: a web ARIA state is untrusted), off -> on is free.
+    if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))
+      && /^\s*(?:vpn\s+)?kill\s*switch\s*$/i.test(name) && nativeToggleState(target) !== false) classes.push('permission')
     // CU-446 (cu-coordinator 21:05Z): a domain-lock / transfer-lock switch turned OFF asks credential, a WHOIS-privacy switch turned
     // OFF asks permission; ON is free on a native read; an unread state asks both ways.
     if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))) {
-      const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
-      const turningOff = !(nativeBox && typeof target.checked === 'boolean') || target.checked === true
+      const turningOff = nativeToggleState(target) !== false
       if (turningOff && /^\s*(?:domain\s+lock|transfer\s+lock|registrar\s+lock)\s*$/i.test(name)) classes.push('credential')
       if (turningOff && /^\s*(?:whois\s+privacy|domain\s+privacy|privacy\s+protection)\s*$/i.test(name)) classes.push('permission')
     }
@@ -1929,8 +1940,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // read; an unread state asks both ways.
     if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))
       && /^\s*(?:block\s+(?:all\s+)?public\s+access|audit\s+log(?:s|ging)?|logging|cloudtrail|data\s+access\s+logs?|flow\s+logs?)\s*$/i.test(name)) {
-      const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
-      if (!(nativeBox && typeof target.checked === 'boolean') || target.checked === true) classes.push('permission')
+      if (nativeToggleState(target) !== false) classes.push('permission')
     }
     // #580 round 2 (cu-coordinator 21:52Z): a bare 'Edit DNS' on a registrar page changes where the domain points (permission,
     // CU-446); the page is read from the URL.
@@ -1940,16 +1950,14 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // CU-456 (cu-coordinator 22:56Z): a mail-protection switch turned OFF asks permission; 'Less secure app access' turned ON asks
     // credential; the safe directions are free on a native read; an unread state asks both ways.
     if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))) {
-      const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
-      const read = nativeBox && typeof target.checked === 'boolean'
-      if (/^\s*(?:spam\s+filter(?:ing)?|safe\s+browsing|external\s+sender\s+warnings?|sign-?in\s+notifications?|security\s+alerts?)\s*$/i.test(name) && (!read || target.checked === true)) classes.push('permission')
-      if (/^\s*less\s+secure\s+app(?:s|\s+access)?\s*$/i.test(name) && (!read || target.checked === false)) classes.push('credential')
+      const state = nativeToggleState(target)
+      if (/^\s*(?:spam\s+filter(?:ing)?|safe\s+browsing|external\s+sender\s+warnings?|sign-?in\s+notifications?|security\s+alerts?)\s*$/i.test(name) && state !== false) classes.push('permission')
+      if (/^\s*less\s+secure\s+app(?:s|\s+access)?\s*$/i.test(name) && state !== true) classes.push('credential')
     }
     // CU-460 (cu-coordinator 23:18Z): a Sentry Mode switch turned OFF asks permission, a PIN-to-drive switch turned OFF asks
     // credential; ON is free on a native read; an unread state asks both ways.
     if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))) {
-      const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
-      const offAsks = !(nativeBox && typeof target.checked === 'boolean') || target.checked === true
+      const offAsks = nativeToggleState(target) !== false
       if (offAsks && /^\s*sentry(?:\s+mode)?\s*$/i.test(name)) classes.push('permission')
       if (offAsks && /^\s*pin\s+to\s+drive\s*$/i.test(name)) classes.push('credential')
     }
@@ -1957,23 +1965,20 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // a native read; an unread state asks both ways.
     if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))
       && /^\s*private\s+(?:account|profile)\s*$/i.test(name)) {
-      const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
-      if (!(nativeBox && typeof target.checked === 'boolean') || target.checked === true) classes.push('permission')
+      if (nativeToggleState(target) !== false) classes.push('permission')
     }
     // CU-464 / CU-465 (cu-coordinator 00:04Z / 00:19Z): a remote-access or agent blanket-approval switch turned ON asks permission;
     // OFF is free on a native read; an unread state asks both ways.
     if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))
       && /^\s*(?:screen\s+sharing|remote\s+(?:login|desktop|apple\s+events|management|access)|file\s+sharing|internet\s+sharing|auto-?accept\s+edits|auto-?approve|yolo\s+mode|skip\s+approvals|run\s+without\s+confirmation)\s*$/i.test(name)) {
-      const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
-      if (!(nativeBox && typeof target.checked === 'boolean') || target.checked === false) classes.push('permission')
+      if (nativeToggleState(target) !== true) classes.push('permission')
     }
     // CU-466 (cu-coordinator 00:34Z): a repository protection switch turned OFF asks permission; an allow-force-push or
     // allow-deletions switch turned ON asks; the safe directions are free on a native read; an unread state asks both ways.
     if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))) {
-      const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
-      const read = nativeBox && typeof target.checked === 'boolean'
-      if (/^\s*(?:branch\s+protection|secret\s+scanning|push\s+protection)\s*$/i.test(name) && (!read || target.checked === true)) classes.push('permission')
-      if (/^\s*allow\s+(?:force\s+pushes|deletions)\s*$/i.test(name) && (!read || target.checked === false)) classes.push('permission')
+      const state = nativeToggleState(target)
+      if (/^\s*(?:branch\s+protection|secret\s+scanning|push\s+protection)\s*$/i.test(name) && state !== false) classes.push('permission')
+      if (/^\s*allow\s+(?:force\s+pushes|deletions)\s*$/i.test(name) && state !== true) classes.push('permission')
     }
     // CU-467 (cu-coordinator 00:49Z): paid creator and dating features on a creator or dating page (purchase, CU-439's family); the
     // page is read from the URL. Older submit asks ('Send Super Chat', 'Unlock post') keep their class.
@@ -1982,8 +1987,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // CU-468: an auto-lock or armed / alarm switch turned OFF asks physical; ON is free on a native read; an unread state asks both ways.
     if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))
       && /^\s*(?:auto-?lock|armed|alarm|alarm\s+system|alarm\s+armed|system\s+armed)\s*$/i.test(name)) {
-      const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? ''))
-      if (!(nativeBox && typeof target.checked === 'boolean') || target.checked === true) classes.push('physical')
+      if (nativeToggleState(target) !== false) classes.push('physical')
     }
     // CU-483 (cu-coordinator 05:34Z): a bare 'Sell' / 'Sell all' on a trading page asks purchase - the whole http(s) URL, as #613 reads
     // it (a whole /trade, /order, /brokerage or /portfolio segment in path, query or hash - '/trade-in', '/trademark' do not count). Off a
@@ -2007,9 +2011,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (autofill) {
         // #669 round 2 (cu-developer-three 11:32Z): direction only from the NATIVE read (CU-373: a web <input type=checkbox> with a
         // boolean checked); an ARIA, missing or mixed state - or a desktop switch with no read - fails closed and asks.
-        const nativeBox = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? '')) && typeof target?.checked === 'boolean'
+        // Helper 0.2.70: the native read is nativeToggleState's, so a desktop AXSwitch with a real AXValue gives the direction too.
+        const nativeState = nativeToggleState(target)
         const toggleRole = /switch|checkbox|toggle/i.test(String(target?.role ?? '') + ' ' + String(target?.subrole ?? ''))
-        if (nativeBox ? target.checked === false : (Boolean(autofill[1]) || toggleRole)) classes.push('permission')
+        if (nativeState !== null ? nativeState === false : (Boolean(autofill[1]) || toggleRole)) classes.push('permission')
       }
     }
     // CU-495 (High; cu-coordinator 11:06Z): on an e-signature page - a whole /sign, /signing, /envelope or /esign segment of an http(s)
@@ -2131,7 +2136,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     }
     // #575 round 2 (cu-coordinator 21:26Z): a native checkbox or switch already ON is being turned OFF - the grammar reads the
     // name as an act ('Forward calls') and must not ask for switching it off. The direction rules above decide such switches.
-    const nativeOn = String(target?.tag ?? '').toLowerCase() === 'input' && /^checkbox$/i.test(String(target?.inputType ?? '')) && target?.checked === true
+    const nativeOn = nativeToggleState(target) === true
     // Split particles for the OLDER lists (cu-coordinator 22:02Z, a High follow-up to #580): 'Turn location sharing on' / 'Turn
     // Find My off' / 'Switch the heater on' are judged as their canonical 'turn on X' form by every rule - one probe, only when
     // nothing has asked yet, so it can only add an ask; a native checkbox already on never probes (its direction rules decide).
@@ -2162,6 +2167,16 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     for (const confirmForm of confirmForms) {
       if (!(grammarEligible && classes.length === 0 && !nativeOn)) break
       const probe = classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { ...target, name: confirmForm }, confirmProbe: true })
+      if (probe.decision === 'block' || probe.decision === 'handoff') return probe
+      if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) classes.push(cls)
+    }
+    // CU-528 (High; cu-coordinator 22:21Z + 22:22Z): a trailing '?' / '.' / '!' or a question lead-in ('Are you sure you want to
+    // <row>?', 'Really <row>?', 'Do you (really) want to <row>?') never frees a row or drops its class off a union row - the whole
+    // classify runs once more on the stripped form and its classes are UNIONED in (adds only, never lowers; one level, no re-probe).
+    // A Quick Actions menu item is judged by its exact built-in name (CU-382), so it never takes the probe.
+    const questionForm = context.questionProbe === true || target?.quickActions === true ? '' : questionStripped(name)
+    if (grammarEligible && !nativeOn && questionForm !== '') {
+      const probe = classify(action, { ...context, target: { ...target, name: questionForm }, questionProbe: true })
       if (probe.decision === 'block' || probe.decision === 'handoff') return probe
       if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) classes.push(cls)
     }
@@ -2341,6 +2356,11 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (homeSecurity) {
         if (/^(?:generate|create|add|make|share|send)\s+(?:a\s+|an\s+|new\s+)?(?:guest|temporary|temp|one[-\s]time|visitor)\s+(?:pin|code|passcode|key|access\s+code)$|^share\s+(?:the\s+|an\s+)?access\s+code$/i.test(label) && !classes.includes('physical')) classes.push('physical')
         if (/^(?:disable|stop|turn\s+off|end)\s+(?:the\s+)?recording$|^(?:turn\s+off|disable|switch\s+off)\s+(?:the\s+|all\s+)?cameras?$|^disarm(?:\s+(?:the\s+)?(?:system|alarm|home|security(?:\s+system)?))?$/i.test(label) && !classes.includes('permission')) classes.push('permission')
+        // CU-536 (High; cu-coordinator 01:06Z, folded into #773 r2), on isHomeSecurityPage only (an alarm clock's 'Silence alarm' stays
+        // free): silencing / muting the siren, motion detection off, pausing / stopping recording and cancelling monitoring ask PERMISSION;
+        // adding a user / a PIN code asks PHYSICAL (someone gets in). Unioned onto any older class.
+        if (/^(?:silence|mute|stop|turn\s+off|dismiss)\s+(?:the\s+)?(?:siren|alarm\s+siren|sirens)$|^(?:turn\s+off|disable|pause|stop)\s+(?:the\s+)?motion\s+(?:detection|alerts?|sensors?)$|^(?:pause|stop)\s+(?:the\s+)?(?:recording|video\s+recording|camera\s+recording)$|^(?:cancel|stop|end|pause|turn\s+off|disable)\s+(?:the\s+)?(?:professional\s+)?monitoring(?:\s+(?:service|plan|subscription))?$/i.test(label) && !classes.includes('permission')) classes.push('permission')
+        if (/^add\s+(?:a\s+|an\s+|new\s+)?(?:user|member|household\s+member|pin(?:\s+code)?|user\s+code|keypad\s+code|passcode)$/i.test(label) && !classes.includes('physical')) classes.push('physical')
       }
     }
     // #721 round 3 (cu-coordinator 18:51Z; CU-515's desktop gap, cu-developer-three 18:37Z): in a native authenticator app the
