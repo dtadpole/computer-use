@@ -2318,6 +2318,16 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         for (const probe of probes) if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) if (!classes.includes(cls)) classes.push(cls)
       }
     }
+    // CU-539 (High; cu-coordinator 01:36Z), table PR 39: on a CI / actions page (D-109: an actions / workflows / runners / pipelines / ci
+    // path segment), adding a self-hosted runner and disabling a workflow ask PERMISSION; elsewhere they stay free.
+    if (grammarEligible && !classes.includes('permission') && /^(?:add|register|new)\s+(?:a\s+|new\s+)?self[-\s]hosted\s+runner$|^(?:disable|turn\s+off|pause)\s+(?:this\s+|the\s+)?workflow$/i.test(String(name ?? '').trim())) {
+      let ciPage = false
+      try {
+        const u = new URL(url)
+        ciPage = /^https?:$/.test(u.protocol) && /(?:^|\/)(?:actions|workflows|runners|pipelines|ci|ci-cd)(?=$|[/?#])/i.test(u.pathname)
+      } catch { ciPage = false }
+      if (ciPage) classes.push('permission')
+    }
     // CU-537 (High; cu-coordinator 01:06Z), table PR 38: the generic 'Add / Edit / Save record' asks PERMISSION on a DNS page only (D-109:
     // a dns / zone(s) / nameserver(s) / records path segment or a dns host label); a CRM's 'Add record' stays free.
     if (grammarEligible && !classes.includes('permission') && /^(?:add|edit|save|create|new|change|update|modify)\s+(?:a\s+|the\s+|new\s+|this\s+)?(?:dns\s+)?record$/i.test(String(name ?? '').trim())) {
@@ -2360,6 +2370,12 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         idpPage = /^https?:$/.test(u.protocol) && (/(?:^|\.)(?:okta|auth0|onelogin|jumpcloud|keycloak|pingone|pingidentity|entra|duo|admin|iam|idp|sso|directory)(?:\.|$)/i.test(u.hostname) || /(?:^|\/)(?:admin|iam|directory|identity|idp|sso)(?=$|[/?#])/i.test(u.pathname))
       } catch { idpPage = false }
       if (idpPage) classes.push('permission')
+    }
+    // CU-539 (#778 r2): skipping deployment protection asks PERMISSION + SUBMIT; the '... and deploy' forms reach an older submit rule
+    // first, so permission is unioned onto it here (the 'Merge anyway' pattern).
+    if (grammarEligible && !classes.includes('permission') && /^(?:skip|bypass|ignore|override)\s+(?:the\s+)?(?:deployment\s+protection(?:\s+rules?)?|(?:branch\s+|environment\s+)?protection\s+rules?)(?:\s+and\s+deploy(?:\s+now)?)?$/i.test(String(name ?? '').trim())) {
+      classes.push('permission')
+      if (!classes.includes('submit')) classes.push('submit')
     }
     // CU-521 (cu-coordinator 20:06Z): 'Merge anyway' keeps its older submit and unions permission (a merge past the requirements).
     if (grammarEligible && classes.length > 0 && !classes.includes('permission') && /^(?:merge\s+anyway|force[-\s]?merge)$/i.test(String(name ?? '').trim())) classes.push('permission')
