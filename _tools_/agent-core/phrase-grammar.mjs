@@ -1160,6 +1160,31 @@ function grammarClassesOf(name, role = '') {
   // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
   // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
   if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
+  // #821 r2 (cu-researcher 07:29Z; whole families per 06:51Z). CU-557: enable / turn on / activate / unlock / start / begin / apply for /
+  // start trading / begin trading (the) futures / derivatives / perpetual(s) / perpetual contracts / perps / CFDs / swaps / options (trading /
+  // wallet / account / contracts / access); open (a / an / my) futures / derivatives / margin / perpetual / CFD (trading) account. CU-558:
+  // download / request (a copy of) (all / everything) (of) (your / my / the / a) data / information / archive - 'get' only with a copy of /
+  // all / everything / your / my (a bare 'Get Info', 'Export data' stay free) /
+  // account data / personal data / data download / data archive / data export / everything you've shared; show / add / display / share /
+  // include / turn on / enable (my) (current) location / city / place to / on / in / with ... posts / profile / photos / stories;
+  // 'Show (my) location'.
+  if (/^\s*(?:enable|turn\s+on|activate|unlock|start|begin|apply\s+for|start\s+trading|begin\s+trading)\s+(?:the\s+)?(?:futures|derivatives?|perpetuals?|perpetual\s+contracts?|perps|cfds?|swaps)(?:\s+(?:trading|wallet|account|contracts?|access))?\s*$|^\s*open\s+(?:a\s+|an\s+|my\s+)?(?:futures|derivatives?|margin|perpetuals?|cfds?)\s+(?:trading\s+)?account\s*$|^\s*(?:download|request)\s+(?:a\s+cop(?:y|ies)\s+of\s+)?(?:(?:all|everything)\s+(?:of\s+)?)?(?:your\s+|my\s+|the\s+|a\s+)?(?:data|information|archive|account\s+data|personal\s+data|account\s+archive|data\s+(?:download|archive|export)|you'?ve\s+shared|everything\s+you'?ve\s+shared)\s*$|^\s*get\s+(?:a\s+cop(?:y|ies)\s+of\s+(?:(?:all|everything)\s+(?:of\s+)?)?(?:your\s+|my\s+|the\s+)?|(?:(?:all|everything)\s+(?:of\s+)?)(?:your\s+|my\s+)?|(?:your|my)\s+)(?:data|information|archive|account\s+data|personal\s+data|account\s+archive|data\s+(?:download|archive|export)|you'?ve\s+shared|everything\s+you'?ve\s+shared)\s*$|^\s*(?:show|add|display|share|include|turn\s+on|enable)\s+(?:my\s+)?(?:current\s+)?(?:location|city|place)\s+(?:to|on|in|with)\s+.{0,30}?\b(?:posts?|profile|photos?|stories|story)\s*$/i.test(raw)) return ['permission']
+  // #821 r3 (cu-researcher 07:44Z): 'Export' with all / everything / a copy of / your / my ('Export all data', 'Export a copy of everything
+  // you've shared'; a bare 'Export data' stays free, an older pin); 'Get a data download / archive / export'; 'Allow / Accept tags /
+  // tagging / mentions from anyone / everyone / the public / strangers / non-friends'. The bare location forms ('Show (my) location', 'Add
+  // (my) (current) location / city') are URL-bound in policy.mjs (#821 r4: a social page only - a map or calendar's 'Add location' exposes
+  // nothing).
+  if (/^\s*export\s+(?:a\s+cop(?:y|ies)\s+of\s+(?:(?:all|everything)\s+(?:of\s+)?)?(?:your\s+|my\s+|the\s+)?|(?:(?:all|everything)\s+(?:of\s+)?)(?:your\s+|my\s+)?|(?:your|my)\s+)(?:data|information|archive|account\s+data|personal\s+data|account\s+archive|data\s+(?:download|archive|export)|you'?ve\s+shared|everything\s+you'?ve\s+shared)\s*$|^\s*get\s+a\s+data\s+(?:download|archive|export)\s*$|^\s*(?:allow|accept|let\s+in)\s+(?:tags|tagging|mentions)\s+from\s+(?:anyone|everyone|the\s+public|strangers|non-friends|people\s+i\s+don'?t\s+know)\s*$/i.test(raw)) return ['permission']
+  // CU-558 (High, privacy; cu-coordinator 07:21Z), folded into table PR 51 - PERMISSION like 'Make account public' / 'Allow messages from
+  // everyone': download / export / request / get (a copy of) (all) (of) your / my information / data / account data / archive / account
+  // archive; show / share / add / display / turn on / enable (my) location on / in (my) posts / photos / stories / check-ins, location
+  // tagging (on posts); let / allow anyone / everyone / the public / strangers / non-friends / people (I don't know) (to) tag / mention /
+  // find / search for / look up / see (posts of) me.
+  if (/^\s*(?:download|export|request|get|save)\s+(?:a\s+cop(?:y|ies)\s+of\s+)?(?:all\s+)?(?:of\s+)?(?:your|my)\s+(?:information|info|data|account\s+data|archive|account\s+archive|personal\s+data)\s*$|^\s*(?:show|share|add|display|turn\s+on|enable|include)\s+(?:my\s+)?location\s+(?:on|in|with)\s+(?:my\s+|all\s+)?(?:posts|photos|stories|check-?ins|tweets|videos)\s*$|^\s*(?:turn\s+on|enable)\s+location\s+tagging(?:\s+(?:on|for)\s+(?:my\s+)?posts)?\s*$|^\s*(?:let|allow)\s+(?:anyone|everyone|the\s+public|strangers|non-friends|people(?:\s+i\s+don'?t\s+know)?)\s+(?:to\s+)?(?:tag|mention|find|search\s+for|look\s+up|see\s+posts\s+of|see)\s+me\s*$/i.test(raw)) return ['permission']
+  // CU-557 (High; cu-coordinator 06:36Z, class corrected 06:37Z), table PR 51 - PERMISSION like 'Enable options / margin trading' /
+  // 'Enable leverage': enable / turn on / activate / unlock / apply for / start (the) futures / derivatives / perpetuals / perps / CFDs /
+  // swaps (trading / account / access); open (a / an / my) futures / derivatives / perpetuals / CFD (trading) account.
+  if (/^\s*(?:enable|turn\s+on|activate|unlock|apply\s+for|start)\s+(?:the\s+)?(?:futures|derivatives?|perpetuals?|perps|cfds?|swaps)(?:\s+(?:trading|account|access))?\s*$|^\s*open\s+(?:a\s+|an\s+|my\s+)?(?:futures|derivatives?|perpetuals?|cfds?)\s+(?:trading\s+)?account\s*$/i.test(raw)) return ['permission']
   // #814 r4 (cu-coordinator 06:51Z: 'the WHOLE verb family'): verb x object x tail. SUBMIT - unpublish / hide / block / disable /
   // deactivate / suspend / shut down / take down / close / pause / lock (my / the / this / your) site / website / store / shop / blog
   // (from visitors / the public / everyone / customers / search / all visitors) (offline / down); take / put / set (it / the site ...)

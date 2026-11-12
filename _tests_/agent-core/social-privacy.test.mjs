@@ -1,0 +1,54 @@
+import assert from 'node:assert/strict'
+import { test } from 'node:test'
+
+import { createPolicy } from '../../_tools_/agent-core/policy.mjs'
+
+// CU-558 (High, privacy; cu-coordinator 07:21Z), folded into table PR 51: downloading your information, showing your location on posts and
+// letting anyone tag you ask permission, like 'Make account public'. Click and Space (D-106).
+const policy = createPolicy({ sitePolicy: () => 'allow' })
+const classesOf = (name, key = false) => {
+  const url = 'https://social.example/settings/privacy'
+  const v = key ? policy.classify({ type: 'keypress', keys: ['SPACE'] }, { url, target: { tag: 'button', role: 'button', name } }) : policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url, target: { role: 'button', name } })
+  return v.decision === 'allow' ? [] : (v.classes ?? [v.class])
+}
+
+test('CU-558: social privacy exposures ask permission', () => {
+  for (const name of ['Download your information', 'Request a copy of my data', 'Download my archive', 'Show my location on posts', 'Add location to photos', 'Turn on location tagging', 'Let anyone tag me', 'Allow everyone to find me', "Let people I don't know mention me"]) {
+    assert.ok(classesOf(name).length > 0, name)
+    assert.ok(classesOf(name, true).length > 0, `Space: ${name}`)
+  }
+  for (const name of ['Download your information', 'Show my location on posts', 'Let anyone tag me']) assert.ok(classesOf(name).includes('permission'), `filed: ${name}`)
+  for (const name of ['Your information', 'Location', 'Tags', 'Download app']) assert.deepEqual(classesOf(name), [], name)
+  for (const name of ['Make account public', 'Allow messages from everyone']) assert.ok(classesOf(name).includes('permission'), `older row: ${name}`)
+})
+
+test('#821 round 2 (cu-researcher 07:29Z): the whole data-download / location family', () => {
+  for (const name of ["Get a copy of everything you've shared", 'Add my current city to new posts', 'Download all data', 'Request a data download', 'Show location', 'Show my location on my profile']) assert.ok(classesOf(name).includes('permission'), name)
+  for (const name of ['Data', 'Location settings', 'Download', 'Get Info', 'Get information', 'Export data']) assert.deepEqual(classesOf(name), [], name)
+  assert.ok(classesOf('Get my data').includes('permission'), 'Get my data')
+})
+
+test("#821 round 2 (cu-developer-three 07:30Z): a 'Location on posts' switch - off -> on and unread ask, on -> off free", () => {
+  for (const name of ['Location on posts', 'Location tagging']) {
+    const sw = (checked) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: 'https://social.example/settings/privacy', target: { role: 'switch', name, ...(checked === undefined ? {} : { tag: 'input', inputType: 'checkbox', checked }) } }); return v.decision === 'allow' ? [] : (v.classes ?? [v.class]) }
+    assert.ok(sw(false).includes('permission'), `${name}: off -> on asks`)
+    assert.ok(sw(undefined).includes('permission'), `${name}: unread asks`)
+    assert.deepEqual(sw(true), [], `${name}: on -> off is free`)
+  }
+})
+
+test('#821 round 3 (cu-researcher 07:44Z): export / get forms, tags from anyone, add my location', () => {
+  for (const name of ['Export all data', "Export a copy of everything you've shared", 'Get a data download', 'Allow tags from anyone', 'Add my current location', 'Add city', 'Add location']) assert.ok(classesOf(name).includes('permission'), name)
+  assert.deepEqual(classesOf('Export data'), [], 'a bare Export data stays free (older pin)')
+})
+
+test('#821 round 4 (cu-researcher 07:47Z): the bare location forms ask on a social page only', () => {
+  const at = (name, url) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url, target: { role: 'button', name } }); return v.decision === 'allow' ? [] : (v.classes ?? [v.class]) }
+  for (const name of ['Show my location', 'Show location', 'Add location', 'Add my current city']) assert.ok(at(name, 'https://social.example/compose').includes('permission'), `social: ${name}`)
+  for (const name of ['Show location', 'Add location', 'Add my current city']) {
+    assert.deepEqual(at(name, 'https://maps.example/search'), [], `maps: ${name}`)
+    assert.deepEqual(at(name, 'https://calendar.example/event/new'), [], `calendar: ${name}`)
+  }
+  assert.ok(at('Show my location', 'https://maps.example/search').includes('permission'), "an older location-sharing row asks on main already (named)")
+  assert.ok(at('Add my current city to new posts', 'https://maps.example/search').includes('permission'), 'an explicit posts object stays unbound')
+})
