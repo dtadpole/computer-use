@@ -41,3 +41,11 @@ test('CU-429 (cu-coordinator 13:04Z): an exchange\'s Order book is a view - free
   assert.notEqual(at('Deactivate withdrawal lock'), 'allow')
   assert.equal(at('Place order'), 'purchase', 'the order row itself stays')
 })
+
+test('CU-429 round 2 (cu-coordinator 17:21Z): exactly the ruled names lower; the KEEP list still asks', () => {
+  const p = createPolicy({ sitePolicy: () => 'allow' })
+  const at = (name, role = 'button') => { const v = p.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: 'https://app.example/x', target: { role, name } }); return v.decision === 'allow' ? 'allow' : v.class }
+  for (const name of ['Go to your account', 'Back to this project', 'Open in this window', 'View API docs', 'Clear all filters', 'Rent is due', 'Note: Rent is due', 'Find and Replace\u2026', 'Find and Replace...', 'Search and replace', 'Unmute all', 'Open All Windows', 'Privacy and security', 'Uninstall guide', 'Edit draft post', 'Pay slip preview', 'Raise a support ticket']) assert.equal(at(name), 'allow', name)
+  for (const name of ['Sign up', 'Remove recovery contact', 'Remove location from posts', 'Remove address', 'Quit all apps', 'Close on all devices']) assert.notEqual(at(name), 'allow', `kept: ${name}`)
+  assert.notEqual(at('Open in this window', 'switch'), 'allow', 'never on a toggle')
+})
