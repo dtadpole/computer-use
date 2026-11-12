@@ -23,3 +23,8 @@ test('CU-533 negatives and older rows', () => {
   assert.ok(classesOf('Disable two-factor requirement').includes('permission'), 'older row unchanged')
   assert.ok(classesOf('Remove IP allow list').includes('delete'), 'older row unchanged')
 })
+
+test('#769 round 2 (cu-researcher 00:33Z): stop requiring SSO, the hyphened audit log, private repository forking', () => {
+  for (const name of ['Stop requiring SAML', 'Stop enforcing SSO', 'Stop requiring SAML SSO', 'Stop audit-log streaming', 'Disable audit-log streaming', 'Allow private repository forking', 'Enable private repo forking', 'Enable forking of private repositories']) assert.ok(classesOf(name).includes('permission'), name)
+  for (const name of ['Repository forking', 'Audit-log streaming', 'Forking policy']) assert.deepEqual(classesOf(name), [], name)
+})
