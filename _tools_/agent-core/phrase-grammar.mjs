@@ -1160,6 +1160,25 @@ function grammarClassesOf(name, role = '') {
   // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
   // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
   if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
+  // CU-534 (High; cu-coordinator 00:51Z), table PR 37, as verb families with object synonyms - a calendar's exposure and wipe (CU-461's
+  // exposure family). PERMISSION: get / copy / show the public / secret / private (iCal) address (in iCal format); get / copy a
+  // shareable / share / public link to (the / this / your) calendar / <object> (the object tail on CU-462's row). DELETE: clear / empty
+  // (the / this / your) (entire) calendar, delete all (calendar) events.
+  if (/^\s*(?:get|copy|show|view|reveal)\s+(?:the\s+)?(?:public|secret|private)\s+(?:calendar\s+|ical\s+|ics\s+)?(?:address|url|link)(?:\s+in\s+(?:ical|ics)\s+format)?\s*$|^\s*(?:get|copy|create)\s+(?:a\s+|the\s+)?(?:shareable|share|public|sharing)\s+link\s+(?:to|for)\s+(?:the\s+|this\s+|your\s+|my\s+)?\S.{0,40}$/i.test(raw)) return ['permission']
+  if (/^\s*(?:clear|empty|wipe)\s+(?:the\s+|this\s+|your\s+|my\s+)?(?:entire\s+|whole\s+)?calendar\s*$|^\s*delete\s+all\s+(?:calendar\s+)?events\s*$/i.test(raw)) return ['delete']
+  // CU-535 (High; cu-coordinator 00:51Z), table PR 37 - a VPN's safeguards. PERMISSION: turn off / disable (the) kill switch; enable /
+  // turn on / use split tunneling; exclude apps / an app from (the) VPN; trust this / the network. CREDENTIAL: download / export (the)
+  // (VPN / WireGuard / OpenVPN) config(uration) (file / profile) - it carries the private key. 'Disconnect', 'Pause VPN' and 'Change
+  // server' stay free by design. #773 r3 (cu-researcher 01:11Z): 'Copy public calendar URL', 'Bypass VPN for this app', 'Add to trusted
+  // networks'.
+  if (/^\s*(?:turn\s+off|disable|deactivate|switch\s+off)\s+(?:the\s+)?(?:vpn\s+)?kill\s*switch\s*$|^\s*(?:enable|turn\s+on|use|activate)\s+split\s+tunnel(?:l?ing)?\s*$|^\s*exclude\s+(?:apps?|applications?|this\s+app|websites?|sites?)\s+from\s+(?:the\s+)?vpn\s*$|^\s*trust\s+(?:this|the)\s+(?:wi-?fi\s+)?network\s*$|^\s*bypass\s+(?:the\s+)?vpn\s+for\s+(?:this\s+|an?\s+|the\s+)?(?:app|application|website|site)\s*$|^\s*add\s+(?:this\s+network\s+|the\s+network\s+)?to\s+(?:the\s+)?trusted\s+networks\s*$/i.test(raw)) return ['permission']
+  // #773 r2 (cu-developer-three 01:03Z): 'Download (VPN) configuration' asked install on main - the older class stays and credential is
+  // added (a union, never a lowering); the other config forms ask credential.
+  // cu-developer-two 01:06Z: every form that asked install on main ('Download configuration file', 'Download OpenVPN profile') keeps it;
+  // a VPN profile (.ovpn) carries the key like a config does.
+  if (/^\s*download\s+(?:the\s+)?(?:vpn\s+|openvpn\s+|wireguard\s+)?(?:configuration(?:\s+(?:file|profile))?|profile)\s*$/i.test(raw) && !/^\s*download\s+(?:the\s+)?profile\s*$/i.test(raw)) return ['install', 'credential']
+  if (/^\s*(?:export|save|download)\s+(?:the\s+)?(?:vpn|openvpn|wireguard)\s+profile\s*$/i.test(raw)) return ['credential']
+  if (/^\s*(?:download|export|save)\s+(?:the\s+)?(?:vpn\s+|wireguard\s+|openvpn\s+)?config(?:uration)?(?:\s+(?:file|profile))?\s*$/i.test(raw)) return ['credential']
   // CU-533 (High; cu-coordinator 00:21Z), table PR 36, as verb families with object synonyms - an organisation's security settings,
   // PERMISSION like the older 'Disable two-factor requirement' / 'Remove IP allow list': disable / turn off / deactivate / remove (the)
   // (SAML) SSO / single sign-on (enforcement / requirement); disable / turn off (the) IP allow list / allowlist / whitelist; disable /
