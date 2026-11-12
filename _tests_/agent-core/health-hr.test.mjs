@@ -44,3 +44,9 @@ test("#813 round 2 (cu-developer-three 06:16Z): 'Terminate employment' asks dele
   assert.deepEqual(at('Promotions', HR), [], 'Promotions')
   assert.deepEqual(at('Promote post', HR), ['submit'], 'an older ad-promotion row keeps submit')
 })
+
+test('#813 round 3 (cu-researcher 06:26Z): the held-out escapes ask', () => {
+  for (const [name, cls] of [['Separate employee', 'delete'], ['Begin termination', 'delete'], ['Set last working day and terminate', 'delete'], ['Elevate to people lead', 'permission'], ['Get a copy of my chart', 'permission'], ['Save visit history as PDF', 'permission']]) assert.ok(at(name, name.match(/chart|visit/i) ? PORTAL : HR).includes(cls), name)
+  for (const name of ['Termination date', 'Visit history']) assert.deepEqual(at(name, HR), [], name)
+  assert.deepEqual(at('Separation pay', HR), ['purchase'], 'an older pay row keeps purchase')
+})
