@@ -19,3 +19,8 @@ test('CU-551: repository visibility to public asks permission; Pages asks submit
   }
   for (const name of ['Change visibility to private', 'Make this repository private', 'Visibility', 'Pages', 'Change visibility']) assert.deepEqual(classesOf(name), [], name)
 })
+
+test('#807 round 2 (05:18Z / 05:21Z): the confirm wrappers, a bare Change repository visibility, Switch repository to public', () => {
+  for (const name of ['I understand, change repository visibility\u2026', 'I understand, change repository visibility...', 'Please change repository visibility', 'Change repository visibility now', 'Change repository visibility', 'Switch repository to public', 'Set repo to public', 'Make public']) assert.ok(classesOf(name).includes('permission'), name)
+  for (const name of ['Switch repository to private', 'Change repository name']) assert.deepEqual(classesOf(name), [], name)
+})
