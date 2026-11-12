@@ -30,3 +30,11 @@ test('CU-539: CI/CD rows; runner / workflow rows on actions pages only', () => {
   for (const name of ['Runners', 'Workflows', 'Production']) assert.deepEqual(classesOf(name, ACTIONS), [], name)
   assert.ok(classesOf('Deploy to production', ACTIONS).includes('submit'), 'older row unchanged')
 })
+
+test("#778 round 2 (cu-researcher 01:39Z): 'deployment' optional with 'rules'; a bare 'Skip protection' stays free", () => {
+  for (const name of ['Skip protection rules', 'Skip protection rules and deploy', 'Bypass environment protection rules', 'Skip deployment protection and deploy']) {
+    const c = classesOf(name, ACTIONS)
+    assert.ok(c.includes('permission') && c.includes('submit'), `${name}: ${c}`)
+  }
+  assert.deepEqual(classesOf('Skip protection', 'https://shop.example/checkout'), [], 'a checkout upsell decline stays free')
+})

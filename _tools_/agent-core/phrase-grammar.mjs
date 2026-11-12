@@ -1171,7 +1171,9 @@ function grammarClassesOf(name, role = '') {
   // PERMISSION + SUBMIT: skip / bypass (the) deployment protection (rules). 'Add self-hosted runner' / 'Disable workflow' are URL-bound in
   // policy.mjs (actions / workflows / runners / pipelines pages).
   if (/^\s*promote\s+(?:this\s+|the\s+)?(?:build\s+|release\s+|deployment\s+)?to\s+(?:production|prod|live)\s*$/i.test(raw)) return ['submit']
-  if (/^\s*(?:skip|bypass|ignore|override)\s+(?:the\s+)?deployment\s+protection(?:\s+rules?)?\s*$/i.test(raw)) return ['permission', 'submit']
+  // #778 r2 (cu-researcher 01:39Z): 'deployment' is optional when 'rules' says what it is ('Skip protection rules and deploy'); a bare
+  // 'Skip protection' (a checkout's insurance upsell) stays free.
+  if (/^\s*(?:skip|bypass|ignore|override)\s+(?:the\s+)?(?:deployment\s+protection(?:\s+rules?)?|(?:branch\s+|environment\s+)?protection\s+rules?)(?:\s+and\s+deploy(?:\s+now)?)?\s*$/i.test(raw)) return ['permission', 'submit']
   // CU-537 (High; cu-coordinator 01:06Z), table PR 38 - registrar DNS. PERMISSION everywhere: add / create / new (a / an) typed record
   // (MX, CNAME, TXT, NS, SRV, CAA, PTR, SPF, DKIM, DMARC, ALIAS; 'A' / 'AAAA' only in capitals, so 'Add a record' is not an A record);
   // the generic 'Add / Edit / Save record' (DNS pages) and turning a domain's auto-renew off (domain / registrar pages; a subscription's
