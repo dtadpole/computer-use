@@ -1931,9 +1931,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))
       && /^\s*(?:vpn\s+)?kill\s*switch\s*$|^\s*profile\s+(?:lock|pin|passcode)\s*$/i.test(name) && nativeToggleState(target) !== false) classes.push('permission')
     // CU-548 (High; cu-coordinator 04:06Z), table PR 46: a life-safety SWITCH - smoke / CO detector, leak sensor, water shutoff - turned
-    // OFF asks PHYSICAL (the safeguard direction rule: on -> off and an unread state ask; off -> on is free).
+    // OFF asks PHYSICAL (the safeguard direction rule: on -> off and an unread state ask; off -> on is free). #798 r3 (cu-developer-three
+    // 04:15Z): the 'Water / Flood detector' switches too.
     if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))
-      && /^\s*(?:smoke|co|carbon\s+monoxide|fire|smoke\s+(?:and|&|\/)\s+co)\s+(?:alarm|detector|sensor)s?\s*$|^\s*(?:water\s+)?leak\s+(?:sensor|detector|detection)s?\s*$|^\s*(?:automatic\s+|auto\s+)?(?:water\s+)?shut-?off(?:\s+valve)?\s*$/i.test(name) && nativeToggleState(target) !== false) classes.push('physical')
+      && /^\s*(?:smoke|co|carbon\s+monoxide|fire|smoke\s+(?:and|&|\/)\s+co)\s+(?:alarm|detector|sensor)s?\s*$|^\s*(?:water\s+leak|leak|water|flood)\s+(?:sensor|detector|detection)s?\s*$|^\s*(?:automatic\s+|auto\s+)?(?:water\s+)?shut-?off(?:\s+valve)?\s*$/i.test(name) && nativeToggleState(target) !== false) classes.push('physical')
     // CU-446 (cu-coordinator 21:05Z): a domain-lock / transfer-lock switch turned OFF asks credential, a WHOIS-privacy switch turned
     // OFF asks permission; ON is free on a native read; an unread state asks both ways.
     if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))) {

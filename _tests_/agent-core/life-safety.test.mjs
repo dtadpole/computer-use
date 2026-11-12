@@ -36,3 +36,12 @@ test("#798 round 2 (cu-researcher 04:10Z): 'Turn on / Open main water', 'Turn of
   for (const name of ['Turn on main water', 'Open main water', 'Turn on the water', 'Turn off the water detector', 'Disable flood sensor']) assert.ok(classesOf(name).includes('physical'), name)
   for (const name of ['Water', 'Main water', 'Turn off water heater schedule']) assert.deepEqual(classesOf(name), [], name)
 })
+
+test("#798 round 3 (cu-developer-three 04:15Z): the 'Water / Flood detector' switches take the direction rule", () => {
+  for (const name of ['Water detector', 'Flood detector', 'Flood sensor']) {
+    const sw = (checked) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: URL, target: { role: 'switch', name, ...(checked === undefined ? {} : { tag: 'input', inputType: 'checkbox', checked }) } }); return v.decision === 'allow' ? [] : (v.classes ?? [v.class]) }
+    assert.ok(sw(true).includes('physical'), `${name}: on -> off asks`)
+    assert.ok(sw(undefined).includes('physical'), `${name}: unread asks`)
+    assert.deepEqual(sw(false), [], `${name}: off -> on is free`)
+  }
+})
