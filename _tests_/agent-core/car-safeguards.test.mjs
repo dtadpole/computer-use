@@ -29,3 +29,8 @@ test('CU-555: the car safeguard switches - on -> off and unread ask, off -> on f
     assert.deepEqual(sw(false), [], `${name}: off -> on is free`)
   }
 })
+
+test("#814 round 3 (cu-researcher 06:27Z): 'Exit restricted driving profile', 'Stop monitoring my teen's driving' ask permission", () => {
+  for (const name of ['Exit restricted driving profile', "Stop monitoring my teen's driving", 'Turn off teen driver profile']) assert.ok(classesOf(name).includes('permission'), name)
+  for (const name of ['Driving profile', 'Stop navigation']) assert.deepEqual(classesOf(name), [], name)
+})

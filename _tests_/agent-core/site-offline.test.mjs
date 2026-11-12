@@ -32,3 +32,8 @@ test('CU-554: the switches - maintenance mode ON asks, a published / online site
     assert.deepEqual(sw(name, false), [], `${name}: off -> on is free`)
   }
 })
+
+test('#814 round 3 (cu-researcher 06:27Z): the held-out site forms ask submit', () => {
+  for (const name of ['Set the site into maintenance', 'Hide my website from visitors', 'Enable coming soon page', 'Turn on under construction mode']) assert.ok(classesOf(name).includes('submit'), name)
+  for (const name of ['Coming soon', 'Hide sidebar']) assert.deepEqual(classesOf(name), [], name)
+})
