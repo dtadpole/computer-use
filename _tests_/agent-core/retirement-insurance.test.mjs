@@ -35,3 +35,10 @@ test('#825 round 2 (cu-researcher 08:12Z): wrappers after 401(k), a new benefici
   assert.ok(at('Roll over', 'https://retire.example/401k/rollover').includes('purchase'), 'retirement page: Roll over')
   assert.deepEqual(at('Roll over', 'https://games.example/play'), [], 'elsewhere: Roll over stays free')
 })
+
+test('#825 round 3 (cu-coordinator 08:21Z): wrappers after a glued parenthesis, a modifier slot, the Continue-to head; CU-560 folded in', () => {
+  for (const tail of ['', ' now', ', please', ' anyway', ' (recommended)', ' today', ' \u203a', '\u2026', ' please', ' \u2192', '!']) assert.ok(classesOf(`Take a loan from 401(k)${tail}`).includes('purchase'), `tail: '${tail}'`)
+  for (const name of ['Continue to take a loan from 401(k)', 'Take a hardship loan from 401(k)', 'Request a personal loan from my 403(b)']) assert.ok(classesOf(name).includes('purchase'), name)
+  for (const name of ['Turn on options trading', 'Unlock options trading', 'Start trading options', 'Upgrade options level', 'Request options level 3', 'Increase my options approval']) assert.ok(classesOf(name).includes('permission'), name)
+  for (const name of ['Options', 'Options chain', 'Continue to app', 'Continue to dashboard']) assert.deepEqual(classesOf(name), [], name)
+})

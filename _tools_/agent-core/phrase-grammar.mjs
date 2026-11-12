@@ -761,7 +761,7 @@ const CONFIRM_PREFIX = /^\s*(?:(?:yes(?:\s+please)?|ok|okay|sure|confirm|continu
 // 'let's', 'go ahead and', 'I want to'.
 // cu-researcher 05:02Z: trailing qualifiers too - 'anyway', 'instantly', 'on this device', 'for me', 'here', 'too', 'again'.
 // #630 round 2: a trailing ', please' too ('Add time, please').
-const TRAILING_QUALIFIER = /(?:\s*,\s*please|\s*[,\u2013\u2014-]\s*(?:yes,?\s+)?i(?:'m|\s+am)\s+(?:(?:really|absolutely|totally|completely|quite|very|fully|100\s?%)\s+)?(?:sure|certain|positive)|\s+(?:anyway|anyways|instantly|immediately|on\s+this\s+(?:device|computer|browser|phone)|for\s+me|here|too|again))+\s*[.!]?\s*$/i
+const TRAILING_QUALIFIER = /(?:\s*,\s*please|\s*[,\u2013\u2014-]\s*(?:yes,?\s+)?i(?:'m|\s+am)\s+(?:(?:really|absolutely|totally|completely|quite|very|fully|100\s?%)\s+)?(?:sure|certain|positive)|\s+(?:anyway|anyways|instantly|immediately|today|right\s+away|on\s+this\s+(?:device|computer|browser|phone)|for\s+me|here|too|again))+\s*[.!]?\s*$/i
 // CU-508 (qualifier sweep): a trailing WIDENING qualifier - 'permanently', 'forever', 'for good', 'completely', 'for all users /
 // members / accounts', 'for everyone', 'on all (my) devices', 'everywhere', 'across all devices' - is stripped in a canonical form
 // (the trailing twin of CU-502's quantifier), so the row decides. Adds asks only.
@@ -775,13 +775,15 @@ export function widenedStripped(name) {
   return text !== first && /\s|^\p{L}{3,}$/u.test(text) ? [text] : []
 }
 // #630 round 2 (cu-researcher 05:22Z): "I'd like to" (the contraction), 'let us', 'kindly'.
-const CTA_LEAD_IN = /^\s*(?:please\s+|kindly\s+|(?:click|tap|press|select)\s+(?:here\s+)?to\s+|let(?:'|\u2019)?s\s+|let\s+us\s+|go\s+ahead\s+and\s+|i(?:\s+want|\s+would\s+like|(?:'|\u2019)d\s+like)\s+to\s+)+/iu
+const CTA_LEAD_IN = /^\s*(?:please\s+|kindly\s+|continue\s+to\s+(?=[a-z]+\s)|(?:click|tap|press|select)\s+(?:here\s+)?to\s+|let(?:'|\u2019)?s\s+|let\s+us\s+|go\s+ahead\s+and\s+|i(?:\s+want|\s+would\s+like|(?:'|\u2019)d\s+like)\s+to\s+)+/iu
 const TRAILING_WRAP = /(?:\s*(?:right\s+now|now|please|\.{2,}|\u2026|!+|\((?:recommended|suggested|best\s+value)\)|[\u2192\u203a\u00bb>\u2794\u27f6\u279c\u27a1]|\p{Extended_Pictographic}|\uFE0F))+\s*$/iu
 // CU-473 (cu-researcher 02:15Z): a second line, a badge or a count after a ruled name - the first line of a multi-line name; a
 // sentence-case name followed by a capitalised second sentence ('Change direct deposit Takes effect immediately'); a trailing badge
 // ('New', 'Beta', 'Preview', 'Updated'); a trailing parenthetical ('(opens in a new window)', '(3)').
 const TRAILING_BADGE = /(?:\s+(?:new|beta|preview|updated|hot)!?)+\s*$/i
-const TRAILING_PAREN = /(?:\s*\([^()]{1,40}\))+\s*$/
+// #825 r3 (cu-coordinator 08:21Z): a parenthesis glued to a word is part of the word - '401(k)', '403(b)' - never a trailing note, so the
+// wrappers after it strip and the row still sees '401(k)'.
+const TRAILING_PAREN = /(?:\s*(?<![\p{L}\p{N}])\([^()]{1,40}\))+\s*$/u
 // #609 round 4 (cu-coordinator 02:35Z): an added leading name part - 'Action: ', 'Confirm action: ', 'Step 2: ', 'Step 2 of 3: '.
 const LEADING_PART = /^\s*(?:(?:confirm\s+)?action|step\s+\d+(?:\s+of\s+\d+)?)\s*[:\u2013\u2014-]\s*/i
 // #609 round 3 (cu-researcher 02:30Z): a trailing key hint ('Send \u2318\u23ce', 'Save \u2318S', 'Submit Ctrl+Enter').
@@ -1169,7 +1171,12 @@ function grammarClassesOf(name, role = '') {
   // request / initiate (a) rollover. DELETE, like 'Cancel policy' - surrender / lapse / let lapse / terminate (my / the / this / your)
   // (life / insurance / whole life / term / annuity) policy / contract / annuity / coverage; let (the / my) policy lapse.
   if (/^\s*(?:change|update|edit|modify|replace|switch|set|designate|name|reassign)\s+(?:my\s+|the\s+|your\s+|a\s+)?(?:new\s+)?(?:primary\s+|contingent\s+|secondary\s+)?beneficiar(?:y|ies)(?:\s+(?:percentages?|allocations?|designations?|split|shares?|information|info|details))?\s*$/i.test(raw)) return ['permission']
-  if (/^\s*(?:take(?:\s+out)?|request|apply\s+for|start|get|borrow)\s+(?:a\s+|an\s+)?(?:new\s+)?loan\s+(?:from|against|on)\s+(?:my\s+|your\s+|the\s+)?(?:401\s*\(?k\)?|403\s*\(?b\)?|457|tsp|ira|retirement(?:\s+(?:account|plan|savings))?|pension|life\s+insurance(?:\s+policy)?|cash\s+value|policy)(?:\s+(?:now|please)|\s*(?:\u2026|\.{3}|\u2192|->|>))*\s*$|^\s*borrow\s+(?:from|against)\s+(?:my\s+|your\s+|the\s+)?(?:401\s*\(?k\)?|403\s*\(?b\)?|retirement(?:\s+(?:account|plan|savings))?|pension|policy)(?:\s+(?:now|please)|\s*(?:\u2026|\.{3}|\u2192|->|>))*\s*$|^\s*(?:roll\s+over|rollover|transfer|move)\s+(?:my\s+|your\s+|the\s+)?(?:(?:401\s*\(?k\)?|403\s*\(?b\)?|457|tsp|plan|funds|balance|retirement\s+savings|old\s+401\s*\(?k\)?)\s+)?(?:to|into)\s+(?:a\s+|an\s+|my\s+|a\s+new\s+)?(?:ira|roth(?:\s+ira)?|traditional\s+ira|new\s+plan|another\s+plan|401\s*\(?k\)?)(?:\s+(?:now|please)|\s*(?:\u2026|\.{3}|\u2192|->|>))*\s*$|^\s*(?:start|begin|request|initiate)\s+(?:a\s+|an\s+)?(?:ira\s+|401\s*\(?k\)?\s+)?rollover(?:\s+(?:now|please)|\s*(?:\u2026|\.{3}|\u2192|->|>))*\s*$/i.test(raw)) return ['purchase']
+  if (/^\s*(?:take(?:\s+out)?|request|apply\s+for|start|get|borrow)\s+(?:a\s+|an\s+)?(?:(?:new|hardship|personal|general(?:\s+purpose)?|residential|emergency|home)\s+)?loan\s+(?:from|against|on)\s+(?:my\s+|your\s+|the\s+)?(?:401\s*\(?k\)?|403\s*\(?b\)?|457|tsp|ira|retirement(?:\s+(?:account|plan|savings))?|pension|life\s+insurance(?:\s+policy)?|cash\s+value|policy)(?:\s+(?:now|please)|\s*(?:\u2026|\.{3}|\u2192|->|>))*\s*$|^\s*borrow\s+(?:from|against)\s+(?:my\s+|your\s+|the\s+)?(?:401\s*\(?k\)?|403\s*\(?b\)?|retirement(?:\s+(?:account|plan|savings))?|pension|policy)(?:\s+(?:now|please)|\s*(?:\u2026|\.{3}|\u2192|->|>))*\s*$|^\s*(?:roll\s+over|rollover|transfer|move)\s+(?:my\s+|your\s+|the\s+)?(?:(?:401\s*\(?k\)?|403\s*\(?b\)?|457|tsp|plan|funds|balance|retirement\s+savings|old\s+401\s*\(?k\)?)\s+)?(?:to|into)\s+(?:a\s+|an\s+|my\s+|a\s+new\s+)?(?:ira|roth(?:\s+ira)?|traditional\s+ira|new\s+plan|another\s+plan|401\s*\(?k\)?)(?:\s+(?:now|please)|\s*(?:\u2026|\.{3}|\u2192|->|>))*\s*$|^\s*(?:start|begin|request|initiate)\s+(?:a\s+|an\s+)?(?:ira\s+|401\s*\(?k\)?\s+)?rollover(?:\s+(?:now|please)|\s*(?:\u2026|\.{3}|\u2192|->|>))*\s*$/i.test(raw)) return ['purchase']
+  // CU-560 (High; folded into table PR 52 at cu-coordinator 08:21Z) - options-level synonyms, PERMISSION like 'Enable options trading':
+  // turn on / unlock / enable / activate / start / begin / get (the) options (trading / account / access / approval); start / begin
+  // trading options; upgrade / increase / raise / change / request / apply for / get (my / the / your) options (trading) level / tier /
+  // approval (N); request (options) level N (options).
+  if (/^\s*(?:turn\s+on|unlock|enable|activate|start|begin|get)\s+(?:the\s+)?options(?:\s+(?:trading|account|access|approval))?\s*$|^\s*(?:start|begin)\s+trading\s+options\s*$|^\s*(?:upgrade|increase|raise|change|request|apply\s+for|get)\s+(?:my\s+|the\s+|your\s+|an?\s+)?options\s+(?:trading\s+)?(?:level|tier|approval)(?:\s+\d)?\s*$|^\s*request\s+(?:options\s+)?level\s+\d(?:\s+options)?\s*$/i.test(raw)) return ['permission']
   // #825 r2 (cu-developer-three 08:09Z): the plan as a modifier ('Take a 401(k) loan', 'Request a retirement loan') and a rolled-over object
   // ('Roll over my IRA / 401(k) / old plan').
   if (/^\s*(?:take(?:\s+out)?|request|apply\s+for|start|get)\s+(?:a\s+|an\s+|my\s+)?(?:new\s+)?(?:401\s*\(?k\)?|403\s*\(?b\)?|457|tsp|ira|roth(?:\s+ira)?|retirement|pension|policy|life\s+insurance)\s+loan(?:\s+(?:now|please)|\s*(?:\u2026|\.{3}|\u2192|->|>))*\s*$|^\s*(?:roll\s+over|rollover|transfer|move)\s+(?:my\s+|your\s+|the\s+|an?\s+)?(?:old\s+|former\s+|previous\s+)?(?:401\s*\(?k\)?|403\s*\(?b\)?|457|tsp|ira|roth(?:\s+ira)?|plan|retirement\s+(?:account|plan|savings)|pension)(?:\s+(?:now|please)|\s*(?:\u2026|\.{3}|\u2192|->|>))*\s*$/i.test(raw)) return ['purchase']
