@@ -1160,6 +1160,16 @@ function grammarClassesOf(name, role = '') {
   // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
   // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
   if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
+  // CU-540 (High; cu-coordinator 01:51Z), table PR 40 - a course site. SUBMIT: release / publish (the) grades (to students); change /
+  // override / edit (the / a / this) (final) grade(s), like 'Post grades'. PURCHASE: drop (the / this) course / class, like 'Withdraw
+  // from course'. PERMISSION: make (a / this) student a TA / teaching assistant / instructor, promote (a) student to TA.
+  // #780 r2 (cu-researcher 02:01Z): scores / marks / results as the grades' synonyms; a grader / instructor / TA role for a student or user.
+  if (/^\s*(?:release|publish)\s+(?:the\s+|all\s+)?(?:final\s+)?(?:grades|scores|marks|results)(?:\s+to\s+(?:the\s+)?students)?\s*$|^\s*(?:change|override|edit|update)\s+(?:the\s+|a\s+|this\s+)?(?:final\s+|student'?s?\s+)?grades?\s*$/i.test(raw)) return ['submit']
+  if (/^\s*drop\s+(?:the\s+|this\s+)?(?:course|class)\s*$/i.test(raw)) return ['purchase']
+  if (/^\s*make\s+(?:a\s+|the\s+|this\s+)?(?:student|user|learner|member)\s+(?:a\s+|an\s+)?(?:ta|teaching\s+assistant|instructor|co-?teacher|grader)\s*$|^\s*promote\s+(?:a\s+|the\s+|this\s+)?student\s+to\s+(?:ta|teaching\s+assistant|instructor)\s*$/i.test(raw)) return ['permission']
+  // CU-541 (High; cu-coordinator 01:51Z), table PR 40 - payroll. PURCHASE: (run / create / send / make) (an) off-cycle payment / payroll /
+  // run; change / update / edit (the / my / an employee's) tax withholding(s) / W-4 / W4; skip (this / the next) payroll / pay run.
+  if (/^\s*(?:(?:run|create|send|make|start|add)\s+(?:an?\s+)?)?off[-\s]cycle\s+(?:payment|payroll|run|pay\s+run)\s*$|^\s*(?:change|update|edit|modify|adjust)\s+(?:the\s+|my\s+|your\s+|employee'?s?\s+)?(?:federal\s+|state\s+)?(?:tax\s+withholdings?|withholdings?|w-?4)(?:\s+form)?\s*$|^\s*skip\s+(?:this\s+|the\s+(?:next\s+)?|next\s+)?(?:payroll|pay\s+run|pay\s+period)\s*$/i.test(raw)) return ['purchase']
   // CU-538 (High; cu-coordinator 01:36Z), table PR 39 - accounting. PURCHASE: write off (an / the / this) invoice / bill / debt / balance,
   // record / log / enter / apply (a / the) payment. SUBMIT: close (the) books / period / month / year. PERMISSION: reopen / unlock (the / a
   // / this) (accounting / closed) period / month / year / books. DELETE: undo / reverse / unreconcile (the / this) reconciliation.
