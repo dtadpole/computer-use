@@ -1160,6 +1160,12 @@ function grammarClassesOf(name, role = '') {
   // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
   // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
   if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
+  // CU-558 (High, privacy; cu-coordinator 07:21Z), folded into table PR 51 - PERMISSION like 'Make account public' / 'Allow messages from
+  // everyone': download / export / request / get (a copy of) (all) (of) your / my information / data / account data / archive / account
+  // archive; show / share / add / display / turn on / enable (my) location on / in (my) posts / photos / stories / check-ins, location
+  // tagging (on posts); let / allow anyone / everyone / the public / strangers / non-friends / people (I don't know) (to) tag / mention /
+  // find / search for / look up / see (posts of) me.
+  if (/^\s*(?:download|export|request|get|save)\s+(?:a\s+cop(?:y|ies)\s+of\s+)?(?:all\s+)?(?:of\s+)?(?:your|my)\s+(?:information|info|data|account\s+data|archive|account\s+archive|personal\s+data)\s*$|^\s*(?:show|share|add|display|turn\s+on|enable|include)\s+(?:my\s+)?location\s+(?:on|in|with)\s+(?:my\s+|all\s+)?(?:posts|photos|stories|check-?ins|tweets|videos)\s*$|^\s*(?:turn\s+on|enable)\s+location\s+tagging(?:\s+(?:on|for)\s+(?:my\s+)?posts)?\s*$|^\s*(?:let|allow)\s+(?:anyone|everyone|the\s+public|strangers|non-friends|people(?:\s+i\s+don'?t\s+know)?)\s+(?:to\s+)?(?:tag|mention|find|search\s+for|look\s+up|see\s+posts\s+of|see)\s+me\s*$/i.test(raw)) return ['permission']
   // CU-557 (High; cu-coordinator 06:36Z, class corrected 06:37Z), table PR 51 - PERMISSION like 'Enable options / margin trading' /
   // 'Enable leverage': enable / turn on / activate / unlock / apply for / start (the) futures / derivatives / perpetuals / perps / CFDs /
   // swaps (trading / account / access); open (a / an / my) futures / derivatives / perpetuals / CFD (trading) account.
