@@ -1160,6 +1160,15 @@ function grammarClassesOf(name, role = '') {
   // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
   // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
   if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
+  // #821 r2 (cu-researcher 07:29Z; whole families per 06:51Z). CU-557: enable / turn on / activate / unlock / start / begin / apply for /
+  // start trading / begin trading (the) futures / derivatives / perpetual(s) / perpetual contracts / perps / CFDs / swaps / options (trading /
+  // wallet / account / contracts / access); open (a / an / my) futures / derivatives / margin / perpetual / CFD (trading) account. CU-558:
+  // download / request (a copy of) (all / everything) (of) (your / my / the / a) data / information / archive - 'get' only with a copy of /
+  // all / everything / your / my (a bare 'Get Info', 'Export data' stay free) /
+  // account data / personal data / data download / data archive / data export / everything you've shared; show / add / display / share /
+  // include / turn on / enable (my) (current) location / city / place to / on / in / with ... posts / profile / photos / stories;
+  // 'Show (my) location'.
+  if (/^\s*(?:enable|turn\s+on|activate|unlock|start|begin|apply\s+for|start\s+trading|begin\s+trading)\s+(?:the\s+)?(?:futures|derivatives?|perpetuals?|perpetual\s+contracts?|perps|cfds?|swaps)(?:\s+(?:trading|wallet|account|contracts?|access))?\s*$|^\s*open\s+(?:a\s+|an\s+|my\s+)?(?:futures|derivatives?|margin|perpetuals?|cfds?)\s+(?:trading\s+)?account\s*$|^\s*(?:download|request)\s+(?:a\s+cop(?:y|ies)\s+of\s+)?(?:(?:all|everything)\s+(?:of\s+)?)?(?:your\s+|my\s+|the\s+|a\s+)?(?:data|information|archive|account\s+data|personal\s+data|account\s+archive|data\s+(?:download|archive|export)|you'?ve\s+shared|everything\s+you'?ve\s+shared)\s*$|^\s*get\s+(?:a\s+cop(?:y|ies)\s+of\s+(?:(?:all|everything)\s+(?:of\s+)?)?(?:your\s+|my\s+|the\s+)?|(?:(?:all|everything)\s+(?:of\s+)?)(?:your\s+|my\s+)?|(?:your|my)\s+)(?:data|information|archive|account\s+data|personal\s+data|account\s+archive|data\s+(?:download|archive|export)|you'?ve\s+shared|everything\s+you'?ve\s+shared)\s*$|^\s*(?:show|add|display|share|include|turn\s+on|enable)\s+(?:my\s+)?(?:current\s+)?(?:location|city|place)\s+(?:to|on|in|with)\s+.{0,30}?\b(?:posts?|profile|photos?|stories|story)\s*$|^\s*show\s+(?:my\s+)?location\s*$/i.test(raw)) return ['permission']
   // CU-558 (High, privacy; cu-coordinator 07:21Z), folded into table PR 51 - PERMISSION like 'Make account public' / 'Allow messages from
   // everyone': download / export / request / get (a copy of) (all) (of) your / my information / data / account data / archive / account
   // archive; show / share / add / display / turn on / enable (my) location on / in (my) posts / photos / stories / check-ins, location

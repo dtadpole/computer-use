@@ -1963,6 +1963,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (/^\s*(?:site\s+|store\s+)?maintenance(?:\s+mode)?\s*$/i.test(name) && nativeToggleState(target) !== true) classes.push('submit')
       else if (/^\s*(?:site|website|store|shop|blog)\s+(?:published|online|live|visible|enabled)\s*$|^\s*(?:publish|enable)\s+(?:site|website|store|shop|blog)\s*$/i.test(name) && nativeToggleState(target) !== false) classes.push('submit')
     }
+    // CU-558 (#821 r2, cu-developer-three 07:30Z): a 'Location on posts' / 'Location tagging' / 'Add location to posts' switch is an
+    // exposure - off -> on and unread ask PERMISSION, on -> off free (like 'Guest access').
+    if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))
+      && /^\s*(?:(?:show\s+|add\s+)?(?:my\s+)?location\s+(?:on|in|to)\s+(?:my\s+|new\s+)?(?:posts|photos|stories)|location\s+tagging|tag\s+my\s+location)\s*$/i.test(name) && nativeToggleState(target) !== true) classes.push('permission')
     // CU-446 (cu-coordinator 21:05Z): a domain-lock / transfer-lock switch turned OFF asks credential, a WHOIS-privacy switch turned
     // OFF asks permission; ON is free on a native read; an unread state asks both ways.
     if (grammarEligible && classes.length === 0 && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))) {

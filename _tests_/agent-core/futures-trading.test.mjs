@@ -20,3 +20,8 @@ test('CU-557: enabling futures / derivatives asks permission', () => {
   for (const name of ['Futures', 'Derivatives', 'Learn about futures']) assert.deepEqual(classesOf(name), [], name)
   for (const name of ['Enable margin trading', 'Enable leverage']) assert.ok(classesOf(name).includes('permission'), `older row: ${name}`)
 })
+
+test('#821 round 2 (cu-researcher 07:29Z): the whole futures / derivatives family', () => {
+  for (const name of ['Unlock perpetual contracts', 'Activate derivatives wallet', 'Start trading futures', 'Open a margin account', 'Begin trading perpetuals']) assert.ok(classesOf(name).includes('permission'), name)
+  for (const name of ['Trading', 'Open account']) assert.deepEqual(classesOf(name), [], name)
+})

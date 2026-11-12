@@ -21,3 +21,18 @@ test('CU-558: social privacy exposures ask permission', () => {
   for (const name of ['Your information', 'Location', 'Tags', 'Download app']) assert.deepEqual(classesOf(name), [], name)
   for (const name of ['Make account public', 'Allow messages from everyone']) assert.ok(classesOf(name).includes('permission'), `older row: ${name}`)
 })
+
+test('#821 round 2 (cu-researcher 07:29Z): the whole data-download / location family', () => {
+  for (const name of ["Get a copy of everything you've shared", 'Add my current city to new posts', 'Download all data', 'Request a data download', 'Show location', 'Show my location on my profile']) assert.ok(classesOf(name).includes('permission'), name)
+  for (const name of ['Data', 'Location settings', 'Download', 'Get Info', 'Get information', 'Export data']) assert.deepEqual(classesOf(name), [], name)
+  assert.ok(classesOf('Get my data').includes('permission'), 'Get my data')
+})
+
+test("#821 round 2 (cu-developer-three 07:30Z): a 'Location on posts' switch - off -> on and unread ask, on -> off free", () => {
+  for (const name of ['Location on posts', 'Location tagging']) {
+    const sw = (checked) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: 'https://social.example/settings/privacy', target: { role: 'switch', name, ...(checked === undefined ? {} : { tag: 'input', inputType: 'checkbox', checked }) } }); return v.decision === 'allow' ? [] : (v.classes ?? [v.class]) }
+    assert.ok(sw(false).includes('permission'), `${name}: off -> on asks`)
+    assert.ok(sw(undefined).includes('permission'), `${name}: unread asks`)
+    assert.deepEqual(sw(true), [], `${name}: on -> off is free`)
+  }
+})
