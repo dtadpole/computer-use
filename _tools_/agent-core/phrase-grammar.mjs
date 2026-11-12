@@ -1160,6 +1160,10 @@ function grammarClassesOf(name, role = '') {
   // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
   // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
   if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
+  // CU-557 (High; cu-coordinator 06:36Z, class corrected 06:37Z), table PR 51 - PERMISSION like 'Enable options / margin trading' /
+  // 'Enable leverage': enable / turn on / activate / unlock / apply for / start (the) futures / derivatives / perpetuals / perps / CFDs /
+  // swaps (trading / account / access); open (a / an / my) futures / derivatives / perpetuals / CFD (trading) account.
+  if (/^\s*(?:enable|turn\s+on|activate|unlock|apply\s+for|start)\s+(?:the\s+)?(?:futures|derivatives?|perpetuals?|perps|cfds?|swaps)(?:\s+(?:trading|account|access))?\s*$|^\s*open\s+(?:a\s+|an\s+|my\s+)?(?:futures|derivatives?|perpetuals?|cfds?)\s+(?:trading\s+)?account\s*$/i.test(raw)) return ['permission']
   // #814 r4 (cu-coordinator 06:51Z: 'the WHOLE verb family'): verb x object x tail. SUBMIT - unpublish / hide / block / disable /
   // deactivate / suspend / shut down / take down / close / pause / lock (my / the / this / your) site / website / store / shop / blog
   // (from visitors / the public / everyone / customers / search / all visitors) (offline / down); take / put / set (it / the site ...)
