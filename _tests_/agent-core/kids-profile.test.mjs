@@ -33,3 +33,8 @@ test("#786 round 2 (cu-developer-three 02:39Z): the 'Profile lock / PIN' switch 
   }
   assert.deepEqual(classesOf('Profile lock'), [], 'the bare label as a button stays free')
 })
+
+test("#786 round 3 (cu-researcher 02:52Z): 'Allow all maturity levels', 'Show titles of all maturity levels'", () => {
+  for (const name of ['Allow all maturity levels', 'Show titles of all maturity levels', 'Show content from all maturity ratings']) assert.ok(classesOf(name).includes('permission'), name)
+  for (const name of ['Maturity levels', 'Show titles']) assert.deepEqual(classesOf(name), [], name)
+})
