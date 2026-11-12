@@ -19,3 +19,13 @@ test('CU-544: workspace export / external sharing / guest access ask permission;
   assert.ok(classesOf('Enable guest access').includes('physical'), 'the older physical stays (union)')
   for (const name of ['Workspace settings', 'External sharing', 'Guest access', 'Export']) assert.deepEqual(classesOf(name), [], name)
 })
+
+test("#789 round 2 (cu-developer-three 03:10Z): the 'Guest access' switch asks off -> on and unread; on -> off is free", () => {
+  const sw = (checked) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: 'https://acme.chat.example/admin/settings', target: { role: 'switch', name: 'Guest access', ...(checked === undefined ? {} : { tag: 'input', inputType: 'checkbox', checked }) } }); return v.decision === 'allow' ? [] : (v.classes ?? [v.class]) }
+  assert.ok(sw(false).includes('permission'), 'off -> on asks')
+  assert.ok(sw(undefined).includes('permission'), 'unread asks')
+  assert.deepEqual(sw(true), [], 'on -> off is free')
+  const desk = (checked) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: 'desktop://com.example.chat', target: { role: 'AXCheckBox', name: 'Guest access', inWebArea: false, checked } }); return v.decision === 'allow' ? [] : (v.classes ?? [v.class]) }
+  assert.ok(desk(false).includes('permission'), 'desktop off -> on asks')
+  assert.deepEqual(desk(true), [], 'desktop on -> off is free')
+})
