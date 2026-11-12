@@ -37,3 +37,12 @@ test('#814 round 3 (cu-researcher 06:27Z): the held-out site forms ask submit', 
   for (const name of ['Set the site into maintenance', 'Hide my website from visitors', 'Enable coming soon page', 'Turn on under construction mode']) assert.ok(classesOf(name).includes('submit'), name)
   for (const name of ['Coming soon', 'Hide sidebar']) assert.deepEqual(classesOf(name), [], name)
 })
+
+test('#814 round 4 (cu-researcher 06:38Z): the r2-line site shapes ask submit', () => {
+  for (const name of ['Hide site from everyone', 'Enable maintenance page']) assert.ok(classesOf(name).includes('submit'), name)
+})
+
+test('#814 round 4 (cu-coordinator 06:51Z): the whole site-takedown family', () => {
+  for (const name of ['Hide my entire website from the public', 'Close store temporarily', 'Lock site', 'Take it offline', 'Show maintenance screen', 'Enable password protection page', 'Pause my store']) assert.ok(classesOf(name).includes('submit'), name)
+  for (const name of ['Close', 'Hide', 'Store hours', 'Close dialog']) assert.deepEqual(classesOf(name), [], name)
+})

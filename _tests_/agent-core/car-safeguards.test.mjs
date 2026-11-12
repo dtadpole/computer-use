@@ -34,3 +34,12 @@ test("#814 round 3 (cu-researcher 06:27Z): 'Exit restricted driving profile', 'S
   for (const name of ['Exit restricted driving profile', "Stop monitoring my teen's driving", 'Turn off teen driver profile']) assert.ok(classesOf(name).includes('permission'), name)
   for (const name of ['Driving profile', 'Stop navigation']) assert.deepEqual(classesOf(name), [], name)
 })
+
+test("#814 round 4 (cu-researcher 06:38Z): 'Stop monitoring driving' asks permission", () => {
+  for (const name of ['Stop monitoring driving', 'Stop monitoring location']) assert.ok(classesOf(name).includes('permission'), name)
+})
+
+test('#814 round 4 (cu-coordinator 06:51Z): the whole car-safeguard family', () => {
+  for (const name of ['Override speed limiter', 'Bypass curfew', 'Remove geofence', 'Stop teen monitoring', "Pause monitoring my kid's location", 'Leave restricted mode', 'End driver attention monitoring']) assert.ok(classesOf(name).includes('permission'), name)
+  for (const name of ['Stop monitoring', 'Stop', 'Monitoring']) assert.deepEqual(classesOf(name), [], name)
+})
