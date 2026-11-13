@@ -275,6 +275,8 @@ const WORDS = Object.freeze({
     'add payee', 'add a payee', 'add recipient', 'add beneficiary',
     // CU-401: leaving a shared space or unlinking an account.
     'leave workspace', 'leave organization', 'leave organisation', 'leave org', 'leave team', 'leave server', 'unlink account',
+    // CU-399 (cu-coordinator 05:02Z): Mail's Apply Rules runs rules that may delete, forward or run a script.
+    'apply rules',
     // CU-386 (cu-coordinator 23:54Z): asking someone else for money.
     'request money',
     // CU-258 (cu-researcher): standing choices an app keeps after the run, as whole phrases. A bare 'Allow' stays free so
@@ -532,7 +534,8 @@ const REPLY_WORDS = new Set(['reply', '回复', '回覆'])
 const SUBMIT_BUT_REPLY = Object.freeze(WORDS.submit.filter((word) => !REPLY_WORDS.has(word)))
 // CU-261: a control named only Call, Answer or Merge submits; inside a longer name ('Call Stack', 'Merge Cells') it does not.
 // CU-293: the same whole names in Chinese - 合并单元格 (Merge Cells) stays free like its English.
-const SUBMIT_WHOLE_NAMES = new Set(['call', 'answer', 'merge', '呼叫', '接听', '接聽', '合并', '合併'])
+// CU-399 (Low; cu-coordinator 04:39Z): Mail's 'Bounce' sends a reply to the sender - by exact name ('Bounce rate' stays free).
+const SUBMIT_WHOLE_NAMES = new Set(['bounce', 'bounce to sender', 'call', 'answer', 'merge', '呼叫', '接听', '接聽', '合并', '合併'])
 function judgesSubmit(name, target) {
   if (SUBMIT_WHOLE_NAMES.has(normaliseName(name).trim())) return true
   if (!namesWord(withoutPastState(name), WORDS.submit)) return false
