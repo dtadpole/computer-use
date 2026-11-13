@@ -1608,6 +1608,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (!focusesEntry && /\b(?:long|short|borrow|lend|supply|repay)\b/i.test(name) && (/[$\u20ac\u00a3\u00a5\u20bf]/.test(name) || TRADE_ASSET.test(name) || formTrade)) classes.push('purchase')
       // CU-409: 'Leverage <N>x' and 'Approve <TICKER>' (an all-caps token after Approve, e.g. 'Approve USDC') ask anywhere.
       if (!focusesEntry && (/\bleverage\s+\d+(?:\.\d+)?\s*x\b|\b\d+(?:\.\d+)?\s*x\s+leverage\b/i.test(name) || /^\s*(?:approve|Approve|APPROVE)\s+[A-Z][A-Z0-9]{1,9}\s*$/.test(String(target?.name ?? '')) || /^\s*approve\s+(?:usdc|usdt|dai|eth|weth|wbtc|btc|sol|matic)\s*$/i.test(name))) classes.push('purchase')
+      // Parity sweep (cu-coordinator 08:24Z): an auction bid commits money - a bare 'Bid' or 'Bid now' asks purchase by exact
+      // name; 'Bid history' and 'Bids' stay free.
+      // cu-coordinator 08:38Z: the quick-bid forms too - 'Bid 5', 'Bid US 5.00', 'Bid!', 'Rebid' (cu-researcher's shape).
+      if (!focusesEntry && /^\s*(?:re)?bid(?:\s+now)?(?:\s+(?:[A-Z]{2,3}\s*)?[$\u20ac\u00a3\u00a5]?\s*[\d.,]+)?\s*!?\s*$/i.test(name)) classes.push('purchase')
       // cu-coordinator 05:30Z: the form's own submit - 'Place', 'Place order', 'Confirm', 'Submit' - beside an asset option is
       // the trade too; 'Continue', 'Next' and 'Review' stay free (the review step's Confirm asks).
       if (!focusesEntry && formTrade && /\b(?:place|confirm|submit)\b/i.test(name)) classes.push('purchase')
