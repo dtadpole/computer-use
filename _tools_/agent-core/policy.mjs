@@ -340,6 +340,9 @@ const KEY_TOKEN_ACT = /^\s*(?:(?:rotate|regenerate|revoke)\s+(?:the\s+|your\s+)?
 const RESET_PASSWORD = /^\s*reset\s+(?:your\s+|my\s+)?password\s*$/i
 // CU-411 round 2: my / your / the between the verb and account / data ('Close your account', 'Clear my data').
 const ACCOUNT_WIPE = /^\s*(?:(?:close|terminate|reset|erase)\s+(?:my\s+|your\s+|the\s+)account|(?:clear|wipe|erase)\s+(?:all\s+)?(?:my\s+|your\s+|the\s+)(?:all\s+)?data)\b/i
+// cu-coordinator 09:26Z adds the same-act wordings: Download & Install, Install Now, Relaunch to update, Enable Extension /
+// Plugin, Install Package / Theme.
+const INSTALL_NAME = /^(?:install\s+(?:an?\s+)?(?:extension|plug-?in|add-?on|update|updates|package|theme)|install\s+and\s+relaunch|install\s+now|download\s*(?:&|and)\s*install|update\s+now|(?:restart|relaunch)\s+to\s+update|enable\s+(?:extension|plug-?in)|add\s+to\s+(?:chrome|firefox|edge|safari)|add\s+extension)\b/i
 const PRECEDENCE = ['physical', 'purchase', 'launch_code', 'delete', 'permission', 'page_dialog', 'credential', 'sensitive_data', 'submit', 'new_site', 'install']
 // CU-418 (High; cu-coordinator 14:14Z): the physical near forms - disabling an alarm or a security camera, starting a car,
 // heating an oven, heater or stove, buzzing someone in.
@@ -1608,6 +1611,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (!focusesEntry && /\b(?:long|short|borrow|lend|supply|repay)\b/i.test(name) && (/[$\u20ac\u00a3\u00a5\u20bf]/.test(name) || TRADE_ASSET.test(name) || formTrade)) classes.push('purchase')
       // CU-409: 'Leverage <N>x' and 'Approve <TICKER>' (an all-caps token after Approve, e.g. 'Approve USDC') ask anywhere.
       if (!focusesEntry && (/\bleverage\s+\d+(?:\.\d+)?\s*x\b|\b\d+(?:\.\d+)?\s*x\s+leverage\b/i.test(name) || /^\s*(?:approve|Approve|APPROVE)\s+[A-Z][A-Z0-9]{1,9}\s*$/.test(String(target?.name ?? '')) || /^\s*approve\s+(?:usdc|usdt|dai|eth|weth|wbtc|btc|sol|matic)\s*$/i.test(name))) classes.push('purchase')
+      // CU-407 (cu-coordinator 09:03Z): installing an extension, a plug-in or an update in any approved app is the same act
+      // as the App Store's Get/Install (CU-254's install class); so is a web store's 'Add to Chrome'. Browsing them stays free.
+      if (!focusesEntry && INSTALL_NAME.test(name.trim())) classes.push('install')
       // cu-coordinator 05:30Z: the form's own submit - 'Place', 'Place order', 'Confirm', 'Submit' - beside an asset option is
       // the trade too; 'Continue', 'Next' and 'Review' stay free (the review step's Confirm asks).
       if (!focusesEntry && formTrade && /\b(?:place|confirm|submit)\b/i.test(name)) classes.push('purchase')
