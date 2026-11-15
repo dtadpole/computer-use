@@ -1,34 +1,35 @@
 ---
 title: '[cu] Integrator - handover'
 created: 2026-11-08T04:22:00Z
-modified: 2026-11-11T22:05:00Z
+modified: 2026-11-15T21:55:00Z
 level: L2
-version: 6.0.0
-description: 'What the next [cu] Integrator needs to take over the landing lanes of dtadpole/computer-use mid-flight, at the 11 Nov evening.'
+version: 7.0.0
+description: 'What the next [cu] Integrator needs to take over the landing lanes of dtadpole/computer-use, at the 15 Nov evening after the machinery was rebuilt.'
 status: unverified
 grounded_in:
-  - source: 'cu-coordinator goal of 2026-11-11 13:05Z (High lane, fillers, nightly CU-59, keep-closed watch)'
-  - source: 'decisions D-079, D-085, D-090, D-093, D-095, D-097, D-101, D-108'
+  - source: 'cu-coordinator goal of 2026-11-12 05:05Z (High lane, CU-522 pair, fillers, run-lock idle wait)'
+  - source: 'decisions D-079, D-085, D-090, D-093, D-095, D-097'
 ---
 
 # [cu] Integrator - handover
 
 **Goal.** Land every reviewed PR at its exact head through the hygiene gate and the two-phase gate (merge-tree
-equality, `pr-merge.py --expect-sha`); phase 2 only with the owner idle >= 300 s. Highs go one at a time in the
-coordinator's lane order, each with two signed PR-comment OKs; the first High ready takes the slot and no High
-pre-empts another; fillers yield to Highs and to live-row runs.
+equality, `pr-merge.py --expect-sha`); phase 2 only with the owner idle >= 300 s, read from the run lock's
+ownerIdle (null is not idle). Highs go one at a time in the coordinator's lane order, each with two signed
+PR-comment OKs; fillers yield to Highs.
 
-**Live state (22:05Z).** Since 13:05Z: table PRs 23-31, the CU-429 lowering, CU-433 and CU-507's web and dialog
-halves landed; the nightly CU-59 run on main was GREEN with phase 2. Lane: #737 (helper 0.2.70: helper chain in
-checks-only mode, then its gate and an idle-checked install) -> #739 -> CU-507 read-only row -> #746 -> #747 -> #735
-(CU-429 round 2) -> #734 (CU-522). Fillers: #624, #621, #500, #491, #742 (CU-462).
+**Live state (15 Nov 21:55Z).** Since 11 Nov: #798, the CU-522 pair (#734, #791), #795, table PRs 47 and 48
+(#805, #807), #800, eight PRs from #810 to #826, and fillers #500, #491 and #803 landed. Main has stood at
+c82f0fc0 since 12 Nov. The session ran no turns from 14:51Z 12 Nov to 21:25Z 15 Nov, and a reboot emptied
+`/tmp`. Open: #833 (CU-561) needs a retarget to main and both OKs; #742 is the last filler; the older PRs
+are parked on the holds file until the coordinator names them.
 
-**Machinery** (`/tmp/cu-integrator-*`, gone on a reboot): `land-together.sh`, `land-cu.sh`, `queue-cu.sh`,
-`chain-helper.sh` (`CHECKS_ONLY=1` for build, selftest and prove-failing), `records-next.sh`, `reviewed.py` (D-085
-carries), `both-ok.sh`, `selfcheck.sh` (audit and base-first sweep), `base-sweep-loop.sh` (every 60 s),
-`premerge-snap.py` with `record-cu.sh` (restore what link automation closed, a 20-minute keep-closed watch, every
-merge answer copied to cu-verifier) and a move log of every Linear state change.
+**Machinery** (`/tmp/cu-integrator-*`, restored from the seat's private tools folder): `land-cu.sh`,
+`queue-cu.sh`, `suite.sh`, `reviewed.py`, the records lane, `refl-land.sh`, `selfcheck.sh`, `nightly.sh` and
+`owner-idle.sh`. Lost and not yet rebuilt: `land-together.sh`, `both-ok.sh`, the holds library, the base-first
+sweep, the D-090 log union and the D-095 filler yield, so land one PR at a time by hand until they are back.
+Selfcheck prints a drift line when a running script differs from the folder: push the tools PR that pass.
 
-**Lessons.** Lift a base-first hold the minute its PR is retargeted (one High sat 22 minutes). Take every
-'Fixes CU-n' in a title, not the last. Check that a slot number is unused before arming it. Read a HOLD's failing
-test before calling it environmental. Announce a desktop hold as waiting for idle until it is actually taken.
+**Lessons.** Keep the tools folder in step every day; `/tmp` does not survive a reboot. Check both sides for a
+non-log overlap before telling an author no push is needed. Lift a base-first hold the minute its PR is
+retargeted. Read a HOLD's failing test before calling it environmental.
