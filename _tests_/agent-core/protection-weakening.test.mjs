@@ -22,3 +22,12 @@ test('CU-572: weakening verbs x protections, and the allow forms, ask permission
 test('CU-572 negatives: turning protections on and the views stay free', () => {
   for (const name of ['Enable CAPTCHA', 'Turn on rate limiting', 'Require signed commits', 'View audit log', 'Password policy', 'Rate limits', 'Enable encryption', 'Verification', 'Skip intro', 'Disable dark mode', 'Turn off sounds']) assert.deepEqual(classesOf(name), [], name)
 })
+
+test('#856 round 2 (cu-researcher 05:00Z): both slots open - any weakening verb x any security object, exempt / optional', () => {
+  for (const name of ['Circumvent the firewall', 'Halt threat scanning', 'Weaken TLS', 'Soften password complexity', 'Strip security headers', 'Kill antivirus', 'Unenforce SSO policy', 'Exempt admins from MFA',
+    'Exclude bots from rate limiting', 'Allow bypassing branch protection', 'Make MFA optional', 'Set session timeout to never', 'Disable phishing filter', 'Turn off fraud alerts', 'Lower security level', 'Suspend login monitoring', 'Pause vulnerability alerts', 'Waive commit signing requirement', 'Disable two-step verification']) {
+    assert.ok(classesOf(name).includes('permission'), name)
+  }
+  assert.deepEqual(classesOf('Exempt this user from 2FA'), ['credential'], 'an older 2FA row leads (credential)')
+  for (const name of ['Remove filter', 'Skip review', 'Disable spell checks', 'Lower volume', 'Make it optional', 'Exempt from tax', 'Halt playback', 'Reduce motion']) assert.ok(!classesOf(name).includes('permission'), name)
+})
