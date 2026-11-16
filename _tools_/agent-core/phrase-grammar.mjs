@@ -761,7 +761,7 @@ const CONFIRM_PREFIX = /^\s*(?:(?:yes(?:\s+please)?|ok|okay|sure|confirm|continu
 // 'let's', 'go ahead and', 'I want to'.
 // cu-researcher 05:02Z: trailing qualifiers too - 'anyway', 'instantly', 'on this device', 'for me', 'here', 'too', 'again'.
 // #630 round 2: a trailing ', please' too ('Add time, please').
-const TRAILING_QUALIFIER = /(?:\s*,\s*please|\s*[,\u2013\u2014-]\s*(?:yes,?\s+)?i(?:'m|\s+am)\s+(?:(?:really|absolutely|totally|completely|quite|very|fully|100\s?%)\s+)?(?:sure|certain|positive)|\s+(?:anyway|anyways|instantly|immediately|today|right\s+away|on\s+this\s+(?:device|computer|browser|phone)|for\s+me|here|too|again))+\s*[.!]?\s*$/i
+const TRAILING_QUALIFIER = /(?:\s*,\s*please|\s*[,\u2013\u2014-]\s*(?:yes,?\s+)?i(?:'m|\s+am)\s+(?:(?:really|absolutely|totally|completely|quite|very|fully|100\s?%)\s+)?(?:sure|certain|positive)|\s+(?:anyway|anyways|instead|instantly|immediately|today|right\s+away|on\s+this\s+(?:device|computer|browser|phone)|for\s+me|here|too|again))+\s*[.!]?\s*$/i
 // CU-508 (qualifier sweep): a trailing WIDENING qualifier - 'permanently', 'forever', 'for good', 'completely', 'for all users /
 // members / accounts', 'for everyone', 'on all (my) devices', 'everywhere', 'across all devices' - is stripped in a canonical form
 // (the trailing twin of CU-502's quantifier), so the row decides. Adds asks only.
@@ -776,7 +776,9 @@ export function widenedStripped(name) {
 }
 // #630 round 2 (cu-researcher 05:22Z): "I'd like to" (the contraction), 'let us', 'kindly'.
 const CTA_LEAD_IN = /^\s*(?:please\s+|kindly\s+|continue\s+to\s+(?=[a-z]+\s)|(?:click|tap|press|select)\s+(?:here\s+)?to\s+|let(?:'|\u2019)?s\s+|let\s+us\s+|go\s+ahead\s+and\s+|i(?:\s+want|\s+would\s+like|(?:'|\u2019)d\s+like)\s+to\s+)+/iu
-const TRAILING_WRAP = /(?:\s*(?:right\s+now|now|please|\.{2,}|\u2026|!+|\((?:recommended|suggested|best\s+value)\)|[\u2192\u203a\u00bb>\u2794\u27f6\u279c\u27a1]|\p{Extended_Pictographic}|\uFE0F))+\s*$/iu
+// CU-561 (High; cu-coordinator 08:36Z): ' instead' (in TRAILING_QUALIFIER) and the triangle / chevron arrows (▸ ▹ ▶ ► ❯ ‣) strip
+// like the other trailing wrappers, so no asking row is freed by them.
+const TRAILING_WRAP = /(?:\s*(?:right\s+now|now|please|\.{2,}|\u2026|!+|\((?:recommended|suggested|best\s+value)\)|[\u2192\u203a\u00bb>\u2794\u27f6\u279c\u27a1\u25b8\u25b9\u25b6\u25ba\u276f\u2023]|\p{Extended_Pictographic}|\uFE0F))+\s*$/iu
 // CU-473 (cu-researcher 02:15Z): a second line, a badge or a count after a ruled name - the first line of a multi-line name; a
 // sentence-case name followed by a capitalised second sentence ('Change direct deposit Takes effect immediately'); a trailing badge
 // ('New', 'Beta', 'Preview', 'Updated'); a trailing parenthetical ('(opens in a new window)', '(3)').
@@ -908,7 +910,19 @@ export function sectionLabelStripped(name) {
   if (wrapped) forms.push(wrapped[1].trim())
   return forms
 }
+// CU-561: ' instead' stripped ALONE too (keeping the row's own trailing words) - 'Install now instead' is judged as 'Install now', not
+// only as the fully stripped 'Install'.
+function insteadStripped(name) {
+  const first = String(name ?? '').split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean)[0] ?? ''
+  const out = first.replace(/(?:\s+instead|\s*[\u25b8\u25b9\u25b6\u25ba\u276f\u2023\u203a\u00bb\u2192])+\s*[.!]?\s*$/iu, '').trim()
+  return out !== first ? out : ''
+}
 export function canonicalForms(name) {
+  const inst = insteadStripped(name)
+  if (inst !== '') return [...new Set([inst, ...canonicalForms(inst), ...canonicalFormsOf(name)])].filter((form) => form !== '' && form !== String(name ?? '').trim())
+  return canonicalFormsOf(name)
+}
+function canonicalFormsOf(name) {
   const unwrapped = canonicalConfirm(name)
   const cut = firstSentence(unwrapped)
   const bare = withoutDeterminers(unwrapped)
@@ -1141,6 +1155,23 @@ function grammarClassesOf(name, role = '') {
     if (v === 'allow' && ((r[0] === 'unknown' && r[1] === 'source' && r.length === 2) || (r[0] === 'app' && r[1] === 'from' && ['anywhere', 'unknown'].includes(r[2]) && (r.length === 3 || (r[2] === 'unknown' && r[3] === 'source' && r.length === 4))))) return ['permission']
   }
   if (/^\s*install\s+now\s*!?\s*$/i.test(raw)) return ['install']
+  // CU-462 (Medium; cu-coordinator 00:04Z triage + 04:20Z, CU-479's rest): an address book or a mailing list leaves the account -
+  // uploads, syncs, imports and exports of contacts, subscribers or an audience, and a shareable link (permission). 'Contacts' and the
+  // user's own 'Export my data' stay free.
+  // #742 round 3 (cu-coordinator 21:21Z): the rest of CU-462's shareable-link words - create / generate / make a shareable / share /
+  // public / sharing link, and 'Anyone with the link' (can view / edit / comment) - permission like 'Get shareable link'.
+  if (/^\s*(?:create|generate|make|turn\s+on)\s+(?:a\s+|the\s+)?(?:shareable|share|public|sharing)\s+link\s*$|^\s*anyone\s+with\s+(?:the\s+)?link(?:\s+can\s+(?:view|edit|comment))?\s*$/i.test(raw)) return ['permission']
+  // #742 round 2 (cu-researcher 21:13Z): the two-word object 'address book' reads as one ('Export address book', 'Sync my address book').
+  if (/^\s*(?:upload|sync|import|export|download|share)\s+(?:all\s+|my\s+|your\s+|the\s+)?address\s+books?\s*$/i.test(raw)) return ['permission']
+  if (list.length <= 4) {
+    const [v, ...r] = list
+    const people = ['contact', 'subscriber', 'audience', 'list', 'address', 'addressbook']
+    if (['upload', 'sync', 'import', 'export', 'download'].includes(v) && r.length >= 1 && r.length <= 3 && people.includes(r[r.length - 1]) && !(v === 'upload' && r[r.length - 1] === 'list' && r.length > 1)) return ['permission']
+    if (v === 'find' && r[0] === 'friend' && r.includes('contact') && r.length <= 3) return ['permission']
+    // cu-coordinator 06:49Z: 'Archive all contacts' is permission too (reversible, not delete).
+    if (v === 'archive' && r[0] === 'all' && r.length === 2 && ['contact', 'subscriber'].includes(r[1])) return ['permission']
+    if (v === 'get' && r.length <= 2 && r[r.length - 1] === 'link' && (r.includes('shareable') || r.includes('share') || r.includes('public'))) return ['permission']
+  }
   // #693 round 2 (cu-researcher 14:53Z): the CU-433 rows as verb families with object synonyms.
   if (/^\s*empty\s+(?:the\s+|my\s+)?(?:spam|junk)(?:\s+(?:folder|mail|box))?\s*$/i.test(raw)) return ['delete']
   if (/^\s*report\s+(?:as\s+|this\s+as\s+)?phishing(?:\s+(?:attempt|email|e-mail|message|mail))?\s*$/i.test(raw)) return ['submit']
