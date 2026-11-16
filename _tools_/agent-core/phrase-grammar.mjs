@@ -191,7 +191,10 @@ const PRICED_ROLES = new Set(['gridcell', 'option', 'radio', 'checkbox', 'button
   'axbutton', 'axmenuitem'])
 const PRICED_NOUNS = new Set(['seat', 'option', 'legroom', 'bag', 'baggage'])
 // #602 round 2 (cu-researcher 01:31Z): a symbol after the number with a comma decimal too ('Weiter f\u00fcr 4,99 \u20ac').
-const AMOUNT = /(?:[$\u20ac\u00a3\u00a5\u20b9]\s?(\d[\d,]*(?:\.\d+)?))|(?:\b(\d[\d,]*(?:\.\d+)?)\s?(?:usd|eur|gbp|jpy|cad|aud|inr|chf)\b)|(?:\b(?:usd|eur|gbp|jpy|cad|aud|inr|chf)\s?(\d[\d,]*(?:\.\d+)?))|(?:\b(\d[\d.]*(?:,\d{1,2})?)\s?[\u20ac$\u00a3\u00a5\u20b9])/gi
+// CU-567 (cu-researcher 02:45Z; built before triage): the money amount reads every currency sign (₩ ₺ ₽ ₱ ฿ ₿ ₫ ₪ ₦ ₴ ₸ ₡ ₲ ₵
+// beside $ € £ ¥ ₹), the common ISO codes and the word currencies kr / kn / zł / lei / kč after a number, and RM / R$ before one.
+// 'TRY' and 'PHP' count only after a number ('Try 3 days', 'PHP 8' are not money); 'Ft' (also feet) only on a tip row (policy.mjs).
+const AMOUNT = /(?:[$\u20ac\u00a3\u00a5\u20b9\u20a9\u20ba\u20bd\u20b1\u0e3f\u20bf\u20ab\u20aa\u20a6\u20b4\u20b8\u20a1\u20b2\u20b5]\s?(\d[\d,]*(?:\.\d+)?))|(?:\b(\d[\d,]*(?:\.\d+)?)\s?(?:usd|eur|gbp|jpy|cad|aud|inr|chf|sek|nok|dkk|pln|czk|huf|mxn|brl|krw|try|rub|php|thb|myr|idr|vnd|ils|ngn|zar|sgd|hkd|nzd|cny|twd|btc|eth|kr|kn|z\u0142|zl|lei|k\u010d)(?![\p{L}]))|(?:(?<![\p{L}])(?:usd|eur|gbp|jpy|cad|aud|inr|chf|sek|nok|dkk|pln|czk|huf|mxn|brl|krw|rub|thb|myr|idr|vnd|ils|ngn|zar|sgd|hkd|nzd|cny|twd|btc|rm|r\$)\s?(\d[\d,]*(?:\.\d+)?))|(?:\b(\d[\d.]*(?:,\d{1,2})?)\s?[$\u20ac\u00a3\u00a5\u20b9\u20a9\u20ba\u20bd\u20b1\u0e3f\u20bf\u20ab\u20aa\u20a6\u20b4\u20b8\u20a1\u20b2\u20b5])/giu
 // A price filter or range commits nothing ('Under $25', '$10 - $20', 'Over EUR 100', 'Up to $50'; cu-researcher 00:51Z).
 const PRICE_FILTER = /^\s*(?:under|over|below|above|less\s+than|more\s+than|up\s+to|from|max(?:imum)?|min(?:imum)?)\b|\d\s*(?:-|\u2013|\u2014|to)\s*[$\u20ac\u00a3\u00a5\u20b9]?\s*\d|\b(?:and\s+(?:up|above|under|below)|or\s+(?:less|more))\s*$/i
 // Links and list items stay out of the plain pattern (17:18Z; cu-coordinator 01:04Z): a priced link navigates to the item.
@@ -200,7 +203,7 @@ const PRICE_FILTER = /^\s*(?:under|over|below|above|less\s+than|more\s+than|up\s
 const AMOUNT_ROLES = new Set(['button', 'menuitem', 'axbutton', 'axmenuitem', 'axmenubutton', 'alertdialog', 'dialog'])
 const COMMIT_LINK_ROLES = new Set(['link', 'listitem', 'axlink', 'option', 'axrow', 'axcell'])
 const PRICE_LABEL = /^\s*(?:price|was|now|from|save|sale|regular|list\s+price|msrp)\b|\boff\s*$|\bdiscount\b/i
-const AMOUNT_COMMIT = /^\s*(?:buy|pay|purchase|subscribe|order|donate|tip|rent|upgrade|renew|checkout|check\s+out|charge|get\s+(?:it|premium|pro|plus))\b/i
+const AMOUNT_COMMIT = /^\s*(?:buy|pay|purchase|subscribe|order|donate|tip|contribute|cheer|rent|upgrade|renew|checkout|check\s+out|charge|get\s+(?:it|premium|pro|plus))\b/i
 /** CU-467 (cu-coordinator 00:49Z, 01:04Z): 'purchase' when a pressed control names a money amount - any button, menu item or dialog
  * control; a link or list item only with a commit verb ('Buy for $5', not a 'Blue mug, $12.99' tile); price filters and ranges never. */
 export function amountClass(name, role = '') {
