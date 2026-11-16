@@ -57,3 +57,7 @@ test('#854 round 6 (cu-researcher 06:10Z): the reach class only adds - warning o
 test('#854 round 7 (cu-researcher 08:14Z): object variants - a branch path or version as the object', () => {
   for (const name of ['Merge release/4.2 into main', 'Merge feature/login-v2 into master', 'Push hotfix-1.3.7 to production', 'Promote build #812 to stable']) assert.notDeepEqual(classesOf(name), [], name)
 })
+
+test('#854 round 8 (cu-researcher 08:22Z): a release-branch target with a path', () => {
+  for (const name of ['Merge feature/x.y into release/5', 'Merge fix into release-2024.11', 'Merge PR into stable/v3']) assert.notDeepEqual(classesOf(name), [], name)
+})
