@@ -698,10 +698,43 @@ export function formContextOf(value) {
  * CU-361 (cu-researcher): a layout label as placeholderOf reads it, except that text the value rules class as sensitive
  * (a card, an IBAN, a bank account: policy.mjs looksSensitive) is a displayed value, not a label, and reads as none - so
  * a summary screen's 'Card 4111...' beside a box never becomes a name anywhere.
+ * CU-374 (cu-researcher): a street address shown beside a box is a displayed value too (looksStreetAddress), so a
+ * checkout summary's '1 Infinite Loop, Cupertino' never becomes the box's name in a record. Policy's value rules are
+ * left as they are; this is only the label read.
  */
 export function nearbyLabelOf(value) {
   const text = placeholderOf(value)
-  return text !== null && looksSensitive(text) === null ? text : null
+  return text !== null && looksSensitive(text) === null && !looksStreetAddress(text) ? text : null
+}
+
+// CU-374: the street-type words of a number-first address ('221B Baker Street', '350 Fifth Ave.').
+const STREET_TYPES = 'St|Street|Ave|Avenue|Rd|Road|Blvd|Boulevard|Ln|Lane|Dr|Drive|Way|Ct|Court|Pl|Place|Ter|Terrace|' +
+  'Hwy|Highway|Pkwy|Parkway|Sq|Square|Cir|Circle|Close|Crescent|Cres|Loop|Row|Walk|Trail|Mews'
+const ADDRESS_SHAPES = [
+  // A house number, at most five words, then a street type: '1 Infinite Loop', 'Ship to 221B Baker Street'.
+  new RegExp(`(?:^|[\\s,:(])\\d{1,6}[A-Za-z]?\\s+(?:[\\p{L}\\d.'-]+\\s+){0,5}(?:${STREET_TYPES})\\b\\.?`, 'iu'),
+  // A street word then its number: 'Hauptstraße 5', 'Lindenweg 12a'.
+  /\p{L}*(?:straße|strasse|str\.|weg|gasse|platz|allee)\s+\d{1,5}[a-z]?\b/iu,
+  // A number then a street word: '12 rue de Rivoli', '3, avenue Foch'.
+  /(?:^|[\s,:(])\d{1,4},?\s+(?:rue|avenue|boulevard|bd|chemin|allée|impasse|quai)\b/iu,
+  // A street word, its name, then its number: 'Calle Mayor 10', 'Via Roma, 12'.
+  /\b(?:calle|avenida|via|viale|piazza|corso)\s+[\p{L} .'-]{2,40},?\s*\d{1,5}\b/iu,
+  // A post-office box: 'PO Box 4471', 'P.O. Box 12'.
+  /\bP\.?\s?O\.?\s+Box\s+\d+/i,
+  // A town, a US state and a ZIP: 'Cupertino, CA 95014'.
+  /,\s*[A-Z]{2}\s+\d{5}(?:-\d{4})?\b/,
+  // A UK postcode: 'London SW1A 1AA'.
+  /\b[A-Z]{1,2}\d[A-Z\d]?\s+\d[A-Z]{2}\b/,
+]
+
+/**
+ * CU-374: whether a short text reads as a street address. Each shape needs a number next to a street word, a box
+ * number or a postal code, so a label that only names the field ('Street address', 'Address line 1', 'ZIP code')
+ * stays a label. Named over-ask: a label that itself reads as an address ('10 Downing Street') reads as none.
+ */
+export function looksStreetAddress(text) {
+  const value = String(text ?? '')
+  return ADDRESS_SHAPES.some((shape) => shape.test(value))
 }
 
 /**

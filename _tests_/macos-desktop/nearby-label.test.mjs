@@ -70,3 +70,28 @@ test('CU-361 (cu-researcher): a static text the value rules class as sensitive i
   assert.equal((await read({ ...BOX, nearbyLabel: 'Card number' })).hit.nearbyLabel, 'Card number', 'a label naming a card stays a label')
 })
 
+test('CU-374 (cu-researcher): a street address shown beside a box is a displayed value, not a label - it reads as null', async () => {
+  const shown = [
+    '1 Infinite Loop, Cupertino, CA 95014',
+    'Ship to 221B Baker Street',
+    '350 Fifth Ave.',
+    'Hauptstraße 5, 10115 Berlin',
+    '12 rue de Rivoli, 75001 Paris',
+    'Calle Mayor 10',
+    'PO Box 4471',
+    'London SW1A 1AA',
+  ]
+  for (const address of shown) {
+    const { hit, focused } = await read({ ...BOX, nearbyLabel: address })
+    assert.equal(hit.nearbyLabel, null, address)
+    assert.equal(focused.nearbyLabel, null, address)
+    for (const target of [hit, focused]) assert.ok(!JSON.stringify(target).includes(address), `no field carries '${address}'`)
+  }
+})
+
+test('CU-374: a label that only names an address field stays a label', async () => {
+  for (const label of ['Street address', 'Address line 1', 'Address 2', 'ZIP code', 'Postcode', 'City', 'Apt / Suite', 'Delivery address', 'Step 2 of 3']) {
+    assert.equal((await read({ ...BOX, nearbyLabel: label })).hit.nearbyLabel, label, label)
+  }
+})
+
