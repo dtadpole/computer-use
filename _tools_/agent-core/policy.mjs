@@ -1531,7 +1531,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (!focusesEntry && (/^\s*give(?:\s+now)?\s*$/i.test(name) || /^\s*leave\s+(?:a\s+)?tip\b/i.test(name)
         || /^\s*(?:tip|give)\s+(?:[A-Z]{3}\s*)?[$\u20ac\u00a3\u00a5]\s*\d/i.test(name)
         // CU-567 (built before triage): a tip / contribution / cheer of any currency or of a platform's coins, Bits or Stars.
-        || /^\s*(?:tip|give|contribute|cheer|send)\s+(?:a\s+tip\s+(?:of\s+)?)?\d[\d,.]*\s*(?:coins?|bits|stars|gems|tokens|credits|points|diamonds|kr|kn|z\u0142|zl|lei|k\u010d|ft)\b/iu.test(name)
+        // #847 r2 (cu-researcher 03:08Z): 'Give 5 stars' is a rating - Stars and points count only with tip / send / cheer / contribute.
+        || /^\s*(?:tip|give|contribute|cheer|send)\s+(?:a\s+tip\s+(?:of\s+)?)?\d[\d,.]*\s*(?:coins?|bits|gems|tokens|credits|diamonds|kr|kn|z\u0142|zl|lei|k\u010d|ft)\b/iu.test(name)
+        || /^\s*(?:tip|contribute|cheer|send)\s+\d[\d,.]*\s*(?:stars|points)\b/iu.test(name)
         || /^\s*(?:tip|give|contribute|cheer)\s+.*(?:[\u20a9\u20ba\u20bd\u20b1\u0e3f\u20bf\u20ab\u20aa\u20a6\u20b4\u20b8\u20a1\u20b2\u20b5]\s*\d|\d\s*[\u20a9\u20ba\u20bd\u20b1\u0e3f\u20bf\u20ab\u20aa\u20a6\u20b4\u20b8\u20a1\u20b2\u20b5]|\b(?:rm|czk|mxn|sek|nok|dkk|pln|huf|brl|krw|try|rub|php|thb|myr|btc)\s*\d|\d\s*(?:czk|mxn|sek|nok|dkk|pln|huf|brl|krw|try|rub|php|thb|myr|btc)\b)/iu.test(name))) classes.push('purchase')
       // Round 2: an article or possessive between the verb and the object ('Cast my vote', 'Decline the offer').
       if (!focusesEntry && (/^\s*(?:cast|submit)\s+(?:my|your|the|a|our)\s+(?:vote|ballot)\b/i.test(name)

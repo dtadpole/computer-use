@@ -17,3 +17,9 @@ test('CU-567: tips and contributions in any currency or platform coin ask purcha
   for (const name of ['Tip', 'Tips', 'Try 3 days', 'Add 10 ft', '100 Bits', 'PHP 8 docs']) assert.deepEqual(classesOf(name), [], name)
   assert.ok(!classesOf('Rate 5 stars').includes('purchase'), 'a rating is not a purchase (its older class is unchanged)')
 })
+
+test("#847 round 2 (cu-researcher 03:08Z): 'Give 5 stars' is a rating, not a purchase", () => {
+  for (const name of ['Give 5 stars', 'Give 4 stars']) assert.deepEqual(classesOf(name), [], name)
+  // 'Give 10 points' asks purchase on main already (an older row) and keeps it.
+  for (const name of ['Send 50 Stars', 'Tip 100 Stars', 'Cheer 100 Bits', 'Give 5 gems']) assert.ok(classesOf(name).includes('purchase'), name)
+})
