@@ -1025,6 +1025,10 @@ export function grammarClasses(name, role = '') {
  * all users' keeps install). */
 export function releasesToLive(raw) {
   raw = String(raw ?? '').trim()
+  // #854 r9 (cu-researcher 10:20Z class sweep): tagging-and-releasing, flipping a flag for ALL, and resuming / unpausing a rollout release.
+  if (/^\s*(?:tag|build|bump(?:\s+(?:the\s+)?version)?|cut)\s+and\s+(?:release|ship|publish|deploy|push)\b/i.test(String(raw ?? ''))
+    || /^\s*(?:flip|toggle|turn\s+on|enable|switch\s+on)\s+(?:the\s+|this\s+)?(?:feature\s+)?(?:flags?|toggles?)\b.*\bfor\s+(?:all(?:\s+users)?|everyone|everybody|100\s*%)/i.test(String(raw ?? ''))
+    || /^\s*(?:unpause|resume|restart|continue|un-?halt|un-?freeze|proceed\s+with)\s+(?:the\s+|this\s+)?(?:roll-?outs?|deploy(?:ment)?s?|releases?|canar(?:y|ies)|ramps?|launch(?:es)?|migrations?|pipelines?)\b/i.test(String(raw ?? ''))) return true
   // #854 r6: an OFF verb or a warning override is never a release - the CU-429 'Keep <x>' refusal probes 'Turn off <x>', so a release
   // reading there lowered 'Keep anyway for all users' (install on main) to free.
   if (/^\s*(?:(?:turn|switch|shut|power)\s+off|disable|deactivate|stop|pause|halt|remove|delete|cancel|revoke|unpublish|withdraw|roll\s*back|revert)\b|\banyway\b/i.test(raw)) return false

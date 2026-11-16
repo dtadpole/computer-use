@@ -61,3 +61,8 @@ test('#854 round 7 (cu-researcher 08:14Z): object variants - a branch path or ve
 test('#854 round 8 (cu-researcher 08:22Z): a release-branch target with a path', () => {
   for (const name of ['Merge feature/x.y into release/5', 'Merge fix into release-2024.11', 'Merge PR into stable/v3']) assert.notDeepEqual(classesOf(name), [], name)
 })
+
+test('#854 round 9 (cu-researcher 10:20Z class sweep): tag-and-release, flag for all, resume a rollout', () => {
+  for (const name of ['Tag and release', 'Flip the feature flag for all', 'Unpause rollout', 'Resume deployment', 'Turn on the flag for everyone', 'Proceed with the canary']) assert.notDeepEqual(classesOf(name), [], name)
+  for (const name of ['Resume', 'Resume video', 'Flip card', 'Tag photos', 'Continue reading']) assert.deepEqual(classesOf(name), [], name)
+})
