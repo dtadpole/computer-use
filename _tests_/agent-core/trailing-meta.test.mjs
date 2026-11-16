@@ -49,3 +49,12 @@ test('#843 round 3 (cu-researcher 02:23Z): any separator glyph and any 1-4 word 
   }
   for (const name of ['Gold \u00b7 Plans', 'Team \u2022 Overview', 'Settings \u2219 Admins only', '$10 - $20']) assert.deepEqual(classesOf(name), [], name)
 })
+
+test('#843 round 4 (cu-researcher 02:37Z): every split, and separators need whitespace', () => {
+  for (const [form, base] of [['Step 2 of 3 - Add phone key \u22c5 3 min', 'Add phone key'], ['Add rule ::/0 \u2027 New', 'Add rule ::/0'], ['Billing \u00b7 Team plan \u00b7 Change IBAN \u00b7 2 min', 'Change IBAN']]) {
+    const want = classesOf(base)
+    assert.notDeepEqual(want, [], `base asks: ${base}`)
+    for (const cls of want) assert.ok(classesOf(form).includes(cls), `${form}: ${cls}`)
+  }
+  for (const name of ['Step 2 of 3 - Overview \u22c5 3 min', 'Docs: Settings', '$10 - $20']) assert.deepEqual(classesOf(name), [], name)
+})
