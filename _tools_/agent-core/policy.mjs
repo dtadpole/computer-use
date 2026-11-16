@@ -333,6 +333,25 @@ const ACCOUNT_SECURITY = /\b(?:(?:generate|create|new|add)\s+(?:an?\s+)?app[\s-]
 const PHYSICAL_NOUN = '(?:door|doors|lock|locks|deadbolt|gate|garage|front|back|side|car|vehicle|trunk)'
 const UNLOCK_PHYSICAL = new RegExp(`\\bunlock\\b.*\\b${PHYSICAL_NOUN}\\b|\\b${PHYSICAL_NOUN}\\b.*\\bunlock\\b`, 'i')
 const TRADE_ASSET = /\b(?:btc|eth|usd|eur|gbp|jpy|usdt|usdc|dai|sol|xrp|ada|doge|bnb|bitcoin|ethereum|crypto|coins?|tokens?|shares?|stocks?)\b/i
+// CU-585: a bare submit that a typed-word confirmation form gates, and the senses of that form's prompt (the driver's
+// formEntries - the words beside its text entries, never a value).
+const TYPED_CONFIRM_SUBMIT = /^\s*(?:confirm|continue|i\s+understand|proceed|ok(?:ay)?|yes|submit)\s*[.!]?\s*$/i
+const TYPED_INSTRUCTION = /\b(?:type|enter|retype|re-type|write|input)\b/i
+const TYPED_DESTROY = /\b(?:delet\w*|eras(?:e|es|ed|ing|ure)\b|wip(?:e|es|ed|ing)\b|remov\w*|destroy\w*|purg(?:e|es|ed|ing)\b|terminat\w*|deactivat\w*|permanent\w*|irreversibl\w*|cannot\s+be\s+undone|clos(?:e|ing)\s+(?:the\s+|this\s+|my\s+|your\s+)?account\b|drop\s+(?:the\s+|this\s+)?(?:table|database|schema|collection|index)\b)/i
+const TYPED_TRANSFER = /\b(?:transfer\w*|hand(?:ing)?\s+(?:it\s+|this\s+\w+\s+|the\s+\w+\s+)?over|handover|ownership|new\s+owner|change\s+(?:the\s+)?owner)\b/i
+
+/**
+ * CU-585: the classes a typed-word confirmation form's prompt asks for, read by sense from the driver's formEntries (at
+ * most 3 texts of 80 characters). Some text must tell the person to type or enter something; then a destructive or
+ * permanent act anywhere in the form's words asks delete, and a transfer of ownership asks permission (not purchase).
+ * Ordinary boxes (a name, a search, a message, a coupon) carry no typing-to-confirm sense and add nothing.
+ */
+export function typedConfirmClasses(entries) {
+  const texts = (Array.isArray(entries) ? entries : []).slice(0, 3).map((text) => String(text ?? '')).filter((text) => text.length <= 80)
+  if (!texts.some((text) => TYPED_INSTRUCTION.test(text))) return []
+  const words = texts.join(' \u2022 ')
+  return [...(TYPED_DESTROY.test(words) ? ['delete'] : []), ...(TYPED_TRANSFER.test(words) ? ['permission'] : [])]
+}
 const TRADE_WORDS = /\b(?:trade|trading|swap|swaps|stake|staking|unstake|sell|selling|bridge|mint|minting)\b/gi
 const TRADE_NAV = /\b(?:trade|trading|swap|swaps|stake|staking|unstake|sell|selling|bridge|mint|minting)\b[\s\S]*\b(?:history|settings|faq|guide|policy|fees|rates|limits)\b/i
 // cu-coordinator 11:13Z adds 'Rotate secret', 'Regenerate token', 'New token' and a settings 'Reset password' (CU-401's family).
@@ -2540,6 +2559,14 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const raised = String(name ?? '').trim()
       if (/^(?:remove|clear)\s+(?:the\s+)?(?:activation\s+lock|device\s+passcode)$/i.test(raised) && !classes.includes('credential') && classes.length > 0) classes.push('credential')
       if (/^deploy\s+(?:the\s+|a\s+|this\s+)?(?:configuration\s+|config\s+|mdm\s+|management\s+)?profiles?$/i.test(raised) && !classes.includes('permission') && classes.length > 0) classes.push('permission')
+    }
+    // CU-585 (cu-researcher's filing; GO from the policy.mjs owner cu-developer-one 13:48Z; built by cu-developer-two): a
+    // bare, otherwise-unclassed submit ('Confirm', 'Continue', 'I understand', 'Proceed', 'OK', 'Yes') in a danger-zone form
+    // reads the words its form's text entries show (the driver's formEntries, on a click and on Return's default button):
+    // a prompt to type something that confirms a destructive or permanent act asks delete, one that confirms a transfer of
+    // ownership asks permission. A late union - it only adds an ask to a submit nothing else classes, never lowers one.
+    if (grammarEligible && classes.length === 0 && TYPED_CONFIRM_SUBMIT.test(String(name ?? '')) && Array.isArray(target?.formEntries)) {
+      for (const cls of typedConfirmClasses(target.formEntries)) classes.push(cls)
     }
     if (grammarEligible && classes.length === 0) {
       const mdm = String(name ?? '').trim()
