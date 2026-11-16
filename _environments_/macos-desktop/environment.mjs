@@ -711,7 +711,9 @@ export function nearbyLabelOf(value) {
   if (text === null || looksSensitive(text) !== null) return null
   if (!looksStreetAddress(text)) return text
   const full = labelVerdicts(text)
-  if (full === labelVerdicts(null)) return null
+  // r4 (cu-researcher): a text that is all address ('221B Baker Street') is a displayed value, whatever its street word
+  // makes policy read; only words outside the address can name the field.
+  if (full === labelVerdicts(null) || cutAddress(text, '') === '') return null
   for (const stand of ['', 'street address']) {
     const cut = cutAddress(text, stand)
     if (cut !== '' && !looksStreetAddress(cut) && labelVerdicts(cut) === full) return cut
@@ -758,6 +760,11 @@ const LEADING_STREET_WORDS = 'Calle|Avenida|Av\\.|Via|Viale|Piazza|Corso|Strada|
 // not '-platz', whose compounds are everyday words ('Parkplatz 3', 'Arbeitsplatz 2').
 const TRAILING_STREET_WORDS = 'straße|strasse|str\\.|weg|gasse|allee|straat|gracht|laan|gatan|gata|gade|vej|' +
   'veien|vegen|utca|katu|tie'
+// CU-374 r4: the UK's postcode areas (outward code letters), so a product size ('PS5 1TB', 'MP3 4GB') is not a postcode.
+const UK_POSTCODE_AREAS = 'AB|AL|BA|BB|BD|BH|BL|BN|BR|BS|BT|B|CA|CB|CF|CH|CM|CO|CR|CT|CV|CW|DA|DD|DE|DG|DH|DL|DN|DT|DY|' +
+  'EC|EH|EN|EX|E|FK|FY|GL|GU|GY|G|HA|HD|HG|HP|HR|HS|HU|HX|IG|IM|IP|IV|JE|KA|KT|KW|KY|LA|LD|LE|LL|LN|LS|LU|L|ME|MK|ML|M|' +
+  'NE|NG|NN|NP|NR|NW|N|OL|OX|PA|PE|PH|PL|PO|PR|RG|RH|RM|SA|SE|SG|SK|SL|SM|SN|SO|SP|SR|SS|ST|SW|SY|S|TA|TD|TF|TN|TQ|TR|' +
+  'TS|TW|UB|WA|WC|WD|WF|WN|WR|WS|WV|W|YO|ZE'
 const ADDRESS_SHAPES = [
   // A house number, one to five capitalised name words, then a street type: '1 Infinite Loop', 'Ship to 221B Baker
   // Street', and the number after a unit's slash: 'Unit 5/12 George St'.
@@ -775,8 +782,9 @@ const ADDRESS_SHAPES = [
   /,\s*[A-Z]{2}\s+\d{5}(?:-\d{4})?\b/,
   // An Australian state and postcode: 'Sydney NSW 2000'.
   /\b(?:NSW|VIC|QLD|SA|WA|TAS|NT|ACT)\s+\d{4}\b/,
-  // A UK postcode after its town or a comma, ending the text: 'London SW1A 1AA' (r3: not a size, 'PS5 1TB').
-  /(?:,\s*|\p{Lu}\p{Ll}+\s+)[A-Z]{1,2}\d[A-Z\d]?\s+\d[A-Z]{2}\s*$/u,
+  // A UK postcode - a real postcode area, then the inward code's digit and two letters - alone ('SW1A 2AA', r4) or
+  // after its town or a comma, ending the text ('London SW1A 1AA'); never a size ('PS5 1TB', r3: PS is no area).
+  new RegExp(`(?:^\\s*|,\\s*|\\p{Lu}\\p{Ll}+\\s+)(?:${UK_POSTCODE_AREAS})\\d[A-Z\\d]?\\s+\\d[ABD-HJLNP-UW-Z]{2}\\s*$`, 'u'),
   // A postal-code line: four to six digits, then a capitalised town: '10115 Berlin', '75001 Paris'.
   /(?:^|[\s,])\d{4,6}\s+\p{Lu}\p{Ll}+/u,
   // A Japanese postcode ('150-0002') and a chome address ('1-2-3 Shibuya').

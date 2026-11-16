@@ -99,13 +99,21 @@ test('CU-374 (cu-researcher): a street address shown beside a box is a displayed
   }
 })
 
+test('CU-374 r4 (cu-researcher): a text that is all address reads as none - an alphanumeric house number, a bare UK postcode', async () => {
+  for (const address of ['221B Baker Street', '12A Station Road', 'SW1A 2AA', 'M1 1AE', '1 Infinite Loop']) {
+    const { hit, focused } = await read({ ...BOX, nearbyLabel: address })
+    assert.deepEqual([hit.nearbyLabel, focused.nearbyLabel], [null, null], address)
+  }
+})
+
 test('CU-374 r3 (cu-developer-three F1): a label that names a sensitive field keeps naming it - dropping an address never removes an ask', async () => {
   const policy = createPolicy({ sitePolicy: () => 'allow' })
   const judge = (nearbyLabel, typed) => {
     const v = policy.classify({ type: 'type', text: typed }, { url: `app:${FIXTURE}`, target: { origin: FIXTURE, role: 'AXTextField', name: null, editable: true, nearbyLabel } })
     return v.decision === 'allow' ? 'allow' : v.class
   }
-  for (const label of ['Enter the 6-digit code we sent via SMS to 555-0123', 'Security code sent via email 2', 'Password for Parkplatz 3', 'PIN for 12 Baker Street', 'Ship to 221B Baker Street']) {
+  for (const label of ['Enter the 6-digit code we sent via SMS to 555-0123', 'Security code sent via email 2', 'Password for Parkplatz 3', 'PIN for 12 Baker Street', 'Ship to 221B Baker Street',
+    'Bank account for 742 Evergreen Terrace', 'Passcode for Flat 3, 12 High St', 'Credit card for PO Box 742', 'Tax ID for 10115 Berlin entity', "Mother's maiden name (Via Roma 10)"]) {
     const read1 = (await read({ ...BOX, nearbyLabel: label })).hit.nearbyLabel
     for (const typed of ['123456', 'hunter2x', 'Pat']) assert.equal(judge(read1, typed), judge(label, typed), `${label} / ${typed}: the read label decides as the shown one`)
   }
