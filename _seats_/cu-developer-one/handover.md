@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-11T21:20:00Z
+modified: 2026-11-16T11:45:00Z
 level: L1
-version: 3.28.0
+version: 3.42.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,31 +15,33 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; never drives the desktop. State at 21:20Z, 11 November.
+session worktree plus `--review` worktrees; never drives the desktop. State at 11:45Z, 16 November.
 
 ## Landed
 
-- Today CU-483..521 table / canonical PRs (#633..#731), CU-507's web unit and 'Continue to'; handover 3.27.0.
+- CU-483..561 table / canonical PRs (#633..#833), CU-462 (#742, #841), CU-429 rounds 2-5.
 
-## Open (Highs first)
+## Open (built before triage; cu-coordinator rules priority)
 
-- Lane: #736 (CU-523), #741 (CU-524 r2), #737 (0.2.70; my policy OK given), #739, CU-507 read-only row, #735 (CU-429 r2, both OKs), CU-522, fillers (#742 CU-462 r2).
-- Asked cu-coordinator: 'Security checkup' (#741 r3 or CU-429 round 3); CU-462's shareable-link scope.
-- CU-429 round 3 list: 'View order', 'Call forwarding', 'Enable auto-merge', chat 'Add member(s) to group', authenticator 'View', 'Security checkup'.
-- Stacked PRs: retarget to main as each base lands; plain merge only on CONFLICTING outside a gate.
-- Never 'linear.py release' a landed issue (it sets Todo); log own state moves hourly.
-- Mediums after: #523, #558, CU-432.
+- Both OKs: #843, #846, #848, #856. Researcher OK (live due): #853, #862, #863, #866, #876. In review: #847 r5,
+  #854 r10. NOT OK on private sets: #851 (verb width - ruling asked), #859 (r6 attempt discarded). To rebuild:
+  #865, #877. Unbuilt: CU-578/579/582/583.
+- METHOD: run `class-sweeps.mjs <class>` on main and the merge; cu-researcher's private sets decide. Build
+  each class from a SOURCED, checked-in vocabulary (thesaurus / platform catalogue) x an object test, not
+  regex growth; older classes lead (reclass CHANGED = narrowing, fix first).
+- Rulings asked: 'Clear / Reset project'; three weak purchase CTAs; bare release verbs. Parked: 'Send <amount>' (after #847); own-storage exports (CU-573) for the ruling.
 
 ## Lessons
 
-- Run the whole agent-core suite before every push, fail 0 in the same command.
-- Fail closed on unread fields: test 'not exactly the safe value', never '=== undefined'.
-- 'Named limit' is for allow negatives only; an under-ask that stays is a filed issue plus a guide line.
-- Push only on the hygiene gate's exit status 0, run unpiped; chain every step with && (a failed merge must stop).
-- Read the inbox for a ruling before pushing to an OK'd PR.
-- Check a claim in the code before sending it; run the full suite on the exact tree you push.
+- Probe concrete objects (handles, hosts, emails, numbers, paths) and case variants before the first push.
+- Build the CLASS, not the issue's examples: verb lexicons and synonym folds, object vocabularies read anywhere,
+  wrappers stripped to a fixed point.
+- A new broad class is a late UNION in the policy (after every row, only on a name nothing else classed), so it only
+  adds; probes (CU-429 keep-refusal, brand strip) call it on derived names - test those (#854 r6, #859).
+- EVERY node run goes through the run guard with the inbox checked in the same call; none from a phase-2 START until
+  MERGED. The guard lives beside the worktree (`<worktree>.guard/`).
 
 ## Tools
 
-- Inbox: only `~/dtadpole/reflection/_tools_/session-inbox/session-inbox.py check|read --me cu-developer-one` (mark read with `--done`); also the old store until REF #6167 merges them.
+- Inbox: `~/dtadpole/reflection/_tools_/session-inbox/session-inbox.py check|read --me cu-developer-one` (mark read with `--done`).
 - Before every push: `node ~/dtadpole/heddle/_tools_/public-hygiene/gate.mjs --range origin/main..HEAD`.

@@ -70,6 +70,13 @@ test('#702 round 2 (cu-researcher 16:24Z): the title gets the full canonical for
   assert.deepEqual(at('https://cloud.example/x', 'OK', 'Heads up', 'This will refresh the page.'), [])
 })
 
+test('#702 round 3 (cu-developer-three 16:35Z): a sentence about NOT confirming is not judged for the confirm', () => {
+  const desk = (name, dialogName, dialogDescription) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: 'desktop://', frontmostBundleId: 'com.example.notes', target: { role: 'AXButton', name, origin: 'com.example.notes', dialogName, dialogDescription } }); return v.decision === 'allow' ? [] : (v.classes ?? [v.class]) }
+  assert.deepEqual(desk('OK', 'Do you want to save the changes made to the document "Notes"?', "Your changes will be lost if you don't save them."), [])
+  assert.deepEqual(desk('OK', 'Save changes?', 'Unsaved work will be deleted unless you save it.'), [])
+  assert.ok(desk('OK', 'Erase "Untitled"?', 'This will erase all data on the disk.').includes('delete'), 'a plain consequence still asks')
+})
+
 test('CU-507 follow-up (cu-coordinator 18:21Z): Continue to / Proceed to inside a dialog asks the union of its rest and the title', () => {
   const at = (name, dialogName, dialogDescription) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: 'https://cloud.example/storage', target: { role: 'button', name, dialogName, dialogDescription } }); return v.decision === 'allow' ? [] : (v.classes ?? [v.class]) }
   assert.ok(at('Continue to empty bucket', 'Empty bucket?', '').includes('delete'), 'rest + title')

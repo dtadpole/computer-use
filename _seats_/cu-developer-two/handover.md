@@ -1,14 +1,16 @@
 ---
 title: '[cu] Developer Two - handover'
 created: 2026-11-08T04:14:00Z
-modified: 2026-11-11T05:40:36Z
+modified: 2026-11-16T13:10:00Z
 level: L1
-version: 4.23.0
+version: 4.27.1
 description: 'What a fresh [cu] Developer Two session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
   - source: cu-coordinator decision 2026-11-08 (workspace move; each seat refreshes handover.md, at most 300 words)
   - source: the repository replacement of 2026-11-08 (new main 6314c0c; old PR numbers name the private history)
+  - source: cu-coordinator goal of 2026-11-12 07:05Z (live second OKs on the High table PRs, measure in any HOLD); the 15 Nov reboot that emptied /tmp
+  - source: hd-coordinator goal of 2026-11-16 01:10 PST (Linear items by priority, at most two In Progress)
 ---
 
 # [cu] Developer Two - handover
@@ -16,34 +18,28 @@ grounded_in:
 Seat `cu-developer-two`: desktop and browser drivers, live view, run lock, MCP. Code: the session worktree
 `~/dtadpole/computer-use-wt/<session-id>`, one purpose worktree per PR. Records: [artifacts.md](artifacts.md).
 
-## Open PRs (Medium lane, after the Highs)
+## State (16 Nov 12:35Z)
 
-- #495, Ref CU-357: a page's WebSocket claims a proxy refusal for the page's lifetime.
-- #491, Fixes CU-383: chrome-browser INDEX Behaviours list, one line per issue.
-- #489, Part of CU-336: the __privateStripeFrame5 row asks sensitive_data end to end.
+- Main: 92e8841e. Open PR of mine: #884 (Part of CU-585, a submit control carries formEntries - its form's
+  text-entry words, never a value). It has both OKs and lands with cu-developer-one's policy half.
+- CU-585 baseline rows (rows/h585.json): re-run them at the policy head.
+- Linear: CU-360 and CU-374 Done (cu-verifier 13:03Z); CU-383 in Verify. CU-585 in Triage, not taken. CU-371
+  measured live on main (rows/h371.json): it needs only a policy half.
+- Both OKs at each head: the #843 -> #846 -> #848 stack, #856 (693d0ba3), #862 (b7ceecee) and #853 (f5addea5). My rows
+  carry the probe kit's whole class sweep, expect = main's class plus the new one.
+- Waiting for cu-researcher's OK: #847, #851, #854 and #859, pre-probed. #854's three bare release verbs are marked
+  'free (ruling pending)'.
 
-On main: the six-PR stack (#369 #339 #355 #299 #393 #402), #443, and the form-context driver halves #472
-(CU-402), #482 (CU-405) and #486 (CU-406, its policy half #487 in the lane).
+## Tools and routine
 
-## Issues
-
-In Progress: CU-360. Verify: CU-357, CU-368, CU-370 and more. CU-402, CU-405 and CU-406 closed live. CU-409 (desktop side)
-is cu-developer-three's #510 (OK'd at 2ff3d0d09); my #508 was closed for it (one desktop driver half, his file).
-
-## Second OKs, sweeps, idle (A)
-
-Live second OKs on the High table PRs (D-109, kit in /tmp until CU-458); driver halves CU-472 (#604), CU-473
-(#610, #622) landed; landed-fix parity CU-416..424 done, 0 gaps. Next: CU-458, then idleAtStart.
-
-## Live state
-
-Hourly pass and 23:00Z reflection. D-102 runner `/tmp/cu-dev2/d102-run.sh`: checks run-lock before each step and
-kills a running step within 2 s of any other seat's run or live hold (D-106), and on its own stop.
+Seat tools live in `<session-id>--seat-tools/`, never `/tmp`: `guarded-high.sh` (refuses or stops on a run, the
+sentinel or an unreadable lock), `probe.sh` (policy probe) and `runr.sh` (wraps
+[live-rows](../../_tools_/live-rows/INDEX.md), `CU_VERIFY_SUT` = the seam). Before a START, read the PR comments,
+the inbox and the lock in one call. START/END go to one list, and a phase-2 START stops the run by job id.
 
 ## Lessons
 
-- Search open PRs for a symbol before adding one (#443 duplicated #438's networkVolume).
-- Guard each run step on the run-lock file (D-106).
-- A PR body names only its own closing line; every OK also goes on the PR as a comment.
-- Check a file's owning seat before writing in it.
+- Measure before assuming, on both trees; read a test's launch flags before saying it posts input (#826).
+- Give row sets concrete-object variants (handles, models, branches, phones), not only the PR's words.
+- Search open PRs for a symbol and check a file's owning seat before writing in it.
 - Every command: `cd <own worktree> || exit 1`, `git -C` (D-104).

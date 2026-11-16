@@ -38,3 +38,16 @@ test('#746 round 3 (cu-researcher 21:46Z): the remaining restore forms', () => {
   for (const name of ['Restore to a snapshot', 'Roll back to snapshot', 'Rollback to a previous backup', 'Restore database']) assert.ok(classesOf(name).includes('delete'), name)
   for (const name of ['Snapshots', 'Restore', 'Database']) assert.ok(!classesOf(name).includes('delete'), name)
 })
+
+test("CU-531 (cu-coordinator 23:21Z): roll back / revert to this point and the database ask delete; bare forms stay free", () => {
+  for (const name of ['Roll back to this point', 'Roll back to a point', 'Revert to this point', 'Roll back database', 'Rollback database', 'Revert database', 'Revert the database']) {
+    assert.ok(classesOf(name).includes('delete'), name)
+    assert.ok(classesOf(name, true).includes('delete'), `Space: ${name}`)
+  }
+  for (const name of ['Roll back', 'Rollback', 'Revert', 'Revert changes', 'Roll back deploy']) assert.ok(!classesOf(name).includes('delete'), name)
+})
+
+test('#759 round 2 (cu-researcher 23:26Z): the determiner is optional', () => {
+  for (const name of ['Revert to point in time', 'Roll back to point in time', 'Roll back to the time', 'Restore to point in time']) assert.ok(classesOf(name).includes('delete'), name)
+  for (const name of ['Point in time', 'Roll back time']) assert.ok(!classesOf(name).includes('delete'), name)
+})

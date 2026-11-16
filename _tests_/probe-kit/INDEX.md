@@ -1,8 +1,8 @@
 ---
 title: probe-kit test suite
 created: 2026-11-09T23:30:00Z
-modified: 2026-11-10T03:22:00Z
-version: 0.2.1
+modified: 2026-11-16T10:25:00Z
+version: 0.6.0
 description: "CU-384: the probe kit's drift test - every landed field is still named by its producing file, pending fields are still pending, the browser builders match describeElement, and the kit judges through the real components."
 grounded_in:
   - source: _tools_/probe-kit/INDEX.md@0.1.0
@@ -10,10 +10,18 @@ grounded_in:
 
 # `probe-kit` tests
 
-`node --test _tests_/probe-kit/shapes.test.mjs _tests_/probe-kit/loop.test.mjs`. loop.test.mjs drives the real runTask through `throughLoop`: a Finder file dragged into Slack is declined, one moved within Finder is done, and Return on a focused Delete button is declined (the key's target is the loop's focus). No browser, no helper: the source check reads files, the
+`node --test _tests_/probe-kit/shapes.test.mjs _tests_/probe-kit/loop.test.mjs _tests_/probe-kit/sweeps.test.mjs _tests_/probe-kit/reclass.test.mjs _tests_/probe-kit/heldout.test.mjs _tests_/probe-kit/test-matrices.test.mjs _tests_/probe-kit/lowering-check.test.mjs _tests_/probe-kit/class-sweeps.test.mjs`. class-sweeps.test.mjs pins each class's shape (an issue, a route, a place, at least 20 distinct phrasings), the runner on all three routes, the diff, and the CLI's exit codes; it asserts no policy verdict. sweeps.test.mjs checks that every ruled family keeps a fixture row asking, that a free row is skipped, and that the unruled family is only reported; reclass.test.mjs checks the map and the lost / gained / changed / narrowed split and lostEquals; heldout.test.mjs checks web, dialog and desktop items and the out-of-scope rule; lowering-check.test.mjs checks that a wrong LOWER, KEEP or CLASS item fails. loop.test.mjs drives the real runTask through `throughLoop`: a Finder file dragged into Slack is declined, one moved within Finder is done, and Return on a focused Delete button is declined (the key's target is the loop's focus). No browser, no helper: the source check reads files, the
 describeElement check runs the real page script over a stub element, and the policy check uses webPolicy and
 deskPolicy. Mutants: renaming a SOURCES field to one no file names fails the first test; marking a landed field
 pending fails the second.
+
+The test-matrices check builds a synthetic tree (the cap and the page rule) and guards this tree's coverage (at least 100
+matrices and 300 asking rows); mutants: narrowing the page pattern or ignoring the cap fails one test each; a cap that is not a whole number >= 1 is refused
+(RangeError, CLI exit 2).
+
+The held-out check reads a union want 'a+b' as every class present, in any order; mutant: 'every' -> 'some' fails it.
+
+The sweep diff names a newly free form even when the family counts stay equal; mutant: report every after-form fails it. The CLI exits 2 on a usage error (an unreadable diff input, a --json OUT naming a matrix) and never overwrites a matrix.
 
 ## Read next
 
