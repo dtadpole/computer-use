@@ -376,6 +376,9 @@ enum Accessibility {
       if let name = words.name { shape["dialogName"] = .string(name) }
       if let description = words.description { shape["dialogDescription"] = .string(description) }
     }
+    // CU-588 (the desktop half of CU-585): a button carries the words its sheet's or window's text entries show
+    // (FormEntries) - labels, placeholders and help only, never an entry's value. Present only when read.
+    if DialogText.applies(role: role), let entries = formEntries(of: element) { shape["formEntries"] = .array(entries.map { .string($0) }) }
     // CU-154: a menu item's key equivalent, so Copy / Cut / Paste are known in any language (Command-V is a paste
     // whatever the title says).
     if role == "AXMenuItem", let key = KeyEquivalent.shape(char: string(element, "AXMenuItemCmdChar"),
@@ -548,6 +551,32 @@ enum Accessibility {
       node = parent
     }
     return nil
+  }
+
+  /// CU-588: a button's form entries (FormEntries.pick) - in its nearest sheet or dialog (DialogText.isContainer), else its
+  /// window: the text entries a breadth-first walk finds (at most FormEntries.maxScan nodes read, never into a control's
+  /// subtree, at most FormEntries.maxEntries entries), each by its label element's shown words, AXDescription,
+  /// AXPlaceholderValue and AXHelp. An entry's own AXValue is never read. nil when nothing reads.
+  private static func formEntries(of element: AXUIElement) -> [String]? {
+    var root: AXUIElement?
+    var node = element
+    for _ in 0..<DialogText.maxDepth {
+      guard let parent = elementAttribute(node, "AXParent") else { break }
+      let role = string(parent, "AXRole")
+      if DialogText.isContainer(role: role, subrole: string(parent, "AXSubrole")) { root = parent; break }
+      if role == "AXWindow" || role == "AXApplication" { break }
+      node = parent
+    }
+    guard let container = root ?? elementAttribute(element, "AXWindow") else { return nil }
+    let entries = DialogText.walk(container, limit: FormEntries.maxScan, children: children, role: { string($0, "AXRole") })
+      .filter { FormEntries.isEntry(role: string($0, "AXRole")) }
+      .prefix(FormEntries.maxEntries)
+    let labels = entries.map { entry -> [String?] in
+      let titled = elementAttribute(entry, "AXTitleUIElement").flatMap { label in string(label, "AXValue") ?? string(label, "AXTitle") }
+      return [titled, string(entry, "AXDescription"), string(entry, "AXPlaceholderValue"), string(entry, "AXHelp")]
+    }
+    let picked = FormEntries.pick(Array(labels))
+    return picked.isEmpty ? nil : picked
   }
 
   /// CU-361: the static text beside an entry in layout (NearbyLabel.pick) - its window's AXStaticText descendants (at
