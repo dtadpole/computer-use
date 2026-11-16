@@ -23,3 +23,21 @@ test('CU-565: check-mark, bullet and metadata tails keep the row asking', () => 
   }
   for (const name of ['Free', 'Pro \u2713', 'Read more \u00b7 2 min', 'Plans - Free']) assert.deepEqual(classesOf(name), [], name)
 })
+
+test('CU-565 widened (cu-researcher 01:57Z): leading list numbers, bracketed badges and plan tags keep the row asking', () => {
+  for (const base of ['Change IBAN', 'Turn off 2SV', 'Enable RDP', 'Delete account', 'Install now']) {
+    const want = classesOf(base)
+    assert.notDeepEqual(want, [], `base asks: ${base}`)
+    for (const head of ['1. ', '2) ', '[Beta] ', '(New) ', 'Pro \u00b7 ', 'New: ', 'Premium - ']) assert.deepEqual(classesOf(`${head}${base}`), want, `${head}${base}`)
+  }
+  for (const name of ['1. Overview', '[Beta] Settings', 'Pro \u00b7 Plans', 'New: Inbox']) assert.deepEqual(classesOf(name), [], name)
+})
+
+test("#843 round 2 (cu-researcher 02:01Z): ' ✓ Done' and a price after a bar keep the row asking", () => {
+  for (const base of ['Request withdrawal', 'Delete account', 'Open RDP', 'Keep anyway']) {
+    const want = classesOf(base)
+    for (const tail of [' \u2713 Done', ' \u2714 Saved']) assert.deepEqual(classesOf(`${base}${tail}`), want, `${base}${tail}`)
+    // A shown price may add purchase (the amount rule) - the row's own classes stay.
+    for (const tail of [' | $9.99', ' \u00b7 \u20ac5/mo']) for (const cls of want) assert.ok(classesOf(`${base}${tail}`).includes(cls), `${base}${tail}: ${cls}`)
+  }
+})

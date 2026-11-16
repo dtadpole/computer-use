@@ -784,9 +784,20 @@ const TRAILING_WRAP = /(?:\s*(?:right\s+now|now|please|\.{2,}|\u2026|!+|\((?:rec
 // ('New', 'Beta', 'Preview', 'Updated'); a trailing parenthetical ('(opens in a new window)', '(3)').
 const TRAILING_BADGE = /(?:\s+(?:new|beta|preview|updated|hot)!?)+\s*$/i
 // CU-565 (cu-researcher 01:47Z; triage pending): a trailing metadata segment after a middle dot, bullet, bar or dash - a plan tag
-// ('- Free', '— Pro', '· Recommended') or a duration ('· 2 min', '• 5 mins ago') - strips like the other wrappers, so it never frees
+// ('- Free', '— Pro', '· Recommended'), a duration ('· 2 min', '• 5 mins ago'), a price ('| $9.99', '· €5/mo') or a check-mark status
+// (' ✓ Done', cu-researcher 02:01Z) - strips like the other wrappers, so it never frees
 // an asking row. The raw name is still judged first; this only adds a form.
-const TRAILING_META = /(?:\s+[\u00b7\u2022|\u2013\u2014-]\s*(?:pro|free|premium|plus|recommended|popular|best\s+value|new|beta|\d+\s*(?:s|secs?|seconds?|m|mins?|minutes?|h|hrs?|hours?|d|days?)(?:\s+ago)?))+\s*$/i
+// CU-565 widened (cu-researcher 01:57Z): the LEADING side of the same root - a list number ('1. ', '2) '), a bracketed badge ('[Beta] ',
+// '(New) ') or a plan tag with a separator ('Pro · ', 'New: ') before the row.
+const LEADING_META = /^\s*(?:\d{1,2}[.)]\s+|[\[(](?:beta|new|pro|premium|plus|free|preview|recommended|popular)[\])]\s*|(?:pro|premium|plus|beta|new|free|preview)\s*[\u00b7\u2022|:\u2013\u2014-]\s+)+/i
+/** CU-565: the name without a leading list number, bracketed badge or plan tag, or a trailing metadata segment ('' when there is none). */
+export function metaStripped(name) {
+  const text = String(name ?? '')
+  const out = text.replace(LEADING_META, '').replace(TRAILING_META, '').trim()
+  // A price range or a bare amount ('$10 - $20') is not a row with a tail: no letter, no form (cu-researcher 00:51Z's filters stay free).
+  return out !== '' && out !== text.trim() && /\p{L}/u.test(out) ? out : ''
+}
+const TRAILING_META = /(?:\s*[\u2713\u2714\u2705]\s*(?:done|added|saved|on|enabled|active|selected|completed|verified|ready)|\s+[\u00b7\u2022|\u2013\u2014-]\s*(?:pro|free|premium|plus|recommended|popular|best\s+value|new|beta|\d+\s*(?:s|secs?|seconds?|m|mins?|minutes?|h|hrs?|hours?|d|days?)(?:\s+ago)?|[$\u20ac\u00a3\u00a5]\s?\d[\d,.]*(?:\s*\/\s*(?:mo|month|yr|year|wk|week))?))+\s*$/i
 // #825 r3 (cu-coordinator 08:21Z): a parenthesis glued to a word is part of the word - '401(k)', '403(b)' - never a trailing note, so the
 // wrappers after it strip and the row still sees '401(k)'.
 const TRAILING_PAREN = /(?:\s*(?<![\p{L}\p{N}])\([^()]{1,40}\))+\s*$/u
@@ -811,7 +822,7 @@ function leadingStripped(name) {
 export function canonicalConfirm(name) {
   const lines = String(name ?? '').split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean)
   const text = lines[0] ?? ''
-  return text.replace(LEADING_ICONS, '').replace(LEADING_PART, '').replace(ACK_CONNECTOR, '').replace(CONFIRM_PREFIX, '').replace(CTA_LEAD_IN, '').replace(TRAILING_QUALIFIER, '').replace(TRAILING_KEYS, '').replace(TRAILING_WRAP, '').replace(TRAILING_PAREN, '').replace(TRAILING_BADGE, '').replace(TRAILING_META, '').replace(TRAILING_WRAP, '').trim()
+  return text.replace(LEADING_ICONS, '').replace(LEADING_META, '').replace(LEADING_PART, '').replace(ACK_CONNECTOR, '').replace(CONFIRM_PREFIX, '').replace(CTA_LEAD_IN, '').replace(TRAILING_QUALIFIER, '').replace(TRAILING_KEYS, '').replace(TRAILING_WRAP, '').replace(TRAILING_PAREN, '').replace(TRAILING_BADGE, '').replace(TRAILING_META, (m, off, str) => (/\p{L}/u.test(str.slice(0, off)) ? '' : m)).replace(TRAILING_WRAP, '').trim()
 }
 /** #609 round 2 (cu-researcher 02:24Z): the canonical forms to try, in order - the unwrapped name, then (only if that asks nothing)
  * its first sentence. Additive: a Title-Case object ('Turn off Safe Browsing') is never lost to the sentence cut. */
@@ -918,8 +929,8 @@ export function sectionLabelStripped(name) {
 // only as the fully stripped 'Install'.
 function insteadStripped(name) {
   const first = String(name ?? '').split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean)[0] ?? ''
-  const out = first.replace(/(?:\s+instead|\s*[\u25b8\u25b9\u25b6\u25ba\u276f\u2023\u203a\u00bb\u2192\u2713\u2022]|\s+[\u00b7\u2022|\u2013\u2014-]\s*(?:pro|free|premium|plus|recommended|popular|best\s+value|new|beta|\d+\s*(?:s|secs?|seconds?|m|mins?|minutes?|h|hrs?|hours?|d|days?)(?:\s+ago)?))+\s*[.!]?\s*$/iu, '').trim()
-  return out !== first ? out : ''
+  const out = first.replace(LEADING_META, '').replace(/(?:\s+instead|\s*[\u25b8\u25b9\u25b6\u25ba\u276f\u2023\u203a\u00bb\u2192\u2713\u2022]|\s*[\u2713\u2714\u2705]\s*(?:done|added|saved|on|enabled|active|selected|completed|verified|ready)|\s+[\u00b7\u2022|\u2013\u2014-]\s*(?:pro|free|premium|plus|recommended|popular|best\s+value|new|beta|\d+\s*(?:s|secs?|seconds?|m|mins?|minutes?|h|hrs?|hours?|d|days?)(?:\s+ago)?|[$\u20ac\u00a3\u00a5]\s?\d[\d,.]*(?:\s*\/\s*(?:mo|month|yr|year|wk|week))?))+\s*[.!]?\s*$/iu, '').trim()
+  return out !== first && /\p{L}/u.test(out) ? out : ''
 }
 export function canonicalForms(name) {
   const inst = insteadStripped(name)
