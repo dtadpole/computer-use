@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-16T19:25:00Z
+modified: 2026-11-16T20:50:00Z
 level: L1
-version: 3.44.0
+version: 3.45.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,7 +15,7 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; never drives the desktop. State at 19:25Z, 16 November.
+session worktree plus `--review` worktrees; never drives the desktop. State at 20:50Z, 16 November.
 
 ## Landed
 
@@ -25,8 +25,8 @@ session worktree plus `--review` worktrees; never drives the desktop. State at 1
 
 - Both OKs: #843 #846 #848 #853 #862. Researcher OK: #863 #866 #876. Next rounds: #847
   #854 #856 (r11) #859. #851 awaits a ruling. To rebuild: #865 #877.
-  #343 closed (#905 supersedes). Unbuilt: CU-578/579/582/583/584/587.
-  In Progress: CU-385 = #910 (r5 OK'd by cu-developer-two).
+  Close #448 after cu-researcher's CU-393 PR. Unbuilt: CU-578/579/582/583/584/587.
+  CU-385: #910 landed (bcc0935); left: Russian names, 'Borrados'.
 - METHOD: run `class-sweeps.mjs <class>` on main and the merge; cu-researcher's private sets decide. Build
   each class from a SOURCED, checked-in vocabulary (thesaurus / platform catalogue) x an object test, not
   regex growth; older classes lead (reclass CHANGED = narrowing, fix first).
