@@ -19,3 +19,10 @@ test('CU-570: purchase CTAs ask purchase', () => {
 test('CU-570 negatives: the nouns and neighbours stay free', () => {
   for (const name of ['Support', 'Contact support', 'Sponsors', 'Our sponsors', 'Backers', 'Funding', 'Grab', 'Lease terms', 'Extend', 'Extend selection', 'Hire', 'Finance', 'Finance team', 'Fund details', 'Patron benefits', 'Grab attention', 'Support center']) assert.deepEqual(classesOf(name), [], name)
 })
+
+test('#853 round 2 (cu-researcher 04:39Z): the class - other funding verbs, keeping a paid membership, taking a priced deal', () => {
+  for (const name of ['Bankroll this project', 'Underwrite this campaign', 'Endow the project', 'Subsidize this creator', 'Crowdfund this project', 'Chip in for this project', 'Pitch in to the campaign', 'Invest in this project', 'Patronize this artist',
+    'Keep my membership', 'Continue subscription', 'Resume my subscription', 'Reactivate membership', 'Retain premium', 'Stay subscribed', 'Stay a member', 'Remain a supporter', 'Rejoin premium',
+    'Take the deal', 'Take this offer', 'Get the deal', 'Grab the discount', 'Lock in this deal', 'Activate the offer', 'Take the special offer', 'Accept discount']) assert.ok(classesOf(name).includes('purchase'), name)
+  for (const name of ['Keep my settings', 'Continue reading', 'Resume playback', 'Stay signed in', 'Take a photo', 'Accept cookies', 'Get the app', 'Deals', 'Offers', 'Invest', 'Crowdfunding']) assert.ok(!classesOf(name).includes('purchase'), name)
+})

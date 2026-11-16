@@ -827,7 +827,12 @@ function withoutDeterminers(text) {
 const VERB_SYNONYMS = [[/^(\s*)modify\b/i, '$1change'], [/^(\s*)(?:update|edit)\b(?!\s+(?:all|now|available)\b)/i, '$1change'], [/^(\s*)(?:display|reveal)\b/i, '$1show'], [/^(\s*)give\b/i, '$1grant'],
   [/^(\s*)begin\b/i, '$1start'], [/^(\s*)ask\s+for\b/i, '$1request'],
   // #627 round 2 (cu-researcher 05:08Z): creating an account is not adding one ('Create account' stays free).
-  [/^(\s*)create\b(?!\s+(?:an?\s+|new\s+|your\s+|my\s+)?accounts?\b)/i, '$1add']]
+  [/^(\s*)create\b(?!\s+(?:an?\s+|new\s+|your\s+|my\s+)?accounts?\b)/i, '$1add'],
+  // #853 r2 (cu-researcher 04:39Z: bind the class): every FUNDING verb reads as 'fund' (bankroll, underwrite, endow, subsidize, crowdfund,
+  // chip / pitch in (for / to), invest in, patronize, finance), and KEEPING a paid membership reads as renewing it (keep / continue /
+  // resume / reactivate / restart / maintain / retain my subscription / membership / plan / premium / tier / access).
+  [/^(\s*)(?:bankroll|underwrite|endow|subsidi[sz]e|crowdfund|chip\s+in(?:\s+(?:for|to|on))?|pitch\s+in(?:\s+(?:for|to|on))?|invest\s+in|patroni[sz]e)\b/i, '$1fund'],
+  [/^(\s*)(?:keep|continue|resume|reactivate|restart|maintain|retain|extend)\b(?=\s+(?:my\s+|your\s+|the\s+|this\s+)?(?:paid\s+|premium\s+|pro\s+|plus\s+)?(?:subscription|membership|plan|premium|pro|plus|tier|access|pass)s?\b)/i, '$1renew']]
 function withVerbSynonym(text) {
   for (const [pattern, replacement] of VERB_SYNONYMS) if (pattern.test(text)) return text.replace(pattern, replacement)
   return text
@@ -1394,7 +1399,13 @@ function grammarClassesOf(name, role = '') {
     || /^\s*commission\s+(?:the\s+|this\s+|my\s+|your\s+|our\s+|a\s+|an\s+)?(?:artist|piece|painting|portrait|artwork|work|illustration|design|this\s+artist)\s*$/i.test(raw)
     || /^\s*(?:grab|snag)\s+(?:it|this|one|yours|the\s+deal|this\s+deal|the\s+offer|this\s+offer|deal|offer)(?:\s+(?:now|today|instead))?\s*$/i.test(raw)
     || /^\s*extend\s+(?:the\s+|this\s+|my\s+|your\s+|our\s+|a\s+|an\s+)?(?:subscription|membership|plan|rental|lease|stay|warranty|booking|reservation|license|licence|coverage|protection|hosting|domain)s?(?:\s+(?:now|today|instead))?\s*$/i.test(raw)
-    || /^\s*get\s+lifetime\s+(?:access|deal|license|licence|plan|membership|pass)\s*$/i.test(raw)) return ['purchase']
+    || /^\s*get\s+lifetime\s+(?:access|deal|license|licence|plan|membership|pass)\s*$/i.test(raw)
+    // #853 r2: staying a paying member in other words, and TAKING a priced deal (take / accept / get / grab / snag / lock in / activate the
+    // deal / offer / discount / promo / bundle / special) - 'Claim deal' and 'Lock in price' stay with cu-coordinator's ruling. An
+    // older reading leads where one exists: 'Accept (this) offer' (a job offer, submit) and 'Resubscribe' (a mailing list, list-send).
+    || /^\s*renew\s+(?:my\s+|your\s+|the\s+|this\s+)?(?:paid\s+|premium\s+|pro\s+|plus\s+)?(?:subscription|membership|plan|premium|pro|plus|tier|access|pass)s?(?:\s+(?:now|today))?\s*$/i.test(raw)
+    || /^\s*(?:stay|remain)\s+(?:subscribed|a\s+(?:paid\s+|premium\s+)?(?:member|subscriber|supporter|patron))(?:\s+(?:now|today))?\s*$|^\s*re-?join\s+(?:premium|pro|plus)\s*$/i.test(raw)
+    || /^\s*(?:take|accept|get|grab|snag|lock\s+in|activate|unlock)\s+(?:the\s+|this\s+|that\s+|my\s+|your\s+|our\s+|an?\s+)?(?:(?:special|limited|exclusive|holiday|annual|bundle|upgrade|introductory|launch|early-?bird)\s+)?(?:deal|offer|discount|promo|promotion|bundle|special|bargain)s?(?:\s+(?:now|today))?\s*$/i.test(raw)) return ['purchase']
   // CU-537 (High; cu-coordinator 01:06Z), table PR 38 - registrar DNS. PERMISSION everywhere: add / create / new (a / an) typed record
   // (MX, CNAME, TXT, NS, SRV, CAA, PTR, SPF, DKIM, DMARC, ALIAS; 'A' / 'AAAA' only in capitals, so 'Add a record' is not an A record);
   // the generic 'Add / Edit / Save record' (DNS pages) and turning a domain's auto-renew off (domain / registrar pages; a subscription's
