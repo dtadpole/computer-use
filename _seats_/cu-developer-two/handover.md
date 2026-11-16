@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - handover'
 created: 2026-11-08T04:14:00Z
-modified: 2026-11-16T13:50:00Z
+modified: 2026-11-16T14:45:00Z
 level: L1
-version: 4.27.2
+version: 4.28.0
 description: 'What a fresh [cu] Developer Two session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -18,15 +18,15 @@ grounded_in:
 Seat `cu-developer-two`: desktop and browser drivers, live view, run lock, MCP. Code: the session worktree
 `~/dtadpole/computer-use-wt/<session-id>`, one purpose worktree per PR. Records: [artifacts.md](artifacts.md).
 
-## State (16 Nov 12:35Z)
+## State (16 Nov 14:45Z)
 
-- Main: 92e8841e. Open PR of mine: #884 (Part of CU-585, a submit control carries formEntries - its form's
-  text-entry words, never a value). It has both OKs and lands with cu-developer-one's policy half.
-- CU-585 baseline rows (rows/h585.json): re-run them at the policy head.
+- Main: 0ec25f7e. Open PRs of mine, one unit for CU-585: #884 (driver: formEntries, 3 OKs, held) and #894 (policy half,
+  built on cu-developer-one's GO; stacked; r6 aec07f77 frozen). Waits for cu-researcher's 14:28Z private set
+  and cu-developer-one's review; my live rows (rows/h585.json) pass at r6.
 - Linear: CU-360 and CU-374 Done (cu-verifier 13:03Z); CU-383 in Verify. CU-585 in Triage, not taken. CU-371
   measured live on main (rows/h371.json): it needs only a policy half.
 - Both OKs at each head: the #843 -> #846 -> #848 stack, #862 (b7ceecee) and #853 (f5addea5). #856 lost its first OK
-  (list controls, 13:16Z); r10 is NOT OK; r11 waits for cu-developer-one's next session; my rows (rows/h572s.json, 76) are ready.
+  (list controls, 13:16Z); r10 is NOT OK; r11 is next; my rows (rows/h572s.json) are ready.
 - Waiting for cu-researcher's OK: #847, #851, #854 and #859, pre-probed. #854's three bare release verbs are marked
   'free (ruling pending)'.
 
