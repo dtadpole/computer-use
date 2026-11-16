@@ -36,3 +36,8 @@ test('#853 round 4 (cu-researcher 08:39Z): patron of, back on a platform, a name
   for (const name of ['Become a patron of Ana Lopez', 'Back Ana on Patreon', 'Grab the 4K TV deal', 'Support the band on Ko-fi', 'Take the Black Friday bundle offer']) assert.notDeepEqual(classesOf(name), [], name)
   for (const name of ['Lease agreement PDF', 'Fund performance', 'Fund prospectus', 'Lease agreement']) assert.ok(!classesOf(name).includes('purchase'), name)
 })
+
+test('#853 round 5 (cu-researcher 08:56Z): information nouns count in the plural', () => {
+  for (const name of ['Sponsor logos', 'Sponsor lists', 'Lease agreements', 'Fund reports']) assert.ok(!classesOf(name).includes('purchase'), name)
+  for (const name of ['Become a patron of Ana Lopez', 'Back Ana on Patreon', 'Grab the 4K TV deal', 'Sponsor @octocat', 'Lease the 2024 Model Y']) assert.ok(classesOf(name).includes('purchase') || classesOf(name).length > 0, name)
+})

@@ -1398,8 +1398,8 @@ function grammarClassesOf(name, role = '') {
     // lease / finance / charter / rent a concrete vehicle, home or item ('Lease the 2024 Model Y') - any object of up to five tokens but
     // an information noun ('Lease terms', 'Finance team', 'Sponsor logo').
     || /^\s*(?:sponsor|fund|lease|finance|charter|rent)\s+(?:the\s+|a\s+|an\s+|this\s+|my\s+)?\S+(?:\s+\S+){0,4}\s*$/i.test(raw)
-      && !/\b(?:terms|details|agreement|options|calculator|rates?|info|information|faq|policy|policies|team|dashboard|settings|department|report|logo|list|page|tiers?|guide|program|benefits|history|overview|summary)\s*$/i.test(raw)
-      && !/^\s*(?:sponsor|fund|lease|finance|charter|rent)\s+(?:the\s+)?(?:agreement|performance|prospectus|returns?|holdings|chart|statements?|fees|fact-?sheet|news|manager|management|overview|details|terms|options|calculator|rates?|info|faq|policy|team|dashboard|settings|report|logo|list|page|tiers?|guide|program|benefits|history|summary|account\s+settings)\b/i.test(raw)
+      && !/\b(?:terms|details|agreement|options|calculator|rates?|info|information|faq|policy|policies|team|dashboard|settings|department|report|logo|list|page|tiers?|guide|program|benefits|history|overview|summary)s?\s*$/i.test(raw)
+      && !/^\s*(?:sponsor|fund|lease|finance|charter|rent)\s+(?:the\s+)?(?:agreement|performance|prospectus|returns?|holdings|chart|statements?|fees|fact-?sheet|news|manager|management|overview|details|terms|options|calculator|rates?|info|faq|policy|team|dashboard|settings|report|logo|list|page|tiers?|guide|program|benefits|history|summary|account\s+settings)s?\b/i.test(raw)
     // #853 r4 (cu-researcher 08:39Z): becoming a patron / member OF someone, backing someone ON a crowdfunding platform, and grabbing
     // a named deal ('Become a patron of Ana Lopez', 'Back Ana on Patreon', 'Grab the 4K TV deal').
     || /^\s*become\s+(?:an?\s+)?(?:(?:paid|paying|founding|premium|monthly|annual|gold|pro)\s+)?(?:patron|member|supporter|sponsor|backer|donor|subscriber|vip)s?\s+(?:of|for|to|on|at)\s+.{1,40}$/i.test(raw)
