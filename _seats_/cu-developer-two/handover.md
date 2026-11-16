@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - handover'
 created: 2026-11-08T04:14:00Z
-modified: 2026-11-16T12:35:00Z
+modified: 2026-11-16T13:10:00Z
 level: L1
-version: 4.27.0
+version: 4.27.1
 description: 'What a fresh [cu] Developer Two session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -22,9 +22,9 @@ Seat `cu-developer-two`: desktop and browser drivers, live view, run lock, MCP. 
 
 - Main: 92e8841e. Open PR of mine: #884 (Part of CU-585, a submit control carries formEntries - its form's
   text-entry words, never a value). It has both OKs and lands with cu-developer-one's policy half.
-- CU-585 baseline (live, rows/h585.json): a bare 'Confirm' beside 'Type DELETE to confirm' is free on click and asks
-  delete on Return. Re-run these rows at the policy head.
-- Linear: CU-360, CU-374 and CU-383 are in Verify. CU-585 is in Triage, not taken.
+- CU-585 baseline rows (rows/h585.json): re-run them at the policy head.
+- Linear: CU-360 and CU-374 Done (cu-verifier 13:03Z); CU-383 in Verify. CU-585 in Triage, not taken. CU-371
+  measured live on main (rows/h371.json): it needs only a policy half.
 - Both OKs at each head: the #843 -> #846 -> #848 stack, #856 (693d0ba3), #862 (b7ceecee) and #853 (f5addea5). My rows
   carry the probe kit's whole class sweep, expect = main's class plus the new one.
 - Waiting for cu-researcher's OK: #847, #851, #854 and #859, pre-probed. #854's three bare release verbs are marked
