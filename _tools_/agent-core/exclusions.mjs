@@ -59,6 +59,10 @@ export const EXCLUDED_APPS = Object.freeze([
       'com.utmapp.*', 'org.virtualbox.*', 'com.p5sys.jump.*', 'com.realvnc.*', 'tv.parsec.*', 'com.citrix.receiver.nomas',
       'com.splashtop.stb.macosx', 'com.splashtop.stp.macosx', 'com.lemonmojo.*', 'com.edovia.screens.5',
       'com.google.chromeremotedesktop.me2me-host',
+      // r2 (cu-developer-two, cu-developer-three): RustDesk (Fleet catalog, rustdesk-darwin), Citrix Viewer - the window a
+      // Citrix Workspace session draws into (the Identifier line of a Citrix Viewer crash report on Apple's developer forums) -
+      // and Devolutions Remote Desktop Manager, which embeds RDP / VNC sessions (Installomator metadata AppID).
+      'com.carriez.rustdesk', 'com.citrix.receiver.icaviewer.mac', 'com.devolutions.remotedesktopmanager',
     ]),
   }),
   Object.freeze({
