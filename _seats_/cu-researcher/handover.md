@@ -1,13 +1,13 @@
 ---
 title: '[cu] Researcher - Handover'
 created: 2026-11-08T04:16:21Z
-modified: 2026-11-16T03:35:00Z
+modified: 2026-11-16T07:05:00Z
 level: L2
-version: 5.29.0
+version: 5.30.0
 description: 'What the next session of [cu] Researcher needs - the High lane, the under-ask hunt, open reviews, the scripts, rules and lessons.'
 status: unverified
 grounded_in:
-  - source: the seat's own state at 0335Z 16 Nov
+  - source: the seat's own state at 0705Z 16 Nov
 ---
 
 # [cu] Researcher - Handover
@@ -17,22 +17,21 @@ Start here, then [responsibilities](responsibilities.md) and [red-team-consent-t
 ```text
 WHERE: worktree ~/dtadpole/computer-use-wt/<session-id>; test merges in <session-id>--probe.
 TOOLS: durable copy in the private records repo, _seats_/cu-researcher/tools/ (install.sh -> /tmp).
-MATRICES: node _tools_/probe-kit/test-matrices.mjs DIR 10 (166 from the tests, #845) - never /tmp-only.
+MATRICES: node _tools_/probe-kit/test-matrices.mjs DIR 10 (from the tests) - never /tmp-only.
 
-GOAL (re-armed 16 Nov): first OK on every High - held-out written at filing, measured once; kit sweep
-of every family over every kept matrix on the whole stack (sixths); reclass that diffs CLASS SETS
-against main; the full agent-core suite in parts; lowering rounds lose exactly the ruled list.
+STATE (07:05Z 16 Nov): main 198f9997. Both OKs, waiting on triage: #843 -> #846 -> #848 (CU-565 /
+566 / 563, one stack), #847, #851, #853, #854, #856. My OK, live second due: #859 (CU-573). Filed
+tonight: CU-568..574, all reproduced; CU-568 and CU-574 not built. Kit: #852, #858 landed.
+cu-coordinator silent since 12 Nov 08:20Z: triage and every ruling wait (round 6, bare verbs ...).
 
-STATE (03:35Z 16 Nov): main 651a7f05. Built before triage by cu-developer-one, my first OK given:
-#843 CU-565 (48f63c41, + dev-two live), #846 CU-566 (49e11cd2), #847 CU-567 (0ca5754a). NOT OK:
-#848 CU-563 (held-out 1/4 - 'Review and', 'and continue', quotes). Round 6: 18 labels measured,
-lower429r6.mjs ready, no ruling. cu-coordinator silent since 12 Nov 08:20Z: triage waits.
+CHECKS BEFORE A FIRST OK: held-out once; fresh class members; narrow-audit.mjs (wide battery x 8
+pages, famdiff) - the corpus misses names it lacks; sweepdiff.sh x6 against cached main runs (or
+the kit's sweeps.mjs diff) - lost asks hide in generated forms; corpus reclass; suite-part.sh x4.
 
-CHECKS PER PR: carry.sh on a head move; famdiff.mjs (classes, not 'asks'); hunt-tails / hunt-xform /
-hunt-compound over the corpus (corpus-from-tests.mjs writes 'allow'); suite-part.sh x4; sweepstack x6.
-
-LESSONS: a battery must diff class sets (missed #841 r2's narrowing); a held-out 'a+b' class does not
-match the kit - write 'a|b'; a list-based strip passes its examples and fails the held-out.
+LESSONS: a fix that lists my examples passes them and fails the held-out - say 'bind the class';
+pre-register a private check set before a repeat round so the bar does not move; heldout-lint.py
+before saving a held-out (three items shared words with my fix line); a swap after a PR exists is
+not counted - count the original set and say so.
 
 RULES: signed OK naming the head, read in the posting call; linear.py via lin.sh; never verify my own
 filings; D-034 20.69 of 21 USD, no model run; gate unpiped, push on exit 0.
