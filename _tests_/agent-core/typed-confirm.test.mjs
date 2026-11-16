@@ -30,6 +30,20 @@ test('CU-585: any generic submit reads the form - Next, Done, Save, Finish, Appl
   assert.equal(press('Done', ['Type the transfer reference']), 'allow')
 })
 
+test('CU-585: other typing verbs and purpose clauses (cu-researcher r3 variants)', () => {
+  assert.equal(press('Finish', ['Key in NUKE to wipe the server']), 'delete')
+  assert.equal(press('Proceed', ['Spell out the bucket name to empty it']), 'delete')
+  assert.equal(press('Go', ['Repeat the handle to give the account away']), 'permission')
+  assert.equal(press('OK', ['Input the slug to archive it forever']), 'delete')
+  assert.equal(press('Continue', ['Re-enter the cluster name to tear it down']), 'delete')
+  assert.equal(press('Confirm', ['Fill in the domain to decommission it']), 'delete')
+  assert.equal(press('Next', ['Copy the team name to hand it off to Sam']), 'permission')
+  assert.equal(press('Next', ['Type TRANSFER to confirm']), 'allow', 'a bare TRANSFER word (ownership or amount) is for the ruling - free, named')
+  assert.equal(press('Done', ['Fill in your city']), 'allow')
+  assert.equal(press('Save', ['Repeat your new password']), 'allow')
+  assert.equal(press('Continue', ['Enter your name to stay signed in forever']), 'allow', 'forever alone is no destroy sense')
+})
+
 test('CU-585: a typed confirmation of a transfer of ownership asks permission, not purchase', () => {
   assert.equal(press('Confirm', ['Type TRANSFER to move ownership']), 'permission')
   assert.equal(press('Continue', ['Enter the new owner\'s username']), 'permission')
