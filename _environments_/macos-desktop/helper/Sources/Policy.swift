@@ -605,6 +605,16 @@ enum FormEntries {
   static let maxEntries = 12
   static let entryRoles: Set<String> = ["AXTextField", "AXTextArea", "AXComboBox"]
   static func isEntry(role: String?) -> Bool { entryRoles.contains(role ?? "") }
+  /// The containers that bound a button's own form in a window: a group, a scroll area, a split or tab pane, a toolbar.
+  static let groupRoles: Set<String> = ["AXGroup", "AXScrollArea", "AXSplitGroup", "AXTabGroup", "AXToolbar", "AXLayoutArea"]
+  /// The button's own form in a window (cu-researcher's #895 note): `chainRoles` are its ancestors' roles, nearest first,
+  /// up to the window. The scope is its nearest group (groupRoles) - an entry in another pane never lends to it, so a
+  /// toolbar's 'Export' reads no danger-zone prompt - else, for a flat panel with no group below the window, the window.
+  /// nil when the chain is empty. Named limit: a Confirm in a nested button-row group reads only that row.
+  static func scope(_ chainRoles: [String?]) -> Int? {
+    if let group = chainRoles.firstIndex(where: { groupRoles.contains($0 ?? "") }) { return group }
+    return chainRoles.isEmpty ? nil : chainRoles.count - 1
+  }
   /// `entries`: per entry, [label from AXTitleUIElement, AXDescription, AXPlaceholderValue, AXHelp].
   static func pick(_ entries: [[String?]]) -> [String] {
     var out: [String] = []

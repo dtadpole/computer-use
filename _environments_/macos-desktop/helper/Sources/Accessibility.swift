@@ -553,24 +553,38 @@ enum Accessibility {
     return nil
   }
 
-  /// CU-588: a button's form entries (FormEntries.pick) - in its nearest sheet or dialog (DialogText.isContainer), else its
-  /// window: the text entries a breadth-first walk finds (at most FormEntries.maxScan nodes read, never into a control's
-  /// subtree, at most FormEntries.maxEntries entries), each by its label element's shown words, AXDescription,
-  /// AXPlaceholderValue and AXHelp. An entry's own AXValue is never read. nil when nothing reads.
+  /// CU-588: a button's form entries (FormEntries.pick) - in its nearest sheet or dialog (DialogText.isContainer), the
+  /// whole container; else, in a window, only its own form: its nearest group (FormEntries.scope; cu-researcher's #895
+  /// note - a window's other panes never lend), the window only for a flat panel. One breadth-first walk of that scope
+  /// (at most FormEntries.maxScan nodes read, never into a control's subtree, at most FormEntries.maxEntries entries);
+  /// each entry is read by its label element's shown words, AXDescription, AXPlaceholderValue and AXHelp. An entry's own
+  /// AXValue is never read. nil when nothing reads.
   private static func formEntries(of element: AXUIElement) -> [String]? {
-    var root: AXUIElement?
+    let scan = { (container: AXUIElement) -> [AXUIElement] in
+      Array(DialogText.walk(container, limit: FormEntries.maxScan, children: children, role: { string($0, "AXRole") })
+        .filter { FormEntries.isEntry(role: string($0, "AXRole")) }
+        .prefix(FormEntries.maxEntries))
+    }
+    var chain: [AXUIElement] = []
+    var dialog: AXUIElement?
     var node = element
     for _ in 0..<DialogText.maxDepth {
       guard let parent = elementAttribute(node, "AXParent") else { break }
       let role = string(parent, "AXRole")
-      if DialogText.isContainer(role: role, subrole: string(parent, "AXSubrole")) { root = parent; break }
-      if role == "AXWindow" || role == "AXApplication" { break }
+      if DialogText.isContainer(role: role, subrole: string(parent, "AXSubrole")) { dialog = parent; break }
+      if role == "AXApplication" { break }
+      chain.append(parent)
+      if role == "AXWindow" { break }
       node = parent
     }
-    guard let container = root ?? elementAttribute(element, "AXWindow") else { return nil }
-    let entries = DialogText.walk(container, limit: FormEntries.maxScan, children: children, role: { string($0, "AXRole") })
-      .filter { FormEntries.isEntry(role: string($0, "AXRole")) }
-      .prefix(FormEntries.maxEntries)
+    let entries: [AXUIElement]
+    if let dialog {
+      entries = scan(dialog)
+    } else {
+      if chain.isEmpty, let window = elementAttribute(element, "AXWindow") { chain = [window] }
+      guard let index = FormEntries.scope(chain.map { string($0, "AXRole") }) else { return nil }
+      entries = scan(chain[index])
+    }
     let labels = entries.map { entry -> [String?] in
       let titled = elementAttribute(entry, "AXTitleUIElement").flatMap { label in string(label, "AXValue") ?? string(label, "AXTitle") }
       return [titled, string(entry, "AXDescription"), string(entry, "AXPlaceholderValue"), string(entry, "AXHelp")]

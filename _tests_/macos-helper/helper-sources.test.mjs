@@ -319,6 +319,12 @@ test('CU-588: describe() gives a button its form entries from a bounded walk tha
   assert.match(helper, /for _ in 0\.\.<DialogText\.maxDepth \{/, 'a bounded ancestor walk to the sheet or dialog')
   assert.match(helper, /DialogText\.walk\(container, limit: FormEntries\.maxScan, children: children, role: \{ string\(\$0, "AXRole"\) \}\)/, 'a bounded walk that skips control subtrees')
   assert.match(helper, /\.prefix\(FormEntries\.maxEntries\)/)
+  // cu-researcher's #895 note: a sheet or dialog lends as a whole; in a window only the button's own form - its nearest
+  // group, the window only for a flat panel - lends.
+  assert.match(helper, /if let dialog \{\n\s*entries = scan\(dialog\)/, 'a sheet or dialog keeps its whole scope')
+  assert.match(helper, /guard let index = FormEntries\.scope\(chain\.map \{ string\(\$0, "AXRole"\) \}\) else \{ return nil \}\n\s*entries = scan\(chain\[index\]\)/, 'a window lends only the button\'s own group')
+  const policySrc = readFileSync(join(SOURCES, 'Policy.swift'), 'utf8')
+  assert.match(policySrc, /static let groupRoles: Set<String> = \["AXGroup", "AXScrollArea", "AXSplitGroup", "AXTabGroup", "AXToolbar", "AXLayoutArea"\]/)
   assert.match(helper, /\[titled, string\(entry, "AXDescription"\), string\(entry, "AXPlaceholderValue"\), string\(entry, "AXHelp"\)\]/, 'label, description, placeholder, help')
   assert.doesNotMatch(helper, /string\(entry, "AXValue"\)|attribute\(entry, "AXValue"\)/, 'an entry\'s own value is never read')
   const policy = readFileSync(join(SOURCES, 'Policy.swift'), 'utf8')

@@ -2075,6 +2075,12 @@ func testDialogText() {
   check(FormEntries.pick([]) == [] && FormEntries.pick([[nil, nil, nil, nil]]) == [], "nothing read: none")
   check(FormEntries.isEntry(role: "AXTextField") && FormEntries.isEntry(role: "AXTextArea") && FormEntries.isEntry(role: "AXComboBox")
         && !FormEntries.isEntry(role: "AXButton") && !FormEntries.isEntry(role: "AXStaticText") && !FormEntries.isEntry(role: nil), "entries are text fields, areas and combo boxes")
+  // cu-researcher's #895 note: in a window, only the button's own form lends - its nearest group, else (a flat panel) the window.
+  check(FormEntries.scope(["AXToolbar", "AXWindow"]) == 0, "a toolbar's 'Export' reads only its toolbar - never a danger-zone prompt elsewhere in the window")
+  check(FormEntries.scope(["AXGroup", "AXScrollArea", "AXWindow"]) == 0, "a danger zone's Confirm reads its own group")
+  check(FormEntries.scope([nil, "AXUnknown", "AXWindow"]) == 2, "a flat panel with no group below the window reads the window")
+  check(FormEntries.scope(["AXSplitGroup", "AXWindow"]) == 0 && FormEntries.scope(["AXTabGroup", "AXWindow"]) == 0, "a split or tab pane bounds the form")
+  check(FormEntries.scope([]) == nil, "no ancestors: no scope")
 }
 
 func testNearbyLabel() {
