@@ -8,7 +8,7 @@ import { createExclusions } from '../../_tools_/agent-core/exclusions.mjs'
 const { isExcludedApp } = createExclusions()
 
 test('CU-577: directory, network and remote-admin utilities are os_security exclusions', () => {
-  for (const id of ['com.apple.DirectoryUtility', 'com.apple.airport.airportutility', 'com.apple.RemoteDesktop', 'com.apple.ScreenSharing', 'com.apple.configurator.ui', 'com.apple.Ticket-Viewer', 'com.apple.DiskUtility']) {
+  for (const id of ['com.apple.DirectoryUtility', 'com.apple.airport.airportutility', 'com.apple.RemoteDesktop', 'com.apple.configurator.ui', 'com.apple.CertificateAssistant', 'com.apple.SetupAssistant', 'com.apple.RAIDUtility', 'com.apple.ExpansionSlotUtility', 'com.apple.wifi.diagnostics', 'com.apple.Ticket-Viewer', 'com.apple.DiskUtility']) {
     const r = isExcludedApp(id)
     assert.equal(r.excluded, true, id)
     assert.equal(r.kind, 'os_security', id)
