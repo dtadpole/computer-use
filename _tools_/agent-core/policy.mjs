@@ -395,6 +395,9 @@ export function isExtensionStoreDetail(url) {
     if (host === 'microsoftedge.microsoft.com' && /^\/addons\/detail\//.test(path)) return true
     if (host === 'addons.opera.com' && /\/extensions\/details\//.test(path)) return true
     if (host === 'marketplace.visualstudio.com' && /^\/items/.test(path)) return true
+    // r2 (cu-developer-three): the IDE extension registries - Open VSX (VSCodium, Cursor, Gitpod, Theia) and JetBrains Marketplace.
+    if (host === 'open-vsx.org' && /^\/extension\/[^/]+\/[^/]+/.test(path)) return true
+    if (host === 'plugins.jetbrains.com' && /^\/plugin\/\d+/.test(path)) return true
     return /\/wp-admin\/(?:plugin|theme)-install\.php$/.test(path)
   } catch { return false }
 }
