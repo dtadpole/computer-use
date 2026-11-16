@@ -31,3 +31,8 @@ test('#851 round 3 (cu-researcher 04:13Z): a strong destroy synonym takes delete
   }
   for (const name of ['Kill switch', 'Burn rate', 'Scrub timeline', 'Blast radius']) assert.deepEqual(classesOf(name), [], name)
 })
+
+test('#851 (cu-researcher 10:19Z class sweep): sunset and format-storage', () => {
+  for (const name of ['Sunset the API', 'Format disk', 'Format the SD card', 'Sunset legacy plan']) assert.notDeepEqual(classesOf(name), [], name)
+  for (const name of ['Format text', 'Format cells', 'Sunset', 'Format', 'Sunset view', 'Sunset photos']) assert.ok(!classesOf(name).includes('delete'), name)
+})

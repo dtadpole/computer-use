@@ -848,7 +848,9 @@ const VERB_SYNONYMS = [[/^(\s*)modify\b/i, '$1change'], [/^(\s*)(?:update|edit)\
   // axe, bin, retire, delist, spin down) are not folded, so 'Kill switch', 'Burn rate' and 'Scrub timeline' stay free; nor is a how-to
   // object ('Tear down guide', 'Teardown checklist'). Only a verb WITH an object folds, and trash / junk / scrap never do: a bare 'Trash'
   // sidebar row stays free (destructive-labels).
-  [/^(\s*)(?:purge|erase|expunge|annihilate|eradicate|exterminate|obliterate|shred|nuke|incinerate|vapori[sz]e|demolish|raze|dismantle|eliminate|excise|cull|unprovision|deprovision|decommission|deregister|unregister|wipe\s+out|wipe\s+clean|tear\s+down|blow\s+away|dispose\s+of|get\s+rid\s+of|do\s+away\s+with)\b(?=\s+\S)(?!\s+(?:the\s+|a\s+)?(?:guide|docs?|documentation|tutorial|instructions?|checklist|steps?|help|faq|video|overview|walkthrough|diagram|playbook|runbook|template)s?\s*$)/i, '$1delete']]
+  [/^(\s*)(?:purge|erase|expunge|annihilate|eradicate|exterminate|obliterate|shred|nuke|incinerate|vapori[sz]e|demolish|raze|dismantle|eliminate|excise|cull|unprovision|deprovision|decommission|sunset(?!\s+(?:view|mode|theme|photos?|pictures?|images?|wallpapers?|colou?rs?|filters?|times?|hours?|scene|sky|beach|boulevard|strip|cruise|tour|glow|orange|gradient))|deregister|unregister|wipe\s+out|wipe\s+clean|tear\s+down|blow\s+away|dispose\s+of|get\s+rid\s+of|do\s+away\s+with)\b(?=\s+\S)(?!\s+(?:the\s+|a\s+)?(?:guide|docs?|documentation|tutorial|instructions?|checklist|steps?|help|faq|video|overview|walkthrough|diagram|playbook|runbook|template)s?\s*$)/i, '$1delete'],
+  // #851 (cu-researcher 10:19Z class sweep: 'Format disk'): formatting STORAGE erases it; 'Format text' / 'Format cells' stay free.
+  [/^(\s*)format(?=\s+(?:the\s+|this\s+|my\s+|a\s+)?(?:disks?|drives?|volumes?|partitions?|ssds?|hdds?|sd\s+cards?|usb(?:\s+drives?)?|storage|memory\s+cards?|startup\s+disk)\b)/i, '$1erase']]
 function withVerbSynonym(text) {
   for (const [pattern, replacement] of VERB_SYNONYMS) if (pattern.test(text)) return text.replace(pattern, replacement)
   return text
