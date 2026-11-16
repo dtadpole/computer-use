@@ -34,3 +34,12 @@ test("#848 round 3 (cu-researcher 03:36Z): the lead-in drop and the badge strip 
   for (const form of ["I'm sure, change direct deposit Takes effect immediately", 'I am sure, change direct deposit', 'Yes, change direct deposit \u00b7 2 min']) assert.notDeepEqual(classesOf(form), [], form)
   for (const name of ["I'm sure", 'Yes, I am sure']) assert.deepEqual(classesOf(name), [], name)
 })
+
+test('#848 round 4 (cu-researcher 03:51Z): every lead-in stacks with every badge and clause - a fixed point', () => {
+  for (const base of ['Scan and link device', 'Change direct deposit Takes effect immediately', 'Open RDP port', 'Delete account']) {
+    const want = classesOf(base)
+    assert.notDeepEqual(want, [], `base asks: ${base}`)
+    for (const form of [`Confirm: ${base} \u00b7 2 min`, `I understand, ${lower(base)} \u2713`, `Click to ${lower(base)}`, `Tap to ${lower(base)} \u203a`, `Let's ${lower(base)}`, `Please, ${lower(base)} - Free`, `Click to ${lower(base)}, then close`]) assert.notDeepEqual(classesOf(form), [], form)
+  }
+  for (const name of ['Click to continue', "Let's go", 'Tap to close', 'Confirm: OK', 'I understand, thanks']) assert.deepEqual(classesOf(name), [], name)
+})

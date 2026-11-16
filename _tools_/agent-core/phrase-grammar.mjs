@@ -798,55 +798,53 @@ const META_SPLIT = /\s+[\u00b7\u2022\u2219\u2027\u22c5\u2981\u25cf\u25e6\u2043\u
 export function metaStripped(name) {
   return metaForms(name)[0] ?? ''
 }
-/** CU-566 (cu-researcher 02:04Z; cu-developer-three 02:28Z, the desktop AXTitle keeps its line breaks): every whole-name form the
- * policy also judges - a wrapped label's lines joined, an ALL-CAPS label in sentence case, and each one's metadata-stripped forms. */
+/** CU-566 / CU-563 / CU-565: every whole-name form the policy also judges, stripped to a FIXED POINT (#848 r4, cu-researcher 03:51Z):
+ * each form found is stripped again until nothing new appears - a wrapped label's lines joined (the desktop AXTitle keeps its line
+ * breaks), an ALL-CAPS multi-word label in sentence case, outer quotes / brackets, a polite or confirming lead-in, the metadata forms
+ * (#843), and benign head / tail clauses ('Review and ...', '..., then close'). So any stack of them ('Click to scan and link device ✓',
+ * 'Confirm: <row> · 2 min') reaches the row. At most 48 forms. */
 export function probeForms(name) {
-  const text = String(name ?? '')
+  const text = String(name ?? '').trim()
+  const seen = new Set([text])
   const forms = []
-  const add = (form) => { const f = String(form ?? '').trim(); if (f !== '' && f !== text.trim() && /\p{L}/u.test(f) && !forms.includes(f)) forms.push(f) }
-  const joined = /[\r\n]/.test(text) ? text.split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean).join(' ') : text
-  add(joined)
-  const letters = joined.replace(/[^\p{L}]/gu, '')
-  // A single all-caps word is an acronym or a field name ('IBAN'), not a shouted label: only a multi-word label takes sentence case.
-  const sentence = letters.length >= 2 && letters === letters.toUpperCase() && /\p{L}\s+\S*\p{L}/u.test(joined) ? joined.toLowerCase().replace(/^(\s*\p{L})/u, (c) => c.toUpperCase()) : joined
-  add(sentence)
-  // CU-563 (cu-researcher 01:11Z; built before triage): a polite or confirming lead-in before the row - 'Please ', 'Kindly ', 'Yes, ',
-  // 'OK, ', 'Sure, ', 'Save and ', 'Save then ', 'Save changes and ', 'Continue and ' - is judged without it too ('Please review and
-  // confirm withdrawal', 'Save and begin sharing location').
-  // #848 r2 (cu-researcher 03:21Z): strip first - outer quotes or brackets around the whole label ('“Delete account”', '[Delete account]')
-  // - then split every benign head / tail clause: the label cut at ', ', ' and ', ' then ', ' & ' (', then close', 'Review and ...',
-  // '... and continue'), every contiguous run of clauses judged.
-  for (const base of [text, joined, sentence]) {
-    const unwrapped = base.replace(/^\s*["'\u201c\u201d\u2018\u2019\u00ab\u00bb\[(]+\s*/u, '').replace(/\s*["'\u201c\u201d\u2018\u2019\u00ab\u00bb\])]+\s*$/u, '').trim()
-    add(unwrapped)
-    for (const from of [base, unwrapped]) {
-      const clauses = from.split(CLAUSE_JOIN).map((part) => part.trim()).filter(Boolean)
-      if (clauses.length < 2 || clauses.length > 6) continue
-      // Only BENIGN head / tail clauses drop ('Review', 'continue', 'then close'); the rest stays whole, so a lowered 'Find and Replace'
-      // never becomes a lone 'Replace'.
-      // Head-only, tail-only and both ('Review and terminate and continue' keeps 'Review and terminate').
-      let lo = 0, hi = clauses.length
-      while (hi - lo > 1 && BENIGN_CLAUSE.test(clauses[lo])) lo++
-      while (hi - lo > 1 && BENIGN_CLAUSE.test(clauses[hi - 1])) hi--
-      let tailOnly = clauses.length
-      while (tailOnly > 1 && BENIGN_CLAUSE.test(clauses[tailOnly - 1])) tailOnly--
-      for (const [from2, to2] of [[lo, hi], [0, tailOnly], [lo, clauses.length]]) {
-        if (from2 === 0 && to2 === clauses.length) continue
-        const run = clauses.slice(from2, to2).join(' and ').replace(/^(\p{Ll})/u, (c) => c.toUpperCase())
-        add(run); for (const form of metaForms(run)) add(form)
-      }
-    }
+  const queue = [text]
+  const push = (form) => {
+    const f = String(form ?? '').trim()
+    if (f === '' || seen.has(f) || !/\p{L}/u.test(f) || forms.length >= 48) return
+    seen.add(f); forms.push(f); queue.push(f)
   }
-  for (const base of [text, joined, sentence]) {
-    const bare = base.replace(LEAD_IN_WRAPPER, '').trim()
-    if (bare !== base.trim()) { add(bare.replace(/^(\p{Ll})/u, (c) => c.toUpperCase())); for (const form of metaForms(bare)) add(form) }
-  }
-  for (const base of [text, joined, sentence]) for (const form of metaForms(base)) add(form)
+  while (queue.length > 0) for (const next of probeSteps(queue.shift())) push(next)
   return forms
+}
+const upperFirst = (s) => s.replace(/^(\p{Ll})/u, (c) => c.toUpperCase())
+function probeSteps(current) {
+  const out = []
+  if (/[\r\n]/.test(current)) out.push(current.split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean).join(' '))
+  const letters = current.replace(/[^\p{L}]/gu, '')
+  // A single all-caps word is an acronym or a field name ('IBAN'), not a shouted label: only a multi-word label takes sentence case.
+  if (letters.length >= 2 && letters === letters.toUpperCase() && /\p{L}\s+\S*\p{L}/u.test(current)) out.push(upperFirst(current.toLowerCase()))
+  out.push(current.replace(/^\s*["'\u201c\u201d\u2018\u2019\u00ab\u00bb\[(]+\s*/u, '').replace(/\s*["'\u201c\u201d\u2018\u2019\u00ab\u00bb\])]+\s*$/u, ''))
+  const bare = current.replace(LEAD_IN_WRAPPER, '').trim()
+  if (bare !== current) out.push(upperFirst(bare))
+  out.push(...metaForms(current))
+  // Only BENIGN head / tail clauses drop - head-only, tail-only and both; the rest stays whole, so a lowered 'Find and Replace' never
+  // becomes a lone 'Replace', and 'Review and terminate and continue' keeps 'Review and terminate'.
+  const clauses = current.split(CLAUSE_JOIN).map((part) => part.trim()).filter(Boolean)
+  if (clauses.length >= 2 && clauses.length <= 6) {
+    let lo = 0, hi = clauses.length
+    while (hi - lo > 1 && BENIGN_CLAUSE.test(clauses[lo])) lo++
+    while (hi - lo > 1 && BENIGN_CLAUSE.test(clauses[hi - 1])) hi--
+    let tailOnly = clauses.length
+    while (tailOnly > 1 && BENIGN_CLAUSE.test(clauses[tailOnly - 1])) tailOnly--
+    for (const [a, b] of [[lo, hi], [0, tailOnly], [lo, clauses.length]]) if (!(a === 0 && b === clauses.length)) out.push(upperFirst(clauses.slice(a, b).join(' and ')))
+  }
+  return out
 }
 const BENIGN_CLAUSE = /^(?:yes|sure|i'?m\s+sure|i\s+am\s+sure|got\s+it|review(?:\s+(?:it|this|details|changes))?|continue|close(?:\s+(?:it|this|window|tab))?|save(?:\s+changes)?|done|finish|next|exit|go\s+back|back|ok|okay|proceed|view(?:\s+details)?|refresh|reload|return|dismiss|cancel)$/iu
 const CLAUSE_JOIN = /\s*,\s*(?:and\s+|then\s+|and\s+then\s+)?|\s+(?:and\s+then|and|then|&)\s+/iu
-const LEAD_IN_WRAPPER = /^\s*(?:(?:please|kindly)\s+|(?:yes|ok|okay|sure|alright|i'?m\s+sure|i\s+am\s+sure|got\s+it)\s*[,!.:-]?\s+|(?:save(?:\s+changes)?|continue|confirm)\s+(?:and|then|&)\s+)+/iu
+// #848 r4 (cu-researcher 03:51Z): 'Confirm: ', 'I understand, ' (the comma form only - 'I understand and want to ...' is a row), 'Click / Tap /
+// Press / Select (here) to ', "Let's ".
+const LEAD_IN_WRAPPER = /^\s*(?:(?:please|kindly)\s*,?\s+|(?:yes|ok|okay|sure|alright|i'?m\s+sure|i\s+am\s+sure|got\s+it)\s*[,!.:-]?\s+|(?:save(?:\s+changes)?|continue|confirm)\s+(?:and|then|&)\s+|confirm\s*:\s+|i\s+understand\s*,\s+|(?:click|tap|press|select)\s+(?:here\s+)?to\s+|let'?s\s+)+/iu
 /** #843 r3: every metadata-stripped form - the closed-list strip, then a generic tag stripped from the front only, the back only, and
  * both (a 'X · Y' name may carry its tag on either side). A form without a letter ('$10 - $20') is not a form. */
 export function metaForms(name) {
