@@ -28,3 +28,8 @@ test("CU-385 r4 (cu-researcher 19:02Z): Outlook's localized Deleted Items folder
   for (const name of ['Elementi eliminati', 'Verwijderde items', 'Itens eliminados', 'Itens Excluídos', 'Usunięte elementy', 'Törölt elemek', 'Gelöschte Elemente', 'Éléments supprimés', 'Elementos eliminados', 'Silinmiş Öğeler', '削除済みアイテム']) assert.ok(drop(name).includes('delete'), name)
   for (const name of ['Elementi', 'Items', 'Gelöschte Szenen planen']) assert.ok(!drop(name).includes('delete'), name)
 })
+
+test('CU-385 r5 (cu-developer-two 19:09Z): the hyphenated junk folder', () => {
+  for (const name of ['Junk-E-Mail', 'Junk-Mail']) assert.ok(drop(name).includes('delete'), name)
+  assert.ok(!drop('Junk-food recipes').includes('delete'))
+})
