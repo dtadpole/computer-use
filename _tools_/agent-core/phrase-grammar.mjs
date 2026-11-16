@@ -1029,6 +1029,12 @@ export function recoveryOrOwnership(raw) {
   raw = String(raw ?? '').trim()
   if (raw.split(/\s+/).length > 10 || /^\s*(?:view|see|read|learn|about|how|help|show)\b/i.test(raw)) return null
   if (/^\s*(?:set|change|update|replace|swap|switch|edit|add|remove|unlink|detach|disconnect|delete|reset|rotate|regenerate|turn\s+off|disable|drop|clear|unpair|unregister|forget)\s+(?:a\s+|an\s+|the\s+|my\s+|your\s+|this\s+|new\s+|another\s+)*(?:(?:recovery|backup|fallback|secondary|alternate|alternative)\s+(?:e-?mail|phone|number|contact|codes?|key|address|method|options?|device)s?|(?:linked|verified|trusted|2fa|mfa)\s+phone(?:\s+number)?|authenticator(?:\s+app)?|security\s+keys?|passkeys?|(?:primary|sign-?in|login)\s+(?:e-?mail|phone|number|method)|two-?factor\s+(?:phone|device|method))\s*$/i.test(raw)) return 'credential'
+  // #862 r2 (cu-researcher 07:08Z): a reset / verification DESTINATION is a recovery route - any verb that points an inbox, address, phone,
+  // number, device or app at password resets, account recovery or sign-in / verification / one-time codes ('Use a different inbox for
+  // password resets', 'Send reset links to my work email', 'Route verification codes to a new phone').
+  if (/\b(?:inbox|e-?mail|address|phone|number|device|app|authenticator|channel|destination)\b/i.test(raw)
+    && /\b(?:password\s+resets?|resets?\s+(?:links?|e-?mails?|codes?)|reset\s+(?:links?|e-?mails?)|account\s+recovery|recovery|(?:verification|security|sign-?in|login|one-?time|2fa|mfa|two-?factor|otp|confirmation)\s+(?:codes?|links?|e-?mails?|texts?|messages?|prompts?)|otps?)\b/i.test(raw)
+    && /^\s*(?:use|set|change|update|pick|choose|send|route|redirect|forward|switch|point|move|add|register|deliver|get)\b/i.test(raw)) return 'credential'
   // A bare phone (number) counts only when it is UNLINKED from the account - a checkout form's 'Change phone' stays free.
   if (/^\s*(?:unlink|detach|disconnect|unpair|unregister|forget)\s+(?:the\s+|my\s+|this\s+)?(?:mobile\s+)?phone(?:\s+number)?\s*$/i.test(raw)) return 'credential'
   if (/^\s*(?:hand\s+(?:over|off)|give\s+away|pass(?:\s+on)?|reassign|delegate|bequeath|sign\s+over|turn\s+over)\s+(?:the\s+|my\s+|this\s+|our\s+)?(?:account|workspace|org|organi[sz]ation|team|channel|ownership|owner\s+role|admin\s+(?:rights|role)|keys)(?:\s+(?:to|over\s+to)(?:\s+\S+){0,4})?\s*$/i.test(raw)

@@ -23,3 +23,9 @@ test('CU-574: an older row leads but still asks', () => {
 test('CU-574 negatives: reading and unrelated phones stay free', () => {
   for (const name of ['View recovery options', 'Learn about legacy contacts', 'Phone settings', 'Owner', 'Admins', 'Pass']) assert.deepEqual(classesOf(name), [], name)
 })
+
+test('#862 round 2 (cu-researcher 07:08Z): a reset / verification destination is a recovery route', () => {
+  for (const name of ['Use a different inbox for password resets', 'Route verification codes to a new phone', 'Switch the account recovery address', 'Deliver sign-in codes to this device']) assert.ok(classesOf(name).includes('credential'), name)
+  assert.notDeepEqual(classesOf('Send reset links to my work email'), [], 'an older send row leads and asks')
+  for (const name of ['Reset filters', 'Send email', 'Use a different inbox', 'Get verification badge', 'Recovery mode guide']) assert.ok(!classesOf(name).includes('credential'), name)
+})
