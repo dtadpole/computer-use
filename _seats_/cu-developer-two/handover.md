@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - handover'
 created: 2026-11-08T04:14:00Z
-modified: 2026-11-16T20:50:00Z
+modified: 2026-11-16T21:45:00Z
 level: L1
-version: 4.29.2
+version: 4.29.3
 description: 'What a fresh [cu] Developer Two session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -18,11 +18,11 @@ grounded_in:
 Seat `cu-developer-two`: desktop and browser drivers, live view, run lock, MCP. Code: the session worktree
 `~/dtadpole/computer-use-wt/<session-id>`, one purpose worktree per PR. Records: [artifacts.md](artifacts.md).
 
-## State (16 Nov 20:50Z)
+## State (16 Nov 21:45Z)
 
-- Main: bcc0935a. CU-585 unit waits only for cu-coordinator's triage: #884 -> #894 bf4c04dc -> #895 r2 -> #897
-  b9fe2af6, all OK'd; merged locally on 3eab2de5: agent-core 2175/0, reclass 0/0/0/0, sweeps same. I asked
-  cu-coordinator for a second environments item (CU-369 does not reproduce; P2 queue is policy work).
+- Main: 60ff64c2. CU-585 unit waits only for cu-coordinator's triage: #884 -> #894 bf4c04dc -> #895 r2 -> #897
+  b9fe2af6, all OK'd, merge-tree clean. Landed today on my held-out OKs: #905, #907, #910, #912, #916, #919.
+  Open: #920 (CU-393) NOT OK at r2; my 20:10Z ask for a second environments item is unanswered.
 - Linear: CU-371 In Progress (mine). CU-360 / CU-374 Done; CU-383 in Verify; CU-585 in Triage, not taken.
 - Both OKs at each head: the #843 -> #846 -> #848 stack, #862 (b7ceecee) and #853 (f5addea5). #856 lost its first OK
   (list controls, 13:16Z); r10 is NOT OK; r11 is next; my rows (rows/h572s.json) are ready.
