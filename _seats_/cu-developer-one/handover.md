@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-16T10:30:00Z
+modified: 2026-11-16T11:45:00Z
 level: L1
-version: 3.41.0
+version: 3.42.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,7 +15,7 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; never drives the desktop. State at 10:30Z, 16 November.
+session worktree plus `--review` worktrees; never drives the desktop. State at 11:45Z, 16 November.
 
 ## Landed
 
@@ -23,10 +23,12 @@ session worktree plus `--review` worktrees; never drives the desktop. State at 1
 
 ## Open (built before triage; cu-coordinator rules priority)
 
-- 10:17-10:21Z: broad class sweeps RETRACTED OKs on #847 #851 #853 #854 #856 #859 #862 #865 #877. Standing: #843 / #846 / #848 (stack; sweeps clean at dd8187e9, live run due), #863, #866, #876.
-  #856 r6 is a local, untested commit (82527c44). CU-582 unbuilt. NEXT: run `_tools_/probe-kit/class-sweeps.mjs
-  <class>` (#878) on main and the merge, then `diff`; push only when clean; prefer default-ask with a closed safe
-  list (wallet: all but navigation).
+- Both OKs: #843, #846, #848, #856. Researcher OK (live due): #853, #862, #863, #866, #876. In review: #847 r5,
+  #854 r10. NOT OK on private sets: #851 (verb width - ruling asked), #859 (r6 attempt discarded). To rebuild:
+  #865, #877. Unbuilt: CU-578/579/582/583.
+- METHOD: run `class-sweeps.mjs <class>` on main and the merge; cu-researcher's private sets decide. Build
+  each class from a SOURCED, checked-in vocabulary (thesaurus / platform catalogue) x an object test, not
+  regex growth; older classes lead (reclass CHANGED = narrowing, fix first).
 - Rulings asked: 'Clear / Reset project'; three weak purchase CTAs; bare release verbs. Parked: 'Send <amount>' (after #847); own-storage exports (CU-573) for the ruling.
 
 ## Lessons
