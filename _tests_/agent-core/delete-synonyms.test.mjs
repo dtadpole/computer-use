@@ -36,3 +36,8 @@ test('#851 (cu-researcher 10:19Z class sweep): sunset and format-storage', () =>
   for (const name of ['Sunset the API', 'Format disk', 'Format the SD card', 'Sunset legacy plan']) assert.notDeepEqual(classesOf(name), [], name)
   for (const name of ['Format text', 'Format cells', 'Sunset', 'Format', 'Sunset view', 'Sunset photos']) assert.ok(!classesOf(name).includes('delete'), name)
 })
+
+test('#851 round 5 (cu-researcher 10:43Z): destroy-sense verbs with a resource object; verb-as-noun labels free', () => {
+  for (const name of ['Reformat the drive', 'End-of-life the product', 'Retire this repository', 'Reimage the laptop', 'Zero the volume', 'Flush the queue']) assert.notDeepEqual(classesOf(name), [], name)
+  for (const name of ['Shred mode', 'Flush settings', 'Retire', 'Reformat']) assert.ok(!classesOf(name).includes('delete'), name)
+})
