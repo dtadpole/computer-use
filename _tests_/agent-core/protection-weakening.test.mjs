@@ -74,3 +74,7 @@ test('#856 round 8 (cu-researcher 13:16Z, 13:22Z): QUALIFIED allow / deny / bloc
   for (const name of ['Disable command allowlist', 'Clear the sender denylist', 'Disable withdrawal whitelist', 'Turn off the IP allowlist', 'Empty the domain blocklist', 'Reset the app safelist']) assert.notDeepEqual(classesOf(name), [], name)
   for (const name of ['Disable whitelist', 'View allowlist', 'Add to allowlist', 'Clear the list', 'Disable playlist']) assert.ok(!classesOf(name).includes('permission'), name)
 })
+
+test('#856 round 9 (cu-researcher 13:26Z): suspicious-login alerts', () => {
+  for (const name of ['Silence suspicious-login warnings', 'Mute suspicious sign-in alerts', 'Turn off suspicious transaction notifications']) assert.notDeepEqual(classesOf(name), [], name)
+})
