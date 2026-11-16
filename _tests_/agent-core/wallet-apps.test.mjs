@@ -28,3 +28,9 @@ test('#865 round 2 (cu-researcher 07:34Z): any wallet by its bundle vocabulary, 
   for (const name of ['View transactions', 'Export PSBT', 'Show address', 'Receive']) assert.ok(!classesOf('com.sparrowwallet.sparrow', name).includes('purchase'), name)
   for (const name of ['Send', 'Spend']) assert.ok(!classesOf('com.apple.Notes', name).includes('purchase'), name)
 })
+
+test('#865 round 3 (cu-researcher 07:38Z): a money operation named anywhere asks - Start coinjoin', () => {
+  for (const name of ['Start coinjoin', 'Begin mixing round', 'Run swap', 'Enable staking', 'Initiate withdrawal']) assert.ok(classesOf('zksnacks.wasabiwallet', name).includes('purchase'), name)
+  assert.ok(!classesOf('com.example.ledger', 'Confirm').includes('purchase'), 'a bookkeeping app named Ledger is not a wallet (cu-developer-three 07:39Z)')
+  for (const name of ['View coinjoin history', 'Show swaps', 'Staking guide']) assert.ok(!classesOf('zksnacks.wasabiwallet', name).includes('purchase') || name === 'Staking guide', name)
+})

@@ -91,9 +91,9 @@ export function isWalletApp(bundleId) {
   const id = String(bundleId ?? '').toLowerCase().replace(/^(?:app|desktop):\/*/, '').replace(/\/.*$/, '')
   if (id === '') return false
   // #865 r2 (cu-researcher 07:34Z): the CLASS, not a closed list - a bundle id carrying wallet vocabulary is a wallet (Wasabi, Electrum's
-  // org.org.pythonmac.unspecified.Electrum, MetaMask, Phantom ...). Ambiguous words (dash, frame, cake, atomic) are left out: Dash the
+  // org.org.pythonmac.unspecified.Electrum, MetaMask, Phantom ...). Ambiguous words (dash, frame, cake, atomic, a bare ledger - bookkeeping apps; Ledger's own apps match com.ledger.) are left out: Dash the
   // docs browser is not a wallet.
-  if (/(?:^|[.\-_])(?:[a-z0-9]*wallet[a-z0-9]*|wasabi|electrum|sparrow|ledger(?:live)?|trezor|exodus|bitcoin|bitcoinqt|btc|monero|ethereum|metamask|phantom|bitbox|specter|nunchuk|coldcard|keystone|blockstream|samourai|guarda|coinomi|rabby|solflare|keplr|yoroi|daedalus|litecoin|dogecoin|zcash)(?:$|[.\-_])/.test(id)) return true
+  if (/(?:^|[.\-_])(?:[a-z0-9]*wallet[a-z0-9]*|wasabi|electrum|sparrow|ledger-?live|trezor|exodus|bitcoin|bitcoinqt|btc|monero|ethereum|metamask|phantom|bitbox|specter|nunchuk|coldcard|keystone|blockstream|samourai|guarda|coinomi|rabby|solflare|keplr|yoroi|daedalus|litecoin|dogecoin|zcash)(?:$|[.\-_])/.test(id)) return true
   return WALLET_APPS.some((entry) => entry.ids.some((one) => {
     const known = one.toLowerCase()
     return known.endsWith('.') ? id.startsWith(known) : id === known || id.startsWith(`${known}.`)
