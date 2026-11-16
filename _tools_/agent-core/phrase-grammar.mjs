@@ -810,9 +810,17 @@ export function probeForms(name) {
   // A single all-caps word is an acronym or a field name ('IBAN'), not a shouted label: only a multi-word label takes sentence case.
   const sentence = letters.length >= 2 && letters === letters.toUpperCase() && /\p{L}\s+\S*\p{L}/u.test(joined) ? joined.toLowerCase().replace(/^(\s*\p{L})/u, (c) => c.toUpperCase()) : joined
   add(sentence)
+  // CU-563 (cu-researcher 01:11Z; built before triage): a polite or confirming lead-in before the row - 'Please ', 'Kindly ', 'Yes, ',
+  // 'OK, ', 'Sure, ', 'Save and ', 'Save then ', 'Save changes and ', 'Continue and ' - is judged without it too ('Please review and
+  // confirm withdrawal', 'Save and begin sharing location').
+  for (const base of [text, joined, sentence]) {
+    const bare = base.replace(LEAD_IN_WRAPPER, '').trim()
+    if (bare !== base.trim()) { add(bare.replace(/^(\p{Ll})/u, (c) => c.toUpperCase())); for (const form of metaForms(bare)) add(form) }
+  }
   for (const base of [text, joined, sentence]) for (const form of metaForms(base)) add(form)
   return forms
 }
+const LEAD_IN_WRAPPER = /^\s*(?:(?:please|kindly)\s+|(?:yes|ok|okay|sure|alright)\s*[,!.:-]?\s+|(?:save(?:\s+changes)?|continue|confirm)\s+(?:and|then|&)\s+)+/iu
 /** #843 r3: every metadata-stripped form - the closed-list strip, then a generic tag stripped from the front only, the back only, and
  * both (a 'X · Y' name may carry its tag on either side). A form without a letter ('$10 - $20') is not a form. */
 export function metaForms(name) {
