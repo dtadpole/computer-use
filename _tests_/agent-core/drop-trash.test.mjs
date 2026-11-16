@@ -53,3 +53,8 @@ test('CU-385 r9 (cu-researcher 20:12Z): folder word first, closed compounds, bar
   for (const name of ['Cartella spam', 'Pasta de spam', 'Folder spam', 'Spammap', 'Spamordner', 'Eliminati', 'Gelöscht', 'Verwijderd']) assert.ok(drop(name).includes('delete'), name)
   for (const name of ['Cartella progetti', 'Folder of photos', 'Mappe', 'Eliminati dal torneo']) assert.ok(!drop(name).includes('delete'), name)
 })
+
+test('CU-385 follow-up: Russian trash / junk names (after the homoglyph fold) and the bare Spanish Borrados', () => {
+  for (const name of ['Удаленные', 'Удалённые', 'Корзина', 'Спам', 'Нежелательная почта', 'Удаленные письма', 'Корзина (4)', 'Borrados']) assert.ok(drop(name).includes('delete'), name)
+  for (const name of ['Входящие', 'Удаленные сцены фильма', 'Корзина покупок']) assert.ok(!drop(name).includes('delete'), name)
+})
