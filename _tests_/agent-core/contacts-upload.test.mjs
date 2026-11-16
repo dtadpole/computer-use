@@ -46,3 +46,8 @@ test('#742 round 4 (cu-developer-three 00:10Z): the people-list family', () => {
   for (const name of ['Contact list', 'Mailing list settings']) assert.equal(at(name), 'allow', name)
   assert.equal(at('Upload file list'), 'submit', 'not a people list: the older upload row (submit) is unchanged')
 })
+
+test('CU-462 follow-up round 2 (cu-developer-three 01:26Z): the whole people-list noun slot', () => {
+  for (const name of ['Upload member list', 'Export user list', 'Import guest list', 'Download attendee list', 'Sync leads list', 'Share donor list', 'Upload address list', 'Export phone list', 'Upload student list', 'Export employee list']) assert.equal(at(name), 'permission', name)
+  for (const name of ['Member list', 'Guest list settings']) assert.equal(at(name), 'allow', name)
+})
