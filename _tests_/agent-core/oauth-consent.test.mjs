@@ -29,6 +29,15 @@ test('CU-393 r2: question-form and data-scope dialogs, and a provider consent st
   assert.equal(click('https://app.example/home', 'Continue', { dialogName: 'Terms of Service updated' }), 'allow')
 })
 
+test('CU-393 r3: the macOS wording, the Let question, consentsummary; a consent help page stays free', () => {
+  assert.equal(click('https://app.example/home', 'Accept', { dialogName: 'Trello would like to read your calendar' }), 'permission')
+  assert.equal(click('https://app.example/home', 'Allow', { dialogName: 'Let "Photo Mixer" see your photos?' }), 'permission')
+  assert.equal(click('https://accounts.idp.example/signin/oauth/v2/consentsummary?authuser=0&part=x&flowName=GeneralOAuthFlow', 'Allow'), 'permission')
+  assert.equal(click('https://accounts.idp.example/signin/oauth/consent/help', 'Allow'), 'allow')
+  assert.equal(click('https://app.example/home', 'Allow', { dialogName: 'Allow this file to open?' }), 'allow')
+  assert.equal(click('https://app.example/home', 'Allow', { dialogName: 'Let the export finish?' }), 'allow')
+})
+
 test('CU-393 negatives: declining, other pages and non-consent dialogs stay as they were', () => {
   for (const name of ['Cancel', 'Deny', 'Not now', 'Back', 'Privacy policy', 'Use another account']) assert.equal(click(PAGES[0], name), 'allow', name)
   for (const url of ['https://app.example/settings', 'https://idp.example/oauth2/docs', 'https://idp.example/authorize/help']) for (const name of ['Allow', 'Continue', 'Accept']) assert.equal(click(url, name), 'allow', `${url} ${name}`)

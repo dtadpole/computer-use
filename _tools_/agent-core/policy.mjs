@@ -397,7 +397,8 @@ export function isOAuthConsentPage(url) {
     const oauthQuery = u.searchParams.has('client_id') || u.searchParams.has('response_type')
     // r2 (cu-developer-three): after the first redirect a provider's own consent screen keeps only its own tokens in the query
     // (accounts.google.com/signin/oauth/consent?authuser=0&part=...), so a path naming both OAuth and the consent step counts alone.
-    const consentStep = /\/(?:signin\/)?oauth2?\/consent(?:\/|$)/i.test(u.pathname)
+    // r3 (cu-developer-three): end-anchored, so /consent and /v2/consentsummary count and /consent/help does not.
+    const consentStep = /\/(?:signin\/)?oauth2?\/(?:v2\/)?consent(?:summary)?\/?$/i.test(u.pathname)
     return (oauthPath && oauthQuery) || consentStep
   } catch { return false }
 }
@@ -405,7 +406,7 @@ const OAUTH_BARE_GRANT = /^\s*(?:allow|accept|continue|authori[sz]e|approve|gran
 // A consent dialog says so in its title or description ('... wants to access your Google Account', '... is requesting permission').
 // r2 (cu-developer-two / -three): the question form 'Allow <app> to access your ...?', 'Grant (<app>) access to your ...', and the
 // data-scope verbs ('wants to view / read / manage your contacts'). 'Allow pasting into this document?' names no access and stays free.
-const OAUTH_DIALOG_TEXT = /\b(?:wants?\s+to\s+(?:access|view|read|see|manage|use)\s+your|would\s+like\s+(?:to\s+)?(?:access|permission)|is\s+requesting\s+(?:access|permission)|requests?\s+access\s+to\s+your|authori[sz]e\s+\S+(?:\s+\S+)?\s+to\s+access|allow\s+\S+(?:\s+\S+){0,3}\s+to\s+(?:access|view|read|see|manage|use)\s+your|grant\s+(?:\S+\s+){0,3}access\s+to\s+your)\b/i
+const OAUTH_DIALOG_TEXT = /\b(?:wants?\s+to\s+(?:access|view|read|see|manage|use)\s+your|would\s+like\s+(?:to\s+)?(?:access|permission)|would\s+like\s+to\s+(?:view|read|see|manage|use)\s+your|let\s+\S+(?:\s+\S+){0,3}\s+(?:access|view|read|see|manage|use)\s+your|is\s+requesting\s+(?:access|permission)|requests?\s+access\s+to\s+your|authori[sz]e\s+\S+(?:\s+\S+)?\s+to\s+access|allow\s+\S+(?:\s+\S+){0,3}\s+to\s+(?:access|view|read|see|manage|use)\s+your|grant\s+(?:\S+\s+){0,3}access\s+to\s+your)\b/i
 // CU-513 (cu-researcher; cu-coordinator: Medium): an extension / add-on / plug-in store DETAIL page, by host and path. On it a
 // bare 'Install' / 'Get' / 'Add' is the store's install button (the browser's own 'Add extension?' confirm is outside the page).
 export function isExtensionStoreDetail(url) {
