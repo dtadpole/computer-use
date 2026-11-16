@@ -80,6 +80,15 @@ test('CU-374 (cu-researcher): a street address shown beside a box is a displayed
     'Calle Mayor 10',
     'PO Box 4471',
     'London SW1A 1AA',
+    // r2 (cu-researcher's review): the street words and postal lines as a class.
+    'Unit 5/12 George St, Sydney NSW 2000',
+    'Rua Augusta 1500, São Paulo',
+    'Strada Nuova 3',
+    'Pl. de la Concorde 8',
+    '10115 Berlin',
+    '1-2-3 Shibuya, Tokyo 150-0002',
+    'Kalverstraat 1, Amsterdam',
+    'Drottninggatan 5',
   ]
   for (const address of shown) {
     const { hit, focused } = await read({ ...BOX, nearbyLabel: address })
@@ -90,7 +99,8 @@ test('CU-374 (cu-researcher): a street address shown beside a box is a displayed
 })
 
 test('CU-374: a label that only names an address field stays a label', async () => {
-  for (const label of ['Street address', 'Address line 1', 'Address 2', 'ZIP code', 'Postcode', 'City', 'Apt / Suite', 'Delivery address', 'Step 2 of 3']) {
+  for (const label of ['Street address', 'Address line 1', 'Address 2', 'ZIP code', 'Postcode', 'City', 'Apt / Suite', 'Delivery address', 'Step 2 of 3',
+    'Shipping address', 'Billing ZIP', 'Address line 2', 'House number', 'Suite or apartment', 'Building name', '5 items in cart', 'Route 66 playlist', 'Floor 3 meeting room']) {
     assert.equal((await read({ ...BOX, nearbyLabel: label })).hit.nearbyLabel, label, label)
   }
 })

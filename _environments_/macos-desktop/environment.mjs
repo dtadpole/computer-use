@@ -710,27 +710,44 @@ export function nearbyLabelOf(value) {
 // CU-374: the street-type words of a number-first address ('221B Baker Street', '350 Fifth Ave.').
 const STREET_TYPES = 'St|Street|Ave|Avenue|Rd|Road|Blvd|Boulevard|Ln|Lane|Dr|Drive|Way|Ct|Court|Pl|Place|Ter|Terrace|' +
   'Hwy|Highway|Pkwy|Parkway|Sq|Square|Cir|Circle|Close|Crescent|Cres|Loop|Row|Walk|Trail|Mews'
+// CU-374 r2 (cu-researcher): street words that lead the street name, as a class across languages; a dotted
+// abbreviation ('Pl.', 'Av.', 'ul.') counts like the full word.
+const LEADING_STREET_WORDS = 'calle|avenida|av\\.|via|viale|piazza|corso|strada|rua|praça|largo|plaza|pl\\.|place|' +
+  'ulica|ul\\.|aleja|al\\.|carrer|rambla|paseo|pso\\.'
+// Street words that end a one-word street name: 'Hauptstraße', 'Kalverstraat', 'Drottninggatan', 'Nørregade'.
+const TRAILING_STREET_WORDS = 'straße|strasse|str\\.|weg|gasse|platz|allee|straat|gracht|laan|gatan|gata|gade|vej|' +
+  'veien|vegen|utca|katu|tie'
 const ADDRESS_SHAPES = [
-  // A house number, at most five words, then a street type: '1 Infinite Loop', 'Ship to 221B Baker Street'.
-  new RegExp(`(?:^|[\\s,:(])\\d{1,6}[A-Za-z]?\\s+(?:[\\p{L}\\d.'-]+\\s+){0,5}(?:${STREET_TYPES})\\b\\.?`, 'iu'),
-  // A street word then its number: 'Hauptstraße 5', 'Lindenweg 12a'.
-  /\p{L}*(?:straße|strasse|str\.|weg|gasse|platz|allee)\s+\d{1,5}[a-z]?\b/iu,
+  // A house number, at most five words, then a street type: '1 Infinite Loop', 'Ship to 221B Baker Street', and the
+  // number after a unit's slash: 'Unit 5/12 George St'.
+  new RegExp(`(?:^|[\\s,:(/])\\d{1,6}[A-Za-z]?\\s+(?:[\\p{L}\\d.'-]+\\s+){0,5}(?:${STREET_TYPES})\\b\\.?`, 'iu'),
+  // A one-word street name then its number: 'Hauptstraße 5', 'Lindenweg 12a', 'Kalverstraat 1'.
+  new RegExp(`\\p{L}*(?:${TRAILING_STREET_WORDS})\\s+\\d{1,5}[a-z]?\\b`, 'iu'),
   // A number then a street word: '12 rue de Rivoli', '3, avenue Foch'.
   /(?:^|[\s,:(])\d{1,4},?\s+(?:rue|avenue|boulevard|bd|chemin|allée|impasse|quai)\b/iu,
-  // A street word, its name, then its number: 'Calle Mayor 10', 'Via Roma, 12'.
-  /\b(?:calle|avenida|via|viale|piazza|corso)\s+[\p{L} .'-]{2,40},?\s*\d{1,5}\b/iu,
+  // A leading street word, its name, then its number: 'Calle Mayor 10', 'Via Roma, 12', 'Rua Augusta 1500',
+  // 'Strada Nuova 3', 'Pl. de la Concorde 8'.
+  new RegExp(`(?:^|[\\s,:(])(?:${LEADING_STREET_WORDS})\\s+[\\p{L} .'-]{2,40},?\\s*\\d{1,5}\\b`, 'iu'),
   // A post-office box: 'PO Box 4471', 'P.O. Box 12'.
   /\bP\.?\s?O\.?\s+Box\s+\d+/i,
   // A town, a US state and a ZIP: 'Cupertino, CA 95014'.
   /,\s*[A-Z]{2}\s+\d{5}(?:-\d{4})?\b/,
+  // An Australian state and postcode: 'Sydney NSW 2000'.
+  /\b(?:NSW|VIC|QLD|SA|WA|TAS|NT|ACT)\s+\d{4}\b/,
   // A UK postcode: 'London SW1A 1AA'.
   /\b[A-Z]{1,2}\d[A-Z\d]?\s+\d[A-Z]{2}\b/,
+  // A postal-code line: four to six digits, then a capitalised town: '10115 Berlin', '75001 Paris'.
+  /(?:^|[\s,])\d{4,6}\s+\p{Lu}\p{Ll}+/u,
+  // A Japanese postcode ('150-0002') and a chome address ('1-2-3 Shibuya').
+  /(?:^|[\s,〒])\d{3}-\d{4}\b/,
+  /(?:^|[\s,])\d{1,2}-\d{1,2}(?:-\d{1,4})?\s+\p{Lu}/u,
 ]
 
 /**
  * CU-374: whether a short text reads as a street address. Each shape needs a number next to a street word, a box
  * number or a postal code, so a label that only names the field ('Street address', 'Address line 1', 'ZIP code')
- * stays a label. Named over-ask: a label that itself reads as an address ('10 Downing Street') reads as none.
+ * stays a label. Named over-asks: a label that itself reads as an address ('10 Downing Street'), or one whose 4-6
+ * digit number is followed by a capitalised word ('2000 Points'), reads as none - a lost label, never a lost value.
  */
 export function looksStreetAddress(text) {
   const value = String(text ?? '')
