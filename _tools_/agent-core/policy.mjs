@@ -314,6 +314,10 @@ const WORDS = Object.freeze({
     'add member', 'add members', 'disable protection', 'unprotect branch',
     // CU-411: ownership and admin grants widen access.
     'make owner', 'make co-owner', 'transfer ownership', 'make admin', 'grant admin',
+    // CU-389 (cu-researcher): widening who can reach a document or space - general access and join settings.
+    'anyone can edit', 'anyone can view', 'anyone can comment', 'everyone can edit', 'everyone can view',
+    'anyone with the link', 'anyone on the web', 'anyone on the internet', 'public on the web',
+    'make editor', 'make an editor', 'make collaborator', 'allow anyone to join', 'allow everyone to join', 'allow guests to join', 'let anyone join',
     // CU-408: adding a payee widens who can be paid.
     'add payee', 'add a payee', 'add recipient', 'add beneficiary',
     // CU-401: leaving a shared space or unlinking an account.
@@ -369,7 +373,7 @@ const WORDS = Object.freeze({
 // CU-377 follow-up: the file browsers whose rows are files (the same set as app-policy's FILE_BROWSERS).
 const FILE_BROWSER_APPS = new Set(['com.apple.finder', 'com.cocoatech.PathFinder', 'com.binarynights.ForkLift-3', 'com.binarynights.ForkLift', 'com.eltima.cmd1', 'com.mrrsoftware.marta', 'org.yanex.marta'])
 const SHARE_DESTINATION = /\b(?:airdrop|shared(?:\s+(?:folder|with\s+me|with\s+you))?|drop\s+box|dropbox|public\s+folder|server|network|(?:smb|afp|nfs|webdav):)/i
-const ACCOUNT_SECURITY = /\b(?:(?:generate|create|new|add)\s+(?:an?\s+)?app[\s-]?(?:specific[\s-]?)?passwords?|app[\s-]?(?:specific[\s-]?)?passwords?|(?:enable|disable|turn\s+(?:on|off)|set\s+up|add\s+(?:a\s+)?)?\s*(?:auto[\s-]?forward(?:ing)?|automatic(?:ally)?\s+forward(?:ing)?|forwarding(?:\s+address)?|forward\s+(?:a\s+copy|incoming|all|to)\b)|two[\s-]?(?:factor|step)(?:\s+(?:authentication|verification|login))?|2[\s-]?step\s+verification|create\s+(?:a\s+|new\s+)?filter|2fa|multi[\s-]?factor(?:\s+authentication)?|(?:change|update|edit)\s+(?:your\s+)?e-?mail(?:\s+address)?(?!\s+(?:notifications?|preferences|settings))|(?:change|update|edit)\s+(?:your\s+)?phone(?:\s+number)?|recovery\s+(?:e-?mail|phone|codes?))\b/i
+const ACCOUNT_SECURITY = /\b(?:(?:generate|create|new|add)\s+(?:an?\s+)?app[\s-]?(?:specific[\s-]?)?passwords?|app[\s-]?(?:specific[\s-]?)?passwords?|(?:enable|disable|turn\s+(?:on|off)|set\s+up|add\s+(?:a\s+)?)?\s*(?:auto[\s-]?forward(?:ing)?|automatic(?:ally)?\s+forward(?:ing)?|forwarding(?:\s+address)?|forward\s+(?:a\s+copy|incoming|all|to|(?:my|all|incoming|every|new)\s+(?:e-?mails?|mail|messages)\s+to)\b)|two[\s-]?(?:factor|step)(?:\s+(?:authentication|verification|login))?|2[\s-]?step\s+verification|create\s+(?:a\s+|new\s+)?filter|2fa|multi[\s-]?factor(?:\s+authentication)?|(?:change|update|edit)\s+(?:your\s+)?e-?mail(?:\s+address)?(?!\s+(?:notifications?|preferences|settings))|(?:change|update|edit)\s+(?:your\s+)?phone(?:\s+number)?|recovery\s+(?:e-?mail|phone|codes?))\b/i
 // CU-375 (cu-researcher): the German names of an app password and of mail forwarding reach a credential as their English
 // twins do; turning forwarding off stays free, as in English.
 const ACCOUNT_SECURITY_DE = /(?:^|[^\p{L}])(?:app[\s-]?passw(?:ort|örter)|anwendungsspezifische[sn]?\s+passw(?:ort|örter)|(?:automatische\s+)?weiterleitung(?:sadresse)?)(?:$|[^\p{L}])/iu
@@ -1566,6 +1570,19 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (!focusesEntry && (ACCOUNT_SECURITY.test(name) || ACCOUNT_SECURITY_DE.test(name)) && !protectionOn && !forwardingOff && !forwardingOffDe && !safeToggle) classes.push('credential')
       // CU-375 r2 (cu-developer-three): a native switch already on (checked true) turns mail access OFF - free; a protocol-named
       // switch that is off turns it ON - asks.
+      // CU-389 (cu-researcher): 'Anyone in <org> can edit' widens access like 'Anyone can edit'; and inside a share / invite /
+      // access dialog a bare role option ('Can edit', 'Editor', 'Owner') grants that role - permission. A bare 'Can edit'
+      // elsewhere, and narrowing options ('Can view', 'Viewer', 'Restricted', 'Only me'), stay free.
+      if (!focusesEntry && /\banyone\s+(?:at|in|from)\s+[\w .&'-]{1,40}?\s+can\s+(?:view|edit|comment|join)\b/i.test(name)) classes.push('permission')
+      // r2 (cu-developer-one / -two / -three): the same widening said other ways - a role change upward ('Change to Editor', 'Set as
+      // owner'), 'Allow anyone / everyone / guests to view / edit / comment / access ...', 'Open to everyone / the public', and link
+      // sharing turned on ('Turn on link sharing', 'Link sharing on'). Turning it off, and roles downward, stay free.
+      if (!focusesEntry && (/\b(?:change|switch|set|upgrade|promote)\s+(?:(?:the\s+)?role\s+)?(?:to|as)\s+(?:an?\s+)?(?:editor|owner|co-?owner|admin(?:istrator)?|commenter|collaborator|manager)\b/i.test(name)
+        || /\ballow\s+(?:anyone|everyone|all\s+users|the\s+public|guests|people\s+outside\s+\S+)\s+to\s+(?:view|edit|comment|access|see|join|download|copy|share)\b/i.test(name)
+        || /\bopen\s+to\s+(?:everyone|anyone|the\s+public|all)\b/i.test(name)
+        || /\b(?:turn\s+on|enable|allow|activate)\s+(?:public\s+)?link\s+sharing\b|^\s*link\s+sharing\s*:?\s*on\s*$/i.test(name))) classes.push('permission')
+      const shareDialog = /\b(?:share|sharing|invite|permissions?|general\s+access|manage\s+access)\b/i.test(`${target?.dialogName ?? ''} ${target?.dialogDescription ?? ''}`)
+      if (!focusesEntry && POINTER.has(action.type) && shareDialog && /^\s*(?:can\s+(?:edit|comment|manage|organi[sz]e)|editor|commenter|owner|co-?owner|full\s+access|admin)\s*$/i.test(name)) classes.push('permission')
       const mailSwitchState = nativeToggleState(target)
       if (!focusesEntry && mailSwitchState !== true && (MAIL_ACCESS_ON.test(name) || MAIL_ACCESS_ON_DE.test(name) || (mailSwitchState === false && MAIL_ACCESS_SWITCH.test(name)))) classes.push('permission')
       // CU-401 round 2 (cu-coordinator): a plan word beside a navigation noun ('Downgrade options', 'Cancel plan details')
