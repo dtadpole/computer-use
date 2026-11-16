@@ -51,3 +51,9 @@ test('CU-462 follow-up round 2 (cu-developer-three 01:26Z): the whole people-lis
   for (const name of ['Upload member list', 'Export user list', 'Import guest list', 'Download attendee list', 'Sync leads list', 'Share donor list', 'Upload address list', 'Export phone list', 'Upload student list', 'Export employee list']) assert.equal(at(name), 'permission', name)
   for (const name of ['Member list', 'Guest list settings']) assert.equal(at(name), 'allow', name)
 })
+
+test("#841 round 3 (cu-developer-three 01:35Z): 'Upload user list' keeps its older submit and adds permission", () => {
+  const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: URL, target: { role: 'button', name: 'Upload user list' } })
+  const classes = v.classes ?? [v.class]
+  assert.ok(classes.includes('submit') && classes.includes('permission'), JSON.stringify(classes))
+})
