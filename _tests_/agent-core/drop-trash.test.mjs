@@ -63,3 +63,9 @@ test("CU-385 follow-up r2 (cu-developer-two 20:53Z): Outlook's Russian Deleted I
   for (const name of ['Удаленные элементы', 'Удалённые элементы', 'Удаленные элементы (2)']) assert.ok(drop(name).includes('delete'), name)
   assert.ok(!drop('Элементы').includes('delete'))
 })
+
+const dropPerm = (name) => { const v = policy.classify({ type: 'drag', from: [10, 10], to: [200, 200] }, { url: 'https://drive.fixture.example/my-drive', target: { role: 'row', name: 'Quarterly report' }, dropTarget: { role: 'treeitem', name } }); return v.decision === 'allow' ? [] : (v.classes ?? [v.class]) }
+test('CU-385 (cu-verifier 21:42Z): a web drop onto a shared or public space asks permission', () => {
+  for (const name of ['Shared with me', 'Public', 'Shared', 'Shared drives', 'Shared with everyone', 'Team Drive', 'Public folder', 'Shared (3)']) assert.ok(dropPerm(name).includes('permission'), name)
+  for (const name of ['My Drive', 'Projects', 'Public speaking notes', 'Shared expenses 2026']) assert.ok(!dropPerm(name).includes('permission'), name)
+})
