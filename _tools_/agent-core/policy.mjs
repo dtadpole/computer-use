@@ -333,6 +333,39 @@ const ACCOUNT_SECURITY = /\b(?:(?:generate|create|new|add)\s+(?:an?\s+)?app[\s-]
 const PHYSICAL_NOUN = '(?:door|doors|lock|locks|deadbolt|gate|garage|front|back|side|car|vehicle|trunk)'
 const UNLOCK_PHYSICAL = new RegExp(`\\bunlock\\b.*\\b${PHYSICAL_NOUN}\\b|\\b${PHYSICAL_NOUN}\\b.*\\bunlock\\b`, 'i')
 const TRADE_ASSET = /\b(?:btc|eth|usd|eur|gbp|jpy|usdt|usdc|dai|sol|xrp|ada|doge|bnb|bitcoin|ethereum|crypto|coins?|tokens?|shares?|stocks?)\b/i
+// CU-585: a bare submit that a typed-word confirmation form gates, and the senses of that form's prompt (the driver's
+// formEntries - the words beside its text entries, never a value).
+// Any generic submit (cu-researcher's r1 held-out: 'Next' / 'Done' were missed), never a named act.
+// cu-researcher r5: invert the button test - in a typed-word confirmation form ANY otherwise-unclassed button reads the
+// prompt ('Yes, do it', 'Next step', 'Alright'), except one that backs out (cancel / back / close / no / keep / not now ...).
+const TYPED_CONFIRM_BACKOUT = /^\s*(?:cancel\b.*|back|go\s+back\b.*|close|dismiss|no\b.*|nope|not\s+now|never\s*mind|keep\b.*|don(?:'|\u2019)?t\b.*|do\s+not\b.*|abort|exit|return\b.*|undo|skip\b.*|(?:maybe\s+)?later|stay\b.*|x|\u00d7|\u2715|\u2716)\s*[.!]?\s*$/i
+// cu-researcher r6: a clipboard / view / reveal / help control beside the box (GitHub's copy-the-name button) does not confirm
+// anything either - it never reads the prompt.
+const TYPED_CONFIRM_UTILITY = /^\s*(?:copy\b.*|show\b.*|hide\b.*|reveal\b.*|view\b.*|preview\b.*|learn\s+more\b.*|help\b.*|more\s+info\b.*|info|details|what(?:'|\u2019)?s\s+this\b.*|paste\b.*|clear|\?|i)\s*[.!]?\s*$/i
+function typedConfirmButton(name) {
+  const text = String(name ?? '').trim()
+  return text !== '' && !TYPED_CONFIRM_BACKOUT.test(text) && !TYPED_CONFIRM_UTILITY.test(text)
+}
+// The confirm-prompt shape: a typing word followed by what to type ('Type DELETE ...', 'Enter the workspace name ...'), never
+// 'Type to search ...' / 'Type here ...' / 'Press Enter to ...' (cu-researcher's r1 over-ask 'Type to search deleted items').
+// r8 (author-found): gerunds too - 'Confirm by typing DELETE', 'by entering the project ID', 'Retyping the name ...'.
+const TYPED_INSTRUCTION = /\b(?:type|typing|enter|entering|re-?enter(?:ing)?|re-?typ(?:e|ing)|write|writing|input(?:ting)?|key(?:ing)?\s+in|spell(?:ing)?\s+out|repeat(?:ing)?|fill(?:ing)?\s+in|copy(?:ing)?|past(?:e|ing))\s+(?!(?:to|here|in)\b)["'\u201c\u2018\p{L}\p{N}]/iu
+const TYPED_DESTROY = /\b(?:delet\w*|eras(?:e|es|ed|ing|ure)\b|wip(?:e|es|ed|ing)\b|remov\w*|destroy\w*|purg(?:e|es|ed|ing)\b|terminat\w*|deactivat\w*|permanently|permanent\s+(?:deletion|removal|erasure)|irreversibl\w*|cannot\s+be\s+undone|nuk(?:e|es|ed|ing)\b|uninstall\w*|drop\s+(?:it|them|(?:the|this|that|your|my)\s+\w+)\b|shut(?:ting)?\s+(?:\w+\s+){0,3}down\b|clos(?:e|ing)\s+(?:it|(?:the|this|that|your|my)\s+\w+)\s+(?:down|for\s+good|permanently)\b|kill(?:s|ed|ing)?\s+(?:it|them|(?:the|this|that|your|my|all)\s+\w+)\b|scrap(?:s|ped|ping)?\b|trash(?:es|ed|ing)?\s+(?:it|them|(?:the|this|that|your|my|all)\s+\w+)\b|discard\w*|retir(?:e|es|ed|ing)\b|sunset(?:s|ting)?\b|cancel(?:l?ing)?\s+(?:the\s+|this\s+|your\s+|my\s+)?(?:account|membership|organi[sz]ation|workspace)\b|re-?format\w*|format\s+(?:the\s+|this\s+|your\s+)?(?:disk|drive|volume|card|partition)\b|obliterat\w*|shred\w*|annihilat\w*|decommission\w*|deprovision\w*|tear\s+(?:it\s+|this\s+|the\s+\w+\s+)?down|factory\s+reset|reset\s+(?:\w+\s+)?to\s+factory|empty\s+(?:it|them|the|this|that|your|all)\b|(?:archiv\w*|los(?:e|ing)|gone|hid(?:e|den))\s+(?:\w+\s+){0,2}(?:forever|for\s+good)|clos(?:e|ing)\s+(?:the\s+|this\s+|my\s+|your\s+)?account\b|drop\s+(?:the\s+|this\s+)?(?:table|database|schema|collection|index)\b)/i
+// A transfer counts only of ownership: 'Enter the transfer amount' is money, not a handover (cu-developer-three's near-miss).
+const TYPED_TRANSFER = /\b(?:(?:move|transfer|send|pass|give|assign|hand)\s+(?:(?:it|this|that|them|the\s+\w+|this\s+\w+)\s+)?(?:on\s+|over\s+)?to\s+(?:a\s+|an\s+)?(?:another|new|different|other)\s+(?:owner|admin(?:istrator)?|account|org(?:anization)?|team|workspace|user|member|person)|make\s+(?:\w+\s+){1,3}(?:the\s+)?(?:new\s+)?admin(?:istrator)?\b|(?:another|different)\s+owner|give\s+(?:(?:it|them|this|that|the|your|my)\s+)?(?:\w+\s+){0,2}away|hand(?:ing)?\s+(?:it\s+|this\s+\w+\s+|the\s+\w+\s+)?off|make\s+(?:\w+\s+){1,3}(?:the\s+)?(?:new\s+)?owner|reassign\s+(?:the\s+)?ownership|transfer\w*\s+(?:of\s+)?(?:the\s+)?ownership|ownership|hand(?:ing)?\s+(?:it\s+|this\s+\w+\s+|the\s+\w+\s+)?over|handover|new\s+owner|change\s+(?:the\s+)?owner|transfer\s+(?:the\s+|this\s+)?(?:workspace|repository|repo|organization|org|project|team|account|domain)\b)/i
+
+/**
+ * CU-585: the classes a typed-word confirmation form's prompt asks for, read by sense from the driver's formEntries (at
+ * most 3 texts of 80 characters). Some text must tell the person to type or enter something; then a destructive or
+ * permanent act anywhere in the form's words asks delete, and a transfer of ownership asks permission (not purchase).
+ * Ordinary boxes (a name, a search, a message, a coupon) carry no typing-to-confirm sense and add nothing.
+ */
+export function typedConfirmClasses(entries) {
+  const texts = (Array.isArray(entries) ? entries : []).slice(0, 3).map((text) => String(text ?? '')).filter((text) => text.length <= 80)
+  if (!texts.some((text) => TYPED_INSTRUCTION.test(text))) return []
+  const words = texts.join(' \u2022 ')
+  return [...(TYPED_DESTROY.test(words) ? ['delete'] : []), ...(TYPED_TRANSFER.test(words) ? ['permission'] : [])]
+}
 const TRADE_WORDS = /\b(?:trade|trading|swap|swaps|stake|staking|unstake|sell|selling|bridge|mint|minting)\b/gi
 const TRADE_NAV = /\b(?:trade|trading|swap|swaps|stake|staking|unstake|sell|selling|bridge|mint|minting)\b[\s\S]*\b(?:history|settings|faq|guide|policy|fees|rates|limits)\b/i
 // cu-coordinator 11:13Z adds 'Rotate secret', 'Regenerate token', 'New token' and a settings 'Reset password' (CU-401's family).
@@ -2540,6 +2573,17 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const raised = String(name ?? '').trim()
       if (/^(?:remove|clear)\s+(?:the\s+)?(?:activation\s+lock|device\s+passcode)$/i.test(raised) && !classes.includes('credential') && classes.length > 0) classes.push('credential')
       if (/^deploy\s+(?:the\s+|a\s+|this\s+)?(?:configuration\s+|config\s+|mdm\s+|management\s+)?profiles?$/i.test(raised) && !classes.includes('permission') && classes.length > 0) classes.push('permission')
+    }
+    // CU-585 (cu-researcher's filing; GO from the policy.mjs owner cu-developer-one 13:48Z; built by cu-developer-two): a
+    // otherwise-unclassed button that does not back out ('Confirm', 'Next step', 'Yes, do it' - not 'Cancel') in a danger-zone form
+    // reads the words its form's text entries show (the driver's formEntries, on a click and on Return's default button):
+    // a prompt to type something that confirms a destructive or permanent act asks delete, one that confirms a transfer of
+    // ownership asks permission. A late union - it only adds an ask to a submit nothing else classes, never lowers one.
+    // Only on the control's own label: the name sub-probes (confirm / question / split-particle forms of 'Not now' -> 'now')
+    // carry the target's formEntries along and must not read the prompt; Return's default-button probe does.
+    const subProbe = context.confirmProbe === true || context.questionProbe === true || context.splitParticleProbe === true
+    if (grammarEligible && !subProbe && classes.length === 0 && typedConfirmButton(name) && Array.isArray(target?.formEntries)) {
+      for (const cls of typedConfirmClasses(target.formEntries)) classes.push(cls)
     }
     if (grammarEligible && classes.length === 0) {
       const mdm = String(name ?? '').trim()
