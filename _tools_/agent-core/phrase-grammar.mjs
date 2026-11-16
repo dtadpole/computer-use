@@ -1156,13 +1156,18 @@ function grammarClassesOf(name, role = '') {
   }
   if (/^\s*install\s+now\s*!?\s*$/i.test(raw)) return ['install']
   // CU-462 (Medium; cu-coordinator 00:04Z triage + 04:20Z, CU-479's rest): an address book or a mailing list leaves the account -
-  // uploads, syncs, imports and exports of contacts, subscribers or an audience, and a shareable link (permission). 'Contacts' and the
-  // user's own 'Export my data' stay free.
+  // uploads, syncs, imports and exports of contacts, subscribers or an audience, and a shareable link (permission). 'Contacts' stays
+  // free; the user's own 'Export my data' asks permission since CU-558 (cu-verifier 01:27Z: the old 'stays free' note was stale).
   // #742 round 3 (cu-coordinator 21:21Z): the rest of CU-462's shareable-link words - create / generate / make a shareable / share /
   // public / sharing link, and 'Anyone with the link' (can view / edit / comment) - permission like 'Get shareable link'.
   if (/^\s*(?:create|generate|make|turn\s+on)\s+(?:a\s+|the\s+)?(?:shareable|share|public|sharing)\s+link\s*$|^\s*anyone\s+with\s+(?:the\s+)?link(?:\s+can\s+(?:view|edit|comment))?\s*$/i.test(raw)) return ['permission']
   // #742 round 2 (cu-researcher 21:13Z): the two-word object 'address book' reads as one ('Export address book', 'Sync my address book').
   if (/^\s*(?:upload|sync|import|export|download|share)\s+(?:all\s+|my\s+|your\s+|the\s+)?address\s+books?\s*$/i.test(raw)) return ['permission']
+  // #742 round 4 (cu-developer-three 00:10Z): the people-list family - upload / sync / import / export / download / share (all / my / your /
+  // the / a) contact / contacts / mailing / email / subscriber / customer / client list(s) ('Upload contact list'); r2 (cu-developer-three
+  // 01:26Z): member / user / guest / attendee / participant / lead / donor / address / phone / student / employee / patient / volunteer /
+  // prospect list(s) too.
+  if (/^\s*(?:upload|sync|import|export|download|share)\s+(?:all\s+|my\s+|your\s+|the\s+|a\s+)?(?:contacts?|mailing|e-?mail|subscribers?|customers?|clients?|members?|users?|guests?|attendees?|participants?|leads?|donors?|address|phone|students?|employees?|patients?|volunteers?|prospects?)\s+lists?\s*$/i.test(raw)) return ['permission']
   if (list.length <= 4) {
     const [v, ...r] = list
     const people = ['contact', 'subscriber', 'audience', 'list', 'address', 'addressbook']

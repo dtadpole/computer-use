@@ -2282,6 +2282,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (probe.decision === 'confirm') for (const cls of probe.classes ?? [probe.class]) classes.push(cls)
     }
     if (grammarEligible && classes.length === 0 && !nativeOn) for (const cls of grammarClasses(name, target?.role)) classes.push(cls)
+    // #841 r3 (cu-developer-three 01:35Z; the older class leads): the people-list row returns permission first, which dropped the older
+    // submit 'Upload user list' asked on main - keep it beside permission (a union, like 'Upgrade to options level 2').
+    if (grammarEligible && classes.includes('permission') && !classes.includes('submit') && /^\s*upload\s+(?:all\s+|my\s+|your\s+|the\s+|a\s+)?users?\s+lists?\s*$/i.test(String(name ?? ''))) classes.push('submit')
     const mixedScript = !url.startsWith('desktop:') && classes.length === 0 && (POINTER.has(action.type) || pressesEnter || keyboard.activates) && target?.mixedScriptName === true
     if (mixedScript) classes.push('permission')
     // CU-302 (design note 0.1): a form the browser filled from saved logins or cards - a field matching :autofill, which
