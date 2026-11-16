@@ -711,15 +711,20 @@ export function nearbyLabelOf(value) {
   if (text === null || looksSensitive(text) !== null) return null
   if (!looksStreetAddress(text)) return text
   const full = labelVerdicts(text)
-  // r4 (cu-researcher): a text that is all address ('221B Baker Street') is a displayed value, whatever its street word
-  // makes policy read; only words outside the address can name the field.
-  if (full === labelVerdicts(null) || cutAddress(text, '') === '') return null
-  for (const stand of ['', 'street address']) {
+  if (full === labelVerdicts(null)) return null
+  // r5 (option (c), agreed by cu-researcher and cu-developer-three): a text that is all address ('221B Baker Street') is
+  // a displayed value; when its street word alone makes policy ask, it reads as the stand-in 'street address' - the same
+  // verdict, re-checked, and no house number or name - never as the address.
+  if (cutAddress(text, '') === '') return labelVerdicts(ADDRESS_STAND_IN) === full ? ADDRESS_STAND_IN : text
+  for (const stand of ['', ADDRESS_STAND_IN]) {
     const cut = cutAddress(text, stand)
     if (cut !== '' && !looksStreetAddress(cut) && labelVerdicts(cut) === full) return cut
   }
   return text
 }
+
+// CU-374 r5: what an address that names its own field reads as - the field words, without the address.
+const ADDRESS_STAND_IN = 'street address'
 
 // CU-374 r3: the probe box and values for labelVerdicts - an unnamed desktop entry, and one value of each kind the
 // entry-name rules weigh (a code, a password, a plain word).

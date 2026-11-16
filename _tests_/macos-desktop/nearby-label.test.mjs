@@ -100,9 +100,22 @@ test('CU-374 (cu-researcher): a street address shown beside a box is a displayed
 })
 
 test('CU-374 r4 (cu-researcher): a text that is all address reads as none - an alphanumeric house number, a bare UK postcode', async () => {
-  for (const address of ['221B Baker Street', '12A Station Road', 'SW1A 2AA', 'M1 1AE', '1 Infinite Loop']) {
+  for (const address of ['12A Station Road', 'SW1A 2AA', 'M1 1AE', '1 Infinite Loop', '350 Fifth Ave.', 'PO Box 4471']) {
     const { hit, focused } = await read({ ...BOX, nearbyLabel: address })
     assert.deepEqual([hit.nearbyLabel, focused.nearbyLabel], [null, null], address)
+  }
+})
+
+test('CU-374 r5 (option (c)): an all-address text whose street word alone makes the box ask reads as the stand-in - never the address, never a lost ask', async () => {
+  const policy = createPolicy({ sitePolicy: () => 'allow' })
+  const judge = (nearbyLabel, typed) => {
+    const v = policy.classify({ type: 'type', text: typed }, { url: `app:${FIXTURE}`, target: { origin: FIXTURE, role: 'AXTextField', name: null, editable: true, nearbyLabel } })
+    return v.decision === 'allow' ? 'allow' : v.class
+  }
+  for (const address of ['221B Baker Street', '10 Downing Street']) {
+    const { hit, focused } = await read({ ...BOX, nearbyLabel: address })
+    assert.deepEqual([hit.nearbyLabel, focused.nearbyLabel], ['street address', 'street address'], address)
+    for (const typed of ['123456', 'hunter2x', 'Pat']) assert.equal(judge(hit.nearbyLabel, typed), judge(address, typed), `${address} / ${typed}`)
   }
 })
 
