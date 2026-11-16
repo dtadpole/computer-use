@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { after, test } from 'node:test'
 
+import { createPolicy } from '../../_tools_/agent-core/policy.mjs'
 import { fakeLauncher, logged, scratchLocks, stopFake } from './harness.mjs'
 
 // CU-361 (helper 0.2.64): the desktop driver carries an unnamed entry's layout label - the static text the helper finds
@@ -70,7 +71,7 @@ test('CU-361 (cu-researcher): a static text the value rules class as sensitive i
   assert.equal((await read({ ...BOX, nearbyLabel: 'Card number' })).hit.nearbyLabel, 'Card number', 'a label naming a card stays a label')
 })
 
-test('CU-374 (cu-researcher): a street address shown beside a box is a displayed value, not a label - it reads as null', async () => {
+test('CU-374 (cu-researcher): a street address shown beside a box is a displayed value, not a label - no number of it is read', async () => {
   const shown = [
     '1 Infinite Loop, Cupertino, CA 95014',
     'Ship to 221B Baker Street',
@@ -92,9 +93,31 @@ test('CU-374 (cu-researcher): a street address shown beside a box is a displayed
   ]
   for (const address of shown) {
     const { hit, focused } = await read({ ...BOX, nearbyLabel: address })
-    assert.equal(hit.nearbyLabel, null, address)
-    assert.equal(focused.nearbyLabel, null, address)
+    // None, or (r3) the field words with the address cut out when they make the box ask - never a house number or code.
+    for (const read1 of [hit.nearbyLabel, focused.nearbyLabel]) assert.ok(read1 === null || !/\d/.test(read1), `${address} read as ${read1}`)
     for (const target of [hit, focused]) assert.ok(!JSON.stringify(target).includes(address), `no field carries '${address}'`)
+  }
+})
+
+test('CU-374 r3 (cu-developer-three F1): a label that names a sensitive field keeps naming it - dropping an address never removes an ask', async () => {
+  const policy = createPolicy({ sitePolicy: () => 'allow' })
+  const judge = (nearbyLabel, typed) => {
+    const v = policy.classify({ type: 'type', text: typed }, { url: `app:${FIXTURE}`, target: { origin: FIXTURE, role: 'AXTextField', name: null, editable: true, nearbyLabel } })
+    return v.decision === 'allow' ? 'allow' : v.class
+  }
+  for (const label of ['Enter the 6-digit code we sent via SMS to 555-0123', 'Security code sent via email 2', 'Password for Parkplatz 3', 'PIN for 12 Baker Street', 'Ship to 221B Baker Street']) {
+    const read1 = (await read({ ...BOX, nearbyLabel: label })).hit.nearbyLabel
+    for (const typed of ['123456', 'hunter2x', 'Pat']) assert.equal(judge(read1, typed), judge(label, typed), `${label} / ${typed}: the read label decides as the shown one`)
+  }
+  const cut = (await read({ ...BOX, nearbyLabel: 'Ship to 221B Baker Street' })).hit.nearbyLabel
+  assert.equal(cut, 'Ship to street address', 'the address is cut out, its ask kept')
+})
+
+test('CU-374 r3 (cu-developer-three F2): everyday labels with a number stay labels', async () => {
+  for (const label of ['Get updates via email every 7 days', 'Share my location via Find My 2', 'Ship via UPS Ground 2', 'Send reminders via SMS 1 day before',
+    'Freeze 1 row', 'Add 1 row', '10 min walk', 'Area 2 square feet', 'Draw 1 circle', 'Use 2 Way sync', 'PS5 1TB', 'M2 1TB SSD', 'MP3 4GB',
+    'Arbeitsplatz 2', 'Parkplatz 3', 'Keep me signed in for 30 days', 'Remind me in 2 days', 'Allow 2 devices', 'Auto-lock after 5 min', 'Enable 2-step verification']) {
+    assert.equal((await read({ ...BOX, nearbyLabel: label })).hit.nearbyLabel, label, label)
   }
 })
 
