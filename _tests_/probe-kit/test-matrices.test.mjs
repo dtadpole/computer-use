@@ -2,6 +2,8 @@ import assert from 'node:assert/strict'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { spawnSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
 import { test } from 'node:test'
 
 import { testMatrices } from '../../_tools_/probe-kit/test-matrices.mjs'
@@ -30,4 +32,16 @@ test("this tree's matrices: over a hundred pages and three hundred asking rows, 
   assert.ok(rows >= 300, `only ${rows} asking rows`)
   assert.equal(new Set(ms.map((m) => m.id)).size, ms.length)
   for (const m of ms) assert.ok(new URL(m.site).origin.startsWith('https://'), m.id)
+})
+
+test('a cap that is not a whole number >= 1 is refused, by the function and by the CLI (exit 2, nothing written)', () => {
+  for (const cap of [Number.NaN, -5, 0, 2.5]) assert.throws(() => testMatrices({ cap }), RangeError, String(cap))
+  const cli = fileURLToPath(new URL('../../_tools_/probe-kit/test-matrices.mjs', import.meta.url))
+  const out = mkdtempSync(join(tmpdir(), 'cu-test-matrices-cli-'))
+  try {
+    for (const cap of ['abc', '-5', '0']) {
+      const r = spawnSync(process.execPath, [cli, join(out, cap), cap], { encoding: 'utf8' })
+      assert.equal(r.status, 2, `cap ${cap}: ${r.stdout}${r.stderr}`)
+    }
+  } finally { rmSync(out, { recursive: true, force: true }) }
 })

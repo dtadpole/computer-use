@@ -2,7 +2,7 @@
 title: probe-kit test suite
 created: 2026-11-09T23:30:00Z
 modified: 2026-11-16T02:45:00Z
-version: 0.4.0
+version: 0.4.1
 description: "CU-384: the probe kit's drift test - every landed field is still named by its producing file, pending fields are still pending, the browser builders match describeElement, and the kit judges through the real components."
 grounded_in:
   - source: _tools_/probe-kit/INDEX.md@0.1.0
@@ -16,7 +16,8 @@ deskPolicy. Mutants: renaming a SOURCES field to one no file names fails the fir
 pending fails the second.
 
 The test-matrices check builds a synthetic tree (the cap and the page rule) and guards this tree's coverage (at least 100
-matrices and 300 asking rows); mutants: narrowing the page pattern or ignoring the cap fails one test each.
+matrices and 300 asking rows); mutants: narrowing the page pattern or ignoring the cap fails one test each; a cap that is not a whole number >= 1 is refused
+(RangeError, CLI exit 2).
 
 ## Read next
 

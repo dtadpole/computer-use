@@ -21,6 +21,7 @@ const verdictOf = (policy, site, name) => {
 
 /** `[{ id, site, rows: [[class, [names]]], free }]`, one per agent-core test file that names a page and an asking name. */
 export function testMatrices({ root = ROOT, cap = 10, freeCap = 6 } = {}) {
+  if (!Number.isInteger(cap) || cap < 1) throw new RangeError(`cap must be a whole number >= 1, got ${cap}`)
   const dir = join(root, '_tests_', 'agent-core'); const out = []
   for (const f of readdirSync(dir).filter((f) => f.endsWith('.test.mjs')).sort()) {
     const src = readFileSync(join(dir, f), 'utf8'); const site = (src.match(SITE) || [])[0]
@@ -41,9 +42,10 @@ export function testMatrices({ root = ROOT, cap = 10, freeCap = 6 } = {}) {
 // CLI: node test-matrices.mjs OUT_DIR [cap] - writes one `{ site, rows, free }` file per matrix for sweeps.mjs / reclass.mjs.
 // Start the CLI only when run directly; resolve the typed path so a symlinked path (macOS /tmp -> /private/tmp) still runs it.
 if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) {
-  const [outDir, cap] = process.argv.slice(2)
-  if (!outDir) { console.error('usage: test-matrices.mjs OUT_DIR [cap]'); process.exitCode = 2 } else {
-    mkdirSync(outDir, { recursive: true }); const ms = testMatrices({ cap: Number(cap ?? 10) })
+  const [outDir, capArg] = process.argv.slice(2); const cap = Number(capArg ?? 10)
+  // The cap must be a whole number of at least 1: 'abc' (NaN) would drop the cap and '-5' would write nothing, both silently.
+  if (!outDir || !Number.isInteger(cap) || cap < 1) { console.error('usage: test-matrices.mjs OUT_DIR [cap, a whole number >= 1]'); process.exitCode = 2 } else {
+    mkdirSync(outDir, { recursive: true }); const ms = testMatrices({ cap })
     for (const { id, ...m } of ms) writeFileSync(join(outDir, `${id}.json`), JSON.stringify(m))
     console.log(`${ms.length} matrices, ${ms.reduce((a, m) => a + m.rows.reduce((b, [, l]) => b + l.length, 0), 0)} asking rows -> ${outDir}`)
   }
