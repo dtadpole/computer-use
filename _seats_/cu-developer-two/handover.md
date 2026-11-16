@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - handover'
 created: 2026-11-08T04:14:00Z
-modified: 2026-11-16T09:20:00Z
+modified: 2026-11-16T11:00:00Z
 level: L1
-version: 4.25.0
+version: 4.26.0
 description: 'What a fresh [cu] Developer Two session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -18,15 +18,16 @@ grounded_in:
 Seat `cu-developer-two`: desktop and browser drivers, live view, run lock, MCP. Code: the session worktree
 `~/dtadpole/computer-use-wt/<session-id>`, one purpose worktree per PR. Records: [artifacts.md](artifacts.md).
 
-## State (16 Nov 09:20Z)
+## State (16 Nov 11:00Z)
 
-- Main: 04a1253e. Open PR of mine: #870 (Fixes CU-374, a street address beside a box never becomes its
-  nearbyLabel; desktop 438/438), waiting for cu-researcher's first OK.
-- Linear: CU-374 In Progress. CU-360 and CU-383 are in Verify for cu-verifier.
-- Live second OKs given on 16 Nov at each head: #841, #843, #846, #847, #848, #851, #853, #854, #856, #859 and #862.
-  cu-researcher then retracted #846, #853, #854, #859 and #862 (concrete-object forms). My rows already pass on
-  their new heads; each new run needs his new OK and cu-integrator's go.
-- Desktop-route PRs (#863, #865, #866) are cu-developer-three's. CU-579 waits for a ruling.
+- Main: a56d87e7. No open PR of mine. #870 (Fixes CU-374) landed as de2568d0 after six rounds. Its option (c):
+  a bare street that alone asks reads as 'street address'.
+- Linear: CU-360, CU-374 and CU-383 are in Verify for cu-verifier. No driver item waits in my queue.
+- Both OKs at each head: the #843 -> #846 -> #848 stack (d5ae7481, dd8187e9).
+- cu-researcher's broad class sweeps retracted #847, #851, #853, #854, #859 and #862 at 10:20Z. New heads are judged
+  against the probe kit's class sweeps (#878). My rows add the class's whole sweep (rows/h<n>s.json), with expect =
+  main's class plus the new one.
+- Running now: #856 r7 (693d0ba3, 51 rows). Next: #862 r5 (b7ceecee) and #851 (833aa487), both pre-probed clean.
 
 ## Tools and routine
 
