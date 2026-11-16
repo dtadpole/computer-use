@@ -327,6 +327,13 @@ const WORDS = Object.freeze({
 const FILE_BROWSER_APPS = new Set(['com.apple.finder', 'com.cocoatech.PathFinder', 'com.binarynights.ForkLift-3', 'com.binarynights.ForkLift', 'com.eltima.cmd1', 'com.mrrsoftware.marta', 'org.yanex.marta'])
 const SHARE_DESTINATION = /\b(?:airdrop|shared(?:\s+(?:folder|with\s+me|with\s+you))?|drop\s+box|dropbox|public\s+folder|server|network|(?:smb|afp|nfs|webdav):)/i
 const ACCOUNT_SECURITY = /\b(?:(?:generate|create|new|add)\s+(?:an?\s+)?app[\s-]?(?:specific[\s-]?)?passwords?|app[\s-]?(?:specific[\s-]?)?passwords?|(?:enable|disable|turn\s+(?:on|off)|set\s+up|add\s+(?:a\s+)?)?\s*(?:auto[\s-]?forward(?:ing)?|automatic(?:ally)?\s+forward(?:ing)?|forwarding(?:\s+address)?|forward\s+(?:a\s+copy|incoming|all|to)\b)|two[\s-]?(?:factor|step)(?:\s+(?:authentication|verification|login))?|2[\s-]?step\s+verification|create\s+(?:a\s+|new\s+)?filter|2fa|multi[\s-]?factor(?:\s+authentication)?|(?:change|update|edit)\s+(?:your\s+)?e-?mail(?:\s+address)?(?!\s+(?:notifications?|preferences|settings))|(?:change|update|edit)\s+(?:your\s+)?phone(?:\s+number)?|recovery\s+(?:e-?mail|phone|codes?))\b/i
+// CU-375 (cu-researcher): the German names of an app password and of mail forwarding reach a credential as their English
+// twins do; turning forwarding off stays free, as in English.
+const ACCOUNT_SECURITY_DE = /(?:^|[^\p{L}])(?:app[\s-]?passw(?:ort|örter)|anwendungsspezifische[sn]?\s+passw(?:ort|örter)|(?:automatische\s+)?weiterleitung(?:sadresse)?)(?:$|[^\p{L}])/iu
+const FORWARDING_OFF_DE = /\b(?:deaktivieren|ausschalten|beenden|stoppen)\b/i
+// CU-375 (cu-researcher): switching on IMAP, POP or SMTP access opens the mailbox to any client holding the password, as
+// 'Allow less secure apps' does - permission. 'Enable pop-ups' and bare 'IMAP settings' stay free.
+const MAIL_ACCESS_ON = /\b(?:enable|turn\s+on|allow|activate)\s+(?:imap|pop3?|smtp)\b(?![\s-]*ups?\b)/i
 // CU-395 (High; cu-coordinator 03:01Z): 'physical' - a control that acts in the physical world (a lock, a garage door, an
 // alarm, a lost device) - leads every class, is never pre-approved and asks each time.
 // cu-coordinator 03:14Z: 'unlock' only beside a physical noun - paywalls ('Unlock Premium', 'Unlock all features') stay free.
@@ -1484,11 +1491,13 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const toggleState = nativeToggleState(target)
       const nativeOn = toggleState === true
       const nativeOff = toggleState === false
-      const isForwarding = /forward/i.test(name)
+      const isForwarding = /forward|weiterleitung/i.test(name)
       // The explicit protection list (CU-270's two-factor and recovery names), never 'every security name but a few'.
       const isProtection = /two[\s-]?(?:factor|step)|2[\s-]?step|\b2fa\b|multi[\s-]?factor|recovery\s+(?:e-?mail|phone|codes?)/i.test(name)
       const safeToggle = (isProtection && nativeOff) || (isForwarding && nativeOn)
-      if (!focusesEntry && ACCOUNT_SECURITY.test(name) && !protectionOn && !forwardingOff && !safeToggle) classes.push('credential')
+      const forwardingOffDe = FORWARDING_OFF_DE.test(name) && /weiterleitung/i.test(name)
+      if (!focusesEntry && (ACCOUNT_SECURITY.test(name) || ACCOUNT_SECURITY_DE.test(name)) && !protectionOn && !forwardingOff && !forwardingOffDe && !safeToggle) classes.push('credential')
+      if (!focusesEntry && MAIL_ACCESS_ON.test(name)) classes.push('permission')
       // CU-401 round 2 (cu-coordinator): a plan word beside a navigation noun ('Downgrade options', 'Cancel plan details')
       // opens a page - free unless another purchase word remains.
       if (/\b(?:downgrade|cancel\s+(?:plan|membership)|end\s+trial)\b[\s\S]*\b(?:options|settings|details|faq|guide|policy|info)\b/i.test(name)
