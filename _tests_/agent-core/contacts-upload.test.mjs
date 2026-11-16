@@ -20,8 +20,10 @@ test('CU-462: contact and list uploads / exports and shareable links ask permiss
   }
 })
 
-test('CU-462 negatives: the contacts view and the user\'s own data export stay free', () => {
-  for (const name of ['Contacts', 'Export my data', 'Contact list', 'Download invoice', 'Export report']) assert.equal(at(name), 'allow', name)
+test('CU-462 negatives: the contacts view stays free; the user\'s own data export asks since CU-558', () => {
+  for (const name of ['Contacts', 'Contact list', 'Download invoice', 'Export report']) assert.equal(at(name), 'allow', name)
+  // Pin moved by CU-558 (cu-coordinator 07:21Z, 12 Nov; #821 round 3): exporting your / my data asks permission now (a raise on main).
+  assert.equal(at('Export my data'), 'permission', 'raised by CU-558')
 })
 
 test('#742 round 2 (cu-researcher 21:13Z): the two-word address book', () => {
