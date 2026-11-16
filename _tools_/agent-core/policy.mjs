@@ -386,6 +386,27 @@ const MAIL_ACCESS_ON_DE = /\b(?:imap|pop3?|smtp)(?:[\s/-]*(?:imap|pop3?))?(?:[\s
 // A switch named only by its protocol ('IMAP access', 'POP-Zugriff'): its verb is its state - a native switch that is off
 // turns access ON (asks); any of these switches that is on turns access OFF, the safe direction (free).
 const MAIL_ACCESS_SWITCH = /^\s*(?:imap|pop3?|smtp)(?:\s*\/\s*(?:imap|pop3?))?(?:[\s-]*(?:access|download|zugriff|zugang|abruf))?\s*$/i
+// CU-393 (cu-researcher; supersedes #448 with cu-developer-one's go): an OAuth / OpenID consent page, by URL - an authorize or
+// consent path with a client_id or response_type query. On it the provider's bare grant button ('Allow', 'Continue', 'Accept')
+// hands the account's data or identity to another service.
+export function isOAuthConsentPage(url) {
+  try {
+    const u = new URL(String(url ?? ''))
+    if (!/^https?:$/.test(u.protocol)) return false
+    const oauthPath = /(?:^|\/)(?:oauth2?|o\/oauth2|authori[sz]e|consent|connect\/authori[sz]e|login\/oauth\/authori[sz]e|adfs\/oauth2)(?:\/|$)/i.test(u.pathname)
+    const oauthQuery = u.searchParams.has('client_id') || u.searchParams.has('response_type')
+    // r2 (cu-developer-three): after the first redirect a provider's own consent screen keeps only its own tokens in the query
+    // (accounts.google.com/signin/oauth/consent?authuser=0&part=...), so a path naming both OAuth and the consent step counts alone.
+    // r3 (cu-developer-three): end-anchored, so /consent and /v2/consentsummary count and /consent/help does not.
+    const consentStep = /\/(?:signin\/)?oauth2?\/(?:v2\/)?consent(?:summary)?\/?$/i.test(u.pathname)
+    return (oauthPath && oauthQuery) || consentStep
+  } catch { return false }
+}
+const OAUTH_BARE_GRANT = /^\s*(?:allow|accept|continue|authori[sz]e|approve|grant|confirm|yes,?\s+allow|allow\s+access|i\s+agree|agree)\s*$/i
+// A consent dialog says so in its title or description ('... wants to access your Google Account', '... is requesting permission').
+// r2 (cu-developer-two / -three): the question form 'Allow <app> to access your ...?', 'Grant (<app>) access to your ...', and the
+// data-scope verbs ('wants to view / read / manage your contacts'). 'Allow pasting into this document?' names no access and stays free.
+const OAUTH_DIALOG_TEXT = /\b(?:wants?\s+to\s+(?:access|view|read|see|manage|use)\s+your|would\s+like\s+(?:to\s+)?(?:access|permission)|would\s+like\s+to\s+(?:view|read|see|manage|use)\s+your|(?:wants?|would\s+like)\s+to\s+(?:connect|link)\s+(?:to|with)\s+your|let\s+\S+(?:\s+\S+){0,3}\s+(?:access|view|read|see|manage|use)\s+your|is\s+requesting\s+(?:access|permission)|requests?\s+access\s+to\s+your|authori[sz]e\s+\S+(?:\s+\S+)?\s+to\s+access|allow\s+\S+(?:\s+\S+){0,3}\s+to\s+(?:access|view|read|see|manage|use)\s+your|grant\s+(?:\S+\s+){0,3}access\s+to\s+your)\b/i
 // CU-513 (cu-researcher; cu-coordinator: Medium): an extension / add-on / plug-in store DETAIL page, by host and path. On it a
 // bare 'Install' / 'Get' / 'Add' is the store's install button (the browser's own 'Add extension?' confirm is outside the page).
 export function isExtensionStoreDetail(url) {
@@ -1657,6 +1678,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // CU-421: overriding a malware warning or installing a profile or helper asks install (CU-254's class).
       // cu-coordinator 15:25Z adds a page's 'Keep dangerous file' (Chrome's own shelf stays the named limit).
       if (!focusesEntry && /^\s*(?:(?:open|run|keep|download|install)\s+anyway|keep\s+(?:the\s+)?dangerous\s+file|install\s+(?:the\s+)?(?:configuration\s+)?(?:profile|helper))\b/i.test(name)) classes.push('install')
+      // CU-393: a bare grant on an OAuth consent page, or in a dialog that asks for access to the account, asks permission.
+      if (!focusesEntry && OAUTH_BARE_GRANT.test(name) && (isOAuthConsentPage(context.url) || OAUTH_DIALOG_TEXT.test(`${target?.dialogName ?? ''} ${target?.dialogDescription ?? ''}`))) classes.push('permission')
       // CU-513: a bare install word on an extension / add-on / plug-in store detail page installs code into the browser or site.
       if (!focusesEntry && STORE_BARE_INSTALL.test(name) && isExtensionStoreDetail(context.url)) classes.push('install')
       // CU-422: a bare 'Give' / 'Give now' pays; a bare 'Vote' (or 'Vote for <x>'), 'Resign' and 'Apply for <noun>' submit.
