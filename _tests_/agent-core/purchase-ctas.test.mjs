@@ -26,3 +26,8 @@ test('#853 round 2 (cu-researcher 04:39Z): the class - other funding verbs, keep
     'Take the deal', 'Take this offer', 'Get the deal', 'Grab the discount', 'Lock in this deal', 'Activate the offer', 'Take the special offer', 'Accept discount']) assert.ok(classesOf(name).includes('purchase'), name)
   for (const name of ['Keep my settings', 'Continue reading', 'Resume playback', 'Stay signed in', 'Take a photo', 'Accept cookies', 'Get the app', 'Deals', 'Offers', 'Invest', 'Crowdfunding']) assert.ok(!classesOf(name).includes('purchase'), name)
 })
+
+test('#853 round 3 (cu-researcher 08:14Z): concrete objects - handles, named people, concrete vehicles', () => {
+  for (const name of ['Sponsor @octocat', 'Fund @alice-dev', 'Sponsor Jane Doe', 'Lease the 2024 Model Y', 'Finance a 2023 Civic', 'Charter the Sea Breeze', 'Rent the Lakeside Cabin']) assert.ok(classesOf(name).includes('purchase'), name)
+  for (const name of ['Lease terms', 'Finance team', 'Sponsor logo', 'Fund details', 'Sponsors', 'Finance']) assert.ok(!classesOf(name).includes('purchase'), name)
+})

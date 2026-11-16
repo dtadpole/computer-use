@@ -1394,6 +1394,12 @@ function grammarClassesOf(name, role = '') {
   if (/^\s*become\s+(?:an?\s+)?(?:(?:paid|paying|founding|premium|monthly|annual|gold|pro)\s+)?(?:patron|member|supporter|sponsor|backer|donor|subscriber|vip|insider|founder)s?(?:\s+(?:now|today|instead))?\s*$/i.test(raw)
     || /^\s*(?:sponsor|fund|back|support)\s+(?:the\s+|this\s+|my\s+|your\s+|our\s+|a\s+|an\s+)?(?:(?:creator|artist|author|writer|developer|maintainer|streamer|podcast|channel|project|campaign|cause|team|event|show|work|journalism|newsletter|us|me|them|him|her|this|it)\b(?:\s+\S+){0,2})(?:\s+(?:now|today|instead))?\s*$/i.test(raw)
     || /^\s*(?:sponsor|fund)(?:\s+(?:now|today|it|this))?\s*$/i.test(raw)
+    // #853 r3 (cu-researcher 08:14Z: concrete objects): sponsor / fund a handle or a named person / project ('Sponsor @octocat'), and
+    // lease / finance / charter / rent a concrete vehicle, home or item ('Lease the 2024 Model Y') - any object of up to five tokens but
+    // an information noun ('Lease terms', 'Finance team', 'Sponsor logo').
+    || /^\s*(?:sponsor|fund|lease|finance|charter|rent)\s+(?:the\s+|a\s+|an\s+|this\s+|my\s+)?\S+(?:\s+\S+){0,4}\s*$/i.test(raw)
+      && !/\b(?:terms|details|agreement|options|calculator|rates?|info|information|faq|policy|policies|team|dashboard|settings|department|report|logo|list|page|tiers?|guide|program|benefits|history|overview|summary)\s*$/i.test(raw)
+      && !/^\s*(?:finance|fund|rent)\s+(?:manager|management|overview|news|account\s+settings)\b/i.test(raw)
     || /^\s*(?:lease|finance|charter|hire)(?:\s+(?:the\s+|this\s+|my\s+|your\s+|our\s+|a\s+|an\s+)?(?:car|vehicle|truck|van|suv|boat|yacht|jet|plane|bus|bike|apartment|home|house|unit|space|office|equipment|phone|laptop|device|purchase|order|it|this|one))?(?:\s+(?:now|today|instead))?\s*$/i.test(raw) && !/^\s*(?:finance|hire|charter|lease)\s*$/i.test(raw)
     || /^\s*pre-?order(?:\s+(?:the\s+|this\s+|my\s+|your\s+|our\s+|a\s+|an\s+)?(?:copy|game|book|album|it|this|one|edition|device|phone))?(?:\s+(?:now|today|instead))?\s*$/i.test(raw)
     || /^\s*commission\s+(?:the\s+|this\s+|my\s+|your\s+|our\s+|a\s+|an\s+)?(?:artist|piece|painting|portrait|artwork|work|illustration|design|this\s+artist)\s*$/i.test(raw)
