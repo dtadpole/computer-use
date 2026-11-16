@@ -1399,7 +1399,12 @@ function grammarClassesOf(name, role = '') {
     // an information noun ('Lease terms', 'Finance team', 'Sponsor logo').
     || /^\s*(?:sponsor|fund|lease|finance|charter|rent)\s+(?:the\s+|a\s+|an\s+|this\s+|my\s+)?\S+(?:\s+\S+){0,4}\s*$/i.test(raw)
       && !/\b(?:terms|details|agreement|options|calculator|rates?|info|information|faq|policy|policies|team|dashboard|settings|department|report|logo|list|page|tiers?|guide|program|benefits|history|overview|summary)\s*$/i.test(raw)
-      && !/^\s*(?:finance|fund|rent)\s+(?:manager|management|overview|news|account\s+settings)\b/i.test(raw)
+      && !/^\s*(?:sponsor|fund|lease|finance|charter|rent)\s+(?:the\s+)?(?:agreement|performance|prospectus|returns?|holdings|chart|statements?|fees|fact-?sheet|news|manager|management|overview|details|terms|options|calculator|rates?|info|faq|policy|team|dashboard|settings|report|logo|list|page|tiers?|guide|program|benefits|history|summary|account\s+settings)\b/i.test(raw)
+    // #853 r4 (cu-researcher 08:39Z): becoming a patron / member OF someone, backing someone ON a crowdfunding platform, and grabbing
+    // a named deal ('Become a patron of Ana Lopez', 'Back Ana on Patreon', 'Grab the 4K TV deal').
+    || /^\s*become\s+(?:an?\s+)?(?:(?:paid|paying|founding|premium|monthly|annual|gold|pro)\s+)?(?:patron|member|supporter|sponsor|backer|donor|subscriber|vip)s?\s+(?:of|for|to|on|at)\s+.{1,40}$/i.test(raw)
+    || /^\s*(?:back|support|sponsor|fund|tip|join|pledge\s+to)\s+.{1,40}?\s+on\s+(?:patreon|ko-?fi|kickstarter|indiegogo|gofundme|github\s+sponsors|open\s*collective|buy\s+me\s+a\s+coffee|substack|liberapay|onlyfans|twitch|youtube\s+memberships?)\s*$/i.test(raw)
+    || /^\s*(?:grab|snag|take|get|claim|lock\s+in)\s+(?:the\s+|this\s+|that\s+|a\s+|an\s+)?(?:\S+\s+){1,4}(?:deal|offer|discount|bundle|bargain|special|promo)s?(?:\s+(?:now|today))?\s*$/i.test(raw)
     || /^\s*(?:lease|finance|charter|hire)(?:\s+(?:the\s+|this\s+|my\s+|your\s+|our\s+|a\s+|an\s+)?(?:car|vehicle|truck|van|suv|boat|yacht|jet|plane|bus|bike|apartment|home|house|unit|space|office|equipment|phone|laptop|device|purchase|order|it|this|one))?(?:\s+(?:now|today|instead))?\s*$/i.test(raw) && !/^\s*(?:finance|hire|charter|lease)\s*$/i.test(raw)
     || /^\s*pre-?order(?:\s+(?:the\s+|this\s+|my\s+|your\s+|our\s+|a\s+|an\s+)?(?:copy|game|book|album|it|this|one|edition|device|phone))?(?:\s+(?:now|today|instead))?\s*$/i.test(raw)
     || /^\s*commission\s+(?:the\s+|this\s+|my\s+|your\s+|our\s+|a\s+|an\s+)?(?:artist|piece|painting|portrait|artwork|work|illustration|design|this\s+artist)\s*$/i.test(raw)

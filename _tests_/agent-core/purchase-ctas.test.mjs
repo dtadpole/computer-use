@@ -31,3 +31,8 @@ test('#853 round 3 (cu-researcher 08:14Z): concrete objects - handles, named peo
   for (const name of ['Sponsor @octocat', 'Fund @alice-dev', 'Sponsor Jane Doe', 'Lease the 2024 Model Y', 'Finance a 2023 Civic', 'Charter the Sea Breeze', 'Rent the Lakeside Cabin']) assert.ok(classesOf(name).includes('purchase'), name)
   for (const name of ['Lease terms', 'Finance team', 'Sponsor logo', 'Fund details', 'Sponsors', 'Finance']) assert.ok(!classesOf(name).includes('purchase'), name)
 })
+
+test('#853 round 4 (cu-researcher 08:39Z): patron of, back on a platform, a named deal; info nouns stay free', () => {
+  for (const name of ['Become a patron of Ana Lopez', 'Back Ana on Patreon', 'Grab the 4K TV deal', 'Support the band on Ko-fi', 'Take the Black Friday bundle offer']) assert.notDeepEqual(classesOf(name), [], name)
+  for (const name of ['Lease agreement PDF', 'Fund performance', 'Fund prospectus', 'Lease agreement']) assert.ok(!classesOf(name).includes('purchase'), name)
+})
