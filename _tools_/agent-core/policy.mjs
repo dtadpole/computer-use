@@ -1537,10 +1537,12 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         // #847 r3 (cu-researcher 10:20Z class sweep): giving MORE stars than a rating scale has ('Give 50 stars'), and any currency TICKER
         // after an amount ('Tip 3 USDC', 'Send 0.5 ETH'), from the crypto / fiat ticker lexicon.
         || /^\s*(?:give|gift|award|donate)\s+(?:[6-9]|\d{2,})[\d,.]*\s*stars\b/iu.test(name)
-        // #847 r4 (cu-researcher 11:03Z): on a TIPPING / streaming / creator page, any unit after a gifting verb is a paid gift ('Shower 300
-        // sparks', 'Give 80 hearts', 'Drop 10 tokens in the jar').
+        // #847 r4 / r5 (cu-researcher 11:03Z, 11:18Z): on a TIPPING / streaming / creator page, a PAID GIFT UNIT after a gifting verb - the
+        // platforms' own catalogues (Twitch Bits / Cheers / subs, TikTok coins / roses / lions / galaxies / universes, YouTube Super Chats /
+        // jewels, Facebook Stars, Bigo beans / diamonds, Kick kicks, Trovo elixir / mana, Reddit awards / gold, Ko-fi coffees ...); a plain
+        // count ('Give 1 like', 'Drop 2 pins', 'Give 10 seconds') is not a gift.
         || (/(?:twitch|kick\.com|youtube|tiktok|patreon|ko-?fi|buymeacoffee|streamlabs|streamelements|onlyfans|fansly|bigo|trovo|rumble|\/live\b|\/stream|\btips?\b|\/tip|donat|\/gifts?\b|creator|\bfans?\b)/i.test(String(url ?? ''))
-          && /^\s*(?:tip|give|gift|send|shower|drop|throw|toss|cheer|donate|award|pledge|sprinkle|spend)\s+(?:(?:them|her|him|the\s+(?:streamer|creator|host))\s+)?\d[\d,.]*\s*\p{L}+/iu.test(name)
+          && /^\s*(?:tip|give|gift|send|shower|drop|throw|toss|cheer|donate|award|pledge|sprinkle|spend)\s+(?:(?:them|her|him|the\s+(?:streamer|creator|host))\s+)?\d[\d,.]*\s*(?:[\p{L}-]+\s+)?(?:bits|cheers?|stars|diamonds?|coins?|gems?|jewels?|beans?|roses?|hearts?|sparks?|bubbles?|rockets?|lions?|galax(?:y|ies)|universes?|kicks|elixirs?|mana|subs?|gift\s+subs?|super\s+(?:chats?|stickers?|thanks)|boosts?|awards?|gold|coffees?|tokens?|credits?|points|crowns?|candies|candy|donuts?|flowers?|kisses|teddy\s+bears?)\b/iu.test(name)
           && !/^\s*(?:give|award|leave)\s+[1-5](?:\.\d)?\s*(?:stars?|out\s+of)\b/i.test(name)
           && !/^\s*\S+\s+\d[\d,.]*\s*(?:files?|pdfs?|docs?|documents?|photos?|images?|videos?|clips?|messages?|links?|e-?mails?|examples?|items?|pages?|copies|invites?|requests?|reminders?)\b/i.test(name))
         || /^\s*(?:tip|give|contribute|cheer|send|donate|gift|pay)\s+\d[\d,.]*\s*(?:usdc|usdt|eth|btc|sol|dai|xrp|ada|doge|matic|pol|bnb|ltc|xmr|avax|dot|trx|ton|shib|link|uni|apt|arb|op|sats?|gwei|eur|usd|gbp|jpy|cny|inr|aud|cad|chf)\b/iu.test(name)
