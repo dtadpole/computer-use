@@ -19,3 +19,11 @@ test('CU-563: lead-ins keep compound and specific rows asking with their classes
   }
   for (const name of ['Please wait', 'Yes, show me', 'Save and close', 'Save and continue', 'OK, got it']) assert.deepEqual(classesOf(name), [], name)
 })
+
+test('#848 round 2 (cu-researcher 03:21Z): outer quotes / brackets, and every benign head / tail clause', () => {
+  for (const base of ['Open RDP port', 'Begin sharing location', 'Turn off two-factor authentication', 'Delete account']) {
+    const want = classesOf(base)
+    for (const form of [`Review and ${lower(base)}`, `${base} and continue`, `${base}, then close`, `\u201c${base}\u201d`, `[${base}]`, `"${base}"`, `Review, ${lower(base)} and close`]) for (const cls of want) assert.ok(classesOf(form).includes(cls), `${form}: ${cls}`)
+  }
+  for (const name of ['Review and continue', 'Save, then close', '\u201cSettings\u201d', '[Help]']) assert.deepEqual(classesOf(name), [], name)
+})
