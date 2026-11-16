@@ -336,13 +336,20 @@ const TRADE_ASSET = /\b(?:btc|eth|usd|eur|gbp|jpy|usdt|usdc|dai|sol|xrp|ada|doge
 // CU-585: a bare submit that a typed-word confirmation form gates, and the senses of that form's prompt (the driver's
 // formEntries - the words beside its text entries, never a value).
 // Any generic submit (cu-researcher's r1 held-out: 'Next' / 'Done' were missed), never a named act.
-const TYPED_CONFIRM_SUBMIT = /^\s*(?:confirm|continue|i\s+understand|i(?:'|\u2019)?m\s+sure|i\s+am\s+sure|yes(?:,?\s+(?:i(?:'|\u2019)?m\s+sure|continue|confirm))?|proceed|ok(?:ay)?|submit|done|next|finish|go|apply|save|accept|agree|i\s+agree|confirm\s+and\s+continue)\s*[.!]?\s*$/i
+const TYPED_CONFIRM_CORE = new Set(['confirm', 'continue', 'proceed', 'ok', 'okay', 'yes', 'submit', 'done', 'next', 'finish', 'go', 'apply', 'save', 'accept', 'agree', 'understand', 'sure'])
+const TYPED_CONFIRM_FILLER = new Set(['i', 'im', 'i\'m', 'am', 'anyway', 'now', 'please', 'and', 'then', 'ahead', 'got', 'it', 'lets', 'let\'s', 'do', 'yep', 'alright', 'all', 'right'])
+// cu-researcher r4: a generic submit is matched by its words ('Continue anyway', 'OK, proceed', 'Go ahead'), at most five,
+// every one a generic or filler word and one a generic verb - never a named act.
+function genericSubmitName(name) {
+  const words = String(name ?? '').toLowerCase().replace(/[\u2018\u2019]/g, "'").replace(/[^a-z' ]+/g, ' ').trim().split(/\s+/).filter(Boolean)
+  return words.length > 0 && words.length <= 5 && words.every((w) => TYPED_CONFIRM_CORE.has(w) || TYPED_CONFIRM_FILLER.has(w)) && words.some((w) => TYPED_CONFIRM_CORE.has(w))
+}
 // The confirm-prompt shape: a typing word followed by what to type ('Type DELETE ...', 'Enter the workspace name ...'), never
 // 'Type to search ...' / 'Type here ...' / 'Press Enter to ...' (cu-researcher's r1 over-ask 'Type to search deleted items').
 const TYPED_INSTRUCTION = /\b(?:type|enter|re-?enter|re-?type|write|input|key\s+in|spell\s+out|repeat|fill\s+in|copy|paste)\s+(?!(?:to|here|in)\b)["'\u201c\u2018\p{L}\p{N}]/iu
-const TYPED_DESTROY = /\b(?:delet\w*|eras(?:e|es|ed|ing|ure)\b|wip(?:e|es|ed|ing)\b|remov\w*|destroy\w*|purg(?:e|es|ed|ing)\b|terminat\w*|deactivat\w*|permanently|permanent\s+(?:deletion|removal|erasure)|irreversibl\w*|cannot\s+be\s+undone|nuk(?:e|es|ed|ing)\b|obliterat\w*|shred\w*|annihilat\w*|decommission\w*|deprovision\w*|tear\s+(?:it\s+|this\s+|the\s+\w+\s+)?down|factory\s+reset|reset\s+(?:\w+\s+)?to\s+factory|empty\s+(?:it|them|the|this|that|your|all)\b|(?:archiv\w*|los(?:e|ing)|gone|hid(?:e|den))\s+(?:\w+\s+){0,2}(?:forever|for\s+good)|clos(?:e|ing)\s+(?:the\s+|this\s+|my\s+|your\s+)?account\b|drop\s+(?:the\s+|this\s+)?(?:table|database|schema|collection|index)\b)/i
+const TYPED_DESTROY = /\b(?:delet\w*|eras(?:e|es|ed|ing|ure)\b|wip(?:e|es|ed|ing)\b|remov\w*|destroy\w*|purg(?:e|es|ed|ing)\b|terminat\w*|deactivat\w*|permanently|permanent\s+(?:deletion|removal|erasure)|irreversibl\w*|cannot\s+be\s+undone|nuk(?:e|es|ed|ing)\b|uninstall\w*|obliterat\w*|shred\w*|annihilat\w*|decommission\w*|deprovision\w*|tear\s+(?:it\s+|this\s+|the\s+\w+\s+)?down|factory\s+reset|reset\s+(?:\w+\s+)?to\s+factory|empty\s+(?:it|them|the|this|that|your|all)\b|(?:archiv\w*|los(?:e|ing)|gone|hid(?:e|den))\s+(?:\w+\s+){0,2}(?:forever|for\s+good)|clos(?:e|ing)\s+(?:the\s+|this\s+|my\s+|your\s+)?account\b|drop\s+(?:the\s+|this\s+)?(?:table|database|schema|collection|index)\b)/i
 // A transfer counts only of ownership: 'Enter the transfer amount' is money, not a handover (cu-developer-three's near-miss).
-const TYPED_TRANSFER = /\b(?:give\s+(?:(?:it|them|this|that|the|your|my)\s+)?(?:\w+\s+){0,2}away|hand(?:ing)?\s+(?:it\s+|this\s+\w+\s+|the\s+\w+\s+)?off|make\s+(?:\w+\s+){1,3}(?:the\s+)?(?:new\s+)?owner|reassign\s+(?:the\s+)?ownership|transfer\w*\s+(?:of\s+)?(?:the\s+)?ownership|ownership|hand(?:ing)?\s+(?:it\s+|this\s+\w+\s+|the\s+\w+\s+)?over|handover|new\s+owner|change\s+(?:the\s+)?owner|transfer\s+(?:the\s+|this\s+)?(?:workspace|repository|repo|organization|org|project|team|account|domain)\b)/i
+const TYPED_TRANSFER = /\b(?:(?:move|transfer|send)\s+(?:it\s+|this\s+\w+\s+|the\s+\w+\s+)?to\s+(?:a\s+|an\s+)?(?:another|new|different|other)\s+(?:owner|account|org(?:anization)?|team|workspace|user)|(?:another|different)\s+owner|give\s+(?:(?:it|them|this|that|the|your|my)\s+)?(?:\w+\s+){0,2}away|hand(?:ing)?\s+(?:it\s+|this\s+\w+\s+|the\s+\w+\s+)?off|make\s+(?:\w+\s+){1,3}(?:the\s+)?(?:new\s+)?owner|reassign\s+(?:the\s+)?ownership|transfer\w*\s+(?:of\s+)?(?:the\s+)?ownership|ownership|hand(?:ing)?\s+(?:it\s+|this\s+\w+\s+|the\s+\w+\s+)?over|handover|new\s+owner|change\s+(?:the\s+)?owner|transfer\s+(?:the\s+|this\s+)?(?:workspace|repository|repo|organization|org|project|team|account|domain)\b)/i
 
 /**
  * CU-585: the classes a typed-word confirmation form's prompt asks for, read by sense from the driver's formEntries (at
@@ -2569,7 +2576,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // reads the words its form's text entries show (the driver's formEntries, on a click and on Return's default button):
     // a prompt to type something that confirms a destructive or permanent act asks delete, one that confirms a transfer of
     // ownership asks permission. A late union - it only adds an ask to a submit nothing else classes, never lowers one.
-    if (grammarEligible && classes.length === 0 && TYPED_CONFIRM_SUBMIT.test(String(name ?? '')) && Array.isArray(target?.formEntries)) {
+    if (grammarEligible && classes.length === 0 && genericSubmitName(name) && Array.isArray(target?.formEntries)) {
       for (const cls of typedConfirmClasses(target.formEntries)) classes.push(cls)
     }
     if (grammarEligible && classes.length === 0) {

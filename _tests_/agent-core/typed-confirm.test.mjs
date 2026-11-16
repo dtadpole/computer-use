@@ -44,6 +44,13 @@ test('CU-585: other typing verbs and purpose clauses (cu-researcher r3 variants)
   assert.equal(press('Continue', ['Enter your name to stay signed in forever']), 'allow', 'forever alone is no destroy sense')
 })
 
+test('CU-585: a generic submit is matched by its words; more purpose verbs (cu-researcher r4 private set)', () => {
+  assert.equal(press('Continue anyway', ['Re-enter the repo path to move it to another owner']), 'permission')
+  assert.equal(press('OK, proceed', ['Fill in the app name to uninstall it for everyone']), 'delete')
+  for (const name of ['Go ahead', "Yes, I'm sure", 'Got it, continue', 'Proceed anyway', 'Confirm now']) assert.equal(press(name, ['Type DELETE to confirm']), 'delete', name)
+  for (const name of ['Rename anyway', 'Continue to profile', 'Save draft', 'Go to settings']) assert.equal(press(name, ['Type DELETE to confirm']), 'allow', `${name}: a named act or destination is not a generic submit`)
+})
+
 test('CU-585: a typed confirmation of a transfer of ownership asks permission, not purchase', () => {
   assert.equal(press('Confirm', ['Type TRANSFER to move ownership']), 'permission')
   assert.equal(press('Continue', ['Enter the new owner\'s username']), 'permission')
