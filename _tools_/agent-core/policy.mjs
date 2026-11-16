@@ -3,7 +3,7 @@ import { normaliseForPolicy, normaliseText } from './normalise.mjs'
 import { BIP39_ENGLISH } from './bip39-english.mjs'
 import { normalizeKey } from './keys.mjs'
 import { originPattern } from './sites.mjs'
-import { amountClass, canonicalForms, clauseSplit, clauseVerbLed, grammarClasses, grammarClassesBase, inertLinkAmountClass, metaForms, quantifierDropped, questionStripped, sectionLabelStripped, straightQuotes, synonymForms, toggleExpansion } from './phrase-grammar.mjs'
+import { amountClass, canonicalForms, clauseSplit, clauseVerbLed, grammarClasses, grammarClassesBase, inertLinkAmountClass, probeForms, quantifierDropped, questionStripped, sectionLabelStripped, straightQuotes, synonymForms, toggleExpansion } from './phrase-grammar.mjs'
 
 /**
  * The action policy (design: action-policy.md, consent-gate.md). `classify` runs in the dispatcher for every action,
@@ -1191,7 +1191,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const name = typeof target?.name === 'string' ? straightQuotes(target.name) : (target?.name ?? '')
     // CU-565 widened (cu-researcher 01:57Z, 02:01Z): a leading list number, bracketed badge or plan tag ('1. ', '[Beta] ', 'Pro · ') or a
     // trailing metadata segment (' | $9.99', ' ✓ Done') never frees a row - every rule also judges the name without it, and the stricter verdict wins (block, then handoff, then the union of asks).
-    const extraForms = typeof name === 'string' && context.leadMetaProbe !== true ? metaForms(name) : []
+    // CU-566: and a wrapped label's joined lines and an ALL-CAPS label's sentence case.
+    // A drag compares its press and drop entries by name (CU-183), so the name forms judge presses, clicks and keys only.
+    const extraForms = typeof name === 'string' && context.leadMetaProbe !== true && action.type !== 'drag' ? probeForms(name) : []
     if (extraForms.length > 0) {
       const verdicts = [classify(rawAction, { ...rawContext, leadMetaProbe: true }), ...extraForms.map((form) => classify(rawAction, { ...rawContext, target: { ...(rawContext.target ?? {}), name: form }, leadMetaProbe: true }))]
       const own = verdicts[0]
