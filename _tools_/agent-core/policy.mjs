@@ -103,9 +103,19 @@ const LOCALE_WORDS = Object.freeze({
     'comprar', 'pagar', 'realizar pedido', 'finalizar compra', 'tramitar pedido', 'comprar ahora',
     'купить', 'оплатить', 'заказать', 'оформить заказ',
     '購入', '支払', '注文を確定', '注文する', 'レジに進む', '今すぐ買う',
-    '구매', '결제', '주문하기', '바로구매'],
-  delete: ['löschen', 'entfernen', 'verwerfen', 'supprimer', 'effacer', 'eliminar', 'borrar', 'удалить', 'стереть', '削除', '消去', '삭제', '지우기'],
-  submit: ['senden', 'absenden', 'abschicken', 'envoyer', 'soumettre', 'enviar', 'отправить', '送信', '보내기', '전송', '제출'],
+    '구매', '결제', '주문하기', '바로구매',
+    // CU-358 (cu-researcher): Italian, Dutch, Portuguese and Turkish (Portuguese shares 'comprar' / 'pagar' above).
+    'acquista', 'acquista ora', 'compra ora', 'paga', 'paga ora', 'ordina ora', 'effettua ordine', "effettua l'ordine", 'conferma ordine', 'procedi al pagamento', 'vai alla cassa',
+    'kopen', 'nu kopen', 'koop nu', 'betalen', 'nu betalen', 'bestellen en betalen', 'bestellen', 'nu bestellen', 'bestelling plaatsen', 'afrekenen', 'naar de kassa',
+    'comprar agora', 'pagar agora', 'finalizar pedido', 'fazer pedido', 'concluir compra', 'efetuar pagamento',
+    'satın al', 'şimdi satın al', 'hemen al', 'öde', 'şimdi öde', 'ödeme yap', 'sipariş ver', 'siparişi tamamla', 'alışverişi tamamla'],
+  delete: ['löschen', 'entfernen', 'verwerfen', 'supprimer', 'effacer', 'eliminar', 'borrar', 'удалить', 'стереть', '削除', '消去', '삭제', '지우기',
+    // CU-358: Italian, Dutch, Portuguese and Turkish.
+    'elimina', 'cancella', 'rimuovi', 'elimina definitivamente', 'verwijderen', 'verwijder', 'wissen', 'definitief verwijderen',
+    'excluir', 'apagar', 'remover', 'excluir permanentemente', 'sil', 'kaldır', 'kalıcı olarak sil', 'hesabı sil'],
+  submit: ['senden', 'absenden', 'abschicken', 'envoyer', 'soumettre', 'enviar', 'отправить', '送信', '보내기', '전송', '제출',
+    // CU-358: Italian, Dutch, Portuguese and Turkish.
+    'invia', 'invia ora', 'verzenden', 'versturen', 'verstuur', 'indienen', 'submeter', 'gönder', 'şimdi gönder'],
   // CU-345: a PIN, one-time code, security code or password field named in these languages.
   secret: ['passwort', 'kennwort', 'sicherheitscode', 'prüfziffer', 'mot de passe', 'code de sécurité', 'cryptogramme',
     'contraseña', 'código de seguridad', 'пароль', 'код безопасности', 'パスワード', '暗証番号', 'セキュリティコード', '認証コード',
@@ -115,7 +125,12 @@ const LOCALE_WORDS = Object.freeze({
     '…geheimzahl', '…bestätigungscode', '…sicherheitscode', '…prüfnummer', '…prüfziffer', '…kartennummer', '…karten nummer', '…einmalcode', 'einmal code',
     'sms code', 'bestätigungs code', 'sicherheits code', 'code de vérification', 'numéro de carte',
     'código de verificación', 'número de tarjeta', 'код подтверждения', 'номер карты', 'pin-код', '確認コード', 'カード番号',
-    '인증 코드', '카드 번호', '카드번호'],
+    '인증 코드', '카드 번호', '카드번호',
+    // CU-358: Italian, Dutch, Portuguese and Turkish; Dutch compounds take the '…' lead like German.
+    'codice di verifica', 'codice di sicurezza', 'codice otp', 'numero della carta', 'numero di carta',
+    'wachtwoord', 'pincode', '…pincode', 'verificatiecode', '…verificatiecode', 'beveiligingscode', '…beveiligingscode', 'kaartnummer', '…kaartnummer', 'eenmalige code',
+    'senha', 'código de verificação', 'código de segurança', 'número do cartão',
+    'şifre', 'parola', 'doğrulama kodu', 'güvenlik kodu', 'kart numarası', 'tek kullanımlık şifre'],
 })
 // CU-355 (design note 0.1): personal-ID field names in German, French, Spanish, Russian, Japanese and Korean - the third
 // locale side beside CU-352's action names and CU-345's credential names. '…' leads a German compound ending.
@@ -127,7 +142,12 @@ const LOCALE_ID_NAMES = Object.freeze(['reisepass', '…passnummer', 'geburtsdat
   'número de seguridad social',
   'паспорт', 'номер паспорта', 'дата рождения', 'инн', 'снилс', 'номер счета', 'номер счёта',
   'パスポート', '旅券番号', '生年月日', 'マイナンバー', '個人番号', '口座番号',
-  '여권', '여권번호', '생년월일', '주민등록번호', '계좌번호', '사업자등록번호'])
+  '여권', '여권번호', '생년월일', '주민등록번호', '계좌번호', '사업자등록번호',
+  // CU-358: Italian, Dutch, Portuguese and Turkish.
+  'codice fiscale', 'passaporto', 'numero di passaporto', 'data di nascita', 'numero di conto', "carta d'identità", 'partita iva',
+  'bsn', 'burgerservicenummer', 'paspoort', 'paspoortnummer', 'geboortedatum', 'rekeningnummer', '…rekeningnummer', 'identiteitskaart',
+  'cpf', 'rg', 'passaporte', 'número do passaporte', 'data de nascimento', 'número da conta', 'cartão de cidadão',
+  'tc kimlik', 'tc kimlik no', 'tc kimlik numarası', 'iban numarası', 'kimlik numarası', 'pasaport', 'pasaport numarası', 'doğum tarihi', 'hesap numarası', 'vergi numarası'])
 const WORDS = Object.freeze({
   // CU-498 (High; cu-coordinator 12:21Z): a direct debit mandate pulls money from the account (purchase), anywhere.
   // (a separate line so the purchase list below stays as it was)
@@ -507,7 +527,9 @@ function withoutTaskValues(text, task) {
 // license, '#' read as 'number', dots dropped (D.O.B., Exp. date, Tax no.) - so one canonical list covers the spellings.
 // An entry then matches whole, its regex specials literally, a space in it as any run of spaces or hyphens (Sort-code).
 const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-const normaliseName = (text) => String(text ?? '').toLowerCase().replace(/[\u2018\u2019]/g, "'").replace(/licence/g, 'license')
+// CU-358 (with cu-developer-one's #343): Turkish casing - 'İ' lower-cases to 'i' plus a combining dot and 'I' to 'i', not 'ı' -
+// so the dot is dropped and a dotless 'ı' read as 'i', on names and entries alike ('SİL', 'SATIN AL' match 'sil', 'satın al').
+const normaliseName = (text) => String(text ?? '').toLowerCase().replace(/\u0307/g, '').replace(/\u0131/g, 'i').replace(/[\u2018\u2019]/g, "'").replace(/licence/g, 'license')
   .replace(/#/g, ' number ').replace(/\./g, '').replace(/\s+/g, ' ').trim()
 // CU-352: an entry with an accented Latin or a Cyrillic letter is bounded by any letter, so 'удалить' does not match inside
 // a longer word; ASCII entries keep the a-z boundary they always had.

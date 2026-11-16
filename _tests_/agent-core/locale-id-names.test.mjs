@@ -14,6 +14,11 @@ const NAMES = {
   ru: ['Номер паспорта', 'Дата рождения', 'ИНН', 'СНИЛС', 'Номер счёта'],
   ja: ['旅券番号', '生年月日', 'マイナンバー', '口座番号'],
   ko: ['여권번호', '생년월일', '주민등록번호', '계좌번호'],
+  // CU-358: Italian, Dutch, Portuguese and Turkish.
+  it: ['Codice fiscale', 'Numero di passaporto', 'Data di nascita', 'Numero di conto', 'Partita IVA'],
+  nl: ['BSN', 'Burgerservicenummer', 'Paspoortnummer', 'Geboortedatum', 'Rekeningnummer', 'IBAN-rekeningnummer', 'Bankrekeningnummer'],
+  pt: ['CPF', 'RG', 'Número do passaporte', 'Data de nascimento', 'Número da conta'],
+  tr: ['T.C. Kimlik No', 'TC Kimlik Numarası', 'Pasaport numarası', 'Doğum tarihi', 'Hesap numarası', 'Vergi numarası', 'IBAN numarası', 'TC KİMLİK NO'],
 }
 for (const [locale, names] of Object.entries(NAMES)) {
   test(`CU-355 [${locale}]: personal-ID field names ask`, () => {
@@ -22,5 +27,5 @@ for (const [locale, names] of Object.entries(NAMES)) {
 }
 
 test('CU-355 negatives: first name, home town, city and name fields stay free', () => {
-  for (const name of ['Vorname', 'Wohnort', 'Ciudad', 'Город', '名前', '이름', 'Prénom', 'Nombre']) assert.equal(typeInto(name), 'allow', name)
+  for (const name of ['Vorname', 'Wohnort', 'Ciudad', 'Город', '名前', '이름', 'Prénom', 'Nombre', 'Cognome', 'Voornaam', 'Sobrenome', 'Soyad', 'Organizzazione', 'Orgaan']) assert.equal(typeInto(name), 'allow', name)
 })
