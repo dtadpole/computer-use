@@ -25,3 +25,8 @@ test('#859 round 2 (cu-researcher 06:39Z): a named outside party as the destinat
   for (const name of ["Duplicate the orders table into Acme's warehouse", 'Keep a live clone of the CRM at a contractor', 'Share the customer list with a vendor', "Send payroll data to Globex's SFTP", 'Hand over the user database to an agency', 'Keep a full copy of our logs with a partner']) assert.notDeepEqual(classesOf(name), [], name)
   for (const name of ["Copy to my team's folder", "Duplicate the orders table into the team's warehouse", 'Copy row', 'Share with my team']) assert.ok(!classesOf(name).includes('permission') || name === 'Share with my team', name)
 })
+
+test('#859 round 3 (cu-researcher 08:13Z): a host as the destination; start / begin + gerund', () => {
+  for (const name of ['Mirror repository to git.partner.example', 'Start mirroring this repository to an external host', 'Begin replicating the bucket to another account', 'Stream logs to logs.vendor.io:514', 'Forward reports to ops@contractor.example']) assert.notDeepEqual(classesOf(name), [], name)
+  for (const name of ['Start mirroring', 'Copy to clipboard', 'Export to PDF', 'Export to report.pdf', 'Save to data.csv']) assert.ok(!classesOf(name).includes('permission'), name)
+})
