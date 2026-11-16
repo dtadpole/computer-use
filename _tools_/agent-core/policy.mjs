@@ -118,14 +118,14 @@ const LOCALE_WORDS = Object.freeze({
     'transferir dinheiro', 'enviar dinheiro', 'fazer _ transferência', 'transferir', 'enviar pix', 'fazer _ pix',
     'para gönder^', 'havale yap^', 'eft yap^', 'para transfer~ yap^', 'para transfer~',
     // r3: Turkish stems take their suffixes ('~' noun, '^' verb - see namesWord).
-    'ödeme~ onayla', 'satın alma~ onayla', 'ödeme~ tamamla', 'ödeme~ yap', 'sipariş~ ver', 'sipariş~ tamamla', 'alışveriş~ tamamla',
+    'ödeme~ onayla^', 'satın alma~ onayla^', 'ödeme~ tamamla^', 'ödeme~ yap^', 'sipariş~ ver^', 'sipariş~ tamamla^', 'sipariş~ onayla^', 'alışveriş~ tamamla^',
     'satın al^', 'şimdi satın al^', 'hemen al^', 'şimdi al^', 'öde^', 'şimdi öde^', 'ödeme~ geç^'],
   delete: ['löschen', 'entfernen', 'verwerfen', 'supprimer', 'effacer', 'eliminar', 'borrar', 'удалить', 'стереть', '削除', '消去', '삭제', '지우기',
     // CU-358: Italian, Dutch, Portuguese and Turkish.
     'elimina', 'cancella', 'rimuovi', 'elimina definitivamente', 'verwijderen', 'verwijder', 'wissen', 'definitief verwijderen',
     // r5 (cu-developer-one): Dutch 'opheffen' closes an account (only beside an account noun; 'Blokkering opheffen' lifts a block).
     'account opheffen', 'mijn account opheffen', '_ account opheffen', 'rekening opheffen',
-    'excluir', 'apagar', 'remover', 'excluir permanentemente', 'sil^', 'kaldır^', 'kalıcı olarak sil^', 'hesabı sil^', 'hesabımı sil^',
+    'excluir', 'apagar', 'remover', 'excluir permanentemente', 'sil^', 'kaldır^', 'kalıcı olarak sil^', 'hesab~ sil^', 'hesab~ kapat^',
     // r2: emptying the trash, as English 'Empty trash'.
     'svuota cestino', 'svuota il cestino', 'prullenbak legen', 'prullenbak leegmaken', 'leeg prullenbak',
     'esvaziar lixeira', 'esvaziar a lixeira', 'esvaziar lixo', 'esvaziar a reciclagem', 'çöp kutu~ boşalt^', 'çöp~ boşalt^', 'çöp kutu~ temizle^'],
