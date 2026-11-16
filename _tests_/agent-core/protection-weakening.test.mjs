@@ -78,3 +78,8 @@ test('#856 round 8 (cu-researcher 13:16Z, 13:22Z): QUALIFIED allow / deny / bloc
 test('#856 round 9 (cu-researcher 13:26Z): suspicious-login alerts', () => {
   for (const name of ['Silence suspicious-login warnings', 'Mute suspicious sign-in alerts', 'Turn off suspicious transaction notifications']) assert.notDeepEqual(classesOf(name), [], name)
 })
+
+test('#856 round 10 (cu-researcher 13:31Z; cu-developer-two 13:29Z): more alert verbs and objects', () => {
+  for (const name of ['Mute new-device login emails', 'Hush breach warnings', 'Opt out of risk notifications', 'Ignore threat alerts', 'Quiet compromise warnings']) assert.notDeepEqual(classesOf(name), [], name)
+  for (const name of ['Snooze reminder', 'Quiet hours settings', 'Silence notifications for 1 hour', 'Mute chat notifications', 'Stop marketing emails']) assert.ok(!classesOf(name).includes('permission'), name)
+})
