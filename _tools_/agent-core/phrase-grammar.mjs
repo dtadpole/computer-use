@@ -1163,6 +1163,9 @@ function grammarClassesOf(name, role = '') {
   if (/^\s*(?:create|generate|make|turn\s+on)\s+(?:a\s+|the\s+)?(?:shareable|share|public|sharing)\s+link\s*$|^\s*anyone\s+with\s+(?:the\s+)?link(?:\s+can\s+(?:view|edit|comment))?\s*$/i.test(raw)) return ['permission']
   // #742 round 2 (cu-researcher 21:13Z): the two-word object 'address book' reads as one ('Export address book', 'Sync my address book').
   if (/^\s*(?:upload|sync|import|export|download|share)\s+(?:all\s+|my\s+|your\s+|the\s+)?address\s+books?\s*$/i.test(raw)) return ['permission']
+  // #742 round 4 (cu-developer-three 00:10Z): the people-list family - upload / sync / import / export / download / share (all / my / your /
+  // the / a) contact / contacts / mailing / email / subscriber / customer / client list(s) ('Upload contact list').
+  if (/^\s*(?:upload|sync|import|export|download|share)\s+(?:all\s+|my\s+|your\s+|the\s+|a\s+)?(?:contacts?|mailing|e-?mail|subscribers?|customers?|clients?)\s+lists?\s*$/i.test(raw)) return ['permission']
   if (list.length <= 4) {
     const [v, ...r] = list
     const people = ['contact', 'subscriber', 'audience', 'list', 'address', 'addressbook']

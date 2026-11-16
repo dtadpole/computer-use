@@ -40,3 +40,9 @@ test("#742 round 3 (cu-coordinator 21:21Z): the rest of CU-462's shareable-link 
   for (const name of ['Link settings', 'Restricted']) assert.deepEqual(at(name), [], name)
   assert.deepEqual(at('Share'), ['permission'], 'an older ask, unchanged')
 })
+
+test('#742 round 4 (cu-developer-three 00:10Z): the people-list family', () => {
+  for (const name of ['Upload contact list', 'Sync my contacts list', 'Import mailing list', 'Export email list', 'Share customer list', 'Download subscriber lists']) assert.equal(at(name), 'permission', name)
+  for (const name of ['Contact list', 'Mailing list settings']) assert.equal(at(name), 'allow', name)
+  assert.equal(at('Upload file list'), 'submit', 'not a people list: the older upload row (submit) is unchanged')
+})
