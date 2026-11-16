@@ -386,6 +386,26 @@ const MAIL_ACCESS_ON_DE = /\b(?:imap|pop3?|smtp)(?:[\s/-]*(?:imap|pop3?))?(?:[\s
 // A switch named only by its protocol ('IMAP access', 'POP-Zugriff'): its verb is its state - a native switch that is off
 // turns access ON (asks); any of these switches that is on turns access OFF, the safe direction (free).
 const MAIL_ACCESS_SWITCH = /^\s*(?:imap|pop3?|smtp)(?:\s*\/\s*(?:imap|pop3?))?(?:[\s-]*(?:access|download|zugriff|zugang|abruf))?\s*$/i
+// CU-513 (cu-researcher; cu-coordinator: Medium): an extension / add-on / plug-in store DETAIL page, by host and path. On it a
+// bare 'Install' / 'Get' / 'Add' is the store's install button (the browser's own 'Add extension?' confirm is outside the page).
+export function isExtensionStoreDetail(url) {
+  try {
+    const u = new URL(String(url ?? ''))
+    if (!/^https?:$/.test(u.protocol)) return false
+    const host = u.hostname.toLowerCase(); const path = u.pathname
+    if (host === 'chromewebstore.google.com' && /^\/detail\//.test(path)) return true
+    if (host === 'chrome.google.com' && /^\/webstore\/detail\//.test(path)) return true
+    if ((host === 'addons.mozilla.org' || host === 'addons.thunderbird.net') && /\/addon\//.test(path)) return true
+    if (host === 'microsoftedge.microsoft.com' && /^\/addons\/detail\//.test(path)) return true
+    if (host === 'addons.opera.com' && /\/extensions\/details\//.test(path)) return true
+    if (host === 'marketplace.visualstudio.com' && /^\/items/.test(path)) return true
+    // r2 (cu-developer-three): the IDE extension registries - Open VSX (VSCodium, Cursor, Gitpod, Theia) and JetBrains Marketplace.
+    if (host === 'open-vsx.org' && /^\/extension\/[^/]+\/[^/]+/.test(path)) return true
+    if (host === 'plugins.jetbrains.com' && /^\/plugin\/\d+/.test(path)) return true
+    return /\/wp-admin\/(?:plugin|theme)-install\.php$/.test(path)
+  } catch { return false }
+}
+const STORE_BARE_INSTALL = /^\s*(?:install|get|add|install\s+now|get\s+it(?:\s+now)?|add\s+extension|install\s+(?:extension|plugin|plug-in|theme|add-on))\s*$/i
 // CU-395 (High; cu-coordinator 03:01Z): 'physical' - a control that acts in the physical world (a lock, a garage door, an
 // alarm, a lost device) - leads every class, is never pre-approved and asks each time.
 // cu-coordinator 03:14Z: 'unlock' only beside a physical noun - paywalls ('Unlock Premium', 'Unlock all features') stay free.
@@ -1637,6 +1657,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // CU-421: overriding a malware warning or installing a profile or helper asks install (CU-254's class).
       // cu-coordinator 15:25Z adds a page's 'Keep dangerous file' (Chrome's own shelf stays the named limit).
       if (!focusesEntry && /^\s*(?:(?:open|run|keep|download|install)\s+anyway|keep\s+(?:the\s+)?dangerous\s+file|install\s+(?:the\s+)?(?:configuration\s+)?(?:profile|helper))\b/i.test(name)) classes.push('install')
+      // CU-513: a bare install word on an extension / add-on / plug-in store detail page installs code into the browser or site.
+      if (!focusesEntry && STORE_BARE_INSTALL.test(name) && isExtensionStoreDetail(context.url)) classes.push('install')
       // CU-422: a bare 'Give' / 'Give now' pays; a bare 'Vote' (or 'Vote for <x>'), 'Resign' and 'Apply for <noun>' submit.
       // cu-coordinator 15:42Z (round 2): money forms 'Leave a tip', 'Tip $<n>', 'Give $<n>'.
       if (!focusesEntry && (/^\s*give(?:\s+now)?\s*$/i.test(name) || /^\s*leave\s+(?:a\s+)?tip\b/i.test(name)
