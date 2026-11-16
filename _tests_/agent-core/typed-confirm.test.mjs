@@ -24,6 +24,12 @@ test('CU-585: a bare submit beside a prompt to type a word that confirms a destr
   assert.equal(press('Confirm', ['Repository name', 'This cannot be undone. Type the name to confirm.']), 'delete', 'the sense may span the form\'s texts')
 })
 
+test('CU-585: any generic submit reads the form - Next, Done, Save, Finish, Apply, Go (cu-researcher r1 held-out)', () => {
+  for (const name of ['Next', 'Done', 'Save', 'Finish', 'Apply', 'Go', 'Accept', "I'm sure", 'Yes, continue']) assert.equal(press(name, ['Type DELETE to confirm']), 'delete', name)
+  assert.equal(press('Next', ['Retype the organisation handle to hand it over']), 'permission')
+  assert.equal(press('Done', ['Type the transfer reference']), 'allow')
+})
+
 test('CU-585: a typed confirmation of a transfer of ownership asks permission, not purchase', () => {
   assert.equal(press('Confirm', ['Type TRANSFER to move ownership']), 'permission')
   assert.equal(press('Continue', ['Enter the new owner\'s username']), 'permission')
@@ -42,7 +48,11 @@ test('CU-585: ordinary boxes add nothing - a bare submit stays free beside a nam
   assert.equal(press('Continue', ['Enter the transfer amount']), 'allow')
   assert.equal(press('Continue', ['Type the transfer reference']), 'allow')
   assert.equal(press('Confirm'), 'allow', 'no formEntries: unchanged')
-  assert.equal(press('Save', ['Type DELETE to confirm']), 'allow', 'only the bare confirm-like submits read the form (named limit)')
+  assert.equal(press('Rename', ['Type DELETE to confirm']), 'allow', 'a named act other than a generic submit does not read the form (named limit)')
+  // cu-researcher's r1 over-ask: a typing word followed by 'to' / 'here' is a search box, not a confirmation prompt.
+  assert.equal(press('Confirm', ['Type to search deleted items']), 'allow')
+  assert.equal(press('Go', ['Type here to filter removed files']), 'allow')
+  assert.equal(press('OK', ['Press Enter to delete']), 'allow')
 })
 
 test('CU-585: formEntries only add - a submit another rule classes keeps its class', () => {

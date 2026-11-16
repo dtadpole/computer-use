@@ -335,8 +335,11 @@ const UNLOCK_PHYSICAL = new RegExp(`\\bunlock\\b.*\\b${PHYSICAL_NOUN}\\b|\\b${PH
 const TRADE_ASSET = /\b(?:btc|eth|usd|eur|gbp|jpy|usdt|usdc|dai|sol|xrp|ada|doge|bnb|bitcoin|ethereum|crypto|coins?|tokens?|shares?|stocks?)\b/i
 // CU-585: a bare submit that a typed-word confirmation form gates, and the senses of that form's prompt (the driver's
 // formEntries - the words beside its text entries, never a value).
-const TYPED_CONFIRM_SUBMIT = /^\s*(?:confirm|continue|i\s+understand|proceed|ok(?:ay)?|yes|submit)\s*[.!]?\s*$/i
-const TYPED_INSTRUCTION = /\b(?:type|enter|retype|re-type|write|input)\b/i
+// Any generic submit (cu-researcher's r1 held-out: 'Next' / 'Done' were missed), never a named act.
+const TYPED_CONFIRM_SUBMIT = /^\s*(?:confirm|continue|i\s+understand|i(?:'|\u2019)?m\s+sure|i\s+am\s+sure|yes(?:,?\s+(?:i(?:'|\u2019)?m\s+sure|continue|confirm))?|proceed|ok(?:ay)?|submit|done|next|finish|go|apply|save|accept|agree|i\s+agree|confirm\s+and\s+continue)\s*[.!]?\s*$/i
+// The confirm-prompt shape: a typing word followed by what to type ('Type DELETE ...', 'Enter the workspace name ...'), never
+// 'Type to search ...' / 'Type here ...' / 'Press Enter to ...' (cu-researcher's r1 over-ask 'Type to search deleted items').
+const TYPED_INSTRUCTION = /\b(?:type|enter|retype|re-type|write|input)\s+(?!(?:to|here)\b)["'\u201c\u2018\p{L}\p{N}]/iu
 const TYPED_DESTROY = /\b(?:delet\w*|eras(?:e|es|ed|ing|ure)\b|wip(?:e|es|ed|ing)\b|remov\w*|destroy\w*|purg(?:e|es|ed|ing)\b|terminat\w*|deactivat\w*|permanently|permanent\s+(?:deletion|removal|erasure)|irreversibl\w*|cannot\s+be\s+undone|clos(?:e|ing)\s+(?:the\s+|this\s+|my\s+|your\s+)?account\b|drop\s+(?:the\s+|this\s+)?(?:table|database|schema|collection|index)\b)/i
 // A transfer counts only of ownership: 'Enter the transfer amount' is money, not a handover (cu-developer-three's near-miss).
 const TYPED_TRANSFER = /\b(?:transfer\w*\s+(?:of\s+)?(?:the\s+)?ownership|ownership|hand(?:ing)?\s+(?:it\s+|this\s+\w+\s+|the\s+\w+\s+)?over|handover|new\s+owner|change\s+(?:the\s+)?owner|transfer\s+(?:the\s+|this\s+)?(?:workspace|repository|repo|organization|org|project|team|account|domain)\b)/i
@@ -2562,7 +2565,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (/^deploy\s+(?:the\s+|a\s+|this\s+)?(?:configuration\s+|config\s+|mdm\s+|management\s+)?profiles?$/i.test(raised) && !classes.includes('permission') && classes.length > 0) classes.push('permission')
     }
     // CU-585 (cu-researcher's filing; GO from the policy.mjs owner cu-developer-one 13:48Z; built by cu-developer-two): a
-    // bare, otherwise-unclassed submit ('Confirm', 'Continue', 'I understand', 'Proceed', 'OK', 'Yes') in a danger-zone form
+    // generic, otherwise-unclassed submit ('Confirm', 'Continue', 'Next', 'Done', 'Save', 'OK' ...) in a danger-zone form
     // reads the words its form's text entries show (the driver's formEntries, on a click and on Return's default button):
     // a prompt to type something that confirms a destructive or permanent act asks delete, one that confirms a transfer of
     // ownership asks permission. A late union - it only adds an ask to a submit nothing else classes, never lowers one.
