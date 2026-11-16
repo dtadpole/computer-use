@@ -33,3 +33,8 @@ test('CU-385 r5 (cu-developer-two 19:09Z): the hyphenated junk folder', () => {
   for (const name of ['Junk-E-Mail', 'Junk-Mail']) assert.ok(drop(name).includes('delete'), name)
   assert.ok(!drop('Junk-food recipes').includes('delete'))
 })
+
+test('CU-385 r6 (cu-researcher 19:24Z): Spanish recycle bin / deleted / junk, and junk names ending in "and spam"', () => {
+  for (const name of ['Papelera de reciclaje', 'Elementos borrados', 'Correo basura', 'Posta indesiderata e spam', 'Ongewenste e-mail en spam', 'Junk and spam']) assert.ok(drop(name).includes('delete'), name)
+  for (const name of ['Kosz zakupów', 'Spam filter rules', 'Junkyard photos', 'Bulk upload', 'Deleted Items policy doc']) assert.ok(!drop(name).includes('delete'), name)
+})
