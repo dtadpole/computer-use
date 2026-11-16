@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict'
+import { test } from 'node:test'
+
+import { createPolicy } from '../../_tools_/agent-core/policy.mjs'
+
+// CU-569 (cu-researcher 03:42Z): the destroy verbs' synonyms and missing objects ask delete on a console page; benign idioms stay free.
+const policy = createPolicy({ sitePolicy: () => 'allow' })
+const classesOf = (name) => {
+  const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: 'https://console.example/project/1', target: { role: 'button', name } })
+  return v.decision === 'allow' ? [] : (v.classes ?? [v.class])
+}
+
+test('CU-569: tear down / decommission / deprovision / shred / nuke / obliterate / scrub / zap x data objects ask delete', () => {
+  for (const name of ['Tear down environment', 'Decommission server', 'Deprovision instance', 'Shred file', 'Nuke database', 'Obliterate repository', 'Scrub data', 'Zap cluster',
+    'Reset everything', 'Terminate project', 'Drop bucket', 'Clear everything', 'Delete deployment', 'Tear down the stack', 'Clear bucket', 'Empty volume']) assert.ok(classesOf(name).includes('delete'), name)
+  for (const name of ['Clear filters', 'Reset zoom', 'Scrub timeline', 'Tear down guide', 'Shred settings', 'Close project']) assert.deepEqual(classesOf(name), [], name)
+})
