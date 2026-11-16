@@ -31,3 +31,11 @@ test('#856 round 2 (cu-researcher 05:00Z): both slots open - any weakening verb 
   assert.deepEqual(classesOf('Exempt this user from 2FA'), ['credential'], 'an older 2FA row leads (credential)')
   for (const name of ['Remove filter', 'Skip review', 'Disable spell checks', 'Lower volume', 'Make it optional', 'Exempt from tax', 'Halt playback', 'Reduce motion']) assert.ok(!classesOf(name).includes('permission'), name)
 })
+
+test('#856 round 3 (cu-researcher 05:17Z): the verb lexicon with prefix verbs, and compound security heads', () => {
+  for (const name of ['Pause intrusion detection', 'Waive bot protection', 'Silence anomaly alerts', 'Neutralize DLP rules', 'Mute geo-blocking', 'Neutralize the WAF', 'Unprotect branch', 'Dial down fraud detection', 'Snooze threat alerts',
+    'Suppress malware alerts', 'Evade rate limits', 'Water down password policy', 'Unenforce MFA', 'Turn off DDoS protection', 'Turn down spam filtering']) assert.ok(classesOf(name).includes('permission'), name)
+  // An older verb row leads but still asks ('disarm' is the physical alarm verb, 'deactivate' a destroy verb).
+  for (const name of ['Disarm the WAF', 'Deactivate DDoS protection']) assert.notDeepEqual(classesOf(name), [], name)
+  for (const name of ['Mute', 'Silence notifications', 'Snooze', 'Skip device protection', 'Pause video', 'Unlock screen', 'Dismiss', 'Unblock user']) assert.ok(!classesOf(name).includes('permission'), name)
+})
