@@ -23,3 +23,11 @@ test('a dialog item reads the title (CU-507) and a desktop item goes through the
   const r = measure({ ask: [['delete', 'Continue', SITE, { title: 'Delete account?' }], ['delete', 'Continue', 'app:com.example.console', { title: 'Delete 3 projects?' }]], free: [['Continue', SITE, { title: 'Welcome back' }]] })
   assert.equal(r.inClass, 2, r.misses.join(' | ')); assert.equal(r.freeOk, 1)
 })
+
+test("a union want 'a+b' needs every listed class, in any order; '|' still means either", () => {
+  const ask = (want) => measure({ ask: [[want, 'Disable two-factor authentication', SITE]], free: [] }).inClass
+  assert.equal(ask('credential+permission'), 1, 'both classes present')
+  assert.equal(ask('permission+credential'), 1, 'order does not matter')
+  assert.equal(ask('credential+delete'), 0, 'a class the verdict lacks fails the union')
+  assert.equal(ask('delete|credential+permission'), 1, 'an alternative may itself be a union')
+})

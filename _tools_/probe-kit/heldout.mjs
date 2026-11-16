@@ -12,7 +12,7 @@ const shown = (r) => (r.decision === 'confirm' ? classes(r).join('+') : r.decisi
 
 /**
  * `set`: `{ ask: [[class, name, where, dialog?]], free: [[name, where, dialog?]], out_of_scope?: [names] }`, where `where` is a
- * page URL, or `app:<bundleId>` for a desktop item; `class` may list alternatives as 'a|b'; `dialog` is `{ title, description }`.
+ * page URL, or `app:<bundleId>` for a desktop item; `class` may list alternatives as 'a|b' and a union as 'a+b' (every class present, any order); `dialog` is `{ title, description }`.
  * Returns the counts and the misses; an out-of-scope ask is reported apart and not counted.
  */
 export function measure(set) {
@@ -34,7 +34,8 @@ export function measure(set) {
       if (out.has(name)) { result.apart.push(`${name}=${shown(r)}`); continue }
       result.counted += 1
       if (r.decision === 'confirm') result.asked += 1
-      if (String(want).split('|').some((c) => classes(r).includes(c))) result.inClass += 1
+      // 'a|b' - either alternative; 'a+b' - every listed class present (a union verdict, D-108), in any order.
+      if (String(want).split('|').some((alt) => alt.split('+').every((c) => classes(r).includes(c)))) result.inClass += 1
       else result.misses.push(`${name}=${shown(r)} (want ${want})`)
     }
     for (const [name, where, dialog] of set.free) {
