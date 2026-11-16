@@ -51,7 +51,7 @@ export function tokens(name) {
 const MULTI_VERBS = [
   [['adopt', 'and', 'sign'], ['sign']], [['sign', 'and', 'submit'], ['sign', 'send']], [['restart', 'to', 'update'], ['install']],
   [['install', 'and', 'relaunch'], ['install']], [['log', 'in', 'as'], ['actas']], [['sign', 'in', 'as'], ['actas']],
-  [['factory', 'reset'], ['destroy']], [['force', 'push'], ['destroy']], [['spin', 'up'], ['cost']], [['scale', 'up'], ['cost']],
+  [['factory', 'reset'], ['destroy']], [['force', 'push'], ['destroy']], [['tear', 'down'], ['destroy']], [['wipe', 'out'], ['destroy']], [['spin', 'up'], ['cost']], [['scale', 'up'], ['cost']],
   [['cash', 'out'], ['pay']], [['top', 'up'], ['pay']], [['turn', 'on'], ['enable', 'phys_on']], [['turn', 'off'], ['unguard', 'phys_off']],
   [['login', 'as'], ['actas']], [['act', 'as'], ['actas']], [['view', 'as'], ['actas']], [['set', 'up'], ['pay']], [['move', 'to'], ['destroy']],
   [['switch', 'to'], ['pay']], [['let', 'in'], ['grant']], [['remote', 'start'], ['phys_on']], [['buzz', 'in'], ['phys_on']],
@@ -63,6 +63,9 @@ const VERBS = new Map(Object.entries({
   delete: ['destroy'], remove: ['destroy', 'unguard', 'pay'], drop: ['destroy'], truncate: ['destroy'], terminate: ['destroy'],
   destroy: ['destroy'], wipe: ['destroy'], erase: ['destroy'], purge: ['destroy'], deactivate: ['destroy'], close: ['destroy', 'pay'],
   cancel: ['destroy', 'pay'], clear: ['destroy'], reset: ['destroy', 'cred'], offboard: ['destroy'], kick: ['destroy'],
+  // CU-569 (cu-researcher 03:42Z; built before triage): the destroy verbs' synonyms - they still need a data object ('Scrub timeline' stays free).
+  decommission: ['destroy'], deprovision: ['destroy'], shred: ['destroy'], nuke: ['destroy'], obliterate: ['destroy'], zap: ['destroy'],
+  scrub: ['destroy'], teardown: ['destroy'],
   launch: ['cost'], create: ['cost', 'cred'], provision: ['cost'],
   pay: ['pay'], buy: ['pay'], purchase: ['pay'], order: ['pay'], book: ['pay'], reserve: ['pay'], rent: ['pay'], redeem: ['pay'],
   refund: ['pay'], reimburse: ['pay'], release: ['pay', 'share'], send: ['pay', 'send'], transfer: ['pay', 'grant'], withdraw: ['pay'],
@@ -105,7 +108,9 @@ const OBJECTS = {
   data: new Set(['backup', 'snapshot', 'archive', 'phone', 'laptop', 'mac', 'ipad', 'iphone', 'computer', 'download', 'trash', 'file',
     'account', 'data', 'database', 'table', 'schema', 'collection', 'instance', 'server', 'cluster', 'vm', 'stack', 'environment', 'disk',
     'repository', 'branch', 'booking', 'reservation', 'trip', 'appointment', 'user', 'employee', 'participant', 'device', 'history',
-    'workspace', 'chat', 'conversation']),
+    'workspace', 'chat', 'conversation',
+    // CU-569: 'Reset everything' / 'Clear everything'.
+    'everything']),
   cost: new Set(['instance', 'cluster', 'vm', 'server']),
   money: new Set(['payment', 'payroll', 'refund', 'invoice', 'card', 'limit', 'ticket', 'flight', 'hotel', 'room', 'car', 'trip', 'seat',
     'table', 'spot', 'credit', 'license', 'click', '1', 'autopay', 'bank', 'point', 'reward', 'gift', 'order', 'booking', 'reservation',
@@ -1379,6 +1384,12 @@ function grammarClassesOf(name, role = '') {
   // #778 r2 (cu-researcher 01:39Z): 'deployment' is optional when 'rules' says what it is ('Skip protection rules and deploy'); a bare
   // 'Skip protection' (a checkout's insurance upsell) stays free.
   if (/^\s*(?:skip|bypass|ignore|override)\s+(?:the\s+)?(?:deployment\s+protection(?:\s+rules?)?|(?:branch\s+|environment\s+)?protection\s+rules?)(?:\s+and\s+deploy(?:\s+now)?)?\s*$/i.test(raw)) return ['permission', 'submit']
+  // CU-569: a project or a cloud object (node, service, deployment, volume, bucket, namespace, container, pod, droplet, app) is destroyed
+  // only by the destroy verbs proper - 'Close project' (reversible), 'Clear / Reset project' (settings or state) and 'Disable encryption
+  // for this bucket' (permission, CU-530) keep their own reading.
+  if (/^\s*(?:delete|destroy|terminate|decommission|deprovision|tear\s+down|nuke|obliterate|shred|wipe\s+out|drop|purge|erase|zap|scrub)\s+(?:the\s+|this\s+|my\s+|your\s+|entire\s+)?(?:project|node|service|deployment|volume|bucket|namespace|container|pod|droplet|app)s?\s*$/i.test(raw)) return ['delete']
+  // Clearing or emptying a bucket or volume wipes its contents (delete); 'Reset bucket / deployment' stays ambiguous and free.
+  if (/^\s*(?:clear|empty)\s+(?:the\s+|this\s+|my\s+)?(?:bucket|volume)s?\s*$/i.test(raw)) return ['delete']
   // CU-537 (High; cu-coordinator 01:06Z), table PR 38 - registrar DNS. PERMISSION everywhere: add / create / new (a / an) typed record
   // (MX, CNAME, TXT, NS, SRV, CAA, PTR, SPF, DKIM, DMARC, ALIAS; 'A' / 'AAAA' only in capitals, so 'Add a record' is not an A record);
   // the generic 'Add / Edit / Save record' (DNS pages) and turning a domain's auto-renew off (domain / registrar pages; a subscription's
