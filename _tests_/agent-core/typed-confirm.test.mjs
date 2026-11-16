@@ -59,6 +59,15 @@ test('CU-585 r6: any otherwise-unclassed button in the form reads the prompt, ex
   for (const name of ['Cancel', 'Back', 'Go back', 'Close', 'No', 'No, keep it', 'Never mind', 'Keep the repository', "Don't delete", 'Not now', 'Maybe later', '\u00d7']) assert.equal(press(name, ['Type DELETE to confirm']), 'allow', `${name}: backing out is never asked`)
 })
 
+test('CU-585 r7: pass / give / assign it to a new admin or owner; clipboard and help buttons never read the prompt (cu-researcher r6)', () => {
+  assert.equal(press('Move ahead', ['Type the workspace handle to pass it to a new admin']), 'permission')
+  assert.equal(press('Confirm', ['Enter the repo name to give it to another owner']), 'permission')
+  assert.equal(press('Next', ['Retype the project slug to assign it to a different team']), 'permission')
+  assert.equal(press('Continue', ['Type the org name to make Sam the new admin']), 'permission')
+  for (const name of ['Copy', 'Copy name', 'Show', 'Reveal', 'Learn more', 'Help', '?', 'Paste', 'Clear', "What's this?"]) assert.equal(press(name, ['Type DELETE to confirm']), 'allow', `${name}: a utility beside the box confirms nothing`)
+  assert.equal(press('Show password', ['Type DELETE to confirm']), press('Show password'), "a utility another rule classes keeps that class (main's credential)")
+})
+
 test('CU-585: a typed confirmation of a transfer of ownership asks permission, not purchase', () => {
   assert.equal(press('Confirm', ['Type TRANSFER to move ownership']), 'permission')
   assert.equal(press('Continue', ['Enter the new owner\'s username']), 'permission')
