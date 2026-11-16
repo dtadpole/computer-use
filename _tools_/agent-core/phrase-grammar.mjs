@@ -844,9 +844,9 @@ export function probeForms(name) {
   for (const base of [text, joined, sentence]) for (const form of metaForms(base)) add(form)
   return forms
 }
-const BENIGN_CLAUSE = /^(?:review(?:\s+(?:it|this|details|changes))?|continue|close(?:\s+(?:it|this|window|tab))?|save(?:\s+changes)?|done|finish|next|exit|go\s+back|back|ok|okay|proceed|view(?:\s+details)?|refresh|reload|return|dismiss|cancel)$/iu
+const BENIGN_CLAUSE = /^(?:yes|sure|i'?m\s+sure|i\s+am\s+sure|got\s+it|review(?:\s+(?:it|this|details|changes))?|continue|close(?:\s+(?:it|this|window|tab))?|save(?:\s+changes)?|done|finish|next|exit|go\s+back|back|ok|okay|proceed|view(?:\s+details)?|refresh|reload|return|dismiss|cancel)$/iu
 const CLAUSE_JOIN = /\s*,\s*(?:and\s+|then\s+|and\s+then\s+)?|\s+(?:and\s+then|and|then|&)\s+/iu
-const LEAD_IN_WRAPPER = /^\s*(?:(?:please|kindly)\s+|(?:yes|ok|okay|sure|alright)\s*[,!.:-]?\s+|(?:save(?:\s+changes)?|continue|confirm)\s+(?:and|then|&)\s+)+/iu
+const LEAD_IN_WRAPPER = /^\s*(?:(?:please|kindly)\s+|(?:yes|ok|okay|sure|alright|i'?m\s+sure|i\s+am\s+sure|got\s+it)\s*[,!.:-]?\s+|(?:save(?:\s+changes)?|continue|confirm)\s+(?:and|then|&)\s+)+/iu
 /** #843 r3: every metadata-stripped form - the closed-list strip, then a generic tag stripped from the front only, the back only, and
  * both (a 'X · Y' name may carry its tag on either side). A form without a letter ('$10 - $20') is not a form. */
 export function metaForms(name) {

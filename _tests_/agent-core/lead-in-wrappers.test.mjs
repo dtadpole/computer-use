@@ -27,3 +27,10 @@ test('#848 round 2 (cu-researcher 03:21Z): outer quotes / brackets, and every be
   }
   for (const name of ['Review and continue', 'Save, then close', '\u201cSettings\u201d', '[Help]']) assert.deepEqual(classesOf(name), [], name)
 })
+
+test("#848 round 3 (cu-researcher 03:36Z): the lead-in drop and the badge strip stack", () => {
+  const want = classesOf('Change direct deposit Takes effect immediately')
+  assert.notDeepEqual(want, [], 'base asks')
+  for (const form of ["I'm sure, change direct deposit Takes effect immediately", 'I am sure, change direct deposit', 'Yes, change direct deposit \u00b7 2 min']) assert.notDeepEqual(classesOf(form), [], form)
+  for (const name of ["I'm sure", 'Yes, I am sure']) assert.deepEqual(classesOf(name), [], name)
+})
