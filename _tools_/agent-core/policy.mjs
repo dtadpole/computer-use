@@ -1,4 +1,4 @@
-import { isMessagingApp } from './app-kinds.mjs'
+import { isMessagingApp, isWalletApp } from './app-kinds.mjs'
 import { normaliseForPolicy, normaliseText } from './normalise.mjs'
 import { BIP39_ENGLISH } from './bip39-english.mjs'
 import { normalizeKey } from './keys.mjs'
@@ -2499,6 +2499,12 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     }
     // CU-521 (cu-coordinator 20:06Z): 'Merge anyway' keeps its older submit and unions permission (a merge past the requirements).
     if (grammarEligible && classes.length > 0 && !classes.includes('permission') && /^(?:merge\s+anyway|force[-\s]?merge)$/i.test(String(name ?? '').trim())) classes.push('permission')
+    // CU-576 (built before triage): in a crypto wallet app a send / broadcast / sign / confirm / approve / swap moves money and is final - it
+    // asks purchase (no grant covers it) beside whatever class it already has; reading, receiving and settings stay as they are.
+    if (desktopUrl && !nativeOn && !classes.includes('purchase') && isWalletApp(String(context.frontmostBundleId ?? target?.origin ?? context.url ?? ''))
+      && (/^\s*(?:send|spend|broadcast|confirm|sign|approve|authori[sz]e|transfer|withdraw|swap|exchange|trade|sell|buy|pay|submit|finali[sz]e|push|publish|release|redeem|sweep|consolidate|coin-?join|mix|bridge|stake|unstake|delegate|claim|move\s+(?:funds|coins)|review\s+and\s+send|sign\s+and\s+(?:send|broadcast)|create\s+transaction|bump\s+fee|speed\s+up|cancel\s+transaction)\b/i.test(String(name ?? ''))
+        || /^\s*[\p{L}-]+\b.*\b(?:transactions?|tx|psbt|payments?|funds|coins|utxos?|outputs?|coin-?\s?joins?|mixing|mix(?:ing)?\s+rounds?|swaps?|staking|stakes?|bridges?|withdrawals?|transfers?|payouts?|sends?|spends?)\b/iu.test(String(name ?? '')) && !/^\s*(?:view|show|see|open|export|copy|search|filter|sort|label|refresh|load|import|scan)\b/i.test(String(name ?? '')))
+      && !/^\s*(?:send|confirm|sign|approve)\s+(?:feedback|logs?|report|crash|diagnostics)\b/i.test(String(name ?? ''))) classes.push('purchase')
     // #729 round 2 (cu-coordinator 19:51Z, the 18:06Z precedent): 'Reset account PIN' keeps the older reset row's delete and unions
     // CU-518's credential.
     if (grammarEligible && classes.length > 0 && !classes.includes('credential') && /^reset\s+(?:the\s+|my\s+|your\s+)?(?:account|port[-\s]?out|transfer|number\s+transfer)\s+(?:pin|passcode)$/i.test(String(name ?? '').trim())) classes.push('credential')
