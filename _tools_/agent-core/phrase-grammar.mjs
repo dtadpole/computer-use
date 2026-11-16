@@ -823,6 +823,17 @@ function probeSteps(current) {
   const letters = current.replace(/[^\p{L}]/gu, '')
   // A single all-caps word is an acronym or a field name ('IBAN'), not a shouted label: only a multi-word label takes sentence case.
   if (letters.length >= 2 && letters === letters.toUpperCase() && /\p{L}\s+\S*\p{L}/u.test(current)) out.push(upperFirst(current.toLowerCase()))
+  // #846 r3 (merged into #848 by a plain merge): a lower-case start takes sentence case; an all-caps name also takes Title Case; both take a
+  // titled tail, so a tail's proper noun ('to Acme Bank') reads as written. Full Title Case stays shouted-only ('a record' is generic).
+  const multi = /\p{L}\s+\S*\p{L}/u.test(current)
+  const shouted = multi && letters.length >= 2 && letters === letters.toUpperCase()
+  const lowerStart = multi && /^\s*\p{Ll}/u.test(current)
+  if (lowerStart) out.push(upperFirst(current))
+  if (shouted) out.push(current.toLowerCase().replace(/(^|[\s/(-])(\p{L})/gu, (m, sep, c) => sep + c.toUpperCase()))
+  if (shouted || lowerStart) {
+    const base = lowerStart ? upperFirst(current) : upperFirst(current.toLowerCase())
+    out.push(base.replace(/(\s(?:to|for|at|with|from|on)\s+)(.+)$/iu, (m, prep, tail) => prep + tail.replace(/(^|\s)(\p{L})/gu, (mm, sep, c) => sep + c.toUpperCase())))
+  }
   out.push(current.replace(/^\s*["'\u201c\u201d\u2018\u2019\u00ab\u00bb\[(]+\s*/u, '').replace(/\s*["'\u201c\u201d\u2018\u2019\u00ab\u00bb\])]+\s*$/u, ''))
   // #848 r5 (cu-researcher 04:08Z): any leading / trailing glyphs or symbols (🗑️ ⚠️ → • 🔒 ✓) strip too, so the clause split sees the row.
   out.push(current.replace(/^[^\p{L}\p{N}$\u20ac\u00a3\u00a5\u20b9]+/u, '').replace(/[^\p{L}\p{N})\].!?]+$/u, ''))
