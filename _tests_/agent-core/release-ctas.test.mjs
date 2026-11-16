@@ -53,3 +53,7 @@ test('#854 round 6 (cu-researcher 06:10Z): the reach class only adds - warning o
     assert.ok((v.classes ?? [v.class]).includes('install'), `${name} @ ${url}`)
   }
 })
+
+test('#854 round 7 (cu-researcher 08:14Z): object variants - a branch path or version as the object', () => {
+  for (const name of ['Merge release/4.2 into main', 'Merge feature/login-v2 into master', 'Push hotfix-1.3.7 to production', 'Promote build #812 to stable']) assert.notDeepEqual(classesOf(name), [], name)
+})
