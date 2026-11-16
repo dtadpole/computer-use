@@ -77,6 +77,18 @@ test('CU-585 r8: gerund typing words (author-found at r7)', () => {
   assert.equal(press('Save', ['Typing your name helps teammates']), 'allow')
 })
 
+test('CU-585 r8: more purpose verbs on the destroy side (cu-researcher r7 private set)', () => {
+  assert.equal(press('Understood', ['Enter the database name to drop it for good']), 'delete')
+  assert.equal(press('Fine', ['Type CLOSE to shut the account down']), 'delete')
+  assert.equal(press('Confirm', ['Type the project key to close it permanently']), 'delete')
+  assert.equal(press('OK', ['Type KILL to kill all sessions and their data']), 'delete')
+  assert.equal(press('Continue', ['Type the API name to sunset it']), 'delete')
+  assert.equal(press('Next', ['Type the plan name to cancel the account']), 'delete')
+  assert.equal(press('Done', ['Type the label to retire it']), 'delete')
+  assert.equal(press('Save', ['Type a name for the drop zone']), 'allow', "'drop zone' is no 'drop it'")
+  assert.equal(press('Save', ['Enter a reason to close this ticket']), 'allow', 'closing a ticket is not shutting it down')
+})
+
 test('CU-585: a typed confirmation of a transfer of ownership asks permission, not purchase', () => {
   assert.equal(press('Confirm', ['Type TRANSFER to move ownership']), 'permission')
   assert.equal(press('Continue', ['Enter the new owner\'s username']), 'permission')
