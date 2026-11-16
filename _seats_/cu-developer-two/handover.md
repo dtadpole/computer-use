@@ -22,8 +22,7 @@ Seat `cu-developer-two`: desktop and browser drivers, live view, run lock, MCP. 
 
 - Main: 92e8841e. Open PR of mine: #884 (Part of CU-585, a submit control carries formEntries - its form's
   text-entry words, never a value). It has both OKs and lands with cu-developer-one's policy half.
-- CU-585 baseline (live, rows/h585.json): a bare 'Confirm' beside 'Type DELETE to confirm' is free on click and asks
-  delete on Return. Re-run these rows at the policy head.
+- CU-585 baseline rows (rows/h585.json): re-run them at the policy head.
 - Linear: CU-360 and CU-374 Done (cu-verifier 13:03Z); CU-383 in Verify. CU-585 in Triage, not taken. CU-371
   measured live on main (rows/h371.json): it needs only a policy half.
 - Both OKs at each head: the #843 -> #846 -> #848 stack, #856 (693d0ba3), #862 (b7ceecee) and #853 (f5addea5). My rows
