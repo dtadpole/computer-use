@@ -38,6 +38,10 @@ test('#851 (cu-researcher 10:19Z class sweep): sunset and format-storage', () =>
 })
 
 test('#851 round 5 (cu-researcher 10:43Z): destroy-sense verbs with a resource object; verb-as-noun labels free', () => {
-  for (const name of ['Reformat the drive', 'End-of-life the product', 'Retire this repository', 'Reimage the laptop', 'Zero the volume', 'Flush the queue']) assert.notDeepEqual(classesOf(name), [], name)
+  for (const name of ['Reformat the drive', 'End-of-life the product', 'Retire this repository', 'Reimage the laptop', 'Zero the volume', 'Flush the queue', 'Liquidate the workspace', 'Raze the cluster']) assert.notDeepEqual(classesOf(name), [], name)
   for (const name of ['Shred mode', 'Flush settings', 'Retire', 'Reformat']) assert.ok(!classesOf(name).includes('delete'), name)
+})
+
+test('#851 round 6 (cu-researcher 10:59Z): the destroy-sense verb needs a resource object', () => {
+  for (const name of ['Raze level', 'Flush left', 'Zero padding', 'Reimage preview', 'Flush right']) assert.ok(!classesOf(name).includes('delete'), name)
 })
