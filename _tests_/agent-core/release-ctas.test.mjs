@@ -21,3 +21,9 @@ test('CU-571: going live, shipping to prod, merging to main, rolling out to ever
 test('CU-571 negatives: the nouns and neighbours stay free', () => {
   for (const name of ['Go to live chat', 'Live preview', 'Production logs', 'Release notes', 'View release', 'Releases', 'Deployments', 'Merge cells', 'Ship to address', 'Shipping', 'Roll back', 'Draft release', 'Blast list', 'Go to main menu', 'Move to folder']) assert.ok(!classesOf(name).includes('submit'), name)
 })
+
+test('#854 round 2 (cu-researcher 04:56Z): the TARGET binds - any verb to a live target, channel promotion, traffic cut-over', () => {
+  for (const name of ['Graduate build to production', 'Advance release to stable', 'Hand off to production', 'Bump to stable channel', 'Promote to stable channel', 'Move canary to GA', 'Open up to everyone', 'Expose to all users', 'Widen rollout to 100%',
+    'Squash and merge into main', 'Land into master', 'Integrate into trunk', 'Shift all traffic to v2', 'Route 100% of traffic to green', 'Cut over', 'Cut over to new cluster', 'Flip DNS to the new server', 'Switch traffic to blue']) assert.ok(classesOf(name).includes('submit'), name)
+  for (const name of ['Go to main', 'Apply to all', 'Copy to all', 'Show to everyone', 'Go back to production logs', 'Navigate to production', 'View traffic', 'Traffic report', 'Say hello to everyone']) assert.ok(!classesOf(name).includes('submit'), name)
+})
