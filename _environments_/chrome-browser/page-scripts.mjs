@@ -630,6 +630,37 @@ export function describeElement(el) {
       || AMOUNT.test([input.name, input.id, input.getAttribute('aria-label'), input.placeholder].filter(Boolean).join(' ')))
     return options.length > 0 || amountEntry ? { options, amountEntry } : null
   })()
+  // CU-585 (cu-researcher; driver half): a submit-like control inside a form carries the words the form's text entries
+  // show - what a danger-zone form asks to be typed ('Type DELETE to confirm' beside a bare 'Confirm'). For each text
+  // entry (input of type text/search/email/url/tel or none, or a textarea) in tree order: its label (<label>, else the
+  // aria-labelledby text, else aria-label, else placeholder), then its aria-describedby text, else - with neither - the
+  // text of the element just before it. Whitespace collapsed; a text over 80 characters is none (never cut); at most 3
+  // texts, no repeats. Never a value. Only the control's own <form> or [role=form]. Context, outside the fingerprint.
+  const formEntries = (() => {
+    const buttonLike = tag === 'button' || (tag === 'input' && ['submit', 'button', 'image'].includes(type)) || role === 'button'
+    if (!buttonLike) return null
+    const form = (el.form && el.form.querySelectorAll ? el.form : null) || (el.closest ? el.closest('form') || el.closest('[role="form"]') : null)
+    if (!form || typeof form.querySelectorAll !== 'function') return null
+    const doc = el.ownerDocument
+    const clean = (text) => String(text || '').replace(/\s+/g, ' ').trim()
+    const byIds = (node, attr) => clean(String((node.getAttribute && node.getAttribute(attr)) || '').split(/\s+/).filter(Boolean)
+      .map((id) => { const target = doc && doc.getElementById ? doc.getElementById(id) : null; return target ? target.textContent : '' }).join(' '))
+    const TEXT_TYPES = ['', 'text', 'search', 'email', 'url', 'tel']
+    const out = []
+    const keep = (text) => { if (text !== '' && text.length <= 80 && out.length < 3 && !out.includes(text)) out.push(text) }
+    for (const entry of Array.from(form.querySelectorAll('input, textarea'))) {
+      if (out.length >= 3) break
+      const entryTag = String(entry.tagName || '').toLowerCase()
+      if (entryTag === 'input' && !TEXT_TYPES.includes(String((entry.getAttribute && entry.getAttribute('type')) || '').toLowerCase())) continue
+      const labelled = entry.labels ? clean(Array.from(entry.labels).map((label) => label.textContent).join(' ')) : ''
+      const name = labelled || byIds(entry, 'aria-labelledby') || clean(entry.getAttribute && entry.getAttribute('aria-label')) || clean(entry.placeholder)
+      const described = byIds(entry, 'aria-describedby')
+      const prior = entry.previousElementSibling
+      const before = name === '' && described === '' && prior && !/^(?:input|select|textarea|button)$/i.test(prior.tagName || '') ? clean(prior.textContent) : ''
+      keep(name); keep(described); keep(before)
+    }
+    return out.length > 0 ? out : null
+  })()
   // CU-443 (cu-coordinator 21:01Z, 21:03Z): a pressed row with no verb of its own - a contact list item that dials on
   // click - is judged with what the page offers around it. Only for list items, rows, grid cells, options and tree
   // items. dialHref: whether the row, an ancestor within 4 levels or a link inside it carries a tel:, sip:, callto: or
@@ -741,7 +772,7 @@ export function describeElement(el) {
   return { tag, inputType: type, isPassword: type === 'password', autocomplete: autocomplete || null, href: link, origin, editable, caption: editable ? null : caption, entryCaption: editable ? caption : null,
     ...(frameUrl ? { frameUrl } : {}), ...(terminal ? { terminal } : {}), ...(notebookCell ? { notebookCell } : {}), ...(notebookSurface ? { notebookSurface } : {}), ...(codeSurface ? { codeSurface } : {}),
     ...(checked !== null ? { checked } : {}), ...(pressed !== null ? { pressed } : {}),
-    ...(formContext !== null ? { formContext } : {}), ...(firstLine !== null ? { firstLine } : {}), ...(inertLink ? { inertLink: true } : {}), ...(inRow ? { inRow: true } : {}), ...(dialHref === true ? { dialHref: true } : {}), ...(rowContext !== null ? { rowContext } : {}), ...(dialogText ?? {}) }
+    ...(formContext !== null ? { formContext } : {}), ...(formEntries !== null ? { formEntries } : {}), ...(firstLine !== null ? { firstLine } : {}), ...(inertLink ? { inertLink: true } : {}), ...(inRow ? { inRow: true } : {}), ...(dialHref === true ? { dialHref: true } : {}), ...(rowContext !== null ? { rowContext } : {}), ...(dialogText ?? {}) }
 }
 
 /**

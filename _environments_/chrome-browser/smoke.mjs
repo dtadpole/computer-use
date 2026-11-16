@@ -114,6 +114,11 @@ const server = http.createServer((req, res) => {
     return
   }
   // CU-360: a page script (on load, and from a click) navigates to a scheme no app on any machine registers.
+  // CU-585: an inline danger-zone form - a labelled box asking for a word to be typed, a placeholder box, and a bare submit.
+  if (req.url.startsWith('/danger-zone-page')) {
+    res.end('<!doctype html><style>body{margin:0;font:14px sans-serif}input{display:block;width:280px;margin:6px 20px}button{position:absolute;left:20px;top:120px;width:200px;height:30px}</style><form onsubmit="return false"><label for="c" style="margin:6px 20px;display:block">Type DELETE to confirm</label><input id="c" value="DEL"><input placeholder="acme/prod"><button>Confirm</button></form>')
+    return
+  }
   if (req.url.startsWith('/extproto-page')) {
     res.end('<!doctype html><style>body{margin:0}button{position:absolute;left:20px;top:20px;width:300px;height:30px}</style><button onclick="location.href=\'x-cu-probe-unregistered-7f3a://click\'">Open</button><script>setTimeout(() => { location.href = \'x-cu-probe-unregistered-7f3a://load\' }, 50)</script>')
     return
@@ -302,6 +307,11 @@ try {
     { backgroundRefused: background.length })
   report.blockedDuringRun = env.session.blocked.map((entry) => `${entry.via ?? 'fetch'} ${entry.rule} ${entry.url}`)
   report.backgroundTrafficRefused = [...new Set(background.map((notice) => new URL(notice.url).host))]
+
+  // CU-585: the bare submit of a danger-zone form carries the words its text entries show, never what was typed.
+  await env.perform({ type: 'navigate', url: `${origin}/danger-zone-page` })
+  const dangerSubmit = await env.inspectPoint({ x: 90, y: 101 }) // frame pixels: the button's CSS centre (120, 135) at scale 0.75
+  check('a bare submit in a danger-zone form carries formEntries (its boxes\' words, never a value)', dangerSubmit?.name === 'Confirm' && JSON.stringify(dangerSubmit?.formEntries) === JSON.stringify(['Type DELETE to confirm', 'acme/prod']) && !JSON.stringify(dangerSubmit).includes('"DEL"'), dangerSubmit && { name: dangerSubmit.name, formEntries: dangerSubmit.formEntries })
 
   // CU-319: the browser's own autofill marks fields :autofill; the submit button then carries them as descriptors. Typing
   // into one clears Chrome's state, and the driver keeps reporting it, marked edited (a partial edit launders nothing).
