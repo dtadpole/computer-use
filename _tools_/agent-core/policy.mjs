@@ -337,8 +337,9 @@ const TRADE_ASSET = /\b(?:btc|eth|usd|eur|gbp|jpy|usdt|usdc|dai|sol|xrp|ada|doge
 // formEntries - the words beside its text entries, never a value).
 const TYPED_CONFIRM_SUBMIT = /^\s*(?:confirm|continue|i\s+understand|proceed|ok(?:ay)?|yes|submit)\s*[.!]?\s*$/i
 const TYPED_INSTRUCTION = /\b(?:type|enter|retype|re-type|write|input)\b/i
-const TYPED_DESTROY = /\b(?:delet\w*|eras(?:e|es|ed|ing|ure)\b|wip(?:e|es|ed|ing)\b|remov\w*|destroy\w*|purg(?:e|es|ed|ing)\b|terminat\w*|deactivat\w*|permanent\w*|irreversibl\w*|cannot\s+be\s+undone|clos(?:e|ing)\s+(?:the\s+|this\s+|my\s+|your\s+)?account\b|drop\s+(?:the\s+|this\s+)?(?:table|database|schema|collection|index)\b)/i
-const TYPED_TRANSFER = /\b(?:transfer\w*|hand(?:ing)?\s+(?:it\s+|this\s+\w+\s+|the\s+\w+\s+)?over|handover|ownership|new\s+owner|change\s+(?:the\s+)?owner)\b/i
+const TYPED_DESTROY = /\b(?:delet\w*|eras(?:e|es|ed|ing|ure)\b|wip(?:e|es|ed|ing)\b|remov\w*|destroy\w*|purg(?:e|es|ed|ing)\b|terminat\w*|deactivat\w*|permanently|permanent\s+(?:deletion|removal|erasure)|irreversibl\w*|cannot\s+be\s+undone|clos(?:e|ing)\s+(?:the\s+|this\s+|my\s+|your\s+)?account\b|drop\s+(?:the\s+|this\s+)?(?:table|database|schema|collection|index)\b)/i
+// A transfer counts only of ownership: 'Enter the transfer amount' is money, not a handover (cu-developer-three's near-miss).
+const TYPED_TRANSFER = /\b(?:transfer\w*\s+(?:of\s+)?(?:the\s+)?ownership|ownership|hand(?:ing)?\s+(?:it\s+|this\s+\w+\s+|the\s+\w+\s+)?over|handover|new\s+owner|change\s+(?:the\s+)?owner|transfer\s+(?:the\s+|this\s+)?(?:workspace|repository|repo|organization|org|project|team|account|domain)\b)/i
 
 /**
  * CU-585: the classes a typed-word confirmation form's prompt asks for, read by sense from the driver's formEntries (at

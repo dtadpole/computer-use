@@ -28,6 +28,7 @@ test('CU-585: a typed confirmation of a transfer of ownership asks permission, n
   assert.equal(press('Confirm', ['Type TRANSFER to move ownership']), 'permission')
   assert.equal(press('Continue', ['Enter the new owner\'s username']), 'permission')
   assert.equal(press('I understand', ['Retype the workspace name to hand it over']), 'permission')
+  assert.equal(press('Confirm', ['Type the repo name to transfer the repository']), 'permission')
 })
 
 test('CU-585: ordinary boxes add nothing - a bare submit stays free beside a name, a search, a message or a coupon', () => {
@@ -36,6 +37,10 @@ test('CU-585: ordinary boxes add nothing - a bare submit stays free beside a nam
     assert.equal(press('Continue', entries), 'allow', JSON.stringify(entries))
   }
   assert.equal(press('Confirm', ['This will delete the draft']), 'allow', 'a destructive word without a prompt to type is not a typed confirmation')
+  // cu-developer-three's near-misses at 4634f4df: an adjective 'permanent' and a money 'transfer' are no typed confirmation.
+  assert.equal(press('Confirm', ['Enter your permanent address']), 'allow')
+  assert.equal(press('Continue', ['Enter the transfer amount']), 'allow')
+  assert.equal(press('Continue', ['Type the transfer reference']), 'allow')
   assert.equal(press('Confirm'), 'allow', 'no formEntries: unchanged')
   assert.equal(press('Save', ['Type DELETE to confirm']), 'allow', 'only the bare confirm-like submits read the form (named limit)')
 })
@@ -54,7 +59,8 @@ test('CU-585: Return presses the default button, judged as the click on it would
 
 test('CU-585: typedConfirmClasses reads at most three texts of 80 characters, by sense', () => {
   assert.deepEqual(typedConfirmClasses(['Type DELETE to confirm']), ['delete'])
-  assert.deepEqual(typedConfirmClasses(['Type TRANSFER and DELETE to confirm']), ['delete', 'permission'])
+  assert.deepEqual(typedConfirmClasses(['Type the name to transfer ownership and delete the old team']), ['delete', 'permission'])
+  assert.deepEqual(typedConfirmClasses(['Type TRANSFER to confirm the payment']), [], 'a bare TRANSFER token with no ownership is money, not a handover')
   assert.deepEqual(typedConfirmClasses(['a', 'b', 'c', 'Type DELETE to confirm']), [], 'a fourth text is never read')
   assert.deepEqual(typedConfirmClasses([`Type DELETE to confirm ${'x'.repeat(70)}`]), [], 'over 80 characters is none')
   assert.deepEqual(typedConfirmClasses('Type DELETE to confirm'), [])
