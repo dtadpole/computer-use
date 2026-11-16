@@ -43,3 +43,11 @@ test('#848 round 4 (cu-researcher 03:51Z): every lead-in stacks with every badge
   }
   for (const name of ['Click to continue', "Let's go", 'Tap to close', 'Confirm: OK', 'I understand, thanks']) assert.deepEqual(classesOf(name), [], name)
 })
+
+test('#848 round 5 (cu-developer-two 04:07Z, cu-researcher 04:08Z): any comma clause, go ahead / want to, and glyphs before the clause split', () => {
+  for (const base of ['Change direct deposit Takes effect immediately', 'Scan and link device', 'Delete account']) {
+    const want = classesOf(base)
+    for (const form of [`I'm really sure, ${lower(base)}`, `Go ahead and ${lower(base)}`, `\u{1f5d1}\ufe0f ${base}`, `\u26a0\ufe0f ${base}`, `\u2192 ${base}`, `\u2022 ${base}`, `\u{1f512} ${base}`, `\u2713 ${base}`, `I understand and want to ${lower(base)}`, `Absolutely certain, ${lower(base)} \u00b7 2 min`]) assert.notDeepEqual(classesOf(form), [], form)
+  }
+  for (const name of ["I'm really sure, thanks", 'Go ahead', '\u2022 Settings', 'I understand and want to continue']) assert.deepEqual(classesOf(name), [], name)
+})

@@ -824,6 +824,8 @@ function probeSteps(current) {
   // A single all-caps word is an acronym or a field name ('IBAN'), not a shouted label: only a multi-word label takes sentence case.
   if (letters.length >= 2 && letters === letters.toUpperCase() && /\p{L}\s+\S*\p{L}/u.test(current)) out.push(upperFirst(current.toLowerCase()))
   out.push(current.replace(/^\s*["'\u201c\u201d\u2018\u2019\u00ab\u00bb\[(]+\s*/u, '').replace(/\s*["'\u201c\u201d\u2018\u2019\u00ab\u00bb\])]+\s*$/u, ''))
+  // #848 r5 (cu-researcher 04:08Z): any leading / trailing glyphs or symbols (🗑️ ⚠️ → • 🔒 ✓) strip too, so the clause split sees the row.
+  out.push(current.replace(/^[^\p{L}\p{N}$\u20ac\u00a3\u00a5\u20b9]+/u, '').replace(/[^\p{L}\p{N})\].!?]+$/u, ''))
   const bare = current.replace(LEAD_IN_WRAPPER, '').trim()
   if (bare !== current) out.push(upperFirst(bare))
   out.push(...metaForms(current))
@@ -840,11 +842,12 @@ function probeSteps(current) {
   }
   return out
 }
-const BENIGN_CLAUSE = /^(?:yes|sure|i'?m\s+sure|i\s+am\s+sure|got\s+it|review(?:\s+(?:it|this|details|changes))?|continue|close(?:\s+(?:it|this|window|tab))?|save(?:\s+changes)?|done|finish|next|exit|go\s+back|back|ok|okay|proceed|view(?:\s+details)?|refresh|reload|return|dismiss|cancel)$/iu
+const BENIGN_CLAUSE = /^(?:yes|sure|i'?m\s+sure|i\s+am\s+sure|got\s+it|i\s+understand|i\s+agree|understood|review(?:\s+(?:it|this|details|changes))?|continue|close(?:\s+(?:it|this|window|tab))?|save(?:\s+changes)?|done|finish|next|exit|go\s+back|back|ok|okay|proceed|view(?:\s+details)?|refresh|reload|return|dismiss|cancel)$/iu
 const CLAUSE_JOIN = /\s*,\s*(?:and\s+|then\s+|and\s+then\s+)?|\s+(?:and\s+then|and|then|&)\s+/iu
 // #848 r4 (cu-researcher 03:51Z): 'Confirm: ', 'I understand, ' (the comma form only - 'I understand and want to ...' is a row), 'Click / Tap /
-// Press / Select (here) to ', "Let's ".
-const LEAD_IN_WRAPPER = /^\s*(?:(?:please|kindly)\s*,?\s+|(?:yes|ok|okay|sure|alright|i'?m\s+sure|i\s+am\s+sure|got\s+it)\s*[,!.:-]?\s+|(?:save(?:\s+changes)?|continue|confirm)\s+(?:and|then|&)\s+|confirm\s*:\s+|i\s+understand\s*,\s+|(?:click|tap|press|select)\s+(?:here\s+)?to\s+|let'?s\s+)+/iu
+// Press / Select (here) to ', "Let's "; r5 (04:07Z, 04:08Z): 'Go ahead (and) ', '(I) want / wish / would like to ', and ANY 1-4 word
+// clause before a comma ("I'm really sure, ").
+const LEAD_IN_WRAPPER = /^\s*(?:(?:please|kindly)\s*,?\s+|(?:yes|ok|okay|sure|alright|i'?m\s+sure|i\s+am\s+sure|got\s+it)\s*[,!.:-]?\s+|(?:save(?:\s+changes)?|continue|confirm)\s+(?:and|then|&)\s+|confirm\s*:\s+|i\s+understand\s*,\s+|(?:click|tap|press|select)\s+(?:here\s+)?to\s+|let'?s\s+|go\s+(?:ahead|on)\s+(?:and\s+)?|(?:i\s+)?(?:want|wish|would\s+like|'d\s+like)\s+to\s+|i'd\s+like\s+to\s+|(?:[\p{L}'\u2019]+\s+){0,3}[\p{L}'\u2019]+\s*,\s+)+/iu
 /** #843 r3: every metadata-stripped form - the closed-list strip, then a generic tag stripped from the front only, the back only, and
  * both (a 'X · Y' name may carry its tag on either side). A form without a letter ('$10 - $20') is not a form. */
 export function metaForms(name) {
