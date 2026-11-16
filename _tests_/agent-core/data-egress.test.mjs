@@ -30,3 +30,7 @@ test('#859 round 3 (cu-researcher 08:13Z): a host as the destination; start / be
   for (const name of ['Mirror repository to git.partner.example', 'Start mirroring this repository to an external host', 'Begin replicating the bucket to another account', 'Stream logs to logs.vendor.io:514', 'Forward reports to ops@contractor.example']) assert.notDeepEqual(classesOf(name), [], name)
   for (const name of ['Start mirroring', 'Copy to clipboard', 'Export to PDF', 'Export to report.pdf', 'Save to data.csv']) assert.ok(!classesOf(name).includes('permission'), name)
 })
+
+test('#859 round 4 (cu-researcher 08:26Z): any URL scheme as the destination', () => {
+  for (const name of ['Push nightly dump to s3://partner-bucket', 'Copy backups to gs://vendor-archive', 'Send exports to sftp://files.partner.example', 'Stream events to kafka://broker.example:9092']) assert.notDeepEqual(classesOf(name), [], name)
+})
