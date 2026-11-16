@@ -14,3 +14,8 @@ test('CU-403: Sync Changes / commits / branch ask submit, as Push does', () => {
 test('CU-403: a bare Sync and unrelated syncs stay as they were', () => {
   for (const n of ['Sync', 'Sync calendar', 'Sync settings']) assert.ok(!cls(n).includes('submit'), n)
 })
+
+test('CU-403 r2 (cu-developer-two 23:50Z, cu-researcher 23:51Z): the IDE sync forms ask submit; settings / panel syncs do not', () => {
+  for (const n of ['Commit & Sync', 'Commit and Sync', 'Synchronize Changes', 'Push and pull', 'Sync with remote']) assert.ok(cls(n).includes('submit'), n)
+  for (const n of ['Settings Sync', 'Turn on Settings Sync', 'Sync scroll', 'Synchronize panels', 'Pull', 'Fetch']) assert.ok(!cls(n).includes('submit'), n)
+})
