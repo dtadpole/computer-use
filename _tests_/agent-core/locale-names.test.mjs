@@ -57,7 +57,10 @@ test('CU-358 r5: article slots, the send-money family and Dutch account closing 
     ['Transferir dinheiro', 'purchase'], ['Enviar Pix', 'purchase'], ['Para gönder', 'purchase'], ['Para gönderin', 'purchase'], ['Havale yap', 'purchase'], ['EFT yap', 'purchase'],
     ['Account opheffen', 'delete'], ['Mijn account opheffen', 'delete'],
     // r6 (cu-developer-one): the polite imperative on 'onayla', and closing a Turkish account.
-    ['Siparişi onaylayın', 'purchase'], ['Ödemeyi onaylayın', 'purchase'], ['Hesabı kapat', 'delete'], ['Hesabımı kapat', 'delete'], ['Hesabınızı kapatın', 'delete'], ['Hesabı sil', 'delete']]) assert.ok(click(name) === expected || (click(name) ?? '').includes(expected), `${name}: ${click(name)}`)
+    ['Siparişi onaylayın', 'purchase'], ['Ödemeyi onaylayın', 'purchase'], ['Hesabı kapat', 'delete'], ['Hesabımı kapat', 'delete'], ['Hesabınızı kapatın', 'delete'], ['Hesabı sil', 'delete'],
+    // r7 (cu-developer-two): closing an account in IT / PT / NL.
+    ['Chiudi account', 'delete'], ["Chiudi l'account", 'delete'], ['Chiudi il mio account', 'delete'], ['Encerrar conta', 'delete'], ['Encerrar a conta', 'delete'], ['Fechar minha conta', 'delete'],
+    ['Account sluiten', 'delete'], ['Mijn account sluiten', 'delete'], ['Sluit je account', 'delete']]) assert.ok(click(name) === expected || (click(name) ?? '').includes(expected), `${name}: ${click(name)}`)
 })
 
 test('CU-358: PIN, one-time code, password and card-number fields named in Italian, Dutch, Portuguese and Turkish ask', () => {
@@ -69,7 +72,7 @@ test('CU-358: PIN, one-time code, password and card-number fields named in Itali
 })
 
 test('CU-358 negatives: cancel, back and near words stay allowed; ordinary fields stay free', () => {
-  for (const name of ['Annulla', 'Indietro', 'Annuleren', 'Terug', 'Voltar', 'İptal', 'Geri', 'Silikon', 'Inviato', 'Pagamenti', 'Pagamentos', 'Ordinamento', 'Bestellingen', 'Verzonden', 'Ödeme yöntemleri', 'Gönderildi', 'Silvester', 'Pagamento', 'Compravendite', 'Koopjes', 'Betaalmethoden', 'Bestellingen', 'Compreensão', 'Cestino', 'Prullenbak', 'Lixeira', 'Çöp kutusu', 'Silinenler', 'Silgi', 'Gönderiler', 'Sepetim', 'Ödemelerim', 'Siparişlerim', 'Silindi', 'Silinen öğeler', 'Silgi aracı', 'Gönderilenler', 'Ödeme geçmişi', 'Silindir', 'Silahlar', 'Sepetimi göster', 'Gönderen', 'Alınanlar', 'Blokkering opheffen', 'Il pagamento è riuscito', 'Bonifici ricevuti', 'Para birimi', 'Havale geçmişi', 'Hesap ayarları', 'Hesabım', 'Kapat', 'Pencereyi kapat']) assert.equal(click(name), 'allow', name)
+  for (const name of ['Annulla', 'Indietro', 'Annuleren', 'Terug', 'Voltar', 'İptal', 'Geri', 'Silikon', 'Inviato', 'Pagamenti', 'Pagamentos', 'Ordinamento', 'Bestellingen', 'Verzonden', 'Ödeme yöntemleri', 'Gönderildi', 'Silvester', 'Pagamento', 'Compravendite', 'Koopjes', 'Betaalmethoden', 'Bestellingen', 'Compreensão', 'Cestino', 'Prullenbak', 'Lixeira', 'Çöp kutusu', 'Silinenler', 'Silgi', 'Gönderiler', 'Sepetim', 'Ödemelerim', 'Siparişlerim', 'Silindi', 'Silinen öğeler', 'Silgi aracı', 'Gönderilenler', 'Ödeme geçmişi', 'Silindir', 'Silahlar', 'Sepetimi göster', 'Gönderen', 'Alınanlar', 'Blokkering opheffen', 'Il pagamento è riuscito', 'Bonifici ricevuti', 'Para birimi', 'Havale geçmişi', 'Hesap ayarları', 'Hesabım', 'Kapat', 'Pencereyi kapat', 'Chiudi', 'Chiudi finestra', 'Fechar', 'Sluiten', 'Account aanmaken', 'Abrir conta']) assert.equal(click(name), 'allow', name)
   for (const name of ['Nome', 'Città', 'Naam', 'Woonplaats', 'Cidade', 'Ad', 'Şehir', 'Codice sconto', 'Kortingscode', 'Código promocional', 'İndirim kodu', 'Postcode', 'Código postal', 'Şifreleme', 'Adınız', 'Şehriniz', 'Telefon numaranız', 'Şifreleme anahtarı', 'Kart sahibinin adı']) assert.equal(typeInto(name), 'allow', name)
 })
 

@@ -125,6 +125,9 @@ const LOCALE_WORDS = Object.freeze({
     'elimina', 'cancella', 'rimuovi', 'elimina definitivamente', 'verwijderen', 'verwijder', 'wissen', 'definitief verwijderen',
     // r5 (cu-developer-one): Dutch 'opheffen' closes an account (only beside an account noun; 'Blokkering opheffen' lifts a block).
     'account opheffen', 'mijn account opheffen', '_ account opheffen', 'rekening opheffen',
+    // r7 (cu-developer-two): closing an account, as English 'Close account' (delete).
+    'chiudi _ account', 'chiudi il mio account', 'chiudi _ conto', 'encerrar _ conta', 'fechar _ conta', 'encerrar minha conta', 'fechar minha conta',
+    '_ account sluiten', 'mijn account sluiten', 'sluit _ account', 'sluit mijn account', 'account sluiten',
     'excluir', 'apagar', 'remover', 'excluir permanentemente', 'sil^', 'kaldır^', 'kalıcı olarak sil^', 'hesab~ sil^', 'hesab~ kapat^',
     // r2: emptying the trash, as English 'Empty trash'.
     'svuota cestino', 'svuota il cestino', 'prullenbak legen', 'prullenbak leegmaken', 'leeg prullenbak',
@@ -565,8 +568,9 @@ const TR_VERB_SUFFIX = '(?:(?:y?[iuü]n)?(?:s[iuü]n|[iuü]z|y?[ae]c[ae]k)?)'
 const turkishPattern = (word) => normaliseName(normaliseText(word)).split(/([~^])/).map((part) => part === '~' ? TR_NOUN_SUFFIX
   : part === '^' ? TR_VERB_SUFFIX : escapeRegExp(part).replace(/ /g, '[\\s-]+')).join('')
 // CU-358 r5 (cu-developer-one): ' _ ' in an Italian, Portuguese or Dutch entry is an optional article slot ('conferma _
-// pagamento' reads 'Conferma pagamento' and 'Conferma il pagamento'); the article list is closed.
-const ARTICLE_SLOT = "[\\s-]+(?:(?:il|lo|la|i|gli|le|un|una|uno|o|a|os|as|um|uma|de|het|een)[\\s-]+|l'\\s*)?"
+// pagamento' reads 'Conferma pagamento' and 'Conferma il pagamento'); the list is closed - articles, and from r7 the possessive
+// determiners ('il mio', 'a minha', 'je', 'mijn', 'uw').
+const ARTICLE_SLOT = "[\\s-]+(?:(?:il|lo|la|i|gli|le)[\\s-]+(?:mio|tuo|suo|vostro)[\\s-]+|(?:a|o|os|as)[\\s-]+(?:minha|meu|sua|seu|tua|teu)[\\s-]+|(?:il|lo|la|i|gli|le|un|una|uno|o|a|os|as|um|uma|de|het|een|mijn|je|jouw|uw|minha|meu|sua|seu|tua|teu|mio|tuo|suo)[\\s-]+|l'\\s*)?"
 const articlePattern = (word) => normaliseName(normaliseText(word)).split(' _ ').map((part) => escapeRegExp(part).replace(/ /g, '[\\s-]+')).join(ARTICLE_SLOT)
 function namesWord(name, words) {
   const text = normaliseName(name)
