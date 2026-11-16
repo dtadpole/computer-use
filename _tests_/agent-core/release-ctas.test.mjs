@@ -66,3 +66,8 @@ test('#854 round 9 (cu-researcher 10:20Z class sweep): tag-and-release, flag for
   for (const name of ['Tag and release', 'Flip the feature flag for all', 'Unpause rollout', 'Resume deployment', 'Turn on the flag for everyone', 'Proceed with the canary']) assert.notDeepEqual(classesOf(name), [], name)
   for (const name of ['Resume', 'Resume video', 'Flip card', 'Tag photos', 'Continue reading']) assert.deepEqual(classesOf(name), [], name)
 })
+
+test('#854 round 10 (cu-researcher 11:22Z): unblocking a production push', () => {
+  for (const name of ['Unblock production push', 'Unlock the release', 'Lift the freeze on deploys', 'Unblock merge']) assert.notDeepEqual(classesOf(name), [], name)
+  for (const name of ['Unblock user', 'Unlock screen', 'Unblock']) assert.ok(!classesOf(name).includes('submit'), name)
+})
