@@ -17,6 +17,12 @@ export const EXCLUDED_APPS = Object.freeze([
       'com.runningwithcrayons.Alfred', 'com.raycast.macos',
       // CU-292 (cu-researcher): Spotlight (its Info.plist on this Mac) and LaunchBar (fleetdm software catalog).
       'com.apple.Spotlight', 'at.obdev.LaunchBar',
+      // CU-575 (cu-researcher 06:06Z; built before triage): the CLASS of apps that run commands, not just the named three - SSH clients
+      // (Termius, SecureCRT, Royal TSX), more terminal emulators (Tabby, Wave, Rio) and script / macro automation that runs shell
+      // commands or AppleScript (Keyboard Maestro, Hammerspoon, BetterTouchTool, Script Debugger, Lingon, CodeRunner).
+      'com.termius-dmg.mac', 'com.termius.*', 'com.vandyke.SecureCRT', 'com.lemonmojo.RoyalTSX.App', 'org.tabby', 'dev.commandline.waveterm',
+      'com.raphaelamorim.rio', 'com.stairways.keyboardmaestro.*', 'org.hammerspoon.Hammerspoon', 'com.hegenberg.BetterTouchTool',
+      'com.latenightsw.*', 'com.peterborgapps.*', 'com.krill.CodeRunner',
     ]),
   }),
   Object.freeze({
