@@ -36,6 +36,10 @@ test('CU-393 r3: the macOS wording, the Let question, consentsummary; a consent 
   assert.equal(click('https://accounts.idp.example/signin/oauth/consent/help', 'Allow'), 'allow')
   assert.equal(click('https://app.example/home', 'Allow', { dialogName: 'Allow this file to open?' }), 'allow')
   assert.equal(click('https://app.example/home', 'Allow', { dialogName: 'Let the export finish?' }), 'allow')
+  // r4 (cu-developer-two): account linking in the dialog's words.
+  assert.equal(click('https://app.example/home', 'Continue', { dialogName: 'Spotify would like to connect to your Facebook account' }), 'permission')
+  assert.equal(click('https://app.example/home', 'Allow', { dialogName: 'Acme wants to link with your bank account' }), 'permission')
+  assert.equal(click('https://app.example/home', 'Continue', { dialogName: 'Connecting to the server...' }), 'allow')
 })
 
 test('CU-393 negatives: declining, other pages and non-consent dialogs stay as they were', () => {
