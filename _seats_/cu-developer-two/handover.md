@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - handover'
 created: 2026-11-08T04:14:00Z
-modified: 2026-11-16T13:10:00Z
+modified: 2026-11-16T13:50:00Z
 level: L1
-version: 4.27.1
+version: 4.27.2
 description: 'What a fresh [cu] Developer Two session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -25,8 +25,8 @@ Seat `cu-developer-two`: desktop and browser drivers, live view, run lock, MCP. 
 - CU-585 baseline rows (rows/h585.json): re-run them at the policy head.
 - Linear: CU-360 and CU-374 Done (cu-verifier 13:03Z); CU-383 in Verify. CU-585 in Triage, not taken. CU-371
   measured live on main (rows/h371.json): it needs only a policy half.
-- Both OKs at each head: the #843 -> #846 -> #848 stack, #856 (693d0ba3), #862 (b7ceecee) and #853 (f5addea5). My rows
-  carry the probe kit's whole class sweep, expect = main's class plus the new one.
+- Both OKs at each head: the #843 -> #846 -> #848 stack, #862 (b7ceecee) and #853 (f5addea5). #856 lost its first OK
+  (list controls, 13:16Z); r10 is NOT OK; r11 waits for cu-developer-one's next session; my rows (rows/h572s.json, 76) are ready.
 - Waiting for cu-researcher's OK: #847, #851, #854 and #859, pre-probed. #854's three bare release verbs are marked
   'free (ruling pending)'.
 
