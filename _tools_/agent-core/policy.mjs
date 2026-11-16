@@ -1512,6 +1512,13 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // access dialog a bare role option ('Can edit', 'Editor', 'Owner') grants that role - permission. A bare 'Can edit'
       // elsewhere, and narrowing options ('Can view', 'Viewer', 'Restricted', 'Only me'), stay free.
       if (!focusesEntry && /\banyone\s+(?:at|in|from)\s+[\w .&'-]{1,40}?\s+can\s+(?:view|edit|comment|join)\b/i.test(name)) classes.push('permission')
+      // r2 (cu-developer-one / -two / -three): the same widening said other ways - a role change upward ('Change to Editor', 'Set as
+      // owner'), 'Allow anyone / everyone / guests to view / edit / comment / access ...', 'Open to everyone / the public', and link
+      // sharing turned on ('Turn on link sharing', 'Link sharing on'). Turning it off, and roles downward, stay free.
+      if (!focusesEntry && (/\b(?:change|switch|set|upgrade|promote)\s+(?:(?:the\s+)?role\s+)?(?:to|as)\s+(?:an?\s+)?(?:editor|owner|co-?owner|admin(?:istrator)?|commenter|collaborator|manager)\b/i.test(name)
+        || /\ballow\s+(?:anyone|everyone|all\s+users|the\s+public|guests|people\s+outside\s+\S+)\s+to\s+(?:view|edit|comment|access|see|join|download|copy|share)\b/i.test(name)
+        || /\bopen\s+to\s+(?:everyone|anyone|the\s+public|all)\b/i.test(name)
+        || /\b(?:turn\s+on|enable|allow|activate)\s+(?:public\s+)?link\s+sharing\b|^\s*link\s+sharing\s*:?\s*on\s*$/i.test(name))) classes.push('permission')
       const shareDialog = /\b(?:share|sharing|invite|permissions?|general\s+access|manage\s+access)\b/i.test(`${target?.dialogName ?? ''} ${target?.dialogDescription ?? ''}`)
       if (!focusesEntry && POINTER.has(action.type) && shareDialog && /^\s*(?:can\s+(?:edit|comment|manage|organi[sz]e)|editor|commenter|owner|co-?owner|full\s+access|admin)\s*$/i.test(name)) classes.push('permission')
       const mailSwitchState = nativeToggleState(target)

@@ -13,6 +13,12 @@ test('CU-389: general-access and join settings that widen access ask permission'
     'Make editor', 'Allow anyone to join', 'Allow everyone to join', 'Public on the web']) assert.equal(click(name), 'permission', name)
 })
 
+test('CU-389 r2: role changes upward, allow-anyone twins, open-to-everyone and link sharing on ask permission', () => {
+  for (const name of ['Change to Editor', 'Change to owner', 'Set as owner', 'Change role to admin', 'Allow anyone to view', 'Allow anyone to comment and edit', 'Allow everyone to access',
+    'Open to everyone', 'Open to the public', 'Turn on link sharing', 'Enable link sharing', 'Link sharing: on']) assert.equal(click(name), 'permission', name)
+  for (const name of ['Turn off link sharing', 'Change to viewer', 'Set as viewer', 'Stop sharing', 'Make private', 'Open to page 2', 'Link sharing settings', 'Editor preferences', 'Owner name', 'Admin guide']) assert.notEqual(click(name), 'permission', name)
+})
+
 test('CU-389: a role option inside a share dialog grants it', () => {
   const dlg = { dialogName: 'Share "Q3 plan"' }
   for (const name of ['Can edit', 'Editor', 'Owner', 'Can comment']) assert.equal(click(name, dlg), 'permission', name)
