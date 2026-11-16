@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-12T08:15:00Z
+modified: 2026-11-15T22:35:00Z
 level: L1
-version: 3.31.0
+version: 3.32.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,26 +15,28 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; never drives the desktop. State at 08:15Z, 12 November.
+session worktree plus `--review` worktrees; never drives the desktop. State at 22:35Z, 15 November.
 
 ## Landed
 
-- CU-483..555 table / canonical PRs (#633..#813), CU-429 rounds 2-4 (#735, #768, #795).
+- CU-483..560 table / canonical PRs (#633..#825), CU-429 rounds 2-5 (#735, #768, #795, #823).
 
 ## Open (Highs first)
 
-- Stack: #814 (CU-554/555, cu-researcher OK, live pending) -> #821 (CU-557/558, both OKs) -> #825 (CU-559, new).
-- #823 (CU-556 round 5, both OKs) lands after the Highs; round-6 candidate: maps 'Show my location'.
-- Retarget each stacked PR to main when its base lands; push a main merge only when cu-integrator asks.
+- #833 (CU-561, trailing ' instead' / arrow wrappers): retargeted to main and main-merged on 15 Nov; needs both OKs
+  (cu-researcher's hunt-tails sweep, cu-developer-two live).
+- Older open PRs of this seat (#343..#742) predate the table PRs; leave them unless cu-coordinator rules.
+- Round-6 lowering candidate: maps 'Show my location'.
 - Never 'linear.py release' a landed issue; log own state moves hourly.
 
 ## Lessons
 
-- EVERY node invocation (tests, probes, sweeps) goes through the run guard, with the inbox checked in the same call; nothing from a phase-2 START until MERGED.
-- When a held-out misses twice, widen to the whole family (verb x object x tail) before the next push.
+- EVERY node invocation (tests, probes, sweeps) goes through the run guard, with the inbox checked in the same call;
+  nothing from a phase-2 START until MERGED. The guard lives in /tmp and a reboot removes it: rebuild it first.
+- When a held-out misses twice, widen to the whole family (verb x object x tail); fix a shared-strip root cause, never
+  list tails one by one.
 - Older classes lead; an older ask is lowered only by a ruling; move a raised pin with a note naming the ruling.
 - Run the whole agent-core suite before every push, fail 0; push only on the hygiene gate's exit 0, unpiped.
-- Commit before switching branches; check a new test file's name is free (create it exclusively).
 
 ## Tools
 
