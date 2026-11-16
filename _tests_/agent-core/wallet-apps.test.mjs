@@ -1,0 +1,23 @@
+import assert from 'node:assert/strict'
+import { test } from 'node:test'
+
+import { createPolicy } from '../../_tools_/agent-core/policy.mjs'
+
+// CU-576 (cu-researcher 07:28Z): in a crypto wallet app a send / broadcast / sign / confirm asks purchase (never grantable); other apps and
+// other controls keep today's judgement.
+const policy = createPolicy({ sitePolicy: () => 'allow' })
+const classesOf = (bundle, name) => {
+  const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: `desktop://${bundle}`, frontmostBundleId: bundle, target: { role: 'AXButton', name, inWebArea: false } })
+  return v.decision === 'allow' ? [] : (v.classes ?? [v.class])
+}
+
+test('CU-576: money-moving and signing controls in wallet apps ask purchase', () => {
+  for (const bundle of ['com.sparrowwallet.sparrow', 'com.ledger.live', 'io.trezor.TrezorSuite', 'org.electrum.electrum']) {
+    for (const name of ['Send', 'Broadcast', 'Broadcast Transaction', 'Confirm', 'Sign', 'Sign and send', 'Approve', 'Swap', 'Bump fee']) assert.ok(classesOf(bundle, name).includes('purchase'), `${name} @ ${bundle}`)
+  }
+})
+
+test('CU-576 negatives: reading and receiving in wallets, and the same words in other apps, keep their judgement', () => {
+  for (const name of ['Receive', 'Accounts', 'Settings', 'Send feedback', 'Show address']) assert.ok(!classesOf('com.sparrowwallet.sparrow', name).includes('purchase'), name)
+  for (const name of ['Confirm', 'Sign']) assert.ok(!classesOf('com.apple.TextEdit', name).includes('purchase'), name)
+})
