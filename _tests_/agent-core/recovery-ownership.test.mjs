@@ -35,3 +35,7 @@ test('#862 round 3 (cu-researcher 08:14Z): concrete objects - a person, a litera
   for (const name of ['Make sam@partner.example the account owner', 'Make Ana the workspace admin', 'Set Priya as owner']) assert.notDeepEqual(classesOf(name), [], name)
   for (const name of ['Set Ana as favorite', 'Make it the default', 'Unlink']) assert.ok(!classesOf(name).includes('credential') && !classesOf(name).includes('permission') || name === 'Unlink', name)
 })
+
+test('#862 round 4 (cu-researcher 08:28Z): a hardware key or authenticator named by brand and model', () => {
+  for (const name of ['Unlink YubiKey 5C', 'Remove YubiKey 5 NFC', 'Unregister Titan Security Key', 'Disconnect Okta Verify', 'Remove Google Authenticator on Pixel 8', 'Add new YubiKey']) assert.notDeepEqual(classesOf(name), [], name)
+})
