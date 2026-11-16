@@ -1379,6 +1379,22 @@ function grammarClassesOf(name, role = '') {
   // #778 r2 (cu-researcher 01:39Z): 'deployment' is optional when 'rules' says what it is ('Skip protection rules and deploy'); a bare
   // 'Skip protection' (a checkout's insurance upsell) stays free.
   if (/^\s*(?:skip|bypass|ignore|override)\s+(?:the\s+)?(?:deployment\s+protection(?:\s+rules?)?|(?:branch\s+|environment\s+)?protection\s+rules?)(?:\s+and\s+deploy(?:\s+now)?)?\s*$/i.test(raw)) return ['permission', 'submit']
+  // CU-570 (cu-researcher 03:57Z; built before triage): the purchase CTAs by CLASS, each verb bound to the objects it pays for, so the
+  // nouns ('Sponsors', 'Lease terms', 'Finance team', 'Fund details', 'Support') stay free. PURCHASE:
+  // - become a (paid / founding / premium) patron / member / supporter / sponsor / backer / donor / subscriber / VIP;
+  // - sponsor / fund / back / support a person, project or cause; lease / finance / charter / hire / rent a vehicle, home or space;
+  //   pre-order a copy; commission an artist or a piece; grab / snag the deal; extend a subscription, plan, rental, stay or warranty;
+  //   get lifetime access. 'Claim deal', 'Lock in price' and 'Split payment' are left for cu-coordinator's ruling; 'Extend trial' stays
+  //   free (child-protections pins it: a free trial's extension pays nothing).
+  if (/^\s*become\s+(?:an?\s+)?(?:(?:paid|paying|founding|premium|monthly|annual|gold|pro)\s+)?(?:patron|member|supporter|sponsor|backer|donor|subscriber|vip|insider|founder)s?(?:\s+(?:now|today|instead))?\s*$/i.test(raw)
+    || /^\s*(?:sponsor|fund|back|support)\s+(?:the\s+|this\s+|my\s+|your\s+|our\s+|a\s+|an\s+)?(?:(?:creator|artist|author|writer|developer|maintainer|streamer|podcast|channel|project|campaign|cause|team|event|show|work|journalism|newsletter|us|me|them|him|her|this|it)\b(?:\s+\S+){0,2})(?:\s+(?:now|today|instead))?\s*$/i.test(raw)
+    || /^\s*(?:sponsor|fund)(?:\s+(?:now|today|it|this))?\s*$/i.test(raw)
+    || /^\s*(?:lease|finance|charter|hire)(?:\s+(?:the\s+|this\s+|my\s+|your\s+|our\s+|a\s+|an\s+)?(?:car|vehicle|truck|van|suv|boat|yacht|jet|plane|bus|bike|apartment|home|house|unit|space|office|equipment|phone|laptop|device|purchase|order|it|this|one))?(?:\s+(?:now|today|instead))?\s*$/i.test(raw) && !/^\s*(?:finance|hire|charter|lease)\s*$/i.test(raw)
+    || /^\s*pre-?order(?:\s+(?:the\s+|this\s+|my\s+|your\s+|our\s+|a\s+|an\s+)?(?:copy|game|book|album|it|this|one|edition|device|phone))?(?:\s+(?:now|today|instead))?\s*$/i.test(raw)
+    || /^\s*commission\s+(?:the\s+|this\s+|my\s+|your\s+|our\s+|a\s+|an\s+)?(?:artist|piece|painting|portrait|artwork|work|illustration|design|this\s+artist)\s*$/i.test(raw)
+    || /^\s*(?:grab|snag)\s+(?:it|this|one|yours|the\s+deal|this\s+deal|the\s+offer|this\s+offer|deal|offer)(?:\s+(?:now|today|instead))?\s*$/i.test(raw)
+    || /^\s*extend\s+(?:the\s+|this\s+|my\s+|your\s+|our\s+|a\s+|an\s+)?(?:subscription|membership|plan|rental|lease|stay|warranty|booking|reservation|license|licence|coverage|protection|hosting|domain)s?(?:\s+(?:now|today|instead))?\s*$/i.test(raw)
+    || /^\s*get\s+lifetime\s+(?:access|deal|license|licence|plan|membership|pass)\s*$/i.test(raw)) return ['purchase']
   // CU-537 (High; cu-coordinator 01:06Z), table PR 38 - registrar DNS. PERMISSION everywhere: add / create / new (a / an) typed record
   // (MX, CNAME, TXT, NS, SRV, CAA, PTR, SPF, DKIM, DMARC, ALIAS; 'A' / 'AAAA' only in capitals, so 'Add a record' is not an A record);
   // the generic 'Add / Edit / Save record' (DNS pages) and turning a domain's auto-renew off (domain / registrar pages; a subscription's
