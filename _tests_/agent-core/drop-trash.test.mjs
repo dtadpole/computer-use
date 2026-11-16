@@ -13,3 +13,8 @@ test('CU-385: trash and junk folders by their own names ask delete', () => {
 test('CU-385: ordinary folders stay free of delete', () => {
   for (const name of ['Inbox', 'Archive', 'Drafts', 'Sent Items', 'Projects']) assert.ok(!drop(name).includes('delete'), name)
 })
+
+test('CU-385 r2 (cu-developer-two 18:40Z): more trash / junk names, whole names only', () => {
+  for (const name of ['Kosz', 'Çöp Kutusu', 'Recently Deleted', 'Bulk Mail', 'Correo no deseado', 'Unerwünscht', 'Junk (12)']) assert.ok(drop(name).includes('delete'), name)
+  for (const name of ['Spam Filter Settings', 'Deleted scenes', 'Junk drawer ideas']) assert.ok(!drop(name).includes('delete'), name)
+})
