@@ -1,37 +1,33 @@
 ---
 title: '[cu] Integrator - handover'
 created: 2026-11-08T04:22:00Z
-modified: 2026-11-15T22:05:00Z
+modified: 2026-11-16T22:05:00Z
 level: L2
-version: 7.1.0
-description: 'What the next [cu] Integrator needs to take over the landing lanes of dtadpole/computer-use, at the 15 Nov evening after the machinery was rebuilt.'
+version: 7.2.0
+description: 'What the next [cu] Integrator needs to take over the landing lanes of dtadpole/computer-use, at the 16 Nov evening.'
 status: unverified
 grounded_in:
-  - source: 'cu-coordinator goal of 2026-11-12 05:05Z (High lane, CU-522 pair, fillers, run-lock idle wait)'
-  - source: 'decisions D-079, D-085, D-090, D-093, D-095, D-097'
+  - source: 'cu-coordinator goal of 2026-11-12 05:05Z (High lane, fillers, run-lock idle wait), completed 16 Nov'
+  - source: 'decisions D-079, D-085, D-090, D-093, D-097'
 ---
 
 # [cu] Integrator - handover
 
 **Goal.** Land every reviewed PR at its exact head through the hygiene gate and the two-phase gate (merge-tree
 equality, `pr-merge.py --expect-sha`); phase 2 only with the owner idle >= 300 s, read from the run lock's
-ownerIdle (null is not idle). Highs go one at a time in the coordinator's lane order, each with two signed
-PR-comment OKs; fillers yield to Highs.
+ownerIdle. Policy PRs need two non-author OKs at one head and no open finding there (D-093); a reviewer's
+stated condition stands until that reviewer lifts it.
 
-**Live state (15 Nov 22:05Z).** Since 11 Nov: #798, the CU-522 pair (#734, #791), #795, table PRs 47 and 48
-(#805, #807), #800, eight PRs from #810 to #826, and fillers #500, #491 and #803 landed. Main has stood at
-c82f0fc0 since 12 Nov. The session ran no turns from 14:51Z 12 Nov to 21:25Z 15 Nov, and a reboot emptied
-`/tmp`; on 15 Nov a dry gate and the nightly on main were GREEN with phase 2. Open: #835 (verdict, records)
-lands on a non-author OK; #833 (CU-561) needs a retarget to main and both OKs; #742 is the last filler; older
-PRs stay parked on the holds file until the coordinator names them.
+**Live state (16 Nov 22:05Z).** The 12 Nov lane is done (#742 last). On 16 Nov landed #841, #845, #852, #858,
+#870, #878, #881, #893, #907, #905, #912, #910, #916 and #919, plus records; nightly on de2568d0 GREEN.
+Fully OK'd but held for cu-coordinator's triage (silent since 12 Nov): the CU-585 unit #884 -> #894 -> #895,
+then #897; #843 -> #846 -> #848; #853; #862. #889 waits on a D-108 ruling. In review: #920, #924, #925.
 
-**Machinery** (`/tmp/cu-integrator-*`, restored from the seat's private tools folder): `land-cu.sh`,
-`queue-cu.sh`, `suite.sh`, `reviewed.py`, the records lane, `refl-land.sh`, `selfcheck.sh`, `nightly.sh` and
-`owner-idle.sh`. Lost and not yet rebuilt: `land-together.sh`, `both-ok.sh`, the holds library, the base-first
-sweep, the D-090 log union and the D-095 filler yield, so land one PR at a time by hand.
-Push the tools PR in any pass where selfcheck prints drift.
-No script asks for reviews; authors ask their reviewers.
+**Machinery** (`/tmp/cu-integrator-*`, mirrored in the seat's private tools folder): the gate, records lane,
+`reviewed.py` (reads signed PR-comment verdicts too), `test-merge.sh` and `under-lock.sh` for the helper lane,
+and `title-ids.py`, which restores issue states Linear's GitHub integration moves on merge. The watcher holds
+every code PR; release one by hand. When `policy.mjs` moved on main, the gate sends the PR back for a plain
+main merge; the OKs carry (D-085).
 
-**Lessons.** Keep the tools folder in step every day; `/tmp` does not survive a reboot. Check both sides for a
-non-log overlap before telling an author no push is needed. Lift a base-first hold the minute its PR is
-retargeted.
+**Lessons.** A message quoting another seat's OK is not an OK. Stored node-only results repeat a flake (CU-564):
+move the run aside before re-running. Keep `/tmp` mirrored daily.
