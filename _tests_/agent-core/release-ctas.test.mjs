@@ -34,3 +34,10 @@ test('#854 round 3 (cu-researcher 05:20Z): read last - older classes lead; fresh
   for (const name of ['Expose v2 to the public', 'Bump stable to 4.2', 'Enable for 100% of traffic', 'Graduate the canary', 'Make v3 the default for customers', 'Promote the release candidate', 'Tag version 2.1']) assert.ok(classesOf(name).includes('submit'), name)
   for (const name of ['Make my email public to everyone', 'Update audience to Public']) assert.ok(classesOf(name).includes('permission'), name)
 })
+
+test('#854 round 4 (cu-researcher 05:36Z): the audience / reach class - a quantifier and a release scope anywhere', () => {
+  assert.notDeepEqual(classesOf('Promote this build so everyone gets it'), [], 'asks (an older promote row leads)')
+  for (const name of ['Make the feature available to all customers', 'Expand the rollout to every region', 'Widen beta access to everyone', 'Launch globally', 'Release v4 worldwide', 'Turn the flag on for all users', 'Open up the canary to 100%',
+    'Set the new version as default for all accounts', 'Point the stable channel at build 812 for everyone', 'Push the config change into production now']) assert.ok(classesOf(name).includes('submit'), name)
+  for (const name of ['Reply to everyone', 'Say hello to everyone', 'Visible to everyone', 'Available for all users', 'View release notes for everyone', 'Open the gates to everyone', 'Production logs for all regions', 'Thanks everyone', 'Everyone']) assert.ok(!classesOf(name).includes('submit') || name === 'Reply to everyone', name)
+})
