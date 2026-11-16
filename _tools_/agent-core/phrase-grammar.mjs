@@ -800,6 +800,21 @@ const GENERIC_TAIL = new RegExp(`(?:\\s+${META_SEP}\\s*(?:[^\\s]+\\s*){1,4}|\\s+
 export function metaStripped(name) {
   return metaForms(name)[0] ?? ''
 }
+/** CU-566 (cu-researcher 02:04Z; cu-developer-three 02:28Z, the desktop AXTitle keeps its line breaks): every whole-name form the
+ * policy also judges - a wrapped label's lines joined, an ALL-CAPS label in sentence case, and each one's metadata-stripped forms. */
+export function probeForms(name) {
+  const text = String(name ?? '')
+  const forms = []
+  const add = (form) => { const f = String(form ?? '').trim(); if (f !== '' && f !== text.trim() && /\p{L}/u.test(f) && !forms.includes(f)) forms.push(f) }
+  const joined = /[\r\n]/.test(text) ? text.split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean).join(' ') : text
+  add(joined)
+  const letters = joined.replace(/[^\p{L}]/gu, '')
+  // A single all-caps word is an acronym or a field name ('IBAN'), not a shouted label: only a multi-word label takes sentence case.
+  const sentence = letters.length >= 2 && letters === letters.toUpperCase() && /\p{L}\s+\S*\p{L}/u.test(joined) ? joined.toLowerCase().replace(/^(\s*\p{L})/u, (c) => c.toUpperCase()) : joined
+  add(sentence)
+  for (const base of [text, joined, sentence]) for (const form of metaForms(base)) add(form)
+  return forms
+}
 /** #843 r3: every metadata-stripped form - the closed-list strip, then a generic tag stripped from the front only, the back only, and
  * both (a 'X · Y' name may carry its tag on either side). A form without a letter ('$10 - $20') is not a form. */
 export function metaForms(name) {
@@ -973,17 +988,18 @@ function canonicalFormsOf(name) {
 // #653 round 2 (cu-researcher 09:11Z; cu-developer-three 09:10Z): ACH / IBAN with a trailing info / details / number / account; WPA
 // reaches the 'Wi-Fi security' row (permission); 'open RDP' is opening port 3389 (CU-464), 'start' joins the RDP verbs; a bare
 // acronym on a TOGGLE (a verbless switch named 'RDP' / 'MFA' / '2SV') expands without a verb, so the switch rules give it direction.
+// CU-566 (cu-researcher 02:04Z): the acronym side is case-insensitive too ('change iban', 'OPEN RDP PORT', 'TURN OFF LOGIN APPROVALS').
 const ABBREVIATIONS = [
-  [/^\s*(?:change|update|edit|add|set\s+up|replace)\b/i, /\b(?:IBAN|ACH)(?:\s+(?:info|information|details|number|account))?\b/g, 'direct deposit'],
-  [/^\s*(?:turn\s+off|disable|remove|deactivate|reset|bypass|skip|switch\s+off)\b/i, /\b(?:2SV|TOTP|MFA|2FA)\b|\b[Ll]ogin\s+approvals?\b/g, 'two-factor authentication'],
+  [/^\s*(?:change|update|edit|add|set\s+up|replace)\b/i, /\b(?:IBAN|ACH)(?:\s+(?:info|information|details|number|account))?\b/gi, 'direct deposit'],
+  [/^\s*(?:turn\s+off|disable|remove|deactivate|reset|bypass|skip|switch\s+off)\b/i, /\b(?:2SV|TOTP|MFA|2FA)\b|\b[Ll]ogin\s+approvals?\b/gi, 'two-factor authentication'],
   // #653 round 3 (cu-developer-two 09:14Z): showing or changing a WPA key is the Wi-Fi password (credential); turning WPA off is the
   // Wi-Fi security row (permission).
-  [/^\s*(?:show|reveal|view|change|copy)\b/i, /\bWPA[23]?(?:\s+(?:key|password|passphrase))?\b/g, 'Wi-Fi password'],
-  [/^\s*(?:turn\s+off|disable|remove)\b/i, /\bWPA[23]?\b/g, 'Wi-Fi security'],
+  [/^\s*(?:show|reveal|view|change|copy)\b/i, /\bWPA[23]?(?:\s+(?:key|password|passphrase))?\b/gi, 'Wi-Fi password'],
+  [/^\s*(?:turn\s+off|disable|remove)\b/i, /\bWPA[23]?\b/gi, 'Wi-Fi security'],
   // cu-researcher 09:15Z: only 'Open RDP (port)' at the END of the name - 'Open RDP guide' stays free.
-  [/^\s*open\b/i, /\bRDP(?:\s+port)?\s*$/g, 'port 3389'],
-  [/^\s*(?:turn\s+on|enable|allow|activate|start|switch\s+on)\b/i, /\bRDP\b/g, 'Remote Desktop']]
-const TOGGLE_ACRONYMS = [[/^\s*(?:2SV|TOTP|MFA|2FA)\s*$/, 'Two-factor authentication'], [/^\s*RDP\s*$/, 'Remote Desktop'], [/^\s*WPA[23]?\s*$/, 'Wi-Fi security']]
+  [/^\s*open\b/i, /\bRDP(?:\s+port)?\s*$/gi, 'port 3389'],
+  [/^\s*(?:turn\s+on|enable|allow|activate|start|switch\s+on)\b/i, /\bRDP\b/gi, 'Remote Desktop']]
+const TOGGLE_ACRONYMS = [[/^\s*(?:2SV|TOTP|MFA|2FA)\s*$/i, 'Two-factor authentication'], [/^\s*RDP\s*$/i, 'Remote Desktop'], [/^\s*WPA[23]?\s*$/i, 'Wi-Fi security']]
 /** #653 round 2: a toggle named by a bare acronym ('RDP', 'MFA') is judged as the setting it stands for. */
 export function toggleExpansion(name) {
   for (const [pattern, expansion] of TOGGLE_ACRONYMS) if (pattern.test(String(name ?? ''))) return expansion
