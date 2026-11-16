@@ -69,3 +69,8 @@ test('CU-385 (cu-verifier 21:42Z): a web drop onto a shared or public space asks
   for (const name of ['Shared with me', 'Public', 'Shared', 'Shared drives', 'Shared with everyone', 'Team Drive', 'Public folder', 'Shared (3)']) assert.ok(dropPerm(name).includes('permission'), name)
   for (const name of ['My Drive', 'Projects', 'Public speaking notes', 'Shared expenses 2026']) assert.ok(!dropPerm(name).includes('permission'), name)
 })
+
+test('CU-385 r2 (cu-developer-two 21:54Z): SharePoint-style shared libraries', () => {
+  for (const name of ['Shared Documents', 'Shared Files', 'Shared Items', 'Shared Library']) assert.ok(dropPerm(name).includes('permission'), name)
+  assert.ok(!dropPerm('Documents').includes('permission'))
+})
