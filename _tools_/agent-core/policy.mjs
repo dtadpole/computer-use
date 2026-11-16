@@ -1688,9 +1688,12 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // CU-421: overriding a malware warning or installing a profile or helper asks install (CU-254's class).
       // cu-coordinator 15:25Z adds a page's 'Keep dangerous file' (Chrome's own shelf stays the named limit).
       if (!focusesEntry && /^\s*(?:(?:open|run|keep|download|install)\s+anyway|keep\s+(?:the\s+)?dangerous\s+file|install\s+(?:the\s+)?(?:configuration\s+)?(?:profile|helper))\b/i.test(name)) classes.push('install')
+      // CU-396 r3 (cu-developer-three): presenting a surface, as a product - '(Start) present(ing) a / your / this / the / my / an
+      // + tab / window / screen / entire screen / desktop / display / app' - not one phrase per pair. Slide apps' bare 'Present' stays free.
+      if (!focusesEntry && /^\s*(?:start\s+)?present(?:ing)?\s+(?:a|an|your|this|the|my|entire|whole)\s+(?:(?:entire|whole|full)\s+)?(?:tab|window|screen|desktop|display|app|application|monitor)\b/i.test(name)) classes.push('permission')
       // CU-397 (cu-researcher; supersedes #462; cu-coordinator's 03:58Z class): a message to an event's guests is sent at once -
       // the label LEADS with the verb, so a refusal ('Don't notify guests', 'Do not send') stays free.
-      if (!focusesEntry && /^\s*(?:(?:e-?mail|notify|message)\s+(?:all\s+)?(?:the\s+)?(?:guests|invitees|attendees|participants)|forward\s+(?:the\s+|this\s+)?(?:invitation|invite|event)|(?:propose|suggest)\s+(?:a\s+)?new\s+time|send\s+updates?(?:\s+to\s+(?:all\s+)?(?:guests|invitees|attendees))?)\b/i.test(name)) classes.push('submit')
+      if (!focusesEntry && /^\s*(?:(?:e-?mail|notify|message)\s+(?:all\s+)?(?:the\s+)?(?:guests|invitees|attendees|participants)|forward\s+(?:the\s+|this\s+)?(?:invitation|invite|event)|(?:propose|suggest)\s+(?:a\s+)?(?:new|another|different|other)\s+time|send\s+updates?(?:\s+to\s+(?:all\s+)?(?:guests|invitees|attendees))?)\b/i.test(name)) classes.push('submit')
       // CU-393: a bare grant on an OAuth consent page, or in a dialog that asks for access to the account, asks permission.
       if (!focusesEntry && OAUTH_BARE_GRANT.test(name) && (isOAuthConsentPage(context.url) || OAUTH_DIALOG_TEXT.test(`${target?.dialogName ?? ''} ${target?.dialogDescription ?? ''}`))) classes.push('permission')
       // CU-513: a bare install word on an extension / add-on / plug-in store detail page installs code into the browser or site.
