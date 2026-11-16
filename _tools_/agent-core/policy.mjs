@@ -777,7 +777,13 @@ const passwordNamedEntry = (target) => isTextEntry(target) && entryNamesOf(targe
 // CU-184 (desktop-rules.md): a text entry named for a password - shown or not, it holds one - unless its name says it is
 // a hint; the desktop hands a key action into it to the person, as it does a secure field (R83).
 export const namesPasswordField = (target) => isTextEntry(target) && entryNamesOf(target).some((name) => namesWord(name, PASSWORD_NAMES) && !namesWord(name, ['hint']))
-const secretNamedEntry = (target) => isTextEntry(target) && entryNamesOf(target).some((name) => namesWord(name, SECRET_NAMES) || namesAcronym(name))
+// CU-580 (cu-researcher 09:26Z; built before triage): a sign-in or recovery secret by CLASS - any auth qualifier (recovery, login, sign-in,
+// verification, security, authentication, 2FA / MFA, one-time, backup, access, confirmation, pairing, setup, activation, reset, unlock,
+// approval, magic, device, SMS / text / e-mail / app; #876 r2: emergency, rescue, fallback, master, break-glass, escrow, enrollment,
+// transaction / TAN, admin, owner, account) before code / token / PIN / key / passphrase. 'Zip code', 'Promo code' and 'Country
+// code' carry no auth qualifier and stay free.
+const AUTH_CODE_NAME = /\b(?:recovery|log-?in|sign-?in|signin|verification|verify|security|auth(?:entication|enticator)?|2fa|mfa|two-?factor|2-?step|one-?time|backup|access|confirmation|pairing|setup|activation|reset|unlock|approval|magic|device|sms|text|e-?mail|app|emergency|rescue|fallback|master|break-?glass|escrow|enrol(?:l)?ment|transaction|tan|mtan|admin(?:istrator)?|owner|account|restore|restoration|override|bypass|supervisor|reactivation|deactivation|wipe|erase|disable|unenroll(?:ment)?|transfer|authorization|authorisation)\s+(?:codes?|tokens?|pins?|keys?|pass-?phrases?)\b/i
+const secretNamedEntry = (target) => isTextEntry(target) && entryNamesOf(target).some((name) => namesWord(name, SECRET_NAMES) || namesAcronym(name) || AUTH_CODE_NAME.test(String(name ?? '')))
 
 // CU-164: a wallet recovery phrase - twelve or more words in a row, every one on the BIP39 list; ordinary prose breaks
 // the run with words the list does not hold (the, is, to, of, a).
