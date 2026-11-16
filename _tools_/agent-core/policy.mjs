@@ -391,10 +391,12 @@ const namesPurchase = (name) => namesWord(withoutOrderReferences(withoutPastStat
 const DROP_DELETE = [...WORDS.delete, 'trash', 'bin']
 // CU-385 (cu-researcher's probe): the trash and junk folders by their own names - Outlook's 'Deleted Items', the localized
 // trash names (Papierkorb, Corbeille, Papelera, Cestino, Prullenbak, Lixeira, Kosz, Çöp Kutusu, 垃圾箱 / 废纸篓, ゴミ箱, 휴지통),
-// 'Recently Deleted', and the junk folders (Spam, Junk, Bulk Mail, Correo no deseado, Unerwünscht ...) - as the folder's WHOLE name
+// 'Recently Deleted', Outlook's localized 'Deleted Items' folders (Gelöschte Elemente, Éléments supprimés, Elementos eliminados,
+// Posta eliminata, Verwijderde items, Itens excluídos, Elementy usunięte, Törölt elemek, Silinmiş Öğeler, 削除済みアイテム ...),
+// and the junk folders (Spam, Junk, Bulk Mail, Correo no deseado, Unerwünscht ...) - as the folder's WHOLE name
 // (a ' folder' word, an account suffix ' - Work' and an unread count may follow), so 'Spam Filter Settings' or 'Bin Liner Orders' stay free (cu-developer-two 18:40Z).
 // A drop there removes the item from where it was; shared-folder drops stay with the driver's networkVolume / dropDestination.
-const DROP_TRASH_NAME = /^\s*(?:(?:recently\s+)?deleted(?:\s+(?:items|messages|mail|files))?|trash|recycle\s+bin|bin|papierkorb|corbeille|papelera|cestino|prullenbak|lixeira|lixo|kosz|çöp(?:\s+kutusu)?|koš|roskakori|papperskorg|papirkurv|spam|junk(?:\s+(?:e-?mail|mail|folder))?|bulk(?:\s+mail)?|correo\s+no\s+deseado|unerwünscht|courrier\s+indésirable|posta\s+indesiderata|ongewenste\s+e-?mail|lixo\s+eletr[oô]nico|垃圾箱|废纸篓|回收站|垃圾邮件|ゴミ箱|迷惑メール|휴지통|스팸)(?:\s+folder)?(?:\s*[-–—|:]\s*[^-–—|:\n]{1,40})?(?:\s*\(\d+\))?\s*$/iu
+const DROP_TRASH_NAME = /^\s*(?:(?:recently\s+)?deleted(?:\s+(?:items|messages|mail|files))?|trash|recycle\s+bin|bin|papierkorb|corbeille|papelera|cestino|prullenbak|lixeira|lixo|kosz|çöp(?:\s+kutusu)?|koš|roskakori|papperskorg|papirkurv|spam|junk(?:\s+(?:e-?mail|mail|folder))?|bulk(?:\s+mail)?|correo\s+no\s+deseado|unerwünscht|courrier\s+indésirable|posta\s+indesiderata|ongewenste\s+e-?mail|lixo\s+eletr[oô]nico|gelöschte\s+(?:elemente|objekte)|éléments\s+supprimés|elementos\s+eliminados|posta\s+eliminata|elementi\s+eliminati|verwijderde\s+items|itens\s+(?:excluídos|eliminados)|(?:elementy\s+usunięte|usunięte\s+elementy)|törölt\s+elemek|silinmiş\s+öğeler|odstraněn[áé]\s+(?:pošta|položky)|borttagna\s+(?:objekt|meddelanden)|slettet\s+post|slettede\s+elementer|poistetut(?:\s+kohteet)?|削除済みアイテム|已删除(?:邮件|项目)|지운\s*편지함|垃圾箱|废纸篓|回收站|垃圾邮件|ゴミ箱|迷惑メール|휴지통|스팸)(?:\s+folder)?(?:\s*[-–—|:]\s*[^-–—|:\n]{1,40})?(?:\s*\(\d+\))?\s*$/iu
 const TEXT_ROLE = /^(ax)?(textfield|textarea|searchfield|combobox|textbox|searchbox)$/i
 
 /**

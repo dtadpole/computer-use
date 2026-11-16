@@ -23,3 +23,8 @@ test('CU-385 r3 (cu-developer-two 18:56Z): a folder word or an account suffix af
   for (const name of ['Deleted Items - Work', 'Spam folder', 'Junk Email - personal@example.test', 'Trash (3)']) assert.ok(drop(name).includes('delete'), name)
   for (const name of ['Spam Filter Settings', 'Deleted scenes', 'Junk drawer ideas', 'Inbox - Work']) assert.ok(!drop(name).includes('delete'), name)
 })
+
+test("CU-385 r4 (cu-researcher 19:02Z): Outlook's localized Deleted Items folders", () => {
+  for (const name of ['Elementi eliminati', 'Verwijderde items', 'Itens eliminados', 'Itens Excluídos', 'Usunięte elementy', 'Törölt elemek', 'Gelöschte Elemente', 'Éléments supprimés', 'Elementos eliminados', 'Silinmiş Öğeler', '削除済みアイテム']) assert.ok(drop(name).includes('delete'), name)
+  for (const name of ['Elementi', 'Items', 'Gelöschte Szenen planen']) assert.ok(!drop(name).includes('delete'), name)
+})
