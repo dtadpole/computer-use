@@ -174,7 +174,12 @@ const LOCALE_ID_NAMES = Object.freeze(['reisepass', '…passnummer', 'geburtsdat
 const WORDS = Object.freeze({
   // CU-498 (High; cu-coordinator 12:21Z): a direct debit mandate pulls money from the account (purchase), anywhere.
   // (a separate line so the purchase list below stays as it was)
-  purchase: ['set up direct debit', 'set up a direct debit', 'authorize direct debit', 'authorise direct debit', 'authorize a direct debit', 'authorise a direct debit', 'buy', 'pay', 'order', 'place order', 'checkout', 'check out', 'subscribe', 'donate', 'purchase', 'transfer', 'withdraw', 'wire', 'send money',
+  purchase: [
+    // CU-404 (cu-researcher; supersedes #478 with cu-developer-one's go): a paid boost buys reach - 'Boost post' / 'Promote post'
+    // asked only submit. A bare 'Promote' already asks purchase (phrase grammar); 'Boosted posts' (a list) stays free.
+    'boost post', 'boost this post', 'boost tweet', 'boost video', 'boost listing', 'boost reel', 'promote post', 'promote this post',
+    'promote tweet', 'promote video', 'promote listing', 'promote page', 'promote reel', 'boost now', 'promote now',
+    'set up direct debit', 'set up a direct debit', 'authorize direct debit', 'authorise direct debit', 'authorize a direct debit', 'authorise a direct debit', 'buy', 'pay', 'order', 'place order', 'checkout', 'check out', 'subscribe', 'donate', 'purchase', 'transfer', 'withdraw', 'wire', 'send money',
     // CU-452 (cu-coordinator 22:28Z): an unlimited token approval lets a contract drain the wallet - purchase leads over the older submit.
     'approve unlimited', 'approve unlimited spending', 'allow unlimited spending',
     // CU-444 (cu-coordinator 20:54Z): publishing a campaign starts paid spend - purchase leads over the older 'publish' submit.
