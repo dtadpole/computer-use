@@ -6,7 +6,7 @@ import { dirname, isAbsolute, join } from 'node:path'
 
 import { createExclusions } from '../../_tools_/agent-core/exclusions.mjs'
 import { cuHome } from '../../_tools_/agent-core/lib.mjs'
-import { looksSensitive } from '../../_tools_/agent-core/policy.mjs'
+import { createPolicy, looksSensitive } from '../../_tools_/agent-core/policy.mjs'
 import { captureMatchesFrame, checkPoint, displayFrame, fitFactor, pngSize, rectToFrame, regionToGlobal, sizeAt, toFrame, toGlobal } from './coords.mjs'
 import { EnvironmentError, invalid, notGranted } from './errors.mjs'
 import {
@@ -698,10 +698,117 @@ export function formContextOf(value) {
  * CU-361 (cu-researcher): a layout label as placeholderOf reads it, except that text the value rules class as sensitive
  * (a card, an IBAN, a bank account: policy.mjs looksSensitive) is a displayed value, not a label, and reads as none - so
  * a summary screen's 'Card 4111...' beside a box never becomes a name anywhere.
+ * CU-374 (cu-researcher): a street address shown beside a box is a displayed value too (looksStreetAddress), so a
+ * checkout summary's '1 Infinite Loop, Cupertino' never becomes the box's name in a record. Policy's value rules are
+ * left as they are; this is only the label read.
+ * r3 (cu-developer-three's F1 on #870): dropping a label must never remove an ask. When the address-shaped text changes
+ * what policy decides for the box (labelVerdicts), the address is cut out of it instead ('Ship to 221B Baker Street'
+ * reads as 'Ship to street address'), kept only when policy decides the same for the cut label; when no cut keeps the
+ * verdicts, the text stays the label as it was (a named limit: the ask wins over the address).
  */
 export function nearbyLabelOf(value) {
   const text = placeholderOf(value)
-  return text !== null && looksSensitive(text) === null ? text : null
+  if (text === null || looksSensitive(text) !== null) return null
+  if (!looksStreetAddress(text)) return text
+  const full = labelVerdicts(text)
+  if (full === labelVerdicts(null)) return null
+  // r5 (option (c), agreed by cu-researcher and cu-developer-three): a text that is all address ('221B Baker Street') is
+  // a displayed value; when its street word alone makes policy ask, it reads as the stand-in 'street address' - the same
+  // verdict, re-checked, and no house number or name - never as the address.
+  if (cutAddress(text, '') === '') return labelVerdicts(ADDRESS_STAND_IN) === full ? ADDRESS_STAND_IN : text
+  for (const stand of ['', ADDRESS_STAND_IN]) {
+    const cut = cutAddress(text, stand)
+    if (cut !== '' && !looksStreetAddress(cut) && labelVerdicts(cut) === full) return cut
+  }
+  return text
+}
+
+// CU-374 r5: what an address that names its own field reads as - the field words, without the address.
+const ADDRESS_STAND_IN = 'street address'
+
+// CU-374 r3: the probe box and values for labelVerdicts - an unnamed desktop entry, and one value of each kind the
+// entry-name rules weigh (a code, a password, a plain word).
+const LABEL_PROBE_APP = 'com.example.label-probe'
+const LABEL_PROBE_VALUES = ['123456', 'hunter2x', 'Pat']
+let labelProbePolicy = null
+
+/**
+ * CU-374 r3: what policy decides for typing each probe value into an unnamed box carrying this nearby text (null: none),
+ * as one string - judged by policy itself, never by a copy of its word lists, so a later entry-name rule is covered too.
+ */
+export function labelVerdicts(text) {
+  labelProbePolicy ??= createPolicy({ sitePolicy: () => 'allow' })
+  const target = { origin: LABEL_PROBE_APP, role: 'AXTextField', subrole: null, name: null, placeholder: null, editable: true, nearbyLabel: text }
+  return LABEL_PROBE_VALUES.map((typed) => {
+    const v = labelProbePolicy.classify({ type: 'type', text: typed }, { url: `app:${LABEL_PROBE_APP}`, target })
+    return `${v.decision}:${v.class ?? ''}`
+  }).join(' ')
+}
+
+// CU-374 r3: the text with every address shape cut out, each cut replaced by `stand`; spaces and stray commas tidied.
+function cutAddress(text, stand) {
+  let out = String(text)
+  for (const shape of ADDRESS_SHAPES) out = out.replace(new RegExp(shape.source, shape.flags.replace('g', '') + 'g'), ` ${stand} `)
+  return out.replace(/\s*,\s*(?=,|$)/g, '').replace(/\s+/g, ' ').replace(/^[\s,:]+|[\s,:]+$/g, '').trim()
+}
+
+// CU-374: the street-type words of a number-first address ('221B Baker Street', '350 Fifth Ave.'), capitalised as an
+// address writes them, so a counted noun ('Freeze 1 row', '10 min walk') is not one (r3, F2).
+const STREET_TYPES = 'St|Street|Ave|Avenue|Rd|Road|Blvd|Boulevard|Ln|Lane|Dr|Drive|Way|Ct|Court|Pl|Place|Ter|Terrace|' +
+  'Hwy|Highway|Pkwy|Parkway|Sq|Square|Cir|Circle|Close|Crescent|Cres|Loop|Row|Walk|Trail|Mews'
+// CU-374 r2 (cu-researcher): street words that lead the street name, as a class across languages; a dotted
+// abbreviation ('Pl.', 'Av.', 'ul.') counts like the full word. r3: capitalised, then a capitalised name, so the
+// English 'via' ('Ship via UPS Ground 2') is not one.
+const LEADING_STREET_WORDS = 'Calle|Avenida|Av\\.|Via|Viale|Piazza|Corso|Strada|Rua|Praça|Largo|Plaza|Pl\\.|Place|' +
+  'Ulica|Ul\\.|ul\\.|Aleja|Al\\.|Carrer|Rambla|Paseo'
+// Street words that end a one-word street name: 'Hauptstraße', 'Kalverstraat', 'Drottninggatan', 'Nørregade'. r3:
+// not '-platz', whose compounds are everyday words ('Parkplatz 3', 'Arbeitsplatz 2').
+const TRAILING_STREET_WORDS = 'straße|strasse|str\\.|weg|gasse|allee|straat|gracht|laan|gatan|gata|gade|vej|' +
+  'veien|vegen|utca|katu|tie'
+// CU-374 r4: the UK's postcode areas (outward code letters), so a product size ('PS5 1TB', 'MP3 4GB') is not a postcode.
+const UK_POSTCODE_AREAS = 'AB|AL|BA|BB|BD|BH|BL|BN|BR|BS|BT|B|CA|CB|CF|CH|CM|CO|CR|CT|CV|CW|DA|DD|DE|DG|DH|DL|DN|DT|DY|' +
+  'EC|EH|EN|EX|E|FK|FY|GL|GU|GY|G|HA|HD|HG|HP|HR|HS|HU|HX|IG|IM|IP|IV|JE|KA|KT|KW|KY|LA|LD|LE|LL|LN|LS|LU|L|ME|MK|ML|M|' +
+  'NE|NG|NN|NP|NR|NW|N|OL|OX|PA|PE|PH|PL|PO|PR|RG|RH|RM|SA|SE|SG|SK|SL|SM|SN|SO|SP|SR|SS|ST|SW|SY|S|TA|TD|TF|TN|TQ|TR|' +
+  'TS|TW|UB|WA|WC|WD|WF|WN|WR|WS|WV|W|YO|ZE'
+const ADDRESS_SHAPES = [
+  // A house number, one to five capitalised name words, then a street type: '1 Infinite Loop', 'Ship to 221B Baker
+  // Street', and the number after a unit's slash: 'Unit 5/12 George St'.
+  new RegExp(`(?:^|[\\s,:(/])\\d{1,6}[A-Za-z]?\\s+(?:\\p{Lu}[\\p{L}\\d.'-]*\\s+){1,5}(?:${STREET_TYPES})\\b\\.?`, 'u'),
+  // A one-word street name then its number: 'Hauptstraße 5', 'Lindenweg 12a', 'Kalverstraat 1'.
+  new RegExp(`\\p{Lu}\\p{L}*(?:${TRAILING_STREET_WORDS})\\s+\\d{1,5}[a-z]?\\b`, 'u'),
+  // r6 (cu-researcher): a capitalised street word as its own word or after a hyphen, then a house number: 'Berliner
+  // Straße 12', 'Baker Strasse 5', 'Karl-Marx-Straße 5', 'Lange Gasse 3'.
+  /(?:^|[\s,(-])(?:Straße|Strasse|Str\.|Straat|Gasse|Weg|Platz|Allee|Laan|Gracht|Gatan|Gade|Vej)\s+\d{1,5}[a-z]?\b/u,
+  // A number then a street word: '12 rue de Rivoli', '3, avenue Foch'.
+  /(?:^|[\s,:(])\d{1,4},?\s+(?:rue|avenue|boulevard|bd|chemin|allée|impasse|quai)\s+\p{L}/iu,
+  // A leading street word, a capitalised name, then its number: 'Calle Mayor 10', 'Via Roma, 12', 'Rua Augusta 1500',
+  // 'Strada Nuova 3', 'Pl. de la Concorde 8'.
+  new RegExp(`(?:^|[\\s,:(])(?:${LEADING_STREET_WORDS})\\s+(?:(?:de|del|della|di|da|do|dos|la|le|las|los)\\s+)*\\p{Lu}[\\p{L} .'-]{1,40},?\\s*\\d{1,5}\\b`, 'u'),
+  // A post-office box: 'PO Box 4471', 'P.O. Box 12'.
+  /\bP\.?\s?O\.?\s+Box\s+\d+/i,
+  // A town, a US state and a ZIP: 'Cupertino, CA 95014'.
+  /,\s*[A-Z]{2}\s+\d{5}(?:-\d{4})?\b/,
+  // An Australian state and postcode: 'Sydney NSW 2000'.
+  /\b(?:NSW|VIC|QLD|SA|WA|TAS|NT|ACT)\s+\d{4}\b/,
+  // A UK postcode - a real postcode area, then the inward code's digit and two letters - alone ('SW1A 2AA', r4) or
+  // after its town or a comma, ending the text ('London SW1A 1AA'); never a size ('PS5 1TB', r3: PS is no area).
+  new RegExp(`(?:^\\s*|,\\s*|\\p{Lu}\\p{Ll}+\\s+)(?:${UK_POSTCODE_AREAS})\\d[A-Z\\d]?\\s+\\d[ABD-HJLNP-UW-Z]{2}\\s*$`, 'u'),
+  // A postal-code line: four to six digits, then a capitalised town: '10115 Berlin', '75001 Paris'.
+  /(?:^|[\s,])\d{4,6}\s+\p{Lu}\p{Ll}+/u,
+  // A Japanese postcode ('150-0002') and a chome address ('1-2-3 Shibuya').
+  /(?:^|[\s,〒])\d{3}-\d{4}\b/,
+  /(?:^|[\s,])\d{1,2}-\d{1,2}(?:-\d{1,4})?\s+\p{Lu}/u,
+]
+
+/**
+ * CU-374: whether a short text reads as a street address. Each shape needs a number next to a street word, a box
+ * number or a postal code, so a label that only names the field ('Street address', 'Address line 1', 'ZIP code')
+ * stays a label. Named over-asks: a label that itself reads as an address ('10 Downing Street'), or one whose 4-6
+ * digit number is followed by a capitalised word ('2000 Points'), reads as none - a lost label, never a lost value.
+ */
+export function looksStreetAddress(text) {
+  const value = String(text ?? '')
+  return ADDRESS_SHAPES.some((shape) => shape.test(value))
 }
 
 /**
