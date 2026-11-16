@@ -376,8 +376,8 @@ const SHARE_DESTINATION = /\b(?:airdrop|shared(?:\s+(?:folder|with\s+me|with\s+y
 // CU-385: shared / public spaces as a drop target's whole name (an unread or item count may follow).
 const DROP_SHARE_NAME = /^\s*(?:public(?:\s+folder)?|shared(?:\s+(?:folders?|drives?|documents|files|items|libraries|library|with\s+(?:me|everyone|you|all)))?|team\s+drives?|shared\s+drives?|everyone)(?:\s*\(\d+\))?\s*$/i
 // CU-385 r3 (cu-researcher 22:02Z): an owner's shared space, 1-3 words then 'shared' (+ folder / drive) ending the name -
-// 'Company Shared', 'Team shared folder'; 'Not shared' / 'Never shared' stay free.
-const DROP_SHARE_TRAILING = /^\s*(?!(?:not|never|un)\b)(?:[\p{L}\d&'.-]+\s+){1,3}shared(?:\s+(?:folders?|drives?))?(?:\s*\(\d+\))?\s*$/iu
+// 'Company Shared', 'Team shared folder', 'Team Public folder' (r4); a name with 'not' / 'never' / 'un' before it stays free.
+const DROP_SHARE_TRAILING = /^\s*(?![^]*\b(?:not|never|un)\s)(?:[\p{L}\d&'.-]+\s+){1,3}(?:shared|public)(?:\s+(?:folders?|drives?))?(?:\s*\(\d+\))?\s*$/iu
 const ACCOUNT_SECURITY = /\b(?:(?:generate|create|new|add)\s+(?:an?\s+)?app[\s-]?(?:specific[\s-]?)?passwords?|app[\s-]?(?:specific[\s-]?)?passwords?|(?:enable|disable|turn\s+(?:on|off)|set\s+up|add\s+(?:a\s+)?)?\s*(?:auto[\s-]?forward(?:ing)?|automatic(?:ally)?\s+forward(?:ing)?|forwarding(?:\s+address)?|forward\s+(?:a\s+copy|incoming|all|to|(?:my|all|incoming|every|new)\s+(?:e-?mails?|mail|messages)\s+to)\b)|two[\s-]?(?:factor|step)(?:\s+(?:authentication|verification|login))?|2[\s-]?step\s+verification|create\s+(?:a\s+|new\s+)?filter|2fa|multi[\s-]?factor(?:\s+authentication)?|(?:change|update|edit)\s+(?:your\s+)?e-?mail(?:\s+address)?(?!\s+(?:notifications?|preferences|settings))|(?:change|update|edit)\s+(?:your\s+)?phone(?:\s+number)?|recovery\s+(?:e-?mail|phone|codes?))\b/i
 // CU-375 (cu-researcher): the German names of an app password and of mail forwarding reach a credential as their English
 // twins do; turning forwarding off stays free, as in English.

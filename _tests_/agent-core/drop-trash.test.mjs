@@ -79,3 +79,8 @@ test("CU-385 r3 (cu-researcher 22:02Z): an owner's shared space ending the name"
   for (const name of ['Company Shared', 'Team shared folder', 'Marketing Shared Drive', 'Acme Corp shared']) assert.ok(dropPerm(name).includes('permission'), name)
   for (const name of ['Not shared', 'Never shared', 'Shared expenses 2026', 'Files I have shared with the whole wide team']) assert.ok(!dropPerm(name).includes('permission'), name)
 })
+
+test('CU-385 r4 (cu-researcher 22:10Z, cu-verifier 22:09Z): an owner\'s public folder; negated names stay free', () => {
+  for (const name of ['Team Public folder', 'Company Public', 'Sales public drive']) assert.ok(dropPerm(name).includes('permission'), name)
+  for (const name of ['Files not shared', 'Drafts never shared', 'Not public', 'Public speaking notes']) assert.ok(!dropPerm(name).includes('permission'), name)
+})
