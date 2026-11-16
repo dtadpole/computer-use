@@ -28,3 +28,9 @@ test('#847 round 3 (cu-researcher 10:20Z class sweep): more stars than a rating,
   for (const name of ['Give 50 stars', 'Tip 3 USDC', 'Send 0.5 ETH', 'Tip 20 USDT']) assert.ok(classesOf(name).includes('purchase'), name)
   for (const name of ['Give 5 stars', 'Send 3 PDF', 'Give 4 stars']) assert.ok(!classesOf(name).includes('purchase'), name)
 })
+
+test('#847 round 4 (cu-researcher 11:03Z): any unit after a gifting verb on a tipping page', () => {
+  const on = (name, url) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url, target: { role: 'button', name } }); return v.decision === 'allow' ? [] : (v.classes ?? [v.class]) }
+  for (const name of ['Shower 300 sparks', 'Give 80 hearts', 'Drop 10 tokens in the jar', 'Send 25 roses']) assert.ok(on(name, 'https://www.twitch.tv/somestreamer').includes('purchase'), name)
+  for (const name of ['Send 3 files', 'Give 2 examples']) assert.ok(!on(name, 'https://docs.example/guide').includes('purchase'), name)
+})
