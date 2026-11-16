@@ -1019,6 +1019,23 @@ export function grammarClasses(name, role = '') {
   return base
 }
 
+/** CU-574 (cu-researcher 06:35Z; built before triage): RECOVERY and OWNERSHIP acts by class, read by the policy as a late UNION on a name
+ * nothing else classed (it only adds). CREDENTIAL: any change verb on a recovery or sign-in factor (recovery / backup email, phone, contact,
+ * codes, key or method; a linked phone (number); an authenticator, security key or passkey; the primary or sign-in email / phone).
+ * PERMISSION: handing the account over (hand over / off, give away, pass, reassign, delegate, bequeath the account / workspace / org /
+ * team / ownership / owner role, to anyone) and naming who inherits or runs it (appoint / designate / nominate / set / add a new owner,
+ * admin, heir, successor, beneficiary or legacy contact). */
+export function recoveryOrOwnership(raw) {
+  raw = String(raw ?? '').trim()
+  if (raw.split(/\s+/).length > 10 || /^\s*(?:view|see|read|learn|about|how|help|show)\b/i.test(raw)) return null
+  if (/^\s*(?:set|change|update|replace|swap|switch|edit|add|remove|unlink|detach|disconnect|delete|reset|rotate|regenerate|turn\s+off|disable|drop|clear|unpair|unregister|forget)\s+(?:a\s+|an\s+|the\s+|my\s+|your\s+|this\s+|new\s+|another\s+)*(?:(?:recovery|backup|fallback|secondary|alternate|alternative)\s+(?:e-?mail|phone|number|contact|codes?|key|address|method|options?|device)s?|(?:linked|verified|trusted|2fa|mfa)\s+phone(?:\s+number)?|authenticator(?:\s+app)?|security\s+keys?|passkeys?|(?:primary|sign-?in|login)\s+(?:e-?mail|phone|number|method)|two-?factor\s+(?:phone|device|method))\s*$/i.test(raw)) return 'credential'
+  // A bare phone (number) counts only when it is UNLINKED from the account - a checkout form's 'Change phone' stays free.
+  if (/^\s*(?:unlink|detach|disconnect|unpair|unregister|forget)\s+(?:the\s+|my\s+|this\s+)?(?:mobile\s+)?phone(?:\s+number)?\s*$/i.test(raw)) return 'credential'
+  if (/^\s*(?:hand\s+(?:over|off)|give\s+away|pass(?:\s+on)?|reassign|delegate|bequeath|sign\s+over|turn\s+over)\s+(?:the\s+|my\s+|this\s+|our\s+)?(?:account|workspace|org|organi[sz]ation|team|channel|ownership|owner\s+role|admin\s+(?:rights|role)|keys)(?:\s+(?:to|over\s+to)(?:\s+\S+){0,4})?\s*$/i.test(raw)
+    || /^\s*(?:appoint|designate|nominate|name|set|add|choose|pick)\s+(?:a\s+|an\s+|the\s+|my\s+|new\s+)*(?:owner|admin(?:istrator)?|heir|successor|beneficiary|legacy\s+contact|inheritance\s+contact|digital\s+heir|account\s+executor)s?\s*$/i.test(raw)) return 'permission'
+  return null
+}
+
 function grammarClassesOf(name, role = '') {
   const raw = straightQuotes(name).trim()
   if (raw === '' || raw.length > 400) return []
