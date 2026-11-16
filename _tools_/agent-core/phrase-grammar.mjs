@@ -1404,6 +1404,10 @@ function grammarClassesOf(name, role = '') {
     // a named deal ('Become a patron of Ana Lopez', 'Back Ana on Patreon', 'Grab the 4K TV deal').
     || /^\s*become\s+(?:an?\s+)?(?:(?:paid|paying|founding|premium|monthly|annual|gold|pro)\s+)?(?:patron|member|supporter|sponsor|backer|donor|subscriber|vip)s?\s+(?:of|for|to|on|at)\s+.{1,40}$/i.test(raw)
     || /^\s*(?:back|support|sponsor|fund|tip|join|pledge\s+to)\s+.{1,40}?\s+on\s+(?:patreon|ko-?fi|kickstarter|indiegogo|gofundme|github\s+sponsors|open\s*collective|buy\s+me\s+a\s+coffee|substack|liberapay|onlyfans|twitch|youtube\s+memberships?)\s*$/i.test(raw)
+    // #853 r6 (cu-researcher 10:20Z class sweep): extending / renewing FOR A PERIOD is a paid term ('Extend for a year', 'Renew for 12
+    // months'), and a tip given as a percentage is a payment ('Tip 15%', 'Add a 20% tip').
+    || /^\s*(?:extend|renew|prolong|add)\s+(?:(?:my|your|the|this)\s+)?(?:(?:plan|subscription|membership|license|licence|rental|lease|stay|booking|warranty|trial|access)\s+)?(?:for|by)\s+(?:a|an|one|another|\d+)\s+(?:more\s+)?(?:years?|months?|weeks?|days?|nights?|hours?|seasons?|terms?)\s*$/i.test(raw)
+    || /^\s*(?:tip|add\s+(?:a\s+)?(?:\d{1,3}\s*%\s+)?tip(?:\s+of)?|leave\s+(?:a\s+)?tip(?:\s+of)?)\s*\d{1,3}(?:\.\d+)?\s*%(?:\s+tip)?\s*$|^\s*add\s+(?:a\s+)?\d{1,3}\s*%\s+tip\s*$/i.test(raw)
     || /^\s*(?:grab|snag|take|get|claim|lock\s+in)\s+(?:the\s+|this\s+|that\s+|a\s+|an\s+)?(?:\S+\s+){1,4}(?:deal|offer|discount|bundle|bargain|special|promo)s?(?:\s+(?:now|today))?\s*$/i.test(raw)
     || /^\s*(?:lease|finance|charter|hire)(?:\s+(?:the\s+|this\s+|my\s+|your\s+|our\s+|a\s+|an\s+)?(?:car|vehicle|truck|van|suv|boat|yacht|jet|plane|bus|bike|apartment|home|house|unit|space|office|equipment|phone|laptop|device|purchase|order|it|this|one))?(?:\s+(?:now|today|instead))?\s*$/i.test(raw) && !/^\s*(?:finance|hire|charter|lease)\s*$/i.test(raw)
     || /^\s*pre-?order(?:\s+(?:the\s+|this\s+|my\s+|your\s+|our\s+|a\s+|an\s+)?(?:copy|game|book|album|it|this|one|edition|device|phone))?(?:\s+(?:now|today|instead))?\s*$/i.test(raw)

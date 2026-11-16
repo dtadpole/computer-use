@@ -41,3 +41,8 @@ test('#853 round 5 (cu-researcher 08:56Z): information nouns count in the plural
   for (const name of ['Sponsor logos', 'Sponsor lists', 'Lease agreements', 'Fund reports']) assert.ok(!classesOf(name).includes('purchase'), name)
   for (const name of ['Become a patron of Ana Lopez', 'Back Ana on Patreon', 'Grab the 4K TV deal', 'Sponsor @octocat', 'Lease the 2024 Model Y']) assert.ok(classesOf(name).includes('purchase') || classesOf(name).length > 0, name)
 })
+
+test('#853 round 6 (cu-researcher 10:20Z class sweep): paid terms and percentage tips', () => {
+  for (const name of ['Extend for a year', 'Renew for 12 months', 'Extend subscription by one month', 'Tip 15%', 'Add a 20% tip']) assert.ok(classesOf(name).includes('purchase'), name)
+  for (const name of ['Extend', 'Extend selection', 'Tip', 'Tips and tricks', 'Extend deadline by a day']) assert.ok(!classesOf(name).includes('purchase'), name)
+})
