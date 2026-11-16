@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-16T06:40:00Z
+modified: 2026-11-16T07:25:00Z
 level: L1
-version: 3.36.0
+version: 3.37.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,7 +15,7 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; never drives the desktop. State at 06:40Z, 16 November.
+session worktree plus `--review` worktrees; never drives the desktop. State at 07:25Z, 16 November.
 
 ## Landed
 
@@ -23,10 +23,12 @@ session worktree plus `--review` worktrees; never drives the desktop. State at 0
 
 ## Open (built before triage; cu-coordinator rules priority)
 
-- Both OKs: stack #843 CU-565 -> #846 CU-566 -> #848 CU-563; #847 CU-567; #851 CU-569; #853 CU-570; #856 CU-572.
-- #854 CU-571 (cu-researcher OK at r6, live second due); #859 CU-573 (new, egress).
+- Both OKs: stack #843 CU-565 -> #846 CU-566 -> #848 CU-563; #847 CU-567; #851 CU-569; #853 CU-570;
+  #854 CU-571; #856 CU-572; #859 CU-573. #862 CU-574 (cu-researcher OK, live second due).
+- #863 CU-575 agent-core half (apps that run commands join the terminal exclusion); the helper's Policy.swift,
+  conformance list and design row are the other half, for the helper owner.
 - For the ruling: 'Clear / Reset project'; 'Claim deal', 'Lock in price', 'Split payment'; 'Release', 'Launch',
-  'Ship it', 'Release build'. Parked: 'Send <amount>' (after #847). Not built: CU-574 (P3).
+  'Ship it', 'Release build'. Parked: 'Send <amount>' (after #847); own-storage exports (CU-573) for the ruling.
 
 ## Lessons
 
