@@ -1036,6 +1036,10 @@ export function egressesData(raw) {
     // into 'Export to', which must stay free.
     || /^\s*(?:replicate|mirror|stream|pipe|forward|sync|drain|fan\s+out)\s+(?:[\p{L}\p{N}'./-]+\s+){1,3}(?:to|into)\s*$/iu.test(raw)
     || /^\s*(?:add|create|enable|set\s+up|configure|register|turn\s+on|activate|new)\s+(?:a\s+|an\s+|the\s+)?(?:new\s+)?(?:outgoing\s+|outbound\s+)?(?:webhooks?(?:\s+(?:url|endpoint|destination))?|callback\s+url|log\s+(?:drain|forwarding|export|sink|stream)|(?:data\s+|event\s+|audit\s+)?(?:export\s+)?(?:destination|sink|drain|forwarder|stream)|event\s+subscription|integration\s+url)s?\s*$/iu.test(raw)
+    // #859 r2 (cu-researcher 06:39Z): a NAMED outside party as the destination - another party's possessive ('into Acme's warehouse';
+    // not my / our / your / the team's) or a party noun (a contractor, vendor, partner, agency, consultant, client, auditor ...) after to /
+    // into / with / at / in / for; and keeping a live clone / copy / mirror / replica of the data there.
+    || /^\s*(?:(?:replicate|mirror|sync(?:hroni[sz]e)?|stream|forward|ship|send|push|export|copy|transfer|pipe|route|replay|dump|offload|duplicate|clone|share|drain|hand\s+over|give)|keep\s+(?:a\s+|an\s+)?(?:live\s+|running\s+|synced\s+|current\s+|full\s+)?(?:clone|copy|mirror|replica|backup|sync)\s+of)\s+(?:[\p{L}\p{N}'./-]+\s+){0,5}?(?:to|into|with|at|in|for|over\s+to)\s+(?:(?:a|an|the|our|my|some)\s+)?(?:(?!(?:my|our|your|the|team|company|org|organi[sz]ation|workspace|account|project)'s)[\p{L}\p{N}&.-]+'s\s+[\p{L}\p{N}-]+|(?:contractors?|vendors?|partners?|agenc(?:y|ies)|consultants?|suppliers?|resellers?|clients?|customers?|auditors?|affiliates?|outside\s+firms?|third[-\s]part(?:y|ies)|freelancers?|outsourcers?|integrators?))(?:\s+[\p{L}\p{N}'./-]+){0,3}\s*$/iu.test(raw)
 }
 
 function grammarClassesOf(name, role = '') {

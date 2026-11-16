@@ -20,3 +20,8 @@ test('CU-573: egress verbs to an external destination, and outgoing webhooks / d
 test('CU-573 negatives: own storage (for the ruling), reading and docs stay free', () => {
   for (const name of ['Back up to my Google Drive', 'Export to Dropbox', 'Copy to my computer', 'Export to an external drive', 'View webhooks', 'Webhooks', 'Webhook guide', 'Copy link', 'Export', 'Sync now']) assert.deepEqual(classesOf(name), [], name)
 })
+
+test('#859 round 2 (cu-researcher 06:39Z): a named outside party as the destination', () => {
+  for (const name of ["Duplicate the orders table into Acme's warehouse", 'Keep a live clone of the CRM at a contractor', 'Share the customer list with a vendor', "Send payroll data to Globex's SFTP", 'Hand over the user database to an agency', 'Keep a full copy of our logs with a partner']) assert.notDeepEqual(classesOf(name), [], name)
+  for (const name of ["Copy to my team's folder", "Duplicate the orders table into the team's warehouse", 'Copy row', 'Share with my team']) assert.ok(!classesOf(name).includes('permission') || name === 'Share with my team', name)
+})
