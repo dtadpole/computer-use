@@ -27,3 +27,10 @@ test('#854 round 2 (cu-researcher 04:56Z): the TARGET binds - any verb to a live
     'Squash and merge into main', 'Land into master', 'Integrate into trunk', 'Shift all traffic to v2', 'Route 100% of traffic to green', 'Cut over', 'Cut over to new cluster', 'Flip DNS to the new server', 'Switch traffic to blue']) assert.ok(classesOf(name).includes('submit'), name)
   for (const name of ['Go to main', 'Apply to all', 'Copy to all', 'Show to everyone', 'Go back to production logs', 'Navigate to production', 'View traffic', 'Traffic report', 'Say hello to everyone']) assert.ok(!classesOf(name).includes('submit'), name)
 })
+
+test('#854 round 3 (cu-researcher 05:20Z): read last - older classes lead; fresh members ask', () => {
+  assert.ok(!classesOf('Open the gates to everyone').includes('submit'), 'the physical gate keeps its older class')
+  assert.notDeepEqual(classesOf('Open the gates to everyone'), [], 'and still asks')
+  for (const name of ['Expose v2 to the public', 'Bump stable to 4.2', 'Enable for 100% of traffic', 'Graduate the canary', 'Make v3 the default for customers', 'Promote the release candidate', 'Tag version 2.1']) assert.ok(classesOf(name).includes('submit'), name)
+  for (const name of ['Make my email public to everyone', 'Update audience to Public']) assert.ok(classesOf(name).includes('permission'), name)
+})

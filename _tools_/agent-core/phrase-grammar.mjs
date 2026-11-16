@@ -1016,9 +1016,51 @@ export function grammarClasses(name, role = '') {
     const classes = grammarClassesOf(form, role)
     if (classes.length > 0) return classes
   }
+  // CU-571: releasing to a live target is read LAST, only when no older row classed the name or its forms.
+  if ([name, ...canonicalForms(name)].some((form) => releasesToLive(String(form ?? '').trim()))) return ['submit']
   return base
 }
 
+/** CU-571 (built before triage): publishing / releasing to a live target - read by grammarClasses LAST, only when no older row classed
+ * the name (#854 r3, cu-researcher 05:20Z: 'Open the gates to everyone' keeps its physical class). */
+function releasesToLive(raw) {
+  // CU-571 (cu-researcher 04:43Z; built before triage): publishing / releasing by CLASS - SUBMIT like 'Deploy' and 'Push to production':
+  // - going live: go / push / take / make / put / set (it) live;
+  // - any release verb (ship / push / deploy / release / promote / roll out / launch / move / send / merge / publish / migrate / cut over),
+  //   with an optional object (build, release, version, changes, code, app, update), TO a live target (prod / production / live / main /
+  //   master / stable / all users / everyone / 100% / the store / GA / public);
+  // - merging into or fast-forwarding main / master / trunk; cutting / shipping / pushing / promoting a release, build or version;
+  // - blasting to a list or everyone; flipping a feature flag on for everyone ('Enable for all users').
+  // The bare ambiguous verbs ('Release', 'Launch', 'Ship it', 'Release it') and 'Release build' (also an Xcode configuration) are left for
+  // cu-coordinator's ruling; 'Blast list', 'Release notes',
+  // 'Ship to address', 'Merge cells' and 'Go to live chat' stay free.
+  return (/^\s*(?:go|push|take|make|put|set)\s+(?:it\s+|this\s+|the\s+site\s+|the\s+app\s+|the\s+stream\s+)?live(?:\s+(?:now|today|anyway))?\s*$/i.test(raw)
+    || /^\s*(?:ship|push|deploy|release|promote|roll\s*out|launch|move|send|merge|publish|migrate|cut\s+over)(?:\s+(?:the\s+|this\s+|that\s+|a\s+|my\s+|our\s+|your\s+)?(?:build|release|version|changes|code|app|update|branch|it|this|commit|artifact|image|site|feature|flag))?\s+(?:to|into|in|for)\s+(?:prod|production|live|main|master|trunk|stable|release|all\s+(?:users|customers|accounts|regions|devices)|everyone|everybody|100\s*%|the\s+(?:app\s+|play\s+)?store|app\s+store|play\s+store|general\s+availability|ga|public|the\s+public|all)(?:\s+(?:now|today|anyway))?\s*$/i.test(raw)
+    || /^\s*(?:merge|rebase|fast-?forward)(?:\s+(?:and\s+)?(?:deploy|release|ship))?\s+(?:to\s+|into\s+)?(?:main|master|trunk|production|prod)\s*$|^\s*merge\s+and\s+(?:deploy|release|ship)\s*$/i.test(raw)
+    || /^\s*(?:cut|ship|push|promote|publish|tag)\s+(?:the\s+|this\s+|that\s+|a\s+|my\s+|our\s+|your\s+)?(?:release|build|version|artifact|deployment|candidate|rc)\s*$/i.test(raw)
+    || /^\s*(?:roll\s*out|release|publish|ship)\s+(?:now|today|everywhere)\s*$|^\s*roll\s*out\s+(?:it|this)\s*$/i.test(raw)
+    // #854 r2 (cu-researcher 04:56Z: bind the TARGET, not the verbs): ANY verb phrase (up to four words) TO / INTO / ONTO a live target -
+    // prod / production / live / stable / GA / the store / public (any verb), or all users / customers / regions / everyone / 100% (any verb
+    // but the benign ones: reply / apply / copy / add / show / scroll / zoom / navigate / go back / expand); a release channel, track or
+    // ring ('Promote to stable channel', 'Graduate to the production track'); and a TRAFFIC cut-over ('Shift all traffic to v2', 'Route
+    // 100% of traffic to green', 'Cut over', 'Flip DNS to the new server'). Merging INTO main / master / trunk needs a merge-like verb, so
+    // 'Go to main' (navigation) stays free. Making a field or audience PUBLIC keeps its permission (social-exposure, CU-481): visibility
+    // is not a release.
+    || /^\s*(?:[\p{L}\p{N}.'-]+\s+){1,4}(?:to|into|onto)\s+(?:the\s+)?(?:prod|production|live|stable|ga|general\s+availability|the\s+(?:app\s+|play\s+)?store|app\s+store|play\s+store|the\s+public|public)(?:\s+(?:channel|track|ring|branch|environment|env|cluster|tier|slot|stage))?(?:\s+(?:now|today))?\s*$/iu.test(raw) && !/^\s*(?:go\s+back|navigate|scroll|zoom|view|open|see|read|switch\s+view)\b/i.test(raw)
+    || /^\s*(?:[\p{L}\p{N}.'-]+\s+){1,4}(?:to|for)\s+(?:the\s+)?(?:all\s+(?:users|customers|accounts|regions|devices|tenants|servers|hosts|instances)|everyone|everybody|100\s*%)(?:\s+(?:now|today))?\s*$/iu.test(raw) && !/^\s*(?:reply|apply|copy|add|show|visible|available|scroll|zoom|navigate|go|expand|collapse|say|wave|hello|hi|welcome|thanks|thank)\b/i.test(raw) && !/\b(?:public|visible|visibility|audience|privacy|private|email|e-mail|phone|profile|address|location|birthday|photo)\b/i.test(raw)
+    || /^\s*(?:merge|push|rebase|land|squash(?:\s+and\s+merge)?|fast-?forward|commit|cherry-?pick|ship|deploy|promote|release|integrate)(?:\s+[\p{L}'-]+){0,3}\s+(?:to|into|onto)\s+(?:the\s+)?(?:main|master|trunk|release|production|prod)(?:\s+branch)?\s*$/iu.test(raw)
+    || /^\s*(?:shift|route|send|move|switch|cut\s+over|direct|redirect|flip|migrate|point)\s+(?:all\s+|100\s*%\s+(?:of\s+)?|the\s+|live\s+|production\s+)?(?:traffic|users|requests|dns|load)(?:\s+(?:over\s+)?(?:to|over)\s+\S+(?:\s+\S+){0,2})?\s*$|^\s*cut\s*over(?:\s+(?:now|to\s+\S+(?:\s+\S+)?))?\s*$|^\s*flip\s+(?:the\s+)?dns(?:\s+to\s+.+)?\s*$/iu.test(raw)
+    || /^\s*blast\s+(?:it\s+|this\s+)?(?:to\s+)(?:the\s+)?(?:list|subscribers|everyone|all|audience|contacts)\s*$/i.test(raw)
+    || /^\s*(?:flip\s+(?:the\s+)?(?:flag|switch|feature\s+flag)|(?:enable|turn\s+on|activate|release)\s+(?:it\s+|this\s+|the\s+feature\s+)?for\s+(?:all|everyone|all\s+users|every\s+user|100\s*%))\s*$/i.test(raw)
+    // #854 r3 (cu-researcher 05:20Z): fresh members - bump / move / set a channel to a version ('Bump stable to 4.2'), enable for N% of
+    // traffic or users, graduate / promote / advance the canary / beta / release candidate, make <x> the default (for <whom>), tag a
+    // version, expose <x> to the public.
+    || /^\s*(?:bump|move|set|update|point)\s+(?:the\s+)?(?:stable|production|prod|release|ga|latest|default|main)(?:\s+(?:channel|track|ring|tag|branch))?\s+to\s+v?\d[\w.-]*\s*$/iu.test(raw)
+    || /^\s*(?:enable|turn\s+on|roll\s*out|release|open)\s+(?:it\s+|this\s+)?(?:for|to)\s+\d{1,3}\s*%\s*(?:of\s+)?(?:traffic|users|customers|requests|accounts|devices)?\s*$/iu.test(raw)
+    || /^\s*(?:graduate|promote|advance|ship|release|publish)\s+(?:the\s+|this\s+)?(?:canary|beta|preview|release\s+candidate|rc|staging\s+build|nightly)(?:\s+(?:build|release|version))?\s*$/iu.test(raw)
+    || /^\s*make\s+\S+(?:\s+\S+)?\s+the\s+(?:default|live|current|production)(?:\s+(?:version|release|build))?(?:\s+for\s+(?:all\s+)?(?:customers|users|everyone|accounts))?\s*$/iu.test(raw)
+    || /^\s*tag\s+(?:a\s+|the\s+)?(?:version|release)\s+v?\d[\w.-]*\s*$/iu.test(raw))
+}
 function grammarClassesOf(name, role = '') {
   const raw = straightQuotes(name).trim()
   if (raw === '' || raw.length > 400) return []
@@ -1379,34 +1421,6 @@ function grammarClassesOf(name, role = '') {
   // #778 r2 (cu-researcher 01:39Z): 'deployment' is optional when 'rules' says what it is ('Skip protection rules and deploy'); a bare
   // 'Skip protection' (a checkout's insurance upsell) stays free.
   if (/^\s*(?:skip|bypass|ignore|override)\s+(?:the\s+)?(?:deployment\s+protection(?:\s+rules?)?|(?:branch\s+|environment\s+)?protection\s+rules?)(?:\s+and\s+deploy(?:\s+now)?)?\s*$/i.test(raw)) return ['permission', 'submit']
-  // CU-571 (cu-researcher 04:43Z; built before triage): publishing / releasing by CLASS - SUBMIT like 'Deploy' and 'Push to production':
-  // - going live: go / push / take / make / put / set (it) live;
-  // - any release verb (ship / push / deploy / release / promote / roll out / launch / move / send / merge / publish / migrate / cut over),
-  //   with an optional object (build, release, version, changes, code, app, update), TO a live target (prod / production / live / main /
-  //   master / stable / all users / everyone / 100% / the store / GA / public);
-  // - merging into or fast-forwarding main / master / trunk; cutting / shipping / pushing / promoting a release, build or version;
-  // - blasting to a list or everyone; flipping a feature flag on for everyone ('Enable for all users').
-  // The bare ambiguous verbs ('Release', 'Launch', 'Ship it', 'Release it') and 'Release build' (also an Xcode configuration) are left for
-  // cu-coordinator's ruling; 'Blast list', 'Release notes',
-  // 'Ship to address', 'Merge cells' and 'Go to live chat' stay free.
-  if (/^\s*(?:go|push|take|make|put|set)\s+(?:it\s+|this\s+|the\s+site\s+|the\s+app\s+|the\s+stream\s+)?live(?:\s+(?:now|today|anyway))?\s*$/i.test(raw)
-    || /^\s*(?:ship|push|deploy|release|promote|roll\s*out|launch|move|send|merge|publish|migrate|cut\s+over)(?:\s+(?:the\s+|this\s+|that\s+|a\s+|my\s+|our\s+|your\s+)?(?:build|release|version|changes|code|app|update|branch|it|this|commit|artifact|image|site|feature|flag))?\s+(?:to|into|in|for)\s+(?:prod|production|live|main|master|trunk|stable|release|all\s+(?:users|customers|accounts|regions|devices)|everyone|everybody|100\s*%|the\s+(?:app\s+|play\s+)?store|app\s+store|play\s+store|general\s+availability|ga|public|the\s+public|all)(?:\s+(?:now|today|anyway))?\s*$/i.test(raw)
-    || /^\s*(?:merge|rebase|fast-?forward)(?:\s+(?:and\s+)?(?:deploy|release|ship))?\s+(?:to\s+|into\s+)?(?:main|master|trunk|production|prod)\s*$|^\s*merge\s+and\s+(?:deploy|release|ship)\s*$/i.test(raw)
-    || /^\s*(?:cut|ship|push|promote|publish|tag)\s+(?:the\s+|this\s+|that\s+|a\s+|my\s+|our\s+|your\s+)?(?:release|build|version|artifact|deployment|candidate|rc)\s*$/i.test(raw)
-    || /^\s*(?:roll\s*out|release|publish|ship)\s+(?:now|today|everywhere)\s*$|^\s*roll\s*out\s+(?:it|this)\s*$/i.test(raw)
-    // #854 r2 (cu-researcher 04:56Z: bind the TARGET, not the verbs): ANY verb phrase (up to four words) TO / INTO / ONTO a live target -
-    // prod / production / live / stable / GA / the store / public (any verb), or all users / customers / regions / everyone / 100% (any verb
-    // but the benign ones: reply / apply / copy / add / show / scroll / zoom / navigate / go back / expand); a release channel, track or
-    // ring ('Promote to stable channel', 'Graduate to the production track'); and a TRAFFIC cut-over ('Shift all traffic to v2', 'Route
-    // 100% of traffic to green', 'Cut over', 'Flip DNS to the new server'). Merging INTO main / master / trunk needs a merge-like verb, so
-    // 'Go to main' (navigation) stays free. Making a field or audience PUBLIC keeps its permission (social-exposure, CU-481): visibility
-    // is not a release.
-    || /^\s*(?:[\p{L}'-]+\s+){1,4}(?:to|into|onto)\s+(?:the\s+)?(?:prod|production|live|stable|ga|general\s+availability|the\s+(?:app\s+|play\s+)?store|app\s+store|play\s+store)(?:\s+(?:channel|track|ring|branch|environment|env|cluster|tier|slot|stage))?(?:\s+(?:now|today))?\s*$/iu.test(raw) && !/^\s*(?:go\s+back|navigate|scroll|zoom|view|open|see|read|switch\s+view)\b/i.test(raw)
-    || /^\s*(?:[\p{L}'-]+\s+){1,4}(?:to|for)\s+(?:the\s+)?(?:all\s+(?:users|customers|accounts|regions|devices|tenants|servers|hosts|instances)|everyone|everybody|100\s*%)(?:\s+(?:now|today))?\s*$/iu.test(raw) && !/^\s*(?:reply|apply|copy|add|show|visible|available|scroll|zoom|navigate|go|expand|collapse|say|wave|hello|hi|welcome|thanks|thank)\b/i.test(raw) && !/\b(?:public|visible|visibility|audience|privacy|private|email|e-mail|phone|profile|address|location|birthday|photo)\b/i.test(raw)
-    || /^\s*(?:merge|push|rebase|land|squash(?:\s+and\s+merge)?|fast-?forward|commit|cherry-?pick|ship|deploy|promote|release|integrate)(?:\s+[\p{L}'-]+){0,3}\s+(?:to|into|onto)\s+(?:the\s+)?(?:main|master|trunk|release|production|prod)(?:\s+branch)?\s*$/iu.test(raw)
-    || /^\s*(?:shift|route|send|move|switch|cut\s+over|direct|redirect|flip|migrate|point)\s+(?:all\s+|100\s*%\s+(?:of\s+)?|the\s+|live\s+|production\s+)?(?:traffic|users|requests|dns|load)(?:\s+(?:over\s+)?(?:to|over)\s+\S+(?:\s+\S+){0,2})?\s*$|^\s*cut\s*over(?:\s+(?:now|to\s+\S+(?:\s+\S+)?))?\s*$|^\s*flip\s+(?:the\s+)?dns(?:\s+to\s+.+)?\s*$/iu.test(raw)
-    || /^\s*blast\s+(?:it\s+|this\s+)?(?:to\s+)(?:the\s+)?(?:list|subscribers|everyone|all|audience|contacts)\s*$/i.test(raw)
-    || /^\s*(?:flip\s+(?:the\s+)?(?:flag|switch|feature\s+flag)|(?:enable|turn\s+on|activate|release)\s+(?:it\s+|this\s+|the\s+feature\s+)?for\s+(?:all|everyone|all\s+users|every\s+user|100\s*%))\s*$/i.test(raw)) return ['submit']
   // CU-537 (High; cu-coordinator 01:06Z), table PR 38 - registrar DNS. PERMISSION everywhere: add / create / new (a / an) typed record
   // (MX, CNAME, TXT, NS, SRV, CAA, PTR, SPF, DKIM, DMARC, ALIAS; 'A' / 'AAAA' only in capitals, so 'Add a record' is not an A record);
   // the generic 'Add / Edit / Save record' (DNS pages) and turning a domain's auto-renew off (domain / registrar pages; a subscription's
