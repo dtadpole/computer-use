@@ -1,8 +1,8 @@
 ---
 title: probe-kit test suite
 created: 2026-11-09T23:30:00Z
-modified: 2026-11-16T04:05:00Z
-version: 0.4.2
+modified: 2026-11-16T06:40:00Z
+version: 0.5.0
 description: "CU-384: the probe kit's drift test - every landed field is still named by its producing file, pending fields are still pending, the browser builders match describeElement, and the kit judges through the real components."
 grounded_in:
   - source: _tools_/probe-kit/INDEX.md@0.1.0
@@ -20,6 +20,8 @@ matrices and 300 asking rows); mutants: narrowing the page pattern or ignoring t
 (RangeError, CLI exit 2).
 
 The held-out check reads a union want 'a+b' as every class present, in any order; mutant: 'every' -> 'some' fails it.
+
+The sweep diff names a newly free form even when the family counts stay equal; mutant: report every after-form fails it. The CLI exits 2 on a usage error (an unreadable diff input, a --json OUT naming a matrix) and never overwrites a matrix.
 
 ## Read next
 
