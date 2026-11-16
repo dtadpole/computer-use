@@ -74,3 +74,8 @@ test('CU-385 r2 (cu-developer-two 21:54Z): SharePoint-style shared libraries', (
   for (const name of ['Shared Documents', 'Shared Files', 'Shared Items', 'Shared Library']) assert.ok(dropPerm(name).includes('permission'), name)
   assert.ok(!dropPerm('Documents').includes('permission'))
 })
+
+test("CU-385 r3 (cu-researcher 22:02Z): an owner's shared space ending the name", () => {
+  for (const name of ['Company Shared', 'Team shared folder', 'Marketing Shared Drive', 'Acme Corp shared']) assert.ok(dropPerm(name).includes('permission'), name)
+  for (const name of ['Not shared', 'Never shared', 'Shared expenses 2026', 'Files I have shared with the whole wide team']) assert.ok(!dropPerm(name).includes('permission'), name)
+})

@@ -375,6 +375,9 @@ const FILE_BROWSER_APPS = new Set(['com.apple.finder', 'com.cocoatech.PathFinder
 const SHARE_DESTINATION = /\b(?:airdrop|shared(?:\s+(?:folder|with\s+me|with\s+you))?|drop\s+box|dropbox|public\s+folder|server|network|(?:smb|afp|nfs|webdav):)/i
 // CU-385: shared / public spaces as a drop target's whole name (an unread or item count may follow).
 const DROP_SHARE_NAME = /^\s*(?:public(?:\s+folder)?|shared(?:\s+(?:folders?|drives?|documents|files|items|libraries|library|with\s+(?:me|everyone|you|all)))?|team\s+drives?|shared\s+drives?|everyone)(?:\s*\(\d+\))?\s*$/i
+// CU-385 r3 (cu-researcher 22:02Z): an owner's shared space, 1-3 words then 'shared' (+ folder / drive) ending the name -
+// 'Company Shared', 'Team shared folder'; 'Not shared' / 'Never shared' stay free.
+const DROP_SHARE_TRAILING = /^\s*(?!(?:not|never|un)\b)(?:[\p{L}\d&'.-]+\s+){1,3}shared(?:\s+(?:folders?|drives?))?(?:\s*\(\d+\))?\s*$/iu
 const ACCOUNT_SECURITY = /\b(?:(?:generate|create|new|add)\s+(?:an?\s+)?app[\s-]?(?:specific[\s-]?)?passwords?|app[\s-]?(?:specific[\s-]?)?passwords?|(?:enable|disable|turn\s+(?:on|off)|set\s+up|add\s+(?:a\s+)?)?\s*(?:auto[\s-]?forward(?:ing)?|automatic(?:ally)?\s+forward(?:ing)?|forwarding(?:\s+address)?|forward\s+(?:a\s+copy|incoming|all|to|(?:my|all|incoming|every|new)\s+(?:e-?mails?|mail|messages)\s+to)\b)|two[\s-]?(?:factor|step)(?:\s+(?:authentication|verification|login))?|2[\s-]?step\s+verification|create\s+(?:a\s+|new\s+)?filter|2fa|multi[\s-]?factor(?:\s+authentication)?|(?:change|update|edit)\s+(?:your\s+)?e-?mail(?:\s+address)?(?!\s+(?:notifications?|preferences|settings))|(?:change|update|edit)\s+(?:your\s+)?phone(?:\s+number)?|recovery\s+(?:e-?mail|phone|codes?))\b/i
 // CU-375 (cu-researcher): the German names of an app password and of mail forwarding reach a credential as their English
 // twins do; turning forwarding off stays free, as in English.
@@ -1549,7 +1552,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // CU-385 (cu-verifier 21:42Z live): on the web route there is no driver dropDestination, so a drag onto a folder whose
     // WHOLE name is a shared or public space asks permission, as a share (the filing's fix text; additions only). Web pages
     // only: on the desktop a move into the local Shared folder stays an ordinary move (S6) and the driver fields decide.
-    if (action.type === 'drag' && context.dropTarget && /^https?:/i.test(String(context.url ?? '')) && DROP_SHARE_NAME.test(String(context.dropTarget.name ?? ''))) classes.push('permission')
+    if (action.type === 'drag' && context.dropTarget && /^https?:/i.test(String(context.url ?? '')) && (DROP_SHARE_NAME.test(String(context.dropTarget.name ?? '')) || DROP_SHARE_TRAILING.test(String(context.dropTarget.name ?? '')))) classes.push('permission')
     // CU-377 (High pending a live row; cu-coordinator 21:35Z): a desktop drag that carries a file, or whose source is unknown,
     // asks when its drop is in another app or cannot be read (fail closed only where it matters, cu-researcher); a drag of
     // anything else, or inside one app, keeps today's judgement. The loop computes context.dragSource.
