@@ -1,9 +1,9 @@
 ---
 title: '[cu] Verifier - Handover'
 created: 2026-11-08T04:15:13Z
-modified: 2026-11-16T13:10:00Z
+modified: 2026-11-16T16:20:00Z
 level: L2
-version: 5.0.3
+version: 5.0.4
 description: 'What a fresh session of [cu] Verifier needs - live state after the 15 Nov reboot, the rebuilt row tools, the armed closes, and the next step.'
 status: unverified
 grounded_in:
@@ -19,7 +19,9 @@ WHERE: session worktree ~/dtadpole/computer-use-wt/<session id>; purpose worktre
 --tm4 .. --tm14 for test runs on main or a PR merge, --vtools for the seat's local row tools). Every PR comment, issue
 and inbox item starts '[cu] Verifier, session-<8>:'.
 
-PUSH (D-097): the hygiene gate runs unpiped and decides the push by its exit status. One _logs_/repo-actions line per
+PUSH (D-097): the hygiene gate runs unpiped and decides the push by its exit status. A PR title names no filing
+id except 'Part of CU-16': Linear's GitHub integration moves every CU-n in a title (open -> In Progress, merge ->
+Verify) - on 16 Nov verdict titles moved two unfixed filings to Verify. One _logs_/repo-actions line per
 PR. A verdict is a new PR off origin/main, or stacked on the previous verdict branch while that PR is open (retarget
 to main once it lands). cu-integrator lands everything; records need a non-author OK.
 
@@ -63,7 +65,7 @@ NEXT: on each watcher fyi, close with linear.py verified (after ids from logs/cl
 repro_ids.py or logs/repro*.jsonl, main sha read from the log header by pattern, never by field number), then one
 verdict per landed PR.
 
-LESSONS: read the Verify state itself, not only the seat queue; state no OK count you have not read on the PR
+LESSONS: no filing ids in PR titles; read the Verify state itself, not only the seat queue; state no OK count you have not read on the PR
 thread; keep tools and logs out of /tmp; a finished close job must be visible without my turn (closewatch fyi);
 run the filings check every pass (an inbox item can be missed); one browser per seat - serialize watchers.
 ```
