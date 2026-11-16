@@ -47,8 +47,16 @@ test('CU-585: other typing verbs and purpose clauses (cu-researcher r3 variants)
 test('CU-585: a generic submit is matched by its words; more purpose verbs (cu-researcher r4 private set)', () => {
   assert.equal(press('Continue anyway', ['Re-enter the repo path to move it to another owner']), 'permission')
   assert.equal(press('OK, proceed', ['Fill in the app name to uninstall it for everyone']), 'delete')
-  for (const name of ['Go ahead', "Yes, I'm sure", 'Got it, continue', 'Proceed anyway', 'Confirm now']) assert.equal(press(name, ['Type DELETE to confirm']), 'delete', name)
-  for (const name of ['Rename anyway', 'Continue to profile', 'Save draft', 'Go to settings']) assert.equal(press(name, ['Type DELETE to confirm']), 'allow', `${name}: a named act or destination is not a generic submit`)
+  for (const name of ['Go ahead', "Yes, I'm sure", 'Got it, continue', 'Proceed anyway']) assert.equal(press(name, ['Type DELETE to confirm']), 'delete', name)
+  assert.equal(press('Confirm now', ['Type DELETE to confirm']), press('Confirm now'), 'a label another rule classes keeps its own class (late union)')
+})
+
+test('CU-585 r6: any otherwise-unclassed button in the form reads the prompt, except one that backs out (cu-researcher r5 private set)', () => {
+  assert.equal(press('Yes, do it', ['Type the volume label to reformat it']), 'delete')
+  assert.equal(press('Next step', ['Enter the new owner handle and the repo name to hand it off']), 'permission')
+  assert.equal(press('Alright', ['Retype the space key to delete the space']), 'delete')
+  for (const name of ['Rename anyway', 'Continue to profile', 'Save draft', 'Got it', 'Let us proceed']) assert.equal(press(name, ['Type DELETE to confirm']), 'delete', name)
+  for (const name of ['Cancel', 'Back', 'Go back', 'Close', 'No', 'No, keep it', 'Never mind', 'Keep the repository', "Don't delete", 'Not now', 'Maybe later', '\u00d7']) assert.equal(press(name, ['Type DELETE to confirm']), 'allow', `${name}: backing out is never asked`)
 })
 
 test('CU-585: a typed confirmation of a transfer of ownership asks permission, not purchase', () => {
@@ -69,7 +77,6 @@ test('CU-585: ordinary boxes add nothing - a bare submit stays free beside a nam
   assert.equal(press('Continue', ['Enter the transfer amount']), 'allow')
   assert.equal(press('Continue', ['Type the transfer reference']), 'allow')
   assert.equal(press('Confirm'), 'allow', 'no formEntries: unchanged')
-  assert.equal(press('Rename', ['Type DELETE to confirm']), 'allow', 'a named act other than a generic submit does not read the form (named limit)')
   // cu-researcher's r1 over-ask: a typing word followed by 'to' / 'here' is a search box, not a confirmation prompt.
   assert.equal(press('Confirm', ['Type to search deleted items']), 'allow')
   assert.equal(press('Go', ['Type here to filter removed files']), 'allow')

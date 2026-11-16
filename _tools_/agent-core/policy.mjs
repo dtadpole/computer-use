@@ -336,18 +336,17 @@ const TRADE_ASSET = /\b(?:btc|eth|usd|eur|gbp|jpy|usdt|usdc|dai|sol|xrp|ada|doge
 // CU-585: a bare submit that a typed-word confirmation form gates, and the senses of that form's prompt (the driver's
 // formEntries - the words beside its text entries, never a value).
 // Any generic submit (cu-researcher's r1 held-out: 'Next' / 'Done' were missed), never a named act.
-const TYPED_CONFIRM_CORE = new Set(['confirm', 'continue', 'proceed', 'ok', 'okay', 'yes', 'submit', 'done', 'next', 'finish', 'go', 'apply', 'save', 'accept', 'agree', 'understand', 'sure'])
-const TYPED_CONFIRM_FILLER = new Set(['i', 'im', 'i\'m', 'am', 'anyway', 'now', 'please', 'and', 'then', 'ahead', 'got', 'it', 'lets', 'let\'s', 'do', 'yep', 'alright', 'all', 'right'])
-// cu-researcher r4: a generic submit is matched by its words ('Continue anyway', 'OK, proceed', 'Go ahead'), at most five,
-// every one a generic or filler word and one a generic verb - never a named act.
-function genericSubmitName(name) {
-  const words = String(name ?? '').toLowerCase().replace(/[\u2018\u2019]/g, "'").replace(/[^a-z' ]+/g, ' ').trim().split(/\s+/).filter(Boolean)
-  return words.length > 0 && words.length <= 5 && words.every((w) => TYPED_CONFIRM_CORE.has(w) || TYPED_CONFIRM_FILLER.has(w)) && words.some((w) => TYPED_CONFIRM_CORE.has(w))
+// cu-researcher r5: invert the button test - in a typed-word confirmation form ANY otherwise-unclassed button reads the
+// prompt ('Yes, do it', 'Next step', 'Alright'), except one that backs out (cancel / back / close / no / keep / not now ...).
+const TYPED_CONFIRM_BACKOUT = /^\s*(?:cancel\b.*|back|go\s+back\b.*|close|dismiss|no\b.*|nope|not\s+now|never\s*mind|keep\b.*|don(?:'|\u2019)?t\b.*|do\s+not\b.*|abort|exit|return\b.*|undo|skip\b.*|(?:maybe\s+)?later|stay\b.*|x|\u00d7|\u2715|\u2716)\s*[.!]?\s*$/i
+function typedConfirmButton(name) {
+  const text = String(name ?? '').trim()
+  return text !== '' && !TYPED_CONFIRM_BACKOUT.test(text)
 }
 // The confirm-prompt shape: a typing word followed by what to type ('Type DELETE ...', 'Enter the workspace name ...'), never
 // 'Type to search ...' / 'Type here ...' / 'Press Enter to ...' (cu-researcher's r1 over-ask 'Type to search deleted items').
 const TYPED_INSTRUCTION = /\b(?:type|enter|re-?enter|re-?type|write|input|key\s+in|spell\s+out|repeat|fill\s+in|copy|paste)\s+(?!(?:to|here|in)\b)["'\u201c\u2018\p{L}\p{N}]/iu
-const TYPED_DESTROY = /\b(?:delet\w*|eras(?:e|es|ed|ing|ure)\b|wip(?:e|es|ed|ing)\b|remov\w*|destroy\w*|purg(?:e|es|ed|ing)\b|terminat\w*|deactivat\w*|permanently|permanent\s+(?:deletion|removal|erasure)|irreversibl\w*|cannot\s+be\s+undone|nuk(?:e|es|ed|ing)\b|uninstall\w*|obliterat\w*|shred\w*|annihilat\w*|decommission\w*|deprovision\w*|tear\s+(?:it\s+|this\s+|the\s+\w+\s+)?down|factory\s+reset|reset\s+(?:\w+\s+)?to\s+factory|empty\s+(?:it|them|the|this|that|your|all)\b|(?:archiv\w*|los(?:e|ing)|gone|hid(?:e|den))\s+(?:\w+\s+){0,2}(?:forever|for\s+good)|clos(?:e|ing)\s+(?:the\s+|this\s+|my\s+|your\s+)?account\b|drop\s+(?:the\s+|this\s+)?(?:table|database|schema|collection|index)\b)/i
+const TYPED_DESTROY = /\b(?:delet\w*|eras(?:e|es|ed|ing|ure)\b|wip(?:e|es|ed|ing)\b|remov\w*|destroy\w*|purg(?:e|es|ed|ing)\b|terminat\w*|deactivat\w*|permanently|permanent\s+(?:deletion|removal|erasure)|irreversibl\w*|cannot\s+be\s+undone|nuk(?:e|es|ed|ing)\b|uninstall\w*|re-?format\w*|format\s+(?:the\s+|this\s+|your\s+)?(?:disk|drive|volume|card|partition)\b|obliterat\w*|shred\w*|annihilat\w*|decommission\w*|deprovision\w*|tear\s+(?:it\s+|this\s+|the\s+\w+\s+)?down|factory\s+reset|reset\s+(?:\w+\s+)?to\s+factory|empty\s+(?:it|them|the|this|that|your|all)\b|(?:archiv\w*|los(?:e|ing)|gone|hid(?:e|den))\s+(?:\w+\s+){0,2}(?:forever|for\s+good)|clos(?:e|ing)\s+(?:the\s+|this\s+|my\s+|your\s+)?account\b|drop\s+(?:the\s+|this\s+)?(?:table|database|schema|collection|index)\b)/i
 // A transfer counts only of ownership: 'Enter the transfer amount' is money, not a handover (cu-developer-three's near-miss).
 const TYPED_TRANSFER = /\b(?:(?:move|transfer|send)\s+(?:it\s+|this\s+\w+\s+|the\s+\w+\s+)?to\s+(?:a\s+|an\s+)?(?:another|new|different|other)\s+(?:owner|account|org(?:anization)?|team|workspace|user)|(?:another|different)\s+owner|give\s+(?:(?:it|them|this|that|the|your|my)\s+)?(?:\w+\s+){0,2}away|hand(?:ing)?\s+(?:it\s+|this\s+\w+\s+|the\s+\w+\s+)?off|make\s+(?:\w+\s+){1,3}(?:the\s+)?(?:new\s+)?owner|reassign\s+(?:the\s+)?ownership|transfer\w*\s+(?:of\s+)?(?:the\s+)?ownership|ownership|hand(?:ing)?\s+(?:it\s+|this\s+\w+\s+|the\s+\w+\s+)?over|handover|new\s+owner|change\s+(?:the\s+)?owner|transfer\s+(?:the\s+|this\s+)?(?:workspace|repository|repo|organization|org|project|team|account|domain)\b)/i
 
@@ -2572,11 +2571,14 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (/^deploy\s+(?:the\s+|a\s+|this\s+)?(?:configuration\s+|config\s+|mdm\s+|management\s+)?profiles?$/i.test(raised) && !classes.includes('permission') && classes.length > 0) classes.push('permission')
     }
     // CU-585 (cu-researcher's filing; GO from the policy.mjs owner cu-developer-one 13:48Z; built by cu-developer-two): a
-    // generic, otherwise-unclassed submit ('Confirm', 'Continue', 'Next', 'Done', 'Save', 'OK' ...) in a danger-zone form
+    // otherwise-unclassed button that does not back out ('Confirm', 'Next step', 'Yes, do it' - not 'Cancel') in a danger-zone form
     // reads the words its form's text entries show (the driver's formEntries, on a click and on Return's default button):
     // a prompt to type something that confirms a destructive or permanent act asks delete, one that confirms a transfer of
     // ownership asks permission. A late union - it only adds an ask to a submit nothing else classes, never lowers one.
-    if (grammarEligible && classes.length === 0 && genericSubmitName(name) && Array.isArray(target?.formEntries)) {
+    // Only on the control's own label: the name sub-probes (confirm / question / split-particle forms of 'Not now' -> 'now')
+    // carry the target's formEntries along and must not read the prompt; Return's default-button probe does.
+    const subProbe = context.confirmProbe === true || context.questionProbe === true || context.splitParticleProbe === true
+    if (grammarEligible && !subProbe && classes.length === 0 && typedConfirmButton(name) && Array.isArray(target?.formEntries)) {
       for (const cls of typedConfirmClasses(target.formEntries)) classes.push(cls)
     }
     if (grammarEligible && classes.length === 0) {
