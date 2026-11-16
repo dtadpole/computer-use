@@ -41,3 +41,8 @@ test('#854 round 4 (cu-researcher 05:36Z): the audience / reach class - a quanti
     'Set the new version as default for all accounts', 'Point the stable channel at build 812 for everyone', 'Push the config change into production now']) assert.ok(classesOf(name).includes('submit'), name)
   for (const name of ['Reply to everyone', 'Say hello to everyone', 'Visible to everyone', 'Available for all users', 'View release notes for everyone', 'Open the gates to everyone', 'Production logs for all regions', 'Thanks everyone', 'Everyone']) assert.ok(!classesOf(name).includes('submit') || name === 'Reply to everyone', name)
 })
+
+test('#854 round 5 (cu-researcher 05:53Z): any change verb with an audience - the three named forms', () => {
+  for (const name of ['Lift the waitlist for all signups', 'Ramp to full rollout', 'Make the new pricing page visible to all visitors']) assert.notDeepEqual(classesOf(name), [], name)
+  for (const name of ['Say hello to everyone', 'Reply to everyone', 'Thanks everyone', 'View release notes for everyone', 'Production logs for all regions']) assert.ok(!classesOf(name).includes('submit') || name === 'Reply to everyone', name)
+})
