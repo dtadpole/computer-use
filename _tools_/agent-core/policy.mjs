@@ -108,11 +108,19 @@ const LOCALE_WORDS = Object.freeze({
     'acquista', 'acquista ora', 'compra ora', 'paga', 'paga ora', 'ordina ora', 'effettua ordine', "effettua l'ordine", 'conferma ordine', 'procedi al pagamento', 'vai alla cassa',
     'kopen', 'nu kopen', 'koop nu', 'betalen', 'nu betalen', 'bestellen en betalen', 'bestellen', 'nu bestellen', 'bestelling plaatsen', 'afrekenen', 'naar de kassa',
     'comprar agora', 'pagar agora', 'finalizar pedido', 'fazer pedido', 'concluir compra', 'efetuar pagamento',
+    // r2 (cu-developer-three's held-out): short imperatives and 'confirm payment' forms.
+    'compra', 'compra adesso', 'acquista adesso', 'paga adesso', 'conferma pagamento', "conferma l'acquisto", 'conferma acquisto',
+    'koop', 'betaal', 'betaal nu', 'bestel', 'bestel nu', 'betaling bevestigen', 'bevestig betaling',
+    'compre', 'compre agora', 'pague', 'pague agora', 'confirmar pagamento', 'confirmar compra',
+    'ödemeyi onayla', 'satın almayı onayla',
     'satın al', 'şimdi satın al', 'hemen al', 'öde', 'şimdi öde', 'ödeme yap', 'sipariş ver', 'siparişi tamamla', 'alışverişi tamamla'],
   delete: ['löschen', 'entfernen', 'verwerfen', 'supprimer', 'effacer', 'eliminar', 'borrar', 'удалить', 'стереть', '削除', '消去', '삭제', '지우기',
     // CU-358: Italian, Dutch, Portuguese and Turkish.
     'elimina', 'cancella', 'rimuovi', 'elimina definitivamente', 'verwijderen', 'verwijder', 'wissen', 'definitief verwijderen',
-    'excluir', 'apagar', 'remover', 'excluir permanentemente', 'sil', 'kaldır', 'kalıcı olarak sil', 'hesabı sil'],
+    'excluir', 'apagar', 'remover', 'excluir permanentemente', 'sil', 'kaldır', 'kalıcı olarak sil', 'hesabı sil',
+    // r2: emptying the trash, as English 'Empty trash'.
+    'svuota cestino', 'svuota il cestino', 'prullenbak legen', 'prullenbak leegmaken', 'leeg prullenbak',
+    'esvaziar lixeira', 'esvaziar a lixeira', 'esvaziar lixo', 'esvaziar a reciclagem', 'çöp kutusunu boşalt', 'çöpü boşalt', 'çöp kutusunu temizle'],
   submit: ['senden', 'absenden', 'abschicken', 'envoyer', 'soumettre', 'enviar', 'отправить', '送信', '보내기', '전송', '제출',
     // CU-358: Italian, Dutch, Portuguese and Turkish.
     'invia', 'invia ora', 'verzenden', 'versturen', 'verstuur', 'indienen', 'submeter', 'gönder', 'şimdi gönder'],
@@ -130,7 +138,11 @@ const LOCALE_WORDS = Object.freeze({
     'codice di verifica', 'codice di sicurezza', 'codice otp', 'numero della carta', 'numero di carta',
     'wachtwoord', 'pincode', '…pincode', 'verificatiecode', '…verificatiecode', 'beveiligingscode', '…beveiligingscode', 'kaartnummer', '…kaartnummer', 'eenmalige code',
     'senha', 'código de verificação', 'código de segurança', 'número do cartão',
-    'şifre', 'parola', 'doğrulama kodu', 'güvenlik kodu', 'kart numarası', 'tek kullanımlık şifre'],
+    'şifre', 'parola', 'doğrulama kodu', 'güvenlik kodu', 'kart numarası', 'tek kullanımlık şifre',
+    // r2: the Portuguese 'de' form, and Turkish possessive forms (your / my), which change the word's ending.
+    'número de cartão', 'numero do cartao', 'numero de cartao',
+    'şifreniz', 'şifren', 'şifrem', 'parolanız', 'parolan', 'parolam', 'doğrulama kodunuz', 'doğrulama kodun', 'güvenlik kodunuz',
+    'kart numaranız', 'kart numaran', 'kart numaram'],
 })
 // CU-355 (design note 0.1): personal-ID field names in German, French, Spanish, Russian, Japanese and Korean - the third
 // locale side beside CU-352's action names and CU-345's credential names. '…' leads a German compound ending.
@@ -147,7 +159,9 @@ const LOCALE_ID_NAMES = Object.freeze(['reisepass', '…passnummer', 'geburtsdat
   'codice fiscale', 'passaporto', 'numero di passaporto', 'data di nascita', 'numero di conto', "carta d'identità", 'partita iva',
   'bsn', 'burgerservicenummer', 'paspoort', 'paspoortnummer', 'geboortedatum', 'rekeningnummer', '…rekeningnummer', 'identiteitskaart',
   'cpf', 'rg', 'passaporte', 'número do passaporte', 'data de nascimento', 'número da conta', 'cartão de cidadão',
-  'tc kimlik', 'tc kimlik no', 'tc kimlik numarası', 'iban numarası', 'kimlik numarası', 'pasaport', 'pasaport numarası', 'doğum tarihi', 'hesap numarası', 'vergi numarası'])
+  'tc kimlik', 'tc kimlik no', 'tc kimlik numarası', 'iban numarası',
+  // r2: Turkish possessive forms (your / my).
+  'kimlik numaranız', 'tc kimlik numaranız', 'doğum tarihiniz', 'doğum tarihin', 'doğum tarihim', 'hesap numaranız', 'pasaport numaranız', 'vergi numaranız', 'kimlik numarası', 'pasaport', 'pasaport numarası', 'doğum tarihi', 'hesap numarası', 'vergi numarası'])
 const WORDS = Object.freeze({
   // CU-498 (High; cu-coordinator 12:21Z): a direct debit mandate pulls money from the account (purchase), anywhere.
   // (a separate line so the purchase list below stays as it was)

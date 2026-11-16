@@ -35,17 +35,22 @@ test('CU-345: PIN, security code and password fields named in six languages ask 
   }
 })
 
+test('CU-358 r2 (cu-developer-three): empty-trash, short-imperative and confirm-payment forms ask', () => {
+  for (const [name, expected] of [['Svuota cestino', 'delete'], ['Prullenbak legen', 'delete'], ['Esvaziar lixeira', 'delete'], ['Çöp kutusunu boşalt', 'delete'],
+    ['Compra adesso', 'purchase'], ['Koop', 'purchase'], ['Betaal nu', 'purchase'], ['Conferma pagamento', 'purchase'], ['Compre agora', 'purchase'], ['Ödemeyi onayla', 'purchase']]) assert.equal(click(name), expected, name)
+})
+
 test('CU-358: PIN, one-time code, password and card-number fields named in Italian, Dutch, Portuguese and Turkish ask', () => {
   for (const name of ['Codice di verifica', 'Codice di sicurezza', 'Numero della carta', 'Wachtwoord', 'Pincode', 'Bankpincode', 'Verificatiecode', 'Sms-verificatiecode',
     'Beveiligingscode', 'Kaartnummer', 'Creditcardkaartnummer', 'Senha', 'Código de verificação', 'Código de segurança', 'Número do cartão',
-    'Şifre', 'ŞİFRE', 'Parola', 'Doğrulama kodu', 'Güvenlik kodu', 'Kart numarası']) {
+    'Şifre', 'ŞİFRE', 'Parola', 'Doğrulama kodu', 'Güvenlik kodu', 'Kart numarası', 'Şifreniz', 'Parolanız', 'Kart numaranız', 'Número de cartão', 'Número de cartão de crédito']) {
     assert.notEqual(typeInto(name), 'allow', name)
   }
 })
 
 test('CU-358 negatives: cancel, back and near words stay allowed; ordinary fields stay free', () => {
-  for (const name of ['Annulla', 'Indietro', 'Annuleren', 'Terug', 'Voltar', 'İptal', 'Geri', 'Silikon', 'Inviato', 'Pagamenti', 'Pagamentos', 'Ordinamento', 'Bestellingen', 'Verzonden', 'Ödeme yöntemleri', 'Gönderildi', 'Silvester', 'Pagamento']) assert.equal(click(name), 'allow', name)
-  for (const name of ['Nome', 'Città', 'Naam', 'Woonplaats', 'Cidade', 'Ad', 'Şehir', 'Codice sconto', 'Kortingscode', 'Código promocional', 'İndirim kodu', 'Postcode', 'Código postal']) assert.equal(typeInto(name), 'allow', name)
+  for (const name of ['Annulla', 'Indietro', 'Annuleren', 'Terug', 'Voltar', 'İptal', 'Geri', 'Silikon', 'Inviato', 'Pagamenti', 'Pagamentos', 'Ordinamento', 'Bestellingen', 'Verzonden', 'Ödeme yöntemleri', 'Gönderildi', 'Silvester', 'Pagamento', 'Compravendite', 'Koopjes', 'Betaalmethoden', 'Bestellingen', 'Compreensão', 'Cestino', 'Prullenbak', 'Lixeira', 'Çöp kutusu']) assert.equal(click(name), 'allow', name)
+  for (const name of ['Nome', 'Città', 'Naam', 'Woonplaats', 'Cidade', 'Ad', 'Şehir', 'Codice sconto', 'Kortingscode', 'Código promocional', 'İndirim kodu', 'Postcode', 'Código postal', 'Şifreleme', 'Adınız', 'Şehriniz']) assert.equal(typeInto(name), 'allow', name)
 })
 
 test('CU-352 negatives: cancel, back, a shopping list, a longer Russian word and ordinary fields stay allowed', () => {

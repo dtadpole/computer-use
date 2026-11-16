@@ -18,7 +18,7 @@ const NAMES = {
   it: ['Codice fiscale', 'Numero di passaporto', 'Data di nascita', 'Numero di conto', 'Partita IVA'],
   nl: ['BSN', 'Burgerservicenummer', 'Paspoortnummer', 'Geboortedatum', 'Rekeningnummer', 'IBAN-rekeningnummer', 'Bankrekeningnummer'],
   pt: ['CPF', 'RG', 'Número do passaporte', 'Data de nascimento', 'Número da conta'],
-  tr: ['T.C. Kimlik No', 'TC Kimlik Numarası', 'Pasaport numarası', 'Doğum tarihi', 'Hesap numarası', 'Vergi numarası', 'IBAN numarası', 'TC KİMLİK NO'],
+  tr: ['T.C. Kimlik No', 'TC Kimlik Numarası', 'Pasaport numarası', 'Doğum tarihi', 'Hesap numarası', 'Vergi numarası', 'IBAN numarası', 'TC KİMLİK NO', 'Doğum tarihiniz', 'Kimlik numaranız', 'Hesap numaranız'],
 }
 for (const [locale, names] of Object.entries(NAMES)) {
   test(`CU-355 [${locale}]: personal-ID field names ask`, () => {
