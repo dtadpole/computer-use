@@ -23,3 +23,8 @@ test("#847 round 2 (cu-researcher 03:08Z): 'Give 5 stars' is a rating, not a pur
   // 'Give 10 points' asks purchase on main already (an older row) and keeps it.
   for (const name of ['Send 50 Stars', 'Tip 100 Stars', 'Cheer 100 Bits', 'Give 5 gems']) assert.ok(classesOf(name).includes('purchase'), name)
 })
+
+test('#847 round 3 (cu-researcher 10:20Z class sweep): more stars than a rating, currency tickers', () => {
+  for (const name of ['Give 50 stars', 'Tip 3 USDC', 'Send 0.5 ETH', 'Tip 20 USDT']) assert.ok(classesOf(name).includes('purchase'), name)
+  for (const name of ['Give 5 stars', 'Send 3 PDF', 'Give 4 stars']) assert.ok(!classesOf(name).includes('purchase'), name)
+})
