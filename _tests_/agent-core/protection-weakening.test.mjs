@@ -60,3 +60,7 @@ test('#856 round 6 (cu-researcher 10:17Z): settings-sweep weakenings - security 
   for (const name of ['Disable HTTPS-only mode', 'Disable DMARC', 'Disable automatic updates', 'Set password minimum to 4', 'Whitelist all senders', 'Turn off FileVault', 'Disable Gatekeeper', 'Turn off Find My Mac', 'Trust all certificates', 'Allow all macros', 'Lower password length to 6']) assert.notDeepEqual(classesOf(name), [], name)
   for (const name of ['Disable notifications', 'Set password', 'Allow all', 'Turn off dark mode']) assert.ok(!classesOf(name).includes('permission'), name)
 })
+
+test('#856 round 6 (class sweep): logins from anywhere, link expiration, plain-text secrets', () => {
+  for (const name of ['Allow login from any country', 'Disable link expiration', 'Store passwords in plain text', 'Allow access from any IP', 'Turn off session expiration']) assert.notDeepEqual(classesOf(name), [], name)
+})
