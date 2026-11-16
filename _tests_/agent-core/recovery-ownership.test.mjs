@@ -39,3 +39,8 @@ test('#862 round 3 (cu-researcher 08:14Z): concrete objects - a person, a litera
 test('#862 round 4 (cu-researcher 08:28Z): a hardware key or authenticator named by brand and model', () => {
   for (const name of ['Unlink YubiKey 5C', 'Remove YubiKey 5 NFC', 'Unregister Titan Security Key', 'Disconnect Okta Verify', 'Remove Google Authenticator on Pixel 8', 'Add new YubiKey']) assert.notDeepEqual(classesOf(name), [], name)
 })
+
+test('#862 round 5 (cu-researcher 10:19Z class sweep): unlinking a sign-in provider', () => {
+  for (const name of ['Unlink Google sign-in', 'Disconnect Apple ID', 'Remove Microsoft login', 'Disable Sign in with Apple', 'Revoke GitHub SSO']) assert.notDeepEqual(classesOf(name), [], name)
+  for (const name of ['Disconnect Google Drive', 'Unlink Spotify']) assert.ok(!classesOf(name).includes('credential'), name)
+})
