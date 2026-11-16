@@ -1016,14 +1016,18 @@ export function grammarClasses(name, role = '') {
     const classes = grammarClassesOf(form, role)
     if (classes.length > 0) return classes
   }
-  // CU-571: releasing to a live target is read LAST, only when no older row classed the name or its forms.
-  if ([name, ...canonicalForms(name)].some((form) => releasesToLive(String(form ?? '').trim()))) return ['submit']
   return base
 }
 
 /** CU-571 (built before triage): publishing / releasing to a live target - read by grammarClasses LAST, only when no older row classed
- * the name (#854 r3, cu-researcher 05:20Z: 'Open the gates to everyone' keeps its physical class). */
-function releasesToLive(raw) {
+ * the name (#854 r3, cu-researcher 05:20Z: 'Open the gates to everyone' keeps its physical class). #854 r6 (cu-researcher 06:10Z): the
+ * policy reads it as a late UNION after every other row, so it only ever adds submit - never clears or pre-empts a verdict ('Keep anyway for
+ * all users' keeps install). */
+export function releasesToLive(raw) {
+  raw = String(raw ?? '').trim()
+  // #854 r6: an OFF verb or a warning override is never a release - the CU-429 'Keep <x>' refusal probes 'Turn off <x>', so a release
+  // reading there lowered 'Keep anyway for all users' (install on main) to free.
+  if (/^\s*(?:(?:turn|switch|shut|power)\s+off|disable|deactivate|stop|pause|halt|remove|delete|cancel|revoke|unpublish|withdraw|roll\s*back|revert)\b|\banyway\b/i.test(raw)) return false
   // CU-571 (cu-researcher 04:43Z; built before triage): publishing / releasing by CLASS - SUBMIT like 'Deploy' and 'Push to production':
   // - going live: go / push / take / make / put / set (it) live;
   // - any release verb (ship / push / deploy / release / promote / roll out / launch / move / send / merge / publish / migrate / cut over),

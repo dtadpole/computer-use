@@ -46,3 +46,10 @@ test('#854 round 5 (cu-researcher 05:53Z): any change verb with an audience - th
   for (const name of ['Lift the waitlist for all signups', 'Ramp to full rollout', 'Make the new pricing page visible to all visitors']) assert.notDeepEqual(classesOf(name), [], name)
   for (const name of ['Say hello to everyone', 'Reply to everyone', 'Thanks everyone', 'View release notes for everyone', 'Production logs for all regions']) assert.ok(!classesOf(name).includes('submit') || name === 'Reply to everyone', name)
 })
+
+test('#854 round 6 (cu-researcher 06:10Z): the reach class only adds - warning overrides keep install', () => {
+  for (const url of ['https://mail.example/inbox', 'https://downloads.example/files']) for (const name of ['Keep anyway for all users', 'Keep anyway for everyone']) {
+    const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url, target: { role: 'button', name } })
+    assert.ok((v.classes ?? [v.class]).includes('install'), `${name} @ ${url}`)
+  }
+})
