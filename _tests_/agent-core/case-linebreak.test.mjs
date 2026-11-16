@@ -19,3 +19,8 @@ test('CU-566: case and line-break transforms keep the row asking with its classe
   }
   for (const name of ['OPEN RDP GUIDE', 'SETTINGS', 'Account\nOverview']) assert.deepEqual(classesOf(name), [], JSON.stringify(name))
 })
+
+test("#846 round 2 (cu-researcher 02:42Z): the AAAA record in any case", () => {
+  for (const name of ['ADD AAAA RECORD', 'add aaaa record', 'Add AAAA record', 'ADD MX RECORD', 'CREATE A RECORD']) assert.ok(classesOf(name).includes('permission'), name)
+  assert.deepEqual(classesOf('add a record'), [], "a lower-case 'a record' is the generic phrase")
+})

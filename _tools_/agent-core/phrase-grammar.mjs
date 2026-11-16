@@ -1426,10 +1426,11 @@ function grammarClassesOf(name, role = '') {
   // 'Skip protection' (a checkout's insurance upsell) stays free.
   if (/^\s*(?:skip|bypass|ignore|override)\s+(?:the\s+)?(?:deployment\s+protection(?:\s+rules?)?|(?:branch\s+|environment\s+)?protection\s+rules?)(?:\s+and\s+deploy(?:\s+now)?)?\s*$/i.test(raw)) return ['permission', 'submit']
   // CU-537 (High; cu-coordinator 01:06Z), table PR 38 - registrar DNS. PERMISSION everywhere: add / create / new (a / an) typed record
-  // (MX, CNAME, TXT, NS, SRV, CAA, PTR, SPF, DKIM, DMARC, ALIAS; 'A' / 'AAAA' only in capitals, so 'Add a record' is not an A record);
+  // (MX, CNAME, TXT, NS, SRV, CAA, PTR, SPF, DKIM, DMARC, ALIAS; 'A' only as a capital, so 'Add a record' is not an A record; 'AAAA' in any
+  // case and the verb / 'record' in any case, CU-566 #846 r2: 'ADD AAAA RECORD', 'add aaaa record');
   // the generic 'Add / Edit / Save record' (DNS pages) and turning a domain's auto-renew off (domain / registrar pages; a subscription's
   // 'Turn off auto-renew' stays free, CU-410) are URL-bound in policy.mjs.
-  if (/^\s*(?:add|create|new)\s+(?:an?\s+|new\s+)?(?:mx|cname|txt|ns|srv|caa|ptr|spf|dkim|dmarc|alias)\s+record\s*$/i.test(raw) || /^\s*(?:[Aa]dd|[Cc]reate|[Nn]ew)\s+(?:an?\s+|new\s+)?(?:A|AAAA)\s+[Rr]ecord\s*$/.test(raw)) return ['permission']
+  if (/^\s*(?:add|create|new)\s+(?:an?\s+|new\s+)?(?:mx|cname|txt|ns|srv|caa|ptr|spf|dkim|dmarc|alias)\s+record\s*$/i.test(raw) || /^\s*(?:[Aa][Dd][Dd]|[Cc][Rr][Ee][Aa][Tt][Ee]|[Nn][Ee][Ww])\s+(?:[Aa][Nn]?\s+|[Nn][Ee][Ww]\s+)?(?:A|[Aa]{4})\s+[Rr][Ee][Cc][Oo][Rr][Dd]\s*$/.test(raw)) return ['permission']
   // CU-534 (High; cu-coordinator 00:51Z), table PR 37, as verb families with object synonyms - a calendar's exposure and wipe (CU-461's
   // exposure family). PERMISSION: get / copy / show the public / secret / private (iCal) address (in iCal format); get / copy a
   // shareable / share / public link to (the / this / your) calendar / <object> (the object tail on CU-462's row). DELETE: clear / empty
