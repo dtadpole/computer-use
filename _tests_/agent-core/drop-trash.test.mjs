@@ -43,3 +43,8 @@ test('CU-385 r7 (cu-researcher 19:42Z): deleted messages per language, junk name
   for (const name of ['Verwijderde berichten', 'Gelöschte Nachrichten', 'Messages supprimés', 'Mensajes eliminados', 'Messaggi eliminati', 'Mensagens excluídas', 'Spam e posta indesiderata', 'Spam and junk']) assert.ok(drop(name).includes('delete'), name)
   for (const name of ['Spam and phishing reports', 'Berichten']) assert.ok(!drop(name).includes('delete'), name)
 })
+
+test('CU-385 r8 (cu-developer-two 19:54Z, cu-researcher 19:56Z): the folder word per language, and the messages noun for every Deleted Items language', () => {
+  for (const name of ['Spam-Ordner', 'Junk-Ordner', 'Spam map', 'Silinmiş iletiler', 'Usunięte wiadomości', 'Törölt üzenetek', 'Odstraněné zprávy', 'Slettede meldinger', 'Poistetut viestit', '削除済みメッセージ', '已删除消息']) assert.ok(drop(name).includes('delete'), name)
+  for (const name of ['Ordner', 'Spam-Ordner Regeln', 'Wiadomości']) assert.ok(!drop(name).includes('delete'), name)
+})
