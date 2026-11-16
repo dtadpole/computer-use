@@ -13,7 +13,7 @@ const classesOf = (name) => {
 test('CU-569: tear down / decommission / deprovision / shred / nuke / obliterate / scrub / zap x data objects ask delete', () => {
   for (const name of ['Tear down environment', 'Decommission server', 'Deprovision instance', 'Shred file', 'Nuke database', 'Obliterate repository', 'Scrub data', 'Zap cluster',
     'Reset everything', 'Terminate project', 'Drop bucket', 'Clear everything', 'Delete deployment', 'Tear down the stack', 'Clear bucket', 'Empty volume']) assert.ok(classesOf(name).includes('delete'), name)
-  for (const name of ['Clear filters', 'Reset zoom', 'Scrub timeline', 'Tear down guide', 'Shred settings', 'Close project']) assert.deepEqual(classesOf(name), [], name)
+  for (const name of ['Clear filters', 'Reset zoom', 'Scrub timeline', 'Tear down guide', 'Close project']) assert.deepEqual(classesOf(name), [], name)
 })
 
 test('#851 round 2 (cu-researcher 03:54Z): the destroy lexicon, not a list of examples', () => {
@@ -21,4 +21,13 @@ test('#851 round 2 (cu-researcher 03:54Z): the destroy lexicon, not a list of ex
   for (const v of verbs) for (const o of ['server', 'database', 'project', 'environment', 'bucket']) assert.ok(classesOf(`${v} ${o}`).includes('delete'), `${v} ${o}`)
   for (const name of ['Kill switch', 'Retire badge', 'Burn rate', 'Blast radius', 'Sunset view']) assert.deepEqual(classesOf(name), [], name)
   for (const o of ['project', 'environment', 'bucket']) assert.ok(classesOf(`Retire ${o}`).includes('delete'), `Retire ${o}`)
+})
+
+test('#851 round 3 (cu-researcher 04:13Z): a strong destroy synonym takes delete\'s whole object slot', () => {
+  for (const v of ['Shred', 'Expunge', 'Eradicate', 'Obliterate', 'Nuke', 'Wipe out', 'Get rid of', 'Purge']) for (const o of ['emails', 'history', 'messages', 'photos', 'contacts', 'my files']) {
+    const want = classesOf(`Delete ${o}`)
+    if (want.length === 0) continue
+    assert.ok(classesOf(`${v} ${o}`).includes('delete'), `${v} ${o}`)
+  }
+  for (const name of ['Kill switch', 'Burn rate', 'Scrub timeline', 'Blast radius']) assert.deepEqual(classesOf(name), [], name)
 })

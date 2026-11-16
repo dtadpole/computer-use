@@ -842,7 +842,13 @@ function withoutDeterminers(text) {
 const VERB_SYNONYMS = [[/^(\s*)modify\b/i, '$1change'], [/^(\s*)(?:update|edit)\b(?!\s+(?:all|now|available)\b)/i, '$1change'], [/^(\s*)(?:display|reveal)\b/i, '$1show'], [/^(\s*)give\b/i, '$1grant'],
   [/^(\s*)begin\b/i, '$1start'], [/^(\s*)ask\s+for\b/i, '$1request'],
   // #627 round 2 (cu-researcher 05:08Z): creating an account is not adding one ('Create account' stays free).
-  [/^(\s*)create\b(?!\s+(?:an?\s+|new\s+|your\s+|my\s+)?accounts?\b)/i, '$1add']]
+  [/^(\s*)create\b(?!\s+(?:an?\s+|new\s+|your\s+|my\s+)?accounts?\b)/i, '$1add'],
+  // #851 r3 (cu-researcher 04:13Z: the object slot was closed): a strong destroy synonym reads as 'delete' and takes delete's whole object
+  // handling ('Shred emails', 'Expunge history', 'Eradicate messages'). The ambiguous ones (kill, burn, blast, sunset, scrub, zap, torch,
+  // axe, bin, retire, delist, spin down) are not folded, so 'Kill switch', 'Burn rate' and 'Scrub timeline' stay free; nor is a how-to
+  // object ('Tear down guide', 'Teardown checklist'). Only a verb WITH an object folds, and trash / junk / scrap never do: a bare 'Trash'
+  // sidebar row stays free (destructive-labels).
+  [/^(\s*)(?:purge|erase|expunge|annihilate|eradicate|exterminate|obliterate|shred|nuke|incinerate|vapori[sz]e|demolish|raze|dismantle|eliminate|excise|cull|unprovision|deprovision|decommission|deregister|unregister|wipe\s+out|wipe\s+clean|tear\s+down|blow\s+away|dispose\s+of|get\s+rid\s+of|do\s+away\s+with)\b(?=\s+\S)(?!\s+(?:the\s+|a\s+)?(?:guide|docs?|documentation|tutorial|instructions?|checklist|steps?|help|faq|video|overview|walkthrough|diagram|playbook|runbook|template)s?\s*$)/i, '$1delete']]
 function withVerbSynonym(text) {
   for (const [pattern, replacement] of VERB_SYNONYMS) if (pattern.test(text)) return text.replace(pattern, replacement)
   return text
