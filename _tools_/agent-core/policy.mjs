@@ -2281,6 +2281,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // set up, authorised or created - asks purchase anywhere, like 'Set up direct debit'.
     // #677 round 3 (cu-developer-three 12:47Z): allow / enable / turn on / activate too.
     // An older 'authorize' permission stays beside it (D-108: never lower).
+    // CU-403 (cu-verifier 23:42Z live): an IDE's 'Sync Changes' pushes local commits like 'Push' does, so it asks submit as Push
+    // does - 'Sync changes', 'Sync commits', 'Sync branch' as the control's name, with an optional count / arrow suffix
+    // ('Sync Changes 1↓ 2↑'). A bare 'Sync' (calendars, files) stays as it was.
+    if (grammarEligible && !classes.includes('submit') && /^\s*sync\s+(?:changes|commits?|branch|repository|repo)(?:\s+[\d\s↑↓]+)?\s*$/iu.test(name)) classes.push('submit')
     if (grammarEligible && !classes.includes('purchase') && /^\s*(?:set\s+up|authori[sz]e|create|start|allow|enable|turn\s+on|activate)\s+(?:an?\s+|the\s+)?(?:direct\s+debit|debit\s+mandate|automatic\s+(?:withdrawals?|debits?)|recurring\s+(?:withdrawals?|debits?))\s*$/i.test(name)) classes.push('purchase')
     // #680 round 3 (cu-researcher 13:02Z): on an exchange's wallet page - a whole /withdraw, /withdrawal(s), /wallet(s), /addresses or
     // /address-book segment of an http(s) URL - a bare 'Add to allowlist / whitelist' is the money redirect and asks credential; on a
