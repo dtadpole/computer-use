@@ -810,7 +810,19 @@ export function probeForms(name) {
   // A single all-caps word is an acronym or a field name ('IBAN'), not a shouted label: only a multi-word label takes sentence case.
   const sentence = letters.length >= 2 && letters === letters.toUpperCase() && /\p{L}\s+\S*\p{L}/u.test(joined) ? joined.toLowerCase().replace(/^(\s*\p{L})/u, (c) => c.toUpperCase()) : joined
   add(sentence)
-  for (const base of [text, joined, sentence]) for (const form of metaForms(base)) add(form)
+  // #846 r3 (cu-researcher 08:17Z: 'change direct deposit to Acme Bank' / 'CHANGE DIRECT DEPOSIT TO ACME BANK' free while the capitalised
+  // form asks): an all-lower-case multi-word name takes sentence case too, and both kinds take a Title Case form, so a tail's proper noun
+  // ('Acme Bank') reads as written.
+  const multi = /\p{L}\s+\S*\p{L}/u.test(joined)
+  const lower = multi && /^\s*\p{Ll}/u.test(joined) ? joined.replace(/^(\s*\p{L})/u, (c) => c.toUpperCase()) : ''
+  add(lower)
+  // Full Title Case only for a shouted (all-caps) name: a lower-case 'a record' stays the generic phrase (#846 r2).
+  const shouted = multi && letters.length >= 2 && letters === letters.toUpperCase()
+  const title = shouted ? joined.toLowerCase().replace(/(^|[\s/(-])(\p{L})/gu, (m, sep, c) => sep + c.toUpperCase()) : ''
+  add(title)
+  const titledTail = (shouted || lower) ? (lower || sentence).replace(/(\s(?:to|for|at|with|from|on)\s+)(.+)$/iu, (m, prep, tail) => prep + tail.replace(/(^|\s)(\p{L})/gu, (mm, sep, c) => sep + c.toUpperCase())) : ''
+  add(titledTail)
+  for (const base of [text, joined, sentence, lower, titledTail]) for (const form of metaForms(base)) add(form)
   return forms
 }
 /** #843 r3: every metadata-stripped form - the closed-list strip, then a generic tag stripped from the front only, the back only, and
