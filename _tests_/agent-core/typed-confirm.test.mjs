@@ -68,6 +68,15 @@ test('CU-585 r7: pass / give / assign it to a new admin or owner; clipboard and 
   assert.equal(press('Show password', ['Type DELETE to confirm']), press('Show password'), "a utility another rule classes keeps that class (main's credential)")
 })
 
+test('CU-585 r8: gerund typing words (author-found at r7)', () => {
+  assert.equal(press('Confirm', ['Confirm by typing DELETE']), 'delete')
+  assert.equal(press('Proceed', ['Confirm deletion by entering the project ID']), 'delete')
+  assert.equal(press('Done', ['Retyping the name deletes the bucket']), 'delete')
+  assert.equal(press('OK', ['Confirm the handover by typing the new owner handle']), 'permission')
+  assert.equal(press('Search', ['Start typing to search deleted items']), 'allow', 'a gerund followed by to is still a search box')
+  assert.equal(press('Save', ['Typing your name helps teammates']), 'allow')
+})
+
 test('CU-585: a typed confirmation of a transfer of ownership asks permission, not purchase', () => {
   assert.equal(press('Confirm', ['Type TRANSFER to move ownership']), 'permission')
   assert.equal(press('Continue', ['Enter the new owner\'s username']), 'permission')
