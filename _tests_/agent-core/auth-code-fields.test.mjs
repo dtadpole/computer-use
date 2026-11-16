@@ -23,3 +23,7 @@ test('CU-580 negatives: ordinary code boxes stay free', () => {
 test('#876 round 2 (cu-researcher 09:33Z): emergency and other last-resort codes', () => {
   for (const name of ['Emergency code', 'Rescue code', 'Fallback code', 'Master key', 'Break-glass code', 'Escrow key', 'Enrollment token', 'Transaction code', 'Admin PIN', 'Account key']) assert.notDeepEqual(typed(name), [], name)
 })
+
+test('#876 round 3 (cu-researcher 09:39Z): restore / override / bypass codes', () => {
+  for (const name of ['Restore code', 'Admin override code', 'Bypass code', 'Supervisor PIN', 'Wipe code', 'Transfer authorization code', 'Reactivation key']) assert.notDeepEqual(typed(name), [], name)
+})
