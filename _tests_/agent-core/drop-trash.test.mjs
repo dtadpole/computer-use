@@ -58,3 +58,8 @@ test('CU-385 follow-up: Russian trash / junk names (after the homoglyph fold) an
   for (const name of ['Удаленные', 'Удалённые', 'Корзина', 'Спам', 'Нежелательная почта', 'Удаленные письма', 'Корзина (4)', 'Borrados']) assert.ok(drop(name).includes('delete'), name)
   for (const name of ['Входящие', 'Удаленные сцены фильма', 'Корзина покупок']) assert.ok(!drop(name).includes('delete'), name)
 })
+
+test("CU-385 follow-up r2 (cu-developer-two 20:53Z): Outlook's Russian Deleted Items", () => {
+  for (const name of ['Удаленные элементы', 'Удалённые элементы', 'Удаленные элементы (2)']) assert.ok(drop(name).includes('delete'), name)
+  assert.ok(!drop('Элементы').includes('delete'))
+})
