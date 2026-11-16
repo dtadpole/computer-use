@@ -41,3 +41,11 @@ test("#843 round 2 (cu-researcher 02:01Z): ' ✓ Done' and a price after a bar k
     for (const tail of [' | $9.99', ' \u00b7 \u20ac5/mo']) for (const cls of want) assert.ok(classesOf(`${base}${tail}`).includes(cls), `${base}${tail}: ${cls}`)
   }
 })
+
+test('#843 round 3 (cu-researcher 02:23Z): any separator glyph and any 1-4 word tag, either side, or a bracketed tag', () => {
+  for (const base of ['Change IBAN', 'Delete account', 'Open RDP', 'Review and confirm withdrawal']) {
+    const want = classesOf(base)
+    for (const form of [`Gold \u00b7 ${base}`, `Team \u2022 ${base}`, `(Admin) ${base}`, `${base} \u2219 Admins only`, `${base} \u2027 Team plan`, `${base} \u22c5 Owner`, `${base} (Admin)`, `Enterprise plan | ${base}`]) for (const cls of want) assert.ok(classesOf(form).includes(cls), `${form}: ${cls}`)
+  }
+  for (const name of ['Gold \u00b7 Plans', 'Team \u2022 Overview', 'Settings \u2219 Admins only', '$10 - $20']) assert.deepEqual(classesOf(name), [], name)
+})

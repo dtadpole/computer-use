@@ -790,12 +790,29 @@ const TRAILING_BADGE = /(?:\s+(?:new|beta|preview|updated|hot)!?)+\s*$/i
 // CU-565 widened (cu-researcher 01:57Z): the LEADING side of the same root - a list number ('1. ', '2) '), a bracketed badge ('[Beta] ',
 // '(New) ') or a plan tag with a separator ('Pro · ', 'New: ') before the row.
 const LEADING_META = /^\s*(?:\d{1,2}[.)]\s+|[\[(](?:beta|new|pro|premium|plus|free|preview|recommended|popular)[\])]\s*|(?:pro|premium|plus|beta|new|free|preview)\s*[\u00b7\u2022|:\u2013\u2014-]\s+)+/i
+// #843 r3 (cu-researcher 02:23Z): the probe form is generic - any dot / bullet / bar / dash separator and any 1-4 word tag on either side,
+// or a bracketed tag ('Gold · ', 'Team • ', '(Admin) ', ' ∙ Admins only', ' (Admin)'). Safe because the policy judges the name both ways
+// and the stricter verdict wins; the canonical strip keeps the closed list above.
+const META_SEP = '[\\u00b7\\u2022\\u2219\\u2027\\u22c5\\u2981\\u25cf\\u25e6\\u2043\\u30fb|\\u2013\\u2014:-]'
+const GENERIC_LEAD = new RegExp(`^\\s*(?:[\\[(][^\\[\\]()]{1,30}[\\])]\\s*|(?:[^\\s\\u00b7\\u2022\\u2219\\u2027\\u22c5|:]+\\s+){0,3}[^\\s\\u00b7\\u2022\\u2219\\u2027\\u22c5|:]+\\s*${META_SEP}\\s+)`, 'u')
+const GENERIC_TAIL = new RegExp(`(?:\\s+${META_SEP}\\s*(?:[^\\s]+\\s*){1,4}|\\s+[\\[(][^\\[\\]()]{1,30}[\\])])\\s*$`, 'u')
 /** CU-565: the name without a leading list number, bracketed badge or plan tag, or a trailing metadata segment ('' when there is none). */
 export function metaStripped(name) {
+  return metaForms(name)[0] ?? ''
+}
+/** #843 r3: every metadata-stripped form - the closed-list strip, then a generic tag stripped from the front only, the back only, and
+ * both (a 'X · Y' name may carry its tag on either side). A form without a letter ('$10 - $20') is not a form. */
+export function metaForms(name) {
   const text = String(name ?? '')
-  const out = text.replace(LEADING_META, '').replace(TRAILING_META, '').trim()
-  // A price range or a bare amount ('$10 - $20') is not a row with a tail: no letter, no form (cu-researcher 00:51Z's filters stay free).
-  return out !== '' && out !== text.trim() && /\p{L}/u.test(out) ? out : ''
+  const forms = []
+  const add = (form) => { const f = String(form ?? '').trim(); if (f !== '' && f !== text.trim() && /\p{L}/u.test(f) && !forms.includes(f)) forms.push(f) }
+  const base = text.replace(LEADING_META, '').replace(TRAILING_META, '').trim()
+  add(base)
+  const strip = (from, re) => { let out = from; for (let i = 0; i < 3; i++) { const next = out.replace(re, '').trim(); if (next === out || !/\p{L}/u.test(next)) break; out = next } return out }
+  const lead = strip(base, GENERIC_LEAD)
+  const tail = strip(base, GENERIC_TAIL)
+  add(lead); add(tail); add(strip(lead, GENERIC_TAIL))
+  return forms
 }
 const TRAILING_META = /(?:\s*[\u2713\u2714\u2705]\s*(?:done|added|saved|on|enabled|active|selected|completed|verified|ready)|\s+[\u00b7\u2022|\u2013\u2014-]\s*(?:pro|free|premium|plus|recommended|popular|best\s+value|new|beta|\d+\s*(?:s|secs?|seconds?|m|mins?|minutes?|h|hrs?|hours?|d|days?)(?:\s+ago)?|[$\u20ac\u00a3\u00a5]\s?\d[\d,.]*(?:\s*\/\s*(?:mo|month|yr|year|wk|week))?))+\s*$/i
 // #825 r3 (cu-coordinator 08:21Z): a parenthesis glued to a word is part of the word - '401(k)', '403(b)' - never a trailing note, so the

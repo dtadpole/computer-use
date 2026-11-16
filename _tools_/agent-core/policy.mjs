@@ -3,7 +3,7 @@ import { normaliseForPolicy, normaliseText } from './normalise.mjs'
 import { BIP39_ENGLISH } from './bip39-english.mjs'
 import { normalizeKey } from './keys.mjs'
 import { originPattern } from './sites.mjs'
-import { amountClass, canonicalForms, clauseSplit, clauseVerbLed, grammarClasses, grammarClassesBase, inertLinkAmountClass, metaStripped, quantifierDropped, questionStripped, sectionLabelStripped, straightQuotes, synonymForms, toggleExpansion } from './phrase-grammar.mjs'
+import { amountClass, canonicalForms, clauseSplit, clauseVerbLed, grammarClasses, grammarClassesBase, inertLinkAmountClass, metaForms, quantifierDropped, questionStripped, sectionLabelStripped, straightQuotes, synonymForms, toggleExpansion } from './phrase-grammar.mjs'
 
 /**
  * The action policy (design: action-policy.md, consent-gate.md). `classify` runs in the dispatcher for every action,
@@ -1191,17 +1191,15 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const name = typeof target?.name === 'string' ? straightQuotes(target.name) : (target?.name ?? '')
     // CU-565 widened (cu-researcher 01:57Z, 02:01Z): a leading list number, bracketed badge or plan tag ('1. ', '[Beta] ', 'Pro · ') or a
     // trailing metadata segment (' | $9.99', ' ✓ Done') never frees a row - every rule also judges the name without it, and the stricter verdict wins (block, then handoff, then the union of asks).
-    const leadBare = typeof name === 'string' && context.leadMetaProbe !== true ? metaStripped(name) : ''
-    if (leadBare !== '') {
-      const own = classify(rawAction, { ...rawContext, leadMetaProbe: true })
-      const bare = classify(rawAction, { ...rawContext, target: { ...(rawContext.target ?? {}), name: leadBare }, leadMetaProbe: true })
-      for (const kind of ['block', 'handoff']) { if (own.decision === kind) return own; if (bare.decision === kind) return bare }
-      if (own.decision === 'confirm' && bare.decision === 'confirm') {
-        const union = [...new Set([...(own.classes ?? [own.class]), ...(bare.classes ?? [bare.class])])]
-        return { ...own, classes: union }
-      }
-      if (bare.decision === 'confirm') return bare
-      return own
+    const extraForms = typeof name === 'string' && context.leadMetaProbe !== true ? metaForms(name) : []
+    if (extraForms.length > 0) {
+      const verdicts = [classify(rawAction, { ...rawContext, leadMetaProbe: true }), ...extraForms.map((form) => classify(rawAction, { ...rawContext, target: { ...(rawContext.target ?? {}), name: form }, leadMetaProbe: true }))]
+      const own = verdicts[0]
+      for (const kind of ['block', 'handoff']) { const hit = verdicts.find((v) => v.decision === kind); if (hit) return hit }
+      const asking = verdicts.filter((v) => v.decision === 'confirm')
+      if (asking.length === 0) return own
+      const first = own.decision === 'confirm' ? own : asking[0]
+      return { ...first, classes: [...new Set(asking.flatMap((v) => v.classes ?? [v.class]))] }
     }
     const classes = []
     // CU-271 (cu-coordinator's ruling): a web terminal runs every line it is given, so a key or text into it - typed, a
