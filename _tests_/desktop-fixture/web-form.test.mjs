@@ -13,20 +13,27 @@ before(() => {
   executable = buildFixtureApp().executable
 })
 
-async function until(fixture, check, label) {
-  for (let i = 0; i < 100; i += 1) {
+// A deadline, not a count: the offscreen WKWebView's first load can take well over 5 s on a loaded Mac (cu-integrator's
+// gate, 11-12 Nov: timeouts at load 14-22 on PRs that never touch the page), so the page load gets PAGE_LOAD_MS, as the
+// other fixture waits do, and each later step STEP_MS. Polls every 50 ms either way.
+const PAGE_LOAD_MS = 20_000
+const STEP_MS = 5_000
+
+async function until(fixture, check, label, budgetMs = STEP_MS) {
+  const deadline = Date.now() + budgetMs
+  for (;;) {
     const state = await fixture.state()
     if (check(state)) return state
+    if (Date.now() >= deadline) throw new Error(`timed out waiting for ${label} (${budgetMs} ms)`)
     await new Promise((resolve) => setTimeout(resolve, 50))
   }
-  throw new Error(`timed out waiting for ${label}`)
 }
 
 async function withForm(variant, body) {
   const fixture = await launchFixture(executable, { offscreen: true })
   try {
     await fixture.open('web-form', { title: 'Account', ...(variant === undefined ? {} : { variant }) })
-    await until(fixture, (state) => state.fields.webFormLoaded === true, 'the page to load')
+    await until(fixture, (state) => state.fields.webFormLoaded === true, 'the page to load', PAGE_LOAD_MS)
     return await body(fixture)
   } finally {
     await fixture.close()

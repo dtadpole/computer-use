@@ -669,8 +669,8 @@ class BrowserEnvironment {
 
   /**
    * CU-370: a key that chooses is judged by what it chooses (keyChoice): a native select's option, the radio an arrow
-   * checks, the ARIA listbox/combobox option it moves to or commits - described, with selectOption: true (an option) or
-   * radioChoice: true (a radio); a choice that cannot be read returns the focus with optionUnread: true. undefined when
+   * checks, the ARIA listbox/combobox option it moves to or commits - described, with selectOption: true (a radio also
+   * carries radioChoice: true); a choice that cannot be read returns the focus with optionUnread: true. undefined when
    * the key chooses nothing - the caller falls back to the focus. A throw means a failed read (the caller asks). The focus is read in the page's world through open
    * shadow roots and same-origin frames (deepActiveElement); a cross-site frame's select is a named limit.
    */

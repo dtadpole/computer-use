@@ -383,6 +383,14 @@ async function holdDesktopRun(acquire, { seat, runId, noInput = false, confirmWi
   // CU-204: the lock's record of this seat's last input, best effort - a missed note can only make a later run inside
   // the hold refuse (the safe side), never admit one.
   release.noteInput = typeof slot.noteInput === 'function' ? () => { try { slot.noteInput() } catch { /* best effort */ } } : () => {}
+  // Idle (A): the run's own entry learns whether the local-input pause is armed and when the person last touched the
+  // Mac while it was, so the lock judges an armed run's owner idle from the run's own record, not from HIDIdleTime
+  // (which a run's own synthetic input resets). Best effort and optional: a lock without mark() (older code, a seam)
+  // keeps judging as before.
+  // run-lock's mark() is async (it takes the lock's mutex): its rejection is swallowed too, never left unhandled.
+  release.mark = typeof slot.mark === 'function'
+    ? (patch) => { try { Promise.resolve(slot.mark(patch)).catch(() => {}) } catch { /* best effort */ } }
+    : () => {}
   return release
 }
 
@@ -640,7 +648,14 @@ function defaultButtonOf(value) {
   if (role === null) return null
   // CU-409: the default button's form context too, so Return is judged by the click's classifier with it (D-106).
   const form = formContextOf(value.formContext)
-  return { role, name: text(value.title), panel: panelOf(value.panel), ...(form !== null ? { formContext: form } : {}) }
+  // CU-507 (helper 0.2.70): the default button's dialog words too, so Return on a sheet's default 'OK' is judged by
+  // what the sheet asks, like a click on it (D-106).
+  const dialogName = dialogTextOf(value.dialogName)
+  const dialogDescription = dialogTextOf(value.dialogDescription)
+  return {
+    role, name: text(value.title), panel: panelOf(value.panel), ...(form !== null ? { formContext: form } : {}),
+    ...(dialogName !== null ? { dialogName } : {}), ...(dialogDescription !== null ? { dialogDescription } : {}),
+  }
 }
 
 /**
@@ -767,6 +782,17 @@ export function placeholderOf(value) {
   if (typeof value !== 'string') return null
   const text = value.trim()
   return text !== '' && text.length <= 80 ? text : null
+}
+
+/**
+ * CU-507 (helper 0.2.70): a dialog's words as the helper read them for a button inside an AXSheet or a dialog window
+ * (DialogText) - whitespace collapsed, trimmed, at most 300 characters, no control characters; else null. The same seam
+ * as the web route's target.dialogName / dialogDescription, which agent core reads beside a generic confirm control.
+ */
+export function dialogTextOf(value) {
+  if (typeof value !== 'string') return null
+  const text = value.replace(/[\u0000-\u001F\u007F]/gu, ' ').replace(/\s+/gu, ' ').trim()
+  return text === '' ? null : text.slice(0, 300)
 }
 
 function keyEquivalentOf(value) {
@@ -1026,6 +1052,9 @@ class DesktopEnvironment {
   #unsubscribeControl = null
   #releaseRun
   #noteInput
+  #markRun
+  // Idle (A): true while the run's lock entry says the pause is armed through the event tap (marked, not yet cleared).
+  #markedArmed = false
   #exclusions
   /** Scope changes run one at a time, so each sends the union of every approval before it (see `addApp`). */
   #scopeQueue = Promise.resolve()
@@ -1076,6 +1105,7 @@ class DesktopEnvironment {
     this.limits = limits
     this.#releaseRun = releaseRun ?? (() => {})
     this.#noteInput = typeof releaseRun?.noteInput === 'function' ? releaseRun.noteInput : () => {}
+    this.#markRun = typeof releaseRun?.mark === 'function' ? releaseRun.mark : () => {}
     this.#exclusions = exclusions
     this.run = Object.freeze({ seat: run?.seat ?? null, runId: run?.runId ?? null })
     this.simulateScale = simulateScale
@@ -1150,6 +1180,12 @@ class DesktopEnvironment {
     this.frame = this.#launchFrame()
     const armed = await this.link.request('pauseOnLocalInput', { on: true })
     this.pauseArmed = armed.armed === true
+    // Idle (A): only an event-tap guard sees every key and click as the person's, so only then may the lock judge the
+    // owner's idle from this run's record (the settled contract, 16:30Z); an idle-counter-only arm leaves HIDIdleTime.
+    if (this.pauseArmed && Array.isArray(armed.via) && armed.via.includes('eventTap')) {
+      this.#markedArmed = true
+      this.#markRun({ armed: true })
+    }
     if (!this.pauseArmed && this.mode === 'global') {
       throw new EnvironmentError('blocked_by_policy', 'the local-input pause could not be armed, and global input never runs without it (D-024)', { reason: 'pause_not_armed' })
     }
@@ -1467,6 +1503,8 @@ class DesktopEnvironment {
   #onLost(reason) {
     if (this.lostReason !== null) return
     this.lostReason = reason
+    // Idle (A): a lost helper's event tap is gone with it, so the run's entry no longer claims an armed pause.
+    this.#clearArmedMark()
     // The helper exits after `bye`; that end is the close this driver asked for, not a crash.
     if (this.closing) return
     this.#events.emit('crash', { code: 'helper_lost', reason })
@@ -1485,6 +1523,8 @@ class DesktopEnvironment {
    * decides (past the cap, `local_input` at step 0 pauses through `#localInputAnswer`).
    */
   #onLocalInput(payload) {
+    // Idle (A): every event is the person at the Mac, a settle's included, so the run's entry records it while armed.
+    this.#stampOwnerInput(typeof payload?.at === 'string' ? payload.at : null)
     if (this.#settling > 0) {
       this.#settleLocalInputs += 1
       return
@@ -1502,7 +1542,22 @@ class DesktopEnvironment {
    */
   #localInputAnswer(error) {
     if (error?.details?.reason !== 'local_input' || this.localInputAt !== null) return
+    this.#stampOwnerInput(null)
     this.#stopForLocalInput(new Date().toISOString(), null)
+  }
+
+  /** Idle (A): the run's lock entry no longer claims an armed pause (once; best effort). */
+  #clearArmedMark() {
+    if (!this.#markedArmed) return
+    this.#markedArmed = false
+    this.#markRun({ armed: false })
+  }
+
+  /** Idle (A): the person's last input while the pause is armed, as epoch ms in the run's lock entry (best effort). */
+  #stampOwnerInput(at) {
+    if (!this.#markedArmed) return
+    const ms = at === null ? NaN : Date.parse(at)
+    this.#markRun({ lastOwnerInputAt: Number.isFinite(ms) ? ms : Date.now() })
   }
 
   /** The stop, the pause request and the listeners' report of one local input, at `at`, of `kind` (or null). */
@@ -1920,6 +1975,9 @@ class DesktopEnvironment {
       // core reads as unread and refuses in a browser (#204: 'absent means unread' - never null, which a strict check
       // could take for a read). Outside the fingerprint, never in run records.
       ...(typeof element.inWebArea === 'boolean' ? { inWebArea: element.inWebArea } : {}),
+      // CU-418 (b) (helper 0.2.70): a checkbox, switch or radio button's state before the action - true, false or
+      // 'mixed' as the helper read its AXValue; absent from an older helper or another role. Outside the fingerprint.
+      ...(element.checked === true || element.checked === false || element.checked === 'mixed' ? { checked: element.checked } : {}),
       // CU-76: part of a system privacy or permission prompt (the helper's, from structure); agent core hands it off.
       systemPrompt: element.systemPrompt === true,
       // CU-154: a menu item's key equivalent ({ char, modifiers }), so agent core knows Copy, Cut and Paste by the
@@ -1942,6 +2000,11 @@ class DesktopEnvironment {
       // 'Sell' or 'Long'. Present only when the helper found a form with a selected text or an amount entry; outside the
       // fingerprint, and never in run records.
       ...(formContextOf(element.formContext) !== null ? { formContext: formContextOf(element.formContext) } : {}),
+      // CU-507 (helper 0.2.70): a button inside a sheet or dialog - the dialog's title (else first static text) and next
+      // static text (dialogTextOf), the seam agent core reads beside a generic 'OK' / 'Continue'. Each present only when
+      // read; outside the fingerprint, and never in run records.
+      ...(dialogTextOf(element.dialogName) !== null ? { dialogName: dialogTextOf(element.dialogName) } : {}),
+      ...(dialogTextOf(element.dialogDescription) !== null ? { dialogDescription: dialogTextOf(element.dialogDescription) } : {}),
       menuPath: menuPathOf(element.menuPath),
       // CU-187: the label that captions a non-entry element (AXTitleUIElement's title, else its row's or cell's sibling
       // title, as the helper reads it) - never its value or its own title. A string of at most 80 characters, null when
@@ -2300,6 +2363,8 @@ class DesktopEnvironment {
       this.link.close()
       await this.server?.close()
     } finally {
+      // Idle (A): the helper is gone or going, so its pause is no longer armed; recorded before the lock is released.
+      this.#clearArmedMark()
       this.#releaseRun()
     }
   }

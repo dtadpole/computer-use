@@ -761,7 +761,7 @@ const CONFIRM_PREFIX = /^\s*(?:(?:yes(?:\s+please)?|ok|okay|sure|confirm|continu
 // 'let's', 'go ahead and', 'I want to'.
 // cu-researcher 05:02Z: trailing qualifiers too - 'anyway', 'instantly', 'on this device', 'for me', 'here', 'too', 'again'.
 // #630 round 2: a trailing ', please' too ('Add time, please').
-const TRAILING_QUALIFIER = /(?:\s*,\s*please|\s*[,\u2013\u2014-]\s*(?:yes,?\s+)?i(?:'m|\s+am)\s+(?:(?:really|absolutely|totally|completely|quite|very|fully|100\s?%)\s+)?(?:sure|certain|positive)|\s+(?:anyway|anyways|instantly|immediately|on\s+this\s+(?:device|computer|browser|phone)|for\s+me|here|too|again))+\s*[.!]?\s*$/i
+const TRAILING_QUALIFIER = /(?:\s*,\s*please|\s*[,\u2013\u2014-]\s*(?:yes,?\s+)?i(?:'m|\s+am)\s+(?:(?:really|absolutely|totally|completely|quite|very|fully|100\s?%)\s+)?(?:sure|certain|positive)|\s+(?:anyway|anyways|instead|instantly|immediately|today|right\s+away|on\s+this\s+(?:device|computer|browser|phone)|for\s+me|here|too|again))+\s*[.!]?\s*$/i
 // CU-508 (qualifier sweep): a trailing WIDENING qualifier - 'permanently', 'forever', 'for good', 'completely', 'for all users /
 // members / accounts', 'for everyone', 'on all (my) devices', 'everywhere', 'across all devices' - is stripped in a canonical form
 // (the trailing twin of CU-502's quantifier), so the row decides. Adds asks only.
@@ -775,13 +775,17 @@ export function widenedStripped(name) {
   return text !== first && /\s|^\p{L}{3,}$/u.test(text) ? [text] : []
 }
 // #630 round 2 (cu-researcher 05:22Z): "I'd like to" (the contraction), 'let us', 'kindly'.
-const CTA_LEAD_IN = /^\s*(?:please\s+|kindly\s+|(?:click|tap|press|select)\s+(?:here\s+)?to\s+|let(?:'|\u2019)?s\s+|let\s+us\s+|go\s+ahead\s+and\s+|i(?:\s+want|\s+would\s+like|(?:'|\u2019)d\s+like)\s+to\s+)+/iu
-const TRAILING_WRAP = /(?:\s*(?:right\s+now|now|please|\.{2,}|\u2026|!+|\((?:recommended|suggested|best\s+value)\)|[\u2192\u203a\u00bb>\u2794\u27f6\u279c\u27a1]|\p{Extended_Pictographic}|\uFE0F))+\s*$/iu
+const CTA_LEAD_IN = /^\s*(?:please\s+|kindly\s+|continue\s+to\s+(?=[a-z]+\s)|(?:click|tap|press|select)\s+(?:here\s+)?to\s+|let(?:'|\u2019)?s\s+|let\s+us\s+|go\s+ahead\s+and\s+|i(?:\s+want|\s+would\s+like|(?:'|\u2019)d\s+like)\s+to\s+)+/iu
+// CU-561 (High; cu-coordinator 08:36Z): ' instead' (in TRAILING_QUALIFIER) and the triangle / chevron arrows (▸ ▹ ▶ ► ❯ ‣) strip
+// like the other trailing wrappers, so no asking row is freed by them.
+const TRAILING_WRAP = /(?:\s*(?:right\s+now|now|please|\.{2,}|\u2026|!+|\((?:recommended|suggested|best\s+value)\)|[\u2192\u203a\u00bb>\u2794\u27f6\u279c\u27a1\u25b8\u25b9\u25b6\u25ba\u276f\u2023]|\p{Extended_Pictographic}|\uFE0F))+\s*$/iu
 // CU-473 (cu-researcher 02:15Z): a second line, a badge or a count after a ruled name - the first line of a multi-line name; a
 // sentence-case name followed by a capitalised second sentence ('Change direct deposit Takes effect immediately'); a trailing badge
 // ('New', 'Beta', 'Preview', 'Updated'); a trailing parenthetical ('(opens in a new window)', '(3)').
 const TRAILING_BADGE = /(?:\s+(?:new|beta|preview|updated|hot)!?)+\s*$/i
-const TRAILING_PAREN = /(?:\s*\([^()]{1,40}\))+\s*$/
+// #825 r3 (cu-coordinator 08:21Z): a parenthesis glued to a word is part of the word - '401(k)', '403(b)' - never a trailing note, so the
+// wrappers after it strip and the row still sees '401(k)'.
+const TRAILING_PAREN = /(?:\s*(?<![\p{L}\p{N}])\([^()]{1,40}\))+\s*$/u
 // #609 round 4 (cu-coordinator 02:35Z): an added leading name part - 'Action: ', 'Confirm action: ', 'Step 2: ', 'Step 2 of 3: '.
 const LEADING_PART = /^\s*(?:(?:confirm\s+)?action|step\s+\d+(?:\s+of\s+\d+)?)\s*[:\u2013\u2014-]\s*/i
 // #609 round 3 (cu-researcher 02:30Z): a trailing key hint ('Send \u2318\u23ce', 'Save \u2318S', 'Submit Ctrl+Enter').
@@ -906,7 +910,19 @@ export function sectionLabelStripped(name) {
   if (wrapped) forms.push(wrapped[1].trim())
   return forms
 }
+// CU-561: ' instead' stripped ALONE too (keeping the row's own trailing words) - 'Install now instead' is judged as 'Install now', not
+// only as the fully stripped 'Install'.
+function insteadStripped(name) {
+  const first = String(name ?? '').split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean)[0] ?? ''
+  const out = first.replace(/(?:\s+instead|\s*[\u25b8\u25b9\u25b6\u25ba\u276f\u2023\u203a\u00bb\u2192])+\s*[.!]?\s*$/iu, '').trim()
+  return out !== first ? out : ''
+}
 export function canonicalForms(name) {
+  const inst = insteadStripped(name)
+  if (inst !== '') return [...new Set([inst, ...canonicalForms(inst), ...canonicalFormsOf(name)])].filter((form) => form !== '' && form !== String(name ?? '').trim())
+  return canonicalFormsOf(name)
+}
+function canonicalFormsOf(name) {
   const unwrapped = canonicalConfirm(name)
   const cut = firstSentence(unwrapped)
   const bare = withoutDeterminers(unwrapped)
@@ -958,6 +974,20 @@ export function synonymForms(name) {
   const labelled = sectionLabelStripped(name)
   const last = [...quantified, ...quantified.map(withVerbSynonym), ...labelled, ...labelled.flatMap((f) => [f, ...canonicalForms(f)])]
   return [...new Set([...forms, ...last])].filter((form) => form !== '' && form !== own && !known.has(form))
+}
+
+/** CU-528 (High; cu-coordinator 22:21Z + 22:22Z addendum): a trailing '?' / '.' / '!' and the question lead-ins ('Are you sure you want
+ *  to <row>?', 'Really <row>?', 'Do you (really) want to <row>?') stripped, so the row decides; '' when nothing changes. policy.mjs runs
+ *  the whole classify on this form and UNIONS its classes (adds only, never lowers). */
+export function questionStripped(name) {
+  const first = String(name ?? '').split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean)[0] ?? ''
+  if (first === '' || first.length > 200) return ''
+  const led = first.replace(/^(?:are\s+you\s+(?:sure|certain)\s+(?:that\s+)?you\s+(?:want|wish)\s+to|do\s+you\s+(?:really\s+)?want\s+to|really)\s+(?=\S)/i, '')
+  // A real question stays a question ('Is this safe?', 'How do I reset my PIN?'): no strip after an interrogative lead word. An ellipsis
+  // ('More…', 'Export...') marks a menu item that opens a dialog, not sentence punctuation - never stripped.
+  if (led === first && /^(?:is|are|was|were|am|how|what|why|where|when|who|whom|whose|which|can|could|should|shall|would|will|does|do|did|have|has|may|might|must)\b/i.test(led)) return ''
+  const stripped = led.replace(/\s*(?:[?!]+|(?<!\.)\.)\s*$/u, '').trim()
+  return stripped !== '' && stripped !== first ? stripped : ''
 }
 
 /** #721 round 3 (cu-coordinator 18:51Z): curly apostrophes and quotes read as straight ones, so a typographic twin of a ruled row
@@ -1163,6 +1193,259 @@ function grammarClassesOf(name, role = '') {
   // CU-414's split (High; cu-coordinator 13:51Z): giving a meeting participant remote control hands over the owner's mouse and keyboard -
   // permission, like 'Allow remote control'. 'Request / Stop remote control' stay as they were.
   if (/^\s*(?:give|grant|hand\s+over|pass|share)\s+(?:remote\s+)?(?:control|mouse\s+and\s+keyboard(?:\s+control)?|keyboard\s+and\s+mouse(?:\s+control)?)(?:\s+to\s+[\w .'-]{1,40})?\s*$/i.test(raw)) return ['permission']
+  // CU-559 (High, money / fraud; cu-coordinator 08:06Z), table PR 52, whole verb families from r1. PERMISSION - change / update / edit /
+  // modify / replace / switch / set / designate / name / reassign (my / the / your) (primary / contingent / secondary) beneficiary /
+  // beneficiaries (percentages / allocation(s) / designation(s) / split / shares). PURCHASE - take (out) / request / apply for / start / get
+  // (a) loan from / against / on (my / your / the) 401(k) / 403(b) / 457 / TSP / IRA / retirement (account / plan / savings) / pension /
+  // life insurance (policy) / cash value; roll over / rollover / transfer / move (my / your / the) (401(k) / 403(b) / plan / funds /
+  // balance / retirement savings) to / into (a / an / my / a new) IRA / Roth (IRA) / new plan / another plan / 401(k); start / begin /
+  // request / initiate (a) rollover. DELETE, like 'Cancel policy' - surrender / lapse / let lapse / terminate (my / the / this / your)
+  // (life / insurance / whole life / term / annuity) policy / contract / annuity / coverage; let (the / my) policy lapse.
+  if (/^\s*(?:change|update|edit|modify|replace|switch|set|designate|name|reassign)\s+(?:my\s+|the\s+|your\s+|a\s+)?(?:new\s+)?(?:primary\s+|contingent\s+|secondary\s+)?beneficiar(?:y|ies)(?:\s+(?:percentages?|allocations?|designations?|split|shares?|information|info|details))?\s*$/i.test(raw)) return ['permission']
+  if (/^\s*(?:take(?:\s+out)?|request|apply\s+for|start|get|borrow)\s+(?:a\s+|an\s+)?(?:(?:new|hardship|personal|general(?:\s+purpose)?|residential|emergency|home)\s+)?loan\s+(?:from|against|on)\s+(?:my\s+|your\s+|the\s+)?(?:401\s*\(?k\)?|403\s*\(?b\)?|457|tsp|ira|retirement(?:\s+(?:account|plan|savings))?|pension|life\s+insurance(?:\s+policy)?|cash\s+value|policy)(?:\s+(?:now|please)|\s*(?:\u2026|\.{3}|\u2192|->|>))*\s*$|^\s*borrow\s+(?:from|against)\s+(?:my\s+|your\s+|the\s+)?(?:401\s*\(?k\)?|403\s*\(?b\)?|retirement(?:\s+(?:account|plan|savings))?|pension|policy|(?:whole\s+|term\s+)?life\s+insurance(?:\s+policy)?|cash\s+value)(?:\s+(?:now|please)|\s*(?:\u2026|\.{3}|\u2192|->|>))*\s*$|^\s*(?:roll\s+over|rollover|transfer|move)\s+(?:my\s+|your\s+|the\s+)?(?:(?:401\s*\(?k\)?|403\s*\(?b\)?|457|tsp|plan|funds|balance|retirement\s+savings|old\s+401\s*\(?k\)?)\s+)?(?:to|into)\s+(?:a\s+|an\s+|my\s+|a\s+new\s+)?(?:ira|roth(?:\s+ira)?|traditional\s+ira|new\s+plan|another\s+plan|401\s*\(?k\)?)(?:\s+(?:now|please)|\s*(?:\u2026|\.{3}|\u2192|->|>))*\s*$|^\s*(?:start|begin|request|initiate)\s+(?:a\s+|an\s+)?(?:ira\s+|401\s*\(?k\)?\s+)?rollover(?:\s+(?:now|please)|\s*(?:\u2026|\.{3}|\u2192|->|>))*\s*$/i.test(raw)) return ['purchase']
+  // CU-560 (High; folded into table PR 52 at cu-coordinator 08:21Z) - options-level synonyms, PERMISSION like 'Enable options trading':
+  // turn on / unlock / enable / activate / start / begin / get (the) options (trading / account / access / approval); start / begin
+  // trading options; upgrade / increase / raise / change / request / apply for / get (my / the / your) options (trading) level / tier /
+  // approval (N); request (options) level N (options). #825 r5 (cu-researcher 08:30Z): become eligible / get approved / apply / qualify /
+  // get access / sign up / enroll for options (trading / approval / access / level N).
+  if (/^\s*(?:turn\s+on|unlock|enable|activate|start|begin|get)\s+(?:the\s+)?options(?:\s+(?:trading|account|access|approval))?\s*$|^\s*(?:start|begin)\s+trading\s+options\s*$|^\s*(?:upgrade|increase|raise|change|request|apply\s+for|get)\s+(?:my\s+|the\s+|your\s+|an?\s+)?options\s+(?:trading\s+)?(?:level|tier|approval)(?:\s+\d)?\s*$|^\s*(?:request|get|apply\s+for)\s+(?:options\s+)?(?:level|tier)\s+\d(?:\s+options)?(?:\s+(?:trading|approval|access))?\s*$|^\s*(?:upgrade|move|switch)\s+to\s+(?:options\s+)?(?:level|tier)\s+\d(?:\s+options)?\s*$|^\s*(?:become\s+eligible|get\s+approved|be\s+approved|apply|qualify|get\s+access|sign\s+up|enroll|register)\s+(?:for|to\s+trade)\s+options(?:\s+(?:trading|approval|access|level\s+\d))?\s*$/i.test(raw)) return ['permission']
+  // #825 r2 (cu-developer-three 08:09Z): the plan as a modifier ('Take a 401(k) loan', 'Request a retirement loan') and a rolled-over object
+  // ('Roll over my IRA / 401(k) / old plan').
+  if (/^\s*(?:take(?:\s+out)?|request|apply\s+for|start|get)\s+(?:a\s+|an\s+|my\s+)?(?:new\s+)?(?:401\s*\(?k\)?|403\s*\(?b\)?|457|tsp|ira|roth(?:\s+ira)?|retirement|pension|policy|life\s+insurance)\s+loan(?:\s+(?:now|please)|\s*(?:\u2026|\.{3}|\u2192|->|>))*\s*$|^\s*(?:roll\s+over|rollover|transfer|move)\s+(?:my\s+|your\s+|the\s+|an?\s+)?(?:old\s+|former\s+|previous\s+)?(?:401\s*\(?k\)?|403\s*\(?b\)?|457|tsp|ira|roth(?:\s+ira)?|plan|retirement\s+(?:account|plan|savings)|pension)(?:\s+(?:now|please)|\s*(?:\u2026|\.{3}|\u2192|->|>))*\s*$/i.test(raw)) return ['purchase']
+  if (/^\s*(?:surrender|lapse|let\s+lapse|terminate)\s+(?:my\s+|the\s+|this\s+|your\s+)?(?:(?:life|insurance|whole\s+life|term(?:\s+life)?|universal\s+life|annuity)\s+){0,2}(?:policy|contract|annuity|coverage)\s*$|^\s*let\s+(?:the\s+|my\s+|this\s+)?(?:(?:life|insurance|term)\s+){0,2}(?:policy|coverage)\s+lapse\s*$/i.test(raw)) return ['delete']
+  // #821 r2 (cu-researcher 07:29Z; whole families per 06:51Z). CU-557: enable / turn on / activate / unlock / start / begin / apply for /
+  // start trading / begin trading (the) futures / derivatives / perpetual(s) / perpetual contracts / perps / CFDs / swaps / options (trading /
+  // wallet / account / contracts / access); open (a / an / my) futures / derivatives / margin / perpetual / CFD (trading) account. CU-558:
+  // download / request (a copy of) (all / everything) (of) (your / my / the / a) data / information / archive - 'get' only with a copy of /
+  // all / everything / your / my (a bare 'Get Info', 'Export data' stay free) /
+  // account data / personal data / data download / data archive / data export / everything you've shared; show / add / display / share /
+  // include / turn on / enable (my) (current) location / city / place to / on / in / with ... posts / profile / photos / stories;
+  // 'Show (my) location'.
+  if (/^\s*(?:enable|turn\s+on|activate|unlock|start|begin|apply\s+for|start\s+trading|begin\s+trading)\s+(?:the\s+)?(?:futures|derivatives?|perpetuals?|perpetual\s+contracts?|perps|cfds?|swaps)(?:\s+(?:trading|wallet|account|contracts?|access))?\s*$|^\s*open\s+(?:a\s+|an\s+|my\s+)?(?:futures|derivatives?|margin|perpetuals?|cfds?)\s+(?:trading\s+)?account\s*$|^\s*(?:download|request)\s+(?:a\s+cop(?:y|ies)\s+of\s+)?(?:(?:all|everything)\s+(?:of\s+)?)?(?:your\s+|my\s+|the\s+|a\s+)?(?:data|information|archive|account\s+data|personal\s+data|account\s+archive|data\s+(?:download|archive|export)|you'?ve\s+shared|everything\s+you'?ve\s+shared)\s*$|^\s*get\s+(?:a\s+cop(?:y|ies)\s+of\s+(?:(?:all|everything)\s+(?:of\s+)?)?(?:your\s+|my\s+|the\s+)?|(?:(?:all|everything)\s+(?:of\s+)?)(?:your\s+|my\s+)?|(?:your|my)\s+)(?:data|information|archive|account\s+data|personal\s+data|account\s+archive|data\s+(?:download|archive|export)|you'?ve\s+shared|everything\s+you'?ve\s+shared)\s*$|^\s*(?:show|add|display|share|include|turn\s+on|enable)\s+(?:my\s+)?(?:current\s+)?(?:location|city|place)\s+(?:to|on|in|with)\s+.{0,30}?\b(?:posts?|profile|photos?|stories|story)\s*$/i.test(raw)) return ['permission']
+  // #821 r3 (cu-researcher 07:44Z): 'Export' with all / everything / a copy of / your / my ('Export all data', 'Export a copy of everything
+  // you've shared'; a bare 'Export data' stays free, an older pin); 'Get a data download / archive / export'; 'Allow / Accept tags /
+  // tagging / mentions from anyone / everyone / the public / strangers / non-friends'. The bare location forms ('Show (my) location', 'Add
+  // (my) (current) location / city') are URL-bound in policy.mjs (#821 r4: a social page only - a map or calendar's 'Add location' exposes
+  // nothing).
+  if (/^\s*export\s+(?:a\s+cop(?:y|ies)\s+of\s+(?:(?:all|everything)\s+(?:of\s+)?)?(?:your\s+|my\s+|the\s+)?|(?:(?:all|everything)\s+(?:of\s+)?)(?:your\s+|my\s+)?|(?:your|my)\s+)(?:data|information|archive|account\s+data|personal\s+data|account\s+archive|data\s+(?:download|archive|export)|you'?ve\s+shared|everything\s+you'?ve\s+shared)\s*$|^\s*get\s+a\s+data\s+(?:download|archive|export)\s*$|^\s*(?:allow|accept|let\s+in)\s+(?:tags|tagging|mentions)\s+from\s+(?:anyone|everyone|the\s+public|strangers|non-friends|people\s+i\s+don'?t\s+know)\s*$/i.test(raw)) return ['permission']
+  // CU-558 (High, privacy; cu-coordinator 07:21Z), folded into table PR 51 - PERMISSION like 'Make account public' / 'Allow messages from
+  // everyone': download / export / request / get (a copy of) (all) (of) your / my information / data / account data / archive / account
+  // archive; show / share / add / display / turn on / enable (my) location on / in (my) posts / photos / stories / check-ins, location
+  // tagging (on posts); let / allow anyone / everyone / the public / strangers / non-friends / people (I don't know) (to) tag / mention /
+  // find / search for / look up / see (posts of) me.
+  if (/^\s*(?:download|export|request|get|save)\s+(?:a\s+cop(?:y|ies)\s+of\s+)?(?:all\s+)?(?:of\s+)?(?:your|my)\s+(?:information|info|data|account\s+data|archive|account\s+archive|personal\s+data)\s*$|^\s*(?:show|share|add|display|turn\s+on|enable|include)\s+(?:my\s+)?location\s+(?:on|in|with)\s+(?:my\s+|all\s+)?(?:posts|photos|stories|check-?ins|tweets|videos)\s*$|^\s*(?:turn\s+on|enable)\s+location\s+tagging(?:\s+(?:on|for)\s+(?:my\s+)?posts)?\s*$|^\s*(?:let|allow)\s+(?:anyone|everyone|the\s+public|strangers|non-friends|people(?:\s+i\s+don'?t\s+know)?)\s+(?:to\s+)?(?:tag|mention|find|search\s+for|look\s+up|see\s+posts\s+of|see)\s+me\s*$/i.test(raw)) return ['permission']
+  // CU-557 (High; cu-coordinator 06:36Z, class corrected 06:37Z), table PR 51 - PERMISSION like 'Enable options / margin trading' /
+  // 'Enable leverage': enable / turn on / activate / unlock / apply for / start (the) futures / derivatives / perpetuals / perps / CFDs /
+  // swaps (trading / account / access); open (a / an / my) futures / derivatives / perpetuals / CFD (trading) account.
+  if (/^\s*(?:enable|turn\s+on|activate|unlock|apply\s+for|start)\s+(?:the\s+)?(?:futures|derivatives?|perpetuals?|perps|cfds?|swaps)(?:\s+(?:trading|account|access))?\s*$|^\s*open\s+(?:a\s+|an\s+|my\s+)?(?:futures|derivatives?|perpetuals?|cfds?)\s+(?:trading\s+)?account\s*$/i.test(raw)) return ['permission']
+  // #814 r4 (cu-coordinator 06:51Z: 'the WHOLE verb family'): verb x object x tail. SUBMIT - unpublish / hide / block / disable /
+  // deactivate / suspend / shut down / take down / close / pause / lock (my / the / this / your) site / website / store / shop / blog
+  // (from visitors / the public / everyone / customers / search / all visitors) (offline / down); take / put / set (it / the site ...)
+  // offline / down; enable / turn on / activate / switch on / start / show (the) maintenance / coming soon / under construction / offline
+  // / password (protection) mode / page / screen. PERMISSION - disable / turn off / deactivate / switch off / exit / end / remove / stop /
+  // pause / leave / bypass / override (the) speed limit (mode / alerts) / speed limiter / curfew / driver (attention) monitoring / teen
+  // (driver) mode / profile / valet mode / profile / restricted (driving) mode / profile / geofence / driving restrictions / (teen / child /
+  // driver) monitoring; stop / end / pause monitoring (my / the) (teen / child / kid / driver('s)) (driving / location / trips / speed).
+  // #814 r5 (cu-researcher 07:22Z): 'bring / turn (the site) offline / down', 'tracking' beside 'monitoring', a two-part 'from search and
+  // visitors' tail.
+  if (/^\s*(?:unpublish|hide|block|disable|deactivate|suspend|shut\s+down|take\s+down|close|pause|lock)\s+(?:my\s+|the\s+|this\s+|your\s+|our\s+)?(?:entire\s+|whole\s+)?(?:site|website|store|shop|blog|storefront)(?:\s+from\s+(?:visitors|the\s+public|everyone|customers|search|all\s+visitors|the\s+internet)(?:\s+(?:and|or|&)\s+(?:visitors|the\s+public|everyone|customers|search|all\s+visitors|the\s+internet|search\s+engines))?)?(?:\s+(?:offline|down|temporarily))?\s*$|^\s*(?:take|put|set|bring|turn)\s+(?:it|my\s+(?:site|website|store|shop|blog)|the\s+(?:site|website|store|shop|blog)|this\s+(?:site|website|store|shop|blog)|(?:site|website|store|shop|blog))\s+(?:offline|down)\s*$|^\s*(?:enable|turn\s+on|activate|switch\s+on|start|show)\s+(?:the\s+|a\s+)?(?:maintenance|coming\s+soon|under\s+construction|offline|password(?:\s+protection)?)\s+(?:mode|page|screen)\s*$/i.test(raw)) return ['submit']
+  if (/^\s*(?:disable|turn\s+off|deactivate|switch\s+off|exit|end|remove|stop|pause|leave|bypass|override)\s+(?:the\s+|my\s+)?(?:speed\s+limit(?:\s+(?:mode|alerts?))?|speed\s+limiter|max(?:imum)?\s+speed(?:\s+limit)?|curfew|driver\s+(?:attention\s+)?monitoring|teen\s+(?:driver\s+)?(?:mode|profile)|valet\s+(?:mode|profile)|restricted\s+(?:driving\s+)?(?:mode|profile)|geofenc(?:e|ing)|driving\s+restrictions?|(?:teen|child|driver)\s+monitoring)\s*$|^\s*(?:stop|end|pause|disable|turn\s+off)\s+(?:monitoring|tracking)\s+(?:my\s+|the\s+|their\s+|his\s+|her\s+|our\s+|your\s+)?(?:(?:teen(?:ager)?|child|kid|driver)(?:'s|s|s')?\s*)?(?:driving|location|trips?|speed)?\s*$/i.test(raw) && !/^\s*(?:stop|end|pause|disable|turn\s+off)\s+(?:monitoring|tracking)\s*$/i.test(raw)) return ['permission']
+  // CU-555 (High, safety; cu-coordinator 06:21Z), folded into table PR 50 - a connected car's safeguards off, PERMISSION like 'Turn off
+  // speed alerts' / 'Turn off parental controls': disable / turn off / deactivate / switch off / exit (the) speed limit (mode / alerts) /
+  // speed limiter / curfew / driver monitoring / teen (driver) mode / valet mode / geofence. The switch forms are in policy.mjs.
+  // #814 r3 (cu-researcher 06:27Z): 'Set the site into maintenance', 'Hide my website from visitors', 'Enable coming soon page' (submit,
+  // above); 'Exit restricted driving profile', 'Stop monitoring my teen's driving' (permission). r4 (cu-researcher 06:38Z): 'Hide site from
+  // everyone', 'Enable maintenance page' (submit), 'Stop monitoring driving' (permission).
+  if (/^\s*(?:exit|disable|turn\s+off|deactivate|leave|end)\s+(?:the\s+)?(?:restricted|teen|valet|guest|supervised)\s+(?:driving\s+|driver\s+)?(?:profile|mode)\s*$|^\s*(?:stop|end|pause)\s+monitoring\s+(?:my\s+|the\s+)?(?:(?:teen(?:ager)?|child|kid|driver)(?:'s|s|s')?(?:\s+(?:driving|location|trips?))?|driving|location|trips?)\s*$/i.test(raw)) return ['permission']
+  if (/^\s*(?:disable|turn\s+off|deactivate|switch\s+off|exit|end|remove)\s+(?:the\s+)?(?:speed\s+limit(?:\s+mode)?|speed\s+limiter|max(?:imum)?\s+speed\s+limit|curfew|driver\s+monitoring|driver\s+attention\s+monitoring|teen\s+(?:driver\s+)?mode|valet\s+mode|geofenc(?:e|ing)|driving\s+restrictions?)\s*$/i.test(raw)) return ['permission']
+  // CU-554 (High; cu-coordinator 06:06Z), table PR 50 - taking a site down, SUBMIT: unpublish (the / this / my) site / website / store /
+  // shop / blog; take (the / this / my) site / website / store / shop / blog offline / down; enable / turn on / activate / switch to
+  // maintenance mode, put (the) site / store into maintenance mode; disable / deactivate / suspend / shut down (the / this / my) site /
+  // website / store / shop / blog. The switch forms are in policy.mjs.
+  if (/^\s*unpublish\s+(?:the\s+|this\s+|my\s+|your\s+)?(?:site|website|store|shop|blog)\s*$|^\s*take\s+(?:the\s+|this\s+|my\s+|your\s+)?(?:site|website|store|shop|blog)\s+(?:offline|down)\s*$|^\s*(?:enable|turn\s+on|activate|switch\s+(?:on|to))\s+(?:the\s+)?maintenance\s+mode\s*$|^\s*(?:put|set|place|switch)\s+(?:the\s+|this\s+|my\s+)?(?:site|website|store|shop|blog)\s+(?:in|into|to)\s+maintenance(?:\s+mode)?\s*$|^\s*(?:hide|block)\s+(?:my\s+|the\s+|this\s+|your\s+)?(?:site|website|store|shop|blog)(?:\s+from\s+(?:visitors|the\s+public|everyone|customers|all\s+visitors))?\s*$|^\s*(?:enable|turn\s+on|activate|switch\s+on)\s+(?:the\s+|a\s+)?(?:coming\s+soon|under\s+construction|maintenance)\s+(?:page|mode|screen)\s*$|^\s*(?:disable|deactivate|suspend|shut\s+down)\s+(?:the\s+|this\s+|my\s+|your\s+)?(?:site|website|store|shop|blog)\s*$/i.test(raw)) return ['submit']
+  // CU-552 (High, health data; cu-coordinator 05:21Z), table PR 49 - PERMISSION for downloading / exporting / printing / sending (all) (my)
+  // medical / health records / summary / history / chart / data / visit notes / lab results. A bare 'Download all records' is URL-bound
+  // in policy.mjs (patient-portal pages), since 'records' alone names a CRM's rows too. #813 r4 (cu-verifier 06:31Z): send / email / save
+  // join the lab / test results family ('Email my lab results'). #813 r5 (cu-coordinator 06:36Z): '(after-)visit / discharge / appointment
+  // summary' joins it too ('Download visit summary' asks).
+  if (/^\s*(?:download|export|print|save|send|email)\s+(?:all\s+)?(?:of\s+)?(?:my\s+|your\s+|the\s+)?(?:full\s+|complete\s+)?(?:medical|health|patient|clinical)\s+(?:records?|summary|history|chart|data|information|file)\s*$|^\s*(?:download|export|print|send|email|e-mail|save)\s+(?:all\s+)?(?:of\s+)?(?:my\s+|your\s+|the\s+)?(?:lab\s+results|test\s+results|visit\s+notes|immunization\s+records?|health\s+summary|(?:after[-\s]?)?visit\s+summar(?:y|ies)|discharge\s+summary|appointment\s+summary)\s*$/i.test(raw)) return ['permission']
+  // CU-553 (High; cu-coordinator 05:21Z), table PR 49 - an HR system. DELETE, like 'Terminate employee': end (the / this / their)
+  // employment; dismiss / fire / let go (of) / lay off (this / the) employee / worker / staff member; process (the) termination; mark as
+  // terminated; start / begin / initiate offboarding. PERMISSION: promote (them / this employee) to manager; make (them) (a) manager /
+  // admin / supervisor. A bare 'Let go' / 'Dismiss' is URL-bound in policy.mjs (HR pages) - a dialog's 'Dismiss' stays free.
+  // #813 r2 (cu-developer-three 06:16Z): 'Terminate employment' (delete) and 'Promote employee' (permission).
+  // #813 r5 (cu-coordinator 06:51Z: 'the WHOLE verb family'): verb x object x tail. DELETE - terminate / fire / dismiss / separate /
+  // offboard / let go (of) / lay off / release / discharge (this / the) employee / worker / staff member / team member / contractor /
+  // person / individual / user / them (from the company / team / payroll / organization); (begin / start / initiate / process / complete
+  // / finalize / confirm / submit / review / approve) (the) termination / separation / offboarding / dismissal / layoff (process / request);
+  // '<anything> and terminate / offboard / separate / dismiss / fire'. PERMISSION - promote / elevate / upgrade / move / advance (them /
+  // this employee / the employee / this person) to (a / an) (people / team) lead / manager / admin / administrator / supervisor / director
+  // / vp / vice president / owner / head of X; health records - download / export / print / save / send / email / get / request / obtain
+  // (a copy of) (all) (of) (my / your / the) (full / complete) medical / health / patient / clinical records / chart / history / summary /
+  // data / file / information, lab / test results, visit notes, (after-)visit / discharge / appointment summary, immunization records,
+  // visit / appointment history (as a PDF / file / document / zip) (to my email / phone / device / computer).
+  if (/^\s*(?:terminate|fire|dismiss|separate|offboard|let\s+go(?:\s+of)?|lay\s+off|release|discharge)\s+(?:this\s+|the\s+|that\s+)?(?:employee|worker|staff\s+member|team\s+member|contractor|person|individual|user|them|him|her)(?:\s+from\s+(?:the\s+)?(?:company|team|payroll|organi[sz]ation|business))?\s*$|^\s*(?:begin|start|initiate|process|complete|finali[sz]e|confirm|submit|review|approve|run)\s+(?:the\s+|a\s+)?(?:termination|separation|offboarding|dismissal|layoff)(?:\s+(?:process|request|workflow))?\s*$|^\s*\S.{0,60}\band\s+(?:terminate|offboard|separate|dismiss|fire)(?:\s+(?:the\s+|this\s+)?(?:employee|employment|worker|person))?\s*$/i.test(raw) && !/^\s*(?:termination|separation|offboarding|dismissal|layoff)\s*$/i.test(raw)) return ['delete']
+  // #813 r6 (cu-developer-three 06:59Z): the object slot takes any pronoun or name - 'Promote her to manager', 'Promote Dana Lee to
+  // director', 'Make him an admin'; for move / upgrade only a pronoun or an employee object ('Move file to admin' stays free).
+  if (/^\s*(?:promote|elevate|advance)\s+(?:[\w.'-]+\s+){0,3}?to\s+(?:a\s+|an\s+)?(?:(?:people|team)\s+)?(?:lead|manager|admin|administrator|supervisor|director|vp|vice\s+president|owner|head\s+of\s+\w+)\s*$|^\s*(?:upgrade|move)\s+(?:them\s+|him\s+|her\s+|this\s+(?:employee|person|user)\s+|the\s+(?:employee|person|user)\s+)?to\s+(?:a\s+|an\s+)?(?:(?:people|team)\s+)?(?:lead|manager|admin|administrator|supervisor|director|vp|vice\s+president|owner|head\s+of\s+\w+)\s*$|^\s*make\s+(?:him|her|them|this\s+(?:employee|person|user))\s+(?:a\s+|an\s+)?(?:manager|admin|administrator|supervisor|director|owner|lead)\s*$|^\s*(?:download|export|print|save|send|email|e-mail|get|request|obtain)\s+(?:a\s+cop(?:y|ies)\s+of\s+)?(?:all\s+)?(?:of\s+)?(?:my\s+|your\s+|the\s+)?(?:full\s+|complete\s+)?(?:(?:medical|health|patient|clinical)\s+(?:records?|chart|history|summary|data|file|information)|chart|lab\s+results|test\s+results|visit\s+notes|(?:after[-\s]?)?visit\s+summar(?:y|ies)|discharge\s+summary|appointment\s+summary|immunization\s+records?|(?:visit|appointment)\s+history)(?:\s+as\s+(?:a\s+)?(?:pdf|file|document|zip))?(?:\s+to\s+(?:my\s+)?(?:email|phone|device|computer|inbox))?\s*$/i.test(raw) && !/^\s*send\s+(?:all\s+)?(?:of\s+)?(?:my\s+|your\s+|the\s+)?(?:lab|test)\s+results\s*$/i.test(raw)) return ['permission']
+  // #813 r3 (cu-researcher 06:26Z): 'Separate employee', 'Begin termination', 'Set last working day and terminate' (delete); 'Elevate to
+  // people lead' (permission); 'Get a copy of my chart', 'Save visit history as PDF' (permission, health records). r5 (cu-researcher
+  // 06:37Z): 'Separate this person', 'Review and terminate' (delete), 'Move to director' (permission).
+  if (/^\s*(?:separate|offboard)\s+(?:this\s+|the\s+)?(?:employee|worker|staff\s+member|team\s+member|contractor|person|individual|user)\s*$|^\s*(?:begin|start|initiate)\s+(?:the\s+|a\s+)?termination(?:\s+process)?\s*$|^\s*(?:set|enter|confirm|choose|review|approve|complete|sign)\b.{0,50}\band\s+terminate(?:\s+(?:the\s+)?(?:employee|employment))?\s*$/i.test(raw)) return ['delete']
+  if (/^\s*(?:elevate|promote|upgrade|move)\s+(?:them\s+|this\s+employee\s+|the\s+employee\s+)?to\s+(?:a\s+)?(?:people\s+)?(?:lead|manager|admin|administrator|supervisor|director|vp|vice\s+president|head\s+of\s+\w+)\s*$|^\s*(?:get|request|obtain|download)\s+(?:a\s+)?cop(?:y|ies)\s+of\s+(?:my\s+|your\s+|the\s+)?(?:chart|medical\s+records?|health\s+records?|records)\s*$|^\s*(?:save|export|download|print)\s+(?:my\s+|the\s+)?(?:visit|medical|health|appointment)\s+history(?:\s+as\s+(?:a\s+)?(?:pdf|file|document))?\s*$/i.test(raw)) return ['permission']
+  if (/^\s*(?:end|terminate)\s+(?:the\s+|this\s+|their\s+|his\s+|her\s+)?employment\s*$|^\s*(?:dismiss|fire|let\s+go(?:\s+of)?|lay\s+off)\s+(?:this\s+|the\s+)?(?:employee|worker|staff\s+member|team\s+member|contractor)\s*$|^\s*process\s+(?:the\s+|a\s+)?termination\s*$|^\s*mark\s+(?:as\s+)?terminated\s*$|^\s*(?:start|begin|initiate)\s+(?:the\s+)?offboarding\s*$/i.test(raw)) return ['delete']
+  if (/^\s*promote\s+(?:them\s+|this\s+employee\s+|the\s+employee\s+)?to\s+(?:a\s+)?(?:manager|admin|administrator|supervisor|team\s+lead|lead)\s*$|^\s*promote\s+(?:this\s+|the\s+)?(?:employee|worker|staff\s+member|team\s+member|user)\s*$|^\s*make\s+(?:them\s+|him\s+|her\s+|this\s+(?:employee|user|person)\s+)?(?:a\s+|an\s+)?(?:(?:people|team)\s+)?(?:manager|admin|administrator|supervisor|director|lead|vp)\s*$/i.test(raw)) return ['permission']
+  // CU-551 (High; cu-coordinator 05:06Z), table PR 48 - a repository's exposure. PERMISSION: change / set / make (the / this) (repository /
+  // repo) visibility to public, make (this / the) (repository / repo) public; the confirm 'I understand, change repository visibility'.
+  // SUBMIT: enable / turn on / publish (GitHub) Pages. Changing visibility to private stays free. #807 r2 (cu-researcher 05:18Z; ruled
+  // 05:21Z, fail-closed): the confirm's wrappers (ellipsis / please / now), 'I understand,' optional (so a bare 'Change repository
+  // visibility' asks), and 'Switch / Make / Set (the) (repository) (to) public'.
+  if (/^\s*(?:change|set|switch)\s+(?:the\s+|this\s+)?(?:repository\s+|repo\s+)?visibility\s+to\s+public\s*$|^\s*make\s+(?:this\s+|the\s+)?(?:repository|repo|project)\s+public\s*$|^\s*(?:i\s+understand,?\s+)?(?:please\s+)?(?:change|make)\s+(?:the\s+|this\s+)?(?:repository|repo)\s+(?:visibility|public)(?:\s+now)?\s*(?:\.{1,3}|\u2026|!)?\s*$|^\s*(?:switch|make|set)\s+(?:the\s+|this\s+)?(?:repository\s+|repo\s+)?(?:to\s+)?public\s*$/i.test(raw)) return ['permission']
+  if (/^\s*(?:enable|turn\s+on|publish|activate)\s+(?:github\s+|gitlab\s+)?pages(?:\s+site)?\s*$/i.test(raw)) return ['submit']
+  // CU-549 (High; cu-coordinator 04:51Z), table PR 47 - a router's exposure, PERMISSION like 'Open port' / 'Enable remote management':
+  // forward (a) port (N / range), add (a) port forward(ing) rule; allow / enable / turn on remote administration / admin / access /
+  // management (from WAN / the internet); make (the) network / Wi-Fi open / public, set Wi-Fi security to open; disable / turn off (the)
+  // client / AP / wireless isolation; enable / turn on WPS.
+  // #805 r2 (cu-researcher 05:05Z): 'Forward external port 3389 to this device', 'Turn on remote admin access'. #805 r3 (05:17Z): the
+  // forward target is any text, a dotted address included ('Forward ports 80 to 192.0.2.5').
+  if (/^\s*forward\s+(?:a\s+|the\s+|an\s+)?(?:external\s+|internal\s+|tcp\s+|udp\s+)?ports?(?:\s+\d{1,5}(?:\s*[-\u2013]\s*\d{1,5})?)?(?:\s+to\s+\S.{0,60})?\s*$|^\s*(?:allow|enable|turn\s+on|permit)\s+remote\s+admin(?:istration)?\s+(?:access|login|management)\s*$|^\s*add\s+(?:a\s+|new\s+)?port[-\s]+forward(?:ing)?(?:\s+rule)?\s*$|^\s*(?:allow|enable|turn\s+on|permit)\s+remote\s+(?:administration|admin|access|management)(?:\s+from\s+(?:wan|the\s+internet|anywhere))?\s*$|^\s*make\s+(?:the\s+|this\s+|my\s+)?(?:network|wi-?fi|wireless\s+network)\s+(?:open|public|unsecured)\s*$|^\s*set\s+(?:the\s+)?(?:wi-?fi\s+)?security\s+to\s+open\s*$|^\s*(?:disable|turn\s+off|switch\s+off)\s+(?:the\s+)?(?:client|ap|wireless|guest)\s+isolation\s*$|^\s*(?:enable|turn\s+on|activate)\s+wps\s*$/i.test(raw)) return ['permission']
+  // CU-550 (High; cu-coordinator 04:51Z), table PR 47 - a carrier account. PURCHASE: change / switch (my / your / this) plan; add (a / an /
+  // another / new) line; upgrade (my / your / this) device / phone. DELETE, like 'Cancel line': suspend (the / this / my) line(s); pause
+  // (my / the) service / line.
+  // #805 r2 (cu-researcher 05:05Z): 'Move to the Premium plan', 'Change to Unlimited plan' (a named plan with the word 'plan').
+  if (/^\s*(?:change|switch)\s+(?:my\s+|your\s+|this\s+|the\s+)?(?:plan|data\s+plan|phone\s+plan|rate\s+plan)s?\s*$|^\s*(?:change|switch|move|upgrade|downgrade)\s+to\s+(?:the\s+|a\s+)?\S+(?:\s+\S+){0,2}\s+plan\s*$|^\s*add\s+(?:a\s+|an\s+|another\s+|new\s+|a\s+new\s+)?(?:phone\s+)?line\s*$|^\s*upgrade\s+(?:my\s+|your\s+|this\s+|the\s+)?(?:device|phone)\s*$/i.test(raw)) return ['purchase']
+  if (/^\s*(?:temporarily\s+)?suspend\s+(?:the\s+|this\s+|my\s+)?(?:phone\s+)?(?:lines?|service)\s*$|^\s*(?:temporarily\s+)?pause\s+(?:my\s+|the\s+|this\s+)?(?:service|line|phone\s+service)\s*$/i.test(raw)) return ['delete']
+  // CU-548 (High; cu-coordinator 04:06Z), table PR 46 - life safety, PHYSICAL everywhere: turn off / disable / deactivate / silence /
+  // mute / hush / snooze (the) smoke / CO / carbon monoxide / fire (and CO) alarm / detector / sensor(s); turn off / disable / bypass (the)
+  // (water) leak sensor / detector / detection / alerts; turn off / disable / bypass (the) (automatic) (water) shutoff (valve); open (the)
+  // (main) water valve / supply / main. A bare 'Silence alarm' (an alarm clock) stays free; the switch forms are in policy.mjs.
+  // #798 r2 (cu-researcher 04:10Z): 'Turn on / Open (the) main water'; 'Turn off the water / flood detector'.
+  if (/^\s*(?:turn\s+off|switch\s+off|disable|deactivate|silence|mute|hush|snooze|dismiss)\s+(?:the\s+|all\s+)?(?:smoke|co|carbon\s+monoxide|fire|smoke\s+(?:and|&|\/)\s+co)\s+(?:alarms?|detectors?|sensors?)\s*$|^\s*(?:turn\s+off|switch\s+off|disable|deactivate|bypass)\s+(?:the\s+)?(?:water\s+leak|leak|water|flood)\s+(?:sensors?|detectors?|detection|alerts?)\s*$|^\s*(?:turn\s+off|switch\s+off|disable|deactivate|bypass)\s+(?:the\s+)?(?:automatic\s+|auto\s+)?(?:water\s+)?shut-?off(?:\s+valve)?\s*$|^\s*(?:open|turn\s+on)\s+(?:the\s+)?(?:main\s+)?water(?:\s+(?:valve|supply|main))?\s*$/i.test(raw)) return ['physical']
+  // CU-546 (High; cu-coordinator 03:51Z), table PR 45 - a seller's money and listings. PURCHASE: request (a / your / my) payout /
+  // withdrawal / disbursement; bulk edit / update / change (all) prices, bulk price edit / update; set (the / all) price(s) to $0 / 0 /
+  // zero / free; apply (a) deep discount - 50% to 100% off. DELETE: end / close / deactivate all (active / my) listings / items.
+  // #796 r2 (cu-researcher 04:09Z): the 'N% off' phrasings - 'Mark everything 75% off', 'Take 80% off all items' (50% to 100%).
+  // #796 r3 (cu-researcher / cu-developer-two 04:13Z): any 'mark / take / apply ... N% off', and 'N% off everything / all items /
+  // all listings'; a bare 'N% off' badge stays free.
+  if (/^\s*request\s+(?:a\s+|an\s+|your\s+|my\s+)?(?:payout|withdrawal|disbursement|transfer\s+to\s+bank)\s*$|^\s*bulk\s+(?:edit|update|change)\s+(?:all\s+)?(?:the\s+)?prices\s*$|^\s*bulk\s+price\s+(?:edit|update|change)s?\s*$|^\s*set\s+(?:the\s+|all\s+)?prices?\s+to\s+(?:\$\s*0(?:\.00)?|0(?:\.00)?|zero|free)\s*$|^\s*apply\s+(?:an?\s+)?(?:(?:[5-9]\d|100)\s*%|deep)\s+(?:off\s+)?discount\s*$|^\s*apply\s+(?:an?\s+)?(?:[5-9]\d|100)\s*%\s+off\s*$|^\s*(?:mark|set|put|price)\s+(?:everything|all(?:\s+(?:items|listings|products))?|the\s+(?:store|shop|catalog))\s+(?:at\s+)?(?:[5-9]\d|100)\s*%\s+off\s*$|^\s*(?:take|give|apply|knock)\s+(?:[5-9]\d|100)\s*%\s+off(?:\s+(?:of\s+)?(?:everything|all(?:\s+(?:items|listings|products))?|the\s+price|this\s+(?:item|listing|product)))?\s*$|^\s*(?:mark|take|apply|knock|give|set|price)\b.{0,40}?\b(?:[5-9]\d|100)\s*%\s+off\b.{0,40}$|^\s*(?:[5-9]\d|100)\s*%\s+off\s+(?:everything|all(?:\s+(?:items|listings|products))?)\s*$/i.test(raw)) return ['purchase']
+  if (/^\s*(?:end|close|deactivate)\s+all\s+(?:active\s+|my\s+|of\s+my\s+)?(?:listings|items|ads)\s*$/i.test(raw)) return ['delete']
+  // CU-545 (High; cu-coordinator 03:36Z), table PR 44 - a recovery kit / key carries the account's way back in, like 'Download recovery
+  // key' / 'Download emergency kit': CREDENTIAL for download / save / print / export / get (the / your / my) recovery kit / key / sheet /
+  // document (PDF), and save / print / export (the / your) recovery key.
+  if (/^\s*(?:download|save|print|export|get)\s+(?:the\s+|your\s+|my\s+|a\s+)?(?:account\s+)?recovery\s+(?:kit|key|sheet|document|file)(?:\s+(?:pdf|as\s+pdf|file))?\s*$/i.test(raw)) return ['credential']
+  // CU-544 (High; cu-coordinator 03:06Z), table PR 43 - a chat workspace's admin. PERMISSION: export (the / all) workspace data / messages /
+  // conversations / channels / history, export all messages; allow / enable / turn on external sharing. INSTALL: install / add (an / the /
+  // this) app / integration / bot to (the / this / your) workspace. Guest access is unioned in policy.mjs (an older class leads).
+  // #789 r3 (cu-researcher 03:17Z): 'Export (the) workspace', 'Export messages / message history', 'Download a full export of all channels'.
+  if (/^\s*export\s+(?:the\s+|all\s+)?(?:workspace|team|organization|org)\s+(?:data|messages|conversations|channels|history)\s*$|^\s*export\s+(?:the\s+|all\s+)?(?:workspace|messages|message\s+history|channels|conversations|chat\s+history)(?:\s+data)?\s*$|^\s*download\s+(?:a\s+|the\s+)?(?:full\s+|complete\s+)?(?:workspace\s+)?export(?:\s+of\s+\S.{0,40})?\s*$|^\s*export\s+all\s+(?:messages|conversations|channels|chats|workspace\s+data)\s*$|^\s*(?:allow|enable|turn\s+on|permit)\s+external\s+(?:sharing|channels|connections|access)\s*$/i.test(raw)) return ['permission']
+  if (/^\s*(?:install|add)\s+(?:an?\s+|the\s+|this\s+)?(?:app|application|integration|bot)\s+to\s+(?:the\s+|this\s+|your\s+|my\s+)?workspace\s*$/i.test(raw)) return ['install']
+  // CU-543 (High; cu-coordinator 02:36Z), table PR 42 - a kids / child profile's safeguards ask PERMISSION: turn off / disable / remove (the)
+  // profile PIN / lock / passcode; allow all maturity ratings / ratings / content; set (the) maturity (rating / level) to 18+ / adult / all /
+  // mature / R / TV-MA / unrestricted; turn off / disable (the) maturity / content filter / restrictions. 'Remove profile PIN / lock' keep
+  // their older delete (older classes lead) and gain nothing here. #786 r3 (cu-researcher 02:52Z): 'Allow all maturity levels', 'Show
+  // (titles of) all maturity levels' - #786 r4 (cu-researcher / cu-developer-two 02:58Z): 'titles of' is optional ('Show all maturity levels').
+  if (/^\s*(?:turn\s+off|disable|switch\s+off|deactivate)\s+(?:the\s+)?profile\s+(?:pin|lock|passcode|password)\s*$|^\s*allow\s+all\s+(?:maturity\s+)?(?:ratings|levels|content|titles)\s*$|^\s*(?:show|allow|display)\s+(?:(?:titles|content|shows|movies)\s+(?:of|from|for)\s+)?all\s+maturity\s+(?:levels|ratings)\s*$|^\s*(?:set|change)\s+(?:the\s+)?maturity(?:\s+(?:rating|level|setting))?\s+to\s+(?:18\+|adult|adults|all|mature|r|tv-ma|nc-17|unrestricted|everything)\s*$|^\s*(?:turn\s+off|disable|remove)\s+(?:the\s+)?(?:maturity|content)\s+(?:filter|filters|restrictions?|limits?)\s*$/i.test(raw)) return ['permission']
+  // CU-542 (High; cu-coordinator 02:21Z), table PR 41 - emergency help asks SUBMIT everywhere, like 'Call 911': (send / use / trigger)
+  // (an) emergency SOS / SOS; emergency assistance / help; contact / call / notify (the) emergency services; alert / notify / message (my)
+  // emergency contacts. A ride's 'Add stop' / 'Change destination' / 'Split fare' are URL-bound in policy.mjs (ride pages only).
+  if (/^\s*(?:(?:send|use|trigger|activate|start)\s+(?:an?\s+)?)?(?:emergency\s+)?sos(?:\s+(?:call|alert))?\s*$|^\s*(?:get\s+|request\s+)?emergency\s+(?:assistance|help)\s*$|^\s*(?:contact|call|notify|dial)\s+(?:the\s+|local\s+)?emergency\s+services\s*$|^\s*(?:alert|notify|message|text)\s+(?:my\s+|your\s+|all\s+)?emergency\s+contacts?\s*$/i.test(raw)) return ['submit']
+  // CU-540 (High; cu-coordinator 01:51Z), table PR 40 - a course site. SUBMIT: release / publish (the) grades (to students); change /
+  // override / edit (the / a / this) (final) grade(s), like 'Post grades'. PURCHASE: drop (the / this) course / class, like 'Withdraw
+  // from course'. PERMISSION: make (a / this) student a TA / teaching assistant / instructor, promote (a) student to TA.
+  // #780 r2 (cu-researcher 02:01Z): scores / marks / results as the grades' synonyms; a grader / instructor / TA role for a student or user.
+  if (/^\s*(?:release|publish)\s+(?:the\s+|all\s+)?(?:final\s+)?(?:grades|scores|marks|results)(?:\s+to\s+(?:the\s+)?students)?\s*$|^\s*(?:change|override|edit|update)\s+(?:the\s+|a\s+|this\s+)?(?:final\s+|student'?s?\s+)?grades?\s*$/i.test(raw)) return ['submit']
+  if (/^\s*drop\s+(?:the\s+|this\s+)?(?:course|class)\s*$/i.test(raw)) return ['purchase']
+  if (/^\s*make\s+(?:a\s+|the\s+|this\s+)?(?:student|user|learner|member)\s+(?:a\s+|an\s+)?(?:ta|teaching\s+assistant|instructor|co-?teacher|grader)\s*$|^\s*promote\s+(?:a\s+|the\s+|this\s+)?student\s+to\s+(?:ta|teaching\s+assistant|instructor)\s*$/i.test(raw)) return ['permission']
+  // CU-541 (High; cu-coordinator 01:51Z), table PR 40 - payroll. PURCHASE: (run / create / send / make) (an) off-cycle payment / payroll /
+  // run; change / update / edit (the / my / an employee's) tax withholding(s) / W-4 / W4; skip (this / the next) payroll / pay run.
+  if (/^\s*(?:(?:run|create|send|make|start|add)\s+(?:an?\s+)?)?off[-\s]cycle\s+(?:payment|payroll|run|pay\s+run)\s*$|^\s*(?:change|update|edit|modify|adjust)\s+(?:the\s+|my\s+|your\s+|employee'?s?\s+)?(?:federal\s+|state\s+)?(?:tax\s+withholdings?|withholdings?|w-?4)(?:\s+form)?\s*$|^\s*skip\s+(?:this\s+|the\s+(?:next\s+)?|next\s+)?(?:payroll|pay\s+run|pay\s+period)\s*$/i.test(raw)) return ['purchase']
+  // CU-538 (High; cu-coordinator 01:36Z), table PR 39 - accounting. PURCHASE: write off (an / the / this) invoice / bill / debt / balance,
+  // record / log / enter / apply (a / the) payment. SUBMIT: close (the) books / period / month / year. PERMISSION: reopen / unlock (the / a
+  // / this) (accounting / closed) period / month / year / books. DELETE: undo / reverse / unreconcile (the / this) reconciliation.
+  if (/^\s*write\s+off\s+(?:an?\s+|the\s+|this\s+)?(?:invoice|bill|debt|balance|bad\s+debt)s?\s*$|^\s*(?:record|log|enter|apply)\s+(?:a\s+|the\s+|this\s+)?(?:new\s+)?payment\s*$/i.test(raw)) return ['purchase']
+  if (/^\s*close\s+(?:the\s+)?(?:books|(?:accounting\s+)?period|month|year|fiscal\s+year)\s*$/i.test(raw)) return ['submit']
+  if (/^\s*(?:reopen|re-open|unlock)\s+(?:the\s+|a\s+|this\s+)?(?:accounting\s+|closed\s+)?(?:period|month|year|fiscal\s+year|books)\s*$/i.test(raw)) return ['permission']
+  // #778 r3 (cu-developer-two 01:42Z): the one-word 'Unreconcile' (an accounting app's literal button) and 'Unreconcile (this) transaction'.
+  if (/^\s*(?:undo|reverse|unreconcile)\s+(?:the\s+|this\s+)?reconciliation\s*$|^\s*unreconcile(?:\s+(?:the\s+|this\s+)?(?:transaction|entry|account|statement)s?)?\s*$/i.test(raw)) return ['delete']
+  // CU-539 (High; cu-coordinator 01:36Z), table PR 39 - CI/CD. SUBMIT: promote (this / the build / release) to production / prod / live.
+  // PERMISSION + SUBMIT: skip / bypass (the) deployment protection (rules). 'Add self-hosted runner' / 'Disable workflow' are URL-bound in
+  // policy.mjs (actions / workflows / runners / pipelines pages).
+  if (/^\s*promote\s+(?:this\s+|the\s+)?(?:build\s+|release\s+|deployment\s+)?to\s+(?:production|prod|live)\s*$/i.test(raw)) return ['submit']
+  // #778 r2 (cu-researcher 01:39Z): 'deployment' is optional when 'rules' says what it is ('Skip protection rules and deploy'); a bare
+  // 'Skip protection' (a checkout's insurance upsell) stays free.
+  if (/^\s*(?:skip|bypass|ignore|override)\s+(?:the\s+)?(?:deployment\s+protection(?:\s+rules?)?|(?:branch\s+|environment\s+)?protection\s+rules?)(?:\s+and\s+deploy(?:\s+now)?)?\s*$/i.test(raw)) return ['permission', 'submit']
+  // CU-537 (High; cu-coordinator 01:06Z), table PR 38 - registrar DNS. PERMISSION everywhere: add / create / new (a / an) typed record
+  // (MX, CNAME, TXT, NS, SRV, CAA, PTR, SPF, DKIM, DMARC, ALIAS; 'A' / 'AAAA' only in capitals, so 'Add a record' is not an A record);
+  // the generic 'Add / Edit / Save record' (DNS pages) and turning a domain's auto-renew off (domain / registrar pages; a subscription's
+  // 'Turn off auto-renew' stays free, CU-410) are URL-bound in policy.mjs.
+  if (/^\s*(?:add|create|new)\s+(?:an?\s+|new\s+)?(?:mx|cname|txt|ns|srv|caa|ptr|spf|dkim|dmarc|alias)\s+record\s*$/i.test(raw) || /^\s*(?:[Aa]dd|[Cc]reate|[Nn]ew)\s+(?:an?\s+|new\s+)?(?:A|AAAA)\s+[Rr]ecord\s*$/.test(raw)) return ['permission']
+  // CU-534 (High; cu-coordinator 00:51Z), table PR 37, as verb families with object synonyms - a calendar's exposure and wipe (CU-461's
+  // exposure family). PERMISSION: get / copy / show the public / secret / private (iCal) address (in iCal format); get / copy a
+  // shareable / share / public link to (the / this / your) calendar / <object> (the object tail on CU-462's row). DELETE: clear / empty
+  // (the / this / your) (entire) calendar, delete all (calendar) events.
+  if (/^\s*(?:get|copy|show|view|reveal)\s+(?:the\s+)?(?:public|secret|private)\s+(?:calendar\s+|ical\s+|ics\s+)?(?:address|url|link)(?:\s+in\s+(?:ical|ics)\s+format)?\s*$|^\s*(?:get|copy|create)\s+(?:a\s+|the\s+)?(?:shareable|share|public|sharing)\s+link\s+(?:to|for)\s+(?:the\s+|this\s+|your\s+|my\s+)?\S.{0,40}$/i.test(raw)) return ['permission']
+  if (/^\s*(?:clear|empty|wipe)\s+(?:the\s+|this\s+|your\s+|my\s+)?(?:entire\s+|whole\s+)?calendar\s*$|^\s*delete\s+all\s+(?:calendar\s+)?events\s*$/i.test(raw)) return ['delete']
+  // CU-535 (High; cu-coordinator 00:51Z), table PR 37 - a VPN's safeguards. PERMISSION: turn off / disable (the) kill switch; enable /
+  // turn on / use split tunneling; exclude apps / an app from (the) VPN; trust this / the network. CREDENTIAL: download / export (the)
+  // (VPN / WireGuard / OpenVPN) config(uration) (file / profile) - it carries the private key. 'Disconnect', 'Pause VPN' and 'Change
+  // server' stay free by design. #773 r3 (cu-researcher 01:11Z): 'Copy public calendar URL', 'Bypass VPN for this app', 'Add to trusted
+  // networks'.
+  if (/^\s*(?:turn\s+off|disable|deactivate|switch\s+off)\s+(?:the\s+)?(?:vpn\s+)?kill\s*switch\s*$|^\s*(?:enable|turn\s+on|use|activate)\s+split\s+tunnel(?:l?ing)?\s*$|^\s*exclude\s+(?:apps?|applications?|this\s+app|websites?|sites?)\s+from\s+(?:the\s+)?vpn\s*$|^\s*trust\s+(?:this|the)\s+(?:wi-?fi\s+)?network\s*$|^\s*bypass\s+(?:the\s+)?vpn\s+for\s+(?:this\s+|an?\s+|the\s+)?(?:app|application|website|site)\s*$|^\s*add\s+(?:this\s+network\s+|the\s+network\s+)?to\s+(?:the\s+)?trusted\s+networks\s*$/i.test(raw)) return ['permission']
+  // #773 r2 (cu-developer-three 01:03Z): 'Download (VPN) configuration' asked install on main - the older class stays and credential is
+  // added (a union, never a lowering); the other config forms ask credential.
+  // cu-developer-two 01:06Z: every form that asked install on main ('Download configuration file', 'Download OpenVPN profile') keeps it;
+  // a VPN profile (.ovpn) carries the key like a config does.
+  if (/^\s*download\s+(?:the\s+)?(?:vpn\s+|openvpn\s+|wireguard\s+)?(?:configuration(?:\s+(?:file|profile))?|profile)\s*$/i.test(raw) && !/^\s*download\s+(?:the\s+)?profile\s*$/i.test(raw)) return ['install', 'credential']
+  if (/^\s*(?:export|save|download)\s+(?:the\s+)?(?:vpn|openvpn|wireguard)\s+profile\s*$/i.test(raw)) return ['credential']
+  if (/^\s*(?:download|export|save)\s+(?:the\s+)?(?:vpn\s+|wireguard\s+|openvpn\s+)?config(?:uration)?(?:\s+(?:file|profile))?\s*$/i.test(raw)) return ['credential']
+  // CU-533 (High; cu-coordinator 00:21Z), table PR 36, as verb families with object synonyms - an organisation's security settings,
+  // PERMISSION like the older 'Disable two-factor requirement' / 'Remove IP allow list': disable / turn off / deactivate / remove (the)
+  // (SAML) SSO / single sign-on (enforcement / requirement); disable / turn off (the) IP allow list / allowlist / whitelist; disable /
+  // turn off / stop / pause (the) audit log streaming / stream / audit logging; allow forking of private / internal repositories.
+  // 'Test SSO connection' and 'Enable SSO' stay free. #769 r2 (cu-researcher 00:33Z): 'Stop requiring / enforcing SAML / SSO',
+  // 'Stop audit-log streaming' (the hyphen), 'Allow / Enable private repository forking'.
+  if (/^\s*(?:disable|turn\s+off|deactivate|remove|switch\s+off|stop\s+enforcing)\s+(?:the\s+)?(?:saml\s+|oidc\s+)?(?:sso|single\s+sign[-\s]?on)(?:\s+(?:enforcement|requirement))?\s*$|^\s*(?:disable|turn\s+off|switch\s+off|deactivate)\s+(?:the\s+)?ip\s+(?:allow\s*list|allowlist|whitelist)\s*$|^\s*(?:disable|turn\s+off|stop|pause|switch\s+off)\s+(?:the\s+)?audit[-\s]+(?:log[-\s]+(?:streaming|stream)|logging)\s*$|^\s*allow\s+forking\s+(?:of\s+)?(?:private|internal)(?:\s+(?:and\s+internal\s+)?(?:repositories|repos))?\s*$|^\s*stop\s+(?:requiring|enforcing)\s+(?:the\s+)?(?:saml\s+sso|saml|sso|single\s+sign[-\s]?on)\s*$|^\s*(?:allow|enable)\s+(?:private|internal)\s+repo(?:sitory)?\s+forking\s*$|^\s*enable\s+forking\s+(?:of\s+)?(?:private|internal)\s+repo(?:sitorie|)s\s*$/i.test(raw)) return ['permission']
+  // CU-530 (High; cu-coordinator 23:21Z), table PR 35, as verb families with object synonyms - a crypto wallet's allowance or permit
+  // lets a contract spend the tokens - PURCHASE like 'Approve unlimited': set / grant / give (a / an / the) (unlimited / max / maximum /
+  // infinite / custom) (spending / token) allowance; sign (the) typed data; sign (a / the) permit / Permit2 (message / signature).
+  // #761 r2 (cu-researcher 23:27Z): a purpose tail ('Sign permit to deposit', 'Sign typed data for swap'); r3 (23:54Z): the allowance
+  // takes one too ('Set allowance to unlimited', 'Set max allowance for USDC').
+  if (/^\s*(?:set|grant|give)\s+(?:a\s+|an\s+|the\s+)?(?:unlimited\s+|max\s+|maximum\s+|infinite\s+|custom\s+)?(?:spending\s+|token\s+)?allowance(?:\s+(?:to|for)\s+\S.{0,40})?\s*$|^\s*sign\s+(?:the\s+)?typed\s+data\s*$|^\s*sign\s+(?:a\s+|the\s+)?permit2?(?:\s+(?:message|signature))?(?:\s+(?:to|for)\s+\S.{0,40})?\s*$|^\s*sign\s+(?:the\s+)?typed\s+data\s+(?:to|for)\s+\S.{0,40}$/i.test(raw)) return ['purchase']
+  // CU-529 (High; cu-coordinator 22:51Z), table PR 34, as verb families with object synonyms - a browser / site permission grant.
+  // PERMISSION: allow (it / this extension) in incognito / private windows / private browsing; (allow) on all sites / websites; a site
+  // prompt's allow (access to) (the / your) camera / microphone / mic / location / notifications. 'Block' and 'Not now' stay free.
+  // #754 r2 (cu-researcher 22:54Z): run / enable in, InPrivate, and on every site.
+  if (/^\s*(?:allow|run|enable)\s+(?:it\s+|this\s+extension\s+|the\s+extension\s+)?in\s+(?:incognito|inprivate|private\s+(?:windows?|browsing|mode))(?:\s+mode)?\s*$|^\s*(?:allow\s+)?on\s+(?:all|every)\s+(?:sites?|websites?)\s*$|^\s*allow\s+(?:access\s+to\s+)?(?:the\s+|your\s+|my\s+)?(?:camera|microphone|mic|location|notifications|camera\s+and\s+microphone)\s*$/i.test(raw)) return ['permission']
+  // CU-527 (High; cu-coordinator 22:06Z), table PR 33, as verb families with object synonyms - a package registry. DELETE: unpublish /
+  // yank (the / this) package / version / release. PERMISSION: add (a / an) maintainer / owner / collaborator / publisher, add a trusted
+  // publisher. CREDENTIAL: create / generate / new (a) granular / automation / publish (access) token. SUBMIT: deprecate (the / this)
+  // package / version / release.
+  if (/^\s*(?:unpublish|yank)\s+(?:the\s+|this\s+|a\s+)?(?:package|version|release|crate|gem|module)s?\s*$/i.test(raw)) return ['delete']
+  if (/^\s*add\s+(?:a\s+|an\s+|new\s+)?(?:maintainer|co-?maintainer|package\s+owner|collaborator|publisher)s?\s*$|^\s*add\s+(?:a\s+|an\s+|new\s+)?trusted\s+publish(?:er|ing)\s*$/i.test(raw)) return ['permission']
+  if (/^\s*(?:create|generate|new|add)\s+(?:a\s+|an\s+)?(?:new\s+)?(?:granular|automation|publish|fine[-\s]grained)\s+(?:access\s+)?token\s*$/i.test(raw)) return ['credential']
+  if (/^\s*deprecate\s+(?:the\s+|this\s+|a\s+)?(?:package|version|release|crate|gem|module)s?\s*$/i.test(raw)) return ['submit']
+  // CU-526 (High; cu-coordinator 21:36Z): a code host's queued merge is a merge - SUBMIT: 'Merge when ready', 'Merge when checks pass',
+  // and enabling / turning on auto-merge (an explicit class ruling: 'Enable auto-merge' moves from the generic enable-auto purchase to
+  // submit, like 'Merge pull request').
+  // #747 round 2 (cu-researcher 21:43Z): the scheduled merge in one row - merge automatically, auto-merge when / after / once ...,
+  // schedule (a / the) merge, merge when / after / once (all) (the) CI / checks / tests / builds pass / succeed / are green / complete,
+  // queue / add (this / the) (PR / pull request) for / to (the) merge (queue).
+  // CU-531 follow-up (cu-researcher 23:20Z self-audit): third-person 'succeeds' / 'completes' / 'finishes' and a pipeline too.
+  // CU-532 (High; cu-coordinator 23:51Z): every tense - 'passed', 'have passed', 'succeeded', 'completed', 'finished', 'went green', 'done'.
+  if (/^\s*merge\s+when\s+(?:ready|checks?\s+pass|(?:all\s+)?(?:requirements|checks)\s+(?:are\s+)?met)\s*$|^\s*(?:enable|turn\s+on|set\s+up|use)\s+auto[-\s]?merge\s*$|^\s*merge\s+automatically\s*$|^\s*auto[-\s]?merge\s+(?:when|after|once)\s+\S.{0,60}$|^\s*schedule\s+(?:a\s+|the\s+)?merge\s*$|^\s*merge\s+(?:when|after|once)\s+(?:all\s+)?(?:the\s+)?(?:ci|checks?|tests?|builds?|pipelines?)\s+(?:(?:have|has|are|is|were|was)\s+)?(?:pass(?:es|ed|ing)?|succeed(?:s|ed|ing)?|are\s+green|is\s+green|(?:went|turned|turns?|go(?:es)?)\s+green|complete(?:s|d)?|finish(?:es|ed)?|done)\s*$|^\s*(?:queue|add)\s+(?:this\s+|the\s+)?(?:pr\s+|pull\s+request\s+)?(?:for|to)\s+(?:the\s+)?merge(?:\s+queue)?\s*$/i.test(raw)) return ['submit']
+  // CU-525 (High; cu-coordinator 21:36Z), table PR 32, as verb families with object synonyms - a database console. PERMISSION: disable
+  // / turn off RLS (row-level security's acronym), allow all IPs / any IP / every IP, add 0.0.0.0/0 (or ::/0), disable / turn off SSL /
+  // TLS enforcement (or 'require SSL'). DELETE: restore (a / the / from) backup / snapshot, restore to a point in time (it overwrites the
+  // live data). CREDENTIAL: reveal / show / copy / view the service role key / secret, show / copy / view / reveal the connection string /
+  // URI / URL. #746 r2 (cu-researcher 21:39Z): 'Disable / Turn off SSL', 'Restore to this point', 'service_role key';
+  // cu-developer-two 21:40Z: singular 'any IP address' / 'any address', and 'database URI / URL' (it carries the password).
+  // #746 r3 (cu-researcher 21:46Z): 'Restore to a snapshot', 'Roll back to snapshot', 'Restore database'.
+  // CU-531 (High; cu-coordinator 23:21Z): 'Roll back / Revert to this point', 'Roll back / Revert database' - the ruled family; a bare
+  // 'Roll back' / 'Rollback' / 'Revert' stays free (deploys too). #759 r2 (cu-researcher 23:26Z): the determiner is optional ('Revert to
+  // point in time', 'Roll back to the time').
+  if (/^\s*(?:disable|turn\s+off|switch\s+off|bypass)\s+(?:the\s+)?rls\s*$|^\s*(?:allow|permit|whitelist|allowlist)\s+(?:all|any|every)\s+(?:ips?|ip\s+address(?:es)?|address(?:es)?|networks?|sources?)\s*$|^\s*(?:add|allow)\s+0\.0\.0\.0\/0\s*$|^\s*(?:add|allow)\s+::\/0\s*$|^\s*(?:disable|turn\s+off|remove|switch\s+off)\s+(?:the\s+)?(?:ssl|tls|https)\s+(?:enforcement|requirement|only|mode)\s*$|^\s*(?:disable|turn\s+off)\s+(?:require|enforce)\s+(?:ssl|tls)\s*$|^\s*(?:disable|turn\s+off|switch\s+off)\s+(?:the\s+)?(?:ssl|tls)\s*$/i.test(raw)) return ['permission']
+  if (/^\s*restore\s+(?:from\s+)?(?:a\s+|the\s+|this\s+)?(?:backup|snapshot)\s*$|^\s*restore\s+(?:the\s+)?(?:database\s+)?to\s+(?:a\s+|the\s+)?point[-\s]in[-\s]time\s*$|^\s*point[-\s]in[-\s]time\s+restore\s*$|^\s*restore\s+(?:the\s+database\s+)?to\s+(?:this|that|the\s+selected)\s+(?:point|time|moment|snapshot|version)\s*$|^\s*(?:restore|roll\s*back|revert)\s+(?:the\s+database\s+)?to\s+(?:a\s+|an\s+|the\s+)?(?:earlier\s+|previous\s+)?(?:snapshot|backup)\s*$|^\s*restore\s+(?:the\s+|this\s+)?(?:database|db)\s*$|^\s*(?:roll\s*back|revert|restore)\s+(?:the\s+database\s+)?to\s+(?:(?:this|that|the\s+selected|the|a|an\s+earlier|a\s+previous)\s+)?(?:point|time|moment|version)(?:\s+in\s+time)?\s*$|^\s*(?:roll\s*back|revert)\s+(?:the\s+|this\s+)?(?:database|db)\s*$/i.test(raw)) return ['delete']
+  if (/^\s*(?:reveal|show|copy|view|display|get)\s+(?:the\s+)?(?:service[-_\s]role|service)\s+(?:key|secret|token)\s*$|^\s*(?:reveal|show|copy|view|display|get)\s+(?:the\s+)?(?:database\s+|db\s+)?connection\s+(?:string|uri|url)\s*$|^\s*(?:reveal|show|copy|view|display|get)\s+(?:the\s+)?(?:database|db|postgres(?:ql)?|mysql|mongodb)\s+(?:uri|url|dsn)\s*$/i.test(raw)) return ['credential']
   // CU-524 (High; cu-coordinator 21:06Z), table PR 31, as verb families with object synonyms - a new recovery channel lets someone
   // else take the account back. CREDENTIAL: add / register / set (up) a trusted / backup / recovery / alternate / secondary / additional
   // phone (number) / number / email (address); set up (account) recovery (options); add / set up a backup / recovery / sign-in method /

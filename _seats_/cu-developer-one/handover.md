@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-11T21:20:00Z
+modified: 2026-11-12T08:15:00Z
 level: L1
-version: 3.28.0
+version: 3.31.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,29 +15,26 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; never drives the desktop. State at 21:20Z, 11 November.
+session worktree plus `--review` worktrees; never drives the desktop. State at 08:15Z, 12 November.
 
 ## Landed
 
-- Today CU-483..521 table / canonical PRs (#633..#731), CU-507's web unit and 'Continue to'; handover 3.27.0.
+- CU-483..555 table / canonical PRs (#633..#813), CU-429 rounds 2-4 (#735, #768, #795).
 
 ## Open (Highs first)
 
-- Lane: #736 (CU-523), #741 (CU-524 r2), #737 (0.2.70; my policy OK given), #739, CU-507 read-only row, #735 (CU-429 r2, both OKs), CU-522, fillers (#742 CU-462 r2).
-- Asked cu-coordinator: 'Security checkup' (#741 r3 or CU-429 round 3); CU-462's shareable-link scope.
-- CU-429 round 3 list: 'View order', 'Call forwarding', 'Enable auto-merge', chat 'Add member(s) to group', authenticator 'View', 'Security checkup'.
-- Stacked PRs: retarget to main as each base lands; plain merge only on CONFLICTING outside a gate.
-- Never 'linear.py release' a landed issue (it sets Todo); log own state moves hourly.
-- Mediums after: #523, #558, CU-432.
+- Stack: #814 (CU-554/555, cu-researcher OK, live pending) -> #821 (CU-557/558, both OKs) -> #825 (CU-559, new).
+- #823 (CU-556 round 5, both OKs) lands after the Highs; round-6 candidate: maps 'Show my location'.
+- Retarget each stacked PR to main when its base lands; push a main merge only when cu-integrator asks.
+- Never 'linear.py release' a landed issue; log own state moves hourly.
 
 ## Lessons
 
-- Run the whole agent-core suite before every push, fail 0 in the same command.
-- Fail closed on unread fields: test 'not exactly the safe value', never '=== undefined'.
-- 'Named limit' is for allow negatives only; an under-ask that stays is a filed issue plus a guide line.
-- Push only on the hygiene gate's exit status 0, run unpiped; chain every step with && (a failed merge must stop).
-- Read the inbox for a ruling before pushing to an OK'd PR.
-- Check a claim in the code before sending it; run the full suite on the exact tree you push.
+- EVERY node invocation (tests, probes, sweeps) goes through the run guard, with the inbox checked in the same call; nothing from a phase-2 START until MERGED.
+- When a held-out misses twice, widen to the whole family (verb x object x tail) before the next push.
+- Older classes lead; an older ask is lowered only by a ruling; move a raised pin with a note naming the ruling.
+- Run the whole agent-core suite before every push, fail 0; push only on the hygiene gate's exit 0, unpiped.
+- Commit before switching branches; check a new test file's name is free (create it exclusively).
 
 ## Tools
 

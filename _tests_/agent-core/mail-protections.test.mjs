@@ -42,5 +42,6 @@ test('CU-456 negatives: the spam folder, turning the filter on, blocking a sende
   for (const name of ['Spam', 'Turn on spam filter', 'Block sender']) assert.equal(click(name), 'allow', name)
   // cu-coordinator 17:36Z (CU-511): one safe sender now asks permission - an explicit raise of the 01:36Z free pin.
   assert.equal(click('Add to safe senders'), 'permission', 'raised by CU-511 (17:36Z)')
-  assert.equal(click('Security settings'), 'permission', 'older security word (CU-429)')
+  // Lowered by CU-429 round 4 (cu-coordinator 03:36Z, CU-547): the 'Security settings' button is free now.
+  assert.equal(click('Security settings'), 'allow', 'lowered by round 4 (03:36Z)')
 })

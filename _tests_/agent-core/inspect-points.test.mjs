@@ -167,6 +167,23 @@ test('CU-372: inspect prints a closed pop-up button\'s popUp read (items, select
   assert.equal(Object.hasOwn(read[3], 'popUp'), false, 'null passes no key')
 })
 
+test('CU-507 / CU-418: inspect prints a button\'s dialog words and a native switch\'s checked when the driver passes them', async () => {
+  const targets = [
+    { role: 'AXButton', name: 'Delete', dialogName: 'Are you sure you want to delete "Report.txt"?', dialogDescription: 'This item will be deleted immediately.' },
+    { role: 'AXButton', name: 'OK', dialogName: 'Erase all notes?' },
+    { role: 'AXCheckBox', name: 'Firewall', checked: false, inWebArea: false },
+    { role: 'AXButton', name: 'Save', dialogName: null, checked: 'yes' },
+  ]
+  const { launch } = fakeDesktop({ describe: (point) => targets[point.x] ?? null })
+  const result = await inspectPoints({ seat: 'cu-verifier', apps: [FIXTURE], points: targets.map((_, x) => ({ x, y: 0 })), env: {}, launch, appApprovals: { covers: () => true } })
+  const read = result.points.map((p) => p.target)
+  assert.deepEqual([read[0].dialogName, read[0].dialogDescription], ['Are you sure you want to delete "Report.txt"?', 'This item will be deleted immediately.'])
+  assert.equal(read[1].dialogName, 'Erase all notes?')
+  assert.equal(Object.hasOwn(read[1], 'dialogDescription'), false, 'no key when the helper read no second text')
+  assert.equal(read[2].checked, false, 'false prints as false, not as absent')
+  for (const key of ['dialogName', 'dialogDescription', 'checked']) assert.equal(Object.hasOwn(read[3], key), false, `${key}: no key for null or a non-boolean`)
+})
+
 test('CU-328: inspect --focused reads the focused element once (role, name, inWebArea); still no input', async () => {
   const fake = fakeDesktop()
   let reads = 0

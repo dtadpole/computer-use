@@ -5,7 +5,7 @@ import Foundation
 /// The helper's identity; `build.sh` writes the same bundle id into Info.plist.
 enum HelperIdentity {
   static let bundleId = "com.reflection.cu-helper"
-  static let version = "0.2.69"
+  static let version = "0.2.70"
   /// The value every synthetic event carries in `kCGEventSourceUserData`: 0x43555345, ASCII "CUSE"
   /// (input-and-targets.md, verify-kit's SYNTHETIC_TAG). Not a secret: an event from another process with this tag
   /// could only fail to pause the run, never act.
@@ -441,6 +441,23 @@ struct DefaultButtonRead: Equatable {
   static let failed = DefaultButtonRead(button: .null, read: false)
 }
 
+/// CU-418 option (b) (cu-coordinator 14:19Z, the Medium batch): a toggle's state from its AXValue - an AXCheckBox (also a
+/// switch or a toggle by subrole) or an AXRadioButton: 0 off, 1 on, 2 mixed. Only these roles' AXValue is ever read (a
+/// toggle's state, never text); any other value, or another role, gives nothing.
+enum ToggleState {
+  static let roles: Set<String> = ["AXCheckBox", "AXRadioButton"]
+  static func reads(role: String?) -> Bool { role.map { roles.contains($0) } ?? false }
+  static func checked(role: String?, value: Int?) -> JSON? {
+    guard reads(role: role), let value else { return nil }
+    switch value {
+    case 0: return .bool(false)
+    case 1: return .bool(true)
+    case 2: return .string("mixed")
+    default: return nil
+    }
+  }
+}
+
 /// CU-412 (cu-coordinator 11:27Z, the desktop half): HTML submits a form on Return in a field even when its only submit
 /// controls are role=button divs, which the window's AXDefaultButton never names. In a web area whose window reads no
 /// default button, the focus's form - the nearest ancestor within 4 levels that is a form landmark or holds a
@@ -529,6 +546,34 @@ enum Placeholder {
     guard applies(role: role) else { return nil }
     guard let text = raw?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty, text.count <= maxLength else { return nil }
     return text
+  }
+}
+
+/// CU-507 (desktop half): what a dialog asks, for a button inside it - so agent core can judge a generic 'OK' or
+/// 'Continue' by the dialog's words, as the web route does with role=dialog / alertdialog. The container is the nearest
+/// AXSheet, or an AXWindow whose subrole is AXDialog / AXSystemDialog (an NSAlert's window is one). dialogName is the
+/// container's title when it has one, else its first static text; dialogDescription the next static text. Static texts
+/// only (their shown words) - never a field's value. Whitespace collapsed, trimmed, at most 300 characters (cut, as the
+/// words that decide come first); empty reads as none.
+enum DialogText {
+  static let maxLength = 300
+  static let maxDepth = 12
+  static let maxTexts = 60
+  static let containerSubroles: Set<String> = ["AXDialog", "AXSystemDialog"]
+  /// Only a button carries it: the generic confirm control CU-507 judges (and Return's default button).
+  static func applies(role: String?) -> Bool { role == "AXButton" }
+  static func isContainer(role: String?, subrole: String?) -> Bool {
+    role == "AXSheet" || (role == "AXWindow" && containerSubroles.contains(subrole ?? ""))
+  }
+  static func clean(_ raw: String?) -> String? {
+    guard let raw else { return nil }
+    let text = raw.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
+    return text.isEmpty ? nil : String(text.prefix(maxLength))
+  }
+  static func pick(title: String?, texts: [String?]) -> (name: String?, description: String?) {
+    let words = texts.compactMap(clean)
+    if let title = clean(title) { return (title, words.first) }
+    return (words.first, words.dropFirst().first)
   }
 }
 
