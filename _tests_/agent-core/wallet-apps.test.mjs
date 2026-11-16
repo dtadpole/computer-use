@@ -21,3 +21,10 @@ test('CU-576 negatives: reading and receiving in wallets, and the same words in 
   for (const name of ['Receive', 'Accounts', 'Settings', 'Send feedback', 'Show address']) assert.ok(!classesOf('com.sparrowwallet.sparrow', name).includes('purchase'), name)
   for (const name of ['Confirm', 'Sign']) assert.ok(!classesOf('com.apple.TextEdit', name).includes('purchase'), name)
 })
+
+test('#865 round 2 (cu-researcher 07:34Z): any wallet by its bundle vocabulary, and spend / transaction verbs', () => {
+  for (const bundle of ['zksnacks.wasabiwallet', 'org.org.pythonmac.unspecified.Electrum', 'io.metamask.desktop', 'app.phantom.desktop']) for (const name of ['Send', 'Spend', 'Broadcast']) assert.ok(classesOf(bundle, name).includes('purchase'), `${name} @ ${bundle}`)
+  for (const name of ['Spend', 'Finalize transaction', 'Push PSBT', 'Sweep funds', 'Move coins to cold storage']) assert.ok(classesOf('com.sparrowwallet.sparrow', name).includes('purchase'), name)
+  for (const name of ['View transactions', 'Export PSBT', 'Show address', 'Receive']) assert.ok(!classesOf('com.sparrowwallet.sparrow', name).includes('purchase'), name)
+  for (const name of ['Send', 'Spend']) assert.ok(!classesOf('com.apple.Notes', name).includes('purchase'), name)
+})
