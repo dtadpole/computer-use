@@ -109,15 +109,22 @@ const LOCALE_WORDS = Object.freeze({
     'kopen', 'nu kopen', 'koop nu', 'betalen', 'nu betalen', 'bestellen en betalen', 'bestellen', 'nu bestellen', 'bestelling plaatsen', 'afrekenen', 'naar de kassa',
     'comprar agora', 'pagar agora', 'finalizar pedido', 'fazer pedido', 'concluir compra', 'efetuar pagamento',
     // r2 (cu-developer-three's held-out): short imperatives and 'confirm payment' forms.
-    'compra', 'compra adesso', 'acquista adesso', 'paga adesso', 'conferma pagamento', "conferma l'acquisto", 'conferma acquisto',
-    'koop', 'betaal', 'betaal nu', 'bestel', 'bestel nu', 'betaling bevestigen', 'bevestig betaling',
-    'compre', 'compre agora', 'pague', 'pague agora', 'confirmar pagamento', 'confirmar compra',
+    'compra', 'compra adesso', 'acquista adesso', 'paga adesso', 'conferma _ pagamento', 'conferma _ acquisto', 'conferma _ ordine', 'effettua _ pagamento', 'effettua _ ordine',
+    'koop', 'betaal', 'betaal nu', 'bestel', 'bestel nu', '_ betaling bevestigen', 'bevestig _ betaling', 'plaats _ bestelling', '_ bestelling plaatsen',
+    'compre', 'compre agora', 'pague', 'pague agora', 'confirmar _ pagamento', 'confirmar _ compra', 'finalizar _ compra', 'finalizar _ pedido', 'fazer _ pedido', 'efetuar _ pagamento',
+    // r5 (cu-developer-two): sending money, as English 'Send money' / 'Transfer money' / 'Wire money' (purchase).
+    'invia bonifico', 'effettua _ bonifico', 'bonifico', 'trasferisci denaro', 'invia denaro', 'trasferisci',
+    'geld overmaken', 'overmaken', 'geld overschrijven', 'overschrijven', 'geld sturen', 'geld versturen',
+    'transferir dinheiro', 'enviar dinheiro', 'fazer _ transferência', 'transferir', 'enviar pix', 'fazer _ pix',
+    'para gönder^', 'havale yap^', 'eft yap^', 'para transfer~ yap^', 'para transfer~',
     // r3: Turkish stems take their suffixes ('~' noun, '^' verb - see namesWord).
     'ödeme~ onayla', 'satın alma~ onayla', 'ödeme~ tamamla', 'ödeme~ yap', 'sipariş~ ver', 'sipariş~ tamamla', 'alışveriş~ tamamla',
     'satın al^', 'şimdi satın al^', 'hemen al^', 'şimdi al^', 'öde^', 'şimdi öde^', 'ödeme~ geç^'],
   delete: ['löschen', 'entfernen', 'verwerfen', 'supprimer', 'effacer', 'eliminar', 'borrar', 'удалить', 'стереть', '削除', '消去', '삭제', '지우기',
     // CU-358: Italian, Dutch, Portuguese and Turkish.
     'elimina', 'cancella', 'rimuovi', 'elimina definitivamente', 'verwijderen', 'verwijder', 'wissen', 'definitief verwijderen',
+    // r5 (cu-developer-one): Dutch 'opheffen' closes an account (only beside an account noun; 'Blokkering opheffen' lifts a block).
+    'account opheffen', 'mijn account opheffen', '_ account opheffen', 'rekening opheffen',
     'excluir', 'apagar', 'remover', 'excluir permanentemente', 'sil^', 'kaldır^', 'kalıcı olarak sil^', 'hesabı sil^', 'hesabımı sil^',
     // r2: emptying the trash, as English 'Empty trash'.
     'svuota cestino', 'svuota il cestino', 'prullenbak legen', 'prullenbak leegmaken', 'leeg prullenbak',
@@ -557,9 +564,14 @@ const TR_NOUN_SUFFIX = '(?:(?:[iuü]?m|[iuü]?n|s?[iuü]|[iuü]?m[iuü]z|[iuü]?
 const TR_VERB_SUFFIX = '(?:(?:y?[iuü]n)?(?:s[iuü]n|[iuü]z|y?[ae]c[ae]k)?)'
 const turkishPattern = (word) => normaliseName(normaliseText(word)).split(/([~^])/).map((part) => part === '~' ? TR_NOUN_SUFFIX
   : part === '^' ? TR_VERB_SUFFIX : escapeRegExp(part).replace(/ /g, '[\\s-]+')).join('')
+// CU-358 r5 (cu-developer-one): ' _ ' in an Italian, Portuguese or Dutch entry is an optional article slot ('conferma _
+// pagamento' reads 'Conferma pagamento' and 'Conferma il pagamento'); the article list is closed.
+const ARTICLE_SLOT = "[\\s-]+(?:(?:il|lo|la|i|gli|le|un|una|uno|o|a|os|as|um|uma|de|het|een)[\\s-]+|l'\\s*)?"
+const articlePattern = (word) => normaliseName(normaliseText(word)).split(' _ ').map((part) => escapeRegExp(part).replace(/ /g, '[\\s-]+')).join(ARTICLE_SLOT)
 function namesWord(name, words) {
   const text = normaliseName(name)
   return words.some((word) => {
+    if (word.includes(' _ ')) return new RegExp(`(^|[^\\p{L}])${articlePattern(word)}([^\\p{L}]|$)`, 'u').test(text)
     if (/[~^]/.test(word)) return new RegExp(`(^|[^\\p{L}])${turkishPattern(word)}([^\\p{L}]|$)`, 'u').test(text)
     // CU-345: '…' leads a German compound ending - matched after any letters, bounded only on its right.
     if (word.startsWith('\u2026')) return new RegExp(`${escapeRegExp(normaliseName(word.slice(1))).replace(/ /g, '[\\s-]+')}([^\\p{L}]|$)`, 'u').test(text)
