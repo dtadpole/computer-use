@@ -15,3 +15,10 @@ test('CU-569: tear down / decommission / deprovision / shred / nuke / obliterate
     'Reset everything', 'Terminate project', 'Drop bucket', 'Clear everything', 'Delete deployment', 'Tear down the stack', 'Clear bucket', 'Empty volume']) assert.ok(classesOf(name).includes('delete'), name)
   for (const name of ['Clear filters', 'Reset zoom', 'Scrub timeline', 'Tear down guide', 'Shred settings', 'Close project']) assert.deepEqual(classesOf(name), [], name)
 })
+
+test('#851 round 2 (cu-researcher 03:54Z): the destroy lexicon, not a list of examples', () => {
+  const verbs = ['Expunge', 'Annihilate', 'Eradicate', 'Demolish', 'Dismantle', 'Scrap', 'Trash', 'Eliminate', 'Kill', 'Sunset', 'Deregister', 'Unprovision', 'Dispose of', 'Get rid of', 'Blow away', 'Wipe clean', 'Spin down', 'Incinerate', 'Torch']
+  for (const v of verbs) for (const o of ['server', 'database', 'project', 'environment', 'bucket']) assert.ok(classesOf(`${v} ${o}`).includes('delete'), `${v} ${o}`)
+  for (const name of ['Kill switch', 'Retire badge', 'Burn rate', 'Blast radius', 'Sunset view']) assert.deepEqual(classesOf(name), [], name)
+  for (const o of ['project', 'environment', 'bucket']) assert.ok(classesOf(`Retire ${o}`).includes('delete'), `Retire ${o}`)
+})

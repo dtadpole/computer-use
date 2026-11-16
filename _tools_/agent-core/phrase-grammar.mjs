@@ -51,7 +51,7 @@ export function tokens(name) {
 const MULTI_VERBS = [
   [['adopt', 'and', 'sign'], ['sign']], [['sign', 'and', 'submit'], ['sign', 'send']], [['restart', 'to', 'update'], ['install']],
   [['install', 'and', 'relaunch'], ['install']], [['log', 'in', 'as'], ['actas']], [['sign', 'in', 'as'], ['actas']],
-  [['factory', 'reset'], ['destroy']], [['force', 'push'], ['destroy']], [['tear', 'down'], ['destroy']], [['wipe', 'out'], ['destroy']], [['spin', 'up'], ['cost']], [['scale', 'up'], ['cost']],
+  [['factory', 'reset'], ['destroy']], [['force', 'push'], ['destroy']], [['tear', 'down'], ['destroy']], [['wipe', 'out'], ['destroy']], [['blow', 'away'], ['destroy']], [['dispose', 'of'], ['destroy']], [['get', 'rid', 'of'], ['destroy']], [['do', 'away', 'with'], ['destroy']], [['wipe', 'clean'], ['destroy']], [['spin', 'down'], ['destroy']], [['shut', 'down', 'and', 'delete'], ['destroy']], [['spin', 'up'], ['cost']], [['scale', 'up'], ['cost']],
   [['cash', 'out'], ['pay']], [['top', 'up'], ['pay']], [['turn', 'on'], ['enable', 'phys_on']], [['turn', 'off'], ['unguard', 'phys_off']],
   [['login', 'as'], ['actas']], [['act', 'as'], ['actas']], [['view', 'as'], ['actas']], [['set', 'up'], ['pay']], [['move', 'to'], ['destroy']],
   [['switch', 'to'], ['pay']], [['let', 'in'], ['grant']], [['remote', 'start'], ['phys_on']], [['buzz', 'in'], ['phys_on']],
@@ -66,6 +66,16 @@ const VERBS = new Map(Object.entries({
   // CU-569 (cu-researcher 03:42Z; built before triage): the destroy verbs' synonyms - they still need a data object ('Scrub timeline' stays free).
   decommission: ['destroy'], deprovision: ['destroy'], shred: ['destroy'], nuke: ['destroy'], obliterate: ['destroy'], zap: ['destroy'],
   scrub: ['destroy'], teardown: ['destroy'],
+  // #851 r2 (cu-researcher 03:54Z: the class, not the examples): the destroy lexicon - expunge, annihilate, eradicate, exterminate,
+  // demolish, raze, dismantle, scrap, trash, junk, bin, eliminate, kill, retire, sunset, deregister, unregister, unprovision, decom,
+  // dispose (of), cull, torch, axe, excise, incinerate, vaporize, burn, blast, delist, and the phrasal forms below. Each needs a data
+  // object like the rest, so 'Kill switch', 'Burn rate' and 'Blast radius' stay free. 'Retire' destroys only a project or cloud object
+  // (the row below): an MDM 'Retire device' keeps its permission (CU-530 family).
+  expunge: ['destroy'], annihilate: ['destroy'], eradicate: ['destroy'], exterminate: ['destroy'], demolish: ['destroy'], raze: ['destroy'],
+  dismantle: ['destroy'], scrap: ['destroy'], trash: ['destroy'], junk: ['destroy'], bin: ['destroy'], eliminate: ['destroy'],
+  kill: ['destroy'], sunset: ['destroy'], deregister: ['destroy'], unregister: ['destroy'], unprovision: ['destroy'],
+  decom: ['destroy'], dispose: ['destroy'], cull: ['destroy'], torch: ['destroy'], axe: ['destroy'], excise: ['destroy'],
+  incinerate: ['destroy'], vaporize: ['destroy'], vaporise: ['destroy'], burn: ['destroy'], blast: ['destroy'], delist: ['destroy'],
   launch: ['cost'], create: ['cost', 'cred'], provision: ['cost'],
   pay: ['pay'], buy: ['pay'], purchase: ['pay'], order: ['pay'], book: ['pay'], reserve: ['pay'], rent: ['pay'], redeem: ['pay'],
   refund: ['pay'], reimburse: ['pay'], release: ['pay', 'share'], send: ['pay', 'send'], transfer: ['pay', 'grant'], withdraw: ['pay'],
@@ -1387,7 +1397,7 @@ function grammarClassesOf(name, role = '') {
   // CU-569: a project or a cloud object (node, service, deployment, volume, bucket, namespace, container, pod, droplet, app) is destroyed
   // only by the destroy verbs proper - 'Close project' (reversible), 'Clear / Reset project' (settings or state) and 'Disable encryption
   // for this bucket' (permission, CU-530) keep their own reading.
-  if (/^\s*(?:delete|destroy|terminate|decommission|deprovision|tear\s+down|nuke|obliterate|shred|wipe\s+out|drop|purge|erase|zap|scrub)\s+(?:the\s+|this\s+|my\s+|your\s+|entire\s+)?(?:project|node|service|deployment|volume|bucket|namespace|container|pod|droplet|app)s?\s*$/i.test(raw)) return ['delete']
+  if (/^\s*(?:delete|destroy|terminate|decommission|deprovision|tear\s+down|nuke|obliterate|shred|wipe\s+out|drop|purge|erase|zap|scrub|expunge|annihilate|eradicate|exterminate|demolish|raze|dismantle|scrap|trash|junk|eliminate|kill|retire|sunset|deregister|unregister|unprovision|decom|dispose\s+of|get\s+rid\s+of|do\s+away\s+with|blow\s+away|wipe\s+clean|spin\s+down|incinerate|vapori[sz]e|torch|axe)\s+(?:the\s+|this\s+|my\s+|your\s+|entire\s+)?(?:project|node|service|deployment|volume|bucket|namespace|container|pod|droplet|app|environment|server|instance|cluster|database|stack|vm)s?\s*$/i.test(raw)) return ['delete']
   // Clearing or emptying a bucket or volume wipes its contents (delete); 'Reset bucket / deployment' stays ambiguous and free.
   if (/^\s*(?:clear|empty)\s+(?:the\s+|this\s+|my\s+)?(?:bucket|volume)s?\s*$/i.test(raw)) return ['delete']
   // CU-537 (High; cu-coordinator 01:06Z), table PR 38 - registrar DNS. PERMISSION everywhere: add / create / new (a / an) typed record
