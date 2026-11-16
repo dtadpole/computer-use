@@ -46,6 +46,11 @@ test('CU-358 r3 (cu-developer-three, D-109): Turkish suffixed and cased forms of
   for (const name of ['Şifrenizi girin', 'Şifrenizi', 'Şifresi', 'Parolanızı', 'Kart numaranızı', 'Kart numarası', 'Doğrulama kodunuzu', 'Güvenlik kodu', 'ŞİFRENİZ']) assert.notEqual(typeInto(name), 'allow', name)
 })
 
+test('CU-358 r4 (cu-developer-three): polite imperative, future and dative forms ask', () => {
+  for (const [name, expected] of [['Gönderin', 'submit'], ['Gönderiniz', 'submit'], ['Şimdi satın alın', 'purchase'], ['Satın alın', 'purchase'], ['Ödemeye geç', 'purchase'], ['Ödemeye geçin', 'purchase'],
+    ['Kalıcı olarak silinecek', 'delete'], ['Silinecek', 'delete']]) assert.equal(click(name), expected, name)
+})
+
 test('CU-358: PIN, one-time code, password and card-number fields named in Italian, Dutch, Portuguese and Turkish ask', () => {
   for (const name of ['Codice di verifica', 'Codice di sicurezza', 'Numero della carta', 'Wachtwoord', 'Pincode', 'Bankpincode', 'Verificatiecode', 'Sms-verificatiecode',
     'Beveiligingscode', 'Kaartnummer', 'Creditcardkaartnummer', 'Senha', 'Código de verificação', 'Código de segurança', 'Número do cartão',
@@ -55,7 +60,7 @@ test('CU-358: PIN, one-time code, password and card-number fields named in Itali
 })
 
 test('CU-358 negatives: cancel, back and near words stay allowed; ordinary fields stay free', () => {
-  for (const name of ['Annulla', 'Indietro', 'Annuleren', 'Terug', 'Voltar', 'İptal', 'Geri', 'Silikon', 'Inviato', 'Pagamenti', 'Pagamentos', 'Ordinamento', 'Bestellingen', 'Verzonden', 'Ödeme yöntemleri', 'Gönderildi', 'Silvester', 'Pagamento', 'Compravendite', 'Koopjes', 'Betaalmethoden', 'Bestellingen', 'Compreensão', 'Cestino', 'Prullenbak', 'Lixeira', 'Çöp kutusu', 'Silinenler', 'Silgi', 'Gönderiler', 'Sepetim', 'Ödemelerim', 'Siparişlerim', 'Silindi']) assert.equal(click(name), 'allow', name)
+  for (const name of ['Annulla', 'Indietro', 'Annuleren', 'Terug', 'Voltar', 'İptal', 'Geri', 'Silikon', 'Inviato', 'Pagamenti', 'Pagamentos', 'Ordinamento', 'Bestellingen', 'Verzonden', 'Ödeme yöntemleri', 'Gönderildi', 'Silvester', 'Pagamento', 'Compravendite', 'Koopjes', 'Betaalmethoden', 'Bestellingen', 'Compreensão', 'Cestino', 'Prullenbak', 'Lixeira', 'Çöp kutusu', 'Silinenler', 'Silgi', 'Gönderiler', 'Sepetim', 'Ödemelerim', 'Siparişlerim', 'Silindi', 'Silinen öğeler', 'Silgi aracı', 'Gönderilenler', 'Ödeme geçmişi', 'Silindir', 'Silahlar', 'Sepetimi göster', 'Gönderen', 'Alınanlar']) assert.equal(click(name), 'allow', name)
   for (const name of ['Nome', 'Città', 'Naam', 'Woonplaats', 'Cidade', 'Ad', 'Şehir', 'Codice sconto', 'Kortingscode', 'Código promocional', 'İndirim kodu', 'Postcode', 'Código postal', 'Şifreleme', 'Adınız', 'Şehriniz', 'Telefon numaranız', 'Şifreleme anahtarı', 'Kart sahibinin adı']) assert.equal(typeInto(name), 'allow', name)
 })
 

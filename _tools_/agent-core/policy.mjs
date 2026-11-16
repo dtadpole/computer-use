@@ -114,7 +114,7 @@ const LOCALE_WORDS = Object.freeze({
     'compre', 'compre agora', 'pague', 'pague agora', 'confirmar pagamento', 'confirmar compra',
     // r3: Turkish stems take their suffixes ('~' noun, '^' verb - see namesWord).
     'ödeme~ onayla', 'satın alma~ onayla', 'ödeme~ tamamla', 'ödeme~ yap', 'sipariş~ ver', 'sipariş~ tamamla', 'alışveriş~ tamamla',
-    'satın al', 'şimdi satın al', 'hemen al', 'şimdi al', 'öde^', 'şimdi öde^'],
+    'satın al^', 'şimdi satın al^', 'hemen al^', 'şimdi al^', 'öde^', 'şimdi öde^', 'ödeme~ geç^'],
   delete: ['löschen', 'entfernen', 'verwerfen', 'supprimer', 'effacer', 'eliminar', 'borrar', 'удалить', 'стереть', '削除', '消去', '삭제', '지우기',
     // CU-358: Italian, Dutch, Portuguese and Turkish.
     'elimina', 'cancella', 'rimuovi', 'elimina definitivamente', 'verwijderen', 'verwijder', 'wissen', 'definitief verwijderen',
@@ -124,7 +124,7 @@ const LOCALE_WORDS = Object.freeze({
     'esvaziar lixeira', 'esvaziar a lixeira', 'esvaziar lixo', 'esvaziar a reciclagem', 'çöp kutu~ boşalt^', 'çöp~ boşalt^', 'çöp kutu~ temizle^'],
   submit: ['senden', 'absenden', 'abschicken', 'envoyer', 'soumettre', 'enviar', 'отправить', '送信', '보내기', '전송', '제출',
     // CU-358: Italian, Dutch, Portuguese and Turkish.
-    'invia', 'invia ora', 'verzenden', 'versturen', 'verstuur', 'indienen', 'submeter', 'gönder', 'şimdi gönder'],
+    'invia', 'invia ora', 'verzenden', 'versturen', 'verstuur', 'indienen', 'submeter', 'gönder^', 'şimdi gönder^'],
   // CU-345: a PIN, one-time code, security code or password field named in these languages.
   secret: ['passwort', 'kennwort', 'sicherheitscode', 'prüfziffer', 'mot de passe', 'code de sécurité', 'cryptogramme',
     'contraseña', 'código de seguridad', 'пароль', 'код безопасности', 'パスワード', '暗証番号', 'セキュリティコード', '認証コード',
@@ -550,10 +550,11 @@ const LETTER_BOUNDED = /[\u00c0-\u024f\u0400-\u04ff]/
 // CU-358 r3 (cu-developer-three's D-109 point): Turkish adds suffixes to a stem, so a Turkish entry marks where they may
 // follow - '~' after a noun stem takes a possessive (my / your / his / our / their) and then a case ending ('şifre~' reads
 // 'şifreniz', 'şifrenizi', 'şifresi'; 'kart numara~' reads 'kart numaranız', 'kart numarası'), '^' after a verb stem takes the
-// polite, passive or third-person imperative ('sil^' reads 'silin', 'silinsin'). A bounded set, after normaliseName's folding
-// (ı reads as i), so 'Şifreleme' (encryption), 'Silinenler' (the Deleted folder) and 'Silgi' stay free.
+// polite or passive -(y)In (and its plural -(y)Iniz), then a third-person imperative -sIn or the future -(y)AcAk ('sil^' reads
+// 'silin', 'silinsin', 'silinecek'; 'gönder^' reads 'gönderin'). A bounded set, after normaliseName's folding (ı reads as i),
+// so 'Şifreleme' (encryption), 'Silinenler' (the Deleted folder), 'Silindir' and 'Silgi' stay free. r4 (cu-developer-three).
 const TR_NOUN_SUFFIX = '(?:(?:[iuü]?m|[iuü]?n|s?[iuü]|[iuü]?m[iuü]z|[iuü]?n[iuü]z|l[ae]ri?)?(?:y?[iuü]|n[iuü]|y?[ae]|n[ae]|[dt][ae]n?|n[iuü]n)?)'
-const TR_VERB_SUFFIX = '(?:y?[iuü]n(?:s[iuü]n|[iuü]z)?|s[iuü]n)?'
+const TR_VERB_SUFFIX = '(?:(?:y?[iuü]n)?(?:s[iuü]n|[iuü]z|y?[ae]c[ae]k)?)'
 const turkishPattern = (word) => normaliseName(normaliseText(word)).split(/([~^])/).map((part) => part === '~' ? TR_NOUN_SUFFIX
   : part === '^' ? TR_VERB_SUFFIX : escapeRegExp(part).replace(/ /g, '[\\s-]+')).join('')
 function namesWord(name, words) {
