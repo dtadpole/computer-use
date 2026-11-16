@@ -377,9 +377,15 @@ const SELECTED_DESTROY = /\b(?:delet(?:e|es|ing|ion)\b|(?:move|send|put)\s+(?:\w
  * CU-371: the classes a form's SELECTED options ask for when a generic submit applies them - the driver's formContext.options
  * (up to 3 selected option texts of 24 characters, CU-400). A destructive one asks delete; nothing else is read.
  */
+// r2 (cu-researcher's over-ask 'Undo delete'): an option that takes an act back never asks.
+const SELECTED_UNDO = /\b(?:undo|restore|recover|undelete|un-?archive|un-?trash|un-?ban|reinstate|cancel\s+(?:the\s+)?(?:deletion|removal))\b/i
+/** CU-371 r2: the selected option texts a generic submit applies - at most 3 of 24 characters, never an undo / restore one. */
+export function selectedOptionTexts(formContext) {
+  const options = Array.isArray(formContext?.options) ? formContext.options.slice(0, 3).map((text) => String(text ?? '').trim()).filter((text) => text !== '' && text.length <= 24) : []
+  return options.filter((text) => !SELECTED_UNDO.test(text))
+}
 export function selectedOptionClasses(formContext) {
-  const options = Array.isArray(formContext?.options) ? formContext.options.slice(0, 3).map((text) => String(text ?? '')).filter((text) => text.length <= 24) : []
-  return options.some((text) => SELECTED_DESTROY.test(text)) ? ['delete'] : []
+  return selectedOptionTexts(formContext).some((text) => SELECTED_DESTROY.test(text)) ? ['delete'] : []
 }
 const TRADE_WORDS = /\b(?:trade|trading|swap|swaps|stake|staking|unstake|sell|selling|bridge|mint|minting)\b/gi
 const TRADE_NAV = /\b(?:trade|trading|swap|swaps|stake|staking|unstake|sell|selling|bridge|mint|minting)\b[\s\S]*\b(?:history|settings|faq|guide|policy|fees|rates|limits)\b/i
@@ -2601,11 +2607,20 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       for (const cls of typedConfirmClasses(target.formEntries)) classes.push(cls)
     }
     // CU-371 (cu-coordinator's filing; GO from the policy.mjs owner cu-developer-one 14:51Z; built by cu-developer-two): a
-    // generic, otherwise-unclassed submit ('Apply', 'Go', 'Update', 'OK') applies what its form's select holds, so it is
-    // judged by the SELECTED option (the driver's formContext): 'Delete permanently', 'Move to Trash', 'Delete selected' ask
-    // delete. A late union on the control's own label only, like CU-585 - it only adds an ask, never lowers one.
-    if (grammarEligible && !subProbe && classes.length === 0 && SELECTED_ACTION_SUBMIT.test(String(name ?? '')) && target?.formContext && typeof target.formContext === 'object') {
+    // generic submit ('Apply', 'Go', 'Update', 'OK', 'Submit') applies what its form's select holds, so it is judged by the
+    // SELECTED option (the driver's formContext). r2 (cu-researcher's held-out): each selected option is judged the way it
+    // would be as a button ('Revoke access' -> permission, 'Deactivate accounts' -> delete, 'Transfer ownership' ->
+    // permission), and the destructive verbs ask delete. A late union on the control's own label only, like CU-585: it adds
+    // to a submit nothing else classes, or to one whose only class is its own generic 'submit' ('Submit' beside 'Erase chosen
+    // rows' asks submit and delete); it never lowers an ask. An undo / restore / recover option never asks.
+    const genericOnly = classes.length === 0 || (classes.length > 0 && classes.every((cls) => cls === 'submit'))
+    if (grammarEligible && !subProbe && context.selectedOptionProbe !== true && genericOnly && SELECTED_ACTION_SUBMIT.test(String(name ?? '')) && target?.formContext && typeof target.formContext === 'object') {
       for (const cls of selectedOptionClasses(target.formContext)) classes.push(cls)
+      for (const option of selectedOptionTexts(target.formContext)) {
+        const asButton = classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { tag: 'button', role: 'button', name: option, origin: target.origin }, selectedOptionProbe: true })
+        if (asButton.decision === 'confirm' && Array.isArray(asButton.classes)) for (const cls of asButton.classes) classes.push(cls)
+        else if (asButton.decision === 'confirm' && typeof asButton.class === 'string') classes.push(asButton.class)
+      }
     }
     if (grammarEligible && classes.length === 0) {
       const mdm = String(name ?? '').trim()

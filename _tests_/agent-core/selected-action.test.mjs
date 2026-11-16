@@ -24,18 +24,29 @@ test('CU-371: a generic submit beside a destructive selected option asks delete'
 })
 
 test('CU-371: archive / move / mark and ordinary choices stay free', () => {
-  for (const options of [['Edit'], ['Export CSV'], ['Archive'], ['Move to folder'], ['Mark as read'], ['Bulk actions'], ['Newest first'], ['Deleted items'], ['Trash'], ['Removed'], ['Permanent link']]) {
+  for (const options of [['Edit'], ['Export CSV'], ['Archive'], ['Move to folder'], ['Mark as read'], ['Bulk actions'], ['Newest first'], ['Deleted items'], ['Removed'], ['Permanent link']]) {
     assert.equal(press('Apply', options), 'allow', JSON.stringify(options))
   }
   assert.equal(press('Go', ['Empty trash']), 'delete')
+  assert.equal(press('Apply', ['Trash']), 'delete', "r2: a bare 'Trash' bulk action is judged as the 'Trash' button would be")
   assert.equal(press('Apply'), 'allow', 'no formContext: unchanged')
 })
 
 test('CU-371: only a generic submit reads the selection; a classed or named control keeps its own reading', () => {
   assert.equal(press('Filter', ['Delete selected']), 'allow', 'a named act other than applying the selection')
   assert.equal(press('Cancel', ['Delete selected']), 'allow')
-  assert.equal(press('Submit', ['Remove from group']), press('Submit'), 'Submit is classed by its own name - the late union stays out')
+  assert.equal(press('Submit', ['Remove from group']), 'delete+submit', "r2: Submit's own generic 'submit' gains the option's class")
+  assert.equal(press('Submit', ['Erase chosen rows']), 'delete+submit')
   assert.equal(press('Delete', ['Edit']), 'delete')
+})
+
+test('CU-371 r2: each selected option is judged as it would be as a button; undo / restore never asks (cu-researcher held-out)', () => {
+  assert.equal(press('Go', ['Revoke access']), 'permission')
+  assert.equal(press('Apply', ['Deactivate accounts']), 'delete')
+  assert.equal(press('Update', ['Transfer ownership']), 'permission')
+  assert.equal(press('Go', ['Ban users']), 'permission')
+  assert.equal(press('OK', ['Remove from workspace']), 'delete')
+  for (const options of [['Undo delete'], ['Restore'], ['Recover items'], ['Show deleted items'], ['Unarchive']]) assert.equal(press('Apply', options), 'allow', JSON.stringify(options))
 })
 
 test('CU-371: Return presses the default button, judged as the click on it would be (CU-406)', () => {
