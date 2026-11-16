@@ -48,3 +48,8 @@ test('CU-385 r8 (cu-developer-two 19:54Z, cu-researcher 19:56Z): the folder word
   for (const name of ['Spam-Ordner', 'Junk-Ordner', 'Spam map', 'Silinmiş iletiler', 'Usunięte wiadomości', 'Törölt üzenetek', 'Odstraněné zprávy', 'Slettede meldinger', 'Poistetut viestit', '削除済みメッセージ', '已删除消息']) assert.ok(drop(name).includes('delete'), name)
   for (const name of ['Ordner', 'Spam-Ordner Regeln', 'Wiadomości']) assert.ok(!drop(name).includes('delete'), name)
 })
+
+test('CU-385 r9 (cu-researcher 20:12Z): folder word first, closed compounds, bare deleted per language', () => {
+  for (const name of ['Cartella spam', 'Pasta de spam', 'Folder spam', 'Spammap', 'Spamordner', 'Eliminati', 'Gelöscht', 'Verwijderd']) assert.ok(drop(name).includes('delete'), name)
+  for (const name of ['Cartella progetti', 'Folder of photos', 'Mappe', 'Eliminati dal torneo']) assert.ok(!drop(name).includes('delete'), name)
+})
