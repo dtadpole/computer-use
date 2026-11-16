@@ -55,3 +55,8 @@ test('#856 round 5 (cu-researcher 05:40Z): requirements on credentials weaken to
   const checkout = (name) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: 'https://shop.example/checkout', target: { role: 'button', name } }); return v.decision === 'allow' ? [] : (v.classes ?? [v.class]) }
   for (const name of ['Stop requiring a signature on delivery', 'Skip verification email resend timer']) assert.deepEqual(checkout(name), [], name)
 })
+
+test('#856 round 6 (cu-researcher 10:17Z): settings-sweep weakenings - security vocabulary, lowered thresholds, allow-all lists', () => {
+  for (const name of ['Disable HTTPS-only mode', 'Disable DMARC', 'Disable automatic updates', 'Set password minimum to 4', 'Whitelist all senders', 'Turn off FileVault', 'Disable Gatekeeper', 'Turn off Find My Mac', 'Trust all certificates', 'Allow all macros', 'Lower password length to 6']) assert.notDeepEqual(classesOf(name), [], name)
+  for (const name of ['Disable notifications', 'Set password', 'Allow all', 'Turn off dark mode']) assert.ok(!classesOf(name).includes('permission'), name)
+})

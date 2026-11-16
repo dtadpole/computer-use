@@ -1037,6 +1037,14 @@ function weakensProtection(raw) {
   if (/^\s*(?:un-?enforce|stop\s+requiring|no\s+longer\s+require|remove\s+(?:the\s+)?requirement\s+(?:for|of)|waive|relax|drop)\s+(?:a\s+|an\s+|the\s+)?(?:hardware(?:\s+security)?\s+|security\s+|physical\s+|fido2?\s+)?(?:keys?|passkeys?|passwords?|passcodes?|pins?|credentials?|yubikeys?|tokens?)(?:\s+(?:requirement|requirements|policy|rule|for\s+\S+(?:\s+\S+)?))?\s*$/i.test(raw)
     || /^\s*(?:let|allow)\s+(?:users|people|members|employees|everyone|accounts)\s+(?:to\s+)?(?:reuse|re-use|recycle|share)\s+(?:old\s+|previous\s+|their\s+)?(?:passwords?|passcodes?|pins?|credentials?)\s*$/i.test(raw)
     || /^\s*make\s+(?:hardware\s+|security\s+)?(?:keys?|passkeys?|passwords?|passcodes?|pins?)\s+optional\s*$/i.test(raw)) return true
+  // #856 r6 (cu-researcher 10:17Z: a 60-toggle settings sweep): more security vocabulary under any off-verb (HTTPS-only mode, DMARC /
+  // DKIM / SPF / DNSSEC / MTA-STS, automatic and security updates, Gatekeeper / SIP / Secure Boot / FileVault / BitLocker / SmartScreen /
+  // Defender, Lockdown Mode, Find My, remote wipe, screen / auto lock, password on wake - Activation Lock stays credential); a LOWERED password threshold
+  // ('Set password minimum to 4'); and allow-listing ALL senders / domains / IPs / hosts / certificates / origins / macros ('Whitelist all
+  // senders').
+  if (/^\s*(?:(?:turn|switch|shut|toggle)\s+off|disable|deactivate|stop|pause|suspend|skip|bypass|remove|opt\s+out\s+of|unenroll\s+from|uncheck)\s+(?:the\s+|my\s+|all\s+)?(?:[\p{L}'-]+\s+){0,3}(?:https-?only(?:\s+mode)?|dmarc|dkim|spf|dnssec|mta-?sts|dane|automatic\s+(?:security\s+|software\s+|app\s+)?updates?|auto-?updates?|security\s+updates?|update\s+checks?|gatekeeper|sip|system\s+integrity\s+protection|secure\s+boot|filevault|bitlocker|smartscreen|defender|xprotect|lockdown\s+mode|find\s+my(?:\s+(?:mac|iphone|device))?|remote\s+wipe|screen\s+lock|auto-?lock|password\s+on\s+wake|require\s+password)\s*$/iu.test(raw)
+    || /^\s*(?:set|change|lower|reduce|decrease)\s+(?:the\s+)?(?:minimum\s+)?(?:password|passcode|pin|passphrase)\s+(?:minimum|min(?:imum)?\s+length|length|complexity|strength)?\s*(?:to|=|at)\s*(?:[0-7]|one|two|three|four|five|six|seven|none|off|low|weak)\b/i.test(raw)
+    || /^\s*(?:whitelist|allowlist|safelist|trust|allow|accept|permit|approve)\s+(?:all|any|every)\s+(?:senders?|domains?|ips?|ip\s+addresses|hosts?|certificates?|origins?|sources?|macros?|scripts?|extensions?|countries|regions|redirects?|attachments?)\s*$/i.test(raw)) return true
   // CU-572 (cu-researcher 04:46Z; built before triage): WEAKENING a protection by CLASS - PERMISSION. Any weakening verb (disable / turn
   // off / switch off / deactivate / remove / skip / bypass / ignore / stop / pause / suspend / relax / weaken / lower / loosen / reduce /
   // waive / override / opt out of) x any protection (CAPTCHA, rate limiting, session timeouts, password policy / expiry, malware and code
