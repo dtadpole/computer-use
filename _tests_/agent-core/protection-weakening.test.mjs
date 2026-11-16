@@ -69,3 +69,8 @@ test('#856 round 7 (cu-researcher 10:39Z): security alerts are protections', () 
   for (const name of ['Disable login notifications', 'Stop new-device emails', 'Turn off security alerts', 'Mute suspicious activity warnings', 'Unsubscribe from sign-in alerts']) assert.notDeepEqual(classesOf(name), [], name)
   for (const name of ['Disable notifications', 'Stop marketing emails', 'Mute chat notifications']) assert.ok(!classesOf(name).includes('permission'), name)
 })
+
+test('#856 round 8 (cu-researcher 13:16Z, 13:22Z): QUALIFIED allow / deny / block lists are protections; a bare list stays free', () => {
+  for (const name of ['Disable command allowlist', 'Clear the sender denylist', 'Disable withdrawal whitelist', 'Turn off the IP allowlist', 'Empty the domain blocklist', 'Reset the app safelist']) assert.notDeepEqual(classesOf(name), [], name)
+  for (const name of ['Disable whitelist', 'View allowlist', 'Add to allowlist', 'Clear the list', 'Disable playlist']) assert.ok(!classesOf(name).includes('permission'), name)
+})
