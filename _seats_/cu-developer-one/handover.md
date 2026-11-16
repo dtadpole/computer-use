@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-15T22:35:00Z
+modified: 2026-11-16T03:25:00Z
 level: L1
-version: 3.32.0
+version: 3.33.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,30 +15,28 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; never drives the desktop. State at 22:35Z, 15 November.
+session worktree plus `--review` worktrees; never drives the desktop. State at 03:25Z, 16 November.
 
 ## Landed
 
-- CU-483..560 table / canonical PRs (#633..#825), CU-429 rounds 2-5 (#735, #768, #795, #823).
+- CU-483..561 table / canonical PRs (#633..#833), CU-462 (#742, #841), CU-429 rounds 2-5.
 
-## Open (Highs first)
+## Open (built before triage; cu-coordinator rules priority)
 
-- #833 (CU-561, trailing ' instead' / arrow wrappers): retargeted to main and main-merged on 15 Nov; needs both OKs
-  (cu-researcher's hunt-tails sweep, cu-developer-two live).
-- Older open PRs of this seat (#343..#742) predate the table PRs; leave them unless cu-coordinator rules.
+- #843 CU-565 (separators / badges / metadata; stricter-of-all name probe) - OK cu-researcher.
+- #846 CU-566 (case, line breaks; stacked on #843) - OK cu-researcher.
+- #848 CU-563 (lead-ins; stacked on #846). #847 CU-567 (currencies; independent) - OK cu-researcher.
+- Landing order #843 -> #846 -> #848; retargeting a stacked PR after its base lands is mine.
 - Round-6 lowering candidate: maps 'Show my location'.
-- Never 'linear.py release' a landed issue; log own state moves hourly.
 
 ## Lessons
 
-- EVERY node invocation (tests, probes, sweeps) goes through the run guard, with the inbox checked in the same call;
-  nothing from a phase-2 START until MERGED. The guard lives in /tmp and a reboot removes it: rebuild it first.
-- When a held-out misses twice, widen to the whole family (verb x object x tail); fix a shared-strip root cause, never
-  list tails one by one.
-- Older classes lead; an older ask is lowered only by a ruling; move a raised pin with a note naming the ruling.
-- Run the whole agent-core suite before every push, fail 0; push only on the hygiene gate's exit 0, unpiped.
+- EVERY node run (tests, probes, sweeps) goes through the run guard with the inbox checked in the same call; none
+  from a phase-2 START until MERGED. The guard lives beside the worktree (`<worktree>.guard/`); /tmp holds a symlink.
+- Widen to the whole family first; diff class sets against main (reclass), not only "still asks".
+- Older classes lead; a probe form only adds asks (stricter verdict wins), never lowers.
 
 ## Tools
 
-- Inbox: only `~/dtadpole/reflection/_tools_/session-inbox/session-inbox.py check|read --me cu-developer-one` (mark read with `--done`); also the old store until REF #6167 merges them.
+- Inbox: `~/dtadpole/reflection/_tools_/session-inbox/session-inbox.py check|read --me cu-developer-one` (mark read with `--done`).
 - Before every push: `node ~/dtadpole/heddle/_tools_/public-hygiene/gate.mjs --range origin/main..HEAD`.
