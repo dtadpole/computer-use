@@ -776,6 +776,9 @@ const ADDRESS_SHAPES = [
   new RegExp(`(?:^|[\\s,:(/])\\d{1,6}[A-Za-z]?\\s+(?:\\p{Lu}[\\p{L}\\d.'-]*\\s+){1,5}(?:${STREET_TYPES})\\b\\.?`, 'u'),
   // A one-word street name then its number: 'Hauptstraße 5', 'Lindenweg 12a', 'Kalverstraat 1'.
   new RegExp(`\\p{Lu}\\p{L}*(?:${TRAILING_STREET_WORDS})\\s+\\d{1,5}[a-z]?\\b`, 'u'),
+  // r6 (cu-researcher): a capitalised street word as its own word or after a hyphen, then a house number: 'Berliner
+  // Straße 12', 'Baker Strasse 5', 'Karl-Marx-Straße 5', 'Lange Gasse 3'.
+  /(?:^|[\s,(-])(?:Straße|Strasse|Str\.|Straat|Gasse|Weg|Platz|Allee|Laan|Gracht|Gatan|Gade|Vej)\s+\d{1,5}[a-z]?\b/u,
   // A number then a street word: '12 rue de Rivoli', '3, avenue Foch'.
   /(?:^|[\s,:(])\d{1,4},?\s+(?:rue|avenue|boulevard|bd|chemin|allée|impasse|quai)\s+\p{L}/iu,
   // A leading street word, a capitalised name, then its number: 'Calle Mayor 10', 'Via Roma, 12', 'Rua Augusta 1500',

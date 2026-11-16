@@ -90,11 +90,21 @@ test('CU-374 (cu-researcher): a street address shown beside a box is a displayed
     '1-2-3 Shibuya, Tokyo 150-0002',
     'Kalverstraat 1, Amsterdam',
     'Drottninggatan 5',
+    // r6: the street word as its own word or after a hyphen.
+    'Baker Strasse 5',
+    'Baker Strasse 12a',
+    'Berliner Straße 12',
+    'Frankfurter Strasse 5',
+    'Karl-Marx-Straße 5',
+    'Lange Gasse 3',
   ]
   for (const address of shown) {
     const { hit, focused } = await read({ ...BOX, nearbyLabel: address })
     // None, or (r3) the field words with the address cut out when they make the box ask - never a house number or code.
-    for (const read1 of [hit.nearbyLabel, focused.nearbyLabel]) assert.ok(read1 === null || !/\d/.test(read1), `${address} read as ${read1}`)
+    const names = (address.match(/\p{Lu}\p{L}{3,}/gu) ?? []).filter((word) => word !== 'Ship')
+    for (const read1 of [hit.nearbyLabel, focused.nearbyLabel]) {
+      assert.ok(read1 === null || (!/\d/.test(read1) && names.every((word) => !read1.includes(word))), `${address} read as ${read1}`)
+    }
     for (const target of [hit, focused]) assert.ok(!JSON.stringify(target).includes(address), `no field carries '${address}'`)
   }
 })
