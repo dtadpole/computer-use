@@ -389,6 +389,10 @@ const withoutPastState = (name) => String(name ?? '').replace(PAST_STATE, ' ')
 const namesDelete = (name) => namesWord(withoutPastState(name).replace(/永不(保存|儲存|存储)/g, ''), WORDS.delete)
 const namesPurchase = (name) => namesWord(withoutOrderReferences(withoutPastState(name)), WORDS.purchase) || TRIAL_NAME.test(String(name ?? '').trim())
 const DROP_DELETE = [...WORDS.delete, 'trash', 'bin']
+// CU-385 (cu-researcher's probe): the trash and junk folders by their own names - Outlook's 'Deleted Items', the localized
+// trash names (Papierkorb, Corbeille, Papelera, Cestino, Prullenbak, Lixeira, 垃圾箱 / 废纸篓, ゴミ箱, 휴지통) and Spam / Junk.
+// A drop there removes the item from where it was; shared-folder drops stay with the driver's networkVolume / dropDestination.
+const DROP_TRASH_NAME = /\b(?:deleted\s+(?:items|messages|mail|files)|recycle\s+bin|papierkorb|corbeille|papelera|cestino|prullenbak|lixeira|spam|junk(?:\s+(?:e-?mail|mail))?)\b|垃圾箱|废纸篓|回收站|ゴミ箱|휴지통/iu
 const TEXT_ROLE = /^(ax)?(textfield|textarea|searchfield|combobox|textbox|searchbox)$/i
 
 /**
@@ -1430,7 +1434,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // a click on it; a file, row, cell or image at the press point is not judged by its name (dragging it moves it).
     const pressesTarget = POINTER.has(action.type) || (action.type === 'drag' && CONTROL_ROLE.test(String(target?.role ?? '')))
     // ... and the drop point of a drag that travels: a drop onto a Trash, Delete or Remove zone deletes.
-    if (action.type === 'drag' && context.dropTarget && namesWord(String(context.dropTarget.name ?? ''), DROP_DELETE)) classes.push('delete')
+    if (action.type === 'drag' && context.dropTarget && (namesWord(String(context.dropTarget.name ?? ''), DROP_DELETE) || DROP_TRASH_NAME.test(String(context.dropTarget.name ?? '')))) classes.push('delete')
     // CU-377 (High pending a live row; cu-coordinator 21:35Z): a desktop drag that carries a file, or whose source is unknown,
     // asks when its drop is in another app or cannot be read (fail closed only where it matters, cu-researcher); a drag of
     // anything else, or inside one app, keeps today's judgement. The loop computes context.dragSource.
