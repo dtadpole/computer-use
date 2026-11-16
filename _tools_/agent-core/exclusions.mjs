@@ -63,6 +63,8 @@ export const EXCLUDED_APPS = Object.freeze([
       // Citrix Workspace session draws into (the Identifier line of a Citrix Viewer crash report on Apple's developer forums) -
       // and Devolutions Remote Desktop Manager, which embeds RDP / VNC sessions (Installomator metadata AppID).
       'com.carriez.rustdesk', 'com.citrix.receiver.icaviewer.mac', 'com.devolutions.remotedesktopmanager',
+      // r3 (cu-developer-two): NoMachine's Mac client (Installomator metadata AppID, nomachine.plist).
+      'com.nomachine.nxdock',
     ]),
   }),
   Object.freeze({

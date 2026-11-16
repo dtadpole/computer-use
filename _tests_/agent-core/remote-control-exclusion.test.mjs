@@ -12,7 +12,7 @@ test('CU-394: remote-desktop and VM clients are excluded by kind', () => {
     'com.omnissa.horizon.client.mac', 'com.utmapp.UTM', 'org.virtualbox.app.VirtualBox', 'com.p5sys.jump.mac.viewer', 'com.p5sys.jump.mac.viewer.web',
     'com.realvnc.vncviewer', 'com.realvnc.rvncconnect', 'tv.parsec.www', 'com.citrix.receiver.nomas', 'com.splashtop.stb.macosx', 'com.splashtop.stp.macosx',
     'com.lemonmojo.RoyalTSX.App', 'com.edovia.screens.5', 'com.google.chromeremotedesktop.me2me-host',
-    'com.carriez.rustdesk', 'com.citrix.receiver.icaviewer.mac', 'com.devolutions.remotedesktopmanager']) {
+    'com.carriez.rustdesk', 'com.citrix.receiver.icaviewer.mac', 'com.devolutions.remotedesktopmanager', 'com.nomachine.nxdock']) {
     assert.equal(isExcludedApp(id).excluded, true, id)
     assert.equal(isExcludedApp(id).kind, 'remote_control', id)
   }
