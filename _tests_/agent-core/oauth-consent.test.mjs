@@ -19,6 +19,16 @@ test('CU-393: an access-request dialog makes a bare grant ask, on any page', () 
   assert.equal(click('https://app.example/home', 'Continue', { dialogDescription: 'Zapline is requesting permission to read your calendar.' }), 'permission')
 })
 
+test('CU-393 r2: question-form and data-scope dialogs, and a provider consent step without client_id, ask', () => {
+  assert.equal(click('https://app.example/home', 'Allow', { dialogName: 'Allow "Notes Sync" to access your Google account?' }), 'permission')
+  assert.equal(click('https://app.example/home', 'Allow', { dialogName: 'Allow "Budget" to access your contacts?' }), 'permission')
+  assert.equal(click('https://app.example/home', 'Allow', { dialogName: 'Grant access to your calendar' }), 'permission')
+  assert.equal(click('https://app.example/home', 'Continue', { dialogDescription: 'App wants to view your contacts' }), 'permission')
+  assert.equal(click('https://accounts.idp.example/signin/oauth/consent?authuser=0&part=abc', 'Allow'), 'permission')
+  assert.equal(click('https://app.example/home', 'Allow', { dialogName: 'Allow pasting into this document?' }), 'allow')
+  assert.equal(click('https://app.example/home', 'Continue', { dialogName: 'Terms of Service updated' }), 'allow')
+})
+
 test('CU-393 negatives: declining, other pages and non-consent dialogs stay as they were', () => {
   for (const name of ['Cancel', 'Deny', 'Not now', 'Back', 'Privacy policy', 'Use another account']) assert.equal(click(PAGES[0], name), 'allow', name)
   for (const url of ['https://app.example/settings', 'https://idp.example/oauth2/docs', 'https://idp.example/authorize/help']) for (const name of ['Allow', 'Continue', 'Accept']) assert.equal(click(url, name), 'allow', `${url} ${name}`)

@@ -395,12 +395,37 @@ export function isOAuthConsentPage(url) {
     if (!/^https?:$/.test(u.protocol)) return false
     const oauthPath = /(?:^|\/)(?:oauth2?|o\/oauth2|authori[sz]e|consent|connect\/authori[sz]e|login\/oauth\/authori[sz]e|adfs\/oauth2)(?:\/|$)/i.test(u.pathname)
     const oauthQuery = u.searchParams.has('client_id') || u.searchParams.has('response_type')
-    return oauthPath && oauthQuery
+    // r2 (cu-developer-three): after the first redirect a provider's own consent screen keeps only its own tokens in the query
+    // (accounts.google.com/signin/oauth/consent?authuser=0&part=...), so a path naming both OAuth and the consent step counts alone.
+    const consentStep = /\/(?:signin\/)?oauth2?\/consent(?:\/|$)/i.test(u.pathname)
+    return (oauthPath && oauthQuery) || consentStep
   } catch { return false }
 }
 const OAUTH_BARE_GRANT = /^\s*(?:allow|accept|continue|authori[sz]e|approve|grant|confirm|yes,?\s+allow|allow\s+access|i\s+agree|agree)\s*$/i
 // A consent dialog says so in its title or description ('... wants to access your Google Account', '... is requesting permission').
-const OAUTH_DIALOG_TEXT = /\b(?:wants?\s+to\s+access\s+your|would\s+like\s+(?:to\s+)?(?:access|permission)|is\s+requesting\s+(?:access|permission)|requests?\s+access\s+to\s+your|authori[sz]e\s+\S+(?:\s+\S+)?\s+to\s+access)\b/i
+// r2 (cu-developer-two / -three): the question form 'Allow <app> to access your ...?', 'Grant (<app>) access to your ...', and the
+// data-scope verbs ('wants to view / read / manage your contacts'). 'Allow pasting into this document?' names no access and stays free.
+const OAUTH_DIALOG_TEXT = /\b(?:wants?\s+to\s+(?:access|view|read|see|manage|use)\s+your|would\s+like\s+(?:to\s+)?(?:access|permission)|is\s+requesting\s+(?:access|permission)|requests?\s+access\s+to\s+your|authori[sz]e\s+\S+(?:\s+\S+)?\s+to\s+access|allow\s+\S+(?:\s+\S+){0,3}\s+to\s+(?:access|view|read|see|manage|use)\s+your|grant\s+(?:\S+\s+){0,3}access\s+to\s+your)\b/i
+// CU-513 (cu-researcher; cu-coordinator: Medium): an extension / add-on / plug-in store DETAIL page, by host and path. On it a
+// bare 'Install' / 'Get' / 'Add' is the store's install button (the browser's own 'Add extension?' confirm is outside the page).
+export function isExtensionStoreDetail(url) {
+  try {
+    const u = new URL(String(url ?? ''))
+    if (!/^https?:$/.test(u.protocol)) return false
+    const host = u.hostname.toLowerCase(); const path = u.pathname
+    if (host === 'chromewebstore.google.com' && /^\/detail\//.test(path)) return true
+    if (host === 'chrome.google.com' && /^\/webstore\/detail\//.test(path)) return true
+    if ((host === 'addons.mozilla.org' || host === 'addons.thunderbird.net') && /\/addon\//.test(path)) return true
+    if (host === 'microsoftedge.microsoft.com' && /^\/addons\/detail\//.test(path)) return true
+    if (host === 'addons.opera.com' && /\/extensions\/details\//.test(path)) return true
+    if (host === 'marketplace.visualstudio.com' && /^\/items/.test(path)) return true
+    // r2 (cu-developer-three): the IDE extension registries - Open VSX (VSCodium, Cursor, Gitpod, Theia) and JetBrains Marketplace.
+    if (host === 'open-vsx.org' && /^\/extension\/[^/]+\/[^/]+/.test(path)) return true
+    if (host === 'plugins.jetbrains.com' && /^\/plugin\/\d+/.test(path)) return true
+    return /\/wp-admin\/(?:plugin|theme)-install\.php$/.test(path)
+  } catch { return false }
+}
+const STORE_BARE_INSTALL = /^\s*(?:install|get|add|install\s+now|get\s+it(?:\s+now)?|add\s+extension|install\s+(?:extension|plugin|plug-in|theme|add-on))\s*$/i
 // CU-395 (High; cu-coordinator 03:01Z): 'physical' - a control that acts in the physical world (a lock, a garage door, an
 // alarm, a lost device) - leads every class, is never pre-approved and asks each time.
 // cu-coordinator 03:14Z: 'unlock' only beside a physical noun - paywalls ('Unlock Premium', 'Unlock all features') stay free.
@@ -1648,6 +1673,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       if (!focusesEntry && /^\s*(?:(?:open|run|keep|download|install)\s+anyway|keep\s+(?:the\s+)?dangerous\s+file|install\s+(?:the\s+)?(?:configuration\s+)?(?:profile|helper))\b/i.test(name)) classes.push('install')
       // CU-393: a bare grant on an OAuth consent page, or in a dialog that asks for access to the account, asks permission.
       if (!focusesEntry && OAUTH_BARE_GRANT.test(name) && (isOAuthConsentPage(context.url) || OAUTH_DIALOG_TEXT.test(`${target?.dialogName ?? ''} ${target?.dialogDescription ?? ''}`))) classes.push('permission')
+      // CU-513: a bare install word on an extension / add-on / plug-in store detail page installs code into the browser or site.
+      if (!focusesEntry && STORE_BARE_INSTALL.test(name) && isExtensionStoreDetail(context.url)) classes.push('install')
       // CU-422: a bare 'Give' / 'Give now' pays; a bare 'Vote' (or 'Vote for <x>'), 'Resign' and 'Apply for <noun>' submit.
       // cu-coordinator 15:42Z (round 2): money forms 'Leave a tip', 'Tip $<n>', 'Give $<n>'.
       if (!focusesEntry && (/^\s*give(?:\s+now)?\s*$/i.test(name) || /^\s*leave\s+(?:a\s+)?tip\b/i.test(name)
