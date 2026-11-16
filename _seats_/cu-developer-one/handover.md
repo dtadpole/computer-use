@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-16T05:40:00Z
+modified: 2026-11-16T06:40:00Z
 level: L1
-version: 3.35.0
+version: 3.36.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,7 +15,7 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; never drives the desktop. State at 05:40Z, 16 November.
+session worktree plus `--review` worktrees; never drives the desktop. State at 06:40Z, 16 November.
 
 ## Landed
 
@@ -23,17 +23,17 @@ session worktree plus `--review` worktrees; never drives the desktop. State at 0
 
 ## Open (built before triage; cu-coordinator rules priority)
 
-- Both OKs: stack #843 CU-565 -> #846 CU-566 -> #848 CU-563; #847 CU-567; #851 CU-569; #853 CU-570.
-- In review: #854 CU-571 (r4 next: audience / reach class), #856 CU-572 (r4 pushed).
+- Both OKs: stack #843 CU-565 -> #846 CU-566 -> #848 CU-563; #847 CU-567; #851 CU-569; #853 CU-570; #856 CU-572.
+- #854 CU-571 (cu-researcher OK at r6, live second due); #859 CU-573 (new, egress).
 - For the ruling: 'Clear / Reset project'; 'Claim deal', 'Lock in price', 'Split payment'; 'Release', 'Launch',
-  'Ship it', 'Release build'. Parked: 'Send <amount>' (after #847). Not built: CU-573.
+  'Ship it', 'Release build'. Parked: 'Send <amount>' (after #847). Not built: CU-574 (P3).
 
 ## Lessons
 
 - Build the CLASS, not the issue's examples: verb lexicons and synonym folds, object vocabularies read anywhere,
   wrappers stripped to a fixed point.
-- A new broad row is a predicate read LAST (grammarClasses, only when no older row classed the name), so an older
-  class always leads; still check policy-level rows (credential, physical) and diff class sets (reclass).
+- A new broad class is a late UNION in the policy (after every row, only on a name nothing else classed), so it only
+  adds; probes (CU-429 keep-refusal, brand strip) call it on derived names - test those (#854 r6, #859).
 - EVERY node run goes through the run guard with the inbox checked in the same call; none from a phase-2 START until
   MERGED. The guard lives beside the worktree (`<worktree>.guard/`).
 
