@@ -314,6 +314,12 @@ const WORDS = Object.freeze({
     'add member', 'add members', 'disable protection', 'unprotect branch',
     // CU-411: ownership and admin grants widen access.
     'make owner', 'make co-owner', 'transfer ownership', 'make admin', 'grant admin',
+    // CU-396 (cu-researcher; supersedes #462 with cu-developer-one's go; cu-coordinator's 03:58Z class): presenting,
+    // broadcasting, streaming, recording others and calling back reach other people like 'Share screen' and 'Call'. A bare
+    // 'Present' (slide apps), 'Presenter view', 'Stop recording' and 'Live captions' stay free.
+    'present now', 'present a tab', 'present a window', 'present your screen', 'present entire screen', 'present to everyone',
+    'go live', 'go live now', 'start broadcast', 'start broadcasting', 'start streaming', 'start stream', 'start livestream',
+    'start live stream', 'start live', 'start recording', 'record meeting', 'record this meeting', 'call back', 'call them back',
     // CU-389 (cu-researcher): widening who can reach a document or space - general access and join settings.
     'anyone can edit', 'anyone can view', 'anyone can comment', 'everyone can edit', 'everyone can view',
     'anyone with the link', 'anyone on the web', 'anyone on the internet', 'public on the web',
