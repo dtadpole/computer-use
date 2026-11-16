@@ -275,6 +275,9 @@ const WORDS = Object.freeze({
     'add payee', 'add a payee', 'add recipient', 'add beneficiary',
     // CU-401: leaving a shared space or unlinking an account.
     'leave workspace', 'leave organization', 'leave organisation', 'leave org', 'leave team', 'leave server', 'unlink account',
+    // CU-389 (cu-researcher): access widened without the word share; CU-375: a profile made public.
+    'anyone can edit', 'anyone can view', 'anyone can comment', 'anyone on the web', 'make editor', 'can edit', 'allow guests',
+    'allow anyone to join', 'shared folder', 'make my profile public', 'profile public', 'make owner',
     // CU-386 (cu-coordinator 23:54Z): asking someone else for money.
     'request money',
     // CU-258 (cu-researcher): standing choices an app keeps after the run, as whole phrases. A bare 'Allow' stays free so
@@ -326,7 +329,7 @@ const WORDS = Object.freeze({
 // CU-377 follow-up: the file browsers whose rows are files (the same set as app-policy's FILE_BROWSERS).
 const FILE_BROWSER_APPS = new Set(['com.apple.finder', 'com.cocoatech.PathFinder', 'com.binarynights.ForkLift-3', 'com.binarynights.ForkLift', 'com.eltima.cmd1', 'com.mrrsoftware.marta', 'org.yanex.marta'])
 const SHARE_DESTINATION = /\b(?:airdrop|shared(?:\s+(?:folder|with\s+me|with\s+you))?|drop\s+box|dropbox|public\s+folder|server|network|(?:smb|afp|nfs|webdav):)/i
-const ACCOUNT_SECURITY = /\b(?:(?:generate|create|new|add)\s+(?:an?\s+)?app[\s-]?(?:specific[\s-]?)?passwords?|app[\s-]?(?:specific[\s-]?)?passwords?|(?:enable|disable|turn\s+(?:on|off)|set\s+up|add\s+(?:a\s+)?)?\s*(?:auto[\s-]?forward(?:ing)?|automatic(?:ally)?\s+forward(?:ing)?|forwarding(?:\s+address)?|forward\s+(?:a\s+copy|incoming|all|to)\b)|two[\s-]?(?:factor|step)(?:\s+(?:authentication|verification|login))?|2[\s-]?step\s+verification|create\s+(?:a\s+|new\s+)?filter|2fa|multi[\s-]?factor(?:\s+authentication)?|(?:change|update|edit)\s+(?:your\s+)?e-?mail(?:\s+address)?(?!\s+(?:notifications?|preferences|settings))|(?:change|update|edit)\s+(?:your\s+)?phone(?:\s+number)?|recovery\s+(?:e-?mail|phone|codes?))\b/i
+const ACCOUNT_SECURITY = /\b(?:(?:generate|create|new|add)\s+(?:an?\s+)?app[\s-]?(?:specific[\s-]?)?passwords?|app[\s-]?(?:specific[\s-]?)?passwords?|(?:enable|disable|turn\s+(?:on|off)|set\s+up|add\s+(?:a\s+)?)?\s*(?:auto[\s-]?forward(?:ing)?|automatic(?:ally)?\s+forward(?:ing)?|forwarding(?:\s+address)?|forward\s+(?:a\s+copy|incoming|all|to)\b)|two[\s-]?(?:factor|step)(?:\s+(?:authentication|verification|login))?|2[\s-]?step\s+verification|create\s+(?:a\s+|new\s+)?filter|2fa|multi[\s-]?factor(?:\s+authentication)?|(?:change|update|edit)\s+(?:your\s+)?e-?mail(?:\s+address)?(?!\s+(?:notifications?|preferences|settings))|(?:change|update|edit)\s+(?:your\s+)?phone(?:\s+number)?|recovery\s+(?:e-?mail|phone|codes?)|imap(?:\s+access)?|enable\s+pop3?|pop3?\s+(?:access|download)|login\s+(?:alerts|notifications)|security\s+alerts|app-passwort|weiterleitung(?:sadresse)?|forward\s+my\s+(?:e-?mail|mail))\b/i
 // CU-395 (High; cu-coordinator 03:01Z): 'physical' - a control that acts in the physical world (a lock, a garage door, an
 // alarm, a lost device) - leads every class, is never pre-approved and asks each time.
 // cu-coordinator 03:14Z: 'unlock' only beside a physical noun - paywalls ('Unlock Premium', 'Unlock all features') stay free.
@@ -388,7 +391,11 @@ const PAST_STATE = /已(?:经|經)?(?:发送|發送|傳送|删除|刪除|提交|
 const withoutPastState = (name) => String(name ?? '').replace(PAST_STATE, ' ')
 const namesDelete = (name) => namesWord(withoutPastState(name).replace(/永不(保存|儲存|存储)/g, ''), WORDS.delete)
 const namesPurchase = (name) => namesWord(withoutOrderReferences(withoutPastState(name)), WORDS.purchase) || TRIAL_NAME.test(String(name ?? '').trim())
-const DROP_DELETE = [...WORDS.delete, 'trash', 'bin']
+// CU-385 (cu-researcher): mail and localized trash and spam folders delete or discard what lands there.
+const PROTECTION_NAME = /two[\s-]?(?:factor|step)|2[\s-]?step|\b2fa\b|multi[\s-]?factor|recovery\s+(?:e-?mail|phone|codes?)|login\s+(?:alerts|notifications)|security\s+alerts/i
+const DROP_DELETE = [...WORDS.delete, 'trash', 'bin', 'deleted items', 'papierkorb', '\u5783\u573e\u7bb1', '\u5e9f\u7eb8\u7bd3', 'spam', 'junk', 'junk e-mail', 'junk email',
+  // D-099 per side (cu-coordinator 02:27Z): the trash folders of LOCALE_WORDS' own languages.
+  'corbeille', 'papelera', 'cestino', 'prullenbak', 'lixeira', 'papierkorb', '\u043a\u043e\u0440\u0437\u0438\u043d\u0430', '\u30b4\u30df\u7bb1', '\ud734\uc9c0\ud1b5']
 const TEXT_ROLE = /^(ax)?(textfield|textarea|searchfield|combobox|textbox|searchbox)$/i
 
 /**
@@ -1363,7 +1370,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // CU-388 (High; cu-coordinator 00:28Z): a choice reached by key is judged like a click on it, CU-373's account-security
       // names included - turning forwarding on, an app password, a bare two-factor or recovery option ask credential; the
       // safe directions by name (protection on, forwarding off) stay free as on a click.
-      const protectionOnByName = /\b(?:turn\s+on|enable|set\s+up|activate)\b/i.test(optionName) && !/forward|app[\s-]?(?:specific[\s-]?)?password/i.test(optionName)
+      const protectionOnByName = /\b(?:turn\s+on|enable|set\s+up|activate)\b/i.test(optionName) && PROTECTION_NAME.test(optionName)
       const forwardingOffByName = /\b(?:disable|turn\s+off|stop|off)\b/i.test(optionName) && /forward/i.test(optionName)
       if (ACCOUNT_SECURITY.test(optionName) && !protectionOnByName && !forwardingOffByName) classes.push('credential')
     }
@@ -1473,7 +1480,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // auto-forwarding, two-factor or recovery settings - so a press asks credential, whatever a toggle's direction.
       // Turning two-factor or recovery protection ON by an explicit name stays free (CU-270); a bare toggle, whose direction
       // the driver does not report yet, asks.
-      const protectionOn = /\b(?:turn\s+on|enable|set\s+up|activate)\b/i.test(name) && !/forward|app[\s-]?password/i.test(name)
+      // CU-375: only a protection (two-factor, recovery, login alerts) goes free when turned on by name - 'Enable IMAP' opens access.
+      const protectionOn = /\b(?:turn\s+on|enable|set\s+up|activate)\b/i.test(name) && PROTECTION_NAME.test(name)
       // Turning forwarding OFF is the safe direction (cu-coordinator 21:00Z).
       const forwardingOff = /\b(?:disable|turn\s+off|stop)\b/i.test(name) && /forward/i.test(name)
       // CU-373 refinement (fail closed, cu-researcher 20:56Z): the driver's state before the press decides a toggle's
@@ -1489,6 +1497,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const isProtection = /two[\s-]?(?:factor|step)|2[\s-]?step|\b2fa\b|multi[\s-]?factor|recovery\s+(?:e-?mail|phone|codes?)/i.test(name)
       const safeToggle = (isProtection && nativeOff) || (isForwarding && nativeOn)
       if (!focusesEntry && ACCOUNT_SECURITY.test(name) && !protectionOn && !forwardingOff && !safeToggle) classes.push('credential')
+      // CU-375: a bare 'Passkeys' TOGGLE (direction unknown) asks; a 'Passkeys' button and 'Sign in with passkey' keep CU-289's rule.
+      if (!focusesEntry && /^passkeys?$/i.test(name.trim()) && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))) classes.push('credential')
       // CU-401 round 2 (cu-coordinator): a plan word beside a navigation noun ('Downgrade options', 'Cancel plan details')
       // opens a page - free unless another purchase word remains.
       if (/\b(?:downgrade|cancel\s+(?:plan|membership)|end\s+trial)\b[\s\S]*\b(?:options|settings|details|faq|guide|policy|info)\b/i.test(name)
