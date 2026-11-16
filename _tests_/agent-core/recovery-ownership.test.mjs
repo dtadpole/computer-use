@@ -29,3 +29,9 @@ test('#862 round 2 (cu-researcher 07:08Z): a reset / verification destination is
   assert.notDeepEqual(classesOf('Send reset links to my work email'), [], 'an older send row leads and asks')
   for (const name of ['Reset filters', 'Send email', 'Use a different inbox', 'Get verification badge', 'Recovery mode guide']) assert.ok(!classesOf(name).includes('credential'), name)
 })
+
+test('#862 round 3 (cu-researcher 08:14Z): concrete objects - a person, a literal number or an address', () => {
+  for (const name of ['Set Ana as recovery contact', 'Unlink +1 555 0100', 'Remove ana@example.org', 'Add Bob Lee as a trusted contact']) assert.notDeepEqual(classesOf(name), [], name)
+  for (const name of ['Make sam@partner.example the account owner', 'Make Ana the workspace admin', 'Set Priya as owner']) assert.notDeepEqual(classesOf(name), [], name)
+  for (const name of ['Set Ana as favorite', 'Make it the default', 'Unlink']) assert.ok(!classesOf(name).includes('credential') && !classesOf(name).includes('permission') || name === 'Unlink', name)
+})

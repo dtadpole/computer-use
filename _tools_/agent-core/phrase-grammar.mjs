@@ -1035,6 +1035,12 @@ export function recoveryOrOwnership(raw) {
   if (/\b(?:inbox|e-?mail|address|phone|number|device|app|authenticator|channel|destination)\b/i.test(raw)
     && /\b(?:password\s+resets?|resets?\s+(?:links?|e-?mails?|codes?)|reset\s+(?:links?|e-?mails?)|account\s+recovery|recovery|(?:verification|security|sign-?in|login|one-?time|2fa|mfa|two-?factor|otp|confirmation)\s+(?:codes?|links?|e-?mails?|texts?|messages?|prompts?)|otps?)\b/i.test(raw)
     && /^\s*(?:use|set|change|update|pick|choose|send|route|redirect|forward|switch|point|move|add|register|deliver|get)\b/i.test(raw)) return 'credential'
+  // #862 r3 (cu-researcher 08:14Z: concrete objects): naming a person or address AS a recovery factor ('Set Ana as recovery contact'),
+  // unlinking a literal phone number or address ('Unlink +1 555 0100'), and making someone the owner / admin / heir ('Make
+  // sam@partner.example the account owner').
+  if (/^\s*(?:set|add|make|use|choose|pick|name|designate)\s+\S+(?:\s+\S+){0,3}?\s+as\s+(?:the\s+|a\s+|an\s+|my\s+|your\s+)?(?:new\s+)?(?:recovery|backup|fallback|trusted|secondary|alternate)\s+(?:contact|e-?mail|phone|number|method|device|address)\s*$/i.test(raw)
+    || /^\s*(?:unlink|remove|detach|disconnect|forget|unpair)\s+(?:\+?\d[\d\s().-]{5,}\d|[\w.+-]+@[\w-]+(?:\.[\w-]+)+)\s*$/i.test(raw)) return 'credential'
+  if (/^\s*(?:make|set|appoint|designate|name|nominate)\s+\S+(?:\s+\S+){0,3}?\s+(?:as\s+)?(?:the\s+|an?\s+)?(?:new\s+)?(?:account\s+|workspace\s+|org(?:ani[sz]ation)?\s+|team\s+|primary\s+)?(?:owner|admin(?:istrator)?|heir|successor|beneficiary|legacy\s+contact)\s*$/i.test(raw)) return 'permission'
   // A bare phone (number) counts only when it is UNLINKED from the account - a checkout form's 'Change phone' stays free.
   if (/^\s*(?:unlink|detach|disconnect|unpair|unregister|forget)\s+(?:the\s+|my\s+|this\s+)?(?:mobile\s+)?phone(?:\s+number)?\s*$/i.test(raw)) return 'credential'
   if (/^\s*(?:hand\s+(?:over|off)|give\s+away|pass(?:\s+on)?|reassign|delegate|bequeath|sign\s+over|turn\s+over)\s+(?:the\s+|my\s+|this\s+|our\s+)?(?:account|workspace|org|organi[sz]ation|team|channel|ownership|owner\s+role|admin\s+(?:rights|role)|keys)(?:\s+(?:to|over\s+to)(?:\s+\S+){0,4})?\s*$/i.test(raw)
