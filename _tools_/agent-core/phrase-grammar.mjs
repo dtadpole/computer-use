@@ -1028,6 +1028,15 @@ export function grammarClasses(name, role = '') {
 function weakensProtection(raw) {
   // An insurance-style plan named 'protection' is an upsell, not a security control ('Skip device protection', CU-410 family).
   if (/\b(?:device|phone|purchase|price|travel|trip|accidental|extended|screen|water|package|shipping|return|rental|cancellation|tire|identity\s+theft|payment)\s+protection\b/i.test(raw)) return false
+  // #856 r5 (cu-researcher 05:40Z): a security word only counts next to a security or account object - a delivery signature, a resend
+  // timer or a UI element is not a control ('Stop requiring a signature on delivery', 'Skip verification email resend timer').
+  if (/\b(?:delivery|deliveries|shipping|shipment|package|parcel|courier|timer|countdown|resend|reminder|banner|pop-?up|tooltip|animation|sound|tutorial|tour|intro)\b/i.test(raw)) return false
+  // #856 r5: weakening a REQUIREMENT also takes credential objects (hardware / security keys, passkeys, passwords, passcodes, PINs) - a
+  // union with the older credential rows, read last ('Un-enforce hardware key requirement', 'Stop requiring a passcode', 'Let users reuse
+  // old passwords'). "Don't require passcode" stays with the older MDM credential row.
+  if (/^\s*(?:un-?enforce|stop\s+requiring|no\s+longer\s+require|remove\s+(?:the\s+)?requirement\s+(?:for|of)|waive|relax|drop)\s+(?:a\s+|an\s+|the\s+)?(?:hardware(?:\s+security)?\s+|security\s+|physical\s+|fido2?\s+)?(?:keys?|passkeys?|passwords?|passcodes?|pins?|credentials?|yubikeys?|tokens?)(?:\s+(?:requirement|requirements|policy|rule|for\s+\S+(?:\s+\S+)?))?\s*$/i.test(raw)
+    || /^\s*(?:let|allow)\s+(?:users|people|members|employees|everyone|accounts)\s+(?:to\s+)?(?:reuse|re-use|recycle|share)\s+(?:old\s+|previous\s+|their\s+)?(?:passwords?|passcodes?|pins?|credentials?)\s*$/i.test(raw)
+    || /^\s*make\s+(?:hardware\s+|security\s+)?(?:keys?|passkeys?|passwords?|passcodes?|pins?)\s+optional\s*$/i.test(raw)) return true
   // CU-572 (cu-researcher 04:46Z; built before triage): WEAKENING a protection by CLASS - PERMISSION. Any weakening verb (disable / turn
   // off / switch off / deactivate / remove / skip / bypass / ignore / stop / pause / suspend / relax / weaken / lower / loosen / reduce /
   // waive / override / opt out of) x any protection (CAPTCHA, rate limiting, session timeouts, password policy / expiry, malware and code

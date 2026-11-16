@@ -49,3 +49,9 @@ test('#856 round 4 (cu-researcher 05:30Z): phrasal off-verbs with a security voc
   for (const name of ['Switch off session binding', 'Unenforce device attestation', 'Unpin certificates', 'Permit password reuse', 'Turn off certificate transparency checks', 'Disable OAuth state validation', 'Relax CORS', 'Skip the attestation step']) assert.ok(classesOf(name).includes('permission'), name)
   for (const name of ['End session', 'Pause session', 'Unpin message', 'Turn off key sounds', 'Stop recording session', 'Disable spam folder view']) assert.ok(!classesOf(name).includes('permission'), name)
 })
+
+test('#856 round 5 (cu-researcher 05:40Z): requirements on credentials weaken too; delivery signatures and UI timers are not controls', () => {
+  for (const name of ['Un-enforce hardware key requirement', 'Unenforce security key requirement', 'Stop requiring a passcode', 'Let users reuse old passwords', 'No longer require passkeys', 'Make security keys optional']) assert.ok(classesOf(name).includes('permission'), name)
+  const checkout = (name) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: 'https://shop.example/checkout', target: { role: 'button', name } }); return v.decision === 'allow' ? [] : (v.classes ?? [v.class]) }
+  for (const name of ['Stop requiring a signature on delivery', 'Skip verification email resend timer']) assert.deepEqual(checkout(name), [], name)
+})
