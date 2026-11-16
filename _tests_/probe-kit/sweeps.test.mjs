@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { FAMILIES, ruledGaps, sweep } from '../../_tools_/probe-kit/sweeps.mjs'
+import { FAMILIES, ruledGaps, sweep, diffSweeps } from '../../_tools_/probe-kit/sweeps.mjs'
 
 // Part of CU-458: the canonical-form sweeps kept on the kit. A row that asks bare keeps asking in every ruled form; a row that
 // is free bare is skipped; an unruled family is reported, never judged.
@@ -33,4 +33,13 @@ test('a form that hands off (stronger than asking) is not reported free', () => 
   const result = sweep([{ id: 'fixture', site: SITE, rows: [['handoff', ['Change password']]] }])
   assert.deepEqual(ruledGaps(result), [])
   assert.equal(result.label.asking, 1)
+})
+
+test('diffSweeps names a newly free form even when the family counts stay equal', () => {
+  const r = (frees) => ({ polite: { ruled: true, asking: 2, free: { please: frees } } })
+  const before = r(['m:Please delete account']), after = r(['m:Please empty trash'])
+  const d = diffSweeps(before, after)
+  assert.deepEqual(d.newFree, [['polite.please', 'm:Please empty trash']])
+  assert.deepEqual(d.gone, [['polite.please', 'm:Please delete account']])
+  assert.deepEqual(diffSweeps(before, before), { newFree: [], gone: [] })
 })
