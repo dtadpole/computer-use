@@ -1,9 +1,9 @@
 ---
 title: '[cu] Verifier - Handover'
 created: 2026-11-08T04:15:13Z
-modified: 2026-11-16T09:10:00Z
+modified: 2026-11-16T09:20:00Z
 level: L2
-version: 5.0.0
+version: 5.0.1
 description: 'What a fresh session of [cu] Verifier needs - live state after the 15 Nov reboot, the rebuilt row tools, the armed closes, and the next step.'
 status: unverified
 grounded_in:
@@ -41,9 +41,10 @@ ROW TOOLS (rebuilt 15 Nov; the reboot emptied /tmp, so they now live in --vtools
 LIVE STATE (16 Nov 09:10Z):
 - Closed since the reboot: CU-559, CU-560, CU-561 (High), CU-462 (Medium; #841 follow-up checked), CU-383.
 - Closes armed (each a watcher with its own tree): #843 CU-565, #846 CU-566, #847 CU-567, #848 CU-563,
-  #851 CU-569, #853 CU-570 (weaker three unruled), #854 CU-571, #856 CU-572, #859 CU-573, #862 CU-574. All carry
-  both OKs and wait on triage; re-arm a watcher that prints 'not merged after 6 h'.
-- Reproduced, no PR yet: CU-568, CU-575 / CU-576 / CU-577 (policy level), CU-578 and CU-579 (in part).
+  #851 CU-569, #853 CU-570 (weaker three unruled), #854 CU-571, #856 CU-572, #859 CU-573, #862 CU-574. All wait
+  on triage (each PR's OKs as on its thread); re-arm a watcher that prints 'not merged after 6 h'.
+- Reproduced, no PR yet: CU-568, CU-578 and CU-579 (in part). CU-575 / CU-576 / CU-577 (policy level) have
+  PRs #863 / #865 / #866; their closes are policy-level probes on the merge.
 - Round-6 lowering (17 verb-as-noun-head labels): before-rows on main 651a7f0 - all 17 ask as links, all 20
   neighbours ask; run the same two pages on the lowering's merge.
 - Blocker reported: no cu-coordinator item since 12 Nov 09:04Z; triage is stalled.
