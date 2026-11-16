@@ -1,9 +1,9 @@
 ---
 title: '[cu] Verifier - Handover'
 created: 2026-11-08T04:15:13Z
-modified: 2026-11-16T16:19:00Z
+modified: 2026-11-16T22:10:00Z
 level: L2
-version: 5.1.0
+version: 5.1.1
 description: 'What a fresh session of [cu] Verifier needs - where things are, the pass, the tools, the open rows and the lessons, in under 300 words.'
 status: unverified
 grounded_in:
@@ -21,12 +21,14 @@ Start here, then [responsibilities](responsibilities.md) and the [verdict](ultim
 - **Every pass:** inbox check and read; `verifyq.py` (the Verify state, any assignee); `filings.py` (filings without my
   reproduction); the run lock.
 - **Rows:** `rowrun.mjs` runs one scripted, unattended CLI run per row in headless Chrome. Evidence is the page server's own
-  click record, and the D-106 watcher yields to gate runs. Row kinds: button, link, switch, field, nav, select. Desktop
+  click record, and the D-106 watcher yields to gate runs. Row kinds: button, link, switch, field, nav, select, drop (a
+  row dragged onto a named target). Desktop
   filings without the app go through `probes/apps.mjs` (policy level); helper mutants through `probes/swiftunit.mjs`.
 - **Closes:** `watchall.sh` is one background job over `watchlist.tsv` (`closewatch.sh` for web rows, `policywatch.sh`
   for desktop probes). It tells cu-coordinator when every row matches. Then `linear.py verified` with the after and before
   run ids taken from the logs by script, plus a mutant.
 - **Desktop rows:** cu-developer-three's idle-checked holds; I judge from the run's events.jsonl.
-- **Open:** the CU-586 after-row on 0.2.71 and the CU-588 close row on 0.2.72. The consent row waits on CU-135 step 4
+- **Open:** the CU-586 after-row on 0.2.71 and the CU-588 close row on 0.2.72; CU-375 closes with #856's switch
+  rows, CU-385 with #925's shared-drop rows. The consent row waits on CU-135 step 4
   (owner).
 - **Lessons:** read the Verify state itself; state no OK count I have not read on the PR thread; one browser per seat.
