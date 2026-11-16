@@ -64,3 +64,8 @@ test('#856 round 6 (cu-researcher 10:17Z): settings-sweep weakenings - security 
 test('#856 round 6 (class sweep): logins from anywhere, link expiration, plain-text secrets', () => {
   for (const name of ['Allow login from any country', 'Disable link expiration', 'Store passwords in plain text', 'Allow access from any IP', 'Turn off session expiration']) assert.notDeepEqual(classesOf(name), [], name)
 })
+
+test('#856 round 7 (cu-researcher 10:39Z): security alerts are protections', () => {
+  for (const name of ['Disable login notifications', 'Stop new-device emails', 'Turn off security alerts', 'Mute suspicious activity warnings', 'Unsubscribe from sign-in alerts']) assert.notDeepEqual(classesOf(name), [], name)
+  for (const name of ['Disable notifications', 'Stop marketing emails', 'Mute chat notifications']) assert.ok(!classesOf(name).includes('permission'), name)
+})
