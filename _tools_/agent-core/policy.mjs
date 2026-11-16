@@ -103,9 +103,38 @@ const LOCALE_WORDS = Object.freeze({
     'comprar', 'pagar', 'realizar pedido', 'finalizar compra', 'tramitar pedido', 'comprar ahora',
     'купить', 'оплатить', 'заказать', 'оформить заказ',
     '購入', '支払', '注文を確定', '注文する', 'レジに進む', '今すぐ買う',
-    '구매', '결제', '주문하기', '바로구매'],
-  delete: ['löschen', 'entfernen', 'verwerfen', 'supprimer', 'effacer', 'eliminar', 'borrar', 'удалить', 'стереть', '削除', '消去', '삭제', '지우기'],
-  submit: ['senden', 'absenden', 'abschicken', 'envoyer', 'soumettre', 'enviar', 'отправить', '送信', '보내기', '전송', '제출'],
+    '구매', '결제', '주문하기', '바로구매',
+    // CU-358 (cu-researcher): Italian, Dutch, Portuguese and Turkish (Portuguese shares 'comprar' / 'pagar' above).
+    'acquista', 'acquista ora', 'compra ora', 'paga', 'paga ora', 'ordina ora', 'effettua ordine', "effettua l'ordine", 'conferma ordine', 'procedi al pagamento', 'vai alla cassa',
+    'kopen', 'nu kopen', 'koop nu', 'betalen', 'nu betalen', 'bestellen en betalen', 'bestellen', 'nu bestellen', 'bestelling plaatsen', 'afrekenen', 'naar de kassa',
+    'comprar agora', 'pagar agora', 'finalizar pedido', 'fazer pedido', 'concluir compra', 'efetuar pagamento',
+    // r2 (cu-developer-three's held-out): short imperatives and 'confirm payment' forms.
+    'compra', 'compra adesso', 'acquista adesso', 'paga adesso', 'conferma _ pagamento', 'conferma _ acquisto', 'conferma _ ordine', 'effettua _ pagamento', 'effettua _ ordine',
+    'koop', 'betaal', 'betaal nu', 'bestel', 'bestel nu', '_ betaling bevestigen', 'bevestig _ betaling', 'plaats _ bestelling', '_ bestelling plaatsen',
+    'compre', 'compre agora', 'pague', 'pague agora', 'confirmar _ pagamento', 'confirmar _ compra', 'finalizar _ compra', 'finalizar _ pedido', 'fazer _ pedido', 'efetuar _ pagamento',
+    // r5 (cu-developer-two): sending money, as English 'Send money' / 'Transfer money' / 'Wire money' (purchase).
+    'invia bonifico', 'effettua _ bonifico', 'bonifico', 'trasferisci denaro', 'invia denaro', 'trasferisci',
+    'geld overmaken', 'overmaken', 'geld overschrijven', 'overschrijven', 'geld sturen', 'geld versturen',
+    'transferir dinheiro', 'enviar dinheiro', 'fazer _ transferência', 'transferir', 'enviar pix', 'fazer _ pix',
+    'para gönder^', 'havale yap^', 'eft yap^', 'para transfer~ yap^', 'para transfer~',
+    // r3: Turkish stems take their suffixes ('~' noun, '^' verb - see namesWord).
+    'ödeme~ onayla^', 'satın alma~ onayla^', 'ödeme~ tamamla^', 'ödeme~ yap^', 'sipariş~ ver^', 'sipariş~ tamamla^', 'sipariş~ onayla^', 'alışveriş~ tamamla^',
+    'satın al^', 'şimdi satın al^', 'hemen al^', 'şimdi al^', 'öde^', 'şimdi öde^', 'ödeme~ geç^'],
+  delete: ['löschen', 'entfernen', 'verwerfen', 'supprimer', 'effacer', 'eliminar', 'borrar', 'удалить', 'стереть', '削除', '消去', '삭제', '지우기',
+    // CU-358: Italian, Dutch, Portuguese and Turkish.
+    'elimina', 'cancella', 'rimuovi', 'elimina definitivamente', 'verwijderen', 'verwijder', 'wissen', 'definitief verwijderen',
+    // r5 (cu-developer-one): Dutch 'opheffen' closes an account (only beside an account noun; 'Blokkering opheffen' lifts a block).
+    'account opheffen', 'mijn account opheffen', '_ account opheffen', 'rekening opheffen',
+    // r7 (cu-developer-two): closing an account, as English 'Close account' (delete).
+    'chiudi _ account', 'chiudi il mio account', 'chiudi _ conto', 'encerrar _ conta', 'fechar _ conta', 'encerrar minha conta', 'fechar minha conta',
+    '_ account sluiten', 'mijn account sluiten', 'sluit _ account', 'sluit mijn account', 'account sluiten',
+    'excluir', 'apagar', 'remover', 'excluir permanentemente', 'sil^', 'kaldır^', 'kalıcı olarak sil^', 'hesab~ sil^', 'hesab~ kapat^',
+    // r2: emptying the trash, as English 'Empty trash'.
+    'svuota cestino', 'svuota il cestino', 'prullenbak legen', 'prullenbak leegmaken', 'leeg prullenbak',
+    'esvaziar lixeira', 'esvaziar a lixeira', 'esvaziar lixo', 'esvaziar a reciclagem', 'çöp kutu~ boşalt^', 'çöp~ boşalt^', 'çöp kutu~ temizle^'],
+  submit: ['senden', 'absenden', 'abschicken', 'envoyer', 'soumettre', 'enviar', 'отправить', '送信', '보내기', '전송', '제출',
+    // CU-358: Italian, Dutch, Portuguese and Turkish.
+    'invia', 'invia ora', 'verzenden', 'versturen', 'verstuur', 'indienen', 'submeter', 'gönder^', 'şimdi gönder^'],
   // CU-345: a PIN, one-time code, security code or password field named in these languages.
   secret: ['passwort', 'kennwort', 'sicherheitscode', 'prüfziffer', 'mot de passe', 'code de sécurité', 'cryptogramme',
     'contraseña', 'código de seguridad', 'пароль', 'код безопасности', 'パスワード', '暗証番号', 'セキュリティコード', '認証コード',
@@ -115,7 +144,15 @@ const LOCALE_WORDS = Object.freeze({
     '…geheimzahl', '…bestätigungscode', '…sicherheitscode', '…prüfnummer', '…prüfziffer', '…kartennummer', '…karten nummer', '…einmalcode', 'einmal code',
     'sms code', 'bestätigungs code', 'sicherheits code', 'code de vérification', 'numéro de carte',
     'código de verificación', 'número de tarjeta', 'код подтверждения', 'номер карты', 'pin-код', '確認コード', 'カード番号',
-    '인증 코드', '카드 번호', '카드번호'],
+    '인증 코드', '카드 번호', '카드번호',
+    // CU-358: Italian, Dutch, Portuguese and Turkish; Dutch compounds take the '…' lead like German.
+    'codice di verifica', 'codice di sicurezza', 'codice otp', 'numero della carta', 'numero di carta',
+    'wachtwoord', 'pincode', '…pincode', 'verificatiecode', '…verificatiecode', 'beveiligingscode', '…beveiligingscode', 'kaartnummer', '…kaartnummer', 'eenmalige code',
+    'senha', 'código de verificação', 'código de segurança', 'número do cartão',
+    'şifre~', 'parola~', 'doğrulama kod~', 'güvenlik kod~', 'kart numara~', 'tek kullanımlık şifre~',
+    // r2: the Portuguese 'de' form, and Turkish possessive forms (your / my), which change the word's ending.
+    'número de cartão', 'numero do cartao', 'numero de cartao',
+],
 })
 // CU-355 (design note 0.1): personal-ID field names in German, French, Spanish, Russian, Japanese and Korean - the third
 // locale side beside CU-352's action names and CU-345's credential names. '…' leads a German compound ending.
@@ -127,7 +164,13 @@ const LOCALE_ID_NAMES = Object.freeze(['reisepass', '…passnummer', 'geburtsdat
   'número de seguridad social',
   'паспорт', 'номер паспорта', 'дата рождения', 'инн', 'снилс', 'номер счета', 'номер счёта',
   'パスポート', '旅券番号', '生年月日', 'マイナンバー', '個人番号', '口座番号',
-  '여권', '여권번호', '생년월일', '주민등록번호', '계좌번호', '사업자등록번호'])
+  '여권', '여권번호', '생년월일', '주민등록번호', '계좌번호', '사업자등록번호',
+  // CU-358: Italian, Dutch, Portuguese and Turkish.
+  'codice fiscale', 'passaporto', 'numero di passaporto', 'data di nascita', 'numero di conto', "carta d'identità", 'partita iva',
+  'bsn', 'burgerservicenummer', 'paspoort', 'paspoortnummer', 'geboortedatum', 'rekeningnummer', '…rekeningnummer', 'identiteitskaart',
+  'cpf', 'rg', 'passaporte', 'número do passaporte', 'data de nascimento', 'número da conta', 'cartão de cidadão',
+  // r3: Turkish stems take their suffixes ('~', see namesWord).
+  'tc kimlik', 'tc kimlik no', 'tc kimlik numara~', 'iban numara~', 'kimlik numara~', 'doğum tarih~', 'hesap numara~', 'pasaport numara~', 'vergi numara~', 'pasaport~'])
 const WORDS = Object.freeze({
   // CU-498 (High; cu-coordinator 12:21Z): a direct debit mandate pulls money from the account (purchase), anywhere.
   // (a separate line so the purchase list below stays as it was)
@@ -271,6 +314,10 @@ const WORDS = Object.freeze({
     'add member', 'add members', 'disable protection', 'unprotect branch',
     // CU-411: ownership and admin grants widen access.
     'make owner', 'make co-owner', 'transfer ownership', 'make admin', 'grant admin',
+    // CU-389 (cu-researcher): widening who can reach a document or space - general access and join settings.
+    'anyone can edit', 'anyone can view', 'anyone can comment', 'everyone can edit', 'everyone can view',
+    'anyone with the link', 'anyone on the web', 'anyone on the internet', 'public on the web',
+    'make editor', 'make an editor', 'make collaborator', 'allow anyone to join', 'allow everyone to join', 'allow guests to join', 'let anyone join',
     // CU-408: adding a payee widens who can be paid.
     'add payee', 'add a payee', 'add recipient', 'add beneficiary',
     // CU-401: leaving a shared space or unlinking an account.
@@ -326,7 +373,19 @@ const WORDS = Object.freeze({
 // CU-377 follow-up: the file browsers whose rows are files (the same set as app-policy's FILE_BROWSERS).
 const FILE_BROWSER_APPS = new Set(['com.apple.finder', 'com.cocoatech.PathFinder', 'com.binarynights.ForkLift-3', 'com.binarynights.ForkLift', 'com.eltima.cmd1', 'com.mrrsoftware.marta', 'org.yanex.marta'])
 const SHARE_DESTINATION = /\b(?:airdrop|shared(?:\s+(?:folder|with\s+me|with\s+you))?|drop\s+box|dropbox|public\s+folder|server|network|(?:smb|afp|nfs|webdav):)/i
-const ACCOUNT_SECURITY = /\b(?:(?:generate|create|new|add)\s+(?:an?\s+)?app[\s-]?(?:specific[\s-]?)?passwords?|app[\s-]?(?:specific[\s-]?)?passwords?|(?:enable|disable|turn\s+(?:on|off)|set\s+up|add\s+(?:a\s+)?)?\s*(?:auto[\s-]?forward(?:ing)?|automatic(?:ally)?\s+forward(?:ing)?|forwarding(?:\s+address)?|forward\s+(?:a\s+copy|incoming|all|to)\b)|two[\s-]?(?:factor|step)(?:\s+(?:authentication|verification|login))?|2[\s-]?step\s+verification|create\s+(?:a\s+|new\s+)?filter|2fa|multi[\s-]?factor(?:\s+authentication)?|(?:change|update|edit)\s+(?:your\s+)?e-?mail(?:\s+address)?(?!\s+(?:notifications?|preferences|settings))|(?:change|update|edit)\s+(?:your\s+)?phone(?:\s+number)?|recovery\s+(?:e-?mail|phone|codes?))\b/i
+const ACCOUNT_SECURITY = /\b(?:(?:generate|create|new|add)\s+(?:an?\s+)?app[\s-]?(?:specific[\s-]?)?passwords?|app[\s-]?(?:specific[\s-]?)?passwords?|(?:enable|disable|turn\s+(?:on|off)|set\s+up|add\s+(?:a\s+)?)?\s*(?:auto[\s-]?forward(?:ing)?|automatic(?:ally)?\s+forward(?:ing)?|forwarding(?:\s+address)?|forward\s+(?:a\s+copy|incoming|all|to|(?:my|all|incoming|every|new)\s+(?:e-?mails?|mail|messages)\s+to)\b)|two[\s-]?(?:factor|step)(?:\s+(?:authentication|verification|login))?|2[\s-]?step\s+verification|create\s+(?:a\s+|new\s+)?filter|2fa|multi[\s-]?factor(?:\s+authentication)?|(?:change|update|edit)\s+(?:your\s+)?e-?mail(?:\s+address)?(?!\s+(?:notifications?|preferences|settings))|(?:change|update|edit)\s+(?:your\s+)?phone(?:\s+number)?|recovery\s+(?:e-?mail|phone|codes?))\b/i
+// CU-375 (cu-researcher): the German names of an app password and of mail forwarding reach a credential as their English
+// twins do; turning forwarding off stays free, as in English.
+const ACCOUNT_SECURITY_DE = /(?:^|[^\p{L}])(?:app[\s-]?passw(?:ort|örter)|anwendungsspezifische[sn]?\s+passw(?:ort|örter)|(?:automatische\s+)?weiterleitung(?:sadresse)?)(?:$|[^\p{L}])/iu
+const FORWARDING_OFF_DE = /\b(?:deaktivieren|ausschalten|beenden|stoppen)\b/i
+// CU-375 (cu-researcher): switching on IMAP, POP or SMTP access opens the mailbox to any client holding the password, as
+// 'Allow less secure apps' does - permission. 'Enable pop-ups' and bare 'IMAP settings' stay free.
+const MAIL_ACCESS_ON = /\b(?:enable|turn\s+on|allow|activate)\s+(?:imap|pop3?|smtp)\b(?![\s-]*ups?\b)/i
+// German puts the verb last ('IMAP aktivieren', 'POP-Zugriff aktivieren', 'IMAP-Zugriff einschalten') - cu-developer-three's #907 review.
+const MAIL_ACCESS_ON_DE = /\b(?:imap|pop3?|smtp)(?:[\s/-]*(?:imap|pop3?))?(?:[\s-]*(?:zugriff|zugang|abruf))?\s+(?:aktivieren|einschalten|zulassen|erlauben)\b/i
+// A switch named only by its protocol ('IMAP access', 'POP-Zugriff'): its verb is its state - a native switch that is off
+// turns access ON (asks); any of these switches that is on turns access OFF, the safe direction (free).
+const MAIL_ACCESS_SWITCH = /^\s*(?:imap|pop3?|smtp)(?:\s*\/\s*(?:imap|pop3?))?(?:[\s-]*(?:access|download|zugriff|zugang|abruf))?\s*$/i
 // CU-395 (High; cu-coordinator 03:01Z): 'physical' - a control that acts in the physical world (a lock, a garage door, an
 // alarm, a lost device) - leads every class, is never pre-approved and asks each time.
 // cu-coordinator 03:14Z: 'unlock' only beside a physical noun - paywalls ('Unlock Premium', 'Unlock all features') stay free.
@@ -516,14 +575,33 @@ function withoutTaskValues(text, task) {
 // license, '#' read as 'number', dots dropped (D.O.B., Exp. date, Tax no.) - so one canonical list covers the spellings.
 // An entry then matches whole, its regex specials literally, a space in it as any run of spaces or hyphens (Sort-code).
 const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-const normaliseName = (text) => String(text ?? '').toLowerCase().replace(/[\u2018\u2019]/g, "'").replace(/licence/g, 'license')
+// CU-358 (with cu-developer-one's #343): Turkish casing - 'İ' lower-cases to 'i' plus a combining dot and 'I' to 'i', not 'ı' -
+// so the dot is dropped and a dotless 'ı' read as 'i', on names and entries alike ('SİL', 'SATIN AL' match 'sil', 'satın al').
+const normaliseName = (text) => String(text ?? '').toLowerCase().replace(/\u0307/g, '').replace(/\u0131/g, 'i').replace(/[\u2018\u2019]/g, "'").replace(/licence/g, 'license')
   .replace(/#/g, ' number ').replace(/\./g, '').replace(/\s+/g, ' ').trim()
 // CU-352: an entry with an accented Latin or a Cyrillic letter is bounded by any letter, so 'удалить' does not match inside
 // a longer word; ASCII entries keep the a-z boundary they always had.
 const LETTER_BOUNDED = /[\u00c0-\u024f\u0400-\u04ff]/
+// CU-358 r3 (cu-developer-three's D-109 point): Turkish adds suffixes to a stem, so a Turkish entry marks where they may
+// follow - '~' after a noun stem takes a possessive (my / your / his / our / their) and then a case ending ('şifre~' reads
+// 'şifreniz', 'şifrenizi', 'şifresi'; 'kart numara~' reads 'kart numaranız', 'kart numarası'), '^' after a verb stem takes the
+// polite or passive -(y)In (and its plural -(y)Iniz), then a third-person imperative -sIn or the future -(y)AcAk ('sil^' reads
+// 'silin', 'silinsin', 'silinecek'; 'gönder^' reads 'gönderin'). A bounded set, after normaliseName's folding (ı reads as i),
+// so 'Şifreleme' (encryption), 'Silinenler' (the Deleted folder), 'Silindir' and 'Silgi' stay free. r4 (cu-developer-three).
+const TR_NOUN_SUFFIX = '(?:(?:[iuü]?m|[iuü]?n|s?[iuü]|[iuü]?m[iuü]z|[iuü]?n[iuü]z|l[ae]ri?)?(?:y?[iuü]|n[iuü]|y?[ae]|n[ae]|[dt][ae]n?|n[iuü]n)?)'
+const TR_VERB_SUFFIX = '(?:(?:y?[iuü]n)?(?:s[iuü]n|[iuü]z|y?[ae]c[ae]k)?)'
+const turkishPattern = (word) => normaliseName(normaliseText(word)).split(/([~^])/).map((part) => part === '~' ? TR_NOUN_SUFFIX
+  : part === '^' ? TR_VERB_SUFFIX : escapeRegExp(part).replace(/ /g, '[\\s-]+')).join('')
+// CU-358 r5 (cu-developer-one): ' _ ' in an Italian, Portuguese or Dutch entry is an optional article slot ('conferma _
+// pagamento' reads 'Conferma pagamento' and 'Conferma il pagamento'); the list is closed - articles, and from r7 the possessive
+// determiners ('il mio', 'a minha', 'je', 'mijn', 'uw').
+const ARTICLE_SLOT = "[\\s-]+(?:(?:il|lo|la|i|gli|le)[\\s-]+(?:mio|tuo|suo|vostro)[\\s-]+|(?:a|o|os|as)[\\s-]+(?:minha|meu|sua|seu|tua|teu)[\\s-]+|(?:il|lo|la|i|gli|le|un|una|uno|o|a|os|as|um|uma|de|het|een|mijn|je|jouw|uw|minha|meu|sua|seu|tua|teu|mio|tuo|suo)[\\s-]+|l'\\s*)?"
+const articlePattern = (word) => normaliseName(normaliseText(word)).split(' _ ').map((part) => escapeRegExp(part).replace(/ /g, '[\\s-]+')).join(ARTICLE_SLOT)
 function namesWord(name, words) {
   const text = normaliseName(name)
   return words.some((word) => {
+    if (word.includes(' _ ')) return new RegExp(`(^|[^\\p{L}])${articlePattern(word)}([^\\p{L}]|$)`, 'u').test(text)
+    if (/[~^]/.test(word)) return new RegExp(`(^|[^\\p{L}])${turkishPattern(word)}([^\\p{L}]|$)`, 'u').test(text)
     // CU-345: '…' leads a German compound ending - matched after any letters, bounded only on its right.
     if (word.startsWith('\u2026')) return new RegExp(`${escapeRegExp(normaliseName(word.slice(1))).replace(/ /g, '[\\s-]+')}([^\\p{L}]|$)`, 'u').test(text)
     if (!LETTER_BOUNDED.test(word)) return new RegExp(`(^|[^a-z])${escapeRegExp(normaliseName(word)).replace(/ /g, '[\\s-]+')}([^a-z]|$)`).test(text)
@@ -1493,11 +1571,29 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const toggleState = nativeToggleState(target)
       const nativeOn = toggleState === true
       const nativeOff = toggleState === false
-      const isForwarding = /forward/i.test(name)
+      const isForwarding = /forward|weiterleitung/i.test(name)
       // The explicit protection list (CU-270's two-factor and recovery names), never 'every security name but a few'.
       const isProtection = /two[\s-]?(?:factor|step)|2[\s-]?step|\b2fa\b|multi[\s-]?factor|recovery\s+(?:e-?mail|phone|codes?)/i.test(name)
       const safeToggle = (isProtection && nativeOff) || (isForwarding && nativeOn)
-      if (!focusesEntry && ACCOUNT_SECURITY.test(name) && !protectionOn && !forwardingOff && !safeToggle) classes.push('credential')
+      const forwardingOffDe = FORWARDING_OFF_DE.test(name) && /weiterleitung/i.test(name)
+      if (!focusesEntry && (ACCOUNT_SECURITY.test(name) || ACCOUNT_SECURITY_DE.test(name)) && !protectionOn && !forwardingOff && !forwardingOffDe && !safeToggle) classes.push('credential')
+      // CU-375 r2 (cu-developer-three): a native switch already on (checked true) turns mail access OFF - free; a protocol-named
+      // switch that is off turns it ON - asks.
+      // CU-389 (cu-researcher): 'Anyone in <org> can edit' widens access like 'Anyone can edit'; and inside a share / invite /
+      // access dialog a bare role option ('Can edit', 'Editor', 'Owner') grants that role - permission. A bare 'Can edit'
+      // elsewhere, and narrowing options ('Can view', 'Viewer', 'Restricted', 'Only me'), stay free.
+      if (!focusesEntry && /\banyone\s+(?:at|in|from)\s+[\w .&'-]{1,40}?\s+can\s+(?:view|edit|comment|join)\b/i.test(name)) classes.push('permission')
+      // r2 (cu-developer-one / -two / -three): the same widening said other ways - a role change upward ('Change to Editor', 'Set as
+      // owner'), 'Allow anyone / everyone / guests to view / edit / comment / access ...', 'Open to everyone / the public', and link
+      // sharing turned on ('Turn on link sharing', 'Link sharing on'). Turning it off, and roles downward, stay free.
+      if (!focusesEntry && (/\b(?:change|switch|set|upgrade|promote)\s+(?:(?:the\s+)?role\s+)?(?:to|as)\s+(?:an?\s+)?(?:editor|owner|co-?owner|admin(?:istrator)?|commenter|collaborator|manager)\b/i.test(name)
+        || /\ballow\s+(?:anyone|everyone|all\s+users|the\s+public|guests|people\s+outside\s+\S+)\s+to\s+(?:view|edit|comment|access|see|join|download|copy|share)\b/i.test(name)
+        || /\bopen\s+to\s+(?:everyone|anyone|the\s+public|all)\b/i.test(name)
+        || /\b(?:turn\s+on|enable|allow|activate)\s+(?:public\s+)?link\s+sharing\b|^\s*link\s+sharing\s*:?\s*on\s*$/i.test(name))) classes.push('permission')
+      const shareDialog = /\b(?:share|sharing|invite|permissions?|general\s+access|manage\s+access)\b/i.test(`${target?.dialogName ?? ''} ${target?.dialogDescription ?? ''}`)
+      if (!focusesEntry && POINTER.has(action.type) && shareDialog && /^\s*(?:can\s+(?:edit|comment|manage|organi[sz]e)|editor|commenter|owner|co-?owner|full\s+access|admin)\s*$/i.test(name)) classes.push('permission')
+      const mailSwitchState = nativeToggleState(target)
+      if (!focusesEntry && mailSwitchState !== true && (MAIL_ACCESS_ON.test(name) || MAIL_ACCESS_ON_DE.test(name) || (mailSwitchState === false && MAIL_ACCESS_SWITCH.test(name)))) classes.push('permission')
       // CU-401 round 2 (cu-coordinator): a plan word beside a navigation noun ('Downgrade options', 'Cancel plan details')
       // opens a page - free unless another purchase word remains.
       if (/\b(?:downgrade|cancel\s+(?:plan|membership)|end\s+trial)\b[\s\S]*\b(?:options|settings|details|faq|guide|policy|info)\b/i.test(name)

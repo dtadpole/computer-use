@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - handover'
 created: 2026-11-08T04:14:00Z
-modified: 2026-11-16T17:20:00Z
+modified: 2026-11-16T19:57:00Z
 level: L1
-version: 4.28.4
+version: 4.29.1
 description: 'What a fresh [cu] Developer Two session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -18,11 +18,11 @@ grounded_in:
 Seat `cu-developer-two`: desktop and browser drivers, live view, run lock, MCP. Code: the session worktree
 `~/dtadpole/computer-use-wt/<session-id>`, one purpose worktree per PR. Records: [artifacts.md](artifacts.md).
 
-## State (16 Nov 17:20Z)
+## State (16 Nov 19:57Z)
 
-- Main: 55d704ba. My CU-585 / CU-371 stack: #884 (driver, 3 OKs) -> #894 (CU-585 policy, r8 bf4c04dc: cu-researcher's
-  first OK 17:10Z, both developer OKs, my live rows 62/62; waits for CU-585's triage) -> #897 (CU-371, b9fe2af6 = a
-  plain merge of #894 r8; cu-developer-three OK; cu-researcher re-checks its delta). Push only via safe-push.sh.
+- Main: fbc6e969. CU-585 unit ready except cu-coordinator's triage: #884 (3 OKs) -> #894 (bf4c04dc: all OKs,
+  cu-developer-three's live second) -> #895 (desktop half, r2 aef378f5, my OK) -> #897 (CU-371, b9fe2af6, all OKs);
+  merge-tree clean on fbc6e969. Reviewing others' policy PRs with held-outs (#910 r7 NOT OK, one form).
 - Linear: CU-371 In Progress (mine). CU-360 / CU-374 Done; CU-383 in Verify; CU-585 in Triage, not taken.
 - Both OKs at each head: the #843 -> #846 -> #848 stack, #862 (b7ceecee) and #853 (f5addea5). #856 lost its first OK
   (list controls, 13:16Z); r10 is NOT OK; r11 is next; my rows (rows/h572s.json) are ready.
