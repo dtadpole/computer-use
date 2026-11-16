@@ -21,7 +21,7 @@ matrices and 300 asking rows); mutants: narrowing the page pattern or ignoring t
 
 The held-out check reads a union want 'a+b' as every class present, in any order; mutant: 'every' -> 'some' fails it.
 
-The sweep diff names a newly free form even when the family counts stay equal; mutant: report every after-form fails it.
+The sweep diff names a newly free form even when the family counts stay equal; mutant: report every after-form fails it. The CLI exits 2 on a usage error (an unreadable diff input, a --json OUT naming a matrix) and never overwrites a matrix.
 
 ## Read next
 

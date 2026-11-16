@@ -1,4 +1,8 @@
 import assert from 'node:assert/strict'
+import { spawnSync } from 'node:child_process'
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { test } from 'node:test'
 
 import { FAMILIES, ruledGaps, sweep, diffSweeps } from '../../_tools_/probe-kit/sweeps.mjs'
@@ -42,4 +46,17 @@ test('diffSweeps names a newly free form even when the family counts stay equal'
   assert.deepEqual(d.newFree, [['polite.please', 'm:Please empty trash']])
   assert.deepEqual(d.gone, [['polite.please', 'm:Please delete account']])
   assert.deepEqual(diffSweeps(before, before), { newFree: [], gone: [] })
+})
+
+test('the CLI tells a usage error (exit 2) from new frees (exit 1) and never overwrites a matrix with --json', () => {
+  const cli = new URL('../../_tools_/probe-kit/sweeps.mjs', import.meta.url).pathname
+  const dir = mkdtempSync(join(tmpdir(), 'sweeps-cli-'))
+  const m = join(dir, 'm.json'); const body = JSON.stringify({ site: 'https://app.fixture.example/settings', rows: [['delete', ['Delete account']]] })
+  writeFileSync(m, body)
+  assert.equal(spawnSync(process.execPath, [cli, 'diff', join(dir, 'missing.json'), m]).status, 2, 'an unreadable diff input is a usage error')
+  assert.equal(spawnSync(process.execPath, [cli, '--json', m, m]).status, 2, 'OUT naming an input matrix is refused')
+  assert.equal(readFileSync(m, 'utf8'), body, 'the matrix is untouched')
+  const out = join(dir, 'r.json')
+  assert.notEqual(spawnSync(process.execPath, [cli, '--json', out, m]).status, 2, 'a new OUT file is accepted')
+  assert.equal(spawnSync(process.execPath, [cli, 'diff', out, out]).status, 0, 'equal results exit 0')
 })

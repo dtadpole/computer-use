@@ -1,7 +1,7 @@
 // Canonical-form sweeps (Part of CU-458): wrap every asking row of a ruled matrix in each written-out form of the canonical
 // families and report the forms that go free. A ruled family must stay at 0 free; an unruled family is reported, not judged.
 // Policy level only (D-098): a sweep says what the policy decides for a button shape on the row's page, not what a run does.
-import { readFileSync, realpathSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, realpathSync, writeFileSync } from 'node:fs'
 import { pathToFileURL } from 'node:url'
 
 import { act, ctx, web } from './shapes.mjs'
@@ -83,12 +83,17 @@ export function diffSweeps(before, after) {
 // Start the CLI only when run directly; resolve the typed path so a symlinked path (macOS /tmp -> /private/tmp) still runs it.
 if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) {
   const argv = process.argv.slice(2)
+  // Usage errors exit 2, apart from 'new frees' (1): an unreadable diff input, or a --json OUT that is missing or names a matrix.
+  const usage = (why) => { console.error(`sweeps.mjs: ${why}\nusage: sweeps.mjs [--json OUT] <matrix.json>... | sweeps.mjs diff MAIN.json CHANGE.json`); process.exit(2) }
+  const readJson = (p) => { try { return JSON.parse(readFileSync(p, 'utf8')) } catch { return usage(`cannot read ${p ?? '(missing path)'}`) } }
   if (argv[0] === 'diff') {
-    const d = diffSweeps(JSON.parse(readFileSync(argv[1], 'utf8')), JSON.parse(readFileSync(argv[2], 'utf8')))
+    const d = diffSweeps(readJson(argv[1]), readJson(argv[2]))
     console.log(`SWEEP DIFF: ${d.newFree.length} new free, ${d.gone.length} no longer free` + (d.newFree.length ? '\n  new free: ' + d.newFree.map(([f, n]) => `${f} ${n}`).join(' | ') : ''))
     process.exitCode = d.newFree.length ? 1 : 0
   } else {
   const json = argv[0] === '--json' ? argv.splice(0, 2)[1] : null
+  if (argv[0] === undefined && json !== null) usage('--json needs OUT and at least one matrix')
+  if (json !== null && (!json || argv.includes(json) || (existsSync(json) && readJson(json)?.rows))) usage(`--json OUT must be a new result file, not a matrix (${json})`)
   const matrices = argv.map((p) => ({ id: p.replace(/^.*\//, '').replace(/\.json$/, ''), ...JSON.parse(readFileSync(p, 'utf8')) }))
   const result = sweep(matrices)
   for (const [f, r] of Object.entries(result)) console.log(`${f}${r.ruled ? '' : ' (unruled)'}: ` + Object.entries(r.free).map(([k, l]) => `${k} ${l.length}`).join(', ') + (Object.values(r.free).flat().length ? `  e.g. ${Object.values(r.free).flat().slice(0, 3).join(' | ')}` : ''))
