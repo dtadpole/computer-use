@@ -1028,6 +1028,10 @@ export function grammarClasses(name, role = '') {
  * else classed (the #854 r6 lesson: a new class only adds). */
 export function egressesData(raw) {
   raw = String(raw ?? '').trim()
+  // #859 r5 (cu-researcher 10:20Z class sweep): uploading / e-mailing / piping data to an OUTSIDE party - a party noun with up to two
+  // qualifiers ('analytics vendor', 'marketing agency') or an e-mail address.
+  if (/^\s*(?:upload|e-?mail|mail|fax|post|deliver|send|pipe|push|export|share|transfer|copy|sync|stream|forward|hand\s+over)\s+(?:[\p{L}\p{N}'./@-]+\s+){0,5}?(?:to|with|into)\s+(?:the\s+|an?\s+|their\s+)?(?:[\p{L}-]+\s+){0,2}(?:agency|agencies|vendors?|contractors?|consultants?|suppliers?|resellers?|affiliates?|advertisers?|brokers?|partners?|third[\s-]part(?:y|ies)|[\w.+-]+@[\w-]+(?:\.[\w-]+)+)\s*$/iu.test(raw)
+    && !/\b(?:my|our|your)\s+(?:own\s+)?(?:[\p{L}-]+\s+){0,2}(?:agency|vendors?|partners?)\s*$/iu.test(raw)) return true
   // #859 r3 (cu-researcher 08:13Z): 'Start mirroring this repository to ...' - a start / begin / keep / continue / resume / enable lead
   // and the gerund read as the bare verb.
   raw = raw.replace(/^\s*(?:start|begin|keep|continue|resume|enable|turn\s+on|set\s+up|proceed\s+with)\s+([\p{L}]+?)(?:ing)\b/iu, (m, stem) => {

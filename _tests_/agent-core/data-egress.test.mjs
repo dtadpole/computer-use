@@ -34,3 +34,8 @@ test('#859 round 3 (cu-researcher 08:13Z): a host as the destination; start / be
 test('#859 round 4 (cu-researcher 08:26Z): any URL scheme as the destination', () => {
   for (const name of ['Push nightly dump to s3://partner-bucket', 'Copy backups to gs://vendor-archive', 'Send exports to sftp://files.partner.example', 'Stream events to kafka://broker.example:9092']) assert.notDeepEqual(classesOf(name), [], name)
 })
+
+test('#859 round 5 (cu-researcher 10:20Z class sweep): upload / e-mail / pipe data to an outside party', () => {
+  for (const name of ['Upload customer list to agency', 'Email the report to billing@partner.example', 'Pipe data to analytics vendor', 'Send payroll file to the payroll vendor']) assert.notDeepEqual(classesOf(name), [], name)
+  for (const name of ['Upload photo', 'Email me', 'Upload to my drive']) assert.ok(!classesOf(name).includes('permission'), name)
+})
