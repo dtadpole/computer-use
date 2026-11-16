@@ -334,6 +334,11 @@ const FORWARDING_OFF_DE = /\b(?:deaktivieren|ausschalten|beenden|stoppen)\b/i
 // CU-375 (cu-researcher): switching on IMAP, POP or SMTP access opens the mailbox to any client holding the password, as
 // 'Allow less secure apps' does - permission. 'Enable pop-ups' and bare 'IMAP settings' stay free.
 const MAIL_ACCESS_ON = /\b(?:enable|turn\s+on|allow|activate)\s+(?:imap|pop3?|smtp)\b(?![\s-]*ups?\b)/i
+// German puts the verb last ('IMAP aktivieren', 'POP-Zugriff aktivieren', 'IMAP-Zugriff einschalten') - cu-developer-three's #907 review.
+const MAIL_ACCESS_ON_DE = /\b(?:imap|pop3?|smtp)(?:[\s/-]*(?:imap|pop3?))?(?:[\s-]*(?:zugriff|zugang|abruf))?\s+(?:aktivieren|einschalten|zulassen|erlauben)\b/i
+// A switch named only by its protocol ('IMAP access', 'POP-Zugriff'): its verb is its state - a native switch that is off
+// turns access ON (asks); any of these switches that is on turns access OFF, the safe direction (free).
+const MAIL_ACCESS_SWITCH = /^\s*(?:imap|pop3?|smtp)(?:\s*\/\s*(?:imap|pop3?))?(?:[\s-]*(?:access|download|zugriff|zugang|abruf))?\s*$/i
 // CU-395 (High; cu-coordinator 03:01Z): 'physical' - a control that acts in the physical world (a lock, a garage door, an
 // alarm, a lost device) - leads every class, is never pre-approved and asks each time.
 // cu-coordinator 03:14Z: 'unlock' only beside a physical noun - paywalls ('Unlock Premium', 'Unlock all features') stay free.
@@ -1497,7 +1502,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const safeToggle = (isProtection && nativeOff) || (isForwarding && nativeOn)
       const forwardingOffDe = FORWARDING_OFF_DE.test(name) && /weiterleitung/i.test(name)
       if (!focusesEntry && (ACCOUNT_SECURITY.test(name) || ACCOUNT_SECURITY_DE.test(name)) && !protectionOn && !forwardingOff && !forwardingOffDe && !safeToggle) classes.push('credential')
-      if (!focusesEntry && MAIL_ACCESS_ON.test(name)) classes.push('permission')
+      // CU-375 r2 (cu-developer-three): a native switch already on (checked true) turns mail access OFF - free; a protocol-named
+      // switch that is off turns it ON - asks.
+      const mailSwitchState = nativeToggleState(target)
+      if (!focusesEntry && mailSwitchState !== true && (MAIL_ACCESS_ON.test(name) || MAIL_ACCESS_ON_DE.test(name) || (mailSwitchState === false && MAIL_ACCESS_SWITCH.test(name)))) classes.push('permission')
       // CU-401 round 2 (cu-coordinator): a plan word beside a navigation noun ('Downgrade options', 'Cancel plan details')
       // opens a page - free unless another purchase word remains.
       if (/\b(?:downgrade|cancel\s+(?:plan|membership)|end\s+trial)\b[\s\S]*\b(?:options|settings|details|faq|guide|policy|info)\b/i.test(name)
