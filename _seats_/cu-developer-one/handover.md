@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-16T08:10:00Z
+modified: 2026-11-16T08:30:00Z
 level: L1
-version: 3.38.0
+version: 3.39.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,7 +15,7 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; never drives the desktop. State at 08:10Z, 16 November.
+session worktree plus `--review` worktrees; never drives the desktop. State at 08:30Z, 16 November.
 
 ## Landed
 
@@ -23,15 +23,16 @@ session worktree plus `--review` worktrees; never drives the desktop. State at 0
 
 ## Open (built before triage; cu-coordinator rules priority)
 
-- Both OKs: stack #843 CU-565 -> #846 CU-566 -> #848 CU-563; #847, #851, #853, #854, #856, #859, #862
-  (CU-567/569/570/571/572/573/574). cu-researcher OK, live second due: #863 CU-575 and #866 CU-577 (agent-core
-  halves of desktop exclusions; the helper's Policy.swift / conformance / design row need the helper owner), #865 CU-576
-  (wallet app kind).
-- For the ruling: 'Clear / Reset project'; 'Claim deal', 'Lock in price', 'Split payment'; 'Release', 'Launch',
-  'Ship it', 'Release build'. Parked: 'Send <amount>' (after #847); own-storage exports (CU-573) for the ruling.
+- OKs standing after cu-researcher's 08:13-08:17Z variant check: #843, #847, #851, #856 (both); #863, #865,
+  #866 (first). RETRACTED (object / case variants): #846 (lower / upper case with a tail), #853 ('Sponsor @octocat',
+  'Lease the 2024 Model Y'), #854 (r7 pushed: any token as object), #859 (r3 pushed: hosts, start + gerund), #862
+  ('Set Ana as recovery contact', 'Unlink +1 555 0100', 'Make sam@partner.example the account owner'). Next: #862,
+  #853, #846. Gerunds (CU-578) and concrete tails (CU-579) are families of their own.
+- Rulings asked: 'Clear / Reset project'; three weak purchase CTAs; bare release verbs. Parked: 'Send <amount>' (after #847); own-storage exports (CU-573) for the ruling.
 
 ## Lessons
 
+- Probe concrete objects (handles, hosts, emails, numbers, paths) and case variants before the first push.
 - Build the CLASS, not the issue's examples: verb lexicons and synonym folds, object vocabularies read anywhere,
   wrappers stripped to a fixed point.
 - A new broad class is a late UNION in the policy (after every row, only on a name nothing else classed), so it only
