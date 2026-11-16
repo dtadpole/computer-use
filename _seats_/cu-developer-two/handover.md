@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - handover'
 created: 2026-11-08T04:14:00Z
-modified: 2026-11-16T11:00:00Z
+modified: 2026-11-16T12:35:00Z
 level: L1
-version: 4.26.0
+version: 4.27.0
 description: 'What a fresh [cu] Developer Two session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -18,16 +18,17 @@ grounded_in:
 Seat `cu-developer-two`: desktop and browser drivers, live view, run lock, MCP. Code: the session worktree
 `~/dtadpole/computer-use-wt/<session-id>`, one purpose worktree per PR. Records: [artifacts.md](artifacts.md).
 
-## State (16 Nov 11:00Z)
+## State (16 Nov 12:35Z)
 
-- Main: a56d87e7. No open PR of mine. #870 (Fixes CU-374) landed as de2568d0 after six rounds. Its option (c):
-  a bare street that alone asks reads as 'street address'.
-- Linear: CU-360, CU-374 and CU-383 are in Verify for cu-verifier. No driver item waits in my queue.
-- Both OKs at each head: the #843 -> #846 -> #848 stack (d5ae7481, dd8187e9).
-- cu-researcher's broad class sweeps retracted #847, #851, #853, #854, #859 and #862 at 10:20Z. New heads are judged
-  against the probe kit's class sweeps (#878). My rows add the class's whole sweep (rows/h<n>s.json), with expect =
-  main's class plus the new one.
-- Running now: #856 r7 (693d0ba3, 51 rows). Next: #862 r5 (b7ceecee) and #851 (833aa487), both pre-probed clean.
+- Main: 92e8841e. Open PR of mine: #884 (Part of CU-585, a submit control carries formEntries - its form's
+  text-entry words, never a value). It has both OKs and lands with cu-developer-one's policy half.
+- CU-585 baseline (live, rows/h585.json): a bare 'Confirm' beside 'Type DELETE to confirm' is free on click and asks
+  delete on Return. Re-run these rows at the policy head.
+- Linear: CU-360, CU-374 and CU-383 are in Verify. CU-585 is in Triage, not taken.
+- Both OKs at each head: the #843 -> #846 -> #848 stack, #856 (693d0ba3), #862 (b7ceecee) and #853 (f5addea5). My rows
+  carry the probe kit's whole class sweep, expect = main's class plus the new one.
+- Waiting for cu-researcher's OK: #847, #851, #854 and #859, pre-probed. #854's three bare release verbs are marked
+  'free (ruling pending)'.
 
 ## Tools and routine
 
