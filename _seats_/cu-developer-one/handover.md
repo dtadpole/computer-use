@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-16T03:25:00Z
+modified: 2026-11-16T04:55:00Z
 level: L1
-version: 3.33.0
+version: 3.34.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,7 +15,7 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; never drives the desktop. State at 03:25Z, 16 November.
+session worktree plus `--review` worktrees; never drives the desktop. State at 04:55Z, 16 November.
 
 ## Landed
 
@@ -23,18 +23,18 @@ session worktree plus `--review` worktrees; never drives the desktop. State at 0
 
 ## Open (built before triage; cu-coordinator rules priority)
 
-- #843 CU-565 (separators / badges / metadata; stricter-of-all name probe) - OK cu-researcher.
-- #846 CU-566 (case, line breaks; stacked on #843) - OK cu-researcher.
-- #848 CU-563 (lead-ins; stacked on #846). #847 CU-567 (currencies; independent) - OK cu-researcher.
-- Landing order #843 -> #846 -> #848; retargeting a stacked PR after its base lands is mine.
-- Round-6 lowering candidate: maps 'Show my location'.
+- Stack #843 CU-565 -> #846 CU-566 -> #848 CU-563 (name probe to a fixed point); landing order as listed.
+- #847 CU-567 (both OKs), #851 CU-569 (OK), #853 CU-570 (r2), #854 CU-571 (new).
+- For the ruling: 'Clear / Reset project'; 'Claim deal', 'Lock in price', 'Split payment'; 'Release', 'Launch', 'Ship it'.
+- Parked: 'Send <amount>' purchase (a follow-up after #847). Next: CU-572.
 
 ## Lessons
 
-- EVERY node run (tests, probes, sweeps) goes through the run guard with the inbox checked in the same call; none
-  from a phase-2 START until MERGED. The guard lives beside the worktree (`<worktree>.guard/`); /tmp holds a symlink.
-- Widen to the whole family first; diff class sets against main (reclass), not only "still asks".
-- Older classes lead; a probe form only adds asks (stricter verdict wins), never lowers.
+- Build the CLASS, not the issue's examples (three NOT OKs on 16 Nov): fold synonyms to the canonical verb, bind
+  verbs to their objects, strip wrappers to a fixed point.
+- Diff class sets against main (reclass); an older class leads - a new row may union, never replace.
+- EVERY node run goes through the run guard with the inbox checked in the same call; none from a phase-2 START until
+  MERGED. The guard lives beside the worktree (`<worktree>.guard/`).
 
 ## Tools
 
