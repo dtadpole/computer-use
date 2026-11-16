@@ -38,3 +38,8 @@ test('CU-385 r6 (cu-researcher 19:24Z): Spanish recycle bin / deleted / junk, an
   for (const name of ['Papelera de reciclaje', 'Elementos borrados', 'Correo basura', 'Posta indesiderata e spam', 'Ongewenste e-mail en spam', 'Junk and spam']) assert.ok(drop(name).includes('delete'), name)
   for (const name of ['Kosz zakupów', 'Spam filter rules', 'Junkyard photos', 'Bulk upload', 'Deleted Items policy doc']) assert.ok(!drop(name).includes('delete'), name)
 })
+
+test('CU-385 r7 (cu-researcher 19:42Z): deleted messages per language, junk names in either order', () => {
+  for (const name of ['Verwijderde berichten', 'Gelöschte Nachrichten', 'Messages supprimés', 'Mensajes eliminados', 'Messaggi eliminati', 'Mensagens excluídas', 'Spam e posta indesiderata', 'Spam and junk']) assert.ok(drop(name).includes('delete'), name)
+  for (const name of ['Spam and phishing reports', 'Berichten']) assert.ok(!drop(name).includes('delete'), name)
+})
