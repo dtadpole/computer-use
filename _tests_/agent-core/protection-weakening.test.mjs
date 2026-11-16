@@ -44,3 +44,8 @@ test('#856 round 3 (cu-developer-two 05:24Z): a review / approval / compliance c
   for (const name of ['Bypass the review check', 'Skip approval requirement', 'Override compliance rules', 'Ignore the deployment checks']) assert.ok(classesOf(name).includes('permission'), name)
   for (const name of ['Skip review', 'Leave a review', 'Check compliance']) assert.ok(!classesOf(name).includes('permission'), name)
 })
+
+test('#856 round 4 (cu-researcher 05:30Z): phrasal off-verbs with a security vocabulary token anywhere in the object', () => {
+  for (const name of ['Switch off session binding', 'Unenforce device attestation', 'Unpin certificates', 'Permit password reuse', 'Turn off certificate transparency checks', 'Disable OAuth state validation', 'Relax CORS', 'Skip the attestation step']) assert.ok(classesOf(name).includes('permission'), name)
+  for (const name of ['End session', 'Pause session', 'Unpin message', 'Turn off key sounds', 'Stop recording session', 'Disable spam folder view']) assert.ok(!classesOf(name).includes('permission'), name)
+})
