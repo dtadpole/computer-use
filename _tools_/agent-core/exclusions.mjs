@@ -57,6 +57,12 @@ export const EXCLUDED_APPS = Object.freeze([
       // also covers the menu-bar agent com.apple.timemachine.HelperAgent (an exact id matches its children, any case).
       'com.apple.DiskUtility', 'com.apple.bootcampassistant', 'com.apple.MigrateAssistant', 'com.apple.backup.launcher',
       'com.apple.TimeMachine', 'com.apple.ActivityMonitor',
+      // CU-577 (cu-researcher 07:53Z; built before triage): the CLASS of utilities that administer the Mac's directory, network or
+      // other Macs - Directory Utility (Enable Root User, Bind / Unbind), AirPort Utility (Restore Defaults), Apple Remote Desktop
+      // (Send UNIX Command, Restart), Screen Sharing (drives another Mac), Apple Configurator (supervises and erases devices) and
+      // Ticket Viewer (Kerberos credentials).
+      'com.apple.DirectoryUtility', 'com.apple.airport.airportutility', 'com.apple.RemoteDesktop', 'com.apple.ScreenSharing',
+      'com.apple.configurator.ui', 'com.apple.Ticket-Viewer',
     ]),
   }),
 ])
