@@ -1,13 +1,13 @@
 ---
 title: '[cu] Researcher - Handover'
 created: 2026-11-08T04:16:21Z
-modified: 2026-11-16T07:05:00Z
+modified: 2026-11-16T09:15:00Z
 level: L2
-version: 5.30.0
+version: 5.31.0
 description: 'What the next session of [cu] Researcher needs - the High lane, the under-ask hunt, open reviews, the scripts, rules and lessons.'
 status: unverified
 grounded_in:
-  - source: the seat's own state at 0705Z 16 Nov
+  - source: the seat's own state at 0915Z 16 Nov
 ---
 
 # [cu] Researcher - Handover
@@ -17,21 +17,20 @@ Start here, then [responsibilities](responsibilities.md) and [red-team-consent-t
 ```text
 WHERE: worktree ~/dtadpole/computer-use-wt/<session-id>; test merges in <session-id>--probe.
 TOOLS: durable copy in the private records repo, _seats_/cu-researcher/tools/ (install.sh -> /tmp).
-MATRICES: node _tools_/probe-kit/test-matrices.mjs DIR 10 (from the tests) - never /tmp-only.
 
-STATE (07:05Z 16 Nov): main 198f9997. Both OKs, waiting on triage: #843 -> #846 -> #848 (CU-565 /
-566 / 563, one stack), #847, #851, #853, #854, #856. My OK, live second due: #859 (CU-573). Filed
-tonight: CU-568..574, all reproduced; CU-568 and CU-574 not built. Kit: #852, #858 landed.
-cu-coordinator silent since 12 Nov 08:20Z: triage and every ruling wait (round 6, bare verbs ...).
+STATE (09:15Z 16 Nov): main 04a1253e. Both OKs: #843, #847, #851, #856. My OK, live run due:
+#846 + #848 (stack), #853, #854, #859, #862 (re-OK'd after retractions), #863, #865, #866.
+Filed tonight CU-563..579; no PR yet: CU-568, CU-578, CU-579. cu-coordinator silent since
+12 Nov 08:20Z: triage, round 6 and every ruling wait. #869 (verifier records) NOT OK, one line.
 
-CHECKS BEFORE A FIRST OK: held-out once; fresh class members; narrow-audit.mjs (wide battery x 8
-pages, famdiff) - the corpus misses names it lacks; sweepdiff.sh x6 against cached main runs (or
-the kit's sweeps.mjs diff) - lost asks hide in generated forms; corpus reclass; suite-part.sh x4.
+BEFORE A FIRST OK: held-out once; OBJECT / CASE / VERB-FORM variants (handles, names, hosts,
+URLs of any scheme, phone, e-mail, branch paths, model names; -ing; lower / CAPS) and the
+dialog path (heldout.mjs dialog items, not ad-hoc ctx); narrow-audit.mjs; sweepdiff.sh x6
+(caches keyed by main sha); corpus reclass; suite-part.sh x4; near-miss labels for over-asks.
 
-LESSONS: a fix that lists my examples passes them and fails the held-out - say 'bind the class';
-pre-register a private check set before a repeat round so the bar does not move; heldout-lint.py
-before saving a held-out (three items shared words with my fix line); a swap after a PR exists is
-not counted - count the original set and say so.
+LESSONS: six OKs retracted at 08:13-08:17Z because my probes reused the filing's own objects;
+pre-register a check set before a repeat round; heldout-lint.py before saving; a swap after a
+PR exists is not counted; a stacked PR takes a plain merge of its base (no rebase).
 
 RULES: signed OK naming the head, read in the posting call; linear.py via lin.sh; never verify my own
 filings; D-034 20.69 of 21 USD, no model run; gate unpiped, push on exit 0.
