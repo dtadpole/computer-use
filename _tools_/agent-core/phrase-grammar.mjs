@@ -1379,6 +1379,23 @@ function grammarClassesOf(name, role = '') {
   // #778 r2 (cu-researcher 01:39Z): 'deployment' is optional when 'rules' says what it is ('Skip protection rules and deploy'); a bare
   // 'Skip protection' (a checkout's insurance upsell) stays free.
   if (/^\s*(?:skip|bypass|ignore|override)\s+(?:the\s+)?(?:deployment\s+protection(?:\s+rules?)?|(?:branch\s+|environment\s+)?protection\s+rules?)(?:\s+and\s+deploy(?:\s+now)?)?\s*$/i.test(raw)) return ['permission', 'submit']
+  // CU-571 (cu-researcher 04:43Z; built before triage): publishing / releasing by CLASS - SUBMIT like 'Deploy' and 'Push to production':
+  // - going live: go / push / take / make / put / set (it) live;
+  // - any release verb (ship / push / deploy / release / promote / roll out / launch / move / send / merge / publish / migrate / cut over),
+  //   with an optional object (build, release, version, changes, code, app, update), TO a live target (prod / production / live / main /
+  //   master / stable / all users / everyone / 100% / the store / GA / public);
+  // - merging into or fast-forwarding main / master / trunk; cutting / shipping / pushing / promoting a release, build or version;
+  // - blasting to a list or everyone; flipping a feature flag on for everyone ('Enable for all users').
+  // The bare ambiguous verbs ('Release', 'Launch', 'Ship it', 'Release it') and 'Release build' (also an Xcode configuration) are left for
+  // cu-coordinator's ruling; 'Blast list', 'Release notes',
+  // 'Ship to address', 'Merge cells' and 'Go to live chat' stay free.
+  if (/^\s*(?:go|push|take|make|put|set)\s+(?:it\s+|this\s+|the\s+site\s+|the\s+app\s+|the\s+stream\s+)?live(?:\s+(?:now|today|anyway))?\s*$/i.test(raw)
+    || /^\s*(?:ship|push|deploy|release|promote|roll\s*out|launch|move|send|merge|publish|migrate|cut\s+over|go)(?:\s+(?:the\s+|this\s+|that\s+|a\s+|my\s+|our\s+|your\s+)?(?:build|release|version|changes|code|app|update|branch|it|this|commit|artifact|image|site|feature|flag))?\s+(?:to|into|in|for)\s+(?:prod|production|live|main|master|trunk|stable|release|all\s+(?:users|customers|accounts|regions|devices)|everyone|everybody|100\s*%|the\s+(?:app\s+|play\s+)?store|app\s+store|play\s+store|general\s+availability|ga|public|the\s+public|all)(?:\s+(?:now|today|anyway))?\s*$/i.test(raw)
+    || /^\s*(?:merge|rebase|fast-?forward)(?:\s+(?:and\s+)?(?:deploy|release|ship))?\s+(?:to\s+|into\s+)?(?:main|master|trunk|production|prod)\s*$|^\s*merge\s+and\s+(?:deploy|release|ship)\s*$/i.test(raw)
+    || /^\s*(?:cut|ship|push|promote|publish|tag)\s+(?:the\s+|this\s+|that\s+|a\s+|my\s+|our\s+|your\s+)?(?:release|build|version|artifact|deployment|candidate|rc)\s*$/i.test(raw)
+    || /^\s*(?:roll\s*out|release|publish|ship)\s+(?:now|today|everywhere)\s*$|^\s*roll\s*out\s+(?:it|this)\s*$/i.test(raw)
+    || /^\s*blast\s+(?:it\s+|this\s+)?(?:to\s+)(?:the\s+)?(?:list|subscribers|everyone|all|audience|contacts)\s*$/i.test(raw)
+    || /^\s*(?:flip\s+(?:the\s+)?(?:flag|switch|feature\s+flag)|(?:enable|turn\s+on|activate|release)\s+(?:it\s+|this\s+|the\s+feature\s+)?for\s+(?:all|everyone|all\s+users|every\s+user|100\s*%))\s*$/i.test(raw)) return ['submit']
   // CU-537 (High; cu-coordinator 01:06Z), table PR 38 - registrar DNS. PERMISSION everywhere: add / create / new (a / an) typed record
   // (MX, CNAME, TXT, NS, SRV, CAA, PTR, SPF, DKIM, DMARC, ALIAS; 'A' / 'AAAA' only in capitals, so 'Add a record' is not an A record);
   // the generic 'Add / Edit / Save record' (DNS pages) and turning a domain's auto-renew off (domain / registrar pages; a subscription's
