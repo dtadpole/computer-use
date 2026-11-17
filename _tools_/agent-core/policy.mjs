@@ -186,6 +186,15 @@ const LOCALE_WORDS = Object.freeze({
   submit: ['senden', 'absenden', 'abschicken', 'envoyer', 'soumettre', 'enviar', 'отправить', '送信', '보내기', '전송', '제출',
     // CU-358: Italian, Dutch, Portuguese and Turkish.
     'invia', 'invia ora', 'verzenden', 'versturen', 'verstuur', 'indienen', 'submeter', 'gönder^', 'şimdi gönder^'],
+  // CU-616 (cu-researcher): sharing a (live) location and granting access, in the seven locales, as English 'Share my location' /
+  // 'Share live location' / 'Grant access' / 'Give access' ask permission.
+  permission: ['standort teilen', 'live-standort teilen', 'meinen standort teilen', 'standortfreigabe aktivieren', 'zugriff gewähren', 'zugriff erlauben', 'zugang gewähren',
+    'partager ma position', 'partager _ position', 'partager la position en direct', 'partager ma localisation', "accorder l'accès", 'accorder l’accès', "autoriser l'accès", 'autoriser l’accès', 'donner accès',
+    'compartir ubicación', 'compartir mi ubicación', 'compartir _ ubicación en tiempo real', 'conceder acceso', 'dar acceso', 'permitir acceso', 'permitir el acceso',
+    'compartilhar localização', 'compartilhar _ localização', 'partilhar localização', 'partilhar _ localização', 'conceder acesso', 'dar acesso', 'permitir acesso', 'permitir o acesso',
+    'condividi posizione', 'condividi _ posizione', 'condividi la posizione in tempo reale', 'concedi accesso', "concedi l'accesso", 'concedi l’accesso', 'consenti accesso', "consenti l'accesso", 'consenti l’accesso',
+    'locatie delen', 'deel _ locatie', 'live locatie delen', 'toegang verlenen', 'toegang geven', 'toegang toestaan',
+    'konum~ paylaş^', 'canlı konum~ paylaş^', 'erişim izni ver^', 'erişim~ izin ver^', 'erişim~ ver^'],
   // CU-345: a PIN, one-time code, security code or password field named in these languages.
   secret: ['passwort', 'kennwort', 'sicherheitscode', 'prüfziffer', 'mot de passe', 'code de sécurité', 'cryptogramme',
     'contraseña', 'código de seguridad', 'пароль', 'код безопасности', 'パスワード', '暗証番号', 'セキュリティコード', '認証コード',
@@ -448,7 +457,7 @@ const WORDS = Object.freeze({
     // ('Turn off notifications' stays free). ChatGPT confirms any change to account permissions.
     ...['turn off', 'disable', 'remove', 'allow'].flatMap((verb) => ['2 step', 'two step', 'two factor', '2fa', 'mfa', 'multi factor',
       'password', 'passkey', 'passkeys', 'security key', 'security keys', 'login alerts', 'sign in alerts', 'account recovery', 'find my',
-      'less secure apps', 'less secure app access'].map((what) => `${verb} ${what}`)), ...ZH_WORDS.permission],
+      'less secure apps', 'less secure app access'].map((what) => `${verb} ${what}`)), ...ZH_WORDS.permission, ...LOCALE_WORDS.permission],
   submit: ['send', 'post', 'submit', 'publish', 'reply', 'sign up', 'register',
     // CU-261 (cu-researcher; cu-coordinator: High): actions that reach other people or commit shared work, as whole
     // phrases. A bare Accept, Connect, Join or Follow stays free (cookie banners, Wi-Fi, generic joins: named limits).
