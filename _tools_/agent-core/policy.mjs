@@ -116,6 +116,30 @@ const LOCALE_WORDS = Object.freeze({
     'realizar _ transferencia', 'confirmar _ transferencia', 'hacer _ transferencia', 'enviar _ transferencia', 'enviar dinero', 'transferir dinero',
     'overboeking bevestigen', 'bevestig _ overboeking', 'overboeking uitvoeren', 'overboeking versturen',
     'transfer~ onayla^', 'havale~ onayla^', 'eft~ onayla^', 'havale~ gönder^',
+    // CU-610 (cu-researcher): subscribe / upgrade / start-trial buttons in the seven locales, as English 'Subscribe now' /
+    // 'Upgrade to Pro' / 'Start free trial' ask purchase. Portuguese 'assinar' alone is 'sign', so only its plan forms.
+    'abonnieren', 'jetzt abonnieren', 'kostenpflichtig abonnieren', 'abo abschließen', 'abonnement abschließen', 'jetzt upgraden', 'auf premium upgraden', 'kostenlos testen', 'gratis testen', 'probeabo starten',
+    "s'abonner", 's’abonner', 'abonnez-vous', 'souscrire', 'souscrire _ abonnement', 'passer à premium', 'passer à pro', 'passer à la version premium', "commencer l'essai gratuit", 'commencer l’essai gratuit', 'essayer gratuitement',
+    'suscribirse', 'suscríbete', 'suscribirme', 'suscríbete ahora', 'mejorar a pro', 'mejorar a premium', 'pasar a premium', 'hazte premium', 'iniciar _ prueba gratuita', 'prueba gratis',
+    'assinar agora', 'assine agora', 'assine já', 'assinar _ plano', 'fazer _ assinatura', 'fazer upgrade', 'mudar para premium', 'iniciar _ teste grátis', 'experimente grátis',
+    'abbonati', 'abbonati ora', 'abbonarsi', 'sottoscrivi', 'sottoscrivi _ abbonamento', 'passa a premium', 'passa a pro', 'inizia _ prova gratuita', 'prova gratis',
+    'abonneren', 'nu abonneren', 'abonnement afsluiten', 'upgraden naar pro', 'upgraden naar premium', 'gratis proberen', 'proefperiode starten',
+    'abone ol^', 'abonelik~ başlat^', 'aboneliğ~ başlat^', 'premium~ geç^', "premium'a geç^", 'premium’a geç^', "pro'ya geç^", 'pro’ya geç^', 'ücretsiz dene^',
+    // r2 (cu-developer-two / -three): 'auf <plan> upgraden', the Turkish upgrade verb 'yükselt', and 'start the free trial'.
+    'auf pro upgraden', 'auf plus upgraden', 'upgrade auf pro', 'upgrade auf premium', "premium'a yükselt^", 'premium’a yükselt^', "pro'ya yükselt^", 'pro’ya yükselt^',
+    'premium~ yükselt^', 'plan~ yükselt^', 'ücretsiz deneme~ başlat^',
+    // r3 (cu-developer-three): 'upgrade your account / package / membership', as English 'Upgrade your account' asks; a bare
+    // 'yükselt' stays out ('Sesi yükselt' raises the volume).
+    'hesab~ yükselt^', 'hesap~ yükselt^', 'paket~ yükselt^', 'üyelik~ yükselt^', 'üyeliğ~ yükselt^',
+    // r4 (cu-developer-two): the same 'upgrade <account / membership / plan / package>' family in the other six languages, as
+    // English 'Upgrade account / membership' asks. 'Actualizar / Atualizar / Aggiorna' + account also mean 'update the details',
+    // so those verbs take only a plan or subscription object.
+    'konto upgraden', 'mitgliedschaft upgraden', 'paket upgraden', 'tarif upgraden', 'abo upgraden', 'plan upgraden', 'upgrade durchführen',
+    'mettre à niveau', "passer à l'offre supérieure", 'passer à l’offre supérieure',
+    'mejorar mi cuenta', 'mejorar _ cuenta', 'mejorar mi plan', 'mejorar _ plan', 'mejorar mi suscripción', 'mejorar _ suscripción', 'actualizar mi plan', 'actualizar _ plan', 'actualizar _ suscripción', 'mejorar el plan', 'actualizar el plan', 'mejorar tu cuenta', 'mejorar tu plan',
+    'atualizar _ plano', 'melhorar _ plano', 'atualizar _ assinatura', 'melhorar _ conta',
+    'aggiorna _ piano', 'aggiorna _ abbonamento', 'potenzia _ account', 'potenzia _ piano', 'passa al piano superiore',
+    'account upgraden', 'abonnement upgraden', 'pakket upgraden', 'lidmaatschap upgraden', 'upgrade je account', 'upgrade uw account', 'upgrade je abonnement',
     // r3: Turkish stems take their suffixes ('~' noun, '^' verb - see namesWord).
     'ödeme~ onayla^', 'satın alma~ onayla^', 'ödeme~ tamamla^', 'ödeme~ yap^', 'sipariş~ ver^', 'sipariş~ tamamla^', 'sipariş~ onayla^', 'alışveriş~ tamamla^',
     'satın al^', 'şimdi satın al^', 'hemen al^', 'şimdi al^', 'öde^', 'şimdi öde^', 'ödeme~ geç^'],
