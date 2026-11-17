@@ -143,6 +143,12 @@ const LOCALE_WORDS = Object.freeze({
     'şifre~', 'parola~', 'doğrulama kod~', 'güvenlik kod~', 'kart~ numara~', 'son kullanma tarih~', 'tek kullanımlık şifre~',
     // r2: the Portuguese 'de' form, and Turkish possessive forms (your / my), which change the word's ending.
     'número de cartão', 'numero do cartao', 'numero de cartao',
+    // CU-600 (cu-researcher): the card's expiry as each language writes it (English 'expiry' / 'expiration date' are in
+    // SECRET_NAMES), and the spelled-out card verification value / code. Bare 'vencimiento' / 'validade' / 'scadenza' stay out
+    // (a bill's due date, a product's shelf life).
+    'ablaufdatum', '…ablaufdatum', 'gültig bis', 'verfallsdatum', 'fecha de caducidad', 'fecha de vencimiento', 'fecha de expiración', 'data de validade',
+    'validade do cartão', 'data de expiração', 'data di scadenza', 'scadenza della carta', 'scadenza carta', 'date de validité', 'date de fin de validité',
+    'card verification value', 'card verification code', 'card validation code',
 ],
 })
 // CU-355 (design note 0.1): personal-ID field names in German, French, Spanish, Russian, Japanese and Korean - the third
@@ -953,7 +959,11 @@ export const namesPasswordField = (target) => isTextEntry(target) && entryNamesO
 // card', 'Numéro de votre carte', 'Nummer Ihrer Karte', 'Número de su tarjeta', 'Número do seu cartão', 'Numero della tua carta' -
 // reads like the compound 'card number' each language already lists.
 const CARD_NUMBER_PHRASE = /\bcard['’]?s\s+number\b|\bnumber\s+(?:of|on|for)\s+(?:(?:your|the|this|my)\s+)?(?:credit\s+|debit\s+|payment\s+)?card\b|\bnum[ée]ro\s+de\s+(?:(?:votre|ta|la|cette|sa)\s+)?carte\b|\bnummer\s+(?:ihrer|deiner|der|ihre|seiner)\s+(?:kredit|debit|bank)?karte\b|\bn[úu]mero\s+de\s+(?:su|tu|la|esta)\s+tarjeta\b|\bn[úu]mero\s+d[oa]\s+(?:seu|teu|sua|tua)\s+cart[ãa]o\b|\bnumero\s+della\s+(?:tua|sua|vostra)\s+carta\b/iu
-const secretNamedEntry = (target) => isTextEntry(target) && entryNamesOf(target).some((name) => namesWord(name, SECRET_NAMES) || namesAcronym(name) || CARD_NUMBER_PHRASE.test(String(name ?? '')))
+// CU-600 r2 (cu-developer-two): the bare expiry word as the field's WHOLE label, with or without a date-format hint, reads like
+// English 'Expiry (MM/YY)' - 'Scadenza', 'Vencimiento', 'Validade (MM/AA)', 'Caducidad', 'Gültig bis MM/JJ'; a longer phrase
+// ('Vencimiento de la factura', 'Validade do produto') stays free.
+const CARD_EXPIRY_BARE = /^\s*(?:scadenza|vencimiento|validade|caducidad|validit[ée]|ablauf|vence|v[aá]lid[oa]\s+(?:hasta|at[ée])|gültig\s+bis)\s*(?:\(?\s*mm\s*[\/-]\s*(?:aa|yy|jj|aaaa|yyyy|jjjj)\s*\)?)?\s*[:*]?\s*$/iu
+const secretNamedEntry = (target) => isTextEntry(target) && entryNamesOf(target).some((name) => namesWord(name, SECRET_NAMES) || namesAcronym(name) || CARD_NUMBER_PHRASE.test(String(name ?? '')) || CARD_EXPIRY_BARE.test(String(name ?? '')))
 
 // CU-164: a wallet recovery phrase - twelve or more words in a row, every one on the BIP39 list; ordinary prose breaks
 // the run with words the list does not hold (the, is, to, of, a).
