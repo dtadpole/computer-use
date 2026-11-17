@@ -1714,6 +1714,18 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // sponsor / advertise) + (this / your / the / my)? + (post / tweet / video / listing / page / reel / story / ad / event / pin /
       // update / article / content), or '... now' (LinkedIn's 'Sponsor now' / 'Sponsor update', r3 cu-developer-three). The label leads with the verb, so 'Boosted posts', 'Boost insights' and 'Promotion settings' stay free.
       if (!focusesEntry && /^\s*(?:boost|promote|sponsor|advertise)\s+(?:(?:this|your|the|my)\s+)?(?:post|tweet|video|listing|page|reel|story|ad|event|pin|thread|status|update|article|content)\b|^\s*(?:boost|promote|sponsor|advertise)\s+now\b/i.test(name)) classes.push('purchase')
+      // CU-425 (cu-researcher; supersedes #547): widening what others may do with a file - moving it into a shared drive, letting
+      // viewers download / print / copy, letting others edit - asks permission. A bare 'Allow editing' asks only inside a share /
+      // access dialog; narrowing ('Disable downloads', 'Restrict downloads') keeps main's judgement.
+      // r2 (cu-developer-three): Drive's own declarative checkbox ('Viewers and commenters can see the option to download, print, and
+      // copy') asks when it turns the option ON (a native box already checked turns it off - free); Dropbox's 'team folder' and
+      // the older 'Team Drive' are shared drives too.
+      const shareToggle = nativeToggleState(target)
+      if (!focusesEntry && shareToggle !== true && /\b(?:viewers|commenters|everyone|anyone|people|recipients)\b(?:\s+(?:and|&)\s+(?:viewers|commenters))?\s+can\s+(?:see\s+the\s+option\s+to\s+)?(?:download|print|copy)\b/i.test(name)) classes.push('permission')
+      if (!focusesEntry && (/^\s*move\s+(?:it\s+|this\s+|the\s+file\s+)?(?:in)?to\s+(?:a\s+|the\s+)?(?:shared\s+(?:drive|folder|library)|team\s+(?:folder|drive))\b/i.test(name)
+        || (shareToggle !== true && /^\s*(?:allow|enable|let)\s+(?:(?:viewers|commenters|others|everyone|anyone|people|recipients)(?:\s+(?:and|&)\s+(?:viewers|commenters))?\s+(?:to\s+)?(?:see\s+the\s+option\s+to\s+)?)?(?:download(?:s|ing)?|print(?:ing)?(?:\s+(?:and|&)\s+copy(?:ing)?)?|copy(?:ing)?)\b/i.test(name))
+        || /^\s*(?:let\s+(?:others|everyone|anyone|people)\s+edit|enable\s+editing\s+for\s+(?:others|everyone|anyone))\b/i.test(name)
+        || (/^\s*allow\s+editing\s*$/i.test(name) && /\b(?:share|sharing|permissions?|general\s+access|manage\s+access|link\s+settings)\b/i.test(`${target?.dialogName ?? ''} ${target?.dialogDescription ?? ''}`)))) classes.push('permission')
       // CU-397 (cu-researcher; supersedes #462; cu-coordinator's 03:58Z class): a message to an event's guests is sent at once -
       // the label LEADS with the verb, so a refusal ('Don't notify guests', 'Do not send') stays free.
       if (!focusesEntry && /^\s*(?:(?:e-?mail|notify|message)\s+(?:all\s+)?(?:the\s+)?(?:guests|invitees|attendees|participants)|forward\s+(?:the\s+|this\s+)?(?:invitation|invite|event)|(?:propose|suggest)\s+(?:a\s+)?(?:new|another|different|other)\s+time|send\s+updates?(?:\s+to\s+(?:all\s+)?(?:guests|invitees|attendees))?)\b/i.test(name)) classes.push('submit')
