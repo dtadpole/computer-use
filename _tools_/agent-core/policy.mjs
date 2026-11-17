@@ -76,15 +76,6 @@ const ZH_WORDS = Object.freeze({
     // CU-294 (cu-researcher; Firefox's own 'Remember this decision' checkbox, mozilla-l10n).
     '记住此决定', '記住此決定'],
   submit: ['发送', '發送', '傳送', '发布', '發佈', '發布', '提交', '注册', '註冊', '送出', '发表', '發表', '加入会议', '加入會議', '加入通话',
-    // CU-421: running a script.
-    'run script', 'run the script',
-    // CU-422: civic, legal and employment acts in the owner's name.
-    'cast ballot', 'cast your ballot', 'cast vote', 'sign petition', 'sign the petition', 'quit job', 'quit my job', 'decline offer',
-    'accept offer', 'apply now', 'enroll now', 'submit vote',
-    // CU-430: accepting an airline's new itinerary or schedule change binds the trip.
-    'accept new itinerary', 'accept the new itinerary', 'accept schedule change', 'accept the schedule change', 'accept itinerary change',
-    // CU-428: listing or relisting an item and accepting a return bind a sale.
-    'list now', 'list it now', 'relist', 'relist item', 'accept return', 'accept the return',
     '视频通话', '視訊通話', '语音通话', '語音通話', '开始会议', '開始會議', '接受邀请', '接受邀請', '拒绝邀请', '拒絕邀請',
     '部署', '退出群聊', '退出群組', '取消会议', '取消會議', '举报', '檢舉', '申请加入', '申請加入', '报税', '報稅',
     // cu-researcher on #145: Reply (回复 / 回覆) - judged like English 'reply', by CU-157's text-entered rule.
@@ -378,7 +369,19 @@ const WORDS = Object.freeze({
     // CU-286 (cu-researcher's real-app wordings): a request to join a meeting, and Slack's huddle (a call to the channel).
     'ask to join', 'start huddle', 'start a huddle', 'join huddle',
     // CU-288: a tax filing goes to the authority.
-    'file return', 'file tax return', 'file your return', 'file my return', 'e-file', 'efile', 'submit return', 'submit tax return', ...ZH_WORDS.submit, ...LOCALE_WORDS.submit],
+    'file return', 'file tax return', 'file your return', 'file my return', 'e-file', 'efile', 'submit return', 'submit tax return',
+    // CU-432: the English phrases below lived in ZH_WORDS.submit until 17 Nov; moved here unchanged (no behaviour change -
+    // ZH_WORDS.submit is spread into this same list, and namesWord picks each entry's boundary by its own letters).
+    // CU-421: running a script.
+    'run script', 'run the script',
+    // CU-422: civic, legal and employment acts in the owner's name.
+    'cast ballot', 'cast your ballot', 'cast vote', 'sign petition', 'sign the petition', 'quit job', 'quit my job', 'decline offer',
+    'accept offer', 'apply now', 'enroll now', 'submit vote',
+    // CU-430: accepting an airline's new itinerary or schedule change binds the trip.
+    'accept new itinerary', 'accept the new itinerary', 'accept schedule change', 'accept the schedule change', 'accept itinerary change',
+    // CU-428: listing or relisting an item and accepting a return bind a sale.
+    'list now', 'list it now', 'relist', 'relist item', 'accept return', 'accept the return',
+    ...ZH_WORDS.submit, ...LOCALE_WORDS.submit],
 })
 // CU-377 follow-up: the file browsers whose rows are files (the same set as app-policy's FILE_BROWSERS).
 const FILE_BROWSER_APPS = new Set(['com.apple.finder', 'com.cocoatech.PathFinder', 'com.binarynights.ForkLift-3', 'com.binarynights.ForkLift', 'com.eltima.cmd1', 'com.mrrsoftware.marta', 'org.yanex.marta'])
