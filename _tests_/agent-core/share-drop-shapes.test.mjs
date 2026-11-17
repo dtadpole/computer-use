@@ -8,9 +8,10 @@ const policy = createPolicy({ sitePolicy: () => 'allow' })
 const drop = (name) => { const r = policy.classify({ type: 'drag', from: [10, 10], to: [200, 200] }, { url: 'https://cloud.example/files/home', target: { role: 'row', name: 'Board deck.pptx' }, dropTarget: { role: 'treeitem', name } }); return r.decision === 'allow' ? 'allow' : (r.classes ?? [r.class]).includes('permission') ? 'permission' : r.class }
 
 test('CU-593: Public + a container noun and Shared with <group> ask permission as drop targets', () => {
-  for (const name of ['Public Files', 'Public share', 'Public uploads', 'Public Documents', 'Shared with partners', 'Shared with clients', 'Shared with external users', 'Shared with the team', 'Public Files (12)']) assert.equal(drop(name), 'permission', name)
+  for (const name of ['Public Files', 'Public share', 'Public uploads', 'Public Documents', 'Shared with partners', 'Shared with clients', 'Shared with external users', 'Shared with the team', 'Public Files (12)',
+    'Public Docs', 'Public Assets', 'Public media', 'Public Resources', 'Public Photos']) assert.equal(drop(name), 'permission', name)
 })
 
 test('CU-593 negatives: names that are not a shared space stay free', () => {
-  for (const name of ['Public relations', 'Public speaking notes', 'Shared calendar settings', 'Sharing preferences', 'My files', 'Desktop', 'Files not shared']) assert.equal(drop(name), 'allow', name)
+  for (const name of ['Public relations', 'Public speaking notes', 'Public holidays', 'Public transport', 'Shared calendar settings', 'Sharing preferences', 'My files', 'Desktop', 'Files not shared']) assert.equal(drop(name), 'allow', name)
 })

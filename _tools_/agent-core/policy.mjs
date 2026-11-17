@@ -390,9 +390,10 @@ const WORDS = Object.freeze({
 const FILE_BROWSER_APPS = new Set(['com.apple.finder', 'com.cocoatech.PathFinder', 'com.binarynights.ForkLift-3', 'com.binarynights.ForkLift', 'com.eltima.cmd1', 'com.mrrsoftware.marta', 'org.yanex.marta'])
 const SHARE_DESTINATION = /\b(?:airdrop|shared(?:\s+(?:folder|with\s+me|with\s+you))?|drop\s+box|dropbox|public\s+folder|server|network|(?:smb|afp|nfs|webdav):)/i
 // CU-385: shared / public spaces as a drop target's whole name (an unread or item count may follow).
-// CU-593 (cu-researcher): 'Public' + a container noun ('Public Files', 'Public share', 'Public uploads') and 'Shared with <group>'
+// CU-593 (cu-researcher): 'Public' + a container noun ('Public Files', 'Public share', 'Public uploads'; r2 cu-developer-two: 'Public
+// Docs', 'Public Assets', media / resources / photos / images / videos / content) and 'Shared with <group>'
 // beyond me / everyone ('Shared with partners / clients / external users / the team'); 'Public relations' (no container) stays free.
-const DROP_SHARE_NAME = /^\s*(?:public(?:\s+(?:folders?|files|shares?|uploads?|documents|drives?|library|libraries|items))?|shared(?:\s+(?:folders?|drives?|documents|files|items|libraries|library|with\s+(?:me|everyone|you|all|others|anyone|partners|clients|customers|guests|vendors|suppliers|contractors|externals?|external\s+(?:users|people|partners)|(?:the\s+|my\s+|our\s+)?(?:team|company|organi[sz]ation|org))))?|team\s+drives?|shared\s+drives?|everyone)(?:\s*\(\d+\))?\s*$/i
+const DROP_SHARE_NAME = /^\s*(?:public(?:\s+(?:folders?|files|shares?|uploads?|documents|docs|assets|media|resources|photos|pictures|images|videos|content|drives?|library|libraries|items))?|shared(?:\s+(?:folders?|drives?|documents|files|items|libraries|library|with\s+(?:me|everyone|you|all|others|anyone|partners|clients|customers|guests|vendors|suppliers|contractors|externals?|external\s+(?:users|people|partners)|(?:the\s+|my\s+|our\s+)?(?:team|company|organi[sz]ation|org))))?|team\s+drives?|shared\s+drives?|everyone)(?:\s*\(\d+\))?\s*$/i
 // CU-385 r3 (cu-researcher 22:02Z): an owner's shared space, 1-3 words then 'shared' (+ folder / drive) ending the name -
 // 'Company Shared', 'Team shared folder', 'Team Public folder' (r4); a name with 'not' / 'never' / 'un' before it stays free.
 const DROP_SHARE_TRAILING = /^\s*(?![^]*\b(?:not|never|un)\s)(?:[\p{L}\d&'.-]+\s+){1,3}(?:shared|public)(?:\s+(?:folders?|drives?))?(?:\s*\(\d+\))?\s*$/iu
