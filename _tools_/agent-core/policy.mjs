@@ -557,7 +557,9 @@ function keyboardActivation(action, target, context = {}) {
   // CU-148: with a sheet or alert up, Command-D and Command-Delete press its Don't Save whatever holds the focus - with
   // keyboard navigation off (a default Mac) the focus is the sheet or its window, never the button. The helper reports
   // it (sheet); a Command-D right after Command-W or Command-Q in the batch is aimed at the sheet that close raises.
-  const sheetUp = target?.sheet === true || context.afterClose === true
+  // CU-364 (design note 0.1; rebuilt from #360 on 17 Nov): the focus may be the sheet or dialog itself, reported by its
+  // role (AXSheet) or subrole (AXDialog, AXSystemDialog) without the sheet flag - its Don't Save still takes Command-D.
+  const sheetUp = target?.sheet === true || context.afterClose === true || target?.role === 'AXSheet' || ['AXDialog', 'AXSystemDialog'].includes(target?.subrole)
   // CU-234: Command-D with Shift, Option or Control too presses the sheet's Don't Save.
   const deletes = keys.has('META') && ((keys.has('BACKSPACE') || keys.has('DELETE')) || (keys.has('D') && onlyWith('D', ['META', 'SHIFT', 'ALT', 'CTRL']) && (button || sheetUp)))
   // CU-147: exactly Backspace or Delete on a focused collection - a list, table, outline, row or cell, not a text input
@@ -2324,8 +2326,19 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // CU-403 (cu-verifier 23:42Z live): an IDE's 'Sync Changes' pushes local commits like 'Push' does, so it asks submit as Push
     // does - 'Sync changes', 'Sync commits', 'Sync branch' as the control's name, with an optional count / arrow suffix
     // ('Sync Changes 1↓ 2↑'); r2 (cu-developer-two 23:50Z, cu-researcher 23:51Z): 'Commit & Sync', 'Synchronize Changes',
-    // 'Push and pull', 'Sync with remote'; r3 (cu-researcher 23:58Z): 'Sync to remote', 'Pull and push', 'Commit, Push'. A bare 'Sync', 'Settings Sync' or 'Synchronize panels' stays as it was.
-    if (grammarEligible && !classes.includes('submit') && /^\s*(?:commit\s*(?:&|and|,)\s*(?:sync|push)|push\s*(?:&|and|,)\s*pull|pull\s*(?:&|and|,)\s*push|sync(?:hroni[sz]e)?\s+(?:changes|commits?|branch|repository|repo|(?:with|to)\s+(?:the\s+)?(?:remote|origin|upstream)))(?:\s+[\d\s↑↓]+)?\s*$/iu.test(name)) classes.push('submit')
+    // 'Push and pull', 'Sync with remote'; r3 (cu-researcher 23:58Z): 'Sync to remote', 'Pull and push', 'Commit, Push'; follow-up (cu-researcher 00:15Z, cu-developer-two 00:05Z): 'Pull, then push', 'Sync branch to
+    // remote', 'Push commits' (a gap older than CU-403); r2 (cu-developer-two 00:58Z): 'Pull then push', 'Push branch'; r2 (cu-researcher 01:00Z): 'Push tags',
+    // 'Push branch to remote', and the git-verb sequence family below; r3 (cu-researcher 01:05Z): 'Squash and push',
+    // 'Push to all remotes'; r4 (cu-researcher 01:14Z): 'Cherry-pick and push', 'Revert and push', 'Fixup, then push'. A bare 'Sync', 'Settings Sync' or 'Synchronize panels' stays as it was.
+    if (grammarEligible && !classes.includes('submit') && /^\s*(?:commit\s*(?:&|and|,)\s*(?:sync|push)|push\s*(?:&|and|,)\s*pull|pull\s*(?:(?:&|and|,)\s*(?:then\s+)?|then\s+)push|push\s+(?:the\s+)?(?:\d+\s+)?(?:local\s+)?(?:commits?|changes|branch(?:es)?|tags?|all)|push\s+to\s+(?:all\s+)?(?:the\s+)?(?:remotes?|origin|upstream)|sync(?:hroni[sz]e)?\s+(?:changes|commits?|branch|repository|repo|(?:with|to)\s+(?:the\s+)?(?:remote|origin|upstream))(?:\s+(?:with|to)\s+(?:the\s+)?(?:remote|origin|upstream))?)(?:\s+to\s+(?:the\s+)?(?:remote|origin|upstream))?(?:\s+[\d\s↑↓]+)?\s*$/iu.test(name)) classes.push('submit')
+    // CU-403 follow-up r2 (cu-researcher 01:00Z): a sequence of git verbs joined by ',', 'then', 'and' or '&' asks submit
+    // when any step pushes or syncs ('Fetch, then push', 'Pull, rebase and push', 'Commit, then sync'); a sequence with no
+    // push / sync step ('Pull, then rebase', 'Fetch, then merge') stays as it was.
+    if (grammarEligible && !classes.includes('submit')) {
+      const gitVerb = '(?:pull|fetch|rebase|commit|stage|merge|stash|amend|squash|cherry[-\\s]?pick|revert|fixup|push|sync)'
+      const gitSequence = new RegExp(`^\\s*${gitVerb}(?:\\s*(?:,\\s*(?:and\\s+|then\\s+)?|&\\s*|and\\s+(?:then\\s+)?|then\\s+)${gitVerb})+\\s*$`, 'i')
+      if (gitSequence.test(name) && /\b(?:push|sync)\b/i.test(name)) classes.push('submit')
+    }
     // CU-413: money moved out to a bank or card, as 'Withdraw to bank' already asks - send / transfer / move / pay out / cash out
     // (an optional amount or money noun) to (my / the) bank, bank account, checking, savings or debit card.
     if (grammarEligible && !classes.includes('purchase') && /^\s*(?:send|transfer|move|pay\s*out|cash\s*out|withdraw)\s+(?:(?:money|funds|cash|balance|earnings|payout|it|[$€£]?\s*[\d.,]+(?:\s*(?:usd|eur|gbp|dollars?|euros?))?)\s+)?(?:to|into)\s+(?:my\s+|your\s+|the\s+|a\s+)?(?:bank(?:\s+account)?|checking(?:\s+account)?|savings(?:\s+account)?|debit\s+card|current\s+account)\b/i.test(name)) classes.push('purchase')

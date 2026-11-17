@@ -1,9 +1,9 @@
 ---
 title: ULTIMATE_GOAL 2.0 verdict, row by row - live, in progress
 created: 2026-11-02T10:22:00Z
-modified: 2026-11-17T01:06:00Z
+modified: 2026-11-17T02:08:00Z
 level: L1
-version: 0.9.230
+version: 0.9.231
 description: cu-verifier's per-row state of the desktop ULTIMATE_GOAL after the owner's grant - live evidence so far from the runbook on the Mac mini beside the pre-grant verifiers, and what each row still needs. No row is held until its live half holds.
 status: unverified
 grounded_in:
@@ -256,7 +256,8 @@ within minutes of its landing with a mutant: CU-393 (bare grants on an OAuth con
 and VM clients excluded, policy level), CU-385 (trash / junk and shared-space drops, 233758Z-4698f4), CU-396 and CU-397 (presenting /
 recording; messages to guests: 000739Z-b3fb9e, 000817Z-568b5b), CU-413 (money sent to a bank asks purchase, 003732Z-33bf87), CU-403
 (push / publish / collaborator forms, desktop at policy level and web 010501Z-1b794b; a bare 'Release' left to CU-571); CU-592 (a bare
-'OK' in an access dialog, 230416Z-e1fa83) reproduced live; CU-559 (retirement / insurance: 080726Z-863132 .., 12 Nov) and CU-560 (broker options synonyms: 080950Z-67de2d .., 12 Nov)
+'OK' in an access dialog, 230416Z-e1fa83) reproduced live; then CU-404 (paid boost / promote asks purchase, 012335Z-e51b52), CU-407 (an updater's Update
+Now asks install, policy level) and CU-432 (a no-behaviour-change move, checked as exact equality of 20 phrases before and after); CU-559 (retirement / insurance: 080726Z-863132 .., 12 Nov) and CU-560 (broker options synonyms: 080950Z-67de2d .., 12 Nov)
 closed live on #825 (main 8d8a01d rows 12 Nov 09:09Z; closed on main c82f0fc after the 15 Nov reboot, five pages: 20261115T214232Z-461572 ..); CU-556 (round 5, Medium: five labels lowered, 'Wire transfer' kept) closed live after #823, main 4c67337 (081751Z-f1a505 ..);
 CU-554 (site takedown) and CU-555 (connected-car safeguards) closed live on #814, main de957db (083812Z-63bfb3 .. / 083922Z-96661b .., 12 Nov);
 CU-557 (exchange futures / derivatives) and CU-558 (social privacy, location bound per D-106) closed live on #821, main 71d69eb, eight pages
