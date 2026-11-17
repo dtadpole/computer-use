@@ -9,7 +9,8 @@ const click = (url, name) => { const r = policy.classify({ type: 'click', x: 1, 
 
 test('CU-615: imperative and possessive subscription twins ask purchase', () => {
   for (const name of ['Inicia tu suscripción', 'Empieza tu suscripción', 'Inicia la suscripción', 'Inicie sua assinatura', 'Avvia il tuo abbonamento', 'Premium plana geç', 'Premium planına geçin',
-    "Passez à l'offre Premium", 'Passez à l’offre Pro', 'Passez à la version Pro', 'Abo bitte starten', 'Starte dein Abo', 'Starten Sie Ihr Abonnement', 'Start uw abonnement']) assert.ok(click('https://shop.example/plans', name).includes('purchase'), name)
+    "Passez à l'offre Premium", 'Passez à l’offre Pro', 'Passez à la version Pro', 'Abo bitte starten', 'Starte dein Abo', 'Starten Sie Ihr Abonnement', 'Start uw abonnement',
+    'Beginne deine Mitgliedschaft', 'Starte jetzt dein Abo', 'Starten Sie jetzt Ihre Mitgliedschaft', 'Wechsle jetzt zu Premium', 'Wechseln Sie gleich zu Pro', 'Start nu je lidmaatschap', 'Stap nu over naar Premium']) assert.ok(click('https://shop.example/plans', name).includes('purchase'), name)
 })
 
 test("CU-615: 'bitte' as the adverb in a split transfer confirmation", () => {
@@ -17,5 +18,5 @@ test("CU-615: 'bitte' as the adverb in a split transfer confirmation", () => {
 })
 
 test('CU-615 negatives: sign-in, profile and layout forms stay free', () => {
-  for (const name of ['Inicia tu sesión', 'Inicie sua sessão', 'Passez à la version mobile', 'Überweisung bitte prüfen', 'Plana göz at']) assert.deepEqual(click('https://app.example/settings', name), [], name)
+  for (const name of ['Inicia tu sesión', 'Inicie sua sessão', 'Passez à la version mobile', 'Überweisung bitte prüfen', 'Plana göz at', 'Starte jetzt die Präsentation', 'Wechsle jetzt zu Dunkel', 'Beginne deine Reise']) assert.deepEqual(click('https://app.example/settings', name), [], name)
 })

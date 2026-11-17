@@ -2496,6 +2496,11 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const lastPush = new RegExp(`^\\s*${step}(?:${join}${step}){0,3}${join}(?:push(?:\\s+(?:to\\s+)?(?:the\\s+)?(?:remotes?|origin|upstream|changes|commits?|branch(?:es)?|tags?))?|sync\\s+(?:(?:to|with)\\s+(?:the\\s+)?)?(?:remote|origin|upstream|changes|commits?|branch))\\s*$`, 'iu')
       if (!classes.includes('submit') && lastPush.test(name)) classes.push('submit')
     }
+    // CU-615 r3 (cu-developer-three): the German / Dutch imperative family as one rule - start / begin (+ one adverb) + your
+    // subscription / membership ('Starte jetzt dein Abo', 'Beginne deine Mitgliedschaft', 'Start nu je lidmaatschap'), and
+    // switch (+ one adverb) to pro / premium / plus ('Wechsle jetzt zu Premium').
+    if (grammarEligible && !classes.includes('purchase') && /^\s*(?:starte|beginne|starten\s+sie|beginnen\s+sie|start|begin)\s+(?:(?:jetzt|gleich|sofort|nu)\s+)?(?:deine?|ihre?|je|uw)\s+(?:abo|abonnement|mitgliedschaft|lidmaatschap)\s*[.!]?\s*$/iu.test(name)) classes.push('purchase')
+    if (grammarEligible && !classes.includes('purchase') && /^\s*(?:wechsle|wechseln\s+sie|stap|stapt)\s+(?:(?:jetzt|gleich|sofort|nu)\s+)?(?:zu|auf|over\s+naar|over\s+op)\s+(?:pro|premium|plus)\s*[.!]?\s*$/iu.test(name)) classes.push('purchase')
     // CU-613 (cu-researcher): the ':' / '-' label form of 'start a subscription' - 'Suscripción mensual: empezar', 'Abo - starten'.
     // r3 (cu-developer-one): with one adverb between instead of the ':' ('Abo jetzt starten', 'Suscripción ahora iniciar').
     if (grammarEligible && !classes.includes('purchase') && /^\s*(?:suscripci[oó]n|abonnement|abo|abbonamento|assinatura|subscription|mitgliedschaft|membres[ií]a)(?:\s+\p{L}+)?(?:\s*[:\-–]\s*|\s+(?:jetzt|sofort|bitte|maintenant|ahora|agora|ora|adesso|nu|şimdi|now|please)\s+)(?:empezar|iniciar|comenzar|starten|beginnen|commencer|démarrer|avvia(?:re)?|inizia(?:re)?|começar|start|begin)\s*[.!]?\s*$/iu.test(name)) classes.push('purchase')
