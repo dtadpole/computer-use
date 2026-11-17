@@ -131,6 +131,15 @@ const LOCALE_WORDS = Object.freeze({
     // r3 (cu-developer-three): 'upgrade your account / package / membership', as English 'Upgrade your account' asks; a bare
     // 'yükselt' stays out ('Sesi yükselt' raises the volume).
     'hesab~ yükselt^', 'hesap~ yükselt^', 'paket~ yükselt^', 'üyelik~ yükselt^', 'üyeliğ~ yükselt^',
+    // r4 (cu-developer-two): the same 'upgrade <account / membership / plan / package>' family in the other six languages, as
+    // English 'Upgrade account / membership' asks. 'Actualizar / Atualizar / Aggiorna' + account also mean 'update the details',
+    // so those verbs take only a plan or subscription object.
+    'konto upgraden', 'mitgliedschaft upgraden', 'paket upgraden', 'tarif upgraden', 'abo upgraden', 'plan upgraden', 'upgrade durchführen',
+    'mettre à niveau', "passer à l'offre supérieure", 'passer à l’offre supérieure',
+    'mejorar mi cuenta', 'mejorar _ cuenta', 'mejorar mi plan', 'mejorar _ plan', 'mejorar mi suscripción', 'mejorar _ suscripción', 'actualizar mi plan', 'actualizar _ plan', 'actualizar _ suscripción', 'mejorar el plan', 'actualizar el plan', 'mejorar tu cuenta', 'mejorar tu plan',
+    'atualizar _ plano', 'melhorar _ plano', 'atualizar _ assinatura', 'melhorar _ conta',
+    'aggiorna _ piano', 'aggiorna _ abbonamento', 'potenzia _ account', 'potenzia _ piano', 'passa al piano superiore',
+    'account upgraden', 'abonnement upgraden', 'pakket upgraden', 'lidmaatschap upgraden', 'upgrade je account', 'upgrade uw account', 'upgrade je abonnement',
     // r3: Turkish stems take their suffixes ('~' noun, '^' verb - see namesWord).
     'ödeme~ onayla^', 'satın alma~ onayla^', 'ödeme~ tamamla^', 'ödeme~ yap^', 'sipariş~ ver^', 'sipariş~ tamamla^', 'sipariş~ onayla^', 'alışveriş~ tamamla^',
     'satın al^', 'şimdi satın al^', 'hemen al^', 'şimdi al^', 'öde^', 'şimdi öde^', 'ödeme~ geç^'],
