@@ -148,6 +148,14 @@ const LOCALE_WORDS = Object.freeze({
     'iniciar _ assinatura', 'começar _ assinatura', 'ativar _ assinatura',
     'avvia _ abbonamento', 'inizia _ abbonamento', 'attiva _ abbonamento',
     'start _ abonnement', 'begin _ abonnement', 'start je abonnement',
+    // r2 (cu-developer-two): the whole family in one round - start a membership, and 'switch to the <paid plan> version' in
+    // every language (a layout switch, 'version mobile / classique', stays free).
+    'commencer mon abonnement', 'commencer _ abonnement', 'commencer _ adhésion', 'commencer mon adhésion',
+    'mitgliedschaft beginnen', 'zur pro-version wechseln', 'auf die pro-version wechseln', 'zur premium-version wechseln', 'zur bezahlversion wechseln',
+    'comenzar _ membresía', 'comenzar mi membresía', 'iniciar _ membresía', 'iniciar mi membresía', 'empezar _ membresía', 'empezar mi membresía', 'cambiar a la versión pro', 'pasar a la versión pro', 'cambiar a la versión premium', 'pasar a la versión premium',
+    'iniciar _ plano', 'mudar para a versão pro', 'passar para a versão pro', 'mudar para a versão premium', 'passar para a versão premium',
+    'passa alla versione pro', 'passa alla versione plus', 'passa alla versione premium', 'passa alla versione a pagamento', 'passare alla versione pro', 'passare alla versione premium',
+    'lidmaatschap starten', 'overstappen naar pro', 'overstappen naar premium', 'overstappen naar de betaalde versie',
     // r3: Turkish stems take their suffixes ('~' noun, '^' verb - see namesWord).
     'ödeme~ onayla^', 'satın alma~ onayla^', 'ödeme~ tamamla^', 'ödeme~ yap^', 'sipariş~ ver^', 'sipariş~ tamamla^', 'sipariş~ onayla^', 'alışveriş~ tamamla^',
     'satın al^', 'şimdi satın al^', 'hemen al^', 'şimdi al^', 'öde^', 'şimdi öde^', 'ödeme~ geç^'],
