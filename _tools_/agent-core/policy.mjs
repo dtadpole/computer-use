@@ -776,9 +776,18 @@ const BANK_OR_TAX_FIELD = Object.freeze(['iban', 'account number', 'account no',
   // CU-285 (cu-researcher): the US form's own words - Taxpayer Identification Number, Taxpayer ID.
   'taxpayer identification', 'taxpayer id',
   // CU-293: a bank account or tax id in Chinese.
-  '银行账号', '銀行帳號', '银行账户', '銀行帳戶', '开户行', '開戶行', '税号', '稅號', '纳税人识别号', '納稅人識別號', '统一社会信用代码'])
+  '银行账号', '銀行帳號', '银行账户', '銀行帳戶', '开户行', '開戶行', '税号', '稅號', '纳税人识别号', '納稅人識別號', '统一社会信用代码',
+  // CU-601 (cu-researcher): national bank routing codes beside 'routing number' / 'sort code' / 'bsb' - Germany, the US ABA
+  // name, Switzerland / Sweden, Canada, France - as phrases; the short ones (BLZ, ABI, CAB, RIB, agência) as a whole label below.
+  'bankleitzahl', 'aba number', 'aba routing', 'clearing number', 'clearingnummer', 'bank clearing', 'transit number', 'institution number',
+  'code banque', 'code guichet', 'clé rib', 'cle rib', 'relevé d\'identité bancaire', 'código de agencia', 'código de agência', 'número de agencia', 'número da agência'])
+// CU-601: the short national codes only as a field's whole label ('Cab' alone is a taxi elsewhere), and the account number
+// in its 'of' form ('Number of your account'), as CU-599 reads the card number.
+const BANK_CODE_WHOLE = /^\s*(?:blz|aba|abi|cab|rib|ag[êe]ncia|clearing)\s*(?:\(.{0,12}\))?\s*[:*]?\s*$/iu
+// r2 (cu-developer-two / -three): both orders, as CU-599 reads the card - "Your account's number", 'Number on your account'.
+const ACCOUNT_NUMBER_OF = /\baccount['’]?s\s+number\b|\bnumber\s+(?:of|on|for)\s+(?:(?:your|the|this|my)\s+)?(?:bank\s+|checking\s+|savings\s+)?account\b/i
 function bankOrTaxField(target) {
-  return entryNamesOf(target).some((name) => namesWord(name, BANK_OR_TAX_FIELD))
+  return entryNamesOf(target).some((name) => namesWord(name, BANK_OR_TAX_FIELD) || BANK_CODE_WHOLE.test(String(name ?? '')) || ACCOUNT_NUMBER_OF.test(String(name ?? '')))
 }
 
 // CU-164: a text entry - the browser's editable flag, or a desktop text role - named for a password asks credential, and
