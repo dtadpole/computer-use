@@ -143,6 +143,12 @@ const LOCALE_WORDS = Object.freeze({
     'şifre~', 'parola~', 'doğrulama kod~', 'güvenlik kod~', 'kart~ numara~', 'son kullanma tarih~', 'tek kullanımlık şifre~',
     // r2: the Portuguese 'de' form, and Turkish possessive forms (your / my), which change the word's ending.
     'número de cartão', 'numero do cartao', 'numero de cartao',
+    // CU-600 (cu-researcher): the card's expiry as each language writes it (English 'expiry' / 'expiration date' are in
+    // SECRET_NAMES), and the spelled-out card verification value / code. Bare 'vencimiento' / 'validade' / 'scadenza' stay out
+    // (a bill's due date, a product's shelf life).
+    'ablaufdatum', '…ablaufdatum', 'gültig bis', 'verfallsdatum', 'fecha de caducidad', 'fecha de vencimiento', 'fecha de expiración', 'data de validade',
+    'validade do cartão', 'data de expiração', 'data di scadenza', 'scadenza della carta', 'scadenza carta', 'date de validité', 'date de fin de validité',
+    'card verification value', 'card verification code', 'card validation code',
 ],
 })
 // CU-355 (design note 0.1): personal-ID field names in German, French, Spanish, Russian, Japanese and Korean - the third
