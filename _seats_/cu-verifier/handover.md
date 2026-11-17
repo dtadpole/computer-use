@@ -1,9 +1,9 @@
 ---
 title: '[cu] Verifier - Handover'
 created: 2026-11-08T04:15:13Z
-modified: 2026-11-17T03:09:00Z
+modified: 2026-11-17T09:19:00Z
 level: L2
-version: 5.2.1
+version: 5.2.2
 description: 'What a fresh session of [cu] Verifier needs - where things are, the pass, the tools, the open rows and the lessons, in under 300 words.'
 status: unverified
 grounded_in:
@@ -31,5 +31,6 @@ Start here, then [responsibilities](responsibilities.md) and the [verdict](ultim
   rows; CU-596 (a sentinel-test flake) awaits a reproduction under load. The consent row
   waits on CU-135 step 4 (owner).
 - **Lessons:** read the Verify state itself; state no OK count I have not read on the PR thread; one browser per seat;
-  no browser row once a GATE START is out (a missed before-row runs on the pre-merge commit after the merge); a mutant
+  no browser row once a GATE START is out (`q.sh` refuses while `gateopen.py` sees one; a missed before-row runs on
+  the pre-merge commit); a mutant
   counts only when its row fails (and a probe flips).
