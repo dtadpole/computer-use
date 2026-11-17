@@ -28,3 +28,13 @@ test('CU-403 follow-up: Pull, then push / Sync branch to remote / Push commits a
   for (const n of ['Pull, then push', 'Sync branch to remote', 'Push commits', 'Push 3 commits', 'Push local changes to origin']) assert.ok(cls(n).includes('submit'), n)
   for (const n of ['Pull', 'Fetch', 'Sync settings', 'Push notifications']) assert.ok(!cls(n).includes('submit'), n)
 })
+
+test('CU-403 follow-up r2 (cu-developer-two 00:58Z): Pull then push without the comma, Push branch', () => {
+  for (const n of ['Pull then push', 'Push branch']) assert.ok(cls(n).includes('submit'), n)
+  for (const n of ['Push notification settings', 'Enable push notifications', 'Branch settings']) assert.ok(!cls(n).includes('submit'), n)
+})
+
+test('CU-403 follow-up r2 (cu-researcher 01:00Z): any git-verb sequence with a push / sync step; push with an object', () => {
+  for (const n of ['Fetch, then push', 'Rebase, then push', 'Commit, then sync', 'Pull, rebase and push', 'Push branch to remote', 'Push tags']) assert.ok(cls(n).includes('submit'), n)
+  for (const n of ['Pull, then rebase', 'Fetch, then merge', 'Sync main view', 'Branch to remote: help', 'Commits', 'Tag details', 'Pull requests']) assert.ok(!cls(n).includes('submit'), n)
+})
