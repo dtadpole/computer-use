@@ -154,6 +154,14 @@ const LOCALE_WORDS = Object.freeze({
     'código de un solo uso', 'código recibido por sms', 'código enviado por sms', 'código de acesso único', 'código de uso único', 'código recebido por sms',
     'codice monouso', 'codice usa e getta', 'codice ricevuto via sms', 'codice ricevuto per sms', 'codice inviato via sms',
     'tek kullanımlık kod~', 'sms kod~', 'eenmalig wachtwoord', 'sms-code', 'sms code ontvangen',
+    // CU-605 (cu-researcher): security questions / answers and the mother's maiden name, as English 'security question' /
+    // 'security answer' / 'maiden name' already ask - account-recovery secrets.
+    '…sicherheitsfrage', 'sicherheitsantwort', 'geheimfrage', 'mädchenname der mutter', 'geburtsname der mutter',
+    'question secrète', 'réponse secrète', 'question de sécurité', 'réponse de sécurité', 'nom de jeune fille',
+    'pregunta de seguridad', 'respuesta de seguridad', 'pregunta secreta', 'respuesta secreta', 'apellido de soltera',
+    'pergunta de segurança', 'resposta de segurança', 'pergunta secreta', 'resposta secreta', 'nome de solteira',
+    'domanda di sicurezza', 'risposta di sicurezza', 'domanda segreta', 'risposta segreta', 'cognome da nubile',
+    'güvenlik soru~', 'gizli soru~', 'kızlık soyad~', 'beveiligingsvraag', 'geheime vraag', 'meisjesnaam',
 ],
 })
 // CU-355 (design note 0.1): personal-ID field names in German, French, Spanish, Russian, Japanese and Korean - the third
