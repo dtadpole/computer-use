@@ -23,3 +23,28 @@ test('CU-403 r2 (cu-developer-two 23:50Z, cu-researcher 23:51Z): the IDE sync fo
 test('CU-403 r3 (cu-researcher 23:58Z): either order, a comma, and sync to the remote', () => {
   for (const n of ['Sync to remote', 'Pull and push', 'Commit, Push', 'Commit, Sync']) assert.ok(cls(n).includes('submit'), n)
 })
+
+test('CU-403 follow-up: Pull, then push / Sync branch to remote / Push commits ask submit', () => {
+  for (const n of ['Pull, then push', 'Sync branch to remote', 'Push commits', 'Push 3 commits', 'Push local changes to origin']) assert.ok(cls(n).includes('submit'), n)
+  for (const n of ['Pull', 'Fetch', 'Sync settings', 'Push notifications']) assert.ok(!cls(n).includes('submit'), n)
+})
+
+test('CU-403 follow-up r2 (cu-developer-two 00:58Z): Pull then push without the comma, Push branch', () => {
+  for (const n of ['Pull then push', 'Push branch']) assert.ok(cls(n).includes('submit'), n)
+  for (const n of ['Push notification settings', 'Enable push notifications', 'Branch settings']) assert.ok(!cls(n).includes('submit'), n)
+})
+
+test('CU-403 follow-up r2 (cu-researcher 01:00Z): any git-verb sequence with a push / sync step; push with an object', () => {
+  for (const n of ['Fetch, then push', 'Rebase, then push', 'Commit, then sync', 'Pull, rebase and push', 'Push branch to remote', 'Push tags']) assert.ok(cls(n).includes('submit'), n)
+  for (const n of ['Pull, then rebase', 'Fetch, then merge', 'Sync main view', 'Branch to remote: help', 'Commits', 'Tag details', 'Pull requests']) assert.ok(!cls(n).includes('submit'), n)
+})
+
+test('CU-403 follow-up r3 (cu-researcher 01:05Z): Squash and push, Push to all remotes', () => {
+  for (const n of ['Squash and push', 'Push to all remotes', 'Push to origin']) assert.ok(cls(n).includes('submit'), n)
+  for (const n of ['Push to talk', 'Squash commits']) assert.ok(!cls(n).includes('submit'), n)
+})
+
+test('CU-403 follow-up r4 (cu-researcher 01:14Z): cherry-pick / revert / fixup steps before a push', () => {
+  for (const n of ['Cherry-pick and push', 'Cherry pick, then push', 'Revert and push', 'Fixup, then push']) assert.ok(cls(n).includes('submit'), n)
+  for (const n of ['Cherry-pick', 'Revert changes', 'Fixup commit']) assert.ok(!cls(n).includes('submit'), n)
+})
