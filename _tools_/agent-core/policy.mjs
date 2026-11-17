@@ -166,6 +166,8 @@ const LOCALE_ID_NAMES = Object.freeze(['reisepass', '…passnummer', 'geburtsdat
   'sağlık sigorta~ numara~', 'insurance member number', 'insurance member id', 'insurance id number',
   // r2 (cu-developer-two): the French insured-person number; 'Versicherten-Nr.' reads through the '-Nr.' family (CU-602).
   "numéro d'assuré", 'numéro d’assuré', "n° d'assuré", 'n° d’assuré', 'numéro assuré',
+  // r2 (cu-developer-one): the Dutch card's own term, twin of 'Versichertennummer'.
+  'verzekerdennummer', '…verzekerdennummer', 'verzekerdenummer',
   'паспорт', 'номер паспорта', 'дата рождения', 'инн', 'снилс', 'номер счета', 'номер счёта',
   'パスポート', '旅券番号', '生年月日', 'マイナンバー', '個人番号', '口座番号',
   '여권', '여권번호', '생년월일', '주민등록번호', '계좌번호', '사업자등록번호',

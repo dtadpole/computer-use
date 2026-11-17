@@ -10,7 +10,7 @@ const field = (name) => { const r = policy.classify({ type: 'type', text: 'x' },
 test('CU-603: health-insurance numbers in six languages and the member number are sensitive_data', () => {
   for (const name of ['Versichertennummer', 'Krankenversichertennummer', 'Número de la seguridad social', 'Tarjeta sanitaria', 'Número do SNS', 'Número de utente', 'Tessera sanitaria',
     'Codice della tessera sanitaria', 'Zorgverzekeringsnummer', 'Sağlık sigortası numarası', 'Sağlık sigorta numaranız', 'Insurance member number', 'Insurance member ID',
-    'Versicherten-Nr.', "Numéro d'assuré", 'Numéro d’assuré', "N° d'assuré"]) assert.ok(field(name).includes('sensitive_data'), name)
+    'Versicherten-Nr.', "Numéro d'assuré", 'Numéro d’assuré', "N° d'assuré", 'Verzekerdennummer', 'Zorgverzekerdennummer']) assert.ok(field(name).includes('sensitive_data'), name)
 })
 
 test('CU-603 negatives: the insurer, a bare member or patient id, and appointment fields stay as they were', () => {
