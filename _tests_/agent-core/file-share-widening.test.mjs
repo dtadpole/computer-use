@@ -11,8 +11,14 @@ test('CU-425: moving into a shared drive, letting viewers download / print / cop
   for (const name of ['Move to shared drive', 'Move to Shared Drive', 'Move into a shared folder', 'Allow downloads', 'Allow downloading', 'Allow viewers to download', 'Allow printing and copying',
     'Enable downloads', 'Let others edit', 'Enable editing for others']) assert.equal(click(name), 'permission', name)
   assert.equal(click('Allow editing', { dialogName: 'Link settings' }), 'permission')
+  // r2 (cu-developer-three): Drive's declarative checkbox, turned on; Dropbox's team folder and the old Team Drive.
+  const box = { tag: 'input', inputType: 'checkbox', role: 'checkbox' }
+  assert.equal(click('Viewers and commenters can see the option to download, print, and copy', { ...box, checked: false }), 'permission')
+  assert.equal(click('Viewers can download, print and copy', { ...box, checked: false }), 'permission')
+  assert.equal(click('Viewers and commenters can see the option to download, print, and copy', { ...box, checked: true }), 'allow')
+  for (const name of ['Move to team folder', 'Move to Team Drive', 'Move to the team folder']) assert.equal(click(name), 'permission', name)
 })
 
 test('CU-425 negatives: narrowing, a bare Allow editing outside a share dialog, and views stay as they were', () => {
-  for (const name of ['Allow editing', 'Download', 'Move to My Drive', 'Move to folder', 'Shared drives', 'Restrict downloads', 'Print', 'Copy link', 'Downloads folder']) assert.equal(click(name), 'allow', name)
+  for (const name of ['Allow editing', 'Download', 'Move to My Drive', 'Move to folder', 'Shared drives', 'Restrict downloads', 'Print', 'Copy link', 'Downloads folder', 'Move to My Drive', 'Team folders', 'Viewers can comment']) assert.equal(click(name), 'allow', name)
 })

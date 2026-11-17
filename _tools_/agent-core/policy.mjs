@@ -1707,7 +1707,12 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // CU-425 (cu-researcher; supersedes #547): widening what others may do with a file - moving it into a shared drive, letting
       // viewers download / print / copy, letting others edit - asks permission. A bare 'Allow editing' asks only inside a share /
       // access dialog; narrowing ('Disable downloads', 'Restrict downloads') keeps main's judgement.
-      if (!focusesEntry && (/^\s*move\s+(?:it\s+|this\s+|the\s+file\s+)?(?:in)?to\s+(?:a\s+|the\s+)?shared\s+(?:drive|folder|library)\b/i.test(name)
+      // r2 (cu-developer-three): Drive's own declarative checkbox ('Viewers and commenters can see the option to download, print, and
+      // copy') asks when it turns the option ON (a native box already checked turns it off - free); Dropbox's 'team folder' and
+      // the older 'Team Drive' are shared drives too.
+      const shareToggle = nativeToggleState(target)
+      if (!focusesEntry && shareToggle !== true && /\b(?:viewers|commenters|everyone|anyone|people|recipients)\b(?:\s+(?:and|&)\s+(?:viewers|commenters))?\s+can\s+(?:see\s+the\s+option\s+to\s+)?(?:download|print|copy)\b/i.test(name)) classes.push('permission')
+      if (!focusesEntry && (/^\s*move\s+(?:it\s+|this\s+|the\s+file\s+)?(?:in)?to\s+(?:a\s+|the\s+)?(?:shared\s+(?:drive|folder|library)|team\s+(?:folder|drive))\b/i.test(name)
         || /^\s*(?:allow|enable|let)\s+(?:(?:viewers|commenters|others|everyone|anyone|people|recipients)\s+(?:to\s+)?)?(?:download(?:s|ing)?|print(?:ing)?(?:\s+(?:and|&)\s+copy(?:ing)?)?|copy(?:ing)?)\b/i.test(name)
         || /^\s*(?:let\s+(?:others|everyone|anyone|people)\s+edit|enable\s+editing\s+for\s+(?:others|everyone|anyone))\b/i.test(name)
         || (/^\s*allow\s+editing\s*$/i.test(name) && /\b(?:share|sharing|permissions?|general\s+access|manage\s+access|link\s+settings)\b/i.test(`${target?.dialogName ?? ''} ${target?.dialogDescription ?? ''}`)))) classes.push('permission')
