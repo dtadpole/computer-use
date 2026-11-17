@@ -200,7 +200,7 @@ const LOCALE_WORDS = Object.freeze({
     'partager ma position', 'partager _ position', 'partager la position en direct', 'partager ma localisation', "accorder l'accès", 'accorder l’accès', "autoriser l'accès", 'autoriser l’accès', 'donner accès',
     'compartir ubicación', 'compartir mi ubicación', 'compartir _ ubicación en tiempo real', 'conceder acceso', 'dar acceso', 'permitir acceso', 'permitir el acceso',
     'compartilhar localização', 'compartilhar _ localização', 'partilhar localização', 'partilhar _ localização', 'conceder acesso', 'dar acesso', 'permitir acesso', 'permitir o acesso',
-    'condividi posizione', 'condividi _ posizione', 'condividi la posizione in tempo reale', 'concedi accesso', "concedi l'accesso", 'concedi l’accesso', 'consenti accesso', "consenti l'accesso", 'consenti l’accesso',
+    'condividi posizione', 'condividi _ posizione', 'condividi la posizione in tempo reale', 'condividi la mia posizione', 'condividi la tua posizione', 'condividi la mia posizione in tempo reale', 'concedi accesso', "concedi l'accesso", 'concedi l’accesso', 'consenti accesso', "consenti l'accesso", 'consenti l’accesso',
     'locatie delen', 'deel _ locatie', 'live locatie delen', 'toegang verlenen', 'toegang geven', 'toegang toestaan',
     'konum~ paylaş^', 'canlı konum~ paylaş^', 'erişim izni ver^', 'erişim~ izin ver^', 'erişim~ ver^'],
   // CU-345: a PIN, one-time code, security code or password field named in these languages.

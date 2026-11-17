@@ -10,7 +10,7 @@ const click = (name) => { const r = policy.classify({ type: 'click', x: 1, y: 1,
 test('CU-616: share-location / grant-access ask permission in seven languages', () => {
   for (const name of ['Standort teilen', 'Live-Standort teilen', 'Zugriff gewähren', 'Partager ma position', 'Partager la position en direct', "Accorder l'accès", 'Compartir ubicación',
     'Compartir ubicación en tiempo real', 'Conceder acceso', 'Compartilhar localização', 'Conceder acesso', 'Condividi posizione', 'Concedi accesso', 'Locatie delen', 'Toegang verlenen',
-    'Konumu paylaş', 'Canlı konum paylaş', 'Erişim izni ver', 'Konumunu paylaş']) assert.ok(click(name).includes('permission'), name)
+    'Konumu paylaş', 'Canlı konum paylaş', 'Erişim izni ver', 'Konumunu paylaş', 'Condividi la mia posizione', 'Compartilhar minha localização']) assert.ok(click(name).includes('permission'), name)
 })
 
 test('CU-616 negatives: location settings and access pages that grant nothing stay free', () => {
