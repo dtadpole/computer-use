@@ -38,3 +38,8 @@ test('CU-403 follow-up r2 (cu-researcher 01:00Z): any git-verb sequence with a p
   for (const n of ['Fetch, then push', 'Rebase, then push', 'Commit, then sync', 'Pull, rebase and push', 'Push branch to remote', 'Push tags']) assert.ok(cls(n).includes('submit'), n)
   for (const n of ['Pull, then rebase', 'Fetch, then merge', 'Sync main view', 'Branch to remote: help', 'Commits', 'Tag details', 'Pull requests']) assert.ok(!cls(n).includes('submit'), n)
 })
+
+test('CU-403 follow-up r3 (cu-researcher 01:05Z): Squash and push, Push to all remotes', () => {
+  for (const n of ['Squash and push', 'Push to all remotes', 'Push to origin']) assert.ok(cls(n).includes('submit'), n)
+  for (const n of ['Push to talk', 'Squash commits']) assert.ok(!cls(n).includes('submit'), n)
+})

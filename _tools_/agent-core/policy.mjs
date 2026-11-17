@@ -2302,13 +2302,14 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // ('Sync Changes 1↓ 2↑'); r2 (cu-developer-two 23:50Z, cu-researcher 23:51Z): 'Commit & Sync', 'Synchronize Changes',
     // 'Push and pull', 'Sync with remote'; r3 (cu-researcher 23:58Z): 'Sync to remote', 'Pull and push', 'Commit, Push'; follow-up (cu-researcher 00:15Z, cu-developer-two 00:05Z): 'Pull, then push', 'Sync branch to
     // remote', 'Push commits' (a gap older than CU-403); r2 (cu-developer-two 00:58Z): 'Pull then push', 'Push branch'; r2 (cu-researcher 01:00Z): 'Push tags',
-    // 'Push branch to remote', and the git-verb sequence family below. A bare 'Sync', 'Settings Sync' or 'Synchronize panels' stays as it was.
-    if (grammarEligible && !classes.includes('submit') && /^\s*(?:commit\s*(?:&|and|,)\s*(?:sync|push)|push\s*(?:&|and|,)\s*pull|pull\s*(?:(?:&|and|,)\s*(?:then\s+)?|then\s+)push|push\s+(?:the\s+)?(?:\d+\s+)?(?:local\s+)?(?:commits?|changes|branch(?:es)?|tags?|all)|sync(?:hroni[sz]e)?\s+(?:changes|commits?|branch|repository|repo|(?:with|to)\s+(?:the\s+)?(?:remote|origin|upstream))(?:\s+(?:with|to)\s+(?:the\s+)?(?:remote|origin|upstream))?)(?:\s+to\s+(?:the\s+)?(?:remote|origin|upstream))?(?:\s+[\d\s↑↓]+)?\s*$/iu.test(name)) classes.push('submit')
+    // 'Push branch to remote', and the git-verb sequence family below; r3 (cu-researcher 01:05Z): 'Squash and push',
+    // 'Push to all remotes'. A bare 'Sync', 'Settings Sync' or 'Synchronize panels' stays as it was.
+    if (grammarEligible && !classes.includes('submit') && /^\s*(?:commit\s*(?:&|and|,)\s*(?:sync|push)|push\s*(?:&|and|,)\s*pull|pull\s*(?:(?:&|and|,)\s*(?:then\s+)?|then\s+)push|push\s+(?:the\s+)?(?:\d+\s+)?(?:local\s+)?(?:commits?|changes|branch(?:es)?|tags?|all)|push\s+to\s+(?:all\s+)?(?:the\s+)?(?:remotes?|origin|upstream)|sync(?:hroni[sz]e)?\s+(?:changes|commits?|branch|repository|repo|(?:with|to)\s+(?:the\s+)?(?:remote|origin|upstream))(?:\s+(?:with|to)\s+(?:the\s+)?(?:remote|origin|upstream))?)(?:\s+to\s+(?:the\s+)?(?:remote|origin|upstream))?(?:\s+[\d\s↑↓]+)?\s*$/iu.test(name)) classes.push('submit')
     // CU-403 follow-up r2 (cu-researcher 01:00Z): a sequence of git verbs joined by ',', 'then', 'and' or '&' asks submit
     // when any step pushes or syncs ('Fetch, then push', 'Pull, rebase and push', 'Commit, then sync'); a sequence with no
     // push / sync step ('Pull, then rebase', 'Fetch, then merge') stays as it was.
     if (grammarEligible && !classes.includes('submit')) {
-      const gitVerb = '(?:pull|fetch|rebase|commit|stage|merge|stash|amend|push|sync)'
+      const gitVerb = '(?:pull|fetch|rebase|commit|stage|merge|stash|amend|squash|push|sync)'
       const gitSequence = new RegExp(`^\\s*${gitVerb}(?:\\s*(?:,\\s*(?:and\\s+|then\\s+)?|&\\s*|and\\s+(?:then\\s+)?|then\\s+)${gitVerb})+\\s*$`, 'i')
       if (gitSequence.test(name) && /\b(?:push|sync)\b/i.test(name)) classes.push('submit')
     }
