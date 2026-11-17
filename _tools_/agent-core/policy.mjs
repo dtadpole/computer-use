@@ -949,7 +949,11 @@ const passwordNamedEntry = (target) => isTextEntry(target) && entryNamesOf(targe
 // CU-184 (desktop-rules.md): a text entry named for a password - shown or not, it holds one - unless its name says it is
 // a hint; the desktop hands a key action into it to the person, as it does a secure field (R83).
 export const namesPasswordField = (target) => isTextEntry(target) && entryNamesOf(target).some((name) => namesWord(name, PASSWORD_NAMES) && !namesWord(name, ['hint']))
-const secretNamedEntry = (target) => isTextEntry(target) && entryNamesOf(target).some((name) => namesWord(name, SECRET_NAMES) || namesAcronym(name))
+// CU-599 (cu-researcher): the card number with a possessive or 'of', in either order - 'Your card's number', 'Number of / on your
+// card', 'Numéro de votre carte', 'Nummer Ihrer Karte', 'Número de su tarjeta', 'Número do seu cartão', 'Numero della tua carta' -
+// reads like the compound 'card number' each language already lists.
+const CARD_NUMBER_PHRASE = /\bcard['’]?s\s+number\b|\bnumber\s+(?:of|on|for)\s+(?:(?:your|the|this|my)\s+)?(?:credit\s+|debit\s+|payment\s+)?card\b|\bnum[ée]ro\s+de\s+(?:(?:votre|ta|la|cette|sa)\s+)?carte\b|\bnummer\s+(?:ihrer|deiner|der|ihre|seiner)\s+(?:kredit|debit|bank)?karte\b|\bn[úu]mero\s+de\s+(?:su|tu|la|esta)\s+tarjeta\b|\bn[úu]mero\s+d[oa]\s+(?:seu|teu|sua|tua)\s+cart[ãa]o\b|\bnumero\s+della\s+(?:tua|sua|vostra)\s+carta\b/iu
+const secretNamedEntry = (target) => isTextEntry(target) && entryNamesOf(target).some((name) => namesWord(name, SECRET_NAMES) || namesAcronym(name) || CARD_NUMBER_PHRASE.test(String(name ?? '')))
 
 // CU-164: a wallet recovery phrase - twelve or more words in a row, every one on the BIP39 list; ordinary prose breaks
 // the run with words the list does not hold (the, is, to, of, a).
