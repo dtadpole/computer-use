@@ -174,12 +174,7 @@ const LOCALE_ID_NAMES = Object.freeze(['reisepass', '…passnummer', 'geburtsdat
 const WORDS = Object.freeze({
   // CU-498 (High; cu-coordinator 12:21Z): a direct debit mandate pulls money from the account (purchase), anywhere.
   // (a separate line so the purchase list below stays as it was)
-  purchase: [
-    // CU-404 (cu-researcher; supersedes #478 with cu-developer-one's go): a paid boost buys reach - 'Boost post' / 'Promote post'
-    // asked only submit. A bare 'Promote' already asks purchase (phrase grammar); 'Boosted posts' (a list) stays free.
-    'boost post', 'boost this post', 'boost tweet', 'boost video', 'boost listing', 'boost reel', 'promote post', 'promote this post',
-    'promote tweet', 'promote video', 'promote listing', 'promote page', 'promote reel', 'boost now', 'promote now',
-    'set up direct debit', 'set up a direct debit', 'authorize direct debit', 'authorise direct debit', 'authorize a direct debit', 'authorise a direct debit', 'buy', 'pay', 'order', 'place order', 'checkout', 'check out', 'subscribe', 'donate', 'purchase', 'transfer', 'withdraw', 'wire', 'send money',
+  purchase: ['set up direct debit', 'set up a direct debit', 'authorize direct debit', 'authorise direct debit', 'authorize a direct debit', 'authorise a direct debit', 'buy', 'pay', 'order', 'place order', 'checkout', 'check out', 'subscribe', 'donate', 'purchase', 'transfer', 'withdraw', 'wire', 'send money',
     // CU-452 (cu-coordinator 22:28Z): an unlimited token approval lets a contract drain the wallet - purchase leads over the older submit.
     'approve unlimited', 'approve unlimited spending', 'allow unlimited spending',
     // CU-444 (cu-coordinator 20:54Z): publishing a campaign starts paid spend - purchase leads over the older 'publish' submit.
@@ -1705,6 +1700,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // CU-396 r3 (cu-developer-three): presenting a surface, as a product - '(Start) present(ing) a / your / this / the / my / an
       // + tab / window / screen / entire screen / desktop / display / app' - not one phrase per pair. Slide apps' bare 'Present' stays free.
       if (!focusesEntry && /^\s*(?:start\s+)?present(?:ing)?\s+(?:a|an|your|this|the|my|entire|whole)\s+(?:(?:entire|whole|full)\s+)?(?:tab|window|screen|desktop|display|app|application|monitor)\b/i.test(name)) classes.push('permission')
+      // CU-404 (cu-researcher; supersedes #478 with cu-developer-one's go): a paid boost buys reach, as a product - (boost / promote /
+      // sponsor / advertise) + (this / your / the / my)? + (post / tweet / video / listing / page / reel / story / ad / event / pin),
+      // or '... now'. The label leads with the verb, so 'Boosted posts', 'Boost insights' and 'Promotion settings' stay free.
+      if (!focusesEntry && /^\s*(?:boost|promote|sponsor|advertise)\s+(?:(?:this|your|the|my)\s+)?(?:post|tweet|video|listing|page|reel|story|ad|event|pin|thread|status)\b|^\s*(?:boost|promote)\s+now\b/i.test(name)) classes.push('purchase')
       // CU-397 (cu-researcher; supersedes #462; cu-coordinator's 03:58Z class): a message to an event's guests is sent at once -
       // the label LEADS with the verb, so a refusal ('Don't notify guests', 'Do not send') stays free.
       if (!focusesEntry && /^\s*(?:(?:e-?mail|notify|message)\s+(?:all\s+)?(?:the\s+)?(?:guests|invitees|attendees|participants)|forward\s+(?:the\s+|this\s+)?(?:invitation|invite|event)|(?:propose|suggest)\s+(?:a\s+)?(?:new|another|different|other)\s+time|send\s+updates?(?:\s+to\s+(?:all\s+)?(?:guests|invitees|attendees))?)\b/i.test(name)) classes.push('submit')
