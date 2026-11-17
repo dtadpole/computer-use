@@ -23,3 +23,8 @@ test('CU-403 r2 (cu-developer-two 23:50Z, cu-researcher 23:51Z): the IDE sync fo
 test('CU-403 r3 (cu-researcher 23:58Z): either order, a comma, and sync to the remote', () => {
   for (const n of ['Sync to remote', 'Pull and push', 'Commit, Push', 'Commit, Sync']) assert.ok(cls(n).includes('submit'), n)
 })
+
+test('CU-403 follow-up: Pull, then push / Sync branch to remote / Push commits ask submit', () => {
+  for (const n of ['Pull, then push', 'Sync branch to remote', 'Push commits', 'Push 3 commits', 'Push local changes to origin']) assert.ok(cls(n).includes('submit'), n)
+  for (const n of ['Pull', 'Fetch', 'Sync settings', 'Push notifications']) assert.ok(!cls(n).includes('submit'), n)
+})
