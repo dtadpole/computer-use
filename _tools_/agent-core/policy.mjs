@@ -140,6 +140,14 @@ const LOCALE_WORDS = Object.freeze({
     'atualizar _ plano', 'melhorar _ plano', 'atualizar _ assinatura', 'melhorar _ conta',
     'aggiorna _ piano', 'aggiorna _ abbonamento', 'potenzia _ account', 'potenzia _ piano', 'passa al piano superiore',
     'account upgraden', 'abonnement upgraden', 'pakket upgraden', 'lidmaatschap upgraden', 'upgrade je account', 'upgrade uw account', 'upgrade je abonnement',
+    // CU-613 (cu-researcher): start / begin a subscription, and 'switch to the <paid plan> version', as English 'Start
+    // subscription' asks; 'Passer à la version mobile' (a layout switch) stays free, so only paid plan names follow 'version'.
+    'abonnement starten', 'abo starten', 'abonnement beginnen', 'mitgliedschaft starten',
+    'passer à la version pro', 'passer à la version plus', 'passer à la version payante', 'passer à la version business', "commencer l'abonnement", 'commencer l’abonnement', 'démarrer _ abonnement', 'démarrer mon abonnement',
+    'empezar _ suscripción', 'empezar mi suscripción', 'iniciar _ suscripción', 'iniciar mi suscripción', 'comenzar _ suscripción', 'comenzar mi suscripción',
+    'iniciar _ assinatura', 'começar _ assinatura', 'ativar _ assinatura',
+    'avvia _ abbonamento', 'inizia _ abbonamento', 'attiva _ abbonamento',
+    'start _ abonnement', 'begin _ abonnement', 'start je abonnement',
     // r3: Turkish stems take their suffixes ('~' noun, '^' verb - see namesWord).
     'ödeme~ onayla^', 'satın alma~ onayla^', 'ödeme~ tamamla^', 'ödeme~ yap^', 'sipariş~ ver^', 'sipariş~ tamamla^', 'sipariş~ onayla^', 'alışveriş~ tamamla^',
     'satın al^', 'şimdi satın al^', 'hemen al^', 'şimdi al^', 'öde^', 'şimdi öde^', 'ödeme~ geç^'],
@@ -2460,6 +2468,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const lastPush = new RegExp(`^\\s*${step}(?:${join}${step}){0,3}${join}(?:push(?:\\s+(?:to\\s+)?(?:the\\s+)?(?:remotes?|origin|upstream|changes|commits?|branch(?:es)?|tags?))?|sync\\s+(?:(?:to|with)\\s+(?:the\\s+)?)?(?:remote|origin|upstream|changes|commits?|branch))\\s*$`, 'iu')
       if (!classes.includes('submit') && lastPush.test(name)) classes.push('submit')
     }
+    // CU-613 (cu-researcher): the ':' / '-' label form of 'start a subscription' - 'Suscripción mensual: empezar', 'Abo - starten'.
+    if (grammarEligible && !classes.includes('purchase') && /^\s*(?:suscripci[oó]n|abonnement|abo|abbonamento|assinatura|subscription)(?:\s+\p{L}+)?\s*[:\-–]\s*(?:empezar|iniciar|comenzar|starten|beginnen|commencer|démarrer|avvia(?:re)?|inizia(?:re)?|começar|start|begin)\s*[.!]?\s*$/iu.test(name)) classes.push('purchase')
     // CU-413: money moved out to a bank or card, as 'Withdraw to bank' already asks - send / transfer / move / pay out / cash out
     // (an optional amount or money noun) to (my / the) bank, bank account, checking, savings or debit card.
     if (grammarEligible && !classes.includes('purchase') && /^\s*(?:send|transfer|move|pay\s*out|cash\s*out|withdraw)\s+(?:(?:money|funds|cash|balance|earnings|payout|it|[$€£]?\s*[\d.,]+(?:\s*(?:usd|eur|gbp|dollars?|euros?))?)\s+)?(?:to|into)\s+(?:my\s+|your\s+|the\s+|a\s+)?(?:bank(?:\s+account)?|checking(?:\s+account)?|savings(?:\s+account)?|debit\s+card|current\s+account)\b/i.test(name)) classes.push('purchase')
