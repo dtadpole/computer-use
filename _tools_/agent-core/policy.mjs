@@ -168,6 +168,12 @@ const LOCALE_WORDS = Object.freeze({
     'commencer votre abonnement', 'démarrer votre abonnement', 'commencer ton abonnement', 'démarrer ton abonnement',
     'wechseln sie zu pro', 'wechseln sie zu premium', 'wechseln sie zu plus', 'wechsle zu pro', 'wechsle zu premium',
     'pro sürüm~ geç^', 'premium sürüm~ geç^',
+    // CU-615 (cu-researcher): the imperative / possessive twins named at #1007 r4 - 'Inicia tu suscripción', 'Premium plana geç',
+    // "Passez à l'offre Premium" - and their siblings.
+    'inicia _ suscripción', 'inicia tu suscripción', 'empieza _ suscripción', 'empieza tu suscripción', 'comienza _ suscripción', 'comienza tu suscripción', 'inicia tu membresía', 'empieza tu membresía',
+    'inicie _ assinatura', 'inicie sua assinatura', 'comece _ assinatura', 'comece sua assinatura', 'avvia il tuo abbonamento', 'inizia il tuo abbonamento',
+    'premium plan~ geç^', 'pro plan~ geç^', 'premium paket~ geç^', 'pro paket~ geç^',
+    "passez à l'offre premium", 'passez à l’offre premium', "passez à l'offre pro", 'passez à l’offre pro', "passez à l'offre plus", 'passez à l’offre plus', 'passez à la version pro', 'passez à la version premium', 'passez à premium', 'passez au forfait pro', 'passez au forfait premium',
     // r3: Turkish stems take their suffixes ('~' noun, '^' verb - see namesWord).
     'ödeme~ onayla^', 'satın alma~ onayla^', 'ödeme~ tamamla^', 'ödeme~ yap^', 'sipariş~ ver^', 'sipariş~ tamamla^', 'sipariş~ onayla^', 'alışveriş~ tamamla^',
     'satın al^', 'şimdi satın al^', 'hemen al^', 'şimdi al^', 'öde^', 'şimdi öde^', 'ödeme~ geç^'],
@@ -2490,7 +2496,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     }
     // CU-613 (cu-researcher): the ':' / '-' label form of 'start a subscription' - 'Suscripción mensual: empezar', 'Abo - starten'.
     // r3 (cu-developer-one): with one adverb between instead of the ':' ('Abo jetzt starten', 'Suscripción ahora iniciar').
-    if (grammarEligible && !classes.includes('purchase') && /^\s*(?:suscripci[oó]n|abonnement|abo|abbonamento|assinatura|subscription|mitgliedschaft|membres[ií]a)(?:\s+\p{L}+)?(?:\s*[:\-–]\s*|\s+(?:jetzt|sofort|maintenant|ahora|agora|ora|adesso|nu|şimdi|now)\s+)(?:empezar|iniciar|comenzar|starten|beginnen|commencer|démarrer|avvia(?:re)?|inizia(?:re)?|começar|start|begin)\s*[.!]?\s*$/iu.test(name)) classes.push('purchase')
+    if (grammarEligible && !classes.includes('purchase') && /^\s*(?:suscripci[oó]n|abonnement|abo|abbonamento|assinatura|subscription|mitgliedschaft|membres[ií]a)(?:\s+\p{L}+)?(?:\s*[:\-–]\s*|\s+(?:jetzt|sofort|bitte|maintenant|ahora|agora|ora|adesso|nu|şimdi|now|please)\s+)(?:empezar|iniciar|comenzar|starten|beginnen|commencer|démarrer|avvia(?:re)?|inizia(?:re)?|começar|start|begin)\s*[.!]?\s*$/iu.test(name)) classes.push('purchase')
     // r3 (cu-developer-three's bar, accepted by cu-developer-one as owner): 'switch / change / move / upgrade to <paid plan>' -
     // pro, premium, plus, paid, annual, family - and 'business / team' only with plan / tier ('Switch to business account' is
     // a profile switch and stays free).
@@ -2500,8 +2506,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (grammarEligible && !classes.includes('purchase') && /^\s*(?:send|transfer|move|pay\s*out|cash\s*out|withdraw)\s+(?:(?:money|funds|cash|balance|earnings|payout|it|[$€£]?\s*[\d.,]+(?:\s*(?:usd|eur|gbp|dollars?|euros?))?)\s+)?(?:to|into)\s+(?:my\s+|your\s+|the\s+|a\s+)?(?:bank(?:\s+account)?|checking(?:\s+account)?|savings(?:\s+account)?|debit\s+card|current\s+account)\b/i.test(name)) classes.push('purchase')
     // CU-611 (cu-researcher; cu-developer-one's go 13:22Z): a transfer noun, then its confirming verb, with one adverb or a ':' /
     // '-' between - 'Überweisung jetzt ausführen', 'Virement : confirmer', 'Transferencia: confirmar', 'Overboeking: bevestigen' -
-    // asks purchase as the contiguous forms (#995) do. The whole label must be the noun and the verb.
-    if (grammarEligible && !classes.includes('purchase') && /^\s*(?:überweisung|virement|transferencia|transferência|overboeking|transfer(?:i|ı)?|havale(?:yi)?|bonifico)\s*(?:[:\-–]\s*|\s+(?:jetzt|sofort|maintenant|ahora|agora|ora|adesso|nu|şimdi)\s+)(?:jetzt\s+|sofort\s+)?(?:ausführen|bestätigen|absenden|senden|confirmer|valider|effectuer|envoyer|confirmar|realizar|enviar|bevestigen|uitvoeren|versturen|verzenden|onayla(?:yın)?|gönder(?:in)?|conferma(?:re)?|esegui|invia)\s*[.!]?\s*$/iu.test(name)) classes.push('purchase')
+    // asks purchase as the contiguous forms (#995) do. The whole label must be the noun and the verb. CU-615: 'bitte' counts
+    // as the adverb too (cu-verifier's CU-611 named limit, 'Überweisung bitte bestätigen').
+    if (grammarEligible && !classes.includes('purchase') && /^\s*(?:überweisung|virement|transferencia|transferência|overboeking|transfer(?:i|ı)?|havale(?:yi)?|bonifico)\s*(?:[:\-–]\s*|\s+(?:jetzt|sofort|bitte|maintenant|ahora|agora|ora|adesso|nu|şimdi)\s+)(?:jetzt\s+|sofort\s+|bitte\s+)?(?:ausführen|bestätigen|absenden|senden|confirmer|valider|effectuer|envoyer|confirmar|realizar|enviar|bevestigen|uitvoeren|versturen|verzenden|onayla(?:yın)?|gönder(?:in)?|conferma(?:re)?|esegui|invia)\s*[.!]?\s*$/iu.test(name)) classes.push('purchase')
     if (grammarEligible && !classes.includes('purchase') && /^\s*(?:set\s+up|authori[sz]e|create|start|allow|enable|turn\s+on|activate)\s+(?:an?\s+|the\s+)?(?:direct\s+debit|debit\s+mandate|automatic\s+(?:withdrawals?|debits?)|recurring\s+(?:withdrawals?|debits?))\s*$/i.test(name)) classes.push('purchase')
     // #680 round 3 (cu-researcher 13:02Z): on an exchange's wallet page - a whole /withdraw, /withdrawal(s), /wallet(s), /addresses or
     // /address-book segment of an http(s) URL - a bare 'Add to allowlist / whitelist' is the money redirect and asks credential; on a
