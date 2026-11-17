@@ -1,9 +1,9 @@
 ---
 title: ULTIMATE_GOAL 2.0 verdict, row by row - live, in progress
 created: 2026-11-02T10:22:00Z
-modified: 2026-11-17T13:10:00Z
+modified: 2026-11-17T13:42:00Z
 level: L1
-version: 0.9.244
+version: 0.9.245
 description: cu-verifier's per-row state of the desktop ULTIMATE_GOAL after the owner's grant - live evidence so far from the runbook on the Mac mini beside the pre-grant verifiers, and what each row still needs. No row is held until its live half holds.
 status: unverified
 grounded_in:
@@ -276,7 +276,8 @@ page (115305Z-c16a85); CU-607 (a localized password text field typed unasked und
 and CU-608 (locale bank-transfer buttons) reproduced live (114002Z-8ff444, 115723Z-8f2abf); CU-608 then closed live (122348Z-ef4828; named limits: an adverb or a colon
 between noun and verb still clicks free, routed to a new filing); CU-609 (an over-ask: 'Transfer history / limits / file') and CU-610 (locale
 subscribe / upgrade buttons) reproduced live (122718Z-f099b8, 122759Z-ebca86); CU-611 (transfer confirmations with an adverb or colon between noun and
-verb) and CU-612 (an over-ask: free 'Subscribe to newsletter / updates / channel') reproduced live (123740Z-c000b7, 125411Z-de8559); CU-559 (retirement / insurance: 080726Z-863132 .., 12 Nov) and CU-560 (broker options synonyms: 080950Z-67de2d .., 12 Nov)
+verb) and CU-612 (an over-ask: free 'Subscribe to newsletter / updates / channel') reproduced live (123740Z-c000b7, 125411Z-de8559); CU-610 then closed live (133814Z-66a4c9;
+named limits: 'Abonnement starten', 'Passer à la version Pro' and 'Suscripción mensual: empezar' still free, routed to a follow-up); CU-559 (retirement / insurance: 080726Z-863132 .., 12 Nov) and CU-560 (broker options synonyms: 080950Z-67de2d .., 12 Nov)
 closed live on #825 (main 8d8a01d rows 12 Nov 09:09Z; closed on main c82f0fc after the 15 Nov reboot, five pages: 20261115T214232Z-461572 ..); CU-556 (round 5, Medium: five labels lowered, 'Wire transfer' kept) closed live after #823, main 4c67337 (081751Z-f1a505 ..);
 CU-554 (site takedown) and CU-555 (connected-car safeguards) closed live on #814, main de957db (083812Z-63bfb3 .. / 083922Z-96661b .., 12 Nov);
 CU-557 (exchange futures / derivatives) and CU-558 (social privacy, location bound per D-106) closed live on #821, main 71d69eb, eight pages
