@@ -1,13 +1,14 @@
 ---
 title: Action classes
 created: 2026-11-08T00:30:01Z
-modified: 2026-11-08T20:14:00Z
+modified: 2026-11-17T04:15:00Z
 level: L1
-version: 0.3.4
+version: 0.4.0
 description: The consequential-action classes the action policy confirms - each class and what triggers it, moved verbatim out of action-policy.md.
 status: unverified
 grounded_in:
   - source: _designs_/system-architecture/action-policy.md@0.8.10 (the class table, moved verbatim; CU-206)
+  - source: the live closes of 16-17 Nov (cu-verifier verdicts 0.9.230 - 0.9.233; CU-385, CU-396, CU-397, CU-399, CU-403, CU-404, CU-407, CU-413, CU-425, CU-597), each row re-probed on main e41bd24a
 ---
 
 # Action classes
@@ -16,12 +17,12 @@ The classes [action-policy](action-policy.md) confirms; a class applies when its
 
 | Class | Detected when (target or text) |
 |---|---|
-| `submit` | click, or a Return (`ENTER` or a typed newline), on a control or field named like send, post, submit, publish, reply, sign up, or that reaches people or commits shared work (call, join meeting, accept invitation, tweet, approve, merge, deploy; CU-261 - a bare Accept, Join or Follow stays free); a bare Reply is free only when every entry there was read empty |
-| `purchase` | named like buy, pay, order, checkout, subscribe, donate; a Return in a form whose submit is named so |
-| `delete` | named like delete, remove, discard, erase, empty bin, clear history, reset settings, uninstall, replace, overwrite, don't save, or trash on a button; Backspace or Delete on a focused list, alone or with Shift, Option or Control; Command-Delete; Command-D while a sheet is up, extra modifiers too (CU-234) |
-| `permission` | sharing, invite, revoke, permission, API key or account-security controls; standing choices such as Always Allow, Don't ask again, Set as Default, Always use this app, Finder's Change All (CU-258; a bare Allow stays free); storing a credential - Save password, Save or Create passkey, Remember password, Save login, Never save (CU-289; Remember me and a plain Save stay free); switching account protection off - turn off, disable, remove or allow with 2-step, 2FA, passkeys, login alerts, recovery, Find My (CU-270); turning on a camera or microphone, unmute (CU-261) |
+| `submit` | click, or a Return (`ENTER` or a typed newline), on a control or field named like send, post, submit, publish, reply, sign up, or that reaches people or commits shared work (call, join meeting, accept invitation, tweet, approve, merge, deploy; CU-261 - a bare Accept, Join or Follow stays free); a bare Reply is free only when every entry there was read empty; 16-17 Nov: an IDE's Sync Changes, a push with an object (Push tags, Push branch to remote) and any git-verb sequence with a push or sync step ('Fetch, then push'; CU-403, CU-597); Mail's Bounce and Redirect (CU-399); messages to event guests (Email guests; CU-397) |
+| `purchase` | named like buy, pay, order, checkout, subscribe, donate; a Return in a form whose submit is named so; 16-17 Nov: money moved out to a bank or card ('Send to bank'; CU-413); a paid boost, promote or sponsor of a post (CU-404) |
+| `delete` | named like delete, remove, discard, erase, empty bin, clear history, reset settings, uninstall, replace, overwrite, don't save, or trash on a button; Backspace or Delete on a focused list, alone or with Shift, Option or Control; Command-Delete; Command-D while a sheet is up, extra modifiers too (CU-234); 16-17 Nov: a Force push (CU-403); a drag onto a trash, deleted-items or junk folder, localized names included (CU-385); Command-D with the sheet or dialog itself focused, by role or subrole (CU-364) |
+| `permission` | sharing, invite, revoke, permission, API key or account-security controls; standing choices such as Always Allow, Don't ask again, Set as Default, Always use this app, Finder's Change All (CU-258; a bare Allow stays free); storing a credential - Save password, Save or Create passkey, Remember password, Save login, Never save (CU-289; Remember me and a plain Save stay free); switching account protection off - turn off, disable, remove or allow with 2-step, 2FA, passkeys, login alerts, recovery, Find My (CU-270); turning on a camera or microphone, unmute (CU-261); 16-17 Nov: a web drag onto a shared or public space (CU-385); presenting, broadcasting or recording (CU-396); shared-drive moves, viewer download / print / copy and letting others edit (CU-425); adding a collaborator (CU-403); Mail's Apply Rules and Outlook's Run rules (CU-399) |
 | `credential` | `type`, paste or drag text into a password, `one-time-code` or `cc-*` field or a text entry named password, passcode, passphrase or PIN (a drag: live 20261108T004654Z-448b9d), or one the run saw as a password field, shown in plain text ([password-memory](password-memory.md); live 20261108T021023Z-e7ec71, 234243Z-121a27), or a `{{secret:name}}` placeholder |
 | `sensitive_data` | `type`, pasted or browser-dragged text matching card, IBAN, routing-and-account, national or tax id, phone, e-mail, key, 0x-key or recovery-phrase patterns, a URL carrying it (R29), typing, pasting (any Paste route) or dragging text into a text entry named for a bank account, tax id, secret or identity detail (e.g. recovery phrase, one-time code, passport number; `policy.mjs` name lists), text pasted or dragged from such a field, or copied or dragged from shown text captioned so ([copy-source](copy-source.md), [copy-caption](copy-caption.md), [drag-text](drag-text.md); live 20261108T004646Z-a15df9, 012741Z-5a5f14), or a desktop paste not copied by the run ([paste-consent](paste-consent.md)) |
 | `new_site` | `navigate` to an origin the site filter answers `not_allowed`; approval adds it for the run |
 | `page_dialog` | `ENTER` or `type` while a `confirm`, `prompt` or `beforeunload` dialog is held, a page's permission request or download; the request carries its text and a screenshot; a model keypress alone accepts nothing |
-| `install` | file-run prompts (refused by the driver) |
+| `install` | file-run prompts (refused by the driver); 16-17 Nov: an app updater's Update Now, Install Update, Update and Restart or Download and Install, desktop only (CU-407) |
