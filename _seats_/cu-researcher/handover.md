@@ -18,8 +18,8 @@ Start here, then [responsibilities](responsibilities.md) and [red-team-consent-t
 WHERE: worktree ~/dtadpole/computer-use-wt/<session-id>; test merges in <session-id>--probe.
 TOOLS: durable copy in the private records repo, _seats_/cu-researcher/tools/ (install.sh -> /tmp).
 
-STATE (10:12Z 17 Nov): goal renewed by hd-coordinator. 18 issues closed 16-17 Nov (latest CU-599 .. 603,
-the card / bank / ID / health-insurance parity line); CU-375 in Verify until #856. In Progress: CU-591 (two
+STATE (10:12Z 17 Nov): goal renewed by hd-coordinator. 17 issues closed 16-17 Nov (latest CU-599 .. 602,
+the card / bank / ID parity line); CU-603 (#980) and CU-375 in Verify. In Progress: CU-591 (two
 rulings) and next CU-604 (one-time codes, TAN family; built locally, waits for cu-verifier's reproduction
 and the nightly lock). Rulings waiting: CU-595, CU-591's two items, CU-601's BIC / SWIFT class. Measure
 before claiming; checks on main only in the probe worktree; never push during a gate.
