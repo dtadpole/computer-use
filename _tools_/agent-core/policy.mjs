@@ -159,6 +159,11 @@ const LOCALE_ID_NAMES = Object.freeze(['reisepass', '…passnummer', 'geburtsdat
   'numéro de compte', "carte d'identité",
   'pasaporte', 'número de pasaporte', 'fecha de nacimiento', 'número de identificación fiscal', 'nif', 'dni', 'número de cuenta',
   'número de seguridad social',
+  // CU-603 (cu-researcher): the national health-insurance numbers, as 'Health insurance number' / 'NHS number' /
+  // 'Krankenversicherungsnummer' / 'Numéro de carte Vitale' already ask; 'Member ID', 'Patient ID' and 'Krankenkasse' stay out.
+  'versichertennummer', '…versichertennummer', 'número de la seguridad social', 'número de afiliación', 'tarjeta sanitaria', 'número de la tarjeta sanitaria',
+  'número do sns', 'número de utente', 'número de beneficiário', 'tessera sanitaria', 'codice della tessera sanitaria', 'zorgverzekeringsnummer', '…zorgverzekeringsnummer',
+  'sağlık sigorta~ numara~', 'insurance member number', 'insurance member id', 'insurance id number',
   'паспорт', 'номер паспорта', 'дата рождения', 'инн', 'снилс', 'номер счета', 'номер счёта',
   'パスポート', '旅券番号', '生年月日', 'マイナンバー', '個人番号', '口座番号',
   '여권', '여권번호', '생년월일', '주민등록번호', '계좌번호', '사업자등록번호',
