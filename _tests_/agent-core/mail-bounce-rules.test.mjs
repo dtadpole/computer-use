@@ -16,3 +16,8 @@ test('CU-399: Bounce asks submit; Apply Rules asks permission', () => {
 test('CU-399 negatives: Rules, Mark as Read and an analytics Bounce rate stay free', () => {
   for (const name of ['Rules', 'Mark as Read', 'Bounce rate']) assert.equal(click(name), 'allow', name)
 })
+
+test('CU-399 r2 (cu-researcher 02:19Z): Bounce Message and Redirect ask submit, with or without an ellipsis', () => {
+  for (const name of ['Bounce Message', 'Bounce…', 'Redirect', 'Redirect…', 'Redirect Message']) assert.equal(click(name), 'submit', name)
+  for (const name of ['Rules…', 'Forward', 'Move to', 'Redirect URL']) assert.notEqual(click(name), 'submit', name)
+})
