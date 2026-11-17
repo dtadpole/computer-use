@@ -42,7 +42,9 @@ test("#813 round 2 (cu-developer-three 06:16Z): 'Terminate employment' asks dele
   assert.ok(at('Promote employee', HR).includes('permission'))
   assert.ok(at('Promote this employee', CRM).includes('permission'), 'unbound like the filed rows')
   assert.deepEqual(at('Promotions', HR), [], 'Promotions')
-  assert.deepEqual(at('Promote post', HR), ['submit'], 'an older ad-promotion row keeps submit')
+  // CU-404 (cu-researcher): a paid post boost also buys reach, so 'Promote post' asks purchase beside submit; the point of this row
+  // stands - the HR 'promote' (permission) does not reach an ad promotion.
+  assert.deepEqual([...at('Promote post', HR)].sort(), ['purchase', 'submit'], 'an older ad-promotion row keeps submit, plus CU-404 purchase, never permission')
 })
 
 test('#813 round 3 (cu-researcher 06:26Z): the held-out escapes ask', () => {

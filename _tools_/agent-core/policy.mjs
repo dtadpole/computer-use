@@ -1703,6 +1703,15 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // CU-396 r3 (cu-developer-three): presenting a surface, as a product - '(Start) present(ing) a / your / this / the / my / an
       // + tab / window / screen / entire screen / desktop / display / app' - not one phrase per pair. Slide apps' bare 'Present' stays free.
       if (!focusesEntry && /^\s*(?:start\s+)?present(?:ing)?\s+(?:a|an|your|this|the|my|entire|whole)\s+(?:(?:entire|whole|full)\s+)?(?:tab|window|screen|desktop|display|app|application|monitor)\b/i.test(name)) classes.push('permission')
+      // CU-407 (cu-researcher; supersedes #501): an app's updater installs new code - 'Update Now', 'Update and Restart / Relaunch',
+      // 'Download and Install', 'Update All (extensions / plug-ins)' - on the DESKTOP route only (a native AX control outside a web
+      // area); on a web page 'Update now' usually saves a form. 'Later', 'Skip This Version' and a bare 'Update' stay free.
+      const nativeControl = /^AX/.test(String(target?.role ?? '')) && target?.inWebArea !== true
+      if (!focusesEntry && nativeControl && /^\s*(?:update\s+now|update\s+(?:and|&)\s+(?:restart|relaunch|reopen)|download\s+(?:and|&)\s+install(?:\s+now)?|update\s+all(?:\s+(?:extensions|plug-?ins|add-?ons|packages|apps))?)\s*$/i.test(name)) classes.push('install')
+      // CU-404 (cu-researcher; supersedes #478 with cu-developer-one's go): a paid boost buys reach, as a product - (boost / promote /
+      // sponsor / advertise) + (this / your / the / my)? + (post / tweet / video / listing / page / reel / story / ad / event / pin /
+      // update / article / content), or '... now' (LinkedIn's 'Sponsor now' / 'Sponsor update', r3 cu-developer-three). The label leads with the verb, so 'Boosted posts', 'Boost insights' and 'Promotion settings' stay free.
+      if (!focusesEntry && /^\s*(?:boost|promote|sponsor|advertise)\s+(?:(?:this|your|the|my)\s+)?(?:post|tweet|video|listing|page|reel|story|ad|event|pin|thread|status|update|article|content)\b|^\s*(?:boost|promote|sponsor|advertise)\s+now\b/i.test(name)) classes.push('purchase')
       // CU-397 (cu-researcher; supersedes #462; cu-coordinator's 03:58Z class): a message to an event's guests is sent at once -
       // the label LEADS with the verb, so a refusal ('Don't notify guests', 'Do not send') stays free.
       if (!focusesEntry && /^\s*(?:(?:e-?mail|notify|message)\s+(?:all\s+)?(?:the\s+)?(?:guests|invitees|attendees|participants)|forward\s+(?:the\s+|this\s+)?(?:invitation|invite|event)|(?:propose|suggest)\s+(?:a\s+)?(?:new|another|different|other)\s+time|send\s+updates?(?:\s+to\s+(?:all\s+)?(?:guests|invitees|attendees))?)\b/i.test(name)) classes.push('submit')
@@ -2300,6 +2309,11 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // set up, authorised or created - asks purchase anywhere, like 'Set up direct debit'.
     // #677 round 3 (cu-developer-three 12:47Z): allow / enable / turn on / activate too.
     // An older 'authorize' permission stays beside it (D-108: never lower).
+    // CU-403 (cu-verifier 23:42Z live): an IDE's 'Sync Changes' pushes local commits like 'Push' does, so it asks submit as Push
+    // does - 'Sync changes', 'Sync commits', 'Sync branch' as the control's name, with an optional count / arrow suffix
+    // ('Sync Changes 1↓ 2↑'); r2 (cu-developer-two 23:50Z, cu-researcher 23:51Z): 'Commit & Sync', 'Synchronize Changes',
+    // 'Push and pull', 'Sync with remote'; r3 (cu-researcher 23:58Z): 'Sync to remote', 'Pull and push', 'Commit, Push'. A bare 'Sync', 'Settings Sync' or 'Synchronize panels' stays as it was.
+    if (grammarEligible && !classes.includes('submit') && /^\s*(?:commit\s*(?:&|and|,)\s*(?:sync|push)|push\s*(?:&|and|,)\s*pull|pull\s*(?:&|and|,)\s*push|sync(?:hroni[sz]e)?\s+(?:changes|commits?|branch|repository|repo|(?:with|to)\s+(?:the\s+)?(?:remote|origin|upstream)))(?:\s+[\d\s↑↓]+)?\s*$/iu.test(name)) classes.push('submit')
     // CU-413: money moved out to a bank or card, as 'Withdraw to bank' already asks - send / transfer / move / pay out / cash out
     // (an optional amount or money noun) to (my / the) bank, bank account, checking, savings or debit card.
     if (grammarEligible && !classes.includes('purchase') && /^\s*(?:send|transfer|move|pay\s*out|cash\s*out|withdraw)\s+(?:(?:money|funds|cash|balance|earnings|payout|it|[$€£]?\s*[\d.,]+(?:\s*(?:usd|eur|gbp|dollars?|euros?))?)\s+)?(?:to|into)\s+(?:my\s+|your\s+|the\s+|a\s+)?(?:bank(?:\s+account)?|checking(?:\s+account)?|savings(?:\s+account)?|debit\s+card|current\s+account)\b/i.test(name)) classes.push('purchase')

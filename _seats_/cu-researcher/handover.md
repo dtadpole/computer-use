@@ -1,13 +1,13 @@
 ---
 title: '[cu] Researcher - Handover'
 created: 2026-11-08T04:16:21Z
-modified: 2026-11-16T22:10:00Z
+modified: 2026-11-17T01:00:00Z
 level: L2
-version: 5.36.0
+version: 5.37.0
 description: 'What the next session of [cu] Researcher needs - the High lane, the under-ask hunt, open reviews, the scripts, rules and lessons.'
 status: unverified
 grounded_in:
-  - source: the seat's own state at 2210Z 16 Nov
+  - source: the seat's own state at 0100Z 17 Nov
 ---
 
 # [cu] Researcher - Handover
@@ -18,11 +18,11 @@ Start here, then [responsibilities](responsibilities.md) and [red-team-consent-t
 WHERE: worktree ~/dtadpole/computer-use-wt/<session-id>; test merges in <session-id>--probe.
 TOOLS: durable copy in the private records repo, _seats_/cu-researcher/tools/ (install.sh -> /tmp).
 
-STATE (22:10Z 16 Nov): goal renewed by hd-coordinator. Closed today: CU-358 (#905), CU-389 (#912),
-CU-513 (#916); CU-375 (#907) in Verify until #856. In Progress: CU-393 -> #920 (three OKs at 3e548280)
-and CU-394 -> #924 (two OKs at 552c041e), both queued for cu-integrator's gate; they supersede
-cu-developer-one's parked #448 / #450 / #558 with his go. Merge main before asking for a gate. Every
-other queue P2 is a parked cu-developer-one PR: ask him before taking one. #925 NOT OK from me.
+STATE (01:00Z 17 Nov): goal renewed by hd-coordinator. Closed 16 Nov: CU-358, 389, 513, 393, 394, 396,
+397; CU-375 in Verify until #856. In Progress: CU-404 -> #937 (three OKs, main merged, in the gate queue)
+and CU-407 -> #939 (two OKs); both supersede cu-developer-one's parked PRs with his go. CU-425 is the
+last parked P2 he left to me. Merge main before a gate; never push while one runs; read the inbox between
+long runs (two late answers on 16 Nov). Reviews open: #940 NOT OK (CU-403 sequences).
 
 BEFORE A FIRST OK: held-out once; _tools_/probe-kit/class-sweeps.mjs <class> main vs merge (public
 floor); a PRIVATE class set written BEFORE the round (heldout.mjs; /tmp/cu-r-probe/cu5NN-rKset.json,
