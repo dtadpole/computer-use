@@ -164,6 +164,8 @@ const LOCALE_ID_NAMES = Object.freeze(['reisepass', '…passnummer', 'geburtsdat
   'versichertennummer', '…versichertennummer', 'número de la seguridad social', 'número de afiliación', 'tarjeta sanitaria', 'número de la tarjeta sanitaria',
   'número do sns', 'número de utente', 'número de beneficiário', 'tessera sanitaria', 'codice della tessera sanitaria', 'zorgverzekeringsnummer', '…zorgverzekeringsnummer',
   'sağlık sigorta~ numara~', 'insurance member number', 'insurance member id', 'insurance id number',
+  // r2 (cu-developer-two): the French insured-person number; 'Versicherten-Nr.' reads through the '-Nr.' family (CU-602).
+  "numéro d'assuré", 'numéro d’assuré', "n° d'assuré", 'n° d’assuré', 'numéro assuré',
   'паспорт', 'номер паспорта', 'дата рождения', 'инн', 'снилс', 'номер счета', 'номер счёта',
   'パスポート', '旅券番号', '生年月日', 'マイナンバー', '個人番号', '口座番号',
   '여권', '여권번호', '생년월일', '주민등록번호', '계좌번호', '사업자등록번호',
@@ -981,7 +983,7 @@ const CARD_EXPIRY_BARE = /^\s*(?:scadenza|vencimiento|validade|caducidad|validit
 // (Personal)ausweises', 'Steuer-Identifikationsnummer', 'Sozialversicherungs-Nr.', 'Nummer Ihrer Kranken- / Sozialversicherung' -
 // and English 'Number of your ID card', as their compounds and 'Number of your passport' already ask; r2 (cu-developer-three):
 // the '-Nr.' abbreviation after any of those nouns ('Ausweis-Nr.', 'Pass-Nr.', 'Ausweisnr.').
-const ID_FIELD_PHRASE = /\bnummer\s+(?:ihres|deines|des|seines|ihrer|der)\s+(?:(?:reise|kinder)?pass(?:es)?|(?:personal)?ausweis(?:es)?|f[üu]hrerscheins?|aufenthaltstitels?)\b|\bsteuer-?\s*identifikations-?\s*nummer\b|\b(?:(?:reise|kinder)?pass|(?:personal)?ausweis|f[üu]hrerschein|steuer|sozialversicherungs|versicherungs|aufenthaltstitel)-?\s*nr\.?(?=\s|$|[:*)])|\bsozialversicherungs-?\s*nummer\b|\bnummer\s+(?:ihrer|deiner|der)\s+(?:kranken|sozial|renten)versicherung\b|\bnumber\s+(?:of|on)\s+(?:(?:your|the|my|this)\s+)?(?:national\s+)?id(?:entity)?\s+card\b/iu
+const ID_FIELD_PHRASE = /\bnummer\s+(?:ihres|deines|des|seines|ihrer|der)\s+(?:(?:reise|kinder)?pass(?:es)?|(?:personal)?ausweis(?:es)?|f[üu]hrerscheins?|aufenthaltstitels?)\b|\bsteuer-?\s*identifikations-?\s*nummer\b|\b(?:(?:reise|kinder)?pass|(?:personal)?ausweis|f[üu]hrerschein|steuer|sozialversicherungs|versicherungs|versicherten|aufenthaltstitel)-?\s*nr\.?(?=\s|$|[:*)])|\bsozialversicherungs-?\s*nummer\b|\bnummer\s+(?:ihrer|deiner|der)\s+(?:kranken|sozial|renten)versicherung\b|\bnumber\s+(?:of|on)\s+(?:(?:your|the|my|this)\s+)?(?:national\s+)?id(?:entity)?\s+card\b/iu
 const secretNamedEntry = (target) => isTextEntry(target) && entryNamesOf(target).some((name) => namesWord(name, SECRET_NAMES) || namesAcronym(name) || CARD_NUMBER_PHRASE.test(String(name ?? '')) || CARD_EXPIRY_BARE.test(String(name ?? '')) || ID_FIELD_PHRASE.test(String(name ?? '')))
 
 // CU-164: a wallet recovery phrase - twelve or more words in a row, every one on the BIP39 list; ordinary prose breaks
