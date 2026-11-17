@@ -1700,6 +1700,11 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // CU-396 r3 (cu-developer-three): presenting a surface, as a product - '(Start) present(ing) a / your / this / the / my / an
       // + tab / window / screen / entire screen / desktop / display / app' - not one phrase per pair. Slide apps' bare 'Present' stays free.
       if (!focusesEntry && /^\s*(?:start\s+)?present(?:ing)?\s+(?:a|an|your|this|the|my|entire|whole)\s+(?:(?:entire|whole|full)\s+)?(?:tab|window|screen|desktop|display|app|application|monitor)\b/i.test(name)) classes.push('permission')
+      // CU-407 (cu-researcher; supersedes #501): an app's updater installs new code - 'Update Now', 'Update and Restart / Relaunch',
+      // 'Download and Install', 'Update All (extensions / plug-ins)' - on the DESKTOP route only (a native AX control outside a web
+      // area); on a web page 'Update now' usually saves a form. 'Later', 'Skip This Version' and a bare 'Update' stay free.
+      const nativeControl = /^AX/.test(String(target?.role ?? '')) && target?.inWebArea !== true
+      if (!focusesEntry && nativeControl && /^\s*(?:update\s+now|update\s+(?:and|&)\s+(?:restart|relaunch|reopen)|download\s+(?:and|&)\s+install(?:\s+now)?|update\s+all(?:\s+(?:extensions|plug-?ins|add-?ons|packages|apps))?)\s*$/i.test(name)) classes.push('install')
       // CU-397 (cu-researcher; supersedes #462; cu-coordinator's 03:58Z class): a message to an event's guests is sent at once -
       // the label LEADS with the verb, so a refusal ('Don't notify guests', 'Do not send') stays free.
       if (!focusesEntry && /^\s*(?:(?:e-?mail|notify|message)\s+(?:all\s+)?(?:the\s+)?(?:guests|invitees|attendees|participants)|forward\s+(?:the\s+|this\s+)?(?:invitation|invite|event)|(?:propose|suggest)\s+(?:a\s+)?(?:new|another|different|other)\s+time|send\s+updates?(?:\s+to\s+(?:all\s+)?(?:guests|invitees|attendees))?)\b/i.test(name)) classes.push('submit')
