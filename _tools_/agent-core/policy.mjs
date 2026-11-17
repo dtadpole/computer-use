@@ -149,6 +149,11 @@ const LOCALE_WORDS = Object.freeze({
     'ablaufdatum', '…ablaufdatum', 'gültig bis', 'verfallsdatum', 'fecha de caducidad', 'fecha de vencimiento', 'fecha de expiración', 'data de validade',
     'validade do cartão', 'data de expiração', 'data di scadenza', 'scadenza della carta', 'scadenza carta', 'date de validité', 'date de fin de validité',
     'card verification value', 'card verification code', 'card validation code',
+    // CU-604 (cu-researcher): one-time codes as each language writes them, as English 'one-time code' / 'OTP' already ask.
+    '…einmalpasswort', 'einmal-passwort', 'einmalkennwort', 'code à usage unique', 'code reçu par sms', 'code envoyé par sms', 'code par sms',
+    'código de un solo uso', 'código recibido por sms', 'código enviado por sms', 'código de acesso único', 'código de uso único', 'código recebido por sms',
+    'codice monouso', 'codice usa e getta', 'codice ricevuto via sms', 'codice ricevuto per sms', 'codice inviato via sms',
+    'tek kullanımlık kod~', 'sms kod~', 'eenmalig wachtwoord', 'sms-code', 'sms code ontvangen',
 ],
 })
 // CU-355 (design note 0.1): personal-ID field names in German, French, Spanish, Russian, Japanese and Korean - the third
@@ -987,7 +992,10 @@ const CARD_EXPIRY_BARE = /^\s*(?:scadenza|vencimiento|validade|caducidad|validit
 // the '-Nr.' abbreviation after any of those nouns ('Ausweis-Nr.', 'Pass-Nr.', 'Ausweisnr.'); CU-603 r3 (cu-developer-two): with
 // the Kranken- / Pflege- / Renten- compound in front ('Krankenversicherten-Nr.').
 const ID_FIELD_PHRASE = /\bnummer\s+(?:ihres|deines|des|seines|ihrer|der)\s+(?:(?:reise|kinder)?pass(?:es)?|(?:personal)?ausweis(?:es)?|f[üu]hrerscheins?|aufenthaltstitels?)\b|\bsteuer-?\s*identifikations-?\s*nummer\b|\b(?:(?:reise|kinder)?pass|(?:personal)?ausweis|f[üu]hrerschein|steuer|(?:kranken|pflege|renten|sozial)?versicherungs|(?:kranken|pflege|renten)?versicherten|aufenthaltstitel)-?\s*nr\.?(?=\s|$|[:*)])|\bsozialversicherungs-?\s*nummer\b|\bnummer\s+(?:ihrer|deiner|der)\s+(?:kranken|sozial|renten)versicherung\b|\bnumber\s+(?:of|on)\s+(?:(?:your|the|my|this)\s+)?(?:national\s+)?id(?:entity)?\s+card\b/iu
-const secretNamedEntry = (target) => isTextEntry(target) && entryNamesOf(target).some((name) => namesWord(name, SECRET_NAMES) || namesAcronym(name) || CARD_NUMBER_PHRASE.test(String(name ?? '')) || CARD_EXPIRY_BARE.test(String(name ?? '')) || ID_FIELD_PHRASE.test(String(name ?? '')))
+// CU-604 (cu-researcher): the German bank TAN family as a field's whole label ('TAN', 'mTAN', 'SMS-TAN', 'pushTAN', 'chipTAN',
+// 'photoTAN', 'TAN-Nummer', 'TAN eingeben') - a bare 'tan' inside a word (a colour, 'Tango') stays free.
+const TAN_FIELD = /^\s*(?:tan\s+eingeben|(?:m|sms[\s-]?|push|chip|photo|smart|app[\s-]?|i)?tan(?:[\s-]?(?:nummer|nr\.?|code))?)\s*[:*]?\s*$/iu
+const secretNamedEntry = (target) => isTextEntry(target) && entryNamesOf(target).some((name) => namesWord(name, SECRET_NAMES) || namesAcronym(name) || CARD_NUMBER_PHRASE.test(String(name ?? '')) || CARD_EXPIRY_BARE.test(String(name ?? '')) || ID_FIELD_PHRASE.test(String(name ?? '')) || TAN_FIELD.test(String(name ?? '')))
 
 // CU-164: a wallet recovery phrase - twelve or more words in a row, every one on the BIP39 list; ordinary prose breaks
 // the run with words the list does not hold (the, is, to, of, a).
