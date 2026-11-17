@@ -140,7 +140,7 @@ const LOCALE_WORDS = Object.freeze({
     'codice di verifica', 'codice di sicurezza', 'codice otp', 'numero della carta', 'numero di carta',
     'wachtwoord', 'pincode', '…pincode', 'verificatiecode', '…verificatiecode', 'beveiligingscode', '…beveiligingscode', 'kaartnummer', '…kaartnummer', 'eenmalige code',
     'senha', 'código de verificação', 'código de segurança', 'número do cartão',
-    'şifre~', 'parola~', 'doğrulama kod~', 'güvenlik kod~', 'kart numara~', 'tek kullanımlık şifre~',
+    'şifre~', 'parola~', 'doğrulama kod~', 'güvenlik kod~', 'kart~ numara~', 'son kullanma tarih~', 'tek kullanımlık şifre~',
     // r2: the Portuguese 'de' form, and Turkish possessive forms (your / my), which change the word's ending.
     'número de cartão', 'numero do cartao', 'numero de cartao',
 ],
@@ -663,12 +663,15 @@ const normaliseName = (text) => String(text ?? '').toLowerCase().replace(/\u0307
 const LETTER_BOUNDED = /[\u00c0-\u024f\u0400-\u04ff]/
 // CU-358 r3 (cu-developer-three's D-109 point): Turkish adds suffixes to a stem, so a Turkish entry marks where they may
 // follow - '~' after a noun stem takes a possessive (my / your / his / our / their) and then a case ending ('şifre~' reads
-// 'şifreniz', 'şifrenizi', 'şifresi'; 'kart numara~' reads 'kart numaranız', 'kart numarası'), '^' after a verb stem takes the
+// 'şifreniz', 'şifrenizi', 'şifresi'; 'kart numara~' reads 'kart numaranız', 'kart numarası'; CU-591: 'kart~ numara~' also reads the genitive 'Kartınızın numarası'), '^' after a verb stem takes the
 // polite or passive -(y)In (and its plural -(y)Iniz), then a third-person imperative -sIn or the future -(y)AcAk ('sil^' reads
 // 'silin', 'silinsin', 'silinecek'; 'gönder^' reads 'gönderin'). A bounded set, after normaliseName's folding (ı reads as i),
 // so 'Şifreleme' (encryption), 'Silinenler' (the Deleted folder), 'Silindir' and 'Silgi' stay free. r4 (cu-developer-three).
-const TR_NOUN_SUFFIX = '(?:(?:[iuü]?m|[iuü]?n|s?[iuü]|[iuü]?m[iuü]z|[iuü]?n[iuü]z|l[ae]ri?)?(?:y?[iuü]|n[iuü]|y?[ae]|n[ae]|[dt][ae]n?|n[iuü]n)?)'
-const TR_VERB_SUFFIX = '(?:(?:y?[iuü]n)?(?:s[iuü]n|[iuü]z|y?[ae]c[ae]k)?)'
+const TR_NOUN_SUFFIX = '(?:(?:[iuü]?m|[iuü]?n|s?[iuü]|[iuü]?m[iuü]z|[iuü]?n[iuü]z|l[ae]ri?)?(?:y?[iuü]|n[iuü]|y?[ae]|n[ae]|[dt][ae]n?|n?[iuü]n)?)'
+// CU-591 (cu-researcher): the future takes the copula -tIr as written in notices and confirmations ('silinecektir'); r2
+// (cu-developer-three, cu-developer-two): and the plural -lAr before or after it ('silinecekler', 'silinecektirler'), and the
+// passive is -Il as well as -(y)In ('kaldırılacak', 'kaldırılacaktır', 'kaldırılsın').
+const TR_VERB_SUFFIX = '(?:(?:y?[iuü]n|[iuü]l)?(?:s[iuü]n|[iuü]z|y?[ae]c[ae]k(?:l[ae]r)?(?:t[iuü]r)?(?:l[ae]r)?)?)'
 const turkishPattern = (word) => normaliseName(normaliseText(word)).split(/([~^])/).map((part) => part === '~' ? TR_NOUN_SUFFIX
   : part === '^' ? TR_VERB_SUFFIX : escapeRegExp(part).replace(/ /g, '[\\s-]+')).join('')
 // CU-358 r5 (cu-developer-one): ' _ ' in an Italian, Portuguese or Dutch entry is an optional article slot ('conferma _
