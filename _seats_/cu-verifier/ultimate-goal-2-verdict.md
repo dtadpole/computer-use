@@ -1,9 +1,9 @@
 ---
 title: ULTIMATE_GOAL 2.0 verdict, row by row - live, in progress
 created: 2026-11-02T10:22:00Z
-modified: 2026-11-17T20:06:00Z
+modified: 2026-11-17T20:38:00Z
 level: L1
-version: 0.9.248
+version: 0.9.249
 description: cu-verifier's per-row state of the desktop ULTIMATE_GOAL after the owner's grant - live evidence so far from the runbook on the Mac mini beside the pre-grant verifiers, and what each row still needs. No row is held until its live half holds.
 status: unverified
 grounded_in:
@@ -280,7 +280,8 @@ verb) and CU-612 (an over-ask: free 'Subscribe to newsletter / updates / channel
 named limits: 'Abonnement starten', 'Passer à la version Pro' and 'Suscripción mensual: empezar' still free, routed to a follow-up); CU-611 then closed live (144454Z-87bfeb; named limit:
 'Überweisung bitte bestätigen' - 'bitte' is outside the one-adverb list); CU-613 (that follow-up) reproduced live (150559Z-e01509); CU-613 then closed live (171348Z-7cd287); CU-615 (its imperative /
 possessive twins) reproduced live on the same merge (171428Z-6dcc0d); CU-616 (locale share-location / grant-access buttons) reproduced live
-(200432Z-9dd943); CU-559 (retirement / insurance: 080726Z-863132 .., 12 Nov) and CU-560 (broker options synonyms: 080950Z-67de2d .., 12 Nov)
+(200432Z-9dd943); CU-615 then closed live (203017Z-8c3f82; CU-611's 'bitte' limit
+now asks too); CU-559 (retirement / insurance: 080726Z-863132 .., 12 Nov) and CU-560 (broker options synonyms: 080950Z-67de2d .., 12 Nov)
 closed live on #825 (main 8d8a01d rows 12 Nov 09:09Z; closed on main c82f0fc after the 15 Nov reboot, five pages: 20261115T214232Z-461572 ..); CU-556 (round 5, Medium: five labels lowered, 'Wire transfer' kept) closed live after #823, main 4c67337 (081751Z-f1a505 ..);
 CU-554 (site takedown) and CU-555 (connected-car safeguards) closed live on #814, main de957db (083812Z-63bfb3 .. / 083922Z-96661b .., 12 Nov);
 CU-557 (exchange futures / derivatives) and CU-558 (social privacy, location bound per D-106) closed live on #821, main 71d69eb, eight pages
