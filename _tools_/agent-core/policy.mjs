@@ -108,6 +108,14 @@ const LOCALE_WORDS = Object.freeze({
     'geld overmaken', 'overmaken', 'geld overschrijven', 'overschrijven', 'geld sturen', 'geld versturen',
     'transferir dinheiro', 'enviar dinheiro', 'fazer _ transferência', 'transferir', 'enviar pix', 'fazer _ pix',
     'para gönder^', 'havale yap^', 'eft yap^', 'para transfer~ yap^', 'para transfer~',
+    // CU-608 (cu-researcher): bank-transfer confirmations in German, French, Spanish, Dutch and Turkish, as English
+    // 'Confirm transfer' / 'Transfer now' and the Italian / Portuguese ones above ask purchase; verb phrases only, so a
+    // 'Transferencias' or 'Virements' tab stays free.
+    'überweisen', 'jetzt überweisen', 'geld überweisen', 'überweisung bestätigen', 'überweisung ausführen', 'überweisung absenden', 'überweisung senden', 'geld senden',
+    'effectuer _ virement', 'confirmer _ virement', 'valider _ virement', 'faire _ virement', "envoyer de l'argent", 'envoyer de l’argent', "transférer de l'argent", 'transférer de l’argent',
+    'realizar _ transferencia', 'confirmar _ transferencia', 'hacer _ transferencia', 'enviar _ transferencia', 'enviar dinero', 'transferir dinero',
+    'overboeking bevestigen', 'bevestig _ overboeking', 'overboeking uitvoeren', 'overboeking versturen',
+    'transfer~ onayla^', 'havale~ onayla^', 'eft~ onayla^', 'havale~ gönder^',
     // r3: Turkish stems take their suffixes ('~' noun, '^' verb - see namesWord).
     'ödeme~ onayla^', 'satın alma~ onayla^', 'ödeme~ tamamla^', 'ödeme~ yap^', 'sipariş~ ver^', 'sipariş~ tamamla^', 'sipariş~ onayla^', 'alışveriş~ tamamla^',
     'satın al^', 'şimdi satın al^', 'hemen al^', 'şimdi al^', 'öde^', 'şimdi öde^', 'ödeme~ geç^'],
