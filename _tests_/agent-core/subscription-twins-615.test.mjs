@@ -9,7 +9,7 @@ const click = (url, name) => { const r = policy.classify({ type: 'click', x: 1, 
 
 test('CU-615: imperative and possessive subscription twins ask purchase', () => {
   for (const name of ['Inicia tu suscripción', 'Empieza tu suscripción', 'Inicia la suscripción', 'Inicie sua assinatura', 'Avvia il tuo abbonamento', 'Premium plana geç', 'Premium planına geçin',
-    "Passez à l'offre Premium", 'Passez à l’offre Pro', 'Passez à la version Pro', 'Abo bitte starten']) assert.ok(click('https://shop.example/plans', name).includes('purchase'), name)
+    "Passez à l'offre Premium", 'Passez à l’offre Pro', 'Passez à la version Pro', 'Abo bitte starten', 'Starte dein Abo', 'Starten Sie Ihr Abonnement', 'Start uw abonnement']) assert.ok(click('https://shop.example/plans', name).includes('purchase'), name)
 })
 
 test("CU-615: 'bitte' as the adverb in a split transfer confirmation", () => {

@@ -172,6 +172,8 @@ const LOCALE_WORDS = Object.freeze({
     // "Passez à l'offre Premium" - and their siblings.
     'inicia _ suscripción', 'inicia tu suscripción', 'empieza _ suscripción', 'empieza tu suscripción', 'comienza _ suscripción', 'comienza tu suscripción', 'inicia tu membresía', 'empieza tu membresía',
     'inicie _ assinatura', 'inicie sua assinatura', 'comece _ assinatura', 'comece sua assinatura', 'avvia il tuo abbonamento', 'inizia il tuo abbonamento',
+    // r2 (cu-developer-two): the German and Dutch imperative + possessive twins.
+    'starte dein abo', 'starte dein abonnement', 'starten sie ihr abo', 'starten sie ihr abonnement', 'beginne dein abo', 'beginnen sie ihr abonnement', 'start uw abonnement', 'begin je abonnement',
     'premium plan~ geç^', 'pro plan~ geç^', 'premium paket~ geç^', 'pro paket~ geç^',
     "passez à l'offre premium", 'passez à l’offre premium', "passez à l'offre pro", 'passez à l’offre pro', "passez à l'offre plus", 'passez à l’offre plus', 'passez à la version pro', 'passez à la version premium', 'passez à premium', 'passez au forfait pro', 'passez au forfait premium',
     // r3: Turkish stems take their suffixes ('~' noun, '^' verb - see namesWord).
