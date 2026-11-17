@@ -116,6 +116,15 @@ const LOCALE_WORDS = Object.freeze({
     'realizar _ transferencia', 'confirmar _ transferencia', 'hacer _ transferencia', 'enviar _ transferencia', 'enviar dinero', 'transferir dinero',
     'overboeking bevestigen', 'bevestig _ overboeking', 'overboeking uitvoeren', 'overboeking versturen',
     'transfer~ onayla^', 'havale~ onayla^', 'eft~ onayla^', 'havale~ gönder^',
+    // CU-610 (cu-researcher): subscribe / upgrade / start-trial buttons in the seven locales, as English 'Subscribe now' /
+    // 'Upgrade to Pro' / 'Start free trial' ask purchase. Portuguese 'assinar' alone is 'sign', so only its plan forms.
+    'abonnieren', 'jetzt abonnieren', 'kostenpflichtig abonnieren', 'abo abschließen', 'abonnement abschließen', 'jetzt upgraden', 'auf premium upgraden', 'kostenlos testen', 'gratis testen', 'probeabo starten',
+    "s'abonner", 's’abonner', 'abonnez-vous', 'souscrire', 'souscrire _ abonnement', 'passer à premium', 'passer à pro', 'passer à la version premium', "commencer l'essai gratuit", 'commencer l’essai gratuit', 'essayer gratuitement',
+    'suscribirse', 'suscríbete', 'suscribirme', 'suscríbete ahora', 'mejorar a pro', 'mejorar a premium', 'pasar a premium', 'hazte premium', 'iniciar _ prueba gratuita', 'prueba gratis',
+    'assinar agora', 'assine agora', 'assine já', 'assinar _ plano', 'fazer _ assinatura', 'fazer upgrade', 'mudar para premium', 'iniciar _ teste grátis', 'experimente grátis',
+    'abbonati', 'abbonati ora', 'abbonarsi', 'sottoscrivi', 'sottoscrivi _ abbonamento', 'passa a premium', 'passa a pro', 'inizia _ prova gratuita', 'prova gratis',
+    'abonneren', 'nu abonneren', 'abonnement afsluiten', 'upgraden naar pro', 'upgraden naar premium', 'gratis proberen', 'proefperiode starten',
+    'abone ol^', 'abonelik~ başlat^', 'aboneliğ~ başlat^', 'premium~ geç^', "premium'a geç^", 'premium’a geç^', "pro'ya geç^", 'pro’ya geç^', 'ücretsiz dene^',
     // r3: Turkish stems take their suffixes ('~' noun, '^' verb - see namesWord).
     'ödeme~ onayla^', 'satın alma~ onayla^', 'ödeme~ tamamla^', 'ödeme~ yap^', 'sipariş~ ver^', 'sipariş~ tamamla^', 'sipariş~ onayla^', 'alışveriş~ tamamla^',
     'satın al^', 'şimdi satın al^', 'hemen al^', 'şimdi al^', 'öde^', 'şimdi öde^', 'ödeme~ geç^'],
