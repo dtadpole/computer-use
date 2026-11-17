@@ -12,7 +12,8 @@ test('CU-613: start-subscription and paid-version switches ask purchase', () => 
     'Iniciar suscripción', 'Iniciar mi suscripción', 'Iniciar assinatura', 'Iniciar a assinatura', 'Avvia abbonamento', "Avvia l'abbonamento", 'Abonnement starten', 'Start je abonnement', 'Abo - starten',
     'Commencer mon abonnement', "Commencer l'abonnement", 'Passa alla versione Pro', 'Comenzar membresía', 'Iniciar mi membresía', 'Mitgliedschaft beginnen', 'Zur Pro-Version wechseln',
     'Cambiar a la versión Pro', 'Mudar para a versão Pro', 'Lidmaatschap starten', 'Overstappen naar Pro',
-    'Zu Pro wechseln', 'Cambiar a Pro', 'Mudar para Pro', 'Passer au forfait Pro', 'Passa al piano Pro', 'Abo jetzt starten', 'Abonnement jetzt starten']) assert.ok(click(name).includes('purchase'), name)
+    'Zu Pro wechseln', 'Cambiar a Pro', 'Mudar para Pro', 'Passer au forfait Pro', 'Passa al piano Pro', 'Abo jetzt starten', 'Abonnement jetzt starten',
+    "Passer à l'offre Premium", 'Commencer votre abonnement', 'Wechseln Sie zu Pro', 'Pro sürüme geç', 'Pro sürüme geçin']) assert.ok(click(name).includes('purchase'), name)
 })
 
 test('CU-613 negatives: layout switches, subscription details and trials of other things stay free', () => {

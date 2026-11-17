@@ -163,6 +163,11 @@ const LOCALE_WORDS = Object.freeze({
     'mudar para pro', 'mudar para premium', 'mudar para o plano pro', 'mudar para o plano premium', 'passar para pro', 'passar para o plano pro',
     'passa al piano pro', 'passa al piano premium', 'passare a pro', 'passare a premium',
     'overstappen op pro', 'overstappen op premium', 'wissel naar pro', 'overstappen naar het pro-abonnement',
+    // r4 (cu-developer-three's r1 row; cu-developer-two's r3 twins): the offer form, the 'votre / ton' and polite forms.
+    "passer à l'offre premium", 'passer à l’offre premium', "passer à l'offre pro", 'passer à l’offre pro', "passer à l'offre plus", 'passer à l’offre plus',
+    'commencer votre abonnement', 'démarrer votre abonnement', 'commencer ton abonnement', 'démarrer ton abonnement',
+    'wechseln sie zu pro', 'wechseln sie zu premium', 'wechseln sie zu plus', 'wechsle zu pro', 'wechsle zu premium',
+    'pro sürüm~ geç^', 'premium sürüm~ geç^',
     // r3: Turkish stems take their suffixes ('~' noun, '^' verb - see namesWord).
     'ödeme~ onayla^', 'satın alma~ onayla^', 'ödeme~ tamamla^', 'ödeme~ yap^', 'sipariş~ ver^', 'sipariş~ tamamla^', 'sipariş~ onayla^', 'alışveriş~ tamamla^',
     'satın al^', 'şimdi satın al^', 'hemen al^', 'şimdi al^', 'öde^', 'şimdi öde^', 'ödeme~ geç^'],
