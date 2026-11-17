@@ -128,6 +128,9 @@ const LOCALE_WORDS = Object.freeze({
     // r2 (cu-developer-two / -three): 'auf <plan> upgraden', the Turkish upgrade verb 'yükselt', and 'start the free trial'.
     'auf pro upgraden', 'auf plus upgraden', 'upgrade auf pro', 'upgrade auf premium', "premium'a yükselt^", 'premium’a yükselt^', "pro'ya yükselt^", 'pro’ya yükselt^',
     'premium~ yükselt^', 'plan~ yükselt^', 'ücretsiz deneme~ başlat^',
+    // r3 (cu-developer-three): 'upgrade your account / package / membership', as English 'Upgrade your account' asks; a bare
+    // 'yükselt' stays out ('Sesi yükselt' raises the volume).
+    'hesab~ yükselt^', 'hesap~ yükselt^', 'paket~ yükselt^', 'üyelik~ yükselt^', 'üyeliğ~ yükselt^',
     // r3: Turkish stems take their suffixes ('~' noun, '^' verb - see namesWord).
     'ödeme~ onayla^', 'satın alma~ onayla^', 'ödeme~ tamamla^', 'ödeme~ yap^', 'sipariş~ ver^', 'sipariş~ tamamla^', 'sipariş~ onayla^', 'alışveriş~ tamamla^',
     'satın al^', 'şimdi satın al^', 'hemen al^', 'şimdi al^', 'öde^', 'şimdi öde^', 'ödeme~ geç^'],
