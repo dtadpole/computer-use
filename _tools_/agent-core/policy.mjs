@@ -2338,6 +2338,14 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const gitVerb = '(?:pull|fetch|rebase|commit|stage|merge|stash|amend|squash|cherry[-\\s]?pick|revert|fixup|push|sync)'
       const gitSequence = new RegExp(`^\\s*${gitVerb}(?:\\s*(?:,\\s*(?:and\\s+|then\\s+)?|&\\s*|and\\s+(?:then\\s+)?|then\\s+)${gitVerb})+\\s*$`, 'i')
       if (gitSequence.test(name) && /\b(?:push|sync)\b/i.test(name)) classes.push('submit')
+      // CU-597 (cu-researcher; cu-developer-one's go 02:20Z): the leading steps need not be listed git verbs - a sequence whose
+      // LAST step is push ('Reword, then push', 'Stage all, commit and push', 'Bump version and push') asks submit, and a last
+      // step 'sync' asks when it names a git object ('..., then sync changes / to remote'). A bare last 'sync' after another step
+      // stays free ('Save and sync', 'Sign in and sync' sync the user's own data), as does a label with no push / sync step.
+      const step = '[\\p{L}][\\p{L}\'-]*(?:\\s+[\\p{L}][\\p{L}\'-]*){0,2}'
+      const join = '(?:\\s*,\\s*(?:and\\s+|then\\s+)?|\\s*&\\s*|\\s+and\\s+(?:then\\s+)?|\\s+then\\s+)'
+      const lastPush = new RegExp(`^\\s*${step}(?:${join}${step}){0,3}${join}(?:push(?:\\s+(?:to\\s+)?(?:the\\s+)?(?:remotes?|origin|upstream|changes|commits?|branch(?:es)?|tags?))?|sync\\s+(?:(?:to|with)\\s+(?:the\\s+)?)?(?:remote|origin|upstream|changes|commits?|branch))\\s*$`, 'iu')
+      if (!classes.includes('submit') && lastPush.test(name)) classes.push('submit')
     }
     // CU-413: money moved out to a bank or card, as 'Withdraw to bank' already asks - send / transfer / move / pay out / cash out
     // (an optional amount or money noun) to (my / the) bank, bank account, checking, savings or debit card.
