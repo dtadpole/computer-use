@@ -783,8 +783,9 @@ const BANK_OR_TAX_FIELD = Object.freeze(['iban', 'account number', 'account no',
   'code banque', 'code guichet', 'clé rib', 'cle rib', 'relevé d\'identité bancaire', 'código de agencia', 'código de agência', 'número de agencia', 'número da agência'])
 // CU-601: the short national codes only as a field's whole label ('Cab' alone is a taxi elsewhere), and the account number
 // in its 'of' form ('Number of your account'), as CU-599 reads the card number.
-const BANK_CODE_WHOLE = /^\s*(?:blz|abi|cab|rib|ag[êe]ncia|clearing)\s*(?:\(.{0,12}\))?\s*[:*]?\s*$/iu
-const ACCOUNT_NUMBER_OF = /\bnumber\s+of\s+(?:(?:your|the|this|my)\s+)?(?:bank\s+|checking\s+|savings\s+)?account\b/i
+const BANK_CODE_WHOLE = /^\s*(?:blz|aba|abi|cab|rib|ag[êe]ncia|clearing)\s*(?:\(.{0,12}\))?\s*[:*]?\s*$/iu
+// r2 (cu-developer-two / -three): both orders, as CU-599 reads the card - "Your account's number", 'Number on your account'.
+const ACCOUNT_NUMBER_OF = /\baccount['’]?s\s+number\b|\bnumber\s+(?:of|on|for)\s+(?:(?:your|the|this|my)\s+)?(?:bank\s+|checking\s+|savings\s+)?account\b/i
 function bankOrTaxField(target) {
   return entryNamesOf(target).some((name) => namesWord(name, BANK_OR_TAX_FIELD) || BANK_CODE_WHOLE.test(String(name ?? '')) || ACCOUNT_NUMBER_OF.test(String(name ?? '')))
 }

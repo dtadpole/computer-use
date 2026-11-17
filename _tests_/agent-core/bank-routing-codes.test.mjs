@@ -10,9 +10,10 @@ const asks = (name) => field(name).length > 0
 
 test('CU-601: national routing codes and the of-form account number ask', () => {
   for (const name of ['Bankleitzahl', 'BLZ', 'ABA number', 'ABA routing number', 'Clearing number', 'Clearingnummer', 'Transit number', 'Institution number', 'Code banque', 'Code guichet',
-    'Clé RIB', 'RIB', 'ABI', 'CAB', 'Agência', 'Código de agencia', 'Number of your account', 'Number of the bank account']) assert.ok(asks(name), name)
+    'Clé RIB', 'RIB', 'ABI', 'CAB', 'Agência', 'Código de agencia', 'Number of your account', 'Number of the bank account',
+    'ABA', "Your account's number", 'Your account’s number', 'Number on your account']) assert.ok(asks(name), name)
 })
 
 test('CU-601 negatives: taxis, cabins, ribbons and counts stay free', () => {
-  for (const name of ['Cab number', 'Cab type', 'Ribbon colour', 'Abilities', 'Number of accounts', 'Agency name', 'Transit line', 'Institution name']) assert.ok(!asks(name), name)
+  for (const name of ['Cab number', 'Cab type', 'Ribbon colour', 'Abilities', 'Number of accounts', 'Agency name', 'Transit line', 'Institution name', 'Abacus', 'Abi-Note', "Account's display name"]) assert.ok(!asks(name), name)
 })
