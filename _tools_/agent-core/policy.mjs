@@ -319,6 +319,16 @@ const WORDS = Object.freeze({
     'add member', 'add members', 'disable protection', 'unprotect branch',
     // CU-411: ownership and admin grants widen access.
     'make owner', 'make co-owner', 'transfer ownership', 'make admin', 'grant admin',
+    // CU-396 (cu-researcher; supersedes #462 with cu-developer-one's go; cu-coordinator's 03:58Z class): presenting,
+    // broadcasting, streaming, recording others and calling back reach other people like 'Share screen' and 'Call'. A bare
+    // 'Present' (slide apps), 'Presenter view', 'Stop recording' and 'Live captions' stay free.
+    'present now', 'present a tab', 'present a window', 'present your screen', 'present entire screen', 'present to everyone',
+    'go live', 'go live now', 'start broadcast', 'start broadcasting', 'start streaming', 'start stream', 'start livestream',
+    'start live stream', 'start live', 'start recording', 'record meeting', 'record this meeting', 'call back', 'call them back',
+    // r2 (cu-developer-two / -three): Meet's and Teams' 'Start presenting', screen recording, and the 'return call' twin of
+    // 'call back'. Slide apps' 'Start slideshow' / 'Play slideshow' stay free.
+    'start presenting', 'start screen recording', 'start screen share', 'start sharing screen', 'record screen', 'return call',
+    'return the call', 'return their call', 'call back now',
     // CU-389 (cu-researcher): widening who can reach a document or space - general access and join settings.
     'anyone can edit', 'anyone can view', 'anyone can comment', 'everyone can edit', 'everyone can view',
     'anyone with the link', 'anyone on the web', 'anyone on the internet', 'public on the web',
@@ -1692,6 +1702,12 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // CU-421: overriding a malware warning or installing a profile or helper asks install (CU-254's class).
       // cu-coordinator 15:25Z adds a page's 'Keep dangerous file' (Chrome's own shelf stays the named limit).
       if (!focusesEntry && /^\s*(?:(?:open|run|keep|download|install)\s+anyway|keep\s+(?:the\s+)?dangerous\s+file|install\s+(?:the\s+)?(?:configuration\s+)?(?:profile|helper))\b/i.test(name)) classes.push('install')
+      // CU-396 r3 (cu-developer-three): presenting a surface, as a product - '(Start) present(ing) a / your / this / the / my / an
+      // + tab / window / screen / entire screen / desktop / display / app' - not one phrase per pair. Slide apps' bare 'Present' stays free.
+      if (!focusesEntry && /^\s*(?:start\s+)?present(?:ing)?\s+(?:a|an|your|this|the|my|entire|whole)\s+(?:(?:entire|whole|full)\s+)?(?:tab|window|screen|desktop|display|app|application|monitor)\b/i.test(name)) classes.push('permission')
+      // CU-397 (cu-researcher; supersedes #462; cu-coordinator's 03:58Z class): a message to an event's guests is sent at once -
+      // the label LEADS with the verb, so a refusal ('Don't notify guests', 'Do not send') stays free.
+      if (!focusesEntry && /^\s*(?:(?:e-?mail|notify|message)\s+(?:all\s+)?(?:the\s+)?(?:guests|invitees|attendees|participants)|forward\s+(?:the\s+|this\s+)?(?:invitation|invite|event)|(?:propose|suggest)\s+(?:a\s+)?(?:new|another|different|other)\s+time|send\s+updates?(?:\s+to\s+(?:all\s+)?(?:guests|invitees|attendees))?)\b/i.test(name)) classes.push('submit')
       // CU-393: a bare grant on an OAuth consent page, or in a dialog that asks for access to the account, asks permission.
       if (!focusesEntry && OAUTH_BARE_GRANT.test(name) && (isOAuthConsentPage(context.url) || OAUTH_DIALOG_TEXT.test(`${target?.dialogName ?? ''} ${target?.dialogDescription ?? ''}`))) classes.push('permission')
       // CU-513: a bare install word on an extension / add-on / plug-in store detail page installs code into the browser or site.
