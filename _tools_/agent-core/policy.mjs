@@ -193,7 +193,10 @@ const LOCALE_WORDS = Object.freeze({
     'esvaziar lixeira', 'esvaziar a lixeira', 'esvaziar lixo', 'esvaziar a reciclagem', 'çöp kutu~ boşalt^', 'çöp~ boşalt^', 'çöp kutu~ temizle^'],
   submit: ['senden', 'absenden', 'abschicken', 'envoyer', 'soumettre', 'enviar', 'отправить', '送信', '보내기', '전송', '제출',
     // CU-358: Italian, Dutch, Portuguese and Turkish.
-    'invia', 'invia ora', 'verzenden', 'versturen', 'verstuur', 'indienen', 'submeter', 'gönder^', 'şimdi gönder^'],
+    'invia', 'invia ora', 'verzenden', 'versturen', 'verstuur', 'indienen', 'submeter', 'gönder^', 'şimdi gönder^',
+    // CU-617 (cu-researcher): publish / post, as English 'Publish' / 'Post' ask submit; infinitive, imperative and formal forms.
+    'veröffentlichen', 'veröffentliche', 'posten', 'poste', 'beitrag veröffentlichen', 'publier', 'publiez', 'publie', 'poster', 'publicar', 'publica', 'publique', 'postear', 'postar', 'poste agora',
+    'pubblica', 'pubblicare', 'pubblicate', 'publiceren', 'publiceer', 'nu plaatsen', 'bericht plaatsen', 'yayınla^', 'gönderi~ paylaş^'],
   // CU-616 (cu-researcher): sharing a (live) location and granting access, in the seven locales, as English 'Share my location' /
   // 'Share live location' / 'Grant access' / 'Give access' ask permission.
   permission: ['standort teilen', 'live-standort teilen', 'meinen standort teilen', 'standortfreigabe aktivieren', 'zugriff gewähren', 'zugriff erlauben', 'zugang gewähren',
@@ -209,7 +212,12 @@ const LOCALE_WORDS = Object.freeze({
     'comparte tu ubicación', 'compartir tu ubicación', 'comparta su ubicación', 'compartir su ubicación', 'concede acceso', 'conceda acceso', 'permite el acceso', 'permita el acceso',
     'compartilhe sua localização', 'compartilhar sua localização', 'compartilhe a sua localização', 'partilhe a sua localização', 'partilhar a sua localização', 'conceda acesso', 'conceda o acesso', 'permita o acesso',
     'condividere la tua posizione', 'condividi la sua posizione', 'condividete la vostra posizione', "concedete l'accesso", 'concedete l’accesso', "consenta l'accesso", 'consenta l’accesso',
-    'je locatie delen', 'uw locatie delen', 'deel je live locatie', 'verleen toegang', 'geef toegang', 'sta toegang toe'],
+    'je locatie delen', 'uw locatie delen', 'deel je live locatie', 'verleen toegang', 'geef toegang', 'sta toegang toe',
+    // CU-617 (cu-researcher): share and invite, as English 'Share' / 'Invite' ask permission; infinitive, imperative and formal forms
+    // (German / Dutch separable imperatives - 'Lade ... ein', 'Nodig ... uit', 'Deel ...' - are a grammar rule below).
+    'teilen', 'teilen sie', 'mit anderen teilen', 'einladen', 'partager', 'partagez', 'partage', 'inviter', 'invitez', 'compartir', 'comparte', 'comparta', 'invitar', 'invita', 'invite a',
+    'compartilhar', 'compartilhe', 'partilhar', 'partilhe', 'convidar', 'convide', 'condividi', 'condividere', 'condividete', 'invitare', 'invitate', 'delen', 'uitnodigen',
+    'paylaş^', 'davet et^', 'davet edin', 'davet edin^'],
   // CU-345: a PIN, one-time code, security code or password field named in these languages.
   secret: ['passwort', 'kennwort', 'sicherheitscode', 'prüfziffer', 'mot de passe', 'code de sécurité', 'cryptogramme',
     'contraseña', 'código de seguridad', 'пароль', 'код безопасности', 'パスワード', '暗証番号', 'セキュリティコード', '認証コード',
@@ -2512,6 +2520,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const lastPush = new RegExp(`^\\s*${step}(?:${join}${step}){0,3}${join}(?:push(?:\\s+(?:to\\s+)?(?:the\\s+)?(?:remotes?|origin|upstream|changes|commits?|branch(?:es)?|tags?))?|sync\\s+(?:(?:to|with)\\s+(?:the\\s+)?)?(?:remote|origin|upstream|changes|commits?|branch))\\s*$`, 'iu')
       if (!classes.includes('submit') && lastPush.test(name)) classes.push('submit')
     }
+    // CU-617 (cu-researcher): German / Dutch separable and short imperatives of share / invite - 'Lade Freunde ein', 'Laden Sie
+    // Kollegen ein', 'Nodig je team uit', 'Teile das Dokument', 'Deel de link' - ask permission; 'Deel 2' (a part number) stays free.
+    if (grammarEligible && !classes.includes('permission') && (/^\s*(?:lade|laden\s+sie)\s+(?:\p{L}+\s+){1,3}ein\s*[.!]?\s*$/iu.test(name) || /^\s*nodig\s+(?:\p{L}+\s+){1,3}uit\s*[.!]?\s*$/iu.test(name) || /^\s*(?:teile|deel)\s+(?:\p{L}+\s*){1,3}[.!]?\s*$/iu.test(name))) classes.push('permission')
     // CU-615 r3 (cu-developer-three): the German / Dutch imperative family as one rule - start / begin (+ one adverb) + your
     // subscription / membership ('Starte jetzt dein Abo', 'Beginne deine Mitgliedschaft', 'Start nu je lidmaatschap'), and
     // switch (+ one adverb) to pro / premium / plus ('Wechsle jetzt zu Premium').
