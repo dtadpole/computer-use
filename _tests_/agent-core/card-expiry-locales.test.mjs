@@ -13,6 +13,10 @@ test('CU-600: locale card-expiry labels and the spelled-out verification value a
     'Card verification value', 'Card verification code']) assert.ok(field(name).includes('sensitive_data'), name)
 })
 
-test('CU-600 negatives: bare due dates and shelf lives stay as they were', () => {
-  for (const name of ['Vencimiento', 'Validade', 'Scadenza', 'Lieferdatum', 'Fecha de entrega', 'Data di consegna']) assert.ok(!field(name).includes('sensitive_data'), name)
+test('CU-600 r2: the bare expiry word as the whole label, with or without MM/AA, is sensitive_data like English Expiry (MM/YY)', () => {
+  for (const name of ['Vencimiento', 'Validade', 'Scadenza', 'Caducidad', 'Validade (MM/AA)', 'Vencimiento MM/AA', 'Scadenza (MM/AA)', 'Gültig bis MM/JJ', 'Válido hasta']) assert.ok(field(name).includes('sensitive_data'), name)
+})
+
+test('CU-600 negatives: longer due-date and shelf-life phrases and delivery dates stay as they were', () => {
+  for (const name of ['Vencimiento de la factura', 'Validade do produto', 'Scadenza del contratto', 'Lieferdatum', 'Fecha de entrega', 'Data di consegna']) assert.ok(!field(name).includes('sensitive_data'), name)
 })
