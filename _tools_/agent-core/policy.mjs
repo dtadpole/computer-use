@@ -972,7 +972,11 @@ const CARD_NUMBER_PHRASE = /\bcard['’]?s\s+number\b|\bnumber\s+(?:of|on|for)\s
 // English 'Expiry (MM/YY)' - 'Scadenza', 'Vencimiento', 'Validade (MM/AA)', 'Caducidad', 'Gültig bis MM/JJ'; a longer phrase
 // ('Vencimiento de la factura', 'Validade do produto') stays free.
 const CARD_EXPIRY_BARE = /^\s*(?:scadenza|vencimiento|validade|caducidad|validit[ée]|ablauf|vence|v[aá]lid[oa]\s+(?:hasta|at[ée])|gültig\s+bis)\s*(?:\(?\s*mm\s*[\/-]\s*(?:aa|yy|jj|aaaa|yyyy|jjjj)\s*\)?)?\s*[:*]?\s*$/iu
-const secretNamedEntry = (target) => isTextEntry(target) && entryNamesOf(target).some((name) => namesWord(name, SECRET_NAMES) || namesAcronym(name) || CARD_NUMBER_PHRASE.test(String(name ?? '')) || CARD_EXPIRY_BARE.test(String(name ?? '')))
+// CU-602 (cu-researcher): German ID fields in the genitive or hyphenated - 'Nummer Ihres / des (Reise)passes', 'Nummer des
+// (Personal)ausweises', 'Steuer-Identifikationsnummer', 'Sozialversicherungs-Nr.', 'Nummer Ihrer Kranken- / Sozialversicherung' -
+// and English 'Number of your ID card', as their compounds and 'Number of your passport' already ask.
+const ID_FIELD_PHRASE = /\bnummer\s+(?:ihres|deines|des|seines|ihrer|der)\s+(?:(?:reise|kinder)?pass(?:es)?|(?:personal)?ausweis(?:es)?|f[üu]hrerscheins?|aufenthaltstitels?)\b|\bsteuer-?\s*identifikations-?\s*nummer\b|\bsteuer-?\s*nr\.?(?=\s|$)|\bsozialversicherungs-?\s*(?:nummer|nr\.?)(?=\s|$|[:*])|\bnummer\s+(?:ihrer|deiner|der)\s+(?:kranken|sozial|renten)versicherung\b|\bnumber\s+(?:of|on)\s+(?:(?:your|the|my|this)\s+)?(?:national\s+)?id(?:entity)?\s+card\b/iu
+const secretNamedEntry = (target) => isTextEntry(target) && entryNamesOf(target).some((name) => namesWord(name, SECRET_NAMES) || namesAcronym(name) || CARD_NUMBER_PHRASE.test(String(name ?? '')) || CARD_EXPIRY_BARE.test(String(name ?? '')) || ID_FIELD_PHRASE.test(String(name ?? '')))
 
 // CU-164: a wallet recovery phrase - twelve or more words in a row, every one on the BIP39 list; ordinary prose breaks
 // the run with words the list does not hold (the, is, to, of, a).
