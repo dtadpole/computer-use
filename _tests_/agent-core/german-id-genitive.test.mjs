@@ -9,9 +9,10 @@ const field = (name) => { const r = policy.classify({ type: 'type', text: 'x' },
 
 test('CU-602: genitive and hyphenated German ID fields and the ID-card of-form are sensitive_data', () => {
   for (const name of ['Nummer Ihres Reisepasses', 'Nummer des Reisepasses', 'Nummer des Ausweises', 'Nummer Ihres Personalausweises', 'Steuer-Identifikationsnummer', 'Sozialversicherungs-Nr.',
-    'Sozialversicherungs-Nummer', 'Nummer Ihrer Krankenversicherung', 'Nummer Ihres Führerscheins', 'Number of your ID card', 'Number on your identity card']) assert.ok(field(name).includes('sensitive_data'), name)
+    'Sozialversicherungs-Nummer', 'Nummer Ihrer Krankenversicherung', 'Nummer Ihres Führerscheins', 'Number of your ID card', 'Number on your identity card',
+    'Ausweis-Nr.', 'Pass-Nr.', 'Ausweisnr.', 'Reisepass-Nr.', 'Führerschein-Nr.', 'Steuer-Nr.', 'Versicherungs-Nr.']) assert.ok(field(name).includes('sensitive_data'), name)
 })
 
 test('CU-602 negatives: other German numbers and passes stay free', () => {
-  for (const name of ['Nummer Ihrer Bestellung', 'Nummer des Pakets', 'Bordkarte', 'Nummer Ihres Tickets', 'Number of ID cards issued']) assert.ok(!field(name).includes('sensitive_data'), name)
+  for (const name of ['Nummer Ihrer Bestellung', 'Nummer des Pakets', 'Bordkarte', 'Nummer Ihres Tickets', 'Number of ID cards issued', 'Bestell-Nr.', 'Kunden-Nr.', 'Rechnungs-Nr.', 'Haus-Nr.']) assert.ok(!field(name).includes('sensitive_data'), name)
 })
