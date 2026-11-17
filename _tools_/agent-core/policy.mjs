@@ -162,6 +162,11 @@ const LOCALE_WORDS = Object.freeze({
     'pergunta de segurança', 'resposta de segurança', 'pergunta secreta', 'resposta secreta', 'nome de solteira',
     'domanda di sicurezza', 'risposta di sicurezza', 'domanda segreta', 'risposta segreta', 'cognome da nubile',
     'güvenlik soru~', 'gizli soru~', 'kızlık soyad~', 'beveiligingsvraag', 'geheime vraag', 'meisjesnaam',
+    // CU-606 (cu-researcher): the European Portuguese password, beside 'senha'; access codes and two-factor recovery codes
+    // as each language writes them, in the class of the locale password words.
+    'palavra-passe', 'palavra passe', '…zugangscode', 'zugangs-code', "code d'accès", 'code d’accès', 'código de acceso', 'clave de acceso', 'código de acesso',
+    'codice di accesso', 'codice d’accesso', "codice d'accesso", 'toegangscode', '…toegangscode', 'erişim kod~',
+    '…wiederherstellungscode', 'code de récupération', 'code de secours', 'código de recuperación', 'código de recuperação', 'codice di recupero', 'herstelcode', '…herstelcode', 'kurtarma kod~',
 ],
 })
 // CU-355 (design note 0.1): personal-ID field names in German, French, Spanish, Russian, Japanese and Korean - the third
@@ -854,6 +859,8 @@ const API_TOKEN = new RegExp([
   'rk_(?:live|test)_[A-Za-z0-9]{16,}',
 ].map((one) => `\\b${one}\\b`).join('|'))
 const PASSWORD_NAMES = Object.freeze(['password', 'passcode', 'passphrase', 'pin', 'pin code',
+  // CU-606 (cu-researcher): an access code, in the class of its twin 'passcode'.
+  'access code',
   // CU-293: the same names in Chinese.
   '密码', '密碼', '口令', '支付密码', '支付密碼'])
 // CU-265: the schemes a page navigates itself; any other hands the link to another app.
@@ -949,6 +956,8 @@ const SECRET_NAMES = Object.freeze(['recovery phrase', 'seed phrase', 'secret ph
   'card no', 'cell number', 'mobile', 'tel',
   // CU-245 (cu-researcher's D-061 red team): a debit card, an account recovery key and two-factor backup codes.
   'debit card', 'recovery key', 'backup code', 'backup codes',
+  // CU-606 (cu-researcher): a two-factor recovery code, in the class of its twin 'backup code'.
+  'recovery code', 'recovery codes',
   // CU-293: D-061's field names in Chinese (an id, a passport, a card, a birth date, a code, contact data).
   '身份证', '身份證', '身分證', '护照', '護照', '社保号', '社会保障号', '出生日期', '生日', '银行卡', '銀行卡', '卡号', '卡號', '信用卡',
   '有效期', '安全码', '安全碼', '验证码', '驗證碼', '动态码', '手机号', '手機號', '电话', '電話', '邮箱', '电子邮件', '電子郵件',
