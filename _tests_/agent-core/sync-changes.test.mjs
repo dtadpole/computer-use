@@ -19,3 +19,7 @@ test('CU-403 r2 (cu-developer-two 23:50Z, cu-researcher 23:51Z): the IDE sync fo
   for (const n of ['Commit & Sync', 'Commit and Sync', 'Synchronize Changes', 'Push and pull', 'Sync with remote']) assert.ok(cls(n).includes('submit'), n)
   for (const n of ['Settings Sync', 'Turn on Settings Sync', 'Sync scroll', 'Synchronize panels', 'Pull', 'Fetch']) assert.ok(!cls(n).includes('submit'), n)
 })
+
+test('CU-403 r3 (cu-researcher 23:58Z): either order, a comma, and sync to the remote', () => {
+  for (const n of ['Sync to remote', 'Pull and push', 'Commit, Push', 'Commit, Sync']) assert.ok(cls(n).includes('submit'), n)
+})
