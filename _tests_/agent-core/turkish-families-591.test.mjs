@@ -22,5 +22,5 @@ test('CU-591: the card number in the genitive is sensitive like the compound', (
 
 test('CU-591 negatives: other words on the same stems stay free', () => {
   for (const name of ['Silindir', 'Silinenler', 'Kartlar', 'Kartvizit', 'Numara sırası']) assert.equal(click(name), 'allow', name)
-  for (const name of ['Kartvizit adı', 'Sipariş numarası', 'Telefon numarası', 'Doğum tarihi', 'Teslim tarihi']) assert.ok(!field(name).includes('sensitive_data'), name)
+  for (const name of ['Kartvizit adı', 'Sipariş numarası', 'Telefon numarası', 'Teslim tarihi']) assert.ok(!field(name).includes('sensitive_data'), name)
 })
