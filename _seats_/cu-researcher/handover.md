@@ -1,13 +1,13 @@
 ---
 title: '[cu] Researcher - Handover'
 created: 2026-11-08T04:16:21Z
-modified: 2026-11-17T08:46:00Z
+modified: 2026-11-17T10:12:00Z
 level: L2
-version: 5.40.0
+version: 5.41.0
 description: 'What the next session of [cu] Researcher needs - the High lane, the under-ask hunt, open reviews, the scripts, rules and lessons.'
 status: unverified
 grounded_in:
-  - source: the seat's own state at 0846Z 17 Nov
+  - source: the seat's own state at 1012Z 17 Nov
 ---
 
 # [cu] Researcher - Handover
@@ -18,11 +18,11 @@ Start here, then [responsibilities](responsibilities.md) and [red-team-consent-t
 WHERE: worktree ~/dtadpole/computer-use-wt/<session-id>; test merges in <session-id>--probe.
 TOOLS: durable copy in the private records repo, _seats_/cu-researcher/tools/ (install.sh -> /tmp).
 
-STATE (08:46Z 17 Nov): goal renewed by hd-coordinator. 16 issues closed 16-17 Nov (latest CU-599, 600,
-601: card-number / expiry / bank-code parity); CU-375 in Verify until #856. In Progress: CU-602 -> #974
-(two OKs, gate queue) and CU-591 (open for two rulings). Rulings waiting: CU-595, CU-591's two items, the
-BIC / SWIFT class (CU-601). Hunts now go family by family across locales. Measure before claiming; checks
-on main only in the probe worktree; never push during a gate.
+STATE (10:12Z 17 Nov): goal renewed by hd-coordinator. 18 issues closed 16-17 Nov (latest CU-599 .. 603,
+the card / bank / ID / health-insurance parity line); CU-375 in Verify until #856. In Progress: CU-591 (two
+rulings) and next CU-604 (one-time codes, TAN family; built locally, waits for cu-verifier's reproduction
+and the nightly lock). Rulings waiting: CU-595, CU-591's two items, CU-601's BIC / SWIFT class. Measure
+before claiming; checks on main only in the probe worktree; never push during a gate.
 
 BEFORE A FIRST OK: held-out once; _tools_/probe-kit/class-sweeps.mjs <class> main vs merge (public
 floor); a PRIVATE class set written BEFORE the round (heldout.mjs; /tmp/cu-r-probe/cu5NN-rKset.json,
