@@ -20,3 +20,8 @@ test('CU-609: every transfer verb form still asks purchase', () => {
     assert.ok(click(name).includes('purchase'), name)
   }
 })
+
+test('CU-609 r2: the Turkish transfer pages are free too; the Turkish verbs still ask', () => {
+  for (const name of ['Transfer geçmişi', 'Transfer ayarları', 'Transfer limitleri', 'Transfer detayları']) assert.ok(!click(name).includes('purchase'), name)
+  for (const name of ['Transferi onayla', 'Para transferi yap']) assert.ok(click(name).includes('purchase'), name)
+})
