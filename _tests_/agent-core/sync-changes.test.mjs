@@ -43,3 +43,8 @@ test('CU-403 follow-up r3 (cu-researcher 01:05Z): Squash and push, Push to all r
   for (const n of ['Squash and push', 'Push to all remotes', 'Push to origin']) assert.ok(cls(n).includes('submit'), n)
   for (const n of ['Push to talk', 'Squash commits']) assert.ok(!cls(n).includes('submit'), n)
 })
+
+test('CU-403 follow-up r4 (cu-researcher 01:14Z): cherry-pick / revert / fixup steps before a push', () => {
+  for (const n of ['Cherry-pick and push', 'Cherry pick, then push', 'Revert and push', 'Fixup, then push']) assert.ok(cls(n).includes('submit'), n)
+  for (const n of ['Cherry-pick', 'Revert changes', 'Fixup commit']) assert.ok(!cls(n).includes('submit'), n)
+})
