@@ -16,6 +16,10 @@ test('CU-425: moving into a shared drive, letting viewers download / print / cop
   assert.equal(click('Viewers and commenters can see the option to download, print, and copy', { ...box, checked: false }), 'permission')
   assert.equal(click('Viewers can download, print and copy', { ...box, checked: false }), 'permission')
   assert.equal(click('Viewers and commenters can see the option to download, print, and copy', { ...box, checked: true }), 'allow')
+  // r2 (cu-developer-one): the settings dialog's wording, two nouns and a verb list.
+  assert.equal(click('Allow viewers and commenters to download, print, and copy', { ...box, checked: false }), 'permission')
+  assert.equal(click('Allow viewers and commenters to see the option to download, print and copy', { ...box, checked: false }), 'permission')
+  assert.equal(click('Allow viewers and commenters to download, print, and copy', { ...box, checked: true }), 'allow')
   for (const name of ['Move to team folder', 'Move to Team Drive', 'Move to the team folder']) assert.equal(click(name), 'permission', name)
 })
 

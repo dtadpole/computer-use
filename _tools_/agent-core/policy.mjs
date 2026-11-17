@@ -1713,7 +1713,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const shareToggle = nativeToggleState(target)
       if (!focusesEntry && shareToggle !== true && /\b(?:viewers|commenters|everyone|anyone|people|recipients)\b(?:\s+(?:and|&)\s+(?:viewers|commenters))?\s+can\s+(?:see\s+the\s+option\s+to\s+)?(?:download|print|copy)\b/i.test(name)) classes.push('permission')
       if (!focusesEntry && (/^\s*move\s+(?:it\s+|this\s+|the\s+file\s+)?(?:in)?to\s+(?:a\s+|the\s+)?(?:shared\s+(?:drive|folder|library)|team\s+(?:folder|drive))\b/i.test(name)
-        || /^\s*(?:allow|enable|let)\s+(?:(?:viewers|commenters|others|everyone|anyone|people|recipients)\s+(?:to\s+)?)?(?:download(?:s|ing)?|print(?:ing)?(?:\s+(?:and|&)\s+copy(?:ing)?)?|copy(?:ing)?)\b/i.test(name)
+        || (shareToggle !== true && /^\s*(?:allow|enable|let)\s+(?:(?:viewers|commenters|others|everyone|anyone|people|recipients)(?:\s+(?:and|&)\s+(?:viewers|commenters))?\s+(?:to\s+)?(?:see\s+the\s+option\s+to\s+)?)?(?:download(?:s|ing)?|print(?:ing)?(?:\s+(?:and|&)\s+copy(?:ing)?)?|copy(?:ing)?)\b/i.test(name))
         || /^\s*(?:let\s+(?:others|everyone|anyone|people)\s+edit|enable\s+editing\s+for\s+(?:others|everyone|anyone))\b/i.test(name)
         || (/^\s*allow\s+editing\s*$/i.test(name) && /\b(?:share|sharing|permissions?|general\s+access|manage\s+access|link\s+settings)\b/i.test(`${target?.dialogName ?? ''} ${target?.dialogDescription ?? ''}`)))) classes.push('permission')
       // CU-397 (cu-researcher; supersedes #462; cu-coordinator's 03:58Z class): a message to an event's guests is sent at once -
