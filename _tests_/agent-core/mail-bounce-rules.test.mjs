@@ -21,3 +21,8 @@ test('CU-399 r2 (cu-researcher 02:19Z): Bounce Message and Redirect ask submit, 
   for (const name of ['Bounce Message', 'Bounce…', 'Redirect', 'Redirect…', 'Redirect Message']) assert.equal(click(name), 'submit', name)
   for (const name of ['Rules…', 'Forward', 'Move to', 'Redirect URL']) assert.notEqual(click(name), 'submit', name)
 })
+
+test('CU-399 r3 (cu-developer-two 03:06Z): Outlook\'s Run rules now and its twins ask permission', () => {
+  for (const name of ['Run rules now', 'Run Rules', 'Run all rules', 'Apply rules now']) assert.equal(click(name), 'permission', name)
+  for (const name of ['Rules', 'Manage rules', 'Rule settings']) assert.notEqual(click(name), 'permission', name)
+})

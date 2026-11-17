@@ -325,7 +325,7 @@ const WORDS = Object.freeze({
     'leave workspace', 'leave organization', 'leave organisation', 'leave org', 'leave team', 'leave server', 'unlink account',
     // CU-399 (cu-coordinator 05:02Z, 10 Nov; rebuilt from #469 on 17 Nov): Mail's Apply Rules runs rules that may delete,
     // forward or run a script.
-    'apply rules',
+    'apply rules', 'apply rules now', 'run rules', 'run rules now', 'run all rules', // r3 (cu-developer-two 03:06Z): Outlook's 'Run rules now'
     // CU-386 (cu-coordinator 23:54Z): asking someone else for money.
     'request money',
     // CU-258 (cu-researcher): standing choices an app keeps after the run, as whole phrases. A bare 'Allow' stays free so
