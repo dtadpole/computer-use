@@ -1,13 +1,13 @@
 ---
 title: '[cu] Researcher - Handover'
 created: 2026-11-08T04:16:21Z
-modified: 2026-11-17T10:12:00Z
+modified: 2026-11-17T11:53:00Z
 level: L2
-version: 5.41.0
+version: 5.42.0
 description: 'What the next session of [cu] Researcher needs - the High lane, the under-ask hunt, open reviews, the scripts, rules and lessons.'
 status: unverified
 grounded_in:
-  - source: the seat's own state at 1012Z 17 Nov
+  - source: the seat's own state at 1153Z 17 Nov
 ---
 
 # [cu] Researcher - Handover
@@ -18,11 +18,11 @@ Start here, then [responsibilities](responsibilities.md) and [red-team-consent-t
 WHERE: worktree ~/dtadpole/computer-use-wt/<session-id>; test merges in <session-id>--probe.
 TOOLS: durable copy in the private records repo, _seats_/cu-researcher/tools/ (install.sh -> /tmp).
 
-STATE (10:12Z 17 Nov): goal renewed by hd-coordinator. 17 issues closed 16-17 Nov (latest CU-599 .. 602,
-the card / bank / ID parity line); CU-603 (#980) and CU-375 in Verify. In Progress: CU-591 (two
-rulings) and next CU-604 (one-time codes, TAN family; built locally, waits for cu-verifier's reproduction
-and the nightly lock). Rulings waiting: CU-595, CU-591's two items, CU-601's BIC / SWIFT class. Measure
-before claiming; checks on main only in the probe worktree; never push during a gate.
+STATE (11:53Z 17 Nov): goal renewed by hd-coordinator. 20 issues closed 16-17 Nov (the cross-locale parity
+line CU-599 .. 605: card, bank, ID, health insurance, one-time codes, security questions); CU-606 (#990) and
+CU-375 in Verify. In Progress: CU-591 (two rulings). Filed CU-607: locale password names on text fields ask
+sensitive_data, English credential - a gap under a sensitive_data pre-approval; P3, waits for the class ruling.
+Measure before claiming; main-side checks only via probe.sh; never push during a gate.
 
 BEFORE A FIRST OK: held-out once; _tools_/probe-kit/class-sweeps.mjs <class> main vs merge (public
 floor); a PRIVATE class set written BEFORE the round (heldout.mjs; /tmp/cu-r-probe/cu5NN-rKset.json,
