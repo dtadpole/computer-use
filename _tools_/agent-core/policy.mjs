@@ -140,7 +140,7 @@ const LOCALE_WORDS = Object.freeze({
     'codice di verifica', 'codice di sicurezza', 'codice otp', 'numero della carta', 'numero di carta',
     'wachtwoord', 'pincode', '…pincode', 'verificatiecode', '…verificatiecode', 'beveiligingscode', '…beveiligingscode', 'kaartnummer', '…kaartnummer', 'eenmalige code',
     'senha', 'código de verificação', 'código de segurança', 'número do cartão',
-    'şifre~', 'parola~', 'doğrulama kod~', 'güvenlik kod~', 'kart~ numara~', 'tek kullanımlık şifre~',
+    'şifre~', 'parola~', 'doğrulama kod~', 'güvenlik kod~', 'kart~ numara~', 'son kullanma tarih~', 'tek kullanımlık şifre~',
     // r2: the Portuguese 'de' form, and Turkish possessive forms (your / my), which change the word's ending.
     'número de cartão', 'numero do cartao', 'numero de cartao',
 ],

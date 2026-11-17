@@ -16,9 +16,11 @@ test('CU-591: the future + copula asks like the future', () => {
 
 test('CU-591: the card number in the genitive is sensitive like the compound', () => {
   for (const name of ['Kartınızın numarası', 'Kartın numarası', 'Kart numarası', 'Kartınızın numarasını girin']) assert.ok(field(name).includes('sensitive_data'), name)
+  // The card's expiry, as English 'Expiration date' / 'Expiry date' already ask.
+  for (const name of ['Son kullanma tarihi', 'Kartın son kullanma tarihi', 'Son kullanma tarihini girin']) assert.ok(field(name).includes('sensitive_data'), name)
 })
 
 test('CU-591 negatives: other words on the same stems stay free', () => {
   for (const name of ['Silindir', 'Silinenler', 'Kartlar', 'Kartvizit', 'Numara sırası']) assert.equal(click(name), 'allow', name)
-  for (const name of ['Kartvizit adı', 'Sipariş numarası', 'Telefon numarası']) assert.ok(!field(name).includes('sensitive_data'), name)
+  for (const name of ['Kartvizit adı', 'Sipariş numarası', 'Telefon numarası', 'Doğum tarihi', 'Teslim tarihi']) assert.ok(!field(name).includes('sensitive_data'), name)
 })
