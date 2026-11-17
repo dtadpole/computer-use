@@ -2297,6 +2297,11 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // set up, authorised or created - asks purchase anywhere, like 'Set up direct debit'.
     // #677 round 3 (cu-developer-three 12:47Z): allow / enable / turn on / activate too.
     // An older 'authorize' permission stays beside it (D-108: never lower).
+    // CU-403 (cu-verifier 23:42Z live): an IDE's 'Sync Changes' pushes local commits like 'Push' does, so it asks submit as Push
+    // does - 'Sync changes', 'Sync commits', 'Sync branch' as the control's name, with an optional count / arrow suffix
+    // ('Sync Changes 1↓ 2↑'); r2 (cu-developer-two 23:50Z, cu-researcher 23:51Z): 'Commit & Sync', 'Synchronize Changes',
+    // 'Push and pull', 'Sync with remote'; r3 (cu-researcher 23:58Z): 'Sync to remote', 'Pull and push', 'Commit, Push'. A bare 'Sync', 'Settings Sync' or 'Synchronize panels' stays as it was.
+    if (grammarEligible && !classes.includes('submit') && /^\s*(?:commit\s*(?:&|and|,)\s*(?:sync|push)|push\s*(?:&|and|,)\s*pull|pull\s*(?:&|and|,)\s*push|sync(?:hroni[sz]e)?\s+(?:changes|commits?|branch|repository|repo|(?:with|to)\s+(?:the\s+)?(?:remote|origin|upstream)))(?:\s+[\d\s↑↓]+)?\s*$/iu.test(name)) classes.push('submit')
     // CU-413: money moved out to a bank or card, as 'Withdraw to bank' already asks - send / transfer / move / pay out / cash out
     // (an optional amount or money noun) to (my / the) bank, bank account, checking, savings or debit card.
     if (grammarEligible && !classes.includes('purchase') && /^\s*(?:send|transfer|move|pay\s*out|cash\s*out|withdraw)\s+(?:(?:money|funds|cash|balance|earnings|payout|it|[$€£]?\s*[\d.,]+(?:\s*(?:usd|eur|gbp|dollars?|euros?))?)\s+)?(?:to|into)\s+(?:my\s+|your\s+|the\s+|a\s+)?(?:bank(?:\s+account)?|checking(?:\s+account)?|savings(?:\s+account)?|debit\s+card|current\s+account)\b/i.test(name)) classes.push('purchase')
