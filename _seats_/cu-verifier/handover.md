@@ -1,9 +1,9 @@
 ---
 title: '[cu] Verifier - Handover'
 created: 2026-11-08T04:15:13Z
-modified: 2026-11-17T02:53:00Z
+modified: 2026-11-17T03:09:00Z
 level: L2
-version: 5.2.0
+version: 5.2.1
 description: 'What a fresh session of [cu] Verifier needs - where things are, the pass, the tools, the open rows and the lessons, in under 300 words.'
 status: unverified
 grounded_in:
@@ -28,7 +28,7 @@ Start here, then [responsibilities](responsibilities.md) and the [verdict](ultim
   run ids from the logs by script, plus a mutant.
 - **Desktop rows:** in cu-developer-three's holds; I judge from events.jsonl.
 - **Open:** the CU-586 after-row on 0.2.71 and the CU-588 close row on 0.2.72; CU-375 closes with #856's switch
-  rows; CU-364 (High) closes by keyprobe on #946's merge plus cu-developer-three's live save-sheet row. The consent row
+  rows; CU-596 (a sentinel-test flake) awaits a reproduction under load. The consent row
   waits on CU-135 step 4 (owner).
 - **Lessons:** read the Verify state itself; state no OK count I have not read on the PR thread; one browser per seat;
   no browser row once a GATE START is out (a missed before-row runs on the pre-merge commit after the merge); a mutant
