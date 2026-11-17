@@ -668,8 +668,10 @@ const LETTER_BOUNDED = /[\u00c0-\u024f\u0400-\u04ff]/
 // 'silin', 'silinsin', 'silinecek'; 'gönder^' reads 'gönderin'). A bounded set, after normaliseName's folding (ı reads as i),
 // so 'Şifreleme' (encryption), 'Silinenler' (the Deleted folder), 'Silindir' and 'Silgi' stay free. r4 (cu-developer-three).
 const TR_NOUN_SUFFIX = '(?:(?:[iuü]?m|[iuü]?n|s?[iuü]|[iuü]?m[iuü]z|[iuü]?n[iuü]z|l[ae]ri?)?(?:y?[iuü]|n[iuü]|y?[ae]|n[ae]|[dt][ae]n?|n?[iuü]n)?)'
-// CU-591 (cu-researcher): the future takes the copula -tIr as written in notices and confirmations ('silinecektir').
-const TR_VERB_SUFFIX = '(?:(?:y?[iuü]n)?(?:s[iuü]n|[iuü]z|y?[ae]c[ae]k(?:t[iuü]r)?)?)'
+// CU-591 (cu-researcher): the future takes the copula -tIr as written in notices and confirmations ('silinecektir'); r2
+// (cu-developer-three, cu-developer-two): and the plural -lAr before or after it ('silinecekler', 'silinecektirler'), and the
+// passive is -Il as well as -(y)In ('kaldırılacak', 'kaldırılacaktır', 'kaldırılsın').
+const TR_VERB_SUFFIX = '(?:(?:y?[iuü]n|[iuü]l)?(?:s[iuü]n|[iuü]z|y?[ae]c[ae]k(?:l[ae]r)?(?:t[iuü]r)?(?:l[ae]r)?)?)'
 const turkishPattern = (word) => normaliseName(normaliseText(word)).split(/([~^])/).map((part) => part === '~' ? TR_NOUN_SUFFIX
   : part === '^' ? TR_VERB_SUFFIX : escapeRegExp(part).replace(/ /g, '[\\s-]+')).join('')
 // CU-358 r5 (cu-developer-one): ' _ ' in an Italian, Portuguese or Dutch entry is an optional article slot ('conferma _
