@@ -2631,6 +2631,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (grammarEligible && !classes.includes('delete') && (/^\s*(?:annuler|annulez|annule|résilier|résiliez|résilie)\s+(?:l['’]\s*|mon\s+|votre\s+|ton\s+)abonnement\s*[.!]?\s*$/iu.test(name)
       || /^\s*(?:(?:kündige|kündigen\s+sie)\s+(?:(?:dein|ihr|das)\s+)?(?:abo|abonnement)|(?:(?:dein|ihr|das|mein)\s+)?(?:abo|abonnement)\s+kündigen)\s*[.!]?\s*$/iu.test(name))) classes.push('delete')
     if (grammarEligible && !classes.includes('purchase') && (/^\s*(?:(?:mettre|mettez|mets)\s+fin\s+(?:à|a)\s+|terminer\s+|terminez\s+|termine\s+)(?:l['’]\s*|mon\s+|votre\s+|ton\s+)(?:abonnement|adhésion|forfait)\s*[.!]?\s*$/iu.test(name)
+      || /^\s*(?:(?:mettre|mettez|mets)\s+fin\s+au\s+|(?:terminer|terminez|termine|annuler|annulez|annule|résilier|résiliez|résilie)\s+le\s+)forfait\s*[.!]?\s*$/iu.test(name)
       || /^\s*(?:annuler|annulez|annule|résilier|résiliez|résilie)\s+(?:l['’]\s*|mon\s+|votre\s+|ton\s+)(?:adhésion|forfait)\s*[.!]?\s*$/iu.test(name)
       || /^\s*(?:(?:beende|beenden\s+sie)\s+(?:(?:dein|ihr|das)\s+)?(?:abo|abonnement)|(?:(?:dein|ihr|das|mein)\s+)?(?:abo|abonnement)\s+beenden)\s*[.!]?\s*$/iu.test(name)
       || /^\s*(?:kündige|kündigen\s+sie|beende|beenden\s+sie)\s+(?:(?:deine|ihre|die|deinen|ihren|den)\s+)?(?:mitgliedschaft|tarif)\s*[.!]?\s*$/iu.test(name)
