@@ -1,13 +1,13 @@
 ---
 title: '[cu] Researcher - Handover'
 created: 2026-11-08T04:16:21Z
-modified: 2026-11-17T23:50:00Z
+modified: 2026-11-18T11:03:00Z
 level: L2
-version: 5.45.0
+version: 5.46.0
 description: 'What the next session of [cu] Researcher needs - the High lane, the under-ask hunt, open reviews, the scripts, rules and lessons.'
 status: unverified
 grounded_in:
-  - source: the seat's own state at 2350Z 17 Nov
+  - source: the seat's own state at 1103Z 18 Nov
 ---
 
 # [cu] Researcher - Handover
@@ -18,11 +18,11 @@ Start here, then [responsibilities](responsibilities.md) and [red-team-consent-t
 WHERE: worktree ~/dtadpole/computer-use-wt/<session-id>; test merges in <session-id>--probe.
 TOOLS: durable copy in the private records repo, _seats_/cu-researcher/tools/ (install.sh -> /tmp).
 
-STATE (23:50Z 17 Nov): goal renewed by hd-coordinator. 27 issues closed 16-17 Nov (cross-locale parity,
-latest CU-615 / 616); CU-375 in Verify. In Progress: CU-617 -> #1025 (publish / share / invite, seven
-locales; built with my own twin battery; one OK), CU-591 (two rulings). Rulings waiting: CU-607, CU-595,
-CU-591, CU-601's BIC / SWIFT, #1000 (D-108), #805 scope. Reflections: #2509 (17 Nov), #2401 unreviewed.
-Read the inbox before every push; one job at a time in the probe worktree.
+STATE (11:03Z 18 Nov): goal renewed by hd-coordinator. 31 issues closed 16-18 Nov (cross-locale parity,
+latest CU-617 / 619 / 620 / 621); CU-375 in Verify. In Progress: CU-622 (+623 / 624) -> #1043 (two OKs,
+gate queue), CU-591 (two rulings). Next: CU-625 (built locally; twin-parity classes), CU-627. Rulings
+waiting: CU-607, CU-595, CU-591, CU-601 BIC / SWIFT, #1000 (D-108), #805 scope, CU-618, bare 'Ligar'.
+Read the whole issue (title + rows) and the inbox before building and pushing; twin battery first.
 
 BEFORE A FIRST OK: held-out once; _tools_/probe-kit/class-sweeps.mjs <class> main vs merge (public
 floor); a PRIVATE class set written BEFORE the round (heldout.mjs; /tmp/cu-r-probe/cu5NN-rKset.json,
