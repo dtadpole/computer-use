@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-18T15:45:00Z
+modified: 2026-11-18T16:35:00Z
 level: L1
-version: 3.53.0
+version: 3.54.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,19 +15,19 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; no desktop runs. State at 15:45Z, 18 November.
+session worktree plus `--review` worktrees; no desktop runs. State at 16:35Z, 18 November.
 
 ## Landed
 
 - CU-483..561 (#633..#833), CU-462, CU-429; closed 16-17 Nov:
   CU-385 (#910/#919/#925), CU-413 (#934), CU-403 (#935, #940), CU-432 (#938), CU-364 (#946), CU-399 (#948); design 0.4.x (#957-#994).
-  My owner OKs, landed: cu-researcher's locale PRs CU-604..606/608/610/611/613/615..617/619..624 (#985..#1043).
+  My owner OKs, landed: cu-researcher's locale PRs CU-604..606/608/610/611/613/615..617/619..625 (#985..#1048).
 
 ## In progress
 
 - CU-609 (#1000): transfer pages stop asking purchase; two OKs; held for D-108 rule-1.
   Next: CU-612 (newsletter over-ask), held likewise. cu-researcher builds locale gaps on my go
-  (CU-625 #1048: r4 pending).
+  (CU-628: go given 16:05Z).
 
 ## Open (built before triage; cu-coordinator rules priority)
 
