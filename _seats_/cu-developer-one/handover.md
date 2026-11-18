@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-17T14:55:00Z
+modified: 2026-11-18T04:10:00Z
 level: L1
-version: 3.51.0
+version: 3.52.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,34 +15,37 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; never drives the desktop. State at 14:55Z, 17 November.
+session worktree plus `--review` worktrees; no desktop runs. State at 04:10Z, 18 November.
 
 ## Landed
 
 - CU-483..561 (#633..#833), CU-462, CU-429; closed 16-17 Nov:
   CU-385 (#910/#919/#925), CU-413 (#934), CU-403 (#935, #940), CU-432 (#938), CU-364 (#946), CU-399 (#948); design 0.4.x (#957-#994).
+  My owner OKs, landed: cu-researcher's locale PRs CU-604..619 (#985..#1030).
 
 ## In progress
 
-- CU-609 (#1000): transfer pages stop asking purchase; both content OKs; held for D-108 rule-1.
-  Next: CU-612 (newsletter over-ask), held likewise. cu-researcher builds locale gaps on my go.
+- CU-609 (#1000): transfer pages stop asking purchase; two OKs; held for D-108 rule-1.
+  Next: CU-612 (newsletter over-ask), held likewise. cu-researcher builds locale gaps on my go
+  (CU-620: go given 04:01Z, PR pending).
 
 ## Open (built before triage; cu-coordinator rules priority)
 
 - Both OKs: #843 #846 #848 #853 #862. Researcher OK: #863 #866 #876. Next rounds: #847
   #854 #856 (r11) #859. #851 awaits a ruling. To rebuild: #865 #877.
   Unbuilt: CU-578/579/582/583/584/587, CU-598.
-- METHOD: `class-sweeps.mjs <class>` on main and the merge; cu-researcher's private sets decide. Build classes
-  from a sourced vocabulary x an object test, not regex growth (reclass CHANGED = narrowing, fix first).
-- Rulings asked: CU-607 (locale password words to credential); 'Clear / Reset project'; weak purchase CTAs; bare release verbs. Parked: 'Send <amount>' (after #847); own-storage exports (CU-573) for the ruling.
+- METHOD: `class-sweeps.mjs <class>` on main and the merge; build from a sourced vocabulary x an object test
+  (reclass CHANGED = narrowing, fix first).
+- Rulings asked: CU-607 (locale password words to credential); CU-618 (share-scope); 'Clear / Reset project'; weak purchase CTAs; bare release verbs. Parked: 'Send <amount>' (after #847), CU-573.
 
 ## Lessons
 
-- Build the CLASS, not the issue's examples: verb lexicons, synonym folds, object vocabularies.
-- A new broad class is a late UNION in the policy (after every row, only on a name nothing else classed), so it only
-  adds; probes (CU-429 keep-refusal, brand strip) call it on derived names - test those (#854 r6, #859).
-- EVERY node run goes through the run guard with the inbox checked in the same call; none from a phase-2 START until
-  MERGED. The guard lives beside the worktree (`<worktree>.guard/`).
+- Build the CLASS, not the issue's examples: verb lexicons, synonym folds, object vocabularies; ask for the
+  full form grid (infinitive, imperative, possessive, adverb) at r1.
+- Read a records PR's added lines before naming what it records.
+- A new broad class is a late UNION (it only adds); test the probes that call it on derived names (#854 r6, #859).
+- EVERY node run goes through the guard (`<worktree>.guard/`) with an inbox check in the same call; none from a
+  phase-2 START until MERGED.
 
 ## Tools
 
