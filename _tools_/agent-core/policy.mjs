@@ -81,7 +81,7 @@ const ZH_WORDS = Object.freeze({
   submit: [
     // CU-628 (cu-researcher): unsubscribing from mail, as English 'Unsubscribe' asks submit (a bare 退订 is a whole-label rule below,
     // so 退订须知 / 退订政策 pages stay free).
-    '取消关注邮件', '退订邮件', '退訂郵件', '退订短信', '退訂簡訊',
+    '取消关注邮件', '退订邮件', '退訂郵件', '退订短信', '退訂簡訊', '我要退订', '我要退訂',
     '发送', '發送', '傳送', '发布', '發佈', '發布', '提交', '注册', '註冊', '送出', '发表', '發表', '加入会议', '加入會議', '加入通话',
     '视频通话', '視訊通話', '语音通话', '語音通話', '开始会议', '開始會議', '接受邀请', '接受邀請', '拒绝邀请', '拒絕邀請',
     '部署', '退出群聊', '退出群組', '取消会议', '取消會議', '举报', '檢舉', '申请加入', '申請加入', '报税', '報稅',
@@ -257,9 +257,16 @@ const LOCALE_WORDS = Object.freeze({
     'quitter ce groupe', 'quittez ce groupe', 'quitter cette conversation', 'diese gruppe verlassen', 'verlasse diese gruppe', 'salir de este grupo', 'sal de este grupo', 'sair deste grupo', 'saia deste grupo',
     'esci da questo gruppo', 'abbandona questo gruppo', 'deze groep verlaten', 'verlaat deze groep',
     'lascia il gruppo', 'lascia _ gruppo', 'lasciare il gruppo', 'lascia questo gruppo', 'deixar o grupo', 'deixar _ grupo', 'deixe o grupo', 'deixar este grupo',
+    // CU-627 (cu-developer-two): the possessive determiners of leave-group in every language ('Quitter votre groupe').
+    'quitter votre groupe', 'quittez votre groupe', 'quitter ton groupe', 'quitter mon groupe', 'deine gruppe verlassen', 'ihre gruppe verlassen', 'verlasse deine gruppe', 'verlassen sie ihre gruppe',
+    'salir de tu grupo', 'salir de su grupo', 'salga de su grupo', 'sair do seu grupo', 'sair do teu grupo', 'saia do seu grupo', 'esci dal tuo gruppo', 'abbandona il tuo gruppo', 'jouw groep verlaten', 'je groep verlaten', 'verlaat je groep', 'verlaat uw groep', 'grubu~ çık^', 'grubu~ ayrıl^', 'grubun~ çık^', 'grubun~ ayrıl^',
     'abbestellen', 'newsletter abbestellen', 'vom newsletter abmelden', 'se désabonner', 'désabonner', 'désabonnez-vous', 'se désinscrire', 'désinscrivez-vous',
     'darse de baja', 'date de baja', 'dese de baja', 'descadastrar', 'cancelar inscrição', 'descadastre-se', 'annulla iscrizione', 'disiscriviti', 'cancella iscrizione',
-    'uitschrijven', 'schrijf je uit', 'schrijf u uit', 'afmelden voor de nieuwsbrief', 'afmelden voor nieuwsbrief', 'afmelden voor _ nieuwsbrief', 'afmelden voor deze nieuwsbrief', 'afmelden voor onze nieuwsbrief', 'meld je af voor deze nieuwsbrief', 'afmelden voor onze e-mails', 'afmelden voor deze e-mails', 'afmelden voor _ e-mails', 'meld je af voor de nieuwsbrief', 'afmelden voor e-mails', 'abonelik~ çık^', 'bülten~ çık^',
+    'uitschrijven', 'schrijf je uit', 'schrijf u uit', 'afmelden voor de nieuwsbrief', 'afmelden voor nieuwsbrief', 'afmelden voor _ nieuwsbrief', 'afmelden voor deze nieuwsbrief', 'afmelden voor onze nieuwsbrief', 'meld je af voor deze nieuwsbrief', 'afmelden voor onze e-mails', 'afmelden voor deze e-mails', 'afmelden voor _ e-mails',
+    // CU-627 (cu-developer-two): the imperative 'meld je / u af voor' with any determiner, and the other languages' e-mail opt-outs.
+    'meld je af voor onze e-mails', 'meld je af voor deze e-mails', 'meld u af voor onze e-mails', 'meld je af voor e-mails', 'meld u af voor de nieuwsbrief', 'meld je af voor onze nieuwsbrief',
+    'von e-mails abmelden', 'von unseren e-mails abmelden', 'e-mails abbestellen', 'se désabonner des e-mails', 'se désinscrire des e-mails', 'darse de baja de los correos', 'darse de baja de nuestros correos',
+    'cancelar inscrição nos e-mails', 'descadastrar e-mails', 'disiscriviti dalle e-mail', 'annulla iscrizione alle e-mail', 'e-posta~ abonelik~ çık^', 'e-postalar~ çık^', 'meld je af voor de nieuwsbrief', 'afmelden voor e-mails', 'abonelik~ çık^', 'bülten~ çık^',
     // r1 grid (cu-developer-one's go): imperative and formal forms in each language; German / Dutch separable forms below.
     'rejoignez _ réunion', 'rejoignez maintenant', 'rejoignez _ appel', 'appelle', 'únase a la reunión', 'únete ahora', 'únase ahora', 'llame', 'llame ahora', 'llámanos', 'inicie _ llamada',
     'ligue para', 'ligue agora', 'entre na reunião', 'participe da reunião', 'inicie _ chamada', 'chiami', 'chiamaci', 'partecipi alla riunione', 'partecipa adesso', 'avvii _ chiamata',
