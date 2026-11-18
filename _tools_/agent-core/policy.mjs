@@ -196,7 +196,16 @@ const LOCALE_WORDS = Object.freeze({
     'invia', 'invia ora', 'verzenden', 'versturen', 'verstuur', 'indienen', 'submeter', 'gönder^', 'şimdi gönder^',
     // CU-617 (cu-researcher): publish / post, as English 'Publish' / 'Post' ask submit; infinitive, imperative and formal forms.
     'veröffentlichen', 'veröffentliche', 'posten', 'poste', 'beitrag veröffentlichen', 'publier', 'publiez', 'publie', 'poster', 'publicar', 'publica', 'publique', 'postear', 'postar', 'poste agora',
-    'pubblica', 'pubblicare', 'pubblicate', 'publiceren', 'publiceer', 'nu plaatsen', 'bericht plaatsen', 'yayınla^', 'gönderi~ paylaş^'],
+    'pubblica', 'pubblicare', 'pubblicate', 'publiceren', 'publiceer', 'nu plaatsen', 'bericht plaatsen', 'yayınla^', 'gönderi~ paylaş^',
+    // CU-619 (cu-researcher): calls and meeting joins, as English 'Call' / 'Video call' / 'Start call' / 'Join meeting' ask submit.
+    // Turkish 'Ara' (also 'search') and Portuguese 'Ligar' (also 'switch on') only with a call noun or object, never bare.
+    'anrufen', 'jetzt anrufen', 'videoanruf', 'videoanruf starten', 'anruf starten', 'meeting beitreten', 'besprechung beitreten', 'konferenz beitreten', 'jetzt beitreten',
+    'appeler', 'appelez', 'appel vidéo', 'appel audio', 'démarrer _ appel', 'lancer _ appel', 'rejoindre _ réunion', 'rejoindre maintenant', 'rejoindre _ appel',
+    'llamar', 'llama', 'videollamada', 'iniciar _ llamada', 'iniciar videollamada', 'unirse a la reunión', 'unirse ahora', 'únete a la reunión', 'unirse a la llamada',
+    'chamada de vídeo', 'iniciar _ chamada', 'fazer _ chamada', 'ligar para', 'ligar agora', 'entrar na reunião', 'participar da reunião', 'entrar na chamada',
+    'chiama', 'chiamare', 'videochiamata', 'avvia _ chiamata', 'avvia videochiamata', 'partecipa alla riunione', 'partecipa ora', 'partecipa alla chiamata',
+    'bellen', 'nu bellen', 'videogesprek', 'gesprek starten', 'videogesprek starten', 'deelnemen aan vergadering', 'deelnemen aan de vergadering', 'nu deelnemen',
+    'görüntülü arama', 'sesli arama', 'arama~ başlat^', 'görüntülü ara^', 'sesli ara^', 'toplantı~ katıl^', 'şimdi katıl^'],
   // CU-616 (cu-researcher): sharing a (live) location and granting access, in the seven locales, as English 'Share my location' /
   // 'Share live location' / 'Grant access' / 'Give access' ask permission.
   permission: ['standort teilen', 'live-standort teilen', 'meinen standort teilen', 'standortfreigabe aktivieren', 'zugriff gewähren', 'zugriff erlauben', 'zugang gewähren',
