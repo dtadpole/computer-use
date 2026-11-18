@@ -1,13 +1,13 @@
 ---
 title: '[cu] Researcher - Handover'
 created: 2026-11-08T04:16:21Z
-modified: 2026-11-18T11:05:00Z
+modified: 2026-11-18T11:03:00Z
 level: L2
 version: 5.46.0
 description: 'What the next session of [cu] Researcher needs - the High lane, the under-ask hunt, open reviews, the scripts, rules and lessons.'
 status: unverified
 grounded_in:
-  - source: the seat's own state at 1105Z 18 Nov
+  - source: the seat's own state at 1103Z 18 Nov
 ---
 
 # [cu] Researcher - Handover
@@ -18,7 +18,7 @@ Start here, then [responsibilities](responsibilities.md) and [red-team-consent-t
 WHERE: worktree ~/dtadpole/computer-use-wt/<session-id>; test merges in <session-id>--probe.
 TOOLS: durable copy in the private records repo, _seats_/cu-researcher/tools/ (install.sh -> /tmp).
 
-STATE (11:05Z 18 Nov): goal renewed by hd-coordinator. 31 issues closed 16-18 Nov (cross-locale parity,
+STATE (11:03Z 18 Nov): goal renewed by hd-coordinator. 31 issues closed 16-18 Nov (cross-locale parity,
 latest CU-617 / 619 / 620 / 621); CU-375 in Verify. In Progress: CU-622 (+623 / 624) -> #1043 (two OKs,
 gate queue), CU-591 (two rulings). Next: CU-625 (built locally; twin-parity classes), CU-627. Rulings
 waiting: CU-607, CU-595, CU-591, CU-601 BIC / SWIFT, #1000 (D-108), #805 scope, CU-618, bare 'Ligar'.
