@@ -58,7 +58,7 @@ const GENERIC_SUBMIT = /^\s*(?:submit|send|send\s+(?:message|reply|email|comment
 const ZH_WORDS = Object.freeze({
   purchase: [
     // CU-625 r2 (cu-developer-one's twin rule): cancelling or ending a membership / plan, as English 'Cancel membership' asks.
-    '取消会员', '取消會員', '取消会员资格', '取消會員資格', '取消套餐', '终止会员', '終止會員', '退出会员', '退出會員', '退订会员', '退訂會員', '退订套餐',
+    '取消会员', '取消會員', '取消会员资格', '取消會員資格', '取消套餐', '终止会员', '終止會員', '退出会员', '退出會員', '退订会员', '退訂會員', '退订套餐', '退订服务', '退訂服務',
     '购买', '購買', '支付', '付款', '结账', '結帳', '结算', '結算', '下单', '下單', '提交订单', '提交訂單', '订阅', '訂閱', '充值',
     '儲值', '转账', '轉帳', '汇款', '匯款', '捐款', '捐赠', '捐贈', '免费试用', '免費試用', '预订', '預訂', '续订', '續訂', '升级套餐', '升級方案',
     // CU-294 (cu-researcher's web sweep): renewals and memberships.
@@ -81,7 +81,7 @@ const ZH_WORDS = Object.freeze({
   submit: [
     // CU-628 (cu-researcher): unsubscribing from mail, as English 'Unsubscribe' asks submit (a bare 退订 is a whole-label rule below,
     // so 退订须知 / 退订政策 pages stay free).
-    '取消关注邮件', '退订邮件', '退訂郵件',
+    '取消关注邮件', '退订邮件', '退訂郵件', '退订短信', '退訂簡訊',
     '发送', '發送', '傳送', '发布', '發佈', '發布', '提交', '注册', '註冊', '送出', '发表', '發表', '加入会议', '加入會議', '加入通话',
     '视频通话', '視訊通話', '语音通话', '語音通話', '开始会议', '開始會議', '接受邀请', '接受邀請', '拒绝邀请', '拒絕邀請',
     '部署', '退出群聊', '退出群組', '取消会议', '取消會議', '举报', '檢舉', '申请加入', '申請加入', '报税', '報稅',
@@ -206,8 +206,9 @@ const LOCALE_WORDS = Object.freeze({
     'abo stoppen', 'abonnement stoppen', 'mitgliedschaft stoppen', 'stoppe dein abo', 'stoppen sie ihr abonnement', 'stoppen sie ihr abo',
     "arrêter l'abonnement", 'arrêter l’abonnement', 'arrêter mon abonnement', "arrêtez l'abonnement", 'arrêtez votre abonnement', "arrêter l'adhésion", 'arrêter mon adhésion',
     'detener _ suscripción', 'detener suscripción', 'parar _ suscripción', 'detén tu suscripción', 'detenga su suscripción', 'detener _ membresía',
-    'parar _ assinatura', 'parar assinatura', 'interromper _ assinatura', 'pare sua assinatura', 'interrompa sua assinatura',
-    'interrompi _ abbonamento', 'interrompere _ abbonamento', 'ferma _ abbonamento', 'interrompi il tuo abbonamento', 'sospendi il rinnovo',
+    'detener mi suscripción', 'detener mi membresía', 'parar mi suscripción', 'detener mi plan', 'detener el plan',
+    'parar _ assinatura', 'parar assinatura', 'interromper _ assinatura', 'pare sua assinatura', 'interrompa sua assinatura', 'parar plano', 'parar _ plano', 'interromper _ plano', 'pare seu plano',
+    'interrompi _ abbonamento', 'interrompere _ abbonamento', 'ferma _ abbonamento', 'interrompi il tuo abbonamento', 'sospendi il rinnovo', 'interrompi piano', 'interrompi _ piano', 'interrompere _ piano',
     'abonnement stoppen', 'lidmaatschap stoppen', 'stop je abonnement', 'stop uw abonnement', 'stop je lidmaatschap',
     'abonelik~ durdur^', 'aboneliğ~ durdur^', 'üyelik~ durdur^', 'üyeliğ~ durdur^',
     'abonelik~ sonlandır^', 'aboneliğ~ sonlandır^', 'üyelik~ sonlandır^', 'üyeliğ~ sonlandır^', 'abonelik~ bitir^', 'aboneliğ~ bitir^', 'üyelik~ bitir^', 'üyeliğ~ bitir^'],
@@ -412,7 +413,8 @@ const WORDS = Object.freeze({
     'terminate subscription', 'terminate my subscription', 'terminate membership', 'terminate my membership', 'terminate plan', 'terminate my plan',
     'stop subscription', 'stop my subscription', 'stop membership', 'stop my membership', 'stop my plan', 'stop plan',
     // r2 (cu-developer-one): stopping the auto-renewal ends the paid plan at term.
-    'stop auto-renew', 'stop auto-renewal', 'stop automatic renewal', 'stop autorenew',
+    'stop auto-renew', 'stop auto-renewal', 'stop automatic renewal', 'stop autorenew', 'turn off auto-renew', 'turn off auto-renewal', 'turn off automatic renewal',
+    'disable auto-renew', 'disable auto-renewal',
     // CU-400 (High; cu-coordinator 04:39Z): a trade, swap, stake or signature moves money and cannot be taken back.
     'confirm transaction', 'sign transaction', 'sign message', 'swap', 'stake', 'trade', 'sell now', 'confirm swap', 'confirm trade', 'confirm sale',
     // cu-coordinator 04:44Z (cu-verifier's stand-in: 'Bridge' acted unasked): a bridge moves tokens between chains.
@@ -2644,7 +2646,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // a profile switch and stays free).
     if (grammarEligible && !classes.includes('purchase') && /^\s*(?:switch|change|move|upgrade|go)\s+to\s+(?:the\s+|a\s+)?(?:(?:pro|premium|plus|paid|annual|yearly|family)(?:\s+(?:plan|version|tier|edition|subscription|membership))?|(?:business|team|enterprise)\s+(?:plan|tier|subscription))\s*[.!]?\s*$/i.test(name)) classes.push('purchase')
     // CU-628 r2 (cu-developer-one): a bare 退订 / 退訂 (or with 全部 / 所有) is an unsubscribe and asks submit; 退订须知 / 退订政策 stay free.
-    if (grammarEligible && !classes.includes('submit') && /^\s*(?:退订|退訂)(?:全部|所有)?\s*$/u.test(name)) classes.push('submit')
+    if (grammarEligible && !classes.includes('submit') && /^\s*(?:立即|马上|現在|现在|一键|一鍵)?(?:退订|退訂)(?:全部|所有)?\s*$/u.test(name)) classes.push('submit')
     // CU-625 r3 (cu-developer-two): the French and German cancel / end families as whole-label rules, each form in its English
     // twin's class - cancel + subscription -> delete; end + subscription, and any verb + membership / plan -> purchase.
     if (grammarEligible && !classes.includes('delete') && (/^\s*(?:annuler|annulez|annule|résilier|résiliez|résilie)\s+(?:l['’]\s*|mon\s+|votre\s+|ton\s+)abonnement\s*[.!]?\s*$/iu.test(name)

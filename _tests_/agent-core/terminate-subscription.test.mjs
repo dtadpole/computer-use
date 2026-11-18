@@ -11,11 +11,12 @@ const click = (name) => { const r = policy.classify({ type: 'click', x: 1, y: 1,
 test('CU-628: terminate / stop subscription, membership or plan asks purchase', () => {
   for (const name of ['Terminate subscription', 'Terminate my subscription', 'Terminate membership', 'Terminate my plan', 'Stop subscription', 'Stop my subscription', 'Stop membership', 'Stop plan', 'Stop auto-renew', 'Stop auto-renewal',
     'Abo stoppen', 'Stoppen Sie Ihr Abonnement', "Arrêter l'abonnement", 'Arrêtez votre abonnement', 'Detener la suscripción', 'Detenga su suscripción', 'Parar a assinatura', 'Interromper a assinatura',
-    "Interrompi l'abbonamento", 'Interrompi il tuo abbonamento', 'Abonnement stoppen', 'Stop je abonnement', 'Lidmaatschap stoppen', 'Aboneliği durdur', 'Üyeliği durdur', '退订会员']) assert.ok(click(name).includes('purchase'), name)
+    "Interrompi l'abbonamento", 'Interrompi il tuo abbonamento', 'Abonnement stoppen', 'Stop je abonnement', 'Lidmaatschap stoppen', 'Aboneliği durdur', 'Üyeliği durdur', '退订会员',
+    'Detener mi suscripción', 'Detener mi membresía', 'Parar o plano', 'Parar plano', 'Interrompi il piano', 'Interrompi piano', 'Turn off auto-renewal', '退订服务']) assert.ok(click(name).includes('purchase'), name)
 })
 
 test('CU-628: Chinese 退订 asks submit', () => {
-  for (const name of ['退订', '退訂', '退订邮件', '退订全部']) assert.ok(click(name).includes('submit'), name)
+  for (const name of ['退订', '退訂', '退订邮件', '退订全部', '退订短信', '立即退订', '一键退订']) assert.ok(click(name).includes('submit'), name)
   assert.ok(!click('退订会员').includes('submit'), '退订会员 is purchase, not submit')
 })
 
