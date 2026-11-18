@@ -1,14 +1,14 @@
 ---
 title: '[cu] Developer Three (macOS helper) - handover'
 created: 2026-11-08T04:20:00Z
-modified: 2026-11-16T22:55:00Z
+modified: 2026-11-17T22:43:00Z
 level: L1
-version: 1.19.0
+version: 1.22.0
 description: 'What a fresh [cu] Developer Three session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
-  - source: hd-coordinator's goal renewal of 2026-11-16 05:10 PST (Linear items by priority, CUHelper correct, land through cu-integrator)
-  - source: PRs #889, #895 (CU-586 / CU-588); cu-researcher's #895 scope note 17:47Z; #924 (CU-394) and the helper floor mirror
+  - source: hd-coordinator's goal renewal of 2026-11-17 10:34 PST (Linear items by priority, CUHelper correct, land through cu-integrator)
+  - source: PRs #889, #895, #930 (CU-586 / CU-588 / CU-394); Linear CU-596 (run-lock sentinel flake), CU-614 (helper test build time)
 ---
 
 # [cu] Developer Three (macOS helper) - handover
@@ -18,31 +18,29 @@ Seat `cu-developer-three`. Edits and CUHelper launches run from the session work
 ## Live state
 
 - Installed helper: 0.2.70, signature valid, the same as main's source.
-- Hold wrapper: `heldrow.sh` with ROW= and PURPOSE=.
-- Row scripts: `row586.mjs` and `row588.mjs`.
+- Hold wrapper: `heldrow.sh` with ROW= and PURPOSE=; row scripts `row586.mjs` and `row588.mjs`.
 - Probes and held-out sets live in a git-excluded `.cu3-tools/` folder.
 
 ## Helper stack
 
-Each PR in the stack lands after the one before it:
+All three wait on cu-coordinator; each lands after the one before it:
 
-1. **#889** (0.2.71, CU-586): one OK. It removes an over-ask, so it waits for cu-coordinator's D-108 ruling.
-2. **#895** (0.2.72, CU-588): both OKs at r2 aef378f5. A window's form entries now come only from the button's own group. Its ask needs #894.
-3. **#930** (0.2.73, Part of CU-394): mirrors #924's 26 remote_control ids into `Exclusions.builtIn`, identical to main after #924's merge. It needs OKs.
+1. **#889** (0.2.71, CU-586): one OK. It removes an over-ask, so it needs the D-108 rule-1 ruling (options sent 01:34Z; A recommended). #1000 (CU-609) waits for the same ruling.
+2. **#895** (0.2.72, CU-588): both OKs at r2 aef378f5. It follows #894, which is held with the CU-585 unit for triage.
+3. **#930** (0.2.73, Part of CU-394): three OKs at 9e7bba5d.
 
-**Close sequence:** install with READBACK under an idle-checked hold, then the after-rows.
+**Close sequence:** one install with READBACK under an idle-checked hold, then the after-rows and the post-install checks.
 
-**CU-589:** in Triage.
+## Other items
 
-## Duties
-
-- Write a fresh held-out before each round and measure it once.
-- Run a corpus diff on table PRs.
-- Live seconds through `_tools_/live-rows/sweep.mjs`.
+- **CU-614** (Triage): each install.sh test compiles from scratch. Four loaded helper steps took 252-262 s of the 300 s gate alarm. Preferred fix: a private (0700) content-addressed compile cache in build.sh, hash-checked before signing.
+- **CU-596**: the fix is local, fad64e0d (5 / 5 green). Push on cu-coordinator's word or a free WIP slot.
+- **CU-589**, **CU-592**: in Triage.
 
 ## Rules learned
 
-- Post PR comments with `--body-file`: inner quotes break `--body`.
-- Read PR comments as well as the inbox; red-team notes come there.
-- No bare issue ids in PR titles.
-- Announce lock-held test runs, and keep them clear of gate phase 2.
+- Post PR comments with `--body-file`; read PR comments as well as the inbox.
+- Keep lock-held runs clear of a gate's phase 2, including PHASE 2 WAITING.
+- A held-out spent on an interim head needs a fresh one.
+- A narrowing (asks that go free) needs cu-coordinator's rule-1 ruling; say so in the review.
+- When a held-out finds a twin, bar its whole family in that round, and check every word the bar names on the next head.

@@ -76,15 +76,6 @@ const ZH_WORDS = Object.freeze({
     // CU-294 (cu-researcher; Firefox's own 'Remember this decision' checkbox, mozilla-l10n).
     '记住此决定', '記住此決定'],
   submit: ['发送', '發送', '傳送', '发布', '發佈', '發布', '提交', '注册', '註冊', '送出', '发表', '發表', '加入会议', '加入會議', '加入通话',
-    // CU-421: running a script.
-    'run script', 'run the script',
-    // CU-422: civic, legal and employment acts in the owner's name.
-    'cast ballot', 'cast your ballot', 'cast vote', 'sign petition', 'sign the petition', 'quit job', 'quit my job', 'decline offer',
-    'accept offer', 'apply now', 'enroll now', 'submit vote',
-    // CU-430: accepting an airline's new itinerary or schedule change binds the trip.
-    'accept new itinerary', 'accept the new itinerary', 'accept schedule change', 'accept the schedule change', 'accept itinerary change',
-    // CU-428: listing or relisting an item and accepting a return bind a sale.
-    'list now', 'list it now', 'relist', 'relist item', 'accept return', 'accept the return',
     '视频通话', '視訊通話', '语音通话', '語音通話', '开始会议', '開始會議', '接受邀请', '接受邀請', '拒绝邀请', '拒絕邀請',
     '部署', '退出群聊', '退出群組', '取消会议', '取消會議', '举报', '檢舉', '申请加入', '申請加入', '报税', '報稅',
     // cu-researcher on #145: Reply (回复 / 回覆) - judged like English 'reply', by CU-157's text-entered rule.
@@ -117,6 +108,74 @@ const LOCALE_WORDS = Object.freeze({
     'geld overmaken', 'overmaken', 'geld overschrijven', 'overschrijven', 'geld sturen', 'geld versturen',
     'transferir dinheiro', 'enviar dinheiro', 'fazer _ transferência', 'transferir', 'enviar pix', 'fazer _ pix',
     'para gönder^', 'havale yap^', 'eft yap^', 'para transfer~ yap^', 'para transfer~',
+    // CU-608 (cu-researcher): bank-transfer confirmations in German, French, Spanish, Dutch and Turkish, as English
+    // 'Confirm transfer' / 'Transfer now' and the Italian / Portuguese ones above ask purchase; verb phrases only, so a
+    // 'Transferencias' or 'Virements' tab stays free.
+    'überweisen', 'jetzt überweisen', 'geld überweisen', 'überweisung bestätigen', 'überweisung ausführen', 'überweisung absenden', 'überweisung senden', 'geld senden',
+    'effectuer _ virement', 'confirmer _ virement', 'valider _ virement', 'faire _ virement', "envoyer de l'argent", 'envoyer de l’argent', "transférer de l'argent", 'transférer de l’argent',
+    'realizar _ transferencia', 'confirmar _ transferencia', 'hacer _ transferencia', 'enviar _ transferencia', 'enviar dinero', 'transferir dinero',
+    'overboeking bevestigen', 'bevestig _ overboeking', 'overboeking uitvoeren', 'overboeking versturen',
+    'transfer~ onayla^', 'havale~ onayla^', 'eft~ onayla^', 'havale~ gönder^',
+    // CU-610 (cu-researcher): subscribe / upgrade / start-trial buttons in the seven locales, as English 'Subscribe now' /
+    // 'Upgrade to Pro' / 'Start free trial' ask purchase. Portuguese 'assinar' alone is 'sign', so only its plan forms.
+    'abonnieren', 'jetzt abonnieren', 'kostenpflichtig abonnieren', 'abo abschließen', 'abonnement abschließen', 'jetzt upgraden', 'auf premium upgraden', 'kostenlos testen', 'gratis testen', 'probeabo starten',
+    "s'abonner", 's’abonner', 'abonnez-vous', 'souscrire', 'souscrire _ abonnement', 'passer à premium', 'passer à pro', 'passer à la version premium', "commencer l'essai gratuit", 'commencer l’essai gratuit', 'essayer gratuitement',
+    'suscribirse', 'suscríbete', 'suscribirme', 'suscríbete ahora', 'mejorar a pro', 'mejorar a premium', 'pasar a premium', 'hazte premium', 'iniciar _ prueba gratuita', 'prueba gratis',
+    'assinar agora', 'assine agora', 'assine já', 'assinar _ plano', 'fazer _ assinatura', 'fazer upgrade', 'mudar para premium', 'iniciar _ teste grátis', 'experimente grátis',
+    'abbonati', 'abbonati ora', 'abbonarsi', 'sottoscrivi', 'sottoscrivi _ abbonamento', 'passa a premium', 'passa a pro', 'inizia _ prova gratuita', 'prova gratis',
+    'abonneren', 'nu abonneren', 'abonnement afsluiten', 'upgraden naar pro', 'upgraden naar premium', 'gratis proberen', 'proefperiode starten',
+    'abone ol^', 'abonelik~ başlat^', 'aboneliğ~ başlat^', 'premium~ geç^', "premium'a geç^", 'premium’a geç^', "pro'ya geç^", 'pro’ya geç^', 'ücretsiz dene^',
+    // r2 (cu-developer-two / -three): 'auf <plan> upgraden', the Turkish upgrade verb 'yükselt', and 'start the free trial'.
+    'auf pro upgraden', 'auf plus upgraden', 'upgrade auf pro', 'upgrade auf premium', "premium'a yükselt^", 'premium’a yükselt^', "pro'ya yükselt^", 'pro’ya yükselt^',
+    'premium~ yükselt^', 'plan~ yükselt^', 'ücretsiz deneme~ başlat^',
+    // r3 (cu-developer-three): 'upgrade your account / package / membership', as English 'Upgrade your account' asks; a bare
+    // 'yükselt' stays out ('Sesi yükselt' raises the volume).
+    'hesab~ yükselt^', 'hesap~ yükselt^', 'paket~ yükselt^', 'üyelik~ yükselt^', 'üyeliğ~ yükselt^',
+    // r4 (cu-developer-two): the same 'upgrade <account / membership / plan / package>' family in the other six languages, as
+    // English 'Upgrade account / membership' asks. 'Actualizar / Atualizar / Aggiorna' + account also mean 'update the details',
+    // so those verbs take only a plan or subscription object.
+    'konto upgraden', 'mitgliedschaft upgraden', 'paket upgraden', 'tarif upgraden', 'abo upgraden', 'plan upgraden', 'upgrade durchführen',
+    'mettre à niveau', "passer à l'offre supérieure", 'passer à l’offre supérieure',
+    'mejorar mi cuenta', 'mejorar _ cuenta', 'mejorar mi plan', 'mejorar _ plan', 'mejorar mi suscripción', 'mejorar _ suscripción', 'actualizar mi plan', 'actualizar _ plan', 'actualizar _ suscripción', 'mejorar el plan', 'actualizar el plan', 'mejorar tu cuenta', 'mejorar tu plan',
+    'atualizar _ plano', 'melhorar _ plano', 'atualizar _ assinatura', 'melhorar _ conta',
+    'aggiorna _ piano', 'aggiorna _ abbonamento', 'potenzia _ account', 'potenzia _ piano', 'passa al piano superiore',
+    'account upgraden', 'abonnement upgraden', 'pakket upgraden', 'lidmaatschap upgraden', 'upgrade je account', 'upgrade uw account', 'upgrade je abonnement',
+    // CU-613 (cu-researcher): start / begin a subscription, and 'switch to the <paid plan> version', as English 'Start
+    // subscription' asks; 'Passer à la version mobile' (a layout switch) stays free, so only paid plan names follow 'version'.
+    'abonnement starten', 'abo starten', 'abonnement beginnen', 'mitgliedschaft starten',
+    'passer à la version pro', 'passer à la version plus', 'passer à la version payante', 'passer à la version business', "commencer l'abonnement", 'commencer l’abonnement', 'démarrer _ abonnement', 'démarrer mon abonnement',
+    'empezar _ suscripción', 'empezar mi suscripción', 'iniciar _ suscripción', 'iniciar mi suscripción', 'comenzar _ suscripción', 'comenzar mi suscripción',
+    'iniciar _ assinatura', 'começar _ assinatura', 'ativar _ assinatura',
+    'avvia _ abbonamento', 'inizia _ abbonamento', 'attiva _ abbonamento',
+    'start _ abonnement', 'begin _ abonnement', 'start je abonnement',
+    // r2 (cu-developer-two): the whole family in one round - start a membership, and 'switch to the <paid plan> version' in
+    // every language (a layout switch, 'version mobile / classique', stays free).
+    'commencer mon abonnement', 'commencer _ abonnement', 'commencer _ adhésion', 'commencer mon adhésion',
+    'mitgliedschaft beginnen', 'zur pro-version wechseln', 'auf die pro-version wechseln', 'zur premium-version wechseln', 'zur bezahlversion wechseln',
+    'comenzar _ membresía', 'comenzar mi membresía', 'iniciar _ membresía', 'iniciar mi membresía', 'empezar _ membresía', 'empezar mi membresía', 'cambiar a la versión pro', 'pasar a la versión pro', 'cambiar a la versión premium', 'pasar a la versión premium',
+    'iniciar _ plano', 'mudar para a versão pro', 'passar para a versão pro', 'mudar para a versão premium', 'passar para a versão premium',
+    'passa alla versione pro', 'passa alla versione plus', 'passa alla versione premium', 'passa alla versione a pagamento', 'passare alla versione pro', 'passare alla versione premium',
+    'lidmaatschap starten', 'overstappen naar pro', 'overstappen naar premium', 'overstappen naar de betaalde versie',
+    // r3 (cu-developer-three): the short 'switch to <paid plan>' forms, without 'version'.
+    'zu pro wechseln', 'auf pro wechseln', 'zu premium wechseln', 'auf premium wechseln', 'zu plus wechseln', 'auf plus wechseln', 'zum pro-tarif wechseln', 'zum pro-plan wechseln',
+    'passer au forfait pro', 'passer au forfait premium', 'passer au plan pro', 'passer au plan premium', 'passer au premium', 'passer au pro',
+    'cambiar a pro', 'cambiar a premium', 'cambiar al plan pro', 'cambiar al plan premium', 'pasar a pro', 'pasar al plan pro',
+    'mudar para pro', 'mudar para premium', 'mudar para o plano pro', 'mudar para o plano premium', 'passar para pro', 'passar para o plano pro',
+    'passa al piano pro', 'passa al piano premium', 'passare a pro', 'passare a premium',
+    'overstappen op pro', 'overstappen op premium', 'wissel naar pro', 'overstappen naar het pro-abonnement',
+    // r4 (cu-developer-three's r1 row; cu-developer-two's r3 twins): the offer form, the 'votre / ton' and polite forms.
+    "passer à l'offre premium", 'passer à l’offre premium', "passer à l'offre pro", 'passer à l’offre pro', "passer à l'offre plus", 'passer à l’offre plus',
+    'commencer votre abonnement', 'démarrer votre abonnement', 'commencer ton abonnement', 'démarrer ton abonnement',
+    'wechseln sie zu pro', 'wechseln sie zu premium', 'wechseln sie zu plus', 'wechsle zu pro', 'wechsle zu premium',
+    'pro sürüm~ geç^', 'premium sürüm~ geç^',
+    // CU-615 (cu-researcher): the imperative / possessive twins named at #1007 r4 - 'Inicia tu suscripción', 'Premium plana geç',
+    // "Passez à l'offre Premium" - and their siblings.
+    'inicia _ suscripción', 'inicia tu suscripción', 'empieza _ suscripción', 'empieza tu suscripción', 'comienza _ suscripción', 'comienza tu suscripción', 'inicia tu membresía', 'empieza tu membresía',
+    'inicie _ assinatura', 'inicie sua assinatura', 'comece _ assinatura', 'comece sua assinatura', 'avvia il tuo abbonamento', 'inizia il tuo abbonamento',
+    // r2 (cu-developer-two): the German and Dutch imperative + possessive twins.
+    'starte dein abo', 'starte dein abonnement', 'starten sie ihr abo', 'starten sie ihr abonnement', 'beginne dein abo', 'beginnen sie ihr abonnement', 'start uw abonnement', 'begin je abonnement',
+    'premium plan~ geç^', 'pro plan~ geç^', 'premium paket~ geç^', 'pro paket~ geç^',
+    "passez à l'offre premium", 'passez à l’offre premium', "passez à l'offre pro", 'passez à l’offre pro', "passez à l'offre plus", 'passez à l’offre plus', 'passez à la version pro', 'passez à la version premium', 'passez à premium', 'passez au forfait pro', 'passez au forfait premium',
     // r3: Turkish stems take their suffixes ('~' noun, '^' verb - see namesWord).
     'ödeme~ onayla^', 'satın alma~ onayla^', 'ödeme~ tamamla^', 'ödeme~ yap^', 'sipariş~ ver^', 'sipariş~ tamamla^', 'sipariş~ onayla^', 'alışveriş~ tamamla^',
     'satın al^', 'şimdi satın al^', 'hemen al^', 'şimdi al^', 'öde^', 'şimdi öde^', 'ödeme~ geç^'],
@@ -134,7 +193,49 @@ const LOCALE_WORDS = Object.freeze({
     'esvaziar lixeira', 'esvaziar a lixeira', 'esvaziar lixo', 'esvaziar a reciclagem', 'çöp kutu~ boşalt^', 'çöp~ boşalt^', 'çöp kutu~ temizle^'],
   submit: ['senden', 'absenden', 'abschicken', 'envoyer', 'soumettre', 'enviar', 'отправить', '送信', '보내기', '전송', '제출',
     // CU-358: Italian, Dutch, Portuguese and Turkish.
-    'invia', 'invia ora', 'verzenden', 'versturen', 'verstuur', 'indienen', 'submeter', 'gönder^', 'şimdi gönder^'],
+    'invia', 'invia ora', 'verzenden', 'versturen', 'verstuur', 'indienen', 'submeter', 'gönder^', 'şimdi gönder^',
+    // CU-617 (cu-researcher): publish / post, as English 'Publish' / 'Post' ask submit; infinitive, imperative and formal forms.
+    'veröffentlichen', 'veröffentliche', 'posten', 'poste', 'beitrag veröffentlichen', 'publier', 'publiez', 'publie', 'poster', 'publicar', 'publica', 'publique', 'postear', 'postar', 'poste agora',
+    'pubblica', 'pubblicare', 'pubblicate', 'publiceren', 'publiceer', 'nu plaatsen', 'bericht plaatsen', 'yayınla^', 'gönderi~ paylaş^',
+    // CU-619 (cu-researcher): calls and meeting joins, as English 'Call' / 'Video call' / 'Start call' / 'Join meeting' ask submit.
+    // Turkish 'Ara' (also 'search') and Portuguese 'Ligar' (also 'switch on') only with a call noun or object, never bare.
+    'anrufen', 'jetzt anrufen', 'videoanruf', 'videoanruf starten', 'anruf starten', 'meeting beitreten', 'besprechung beitreten', 'konferenz beitreten', 'jetzt beitreten',
+    'appeler', 'appelez', 'appel vidéo', 'appel audio', 'démarrer _ appel', 'lancer _ appel', 'rejoindre _ réunion', 'rejoindre maintenant', 'rejoindre _ appel',
+    'llamar', 'llama', 'videollamada', 'iniciar _ llamada', 'iniciar videollamada', 'unirse a la reunión', 'unirse ahora', 'únete a la reunión', 'unirse a la llamada',
+    'chamada de vídeo', 'iniciar _ chamada', 'fazer _ chamada', 'ligar para', 'ligar agora', 'entrar na reunião', 'participar da reunião', 'entrar na chamada',
+    'chiama', 'chiamare', 'videochiamata', 'avvia _ chiamata', 'avvia videochiamata', 'partecipa alla riunione', 'partecipa ora', 'partecipa alla chiamata',
+    'bellen', 'nu bellen', 'videogesprek', 'gesprek starten', 'videogesprek starten', 'deelnemen aan vergadering', 'deelnemen aan de vergadering', 'nu deelnemen',
+    'görüntülü arama', 'sesli arama', 'arama~ başlat^', 'görüntülü ara^', 'sesli ara^', 'toplantı~ katıl^', 'şimdi katıl^',
+    // r1 grid (cu-developer-one's go): imperative and formal forms in each language; German / Dutch separable forms below.
+    'rejoignez _ réunion', 'rejoignez maintenant', 'rejoignez _ appel', 'appelle', 'únase a la reunión', 'únete ahora', 'únase ahora', 'llame', 'llame ahora', 'llámanos', 'inicie _ llamada',
+    'ligue para', 'ligue agora', 'entre na reunião', 'participe da reunião', 'inicie _ chamada', 'chiami', 'chiamaci', 'partecipi alla riunione', 'partecipa adesso', 'avvii _ chiamata',
+    'bel nu', 'bel ons', 'start _ gesprek', 'start videogesprek', 'neem deel aan de vergadering', 'neem nu deel',
+    // r2 (cu-developer-three, cu-developer-two): the German 'teilnehmen' join forms, Turkish 'join the call', and the Turkish
+    // 'ara' with an adverb ('Hemen ara', 'Şimdi ara') - read as a call; a 'search now' button over-asks, fail-closed.
+    'jetzt teilnehmen', 'an der besprechung teilnehmen', 'an besprechung teilnehmen', 'am meeting teilnehmen', 'an meeting teilnehmen', 'an der konferenz teilnehmen', 'an der videokonferenz teilnehmen',
+    'am anruf teilnehmen', 'am videoanruf teilnehmen', 'am telefonat teilnehmen', 'besprechung teilnehmen', 'meeting teilnehmen', 'konferenz teilnehmen',
+    'arama~ katıl^', 'görüşme~ katıl^', 'hemen ara^', 'şimdi ara^'],
+  // CU-616 (cu-researcher): sharing a (live) location and granting access, in the seven locales, as English 'Share my location' /
+  // 'Share live location' / 'Grant access' / 'Give access' ask permission.
+  permission: ['standort teilen', 'live-standort teilen', 'meinen standort teilen', 'standortfreigabe aktivieren', 'zugriff gewähren', 'zugriff erlauben', 'zugang gewähren',
+    'partager ma position', 'partager _ position', 'partager la position en direct', 'partager ma localisation', "accorder l'accès", 'accorder l’accès', "autoriser l'accès", 'autoriser l’accès', 'donner accès',
+    'compartir ubicación', 'compartir mi ubicación', 'compartir _ ubicación en tiempo real', 'conceder acceso', 'dar acceso', 'permitir acceso', 'permitir el acceso',
+    'compartilhar localização', 'compartilhar _ localização', 'partilhar localização', 'partilhar _ localização', 'conceder acesso', 'dar acesso', 'permitir acesso', 'permitir o acesso',
+    'condividi posizione', 'condividi _ posizione', 'condividi la posizione in tempo reale', 'condividi la mia posizione', 'condividi la tua posizione', 'condividi la mia posizione in tempo reale', 'concedi accesso', "concedi l'accesso", 'concedi l’accesso', 'consenti accesso', "consenti l'accesso", 'consenti l’accesso',
+    'locatie delen', 'deel _ locatie', 'live locatie delen', 'toegang verlenen', 'toegang geven', 'toegang toestaan',
+    'konum~ paylaş^', 'canlı konum~ paylaş^', 'erişim izni ver^', 'erişim~ izin ver^', 'erişim~ ver^',
+    // r3 (cu-developer-three): the whole possessive / imperative family in every language, not one row at a time.
+    'teile deinen standort', 'teile deinen live-standort', 'teilen sie ihren standort', 'deinen standort teilen', 'ihren standort teilen', 'gewähre zugriff', 'gewähren sie zugriff', 'erlaube zugriff', 'erlauben sie den zugriff',
+    'partager votre position', 'partagez votre position', 'partage ta position', 'partager ta position', 'partager votre localisation', 'partagez votre localisation', "accordez l'accès", 'accordez l’accès', "autorisez l'accès", 'autorisez l’accès',
+    'comparte tu ubicación', 'compartir tu ubicación', 'comparta su ubicación', 'compartir su ubicación', 'concede acceso', 'conceda acceso', 'permite el acceso', 'permita el acceso',
+    'compartilhe sua localização', 'compartilhar sua localização', 'compartilhe a sua localização', 'partilhe a sua localização', 'partilhar a sua localização', 'conceda acesso', 'conceda o acesso', 'permita o acesso',
+    'condividere la tua posizione', 'condividi la sua posizione', 'condividete la vostra posizione', "concedete l'accesso", 'concedete l’accesso', "consenta l'accesso", 'consenta l’accesso',
+    'je locatie delen', 'uw locatie delen', 'deel je live locatie', 'verleen toegang', 'geef toegang', 'sta toegang toe',
+    // CU-617 (cu-researcher): share and invite, as English 'Share' / 'Invite' ask permission; infinitive, imperative and formal forms
+    // (German / Dutch separable imperatives - 'Lade ... ein', 'Nodig ... uit', 'Deel ...' - are a grammar rule below).
+    'teilen', 'teilen sie', 'mit anderen teilen', 'einladen', 'partager', 'partagez', 'partage', 'inviter', 'invitez', 'compartir', 'comparte', 'comparta', 'invitar', 'invita', 'invite a',
+    'compartilhar', 'compartilhe', 'partilhar', 'partilhe', 'convidar', 'convide', 'condividi', 'condividere', 'condividete', 'invitare', 'invitate', 'delen', 'uitnodigen',
+    'paylaş^', 'davet et^', 'davet edin', 'davet edin^', 'nodig uit', 'nodig uit^'],
   // CU-345: a PIN, one-time code, security code or password field named in these languages.
   secret: ['passwort', 'kennwort', 'sicherheitscode', 'prüfziffer', 'mot de passe', 'code de sécurité', 'cryptogramme',
     'contraseña', 'código de seguridad', 'пароль', 'код безопасности', 'パスワード', '暗証番号', 'セキュリティコード', '認証コード',
@@ -149,9 +250,33 @@ const LOCALE_WORDS = Object.freeze({
     'codice di verifica', 'codice di sicurezza', 'codice otp', 'numero della carta', 'numero di carta',
     'wachtwoord', 'pincode', '…pincode', 'verificatiecode', '…verificatiecode', 'beveiligingscode', '…beveiligingscode', 'kaartnummer', '…kaartnummer', 'eenmalige code',
     'senha', 'código de verificação', 'código de segurança', 'número do cartão',
-    'şifre~', 'parola~', 'doğrulama kod~', 'güvenlik kod~', 'kart numara~', 'tek kullanımlık şifre~',
+    'şifre~', 'parola~', 'doğrulama kod~', 'güvenlik kod~', 'kart~ numara~', 'son kullanma tarih~', 'tek kullanımlık şifre~',
     // r2: the Portuguese 'de' form, and Turkish possessive forms (your / my), which change the word's ending.
     'número de cartão', 'numero do cartao', 'numero de cartao',
+    // CU-600 (cu-researcher): the card's expiry as each language writes it (English 'expiry' / 'expiration date' are in
+    // SECRET_NAMES), and the spelled-out card verification value / code. Bare 'vencimiento' / 'validade' / 'scadenza' stay out
+    // (a bill's due date, a product's shelf life).
+    'ablaufdatum', '…ablaufdatum', 'gültig bis', 'verfallsdatum', 'fecha de caducidad', 'fecha de vencimiento', 'fecha de expiración', 'data de validade',
+    'validade do cartão', 'data de expiração', 'data di scadenza', 'scadenza della carta', 'scadenza carta', 'date de validité', 'date de fin de validité',
+    'card verification value', 'card verification code', 'card validation code',
+    // CU-604 (cu-researcher): one-time codes as each language writes them, as English 'one-time code' / 'OTP' already ask.
+    '…einmalpasswort', 'einmal-passwort', 'einmalkennwort', 'code à usage unique', 'code reçu par sms', 'code envoyé par sms', 'code par sms',
+    'código de un solo uso', 'código recibido por sms', 'código enviado por sms', 'código de acesso único', 'código de uso único', 'código recebido por sms',
+    'codice monouso', 'codice usa e getta', 'codice ricevuto via sms', 'codice ricevuto per sms', 'codice inviato via sms',
+    'tek kullanımlık kod~', 'sms kod~', 'eenmalig wachtwoord', 'sms-code', 'sms code ontvangen',
+    // CU-605 (cu-researcher): security questions / answers and the mother's maiden name, as English 'security question' /
+    // 'security answer' / 'maiden name' already ask - account-recovery secrets.
+    '…sicherheitsfrage', 'sicherheitsantwort', 'geheimfrage', 'mädchenname der mutter', 'geburtsname der mutter',
+    'question secrète', 'réponse secrète', 'question de sécurité', 'réponse de sécurité', 'nom de jeune fille',
+    'pregunta de seguridad', 'respuesta de seguridad', 'pregunta secreta', 'respuesta secreta', 'apellido de soltera',
+    'pergunta de segurança', 'resposta de segurança', 'pergunta secreta', 'resposta secreta', 'nome de solteira',
+    'domanda di sicurezza', 'risposta di sicurezza', 'domanda segreta', 'risposta segreta', 'cognome da nubile',
+    'güvenlik soru~', 'gizli soru~', 'kızlık soyad~', 'beveiligingsvraag', 'geheime vraag', 'meisjesnaam',
+    // CU-606 (cu-researcher): the European Portuguese password, beside 'senha'; access codes and two-factor recovery codes
+    // as each language writes them, in the class of the locale password words.
+    'palavra-passe', 'palavra passe', '…zugangscode', 'zugangs-code', "code d'accès", 'code d’accès', 'código de acceso', 'clave de acceso', 'código de acesso',
+    'codice di accesso', 'codice d’accesso', "codice d'accesso", 'toegangscode', '…toegangscode', 'erişim kod~',
+    '…wiederherstellungscode', 'code de récupération', 'code de secours', 'código de recuperación', 'código de recuperação', 'codice di recupero', 'herstelcode', '…herstelcode', 'kurtarma kod~',
 ],
 })
 // CU-355 (design note 0.1): personal-ID field names in German, French, Spanish, Russian, Japanese and Korean - the third
@@ -162,6 +287,15 @@ const LOCALE_ID_NAMES = Object.freeze(['reisepass', '…passnummer', 'geburtsdat
   'numéro de compte', "carte d'identité",
   'pasaporte', 'número de pasaporte', 'fecha de nacimiento', 'número de identificación fiscal', 'nif', 'dni', 'número de cuenta',
   'número de seguridad social',
+  // CU-603 (cu-researcher): the national health-insurance numbers, as 'Health insurance number' / 'NHS number' /
+  // 'Krankenversicherungsnummer' / 'Numéro de carte Vitale' already ask; 'Member ID', 'Patient ID' and 'Krankenkasse' stay out.
+  'versichertennummer', '…versichertennummer', 'número de la seguridad social', 'número de afiliación', 'tarjeta sanitaria', 'número de la tarjeta sanitaria',
+  'número do sns', 'número de utente', 'número de beneficiário', 'tessera sanitaria', 'codice della tessera sanitaria', 'zorgverzekeringsnummer', '…zorgverzekeringsnummer',
+  'sağlık sigorta~ numara~', 'insurance member number', 'insurance member id', 'insurance id number',
+  // r2 (cu-developer-two): the French insured-person number; 'Versicherten-Nr.' reads through the '-Nr.' family (CU-602).
+  "numéro d'assuré", 'numéro d’assuré', "n° d'assuré", 'n° d’assuré', 'numéro assuré',
+  // r2 (cu-developer-one): the Dutch card's own term, twin of 'Versichertennummer'.
+  'verzekerdennummer', '…verzekerdennummer', 'verzekerdenummer',
   'паспорт', 'номер паспорта', 'дата рождения', 'инн', 'снилс', 'номер счета', 'номер счёта',
   'パスポート', '旅券番号', '生年月日', 'マイナンバー', '個人番号', '口座番号',
   '여권', '여권번호', '생년월일', '주민등록번호', '계좌번호', '사업자등록번호',
@@ -314,6 +448,16 @@ const WORDS = Object.freeze({
     'add member', 'add members', 'disable protection', 'unprotect branch',
     // CU-411: ownership and admin grants widen access.
     'make owner', 'make co-owner', 'transfer ownership', 'make admin', 'grant admin',
+    // CU-396 (cu-researcher; supersedes #462 with cu-developer-one's go; cu-coordinator's 03:58Z class): presenting,
+    // broadcasting, streaming, recording others and calling back reach other people like 'Share screen' and 'Call'. A bare
+    // 'Present' (slide apps), 'Presenter view', 'Stop recording' and 'Live captions' stay free.
+    'present now', 'present a tab', 'present a window', 'present your screen', 'present entire screen', 'present to everyone',
+    'go live', 'go live now', 'start broadcast', 'start broadcasting', 'start streaming', 'start stream', 'start livestream',
+    'start live stream', 'start live', 'start recording', 'record meeting', 'record this meeting', 'call back', 'call them back',
+    // r2 (cu-developer-two / -three): Meet's and Teams' 'Start presenting', screen recording, and the 'return call' twin of
+    // 'call back'. Slide apps' 'Start slideshow' / 'Play slideshow' stay free.
+    'start presenting', 'start screen recording', 'start screen share', 'start sharing screen', 'record screen', 'return call',
+    'return the call', 'return their call', 'call back now',
     // CU-389 (cu-researcher): widening who can reach a document or space - general access and join settings.
     'anyone can edit', 'anyone can view', 'anyone can comment', 'everyone can edit', 'everyone can view',
     'anyone with the link', 'anyone on the web', 'anyone on the internet', 'public on the web',
@@ -322,6 +466,9 @@ const WORDS = Object.freeze({
     'add payee', 'add a payee', 'add recipient', 'add beneficiary',
     // CU-401: leaving a shared space or unlinking an account.
     'leave workspace', 'leave organization', 'leave organisation', 'leave org', 'leave team', 'leave server', 'unlink account',
+    // CU-399 (cu-coordinator 05:02Z, 10 Nov; rebuilt from #469 on 17 Nov): Mail's Apply Rules runs rules that may delete,
+    // forward or run a script.
+    'apply rules', 'apply rules now', 'run rules', 'run rules now', 'run all rules', // r3 (cu-developer-two 03:06Z): Outlook's 'Run rules now'
     // CU-386 (cu-coordinator 23:54Z): asking someone else for money.
     'request money',
     // CU-258 (cu-researcher): standing choices an app keeps after the run, as whole phrases. A bare 'Allow' stays free so
@@ -351,7 +498,7 @@ const WORDS = Object.freeze({
     // ('Turn off notifications' stays free). ChatGPT confirms any change to account permissions.
     ...['turn off', 'disable', 'remove', 'allow'].flatMap((verb) => ['2 step', 'two step', 'two factor', '2fa', 'mfa', 'multi factor',
       'password', 'passkey', 'passkeys', 'security key', 'security keys', 'login alerts', 'sign in alerts', 'account recovery', 'find my',
-      'less secure apps', 'less secure app access'].map((what) => `${verb} ${what}`)), ...ZH_WORDS.permission],
+      'less secure apps', 'less secure app access'].map((what) => `${verb} ${what}`)), ...ZH_WORDS.permission, ...LOCALE_WORDS.permission],
   submit: ['send', 'post', 'submit', 'publish', 'reply', 'sign up', 'register',
     // CU-261 (cu-researcher; cu-coordinator: High): actions that reach other people or commit shared work, as whole
     // phrases. A bare Accept, Connect, Join or Follow stays free (cookie banners, Wi-Fi, generic joins: named limits).
@@ -368,13 +515,28 @@ const WORDS = Object.freeze({
     // CU-286 (cu-researcher's real-app wordings): a request to join a meeting, and Slack's huddle (a call to the channel).
     'ask to join', 'start huddle', 'start a huddle', 'join huddle',
     // CU-288: a tax filing goes to the authority.
-    'file return', 'file tax return', 'file your return', 'file my return', 'e-file', 'efile', 'submit return', 'submit tax return', ...ZH_WORDS.submit, ...LOCALE_WORDS.submit],
+    'file return', 'file tax return', 'file your return', 'file my return', 'e-file', 'efile', 'submit return', 'submit tax return',
+    // CU-432: the English phrases below lived in ZH_WORDS.submit until 17 Nov; moved here unchanged (no behaviour change -
+    // ZH_WORDS.submit is spread into this same list, and namesWord picks each entry's boundary by its own letters).
+    // CU-421: running a script.
+    'run script', 'run the script',
+    // CU-422: civic, legal and employment acts in the owner's name.
+    'cast ballot', 'cast your ballot', 'cast vote', 'sign petition', 'sign the petition', 'quit job', 'quit my job', 'decline offer',
+    'accept offer', 'apply now', 'enroll now', 'submit vote',
+    // CU-430: accepting an airline's new itinerary or schedule change binds the trip.
+    'accept new itinerary', 'accept the new itinerary', 'accept schedule change', 'accept the schedule change', 'accept itinerary change',
+    // CU-428: listing or relisting an item and accepting a return bind a sale.
+    'list now', 'list it now', 'relist', 'relist item', 'accept return', 'accept the return',
+    ...ZH_WORDS.submit, ...LOCALE_WORDS.submit],
 })
 // CU-377 follow-up: the file browsers whose rows are files (the same set as app-policy's FILE_BROWSERS).
 const FILE_BROWSER_APPS = new Set(['com.apple.finder', 'com.cocoatech.PathFinder', 'com.binarynights.ForkLift-3', 'com.binarynights.ForkLift', 'com.eltima.cmd1', 'com.mrrsoftware.marta', 'org.yanex.marta'])
 const SHARE_DESTINATION = /\b(?:airdrop|shared(?:\s+(?:folder|with\s+me|with\s+you))?|drop\s+box|dropbox|public\s+folder|server|network|(?:smb|afp|nfs|webdav):)/i
 // CU-385: shared / public spaces as a drop target's whole name (an unread or item count may follow).
-const DROP_SHARE_NAME = /^\s*(?:public(?:\s+folder)?|shared(?:\s+(?:folders?|drives?|documents|files|items|libraries|library|with\s+(?:me|everyone|you|all)))?|team\s+drives?|shared\s+drives?|everyone)(?:\s*\(\d+\))?\s*$/i
+// CU-593 (cu-researcher): 'Public' + a container noun ('Public Files', 'Public share', 'Public uploads'; r2 cu-developer-two: 'Public
+// Docs', 'Public Assets', media / resources / photos / images / videos / content) and 'Shared with <group>'
+// beyond me / everyone ('Shared with partners / clients / external users / the team'); 'Public relations' (no container) stays free.
+const DROP_SHARE_NAME = /^\s*(?:public(?:\s+(?:folders?|files|shares?|uploads?|documents|docs|assets|media|resources|photos|pictures|images|videos|content|drives?|library|libraries|items))?|shared(?:\s+(?:folders?|drives?|documents|files|items|libraries|library|with\s+(?:me|everyone|you|all|others|anyone|partners|clients|customers|guests|vendors|suppliers|contractors|externals?|external\s+(?:users|people|partners)|(?:the\s+|my\s+|our\s+)?(?:team|company|organi[sz]ation|org))))?|team\s+drives?|shared\s+drives?|everyone)(?:\s*\(\d+\))?\s*$/i
 // CU-385 r3 (cu-researcher 22:02Z): an owner's shared space, 1-3 words then 'shared' (+ folder / drive) ending the name -
 // 'Company Shared', 'Team shared folder', 'Team Public folder' (r4); a name with 'not' / 'never' / 'un' before it stays free.
 const DROP_SHARE_TRAILING = /^\s*(?![^]*\b(?:not|never|un)\s)(?:[\p{L}\d&'.-]+\s+){1,3}(?:shared|public)(?:\s+(?:folders?|drives?))?(?:\s*\(\d+\))?\s*$/iu
@@ -504,7 +666,13 @@ const DROP_DELETE = [...WORDS.delete, 'trash', 'bin']
 const DROP_TRASH_NAME = /^\s*(?:(?:folder|ordner|dossier|carpeta|cartella|map|pasta|mappe|mapp|kansio|klasör)\s+(?:(?:de|di|du|des|del|da|do|van|voor|för|for|of)\s+)?)?(?:(?:spam|junk)\s+(?:and|e|en|et|und|y|i|og|och|ve)\s+)?(?:spam(?:map|ordner|mappe|mapp|kansio)|junk(?:map|ordner|mappe)|eliminati|gelöscht|supprimés|eliminados|borrados|verwijderd|excluídos|usunięte|törölt|silinmiş|borttaget|slettet|(?:recently\s+)?deleted(?:\s+(?:items|messages|mail|files))?|trash|recycle\s+bin|bin|papierkorb|corbeille|papelera(?:\s+de\s+reciclaje)?|elementos\s+borrados|correo\s+basura|cestino|prullenbak|lixeira|lixo|kosz|çöp(?:\s+kutusu)?|koš|roskakori|papperskorg|papirkurv|spam|junk(?:[\s-]+(?:e-?mail|mail|folder))?|bulk(?:\s+mail)?|correo\s+no\s+deseado|unerwünscht|courrier\s+indésirable|posta\s+indesiderata|ongewenste\s+e-?mail|lixo\s+eletr[oô]nico|gelöschte\s+(?:elemente|objekte|nachrichten|e-?mails)|(?:éléments|messages|courriers)\s+supprimés|(?:elementos|mensajes|correos)\s+eliminados|posta\s+eliminata|(?:elementi|messaggi)\s+eliminati|verwijderde\s+(?:items|berichten|e-?mail|objecten)|itens\s+(?:excluídos|eliminados)|mensagens\s+(?:excluídas|apagadas|eliminadas)|(?:elementy|wiadomości)\s+usunięte|usunięte\s+(?:elementy|wiadomości)|törölt\s+(?:elemek|üzenetek)|silinmiş\s+(?:öğeler|iletiler|mesajlar|postalar)|odstraněn[áé]\s+(?:pošta|položky|zprávy)|borttagna\s+(?:objekt|meddelanden)|slettet\s+post|slettede\s+(?:elementer|meddelelser|meldinger)|poistetut(?:\s+(?:kohteet|viestit))?|削除済み(?:アイテム|メッセージ)|已删除(?:邮件|项目|消息)|지운\s*편지함|垃圾箱|废纸篓|回收站|垃圾邮件|ゴミ箱|迷惑メール|휴지통|스팸)(?:\s+(?:and|e|en|et|und|y|i|og|och|ve)\s+(?:spam|junk))?(?:[\s-]+(?:folder|ordner|dossier|carpeta|cartella|map|pasta|mappe|mapp|kansio|klasör(?:ü)?))?(?:(?:\s+[-–—]\s+|\s*[|:]\s*)[^-–—|:\n]{1,40})?(?:\s*\(\d+\))?\s*$/iu
 // CU-385 follow-up: a drop target's name has passed normaliseText, which folds Cyrillic homoglyphs to Latin, so the Russian
 // trash / junk names are compared as WHOLE names after the same fold (as namesWord folds its entries).
-const DROP_TRASH_FOLDED = ['удаленные', 'удалённые', 'удаленные письма', 'удалённые письма', 'удаленные объекты', 'удаленные элементы', 'удалённые элементы', 'удалённые объекты', 'корзина', 'спам', 'нежелательная почта']
+// CU-594 (cu-researcher): the Ukrainian names - 'Кошик' (Trash / Bin; macOS says 'Смітник'), 'Видалені' (+ елементи / повідомлення / листи / об'єкти),
+// 'Нещодавно видалені' (Recently Deleted), 'Небажана пошта' (Junk Email), 'Спам-папка' - and the Russian 'Недавно удаленные'.
+const DROP_TRASH_FOLDED = ['удаленные', 'удалённые', 'удаленные письма', 'удалённые письма', 'удаленные объекты', 'удаленные элементы', 'удалённые элементы', 'удалённые объекты', 'корзина', 'спам', 'нежелательная почта',
+  'недавно удаленные', 'недавно удалённые', 'кошик', 'видалені', 'видалені елементи', 'видалені повідомлення', 'видалені листи', "видалені об'єкти", 'видалені об’єкти',
+  'нещодавно видалені', 'небажана пошта', 'спам-папка', 'папка спам',
+  // r2 (cu-developer-three, cu-developer-two): macOS's own Ukrainian Trash 'Смітник', the 'Вилучені' wording, the bare 'Небажані'.
+  'смітник', 'вилучені', 'вилучені елементи', 'вилучені повідомлення', 'нещодавно вилучені', 'небажані']
 function namesTrashFolded(name) {
   const text = normaliseName(String(name ?? '')).trim().replace(/\s*\(\d+\)$/, '')
   return DROP_TRASH_FOLDED.some((word) => new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form)))).has(text))
@@ -544,7 +712,9 @@ function keyboardActivation(action, target, context = {}) {
   // CU-148: with a sheet or alert up, Command-D and Command-Delete press its Don't Save whatever holds the focus - with
   // keyboard navigation off (a default Mac) the focus is the sheet or its window, never the button. The helper reports
   // it (sheet); a Command-D right after Command-W or Command-Q in the batch is aimed at the sheet that close raises.
-  const sheetUp = target?.sheet === true || context.afterClose === true
+  // CU-364 (design note 0.1; rebuilt from #360 on 17 Nov): the focus may be the sheet or dialog itself, reported by its
+  // role (AXSheet) or subrole (AXDialog, AXSystemDialog) without the sheet flag - its Don't Save still takes Command-D.
+  const sheetUp = target?.sheet === true || context.afterClose === true || target?.role === 'AXSheet' || ['AXDialog', 'AXSystemDialog'].includes(target?.subrole)
   // CU-234: Command-D with Shift, Option or Control too presses the sheet's Don't Save.
   const deletes = keys.has('META') && ((keys.has('BACKSPACE') || keys.has('DELETE')) || (keys.has('D') && onlyWith('D', ['META', 'SHIFT', 'ALT', 'CTRL']) && (button || sheetUp)))
   // CU-147: exactly Backspace or Delete on a focused collection - a list, table, outline, row or cell, not a text input
@@ -636,12 +806,15 @@ const normaliseName = (text) => String(text ?? '').toLowerCase().replace(/\u0307
 const LETTER_BOUNDED = /[\u00c0-\u024f\u0400-\u04ff]/
 // CU-358 r3 (cu-developer-three's D-109 point): Turkish adds suffixes to a stem, so a Turkish entry marks where they may
 // follow - '~' after a noun stem takes a possessive (my / your / his / our / their) and then a case ending ('şifre~' reads
-// 'şifreniz', 'şifrenizi', 'şifresi'; 'kart numara~' reads 'kart numaranız', 'kart numarası'), '^' after a verb stem takes the
+// 'şifreniz', 'şifrenizi', 'şifresi'; 'kart numara~' reads 'kart numaranız', 'kart numarası'; CU-591: 'kart~ numara~' also reads the genitive 'Kartınızın numarası'), '^' after a verb stem takes the
 // polite or passive -(y)In (and its plural -(y)Iniz), then a third-person imperative -sIn or the future -(y)AcAk ('sil^' reads
 // 'silin', 'silinsin', 'silinecek'; 'gönder^' reads 'gönderin'). A bounded set, after normaliseName's folding (ı reads as i),
 // so 'Şifreleme' (encryption), 'Silinenler' (the Deleted folder), 'Silindir' and 'Silgi' stay free. r4 (cu-developer-three).
-const TR_NOUN_SUFFIX = '(?:(?:[iuü]?m|[iuü]?n|s?[iuü]|[iuü]?m[iuü]z|[iuü]?n[iuü]z|l[ae]ri?)?(?:y?[iuü]|n[iuü]|y?[ae]|n[ae]|[dt][ae]n?|n[iuü]n)?)'
-const TR_VERB_SUFFIX = '(?:(?:y?[iuü]n)?(?:s[iuü]n|[iuü]z|y?[ae]c[ae]k)?)'
+const TR_NOUN_SUFFIX = '(?:(?:[iuü]?m|[iuü]?n|s?[iuü]|[iuü]?m[iuü]z|[iuü]?n[iuü]z|l[ae]ri?)?(?:y?[iuü]|n[iuü]|y?[ae]|n[ae]|[dt][ae]n?|n?[iuü]n)?)'
+// CU-591 (cu-researcher): the future takes the copula -tIr as written in notices and confirmations ('silinecektir'); r2
+// (cu-developer-three, cu-developer-two): and the plural -lAr before or after it ('silinecekler', 'silinecektirler'), and the
+// passive is -Il as well as -(y)In ('kaldırılacak', 'kaldırılacaktır', 'kaldırılsın').
+const TR_VERB_SUFFIX = '(?:(?:y?[iuü]n|[iuü]l)?(?:s[iuü]n|[iuü]z|y?[ae]c[ae]k(?:l[ae]r)?(?:t[iuü]r)?(?:l[ae]r)?)?)'
 const turkishPattern = (word) => normaliseName(normaliseText(word)).split(/([~^])/).map((part) => part === '~' ? TR_NOUN_SUFFIX
   : part === '^' ? TR_VERB_SUFFIX : escapeRegExp(part).replace(/ /g, '[\\s-]+')).join('')
 // CU-358 r5 (cu-developer-one): ' _ ' in an Italian, Portuguese or Dutch entry is an optional article slot ('conferma _
@@ -671,7 +844,10 @@ const REPLY_WORDS = new Set(['reply', '回复', '回覆'])
 const SUBMIT_BUT_REPLY = Object.freeze(WORDS.submit.filter((word) => !REPLY_WORDS.has(word)))
 // CU-261: a control named only Call, Answer or Merge submits; inside a longer name ('Call Stack', 'Merge Cells') it does not.
 // CU-293: the same whole names in Chinese - 合并单元格 (Merge Cells) stays free like its English.
-const SUBMIT_WHOLE_NAMES = new Set(['call', 'answer', 'merge', '呼叫', '接听', '接聽', '合并', '合併'])
+// CU-399 (Low; cu-coordinator 04:39Z, 10 Nov): Mail's 'Bounce' sends a reply to the sender - by exact name ('Bounce rate'
+// stays free); r2 (cu-researcher 02:19Z): 'Bounce Message' and Mail's 'Redirect', the same act (sends the original on).
+const SUBMIT_WHOLE_NAMES = new Set(['bounce', 'bounce to sender', 'bounce message', 'bounce this message', 'redirect',
+  'redirect message', 'redirect this message', 'call', 'answer', 'merge', '呼叫', '接听', '接聽', '合并', '合併'])
 function judgesSubmit(name, target) {
   if (SUBMIT_WHOLE_NAMES.has(normaliseName(name).trim())) return true
   if (!namesWord(withoutPastState(name), WORDS.submit)) return false
@@ -737,9 +913,18 @@ const BANK_OR_TAX_FIELD = Object.freeze(['iban', 'account number', 'account no',
   // CU-285 (cu-researcher): the US form's own words - Taxpayer Identification Number, Taxpayer ID.
   'taxpayer identification', 'taxpayer id',
   // CU-293: a bank account or tax id in Chinese.
-  '银行账号', '銀行帳號', '银行账户', '銀行帳戶', '开户行', '開戶行', '税号', '稅號', '纳税人识别号', '納稅人識別號', '统一社会信用代码'])
+  '银行账号', '銀行帳號', '银行账户', '銀行帳戶', '开户行', '開戶行', '税号', '稅號', '纳税人识别号', '納稅人識別號', '统一社会信用代码',
+  // CU-601 (cu-researcher): national bank routing codes beside 'routing number' / 'sort code' / 'bsb' - Germany, the US ABA
+  // name, Switzerland / Sweden, Canada, France - as phrases; the short ones (BLZ, ABI, CAB, RIB, agência) as a whole label below.
+  'bankleitzahl', 'aba number', 'aba routing', 'clearing number', 'clearingnummer', 'bank clearing', 'transit number', 'institution number',
+  'code banque', 'code guichet', 'clé rib', 'cle rib', 'relevé d\'identité bancaire', 'código de agencia', 'código de agência', 'número de agencia', 'número da agência'])
+// CU-601: the short national codes only as a field's whole label ('Cab' alone is a taxi elsewhere), and the account number
+// in its 'of' form ('Number of your account'), as CU-599 reads the card number.
+const BANK_CODE_WHOLE = /^\s*(?:blz|aba|abi|cab|rib|ag[êe]ncia|clearing)\s*(?:\(.{0,12}\))?\s*[:*]?\s*$/iu
+// r2 (cu-developer-two / -three): both orders, as CU-599 reads the card - "Your account's number", 'Number on your account'.
+const ACCOUNT_NUMBER_OF = /\baccount['’]?s\s+number\b|\bnumber\s+(?:of|on|for)\s+(?:(?:your|the|this|my)\s+)?(?:bank\s+|checking\s+|savings\s+)?account\b/i
 function bankOrTaxField(target) {
-  return entryNamesOf(target).some((name) => namesWord(name, BANK_OR_TAX_FIELD))
+  return entryNamesOf(target).some((name) => namesWord(name, BANK_OR_TAX_FIELD) || BANK_CODE_WHOLE.test(String(name ?? '')) || ACCOUNT_NUMBER_OF.test(String(name ?? '')))
 }
 
 // CU-164: a text entry - the browser's editable flag, or a desktop text role - named for a password asks credential, and
@@ -784,6 +969,8 @@ const API_TOKEN = new RegExp([
   'rk_(?:live|test)_[A-Za-z0-9]{16,}',
 ].map((one) => `\\b${one}\\b`).join('|'))
 const PASSWORD_NAMES = Object.freeze(['password', 'passcode', 'passphrase', 'pin', 'pin code',
+  // CU-606 (cu-researcher): an access code, in the class of its twin 'passcode'.
+  'access code',
   // CU-293: the same names in Chinese.
   '密码', '密碼', '口令', '支付密码', '支付密碼'])
 // CU-265: the schemes a page navigates itself; any other hands the link to another app.
@@ -879,6 +1066,8 @@ const SECRET_NAMES = Object.freeze(['recovery phrase', 'seed phrase', 'secret ph
   'card no', 'cell number', 'mobile', 'tel',
   // CU-245 (cu-researcher's D-061 red team): a debit card, an account recovery key and two-factor backup codes.
   'debit card', 'recovery key', 'backup code', 'backup codes',
+  // CU-606 (cu-researcher): a two-factor recovery code, in the class of its twin 'backup code'.
+  'recovery code', 'recovery codes',
   // CU-293: D-061's field names in Chinese (an id, a passport, a card, a birth date, a code, contact data).
   '身份证', '身份證', '身分證', '护照', '護照', '社保号', '社会保障号', '出生日期', '生日', '银行卡', '銀行卡', '卡号', '卡號', '信用卡',
   '有效期', '安全码', '安全碼', '验证码', '驗證碼', '动态码', '手机号', '手機號', '电话', '電話', '邮箱', '电子邮件', '電子郵件',
@@ -916,7 +1105,24 @@ const passwordNamedEntry = (target) => isTextEntry(target) && entryNamesOf(targe
 // CU-184 (desktop-rules.md): a text entry named for a password - shown or not, it holds one - unless its name says it is
 // a hint; the desktop hands a key action into it to the person, as it does a secure field (R83).
 export const namesPasswordField = (target) => isTextEntry(target) && entryNamesOf(target).some((name) => namesWord(name, PASSWORD_NAMES) && !namesWord(name, ['hint']))
-const secretNamedEntry = (target) => isTextEntry(target) && entryNamesOf(target).some((name) => namesWord(name, SECRET_NAMES) || namesAcronym(name))
+// CU-599 (cu-researcher): the card number with a possessive or 'of', in either order - 'Your card's number', 'Number of / on your
+// card', 'Numéro de votre carte', 'Nummer Ihrer Karte', 'Número de su tarjeta', 'Número do seu cartão', 'Numero della tua carta' -
+// reads like the compound 'card number' each language already lists.
+const CARD_NUMBER_PHRASE = /\bcard['’]?s\s+number\b|\bnumber\s+(?:of|on|for)\s+(?:(?:your|the|this|my)\s+)?(?:credit\s+|debit\s+|payment\s+)?card\b|\bnum[ée]ro\s+de\s+(?:(?:votre|ta|la|cette|sa)\s+)?carte\b|\bnummer\s+(?:ihrer|deiner|der|ihre|seiner)\s+(?:kredit|debit|bank)?karte\b|\bn[úu]mero\s+de\s+(?:su|tu|la|esta)\s+tarjeta\b|\bn[úu]mero\s+d[oa]\s+(?:seu|teu|sua|tua)\s+cart[ãa]o\b|\bnumero\s+della\s+(?:tua|sua|vostra)\s+carta\b/iu
+// CU-600 r2 (cu-developer-two): the bare expiry word as the field's WHOLE label, with or without a date-format hint, reads like
+// English 'Expiry (MM/YY)' - 'Scadenza', 'Vencimiento', 'Validade (MM/AA)', 'Caducidad', 'Gültig bis MM/JJ'; a longer phrase
+// ('Vencimiento de la factura', 'Validade do produto') stays free.
+const CARD_EXPIRY_BARE = /^\s*(?:scadenza|vencimiento|validade|caducidad|validit[ée]|ablauf|vence|v[aá]lid[oa]\s+(?:hasta|at[ée])|gültig\s+bis)\s*(?:\(?\s*mm\s*[\/-]\s*(?:aa|yy|jj|aaaa|yyyy|jjjj)\s*\)?)?\s*[:*]?\s*$/iu
+// CU-602 (cu-researcher): German ID fields in the genitive or hyphenated - 'Nummer Ihres / des (Reise)passes', 'Nummer des
+// (Personal)ausweises', 'Steuer-Identifikationsnummer', 'Sozialversicherungs-Nr.', 'Nummer Ihrer Kranken- / Sozialversicherung' -
+// and English 'Number of your ID card', as their compounds and 'Number of your passport' already ask; r2 (cu-developer-three):
+// the '-Nr.' abbreviation after any of those nouns ('Ausweis-Nr.', 'Pass-Nr.', 'Ausweisnr.'); CU-603 r3 (cu-developer-two): with
+// the Kranken- / Pflege- / Renten- compound in front ('Krankenversicherten-Nr.').
+const ID_FIELD_PHRASE = /\bnummer\s+(?:ihres|deines|des|seines|ihrer|der)\s+(?:(?:reise|kinder)?pass(?:es)?|(?:personal)?ausweis(?:es)?|f[üu]hrerscheins?|aufenthaltstitels?)\b|\bsteuer-?\s*identifikations-?\s*nummer\b|\b(?:(?:reise|kinder)?pass|(?:personal)?ausweis|f[üu]hrerschein|steuer|(?:kranken|pflege|renten|sozial)?versicherungs|(?:kranken|pflege|renten)?versicherten|aufenthaltstitel)-?\s*nr\.?(?=\s|$|[:*)])|\bsozialversicherungs-?\s*nummer\b|\bnummer\s+(?:ihrer|deiner|der)\s+(?:kranken|sozial|renten)versicherung\b|\bnumber\s+(?:of|on)\s+(?:(?:your|the|my|this)\s+)?(?:national\s+)?id(?:entity)?\s+card\b/iu
+// CU-604 (cu-researcher): the German bank TAN family as a field's whole label ('TAN', 'mTAN', 'SMS-TAN', 'pushTAN', 'chipTAN',
+// 'photoTAN', 'TAN-Nummer', 'TAN eingeben') - a bare 'tan' inside a word (a colour, 'Tango') stays free.
+const TAN_FIELD = /^\s*(?:tan\s+eingeben|(?:m|sms[\s-]?|push|chip|photo|smart|app[\s-]?|i)?tan(?:[\s-]?(?:nummer|nr\.?|code))?)\s*[:*]?\s*$/iu
+const secretNamedEntry = (target) => isTextEntry(target) && entryNamesOf(target).some((name) => namesWord(name, SECRET_NAMES) || namesAcronym(name) || CARD_NUMBER_PHRASE.test(String(name ?? '')) || CARD_EXPIRY_BARE.test(String(name ?? '')) || ID_FIELD_PHRASE.test(String(name ?? '')) || TAN_FIELD.test(String(name ?? '')))
 
 // CU-164: a wallet recovery phrase - twelve or more words in a row, every one on the BIP39 list; ordinary prose breaks
 // the run with words the list does not hold (the, is, to, of, a).
@@ -1687,6 +1893,33 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // CU-421: overriding a malware warning or installing a profile or helper asks install (CU-254's class).
       // cu-coordinator 15:25Z adds a page's 'Keep dangerous file' (Chrome's own shelf stays the named limit).
       if (!focusesEntry && /^\s*(?:(?:open|run|keep|download|install)\s+anyway|keep\s+(?:the\s+)?dangerous\s+file|install\s+(?:the\s+)?(?:configuration\s+)?(?:profile|helper))\b/i.test(name)) classes.push('install')
+      // CU-396 r3 (cu-developer-three): presenting a surface, as a product - '(Start) present(ing) a / your / this / the / my / an
+      // + tab / window / screen / entire screen / desktop / display / app' - not one phrase per pair. Slide apps' bare 'Present' stays free.
+      if (!focusesEntry && /^\s*(?:start\s+)?present(?:ing)?\s+(?:a|an|your|this|the|my|entire|whole)\s+(?:(?:entire|whole|full)\s+)?(?:tab|window|screen|desktop|display|app|application|monitor)\b/i.test(name)) classes.push('permission')
+      // CU-407 (cu-researcher; supersedes #501): an app's updater installs new code - 'Update Now', 'Update and Restart / Relaunch',
+      // 'Download and Install', 'Update All (extensions / plug-ins)' - on the DESKTOP route only (a native AX control outside a web
+      // area); on a web page 'Update now' usually saves a form. 'Later', 'Skip This Version' and a bare 'Update' stay free.
+      const nativeControl = /^AX/.test(String(target?.role ?? '')) && target?.inWebArea !== true
+      if (!focusesEntry && nativeControl && /^\s*(?:update\s+now|update\s+(?:and|&)\s+(?:restart|relaunch|reopen)|download\s+(?:and|&)\s+install(?:\s+now)?|update\s+all(?:\s+(?:extensions|plug-?ins|add-?ons|packages|apps))?)\s*$/i.test(name)) classes.push('install')
+      // CU-404 (cu-researcher; supersedes #478 with cu-developer-one's go): a paid boost buys reach, as a product - (boost / promote /
+      // sponsor / advertise) + (this / your / the / my)? + (post / tweet / video / listing / page / reel / story / ad / event / pin /
+      // update / article / content), or '... now' (LinkedIn's 'Sponsor now' / 'Sponsor update', r3 cu-developer-three). The label leads with the verb, so 'Boosted posts', 'Boost insights' and 'Promotion settings' stay free.
+      if (!focusesEntry && /^\s*(?:boost|promote|sponsor|advertise)\s+(?:(?:this|your|the|my)\s+)?(?:post|tweet|video|listing|page|reel|story|ad|event|pin|thread|status|update|article|content)\b|^\s*(?:boost|promote|sponsor|advertise)\s+now\b/i.test(name)) classes.push('purchase')
+      // CU-425 (cu-researcher; supersedes #547): widening what others may do with a file - moving it into a shared drive, letting
+      // viewers download / print / copy, letting others edit - asks permission. A bare 'Allow editing' asks only inside a share /
+      // access dialog; narrowing ('Disable downloads', 'Restrict downloads') keeps main's judgement.
+      // r2 (cu-developer-three): Drive's own declarative checkbox ('Viewers and commenters can see the option to download, print, and
+      // copy') asks when it turns the option ON (a native box already checked turns it off - free); Dropbox's 'team folder' and
+      // the older 'Team Drive' are shared drives too.
+      const shareToggle = nativeToggleState(target)
+      if (!focusesEntry && shareToggle !== true && /\b(?:viewers|commenters|everyone|anyone|people|recipients)\b(?:\s+(?:and|&)\s+(?:viewers|commenters))?\s+can\s+(?:see\s+the\s+option\s+to\s+)?(?:download|print|copy)\b/i.test(name)) classes.push('permission')
+      if (!focusesEntry && (/^\s*move\s+(?:it\s+|this\s+|the\s+file\s+)?(?:in)?to\s+(?:a\s+|the\s+)?(?:shared\s+(?:drive|folder|library)|team\s+(?:folder|drive))\b/i.test(name)
+        || (shareToggle !== true && /^\s*(?:allow|enable|let)\s+(?:(?:viewers|commenters|others|everyone|anyone|people|recipients)(?:\s+(?:and|&)\s+(?:viewers|commenters))?\s+(?:to\s+)?(?:see\s+the\s+option\s+to\s+)?)?(?:download(?:s|ing)?|print(?:ing)?(?:\s+(?:and|&)\s+copy(?:ing)?)?|copy(?:ing)?)\b/i.test(name))
+        || /^\s*(?:let\s+(?:others|everyone|anyone|people)\s+edit|enable\s+editing\s+for\s+(?:others|everyone|anyone))\b/i.test(name)
+        || (/^\s*allow\s+editing\s*$/i.test(name) && /\b(?:share|sharing|permissions?|general\s+access|manage\s+access|link\s+settings)\b/i.test(`${target?.dialogName ?? ''} ${target?.dialogDescription ?? ''}`)))) classes.push('permission')
+      // CU-397 (cu-researcher; supersedes #462; cu-coordinator's 03:58Z class): a message to an event's guests is sent at once -
+      // the label LEADS with the verb, so a refusal ('Don't notify guests', 'Do not send') stays free.
+      if (!focusesEntry && /^\s*(?:(?:e-?mail|notify|message)\s+(?:all\s+)?(?:the\s+)?(?:guests|invitees|attendees|participants)|forward\s+(?:the\s+|this\s+)?(?:invitation|invite|event)|(?:propose|suggest)\s+(?:a\s+)?(?:new|another|different|other)\s+time|send\s+updates?(?:\s+to\s+(?:all\s+)?(?:guests|invitees|attendees))?)\b/i.test(name)) classes.push('submit')
       // CU-393: a bare grant on an OAuth consent page, or in a dialog that asks for access to the account, asks permission.
       if (!focusesEntry && OAUTH_BARE_GRANT.test(name) && (isOAuthConsentPage(context.url) || OAUTH_DIALOG_TEXT.test(`${target?.dialogName ?? ''} ${target?.dialogDescription ?? ''}`))) classes.push('permission')
       // CU-513: a bare install word on an extension / add-on / plug-in store detail page installs code into the browser or site.
@@ -2281,6 +2514,56 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // set up, authorised or created - asks purchase anywhere, like 'Set up direct debit'.
     // #677 round 3 (cu-developer-three 12:47Z): allow / enable / turn on / activate too.
     // An older 'authorize' permission stays beside it (D-108: never lower).
+    // CU-403 (cu-verifier 23:42Z live): an IDE's 'Sync Changes' pushes local commits like 'Push' does, so it asks submit as Push
+    // does - 'Sync changes', 'Sync commits', 'Sync branch' as the control's name, with an optional count / arrow suffix
+    // ('Sync Changes 1↓ 2↑'); r2 (cu-developer-two 23:50Z, cu-researcher 23:51Z): 'Commit & Sync', 'Synchronize Changes',
+    // 'Push and pull', 'Sync with remote'; r3 (cu-researcher 23:58Z): 'Sync to remote', 'Pull and push', 'Commit, Push'; follow-up (cu-researcher 00:15Z, cu-developer-two 00:05Z): 'Pull, then push', 'Sync branch to
+    // remote', 'Push commits' (a gap older than CU-403); r2 (cu-developer-two 00:58Z): 'Pull then push', 'Push branch'; r2 (cu-researcher 01:00Z): 'Push tags',
+    // 'Push branch to remote', and the git-verb sequence family below; r3 (cu-researcher 01:05Z): 'Squash and push',
+    // 'Push to all remotes'; r4 (cu-researcher 01:14Z): 'Cherry-pick and push', 'Revert and push', 'Fixup, then push'. A bare 'Sync', 'Settings Sync' or 'Synchronize panels' stays as it was.
+    if (grammarEligible && !classes.includes('submit') && /^\s*(?:commit\s*(?:&|and|,)\s*(?:sync|push)|push\s*(?:&|and|,)\s*pull|pull\s*(?:(?:&|and|,)\s*(?:then\s+)?|then\s+)push|push\s+(?:the\s+)?(?:\d+\s+)?(?:local\s+)?(?:commits?|changes|branch(?:es)?|tags?|all)|push\s+to\s+(?:all\s+)?(?:the\s+)?(?:remotes?|origin|upstream)|sync(?:hroni[sz]e)?\s+(?:changes|commits?|branch|repository|repo|(?:with|to)\s+(?:the\s+)?(?:remote|origin|upstream))(?:\s+(?:with|to)\s+(?:the\s+)?(?:remote|origin|upstream))?)(?:\s+to\s+(?:the\s+)?(?:remote|origin|upstream))?(?:\s+[\d\s↑↓]+)?\s*$/iu.test(name)) classes.push('submit')
+    // CU-403 follow-up r2 (cu-researcher 01:00Z): a sequence of git verbs joined by ',', 'then', 'and' or '&' asks submit
+    // when any step pushes or syncs ('Fetch, then push', 'Pull, rebase and push', 'Commit, then sync'); a sequence with no
+    // push / sync step ('Pull, then rebase', 'Fetch, then merge') stays as it was.
+    if (grammarEligible && !classes.includes('submit')) {
+      const gitVerb = '(?:pull|fetch|rebase|commit|stage|merge|stash|amend|squash|cherry[-\\s]?pick|revert|fixup|push|sync)'
+      const gitSequence = new RegExp(`^\\s*${gitVerb}(?:\\s*(?:,\\s*(?:and\\s+|then\\s+)?|&\\s*|and\\s+(?:then\\s+)?|then\\s+)${gitVerb})+\\s*$`, 'i')
+      if (gitSequence.test(name) && /\b(?:push|sync)\b/i.test(name)) classes.push('submit')
+      // CU-597 (cu-researcher; cu-developer-one's go 02:20Z): the leading steps need not be listed git verbs - a sequence whose
+      // LAST step is push ('Reword, then push', 'Stage all, commit and push', 'Bump version and push') asks submit, and a last
+      // step 'sync' asks when it names a git object ('..., then sync changes / to remote'). A bare last 'sync' after another step
+      // stays free ('Save and sync', 'Sign in and sync' sync the user's own data), as does a label with no push / sync step.
+      const step = '[\\p{L}][\\p{L}\'-]*(?:\\s+[\\p{L}][\\p{L}\'-]*){0,2}'
+      const join = '(?:\\s*,\\s*(?:and\\s+|then\\s+)?|\\s*&\\s*|\\s+and\\s+(?:then\\s+)?|\\s+then\\s+)'
+      const lastPush = new RegExp(`^\\s*${step}(?:${join}${step}){0,3}${join}(?:push(?:\\s+(?:to\\s+)?(?:the\\s+)?(?:remotes?|origin|upstream|changes|commits?|branch(?:es)?|tags?))?|sync\\s+(?:(?:to|with)\\s+(?:the\\s+)?)?(?:remote|origin|upstream|changes|commits?|branch))\\s*$`, 'iu')
+      if (!classes.includes('submit') && lastPush.test(name)) classes.push('submit')
+    }
+    // CU-619 (cu-researcher): German / Dutch separable call / join forms - 'Rufen Sie uns an', 'Ruf Anna an', 'Treten Sie dem Meeting
+    // bei', 'Tritt jetzt bei', 'Neem deel', 'Bel Anna' - ask submit; a bare 'Bel' stays free (it is also a bell label).
+    if (grammarEligible && !classes.includes('submit') && (/^\s*(?:ruf|rufe|rufen\s+sie)\s+(?:\p{L}+\s+){0,3}an\s*[.!]?\s*$/iu.test(name) || /^\s*(?:tritt|treten\s+sie)\s+(?:\p{L}+\s+){0,3}bei\s*[.!]?\s*$/iu.test(name) || /^\s*neem\s+(?:\p{L}+\s+){0,3}deel\s*[.!]?\s*$/iu.test(name) || /^\s*(?:nimm|nehmen\s+sie)\s+(?:\p{L}+\s+){0,4}teil\s*[.!]?\s*$/iu.test(name) || /^\s*bel\s+\p{L}+(?:\s+\p{L}+)?\s*[.!]?\s*$/iu.test(name))) classes.push('submit')
+    // CU-617 (cu-researcher): German / Dutch separable and short imperatives of share / invite - 'Lade Freunde ein', 'Laden Sie
+    // Kollegen ein', 'Nodig je team uit', 'Teile das Dokument', 'Deel de link' - ask permission; 'Deel 2' (a part number) stays free.
+    if (grammarEligible && !classes.includes('permission') && (/^\s*(?:lade|laden\s+sie)\s+(?:\p{L}+\s+){1,3}ein\s*[.!]?\s*$/iu.test(name) || /^\s*nodig\s+(?:\p{L}+\s+){1,3}uit\s*[.!]?\s*$/iu.test(name) || /^\s*(?:teile|deel)\s+(?:\p{L}+\s*){1,3}[.!]?\s*$/iu.test(name) || /^\s*deel\s*[.!]?\s*$/iu.test(name))) classes.push('permission')
+    // CU-615 r3 (cu-developer-three): the German / Dutch imperative family as one rule - start / begin (+ one adverb) + your
+    // subscription / membership ('Starte jetzt dein Abo', 'Beginne deine Mitgliedschaft', 'Start nu je lidmaatschap'), and
+    // switch (+ one adverb) to pro / premium / plus ('Wechsle jetzt zu Premium').
+    if (grammarEligible && !classes.includes('purchase') && /^\s*(?:starte|beginne|starten\s+sie|beginnen\s+sie|start|begin)\s+(?:(?:jetzt|gleich|sofort|bitte|nu)\s+)?(?:deine?|ihre?|je|uw)\s+(?:abo|abonnement|mitgliedschaft|lidmaatschap)\s*[.!]?\s*$/iu.test(name)) classes.push('purchase')
+    if (grammarEligible && !classes.includes('purchase') && /^\s*(?:wechsle|wechseln\s+sie|stap|stapt)\s+(?:(?:jetzt|gleich|sofort|bitte|nu)\s+)?(?:zu|auf|over\s+naar|over\s+op)\s+(?:pro|premium|plus)\s*[.!]?\s*$/iu.test(name)) classes.push('purchase')
+    // CU-613 (cu-researcher): the ':' / '-' label form of 'start a subscription' - 'Suscripción mensual: empezar', 'Abo - starten'.
+    // r3 (cu-developer-one): with one adverb between instead of the ':' ('Abo jetzt starten', 'Suscripción ahora iniciar').
+    if (grammarEligible && !classes.includes('purchase') && /^\s*(?:suscripci[oó]n|abonnement|abo|abbonamento|assinatura|subscription|mitgliedschaft|membres[ií]a)(?:\s+\p{L}+)?(?:\s*[:\-–]\s*|\s+(?:jetzt|sofort|bitte|maintenant|ahora|agora|ora|adesso|nu|şimdi|now|please)\s+)(?:empezar|iniciar|comenzar|starten|beginnen|commencer|démarrer|avvia(?:re)?|inizia(?:re)?|começar|start|begin)\s*[.!]?\s*$/iu.test(name)) classes.push('purchase')
+    // r3 (cu-developer-three's bar, accepted by cu-developer-one as owner): 'switch / change / move / upgrade to <paid plan>' -
+    // pro, premium, plus, paid, annual, family - and 'business / team' only with plan / tier ('Switch to business account' is
+    // a profile switch and stays free).
+    if (grammarEligible && !classes.includes('purchase') && /^\s*(?:switch|change|move|upgrade|go)\s+to\s+(?:the\s+|a\s+)?(?:(?:pro|premium|plus|paid|annual|yearly|family)(?:\s+(?:plan|version|tier|edition|subscription|membership))?|(?:business|team|enterprise)\s+(?:plan|tier|subscription))\s*[.!]?\s*$/i.test(name)) classes.push('purchase')
+    // CU-413: money moved out to a bank or card, as 'Withdraw to bank' already asks - send / transfer / move / pay out / cash out
+    // (an optional amount or money noun) to (my / the) bank, bank account, checking, savings or debit card.
+    if (grammarEligible && !classes.includes('purchase') && /^\s*(?:send|transfer|move|pay\s*out|cash\s*out|withdraw)\s+(?:(?:money|funds|cash|balance|earnings|payout|it|[$€£]?\s*[\d.,]+(?:\s*(?:usd|eur|gbp|dollars?|euros?))?)\s+)?(?:to|into)\s+(?:my\s+|your\s+|the\s+|a\s+)?(?:bank(?:\s+account)?|checking(?:\s+account)?|savings(?:\s+account)?|debit\s+card|current\s+account)\b/i.test(name)) classes.push('purchase')
+    // CU-611 (cu-researcher; cu-developer-one's go 13:22Z): a transfer noun, then its confirming verb, with one adverb or a ':' /
+    // '-' between - 'Überweisung jetzt ausführen', 'Virement : confirmer', 'Transferencia: confirmar', 'Overboeking: bevestigen' -
+    // asks purchase as the contiguous forms (#995) do. The whole label must be the noun and the verb. CU-615: 'bitte' counts
+    // as the adverb too (cu-verifier's CU-611 named limit, 'Überweisung bitte bestätigen').
+    if (grammarEligible && !classes.includes('purchase') && /^\s*(?:überweisung|virement|transferencia|transferência|overboeking|transfer(?:i|ı)?|havale(?:yi)?|bonifico)\s*(?:[:\-–]\s*|\s+(?:jetzt|sofort|bitte|maintenant|ahora|agora|ora|adesso|nu|şimdi)\s+)(?:jetzt\s+|sofort\s+|bitte\s+)?(?:ausführen|bestätigen|absenden|senden|confirmer|valider|effectuer|envoyer|confirmar|realizar|enviar|bevestigen|uitvoeren|versturen|verzenden|onayla(?:yın)?|gönder(?:in)?|conferma(?:re)?|esegui|invia)\s*[.!]?\s*$/iu.test(name)) classes.push('purchase')
     if (grammarEligible && !classes.includes('purchase') && /^\s*(?:set\s+up|authori[sz]e|create|start|allow|enable|turn\s+on|activate)\s+(?:an?\s+|the\s+)?(?:direct\s+debit|debit\s+mandate|automatic\s+(?:withdrawals?|debits?)|recurring\s+(?:withdrawals?|debits?))\s*$/i.test(name)) classes.push('purchase')
     // #680 round 3 (cu-researcher 13:02Z): on an exchange's wallet page - a whole /withdraw, /withdrawal(s), /wallet(s), /addresses or
     // /address-book segment of an http(s) URL - a bare 'Add to allowlist / whitelist' is the money redirect and asks credential; on a
