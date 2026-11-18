@@ -196,6 +196,8 @@ const LOCALE_WORDS = Object.freeze({
     'encerrar assinatura', 'encerrar _ assinatura', 'terminar _ assinatura', 'encerrar plano', 'encerrar _ plano', 'encerre sua assinatura',
     'termina abbonamento', 'termina _ abbonamento', 'terminare _ abbonamento', 'termina il tuo abbonamento', 'termina _ piano',
     'abonnement beëindigen', 'lidmaatschap beëindigen', 'beëindig je abonnement', 'beëindig uw abonnement', 'beëindig je lidmaatschap', 'beëindig uw lidmaatschap',
+    'abonnement stopzetten', 'lidmaatschap stopzetten', '_ abonnement stopzetten', '_ lidmaatschap stopzetten', 'zet je abonnement stop', 'zet uw abonnement stop', 'zet je lidmaatschap stop', 'zet uw lidmaatschap stop',
+    'terminar plano', 'terminar _ plano', 'termine seu plano', 'encerre seu plano', 'termine sua assinatura',
     'abonelik~ sonlandır^', 'aboneliğ~ sonlandır^', 'üyelik~ sonlandır^', 'üyeliğ~ sonlandır^', 'abonelik~ bitir^', 'aboneliğ~ bitir^', 'üyelik~ bitir^', 'üyeliğ~ bitir^'],
   delete: ['löschen', 'entfernen', 'verwerfen', 'supprimer', 'effacer', 'eliminar', 'borrar', 'удалить', 'стереть', '削除', '消去', '삭제', '지우기',
     // CU-358: Italian, Dutch, Portuguese and Turkish.
