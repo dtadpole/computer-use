@@ -18,7 +18,7 @@ test('CU-621: leave group and unsubscribe ask submit in seven languages', () => 
   for (const name of ['Gruppe verlassen', 'Verlassen Sie die Gruppe', 'Quitter le groupe', 'Quittez le groupe', 'Salir del grupo', 'Salga del grupo', 'Abandonar el grupo', 'Sair do grupo', 'Saia do grupo',
     'Abbandona il gruppo', 'Esci dal gruppo', 'Groep verlaten', 'Verlaat de groep', 'Gruptan çık', 'Gruptan ayrıl', 'Gruptan ayrılın',
     'Abbestellen', 'Newsletter abbestellen', 'Vom Newsletter abmelden', 'Se désabonner', 'Désabonnez-vous', 'Se désinscrire', 'Darse de baja', 'Date de baja', 'Cancelar inscrição', 'Descadastrar',
-    'Annulla iscrizione', 'Disiscriviti', 'Uitschrijven', 'Schrijf je uit', 'Abonelikten çık', 'Bültenden çık']) assert.ok(click(name).includes('submit'), name)
+    'Annulla iscrizione', 'Disiscriviti', 'Uitschrijven', 'Schrijf je uit', 'Afmelden voor nieuwsbrief', 'Afmelden voor de nieuwsbrief', 'Meld je af voor de nieuwsbrief', 'Abonelikten çık', 'Bültenden çık']) assert.ok(click(name).includes('submit'), name)
 })
 
 test('CU-621 negatives: plain sign-out, group pages and device lists stay free', () => {
