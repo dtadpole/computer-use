@@ -1,7 +1,7 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-18T21:40:00Z
+modified: 2026-11-18T21:39:00Z
 level: L1
 version: 3.55.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
@@ -15,7 +15,7 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; no desktop runs. State at 21:40Z, 18 November.
+session worktree plus `--review` worktrees; no desktop runs. State at 21:39Z, 18 November.
 
 ## Landed
 
