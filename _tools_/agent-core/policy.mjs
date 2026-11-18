@@ -56,7 +56,10 @@ const GENERIC_SUBMIT = /^\s*(?:submit|send|send\s+(?:message|reply|email|comment
 // Traditional Chinese. CJK has no word gaps, so a phrase matches inside a longer label ('立即购买' asks purchase); named
 // over-asks: a label that merely contains one ('删除线', strikethrough). Other languages are a named limit.
 const ZH_WORDS = Object.freeze({
-  purchase: ['购买', '購買', '支付', '付款', '结账', '結帳', '结算', '結算', '下单', '下單', '提交订单', '提交訂單', '订阅', '訂閱', '充值',
+  purchase: [
+    // CU-625 r2 (cu-developer-one's twin rule): cancelling or ending a membership / plan, as English 'Cancel membership' asks.
+    '取消会员', '取消會員', '取消会员资格', '取消會員資格', '取消套餐', '终止会员', '終止會員', '退出会员', '退出會員',
+    '购买', '購買', '支付', '付款', '结账', '結帳', '结算', '結算', '下单', '下單', '提交订单', '提交訂單', '订阅', '訂閱', '充值',
     '儲值', '转账', '轉帳', '汇款', '匯款', '捐款', '捐赠', '捐贈', '免费试用', '免費試用', '预订', '預訂', '续订', '續訂', '升级套餐', '升級方案',
     // CU-294 (cu-researcher's web sweep): renewals and memberships.
     '续费', '續費', '开通会员', '開通會員', '立即开通', '立即開通', '升级会员', '升級會員', '开通vip', '開通vip'],
@@ -184,7 +187,16 @@ const LOCALE_WORDS = Object.freeze({
     "résilier l'adhésion", 'résilier l’adhésion', "annuler l'adhésion", 'annuler l’adhésion', 'résilier mon adhésion', 'résilier mon forfait', 'annuler mon forfait',
     'cancelar membresía', 'cancelar _ membresía', 'cancelar mi membresía', 'cancela tu membresía', 'cancelar mi plan', 'cancelar el plan',
     'cancelar plano', 'cancelar _ plano', 'cancelar meu plano', 'cancelar associação', 'annulla iscrizione al club', 'annulla piano', 'annulla il mio piano', 'disdici piano', 'disdici il piano',
-    'lidmaatschap opzeggen', 'zeg je lidmaatschap op', 'zeg uw lidmaatschap op', 'pakket opzeggen', 'üyelik~ iptal et^', 'üyelik~ iptal edin', 'üyeliğ~ iptal et^', 'üyeliğ~ iptal edin', 'plan~ iptal et^'],
+    'lidmaatschap opzeggen', 'zeg je lidmaatschap op', 'zeg uw lidmaatschap op', 'pakket opzeggen', 'üyelik~ iptal et^', 'üyelik~ iptal edin', 'üyeliğ~ iptal et^', 'üyeliğ~ iptal edin', 'plan~ iptal et^',
+    // r2 (cu-developer-three): the end / terminate verb for both halves takes purchase, as English 'End subscription' / 'End
+    // membership' do.
+    'abo beenden', 'abonnement beenden', 'mitgliedschaft beenden', 'beende dein abo', 'beende deine mitgliedschaft', 'beenden sie ihr abonnement', 'beenden sie ihre mitgliedschaft',
+    "mettre fin à l'abonnement", 'mettre fin à l’abonnement', 'mettre fin à mon abonnement', "mettre fin à l'adhésion", 'mettre fin à l’adhésion', "terminer l'abonnement", 'terminer l’abonnement',
+    'finalizar suscripción', 'finalizar _ suscripción', 'terminar _ suscripción', 'finalizar membresía', 'finalizar _ membresía', 'terminar _ membresía', 'finaliza tu suscripción', 'finalice su suscripción',
+    'encerrar assinatura', 'encerrar _ assinatura', 'terminar _ assinatura', 'encerrar plano', 'encerrar _ plano', 'encerre sua assinatura',
+    'termina abbonamento', 'termina _ abbonamento', 'terminare _ abbonamento', 'termina il tuo abbonamento', 'termina _ piano',
+    'abonnement beëindigen', 'lidmaatschap beëindigen', 'beëindig je abonnement', 'beëindig uw abonnement', 'beëindig je lidmaatschap', 'beëindig uw lidmaatschap',
+    'abonelik~ sonlandır^', 'aboneliğ~ sonlandır^', 'üyelik~ sonlandır^', 'üyeliğ~ sonlandır^', 'abonelik~ bitir^', 'aboneliğ~ bitir^', 'üyelik~ bitir^', 'üyeliğ~ bitir^'],
   delete: ['löschen', 'entfernen', 'verwerfen', 'supprimer', 'effacer', 'eliminar', 'borrar', 'удалить', 'стереть', '削除', '消去', '삭제', '지우기',
     // CU-358: Italian, Dutch, Portuguese and Turkish.
     'elimina', 'cancella', 'rimuovi', 'elimina definitivamente', 'verwijderen', 'verwijder', 'wissen', 'definitief verwijderen',
@@ -204,8 +216,8 @@ const LOCALE_WORDS = Object.freeze({
     'cancelar suscripción', 'cancelar _ suscripción', 'cancelar mi suscripción', 'cancela tu suscripción', 'cancele su suscripción',
     'cancelar assinatura', 'cancelar _ assinatura', 'cancele sua assinatura', 'cancela a tua assinatura', 'cancelar subscrição', 'cancelar _ subscrição',
     'annulla abbonamento', 'annulla _ abbonamento', 'disdici abbonamento', 'disdici _ abbonamento', 'disdici il tuo abbonamento', 'disdire _ abbonamento', 'annulla il tuo abbonamento',
-    'abonnement opzeggen', '_ abonnement opzeggen', 'zeg je abonnement op', 'zeg uw abonnement op', 'abonnement beëindigen',
-    'abonelik~ iptal et^', 'abonelik~ iptal edin', 'abonelik~ sonlandır^', 'aboneliğ~ iptal et^', 'aboneliğ~ iptal edin', 'aboneliğ~ sonlandır^'],
+    'abonnement opzeggen', '_ abonnement opzeggen', 'zeg je abonnement op', 'zeg uw abonnement op',
+    'abonelik~ iptal et^', 'abonelik~ iptal edin', 'aboneliğ~ iptal et^', 'aboneliğ~ iptal edin'],
   submit: ['senden', 'absenden', 'abschicken', 'envoyer', 'soumettre', 'enviar', 'отправить', '送信', '보내기', '전송', '제출',
     // CU-358: Italian, Dutch, Portuguese and Turkish.
     'invia', 'invia ora', 'verzenden', 'versturen', 'verstuur', 'indienen', 'submeter', 'gönder^', 'şimdi gönder^',
