@@ -211,6 +211,9 @@ const LOCALE_WORDS = Object.freeze({
     'gruppe verlassen', 'verlasse die gruppe', 'verlassen sie die gruppe', 'chat verlassen', 'quitter le groupe', 'quittez le groupe', 'quitter la conversation', 'quitter le canal',
     'salir del grupo', 'sal del grupo', 'salga del grupo', 'abandonar el grupo', 'sair do grupo', 'saia do grupo', 'abandonar o grupo', 'abbandona il gruppo', 'abbandonare il gruppo', 'esci dal gruppo',
     'groep verlaten', 'verlaat de groep', 'verlaat groep', 'grup~ çık^', 'grup~ ayrıl^', 'sohbet~ ayrıl^',
+    // cu-verifier's CU-621 named limit: the demonstrative forms ('Quitter ce groupe').
+    'quitter ce groupe', 'quittez ce groupe', 'quitter cette conversation', 'diese gruppe verlassen', 'verlasse diese gruppe', 'salir de este grupo', 'sal de este grupo', 'sair deste grupo', 'saia deste grupo',
+    'esci da questo gruppo', 'abbandona questo gruppo', 'deze groep verlaten', 'verlaat deze groep',
     'abbestellen', 'newsletter abbestellen', 'vom newsletter abmelden', 'se désabonner', 'désabonner', 'désabonnez-vous', 'se désinscrire', 'désinscrivez-vous',
     'darse de baja', 'date de baja', 'dese de baja', 'descadastrar', 'cancelar inscrição', 'descadastre-se', 'annulla iscrizione', 'disiscriviti', 'cancella iscrizione',
     'uitschrijven', 'schrijf je uit', 'schrijf u uit', 'afmelden voor de nieuwsbrief', 'afmelden voor nieuwsbrief', 'afmelden voor _ nieuwsbrief', 'meld je af voor de nieuwsbrief', 'afmelden voor e-mails', 'abonelik~ çık^', 'bülten~ çık^',
