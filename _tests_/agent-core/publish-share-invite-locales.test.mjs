@@ -16,7 +16,7 @@ test('CU-617: publish / post ask submit in seven languages', () => {
 test('CU-617: share / invite ask permission in seven languages', () => {
   for (const name of ['Teilen', 'Mit anderen teilen', 'Teilen Sie', 'Teile das Dokument', 'Einladen', 'Personen einladen', 'Lade Freunde ein', 'Laden Sie Kollegen ein', 'Partager', 'Partager avec',
     'Partagez', 'Inviter', 'Inviter des personnes', 'Invitez vos amis', 'Compartir', 'Comparte', 'Invitar', 'Invitar personas', 'Invita a tus amigos', 'Compartilhar', 'Compartilhe', 'Partilhe', 'Convidar',
-    'Convidar pessoas', 'Convide amigos', 'Condividi', 'Condividere', 'Invita', 'Invita persone', 'Delen', 'Deel de link', 'Uitnodigen', 'Mensen uitnodigen', 'Nodig je team uit', 'Paylaş', 'Paylaşın',
+    'Convidar pessoas', 'Convide amigos', 'Condividi', 'Condividere', 'Invita', 'Invita persone', 'Delen', 'Deel de link', 'Uitnodigen', 'Mensen uitnodigen', 'Nodig je team uit', 'Deel', 'Nodig uit', 'Paylaş', 'Paylaşın',
     'Davet et', 'Kişileri davet et', 'Davet edin']) assert.ok(click(name).includes('permission'), name)
 })
 
