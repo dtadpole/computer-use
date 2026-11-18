@@ -178,7 +178,13 @@ const LOCALE_WORDS = Object.freeze({
     "passez à l'offre premium", 'passez à l’offre premium', "passez à l'offre pro", 'passez à l’offre pro', "passez à l'offre plus", 'passez à l’offre plus', 'passez à la version pro', 'passez à la version premium', 'passez à premium', 'passez au forfait pro', 'passez au forfait premium',
     // r3: Turkish stems take their suffixes ('~' noun, '^' verb - see namesWord).
     'ödeme~ onayla^', 'satın alma~ onayla^', 'ödeme~ tamamla^', 'ödeme~ yap^', 'sipariş~ ver^', 'sipariş~ tamamla^', 'sipariş~ onayla^', 'alışveriş~ tamamla^',
-    'satın al^', 'şimdi satın al^', 'hemen al^', 'şimdi al^', 'öde^', 'şimdi öde^', 'ödeme~ geç^'],
+    'satın al^', 'şimdi satın al^', 'hemen al^', 'şimdi al^', 'öde^', 'şimdi öde^', 'ödeme~ geç^',
+    // CU-625 (cu-researcher): cancelling a membership or a plan asks purchase, as English 'Cancel membership' / 'Cancel my plan' do.
+    'mitgliedschaft kündigen', 'kündige deine mitgliedschaft', 'kündigen sie ihre mitgliedschaft', 'tarif kündigen', 'meinen tarif kündigen',
+    "résilier l'adhésion", 'résilier l’adhésion', "annuler l'adhésion", 'annuler l’adhésion', 'résilier mon adhésion', 'résilier mon forfait', 'annuler mon forfait',
+    'cancelar membresía', 'cancelar _ membresía', 'cancelar mi membresía', 'cancela tu membresía', 'cancelar mi plan', 'cancelar el plan',
+    'cancelar plano', 'cancelar _ plano', 'cancelar meu plano', 'cancelar associação', 'annulla iscrizione al club', 'annulla piano', 'annulla il mio piano', 'disdici piano', 'disdici il piano',
+    'lidmaatschap opzeggen', 'zeg je lidmaatschap op', 'zeg uw lidmaatschap op', 'pakket opzeggen', 'üyelik~ iptal et^', 'üyelik~ iptal edin', 'üyeliğ~ iptal et^', 'üyeliğ~ iptal edin', 'plan~ iptal et^'],
   delete: ['löschen', 'entfernen', 'verwerfen', 'supprimer', 'effacer', 'eliminar', 'borrar', 'удалить', 'стереть', '削除', '消去', '삭제', '지우기',
     // CU-358: Italian, Dutch, Portuguese and Turkish.
     'elimina', 'cancella', 'rimuovi', 'elimina definitivamente', 'verwijderen', 'verwijder', 'wissen', 'definitief verwijderen',
@@ -190,7 +196,16 @@ const LOCALE_WORDS = Object.freeze({
     'excluir', 'apagar', 'remover', 'excluir permanentemente', 'sil^', 'kaldır^', 'kalıcı olarak sil^', 'hesab~ sil^', 'hesab~ kapat^',
     // r2: emptying the trash, as English 'Empty trash'.
     'svuota cestino', 'svuota il cestino', 'prullenbak legen', 'prullenbak leegmaken', 'leeg prullenbak',
-    'esvaziar lixeira', 'esvaziar a lixeira', 'esvaziar lixo', 'esvaziar a reciclagem', 'çöp kutu~ boşalt^', 'çöp~ boşalt^', 'çöp kutu~ temizle^'],
+    'esvaziar lixeira', 'esvaziar a lixeira', 'esvaziar lixo', 'esvaziar a reciclagem', 'çöp kutu~ boşalt^', 'çöp~ boşalt^', 'çöp kutu~ temizle^',
+    // CU-625 (cu-researcher; cu-developer-one's twin-parity class rule): cancelling a subscription asks delete, as English 'Cancel
+    // subscription' does; infinitive, imperative, formal and possessive forms.
+    'abo kündigen', 'abonnement kündigen', 'kündige dein abo', 'kündige dein abonnement', 'kündigen sie ihr abonnement', 'kündigen sie ihr abo',
+    "résilier l'abonnement", 'résilier l’abonnement', "annuler l'abonnement", 'annuler l’abonnement', 'résilier mon abonnement', 'annuler mon abonnement', 'résiliez votre abonnement', 'annulez votre abonnement',
+    'cancelar suscripción', 'cancelar _ suscripción', 'cancelar mi suscripción', 'cancela tu suscripción', 'cancele su suscripción',
+    'cancelar assinatura', 'cancelar _ assinatura', 'cancele sua assinatura', 'cancela a tua assinatura', 'cancelar subscrição', 'cancelar _ subscrição',
+    'annulla abbonamento', 'annulla _ abbonamento', 'disdici abbonamento', 'disdici _ abbonamento', 'disdici il tuo abbonamento', 'disdire _ abbonamento', 'annulla il tuo abbonamento',
+    'abonnement opzeggen', '_ abonnement opzeggen', 'zeg je abonnement op', 'zeg uw abonnement op', 'abonnement beëindigen',
+    'abonelik~ iptal et^', 'abonelik~ iptal edin', 'abonelik~ sonlandır^', 'aboneliğ~ iptal et^', 'aboneliğ~ iptal edin', 'aboneliğ~ sonlandır^'],
   submit: ['senden', 'absenden', 'abschicken', 'envoyer', 'soumettre', 'enviar', 'отправить', '送信', '보내기', '전송', '제출',
     // CU-358: Italian, Dutch, Portuguese and Turkish.
     'invia', 'invia ora', 'verzenden', 'versturen', 'verstuur', 'indienen', 'submeter', 'gönder^', 'şimdi gönder^',
