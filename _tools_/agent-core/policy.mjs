@@ -230,7 +230,7 @@ const LOCALE_WORDS = Object.freeze({
     // (German / Dutch separable imperatives - 'Lade ... ein', 'Nodig ... uit', 'Deel ...' - are a grammar rule below).
     'teilen', 'teilen sie', 'mit anderen teilen', 'einladen', 'partager', 'partagez', 'partage', 'inviter', 'invitez', 'compartir', 'comparte', 'comparta', 'invitar', 'invita', 'invite a',
     'compartilhar', 'compartilhe', 'partilhar', 'partilhe', 'convidar', 'convide', 'condividi', 'condividere', 'condividete', 'invitare', 'invitate', 'delen', 'uitnodigen',
-    'paylaş^', 'davet et^', 'davet edin', 'davet edin^'],
+    'paylaş^', 'davet et^', 'davet edin', 'davet edin^', 'nodig uit', 'nodig uit^'],
   // CU-345: a PIN, one-time code, security code or password field named in these languages.
   secret: ['passwort', 'kennwort', 'sicherheitscode', 'prüfziffer', 'mot de passe', 'code de sécurité', 'cryptogramme',
     'contraseña', 'código de seguridad', 'пароль', 'код безопасности', 'パスワード', '暗証番号', 'セキュリティコード', '認証コード',
@@ -2538,7 +2538,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (grammarEligible && !classes.includes('submit') && (/^\s*(?:ruf|rufe|rufen\s+sie)\s+(?:\p{L}+\s+){0,3}an\s*[.!]?\s*$/iu.test(name) || /^\s*(?:tritt|treten\s+sie)\s+(?:\p{L}+\s+){0,3}bei\s*[.!]?\s*$/iu.test(name) || /^\s*neem\s+(?:\p{L}+\s+){0,3}deel\s*[.!]?\s*$/iu.test(name) || /^\s*bel\s+\p{L}+(?:\s+\p{L}+)?\s*[.!]?\s*$/iu.test(name))) classes.push('submit')
     // CU-617 (cu-researcher): German / Dutch separable and short imperatives of share / invite - 'Lade Freunde ein', 'Laden Sie
     // Kollegen ein', 'Nodig je team uit', 'Teile das Dokument', 'Deel de link' - ask permission; 'Deel 2' (a part number) stays free.
-    if (grammarEligible && !classes.includes('permission') && (/^\s*(?:lade|laden\s+sie)\s+(?:\p{L}+\s+){1,3}ein\s*[.!]?\s*$/iu.test(name) || /^\s*nodig\s+(?:\p{L}+\s+){1,3}uit\s*[.!]?\s*$/iu.test(name) || /^\s*(?:teile|deel)\s+(?:\p{L}+\s*){1,3}[.!]?\s*$/iu.test(name))) classes.push('permission')
+    if (grammarEligible && !classes.includes('permission') && (/^\s*(?:lade|laden\s+sie)\s+(?:\p{L}+\s+){1,3}ein\s*[.!]?\s*$/iu.test(name) || /^\s*nodig\s+(?:\p{L}+\s+){1,3}uit\s*[.!]?\s*$/iu.test(name) || /^\s*(?:teile|deel)\s+(?:\p{L}+\s*){1,3}[.!]?\s*$/iu.test(name) || /^\s*deel\s*[.!]?\s*$/iu.test(name))) classes.push('permission')
     // CU-615 r3 (cu-developer-three): the German / Dutch imperative family as one rule - start / begin (+ one adverb) + your
     // subscription / membership ('Starte jetzt dein Abo', 'Beginne deine Mitgliedschaft', 'Start nu je lidmaatschap'), and
     // switch (+ one adverb) to pro / premium / plus ('Wechsle jetzt zu Premium').
