@@ -15,9 +15,9 @@ test('CU-619: call / join-meeting buttons ask submit in seven languages', () => 
     'Görüntülü arama', 'Sesli arama', 'Görüntülü ara', 'Toplantıya katıl', 'Toplantıya katılın', 'Şimdi katıl',
     'Rufen Sie uns an', 'Ruf Anna an', 'Treten Sie dem Meeting bei', 'Tritt jetzt bei', 'Rejoignez la réunion', 'Únase a la reunión', 'Llame ahora', 'Ligue para nós', 'Entre na reunião', 'Participe da reunião',
     'Chiami ora', 'Partecipi alla riunione', 'Bel nu', 'Bel Anna', 'Neem deel', 'Neem nu deel',
-    'An Besprechung teilnehmen', 'Am Meeting teilnehmen', 'Jetzt teilnehmen', 'Nehmen Sie an der Besprechung teil', 'Nimm jetzt teil', 'Aramaya katıl', 'Aramaya katılın', 'Hemen ara', 'Şimdi ara']) assert.ok(click(name).includes('submit'), name)
+    'An Besprechung teilnehmen', 'Am Meeting teilnehmen', 'Jetzt teilnehmen', 'Nehmen Sie an der Besprechung teil', 'Nimm jetzt teil', 'Aramaya katıl', 'Aramaya katılın', 'Hemen ara']) assert.ok(click(name).includes('submit'), name)
 })
 
 test('CU-619 negatives: search, switch-on, call logs and meeting details stay free', () => {
-  for (const name of ['Ara', 'Ligar', 'Ligar Wi-Fi', 'Anrufliste', 'Historique des appels', 'Llamadas recientes', 'Registro chiamate', 'Belgeschiedenis', 'Toplantı ayrıntıları', 'Meeting-Details', 'Détails de la réunion', 'Bel', 'Arayın', 'Ruf-Nummer', 'Neem contact op']) assert.deepEqual(click(name), [], name)
+  for (const name of ['Ara', 'Ligar', 'Ligar Wi-Fi', 'Anrufliste', 'Historique des appels', 'Llamadas recientes', 'Registro chiamate', 'Belgeschiedenis', 'Toplantı ayrıntıları', 'Meeting-Details', 'Détails de la réunion', 'Bel', 'Arayın', 'Ruf-Nummer', 'Neem contact op', 'Şimdi ara']) assert.deepEqual(click(name), [], name)
 })

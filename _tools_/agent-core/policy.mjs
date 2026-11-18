@@ -211,10 +211,10 @@ const LOCALE_WORDS = Object.freeze({
     'ligue para', 'ligue agora', 'entre na reunião', 'participe da reunião', 'inicie _ chamada', 'chiami', 'chiamaci', 'partecipi alla riunione', 'partecipa adesso', 'avvii _ chiamata',
     'bel nu', 'bel ons', 'start _ gesprek', 'start videogesprek', 'neem deel aan de vergadering', 'neem nu deel',
     // r2 (cu-developer-three, cu-developer-two): the German 'teilnehmen' join forms, Turkish 'join the call', and the Turkish
-    // 'ara' with an adverb ('Hemen ara', 'Şimdi ara') - read as a call; a 'search now' button over-asks, fail-closed.
+    // 'Hemen ara' (cu-developer-two's bar) - read as a call; 'Şimdi ara' stays free as ambiguous (cu-developer-three).
     'jetzt teilnehmen', 'an der besprechung teilnehmen', 'an besprechung teilnehmen', 'am meeting teilnehmen', 'an meeting teilnehmen', 'an der konferenz teilnehmen', 'an der videokonferenz teilnehmen',
     'am anruf teilnehmen', 'am videoanruf teilnehmen', 'am telefonat teilnehmen', 'besprechung teilnehmen', 'meeting teilnehmen', 'konferenz teilnehmen',
-    'arama~ katıl^', 'görüşme~ katıl^', 'hemen ara^', 'şimdi ara^'],
+    'arama~ katıl^', 'görüşme~ katıl^', 'hemen ara^'],
   // CU-616 (cu-researcher): sharing a (live) location and granting access, in the seven locales, as English 'Share my location' /
   // 'Share live location' / 'Grant access' / 'Give access' ask permission.
   permission: ['standort teilen', 'live-standort teilen', 'meinen standort teilen', 'standortfreigabe aktivieren', 'zugriff gewähren', 'zugriff erlauben', 'zugang gewähren',
