@@ -196,7 +196,25 @@ const LOCALE_WORDS = Object.freeze({
     'invia', 'invia ora', 'verzenden', 'versturen', 'verstuur', 'indienen', 'submeter', 'gönder^', 'şimdi gönder^',
     // CU-617 (cu-researcher): publish / post, as English 'Publish' / 'Post' ask submit; infinitive, imperative and formal forms.
     'veröffentlichen', 'veröffentliche', 'posten', 'poste', 'beitrag veröffentlichen', 'publier', 'publiez', 'publie', 'poster', 'publicar', 'publica', 'publique', 'postear', 'postar', 'poste agora',
-    'pubblica', 'pubblicare', 'pubblicate', 'publiceren', 'publiceer', 'nu plaatsen', 'bericht plaatsen', 'yayınla^', 'gönderi~ paylaş^'],
+    'pubblica', 'pubblicare', 'pubblicate', 'publiceren', 'publiceer', 'nu plaatsen', 'bericht plaatsen', 'yayınla^', 'gönderi~ paylaş^',
+    // CU-619 (cu-researcher): calls and meeting joins, as English 'Call' / 'Video call' / 'Start call' / 'Join meeting' ask submit.
+    // Turkish 'Ara' (also 'search') and Portuguese 'Ligar' (also 'switch on') only with a call noun or object, never bare.
+    'anrufen', 'jetzt anrufen', 'videoanruf', 'videoanruf starten', 'anruf starten', 'meeting beitreten', 'besprechung beitreten', 'konferenz beitreten', 'jetzt beitreten',
+    'appeler', 'appelez', 'appel vidéo', 'appel audio', 'démarrer _ appel', 'lancer _ appel', 'rejoindre _ réunion', 'rejoindre maintenant', 'rejoindre _ appel',
+    'llamar', 'llama', 'videollamada', 'iniciar _ llamada', 'iniciar videollamada', 'unirse a la reunión', 'unirse ahora', 'únete a la reunión', 'unirse a la llamada',
+    'chamada de vídeo', 'iniciar _ chamada', 'fazer _ chamada', 'ligar para', 'ligar agora', 'entrar na reunião', 'participar da reunião', 'entrar na chamada',
+    'chiama', 'chiamare', 'videochiamata', 'avvia _ chiamata', 'avvia videochiamata', 'partecipa alla riunione', 'partecipa ora', 'partecipa alla chiamata',
+    'bellen', 'nu bellen', 'videogesprek', 'gesprek starten', 'videogesprek starten', 'deelnemen aan vergadering', 'deelnemen aan de vergadering', 'nu deelnemen',
+    'görüntülü arama', 'sesli arama', 'arama~ başlat^', 'görüntülü ara^', 'sesli ara^', 'toplantı~ katıl^', 'şimdi katıl^',
+    // r1 grid (cu-developer-one's go): imperative and formal forms in each language; German / Dutch separable forms below.
+    'rejoignez _ réunion', 'rejoignez maintenant', 'rejoignez _ appel', 'appelle', 'únase a la reunión', 'únete ahora', 'únase ahora', 'llame', 'llame ahora', 'llámanos', 'inicie _ llamada',
+    'ligue para', 'ligue agora', 'entre na reunião', 'participe da reunião', 'inicie _ chamada', 'chiami', 'chiamaci', 'partecipi alla riunione', 'partecipa adesso', 'avvii _ chiamata',
+    'bel nu', 'bel ons', 'start _ gesprek', 'start videogesprek', 'neem deel aan de vergadering', 'neem nu deel',
+    // r2 (cu-developer-three, cu-developer-two): the German 'teilnehmen' join forms, Turkish 'join the call', and the Turkish
+    // 'ara' with an adverb ('Hemen ara', 'Şimdi ara') - read as a call; a 'search now' button over-asks, fail-closed.
+    'jetzt teilnehmen', 'an der besprechung teilnehmen', 'an besprechung teilnehmen', 'am meeting teilnehmen', 'an meeting teilnehmen', 'an der konferenz teilnehmen', 'an der videokonferenz teilnehmen',
+    'am anruf teilnehmen', 'am videoanruf teilnehmen', 'am telefonat teilnehmen', 'besprechung teilnehmen', 'meeting teilnehmen', 'konferenz teilnehmen',
+    'arama~ katıl^', 'görüşme~ katıl^', 'hemen ara^', 'şimdi ara^'],
   // CU-616 (cu-researcher): sharing a (live) location and granting access, in the seven locales, as English 'Share my location' /
   // 'Share live location' / 'Grant access' / 'Give access' ask permission.
   permission: ['standort teilen', 'live-standort teilen', 'meinen standort teilen', 'standortfreigabe aktivieren', 'zugriff gewähren', 'zugriff erlauben', 'zugang gewähren',
@@ -2520,6 +2538,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const lastPush = new RegExp(`^\\s*${step}(?:${join}${step}){0,3}${join}(?:push(?:\\s+(?:to\\s+)?(?:the\\s+)?(?:remotes?|origin|upstream|changes|commits?|branch(?:es)?|tags?))?|sync\\s+(?:(?:to|with)\\s+(?:the\\s+)?)?(?:remote|origin|upstream|changes|commits?|branch))\\s*$`, 'iu')
       if (!classes.includes('submit') && lastPush.test(name)) classes.push('submit')
     }
+    // CU-619 (cu-researcher): German / Dutch separable call / join forms - 'Rufen Sie uns an', 'Ruf Anna an', 'Treten Sie dem Meeting
+    // bei', 'Tritt jetzt bei', 'Neem deel', 'Bel Anna' - ask submit; a bare 'Bel' stays free (it is also a bell label).
+    if (grammarEligible && !classes.includes('submit') && (/^\s*(?:ruf|rufe|rufen\s+sie)\s+(?:\p{L}+\s+){0,3}an\s*[.!]?\s*$/iu.test(name) || /^\s*(?:tritt|treten\s+sie)\s+(?:\p{L}+\s+){0,3}bei\s*[.!]?\s*$/iu.test(name) || /^\s*neem\s+(?:\p{L}+\s+){0,3}deel\s*[.!]?\s*$/iu.test(name) || /^\s*(?:nimm|nehmen\s+sie)\s+(?:\p{L}+\s+){0,4}teil\s*[.!]?\s*$/iu.test(name) || /^\s*bel\s+\p{L}+(?:\s+\p{L}+)?\s*[.!]?\s*$/iu.test(name))) classes.push('submit')
     // CU-617 (cu-researcher): German / Dutch separable and short imperatives of share / invite - 'Lade Freunde ein', 'Laden Sie
     // Kollegen ein', 'Nodig je team uit', 'Teile das Dokument', 'Deel de link' - ask permission; 'Deel 2' (a part number) stays free.
     if (grammarEligible && !classes.includes('permission') && (/^\s*(?:lade|laden\s+sie)\s+(?:\p{L}+\s+){1,3}ein\s*[.!]?\s*$/iu.test(name) || /^\s*nodig\s+(?:\p{L}+\s+){1,3}uit\s*[.!]?\s*$/iu.test(name) || /^\s*(?:teile|deel)\s+(?:\p{L}+\s*){1,3}[.!]?\s*$/iu.test(name) || /^\s*deel\s*[.!]?\s*$/iu.test(name))) classes.push('permission')
