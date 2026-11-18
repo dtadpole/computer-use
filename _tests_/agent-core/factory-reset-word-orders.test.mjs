@@ -15,10 +15,12 @@ test('CU-620: factory reset asks delete in any order and language', () => {
     "Réinitialiser les paramètres d'usine", 'Rétablir les paramètres d’usine', "Réinitialisez l'appareil aux paramètres d'usine", "Restaurer les paramètres d'usine",
     'Restablecer valores de fábrica', 'Restablecer a los valores de fábrica', 'Restablezca la configuración de fábrica', 'Restaurar configurações de fábrica', 'Redefinir para as configurações de fábrica', 'Repor definições de fábrica',
     'Ripristina impostazioni di fabbrica', 'Ripristinare le impostazioni di fabbrica', 'Reimposta ai valori di fabbrica', 'Fabrieksinstellingen herstellen', 'Terugzetten naar fabrieksinstellingen', 'Zet terug naar fabrieksinstellingen',
-    'Fabrika ayarlarına sıfırla', 'Fabrika ayarlarına geri yükle', 'Fabrika ayarlarına döndürün']) assert.ok(click(name).includes('delete'), name)
+    'Fabrika ayarlarına sıfırla', 'Fabrika ayarlarına geri yükle', 'Fabrika ayarlarına döndürün',
+    'Fabrika verilerine sıfırla', 'Fabrika verilerine sıfırlayın', 'Fabrieksgegevens herstellen', 'Werksdaten zurücksetzen', 'Restablecer datos de fábrica', "Réinitialiser les données d'usine", 'Ripristino dati di fabbrica', '恢复出厂数据',
+    'Return to factory settings', 'Revert to factory defaults', 'Load factory settings', 'Load factory defaults', 'Go back to factory settings']) assert.ok(click(name).includes('delete'), name)
 })
 
 test('CU-620 negatives: factory pages without a reset verb, and resets of other things, stay free', () => {
-  for (const name of ['Factory settings', 'Werkseinstellungen', "Paramètres d'usine", 'Valores de fábrica', 'Impostazioni di fabbrica', 'Fabrieksinstellingen', 'Fabrika ayarları', '出厂设置',
+  for (const name of ['Factory settings', 'Werkseinstellungen', "Paramètres d'usine", 'Valores de fábrica', 'Impostazioni di fabbrica', 'Fabrieksinstellingen', 'Fabrika ayarları', 'Fabrika verileri', 'Fabrieksgegevens', 'Werksdaten', 'Factory outlet', 'Return to factory page', '出厂设置',
     'Reset', 'Reset zoom', 'Restore window', 'Zurücksetzen', 'Réinitialiser le filtre', 'Restablecer filtros', 'Ripristina finestra', 'Sıfırla']) assert.deepEqual(click(name), [], name)
 })

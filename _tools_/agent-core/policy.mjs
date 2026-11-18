@@ -765,16 +765,19 @@ const SIGN_OUT_ALL_PAIRS = [
   [/alle\s+apparaten|overal/iu, /afmeld|uitlog|log\s+uit|meld\s+af/iu],
   [/tüm\s+cihaz|tüm\s+oturum/iu, /çıkış|kapat/iu],
 ]
-// CU-620: (factory word, reset verb) pairs per language for the factory-reset rule.
+// CU-620: (factory word, reset verb) pairs per language for the factory-reset rule. CU-622 (cu-developer-three) adds the English
+// return / revert / load verbs; CU-623 (cu-developer-two) the 'factory data' words ('Fabrika verilerine sıfırla', 'Fabrieksgegevens
+// herstellen', 'Werksdaten zurücksetzen').
 const FACTORY_RESET_PAIRS = [
   [/\bfactory\b/i, /\b(?:reset|restore|wipe|erase)\b/i],
+  [/\bfactory\s+(?:settings|defaults?|default\s+settings|state|data|configuration)\b/i, /\b(?:return|revert|load|go\s+back)\b/i],
   [/出厂|出廠|原厂|原廠/u, /恢复|恢復|重置|还原|還原/u],
-  [/werkseinstellung|werkszustand|auslieferungszustand/iu, /zurücksetz|zurück(?![\p{L}])|wiederherstell/iu],
+  [/werkseinstellung|werkszustand|werksdaten|auslieferungszustand/iu, /zurücksetz|zurück(?![\p{L}])|wiederherstell/iu],
   [/d['’]\s*usine/iu, /réinitialis|rétabli|restaur/iu],
   [/de\s+fábrica/iu, /restablec|restablez|restaur|reinici|reset|redefin|repor|reponha|reinicializ/iu],
   [/di\s+fabbrica/iu, /ripristin|reimpost|resett/iu],
-  [/fabrieksinstelling|fabrieksstaat/iu, /herstel|terugzet|terug(?![\p{L}])|reset/iu],
-  [/fabrika\s+ayar/iu, /sıfırla|geri\s+yükle|döndür/iu],
+  [/fabrieksinstelling|fabrieksstaat|fabrieksgegevens|fabrieksdata/iu, /herstel|terugzet|terug(?![\p{L}])|reset/iu],
+  [/fabrika\s+(?:ayar|veri)/iu, /sıfırla|geri\s+yükle|döndür/iu],
 ]
 const ORDER_REFERENCE = /(^|[^a-z])order\s*(?:#|no\.|number\b|id\b)\s*#?[\w-]*\d[\w-]*|(^|[^a-z])order\s+\d{3,}[\w-]*|(^|[^a-z])order\s+(?:details|history|status|summary|tracking|lookup)([^a-z]|$)/gi
 
