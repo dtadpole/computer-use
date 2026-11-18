@@ -206,6 +206,14 @@ const LOCALE_WORDS = Object.freeze({
     'chiama', 'chiamare', 'videochiamata', 'avvia _ chiamata', 'avvia videochiamata', 'partecipa alla riunione', 'partecipa ora', 'partecipa alla chiamata',
     'bellen', 'nu bellen', 'videogesprek', 'gesprek starten', 'videogesprek starten', 'deelnemen aan vergadering', 'deelnemen aan de vergadering', 'nu deelnemen',
     'görüntülü arama', 'sesli arama', 'arama~ başlat^', 'görüntülü ara^', 'sesli ara^', 'toplantı~ katıl^', 'şimdi katıl^',
+    // CU-621 (cu-researcher): leaving a group and unsubscribing, as English 'Leave group' / 'Unsubscribe' ask submit; a bare German
+    // 'Abmelden' is also a plain sign-out, so it asks only with a newsletter / mailing object.
+    'gruppe verlassen', 'verlasse die gruppe', 'verlassen sie die gruppe', 'chat verlassen', 'quitter le groupe', 'quittez le groupe', 'quitter la conversation', 'quitter le canal',
+    'salir del grupo', 'sal del grupo', 'salga del grupo', 'abandonar el grupo', 'sair do grupo', 'saia do grupo', 'abandonar o grupo', 'abbandona il gruppo', 'abbandonare il gruppo', 'esci dal gruppo',
+    'groep verlaten', 'verlaat de groep', 'verlaat groep', 'grup~ çık^', 'grup~ ayrıl^', 'sohbet~ ayrıl^',
+    'abbestellen', 'newsletter abbestellen', 'vom newsletter abmelden', 'se désabonner', 'désabonner', 'désabonnez-vous', 'se désinscrire', 'désinscrivez-vous',
+    'darse de baja', 'date de baja', 'dese de baja', 'descadastrar', 'cancelar inscrição', 'descadastre-se', 'annulla iscrizione', 'disiscriviti', 'cancella iscrizione',
+    'uitschrijven', 'schrijf je uit', 'schrijf u uit', 'afmelden voor de nieuwsbrief', 'abonelik~ çık^', 'bülten~ çık^',
     // r1 grid (cu-developer-one's go): imperative and formal forms in each language; German / Dutch separable forms below.
     'rejoignez _ réunion', 'rejoignez maintenant', 'rejoignez _ appel', 'appelle', 'únase a la reunión', 'únete ahora', 'únase ahora', 'llame', 'llame ahora', 'llámanos', 'inicie _ llamada',
     'ligue para', 'ligue agora', 'entre na reunião', 'participe da reunião', 'inicie _ chamada', 'chiami', 'chiamaci', 'partecipi alla riunione', 'partecipa adesso', 'avvii _ chiamata',
@@ -747,6 +755,16 @@ function printableKeyChar(action) {
  * it is dropped before the purchase words are matched, so the verb ('Order', 'Order now', 'Place order') still confirms
  * and any other purchase word in the same name still counts (CU-8: a double-click on a list cell 'Order #4344').
  */
+// CU-621: (all-devices phrase, sign-out verb) pairs per language.
+const SIGN_OUT_ALL_PAIRS = [
+  [/allen?\s+geräten?|überall/iu, /abmeld|ausloggen|ausgeloggt|melde\s+dich|melden\s+sie\s+sich/iu],
+  [/tous\s+les\s+appareils|partout/iu, /déconnect/iu],
+  [/todos\s+los\s+dispositivos/iu, /cerrar\s+sesión|cierra\s+sesión|cierre\s+sesión|desconectar/iu],
+  [/todos\s+os\s+dispositivos/iu, /\bsair\b|\bsaia\b|terminar\s+sessão|encerrar\s+sessão|desconectar/iu],
+  [/tutti\s+i\s+dispositivi|ovunque/iu, /\besci\b|disconnett|uscire/iu],
+  [/alle\s+apparaten|overal/iu, /afmeld|uitlog|log\s+uit|meld\s+af/iu],
+  [/tüm\s+cihaz|tüm\s+oturum/iu, /çıkış|kapat/iu],
+]
 // CU-620: (factory word, reset verb) pairs per language for the factory-reset rule.
 const FACTORY_RESET_PAIRS = [
   [/\bfactory\b/i, /\b(?:reset|restore|wipe|erase)\b/i],
@@ -2552,6 +2570,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // CU-619 (cu-researcher): German / Dutch separable call / join forms - 'Rufen Sie uns an', 'Ruf Anna an', 'Treten Sie dem Meeting
     // bei', 'Tritt jetzt bei', 'Neem deel', 'Bel Anna' - ask submit; a bare 'Bel' stays free (it is also a bell label).
     if (grammarEligible && !classes.includes('submit') && (/^\s*(?:ruf|rufe|rufen\s+sie)\s+(?:\p{L}+\s+){0,3}an\s*[.!]?\s*$/iu.test(name) || /^\s*(?:tritt|treten\s+sie)\s+(?:\p{L}+\s+){0,3}bei\s*[.!]?\s*$/iu.test(name) || /^\s*neem\s+(?:\p{L}+\s+){0,3}deel\s*[.!]?\s*$/iu.test(name) || /^\s*(?:nimm|nehmen\s+sie)\s+(?:\p{L}+\s+){0,4}teil\s*[.!]?\s*$/iu.test(name) || /^\s*bel\s+\p{L}+(?:\s+\p{L}+)?\s*[.!]?\s*$/iu.test(name))) classes.push('submit')
+    // CU-621 (cu-researcher): sign out of all devices in the seven locales asks permission, as English does - an all-devices phrase
+    // and a sign-out verb of one language in one short label ('Von allen Geräten abmelden', 'Cerrar sesión en todos los dispositivos').
+    if (grammarEligible && !classes.includes('permission') && name.length <= 90 && SIGN_OUT_ALL_PAIRS.some(([all, verb]) => all.test(name) && verb.test(name))) classes.push('permission')
     // CU-617 (cu-researcher): German / Dutch separable and short imperatives of share / invite - 'Lade Freunde ein', 'Laden Sie
     // Kollegen ein', 'Nodig je team uit', 'Teile das Dokument', 'Deel de link' - ask permission; 'Deel 2' (a part number) stays free.
     if (grammarEligible && !classes.includes('permission') && (/^\s*(?:lade|laden\s+sie)\s+(?:\p{L}+\s+){1,3}ein\s*[.!]?\s*$/iu.test(name) || /^\s*nodig\s+(?:\p{L}+\s+){1,3}uit\s*[.!]?\s*$/iu.test(name) || /^\s*(?:teile|deel)\s+(?:\p{L}+\s*){1,3}[.!]?\s*$/iu.test(name) || /^\s*deel\s*[.!]?\s*$/iu.test(name))) classes.push('permission')
