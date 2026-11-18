@@ -214,9 +214,10 @@ const LOCALE_WORDS = Object.freeze({
     // cu-verifier's CU-621 named limit: the demonstrative forms ('Quitter ce groupe').
     'quitter ce groupe', 'quittez ce groupe', 'quitter cette conversation', 'diese gruppe verlassen', 'verlasse diese gruppe', 'salir de este grupo', 'sal de este grupo', 'sair deste grupo', 'saia deste grupo',
     'esci da questo gruppo', 'abbandona questo gruppo', 'deze groep verlaten', 'verlaat deze groep',
+    'lascia il gruppo', 'lascia _ gruppo', 'lasciare il gruppo', 'lascia questo gruppo', 'deixar o grupo', 'deixar _ grupo', 'deixe o grupo', 'deixar este grupo',
     'abbestellen', 'newsletter abbestellen', 'vom newsletter abmelden', 'se désabonner', 'désabonner', 'désabonnez-vous', 'se désinscrire', 'désinscrivez-vous',
     'darse de baja', 'date de baja', 'dese de baja', 'descadastrar', 'cancelar inscrição', 'descadastre-se', 'annulla iscrizione', 'disiscriviti', 'cancella iscrizione',
-    'uitschrijven', 'schrijf je uit', 'schrijf u uit', 'afmelden voor de nieuwsbrief', 'afmelden voor nieuwsbrief', 'afmelden voor _ nieuwsbrief', 'afmelden voor deze nieuwsbrief', 'afmelden voor onze nieuwsbrief', 'meld je af voor deze nieuwsbrief', 'meld je af voor de nieuwsbrief', 'afmelden voor e-mails', 'abonelik~ çık^', 'bülten~ çık^',
+    'uitschrijven', 'schrijf je uit', 'schrijf u uit', 'afmelden voor de nieuwsbrief', 'afmelden voor nieuwsbrief', 'afmelden voor _ nieuwsbrief', 'afmelden voor deze nieuwsbrief', 'afmelden voor onze nieuwsbrief', 'meld je af voor deze nieuwsbrief', 'afmelden voor onze e-mails', 'afmelden voor deze e-mails', 'afmelden voor _ e-mails', 'meld je af voor de nieuwsbrief', 'afmelden voor e-mails', 'abonelik~ çık^', 'bülten~ çık^',
     // r1 grid (cu-developer-one's go): imperative and formal forms in each language; German / Dutch separable forms below.
     'rejoignez _ réunion', 'rejoignez maintenant', 'rejoignez _ appel', 'appelle', 'únase a la reunión', 'únete ahora', 'únase ahora', 'llame', 'llame ahora', 'llámanos', 'inicie _ llamada',
     'ligue para', 'ligue agora', 'entre na reunião', 'participe da reunião', 'inicie _ chamada', 'chiami', 'chiamaci', 'partecipi alla riunione', 'partecipa adesso', 'avvii _ chiamata',
@@ -774,13 +775,15 @@ const SIGN_OUT_ALL_PAIRS = [
 const FACTORY_RESET_PAIRS = [
   [/\bfactory\b/i, /\b(?:reset|restore|wipe|erase)\b/i],
   [/\bfactory\s+(?:settings|defaults?|default\s+settings|state|data|configuration)\b/i, /\b(?:return|revert|load|go\s+back)\b/i],
-  [/出厂|出廠|原厂|原廠/u, /恢复|恢復|重置|还原|還原/u],
+  [/出厂|出廠|原厂|原廠/u, /恢复|恢復|重置|还原|還原|返回|回到|载入|載入|加载|加載/u],
+  // r3 (cu-developer-three): one-word factory resets ('Werksreset', 'Fabrieksreset'), as bare English 'Factory reset' asks.
+  [/werks-?reset|fabrieks-?reset/iu, /\p{L}/u],
   [/werkseinstellung|werkszustand|werksdaten|auslieferungszustand/iu, /zurücksetz|zurück(?![\p{L}])|wiederherstell|laden|lade\b|zurückkehr|zurückgeh|kehre|kehren/iu],
   [/d['’]\s*usine/iu, /réinitialis|rétabli|restaur|revenir|revenez|reviens|retour|retourner|charger|chargez/iu],
-  [/de\s+fábrica/iu, /restablec|restablez|restaur|reinici|reset|redefin|repor|reponha|reinicializ|volver|vuelve|vuelva|regresar|regresa|cargar|carga|voltar|volte|retornar|retorne|carregar|carregue/iu],
+  [/de\s+fábrica/iu, /restablec|restablez|restaur|reinici|reset|redefin|repor|reponha|reinicializ|reposiç|volver|vuelve|vuelva|regresar|regresa|cargar|carga|voltar|volte|retornar|retorne|carregar|carregue/iu],
   [/di\s+fabbrica/iu, /ripristin|reimpost|resett|torna|tornare|ritorna|ritornare|carica|caricare/iu],
-  [/fabrieksinstelling|fabrieksstaat|fabrieksgegevens|fabrieksdata/iu, /herstel|terugzet|terug(?![\p{L}])|reset|laden|laad\b|keer\s+terug|teruggaan|ga\s+terug/iu],
-  [/fabrika\s+(?:ayar|veri)/iu, /sıfırla|geri\s+yükle|döndür|dön\b|dönün|geri\s+dön|yükle/iu],
+  [/fabrieksinstelling|fabrieksstaat|fabrieksgegevens|fabrieksdata/iu, /herstel|terugzet|terug(?![\p{L}])|reset|laden|laad\b|keer\s+terug|terugkeren|terugkeer|teruggaan|ga\s+terug/iu],
+  [/fabrika\s+(?:ayar|veri|durum|sıfırla)/iu, /sıfırla|geri\s+yükle|döndür|dön\b|dönün|geri\s+dön|yükle/iu],
 ]
 const ORDER_REFERENCE = /(^|[^a-z])order\s*(?:#|no\.|number\b|id\b)\s*#?[\w-]*\d[\w-]*|(^|[^a-z])order\s+\d{3,}[\w-]*|(^|[^a-z])order\s+(?:details|history|status|summary|tracking|lookup)([^a-z]|$)/gi
 

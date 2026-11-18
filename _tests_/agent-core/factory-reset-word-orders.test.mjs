@@ -21,7 +21,8 @@ test('CU-620: factory reset asks delete in any order and language', () => {
     'Werkseinstellungen laden', 'Zu den Werkseinstellungen zurückkehren', 'Lade die Werkseinstellungen', "Revenir aux paramètres d'usine", "Revenez aux paramètres d'usine", "Charger les paramètres d'usine", "Retour aux paramètres d'usine",
     'Volver a los valores de fábrica', 'Vuelva a la configuración de fábrica', 'Cargar valores de fábrica', 'Voltar às configurações de fábrica', 'Volte às definições de fábrica', 'Carregar configurações de fábrica',
     'Torna alle impostazioni di fabbrica', 'Ritorna alle impostazioni di fabbrica', 'Carica impostazioni di fabbrica', 'Fabrieksinstellingen laden', 'Terug naar fabrieksinstellingen', 'Keer terug naar fabrieksinstellingen',
-    'Fabrika ayarlarına dön', 'Fabrika ayarlarına dönün', 'Fabrika ayarlarına geri dön', 'Fabrika ayarlarını yükle']) assert.ok(click(name).includes('delete'), name)
+    'Fabrika ayarlarına dön', 'Fabrika ayarlarına dönün', 'Fabrika ayarlarına geri dön', 'Fabrika ayarlarını yükle',
+    'Terugkeren naar fabrieksinstellingen', '返回出厂设置', '载入出厂设置', '加载出厂设置', 'Werksreset', 'Werksreset durchführen', 'Fabrieksreset', 'Fabrieksreset uitvoeren', 'Fabrika durumuna sıfırla', 'Fabrika sıfırlaması', 'Reposição de fábrica']) assert.ok(click(name).includes('delete'), name)
 })
 
 test('CU-620 negatives: factory pages without a reset verb, and resets of other things, stay free', () => {

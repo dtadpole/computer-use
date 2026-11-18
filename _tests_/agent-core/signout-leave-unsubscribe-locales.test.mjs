@@ -18,7 +18,7 @@ test('CU-621: leave group and unsubscribe ask submit in seven languages', () => 
   for (const name of ['Gruppe verlassen', 'Verlassen Sie die Gruppe', 'Quitter le groupe', 'Quittez le groupe', 'Salir del grupo', 'Salga del grupo', 'Abandonar el grupo', 'Sair do grupo', 'Saia do grupo',
     'Abbandona il gruppo', 'Esci dal gruppo', 'Groep verlaten', 'Verlaat de groep', 'Quitter ce groupe', 'Diese Gruppe verlassen', 'Salir de este grupo', 'Sair deste grupo', 'Esci da questo gruppo', 'Deze groep verlaten', 'Bu gruptan çık', 'Gruptan çık', 'Gruptan ayrıl', 'Gruptan ayrılın',
     'Abbestellen', 'Newsletter abbestellen', 'Vom Newsletter abmelden', 'Se désabonner', 'Désabonnez-vous', 'Se désinscrire', 'Darse de baja', 'Date de baja', 'Cancelar inscrição', 'Descadastrar',
-    'Annulla iscrizione', 'Disiscriviti', 'Uitschrijven', 'Schrijf je uit', 'Afmelden voor nieuwsbrief', 'Afmelden voor de nieuwsbrief', 'Afmelden voor deze nieuwsbrief', 'Afmelden voor onze nieuwsbrief', 'Meld je af voor de nieuwsbrief', 'Abonelikten çık', 'Bültenden çık']) assert.ok(click(name).includes('submit'), name)
+    'Annulla iscrizione', 'Disiscriviti', 'Uitschrijven', 'Schrijf je uit', 'Afmelden voor nieuwsbrief', 'Afmelden voor de nieuwsbrief', 'Afmelden voor deze nieuwsbrief', 'Afmelden voor onze nieuwsbrief', 'Afmelden voor onze e-mails', 'Afmelden voor deze e-mails', 'Lascia il gruppo', 'Deixar o grupo', 'Deixe o grupo', 'Meld je af voor de nieuwsbrief', 'Abonelikten çık', 'Bültenden çık']) assert.ok(click(name).includes('submit'), name)
 })
 
 test('CU-621 negatives: plain sign-out, group pages and device lists stay free', () => {
