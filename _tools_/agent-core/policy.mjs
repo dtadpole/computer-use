@@ -747,6 +747,17 @@ function printableKeyChar(action) {
  * it is dropped before the purchase words are matched, so the verb ('Order', 'Order now', 'Place order') still confirms
  * and any other purchase word in the same name still counts (CU-8: a double-click on a list cell 'Order #4344').
  */
+// CU-620: (factory word, reset verb) pairs per language for the factory-reset rule.
+const FACTORY_RESET_PAIRS = [
+  [/\bfactory\b/i, /\b(?:reset|restore|wipe|erase)\b/i],
+  [/出厂|出廠|原厂|原廠/u, /恢复|恢復|重置|还原|還原/u],
+  [/werkseinstellung|werkszustand|auslieferungszustand/iu, /zurücksetz|zurück(?![\p{L}])|wiederherstell/iu],
+  [/d['’]\s*usine/iu, /réinitialis|rétabli|restaur/iu],
+  [/de\s+fábrica/iu, /restablec|restablez|restaur|reinici|reset|redefin|repor|reponha|reinicializ/iu],
+  [/di\s+fabbrica/iu, /ripristin|reimpost|resett/iu],
+  [/fabrieksinstelling|fabrieksstaat/iu, /herstel|terugzet|terug(?![\p{L}])|reset/iu],
+  [/fabrika\s+ayar/iu, /sıfırla|geri\s+yükle|döndür/iu],
+]
 const ORDER_REFERENCE = /(^|[^a-z])order\s*(?:#|no\.|number\b|id\b)\s*#?[\w-]*\d[\w-]*|(^|[^a-z])order\s+\d{3,}[\w-]*|(^|[^a-z])order\s+(?:details|history|status|summary|tracking|lookup)([^a-z]|$)/gi
 
 // CU-443 (cu-coordinator 20:54Z, a class fold): transferring a phone number is a port-out (credential, from the grammar's phone
@@ -2556,6 +2567,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // pro, premium, plus, paid, annual, family - and 'business / team' only with plan / tier ('Switch to business account' is
     // a profile switch and stays free).
     if (grammarEligible && !classes.includes('purchase') && /^\s*(?:switch|change|move|upgrade|go)\s+to\s+(?:the\s+|a\s+)?(?:(?:pro|premium|plus|paid|annual|yearly|family)(?:\s+(?:plan|version|tier|edition|subscription|membership))?|(?:business|team|enterprise)\s+(?:plan|tier|subscription))\s*[.!]?\s*$/i.test(name)) classes.push('purchase')
+    // CU-620 (cu-researcher): a factory reset in any word order and language asks delete, as 'Factory reset' / 'Reset all
+    // settings' / 'Erase all content and settings' do - a factory word and a reset verb in one short label ('Reset to factory
+    // settings', 'Restore factory defaults', '恢复出厂设置', 'Auf Werkseinstellungen zurücksetzen', 'Fabrika ayarlarına sıfırla').
+    if (grammarEligible && !classes.includes('delete') && name.length <= 90 && FACTORY_RESET_PAIRS.some(([factory, verb]) => factory.test(name) && verb.test(name))) classes.push('delete')
     // CU-413: money moved out to a bank or card, as 'Withdraw to bank' already asks - send / transfer / move / pay out / cash out
     // (an optional amount or money noun) to (my / the) bank, bank account, checking, savings or debit card.
     if (grammarEligible && !classes.includes('purchase') && /^\s*(?:send|transfer|move|pay\s*out|cash\s*out|withdraw)\s+(?:(?:money|funds|cash|balance|earnings|payout|it|[$€£]?\s*[\d.,]+(?:\s*(?:usd|eur|gbp|dollars?|euros?))?)\s+)?(?:to|into)\s+(?:my\s+|your\s+|the\s+|a\s+)?(?:bank(?:\s+account)?|checking(?:\s+account)?|savings(?:\s+account)?|debit\s+card|current\s+account)\b/i.test(name)) classes.push('purchase')
