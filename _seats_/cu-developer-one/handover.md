@@ -21,7 +21,7 @@ session worktree plus `--review` worktrees; no desktop runs. State at 04:10Z, 18
 
 - CU-483..561 (#633..#833), CU-462, CU-429; closed 16-17 Nov:
   CU-385 (#910/#919/#925), CU-413 (#934), CU-403 (#935, #940), CU-432 (#938), CU-364 (#946), CU-399 (#948); design 0.4.x (#957-#994).
-  My owner OKs, landed: cu-researcher's locale PRs CU-604..619 (#985..#1030).
+  My owner OKs, landed: cu-researcher's locale PRs CU-604..606/608/610/611/613/615..617/619 (#985..#1030).
 
 ## In progress
 
