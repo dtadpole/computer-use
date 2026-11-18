@@ -14,7 +14,8 @@ test('CU-619: call / join-meeting buttons ask submit in seven languages', () => 
     'Chiama', 'Videochiamata', 'Avvia una chiamata', 'Partecipa alla riunione', 'Partecipa ora', 'Bellen', 'Nu bellen', 'Videogesprek starten', 'Deelnemen aan vergadering', 'Nu deelnemen',
     'Görüntülü arama', 'Sesli arama', 'Görüntülü ara', 'Toplantıya katıl', 'Toplantıya katılın', 'Şimdi katıl',
     'Rufen Sie uns an', 'Ruf Anna an', 'Treten Sie dem Meeting bei', 'Tritt jetzt bei', 'Rejoignez la réunion', 'Únase a la reunión', 'Llame ahora', 'Ligue para nós', 'Entre na reunião', 'Participe da reunião',
-    'Chiami ora', 'Partecipi alla riunione', 'Bel nu', 'Bel Anna', 'Neem deel', 'Neem nu deel']) assert.ok(click(name).includes('submit'), name)
+    'Chiami ora', 'Partecipi alla riunione', 'Bel nu', 'Bel Anna', 'Neem deel', 'Neem nu deel',
+    'An Besprechung teilnehmen', 'Am Meeting teilnehmen', 'Jetzt teilnehmen', 'Nehmen Sie an der Besprechung teil', 'Nimm jetzt teil', 'Aramaya katıl', 'Aramaya katılın', 'Hemen ara', 'Şimdi ara']) assert.ok(click(name).includes('submit'), name)
 })
 
 test('CU-619 negatives: search, switch-on, call logs and meeting details stay free', () => {
