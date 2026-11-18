@@ -412,9 +412,6 @@ const WORDS = Object.freeze({
     // CU-628 (cu-researcher): terminate / stop a subscription, membership or plan, as 'End subscription' / 'End membership' ask.
     'terminate subscription', 'terminate my subscription', 'terminate membership', 'terminate my membership', 'terminate plan', 'terminate my plan',
     'stop subscription', 'stop my subscription', 'stop membership', 'stop my membership', 'stop my plan', 'stop plan',
-    // r2 (cu-developer-one): stopping the auto-renewal ends the paid plan at term.
-    'stop auto-renew', 'stop auto-renewal', 'stop automatic renewal', 'stop autorenew', 'turn off auto-renew', 'turn off auto-renewal', 'turn off automatic renewal',
-    'disable auto-renew', 'disable auto-renewal',
     // CU-400 (High; cu-coordinator 04:39Z): a trade, swap, stake or signature moves money and cannot be taken back.
     'confirm transaction', 'sign transaction', 'sign message', 'swap', 'stake', 'trade', 'sell now', 'confirm swap', 'confirm trade', 'confirm sale',
     // cu-coordinator 04:44Z (cu-verifier's stand-in: 'Bridge' acted unasked): a bridge moves tokens between chains.
