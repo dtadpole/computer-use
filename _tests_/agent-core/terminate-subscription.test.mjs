@@ -12,7 +12,7 @@ test('CU-628: terminate / stop subscription, membership or plan asks purchase', 
   for (const name of ['Terminate subscription', 'Terminate my subscription', 'Terminate membership', 'Terminate my plan', 'Stop subscription', 'Stop my subscription', 'Stop membership', 'Stop plan',
     'Abo stoppen', 'Stoppen Sie Ihr Abonnement', "Arrêter l'abonnement", 'Arrêtez votre abonnement', 'Detener la suscripción', 'Detenga su suscripción', 'Parar a assinatura', 'Interromper a assinatura',
     "Interrompi l'abbonamento", 'Interrompi il tuo abbonamento', 'Abonnement stoppen', 'Stop je abonnement', 'Lidmaatschap stoppen', 'Aboneliği durdur', 'Üyeliği durdur', '退订会员',
-    'Detener mi suscripción', 'Detener mi membresía', 'Parar o plano', 'Parar plano', 'Interrompi il piano', 'Interrompi piano', '退订服务']) assert.ok(click(name).includes('purchase'), name)
+    'Detener mi suscripción', 'Detener mi membresía', 'Detener tu suscripción', 'Detener tu membresía', 'Parar o plano', 'Parar plano', 'Interrompi il piano', 'Interrompi piano', '退订服务']) assert.ok(click(name).includes('purchase'), name)
 })
 
 test('CU-628: Chinese 退订 asks submit', () => {

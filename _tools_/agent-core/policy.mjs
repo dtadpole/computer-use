@@ -206,7 +206,7 @@ const LOCALE_WORDS = Object.freeze({
     'abo stoppen', 'abonnement stoppen', 'mitgliedschaft stoppen', 'stoppe dein abo', 'stoppen sie ihr abonnement', 'stoppen sie ihr abo',
     "arrêter l'abonnement", 'arrêter l’abonnement', 'arrêter mon abonnement', "arrêtez l'abonnement", 'arrêtez votre abonnement', "arrêter l'adhésion", 'arrêter mon adhésion',
     'detener _ suscripción', 'detener suscripción', 'parar _ suscripción', 'detén tu suscripción', 'detenga su suscripción', 'detener _ membresía',
-    'detener mi suscripción', 'detener mi membresía', 'parar mi suscripción', 'detener mi plan', 'detener el plan',
+    'detener mi suscripción', 'detener mi membresía', 'parar mi suscripción', 'detener mi plan', 'detener el plan', 'detener tu suscripción', 'detener tu membresía', 'parar tu suscripción', 'detener su suscripción',
     'parar _ assinatura', 'parar assinatura', 'interromper _ assinatura', 'pare sua assinatura', 'interrompa sua assinatura', 'parar plano', 'parar _ plano', 'interromper _ plano', 'pare seu plano',
     'interrompi _ abbonamento', 'interrompere _ abbonamento', 'ferma _ abbonamento', 'interrompi il tuo abbonamento', 'sospendi il rinnovo', 'interrompi piano', 'interrompi _ piano', 'interrompere _ piano',
     'abonnement stoppen', 'lidmaatschap stoppen', 'stop je abonnement', 'stop uw abonnement', 'stop je lidmaatschap',
