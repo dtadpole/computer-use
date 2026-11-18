@@ -2624,6 +2624,15 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // pro, premium, plus, paid, annual, family - and 'business / team' only with plan / tier ('Switch to business account' is
     // a profile switch and stays free).
     if (grammarEligible && !classes.includes('purchase') && /^\s*(?:switch|change|move|upgrade|go)\s+to\s+(?:the\s+|a\s+)?(?:(?:pro|premium|plus|paid|annual|yearly|family)(?:\s+(?:plan|version|tier|edition|subscription|membership))?|(?:business|team|enterprise)\s+(?:plan|tier|subscription))\s*[.!]?\s*$/i.test(name)) classes.push('purchase')
+    // CU-625 r3 (cu-developer-two): the French and German cancel / end families as whole-label rules, each form in its English
+    // twin's class - cancel + subscription -> delete; end + subscription, and any verb + membership / plan -> purchase.
+    if (grammarEligible && !classes.includes('delete') && (/^\s*(?:annuler|annulez|annule|résilier|résiliez|résilie)\s+(?:l['’]\s*|mon\s+|votre\s+|ton\s+)abonnement\s*[.!]?\s*$/iu.test(name)
+      || /^\s*(?:(?:kündige|kündigen\s+sie)\s+(?:(?:dein|ihr|das)\s+)?(?:abo|abonnement)|(?:(?:dein|ihr|das|mein)\s+)?(?:abo|abonnement)\s+kündigen)\s*[.!]?\s*$/iu.test(name))) classes.push('delete')
+    if (grammarEligible && !classes.includes('purchase') && (/^\s*(?:(?:mettre|mettez|mets)\s+fin\s+(?:à|a)\s+|terminer\s+|terminez\s+|termine\s+)(?:l['’]\s*|mon\s+|votre\s+|ton\s+)(?:abonnement|adhésion|forfait)\s*[.!]?\s*$/iu.test(name)
+      || /^\s*(?:annuler|annulez|annule|résilier|résiliez|résilie)\s+(?:l['’]\s*|mon\s+|votre\s+|ton\s+)(?:adhésion|forfait)\s*[.!]?\s*$/iu.test(name)
+      || /^\s*(?:(?:beende|beenden\s+sie)\s+(?:(?:dein|ihr|das)\s+)?(?:abo|abonnement)|(?:(?:dein|ihr|das|mein)\s+)?(?:abo|abonnement)\s+beenden)\s*[.!]?\s*$/iu.test(name)
+      || /^\s*(?:kündige|kündigen\s+sie|beende|beenden\s+sie)\s+(?:(?:deine|ihre|die|deinen|ihren|den)\s+)?(?:mitgliedschaft|tarif)\s*[.!]?\s*$/iu.test(name)
+      || /^\s*(?:(?:deine|ihre|die|meine|deinen|ihren|den|meinen)\s+)?(?:mitgliedschaft|tarif)\s+(?:kündigen|beenden)\s*[.!]?\s*$/iu.test(name))) classes.push('purchase')
     // CU-620 (cu-researcher): a factory reset in any word order and language asks delete, as 'Factory reset' / 'Reset all
     // settings' / 'Erase all content and settings' do - a factory word and a reset verb in one short label ('Reset to factory
     // settings', 'Restore factory defaults', '恢复出厂设置', 'Auf Werkseinstellungen zurücksetzen', 'Fabrika ayarlarına sıfırla').
