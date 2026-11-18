@@ -18,7 +18,7 @@ test('CU-625: cancel membership / plan asks purchase in seven languages', () => 
   for (const name of ['Mitgliedschaft kündigen', 'Kündigen Sie Ihre Mitgliedschaft', 'Tarif kündigen', "Résilier l'adhésion", 'Résilier mon forfait', 'Cancelar membresía', 'Cancelar mi plan',
     'Cancelar plano', 'Cancelar meu plano', 'Annulla piano', 'Disdici il piano', 'Lidmaatschap opzeggen', 'Zeg je lidmaatschap op', 'Üyeliği iptal et', 'Üyeliğinizi iptal edin', 'Planı iptal et',
     'Abo beenden', 'Mitgliedschaft beenden', 'Beenden Sie Ihr Abonnement', "Mettre fin à l'abonnement", "Mettre fin à l'adhésion", 'Finalizar suscripción', 'Finalizar membresía', 'Encerrar assinatura', 'Encerrar plano',
-    'Termina abbonamento', 'Abonnement beëindigen', 'Lidmaatschap beëindigen', 'Aboneliği sonlandır', 'Üyeliği sonlandır', 'Üyeliğini bitir', '取消会员', '取消会员资格', '取消套餐']) assert.ok(click(name).includes('purchase'), name)
+    'Termina abbonamento', 'Abonnement beëindigen', 'Lidmaatschap beëindigen', 'Aboneliği sonlandır', 'Üyeliği sonlandır', 'Üyeliğini bitir', 'Annuler mon adhésion', 'Annulez votre adhésion', '取消会员', '取消会员资格', '取消套餐']) assert.ok(click(name).includes('purchase'), name)
 })
 
 test('CU-625 negatives: subscription pages and plan details stay free', () => {

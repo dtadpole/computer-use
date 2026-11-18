@@ -184,7 +184,7 @@ const LOCALE_WORDS = Object.freeze({
     'satın al^', 'şimdi satın al^', 'hemen al^', 'şimdi al^', 'öde^', 'şimdi öde^', 'ödeme~ geç^',
     // CU-625 (cu-researcher): cancelling a membership or a plan asks purchase, as English 'Cancel membership' / 'Cancel my plan' do.
     'mitgliedschaft kündigen', 'kündige deine mitgliedschaft', 'kündigen sie ihre mitgliedschaft', 'tarif kündigen', 'meinen tarif kündigen',
-    "résilier l'adhésion", 'résilier l’adhésion', "annuler l'adhésion", 'annuler l’adhésion', 'résilier mon adhésion', 'résilier mon forfait', 'annuler mon forfait',
+    "résilier l'adhésion", 'résilier l’adhésion', "annuler l'adhésion", 'annuler l’adhésion', 'résilier mon adhésion', 'annuler mon adhésion', 'annulez votre adhésion', 'résiliez votre adhésion', 'résilier mon forfait', 'annuler mon forfait', 'résiliez votre forfait',
     'cancelar membresía', 'cancelar _ membresía', 'cancelar mi membresía', 'cancela tu membresía', 'cancelar mi plan', 'cancelar el plan',
     'cancelar plano', 'cancelar _ plano', 'cancelar meu plano', 'cancelar associação', 'annulla iscrizione al club', 'annulla piano', 'annulla il mio piano', 'disdici piano', 'disdici il piano',
     'lidmaatschap opzeggen', 'zeg je lidmaatschap op', 'zeg uw lidmaatschap op', 'pakket opzeggen', 'üyelik~ iptal et^', 'üyelik~ iptal edin', 'üyeliğ~ iptal et^', 'üyeliğ~ iptal edin', 'plan~ iptal et^',
