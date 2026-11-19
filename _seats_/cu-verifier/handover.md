@@ -19,7 +19,7 @@ Start here, then [responsibilities](responsibilities.md) and the [verdict](ultim
 - **Every pass:** inbox; `verifyq.py` (Verify state, any assignee); `filings.py` (unreproduced filings); `unarmed.py` (unwatched fix PRs); the run lock;
   my open PRs' mergeability (merge main if CONFLICTING; D-085).
 - **Rows:** `rowrun.mjs`, one headless Chrome run per row; evidence: the run record and the
-  page's click record.
+  click record.
   Desktop filings: `probes/apps.mjs` (clicks; ';;' joins labels), `probes/keyprobe.mjs` (keys);
   helper mutants: `probes/swiftunit.mjs`.
 - **Closes:** `watchall.sh` is one background job (restart every ~30 h) over `watchlist.tsv`. Then `linear.py verified` with after and before
@@ -32,4 +32,4 @@ Start here, then [responsibilities](responsibilities.md) and the [verdict](ultim
   no browser row once a GATE START is out (`q.sh` refuses); a mutant
   counts only when its row fails, the file still parses, and it ran in a scratch tree after the close - a list
   entry a rule also covers needs both mutated. Read an issue's state before `verified`; outside Verify it only moves there. A records PR naming an issue id moves that issue to Verify on merge: reopen with a live row. A held-out page covers
-  person, possessive and imperative twins, not just the filed shape.
+  person, possessive and imperative twins, not only the filed one.
