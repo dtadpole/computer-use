@@ -15,7 +15,7 @@ grounded_in:
 | [browser-gate.test.mjs](browser-gate.test.mjs) | `parseMemoryFree`, `memoryGate`, `floorFromEnv`, `isThrowawayProfile`, a real `/tmp/cu-verifier-chrome-*` directory |
 | [browser-registry.test.mjs](browser-registry.test.mjs) | the D-014 protocol against a temporary directory: entries, seat and team refusals, dead entries, lock wait and stale lock, exit cleanup |
 | [check-browser.test.mjs](check-browser.test.mjs) | the start order and that every refusal gives back what was taken |
-| [default-seat-guard.test.mjs](default-seat-guard.test.mjs) | the two default-seat tests never reach the real D-005 registry or Chrome: every real-effect seam of `startCheckBrowser` is faked, no banned import, the ambient `CU_VERIFY_SEAT` put back (CU-369) |
+| [default-seat-guard.test.mjs](default-seat-guard.test.mjs), [default-seat-guard-hooks.mjs](default-seat-guard-hooks.mjs) | the two default-seat tests never reach the real D-005 registry or Chrome: every real-effect seam of `startCheckBrowser` is faked, neither file names the registry / gate / launcher, a child run under module hooks records no real `registerBrowser` / `openPage` / `openBrowser` call, and the ambient `CU_VERIFY_SEAT` is put back (CU-369) |
 | [sut.test.mjs](sut.test.mjs) | loading the system under test, exact-once mutations, a real mutant built and removed without touching browser-use |
 | [prove-failing.test.mjs](prove-failing.test.mjs) | verdict classes, the all-caught rule, leaked-profile detection |
 | [desktop-evidence.test.mjs](desktop-evidence.test.mjs) | landing tolerance, pid and tag, the marker matcher, run-directory scans, the held key's release after the owner's press (CU-341 G2) |
