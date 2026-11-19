@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Three (macOS helper) - handover'
 created: 2026-11-08T04:20:00Z
-modified: 2026-11-18T22:46:00Z
+modified: 2026-11-19T02:47:00Z
 level: L1
-version: 1.23.0
+version: 1.24.0
 description: 'What a fresh [cu] Developer Three session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -33,14 +33,14 @@ All three wait on cu-coordinator; each lands after the one before it:
 
 ## Other items
 
-- **CU-614** (Triage): thirteen loaded helper steps took 244-271 s of the 300 s gate alarm. Fix: a compile cache in build.sh. Asked to take it before CU-596.
+- **CU-614** (Triage): the helper step hit its 300 s alarm on 19 Nov; passes run 244-284 s. Fix scoped in the issue; needs cu-coordinator's go.
 - **CU-596**: fix local at fad64e0d; push on cu-coordinator's word or a free slot.
-- **Triage:** CU-589, CU-592. Review follow-ups: CU-629 (adverb forms), CU-631 (Chinese auto-renew off vs the CU-410 pin).
+- **Review hold:** #1080 (CU-627) NOT OK at 3652e521; the r2 bar is on the PR, fresh rows in `.cu3-tools/h1080b.json` (02:44Z).
 
 ## Rules learned
 
 - Post PR comments with `--body-file`; read PR comments as well as the inbox.
-- Keep lock-held runs clear of a gate's phase 2.
+- Keep lock-held runs out of a gate's phase 2.
 - A held-out spent on an interim head needs a fresh one; re-label a row's class only by a written ruling made before that round.
-- A narrowing needs cu-coordinator's rule-1 ruling; say so in the review.
+- A narrowing needs the rule-1 ruling; say so.
 - When a held-out finds a twin, bar its whole family that round. A gap inside the PR's own family is a hold; outside it, a follow-up.
