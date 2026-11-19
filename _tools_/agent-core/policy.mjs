@@ -2676,12 +2676,12 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       || /^\s*(?:我要|我想)?(?:立即|马上)?(?:退出|离开|離開)(?:这个|這個|该|該|此|本)?(?:群组|群組|群聊|群|频道|頻道)\s*$/u.test(name))) classes.push('submit')
     // CU-627 r2 (cu-developer-two): leaving a group with any article / demonstrative / possessive, and the German separable e-mail
     // opt-out, as whole-label rules in each language - submit, as English 'Leave group' / 'Unsubscribe'.
-    if (grammarEligible && !classes.includes('submit') && (/^\s*(?:quitter|quittez|quitte)\s+(?:le|ce|votre|ton|mon|notre)\s+groupe\s*[.!]?\s*$/iu.test(name)
-      || /^\s*(?:(?:salir|sal|salga)\s+de(?:l|\s+(?:este|ese|tu|su|mi|nuestro))|(?:abandonar|abandona|abandone)\s+(?:el|este|tu|su|mi|nuestro))\s+grupo\s*[.!]?\s*$/iu.test(name)
-      || /^\s*(?:(?:sair|sai|saia)\s+d(?:o|este|esse)|(?:deixar|deixa|deixe|abandonar|abandona|abandone)\s+(?:o|este|esse))(?:\s+(?:seu|teu|meu|nosso))?\s+grupo\s*[.!]?\s*$/iu.test(name)
-      || /^\s*(?:(?:esci|uscire)\s+da(?:l|\s+questo)?|(?:abbandona|abbandonare|lascia|lasciare)\s+(?:il|questo))(?:\s+(?:tuo|suo|mio|nostro))?\s+gruppo\s*[.!]?\s*$/iu.test(name)
-      || /^\s*(?:(?:verlaat|verlaten)\s+(?:de|deze|je|jouw|uw|onze|mijn)\s+groep|(?:(?:de|deze|je|jouw|uw|onze|mijn)\s+)?groep\s+verlaten)\s*[.!]?\s*$/iu.test(name)
-      || /^\s*(?:(?:verlasse|verlass|verlassen\s+sie)\s+(?:die|diese|deine|ihre|unsere|meine)\s+gruppe|(?:(?:die|diese|deine|ihre|unsere|meine)\s+)?gruppe\s+verlassen)\s*[.!]?\s*$/iu.test(name)
+    if (grammarEligible && !classes.includes('submit') && (/^\s*(?:quitter|quittez|quitte|quittons)\s+(?:le|ce|cet|votre|ton|mon|notre|leur)\s+groupe\s*[.!]?\s*$/iu.test(name)
+      || /^\s*(?:(?:salir|sal|salga|salgan|salid)\s+de(?:l|\s+(?:este|ese|aquel|tu|su|mi|nuestro|vuestro))|(?:abandonar|abandona|abandone|abandonen|abandonad)\s+(?:el|este|ese|tu|su|mi|nuestro|vuestro))\s+grupo\s*[.!]?\s*$/iu.test(name)
+      || /^\s*(?:(?:sair|sai|saia|saiam|saiamos)\s+d(?:o|este|esse)|(?:deixar|deixa|deixe|deixem|abandonar|abandona|abandone|abandonem)\s+(?:o|este|esse))(?:\s+(?:seu|teu|meu|nosso|vosso))?\s+grupo\s*[.!]?\s*$/iu.test(name)
+      || /^\s*(?:(?:esci|uscite|esca|uscire)\s+da(?:l|\s+questo)?|(?:abbandona|abbandonate|abbandoni|abbandonare|lascia|lasciate|lasci|lasciare)\s+(?:il|questo))(?:\s+(?:tuo|suo|mio|nostro|vostro|loro))?\s+gruppo\s*[.!]?\s*$/iu.test(name)
+      || /^\s*(?:(?:verlaat|verlaten)\s+(?:de|deze|die|je|jouw|uw|onze|mijn|jullie|hun)\s+groep|(?:(?:de|deze|die|je|jouw|uw|onze|mijn|jullie|hun)\s+)?groep\s+verlaten)\s*[.!]?\s*$/iu.test(name)
+      || /^\s*(?:(?:verlasse|verlass|verlasst|verlassen\s+sie)\s+(?:die|diese|deine|ihre|unsere|meine|eure)\s+gruppe|(?:(?:die|diese|deine|ihre|unsere|meine|eure)\s+)?gruppe\s+verlassen)\s*[.!]?\s*$/iu.test(name)
       || /^\s*(?:melde\s+dich|melden\s+sie\s+sich)\s+(?:vom|von)\s+(?:\p{L}+\s+){0,2}(?:newsletter|e-mails?|emails?|mails?)\s+ab\s*[.!]?\s*$/iu.test(name))) classes.push('submit')
     // CU-629 (cu-researcher): one adverb inside a subscription-family label ('Abonnement direct opzeggen', 'Abo jetzt kündigen',
     // 'Annuler maintenant l'abonnement') keeps the twin class - the label is read again with that one adverb dropped.

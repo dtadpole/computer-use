@@ -12,7 +12,9 @@ test('CU-627: leave-group with a possessive asks submit in seven languages', () 
     'Esci dal tuo gruppo', 'Abbandona il tuo gruppo', 'Je groep verlaten', 'Verlaat uw groep', 'Grubunuzdan çıkın',
     'Quitter notre groupe', 'Quitte ton groupe', 'Verlaat onze groep', 'Onze groep verlaten', 'Sal de tu grupo', 'Salir de nuestro grupo', 'Abandonar tu grupo', 'Abandone su grupo', 'Sai do teu grupo', 'Deixe o seu grupo',
     'Esci da questo gruppo', 'Lascia il nostro gruppo', 'Verlasse unsere Gruppe', 'Unsere Gruppe verlassen',
-    'Salir de mi grupo', 'Salir de nuestro grupo', 'Esci dal mio gruppo', 'Sair do meu grupo', 'Sair do nosso grupo']) assert.ok(click(name).includes('submit'), name)
+    'Salir de mi grupo', 'Salir de nuestro grupo', 'Esci dal mio gruppo', 'Sair do meu grupo', 'Sair do nosso grupo',
+    'Salir de vuestro grupo', 'Salid del grupo', 'Abandonad vuestro grupo', 'Sair do vosso grupo', 'Esci dal vostro gruppo', 'Verlasst eure Gruppe', 'Eure Gruppe verlassen', 'Jullie groep verlaten', 'Quitter leur groupe',
+    'Uscite dal vostro gruppo', 'Abbandonate il vostro gruppo', 'Esca dal suo gruppo', 'Saiam do vosso grupo', 'Deixem o grupo', 'Salgan de su grupo', 'Abandonen el grupo', 'Quittons le groupe']) assert.ok(click(name).includes('submit'), name)
 })
 
 test('CU-627: e-mail opt-outs with a determiner ask submit; 我要退订 asks submit', () => {
