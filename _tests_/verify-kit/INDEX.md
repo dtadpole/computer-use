@@ -1,8 +1,8 @@
 ---
 title: Verify kit tests
 created: 2026-11-01T09:33:46Z
-modified: 2026-11-09T16:25:00Z
-version: 1.14.0
+modified: 2026-11-19T13:19:00Z
+version: 1.15.0
 description: The unit suite of the verify kit - the memory gate and guarded profiles, and the CDP input events each canonical action becomes.
 grounded_in:
   - source: shared/_conventions_/core-conventions/working-agreements.md@1.5.1 (key functions carry test cases)
@@ -15,6 +15,7 @@ grounded_in:
 | [browser-gate.test.mjs](browser-gate.test.mjs) | `parseMemoryFree`, `memoryGate`, `floorFromEnv`, `isThrowawayProfile`, a real `/tmp/cu-verifier-chrome-*` directory |
 | [browser-registry.test.mjs](browser-registry.test.mjs) | the D-014 protocol against a temporary directory: entries, seat and team refusals, dead entries, lock wait and stale lock, exit cleanup |
 | [check-browser.test.mjs](check-browser.test.mjs) | the start order and that every refusal gives back what was taken |
+| [default-seat-guard.test.mjs](default-seat-guard.test.mjs) | the two default-seat tests never reach the real D-005 registry or Chrome: every real-effect seam of `startCheckBrowser` is faked, no banned import, the ambient `CU_VERIFY_SEAT` put back (CU-369) |
 | [sut.test.mjs](sut.test.mjs) | loading the system under test, exact-once mutations, a real mutant built and removed without touching browser-use |
 | [prove-failing.test.mjs](prove-failing.test.mjs) | verdict classes, the all-caught rule, leaked-profile detection |
 | [desktop-evidence.test.mjs](desktop-evidence.test.mjs) | landing tolerance, pid and tag, the marker matcher, run-directory scans, the held key's release after the owner's press (CU-341 G2) |
