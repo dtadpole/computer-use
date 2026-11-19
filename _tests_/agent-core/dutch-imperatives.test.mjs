@@ -13,9 +13,11 @@ const GRID = {
     'Neem deel aan de vergadering', 'Neemt u deel aan de vergadering', 'Meld je af voor de nieuwsbrief', 'Meldt u zich af voor de nieuwsbrief', 'Schrijf je uit', 'Schrijft u zich uit'],
   delete: ['Verwijder uw account', 'Verwijdert u uw account', 'Account verwijderen', 'Wis account', 'Wis uw account', 'Account wissen', 'Wist u uw account', 'Wis geschiedenis',
     'Annuleer abonnement', 'Annuleer uw abonnement', 'Abonnement annuleren', 'Annuleert u uw abonnement', 'Zeg abonnement op', 'Zeg uw abonnement op', 'Zegt u uw abonnement op',
-    'Hef uw account op', 'Heft u uw account op', 'Sluit uw account af', 'Maak de prullenbak leeg'],
+    'Hef uw account op', 'Heft u uw account op', 'Sluit uw account af', 'Maak de prullenbak leeg',
+    'Wis je gegevens', 'Wis de gegevens', 'Wis alle bestanden', 'Wis je profiel', 'Gegevens wissen', 'Wist u uw gegevens'],
   purchase: ['Betaal', 'Betaalt u', 'Betaal nu', 'Koop nu', 'Koopt u nu', 'Bestel', 'Bestelt u', 'Maak het geld over', 'Maakt u het geld over', 'Reken af', 'Rekent u af',
-    'Lidmaatschap annuleren', 'Annuleer uw lidmaatschap'],
+    'Lidmaatschap annuleren', 'Annuleer uw lidmaatschap',
+    'Plan annuleren', 'Annuleer je plan', 'Annuleert u uw plan', 'Zeg je plan op', 'Plan opzeggen', 'Pakket annuleren', 'Annuleer uw pakket', 'Zeg uw pakket op', 'Zegt u uw pakket op'],
   permission: ['Deel uw locatie', 'Deelt u uw locatie', 'Verleen toegang', 'Verleent u toegang', 'Nodig uit', 'Nodigt u uit', 'Sta toegang toe', 'Staat u toegang toe'],
 }
 

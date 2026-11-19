@@ -196,7 +196,9 @@ const LOCALE_WORDS = Object.freeze({
     "résilier l'adhésion", 'résilier l’adhésion', "annuler l'adhésion", 'annuler l’adhésion', 'résilier mon adhésion', 'annuler mon adhésion', 'annulez votre adhésion', 'résiliez votre adhésion', 'résilier mon forfait', 'annuler mon forfait', 'résiliez votre forfait',
     'cancelar membresía', 'cancelar _ membresía', 'cancelar mi membresía', 'cancela tu membresía', 'cancelar mi plan', 'cancelar el plan',
     'cancelar plano', 'cancelar _ plano', 'cancelar meu plano', 'cancelar associação', 'annulla iscrizione al club', 'annulla piano', 'annulla il mio piano', 'disdici piano', 'disdici il piano',
-    'lidmaatschap opzeggen', 'zeg je lidmaatschap op', 'zeg uw lidmaatschap op', 'pakket opzeggen', 'lidmaatschap annuleren', '_ lidmaatschap annuleren', 'üyelik~ iptal et^', 'üyelik~ iptal edin', 'üyeliğ~ iptal et^', 'üyeliğ~ iptal edin', 'plan~ iptal et^',
+    'lidmaatschap opzeggen', 'zeg je lidmaatschap op', 'zeg uw lidmaatschap op', 'pakket opzeggen', 'lidmaatschap annuleren', '_ lidmaatschap annuleren',
+    // r2 (cu-developer-two, cu-developer-one 20:30Z): plan / pakket beside lidmaatschap, as 'Cancel plan'.
+    'plan annuleren', '_ plan annuleren', 'pakket annuleren', '_ pakket annuleren', 'plan opzeggen', '_ plan opzeggen', 'üyelik~ iptal et^', 'üyelik~ iptal edin', 'üyeliğ~ iptal et^', 'üyeliğ~ iptal edin', 'plan~ iptal et^',
     // r2 (cu-developer-three): the end / terminate verb for both halves takes purchase, as English 'End subscription' / 'End
     // membership' do.
     'abo beenden', 'abonnement beenden', 'mitgliedschaft beenden', 'beende dein abo', 'beende deine mitgliedschaft', 'beenden sie ihr abonnement', 'beenden sie ihre mitgliedschaft',
@@ -240,6 +242,8 @@ const LOCALE_WORDS = Object.freeze({
     // CU-641 (twin rule): wipe an account, cancel a subscription ('Wis account', 'Annuleer abonnement'), as 'Erase account' /
     // 'Cancel subscription'; 'Wis zoekopdracht' / 'Wis filters' stay free as 'Clear search' / 'Clear filters' do.
     'account wissen', '_ account wissen', 'geschiedenis wissen', 'abonnement annuleren', '_ abonnement annuleren',
+    // r2 (cu-developer-three, cu-verifier): wipe data / files / profile, as 'Erase (your) data', 'Erase all files', 'Erase profile'.
+    'gegevens wissen', '_ gegevens wissen', 'bestanden wissen', '_ bestanden wissen', 'profiel wissen', '_ profiel wissen',
     'abonelik~ iptal et^', 'abonelik~ iptal edin', 'aboneliğ~ iptal et^', 'aboneliğ~ iptal edin'],
   submit: ['senden', 'absenden', 'abschicken', 'envoyer', 'soumettre', 'enviar', 'отправить', '送信', '보내기', '전송', '제출',
     // CU-358: Italian, Dutch, Portuguese and Turkish.
@@ -494,7 +498,7 @@ const IMPERATIVE_DETERMINERS = ['le', 'la', 'les', 'un', 'une', 'des', 'du', 'vo
   'vostro', 'vostra', 'nostro', 'nostra', 'questo', 'questa', 'der', 'die', 'das', 'den', 'dem', 'ein', 'eine', 'einen', 'dein', 'deine', 'deinen', 'euer',
   'eure', 'euren', 'ihr', 'ihre', 'ihren', 'unser', 'unsere', 'unseren', 'mein', 'meine', 'meinen', 'diese', 'dieses', 'diesen',
   // CU-641: Dutch, with the reflexive je / u of a separable verb ('Meld je af', 'Schrijf u uit').
-  'de', 'het', 'een', 'je', 'jouw', 'uw', 'mijn', 'onze', 'ons', 'deze', 'dit', 'jullie', 'hun', 'u', 'zich']
+  'de', 'het', 'een', 'je', 'jouw', 'uw', 'mijn', 'onze', 'ons', 'deze', 'dit', 'jullie', 'hun', 'u', 'zich', 'alle']
 const GERMAN_INFINITIVES = new Set(Object.keys(IMPERATIVE_FORMS).filter((verb) => /n$/.test(verb) && IMPERATIVE_FORMS[verb].some((form) => form.endsWith(' sie') || / u(\|\S+)?$/.test(form) || form.includes('|'))))
 /** Every form a verb token may take (its own lemma or lemmas, and their forms), or null when it is no table verb. */
 function imperativeFamily(token) {
