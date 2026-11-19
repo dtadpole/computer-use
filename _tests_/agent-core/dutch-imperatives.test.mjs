@@ -27,5 +27,5 @@ test('CU-641: the Dutch stem x formality x order grid asks each English twin\'s 
 })
 
 test('CU-641 controls: clear / filter / steering and bare collisions stay free', () => {
-  for (const name of ['Stuur', 'Stuurwiel', 'Sturen', 'Wis', 'Wis zoekopdracht', 'Wis filters', 'Wis de filters', 'Wis selectie', 'Wis het formulier', 'Wis cache', 'Wis alle meldingen', 'Bel', 'Plaats', 'Annuleer', 'Annuleren', 'Verzendkosten']) assert.deepEqual(click(name), [], name)
+  for (const name of ['Stuur', 'Stuurwiel', 'Sturen', 'Wis', 'Wis zoekopdracht', 'Wis filters', 'Wis de filters', 'Wis selectie', 'Wis het formulier', 'Wis cache', 'Wis alle meldingen', 'Wist u', 'Wist u dat?', 'Wist u het al?', 'Wist u dat u kunt sparen?', 'Bel', 'Plaats', 'Annuleer', 'Annuleren', 'Verzendkosten']) assert.deepEqual(click(name), [], name)
 })

@@ -487,7 +487,8 @@ const IMPERATIVE_BARE_COLLISIONS = new Set(['kauf', 'kauft', 'bezahlt', 'bestell
   'deel', 'bel', 'plaats'])
 // CU-641 (cu-developer-one, point 4): 'Stuur' (also the steering wheel) and 'Wis' ('Wis zoekopdracht', 'Wis filters' stay free) ask
 // only with an entry's object - never alone, never in the determiner context.
-const IMPERATIVE_OBJECT_ONLY = new Set(['stuur', 'wis'])
+// CU-645: and 'wist u' - the u form of wissen is also weten's past tense ('Wist u dat?', 'Wist u het al?' = did you know).
+const IMPERATIVE_OBJECT_ONLY = new Set(['stuur', 'wis', 'wist u'])
 // CU-641 r3: the objects 'Wis' clears without deleting, as English 'Clear ...' stays free for them.
 const WIS_CLEAR_OBJECTS = new Set(['zoekopdracht', 'zoekopdrachten', 'zoekveld', 'zoektermen', 'zoekterm', 'filter', 'filters', 'selectie', 'formulier', 'invoer',
   'veld', 'velden', 'tekst', 'cache', 'melding', 'meldingen', 'notificaties', 'opmaak', 'markering', 'markeringen', 'zoekbalk'])
@@ -2905,7 +2906,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // except the objects English clears without asking ('Clear search / filters / selection / form / cache / notifications'), so
     // 'Wis zoekopdracht', 'Wis de filters', 'Wis selectie' stay free (the wider clear-verb family is CU-642).
     if (grammarEligible && !classes.includes('delete')) {
-      const wipe = String(name ?? '').trim().toLowerCase().match(/^(?:wis|wist\s+u)\s+(?:(?:de|het|je|jouw|uw|mijn|onze|alle|al|deze|dit|die)\s+){0,2}(\p{L}[\p{L}'’-]*)(?:\s+\p{L}[\p{L}'’-]*)?\s*[.!]?$/u)
+      const wipe = String(name ?? '').trim().toLowerCase().match(/^wis\s+(?:(?:de|het|je|jouw|uw|mijn|onze|alle|al|deze|dit|die)\s+){0,2}(\p{L}[\p{L}'’-]*)(?:\s+\p{L}[\p{L}'’-]*)?\s*[.!]?$/u)
       if (wipe && !WIS_CLEAR_OBJECTS.has(wipe[1])) classes.push('delete')
     }
     // CU-627 r2 (cu-developer-two): leaving a group with any article / demonstrative / possessive, and the German separable e-mail
