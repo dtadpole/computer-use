@@ -15,9 +15,9 @@ test('CU-634: 退出群组 / 退群 / 退出频道 ask submit; 退出团队 asks
 
 test('CU-635: opt out of / stop / turn off e-mails ask submit', () => {
   for (const name of ['Opt out of emails', 'Opt out of our emails', 'Opt out of marketing emails', 'Stop emails', 'Stop all emails', 'Turn off emails', 'Turn off marketing emails',
-    'Opt out of all emails', 'Opt out of promotional emails', 'Opt-out of future emails', 'Stop sending me emails', 'Stop receiving emails', 'Turn off all marketing emails', 'Opt out of email marketing', 'Unsubscribe from all emails', 'Opt me out of emails', 'Opt me out of all marketing emails']) assert.ok(click(name).includes('submit'), name)
+    'Opt out of all emails', 'Opt out of promotional emails', 'Opt-out of future emails', 'Stop sending me emails', 'Stop receiving emails', 'Turn off all marketing emails', 'Opt out of email marketing', 'Unsubscribe from all emails', 'Opt me out of emails', 'Opt me out of all marketing emails', 'Stop sending emails', 'Stop sending us emails', 'Stop getting emails']) assert.ok(click(name).includes('submit'), name)
 })
 
 test('CU-634 / 635 negatives: bare Opt out, settings and group pages stay free', () => {
-  for (const name of ['Opt out', 'Email settings', 'Emails', '群组', '群组设置', '频道列表', '团队成员', 'Stop', 'Turn off', 'Email preferences', 'Stop video', '退出', '离开页面', '团队', '我的团队', 'Opt me in']) assert.deepEqual(click(name), [], name)
+  for (const name of ['Opt out', 'Email settings', 'Emails', '群组', '群组设置', '频道列表', '团队成员', 'Stop', 'Turn off', 'Email preferences', 'Stop video', '退出', '离开页面', '团队', '我的团队', 'Opt me in', 'Stop email notifications', 'Turn off email notifications', 'Stop sending']) assert.deepEqual(click(name), [], name)
 })

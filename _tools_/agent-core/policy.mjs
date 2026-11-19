@@ -2672,7 +2672,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (grammarEligible && !classes.includes('submit') && /^\s*(?:我想|我要)?(?:立即|马上|馬上|現在|现在|一键|一鍵|确认|確認)?(?:退订|退訂)(?:全部|所有)?\s*$/u.test(name)) classes.push('submit')
     // CU-635 (cu-developer-two): opting out of / stopping / turning off e-mails with any determiner or kind; CU-634: leaving a
     // group or channel in Chinese with a modifier or demonstrative - submit, as 'Unsubscribe' / 'Leave group'. A bare 'Opt out' stays free.
-    if (grammarEligible && !classes.includes('submit') && (/^\s*(?:opt[-\s]?out\s+of|opt\s+me\s+out\s+of|stop(?:\s+(?:sending\s+me|receiving))?|turn\s+off|unsubscribe\s+from)\s+(?:all\s+)?(?:(?:our|my|these|the|marketing|promotional|newsletter|future)\s+){0,2}(?:e-?mails?|newsletters?|email\s+marketing|marketing\s+e-?mails?)\s*[.!]?\s*$/iu.test(name)
+    if (grammarEligible && !classes.includes('submit') && (/^\s*(?:opt[-\s]?out\s+of|opt\s+me\s+out\s+of|stop(?:\s+(?:sending(?:\s+(?:me|us))?|receiving|getting))?|turn\s+off|unsubscribe\s+from)\s+(?:all\s+)?(?:(?:our|my|these|the|marketing|promotional|newsletter|future)\s+){0,2}(?:e-?mails?|newsletters?|email\s+marketing|marketing\s+e-?mails?)\s*[.!]?\s*$/iu.test(name)
       || /^\s*(?:我要|我想)?(?:立即|马上)?(?:退出|离开|離開)(?:这个|這個|该|該|此|本|我的|我们的|我們的)?(?:群组|群組|群聊|群|频道|頻道)\s*$/u.test(name))) classes.push('submit')
     // CU-634 r2 (cu-developer-two / -three): leaving a team in Chinese with a modifier, demonstrative or possessive asks permission, as
     // 'Leave (this) team'.
