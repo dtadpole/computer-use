@@ -196,7 +196,9 @@ const LOCALE_WORDS = Object.freeze({
     "résilier l'adhésion", 'résilier l’adhésion', "annuler l'adhésion", 'annuler l’adhésion', 'résilier mon adhésion', 'annuler mon adhésion', 'annulez votre adhésion', 'résiliez votre adhésion', 'résilier mon forfait', 'annuler mon forfait', 'résiliez votre forfait',
     'cancelar membresía', 'cancelar _ membresía', 'cancelar mi membresía', 'cancela tu membresía', 'cancelar mi plan', 'cancelar el plan',
     'cancelar plano', 'cancelar _ plano', 'cancelar meu plano', 'cancelar associação', 'annulla iscrizione al club', 'annulla piano', 'annulla il mio piano', 'disdici piano', 'disdici il piano',
-    'lidmaatschap opzeggen', 'zeg je lidmaatschap op', 'zeg uw lidmaatschap op', 'pakket opzeggen', 'üyelik~ iptal et^', 'üyelik~ iptal edin', 'üyeliğ~ iptal et^', 'üyeliğ~ iptal edin', 'plan~ iptal et^',
+    'lidmaatschap opzeggen', 'zeg je lidmaatschap op', 'zeg uw lidmaatschap op', 'pakket opzeggen', 'lidmaatschap annuleren', '_ lidmaatschap annuleren',
+    // r2 (cu-developer-two, cu-developer-one 20:30Z): plan / pakket beside lidmaatschap, as 'Cancel plan'.
+    'plan annuleren', '_ plan annuleren', 'pakket annuleren', '_ pakket annuleren', 'plan opzeggen', '_ plan opzeggen', 'üyelik~ iptal et^', 'üyelik~ iptal edin', 'üyeliğ~ iptal et^', 'üyeliğ~ iptal edin', 'plan~ iptal et^',
     // r2 (cu-developer-three): the end / terminate verb for both halves takes purchase, as English 'End subscription' / 'End
     // membership' do.
     'abo beenden', 'abonnement beenden', 'mitgliedschaft beenden', 'beende dein abo', 'beende deine mitgliedschaft', 'beenden sie ihr abonnement', 'beenden sie ihre mitgliedschaft',
@@ -237,10 +239,15 @@ const LOCALE_WORDS = Object.freeze({
     'cancelar assinatura', 'cancelar _ assinatura', 'cancele sua assinatura', 'cancela a tua assinatura', 'cancelar subscrição', 'cancelar _ subscrição',
     'annulla abbonamento', 'annulla _ abbonamento', 'disdici abbonamento', 'disdici _ abbonamento', 'disdici il tuo abbonamento', 'disdire _ abbonamento', 'annulla il tuo abbonamento',
     'abonnement opzeggen', '_ abonnement opzeggen', 'zeg je abonnement op', 'zeg uw abonnement op',
+    // CU-641 (twin rule): wipe an account, cancel a subscription ('Wis account', 'Annuleer abonnement'), as 'Erase account' /
+    // 'Cancel subscription'; 'Wis zoekopdracht' / 'Wis filters' stay free as 'Clear search' / 'Clear filters' do.
+    'account wissen', '_ account wissen', 'geschiedenis wissen', 'abonnement annuleren', '_ abonnement annuleren',
+    // r2 (cu-developer-three, cu-verifier): wipe data / files / profile, as 'Erase (your) data', 'Erase all files', 'Erase profile'.
+    'gegevens wissen', '_ gegevens wissen', 'bestanden wissen', '_ bestanden wissen', 'profiel wissen', '_ profiel wissen',
     'abonelik~ iptal et^', 'abonelik~ iptal edin', 'aboneliğ~ iptal et^', 'aboneliğ~ iptal edin'],
   submit: ['senden', 'absenden', 'abschicken', 'envoyer', 'soumettre', 'enviar', 'отправить', '送信', '보내기', '전송', '제출',
     // CU-358: Italian, Dutch, Portuguese and Turkish.
-    'invia', 'invia ora', 'verzenden', 'versturen', 'verstuur', 'indienen', 'submeter', 'gönder^', 'şimdi gönder^',
+    'invia', 'invia ora', 'verzenden', 'versturen', 'verstuur', 'bericht sturen', 'e-mail sturen', 'nu sturen', 'indienen', 'submeter', 'gönder^', 'şimdi gönder^',
     // CU-617 (cu-researcher): publish / post, as English 'Publish' / 'Post' ask submit; infinitive, imperative and formal forms.
     'veröffentlichen', 'veröffentliche', 'posten', 'poste', 'beitrag veröffentlichen', 'publier', 'publiez', 'publie', 'poster', 'publicar', 'publica', 'publique', 'postear', 'postar', 'poste agora',
     'pubblica', 'pubblicare', 'pubblicate', 'publiceren', 'publiceer', 'nu plaatsen', 'bericht plaatsen', 'yayınla^', 'gönderi~ paylaş^',
@@ -376,7 +383,9 @@ const LOCALE_ID_NAMES = Object.freeze(['reisepass', '…passnummer', 'geburtsdat
 // DE du / ihr / Sie, ES tu / vosotros / usted / ustedes, IT tu / voi / Lei, PT tu / voce / voces - generated once from the entry
 // list and reviewed (no suffix rules). An entry led by any form of a verb also matches every other form of it, with exactly
 // the entry's own object: 'supprimer le compte' reads 'Supprimez votre compte', 'konto loeschen' reads 'Loescht euer Konto', so a
-// form asks only where the infinitive asks. Dutch and Turkish already hold (shared stem, suffix markers).
+// form asks only where the infinitive asks. Turkish holds through its suffix markers. CU-641 (cu-developer-one's ruling): Dutch takes
+// the jij stem and the u form, infinitive-first and infinitive-final entries alike, and a separable verb's particle moves to the end
+// ('abonnement opzeggen' reads 'Zeg je abonnement op'; a 'verb|particle' form).
 const IMPERATIVE_FORMS = Object.freeze({
   'supprimer': ['supprime', 'supprimez'], 'effacer': ['efface', 'effacez'], 'annuler': ['annule', 'annulez'],
   'résilier': ['résilie', 'résiliez'], 'quitter': ['quitte', 'quittez'], 'partager': ['partage', 'partagez'],
@@ -444,7 +453,7 @@ const IMPERATIVE_FORMS = Object.freeze({
   'entfernen': ['entfern', 'entferne', 'entfernt', 'entfernen sie'], 'verwerfen': ['verwirf', 'verwerft', 'verwerfen sie'],
   'leeren': ['leere', 'leert', 'leeren sie'], 'bezahlen': ['bezahl', 'bezahle', 'bezahlt', 'bezahlen sie'],
   'zahlen': ['zahl', 'zahle', 'zahlt', 'zahlen sie'], 'kaufen': ['kauf', 'kaufe', 'kauft', 'kaufen sie'],
-  'bestellen': ['bestell', 'bestelle', 'bestellt', 'bestellen sie'],
+  'bestellen': ['bestel', 'bestelt u', 'bestell', 'bestelle', 'bestellt', 'bestellen sie'],
   'bestätigen': ['bestätig', 'bestätige', 'bestätigt', 'bestätigen sie'], 'senden': ['sende', 'sendet', 'senden sie'],
   'überweisen': ['überweis', 'überweise', 'überweist', 'überweisen sie'], 'kündigen': ['kündig', 'kündige', 'kündigt', 'kündigen sie'],
   'beenden': ['beend', 'beende', 'beendet', 'beenden sie'], 'stoppen': ['stopp', 'stoppe', 'stoppt', 'stoppen sie'],
@@ -452,7 +461,17 @@ const IMPERATIVE_FORMS = Object.freeze({
   'teilen': ['teil', 'teile', 'teilt', 'teilen sie'], 'verlassen': ['verlass', 'verlasse', 'verlasst', 'verlassen sie'],
   'veröffentlichen': ['veröffentlich', 'veröffentliche', 'veröffentlicht', 'veröffentlichen sie'],
   'posten': ['post', 'poste', 'postet', 'posten sie'], 'gewähren': ['gewähr', 'gewähre', 'gewährt', 'gewähren sie'],
-  'erlauben': ['erlaub', 'erlaube', 'erlaubt', 'erlauben sie'], 'aktivieren': ['aktivier', 'aktiviere', 'aktiviert', 'aktivieren sie']
+  'erlauben': ['erlaub', 'erlaube', 'erlaubt', 'erlauben sie'], 'aktivieren': ['aktivier', 'aktiviere', 'aktiviert', 'aktivieren sie'],
+  // CU-641: Dutch - jij stem and u form; 'verb|particle' for a separable verb.
+  'verzenden': ['verzend', 'verzendt u'], 'versturen': ['verstuur', 'verstuurt u'], 'sturen': ['stuur', 'stuurt u'], 'verwijderen': ['verwijder', 'verwijdert u'],
+  'wissen': ['wis', 'wist u'], 'annuleren': ['annuleer', 'annuleert u'], 'bevestigen': ['bevestig', 'bevestigt u'], 'betalen': ['betaal', 'betaalt u'],
+  'kopen': ['koop', 'koopt u'], 'delen': ['deel', 'deelt u'], 'verlaten': ['verlaat', 'verlaat u'], 'beëindigen': ['beëindig', 'beëindigt u'],
+  'publiceren': ['publiceer', 'publiceert u'], 'plaatsen': ['plaats', 'plaatst u'], 'bellen': ['bel', 'belt u'], 'verlenen': ['verleen', 'verleent u'],
+  'geven': ['geef', 'geeft u'], 'abonneren': ['abonneer', 'abonneert u'], 'proberen': ['probeer', 'probeert u'],
+  'opzeggen': ['zeg|op', 'zegt u|op'], 'stopzetten': ['zet|stop', 'zet u|stop'], 'opheffen': ['hef|op', 'heft u|op'], 'afsluiten': ['sluit|af', 'sluit u|af'],
+  'uitnodigen': ['nodig|uit', 'nodigt u|uit'], 'toestaan': ['sta|toe', 'staat u|toe'], 'deelnemen': ['neem|deel', 'neemt u|deel'], 'uitschrijven': ['schrijf|uit', 'schrijft u|uit'],
+  'afmelden': ['meld|af', 'meldt u|af'], 'overmaken': ['maak|over', 'maakt u|over'], 'leegmaken': ['maak|leeg', 'maakt u|leeg'], 'overschrijven': ['schrijf|over', 'schrijft u|over'],
+  'afrekenen': ['reken|af', 'rekent u|af'], 'uitvoeren': ['voer|uit', 'voert u|uit'], 'overstappen': ['stap|over', 'stapt u|over'],
 })
 // A form that is also a participle, adjective or noun is never matched alone where the entry is the bare verb ('Inviate', 'Pagate',
 // 'Bezahlt' stay free); it asks only in an imperative-only context - first in the label and followed by a determiner, or by a 'now'
@@ -463,7 +482,12 @@ const IMPERATIVE_BARE_COLLISIONS = new Set(['kauf', 'kauft', 'bezahlt', 'bestell
   'trasferite', 'pagate', 'andate', 'esca',
   // German e-less du stems lead hyphenated compounds ('Bestell-Nr.', 'Zahl-Art', 'Lösch-Datum'), so they never stand alone either.
   'lösch', 'entfern', 'bezahl', 'zahl', 'bestell', 'bestätig', 'überweis', 'kündig', 'beend', 'stopp', 'start', 'veröffentlich', 'gewähr', 'erlaub',
-  'aktivier', 'verlass', 'wechsel', 'verwirf', 'leer'])
+  'aktivier', 'verlass', 'wechsel', 'verwirf', 'leer',
+  // CU-641: Dutch stems that are also nouns or adjectives ('Deel' part, 'Bel' bell, 'Plaats' place).
+  'deel', 'bel', 'plaats'])
+// CU-641 (cu-developer-one, point 4): 'Stuur' (also the steering wheel) and 'Wis' ('Wis zoekopdracht', 'Wis filters' stay free) ask
+// only with an entry's object - never alone, never in the determiner context.
+const IMPERATIVE_OBJECT_ONLY = new Set(['stuur', 'wis'])
 const IMPERATIVE_NEVER = new Set(['para'])
 // The determiners an imperative may take instead of the entry's own ('le compte' / 'votre compte' / 'ton compte'), FR / ES / PT
 // / IT / DE; optional, at most two ('il vostro'), at the entry's determiner positions and right after the verb.
@@ -472,8 +496,10 @@ const IMPERATIVE_DETERMINERS = ['le', 'la', 'les', 'un', 'une', 'des', 'du', 'vo
   'nuestra', 'nuestro', 'nuestras', 'nuestros', 'este', 'esta', 'estos', 'estas', 'ese', 'esa', 'o', 'a', 'os', 'as', 'um', 'uma', 'seu', 'sua', 'seus', 'suas',
   'teu', 'tua', 'meu', 'minha', 'vosso', 'vossa', 'nosso', 'nossa', 'esse', 'essa', 'il', 'lo', 'i', 'gli', 'uno', 'tuo', 'tuoi', 'tue', 'suo', 'mio', 'mia',
   'vostro', 'vostra', 'nostro', 'nostra', 'questo', 'questa', 'der', 'die', 'das', 'den', 'dem', 'ein', 'eine', 'einen', 'dein', 'deine', 'deinen', 'euer',
-  'eure', 'euren', 'ihr', 'ihre', 'ihren', 'unser', 'unsere', 'unseren', 'mein', 'meine', 'meinen', 'diese', 'dieses', 'diesen']
-const GERMAN_INFINITIVES = new Set(Object.keys(IMPERATIVE_FORMS).filter((verb) => /en$/.test(verb) && IMPERATIVE_FORMS[verb].some((form) => form.endsWith(' sie'))))
+  'eure', 'euren', 'ihr', 'ihre', 'ihren', 'unser', 'unsere', 'unseren', 'mein', 'meine', 'meinen', 'diese', 'dieses', 'diesen',
+  // CU-641: Dutch, with the reflexive je / u of a separable verb ('Meld je af', 'Schrijf u uit').
+  'de', 'het', 'een', 'je', 'jouw', 'uw', 'mijn', 'onze', 'ons', 'deze', 'dit', 'jullie', 'hun', 'u', 'zich', 'alle']
+const GERMAN_INFINITIVES = new Set(Object.keys(IMPERATIVE_FORMS).filter((verb) => /n$/.test(verb) && IMPERATIVE_FORMS[verb].some((form) => form.endsWith(' sie') || / u(\|\S+)?$/.test(form) || form.includes('|'))))
 /** Every form a verb token may take (its own lemma or lemmas, and their forms), or null when it is no table verb. */
 function imperativeFamily(token) {
   const family = new Set()
@@ -490,21 +516,32 @@ function imperativeVariants(entry) {
     else tokens.push(raw)
   }
   const variants = []
+  // A 'verb|particle' form (Dutch separable) puts its particle after the object, or before an infinitive-first entry's complement.
+  const split = (form) => form.includes('|') ? form.split('|') : [form, null]
   const lead = imperativeFamily(tokens[0])
-  if (lead && !GERMAN_INFINITIVES.has(tokens[0])) {
+  const last = tokens[tokens.length - 1]
+  if (tokens.length === 1) {
+    for (const form of lead || []) {
+      if (form === tokens[0] || IMPERATIVE_NEVER.has(form)) continue
+      const [verb, particle] = split(form)
+      if (IMPERATIVE_OBJECT_ONLY.has(verb)) continue
+      if (IMPERATIVE_BARE_COLLISIONS.has(verb)) variants.push(['^', verb, '¦!'])
+      else variants.push(particle ? [verb, '¦', particle] : [verb])
+    }
+  } else if (lead) {
     const rest = tokens.slice(1)
     for (const form of lead) {
       if (form === tokens[0] || IMPERATIVE_NEVER.has(form)) continue
-      if (!rest.length) { if (!form.includes(' ')) variants.push(IMPERATIVE_BARE_COLLISIONS.has(form) ? ['^', form, '¦!'] : [form]); continue }
-      variants.push([form, ...(rest[0] === '¦' ? [] : ['¦']), ...rest])
+      const [verb, particle] = split(form)
+      variants.push([verb, ...(rest[0] === '¦' ? [] : ['¦']), ...(particle ? [particle] : []), ...rest])
     }
-  }
-  const last = tokens[tokens.length - 1]
-  if (tokens.length > 1 && GERMAN_INFINITIVES.has(last)) {
+  } else if (GERMAN_INFINITIVES.has(last)) {
     const object = tokens.slice(0, -1)
-    for (const form of IMPERATIVE_FORMS[last]) variants.push([form, ...(object[0] === '¦' ? [] : ['¦']), ...object])
-  } else if (tokens.length === 1 && GERMAN_INFINITIVES.has(last)) {
-    for (const form of IMPERATIVE_FORMS[last]) variants.push(IMPERATIVE_BARE_COLLISIONS.has(form) ? ['^', form, '¦!'] : [form])
+    for (const form of IMPERATIVE_FORMS[last]) {
+      if (IMPERATIVE_NEVER.has(form)) continue
+      const [verb, particle] = split(form)
+      variants.push([verb, ...(object[0] === '¦' ? [] : ['¦']), ...object, ...(particle ? [particle] : [])])
+    }
   }
   return variants
 }

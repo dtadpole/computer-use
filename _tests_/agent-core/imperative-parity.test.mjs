@@ -32,3 +32,12 @@ test('CU-638 near misses: conjugated view / show / open verbs stay free', () => 
   for (const name of ['Affichez votre compte', 'Ouvrez le compte', 'Zeigt euer Konto', 'Öffnet euer Konto', 'Mostrad vuestra cuenta', 'Vean su cuenta', 'Visualizzate il vostro account',
     'Aprite il conto', 'Vejam a conta', 'Abram a conta']) assert.deepEqual(click(name), [], name)
 })
+
+// cu-verifier at CU-638's close: the parity test is generated from the table, so a form dropped from the table would drop its row
+// too. These pinned rows, one or more per language and person, must stay generated.
+test('CU-638 / CU-641: pinned forms stay in the table (a dropped form fails here)', () => {
+  const labels = new Set(imperativeParityRows().map((row) => row.label))
+  for (const label of ['supprimez', 'supprime', 'envoyez', 'payez', 'löscht', 'lösche', 'löschen sie', 'sendet', 'bezahlt jetzt', 'eliminad', 'eliminen', 'elimine',
+    'pagad', 'paguen', 'enviad', 'envíen', 'pagate ora', 'excluam', 'paguem', 'enviem', 'verzend', 'verzendt u', 'zeg abonnement op', 'zegt u abonnement op',
+    'annuleer abonnement', 'wis account', 'verwijdert u', 'staat u toegang toe']) assert.ok(labels.has(label), `pinned row: ${label}`)
+})
