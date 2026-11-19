@@ -70,7 +70,10 @@ const ZH_WORDS = Object.freeze({
     '丟到垃圾桶', '丟到資源回收筒', '清倒废纸篓', '清倒垃圾桶', '不存储',
     // CU-294: an account closed in other words.
     '注销账号', '註銷帳號', '注销帐号', '删除账号', '刪除帳號', '注销账户'],
-  permission: ['共享', '分享', '邀请', '邀請', '授权', '授權', '公开', '公開', '始终允许', '總是允許', '总是允许', '永遠允許', '一律允许',
+  permission: [
+    // CU-634: leaving a team, as English 'Leave team' (permission).
+    '退出团队', '退出團隊',
+    '共享', '分享', '邀请', '邀請', '授权', '授權', '公开', '公開', '始终允许', '總是允許', '总是允许', '永遠允許', '一律允许',
     '允许访问', '允許存取', '不再询问', '不再詢問', '不再提示', '记住我的选择', '記住我的選擇', '记住此选择', '设为默认', '設為預設',
     '保存密码', '儲存密碼', '记住密码', '記住密碼', '保存通行密钥', '儲存通行密鑰', '创建通行密钥', '建立通行密鑰', '关闭两步验证',
     '關閉兩步驟驗證', '关闭双重认证', '關閉雙重認證', '打开摄像头', '開啟相機', '打开麦克风', '開啟麥克風',
@@ -84,7 +87,9 @@ const ZH_WORDS = Object.freeze({
     '取消关注邮件', '退订邮件', '退訂郵件', '退订短信', '退訂簡訊', '我要退订', '我要退訂',
     '发送', '發送', '傳送', '发布', '發佈', '發布', '提交', '注册', '註冊', '送出', '发表', '發表', '加入会议', '加入會議', '加入通话',
     '视频通话', '視訊通話', '语音通话', '語音通話', '开始会议', '開始會議', '接受邀请', '接受邀請', '拒绝邀请', '拒絕邀請',
-    '部署', '退出群聊', '退出群組', '取消会议', '取消會議', '举报', '檢舉', '申请加入', '申請加入', '报税', '報稅',
+    '部署', '退出群聊', '退出群組',
+    // CU-634 (cu-developer-one): leaving a group or channel in Chinese, as 'Leave group / channel' (submit).
+    '退出群组', '退群', '退出频道', '退出頻道', '退出该群', '退出此群', '退出本群', '取消会议', '取消會議', '举报', '檢舉', '申请加入', '申請加入', '报税', '報稅',
     // cu-researcher on #145: Reply (回复 / 回覆) - judged like English 'reply', by CU-157's text-entered rule.
     '回复', '回覆',
     // CU-294: joining or starting a meeting, and placing a call, in a meeting app's words.
@@ -574,6 +579,10 @@ const WORDS = Object.freeze({
     'upload file', 'upload files', 'attach', 'attach file', 'attach files', 'share file',
     // cu-researcher's 13:23Z sweep: messages to the sender or the group.
     'unsubscribe', 'report spam', 'report junk', 'leave group', 'leave conversation', 'leave channel',
+    // CU-635 (cu-developer-two): opting out of / stopping / turning off e-mails, as 'Unsubscribe (from our emails)'; a bare 'Opt
+    // out' stays free (cu-developer-one's ruling).
+    'opt out of emails', 'opt out of _ emails', 'opt out of marketing emails', 'opt out of email', 'opt-out of emails', 'opt out of newsletters',
+    'stop emails', 'stop all emails', 'stop marketing emails', 'stop _ emails', 'turn off emails', 'turn off marketing emails', 'turn off all emails',
     // cu-researcher on #98: a cancellation goes to every attendee.
     'cancel meeting', 'cancel event', 'cancel invitation', 'send cancellation',
     // CU-286 (cu-researcher's real-app wordings): a request to join a meeting, and Slack's huddle (a call to the channel).
@@ -2661,6 +2670,13 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // CU-629: one modifier before it (立即 / 马上 / 现在 / 一键 / 确认) keeps submit; 退订邮件 / 短信 and 退订会员 / 套餐 / 服务 keep their
     // classes through the substring entries whatever modifier precedes them.
     if (grammarEligible && !classes.includes('submit') && /^\s*(?:我想|我要)?(?:立即|马上|馬上|現在|现在|一键|一鍵|确认|確認)?(?:退订|退訂)(?:全部|所有)?\s*$/u.test(name)) classes.push('submit')
+    // CU-635 (cu-developer-two): opting out of / stopping / turning off e-mails with any determiner or kind; CU-634: leaving a
+    // group or channel in Chinese with a modifier or demonstrative - submit, as 'Unsubscribe' / 'Leave group'. A bare 'Opt out' stays free.
+    if (grammarEligible && !classes.includes('submit') && (/^\s*(?:opt[-\s]?out\s+of|opt\s+me\s+out\s+of|stop(?:\s+(?:sending(?:\s+(?:me|us))?|receiving|getting))?|turn\s+off|unsubscribe\s+from)\s+(?:all\s+)?(?:(?:our|my|these|the|marketing|promotional|newsletter|future)\s+){0,2}(?:e-?mails?|newsletters?|email\s+marketing|marketing\s+e-?mails?)\s*[.!]?\s*$/iu.test(name)
+      || /^\s*(?:我要|我想)?(?:立即|马上)?(?:退出|离开|離開)(?:这个|這個|那个|那個|该|該|此|本|我的|我们的|我們的|你的|您的|你们的|你們的|他的|她的|他们的|他們的)?(?:群组|群組|群聊|群|频道|頻道)\s*$/u.test(name))) classes.push('submit')
+    // CU-634 r2 (cu-developer-two / -three): leaving a team in Chinese with a modifier, demonstrative or possessive asks permission, as
+    // 'Leave (this) team'.
+    if (grammarEligible && !classes.includes('permission') && /^\s*(?:我要|我想)?(?:立即|马上)?(?:退出|离开|離開)(?:这个|這個|那个|那個|该|該|此|本|我的|我们的|我們的|你的|您的|你们的|你們的|他的|她的|他们的|他們的)?(?:团队|團隊)\s*$/u.test(name)) classes.push('permission')
     // CU-627 r2 (cu-developer-two): leaving a group with any article / demonstrative / possessive, and the German separable e-mail
     // opt-out, as whole-label rules in each language - submit, as English 'Leave group' / 'Unsubscribe'.
     if (grammarEligible && !classes.includes('submit') && (/^\s*(?:quitter|quittez|quitte|quittons)\s+(?:le|ce|cet|votre|ton|mon|notre|leur)\s+groupe\s*[.!]?\s*$/iu.test(name)
