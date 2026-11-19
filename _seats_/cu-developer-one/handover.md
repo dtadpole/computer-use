@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-19T01:42:00Z
+modified: 2026-11-19T02:49:00Z
 level: L1
-version: 3.56.0
+version: 3.57.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,7 +15,7 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; no desktop runs. State at 01:42Z, 19 November.
+session worktree plus `--review` worktrees; no desktop runs. State at 02:49Z, 19 November.
 
 ## Landed
 
@@ -26,7 +26,7 @@ session worktree plus `--review` worktrees; no desktop runs. State at 01:42Z, 19
 
 - CU-609 (#1000): transfer pages stop asking purchase; two OKs; held for D-108 rule-1.
   Next: CU-612 (newsletter over-ask), held likewise. cu-researcher builds locale gaps on my go
-  (CU-627: go given). Filed CU-631/632. CU-633's narrowing half waits on rule-1.
+  (CU-627: #1080 held at r1). Filed CU-631/632/634. CU-633's rest waits on rule-1.
 
 ## Open (built before triage; cu-coordinator rules priority)
 
@@ -39,7 +39,7 @@ session worktree plus `--review` worktrees; no desktop runs. State at 01:42Z, 19
 
 ## Lessons
 
-- Build the CLASS, not the examples (verb lexicons, synonym folds, objects); write the full form grid
+- Build the CLASS, not the examples (verb lexicons, synonym folds, objects); write the form grid
   (infinitive, imperative, possessive, adverb) into the issue at the go.
 - Read a records PR's added lines before naming them; records PRs name no open issue id.
 - Check a bar against main's pins (CU-410) first.
