@@ -2660,7 +2660,16 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // CU-628 r2 (cu-developer-one): a bare 退订 / 退訂 (or with 全部 / 所有) is an unsubscribe and asks submit; 退订须知 / 退订政策 stay free.
     // CU-629: one modifier before it (立即 / 马上 / 现在 / 一键 / 确认) keeps submit; 退订邮件 / 短信 and 退订会员 / 套餐 / 服务 keep their
     // classes through the substring entries whatever modifier precedes them.
-    if (grammarEligible && !classes.includes('submit') && /^\s*(?:立即|马上|馬上|現在|现在|一键|一鍵|确认|確認)?(?:退订|退訂)(?:全部|所有)?\s*$/u.test(name)) classes.push('submit')
+    if (grammarEligible && !classes.includes('submit') && /^\s*(?:我想|我要)?(?:立即|马上|馬上|現在|现在|一键|一鍵|确认|確認)?(?:退订|退訂)(?:全部|所有)?\s*$/u.test(name)) classes.push('submit')
+    // CU-627 r2 (cu-developer-two): leaving a group with any article / demonstrative / possessive, and the German separable e-mail
+    // opt-out, as whole-label rules in each language - submit, as English 'Leave group' / 'Unsubscribe'.
+    if (grammarEligible && !classes.includes('submit') && (/^\s*(?:quitter|quittez|quitte)\s+(?:le|ce|votre|ton|mon|notre)\s+groupe\s*[.!]?\s*$/iu.test(name)
+      || /^\s*(?:(?:salir|sal|salga)\s+de(?:l|\s+(?:este|ese|tu|su|mi|nuestro))|(?:abandonar|abandona|abandone)\s+(?:el|este|tu|su|mi|nuestro))\s+grupo\s*[.!]?\s*$/iu.test(name)
+      || /^\s*(?:(?:sair|sai|saia)\s+d(?:o|este|esse)|(?:deixar|deixa|deixe|abandonar|abandona|abandone)\s+(?:o|este|esse))(?:\s+(?:seu|teu|meu|nosso))?\s+grupo\s*[.!]?\s*$/iu.test(name)
+      || /^\s*(?:(?:esci|uscire)\s+da(?:l|\s+questo)?|(?:abbandona|abbandonare|lascia|lasciare)\s+(?:il|questo))(?:\s+(?:tuo|suo|mio|nostro))?\s+gruppo\s*[.!]?\s*$/iu.test(name)
+      || /^\s*(?:(?:verlaat|verlaten)\s+(?:de|deze|je|jouw|uw|onze|mijn)\s+groep|(?:(?:de|deze|je|jouw|uw|onze|mijn)\s+)?groep\s+verlaten)\s*[.!]?\s*$/iu.test(name)
+      || /^\s*(?:(?:verlasse|verlass|verlassen\s+sie)\s+(?:die|diese|deine|ihre|unsere|meine)\s+gruppe|(?:(?:die|diese|deine|ihre|unsere|meine)\s+)?gruppe\s+verlassen)\s*[.!]?\s*$/iu.test(name)
+      || /^\s*(?:melde\s+dich|melden\s+sie\s+sich)\s+(?:vom|von)\s+(?:\p{L}+\s+){0,2}(?:newsletter|e-mails?|emails?|mails?)\s+ab\s*[.!]?\s*$/iu.test(name))) classes.push('submit')
     // CU-629 (cu-researcher): one adverb inside a subscription-family label ('Abonnement direct opzeggen', 'Abo jetzt kündigen',
     // 'Annuler maintenant l'abonnement') keeps the twin class - the label is read again with that one adverb dropped.
     const subscriptionLabels = [name]
