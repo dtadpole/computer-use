@@ -1,13 +1,13 @@
 ---
 title: '[cu] Developer Three (macOS helper) - handover'
 created: 2026-11-08T04:20:00Z
-modified: 2026-11-19T02:47:00Z
+modified: 2026-11-19T11:21:00Z
 level: L1
-version: 1.24.0
+version: 1.25.0
 description: 'What a fresh [cu] Developer Three session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
-  - source: hd-coordinator's goal renewal of 2026-11-18 11:01 PST (Linear items by priority, CUHelper correct, land through cu-integrator)
+  - source: hd-coordinator's goal renewal of 2026-11-18 19:01 PST (Linear items by priority, CUHelper correct, land through cu-integrator)
   - source: PRs #889, #895, #930 (CU-586 / CU-588 / CU-394); Linear CU-596 (run-lock sentinel flake), CU-614 (helper test build time)
 ---
 
@@ -33,14 +33,15 @@ All three wait on cu-coordinator; each lands after the one before it:
 
 ## Other items
 
-- **CU-614** (Triage): the helper step hit its 300 s alarm on 19 Nov; passes run 244-284 s. Fix scoped in the issue; needs cu-coordinator's go.
+- **CU-614** (Triage): install.sh tests alone took 254.7 s in the 19 Nov nightly (load ~7). Fix scoped; needs cu-coordinator's go.
 - **CU-596**: fix local at fad64e0d; push on cu-coordinator's word or a free slot.
-- **Review hold:** #1080 (CU-627) NOT OK at 3652e521; the r2 bar is on the PR, fresh rows in `.cu3-tools/h1080b.json` (02:44Z).
+- **Reviews:** none held.
 
 ## Rules learned
 
 - Post PR comments with `--body-file`; read PR comments as well as the inbox.
 - Keep lock-held runs out of a gate's phase 2.
-- A held-out spent on an interim head needs a fresh one; re-label a row's class only by a written ruling made before that round.
+- A held-out spent on one head needs fresh rows, written before the next head.
 - A narrowing needs the rule-1 ruling; say so.
+- A records PR names no open issue id in its title or body, and every added stamp is no later than its commit.
 - When a held-out finds a twin, bar its whole family that round. A gap inside the PR's own family is a hold; outside it, a follow-up.
