@@ -840,6 +840,11 @@ const FACTORY_RESET_PAIRS = [
 // CU-629: the subscription-family nouns, and the one adverb that may sit inside such a label.
 const SUBSCRIPTION_NOUN = /(?:^|[^\p{L}])(?:abo|abonnement|mitgliedschaft|tarif|lidmaatschap|pakket|adhésion|forfait|suscripción|membresía|assinatura|subscrição|plano|abbonamento|piano|subscription|membership|plan)(?![\p{L}])|abonelik|aboneliğ|üyelik|üyeliğ/iu
 const ONE_ADVERB = /\s+(?:jetzt|sofort|direkt|gleich|direct|nu|meteen|onmiddellijk|hemen|şimdi|maintenant|immédiatement|ahora|ya|agora|já|ora|subito|adesso|now|immediately)(?=\s)/iu
+// CU-633: the same closed list as the label's last word ('Cancel my subscription now').
+const TRAILING_ADVERB = /\s+(?:jetzt|sofort|direkt|gleich|direct|nu|meteen|onmiddellijk|hemen|şimdi|maintenant|immédiatement|ahora|ya|agora|já|ora|subito|adesso|now|immediately)\s*[.!]?\s*$/iu
+// CU-633 (cu-developer-one's ruling 23:21Z): a bare 'Cancel now' and its locale twins - delete on a billing / subscription /
+// membership page only (the page test below); elsewhere they keep main's class until the rule-1 ruling.
+const BARE_CANCEL_NOW = /^\s*(?:cancel\s+now|jetzt\s+kündigen|annuler\s+maintenant|cancelar\s+ahora|annulla\s+ora|cancelar\s+agora|nu\s+opzeggen|şimdi\s+iptal\s+et|立即取消)\s*[.!]?\s*$/iu
 const ORDER_REFERENCE = /(^|[^a-z])order\s*(?:#|no\.|number\b|id\b)\s*#?[\w-]*\d[\w-]*|(^|[^a-z])order\s+\d{3,}[\w-]*|(^|[^a-z])order\s+(?:details|history|status|summary|tracking|lookup)([^a-z]|$)/gi
 
 // CU-443 (cu-coordinator 20:54Z, a class fold): transferring a phone number is a port-out (credential, from the grammar's phone
@@ -2660,7 +2665,11 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // 'Annuler maintenant l'abonnement') keeps the twin class - the label is read again with that one adverb dropped.
     const subscriptionLabels = [name]
     if (SUBSCRIPTION_NOUN.test(name) && ONE_ADVERB.test(name)) subscriptionLabels.push(name.replace(ONE_ADVERB, ''))
+    // CU-633 (cu-developer-two): or that adverb as the last word ('Cancel my subscription now', '... immediately').
+    else if (SUBSCRIPTION_NOUN.test(name) && TRAILING_ADVERB.test(name)) subscriptionLabels.push(name.replace(TRAILING_ADVERB, ''))
     for (const label of subscriptionLabels) {
+      // CU-633: English cancel + a determiner + subscription reads as 'Cancel subscription' (delete).
+      if (grammarEligible && !classes.includes('delete') && /^\s*cancel\s+(?:my|your|the|this|our)\s+subscription\s*[.!]?\s*$/i.test(label)) classes.push('delete')
       // CU-625 r3 (cu-developer-two): the French and German cancel / end families as whole-label rules, each form in its English
       // twin's class - cancel + subscription -> delete; end + subscription, and any verb + membership / plan -> purchase.
       if (grammarEligible && !classes.includes('delete') && (/^\s*(?:annuler|annulez|annule|résilier|résiliez|résilie)\s+(?:l['’]\s*|mon\s+|votre\s+|ton\s+)abonnement\s*[.!]?\s*$/iu.test(label)
@@ -2675,6 +2684,17 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (subscriptionLabels.length > 1 && grammarEligible) {
       if (!classes.includes('delete') && namesDelete(subscriptionLabels[1])) classes.push('delete')
       if (!classes.includes('purchase') && namesPurchase(subscriptionLabels[1])) classes.push('purchase')
+    }
+    // CU-633: a bare 'Cancel now' (or a locale twin) on a billing / subscription / membership page cancels the plan - delete, as
+    // 'Cancel subscription' asks. The page is a billing / subscription(s) / membership(s) path segment or a billing /
+    // subscriptions host label (CU-537's page test). Before the phrase grammar, whose '<cancel> now' reads purchase.
+    if (grammarEligible && classes.length === 0 && BARE_CANCEL_NOW.test(name)) {
+      let billingPage = false
+      try {
+        const u = new URL(url)
+        billingPage = /^https?:$/.test(u.protocol) && (/(?:^|\/)(?:billing|subscriptions?|memberships?)(?=$|[/?#])/i.test(u.pathname) || /(?:^|\.)(?:billing|subscriptions?)(?:\.|$)/i.test(u.hostname))
+      } catch { billingPage = false }
+      if (billingPage) classes.push('delete')
     }
     // CU-620 (cu-researcher): a factory reset in any word order and language asks delete, as 'Factory reset' / 'Reset all
     // settings' / 'Erase all content and settings' do - a factory word and a reset verb in one short label ('Reset to factory
