@@ -2663,10 +2663,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (grammarEligible && !classes.includes('submit') && /^\s*(?:我想|我要)?(?:立即|马上|馬上|現在|现在|一键|一鍵|确认|確認)?(?:退订|退訂)(?:全部|所有)?\s*$/u.test(name)) classes.push('submit')
     // CU-627 r2 (cu-developer-two): leaving a group with any article / demonstrative / possessive, and the German separable e-mail
     // opt-out, as whole-label rules in each language - submit, as English 'Leave group' / 'Unsubscribe'.
-    if (grammarEligible && !classes.includes('submit') && (/^\s*(?:quitter|quittez|quitte)\s+(?:le|ce|cet|votre|ton|mon|notre|leur)\s+groupe\s*[.!]?\s*$/iu.test(name)
-      || /^\s*(?:(?:salir|sal|salga|salid)\s+de(?:l|\s+(?:este|ese|aquel|tu|su|mi|nuestro|vuestro))|(?:abandonar|abandona|abandone|abandonad)\s+(?:el|este|ese|tu|su|mi|nuestro|vuestro))\s+grupo\s*[.!]?\s*$/iu.test(name)
-      || /^\s*(?:(?:sair|sai|saia)\s+d(?:o|este|esse)|(?:deixar|deixa|deixe|abandonar|abandona|abandone)\s+(?:o|este|esse))(?:\s+(?:seu|teu|meu|nosso|vosso))?\s+grupo\s*[.!]?\s*$/iu.test(name)
-      || /^\s*(?:(?:esci|uscire)\s+da(?:l|\s+questo)?|(?:abbandona|abbandonare|lascia|lasciare)\s+(?:il|questo))(?:\s+(?:tuo|suo|mio|nostro|vostro|loro))?\s+gruppo\s*[.!]?\s*$/iu.test(name)
+    if (grammarEligible && !classes.includes('submit') && (/^\s*(?:quitter|quittez|quitte|quittons)\s+(?:le|ce|cet|votre|ton|mon|notre|leur)\s+groupe\s*[.!]?\s*$/iu.test(name)
+      || /^\s*(?:(?:salir|sal|salga|salgan|salid)\s+de(?:l|\s+(?:este|ese|aquel|tu|su|mi|nuestro|vuestro))|(?:abandonar|abandona|abandone|abandonen|abandonad)\s+(?:el|este|ese|tu|su|mi|nuestro|vuestro))\s+grupo\s*[.!]?\s*$/iu.test(name)
+      || /^\s*(?:(?:sair|sai|saia|saiam|saiamos)\s+d(?:o|este|esse)|(?:deixar|deixa|deixe|deixem|abandonar|abandona|abandone|abandonem)\s+(?:o|este|esse))(?:\s+(?:seu|teu|meu|nosso|vosso))?\s+grupo\s*[.!]?\s*$/iu.test(name)
+      || /^\s*(?:(?:esci|uscite|esca|uscire)\s+da(?:l|\s+questo)?|(?:abbandona|abbandonate|abbandoni|abbandonare|lascia|lasciate|lasci|lasciare)\s+(?:il|questo))(?:\s+(?:tuo|suo|mio|nostro|vostro|loro))?\s+gruppo\s*[.!]?\s*$/iu.test(name)
       || /^\s*(?:(?:verlaat|verlaten)\s+(?:de|deze|die|je|jouw|uw|onze|mijn|jullie|hun)\s+groep|(?:(?:de|deze|die|je|jouw|uw|onze|mijn|jullie|hun)\s+)?groep\s+verlaten)\s*[.!]?\s*$/iu.test(name)
       || /^\s*(?:(?:verlasse|verlass|verlasst|verlassen\s+sie)\s+(?:die|diese|deine|ihre|unsere|meine|eure)\s+gruppe|(?:(?:die|diese|deine|ihre|unsere|meine|eure)\s+)?gruppe\s+verlassen)\s*[.!]?\s*$/iu.test(name)
       || /^\s*(?:melde\s+dich|melden\s+sie\s+sich)\s+(?:vom|von)\s+(?:\p{L}+\s+){0,2}(?:newsletter|e-mails?|emails?|mails?)\s+ab\s*[.!]?\s*$/iu.test(name))) classes.push('submit')
