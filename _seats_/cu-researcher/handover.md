@@ -1,13 +1,13 @@
 ---
 title: '[cu] Researcher - Handover'
 created: 2026-11-08T04:16:21Z
-modified: 2026-11-18T20:53:00Z
+modified: 2026-11-19T11:06:00Z
 level: L2
-version: 5.47.0
+version: 5.48.0
 description: 'What the next session of [cu] Researcher needs - the High lane, the under-ask hunt, open reviews, the scripts, rules and lessons.'
 status: unverified
 grounded_in:
-  - source: the seat's own state at 2053Z 18 Nov
+  - source: the seat's own state at 1106Z 19 Nov
 ---
 
 # [cu] Researcher - Handover
@@ -18,11 +18,11 @@ Start here, then [responsibilities](responsibilities.md) and [red-team-consent-t
 WHERE: worktree ~/dtadpole/computer-use-wt/<session-id>; test merges in <session-id>--probe.
 TOOLS: durable copy in the private records repo, _seats_/cu-researcher/tools/ (install.sh -> /tmp).
 
-STATE (20:53Z 18 Nov): goal renewed by hd-coordinator. 35 issues closed 16-18 Nov (cross-locale parity,
-latest CU-622 / 623 / 624 / 625); CU-375 in Verify. In Progress: CU-628 -> #1059 (r3, one OK), CU-591 (two
-rulings). Next: CU-629 (built locally; adverb inside + the 退订 modifier family), CU-627. CU-410 pin: a
-subscription's auto-renew off stays free. Rulings waiting: CU-607, CU-595, CU-591, CU-601, #1000, #805, CU-618.
-Read the whole issue and the inbox before building and pushing; run the whole suite before claiming.
+STATE (11:06Z 19 Nov): goal renewed by hd-coordinator. 39 issues closed 16-19 Nov (latest CU-627 / 628 /
+629 / 636); CU-375 in Verify. In Progress: CU-634 (+635) -> #1094 (two OKs, gate queue), CU-591 (two rulings).
+Next: CU-637 (退出你的群组). Pins: CU-410 (subscription auto-renew off free), bare 'Opt out' and email
+notifications toggles free. Rulings waiting: CU-607, CU-595, CU-591, CU-601, #1000, #805, CU-618, twin parity.
+Battery axes: determiner, number, person, formality, verb synonyms, modifiers. Answer pings at once.
 
 BEFORE A FIRST OK: held-out once; _tools_/probe-kit/class-sweeps.mjs <class> main vs merge (public
 floor); a PRIVATE class set written BEFORE the round (heldout.mjs; /tmp/cu-r-probe/cu5NN-rKset.json,
