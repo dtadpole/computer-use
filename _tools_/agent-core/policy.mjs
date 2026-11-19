@@ -371,6 +371,188 @@ const LOCALE_ID_NAMES = Object.freeze(['reisepass', '…passnummer', 'geburtsdat
   'cpf', 'rg', 'passaporte', 'número do passaporte', 'data de nascimento', 'número da conta', 'cartão de cidadão',
   // r3: Turkish stems take their suffixes ('~', see namesWord).
   'tc kimlik', 'tc kimlik no', 'tc kimlik numara~', 'iban numara~', 'kimlik numara~', 'doğum tarih~', 'hesap numara~', 'pasaport numara~', 'vergi numara~', 'pasaport~'])
+// CU-638 (cu-developer-one's design, 19 Nov 13:36Z): the plural / formal imperatives of the locale verbs. Each verb that leads (or,
+// in German, ends) a purchase / delete / submit / permission entry has an explicit table of its imperative forms - FR tu / vous,
+// DE du / ihr / Sie, ES tu / vosotros / usted / ustedes, IT tu / voi / Lei, PT tu / voce / voces - generated once from the entry
+// list and reviewed (no suffix rules). An entry led by any form of a verb also matches every other form of it, with exactly
+// the entry's own object: 'supprimer le compte' reads 'Supprimez votre compte', 'konto loeschen' reads 'Loescht euer Konto', so a
+// form asks only where the infinitive asks. Dutch and Turkish already hold (shared stem, suffix markers).
+const IMPERATIVE_FORMS = Object.freeze({
+  'supprimer': ['supprime', 'supprimez'], 'effacer': ['efface', 'effacez'], 'annuler': ['annule', 'annulez'],
+  'résilier': ['résilie', 'résiliez'], 'quitter': ['quitte', 'quittez'], 'partager': ['partage', 'partagez'],
+  'passer': ['passe', 'passez'], 'commencer': ['commence', 'commencez'], 'démarrer': ['démarre', 'démarrez'],
+  'arrêter': ['arrête', 'arrêtez'], 'terminer': ['termine', 'terminez'], 'commander': ['commande', 'commandez'],
+  'confirmer': ['confirme', 'confirmez'], 'valider': ['valide', 'validez'], 'publier': ['publie', 'publiez'],
+  'poster': ['poste', 'postez'], 'lancer': ['lance', 'lancez'], 'accorder': ['accorde', 'accordez'],
+  'autoriser': ['autorise', 'autorisez'], 'donner': ['donne', 'donnez'], 'inviter': ['invite', 'invitez'],
+  'activer': ['active', 'activez'], 'continuer': ['continue', 'continuez'], 'retirer': ['retire', 'retirez'], 'vider': ['vide', 'videz'],
+  'payer': ['paie', 'paye', 'payez'], 'envoyer': ['envoie', 'envoyez'], 'essayer': ['essaie', 'essaye', 'essayez'],
+  'appeler': ['appelle', 'appelez'], 'mettre': ['mets', 'mettez'], 'soumettre': ['soumets', 'soumettez'], 'faire': ['fais', 'faites'],
+  'effectuer': ['effectue', 'effectuez'], 'rejoindre': ['rejoins', 'rejoignez'], 'acheter': ['achète', 'achetez'],
+  'transférer': ['transfère', 'transférez'], 'souscrire': ['souscris', 'souscrivez'],
+  'cancelar': ['cancela', 'cancelad', 'cancele', 'cancelen', 'cancelem'], 'mejorar': ['mejora', 'mejorad', 'mejore', 'mejoren'],
+  'iniciar': ['inicia', 'iniciad', 'inicie', 'inicien', 'iniciem'], 'cambiar': ['cambia', 'cambiad', 'cambie', 'cambien'],
+  'pasar': ['pasa', 'pasad', 'pase', 'pasen'], 'comprar': ['compra', 'comprad', 'compre', 'compren', 'comprem'],
+  'confirmar': ['confirma', 'confirmad', 'confirme', 'confirmen', 'confirmem'], 'tramitar': ['tramita', 'tramitad', 'tramite', 'tramiten'],
+  'eliminar': ['elimina', 'eliminad', 'elimine', 'eliminen'], 'borrar': ['borra', 'borrad', 'borre', 'borren'],
+  'llamar': ['llama', 'llamad', 'llame', 'llamen'], 'invitar': ['invita', 'invitad', 'invite', 'inviten'],
+  'postear': ['postea', 'postead', 'postee', 'posteen'], 'abandonar': ['abandona', 'abandonad', 'abandone', 'abandonen', 'abandonem'],
+  'participar': ['participa', 'participad', 'participe', 'participen', 'participem'],
+  'activar': ['activa', 'activad', 'active', 'activen'], 'retirar': ['retira', 'retirad', 'retire', 'retiren', 'retirem'],
+  'detener': ['detén', 'detened', 'detenga', 'detengan'], 'salir': ['sal', 'salid', 'salga', 'salgan'],
+  'hacer': ['haz', 'haced', 'haga', 'hagan'], 'empezar': ['empieza', 'empezad', 'empiece', 'empiecen'],
+  'comenzar': ['comienza', 'comenzad', 'comience', 'comiencen'], 'pagar': ['paga', 'pagad', 'pague', 'paguen', 'paguem'],
+  'finalizar': ['finaliza', 'finalizad', 'finalice', 'finalicen'], 'actualizar': ['actualiza', 'actualizad', 'actualice', 'actualicen'],
+  'realizar': ['realiza', 'realizad', 'realice', 'realicen', 'realize', 'realizem'],
+  'publicar': ['publica', 'publicad', 'publique', 'publiquen', 'publiquem'],
+  'enviar': ['envía', 'enviad', 'envíe', 'envíen', 'envia', 'envie', 'enviem'],
+  'transferir': ['transfiere', 'transferid', 'transfiera', 'transfieran', 'transfere', 'transfira', 'transfiram'],
+  'compartir': ['comparte', 'compartid', 'comparta', 'compartan'], 'permitir': ['permite', 'permitid', 'permita', 'permitan', 'permitam'],
+  'conceder': ['concede', 'conceded', 'conceda', 'concedan', 'concedam'], 'dar': ['da', 'dad', 'dé', 'den', 'dá', 'dê', 'deem'],
+  'vaciar': ['vacía', 'vaciad', 'vacíe', 'vacíen'], 'mudar': ['muda', 'mude', 'mudem'], 'encerrar': ['encerra', 'encerre', 'encerrem'],
+  'parar': ['para', 'pare', 'parem'], 'passar': ['passa', 'passe', 'passem'], 'atualizar': ['atualiza', 'atualize', 'atualizem'],
+  'melhorar': ['melhora', 'melhore', 'melhorem'], 'assinar': ['assina', 'assine', 'assinem'],
+  'esvaziar': ['esvazia', 'esvazie', 'esvaziem'], 'compartilhar': ['compartilha', 'compartilhe', 'compartilhem'],
+  'partilhar': ['partilha', 'partilhe', 'partilhem'], 'convidar': ['convida', 'convide', 'convidem'],
+  'postar': ['posta', 'poste', 'postem'], 'entrar': ['entra', 'entre', 'entrem'], 'deixar': ['deixa', 'deixe', 'deixem'],
+  'descadastrar': ['descadastra', 'descadastre', 'descadastrem'], 'terminar': ['termina', 'termine', 'terminem'],
+  'fechar': ['fecha', 'feche', 'fechem'], 'ativar': ['ativa', 'ative', 'ativem'], 'fazer': ['faz', 'faça', 'façam'],
+  'sair': ['sai', 'saia', 'saiam'], 'ligar': ['liga', 'ligue', 'liguem'], 'começar': ['começa', 'comece', 'comecem'],
+  'excluir': ['exclui', 'exclua', 'excluam'], 'interromper': ['interrompe', 'interrompa', 'interrompam'],
+  'remover': ['remove', 'remova', 'removam'], 'submeter': ['submete', 'submeta', 'submetam'], 'efetuar': ['efetua', 'efetue', 'efetuem'],
+  'apagar': ['apaga', 'apague', 'apaguem'], 'elimina': ['eliminate', 'elimini'], 'cancella': ['cancellate', 'cancelli'],
+  'conferma': ['confermate', 'confermi'], 'acquista': ['acquistate', 'acquisti'], 'annulla': ['annullate', 'annulli'],
+  'svuota': ['svuotate', 'svuoti'], 'partecipa': ['partecipate', 'partecipi'], 'termina': ['terminate', 'termini'],
+  'abbandona': ['abbandonate', 'abbandoni'], 'ordina': ['ordinate', 'ordini'], 'chiama': ['chiamate', 'chiami'],
+  'invita': ['invitate', 'inviti'], 'aggiorna': ['aggiornate', 'aggiorni'], 'passa': ['passate', 'passi'],
+  'effettua': ['effettuate', 'effettui'], 'ferma': ['fermate', 'fermi'], 'prova': ['provate', 'provi'], 'attiva': ['attivate', 'attivi'],
+  'paga': ['pagate', 'paghi'], 'pubblica': ['pubblicate', 'pubblichi'], 'cerca': ['cercate', 'cerchi'], 'disdici': ['disdite', 'disdica'],
+  'chiudi': ['chiudete', 'chiuda'], 'esci': ['uscite', 'esca'], 'condividi': ['condividete', 'condivida'],
+  'concedi': ['concedete', 'conceda'], 'consenti': ['consentite', 'consenta'], 'interrompi': ['interrompete', 'interrompa'],
+  'rimuovi': ['rimuovete', 'rimuova'], 'trasferisci': ['trasferite', 'trasferisca'], 'procedi': ['procedete', 'proceda'],
+  'sospendi': ['sospendete', 'sospenda'], 'sottoscrivi': ['sottoscrivete', 'sottoscriva'], 'vai': ['andate', 'vada'],
+  'abbonati': ['abbonatevi', 'si abboni'], 'avvia': ['avviate', 'avvii'], 'invia': ['inviate', 'invii'], 'inizia': ['iniziate', 'inizi'],
+  'lascia': ['lasciate', 'lasci'], 'potenzia': ['potenziate', 'potenzi'], 'eliminare': ['elimina', 'eliminate', 'elimini'],
+  'cancellare': ['cancella', 'cancellate', 'cancelli'], 'confermare': ['conferma', 'confermate', 'confermi'],
+  'acquistare': ['acquista', 'acquistate', 'acquisti'], 'pagare': ['paga', 'pagate', 'paghi'], 'inviare': ['invia', 'inviate', 'invii'],
+  'annullare': ['annulla', 'annullate', 'annulli'], 'condividere': ['condividi', 'condividete', 'condivida'],
+  'abbandonare': ['abbandona', 'abbandonate', 'abbandoni'], 'lasciare': ['lascia', 'lasciate', 'lasci'],
+  'interrompere': ['interrompi', 'interrompete', 'interrompa'], 'terminare': ['termina', 'terminate', 'termini'],
+  'disdire': ['disdici', 'disdite', 'disdica'], 'pubblicare': ['pubblica', 'pubblicate', 'pubblichi'],
+  'chiamare': ['chiama', 'chiamate', 'chiami'], 'invitare': ['invita', 'invitate', 'inviti'], 'uscire': ['esci', 'uscite', 'esca'],
+  'concedere': ['concedi', 'concedete', 'conceda'], 'löschen': ['lösch', 'lösche', 'löscht', 'löschen sie'],
+  'entfernen': ['entfern', 'entferne', 'entfernt', 'entfernen sie'], 'verwerfen': ['verwirf', 'verwerft', 'verwerfen sie'],
+  'leeren': ['leere', 'leert', 'leeren sie'], 'bezahlen': ['bezahl', 'bezahle', 'bezahlt', 'bezahlen sie'],
+  'zahlen': ['zahl', 'zahle', 'zahlt', 'zahlen sie'], 'kaufen': ['kauf', 'kaufe', 'kauft', 'kaufen sie'],
+  'bestellen': ['bestell', 'bestelle', 'bestellt', 'bestellen sie'],
+  'bestätigen': ['bestätig', 'bestätige', 'bestätigt', 'bestätigen sie'], 'senden': ['sende', 'sendet', 'senden sie'],
+  'überweisen': ['überweis', 'überweise', 'überweist', 'überweisen sie'], 'kündigen': ['kündig', 'kündige', 'kündigt', 'kündigen sie'],
+  'beenden': ['beend', 'beende', 'beendet', 'beenden sie'], 'stoppen': ['stopp', 'stoppe', 'stoppt', 'stoppen sie'],
+  'starten': ['start', 'starte', 'startet', 'starten sie'], 'wechseln': ['wechsle', 'wechsel', 'wechselt', 'wechseln sie'],
+  'teilen': ['teil', 'teile', 'teilt', 'teilen sie'], 'verlassen': ['verlass', 'verlasse', 'verlasst', 'verlassen sie'],
+  'veröffentlichen': ['veröffentlich', 'veröffentliche', 'veröffentlicht', 'veröffentlichen sie'],
+  'posten': ['post', 'poste', 'postet', 'posten sie'], 'gewähren': ['gewähr', 'gewähre', 'gewährt', 'gewähren sie'],
+  'erlauben': ['erlaub', 'erlaube', 'erlaubt', 'erlauben sie'], 'aktivieren': ['aktivier', 'aktiviere', 'aktiviert', 'aktivieren sie']
+})
+// A form that is also a participle, adjective or noun is never matched alone where the entry is the bare verb ('Inviate', 'Pagate',
+// 'Bezahlt' stay free); it asks only in an imperative-only context - first in the label and followed by a determiner, or by a 'now'
+// adverb ('Bestellt jetzt', 'Pagate subito') ('Eliminate il
+// vostro account', 'Inviate il messaggio') - or with an entry's object. 'para' (PT 'parar') is the preposition 'for', never generated.
+const IMPERATIVE_BARE_COLLISIONS = new Set(['kauf', 'kauft', 'bezahlt', 'bestellt', 'entfernt', 'veröffentlicht', 'post', 'posta', 'poste', 'teil', 'teile', 'teilt',
+  'paye', 'commande', 'partage', 'partilha', 'compra', 'paga', 'acquistate', 'eliminate', 'cancellate', 'inviate', 'pubblicate', 'chiamate', 'invitate',
+  'trasferite', 'pagate', 'andate', 'esca',
+  // German e-less du stems lead hyphenated compounds ('Bestell-Nr.', 'Zahl-Art', 'Lösch-Datum'), so they never stand alone either.
+  'lösch', 'entfern', 'bezahl', 'zahl', 'bestell', 'bestätig', 'überweis', 'kündig', 'beend', 'stopp', 'start', 'veröffentlich', 'gewähr', 'erlaub',
+  'aktivier', 'verlass', 'wechsel', 'verwirf', 'leer'])
+const IMPERATIVE_NEVER = new Set(['para'])
+// The determiners an imperative may take instead of the entry's own ('le compte' / 'votre compte' / 'ton compte'), FR / ES / PT
+// / IT / DE; optional, at most two ('il vostro'), at the entry's determiner positions and right after the verb.
+const IMPERATIVE_DETERMINERS = ['le', 'la', 'les', 'un', 'une', 'des', 'du', 'votre', 'vos', 'ton', 'ta', 'tes', 'mon', 'ma', 'mes', 'notre', 'nos', 'leur',
+  'leurs', 'ce', 'cet', 'cette', 'ces', 'el', 'los', 'las', 'unos', 'unas', 'tu', 'tus', 'su', 'sus', 'mi', 'mis', 'vuestra', 'vuestro', 'vuestras', 'vuestros',
+  'nuestra', 'nuestro', 'nuestras', 'nuestros', 'este', 'esta', 'estos', 'estas', 'ese', 'esa', 'o', 'a', 'os', 'as', 'um', 'uma', 'seu', 'sua', 'seus', 'suas',
+  'teu', 'tua', 'meu', 'minha', 'vosso', 'vossa', 'nosso', 'nossa', 'esse', 'essa', 'il', 'lo', 'i', 'gli', 'uno', 'tuo', 'tuoi', 'tue', 'suo', 'mio', 'mia',
+  'vostro', 'vostra', 'nostro', 'nostra', 'questo', 'questa', 'der', 'die', 'das', 'den', 'dem', 'ein', 'eine', 'einen', 'dein', 'deine', 'deinen', 'euer',
+  'eure', 'euren', 'ihr', 'ihre', 'ihren', 'unser', 'unsere', 'unseren', 'mein', 'meine', 'meinen', 'diese', 'dieses', 'diesen']
+const GERMAN_INFINITIVES = new Set(Object.keys(IMPERATIVE_FORMS).filter((verb) => /en$/.test(verb) && IMPERATIVE_FORMS[verb].some((form) => form.endsWith(' sie'))))
+/** Every form a verb token may take (its own lemma or lemmas, and their forms), or null when it is no table verb. */
+function imperativeFamily(token) {
+  const family = new Set()
+  for (const [lemma, forms] of Object.entries(IMPERATIVE_FORMS)) if (lemma === token || forms.includes(token)) [lemma, ...forms].forEach((form) => family.add(form))
+  return family.size ? family : null
+}
+/** The imperative variants of one entry, as token lists ('¦' an optional determiner slot); [] when its verb has no table. */
+function imperativeVariants(entry) {
+  if (/[~^\u2026]/.test(entry)) return []
+  const tokens = []
+  for (const raw of entry.toLowerCase().replace(/\u2019/g, "'").split(/\s+/)) {
+    if (raw === '_' || IMPERATIVE_DETERMINERS.includes(raw)) tokens.push('¦')
+    else if (/^l'./.test(raw)) tokens.push('¦', raw.slice(2))
+    else tokens.push(raw)
+  }
+  const variants = []
+  const lead = imperativeFamily(tokens[0])
+  if (lead && !GERMAN_INFINITIVES.has(tokens[0])) {
+    const rest = tokens.slice(1)
+    for (const form of lead) {
+      if (form === tokens[0] || IMPERATIVE_NEVER.has(form)) continue
+      if (!rest.length) { if (!form.includes(' ')) variants.push(IMPERATIVE_BARE_COLLISIONS.has(form) ? ['^', form, '¦!'] : [form]); continue }
+      variants.push([form, ...(rest[0] === '¦' ? [] : ['¦']), ...rest])
+    }
+  }
+  const last = tokens[tokens.length - 1]
+  if (tokens.length > 1 && GERMAN_INFINITIVES.has(last)) {
+    const object = tokens.slice(0, -1)
+    for (const form of IMPERATIVE_FORMS[last]) variants.push([form, ...(object[0] === '¦' ? [] : ['¦']), ...object])
+  } else if (tokens.length === 1 && GERMAN_INFINITIVES.has(last)) {
+    for (const form of IMPERATIVE_FORMS[last]) variants.push(IMPERATIVE_BARE_COLLISIONS.has(form) ? ['^', form, '¦!'] : [form])
+  }
+  return variants
+}
+/** One compiled pattern per class over every entry's variants, built on first use (normaliseName is defined further down). */
+class ImperativePattern {
+  constructor(entries) { this.entries = entries }
+  get regex() {
+    if (this.compiled) return this.compiled
+    const slot = `(?:(?:${IMPERATIVE_DETERMINERS.map(escapeRegExp).join('|')})[\\s-]+|l'\\s*){0,2}`
+    const sources = new Set()
+    const anchored = new Set()
+    this.leads = new Set()
+    const NOW = ['jetzt', 'sofort', 'gleich', 'ora', 'subito', 'adesso', 'ahora', 'ya', 'agora', 'já', 'maintenant', 'immédiatement']
+    const determiner = `(?:(?:${IMPERATIVE_DETERMINERS.map(escapeRegExp).join('|')})[\\s-]+\\p{L}|l'\\s*\\p{L}|(?:${NOW.map(escapeRegExp).join('|')})(?:[^\\p{L}]|$))`
+    for (const entry of this.entries) {
+      for (const variant of imperativeVariants(entry)) {
+        // '^' form '¦!': a bare collision, first in the label and followed by a determiner or a 'now' adverb (the imperative-only context).
+        const lead = normaliseName(normaliseText(variant[0] === '^' ? variant[1] : variant[0])).split(' ')[0]
+        this.leads.add(lead)
+        if (variant[0] === '^') { anchored.add(`${escapeRegExp(normaliseName(normaliseText(variant[1])))}[\\s-]+${determiner}`); continue }
+        let source = ''
+        variant.forEach((token, index) => {
+          if (token === '¦') { if (index < variant.length - 1) source += slot; return }
+          source += normaliseName(normaliseText(token)).split(' ').map(escapeRegExp).join('[\\s-]+')
+          if (index < variant.length - 1) source += '[\\s-]+'
+        })
+        sources.add(source)
+      }
+    }
+    this.anchored = anchored.size ? new RegExp(`^(?:${[...anchored].join('|')})`, 'u') : /(?!)/
+    this.compiled = sources.size ? new RegExp(`(^|[^\\p{L}])(?:${[...sources].join('|')})([^\\p{L}]|$)`, 'u') : /(?!)/
+    return this.compiled
+  }
+  // Most names hold no table verb form: a word lookup first keeps the big pattern off them.
+  test(text) {
+    const regex = this.regex
+    if (!text.split(/[^\p{L}]+/u).some((word) => this.leads.has(word))) return false
+    return regex.test(text) || this.anchored.test(text)
+  }
+}
+const IMPERATIVES = Object.freeze(Object.fromEntries(['purchase', 'delete', 'submit', 'permission'].map((cls) => [cls, new ImperativePattern(LOCALE_WORDS[cls])])))
+/** For the CU-638 parity test: each class's entries with one plain label per variant (the slots left empty). */
+export function imperativeParityRows() {
+  return Object.entries(IMPERATIVES).flatMap(([cls, pattern]) => pattern.entries.flatMap((entry) => imperativeVariants(entry).map((variant) => variant[0] === '^'
+    ? { cls, entry, label: `${variant[1]} ${/^(?:pag|acquist|trasfer)/.test(variant[1]) ? 'il conto' : 'il messaggio'}`, collision: variant[1] }
+    : { cls, entry, label: variant.filter((token) => token !== '¦').join(' ') })))
+}
+
 const WORDS = Object.freeze({
   // CU-498 (High; cu-coordinator 12:21Z): a direct debit mandate pulls money from the account (purchase), anywhere.
   // (a separate line so the purchase list below stays as it was)
@@ -438,7 +620,7 @@ const WORDS = Object.freeze({
     'sell now', 'confirm sale',
     // CU-288 (cu-researcher's real-app wordings, round 2): a booking, an upgrade or a renewal commits money.
     'book now', 'book this', 'reserve now', 'upgrade plan', 'upgrade now', 'upgrade to pro', 'upgrade to premium', 'renew subscription', 'renew now',
-    'renew plan', ...ZH_WORDS.purchase, ...LOCALE_WORDS.purchase],
+    'renew plan', ...ZH_WORDS.purchase, ...LOCALE_WORDS.purchase, IMPERATIVES.purchase],
   // CU-135: replace and overwrite (a save panel's 'already exists' sheet), don't save (a close sheet discards work).
   delete: ['delete', 'remove', 'discard', 'erase', 'empty trash', 'cancel subscription', 'replace', 'overwrite', "don't save", 'don\u2019t save',
     // CU-430 (CU-415 family): cancelling a flight cancels a trip.
@@ -460,7 +642,7 @@ const WORDS = Object.freeze({
     'move to trash', 'move to bin', 'empty bin', 'clear history', 'clear all', 'reset all', 'reset settings', 'reset to defaults', 'uninstall', 'wipe', 'purge',
     'deactivate', 'close account', 'forget', 'factory reset',
     // cu-researcher's 13:23Z sweep: unsaved edits lost, like Discard Changes.
-    'revert to saved', 'revert all changes', ...ZH_WORDS.delete, ...LOCALE_WORDS.delete],
+    'revert to saved', 'revert all changes', ...ZH_WORDS.delete, ...LOCALE_WORDS.delete, IMPERATIVES.delete],
   permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke',
     // CU-496 (High; cu-coordinator 11:21Z): approving an access request lets another person in (raises the older submit 'approve').
     'approve access request', 'approve access', 'approve the access request',
@@ -567,7 +749,7 @@ const WORDS = Object.freeze({
     // ('Turn off notifications' stays free). ChatGPT confirms any change to account permissions.
     ...['turn off', 'disable', 'remove', 'allow'].flatMap((verb) => ['2 step', 'two step', 'two factor', '2fa', 'mfa', 'multi factor',
       'password', 'passkey', 'passkeys', 'security key', 'security keys', 'login alerts', 'sign in alerts', 'account recovery', 'find my',
-      'less secure apps', 'less secure app access'].map((what) => `${verb} ${what}`)), ...ZH_WORDS.permission, ...LOCALE_WORDS.permission],
+      'less secure apps', 'less secure app access'].map((what) => `${verb} ${what}`)), ...ZH_WORDS.permission, ...LOCALE_WORDS.permission, IMPERATIVES.permission],
   submit: ['send', 'post', 'submit', 'publish', 'reply', 'sign up', 'register',
     // CU-261 (cu-researcher; cu-coordinator: High): actions that reach other people or commit shared work, as whole
     // phrases. A bare Accept, Connect, Join or Follow stays free (cookie banners, Wi-Fi, generic joins: named limits).
@@ -600,7 +782,7 @@ const WORDS = Object.freeze({
     'accept new itinerary', 'accept the new itinerary', 'accept schedule change', 'accept the schedule change', 'accept itinerary change',
     // CU-428: listing or relisting an item and accepting a return bind a sale.
     'list now', 'list it now', 'relist', 'relist item', 'accept return', 'accept the return',
-    ...ZH_WORDS.submit, ...LOCALE_WORDS.submit],
+    ...ZH_WORDS.submit, ...LOCALE_WORDS.submit, IMPERATIVES.submit],
 })
 // CU-377 follow-up: the file browsers whose rows are files (the same set as app-policy's FILE_BROWSERS).
 const FILE_BROWSER_APPS = new Set(['com.apple.finder', 'com.cocoatech.PathFinder', 'com.binarynights.ForkLift-3', 'com.binarynights.ForkLift', 'com.eltima.cmd1', 'com.mrrsoftware.marta', 'org.yanex.marta'])
@@ -932,6 +1114,8 @@ const articlePattern = (word) => normaliseName(normaliseText(word)).split(' _ ')
 function namesWord(name, words) {
   const text = normaliseName(name)
   return words.some((word) => {
+    // CU-638: a class's compiled imperative pattern rides in its word list.
+    if (typeof word !== 'string') return word.test(text)
     if (word.includes(' _ ')) return new RegExp(`(^|[^\\p{L}])${articlePattern(word)}([^\\p{L}]|$)`, 'u').test(text)
     if (/[~^]/.test(word)) return new RegExp(`(^|[^\\p{L}])${turkishPattern(word)}([^\\p{L}]|$)`, 'u').test(text)
     // CU-345: '…' leads a German compound ending - matched after any letters, bounded only on its right.
