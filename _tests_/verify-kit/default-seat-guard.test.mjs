@@ -50,7 +50,10 @@ test('CU-369: neither default-seat test names the real registry, memory gate or 
 // cu-developer-three (#1102 r1): live-probe.test.mjs imports live-probe.mjs, which imports the vendored launcher, so a source read
 // alone cannot rule out a call one hop down. This runs both files in a child whose module hooks replace the real registry entry
 // and browser launch with stand-ins that record the call and throw: the run must pass with nothing recorded.
-test('CU-369: at run time neither default-seat test reaches the real registerBrowser, openPage or openBrowser', () => {
+// r3 (cu-integrator's two gate holds, 19 Nov): the child re-runs live-probe.test.mjs, whose helper-link load next to the suite's
+// own helper-link deadline tests broke their 300-400 ms capture deadlines on the merge tree. So the run-time half is opt-in -
+// CU369_RUNTIME=1 (verify-kit's own check or the nightly) - and the default suite keeps checks 1-3 and 5.
+test('CU-369: at run time neither default-seat test reaches the real registerBrowser, openPage or openBrowser (opt-in: CU369_RUNTIME=1)', { skip: process.env.CU369_RUNTIME === '1' ? false : 'opt-in: set CU369_RUNTIME=1' }, () => {
   const dir = mkdtempSync(join(tmpdir(), 'cu369-'))
   const mark = join(dir, 'reached')
   try {
