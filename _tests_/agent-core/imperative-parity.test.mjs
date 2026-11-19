@@ -17,7 +17,7 @@ test('CU-638 parity: for every entry and every imperative form, the form (with t
 test('CU-638: the filed rows ask (delete / submit / purchase in FR / DE / ES / IT / PT)', () => {
   const rows = { delete: ['Supprimez votre compte', 'Supprime ton compte', 'Löscht euer Konto', 'Eliminad vuestra cuenta', 'Eliminen su cuenta', 'Excluam a conta', 'Excluam a vossa conta', 'Eliminate il vostro account'],
     submit: ['Envoyez', 'Sendet', 'Enviad', 'Envíen', 'Enviem', 'Inviate il messaggio'],
-    purchase: ['Bezahlt jetzt', 'Pagad ahora', 'Paguen ahora', 'Paguem agora', 'Pagate ora', 'Überweist das Geld', 'Transferid el dinero', 'Transfiram o dinheiro'] }
+    purchase: ['Bezahlt jetzt', 'Bestellt jetzt', 'Kauft jetzt', 'Pagate subito', 'Pagad ahora', 'Paguen ahora', 'Paguem agora', 'Pagate ora', 'Überweist das Geld', 'Transferid el dinero', 'Transfiram o dinheiro'] }
   for (const [cls, names] of Object.entries(rows)) for (const name of names) assert.ok(click(name).includes(cls), `${name} -> ${cls}`)
 })
 
@@ -25,7 +25,7 @@ test('CU-638 collisions: a participle / noun form alone, or after its noun, stay
   for (const name of ['Kauf', 'Kauft', 'Bezahlt', 'Bestellt', 'Entfernt', 'Veröffentlicht', 'Posta', 'Teil', 'Teile', 'Teilt', 'Paye', 'Commande', 'Partilha',
     'Acquistate', 'Eliminate', 'Cancellate', 'Inviate', 'Chiamate', 'Trasferite', 'Pagate', 'Andate', 'Esca',
     'Foto eliminate', 'Messaggi inviati', 'Fatture pagate', 'Rechnung bezahlt', 'Para assinatura anual', 'Para a assinatura',
-    'Bestell-Nr.', 'Bestell-Nummer', 'Zahl-Art', 'Lösch-Datum', 'Start-Seite']) assert.deepEqual(click(name), [], name)
+    'Bestell-Nr.', 'Bestell-Nummer', 'Zahl-Art', 'Lösch-Datum', 'Start-Seite', 'Bestellt am 3. Mai', 'Bezahlt per Karte', 'Inviate da Mario']) assert.deepEqual(click(name), [], name)
 })
 
 test('CU-638 near misses: conjugated view / show / open verbs stay free', () => {

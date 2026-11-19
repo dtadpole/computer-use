@@ -455,7 +455,8 @@ const IMPERATIVE_FORMS = Object.freeze({
   'erlauben': ['erlaub', 'erlaube', 'erlaubt', 'erlauben sie'], 'aktivieren': ['aktivier', 'aktiviere', 'aktiviert', 'aktivieren sie']
 })
 // A form that is also a participle, adjective or noun is never matched alone where the entry is the bare verb ('Inviate', 'Pagate',
-// 'Bezahlt' stay free); it asks only in an imperative-only context - first in the label and followed by a determiner ('Eliminate il
+// 'Bezahlt' stay free); it asks only in an imperative-only context - first in the label and followed by a determiner, or by a 'now'
+// adverb ('Bestellt jetzt', 'Pagate subito') ('Eliminate il
 // vostro account', 'Inviate il messaggio') - or with an entry's object. 'para' (PT 'parar') is the preposition 'for', never generated.
 const IMPERATIVE_BARE_COLLISIONS = new Set(['kauf', 'kauft', 'bezahlt', 'bestellt', 'entfernt', 'veröffentlicht', 'post', 'posta', 'poste', 'teil', 'teile', 'teilt',
   'paye', 'commande', 'partage', 'partilha', 'compra', 'paga', 'acquistate', 'eliminate', 'cancellate', 'inviate', 'pubblicate', 'chiamate', 'invitate',
@@ -516,10 +517,11 @@ class ImperativePattern {
     const sources = new Set()
     const anchored = new Set()
     this.leads = new Set()
-    const determiner = `(?:(?:${IMPERATIVE_DETERMINERS.map(escapeRegExp).join('|')})[\\s-]+|l'\\s*)`
+    const NOW = ['jetzt', 'sofort', 'gleich', 'ora', 'subito', 'adesso', 'ahora', 'ya', 'agora', 'já', 'maintenant', 'immédiatement']
+    const determiner = `(?:(?:${IMPERATIVE_DETERMINERS.map(escapeRegExp).join('|')})[\\s-]+\\p{L}|l'\\s*\\p{L}|(?:${NOW.map(escapeRegExp).join('|')})(?:[^\\p{L}]|$))`
     for (const entry of this.entries) {
       for (const variant of imperativeVariants(entry)) {
-        // '^' form '¦!': a bare collision, first in the label and followed by a determiner (the imperative-only context).
+        // '^' form '¦!': a bare collision, first in the label and followed by a determiner or a 'now' adverb (the imperative-only context).
         const lead = normaliseName(normaliseText(variant[0] === '^' ? variant[1] : variant[0])).split(' ')[0]
         this.leads.add(lead)
         if (variant[0] === '^') { anchored.add(`${escapeRegExp(normaliseName(normaliseText(variant[1])))}[\\s-]+${determiner}`); continue }
@@ -532,7 +534,7 @@ class ImperativePattern {
         sources.add(source)
       }
     }
-    this.anchored = anchored.size ? new RegExp(`^(?:${[...anchored].join('|')})\\p{L}`, 'u') : /(?!)/
+    this.anchored = anchored.size ? new RegExp(`^(?:${[...anchored].join('|')})`, 'u') : /(?!)/
     this.compiled = sources.size ? new RegExp(`(^|[^\\p{L}])(?:${[...sources].join('|')})([^\\p{L}]|$)`, 'u') : /(?!)/
     return this.compiled
   }
