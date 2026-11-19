@@ -14,7 +14,8 @@ const GRID = {
   delete: ['Verwijder uw account', 'Verwijdert u uw account', 'Account verwijderen', 'Wis account', 'Wis uw account', 'Account wissen', 'Wist u uw account', 'Wis geschiedenis',
     'Annuleer abonnement', 'Annuleer uw abonnement', 'Abonnement annuleren', 'Annuleert u uw abonnement', 'Zeg abonnement op', 'Zeg uw abonnement op', 'Zegt u uw abonnement op',
     'Hef uw account op', 'Heft u uw account op', 'Sluit uw account af', 'Maak de prullenbak leeg',
-    'Wis je gegevens', 'Wis de gegevens', 'Wis alle bestanden', 'Wis je profiel', 'Gegevens wissen', 'Wist u uw gegevens'],
+    'Wis je gegevens', 'Wis de gegevens', 'Wis alle bestanden', 'Wis je profiel', 'Gegevens wissen', 'Wist u uw gegevens',
+    "Wis je foto's", 'Wis uw berichten', 'Wis alle contacten', 'Wis de documenten', 'Wis alles', 'Wis het apparaat'],
   purchase: ['Betaal', 'Betaalt u', 'Betaal nu', 'Koop nu', 'Koopt u nu', 'Bestel', 'Bestelt u', 'Maak het geld over', 'Maakt u het geld over', 'Reken af', 'Rekent u af',
     'Lidmaatschap annuleren', 'Annuleer uw lidmaatschap',
     'Plan annuleren', 'Annuleer je plan', 'Annuleert u uw plan', 'Zeg je plan op', 'Plan opzeggen', 'Pakket annuleren', 'Annuleer uw pakket', 'Zeg uw pakket op', 'Zegt u uw pakket op'],
@@ -26,5 +27,5 @@ test('CU-641: the Dutch stem x formality x order grid asks each English twin\'s 
 })
 
 test('CU-641 controls: clear / filter / steering and bare collisions stay free', () => {
-  for (const name of ['Stuur', 'Stuurwiel', 'Sturen', 'Wis', 'Wis zoekopdracht', 'Wis filters', 'Wis de filters', 'Bel', 'Plaats', 'Annuleer', 'Annuleren', 'Verzendkosten']) assert.deepEqual(click(name), [], name)
+  for (const name of ['Stuur', 'Stuurwiel', 'Sturen', 'Wis', 'Wis zoekopdracht', 'Wis filters', 'Wis de filters', 'Wis selectie', 'Wis het formulier', 'Wis cache', 'Wis alle meldingen', 'Bel', 'Plaats', 'Annuleer', 'Annuleren', 'Verzendkosten']) assert.deepEqual(click(name), [], name)
 })

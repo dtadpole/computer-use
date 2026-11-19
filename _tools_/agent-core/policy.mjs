@@ -488,6 +488,9 @@ const IMPERATIVE_BARE_COLLISIONS = new Set(['kauf', 'kauft', 'bezahlt', 'bestell
 // CU-641 (cu-developer-one, point 4): 'Stuur' (also the steering wheel) and 'Wis' ('Wis zoekopdracht', 'Wis filters' stay free) ask
 // only with an entry's object - never alone, never in the determiner context.
 const IMPERATIVE_OBJECT_ONLY = new Set(['stuur', 'wis'])
+// CU-641 r3: the objects 'Wis' clears without deleting, as English 'Clear ...' stays free for them.
+const WIS_CLEAR_OBJECTS = new Set(['zoekopdracht', 'zoekopdrachten', 'zoekveld', 'zoektermen', 'zoekterm', 'filter', 'filters', 'selectie', 'formulier', 'invoer',
+  'veld', 'velden', 'tekst', 'cache', 'melding', 'meldingen', 'notificaties', 'opmaak', 'markering', 'markeringen', 'zoekbalk'])
 const IMPERATIVE_NEVER = new Set(['para'])
 // The determiners an imperative may take instead of the entry's own ('le compte' / 'votre compte' / 'ton compte'), FR / ES / PT
 // / IT / DE; optional, at most two ('il vostro'), at the entry's determiner positions and right after the verb.
@@ -2898,6 +2901,13 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // CU-634 r2 (cu-developer-two / -three): leaving a team in Chinese with a modifier, demonstrative or possessive asks permission, as
     // 'Leave (this) team'.
     if (grammarEligible && !classes.includes('permission') && /^\s*(?:我要|我想)?(?:立即|马上)?(?:退出|离开|離開)(?:这个|這個|那个|那個|该|該|此|本|我的|我们的|我們的|你的|您的|你们的|你們的|他的|她的|他们的|他們的)?(?:团队|團隊)\s*$/u.test(name)) classes.push('permission')
+    // CU-641 r3 (cu-developer-three): Dutch 'Wis' (wipe / clear) + an object asks delete, as 'Erase <object>' does for any object -
+    // except the objects English clears without asking ('Clear search / filters / selection / form / cache / notifications'), so
+    // 'Wis zoekopdracht', 'Wis de filters', 'Wis selectie' stay free (the wider clear-verb family is CU-642).
+    if (grammarEligible && !classes.includes('delete')) {
+      const wipe = String(name ?? '').trim().toLowerCase().match(/^(?:wis|wist\s+u)\s+(?:(?:de|het|je|jouw|uw|mijn|onze|alle|al|deze|dit|die)\s+){0,2}(\p{L}[\p{L}'’-]*)(?:\s+\p{L}[\p{L}'’-]*)?\s*[.!]?$/u)
+      if (wipe && !WIS_CLEAR_OBJECTS.has(wipe[1])) classes.push('delete')
+    }
     // CU-627 r2 (cu-developer-two): leaving a group with any article / demonstrative / possessive, and the German separable e-mail
     // opt-out, as whole-label rules in each language - submit, as English 'Leave group' / 'Unsubscribe'.
     if (grammarEligible && !classes.includes('submit') && (/^\s*(?:quitter|quittez|quitte|quittons)\s+(?:le|ce|cet|votre|ton|mon|notre|leur)\s+groupe\s*[.!]?\s*$/iu.test(name)
