@@ -459,7 +459,10 @@ const IMPERATIVE_FORMS = Object.freeze({
 // vostro account', 'Inviate il messaggio') - or with an entry's object. 'para' (PT 'parar') is the preposition 'for', never generated.
 const IMPERATIVE_BARE_COLLISIONS = new Set(['kauf', 'kauft', 'bezahlt', 'bestellt', 'entfernt', 'veröffentlicht', 'post', 'posta', 'poste', 'teil', 'teile', 'teilt',
   'paye', 'commande', 'partage', 'partilha', 'compra', 'paga', 'acquistate', 'eliminate', 'cancellate', 'inviate', 'pubblicate', 'chiamate', 'invitate',
-  'trasferite', 'pagate', 'andate', 'esca'])
+  'trasferite', 'pagate', 'andate', 'esca',
+  // German e-less du stems lead hyphenated compounds ('Bestell-Nr.', 'Zahl-Art', 'Lösch-Datum'), so they never stand alone either.
+  'lösch', 'entfern', 'bezahl', 'zahl', 'bestell', 'bestätig', 'überweis', 'kündig', 'beend', 'stopp', 'start', 'veröffentlich', 'gewähr', 'erlaub',
+  'aktivier', 'verlass', 'wechsel', 'verwirf', 'leer'])
 const IMPERATIVE_NEVER = new Set(['para'])
 // The determiners an imperative may take instead of the entry's own ('le compte' / 'votre compte' / 'ton compte'), FR / ES / PT
 // / IT / DE; optional, at most two ('il vostro'), at the entry's determiner positions and right after the verb.

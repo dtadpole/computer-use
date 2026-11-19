@@ -24,7 +24,8 @@ test('CU-638: the filed rows ask (delete / submit / purchase in FR / DE / ES / I
 test('CU-638 collisions: a participle / noun form alone, or after its noun, stays free', () => {
   for (const name of ['Kauf', 'Kauft', 'Bezahlt', 'Bestellt', 'Entfernt', 'Veröffentlicht', 'Posta', 'Teil', 'Teile', 'Teilt', 'Paye', 'Commande', 'Partilha',
     'Acquistate', 'Eliminate', 'Cancellate', 'Inviate', 'Chiamate', 'Trasferite', 'Pagate', 'Andate', 'Esca',
-    'Foto eliminate', 'Messaggi inviati', 'Fatture pagate', 'Rechnung bezahlt', 'Para assinatura anual', 'Para a assinatura']) assert.deepEqual(click(name), [], name)
+    'Foto eliminate', 'Messaggi inviati', 'Fatture pagate', 'Rechnung bezahlt', 'Para assinatura anual', 'Para a assinatura',
+    'Bestell-Nr.', 'Bestell-Nummer', 'Zahl-Art', 'Lösch-Datum', 'Start-Seite']) assert.deepEqual(click(name), [], name)
 })
 
 test('CU-638 near misses: conjugated view / show / open verbs stay free', () => {
