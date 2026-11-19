@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - handover'
 created: 2026-11-08T04:14:00Z
-modified: 2026-11-19T12:24:00Z
+modified: 2026-11-19T13:30:00Z
 level: L1
-version: 4.29.48
+version: 4.29.49
 description: 'What a fresh [cu] Developer Two session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -18,11 +18,11 @@ grounded_in:
 Seat `cu-developer-two`: desktop and browser drivers, live view, run lock, MCP. Code: the session worktree
 `~/dtadpole/computer-use-wt/<session-id>`, one purpose worktree per PR. Records: [artifacts.md](artifacts.md).
 
-## State (19 Nov 12:24Z)
+## State (19 Nov 13:30Z)
 
-- Main: c83aa97a; goal (21:01 PST renewal) caps ~12:45Z, warned. CU-585 unit waits only for triage:
-  #884 -> #894 bf4c04dc -> #895 r2 -> #897 b9fe2af6, all OK'd. #1094 r3 16bf7742 (CU-634 / 635 / 637) OK'd;
-  after it lands: main evidence on CU-635 and CU-637. Asked: CU-369; CU-607 and 'Ligar' rulings; triage.
+- Main: a5946395; goal renewed 19 Nov 05:01 PST. #1094 landed 3de98007; CU-634 / 635 / 637 closed live, my
+  main evidence on 635 / 637. #1102 (CU-369) OK'd at r2. CU-585 unit waits only for triage: #884 -> #894
+  bf4c04dc -> #895 r2 -> #897 b9fe2af6, all OK'd. Asked: CU-607 and 'Ligar' rulings; CU-585 triage.
 - Linear: CU-371 In Progress (mine); one slot free, nothing takeable.
 - Both OKs at each head: the #843 -> #846 -> #848 stack, #862 (b7ceecee) and #853 (f5addea5). #856 lost its first OK
   (list controls, 13:16Z); r10 is NOT OK; r11 is next; my rows (rows/h572s.json) are ready.
