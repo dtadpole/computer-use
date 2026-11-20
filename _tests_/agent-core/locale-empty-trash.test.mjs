@@ -20,6 +20,7 @@ const ASK = [
 test('CU-655: emptying the trash asks delete in every locale, as its English twin does', () => {
   assert.ok(click('Empty trash').includes('delete'), 'the English twin asks')
   for (const name of ['Svuota il cestino', 'Prullenbak legen', 'Esvaziar lixeira']) assert.ok(click(name).includes('delete'), `${name} asked before CU-655 too`)
+  for (const name of ['Leeg de prullenbak', 'Leeg je prullenbak', 'Esvaziar o lixo', 'Esvazie a lixeira', 'Esvazie o lixo']) assert.ok(click(name).includes('delete'), `${name} -> delete (r4: the article slot)`)
   for (const name of ASK) assert.ok(click(name).includes('delete'), `${name} -> delete`)
 })
 

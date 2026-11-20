@@ -241,6 +241,8 @@ const LOCALE_WORDS = Object.freeze({
     'excluir', 'apagar', 'remover', 'excluir permanentemente', 'sil^', 'kaldır^', 'kalıcı olarak sil^', 'hesab~ sil^', 'hesab~ kapat^',
     // r2: emptying the trash, as English 'Empty trash'.
     'svuota cestino', 'svuota il cestino', 'prullenbak legen', 'prullenbak leegmaken', 'leeg prullenbak',
+    // CU-655 r4 (cu-researcher): an article or possessive between the verb and the trash noun ('Leeg de prullenbak', 'Esvaziar o lixo').
+    'leeg _ prullenbak', 'esvaziar _ lixo',
     'esvaziar lixeira', 'esvaziar a lixeira', 'esvaziar lixo', 'esvaziar a reciclagem', 'çöp kutu~ boşalt^', 'çöp~ boşalt^', 'çöp kutu~ temizle^',
     // CU-625 (cu-researcher; cu-developer-one's twin-parity class rule): cancelling a subscription asks delete, as English 'Cancel
     // subscription' does; infinitive, imperative, formal and possessive forms.
