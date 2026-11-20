@@ -540,6 +540,24 @@ const LOCALE_TRASH_EMPTY = Object.freeze([
   /^(?:leere|leert|leeren\s+sie|entleere|entleert|entleeren\s+sie)\s+(?:\S+\s+){0,4}?papierkorb(?=\s|$|[.!])/i,
   /ゴミ箱.{0,10}?空に(?!し(?:ました|た)|され|済|完了|中)/u,
   /휴지통\S*\s*(?:\S+\s+){0,4}?(?:비우(?:기|세요|십시오|시겠습니까)?|비워(?:\s?줘|\s?주세요|요)?)(?=\s|$|[.!?])/u,
+  // CU-657 (cu-developer-one's 17:00Z row): the nominal form takes the object particle before 실행 / 하기 ('휴지통 비우기를 실행',
+  // '휴지통 비우기를 하기'), as '휴지통 비우기 실행' asks; a past or status verb after the particle stays free ('휴지통 비우기를 완료했습니다').
+  /휴지통\S*\s*(?:\S+\s+){0,4}?비우기[을를]\s*(?:실행|하기)(?=\s|$|[.!?])/u,
+  // CU-657 (cu-developer-one's design, 20 Nov 16:47Z): IT / NL / PT / TR with the same slots - up to four words before the noun
+  // ('Svuota tutto il cestino', 'Esvaziar sua lixeira'), words between the noun and a final verb in NL and TR ('Prullenbak nu
+  // legen', 'Çöp kutusunu şimdi boşalt'), a trailing adverb ('Svuotare il cestino ora'); negation follows its twin ('Non svuotare
+  // il cestino', 'Prullenbak niet legen', 'Não esvaziar a lixeira', 'Çöp kutusunu boşaltma'). Past forms ('Cestino svuotato',
+  // 'Prullenbak geleegd', 'Lixeira esvaziada', 'Çöp kutusu boşaltıldı'), other objects ('Svuota il carrello', 'Winkelwagen
+  // legen', 'Esvaziar o carrinho', 'Sepeti boşalt') and the bare nouns stay free.
+  /^(?:non\s+)?(?:svuota|svuotare|svuotate|svuoti)\s+(?:\S+\s+){0,4}?cestino(?=\s|$|[.!])/i,
+  /^(?:niet\s+)?(?:leeg|leegt|legen|leegmaken)\s+(?:\S+\s+){0,4}?prullenbak(?=\s|$|[.!])/i,
+  /^maak\s+(?:\S+\s+){0,4}?prullenbak(?:\s+\S+){0,3}?\s+leeg(?=\s|$|[.!])/i,
+  /^(?:\S+\s+){0,4}?prullenbak(?:\s+\S+){0,4}?\s+(?:legen|leegmaken|leeg\s+maken)\s*[.!]?$/i,
+  /^(?:não\s+|nao\s+)?(?:esvaziar|esvazie|esvazia|esvaziem)\s+(?:\S+\s+){0,4}?(?:lixeira|lixo|reciclagem)(?=\s|$|[.!])/i,
+  /^(?:\S+\s+){0,4}?çöp(?:\s+kutu\S*)?(?:\s+\S+){0,4}?\s+(?:boşalt|boşaltın|boşaltınız|temizle|temizleyin|temizleyiniz)\s*[.!]?$/iu,
+  // The negative imperative needs the accusative object ('Çöp kutusunu boşaltma'): 'boşaltma' after a bare noun is the verbal noun
+  // of a setting's name ('Otomatik çöp kutusu boşaltma', automatic trash emptying), which stays free.
+  /^(?:\S+\s+){0,4}?(?:çöp\s+kutusunu|çöpü)(?:\s+\S+){0,4}?\s+(?:boşaltma|boşaltmayın|temizleme|temizlemeyin)\s*[.!]?$/iu,
 ])
 // CU-655: the Russian twin ('Очистить корзину', 'Очистите корзину', 'Корзину очистить', with 'не' as negation) is built from folded
 // words on first use: a judged name has passed normaliseText, which folds Cyrillic homoglyphs to Latin case by case, so each word
