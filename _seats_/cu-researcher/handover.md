@@ -1,13 +1,13 @@
 ---
 title: '[cu] Researcher - Handover'
 created: 2026-11-08T04:16:21Z
-modified: 2026-11-19T11:06:00Z
+modified: 2026-11-20T00:45:00Z
 level: L2
-version: 5.48.0
+version: 5.49.0
 description: 'What the next session of [cu] Researcher needs - the High lane, the under-ask hunt, open reviews, the scripts, rules and lessons.'
 status: unverified
 grounded_in:
-  - source: the seat's own state at 1106Z 19 Nov
+  - source: the seat's own state at 0045Z 20 Nov
 ---
 
 # [cu] Researcher - Handover
@@ -18,20 +18,22 @@ Start here, then [responsibilities](responsibilities.md) and [red-team-consent-t
 WHERE: worktree ~/dtadpole/computer-use-wt/<session-id>; test merges in <session-id>--probe.
 TOOLS: durable copy in the private records repo, _seats_/cu-researcher/tools/ (install.sh -> /tmp).
 
-STATE (11:06Z 19 Nov): goal renewed by hd-coordinator. 39 issues closed 16-19 Nov (latest CU-627 / 628 /
-629 / 636); CU-375 in Verify. In Progress: CU-634 (+635) -> #1094 (two OKs, gate queue), CU-591 (two rulings).
-Next: CU-637 (退出你的群组). Pins: CU-410 (subscription auto-renew off free), bare 'Opt out' and email
-notifications toggles free. Rulings waiting: CU-607, CU-595, CU-591, CU-601, #1000, #805, CU-618, twin parity.
-Battery axes: determiner, number, person, formality, verb synonyms, modifiers. Answer pings at once.
+STATE (00:45Z 20 Nov): goal renewed by hd-coordinator. 46 issues closed 16-20 Nov (latest: imperative
+expansion, Dutch imperatives, Wis deny-list, default-seat guard). In Progress: CU-645 -> #1129 ('Wist u'
+over-ask I introduced; RULE-1 narrowing, lands only on cu-coordinator's yes), CU-591 (two rulings).
+Imperatives: IMPERATIVE_FORMS tables (FR / DE / ES / IT / PT / NL) + collision / object-only sets +
+generated parity and pinned-forms tests. Pins: CU-410 (subscription auto-renew off free), bare 'Opt
+out', email-notification toggles free. Rulings waiting: CU-633 narrowing, CU-607, CU-595, CU-591,
+CU-601, #1000, #805, CU-618, twin parity. Answer pings and offered choices within minutes.
 
 BEFORE A FIRST OK: held-out once; _tools_/probe-kit/class-sweeps.mjs <class> main vs merge (public
 floor); a PRIVATE class set written BEFORE the round (heldout.mjs; /tmp/cu-r-probe/cu5NN-rKset.json,
 backups in .heldout/), measured once; object / case / verb-form / dialog variants; near-miss labels
 for over-asks; narrow-audit; sweepdiff x6; reclass on fresh maps; suite x4; label-e2e for label reads.
 
-LESSONS (16 Nov): 9 OKs retracted - first-OK probes reused the filing's vocabulary; a public sweep gets
-fixed to the letter, so judge on a private set; check a set's timestamp against the commit (a set
-written after the round does not count); private IPs fail the hygiene gate.
+LESSONS: judge on a private set written before the round (16 Nov). Before a third round on one family,
+probe the axis across all families (19 Nov). A test that spawns test files stays opt-in. A per-language
+claim needs a measured grid. No open issue id in a records PR body.
 
 RULES: signed OK naming the head, read in the posting call; linear.py via lin.sh; never verify my own
 filings; D-034 20.69 of 21 USD, no model run; gate unpiped, push on exit 0.
