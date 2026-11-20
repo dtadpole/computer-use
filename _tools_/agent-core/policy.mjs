@@ -227,8 +227,9 @@ const LOCALE_WORDS = Object.freeze({
   delete: ['löschen', 'entfernen', 'verwerfen', 'supprimer', 'effacer', 'eliminar', 'borrar', 'удалить', 'стереть',
     // CU-650: cancel a subscription, as 'Cancel subscription' (Russian accusative, with or without a possessive; the table's
     // imperatives read 'Отмените (свою) подписку').
-    // CU-654: clear a history (Russian through the table's очисти / очистите, Japanese, Turkish with its suffix markers).
-    'очистить историю', 'очистить всю историю', 'очистить свою историю', 'очистить вашу историю', '履歴をクリア', '履歴クリア', '履歴のクリア', 'geçmiş~ temizle^',
+    // CU-654: clear a history (Russian through the table's очисти / очистите, Turkish with its suffix markers; Japanese is a
+    // whole-label rule so its past forms stay free).
+    'очистить историю', 'очистить всю историю', 'очистить свою историю', 'очистить вашу историю', 'geçmiş~ temizle^',
     'отменить подписку', 'отменить мою подписку', 'отменить свою подписку', 'отменить вашу подписку', 'отменить твою подписку', 'отменить эту подписку', '削除', '消去', '삭제', '지우기',
     // CU-358: Italian, Dutch, Portuguese and Turkish.
     'elimina', 'cancella', 'rimuovi', 'elimina definitivamente', 'verwijderen', 'verwijder', 'wissen', 'definitief verwijderen',
@@ -517,8 +518,10 @@ const LOCALE_HISTORY_CLEAR = Object.freeze([
   // r2 (cu-developer-three, cu-developer-one 12:50Z): in the verb-final locales words may stand between the noun and the verb -
   // 'Verlauf jetzt / vollständig / beim Beenden leeren', '履歴をすべてクリア', 'Arama geçmişini şimdi temizle'.
   /^(?:\S+\s+){0,4}?\S*verlauf(?:\s+\S+){0,4}?\s+(?:leeren|bereinigen)\s*[.!]?$/i,
-  /履歴.{0,10}?クリア/u,
-  /(?:^|\s)\S*geçmiş\S*(?:\s+\S+){0,4}?\s+temizle\S*\s*[.!]?$/iu,
+  // r3 (cu-developer-three, cu-developer-one 14:15Z): past and passive forms stay free, as 'History cleared' does ('履歴をクリアしま
+  // した', '履歴がクリアされました', 'Geçmiş temizlendi').
+  /履歴.{0,10}?クリア(?!し(?:ました|た)|され|済|完了|中)/u,
+  /(?:^|\s)\S*geçmiş\S*(?:\s+\S+){0,4}?\s+temizle(?:yin(?:iz)?|sin)?\s*[.!]?$/iu,
   /^(?:leere|leert|leeren\s+sie|bereinige|bereinigt|bereinigen\s+sie)\s+(?:\S+\s+){0,4}?\S*verlauf\b/i,
 ])
 // CU-641 r3: the objects 'Wis' clears without deleting, as English 'Clear ...' stays free for them.

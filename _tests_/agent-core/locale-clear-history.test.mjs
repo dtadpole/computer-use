@@ -28,5 +28,7 @@ test('CU-654: locale clear + history and the Korean casual imperatives ask as th
 
 test('CU-654 controls: the clear verbs with other objects, the bare verbs and nouns, and statements stay free', () => {
   for (const name of ['Vider le panier', 'Vider', 'Limpiar filtros', 'Limpiar', 'Limpar filtros', 'Svuota carrello', 'Cache leeren', 'Verlauf', 'Historique', 'Historial',
-    'Очистить фильтры', 'Очистить', 'キャッシュをクリア', 'Önbelleği temizle', 'Cache jetzt leeren', 'キャッシュをすべてクリア', 'Önbelleği şimdi temizle', 'Verlauf jetzt anzeigen', '보내요', '지워졌습니다', 'Afficher l\'historique', 'Ver historial', 'Verlauf anzeigen']) assert.deepEqual(click(name), [], name)
+    'Очистить фильтры', 'Очистить', 'キャッシュをクリア', 'Önbelleği temizle', 'Cache jetzt leeren', 'キャッシュをすべてクリア', 'Önbelleği şimdi temizle', 'Verlauf jetzt anzeigen',
+    // r3: past and passive forms stay free
+    'Geçmiş temizlendi', 'Arama geçmişi temizlendi', 'Geçmiş temizleniyor', '履歴をクリアしました', '履歴がクリアされました', '履歴をクリアした', '履歴クリア済み', '履歴のクリア完了', 'История очищена', 'Verlauf geleert', 'Historique vidé', 'Historial limpiado', '보내요', '지워졌습니다', 'Afficher l\'historique', 'Ver historial', 'Verlauf anzeigen']) assert.deepEqual(click(name), [], name)
 })
