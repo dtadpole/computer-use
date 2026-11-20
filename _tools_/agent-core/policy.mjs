@@ -549,7 +549,8 @@ function namesRuTrashEmpty(name) {
     const any = (words) => `(?:${words.flatMap(folds).join('|')})`
     const verb = any(['очистить', 'очисти', 'очистите', 'очищать', 'очищай', 'очищайте'])
     const noun = any(['корзину'])
-    const cart = any(['покупок', 'товаров', 'заказов', 'магазина'])
+    // r2 (cu-developer-three): the cart's noun in the singular too ('корзину заказа').
+    const cart = any(['покупок', 'покупки', 'товаров', 'товара', 'заказов', 'заказа', 'магазина'])
     ruTrashEmptyRegex = new RegExp(`^(?:${any(['не'])}\\s+)?(?:${verb}\\s+(?:\\S+\\s+){0,4}?${noun}|${noun}\\s+(?:\\S+\\s+){0,4}?${verb})(?!\\s+${cart})(?=\\s|$|[.!])`, 'iu')
   }
   // The name is compared after normaliseName too, as namesTrashFolded compares it.

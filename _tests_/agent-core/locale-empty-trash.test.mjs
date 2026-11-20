@@ -37,4 +37,5 @@ test('CU-655: Russian korzina is also a shopping cart - it asks there too (a kno
   assert.deepEqual(click('Empty cart', cart), [], 'the English cart twin is free')
   assert.ok(click('Очистить корзину', cart).includes('delete'), 'the trash reading wins: the trash deletes for good, a cart empties reversibly')
   assert.deepEqual(click('Очистить корзину покупок', cart), [], 'a cart named as such stays free')
+  for (const name of ['Очистить корзину заказа', 'Очистить корзину товаров', 'Очистить корзину покупки']) assert.deepEqual(click(name, cart), [], `${name}: a named cart, singular or plural (r2)`)
 })
