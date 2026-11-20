@@ -543,8 +543,10 @@ const LOCALE_TRASH_EMPTY = Object.freeze([
   // CU-657 (cu-developer-one's 17:00Z row): the nominal form takes the object particle before 실행 / 하기 ('휴지통 비우기를 실행',
   // '휴지통 비우기를 하기'), as '휴지통 비우기 실행' asks; a past or status verb after the particle stays free ('휴지통 비우기를 완료했습니다').
   // CU-660 (cu-developer-one's go, 19:06Z): 시작 / 진행 (start / proceed) after the particle ask too ('휴지통 비우기를 시작'), with the
-  // imperative endings (r2, cu-researcher: '휴지통 비우기를 시작하세요', '…진행해 주세요', '…시작하십시오'); 'in progress' (진행 중) stays free.
-  /휴지통\S*\s*(?:\S+\s+){0,4}?비우기[을를]\s*(?:실행|하기|시작|진행)(?:하기|하세요|해\s?주세요|하십시오|해요|해)?(?!\s*중)(?=\s|$|[.!?])/u,
+  // imperative endings (r2, cu-researcher: '휴지통 비우기를 시작하세요', '…진행해 주세요', '…시작하십시오'; r3, cu-developer-three: the
+  // casual '…진행해줘', as CU-654's '지워줘'), and up to two words between the particle and the verb ('휴지통 비우기를 지금 시작',
+  // cu-developer-one's r3 ruling); 'in progress' (진행 중) and the past forms stay free.
+  /휴지통\S*\s*(?:\S+\s+){0,4}?비우기[을를]\s*(?:\S+\s+){0,2}?(?:실행|하기|시작|진행)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|해)?(?!\s*중)(?=\s|$|[.!?])/u,
   // CU-657 (cu-developer-one's design, 20 Nov 16:47Z): IT / NL / PT / TR with the same slots - up to four words before the noun
   // ('Svuota tutto il cestino', 'Esvaziar sua lixeira'), words between the noun and a final verb in NL and TR ('Prullenbak nu
   // legen', 'Çöp kutusunu şimdi boşalt'), a trailing adverb ('Svuotare il cestino ora'); negation follows its twin ('Non svuotare
