@@ -104,7 +104,7 @@ const LOCALE_WORDS = Object.freeze({
   purchase: ['kaufen', 'jetzt kaufen', 'bezahlen', 'jetzt bezahlen', 'bestellen', 'zahlungspflichtig bestellen', 'kaufen und bezahlen', 'zur kasse',
     'acheter', 'payer', 'commander', 'passer la commande', 'valider la commande', 'acheter maintenant',
     'comprar', 'pagar', 'realizar pedido', 'finalizar compra', 'tramitar pedido', 'comprar ahora',
-    'купить', 'оплатить', 'заказать', 'оформить заказ',
+    'купить', 'оплатить', 'заказать', 'оформить заказ', 'оформить покупку', 'оформить подписку',
     '購入', '支払', '注文を確定', '注文する', 'レジに進む', '今すぐ買う',
     '구매', '결제', '주문하기', '바로구매',
     // CU-358 (cu-researcher): Italian, Dutch, Portuguese and Turkish (Portuguese shares 'comprar' / 'pagar' above).
@@ -472,6 +472,14 @@ const IMPERATIVE_FORMS = Object.freeze({
   'uitnodigen': ['nodig|uit', 'nodigt u|uit'], 'toestaan': ['sta|toe', 'staat u|toe'], 'deelnemen': ['neem|deel', 'neemt u|deel'], 'uitschrijven': ['schrijf|uit', 'schrijft u|uit'],
   'afmelden': ['meld|af', 'meldt u|af'], 'overmaken': ['maak|over', 'maakt u|over'], 'leegmaken': ['maak|leeg', 'maakt u|leeg'], 'overschrijven': ['schrijf|over', 'schrijft u|over'],
   'afrekenen': ['reken|af', 'rekent u|af'], 'uitvoeren': ['voer|uit', 'voert u|uit'], 'overstappen': ['stap|over', 'stapt u|over'],
+  // CU-648 (cu-developer-one's design 03:04Z / 03:06Z): Russian perfective ty / vy imperatives; imperfective ('Удаляйте',
+  // 'Покупайте') and negated forms stay out. Korean polite imperatives of the native 보내다 and of the hada table nouns; the plain
+  // statement forms ('보내요', '삭제해요') stay out ('보내요' is also 'I send').
+  'удалить': ['удали', 'удалите'], 'отправить': ['отправь', 'отправьте'], 'оплатить': ['оплати', 'оплатите'], 'купить': ['купи', 'купите'],
+  'заказать': ['закажи', 'закажите'], 'оформить': ['оформи', 'оформите'], 'стереть': ['сотри', 'сотрите'],
+  '보내기': ['보내세요', '보내 주세요', '보내주세요', '보내십시오'], '삭제': ['삭제하세요', '삭제해 주세요', '삭제해주세요', '삭제하십시오'],
+  '결제': ['결제하세요', '결제해 주세요', '결제해주세요', '결제하십시오'], '구매': ['구매하세요', '구매해 주세요', '구매해주세요', '구매하십시오'],
+  '전송': ['전송하세요', '전송해 주세요', '전송해주세요', '전송하십시오'],
 })
 // A form that is also a participle, adjective or noun is never matched alone where the entry is the bare verb ('Inviate', 'Pagate',
 // 'Bezahlt' stay free); it asks only in an imperative-only context - first in the label and followed by a determiner, or by a 'now'
@@ -501,7 +509,9 @@ const IMPERATIVE_DETERMINERS = ['le', 'la', 'les', 'un', 'une', 'des', 'du', 'vo
   'vostro', 'vostra', 'nostro', 'nostra', 'questo', 'questa', 'der', 'die', 'das', 'den', 'dem', 'ein', 'eine', 'einen', 'dein', 'deine', 'deinen', 'euer',
   'eure', 'euren', 'ihr', 'ihre', 'ihren', 'unser', 'unsere', 'unseren', 'mein', 'meine', 'meinen', 'diese', 'dieses', 'diesen',
   // CU-641: Dutch, with the reflexive je / u of a separable verb ('Meld je af', 'Schrijf u uit').
-  'de', 'het', 'een', 'je', 'jouw', 'uw', 'mijn', 'onze', 'ons', 'deze', 'dit', 'jullie', 'hun', 'u', 'zich', 'alle']
+  'de', 'het', 'een', 'je', 'jouw', 'uw', 'mijn', 'onze', 'ons', 'deze', 'dit', 'jullie', 'hun', 'u', 'zich', 'alle',
+  // CU-648: Russian possessives and demonstratives ('Удалите свой аккаунт', 'Оформите ваш заказ').
+  'свой', 'свою', 'своё', 'свое', 'свои', 'ваш', 'вашу', 'ваше', 'ваши', 'мой', 'мою', 'моё', 'мое', 'мои', 'твой', 'твою', 'этот', 'эту', 'это', 'эти']
 const GERMAN_INFINITIVES = new Set(Object.keys(IMPERATIVE_FORMS).filter((verb) => /n$/.test(verb) && IMPERATIVE_FORMS[verb].some((form) => form.endsWith(' sie') || / u(\|\S+)?$/.test(form) || form.includes('|'))))
 /** Every form a verb token may take (its own lemma or lemmas, and their forms), or null when it is no table verb. */
 function imperativeFamily(token) {
@@ -553,22 +563,26 @@ class ImperativePattern {
   constructor(entries) { this.entries = entries }
   get regex() {
     if (this.compiled) return this.compiled
-    const slot = `(?:(?:${IMPERATIVE_DETERMINERS.map(escapeRegExp).join('|')})[\\s-]+|l'\\s*){0,2}`
+    // CU-648: a judged name has passed normaliseText, which folds homoglyphs case by case ('Удалите' -> 'Yдaлитe', 'УДАЛИТЕ' ->
+    // 'YДAЛИTE'), so each word is folded as written, capitalised and in capitals, as namesWord does for its Cyrillic entries.
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))]
+    const alternatives = (word) => { const forms = folds(word).map((form) => form.split(' ').map(escapeRegExp).join('[\\s-]+')); return forms.length > 1 ? `(?:${forms.join('|')})` : forms[0] }
+    const dets = [...new Set(IMPERATIVE_DETERMINERS.flatMap(folds))].map(escapeRegExp).join('|')
+    const slot = `(?:(?:${dets})[\\s-]+|l'\\s*){0,2}`
     const sources = new Set()
     const anchored = new Set()
     this.leads = new Set()
     const NOW = ['jetzt', 'sofort', 'gleich', 'ora', 'subito', 'adesso', 'ahora', 'ya', 'agora', 'já', 'maintenant', 'immédiatement']
-    const determiner = `(?:(?:${IMPERATIVE_DETERMINERS.map(escapeRegExp).join('|')})[\\s-]+\\p{L}|l'\\s*\\p{L}|(?:${NOW.map(escapeRegExp).join('|')})(?:[^\\p{L}]|$))`
+    const determiner = `(?:(?:${dets})[\\s-]+\\p{L}|l'\\s*\\p{L}|(?:${NOW.map(escapeRegExp).join('|')})(?:[^\\p{L}]|$))`
     for (const entry of this.entries) {
       for (const variant of imperativeVariants(entry)) {
         // '^' form '¦!': a bare collision, first in the label and followed by a determiner or a 'now' adverb (the imperative-only context).
-        const lead = normaliseName(normaliseText(variant[0] === '^' ? variant[1] : variant[0])).split(' ')[0]
-        this.leads.add(lead)
-        if (variant[0] === '^') { anchored.add(`${escapeRegExp(normaliseName(normaliseText(variant[1])))}[\\s-]+${determiner}`); continue }
+        for (const form of folds(variant[0] === '^' ? variant[1] : variant[0])) this.leads.add(form.split(' ')[0])
+        if (variant[0] === '^') { anchored.add(`${alternatives(variant[1])}[\\s-]+${determiner}`); continue }
         let source = ''
         variant.forEach((token, index) => {
           if (token === '¦') { if (index < variant.length - 1) source += slot; return }
-          source += normaliseName(normaliseText(token)).split(' ').map(escapeRegExp).join('[\\s-]+')
+          source += alternatives(token)
           if (index < variant.length - 1) source += '[\\s-]+'
         })
         sources.add(source)
