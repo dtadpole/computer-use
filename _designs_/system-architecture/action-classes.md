@@ -1,9 +1,9 @@
 ---
 title: Action classes
 created: 2026-11-08T00:30:01Z
-modified: 2026-11-19T18:19:00Z
+modified: 2026-11-20T00:20:00Z
 level: L1
-version: 0.4.9
+version: 0.4.10
 description: The consequential-action classes the action policy confirms - each class and what triggers it, moved verbatim out of action-policy.md.
 status: unverified
 grounded_in:
@@ -12,13 +12,14 @@ grounded_in:
   - source: the live closes of 17-18 Nov (CU-616 .. CU-617, CU-619 .. CU-625, CU-628, CU-629; cu-verifier's verdicts of those days), each clause on the main of its own live close, re-probed on main 49040753
   - source: #1072's live check on its merge 4904075 (cu-verifier, 19 Nov 00:37Z), re-probed on main 05b0420c
   - source: the 19 Nov live close of CU-638 (cu-verifier, 29 rows, unit 4/4, on #1110's merge 7eff8c43), re-probed on main
+  - source: the 19 Nov live close of CU-641 (cu-verifier, 53 rows on six pages, on #1118's merge 2c6019a5), re-probed on main
   - source: the 19 Nov live closes of CU-634, CU-635 and CU-637 (cu-verifier, seven pages, 68 rows, on #1094's merge 3de98007), re-probed on main
   - source: the 19 Nov live closes of CU-627 and CU-636 on #1080's merge 5b5c64b1 (cu-verifier, six pages, 56 rows), re-probed on main
 ---
 
 # Action classes
 
-The classes [action-policy](action-policy.md) confirms; a class applies when its trigger matches the target or text. A locale verb in a class also matches its imperatives - familiar, plural and formal (tu / vous, du / ihr / Sie, tú / vosotros / usted / ustedes, tu / voi / Lei, você / vocês) - with the infinitive's own anchoring: a verb that asks alone asks alone conjugated, one that needs an object needs it conjugated; a form that is also a participle, adjective or noun ('Inviate', 'Pagate') asks only with the verb's object or an adverb ('Inviate il messaggio', 'Inviate ora', 'Pagate ora'; 'Email inviate' stays free) (CU-638).
+The classes [action-policy](action-policy.md) confirms; a class applies when its trigger matches the target or text. A locale verb in a class also matches its imperatives - familiar, plural and formal (tu / vous, du / ihr / Sie, tú / vosotros / usted / ustedes, tu / voi / Lei, você / vocês, Dutch jij / u in both orders, a separable particle at the end as in 'Zeg ... op') - with the infinitive's own anchoring: a verb that asks alone asks alone conjugated, one that needs an object needs it conjugated; a form that is also a participle, adjective or noun ('Inviate', 'Pagate', Dutch 'Stuur' and 'Wis'; Dutch 'Wist u' is also the past tense of weten - 'Wist u dat?' asks today and its narrowing waits on a rule-1 ruling) asks only with the verb's object or an adverb ('Inviate il messaggio', 'Inviate ora', 'Pagate ora'; 'Email inviate' stays free) (CU-638, CU-641).
 
 | Class | Detected when (target or text) |
 |---|---|
