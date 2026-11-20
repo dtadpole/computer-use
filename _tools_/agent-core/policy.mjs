@@ -105,6 +105,11 @@ const LOCALE_WORDS = Object.freeze({
     'acheter', 'payer', 'commander', 'passer la commande', 'valider la commande', 'acheter maintenant',
     'comprar', 'pagar', 'realizar pedido', 'finalizar compra', 'tramitar pedido', 'comprar ahora',
     'купить', 'оплатить', 'заказать', 'оформить заказ', 'оформить покупку', 'оформить подписку',
+    // CU-650 (cu-developer-one's go 04:21Z): cancel an order / membership / plan, as 'Cancel order / membership / plan'.
+    'отменить заказ', 'отменить членство', 'отменить тариф', 'отменить план',
+    // r2 (cu-developer-one): with a possessive or demonstrative of each gender ('Отменить мой заказ', 'Отмените ваше членство').
+    ...['заказ', 'тариф', 'план'].flatMap((what) => ['мой', 'свой', 'ваш', 'твой', 'этот'].map((whose) => `отменить ${whose} ${what}`)),
+    ...['моё', 'мое', 'своё', 'свое', 'ваше', 'твоё', 'твое', 'это'].map((whose) => `отменить ${whose} членство`),
     '購入', '支払', '注文を確定', '注文する', 'レジに進む', '今すぐ買う',
     '구매', '결제', '주문하기', '바로구매',
     // CU-358 (cu-researcher): Italian, Dutch, Portuguese and Turkish (Portuguese shares 'comprar' / 'pagar' above).
@@ -219,7 +224,10 @@ const LOCALE_WORDS = Object.freeze({
     'abonnement stoppen', 'lidmaatschap stoppen', 'stop je abonnement', 'stop uw abonnement', 'stop je lidmaatschap',
     'abonelik~ durdur^', 'aboneliğ~ durdur^', 'üyelik~ durdur^', 'üyeliğ~ durdur^',
     'abonelik~ sonlandır^', 'aboneliğ~ sonlandır^', 'üyelik~ sonlandır^', 'üyeliğ~ sonlandır^', 'abonelik~ bitir^', 'aboneliğ~ bitir^', 'üyelik~ bitir^', 'üyeliğ~ bitir^'],
-  delete: ['löschen', 'entfernen', 'verwerfen', 'supprimer', 'effacer', 'eliminar', 'borrar', 'удалить', 'стереть', '削除', '消去', '삭제', '지우기',
+  delete: ['löschen', 'entfernen', 'verwerfen', 'supprimer', 'effacer', 'eliminar', 'borrar', 'удалить', 'стереть',
+    // CU-650: cancel a subscription, as 'Cancel subscription' (Russian accusative, with or without a possessive; the table's
+    // imperatives read 'Отмените (свою) подписку').
+    'отменить подписку', 'отменить мою подписку', 'отменить свою подписку', 'отменить вашу подписку', 'отменить твою подписку', 'отменить эту подписку', '削除', '消去', '삭제', '지우기',
     // CU-358: Italian, Dutch, Portuguese and Turkish.
     'elimina', 'cancella', 'rimuovi', 'elimina definitivamente', 'verwijderen', 'verwijder', 'wissen', 'definitief verwijderen',
     // r5 (cu-developer-one): Dutch 'opheffen' closes an account (only beside an account noun; 'Blokkering opheffen' lifts a block).
@@ -245,7 +253,7 @@ const LOCALE_WORDS = Object.freeze({
     // r2 (cu-developer-three, cu-verifier): wipe data / files / profile, as 'Erase (your) data', 'Erase all files', 'Erase profile'.
     'gegevens wissen', '_ gegevens wissen', 'bestanden wissen', '_ bestanden wissen', 'profiel wissen', '_ profiel wissen',
     'abonelik~ iptal et^', 'abonelik~ iptal edin', 'aboneliğ~ iptal et^', 'aboneliğ~ iptal edin'],
-  submit: ['senden', 'absenden', 'abschicken', 'envoyer', 'soumettre', 'enviar', 'отправить', '送信', '보내기', '전송', '제출',
+  submit: ['senden', 'absenden', 'abschicken', 'envoyer', 'soumettre', 'enviar', 'отправить', 'отписаться', '送信', '보내기', '전송', '제출',
     // CU-358: Italian, Dutch, Portuguese and Turkish.
     'invia', 'invia ora', 'verzenden', 'versturen', 'verstuur', 'bericht sturen', 'e-mail sturen', 'nu sturen', 'indienen', 'submeter', 'gönder^', 'şimdi gönder^',
     // CU-617 (cu-researcher): publish / post, as English 'Publish' / 'Post' ask submit; infinitive, imperative and formal forms.
@@ -477,6 +485,8 @@ const IMPERATIVE_FORMS = Object.freeze({
   // statement forms ('보내요', '삭제해요') stay out ('보내요' is also 'I send').
   'удалить': ['удали', 'удалите'], 'отправить': ['отправь', 'отправьте'], 'оплатить': ['оплати', 'оплатите'], 'купить': ['купи', 'купите'],
   'заказать': ['закажи', 'закажите'], 'оформить': ['оформи', 'оформите'], 'стереть': ['сотри', 'сотрите'],
+  // CU-650: cancel and unsubscribe, with the objects their entries name ('Отмените подписку', 'Отпишитесь').
+  'отменить': ['отмени', 'отмените'], 'отписаться': ['отпишись', 'отпишитесь'],
   '보내기': ['보내세요', '보내 주세요', '보내주세요', '보내십시오'], '삭제': ['삭제하세요', '삭제해 주세요', '삭제해주세요', '삭제하십시오'],
   '결제': ['결제하세요', '결제해 주세요', '결제해주세요', '결제하십시오'], '구매': ['구매하세요', '구매해 주세요', '구매해주세요', '구매하십시오'],
   '전송': ['전송하세요', '전송해 주세요', '전송해주세요', '전송하십시오'],
@@ -2921,6 +2931,15 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (grammarEligible && !classes.includes('delete')) {
       const wipe = String(name ?? '').trim().toLowerCase().match(/^(?:wis|wist\s+u)\s+(?:(?:de|het|je|jouw|uw|mijn|onze|alle|al|deze|dit|die)\s+){0,2}(\p{L}[\p{L}'’-]*)(?:\s+\p{L}[\p{L}'’-]*)?\s*[.!]?$/u)
       if (wipe && !WIS_CLEAR_OBJECTS.has(wipe[1])) classes.push('delete')
+    }
+    // CU-650 (cu-developer-one's go 04:21Z): Korean cancel / terminate (취소 / 해지) + subscription asks delete, + order / membership /
+    // plan asks purchase, as 'Cancel subscription' / 'Cancel order / membership / plan' - both orders, with or without a space, with
+    // the 하기 / 하세요 / 해 주세요 / 하십시오 endings. Bare 취소, the nouns and state or past forms ('구독 취소됨', '취소했어요') stay free.
+    if (grammarEligible) {
+      // r2 (cu-developer-one, -two, -three): the object particle 을 / 를 and a possessive (내 / 제 / 나의 / 저의) - '구독을 취소하세요',
+      // '제 멤버십을 해지해 주세요'.
+      const cancelKo = String(name ?? '').trim().match(/^(?:(?:내|제|나의|저의)\s*)?(?:(구독|주문|멤버십|요금제|플랜)(?:\s*(?:을|를))?\s*(?:취소|해지)|(?:취소|해지)\s*(구독|주문|멤버십|요금제|플랜))(?:하기|하세요|해\s?주세요|하십시오)?\s*[.!]?$/u)
+      if (cancelKo) { const cls = (cancelKo[1] ?? cancelKo[2]) === '구독' ? 'delete' : 'purchase'; if (!classes.includes(cls)) classes.push(cls) }
     }
     // CU-627 r2 (cu-developer-two): leaving a group with any article / demonstrative / possessive, and the German separable e-mail
     // opt-out, as whole-label rules in each language - submit, as English 'Leave group' / 'Unsubscribe'.

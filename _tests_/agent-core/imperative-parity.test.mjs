@@ -41,5 +41,7 @@ test('CU-638 / CU-641: pinned forms stay in the table (a dropped form fails here
     'pagad', 'paguen', 'enviad', 'envíen', 'pagate ora', 'excluam', 'paguem', 'enviem', 'verzend', 'verzendt u', 'zeg abonnement op', 'zegt u abonnement op',
     'annuleer abonnement', 'wis account', 'verwijdert u', 'staat u toegang toe',
     // CU-648: Russian and Korean.
-    'удалите', 'удали', 'отправьте', 'оплатите', 'купите', 'закажите', 'оформите заказ', 'сотрите', '보내세요', '보내 주세요', '삭제해 주세요', '결제하세요', '구매해 주세요', '전송하세요']) assert.ok(labels.has(label), `pinned row: ${label}`)
+    'удалите', 'удали', 'отправьте', 'оплатите', 'купите', 'закажите', 'оформите заказ', 'сотрите', '보내세요', '보내 주세요', '삭제해 주세요', '결제하세요', '구매해 주세요', '전송하세요',
+    // CU-650
+    'отмените подписку', 'отмени заказ', 'отпишитесь']) assert.ok(labels.has(label), `pinned row: ${label}`)
 })
