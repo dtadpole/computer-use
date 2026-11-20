@@ -15,7 +15,9 @@ const GRID = {
     'Annuleer abonnement', 'Annuleer uw abonnement', 'Abonnement annuleren', 'Annuleert u uw abonnement', 'Zeg abonnement op', 'Zeg uw abonnement op', 'Zegt u uw abonnement op',
     'Hef uw account op', 'Heft u uw account op', 'Sluit uw account af', 'Maak de prullenbak leeg',
     'Wis je gegevens', 'Wis de gegevens', 'Wis alle bestanden', 'Wis je profiel', 'Gegevens wissen', 'Wist u uw gegevens',
-    "Wis je foto's", 'Wis uw berichten', 'Wis alle contacten', 'Wis de documenten', 'Wis alles', 'Wis het apparaat'],
+    "Wis je foto's", 'Wis uw berichten', 'Wis alle contacten', 'Wis de documenten', 'Wis alles', 'Wis het apparaat',
+    // cu-verifier (CU-643 close): a pinned two-determiner row.
+    'Wis al je notities', 'Wis al uw berichten', 'Wist u uw account'],
   purchase: ['Betaal', 'Betaalt u', 'Betaal nu', 'Koop nu', 'Koopt u nu', 'Bestel', 'Bestelt u', 'Maak het geld over', 'Maakt u het geld over', 'Reken af', 'Rekent u af',
     'Lidmaatschap annuleren', 'Annuleer uw lidmaatschap',
     'Plan annuleren', 'Annuleer je plan', 'Annuleert u uw plan', 'Zeg je plan op', 'Plan opzeggen', 'Pakket annuleren', 'Annuleer uw pakket', 'Zeg uw pakket op', 'Zegt u uw pakket op'],

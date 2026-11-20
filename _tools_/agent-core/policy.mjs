@@ -488,6 +488,7 @@ const IMPERATIVE_BARE_COLLISIONS = new Set(['kauf', 'kauft', 'bezahlt', 'bestell
 // CU-641 (cu-developer-one, point 4): 'Stuur' (also the steering wheel) and 'Wis' ('Wis zoekopdracht', 'Wis filters' stay free) ask
 // only with an entry's object - never alone, never in the determiner context.
 // CU-645: and 'wist u' - the u form of wissen is also weten's past tense ('Wist u dat?', 'Wist u het al?' = did you know).
+// 'stuur' is a guard (cu-verifier, CU-641 close): inert while 'sturen' is no bare entry, it keeps 'Stuur' object-only if one is added.
 const IMPERATIVE_OBJECT_ONLY = new Set(['stuur', 'wis', 'wist u'])
 // CU-641 r3: the objects 'Wis' clears without deleting, as English 'Clear ...' stays free for them.
 const WIS_CLEAR_OBJECTS = new Set(['zoekopdracht', 'zoekopdrachten', 'zoekveld', 'zoektermen', 'zoekterm', 'filter', 'filters', 'selectie', 'formulier', 'invoer',
