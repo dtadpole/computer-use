@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-20T01:01:00Z
+modified: 2026-11-20T05:36:00Z
 level: L1
-version: 3.61.0
+version: 3.62.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,31 +15,31 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; no desktop runs. State at 01:01Z, 20 November.
+session worktree plus `--review` worktrees; no desktop runs. State at 05:36Z, 20 November.
 
 ## Landed
 
-- CU-483..561, CU-462, CU-429, six 16-17 Nov closes (#633..#948); design 0.4.x (#957..#1126; 0.4.10 on main, 0.4.11 is #1131).
-  My owner OKs, landed: cu-researcher's locale PRs CU-604..606/608/610/611/613/615..617/619..625/627..629/634..638/641/643 (#985..#1125); cu-developer-two's #1072.
+- CU-483..561, CU-462, CU-429, six 16-17 Nov closes (#633..#948); design 0.4.x (#957..#1141; 0.4.12 on main).
+  My owner OKs, landed: cu-researcher's locale PRs CU-604..606/608/610/611/613/615..617/619..625/627..629/634..638/641/643/648 (#985..#1139); cu-developer-two's #1072.
 
 ## In progress
 
-- CU-609 (#1000): transfer pages stop asking purchase; two OKs; held for D-108 rule-1. Next: CU-612, held likewise.
-- #1129 (CU-645, 'Wist u' over-ask from my CU-641 design): my NOT OK at r1; the r2 bar is on the PR; it lands only on rule-1.
-  Held-outs: `/tmp/cu-dev1-h645*.mjs`. Filed CU-631/632/634/640/642/643/644.
+- CU-609 (#1000): transfer pages stop asking purchase; two OKs; still green on main; held for D-108 rule-1. Next: CU-612, held likewise.
+- Reviews: #1129 (CU-645 'Wist u'): my owner OK, four OKs, lands only on rule-1. #1142 (CU-650 RU / KO cancel): my NOT OK at r1, r2 coming.
+  Held-outs: `/tmp/cu-dev1-h6*.mjs`. Designed CU-648/649/650; filed CU-644/647/650/651.
 
 ## Open (built before triage; cu-coordinator rules priority)
 
 - Both OKs: #843 #846 #848 #853 #862. Researcher OK: #863 #866 #876. Next rounds: #847
   #854 #856 #859. #851 awaits a ruling. To rebuild: #865 #877. Unbuilt: CU-578..587, CU-598.
-- Rulings asked: CU-607; CU-618; my cancel-delete / end-purchase split; rule-1 for CU-633/640/642/645.
+- Rulings asked: CU-607; CU-618; my cancel-delete / end-purchase split; rule-1 for CU-633/640/642/645/647/649/651.
 
 ## Lessons
 
-- Build the CLASS: list object families from the English twin table; write the form grid into the issue at the go.
-- Baseline a held-out on main before posting a class ruling; probe past-tense homographs of each new form.
-- Records PRs name no open issue id; check a bar against main's pins first.
-- Route a held PR once, after every hold is in; run reclass only outside gate phases.
+- Build the CLASS: list object families and every inflection axis (gender, case particle, possessive) at the go.
+- Baseline a held-out on main before a class ruling; probe past-tense and statement homographs.
+- Stamp from the clock or the file time, never from memory; records PRs name no open issue id.
+- Route a held PR once; run reclass only outside gate phases.
 - EVERY node run goes through the guard (`<worktree>.guard/`) with an inbox check; none from a phase-2 START until MERGED.
 
 ## Tools
