@@ -15,6 +15,9 @@ test('CU-644: each qualifier reads as its twin \'Clear history\' (parity), with 
     for (const name of [`Clear ${q} history`, `Clear your ${q} history`, `Clear all ${q} history`, `Clear my ${q} history`]) assert.ok(click(name).includes('delete'), name)
   }
   for (const name of ['Erase search history', 'Wipe browsing history', 'Clear the history', 'Clear recent history', 'CLEAR SEARCH HISTORY', 'Clear search history?']) assert.ok(click(name).includes('delete'), name)
+  // r2 (cu-developer-two): scope and age words, and three-word slots.
+  for (const w of ['entire', 'whole', 'full', 'complete', 'old', 'past', 'previous']) for (const name of [`Clear ${w} history`, `Clear your ${w} history`, `Clear your ${w} search history`]) assert.ok(click(name).includes('delete'), name)
+  for (const name of ['Clear all of your history', 'Clear web and app activity history', 'Clear my entire watch history', 'Clear all past order history']) assert.ok(click(name).includes('delete'), name)
 })
 
 test('CU-644 controls: naming, opening, pausing or toggling a history, and the transient clears, stay free', () => {
