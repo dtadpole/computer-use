@@ -540,6 +540,9 @@ const LOCALE_TRASH_EMPTY = Object.freeze([
   /^(?:leere|leert|leeren\s+sie|entleere|entleert|entleeren\s+sie)\s+(?:\S+\s+){0,4}?papierkorb(?=\s|$|[.!])/i,
   /ゴミ箱.{0,10}?空に(?!し(?:ました|た)|され|済|完了|中)/u,
   /휴지통\S*\s*(?:\S+\s+){0,4}?(?:비우(?:기|세요|십시오|시겠습니까)?|비워(?:\s?줘|\s?주세요|요)?)(?=\s|$|[.!?])/u,
+  // CU-657 (cu-developer-one's 17:00Z row): the nominal form takes the object particle before 실행 / 하기 ('휴지통 비우기를 실행',
+  // '휴지통 비우기를 하기'), as '휴지통 비우기 실행' asks; a past or status verb after the particle stays free ('휴지통 비우기를 완료했습니다').
+  /휴지통\S*\s*(?:\S+\s+){0,4}?비우기[을를]\s*(?:실행|하기)(?=\s|$|[.!?])/u,
   // CU-657 (cu-developer-one's design, 20 Nov 16:47Z): IT / NL / PT / TR with the same slots - up to four words before the noun
   // ('Svuota tutto il cestino', 'Esvaziar sua lixeira'), words between the noun and a final verb in NL and TR ('Prullenbak nu
   // legen', 'Çöp kutusunu şimdi boşalt'), a trailing adverb ('Svuotare il cestino ora'); negation follows its twin ('Non svuotare

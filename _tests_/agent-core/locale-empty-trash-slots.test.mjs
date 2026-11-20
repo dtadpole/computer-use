@@ -14,6 +14,7 @@ const ASK = [
   'Leeg de prullenbak nu', 'Maak de prullenbak leeg', 'Maak de prullenbak nu leeg', 'Prullenbak nu legen', 'De prullenbak helemaal leegmaken', 'Prullenbak niet legen', 'Prullenbak leeg maken',
   'Esvaziar toda a lixeira', 'Esvaziar sua lixeira', 'Esvazie a lixeira agora', 'Esvaziem a lixeira', 'Não esvaziar a lixeira', 'Esvaziar a reciclagem agora',
   'Çöp kutusunu şimdi boşalt', 'Çöp kutusunu boşaltın', 'Çöp kutusunu boşaltınız', 'Çöp kutusunu boşaltma', 'Tüm çöp kutusunu boşalt', 'Çöp kutusunu temizle', 'Çöpü boşalt', 'Çöpü boşaltma', 'ÇÖP KUTUSUNU BOŞALT',
+    '휴지통 비우기를 실행', '휴지통 비우기를 하기', '휴지통 비우기 실행',
 ]
 
 test('CU-657: IT / NL / PT / TR empty trash with any CU-655 slot asks delete, as its English twin does', () => {
@@ -22,7 +23,7 @@ test('CU-657: IT / NL / PT / TR empty trash with any CU-655 slot asks delete, as
 })
 
 test('CU-657 controls: past forms, other objects, opening the trash and the bare nouns stay free', () => {
-  for (const name of ['Cestino svuotato', 'Il cestino è stato svuotato', 'Prullenbak geleegd', 'De prullenbak is geleegd', 'Lixeira esvaziada', 'A lixeira foi esvaziada', 'Çöp kutusu boşaltıldı', 'Otomatik çöp kutusu boşaltma', 'Svuotamento del cestino', 'Esvaziamento da lixeira',
+  for (const name of ['Cestino svuotato', 'Il cestino è stato svuotato', 'Prullenbak geleegd', 'De prullenbak is geleegd', 'Lixeira esvaziada', 'A lixeira foi esvaziada', 'Çöp kutusu boşaltıldı', 'Otomatik çöp kutusu boşaltma', '휴지통 비우기를 완료했습니다', 'Svuotamento del cestino', 'Esvaziamento da lixeira',
     'Svuota il carrello', 'Winkelwagen legen', 'Leeg de winkelwagen', 'Esvaziar o carrinho', 'Sepeti boşalt',
     'Apri il cestino', 'Prullenbak openen', 'Abrir lixeira', 'Çöp kutusunu aç', 'Cestino', 'Prullenbak', 'Lixeira', 'Çöp kutusu',
     // five words between the noun and the verb stay out, as in CU-644 / CU-654 / CU-655
