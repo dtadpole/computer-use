@@ -1,9 +1,9 @@
 ---
 title: Action classes
 created: 2026-11-08T00:30:01Z
-modified: 2026-11-20T00:45:00Z
+modified: 2026-11-20T05:04:00Z
 level: L1
-version: 0.4.11
+version: 0.4.12
 description: The consequential-action classes the action policy confirms - each class and what triggers it, moved verbatim out of action-policy.md.
 status: unverified
 grounded_in:
@@ -16,11 +16,12 @@ grounded_in:
   - source: the live close of CU-643 (cu-verifier, 22 rows on two pages, on #1125's merge 67932d28), re-probed on main
   - source: the 19 Nov live closes of CU-634, CU-635 and CU-637 (cu-verifier, seven pages, 68 rows, on #1094's merge 3de98007), re-probed on main
   - source: the 19 Nov live closes of CU-627 and CU-636 on #1080's merge 5b5c64b1 (cu-verifier, six pages, 56 rows), re-probed on main
+  - source: the live close of CU-648 (cu-verifier, 29 rows on two pages, on #1139's merge ff1e195f), re-probed on main
 ---
 
 # Action classes
 
-The classes [action-policy](action-policy.md) confirms; a class applies when its trigger matches the target or text. A locale verb in a class also matches its imperatives - familiar, plural and formal (tu / vous, du / ihr / Sie, tú / vosotros / usted / ustedes, tu / voi / Lei, você / vocês, Dutch jij / u in both orders, a separable particle at the end as in 'Zeg ... op') - with the infinitive's own anchoring: a verb that asks alone asks alone conjugated, one that needs an object needs it conjugated; a form that is also a participle, adjective or noun ('Inviate', 'Pagate', Dutch 'Stuur' and 'Wis'; Dutch 'Wist u' is also the past tense of weten - 'Wist u dat?' asks today and its narrowing waits on a rule-1 ruling) asks only with the verb's object or an adverb ('Inviate il messaggio', 'Inviate ora', 'Pagate ora'; 'Email inviate' stays free) (CU-638, CU-641). Dutch 'Wis' (erase and clear) takes the stricter 'Erase' twin: 'Wis' + any object asks delete, except the clear-objects whose English 'Clear X' is free (search, filters, cache, selection, form, fields, input, text, notifications); bare 'Wis' stays free (CU-643).
+The classes [action-policy](action-policy.md) confirms; a class applies when its trigger matches the target or text. A locale verb in a class also matches its imperatives - familiar, plural and formal (tu / vous, du / ihr / Sie, tú / vosotros / usted / ustedes, tu / voi / Lei, você / vocês, Dutch jij / u in both orders, a separable particle at the end as in 'Zeg ... op', Russian perfective ты / вы as in 'Удали' / 'Удалите', Korean polite 보내세요 / 보내 주세요 / 보내십시오 and the 하세요 / 해 주세요 forms of a class noun; plain statement forms such as '보내요' and imperfective or negated forms such as 'Удаляйте', 'Не удаляйте' are not imperatives here, though a class noun's stem inside a statement form still asks today, as '삭제해요' does, and its narrowing waits on a rule-1 ruling) - with the infinitive's own anchoring: a verb that asks alone asks alone conjugated, one that needs an object needs it conjugated; a form that is also a participle, adjective or noun ('Inviate', 'Pagate', Dutch 'Stuur' and 'Wis'; Dutch 'Wist u' is also the past tense of weten - 'Wist u dat?' asks today and its narrowing waits on a rule-1 ruling) asks only with the verb's object or an adverb ('Inviate il messaggio', 'Inviate ora', 'Pagate ora'; 'Email inviate' stays free) (CU-638, CU-641). Dutch 'Wis' (erase and clear) takes the stricter 'Erase' twin: 'Wis' + any object asks delete, except the clear-objects whose English 'Clear X' is free (search, filters, cache, selection, form, fields, input, text, notifications); bare 'Wis' stays free (CU-643).
 
 | Class | Detected when (target or text) |
 |---|---|
