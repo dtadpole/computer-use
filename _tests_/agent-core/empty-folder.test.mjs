@@ -14,7 +14,9 @@ test('CU-659: emptying a folder and clearing storage ask delete, as their twins'
     'Empty selected folder', 'Empty Deleted Items now', 'Empty folder permanently', 'EMPTY FOLDER', 'Empty folder?', 'Clear storage', 'Clear app storage', 'Clear all storage', 'Clear local storage', 'Clear storage now',
     // r2: four slot words, Outbox, storage qualifiers
     'Empty Outbox', 'Empty the Outbox', 'Empty the whole Junk Email folder', 'Empty all of my drafts', 'Empty the folder', 'Empty this folder now', 'Clear site storage', 'Clear browser storage', 'Clear local site storage',
-    'Empty the entire inbox', 'Empty the whole Junk folder', 'Empty Clutter folder', "Don't empty this folder", 'Do not empty Deleted Items', 'Don’t empty the Outbox']) assert.ok(click(name).includes('delete'), name)
+    'Empty the entire inbox', 'Empty the whole Junk folder', 'Empty Clutter folder', "Don't empty this folder", 'Do not empty Deleted Items', 'Don’t empty the Outbox',
+    // CU-661 r2: quantified contents before in / from keep asking
+    'Empty all items in Deleted Items', 'Empty everything in the Junk folder', 'Empty all messages in Inbox', 'Empty all in Drafts', 'Empty every item in the Outbox', 'Empty the contents of this folder', "Don't empty everything in Archive", 'Empty any items in Drafts', 'Empty the whole contents of Inbox', 'Empty the entire contents of the Junk folder', 'Empty each message in Sent Items']) assert.ok(click(name).includes('delete'), name)
 })
 
 test('CU-659 controls: status / past forms, carts, caches, open / view and bare nouns stay free', () => {
@@ -23,5 +25,5 @@ test('CU-659 controls: status / past forms, carts, caches, open / view and bare 
     // five slot words stay out, as in CU-644
     'Empty Chrome Android sync device backup folder',
     // follow-up: a preposition or verb in the slot names a place, not the object
-    'Empty message in Drafts', 'Empty state for inbox', 'Empty items stay in Inbox', 'Empty subject line in Sent Items', 'Empty draft saved to Drafts', 'Empty results from Archive', 'Empty page is shown in folder']) assert.deepEqual(click(name), [], name)
+    'Empty message in Drafts', 'Empty state for inbox', 'Empty items stay in Inbox', 'Empty subject line in Sent Items', 'Empty draft saved to Drafts', 'Empty results from Archive', 'Empty page is shown in folder', 'Empty copy of Inbox', 'Empty preview of Drafts']) assert.deepEqual(click(name), [], name)
 })
