@@ -21,5 +21,7 @@ test('CU-659 controls: status / past forms, carts, caches, open / view and bare 
   for (const name of ['Folder emptied', 'Deleted Items emptied', 'Inbox is empty', 'This folder is empty', 'Empty cart', 'Clear cart', 'Empty cache', 'Clear cache', 'Open Deleted Items', 'View junk email',
     'Deleted Items', 'Junk Email', 'Inbox', 'Storage', 'Manage storage', 'Storage settings', 'Free up storage space', 'Storage cleared', 'Empty basket', 'Clear filters', 'New folder', 'Clear storage settings',
     // five slot words stay out, as in CU-644
-    'Empty Chrome Android sync device backup folder']) assert.deepEqual(click(name), [], name)
+    'Empty Chrome Android sync device backup folder',
+    // follow-up: a preposition or verb in the slot names a place, not the object
+    'Empty message in Drafts', 'Empty state for inbox', 'Empty items stay in Inbox', 'Empty subject line in Sent Items', 'Empty draft saved to Drafts', 'Empty results from Archive', 'Empty page is shown in folder']) assert.deepEqual(click(name), [], name)
 })
