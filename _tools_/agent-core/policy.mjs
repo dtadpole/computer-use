@@ -3035,10 +3035,11 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // Follow-up (cu-developer-three's finding, cu-developer-one 19:50Z): a preposition or a verb in the slot makes the folder a place,
     // not the object - 'Empty message in Drafts', 'Empty state for inbox', 'Empty items stay in Inbox' stay free. r2 (cu-developer-three):
     // quantified contents (all / any / every / each / everything / the whole / the entire, cu-developer-one) before in / from / of keep
-    // asking, as 'Empty everything in the trash' does ('Empty all items in Deleted Items', 'Empty all of my drafts'); 'of' after
+    // asking, as 'Empty everything in the trash' does ('Empty all items in Deleted Items', 'Empty all of my drafts'), with any words after
+    // the quantifier (r3, cu-developer-three: 'Empty all old items in Deleted Items', 'Empty all unread messages in Inbox'); 'of' after
     // anything else names a place ('Empty copy of Inbox').
     if (grammarEligible && !classes.includes('delete') && (/^(?:(?:don['’]t|do\s+not)\s+)?empty(?:\s+(?!(?:in|into|inside|within|for|from|of|to|on|at|under|is|are|was|were|will|be|been|stays?|remains?|appears?|shows?|shown|moves?|goes|saved|sent|found)\b)\S+){0,4}?\s+(?:deleted\s+items|junk(?:\s+e-?mail)?|inbox|drafts|sent(?:\s+items|\s+mail)?|archive|outbox|folders?|mailbox)(?:\s+folders?)?(?:\s+(?:now|permanently|completely))?\s*[.!]?$/i.test(String(name ?? '').trim())
-      || /^(?:(?:don['’]t|do\s+not)\s+)?empty\s+(?:(?:all|any|every|each|the\s+whole|the\s+entire)(?:\s+(?:of\s+)?(?:the\s+)?(?:items?|messages?|mail|e-?mails?|files?|contents|conversations?))?|everything|the\s+contents)\s+(?:in|inside|from|of)\s+(?:(?:the|your|my|this)\s+)?(?:deleted\s+items|junk(?:\s+e-?mail)?|inbox|drafts|sent(?:\s+items|\s+mail)?|archive|outbox|folders?|mailbox)(?:\s+folders?)?(?:\s+(?:now|permanently|completely))?\s*[.!]?$/i.test(String(name ?? '').trim())
+      || /^(?:(?:don['’]t|do\s+not)\s+)?empty\s+(?:all|any|every|each|everything|the\s+whole|the\s+entire|the\s+contents)(?:\s+\S+){0,3}?\s+(?:in|inside|from|of)\s+(?:(?:the|your|my|this)\s+)?(?:deleted\s+items|junk(?:\s+e-?mail)?|inbox|drafts|sent(?:\s+items|\s+mail)?|archive|outbox|folders?|mailbox)(?:\s+folders?)?(?:\s+(?:now|permanently|completely))?\s*[.!]?$/i.test(String(name ?? '').trim())
       || /^clear(?:\s+\S+){0,2}?\s+storage(?:\s+now)?\s*[.!]?$/i.test(String(name ?? '').trim()))) classes.push('delete')
     // CU-627 r2 (cu-developer-two): leaving a group with any article / demonstrative / possessive, and the German separable e-mail
     // opt-out, as whole-label rules in each language - submit, as English 'Leave group' / 'Unsubscribe'.
