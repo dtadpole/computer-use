@@ -227,6 +227,9 @@ const LOCALE_WORDS = Object.freeze({
   delete: ['löschen', 'entfernen', 'verwerfen', 'supprimer', 'effacer', 'eliminar', 'borrar', 'удалить', 'стереть',
     // CU-650: cancel a subscription, as 'Cancel subscription' (Russian accusative, with or without a possessive; the table's
     // imperatives read 'Отмените (свою) подписку').
+    // CU-654: clear a history (Russian through the table's очисти / очистите, Turkish with its suffix markers; Japanese is a
+    // whole-label rule so its past forms stay free).
+    'очистить историю', 'очистить всю историю', 'очистить свою историю', 'очистить вашу историю', 'geçmiş~ temizle^',
     'отменить подписку', 'отменить мою подписку', 'отменить свою подписку', 'отменить вашу подписку', 'отменить твою подписку', 'отменить эту подписку', '削除', '消去', '삭제', '지우기',
     // CU-358: Italian, Dutch, Portuguese and Turkish.
     'elimina', 'cancella', 'rimuovi', 'elimina definitivamente', 'verwijderen', 'verwijder', 'wissen', 'definitief verwijderen',
@@ -486,8 +489,8 @@ const IMPERATIVE_FORMS = Object.freeze({
   'удалить': ['удали', 'удалите'], 'отправить': ['отправь', 'отправьте'], 'оплатить': ['оплати', 'оплатите'], 'купить': ['купи', 'купите'],
   'заказать': ['закажи', 'закажите'], 'оформить': ['оформи', 'оформите'], 'стереть': ['сотри', 'сотрите'],
   // CU-650: cancel and unsubscribe, with the objects their entries name ('Отмените подписку', 'Отпишитесь').
-  'отменить': ['отмени', 'отмените'], 'отписаться': ['отпишись', 'отпишитесь'],
-  '보내기': ['보내세요', '보내 주세요', '보내주세요', '보내십시오'], '삭제': ['삭제하세요', '삭제해 주세요', '삭제해주세요', '삭제하십시오'],
+  'отменить': ['отмени', 'отмените'], 'отписаться': ['отпишись', 'отпишитесь'], 'очистить': ['очисти', 'очистите'],
+  '보내기': ['보내세요', '보내 주세요', '보내주세요', '보내십시오', '보내줘', '보내 줘'], '지우기': ['지워', '지워줘', '지워 줘', '지우세요', '지워 주세요', '지워주세요'], '삭제': ['삭제하세요', '삭제해 주세요', '삭제해주세요', '삭제하십시오'],
   '결제': ['결제하세요', '결제해 주세요', '결제해주세요', '결제하십시오'], '구매': ['구매하세요', '구매해 주세요', '구매해주세요', '구매하십시오'],
   '전송': ['전송하세요', '전송해 주세요', '전송해주세요', '전송하십시오'],
 })
@@ -506,6 +509,21 @@ const IMPERATIVE_BARE_COLLISIONS = new Set(['kauf', 'kauft', 'bezahlt', 'bestell
 // CU-641 (cu-developer-one, point 4): 'Stuur' (also the steering wheel) and 'Wis' ('Wis zoekopdracht', 'Wis filters' stay free) ask
 // only with an entry's object - never alone, never in the determiner context.
 const IMPERATIVE_OBJECT_ONLY = new Set(['stuur', 'wis'])
+// CU-654: clear verbs that ask only before a history noun (FR / ES / PT / IT / DE; Russian, Japanese and Turkish are entries).
+const LOCALE_HISTORY_CLEAR = Object.freeze([
+  /^(?:vider|videz|vide)\s+(?:\S+\s+){0,4}?(?:l['’]\s*)?historique\b/i,
+  /^(?:limpiar|limpia|limpie|limpiad|limpien|vaciar|vacía|vacíe|vaciad|vacíen)\s+(?:\S+\s+){0,4}?historial\b/i,
+  /^(?:limpar|limpa|limpe|limpem)\s+(?:\S+\s+){0,4}?hist[oó]rico\b/i,
+  /^(?:svuota|svuotare|svuotate|svuoti|pulisci|pulire|pulite)\s+(?:\S+\s+){0,4}?(?:l['’]\s*)?cronologia\b/i,
+  // r2 (cu-developer-three, cu-developer-one 12:50Z): in the verb-final locales words may stand between the noun and the verb -
+  // 'Verlauf jetzt / vollständig / beim Beenden leeren', '履歴をすべてクリア', 'Arama geçmişini şimdi temizle'.
+  /^(?:\S+\s+){0,4}?\S*verlauf(?:\s+\S+){0,4}?\s+(?:leeren|bereinigen)\s*[.!]?$/i,
+  // r3 (cu-developer-three, cu-developer-one 14:15Z): past and passive forms stay free, as 'History cleared' does ('履歴をクリアしま
+  // した', '履歴がクリアされました', 'Geçmiş temizlendi').
+  /履歴.{0,10}?クリア(?!し(?:ました|た)|され|済|完了|中)/u,
+  /(?:^|\s)\S*geçmiş\S*(?:\s+\S+){0,4}?\s+temizle(?:yin(?:iz)?|sin)?\s*[.!]?$/iu,
+  /^(?:leere|leert|leeren\s+sie|bereinige|bereinigt|bereinigen\s+sie)\s+(?:\S+\s+){0,4}?\S*verlauf\b/i,
+])
 // CU-641 r3: the objects 'Wis' clears without deleting, as English 'Clear ...' stays free for them.
 const WIS_CLEAR_OBJECTS = new Set(['zoekopdracht', 'zoekopdrachten', 'zoekveld', 'zoektermen', 'zoekterm', 'filter', 'filters', 'selectie', 'formulier', 'invoer',
   'veld', 'velden', 'tekst', 'cache', 'melding', 'meldingen', 'notificaties', 'opmaak', 'markering', 'markeringen', 'zoekbalk'])
@@ -2949,6 +2967,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // 'Clear entire / old / previous / YouTube / 30-day history', 'Clear your entire search history', 'Clear download history'
     // (a noun compound); five or more words stay out, and so does any label that does not start with clear / erase / wipe.
     if (grammarEligible && !classes.includes('delete') && /^(?:clear|erase|wipe)(?:\s+\S+){0,4}\s+history\s*[.!]?$/i.test(String(name ?? '').trim())) classes.push('delete')
+    // CU-654 (cu-developer-one's go 12:05Z): the locale twins of CU-644 - a clear verb that does not ask by itself (vider /
+    // limpiar / limpar / svuotare / leeren) asks delete with a history noun after up to four words ('Vider tout l'historique',
+    // 'Limpiar el historial de búsqueda', 'Browserverlauf leeren'); with any other object it stays free ('Vider le panier').
+    if (grammarEligible && !classes.includes('delete') && LOCALE_HISTORY_CLEAR.some((re) => re.test(String(name ?? '').trim()))) classes.push('delete')
     // CU-627 r2 (cu-developer-two): leaving a group with any article / demonstrative / possessive, and the German separable e-mail
     // opt-out, as whole-label rules in each language - submit, as English 'Leave group' / 'Unsubscribe'.
     if (grammarEligible && !classes.includes('submit') && (/^\s*(?:quitter|quittez|quitte|quittons)\s+(?:le|ce|cet|votre|ton|mon|notre|leur)\s+groupe\s*[.!]?\s*$/iu.test(name)
