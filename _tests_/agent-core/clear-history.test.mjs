@@ -18,6 +18,10 @@ test('CU-644: each qualifier reads as its twin \'Clear history\' (parity), with 
   // r2 (cu-developer-two): scope and age words, and three-word slots.
   for (const w of ['entire', 'whole', 'full', 'complete', 'old', 'past', 'previous']) for (const name of [`Clear ${w} history`, `Clear your ${w} history`, `Clear your ${w} search history`]) assert.ok(click(name).includes('delete'), name)
   for (const name of ['Clear all of your history', 'Clear web and app activity history', 'Clear my entire watch history', 'Clear all past order history']) assert.ok(click(name).includes('delete'), name)
+  // the settled bar: any one to four words, noun compounds included; five or more stay out.
+  for (const name of ['Clear YouTube history', 'Clear 30-day history', 'Clear download history', 'Clear your download history', 'Clear export history', 'Clear view history']) assert.ok(click(name).includes('delete'), name)
+  // five content words stay out (possessives and intensifiers fall away in the canonical re-reads, so the control uses nouns)
+  assert.deepEqual(click('Clear Chrome Android sync device search history'), [], 'five slot words stay out')
 })
 
 test('CU-644 controls: naming, opening, pausing or toggling a history, and the transient clears, stay free', () => {

@@ -2945,9 +2945,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // two words (your / my / all / the, or a qualifier: search, browsing, chat, call, watch, viewing, location, order, recent,
     // purchase, download), then 'history': 'Clear search history', 'Clear your browsing history', 'Clear all chat history'. A label
     // that only names, opens, pauses or toggles a history stays free ('Search history', 'View history', 'Pause watch history').
-    // r2 (cu-developer-two): the scope and age words too ('Clear entire / whole / full / complete / old / past / previous history'),
-    // up to four words ('Clear your entire search history', 'Clear web and app activity history').
-    if (grammarEligible && !classes.includes('delete') && /^(?:clear|erase|wipe)\s+(?:(?:your|my|all|the|of|and|entire|whole|full|complete|old|older|past|previous|search|browsing|chat|call|watch|viewing|location|order|recent|purchase|download|web|app|activity|voice|listening)\s+){0,4}history\s*[.!]?$/i.test(String(name ?? '').trim())) classes.push('delete')
+    // r2 (cu-developer-two's hold; cu-developer-one's settled bar 07:56Z): ANY one to four words between the verb and 'history' -
+    // 'Clear entire / old / previous / YouTube / 30-day history', 'Clear your entire search history', 'Clear download history'
+    // (a noun compound); five or more words stay out, and so does any label that does not start with clear / erase / wipe.
+    if (grammarEligible && !classes.includes('delete') && /^(?:clear|erase|wipe)(?:\s+\S+){0,4}\s+history\s*[.!]?$/i.test(String(name ?? '').trim())) classes.push('delete')
     // CU-627 r2 (cu-developer-two): leaving a group with any article / demonstrative / possessive, and the German separable e-mail
     // opt-out, as whole-label rules in each language - submit, as English 'Leave group' / 'Unsubscribe'.
     if (grammarEligible && !classes.includes('submit') && (/^\s*(?:quitter|quittez|quitte|quittons)\s+(?:le|ce|cet|votre|ton|mon|notre|leur)\s+groupe\s*[.!]?\s*$/iu.test(name)
