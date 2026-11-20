@@ -18,7 +18,9 @@ test('CU-659: emptying a folder and clearing storage ask delete, as their twins'
     // CU-661 r2: quantified contents before in / from keep asking
     'Empty all items in Deleted Items', 'Empty everything in the Junk folder', 'Empty all messages in Inbox', 'Empty all in Drafts', 'Empty every item in the Outbox', 'Empty the contents of this folder', "Don't empty everything in Archive", 'Empty any items in Drafts', 'Empty the whole contents of Inbox', 'Empty the entire contents of the Junk folder', 'Empty each message in Sent Items',
     // r3: any words after the quantifier
-    'Empty all old items in Deleted Items', 'Empty all unread messages in Inbox', 'Empty every single message in Drafts', 'Empty everything older than a week in Archive', 'Empty all the old messages in the Junk Email folder', 'Empty every single file in this folder']) assert.ok(click(name).includes('delete'), name)
+    'Empty all old items in Deleted Items', 'Empty all unread messages in Inbox', 'Empty every single message in Drafts', 'Empty everything older than a week in Archive', 'Empty all the old messages in the Junk Email folder', 'Empty every single file in this folder',
+    // a plural content noun first counts as a quantifier
+    'Empty items from Deleted Items', 'Empty messages in Junk Email', 'Empty files in this folder', 'Empty attachments from Sent Items']) assert.ok(click(name).includes('delete'), name)
 })
 
 test('CU-659 controls: status / past forms, carts, caches, open / view and bare nouns stay free', () => {
