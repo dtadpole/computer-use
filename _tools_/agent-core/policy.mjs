@@ -524,6 +524,37 @@ const LOCALE_HISTORY_CLEAR = Object.freeze([
   /(?:^|\s)\S*geçmiş\S*(?:\s+\S+){0,4}?\s+temizle(?:yin(?:iz)?|sin)?\s*[.!]?$/iu,
   /^(?:leere|leert|leeren\s+sie|bereinige|bereinigt|bereinigen\s+sie)\s+(?:\S+\s+){0,4}?\S*verlauf\b/i,
 ])
+// CU-655 (cu-developer-one's design): emptying the trash asks delete in FR / ES / DE / RU / JA / KO, as 'Empty trash' and the
+// IT / NL / PT / TR entries do - the verb with the trash noun only, up to four words between them, in either order where the
+// language puts the verb last; negation follows 'Don't empty trash' (asks). Past and status forms stay free, as the locale bare
+// nouns do ('Corbeille vidée', 'Papierkorb geleert', 'Корзина очищена', 'ゴミ箱を空にしました', '휴지통을 비웠습니다'); the same
+// verbs with any other object stay free ('Vider le panier', 'Warenkorb leeren', '장바구니 비우기'). Russian 'корзина' is also a
+// shopping cart: it asks (the trash deletes for good, a cart empties reversibly) unless the cart is named ('корзину покупок').
+const LOCALE_TRASH_EMPTY = Object.freeze([
+  /^(?:ne\s+pas\s+)?(?:vider|videz|vide)\s+(?:\S+\s+){0,4}?corbeille(?=\s|$|[.!])/i,
+  /^ne\s+(?:videz|vide)\s+pas\s+(?:\S+\s+){0,4}?corbeille(?=\s|$|[.!])/i,
+  /^(?:no\s+)?(?:vaciar|vacía|vacia|vacíe|vacie|vaciad|vacíen|vacien|vacíes|vacies)\s+(?:\S+\s+){0,4}?papelera(?=\s|$|[.!])/i,
+  /^(?:\S+\s+){0,4}?papierkorb(?:\s+\S+){0,4}?\s+(?:leeren|entleeren)\s*[.!]?$/i,
+  /^(?:leere|leert|leeren\s+sie|entleere|entleert|entleeren\s+sie)\s+(?:\S+\s+){0,4}?papierkorb(?=\s|$|[.!])/i,
+  /ゴミ箱.{0,10}?空に(?!し(?:ました|た)|され|済|完了|中)/u,
+  /휴지통\S*\s*(?:\S+\s+){0,4}?(?:비우(?:기|세요|십시오|시겠습니까)?|비워(?:\s?줘|\s?주세요|요)?)(?=\s|$|[.!?])/u,
+])
+// CU-655: the Russian twin ('Очистить корзину', 'Очистите корзину', 'Корзину очистить', with 'не' as negation) is built from folded
+// words on first use: a judged name has passed normaliseText, which folds Cyrillic homoglyphs to Latin case by case, so each word
+// is folded as written, capitalised and in capitals, as namesWord does for its Cyrillic entries.
+let ruTrashEmptyRegex = null
+function namesRuTrashEmpty(name) {
+  if (!ruTrashEmptyRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const verb = any(['очистить', 'очисти', 'очистите', 'очищать', 'очищай', 'очищайте'])
+    const noun = any(['корзину'])
+    const cart = any(['покупок', 'товаров', 'заказов', 'магазина'])
+    ruTrashEmptyRegex = new RegExp(`^(?:${any(['не'])}\\s+)?(?:${verb}\\s+(?:\\S+\\s+){0,4}?${noun}|${noun}\\s+(?:\\S+\\s+){0,4}?${verb})(?!\\s+${cart})(?=\\s|$|[.!])`, 'iu')
+  }
+  // The name is compared after normaliseName too, as namesTrashFolded compares it.
+  return ruTrashEmptyRegex.test(normaliseName(String(name ?? '')).trim())
+}
 // CU-641 r3: the objects 'Wis' clears without deleting, as English 'Clear ...' stays free for them.
 const WIS_CLEAR_OBJECTS = new Set(['zoekopdracht', 'zoekopdrachten', 'zoekveld', 'zoektermen', 'zoekterm', 'filter', 'filters', 'selectie', 'formulier', 'invoer',
   'veld', 'velden', 'tekst', 'cache', 'melding', 'meldingen', 'notificaties', 'opmaak', 'markering', 'markeringen', 'zoekbalk'])
@@ -2971,6 +3002,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // limpiar / limpar / svuotare / leeren) asks delete with a history noun after up to four words ('Vider tout l'historique',
     // 'Limpiar el historial de búsqueda', 'Browserverlauf leeren'); with any other object it stays free ('Vider le panier').
     if (grammarEligible && !classes.includes('delete') && LOCALE_HISTORY_CLEAR.some((re) => re.test(String(name ?? '').trim()))) classes.push('delete')
+    // CU-655 (cu-developer-one's design): the locale twins of 'Empty trash' (LOCALE_TRASH_EMPTY above).
+    if (grammarEligible && !classes.includes('delete') && (LOCALE_TRASH_EMPTY.some((re) => re.test(String(name ?? '').trim())) || namesRuTrashEmpty(name))) classes.push('delete')
     // CU-627 r2 (cu-developer-two): leaving a group with any article / demonstrative / possessive, and the German separable e-mail
     // opt-out, as whole-label rules in each language - submit, as English 'Leave group' / 'Unsubscribe'.
     if (grammarEligible && !classes.includes('submit') && (/^\s*(?:quitter|quittez|quitte|quittons)\s+(?:le|ce|cet|votre|ton|mon|notre|leur)\s+groupe\s*[.!]?\s*$/iu.test(name)
