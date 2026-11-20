@@ -19,7 +19,7 @@ const GRID = {
     // cu-verifier (CU-643 close): a pinned two-determiner row.
     'Wis al je notities', 'Wis al uw berichten', 'Wist u uw account',
     // CU-645 r2: 'Wist u' + (al +) determiner + noun, not a question.
-    "Wist u uw foto's", 'Wist u al uw berichten', 'Wist u uw notities', 'Wist u alle afspraken', 'Wist u de documenten'],
+    "Wist u uw foto's", 'Wist u al uw berichten', 'Wist u uw notities', 'Wist u alle afspraken', 'Wist u de documenten', 'Wist u dit bestand', 'Wist u dat account', 'Wist u het profiel', 'Wist u eigenlijk uw berichten'],
   purchase: ['Betaal', 'Betaalt u', 'Betaal nu', 'Koop nu', 'Koopt u nu', 'Bestel', 'Bestelt u', 'Maak het geld over', 'Maakt u het geld over', 'Reken af', 'Rekent u af',
     'Lidmaatschap annuleren', 'Annuleer uw lidmaatschap',
     'Plan annuleren', 'Annuleer je plan', 'Annuleert u uw plan', 'Zeg je plan op', 'Plan opzeggen', 'Pakket annuleren', 'Annuleer uw pakket', 'Zeg uw pakket op', 'Zegt u uw pakket op'],
@@ -31,5 +31,5 @@ test('CU-641: the Dutch stem x formality x order grid asks each English twin\'s 
 })
 
 test('CU-641 controls: clear / filter / steering and bare collisions stay free', () => {
-  for (const name of ['Stuur', 'Stuurwiel', 'Sturen', 'Wis', 'Wis zoekopdracht', 'Wis filters', 'Wis de filters', 'Wis selectie', 'Wis het formulier', 'Wis cache', 'Wis alle meldingen', 'Wist u', 'Wist u dat?', 'Wist u het al?', 'Wist u dat u kunt sparen?', 'Wist u wat er nieuw is?', 'Wist u de weg?', 'Wist u dit al', 'Wist u uw filters', 'Bel', 'Plaats', 'Annuleer', 'Annuleren', 'Verzendkosten']) assert.deepEqual(click(name), [], name)
+  for (const name of ['Stuur', 'Stuurwiel', 'Sturen', 'Wis', 'Wis zoekopdracht', 'Wis filters', 'Wis de filters', 'Wis selectie', 'Wis het formulier', 'Wis cache', 'Wis alle meldingen', 'Wist u', 'Wist u dat?', 'Wist u het al?', 'Wist u dat u kunt sparen?', 'Wist u wat er nieuw is?', 'Wist u de weg?', 'Wist u dit al', 'Wist u uw filters', 'Wist u dat', 'Wist u dit', 'Wist u het al', 'Wist u dat er', 'Wist u dat u', 'Wist u eigenlijk dat', 'Wist u al dat', 'Bel', 'Plaats', 'Annuleer', 'Annuleren', 'Verzendkosten']) assert.deepEqual(click(name), [], name)
 })

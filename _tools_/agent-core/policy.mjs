@@ -2912,11 +2912,14 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // CU-645 r2 (cu-developer-one 00:52Z, cu-developer-three 00:54Z): 'Wist u' is also 'did you know', so it asks only with
       // (al +) a determiner and a noun and not as a question - 'Wist u uw foto's', 'Wist u al uw berichten', 'Wist u alle
       // afspraken' ask; 'Wist u dat?', 'Wist u het al?', 'Wist u wat ...', 'Wist u de weg?' and bare 'Wist u' stay free.
-      const wiped = String(name ?? '').trim().toLowerCase().match(/^wist\s+u\s+(?:al\s+)?(?:de|het|je|jouw|uw|mijn|onze|alle|deze|die)\s+(\p{L}[\p{L}'’-]*)(?:\s+\p{L}[\p{L}'’-]*)?\s*[.!]?$/u)
+      // r2 bar (cu-developer-one 01:00Z / 01:01Z): het / dit / dat open an object only before a noun - at the end, before 'al' or
+      // before a clause (a pronoun or 'er': 'Wist u dat u ...', 'Wist u dat er ...') they are the 'did you know' reading.
+      const wiped = String(name ?? '').trim().toLowerCase().match(/^wist\s+u\s+(?:(?:al|eigenlijk)\s+)?(?:de|het|je|jouw|uw|mijn|onze|alle|deze|die|dit|dat)\s+(\p{L}[\p{L}'’-]*)(?:\s+\p{L}[\p{L}'’-]*)?\s*[.!]?$/u)
       // The question reading is the know reading, so here - and only here - a trailing '?' frees the row: the rule also skips
       // CU-528's question-stripped re-read (context.questionProbe), a scoped exception cu-developer-one's design names.
       const asked = context.questionProbe === true || /\?\s*$/.test(String(target?.name ?? ''))
-      if (!classes.includes('delete') && wiped && !asked && wiped[1] !== 'al' && !WIS_CLEAR_OBJECTS.has(wiped[1])) classes.push('delete')
+      const clause = wiped && /^(?:al|u|je|jij|er|we|wij|ze|zij|hij|ik|men|het|dat|dit|wat)$/.test(wiped[1])
+      if (!classes.includes('delete') && wiped && !asked && !clause && !WIS_CLEAR_OBJECTS.has(wiped[1])) classes.push('delete')
     }
     // CU-627 r2 (cu-developer-two): leaving a group with any article / demonstrative / possessive, and the German separable e-mail
     // opt-out, as whole-label rules in each language - submit, as English 'Leave group' / 'Unsubscribe'.
