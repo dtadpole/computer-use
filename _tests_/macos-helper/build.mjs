@@ -47,17 +47,34 @@ export function underBuildLock(argv, { lock = BUILD_LOCK, waitSeconds = BUILD_WA
   }
 }
 
-function paths(hash, cacheRoot) {
+export function cachePaths(hash, cacheRoot) {
   const root = join(cacheRoot, `cu-helper-test-${hash}`)
   const app = join(root, 'CUHelper.app')
   return { root, app, executable: join(app, 'Contents', 'MacOS', 'CUHelper'), unitTests: join(root, 'unit-tests') }
 }
 
+/**
+ * CU-653: a cached build counts only when it is whole. On 20 Nov an age-based tmp cleaner took Info.plist and the seal
+ * from a cached bundle and left the recently-run executable; the half bundle still counted as built, and every helper
+ * build / --selftest row failed in under a second until the cache was moved aside. The bundle's ad hoc seal names every
+ * file in it, so `codesign --verify --strict` catches any loss; `verify` is injectable for the rows that need no bundle.
+ */
+export function cacheComplete({ app, executable, unitTests }, { verify = (bundle) => execFileSync('/usr/bin/codesign', ['--verify', '--strict', bundle], { stdio: 'ignore', timeout: 30_000 }) } = {}) {
+  if (![executable, unitTests, join(app, 'Contents', 'Info.plist')].every((path) => existsSync(path))) return false
+  try {
+    verify(app)
+    return true
+  } catch {
+    return false
+  }
+}
+
 /** Build (or reuse) the bundle and the unit-test binary; returns their paths. */
 export function buildAll({ cacheRoot = '/tmp' } = {}) {
   const hash = sourceHash()
-  const { root, app, executable, unitTests } = paths(hash, cacheRoot)
-  if (existsSync(executable) && existsSync(unitTests)) return { root, app, executable, unitTests, hash, cached: true }
+  const cache = cachePaths(hash, cacheRoot)
+  const { root, app, executable, unitTests } = cache
+  if (cacheComplete(cache)) return { root, app, executable, unitTests, hash, cached: true }
   // CU-335: build under the host-wide lock, in a child that re-checks the cache once it holds it - a seat that waited
   // for another's build of the same sources reuses it instead of compiling again.
   underBuildLock([process.execPath, fileURLToPath(import.meta.url), '--build', hash, cacheRoot])
@@ -66,8 +83,11 @@ export function buildAll({ cacheRoot = '/tmp' } = {}) {
 
 /** The locked step: compile into a staging folder and rename it into place, unless the cache was filled meanwhile. */
 function buildLocked(hash, cacheRoot) {
-  const { root, executable, unitTests } = paths(hash, cacheRoot)
-  if (existsSync(executable) && existsSync(unitTests)) return
+  const cache = cachePaths(hash, cacheRoot)
+  const { root } = cache
+  if (cacheComplete(cache)) return
+  // CU-653: a broken cache left in place would make the rename below fail and its half build be reused: remove it.
+  rmSync(root, { recursive: true, force: true })
   // Build beside, then rename, so a concurrent reader never sees half a build.
   const staging = `${root}.staging-${process.pid}`
   rmSync(staging, { recursive: true, force: true })
