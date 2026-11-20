@@ -58,14 +58,16 @@ export function cachePaths(hash, cacheRoot) {
  * from a cached bundle and left the recently-run executable; the half bundle still counted as built, and every helper
  * build / --selftest row failed in under a second until the cache was moved aside. The bundle's ad hoc seal names every
  * file in it, so `codesign --verify --strict` catches any loss; `verify` is injectable for the rows that need no bundle.
+ * Only codesign's own refusal (an exit status) means broken: a spawn error or a timeout under load says nothing about
+ * the bundle, and calling a good shared cache broken would make buildLocked delete it under another seat's run.
  */
 export function cacheComplete({ app, executable, unitTests }, { verify = (bundle) => execFileSync('/usr/bin/codesign', ['--verify', '--strict', bundle], { stdio: 'ignore', timeout: 30_000 }) } = {}) {
   if (![executable, unitTests, join(app, 'Contents', 'Info.plist')].every((path) => existsSync(path))) return false
   try {
     verify(app)
     return true
-  } catch {
-    return false
+  } catch (error) {
+    return !(Number.isInteger(error?.status) && error.status > 0)
   }
 }
 

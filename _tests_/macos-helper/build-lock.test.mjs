@@ -86,6 +86,7 @@ test('CU-335: buildAll compiles only under the lock, in a child that re-checks t
   const buildAll = source.slice(source.indexOf('export function buildAll('), source.indexOf('function buildLocked('))
   assert.match(buildAll, /underBuildLock\(\[process\.execPath, fileURLToPath\(import\.meta\.url\), '--build', hash, cacheRoot\]\)/)
   assert.doesNotMatch(buildAll, /execFileSync\('(bash|swiftc)'/, 'no compile outside the lock')
+  assert.match(buildAll, /if \(cacheComplete\(cache\)\) return \{ root/, 'CU-653: the fast path trusts only a whole cache, too')
   const locked = source.slice(source.indexOf('function buildLocked('))
   assert.match(locked, /if \(cacheComplete\(cache\)\) return/, 're-checks the cache first')
   assert.match(locked, /rmSync\(root, \{ recursive: true, force: true \}\)/, 'and removes a broken one before building')
@@ -100,7 +101,10 @@ test('CU-653: a cache counts only when the bundle is whole - executable, unit te
   let verified = 0
   const sealed = { verify: () => { verified += 1 } }
   assert.equal(cacheComplete(cache, sealed), true, 'every part present and the seal verifies')
-  assert.equal(cacheComplete(cache, { verify: () => { throw new Error('a sealed resource is missing') } }), false, 'a broken seal')
+  const refused = Object.assign(new Error('a sealed resource is missing'), { status: 1 })
+  assert.equal(cacheComplete(cache, { verify: () => { throw refused } }), false, 'a broken seal: codesign exits non-zero')
+  const timedOut = Object.assign(new Error('spawnSync /usr/bin/codesign ETIMEDOUT'), { code: 'ETIMEDOUT', status: null, signal: 'SIGTERM' })
+  assert.equal(cacheComplete(cache, { verify: () => { throw timedOut } }), true, 'a codesign timeout says nothing about the bundle: keep the cache')
   rmSync(plist)
   verified = 0
   assert.equal(cacheComplete(cache, sealed), false, 'Info.plist gone (what the 20 Nov tmp cleaner took)')
