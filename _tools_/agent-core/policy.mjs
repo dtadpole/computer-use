@@ -551,7 +551,8 @@ function namesRuTrashEmpty(name) {
     const noun = any(['корзину'])
     // r2 (cu-developer-three): the cart's noun in the singular too ('корзину заказа').
     const cart = any(['покупок', 'покупки', 'товаров', 'товара', 'заказов', 'заказа', 'магазина'])
-    ruTrashEmptyRegex = new RegExp(`^(?:${any(['не'])}\\s+)?(?:${verb}\\s+(?:\\S+\\s+){0,4}?${noun}|${noun}\\s+(?:\\S+\\s+){0,4}?${verb})(?!\\s+${cart})(?=\\s|$|[.!])`, 'iu')
+    // r3 (cu-developer-three): the named-cart exclusion sits right after the noun in both orders ('Корзину покупок очистить').
+    ruTrashEmptyRegex = new RegExp(`^(?:${any(['не'])}\\s+)?(?:${verb}\\s+(?:\\S+\\s+){0,4}?${noun}(?!\\s+${cart})(?=\\s|$|[.!])|${noun}(?!\\s+${cart})\\s+(?:\\S+\\s+){0,4}?${verb}(?=\\s|$|[.!]))`, 'iu')
   }
   // The name is compared after normaliseName too, as namesTrashFolded compares it.
   return ruTrashEmptyRegex.test(normaliseName(String(name ?? '')).trim())
