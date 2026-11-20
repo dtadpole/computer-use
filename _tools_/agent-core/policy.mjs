@@ -3011,9 +3011,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // CU-659 (cu-developer-one's go 17:13Z): emptying a mail or file folder deletes its items, as 'Empty trash' does - 'Empty Deleted
     // Items', 'Empty the Junk Email folder', 'Empty your inbox', 'Empty this folder', a bare 'Empty folder' button; and 'Clear
     // storage' wipes an app's data as 'Clear app data' does. Status and past forms, carts, caches and bare nouns stay free.
-    // r2 (cu-developer-two): the design's up-to-four slot words ('Empty the whole Junk Email folder'), Outbox, and any one or two
-    // words before 'storage' ('Clear site storage', 'Clear browser storage').
-    if (grammarEligible && !classes.includes('delete') && (/^empty(?:\s+\S+){0,4}?\s+(?:deleted\s+items|junk(?:\s+e-?mail)?|inbox|drafts|sent(?:\s+items|\s+mail)?|archive|outbox|folders?|mailbox)(?:\s+folders?)?(?:\s+(?:now|permanently|completely))?\s*[.!]?$/i.test(String(name ?? '').trim())
+    // r2 (cu-developer-two, -three; cu-developer-one's list 18:42Z): the design's open slot of up to four words ('Empty the entire
+    // inbox', 'Empty Clutter folder'), Outbox, one or two words before 'storage' ('Clear site storage'), and negation as its twin
+    // ("Don't empty this folder" asks as "Don't empty trash" does).
+    if (grammarEligible && !classes.includes('delete') && (/^(?:(?:don['’]t|do\s+not)\s+)?empty(?:\s+\S+){0,4}?\s+(?:deleted\s+items|junk(?:\s+e-?mail)?|inbox|drafts|sent(?:\s+items|\s+mail)?|archive|outbox|folders?|mailbox)(?:\s+folders?)?(?:\s+(?:now|permanently|completely))?\s*[.!]?$/i.test(String(name ?? '').trim())
       || /^clear(?:\s+\S+){0,2}?\s+storage(?:\s+now)?\s*[.!]?$/i.test(String(name ?? '').trim()))) classes.push('delete')
     // CU-627 r2 (cu-developer-two): leaving a group with any article / demonstrative / possessive, and the German separable e-mail
     // opt-out, as whole-label rules in each language - submit, as English 'Leave group' / 'Unsubscribe'.
