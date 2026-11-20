@@ -15,7 +15,9 @@ const GRID = {
     'Svuota cronologia', 'Svuota la cronologia', 'Svuotate la cronologia', 'Svuoti la cronologia', 'Pulisci la cronologia',
     'Verlauf leeren', 'Browserverlauf leeren', 'Suchverlauf bereinigen', 'Leere den Verlauf', 'Leert euren Verlauf', 'Leeren Sie Ihren Verlauf',
     'Очистить историю', 'Очистите историю', 'Очисти историю', 'Очистите историю поиска', 'ОЧИСТИТЬ ИСТОРИЮ', 'Очистить всю историю',
-    '履歴をクリア', '検索履歴をクリア', '履歴クリア', 'Geçmişi temizle', 'Arama geçmişini temizleyin', '지워', '지워줘', '지워 주세요'],
+    '履歴をクリア', '検索履歴をクリア', '履歴クリア', 'Geçmişi temizle', 'Arama geçmişini temizleyin', '지워', '지워줘', '지워 주세요',
+    // r2: words between the noun and a final verb
+    'Verlauf jetzt leeren', 'Verlauf vollständig leeren', 'Verlauf beim Beenden leeren', 'Browserverlauf komplett bereinigen', '履歴をすべてクリア', '検索履歴を今すぐクリア', 'Arama geçmişini şimdi temizle', 'Geçmişi tamamen temizleyin'],
   submit: ['보내줘', '보내 줘'],
 }
 
@@ -26,5 +28,5 @@ test('CU-654: locale clear + history and the Korean casual imperatives ask as th
 
 test('CU-654 controls: the clear verbs with other objects, the bare verbs and nouns, and statements stay free', () => {
   for (const name of ['Vider le panier', 'Vider', 'Limpiar filtros', 'Limpiar', 'Limpar filtros', 'Svuota carrello', 'Cache leeren', 'Verlauf', 'Historique', 'Historial',
-    'Очистить фильтры', 'Очистить', 'キャッシュをクリア', 'Önbelleği temizle', '보내요', '지워졌습니다', 'Afficher l\'historique', 'Ver historial', 'Verlauf anzeigen']) assert.deepEqual(click(name), [], name)
+    'Очистить фильтры', 'Очистить', 'キャッシュをクリア', 'Önbelleği temizle', 'Cache jetzt leeren', 'キャッシュをすべてクリア', 'Önbelleği şimdi temizle', 'Verlauf jetzt anzeigen', '보내요', '지워졌습니다', 'Afficher l\'historique', 'Ver historial', 'Verlauf anzeigen']) assert.deepEqual(click(name), [], name)
 })

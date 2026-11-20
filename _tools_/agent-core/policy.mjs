@@ -514,7 +514,11 @@ const LOCALE_HISTORY_CLEAR = Object.freeze([
   /^(?:limpiar|limpia|limpie|limpiad|limpien|vaciar|vacía|vacíe|vaciad|vacíen)\s+(?:\S+\s+){0,4}?historial\b/i,
   /^(?:limpar|limpa|limpe|limpem)\s+(?:\S+\s+){0,4}?hist[oó]rico\b/i,
   /^(?:svuota|svuotare|svuotate|svuoti|pulisci|pulire|pulite)\s+(?:\S+\s+){0,4}?(?:l['’]\s*)?cronologia\b/i,
-  /^(?:\S+\s+){0,4}?\S*verlauf\s+(?:leeren|bereinigen)\s*[.!]?$/i,
+  // r2 (cu-developer-three, cu-developer-one 12:50Z): in the verb-final locales words may stand between the noun and the verb -
+  // 'Verlauf jetzt / vollständig / beim Beenden leeren', '履歴をすべてクリア', 'Arama geçmişini şimdi temizle'.
+  /^(?:\S+\s+){0,4}?\S*verlauf(?:\s+\S+){0,4}?\s+(?:leeren|bereinigen)\s*[.!]?$/i,
+  /履歴.{0,10}?クリア/u,
+  /(?:^|\s)\S*geçmiş\S*(?:\s+\S+){0,4}?\s+temizle\S*\s*[.!]?$/iu,
   /^(?:leere|leert|leeren\s+sie|bereinige|bereinigt|bereinigen\s+sie)\s+(?:\S+\s+){0,4}?\S*verlauf\b/i,
 ])
 // CU-641 r3: the objects 'Wis' clears without deleting, as English 'Clear ...' stays free for them.
