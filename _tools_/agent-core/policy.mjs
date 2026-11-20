@@ -2941,6 +2941,14 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const cancelKo = String(name ?? '').trim().match(/^(?:(?:내|제|나의|저의)\s*)?(?:(구독|주문|멤버십|요금제|플랜)(?:\s*(?:을|를))?\s*(?:취소|해지)|(?:취소|해지)\s*(구독|주문|멤버십|요금제|플랜))(?:하기|하세요|해\s?주세요|하십시오)?\s*[.!]?$/u)
       if (cancelKo) { const cls = (cancelKo[1] ?? cancelKo[2]) === '구독' ? 'delete' : 'purchase'; if (!classes.includes(cls)) classes.push(cls) }
     }
+    // CU-644 (cu-developer-one's go 07:00Z): clearing a history deletes it, as 'Clear history' does - clear / erase / wipe, then up to
+    // two words (your / my / all / the, or a qualifier: search, browsing, chat, call, watch, viewing, location, order, recent,
+    // purchase, download), then 'history': 'Clear search history', 'Clear your browsing history', 'Clear all chat history'. A label
+    // that only names, opens, pauses or toggles a history stays free ('Search history', 'View history', 'Pause watch history').
+    // r2 (cu-developer-two's hold; cu-developer-one's settled bar 07:56Z): ANY one to four words between the verb and 'history' -
+    // 'Clear entire / old / previous / YouTube / 30-day history', 'Clear your entire search history', 'Clear download history'
+    // (a noun compound); five or more words stay out, and so does any label that does not start with clear / erase / wipe.
+    if (grammarEligible && !classes.includes('delete') && /^(?:clear|erase|wipe)(?:\s+\S+){0,4}\s+history\s*[.!]?$/i.test(String(name ?? '').trim())) classes.push('delete')
     // CU-627 r2 (cu-developer-two): leaving a group with any article / demonstrative / possessive, and the German separable e-mail
     // opt-out, as whole-label rules in each language - submit, as English 'Leave group' / 'Unsubscribe'.
     if (grammarEligible && !classes.includes('submit') && (/^\s*(?:quitter|quittez|quitte|quittons)\s+(?:le|ce|cet|votre|ton|mon|notre|leur)\s+groupe\s*[.!]?\s*$/iu.test(name)
