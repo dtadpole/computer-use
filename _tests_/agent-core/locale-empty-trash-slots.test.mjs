@@ -29,3 +29,10 @@ test('CU-657 controls: past forms, other objects, opening the trash and the bare
     // five words between the noun and the verb stay out, as in CU-644 / CU-654 / CU-655
     'Prullenbak van al mijn oude apparaten op de server legen']) assert.deepEqual(click(name), [], name)
 })
+
+// CU-660 (cu-developer-one's go, 20 Nov 19:06Z): Korean 시작 / 진행 after the object particle, and the Turkish noun with its case
+// ending before a slot word, ask as their twins do; past and status forms and carts stay free.
+test('CU-660: start / proceed emptying the trash (Korean) and the case-marked Turkish noun with an adverb ask delete', () => {
+  for (const name of ['휴지통 비우기를 시작', '휴지통 비우기를 진행', '휴지통 비우기 시작', '휴지통 비우기 진행', 'Çöpü tamamen boşalt', 'Çöpü şimdi boşalt', 'Çöpü tamamen boşaltın']) assert.ok(click(name).includes('delete'), `${name} -> delete`)
+  for (const name of ['휴지통 비우기를 시작했습니다', '휴지통 비우기를 진행했습니다', '휴지통 비우기를 완료했습니다', 'Çöp boşaltıldı', 'Çöpü tamamen boşalttı', 'Sepeti tamamen boşalt', '장바구니 비우기를 시작']) assert.deepEqual(click(name), [], name)
+})
