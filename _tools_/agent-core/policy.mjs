@@ -2909,6 +2909,14 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (grammarEligible && !classes.includes('delete')) {
       const wipe = String(name ?? '').trim().toLowerCase().match(/^wis\s+(?:(?:de|het|je|jouw|uw|mijn|onze|alle|al|deze|dit|die)\s+){0,2}(\p{L}[\p{L}'’-]*)(?:\s+\p{L}[\p{L}'’-]*)?\s*[.!]?$/u)
       if (wipe && !WIS_CLEAR_OBJECTS.has(wipe[1])) classes.push('delete')
+      // CU-645 r2 (cu-developer-one 00:52Z, cu-developer-three 00:54Z): 'Wist u' is also 'did you know', so it asks only with
+      // (al +) a determiner and a noun and not as a question - 'Wist u uw foto's', 'Wist u al uw berichten', 'Wist u alle
+      // afspraken' ask; 'Wist u dat?', 'Wist u het al?', 'Wist u wat ...', 'Wist u de weg?' and bare 'Wist u' stay free.
+      const wiped = String(name ?? '').trim().toLowerCase().match(/^wist\s+u\s+(?:al\s+)?(?:de|het|je|jouw|uw|mijn|onze|alle|deze|die)\s+(\p{L}[\p{L}'’-]*)(?:\s+\p{L}[\p{L}'’-]*)?\s*[.!]?$/u)
+      // The question reading is the know reading, so here - and only here - a trailing '?' frees the row: the rule also skips
+      // CU-528's question-stripped re-read (context.questionProbe), a scoped exception cu-developer-one's design names.
+      const asked = context.questionProbe === true || /\?\s*$/.test(String(target?.name ?? ''))
+      if (!classes.includes('delete') && wiped && !asked && wiped[1] !== 'al' && !WIS_CLEAR_OBJECTS.has(wiped[1])) classes.push('delete')
     }
     // CU-627 r2 (cu-developer-two): leaving a group with any article / demonstrative / possessive, and the German separable e-mail
     // opt-out, as whole-label rules in each language - submit, as English 'Leave group' / 'Unsubscribe'.
