@@ -906,7 +906,9 @@ const LOCALE_REVOKE_ACCESS = Object.freeze([
   // go (cu-developer-one 22:32Z): English bare 'Revoke' asks, so the unambiguous bare revoke verbs ask too; the cancel-sense verbs
   // (取り消す / 취소 / 撤销 / iptal et) stay noun-bound
   new RegExp(`^(?:révoquer|révoquez|revocar|revoque|revogar|revogue|revocare|revoca|widerrufen|intrekken)${pubNow}\\s*[.!]?$`, 'iu'),
-  new RegExp(`^(?:tüm\\s+|bütün\\s+)?(?:\\S+\\s+)?(?:erişimi|erişimini|izinleri|izinlerini|yetkiyi|yetkileri)\\s+(?:şimdi\\s+)?(?:iptal\\s+et|iptal\\s+edin|geri\\s+al|geri\\s+alın)\\s*[.!]?$`, 'iu'),
+  // r2 (cu-developer-two, cu-developer-one 22:58Z): /iu does not fold the Turkish dotted capital İ, so it is listed here and the
+  // wiring below also tests the name with İ folded to i (all-caps Turkish, 'TÜM İZİNLERİ GERİ AL')
+  new RegExp(`^(?:tüm\\s+|bütün\\s+)?(?:\\S+\\s+)?(?:erişimi|erişimini|[iİ]zinleri|[iİ]zinlerini|yetkiyi|yetkileri)\\s+(?:şimdi\\s+)?(?:[iİ]ptal\\s+et|[iİ]ptal\\s+edin|geri\\s+al|geri\\s+alın)\\s*[.!]?$`, 'iu'),
 ])
 let ruRevokeAccessRegex = null
 function namesRuRevokeAccess(name) {
@@ -3387,7 +3389,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // CU-655 (cu-developer-one's design): the locale twins of 'Empty trash' (LOCALE_TRASH_EMPTY above).
     if (grammarEligible && !classes.includes('delete') && (LOCALE_TRASH_EMPTY.some((re) => re.test(String(name ?? '').trim())) || namesRuTrashEmpty(name))) classes.push('delete')
     // CU-683: locale revoke-access twins (LOCALE_REVOKE_ACCESS above).
-    if (grammarEligible && !classes.includes('permission') && (LOCALE_REVOKE_ACCESS.some((re) => re.test(String(name ?? '').trim())) || namesRuRevokeAccess(name))) classes.push('permission')
+    if (grammarEligible && !classes.includes('permission') && (LOCALE_REVOKE_ACCESS.some((re) => re.test(String(name ?? '').trim().replace(/İ/g, 'i'))) || namesRuRevokeAccess(name))) classes.push('permission')
     // CU-684: locale leave-workspace twins (LOCALE_LEAVE_WORKSPACE above).
     if (grammarEligible && !classes.includes('permission') && (LOCALE_LEAVE_WORKSPACE.some((re) => re.test(String(name ?? '').trim())) || namesRuLeaveWorkspace(name))) classes.push('permission')
     // CU-678: transfer-ownership twins (TRANSFER_OWNERSHIP above).

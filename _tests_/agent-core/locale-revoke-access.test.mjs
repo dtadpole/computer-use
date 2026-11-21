@@ -24,3 +24,8 @@ test('CU-683 go (22:32Z): the unambiguous bare revoke verbs ask as English bare 
   for (const name of ['Révoquer', 'Revocar', 'Revogar', 'Revoca', 'Widerrufen', 'Intrekken', 'Отозвать', 'Отзовите', 'Revoke']) assert.ok(click(name).includes('permission'), name)
   for (const name of ['取り消す', '취소', '撤销', 'İptal et', 'Révoqué', 'Revocado', 'Отозвано']) assert.ok(!click(name).includes('permission'), name)
 })
+
+test('CU-683 r2: the Turkish dotted capital İ is folded; zh bare 撤销 and ko floated \'all\' stay free', () => {
+  for (const name of ['İzinleri geri alın', 'Erişimi İptal et', 'TÜM İZİNLERİ GERİ AL', 'Tüm izinleri geri alın', 'Erişimi iptal edin']) assert.ok(click(name).includes('permission'), name)
+  for (const name of ['撤销', '액세스 모두 취소', 'İptal et', 'İzinler']) assert.ok(!click(name).includes('permission'), name)
+})
