@@ -793,6 +793,9 @@ const LOCALE_MAKE_PUBLIC = Object.freeze([
   new RegExp(`^(?:\\S+\\s+){0,2}?(?:nu\\s+|niet\\s+)?openbaar\\s+maken\\s*[.!]?$`, 'iu'),
   new RegExp(`^(?:maak|maakt)\\s+(?:\\S+\\s+){0,2}?openbaar\\s*[.!]?$`, 'iu'),
   /^(?:\S+\s+){0,1}?공개로\s?(?:전환|설정|변경)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|해|합니다)?\s*[.!]?$/u,
+  // r2 (cu-developer-three, cu-developer-one 15:48Z): 공개하다 is the literal 'make public' (Korean 'publish' is 게시 / 발행), so its verb
+  // forms ask with or without an object; 비공개 / 공개됨 / 공개 중 and past forms stay free
+  /^(?:지금\s+)?(?:\S+\s+){0,2}?(?:\S+(?:을|를)\s+)?공개(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)\s*[.!]?$/u,
   new RegExp(`^(?:\\S+\\s+){0,2}?herkese\\s+açık\\s+(?:yap|yapın|yapınız|hale\\s+getir|olarak\\s+ayarla)\\s*[.!]?$`, 'iu'),
 ])
 let ruMakePublicRegex = null

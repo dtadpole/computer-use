@@ -24,3 +24,8 @@ test('CU-677 controls: past / status forms, bare adjectives and the make-private
  'Öffentlich', 'Öffentlich gemacht', 'Privat machen', 'Openbaar', 'Openbaar gemaakt', 'Privé maken', 'Общедоступный', 'Сделано общедоступным', 'Сделать приватным', '공개', '공개로 전환되었습니다', '비공개로 전환',
  'Herkese açık', 'Herkese açık yapıldı', 'Gizli yap', 'Make private', 'Made public']) assert.deepEqual(click(name), [], name)
 })
+
+test('CU-677 r2: the Korean verb forms of 공개하다 (literal \'make public\') ask permission; private / status / past forms stay free', () => {
+  for (const name of ['공개하기', '저장소 공개하기', '공개하세요', '공개해 주세요', '프로필을 공개하세요', '저장소를 공개해 주세요', '지금 공개하기']) assert.ok(click(name).includes('permission'), name)
+  for (const name of ['공개', '비공개', '공개됨', '공개 중', '공개되었습니다', '비공개하기', '공개했습니다', '공개 설정']) assert.deepEqual(click(name), [], name)
+})
