@@ -564,6 +564,49 @@ const LOCALE_TRASH_EMPTY = Object.freeze([
   // of a setting's name ('Otomatik çöp kutusu boşaltma', automatic trash emptying), which stays free.
   /^(?:\S+\s+){0,4}?(?:çöp\s+kutusunu|çöpü)(?:\s+\S+){0,4}?\s+(?:boşaltma|boşaltmayın|temizleme|temizlemeyin)\s*[.!]?$/iu,
 ])
+// CU-663 (cu-developer-one's design, 20 Nov 23:11Z): the locale twins of CU-659 - emptying a folder (or a localized Deleted
+// Items / Junk folder) asks delete as 'Empty folder' does, with CU-655's axes: up to four slot words in either order, a trailing
+// adverb, negation as its twin, the formal / casual endings; and CU-661's rule - a preposition in the slot names a place (free)
+// unless the slot starts with a quantifier or 'the contents' (asks). Past / status forms, carts, open / new folder and the bare
+// names stay free. 'Clear storage' twins (pt / ru / tr) ask as 'Clear data'.
+const folderSlot = (preps, quants) => `(?:(?:${quants})(?:\\s+\\S+){0,4}?\\s+|(?:(?!(?:${preps})(?:\\s|$))\\S+\\s+){0,4}?)`
+const folderVerbFirst = (neg, verbs, preps, quants, nouns) => new RegExp(`^(?:${neg})?(?:${verbs})\\s+${folderSlot(preps, quants)}(?:${nouns})(?=\\s|$|[.!?])`, 'iu')
+const folderVerbLast = (preps, quants, nouns, verbs) => new RegExp(`^${folderSlot(preps, quants)}(?:${nouns})(?:\\s+\\S+){0,4}?\\s+(?:${verbs})\\s*[.!]?$`, 'iu')
+const LOCALE_FOLDER_EMPTY = Object.freeze([
+  folderVerbFirst('ne\\s+pas\\s+', 'vider|videz|vide', 'dans|de|du|des|pour|depuis|en|sur|à|au|aux', 'tout|tous|toutes|le\\s+contenu|tout\\s+le\\s+contenu', 'dossier|éléments\\s+supprimés|courrier\\s+indésirable'),
+  /^ne\s+(?:videz|vide)\s+pas\s+(?:\S+\s+){0,4}?(?:dossier|éléments\s+supprimés|courrier\s+indésirable)(?=\s|$|[.!?])/iu,
+  folderVerbFirst('no\\s+', 'vaciar|vacía|vacia|vacíe|vacie|vaciad|vacíen|vacien|vacíes|vacies', 'en|de|del|para|desde', 'todo|todos|todas|el\\s+contenido|todo\\s+el\\s+contenido', 'carpeta|elementos\\s+eliminados|correo\\s+no\\s+deseado'),
+  folderVerbFirst('(?:não|nao)\\s+', 'esvaziar|esvazie|esvazia|esvaziem|limpar|limpe|limpa|limpem', 'em|no|na|nos|nas|de|do|da|dos|das|para', 'tudo|todo|toda|todos|todas|o\\s+conteúdo|todo\\s+o\\s+conteúdo', 'pasta|itens\\s+excluídos|lixo\\s+eletrônico'),
+  folderVerbFirst('non\\s+', 'svuota|svuotare|svuotate|svuoti', 'in|nel|nella|di|del|della|dal|dalla|per|da', 'tutto|tutti|tutte|il\\s+contenuto|tutto\\s+il\\s+contenuto', 'cartella|posta\\s+eliminata|posta\\s+indesiderata'),
+  folderVerbLast('in|im|aus|vom|von|für', 'alle|alles|den\\s+gesamten|den\\s+ganzen|den\\s+inhalt|gesamten|ganzen', '\\S*ordner|gelöschte\\s+elemente|junk-e-mail', 'leeren|entleeren'),
+  folderVerbFirst('nicht\\s+', 'leere|leert|leeren\\s+sie|entleere|entleert|entleeren\\s+sie', 'in|im|aus|vom|von|für', 'alle|alles|den\\s+gesamten|den\\s+ganzen|den\\s+inhalt', '\\S*ordner|gelöschte\\s+elemente|junk-e-mail'),
+  folderVerbFirst('niet\\s+', 'leeg|leegt|legen|leegmaken', 'in|uit|van|voor', 'alle|alles|de\\s+hele|de\\s+inhoud|hele', 'map|verwijderde\\s+items|ongewenste\\s+e-mail'),
+  /^maak\s+(?:\S+\s+){0,4}?(?:map|verwijderde\s+items|ongewenste\s+e-mail)(?:\s+\S+){0,3}?\s+leeg(?=\s|$|[.!])/iu,
+  folderVerbLast('in|uit|van|voor', 'alle|alles|de\\s+hele|de\\s+inhoud|hele', 'map|verwijderde\\s+items|ongewenste\\s+e-mail', 'legen|leegmaken|leeg\\s+maken'),
+  /(?:フォルダー?|削除済みアイテム|迷惑メール).{0,10}?空に(?!し(?:ました|た)|され|済|完了|中|なって|なりました)/u,
+  /(?:폴더|지운\s?편지함|정크\s?메일)\S*\s*(?:\S+\s+){0,4}?(?:비우(?:기|세요|십시오)?|비워(?:\s?줘|\s?주세요|요)?|비우지\s?마(?:세요|십시오)?)(?=\s|$|[.!?])/u,
+  /(?:폴더|지운\s?편지함|정크\s?메일)\S*\s*(?:\S+\s+){0,4}?비우기[을를]\s*(?:\S+\s+){0,2}?(?:실행|하기|시작|진행)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|해)?(?!\s*중)(?=\s|$|[.!?])/u,
+  folderVerbLast('içinde|için|içindeki', 'tüm|bütün|tamamını|hepsini', 'klasör\\S*|silinmiş\\s+öğeler\\S*|gereksiz\\s+e-posta\\S*', 'boşalt|boşaltın|boşaltınız|temizle|temizleyin|temizleyiniz'),
+  /^(?:\S+\s+){0,4}?(?:klasörü|silinmiş\s+öğeleri|gereksiz\s+e-postayı)(?:\s+\S+){0,4}?\s+(?:boşaltma|boşaltmayın|temizleme|temizlemeyin)\s*[.!]?$/iu,
+  /^(?:não\s+|nao\s+)?(?:limpar|limpe|limpa|limpem)\s+(?:\S+\s+){0,2}?armazenamento(?=\s|$|[.!])/iu,
+  /^(?:\S+\s+){0,2}?depolama\S*(?:\s+\S+){0,2}?\s+(?:temizle|temizleyin|temizleyiniz)\s*[.!]?$/iu,
+])
+// CU-663: the Russian folder / storage twins, folded on first use as namesRuTrashEmpty's words are ('Очистить папку', 'Очистите
+// папку «Удалённые»', 'Очистить хранилище'); a preposition (в / из / для / с) in the slot names a place unless a quantifier leads.
+let ruFolderEmptyRegex = null
+function namesRuFolderEmpty(name) {
+  if (!ruFolderEmptyRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const verb = any(['очистить', 'очисти', 'очистите', 'очищать', 'очищай', 'очищайте'])
+    const noun = `(?:${any(['папку', 'папке', 'удалённые', 'удаленные', 'хранилище'])}|${any(['нежелательную'])}\\s+${any(['почту'])})`
+    const prep = any(['в', 'из', 'для', 'с', 'во', 'со'])
+    const quant = any(['все', 'всё', 'всю', 'весь', 'содержимое'])
+    const slot = `(?:${quant}(?:\\s+\\S+){0,4}?\\s+|(?:(?!${prep}(?:\\s|$))\\S+\\s+){0,4}?)`
+    ruFolderEmptyRegex = new RegExp(`^(?:${any(['не'])}\\s+)?(?:${verb}\\s+${slot}${noun}(?=\\s|$|[.!?«»"])|${noun}\\s+(?:\\S+\\s+){0,4}?${verb}(?=\\s|$|[.!]))`, 'iu')
+  }
+  return ruFolderEmptyRegex.test(normaliseName(String(name ?? '')).trim())
+}
 // CU-655: the Russian twin ('Очистить корзину', 'Очистите корзину', 'Корзину очистить', with 'не' as negation) is built from folded
 // words on first use: a judged name has passed normaliseText, which folds Cyrillic homoglyphs to Latin case by case, so each word
 // is folded as written, capitalised and in capitals, as namesWord does for its Cyrillic entries.
@@ -3031,6 +3074,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (grammarEligible && !classes.includes('delete') && LOCALE_HISTORY_CLEAR.some((re) => re.test(String(name ?? '').trim()))) classes.push('delete')
     // CU-655 (cu-developer-one's design): the locale twins of 'Empty trash' (LOCALE_TRASH_EMPTY above).
     if (grammarEligible && !classes.includes('delete') && (LOCALE_TRASH_EMPTY.some((re) => re.test(String(name ?? '').trim())) || namesRuTrashEmpty(name))) classes.push('delete')
+    // CU-663: the locale twins of CU-659 (LOCALE_FOLDER_EMPTY above).
+    if (grammarEligible && !classes.includes('delete') && (LOCALE_FOLDER_EMPTY.some((re) => re.test(String(name ?? '').trim())) || namesRuFolderEmpty(name))) classes.push('delete')
     // CU-659 (cu-developer-one's go 17:13Z): emptying a mail or file folder deletes its items, as 'Empty trash' does - 'Empty Deleted
     // Items', 'Empty the Junk Email folder', 'Empty your inbox', 'Empty this folder', a bare 'Empty folder' button; and 'Clear
     // storage' wipes an app's data as 'Clear app data' does. Status and past forms, carts, caches and bare nouns stay free.
@@ -3046,7 +3091,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // verb follows it ('Empty items stay in Inbox' stays free); 'of' after
     // anything else names a place ('Empty copy of Inbox').
     if (grammarEligible && !classes.includes('delete') && (/^(?:(?:don['’]t|do\s+not)\s+)?empty(?:\s+(?!(?:in|into|inside|within|for|from|of|to|on|at|under|is|are|was|were|will|be|been|stays?|remains?|appears?|shows?|shown|moves?|goes|saved|sent|found)\b)\S+){0,4}?\s+(?:deleted\s+items|junk(?:\s+e-?mail)?|inbox|drafts|sent(?:\s+items|\s+mail)?|archive|outbox|folders?|mailbox)(?:\s+folders?)?(?:\s+(?:now|permanently|completely))?\s*[.!]?$/i.test(String(name ?? '').trim())
-      || /^(?:(?:don['’]t|do\s+not)\s+)?empty\s+(?:(?:all|any|every|each|everything|the\s+whole|the\s+entire|the\s+contents)(?:\s+\S+){0,3}?|(?:items|messages|e-?mails|mail|files|contents|attachments)(?:\s+(?!(?:is|are|was|were|will|be|been|stays?|remains?|appears?|shows?|shown|moves?|goes|saved|sent|found)\b)\S+){0,3}?)\s+(?:in|inside|from|of)\s+(?:(?:the|your|my|this)\s+)?(?:deleted\s+items|junk(?:\s+e-?mail)?|inbox|drafts|sent(?:\s+items|\s+mail)?|archive|outbox|folders?|mailbox)(?:\s+folders?)?(?:\s+(?:now|permanently|completely))?\s*[.!]?$/i.test(String(name ?? '').trim())
+      || /^(?:(?:don['’]t|do\s+not)\s+)?empty\s+(?:(?:all|any|every|each|everything|the\s+whole|the\s+entire|the\s+contents)(?:\s+\S+){0,3}?|(?:items|messages|e-?mails|mail|files|contents|attachments|conversations|threads|chats|notes|documents|photos)(?:\s+(?!(?:is|are|was|were|will|be|been|stays?|remains?|appears?|shows?|shown|moves?|goes|saved|sent|found)\b)\S+){0,3}?)\s+(?:in|inside|from|of)\s+(?:(?:the|your|my|this)\s+)?(?:deleted\s+items|junk(?:\s+e-?mail)?|inbox|drafts|sent(?:\s+items|\s+mail)?|archive|outbox|folders?|mailbox)(?:\s+folders?)?(?:\s+(?:now|permanently|completely))?\s*[.!]?$/i.test(String(name ?? '').trim())
       || /^clear(?:\s+\S+){0,2}?\s+storage(?:\s+now)?\s*[.!]?$/i.test(String(name ?? '').trim()))) classes.push('delete')
     // CU-627 r2 (cu-developer-two): leaving a group with any article / demonstrative / possessive, and the German separable e-mail
     // opt-out, as whole-label rules in each language - submit, as English 'Leave group' / 'Unsubscribe'.
