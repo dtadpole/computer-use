@@ -748,6 +748,40 @@ const CJK_SIGNOUT_ALL = Object.freeze([
   /^(?:(?:지금|즉시)\s+)?(?:모든\s|다른\s|이\s)?세션\s?(?:을|를)?\s?(?:(?:지금|즉시)\s+)?(?:취소|해지|철회|무효화)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|해|합니다)?\s*[.!]?$/u,
   /^(?:立即|现在|立刻|马上|馬上)?(?:撤销|撤銷|吊销|吊銷)(?:所有|全部|其他|其它|此|这个|這個)?(?:的)?(?:会话|會話|工作階段)\s*[.!。]?$/u,
 ])
+// CU-677 (strict English parity; the English facts are on the issue): making something public asks permission in the locales as
+// 'Make public' / 'Make this repository public' / 'Change visibility to public' do - the make / set verb with up to two slot words
+// before 'public', or visibility changed to public, both orders, a 'now'; negation asks too, as "Don't make public" does in English.
+// Past / status forms, the bare adjective and the make-private twins stay free.
+const pubNow = '(?:\\s+(?:maintenant|ahora|agora|ora|adesso|jetzt|nu|şimdi))?'
+const LOCALE_MAKE_PUBLIC = Object.freeze([
+  new RegExp(`^(?:ne\\s+pas\\s+)?(?:rendre|rendez|rends)\\s+(?:\\S+\\s+){0,2}?(?:public|publique|publics|publiques)(?:\\s+\\S+){0,3}?${pubNow}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^ne\\s+(?:rendez|rends)\\s+pas\\s+(?:\\S+\\s+){0,2}?(?:public|publique|publics|publiques)\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:définir|définissez|passer|passez|changer|changez)\\s+(?:\\S+\\s+){0,3}?(?:comme|en|à)\\s+(?:public|publique)${pubNow}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:no\\s+)?(?:hacer|haz|haga|hagan)\\s+(?:\\S+\\s+){0,2}?(?:público|pública|públicos|públicas)(?:\\s+\\S+){0,3}?${pubNow}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:no\\s+)?(?:establecer|establece|cambiar|cambia|cambie|configurar)\\s+(?:\\S+\\s+){0,3}?(?:como|a|en)\\s+(?:público|pública)${pubNow}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:não\\s+|nao\\s+)?(?:tornar|torne|torna|tornem)\\s+(?:\\S+\\s+){0,2}?(?:público|pública|públicos|públicas)(?:\\s+\\S+){0,3}?${pubNow}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:não\\s+|nao\\s+)?(?:definir|defina|alterar|altere|mudar|mude)\\s+(?:\\S+\\s+){0,3}?(?:como|para)\\s+(?:público|pública)${pubNow}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:non\\s+)?(?:rendi|rendere|rendete|renda)\\s+(?:\\S+\\s+){0,2}?(?:pubblico|pubblica|pubblici|pubbliche)(?:\\s+\\S+){0,3}?${pubNow}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:non\\s+)?(?:imposta|impostare|cambia|cambiare)\\s+(?:\\S+\\s+){0,3}?(?:come|a|su|in)\\s+(?:pubblico|pubblica)${pubNow}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:\\S+\\s+){0,2}?(?:jetzt\\s+|nicht\\s+)?öffentlich\\s+machen\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:mache|macht|machen\\s+sie)\\s+(?:\\S+\\s+){0,2}?öffentlich\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:\\S+\\s+){0,2}?auf\\s+öffentlich\\s+(?:setzen|stellen|ändern|umstellen)\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:\\S+\\s+){0,2}?(?:nu\\s+|niet\\s+)?openbaar\\s+maken\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:maak|maakt)\\s+(?:\\S+\\s+){0,2}?openbaar\\s*[.!]?$`, 'iu'),
+  /^(?:\S+\s+){0,1}?공개로\s?(?:전환|설정|변경)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|해|합니다)?\s*[.!]?$/u,
+  new RegExp(`^(?:\\S+\\s+){0,2}?herkese\\s+açık\\s+(?:yap|yapın|yapınız|hale\\s+getir|olarak\\s+ayarla)\\s*[.!]?$`, 'iu'),
+])
+let ruMakePublicRegex = null
+function namesRuMakePublic(name) {
+  if (!ruMakePublicRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const verb = any(['сделать', 'сделайте', 'сделай'])
+    const adj = any(['общедоступным', 'общедоступной', 'общедоступными', 'публичным', 'публичной', 'публичными'])
+    ruMakePublicRegex = new RegExp(`^(?:(?:${any(['не'])}\\s+)?${verb}|${any(['не'])}\\s+${any(['делать', 'делайте'])})\\s+(?:\\S+\\s+){0,2}?${adj}(?:\\s+${any(['сейчас'])})?\\s*[.!]?$`, 'iu')
+  }
+  return ruMakePublicRegex.test(normaliseName(String(name ?? '')).trim())
+}
 // CU-655: the Russian twin ('Очистить корзину', 'Очистите корзину', 'Корзину очистить', with 'не' as negation) is built from folded
 // words on first use: a judged name has passed normaliseText, which folds Cyrillic homoglyphs to Latin case by case, so each word
 // is folded as written, capitalised and in capitals, as namesWord does for its Cyrillic entries.
@@ -3215,6 +3249,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (grammarEligible && !classes.includes('delete') && LOCALE_HISTORY_CLEAR.some((re) => re.test(String(name ?? '').trim()))) classes.push('delete')
     // CU-655 (cu-developer-one's design): the locale twins of 'Empty trash' (LOCALE_TRASH_EMPTY above).
     if (grammarEligible && !classes.includes('delete') && (LOCALE_TRASH_EMPTY.some((re) => re.test(String(name ?? '').trim())) || namesRuTrashEmpty(name))) classes.push('delete')
+    // CU-677: locale make-public twins (LOCALE_MAKE_PUBLIC above).
+    if (grammarEligible && !classes.includes('permission') && (LOCALE_MAKE_PUBLIC.some((re) => re.test(String(name ?? '').trim())) || namesRuMakePublic(name))) classes.push('permission')
     // CU-673: ja / ko / zh sign-out-everywhere twins (CJK_SIGNOUT_ALL above).
     if (grammarEligible && !classes.includes('permission') && CJK_SIGNOUT_ALL.some((re) => re.test(String(name ?? '').trim()))) classes.push('permission')
     // CU-672: locale account-deactivation twins (LOCALE_ACCOUNT_DEACTIVATE above).
