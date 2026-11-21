@@ -724,6 +724,19 @@ const LOCALE_ACCOUNT_CLOSE = Object.freeze([
   /^(?:この|私の|あなたの|すべての|全ての)?アカウントを?(?:今すぐ|完全に)?(?:閉鎖(?:する|して(?:ください)?|します)?|解約(?:する|して(?:ください)?|します)?|閉じる|閉じて(?:ください)?|閉じます)\s*[.!。]?$/u,
   /^(?:내\s+|이\s+|모든\s+)?계정(?:들)?\s*(?:을|를)?\s*(?:(?:지금|즉시|영구적으로)\s+)?(?:(?:해지|폐쇄)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|해|합니다)?|닫기|닫으세요|닫아\s?주세요|닫아\s?줘|닫으십시오|닫아요|닫아|닫습니다)\s*[.!]?$/u,
 ])
+// CU-678 r2 (cu-developer-two, cu-developer-three 19:12Z): the Russian twin, folded - передать / передайте + право / права
+// владения / собственности / владельца, or владение / собственность.
+let ruTransferOwnershipRegex = null
+function namesRuTransferOwnership(name) {
+  if (!ruTransferOwnershipRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const verb = any(['передать', 'передайте', 'передай'])
+    const noun = `(?:${any(['право', 'права'])}\\s+${any(['владения', 'собственности', 'владельца'])}|${any(['владение', 'собственность'])})`
+    ruTransferOwnershipRegex = new RegExp(`^(?:${any(['сейчас'])}\\s+)?${verb}\\s+(?:\\S+\\s+){0,2}?${noun}(?:\\s+\\S+){0,3}?\\s*[.!]?$`, 'iu')
+  }
+  return ruTransferOwnershipRegex.test(normaliseName(String(name ?? '')).trim())
+}
 let ruAccountCloseRegex = null
 function namesRuAccountClose(name) {
   if (!ruAccountCloseRegex) {
@@ -852,6 +865,26 @@ function namesRuLeaveWorkspace(name) {
   }
   return ruLeaveWorkspaceRegex.test(normaliseName(String(name ?? '')).trim())
 }
+// CU-678 (cu-developer-one's design 16:57Z, strict English parity): transferring ownership asks permission - English 'Transfer <slot>
+// ownership' ('Transfer repository / team ownership', which asked purchase only) and the locale twins: the transfer verb with the
+// ownership noun, up to two slot words before it, an object or recipient after it ('… to X', '… of this repository'). The es / pt / it
+// purchase from the 'transfer' word stays (removing it is CU-609's rule-1). Negation, past / status forms and the bare noun stay free.
+const ownTail = '(?:\\s+\\S+){0,4}?'
+const TRANSFER_OWNERSHIP = Object.freeze([
+  new RegExp(`^transfer\\s+(?:\\S+\\s+){1,2}?ownership${ownTail}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:transférer|transférez|transfère)\\s+(?:\\S+\\s+){0,2}?propriété${ownTail}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:transferir|transfiere|transfiera|transfira|transfere)\\s+(?:\\S+\\s+){0,2}?(?:propiedad|propriedade|titularidad)${ownTail}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:trasferisci|trasferire|trasferite|trasferisca)\\s+(?:\\S+\\s+){0,2}?proprietà${ownTail}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:\\S+\\s+){0,4}?\\S*(?:eigentümerschaft|inhaberschaft|eigentum|besitzrechte)(?:\\s+(?!(?:wurde|wurden|ist|sind|wird|werden|nicht|kein|keine)(?:\\s|$))\\S+){0,3}?\\s+übertragen\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:übertrage|überträgt|übertragen\\s+sie)\\s+(?:\\S+\\s+){0,2}?\\S*(?:eigentümerschaft|inhaberschaft|eigentum)${ownTail}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:\\S+\\s+){0,4}?eigendom(?:\\s+(?!(?:is|werd|wordt|niet|geen)(?:\\s|$))\\S+){0,3}?\\s+overdragen\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:draag|draagt)\\s+(?:\\S+\\s+){0,2}?eigendom(?:\\s+\\S+){0,3}?\\s+over\\s*[.!]?$`, 'iu'),
+  /^(?:\S+\s*){0,3}?所有権を?(?:\S+\s*){0,2}?(?:譲渡|移転|移管)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
+  /^(?:\S+\s+){0,2}?소유권\s*(?:을|를)?\s*(?:\S+\s+){0,2}?(?:이전|양도)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+  /^(?:立即|马上|馬上|现在)?(?:转移|转让|轉移|轉讓)(?:\S{0,8}?)(?:的)?所有权\S{0,10}$/u,
+  /^(?:\S+\s*){0,4}?所有权(?:转移|转让)(?:给\S{1,10})?\s*[.!。]?$/u,
+  new RegExp(`^(?:\\S+\\s+){0,3}?sahipli[gğ]\\S*(?:\\s+\\S+){0,2}?\\s+(?:devret|devredin|devredil?iniz|devrediniz)\\s*[.!]?$`, 'iu'),
+])
 // CU-655: the Russian twin ('Очистить корзину', 'Очистите корзину', 'Корзину очистить', with 'не' as negation) is built from folded
 // words on first use: a judged name has passed normaliseText, which folds Cyrillic homoglyphs to Latin case by case, so each word
 // is folded as written, capitalised and in capitals, as namesWord does for its Cyrillic entries.
@@ -3321,6 +3354,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (grammarEligible && !classes.includes('delete') && (LOCALE_TRASH_EMPTY.some((re) => re.test(String(name ?? '').trim())) || namesRuTrashEmpty(name))) classes.push('delete')
     // CU-684: locale leave-workspace twins (LOCALE_LEAVE_WORKSPACE above).
     if (grammarEligible && !classes.includes('permission') && (LOCALE_LEAVE_WORKSPACE.some((re) => re.test(String(name ?? '').trim())) || namesRuLeaveWorkspace(name))) classes.push('permission')
+    // CU-678: transfer-ownership twins (TRANSFER_OWNERSHIP above).
+    if (grammarEligible && !classes.includes('permission') && (TRANSFER_OWNERSHIP.some((re) => re.test(String(name ?? '').trim())) || namesRuTransferOwnership(name))) classes.push('permission')
     // CU-677: locale make-public twins (LOCALE_MAKE_PUBLIC above).
     if (grammarEligible && !classes.includes('permission') && (LOCALE_MAKE_PUBLIC.some((re) => re.test(String(name ?? '').trim())) || namesRuMakePublic(name))) classes.push('permission')
     // CU-673: ja / ko / zh sign-out-everywhere twins (CJK_SIGNOUT_ALL above).
