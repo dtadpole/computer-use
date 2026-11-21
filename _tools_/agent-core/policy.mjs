@@ -694,14 +694,15 @@ function namesRuResetSettings(name) {
 // account asks delete in the locales as 'Deactivate account' / 'Disable my account' do - the verb with the account noun, its
 // determiners, up to two slot words ('Désactiver mon compte Facebook'), the time adverbs and both orders. Negation, past / status
 // forms, the bare verb and the verb with other objects stay free: each locale verb means both 'deactivate' and 'disable', and English
-// frees 'Disable' and 'Disable notifications'.
+// frees 'Disable' and 'Disable notifications'. r2 (cu-developer-two, cu-developer-one 10:24Z): the Italian elided article joins the
+// noun ('Disattivare l'account').
 const acctAdverb = '(?:\\s+(?:maintenant|définitivement|temporairement|ahora|definitivamente|temporalmente|agora|temporariamente|ora|definitivamente|temporaneamente|jetzt|dauerhaft|vorübergehend|nu|tijdelijk|permanent))?'
 const acctLead = '(?:(?:temporairement|définitivement|temporalmente|definitivamente|temporariamente|temporaneamente)\\s+)?'
 const LOCALE_ACCOUNT_DEACTIVATE = Object.freeze([
   new RegExp(`^${acctLead}(?:désactiver|désactivez|désactive)\\s+(?:\\S+\\s+){0,2}?compte(?:\\s+\\S+)?${acctAdverb}\\s*[.!]?$`, 'iu'),
   new RegExp(`^${acctLead}(?:desactivar|desactiva|desactive|desactivad|desactiven|deshabilitar|deshabilita|deshabilite|inhabilitar)\\s+(?:\\S+\\s+){0,2}?cuenta(?:\\s+\\S+)?${acctAdverb}\\s*[.!]?$`, 'iu'),
   new RegExp(`^${acctLead}(?:desativar|desative|desativa|desativem|desabilitar|desabilite)\\s+(?:\\S+\\s+){0,2}?conta(?:\\s+\\S+)?${acctAdverb}\\s*[.!]?$`, 'iu'),
-  new RegExp(`^${acctLead}(?:disattiva|disattivare|disattivate|disabilita|disabilitare|disabilitate)\\s+(?:\\S+\\s+){0,2}?account(?:\\s+\\S+)?${acctAdverb}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^${acctLead}(?:disattiva|disattivare|disattivate|disabilita|disabilitare|disabilitate)\\s+(?:\\S+\\s+){0,2}?(?:l['’]\\s*)?account(?:\\s+\\S+)?${acctAdverb}\\s*[.!]?$`, 'iu'),
   new RegExp(`^(?:\\S+\\s+){0,2}?(?:\\S*konto|account)${acctAdverb}\\s+deaktivieren\\s*[.!]?$`, 'iu'),
   new RegExp(`^(?:deaktiviere|deaktiviert|deaktivieren\\s+sie)\\s+(?:\\S+\\s+){0,2}?(?:\\S*konto|account)(?:\\s+\\S+)?${acctAdverb}\\s*[.!]?$`, 'iu'),
   new RegExp(`^(?:\\S+\\s+){0,2}?account${acctAdverb}\\s+(?:deactiveren|uitschakelen)\\s*[.!]?$`, 'iu'),
