@@ -724,6 +724,22 @@ function namesRuAccountDeactivate(name) {
   }
   return ruAccountDeactivateRegex.test(normaliseName(String(name ?? '')).trim())
 }
+// CU-673 (cu-developer-one's go 11:28Z, strict parity with the English set posted on the issue): signing out of all or other devices
+// or sessions asks permission in ja / ko / zh as 'Log out of all devices' does, with the polite forms and a 'now'; the bare verb, past
+// forms, negation and the single-device form stay free.
+const cjkJaAll = '(?:すべての|全ての|全|他の|ほかの|その他の)(?:他の|ほかの|すべての|全ての)?'
+const cjkKoAll = '(?:모든|다른)\\s?(?:모든|다른)?\\s?'
+const cjkZhAll = '(?:所有|全部|其他|其它)(?:其他|其它|所有)?(?:的)?'
+const cjkZhDevice = '(?:设备|裝置|設備|装置|会话|會話|工作階段)'
+const cjkZhVerb = '(?:退出(?:登录|登錄)?|登出|注销|註銷)'
+const CJK_SIGNOUT_ALL = Object.freeze([
+  new RegExp(`^(?:今すぐ)?${cjkJaAll}(?:デバイス|端末|機器|セッション)(?:から|で)(?:今すぐ)?(?:ログアウト|サインアウト)(?:する|して(?:ください)?|します)?\\s*[.!。]?$`, 'u'),
+  // r2 (cu-developer-three, cu-developer-one 11:44Z): the Korean noun-phrase form without 에서 ('모든 기기 로그아웃', as 'Log out all devices')
+  new RegExp(`^(?:지금\\s+)?${cjkKoAll}(?:기기|디바이스|장치|세션)(?:에서)?\\s?(?:지금\\s+)?(?:로그아웃|로그\\s아웃)(?:하기|하세요|해\\s?주세요|해\\s?줘|하십시오|해요|해|합니다)?\\s*[.!]?$`, 'u'),
+  new RegExp(`^(?:立即|现在|立即)?(?:从|從|在)?${cjkZhAll}${cjkZhDevice}(?:上|中)?${cjkZhVerb}\\s*[.!。]?$`, 'u'),
+  // r2 (cu-developer-one, cu-developer-two 11:42Z): zh verb-first ('退出所有设备', '登出所有裝置', '注销其他设备'); '注销账号' stays out
+  new RegExp(`^(?:立即|现在)?${cjkZhVerb}${cjkZhAll}${cjkZhDevice}\\s*[.!。]?$`, 'u'),
+])
 // CU-655: the Russian twin ('Очистить корзину', 'Очистите корзину', 'Корзину очистить', with 'не' as negation) is built from folded
 // words on first use: a judged name has passed normaliseText, which folds Cyrillic homoglyphs to Latin case by case, so each word
 // is folded as written, capitalised and in capitals, as namesWord does for its Cyrillic entries.
@@ -3191,6 +3207,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (grammarEligible && !classes.includes('delete') && LOCALE_HISTORY_CLEAR.some((re) => re.test(String(name ?? '').trim()))) classes.push('delete')
     // CU-655 (cu-developer-one's design): the locale twins of 'Empty trash' (LOCALE_TRASH_EMPTY above).
     if (grammarEligible && !classes.includes('delete') && (LOCALE_TRASH_EMPTY.some((re) => re.test(String(name ?? '').trim())) || namesRuTrashEmpty(name))) classes.push('delete')
+    // CU-673: ja / ko / zh sign-out-everywhere twins (CJK_SIGNOUT_ALL above).
+    if (grammarEligible && !classes.includes('permission') && CJK_SIGNOUT_ALL.some((re) => re.test(String(name ?? '').trim()))) classes.push('permission')
     // CU-672: locale account-deactivation twins (LOCALE_ACCOUNT_DEACTIVATE above).
     if (grammarEligible && !classes.includes('delete') && (LOCALE_ACCOUNT_DEACTIVATE.some((re) => re.test(String(name ?? '').trim())) || namesRuAccountDeactivate(name))) classes.push('delete')
     // CU-670: locale 'Reset settings' / factory-reset twins (LOCALE_RESET_SETTINGS above).
