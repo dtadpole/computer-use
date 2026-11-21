@@ -542,7 +542,11 @@ const LOCALE_TRASH_EMPTY = Object.freeze([
   /휴지통\S*\s*(?:\S+\s+){0,4}?(?:비우(?:기|세요|십시오|시겠습니까)?|비워(?:\s?줘|\s?주세요|요)?)(?=\s|$|[.!?])/u,
   // CU-657 (cu-developer-one's 17:00Z row): the nominal form takes the object particle before 실행 / 하기 ('휴지통 비우기를 실행',
   // '휴지통 비우기를 하기'), as '휴지통 비우기 실행' asks; a past or status verb after the particle stays free ('휴지통 비우기를 완료했습니다').
-  /휴지통\S*\s*(?:\S+\s+){0,4}?비우기[을를]\s*(?:실행|하기)(?=\s|$|[.!?])/u,
+  // CU-660 (cu-developer-one's go, 19:06Z): 시작 / 진행 (start / proceed) after the particle ask too ('휴지통 비우기를 시작'), with the
+  // imperative endings (r2, cu-researcher: '휴지통 비우기를 시작하세요', '…진행해 주세요', '…시작하십시오'; r3, cu-developer-three: the
+  // casual '…진행해줘', as CU-654's '지워줘'), and up to two words between the particle and the verb ('휴지통 비우기를 지금 시작',
+  // cu-developer-one's r3 ruling); 'in progress' (진행 중) and the past forms stay free.
+  /휴지통\S*\s*(?:\S+\s+){0,4}?비우기[을를]\s*(?:\S+\s+){0,2}?(?:실행|하기|시작|진행)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|해)?(?!\s*중)(?=\s|$|[.!?])/u,
   // CU-657 (cu-developer-one's design, 20 Nov 16:47Z): IT / NL / PT / TR with the same slots - up to four words before the noun
   // ('Svuota tutto il cestino', 'Esvaziar sua lixeira'), words between the noun and a final verb in NL and TR ('Prullenbak nu
   // legen', 'Çöp kutusunu şimdi boşalt'), a trailing adverb ('Svuotare il cestino ora'); negation follows its twin ('Non svuotare
@@ -554,7 +558,8 @@ const LOCALE_TRASH_EMPTY = Object.freeze([
   /^maak\s+(?:\S+\s+){0,4}?prullenbak(?:\s+\S+){0,3}?\s+leeg(?=\s|$|[.!])/i,
   /^(?:\S+\s+){0,4}?prullenbak(?:\s+\S+){0,4}?\s+(?:legen|leegmaken|leeg\s+maken)\s*[.!]?$/i,
   /^(?:não\s+|nao\s+)?(?:esvaziar|esvazie|esvazia|esvaziem)\s+(?:\S+\s+){0,4}?(?:lixeira|lixo|reciclagem)(?=\s|$|[.!])/i,
-  /^(?:\S+\s+){0,4}?çöp(?:\s+kutu\S*)?(?:\s+\S+){0,4}?\s+(?:boşalt|boşaltın|boşaltınız|temizle|temizleyin|temizleyiniz)\s*[.!]?$/iu,
+  // CU-660: the noun takes its case ending ('Çöpü tamamen boşalt'), as 'Çöp kutusunu' does.
+  /^(?:\S+\s+){0,4}?çöp\S*(?:\s+kutu\S*)?(?:\s+\S+){0,4}?\s+(?:boşalt|boşaltın|boşaltınız|temizle|temizleyin|temizleyiniz)\s*[.!]?$/iu,
   // The negative imperative needs the accusative object ('Çöp kutusunu boşaltma'): 'boşaltma' after a bare noun is the verbal noun
   // of a setting's name ('Otomatik çöp kutusu boşaltma', automatic trash emptying), which stays free.
   /^(?:\S+\s+){0,4}?(?:çöp\s+kutusunu|çöpü)(?:\s+\S+){0,4}?\s+(?:boşaltma|boşaltmayın|temizleme|temizlemeyin)\s*[.!]?$/iu,
@@ -3032,7 +3037,16 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // r2 (cu-developer-two, -three; cu-developer-one's list 18:42Z): the design's open slot of up to four words ('Empty the entire
     // inbox', 'Empty Clutter folder'), Outbox, one or two words before 'storage' ('Clear site storage'), and negation as its twin
     // ("Don't empty this folder" asks as "Don't empty trash" does).
-    if (grammarEligible && !classes.includes('delete') && (/^(?:(?:don['’]t|do\s+not)\s+)?empty(?:\s+\S+){0,4}?\s+(?:deleted\s+items|junk(?:\s+e-?mail)?|inbox|drafts|sent(?:\s+items|\s+mail)?|archive|outbox|folders?|mailbox)(?:\s+folders?)?(?:\s+(?:now|permanently|completely))?\s*[.!]?$/i.test(String(name ?? '').trim())
+    // Follow-up (cu-developer-three's finding, cu-developer-one 19:50Z): a preposition or a verb in the slot makes the folder a place,
+    // not the object - 'Empty message in Drafts', 'Empty state for inbox', 'Empty items stay in Inbox' stay free. r2 (cu-developer-three):
+    // quantified contents (all / any / every / each / everything / the whole / the entire, cu-developer-one) before in / from / of keep
+    // asking, as 'Empty everything in the trash' does ('Empty all items in Deleted Items', 'Empty all of my drafts'), with any words after
+    // the quantifier (r3, cu-developer-three: 'Empty all old items in Deleted Items', 'Empty all unread messages in Inbox'); a plural content noun
+    // first counts as a quantifier (cu-developer-one 23:37Z: 'Empty items from Deleted Items', 'Empty messages in Junk Email') unless a
+    // verb follows it ('Empty items stay in Inbox' stays free); 'of' after
+    // anything else names a place ('Empty copy of Inbox').
+    if (grammarEligible && !classes.includes('delete') && (/^(?:(?:don['’]t|do\s+not)\s+)?empty(?:\s+(?!(?:in|into|inside|within|for|from|of|to|on|at|under|is|are|was|were|will|be|been|stays?|remains?|appears?|shows?|shown|moves?|goes|saved|sent|found)\b)\S+){0,4}?\s+(?:deleted\s+items|junk(?:\s+e-?mail)?|inbox|drafts|sent(?:\s+items|\s+mail)?|archive|outbox|folders?|mailbox)(?:\s+folders?)?(?:\s+(?:now|permanently|completely))?\s*[.!]?$/i.test(String(name ?? '').trim())
+      || /^(?:(?:don['’]t|do\s+not)\s+)?empty\s+(?:(?:all|any|every|each|everything|the\s+whole|the\s+entire|the\s+contents)(?:\s+\S+){0,3}?|(?:items|messages|e-?mails|mail|files|contents|attachments)(?:\s+(?!(?:is|are|was|were|will|be|been|stays?|remains?|appears?|shows?|shown|moves?|goes|saved|sent|found)\b)\S+){0,3}?)\s+(?:in|inside|from|of)\s+(?:(?:the|your|my|this)\s+)?(?:deleted\s+items|junk(?:\s+e-?mail)?|inbox|drafts|sent(?:\s+items|\s+mail)?|archive|outbox|folders?|mailbox)(?:\s+folders?)?(?:\s+(?:now|permanently|completely))?\s*[.!]?$/i.test(String(name ?? '').trim())
       || /^clear(?:\s+\S+){0,2}?\s+storage(?:\s+now)?\s*[.!]?$/i.test(String(name ?? '').trim()))) classes.push('delete')
     // CU-627 r2 (cu-developer-two): leaving a group with any article / demonstrative / possessive, and the German separable e-mail
     // opt-out, as whole-label rules in each language - submit, as English 'Leave group' / 'Unsubscribe'.
