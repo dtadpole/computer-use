@@ -20,7 +20,9 @@ test('CU-659: emptying a folder and clearing storage ask delete, as their twins'
     // r3: any words after the quantifier
     'Empty all old items in Deleted Items', 'Empty all unread messages in Inbox', 'Empty every single message in Drafts', 'Empty everything older than a week in Archive', 'Empty all the old messages in the Junk Email folder', 'Empty every single file in this folder',
     // a plural content noun first counts as a quantifier
-    'Empty items from Deleted Items', 'Empty messages in Junk Email', 'Empty files in this folder', 'Empty attachments from Sent Items', 'Empty conversations in this folder', 'Empty threads in Archive', 'Empty notes in this folder', 'Empty documents from Archive', 'Empty photos in this folder']) assert.ok(click(name).includes('delete'), name)
+    'Empty items from Deleted Items', 'Empty messages in Junk Email', 'Empty files in this folder', 'Empty attachments from Sent Items', 'Empty conversations in this folder', 'Empty threads in Archive', 'Empty notes in this folder', 'Empty documents from Archive', 'Empty photos in this folder',
+    // CU-664: adjectives before the plural noun, and Spam as a folder
+    'Empty old documents from this folder', 'Empty unread messages in Inbox', 'Empty all messages in Spam', 'Empty unread messages in Spam', 'Empty old read messages in the Junk Email folder', 'Empty large files in Archive']) assert.ok(click(name).includes('delete'), name)
 })
 
 test('CU-659 controls: status / past forms, carts, caches, open / view and bare nouns stay free', () => {
@@ -29,5 +31,5 @@ test('CU-659 controls: status / past forms, carts, caches, open / view and bare 
     // five slot words stay out, as in CU-644
     'Empty Chrome Android sync device backup folder',
     // follow-up: a preposition or verb in the slot names a place, not the object
-    'Empty message in Drafts', 'Empty state for inbox', 'Empty items stay in Inbox', 'Empty subject line in Sent Items', 'Empty draft saved to Drafts', 'Empty results from Archive', 'Empty page is shown in folder', 'Empty copy of Inbox', 'Empty preview of Drafts', 'Empty old message in the Junk Email folder']) assert.deepEqual(click(name), [], name)
+    'Empty message in Drafts', 'Empty state for inbox', 'Empty items stay in Inbox', 'Empty subject line in Sent Items', 'Empty draft saved to Drafts', 'Empty results from Archive', 'Empty page is shown in folder', 'Empty copy of Inbox', 'Empty preview of Drafts', 'Empty old message in the Junk Email folder', 'Empty message in Spam', 'Old documents in this folder', 'Empty new folder in Archive', 'Mark as spam']) assert.deepEqual(click(name), [], name)
 })

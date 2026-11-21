@@ -21,7 +21,7 @@ test('CU-663: locale empty-folder and clear-storage rows ask delete as their Eng
  'フォルダーを空にする', 'フォルダを空にしてください', '削除済みアイテムを空にする', '迷惑メールを空にする', 'フォルダーを今すぐ空にする',
  '폴더 비우기', '폴더를 비우세요', '폴더 비워 주세요', '지운 편지함 비우기', '정크 메일 비우기', '폴더 비우기를 실행', '폴더를 비우지 마세요',
  'Klasörü boşalt', 'Klasörü şimdi boşaltın', 'Silinmiş Öğeler klasörünü boşalt', 'Gereksiz E-posta klasörünü boşalt', 'Klasörü boşaltma', 'Tüm klasörü boşalt',
- 'Limpar armazenamento', 'Limpar o armazenamento', 'Очистить хранилище', 'Depolamayı temizle']) assert.ok(click(name).includes('delete'), name)
+ 'Vider le spam', 'Vaciar spam', 'Esvaziar spam', 'Svuota spam', 'Spam leeren', 'Spam legen', 'Limpar armazenamento', 'Limpar o armazenamento', 'Очистить хранилище', 'Depolamayı temizle']) assert.ok(click(name).includes('delete'), name)
 })
 
 test('CU-663 controls: past / status forms, carts, open / new folder, place words and bare names stay free', () => {
