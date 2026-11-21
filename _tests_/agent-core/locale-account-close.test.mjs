@@ -22,3 +22,9 @@ test('CU-676 controls: negation, past / status forms, the bare verb and other ob
  'Не закрывать аккаунт', 'Аккаунт закрыт', 'Закрыть окно', 'Закрыть', 'アカウントを閉鎖しました', 'アカウントは閉鎖されました', 'ウィンドウを閉じる', '계정이 해지되었습니다', '계정을 해지하지 마세요', '창 닫기',
  "Don't close my account", 'Account closed', 'Close window']) assert.deepEqual(click(name), [], name)
 })
+
+test('CU-676 r2: the plural account nouns ask as English \'Close accounts\' does, and ru счёт joins', () => {
+  for (const name of ['Konten schließen', 'Alle Konten schließen', 'Schließen Sie Ihre Konten', 'Benutzerkonten schließen', 'Konten kündigen', 'Fermer les comptes', 'Fermer mes comptes', 'Cerrar cuentas',
+    'Cerrar mis cuentas', 'Закрыть аккаунты', 'Закрыть счёт', 'Закрыть счет', 'Закрыть счета', 'Закрыть учётные записи', '계정들 해지', '계정들을 해지하세요', 'Close accounts']) assert.ok(click(name).includes('delete'), name)
+  for (const name of ['Счёт оплачен', 'Счёт', 'Konten', 'Comptes fermés', 'Cuentas cerradas', 'Konten geschlossen', 'Konten nicht schließen']) assert.deepEqual(click(name), [], name)
+})
