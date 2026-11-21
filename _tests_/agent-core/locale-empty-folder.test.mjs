@@ -31,3 +31,10 @@ test('CU-663 controls: past / status forms, carts, open / new folder, place word
  'Папка очищена', 'Папка пуста', 'Очистить корзину покупок', 'Новая папка', 'Открыть папку', 'フォルダーは空です', 'フォルダーを空にしました', '新しいフォルダー', '폴더가 비어 있습니다', '폴더를 비웠습니다', '새 폴더',
  'Klasör boşaltıldı', 'Klasör boş', 'Sepeti boşalt', 'Yeni klasör', 'Armazenamento limpo', 'Хранилище очищено', 'Depolama temizlendi', 'Limpar cache', 'Folder']) assert.deepEqual(click(name), [], name)
 })
+
+test('CU-665: a plural content noun first keeps asking before the place word in each locale, as the English plural rule does', () => {
+  for (const name of ['Vider les messages du dossier Spam', 'Vider les éléments du dossier', 'Vider les anciens messages du dossier', 'Vaciar los mensajes de la carpeta', 'Esvaziar as mensagens da pasta',
+    'Svuota i messaggi della cartella', 'Die Nachrichten im Ordner leeren', 'Leere die Nachrichten im Ordner', 'De berichten in de map legen', 'Leeg de berichten in de map', 'Очистить сообщения в папке', 'Очистить файлы в папке']) assert.ok(click(name).includes('delete'), name)
+  for (const name of ['Vider le message dans le dossier', 'Message vide dans le dossier', 'Vaciar mensaje en carpeta', 'Esvaziar a mensagem da pasta', 'Leere Nachricht im Ordner', 'Lege bericht in de map',
+    'Пустое письмо в папке', 'Les messages du dossier']) assert.deepEqual(click(name), [], name)
+})

@@ -568,21 +568,23 @@ const LOCALE_TRASH_EMPTY = Object.freeze([
 // Items / Junk folder) asks delete as 'Empty folder' does, with CU-655's axes: up to four slot words in either order, a trailing
 // adverb, negation as its twin, the formal / casual endings; and CU-661's rule - a preposition in the slot names a place (free)
 // unless the slot starts with a quantifier or 'the contents' (asks). Past / status forms, carts, open / new folder and the bare
-// names stay free. 'Clear storage' twins (pt / ru / tr) ask as 'Clear data'.
+// names stay free. 'Clear storage' twins (pt / ru / tr) ask as 'Clear data'. CU-665 (cu-developer-one's go 04:09Z): a plural content noun
+// first (with its article and one adjective) counts as a quantifier in each locale, as CU-661's English rule does ('Vider les messages
+// du dossier Spam', 'Die Nachrichten im Ordner leeren', 'Очистить письма в папке').
 const folderSlot = (preps, quants) => `(?:(?:${quants})(?:\\s+\\S+){0,4}?\\s+|(?:(?!(?:${preps})(?:\\s|$))\\S+\\s+){0,4}?)`
 const folderVerbFirst = (neg, verbs, preps, quants, nouns) => new RegExp(`^(?:${neg})?(?:${verbs})\\s+${folderSlot(preps, quants)}(?:${nouns})(?=\\s|$|[.!?])`, 'iu')
 const folderVerbLast = (preps, quants, nouns, verbs) => new RegExp(`^${folderSlot(preps, quants)}(?:${nouns})(?:\\s+\\S+){0,4}?\\s+(?:${verbs})\\s*[.!]?$`, 'iu')
 const LOCALE_FOLDER_EMPTY = Object.freeze([
-  folderVerbFirst('ne\\s+pas\\s+', 'vider|videz|vide', 'dans|de|du|des|pour|depuis|en|sur|à|au|aux', 'tout|tous|toutes|le\\s+contenu|tout\\s+le\\s+contenu', 'dossier|éléments\\s+supprimés|courrier\\s+indésirable|spam'),
+  folderVerbFirst('ne\\s+pas\\s+', 'vider|videz|vide', 'dans|de|du|des|pour|depuis|en|sur|à|au|aux', 'tout|tous|toutes|le\\s+contenu|tout\\s+le\\s+contenu|(?:(?:les|des|vos|tes|mes)\\s+)?(?:\\S+\\s+)?(?:messages|éléments|fichiers|e-mails|courriels|conversations|documents|photos)', 'dossier|éléments\\s+supprimés|courrier\\s+indésirable|spam'),
   /^ne\s+(?:videz|vide)\s+pas\s+(?:\S+\s+){0,4}?(?:dossier|éléments\s+supprimés|courrier\s+indésirable)(?=\s|$|[.!?])/iu,
-  folderVerbFirst('no\\s+', 'vaciar|vacía|vacia|vacíe|vacie|vaciad|vacíen|vacien|vacíes|vacies', 'en|de|del|para|desde', 'todo|todos|todas|el\\s+contenido|todo\\s+el\\s+contenido', 'carpeta|elementos\\s+eliminados|correo\\s+no\\s+deseado|spam'),
-  folderVerbFirst('(?:não|nao)\\s+', 'esvaziar|esvazie|esvazia|esvaziem|limpar|limpe|limpa|limpem', 'em|no|na|nos|nas|de|do|da|dos|das|para', 'tudo|todo|toda|todos|todas|o\\s+conteúdo|todo\\s+o\\s+conteúdo', 'pasta|itens\\s+excluídos|lixo\\s+eletrônico|spam'),
-  folderVerbFirst('non\\s+', 'svuota|svuotare|svuotate|svuoti', 'in|nel|nella|di|del|della|dal|dalla|per|da', 'tutto|tutti|tutte|il\\s+contenuto|tutto\\s+il\\s+contenuto', 'cartella|posta\\s+eliminata|posta\\s+indesiderata|spam'),
-  folderVerbLast('in|im|aus|vom|von|für', 'alle|alles|den\\s+gesamten|den\\s+ganzen|den\\s+inhalt|gesamten|ganzen', '\\S*ordner|gelöschte\\s+elemente|junk-e-mail|spam', 'leeren|entleeren'),
-  folderVerbFirst('nicht\\s+', 'leere|leert|leeren\\s+sie|entleere|entleert|entleeren\\s+sie', 'in|im|aus|vom|von|für', 'alle|alles|den\\s+gesamten|den\\s+ganzen|den\\s+inhalt', '\\S*ordner|gelöschte\\s+elemente|junk-e-mail|spam'),
-  folderVerbFirst('niet\\s+', 'leeg|leegt|legen|leegmaken', 'in|uit|van|voor', 'alle|alles|de\\s+hele|de\\s+inhoud|hele', 'map|verwijderde\\s+items|ongewenste\\s+e-mail|spam'),
+  folderVerbFirst('no\\s+', 'vaciar|vacía|vacia|vacíe|vacie|vaciad|vacíen|vacien|vacíes|vacies', 'en|de|del|para|desde', 'todo|todos|todas|el\\s+contenido|todo\\s+el\\s+contenido|(?:(?:los|las|tus|sus|mis)\\s+)?(?:\\S+\\s+)?(?:mensajes|elementos|archivos|correos|conversaciones|documentos|fotos)', 'carpeta|elementos\\s+eliminados|correo\\s+no\\s+deseado|spam'),
+  folderVerbFirst('(?:não|nao)\\s+', 'esvaziar|esvazie|esvazia|esvaziem|limpar|limpe|limpa|limpem', 'em|no|na|nos|nas|de|do|da|dos|das|para', 'tudo|todo|toda|todos|todas|o\\s+conteúdo|todo\\s+o\\s+conteúdo|(?:(?:os|as|seus|suas|meus|minhas)\\s+)?(?:\\S+\\s+)?(?:mensagens|itens|arquivos|e-mails|conversas|documentos|fotos)', 'pasta|itens\\s+excluídos|lixo\\s+eletrônico|spam'),
+  folderVerbFirst('non\\s+', 'svuota|svuotare|svuotate|svuoti', 'in|nel|nella|di|del|della|dal|dalla|per|da', 'tutto|tutti|tutte|il\\s+contenuto|tutto\\s+il\\s+contenuto|(?:(?:i|gli|le|tuoi|miei)\\s+)?(?:\\S+\\s+)?(?:messaggi|elementi|email|conversazioni|documenti)', 'cartella|posta\\s+eliminata|posta\\s+indesiderata|spam'),
+  folderVerbLast('in|im|aus|vom|von|für', 'alle|alles|den\\s+gesamten|den\\s+ganzen|den\\s+inhalt|gesamten|ganzen|(?:(?:die|ihre|deine|meine)\\s+)?(?:\\S+\\s+)?(?:nachrichten|elemente|dateien|e-mails|mails|unterhaltungen|dokumente|fotos)', '\\S*ordner|gelöschte\\s+elemente|junk-e-mail|spam', 'leeren|entleeren'),
+  folderVerbFirst('nicht\\s+', 'leere|leert|leeren\\s+sie|entleere|entleert|entleeren\\s+sie', 'in|im|aus|vom|von|für', 'alle|alles|den\\s+gesamten|den\\s+ganzen|den\\s+inhalt|(?:(?:die|ihre|deine|meine)\\s+)?(?:\\S+\\s+)?(?:nachrichten|elemente|dateien|e-mails|mails|unterhaltungen|dokumente|fotos)', '\\S*ordner|gelöschte\\s+elemente|junk-e-mail|spam'),
+  folderVerbFirst('niet\\s+', 'leeg|leegt|legen|leegmaken', 'in|uit|van|voor', 'alle|alles|de\\s+hele|de\\s+inhoud|hele|(?:(?:de|je|uw|mijn)\\s+)?(?:\\S+\\s+)?(?:berichten|items|bestanden|e-mails|gesprekken|documenten)', 'map|verwijderde\\s+items|ongewenste\\s+e-mail|spam'),
   /^maak\s+(?:\S+\s+){0,4}?(?:map|verwijderde\s+items|ongewenste\s+e-mail)(?:\s+\S+){0,3}?\s+leeg(?=\s|$|[.!])/iu,
-  folderVerbLast('in|uit|van|voor', 'alle|alles|de\\s+hele|de\\s+inhoud|hele', 'map|verwijderde\\s+items|ongewenste\\s+e-mail|spam', 'legen|leegmaken|leeg\\s+maken'),
+  folderVerbLast('in|uit|van|voor', 'alle|alles|de\\s+hele|de\\s+inhoud|hele|(?:(?:de|je|uw|mijn)\\s+)?(?:\\S+\\s+)?(?:berichten|items|bestanden|e-mails|gesprekken|documenten)', 'map|verwijderde\\s+items|ongewenste\\s+e-mail|spam', 'legen|leegmaken|leeg\\s+maken'),
   /(?:フォルダー?|削除済みアイテム|迷惑メール).{0,10}?空に(?!し(?:ました|た)|され|済|完了|中|なって|なりました)/u,
   /(?:폴더|지운\s?편지함|정크\s?메일)\S*\s*(?:\S+\s+){0,4}?(?:비우(?:기|세요|십시오)?|비워(?:\s?줘|\s?주세요|요)?|비우지\s?마(?:세요|십시오)?)(?=\s|$|[.!?])/u,
   /(?:폴더|지운\s?편지함|정크\s?메일)\S*\s*(?:\S+\s+){0,4}?비우기[을를]\s*(?:\S+\s+){0,2}?(?:실행|하기|시작|진행)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|해)?(?!\s*중)(?=\s|$|[.!?])/u,
@@ -601,7 +603,7 @@ function namesRuFolderEmpty(name) {
     const verb = any(['очистить', 'очисти', 'очистите', 'очищать', 'очищай', 'очищайте'])
     const noun = `(?:${any(['папку', 'папке', 'удалённые', 'удаленные', 'хранилище'])}|${any(['нежелательную'])}\\s+${any(['почту'])})`
     const prep = any(['в', 'из', 'для', 'с', 'во', 'со'])
-    const quant = any(['все', 'всё', 'всю', 'весь', 'содержимое'])
+    const quant = any(['все', 'всё', 'всю', 'весь', 'содержимое', 'письма', 'сообщения', 'файлы', 'элементы', 'документы'])
     const slot = `(?:${quant}(?:\\s+\\S+){0,4}?\\s+|(?:(?!${prep}(?:\\s|$))\\S+\\s+){0,4}?)`
     ruFolderEmptyRegex = new RegExp(`^(?:${any(['не'])}\\s+)?(?:${verb}\\s+${slot}${noun}(?=\\s|$|[.!?«»"])|${noun}\\s+(?:\\S+\\s+){0,4}?${verb}(?=\\s|$|[.!]))`, 'iu')
   }
