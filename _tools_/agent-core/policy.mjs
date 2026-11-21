@@ -898,6 +898,42 @@ const LOCALE_REMOVE_MEMBER = Object.freeze([
 const LOCALE_KICK_MEMBER = Object.freeze([
   /^(?:exclure|excluez|exclus)\s+(?:\S+\s+){0,2}?(?:l['’]\s*)?(?:membres?|utilisateurs?|participants?)(?:\s+\S+){0,3}?\s*[.!]?$/iu,
 ])
+// CU-683 (strict English parity; the English facts are on the issue): revoking access asks permission in the locales as 'Revoke access'
+// / 'Revoke permissions' do - the revoke verb with the access or permission noun, both orders, a 'for X' / possessive slot, 'all' and a
+// 'now'. Cancel-sense verbs (取り消す / 취소 / 撤销) count only with the noun, as in CU-675; remove-sense verbs (retirer, 削除, kaldır) are
+// left out, since English 'Remove access' asks delete, not permission. Negation, past / status and bare nouns stay free.
+const revokeTail = '(?:\\s+\\S+){0,3}?'
+const LOCALE_REVOKE_ACCESS = Object.freeze([
+  new RegExp(`^(?:révoquer|révoquez|révoque)\\s+(?:\\S+\\s+){0,2}?(?:l['’]\\s*)?(?:accès|autorisations?|permissions?)${revokeTail}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:révoquer|révoquez|révoque)\\s+(?:l['’])(?:accès)${revokeTail}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:revocar|revoca|revoque|revoquen)\\s+(?:\\S+\\s+){0,2}?(?:acceso|accesos|permisos?|autorizaci[oó]n(?:es)?)${revokeTail}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:revogar|revogue|revoga)\\s+(?:\\S+\\s+){0,2}?(?:acesso|acessos|permiss[aã]o|permiss[oõ]es|autoriza[cç][aã]o)${revokeTail}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:revoca|revocare|revocate)\\s+(?:\\S+\\s+){0,2}?(?:l['’]\\s*)?(?:accesso|accessi|autorizzazion[ei]|permess[oi])${revokeTail}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:(?:den|die|alle|ihren|seinen|meinen)\\s+)?(?:\\S+\\s+)?(?:\\S*zugriff|\\S*zugang|\\S*berechtigung(?:en)?|zugriffsrechte)(?:\\s+(?!(?:wurde|wurden|ist|sind|wird|nicht)(?:\\s|$))\\S+){0,2}?\\s+(?:widerrufen|entziehen|zurückziehen)\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:widerrufen\\s+sie|widerrufe|entziehen\\s+sie|entziehe)\\s+(?:\\S+\\s+){0,2}?(?:\\S*zugriff|\\S*zugang|\\S*berechtigung(?:en)?)${revokeTail}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:(?:de|alle|zijn|haar|mijn)\\s+)?(?:\\S+\\s+)?(?:toegang|machtigingen?|rechten|toestemming)(?:\\s+(?!(?:is|werd|wordt|niet)(?:\\s|$))\\S+){0,2}?\\s+intrekken\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:trek)\\s+(?:\\S+\\s+){0,2}?(?:toegang|machtigingen?|rechten)(?:\\s+\\S+){0,2}?\\s+in\\s*[.!]?$`, 'iu'),
+  /^(?:今すぐ)?(?:すべての|全ての)?(?:\S+の)?(?:アクセス(?:権(?:限)?)?|権限)を?(?:今すぐ)?(?:取り消す|取り消して(?:ください)?|取り消し|取消|無効にする|無効化|剥奪|はく奪)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
+  /^(?:(?:지금|즉시)\s+)?(?:모든\s+)?(?:\S+\s+)?(?:액세스|접근|액세스\s?권한|접근\s?권한|권한)\s*(?:을|를)?\s*(?:(?:지금|즉시)\s+)?(?:취소|철회|해제|회수|박탈)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+  /^(?:立即|马上|馬上|现在)?(?:撤销|撤銷|吊销|吊銷|收回|取消)(?:\S{0,8}?的)?(?:所有|全部)?(?:访问权限|訪問權限|访问权|存取權(?:限)?|访问|权限|權限|授权|授權)\s*[.!。]?$/u,
+  // go (cu-developer-one 22:32Z): English bare 'Revoke' asks, so the unambiguous bare revoke verbs ask too; the cancel-sense verbs
+  // (取り消す / 취소 / 撤销 / iptal et) stay noun-bound
+  new RegExp(`^(?:révoquer|révoquez|revocar|revoque|revogar|revogue|revocare|revoca|widerrufen|intrekken)${pubNow}\\s*[.!]?$`, 'iu'),
+  // r2 (cu-developer-two, cu-developer-one 22:58Z): /iu does not fold the Turkish dotted capital İ, so it is listed here and the
+  // wiring below also tests the name with İ folded to i (all-caps Turkish, 'TÜM İZİNLERİ GERİ AL')
+  new RegExp(`^(?:tüm\\s+|bütün\\s+)?(?:\\S+\\s+)?(?:erişimi|erişimini|[iİ]zinleri|[iİ]zinlerini|yetkiyi|yetkileri)\\s+(?:şimdi\\s+)?(?:[iİ]ptal\\s+et|[iİ]ptal\\s+edin|geri\\s+al|geri\\s+alın)\\s*[.!]?$`, 'iu'),
+])
+let ruRevokeAccessRegex = null
+function namesRuRevokeAccess(name) {
+  if (!ruRevokeAccessRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const verb = any(['отозвать', 'отзовите', 'отзови'])
+    const noun = any(['доступ', 'разрешения', 'разрешение', 'права', 'полномочия'])
+    ruRevokeAccessRegex = new RegExp(`^(?:${any(['сейчас'])}\\s+)?${verb}(?:\\s+(?:\\S+\\s+){0,2}?${noun}(?:\\s+\\S+){0,3}?)?\\s*[.!]?$`, 'iu')
+  }
+  return ruRevokeAccessRegex.test(normaliseName(String(name ?? '')).trim())
+}
 // CU-655: the Russian twin ('Очистить корзину', 'Очистите корзину', 'Корзину очистить', with 'не' as negation) is built from folded
 // words on first use: a judged name has passed normaliseText, which folds Cyrillic homoglyphs to Latin case by case, so each word
 // is folded as written, capitalised and in capitals, as namesWord does for its Cyrillic entries.
@@ -3368,6 +3404,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // CU-686: fr / ko remove-member twins (delete) and fr 'Exclure le membre' (permission, as 'Kick member').
     if (grammarEligible && !classes.includes('delete') && LOCALE_REMOVE_MEMBER.some((re) => re.test(String(name ?? '').trim()))) classes.push('delete')
     if (grammarEligible && !classes.includes('permission') && LOCALE_KICK_MEMBER.some((re) => re.test(String(name ?? '').trim()))) classes.push('permission')
+    // CU-683: locale revoke-access twins (LOCALE_REVOKE_ACCESS above).
+    if (grammarEligible && !classes.includes('permission') && (LOCALE_REVOKE_ACCESS.some((re) => re.test(String(name ?? '').trim().replace(/İ/g, 'i'))) || namesRuRevokeAccess(name))) classes.push('permission')
     // CU-684: locale leave-workspace twins (LOCALE_LEAVE_WORKSPACE above).
     if (grammarEligible && !classes.includes('permission') && (LOCALE_LEAVE_WORKSPACE.some((re) => re.test(String(name ?? '').trim())) || namesRuLeaveWorkspace(name))) classes.push('permission')
     // CU-678: transfer-ownership twins (TRANSFER_OWNERSHIP above).
