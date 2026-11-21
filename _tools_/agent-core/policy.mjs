@@ -903,6 +903,9 @@ const LOCALE_REVOKE_ACCESS = Object.freeze([
   /^(?:今すぐ)?(?:すべての|全ての)?(?:\S+の)?(?:アクセス(?:権(?:限)?)?|権限)を?(?:今すぐ)?(?:取り消す|取り消して(?:ください)?|取り消し|取消|無効にする|無効化|剥奪|はく奪)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
   /^(?:(?:지금|즉시)\s+)?(?:모든\s+)?(?:\S+\s+)?(?:액세스|접근|액세스\s?권한|접근\s?권한|권한)\s*(?:을|를)?\s*(?:(?:지금|즉시)\s+)?(?:취소|철회|해제|회수|박탈)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
   /^(?:立即|马上|馬上|现在)?(?:撤销|撤銷|吊销|吊銷|收回|取消)(?:\S{0,8}?的)?(?:所有|全部)?(?:访问权限|訪問權限|访问权|存取權(?:限)?|访问|权限|權限|授权|授權)\s*[.!。]?$/u,
+  // go (cu-developer-one 22:32Z): English bare 'Revoke' asks, so the unambiguous bare revoke verbs ask too; the cancel-sense verbs
+  // (取り消す / 취소 / 撤销 / iptal et) stay noun-bound
+  new RegExp(`^(?:révoquer|révoquez|revocar|revoque|revogar|revogue|revocare|revoca|widerrufen|intrekken)${pubNow}\\s*[.!]?$`, 'iu'),
   new RegExp(`^(?:tüm\\s+|bütün\\s+)?(?:\\S+\\s+)?(?:erişimi|erişimini|izinleri|izinlerini|yetkiyi|yetkileri)\\s+(?:şimdi\\s+)?(?:iptal\\s+et|iptal\\s+edin|geri\\s+al|geri\\s+alın)\\s*[.!]?$`, 'iu'),
 ])
 let ruRevokeAccessRegex = null
@@ -912,7 +915,7 @@ function namesRuRevokeAccess(name) {
     const any = (words) => `(?:${words.flatMap(folds).join('|')})`
     const verb = any(['отозвать', 'отзовите', 'отзови'])
     const noun = any(['доступ', 'разрешения', 'разрешение', 'права', 'полномочия'])
-    ruRevokeAccessRegex = new RegExp(`^(?:${any(['сейчас'])}\\s+)?${verb}\\s+(?:\\S+\\s+){0,2}?${noun}(?:\\s+\\S+){0,3}?\\s*[.!]?$`, 'iu')
+    ruRevokeAccessRegex = new RegExp(`^(?:${any(['сейчас'])}\\s+)?${verb}(?:\\s+(?:\\S+\\s+){0,2}?${noun}(?:\\s+\\S+){0,3}?)?\\s*[.!]?$`, 'iu')
   }
   return ruRevokeAccessRegex.test(normaliseName(String(name ?? '')).trim())
 }

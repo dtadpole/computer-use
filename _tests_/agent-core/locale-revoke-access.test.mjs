@@ -16,6 +16,11 @@ test('CU-683: locale revoke-access rows ask permission as their English twins (p
 })
 
 test('CU-683 controls: negation, past / status forms, bare nouns and bare cancel-sense verbs do not take permission', () => {
-  for (const name of ['Accès', 'Accès révoqué', 'Ne pas révoquer l’accès', 'Révoquer', 'Acceso revocado', 'No revocar el acceso', 'Zugriff', 'Zugriff widerrufen.x', 'Zugriff wurde widerrufen', 'Zugriff nicht widerrufen', 'Toegang ingetrokken', 'Доступ отозван',
+  for (const name of ['Accès', 'Accès révoqué', 'Ne pas révoquer l’accès', 'Acceso revocado', 'No revocar el acceso', 'Zugriff', 'Zugriff widerrufen.x', 'Zugriff wurde widerrufen', 'Zugriff nicht widerrufen', 'Toegang ingetrokken', 'Доступ отозван',
  'Не отзывать доступ', 'アクセス', 'アクセスを取り消しました', '取り消す', '액세스 권한이 취소되었습니다', '취소', '访问权限已撤销', '撤销', '取消', 'Erişim iptal edildi', 'Access revoked', "Don't revoke access", 'Access']) assert.ok(!click(name).includes('permission'), name)
+})
+
+test('CU-683 go (22:32Z): the unambiguous bare revoke verbs ask as English bare \'Revoke\' does; cancel-sense bare verbs stay free', () => {
+  for (const name of ['Révoquer', 'Revocar', 'Revogar', 'Revoca', 'Widerrufen', 'Intrekken', 'Отозвать', 'Отзовите', 'Revoke']) assert.ok(click(name).includes('permission'), name)
+  for (const name of ['取り消す', '취소', '撤销', 'İptal et', 'Révoqué', 'Revocado', 'Отозвано']) assert.ok(!click(name).includes('permission'), name)
 })
