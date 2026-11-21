@@ -1,7 +1,7 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-21T09:23:00Z
+modified: 2026-11-21T10:41:00Z
 level: L1
 version: 3.68.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
@@ -19,14 +19,14 @@ session worktree plus `--review` worktrees; no desktop runs. State at 09:23Z, 21
 
 ## Landed
 
-- CU-483..561, CU-462, CU-429, CU-655 (#1161, closed live); design 0.4.x (#957..#1199; 0.4.20 on main; 0.4.21 #1205 queued).
+- CU-483..561, CU-462, CU-429, CU-655 (#1161, closed live); design 0.4.x (#957..#1205; 0.4.21 on main).
   Owner OKs, landed: cu-researcher's CU-604..654, CU-659, CU-661, CU-663..665, CU-668 / 669 (closed
-  live), CU-670 (landed, close pending); cu-developer-two's #1072, CU-657, CU-660.
+  live), CU-670 (closed live); cu-developer-two's #1072, CU-657, CU-660.
 
 ## In progress
 
 - CU-609 (#1000): green, held for D-108 rule-1.
-- Design 0.4.22 drafted (CU-670 clause, three CU-668 verbs): after the CU-670 live close and #1205.
+- Design 0.4.22 (CU-670 clause, three CU-668 verbs) with this handover.
 - Designs given: CU-672 (strict English parity; baselined 0/11), CU-673 after it, CU-671 (follow-ups),
   CU-667 (rule-1; I recommend yes).
 
