@@ -18,7 +18,9 @@ test('CU-668: locale clear-data rows ask delete as their English twin (parity)',
  'Browsegegevens legen', 'Sitegegevens leegmaken', 'Leeg de browsegegevens', 'Browsegegevens nu wissen',
  'Очистить данные сайта', 'Очистите данные браузера', 'Данные сайта очистить', 'Не очищать данные сайта', 'ОЧИСТИТЬ ДАННЫЕ САЙТА',
  'Tarama verilerini temizle', 'Site verilerini temizleyin', 'Tarama verilerini şimdi temizle',
- '閲覧データをクリア', '閲覧データをクリアする', 'サイトデータをクリアしてください', '사이트 데이터 비우기', '사이트 데이터를 비워 주세요', 'Clear browsing data']) assert.ok(click(name).includes('delete'), name)
+ '閲覧データをクリア', '閲覧データをクリアする', 'サイトデータをクリアしてください', '사이트 데이터 비우기', '사이트 데이터를 비워 주세요', 'Clear browsing data',
+    // r2 (cu-developer-two, cu-developer-one 07:26Z): the ja / ko browser-data nouns
+    'ブラウザのデータを空にする', 'ブラウザのデータを空にしてください', 'ブラウザーデータをクリア', '브라우저 데이터를 비우세요', '브라우저 데이터 비우기']) assert.ok(click(name).includes('delete'), name)
 })
 
 test('CU-668 controls: nouns, show / settings labels, past forms, caches and other objects stay free', () => {
@@ -26,5 +28,5 @@ test('CU-668 controls: nouns, show / settings labels, past forms, caches and oth
  'Datos de navegación', 'Configuración de datos de navegación', 'Datos borrados', 'Limpiar filtros', 'Limpiar caché',
  'Dados de navegação', 'Dados do site limpos', 'Limpar filtros', 'Dati di navigazione', 'Svuota il carrello',
  'Browserdaten', 'Browserdaten anzeigen', 'Browserdaten gelöscht', 'Cache leeren', 'Browsegegevens', 'Browsegegevens bekijken', 'Browsegegevens gewist',
- 'Данные сайта', 'Очистить кэш', 'Tarama verileri', 'Tarama verileri temizlendi', '閲覧データ', '閲覧データをクリアしました', '사이트 데이터', '사이트 데이터를 비웠습니다', 'Clear cache']) assert.deepEqual(click(name), [], name)
+ 'Данные сайта', 'Очистить кэш', 'Tarama verileri', 'Tarama verileri temizlendi', '閲覧データ', '閲覧データをクリアしました', 'ブラウザのデータ', 'ブラウザのデータを空にしました', '브라우저 데이터', '브라우저 데이터를 비웠습니다', '사이트 데이터', '사이트 데이터를 비웠습니다', 'Clear cache']) assert.deepEqual(click(name), [], name)
 })

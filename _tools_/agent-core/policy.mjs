@@ -625,8 +625,8 @@ const LOCALE_DATA_CLEAR = Object.freeze([
   new RegExp(`^${dataSlot}\\S*(?:browse|site|website)gegevens(?:\\s+\\S+){0,2}?\\s+(?:legen|leegmaken|leeg\\s+maken|wissen)\\s*[.!]?$`, 'iu'),
   new RegExp(`^(?:niet\\s+)?(?:wis|leeg|leegt|legen|leegmaken)\\s+${dataSlot}\\S*(?:browse|site|website)gegevens(?=\\s|$|[.!?])`, 'iu'),
   new RegExp(`^${dataSlot}(?:tarama|site|gezinme)\\s+veriler\\S*(?:\\s+\\S+){0,2}?\\s+(?:temizle|temizleyin|temizleyiniz)\\s*[.!]?$`, 'iu'),
-  /(?:閲覧データ|サイトデータ|ブラウジングデータ).{0,8}?(?:クリア|空に)(?!し(?:ました|た)|され|済|完了|中)/u,
-  /(?:사이트\s?데이터|인터넷\s?사용\s?기록|검색\s?데이터)\S*\s*(?:\S+\s+){0,2}?(?:비우(?:기|세요|십시오)?|비워(?:\s?줘|\s?주세요|요)?)(?=\s|$|[.!?])/u,
+  /(?:閲覧データ|サイトデータ|ブラウジングデータ|ブラウザー?の?データ).{0,8}?(?:クリア|空に)(?!し(?:ました|た)|され|済|完了|中)/u,
+  /(?:사이트\s?데이터|인터넷\s?사용\s?기록|검색\s?데이터|브라우저\s?데이터)\S*\s*(?:\S+\s+){0,2}?(?:비우(?:기|세요|십시오)?|비워(?:\s?줘|\s?주세요|요)?)(?=\s|$|[.!?])/u,
 ])
 let ruDataClearRegex = null
 function namesRuDataClear(name) {
