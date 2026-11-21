@@ -645,18 +645,29 @@ function namesRuDataClear(name) {
 // ("Don't reset settings" is free), other or qualified objects ('Reset preferences', 'Reset network settings', 'Réinitialiser le
 // zoom'), 'Restore defaults' twins ('恢复默认设置', 'Ripristina predefiniti'), past / status forms and bare nouns.
 const LOCALE_RESET_SETTINGS = Object.freeze([
-  /^(?:réinitialiser|réinitialisez|réinitialise)\s+(?:(?:tous|toutes)\s+)?(?:les|vos|tes|mes)\s+(?:paramètres|réglages)\s*[.!]?$/iu,
-  /^(?:restablecer|restablece|restablezca|restableced|restablezcan)\s+(?:(?:toda|todas|todos)\s+)?(?:la|las|los|tu|tus|su|sus)?\s*(?:configuración|ajustes|configuraciones)\s*[.!]?$/iu,
-  /^(?:redefinir|redefina|redefine|redefinam)\s+(?:(?:todas|todos)\s+)?(?:as|os|suas|seus|tuas|teus)?\s*(?:configurações|definições)\s*[.!]?$/iu,
-  /^(?:ripristina|ripristinare|ripristinate|reimposta|reimpostare|reimpostate)\s+(?:tutte\s+)?(?:le\s+|tue\s+|sue\s+)?impostazioni\s*[.!]?$/iu,
-  /^(?:(?:die|alle|ihre|deine|meine)\s+){0,2}einstellungen\s+zurücksetzen\s*[.!]?$/iu,
-  /^(?:setze|setzt|setzen\s+sie)\s+(?:(?:die|alle|ihre|deine|meine)\s+){0,2}einstellungen\s+zurück\s*[.!]?$/iu,
-  /^(?:(?:de|alle|je|uw|mijn)\s+){0,2}instellingen\s+(?:resetten|opnieuw\s+instellen|terugzetten)\s*[.!]?$/iu,
+  /^(?:réinitialiser|réinitialisez|réinitialise)\s+(?:(?:tous|toutes)\s+)?(?:les|vos|tes|mes)\s+(?:paramètres|réglages)(?:\s+(?:maintenant|tout\s+de\s+suite))?\s*[.!]?$/iu,
+  /^(?:restablecer|restablece|restablezca|restableced|restablezcan)\s+(?:(?:toda|todas|todos)\s+)?(?:la|las|los|tu|tus|su|sus)?\s*(?:configuración|ajustes|configuraciones)(?:\s+(?:ahora|ya))?\s*[.!]?$/iu,
+  /^(?:redefinir|redefina|redefine|redefinam)\s+(?:(?:todas|todos)\s+)?(?:as|os|suas|seus|tuas|teus)?\s*(?:configurações|definições)(?:\s+(?:agora|já))?\s*[.!]?$/iu,
+  /^(?:ripristina|ripristinare|ripristinate|reimposta|reimpostare|reimpostate)\s+(?:tutte\s+)?(?:le\s+|tue\s+|sue\s+)?impostazioni(?:\s+(?:ora|adesso|subito))?\s*[.!]?$/iu,
+  /^(?:(?:die|alle|ihre|deine|meine)\s+){0,2}einstellungen(?:\s+(?:jetzt|sofort))?\s+zurücksetzen\s*[.!]?$/iu,
+  /^(?:setze|setzt|setzen\s+sie)\s+(?:(?:die|alle|ihre|deine|meine)\s+){0,2}einstellungen(?:\s+(?:jetzt|sofort))?\s+zurück\s*[.!]?$/iu,
+  /^(?:(?:de|alle|je|uw|mijn)\s+){0,2}instellingen(?:\s+(?:nu|direct))?\s+(?:resetten|opnieuw\s+instellen|terugzetten)\s*[.!]?$/iu,
   /^(?:reset|zet)\s+(?:(?:de|alle|je|uw|mijn)\s+){0,2}instellingen(?:\s+terug)?\s*[.!]?$/iu,
-  /^(?:すべての|全ての)?設定を?(?:リセット|初期化)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
-  /^(?:모든\s+)?설정\S{0,1}\s*(?:초기화|리셋)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|해)?\s*[.!]?$/u,
-  /^(?:重置|重设)(?:所有|全部)?设置\s*[.!。]?$/u,
-  /^(?:(?:tüm|bütün)\s+)?ayarlar\S*\s+(?:sıfırla|sıfırlayın|sıfırlayınız)\s*[.!]?$/iu,
+  /^(?:今すぐ)?(?:すべての|全ての)?設定を?(?:今すぐ)?(?:リセット|初期化)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
+  /^(?:지금\s+)?(?:모든\s+)?설정\S{0,1}\s*(?:지금\s+)?(?:초기화|리셋)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|해)?\s*[.!]?$/u,
+  /^(?:立即|现在)?(?:重置|重设)(?:所有|全部)?设置\s*[.!。]?$/u,
+  /^(?:(?:tüm|bütün)\s+)?ayarlar\S*(?:\s+(?:şimdi|hemen))?\s+(?:sıfırla|sıfırlayın|sıfırlayınız)\s*[.!]?$/iu,
+  // r2 (cu-developer-two, cu-developer-one 08:21Z): the 'Reset to defaults' twins - a reset verb (not a restore verb) before 'defaults'
+  /^(?:réinitialiser|réinitialisez|réinitialise)\s+(?:(?:aux?|les)\s+)?(?:(?:valeurs|paramètres|réglages)\s+)?par\s+défaut\s*[.!]?$/iu,
+  /^(?:restablecer|restablece|restablezca|restableced|restablezcan)\s+(?:a\s+)?(?:los\s+)?(?:valores\s+)?(?:predeterminados|por\s+defecto)\s*[.!]?$/iu,
+  /^(?:redefinir|redefina|redefine|redefinam)\s+(?:para\s+)?(?:os?\s+)?(?:valores\s+)?(?:padrão|padrões|predefinidos)\s*[.!]?$/iu,
+  /^(?:reimposta|reimpostare|reimpostate)\s+(?:ai\s+|i\s+)?(?:valori\s+)?predefiniti\s*[.!]?$/iu,
+  /^(?:(?:\S*einstellungen|alles)\s+)?auf\s+(?:die\s+)?(?:standard|standardwerte|standardeinstellungen|voreinstellungen)\s+zurücksetzen\s*[.!]?$/iu,
+  /^(?:(?:instellingen|alles)\s+)?(?:terugzetten|resetten)\s+(?:naar|op)\s+(?:de\s+)?standaard(?:waarden|instellingen)?\s*[.!]?$/iu,
+  /^(?:デフォルト|既定値|既定の設定)に(?:リセット)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
+  /^기본값으로\s?(?:초기화|재설정)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|해)?\s*[.!]?$/u,
+  /^重置为默认(?:值|设置)?\s*[.!。]?$/u,
+  /^varsayılan(?:a|lara|\s+ayarlara)\s+(?:sıfırla|sıfırlayın|sıfırlayınız)\s*[.!]?$/iu,
   // the factory-reset twins ('Factory reset', 'Reset to factory settings', 'Restore factory settings' ask in English)
   /^(?:réinitialis\S*|rétablir|rétablissez|restaurer|restaurez)\b.*\busine\b|^réinitialisation\s+d['’]usine\s*[.!]?$/iu,
   /^(?:restablec\S*|restaurar|restaure)\b.*\bfábrica\b|^restablecimiento\s+de\s+fábrica\s*[.!]?$/iu,
@@ -675,7 +686,7 @@ function namesRuResetSettings(name) {
     const any = (words) => `(?:${words.flatMap(folds).join('|')})`
     const verb = any(['сбросить', 'сбросьте', 'сбрось'])
     const slot = `(?:${any(['все', 'свои', 'ваши', 'мои'])}\\s+)?`
-    ruResetSettingsRegex = new RegExp(`^(?:${verb}\\s+${slot}${any(['настройки'])}|${verb}\\s+(?:\\S+\\s+){0,2}?${any(['заводских'])}\\s+${any(['настроек'])}|${any(['сброс'])}\\s+(?:\\S+\\s+){0,2}?${any(['заводских'])}\\s+${any(['настроек'])})\\s*[.!]?$`, 'iu')
+    ruResetSettingsRegex = new RegExp(`^(?:${verb}\\s+${slot}${any(['настройки'])}(?:\\s+${any(['сейчас'])})?|${verb}\\s+(?:${any(['настройки'])}\\s+)?(?:${any(['до', 'к'])}\\s+${any(['значений', 'значениям'])}\\s+)?${any(['по'])}\\s+${any(['умолчанию'])}|${verb}\\s+(?:\\S+\\s+){0,2}?${any(['заводских'])}\\s+${any(['настроек'])}|${any(['сброс'])}\\s+(?:\\S+\\s+){0,2}?${any(['заводских'])}\\s+${any(['настроек'])})\\s*[.!]?$`, 'iu')
   }
   return ruResetSettingsRegex.test(normaliseName(String(name ?? '')).trim())
 }

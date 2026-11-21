@@ -24,3 +24,12 @@ test('CU-670 controls: negation, other objects, restore-defaults twins, past for
  'Не сбрасывать настройки', 'Настройки сброшены', 'Настройки', 'Сбросить фильтры', '設定をリセットしました', '設定をリセットしない', '設定', '설정 초기화됨', '설정', '恢复默认设置', '设置', 'Ayarları sıfırlama', 'Ayarlar sıfırlandı',
  "Paramètres d'usine", 'Fábrica', "Don't reset settings", 'Reset preferences', 'Restore defaults']) assert.deepEqual(click(name), [], name)
 })
+
+test('CU-670 r2: the reset-to-defaults twins and quantifier + adverb rows ask, as English does', () => {
+  for (const name of ['Réinitialiser tous les paramètres maintenant', 'Alle Einstellungen jetzt zurücksetzen', 'Restablecer todos los ajustes ahora', 'Сбросить все настройки сейчас', '今すぐ設定をリセット',
+    '지금 모든 설정 초기화', '立即重置所有设置', 'Tüm ayarları şimdi sıfırla', 'Réinitialiser par défaut', 'Réinitialiser aux valeurs par défaut', 'Restablecer valores predeterminados',
+    'Restablecer a los valores predeterminados', 'Redefinir para o padrão', 'Reimposta valori predefiniti', 'Auf Standard zurücksetzen', 'Einstellungen auf Standardwerte zurücksetzen', 'Terugzetten naar standaard',
+    'Сбросить по умолчанию', 'Сбросить настройки до значений по умолчанию', 'デフォルトにリセット', '기본값으로 초기화', '重置为默认', 'Varsayılana sıfırla', 'Reset all settings now', 'Reset to defaults']) assert.ok(click(name).includes('delete'), name)
+  for (const name of ['Ripristina predefiniti', 'Restaurar padrões', 'Standaardinstellingen herstellen', '恢复默认设置', 'Restore defaults', 'Valeurs par défaut', 'Par défaut', 'Standardwerte', 'По умолчанию',
+    'Ne pas réinitialiser par défaut', 'Einstellungen nicht zurücksetzen']) assert.deepEqual(click(name), [], name)
+})
