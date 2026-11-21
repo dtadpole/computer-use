@@ -887,9 +887,13 @@ const TRANSFER_OWNERSHIP = Object.freeze([
 ])
 // CU-686 (strict English parity; the English facts are on the issue): removing a member asks delete in fr / ko as 'Remove member' does -
 // fr retirer + the member / user noun or '… de l'équipe / du groupe', ko 제거 with the member / user noun or '팀 / 그룹에서'; fr 'Exclure
-// le membre' asks permission as 'Kick member' does. Bare 'Retirer' / '제거' stay free here (fr retirer also means withdraw money);
+// le membre' asks permission as 'Kick member' does; the bare remove verbs ask as bare 'Remove' does (corrected go 23:45Z);
 // negation, past / status forms and the bare nouns stay free.
 const LOCALE_REMOVE_MEMBER = Object.freeze([
+  // corrected go (cu-developer-one 23:45Z): English bare 'Remove' asks delete, so the bare remove verbs ask too (the fr withdraw-money
+  // homograph is consent-sensitive anyway)
+  /^(?:retirer|retirez)\s*[.!]?$/iu,
+  /^(?:제거|삭제)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
   /^(?:retirer|retirez|retire)\s+(?:\S+\s+){0,2}?(?:l['’]\s*)?(?:membres?|utilisateurs?|utilisatrices?|participants?|participantes?|collaborateurs?|collaboratrices?)(?:\s+\S+){0,3}?\s*[.!]?$/iu,
   /^(?:retirer|retirez|retire)\s+(?:\S+\s+){0,2}?(?:de\s+l['’]\s*|du\s+|de\s+la\s+|des\s+)(?:équipe|groupe|espace(?:\s+de\s+travail)?|organisation|projet|canal|serveur)(?:\s+\S+)?\s*[.!]?$/iu,
   /^(?:(?:지금|즉시)\s+)?(?:이\s+|모든\s+)?(?:\S+\s+)?(?:구성원|멤버|사용자|참가자|회원)(?:들)?\s*(?:을|를)?\s*(?:(?:지금|즉시)\s+)?제거(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,

@@ -18,6 +18,11 @@ test('CU-686: fr exclude-member rows ask permission as \'Kick member\' does', ()
 })
 
 test('CU-686 controls: bare verbs, other objects, negation, past / status forms and bare nouns stay free', () => {
-  for (const name of ['Retirer', 'Retirer de l’argent', 'Retirer la carte', 'Retirer le filtre', 'Membre retiré', 'Ne pas retirer le membre', 'Membres', 'Le membre a été retiré', 'Exclure', 'Exclure les mots-clés',
- '제거', '필터 제거', '구성원', '구성원이 제거되었습니다', '구성원을 제거하지 마세요', '팀', "Don't remove member", 'Member removed', 'Members']) assert.deepEqual(click(name), [], name)
+  for (const name of ['Retirer de l’argent', 'Retirer la carte', 'Retirer le filtre', 'Membre retiré', 'Ne pas retirer le membre', 'Membres', 'Le membre a été retiré', 'Exclure', 'Exclure les mots-clés',
+ '필터 제거', '구성원', '구성원이 제거되었습니다', '구성원을 제거하지 마세요', '팀', "Don't remove member", 'Member removed', 'Members']) assert.deepEqual(click(name), [], name)
+})
+
+test('CU-686 corrected go (23:45Z): the bare remove verbs ask delete as English bare \'Remove\' does', () => {
+  for (const name of ['Retirer', 'Retirez', '제거', '삭제', '제거하기', '삭제하기', 'Remove']) assert.ok(click(name).includes('delete'), name)
+  for (const name of ['Retiré', '삭제됨', '제거되었습니다', 'Exclure']) assert.deepEqual(click(name), [], name)
 })
