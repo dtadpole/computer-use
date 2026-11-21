@@ -22,3 +22,9 @@ test('CU-684 controls: project, negation, past / status, bare verbs and other ob
  'Verlassen', 'Seite verlassen', 'Projekt verlassen', 'Organisation nicht verlassen', 'Organisation verlassen.x', 'Pagina verlaten', 'Покинуть страницу', 'Вы покинули организацию', 'Выйти',
  '退出', 'ページから退出', '組織から脱退しました', '나가기', '페이지 나가기', '조직에서 탈퇴했습니다', '退出登录', '已退出组织', 'Sayfadan ayrıl', "Don't leave workspace", 'Left workspace', 'Leave project']) assert.ok(!click(name).includes('permission'), name)
 })
+
+test('CU-684 design rows (21:17Z): it uscire da / area di lavoro, de austreten aus / Workspace, ja 離れる', () => {
+  for (const name of ['Uscire dall’area di lavoro', "Esci dall'organizzazione", 'Uscire dallo spazio di lavoro', 'Aus der Organisation austreten', 'Treten Sie aus der Organisation aus', 'Workspace verlassen',
+    'Verlassen Sie den Workspace', '組織を離れる', 'ワークスペースから離れてください']) assert.ok(click(name).includes('permission'), name)
+  for (const name of ['Aus dem Verein austreten', 'Uscire dalla pagina', 'Seite verlassen', 'ページを離れる', '組織を離れました']) assert.ok(!click(name).includes('permission'), name)
+})
