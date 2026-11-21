@@ -30,8 +30,9 @@ test('CU-677 r2: the Korean verb forms of 공개하다 (literal \'make public\')
   for (const name of ['공개', '비공개', '공개됨', '공개 중', '공개되었습니다', '비공개하기', '공개했습니다', '공개 설정']) assert.deepEqual(click(name), [], name)
 })
 
-test('CU-677 r3: negation asks in every locale of this family, as "Don\'t make public" does', () => {
-  for (const name of ['공개하지 마세요', '공개하지 마', '저장소를 공개하지 마세요', '공개로 전환하지 마세요', 'Herkese açık yapma', 'Depoyu herkese açık yapmayın', 'Ne pas rendre public', 'Nicht öffentlich machen',
-    'No hacer público', 'Não tornar público', 'Non rendere pubblico', 'Niet openbaar maken', 'Не делать общедоступным', "Don't make public"]) assert.ok(click(name).includes('permission'), name)
-  for (const name of ['비공개하지 마세요', '공개하지 않음']) assert.deepEqual(click(name), [], name)
+test('CU-677 r3: bare negation asks in every locale, as "Don\'t make public" does; negation with an object stays free, as in English', () => {
+  for (const name of ['공개하지 마세요', '공개하지 마', '공개로 전환하지 마세요', 'Herkese açık yapma', 'Ne pas rendre public', 'Ne rendez pas public', 'Nicht öffentlich machen', 'No hacer público', 'Não tornar público',
+    'Non rendere pubblico', 'Niet openbaar maken', 'Не делать общедоступным', "Don't make public"]) assert.ok(click(name).includes('permission'), name)
+  for (const name of ['Ne pas rendre le dépôt public', 'No hacer público el repositorio', 'Não tornar o repositório público', 'Non rendere pubblico il repository', 'Repository nicht öffentlich machen',
+    'Repository niet openbaar maken', 'Не делать репозиторий общедоступным', '저장소를 공개하지 마세요', 'Depoyu herkese açık yapma', "Don't make this repository public", '비공개하지 마세요', '공개하지 않음']) assert.deepEqual(click(name), [], name)
 })

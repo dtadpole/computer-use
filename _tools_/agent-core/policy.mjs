@@ -774,30 +774,38 @@ const CJK_SIGNOUT_ALL = Object.freeze([
 ])
 // CU-677 (strict English parity; the English facts are on the issue): making something public asks permission in the locales as
 // 'Make public' / 'Make this repository public' / 'Change visibility to public' do - the make / set verb with up to two slot words
-// before 'public', or visibility changed to public, both orders, a 'now'; negation asks too, as "Don't make public" does in English.
+// before 'public', or visibility changed to public, both orders, a 'now'; bare negation asks too, as "Don't make public" does in English.
 // Past / status forms, the bare adjective and the make-private twins stay free.
 const pubNow = '(?:\\s+(?:maintenant|ahora|agora|ora|adesso|jetzt|nu|şimdi))?'
 const LOCALE_MAKE_PUBLIC = Object.freeze([
-  new RegExp(`^(?:ne\\s+pas\\s+)?(?:rendre|rendez|rends)\\s+(?:\\S+\\s+){0,2}?(?:public|publique|publics|publiques)(?:\\s+\\S+){0,3}?${pubNow}\\s*[.!]?$`, 'iu'),
-  new RegExp(`^ne\\s+(?:rendez|rends)\\s+pas\\s+(?:\\S+\\s+){0,2}?(?:public|publique|publics|publiques)\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:rendre|rendez|rends)\\s+(?:\\S+\\s+){0,2}?(?:public|publique|publics|publiques)(?:\\s+\\S+){0,3}?${pubNow}\\s*[.!]?$`, 'iu'),
   new RegExp(`^(?:définir|définissez|passer|passez|changer|changez)\\s+(?:\\S+\\s+){0,3}?(?:comme|en|à)\\s+(?:public|publique)${pubNow}\\s*[.!]?$`, 'iu'),
-  new RegExp(`^(?:no\\s+)?(?:hacer|haz|haga|hagan)\\s+(?:\\S+\\s+){0,2}?(?:público|pública|públicos|públicas)(?:\\s+\\S+){0,3}?${pubNow}\\s*[.!]?$`, 'iu'),
-  new RegExp(`^(?:no\\s+)?(?:establecer|establece|cambiar|cambia|cambie|configurar)\\s+(?:\\S+\\s+){0,3}?(?:como|a|en)\\s+(?:público|pública)${pubNow}\\s*[.!]?$`, 'iu'),
-  new RegExp(`^(?:não\\s+|nao\\s+)?(?:tornar|torne|torna|tornem)\\s+(?:\\S+\\s+){0,2}?(?:público|pública|públicos|públicas)(?:\\s+\\S+){0,3}?${pubNow}\\s*[.!]?$`, 'iu'),
-  new RegExp(`^(?:não\\s+|nao\\s+)?(?:definir|defina|alterar|altere|mudar|mude)\\s+(?:\\S+\\s+){0,3}?(?:como|para)\\s+(?:público|pública)${pubNow}\\s*[.!]?$`, 'iu'),
-  new RegExp(`^(?:non\\s+)?(?:rendi|rendere|rendete|renda)\\s+(?:\\S+\\s+){0,2}?(?:pubblico|pubblica|pubblici|pubbliche)(?:\\s+\\S+){0,3}?${pubNow}\\s*[.!]?$`, 'iu'),
-  new RegExp(`^(?:non\\s+)?(?:imposta|impostare|cambia|cambiare)\\s+(?:\\S+\\s+){0,3}?(?:come|a|su|in)\\s+(?:pubblico|pubblica)${pubNow}\\s*[.!]?$`, 'iu'),
-  new RegExp(`^(?:\\S+\\s+){0,2}?(?:jetzt\\s+|nicht\\s+)?öffentlich\\s+machen\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:hacer|haz|haga|hagan)\\s+(?:\\S+\\s+){0,2}?(?:público|pública|públicos|públicas)(?:\\s+\\S+){0,3}?${pubNow}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:establecer|establece|cambiar|cambia|cambie|configurar)\\s+(?:\\S+\\s+){0,3}?(?:como|a|en)\\s+(?:público|pública)${pubNow}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:tornar|torne|torna|tornem)\\s+(?:\\S+\\s+){0,2}?(?:público|pública|públicos|públicas)(?:\\s+\\S+){0,3}?${pubNow}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:definir|defina|alterar|altere|mudar|mude)\\s+(?:\\S+\\s+){0,3}?(?:como|para)\\s+(?:público|pública)${pubNow}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:rendi|rendere|rendete|renda)\\s+(?:\\S+\\s+){0,2}?(?:pubblico|pubblica|pubblici|pubbliche)(?:\\s+\\S+){0,3}?${pubNow}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:imposta|impostare|cambia|cambiare)\\s+(?:\\S+\\s+){0,3}?(?:come|a|su|in)\\s+(?:pubblico|pubblica)${pubNow}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:(?!nicht\\s)\\S+\\s+){0,2}?(?:jetzt\\s+)?öffentlich\\s+machen\\s*[.!]?$`, 'iu'),
   new RegExp(`^(?:mache|macht|machen\\s+sie)\\s+(?:\\S+\\s+){0,2}?öffentlich\\s*[.!]?$`, 'iu'),
   new RegExp(`^(?:\\S+\\s+){0,2}?auf\\s+öffentlich\\s+(?:setzen|stellen|ändern|umstellen)\\s*[.!]?$`, 'iu'),
-  new RegExp(`^(?:\\S+\\s+){0,2}?(?:nu\\s+|niet\\s+)?openbaar\\s+maken\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:(?!niet\\s)\\S+\\s+){0,2}?(?:nu\\s+)?openbaar\\s+maken\\s*[.!]?$`, 'iu'),
   new RegExp(`^(?:maak|maakt)\\s+(?:\\S+\\s+){0,2}?openbaar\\s*[.!]?$`, 'iu'),
-  /^(?:\S+\s+){0,1}?공개로\s?(?:전환|설정|변경)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|해|합니다|하지\s?마(?:세요|십시오)?)?\s*[.!]?$/u,
+  /^(?:\S+\s+){0,1}?공개로\s?(?:전환|설정|변경)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|해|합니다)?\s*[.!]?$/u,
   // r2 (cu-developer-three, cu-developer-one 15:48Z): 공개하다 is the literal 'make public' (Korean 'publish' is 게시 / 발행), so its verb
   // forms ask with or without an object; 비공개 / 공개됨 / 공개 중 and past forms stay free
-  /^(?:지금\s+)?(?:\S+\s+){0,2}?(?:\S+(?:을|를)\s+)?공개(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다|하지\s?마(?:세요|십시오)?)\s*[.!]?$/u,
-  // r3 (cu-developer-two, cu-developer-one 15:53Z): negation asks in this family, as "Don't make public" does - ko 하지 마세요 above, tr yapma below
-  new RegExp(`^(?:\\S+\\s+){0,2}?herkese\\s+açık\\s+(?:yap|yapın|yapınız|yapma|yapmayın|hale\\s+getir|hale\\s+getirme|olarak\\s+ayarla)\\s*[.!]?$`, 'iu'),
+  /^(?:지금\s+)?(?:\S+\s+){0,2}?(?:\S+(?:을|를)\s+)?공개(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)\s*[.!]?$/u,
+  new RegExp(`^(?:\\S+\\s+){0,2}?herkese\\s+açık\\s+(?:yap|yapın|yapınız|hale\\s+getir|olarak\\s+ayarla)\\s*[.!]?$`, 'iu'),
+  // r3 (cu-developer-two, cu-developer-one 16:04Z, final): negation asks only bare, as English asks "Don't make public" and frees
+  // "Don't make this repository public"; a negated label with an object stays free in every locale
+  /^(?:ne\s+pas\s+(?:rendre|rendez|rends)|ne\s+(?:rendez|rends)\s+pas)\s+(?:public|publique)\s*[.!]?$/iu,
+  /^no\s+(?:hacer|haga|hagas)\s+(?:público|pública)\s*[.!]?$/iu,
+  /^(?:não|nao)\s+(?:tornar|torne|torna)\s+(?:público|pública)\s*[.!]?$/iu,
+  /^non\s+(?:rendere|rendi|renda)\s+(?:pubblico|pubblica)\s*[.!]?$/iu,
+  /^nicht\s+öffentlich\s+machen\s*[.!]?$/iu,
+  /^niet\s+openbaar\s+maken\s*[.!]?$/iu,
+  /^(?:공개|공개로\s?(?:전환|설정|변경))하지\s?마(?:세요|십시오)?\s*[.!]?$/u,
+  /^herkese\s+açık\s+(?:yapma|yapmayın|yapmayınız)\s*[.!]?$/iu,
 ])
 let ruMakePublicRegex = null
 function namesRuMakePublic(name) {
@@ -806,7 +814,7 @@ function namesRuMakePublic(name) {
     const any = (words) => `(?:${words.flatMap(folds).join('|')})`
     const verb = any(['сделать', 'сделайте', 'сделай'])
     const adj = any(['общедоступным', 'общедоступной', 'общедоступными', 'публичным', 'публичной', 'публичными'])
-    ruMakePublicRegex = new RegExp(`^(?:(?:${any(['не'])}\\s+)?${verb}|${any(['не'])}\\s+${any(['делать', 'делайте'])})\\s+(?:\\S+\\s+){0,2}?${adj}(?:\\s+${any(['сейчас'])})?\\s*[.!]?$`, 'iu')
+    ruMakePublicRegex = new RegExp(`^(?:${verb}\\s+(?:\\S+\\s+){0,2}?${adj}(?:\\s+${any(['сейчас'])})?|${any(['не'])}\\s+${any(['делать', 'делайте', 'сделать'])}\\s+${adj})\\s*[.!]?$`, 'iu')
   }
   return ruMakePublicRegex.test(normaliseName(String(name ?? '')).trim())
 }
