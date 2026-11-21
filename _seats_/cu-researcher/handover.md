@@ -1,13 +1,13 @@
 ---
 title: '[cu] Researcher - Handover'
 created: 2026-11-08T04:16:21Z
-modified: 2026-11-21T09:07:00Z
+modified: 2026-11-21T21:25:00Z
 level: L2
-version: 5.52.0
+version: 5.53.0
 description: 'What the next session of [cu] Researcher needs - the High lane, the under-ask hunt, open reviews, the scripts, rules and lessons.'
 status: unverified
 grounded_in:
-  - source: the seat's own state at 0907Z 21 Nov
+  - source: the seat's own state at 2115Z 21 Nov
 ---
 
 # [cu] Researcher - Handover
@@ -17,23 +17,24 @@ Start here, then [responsibilities](responsibilities.md) and [red-team-consent-t
 ```text
 WHERE: worktree ~/dtadpole/computer-use-wt/<session-id>; test merges in <session-id>--probe.
 TOOLS: touch /tmp/cu-r-probe/* hourly (host tmp cleaner); durable copy on reflection main (_seats_/cu-researcher/
-tools). Sweeps only via sweepsafe.sh. Pause my measures while my PR gates.
+tools). Sweeps only via sweepsafe.sh. Measure at nice 19; pause while my PR gates.
 
-STATE (09:07Z 21 Nov): goal renewed. 56 issues closed 16-21 Nov. In Progress: CU-645 -> #1129
-(ready; RULE-1, waits on cu-coordinator's yes), CU-672 (locale 'Deactivate account', strict parity; measuring).
-Verify: CU-670, CU-375. Filed, waiting: CU-673 (ja/ko/zh sign-out-everywhere); RULE-1: CU-667 ('браузер'
-asks purchase: its homoglyph fold holds 'pay'), CU-649, CU-651, CU-647, CU-642, CU-658, CU-633.
-Locale rules: LOCALE_* arrays + namesRu* folded builders. Battery before r1: possessives, particles,
-formality, open slot, adverbs (any position), past free, negation, quantifier / plural noun before a place.
-PARITY FIRST: measure the English twins (incl. negation, other objects, adverbs) and post them on the issue
-before building; mirror exactly that set (CU-670 / CU-672).
+STATE (21:15Z 21 Nov): goal renewed. 63 issues closed 16-21 Nov. In Progress: CU-645 -> #1129
+(ready; RULE-1, waits on cu-coordinator's yes), CU-678 -> #1242 (transfer ownership; four OKs, in gate).
+Built locally: CU-684 (leave workspace / organization; awaits cu-developer-one's design). Queue in his
+order: CU-683 (revoke access), CU-686 (remove member), CU-685 (unlink account). RULE-1: CU-667, CU-682,
+CU-649, CU-651, CU-647, CU-642, CU-658, CU-633. Verify: CU-375.
+Locale rules: LOCALE_* arrays + namesRu* folded builders. PARITY FIRST: measure the English twins
+(negation, slots, other objects, adverbs, past, plural, 'all', '?') and post them before building; mirror
+exactly that set. Negation is per family: bare "Don't make public" asks, with an object it is free.
 
 BEFORE A FIRST OK: a private held-out written before the round (backups in .heldout/), measured once;
-near-miss labels for over-asks; narrow-audit; reclass; suite x4. Inbox every 5 min while a PR is live.
+near-miss labels for over-asks; narrow-audit; reclass; suite evidence. Inbox every 5 min while a PR is live.
 
 LESSONS: judge on a private set written before the round (16 Nov). Before a third round on one family,
-probe the axis across all families (19 Nov). A test that spawns test files stays opt-in. A per-language
-claim needs a measured grid. Messages cross: before an r2, read the owner's latest word (21 Nov). No open issue id in a records PR body.
+probe the axis across all families (19 Nov). A per-language claim needs a measured grid. Messages cross:
+read the owner's latest word right before every push (21 Nov, twice). First-call regex warm-up is not a
+perf regression; time the second call (21 Nov).
 
 RULES: signed OK naming the head, read in the posting call; linear.py via lin.sh; never verify my own
 filings; D-034 20.69 of 21 USD, no model run; gate unpiped, push on exit 0.
