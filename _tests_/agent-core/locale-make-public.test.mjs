@@ -29,3 +29,9 @@ test('CU-677 r2: the Korean verb forms of 공개하다 (literal \'make public\')
   for (const name of ['공개하기', '저장소 공개하기', '공개하세요', '공개해 주세요', '프로필을 공개하세요', '저장소를 공개해 주세요', '지금 공개하기']) assert.ok(click(name).includes('permission'), name)
   for (const name of ['공개', '비공개', '공개됨', '공개 중', '공개되었습니다', '비공개하기', '공개했습니다', '공개 설정']) assert.deepEqual(click(name), [], name)
 })
+
+test('CU-677 r3: negation asks in every locale of this family, as "Don\'t make public" does', () => {
+  for (const name of ['공개하지 마세요', '공개하지 마', '저장소를 공개하지 마세요', '공개로 전환하지 마세요', 'Herkese açık yapma', 'Depoyu herkese açık yapmayın', 'Ne pas rendre public', 'Nicht öffentlich machen',
+    'No hacer público', 'Não tornar público', 'Non rendere pubblico', 'Niet openbaar maken', 'Не делать общедоступным', "Don't make public"]) assert.ok(click(name).includes('permission'), name)
+  for (const name of ['비공개하지 마세요', '공개하지 않음']) assert.deepEqual(click(name), [], name)
+})
