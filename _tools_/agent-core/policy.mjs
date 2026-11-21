@@ -712,6 +712,30 @@ const LOCALE_ACCOUNT_DEACTIVATE = Object.freeze([
   /^(?:停用|禁用|冻结|凍結)(?:我的|此|该|這個|这个)?(?:账户|帐户|账号|帐号|帳戶|帳號)\s*[.!。]?$/u,
   /^(?:\S+\s+){0,2}?hesab\S*(?:\s+(?:şimdi|geçici\s+olarak|kalıcı\s+olarak))?\s+devre\s+dışı\s+(?:bırak|bırakın|bırakınız)\s*[.!]?$/iu,
 ])
+// CU-676 (strict English parity; the English facts are on the issue): closing the account asks delete in fr / es / de / ru / ja / ko
+// as 'Close account' does - the close verb with the account noun, its determiners, up to two slot words ('Fermer mon compte PayPal'),
+// the time adverbs and both orders; German kündigen only with Konto / Account (cu-developer-one 13:35Z; not Abo / Vertrag); negation,
+// past / status forms, the bare verb and other objects ('Fermer la fenêtre', 'Cerrar sesión') stay free.
+const LOCALE_ACCOUNT_CLOSE = Object.freeze([
+  new RegExp(`^${acctLead}(?:fermer|fermez|ferme|clôturer|clôturez|clôture|résilier|résiliez|résilie)\\s+(?:\\S+\\s+){0,2}?comptes?(?:\\s+\\S+)?${acctAdverb}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^${acctLead}(?:cerrar|cierra|cierre|cerrad|cierren|dar\\s+de\\s+baja|da\\s+de\\s+baja|dé\\s+de\\s+baja|den\\s+de\\s+baja)\\s+(?:\\S+\\s+){0,2}?cuentas?(?:\\s+\\S+)?${acctAdverb}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:\\S+\\s+){0,2}?(?:\\S*kont(?:o|en)|accounts?)${acctAdverb}\\s+(?:schließen|kündigen)\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:schließe|schließt|schließen\\s+sie|kündige|kündigt|kündigen\\s+sie)\\s+(?:\\S+\\s+){0,2}?(?:\\S*kont(?:o|en)|accounts?)(?:\\s+\\S+)?${acctAdverb}\\s*[.!]?$`, 'iu'),
+  /^(?:この|私の|あなたの|すべての|全ての)?アカウントを?(?:今すぐ|完全に)?(?:閉鎖(?:する|して(?:ください)?|します)?|解約(?:する|して(?:ください)?|します)?|閉じる|閉じて(?:ください)?|閉じます)\s*[.!。]?$/u,
+  /^(?:내\s+|이\s+|모든\s+)?계정(?:들)?\s*(?:을|를)?\s*(?:(?:지금|즉시|영구적으로)\s+)?(?:(?:해지|폐쇄)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|해|합니다)?|닫기|닫으세요|닫아\s?주세요|닫아\s?줘|닫으십시오|닫아요|닫아|닫습니다)\s*[.!]?$/u,
+])
+let ruAccountCloseRegex = null
+function namesRuAccountClose(name) {
+  if (!ruAccountCloseRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const verb = any(['закрыть', 'закройте', 'закрой'])
+    const noun = `(?:${any(['аккаунт', 'аккаунты', 'счёт', 'счет', 'счета'])}|${any(['учётную', 'учетную'])}\\s+${any(['запись'])}|${any(['учётные', 'учетные'])}\\s+${any(['записи'])})`
+    const adv = `(?:\\s+${any(['сейчас', 'навсегда'])})?`
+    ruAccountCloseRegex = new RegExp(`^(?:${any(['навсегда'])}\\s+)?(?:${verb}\\s+(?:\\S+\\s+){0,2}?${noun}(?:\\s+\\S+)?${adv}|${noun}\\s+(?:\\S+\\s+){0,1}?${verb})\\s*[.!]?$`, 'iu')
+  }
+  return ruAccountCloseRegex.test(normaliseName(String(name ?? '')).trim())
+}
 let ruAccountDeactivateRegex = null
 function namesRuAccountDeactivate(name) {
   if (!ruAccountDeactivateRegex) {
@@ -3217,6 +3241,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (grammarEligible && !classes.includes('delete') && (LOCALE_TRASH_EMPTY.some((re) => re.test(String(name ?? '').trim())) || namesRuTrashEmpty(name))) classes.push('delete')
     // CU-673: ja / ko / zh sign-out-everywhere twins (CJK_SIGNOUT_ALL above).
     if (grammarEligible && !classes.includes('permission') && CJK_SIGNOUT_ALL.some((re) => re.test(String(name ?? '').trim()))) classes.push('permission')
+    // CU-676: locale close-account twins (LOCALE_ACCOUNT_CLOSE above).
+    if (grammarEligible && !classes.includes('delete') && (LOCALE_ACCOUNT_CLOSE.some((re) => re.test(String(name ?? '').trim())) || namesRuAccountClose(name))) classes.push('delete')
     // CU-672: locale account-deactivation twins (LOCALE_ACCOUNT_DEACTIVATE above).
     if (grammarEligible && !classes.includes('delete') && (LOCALE_ACCOUNT_DEACTIVATE.some((re) => re.test(String(name ?? '').trim())) || namesRuAccountDeactivate(name))) classes.push('delete')
     // CU-670: locale 'Reset settings' / factory-reset twins (LOCALE_RESET_SETTINGS above).
