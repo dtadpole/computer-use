@@ -1,7 +1,7 @@
 ---
 title: '[cu] Researcher - Handover'
 created: 2026-11-08T04:16:21Z
-modified: 2026-11-21T21:15:00Z
+modified: 2026-11-21T21:25:00Z
 level: L2
 version: 5.53.0
 description: 'What the next session of [cu] Researcher needs - the High lane, the under-ask hunt, open reviews, the scripts, rules and lessons.'
