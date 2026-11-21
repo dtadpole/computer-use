@@ -735,10 +735,18 @@ const cjkZhVerb = '(?:退出(?:登录|登錄)?|登出|注销|註銷)'
 const CJK_SIGNOUT_ALL = Object.freeze([
   new RegExp(`^(?:今すぐ)?${cjkJaAll}(?:デバイス|端末|機器|セッション)(?:から|で)(?:今すぐ)?(?:ログアウト|サインアウト)(?:する|して(?:ください)?|します)?\\s*[.!。]?$`, 'u'),
   // r2 (cu-developer-three, cu-developer-one 11:44Z): the Korean noun-phrase form without 에서 ('모든 기기 로그아웃', as 'Log out all devices')
-  new RegExp(`^(?:지금\\s+)?${cjkKoAll}(?:기기|디바이스|장치|세션)(?:에서)?\\s?(?:지금\\s+)?(?:로그아웃|로그\\s아웃)(?:하기|하세요|해\\s?주세요|해\\s?줘|하십시오|해요|해|합니다)?\\s*[.!]?$`, 'u'),
-  new RegExp(`^(?:立即|现在|立即)?(?:从|從|在)?${cjkZhAll}${cjkZhDevice}(?:上|中)?${cjkZhVerb}\\s*[.!。]?$`, 'u'),
+  new RegExp(`^(?:(?:지금|즉시)\\s+)?${cjkKoAll}(?:기기|디바이스|장치|세션)(?:에서)?\\s?(?:(?:지금|즉시)\\s+)?(?:로그아웃|로그\\s아웃)(?:하기|하세요|해\\s?주세요|해\\s?줘|하십시오|해요|해|합니다)?\\s*[.!]?$`, 'u'),
+  new RegExp(`^(?:立即|现在|立刻|马上|馬上)?(?:从|從|在)?${cjkZhAll}${cjkZhDevice}(?:上|中)?${cjkZhVerb}\\s*[.!。]?$`, 'u'),
   // r2 (cu-developer-one, cu-developer-two 11:42Z): zh verb-first ('退出所有设备', '登出所有裝置', '注销其他设备'); '注销账号' stays out
-  new RegExp(`^(?:立即|现在)?${cjkZhVerb}${cjkZhAll}${cjkZhDevice}\\s*[.!。]?$`, 'u'),
+  new RegExp(`^(?:立即|现在|立刻|马上|馬上)?${cjkZhVerb}${cjkZhAll}${cjkZhDevice}\\s*[.!。]?$`, 'u'),
+  // CU-675 (cu-developer-one's go 12:04Z): 'Sign out everywhere' - the sign-out verb with 'everywhere' - and 'Revoke (all) sessions' -
+  // the revoke / cancel verb only with the session noun (取り消す / 취소 / 撤销 also mean cancel, which English frees elsewhere)
+  /^(?:今すぐ)?(?:すべての場所|全ての場所|どこでも|あらゆる場所)(?:で|から)?(?:今すぐ)?(?:ログアウト|サインアウト)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
+  /^(?:(?:지금|즉시)\s+)?(?:모든\s?곳|어디서나)(?:에서)?\s?(?:(?:지금|즉시)\s+)?(?:로그아웃|로그\s아웃)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|해|합니다)?\s*[.!]?$/u,
+  /^(?:立即|现在|立刻|马上|馬上)?(?:在|從|从)?(?:所有地方|所有位置|任何地方|各处|各處)(?:都)?(?:退出(?:登录|登錄)?|登出|注销|註銷)\s*[.!。]?$/u,
+  /^(?:今すぐ)?(?:すべての|全ての|他の|ほかの|この)?セッションを?(?:今すぐ)?(?:取り消す|取り消して(?:ください)?|取り消し|取消|失効させて(?:ください)?|失効させる|失効|無効にする|無効化)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
+  /^(?:(?:지금|즉시)\s+)?(?:모든\s|다른\s|이\s)?세션\s?(?:을|를)?\s?(?:(?:지금|즉시)\s+)?(?:취소|해지|철회|무효화)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|해|합니다)?\s*[.!]?$/u,
+  /^(?:立即|现在|立刻|马上|馬上)?(?:撤销|撤銷|吊销|吊銷)(?:所有|全部|其他|其它|此|这个|這個)?(?:的)?(?:会话|會話|工作階段)\s*[.!。]?$/u,
 ])
 // CU-655: the Russian twin ('Очистить корзину', 'Очистите корзину', 'Корзину очистить', with 'не' as negation) is built from folded
 // words on first use: a judged name has passed normaliseText, which folds Cyrillic homoglyphs to Latin case by case, so each word
