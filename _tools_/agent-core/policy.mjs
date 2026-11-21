@@ -714,12 +714,13 @@ const LOCALE_ACCOUNT_DEACTIVATE = Object.freeze([
 ])
 // CU-676 (strict English parity; the English facts are on the issue): closing the account asks delete in fr / es / de / ru / ja / ko
 // as 'Close account' does - the close verb with the account noun, its determiners, up to two slot words ('Fermer mon compte PayPal'),
-// the time adverbs and both orders; negation, past / status forms, the bare verb and other objects ('Fermer la fenêtre') stay free.
+// the time adverbs and both orders; German kündigen only with Konto / Account (cu-developer-one 13:35Z; not Abo / Vertrag); negation,
+// past / status forms, the bare verb and other objects ('Fermer la fenêtre', 'Cerrar sesión') stay free.
 const LOCALE_ACCOUNT_CLOSE = Object.freeze([
   new RegExp(`^${acctLead}(?:fermer|fermez|ferme|clôturer|clôturez|clôture)\\s+(?:\\S+\\s+){0,2}?compte(?:\\s+\\S+)?${acctAdverb}\\s*[.!]?$`, 'iu'),
   new RegExp(`^${acctLead}(?:cerrar|cierra|cierre|cerrad|cierren)\\s+(?:\\S+\\s+){0,2}?cuenta(?:\\s+\\S+)?${acctAdverb}\\s*[.!]?$`, 'iu'),
-  new RegExp(`^(?:\\S+\\s+){0,2}?(?:\\S*konto|account)${acctAdverb}\\s+schließen\\s*[.!]?$`, 'iu'),
-  new RegExp(`^(?:schließe|schließt|schließen\\s+sie)\\s+(?:\\S+\\s+){0,2}?(?:\\S*konto|account)(?:\\s+\\S+)?${acctAdverb}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:\\S+\\s+){0,2}?(?:\\S*konto|account)${acctAdverb}\\s+(?:schließen|kündigen)\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:schließe|schließt|schließen\\s+sie|kündige|kündigt|kündigen\\s+sie)\\s+(?:\\S+\\s+){0,2}?(?:\\S*konto|account)(?:\\s+\\S+)?${acctAdverb}\\s*[.!]?$`, 'iu'),
   /^(?:この|私の|あなたの)?アカウントを?(?:今すぐ|完全に)?(?:閉鎖|解約)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
   /^(?:내\s+|이\s+)?계정\s*(?:을|를)?\s*(?:(?:지금|즉시|영구적으로)\s+)?(?:해지|폐쇄)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|해|합니다)?\s*[.!]?$/u,
 ])
