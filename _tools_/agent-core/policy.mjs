@@ -695,22 +695,22 @@ function namesRuResetSettings(name) {
 // determiners, up to two slot words ('Désactiver mon compte Facebook'), the time adverbs and both orders. Negation, past / status
 // forms, the bare verb and the verb with other objects stay free: each locale verb means both 'deactivate' and 'disable', and English
 // frees 'Disable' and 'Disable notifications'. r2 (cu-developer-two, cu-developer-one 10:24Z): the Italian elided article joins the
-// noun ('Disattivare l'account').
+// noun ('Disattivare l'account'). CU-680: the plural account nouns and ja / ko 'all' ask, as 'Deactivate (all) accounts' does.
 const acctAdverb = '(?:\\s+(?:maintenant|définitivement|temporairement|ahora|definitivamente|temporalmente|agora|temporariamente|ora|definitivamente|temporaneamente|jetzt|dauerhaft|vorübergehend|nu|tijdelijk|permanent))?'
 const acctLead = '(?:(?:temporairement|définitivement|temporalmente|definitivamente|temporariamente|temporaneamente)\\s+)?'
 const LOCALE_ACCOUNT_DEACTIVATE = Object.freeze([
-  new RegExp(`^${acctLead}(?:désactiver|désactivez|désactive)\\s+(?:\\S+\\s+){0,2}?compte(?:\\s+\\S+)?${acctAdverb}\\s*[.!]?$`, 'iu'),
-  new RegExp(`^${acctLead}(?:desactivar|desactiva|desactive|desactivad|desactiven|deshabilitar|deshabilita|deshabilite|inhabilitar)\\s+(?:\\S+\\s+){0,2}?cuenta(?:\\s+\\S+)?${acctAdverb}\\s*[.!]?$`, 'iu'),
-  new RegExp(`^${acctLead}(?:desativar|desative|desativa|desativem|desabilitar|desabilite)\\s+(?:\\S+\\s+){0,2}?conta(?:\\s+\\S+)?${acctAdverb}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^${acctLead}(?:désactiver|désactivez|désactive)\\s+(?:\\S+\\s+){0,2}?comptes?(?:\\s+\\S+)?${acctAdverb}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^${acctLead}(?:desactivar|desactiva|desactive|desactivad|desactiven|deshabilitar|deshabilita|deshabilite|inhabilitar)\\s+(?:\\S+\\s+){0,2}?cuentas?(?:\\s+\\S+)?${acctAdverb}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^${acctLead}(?:desativar|desative|desativa|desativem|desabilitar|desabilite)\\s+(?:\\S+\\s+){0,2}?contas?(?:\\s+\\S+)?${acctAdverb}\\s*[.!]?$`, 'iu'),
   new RegExp(`^${acctLead}(?:disattiva|disattivare|disattivate|disabilita|disabilitare|disabilitate)\\s+(?:\\S+\\s+){0,2}?(?:l['’]\\s*)?account(?:\\s+\\S+)?${acctAdverb}\\s*[.!]?$`, 'iu'),
-  new RegExp(`^(?:\\S+\\s+){0,2}?(?:\\S*konto|account)${acctAdverb}\\s+deaktivieren\\s*[.!]?$`, 'iu'),
-  new RegExp(`^(?:deaktiviere|deaktiviert|deaktivieren\\s+sie)\\s+(?:\\S+\\s+){0,2}?(?:\\S*konto|account)(?:\\s+\\S+)?${acctAdverb}\\s*[.!]?$`, 'iu'),
-  new RegExp(`^(?:\\S+\\s+){0,2}?account${acctAdverb}\\s+(?:deactiveren|uitschakelen)\\s*[.!]?$`, 'iu'),
-  new RegExp(`^(?:deactiveer|schakel)\\s+(?:\\S+\\s+){0,2}?account(?:\\s+uit)?${acctAdverb}\\s*[.!]?$`, 'iu'),
-  /^(?:この|私の|あなたの)?アカウントを?(?:一時的に|今すぐ)?(?:無効にする|無効にして(?:ください)?|無効化(?:する|して(?:ください)?)?|停止(?:する|して(?:ください)?)?)\s*[.!。]?$/u,
-  /^(?:내\s+|이\s+)?계정\s*(?:을|를)?\s*(?:지금\s+|일시적으로\s+)?(?:비활성화|일시\s?중지)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|해)?\s*[.!]?$/u,
+  new RegExp(`^(?:\\S+\\s+){0,2}?(?:\\S*kont(?:o|en)|accounts?)${acctAdverb}\\s+deaktivieren\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:deaktiviere|deaktiviert|deaktivieren\\s+sie)\\s+(?:\\S+\\s+){0,2}?(?:\\S*kont(?:o|en)|accounts?)(?:\\s+\\S+)?${acctAdverb}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:\\S+\\s+){0,2}?accounts?${acctAdverb}\\s+(?:deactiveren|uitschakelen)\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:deactiveer|schakel)\\s+(?:\\S+\\s+){0,2}?accounts?(?:\\s+uit)?${acctAdverb}\\s*[.!]?$`, 'iu'),
+  /^(?:この|私の|あなたの|すべての|全ての)?アカウントを?(?:一時的に|今すぐ)?(?:無効にする|無効にして(?:ください)?|無効化(?:する|して(?:ください)?)?|停止(?:する|して(?:ください)?)?)\s*[.!。]?$/u,
+  /^(?:내\s+|이\s+|모든\s+)?계정(?:들)?\s*(?:을|를)?\s*(?:지금\s+|일시적으로\s+)?(?:비활성화|일시\s?중지)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|해)?\s*[.!]?$/u,
   /^(?:停用|禁用|冻结|凍結)(?:我的|此|该|這個|这个)?(?:账户|帐户|账号|帐号|帳戶|帳號)\s*[.!。]?$/u,
-  /^(?:\S+\s+){0,2}?hesab\S*(?:\s+(?:şimdi|geçici\s+olarak|kalıcı\s+olarak))?\s+devre\s+dışı\s+(?:bırak|bırakın|bırakınız)\s*[.!]?$/iu,
+  /^(?:\S+\s+){0,2}?hesa[bp]\S*(?:\s+(?:şimdi|geçici\s+olarak|kalıcı\s+olarak))?\s+devre\s+dışı\s+(?:bırak|bırakın|bırakınız)\s*[.!]?$/iu,
 ])
 // CU-676 (strict English parity; the English facts are on the issue): closing the account asks delete in fr / es / de / ru / ja / ko
 // as 'Close account' does - the close verb with the account noun, its determiners, up to two slot words ('Fermer mon compte PayPal'),
@@ -742,7 +742,7 @@ function namesRuAccountDeactivate(name) {
     const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
     const any = (words) => `(?:${words.flatMap(folds).join('|')})`
     const verb = any(['деактивировать', 'деактивируйте', 'деактивируй', 'отключить', 'отключите', 'отключи'])
-    const noun = `(?:${any(['аккаунт'])}|${any(['учётную', 'учетную'])}\\s+${any(['запись'])})`
+    const noun = `(?:${any(['аккаунт', 'аккаунты'])}|${any(['учётную', 'учетную'])}\\s+${any(['запись'])}|${any(['учётные', 'учетные'])}\\s+${any(['записи'])})`
     const adv = `(?:\\s+${any(['сейчас', 'навсегда', 'временно'])})?`
     ruAccountDeactivateRegex = new RegExp(`^(?:${any(['временно', 'навсегда'])}\\s+)?(?:${verb}\\s+(?:\\S+\\s+){0,2}?${noun}(?:\\s+\\S+)?${adv}|${noun}\\s+(?:\\S+\\s+){0,1}?${verb})\\s*[.!]?$`, 'iu')
   }

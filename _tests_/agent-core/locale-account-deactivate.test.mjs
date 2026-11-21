@@ -27,3 +27,11 @@ test('CU-672 controls: negation, past / status forms, the bare verb and other ob
  'Не деактивировать аккаунт', 'Аккаунт деактивирован', 'Отключить уведомления', 'アカウントを無効にしました', 'アカウントは無効です', '通知を無効にする', '계정이 비활성화되었습니다', '계정을 비활성화하지 마세요', '알림 비활성화',
  '账户已停用', '停用通知', 'Hesap devre dışı bırakıldı', 'Hesabı devre dışı bırakma', 'Bildirimleri devre dışı bırak', "Don't deactivate my account", 'Account deactivated', 'Disable notifications', 'Disable']) assert.deepEqual(click(name), [], name)
 })
+
+test('CU-680: the plural account nouns and ja / ko \'all\' ask, as \'Deactivate (all) accounts\' does', () => {
+  for (const name of ['Désactiver les comptes', 'Désactiver mes comptes', 'Desactivar cuentas', 'Desactivar todas las cuentas', 'Desativar contas', 'Konten deaktivieren', 'Alle Konten deaktivieren',
+    'Deaktivieren Sie Ihre Konten', 'Benutzerkonten deaktivieren', 'Accounts deactiveren', 'Deactiveer alle accounts', 'Деактивировать аккаунты', 'Отключить учётные записи', 'すべてのアカウントを無効にする',
+    '모든 계정 비활성화', '계정들을 비활성화하세요', 'Disattiva gli account', 'Tüm hesapları devre dışı bırak', 'Deactivate accounts', 'Deactivate all accounts']) assert.ok(click(name).includes('delete'), name)
+  for (const name of ['Konten', 'Comptes désactivés', 'Cuentas desactivadas', 'Konten deaktiviert', 'Konten nicht deaktivieren', 'Аккаунты деактивированы', '모든 알림 비활성화', 'すべての通知を無効にする',
+    'Désactiver les notifications']) assert.deepEqual(click(name), [], name)
+})
