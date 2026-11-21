@@ -717,12 +717,12 @@ const LOCALE_ACCOUNT_DEACTIVATE = Object.freeze([
 // the time adverbs and both orders; German kündigen only with Konto / Account (cu-developer-one 13:35Z; not Abo / Vertrag); negation,
 // past / status forms, the bare verb and other objects ('Fermer la fenêtre', 'Cerrar sesión') stay free.
 const LOCALE_ACCOUNT_CLOSE = Object.freeze([
-  new RegExp(`^${acctLead}(?:fermer|fermez|ferme|clôturer|clôturez|clôture)\\s+(?:\\S+\\s+){0,2}?comptes?(?:\\s+\\S+)?${acctAdverb}\\s*[.!]?$`, 'iu'),
-  new RegExp(`^${acctLead}(?:cerrar|cierra|cierre|cerrad|cierren)\\s+(?:\\S+\\s+){0,2}?cuentas?(?:\\s+\\S+)?${acctAdverb}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^${acctLead}(?:fermer|fermez|ferme|clôturer|clôturez|clôture|résilier|résiliez|résilie)\\s+(?:\\S+\\s+){0,2}?comptes?(?:\\s+\\S+)?${acctAdverb}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^${acctLead}(?:cerrar|cierra|cierre|cerrad|cierren|dar\\s+de\\s+baja|da\\s+de\\s+baja|dé\\s+de\\s+baja|den\\s+de\\s+baja)\\s+(?:\\S+\\s+){0,2}?cuentas?(?:\\s+\\S+)?${acctAdverb}\\s*[.!]?$`, 'iu'),
   new RegExp(`^(?:\\S+\\s+){0,2}?(?:\\S*kont(?:o|en)|accounts?)${acctAdverb}\\s+(?:schließen|kündigen)\\s*[.!]?$`, 'iu'),
   new RegExp(`^(?:schließe|schließt|schließen\\s+sie|kündige|kündigt|kündigen\\s+sie)\\s+(?:\\S+\\s+){0,2}?(?:\\S*kont(?:o|en)|accounts?)(?:\\s+\\S+)?${acctAdverb}\\s*[.!]?$`, 'iu'),
-  /^(?:この|私の|あなたの)?アカウントを?(?:今すぐ|完全に)?(?:閉鎖|解約)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
-  /^(?:내\s+|이\s+)?계정(?:들)?\s*(?:을|를)?\s*(?:(?:지금|즉시|영구적으로)\s+)?(?:해지|폐쇄)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|해|합니다)?\s*[.!]?$/u,
+  /^(?:この|私の|あなたの|すべての|全ての)?アカウントを?(?:今すぐ|完全に)?(?:閉鎖(?:する|して(?:ください)?|します)?|解約(?:する|して(?:ください)?|します)?|閉じる|閉じて(?:ください)?|閉じます)\s*[.!。]?$/u,
+  /^(?:내\s+|이\s+|모든\s+)?계정(?:들)?\s*(?:을|를)?\s*(?:(?:지금|즉시|영구적으로)\s+)?(?:(?:해지|폐쇄)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|해|합니다)?|닫기|닫으세요|닫아\s?주세요|닫아\s?줘|닫으십시오|닫아요|닫아|닫습니다)\s*[.!]?$/u,
 ])
 let ruAccountCloseRegex = null
 function namesRuAccountClose(name) {

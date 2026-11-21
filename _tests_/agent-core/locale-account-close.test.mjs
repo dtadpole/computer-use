@@ -28,3 +28,9 @@ test('CU-676 r2: the plural account nouns ask as English \'Close accounts\' does
     'Cerrar mis cuentas', 'Закрыть аккаунты', 'Закрыть счёт', 'Закрыть счет', 'Закрыть счета', 'Закрыть учётные записи', '계정들 해지', '계정들을 해지하세요', 'Close accounts']) assert.ok(click(name).includes('delete'), name)
   for (const name of ['Счёт оплачен', 'Счёт', 'Konten', 'Comptes fermés', 'Cuentas cerradas', 'Konten geschlossen', 'Konten nicht schließen']) assert.deepEqual(click(name), [], name)
 })
+
+test('CU-676 r3: ja 閉じる / ko 닫기 with the account noun, ja / ko \'all\', fr résilier and es dar de baja join', () => {
+  for (const name of ['アカウントを閉じる', 'アカウントを閉じてください', 'すべてのアカウントを閉鎖', '全てのアカウントを閉じる', '계정 닫기', '계정들 닫기', '계정을 닫으세요', '모든 계정 해지', '모든 계정 닫기',
+    'Résilier le compte', 'Résilier mon compte', 'Résiliez votre compte', 'Dar de baja la cuenta', 'Dar de baja mi cuenta', 'Dé de baja su cuenta', 'Close all accounts']) assert.ok(click(name).includes('delete'), name)
+  for (const name of ['閉じる', 'ウィンドウを閉じる', 'タブを閉じる', '닫기', '창 닫기', '탭 닫기', 'Résilier', 'Dar de baja', 'アカウントを閉じました', '계정이 닫혔습니다', 'Compte résilié', 'Cuenta dada de baja']) assert.deepEqual(click(name), [], name)
+})
