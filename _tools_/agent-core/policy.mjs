@@ -690,6 +690,56 @@ function namesRuResetSettings(name) {
   }
   return ruResetSettingsRegex.test(normaliseName(String(name ?? '')).trim())
 }
+// CU-672 (cu-developer-one's go 08:59Z, strict English parity; the English facts are on the issue): deactivating or disabling the
+// account asks delete in the locales as 'Deactivate account' / 'Disable my account' do - the verb with the account noun, its
+// determiners, up to two slot words ('Désactiver mon compte Facebook'), the time adverbs and both orders. Negation, past / status
+// forms, the bare verb and the verb with other objects stay free: each locale verb means both 'deactivate' and 'disable', and English
+// frees 'Disable' and 'Disable notifications'. r2 (cu-developer-two, cu-developer-one 10:24Z): the Italian elided article joins the
+// noun ('Disattivare l'account').
+const acctAdverb = '(?:\\s+(?:maintenant|définitivement|temporairement|ahora|definitivamente|temporalmente|agora|temporariamente|ora|definitivamente|temporaneamente|jetzt|dauerhaft|vorübergehend|nu|tijdelijk|permanent))?'
+const acctLead = '(?:(?:temporairement|définitivement|temporalmente|definitivamente|temporariamente|temporaneamente)\\s+)?'
+const LOCALE_ACCOUNT_DEACTIVATE = Object.freeze([
+  new RegExp(`^${acctLead}(?:désactiver|désactivez|désactive)\\s+(?:\\S+\\s+){0,2}?compte(?:\\s+\\S+)?${acctAdverb}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^${acctLead}(?:desactivar|desactiva|desactive|desactivad|desactiven|deshabilitar|deshabilita|deshabilite|inhabilitar)\\s+(?:\\S+\\s+){0,2}?cuenta(?:\\s+\\S+)?${acctAdverb}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^${acctLead}(?:desativar|desative|desativa|desativem|desabilitar|desabilite)\\s+(?:\\S+\\s+){0,2}?conta(?:\\s+\\S+)?${acctAdverb}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^${acctLead}(?:disattiva|disattivare|disattivate|disabilita|disabilitare|disabilitate)\\s+(?:\\S+\\s+){0,2}?(?:l['’]\\s*)?account(?:\\s+\\S+)?${acctAdverb}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:\\S+\\s+){0,2}?(?:\\S*konto|account)${acctAdverb}\\s+deaktivieren\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:deaktiviere|deaktiviert|deaktivieren\\s+sie)\\s+(?:\\S+\\s+){0,2}?(?:\\S*konto|account)(?:\\s+\\S+)?${acctAdverb}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:\\S+\\s+){0,2}?account${acctAdverb}\\s+(?:deactiveren|uitschakelen)\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:deactiveer|schakel)\\s+(?:\\S+\\s+){0,2}?account(?:\\s+uit)?${acctAdverb}\\s*[.!]?$`, 'iu'),
+  /^(?:この|私の|あなたの)?アカウントを?(?:一時的に|今すぐ)?(?:無効にする|無効にして(?:ください)?|無効化(?:する|して(?:ください)?)?|停止(?:する|して(?:ください)?)?)\s*[.!。]?$/u,
+  /^(?:내\s+|이\s+)?계정\s*(?:을|를)?\s*(?:지금\s+|일시적으로\s+)?(?:비활성화|일시\s?중지)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|해)?\s*[.!]?$/u,
+  /^(?:停用|禁用|冻结|凍結)(?:我的|此|该|這個|这个)?(?:账户|帐户|账号|帐号|帳戶|帳號)\s*[.!。]?$/u,
+  /^(?:\S+\s+){0,2}?hesab\S*(?:\s+(?:şimdi|geçici\s+olarak|kalıcı\s+olarak))?\s+devre\s+dışı\s+(?:bırak|bırakın|bırakınız)\s*[.!]?$/iu,
+])
+let ruAccountDeactivateRegex = null
+function namesRuAccountDeactivate(name) {
+  if (!ruAccountDeactivateRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const verb = any(['деактивировать', 'деактивируйте', 'деактивируй', 'отключить', 'отключите', 'отключи'])
+    const noun = `(?:${any(['аккаунт'])}|${any(['учётную', 'учетную'])}\\s+${any(['запись'])})`
+    const adv = `(?:\\s+${any(['сейчас', 'навсегда', 'временно'])})?`
+    ruAccountDeactivateRegex = new RegExp(`^(?:${any(['временно', 'навсегда'])}\\s+)?(?:${verb}\\s+(?:\\S+\\s+){0,2}?${noun}(?:\\s+\\S+)?${adv}|${noun}\\s+(?:\\S+\\s+){0,1}?${verb})\\s*[.!]?$`, 'iu')
+  }
+  return ruAccountDeactivateRegex.test(normaliseName(String(name ?? '')).trim())
+}
+// CU-673 (cu-developer-one's go 11:28Z, strict parity with the English set posted on the issue): signing out of all or other devices
+// or sessions asks permission in ja / ko / zh as 'Log out of all devices' does, with the polite forms and a 'now'; the bare verb, past
+// forms, negation and the single-device form stay free.
+const cjkJaAll = '(?:すべての|全ての|全|他の|ほかの|その他の)(?:他の|ほかの|すべての|全ての)?'
+const cjkKoAll = '(?:모든|다른)\\s?(?:모든|다른)?\\s?'
+const cjkZhAll = '(?:所有|全部|其他|其它)(?:其他|其它|所有)?(?:的)?'
+const cjkZhDevice = '(?:设备|裝置|設備|装置|会话|會話|工作階段)'
+const cjkZhVerb = '(?:退出(?:登录|登錄)?|登出|注销|註銷)'
+const CJK_SIGNOUT_ALL = Object.freeze([
+  new RegExp(`^(?:今すぐ)?${cjkJaAll}(?:デバイス|端末|機器|セッション)(?:から|で)(?:今すぐ)?(?:ログアウト|サインアウト)(?:する|して(?:ください)?|します)?\\s*[.!。]?$`, 'u'),
+  // r2 (cu-developer-three, cu-developer-one 11:44Z): the Korean noun-phrase form without 에서 ('모든 기기 로그아웃', as 'Log out all devices')
+  new RegExp(`^(?:지금\\s+)?${cjkKoAll}(?:기기|디바이스|장치|세션)(?:에서)?\\s?(?:지금\\s+)?(?:로그아웃|로그\\s아웃)(?:하기|하세요|해\\s?주세요|해\\s?줘|하십시오|해요|해|합니다)?\\s*[.!]?$`, 'u'),
+  new RegExp(`^(?:立即|现在|立即)?(?:从|從|在)?${cjkZhAll}${cjkZhDevice}(?:上|中)?${cjkZhVerb}\\s*[.!。]?$`, 'u'),
+  // r2 (cu-developer-one, cu-developer-two 11:42Z): zh verb-first ('退出所有设备', '登出所有裝置', '注销其他设备'); '注销账号' stays out
+  new RegExp(`^(?:立即|现在)?${cjkZhVerb}${cjkZhAll}${cjkZhDevice}\\s*[.!。]?$`, 'u'),
+])
 // CU-655: the Russian twin ('Очистить корзину', 'Очистите корзину', 'Корзину очистить', with 'не' as negation) is built from folded
 // words on first use: a judged name has passed normaliseText, which folds Cyrillic homoglyphs to Latin case by case, so each word
 // is folded as written, capitalised and in capitals, as namesWord does for its Cyrillic entries.
@@ -3157,6 +3207,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (grammarEligible && !classes.includes('delete') && LOCALE_HISTORY_CLEAR.some((re) => re.test(String(name ?? '').trim()))) classes.push('delete')
     // CU-655 (cu-developer-one's design): the locale twins of 'Empty trash' (LOCALE_TRASH_EMPTY above).
     if (grammarEligible && !classes.includes('delete') && (LOCALE_TRASH_EMPTY.some((re) => re.test(String(name ?? '').trim())) || namesRuTrashEmpty(name))) classes.push('delete')
+    // CU-673: ja / ko / zh sign-out-everywhere twins (CJK_SIGNOUT_ALL above).
+    if (grammarEligible && !classes.includes('permission') && CJK_SIGNOUT_ALL.some((re) => re.test(String(name ?? '').trim()))) classes.push('permission')
+    // CU-672: locale account-deactivation twins (LOCALE_ACCOUNT_DEACTIVATE above).
+    if (grammarEligible && !classes.includes('delete') && (LOCALE_ACCOUNT_DEACTIVATE.some((re) => re.test(String(name ?? '').trim())) || namesRuAccountDeactivate(name))) classes.push('delete')
     // CU-670: locale 'Reset settings' / factory-reset twins (LOCALE_RESET_SETTINGS above).
     if (grammarEligible && !classes.includes('delete') && (LOCALE_RESET_SETTINGS.some((re) => re.test(String(name ?? '').trim())) || namesRuResetSettings(name))) classes.push('delete')
     // CU-668: locale clear-data twins (LOCALE_DATA_CLEAR above).
