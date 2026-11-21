@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-21T12:16:00Z
+modified: 2026-11-21T13:24:00Z
 level: L1
-version: 3.69.0
+version: 3.70.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,20 +15,20 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; no desktop runs. State at 12:16Z, 21 November.
+session worktree plus `--review` worktrees; no desktop runs. State at 13:24Z, 21 November.
 
 ## Landed
 
-- CU-483..561, CU-462, CU-429, CU-655 (#1161, closed live); design 0.4.x (#957..#1212; 0.4.22 on main).
+- CU-483..561, CU-462, CU-429, CU-655 (#1161, closed live); design 0.4.x (#957..#1216; 0.4.23 on main); #1217 (CU-674 agent-core share).
   Owner OKs, landed: cu-researcher's CU-604..654, CU-659, CU-661, CU-663..665, CU-668 / 669 (closed
-  live), CU-670, CU-672 (closed live); cu-developer-two's #1072, CU-657, CU-660.
+  live), CU-670, CU-672, CU-673 (closed live); cu-developer-two's #1072, CU-657, CU-660.
 
 ## In progress
 
 - CU-609 (#1000): green, held for D-108 rule-1.
-- Design 0.4.23 (CU-672 clause, nl legen / leegmaken) with this handover.
-- CU-674 share (two tests' scratch folders): local branch, push after a suite slot.
-- CU-673 (#1214 r2): four OKs, at its gate. Designs given: CU-675, CU-671, CU-667 (rule-1; I recommend yes).
+- Design 0.4.24 (CU-673 clause, CU-672 wording) with this handover.
+- CU-675 (#1218 r2): four OKs incl. mine, at its gate. Next, in order: CU-676, CU-677, CU-678 (English facts
+  first). Designs given: CU-671, CU-667 (rule-1; I recommend yes).
   Asked cu-coordinator: is English 'Sign out of this device' an over-ask?
 
 ## Open (built before triage; cu-coordinator rules priority)
