@@ -609,6 +609,36 @@ function namesRuFolderEmpty(name) {
   }
   return ruFolderEmptyRegex.test(normaliseName(String(name ?? '')).trim())
 }
+// CU-668 (cu-developer-one's design, 21 Nov 06:47Z): clearing browsing or site data asks delete in the locales whose clear verb
+// does not ask by itself, as 'Clear browsing data' does - verb-first and verb-final, up to two slot words ('Vider toutes les données
+// de navigation'), negation as its twin, ja / ko politeness. Bare nouns, show / settings labels, past forms, caches ('Vider le
+// cache', CU-659) and the verbs' other objects stay free.
+const dataSlot = '(?:\\S+\\s+){0,2}?'
+const LOCALE_DATA_CLEAR = Object.freeze([
+  new RegExp(`^(?:ne\\s+pas\\s+)?(?:vider|videz|vide)\\s+${dataSlot}données\\s+(?:de\\s+navigation|du\\s+site|des\\s+sites|de\\s+site)(?=\\s|$|[.!?])`, 'iu'),
+  new RegExp(`^ne\\s+(?:videz|vide)\\s+pas\\s+${dataSlot}données\\s+(?:de\\s+navigation|du\\s+site|des\\s+sites)(?=\\s|$|[.!?])`, 'iu'),
+  new RegExp(`^(?:no\\s+)?(?:limpiar|limpia|limpie|limpiad|limpien|vaciar|vacía|vacia|vacíe|vaciad|vacíen)\\s+${dataSlot}datos\\s+(?:de\\s+navegación|del\\s+sitio|de\\s+sitios?|de\\s+los\\s+sitios)(?=\\s|$|[.!?])`, 'iu'),
+  new RegExp(`^(?:não\\s+|nao\\s+)?(?:limpar|limpe|limpa|limpem)\\s+${dataSlot}dados\\s+(?:de\\s+navegação|do\\s+site|dos\\s+sites)(?=\\s|$|[.!?])`, 'iu'),
+  new RegExp(`^(?:non\\s+)?(?:svuota|svuotare|svuotate|svuoti|cancella|cancellare|cancellate)\\s+${dataSlot}dati\\s+(?:di\\s+navigazione|del\\s+sito|dei\\s+siti)(?=\\s|$|[.!?])`, 'iu'),
+  new RegExp(`^${dataSlot}(?:\\S*(?:browser|website|web|seiten)daten|daten\\s+(?:des\\s+browsers|der\\s+website))(?:\\s+\\S+){0,2}?\\s+(?:leeren|bereinigen)\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:leere|leert|leeren\\s+sie|bereinige|bereinigt|bereinigen\\s+sie)\\s+${dataSlot}(?:\\S*(?:browser|website|web|seiten)daten)(?=\\s|$|[.!?])`, 'iu'),
+  new RegExp(`^${dataSlot}\\S*(?:browse|site|website)gegevens(?:\\s+\\S+){0,2}?\\s+(?:legen|leegmaken|leeg\\s+maken|wissen)\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:niet\\s+)?(?:wis|leeg|leegt|legen|leegmaken)\\s+${dataSlot}\\S*(?:browse|site|website)gegevens(?=\\s|$|[.!?])`, 'iu'),
+  new RegExp(`^${dataSlot}(?:tarama|site|gezinme)\\s+veriler\\S*(?:\\s+\\S+){0,2}?\\s+(?:temizle|temizleyin|temizleyiniz)\\s*[.!]?$`, 'iu'),
+  /(?:閲覧データ|サイトデータ|ブラウジングデータ).{0,8}?(?:クリア|空に)(?!し(?:ました|た)|され|済|完了|中)/u,
+  /(?:사이트\s?데이터|인터넷\s?사용\s?기록|검색\s?데이터)\S*\s*(?:\S+\s+){0,2}?(?:비우(?:기|세요|십시오)?|비워(?:\s?줘|\s?주세요|요)?)(?=\s|$|[.!?])/u,
+])
+let ruDataClearRegex = null
+function namesRuDataClear(name) {
+  if (!ruDataClearRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const verb = any(['очистить', 'очисти', 'очистите', 'очищать', 'очищай', 'очищайте'])
+    const data = `${any(['данные'])}\\s+${any(['браузера', 'сайта', 'сайтов', 'просмотра'])}`
+    ruDataClearRegex = new RegExp(`^(?:${any(['не'])}\\s+)?(?:${verb}\\s+(?:\\S+\\s+){0,2}?${data}(?=\\s|$|[.!?])|${data}\\s+(?:\\S+\\s+){0,2}?${verb}(?=\\s|$|[.!]))`, 'iu')
+  }
+  return ruDataClearRegex.test(normaliseName(String(name ?? '')).trim())
+}
 // CU-655: the Russian twin ('Очистить корзину', 'Очистите корзину', 'Корзину очистить', with 'не' as negation) is built from folded
 // words on first use: a judged name has passed normaliseText, which folds Cyrillic homoglyphs to Latin case by case, so each word
 // is folded as written, capitalised and in capitals, as namesWord does for its Cyrillic entries.
@@ -3076,6 +3106,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (grammarEligible && !classes.includes('delete') && LOCALE_HISTORY_CLEAR.some((re) => re.test(String(name ?? '').trim()))) classes.push('delete')
     // CU-655 (cu-developer-one's design): the locale twins of 'Empty trash' (LOCALE_TRASH_EMPTY above).
     if (grammarEligible && !classes.includes('delete') && (LOCALE_TRASH_EMPTY.some((re) => re.test(String(name ?? '').trim())) || namesRuTrashEmpty(name))) classes.push('delete')
+    // CU-668: locale clear-data twins (LOCALE_DATA_CLEAR above).
+    if (grammarEligible && !classes.includes('delete') && (LOCALE_DATA_CLEAR.some((re) => re.test(String(name ?? '').trim())) || namesRuDataClear(name))) classes.push('delete')
     // CU-663: the locale twins of CU-659 (LOCALE_FOLDER_EMPTY above).
     if (grammarEligible && !classes.includes('delete') && (LOCALE_FOLDER_EMPTY.some((re) => re.test(String(name ?? '').trim())) || namesRuFolderEmpty(name))) classes.push('delete')
     // CU-659 (cu-developer-one's go 17:13Z): emptying a mail or file folder deletes its items, as 'Empty trash' does - 'Empty Deleted
