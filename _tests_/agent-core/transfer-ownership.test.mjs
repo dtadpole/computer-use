@@ -22,3 +22,9 @@ test('CU-678 controls: negation, past / status forms and bare nouns do not take 
  'Eigentümerschaft wurde übertragen', 'Eigentümerschaft nicht übertragen', 'Eigendom overgedragen', '所有権を譲渡しました', '所有権', '소유권이 이전되었습니다', '소유권',
  '所有权已转移', '所有权', 'Sahiplik devredildi', 'Sahiplik']) assert.ok(!click(name).includes('permission'), name)
 })
+
+test('CU-678 r2: the Russian twin, a leading zh \'now\' and de compound ownership nouns ask permission', () => {
+  for (const name of ['Передать право владения', 'Передайте право собственности', 'Передайте владение', 'Передать права владельца', 'Передать владение репозиторием', '立即转移所有权', '马上转让所有权',
+    'Repository-Eigentümerschaft übertragen', 'Projekteigentümerschaft übertragen', 'Übertragen Sie die Repository-Eigentümerschaft']) assert.ok(click(name).includes('permission'), name)
+  for (const name of ['Право владения', 'Владение передано', 'Не передавать владение', 'Передать файл', 'Eigentümerschaft wurde übertragen', '所有权已转移', '立即']) assert.ok(!click(name).includes('permission'), name)
+})
