@@ -639,6 +639,57 @@ function namesRuDataClear(name) {
   }
   return ruDataClearRegex.test(normaliseName(String(name ?? '')).trim())
 }
+// CU-670 (cu-developer-one's design 08:01Z, strict parity 08:03Z): the locale twins of 'Reset settings' and 'Factory reset' ask
+// delete exactly where English does - the reset verb before the settings noun, with determiner / quantifier slot words only
+// ('Réinitialiser tous les paramètres'), verb-final in de / nl / ja / ko / tr; the factory-reset twins. Free as in English: negation
+// ("Don't reset settings" is free), other or qualified objects ('Reset preferences', 'Reset network settings', 'Réinitialiser le
+// zoom'), 'Restore defaults' twins ('恢复默认设置', 'Ripristina predefiniti'), past / status forms and bare nouns.
+const LOCALE_RESET_SETTINGS = Object.freeze([
+  /^(?:réinitialiser|réinitialisez|réinitialise)\s+(?:(?:tous|toutes)\s+)?(?:les|vos|tes|mes)\s+(?:paramètres|réglages)(?:\s+(?:maintenant|tout\s+de\s+suite))?\s*[.!]?$/iu,
+  /^(?:restablecer|restablece|restablezca|restableced|restablezcan)\s+(?:(?:toda|todas|todos)\s+)?(?:la|las|los|tu|tus|su|sus)?\s*(?:configuración|ajustes|configuraciones)(?:\s+(?:ahora|ya))?\s*[.!]?$/iu,
+  /^(?:redefinir|redefina|redefine|redefinam)\s+(?:(?:todas|todos)\s+)?(?:as|os|suas|seus|tuas|teus)?\s*(?:configurações|definições)(?:\s+(?:agora|já))?\s*[.!]?$/iu,
+  /^(?:ripristina|ripristinare|ripristinate|reimposta|reimpostare|reimpostate)\s+(?:tutte\s+)?(?:le\s+|tue\s+|sue\s+)?impostazioni(?:\s+(?:ora|adesso|subito))?\s*[.!]?$/iu,
+  /^(?:(?:die|alle|ihre|deine|meine)\s+){0,2}einstellungen(?:\s+(?:jetzt|sofort))?\s+zurücksetzen\s*[.!]?$/iu,
+  /^(?:setze|setzt|setzen\s+sie)\s+(?:(?:die|alle|ihre|deine|meine)\s+){0,2}einstellungen(?:\s+(?:jetzt|sofort))?\s+zurück\s*[.!]?$/iu,
+  /^(?:(?:de|alle|je|uw|mijn)\s+){0,2}instellingen(?:\s+(?:nu|direct))?\s+(?:resetten|opnieuw\s+instellen|terugzetten)\s*[.!]?$/iu,
+  /^(?:reset|zet)\s+(?:(?:de|alle|je|uw|mijn)\s+){0,2}instellingen(?:\s+terug)?\s*[.!]?$/iu,
+  /^(?:今すぐ)?(?:すべての|全ての)?設定を?(?:今すぐ)?(?:リセット|初期化)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
+  /^(?:지금\s+)?(?:모든\s+)?설정\S{0,1}\s*(?:지금\s+)?(?:초기화|리셋)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|해)?\s*[.!]?$/u,
+  /^(?:立即|现在)?(?:重置|重设)(?:所有|全部)?设置\s*[.!。]?$/u,
+  /^(?:(?:tüm|bütün)\s+)?ayarlar\S*(?:\s+(?:şimdi|hemen))?\s+(?:sıfırla|sıfırlayın|sıfırlayınız)\s*[.!]?$/iu,
+  // r2 (cu-developer-two, cu-developer-one 08:21Z): the 'Reset to defaults' twins - a reset verb (not a restore verb) before 'defaults'
+  /^(?:réinitialiser|réinitialisez|réinitialise)\s+(?:(?:aux?|les)\s+)?(?:(?:valeurs|paramètres|réglages)\s+)?par\s+défaut\s*[.!]?$/iu,
+  /^(?:restablecer|restablece|restablezca|restableced|restablezcan)\s+(?:a\s+)?(?:los\s+)?(?:valores\s+)?(?:predeterminados|por\s+defecto)\s*[.!]?$/iu,
+  /^(?:redefinir|redefina|redefine|redefinam)\s+(?:para\s+)?(?:os?\s+)?(?:valores\s+)?(?:padrão|padrões|predefinidos)\s*[.!]?$/iu,
+  /^(?:reimposta|reimpostare|reimpostate)\s+(?:ai\s+|i\s+)?(?:valori\s+)?predefiniti\s*[.!]?$/iu,
+  /^(?:(?:\S*einstellungen|alles)\s+)?auf\s+(?:die\s+)?(?:standard|standardwerte|standardeinstellungen|voreinstellungen)\s+zurücksetzen\s*[.!]?$/iu,
+  /^(?:(?:instellingen|alles)\s+)?(?:terugzetten|resetten)\s+(?:naar|op)\s+(?:de\s+)?standaard(?:waarden|instellingen)?\s*[.!]?$/iu,
+  /^(?:デフォルト|既定値|既定の設定)に(?:リセット)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
+  /^기본값으로\s?(?:초기화|재설정)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|해)?\s*[.!]?$/u,
+  /^重置为默认(?:值|设置)?\s*[.!。]?$/u,
+  /^varsayılan(?:a|lara|\s+ayarlara)\s+(?:sıfırla|sıfırlayın|sıfırlayınız)\s*[.!]?$/iu,
+  // the factory-reset twins ('Factory reset', 'Reset to factory settings', 'Restore factory settings' ask in English)
+  /^(?:réinitialis\S*|rétablir|rétablissez|restaurer|restaurez)\b.*\busine\b|^réinitialisation\s+d['’]usine\s*[.!]?$/iu,
+  /^(?:restablec\S*|restaurar|restaure)\b.*\bfábrica\b|^restablecimiento\s+de\s+fábrica\s*[.!]?$/iu,
+  /^(?:redefin\S*|restaurar|restaure)\b.*\bfábrica\b|^redefinição\s+de\s+fábrica\s*[.!]?$/iu,
+  /^(?:ripristin\S*|reimpost\S*)\b.*\bfabbrica\b/iu,
+  /^(?:\S+\s+){0,3}?(?:op\s+)?fabrieksinstellingen\s+(?:herstellen|terugzetten|resetten)\s*[.!]?$|^(?:herstel|zet|reset)\b.*\bfabrieksinstellingen\b/iu,
+  /工場出荷.{0,8}?(?:リセット|初期化|戻す|戻して)(?!し(?:ました|た)|され|済|完了|中)/u,
+  /^공장\s?(?:초기화|설정\s?복원)(?:하기|하세요|해\s?주세요|하십시오)?\s*[.!]?$/u,
+  /^(?:恢复|重置为?|还原)出厂设置\s*[.!。]?$/u,
+  /^fabrika\s+ayarlar\S*\s+(?:sıfırla|sıfırlayın|dön|geri\s+dön|geri\s+yükle)\s*[.!]?$/iu,
+])
+let ruResetSettingsRegex = null
+function namesRuResetSettings(name) {
+  if (!ruResetSettingsRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const verb = any(['сбросить', 'сбросьте', 'сбрось'])
+    const slot = `(?:${any(['все', 'свои', 'ваши', 'мои'])}\\s+)?`
+    ruResetSettingsRegex = new RegExp(`^(?:${verb}\\s+${slot}${any(['настройки'])}(?:\\s+${any(['сейчас'])})?|${verb}\\s+(?:${any(['настройки'])}\\s+)?(?:${any(['до', 'к'])}\\s+${any(['значений', 'значениям'])}\\s+)?${any(['по'])}\\s+${any(['умолчанию'])}|${verb}\\s+(?:\\S+\\s+){0,2}?${any(['заводских'])}\\s+${any(['настроек'])}|${any(['сброс'])}\\s+(?:\\S+\\s+){0,2}?${any(['заводских'])}\\s+${any(['настроек'])})\\s*[.!]?$`, 'iu')
+  }
+  return ruResetSettingsRegex.test(normaliseName(String(name ?? '')).trim())
+}
 // CU-655: the Russian twin ('Очистить корзину', 'Очистите корзину', 'Корзину очистить', with 'не' as negation) is built from folded
 // words on first use: a judged name has passed normaliseText, which folds Cyrillic homoglyphs to Latin case by case, so each word
 // is folded as written, capitalised and in capitals, as namesWord does for its Cyrillic entries.
@@ -3106,6 +3157,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (grammarEligible && !classes.includes('delete') && LOCALE_HISTORY_CLEAR.some((re) => re.test(String(name ?? '').trim()))) classes.push('delete')
     // CU-655 (cu-developer-one's design): the locale twins of 'Empty trash' (LOCALE_TRASH_EMPTY above).
     if (grammarEligible && !classes.includes('delete') && (LOCALE_TRASH_EMPTY.some((re) => re.test(String(name ?? '').trim())) || namesRuTrashEmpty(name))) classes.push('delete')
+    // CU-670: locale 'Reset settings' / factory-reset twins (LOCALE_RESET_SETTINGS above).
+    if (grammarEligible && !classes.includes('delete') && (LOCALE_RESET_SETTINGS.some((re) => re.test(String(name ?? '').trim())) || namesRuResetSettings(name))) classes.push('delete')
     // CU-668: locale clear-data twins (LOCALE_DATA_CLEAR above).
     if (grammarEligible && !classes.includes('delete') && (LOCALE_DATA_CLEAR.some((re) => re.test(String(name ?? '').trim())) || namesRuDataClear(name))) classes.push('delete')
     // CU-663: the locale twins of CU-659 (LOCALE_FOLDER_EMPTY above).
