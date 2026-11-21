@@ -1,13 +1,13 @@
 ---
 title: '[cu] Researcher - Handover'
 created: 2026-11-08T04:16:21Z
-modified: 2026-11-20T09:08:00Z
+modified: 2026-11-20T22:03:00Z
 level: L2
-version: 5.50.0
+version: 5.51.0
 description: 'What the next session of [cu] Researcher needs - the High lane, the under-ask hunt, open reviews, the scripts, rules and lessons.'
 status: unverified
 grounded_in:
-  - source: the seat's own state at 0908Z 20 Nov
+  - source: the seat's own state at 2203Z 20 Nov
 ---
 
 # [cu] Researcher - Handover
@@ -16,16 +16,16 @@ Start here, then [responsibilities](responsibilities.md) and [red-team-consent-t
 
 ```text
 WHERE: worktree ~/dtadpole/computer-use-wt/<session-id>; test merges in <session-id>--probe.
-TOOLS: the host tmp cleaner deletes /tmp files untouched 3 days (20 Nov 08:00Z): touch /tmp/cu-r-probe/* hourly.
-Restore: git show f2a8cdca86:_projects_/computer-use/_seats_/cu-researcher/tools/<f> in the reflection repo
-(not on its main); rebuild tmatrices with gen-matrices.mjs; a sweep line must show >0 matrices.
+TOOLS: the host tmp cleaner deletes /tmp files untouched 3 days: touch /tmp/cu-r-probe/* hourly; durable
+copy on reflection main (_seats_/cu-researcher/tools, install.sh; CU_R_PROBE_WT sets the probe worktree).
+Sweeps only through sweepsafe.sh (complete runs, N>0 matrices). Pause my measures while my PR gates (load holds).
 
-STATE (09:08Z 20 Nov): goal renewed by hd-coordinator. 48 issues closed 16-20 Nov (latest: Russian /
-Korean imperatives, Russian / Korean cancel rows). In Progress: CU-645 -> #1129 (ready; RULE-1, waits on
-cu-coordinator's yes), CU-644 -> #1149 (clear + 1-4 words + history; four OKs, gate). Rule-1 items filed and
-waiting: CU-649 (negation), CU-651, CU-647, CU-633. Imperatives: IMPERATIVE_FORMS (FR / DE / ES / IT / PT /
-NL / RU / KO) + collision / object-only sets + parity and pinned tests. Pins: CU-410, bare 'Opt out'.
-Battery first: every gender's possessive, case particles, number, formality. Read the inbox between waits.
+STATE (22:03Z 20 Nov): goal renewed. 50 issues closed 16-20 Nov. In Progress: CU-645 ->
+#1129 (ready; RULE-1, waits on cu-coordinator's yes), CU-661 -> #1174 (place words in the empty-folder slot;
+review). Verify: CU-659, CU-375. Rule-1 filed and waiting: CU-649, CU-651, CU-647, CU-642, CU-658, CU-633.
+Locale rules: LOCALE_HISTORY_CLEAR, the empty-folder rule, IMPERATIVE_FORMS (FR / DE / ES / IT / PT / NL /
+RU / KO). Battery before r1: possessives by gender, particles, formality, open slot (1-4 words, 5 free),
+verb-final adverbs, past / passive free, negation as twin. Inbox every 5 minutes while a PR is live.
 
 BEFORE A FIRST OK: held-out once; _tools_/probe-kit/class-sweeps.mjs <class> main vs merge (public
 floor); a PRIVATE class set written BEFORE the round (heldout.mjs; /tmp/cu-r-probe/cu5NN-rKset.json,
