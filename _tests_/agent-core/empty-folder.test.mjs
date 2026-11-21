@@ -22,7 +22,9 @@ test('CU-659: emptying a folder and clearing storage ask delete, as their twins'
     // a plural content noun first counts as a quantifier
     'Empty items from Deleted Items', 'Empty messages in Junk Email', 'Empty files in this folder', 'Empty attachments from Sent Items', 'Empty conversations in this folder', 'Empty threads in Archive', 'Empty notes in this folder', 'Empty documents from Archive', 'Empty photos in this folder',
     // CU-664: adjectives before the plural noun, and Spam as a folder
-    'Empty old documents from this folder', 'Empty unread messages in Inbox', 'Empty all messages in Spam', 'Empty unread messages in Spam', 'Empty old read messages in the Junk Email folder', 'Empty large files in Archive']) assert.ok(click(name).includes('delete'), name)
+    'Empty old documents from this folder', 'Empty unread messages in Inbox', 'Empty all messages in Spam', 'Empty unread messages in Spam', 'Empty old read messages in the Junk Email folder', 'Empty large files in Archive',
+    // CU-664 survivor (cu-verifier 05:09Z): only the open-slot branch's 'spam' token decides the negated bare name
+    "Don't empty Spam", 'Do not empty Spam']) assert.ok(click(name).includes('delete'), name)
 })
 
 test('CU-659 controls: status / past forms, carts, caches, open / view and bare nouns stay free', () => {
