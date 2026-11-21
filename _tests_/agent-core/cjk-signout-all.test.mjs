@@ -31,7 +31,9 @@ test('CU-673 r2: stacked other + all, the Korean noun-phrase form, zh verb-first
 test('CU-675: ja / ko / zh sign-out-everywhere and revoke-session twins ask permission; the revoke / cancel verbs ask only with the session noun', () => {
   for (const name of ['すべての場所でログアウト', 'どこでもサインアウト', 'すべての場所からログアウトしてください', '모든 곳에서 로그아웃', '모든 곳에서 로그아웃하기', '어디서나 로그아웃', '在所有地方退出', '在所有位置登出',
     '任何地方都退出登录', 'すべてのセッションを取り消す', 'セッションを取り消してください', '他のセッションを失効させる', '모든 세션 취소', '다른 세션을 해지하세요', '이 세션 철회', '撤销所有会话', '撤銷所有工作階段',
-    '撤销此会话', 'Sign out everywhere', 'Revoke all sessions']) assert.ok(click(name).includes('permission'), name)
+    '撤销此会话', 'Sign out everywhere', 'Revoke all sessions',
+    // r2 (cu-developer-two 12:49Z): 'now' with the revoke rows
+    '立即撤销所有会话', '今すぐすべてのセッションを取り消す', 'セッションを今すぐ取り消してください', '지금 모든 세션 취소', '모든 세션 지금 해지하기']) assert.ok(click(name).includes('permission'), name)
   for (const name of ['取り消す', '取消', '취소', '撤销', '注文を取り消す', '예약 취소', '撤销更改', 'セッション', '세션', '会话', 'すべての場所でログアウトしました', '모든 곳에서 로그아웃되었습니다', '已撤销所有会话',
     'セッションを取り消さない', '모든 세션 취소하지 마세요', 'どこでも', 'Log me out everywhere', 'End all sessions']) assert.ok(!click(name).includes('permission'), name)
 })
