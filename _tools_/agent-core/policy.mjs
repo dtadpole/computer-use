@@ -1009,6 +1009,32 @@ function namesRuUnlinkAccount(name) {
   }
   return ruUnlinkAccountRegex.test(normaliseName(String(name ?? '')).trim())
 }
+// CU-689 (strict English parity; the English facts are on the issue): linking an account or device asks permission in the locales as
+// 'Link account' / 'Link device' do - the link verb with the account / device noun, a brand / possessive slot, plural, 'now', and
+// negation (\"Don't link account\" asks in English). Bare verbs, other objects ('Link phone number'), past / status stay free.
+const LOCALE_LINK_ACCOUNT = Object.freeze([
+  /^(?:ne\s+pas\s+)?(?:lier|liez|associer|associez)\s+(?:\S+\s+){0,2}?(?:l['’]\s*)?(?:comptes?|appareils?)(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:no\s+|não\s+|nao\s+)?(?:vincular|vincula|vincule|asociar|asocia|asocie)\s+(?:\S+\s+){0,2}?(?:cuentas?|dispositivos?|contas?|aparelhos?)(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:non\s+)?(?:collega|collegare|associa|associare)\s+(?:\S+\s+){0,2}?(?:l['’]\s*)?(?:account|dispositivi?|dispositivo)(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:(?:das|dein|ihr|mein|dieses)\s+)?(?:\S+\s+)?(?:\S*kont(?:o|en)|\S*account|\S*gerät(?:e)?)(?:\s+(?:jetzt|nicht))?\s+verknüpfen\s*[.!]?$/iu,
+  /^(?:verknüpfen\s+sie|verknüpfe)\s+(?:\S+\s+){0,2}?(?:\S*kont(?:o|en)|\S*account|\S*gerät(?:e)?)(?:\s+\S+)?\s*[.!]?$/iu,
+  /^(?:(?:het|dit|mijn|je)\s+)?(?:\S+\s+)?(?:account|accounts|apparaat|apparaten)(?:\s+(?:nu|niet))?\s+koppelen\s*[.!]?$/iu,
+  /^(?:今すぐ)?(?:この)?(?:\S+の)?(?:アカウント|デバイス|端末)(?:を|と)?(?:リンク|連携|紐付け|ひも付け)(?:する|して(?:ください)?|します|しない(?:で(?:ください)?)?)?\s*[.!。]?$/u,
+  /^(?:(?:지금|즉시)\s+)?(?:이\s+|내\s+)?(?:\S+\s+)?(?:계정|기기|장치)(?:들)?\s*(?:을|를)?\s*(?:연결|연동|링크)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다|하지\s?마(?:세요|십시오)?)?\s*[.!]?$/u,
+  /^(?:立即|马上|现在|不要)?(?:关联|關聯|绑定|綁定)(?:此|这个|該|该)?(?:\S{0,8}的)?(?:账户|帳戶|账号|帳號|设备|裝置|設備)\s*[.!。]?$/u,
+  new RegExp(`^(?:bu\\s+)?(?:\\S+\\s+)?(?:hesab[ıiI]|hesapl[aA]r[ıI]|cihaz[ıiI]|cihazl[aA]r[ıI])\\s+(?:bağla|bağlay[ıI]n|bağlama)\\s*[.!]?$`, 'iu'),
+])
+let ruLinkAccountRegex = null
+function namesRuLinkAccount(name) {
+  if (!ruLinkAccountRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const verb = `(?:${any(['привязать', 'привяжите', 'привяжи'])}|${any(['не'])}\\s+${any(['привязывать'])})`
+    const noun = any(['аккаунт', 'аккаунты', 'устройство', 'устройства'])
+    ruLinkAccountRegex = new RegExp(`^(?:${any(['сейчас'])}\\s+)?${verb}\\s+(?:\\S+\\s+){0,2}?${noun}(?:\\s+\\S+){0,2}?\\s*[.!]?$`, 'iu')
+  }
+  return ruLinkAccountRegex.test(normaliseName(String(name ?? '')).trim())
+}
 // CU-655: the Russian twin ('Очистить корзину', 'Очистите корзину', 'Корзину очистить', with 'не' as negation) is built from folded
 // words on first use: a judged name has passed normaliseText, which folds Cyrillic homoglyphs to Latin case by case, so each word
 // is folded as written, capitalised and in capitals, as namesWord does for its Cyrillic entries.
@@ -3485,6 +3511,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (grammarEligible && !classes.includes('permission') && (CJK_GRANT_SHARE_INVITE.some((re) => re.test(String(name ?? '').trim())) || namesRuGrantShareInvite(name))) classes.push('permission')
     // CU-685: locale unlink-account / device twins (LOCALE_UNLINK_ACCOUNT above).
     if (grammarEligible && !classes.includes('permission') && (LOCALE_UNLINK_ACCOUNT.some((re) => re.test(String(name ?? '').trim().replace(/İ/g, 'i'))) || namesRuUnlinkAccount(name))) classes.push('permission')
+    // CU-689: locale link-account / device twins (LOCALE_LINK_ACCOUNT above).
+    if (grammarEligible && !classes.includes('permission') && (LOCALE_LINK_ACCOUNT.some((re) => re.test(String(name ?? '').trim().replace(/İ/g, 'i'))) || namesRuLinkAccount(name))) classes.push('permission')
     // CU-684: locale leave-workspace twins (LOCALE_LEAVE_WORKSPACE above).
     if (grammarEligible && !classes.includes('permission') && (LOCALE_LEAVE_WORKSPACE.some((re) => re.test(String(name ?? '').trim())) || namesRuLeaveWorkspace(name))) classes.push('permission')
     // CU-678: transfer-ownership twins (TRANSFER_OWNERSHIP above).
