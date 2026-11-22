@@ -1119,6 +1119,22 @@ function namesRuAdminGrant(name) {
   }
   return ruAdminGrantRegex.test(normaliseName(String(name ?? '')).trim())
 }
+// CU-693 (strict English parity; the English facts are on the issue): the publish verb asks submit in ru / ko as 'Publish' / 'Post' do -
+// bare, with an object, 'now', and negated ("Don't publish" asks). Past / status and the un- / re- forms stay free.
+const KO_PUBLISH = Object.freeze([
+  // r2 (cu-developer-three 11:07Z): an optional bare object noun before 게시 / 발행 ('글 게시', '공지 발행'), as CU-692's ko approve line
+  /^(?:(?:지금|즉시)\s+)?(?:\S+\s+)?(?:\S+(?:을|를)\s*)?(?:게시|발행|게시물\s?게시)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다|하지\s?마(?:세요|십시오)?)?\s*[.!]?$/u,
+])
+let ruPublishRegex = null
+function namesRuPublish(name) {
+  if (!ruPublishRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const verb = `(?:${any(['опубликовать', 'опубликуйте', 'опубликуй'])}|${any(['не'])}\\s+${any(['публиковать'])})`
+    ruPublishRegex = new RegExp(`^(?:${any(['сейчас'])}\\s+)?${verb}(?:\\s+\\S+){0,3}?\\s*[.!]?$`, 'iu')
+  }
+  return ruPublishRegex.test(normaliseName(String(name ?? '')).trim())
+}
 // CU-692 (strict English parity; the English facts are on the issue): the approve verb asks submit in the locales as 'Approve' does -
 // bare, with any object, with 'all' / 'now', and negated ("Don't approve" asks). Past / status forms and the approval nouns stay free.
 const LOCALE_APPROVE = Object.freeze([
@@ -3630,6 +3646,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // CU-691: locale admin-role twins - grant / revoke ask permission, remove asks delete (LOCALE_ADMIN_GRANT / LOCALE_ADMIN_REMOVE above).
     if (grammarEligible && !classes.includes('permission') && (LOCALE_ADMIN_GRANT.some((re) => re.test(String(name ?? '').trim().replace(/İ/g, 'i'))) || namesRuAdminGrant(name))) classes.push('permission')
     if (grammarEligible && !classes.includes('delete') && LOCALE_ADMIN_REMOVE.some((re) => re.test(String(name ?? '').trim()))) classes.push('delete')
+    // CU-693: ru / ko publish twins ask submit (KO_PUBLISH and the ru builder above).
+    if (grammarEligible && !classes.includes('submit') && (KO_PUBLISH.some((re) => re.test(String(name ?? '').trim())) || namesRuPublish(name))) classes.push('submit')
     // CU-692: locale approve twins ask submit (LOCALE_APPROVE above).
     if (grammarEligible && !classes.includes('submit') && (LOCALE_APPROVE.some((re) => re.test(String(name ?? '').trim())) || namesRuApprove(name))) classes.push('submit')
     // CU-684: locale leave-workspace twins (LOCALE_LEAVE_WORKSPACE above).
