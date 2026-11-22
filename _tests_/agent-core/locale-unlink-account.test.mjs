@@ -24,3 +24,9 @@ test('CU-685 r2: the zh split form and the de compound Verknüpfung ask permissi
   for (const name of ['解除账户关联', '解除账号绑定', '取消设备绑定', '解除帳號綁定', 'Kontoverknüpfung aufheben', 'Die Kontoverknüpfung aufheben', 'Google-Kontoverknüpfung aufheben', 'Geräteverknüpfung aufheben', 'Accountkopplung aufheben']) assert.ok(click(name).includes('permission'), name)
   for (const name of ['解除银行卡绑定', '解除关联', 'Kontoverknüpfung', 'Kontoverknüpfung aufgehoben', 'Verknüpfung aufheben']) assert.ok(!click(name).includes('permission'), name)
 })
+
+test('CU-685 r3: the tr compound noun and Turkish capitals, the de formal imperative and the ko object particle ask permission', () => {
+  for (const name of ['Hesap bağlantısını kaldır', 'Cihaz bağlantısını kes', 'HESABIN BAĞLANTISINI KALDIR', 'HESAP BAĞLANTISINI KALDIR', 'Hesabın bağlantısını kaldırın', 'Entkoppeln Sie das Konto',
+    'Entkoppeln Sie Ihr Google-Konto', 'Google 계정 연결을 해제하세요', '계정 연결을 해제', '계정의 연결 해제']) assert.ok(click(name).includes('permission'), name)
+  for (const name of ['Kartın bağlantısını kaldır', 'Bağlantıyı kaldır', 'Entkoppeln Sie die Karte', '카드 연결을 해제하세요', '계정 연결이 해제되었습니다']) assert.ok(!click(name).includes('permission'), name)
+})
