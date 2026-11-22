@@ -1134,6 +1134,34 @@ function namesRuPublish(name) {
   }
   return ruPublishRegex.test(normaliseName(String(name ?? '')).trim())
 }
+// CU-692 (strict English parity; the English facts are on the issue): the approve verb asks submit in the locales as 'Approve' does -
+// bare, with any object, with 'all' / 'now', and negated ("Don't approve" asks). Past / status forms and the approval nouns stay free.
+const LOCALE_APPROVE = Object.freeze([
+  /^(?:ne\s+pas\s+)?(?:approuver|approuvez|approuve)(?:\s+\S+){0,4}?\s*[.!]?$/iu,
+  /^(?:tout|tous|toutes)\s+(?:approuver|approuvez)\s*[.!]?$/iu,
+  /^(?:no\s+)?(?:aprobar|aprueba|apruebe|aprueben)(?:\s+\S+){0,4}?\s*[.!]?$/iu,
+  /^(?:não\s+|nao\s+)?(?:aprovar|aprova|aprove)(?:\s+\S+){0,4}?\s*[.!]?$/iu,
+  /^(?:non\s+)?(?:approva|approvare|approvate|approvi)(?:\s+\S+){0,4}?\s*[.!]?$/iu,
+  /^(?:\S+\s+){0,3}?(?:nicht\s+)?genehmigen\s*[.!]?$/iu,
+  /^(?:genehmigen\s+sie|genehmige)(?:\s+\S+){0,4}?\s*[.!]?$/iu,
+  /^(?:\S+\s+){0,3}?(?:niet\s+)?goedkeuren\s*[.!]?$/iu,
+  // go (cu-developer-one 09:15Z): bare 承認 / 승인 ask too - the bare Sino-noun is the button verb, as bare 削除 / 삭제 / 제거 on CU-686
+  /^(?:\S+を)?(?:今すぐ)?承認(?:する|して(?:ください)?|します|しない(?:で(?:ください)?)?)?\s*[.!。]?$/u,
+  /^(?:\S+\s+)?(?:\S+(?:을|를)\s*)?승인(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다|하지\s?마(?:세요|십시오)?)?\s*[.!]?$/u,
+  // r2 (cu-developer-three, cu-developer-one 09:28Z, final): no open tail - 批准 bare, or + a determiner + a request noun; so 批准人 /
+  // 批准时间 (nouns) and 批准了 / 批准中 / 批准过 (past / status) stay free, as 'Approver', 'Approval date', 'Approved'
+  /^(?:不要|立即)?(?:批准|审批通过|審批通過)(?:(?:此|这个|這個|该|該|所有|全部)?(?:请求|請求|申请|申請|变更|變更|合并请求|合併請求|订单|訂單|文档|文件))?\s*[.!。]?$/u,
+])
+let ruApproveRegex = null
+function namesRuApprove(name) {
+  if (!ruApproveRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const verb = `(?:${any(['одобрить', 'одобрите', 'одобри', 'утвердить', 'утвердите'])}|${any(['не'])}\\s+${any(['одобрять', 'утверждать'])})`
+    ruApproveRegex = new RegExp(`^${verb}(?:\\s+\\S+){0,4}?\\s*[.!]?$`, 'iu')
+  }
+  return ruApproveRegex.test(normaliseName(String(name ?? '')).trim())
+}
 // CU-655: the Russian twin ('Очистить корзину', 'Очистите корзину', 'Корзину очистить', with 'не' as negation) is built from folded
 // words on first use: a judged name has passed normaliseText, which folds Cyrillic homoglyphs to Latin case by case, so each word
 // is folded as written, capitalised and in capitals, as namesWord does for its Cyrillic entries.
@@ -3619,6 +3647,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (grammarEligible && !classes.includes('delete') && LOCALE_ADMIN_REMOVE.some((re) => re.test(String(name ?? '').trim()))) classes.push('delete')
     // CU-693: ru / ko publish twins ask submit (KO_PUBLISH and the ru builder above).
     if (grammarEligible && !classes.includes('submit') && (KO_PUBLISH.some((re) => re.test(String(name ?? '').trim())) || namesRuPublish(name))) classes.push('submit')
+    // CU-692: locale approve twins ask submit (LOCALE_APPROVE above).
+    if (grammarEligible && !classes.includes('submit') && (LOCALE_APPROVE.some((re) => re.test(String(name ?? '').trim())) || namesRuApprove(name))) classes.push('submit')
     // CU-684: locale leave-workspace twins (LOCALE_LEAVE_WORKSPACE above).
     if (grammarEligible && !classes.includes('permission') && (LOCALE_LEAVE_WORKSPACE.some((re) => re.test(String(name ?? '').trim())) || namesRuLeaveWorkspace(name))) classes.push('permission')
     // CU-678: transfer-ownership twins (TRANSFER_OWNERSHIP above).
