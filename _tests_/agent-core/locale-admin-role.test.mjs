@@ -33,3 +33,8 @@ test('CU-691 r2: ko 관리자 해제, zh 取消管理员 and fr l\' ask delete; 
   for (const name of ['Machen Sie Alex zum Administrator', 'Ernennen Sie Paul zum Admin', '管理者に設定してください', '管理者に昇格してください', '立即设为管理员']) assert.ok(click(name).includes('permission'), name)
   for (const name of ['取消', '해제', '管理员', '管理者に設定しました']) assert.deepEqual(click(name), [], name)
 })
+
+test('CU-691 r3: the es remove-admin article forms ask delete', () => {
+  for (const name of ['Quitar al administrador', 'Quitar a la administradora', 'Eliminar al administrador', 'Quitar el administrador']) assert.ok(click(name).includes('delete'), name)
+  for (const name of ['Administrador eliminado', 'El administrador']) assert.deepEqual(click(name), [], name)
+})
