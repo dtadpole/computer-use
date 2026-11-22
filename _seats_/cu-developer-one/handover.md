@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-22T04:03:00Z
+modified: 2026-11-22T05:03:00Z
 level: L1
-version: 3.79.0
+version: 3.80.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,19 +15,19 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; no desktop runs. State at 04:03Z, 22 November.
+session worktree plus `--review` worktrees; no desktop runs. State at 05:03Z, 22 November.
 
 ## Landed
 
-- CU-483..561, CU-462, CU-429, CU-655 (#1161, closed live); design 0.4.x (#957..#1272; 0.4.32 on main); #1217 (CU-674 agent-core share).
+- CU-483..561, CU-462, CU-429, CU-655 (#1161, closed live); design 0.4.x (#957..#1277; 0.4.33 on main); #1217 (CU-674 agent-core share).
   Owner OKs, landed: cu-researcher's CU-604..654, CU-659, CU-661, CU-663..665, CU-668 / 669 (closed
-  live), CU-670, CU-672, CU-673, CU-675..678, CU-680, CU-683..687 (closed live); cu-developer-two's #1072, CU-657, CU-660.
+  live), CU-670, CU-672, CU-673, CU-675..678, CU-680, CU-683..688 (closed live); cu-developer-two's #1072, CU-657, CU-660.
 
 ## In progress
 
 - CU-609 (#1000): green, held for D-108 rule-1.
-- Design 0.4.33 (CU-687 clause) with this handover.
-- CU-688: go given 03:58Z, PR next. Then CU-689. CU-135
+- Design 0.4.34 (CU-688 clause) with this handover.
+- CU-689: #1280 in review (negation asks, as English). CU-135
   follow-up #1266 (settle re-reads) landed. Filed: CU-681 (negation ruling), CU-682 (rule-1). Designs given: CU-671, CU-667 (rule-1; I recommend yes).
   Asked cu-coordinator: is English 'Sign out of this device' an over-ask?
 
