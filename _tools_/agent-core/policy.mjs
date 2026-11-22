@@ -991,7 +991,7 @@ const LOCALE_UNLINK_ACCOUNT = Object.freeze([
   /^(?:die\s+)?(?:\S*-)?(?:konto|account|geräte?)(?:verknüpfung|kopplung)(?:en)?\s+(?:jetzt\s+)?aufheben\s*[.!]?$/iu,
   /^(?:立即|马上|现在)?(?:解除|取消)(?:此|这个|該|该)?(?:\S{0,8}的)?(?:账户|帳戶|账号|帳號|设备|裝置|設備)(?:的)?(?:关联|關聯|绑定|綁定)\s*[.!。]?$/u,
   /^(?:(?:het|dit|mijn|je)\s+)?(?:\S+\s+)?(?:account|accounts|apparaat|apparaten)(?:\s+nu)?\s+ontkoppelen\s*[.!]?$/iu,
-  /^(?:今すぐ)?(?:この)?(?:\S+の)?(?:アカウント|デバイス|端末)(?:の)?(?:リンク|連携|紐付け|ひも付け)(?:を)?(?:解除)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
+  /^(?:今すぐ)?(?:この)?(?:\S+(?:の|\s+))?(?:アカウント|デバイス|端末)(?:の)?(?:リンク|連携|紐付け|ひも付け)(?:を)?(?:解除)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
   /^(?:(?:지금|즉시)\s+)?(?:이\s+|내\s+)?(?:\S+\s+)?(?:계정|기기|장치)(?:들)?\s*(?:의\s?)?(?:연결|연동|링크)\s*(?:을|를)?\s?해제(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
   /^(?:立即|马上|现在)?(?:取消关联|取消關聯|解除关联|解除關聯|解除绑定|解除綁定|解绑|解綁)(?:此|这个|該|该)?(?:\S{0,8}的)?(?:账户|帳戶|账号|帳號|设备|裝置|設備)\s*[.!。]?$/u,
   // r3 (cu-developer-one 01:36Z, final): the tr compound noun ('Hesap bağlantısını kaldır') and Turkish capitals - dotless ı is listed
@@ -1013,13 +1013,15 @@ function namesRuUnlinkAccount(name) {
 // 'Link account' / 'Link device' do - the link verb with the account / device noun, a brand / possessive slot, plural, 'now', and
 // negation (\"Don't link account\" asks in English). Bare verbs, other objects ('Link phone number'), past / status stay free.
 const LOCALE_LINK_ACCOUNT = Object.freeze([
+  // r2 (cu-developer-three, cu-developer-two, cu-developer-one 05:19Z): the ja brand slot takes a spaced brand ('Google アカウントをリンク')
+  // on the link, connect and CU-685 unlink lines, and ru связать joins the link verbs ('Связать аккаунты')
   /^(?:ne\s+pas\s+)?(?:lier|liez|associer|associez)\s+(?:\S+\s+){0,2}?(?:l['’]\s*)?(?:comptes?|appareils?)(?:\s+\S+){0,2}?\s*[.!]?$/iu,
   /^(?:no\s+|não\s+|nao\s+)?(?:vincular|vincula|vincule|asociar|asocia|asocie)\s+(?:\S+\s+){0,2}?(?:cuentas?|dispositivos?|contas?|aparelhos?)(?:\s+\S+){0,2}?\s*[.!]?$/iu,
   /^(?:non\s+)?(?:collega|collegare|associa|associare)\s+(?:\S+\s+){0,2}?(?:l['’]\s*)?(?:account|dispositivi?|dispositivo)(?:\s+\S+){0,2}?\s*[.!]?$/iu,
   /^(?:(?:das|dein|ihr|mein|dieses)\s+)?(?:\S+\s+)?(?:\S*kont(?:o|en)|\S*account|\S*gerät(?:e)?)(?:\s+(?:jetzt|nicht))?\s+verknüpfen\s*[.!]?$/iu,
   /^(?:verknüpfen\s+sie|verknüpfe)\s+(?:\S+\s+){0,2}?(?:\S*kont(?:o|en)|\S*account|\S*gerät(?:e)?)(?:\s+\S+)?\s*[.!]?$/iu,
   /^(?:(?:het|dit|mijn|je)\s+)?(?:\S+\s+)?(?:account|accounts|apparaat|apparaten)(?:\s+(?:nu|niet))?\s+koppelen\s*[.!]?$/iu,
-  /^(?:今すぐ)?(?:この)?(?:\S+の)?(?:アカウント|デバイス|端末)(?:を|と)?(?:リンク|連携|紐付け|ひも付け)(?:する|して(?:ください)?|します|しない(?:で(?:ください)?)?)?\s*[.!。]?$/u,
+  /^(?:今すぐ)?(?:この)?(?:\S+(?:の|\s+))?(?:アカウント|デバイス|端末)(?:を|と)?(?:リンク|連携|紐付け|ひも付け)(?:する|して(?:ください)?|します|しない(?:で(?:ください)?)?)?\s*[.!。]?$/u,
   /^(?:(?:지금|즉시)\s+)?(?:이\s+|내\s+)?(?:\S+\s+)?(?:계정|기기|장치)(?:들)?\s*(?:을|를)?\s*(?:연결|연동|링크)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다|하지\s?마(?:세요|십시오)?)?\s*[.!]?$/u,
   /^(?:立即|马上|现在|不要)?(?:关联|關聯|绑定|綁定)(?:此|这个|該|该)?(?:\S{0,8}的)?(?:账户|帳戶|账号|帳號|设备|裝置|設備)\s*[.!。]?$/u,
   new RegExp(`^(?:bu\\s+)?(?:\\S+\\s+)?(?:hesab[ıiI]|hesapl[aA]r[ıI]|cihaz[ıiI]|cihazl[aA]r[ıI])\\s+(?:bağla|bağlay[ıI]n|bağlama)\\s*[.!]?$`, 'iu'),
@@ -1030,7 +1032,7 @@ const LOCALE_LINK_ACCOUNT = Object.freeze([
   /^(?:(?:das|dein|ihr|mein|dieses)\s+)?(?:\S+\s+)?(?:\S*kont(?:o|en)|\S*account)(?:\s+(?:jetzt|nicht))?\s+verbinden\s*[.!]?$/iu,
   /^(?:verbinden\s+sie|verbinde)\s+(?:\S+\s+){0,2}?(?:\S*kont(?:o|en)|\S*account)(?:\s+\S+)?\s*[.!]?$/iu,
   /^(?:(?:het|dit|mijn|je)\s+)?(?:\S+\s+)?(?:account|accounts)(?:\s+(?:nu|niet))?\s+verbinden\s*[.!]?$/iu,
-  /^(?:今すぐ)?(?:この)?(?:\S+の)?アカウント(?:を|に)?接続(?:する|して(?:ください)?|します|しない(?:で(?:ください)?)?)?\s*[.!。]?$/u,
+  /^(?:今すぐ)?(?:この)?(?:\S+(?:の|\s+))?アカウント(?:を|に)?接続(?:する|して(?:ください)?|します|しない(?:で(?:ください)?)?)?\s*[.!。]?$/u,
   /^(?:立即|马上|现在|不要)?(?:连接|連接)(?:此|这个|該|该)?(?:\S{0,8}的)?(?:账户|帳戶|账号|帳號)\s*[.!。]?$/u,
 ])
 let ruLinkAccountRegex = null
@@ -1038,7 +1040,7 @@ function namesRuLinkAccount(name) {
   if (!ruLinkAccountRegex) {
     const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
     const any = (words) => `(?:${words.flatMap(folds).join('|')})`
-    const verb = `(?:${any(['привязать', 'привяжите', 'привяжи'])}|${any(['не'])}\\s+${any(['привязывать'])})`
+    const verb = `(?:${any(['привязать', 'привяжите', 'привяжи', 'связать', 'свяжите'])}|${any(['не'])}\\s+${any(['привязывать', 'связывать'])})`
     const noun = any(['аккаунт', 'аккаунты', 'устройство', 'устройства'])
     const connect = `(?:${any(['подключить', 'подключите'])}|${any(['не'])}\\s+${any(['подключать'])})\\s+(?:\\S+\\s+){0,2}?${any(['аккаунт', 'аккаунты'])}`
     ruLinkAccountRegex = new RegExp(`^(?:${any(['сейчас'])}\\s+)?(?:${verb}\\s+(?:\\S+\\s+){0,2}?${noun}|${connect})(?:\\s+\\S+){0,2}?\\s*[.!]?$`, 'iu')

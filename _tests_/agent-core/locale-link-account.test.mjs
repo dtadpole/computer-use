@@ -24,3 +24,8 @@ test('CU-689 go (04:30Z): the connect twins ask with the account noun only, as E
   for (const name of ['Connecter le compte', 'Conectar cuenta', 'Conectar mi cuenta de Google', 'Konto verbinden', 'Verbinden Sie Ihr Konto', 'Account verbinden', 'Подключить аккаунт', 'Не подключать аккаунт', 'アカウントを接続', '连接账户', 'Connect account']) assert.ok(click(name).includes('permission'), name)
   for (const name of ['Connecter l’appareil', 'Conectar dispositivo', 'Gerät verbinden', 'Подключить устройство', 'Connecter', 'Conectar', 'Verbinden', 'Подключить', '接続', '连接', 'Connect device', 'Connect']) assert.ok(!click(name).includes('permission'), name)
 })
+
+test('CU-689 r2: the ja spaced brand slot (link, connect, unlink) and ru связать ask permission', () => {
+  for (const name of ['Google アカウントをリンクする', 'Google アカウントを連携してください', 'Google アカウントを接続', 'Google アカウントのリンクを解除', 'Связать аккаунты', 'Свяжите аккаунт', 'Не связывать аккаунты']) assert.ok(click(name).includes('permission'), name)
+  for (const name of ['Связать', 'Связать номер телефона', 'Google アカウント', 'アカウントをリンクしました']) assert.ok(!click(name).includes('permission'), name)
+})
