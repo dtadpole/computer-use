@@ -988,6 +988,8 @@ const LOCALE_REVOKE_INVITATION = Object.freeze([
   /^(?:(?:de|deze|alle)\s+)?(?:\S+\s+)?uitnodiging(?:en)?(?:\s+nu)?\s+intrekken\s*[.!]?$/iu,
   /^(?:trek)\s+(?:\S+\s+){0,2}?uitnodiging(?:en)?\s+in\s*[.!]?$/iu,
   /^(?:今すぐ)?(?:この|すべての|全ての)?(?:\S+への)?招待を?(?:今すぐ)?(?:取り消す|取り消して(?:ください)?|取り消し|取消|無効にする|無効化|撤回)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
+  // go (cu-developer-one 03:58Z): tr iptal et / geri al with the invitation noun too (the wiring folds the dotted İ)
+  /^(?:bu\s+|tüm\s+)?(?:\S+\s+)?(?:daveti|davetiyeyi|davetleri|davetiyeleri)\s+(?:şimdi\s+)?(?:[iİ]ptal\s+et|[iİ]ptal\s+ed[iİ]n|ger[iİ]\s+al|ger[iİ]\s+al[ıI]n)\s*[.!]?$/iu,
   /^(?:(?:지금|즉시)\s+)?(?:이\s+|모든\s+)?(?:\S+\s+)?초대(?:장)?(?:들)?\s*(?:을|를)?\s*(?:(?:지금|즉시)\s+)?(?:취소|철회|무효화)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
 ])
 let ruRevokeInvitationRegex = null
@@ -3474,7 +3476,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // CU-685: locale unlink-account / device twins (LOCALE_UNLINK_ACCOUNT above).
     if (grammarEligible && !classes.includes('permission') && (LOCALE_UNLINK_ACCOUNT.some((re) => re.test(String(name ?? '').trim().replace(/İ/g, 'i'))) || namesRuUnlinkAccount(name))) classes.push('permission')
     // CU-688: locale revoke-invitation twins (LOCALE_REVOKE_INVITATION above).
-    if (grammarEligible && !classes.includes('permission') && (LOCALE_REVOKE_INVITATION.some((re) => re.test(String(name ?? '').trim())) || namesRuRevokeInvitation(name))) classes.push('permission')
+    if (grammarEligible && !classes.includes('permission') && (LOCALE_REVOKE_INVITATION.some((re) => re.test(String(name ?? '').trim().replace(/İ/g, 'i'))) || namesRuRevokeInvitation(name))) classes.push('permission')
     // CU-684: locale leave-workspace twins (LOCALE_LEAVE_WORKSPACE above).
     if (grammarEligible && !classes.includes('permission') && (LOCALE_LEAVE_WORKSPACE.some((re) => re.test(String(name ?? '').trim())) || namesRuLeaveWorkspace(name))) classes.push('permission')
     // CU-678: transfer-ownership twins (TRANSFER_OWNERSHIP above).

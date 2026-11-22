@@ -17,3 +17,8 @@ test('CU-688 controls: cancel-invitation twins, negation, past / status forms an
   for (const name of ['Invitation révoquée', 'Ne pas révoquer l’invitation', 'Invitation', 'Annuler l’invitation', 'Invitación revocada', 'Cancelar invitación', 'Einladung wurde widerrufen', 'Einladung', 'Приглашение отозвано', 'Приглашение',
  '招待を取り消しました', '초대가 취소되었습니다', '취소', '取り消す', 'Invitation revoked', "Don't revoke invitation"]) assert.ok(!click(name).includes('permission'), name)
 })
+
+test('CU-688 go (03:58Z): tr iptal et / geri al with the invitation noun asks; fr / es cancel twins stay out', () => {
+  for (const name of ['Daveti iptal et', 'Davetiyeyi iptal edin', 'Tüm davetleri geri al', 'DAVETİ İPTAL ET']) assert.ok(click(name).includes('permission'), name)
+  for (const name of ['İptal et', 'Davet iptal edildi', 'Annuler l’invitation', 'Cancelar invitación']) assert.ok(!click(name).includes('permission'), name)
+})
