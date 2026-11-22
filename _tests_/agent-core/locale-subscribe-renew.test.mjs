@@ -16,3 +16,8 @@ test('CU-700: locale subscribe / renew rows ask purchase as English (parity)', (
 test('CU-700 controls: negation, past / status, bare nouns and bare update verbs take no purchase', () => {
   for (const name of ['Abonnement renouvelé', 'Abonnement', 'Ne pas renouveler', 'Suscripción', 'Suscripción renovada', 'No renovar', 'Abo', 'Abo verlängert', 'Подписка', 'Подписка продлена', 'Не продлевать', '更新', '更新する', '購読済み', '갱신', '구독 중', '구독이 갱신되었습니다', 'Abonelik', 'Resubscribe', "Don't renew", 'Subscription']) assert.ok(!click(name).includes('purchase'), name)
 })
+
+test('CU-700: pt assinar asks only bare, with agora or a plan noun - \'Assinar documento\' (sign a document) stays free (found by the corpus reclass); sign-up verbs stay out', () => {
+  for (const name of ['Assinar', 'Assinar agora', 'Assinar o plano Pro', 'Assinar a newsletter']) assert.ok(click(name).includes('purchase'), name)
+  for (const name of ['Assinar documento', 'Assinar contrato', 'Inscreva-se', 'Iscriviti']) assert.ok(!click(name).includes('purchase'), name)
+})

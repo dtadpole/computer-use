@@ -1255,9 +1255,11 @@ const LOCALE_SUBSCRIBE_RENEW = Object.freeze([
   new RegExp(`^(?:renouveler|renouvelez|renouvelle)(?:\\s+${SUB_NOUN_FR}(?:\\s+\\S+){0,2}?)?\\s*[.!]?$`, 'iu'),
   /^(?:suscribirse|suscríbete|suscríbase|suscribirme)(?:\s+\S+){0,4}?\s*[.!]?$/iu,
   /^(?:renovar|renueva|renueve)(?:\s+(?:la\s+|tu\s+|su\s+|mi\s+)?(?:suscripci[oó]n|membres[ií]a|plan|abono)(?:\s+\S+){0,2}?)?\s*[.!]?$/iu,
-  /^(?:assinar|assine|inscrever-se|inscreva-se)(?:\s+\S+){0,4}?\s*[.!]?$/iu,
+  // pt assinar also means 'sign' ('Assinar documento' stays free, found by the corpus reclass): bare, 'agora' or a plan noun only;
+  // inscrever-se / it iscriviti are left out, ambiguous with 'Sign up' / 'Register' as ja 登録 is
+  /^(?:assinar|assine)(?:\s+(?:agora|já|(?:o\s+|a\s+)?(?:plano|premium|pro|newsletter|boletim|assinatura)(?:\s+\S+){0,2}?))?\s*[.!]?$/iu,
   /^(?:renovar|renove)(?:\s+(?:a\s+|sua\s+|minha\s+)?(?:assinatura|plano|associa[cç][aã]o)(?:\s+\S+){0,2}?)?\s*[.!]?$/iu,
-  /^(?:abbonati|abbonarsi|iscriviti)(?:\s+\S+){0,4}?\s*[.!]?$/iu,
+  /^(?:abbonati|abbonarsi)(?:\s+\S+){0,4}?\s*[.!]?$/iu,
   /^(?:rinnova|rinnovare)(?:\s+(?:l['’]\s*|il\s+|la\s+)?(?:abbonamento|piano|iscrizione)(?:\s+\S+){0,2}?)?\s*[.!]?$/iu,
   /^(?:(?:jetzt|das|den|dein|ihr)\s+)?(?:\S+\s+)?(?:\S*abo(?:nnement)?|\S*mitgliedschaft|\S*plan|\S*tarif)(?:\s+jetzt)?\s+(?:verlängern|erneuern)\s*[.!]?$/iu,
   /^(?:jetzt\s+)?(?:abonnieren|verlängern)\s*[.!]?$/iu,
