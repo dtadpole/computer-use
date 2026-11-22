@@ -1277,6 +1277,47 @@ function namesRuMoneyVerbs(name) {
   }
   return ruMoneyVerbsRegex.test(normaliseName(String(name ?? '')).trim())
 }
+// CU-700 (strict English parity; the English facts are on the issue): the subscribe / renew verb asks purchase in the locales as
+// 'Subscribe' / 'Renew subscription' do - bare or with an object. Negation ("Don't renew" is free), past / status, the bare noun and
+// 'Resubscribe' stay free, as in English. ja 更新 / ko 갱신 count only with the subscription noun (bare they also mean 'update').
+const SUB_NOUN_FR = String.raw`(?:l['’]\s*|mon\s+|votre\s+|cet\s+|l['’]\s*)?(?:abonnement|forfait|adhésion)`
+const LOCALE_SUBSCRIBE_RENEW = Object.freeze([
+  /^(?:s['’]\s*abonner|abonnez-vous|abonne-toi)(?:\s+\S+){0,4}?\s*[.!]?$/iu,
+  new RegExp(`^(?:renouveler|renouvelez|renouvelle)(?:\\s+${SUB_NOUN_FR}(?:\\s+\\S+){0,2}?)?\\s*[.!]?$`, 'iu'),
+  /^(?:suscribirse|suscríbete|suscríbase|suscribirme)(?:\s+\S+){0,4}?\s*[.!]?$/iu,
+  /^(?:renovar|renueva|renueve)(?:\s+(?:la\s+|tu\s+|su\s+|mi\s+)?(?:suscripci[oó]n|membres[ií]a|plan|abono)(?:\s+\S+){0,2}?)?\s*[.!]?$/iu,
+  // pt assinar also means 'sign' ('Assinar documento' stays free, found by the corpus reclass): bare, 'agora' or a plan noun only;
+  // inscrever-se / it iscriviti are left out, ambiguous with 'Sign up' / 'Register' as ja 登録 is
+  // r2: bare 'assinar' / 'assinar agora' are out (also 'Sign', which English asks as permission); only with a plan / subscription noun
+  /^(?:assinar|assine)\s+(?:o\s+|a\s+)?(?:plano|premium|pro|newsletter|boletim|assinatura)(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:renovar|renove)(?:\s+(?:a\s+|sua\s+|minha\s+)?(?:assinatura|plano|associa[cç][aã]o)(?:\s+\S+){0,2}?)?\s*[.!]?$/iu,
+  /^(?:abbonati|abbonarsi)(?:\s+\S+){0,4}?\s*[.!]?$/iu,
+  /^(?:rinnova|rinnovare)(?:\s+(?:l['’]\s*|il\s+|la\s+)?(?:abbonamento|piano|iscrizione)(?:\s+\S+){0,2}?)?\s*[.!]?$/iu,
+  // r2 (cu-developer-one 20:59Z): Plan / Tarif only as the whole word or a hyphen compound ('Zeitplan verlängern' = extend schedule stays
+  // free); the formal verb-first form asks; bare 'verlängern' / 'jetzt verlängern' are out (also 'Extend', free in English)
+  /^(?:(?:jetzt|das|den|dein|ihr)\s+)?(?:\S+\s+)?(?:\S*abo(?:nnement)?|\S*mitgliedschaft|(?:\S+-)?plan|(?:\S+-)?tarif)(?:\s+jetzt)?\s+(?:verlängern|erneuern)\s*[.!]?$/iu,
+  /^(?:verlängern|erneuern)\s+sie\s+(?:ihr(?:e|en)?\s+|das\s+|den\s+|die\s+)?(?:\S*abo(?:nnement)?|\S*mitgliedschaft|(?:\S+-)?plan|(?:\S+-)?tarif)(?:\s+jetzt)?\s*[.!]?$/iu,
+  /^(?:jetzt\s+)?abonnieren\s*[.!]?$/iu,
+  /^(?:(?:je|uw|het)\s+)?(?:abonnement|lidmaatschap)(?:\s+nu)?\s+(?:verlengen|vernieuwen)\s*[.!]?$/iu,
+  // r2 (cu-developer-one 21:03Z): bare 'Verlengen' / 'Nu verlengen' are out (also 'Extend'); 'Abonnement verlengen' keeps asking
+  /^(?:nu\s+)?abonneren\s*[.!]?$/iu,
+  /^(?:今すぐ)?(?:\S+を)?(?:購読|定期購入)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
+  /^(?:今すぐ)?(?:サブスクリプション|定期購入|購読|メンバーシップ|プラン)を?(?:更新|延長)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
+  /^(?:(?:지금|즉시)\s+)?(?:\S+\s+)?구독(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+  /^(?:(?:지금|즉시)\s+)?(?:구독|멤버십|요금제|플랜)\s*(?:을|를)?\s*(?:갱신|연장)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+  new RegExp(`^(?:abone\\s+ol|abone\\s+olun|aboneliği\\s+yenile|aboneliği\\s+yenileyin|üyeliği\\s+yenile|abonelik\\s+yenile)\\s*[.!]?$`, 'iu'),
+])
+let ruSubscribeRenewRegex = null
+function namesRuSubscribeRenew(name) {
+  if (!ruSubscribeRenewRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const subscribe = `${any(['подписаться', 'подпишитесь', 'подпишись'])}(?:\\s+\\S+){0,3}?`
+    const renew = `${any(['продлить', 'продлите', 'продли', 'возобновить'])}(?:\\s+(?:\\S+\\s+)?${any(['подписку', 'членство', 'тариф', 'план'])}(?:\\s+\\S+){0,2}?)?`
+    ruSubscribeRenewRegex = new RegExp(`^(?:${any(['сейчас'])}\\s+)?(?:${subscribe}|${renew})\\s*[.!]?$`, 'iu')
+  }
+  return ruSubscribeRenewRegex.test(normaliseName(String(name ?? '')).trim())
+}
 // CU-655: the Russian twin ('Очистить корзину', 'Очистите корзину', 'Корзину очистить', with 'не' as negation) is built from folded
 // words on first use: a judged name has passed normaliseText, which folds Cyrillic homoglyphs to Latin case by case, so each word
 // is folded as written, capitalised and in capitals, as namesWord does for its Cyrillic entries.
@@ -3772,6 +3813,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (grammarEligible && !classes.includes('credential') && (LOCALE_CHANGE_CONTACT.some((re) => re.test(String(name ?? '').trim().replace(/İ/g, 'i'))) || namesRuChangeContact(name))) classes.push('credential')
     // CU-699: locale send-money / transfer-funds / place-order verbs ask purchase (LOCALE_MONEY_VERBS above).
     if (grammarEligible && !classes.includes('purchase') && (LOCALE_MONEY_VERBS.some((re) => re.test(String(name ?? '').trim().replace(/İ/g, 'i'))) || namesRuMoneyVerbs(name))) classes.push('purchase')
+    // CU-700: locale subscribe / renew twins ask purchase (LOCALE_SUBSCRIBE_RENEW above).
+    if (grammarEligible && !classes.includes('purchase') && (LOCALE_SUBSCRIBE_RENEW.some((re) => re.test(String(name ?? '').trim().replace(/İ/g, 'i'))) || namesRuSubscribeRenew(name))) classes.push('purchase')
     // CU-684: locale leave-workspace twins (LOCALE_LEAVE_WORKSPACE above).
     if (grammarEligible && !classes.includes('permission') && (LOCALE_LEAVE_WORKSPACE.some((re) => re.test(String(name ?? '').trim())) || namesRuLeaveWorkspace(name))) classes.push('permission')
     // CU-678: transfer-ownership twins (TRANSFER_OWNERSHIP above).

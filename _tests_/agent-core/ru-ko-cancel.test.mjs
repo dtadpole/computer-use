@@ -24,5 +24,9 @@ test('CU-650: Russian / Korean cancel rows ask as their English twins', () => {
 })
 
 test('CU-650 controls: bare cancel, the nouns and state / past forms stay free', () => {
-  for (const name of ['Отменить', 'Отмените', 'Подписка отменена', 'Заказ отменён', '취소', '구독', '구독 취소됨', '취소됨', '구독 취소 완료', '구독 취소했어요', '주문 취소됨', '구독을 취소했습니다', '주문이 취소되었습니다', 'Ваш заказ отменён']) assert.deepEqual(click(name), [], name)
+  for (const name of ['Отменить', 'Отмените', 'Подписка отменена', 'Заказ отменён', '취소', '구독 취소됨', '취소됨', '구독 취소 완료', '구독 취소했어요', '주문 취소됨', '구독을 취소했습니다', '주문이 취소되었습니다', 'Ваш заказ отменён']) assert.deepEqual(click(name), [], name)
+})
+
+test('CU-700 supersedes one CU-650 control row: bare ko 구독 asks purchase as the \'Subscribe\' button label (bare Sino-noun = verb, owner ruling 21:43Z)', () => {
+  assert.ok(click('구독').includes('purchase'))
 })
