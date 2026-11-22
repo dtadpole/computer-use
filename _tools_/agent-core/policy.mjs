@@ -1169,6 +1169,34 @@ function namesRuApprove(name) {
   }
   return ruApproveRegex.test(normaliseName(String(name ?? '')).trim())
 }
+// CU-695 (strict English parity; the English facts are on the issue): turning off two-factor / two-step authentication asks permission +
+// credential in the locales as 'Disable two-factor authentication' / 'Turn off 2-step verification' do - the disable / turn-off verb with
+// the two-factor, two-step or 2FA noun, a recipient slot and 'now'. Negation, the bare noun and status forms stay as English.
+const TWO_FACTOR_NOUN_FR = String.raw`(?:(?:l['’]\s*)?authentification\s+(?:à\s+)?(?:deux|2)\s+facteurs|(?:la\s+)?(?:validation|vérification)\s+en\s+(?:deux|2)\s+étapes|(?:la\s+)?2fa|(?:la\s+)?a2f)`
+const LOCALE_DISABLE_2FA = Object.freeze([
+  new RegExp(`^(?:désactiver|désactivez|désactive)\\s+${TWO_FACTOR_NOUN_FR}(?:\\s+\\S+){0,3}?\\s*[.!]?$`, 'iu'),
+  /^(?:desactivar|desactiva|desactive|apagar)\s+(?:la\s+|el\s+)?(?:autenticaci[oó]n\s+de\s+(?:dos|2)\s+factores|verificaci[oó]n\s+en\s+(?:dos|2)\s+pasos|2fa|doble\s+factor)(?:\s+\S+){0,3}?\s*[.!]?$/iu,
+  /^(?:desativar|desative|desligar)\s+(?:a\s+|o\s+)?(?:autentica[cç][aã]o\s+de\s+(?:dois|2)\s+fatores|verifica[cç][aã]o\s+em\s+(?:duas|2)\s+etapas|2fa)(?:\s+\S+){0,3}?\s*[.!]?$/iu,
+  /^(?:disattiva|disattivare|disabilita|disabilitare)\s+(?:l['’]\s*|la\s+)?(?:autenticazione\s+a\s+(?:due|2)\s+fattori|verifica\s+in\s+(?:due|2)\s+passaggi|2fa)(?:\s+\S+){0,3}?\s*[.!]?$/iu,
+  /^(?:die\s+)?(?:zwei-faktor-authentifizierung|2-faktor-authentifizierung|zwei-faktor-authentisierung|bestätigung\s+in\s+zwei\s+schritten|2fa|zweistufige\s+verifizierung)(?:\s+jetzt)?\s+(?:deaktivieren|ausschalten)\s*[.!]?$/iu,
+  /^(?:deaktivieren\s+sie|deaktiviere)\s+(?:die\s+)?(?:zwei-faktor-authentifizierung|2-faktor-authentifizierung|bestätigung\s+in\s+zwei\s+schritten|2fa)\s*[.!]?$/iu,
+  /^(?:(?:tweestapsverificatie|twee-factor-authenticatie|tweefactorauthenticatie|2fa)(?:\s+nu)?\s+(?:uitschakelen|uitzetten)|(?:schakel)\s+(?:tweestapsverificatie|twee-factor-authenticatie|2fa)\s+uit)\s*[.!]?$/iu,
+  /^(?:今すぐ)?(?:2段階認証(?:プロセス)?|2要素認証|二段階認証|二要素認証|2FA)を?(?:無効にする|無効にしてください|無効化(?:する)?|オフにする|オフにしてください|オフ|解除(?:する)?)\s*[.!。]?$/iu,
+  /^(?:(?:지금|즉시)\s+)?(?:2단계\s?인증|2차\s?인증|이중\s?인증|2FA)\s*(?:을|를)?\s*(?:사용\s?중지|비활성화|끄기|해제|중지)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/iu,
+  /^(?:立即)?(?:关闭|關閉|停用|禁用|取消)(?:两步验证|兩步驗證|双重验证|雙重驗證|两步验证码|双因素认证|雙因素認證|二次验证|2FA)\s*[.!。]?$/iu,
+  new RegExp(`^(?:iki\\s+faktörlü\\s+(?:kimlik\\s+doğrulamayı|doğrulamayı)|iki\\s+adımlı\\s+doğrulamayı|2fa'yı|2fa)\\s+(?:devre\\s+dışı\\s+bırak|devre\\s+dışı\\s+bırakın|kapat|kapatın)\\s*[.!]?$`, 'iu'),
+])
+let ruDisable2faRegex = null
+function namesRuDisable2fa(name) {
+  if (!ruDisable2faRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const verb = any(['отключить', 'отключите', 'выключить', 'выключите', 'деактивировать'])
+    const noun = `(?:${any(['двухфакторную', 'двухэтапную', 'двухфакторная', 'двухэтапная'])}\\s+${any(['аутентификацию', 'проверку', 'авторизацию', 'аутентификация', 'проверка'])}|2fa)`
+    ruDisable2faRegex = new RegExp(`^(?:${any(['сейчас'])}\\s+)?${verb}\\s+${noun}(?:\\s+\\S+){0,2}?\\s*[.!]?$`, 'iu')
+  }
+  return ruDisable2faRegex.test(normaliseName(String(name ?? '')).trim())
+}
 // CU-655: the Russian twin ('Очистить корзину', 'Очистите корзину', 'Корзину очистить', with 'не' as negation) is built from folded
 // words on first use: a judged name has passed normaliseText, which folds Cyrillic homoglyphs to Latin case by case, so each word
 // is folded as written, capitalised and in capitals, as namesWord does for its Cyrillic entries.
@@ -3656,6 +3684,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (grammarEligible && !classes.includes('submit') && (KO_PUBLISH.some((re) => re.test(String(name ?? '').trim())) || namesRuPublish(name))) classes.push('submit')
     // CU-692: locale approve twins ask submit (LOCALE_APPROVE above).
     if (grammarEligible && !classes.includes('submit') && (LOCALE_APPROVE.some((re) => re.test(String(name ?? '').trim())) || namesRuApprove(name))) classes.push('submit')
+    // CU-695: locale disable-2FA twins ask permission + credential (LOCALE_DISABLE_2FA above).
+    if (grammarEligible && (LOCALE_DISABLE_2FA.some((re) => re.test(String(name ?? '').trim().replace(/İ/g, 'i'))) || namesRuDisable2fa(name))) { if (!classes.includes('permission')) classes.push('permission'); if (!classes.includes('credential')) classes.push('credential') }
     // CU-684: locale leave-workspace twins (LOCALE_LEAVE_WORKSPACE above).
     if (grammarEligible && !classes.includes('permission') && (LOCALE_LEAVE_WORKSPACE.some((re) => re.test(String(name ?? '').trim())) || namesRuLeaveWorkspace(name))) classes.push('permission')
     // CU-678: transfer-ownership twins (TRANSFER_OWNERSHIP above).
