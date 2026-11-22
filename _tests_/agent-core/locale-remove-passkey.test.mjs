@@ -17,3 +17,8 @@ test('CU-696 controls: past / status forms, the bare noun and other objects stay
   // bare 'Retirer' already asks delete on main (CU-686's bare remove verbs), so it is not a control here
   for (const name of ['Clé d’accès retirée', 'Retirer le filtre', 'Llave de acceso quitada', 'パスキーを取り除きました', '패스키가 제거되었습니다', '패스키', 'Passkey removed']) assert.ok(!click(name).includes('delete'), name)
 })
+
+test('CU-696 r2: the ja determiners この / すべての and es clave de seguridad ask delete, as \'Remove this passkey\' / \'Remove security key\'', () => {
+  for (const name of ['このパスキーを取り除く', 'すべてのパスキーを取り除く', 'このセキュリティキーを外す', 'Quitar clave de seguridad', 'Quitar la clave de seguridad', 'Remove this passkey']) assert.ok(click(name).includes('delete'), name)
+  for (const name of ['このパスキー', 'このパスキーを取り除きました']) assert.ok(!click(name).includes('delete'), name)
+})

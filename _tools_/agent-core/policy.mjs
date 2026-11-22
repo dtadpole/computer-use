@@ -1173,8 +1173,9 @@ function namesRuApprove(name) {
 // remove / delete passkey form does; the permission half waits on the ruling about English consistency. Past / status forms stay free.
 const LOCALE_REMOVE_PASSKEY = Object.freeze([
   /^(?:retirer|retirez|retire)\s+(?:\S+\s+){0,2}?(?:(?:la|les|cette)\s+)?(?:clés?\s+d['’]\s*accès|clés?\s+de\s+sécurité|passkeys?)(?:\s+\S+){0,2}?\s*[.!]?$/iu,
-  /^(?:quitar|quita|quite)\s+(?:\S+\s+){0,2}?(?:(?:la|las|esta)\s+)?(?:llaves?\s+de\s+acceso|claves?\s+de\s+acceso|llaves?\s+de\s+seguridad|passkeys?)(?:\s+\S+){0,2}?\s*[.!]?$/iu,
-  /^(?:\S+を)?(?:パスキー|セキュリティキー|セキュリティ\s?キー)を?(?:取り除く|取り除いてください|外す|外してください)\s*[.!。]?$/u,
+  /^(?:quitar|quita|quite)\s+(?:\S+\s+){0,2}?(?:(?:la|las|esta)\s+)?(?:llaves?\s+de\s+acceso|claves?\s+de\s+acceso|llaves?\s+de\s+seguridad|claves?\s+de\s+seguridad|passkeys?)(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  // r2 (cu-developer-two 16:14Z): the ja determiners この / その / すべての, as ko 이 / 모든 and English 'Remove this passkey'
+  /^(?:\S+を)?(?:この|その|すべての|全ての)?\s*(?:パスキー|セキュリティキー|セキュリティ\s?キー)を?(?:取り除く|取り除いてください|外す|外してください)\s*[.!。]?$/u,
   /^(?:(?:이|모든)\s+)?(?:\S+\s+)?(?:패스키|보안\s?키)(?:들)?\s*(?:을|를)?\s*(?:제거|해제)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
 ])
 let ruRemovePasskeyRegex = null
