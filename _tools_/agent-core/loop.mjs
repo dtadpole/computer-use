@@ -523,14 +523,20 @@ export async function runTask(options) {
   // CU-135 race (cu-developer-two): the helper replies once a key is posted, not once the app moved focus, so a Space
   // or Enter right after Tab, Shift-Tab or an arrow in the same batch reads the focus until two reads 50 ms apart agree
   // (within 300 ms); one that never settles is passed as opaque, which app-policy asks (unknown_target).
+  // The window counts reads as well as time: at least three re-reads are taken before giving up, so a slow read under
+  // load (a busy helper or test host) cannot end the window before the focus had a chance to settle (CU-135 follow-up:
+  // the seam row 'after a tab the typed newline is judged on the settled focus' failed on a loaded gate, 22 Nov 00:31Z).
   const MOVES_FOCUS = /^(tab|up|down|left|right|arrowup|arrowdown|arrowleft|arrowright)$/i
+  const SETTLE_MIN_REREADS = 3
   const settledFocus = async () => {
     const same = (a, b) => (a?.role ?? null) === (b?.role ?? null) && (a?.name ?? null) === (b?.name ?? null) && (a?.fingerprint ?? null) === (b?.fingerprint ?? null)
     let last = await environment.focusedElement()
     const deadline = Date.now() + 300
-    while (Date.now() < deadline) {
+    let rereads = 0
+    while (rereads < SETTLE_MIN_REREADS || Date.now() < deadline) {
       await new Promise((resolve) => setTimeout(resolve, 50))
       const next = await environment.focusedElement()
+      rereads += 1
       if (same(last, next)) return next
       last = next
     }
