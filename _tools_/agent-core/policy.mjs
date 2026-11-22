@@ -1133,7 +1133,9 @@ const LOCALE_APPROVE = Object.freeze([
   // go (cu-developer-one 09:15Z): bare 承認 / 승인 ask too - the bare Sino-noun is the button verb, as bare 削除 / 삭제 / 제거 on CU-686
   /^(?:\S+を)?(?:今すぐ)?承認(?:する|して(?:ください)?|します|しない(?:で(?:ください)?)?)?\s*[.!。]?$/u,
   /^(?:\S+\s+)?(?:\S+(?:을|를)\s*)?승인(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다|하지\s?마(?:세요|십시오)?)?\s*[.!]?$/u,
-  /^(?:不要|立即)?(?:批准|审批通过|審批通過)(?:\S{0,8})?\s*[.!。]?$/u,
+  // r2 (cu-developer-three, cu-developer-one 09:28Z, final): no open tail - 批准 bare, or + a determiner + a request noun; so 批准人 /
+  // 批准时间 (nouns) and 批准了 / 批准中 / 批准过 (past / status) stay free, as 'Approver', 'Approval date', 'Approved'
+  /^(?:不要|立即)?(?:批准|审批通过|審批通過)(?:(?:此|这个|這個|该|該|所有|全部)?(?:请求|請求|申请|申請|变更|變更|合并请求|合併請求|订单|訂單|文档|文件))?\s*[.!。]?$/u,
 ])
 let ruApproveRegex = null
 function namesRuApprove(name) {

@@ -22,3 +22,8 @@ test('CU-692 go (09:15Z): bare ja 承認, ko 승인 and zh 批准 ask submit; de
   for (const name of ['承認', '승인', '批准', '申請を承認']) assert.ok(click(name).includes('submit'), name)
   for (const name of ['承認済み', '승인됨', '已批准', '승인 대기 중']) assert.ok(!click(name).includes('submit'), name)
 })
+
+test('CU-692 r2: zh 批准 bare or with a request noun asks; 批准人 / 批准时间 (nouns) and 批准了 / 批准中 / 批准过 (past / status) stay free', () => {
+  for (const name of ['批准', '不要批准', '立即批准', '批准申请', '批准此请求', '批准所有变更', '批准合并请求']) assert.ok(click(name).includes('submit'), name)
+  for (const name of ['批准人', '批准时间', '批准了', '批准中', '批准过', 'Approver', 'Approval date']) assert.ok(!click(name).includes('submit'), name)
+})
