@@ -29,6 +29,11 @@ test('CU-692 r2: zh 批准 bare or with a request noun asks; 批准人 / 批准�
 })
 
 test('CU-694: zh approve all without a noun asks submit, as English \'Approve all\'', () => {
-  for (const name of ['批准所有', '批准全部', '全部批准', '所有批准', '一键批准', '不要全部批准', 'Approve all']) assert.ok(click(name).includes('submit'), name)
+  for (const name of ['批准所有', '批准全部', '全部批准', '一键批准', '不要全部批准', 'Approve all']) assert.ok(click(name).includes('submit'), name)
   for (const name of ['全部已批准', '所有批准人', '批准人', '批准了', '全部']) assert.ok(!click(name).includes('submit'), name)
+})
+
+test('CU-694 r2: the 全部 / 一键 prefix takes a request noun; 所有批准 is the noun (free, as \'All approvals\'); no particle tail', () => {
+  for (const name of ['全部批准申请', '全部批准请求', '一键批准变更', '批准所有请求', 'Approve all requests']) assert.ok(click(name).includes('submit'), name)
+  for (const name of ['所有批准', '全部批准吧', 'All approvals']) assert.ok(!click(name).includes('submit'), name)
 })
