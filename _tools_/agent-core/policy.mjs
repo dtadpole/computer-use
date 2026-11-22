@@ -1217,6 +1217,33 @@ function namesRuDisable2fa(name) {
   }
   return ruDisable2faRegex.test(normaliseName(String(name ?? '')).trim())
 }
+// CU-698 (strict English parity; the English facts are on the issue): changing the account email or phone asks credential in the locales
+// as 'Change email' / 'Update phone number' do - the change / update / edit verb with the email or phone noun, a possessive or recovery /
+// backup slot, negation included ("Don't change email" asks). Add / verify, past / status and the bare nouns stay free.
+const LOCALE_CHANGE_CONTACT = Object.freeze([
+  /^(?:ne\s+pas\s+)?(?:modifier|modifiez|changer|changez|mettre\s+à\s+jour|mettez\s+à\s+jour)\s+(?:\S+\s+){0,2}?(?:(?:l['’]\s*)?(?:adresse\s+)?(?:e-?mail|courriel)|(?:le\s+)?(?:numéro\s+de\s+)?(?:téléphone|portable|mobile))(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:no\s+)?(?:cambiar|cambia|cambie|actualizar|actualiza|actualice|editar|edita|edite)\s+(?:\S+\s+){0,2}?(?:(?:el\s+)?(?:correo(?:\s+electr[oó]nico)?|e-?mail)|(?:el\s+)?(?:n[uú]mero\s+de\s+)?(?:tel[eé]fono|m[oó]vil|celular))(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:não\s+|nao\s+)?(?:alterar|altere|atualizar|atualize|mudar|mude|editar|edite)\s+(?:\S+\s+){0,2}?(?:(?:o\s+)?(?:e-?mail|endere[cç]o\s+de\s+e-?mail)|(?:o\s+)?(?:n[uú]mero\s+de\s+)?(?:telefone|celular))(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:non\s+)?(?:modifica|modificare|cambia|cambiare|aggiorna|aggiornare)\s+(?:\S+\s+){0,2}?(?:(?:l['’]\s*|la\s+)?(?:e-?mail|indirizzo\s+e-?mail)|(?:il\s+)?(?:numero\s+di\s+)?(?:telefono|cellulare))(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:(?:deine|ihre|die|meine)\s+)?(?:\S+\s+)?(?:\S*e-?mail(?:-adresse)?|\S*telefonnummer|\S*handynummer|\S*mobilnummer)(?:\s+(?:jetzt|nicht))?\s+(?:ändern|aktualisieren|bearbeiten)\s*[.!]?$/iu,
+  /^(?:ändern\s+sie|ändere|aktualisieren\s+sie)\s+(?:\S+\s+){0,2}?(?:\S*e-?mail(?:-adresse)?|\S*telefonnummer|\S*handynummer)\s*[.!]?$/iu,
+  /^(?:(?:je|uw|het|mijn)\s+)?(?:\S+\s+)?(?:e-?mailadres|e-?mail|telefoonnummer|mobiele\s+nummer)(?:\s+(?:nu|niet))?\s+(?:wijzigen|bijwerken|aanpassen)\s*[.!]?$/iu,
+  /^(?:\S+の)?(?:メールアドレス|メール|電話番号|携帯電話番号)を?(?:変更|更新|編集)(?:する|して(?:ください)?|します|しない(?:で(?:ください)?)?)?\s*[.!。]?$/u,
+  /^(?:(?:복구|백업|내)\s+)?(?:이메일(?:\s?주소)?|전화\s?번호|휴대폰\s?번호)\s*(?:을|를)?\s*(?:변경|수정|업데이트)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다|하지\s?마(?:세요|십시오)?)?\s*[.!]?$/u,
+  /^(?:不要)?(?:更改|修改|更新|变更|變更|編輯|编辑)(?:\S{0,6}的)?(?:邮箱|郵箱|电子邮件|電子郵件|邮件地址|手机号(?:码)?|手機號(?:碼)?|电话号码|電話號碼)\s*[.!。]?$/u,
+  new RegExp(`^(?:\\S+\\s+)?(?:e-?posta(?:\\s+adresini|y[ıI])?|e-?postan[ıI]|telefon\\s+numaras[ıI]n[ıI]|telefon\\s+numaran[ıI])\\s+(?:değiştir|değiştirin|güncelle|güncelleyin)\\s*[.!]?$`, 'iu'),
+])
+let ruChangeContactRegex = null
+function namesRuChangeContact(name) {
+  if (!ruChangeContactRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const verb = `(?:(?:${any(['не'])}\\s+)?${any(['изменить', 'измените', 'сменить', 'смените', 'обновить', 'обновите', 'изменять', 'менять'])})`
+    const noun = `(?:${any(['адрес'])}\\s+${any(['электронной'])}\\s+${any(['почты'])}|${any(['почту', 'email', 'e-mail'])}|${any(['номер'])}\\s+${any(['телефона'])}|${any(['телефон'])})`
+    ruChangeContactRegex = new RegExp(`^${verb}\\s+(?:\\S+\\s+){0,2}?${noun}(?:\\s+\\S+){0,2}?\\s*[.!]?$`, 'iu')
+  }
+  return ruChangeContactRegex.test(normaliseName(String(name ?? '')).trim())
+}
 // CU-655: the Russian twin ('Очистить корзину', 'Очистите корзину', 'Корзину очистить', with 'не' as negation) is built from folded
 // words on first use: a judged name has passed normaliseText, which folds Cyrillic homoglyphs to Latin case by case, so each word
 // is folded as written, capitalised and in capitals, as namesWord does for its Cyrillic entries.
@@ -3708,6 +3735,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (grammarEligible && !classes.includes('delete') && (LOCALE_REMOVE_PASSKEY.some((re) => re.test(String(name ?? '').trim())) || namesRuRemovePasskey(name))) classes.push('delete')
     // CU-695: locale disable-2FA twins ask permission + credential (LOCALE_DISABLE_2FA above).
     if (grammarEligible && (LOCALE_DISABLE_2FA.some((re) => re.test(String(name ?? '').trim().replace(/İ/g, 'i'))) || namesRuDisable2fa(name))) { if (!classes.includes('permission')) classes.push('permission'); if (!classes.includes('credential')) classes.push('credential') }
+    // CU-698: locale change-email / phone twins ask credential (LOCALE_CHANGE_CONTACT above).
+    if (grammarEligible && !classes.includes('credential') && (LOCALE_CHANGE_CONTACT.some((re) => re.test(String(name ?? '').trim().replace(/İ/g, 'i'))) || namesRuChangeContact(name))) classes.push('credential')
     // CU-684: locale leave-workspace twins (LOCALE_LEAVE_WORKSPACE above).
     if (grammarEligible && !classes.includes('permission') && (LOCALE_LEAVE_WORKSPACE.some((re) => re.test(String(name ?? '').trim())) || namesRuLeaveWorkspace(name))) classes.push('permission')
     // CU-678: transfer-ownership twins (TRANSFER_OWNERSHIP above).
