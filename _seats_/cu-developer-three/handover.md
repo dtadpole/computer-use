@@ -1,14 +1,14 @@
 ---
 title: '[cu] Developer Three (macOS helper) - handover'
 created: 2026-11-08T04:20:00Z
-modified: 2026-11-22T06:34:00Z
+modified: 2026-11-22T22:46:00Z
 level: L1
-version: 1.30.0
+version: 1.31.0
 description: 'What a fresh [cu] Developer Three session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
-  - source: hd-coordinator's goal renewal of 2026-11-21 21:01 PST (Linear items by priority, CUHelper correct, land through cu-integrator)
-  - source: PRs #889, #895, #930, #1260, #1265, #1266, #1271, #1276, #1280; Linear CU-586, CU-588, CU-596, CU-614, CU-662, CU-666, CU-679
+  - source: hd-coordinator's goal renewal of 2026-11-22 09:01 PST (Linear items by priority, CUHelper correct, land through cu-integrator)
+  - source: PRs #889, #895, #930, #1304, #1310, #1311, #1315, #1326, #1331; Linear CU-586, CU-588, CU-596, CU-614, CU-662, CU-666, CU-674, CU-679
 ---
 
 # [cu] Developer Three (macOS helper) - handover
@@ -33,10 +33,10 @@ All wait on cu-coordinator, landing in order:
 
 ## Other items
 
-- **Load flakes** CU-614 / CU-662 / CU-666 / CU-679: one test-only PR, awaiting cu-coordinator's go. #1266 fixed the CU-135 seam flake.
-- **CU-596**: the fix is local at fad64e0d and waits on cu-coordinator.
-- **Reviews:** CU-683 .. CU-689 closed live on my OKs (four after a narrow hold and an r2); CU-691 (#1287) in review. Held-outs ready: CU-667, CU-658, CU-651.
-- **Triage asks:** ja 招待を再送信 reads submit; zh 已撤销邀请 asks (rule-1); multi-token brand slots.
+- **Load flakes** CU-614 / 662 / 666 / 679: one test-only PR awaits cu-coordinator's go; local c287e818 widens settle.test.mjs:188. Leaked /tmp folders (CU-674) drive them.
+- **CU-596**: fix local at fad64e0d; waits on cu-coordinator's WIP go.
+- **Reviews:** CU-683 .. CU-695, CU-696's delete half and CU-698 closed live on my OKs (eleven after a hold and an r2). CU-700 (#1331 r3) gating on my OK. Held-outs ready: CU-699, CU-667, CU-658, CU-651.
+- **Follow-ups:** in action-classes 0.4.42's 'Not yet covered' paragraph; also fr 'cet' / short-noun admin.
 
 ## Rules learned
 
@@ -44,7 +44,7 @@ All wait on cu-coordinator, landing in order:
 - Keep lock-held runs out of a gate's phase 2.
 - Check the inbox before any node batch.
 - Write held-outs before each head; probe brand slots with spaces and tr capital İ.
-- Mutant patterns must match once; re-check on every new head.
+- Mutant patterns must match once; re-check on every new head; also run every test file naming a string the PR reclassifies.
 - English parity rows decide the family.
 - Records PRs: no open issue id; stamps never after the commit; check dates after 00:00Z.
-- One watcher at a time.
+- One watcher at a time; start it in the same step as each inbox read; send DONE in the same step as the rows.
