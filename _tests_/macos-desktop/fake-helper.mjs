@@ -743,7 +743,13 @@ function handle(message) {
     case 'focused':
       if (scope === null) return refuse(id, 'no_scope', 'no scope is set')
       // config.focusedReads (CU-135's race): successive answers, the last one repeating - a focus the app moves late.
-      if (Array.isArray(config.focusedReads) && config.focusedReads.length > 0) return send({ id, ok: true, element: elementShape(config.focusedReads.length > 1 ? config.focusedReads.shift() : config.focusedReads[0]) })
+      // config.focusedReadDelayMs: each such answer comes that late - a loaded helper whose reads are slower than the
+      // settle window (CU-135 follow-up); the answer is taken when the request arrives, only its reply waits.
+      if (Array.isArray(config.focusedReads) && config.focusedReads.length > 0) {
+        const element = elementShape(config.focusedReads.length > 1 ? config.focusedReads.shift() : config.focusedReads[0])
+        if (Number.isInteger(config.focusedReadDelayMs) && config.focusedReadDelayMs > 0) return void setTimeout(() => send({ id, ok: true, element }), config.focusedReadDelayMs)
+        return send({ id, ok: true, element })
+      }
       // CU-142: config.defaultButton, the button Return presses there; absent from the reply when the world has none (an older helper).
       return send({ id, ok: true, element: elementShape(focusedNow() ?? null), ...('defaultButton' in config ? { defaultButton: elementShape(config.defaultButton) } : {}), ...(Array.isArray(config.defaultCandidates) ? { defaultCandidates: config.defaultCandidates.map(elementShape) } : {}), ...(config.defaultCandidatesMore === true ? { defaultCandidatesMore: true } : {}), ...(quirks.omitDefaultButtonRead ? {} : { defaultButtonRead: 'defaultButtonRead' in config ? config.defaultButtonRead : true }), ...('sheet' in config ? { sheet: config.sheet } : {}), ...('focusedApp' in config ? { app: config.focusedApp } : {}), ...counted() })
     case 'screenText': {
