@@ -17,3 +17,8 @@ test('CU-698: locale change-email / phone rows ask credential as English (parity
 test('CU-698 controls: add / verify, past / status and bare nouns take no credential', () => {
   for (const name of ['Ajouter une adresse e-mail', 'Vérifier l’e-mail', 'Adresse e-mail modifiée', 'Agregar correo', 'Correo electrónico', 'E-Mail-Adresse hinzufügen', 'E-Mail-Adresse geändert', 'Добавить номер телефона', 'Номер телефона изменён', 'メールアドレスを追加', 'メールアドレス', '이메일 추가', '이메일이 변경되었습니다', '添加邮箱', '邮箱', '更改用户名', 'Modifier le nom', 'Add email', 'Email changed']) assert.ok(!click(name).includes('credential'), name)
 })
+
+test('CU-698: the mobile nouns ask only with the number / phone noun, so switch-to-mobile-version labels stay free (found by the corpus reclass)', () => {
+  for (const name of ['Cambiar el número de móvil', 'Cambiar teléfono móvil', 'Modifier le numéro de portable', 'Alterar número de celular', 'Cambia il numero di cellulare']) assert.ok(click(name).includes('credential'), name)
+  for (const name of ['Cambiar a la versión móvil', 'Passer à la version mobile', 'Changer de version mobile', 'Alterar para versão celular', 'Cambia a versione mobile']) assert.ok(!click(name).includes('credential'), name)
+})
