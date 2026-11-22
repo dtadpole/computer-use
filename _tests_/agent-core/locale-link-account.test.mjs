@@ -19,3 +19,8 @@ test('CU-689 controls: bare verbs, other objects and past / status forms do not 
   for (const name of ['Lier', 'Lier le numéro de téléphone', 'Compte lié', 'Vincular', 'Vincular número de teléfono', 'Cuenta vinculada', 'Verknüpfen', 'Telefonnummer verknüpfen', 'Konto verknüpft', 'Koppelen', 'Привязать', 'Привязать номер телефона', 'Аккаунт привязан',
  'リンク', '電話番号をリンク', 'アカウントをリンクしました', '연결', '전화번호 연결', '계정이 연결되었습니다', '关联', '绑定手机号', '账户已关联', 'Bağla', 'Telefon numarasını bağla', 'Link', 'Link phone number', 'Account linked']) assert.ok(!click(name).includes('permission'), name)
 })
+
+test('CU-689 go (04:30Z): the connect twins ask with the account noun only, as English \'Connect account\'; connect + device and bare connect stay free', () => {
+  for (const name of ['Connecter le compte', 'Conectar cuenta', 'Conectar mi cuenta de Google', 'Konto verbinden', 'Verbinden Sie Ihr Konto', 'Account verbinden', 'Подключить аккаунт', 'Не подключать аккаунт', 'アカウントを接続', '连接账户', 'Connect account']) assert.ok(click(name).includes('permission'), name)
+  for (const name of ['Connecter l’appareil', 'Conectar dispositivo', 'Gerät verbinden', 'Подключить устройство', 'Connecter', 'Conectar', 'Verbinden', 'Подключить', '接続', '连接', 'Connect device', 'Connect']) assert.ok(!click(name).includes('permission'), name)
+})

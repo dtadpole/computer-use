@@ -1023,6 +1023,15 @@ const LOCALE_LINK_ACCOUNT = Object.freeze([
   /^(?:(?:지금|즉시)\s+)?(?:이\s+|내\s+)?(?:\S+\s+)?(?:계정|기기|장치)(?:들)?\s*(?:을|를)?\s*(?:연결|연동|링크)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다|하지\s?마(?:세요|십시오)?)?\s*[.!]?$/u,
   /^(?:立即|马上|现在|不要)?(?:关联|關聯|绑定|綁定)(?:此|这个|該|该)?(?:\S{0,8}的)?(?:账户|帳戶|账号|帳號|设备|裝置|設備)\s*[.!。]?$/u,
   new RegExp(`^(?:bu\\s+)?(?:\\S+\\s+)?(?:hesab[ıiI]|hesapl[aA]r[ıI]|cihaz[ıiI]|cihazl[aA]r[ıI])\\s+(?:bağla|bağlay[ıI]n|bağlama)\\s*[.!]?$`, 'iu'),
+  // go (cu-developer-one 04:30Z): the connect twins join with the account noun only - English 'Connect account' asks while 'Connect
+  // device' and bare 'Connect' are free
+  /^(?:ne\s+pas\s+)?(?:connecter|connectez)\s+(?:\S+\s+){0,2}?(?:l['’]\s*)?comptes?(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:no\s+|não\s+|nao\s+)?(?:conectar|conecta|conecte)\s+(?:\S+\s+){0,2}?(?:cuentas?|contas?)(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:(?:das|dein|ihr|mein|dieses)\s+)?(?:\S+\s+)?(?:\S*kont(?:o|en)|\S*account)(?:\s+(?:jetzt|nicht))?\s+verbinden\s*[.!]?$/iu,
+  /^(?:verbinden\s+sie|verbinde)\s+(?:\S+\s+){0,2}?(?:\S*kont(?:o|en)|\S*account)(?:\s+\S+)?\s*[.!]?$/iu,
+  /^(?:(?:het|dit|mijn|je)\s+)?(?:\S+\s+)?(?:account|accounts)(?:\s+(?:nu|niet))?\s+verbinden\s*[.!]?$/iu,
+  /^(?:今すぐ)?(?:この)?(?:\S+の)?アカウント(?:を|に)?接続(?:する|して(?:ください)?|します|しない(?:で(?:ください)?)?)?\s*[.!。]?$/u,
+  /^(?:立即|马上|现在|不要)?(?:连接|連接)(?:此|这个|該|该)?(?:\S{0,8}的)?(?:账户|帳戶|账号|帳號)\s*[.!。]?$/u,
 ])
 let ruLinkAccountRegex = null
 function namesRuLinkAccount(name) {
@@ -1031,7 +1040,8 @@ function namesRuLinkAccount(name) {
     const any = (words) => `(?:${words.flatMap(folds).join('|')})`
     const verb = `(?:${any(['привязать', 'привяжите', 'привяжи'])}|${any(['не'])}\\s+${any(['привязывать'])})`
     const noun = any(['аккаунт', 'аккаунты', 'устройство', 'устройства'])
-    ruLinkAccountRegex = new RegExp(`^(?:${any(['сейчас'])}\\s+)?${verb}\\s+(?:\\S+\\s+){0,2}?${noun}(?:\\s+\\S+){0,2}?\\s*[.!]?$`, 'iu')
+    const connect = `(?:${any(['подключить', 'подключите'])}|${any(['не'])}\\s+${any(['подключать'])})\\s+(?:\\S+\\s+){0,2}?${any(['аккаунт', 'аккаунты'])}`
+    ruLinkAccountRegex = new RegExp(`^(?:${any(['сейчас'])}\\s+)?(?:${verb}\\s+(?:\\S+\\s+){0,2}?${noun}|${connect})(?:\\s+\\S+){0,2}?\\s*[.!]?$`, 'iu')
   }
   return ruLinkAccountRegex.test(normaliseName(String(name ?? '')).trim())
 }
