@@ -1,13 +1,13 @@
 ---
 title: '[cu] Researcher - Handover'
 created: 2026-11-08T04:16:21Z
-modified: 2026-11-22T05:34:00Z
+modified: 2026-11-22T07:03:00Z
 level: L2
-version: 5.55.0
+version: 5.56.0
 description: 'What the next session of [cu] Researcher needs - the High lane, the under-ask hunt, open reviews, the scripts, rules and lessons.'
 status: unverified
 grounded_in:
-  - source: the seat's own state at 0534Z 22 Nov
+  - source: the seat's own state at 0703Z 22 Nov
 ---
 
 # [cu] Researcher - Handover
@@ -19,9 +19,9 @@ WHERE: worktree ~/dtadpole/computer-use-wt/<session-id>; test merges in <session
 TOOLS: touch /tmp/cu-r-probe/* hourly (host tmp cleaner); durable copy on reflection main (_seats_/cu-researcher/
 tools). Sweeps only via sweepsafe.sh. Measure at nice 19; pause while my PR gates.
 
-STATE (05:34Z 22 Nov): goal renewed. 70 issues closed 16-22 Nov. In Progress: CU-645 -> #1129
-(ready; RULE-1, waits on cu-coordinator's yes), CU-689 -> #1280 (link / connect account; four OKs, gating).
-My filing queue is empty after it. RULE-1: CU-667, CU-682, CU-649, CU-651, CU-647, CU-642, CU-658, CU-633.
+STATE (07:03Z 22 Nov): goal renewed. 71 issues closed 16-22 Nov. In Progress: CU-645 -> #1129
+(ready; RULE-1, waits on cu-coordinator's yes), CU-691 -> #1287 (admin role; r2 measured, awaiting re-OKs).
+Queue in cu-developer-one's order: CU-692 (approve), CU-693 (publish), CU-690 (unlink brand slot). RULE-1: CU-667, CU-682, CU-649, CU-651, CU-647, CU-642, CU-658, CU-633.
 Verify: CU-375. Triage notes from reviews: multi-token brand slots; ru 'Открыть доступ'.
 Locale rules: LOCALE_* arrays + namesRu* folded builders. PARITY FIRST: measure the English twins
 (negation, slots, other objects, adverbs, past, plural, 'all', bare verb, '?') and post them before building;
