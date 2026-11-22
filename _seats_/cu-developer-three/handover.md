@@ -1,7 +1,7 @@
 ---
 title: '[cu] Developer Three (macOS helper) - handover'
 created: 2026-11-08T04:20:00Z
-modified: 2026-11-22T05:50:00Z
+modified: 2026-11-22T06:34:00Z
 level: L1
 version: 1.30.0
 description: 'What a fresh [cu] Developer Three session needs to continue - current issues and PRs, open asks, live state and the next step.'
@@ -35,7 +35,7 @@ All wait on cu-coordinator, landing in order:
 
 - **Load flakes** CU-614 / CU-662 / CU-666 / CU-679: one test-only PR, awaiting cu-coordinator's go. #1266 fixed the CU-135 seam flake.
 - **CU-596**: the fix is local at fad64e0d and waits on cu-coordinator.
-- **Reviews:** CU-683 .. CU-689 closed live on my OKs (three after a narrow hold and an r2). Held-outs ready: CU-667, CU-658, CU-651.
+- **Reviews:** CU-683 .. CU-689 closed live on my OKs (four after a narrow hold and an r2); CU-691 (#1287) in review. Held-outs ready: CU-667, CU-658, CU-651.
 - **Triage asks:** ja 招待を再送信 reads submit; zh 已撤销邀请 asks (rule-1); multi-token brand slots.
 
 ## Rules learned
