@@ -26,3 +26,8 @@ test('CU-686 corrected go (23:45Z): the bare remove verbs ask delete as English 
   for (const name of ['Retirer', 'Retirez', '제거', '삭제', '제거하기', '삭제하기', 'Remove']) assert.ok(click(name).includes('delete'), name)
   for (const name of ['Retiré', '삭제됨', '제거되었습니다', 'Exclure']) assert.deepEqual(click(name), [], name)
 })
+
+test('CU-686 r2: es quitar + the member noun asks delete as \'Remove member\'; fr bare \'Retire\' and es bare \'Quitar\' join the bare verbs', () => {
+  for (const name of ['Quitar al miembro', 'Quitar miembro', 'Quitar a los miembros', 'Quitar este usuario', 'Quite al participante', 'Quitar a Ana del equipo', 'Quitar del grupo', 'Retire', 'Quitar']) assert.ok(click(name).includes('delete'), name)
+  for (const name of ['Quitar filtro', 'Miembro quitado', 'No quitar al miembro', 'Quitado', 'Miembros']) assert.deepEqual(click(name), [], name)
+})

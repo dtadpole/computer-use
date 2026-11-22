@@ -892,7 +892,11 @@ const TRANSFER_OWNERSHIP = Object.freeze([
 const LOCALE_REMOVE_MEMBER = Object.freeze([
   // corrected go (cu-developer-one 23:45Z): English bare 'Remove' asks delete, so the bare remove verbs ask too (the fr withdraw-money
   // homograph is consent-sensitive anyway)
-  /^(?:retirer|retirez)\s*[.!]?$/iu,
+  /^(?:retirer|retirez|retire|quitar|quita|quite)\s*[.!]?$/iu,
+  // r2 (cu-developer-three, cu-developer-one 00:19Z): es quitar + the member noun, as English 'Remove member'; fr bare 'Retire' and es bare
+  // 'Quitar' join the bare remove verbs
+  /^(?:quitar|quita|quite|quiten)\s+(?:a\s+|al\s+|a\s+los\s+|a\s+las\s+)?(?:\S+\s+){0,2}?(?:miembros?|usuarios?|usuarias?|participantes?|colaboradore?s?)(?:\s+\S+){0,3}?\s*[.!]?$/iu,
+  /^(?:quitar|quita|quite)\s+(?:\S+\s+){0,2}?(?:del|de\s+la|de\s+los)\s+(?:equipo|grupo|espacio(?:\s+de\s+trabajo)?|organización|proyecto|canal|servidor)(?:\s+\S+)?\s*[.!]?$/iu,
   /^(?:제거|삭제)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
   /^(?:retirer|retirez|retire)\s+(?:\S+\s+){0,2}?(?:l['’]\s*)?(?:membres?|utilisateurs?|utilisatrices?|participants?|participantes?|collaborateurs?|collaboratrices?)(?:\s+\S+){0,3}?\s*[.!]?$/iu,
   /^(?:retirer|retirez|retire)\s+(?:\S+\s+){0,2}?(?:de\s+l['’]\s*|du\s+|de\s+la\s+|des\s+)(?:équipe|groupe|espace(?:\s+de\s+travail)?|organisation|projet|canal|serveur)(?:\s+\S+)?\s*[.!]?$/iu,
