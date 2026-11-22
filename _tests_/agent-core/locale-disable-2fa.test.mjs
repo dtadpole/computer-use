@@ -19,3 +19,8 @@ test('CU-695 controls: enabling 2FA, the bare noun, status forms and other objec
   for (const name of ['Activer l’authentification à deux facteurs', 'Authentification à deux facteurs', 'Désactiver', 'Désactiver les notifications', 'Activar 2FA', 'Zwei-Faktor-Authentifizierung aktivieren', 'Zwei-Faktor-Authentifizierung', 'Включить двухфакторную аутентификацию', 'Двухфакторная аутентификация отключена',
  '2段階認証を有効にする', '2段階認証', '2단계 인증 사용', '2단계 인증', '开启两步验证', '两步验证', '关闭通知', 'Enable 2FA']) assert.ok(!click(name).includes('permission'), name)
 })
+
+test('CU-695 r2: zh 双重身份验证 / 双重认证 and Turkish capitals ask permission + credential', () => {
+  for (const name of ['关闭双重身份验证', '關閉雙重身份驗證', '停用双重认证', 'İKİ ADIMLI DOĞRULAMAYI KAPAT', 'İKİ FAKTÖRLÜ KİMLİK DOĞRULAMAYI DEVRE DIŞI BIRAK']) { const r = click(name); assert.ok(r.includes('permission') && r.includes('credential'), name) }
+  for (const name of ['双重身份验证', 'İKİ ADIMLI DOĞRULAMA']) assert.ok(!click(name).includes('permission'), name)
+})

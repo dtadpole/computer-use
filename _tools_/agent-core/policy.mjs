@@ -1183,8 +1183,9 @@ const LOCALE_DISABLE_2FA = Object.freeze([
   /^(?:(?:tweestapsverificatie|twee-factor-authenticatie|tweefactorauthenticatie|2fa)(?:\s+nu)?\s+(?:uitschakelen|uitzetten)|(?:schakel)\s+(?:tweestapsverificatie|twee-factor-authenticatie|2fa)\s+uit)\s*[.!]?$/iu,
   /^(?:今すぐ)?(?:2段階認証(?:プロセス)?|2要素認証|二段階認証|二要素認証|2FA)を?(?:無効にする|無効にしてください|無効化(?:する)?|オフにする|オフにしてください|オフ|解除(?:する)?)\s*[.!。]?$/iu,
   /^(?:(?:지금|즉시)\s+)?(?:2단계\s?인증|2차\s?인증|이중\s?인증|2FA)\s*(?:을|를)?\s*(?:사용\s?중지|비활성화|끄기|해제|중지)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/iu,
-  /^(?:立即)?(?:关闭|關閉|停用|禁用|取消)(?:两步验证|兩步驗證|双重验证|雙重驗證|两步验证码|双因素认证|雙因素認證|二次验证|2FA)\s*[.!。]?$/iu,
-  new RegExp(`^(?:iki\\s+faktörlü\\s+(?:kimlik\\s+doğrulamayı|doğrulamayı)|iki\\s+adımlı\\s+doğrulamayı|2fa'yı|2fa)\\s+(?:devre\\s+dışı\\s+bırak|devre\\s+dışı\\s+bırakın|kapat|kapatın)\\s*[.!]?$`, 'iu'),
+  /^(?:立即)?(?:关闭|關閉|停用|禁用|取消)(?:两步验证|兩步驗證|双重验证|雙重驗證|双重身份验证|雙重身份驗證|双重认证|雙重認證|两步验证码|双因素认证|雙因素認證|二次验证|2FA)\s*[.!。]?$/iu,
+  // r2 (cu-developer-three, cu-developer-one 14:58Z): Turkish capitals - dotless ı is listed with I, as on CU-685's tr line (the wiring folds İ)
+  new RegExp(`^(?:iki\\s+faktörlü\\s+(?:kimlik\\s+doğrulamay[ıI]|doğrulamay[ıI])|iki\\s+ad[ıI]ml[ıI]\\s+doğrulamay[ıI]|2fa'y[ıI]|2fa)\\s+(?:devre\\s+d[ıI]ş[ıI]\\s+b[ıI]rak|devre\\s+d[ıI]ş[ıI]\\s+b[ıI]rak[ıI]n|kapat|kapat[ıI]n)\\s*[.!]?$`, 'iu'),
 ])
 let ruDisable2faRegex = null
 function namesRuDisable2fa(name) {
