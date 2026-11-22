@@ -1119,6 +1119,31 @@ function namesRuAdminGrant(name) {
   }
   return ruAdminGrantRegex.test(normaliseName(String(name ?? '')).trim())
 }
+// CU-692 (strict English parity; the English facts are on the issue): the approve verb asks submit in the locales as 'Approve' does -
+// bare, with any object, with 'all' / 'now', and negated ("Don't approve" asks). Past / status forms and the approval nouns stay free.
+const LOCALE_APPROVE = Object.freeze([
+  /^(?:ne\s+pas\s+)?(?:approuver|approuvez|approuve)(?:\s+\S+){0,4}?\s*[.!]?$/iu,
+  /^(?:tout|tous|toutes)\s+(?:approuver|approuvez)\s*[.!]?$/iu,
+  /^(?:no\s+)?(?:aprobar|aprueba|apruebe|aprueben)(?:\s+\S+){0,4}?\s*[.!]?$/iu,
+  /^(?:não\s+|nao\s+)?(?:aprovar|aprova|aprove)(?:\s+\S+){0,4}?\s*[.!]?$/iu,
+  /^(?:non\s+)?(?:approva|approvare|approvate|approvi)(?:\s+\S+){0,4}?\s*[.!]?$/iu,
+  /^(?:\S+\s+){0,3}?(?:nicht\s+)?genehmigen\s*[.!]?$/iu,
+  /^(?:genehmigen\s+sie|genehmige)(?:\s+\S+){0,4}?\s*[.!]?$/iu,
+  /^(?:\S+\s+){0,3}?(?:niet\s+)?goedkeuren\s*[.!]?$/iu,
+  /^(?:\S+を)?(?:今すぐ)?承認(?:する|して(?:ください)?|します|しない(?:で(?:ください)?)?)\s*[.!。]?$/u,
+  /^(?:\S+\s+)?(?:\S+(?:을|를)\s*)?승인(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다|하지\s?마(?:세요|십시오)?)\s*[.!]?$/u,
+  /^(?:不要|立即)?(?:批准|审批通过|審批通過)(?:\S{0,8})?\s*[.!。]?$/u,
+])
+let ruApproveRegex = null
+function namesRuApprove(name) {
+  if (!ruApproveRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const verb = `(?:${any(['одобрить', 'одобрите', 'одобри', 'утвердить', 'утвердите'])}|${any(['не'])}\\s+${any(['одобрять', 'утверждать'])})`
+    ruApproveRegex = new RegExp(`^${verb}(?:\\s+\\S+){0,4}?\\s*[.!]?$`, 'iu')
+  }
+  return ruApproveRegex.test(normaliseName(String(name ?? '')).trim())
+}
 // CU-655: the Russian twin ('Очистить корзину', 'Очистите корзину', 'Корзину очистить', with 'не' as negation) is built from folded
 // words on first use: a judged name has passed normaliseText, which folds Cyrillic homoglyphs to Latin case by case, so each word
 // is folded as written, capitalised and in capitals, as namesWord does for its Cyrillic entries.
@@ -3602,6 +3627,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // CU-691: locale admin-role twins - grant / revoke ask permission, remove asks delete (LOCALE_ADMIN_GRANT / LOCALE_ADMIN_REMOVE above).
     if (grammarEligible && !classes.includes('permission') && (LOCALE_ADMIN_GRANT.some((re) => re.test(String(name ?? '').trim().replace(/İ/g, 'i'))) || namesRuAdminGrant(name))) classes.push('permission')
     if (grammarEligible && !classes.includes('delete') && LOCALE_ADMIN_REMOVE.some((re) => re.test(String(name ?? '').trim()))) classes.push('delete')
+    // CU-692: locale approve twins ask submit (LOCALE_APPROVE above).
+    if (grammarEligible && !classes.includes('submit') && (LOCALE_APPROVE.some((re) => re.test(String(name ?? '').trim())) || namesRuApprove(name))) classes.push('submit')
     // CU-684: locale leave-workspace twins (LOCALE_LEAVE_WORKSPACE above).
     if (grammarEligible && !classes.includes('permission') && (LOCALE_LEAVE_WORKSPACE.some((re) => re.test(String(name ?? '').trim())) || namesRuLeaveWorkspace(name))) classes.push('permission')
     // CU-678: transfer-ownership twins (TRANSFER_OWNERSHIP above).
