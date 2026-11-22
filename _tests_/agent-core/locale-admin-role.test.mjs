@@ -38,3 +38,9 @@ test('CU-691 r3: the es remove-admin article forms ask delete', () => {
   for (const name of ['Quitar al administrador', 'Quitar a la administradora', 'Eliminar al administrador', 'Quitar el administrador']) assert.ok(click(name).includes('delete'), name)
   for (const name of ['Administrador eliminado', 'El administrador']) assert.deepEqual(click(name), [], name)
 })
+
+test('CU-691 r4: es formal imperatives and the name slot with como ask delete, as \'Remove Alex as admin\'', () => {
+  for (const name of ['Quite al administrador', 'Elimine al administrador', 'Quitar a Alex como administrador', 'Quitar a Ana García como administradora', 'Remove Alex as admin']) assert.ok(click(name).includes('delete'), name)
+  // bare 'Quite' already asks delete on main (CU-686's bare remove verbs), so it is not a control here
+  for (const name of ['Alex como administrador', 'Administrador quitado']) assert.ok(!click(name).includes('delete'), name)
+})

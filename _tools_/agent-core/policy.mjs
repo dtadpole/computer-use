@@ -1104,7 +1104,8 @@ const LOCALE_ADMIN_REMOVE = Object.freeze([
   /^(?:取消|移除|撤销|撤銷)(?:\S{0,8}的)?(?:管理员|管理員)(?:身份|角色)?\s*[.!。]?$/u,
   /^(?:retirer|retirez)\s+(?:les\s+droits\s+d['’]\s*|l['’]\s*)?(?:administrateur|administratrice)(?:\s+\S+)?\s*[.!]?$/iu,
   // r3 (cu-verifier, cu-developer-one 07:09Z): the es article ('Quitar al administrador', 'Quitar a la administradora'), as CU-686's 'Quitar al miembro'
-  /^(?:quitar|quita|eliminar|elimina)\s+(?:como\s+|al\s+|a\s+la\s+|el\s+|la\s+)?(?:administrador|administradora|permisos\s+de\s+administrador)(?:\s+\S+)?\s*[.!]?$/iu,
+  // r4 (cu-developer-two, cu-developer-one 07:28Z): the formal imperatives (quite / elimine) and a name slot with 'como'
+  /^(?:quitar|quita|quite|eliminar|elimina|elimine)\s+(?:como\s+|al\s+|a\s+la\s+|el\s+|la\s+|a\s+\S+(?:\s+\S+)?\s+como\s+)?(?:administrador|administradora|permisos\s+de\s+administrador)(?:\s+\S+)?\s*[.!]?$/iu,
   /^(?:administratorrechte|adminrechte)\s+entfernen\s*[.!]?$/iu,
   /^(?:\S+\s+)?관리자\s?(?:권한)?\s*(?:을|를|에서)?\s*(?:제거|삭제|해제)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
 ])
