@@ -25,7 +25,7 @@ Start here, then [responsibilities](responsibilities.md) and [verdict](ultimate-
   run ids copied by script, plus a mutant.
 - **Desktop rows:** in cu-developer-three's holds; I judge from events.jsonl.
 - **Open:** CU-586 / CU-588 desktop rows; CU-375 with #856; CU-596 under load; CU-607 on a class ruling;
-  CU-645 has #1129 (rule-1); no fix PR: CU-612, CU-618, CU-631 .. CU-633, CU-640, CU-642, CU-647, CU-649, CU-651, CU-656, CU-658, CU-667, CU-671, CU-681, CU-682, CU-696 (permission half), CU-699, CU-700, CU-701. The consent row
+  CU-645 has #1129 (rule-1), CU-700 #1331; no fix PR: CU-612, CU-618, CU-631 .. CU-633, CU-640, CU-642, CU-647, CU-649, CU-651, CU-656, CU-658, CU-667, CU-671, CU-681, CU-682, CU-696 (permission half), CU-699, CU-701. The consent row
   waits on CU-135 step 4.
 - **Lessons:** read the Verify state before `verified` (outside Verify it only moves there); a records PR naming an
   issue moves it to Verify on merge - reopen with a live row; count OKs from the PR. One browser per seat, one job
