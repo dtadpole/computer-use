@@ -30,3 +30,8 @@ test('CU-685 r3: the tr compound noun and Turkish capitals, the de formal impera
     'Entkoppeln Sie Ihr Google-Konto', 'Google 계정 연결을 해제하세요', '계정 연결을 해제', '계정의 연결 해제']) assert.ok(click(name).includes('permission'), name)
   for (const name of ['Kartın bağlantısını kaldır', 'Bağlantıyı kaldır', 'Entkoppeln Sie die Karte', '카드 연결을 해제하세요', '계정 연결이 해제되었습니다']) assert.ok(!click(name).includes('permission'), name)
 })
+
+test('CU-690: the ja / ko / zh unlink lines take a two-token brand before the account noun, as \'Unlink Apple ID account\'; link / connect stay as English (free)', () => {
+  for (const name of ['Apple ID アカウントのリンクを解除', 'Google Workspace アカウントのリンクを解除', 'Apple ID 계정 연결 해제', 'Microsoft 365 계정 연동 해제', '解除 Apple ID 账户关联', '取消 Apple ID 账户绑定', '解绑 Apple ID 账户', 'Unlink Apple ID account']) assert.ok(click(name).includes('permission'), name)
+  for (const name of ['Apple ID のリンクを解除', 'Apple ID 연결 해제', '解除 Apple ID 关联', 'Link Apple ID account', 'Apple ID アカウントをリンク', 'Apple ID 계정 연결', '关联 Apple ID 账户']) assert.ok(!click(name).includes('permission'), name)
+})
