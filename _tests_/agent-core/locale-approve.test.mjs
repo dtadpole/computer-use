@@ -27,3 +27,8 @@ test('CU-692 r2: zh 批准 bare or with a request noun asks; 批准人 / 批准�
   for (const name of ['批准', '不要批准', '立即批准', '批准申请', '批准此请求', '批准所有变更', '批准合并请求']) assert.ok(click(name).includes('submit'), name)
   for (const name of ['批准人', '批准时间', '批准了', '批准中', '批准过', 'Approver', 'Approval date']) assert.ok(!click(name).includes('submit'), name)
 })
+
+test('CU-694: zh approve all without a noun asks submit, as English \'Approve all\'', () => {
+  for (const name of ['批准所有', '批准全部', '全部批准', '所有批准', '一键批准', '不要全部批准', 'Approve all']) assert.ok(click(name).includes('submit'), name)
+  for (const name of ['全部已批准', '所有批准人', '批准人', '批准了', '全部']) assert.ok(!click(name).includes('submit'), name)
+})
