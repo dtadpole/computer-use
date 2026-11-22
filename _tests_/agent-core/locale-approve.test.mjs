@@ -17,3 +17,8 @@ test('CU-692: locale approve rows ask submit as English \'Approve\' (parity, neg
 test('CU-692 controls: past / status forms and the approval nouns stay free', () => {
   for (const name of ['Approuvé', 'Approbation', 'Tout approuvé', 'Aprobado', 'Aprobación', 'Genehmigt', 'Genehmigung', 'Goedgekeurd', 'Одобрено', 'Одобрение', '承認済み', '승인됨', '已批准', 'Approved', 'Approval']) assert.ok(!click(name).includes('submit'), name)
 })
+
+test('CU-692 go (09:15Z): bare ja 承認, ko 승인 and zh 批准 ask submit; de freigeben and zh 同意 stay out', () => {
+  for (const name of ['承認', '승인', '批准', '申請を承認']) assert.ok(click(name).includes('submit'), name)
+  for (const name of ['承認済み', '승인됨', '已批准', '승인 대기 중']) assert.ok(!click(name).includes('submit'), name)
+})
