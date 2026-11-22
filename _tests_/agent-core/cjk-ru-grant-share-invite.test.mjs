@@ -22,3 +22,8 @@ test('CU-687 go (02:33Z): bare ja / ko share and invite forms and invite negatio
     '멤버를 초대하지 마세요', "Don't invite member", 'Share', 'Invite']) assert.ok(click(name).includes('permission'), name)
   for (const name of ['共有しない', '공유하지 마세요', 'Не делиться', '共有済み', '공유됨', '招待済み', '초대됨', '付与', 'Приглашение', 'Grant']) assert.ok(!click(name).includes('permission'), name)
 })
+
+test('CU-687 r2: the zh grant slot takes spaces and ja / ko invite with a target asks, as \'Grant access to Alex\' / \'Invite to team\'', () => {
+  for (const name of ['授予 Alex 访问权限', '授予张三访问权限', '授予 Alex 和 Bob 访问权限', 'チームに招待', 'チームに招待する', 'プロジェクトにメンバーを招待', '팀에 초대', '팀에 초대하기', '프로젝트에 멤버 초대', 'Invite to team', 'Grant access to Alex']) assert.ok(click(name).includes('permission'), name)
+  for (const name of ['授予', 'チーム', '팀에 초대되었습니다', 'チームに招待しました']) assert.ok(!click(name).includes('permission'), name)
+})
