@@ -885,6 +885,27 @@ const TRANSFER_OWNERSHIP = Object.freeze([
   /^(?:\S+\s*){0,4}?所有权(?:转移|转让)(?:给\S{1,10})?\s*[.!。]?$/u,
   new RegExp(`^(?:\\S+\\s+){0,3}?sahipli[gğ]\\S*(?:\\s+\\S+){0,2}?\\s+(?:devret|devredin|devredil?iniz|devrediniz)\\s*[.!]?$`, 'iu'),
 ])
+// CU-686 (strict English parity; the English facts are on the issue): removing a member asks delete in fr / ko as 'Remove member' does -
+// fr retirer + the member / user noun or '… de l'équipe / du groupe', ko 제거 with the member / user noun or '팀 / 그룹에서'; fr 'Exclure
+// le membre' asks permission as 'Kick member' does; the bare remove verbs ask as bare 'Remove' does (corrected go 23:45Z);
+// negation, past / status forms and the bare nouns stay free.
+const LOCALE_REMOVE_MEMBER = Object.freeze([
+  // corrected go (cu-developer-one 23:45Z): English bare 'Remove' asks delete, so the bare remove verbs ask too (the fr withdraw-money
+  // homograph is consent-sensitive anyway)
+  /^(?:retirer|retirez|retire|quitar|quita|quite)\s*[.!]?$/iu,
+  // r2 (cu-developer-three, cu-developer-one 00:19Z): es quitar + the member noun, as English 'Remove member'; fr bare 'Retire' and es bare
+  // 'Quitar' join the bare remove verbs
+  /^(?:quitar|quita|quite|quiten)\s+(?:a\s+|al\s+|a\s+los\s+|a\s+las\s+)?(?:\S+\s+){0,2}?(?:miembros?|usuarios?|usuarias?|participantes?|colaboradore?s?)(?:\s+\S+){0,3}?\s*[.!]?$/iu,
+  /^(?:quitar|quita|quite)\s+(?:\S+\s+){0,2}?(?:del|de\s+la|de\s+los)\s+(?:equipo|grupo|espacio(?:\s+de\s+trabajo)?|organización|proyecto|canal|servidor)(?:\s+\S+)?\s*[.!]?$/iu,
+  /^(?:제거|삭제)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+  /^(?:retirer|retirez|retire)\s+(?:\S+\s+){0,2}?(?:l['’]\s*)?(?:membres?|utilisateurs?|utilisatrices?|participants?|participantes?|collaborateurs?|collaboratrices?)(?:\s+\S+){0,3}?\s*[.!]?$/iu,
+  /^(?:retirer|retirez|retire)\s+(?:\S+\s+){0,2}?(?:de\s+l['’]\s*|du\s+|de\s+la\s+|des\s+)(?:équipe|groupe|espace(?:\s+de\s+travail)?|organisation|projet|canal|serveur)(?:\s+\S+)?\s*[.!]?$/iu,
+  /^(?:(?:지금|즉시)\s+)?(?:이\s+|모든\s+)?(?:\S+\s+)?(?:구성원|멤버|사용자|참가자|회원)(?:들)?\s*(?:을|를)?\s*(?:(?:지금|즉시)\s+)?제거(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+  /^(?:(?:지금|즉시)\s+)?(?:\S+\s+)?(?:팀|그룹|작업\s?공간|조직|채널|서버|프로젝트)에서\s+(?:\S+\s+)?제거(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+])
+const LOCALE_KICK_MEMBER = Object.freeze([
+  /^(?:exclure|excluez|exclus)\s+(?:\S+\s+){0,2}?(?:l['’]\s*)?(?:membres?|utilisateurs?|participants?)(?:\s+\S+){0,3}?\s*[.!]?$/iu,
+])
 // CU-683 (strict English parity; the English facts are on the issue): revoking access asks permission in the locales as 'Revoke access'
 // / 'Revoke permissions' do - the revoke verb with the access or permission noun, both orders, a 'for X' / possessive slot, 'all' and a
 // 'now'. Cancel-sense verbs (取り消す / 취소 / 撤销) count only with the noun, as in CU-675; remove-sense verbs (retirer, 削除, kaldır) are
@@ -920,6 +941,38 @@ function namesRuRevokeAccess(name) {
     ruRevokeAccessRegex = new RegExp(`^(?:${any(['сейчас'])}\\s+)?${verb}(?:\\s+(?:\\S+\\s+){0,2}?${noun}(?:\\s+\\S+){0,3}?)?\\s*[.!]?$`, 'iu')
   }
   return ruRevokeAccessRegex.test(normaliseName(String(name ?? '')).trim())
+}
+// CU-685 (strict English parity; the English facts are on the issue): unlinking an account or device asks permission in the locales as
+// 'Unlink account' / 'Unlink device' do - the unlink verb with the account / device noun, a brand / possessive slot, plural and 'now'.
+// Bare verbs, other objects ('Unlink card'), negation, past / status and the disconnect / unpair twins stay free, as in English.
+const LOCALE_UNLINK_ACCOUNT = Object.freeze([
+  /^(?:dissocier|dissociez|dissocie|délier|déliez)\s+(?:\S+\s+){0,2}?(?:l['’]\s*)?(?:comptes?|appareils?)(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:desvincular|desvincula|desvincule)\s+(?:\S+\s+){0,2}?(?:cuentas?|dispositivos?|contas?|aparelhos?)(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:scollega|scollegare|dissocia|dissociare)\s+(?:\S+\s+){0,2}?(?:l['’]\s*)?(?:account|dispositivi?|dispositivo)(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:(?:das|dein|ihr|mein|dieses)\s+)?(?:\S+\s+)?(?:\S*kont(?:o|en)|\S*account|\S*gerät(?:e)?)(?:\s+jetzt)?\s+(?:entkoppeln|trennen\s+und\s+entfernen)\s*[.!]?$/iu,
+  /^(?:entkoppeln\s+sie|entkopple|entkoppelt)\s+(?:\S+\s+){0,2}?(?:\S*kont(?:o|en)|\S*accounts?|\S*gerät(?:e)?)(?:\s+\S+)?\s*[.!]?$/iu,
+  /^(?:verknüpfung|kopplung)\s+(?:mit\s+(?:dem|diesem)\s+|des\s+|zum\s+)?(?:\S+\s+)?(?:\S*kontos?|\S*accounts?|\S*geräts?)\s+aufheben\s*[.!]?$/iu,
+  // r2 (cu-developer-three 01:33Z): the de compound ('Kontoverknüpfung aufheben') and the zh split form ('解除账户关联', '取消账号绑定')
+  /^(?:die\s+)?(?:\S*-)?(?:konto|account|geräte?)(?:verknüpfung|kopplung)(?:en)?\s+(?:jetzt\s+)?aufheben\s*[.!]?$/iu,
+  /^(?:立即|马上|现在)?(?:解除|取消)(?:此|这个|該|该)?(?:\S{0,8}的)?(?:账户|帳戶|账号|帳號|设备|裝置|設備)(?:的)?(?:关联|關聯|绑定|綁定)\s*[.!。]?$/u,
+  /^(?:(?:het|dit|mijn|je)\s+)?(?:\S+\s+)?(?:account|accounts|apparaat|apparaten)(?:\s+nu)?\s+ontkoppelen\s*[.!]?$/iu,
+  /^(?:今すぐ)?(?:この)?(?:\S+の)?(?:アカウント|デバイス|端末)(?:の)?(?:リンク|連携|紐付け|ひも付け)(?:を)?(?:解除)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
+  /^(?:(?:지금|즉시)\s+)?(?:이\s+|내\s+)?(?:\S+\s+)?(?:계정|기기|장치)(?:들)?\s*(?:의\s?)?(?:연결|연동|링크)\s*(?:을|를)?\s?해제(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+  /^(?:立即|马上|现在)?(?:取消关联|取消關聯|解除关联|解除關聯|解除绑定|解除綁定|解绑|解綁)(?:此|这个|該|该)?(?:\S{0,8}的)?(?:账户|帳戶|账号|帳號|设备|裝置|設備)\s*[.!。]?$/u,
+  // r3 (cu-developer-one 01:36Z, final): the tr compound noun ('Hesap bağlantısını kaldır') and Turkish capitals - dotless ı is listed
+  // with I, as /iu folds I only to i (and the wiring folds the dotted İ)
+  new RegExp(`^(?:bu\\s+)?(?:\\S+\\s+)?(?:hesab[ıiI]n(?:[ıI]n)?|hesapl[aA]r[ıI]n|hesap|cihaz[ıiI]n|cihazl[aA]r[ıI]n|cihaz)\\s+bağlant[ıI]s[ıI]n[ıI]\\s+(?:kald[ıI]r|kald[ıI]r[ıI]n|kes|kesin)\\s*[.!]?$`, 'iu'),
+])
+let ruUnlinkAccountRegex = null
+function namesRuUnlinkAccount(name) {
+  if (!ruUnlinkAccountRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const verb = any(['отвязать', 'отвяжите', 'отвяжи'])
+    const noun = any(['аккаунт', 'аккаунты', 'устройство', 'устройства'])
+    ruUnlinkAccountRegex = new RegExp(`^(?:${any(['сейчас'])}\\s+)?${verb}\\s+(?:\\S+\\s+){0,2}?${noun}(?:\\s+\\S+){0,2}?\\s*[.!]?$`, 'iu')
+  }
+  return ruUnlinkAccountRegex.test(normaliseName(String(name ?? '')).trim())
 }
 // CU-655: the Russian twin ('Очистить корзину', 'Очистите корзину', 'Корзину очистить', with 'не' as negation) is built from folded
 // words on first use: a judged name has passed normaliseText, which folds Cyrillic homoglyphs to Latin case by case, so each word
@@ -3388,8 +3441,13 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (grammarEligible && !classes.includes('delete') && LOCALE_HISTORY_CLEAR.some((re) => re.test(String(name ?? '').trim()))) classes.push('delete')
     // CU-655 (cu-developer-one's design): the locale twins of 'Empty trash' (LOCALE_TRASH_EMPTY above).
     if (grammarEligible && !classes.includes('delete') && (LOCALE_TRASH_EMPTY.some((re) => re.test(String(name ?? '').trim())) || namesRuTrashEmpty(name))) classes.push('delete')
+    // CU-686: fr / ko remove-member twins (delete) and fr 'Exclure le membre' (permission, as 'Kick member').
+    if (grammarEligible && !classes.includes('delete') && LOCALE_REMOVE_MEMBER.some((re) => re.test(String(name ?? '').trim()))) classes.push('delete')
+    if (grammarEligible && !classes.includes('permission') && LOCALE_KICK_MEMBER.some((re) => re.test(String(name ?? '').trim()))) classes.push('permission')
     // CU-683: locale revoke-access twins (LOCALE_REVOKE_ACCESS above).
     if (grammarEligible && !classes.includes('permission') && (LOCALE_REVOKE_ACCESS.some((re) => re.test(String(name ?? '').trim().replace(/İ/g, 'i'))) || namesRuRevokeAccess(name))) classes.push('permission')
+    // CU-685: locale unlink-account / device twins (LOCALE_UNLINK_ACCOUNT above).
+    if (grammarEligible && !classes.includes('permission') && (LOCALE_UNLINK_ACCOUNT.some((re) => re.test(String(name ?? '').trim().replace(/İ/g, 'i'))) || namesRuUnlinkAccount(name))) classes.push('permission')
     // CU-684: locale leave-workspace twins (LOCALE_LEAVE_WORKSPACE above).
     if (grammarEligible && !classes.includes('permission') && (LOCALE_LEAVE_WORKSPACE.some((re) => re.test(String(name ?? '').trim())) || namesRuLeaveWorkspace(name))) classes.push('permission')
     // CU-678: transfer-ownership twins (TRANSFER_OWNERSHIP above).
