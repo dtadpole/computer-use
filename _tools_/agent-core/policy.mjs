@@ -942,6 +942,41 @@ function namesRuRevokeAccess(name) {
   }
   return ruRevokeAccessRegex.test(normaliseName(String(name ?? '')).trim())
 }
+// CU-687 (strict English parity; the English facts are on the issue): granting access, sharing with everyone and inviting ask permission
+// in ja / ko (and zh grant) as 'Grant access', 'Share with everyone' and 'Invite member' do - grant only with the access / permission noun
+// (bare 'Grant' is free in English); share with 'everyone' / a link and invite with a person noun. Past / status forms stay free.
+const CJK_GRANT_SHARE_INVITE = Object.freeze([
+  // go (cu-developer-one 02:33Z): English bare 'Share' / 'Invite' ask, so the bare ja / ko share and invite forms ask; invite negation
+  // asks ("Don't invite member" asks); share negation and bare grant stay free
+  /^(?:共有|シェア|招待)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
+  /^(?:공유|초대)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+  /^(?:\S+\s*)?(?:(?:メンバー|ユーザー|友達|友だち|人)を?)?招待(?:しない(?:で(?:ください)?)?|しないでください)\s*[.!。]?$/u,
+  /^(?:\S+\s+)?(?:(?:멤버|구성원|사용자|친구|팀원|사람)(?:들)?\s*(?:을|를)?\s*)?초대(?:하지\s?마(?:세요|십시오)?|하지\s?않기)\s*[.!]?$/u,
+  /^(?:今すぐ)?(?:\S+に)?(?:アクセス(?:権(?:限)?)?|権限)を?(?:許可|付与)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
+  /^(?:(?:지금|즉시)\s+)?(?:\S+에게\s+)?(?:(?:액세스|접근)\s?(?:권한)?|권한)\s*(?:을|를)?\s*(?:부여|허용)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+  /^(?:立即)?(?:授予|授权|授權|给予)\s*(?:[^\s]{1,12}\s*){0,4}?(?:的)?(?:访问权限|訪問權限|访问权|存取權(?:限)?|权限|權限)\s*[.!。]?$/u,
+  /^(?:全員|すべてのユーザー|みんな)と(?:共有|シェア)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
+  /^(?:リンクを)(?:共有|シェア)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
+  /^(?:모든\s?사용자|모두|전체)(?:와|과|에게)\s?공유(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+  /^링크\s?(?:를\s?)?공유(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+  /^(?:\S+\s*)?(?:メンバー|ユーザー|友達|友だち|人)(?:を)?招待(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
+  // r2 (cu-developer-three, cu-developer-one 03:11Z): invite with a target, as English 'Invite to team' asks
+  /^(?:\S+\s*)?(?:チーム|グループ|ワークスペース|組織|プロジェクト|チャンネル|サーバー)に(?:\S+を)?招待(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
+  /^(?:\S+\s+)?(?:팀|그룹|작업\s?공간|워크스페이스|조직|프로젝트|채널|서버)(?:에|으로|로)\s?(?:\S+\s+)?초대(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+  /^(?:\S+\s+)?(?:멤버|구성원|사용자|친구|팀원|사람)(?:들)?\s*(?:을|를)?\s*초대(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+])
+let ruGrantShareInviteRegex = null
+function namesRuGrantShareInvite(name) {
+  if (!ruGrantShareInviteRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const grant = `${any(['предоставить', 'предоставьте', 'дать', 'дайте', 'выдать'])}\\s+(?:\\S+\\s+){0,2}?${any(['доступ', 'разрешение', 'разрешения', 'права'])}(?:\\s+\\S+){0,2}?`
+    const share = `${any(['поделиться', 'поделитесь', 'поделись'])}(?:\\s+(?:${any(['со'])}\\s+${any(['всеми'])}|${any(['ссылкой'])}))?`
+    const invite = `(?:${any(['пригласить', 'пригласите', 'пригласи'])}|${any(['не'])}\\s+${any(['приглашать', 'приглашайте'])})(?:\\s+(?:\\S+\\s+)?${any(['участника', 'участников', 'друга', 'друзей', 'пользователя', 'пользователей', 'людей'])})?`
+    ruGrantShareInviteRegex = new RegExp(`^(?:${grant}|${share}|${invite})\\s*[.!]?$`, 'iu')
+  }
+  return ruGrantShareInviteRegex.test(normaliseName(String(name ?? '')).trim())
+}
 // CU-685 (strict English parity; the English facts are on the issue): unlinking an account or device asks permission in the locales as
 // 'Unlink account' / 'Unlink device' do - the unlink verb with the account / device noun, a brand / possessive slot, plural and 'now'.
 // Bare verbs, other objects ('Unlink card'), negation, past / status and the disconnect / unpair twins stay free, as in English.
@@ -3446,6 +3481,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (grammarEligible && !classes.includes('permission') && LOCALE_KICK_MEMBER.some((re) => re.test(String(name ?? '').trim()))) classes.push('permission')
     // CU-683: locale revoke-access twins (LOCALE_REVOKE_ACCESS above).
     if (grammarEligible && !classes.includes('permission') && (LOCALE_REVOKE_ACCESS.some((re) => re.test(String(name ?? '').trim().replace(/İ/g, 'i'))) || namesRuRevokeAccess(name))) classes.push('permission')
+    // CU-687: ja / ko / zh grant-access, share-with-everyone and invite twins and the ru builder (CJK_GRANT_SHARE_INVITE above).
+    if (grammarEligible && !classes.includes('permission') && (CJK_GRANT_SHARE_INVITE.some((re) => re.test(String(name ?? '').trim())) || namesRuGrantShareInvite(name))) classes.push('permission')
     // CU-685: locale unlink-account / device twins (LOCALE_UNLINK_ACCOUNT above).
     if (grammarEligible && !classes.includes('permission') && (LOCALE_UNLINK_ACCOUNT.some((re) => re.test(String(name ?? '').trim().replace(/İ/g, 'i'))) || namesRuUnlinkAccount(name))) classes.push('permission')
     // CU-684: locale leave-workspace twins (LOCALE_LEAVE_WORKSPACE above).
