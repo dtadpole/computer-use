@@ -974,6 +974,38 @@ function namesRuGrantShareInvite(name) {
   }
   return ruGrantShareInviteRegex.test(normaliseName(String(name ?? '')).trim())
 }
+// CU-685 (strict English parity; the English facts are on the issue): unlinking an account or device asks permission in the locales as
+// 'Unlink account' / 'Unlink device' do - the unlink verb with the account / device noun, a brand / possessive slot, plural and 'now'.
+// Bare verbs, other objects ('Unlink card'), negation, past / status and the disconnect / unpair twins stay free, as in English.
+const LOCALE_UNLINK_ACCOUNT = Object.freeze([
+  /^(?:dissocier|dissociez|dissocie|délier|déliez)\s+(?:\S+\s+){0,2}?(?:l['’]\s*)?(?:comptes?|appareils?)(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:desvincular|desvincula|desvincule)\s+(?:\S+\s+){0,2}?(?:cuentas?|dispositivos?|contas?|aparelhos?)(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:scollega|scollegare|dissocia|dissociare)\s+(?:\S+\s+){0,2}?(?:l['’]\s*)?(?:account|dispositivi?|dispositivo)(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:(?:das|dein|ihr|mein|dieses)\s+)?(?:\S+\s+)?(?:\S*kont(?:o|en)|\S*account|\S*gerät(?:e)?)(?:\s+jetzt)?\s+(?:entkoppeln|trennen\s+und\s+entfernen)\s*[.!]?$/iu,
+  /^(?:entkoppeln\s+sie|entkopple|entkoppelt)\s+(?:\S+\s+){0,2}?(?:\S*kont(?:o|en)|\S*accounts?|\S*gerät(?:e)?)(?:\s+\S+)?\s*[.!]?$/iu,
+  /^(?:verknüpfung|kopplung)\s+(?:mit\s+(?:dem|diesem)\s+|des\s+|zum\s+)?(?:\S+\s+)?(?:\S*kontos?|\S*accounts?|\S*geräts?)\s+aufheben\s*[.!]?$/iu,
+  // r2 (cu-developer-three 01:33Z): the de compound ('Kontoverknüpfung aufheben') and the zh split form ('解除账户关联', '取消账号绑定')
+  /^(?:die\s+)?(?:\S*-)?(?:konto|account|geräte?)(?:verknüpfung|kopplung)(?:en)?\s+(?:jetzt\s+)?aufheben\s*[.!]?$/iu,
+  /^(?:立即|马上|现在)?(?:解除|取消)(?:此|这个|該|该)?(?:\S{0,8}的)?(?:账户|帳戶|账号|帳號|设备|裝置|設備)(?:的)?(?:关联|關聯|绑定|綁定)\s*[.!。]?$/u,
+  /^(?:(?:het|dit|mijn|je)\s+)?(?:\S+\s+)?(?:account|accounts|apparaat|apparaten)(?:\s+nu)?\s+ontkoppelen\s*[.!]?$/iu,
+  /^(?:今すぐ)?(?:この)?(?:\S+の)?(?:アカウント|デバイス|端末)(?:の)?(?:リンク|連携|紐付け|ひも付け)(?:を)?(?:解除)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
+  /^(?:(?:지금|즉시)\s+)?(?:이\s+|내\s+)?(?:\S+\s+)?(?:계정|기기|장치)(?:들)?\s*(?:의\s?)?(?:연결|연동|링크)\s*(?:을|를)?\s?해제(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+  /^(?:立即|马上|现在)?(?:取消关联|取消關聯|解除关联|解除關聯|解除绑定|解除綁定|解绑|解綁)(?:此|这个|該|该)?(?:\S{0,8}的)?(?:账户|帳戶|账号|帳號|设备|裝置|設備)\s*[.!。]?$/u,
+  // r3 (cu-developer-one 01:36Z, final): the tr compound noun ('Hesap bağlantısını kaldır') and Turkish capitals - dotless ı is listed
+  // with I, as /iu folds I only to i (and the wiring folds the dotted İ)
+  new RegExp(`^(?:bu\\s+)?(?:\\S+\\s+)?(?:hesab[ıiI]n(?:[ıI]n)?|hesapl[aA]r[ıI]n|hesap|cihaz[ıiI]n|cihazl[aA]r[ıI]n|cihaz)\\s+bağlant[ıI]s[ıI]n[ıI]\\s+(?:kald[ıI]r|kald[ıI]r[ıI]n|kes|kesin)\\s*[.!]?$`, 'iu'),
+])
+let ruUnlinkAccountRegex = null
+function namesRuUnlinkAccount(name) {
+  if (!ruUnlinkAccountRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const verb = any(['отвязать', 'отвяжите', 'отвяжи'])
+    const noun = any(['аккаунт', 'аккаунты', 'устройство', 'устройства'])
+    ruUnlinkAccountRegex = new RegExp(`^(?:${any(['сейчас'])}\\s+)?${verb}\\s+(?:\\S+\\s+){0,2}?${noun}(?:\\s+\\S+){0,2}?\\s*[.!]?$`, 'iu')
+  }
+  return ruUnlinkAccountRegex.test(normaliseName(String(name ?? '')).trim())
+}
 // CU-655: the Russian twin ('Очистить корзину', 'Очистите корзину', 'Корзину очистить', with 'не' as negation) is built from folded
 // words on first use: a judged name has passed normaliseText, which folds Cyrillic homoglyphs to Latin case by case, so each word
 // is folded as written, capitalised and in capitals, as namesWord does for its Cyrillic entries.
@@ -3448,6 +3480,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (grammarEligible && !classes.includes('permission') && (LOCALE_REVOKE_ACCESS.some((re) => re.test(String(name ?? '').trim().replace(/İ/g, 'i'))) || namesRuRevokeAccess(name))) classes.push('permission')
     // CU-687: ja / ko / zh grant-access, share-with-everyone and invite twins and the ru builder (CJK_GRANT_SHARE_INVITE above).
     if (grammarEligible && !classes.includes('permission') && (CJK_GRANT_SHARE_INVITE.some((re) => re.test(String(name ?? '').trim())) || namesRuGrantShareInvite(name))) classes.push('permission')
+    // CU-685: locale unlink-account / device twins (LOCALE_UNLINK_ACCOUNT above).
+    if (grammarEligible && !classes.includes('permission') && (LOCALE_UNLINK_ACCOUNT.some((re) => re.test(String(name ?? '').trim().replace(/İ/g, 'i'))) || namesRuUnlinkAccount(name))) classes.push('permission')
     // CU-684: locale leave-workspace twins (LOCALE_LEAVE_WORKSPACE above).
     if (grammarEligible && !classes.includes('permission') && (LOCALE_LEAVE_WORKSPACE.some((re) => re.test(String(name ?? '').trim())) || namesRuLeaveWorkspace(name))) classes.push('permission')
     // CU-678: transfer-ownership twins (TRANSFER_OWNERSHIP above).
