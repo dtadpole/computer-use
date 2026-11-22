@@ -1246,6 +1246,37 @@ function namesRuChangeContact(name) {
   }
   return ruChangeContactRegex.test(normaliseName(String(name ?? '')).trim())
 }
+// CU-699 (go cu-developer-one 19:41Z; the English facts are on the issue): the send-money / transfer-funds verbs with a money object and the
+// place-order verbs ask purchase in the locales as 'Send money' / 'Transfer funds' / 'Place order' do. Bare transfer verbs, the transfer page
+// nouns and status forms stay out - they follow #1000 (CU-609). ja / ko bare 送金 / 송금 read as the verb. Negation and past stay free.
+const LOCALE_MONEY_VERBS = Object.freeze([
+  /^(?:transférer|transférez|envoyer|envoyez|virer|virez)\s+(?:des\s+fonds|de\s+l['’]\s*argent|l['’]\s*argent|\d[\d\s.,]*\s?(?:€|\$|eur))(?:\s+\S+){0,3}?\s*[.!]?$/iu,
+  /^(?:effectuer|effectuez|faire|faites)\s+(?:un\s+)?virement(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:enviar|envía|envíe|transferir|transfiere|transfiera)\s+(?:dinero|fondos|el\s+dinero|los\s+fondos)(?:\s+\S+){0,3}?\s*[.!]?$/iu,
+  /^(?:hacer|haz|realizar|realiza|realice)\s+(?:una\s+)?transferencia(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:hacer|haz|realizar|realiza|realice|confirmar)\s+(?:el\s+)?pedido(?:\s+ahora)?\s*[.!]?$/iu,
+  /^(?:enviar|envie|transferir|transfira)\s+(?:dinheiro|fundos|o\s+dinheiro)(?:\s+\S+){0,3}?\s*[.!]?$/iu,
+  /^(?:fazer|faça|finalizar|finalize|confirmar)\s+(?:o\s+)?pedido(?:\s+agora)?\s*[.!]?$/iu,
+  /^(?:invia|inviare|trasferisci|trasferire)\s+(?:denaro|soldi|fondi|il\s+denaro)(?:\s+\S+){0,3}?\s*[.!]?$/iu,
+  /^(?:fai|fare|effettua|effettuare)\s+(?:un\s+)?bonifico(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:effettua|effettuare|invia|inviare|conferma)\s+(?:l['’]\s*)?ordine(?:\s+ora)?\s*[.!]?$/iu,
+  /^(?:jetzt\s+)?(?:geld\s+(?:transferieren|senden|überweisen)|bestellung\s+aufgeben|zahlungspflichtig\s+bestellen|kostenpflichtig\s+bestellen)\s*[.!]?$/iu,
+  /^(?:(?:nu\s+)?geld\s+(?:overmaken|versturen|overboeken)|bestelling\s+plaatsen|maak\s+geld\s+over)\s*[.!]?$/iu,
+  /^(?:今すぐ)?(?:送金(?:する|して(?:ください)?|します)?|(?:資金|お金)を?(?:振り込む|振り込み|送る|送金する)|注文する|注文して(?:ください)?)\s*[.!。]?$/u,
+  /^(?:(?:지금|즉시)\s+)?(?:송금(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?|(?:자금|돈)\s*(?:을|를)?\s*(?:이체|송금|보내기|보내)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?)\s*[.!]?$/u,
+  new RegExp(`^(?:para\\s+(?:gönder|gönderin|aktar|aktarın|transfer\\s+et)|havale\\s+yap|sipariş\\s+ver|siparişi\\s+tamamla|siparişi\\s+onayla)\\s*[.!]?$`, 'iu'),
+])
+let ruMoneyVerbsRegex = null
+function namesRuMoneyVerbs(name) {
+  if (!ruMoneyVerbsRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const verb = any(['отправить', 'отправьте', 'перевести', 'переведите', 'перечислить'])
+    const object = any(['деньги', 'средства', 'денежные'])
+    ruMoneyVerbsRegex = new RegExp(`^${verb}\\s+(?:${any(['денежные'])}\\s+)?${object}(?:\\s+\\S+){0,3}?\\s*[.!]?$`, 'iu')
+  }
+  return ruMoneyVerbsRegex.test(normaliseName(String(name ?? '')).trim())
+}
 // CU-655: the Russian twin ('Очистить корзину', 'Очистите корзину', 'Корзину очистить', with 'не' as negation) is built from folded
 // words on first use: a judged name has passed normaliseText, which folds Cyrillic homoglyphs to Latin case by case, so each word
 // is folded as written, capitalised and in capitals, as namesWord does for its Cyrillic entries.
@@ -3739,6 +3770,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (grammarEligible && (LOCALE_DISABLE_2FA.some((re) => re.test(String(name ?? '').trim().replace(/İ/g, 'i'))) || namesRuDisable2fa(name))) { if (!classes.includes('permission')) classes.push('permission'); if (!classes.includes('credential')) classes.push('credential') }
     // CU-698: locale change-email / phone twins ask credential (LOCALE_CHANGE_CONTACT above).
     if (grammarEligible && !classes.includes('credential') && (LOCALE_CHANGE_CONTACT.some((re) => re.test(String(name ?? '').trim().replace(/İ/g, 'i'))) || namesRuChangeContact(name))) classes.push('credential')
+    // CU-699: locale send-money / transfer-funds / place-order verbs ask purchase (LOCALE_MONEY_VERBS above).
+    if (grammarEligible && !classes.includes('purchase') && (LOCALE_MONEY_VERBS.some((re) => re.test(String(name ?? '').trim().replace(/İ/g, 'i'))) || namesRuMoneyVerbs(name))) classes.push('purchase')
     // CU-684: locale leave-workspace twins (LOCALE_LEAVE_WORKSPACE above).
     if (grammarEligible && !classes.includes('permission') && (LOCALE_LEAVE_WORKSPACE.some((re) => re.test(String(name ?? '').trim())) || namesRuLeaveWorkspace(name))) classes.push('permission')
     // CU-678: transfer-ownership twins (TRANSFER_OWNERSHIP above).
