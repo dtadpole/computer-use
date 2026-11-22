@@ -946,6 +946,12 @@ function namesRuRevokeAccess(name) {
 // in ja / ko (and zh grant) as 'Grant access', 'Share with everyone' and 'Invite member' do - grant only with the access / permission noun
 // (bare 'Grant' is free in English); share with 'everyone' / a link and invite with a person noun. Past / status forms stay free.
 const CJK_GRANT_SHARE_INVITE = Object.freeze([
+  // go (cu-developer-one 02:33Z): English bare 'Share' / 'Invite' ask, so the bare ja / ko share and invite forms ask; invite negation
+  // asks ("Don't invite member" asks); share negation and bare grant stay free
+  /^(?:共有|シェア|招待)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
+  /^(?:공유|초대)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+  /^(?:\S+\s*)?(?:(?:メンバー|ユーザー|友達|友だち|人)を?)?招待(?:しない(?:で(?:ください)?)?|しないでください)\s*[.!。]?$/u,
+  /^(?:\S+\s+)?(?:(?:멤버|구성원|사용자|친구|팀원|사람)(?:들)?\s*(?:을|를)?\s*)?초대(?:하지\s?마(?:세요|십시오)?|하지\s?않기)\s*[.!]?$/u,
   /^(?:今すぐ)?(?:\S+に)?(?:アクセス(?:権(?:限)?)?|権限)を?(?:許可|付与)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
   /^(?:(?:지금|즉시)\s+)?(?:\S+에게\s+)?(?:(?:액세스|접근)\s?(?:권한)?|권한)\s*(?:을|를)?\s*(?:부여|허용)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
   /^(?:立即)?(?:授予|授权|授權|给予)(?:\S{0,8})?(?:访问权限|訪問權限|访问权|存取權(?:限)?|权限|權限)\s*[.!。]?$/u,
@@ -963,7 +969,7 @@ function namesRuGrantShareInvite(name) {
     const any = (words) => `(?:${words.flatMap(folds).join('|')})`
     const grant = `${any(['предоставить', 'предоставьте', 'дать', 'дайте', 'выдать'])}\\s+(?:\\S+\\s+){0,2}?${any(['доступ', 'разрешение', 'разрешения', 'права'])}(?:\\s+\\S+){0,2}?`
     const share = `${any(['поделиться', 'поделитесь', 'поделись'])}(?:\\s+(?:${any(['со'])}\\s+${any(['всеми'])}|${any(['ссылкой'])}))?`
-    const invite = `${any(['пригласить', 'пригласите', 'пригласи'])}(?:\\s+(?:\\S+\\s+)?${any(['участника', 'участников', 'друга', 'друзей', 'пользователя', 'пользователей', 'людей'])})?`
+    const invite = `(?:${any(['пригласить', 'пригласите', 'пригласи'])}|${any(['не'])}\\s+${any(['приглашать', 'приглашайте'])})(?:\\s+(?:\\S+\\s+)?${any(['участника', 'участников', 'друга', 'друзей', 'пользователя', 'пользователей', 'людей'])})?`
     ruGrantShareInviteRegex = new RegExp(`^(?:${grant}|${share}|${invite})\\s*[.!]?$`, 'iu')
   }
   return ruGrantShareInviteRegex.test(normaliseName(String(name ?? '')).trim())
