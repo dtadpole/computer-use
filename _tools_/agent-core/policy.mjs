@@ -1257,14 +1257,19 @@ const LOCALE_SUBSCRIBE_RENEW = Object.freeze([
   /^(?:renovar|renueva|renueve)(?:\s+(?:la\s+|tu\s+|su\s+|mi\s+)?(?:suscripci[oó]n|membres[ií]a|plan|abono)(?:\s+\S+){0,2}?)?\s*[.!]?$/iu,
   // pt assinar also means 'sign' ('Assinar documento' stays free, found by the corpus reclass): bare, 'agora' or a plan noun only;
   // inscrever-se / it iscriviti are left out, ambiguous with 'Sign up' / 'Register' as ja 登録 is
-  /^(?:assinar|assine)(?:\s+(?:agora|já|(?:o\s+|a\s+)?(?:plano|premium|pro|newsletter|boletim|assinatura)(?:\s+\S+){0,2}?))?\s*[.!]?$/iu,
+  // r2: bare 'assinar' / 'assinar agora' are out (also 'Sign', which English asks as permission); only with a plan / subscription noun
+  /^(?:assinar|assine)\s+(?:o\s+|a\s+)?(?:plano|premium|pro|newsletter|boletim|assinatura)(?:\s+\S+){0,2}?\s*[.!]?$/iu,
   /^(?:renovar|renove)(?:\s+(?:a\s+|sua\s+|minha\s+)?(?:assinatura|plano|associa[cç][aã]o)(?:\s+\S+){0,2}?)?\s*[.!]?$/iu,
   /^(?:abbonati|abbonarsi)(?:\s+\S+){0,4}?\s*[.!]?$/iu,
   /^(?:rinnova|rinnovare)(?:\s+(?:l['’]\s*|il\s+|la\s+)?(?:abbonamento|piano|iscrizione)(?:\s+\S+){0,2}?)?\s*[.!]?$/iu,
-  /^(?:(?:jetzt|das|den|dein|ihr)\s+)?(?:\S+\s+)?(?:\S*abo(?:nnement)?|\S*mitgliedschaft|\S*plan|\S*tarif)(?:\s+jetzt)?\s+(?:verlängern|erneuern)\s*[.!]?$/iu,
-  /^(?:jetzt\s+)?(?:abonnieren|verlängern)\s*[.!]?$/iu,
+  // r2 (cu-developer-one 20:59Z): Plan / Tarif only as the whole word or a hyphen compound ('Zeitplan verlängern' = extend schedule stays
+  // free); the formal verb-first form asks; bare 'verlängern' / 'jetzt verlängern' are out (also 'Extend', free in English)
+  /^(?:(?:jetzt|das|den|dein|ihr)\s+)?(?:\S+\s+)?(?:\S*abo(?:nnement)?|\S*mitgliedschaft|(?:\S+-)?plan|(?:\S+-)?tarif)(?:\s+jetzt)?\s+(?:verlängern|erneuern)\s*[.!]?$/iu,
+  /^(?:verlängern|erneuern)\s+sie\s+(?:ihr(?:e|en)?\s+|das\s+|den\s+|die\s+)?(?:\S*abo(?:nnement)?|\S*mitgliedschaft|(?:\S+-)?plan|(?:\S+-)?tarif)(?:\s+jetzt)?\s*[.!]?$/iu,
+  /^(?:jetzt\s+)?abonnieren\s*[.!]?$/iu,
   /^(?:(?:je|uw|het)\s+)?(?:abonnement|lidmaatschap)(?:\s+nu)?\s+(?:verlengen|vernieuwen)\s*[.!]?$/iu,
-  /^(?:nu\s+)?(?:abonneren|verlengen)\s*[.!]?$/iu,
+  // r2 (cu-developer-one 21:03Z): bare 'Verlengen' / 'Nu verlengen' are out (also 'Extend'); 'Abonnement verlengen' keeps asking
+  /^(?:nu\s+)?abonneren\s*[.!]?$/iu,
   /^(?:今すぐ)?(?:\S+を)?(?:購読|定期購入)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
   /^(?:今すぐ)?(?:サブスクリプション|定期購入|購読|メンバーシップ|プラン)を?(?:更新|延長)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
   /^(?:(?:지금|즉시)\s+)?(?:\S+\s+)?구독(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
