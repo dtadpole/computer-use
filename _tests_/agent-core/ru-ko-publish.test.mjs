@@ -15,3 +15,8 @@ test('CU-693: ru / ko publish rows ask submit as English \'Publish\' (parity, ne
 test('CU-693 controls: past / status forms, nouns and un-publish forms stay free', () => {
   for (const name of ['Опубликовано', 'Публикация', 'Снять с публикации', 'Опубликован', '게시됨', '게시되었습니다', '게시 취소', '게시물', '게시판', '발행됨', 'Published', 'Unpublish']) assert.ok(!click(name).includes('submit'), name)
 })
+
+test('CU-693 r2: a bare object noun before ko 게시 / 발행 asks, as CU-692\'s ko approve line', () => {
+  for (const name of ['글 게시', '공지 발행', '글 게시하기']) assert.ok(click(name).includes('submit'), name)
+  for (const name of ['게시 취소', '글이 게시되었습니다', '게시판']) assert.ok(!click(name).includes('submit'), name)
+})

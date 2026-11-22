@@ -1122,7 +1122,8 @@ function namesRuAdminGrant(name) {
 // CU-693 (strict English parity; the English facts are on the issue): the publish verb asks submit in ru / ko as 'Publish' / 'Post' do -
 // bare, with an object, 'now', and negated ("Don't publish" asks). Past / status and the un- / re- forms stay free.
 const KO_PUBLISH = Object.freeze([
-  /^(?:(?:지금|즉시)\s+)?(?:\S+(?:을|를)\s*)?(?:게시|발행|게시물\s?게시)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다|하지\s?마(?:세요|십시오)?)?\s*[.!]?$/u,
+  // r2 (cu-developer-three 11:07Z): an optional bare object noun before 게시 / 발행 ('글 게시', '공지 발행'), as CU-692's ko approve line
+  /^(?:(?:지금|즉시)\s+)?(?:\S+\s+)?(?:\S+(?:을|를)\s*)?(?:게시|발행|게시물\s?게시)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다|하지\s?마(?:세요|십시오)?)?\s*[.!]?$/u,
 ])
 let ruPublishRegex = null
 function namesRuPublish(name) {
