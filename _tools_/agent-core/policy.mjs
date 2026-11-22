@@ -951,6 +951,9 @@ const LOCALE_UNLINK_ACCOUNT = Object.freeze([
   /^(?:scollega|scollegare|dissocia|dissociare)\s+(?:\S+\s+){0,2}?(?:l['’]\s*)?(?:account|dispositivi?|dispositivo)(?:\s+\S+){0,2}?\s*[.!]?$/iu,
   /^(?:(?:das|dein|ihr|mein|dieses)\s+)?(?:\S+\s+)?(?:\S*kont(?:o|en)|\S*account|\S*gerät(?:e)?)(?:\s+jetzt)?\s+(?:entkoppeln|trennen\s+und\s+entfernen)\s*[.!]?$/iu,
   /^(?:verknüpfung|kopplung)\s+(?:mit\s+(?:dem|diesem)\s+|des\s+|zum\s+)?(?:\S+\s+)?(?:\S*kontos?|\S*accounts?|\S*geräts?)\s+aufheben\s*[.!]?$/iu,
+  // r2 (cu-developer-three 01:33Z): the de compound ('Kontoverknüpfung aufheben') and the zh split form ('解除账户关联', '取消账号绑定')
+  /^(?:die\s+)?(?:\S*-)?(?:konto|account|geräte?)(?:verknüpfung|kopplung)(?:en)?\s+(?:jetzt\s+)?aufheben\s*[.!]?$/iu,
+  /^(?:立即|马上|现在)?(?:解除|取消)(?:此|这个|該|该)?(?:\S{0,8}的)?(?:账户|帳戶|账号|帳號|设备|裝置|設備)(?:的)?(?:关联|關聯|绑定|綁定)\s*[.!。]?$/u,
   /^(?:(?:het|dit|mijn|je)\s+)?(?:\S+\s+)?(?:account|accounts|apparaat|apparaten)(?:\s+nu)?\s+ontkoppelen\s*[.!]?$/iu,
   /^(?:今すぐ)?(?:この)?(?:\S+の)?(?:アカウント|デバイス|端末)(?:の)?(?:リンク|連携|紐付け|ひも付け)(?:を)?(?:解除)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
   /^(?:(?:지금|즉시)\s+)?(?:이\s+|내\s+)?(?:\S+\s+)?(?:계정|기기|장치)(?:들)?\s*(?:연결|연동|링크)\s?해제(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,

@@ -19,3 +19,8 @@ test('CU-685 controls: bare verbs, other objects, negation, past / status and di
  'Отвязать', 'Отвязать карту', 'Аккаунт отвязан', 'Отключить устройство', 'リンクを解除', 'カードのリンクを解除', 'アカウントのリンクを解除しました', '연결 해제', '카드 연결 해제', '계정 연결이 해제되었습니다', '계정 연결 끊기', '取消关联', '解除绑定银行卡', '账户已解绑', '断开账户',
  'Bağlantıyı kaldır', 'Kartın bağlantısını kaldır', 'Unlink', 'Unlink card', 'Disconnect account', 'Account unlinked']) assert.ok(!click(name).includes('permission'), name)
 })
+
+test('CU-685 r2: the zh split form and the de compound Verknüpfung ask permission', () => {
+  for (const name of ['解除账户关联', '解除账号绑定', '取消设备绑定', '解除帳號綁定', 'Kontoverknüpfung aufheben', 'Die Kontoverknüpfung aufheben', 'Google-Kontoverknüpfung aufheben', 'Geräteverknüpfung aufheben', 'Accountkopplung aufheben']) assert.ok(click(name).includes('permission'), name)
+  for (const name of ['解除银行卡绑定', '解除关联', 'Kontoverknüpfung', 'Kontoverknüpfung aufgehoben', 'Verknüpfung aufheben']) assert.ok(!click(name).includes('permission'), name)
+})
