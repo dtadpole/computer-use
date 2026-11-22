@@ -22,3 +22,8 @@ test('CU-691: locale remove-admin rows ask delete as English \'Remove admin\'', 
 test('CU-691 controls: moderator, demote, past / status forms and bare nouns stay free', () => {
   for (const name of ['Administrateur', 'Admin', 'Modérateur', 'Nommer modérateur', 'Rétrograder', 'Administrador', 'Zum Moderator machen', 'Администратор', '管理者', '관리자', '管理员', 'Made admin']) assert.deepEqual(click(name), [], name)
 })
+
+test('CU-691 go (06:20Z): admin rights / privileges twins ask permission whatever the verb, as \'Revoke admin rights\'', () => {
+  for (const name of ['Retirer les droits d’administrateur', 'Révoquer les droits d’administrateur', 'Quitar los permisos de administrador', 'Administratorrechte entfernen', '관리자 권한 제거', '管理者権限を削除', '移除管理员权限', 'Revoke admin rights']) assert.ok(click(name).includes('permission'), name)
+  for (const name of ['Droits d’administrateur', '관리자 권한', '管理者権限']) assert.deepEqual(click(name), [], name)
+})

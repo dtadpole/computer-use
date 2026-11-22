@@ -1089,7 +1089,13 @@ const LOCALE_ADMIN_GRANT = Object.freeze([
   /^(?:\S+\s+)?(?:관리자|소유자)(?:로|으로)\s?(?:지정|설정|승격|변경)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다|하지\s?마(?:세요|십시오)?)?\s*[.!]?$/u,
   /^(?:不要)?(?:设为|設為|设置为|設定為|提升为|提升為|升级为)(?:\S{0,8})?(?:管理员|管理員|所有者)\s*[.!。]?$/u,
   new RegExp(`^(?:\\S+\\s+)?(?:yönetici|sahip)\\s+(?:yap|yapın|yapma)\\s*[.!]?$`, 'iu'),
-  /^(?:\S+\s+)?(?:administratorrechte|adminrechte)\s+(?:entziehen|widerrufen)\s*[.!]?$/iu,
+  /^(?:\S+\s+)?(?:administratorrechte|adminrechte)\s+(?:entziehen|widerrufen|entfernen)\s*[.!]?$/iu,
+  // go (cu-developer-one 06:20Z): the admin rights / privileges twins ask permission whatever the verb, as 'Revoke admin rights'
+  /^(?:retirer|retirez|révoquer|révoquez|supprimer|supprimez)\s+(?:les\s+)?(?:droits|privilèges)\s+d['’]\s*(?:administrateur|administration)\s*[.!]?$/iu,
+  /^(?:quitar|quita|revocar|revoca|eliminar|elimina|retirar)\s+(?:los\s+)?(?:permisos|privilegios|derechos)\s+de\s+(?:administrador|administración)\s*[.!]?$/iu,
+  /^(?:\S+\s+)?관리자\s?권한\s*(?:을|를)?\s*(?:제거|삭제|취소|해제|회수|박탈)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+  /^(?:\S+\s*)?管理者権限を?(?:削除|取り消す|取り消し|解除|剥奪)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
+  /^(?:移除|撤销|撤銷|取消|删除|刪除)(?:\S{0,8}的)?(?:管理员|管理員)权限\s*[.!。]?$/u,
 ])
 const LOCALE_ADMIN_REMOVE = Object.freeze([
   /^(?:retirer|retirez)\s+(?:les\s+droits\s+d['’]\s*)?(?:administrateur|administratrice)(?:\s+\S+)?\s*[.!]?$/iu,
