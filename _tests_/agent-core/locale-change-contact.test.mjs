@@ -22,3 +22,9 @@ test('CU-698: the mobile nouns ask only with the number / phone noun, so switch-
   for (const name of ['Cambiar el número de móvil', 'Cambiar teléfono móvil', 'Modifier le numéro de portable', 'Alterar número de celular', 'Cambia il numero di cellulare']) assert.ok(click(name).includes('credential'), name)
   for (const name of ['Cambiar a la versión móvil', 'Passer à la version mobile', 'Changer de version mobile', 'Alterar para versão celular', 'Cambia a versione mobile']) assert.ok(!click(name).includes('credential'), name)
 })
+
+test('CU-698 r2: zh 立即 and 邮箱地址, the nl verb-first imperative, a ja / ko qualifier noun and Turkish capitals ask credential', () => {
+  for (const name of ['立即更改邮箱', '修改邮箱地址', '修改郵箱地址', 'Wijzig e-mailadres', 'Wijzig uw telefoonnummer', '登録メールアドレスを変更', '連絡先メールアドレスを変更する', '연락처 이메일 변경', '회사 전화번호 변경하기',
+    'E-POSTA ADRESİNİ DEĞİŞTİR']) assert.ok(click(name).includes('credential'), name)
+  for (const name of ['邮箱地址', '登録メールアドレス', 'Wijzig', '연락처 이메일']) assert.ok(!click(name).includes('credential'), name)
+})

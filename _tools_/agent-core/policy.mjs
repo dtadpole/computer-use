@@ -1228,9 +1228,11 @@ const LOCALE_CHANGE_CONTACT = Object.freeze([
   /^(?:(?:deine|ihre|die|meine)\s+)?(?:\S+\s+)?(?:\S*e-?mail(?:-adresse)?|\S*telefonnummer|\S*handynummer|\S*mobilnummer)(?:\s+(?:jetzt|nicht))?\s+(?:ändern|aktualisieren|bearbeiten)\s*[.!]?$/iu,
   /^(?:ändern\s+sie|ändere|aktualisieren\s+sie)\s+(?:\S+\s+){0,2}?(?:\S*e-?mail(?:-adresse)?|\S*telefonnummer|\S*handynummer)\s*[.!]?$/iu,
   /^(?:(?:je|uw|het|mijn)\s+)?(?:\S+\s+)?(?:e-?mailadres|e-?mail|telefoonnummer|mobiele\s+nummer)(?:\s+(?:nu|niet))?\s+(?:wijzigen|bijwerken|aanpassen)\s*[.!]?$/iu,
-  /^(?:\S+の)?(?:メールアドレス|メール|電話番号|携帯電話番号)を?(?:変更|更新|編集)(?:する|して(?:ください)?|します|しない(?:で(?:ください)?)?)?\s*[.!。]?$/u,
-  /^(?:(?:복구|백업|내)\s+)?(?:이메일(?:\s?주소)?|전화\s?번호|휴대폰\s?번호)\s*(?:을|를)?\s*(?:변경|수정|업데이트)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다|하지\s?마(?:세요|십시오)?)?\s*[.!]?$/u,
-  /^(?:不要)?(?:更改|修改|更新|变更|變更|編輯|编辑)(?:\S{0,6}的)?(?:邮箱|郵箱|电子邮件|電子郵件|邮件地址|手机号(?:码)?|手機號(?:碼)?|电话号码|電話號碼)\s*[.!。]?$/u,
+  // r2 (cu-developer-three, cu-developer-one 19:20Z): the nl verb-first imperative ('Wijzig e-mailadres', 'Wijzig uw telefoonnummer')
+  /^(?:wijzig|werk)\s+(?:je\s+|uw\s+|het\s+|mijn\s+)?(?:\S+\s+)?(?:e-?mailadres|e-?mail|telefoonnummer|mobiele\s+nummer)(?:\s+bij)?\s*[.!]?$/iu,
+  /^(?:\S+の)?(?:[^\sをの]{1,6})?(?:メールアドレス|メール|電話番号|携帯電話番号)を?(?:変更|更新|編集)(?:する|して(?:ください)?|します|しない(?:で(?:ください)?)?)?\s*[.!。]?$/u,
+  /^(?:(?:복구|백업|내)\s+)?(?:\S+\s+)?(?:이메일(?:\s?주소)?|전화\s?번호|휴대폰\s?번호)\s*(?:을|를)?\s*(?:변경|수정|업데이트)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다|하지\s?마(?:세요|십시오)?)?\s*[.!]?$/u,
+  /^(?:不要|立即|马上|现在)?(?:更改|修改|更新|变更|變更|編輯|编辑)(?:\S{0,6}的)?(?:邮箱地址|郵箱地址|邮箱|郵箱|电子邮件(?:地址)?|電子郵件(?:地址)?|邮件地址|手机号(?:码)?|手機號(?:碼)?|电话号码|電話號碼)\s*[.!。]?$/u,
   new RegExp(`^(?:\\S+\\s+)?(?:e-?posta(?:\\s+adresini|y[ıI])?|e-?postan[ıI]|telefon\\s+numaras[ıI]n[ıI]|telefon\\s+numaran[ıI])\\s+(?:değiştir|değiştirin|güncelle|güncelleyin)\\s*[.!]?$`, 'iu'),
 ])
 let ruChangeContactRegex = null
