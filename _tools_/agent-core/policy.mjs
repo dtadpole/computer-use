@@ -1084,10 +1084,12 @@ const LOCALE_ADMIN_GRANT = Object.freeze([
   /^(?:non\s+)?(?:rendi|rendere|nomina|nominare|imposta\s+come|promuovi\s+(?:ad?|come))\s+(?:\S+\s+){0,2}?(?:amministratore|amministratrice|proprietario)(?:\s+\S+)?\s*[.!]?$/iu,
   /^(?:\S+\s+)?(?:zum|zur)\s+(?:administrator|administratorin|admin|eigentümer|inhaber)(?:\s+(?:jetzt|nicht))?\s+(?:machen|ernennen|befördern)\s*[.!]?$/iu,
   /^(?:\S+\s+)?als\s+(?:administrator|administratorin|admin)\s+(?:festlegen|einrichten)\s*[.!]?$/iu,
+  // r2: the de formal imperative ('Machen Sie Alex zum Administrator', 'Ernennen Sie … zum Admin')
+  /^(?:machen|ernennen|befördern)\s+sie\s+(?:\S+\s+){0,2}?(?:zum|zur)\s+(?:administrator|administratorin|admin|eigentümer|inhaber)\s*[.!]?$/iu,
   /^(?:\S+\s+)?(?:beheerder|eigenaar)(?:\s+(?:nu|niet))?\s+maken\s*[.!]?$/iu,
-  /^(?:\S+\s*)?(?:管理者|オーナー|所有者)(?:に)(?:する|して(?:ください)?|します|設定(?:する)?|昇格(?:する)?|しない(?:で(?:ください)?)?)\s*[.!。]?$/u,
+  /^(?:\S+\s*)?(?:管理者|オーナー|所有者)(?:に)(?:する|して(?:ください)?|します|設定(?:する|して(?:ください)?|します)?|昇格(?:する|して(?:ください)?|します)?|しない(?:で(?:ください)?)?)\s*[.!。]?$/u,
   /^(?:\S+\s+)?(?:관리자|소유자)(?:로|으로)\s?(?:지정|설정|승격|변경)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다|하지\s?마(?:세요|십시오)?)?\s*[.!]?$/u,
-  /^(?:不要)?(?:设为|設為|设置为|設定為|提升为|提升為|升级为)(?:\S{0,8})?(?:管理员|管理員|所有者)\s*[.!。]?$/u,
+  /^(?:不要|立即|马上|现在)?(?:设为|設為|设置为|設定為|提升为|提升為|升级为)(?:\S{0,8})?(?:管理员|管理員|所有者)\s*[.!。]?$/u,
   new RegExp(`^(?:\\S+\\s+)?(?:yönetici|sahip)\\s+(?:yap|yapın|yapma)\\s*[.!]?$`, 'iu'),
   /^(?:\S+\s+)?(?:administratorrechte|adminrechte)\s+(?:entziehen|widerrufen|entfernen)\s*[.!]?$/iu,
   // go (cu-developer-one 06:20Z): the admin rights / privileges twins ask permission whatever the verb, as 'Revoke admin rights'
@@ -1098,10 +1100,12 @@ const LOCALE_ADMIN_GRANT = Object.freeze([
   /^(?:移除|撤销|撤銷|取消|删除|刪除)(?:\S{0,8}的)?(?:管理员|管理員)权限\s*[.!。]?$/u,
 ])
 const LOCALE_ADMIN_REMOVE = Object.freeze([
-  /^(?:retirer|retirez)\s+(?:les\s+droits\s+d['’]\s*)?(?:administrateur|administratrice)(?:\s+\S+)?\s*[.!]?$/iu,
+  // r2 (cu-developer-one 06:46Z, final): ko 관리자 해제, zh 取消管理员 and the fr article l' join the remove-admin rows
+  /^(?:取消|移除|撤销|撤銷)(?:\S{0,8}的)?(?:管理员|管理員)(?:身份|角色)?\s*[.!。]?$/u,
+  /^(?:retirer|retirez)\s+(?:les\s+droits\s+d['’]\s*|l['’]\s*)?(?:administrateur|administratrice)(?:\s+\S+)?\s*[.!]?$/iu,
   /^(?:quitar|quita|eliminar|elimina)\s+(?:como\s+)?(?:administrador|administradora|permisos\s+de\s+administrador)(?:\s+\S+)?\s*[.!]?$/iu,
   /^(?:administratorrechte|adminrechte)\s+entfernen\s*[.!]?$/iu,
-  /^(?:\S+\s+)?관리자\s?(?:권한)?\s*(?:을|를)?\s*(?:제거|삭제)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+  /^(?:\S+\s+)?관리자\s?(?:권한)?\s*(?:을|를|에서)?\s*(?:제거|삭제|해제)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
 ])
 let ruAdminGrantRegex = null
 function namesRuAdminGrant(name) {
