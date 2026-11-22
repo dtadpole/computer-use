@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - handover'
 created: 2026-11-08T04:14:00Z
-modified: 2026-11-22T01:12:00Z
+modified: 2026-11-22T03:06:00Z
 level: L1
-version: 4.29.76
+version: 4.29.77
 description: 'What a fresh [cu] Developer Two session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -18,9 +18,9 @@ grounded_in:
 Seat `cu-developer-two`: desktop and browser drivers, live view, run lock, MCP. Code: the session worktree
 `~/dtadpole/computer-use-wt/<session-id>`, one purpose worktree per PR. Records: [artifacts.md](artifacts.md).
 
-## State (22 Nov 01:12Z)
+## State (22 Nov 03:06Z)
 
-- Main: 7979e124; goal renewed 21 Nov 11:01 PST. Twenty-four fixes between CU-641 and 686 landed on my OKs (last: 683, 686), CU-657 / 660 on my builds.
+- Main: cce7093a; goal renewed 21 Nov 19:01 PST. Twenty-five fixes between CU-641 and 686 landed on my OKs (last: 686, 685), CU-657 / 660 on my builds.
   CU-645: #1129 r2 has all OKs, waits for rule-1. Held-outs wait for the CU-647 / 649 PRs.
   CU-585 unit waits for triage (#884 / #894 / #895 / #897). Asked: CU-607, 'Ligar', triage, CU-645's rule-1 yes.
 - Linear: CU-371 In Progress.
