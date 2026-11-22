@@ -1169,6 +1169,25 @@ function namesRuApprove(name) {
   }
   return ruApproveRegex.test(normaliseName(String(name ?? '')).trim())
 }
+// CU-696, delete half (go cu-developer-one 15:21Z): the locale remove verbs with a passkey / security-key noun ask delete, as every English
+// remove / delete passkey form does; the permission half waits on the ruling about English consistency. Past / status forms stay free.
+const LOCALE_REMOVE_PASSKEY = Object.freeze([
+  /^(?:retirer|retirez|retire)\s+(?:\S+\s+){0,2}?(?:(?:la|les|cette)\s+)?(?:clés?\s+d['’]\s*accès|clés?\s+de\s+sécurité|passkeys?)(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:quitar|quita|quite)\s+(?:\S+\s+){0,2}?(?:(?:la|las|esta)\s+)?(?:llaves?\s+de\s+acceso|claves?\s+de\s+acceso|llaves?\s+de\s+seguridad|claves?\s+de\s+seguridad|passkeys?)(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  // r2 (cu-developer-two 16:14Z): the ja determiners この / その / すべての, as ko 이 / 모든 and English 'Remove this passkey'
+  /^(?:\S+を)?(?:この|その|すべての|全ての)?\s*(?:パスキー|セキュリティキー|セキュリティ\s?キー)を?(?:取り除く|取り除いてください|外す|外してください)\s*[.!。]?$/u,
+  /^(?:(?:이|모든)\s+)?(?:\S+\s+)?(?:패스키|보안\s?키)(?:들)?\s*(?:을|를)?\s*(?:제거|해제)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+])
+let ruRemovePasskeyRegex = null
+function namesRuRemovePasskey(name) {
+  if (!ruRemovePasskeyRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const noun = `(?:${any(['ключ', 'ключи'])}\\s+${any(['доступа', 'безопасности'])}|${any(['passkey', 'пасскей'])})`
+    ruRemovePasskeyRegex = new RegExp(`^${any(['убрать', 'уберите', 'убери'])}\\s+(?:\\S+\\s+){0,2}?${noun}(?:\\s+\\S+){0,2}?\\s*[.!]?$`, 'iu')
+  }
+  return ruRemovePasskeyRegex.test(normaliseName(String(name ?? '')).trim())
+}
 // CU-695 (strict English parity; the English facts are on the issue): turning off two-factor / two-step authentication asks permission +
 // credential in the locales as 'Disable two-factor authentication' / 'Turn off 2-step verification' do - the disable / turn-off verb with
 // the two-factor, two-step or 2FA noun, a recipient slot and 'now'. Negation, the bare noun and status forms stay as English.
@@ -3685,6 +3704,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (grammarEligible && !classes.includes('submit') && (KO_PUBLISH.some((re) => re.test(String(name ?? '').trim())) || namesRuPublish(name))) classes.push('submit')
     // CU-692: locale approve twins ask submit (LOCALE_APPROVE above).
     if (grammarEligible && !classes.includes('submit') && (LOCALE_APPROVE.some((re) => re.test(String(name ?? '').trim())) || namesRuApprove(name))) classes.push('submit')
+    // CU-696: locale remove-passkey twins ask delete (LOCALE_REMOVE_PASSKEY above).
+    if (grammarEligible && !classes.includes('delete') && (LOCALE_REMOVE_PASSKEY.some((re) => re.test(String(name ?? '').trim())) || namesRuRemovePasskey(name))) classes.push('delete')
     // CU-695: locale disable-2FA twins ask permission + credential (LOCALE_DISABLE_2FA above).
     if (grammarEligible && (LOCALE_DISABLE_2FA.some((re) => re.test(String(name ?? '').trim().replace(/İ/g, 'i'))) || namesRuDisable2fa(name))) { if (!classes.includes('permission')) classes.push('permission'); if (!classes.includes('credential')) classes.push('credential') }
     // CU-684: locale leave-workspace twins (LOCALE_LEAVE_WORKSPACE above).
