@@ -1074,6 +1074,51 @@ function namesRuRevokeInvitation(name) {
   }
   return ruRevokeInvitationRegex.test(normaliseName(String(name ?? '')).trim())
 }
+// CU-691 (strict English parity; the English facts are on the issue): admin-role changes ask in the locales as in English - make / set /
+// promote + admin / administrator / owner asks permission (negation too, as "Don't make admin"); remove + admin asks delete, as 'Remove
+// admin'; revoke + admin rights asks permission, as 'Revoke admin'. Moderator, demote, past / status and the bare noun stay free.
+const LOCALE_ADMIN_GRANT = Object.freeze([
+  /^(?:ne\s+pas\s+)?(?:nommer|nommez|définir\s+comme|promouvoir|promouvez|rendre)\s+(?:\S+\s+){0,2}?(?:administrateur|administratrice|propriétaire)(?:\s+\S+)?\s*[.!]?$/iu,
+  /^(?:no\s+)?(?:hacer|haz|nombrar|nombra|establecer\s+como|ascender\s+a)\s+(?:\S+\s+){0,2}?(?:administrador|administradora|propietario)(?:\s+\S+)?\s*[.!]?$/iu,
+  /^(?:não\s+|nao\s+)?(?:tornar|torne|definir\s+como|promover\s+a)\s+(?:\S+\s+){0,2}?(?:administrador|administradora|proprietário)(?:\s+\S+)?\s*[.!]?$/iu,
+  /^(?:non\s+)?(?:rendi|rendere|nomina|nominare|imposta\s+come|promuovi\s+(?:ad?|come))\s+(?:\S+\s+){0,2}?(?:amministratore|amministratrice|proprietario)(?:\s+\S+)?\s*[.!]?$/iu,
+  /^(?:\S+\s+)?(?:zum|zur)\s+(?:administrator|administratorin|admin|eigentümer|inhaber)(?:\s+(?:jetzt|nicht))?\s+(?:machen|ernennen|befördern)\s*[.!]?$/iu,
+  /^(?:\S+\s+)?als\s+(?:administrator|administratorin|admin)\s+(?:festlegen|einrichten)\s*[.!]?$/iu,
+  // r2: the de formal imperative ('Machen Sie Alex zum Administrator', 'Ernennen Sie … zum Admin')
+  /^(?:machen|ernennen|befördern)\s+sie\s+(?:\S+\s+){0,2}?(?:zum|zur)\s+(?:administrator|administratorin|admin|eigentümer|inhaber)\s*[.!]?$/iu,
+  /^(?:\S+\s+)?(?:beheerder|eigenaar)(?:\s+(?:nu|niet))?\s+maken\s*[.!]?$/iu,
+  /^(?:\S+\s*)?(?:管理者|オーナー|所有者)(?:に)(?:する|して(?:ください)?|します|設定(?:する|して(?:ください)?|します)?|昇格(?:する|して(?:ください)?|します)?|しない(?:で(?:ください)?)?)\s*[.!。]?$/u,
+  /^(?:\S+\s+)?(?:관리자|소유자)(?:로|으로)\s?(?:지정|설정|승격|변경)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다|하지\s?마(?:세요|십시오)?)?\s*[.!]?$/u,
+  /^(?:不要|立即|马上|现在)?(?:设为|設為|设置为|設定為|提升为|提升為|升级为)(?:\S{0,8})?(?:管理员|管理員|所有者)\s*[.!。]?$/u,
+  new RegExp(`^(?:\\S+\\s+)?(?:yönetici|sahip)\\s+(?:yap|yapın|yapma)\\s*[.!]?$`, 'iu'),
+  /^(?:\S+\s+)?(?:administratorrechte|adminrechte)\s+(?:entziehen|widerrufen|entfernen)\s*[.!]?$/iu,
+  // go (cu-developer-one 06:20Z): the admin rights / privileges twins ask permission whatever the verb, as 'Revoke admin rights'
+  /^(?:retirer|retirez|révoquer|révoquez|supprimer|supprimez)\s+(?:les\s+)?(?:droits|privilèges)\s+d['’]\s*(?:administrateur|administration)\s*[.!]?$/iu,
+  /^(?:quitar|quita|revocar|revoca|eliminar|elimina|retirar)\s+(?:los\s+)?(?:permisos|privilegios|derechos)\s+de\s+(?:administrador|administración)\s*[.!]?$/iu,
+  /^(?:\S+\s+)?관리자\s?권한\s*(?:을|를)?\s*(?:제거|삭제|취소|해제|회수|박탈)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+  /^(?:\S+\s*)?管理者権限を?(?:削除|取り消す|取り消し|解除|剥奪)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
+  /^(?:移除|撤销|撤銷|取消|删除|刪除)(?:\S{0,8}的)?(?:管理员|管理員)权限\s*[.!。]?$/u,
+])
+const LOCALE_ADMIN_REMOVE = Object.freeze([
+  // r2 (cu-developer-one 06:46Z, final): ko 관리자 해제, zh 取消管理员 and the fr article l' join the remove-admin rows
+  /^(?:取消|移除|撤销|撤銷)(?:\S{0,8}的)?(?:管理员|管理員)(?:身份|角色)?\s*[.!。]?$/u,
+  /^(?:retirer|retirez)\s+(?:les\s+droits\s+d['’]\s*|l['’]\s*)?(?:administrateur|administratrice)(?:\s+\S+)?\s*[.!]?$/iu,
+  // r3 (cu-verifier, cu-developer-one 07:09Z): the es article ('Quitar al administrador', 'Quitar a la administradora'), as CU-686's 'Quitar al miembro'
+  // r4 (cu-developer-two, cu-developer-one 07:28Z): the formal imperatives (quite / elimine) and a name slot with 'como'
+  /^(?:quitar|quita|quite|eliminar|elimina|elimine)\s+(?:como\s+|al\s+|a\s+la\s+|el\s+|la\s+|a\s+\S+(?:\s+\S+)?\s+como\s+)?(?:administrador|administradora|permisos\s+de\s+administrador)(?:\s+\S+)?\s*[.!]?$/iu,
+  /^(?:administratorrechte|adminrechte)\s+entfernen\s*[.!]?$/iu,
+  /^(?:\S+\s+)?관리자\s?(?:권한)?\s*(?:을|를|에서)?\s*(?:제거|삭제|해제)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+])
+let ruAdminGrantRegex = null
+function namesRuAdminGrant(name) {
+  if (!ruAdminGrantRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const verb = `(?:(?:${any(['не'])}\\s+)?${any(['сделать', 'сделайте', 'назначить', 'назначьте', 'делать', 'назначать'])})`
+    ruAdminGrantRegex = new RegExp(`^${verb}\\s+(?:\\S+\\s+){0,2}?${any(['администратором', 'админом', 'владельцем'])}(?:\\s+\\S+)?\\s*[.!]?$`, 'iu')
+  }
+  return ruAdminGrantRegex.test(normaliseName(String(name ?? '')).trim())
+}
 // CU-655: the Russian twin ('Очистить корзину', 'Очистите корзину', 'Корзину очистить', with 'не' as negation) is built from folded
 // words on first use: a judged name has passed normaliseText, which folds Cyrillic homoglyphs to Latin case by case, so each word
 // is folded as written, capitalised and in capitals, as namesWord does for its Cyrillic entries.
@@ -3554,6 +3599,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (grammarEligible && !classes.includes('permission') && (LOCALE_LINK_ACCOUNT.some((re) => re.test(String(name ?? '').trim().replace(/İ/g, 'i'))) || namesRuLinkAccount(name))) classes.push('permission')
     // CU-688: locale revoke-invitation twins (LOCALE_REVOKE_INVITATION above).
     if (grammarEligible && !classes.includes('permission') && (LOCALE_REVOKE_INVITATION.some((re) => re.test(String(name ?? '').trim().replace(/İ/g, 'i'))) || namesRuRevokeInvitation(name))) classes.push('permission')
+    // CU-691: locale admin-role twins - grant / revoke ask permission, remove asks delete (LOCALE_ADMIN_GRANT / LOCALE_ADMIN_REMOVE above).
+    if (grammarEligible && !classes.includes('permission') && (LOCALE_ADMIN_GRANT.some((re) => re.test(String(name ?? '').trim().replace(/İ/g, 'i'))) || namesRuAdminGrant(name))) classes.push('permission')
+    if (grammarEligible && !classes.includes('delete') && LOCALE_ADMIN_REMOVE.some((re) => re.test(String(name ?? '').trim()))) classes.push('delete')
     // CU-684: locale leave-workspace twins (LOCALE_LEAVE_WORKSPACE above).
     if (grammarEligible && !classes.includes('permission') && (LOCALE_LEAVE_WORKSPACE.some((re) => re.test(String(name ?? '').trim())) || namesRuLeaveWorkspace(name))) classes.push('permission')
     // CU-678: transfer-ownership twins (TRANSFER_OWNERSHIP above).
