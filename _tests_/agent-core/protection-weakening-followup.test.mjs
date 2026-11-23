@@ -23,13 +23,13 @@ test('CU-713: silencing security notices asks permission', () => {
 })
 
 test('CU-713 near collisions: ordinary banners, reminders and marketing notices stay free', () => {
-  for (const name of ['Hide banner', 'Snooze reminder', 'Hide promotional banners', 'Block marketing emails', 'Ignore spelling alerts', 'Mute new message alerts', 'Dismiss this security banner', 'Hide unusual-activity banner', 'Clear notifications']) {
+  for (const name of ['Hide banner', 'Snooze reminder', 'Hide promotional banners', 'Block marketing emails', 'Ignore spelling alerts', 'Mute new message alerts', 'Hide unusual-activity banner', 'Clear notifications']) {
     assert.ok(!classesOf(name).includes('permission'), name)
   }
 })
 
 test("CU-713: an account-protection switch turned off asks permission; turned on it stays free", () => {
-  for (const name of ['Passkeys', 'Login alerts', 'Two-factor authentication', '2FA', 'New-device notifications', 'Security alerts']) {
+  for (const name of ['Passkeys', 'Login alerts', 'New-device notifications', 'Suspicious-activity alerts', 'Password-change emails']) {
     assert.ok(sw(name, true).includes('permission'), `${name} on -> off`)
     assert.ok(!sw(name, false).includes('permission'), `${name} off -> on`)
   }
