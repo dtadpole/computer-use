@@ -1,9 +1,9 @@
 ---
 title: '[cu] Verifier - Handover'
 created: 2026-11-08T04:15:13Z
-modified: 2026-11-23T11:11:00Z
+modified: 2026-11-23T17:17:00Z
 level: L2
-version: 5.4.40
+version: 5.4.42
 description: 'What a fresh session of [cu] Verifier needs - where things are, the pass, the tools, the open rows and the lessons, in under 300 words.'
 status: unverified
 grounded_in:
@@ -23,13 +23,10 @@ Start here, then [responsibilities](responsibilities.md) and [verdict](ultimate-
   Desktop probes: `probes/`.
 - **Closes:** `watchall.sh` is one background job (restart daily) over `watchlist.tsv`. Then `linear.py verified` with
   run ids copied by script, plus a mutant.
-- **Desktop rows:** in cu-developer-three's holds; I judge from events.jsonl.
-- **Open:** Highs CU-585, CU-371, CU-716 (consent row); CU-586 / CU-588 desktop rows; CU-375 with #856; CU-596 under load; CU-607 on a class ruling;
-  CU-645 has #1129 (rule-1), CU-702 #1349; no fix PR: CU-612, CU-618, CU-631 .. CU-633, CU-640, CU-642, CU-647, CU-649, CU-651, CU-656, CU-658, CU-667, CU-671, CU-681, CU-682, CU-696 (permission half), CU-701, CU-703 .. CU-707. The consent row
-  waits on CU-135 step 4.
+- **Open:** High CU-726 (repro on main 7 of 10 languages; finish with `repro726.sh`, close on its fix's merge); CU-720 (live row in an owner-idle window, `live720.sh`); CU-717 (#1373, armed). Consent row waits on CU-135 step 4.
 - **Lessons:** read the Verify state before `verified` (outside Verify it only moves there); a records PR naming an
   issue moves it to Verify on merge - reopen with a live row; count OKs from the PR. One browser per seat, one job
   per window, one DONE after all of it. Rows start only in a written window given to me, shared, or my close -
   never another seat's - and never while a gate runs (`q.sh` checks per row). A mutant counts only when its row
   fails, the file parses, its anchor is unique, and it ran in a scratch tree after the close. Held-outs cover
-  person, possessive and imperative twins; pin parity rows.
+  person, possessive and imperative twins; pin parity rows. Never split a page across runs (CU-722); keep run folders when a row surprises; desktop rows run `deskguard.sh` first. Browser runs only through `q.sh` / `resume.sh` under `locks/browser.lock`; launchers start only on their own named window.

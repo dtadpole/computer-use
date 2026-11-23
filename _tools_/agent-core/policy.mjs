@@ -1,4 +1,4 @@
-import { isMessagingApp } from './app-kinds.mjs'
+import { isMessagingApp, isWalletApp } from './app-kinds.mjs'
 import { normaliseForPolicy, normaliseText } from './normalise.mjs'
 import { BIP39_ENGLISH } from './bip39-english.mjs'
 import { normalizeKey } from './keys.mjs'
@@ -49,6 +49,15 @@ export function neverCoveredByGrant(cls, name) {
 // locks, dial rows, mass sends, compensation, returns, relists, ride cancels) asks under any submit grant.
 // CU-507 (High; cu-coordinator 16:06Z): the generic final buttons of a confirm modal - judged by the modal's own title and text.
 const GENERIC_CONFIRM = /^\s*(?:confirm|ok|okay|yes|yes,?\s+(?:continue|confirm|proceed|i'?m\s+sure|do\s+it)|continue|proceed|submit|done|apply|accept|agree|i\s+agree|i\s+understand|got\s+it|i'?m\s+sure|do\s+it|go\s+ahead|confirm\s+and\s+continue)\s*[.!]?\s*$/i
+// CU-729 (High; cu-researcher's sweep, cu-coordinator 19:59Z): the same generic final buttons in the covered languages (de fr es it
+// pt nl ru ja zh ko) - a localized confirm modal's 'Ja' / 'Oui' / 'Aceptar' / 'はい' / '确定' / '확인' / 'Да' is judged by the modal's title
+// like English 'OK' / 'Yes'. Matched on the raw name (before the Cyrillic homoglyph fold), the whole name, an affirmative optionally
+// followed by a comma and one more confirm word ('Ja, fortfahren'). Additions only.
+const LOCALE_CONFIRM_WORD = String.raw`(?:ja|jawohl|ok|okay|bestätigen|bestaetigen|weiter|fortfahren|übernehmen|zustimmen|akzeptieren|einverstanden|verstanden|fertig|anwenden|oui|confirmer|continuer|valider|accepter|d['’]accord|appliquer|terminé|sí|si|aceptar|confirmar|continuar|de\s+acuerdo|vale|aplicar|listo|sì|conferma|confermare|continua|accetta|procedi|va\s+bene|applica|fatto|sim|aceitar|prosseguir|concluir|bevestigen|doorgaan|akkoord|accepteren|toepassen|verder|да|ок|подтвердить|продолжить|принять|согласен|согласна|применить|готово|хорошо|はい|確認|続行|同意する|同意|適用|完了|了解|是|是的|确定|確定|确认|继续|繼續|好|好的|应用|應用|完成|예|네|확인|계속|동의|적용|완료)`
+const LOCALE_GENERIC_CONFIRM = new RegExp(String.raw`^\s*${LOCALE_CONFIRM_WORD}(?:\s*[,、，]\s*${LOCALE_CONFIRM_WORD})?\s*[.!。！]?\s*$`, 'iu')
+// CU-729: the question frames of a localized confirm title ('Möchten Sie diese Notiz wirklich löschen?', 'Voulez-vous vraiment ...',
+// '¿Desea eliminar ...?', '本当に削除しますか？', '确定要删除吗？', '정말 삭제하시겠습니까?') are removed into one more title text to judge.
+const LOCALE_QUESTION_FRAME = /(?:möchten\s+sie|wollen\s+sie|möchtest\s+du|willst\s+du|sind\s+sie\s+sicher,?\s+dass\s+sie|wirklich|voulez-vous|souhaitez-vous|êtes-vous\s+sûre?\s+de\s+vouloir|vraiment|¿|está\s+seguro\s+de\s+que\s+desea|desea|quiere|realmente|sei\s+sicuro\s+di\s+voler|vuoi|davvero|tem\s+certeza\s+de\s+que\s+deseja|deseja|wilt\s+u|weet\s+u\s+zeker\s+dat\s+u|вы\s+действительно\s+хотите|вы\s+уверены,?\s+что\s+хотите|действительно|本当に|しますか|ますか|确定要|確定要|是否|确认要|吗|嗎|정말|하시겠습니까|하시겠어요)/giu
 const GENERIC_SUBMIT = /^\s*(?:submit|send|send\s+(?:message|reply|email|comment)|reply|post|post\s+(?:comment|reply)|comment|save|save\s+changes|apply|search|go|ok|done|continue|next|report\s+spam|sign\s+up|register|create\s+account)\s*!?\s*$/i
 
 /** Word lists matched on a target's accessible name, case-insensitively, at word boundaries; they err toward confirm. */
@@ -1760,9 +1769,34 @@ const TYPED_CONFIRM_BACKOUT = /^\s*(?:cancel\b.*|back|go\s+back\b.*|close|dismis
 // cu-researcher r6: a clipboard / view / reveal / help control beside the box (GitHub's copy-the-name button) does not confirm
 // anything either - it never reads the prompt.
 const TYPED_CONFIRM_UTILITY = /^\s*(?:copy\b.*|show\b.*|hide\b.*|reveal\b.*|view\b.*|preview\b.*|learn\s+more\b.*|help\b.*|more\s+info\b.*|info|details|what(?:'|\u2019)?s\s+this\b.*|paste\b.*|clear|\?|i)\s*[.!]?\s*$/i
+// CU-726: the same back-out and utility buttons in the covered languages (de fr es pt it nl ru ja zh ko) - a localized
+// danger zone's 'Abbrechen' / 'Annuler' / 'Отмена' / 'キャンセル' never confirms it.
+const LOCALE_CONFIRM_BACKOUT = /^\s*(?:abbrechen|zurück|schlie(?:ß|ss)en|nein|behalten|später|nicht\s+jetzt|annuler|retour|fermer|non|conserver|garder|plus\s+tard|pas\s+maintenant|cancelar|volver|atrás|cerrar|conservar|mantener|más\s+tarde|ahora\s+no|voltar|fechar|não|manter|mais\s+tarde|agora\s+não|annulla|indietro|chiudi|mantieni|più\s+tardi|non\s+ora|annuleren|terug|sluiten|nee|behouden|niet\s+nu|отмена|отменить|назад|закрыть|нет|оставить|позже|не\s+сейчас|キャンセル|戻る|閉じる|いいえ|後で|取消|返回|关闭|關閉|否|稍后|稍後|취소|뒤로|닫기|아니요|아니오|나중에)\s*[.!\u3002]?\s*$/iu
+const LOCALE_CONFIRM_UTILITY = /^\s*(?:kopieren|copier|copiar|copia|kopiëren|копировать|コピー|复制|複製|복사|hilfe|aide|ayuda|ajuda|aiuto|справка|помощь|ヘルプ|帮助|幫助|도움말)(?![\p{L}\p{N}])/iu
+// A judged name has passed normaliseText, which folds Cyrillic homoglyphs to Latin case by case ('Отмена' -> 'Oтмeнa'), so the
+// Russian back-outs are also matched folded - as written, capitalised and in capitals - as namesRuTrashEmpty does.
+// CU-729: the Russian affirmatives the same way - a judged name has passed the Cyrillic homoglyph fold ('Да' -> 'Дa'), so they
+// are matched folded too (as written, capitalised and in capitals), alone or with a comma and one more of them.
+let ruConfirmRegex = null
+function namesRuConfirm(text) {
+  if (!ruConfirmRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const words = ['да', 'ок', 'подтвердить', 'продолжить', 'принять', 'согласен', 'согласна', 'применить', 'готово', 'хорошо'].flatMap(folds).join('|')
+    ruConfirmRegex = new RegExp(`^\\s*(?:${words})(?:\\s*,\\s*(?:${words}))?\\s*[.!]?\\s*$`, 'u')
+  }
+  return ruConfirmRegex.test(normaliseName(text))
+}
+let ruBackoutRegex = null
+function namesRuBackout(text) {
+  if (!ruBackoutRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    ruBackoutRegex = new RegExp(`^\\s*(?:${['отмена', 'отменить', 'назад', 'закрыть', 'нет', 'оставить', 'позже', 'не сейчас'].flatMap(folds).join('|')})\\s*[.!]?\\s*$`, 'u')
+  }
+  return ruBackoutRegex.test(normaliseName(text))
+}
 function typedConfirmButton(name) {
   const text = String(name ?? '').trim()
-  return text !== '' && !TYPED_CONFIRM_BACKOUT.test(text) && !TYPED_CONFIRM_UTILITY.test(text)
+  return text !== '' && !TYPED_CONFIRM_BACKOUT.test(text) && !TYPED_CONFIRM_UTILITY.test(text) && !LOCALE_CONFIRM_BACKOUT.test(text) && !LOCALE_CONFIRM_UTILITY.test(text) && !namesRuBackout(text)
 }
 // The confirm-prompt shape: a typing word followed by what to type ('Type DELETE ...', 'Enter the workspace name ...'), never
 // 'Type to search ...' / 'Type here ...' / 'Press Enter to ...' (cu-researcher's r1 over-ask 'Type to search deleted items').
@@ -1770,19 +1804,133 @@ function typedConfirmButton(name) {
 const TYPED_INSTRUCTION = /\b(?:type|typing|enter|entering|re-?enter(?:ing)?|re-?typ(?:e|ing)|write|writing|input(?:ting)?|key(?:ing)?\s+in|spell(?:ing)?\s+out|repeat(?:ing)?|fill(?:ing)?\s+in|copy(?:ing)?|past(?:e|ing))\s+(?!(?:to|here|in)\b)["'\u201c\u2018\p{L}\p{N}]/iu
 const TYPED_DESTROY = /\b(?:delet\w*|eras(?:e|es|ed|ing|ure)\b|wip(?:e|es|ed|ing)\b|remov\w*|destroy\w*|purg(?:e|es|ed|ing)\b|terminat\w*|deactivat\w*|permanently|permanent\s+(?:deletion|removal|erasure)|irreversibl\w*|cannot\s+be\s+undone|nuk(?:e|es|ed|ing)\b|uninstall\w*|drop\s+(?:it|them|(?:the|this|that|your|my)\s+\w+)\b|shut(?:ting)?\s+(?:\w+\s+){0,3}down\b|clos(?:e|ing)\s+(?:it|(?:the|this|that|your|my)\s+\w+)\s+(?:down|for\s+good|permanently)\b|kill(?:s|ed|ing)?\s+(?:it|them|(?:the|this|that|your|my|all)\s+\w+)\b|scrap(?:s|ped|ping)?\b|trash(?:es|ed|ing)?\s+(?:it|them|(?:the|this|that|your|my|all)\s+\w+)\b|discard\w*|retir(?:e|es|ed|ing)\b|sunset(?:s|ting)?\b|cancel(?:l?ing)?\s+(?:the\s+|this\s+|your\s+|my\s+)?(?:account|membership|organi[sz]ation|workspace)\b|re-?format\w*|format\s+(?:the\s+|this\s+|your\s+)?(?:disk|drive|volume|card|partition)\b|obliterat\w*|shred\w*|annihilat\w*|decommission\w*|deprovision\w*|tear\s+(?:it\s+|this\s+|the\s+\w+\s+)?down|factory\s+reset|reset\s+(?:\w+\s+)?to\s+factory|empty\s+(?:it|them|the|this|that|your|all)\b|(?:archiv\w*|los(?:e|ing)|gone|hid(?:e|den))\s+(?:\w+\s+){0,2}(?:forever|for\s+good)|clos(?:e|ing)\s+(?:the\s+|this\s+|my\s+|your\s+)?account\b|drop\s+(?:the\s+|this\s+)?(?:table|database|schema|collection|index)\b)/i
 // A transfer counts only of ownership: 'Enter the transfer amount' is money, not a handover (cu-developer-three's near-miss).
+// r3 (policy owner 13:25Z): the destroy test without its three bare intensifiers ('permanently', 'irreversibl*', 'cannot
+// be undone') - they name no act. Used only where a strong confirm sentence takes the act from ANOTHER zone sentence.
+const TYPED_DESTROY_ACT = new RegExp(TYPED_DESTROY.source.replace('|permanently|permanent\\s+', '|permanent\\s+').replace('|irreversibl\\w*', '').replace('|cannot\\s+be\\s+undone', ''), 'i')
 const TYPED_TRANSFER = /\b(?:(?:move|transfer|send|pass|give|assign|hand)\s+(?:(?:it|this|that|them|the\s+\w+|this\s+\w+)\s+)?(?:on\s+|over\s+)?to\s+(?:a\s+|an\s+)?(?:another|new|different|other)\s+(?:owner|admin(?:istrator)?|account|org(?:anization)?|team|workspace|user|member|person)|make\s+(?:\w+\s+){1,3}(?:the\s+)?(?:new\s+)?admin(?:istrator)?\b|(?:another|different)\s+owner|give\s+(?:(?:it|them|this|that|the|your|my)\s+)?(?:\w+\s+){0,2}away|hand(?:ing)?\s+(?:it\s+|this\s+\w+\s+|the\s+\w+\s+)?off|make\s+(?:\w+\s+){1,3}(?:the\s+)?(?:new\s+)?owner|reassign\s+(?:the\s+)?ownership|transfer\w*\s+(?:of\s+)?(?:the\s+)?ownership|ownership|hand(?:ing)?\s+(?:it\s+|this\s+\w+\s+|the\s+\w+\s+)?over|handover|new\s+owner|change\s+(?:the\s+)?owner|transfer\s+(?:the\s+|this\s+)?(?:workspace|repository|repo|organization|org|project|team|account|domain)\b)/i
+
+// The confirm shape of an entry (policy owner 08:07Z), for the zone words only: after a typing word, a token in capitals
+// ('DELETE', 'CLOSE' - not a field acronym like PIN or OTP) or in quotes, or 'the <up to 2 words> name / ID / slug /
+// handle / URL', or 'the name of'; or 'to confirm' anywhere. 'Enter your email', 'Enter the 6-digit code' and 'Type
+// your full name' are not confirm-shaped.
+const TYPED_VERB = /\b(?:type|typing|enter|entering|re-?enter(?:ing)?|re-?typ(?:e|ing)|write|writing|input(?:ting)?|key(?:ing)?\s+in|spell(?:ing)?\s+out|repeat(?:ing)?|fill(?:ing)?\s+in|copy(?:ing)?|past(?:e|ing))\s+/giu
+const FIELD_ACRONYM = /^(?:PIN|PUK|OTP|TAN|SMS|CVV|CVC|ID|URL|IBAN|BIC|SWIFT|SSN|ZIP|VAT|API|IP|MAC|IMEI)(?![\p{L}\p{N}])/u
+function confirmShaped(text) {
+  if (/\bto\s+confirm\b/i.test(text)) return true
+  for (const m of text.matchAll(TYPED_VERB)) {
+    const rest = text.slice(m.index + m[0].length)
+    if (/^["'\u201c\u2018]/u.test(rest)) return true
+    if (/^\p{Lu}{2,}(?![\p{L}\p{N}])/u.test(rest) && !FIELD_ACRONYM.test(rest)) return true
+    if (/^the\s+(?:[\p{L}\p{N}-]+\s+){0,2}(?:name|id|slug|handle|url)\b/iu.test(rest) || /^the\s+name\s+of\b/i.test(rest)) return true
+  }
+  return localeConfirmShaped(text)
+}
+// r3: a STRONG confirm sentence - 'to confirm' / 'confirm by', or a typed token (quoted, or a capitalised word that is no field
+// acronym). 'the <noun> name' alone is confirm-shaped but not strong.
+function strongConfirm(text) {
+  if (/\bto\s+confirm\b|\bconfirm\s+by\b/i.test(text)) return true
+  for (const m of text.matchAll(TYPED_VERB)) {
+    const rest = text.slice(m.index + m[0].length)
+    if (/^["'\u201c\u2018]/u.test(rest)) return true
+    if (/^\p{Lu}{2,}(?![\p{L}\p{N}])/u.test(rest) && !FIELD_ACRONYM.test(rest)) return true
+  }
+  return localeStrongConfirm(text)
+}
+
+// CU-726 (cu-researcher's 16:05Z sweep: 'Geben Sie LÖSCHEN ein, um zu bestätigen' + 'Bestätigen' and its fr / es / pt / it /
+// nl / ja / zh / ko / ru twins acted unasked; English asked). The typed-confirm senses in those languages - ADDITIONS only:
+// every English test above is unchanged, and each localized test is an extra way to pass. JS's \b is ASCII-only, so a word
+// start here is 'no letter or digit before'. German and Japanese put the verb after the typed word ('LÖSCHEN eingeben',
+// '「削除」と入力'), so a localized sentence is read by presence (a typing verb AND a confirm phrase or a typed token), not by
+// the English 'verb then token' order.
+const L0 = '(?<![\\p{L}\\p{N}])'
+const L1 = '(?![\\p{L}\\p{N}])'
+const LOCALE_TYPED_VERB = new RegExp(`${L0}(?:geben\\s+sie|gib|eingeben|einzugeben|einzutippen|tippen(?:\\s+sie)?|tippe|schreiben\\s+sie|saisissez|saisir|saisis|tapez|taper|entrez|entrer|écrivez|écrire|escribe|escriba|escribir|introduce|introduzca|introducir|ingresa|ingrese|ingresar|teclea|digite|digita|digitar|digitare|escreva|insira|introduza|inserisci|inserire|immetti|scrivi|typ|voer|vul|введите|ввести|наберите|напишите|впишите)${L1}|入力|タイプ|输入|輸入|键入|鍵入|입력`, 'iu')
+// 'To confirm' in each language ('um zu bestätigen', 'pour confirmer', 'для подтверждения', '確認のため', '以确认', '확인하려면').
+const LOCALE_TO_CONFIRM = new RegExp(`${L0}(?:um\\s+(?:\\p{L}+\\s+){0,3}zu\\s+bestätigen|zur\\s+bestätigung|zum\\s+bestätigen|pour\\s+confirmer|para\\s+confirmar|per\\s+confermare|om\\s+te\\s+bevestigen|ter\\s+bevestiging|для\\s+подтверждения|чтобы\\s+подтвердить)${L1}|確認のため|確認するには|確認するため|以确认|以確認|来确认|來確認|进行确认|進行確認|확인하려면|확인을\\s*위해`, 'iu')
+// A typed token anywhere: in quotes (any script's quote marks) or a run of 3+ capitals that is no field acronym ('LÖSCHEN', 'УДАЛИТЬ').
+// An apostrophe opens or closes a quote only away from Latin letters, so French elision ('l'adresse', 'd'utilisateur') is no
+// quote while Korean's particle after a closing mark ('삭제'를) still is.
+const LOCALE_QUOTED = /(?:["\u201c\u201e\u00ab\u300c\u300e\uff02]|(?<![\p{Script=Latin}\p{N}])['\u2018\u2019])[^"'\u201c\u201d\u2018\u2019\u201e\u00ab\u00bb\u300c\u300d\u300e\u300f\uff02]{1,40}(?:["\u201d\u201c\u00bb\u300d\u300f\uff02]|['\u2019\u2018](?![\p{Script=Latin}\p{N}]))/u
+const LOCALE_ACRONYM = /^(?:PIN|PUK|OTP|TAN|SMS|CVV|CVC|URL|IBAN|BIC|SWIFT|SSN|ZIP|VAT|API|IMEI|NIP|ПИН|СМС|ИНН|КОД)$/u
+function localeToken(text) {
+  if (LOCALE_QUOTED.test(text)) return true
+  // a capitals run counts only inside a mixed-case sentence - an all-capitals label ('E-MAIL-ADRESSE EINGEBEN') is styling
+  if (!/\p{Ll}/u.test(text)) return false
+  for (const m of text.matchAll(/(?<![\p{L}\p{N}])\p{Lu}{3,}(?![\p{L}\p{N}])/gu)) if (!LOCALE_ACRONYM.test(m[0])) return true
+  return false
+}
+// 'The name' shape: 'den Namen', 'le nom', 'el nombre', 'o nome', 'il nome', 'de naam', 'название', '名前', '名称', '이름'; #1385 r2
+// (cu-researcher's miss): a Japanese / Chinese compound name noun, '<noun>名' before its particle ('リポジトリ名を', 'プロジェクト名と');
+// r3 (her next set; cu-coordinator 18:10Z: the general compound rule, the last fold): the Korean '<noun>명' ('저장소명을'), German /
+// Dutch compounds ending in -name(n) / -naam ('Teamnamen', 'projectnaam'), a '-ID' compound or the ID word ('Projekt-ID',
+// 'identifiant', 'идентификатор', 'リポジトリID'), the article-less 'nombre del' / 'nome do' / 'nom du' / 'naam van', and '名字'.
+const LOCALE_NAME = new RegExp(`${L0}(?:den\\s+namen|namen\\s+(?:des|der)|le\\s+nom|el\\s+nombre|o\\s+nome|il\\s+nome|de\\s+naam|название|имя)${L1}|名前|名称|名稱|이름|[\\p{Script=Katakana}\\p{Script=Han}\\u30fc]名(?=\\s*(?:を|と|が|は|：|:|以|并|並|来|來|，|。|,|\\.|\\s|$))|[\\p{Script=Hangul}]명(?=\\s*(?:을|를|이|가|은|는|:|\\s|$))|${L0}\\p{L}{2,}(?:namen?|naam)${L1}|${L0}(?:\\p{L}{2,}-id|identifiant|identificador|identificativo|идентификатор|nombre\\s+del?|nome\\s+d[oaei]|nom\\s+du|naam\\s+van)${L1}|名字|[\\p{Script=Katakana}\\p{Script=Han}\\u30fc](?:ID|ＩＤ)|[\\p{Script=Hangul}]\\s?ID`, 'iu')
+function localeStrongConfirm(text) {
+  return LOCALE_TYPED_VERB.test(text) && (LOCALE_TO_CONFIRM.test(text) || localeToken(text))
+}
+function localeConfirmShaped(text) {
+  return localeStrongConfirm(text) || (LOCALE_TYPED_VERB.test(text) && LOCALE_NAME.test(text))
+}
+// The destroy act (verbs) and its bare intensifiers, kept apart as in English (TYPED_DESTROY_ACT, policy owner 13:25Z). Word
+// forms are listed where a stem would catch an English word ('borrow', 'exclude', 'cancellation').
+const LOCALE_DESTROY_VERBS = `${L0}(?:lösch\\p{L}*|gelöscht\\p{L}*|entfernen|entferne|entfernt|entfernst|vernicht\\p{L}*|supprim\\p{L}*|effac\\p{L}*|détrui\\p{L}*|elimin\\p{L}*|borra|borrar|borre|borrado|borrada|borrados|borradas|borrará|borrarán|suprim\\p{L}*|excluir|exclua|excluído|excluída|excluídos|excluídas|excluirá|excluirão|exclusão|apagar|apague|apagado|apagada|apagará|cancella|cancellare|cancellato|cancellata|cancellati|cancellate|cancellerà|rimuov\\p{L}*|rimoss\\p{L}*|verwijder\\p{L}*|удал(?:ить|ите|ение|ения|ению|ено|ены|ён|ен|ена|ится|ятся|им|яет|ять|яются)|стереть|сотрите|сотрёт|стёрт\\p{L}*|стерт\\p{L}*|уничтож\\p{L}*|закрыть\\s+(?:аккаунт|учётную\\s+запись|учетную\\s+запись)|fermer\\s+(?:votre\\s+|le\\s+)?compte|cerrar\\s+(?:tu\\s+|su\\s+|la\\s+)?cuenta|encerrar\\s+(?:sua\\s+|a\\s+)?conta|chiudere\\s+(?:il\\s+(?:tuo\\s+)?|l['\u2019])?account|konto\\s+(?:\\p{L}+\\s+){0,2}(?:schlie(?:ß|ss)en|kündigen|auflösen)|account\\s+opheffen)${L1}|削除|消去|删除|刪除|清除|注销|註銷|삭제|탈퇴|退会`
+const LOCALE_DESTROY_INTENSIFIERS = `${L0}(?:endgültig\\p{L}*|unwiderruflich\\p{L}*|nicht\\s+rückgängig|définitivement|irréversibl\\p{L}*|ne\\s+peut\\s+(?:pas\\s+)?être\\s+annul\\p{L}*|permanentemente|de\\s+forma\\s+permanente|irreversibl\\p{L}*|no\\s+se\\s+puede\\s+deshacer|irreversível|não\\s+pode\\s+ser\\s+desfeit\\p{L}*|definitivamente|irreversibile|non\\s+può\\s+essere\\s+annullat\\p{L}*|definitief|onomkeerbaar|niet\\s+ongedaan|безвозвратно|навсегда|необратим\\p{L}*|нельзя\\s+отменить|невозможно\\s+отменить)${L1}|完全に|元に戻せ|取り消せ|永久|无法撤销|無法復原|无法恢复|無法恢復|不可恢复|영구|되돌릴\\s*수\\s*없`
+const LOCALE_DESTROY = new RegExp(`${LOCALE_DESTROY_VERBS}|${LOCALE_DESTROY_INTENSIFIERS}`, 'iu')
+const LOCALE_DESTROY_ACT = new RegExp(LOCALE_DESTROY_VERBS, 'iu')
+// A handover of ownership: a transfer verb AND an owner noun in the same text ('die Eigentümerschaft übertragen', 'transférer la
+// propriété', 'передать права владельца', '所有権を譲渡', '转让所有权', '소유권 이전').
+const LOCALE_TRANSFER_VERB = new RegExp(`${L0}(?:übertrag\\p{L}*|transfér\\p{L}*|transférer|transferir|transfira|transfiera|trasferi\\p{L}*|overdragen|overdraagt|overgedragen|переда\\p{L}*)${L1}|移転|譲渡|转让|轉讓|转移|轉移|이전|양도`, 'iu')
+const LOCALE_OWNER = new RegExp(`${L0}(?:eigentüm\\p{L}*|inhaber\\p{L}*|besitzer\\p{L}*|propriét\\p{L}*|propiedad|propietari\\p{L}*|proprietári\\p{L}*|propriedade|propriet[àa]\\p{L}*|eigenaar\\p{L}*|eigendom\\p{L}*|владел\\p{L}*)${L1}|所有権|所有者|オーナー|所有权|所有權|拥有者|擁有者|소유권|소유자`, 'iu')
+const localeTransfer = (text) => LOCALE_TRANSFER_VERB.test(text) && LOCALE_OWNER.test(text)
+// The tests the typed-confirm reader uses: English first (unchanged), then the localized addition.
+const typedInstruction = (text) => TYPED_INSTRUCTION.test(text) || LOCALE_TYPED_VERB.test(text)
+const typedDestroy = (text) => TYPED_DESTROY.test(text) || LOCALE_DESTROY.test(text)
+const typedDestroyAct = (text) => TYPED_DESTROY_ACT.test(text) || LOCALE_DESTROY_ACT.test(text)
+const typedTransfer = (text) => TYPED_TRANSFER.test(text) || localeTransfer(text)
 
 /**
  * CU-585: the classes a typed-word confirmation form's prompt asks for, read by sense from the driver's formEntries (at
  * most 3 texts of 80 characters). Some text must tell the person to type or enter something; then a destructive or
  * permanent act anywhere in the form's words asks delete, and a transfer of ownership asks permission (not purchase).
  * Ordinary boxes (a name, a search, a message, a coupon) carry no typing-to-confirm sense and add nothing.
+ * Owner spec 07:33Z: the zone's own static texts (zoneWords - its heading and description, at most 3 texts of 80
+ * characters) join the destroy / transfer test, so 'Close this account permanently.' beside 'Type CLOSE to confirm' asks
+ * delete; they never supply the typing instruction, and a bare typed CLOSE stays free (it also closes dialogs).
  */
-export function typedConfirmClasses(entries) {
-  const texts = (Array.isArray(entries) ? entries : []).slice(0, 3).map((text) => String(text ?? '')).filter((text) => text.length <= 80)
-  if (!texts.some((text) => TYPED_INSTRUCTION.test(text))) return []
-  const words = texts.join(' \u2022 ')
-  return [...(TYPED_DESTROY.test(words) ? ['delete'] : []), ...(TYPED_TRANSFER.test(words) ? ['permission'] : [])]
+export function typedConfirmClasses(entries, zoneWords = []) {
+  const bounded = (list) => (Array.isArray(list) ? list : []).slice(0, 3).map((text) => String(text ?? '')).filter((text) => text.length <= 80)
+  const texts = bounded(entries)
+  const zone = bounded(zoneWords)
+  // Policy owner's r2 rule (09:52Z, cu-researcher's paragraph-prompt miss): a zone sentence supplies the typing
+  // instruction when it is confirm-shaped AND names the destroy / transfer act ('Enter the project name to delete it'
+  // beside a box whose only word is 'project name'). r3 (cu-researcher's r2 review, the split dialog 'To confirm, enter
+  // the workspace name below.' + 'This deletes it permanently.'): a STRONG confirm sentence ('to confirm', or a typed
+  // token) may take the act - a destroy / transfer verb, not a bare intensifier - from another sentence of the same zone. 'Enter the workspace name.' beside a retention note
+  // stays free (not strong), and a zone with no act ('Enter the project name to search.') adds nothing.
+  const acts = (text) => typedDestroy(text) || typedTransfer(text)
+  // the other sentence must hold a destroy / transfer VERB phrase, not a bare intensifier (policy owner 13:25Z)
+  const zoneActs = zone.some((text) => typedDestroyAct(text) || typedTransfer(text))
+  // r3 branch (c) (policy owner 13:32Z, cu-researcher's 'erase your account' row): a typing instruction followed in the
+  // SAME sentence by 'to <act>' supplies the instruction whatever is typed ('Enter your email address to erase your
+  // account.'). The act test runs on everything after the first 'to' past the verb, so any later to-clause counts too
+  // ('... to receive a code to delete your account'), and 'in order to' / 'so as to' end in 'to'. Verb phrases only.
+  // CU-726: a localized sentence has no English 'to'; its purpose clause is the act verb in the same sentence as the typing
+  // verb, in either order ('Geben Sie Ihre E-Mail-Adresse ein, um Ihr Konto zu löschen', 'Введите email, чтобы удалить аккаунт').
+  const purposeAct = (text) => {
+    const at = text.search(TYPED_INSTRUCTION)
+    const clause = at < 0 ? null : text.slice(at).match(/\bto\s+([\s\S]+)$/i)
+    return (clause !== null && (TYPED_DESTROY_ACT.test(clause[1]) || TYPED_TRANSFER.test(clause[1]))) || (LOCALE_TYPED_VERB.test(text) && (LOCALE_DESTROY_ACT.test(text) || localeTransfer(text)))
+  }
+  // r4 (policy owner 14:45Z, cu-researcher's r3 misses 'To proceed, type the account name.' + 'Your account will be
+  // permanently deleted.'): in the split branch ANY confirm-shaped instruction (the name / slug / ID / handle / URL shape,
+  // or strong) takes the verb from another zone sentence - an under-ask on a destroy act weighs more than a rare over-ask.
+  const zoneInstruction = zone.some((text) => typedInstruction(text) && (((confirmShaped(text) || strongConfirm(text)) && (acts(text) || zoneActs)) || purposeAct(text)))
+  if (!texts.some((text) => typedInstruction(text)) && !zoneInstruction) return []
+  // Policy owner's gate (08:07Z): the zone's words join only when an entry is confirm-shaped - an 'Enter your phone number'
+  // form's 'We will remove it if you ask.' never reaches the destroy test. Entries alone keep #894's behaviour.
+  const words = [...texts, ...(texts.some(confirmShaped) || zoneInstruction ? zone : [])].join(' \u2022 ')
+  return [...(typedDestroy(words) ? ['delete'] : []), ...(typedTransfer(words) ? ['permission'] : [])]
 }
 
 // CU-371: a generic submit that applies whatever its form's select holds ('Apply', 'Go', 'Update' beside 'Bulk actions').
@@ -2243,7 +2391,10 @@ const PASSWORD_NAMES = Object.freeze(['password', 'passcode', 'passphrase', 'pin
 // CU-607: a few phrases share a password word without naming a password - Italian 'parola chiave' (keyword) and Korean
 // 암호화 (encryption, which contains 암호). They are cut out of the name before the password words are matched, so
 // '암호화 설정' stays free while '암호화 비밀번호' still names a password.
-const PASSWORD_NAME_NOT = /parol[ae][\s-]+chiave|암호화/giu
+// CU-717 (a narrowing under D-110, the #1364 reviewers' over-asks): Italian 'parola' (word) led into an Italian phrase -
+// 'Parola da cercare', 'Parola del giorno', 'Parola che inizia con' - and Korean 암호문 (ciphertext) and 암호학 (cryptography).
+// Bare 'Parola', Turkish 'Parolanız' / 'Yeni parola' and Italian "parola d'ordine" / "parola d'accesso" still name a password.
+const PASSWORD_NAME_NOT = /parol[ae][\s-]+chiave|parol[ae][\s-]+(?:da|del|della|dello|delle|dei|degli|per|che)(?![\p{L}'\u2019])|암호(?:화|문|학)/giu
 // The desktop passes raw names; a judged name is homoglyph-folded first, so both forms are read ('Пароль').
 const namesPassword = (name) => [String(name ?? ''), normaliseText(String(name ?? ''))].some((n) => namesWord(n.replace(PASSWORD_NAME_NOT, ' '), PASSWORD_NAMES))
 // CU-265: the schemes a page navigates itself; any other hands the link to another app.
@@ -4252,7 +4403,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         const restProbe = classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { role: 'button', name: continueTo[1].trim(), ...(target?.origin ? { origin: target.origin } : {}) } })
         if (restProbe.decision === 'confirm') for (const cls of restProbe.classes ?? [restProbe.class]) if (!classes.includes(cls)) classes.push(cls)
       }
-      if (context.confirmProbe !== true && presses && (dialogName !== '' || dialogDescription !== '') && (GENERIC_CONFIRM.test(String(name ?? '')) || continueTo)) {
+      const localeConfirm = LOCALE_GENERIC_CONFIRM.test(String(target?.name ?? name ?? '')) || LOCALE_GENERIC_CONFIRM.test(String(name ?? '')) || namesRuConfirm(String(name ?? ''))
+      if (context.confirmProbe !== true && presses && (dialogName !== '' || dialogDescription !== '') && (GENERIC_CONFIRM.test(String(name ?? '')) || localeConfirm || continueTo)) {
         // cu-researcher 16:09Z: a title is a question more often than a row - 'Are you sure you want to <row>?', 'Really <row>?',
         // '<row>?' - so a title canonical step strips the question frame before the title is judged as a name.
         // #702 round 2 (cu-researcher 16:24Z): descriptions lead with 'This will / This action will / You are about to / Doing this will'.
@@ -4264,6 +4416,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         const firstSentence = kept[0] ?? ''
         const keptDescription = kept.join(' ')
         const texts = [...new Set([dialogName, titleRow(dialogName), firstSentence, titleRow(firstSentence), `${titleRow(dialogName)} ${keptDescription}`.trim()].filter((t) => t !== ''))]
+        // CU-729: the localized title with its question frame removed is one more text (additions only).
+        const unframed = (text) => text.replace(LOCALE_QUESTION_FRAME, ' ').replace(/[?？!！.。:：\s]+$/u, '').replace(/\s+/g, ' ').trim()
+        for (const extra of [unframed(dialogName), unframed(firstSentence)]) if (extra !== '' && !texts.includes(extra)) texts.push(extra)
         for (const text of texts) {
           // #702 round 2: the title is judged with the FULL canonical form (synonym, quantifier, label and clause steps run only
           // outside a confirm probe), so no confirmProbe flag here; the probe target carries no dialog fields, so it cannot recurse.
@@ -4393,6 +4548,12 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     }
     // CU-521 (cu-coordinator 20:06Z): 'Merge anyway' keeps its older submit and unions permission (a merge past the requirements).
     if (grammarEligible && classes.length > 0 && !classes.includes('permission') && /^(?:merge\s+anyway|force[-\s]?merge)$/i.test(String(name ?? '').trim())) classes.push('permission')
+    // CU-576 (built before triage): in a crypto wallet app a send / broadcast / sign / confirm / approve / swap moves money and is final - it
+    // asks purchase (no grant covers it) beside whatever class it already has; reading, receiving and settings stay as they are.
+    if (desktopUrl && !nativeOn && !classes.includes('purchase') && isWalletApp(String(context.frontmostBundleId ?? target?.origin ?? context.url ?? ''))
+      && (/^\s*(?:send|spend|broadcast|confirm|sign|approve|authori[sz]e|transfer|withdraw|swap|exchange|trade|sell|buy|pay|submit|finali[sz]e|push|publish|release|redeem|sweep|consolidate|coin-?join|mix|bridge|stake|unstake|delegate|claim|move\s+(?:funds|coins)|review\s+and\s+send|sign\s+and\s+(?:send|broadcast)|create\s+transaction|bump\s+fee|speed\s+up|cancel\s+transaction)\b/i.test(String(name ?? ''))
+        || /^\s*[\p{L}-]+\b.*\b(?:transactions?|tx|psbt|payments?|funds|coins|utxos?|outputs?|coin-?\s?joins?|mixing|mix(?:ing)?\s+rounds?|swaps?|staking|stakes?|bridges?|withdrawals?|transfers?|payouts?|sends?|spends?)\b/iu.test(String(name ?? '')) && !/^\s*(?:view|show|see|open|export|copy|search|filter|sort|label|refresh|load|import|scan)\b/i.test(String(name ?? '')))
+      && !/^\s*(?:send|confirm|sign|approve)\s+(?:feedback|logs?|report|crash|diagnostics)\b/i.test(String(name ?? ''))) classes.push('purchase')
     // #729 round 2 (cu-coordinator 19:51Z, the 18:06Z precedent): 'Reset account PIN' keeps the older reset row's delete and unions
     // CU-518's credential.
     if (grammarEligible && classes.length > 0 && !classes.includes('credential') && /^reset\s+(?:the\s+|my\s+|your\s+)?(?:account|port[-\s]?out|transfer|number\s+transfer)\s+(?:pin|passcode)$/i.test(String(name ?? '').trim())) classes.push('credential')
@@ -4442,9 +4603,11 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // ownership asks permission. A late union - it only adds an ask to a submit nothing else classes, never lowers one.
     // Only on the control's own label: the name sub-probes (confirm / question / split-particle forms of 'Not now' -> 'now')
     // carry the target's formEntries along and must not read the prompt; Return's default-button probe does.
+    // Owner spec 07:33Z (cu-verifier's close-account row): the zone's own static texts (the driver's zoneWords) join the
+    // destroy / transfer test - only beside a confirm-shaped entry (policy owner 08:07Z); the instruction comes from the entries.
     const subProbe = context.confirmProbe === true || context.questionProbe === true || context.splitParticleProbe === true
     if (grammarEligible && !subProbe && classes.length === 0 && typedConfirmButton(name) && Array.isArray(target?.formEntries)) {
-      for (const cls of typedConfirmClasses(target.formEntries)) classes.push(cls)
+      for (const cls of typedConfirmClasses(target.formEntries, target.zoneWords)) classes.push(cls)
     }
     // CU-371 (cu-coordinator's filing; GO from the policy.mjs owner cu-developer-one 14:51Z; built by cu-developer-two): a
     // generic submit ('Apply', 'Go', 'Update', 'OK', 'Submit') applies what its form's select holds, so it is judged by the
