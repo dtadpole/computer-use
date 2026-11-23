@@ -1829,7 +1829,9 @@ function confirmShaped(text) {
 // name / ID / slug / handle / URL', 'its name', '<x>'s name' ('your team's name', 'the project's name') or a bare '<x> name'
 // ('Enter repository name'). Not a rename ('a new name') or a sign-in / profile field ('user ID', 'display name', 'first name';
 // 'username' is no name shape). It counts only inside a zone that holds a destroy / transfer act (typedConfirmClasses).
-const POSSESSIVE_NAME_FREE = /^(?:new|user|display|nick|first|last|middle|given|family|sur|a|an|any|some)$/i
+// Policy owner 22:41Z: personal-name words stay free too ('your full name' is a sign-up field; a real typed confirm that asks for it
+// says 'to confirm', which strongConfirm takes).
+const POSSESSIVE_NAME_FREE = /^(?:new|user|display|nick|first|last|middle|given|family|sur|full|legal|real|preferred|screen|maiden|a|an|any|some)$/i
 function possessiveNameShaped(text) {
   for (const m of text.matchAll(TYPED_VERB)) {
     const rest = text.slice(m.index + m[0].length)
@@ -1837,6 +1839,9 @@ function possessiveNameShaped(text) {
     if (!shape) continue
     const words = shape[3].trim().split(/\s+/).filter(Boolean)
     if (!shape[1] && !shape[2] && words.length === 0) continue
+    // policy owner 22:41Z: a bare personal possessive with no noun ('your name', 'your ID', 'their name') is a person's field; 'its name'
+    // names the thing itself and stays.
+    if (shape[1] && !/^its$/i.test(shape[1]) && words.length === 0) continue
     if (/^the$/i.test(words[0] ?? '')) continue
     if (words.some((word) => POSSESSIVE_NAME_FREE.test(word))) continue
     return true

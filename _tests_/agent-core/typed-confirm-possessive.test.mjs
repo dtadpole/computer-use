@@ -6,6 +6,7 @@ import { typedConfirmClasses } from '../../_tools_/agent-core/policy.mjs'
 // CU-735 (cu-researcher's miss): an English typed-confirm prompt that says YOUR <x> name, its name, <x>'s name or a bare
 // '<x> name' asks like 'the <x> name' - only inside a zone that holds a destroy / transfer act.
 test("CU-735: possessive and bare name shapes ask inside a destroy / transfer zone", () => {
+  assert.deepEqual(typedConfirmClasses(['Full name'], ['Type your full name to confirm.', 'Your account will be deleted.']), ['delete'], "'to confirm' still takes a personal name (strongConfirm)")
   assert.deepEqual(typedConfirmClasses(['Account name'], ['Enter your account name below.', 'Your account will be deleted.']), ['delete'])
   assert.deepEqual(typedConfirmClasses(['Team'], ["Type your team's name.", 'The team and its projects will be deleted.']), ['delete'])
   assert.deepEqual(typedConfirmClasses(['Repository'], ['Enter repository name below.', 'The repository will be removed.']), ['delete'])
@@ -21,4 +22,8 @@ test('CU-735 near collisions: rename, sign-in and zones without an act stay free
   assert.deepEqual(typedConfirmClasses(['Display name'], ['Type your display name.', 'Old avatars are removed.']), [], 'profile field')
   assert.deepEqual(typedConfirmClasses(['Account name'], ['Enter your account name.', 'We will e-mail you a sign-in link.']), [], 'no act in the zone')
   assert.deepEqual(typedConfirmClasses(['Enter your account name'], []), [], 'an entry alone, no act')
+  // policy owner 22:41Z: personal-name fields stay free; a real typed confirm for them says 'to confirm'
+  assert.deepEqual(typedConfirmClasses(['Full name'], ['Enter your full name.', 'Inactive accounts are deleted after 2 years.']), [], 'your full name (sign-up)')
+  assert.deepEqual(typedConfirmClasses(['Name'], ['Enter your name.', 'Inactive accounts are deleted after 2 years.']), [], "a bare 'your name'")
+  assert.deepEqual(typedConfirmClasses(['ID'], ['Type your ID.', 'Old records are removed.']), [], "a bare 'your ID'")
 })
