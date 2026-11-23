@@ -1,7 +1,7 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-23T07:18:00Z
+modified: 2026-11-23T07:51:00Z
 level: L1
 version: 3.93.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
@@ -15,12 +15,11 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); session
-worktree plus `--review` and `--refresh` worktrees; no desktop runs. State at 07:18Z, 23 November.
+worktree plus `--review` and `--refresh` worktrees; no desktop runs. State at 07:51Z, 23 November.
 
 ## In progress
 
-- CU-607 (P1, High): r2 4e779da6, unpushed; agent-core, macos-desktop, 12/18 node verifiers green.
-  Next: the last 6 verifiers, push, PR, cu-researcher's matrix, live rows, close.
+- CU-607 (P1, High): #1364 at 4e779da6, D-114 runs green, reviews asked; refresh main before its gate.
 - CU-609 (#1000): rule-1 yes (D-110). Main merged (0786f300, unpushed). Next: check, suite, reclass diff, push.
 - CU-702 (#1349 r4): three OKs; gate try 2 after the Highs. CU-707: go to cu-researcher.
 - Next: CU-705, CU-704, CU-703 (English measured, held-outs written); CU-696 permission half and CU-701 (gos given).
