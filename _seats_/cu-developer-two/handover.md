@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - handover'
 created: 2026-11-08T04:14:00Z
-modified: 2026-11-23T15:43:00Z
+modified: 2026-11-23T18:04:00Z
 level: L1
-version: 4.32.0
+version: 4.33.0
 description: 'What a fresh [cu] Developer Two session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -19,14 +19,13 @@ grounded_in:
 Seat `cu-developer-two`: desktop and browser drivers, live view, run lock, MCP. Code: the session worktree
 `~/dtadpole/computer-use-wt/<session-id>`, one purpose worktree per PR. Records: [artifacts.md](artifacts.md).
 
-## State (23 Nov 15:43Z)
+## State (23 Nov 18:04Z)
 
-- Goal: cu-coordinator's renewal of 23 Nov 11:32Z. CU-720 landed (#1375); its live row waits for the shared checkout's
-  sync (CU-721) or cu-verifier's armed run.
-- #1368 r4 (Fixes CU-585, Fixes CU-371) at 65344a79 is gate-ready: three non-author OKs, D-114 green, the live check
-  35/35 on whole pages. It lands on phase 1 after #895; cu-verifier closes both issues on the merge.
-- CU-639 (P2 test flake): #1382 has one OK and waits for cu-developer-three.
-- Linear: CU-720 and CU-458 in Verify.
+- Goal: cu-coordinator's renewal of 23 Nov 16:59Z. #1368 (CU-585 / CU-371) merged 16:30Z; both in Verify, as is CU-720.
+- D-112 follow-ups, each stacked on its refreshed class PR (base = the parent's branch): CU-710 is #1390 on #877 (D-114
+  green, reviews asked); CU-709 on #865 and CU-713 on #856 are built, their windows asked. Each lands after its parent.
+- #1382 (CU-639) gate-ready with two OKs. CU-723 (the split-rule narrowing) comes next.
+- Reviews today: #1385 OK at r1 (re-run owed on r2), #930 re-OK, #1387 / #1388 OKs.
 
 ## Tools and routine
 
