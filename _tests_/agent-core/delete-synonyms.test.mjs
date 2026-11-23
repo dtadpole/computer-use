@@ -39,7 +39,9 @@ test('#851 (cu-researcher 10:19Z class sweep): sunset and format-storage', () =>
 
 test('#851 round 5 (cu-researcher 10:43Z): destroy-sense verbs with a resource object; verb-as-noun labels free', () => {
   for (const name of ['Reformat the drive', 'End-of-life the product', 'Retire this repository', 'Reimage the laptop', 'Zero the volume', 'Flush the queue', 'Liquidate the workspace', 'Raze the cluster']) assert.notDeepEqual(classesOf(name), [], name)
-  for (const name of ['Shred mode', 'Flush settings', 'Retire', 'Reformat']) assert.ok(!classesOf(name).includes('delete'), name)
+  // D-112 refresh: bare 'Retire' left this free list - on main it is the French bare remove verb and asks delete like English 'Remove'
+  // (CU-686 r2, 97e6a4902); this PR's 'Retire' row was about the English destroy sense only.
+  for (const name of ['Shred mode', 'Flush settings', 'Reformat']) assert.ok(!classesOf(name).includes('delete'), name)
 })
 
 test('#851 round 6 (cu-researcher 10:59Z): the destroy-sense verb needs a resource object', () => {
