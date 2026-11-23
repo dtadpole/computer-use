@@ -13,6 +13,7 @@ import http from 'node:http'
 import { inflateSync } from 'node:zlib'
 
 import { createRunControl, createSitePolicy, readFreeMemoryPercent, resourceGate } from '../../_tools_/agent-core/lib.mjs'
+import { createPolicy } from '../../_tools_/agent-core/policy.mjs'
 import { launchBrowserEnvironment } from './environment.mjs'
 import { processCommandLine } from './launch.mjs'
 
@@ -117,6 +118,23 @@ const server = http.createServer((req, res) => {
   // CU-585: an inline danger-zone form - a labelled box asking for a word to be typed, a placeholder box, and a bare submit.
   if (req.url.startsWith('/danger-zone-page')) {
     res.end('<!doctype html><style>body{margin:0;font:14px sans-serif}input{display:block;width:280px;margin:6px 20px}button{position:absolute;left:20px;top:120px;width:200px;height:30px}</style><form onsubmit="return false"><label for="c" style="margin:6px 20px;display:block">Type DELETE to confirm</label><input id="c" value="DEL"><input placeholder="acme/prod"><button>Confirm</button></form>')
+    return
+  }
+  // CU-585 r2 (cu-verifier's 09:51Z reproduction pages, cu-researcher's paragraph-prompt miss): danger zones whose
+  // controls sit straight in <body> or in a <form>, the danger text in a <button>, the box labelled only by aria-label or
+  // placeholder and already holding the typed word, and a section whose prompt is a paragraph beside a noun placeholder.
+  if (req.url.startsWith('/danger-shape')) {
+    const n = Number(new URL(req.url, 'http://x').searchParams.get('n'))
+    const at = (top) => `position:absolute;left:20px;top:${top}px;height:26px;width:380px`
+    const controls = (prompt, value, go) => `<button style="${at(10)}">Danger zone\nDelete this repository. This cannot be undone.</button><input type="text" aria-label="${prompt}" placeholder="${prompt}" value="${value}" style="${at(41)}"><button id="go" style="${at(72)}">${go}</button><button style="${at(103)}">Delete this repository</button><button style="${at(134)}">Cancel</button>`
+    const pages = [
+      `<body style="margin:0">${controls('Type DELETE to confirm', 'DELETE', 'Confirm')}</body>`,
+      `<body style="margin:0"><form onsubmit="return false">${controls('Type DELETE to confirm', 'DELETE', 'Confirm')}</form></body>`,
+      `<body style="margin:0"><form onsubmit="return false">${controls('Type CLOSE to confirm', 'CLOSE', 'Continue')}</form></body>`,
+      `<body style="margin:0">${controls('To confirm, type &quot;acme/website&quot;', 'acme/website', 'Confirm')}</body>`,
+      '<body style="margin:0"><section><h3>Delete project</h3><p>Enter the project name to delete it.</p><input placeholder="project name" style="position:absolute;left:20px;top:41px;width:380px"><button id="go" style="position:absolute;left:20px;top:72px;width:380px;height:26px">Continue</button></section></body>',
+    ]
+    res.end(`<!doctype html><meta charset="utf-8">${pages[n] ?? ''}`)
     return
   }
   if (req.url.startsWith('/extproto-page')) {
@@ -312,6 +330,20 @@ try {
   await env.perform({ type: 'navigate', url: `${origin}/danger-zone-page` })
   const dangerSubmit = await env.inspectPoint({ x: 90, y: 101 }) // frame pixels: the button's CSS centre (120, 135) at scale 0.75
   check('a bare submit in a danger-zone form carries formEntries (its boxes\' words, never a value)', dangerSubmit?.name === 'Confirm' && JSON.stringify(dangerSubmit?.formEntries) === JSON.stringify(['Type DELETE to confirm', 'acme/prod']) && !JSON.stringify(dangerSubmit).includes('"DEL"'), dangerSubmit && { name: dangerSubmit.name, formEntries: dangerSubmit.formEntries })
+
+  // CU-585 r2: the same hand-over a run makes (inspectPoint at the button's centre, then the policy) on each shape -
+  // every one asks delete. The typed word never rides along.
+  const shapePolicy = createPolicy({ sitePolicy: () => 'allow' })
+  for (let n = 0; n < 5; n += 1) {
+    await env.perform({ type: 'navigate', url: `${origin}/danger-shape?n=${n}` })
+    const box = await evaluate("(() => { const r = document.getElementById('go').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 } })()")
+    const point = { x: Math.round(box.x * env.frame.scale), y: Math.round(box.y * env.frame.scale) }
+    const shape = await env.inspectPoint(point)
+    const verdict = shapePolicy.classify({ type: 'click', ...point, button: 'left' }, { url: `${origin}/danger-shape?n=${n}`, target: shape })
+    const classes = verdict.decision === 'allow' ? [] : (verdict.classes ?? [verdict.class])
+    check(`CU-585 r2 shape ${n}: the bare button carries its zone's words and asks delete`, classes.includes('delete') && !/"(?:DELETE|CLOSE|acme\/website)"/.test(JSON.stringify(shape?.formEntries ?? null)),
+      shape && { name: shape.name, formEntries: shape.formEntries ?? null, zoneWords: shape.zoneWords ?? null, classes })
+  }
 
   // CU-319: the browser's own autofill marks fields :autofill; the submit button then carries them as descriptors. Typing
   // into one clears Chrome's state, and the driver keeps reporting it, marked edited (a partial edit launders nothing).

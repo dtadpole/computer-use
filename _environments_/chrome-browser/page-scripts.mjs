@@ -700,6 +700,28 @@ export function describeElement(el) {
       }
       if (words.length >= 3) break
     }
+    // r2 (cu-coordinator 09:50Z ruling 3; cu-verifier's pages): a zone's static prompt also sits in a <div>, a <span> or a
+    // button's own text (React cards; 'Danger zone / This will permanently delete ...' in a text button). After the
+    // headings and paragraphs, the zone's other own texts in document order, cut at line and sentence ends - never this
+    // control's own words, an entry, a script or style, nor text already inside a heading or paragraph. Same bounds.
+    if (words.length < 3) {
+      const SKIP = /^(?:script|style|noscript|template|title|option|select|textarea|input)$/i
+      const HEADED = 'h1, h2, h3, h4, h5, h6, [role="heading"], legend, p'
+      let nodes = []
+      try { nodes = Array.from(form.querySelectorAll('*')).slice(0, 300) } catch { nodes = [] }
+      for (const node of nodes) {
+        if (words.length >= 3) break
+        if (!node || node === el || (typeof el.contains === 'function' && el.contains(node)) || SKIP.test(String(node.tagName || ''))) continue
+        if (typeof node.matches === 'function' && node.matches(HEADED)) continue
+        if (typeof node.closest === 'function' && node.closest(HEADED)) continue
+        const own = Array.from(node.childNodes || []).filter((child) => child && child.nodeType === 3).map((child) => String(child.nodeValue ?? child.textContent ?? '')).join('\n')
+        for (const piece of own.split(/\n+|(?<=[.!?])\s+/)) {
+          const sentence = clean(piece)
+          if (words.length >= 3) break
+          if (sentence !== '' && sentence.length <= 80 && !words.includes(sentence) && !out.includes(sentence)) words.push(sentence)
+        }
+      }
+    }
     return { entries: out, words: words.length > 0 ? words : null }
   })()
   const formEntries = typedZone ? typedZone.entries : null

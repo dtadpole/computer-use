@@ -1801,10 +1801,15 @@ function confirmShaped(text) {
 export function typedConfirmClasses(entries, zoneWords = []) {
   const bounded = (list) => (Array.isArray(list) ? list : []).slice(0, 3).map((text) => String(text ?? '')).filter((text) => text.length <= 80)
   const texts = bounded(entries)
-  if (!texts.some((text) => TYPED_INSTRUCTION.test(text))) return []
+  const zone = bounded(zoneWords)
+  // Policy owner's r2 rule (09:52Z, cu-researcher's paragraph-prompt miss): one zone sentence may supply the typing
+  // instruction when that same sentence is confirm-shaped AND names the destroy / transfer act ('Enter the project name
+  // to delete it' beside a box whose only word is 'project name'). A sentence that is only one of the two supplies nothing.
+  const zoneInstruction = zone.some((text) => TYPED_INSTRUCTION.test(text) && confirmShaped(text) && (TYPED_DESTROY.test(text) || TYPED_TRANSFER.test(text)))
+  if (!texts.some((text) => TYPED_INSTRUCTION.test(text)) && !zoneInstruction) return []
   // Policy owner's gate (08:07Z): the zone's words join only when an entry is confirm-shaped - an 'Enter your phone number'
   // form's 'We will remove it if you ask.' never reaches the destroy test. Entries alone keep #894's behaviour.
-  const words = [...texts, ...(texts.some(confirmShaped) ? bounded(zoneWords) : [])].join(' \u2022 ')
+  const words = [...texts, ...(texts.some(confirmShaped) || zoneInstruction ? zone : [])].join(' \u2022 ')
   return [...(TYPED_DESTROY.test(words) ? ['delete'] : []), ...(TYPED_TRANSFER.test(words) ? ['permission'] : [])]
 }
 const TRADE_WORDS = /\b(?:trade|trading|swap|swaps|stake|staking|unstake|sell|selling|bridge|mint|minting)\b/gi

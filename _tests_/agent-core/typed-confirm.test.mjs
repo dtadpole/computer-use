@@ -148,7 +148,7 @@ test('CU-585 close-account zone: the zone\'s heading and description join the de
   for (const near of [['Close this dialog'], ['Close panel'], ['Close the sidebar'], ['Account settings'], ['Your account is active.']]) {
     assert.equal(zoned('Continue', ['Type CLOSE to confirm'], near), 'allow', `near miss ${JSON.stringify(near)}`)
   }
-  assert.equal(zoned('Continue', ['Account name'], ['Type CLOSE to confirm.', 'Close this account permanently.']), 'allow', 'zone words never supply the typing instruction')
+  assert.equal(zoned('Continue', ['Account name'], ['Type CLOSE to confirm.', 'Close this account permanently.']), 'allow', 'a zone sentence that names no act (CLOSE alone) supplies no instruction (r2 rule)')
   assert.equal(zoned('Continue', ['Your name'], ['Delete your account permanently.']), 'allow', 'an ordinary box beside a destructive heading stays free (no prompt to type)')
   assert.equal(zoned('Delete account', ['Your name'], ['Close panel']), 'delete', 'a classed name keeps its class')
   assert.deepEqual(typedConfirmClasses(['Type CLOSE to confirm'], ['a', 'b', 'c', 'This cannot be undone.']), [], 'a fourth zone text is never read')
@@ -171,4 +171,16 @@ test("CU-585 zone words need a confirm-shaped entry (policy owner 08:07Z): ordin
   }
   assert.equal(zoned('Confirm', ['Type DELETE to confirm']), 'delete', "entries alone keep #894's behaviour")
   assert.equal(zoned('Confirm', ['Enter the workspace name to permanently delete it']), 'delete')
+})
+
+test("CU-585 r2 (policy owner 09:52Z, cu-researcher's miss): a zone sentence supplies the typing instruction only when it is confirm-shaped AND names the act", () => {
+  assert.equal(zoned('Continue', ['project name'], ['Enter the project name to delete it.', 'This cannot be undone.']), 'delete', 'the paragraph prompt beside a noun placeholder')
+  assert.equal(zoned('Confirm', ['Repository'], ['To delete, type DELETE.']), 'delete')
+  assert.equal(zoned('Confirm', ['Workspace'], ['Type the workspace name to transfer ownership.']), 'permission')
+  assert.equal(zoned('Continue', ['Workspace name'], ['Enter the workspace name.', 'Workspaces are deleted after 90 days.']), 'allow', 'confirm-shaped in one sentence, destructive in another: nothing')
+  assert.equal(zoned('Continue', ['Workspace name'], ['Type the workspace name below.']), 'allow', 'only confirm-shaped: nothing')
+  assert.equal(zoned('Continue', ['Workspace name'], ['Workspaces are deleted after 90 days.']), 'allow', 'only destructive: nothing')
+  assert.equal(zoned('Continue', ['Your email'], ['Enter your email to delete your newsletter subscription.']), 'allow', 'not confirm-shaped (your email): nothing')
+  assert.equal(zoned('Next', ['Enter your phone number'], ['We will remove it if you ask.']), 'allow', "the owner's ordinary rows stay free")
+  assert.equal(zoned('Apply', ['Enter a coupon code'], ['Expired codes are removed automatically.']), 'allow')
 })

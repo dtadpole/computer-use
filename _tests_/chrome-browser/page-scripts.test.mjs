@@ -893,6 +893,25 @@ test("CU-585 close-account zone: zoneWords - the chosen container's own headings
   assert.equal(JSON.stringify(zone).includes('SECRET-VALUE'), false, 'never a value')
 })
 
+test("CU-585 r2 zone texts (cu-coordinator 09:50Z ruling 3, cu-verifier's pages): after headings and paragraphs, the zone's other own texts - a text button's or a div's - cut at line and sentence ends; never the control's own words, a script or text inside a heading", () => {
+  const doc = { getElementById: () => null }
+  const STATICS = 'h1, h2, h3, h4, h5, h6, [role="heading"], legend, p'
+  const typed = { tagName: 'INPUT', getAttribute: (name) => (name === 'type' ? 'text' : name === 'aria-label' ? 'To confirm, type "acme/website"' : null), placeholder: '', value: 'acme/website', labels: [], previousElementSibling: null }
+  const node = (tagName, own, { inHeading = false } = {}) => ({ tagName, childNodes: own === null ? [] : [{ nodeType: 3, nodeValue: own }], matches: (sel) => sel === STATICS && /^H[1-6]$|^P$|^LEGEND$/.test(tagName), closest: (sel) => (sel === STATICS && inHeading ? {} : null) })
+  const zoneOf = (all, statics = []) => ({ querySelectorAll: (sel) => (sel === 'input, textarea' ? [typed] : sel === STATICS ? statics : sel === '*' ? all : []) })
+  const button = (zone) => { const b = el('BUTTON', { children: ['Confirm'], closest: (sel) => (sel === 'form' ? zone : null), ownerDocument: doc }); b.contains = (other) => other === b; return b }
+  const dangerButton = node('BUTTON', 'Danger zone\nThis will permanently delete the acme/website repository.')
+  const words = (zone) => describeElement(button(zone)).zoneWords
+  assert.deepEqual(words(zoneOf([dangerButton, typed, node('SCRIPT', 'fetch("/acted")'), node('BUTTON', 'Cancel')])), ['Danger zone', 'This will permanently delete the acme/website repository.', 'Cancel'], "a text button's own words, in order; the script never")
+  const zone = zoneOf([node('DIV', 'Delete repository'), node('DIV', 'This cannot be undone. All issues go too.'), node('BUTTON', 'Delete this repository')])
+  assert.deepEqual(words(zone), ['Delete repository', 'This cannot be undone.', 'All issues go too.'], 'React div texts, cut at sentence ends, at most 3')
+  const self = button(null); const own = zoneOf([self, dangerButton]); const b = button(own); b.contains = (other) => other === b || other === self
+  assert.deepEqual(describeElement(b).zoneWords, ['Danger zone', 'This will permanently delete the acme/website repository.'], "never the control's own words")
+  const headed = zoneOf([node('STRONG', 'Warning', { inHeading: true }), node('DIV', 'Repositories are archived first.')], [{ textContent: 'Warning: this deletes the repository.' }])
+  assert.deepEqual(words(headed), ['Warning: this deletes the repository.', 'Repositories are archived first.'], 'headings and paragraphs first; text inside them is not read twice')
+  assert.equal(JSON.stringify(describeElement(button(zone))).includes('"acme/website"'), false, 'never the typed value')
+})
+
 test("CU-371 formless rows: a bulk-action bar (a select beside Apply and Go, no container) lends its selected option through the one-entry zone (owner 07:35Z)", () => {
   const SELECTS = 'select, [role="combobox"]'
   const ENTRIES = 'input, textarea, select, [role="combobox"]'
