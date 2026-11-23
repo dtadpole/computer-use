@@ -366,6 +366,16 @@ enum Accessibility {
       shape["inWebArea"] = WebArea.contains(path: walk.path.map { $0.role }, ending: walk.ending).map { .bool($0) } ?? .null
     }
     if client != nil { shape["hostedBy"] = .string(PanelAttribution.serviceBundleId) }
+    // CU-418 (b): a checkbox, switch or radio button's state - AXValue read only behind the role check (ToggleState).
+    if ToggleState.reads(role: role), let checked = ToggleState.checked(role: role, value: (attribute(element, "AXValue") as? NSNumber)?.intValue) {
+      shape["checked"] = checked
+    }
+    // CU-507 (desktop half): a button inside a sheet or dialog carries the dialog's words (DialogText) - what agent core
+    // judges a generic 'OK' or 'Continue' by. Static texts only; each key present only when read.
+    if DialogText.applies(role: role), let words = dialogWords(of: element) {
+      if let name = words.name { shape["dialogName"] = .string(name) }
+      if let description = words.description { shape["dialogDescription"] = .string(description) }
+    }
     // CU-154: a menu item's key equivalent, so Copy / Cut / Paste are known in any language (Command-V is a paste
     // whatever the title says).
     if role == "AXMenuItem", let key = KeyEquivalent.shape(char: string(element, "AXMenuItemCmdChar"),
@@ -384,7 +394,128 @@ enum Accessibility {
     // items as AX shows them closed (PopUpItems), never by opening the menu.
     // A pull-down button is AXMenuButton in AppKit: the same read, marked pullsDown (its title is a label, not a value).
     if role == "AXPopUpButton" || role == "AXMenuButton" { shape["popUp"] = popUp(element, pullsDown: role == "AXMenuButton") }
+    // CU-409: a button inside a form says what the form holds (FormContext) - the selected texts beside it and whether
+    // an amount entry is there - so a bare 'Sell' or 'Long' in a native or web trading panel is judged like the chrome
+    // driver's (CU-402). Present only when the form has either.
+    if role == "AXButton", !FormContext.windowButtonSubroles.contains(subrole ?? ""), let form = formContext(of: element) { shape["formContext"] = form }
     return .object(shape)
+  }
+
+  /// CU-409: the button's ancestors, nearest first (at most FormContext.maxLevels), each scanned until the walk finds its
+  /// form or stops (FormContext.outcome). Attributes only.
+  static func formContext(of element: AXUIElement) -> JSON? {
+    var containers: [FormContext.Container] = []
+    let deadline = Date().addingTimeInterval(FormContext.budgetSeconds)
+    var node = elementAttribute(element, "AXParent")
+    while let current = node, containers.count < FormContext.maxLevels {
+      let role = string(current, "AXRole")
+      let subrole = string(current, "AXSubrole")
+      var container = FormContext.Container(role: role, subrole: subrole, submitVerbs: [], selected: [], entryLabels: [], truncated: false)
+      if !(role.map { FormContext.stopRoles.contains($0) } ?? false) { scanForm(current, into: &container, deadline: deadline) }
+      containers.append(container)
+      guard FormContext.outcome(container) == .next else { break }
+      node = elementAttribute(current, "AXParent")
+    }
+    return FormContext.pick(containers)
+  }
+
+  /// #510 F1: a combo box's selected text (FormContext.comboText) - editable when its AXValue is settable or it holds a
+  /// text field; its list items are the titles or values of its list's children (at most 50), read without opening it.
+  private static func comboText(_ combo: AXUIElement) -> String? {
+    var settable: DarwinBoolean = false
+    let kids = children(combo)
+    let editable = (AXUIElementIsAttributeSettable(combo, "AXValue" as CFString, &settable) == .success && settable.boolValue)
+      || kids.contains { string($0, "AXRole") == "AXTextField" }
+    let value = string(combo, "AXValue")
+    guard editable, value != nil else { return FormContext.comboText(value: value, editable: editable, items: []) }
+    let lists = kids.filter { ["AXList", "AXListBox", "AXMenu", "AXScrollArea"].contains(string($0, "AXRole") ?? "") }
+    let rows = lists.flatMap { list -> [AXUIElement] in
+      let inner = children(list)
+      return string(list, "AXRole") == "AXScrollArea" ? inner.flatMap { children($0) } : inner
+    }.prefix(50)
+    let items = rows.compactMap { row in string(row, "AXTitle").flatMap { $0.isEmpty ? nil : $0 } ?? string(row, "AXValue") }
+    return FormContext.comboText(value: value, editable: editable, items: items)
+  }
+
+  /// CU-412: whether the element is inside a web page (an AXWebArea among its ancestors, CU-322's walk).
+  static func inWebArea(_ element: AXUIElement) -> Bool {
+    let walk = ancestorWalk(of: element)
+    return WebArea.contains(path: walk.path.map { $0.role }, ending: walk.ending) == true
+  }
+
+  /// CU-412: the focus's form (DefaultCandidates.pick over at most 4 ancestors) and its enabled submit-like buttons -
+  /// each scan within FormContext's element and depth bounds and one time budget for the walk; a scan cut short is
+  /// `truncated` (agent core asks unknown). Attributes only.
+  static func formCandidates(of focus: AXUIElement) -> (buttons: [AXUIElement], truncated: Bool) {
+    let deadline = Date().addingTimeInterval(FormContext.budgetSeconds)
+    var levels: [DefaultCandidates.Level] = []
+    var found: [[AXUIElement]] = []
+    var node = elementAttribute(focus, "AXParent")
+    while let current = node, levels.count < DefaultCandidates.maxLevels {
+      let role = string(current, "AXRole")
+      var buttons: [AXUIElement] = []
+      var truncated = false
+      if DefaultCandidates.scans(role: role) { (buttons, truncated) = submitButtons(in: current, deadline: deadline) }
+      levels.append(DefaultCandidates.Level(role: role, subrole: string(current, "AXSubrole"), buttons: buttons.count, truncated: truncated))
+      found.append(buttons)
+      switch DefaultCandidates.step(levels[levels.count - 1]) {
+      case .form: return (buttons, false)
+      case .stop: return ([], false)
+      case .unread: return ([], true)
+      case .next: node = elementAttribute(current, "AXParent")
+      }
+    }
+    return ([], false)
+  }
+
+  /// CU-412: a container's enabled submit-like AXButtons (not window buttons, not AXEnabled false), breadth first, at most
+  /// FormContext.maxScan elements 4 deep before `deadline`; a button's children are not entered.
+  private static func submitButtons(in root: AXUIElement, deadline: Date) -> (buttons: [AXUIElement], truncated: Bool) {
+    var queue: [(element: AXUIElement, depth: Int)] = children(root).map { ($0, 1) }
+    var seen = 0
+    var buttons: [AXUIElement] = []
+    while !queue.isEmpty {
+      guard seen < FormContext.maxScan, Date() < deadline else { return (buttons, true) }
+      let next = queue.removeFirst()
+      seen += 1
+      let role = string(next.element, "AXRole")
+      if let role, FormContext.submitRoles.contains(role) {
+        let windowButton = FormContext.windowButtonSubroles.contains(string(next.element, "AXSubrole") ?? "")
+        let disabled = (attribute(next.element, "AXEnabled") as? NSNumber)?.boolValue == false
+        if !windowButton && !disabled { buttons.append(next.element) }
+        continue
+      }
+      if next.depth < 4 { queue += children(next.element).map { ($0, next.depth + 1) } }
+    }
+    return (buttons, false)
+  }
+
+  /// One container's submit-like controls (their words: title, description, else their label children), its pop-ups'
+  /// and combo boxes' selected texts and its text entries' label words (description, placeholder, title, help - never
+  /// the value), breadth first, at most FormContext.maxScan elements 4 deep and within the walk's time budget; more marks
+  /// the scan truncated.
+  private static func scanForm(_ root: AXUIElement, into container: inout FormContext.Container, deadline: Date) {
+    var queue: [(element: AXUIElement, depth: Int)] = children(root).map { ($0, 1) }
+    var seen = 0
+    while !queue.isEmpty {
+      guard seen < FormContext.maxScan, Date() < deadline else { container.truncated = true; return }
+      let next = queue.removeFirst()
+      seen += 1
+      let role = string(next.element, "AXRole")
+      if let role, FormContext.submitRoles.contains(role) {
+        if FormContext.windowButtonSubroles.contains(string(next.element, "AXSubrole") ?? "") { continue }
+        let own = string(next.element, "AXTitle").flatMap { $0.isEmpty ? nil : $0 } ?? string(next.element, "AXDescription").flatMap { $0.isEmpty ? nil : $0 }
+        container.submitVerbs.append(own ?? displayText(next.element))
+        continue
+      }
+      if role == "AXPopUpButton" { container.selected.append(string(next.element, "AXValue") ?? string(next.element, "AXTitle")); continue }
+      if role == "AXComboBox" { container.selected.append(comboText(next.element)); continue }
+      if role == "AXTextField" {
+        container.entryLabels.append(["AXDescription", "AXPlaceholderValue", "AXTitle", "AXHelp"].map { string(next.element, $0) })
+        continue
+      }
+      if next.depth < 4 { queue += children(next.element).map { ($0, next.depth + 1) } }
+    }
   }
 
   /// CU-372: a pop-up button's selected title (its AXValue) and its menu's items, read from the AXMenu among its
@@ -397,6 +528,25 @@ enum Accessibility {
     let items = entries.filter { string($0, "AXRole") == "AXMenuItem" }
       .map { PopUpItems.Item(title: string($0, "AXTitle"), enabled: (attribute($0, "AXEnabled") as? NSNumber)?.boolValue) }
     return PopUpItems.shape(selected: selected, items: items, pullsDown: pullsDown)
+  }
+
+  /// CU-507: the nearest dialog container above an element (DialogText.isContainer: an AXSheet, or an AXWindow whose
+  /// subrole is AXDialog / AXSystemDialog), at most DialogText.maxDepth levels up, and its words - its title, else its
+  /// static texts (at most DialogText.maxTexts read, each by its shown words). nil outside a dialog or when none is read.
+  private static func dialogWords(of element: AXUIElement) -> (name: String?, description: String?)? {
+    var node = element
+    for _ in 0..<DialogText.maxDepth {
+      guard let parent = elementAttribute(node, "AXParent") else { return nil }
+      let role = string(parent, "AXRole")
+      if DialogText.isContainer(role: role, subrole: string(parent, "AXSubrole")) {
+        let texts = descendants(of: parent, limit: DialogText.maxTexts).filter { string($0, "AXRole") == "AXStaticText" }.map { string($0, "AXValue") }
+        let words = DialogText.pick(title: string(parent, "AXTitle"), texts: texts)
+        return words.name == nil && words.description == nil ? nil : words
+      }
+      if role == "AXApplication" { return nil }
+      node = parent
+    }
+    return nil
   }
 
   /// CU-361: the static text beside an entry in layout (NearbyLabel.pick) - its window's AXStaticText descendants (at

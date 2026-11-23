@@ -5,7 +5,7 @@ import Foundation
 /// The helper's identity; `build.sh` writes the same bundle id into Info.plist.
 enum HelperIdentity {
   static let bundleId = "com.reflection.cu-helper"
-  static let version = "0.2.67"
+  static let version = "0.2.70"
   /// The value every synthetic event carries in `kCGEventSourceUserData`: 0x43555345, ASCII "CUSE"
   /// (input-and-targets.md, verify-kit's SYNTHETIC_TAG). Not a secret: an event from another process with this tag
   /// could only fail to pause the run, never act.
@@ -433,7 +433,85 @@ enum TargetName {
 struct DefaultButtonRead: Equatable {
   var button: JSON
   var read: Bool
+  /// CU-412: with no native default in a web area, the focus's form's submit-like buttons when two or three
+  /// (DefaultCandidates), and `more` when there are more or the scan was cut short - agent core asks the strictest class
+  /// among them, or unknown.
+  var candidates: [JSON] = []
+  var more = false
   static let failed = DefaultButtonRead(button: .null, read: false)
+}
+
+/// CU-418 option (b) (cu-coordinator 14:19Z, the Medium batch): a toggle's state from its AXValue - an AXCheckBox (also a
+/// switch or a toggle by subrole) or an AXRadioButton: 0 off, 1 on, 2 mixed. Only these roles' AXValue is ever read (a
+/// toggle's state, never text); any other value, or another role, gives nothing.
+enum ToggleState {
+  static let roles: Set<String> = ["AXCheckBox", "AXRadioButton"]
+  static func reads(role: String?) -> Bool { role.map { roles.contains($0) } ?? false }
+  static func checked(role: String?, value: Int?) -> JSON? {
+    guard reads(role: role), let value else { return nil }
+    switch value {
+    case 0: return .bool(false)
+    case 1: return .bool(true)
+    case 2: return .string("mixed")
+    default: return nil
+    }
+  }
+}
+
+/// CU-412 (cu-coordinator 11:27Z, the desktop half): HTML submits a form on Return in a field even when its only submit
+/// controls are role=button divs, which the window's AXDefaultButton never names. In a web area whose window reads no
+/// default button, the focus's form - the nearest ancestor within 4 levels that is a form landmark or holds a
+/// submit-like button, never past the page's root, a sheet or the window - gives its enabled AXButtons as Return's
+/// candidates: one is the default button, two or three are candidates, more (or a scan cut short) is unknown. AX shows a
+/// <button type=submit> and a div role=button alike (both AXButton), so every enabled button counts (fail closed).
+enum DefaultCandidates {
+  static let maxLevels = 4
+  static let maxCandidates = 3
+  struct Level: Equatable {
+    var role: String?
+    var subrole: String?
+    var buttons: Int
+    var truncated: Bool
+  }
+  enum Step: Equatable { case form, stop, unread, next }
+  /// One ancestor: the page's root, a stop role or the window ends the walk; a scan cut short is unread; a form landmark
+  /// or a level holding a submit-like button is the form; a sheet without one ends the walk; anything else passes it on.
+  static func step(_ level: Level) -> Step {
+    if let role = level.role, FormContext.stopRoles.contains(role) || role == "AXWindow" { return .stop }
+    if level.truncated { return .unread }
+    if level.subrole == "AXLandmarkForm" || level.buttons > 0 { return .form }
+    return level.role == "AXSheet" ? .stop : .next
+  }
+  /// Whether a level is scanned at all (never the page's root, a stop role or the window).
+  static func scans(role: String?) -> Bool { !(role.map { FormContext.stopRoles.contains($0) || $0 == "AXWindow" } ?? false) }
+  enum Pick: Equatable { case form(Int), none, unread }
+  /// `levels`: the focus's ancestors, nearest first, each with its enabled submit-like buttons counted.
+  static func pick(_ levels: [Level]) -> Pick {
+    for (index, level) in levels.prefix(maxLevels).enumerated() {
+      switch step(level) {
+      case .form: return .form(index)
+      case .stop: return .none
+      case .unread: return .unread
+      case .next: continue
+      }
+    }
+    return .none
+  }
+  /// cu-coordinator 11:35Z (the policy takes the union): a default button that has no name - nothing for agent core to
+  /// judge - also looks for the form's candidates; a named one stands alone.
+  static func looks(defaultTitle: String?, defaultRead: Bool) -> Bool {
+    guard defaultRead else { return false }
+    return (defaultTitle ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+  }
+  enum Outcome: Equatable { case none, one, some(Int), more }
+  static func outcome(count: Int, truncated: Bool) -> Outcome {
+    if truncated || count > maxCandidates { return .more }
+    switch count {
+    case 0: return .none
+    case 1: return .one
+    default: return .some(count)
+    }
+  }
 }
 
 /// CU-190: what an Accessibility read's error code says - a value, a positive none, or a failure.
@@ -468,6 +546,34 @@ enum Placeholder {
     guard applies(role: role) else { return nil }
     guard let text = raw?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty, text.count <= maxLength else { return nil }
     return text
+  }
+}
+
+/// CU-507 (desktop half): what a dialog asks, for a button inside it - so agent core can judge a generic 'OK' or
+/// 'Continue' by the dialog's words, as the web route does with role=dialog / alertdialog. The container is the nearest
+/// AXSheet, or an AXWindow whose subrole is AXDialog / AXSystemDialog (an NSAlert's window is one). dialogName is the
+/// container's title when it has one, else its first static text; dialogDescription the next static text. Static texts
+/// only (their shown words) - never a field's value. Whitespace collapsed, trimmed, at most 300 characters (cut, as the
+/// words that decide come first); empty reads as none.
+enum DialogText {
+  static let maxLength = 300
+  static let maxDepth = 12
+  static let maxTexts = 60
+  static let containerSubroles: Set<String> = ["AXDialog", "AXSystemDialog"]
+  /// Only a button carries it: the generic confirm control CU-507 judges (and Return's default button).
+  static func applies(role: String?) -> Bool { role == "AXButton" }
+  static func isContainer(role: String?, subrole: String?) -> Bool {
+    role == "AXSheet" || (role == "AXWindow" && containerSubroles.contains(subrole ?? ""))
+  }
+  static func clean(_ raw: String?) -> String? {
+    guard let raw else { return nil }
+    let text = raw.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
+    return text.isEmpty ? nil : String(text.prefix(maxLength))
+  }
+  static func pick(title: String?, texts: [String?]) -> (name: String?, description: String?) {
+    let words = texts.compactMap(clean)
+    if let title = clean(title) { return (title, words.first) }
+    return (words.first, words.dropFirst().first)
   }
 }
 
@@ -1082,6 +1188,114 @@ enum FileAncestor {
       if level.role == "AXWindow" || level.role == "AXApplication" { return nil }
       if level.filename != nil || level.url != nil { return level }
       if let role = level.role, stopRoles.contains(role) { return nil }
+    }
+    return nil
+  }
+}
+
+/// CU-409 (the desktop half of CU-402/CU-405's formContext; cu-developer-two's chrome page-scripts rules on the AX
+/// tree): a pressed button is judged with the choices beside it - an exchange's bare 'Sell' or 'Long' next to an asset
+/// pop-up and an amount field. Structural and bounded: the nearest ancestor within 3 levels that is a form landmark, a
+/// sheet or dialog that lends, or a group that lends and holds a pop-up or combo box; at most 3 selected texts of 24
+/// characters, and whether an amount-shaped entry is present - an entry's label words only, never its value.
+enum FormContext {
+  static let maxLevels = 3
+  static let maxScan = 60
+  static let maxOptions = 3
+  static let maxOptionLength = 24
+  /// cu-researcher 10:35Z (describe()'s cost on a busy window): the whole walk's time budget; past it a scan stops as
+  /// truncated (never lends), so a slow app costs at most this much more per button described.
+  static let budgetSeconds = 0.08
+  /// CU-405: the trade verbs a panel's other buttons may carry, and the order-panel helpers that never void it.
+  static let tradeVerb = #"^(?:buy|sell|swap|convert|trade|deposit|withdraw|transfer)(?:\s|$)"#
+  static let neutralVerb = #"^(?:max|min|half|all|\d{1,3}\s?%|limit|market|stop(?:[\s-]limit)?|oco)$"#
+  static let amountWords = #"amount|qty|quantity|price|total|sum"#
+  /// Where the walk stops without lending: past these nothing belongs to the button's form. (A window is read, then
+  /// ends the walk: AppKit's plain container views are no AX elements, so a native panel's controls are often the
+  /// window's own children.)
+  static let stopRoles: Set<String> = ["AXWebArea", "AXApplication", "AXMenuBar", "AXMenu"]
+  /// The submit-like controls of a container (a pop-up, check box or radio is a choice, not a submit).
+  static let submitRoles: Set<String> = ["AXButton"]
+  static let windowButtonSubroles: Set<String> = ["AXCloseButton", "AXMinimizeButton", "AXZoomButton", "AXFullScreenButton"]
+  static let selectRoles: Set<String> = ["AXPopUpButton", "AXComboBox"]
+
+  enum Kind: Equatable { case trade, neutral, other }
+
+  /// A submit-like control's words: a trade verb, a neutral helper (or an unlabelled icon button - CU-405's fail-closed
+  /// reading, as one symbol or arrow), or anything else.
+  static func kind(_ verb: String?) -> Kind {
+    let words = (verb ?? "").split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
+    if words.count <= 30, words.range(of: tradeVerb, options: [.regularExpression, .caseInsensitive]) != nil { return .trade }
+    if words.isEmpty { return .neutral }
+    if words.count <= 2, !words.unicodeScalars.contains(where: { CharacterSet.letters.contains($0) || CharacterSet.decimalDigits.contains($0) }) { return .neutral }
+    return words.range(of: neutralVerb, options: [.regularExpression, .caseInsensitive]) != nil ? .neutral : .other
+  }
+
+  /// cu-coordinator 10:35Z (#510 F1): a combo box's selected text is its AXValue only when it is not editable, or when
+  /// the value equals one of its list items exactly - an editable combo's free text (a symbol search) is typed text, a
+  /// field's value, and gives nothing.
+  static func comboText(value: String?, editable: Bool, items: [String]) -> String? {
+    guard let value else { return nil }
+    if !editable { return value }
+    return items.contains(value) ? value : nil
+  }
+
+  /// A container lends its choices when it holds exactly the pressed control, or only trade verbs and neutral helpers.
+  static func lends(submitVerbs: [String?]) -> Bool {
+    if submitVerbs.count == 1 { return true }
+    let kinds = submitVerbs.map(kind)
+    return kinds.contains(.trade) && !kinds.contains(.other)
+  }
+
+  /// One candidate container as the walk read it.
+  struct Container: Equatable {
+    var role: String?
+    var subrole: String?
+    var submitVerbs: [String?]
+    var selected: [String?]
+    var entryLabels: [[String?]]
+    var truncated: Bool
+  }
+
+  enum Outcome: Equatable { case form, next, stop }
+
+  /// What the walk does at `container`: a stop role ends it; a form landmark is the form; a sheet or dialog window is
+  /// the form when it lends; any other window, and any group, is the form when it lends and holds a pop-up or combo box
+  /// - and the walk ends at a sheet or window either way. A scan cut short by the bound never lends (it may have missed
+  /// a second submit).
+  static func outcome(_ container: Container) -> Outcome {
+    if let role = container.role, stopRoles.contains(role) { return .stop }
+    if container.truncated { return container.subrole == "AXLandmarkForm" || ["AXSheet", "AXWindow"].contains(container.role ?? "") ? .stop : .next }
+    if container.subrole == "AXLandmarkForm" { return .form }
+    let lendsHere = lends(submitVerbs: container.submitVerbs)
+    let dialog = container.role == "AXSheet" || (container.role == "AXWindow" && ["AXDialog", "AXSystemDialog"].contains(container.subrole ?? ""))
+    if dialog { return lendsHere ? .form : .stop }
+    if container.role == "AXWindow" { return lendsHere && !container.selected.isEmpty ? .form : .stop }
+    return lendsHere && !container.selected.isEmpty ? .form : .next
+  }
+
+  /// The JSON a form gives: its selected texts (at most 3 of at most 24 characters, empty ones skipped) and whether an
+  /// entry's label words name an amount. Nil when it has neither.
+  static func shape(_ container: Container) -> JSON? {
+    let options = container.selected.compactMap { text -> String? in
+      let words = (text ?? "").split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
+      return words.isEmpty || words.count > maxOptionLength ? nil : words
+    }.prefix(maxOptions)
+    let amountEntry = container.entryLabels.contains { labels in
+      labels.contains { ($0 ?? "").range(of: amountWords, options: [.regularExpression, .caseInsensitive]) != nil }
+    }
+    guard !options.isEmpty || amountEntry else { return nil }
+    return .object(["options": .array(options.map { .string($0) }), "amountEntry": .bool(amountEntry)])
+  }
+
+  /// `containers`: the button's ancestors, nearest first, as read. The first that is a form gives the shape.
+  static func pick(_ containers: [Container]) -> JSON? {
+    for container in containers.prefix(maxLevels) {
+      switch outcome(container) {
+      case .form: return shape(container)
+      case .stop: return nil
+      case .next: continue
+      }
     }
     return nil
   }

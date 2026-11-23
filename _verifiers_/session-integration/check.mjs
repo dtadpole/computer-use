@@ -72,6 +72,17 @@ async function planFor(taskId) {
 }
 
 /** Poll status until the run is finished or `state` is reached. */
+/**
+ * A browser the team cap refused after computer_use_start answered: the run ends with an error naming the refusal
+ * ('no recording browser: browser registry refused (team_cap)', or resource_refused). That is the machine's state, not
+ * the route's behaviour, so the check is unjudged - as when the start call itself is refused, and as
+ * browser-environment and trajectory-replay score it (cu-developer-two, #576's run). Returns the error text or ''.
+ */
+function refusedAfterStart(status) {
+  const error = String(status?.json?.result?.error ?? status?.json?.error ?? '')
+  return status?.json?.state === 'finished' && /team_cap|resource_refused/.test(error) ? error : ''
+}
+
 async function waitFor(runId, wanted, timeoutMs = 90_000) {
   const deadline = Date.now() + timeoutMs
   let status
@@ -125,6 +136,7 @@ test('a scripted run started over MCP completes visitor-badge and returns its fi
   if (start.isError && /resource|browsers/i.test(start.texts.join(' '))) return skipUnless(t, false, start.texts.join(' '))
   assert.equal(start.isError, false, start.texts.join(' '))
   const status = await waitFor(start.json.run_id, 'finished')
+  if (refusedAfterStart(status)) return skipUnless(t, false, refusedAfterStart(status))
   assert.equal(status.json.state, 'finished')
   assert.equal(status.json.result?.status, 'completed', `result ${JSON.stringify(status.json.result?.status)}`)
   const state = await client.settle('visitor-badge', { quietMs: 300 })
@@ -143,6 +155,7 @@ test('the caller cannot answer a consent request: refused by name, nothing bough
   if (start.isError && /resource|browsers/i.test(start.texts.join(' '))) return skipUnless(t, false, start.texts.join(' '))
   const runId = start.json.run_id
   const waiting = await waitFor(runId, 'awaiting_consent')
+  if (refusedAfterStart(waiting)) return skipUnless(t, false, refusedAfterStart(waiting))
   assert.equal(waiting.json.state, 'awaiting_consent', 'the purchase never waited for a person')
   assert.equal(waiting.json.waiting_for_person?.class, 'purchase')
   const approve = await mcp.callTool('computer_use_respond', { run_id: runId, question_id: String(waiting.json.waiting_for_person.step), answer: 'yes', approved: true })

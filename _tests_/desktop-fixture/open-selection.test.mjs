@@ -34,7 +34,7 @@ describe('open-selection (CU-252, CU-269 stand-in)', () => {
       const { rows } = await fixture.call('sandboxAX')
       assert.equal(rows.length, 1)
       assert.equal(rows[0].nameFilename, null, 'the name carries no AXFilename of its own')
-      assert.equal(rows[0].cellFilename, 'install.command', 'its cell does - the ancestor 0.2.67 lends from')
+      assert.equal(rows[0].boxFilename, 'install.command', 'its box (an AX element of its own) does - the ancestor 0.2.67 lends from; measured 10 Nov: a table cell or row view does not surface the override across processes')
       const audit = await fixture.axAudit()
       assert.equal(audit['sandbox-file-0'].role, 'AXStaticText', 'still the static text a press hits')
     } finally {
@@ -77,7 +77,8 @@ describe('open-selection (CU-252, CU-269 stand-in)', () => {
       // AppKit's own row element is not the row view (its role reads AXUnknown in process; CU-252): the row view, its
       // cell and the cell's text field all carry the file name and URL; across processes AppKit serves the text field's
       // (probe 5), which the helper's read finds among a row's descendants.
-      assert.deepEqual(rows.map(({ role, ...rest }) => rest), [
+      assert.ok(rows.every((row) => row.boxFilename === null), 'by default no box: the name carries the file itself')
+      assert.deepEqual(rows.map(({ role, boxFilename, ...rest }) => rest), [
         { filename: 'install.command', url: 'file:///tmp/cu-fixture-sandbox/install.command', cellFilename: 'install.command', cellURL: 'file:///tmp/cu-fixture-sandbox/install.command', nameFilename: 'install.command', nameURL: 'file:///tmp/cu-fixture-sandbox/install.command' },
         { filename: 'Payload.app', url: 'file:///tmp/cu-fixture-sandbox/Payload.app/', cellFilename: 'Payload.app', cellURL: 'file:///tmp/cu-fixture-sandbox/Payload.app/', nameFilename: 'Payload.app', nameURL: 'file:///tmp/cu-fixture-sandbox/Payload.app/' },
       ])

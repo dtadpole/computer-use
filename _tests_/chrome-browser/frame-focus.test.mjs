@@ -332,7 +332,17 @@ test('CU-336: a host whose AX read fails is named from the words the page gives 
     HOST.attributes = []
     assert.equal((await env.focusedElement()).frameHost.name, null, 'no words at all: still unread, for the policy\'s own rules')
     HOST.attributes = ['name', '__privateStripeFrame5', 'src', 'https://js.stripe.example/v3/elements-inner-cvc.html']
-    assert.equal((await env.focusedElement()).frameHost.name, null, 'a name attribute is an id for scripts, never a label: the frame stays unnamed (cu-researcher)')
+    const stripeInner = await env.focusedElement()
+    assert.equal(stripeInner.frameHost.name, null, 'a name attribute is an id for scripts, never a label: the frame stays unnamed (cu-researcher)')
+    // End to end with CU-336's policy half (PR #274), cu-researcher's row: the frame host the driver reports (unnamed, as
+    // the id is no label) around an inner field whose own names are unread asks for a short code; with a name attribute
+    // taken as the frame's name it would have been allowed.
+    const policy = createPolicy({ sitePolicy: () => 'allow' })
+    const judge = (target) => { const v = policy.classify({ type: 'type', text: '123' }, { url: 'https://shop.example/checkout', target }); return v.decision === 'allow' ? 'allow' : v.class }
+    const unnamedInner = { ...stripeInner, name: null, autocomplete: null }
+    assert.equal(judge(unnamedInner), 'sensitive_data', "'123' into the id-only frame's unnamed field asks sensitive_data")
+    assert.equal(judge({ ...unnamedInner, frameHost: { ...stripeInner.frameHost, name: '__privateStripeFrame5' } }), 'allow', 'the mutant reading: the id as the frame name lets it through - why the driver never takes it')
+    assert.equal(judge(stripeInner), 'credential', 'the harness field itself (CVC, cc-csc) asks by its own names, as before')
     HOST.attributes = savedAttributes
     world.pageResolveFails = false
     world.hostLabel = null

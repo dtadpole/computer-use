@@ -93,8 +93,10 @@ export class BrowserSession extends EventEmitter {
    *
    * Every page HTTP(S) request is judged by `Fetch` first, so a refusal from the proxy is either a page's WebSocket
    * or Chrome's own background traffic (measured: update checks, clock sync, google.com pre-connects). A proxy refusal
-   * whose host and port match a WebSocket a page created in the last 15 s (`Network.webSocketCreated`) is the page's
-   * and goes into `blocked` under that WebSocket's URL; any other is a `browser_traffic_blocked` notice.
+   * whose host and port match a WebSocket an open page created (`Network.webSocketCreated`, the page's last 50) is the
+   * page's and goes into `blocked` under that WebSocket's URL - for the page's lifetime, so a socket the page opened
+   * long before its refused reconnect still claims it (cu-researcher's #339 corner); any other is a
+   * `browser_traffic_blocked` notice.
    */
   recordBlocked(entry) {
     const at = entry.at ?? Date.now()
@@ -123,8 +125,8 @@ export class BrowserSession extends EventEmitter {
     }
     const port = (parsed) => parsed.port || ({ 'http:': '80', 'ws:': '80', 'https:': '443', 'wss:': '443' })[parsed.protocol]
     for (const page of this.pages.values()) {
-      const socket = page.webSockets.find((candidate) => {
-        if (at - candidate.at > 15_000) return false
+      const socket = page.webSockets.findLast((candidate) => {
+        if (candidate.at > at) return false
         try {
           const parsed = new URL(candidate.url)
           return parsed.hostname === target.hostname && port(parsed) === port(target)

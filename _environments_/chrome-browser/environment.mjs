@@ -164,12 +164,37 @@ export async function launchBrowserEnvironment(options = {}) {
   }
 }
 
+/** CU-494: an entry's raw name, else id, attribute when it is a plain token ([a-z0-9_-], at most 40 characters, camelCase split by '_'), else null. */
+export function fieldAttrOf(attributes) {
+  for (const key of ['name', 'id']) {
+    // camelCase keeps its word breaks as '_' ('BankAccountNumber' -> 'bank_account_number') before lower-casing.
+    const value = String(attributes?.[key] ?? '').trim().replace(/([a-z0-9])([A-Z])/g, '$1_$2').replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2').toLowerCase()
+    if (/^[a-z0-9_-]{1,40}$/.test(value)) return value
+  }
+  return null
+}
+
 /** CU-400: describeElement's formContext, re-validated at the boundary - else null. */
 export function formContextOf(value) {
   if (value === null || typeof value !== 'object') return null
   const options = Array.isArray(value.options) ? value.options.filter((text) => typeof text === 'string' && text !== '' && text.length <= 24).slice(0, 3) : []
   const amountEntry = value.amountEntry === true
   return options.length > 0 || amountEntry ? { options, amountEntry } : null
+}
+
+/** CU-507: describeElement's dialogName / dialogDescription, re-validated at the boundary - a trimmed string of at most 300 characters, else null. */
+export function dialogTextOf(value) {
+  if (typeof value !== 'string') return null
+  const text = value.replace(/\s+/g, ' ').trim().slice(0, 300)
+  return text === '' ? null : text
+}
+
+/** CU-443: describeElement's rowContext, re-validated at the boundary - else null. */
+export function rowContextOf(value) {
+  if (value === null || typeof value !== 'object') return null
+  const list = typeof value.list === 'string' && value.list !== '' && value.list.length <= 60 ? value.list : null
+  const hints = Array.isArray(value.hints) ? value.hints.filter((text) => typeof text === 'string' && text !== '' && text.length <= 40).slice(0, 3) : []
+  return list !== null || hints.length > 0 ? { ...(list !== null ? { list } : {}), hints } : null
 }
 
 class BrowserEnvironment {
@@ -644,8 +669,8 @@ class BrowserEnvironment {
 
   /**
    * CU-370: a key that chooses is judged by what it chooses (keyChoice): a native select's option, the radio an arrow
-   * checks, the ARIA listbox/combobox option it moves to or commits - described, with selectOption: true (an option) or
-   * radioChoice: true (a radio); a choice that cannot be read returns the focus with optionUnread: true. undefined when
+   * checks, the ARIA listbox/combobox option it moves to or commits - described, with selectOption: true (a radio also
+   * carries radioChoice: true); a choice that cannot be read returns the focus with optionUnread: true. undefined when
    * the key chooses nothing - the caller falls back to the focus. A throw means a failed read (the caller asks). The focus is read in the page's world through open
    * shadow roots and same-origin frames (deepActiveElement); a cross-site frame's select is a named limit.
    */
@@ -814,7 +839,9 @@ class BrowserEnvironment {
       }
       // CU-406: the Return target carries the same bounded formContext a click on that button would (CU-402/CU-405), so a
       // Return in a trade form's amount field is judged with the form's asset beside a bare 'Sell' default.
-      return { button: described === null ? null : { role: described.role, name: described.name, panel: null, ...(described.formContext ? { formContext: described.formContext } : {}) }, read: true }
+      // CU-473 (Return route, cu-coordinator 04:20Z): the default button's first rendered line rides along as on a click, so a
+      // Title-case two-line default ('Change Direct Deposit' over 'Takes Effect Immediately') is judged the same either way.
+      return { button: described === null ? null : { role: described.role, name: described.name, panel: null, ...(described.formContext ? { formContext: described.formContext } : {}), ...(typeof described.firstLine === 'string' ? { firstLine: described.firstLine } : {}), ...(described.dialogName ? { dialogName: described.dialogName } : {}), ...(described.dialogDescription ? { dialogDescription: described.dialogDescription } : {}) }, read: true }
     } catch {
       return { button: null, read: false }
     }
@@ -843,7 +870,7 @@ class BrowserEnvironment {
         const described = await this.#describe(page, node.backendNodeId, undefined, { scanText: false })
         // CU-412 (11:56Z): a control with no accessible name (an icon-only div) cannot be judged - unreadable, never dropped.
         if (described === null || typeof described.name !== 'string' || described.name.trim() === '') unread = true
-        else controls.push({ role: described.role, name: described.name, ...(described.formContext ? { formContext: described.formContext } : {}) })
+        else controls.push({ role: described.role, name: described.name, ...(described.formContext ? { formContext: described.formContext } : {}), ...(typeof described.firstLine === 'string' ? { firstLine: described.firstLine } : {}), ...(described.dialogName ? { dialogName: described.dialogName } : {}), ...(described.dialogDescription ? { dialogDescription: described.dialogDescription } : {}) })
       }
       // Fail closed (D-107: candidates only add asks): a control that could not be read makes the list unjudgeable.
       return { ...(controls.length > 0 ? { candidates: controls } : {}), more: items.length > 3 || unread }
@@ -971,6 +998,26 @@ class BrowserEnvironment {
       // CU-400: the choices beside a form's submit button (describeElement's formContext) - up to 3 short option texts
       // and whether an amount entry is present. Context, outside the fingerprint; run records keep origin, role, name.
       ...(formContextOf(extra.formContext) ? { formContext: formContextOf(extra.formContext) } : {}),
+      // CU-443: a row with no verb of its own carries what the page offers around it (describeElement): dialHref (a
+      // tel:/sip:/callto:/facetime: href on it, above it or inside it - a boolean) and rowContext (its list's name, up to 3
+      // action names). Context, outside the fingerprint; never recorded.
+      // Round 2: inRow - the hit element has no verb of its own and sits inside such a row (read through it). A boolean.
+      // CU-472: a link that does not navigate (no / empty / '#' / '#fragment' / 'javascript:' href) - a boolean.
+      ...(extra.inertLink === true ? { inertLink: true } : {}),
+      // CU-494 (typing path): an entry's own name, else id, attribute - lower-cased, [a-z0-9_-], at most 40 characters - so
+      // a typing grant can tell <input name="iban"> or name="wallet_address" from a secret field. #675 r2 (12:36Z): sent for
+      // a named entry too, since money detection is a union and a hostile accessible name must not hide it. A raw page
+      // attribute, re-validated here; outside the fingerprint, never recorded.
+      ...(extra.editable === true && fieldAttrOf(attributes) !== null ? { fieldAttr: fieldAttrOf(attributes) } : {}),
+      // CU-473: the first rendered line of a multi-line name - a string, re-bounded to 80 characters.
+      ...(typeof extra.firstLine === 'string' && extra.firstLine.trim() !== '' ? { firstLine: extra.firstLine.replace(/\s+/g, ' ').trim().slice(0, 80) } : {}),
+      ...(extra.inRow === true ? { inRow: true } : {}),
+      ...(extra.dialHref === true ? { dialHref: true } : {}),
+      ...(rowContextOf(extra.rowContext) ? { rowContext: rowContextOf(extra.rowContext) } : {}),
+      // CU-507: the enclosing modal's name and description (describeElement's dialogName / dialogDescription) - context,
+      // outside the fingerprint, never recorded.
+      ...(dialogTextOf(extra.dialogName) !== null ? { dialogName: dialogTextOf(extra.dialogName) } : {}),
+      ...(dialogTextOf(extra.dialogDescription) !== null ? { dialogDescription: dialogTextOf(extra.dialogDescription) } : {}),
       // CU-157: context, not identity - outside the fingerprint.
       textEntered: entered,
       // CU-187: the label that captions a non-entry element (see describeElement); CU-194 rule 5: an entry's structural
