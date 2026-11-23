@@ -1841,8 +1841,11 @@ function localeToken(text) {
   return false
 }
 // 'The name' shape: 'den Namen', 'le nom', 'el nombre', 'o nome', 'il nome', 'de naam', 'название', '名前', '名称', '이름'; #1385 r2
-// (cu-researcher's miss): a Japanese / Chinese compound name noun, '<noun>名' before its particle ('リポジトリ名を', 'プロジェクト名と').
-const LOCALE_NAME = new RegExp(`${L0}(?:den\\s+namen|namen\\s+(?:des|der)|le\\s+nom|el\\s+nombre|o\\s+nome|il\\s+nome|de\\s+naam|название|имя)${L1}|名前|名称|名稱|이름|[\\p{Script=Katakana}\\p{Script=Han}\\u30fc]名(?=\\s*(?:を|と|が|は|：|:|\\s|$))`, 'iu')
+// (cu-researcher's miss): a Japanese / Chinese compound name noun, '<noun>名' before its particle ('リポジトリ名を', 'プロジェクト名と');
+// r3 (her next set; cu-coordinator 18:10Z: the general compound rule, the last fold): the Korean '<noun>명' ('저장소명을'), German /
+// Dutch compounds ending in -name(n) / -naam ('Teamnamen', 'projectnaam'), a '-ID' compound or the ID word ('Projekt-ID',
+// 'identifiant', 'идентификатор', 'リポジトリID'), the article-less 'nombre del' / 'nome do' / 'nom du' / 'naam van', and '名字'.
+const LOCALE_NAME = new RegExp(`${L0}(?:den\\s+namen|namen\\s+(?:des|der)|le\\s+nom|el\\s+nombre|o\\s+nome|il\\s+nome|de\\s+naam|название|имя)${L1}|名前|名称|名稱|이름|[\\p{Script=Katakana}\\p{Script=Han}\\u30fc]名(?=\\s*(?:を|と|が|は|：|:|以|并|並|来|來|，|。|,|\\.|\\s|$))|[\\p{Script=Hangul}]명(?=\\s*(?:을|를|이|가|은|는|:|\\s|$))|${L0}\\p{L}{2,}(?:namen?|naam)${L1}|${L0}(?:\\p{L}{2,}-id|identifiant|identificador|identificativo|идентификатор|nombre\\s+del?|nome\\s+d[oaei]|nom\\s+du|naam\\s+van)${L1}|名字|[\\p{Script=Katakana}\\p{Script=Han}\\u30fc](?:ID|ＩＤ)|[\\p{Script=Hangul}]\\s?ID`, 'iu')
 function localeStrongConfirm(text) {
   return LOCALE_TYPED_VERB.test(text) && (LOCALE_TO_CONFIRM.test(text) || localeToken(text))
 }

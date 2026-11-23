@@ -39,6 +39,13 @@ test('CU-726: the name shape and the split zone work in other languages too', ()
   assert.equal(zoned('Weiter', ['E-Mail'], ['Geben Sie Ihre E-Mail-Adresse ein, um Ihr Konto zu löschen.']), 'delete', 'a purpose clause in the same sentence')
   assert.equal(zoned('続行', ['リポジトリ名'], ['続行するにはリポジトリ名を入力してください', 'リポジトリを削除します']), 'delete', 'a Japanese compound name noun (#1385 r2)')
   assert.equal(zoned('次へ', ['プロジェクト名'], ['プロジェクト名を入力してください', '新しいプロジェクトを作成します']), 'allow', 'the name shape alone, no act: free')
+  assert.equal(zoned('계속', ['저장소명'], ['계속하려면 저장소명을 입력하세요.', '저장소가 영구적으로 삭제됩니다.']), 'delete', 'a Korean compound name noun (#1385 r3)')
+  assert.equal(zoned('Weiter', ['Teamname'], ['Geben Sie den Teamnamen ein.', 'Das Team wird endgültig gelöscht.']), 'delete', 'a German -namen compound (#1385 r3)')
+  assert.equal(zoned('Weiter', ['Benutzername'], ['Geben Sie Ihren Benutzernamen ein.']), 'allow', 'the name shape alone, no act: free')
+  assert.equal(zoned('Doorgaan', ['Projectnaam'], ['Typ de projectnaam.', 'Het project wordt definitief verwijderd.']), 'delete', 'a Dutch -naam compound')
+  assert.equal(zoned('Weiter', ['Projekt-ID'], ['Geben Sie die Projekt-ID ein.', 'Das Projekt wird gelöscht.']), 'delete', 'a German -ID compound')
+  assert.equal(zoned('续行', ['仓库名'], ['请输入仓库名以继续。', '仓库将被永久删除。']), 'delete', 'a Chinese compound name noun')
+  assert.equal(zoned('Weiter', ['Projekt-ID'], ['Geben Sie die Projekt-ID ein.']), 'allow', 'the ID shape alone, no act: free')
 })
 
 test('CU-726: a localized handover of ownership asks permission', () => {
