@@ -980,6 +980,30 @@ test('CU-585: the Return target (defaultButton) carries the submit button\'s for
   }
 })
 
+test("CU-585 close-account zone: the zone's own sentences (zoneWords) ride beside formEntries - re-validated with the same bounds, and on the Return target too", async () => {
+  const handlers = checkoutHandlers()
+  const base = handlers['Runtime.callFunctionOn']
+  let zoneWords = ['  Close this account  permanently. ', 7, 'x'.repeat(81), 'This cannot be undone.', 'B', 'C']
+  let formEntries = ['Type CLOSE to confirm']
+  handlers['Runtime.callFunctionOn'] = (params) => (String(params.functionDeclaration).includes('describeElement') && /-41$/.test(String(params.objectId))
+    ? { result: { result: { value: { formEntries, zoneWords } } } }
+    : base(params))
+  const run = harness({ handlers })
+  const env = await launchBrowserEnvironment(run.options)
+  try {
+    const target = await env.focusedElement()
+    assert.deepEqual(target.defaultButton, { role: 'button', name: 'Place order', panel: null, formEntries: ['Type CLOSE to confirm'], zoneWords: ['Close this account permanently.', 'This cannot be undone.', 'B'] })
+    formEntries = undefined
+    const bare = await env.focusedElement()
+    assert.equal('zoneWords' in (bare.defaultButton ?? {}), false, 'no formEntries: no zoneWords either')
+    formEntries = ['Type CLOSE to confirm']; zoneWords = 'Close this account permanently.'
+    const loose = await env.focusedElement()
+    assert.equal('zoneWords' in (loose.defaultButton ?? {}), false, 'zoneWords must be a list')
+  } finally {
+    await env.close()
+  }
+})
+
 test('CU-412: a Return whose implicit submission may press one of two script controls carries defaultCandidates [{role, name}] (11:27Z contract)', async () => {
   const handlers = checkoutHandlers({ submit: false })
   const nodes = { 51: { backendNodeId: 51, nodeName: 'DIV', attributes: ['role', 'button'] }, 52: { backendNodeId: 52, nodeName: 'DIV', attributes: ['role', 'button'] } }

@@ -848,7 +848,7 @@ class BrowserEnvironment {
       // Return in a trade form's amount field is judged with the form's asset beside a bare 'Sell' default.
       // CU-473 (Return route, cu-coordinator 04:20Z): the default button's first rendered line rides along as on a click, so a
       // Title-case two-line default ('Change Direct Deposit' over 'Takes Effect Immediately') is judged the same either way.
-      return { button: described === null ? null : { role: described.role, name: described.name, panel: null, ...(described.formContext ? { formContext: described.formContext } : {}), ...(described.formEntries ? { formEntries: described.formEntries } : {}), ...(typeof described.firstLine === 'string' ? { firstLine: described.firstLine } : {}), ...(described.dialogName ? { dialogName: described.dialogName } : {}), ...(described.dialogDescription ? { dialogDescription: described.dialogDescription } : {}) }, read: true }
+      return { button: described === null ? null : { role: described.role, name: described.name, panel: null, ...(described.formContext ? { formContext: described.formContext } : {}), ...(described.formEntries ? { formEntries: described.formEntries } : {}), ...(described.zoneWords ? { zoneWords: described.zoneWords } : {}), ...(typeof described.firstLine === 'string' ? { firstLine: described.firstLine } : {}), ...(described.dialogName ? { dialogName: described.dialogName } : {}), ...(described.dialogDescription ? { dialogDescription: described.dialogDescription } : {}) }, read: true }
     } catch {
       return { button: null, read: false }
     }
@@ -877,7 +877,7 @@ class BrowserEnvironment {
         const described = await this.#describe(page, node.backendNodeId, undefined, { scanText: false })
         // CU-412 (11:56Z): a control with no accessible name (an icon-only div) cannot be judged - unreadable, never dropped.
         if (described === null || typeof described.name !== 'string' || described.name.trim() === '') unread = true
-        else controls.push({ role: described.role, name: described.name, ...(described.formContext ? { formContext: described.formContext } : {}), ...(described.formEntries ? { formEntries: described.formEntries } : {}), ...(typeof described.firstLine === 'string' ? { firstLine: described.firstLine } : {}), ...(described.dialogName ? { dialogName: described.dialogName } : {}), ...(described.dialogDescription ? { dialogDescription: described.dialogDescription } : {}) })
+        else controls.push({ role: described.role, name: described.name, ...(described.formContext ? { formContext: described.formContext } : {}), ...(described.formEntries ? { formEntries: described.formEntries } : {}), ...(described.zoneWords ? { zoneWords: described.zoneWords } : {}), ...(typeof described.firstLine === 'string' ? { firstLine: described.firstLine } : {}), ...(described.dialogName ? { dialogName: described.dialogName } : {}), ...(described.dialogDescription ? { dialogDescription: described.dialogDescription } : {}) })
       }
       // Fail closed (D-107: candidates only add asks): a control that could not be read makes the list unjudgeable.
       return { ...(controls.length > 0 ? { candidates: controls } : {}), more: items.length > 3 || unread }
@@ -1008,6 +1008,8 @@ class BrowserEnvironment {
       // CU-585: the words a submit control's form shows beside its text entries ('Type DELETE to confirm') - up to 3 texts of
       // 80 characters, never a value. Context, outside the fingerprint; run records keep origin, role, name.
       ...(formEntriesOf(extra.formEntries) ? { formEntries: formEntriesOf(extra.formEntries) } : {}),
+      // Owner spec 07:33Z: the same zone's own heading / description sentences (zoneWords), the same bounds, only beside formEntries.
+      ...(formEntriesOf(extra.formEntries) && formEntriesOf(extra.zoneWords) ? { zoneWords: formEntriesOf(extra.zoneWords) } : {}),
       // CU-443: a row with no verb of its own carries what the page offers around it (describeElement): dialHref (a
       // tel:/sip:/callto:/facetime: href on it, above it or inside it - a boolean) and rowContext (its list's name, up to 3
       // action names). Context, outside the fingerprint; never recorded.
