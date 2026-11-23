@@ -28,7 +28,8 @@ test('CU-353 policy: an accesskey chord on the element it fires is a press - Del
   assert.equal(at(target('button', 'Delete account', { accessKey: true })), 'delete')
   assert.equal(at(target('checkbox', 'Verify you are human', { accessKey: true }), chord('H')), 'captcha')
   assert.equal(at(target('button', 'Buy now', { accessKey: true }), chord('B')), 'purchase')
-  assert.equal(at(target('button', 'Delete account')), 'allow', 'the focus, not fired by the chord: a plain key, as before')
+  // CU-365: a chord the accesskey does not fire still reaches the page's handlers - a page shortcut, asked once per chord.
+  assert.equal(at(target('button', 'Delete account')), 'permission', 'the focus, not fired by the chord: a page shortcut (CU-365)')
   assert.equal(at(target('textbox', 'Search', { accessKey: true }), chord('S')), 'allow', 'an accesskey that only focuses an entry is no press of a named control')
 })
 

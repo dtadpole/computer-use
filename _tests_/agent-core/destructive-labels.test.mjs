@@ -20,9 +20,13 @@ test('the missed destructive labels ask delete; revoke asks permission', () => {
 
 test('Trash or Bin as a sidebar row, Binder, Reset password and Clear search are not asked', () => {
   for (const [role, name] of [['AXRow', 'Trash'], ['AXCell', 'Bin'], ['AXStaticText', 'Trash'], ['link', 'Trash'], ['AXLink', 'Bin'], ['AXButton', 'Binder'],
-    ['AXButton', 'Reset password'], ['AXButton', 'Clear search'], ['link', 'Forgot password?']]) {
+    ['AXButton', 'Clear search'], ['link', 'Forgot password?'], ['link', 'Reset password']]) {
     assert.equal(click(role, name).decision, 'allow', `${role} ${name}`)
   }
+})
+
+test('CU-411 (cu-coordinator 11:13Z) re-judges a settings button Reset password: it asks credential (was free here); a Reset password link stays free', () => {
+  assert.equal(click('AXButton', 'Reset password').class, 'credential')
 })
 
 test('the accepted over-ask, named: Clear all on a filter bar asks delete', () => {

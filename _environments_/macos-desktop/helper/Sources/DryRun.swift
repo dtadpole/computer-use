@@ -570,7 +570,8 @@ final class DryRunCapabilities: Capabilities {
         guard let entry = level.object else { return nil }
         return MenuContext.Level(holderTitle: entry["holderTitle"]?.string, childTitles: (entry["childTitles"]?.array ?? []).compactMap { $0.string })
       }
-      for (key, value) in MenuContext.of(itemTitle: object["title"]?.string, levels: parsed, services: .english).json { object[key] = value }
+      for (key, value) in MenuContext.of(itemTitle: object["title"]?.string, levels: parsed, services: .english, quick: .english,
+                                         inFinder: object["bundleId"]?.string == QuickActionsMenu.finderBundleId).json { object[key] = value }
     }
     return (object["bundleId"]?.string, object)
   }
@@ -768,6 +769,7 @@ final class DryRunCapabilities: Capabilities {
         let start = entries.count
         add(object["items"]?.array ?? [], path: here, apple: apple)
         MenuKey.markServices(&entries, from: start, holderTitle: title, depth: here.count + 1, services: .english)
+        MenuKey.markQuickActions(&entries, from: start, holderTitle: title, depth: here.count + 1, quick: .english, inFinder: false)
       }
     }
     for (index, menu) in menus.enumerated() {

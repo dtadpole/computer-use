@@ -1,36 +1,34 @@
 ---
 title: '[cu] Integrator - handover'
 created: 2026-11-08T04:22:00Z
-modified: 2026-11-08T23:10:00Z
+modified: 2026-11-22T22:00:00Z
 level: L2
-version: 3.0.0
-description: 'What the successor [cu] Integrator needs to take over the landing lane of dtadpole/computer-use mid-flight, at the 8 Nov evening re-home.'
+version: 7.8.0
+description: 'What the next [cu] Integrator needs to take over the landing lanes of dtadpole/computer-use, at the 22 Nov evening.'
 status: unverified
 grounded_in:
-  - source: 'owner order 2026-11-08 14:59 PST via cu-coordinator 23:04Z (main checkout moved; one successor per seat)'
-  - source: 'decisions D-073, D-076, D-078 (node-only and records-only landings) and CU-276 (run-lock waiter)'
+  - source: 'cu-coordinator goal of 2026-11-12 05:05Z (High lane, fillers, run-lock idle wait), completed 16 Nov'
+  - source: 'decisions D-079, D-085, D-090, D-093, D-097'
 ---
 
 # [cu] Integrator - handover
 
-**Goal.** Land every reviewed [cu] PR on dtadpole/computer-use with `pr-merge.py` after the public-hygiene gate
-and the two-phase gate, with merge-tree equality; Urgent and consent-row fixes first, in cu-coordinator's order.
+**Goal.** Land every reviewed PR at its exact head through the hygiene gate and the two-phase gate (merge-tree
+equality, `pr-merge.py --expect-sha`); phase 2 only with the owner idle >= 300 s. Policy PRs need two non-author
+OKs at one head and no open NOT OK there (D-093).
 
-**Live state (23:10Z).** About 130 PRs landed today, all tree matches. Order given: #141 (gating), #150, #146 and
-#149, #157, #152, then the records (#156, #154, #158) and the backlog. #150 (helper 0.2.58): helper checks passed on
-test merge b795460b5; GitHub reports a conflict from two merge bases - its author merges main, and the waiter lands
-it if the merged helper tree equals the checked one, else re-runs the chain. #146 holds: its change left the
-desktop-consent mutant `terminal-typed` stale. #132 waits for a main merge. Table PRs need OKs at their heads.
+**Live state (22 Nov 22:00Z).** Code landed since 21 Nov 22:00Z: #1255, #1260, #1265, #1266, #1271, #1276, #1280,
+#1287, #1295, #1299, #1300, #1304, #1310, #1315 and #1326, plus records #1249-#1330. Nightly be7bf758f GREEN.
+Held: #1331 (its CU-650 control row needs the new ruling). Records lane: #1332, #1333. Held for cu-coordinator
+(silent since 12 Nov): #1129 and #889 / #1000 (D-108 rule 1); the CU-585 unit #884 -> #894 -> #895, then #930
+and #897; #843 -> #846 -> #848; #853; #862.
 
-**Machinery** (`/tmp/cu-integrator-*`, gone on a reboot): `land-cu.sh` (hygiene twice, mutex, carries check, the
-D-076/D-078 records path), `land-next.sh`, `land-seq.sh`, `land-when-reviewed.sh`, `chain-helper.sh` (`CHECKS_ONLY=1`,
-`SKIP_SWIFT=1`), `chain-mut.sh`, `suite.sh` (registers the CU-276 waiter), `general.sh`, `watch.sh`, `reviewed.py`,
-`record-all.sh`, `partial-check.py`. Priority tickets queue oldest-first in `/tmp/cu-integrator-tickets/`.
+**Machinery** (`/tmp/cu-integrator-*`, mirrored in the seat's private tools folder): the gate, the records lane,
+`reviewed.py`, `title-ids.py`. Each pass restores any missing tool from the mirror. Keep sequence scripts and their
+logs outside /tmp. A run folder's `tests.log` holds the full failing assertion.
 
-**Rules that bit.** List PRs with `--limit 200` (the default 30 hid the oldest). `grep -v` that empties a file
-exits 1 - add `|| true`. Two merge bases: local merge-tree clean, GitHub conflicting - the author merges main.
-Quoted words and hold-like lines followed by the same sender's OK are not holds. A closure-sweep 'To Verify' note
-is deliberate. Lands mark inbox messages read: read the saved `inbox-before-merge-*` files.
-
-**Paths.** The main checkout is now `~/dtadpole/computer-use` (old paths are symlinks); this seat's worktree stays
-`~/computer-use--cu-integrator` until the successor re-homes.
+**Lessons.** Every STOP note goes to all seats, with its end time; never set one in the same second another
+clears. Announce a HOLD as you announce a merge. To stop a gate, kill its lock waiter (pid in `waiter.out`) too.
+Leaked /tmp test folders (CU-674) load the host and fail timing tests (settle, helper R4; CU-697): remove the old
+ones and re-run records-only holds. A host tmp cleanup near 08:00Z can strip tools and build caches; gate after
+it. Write each sequence fresh; read every send line: only `--from cu-integrator`.

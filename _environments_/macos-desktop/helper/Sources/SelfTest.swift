@@ -38,6 +38,7 @@ final class TrapCapabilities: Capabilities {
   func defaultButton(scope: [String]) -> DefaultButtonRead { _ = trap("defaultButton"); return .failed }
   func sheetPresent(scope: [String]) -> SheetRead? { _ = trap("sheetPresent"); return nil }
   func pasteboardChangeCount() -> Int? { _ = trap("pasteboardChangeCount"); return nil }
+  func pasteboardHasFile() -> Bool? { _ = trap("pasteboardHasFile"); return nil }
   func menuKey(keyCode: Int, flags: UInt64, scope: [String]) -> MenuKey.Read { _ = trap("menuKey"); return .unreadable("trapped") }
   func selectedItems(scope: [String]) -> SelectedItems.Read { _ = trap("selectedItems"); return .unreadable("trapped") }
   func textEntered(at point: CGPoint?, scope: [String]) -> Bool? { _ = trap("textEntered"); return nil }

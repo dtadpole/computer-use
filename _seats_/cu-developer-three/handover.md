@@ -1,46 +1,50 @@
 ---
 title: '[cu] Developer Three (macOS helper) - handover'
 created: 2026-11-08T04:20:00Z
-modified: 2026-11-09T14:20:00Z
+modified: 2026-11-22T22:46:00Z
 level: L1
-version: 1.11.0
+version: 1.31.0
 description: 'What a fresh [cu] Developer Three session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
-  - source: the 0.2.62 install of 2026-11-09 13:18Z and cu-verifier's CU-329 row 5 (13:37-13:53Z)
-  - source: Linear CU-328, CU-329, CU-341, CU-342, CU-343, CU-344 (9 Nov)
+  - source: hd-coordinator's goal renewal of 2026-11-22 09:01 PST (Linear items by priority, CUHelper correct, land through cu-integrator)
+  - source: PRs #889, #895, #930, #1304, #1310, #1311, #1315, #1326, #1331; Linear CU-586, CU-588, CU-596, CU-614, CU-662, CU-666, CU-674, CU-679
 ---
 
 # [cu] Developer Three (macOS helper) - handover
 
-Seat `cu-developer-three`. Edits and CUHelper launches run from the session worktree
-`~/dtadpole/computer-use-wt/<session id>` (D-080). The seat's scripts live in the private seat folder (`tools/`).
-`install-held.sh <version> --prove` (or `--prove-only`) re-checks owner idle right before its hold.
+Seat `cu-developer-three`. Edits and CUHelper launches run from the session worktree.
 
 ## Live state
 
-- Installed helper: 0.2.62 from main 3f1cd68 (9 Nov 13:18Z), sha256 1586992b, self-test 40, stable identity, the
-  boundary proof valid. CU-329 is Done: cu-verifier saw AXManualAccessibility given back live after bye and after a
-  socket loss, and left alone when already on.
-- CU-328 is Done: `cli.mjs inspect` prints `inWebArea` as passed, and `--focused` reads the focus.
+- Installed helper: 0.2.70, matching main.
+- Hold wrapper `heldrow.sh` (ROW=, PURPOSE=); rows `row586.mjs`, `row588.mjs`.
+- Probes, held-outs, run scripts and review texts: git-excluded `.cu3-tools/`.
 
-## In flight
+## Helper stack
 
-- CU-341 (In Progress): rehearse the owner session on 0.2.62 with labelled stand-ins, then a one-page owner
-  checklist. Plan 0.1 is approved. R1 (live-probe: the control sequence and the watch link) is queued for an idle
-  window. R1b drives owner-step4 with a scripted control client and records cu-verifier's evidence (1)-(8). R3 (the
-  CU-203 prompt) runs last because a timeout starts a 5-minute backoff.
-- Gaps filed: CU-342 (owner-input stand-in, design line first, four consent conditions), CU-343 (G2 script) and
-  CU-344 (Part 3 by script, Low).
+All wait on cu-coordinator, landing in order:
 
-## Next
+1. **#889** (0.2.71, CU-586): an over-ask removal awaiting the D-108 rule-1 ruling.
+2. **#895** (0.2.72, CU-588): two OKs; follows #894.
+3. **#930** (0.2.73, Part of CU-394): three OKs.
 
-Finish R1-R3, then the checklist PR. Then ask cu-coordinator for the next item.
+**Then:** one READBACK install under an idle-checked hold, the after-rows, the post-install checks.
+
+## Other items
+
+- **Load flakes** CU-614 / 662 / 666 / 679: one test-only PR awaits cu-coordinator's go; local c287e818 widens settle.test.mjs:188. Leaked /tmp folders (CU-674) drive them.
+- **CU-596**: fix local at fad64e0d; waits on cu-coordinator's WIP go.
+- **Reviews:** CU-683 .. CU-695, CU-696's delete half and CU-698 closed live on my OKs (eleven after a hold and an r2). CU-700 (#1331 r3) gating on my OK. Held-outs ready: CU-699, CU-667, CU-658, CU-651.
+- **Follow-ups:** in action-classes 0.4.42's 'Not yet covered' paragraph; also fr 'cet' / short-noun admin.
 
 ## Rules learned
 
-- Run the boundary proof with the agent's node (volta); the boundary refuses Homebrew's node as not genuine.
-- Hold scripts export `CU_DESKTOP_SEAT` (CU-305) and release with the hold's token (CU-327).
-- Run the gate unpiped and push only on exit status 0, never `--no-verify` (CU-337). Never build ad-hoc helpers while
-  a gate's helper step runs.
-- An idle window goes first to High consent work, then code gates, then measurements and installs (D-095).
+- Post PR comments with `--body-file`.
+- Keep lock-held runs out of a gate's phase 2.
+- Check the inbox before any node batch.
+- Write held-outs before each head; probe brand slots with spaces and tr capital İ.
+- Mutant patterns must match once; re-check on every new head; also run every test file naming a string the PR reclassifies.
+- English parity rows decide the family.
+- Records PRs: no open issue id; stamps never after the commit; check dates after 00:00Z.
+- One watcher at a time; start it in the same step as each inbox read; send DONE in the same step as the rows.

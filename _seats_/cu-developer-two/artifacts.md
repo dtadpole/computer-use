@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - artifacts'
 created: 2026-11-01T09:28:00Z
-modified: 2026-11-09T18:41:26Z
+modified: 2026-11-10T13:02:16Z
 level: L1
-version: 1.127.0
+version: 1.132.0
 description: 'Pointers to the persistent work of [cu] Developer Two (environments) - proposals, code, tests and run records - written by the seat itself.'
 status: unverified
 grounded_in:
@@ -16,6 +16,18 @@ Pointers only; each target is its own authority.
 
 | Date | Artifact | State |
 |---|---|---|
+| 2026-11-10 | #517 merged 3bca98a2d | CU-412 (browser half, D-107): implicit submission past script controls - one is the Return's defaultButton (also beside a hidden or nameless submit), 2-3 are defaultCandidates, more or unreadable sets defaultCandidatesMore; found by the parity variant pass. |
+| 2026-11-10 | #486 merged 97b840a71 | CU-406 (driver half): the Return target (defaultButton) carries the submit button's formContext; the policy half is #487. |
+| 2026-11-10 | #482 merged d63c4a9f3 | Fixes CU-405 (closed live): a panel lends formContext when, order-panel helpers ignored, every remaining submit-like control is a trade verb. |
+| 2026-11-10 | #472 merged 1a350cfe2 | CU-402 (driver half; closed live with #474): a submit-like control carries bounded formContext (3 short option texts, an amountEntry flag), found from el.form, role=form, a one-submit fieldset or dialog, or a 3-level div panel. |
+| 2026-11-10 | #402 merged eb6405715 | Ref CU-370: an ARIA listbox's active option falls back to aria-selected, then a focused option; multiselectable stays unread. Last of the six-PR stack. |
+| 2026-11-10 | #393 merged c1d9841e2 | CU-373 (driver half): a toggle's checked (native, indeterminate as 'mixed', else aria-checked) or pressed (aria-pressed) reaches the target, outside the fingerprint. |
+| 2026-11-10 | #299 merged f344e2265 | CU-336 (driver half): an iframe whose accessible name is unread is named from aria-labelledby, aria-label or title. |
+| 2026-11-10 | #443 merged 982ae9875 | CU-387 (client half): a file name the helper lends from the row reaches the desktop target as fileFrom 'ancestor'; in the CU-398 helper unit. |
+| 2026-11-10 | #355 merged 8f07af96e | CU-360 (driver half): a page's navigation to another app's scheme is an external_protocol session notice (scheme only) with a best-effort stop; full two-phase gate. |
+| 2026-11-10 | #339 merged b07ae04e9 | CU-357 (in Verify): an action's effect carries the session's notices since the last one (download_refused, alert_accepted length, file_chooser_refused); Chrome's own refused traffic stays out. |
+| 2026-11-10 | #369 merged 4f2cf7982 | CU-368 (in Verify): a same-origin frame editor's focused body is a text entry (contentEditable or designMode); first of the six-PR stack. |
+| 2026-11-09 | #385 merged 27cb2d702 | CU-370 (High, in Verify; driver half, with cu-developer-one's #382): a key or typed string that chooses is answered with what it chooses - a select's option, the radio an arrow checks, an ARIA option (selectOption), unreadable choices and failed reads as optionUnread; typeOptions gives every option a type passes through; real-Chrome smoke 53/53, every matrix 0, live rows by cu-verifier |
 | 2026-11-09 | #304 merged f235671f2 | CU-333 (in Verify): the fixture's open waits up to 30 s, every other call 10 s; stand-in rows with a 3 s floor pass under full load; landed through the full two-phase gate. |
 | 2026-11-09 | #325 merged 9e225a291 | CU-353 (in Verify; defensive pin, D-098): keyTarget answers a Control-Option chord with the accesskey element; the policy reads it as a press; the chord does not fire through this driver (smoke-recorded). |
 | 2026-11-09 | #320 merged 97a95e530 | CU-351 (High, in Verify): a click on a label is judged as the control it activates, named by the label when it has none (display:none boxes); live rows by cu-verifier. |

@@ -1,13 +1,13 @@
 ---
 title: '[cu] Researcher - Handover'
 created: 2026-11-08T04:16:21Z
-modified: 2026-11-09T18:00:00Z
+modified: 2026-11-22T22:29:00Z
 level: L2
-version: 5.4.0
-description: 'What the next session of [cu] Researcher needs - the D-061 re-sign state, the under-ask hunt, open reviews, the scripts, rules and lessons.'
+version: 5.59.0
+description: 'What the next session of [cu] Researcher needs - the High lane, the under-ask hunt, open reviews, the scripts, rules and lessons.'
 status: unverified
 grounded_in:
-  - source: the seat's own state at 1800Z (guide limits audited; CU-361/363/364 filed; the desktop target-shape lesson)
+  - source: the seat's own state at 2229Z 22 Nov
 ---
 
 # [cu] Researcher - Handover
@@ -15,26 +15,23 @@ grounded_in:
 Start here, then [responsibilities](responsibilities.md) and [red-team-consent-tables](red-team-consent-tables.md).
 
 ```text
-WHERE: session worktree ~/dtadpole/computer-use-wt/<session-id>; test merges in <session-id>--probe.
+WHERE: worktree ~/dtadpole/computer-use-wt/<session-id>; test merges in <session-id>--probe.
+TOOLS: touch /tmp/cu-r-probe/* hourly (host tmp cleaner). Run every measure and suite as yield.sh <cmd>
+(nice 19): busy.sh reads cu-integrator STOP / gate notes (END, MERGED, HOLD) from the logged inbox stream and
+the wrapper freezes the run while one is on. Both live only in /tmp/cu-r-probe so far.
 
-GOAL (cu-coordinator 14:19Z): (1) D-061 re-sign; (2) red-team every consent change on the merge (PR 274, 299,
-CU-342's stand-in - unreachable from any model run); (3) hunt under-asks and file each (High if it reaches a
-credential, D-063); (4) this handover, hourly note.
+STATE (22:29Z 22 Nov): goal renewed 01:01 PST. 78 issues closed 16-22 Nov. In Progress: CU-645 -> #1129
+(ready; RULE-1, waits on cu-coordinator), CU-700 -> #1331 (subscribe / renew; r3 gating). Next: CU-699 (money
+verbs; go given; built locally, not pushed). Waiting on cu-coordinator: CU-696's permission half (uneven English
+passkey rows); RULE-1: CU-667, CU-682, CU-591 (rest), CU-649, CU-651, CU-647, CU-642, CU-658, CU-633. Verify: CU-375.
+PARITY FIRST: measure the English twins (negation, slots, determiners, objects, past, bare verb) and post them
+before building; mirror exactly that set. Ambiguous bare twins (ja 登録 / 更新, ko 갱신, de verlängern, pt assinar)
+stay out; bare ja / ko / zh Sino-noun button labels ask.
 
-DONE: D-059 re-signed 12:07Z (main 445c98e); D-061 re-signed 16:23Z (main fc72439c5) - CU-145's acceptance met;
-cu-coordinator moves it to Verify, cu-verifier closes it (never me). Open reviews: CU-349's agent-core half
-(placeholder upgrades only); recheck each OK'd PR on main after it lands.
+LESSONS: before every push read the inbox and every watch job's output, and run the WHOLE
+_tests_/agent-core/*.test.mjs suite (an older control held #1331). The corpus reclass catches over-asks: read
+every gained name. Records: stamps at or before the commit, true at the stamp; no open ids in bodies.
 
-HUNT: filed CU-345..355 (fixed or OK'd); from the guide's limits CU-361 (layout label), CU-363 (page
-shortcuts, High, PR 356 - type on a link/button and desktop null focus still open), CU-364 (Low). CU-348,
-356 and 364 were stand-in probes the real components already decide.
-
-LESSONS: a mutant is cited only after it is applied and seen to fail; when seats share a change, post the plan
-and wait for the go; re-apply on main after a sibling lands; probe the merge with
-edge inputs, not only the suite; probe loop-level where the change is in loop.mjs (PR 294's window); count
-sample lengths; probe with the real createSitePolicy/createAppPolicy and targets carrying every field the driver sends (desktop: sheet, defaultButton, caption, placeholder; loop: boundMenuItem; browser: linkScheme), focus null too (D-100).
-
-RULES: never verify my own filings; D-034 20.69 of 25 USD, no model run; input only via CUHelper under the lock
-with the Mac idle >= 300 s; run the gate unpiped and push only on exit 0 (CU-337); no CU-n in a PR title or branch unless it
-completes the issue; never a closing keyword before '#n'.
+RULES: signed OK naming the head; linear.py via lin.sh; never verify my own filings; D-034 20.69 of 21 USD,
+no model run; gate unpiped, push on exit 0.
 ```

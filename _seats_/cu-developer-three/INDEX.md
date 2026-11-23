@@ -1,8 +1,8 @@
 ---
 title: '[cu] Developer Three (macOS helper) - Team Member'
 created: 2026-11-02T08:50:00Z
-modified: 2026-11-09T08:30:00Z
-version: 1.7.0
+modified: 2026-11-09T19:05:00Z
+version: 1.8.0
 description: 'The lasting record of [cu] Developer Three (macOS helper) - its seat, current direction and links to its work.'
 grounded_in:
   - source: owner choice 2026-11-02 in the coordinator's session (7 seats - add a Swift helper developer and an Integrator), decision D-026
@@ -29,6 +29,7 @@ stable; its direction changes when the coordinator assigns a new one, and the wr
 | [`hit-window-measurements.md`](hit-window-measurements.md) | the drag-image (CU-46) and hit-window (Q-D14, Q-D15) measurements of 2026-11-05 |
 | [`panel-measurements.md`](panel-measurements.md) | the open/save panel (CU-39) measurements of 2026-11-05 |
 | [`web-tree-measurements.md`](web-tree-measurements.md) | the CU-321 measurement of 2026-11-09: an approved Chrome's page through the helper, with and without the accessibility flag |
+| [`owner-session-rehearsal.md`](owner-session-rehearsal.md) | CU-341: the owner session rehearsed on helper 0.2.62 with labelled stand-ins - per step the checklist line, screen, evidence and time; what cannot be rehearsed |
 | [`handover.md`](handover.md) | what a fresh session needs to continue: issues, PRs, open asks, live state, next step |
 
 ## Read next

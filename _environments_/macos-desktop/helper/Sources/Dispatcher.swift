@@ -108,6 +108,9 @@ protocol Capabilities: AnyObject {
   /// CU-151: the general pasteboard's change count - a number, never content (D-031, D-056) - read fresh with every
   /// target, so agent core can tell the run's own copy from someone else's; null if it cannot be read.
   func pasteboardChangeCount() -> Int?
+  /// CU-377: whether the general pasteboard holds a file (its type names include a file URL) - type names only, never a
+  /// path or any content (D-060); null when the types cannot be read.
+  func pasteboardHasFile() -> Bool?
   /// CU-235: the frontmost approved app's menu items this key down fires (the layout's characters are the capability's
   /// to find), or none, or unreadable.
   func menuKey(keyCode: Int, flags: UInt64, scope: [String]) -> MenuKey.Read
@@ -135,6 +138,7 @@ extension Capabilities {
   func defaultButton(scope: [String]) -> DefaultButtonRead { .failed }
   func sheetPresent(scope: [String]) -> SheetRead? { nil }
   func pasteboardChangeCount() -> Int? { nil }
+  func pasteboardHasFile() -> Bool? { nil }
   func menuKey(keyCode: Int, flags: UInt64, scope: [String]) -> MenuKey.Read { .unreadable("this helper cannot read menus") }
   func grant(_ name: String) -> Bool { grants().has(name) }
   func selectedItems(scope: [String]) -> SelectedItems.Read { .unreadable("this helper cannot read a selection") }
@@ -361,11 +365,17 @@ final class Dispatcher {
       // target takes its origin from it (cu-developer-two's #347), else app-policy blocks it.
       let read = capabilities.sheetPresent(scope: scope)
       let defaultButton = capabilities.defaultButton(scope: scope)
-      ok(id, ["element": capabilities.focused(scope: scope), "defaultButton": defaultButton.button, "defaultButtonRead": .bool(defaultButton.read),
+      var reply: [String: JSON] = ["element": capabilities.focused(scope: scope), "defaultButton": defaultButton.button, "defaultButtonRead": .bool(defaultButton.read),
               "sheet": read.map { .bool($0.sheet) } ?? .null,
               "app": read.map { .object(["bundleId": .string($0.bundleId), "pid": .int(Int($0.pid))]) } ?? .null,
               "changeCount": capabilities.pasteboardChangeCount().map { .int($0) } ?? .null,
-              "textEntered": capabilities.textEntered(at: nil, scope: scope).map { .bool($0) } ?? .null])
+              // CU-377: a file on the clipboard (type names only), so a paste into another app can ask like a drop.
+              "pasteboardHasFile": capabilities.pasteboardHasFile().map { .bool($0) } ?? .null,
+              "textEntered": capabilities.textEntered(at: nil, scope: scope).map { .bool($0) } ?? .null]
+      // CU-412: Return's candidates in a web form with no native default (two or three), or more than can be judged.
+      if !defaultButton.candidates.isEmpty { reply["defaultCandidates"] = .array(defaultButton.candidates) }
+      if defaultButton.more { reply["defaultCandidatesMore"] = .bool(true) }
+      ok(id, reply)
     case .cursor:
       // CU-64: the real pointer, in global points, and the display it is on (null between displays).
       guard scope != nil else { return refuse(id, Refusal(code: "no_scope", message: "no scope is set")) }

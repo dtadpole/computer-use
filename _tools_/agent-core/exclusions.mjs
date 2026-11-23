@@ -35,11 +35,37 @@ export const EXCLUDED_APPS = Object.freeze([
       'in.sinew.*', 'me.proton.pass', 'com.keepersecurity.*',
     ]),
   }),
+  // CU-395 (High; cu-coordinator 03:01Z): Home and Find My act on doors, locks, alarms and devices in the physical world.
+  Object.freeze({ kind: 'physical_control', ids: Object.freeze(['com.apple.Home', 'com.apple.findmy']) }),
   // A clipboard history shows what the person copied before the run; D-031 allows copy and paste, not reading that.
   Object.freeze({
     kind: 'clipboard_manager',
     // CU-292: Paste (com.wiheads.paste and com.wiheads.paste-direct, mole.fit's tested apps), so its maker's family.
     ids: Object.freeze(['org.p0deje.Maccy', 'com.clipy-app.Clipy', 'com.tapbots.Pastebot2Mac', 'com.tapbots.Pastebot3Mac', 'com.wiheads.*']),
+  }),
+  // CU-394 (cu-researcher; supersedes #450 / #558 with cu-developer-one's go): a remote-desktop or VM client shows another
+  // computer as one opaque canvas, so one 'run' yes to unknown_target there would become unasked control of that computer.
+  // Ids: Screen Sharing from its Info.plist on this Mac (/System/Applications/Utilities); the rest from the Fleet software catalog
+  // (fleetdm.com/software-catalog/<app>-darwin, its bundle_identifier query), else the Homebrew cask's quit stanza
+  // (formulae.brew.sh/api/cask/<token>.json), the App Store lookup API, or a code-signing requirement (VMware Fusion). A maker's
+  // family pattern only where every app of that maker is remote access or a VM; exact ids where the maker ships other apps
+  // (Microsoft, Google, Parallels, VMware, Omnissa, Citrix, Splashtop). An exact id also covers its children.
+  Object.freeze({
+    kind: 'remote_control',
+    ids: Object.freeze([
+      'com.apple.ScreenSharing', 'com.apple.RemoteDesktop',
+      'com.teamviewer.*', 'com.philandro.anydesk', 'com.microsoft.rdc.macos', 'com.microsoft.remotehelp',
+      'com.parallels.desktop.console', 'com.2X.Client.Mac', 'com.vmware.fusion', 'com.vmware.horizon', 'com.omnissa.horizon.client.mac',
+      'com.utmapp.*', 'org.virtualbox.*', 'com.p5sys.jump.*', 'com.realvnc.*', 'tv.parsec.*', 'com.citrix.receiver.nomas',
+      'com.splashtop.stb.macosx', 'com.splashtop.stp.macosx', 'com.lemonmojo.*', 'com.edovia.screens.5',
+      'com.google.chromeremotedesktop.me2me-host',
+      // r2 (cu-developer-two, cu-developer-three): RustDesk (Fleet catalog, rustdesk-darwin), Citrix Viewer - the window a
+      // Citrix Workspace session draws into (the Identifier line of a Citrix Viewer crash report on Apple's developer forums) -
+      // and Devolutions Remote Desktop Manager, which embeds RDP / VNC sessions (Installomator metadata AppID).
+      'com.carriez.rustdesk', 'com.citrix.receiver.icaviewer.mac', 'com.devolutions.remotedesktopmanager',
+      // r3 (cu-developer-two): NoMachine's Mac client (Installomator metadata AppID, nomachine.plist).
+      'com.nomachine.nxdock',
+    ]),
   }),
   Object.freeze({
     kind: 'os_security',

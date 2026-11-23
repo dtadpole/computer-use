@@ -6,6 +6,7 @@ import { dirname, isAbsolute, join } from 'node:path'
 
 import { createExclusions } from '../../_tools_/agent-core/exclusions.mjs'
 import { cuHome } from '../../_tools_/agent-core/lib.mjs'
+import { createPolicy, looksSensitive } from '../../_tools_/agent-core/policy.mjs'
 import { captureMatchesFrame, checkPoint, displayFrame, fitFactor, pngSize, rectToFrame, regionToGlobal, sizeAt, toFrame, toGlobal } from './coords.mjs'
 import { EnvironmentError, invalid, notGranted } from './errors.mjs'
 import {
@@ -13,7 +14,7 @@ import {
   SETTLE_CAP_MS, SETTLE_MS,
 } from './helper-link.mjs'
 import { ACTION_TYPES, chordKeyDowns, hitTestPoints, NAVIGATE_REFUSAL, planAction, planBatch } from './input-plan.mjs'
-import { keyName } from './keys.mjs'
+import { keyName, normalizeKey } from './keys.mjs'
 import { defaultBundlePath, driverIdentity, driverLaunchProblems, helperExecutablePath, launchHelper } from './launch.mjs'
 import { acquireDesktopRun, RUN_ID_PATTERN, SEAT_PATTERN } from './run-lock.mjs'
 
@@ -382,6 +383,14 @@ async function holdDesktopRun(acquire, { seat, runId, noInput = false, confirmWi
   // CU-204: the lock's record of this seat's last input, best effort - a missed note can only make a later run inside
   // the hold refuse (the safe side), never admit one.
   release.noteInput = typeof slot.noteInput === 'function' ? () => { try { slot.noteInput() } catch { /* best effort */ } } : () => {}
+  // Idle (A): the run's own entry learns whether the local-input pause is armed and when the person last touched the
+  // Mac while it was, so the lock judges an armed run's owner idle from the run's own record, not from HIDIdleTime
+  // (which a run's own synthetic input resets). Best effort and optional: a lock without mark() (older code, a seam)
+  // keeps judging as before.
+  // run-lock's mark() is async (it takes the lock's mutex): its rejection is swallowed too, never left unhandled.
+  release.mark = typeof slot.mark === 'function'
+    ? (patch) => { try { Promise.resolve(slot.mark(patch)).catch(() => {}) } catch { /* best effort */ } }
+    : () => {}
   return release
 }
 
@@ -637,7 +646,47 @@ function defaultButtonOf(value) {
   const text = (v) => typeof v === 'string' && v.length > 0 ? v : null
   const role = text(value.role)
   if (role === null) return null
-  return { role, name: text(value.title), panel: panelOf(value.panel) }
+  // CU-409: the default button's form context too, so Return is judged by the click's classifier with it (D-106).
+  const form = formContextOf(value.formContext)
+  // CU-507 (helper 0.2.70): the default button's dialog words too, so Return on a sheet's default 'OK' is judged by
+  // what the sheet asks, like a click on it (D-106).
+  const dialogName = dialogTextOf(value.dialogName)
+  const dialogDescription = dialogTextOf(value.dialogDescription)
+  return {
+    role, name: text(value.title), panel: panelOf(value.panel), ...(form !== null ? { formContext: form } : {}),
+    ...(dialogName !== null ? { dialogName } : {}), ...(dialogDescription !== null ? { dialogDescription } : {}),
+  }
+}
+
+/**
+ * CU-412 (helper 0.2.69): Return's candidates in a web form with no native default - two or three buttons, each read as
+ * defaultButtonOf reads one (role, name, panel, formContext) - as `{ candidates }`. Fail closed (cu-developer-two's F1 on
+ * #520): a list the driver cannot use whole - more than three, fewer than two, or any unreadable or nameless entry - is `{ more: true }`
+ * (agent core asks unknown), never dropped; no list at all (an older helper, or none sent) is null.
+ */
+export function defaultCandidatesOf(value) {
+  if (value === undefined || value === null) return null
+  if (!Array.isArray(value)) return { more: true }
+  if (value.length === 0) return null
+  // cu-researcher 11:54Z: a candidate with no name (an icon-only button) is unreadable too - it may be the risky one.
+  const read = value.map(defaultButtonOf)
+  if (value.length < 2 || value.length > 3 || read.some((one) => one === null || one.name === null || one.name.trim() === '')) return { more: true }
+  return { candidates: read }
+}
+
+/**
+ * CU-409 (helper 0.2.68): a button's form context as the helper reads it (FormContext: the nearest form, sheet, dialog or
+ * group that lends within 3 levels) - `options`, at most 3 selected pop-up or combo box texts of at most 24 characters,
+ * and `amountEntry`, whether an entry's label words name an amount (never its value). The same shape the chrome driver
+ * gives (CU-402), so agent core's trade rules read it alike. Malformed, or neither part present: null.
+ */
+export function formContextOf(value) {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return null
+  if (!Array.isArray(value.options) || typeof value.amountEntry !== 'boolean') return null
+  const options = value.options.filter((text) => typeof text === 'string').map((text) => text.replace(/\s+/g, ' ').trim())
+    .filter((text) => text !== '' && text.length <= 24).slice(0, 3)
+  if (options.length === 0 && !value.amountEntry) return null
+  return { options, amountEntry: value.amountEntry }
 }
 
 /**
@@ -645,6 +694,214 @@ function defaultButtonOf(value) {
  * control characters) and `modifiers` (AXMenuItemCmdModifiers: an integer 0-15 - Command alone is 0; +1 Shift,
  * +2 Option, +4 Control, +8 no Command). A part that is malformed is null; nothing usable at all is null.
  */
+/**
+ * CU-361 (cu-researcher): a layout label as placeholderOf reads it, except that text the value rules class as sensitive
+ * (a card, an IBAN, a bank account: policy.mjs looksSensitive) is a displayed value, not a label, and reads as none - so
+ * a summary screen's 'Card 4111...' beside a box never becomes a name anywhere.
+ * CU-374 (cu-researcher): a street address shown beside a box is a displayed value too (looksStreetAddress), so a
+ * checkout summary's '1 Infinite Loop, Cupertino' never becomes the box's name in a record. Policy's value rules are
+ * left as they are; this is only the label read.
+ * r3 (cu-developer-three's F1 on #870): dropping a label must never remove an ask. When the address-shaped text changes
+ * what policy decides for the box (labelVerdicts), the address is cut out of it instead ('Ship to 221B Baker Street'
+ * reads as 'Ship to street address'), kept only when policy decides the same for the cut label; when no cut keeps the
+ * verdicts, the text stays the label as it was (a named limit: the ask wins over the address).
+ */
+export function nearbyLabelOf(value) {
+  const text = placeholderOf(value)
+  if (text === null || looksSensitive(text) !== null) return null
+  if (!looksStreetAddress(text)) return text
+  const full = labelVerdicts(text)
+  if (full === labelVerdicts(null)) return null
+  // r5 (option (c), agreed by cu-researcher and cu-developer-three): a text that is all address ('221B Baker Street') is
+  // a displayed value; when its street word alone makes policy ask, it reads as the stand-in 'street address' - the same
+  // verdict, re-checked, and no house number or name - never as the address.
+  if (cutAddress(text, '') === '') return labelVerdicts(ADDRESS_STAND_IN) === full ? ADDRESS_STAND_IN : text
+  for (const stand of ['', ADDRESS_STAND_IN]) {
+    const cut = cutAddress(text, stand)
+    if (cut !== '' && !looksStreetAddress(cut) && labelVerdicts(cut) === full) return cut
+  }
+  return text
+}
+
+// CU-374 r5: what an address that names its own field reads as - the field words, without the address.
+const ADDRESS_STAND_IN = 'street address'
+
+// CU-374 r3: the probe box and values for labelVerdicts - an unnamed desktop entry, and one value of each kind the
+// entry-name rules weigh (a code, a password, a plain word).
+const LABEL_PROBE_APP = 'com.example.label-probe'
+const LABEL_PROBE_VALUES = ['123456', 'hunter2x', 'Pat']
+let labelProbePolicy = null
+
+/**
+ * CU-374 r3: what policy decides for typing each probe value into an unnamed box carrying this nearby text (null: none),
+ * as one string - judged by policy itself, never by a copy of its word lists, so a later entry-name rule is covered too.
+ */
+export function labelVerdicts(text) {
+  labelProbePolicy ??= createPolicy({ sitePolicy: () => 'allow' })
+  const target = { origin: LABEL_PROBE_APP, role: 'AXTextField', subrole: null, name: null, placeholder: null, editable: true, nearbyLabel: text }
+  return LABEL_PROBE_VALUES.map((typed) => {
+    const v = labelProbePolicy.classify({ type: 'type', text: typed }, { url: `app:${LABEL_PROBE_APP}`, target })
+    return `${v.decision}:${v.class ?? ''}`
+  }).join(' ')
+}
+
+// CU-374 r3: the text with every address shape cut out, each cut replaced by `stand`; spaces and stray commas tidied.
+function cutAddress(text, stand) {
+  let out = String(text)
+  for (const shape of ADDRESS_SHAPES) out = out.replace(new RegExp(shape.source, shape.flags.replace('g', '') + 'g'), ` ${stand} `)
+  return out.replace(/\s*,\s*(?=,|$)/g, '').replace(/\s+/g, ' ').replace(/^[\s,:]+|[\s,:]+$/g, '').trim()
+}
+
+// CU-374: the street-type words of a number-first address ('221B Baker Street', '350 Fifth Ave.'), capitalised as an
+// address writes them, so a counted noun ('Freeze 1 row', '10 min walk') is not one (r3, F2).
+const STREET_TYPES = 'St|Street|Ave|Avenue|Rd|Road|Blvd|Boulevard|Ln|Lane|Dr|Drive|Way|Ct|Court|Pl|Place|Ter|Terrace|' +
+  'Hwy|Highway|Pkwy|Parkway|Sq|Square|Cir|Circle|Close|Crescent|Cres|Loop|Row|Walk|Trail|Mews'
+// CU-374 r2 (cu-researcher): street words that lead the street name, as a class across languages; a dotted
+// abbreviation ('Pl.', 'Av.', 'ul.') counts like the full word. r3: capitalised, then a capitalised name, so the
+// English 'via' ('Ship via UPS Ground 2') is not one.
+const LEADING_STREET_WORDS = 'Calle|Avenida|Av\\.|Via|Viale|Piazza|Corso|Strada|Rua|Praça|Largo|Plaza|Pl\\.|Place|' +
+  'Ulica|Ul\\.|ul\\.|Aleja|Al\\.|Carrer|Rambla|Paseo'
+// Street words that end a one-word street name: 'Hauptstraße', 'Kalverstraat', 'Drottninggatan', 'Nørregade'. r3:
+// not '-platz', whose compounds are everyday words ('Parkplatz 3', 'Arbeitsplatz 2').
+const TRAILING_STREET_WORDS = 'straße|strasse|str\\.|weg|gasse|allee|straat|gracht|laan|gatan|gata|gade|vej|' +
+  'veien|vegen|utca|katu|tie'
+// CU-374 r4: the UK's postcode areas (outward code letters), so a product size ('PS5 1TB', 'MP3 4GB') is not a postcode.
+const UK_POSTCODE_AREAS = 'AB|AL|BA|BB|BD|BH|BL|BN|BR|BS|BT|B|CA|CB|CF|CH|CM|CO|CR|CT|CV|CW|DA|DD|DE|DG|DH|DL|DN|DT|DY|' +
+  'EC|EH|EN|EX|E|FK|FY|GL|GU|GY|G|HA|HD|HG|HP|HR|HS|HU|HX|IG|IM|IP|IV|JE|KA|KT|KW|KY|LA|LD|LE|LL|LN|LS|LU|L|ME|MK|ML|M|' +
+  'NE|NG|NN|NP|NR|NW|N|OL|OX|PA|PE|PH|PL|PO|PR|RG|RH|RM|SA|SE|SG|SK|SL|SM|SN|SO|SP|SR|SS|ST|SW|SY|S|TA|TD|TF|TN|TQ|TR|' +
+  'TS|TW|UB|WA|WC|WD|WF|WN|WR|WS|WV|W|YO|ZE'
+const ADDRESS_SHAPES = [
+  // A house number, one to five capitalised name words, then a street type: '1 Infinite Loop', 'Ship to 221B Baker
+  // Street', and the number after a unit's slash: 'Unit 5/12 George St'.
+  new RegExp(`(?:^|[\\s,:(/])\\d{1,6}[A-Za-z]?\\s+(?:\\p{Lu}[\\p{L}\\d.'-]*\\s+){1,5}(?:${STREET_TYPES})\\b\\.?`, 'u'),
+  // A one-word street name then its number: 'Hauptstraße 5', 'Lindenweg 12a', 'Kalverstraat 1'.
+  new RegExp(`\\p{Lu}\\p{L}*(?:${TRAILING_STREET_WORDS})\\s+\\d{1,5}[a-z]?\\b`, 'u'),
+  // r6 (cu-researcher): a capitalised street word as its own word or after a hyphen, then a house number: 'Berliner
+  // Straße 12', 'Baker Strasse 5', 'Karl-Marx-Straße 5', 'Lange Gasse 3'.
+  /(?:^|[\s,(-])(?:Straße|Strasse|Str\.|Straat|Gasse|Weg|Platz|Allee|Laan|Gracht|Gatan|Gade|Vej)\s+\d{1,5}[a-z]?\b/u,
+  // A number then a street word: '12 rue de Rivoli', '3, avenue Foch'.
+  /(?:^|[\s,:(])\d{1,4},?\s+(?:rue|avenue|boulevard|bd|chemin|allée|impasse|quai)\s+\p{L}/iu,
+  // A leading street word, a capitalised name, then its number: 'Calle Mayor 10', 'Via Roma, 12', 'Rua Augusta 1500',
+  // 'Strada Nuova 3', 'Pl. de la Concorde 8'.
+  new RegExp(`(?:^|[\\s,:(])(?:${LEADING_STREET_WORDS})\\s+(?:(?:de|del|della|di|da|do|dos|la|le|las|los)\\s+)*\\p{Lu}[\\p{L} .'-]{1,40},?\\s*\\d{1,5}\\b`, 'u'),
+  // A post-office box: 'PO Box 4471', 'P.O. Box 12'.
+  /\bP\.?\s?O\.?\s+Box\s+\d+/i,
+  // A town, a US state and a ZIP: 'Cupertino, CA 95014'.
+  /,\s*[A-Z]{2}\s+\d{5}(?:-\d{4})?\b/,
+  // An Australian state and postcode: 'Sydney NSW 2000'.
+  /\b(?:NSW|VIC|QLD|SA|WA|TAS|NT|ACT)\s+\d{4}\b/,
+  // A UK postcode - a real postcode area, then the inward code's digit and two letters - alone ('SW1A 2AA', r4) or
+  // after its town or a comma, ending the text ('London SW1A 1AA'); never a size ('PS5 1TB', r3: PS is no area).
+  new RegExp(`(?:^\\s*|,\\s*|\\p{Lu}\\p{Ll}+\\s+)(?:${UK_POSTCODE_AREAS})\\d[A-Z\\d]?\\s+\\d[ABD-HJLNP-UW-Z]{2}\\s*$`, 'u'),
+  // A postal-code line: four to six digits, then a capitalised town: '10115 Berlin', '75001 Paris'.
+  /(?:^|[\s,])\d{4,6}\s+\p{Lu}\p{Ll}+/u,
+  // A Japanese postcode ('150-0002') and a chome address ('1-2-3 Shibuya').
+  /(?:^|[\s,〒])\d{3}-\d{4}\b/,
+  /(?:^|[\s,])\d{1,2}-\d{1,2}(?:-\d{1,4})?\s+\p{Lu}/u,
+]
+
+/**
+ * CU-374: whether a short text reads as a street address. Each shape needs a number next to a street word, a box
+ * number or a postal code, so a label that only names the field ('Street address', 'Address line 1', 'ZIP code')
+ * stays a label. Named over-asks: a label that itself reads as an address ('10 Downing Street'), or one whose 4-6
+ * digit number is followed by a capitalised word ('2000 Points'), reads as none - a lost label, never a lost value.
+ */
+export function looksStreetAddress(text) {
+  const value = String(text ?? '')
+  return ADDRESS_SHAPES.some((shape) => shape.test(value))
+}
+
+/**
+ * CU-372 (helper 0.2.65): a pop-up button's menu as the helper read it closed - `{ items: [{ title, enabled }], selected,
+ * selectedIndex }`, or `{ unread: true, selected }`; null when absent (an older helper, another role). Anything malformed
+ * reads as unread, never as an empty list (unread asks). Outside the fingerprint, and never in run records.
+ */
+export function popUpOf(value) {
+  if (value === null || value === undefined || typeof value !== 'object' || Array.isArray(value)) return null
+  const selected = typeof value.selected === 'string' && value.selected.trim() !== '' ? value.selected.trim().slice(0, 80) : null
+  // A pull-down button (pullsDown: its title a label, Return or Space opening a menu of actions) keeps the mark either way.
+  const pull = value.pullsDown === true ? { pullsDown: true } : {}
+  const unread = { unread: true, selected, ...pull }
+  if (value.unread === true || !Array.isArray(value.items) || value.items.length === 0 || value.items.length > 50) return unread
+  const items = []
+  for (const item of value.items) {
+    if (item === null || typeof item !== 'object' || typeof item.title !== 'string' || item.title.trim() === '') return unread
+    items.push({ title: item.title.trim().slice(0, 80), enabled: item.enabled !== false })
+  }
+  // cu-researcher: a selected title two items share leaves an arrow's neighbour unknown - unread, as the helper says.
+  if (selected !== null && items.filter((item) => item.title === selected).length > 1) return unread
+  const index = value.selectedIndex
+  const known = value.pullsDown !== true && Number.isInteger(index) && index >= 0 && index < items.length && items[index].title === selected
+  return { items, selected, selectedIndex: known ? index : null, ...pull }
+}
+
+/**
+ * CU-372: the items a typed string may select in a closed pop-up button, in menu order - conservatively every enabled
+ * item whose title starts (case-insensitively) with any prefix of the typed text, not only AppKit's first match (named
+ * over-ask). [] when none matches (the button keeps its item); `{ unread: true }` for an unread menu.
+ */
+export function popUpTypeItems(popUp, text) {
+  if (popUp === null || popUp.unread === true || popUp.pullsDown === true) return { unread: true }
+  const typed = String(text ?? '').toLocaleLowerCase()
+  const prefixes = []
+  for (let end = 1; end <= typed.length; end += 1) prefixes.push(typed.slice(0, end))
+  return popUp.items.filter((item) => item.enabled && prefixes.some((prefix) => item.title.toLocaleLowerCase().startsWith(prefix)))
+}
+
+/**
+ * CU-372: the item one plain key lands on in a closed pop-up button, from its selected item - Down/Right the next
+ * enabled item, Up/Left the previous, Home the first, End the last (no wrap); a letter or digit the one enabled item it
+ * type-selects, unread when several could. PageUp/PageDown and an unknown selected index read as unread (they ask).
+ * Returns `{ item }`, `{ unread: true }`, or null when the key chooses nothing (the focus stays the target).
+ */
+export function popUpKeyItem(popUp, key) {
+  if (popUp === null || popUp.unread === true || popUp.pullsDown === true) return { unread: true }
+  const enabled = popUp.items.map((item, index) => ({ item, index })).filter(({ item }) => item.enabled)
+  if (/^[A-Z0-9]$/.test(key)) {
+    const matches = enabled.filter(({ item }) => item.title.toLocaleUpperCase().startsWith(key))
+    if (matches.length === 0) return null
+    return matches.length === 1 ? { item: matches[0].item } : { unread: true }
+  }
+  if (key === 'HOME' || key === 'END') {
+    if (enabled.length === 0) return null
+    return { item: (key === 'HOME' ? enabled[0] : enabled[enabled.length - 1]).item }
+  }
+  if (key === 'PAGEUP' || key === 'PAGEDOWN') return { unread: true }
+  const down = key === 'ARROWDOWN' || key === 'ARROWRIGHT'
+  if (!down && key !== 'ARROWUP' && key !== 'ARROWLEFT') return null
+  if (popUp.selectedIndex === null) return { unread: true }
+  const next = down ? enabled.find(({ index }) => index > popUp.selectedIndex) : enabled.filter(({ index }) => index < popUp.selectedIndex).pop()
+  return next === undefined ? null : { item: next.item }
+}
+
+/** CU-372: the roles that carry a closed menu - a pop-up button, and a pull-down (AppKit's AXMenuButton). */
+const POPUP_ROLES = ['AXPopUpButton', 'AXMenuButton']
+
+/** CU-372: a pop-up button's menu item as a target - the button's own context, the item's title as its name, marked as a choice. */
+function popUpItemTarget(focus, item) {
+  const { popUp, fieldKey, placeholder, nearbyLabel, ...context } = focus
+  const fingerprint = createHash('sha256').update(`${focus.fingerprint}|popUpItem=${item.title}`).digest('hex').slice(0, 32)
+  return { ...context, role: 'AXMenuItem', subrole: null, name: item.title, editable: false, placeholder: null, nearbyLabel: null, selectOption: true, fingerprint }
+}
+
+/** CU-349: a placeholder string, trimmed, at most 80 characters (longer is none, never cut), else null. */
+export function placeholderOf(value) {
+  if (typeof value !== 'string') return null
+  const text = value.trim()
+  return text !== '' && text.length <= 80 ? text : null
+}
+
+/**
+ * CU-507 (helper 0.2.70): a dialog's words as the helper read them for a button inside an AXSheet or a dialog window
+ * (DialogText) - whitespace collapsed, trimmed, at most 300 characters, no control characters; else null. The same seam
+ * as the web route's target.dialogName / dialogDescription, which agent core reads beside a generic confirm control.
+ */
+export function dialogTextOf(value) {
+  if (typeof value !== 'string') return null
+  const text = value.replace(/[\u0000-\u001F\u007F]/gu, ' ').replace(/\s+/gu, ' ').trim()
+  return text === '' ? null : text.slice(0, 300)
+}
+
 function keyEquivalentOf(value) {
   if (value === null || typeof value !== 'object') return null
   const char = typeof value.char === 'string' && value.char.length >= 1 && value.char.length <= 4 && !/[\u0000-\u001F\u007F]/u.test(value.char) ? value.char : null
@@ -683,6 +940,9 @@ function boundEntryOf(item, scope) {
   if (item.appleMenu !== undefined && typeof item.appleMenu !== 'boolean') return null
   // CU-250 (helper 0.2.53): an item under the Services menu acts outside the approved app; app-policy refuses it.
   if (item.servicesMenu !== undefined && typeof item.servicesMenu !== 'boolean') return null
+  // CU-382 (helper 0.2.66): an item in Finder's Quick Actions runs a user-installed workflow - the menu-key list marks it
+  // as the clicked item's describe() does, and a chord bound to it is judged as a click on it.
+  if (item.quickActions !== undefined && typeof item.quickActions !== 'boolean') return null
   const name = menuTitleOf(item.title)
   if (name === null) return null
   const path = Array.isArray(item.path) ? item.path.slice(0, 8).map(menuTitleOf).filter((step) => step !== null) : []
@@ -691,6 +951,7 @@ function boundEntryOf(item, scope) {
     enabled: typeof item.enabled === 'boolean' ? item.enabled : null,
     ...(item.appleMenu === true ? { appleMenu: true } : {}),
     ...(item.servicesMenu === true ? { servicesMenu: true } : {}),
+    ...(item.quickActions === true ? { quickActions: true } : {}),
   }
 }
 
@@ -778,6 +1039,19 @@ export function fileNameOf(value) {
  * directory or bundle keeping its trailing '/' (Payload.app/); never the path, which names the owner's folders. Null for
  * any other scheme, a malformed URL or a leaf fileNameOf refuses.
  */
+/**
+ * CU-392 (cu-coordinator 01:21Z): whether an element's AXURL names a network volume or server - its scheme is one of
+ * smb, cifs, afp, nfs, webdav(s), dav(s) or ftp(s) (a server row in a file browser, a share on it). A boolean only: the URL, host
+ * and share never leave the driver. A mounted share reads as a file: URL under /Volumes and is not seen here (a named
+ * limit), nor is a WebDAV volume addressed by http(s).
+ */
+export const NETWORK_VOLUME_SCHEMES = Object.freeze(['smb', 'cifs', 'afp', 'nfs', 'webdav', 'webdavs', 'dav', 'davs', 'ftp', 'ftps'])
+export function networkVolumeOf(value) {
+  if (typeof value !== 'string') return false
+  const scheme = /^([a-z][a-z0-9+.-]{0,15}):/i.exec(value.trim())?.[1]?.toLowerCase()
+  return scheme !== undefined && NETWORK_VOLUME_SCHEMES.includes(scheme)
+}
+
 export function fileUrlLeafOf(value) {
   if (typeof value !== 'string') return null
   let url
@@ -885,6 +1159,9 @@ class DesktopEnvironment {
   #unsubscribeControl = null
   #releaseRun
   #noteInput
+  #markRun
+  // Idle (A): true while the run's lock entry says the pause is armed through the event tap (marked, not yet cleared).
+  #markedArmed = false
   #exclusions
   /** Scope changes run one at a time, so each sends the union of every approval before it (see `addApp`). */
   #scopeQueue = Promise.resolve()
@@ -935,6 +1212,7 @@ class DesktopEnvironment {
     this.limits = limits
     this.#releaseRun = releaseRun ?? (() => {})
     this.#noteInput = typeof releaseRun?.noteInput === 'function' ? releaseRun.noteInput : () => {}
+    this.#markRun = typeof releaseRun?.mark === 'function' ? releaseRun.mark : () => {}
     this.#exclusions = exclusions
     this.run = Object.freeze({ seat: run?.seat ?? null, runId: run?.runId ?? null })
     this.simulateScale = simulateScale
@@ -1009,6 +1287,12 @@ class DesktopEnvironment {
     this.frame = this.#launchFrame()
     const armed = await this.link.request('pauseOnLocalInput', { on: true })
     this.pauseArmed = armed.armed === true
+    // Idle (A): only an event-tap guard sees every key and click as the person's, so only then may the lock judge the
+    // owner's idle from this run's record (the settled contract, 16:30Z); an idle-counter-only arm leaves HIDIdleTime.
+    if (this.pauseArmed && Array.isArray(armed.via) && armed.via.includes('eventTap')) {
+      this.#markedArmed = true
+      this.#markRun({ armed: true })
+    }
     if (!this.pauseArmed && this.mode === 'global') {
       throw new EnvironmentError('blocked_by_policy', 'the local-input pause could not be armed, and global input never runs without it (D-024)', { reason: 'pause_not_armed' })
     }
@@ -1326,6 +1610,8 @@ class DesktopEnvironment {
   #onLost(reason) {
     if (this.lostReason !== null) return
     this.lostReason = reason
+    // Idle (A): a lost helper's event tap is gone with it, so the run's entry no longer claims an armed pause.
+    this.#clearArmedMark()
     // The helper exits after `bye`; that end is the close this driver asked for, not a crash.
     if (this.closing) return
     this.#events.emit('crash', { code: 'helper_lost', reason })
@@ -1344,6 +1630,8 @@ class DesktopEnvironment {
    * decides (past the cap, `local_input` at step 0 pauses through `#localInputAnswer`).
    */
   #onLocalInput(payload) {
+    // Idle (A): every event is the person at the Mac, a settle's included, so the run's entry records it while armed.
+    this.#stampOwnerInput(typeof payload?.at === 'string' ? payload.at : null)
     if (this.#settling > 0) {
       this.#settleLocalInputs += 1
       return
@@ -1361,7 +1649,22 @@ class DesktopEnvironment {
    */
   #localInputAnswer(error) {
     if (error?.details?.reason !== 'local_input' || this.localInputAt !== null) return
+    this.#stampOwnerInput(null)
     this.#stopForLocalInput(new Date().toISOString(), null)
+  }
+
+  /** Idle (A): the run's lock entry no longer claims an armed pause (once; best effort). */
+  #clearArmedMark() {
+    if (!this.#markedArmed) return
+    this.#markedArmed = false
+    this.#markRun({ armed: false })
+  }
+
+  /** Idle (A): the person's last input while the pause is armed, as epoch ms in the run's lock entry (best effort). */
+  #stampOwnerInput(at) {
+    if (!this.#markedArmed) return
+    const ms = at === null ? NaN : Date.parse(at)
+    this.#markRun({ lastOwnerInputAt: Number.isFinite(ms) ? ms : Date.now() })
   }
 
   /** The stop, the pause request and the listeners' report of one local input, at `at`, of `kind` (or null). */
@@ -1779,6 +2082,9 @@ class DesktopEnvironment {
       // core reads as unread and refuses in a browser (#204: 'absent means unread' - never null, which a strict check
       // could take for a read). Outside the fingerprint, never in run records.
       ...(typeof element.inWebArea === 'boolean' ? { inWebArea: element.inWebArea } : {}),
+      // CU-418 (b) (helper 0.2.70): a checkbox, switch or radio button's state before the action - true, false or
+      // 'mixed' as the helper read its AXValue; absent from an older helper or another role. Outside the fingerprint.
+      ...(element.checked === true || element.checked === false || element.checked === 'mixed' ? { checked: element.checked } : {}),
       // CU-76: part of a system privacy or permission prompt (the helper's, from structure); agent core hands it off.
       systemPrompt: element.systemPrompt === true,
       // CU-154: a menu item's key equivalent ({ char, modifiers }), so agent core knows Copy, Cut and Paste by the
@@ -1788,16 +2094,57 @@ class DesktopEnvironment {
       // CU-250 (helper 0.2.53): a menu item under the Services menu, and its menu path - outside the fingerprint, and never in
       // run records (an event's target keeps origin, role and name).
       ...(servicesMenuOf(element.servicesMenu) ? { servicesMenu: true } : {}),
+      // CU-398 (helper 0.2.67): a menu item under the Apple menu (Restart..., Shut Down..., Log Out...), structural.
+      ...(element.appleMenu === true ? { appleMenu: true } : {}),
+      // CU-382 (helper 0.2.66): under Finder's Quick Actions (a submenu or the preview pane's row), and a menu walk
+      // that could not finish - each present only when true; outside the fingerprint, and never in run records.
+      ...(element.quickActions === true ? { quickActions: true } : {}),
+      ...(element.menuContextUnread === true ? { menuContextUnread: true } : {}),
+      // CU-392 (helper 0.2.67): where a drop in Finder sends a file - 'airdrop', 'shared' or 'server' - from Finder's own
+      // strings in the helper (the raw title never leaves it); present only when one of those.
+      ...(['airdrop', 'shared', 'server'].includes(element.dropDestination) ? { dropDestination: element.dropDestination } : {}),
+      // CU-409 (helper 0.2.68): a button's form context (formContextOf) - what CU-402's trade rules read beside a bare
+      // 'Sell' or 'Long'. Present only when the helper found a form with a selected text or an amount entry; outside the
+      // fingerprint, and never in run records.
+      ...(formContextOf(element.formContext) !== null ? { formContext: formContextOf(element.formContext) } : {}),
+      // CU-507 (helper 0.2.70): a button inside a sheet or dialog - the dialog's title (else first static text) and next
+      // static text (dialogTextOf), the seam agent core reads beside a generic 'OK' / 'Continue'. Each present only when
+      // read; outside the fingerprint, and never in run records.
+      ...(dialogTextOf(element.dialogName) !== null ? { dialogName: dialogTextOf(element.dialogName) } : {}),
+      ...(dialogTextOf(element.dialogDescription) !== null ? { dialogDescription: dialogTextOf(element.dialogDescription) } : {}),
       menuPath: menuPathOf(element.menuPath),
       // CU-187: the label that captions a non-entry element (AXTitleUIElement's title, else its row's or cell's sibling
       // title, as the helper reads it) - never its value or its own title. A string of at most 80 characters, null when
       // absent (an older helper) or malformed. Context, not identity: outside the fingerprint, and never in run records.
       caption: typeof element.caption === 'string' && element.caption.trim() !== '' ? element.caption.trim().slice(0, 80) : null,
+      // CU-349 (helper 0.2.63): an entry's placeholder as the helper reads it (AXPlaceholderValue, never the value) - an
+      // extra name source the consent field rules may use to ask, never to replace a name. A string of at most 80
+      // characters (longer reads as none), null when absent (an older helper) or malformed. Outside the fingerprint, and
+      // never in run records.
+      placeholder: placeholderOf(element.placeholder),
+      // CU-361 (helper 0.2.64): a static text beside an entry in layout (left on its row, else just above it), as the
+      // helper reads it only when the entry has no title, caption or placeholder - a layout label agent core uses
+      // upgrade-only. Trimmed, at most 80 characters (longer reads as none), else null (absent from an older helper, or
+      // malformed). Outside the fingerprint, and never in run records.
+      nearbyLabel: nearbyLabelOf(element.nearbyLabel),
+      // CU-372 (helper 0.2.65): a pop-up button's menu items as the helper read them closed (popUpOf) - what keyTarget and
+      // typeOptions turn into the item a key or a type selects. Outside the fingerprint, and never in run records.
+      ...(element.role === 'AXPopUpButton' || element.role === 'AXMenuButton' ? { popUp: popUpOf(element.popUp) } : {}),
+      // CU-380 (helper 0.2.65): a menu is tracking - set by the helper on whatever focus it returns then (the highlighted
+      // item, a stale first responder, or an AXMenu placeholder), so agent core asks on Return or Space unless it can
+      // judge the item. Present only when true; outside the fingerprint, and never in run records.
+      ...(element.menuOpen === true ? { menuOpen: true } : {}),
       // CU-255: the file the element shows and its URL's last component, what launch_code reads besides the name - Finder
       // may hide an extension in the title (Payload for Payload.app or install.command). Outside the fingerprint, and
       // never in run records (an event's target keeps origin, role and name); the URL's path never leaves the driver.
       filename: fileNameOf(element.filename),
       url: fileUrlLeafOf(element.url),
+      // CU-387 (helper 0.2.67): 'ancestor' when the helper lent a content element (a row's text, image or cell) the
+      // nearest row's or cell's AXFilename/AXURL - a kind for the run record (CU-391), judged exactly as an own file name.
+      // Present only then; outside the fingerprint.
+      ...(element.fileFrom === 'ancestor' ? { fileFrom: 'ancestor' } : {}),
+      // CU-392: a drop onto a server or network share sends the file away - a boolean from AXURL's scheme, only when true.
+      ...(networkVolumeOf(element.url) ? { networkVolume: true } : {}),
       // CU-265: a link's scheme (AXLink's AXURL), so a facetime:, tel: or mailto: link is not a plain click. Links only - a
       // file browser's items carry file: URLs and are judged by launch_code - and the scheme only, never the URL.
       linkScheme: element.role === 'AXLink' ? linkSchemeOf(element.url) : null,
@@ -1831,14 +2178,57 @@ class DesktopEnvironment {
     return this.#focusedOf(await this.link.request('focused', {}))
   }
 
+  /**
+   * CU-372: a plain key on a focused pop-up button is judged by the item it selects (popUpKeyItem) - the item as a target
+   * with selectOption: true, or the button with optionUnread: true when the menu or the landing cannot be read. Any other
+   * key, or any other focus, gives the focus as before (agent core's keyTarget contract, as on the browser route).
+   */
+  async keyTarget(action) {
+    const focus = await this.focusedElement()
+    if (focus === null || !POPUP_ROLES.includes(focus.role) || action?.type !== 'keypress' || !Array.isArray(action.keys)) return focus
+    let keys
+    try {
+      keys = action.keys.map((key) => normalizeKey(String(key)))
+    } catch {
+      return focus
+    }
+    const main = keys.filter((key) => !['SHIFT', 'CONTROL', 'ALT', 'META'].includes(key))
+    if (main.length !== 1 || keys.some((key) => ['CONTROL', 'ALT', 'META'].includes(key))) return focus
+    const landed = popUpKeyItem(focus.popUp ?? null, main[0])
+    if (landed === null) return focus
+    return landed.unread === true ? { ...focus, optionUnread: true } : popUpItemTarget(focus, landed.item)
+  }
+
+  /**
+   * CU-372: for a type whose focus is a pop-up button, every item the typed string may select (popUpTypeItems), each a
+   * target with selectOption: true, in menu order; [] when none matches; `{ unread: true }` when the menu cannot be read.
+   * null for any other focus (the type is judged as before). The shape of the browser route's typeOptions (CU-370).
+   */
+  async typeOptions(action) {
+    if (action?.type !== 'type' || typeof action.text !== 'string') return null
+    const focus = await this.focusedElement()
+    if (focus === null || !POPUP_ROLES.includes(focus.role)) return null
+    const items = popUpTypeItems(focus.popUp ?? null, action.text)
+    return Array.isArray(items) ? items.map((item) => popUpItemTarget(focus, item)) : items
+  }
+
   /** The target focusedElement() makes of a 'focused' reply: the element, the no-focus placeholder, or null. */
   #focusedOf(reply) {
     const element = this.#describe(reply.element)
     const defaultButton = defaultButtonOf(reply.defaultButton)
+    // CU-412 (helper 0.2.69): in a web form whose window names no default button, Return's candidates - two or three
+    // ({role, name, formContext?}, as defaultButtonOf reads each) - or more than can be judged (agent core asks unknown).
+    const candidates = defaultCandidatesOf(reply.defaultCandidates)
+    const more = reply.defaultCandidatesMore === true || candidates?.more === true
+    const candidatesFields = { ...(candidates?.candidates ? { defaultCandidates: candidates.candidates } : {}), ...(more ? { defaultCandidatesMore: true } : {}) }
     const defaultButtonRead = defaultButtonReadOf(reply.defaultButtonRead)
     const sheet = sheetOf(reply.sheet)
     const pasteboardChangeCount = changeCountOf(reply.changeCount)
     const textEntered = textEnteredOf(reply.textEntered)
+    // CU-377 (helper 0.2.65): whether the clipboard holds a file, from its type names only (never a path or content) -
+    // true, false, or null when unread or from an older helper (agent core reads null as unknown). Context beside the
+    // change count: outside the fingerprint, and never in run records.
+    const pasteboardHasFile = typeof reply.pasteboardHasFile === 'boolean' ? reply.pasteboardHasFile : null
     if (element === null) {
       // CU-148: no focused element - with keyboard navigation off the focus is the window itself - yet the helper read
       // the window: a sheet is up, or Return has a default button to press. A placeholder target (the shape of any
@@ -1848,9 +2238,9 @@ class DesktopEnvironment {
       // CU-190: a default button the helper could not read makes one too - Return still presses the window's default
       // button, so agent core must see the failed read (cu-developer-one); a positive none or an older helper does not.
       if (sheet !== true && defaultButton === null && defaultButtonRead !== false) return null
-      return { ...this.#describe(appOf(reply.app)), noFocus: true, defaultButton, defaultButtonRead, sheet, pasteboardChangeCount, textEntered }
+      return { ...this.#describe(appOf(reply.app)), noFocus: true, defaultButton, defaultButtonRead, sheet, pasteboardChangeCount, pasteboardHasFile, textEntered }
     }
-    return { ...element, defaultButton, defaultButtonRead, sheet, pasteboardChangeCount, textEntered }
+    return { ...element, defaultButton, defaultButtonRead, ...candidatesFields, sheet, pasteboardChangeCount, pasteboardHasFile, textEntered }
   }
 
   /**
@@ -2080,6 +2470,8 @@ class DesktopEnvironment {
       this.link.close()
       await this.server?.close()
     } finally {
+      // Idle (A): the helper is gone or going, so its pause is no longer armed; recorded before the lock is released.
+      this.#clearArmedMark()
       this.#releaseRun()
     }
   }

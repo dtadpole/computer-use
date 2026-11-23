@@ -2,23 +2,33 @@
 // runs here: the rows hold the lock with a sleeper and time how long a second build waits for it.
 import assert from 'node:assert/strict'
 import { spawn, spawnSync } from 'node:child_process'
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { after, test } from 'node:test'
 
-import { HELPER_DIR, underBuildLock } from './build.mjs'
+import { cacheComplete, cachePaths, HELPER_DIR, underBuildLock } from './build.mjs'
 
 const dir = mkdtempSync(join(tmpdir(), 'cu-build-lock-'))
 after(() => rmSync(dir, { recursive: true, force: true }))
 const pause = (ms) => new Promise((done) => setTimeout(done, ms))
 const unlocked = () => { const env = { ...process.env }; delete env.CU_HELPER_BUILD_LOCKED; return env }
 
-/** Hold `lock` for `seconds` in a sleeper; resolves once the sleeper holds it. */
+/**
+ * Hold `lock` for `seconds` in a sleeper; resolves once the sleeper holds it. A fixed 300 ms pause used to stand in for
+ * "holds it", and under load lockf had not yet taken the lock, so the row's own build took it at once (the timeout row's
+ * "Missing expected exception", #500's gate 07:09Z, 12 Nov). Now a non-blocking probe (`lockf -k -t 0`, which keeps the
+ * file, so the holder's inode stays the lock) is retried until it is refused (exit 75): only then does the sleeper hold it.
+ */
 async function holdLock(lock, seconds) {
   const holder = spawn('/usr/bin/lockf', ['-k', lock, '/bin/sleep', String(seconds)], { stdio: 'ignore' })
-  await pause(300)
-  return holder
+  const deadline = Date.now() + 10_000
+  for (;;) {
+    const probe = spawnSync('/usr/bin/lockf', ['-k', '-t', '0', lock, '/usr/bin/true'])
+    if (probe.status === 75) return holder
+    if (Date.now() > deadline) { holder.kill(); throw new Error(`the sleeper never took ${lock} (probe exit ${probe.status})`) }
+    await pause(25)
+  }
 }
 
 test('CU-335: a second build waits for the lock instead of compiling alongside', async () => {
@@ -76,6 +86,32 @@ test('CU-335: buildAll compiles only under the lock, in a child that re-checks t
   const buildAll = source.slice(source.indexOf('export function buildAll('), source.indexOf('function buildLocked('))
   assert.match(buildAll, /underBuildLock\(\[process\.execPath, fileURLToPath\(import\.meta\.url\), '--build', hash, cacheRoot\]\)/)
   assert.doesNotMatch(buildAll, /execFileSync\('(bash|swiftc)'/, 'no compile outside the lock')
+  assert.match(buildAll, /if \(cacheComplete\(cache\)\) return \{ root/, 'CU-653: the fast path trusts only a whole cache, too')
   const locked = source.slice(source.indexOf('function buildLocked('))
-  assert.match(locked, /if \(existsSync\(executable\) && existsSync\(unitTests\)\) return/, 're-checks the cache first')
+  assert.match(locked, /if \(cacheComplete\(cache\)\) return/, 're-checks the cache first')
+  assert.match(locked, /rmSync\(root, \{ recursive: true, force: true \}\)/, 'and removes a broken one before building')
+})
+
+test('CU-653: a cache counts only when the bundle is whole - executable, unit tests, Info.plist and a verified seal', () => {
+  const root = mkdtempSync(join(dir, 'cache-'))
+  const cache = cachePaths('0123456789abcdef', root)
+  const plist = join(cache.app, 'Contents', 'Info.plist')
+  mkdirSync(dirname(cache.executable), { recursive: true })
+  for (const path of [cache.executable, cache.unitTests, plist]) writeFileSync(path, 'x')
+  let verified = 0
+  const sealed = { verify: () => { verified += 1 } }
+  assert.equal(cacheComplete(cache, sealed), true, 'every part present and the seal verifies')
+  const refused = Object.assign(new Error('a sealed resource is missing'), { status: 1 })
+  assert.equal(cacheComplete(cache, { verify: () => { throw refused } }), false, 'a broken seal: codesign exits non-zero')
+  const timedOut = Object.assign(new Error('spawnSync /usr/bin/codesign ETIMEDOUT'), { code: 'ETIMEDOUT', status: null, signal: 'SIGTERM' })
+  assert.equal(cacheComplete(cache, { verify: () => { throw timedOut } }), true, 'a codesign timeout says nothing about the bundle: keep the cache')
+  rmSync(plist)
+  verified = 0
+  assert.equal(cacheComplete(cache, sealed), false, 'Info.plist gone (what the 20 Nov tmp cleaner took)')
+  assert.equal(verified, 0, 'a missing part fails before codesign runs')
+  writeFileSync(plist, 'x')
+  rmSync(cache.unitTests)
+  assert.equal(cacheComplete(cache, sealed), false, 'the unit-test binary gone')
+  writeFileSync(cache.unitTests, 'x')
+  assert.equal(cacheComplete(cache), false, 'the real codesign refuses an unsigned stand-in bundle')
 })

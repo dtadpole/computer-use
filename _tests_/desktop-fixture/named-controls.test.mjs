@@ -63,6 +63,29 @@ describe('named-controls (live rows decided by a name)', () => {
     })
   })
 
+  test('placeholders (CU-349): entries labelled only by a placeholder - AXTextField, the placeholder served apart from the name; lengths only', async () => {
+    const names = ['One-time code', 'CVV', 'Search']
+    await withNamed({ fields: ['Bank account'], placeholders: names, buttons: ['Continue'] }, async (fixture) => {
+      const audit = await fixture.axAudit()
+      names.forEach((name, index) => {
+        const entry = audit[`placeholder-${index}`]
+        assert.equal(entry.role, 'AXTextField')
+        // No caption or label is set; what AppKit serves as a name is not the placeholder's words (the policy must find
+        // them in the placeholder, CU-349).
+        assert.notEqual(entry.name, name, `placeholder-${index} must not carry its placeholder as its name`)
+        assert.equal(entry.placeholder, name)
+      })
+      assert.equal(audit['field-0'].name, 'Bank account', 'the named entry keeps its name above them')
+      const targets = await fixture.targets()
+      for (const key of ['placeholder-0', 'placeholder-1', 'placeholder-2', 'field-0', 'button-0']) assert.ok(targets[key], `no target for ${key}`)
+      assert.ok(targets['placeholder-0'].y > targets['field-0'].y && targets['button-0'].y > targets['placeholder-2'].y, 'they sit between the named entries and the buttons')
+      await fixture.act({ set: 'placeholder-1', value: '123' })
+      const { fields } = await fixture.state()
+      assert.deepEqual(fields.placeholderFieldLengths, [0, 3, 0])
+      assert.doesNotMatch(JSON.stringify(await fixture.state()), /"123"/, 'the text never comes back through the channel')
+    })
+  })
+
   test('at most six of each, names trimmed and capped at 60, empty names dropped', async () => {
     const long = 'x'.repeat(80)
     await withNamed({ fields: ['  Debit card  ', '', long, 'a', 'b', 'c', 'd', 'e'], buttons: [] }, async (fixture) => {
@@ -111,6 +134,29 @@ describe('named-controls (live rows decided by a name)', () => {
     })
   })
 
+  test('menuTitle (CU-382): the menu takes the given title, as a stand-in for Finder\'s Quick Actions submenu; the default stays Actions', async () => {
+    await withNamed({ fields: ['Message'], menuTitle: 'Quick Actions', menuItems: ['Fixture Workflow', { name: 'Fixture Upload', key: 'U', shift: true }] }, async (fixture) => {
+      const menus = (await fixture.call('menuAX')).menus
+      const quick = menus.find((menu) => menu.title === 'Quick Actions')
+      assert.ok(quick, 'the menu bar shows Quick Actions')
+      assert.deepEqual(quick.items.map(({ title }) => title), ['Fixture Workflow', 'Fixture Upload'])
+      assert.equal(menus.some((menu) => menu.title === 'Actions'), false, 'no Actions menu beside it')
+      const bound = await fixture.call('menuItemForKey', { key: 'shift+cmd+u' })
+      assert.deepEqual([bound.title, bound.action], ['Fixture Upload', 'choose:'])
+    })
+  })
+
+  test('popUps (CU-409): a native order panel - an asset pop-up (first item selected), an Amount entry and a bare Sell, all the window\'s own children', async () => {
+    await withNamed({ fields: ['Amount'], popUps: [{ name: 'Asset', items: ['BTC', 'ETH'] }, { name: '', items: ['x'] }, { name: 'Empty', items: [] }], buttons: ['Sell'] }, async (fixture) => {
+      const state = await fixture.state()
+      assert.deepEqual(state.fields.namedPopUpSelected, [0], 'one valid pop-up (an unnamed or empty one is skipped), its first item selected')
+      const targets = await fixture.targets()
+      assert.ok(targets['popup-0'] && targets['button-0'] && targets['field-0'], 'the pop-up, the Sell button and the Amount entry are named targets')
+      await fixture.act({ press: 'button-0' })
+      assert.deepEqual((await fixture.state()).fields.namedPressed, [0])
+    })
+  })
+
   test('the Actions menu exists only while named-controls is open', async () => {
     const fixture = await launchFixture(executable, { offscreen: true })
     try {
@@ -122,5 +168,31 @@ describe('named-controls (live rows decided by a name)', () => {
     } finally {
       await fixture.close()
     }
+  })
+
+  test("CU-586: sheet attaches a sheet with no title or message - a plain 'Continue' and a SwiftUI-style 'Delete' whose label is its own static text", async () => {
+    await withNamed({ buttons: ['OK'], sheet: true }, async (fixture) => {
+      const { fields } = await fixture.state()
+      assert.equal(fields.namedSheetTexts.role, 'AXSheet')
+      assert.deepEqual(fields.namedSheetTexts.outside, [], 'no title or message text on the sheet')
+      assert.deepEqual(fields.namedSheetTexts.inside, ['Delete'], "the only static text is 'Delete', inside its button")
+      assert.deepEqual(fields.namedSheetTexts.controls, [['AXButton', 'Continue'], ['AXButton', 'Delete']], 'two buttons, nothing else')
+      const audit = await fixture.axAudit()
+      assert.deepEqual([audit['sheet-continue'].role, audit['sheet-continue'].name], ['AXButton', 'Continue'])
+      // In-process audit walks to the deepest element at the centre: 'Delete' is its label, the static text child.
+      assert.deepEqual([audit['sheet-delete'].role, audit['sheet-delete'].name], ['AXStaticText', 'Delete'])
+      const targets = await fixture.targets()
+      assert.equal(targets['sheet-continue'].window, 'main:sheet', "counted in the sheet's own window")
+      assert.equal(targets['sheet-delete'].window, 'main:sheet')
+      await fixture.act({ press: 'sheet-continue' })
+      assert.deepEqual((await fixture.state()).fields.namedSheetPressed, [0], 'a press records its index only')
+    })
+  })
+
+  test('without sheet, no sheet opens', async () => {
+    await withNamed({ buttons: ['OK'] }, async (fixture) => {
+      assert.deepEqual((await fixture.state()).fields.namedSheetTexts, {})
+      assert.equal((await fixture.targets())['sheet-continue'], undefined)
+    })
   })
 })
