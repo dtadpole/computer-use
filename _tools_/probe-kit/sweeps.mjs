@@ -1,7 +1,7 @@
 // Canonical-form sweeps (Part of CU-458): wrap every asking row of a ruled matrix in each written-out form of the canonical
 // families and report the forms that go free. A ruled family must stay at 0 free; an unruled family is reported, not judged.
 // Policy level only (D-098): a sweep says what the policy decides for a button shape on the row's page, not what a run does.
-import { readFileSync, realpathSync } from 'node:fs'
+import { existsSync, readFileSync, realpathSync, writeFileSync } from 'node:fs'
 import { pathToFileURL } from 'node:url'
 
 import { act, ctx, web } from './shapes.mjs'
@@ -66,11 +66,38 @@ export function sweep(matrices, { families = Object.keys(FAMILIES) } = {}) {
 /** The ruled families with any free form - empty when every ruled form keeps the row asking. */
 export const ruledGaps = (result) => Object.entries(result).filter(([, r]) => r.ruled && Object.values(r.free).some((l) => l.length > 0)).map(([f]) => f)
 
+/**
+ * Compare two sweep results (main, then the change): `{ newFree, gone }`, each `[family.form, id:name]`. A wrapped form free on
+ * the change but not on main is a new gap or a lost ask - the counts can hide it (one form freed, another fixed); the names cannot.
+ */
+export function diffSweeps(before, after) {
+  const pairs = (r) => new Set(Object.entries(r).flatMap(([f, x]) => Object.entries(x.free).flatMap(([k, l]) => l.map((n) => `${f}.${k}\t${n}`))))
+  const a = pairs(before), b = pairs(after)
+  const split = (s) => s.split('\t')
+  return { newFree: [...b].filter((x) => !a.has(x)).map(split), gone: [...a].filter((x) => !b.has(x)).map(split) }
+}
+
+// CLI: node sweeps.mjs [--json OUT] <matrix.json>... - also writes the full result to OUT for a later diff;
+//      node sweeps.mjs diff MAIN.json CHANGE.json - prints the new frees by name and exits 1 when there is any.
 // CLI: node sweeps.mjs <matrix.json>... - each file `{ site, rows }` (id = file name); prints a line per family, exits 1 on a ruled gap.
 // Start the CLI only when run directly; resolve the typed path so a symlinked path (macOS /tmp -> /private/tmp) still runs it.
 if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) {
-  const matrices = process.argv.slice(2).map((p) => ({ id: p.replace(/^.*\//, '').replace(/\.json$/, ''), ...JSON.parse(readFileSync(p, 'utf8')) }))
+  const argv = process.argv.slice(2)
+  // Usage errors exit 2, apart from 'new frees' (1): an unreadable diff input, or a --json OUT that is missing or names a matrix.
+  const usage = (why) => { console.error(`sweeps.mjs: ${why}\nusage: sweeps.mjs [--json OUT] <matrix.json>... | sweeps.mjs diff MAIN.json CHANGE.json`); process.exit(2) }
+  const readJson = (p) => { try { return JSON.parse(readFileSync(p, 'utf8')) } catch { return usage(`cannot read ${p ?? '(missing path)'}`) } }
+  if (argv[0] === 'diff') {
+    const d = diffSweeps(readJson(argv[1]), readJson(argv[2]))
+    console.log(`SWEEP DIFF: ${d.newFree.length} new free, ${d.gone.length} no longer free` + (d.newFree.length ? '\n  new free: ' + d.newFree.map(([f, n]) => `${f} ${n}`).join(' | ') : ''))
+    process.exitCode = d.newFree.length ? 1 : 0
+  } else {
+  const json = argv[0] === '--json' ? argv.splice(0, 2)[1] : null
+  if (argv[0] === undefined && json !== null) usage('--json needs OUT and at least one matrix')
+  if (json !== null && (!json || argv.includes(json) || (existsSync(json) && readJson(json)?.rows))) usage(`--json OUT must be a new result file, not a matrix (${json})`)
+  const matrices = argv.map((p) => ({ id: p.replace(/^.*\//, '').replace(/\.json$/, ''), ...JSON.parse(readFileSync(p, 'utf8')) }))
   const result = sweep(matrices)
   for (const [f, r] of Object.entries(result)) console.log(`${f}${r.ruled ? '' : ' (unruled)'}: ` + Object.entries(r.free).map(([k, l]) => `${k} ${l.length}`).join(', ') + (Object.values(r.free).flat().length ? `  e.g. ${Object.values(r.free).flat().slice(0, 3).join(' | ')}` : ''))
+  if (json) writeFileSync(json, JSON.stringify(result))
   process.exitCode = ruledGaps(result).length ? 1 : 0
+  }
 }

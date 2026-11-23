@@ -16,6 +16,11 @@ const BUTTONS = {
   ru: [['Оформить заказ', 'purchase'], ['КУПИТЬ', 'purchase'], ['Удалить', 'delete'], ['Отправить', 'submit']],
   ja: [['注文を確定する', 'purchase'], ['購入する', 'purchase'], ['削除', 'delete'], ['送信', 'submit']],
   ko: [['결제하기', 'purchase'], ['바로구매', 'purchase'], ['삭제', 'delete'], ['보내기', 'submit']],
+  // CU-358: Italian, Dutch, Portuguese and Turkish.
+  it: [['Acquista ora', 'purchase'], ['Paga ora', 'purchase'], ['Effettua ordine', 'purchase'], ['Elimina', 'delete'], ['Cancella', 'delete'], ['Rimuovi', 'delete'], ['Invia', 'submit']],
+  nl: [['Nu kopen', 'purchase'], ['Nu betalen', 'purchase'], ['Afrekenen', 'purchase'], ['Verwijderen', 'delete'], ['Wissen', 'delete'], ['Versturen', 'submit'], ['Verzenden', 'submit']],
+  pt: [['Comprar agora', 'purchase'], ['Finalizar pedido', 'purchase'], ['Excluir', 'delete'], ['Apagar', 'delete'], ['Remover', 'delete'], ['Enviar', 'submit']],
+  tr: [['Şimdi satın al', 'purchase'], ['Şimdi öde', 'purchase'], ['Sipariş ver', 'purchase'], ['SATIN AL', 'purchase'], ['Hemen al', 'purchase'], ['Sil', 'delete'], ['SİL', 'delete'], ['Kalıcı olarak sil', 'delete'], ['Kaldır', 'delete'], ['Gönder', 'submit']],
 }
 for (const [locale, rows] of Object.entries(BUTTONS)) {
   test(`CU-352 [${locale}]: buy, pay, delete and send buttons ask`, () => {
@@ -28,6 +33,47 @@ test('CU-345: PIN, security code and password fields named in six languages ask 
     'Geheimzahl', 'Bestätigungscode', 'Prüfnummer', 'Código de verificación', 'Код подтверждения', 'Kartennummer', 'カード番号', 'Numéro de carte', 'Número de tarjeta', 'Номер карты', '카드 번호', 'Kreditkartennummer', 'Debitkartennummer', 'Bankkartennummer', 'Kartenprüfnummer', 'Bankkartengeheimzahl', 'Einmalcode', 'SMS-Code', 'Bestätigungs-Code', 'Bestätigungs Code', 'Kreditkarten-Nummer', 'Karten Nummer']) {
     assert.notEqual(typeInto(name), 'allow', name)
   }
+})
+
+test('CU-358 r2 (cu-developer-three): empty-trash, short-imperative and confirm-payment forms ask', () => {
+  for (const [name, expected] of [['Svuota cestino', 'delete'], ['Prullenbak legen', 'delete'], ['Esvaziar lixeira', 'delete'], ['Çöp kutusunu boşalt', 'delete'],
+    ['Compra adesso', 'purchase'], ['Koop', 'purchase'], ['Betaal nu', 'purchase'], ['Conferma pagamento', 'purchase'], ['Compre agora', 'purchase'], ['Ödemeyi onayla', 'purchase']]) assert.equal(click(name), expected, name)
+})
+
+test('CU-358 r3 (cu-developer-three, D-109): Turkish suffixed and cased forms of listed stems ask', () => {
+  for (const [name, expected] of [['Ödemeyi tamamla', 'purchase'], ['Ödemeyi onayla', 'purchase'], ['Şimdi Al', 'purchase'], ['Siparişi ver', 'purchase'], ['Ödeyin', 'purchase'],
+    ['Kalıcı olarak silinsin', 'delete'], ['Silin', 'delete'], ['Hesabımı sil', 'delete'], ['Çöp kutusunu boşaltın', 'delete']]) assert.equal(click(name), expected, name)
+  for (const name of ['Şifrenizi girin', 'Şifrenizi', 'Şifresi', 'Parolanızı', 'Kart numaranızı', 'Kart numarası', 'Doğrulama kodunuzu', 'Güvenlik kodu', 'ŞİFRENİZ']) assert.notEqual(typeInto(name), 'allow', name)
+})
+
+test('CU-358 r4 (cu-developer-three): polite imperative, future and dative forms ask', () => {
+  for (const [name, expected] of [['Gönderin', 'submit'], ['Gönderiniz', 'submit'], ['Şimdi satın alın', 'purchase'], ['Satın alın', 'purchase'], ['Ödemeye geç', 'purchase'], ['Ödemeye geçin', 'purchase'],
+    ['Kalıcı olarak silinecek', 'delete'], ['Silinecek', 'delete']]) assert.equal(click(name), expected, name)
+})
+
+test('CU-358 r5: article slots, the send-money family and Dutch account closing ask', () => {
+  for (const [name, expected] of [['Conferma il pagamento', 'purchase'], ["Conferma l'ordine", 'purchase'], ['Effettua il pagamento', 'purchase'], ['Confirmar o pagamento', 'purchase'], ['Finalizar a compra', 'purchase'],
+    ['Bevestig de betaling', 'purchase'], ['De bestelling plaatsen', 'purchase'], ['Geld overmaken', 'purchase'], ['Geld overmaken naar Sam', 'purchase'], ['Invia bonifico', 'purchase'], ['Trasferisci denaro', 'purchase'],
+    ['Transferir dinheiro', 'purchase'], ['Enviar Pix', 'purchase'], ['Para gönder', 'purchase'], ['Para gönderin', 'purchase'], ['Havale yap', 'purchase'], ['EFT yap', 'purchase'],
+    ['Account opheffen', 'delete'], ['Mijn account opheffen', 'delete'],
+    // r6 (cu-developer-one): the polite imperative on 'onayla', and closing a Turkish account.
+    ['Siparişi onaylayın', 'purchase'], ['Ödemeyi onaylayın', 'purchase'], ['Hesabı kapat', 'delete'], ['Hesabımı kapat', 'delete'], ['Hesabınızı kapatın', 'delete'], ['Hesabı sil', 'delete'],
+    // r7 (cu-developer-two): closing an account in IT / PT / NL.
+    ['Chiudi account', 'delete'], ["Chiudi l'account", 'delete'], ['Chiudi il mio account', 'delete'], ['Encerrar conta', 'delete'], ['Encerrar a conta', 'delete'], ['Fechar minha conta', 'delete'],
+    ['Account sluiten', 'delete'], ['Mijn account sluiten', 'delete'], ['Sluit je account', 'delete']]) assert.ok(click(name) === expected || (click(name) ?? '').includes(expected), `${name}: ${click(name)}`)
+})
+
+test('CU-358: PIN, one-time code, password and card-number fields named in Italian, Dutch, Portuguese and Turkish ask', () => {
+  for (const name of ['Codice di verifica', 'Codice di sicurezza', 'Numero della carta', 'Wachtwoord', 'Pincode', 'Bankpincode', 'Verificatiecode', 'Sms-verificatiecode',
+    'Beveiligingscode', 'Kaartnummer', 'Creditcardkaartnummer', 'Senha', 'Código de verificação', 'Código de segurança', 'Número do cartão',
+    'Şifre', 'ŞİFRE', 'Parola', 'Doğrulama kodu', 'Güvenlik kodu', 'Kart numarası', 'Şifreniz', 'Parolanız', 'Kart numaranız', 'Número de cartão', 'Número de cartão de crédito']) {
+    assert.notEqual(typeInto(name), 'allow', name)
+  }
+})
+
+test('CU-358 negatives: cancel, back and near words stay allowed; ordinary fields stay free', () => {
+  for (const name of ['Annulla', 'Indietro', 'Annuleren', 'Terug', 'Voltar', 'İptal', 'Geri', 'Silikon', 'Inviato', 'Pagamenti', 'Pagamentos', 'Ordinamento', 'Bestellingen', 'Verzonden', 'Ödeme yöntemleri', 'Gönderildi', 'Silvester', 'Pagamento', 'Compravendite', 'Koopjes', 'Betaalmethoden', 'Bestellingen', 'Compreensão', 'Cestino', 'Prullenbak', 'Lixeira', 'Çöp kutusu', 'Silinenler', 'Silgi', 'Gönderiler', 'Sepetim', 'Ödemelerim', 'Siparişlerim', 'Silindi', 'Silinen öğeler', 'Silgi aracı', 'Gönderilenler', 'Ödeme geçmişi', 'Silindir', 'Silahlar', 'Sepetimi göster', 'Gönderen', 'Alınanlar', 'Blokkering opheffen', 'Il pagamento è riuscito', 'Bonifici ricevuti', 'Para birimi', 'Havale geçmişi', 'Hesap ayarları', 'Hesabım', 'Kapat', 'Pencereyi kapat', 'Chiudi', 'Chiudi finestra', 'Fechar', 'Sluiten', 'Account aanmaken', 'Abrir conta']) assert.equal(click(name), 'allow', name)
+  for (const name of ['Nome', 'Città', 'Naam', 'Woonplaats', 'Cidade', 'Ad', 'Şehir', 'Codice sconto', 'Kortingscode', 'Código promocional', 'İndirim kodu', 'Postcode', 'Código postal', 'Şifreleme', 'Adınız', 'Şehriniz', 'Telefon numaranız', 'Şifreleme anahtarı', 'Kart sahibinin adı']) assert.equal(typeInto(name), 'allow', name)
 })
 
 test('CU-352 negatives: cancel, back, a shopping list, a longer Russian word and ordinary fields stay allowed', () => {

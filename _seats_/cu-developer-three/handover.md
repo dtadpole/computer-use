@@ -1,50 +1,43 @@
 ---
 title: '[cu] Developer Three (macOS helper) - handover'
 created: 2026-11-08T04:20:00Z
-modified: 2026-11-15T22:30:00Z
+modified: 2026-11-23T10:16:00Z
 level: L1
-version: 1.16.0
+version: 1.33.0
 description: 'What a fresh [cu] Developer Three session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
-  - source: cu-coordinator goal of 2026-11-12 08:05Z (desktop checks, live seconds, timing tests, guarded node calls)
-  - source: PRs #791, #800, #810, #818, #826, #500, #833 (12-15 Nov); the 15 Nov reboot that emptied /tmp
+  - source: cu-coordinator's seat goal of 2026-11-23 08:00Z and lane rulings D-112 to D-115
+  - source: PRs #895, #930, #1353; Linear CU-585, CU-588, CU-614, CU-662, CU-666, CU-674, CU-679, CU-697
 ---
 
 # [cu] Developer Three (macOS helper) - handover
 
-Seat `cu-developer-three`. Edits and CUHelper launches run from the session worktree (D-080).
+Seat `cu-developer-three`. Edits and CUHelper launches run from the session worktree.
 
 ## Live state
 
-- Installed helper: 0.2.70 (since 11 Nov). Main stands at c82f0fc0.
-- The 15 Nov reboot emptied `/tmp`. The scratch tools (`guarded.sh`, `lockstate.sh`, `send.sh`, the corpus tool
-  `lost-asks2.mjs`) are rebuilt there and backed up in a git-excluded `.cu3-tools/` folder of the session worktree.
-- The rebuilt corpus tool was checked on #823's own merge: it reproduces exactly the five ruled labels.
+- Installed helper: 0.2.70 (READBACK 03:41Z); main has 0.2.71 (#889).
+- Scripts: `heldrow.sh` (holds), `authorrun.sh` (the D-114 set per branch); copies in the private seat tools.
+- Every app-launching run waits on our run lock and on the shared-desktop claim file (D-115).
 
-## Landed since 11 Nov
+## Helper stack (the CU-585 desktop half, High)
 
-- CU-522's environment half (#791). The gate's idle wait now reads run-lock `ownerIdle`.
-- Four timing-test fixes: #800 (row f), #810 (menu close), #818 (build lock), #826 (the CU-64 R4 hold row, 1 s bound).
-- #500 (fixture menu title).
+1. **#895** (0.2.72, CU-588): author runs green at 10941168 (agent-core 2411, macos-desktop 446, helper 86); two re-OKs; in the helper gate queue.
+2. **#930** (0.2.73): merged locally on #895; the full D-101 set plus the helper suite in its window; retarget to main after #895 lands.
 
-## In flight
+**Then:** one READBACK install when the owner is idle, then the post-install checks.
 
-- #833 (CU-561): direct rows and a 142k-cell corpus diff are clean (nothing lowered). It needs a retarget to main and
-  both OKs.
-- Helper 0.2.71 (local branch `cu/cu-developer-three-dialog-text-skip-controls`): DialogText skips control subtrees.
-  It waits for a Linear issue and a slot.
+## Other items
 
-## Duties
-
-- Desktop contract checks on each High table PR: main vs head, adds only, both routes. They are labelled not-a-review.
-- A corpus diff on every lowering round and every shared-strip change.
-- Live second OKs when named. Own the timing tests in the seat's files.
-- Every node call goes through `guarded.sh`. Lock reads stay node-free.
+- **#1353** fixes the settle row of CU-697: two OKs, author runs posted; gate queued.
+- **Local, PRs next:** the CU-674 sandbox cleanup (ec853bd2) and one timing PR for CU-614, CU-662, CU-666 and CU-679's request-timeout row (40c52351); evidence scripts ready, windows queued after the Highs.
+- **Reflection:** corrections, seat tools and the claim-file wait await OKs.
 
 ## Rules learned
 
-- Keep tools outside `/tmp`.
-- A guarded run stops when another seat's `run.json` appears. Re-run it after the END notice.
-- Validate a rebuilt checker on a known case before trusting it.
-- Read a helper test's launch flags before saying it posts real input.
+- Author runs (D-114): name head, time and counts; test-only PRs run the holding suite plus five lone runs; slow suites the changed rows five times by name.
+- Policy reviews run the whole agent-core suite and every test file naming a reclassified string.
+- Read the inbox before any run after a DONE; one watcher at a time.
+- Records PRs: no open issue id; stamps never after the commit.
+- Reflection repo work goes through a separate clone, never its main checkout.
