@@ -1784,6 +1784,28 @@ export function typedConfirmClasses(entries) {
   const words = texts.join(' \u2022 ')
   return [...(TYPED_DESTROY.test(words) ? ['delete'] : []), ...(TYPED_TRANSFER.test(words) ? ['permission'] : [])]
 }
+
+// CU-371: a generic submit that applies whatever its form's select holds ('Apply', 'Go', 'Update' beside 'Bulk actions').
+const SELECTED_ACTION_SUBMIT = /^\s*(?:apply|go|update|ok(?:ay)?|submit|save|confirm|continue|run|execute|do\s+it|perform|proceed|done)\s*[.!]?\s*$/i
+// A destructive selected option, by its verb: delete / move to trash or bin / empty the trash / remove / erase / destroy /
+// purge / wipe / discard, or anything done permanently. A state or a view ('Deleted items', 'Trash', 'Removed') and
+// 'Archive', 'Move to folder', 'Mark as read' stay free (cu-developer-one 14:51Z).
+const SELECTED_DESTROY = /\b(?:delet(?:e|es|ing|ion)\b|(?:move|send|put)\s+(?:\w+\s+)?to\s+(?:the\s+)?(?:trash|bin|recycle\s+bin)\b|trash\s+(?:selected|all|them|it|items?)\b|empty\s+(?:the\s+)?(?:trash|bin)\b|remov(?:e|es|ing|al)\b|eras(?:e|es|ing|ure)\b|destroy\b|purg(?:e|es|ing)\b|wip(?:e|es|ing)\b|discard\b|permanently\b)/i
+
+/**
+ * CU-371: the classes a form's SELECTED options ask for when a generic submit applies them - the driver's formContext.options
+ * (up to 3 selected option texts of 24 characters, CU-400). A destructive one asks delete; nothing else is read.
+ */
+// r2 (cu-researcher's over-ask 'Undo delete'): an option that takes an act back never asks.
+const SELECTED_UNDO = /\b(?:undo|restore|recover|undelete|un-?archive|un-?trash|un-?ban|reinstate|cancel\s+(?:the\s+)?(?:deletion|removal))\b/i
+/** CU-371 r2: the selected option texts a generic submit applies - at most 3 of 24 characters, never an undo / restore one. */
+export function selectedOptionTexts(formContext) {
+  const options = Array.isArray(formContext?.options) ? formContext.options.slice(0, 3).map((text) => String(text ?? '').trim()).filter((text) => text !== '' && text.length <= 24) : []
+  return options.filter((text) => !SELECTED_UNDO.test(text))
+}
+export function selectedOptionClasses(formContext) {
+  return selectedOptionTexts(formContext).some((text) => SELECTED_DESTROY.test(text)) ? ['delete'] : []
+}
 const TRADE_WORDS = /\b(?:trade|trading|swap|swaps|stake|staking|unstake|sell|selling|bridge|mint|minting)\b/gi
 const TRADE_NAV = /\b(?:trade|trading|swap|swaps|stake|staking|unstake|sell|selling|bridge|mint|minting)\b[\s\S]*\b(?:history|settings|faq|guide|policy|fees|rates|limits)\b/i
 // cu-coordinator 11:13Z adds 'Rotate secret', 'Regenerate token', 'New token' and a settings 'Reset password' (CU-401's family).
@@ -4378,6 +4400,22 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const subProbe = context.confirmProbe === true || context.questionProbe === true || context.splitParticleProbe === true
     if (grammarEligible && !subProbe && classes.length === 0 && typedConfirmButton(name) && Array.isArray(target?.formEntries)) {
       for (const cls of typedConfirmClasses(target.formEntries)) classes.push(cls)
+    }
+    // CU-371 (cu-coordinator's filing; GO from the policy.mjs owner cu-developer-one 14:51Z; built by cu-developer-two): a
+    // generic submit ('Apply', 'Go', 'Update', 'OK', 'Submit') applies what its form's select holds, so it is judged by the
+    // SELECTED option (the driver's formContext). r2 (cu-researcher's held-out): each selected option is judged the way it
+    // would be as a button ('Revoke access' -> permission, 'Deactivate accounts' -> delete, 'Transfer ownership' ->
+    // permission), and the destructive verbs ask delete. A late union on the control's own label only, like CU-585: it adds
+    // to a submit nothing else classes, or to one whose only class is its own generic 'submit' ('Submit' beside 'Erase chosen
+    // rows' asks submit and delete); it never lowers an ask. An undo / restore / recover option never asks.
+    const genericOnly = classes.length === 0 || (classes.length > 0 && classes.every((cls) => cls === 'submit'))
+    if (grammarEligible && !subProbe && context.selectedOptionProbe !== true && genericOnly && SELECTED_ACTION_SUBMIT.test(String(name ?? '')) && target?.formContext && typeof target.formContext === 'object') {
+      for (const cls of selectedOptionClasses(target.formContext)) classes.push(cls)
+      for (const option of selectedOptionTexts(target.formContext)) {
+        const asButton = classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { tag: 'button', role: 'button', name: option, origin: target.origin }, selectedOptionProbe: true })
+        if (asButton.decision === 'confirm' && Array.isArray(asButton.classes)) for (const cls of asButton.classes) classes.push(cls)
+        else if (asButton.decision === 'confirm' && typeof asButton.class === 'string') classes.push(asButton.class)
+      }
     }
     if (grammarEligible && classes.length === 0) {
       const mdm = String(name ?? '').trim()
