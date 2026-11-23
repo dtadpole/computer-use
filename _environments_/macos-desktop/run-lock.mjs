@@ -89,6 +89,10 @@ export const RUN_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/
 export const OWNER_IDLE_SECONDS = 300
 /** Idle (A): an admission's idleAtStart is trusted only in [0, 86400] seconds. */
 const IDLE_AT_START_MAX = 86400
+/** CU-720: where a released armed run leaves its owner-idle base, how long it may stand, and the read jitter it allows. */
+export const CARRY_NAME = 'idle-carry.json'
+const CARRY_MAX_MS = 6 * 3600 * 1000
+const CARRY_SLACK_MS = 100
 /** CU-327: a hold's token - 16 hex characters - names who may end it; a nested holder gets its own. */
 export const HOLD_TOKEN_PATTERN = /^[0-9a-f]{16}$/
 /** CU-327: at most this many nested holders under one hold; past it a nest is refused (a runaway loop, not nesting). */
@@ -532,7 +536,13 @@ async function admitDesktopRun({
   if (typeof runId !== 'string' || !RUN_ID_PATTERN.test(runId)) throw invalid('the desktop run needs a run id of letters, digits and . _ : -')
   if (typeof dir !== 'string' || !isAbsolute(dir)) throw invalid('the desktop-run lock needs an absolute dir')
   const root = resolve(dir)
-  const readIdle = idleSeconds === undefined ? ownerIdleReader(root) : idleSeconds
+  const rawIdle = idleSeconds === undefined ? ownerIdleReader(root) : idleSeconds
+  // CU-720: an admission between two runs reads the carried owner idle when no event came since the last armed release.
+  const readIdle = typeof rawIdle === 'function' ? () => {
+    const hid = rawIdle()
+    const value = typeof hid === 'number' && Number.isFinite(hid) && hid >= 0 ? hid : null
+    return carriedIdle(root, now(), value) ?? hid
+  } : rawIdle
   prepareDir(root)
   const lock = join(root, '.lock')
   const entryPath = join(root, ENTRY_NAME)
@@ -585,7 +595,9 @@ async function admitDesktopRun({
   // older checkouts never find the Mac free between the holder's runs. Synchronous: it also runs in the exit hook.
   const removeEntry = () => {
     try {
-      if (!sameEntry(readEntry(entryPath), entry)) return
+      const current = readEntry(entryPath)
+      if (!sameEntry(current, entry)) return
+      writeCarry(root, current, now())
       const sentinel = keeperSentinel(readEntry(join(root, HOLD_NAME)), seat, now(), isAlive)
       if (sentinel !== null) {
         replaceEntry(entryPath, sentinel)
@@ -670,6 +682,44 @@ function markPatch(patch) {
  * this lock's own reader (none for a scratch dir, CU-117). Returns { seconds, rule } with rule 'armed_run' or 'hid';
  * seconds is null when HIDIdleTime cannot be read and no armed run stands in.
  */
+/**
+ * CU-720 (cu-coordinator 10:49Z; cu-developer-two's 10:48Z design, cu-developer-three's CU-719 notes): an armed run's
+ * owner-idle base outlives its release. Between runs the owner's idle used to be HIDIdleTime alone, which every HID-level
+ * event resets - ours and another team's bridge's alike (CUHelper posts at the HID tap) - so back-to-back runs every few
+ * minutes kept a D-066 gate under 300 s with nobody at the Mac. On release, an armed run with a kept idleAtStart writes
+ * { since, releasedAt, seat, runId } (since = max(admittedAt - idleAtStart, lastOwnerInputAt), the armed formula's base).
+ * While HIDIdleTime still reads at least the time since that release (no event since; 0.1 s of read jitter allowed), the
+ * owner's idle is now - since (rule 'carried'). Any later event, a carry older than 6 h, a clock behind it or a malformed
+ * file falls back to HIDIdleTime. Never longer than an armed run would have said; a hand on the Mac ends it at once.
+ */
+function writeCarry(root, current, at) {
+  try {
+    if (!current || isSentinel(current) || current.noInput === true || current.armed !== true) return
+    if (!(typeof current.idleAtStart === 'number' && Number.isFinite(current.idleAtStart) && current.idleAtStart >= 0 && current.idleAtStart <= IDLE_AT_START_MAX)) return
+    const admittedAt = Date.parse(current.startedAt)
+    if (!Number.isFinite(admittedAt) || at < admittedAt) return
+    const owner = typeof current.lastOwnerInputAt === 'number' && Number.isFinite(current.lastOwnerInputAt) ? current.lastOwnerInputAt : -Infinity
+    const since = Math.max(admittedAt - current.idleAtStart * 1000, owner)
+    if (!Number.isFinite(since) || since > at) return
+    const path = join(root, CARRY_NAME)
+    const temp = `${path}.${process.pid}.tmp`
+    writeFileSync(temp, `${JSON.stringify({ since, releasedAt: at, seat: current.seat, runId: current.runId })}\n`, { mode: 0o644 })
+    renameSync(temp, path)
+  } catch { /* a carry that cannot be written leaves HIDIdleTime alone - the over-wait side */ }
+}
+
+/** CU-720: the carried owner idle in whole seconds, or null (no carry, an event since its release, stale or malformed). */
+function carriedIdle(root, at, hidSeconds) {
+  if (hidSeconds === null) return null
+  const carry = readEntry(join(root, CARRY_NAME))
+  if (!carry || typeof carry !== 'object') return null
+  const { since, releasedAt } = carry
+  if (!(typeof since === 'number' && Number.isFinite(since) && typeof releasedAt === 'number' && Number.isFinite(releasedAt))) return null
+  if (since > releasedAt || at < releasedAt || at - releasedAt > CARRY_MAX_MS) return null
+  if (hidSeconds * 1000 + CARRY_SLACK_MS < at - releasedAt) return null
+  return Math.floor((at - since) / 1000)
+}
+
 export function ownerIdleSeconds({ dir = RUN_LOCK_DIR, now = Date.now, isAlive = pidAlive, idleSeconds } = {}) {
   const root = resolve(dir)
   const reader = idleSeconds === undefined ? ownerIdleReader(root) : idleSeconds
@@ -684,6 +734,8 @@ export function ownerIdleSeconds({ dir = RUN_LOCK_DIR, now = Date.now, isAlive =
     const since = Math.max(admittedAt - entry.idleAtStart * 1000, owner)
     if (Number.isFinite(admittedAt) && at >= admittedAt && at >= since) return { seconds: Math.floor((at - since) / 1000), rule: 'armed_run' }
   }
+  const carried = carriedIdle(root, at, hidSeconds)
+  if (carried !== null) return { seconds: carried, rule: 'carried' }
   return { seconds: hidSeconds === null ? null : Math.floor(hidSeconds), rule: 'hid' }
 }
 
