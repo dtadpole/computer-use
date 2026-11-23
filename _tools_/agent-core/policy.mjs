@@ -1,4 +1,4 @@
-import { isMessagingApp } from './app-kinds.mjs'
+import { isMessagingApp, isWalletApp } from './app-kinds.mjs'
 import { normaliseForPolicy, normaliseText } from './normalise.mjs'
 import { BIP39_ENGLISH } from './bip39-english.mjs'
 import { normalizeKey } from './keys.mjs'
@@ -49,6 +49,15 @@ export function neverCoveredByGrant(cls, name) {
 // locks, dial rows, mass sends, compensation, returns, relists, ride cancels) asks under any submit grant.
 // CU-507 (High; cu-coordinator 16:06Z): the generic final buttons of a confirm modal - judged by the modal's own title and text.
 const GENERIC_CONFIRM = /^\s*(?:confirm|ok|okay|yes|yes,?\s+(?:continue|confirm|proceed|i'?m\s+sure|do\s+it)|continue|proceed|submit|done|apply|accept|agree|i\s+agree|i\s+understand|got\s+it|i'?m\s+sure|do\s+it|go\s+ahead|confirm\s+and\s+continue)\s*[.!]?\s*$/i
+// CU-729 (High; cu-researcher's sweep, cu-coordinator 19:59Z): the same generic final buttons in the covered languages (de fr es it
+// pt nl ru ja zh ko) - a localized confirm modal's 'Ja' / 'Oui' / 'Aceptar' / 'はい' / '确定' / '확인' / 'Да' is judged by the modal's title
+// like English 'OK' / 'Yes'. Matched on the raw name (before the Cyrillic homoglyph fold), the whole name, an affirmative optionally
+// followed by a comma and one more confirm word ('Ja, fortfahren'). Additions only.
+const LOCALE_CONFIRM_WORD = String.raw`(?:ja|jawohl|ok|okay|bestätigen|bestaetigen|weiter|fortfahren|übernehmen|zustimmen|akzeptieren|einverstanden|verstanden|fertig|anwenden|oui|confirmer|continuer|valider|accepter|d['’]accord|appliquer|terminé|sí|si|aceptar|confirmar|continuar|de\s+acuerdo|vale|aplicar|listo|sì|conferma|confermare|continua|accetta|procedi|va\s+bene|applica|fatto|sim|aceitar|prosseguir|concluir|bevestigen|doorgaan|akkoord|accepteren|toepassen|verder|да|ок|подтвердить|продолжить|принять|согласен|согласна|применить|готово|хорошо|はい|確認|続行|同意する|同意|適用|完了|了解|是|是的|确定|確定|确认|继续|繼續|好|好的|应用|應用|完成|예|네|확인|계속|동의|적용|완료)`
+const LOCALE_GENERIC_CONFIRM = new RegExp(String.raw`^\s*${LOCALE_CONFIRM_WORD}(?:\s*[,、，]\s*${LOCALE_CONFIRM_WORD})?\s*[.!。！]?\s*$`, 'iu')
+// CU-729: the question frames of a localized confirm title ('Möchten Sie diese Notiz wirklich löschen?', 'Voulez-vous vraiment ...',
+// '¿Desea eliminar ...?', '本当に削除しますか？', '确定要删除吗？', '정말 삭제하시겠습니까?') are removed into one more title text to judge.
+const LOCALE_QUESTION_FRAME = /(?:möchten\s+sie|wollen\s+sie|möchtest\s+du|willst\s+du|sind\s+sie\s+sicher,?\s+dass\s+sie|wirklich|voulez-vous|souhaitez-vous|êtes-vous\s+sûre?\s+de\s+vouloir|vraiment|¿|está\s+seguro\s+de\s+que\s+desea|desea|quiere|realmente|sei\s+sicuro\s+di\s+voler|vuoi|davvero|tem\s+certeza\s+de\s+que\s+deseja|deseja|wilt\s+u|weet\s+u\s+zeker\s+dat\s+u|вы\s+действительно\s+хотите|вы\s+уверены,?\s+что\s+хотите|действительно|本当に|しますか|ますか|确定要|確定要|是否|确认要|吗|嗎|정말|하시겠습니까|하시겠어요)/giu
 const GENERIC_SUBMIT = /^\s*(?:submit|send|send\s+(?:message|reply|email|comment)|reply|post|post\s+(?:comment|reply)|comment|save|save\s+changes|apply|search|go|ok|done|continue|next|report\s+spam|sign\s+up|register|create\s+account)\s*!?\s*$/i
 
 /** Word lists matched on a target's accessible name, case-insensitively, at word boundaries; they err toward confirm. */
@@ -1766,6 +1775,17 @@ const LOCALE_CONFIRM_BACKOUT = /^\s*(?:abbrechen|zurück|schlie(?:ß|ss)en|nein|
 const LOCALE_CONFIRM_UTILITY = /^\s*(?:kopieren|copier|copiar|copia|kopiëren|копировать|コピー|复制|複製|복사|hilfe|aide|ayuda|ajuda|aiuto|справка|помощь|ヘルプ|帮助|幫助|도움말)(?![\p{L}\p{N}])/iu
 // A judged name has passed normaliseText, which folds Cyrillic homoglyphs to Latin case by case ('Отмена' -> 'Oтмeнa'), so the
 // Russian back-outs are also matched folded - as written, capitalised and in capitals - as namesRuTrashEmpty does.
+// CU-729: the Russian affirmatives the same way - a judged name has passed the Cyrillic homoglyph fold ('Да' -> 'Дa'), so they
+// are matched folded too (as written, capitalised and in capitals), alone or with a comma and one more of them.
+let ruConfirmRegex = null
+function namesRuConfirm(text) {
+  if (!ruConfirmRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const words = ['да', 'ок', 'подтвердить', 'продолжить', 'принять', 'согласен', 'согласна', 'применить', 'готово', 'хорошо'].flatMap(folds).join('|')
+    ruConfirmRegex = new RegExp(`^\\s*(?:${words})(?:\\s*,\\s*(?:${words}))?\\s*[.!]?\\s*$`, 'u')
+  }
+  return ruConfirmRegex.test(normaliseName(text))
+}
 let ruBackoutRegex = null
 function namesRuBackout(text) {
   if (!ruBackoutRegex) {
@@ -2526,7 +2546,18 @@ const ID_FIELD_PHRASE = /\bnummer\s+(?:ihres|deines|des|seines|ihrer|der)\s+(?:(
 // CU-604 (cu-researcher): the German bank TAN family as a field's whole label ('TAN', 'mTAN', 'SMS-TAN', 'pushTAN', 'chipTAN',
 // 'photoTAN', 'TAN-Nummer', 'TAN eingeben') - a bare 'tan' inside a word (a colour, 'Tango') stays free.
 const TAN_FIELD = /^\s*(?:tan\s+eingeben|(?:m|sms[\s-]?|push|chip|photo|smart|app[\s-]?|i)?tan(?:[\s-]?(?:nummer|nr\.?|code))?)\s*[:*]?\s*$/iu
-const secretNamedEntry = (target) => isTextEntry(target) && entryNamesOf(target).some((name) => namesWord(name, SECRET_NAMES) || namesAcronym(name) || CARD_NUMBER_PHRASE.test(String(name ?? '')) || CARD_EXPIRY_BARE.test(String(name ?? '')) || ID_FIELD_PHRASE.test(String(name ?? '')) || TAN_FIELD.test(String(name ?? '')))
+// CU-580 (cu-researcher 09:26Z; built before triage): a sign-in or recovery secret by CLASS - any auth qualifier (recovery, login, sign-in,
+// verification, security, authentication, 2FA / MFA, one-time, backup, access, confirmation, pairing, setup, activation, reset, unlock,
+// approval, magic, device, SMS / text / e-mail / app; #876 r2: emergency, rescue, fallback, master, break-glass, escrow, enrollment,
+// transaction / TAN, admin, owner, account) before code / token / PIN / key / passphrase. 'Zip code', 'Promo code' and 'Country
+// code' carry no auth qualifier and stay free.
+const AUTH_CODE_NAME = /\b(?:recovery|log-?in|sign-?in|signin|verification|verify|security|auth(?:entication|enticator)?|2fa|mfa|two-?factor|2-?step|one-?time|backup|access|confirmation|pairing|setup|activation|reset|unlock|approval|magic|device|sms|text|e-?mail|app|emergency|rescue|fallback|master|break-?glass|escrow|enrol(?:l)?ment|transaction|tan|mtan|admin(?:istrator)?|owner|account|restore|restoration|override|bypass|supervisor|reactivation|deactivation|wipe|erase|disable|unenroll(?:ment)?|transfer|authorization|authorisation)\s+(?:codes?|tokens?|pins?|keys?|pass-?phrases?)\b/i
+// CU-581 (cu-researcher 09:58Z; built before triage): secret MATERIAL by class - a token / secret / key / cookie named for what it unlocks
+// (API, bearer, vault, session, refresh, JWT, OAuth, personal access, service account, deploy, webhook, signing, client, a named cloud or
+// registry), a session / auth cookie, an encryption / SSH / GPG / PGP / signing / master / root / wallet key, a bank login or password,
+// a connection string, a database password, credentials.
+const SECRET_MATERIAL_NAME = /\b(?:api|bearer|vault|session|refresh|id|jwt|oauth2?|auth|personal\s+access|service(?:\s+account)?|deploy|webhook|signing|client|github|gitlab|npm|pypi|slack|stripe|aws|gcp|azure|cloudflare|openai)\s+(?:tokens?|secrets?|keys?|cookies?)\b|\b(?:session|auth|login)\s+cookies?\b|\b(?:encryption|decryption|ssh|gpg|pgp|signing|master|root|wallet)\s+keys?\b|\bbank(?:ing)?\s+(?:login|password|credentials|user\s*name|user\s*id)\b|\bconnection\s+strings?\b|\b(?:database|db)\s+password\b|\bcredentials?\b/i
+const secretNamedEntry = (target) => isTextEntry(target) && entryNamesOf(target).some((name) => namesWord(name, SECRET_NAMES) || namesAcronym(name) || CARD_NUMBER_PHRASE.test(String(name ?? '')) || CARD_EXPIRY_BARE.test(String(name ?? '')) || ID_FIELD_PHRASE.test(String(name ?? '')) || TAN_FIELD.test(String(name ?? '')) || AUTH_CODE_NAME.test(String(name ?? '')) || SECRET_MATERIAL_NAME.test(String(name ?? '')))
 
 // CU-164: a wallet recovery phrase - twelve or more words in a row, every one on the BIP39 list; ordinary prose breaks
 // the run with words the list does not hold (the, is, to, of, a).
@@ -4369,7 +4400,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         const restProbe = classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { role: 'button', name: continueTo[1].trim(), ...(target?.origin ? { origin: target.origin } : {}) } })
         if (restProbe.decision === 'confirm') for (const cls of restProbe.classes ?? [restProbe.class]) if (!classes.includes(cls)) classes.push(cls)
       }
-      if (context.confirmProbe !== true && presses && (dialogName !== '' || dialogDescription !== '') && (GENERIC_CONFIRM.test(String(name ?? '')) || continueTo)) {
+      const localeConfirm = LOCALE_GENERIC_CONFIRM.test(String(target?.name ?? name ?? '')) || LOCALE_GENERIC_CONFIRM.test(String(name ?? '')) || namesRuConfirm(String(name ?? ''))
+      if (context.confirmProbe !== true && presses && (dialogName !== '' || dialogDescription !== '') && (GENERIC_CONFIRM.test(String(name ?? '')) || localeConfirm || continueTo)) {
         // cu-researcher 16:09Z: a title is a question more often than a row - 'Are you sure you want to <row>?', 'Really <row>?',
         // '<row>?' - so a title canonical step strips the question frame before the title is judged as a name.
         // #702 round 2 (cu-researcher 16:24Z): descriptions lead with 'This will / This action will / You are about to / Doing this will'.
@@ -4381,6 +4413,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         const firstSentence = kept[0] ?? ''
         const keptDescription = kept.join(' ')
         const texts = [...new Set([dialogName, titleRow(dialogName), firstSentence, titleRow(firstSentence), `${titleRow(dialogName)} ${keptDescription}`.trim()].filter((t) => t !== ''))]
+        // CU-729: the localized title with its question frame removed is one more text (additions only).
+        const unframed = (text) => text.replace(LOCALE_QUESTION_FRAME, ' ').replace(/[?？!！.。:：\s]+$/u, '').replace(/\s+/g, ' ').trim()
+        for (const extra of [unframed(dialogName), unframed(firstSentence)]) if (extra !== '' && !texts.includes(extra)) texts.push(extra)
         for (const text of texts) {
           // #702 round 2: the title is judged with the FULL canonical form (synonym, quantifier, label and clause steps run only
           // outside a confirm probe), so no confirmProbe flag here; the probe target carries no dialog fields, so it cannot recurse.
@@ -4510,6 +4545,12 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     }
     // CU-521 (cu-coordinator 20:06Z): 'Merge anyway' keeps its older submit and unions permission (a merge past the requirements).
     if (grammarEligible && classes.length > 0 && !classes.includes('permission') && /^(?:merge\s+anyway|force[-\s]?merge)$/i.test(String(name ?? '').trim())) classes.push('permission')
+    // CU-576 (built before triage): in a crypto wallet app a send / broadcast / sign / confirm / approve / swap moves money and is final - it
+    // asks purchase (no grant covers it) beside whatever class it already has; reading, receiving and settings stay as they are.
+    if (desktopUrl && !nativeOn && !classes.includes('purchase') && isWalletApp(String(context.frontmostBundleId ?? target?.origin ?? context.url ?? ''))
+      && (/^\s*(?:send|spend|broadcast|confirm|sign|approve|authori[sz]e|transfer|withdraw|swap|exchange|trade|sell|buy|pay|submit|finali[sz]e|push|publish|release|redeem|sweep|consolidate|coin-?join|mix|bridge|stake|unstake|delegate|claim|move\s+(?:funds|coins)|review\s+and\s+send|sign\s+and\s+(?:send|broadcast)|create\s+transaction|bump\s+fee|speed\s+up|cancel\s+transaction)\b/i.test(String(name ?? ''))
+        || /^\s*[\p{L}-]+\b.*\b(?:transactions?|tx|psbt|payments?|funds|coins|utxos?|outputs?|coin-?\s?joins?|mixing|mix(?:ing)?\s+rounds?|swaps?|staking|stakes?|bridges?|withdrawals?|transfers?|payouts?|sends?|spends?)\b/iu.test(String(name ?? '')) && !/^\s*(?:view|show|see|open|export|copy|search|filter|sort|label|refresh|load|import|scan)\b/i.test(String(name ?? '')))
+      && !/^\s*(?:send|confirm|sign|approve)\s+(?:feedback|logs?|report|crash|diagnostics)\b/i.test(String(name ?? ''))) classes.push('purchase')
     // #729 round 2 (cu-coordinator 19:51Z, the 18:06Z precedent): 'Reset account PIN' keeps the older reset row's delete and unions
     // CU-518's credential.
     if (grammarEligible && classes.length > 0 && !classes.includes('credential') && /^reset\s+(?:the\s+|my\s+|your\s+)?(?:account|port[-\s]?out|transfer|number\s+transfer)\s+(?:pin|passcode)$/i.test(String(name ?? '').trim())) classes.push('credential')
