@@ -19,6 +19,8 @@ import { decodePng, solidPng } from '../../_tools_/verify-kit/png.mjs'
 
 let built
 const scratch = []
+/** CU-614: a loaded gate widens the build-bound timeouts with CU_TEST_TIME_FACTOR, as the run-lock rows do. Unset, they are as before. */
+const FACTOR = Math.max(1, Number(process.env.CU_TEST_TIME_FACTOR) || 1)
 
 before(() => {
   built = buildAll()
@@ -34,6 +36,15 @@ function privateDir() {
   chmodSync(dir, 0o700)
   scratch.push(dir)
   return dir
+}
+
+/**
+ * CU-614: a stand-in swiftc for the rows that test a signing failure, not the compile. It copies the suite's cached build
+ * (the same sources and build.sh, so the same binary) to swiftc's -o path; under load each of those rows used to compile
+ * the helper in full and two of them ran into their timeout (20 Nov gates).
+ */
+function cachedSwiftc(shim) {
+  writeFileSync(join(shim, 'swiftc'), `#!/bin/sh\nout=; prev=; for a in "$@"; do [ "$prev" = "-o" ] && out="$a"; prev="$a"; done\n[ -n "$out" ] || exit 1\nexec /bin/cp '${built.executable}' "$out"\n`, { mode: 0o755 })
 }
 
 function tokenFile(dir, token = 'a'.repeat(64), mode = 0o600) {
@@ -174,7 +185,7 @@ describe('build', () => {
 describe('install.sh (the owner\'s install step)', () => {
   it('builds at <CU_HOME>/helper, keeps the directories private and reports the prompt-free self-test', () => {
     const home = privateDir()
-    const output = execFileSync('bash', [join(HELPER_DIR, 'install.sh'), '--cu-home', home, '--no-open'], { env: { ...process.env, CU_HELPER_IDENTITY: '' }, stdio: ['ignore', 'pipe', 'pipe'], timeout: 100_000 }).toString()
+    const output = execFileSync('bash', [join(HELPER_DIR, 'install.sh'), '--cu-home', home, '--no-open'], { env: { ...process.env, CU_HELPER_IDENTITY: '' }, stdio: ['ignore', 'pipe', 'pipe'], timeout: 100_000 * FACTOR }).toString()
     assert.ok(existsSync(join(home, 'helper', 'CUHelper.app', 'Contents', 'MacOS', 'CUHelper')))
     assert.equal(execFileSync('stat', ['-f', '%Lp', join(home, 'helper')]).toString().trim(), '700')
     assert.match(output, /designated requirement: cdhash H"[0-9a-f]{40}"/)
@@ -188,9 +199,10 @@ describe('install.sh (the owner\'s install step)', () => {
     // is missing or its key is refused, and is never asked to touch a keychain.
     const shim = privateDir()
     writeFileSync(join(shim, 'codesign'), '#!/bin/sh\nfor a in "$@"; do [ "$prev" = "--sign" ] && [ "$a" != "-" ] && { echo "$a: no identity found" >&2; exit 1; }; prev="$a"; done\nexec /usr/bin/codesign "$@"\n', { mode: 0o755 })
+    cachedSwiftc(shim)
     let failure
     try {
-      execFileSync('bash', [join(HELPER_DIR, 'install.sh'), '--cu-home', home, '--no-open'], { env: { ...process.env, PATH: `${shim}:${process.env.PATH}`, CU_HELPER_IDENTITY: 'CU Helper Signing' }, stdio: ['ignore', 'pipe', 'pipe'], timeout: 100_000 })
+      execFileSync('bash', [join(HELPER_DIR, 'install.sh'), '--cu-home', home, '--no-open'], { env: { ...process.env, PATH: `${shim}:${process.env.PATH}`, CU_HELPER_IDENTITY: 'CU Helper Signing' }, stdio: ['ignore', 'pipe', 'pipe'], timeout: 100_000 * FACTOR })
     } catch (error) {
       failure = error
     }
@@ -204,9 +216,10 @@ describe('install.sh (the owner\'s install step)', () => {
     const home = privateDir()
     const shim = privateDir()
     writeFileSync(join(shim, 'codesign'), '#!/bin/sh\nfor a in "$@"; do [ "$prev" = "--sign" ] && [ "$a" != "-" ] && { echo "$PWD: errSecInternalComponent" >&2; exit 1; }; prev="$a"; done\nexec /usr/bin/codesign "$@"\n', { mode: 0o755 })
+    cachedSwiftc(shim)
     let failure
     try {
-      execFileSync('bash', [join(HELPER_DIR, 'install.sh'), '--cu-home', home, '--no-open'], { env: { ...process.env, PATH: `${shim}:${process.env.PATH}`, CU_HELPER_IDENTITY: 'CU Helper Signing' }, stdio: ['ignore', 'pipe', 'pipe'], timeout: 100_000 })
+      execFileSync('bash', [join(HELPER_DIR, 'install.sh'), '--cu-home', home, '--no-open'], { env: { ...process.env, PATH: `${shim}:${process.env.PATH}`, CU_HELPER_IDENTITY: 'CU Helper Signing' }, stdio: ['ignore', 'pipe', 'pipe'], timeout: 100_000 * FACTOR })
     } catch (error) {
       failure = error
     }
@@ -230,7 +243,7 @@ describe('Swift unit tests', () => {
   it('pass', () => {
     let output
     try {
-      output = execFileSync(built.unitTests, { stdio: ['ignore', 'pipe', 'pipe'], timeout: 60_000 }).toString()
+      output = execFileSync(built.unitTests, { stdio: ['ignore', 'pipe', 'pipe'], timeout: 60_000 * FACTOR }).toString()
     } catch (error) {
       output = error.stdout?.toString() ?? ''
     }

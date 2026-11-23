@@ -900,7 +900,7 @@ test('services mark [desktop]: the real desktop driver carries the helper\'s ser
 // origin set; a hold goes in as itself (app-policy judges it as the chord pressed since #42, CU-244). Expected 'block:<rule>' for a refusal.
 const { createAppPolicy } = await import('../../_tools_/agent-core/app-policy.mjs')
 const { createAppApprovals } = await import('../../_tools_/agent-core/app-approvals.mjs')
-const { mkdtempSync } = await import('node:fs')
+const { mkdtempSync, rmSync } = await import('node:fs')
 const { tmpdir } = await import('node:os')
 const { join } = await import('node:path')
 const FIXTURE_ID = 'ai.reflection.cu.fixture'
@@ -921,7 +921,10 @@ const KEEPER_ID = 'com.keepersecurity.passwordmanager'
 const PASTE_ID = 'com.wiheads.paste'
 const PERPLEXITY_ID = 'ai.perplexity.macv3'
 const CU292_IDS = [SPOTLIGHT_ID, LAUNCHBAR_ID, ENPASS_ID, PROTON_PASS_ID, KEEPER_ID, PASTE_ID, PERPLEXITY_ID]
-const appApprovals = createAppApprovals({ path: join(mkdtempSync(join(tmpdir(), 'cu-routes-')), 'app-approvals.json') })
+// CU-674: the approvals store's scratch folder is removed when the file ends.
+const routesScratch = mkdtempSync(join(tmpdir(), 'cu-routes-'))
+after(() => rmSync(routesScratch, { recursive: true, force: true }))
+const appApprovals = createAppApprovals({ path: join(routesScratch, 'app-approvals.json') })
 appApprovals.grantAlways(FIXTURE_ID, { by: 'api' })
 appApprovals.grantAlways(APP_STORE_ID, { by: 'api' })
 // An app the build excludes (CU-264's whole-Mac tools, once #100 lands) cannot be granted - it stays unapproved, as it

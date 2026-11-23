@@ -1,13 +1,16 @@
 import assert from 'node:assert/strict'
-import { mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { test } from 'node:test'
+import { after, test } from 'node:test'
 
 import { ApprovalStoreError, createAppApprovals } from '../../_tools_/agent-core/app-approvals.mjs'
 import { createAppPolicy } from '../../_tools_/agent-core/app-policy.mjs'
 
-const fresh = () => join(mkdtempSync(join(tmpdir(), 'cu-approvals-')), 'app-approvals.json')
+// CU-674: each store gets its own scratch folder; all are removed when the file ends.
+const scratch = []
+after(() => { for (const dir of scratch) rmSync(dir, { recursive: true, force: true }) })
+const fresh = () => { const dir = mkdtempSync(join(tmpdir(), 'cu-approvals-')); scratch.push(dir); return join(dir, 'app-approvals.json') }
 
 test('grant always, list, revoke; the file is mode 600 and a second store sees changes at once', () => {
   const path = fresh()
