@@ -1,9 +1,9 @@
 ---
 title: '[cu] Verifier - Handover'
 created: 2026-11-08T04:15:13Z
-modified: 2026-11-17T09:19:00Z
+modified: 2026-11-23T02:29:00Z
 level: L2
-version: 5.2.2
+version: 5.4.35
 description: 'What a fresh session of [cu] Verifier needs - where things are, the pass, the tools, the open rows and the lessons, in under 300 words.'
 status: unverified
 grounded_in:
@@ -12,25 +12,24 @@ grounded_in:
 
 # [cu] Verifier - Handover
 
-Start here, then [responsibilities](responsibilities.md) and the [verdict](ultimate-goal-2-verdict.md).
+Start here, then [responsibilities](responsibilities.md) and [verdict](ultimate-goal-2-verdict.md).
 
-- **Where:** `--records` for verdicts, `--tm*` test trees, `--vtools` for local tools (never /tmp).
-- **Push:** gate unpiped, push on exit 0; one action-log line per PR; a PR title names no filing id but 'Part of CU-16'
-  (Linear moves every issue a title names).
-- **Every pass:** inbox; `verifyq.py` (Verify state, any assignee); `filings.py` (unreproduced filings); the run lock.
-- **Rows:** `rowrun.mjs`, one scripted unattended CLI run per row in headless Chrome; evidence is the run record and the
-  page's click record; the D-106 watcher yields to gates. Row kinds: button, link, switch, field, nav, select, drop (a
-  row dragged onto a named target), and a page may sit in a labelled dialog. Desktop filings without the app go through
-  `probes/apps.mjs` (clicks; ';;' separates labels with commas) and `probes/keyprobe.mjs` (keypresses), both policy level;
-  helper mutants through `probes/swiftunit.mjs`.
-- **Closes:** `watchall.sh` is one background job over `watchlist.tsv` (`closewatch.sh` for web rows, `policywatch.sh`
-  for desktop probes) and tells cu-coordinator when every row matches. Then `linear.py verified` with after and before
-  run ids from the logs by script, plus a mutant.
+- **Where:** `--records` for verdicts, `--tm*` test trees, `--vtools` for local tools.
+- **Push:** gate unpiped, push on exit 0; one action-log line per PR; a PR title names no filing id but 'Part of CU-16'.
+- **Every pass:** inbox; `verifyq.py`; `filings.py`; `unarmed.py`; the run lock;
+  my PRs' mergeability (merge main if CONFLICTING; D-085).
+- **Rows:** `rowrun.mjs`, one headless run per row; `resume.sh` resumes gate-interrupted batches.
+  Review PRs by FETCH_HEAD SHA.
+  Desktop probes: `probes/`.
+- **Closes:** `watchall.sh` is one background job (restart daily) over `watchlist.tsv`. Then `linear.py verified` with
+  run ids copied by script, plus a mutant.
 - **Desktop rows:** in cu-developer-three's holds; I judge from events.jsonl.
-- **Open:** the CU-586 after-row on 0.2.71 and the CU-588 close row on 0.2.72; CU-375 closes with #856's switch
-  rows; CU-596 (a sentinel-test flake) awaits a reproduction under load. The consent row
-  waits on CU-135 step 4 (owner).
-- **Lessons:** read the Verify state itself; state no OK count I have not read on the PR thread; one browser per seat;
-  no browser row once a GATE START is out (`q.sh` refuses while `gateopen.py` sees one; a missed before-row runs on
-  the pre-merge commit); a mutant
-  counts only when its row fails (and a probe flips).
+- **Open:** CU-586 / CU-588 desktop rows; CU-375 with #856; CU-596 under load; CU-607 on a class ruling;
+  CU-645 has #1129 (rule-1), CU-702 #1349; no fix PR: CU-612, CU-618, CU-631 .. CU-633, CU-640, CU-642, CU-647, CU-649, CU-651, CU-656, CU-658, CU-667, CU-671, CU-681, CU-682, CU-696 (permission half), CU-701, CU-703 .. CU-706. The consent row
+  waits on CU-135 step 4.
+- **Lessons:** read the Verify state before `verified` (outside Verify it only moves there); a records PR naming an
+  issue moves it to Verify on merge - reopen with a live row; count OKs from the PR. One browser per seat, one job
+  per window, one DONE after all of it. Rows start only in a written window given to me, shared, or my close -
+  never another seat's - and never while a gate runs (`q.sh` checks per row). A mutant counts only when its row
+  fails, the file parses, its anchor is unique, and it ran in a scratch tree after the close. Held-outs cover
+  person, possessive and imperative twins; pin parity rows.

@@ -56,7 +56,10 @@ const GENERIC_SUBMIT = /^\s*(?:submit|send|send\s+(?:message|reply|email|comment
 // Traditional Chinese. CJK has no word gaps, so a phrase matches inside a longer label ('立即购买' asks purchase); named
 // over-asks: a label that merely contains one ('删除线', strikethrough). Other languages are a named limit.
 const ZH_WORDS = Object.freeze({
-  purchase: ['购买', '購買', '支付', '付款', '结账', '結帳', '结算', '結算', '下单', '下單', '提交订单', '提交訂單', '订阅', '訂閱', '充值',
+  purchase: [
+    // CU-625 r2 (cu-developer-one's twin rule): cancelling or ending a membership / plan, as English 'Cancel membership' asks.
+    '取消会员', '取消會員', '取消会员资格', '取消會員資格', '取消套餐', '终止会员', '終止會員', '退出会员', '退出會員', '退订会员', '退訂會員', '退订套餐', '退订服务', '退訂服務',
+    '购买', '購買', '支付', '付款', '结账', '結帳', '结算', '結算', '下单', '下單', '提交订单', '提交訂單', '订阅', '訂閱', '充值',
     '儲值', '转账', '轉帳', '汇款', '匯款', '捐款', '捐赠', '捐贈', '免费试用', '免費試用', '预订', '預訂', '续订', '續訂', '升级套餐', '升級方案',
     // CU-294 (cu-researcher's web sweep): renewals and memberships.
     '续费', '續費', '开通会员', '開通會員', '立即开通', '立即開通', '升级会员', '升級會員', '开通vip', '開通vip'],
@@ -67,7 +70,10 @@ const ZH_WORDS = Object.freeze({
     '丟到垃圾桶', '丟到資源回收筒', '清倒废纸篓', '清倒垃圾桶', '不存储',
     // CU-294: an account closed in other words.
     '注销账号', '註銷帳號', '注销帐号', '删除账号', '刪除帳號', '注销账户'],
-  permission: ['共享', '分享', '邀请', '邀請', '授权', '授權', '公开', '公開', '始终允许', '總是允許', '总是允许', '永遠允許', '一律允许',
+  permission: [
+    // CU-634: leaving a team, as English 'Leave team' (permission).
+    '退出团队', '退出團隊',
+    '共享', '分享', '邀请', '邀請', '授权', '授權', '公开', '公開', '始终允许', '總是允許', '总是允许', '永遠允許', '一律允许',
     '允许访问', '允許存取', '不再询问', '不再詢問', '不再提示', '记住我的选择', '記住我的選擇', '记住此选择', '设为默认', '設為預設',
     '保存密码', '儲存密碼', '记住密码', '記住密碼', '保存通行密钥', '儲存通行密鑰', '创建通行密钥', '建立通行密鑰', '关闭两步验证',
     '關閉兩步驟驗證', '关闭双重认证', '關閉雙重認證', '打开摄像头', '開啟相機', '打开麦克风', '開啟麥克風',
@@ -75,9 +81,15 @@ const ZH_WORDS = Object.freeze({
     '永不保存', '永不儲存',
     // CU-294 (cu-researcher; Firefox's own 'Remember this decision' checkbox, mozilla-l10n).
     '记住此决定', '記住此決定'],
-  submit: ['发送', '發送', '傳送', '发布', '發佈', '發布', '提交', '注册', '註冊', '送出', '发表', '發表', '加入会议', '加入會議', '加入通话',
+  submit: [
+    // CU-628 (cu-researcher): unsubscribing from mail, as English 'Unsubscribe' asks submit (a bare 退订 is a whole-label rule below,
+    // so 退订须知 / 退订政策 pages stay free).
+    '取消关注邮件', '退订邮件', '退訂郵件', '退订短信', '退訂簡訊', '我要退订', '我要退訂',
+    '发送', '發送', '傳送', '发布', '發佈', '發布', '提交', '注册', '註冊', '送出', '发表', '發表', '加入会议', '加入會議', '加入通话',
     '视频通话', '視訊通話', '语音通话', '語音通話', '开始会议', '開始會議', '接受邀请', '接受邀請', '拒绝邀请', '拒絕邀請',
-    '部署', '退出群聊', '退出群組', '取消会议', '取消會議', '举报', '檢舉', '申请加入', '申請加入', '报税', '報稅',
+    '部署', '退出群聊', '退出群組',
+    // CU-634 (cu-developer-one): leaving a group or channel in Chinese, as 'Leave group / channel' (submit).
+    '退出群组', '退群', '退出频道', '退出頻道', '退出该群', '退出此群', '退出本群', '取消会议', '取消會議', '举报', '檢舉', '申请加入', '申請加入', '报税', '報稅',
     // cu-researcher on #145: Reply (回复 / 回覆) - judged like English 'reply', by CU-157's text-entered rule.
     '回复', '回覆',
     // CU-294: joining or starting a meeting, and placing a call, in a meeting app's words.
@@ -92,7 +104,12 @@ const LOCALE_WORDS = Object.freeze({
   purchase: ['kaufen', 'jetzt kaufen', 'bezahlen', 'jetzt bezahlen', 'bestellen', 'zahlungspflichtig bestellen', 'kaufen und bezahlen', 'zur kasse',
     'acheter', 'payer', 'commander', 'passer la commande', 'valider la commande', 'acheter maintenant',
     'comprar', 'pagar', 'realizar pedido', 'finalizar compra', 'tramitar pedido', 'comprar ahora',
-    'купить', 'оплатить', 'заказать', 'оформить заказ',
+    'купить', 'оплатить', 'заказать', 'оформить заказ', 'оформить покупку', 'оформить подписку',
+    // CU-650 (cu-developer-one's go 04:21Z): cancel an order / membership / plan, as 'Cancel order / membership / plan'.
+    'отменить заказ', 'отменить членство', 'отменить тариф', 'отменить план',
+    // r2 (cu-developer-one): with a possessive or demonstrative of each gender ('Отменить мой заказ', 'Отмените ваше членство').
+    ...['заказ', 'тариф', 'план'].flatMap((what) => ['мой', 'свой', 'ваш', 'твой', 'этот'].map((whose) => `отменить ${whose} ${what}`)),
+    ...['моё', 'мое', 'своё', 'свое', 'ваше', 'твоё', 'твое', 'это'].map((whose) => `отменить ${whose} членство`),
     '購入', '支払', '注文を確定', '注文する', 'レジに進む', '今すぐ買う',
     '구매', '결제', '주문하기', '바로구매',
     // CU-358 (cu-researcher): Italian, Dutch, Portuguese and Turkish (Portuguese shares 'comprar' / 'pagar' above).
@@ -140,10 +157,80 @@ const LOCALE_WORDS = Object.freeze({
     'atualizar _ plano', 'melhorar _ plano', 'atualizar _ assinatura', 'melhorar _ conta',
     'aggiorna _ piano', 'aggiorna _ abbonamento', 'potenzia _ account', 'potenzia _ piano', 'passa al piano superiore',
     'account upgraden', 'abonnement upgraden', 'pakket upgraden', 'lidmaatschap upgraden', 'upgrade je account', 'upgrade uw account', 'upgrade je abonnement',
+    // CU-613 (cu-researcher): start / begin a subscription, and 'switch to the <paid plan> version', as English 'Start
+    // subscription' asks; 'Passer à la version mobile' (a layout switch) stays free, so only paid plan names follow 'version'.
+    'abonnement starten', 'abo starten', 'abonnement beginnen', 'mitgliedschaft starten',
+    'passer à la version pro', 'passer à la version plus', 'passer à la version payante', 'passer à la version business', "commencer l'abonnement", 'commencer l’abonnement', 'démarrer _ abonnement', 'démarrer mon abonnement',
+    'empezar _ suscripción', 'empezar mi suscripción', 'iniciar _ suscripción', 'iniciar mi suscripción', 'comenzar _ suscripción', 'comenzar mi suscripción',
+    'iniciar _ assinatura', 'começar _ assinatura', 'ativar _ assinatura',
+    'avvia _ abbonamento', 'inizia _ abbonamento', 'attiva _ abbonamento',
+    'start _ abonnement', 'begin _ abonnement', 'start je abonnement',
+    // r2 (cu-developer-two): the whole family in one round - start a membership, and 'switch to the <paid plan> version' in
+    // every language (a layout switch, 'version mobile / classique', stays free).
+    'commencer mon abonnement', 'commencer _ abonnement', 'commencer _ adhésion', 'commencer mon adhésion',
+    'mitgliedschaft beginnen', 'zur pro-version wechseln', 'auf die pro-version wechseln', 'zur premium-version wechseln', 'zur bezahlversion wechseln',
+    'comenzar _ membresía', 'comenzar mi membresía', 'iniciar _ membresía', 'iniciar mi membresía', 'empezar _ membresía', 'empezar mi membresía', 'cambiar a la versión pro', 'pasar a la versión pro', 'cambiar a la versión premium', 'pasar a la versión premium',
+    'iniciar _ plano', 'mudar para a versão pro', 'passar para a versão pro', 'mudar para a versão premium', 'passar para a versão premium',
+    'passa alla versione pro', 'passa alla versione plus', 'passa alla versione premium', 'passa alla versione a pagamento', 'passare alla versione pro', 'passare alla versione premium',
+    'lidmaatschap starten', 'overstappen naar pro', 'overstappen naar premium', 'overstappen naar de betaalde versie',
+    // r3 (cu-developer-three): the short 'switch to <paid plan>' forms, without 'version'.
+    'zu pro wechseln', 'auf pro wechseln', 'zu premium wechseln', 'auf premium wechseln', 'zu plus wechseln', 'auf plus wechseln', 'zum pro-tarif wechseln', 'zum pro-plan wechseln',
+    'passer au forfait pro', 'passer au forfait premium', 'passer au plan pro', 'passer au plan premium', 'passer au premium', 'passer au pro',
+    'cambiar a pro', 'cambiar a premium', 'cambiar al plan pro', 'cambiar al plan premium', 'pasar a pro', 'pasar al plan pro',
+    'mudar para pro', 'mudar para premium', 'mudar para o plano pro', 'mudar para o plano premium', 'passar para pro', 'passar para o plano pro',
+    'passa al piano pro', 'passa al piano premium', 'passare a pro', 'passare a premium',
+    'overstappen op pro', 'overstappen op premium', 'wissel naar pro', 'overstappen naar het pro-abonnement',
+    // r4 (cu-developer-three's r1 row; cu-developer-two's r3 twins): the offer form, the 'votre / ton' and polite forms.
+    "passer à l'offre premium", 'passer à l’offre premium', "passer à l'offre pro", 'passer à l’offre pro', "passer à l'offre plus", 'passer à l’offre plus',
+    'commencer votre abonnement', 'démarrer votre abonnement', 'commencer ton abonnement', 'démarrer ton abonnement',
+    'wechseln sie zu pro', 'wechseln sie zu premium', 'wechseln sie zu plus', 'wechsle zu pro', 'wechsle zu premium',
+    'pro sürüm~ geç^', 'premium sürüm~ geç^',
+    // CU-615 (cu-researcher): the imperative / possessive twins named at #1007 r4 - 'Inicia tu suscripción', 'Premium plana geç',
+    // "Passez à l'offre Premium" - and their siblings.
+    'inicia _ suscripción', 'inicia tu suscripción', 'empieza _ suscripción', 'empieza tu suscripción', 'comienza _ suscripción', 'comienza tu suscripción', 'inicia tu membresía', 'empieza tu membresía',
+    'inicie _ assinatura', 'inicie sua assinatura', 'comece _ assinatura', 'comece sua assinatura', 'avvia il tuo abbonamento', 'inizia il tuo abbonamento',
+    // r2 (cu-developer-two): the German and Dutch imperative + possessive twins.
+    'starte dein abo', 'starte dein abonnement', 'starten sie ihr abo', 'starten sie ihr abonnement', 'beginne dein abo', 'beginnen sie ihr abonnement', 'start uw abonnement', 'begin je abonnement',
+    'premium plan~ geç^', 'pro plan~ geç^', 'premium paket~ geç^', 'pro paket~ geç^',
+    "passez à l'offre premium", 'passez à l’offre premium', "passez à l'offre pro", 'passez à l’offre pro', "passez à l'offre plus", 'passez à l’offre plus', 'passez à la version pro', 'passez à la version premium', 'passez à premium', 'passez au forfait pro', 'passez au forfait premium',
     // r3: Turkish stems take their suffixes ('~' noun, '^' verb - see namesWord).
     'ödeme~ onayla^', 'satın alma~ onayla^', 'ödeme~ tamamla^', 'ödeme~ yap^', 'sipariş~ ver^', 'sipariş~ tamamla^', 'sipariş~ onayla^', 'alışveriş~ tamamla^',
-    'satın al^', 'şimdi satın al^', 'hemen al^', 'şimdi al^', 'öde^', 'şimdi öde^', 'ödeme~ geç^'],
-  delete: ['löschen', 'entfernen', 'verwerfen', 'supprimer', 'effacer', 'eliminar', 'borrar', 'удалить', 'стереть', '削除', '消去', '삭제', '지우기',
+    'satın al^', 'şimdi satın al^', 'hemen al^', 'şimdi al^', 'öde^', 'şimdi öde^', 'ödeme~ geç^',
+    // CU-625 (cu-researcher): cancelling a membership or a plan asks purchase, as English 'Cancel membership' / 'Cancel my plan' do.
+    'mitgliedschaft kündigen', 'kündige deine mitgliedschaft', 'kündigen sie ihre mitgliedschaft', 'tarif kündigen', 'meinen tarif kündigen',
+    "résilier l'adhésion", 'résilier l’adhésion', "annuler l'adhésion", 'annuler l’adhésion', 'résilier mon adhésion', 'annuler mon adhésion', 'annulez votre adhésion', 'résiliez votre adhésion', 'résilier mon forfait', 'annuler mon forfait', 'résiliez votre forfait',
+    'cancelar membresía', 'cancelar _ membresía', 'cancelar mi membresía', 'cancela tu membresía', 'cancelar mi plan', 'cancelar el plan',
+    'cancelar plano', 'cancelar _ plano', 'cancelar meu plano', 'cancelar associação', 'annulla iscrizione al club', 'annulla piano', 'annulla il mio piano', 'disdici piano', 'disdici il piano',
+    'lidmaatschap opzeggen', 'zeg je lidmaatschap op', 'zeg uw lidmaatschap op', 'pakket opzeggen', 'lidmaatschap annuleren', '_ lidmaatschap annuleren',
+    // r2 (cu-developer-two, cu-developer-one 20:30Z): plan / pakket beside lidmaatschap, as 'Cancel plan'.
+    'plan annuleren', '_ plan annuleren', 'pakket annuleren', '_ pakket annuleren', 'plan opzeggen', '_ plan opzeggen', 'üyelik~ iptal et^', 'üyelik~ iptal edin', 'üyeliğ~ iptal et^', 'üyeliğ~ iptal edin', 'plan~ iptal et^',
+    // r2 (cu-developer-three): the end / terminate verb for both halves takes purchase, as English 'End subscription' / 'End
+    // membership' do.
+    'abo beenden', 'abonnement beenden', 'mitgliedschaft beenden', 'beende dein abo', 'beende deine mitgliedschaft', 'beenden sie ihr abonnement', 'beenden sie ihre mitgliedschaft',
+    "mettre fin à l'abonnement", 'mettre fin à l’abonnement', 'mettre fin à mon abonnement', "mettre fin à l'adhésion", 'mettre fin à l’adhésion', "terminer l'abonnement", 'terminer l’abonnement',
+    'finalizar suscripción', 'finalizar _ suscripción', 'terminar _ suscripción', 'finalizar membresía', 'finalizar _ membresía', 'terminar _ membresía', 'finaliza tu suscripción', 'finalice su suscripción',
+    'encerrar assinatura', 'encerrar _ assinatura', 'terminar _ assinatura', 'encerrar plano', 'encerrar _ plano', 'encerre sua assinatura',
+    'termina abbonamento', 'termina _ abbonamento', 'terminare _ abbonamento', 'termina il tuo abbonamento', 'termina _ piano',
+    'abonnement beëindigen', 'lidmaatschap beëindigen', 'beëindig je abonnement', 'beëindig uw abonnement', 'beëindig je lidmaatschap', 'beëindig uw lidmaatschap',
+    'abonnement stopzetten', 'lidmaatschap stopzetten', '_ abonnement stopzetten', '_ lidmaatschap stopzetten', 'zet je abonnement stop', 'zet uw abonnement stop', 'zet je lidmaatschap stop', 'zet uw lidmaatschap stop',
+    'terminar plano', 'terminar _ plano', 'termine seu plano', 'encerre seu plano', 'termine sua assinatura',
+    // CU-628 r2 (cu-developer-three): the stop verb in the seven locales, as English 'Stop subscription' (purchase).
+    'abo stoppen', 'abonnement stoppen', 'mitgliedschaft stoppen', 'stoppe dein abo', 'stoppen sie ihr abonnement', 'stoppen sie ihr abo',
+    "arrêter l'abonnement", 'arrêter l’abonnement', 'arrêter mon abonnement', "arrêtez l'abonnement", 'arrêtez votre abonnement', "arrêter l'adhésion", 'arrêter mon adhésion',
+    'detener _ suscripción', 'detener suscripción', 'parar _ suscripción', 'detén tu suscripción', 'detenga su suscripción', 'detener _ membresía',
+    'detener mi suscripción', 'detener mi membresía', 'parar mi suscripción', 'detener mi plan', 'detener el plan', 'detener tu suscripción', 'detener tu membresía', 'parar tu suscripción', 'detener su suscripción',
+    'parar _ assinatura', 'parar assinatura', 'interromper _ assinatura', 'pare sua assinatura', 'interrompa sua assinatura', 'parar plano', 'parar _ plano', 'interromper _ plano', 'pare seu plano',
+    'interrompi _ abbonamento', 'interrompere _ abbonamento', 'ferma _ abbonamento', 'interrompi il tuo abbonamento', 'sospendi il rinnovo', 'interrompi piano', 'interrompi _ piano', 'interrompere _ piano',
+    'abonnement stoppen', 'lidmaatschap stoppen', 'stop je abonnement', 'stop uw abonnement', 'stop je lidmaatschap',
+    'abonelik~ durdur^', 'aboneliğ~ durdur^', 'üyelik~ durdur^', 'üyeliğ~ durdur^',
+    'abonelik~ sonlandır^', 'aboneliğ~ sonlandır^', 'üyelik~ sonlandır^', 'üyeliğ~ sonlandır^', 'abonelik~ bitir^', 'aboneliğ~ bitir^', 'üyelik~ bitir^', 'üyeliğ~ bitir^'],
+  delete: ['löschen', 'entfernen', 'verwerfen', 'supprimer', 'effacer', 'eliminar', 'borrar', 'удалить', 'стереть',
+    // CU-650: cancel a subscription, as 'Cancel subscription' (Russian accusative, with or without a possessive; the table's
+    // imperatives read 'Отмените (свою) подписку').
+    // CU-654: clear a history (Russian through the table's очисти / очистите, Turkish with its suffix markers; Japanese is a
+    // whole-label rule so its past forms stay free).
+    'очистить историю', 'очистить всю историю', 'очистить свою историю', 'очистить вашу историю', 'geçmiş~ temizle^',
+    'отменить подписку', 'отменить мою подписку', 'отменить свою подписку', 'отменить вашу подписку', 'отменить твою подписку', 'отменить эту подписку', '削除', '消去', '삭제', '지우기',
     // CU-358: Italian, Dutch, Portuguese and Turkish.
     'elimina', 'cancella', 'rimuovi', 'elimina definitivamente', 'verwijderen', 'verwijder', 'wissen', 'definitief verwijderen',
     // r5 (cu-developer-one): Dutch 'opheffen' closes an account (only beside an account noun; 'Blokkering opheffen' lifts a block).
@@ -154,10 +241,87 @@ const LOCALE_WORDS = Object.freeze({
     'excluir', 'apagar', 'remover', 'excluir permanentemente', 'sil^', 'kaldır^', 'kalıcı olarak sil^', 'hesab~ sil^', 'hesab~ kapat^',
     // r2: emptying the trash, as English 'Empty trash'.
     'svuota cestino', 'svuota il cestino', 'prullenbak legen', 'prullenbak leegmaken', 'leeg prullenbak',
-    'esvaziar lixeira', 'esvaziar a lixeira', 'esvaziar lixo', 'esvaziar a reciclagem', 'çöp kutu~ boşalt^', 'çöp~ boşalt^', 'çöp kutu~ temizle^'],
-  submit: ['senden', 'absenden', 'abschicken', 'envoyer', 'soumettre', 'enviar', 'отправить', '送信', '보내기', '전송', '제출',
+    // CU-655 r4 (cu-researcher): an article or possessive between the verb and the trash noun ('Leeg de prullenbak', 'Esvaziar o lixo').
+    'leeg _ prullenbak', 'esvaziar _ lixo',
+    'esvaziar lixeira', 'esvaziar a lixeira', 'esvaziar lixo', 'esvaziar a reciclagem', 'çöp kutu~ boşalt^', 'çöp~ boşalt^', 'çöp kutu~ temizle^',
+    // CU-625 (cu-researcher; cu-developer-one's twin-parity class rule): cancelling a subscription asks delete, as English 'Cancel
+    // subscription' does; infinitive, imperative, formal and possessive forms.
+    'abo kündigen', 'abonnement kündigen', 'kündige dein abo', 'kündige dein abonnement', 'kündigen sie ihr abonnement', 'kündigen sie ihr abo',
+    "résilier l'abonnement", 'résilier l’abonnement', "annuler l'abonnement", 'annuler l’abonnement', 'résilier mon abonnement', 'annuler mon abonnement', 'résiliez votre abonnement', 'annulez votre abonnement',
+    'cancelar suscripción', 'cancelar _ suscripción', 'cancelar mi suscripción', 'cancela tu suscripción', 'cancele su suscripción',
+    'cancelar assinatura', 'cancelar _ assinatura', 'cancele sua assinatura', 'cancela a tua assinatura', 'cancelar subscrição', 'cancelar _ subscrição',
+    'annulla abbonamento', 'annulla _ abbonamento', 'disdici abbonamento', 'disdici _ abbonamento', 'disdici il tuo abbonamento', 'disdire _ abbonamento', 'annulla il tuo abbonamento',
+    'abonnement opzeggen', '_ abonnement opzeggen', 'zeg je abonnement op', 'zeg uw abonnement op',
+    // CU-641 (twin rule): wipe an account, cancel a subscription ('Wis account', 'Annuleer abonnement'), as 'Erase account' /
+    // 'Cancel subscription'; 'Wis zoekopdracht' / 'Wis filters' stay free as 'Clear search' / 'Clear filters' do.
+    'account wissen', '_ account wissen', 'geschiedenis wissen', 'abonnement annuleren', '_ abonnement annuleren',
+    // r2 (cu-developer-three, cu-verifier): wipe data / files / profile, as 'Erase (your) data', 'Erase all files', 'Erase profile'.
+    'gegevens wissen', '_ gegevens wissen', 'bestanden wissen', '_ bestanden wissen', 'profiel wissen', '_ profiel wissen',
+    'abonelik~ iptal et^', 'abonelik~ iptal edin', 'aboneliğ~ iptal et^', 'aboneliğ~ iptal edin'],
+  submit: ['senden', 'absenden', 'abschicken', 'envoyer', 'soumettre', 'enviar', 'отправить', 'отписаться', '送信', '보내기', '전송', '제출',
     // CU-358: Italian, Dutch, Portuguese and Turkish.
-    'invia', 'invia ora', 'verzenden', 'versturen', 'verstuur', 'indienen', 'submeter', 'gönder^', 'şimdi gönder^'],
+    'invia', 'invia ora', 'verzenden', 'versturen', 'verstuur', 'bericht sturen', 'e-mail sturen', 'nu sturen', 'indienen', 'submeter', 'gönder^', 'şimdi gönder^',
+    // CU-617 (cu-researcher): publish / post, as English 'Publish' / 'Post' ask submit; infinitive, imperative and formal forms.
+    'veröffentlichen', 'veröffentliche', 'posten', 'poste', 'beitrag veröffentlichen', 'publier', 'publiez', 'publie', 'poster', 'publicar', 'publica', 'publique', 'postear', 'postar', 'poste agora',
+    'pubblica', 'pubblicare', 'pubblicate', 'publiceren', 'publiceer', 'nu plaatsen', 'bericht plaatsen', 'yayınla^', 'gönderi~ paylaş^',
+    // CU-619 (cu-researcher): calls and meeting joins, as English 'Call' / 'Video call' / 'Start call' / 'Join meeting' ask submit.
+    // Turkish 'Ara' (also 'search') and Portuguese 'Ligar' (also 'switch on') only with a call noun or object, never bare.
+    'anrufen', 'jetzt anrufen', 'videoanruf', 'videoanruf starten', 'anruf starten', 'meeting beitreten', 'besprechung beitreten', 'konferenz beitreten', 'jetzt beitreten',
+    'appeler', 'appelez', 'appel vidéo', 'appel audio', 'démarrer _ appel', 'lancer _ appel', 'rejoindre _ réunion', 'rejoindre maintenant', 'rejoindre _ appel',
+    'llamar', 'llama', 'videollamada', 'iniciar _ llamada', 'iniciar videollamada', 'unirse a la reunión', 'unirse ahora', 'únete a la reunión', 'unirse a la llamada',
+    'chamada de vídeo', 'iniciar _ chamada', 'fazer _ chamada', 'ligar para', 'ligar agora', 'entrar na reunião', 'participar da reunião', 'entrar na chamada',
+    'chiama', 'chiamare', 'videochiamata', 'avvia _ chiamata', 'avvia videochiamata', 'partecipa alla riunione', 'partecipa ora', 'partecipa alla chiamata',
+    'bellen', 'nu bellen', 'videogesprek', 'gesprek starten', 'videogesprek starten', 'deelnemen aan vergadering', 'deelnemen aan de vergadering', 'nu deelnemen',
+    'görüntülü arama', 'sesli arama', 'arama~ başlat^', 'görüntülü ara^', 'sesli ara^', 'toplantı~ katıl^', 'şimdi katıl^',
+    // CU-621 (cu-researcher): leaving a group and unsubscribing, as English 'Leave group' / 'Unsubscribe' ask submit; a bare German
+    // 'Abmelden' is also a plain sign-out, so it asks only with a newsletter / mailing object.
+    'gruppe verlassen', 'verlasse die gruppe', 'verlassen sie die gruppe', 'chat verlassen', 'quitter le groupe', 'quittez le groupe', 'quitter la conversation', 'quitter le canal',
+    'salir del grupo', 'sal del grupo', 'salga del grupo', 'abandonar el grupo', 'sair do grupo', 'saia do grupo', 'abandonar o grupo', 'abbandona il gruppo', 'abbandonare il gruppo', 'esci dal gruppo',
+    'groep verlaten', 'verlaat de groep', 'verlaat groep', 'grup~ çık^', 'grup~ ayrıl^', 'sohbet~ ayrıl^',
+    // cu-verifier's CU-621 named limit: the demonstrative forms ('Quitter ce groupe').
+    'quitter ce groupe', 'quittez ce groupe', 'quitter cette conversation', 'diese gruppe verlassen', 'verlasse diese gruppe', 'salir de este grupo', 'sal de este grupo', 'sair deste grupo', 'saia deste grupo',
+    'esci da questo gruppo', 'abbandona questo gruppo', 'deze groep verlaten', 'verlaat deze groep',
+    'lascia il gruppo', 'lascia _ gruppo', 'lasciare il gruppo', 'lascia questo gruppo', 'deixar o grupo', 'deixar _ grupo', 'deixe o grupo', 'deixar este grupo',
+    // CU-627 (cu-developer-two): the possessive determiners of leave-group in every language ('Quitter votre groupe').
+    'quitter votre groupe', 'quittez votre groupe', 'quitter ton groupe', 'quitter mon groupe', 'deine gruppe verlassen', 'ihre gruppe verlassen', 'verlasse deine gruppe', 'verlassen sie ihre gruppe',
+    'salir de tu grupo', 'salir de su grupo', 'salga de su grupo', 'sair do seu grupo', 'sair do teu grupo', 'saia do seu grupo', 'esci dal tuo gruppo', 'abbandona il tuo gruppo', 'jouw groep verlaten', 'je groep verlaten', 'verlaat je groep', 'verlaat uw groep', 'grubu~ çık^', 'grubu~ ayrıl^', 'grubun~ çık^', 'grubun~ ayrıl^',
+    'abbestellen', 'newsletter abbestellen', 'vom newsletter abmelden', 'se désabonner', 'désabonner', 'désabonnez-vous', 'se désinscrire', 'désinscrivez-vous',
+    'darse de baja', 'date de baja', 'dese de baja', 'descadastrar', 'cancelar inscrição', 'descadastre-se', 'annulla iscrizione', 'disiscriviti', 'cancella iscrizione',
+    'uitschrijven', 'schrijf je uit', 'schrijf u uit', 'afmelden voor de nieuwsbrief', 'afmelden voor nieuwsbrief', 'afmelden voor _ nieuwsbrief', 'afmelden voor deze nieuwsbrief', 'afmelden voor onze nieuwsbrief', 'meld je af voor deze nieuwsbrief', 'afmelden voor onze e-mails', 'afmelden voor deze e-mails', 'afmelden voor _ e-mails',
+    // CU-627 (cu-developer-two): the imperative 'meld je / u af voor' with any determiner, and the other languages' e-mail opt-outs.
+    'meld je af voor onze e-mails', 'meld je af voor deze e-mails', 'meld u af voor onze e-mails', 'meld je af voor e-mails', 'meld u af voor de nieuwsbrief', 'meld je af voor onze nieuwsbrief',
+    'von e-mails abmelden', 'von unseren e-mails abmelden', 'e-mails abbestellen', 'se désabonner des e-mails', 'se désinscrire des e-mails', 'darse de baja de los correos', 'darse de baja de nuestros correos',
+    'cancelar inscrição nos e-mails', 'descadastrar e-mails', 'disiscriviti dalle e-mail', 'annulla iscrizione alle e-mail', 'e-posta~ abonelik~ çık^', 'e-postalar~ çık^', 'meld je af voor de nieuwsbrief', 'afmelden voor e-mails', 'abonelik~ çık^', 'bülten~ çık^',
+    // r1 grid (cu-developer-one's go): imperative and formal forms in each language; German / Dutch separable forms below.
+    'rejoignez _ réunion', 'rejoignez maintenant', 'rejoignez _ appel', 'appelle', 'únase a la reunión', 'únete ahora', 'únase ahora', 'llame', 'llame ahora', 'llámanos', 'inicie _ llamada',
+    'ligue para', 'ligue agora', 'entre na reunião', 'participe da reunião', 'inicie _ chamada', 'chiami', 'chiamaci', 'partecipi alla riunione', 'partecipa adesso', 'avvii _ chiamata',
+    'bel nu', 'bel ons', 'start _ gesprek', 'start videogesprek', 'neem deel aan de vergadering', 'neem nu deel',
+    // r2 (cu-developer-three, cu-developer-two): the German 'teilnehmen' join forms, Turkish 'join the call', and the Turkish
+    // 'ara' with an adverb ('Hemen ara', 'Şimdi ara') - read as a call; a 'search now' button over-asks, fail-closed.
+    'jetzt teilnehmen', 'an der besprechung teilnehmen', 'an besprechung teilnehmen', 'am meeting teilnehmen', 'an meeting teilnehmen', 'an der konferenz teilnehmen', 'an der videokonferenz teilnehmen',
+    'am anruf teilnehmen', 'am videoanruf teilnehmen', 'am telefonat teilnehmen', 'besprechung teilnehmen', 'meeting teilnehmen', 'konferenz teilnehmen',
+    'arama~ katıl^', 'görüşme~ katıl^', 'hemen ara^', 'şimdi ara^'],
+  // CU-616 (cu-researcher): sharing a (live) location and granting access, in the seven locales, as English 'Share my location' /
+  // 'Share live location' / 'Grant access' / 'Give access' ask permission.
+  permission: ['standort teilen', 'live-standort teilen', 'meinen standort teilen', 'standortfreigabe aktivieren', 'zugriff gewähren', 'zugriff erlauben', 'zugang gewähren',
+    'partager ma position', 'partager _ position', 'partager la position en direct', 'partager ma localisation', "accorder l'accès", 'accorder l’accès', "autoriser l'accès", 'autoriser l’accès', 'donner accès',
+    'compartir ubicación', 'compartir mi ubicación', 'compartir _ ubicación en tiempo real', 'conceder acceso', 'dar acceso', 'permitir acceso', 'permitir el acceso',
+    'compartilhar localização', 'compartilhar _ localização', 'partilhar localização', 'partilhar _ localização', 'conceder acesso', 'dar acesso', 'permitir acesso', 'permitir o acesso',
+    'condividi posizione', 'condividi _ posizione', 'condividi la posizione in tempo reale', 'condividi la mia posizione', 'condividi la tua posizione', 'condividi la mia posizione in tempo reale', 'concedi accesso', "concedi l'accesso", 'concedi l’accesso', 'consenti accesso', "consenti l'accesso", 'consenti l’accesso',
+    'locatie delen', 'deel _ locatie', 'live locatie delen', 'toegang verlenen', 'toegang geven', 'toegang toestaan',
+    'konum~ paylaş^', 'canlı konum~ paylaş^', 'erişim izni ver^', 'erişim~ izin ver^', 'erişim~ ver^',
+    // r3 (cu-developer-three): the whole possessive / imperative family in every language, not one row at a time.
+    'teile deinen standort', 'teile deinen live-standort', 'teilen sie ihren standort', 'deinen standort teilen', 'ihren standort teilen', 'gewähre zugriff', 'gewähren sie zugriff', 'erlaube zugriff', 'erlauben sie den zugriff',
+    'partager votre position', 'partagez votre position', 'partage ta position', 'partager ta position', 'partager votre localisation', 'partagez votre localisation', "accordez l'accès", 'accordez l’accès', "autorisez l'accès", 'autorisez l’accès',
+    'comparte tu ubicación', 'compartir tu ubicación', 'comparta su ubicación', 'compartir su ubicación', 'concede acceso', 'conceda acceso', 'permite el acceso', 'permita el acceso',
+    'compartilhe sua localização', 'compartilhar sua localização', 'compartilhe a sua localização', 'partilhe a sua localização', 'partilhar a sua localização', 'conceda acesso', 'conceda o acesso', 'permita o acesso',
+    'condividere la tua posizione', 'condividi la sua posizione', 'condividete la vostra posizione', "concedete l'accesso", 'concedete l’accesso', "consenta l'accesso", 'consenta l’accesso',
+    'je locatie delen', 'uw locatie delen', 'deel je live locatie', 'verleen toegang', 'geef toegang', 'sta toegang toe',
+    // CU-617 (cu-researcher): share and invite, as English 'Share' / 'Invite' ask permission; infinitive, imperative and formal forms
+    // (German / Dutch separable imperatives - 'Lade ... ein', 'Nodig ... uit', 'Deel ...' - are a grammar rule below).
+    'teilen', 'teilen sie', 'mit anderen teilen', 'einladen', 'partager', 'partagez', 'partage', 'inviter', 'invitez', 'compartir', 'comparte', 'comparta', 'invitar', 'invita', 'invite a',
+    'compartilhar', 'compartilhe', 'partilhar', 'partilhe', 'convidar', 'convide', 'condividi', 'condividere', 'condividete', 'invitare', 'invitate', 'delen', 'uitnodigen',
+    'paylaş^', 'davet et^', 'davet edin', 'davet edin^', 'nodig uit', 'nodig uit^'],
   // CU-345: a PIN, one-time code, security code or password field named in these languages.
   secret: ['passwort', 'kennwort', 'sicherheitscode', 'prüfziffer', 'mot de passe', 'code de sécurité', 'cryptogramme',
     'contraseña', 'código de seguridad', 'пароль', 'код безопасности', 'パスワード', '暗証番号', 'セキュリティコード', '認証コード',
@@ -227,6 +391,1064 @@ const LOCALE_ID_NAMES = Object.freeze(['reisepass', '…passnummer', 'geburtsdat
   'cpf', 'rg', 'passaporte', 'número do passaporte', 'data de nascimento', 'número da conta', 'cartão de cidadão',
   // r3: Turkish stems take their suffixes ('~', see namesWord).
   'tc kimlik', 'tc kimlik no', 'tc kimlik numara~', 'iban numara~', 'kimlik numara~', 'doğum tarih~', 'hesap numara~', 'pasaport numara~', 'vergi numara~', 'pasaport~'])
+// CU-638 (cu-developer-one's design, 19 Nov 13:36Z): the plural / formal imperatives of the locale verbs. Each verb that leads (or,
+// in German, ends) a purchase / delete / submit / permission entry has an explicit table of its imperative forms - FR tu / vous,
+// DE du / ihr / Sie, ES tu / vosotros / usted / ustedes, IT tu / voi / Lei, PT tu / voce / voces - generated once from the entry
+// list and reviewed (no suffix rules). An entry led by any form of a verb also matches every other form of it, with exactly
+// the entry's own object: 'supprimer le compte' reads 'Supprimez votre compte', 'konto loeschen' reads 'Loescht euer Konto', so a
+// form asks only where the infinitive asks. Turkish holds through its suffix markers. CU-641 (cu-developer-one's ruling): Dutch takes
+// the jij stem and the u form, infinitive-first and infinitive-final entries alike, and a separable verb's particle moves to the end
+// ('abonnement opzeggen' reads 'Zeg je abonnement op'; a 'verb|particle' form).
+const IMPERATIVE_FORMS = Object.freeze({
+  'supprimer': ['supprime', 'supprimez'], 'effacer': ['efface', 'effacez'], 'annuler': ['annule', 'annulez'],
+  'résilier': ['résilie', 'résiliez'], 'quitter': ['quitte', 'quittez'], 'partager': ['partage', 'partagez'],
+  'passer': ['passe', 'passez'], 'commencer': ['commence', 'commencez'], 'démarrer': ['démarre', 'démarrez'],
+  'arrêter': ['arrête', 'arrêtez'], 'terminer': ['termine', 'terminez'], 'commander': ['commande', 'commandez'],
+  'confirmer': ['confirme', 'confirmez'], 'valider': ['valide', 'validez'], 'publier': ['publie', 'publiez'],
+  'poster': ['poste', 'postez'], 'lancer': ['lance', 'lancez'], 'accorder': ['accorde', 'accordez'],
+  'autoriser': ['autorise', 'autorisez'], 'donner': ['donne', 'donnez'], 'inviter': ['invite', 'invitez'],
+  'activer': ['active', 'activez'], 'continuer': ['continue', 'continuez'], 'retirer': ['retire', 'retirez'], 'vider': ['vide', 'videz'],
+  'payer': ['paie', 'paye', 'payez'], 'envoyer': ['envoie', 'envoyez'], 'essayer': ['essaie', 'essaye', 'essayez'],
+  'appeler': ['appelle', 'appelez'], 'mettre': ['mets', 'mettez'], 'soumettre': ['soumets', 'soumettez'], 'faire': ['fais', 'faites'],
+  'effectuer': ['effectue', 'effectuez'], 'rejoindre': ['rejoins', 'rejoignez'], 'acheter': ['achète', 'achetez'],
+  'transférer': ['transfère', 'transférez'], 'souscrire': ['souscris', 'souscrivez'],
+  'cancelar': ['cancela', 'cancelad', 'cancele', 'cancelen', 'cancelem'], 'mejorar': ['mejora', 'mejorad', 'mejore', 'mejoren'],
+  'iniciar': ['inicia', 'iniciad', 'inicie', 'inicien', 'iniciem'], 'cambiar': ['cambia', 'cambiad', 'cambie', 'cambien'],
+  'pasar': ['pasa', 'pasad', 'pase', 'pasen'], 'comprar': ['compra', 'comprad', 'compre', 'compren', 'comprem'],
+  'confirmar': ['confirma', 'confirmad', 'confirme', 'confirmen', 'confirmem'], 'tramitar': ['tramita', 'tramitad', 'tramite', 'tramiten'],
+  'eliminar': ['elimina', 'eliminad', 'elimine', 'eliminen'], 'borrar': ['borra', 'borrad', 'borre', 'borren'],
+  'llamar': ['llama', 'llamad', 'llame', 'llamen'], 'invitar': ['invita', 'invitad', 'invite', 'inviten'],
+  'postear': ['postea', 'postead', 'postee', 'posteen'], 'abandonar': ['abandona', 'abandonad', 'abandone', 'abandonen', 'abandonem'],
+  'participar': ['participa', 'participad', 'participe', 'participen', 'participem'],
+  'activar': ['activa', 'activad', 'active', 'activen'], 'retirar': ['retira', 'retirad', 'retire', 'retiren', 'retirem'],
+  'detener': ['detén', 'detened', 'detenga', 'detengan'], 'salir': ['sal', 'salid', 'salga', 'salgan'],
+  'hacer': ['haz', 'haced', 'haga', 'hagan'], 'empezar': ['empieza', 'empezad', 'empiece', 'empiecen'],
+  'comenzar': ['comienza', 'comenzad', 'comience', 'comiencen'], 'pagar': ['paga', 'pagad', 'pague', 'paguen', 'paguem'],
+  'finalizar': ['finaliza', 'finalizad', 'finalice', 'finalicen'], 'actualizar': ['actualiza', 'actualizad', 'actualice', 'actualicen'],
+  'realizar': ['realiza', 'realizad', 'realice', 'realicen', 'realize', 'realizem'],
+  'publicar': ['publica', 'publicad', 'publique', 'publiquen', 'publiquem'],
+  'enviar': ['envía', 'enviad', 'envíe', 'envíen', 'envia', 'envie', 'enviem'],
+  'transferir': ['transfiere', 'transferid', 'transfiera', 'transfieran', 'transfere', 'transfira', 'transfiram'],
+  'compartir': ['comparte', 'compartid', 'comparta', 'compartan'], 'permitir': ['permite', 'permitid', 'permita', 'permitan', 'permitam'],
+  'conceder': ['concede', 'conceded', 'conceda', 'concedan', 'concedam'], 'dar': ['da', 'dad', 'dé', 'den', 'dá', 'dê', 'deem'],
+  'vaciar': ['vacía', 'vaciad', 'vacíe', 'vacíen'], 'mudar': ['muda', 'mude', 'mudem'], 'encerrar': ['encerra', 'encerre', 'encerrem'],
+  'parar': ['para', 'pare', 'parem'], 'passar': ['passa', 'passe', 'passem'], 'atualizar': ['atualiza', 'atualize', 'atualizem'],
+  'melhorar': ['melhora', 'melhore', 'melhorem'], 'assinar': ['assina', 'assine', 'assinem'],
+  'esvaziar': ['esvazia', 'esvazie', 'esvaziem'], 'compartilhar': ['compartilha', 'compartilhe', 'compartilhem'],
+  'partilhar': ['partilha', 'partilhe', 'partilhem'], 'convidar': ['convida', 'convide', 'convidem'],
+  'postar': ['posta', 'poste', 'postem'], 'entrar': ['entra', 'entre', 'entrem'], 'deixar': ['deixa', 'deixe', 'deixem'],
+  'descadastrar': ['descadastra', 'descadastre', 'descadastrem'], 'terminar': ['termina', 'termine', 'terminem'],
+  'fechar': ['fecha', 'feche', 'fechem'], 'ativar': ['ativa', 'ative', 'ativem'], 'fazer': ['faz', 'faça', 'façam'],
+  'sair': ['sai', 'saia', 'saiam'], 'ligar': ['liga', 'ligue', 'liguem'], 'começar': ['começa', 'comece', 'comecem'],
+  'excluir': ['exclui', 'exclua', 'excluam'], 'interromper': ['interrompe', 'interrompa', 'interrompam'],
+  'remover': ['remove', 'remova', 'removam'], 'submeter': ['submete', 'submeta', 'submetam'], 'efetuar': ['efetua', 'efetue', 'efetuem'],
+  'apagar': ['apaga', 'apague', 'apaguem'], 'elimina': ['eliminate', 'elimini'], 'cancella': ['cancellate', 'cancelli'],
+  'conferma': ['confermate', 'confermi'], 'acquista': ['acquistate', 'acquisti'], 'annulla': ['annullate', 'annulli'],
+  'svuota': ['svuotate', 'svuoti'], 'partecipa': ['partecipate', 'partecipi'], 'termina': ['terminate', 'termini'],
+  'abbandona': ['abbandonate', 'abbandoni'], 'ordina': ['ordinate', 'ordini'], 'chiama': ['chiamate', 'chiami'],
+  'invita': ['invitate', 'inviti'], 'aggiorna': ['aggiornate', 'aggiorni'], 'passa': ['passate', 'passi'],
+  'effettua': ['effettuate', 'effettui'], 'ferma': ['fermate', 'fermi'], 'prova': ['provate', 'provi'], 'attiva': ['attivate', 'attivi'],
+  'paga': ['pagate', 'paghi'], 'pubblica': ['pubblicate', 'pubblichi'], 'cerca': ['cercate', 'cerchi'], 'disdici': ['disdite', 'disdica'],
+  'chiudi': ['chiudete', 'chiuda'], 'esci': ['uscite', 'esca'], 'condividi': ['condividete', 'condivida'],
+  'concedi': ['concedete', 'conceda'], 'consenti': ['consentite', 'consenta'], 'interrompi': ['interrompete', 'interrompa'],
+  'rimuovi': ['rimuovete', 'rimuova'], 'trasferisci': ['trasferite', 'trasferisca'], 'procedi': ['procedete', 'proceda'],
+  'sospendi': ['sospendete', 'sospenda'], 'sottoscrivi': ['sottoscrivete', 'sottoscriva'], 'vai': ['andate', 'vada'],
+  'abbonati': ['abbonatevi', 'si abboni'], 'avvia': ['avviate', 'avvii'], 'invia': ['inviate', 'invii'], 'inizia': ['iniziate', 'inizi'],
+  'lascia': ['lasciate', 'lasci'], 'potenzia': ['potenziate', 'potenzi'], 'eliminare': ['elimina', 'eliminate', 'elimini'],
+  'cancellare': ['cancella', 'cancellate', 'cancelli'], 'confermare': ['conferma', 'confermate', 'confermi'],
+  'acquistare': ['acquista', 'acquistate', 'acquisti'], 'pagare': ['paga', 'pagate', 'paghi'], 'inviare': ['invia', 'inviate', 'invii'],
+  'annullare': ['annulla', 'annullate', 'annulli'], 'condividere': ['condividi', 'condividete', 'condivida'],
+  'abbandonare': ['abbandona', 'abbandonate', 'abbandoni'], 'lasciare': ['lascia', 'lasciate', 'lasci'],
+  'interrompere': ['interrompi', 'interrompete', 'interrompa'], 'terminare': ['termina', 'terminate', 'termini'],
+  'disdire': ['disdici', 'disdite', 'disdica'], 'pubblicare': ['pubblica', 'pubblicate', 'pubblichi'],
+  'chiamare': ['chiama', 'chiamate', 'chiami'], 'invitare': ['invita', 'invitate', 'inviti'], 'uscire': ['esci', 'uscite', 'esca'],
+  'concedere': ['concedi', 'concedete', 'conceda'], 'löschen': ['lösch', 'lösche', 'löscht', 'löschen sie'],
+  'entfernen': ['entfern', 'entferne', 'entfernt', 'entfernen sie'], 'verwerfen': ['verwirf', 'verwerft', 'verwerfen sie'],
+  'leeren': ['leere', 'leert', 'leeren sie'], 'bezahlen': ['bezahl', 'bezahle', 'bezahlt', 'bezahlen sie'],
+  'zahlen': ['zahl', 'zahle', 'zahlt', 'zahlen sie'], 'kaufen': ['kauf', 'kaufe', 'kauft', 'kaufen sie'],
+  'bestellen': ['bestel', 'bestelt u', 'bestell', 'bestelle', 'bestellt', 'bestellen sie'],
+  'bestätigen': ['bestätig', 'bestätige', 'bestätigt', 'bestätigen sie'], 'senden': ['sende', 'sendet', 'senden sie'],
+  'überweisen': ['überweis', 'überweise', 'überweist', 'überweisen sie'], 'kündigen': ['kündig', 'kündige', 'kündigt', 'kündigen sie'],
+  'beenden': ['beend', 'beende', 'beendet', 'beenden sie'], 'stoppen': ['stopp', 'stoppe', 'stoppt', 'stoppen sie'],
+  'starten': ['start', 'starte', 'startet', 'starten sie'], 'wechseln': ['wechsle', 'wechsel', 'wechselt', 'wechseln sie'],
+  'teilen': ['teil', 'teile', 'teilt', 'teilen sie'], 'verlassen': ['verlass', 'verlasse', 'verlasst', 'verlassen sie'],
+  'veröffentlichen': ['veröffentlich', 'veröffentliche', 'veröffentlicht', 'veröffentlichen sie'],
+  'posten': ['post', 'poste', 'postet', 'posten sie'], 'gewähren': ['gewähr', 'gewähre', 'gewährt', 'gewähren sie'],
+  'erlauben': ['erlaub', 'erlaube', 'erlaubt', 'erlauben sie'], 'aktivieren': ['aktivier', 'aktiviere', 'aktiviert', 'aktivieren sie'],
+  // CU-641: Dutch - jij stem and u form; 'verb|particle' for a separable verb.
+  'verzenden': ['verzend', 'verzendt u'], 'versturen': ['verstuur', 'verstuurt u'], 'sturen': ['stuur', 'stuurt u'], 'verwijderen': ['verwijder', 'verwijdert u'],
+  'wissen': ['wis', 'wist u'], 'annuleren': ['annuleer', 'annuleert u'], 'bevestigen': ['bevestig', 'bevestigt u'], 'betalen': ['betaal', 'betaalt u'],
+  'kopen': ['koop', 'koopt u'], 'delen': ['deel', 'deelt u'], 'verlaten': ['verlaat', 'verlaat u'], 'beëindigen': ['beëindig', 'beëindigt u'],
+  'publiceren': ['publiceer', 'publiceert u'], 'plaatsen': ['plaats', 'plaatst u'], 'bellen': ['bel', 'belt u'], 'verlenen': ['verleen', 'verleent u'],
+  'geven': ['geef', 'geeft u'], 'abonneren': ['abonneer', 'abonneert u'], 'proberen': ['probeer', 'probeert u'],
+  'opzeggen': ['zeg|op', 'zegt u|op'], 'stopzetten': ['zet|stop', 'zet u|stop'], 'opheffen': ['hef|op', 'heft u|op'], 'afsluiten': ['sluit|af', 'sluit u|af'],
+  'uitnodigen': ['nodig|uit', 'nodigt u|uit'], 'toestaan': ['sta|toe', 'staat u|toe'], 'deelnemen': ['neem|deel', 'neemt u|deel'], 'uitschrijven': ['schrijf|uit', 'schrijft u|uit'],
+  'afmelden': ['meld|af', 'meldt u|af'], 'overmaken': ['maak|over', 'maakt u|over'], 'leegmaken': ['maak|leeg', 'maakt u|leeg'], 'overschrijven': ['schrijf|over', 'schrijft u|over'],
+  'afrekenen': ['reken|af', 'rekent u|af'], 'uitvoeren': ['voer|uit', 'voert u|uit'], 'overstappen': ['stap|over', 'stapt u|over'],
+  // CU-648 (cu-developer-one's design 03:04Z / 03:06Z): Russian perfective ty / vy imperatives; imperfective ('Удаляйте',
+  // 'Покупайте') and negated forms stay out. Korean polite imperatives of the native 보내다 and of the hada table nouns; the plain
+  // statement forms ('보내요', '삭제해요') stay out ('보내요' is also 'I send').
+  'удалить': ['удали', 'удалите'], 'отправить': ['отправь', 'отправьте'], 'оплатить': ['оплати', 'оплатите'], 'купить': ['купи', 'купите'],
+  'заказать': ['закажи', 'закажите'], 'оформить': ['оформи', 'оформите'], 'стереть': ['сотри', 'сотрите'],
+  // CU-650: cancel and unsubscribe, with the objects their entries name ('Отмените подписку', 'Отпишитесь').
+  'отменить': ['отмени', 'отмените'], 'отписаться': ['отпишись', 'отпишитесь'], 'очистить': ['очисти', 'очистите'],
+  '보내기': ['보내세요', '보내 주세요', '보내주세요', '보내십시오', '보내줘', '보내 줘'], '지우기': ['지워', '지워줘', '지워 줘', '지우세요', '지워 주세요', '지워주세요'], '삭제': ['삭제하세요', '삭제해 주세요', '삭제해주세요', '삭제하십시오'],
+  '결제': ['결제하세요', '결제해 주세요', '결제해주세요', '결제하십시오'], '구매': ['구매하세요', '구매해 주세요', '구매해주세요', '구매하십시오'],
+  '전송': ['전송하세요', '전송해 주세요', '전송해주세요', '전송하십시오'],
+})
+// A form that is also a participle, adjective or noun is never matched alone where the entry is the bare verb ('Inviate', 'Pagate',
+// 'Bezahlt' stay free); it asks only in an imperative-only context - first in the label and followed by a determiner, or by a 'now'
+// adverb ('Bestellt jetzt', 'Pagate subito') ('Eliminate il
+// vostro account', 'Inviate il messaggio') - or with an entry's object. 'para' (PT 'parar') is the preposition 'for', never generated.
+const IMPERATIVE_BARE_COLLISIONS = new Set(['kauf', 'kauft', 'bezahlt', 'bestellt', 'entfernt', 'veröffentlicht', 'post', 'posta', 'poste', 'teil', 'teile', 'teilt',
+  'paye', 'commande', 'partage', 'partilha', 'compra', 'paga', 'acquistate', 'eliminate', 'cancellate', 'inviate', 'pubblicate', 'chiamate', 'invitate',
+  'trasferite', 'pagate', 'andate', 'esca',
+  // German e-less du stems lead hyphenated compounds ('Bestell-Nr.', 'Zahl-Art', 'Lösch-Datum'), so they never stand alone either.
+  'lösch', 'entfern', 'bezahl', 'zahl', 'bestell', 'bestätig', 'überweis', 'kündig', 'beend', 'stopp', 'start', 'veröffentlich', 'gewähr', 'erlaub',
+  'aktivier', 'verlass', 'wechsel', 'verwirf', 'leer',
+  // CU-641: Dutch stems that are also nouns or adjectives ('Deel' part, 'Bel' bell, 'Plaats' place).
+  'deel', 'bel', 'plaats'])
+// CU-641 (cu-developer-one, point 4): 'Stuur' (also the steering wheel) and 'Wis' ('Wis zoekopdracht', 'Wis filters' stay free) ask
+// only with an entry's object - never alone, never in the determiner context.
+const IMPERATIVE_OBJECT_ONLY = new Set(['stuur', 'wis'])
+// CU-654: clear verbs that ask only before a history noun (FR / ES / PT / IT / DE; Russian, Japanese and Turkish are entries).
+const LOCALE_HISTORY_CLEAR = Object.freeze([
+  /^(?:vider|videz|vide)\s+(?:\S+\s+){0,4}?(?:l['’]\s*)?historique\b/i,
+  /^(?:limpiar|limpia|limpie|limpiad|limpien|vaciar|vacía|vacíe|vaciad|vacíen)\s+(?:\S+\s+){0,4}?historial\b/i,
+  /^(?:limpar|limpa|limpe|limpem)\s+(?:\S+\s+){0,4}?hist[oó]rico\b/i,
+  /^(?:svuota|svuotare|svuotate|svuoti|pulisci|pulire|pulite)\s+(?:\S+\s+){0,4}?(?:l['’]\s*)?cronologia\b/i,
+  // r2 (cu-developer-three, cu-developer-one 12:50Z): in the verb-final locales words may stand between the noun and the verb -
+  // 'Verlauf jetzt / vollständig / beim Beenden leeren', '履歴をすべてクリア', 'Arama geçmişini şimdi temizle'.
+  /^(?:\S+\s+){0,4}?\S*verlauf(?:\s+\S+){0,4}?\s+(?:leeren|bereinigen)\s*[.!]?$/i,
+  // r3 (cu-developer-three, cu-developer-one 14:15Z): past and passive forms stay free, as 'History cleared' does ('履歴をクリアしま
+  // した', '履歴がクリアされました', 'Geçmiş temizlendi').
+  /履歴.{0,10}?クリア(?!し(?:ました|た)|され|済|完了|中)/u,
+  /(?:^|\s)\S*geçmiş\S*(?:\s+\S+){0,4}?\s+temizle(?:yin(?:iz)?|sin)?\s*[.!]?$/iu,
+  /^(?:leere|leert|leeren\s+sie|bereinige|bereinigt|bereinigen\s+sie)\s+(?:\S+\s+){0,4}?\S*verlauf\b/i,
+])
+// CU-655 (cu-developer-one's design): emptying the trash asks delete in FR / ES / DE / RU / JA / KO, as 'Empty trash' and the
+// IT / NL / PT / TR entries do - the verb with the trash noun only, up to four words between them, in either order where the
+// language puts the verb last; negation follows 'Don't empty trash' (asks). Past and status forms stay free, as the locale bare
+// nouns do ('Corbeille vidée', 'Papierkorb geleert', 'Корзина очищена', 'ゴミ箱を空にしました', '휴지통을 비웠습니다'); the same
+// verbs with any other object stay free ('Vider le panier', 'Warenkorb leeren', '장바구니 비우기'). Russian 'корзина' is also a
+// shopping cart: it asks (the trash deletes for good, a cart empties reversibly) unless the cart is named ('корзину покупок').
+const LOCALE_TRASH_EMPTY = Object.freeze([
+  /^(?:ne\s+pas\s+)?(?:vider|videz|vide)\s+(?:\S+\s+){0,4}?corbeille(?=\s|$|[.!])/i,
+  /^ne\s+(?:videz|vide)\s+pas\s+(?:\S+\s+){0,4}?corbeille(?=\s|$|[.!])/i,
+  /^(?:no\s+)?(?:vaciar|vacía|vacia|vacíe|vacie|vaciad|vacíen|vacien|vacíes|vacies)\s+(?:\S+\s+){0,4}?papelera(?=\s|$|[.!])/i,
+  /^(?:\S+\s+){0,4}?papierkorb(?:\s+\S+){0,4}?\s+(?:leeren|entleeren)\s*[.!]?$/i,
+  /^(?:leere|leert|leeren\s+sie|entleere|entleert|entleeren\s+sie)\s+(?:\S+\s+){0,4}?papierkorb(?=\s|$|[.!])/i,
+  /ゴミ箱.{0,10}?空に(?!し(?:ました|た)|され|済|完了|中)/u,
+  /휴지통\S*\s*(?:\S+\s+){0,4}?(?:비우(?:기|세요|십시오|시겠습니까)?|비워(?:\s?줘|\s?주세요|요)?)(?=\s|$|[.!?])/u,
+  // CU-657 (cu-developer-one's 17:00Z row): the nominal form takes the object particle before 실행 / 하기 ('휴지통 비우기를 실행',
+  // '휴지통 비우기를 하기'), as '휴지통 비우기 실행' asks; a past or status verb after the particle stays free ('휴지통 비우기를 완료했습니다').
+  // CU-660 (cu-developer-one's go, 19:06Z): 시작 / 진행 (start / proceed) after the particle ask too ('휴지통 비우기를 시작'), with the
+  // imperative endings (r2, cu-researcher: '휴지통 비우기를 시작하세요', '…진행해 주세요', '…시작하십시오'; r3, cu-developer-three: the
+  // casual '…진행해줘', as CU-654's '지워줘'), and up to two words between the particle and the verb ('휴지통 비우기를 지금 시작',
+  // cu-developer-one's r3 ruling); 'in progress' (진행 중) and the past forms stay free.
+  /휴지통\S*\s*(?:\S+\s+){0,4}?비우기[을를]\s*(?:\S+\s+){0,2}?(?:실행|하기|시작|진행)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|해)?(?!\s*중)(?=\s|$|[.!?])/u,
+  // CU-657 (cu-developer-one's design, 20 Nov 16:47Z): IT / NL / PT / TR with the same slots - up to four words before the noun
+  // ('Svuota tutto il cestino', 'Esvaziar sua lixeira'), words between the noun and a final verb in NL and TR ('Prullenbak nu
+  // legen', 'Çöp kutusunu şimdi boşalt'), a trailing adverb ('Svuotare il cestino ora'); negation follows its twin ('Non svuotare
+  // il cestino', 'Prullenbak niet legen', 'Não esvaziar a lixeira', 'Çöp kutusunu boşaltma'). Past forms ('Cestino svuotato',
+  // 'Prullenbak geleegd', 'Lixeira esvaziada', 'Çöp kutusu boşaltıldı'), other objects ('Svuota il carrello', 'Winkelwagen
+  // legen', 'Esvaziar o carrinho', 'Sepeti boşalt') and the bare nouns stay free.
+  /^(?:non\s+)?(?:svuota|svuotare|svuotate|svuoti)\s+(?:\S+\s+){0,4}?cestino(?=\s|$|[.!])/i,
+  /^(?:niet\s+)?(?:leeg|leegt|legen|leegmaken)\s+(?:\S+\s+){0,4}?prullenbak(?=\s|$|[.!])/i,
+  /^maak\s+(?:\S+\s+){0,4}?prullenbak(?:\s+\S+){0,3}?\s+leeg(?=\s|$|[.!])/i,
+  /^(?:\S+\s+){0,4}?prullenbak(?:\s+\S+){0,4}?\s+(?:legen|leegmaken|leeg\s+maken)\s*[.!]?$/i,
+  /^(?:não\s+|nao\s+)?(?:esvaziar|esvazie|esvazia|esvaziem)\s+(?:\S+\s+){0,4}?(?:lixeira|lixo|reciclagem)(?=\s|$|[.!])/i,
+  // CU-660: the noun takes its case ending ('Çöpü tamamen boşalt'), as 'Çöp kutusunu' does.
+  /^(?:\S+\s+){0,4}?çöp\S*(?:\s+kutu\S*)?(?:\s+\S+){0,4}?\s+(?:boşalt|boşaltın|boşaltınız|temizle|temizleyin|temizleyiniz)\s*[.!]?$/iu,
+  // The negative imperative needs the accusative object ('Çöp kutusunu boşaltma'): 'boşaltma' after a bare noun is the verbal noun
+  // of a setting's name ('Otomatik çöp kutusu boşaltma', automatic trash emptying), which stays free.
+  /^(?:\S+\s+){0,4}?(?:çöp\s+kutusunu|çöpü)(?:\s+\S+){0,4}?\s+(?:boşaltma|boşaltmayın|temizleme|temizlemeyin)\s*[.!]?$/iu,
+])
+// CU-663 (cu-developer-one's design, 20 Nov 23:11Z): the locale twins of CU-659 - emptying a folder (or a localized Deleted
+// Items / Junk folder) asks delete as 'Empty folder' does, with CU-655's axes: up to four slot words in either order, a trailing
+// adverb, negation as its twin, the formal / casual endings; and CU-661's rule - a preposition in the slot names a place (free)
+// unless the slot starts with a quantifier or 'the contents' (asks). Past / status forms, carts, open / new folder and the bare
+// names stay free. 'Clear storage' twins (pt / ru / tr) ask as 'Clear data'. CU-665 (cu-developer-one's go 04:09Z): a plural content noun
+// first (with its article and one adjective) counts as a quantifier in each locale, as CU-661's English rule does ('Vider les messages
+// du dossier Spam', 'Die Nachrichten im Ordner leeren', 'Очистить письма в папке').
+const folderSlot = (preps, quants) => `(?:(?:${quants})(?:\\s+\\S+){0,4}?\\s+|(?:(?!(?:${preps})(?:\\s|$))\\S+\\s+){0,4}?)`
+const folderVerbFirst = (neg, verbs, preps, quants, nouns) => new RegExp(`^(?:${neg})?(?:${verbs})\\s+${folderSlot(preps, quants)}(?:${nouns})(?=\\s|$|[.!?])`, 'iu')
+const folderVerbLast = (preps, quants, nouns, verbs) => new RegExp(`^${folderSlot(preps, quants)}(?:${nouns})(?:\\s+\\S+){0,4}?\\s+(?:${verbs})\\s*[.!]?$`, 'iu')
+const LOCALE_FOLDER_EMPTY = Object.freeze([
+  folderVerbFirst('ne\\s+pas\\s+', 'vider|videz|vide', 'dans|de|du|des|pour|depuis|en|sur|à|au|aux', 'tout|tous|toutes|le\\s+contenu|tout\\s+le\\s+contenu|(?:(?:les|des|vos|tes|mes)\\s+)?(?:\\S+\\s+)?(?:messages|éléments|fichiers|e-mails|courriels|conversations|documents|photos)', 'dossier|éléments\\s+supprimés|courrier\\s+indésirable|spam'),
+  /^ne\s+(?:videz|vide)\s+pas\s+(?:\S+\s+){0,4}?(?:dossier|éléments\s+supprimés|courrier\s+indésirable)(?=\s|$|[.!?])/iu,
+  folderVerbFirst('no\\s+', 'vaciar|vacía|vacia|vacíe|vacie|vaciad|vacíen|vacien|vacíes|vacies', 'en|de|del|para|desde', 'todo|todos|todas|el\\s+contenido|todo\\s+el\\s+contenido|(?:(?:los|las|tus|sus|mis)\\s+)?(?:\\S+\\s+)?(?:mensajes|elementos|archivos|correos|conversaciones|documentos|fotos)', 'carpeta|elementos\\s+eliminados|correo\\s+no\\s+deseado|spam'),
+  folderVerbFirst('(?:não|nao)\\s+', 'esvaziar|esvazie|esvazia|esvaziem|limpar|limpe|limpa|limpem', 'em|no|na|nos|nas|de|do|da|dos|das|para', 'tudo|todo|toda|todos|todas|o\\s+conteúdo|todo\\s+o\\s+conteúdo|(?:(?:os|as|seus|suas|meus|minhas)\\s+)?(?:\\S+\\s+)?(?:mensagens|itens|arquivos|e-mails|conversas|documentos|fotos)', 'pasta|itens\\s+excluídos|lixo\\s+eletrônico|spam'),
+  folderVerbFirst('non\\s+', 'svuota|svuotare|svuotate|svuoti', 'in|nel|nella|di|del|della|dal|dalla|per|da', 'tutto|tutti|tutte|il\\s+contenuto|tutto\\s+il\\s+contenuto|(?:(?:i|gli|le|tuoi|miei)\\s+)?(?:\\S+\\s+)?(?:messaggi|elementi|email|conversazioni|documenti)', 'cartella|posta\\s+eliminata|posta\\s+indesiderata|spam'),
+  folderVerbLast('in|im|aus|vom|von|für', 'alle|alles|den\\s+gesamten|den\\s+ganzen|den\\s+inhalt|gesamten|ganzen|(?:(?:die|ihre|deine|meine)\\s+)?(?:\\S+\\s+)?(?:nachrichten|elemente|dateien|e-mails|mails|unterhaltungen|dokumente|fotos)', '\\S*ordner|gelöschte\\s+elemente|junk-e-mail|spam', 'leeren|entleeren'),
+  folderVerbFirst('nicht\\s+', 'leere|leert|leeren\\s+sie|entleere|entleert|entleeren\\s+sie', 'in|im|aus|vom|von|für', 'alle|alles|den\\s+gesamten|den\\s+ganzen|den\\s+inhalt|(?:(?:die|ihre|deine|meine)\\s+)?(?:\\S+\\s+)?(?:nachrichten|elemente|dateien|e-mails|mails|unterhaltungen|dokumente|fotos)', '\\S*ordner|gelöschte\\s+elemente|junk-e-mail|spam'),
+  folderVerbFirst('niet\\s+', 'leeg|leegt|legen|leegmaken', 'in|uit|van|voor', 'alle|alles|de\\s+hele|de\\s+inhoud|hele|(?:(?:de|je|uw|mijn)\\s+)?(?:\\S+\\s+)?(?:berichten|items|bestanden|e-mails|gesprekken|documenten)', 'map|verwijderde\\s+items|ongewenste\\s+e-mail|spam'),
+  /^maak\s+(?:\S+\s+){0,4}?(?:map|verwijderde\s+items|ongewenste\s+e-mail)(?:\s+\S+){0,3}?\s+leeg(?=\s|$|[.!])/iu,
+  folderVerbLast('in|uit|van|voor', 'alle|alles|de\\s+hele|de\\s+inhoud|hele|(?:(?:de|je|uw|mijn)\\s+)?(?:\\S+\\s+)?(?:berichten|items|bestanden|e-mails|gesprekken|documenten)', 'map|verwijderde\\s+items|ongewenste\\s+e-mail|spam', 'legen|leegmaken|leeg\\s+maken'),
+  /(?:フォルダー?|削除済みアイテム|迷惑メール).{0,10}?空に(?!し(?:ました|た)|され|済|完了|中|なって|なりました)/u,
+  /(?:폴더|지운\s?편지함|정크\s?메일)\S*\s*(?:\S+\s+){0,4}?(?:비우(?:기|세요|십시오)?|비워(?:\s?줘|\s?주세요|요)?|비우지\s?마(?:세요|십시오)?)(?=\s|$|[.!?])/u,
+  /(?:폴더|지운\s?편지함|정크\s?메일)\S*\s*(?:\S+\s+){0,4}?비우기[을를]\s*(?:\S+\s+){0,2}?(?:실행|하기|시작|진행)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|해)?(?!\s*중)(?=\s|$|[.!?])/u,
+  folderVerbLast('içinde|için|içindeki', 'tüm|bütün|tamamını|hepsini', 'klasör\\S*|silinmiş\\s+öğeler\\S*|gereksiz\\s+e-posta\\S*', 'boşalt|boşaltın|boşaltınız|temizle|temizleyin|temizleyiniz'),
+  /^(?:\S+\s+){0,4}?(?:klasörü|silinmiş\s+öğeleri|gereksiz\s+e-postayı)(?:\s+\S+){0,4}?\s+(?:boşaltma|boşaltmayın|temizleme|temizlemeyin)\s*[.!]?$/iu,
+  /^(?:não\s+|nao\s+)?(?:limpar|limpe|limpa|limpem)\s+(?:\S+\s+){0,2}?armazenamento(?=\s|$|[.!])/iu,
+  /^(?:\S+\s+){0,2}?depolama\S*(?:\s+\S+){0,2}?\s+(?:temizle|temizleyin|temizleyiniz)\s*[.!]?$/iu,
+])
+// CU-663: the Russian folder / storage twins, folded on first use as namesRuTrashEmpty's words are ('Очистить папку', 'Очистите
+// папку «Удалённые»', 'Очистить хранилище'); a preposition (в / из / для / с) in the slot names a place unless a quantifier leads.
+let ruFolderEmptyRegex = null
+function namesRuFolderEmpty(name) {
+  if (!ruFolderEmptyRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const verb = any(['очистить', 'очисти', 'очистите', 'очищать', 'очищай', 'очищайте'])
+    const noun = `(?:${any(['папку', 'папке', 'удалённые', 'удаленные', 'хранилище'])}|${any(['нежелательную'])}\\s+${any(['почту'])})`
+    const prep = any(['в', 'из', 'для', 'с', 'во', 'со'])
+    const quant = any(['все', 'всё', 'всю', 'весь', 'содержимое', 'письма', 'сообщения', 'файлы', 'элементы', 'документы'])
+    const slot = `(?:${quant}(?:\\s+\\S+){0,4}?\\s+|(?:(?!${prep}(?:\\s|$))\\S+\\s+){0,4}?)`
+    ruFolderEmptyRegex = new RegExp(`^(?:${any(['не'])}\\s+)?(?:${verb}\\s+${slot}${noun}(?=\\s|$|[.!?«»"])|${noun}\\s+(?:\\S+\\s+){0,4}?${verb}(?=\\s|$|[.!]))`, 'iu')
+  }
+  return ruFolderEmptyRegex.test(normaliseName(String(name ?? '')).trim())
+}
+// CU-668 (cu-developer-one's design, 21 Nov 06:47Z): clearing browsing or site data asks delete in the locales whose clear verb
+// does not ask by itself, as 'Clear browsing data' does - verb-first and verb-final, up to two slot words ('Vider toutes les données
+// de navigation'), negation as its twin, ja / ko politeness. Bare nouns, show / settings labels, past forms, caches ('Vider le
+// cache', CU-659) and the verbs' other objects stay free.
+const dataSlot = '(?:\\S+\\s+){0,2}?'
+const LOCALE_DATA_CLEAR = Object.freeze([
+  new RegExp(`^(?:ne\\s+pas\\s+)?(?:vider|videz|vide)\\s+${dataSlot}données\\s+(?:de\\s+navigation|du\\s+site|des\\s+sites|de\\s+site)(?=\\s|$|[.!?])`, 'iu'),
+  new RegExp(`^ne\\s+(?:videz|vide)\\s+pas\\s+${dataSlot}données\\s+(?:de\\s+navigation|du\\s+site|des\\s+sites)(?=\\s|$|[.!?])`, 'iu'),
+  new RegExp(`^(?:no\\s+)?(?:limpiar|limpia|limpie|limpiad|limpien|vaciar|vacía|vacia|vacíe|vaciad|vacíen)\\s+${dataSlot}datos\\s+(?:de\\s+navegación|del\\s+sitio|de\\s+sitios?|de\\s+los\\s+sitios)(?=\\s|$|[.!?])`, 'iu'),
+  new RegExp(`^(?:não\\s+|nao\\s+)?(?:limpar|limpe|limpa|limpem)\\s+${dataSlot}dados\\s+(?:de\\s+navegação|do\\s+site|dos\\s+sites)(?=\\s|$|[.!?])`, 'iu'),
+  new RegExp(`^(?:non\\s+)?(?:svuota|svuotare|svuotate|svuoti|cancella|cancellare|cancellate)\\s+${dataSlot}dati\\s+(?:di\\s+navigazione|del\\s+sito|dei\\s+siti)(?=\\s|$|[.!?])`, 'iu'),
+  new RegExp(`^${dataSlot}(?:\\S*(?:browser|website|web|seiten)daten|daten\\s+(?:des\\s+browsers|der\\s+website))(?:\\s+\\S+){0,2}?\\s+(?:leeren|bereinigen)\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:leere|leert|leeren\\s+sie|bereinige|bereinigt|bereinigen\\s+sie)\\s+${dataSlot}(?:\\S*(?:browser|website|web|seiten)daten)(?=\\s|$|[.!?])`, 'iu'),
+  new RegExp(`^${dataSlot}\\S*(?:browse|site|website)gegevens(?:\\s+\\S+){0,2}?\\s+(?:legen|leegmaken|leeg\\s+maken|wissen)\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:niet\\s+)?(?:wis|leeg|leegt|legen|leegmaken)\\s+${dataSlot}\\S*(?:browse|site|website)gegevens(?=\\s|$|[.!?])`, 'iu'),
+  new RegExp(`^${dataSlot}(?:tarama|site|gezinme)\\s+veriler\\S*(?:\\s+\\S+){0,2}?\\s+(?:temizle|temizleyin|temizleyiniz)\\s*[.!]?$`, 'iu'),
+  /(?:閲覧データ|サイトデータ|ブラウジングデータ|ブラウザー?の?データ).{0,8}?(?:クリア|空に)(?!し(?:ました|た)|され|済|完了|中)/u,
+  /(?:사이트\s?데이터|인터넷\s?사용\s?기록|검색\s?데이터|브라우저\s?데이터)\S*\s*(?:\S+\s+){0,2}?(?:비우(?:기|세요|십시오)?|비워(?:\s?줘|\s?주세요|요)?)(?=\s|$|[.!?])/u,
+])
+let ruDataClearRegex = null
+function namesRuDataClear(name) {
+  if (!ruDataClearRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const verb = any(['очистить', 'очисти', 'очистите', 'очищать', 'очищай', 'очищайте'])
+    const data = `${any(['данные'])}\\s+${any(['браузера', 'сайта', 'сайтов', 'просмотра'])}`
+    ruDataClearRegex = new RegExp(`^(?:${any(['не'])}\\s+)?(?:${verb}\\s+(?:\\S+\\s+){0,2}?${data}(?=\\s|$|[.!?])|${data}\\s+(?:\\S+\\s+){0,2}?${verb}(?=\\s|$|[.!]))`, 'iu')
+  }
+  return ruDataClearRegex.test(normaliseName(String(name ?? '')).trim())
+}
+// CU-670 (cu-developer-one's design 08:01Z, strict parity 08:03Z): the locale twins of 'Reset settings' and 'Factory reset' ask
+// delete exactly where English does - the reset verb before the settings noun, with determiner / quantifier slot words only
+// ('Réinitialiser tous les paramètres'), verb-final in de / nl / ja / ko / tr; the factory-reset twins. Free as in English: negation
+// ("Don't reset settings" is free), other or qualified objects ('Reset preferences', 'Reset network settings', 'Réinitialiser le
+// zoom'), 'Restore defaults' twins ('恢复默认设置', 'Ripristina predefiniti'), past / status forms and bare nouns.
+const LOCALE_RESET_SETTINGS = Object.freeze([
+  /^(?:réinitialiser|réinitialisez|réinitialise)\s+(?:(?:tous|toutes)\s+)?(?:les|vos|tes|mes)\s+(?:paramètres|réglages)(?:\s+(?:maintenant|tout\s+de\s+suite))?\s*[.!]?$/iu,
+  /^(?:restablecer|restablece|restablezca|restableced|restablezcan)\s+(?:(?:toda|todas|todos)\s+)?(?:la|las|los|tu|tus|su|sus)?\s*(?:configuración|ajustes|configuraciones)(?:\s+(?:ahora|ya))?\s*[.!]?$/iu,
+  /^(?:redefinir|redefina|redefine|redefinam)\s+(?:(?:todas|todos)\s+)?(?:as|os|suas|seus|tuas|teus)?\s*(?:configurações|definições)(?:\s+(?:agora|já))?\s*[.!]?$/iu,
+  /^(?:ripristina|ripristinare|ripristinate|reimposta|reimpostare|reimpostate)\s+(?:tutte\s+)?(?:le\s+|tue\s+|sue\s+)?impostazioni(?:\s+(?:ora|adesso|subito))?\s*[.!]?$/iu,
+  /^(?:(?:die|alle|ihre|deine|meine)\s+){0,2}einstellungen(?:\s+(?:jetzt|sofort))?\s+zurücksetzen\s*[.!]?$/iu,
+  /^(?:setze|setzt|setzen\s+sie)\s+(?:(?:die|alle|ihre|deine|meine)\s+){0,2}einstellungen(?:\s+(?:jetzt|sofort))?\s+zurück\s*[.!]?$/iu,
+  /^(?:(?:de|alle|je|uw|mijn)\s+){0,2}instellingen(?:\s+(?:nu|direct))?\s+(?:resetten|opnieuw\s+instellen|terugzetten)\s*[.!]?$/iu,
+  /^(?:reset|zet)\s+(?:(?:de|alle|je|uw|mijn)\s+){0,2}instellingen(?:\s+terug)?\s*[.!]?$/iu,
+  /^(?:今すぐ)?(?:すべての|全ての)?設定を?(?:今すぐ)?(?:リセット|初期化)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
+  /^(?:지금\s+)?(?:모든\s+)?설정\S{0,1}\s*(?:지금\s+)?(?:초기화|리셋)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|해)?\s*[.!]?$/u,
+  /^(?:立即|现在)?(?:重置|重设)(?:所有|全部)?设置\s*[.!。]?$/u,
+  /^(?:(?:tüm|bütün)\s+)?ayarlar\S*(?:\s+(?:şimdi|hemen))?\s+(?:sıfırla|sıfırlayın|sıfırlayınız)\s*[.!]?$/iu,
+  // r2 (cu-developer-two, cu-developer-one 08:21Z): the 'Reset to defaults' twins - a reset verb (not a restore verb) before 'defaults'
+  /^(?:réinitialiser|réinitialisez|réinitialise)\s+(?:(?:aux?|les)\s+)?(?:(?:valeurs|paramètres|réglages)\s+)?par\s+défaut\s*[.!]?$/iu,
+  /^(?:restablecer|restablece|restablezca|restableced|restablezcan)\s+(?:a\s+)?(?:los\s+)?(?:valores\s+)?(?:predeterminados|por\s+defecto)\s*[.!]?$/iu,
+  /^(?:redefinir|redefina|redefine|redefinam)\s+(?:para\s+)?(?:os?\s+)?(?:valores\s+)?(?:padrão|padrões|predefinidos)\s*[.!]?$/iu,
+  /^(?:reimposta|reimpostare|reimpostate)\s+(?:ai\s+|i\s+)?(?:valori\s+)?predefiniti\s*[.!]?$/iu,
+  /^(?:(?:\S*einstellungen|alles)\s+)?auf\s+(?:die\s+)?(?:standard|standardwerte|standardeinstellungen|voreinstellungen)\s+zurücksetzen\s*[.!]?$/iu,
+  /^(?:(?:instellingen|alles)\s+)?(?:terugzetten|resetten)\s+(?:naar|op)\s+(?:de\s+)?standaard(?:waarden|instellingen)?\s*[.!]?$/iu,
+  /^(?:デフォルト|既定値|既定の設定)に(?:リセット)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
+  /^기본값으로\s?(?:초기화|재설정)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|해)?\s*[.!]?$/u,
+  /^重置为默认(?:值|设置)?\s*[.!。]?$/u,
+  /^varsayılan(?:a|lara|\s+ayarlara)\s+(?:sıfırla|sıfırlayın|sıfırlayınız)\s*[.!]?$/iu,
+  // the factory-reset twins ('Factory reset', 'Reset to factory settings', 'Restore factory settings' ask in English)
+  /^(?:réinitialis\S*|rétablir|rétablissez|restaurer|restaurez)\b.*\busine\b|^réinitialisation\s+d['’]usine\s*[.!]?$/iu,
+  /^(?:restablec\S*|restaurar|restaure)\b.*\bfábrica\b|^restablecimiento\s+de\s+fábrica\s*[.!]?$/iu,
+  /^(?:redefin\S*|restaurar|restaure)\b.*\bfábrica\b|^redefinição\s+de\s+fábrica\s*[.!]?$/iu,
+  /^(?:ripristin\S*|reimpost\S*)\b.*\bfabbrica\b/iu,
+  /^(?:\S+\s+){0,3}?(?:op\s+)?fabrieksinstellingen\s+(?:herstellen|terugzetten|resetten)\s*[.!]?$|^(?:herstel|zet|reset)\b.*\bfabrieksinstellingen\b/iu,
+  /工場出荷.{0,8}?(?:リセット|初期化|戻す|戻して)(?!し(?:ました|た)|され|済|完了|中)/u,
+  /^공장\s?(?:초기화|설정\s?복원)(?:하기|하세요|해\s?주세요|하십시오)?\s*[.!]?$/u,
+  /^(?:恢复|重置为?|还原)出厂设置\s*[.!。]?$/u,
+  /^fabrika\s+ayarlar\S*\s+(?:sıfırla|sıfırlayın|dön|geri\s+dön|geri\s+yükle)\s*[.!]?$/iu,
+])
+let ruResetSettingsRegex = null
+function namesRuResetSettings(name) {
+  if (!ruResetSettingsRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const verb = any(['сбросить', 'сбросьте', 'сбрось'])
+    const slot = `(?:${any(['все', 'свои', 'ваши', 'мои'])}\\s+)?`
+    ruResetSettingsRegex = new RegExp(`^(?:${verb}\\s+${slot}${any(['настройки'])}(?:\\s+${any(['сейчас'])})?|${verb}\\s+(?:${any(['настройки'])}\\s+)?(?:${any(['до', 'к'])}\\s+${any(['значений', 'значениям'])}\\s+)?${any(['по'])}\\s+${any(['умолчанию'])}|${verb}\\s+(?:\\S+\\s+){0,2}?${any(['заводских'])}\\s+${any(['настроек'])}|${any(['сброс'])}\\s+(?:\\S+\\s+){0,2}?${any(['заводских'])}\\s+${any(['настроек'])})\\s*[.!]?$`, 'iu')
+  }
+  return ruResetSettingsRegex.test(normaliseName(String(name ?? '')).trim())
+}
+// CU-672 (cu-developer-one's go 08:59Z, strict English parity; the English facts are on the issue): deactivating or disabling the
+// account asks delete in the locales as 'Deactivate account' / 'Disable my account' do - the verb with the account noun, its
+// determiners, up to two slot words ('Désactiver mon compte Facebook'), the time adverbs and both orders. Negation, past / status
+// forms, the bare verb and the verb with other objects stay free: each locale verb means both 'deactivate' and 'disable', and English
+// frees 'Disable' and 'Disable notifications'. r2 (cu-developer-two, cu-developer-one 10:24Z): the Italian elided article joins the
+// noun ('Disattivare l'account'). CU-680: the plural account nouns and ja / ko 'all' ask, as 'Deactivate (all) accounts' does.
+const acctAdverb = '(?:\\s+(?:maintenant|définitivement|temporairement|ahora|definitivamente|temporalmente|agora|temporariamente|ora|definitivamente|temporaneamente|jetzt|dauerhaft|vorübergehend|nu|tijdelijk|permanent))?'
+const acctLead = '(?:(?:temporairement|définitivement|temporalmente|definitivamente|temporariamente|temporaneamente)\\s+)?'
+const LOCALE_ACCOUNT_DEACTIVATE = Object.freeze([
+  new RegExp(`^${acctLead}(?:désactiver|désactivez|désactive)\\s+(?:\\S+\\s+){0,2}?comptes?(?:\\s+\\S+)?${acctAdverb}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^${acctLead}(?:desactivar|desactiva|desactive|desactivad|desactiven|deshabilitar|deshabilita|deshabilite|inhabilitar)\\s+(?:\\S+\\s+){0,2}?cuentas?(?:\\s+\\S+)?${acctAdverb}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^${acctLead}(?:desativar|desative|desativa|desativem|desabilitar|desabilite)\\s+(?:\\S+\\s+){0,2}?contas?(?:\\s+\\S+)?${acctAdverb}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^${acctLead}(?:disattiva|disattivare|disattivate|disabilita|disabilitare|disabilitate)\\s+(?:\\S+\\s+){0,2}?(?:l['’]\\s*)?account(?:\\s+\\S+)?${acctAdverb}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:\\S+\\s+){0,2}?(?:\\S*kont(?:o|en)|accounts?)${acctAdverb}\\s+deaktivieren\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:deaktiviere|deaktiviert|deaktivieren\\s+sie)\\s+(?:\\S+\\s+){0,2}?(?:\\S*kont(?:o|en)|accounts?)(?:\\s+\\S+)?${acctAdverb}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:\\S+\\s+){0,2}?accounts?${acctAdverb}\\s+(?:deactiveren|uitschakelen)\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:deactiveer|schakel)\\s+(?:\\S+\\s+){0,2}?accounts?(?:\\s+uit)?${acctAdverb}\\s*[.!]?$`, 'iu'),
+  /^(?:この|私の|あなたの|すべての|全ての)?アカウントを?(?:一時的に|今すぐ)?(?:無効にする|無効にして(?:ください)?|無効化(?:する|して(?:ください)?)?|停止(?:する|して(?:ください)?)?)\s*[.!。]?$/u,
+  /^(?:내\s+|이\s+|모든\s+)?계정(?:들)?\s*(?:을|를)?\s*(?:지금\s+|일시적으로\s+)?(?:비활성화|일시\s?중지)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|해)?\s*[.!]?$/u,
+  /^(?:停用|禁用|冻结|凍結)(?:我的|此|该|這個|这个)?(?:账户|帐户|账号|帐号|帳戶|帳號)\s*[.!。]?$/u,
+  /^(?:\S+\s+){0,2}?hesa[bp]\S*(?:\s+(?:şimdi|geçici\s+olarak|kalıcı\s+olarak))?\s+devre\s+dışı\s+(?:bırak|bırakın|bırakınız)\s*[.!]?$/iu,
+])
+// CU-676 (strict English parity; the English facts are on the issue): closing the account asks delete in fr / es / de / ru / ja / ko
+// as 'Close account' does - the close verb with the account noun, its determiners, up to two slot words ('Fermer mon compte PayPal'),
+// the time adverbs and both orders; German kündigen only with Konto / Account (cu-developer-one 13:35Z; not Abo / Vertrag); negation,
+// past / status forms, the bare verb and other objects ('Fermer la fenêtre', 'Cerrar sesión') stay free.
+const LOCALE_ACCOUNT_CLOSE = Object.freeze([
+  new RegExp(`^${acctLead}(?:fermer|fermez|ferme|clôturer|clôturez|clôture|résilier|résiliez|résilie)\\s+(?:\\S+\\s+){0,2}?comptes?(?:\\s+\\S+)?${acctAdverb}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^${acctLead}(?:cerrar|cierra|cierre|cerrad|cierren|dar\\s+de\\s+baja|da\\s+de\\s+baja|dé\\s+de\\s+baja|den\\s+de\\s+baja)\\s+(?:\\S+\\s+){0,2}?cuentas?(?:\\s+\\S+)?${acctAdverb}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:\\S+\\s+){0,2}?(?:\\S*kont(?:o|en)|accounts?)${acctAdverb}\\s+(?:schließen|kündigen)\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:schließe|schließt|schließen\\s+sie|kündige|kündigt|kündigen\\s+sie)\\s+(?:\\S+\\s+){0,2}?(?:\\S*kont(?:o|en)|accounts?)(?:\\s+\\S+)?${acctAdverb}\\s*[.!]?$`, 'iu'),
+  /^(?:この|私の|あなたの|すべての|全ての)?アカウントを?(?:今すぐ|完全に)?(?:閉鎖(?:する|して(?:ください)?|します)?|解約(?:する|して(?:ください)?|します)?|閉じる|閉じて(?:ください)?|閉じます)\s*[.!。]?$/u,
+  /^(?:내\s+|이\s+|모든\s+)?계정(?:들)?\s*(?:을|를)?\s*(?:(?:지금|즉시|영구적으로)\s+)?(?:(?:해지|폐쇄)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|해|합니다)?|닫기|닫으세요|닫아\s?주세요|닫아\s?줘|닫으십시오|닫아요|닫아|닫습니다)\s*[.!]?$/u,
+])
+// CU-678 r2 (cu-developer-two, cu-developer-three 19:12Z): the Russian twin, folded - передать / передайте + право / права
+// владения / собственности / владельца, or владение / собственность.
+let ruTransferOwnershipRegex = null
+function namesRuTransferOwnership(name) {
+  if (!ruTransferOwnershipRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const verb = any(['передать', 'передайте', 'передай'])
+    const noun = `(?:${any(['право', 'права'])}\\s+${any(['владения', 'собственности', 'владельца'])}|${any(['владение', 'собственность'])})`
+    ruTransferOwnershipRegex = new RegExp(`^(?:${any(['сейчас'])}\\s+)?${verb}\\s+(?:\\S+\\s+){0,2}?${noun}(?:\\s+\\S+){0,3}?\\s*[.!]?$`, 'iu')
+  }
+  return ruTransferOwnershipRegex.test(normaliseName(String(name ?? '')).trim())
+}
+let ruAccountCloseRegex = null
+function namesRuAccountClose(name) {
+  if (!ruAccountCloseRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const verb = any(['закрыть', 'закройте', 'закрой'])
+    const noun = `(?:${any(['аккаунт', 'аккаунты', 'счёт', 'счет', 'счета'])}|${any(['учётную', 'учетную'])}\\s+${any(['запись'])}|${any(['учётные', 'учетные'])}\\s+${any(['записи'])})`
+    const adv = `(?:\\s+${any(['сейчас', 'навсегда'])})?`
+    ruAccountCloseRegex = new RegExp(`^(?:${any(['навсегда'])}\\s+)?(?:${verb}\\s+(?:\\S+\\s+){0,2}?${noun}(?:\\s+\\S+)?${adv}|${noun}\\s+(?:\\S+\\s+){0,1}?${verb})\\s*[.!]?$`, 'iu')
+  }
+  return ruAccountCloseRegex.test(normaliseName(String(name ?? '')).trim())
+}
+let ruAccountDeactivateRegex = null
+function namesRuAccountDeactivate(name) {
+  if (!ruAccountDeactivateRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const verb = any(['деактивировать', 'деактивируйте', 'деактивируй', 'отключить', 'отключите', 'отключи'])
+    const noun = `(?:${any(['аккаунт', 'аккаунты'])}|${any(['учётную', 'учетную'])}\\s+${any(['запись'])}|${any(['учётные', 'учетные'])}\\s+${any(['записи'])})`
+    const adv = `(?:\\s+${any(['сейчас', 'навсегда', 'временно'])})?`
+    ruAccountDeactivateRegex = new RegExp(`^(?:${any(['временно', 'навсегда'])}\\s+)?(?:${verb}\\s+(?:\\S+\\s+){0,2}?${noun}(?:\\s+\\S+)?${adv}|${noun}\\s+(?:\\S+\\s+){0,1}?${verb})\\s*[.!]?$`, 'iu')
+  }
+  return ruAccountDeactivateRegex.test(normaliseName(String(name ?? '')).trim())
+}
+// CU-673 (cu-developer-one's go 11:28Z, strict parity with the English set posted on the issue): signing out of all or other devices
+// or sessions asks permission in ja / ko / zh as 'Log out of all devices' does, with the polite forms and a 'now'; the bare verb, past
+// forms, negation and the single-device form stay free.
+const cjkJaAll = '(?:すべての|全ての|全|他の|ほかの|その他の)(?:他の|ほかの|すべての|全ての)?'
+const cjkKoAll = '(?:모든|다른)\\s?(?:모든|다른)?\\s?'
+const cjkZhAll = '(?:所有|全部|其他|其它)(?:其他|其它|所有)?(?:的)?'
+const cjkZhDevice = '(?:设备|裝置|設備|装置|会话|會話|工作階段)'
+const cjkZhVerb = '(?:退出(?:登录|登錄)?|登出|注销|註銷)'
+const CJK_SIGNOUT_ALL = Object.freeze([
+  new RegExp(`^(?:今すぐ)?${cjkJaAll}(?:デバイス|端末|機器|セッション)(?:から|で)(?:今すぐ)?(?:ログアウト|サインアウト)(?:する|して(?:ください)?|します)?\\s*[.!。]?$`, 'u'),
+  // r2 (cu-developer-three, cu-developer-one 11:44Z): the Korean noun-phrase form without 에서 ('모든 기기 로그아웃', as 'Log out all devices')
+  new RegExp(`^(?:(?:지금|즉시)\\s+)?${cjkKoAll}(?:기기|디바이스|장치|세션)(?:에서)?\\s?(?:(?:지금|즉시)\\s+)?(?:로그아웃|로그\\s아웃)(?:하기|하세요|해\\s?주세요|해\\s?줘|하십시오|해요|해|합니다)?\\s*[.!]?$`, 'u'),
+  new RegExp(`^(?:立即|现在|立刻|马上|馬上)?(?:从|從|在)?${cjkZhAll}${cjkZhDevice}(?:上|中)?${cjkZhVerb}\\s*[.!。]?$`, 'u'),
+  // r2 (cu-developer-one, cu-developer-two 11:42Z): zh verb-first ('退出所有设备', '登出所有裝置', '注销其他设备'); '注销账号' stays out
+  new RegExp(`^(?:立即|现在|立刻|马上|馬上)?${cjkZhVerb}${cjkZhAll}${cjkZhDevice}\\s*[.!。]?$`, 'u'),
+  // CU-675 (cu-developer-one's go 12:04Z): 'Sign out everywhere' - the sign-out verb with 'everywhere' - and 'Revoke (all) sessions' -
+  // the revoke / cancel verb only with the session noun (取り消す / 취소 / 撤销 also mean cancel, which English frees elsewhere)
+  /^(?:今すぐ)?(?:すべての場所|全ての場所|どこでも|あらゆる場所)(?:で|から)?(?:今すぐ)?(?:ログアウト|サインアウト)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
+  /^(?:(?:지금|즉시)\s+)?(?:모든\s?곳|어디서나)(?:에서)?\s?(?:(?:지금|즉시)\s+)?(?:로그아웃|로그\s아웃)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|해|합니다)?\s*[.!]?$/u,
+  /^(?:立即|现在|立刻|马上|馬上)?(?:在|從|从)?(?:所有地方|所有位置|任何地方|各处|各處)(?:都)?(?:退出(?:登录|登錄)?|登出|注销|註銷)\s*[.!。]?$/u,
+  /^(?:今すぐ)?(?:すべての|全ての|他の|ほかの|この)?セッションを?(?:今すぐ)?(?:取り消す|取り消して(?:ください)?|取り消し|取消|失効させて(?:ください)?|失効させる|失効|無効にする|無効化)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
+  /^(?:(?:지금|즉시)\s+)?(?:모든\s|다른\s|이\s)?세션\s?(?:을|를)?\s?(?:(?:지금|즉시)\s+)?(?:취소|해지|철회|무효화)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|해|합니다)?\s*[.!]?$/u,
+  /^(?:立即|现在|立刻|马上|馬上)?(?:撤销|撤銷|吊销|吊銷)(?:所有|全部|其他|其它|此|这个|這個)?(?:的)?(?:会话|會話|工作階段)\s*[.!。]?$/u,
+])
+// CU-677 (strict English parity; the English facts are on the issue): making something public asks permission in the locales as
+// 'Make public' / 'Make this repository public' / 'Change visibility to public' do - the make / set verb with up to two slot words
+// before 'public', or visibility changed to public, both orders, a 'now'; bare negation asks too, as "Don't make public" does in English.
+// Past / status forms, the bare adjective and the make-private twins stay free.
+const pubNow = '(?:\\s+(?:maintenant|ahora|agora|ora|adesso|jetzt|nu|şimdi))?'
+const LOCALE_MAKE_PUBLIC = Object.freeze([
+  new RegExp(`^(?:rendre|rendez|rends)\\s+(?:\\S+\\s+){0,2}?(?:public|publique|publics|publiques)(?:\\s+\\S+){0,3}?${pubNow}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:définir|définissez|passer|passez|changer|changez)\\s+(?:\\S+\\s+){0,3}?(?:comme|en|à)\\s+(?:public|publique)${pubNow}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:hacer|haz|haga|hagan)\\s+(?:\\S+\\s+){0,2}?(?:público|pública|públicos|públicas)(?:\\s+\\S+){0,3}?${pubNow}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:establecer|establece|cambiar|cambia|cambie|configurar)\\s+(?:\\S+\\s+){0,3}?(?:como|a|en)\\s+(?:público|pública)${pubNow}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:tornar|torne|torna|tornem)\\s+(?:\\S+\\s+){0,2}?(?:público|pública|públicos|públicas)(?:\\s+\\S+){0,3}?${pubNow}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:definir|defina|alterar|altere|mudar|mude)\\s+(?:\\S+\\s+){0,3}?(?:como|para)\\s+(?:público|pública)${pubNow}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:rendi|rendere|rendete|renda)\\s+(?:\\S+\\s+){0,2}?(?:pubblico|pubblica|pubblici|pubbliche)(?:\\s+\\S+){0,3}?${pubNow}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:imposta|impostare|cambia|cambiare)\\s+(?:\\S+\\s+){0,3}?(?:come|a|su|in)\\s+(?:pubblico|pubblica)${pubNow}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:(?!nicht\\s)\\S+\\s+){0,2}?(?:jetzt\\s+)?öffentlich\\s+machen\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:mache|macht|machen\\s+sie)\\s+(?:\\S+\\s+){0,2}?öffentlich\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:\\S+\\s+){0,2}?auf\\s+öffentlich\\s+(?:setzen|stellen|ändern|umstellen)\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:(?!niet\\s)\\S+\\s+){0,2}?(?:nu\\s+)?openbaar\\s+maken\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:maak|maakt)\\s+(?:\\S+\\s+){0,2}?openbaar\\s*[.!]?$`, 'iu'),
+  /^(?:\S+\s+){0,1}?공개로\s?(?:전환|설정|변경)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|해|합니다)?\s*[.!]?$/u,
+  // r2 (cu-developer-three, cu-developer-one 15:48Z): 공개하다 is the literal 'make public' (Korean 'publish' is 게시 / 발행), so its verb
+  // forms ask with or without an object; 비공개 / 공개됨 / 공개 중 and past forms stay free
+  /^(?:지금\s+)?(?:\S+\s+){0,2}?(?:\S+(?:을|를)\s+)?공개(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)\s*[.!]?$/u,
+  new RegExp(`^(?:\\S+\\s+){0,2}?herkese\\s+açık\\s+(?:yap|yapın|yapınız|hale\\s+getir|olarak\\s+ayarla)\\s*[.!]?$`, 'iu'),
+  // r3 (cu-developer-two, cu-developer-one 16:04Z, final): negation asks only bare, as English asks "Don't make public" and frees
+  // "Don't make this repository public"; a negated label with an object stays free in every locale
+  /^(?:ne\s+pas\s+(?:rendre|rendez|rends)|ne\s+(?:rendez|rends)\s+pas)\s+(?:public|publique)\s*[.!]?$/iu,
+  /^no\s+(?:hacer|haga|hagas)\s+(?:público|pública)\s*[.!]?$/iu,
+  /^(?:não|nao)\s+(?:tornar|torne|torna)\s+(?:público|pública)\s*[.!]?$/iu,
+  /^non\s+(?:rendere|rendi|renda)\s+(?:pubblico|pubblica)\s*[.!]?$/iu,
+  /^nicht\s+öffentlich\s+machen\s*[.!]?$/iu,
+  /^niet\s+openbaar\s+maken\s*[.!]?$/iu,
+  /^(?:공개|공개로\s?(?:전환|설정|변경))하지\s?마(?:세요|십시오)?\s*[.!]?$/u,
+  /^herkese\s+açık\s+(?:yapma|yapmayın|yapmayınız)\s*[.!]?$/iu,
+])
+let ruMakePublicRegex = null
+function namesRuMakePublic(name) {
+  if (!ruMakePublicRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const verb = any(['сделать', 'сделайте', 'сделай'])
+    const adj = any(['общедоступным', 'общедоступной', 'общедоступными', 'публичным', 'публичной', 'публичными'])
+    ruMakePublicRegex = new RegExp(`^(?:${verb}\\s+(?:\\S+\\s+){0,2}?${adj}(?:\\s+${any(['сейчас'])})?|${any(['не'])}\\s+${any(['делать', 'делайте', 'сделать'])}\\s+${adj})\\s*[.!]?$`, 'iu')
+  }
+  return ruMakePublicRegex.test(normaliseName(String(name ?? '')).trim())
+}
+// CU-684 (strict English parity; the English facts are on the issue): leaving a workspace / organization / team / server asks
+// permission in the locales as 'Leave workspace' / 'Leave organization' do - the leave verb with that noun, its determiner, one name slot
+// and a 'now' (design 21:17Z: it uscire da / area di lavoro, de austreten aus / Workspace, ja 離れる). Team and server ask as 'Leave team' /
+// 'Leave server' do in English. 'Project' stays free as in English; negation, past / status, the bare verb and other objects stay free.
+const leaveNow = '(?:\\s+(?:maintenant|ahora|agora|ora|adesso|jetzt|nu|şimdi))?'
+const LOCALE_LEAVE_WORKSPACE = Object.freeze([
+  new RegExp(`^(?:quitter|quittez|quitte)\\s+(?:l['’]|le\\s+|la\\s+|cet(?:te)?\\s+|ce\\s+|mon\\s+|ma\\s+|votre\\s+)?(?:\\S+\\s+)?(?:espace\\s+de\\s+travail|organisation|équipe|serveur)(?:\\s+\\S+)?${leaveNow}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:salir|sal|salga|abandonar|abandona|abandone)(?:\\s+(?:de|del))?\\s+(?:el\\s+|la\\s+|este\\s+|esta\\s+|mi\\s+|su\\s+)?(?:\\S+\\s+)?(?:espacio\\s+de\\s+trabajo|organización|equipo|servidor)(?:\\s+\\S+)?${leaveNow}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:sair|saia|deixar|deixe)(?:\\s+(?:de|do|da))?\\s+(?:o\\s+|a\\s+|este\\s+|esta\\s+|meu\\s+|minha\\s+)?(?:\\S+\\s+)?(?:espaço\\s+de\\s+trabalho|organização|equipe|equipa|servidor)(?:\\s+\\S+)?${leaveNow}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:lascia|lasciare|abbandona|abbandonare|(?:esci|uscire|uscite)\\s+da(?:llo|lla|l|ll['’]\\s*)?)\\s*(?:lo\\s+|la\\s+|il\\s+|l['’]|questo\\s+|questa\\s+)?(?:\\S+\\s+)?(?:spazio\\s+di\\s+lavoro|area\\s+di\\s+lavoro|organizzazione|team|server)(?:\\s+\\S+)?${leaveNow}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:(?:den|die|das|diesen|diese|dieses|meinen|meine|mein)\\s+)?(?:\\S+\\s+)?(?:\\S*arbeitsbereich|workspace|organisation|team|server)(?:\\s+jetzt)?\\s+verlassen\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:jetzt\\s+)?aus\\s+(?:der|dem|diesem|dieser|meinem|meiner)?\\s*(?:\\S+\\s+)?(?:\\S*arbeitsbereich|workspace|organisation|team)\\s+austreten\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:treten\\s+sie|trete|tritt)\\s+aus\\s+(?:der|dem|diesem|dieser)?\\s*(?:\\S+\\s+)?(?:\\S*arbeitsbereich|workspace|organisation|team)\\s+aus\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:verlasse|verlassen\\s+sie)\\s+(?:den\\s+|die\\s+|das\\s+|diesen\\s+|diese\\s+|dieses\\s+)?(?:\\S+\\s+)?(?:\\S*arbeitsbereich|workspace|organisation|team|server)(?:\\s+\\S+)?\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:(?:de|het|deze|dit|mijn)\\s+)?(?:\\S+\\s+)?(?:werkruimte|organisatie|team|server)(?:\\s+nu)?\\s+verlaten\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:verlaat)\\s+(?:de\\s+|het\\s+|deze\\s+|dit\\s+)?(?:\\S+\\s+)?(?:werkruimte|organisatie|team|server)\\s*[.!]?$`, 'iu'),
+  /^(?:今すぐ)?(?:この)?(?:\S+の)?(?:ワークスペース|組織|チーム|サーバー)(?:から|を)?(?:今すぐ)?(?:(?:退出|脱退|離脱)(?:する|して(?:ください)?|します)?|離れる|離れて(?:ください)?|離れます)\s*[.!。]?$/u,
+  /^(?:(?:지금|즉시)\s+)?(?:이\s+)?(?:\S+\s+)?(?:작업\s?공간|워크스페이스|조직|팀|서버)(?:에서|을|를)?\s?(?:나가기|나가세요|나가|탈퇴(?:하기|하세요|해\s?주세요|해|합니다)?)\s*[.!]?$/u,
+  /^(?:立即|马上|現在|现在)?(?:退出|离开|離開)(?:此|该|這個|这个)?(?:\S{0,8}的)?(?:工作区|工作區|组织|組織|团队|團隊|服务器|伺服器)\s*[.!。]?$/u,
+  new RegExp(`^(?:bu\\s+)?(?:\\S+\\s+)?(?:çalışma\\s+alanından|kuruluştan|organizasyondan|ekipten|takımdan|sunucudan)\\s+(?:şimdi\\s+)?(?:ayrıl|ayrılın|çık|çıkın)\\s*[.!]?$`, 'iu'),
+])
+let ruLeaveWorkspaceRegex = null
+function namesRuLeaveWorkspace(name) {
+  if (!ruLeaveWorkspaceRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const verbAcc = any(['покинуть', 'покиньте'])
+    const verbFrom = `${any(['выйти', 'выйдите', 'выйди'])}\\s+${any(['из'])}`
+    const nounAcc = `(?:${any(['рабочее'])}\\s+${any(['пространство'])}|${any(['организацию', 'команду', 'сервер'])})`
+    const nounGen = `(?:${any(['рабочего'])}\\s+${any(['пространства'])}|${any(['организации', 'команды', 'сервера'])})`
+    ruLeaveWorkspaceRegex = new RegExp(`^(?:${verbAcc}\\s+(?:\\S+\\s+)?${nounAcc}|${verbFrom}\\s+(?:\\S+\\s+)?${nounGen})(?:\\s+\\S+)?(?:\\s+${any(['сейчас'])})?\\s*[.!]?$`, 'iu')
+  }
+  return ruLeaveWorkspaceRegex.test(normaliseName(String(name ?? '')).trim())
+}
+// CU-678 (cu-developer-one's design 16:57Z, strict English parity): transferring ownership asks permission - English 'Transfer <slot>
+// ownership' ('Transfer repository / team ownership', which asked purchase only) and the locale twins: the transfer verb with the
+// ownership noun, up to two slot words before it, an object or recipient after it ('… to X', '… of this repository'). The es / pt / it
+// purchase from the 'transfer' word stays (removing it is CU-609's rule-1). Negation, past / status forms and the bare noun stay free.
+const ownTail = '(?:\\s+\\S+){0,4}?'
+const TRANSFER_OWNERSHIP = Object.freeze([
+  new RegExp(`^transfer\\s+(?:\\S+\\s+){1,2}?ownership${ownTail}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:transférer|transférez|transfère)\\s+(?:\\S+\\s+){0,2}?propriété${ownTail}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:transferir|transfiere|transfiera|transfira|transfere)\\s+(?:\\S+\\s+){0,2}?(?:propiedad|propriedade|titularidad)${ownTail}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:trasferisci|trasferire|trasferite|trasferisca)\\s+(?:\\S+\\s+){0,2}?proprietà${ownTail}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:\\S+\\s+){0,4}?\\S*(?:eigentümerschaft|inhaberschaft|eigentum|besitzrechte)(?:\\s+(?!(?:wurde|wurden|ist|sind|wird|werden|nicht|kein|keine)(?:\\s|$))\\S+){0,3}?\\s+übertragen\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:übertrage|überträgt|übertragen\\s+sie)\\s+(?:\\S+\\s+){0,2}?\\S*(?:eigentümerschaft|inhaberschaft|eigentum)${ownTail}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:\\S+\\s+){0,4}?eigendom(?:\\s+(?!(?:is|werd|wordt|niet|geen)(?:\\s|$))\\S+){0,3}?\\s+overdragen\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:draag|draagt)\\s+(?:\\S+\\s+){0,2}?eigendom(?:\\s+\\S+){0,3}?\\s+over\\s*[.!]?$`, 'iu'),
+  /^(?:\S+\s*){0,3}?所有権を?(?:\S+\s*){0,2}?(?:譲渡|移転|移管)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
+  /^(?:\S+\s+){0,2}?소유권\s*(?:을|를)?\s*(?:\S+\s+){0,2}?(?:이전|양도)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+  /^(?:立即|马上|馬上|现在)?(?:转移|转让|轉移|轉讓)(?:\S{0,8}?)(?:的)?所有权\S{0,10}$/u,
+  /^(?:\S+\s*){0,4}?所有权(?:转移|转让)(?:给\S{1,10})?\s*[.!。]?$/u,
+  new RegExp(`^(?:\\S+\\s+){0,3}?sahipli[gğ]\\S*(?:\\s+\\S+){0,2}?\\s+(?:devret|devredin|devredil?iniz|devrediniz)\\s*[.!]?$`, 'iu'),
+])
+// CU-686 (strict English parity; the English facts are on the issue): removing a member asks delete in fr / ko as 'Remove member' does -
+// fr retirer + the member / user noun or '… de l'équipe / du groupe', ko 제거 with the member / user noun or '팀 / 그룹에서'; fr 'Exclure
+// le membre' asks permission as 'Kick member' does; the bare remove verbs ask as bare 'Remove' does (corrected go 23:45Z);
+// negation, past / status forms and the bare nouns stay free.
+const LOCALE_REMOVE_MEMBER = Object.freeze([
+  // corrected go (cu-developer-one 23:45Z): English bare 'Remove' asks delete, so the bare remove verbs ask too (the fr withdraw-money
+  // homograph is consent-sensitive anyway)
+  /^(?:retirer|retirez|retire|quitar|quita|quite)\s*[.!]?$/iu,
+  // r2 (cu-developer-three, cu-developer-one 00:19Z): es quitar + the member noun, as English 'Remove member'; fr bare 'Retire' and es bare
+  // 'Quitar' join the bare remove verbs
+  /^(?:quitar|quita|quite|quiten)\s+(?:a\s+|al\s+|a\s+los\s+|a\s+las\s+)?(?:\S+\s+){0,2}?(?:miembros?|usuarios?|usuarias?|participantes?|colaboradore?s?)(?:\s+\S+){0,3}?\s*[.!]?$/iu,
+  /^(?:quitar|quita|quite)\s+(?:\S+\s+){0,2}?(?:del|de\s+la|de\s+los)\s+(?:equipo|grupo|espacio(?:\s+de\s+trabajo)?|organización|proyecto|canal|servidor)(?:\s+\S+)?\s*[.!]?$/iu,
+  /^(?:제거|삭제)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+  /^(?:retirer|retirez|retire)\s+(?:\S+\s+){0,2}?(?:l['’]\s*)?(?:membres?|utilisateurs?|utilisatrices?|participants?|participantes?|collaborateurs?|collaboratrices?)(?:\s+\S+){0,3}?\s*[.!]?$/iu,
+  /^(?:retirer|retirez|retire)\s+(?:\S+\s+){0,2}?(?:de\s+l['’]\s*|du\s+|de\s+la\s+|des\s+)(?:équipe|groupe|espace(?:\s+de\s+travail)?|organisation|projet|canal|serveur)(?:\s+\S+)?\s*[.!]?$/iu,
+  /^(?:(?:지금|즉시)\s+)?(?:이\s+|모든\s+)?(?:\S+\s+)?(?:구성원|멤버|사용자|참가자|회원)(?:들)?\s*(?:을|를)?\s*(?:(?:지금|즉시)\s+)?제거(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+  /^(?:(?:지금|즉시)\s+)?(?:\S+\s+)?(?:팀|그룹|작업\s?공간|조직|채널|서버|프로젝트)에서\s+(?:\S+\s+)?제거(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+])
+const LOCALE_KICK_MEMBER = Object.freeze([
+  /^(?:exclure|excluez|exclus)\s+(?:\S+\s+){0,2}?(?:l['’]\s*)?(?:membres?|utilisateurs?|participants?)(?:\s+\S+){0,3}?\s*[.!]?$/iu,
+])
+// CU-683 (strict English parity; the English facts are on the issue): revoking access asks permission in the locales as 'Revoke access'
+// / 'Revoke permissions' do - the revoke verb with the access or permission noun, both orders, a 'for X' / possessive slot, 'all' and a
+// 'now'. Cancel-sense verbs (取り消す / 취소 / 撤销) count only with the noun, as in CU-675; remove-sense verbs (retirer, 削除, kaldır) are
+// left out, since English 'Remove access' asks delete, not permission. Negation, past / status and bare nouns stay free.
+const revokeTail = '(?:\\s+\\S+){0,3}?'
+const LOCALE_REVOKE_ACCESS = Object.freeze([
+  new RegExp(`^(?:révoquer|révoquez|révoque)\\s+(?:\\S+\\s+){0,2}?(?:l['’]\\s*)?(?:accès|autorisations?|permissions?)${revokeTail}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:révoquer|révoquez|révoque)\\s+(?:l['’])(?:accès)${revokeTail}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:revocar|revoca|revoque|revoquen)\\s+(?:\\S+\\s+){0,2}?(?:acceso|accesos|permisos?|autorizaci[oó]n(?:es)?)${revokeTail}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:revogar|revogue|revoga)\\s+(?:\\S+\\s+){0,2}?(?:acesso|acessos|permiss[aã]o|permiss[oõ]es|autoriza[cç][aã]o)${revokeTail}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:revoca|revocare|revocate)\\s+(?:\\S+\\s+){0,2}?(?:l['’]\\s*)?(?:accesso|accessi|autorizzazion[ei]|permess[oi])${revokeTail}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:(?:den|die|alle|ihren|seinen|meinen)\\s+)?(?:\\S+\\s+)?(?:\\S*zugriff|\\S*zugang|\\S*berechtigung(?:en)?|zugriffsrechte)(?:\\s+(?!(?:wurde|wurden|ist|sind|wird|nicht)(?:\\s|$))\\S+){0,2}?\\s+(?:widerrufen|entziehen|zurückziehen)\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:widerrufen\\s+sie|widerrufe|entziehen\\s+sie|entziehe)\\s+(?:\\S+\\s+){0,2}?(?:\\S*zugriff|\\S*zugang|\\S*berechtigung(?:en)?)${revokeTail}\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:(?:de|alle|zijn|haar|mijn)\\s+)?(?:\\S+\\s+)?(?:toegang|machtigingen?|rechten|toestemming)(?:\\s+(?!(?:is|werd|wordt|niet)(?:\\s|$))\\S+){0,2}?\\s+intrekken\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:trek)\\s+(?:\\S+\\s+){0,2}?(?:toegang|machtigingen?|rechten)(?:\\s+\\S+){0,2}?\\s+in\\s*[.!]?$`, 'iu'),
+  /^(?:今すぐ)?(?:すべての|全ての)?(?:\S+の)?(?:アクセス(?:権(?:限)?)?|権限)を?(?:今すぐ)?(?:取り消す|取り消して(?:ください)?|取り消し|取消|無効にする|無効化|剥奪|はく奪)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
+  /^(?:(?:지금|즉시)\s+)?(?:모든\s+)?(?:\S+\s+)?(?:액세스|접근|액세스\s?권한|접근\s?권한|권한)\s*(?:을|를)?\s*(?:(?:지금|즉시)\s+)?(?:취소|철회|해제|회수|박탈)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+  /^(?:立即|马上|馬上|现在)?(?:撤销|撤銷|吊销|吊銷|收回|取消)(?:\S{0,8}?的)?(?:所有|全部)?(?:访问权限|訪問權限|访问权|存取權(?:限)?|访问|权限|權限|授权|授權)\s*[.!。]?$/u,
+  // go (cu-developer-one 22:32Z): English bare 'Revoke' asks, so the unambiguous bare revoke verbs ask too; the cancel-sense verbs
+  // (取り消す / 취소 / 撤销 / iptal et) stay noun-bound
+  new RegExp(`^(?:révoquer|révoquez|revocar|revoque|revogar|revogue|revocare|revoca|widerrufen|intrekken)${pubNow}\\s*[.!]?$`, 'iu'),
+  // r2 (cu-developer-two, cu-developer-one 22:58Z): /iu does not fold the Turkish dotted capital İ, so it is listed here and the
+  // wiring below also tests the name with İ folded to i (all-caps Turkish, 'TÜM İZİNLERİ GERİ AL')
+  new RegExp(`^(?:tüm\\s+|bütün\\s+)?(?:\\S+\\s+)?(?:erişimi|erişimini|[iİ]zinleri|[iİ]zinlerini|yetkiyi|yetkileri)\\s+(?:şimdi\\s+)?(?:[iİ]ptal\\s+et|[iİ]ptal\\s+edin|geri\\s+al|geri\\s+alın)\\s*[.!]?$`, 'iu'),
+])
+let ruRevokeAccessRegex = null
+function namesRuRevokeAccess(name) {
+  if (!ruRevokeAccessRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const verb = any(['отозвать', 'отзовите', 'отзови'])
+    const noun = any(['доступ', 'разрешения', 'разрешение', 'права', 'полномочия'])
+    ruRevokeAccessRegex = new RegExp(`^(?:${any(['сейчас'])}\\s+)?${verb}(?:\\s+(?:\\S+\\s+){0,2}?${noun}(?:\\s+\\S+){0,3}?)?\\s*[.!]?$`, 'iu')
+  }
+  return ruRevokeAccessRegex.test(normaliseName(String(name ?? '')).trim())
+}
+// CU-687 (strict English parity; the English facts are on the issue): granting access, sharing with everyone and inviting ask permission
+// in ja / ko (and zh grant) as 'Grant access', 'Share with everyone' and 'Invite member' do - grant only with the access / permission noun
+// (bare 'Grant' is free in English); share with 'everyone' / a link and invite with a person noun. Past / status forms stay free.
+const CJK_GRANT_SHARE_INVITE = Object.freeze([
+  // go (cu-developer-one 02:33Z): English bare 'Share' / 'Invite' ask, so the bare ja / ko share and invite forms ask; invite negation
+  // asks ("Don't invite member" asks); share negation and bare grant stay free
+  /^(?:共有|シェア|招待)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
+  /^(?:공유|초대)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+  /^(?:\S+\s*)?(?:(?:メンバー|ユーザー|友達|友だち|人)を?)?招待(?:しない(?:で(?:ください)?)?|しないでください)\s*[.!。]?$/u,
+  /^(?:\S+\s+)?(?:(?:멤버|구성원|사용자|친구|팀원|사람)(?:들)?\s*(?:을|를)?\s*)?초대(?:하지\s?마(?:세요|십시오)?|하지\s?않기)\s*[.!]?$/u,
+  /^(?:今すぐ)?(?:\S+に)?(?:アクセス(?:権(?:限)?)?|権限)を?(?:許可|付与)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
+  /^(?:(?:지금|즉시)\s+)?(?:\S+에게\s+)?(?:(?:액세스|접근)\s?(?:권한)?|권한)\s*(?:을|를)?\s*(?:부여|허용)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+  /^(?:立即)?(?:授予|授权|授權|给予)\s*(?:[^\s]{1,12}\s*){0,4}?(?:的)?(?:访问权限|訪問權限|访问权|存取權(?:限)?|权限|權限)\s*[.!。]?$/u,
+  /^(?:全員|すべてのユーザー|みんな)と(?:共有|シェア)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
+  /^(?:リンクを)(?:共有|シェア)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
+  /^(?:모든\s?사용자|모두|전체)(?:와|과|에게)\s?공유(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+  /^링크\s?(?:를\s?)?공유(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+  /^(?:\S+\s*)?(?:メンバー|ユーザー|友達|友だち|人)(?:を)?招待(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
+  // r2 (cu-developer-three, cu-developer-one 03:11Z): invite with a target, as English 'Invite to team' asks
+  /^(?:\S+\s*)?(?:チーム|グループ|ワークスペース|組織|プロジェクト|チャンネル|サーバー)に(?:\S+を)?招待(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
+  /^(?:\S+\s+)?(?:팀|그룹|작업\s?공간|워크스페이스|조직|프로젝트|채널|서버)(?:에|으로|로)\s?(?:\S+\s+)?초대(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+  /^(?:\S+\s+)?(?:멤버|구성원|사용자|친구|팀원|사람)(?:들)?\s*(?:을|를)?\s*초대(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+])
+let ruGrantShareInviteRegex = null
+function namesRuGrantShareInvite(name) {
+  if (!ruGrantShareInviteRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const grant = `${any(['предоставить', 'предоставьте', 'дать', 'дайте', 'выдать'])}\\s+(?:\\S+\\s+){0,2}?${any(['доступ', 'разрешение', 'разрешения', 'права'])}(?:\\s+\\S+){0,2}?`
+    const share = `${any(['поделиться', 'поделитесь', 'поделись'])}(?:\\s+(?:${any(['со'])}\\s+${any(['всеми'])}|${any(['ссылкой'])}))?`
+    const invite = `(?:${any(['пригласить', 'пригласите', 'пригласи'])}|${any(['не'])}\\s+${any(['приглашать', 'приглашайте'])})(?:\\s+(?:\\S+\\s+)?${any(['участника', 'участников', 'друга', 'друзей', 'пользователя', 'пользователей', 'людей'])})?`
+    ruGrantShareInviteRegex = new RegExp(`^(?:${grant}|${share}|${invite})\\s*[.!]?$`, 'iu')
+  }
+  return ruGrantShareInviteRegex.test(normaliseName(String(name ?? '')).trim())
+}
+// CU-685 (strict English parity; the English facts are on the issue): unlinking an account or device asks permission in the locales as
+// 'Unlink account' / 'Unlink device' do - the unlink verb with the account / device noun, a brand / possessive slot, plural and 'now'.
+// Bare verbs, other objects ('Unlink card'), negation, past / status and the disconnect / unpair twins stay free, as in English.
+const LOCALE_UNLINK_ACCOUNT = Object.freeze([
+  // CU-690 (go cu-developer-one 12:12Z): the ja / ko / zh lines take a brand slot of up to two tokens before the account noun
+  // ('Apple ID アカウントのリンクを解除', 'Apple ID 계정 연결 해제', '解除 Apple ID 账户关联'), as 'Unlink Apple ID account' asks
+  /^(?:dissocier|dissociez|dissocie|délier|déliez)\s+(?:\S+\s+){0,2}?(?:l['’]\s*)?(?:comptes?|appareils?)(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:desvincular|desvincula|desvincule)\s+(?:\S+\s+){0,2}?(?:cuentas?|dispositivos?|contas?|aparelhos?)(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:scollega|scollegare|dissocia|dissociare)\s+(?:\S+\s+){0,2}?(?:l['’]\s*)?(?:account|dispositivi?|dispositivo)(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:(?:das|dein|ihr|mein|dieses)\s+)?(?:\S+\s+)?(?:\S*kont(?:o|en)|\S*account|\S*gerät(?:e)?)(?:\s+jetzt)?\s+(?:entkoppeln|trennen\s+und\s+entfernen)\s*[.!]?$/iu,
+  /^(?:entkoppeln\s+sie|entkopple|entkoppelt)\s+(?:\S+\s+){0,2}?(?:\S*kont(?:o|en)|\S*accounts?|\S*gerät(?:e)?)(?:\s+\S+)?\s*[.!]?$/iu,
+  /^(?:verknüpfung|kopplung)\s+(?:mit\s+(?:dem|diesem)\s+|des\s+|zum\s+)?(?:\S+\s+)?(?:\S*kontos?|\S*accounts?|\S*geräts?)\s+aufheben\s*[.!]?$/iu,
+  // r2 (cu-developer-three 01:33Z): the de compound ('Kontoverknüpfung aufheben') and the zh split form ('解除账户关联', '取消账号绑定')
+  /^(?:die\s+)?(?:\S*-)?(?:konto|account|geräte?)(?:verknüpfung|kopplung)(?:en)?\s+(?:jetzt\s+)?aufheben\s*[.!]?$/iu,
+  /^(?:立即|马上|现在)?(?:解除|取消)\s*(?:此|这个|該|该)?(?:\S+\s+){0,2}?(?:\S{0,8}的)?(?:账户|帳戶|账号|帳號|设备|裝置|設備)(?:的)?(?:关联|關聯|绑定|綁定)\s*[.!。]?$/u,
+  /^(?:(?:het|dit|mijn|je)\s+)?(?:\S+\s+)?(?:account|accounts|apparaat|apparaten)(?:\s+nu)?\s+ontkoppelen\s*[.!]?$/iu,
+  /^(?:今すぐ)?(?:この)?(?:\S+(?:\s+\S+)?(?:の|\s+))?(?:アカウント|デバイス|端末)(?:の)?(?:リンク|連携|紐付け|ひも付け)(?:を)?(?:解除)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
+  /^(?:(?:지금|즉시)\s+)?(?:이\s+|내\s+)?(?:\S+\s+){0,2}(?:계정|기기|장치)(?:들)?\s*(?:의\s?)?(?:연결|연동|링크)\s*(?:을|를)?\s?해제(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+  /^(?:立即|马上|现在)?(?:取消关联|取消關聯|解除关联|解除關聯|解除绑定|解除綁定|解绑|解綁)\s*(?:此|这个|該|该)?(?:\S+\s+){0,2}?(?:\S{0,8}的)?(?:账户|帳戶|账号|帳號|设备|裝置|設備)\s*[.!。]?$/u,
+  // r3 (cu-developer-one 01:36Z, final): the tr compound noun ('Hesap bağlantısını kaldır') and Turkish capitals - dotless ı is listed
+  // with I, as /iu folds I only to i (and the wiring folds the dotted İ)
+  new RegExp(`^(?:bu\\s+)?(?:\\S+\\s+)?(?:hesab[ıiI]n(?:[ıI]n)?|hesapl[aA]r[ıI]n|hesap|cihaz[ıiI]n|cihazl[aA]r[ıI]n|cihaz)\\s+bağlant[ıI]s[ıI]n[ıI]\\s+(?:kald[ıI]r|kald[ıI]r[ıI]n|kes|kesin)\\s*[.!]?$`, 'iu'),
+])
+let ruUnlinkAccountRegex = null
+function namesRuUnlinkAccount(name) {
+  if (!ruUnlinkAccountRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const verb = any(['отвязать', 'отвяжите', 'отвяжи'])
+    const noun = any(['аккаунт', 'аккаунты', 'устройство', 'устройства'])
+    ruUnlinkAccountRegex = new RegExp(`^(?:${any(['сейчас'])}\\s+)?${verb}\\s+(?:\\S+\\s+){0,2}?${noun}(?:\\s+\\S+){0,2}?\\s*[.!]?$`, 'iu')
+  }
+  return ruUnlinkAccountRegex.test(normaliseName(String(name ?? '')).trim())
+}
+// CU-689 (strict English parity; the English facts are on the issue): linking an account or device asks permission in the locales as
+// 'Link account' / 'Link device' do - the link verb with the account / device noun, a brand / possessive slot, plural, 'now', and
+// negation (\"Don't link account\" asks in English). Bare verbs, other objects ('Link phone number'), past / status stay free.
+const LOCALE_LINK_ACCOUNT = Object.freeze([
+  // r2 (cu-developer-three, cu-developer-two, cu-developer-one 05:19Z): the ja brand slot takes a spaced brand ('Google アカウントをリンク')
+  // on the link, connect and CU-685 unlink lines, and ru связать joins the link verbs ('Связать аккаунты')
+  /^(?:ne\s+pas\s+)?(?:lier|liez|associer|associez)\s+(?:\S+\s+){0,2}?(?:l['’]\s*)?(?:comptes?|appareils?)(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:no\s+|não\s+|nao\s+)?(?:vincular|vincula|vincule|asociar|asocia|asocie)\s+(?:\S+\s+){0,2}?(?:cuentas?|dispositivos?|contas?|aparelhos?)(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:non\s+)?(?:collega|collegare|associa|associare)\s+(?:\S+\s+){0,2}?(?:l['’]\s*)?(?:account|dispositivi?|dispositivo)(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:(?:das|dein|ihr|mein|dieses)\s+)?(?:\S+\s+)?(?:\S*kont(?:o|en)|\S*account|\S*gerät(?:e)?)(?:\s+(?:jetzt|nicht))?\s+verknüpfen\s*[.!]?$/iu,
+  /^(?:verknüpfen\s+sie|verknüpfe)\s+(?:\S+\s+){0,2}?(?:\S*kont(?:o|en)|\S*account|\S*gerät(?:e)?)(?:\s+\S+)?\s*[.!]?$/iu,
+  /^(?:(?:het|dit|mijn|je)\s+)?(?:\S+\s+)?(?:account|accounts|apparaat|apparaten)(?:\s+(?:nu|niet))?\s+koppelen\s*[.!]?$/iu,
+  /^(?:今すぐ)?(?:この)?(?:\S+(?:の|\s+))?(?:アカウント|デバイス|端末)(?:を|と)?(?:リンク|連携|紐付け|ひも付け)(?:する|して(?:ください)?|します|しない(?:で(?:ください)?)?)?\s*[.!。]?$/u,
+  /^(?:(?:지금|즉시)\s+)?(?:이\s+|내\s+)?(?:\S+\s+)?(?:계정|기기|장치)(?:들)?\s*(?:을|를)?\s*(?:연결|연동|링크)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다|하지\s?마(?:세요|십시오)?)?\s*[.!]?$/u,
+  /^(?:立即|马上|现在|不要)?(?:关联|關聯|绑定|綁定)(?:此|这个|該|该)?(?:\S{0,8}的)?(?:账户|帳戶|账号|帳號|设备|裝置|設備)\s*[.!。]?$/u,
+  new RegExp(`^(?:bu\\s+)?(?:\\S+\\s+)?(?:hesab[ıiI]|hesapl[aA]r[ıI]|cihaz[ıiI]|cihazl[aA]r[ıI])\\s+(?:bağla|bağlay[ıI]n|bağlama)\\s*[.!]?$`, 'iu'),
+  // go (cu-developer-one 04:30Z): the connect twins join with the account noun only - English 'Connect account' asks while 'Connect
+  // device' and bare 'Connect' are free
+  /^(?:ne\s+pas\s+)?(?:connecter|connectez)\s+(?:\S+\s+){0,2}?(?:l['’]\s*)?comptes?(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:no\s+|não\s+|nao\s+)?(?:conectar|conecta|conecte)\s+(?:\S+\s+){0,2}?(?:cuentas?|contas?)(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:(?:das|dein|ihr|mein|dieses)\s+)?(?:\S+\s+)?(?:\S*kont(?:o|en)|\S*account)(?:\s+(?:jetzt|nicht))?\s+verbinden\s*[.!]?$/iu,
+  /^(?:verbinden\s+sie|verbinde)\s+(?:\S+\s+){0,2}?(?:\S*kont(?:o|en)|\S*account)(?:\s+\S+)?\s*[.!]?$/iu,
+  /^(?:(?:het|dit|mijn|je)\s+)?(?:\S+\s+)?(?:account|accounts)(?:\s+(?:nu|niet))?\s+verbinden\s*[.!]?$/iu,
+  /^(?:今すぐ)?(?:この)?(?:\S+(?:の|\s+))?アカウント(?:を|に)?接続(?:する|して(?:ください)?|します|しない(?:で(?:ください)?)?)?\s*[.!。]?$/u,
+  /^(?:立即|马上|现在|不要)?(?:连接|連接)(?:此|这个|該|该)?(?:\S{0,8}的)?(?:账户|帳戶|账号|帳號)\s*[.!。]?$/u,
+])
+let ruLinkAccountRegex = null
+function namesRuLinkAccount(name) {
+  if (!ruLinkAccountRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const verb = `(?:${any(['привязать', 'привяжите', 'привяжи', 'связать', 'свяжите'])}|${any(['не'])}\\s+${any(['привязывать', 'связывать'])})`
+    const noun = any(['аккаунт', 'аккаунты', 'устройство', 'устройства'])
+    const connect = `(?:${any(['подключить', 'подключите'])}|${any(['не'])}\\s+${any(['подключать'])})\\s+(?:\\S+\\s+){0,2}?${any(['аккаунт', 'аккаунты'])}`
+    ruLinkAccountRegex = new RegExp(`^(?:${any(['сейчас'])}\\s+)?(?:${verb}\\s+(?:\\S+\\s+){0,2}?${noun}|${connect})(?:\\s+\\S+){0,2}?\\s*[.!]?$`, 'iu')
+  }
+  return ruLinkAccountRegex.test(normaliseName(String(name ?? '')).trim())
+}
+// CU-688 (strict English parity; the English facts are on the issue): revoking an invitation asks permission in the locales as 'Revoke
+// invitation' does - the CU-683 revoke verbs with the invitation noun, both orders, 'this / all' and 'now'; cancel-sense verbs (取り消す /
+// 취소) only with the noun. 'Cancel invitation' twins (annuler / cancelar) are left out, as English 'Cancel invitation' reads submit.
+// Negation, past / status forms and the bare noun stay free.
+const LOCALE_REVOKE_INVITATION = Object.freeze([
+  /^(?:révoquer|révoquez|révoque)\s+(?:\S+\s+){0,2}?(?:l['’]\s*)?invitations?(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:revocar|revoca|revoque)\s+(?:\S+\s+){0,2}?invitaci[oó]n(?:es)?(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:revogar|revogue|revoga)\s+(?:\S+\s+){0,2}?convites?(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:revoca|revocare|revocate)\s+(?:\S+\s+){0,2}?(?:l['’]\s*)?invit[oi](?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:(?:die|diese|alle)\s+)?(?:\S+\s+)?\S*einladung(?:en)?(?:\s+jetzt)?\s+widerrufen\s*[.!]?$/iu,
+  /^(?:widerrufen\s+sie|widerrufe)\s+(?:\S+\s+){0,2}?\S*einladung(?:en)?(?:\s+\S+)?\s*[.!]?$/iu,
+  /^(?:(?:de|deze|alle)\s+)?(?:\S+\s+)?uitnodiging(?:en)?(?:\s+nu)?\s+intrekken\s*[.!]?$/iu,
+  /^(?:trek)\s+(?:\S+\s+){0,2}?uitnodiging(?:en)?\s+in\s*[.!]?$/iu,
+  /^(?:今すぐ)?(?:この|すべての|全ての)?(?:\S+への)?招待を?(?:今すぐ)?(?:取り消す|取り消して(?:ください)?|取り消し|取消|無効にする|無効化|撤回)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
+  // go (cu-developer-one 03:58Z): tr iptal et / geri al with the invitation noun too (the wiring folds the dotted İ)
+  /^(?:bu\s+|tüm\s+)?(?:\S+\s+)?(?:daveti|davetiyeyi|davetleri|davetiyeleri)\s+(?:şimdi\s+)?(?:[iİ]ptal\s+et|[iİ]ptal\s+ed[iİ]n|ger[iİ]\s+al|ger[iİ]\s+al[ıI]n)\s*[.!]?$/iu,
+  /^(?:(?:지금|즉시)\s+)?(?:이\s+|모든\s+)?(?:\S+\s+)?초대(?:장)?(?:들)?\s*(?:을|를)?\s*(?:(?:지금|즉시)\s+)?(?:취소|철회|무효화)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+])
+let ruRevokeInvitationRegex = null
+function namesRuRevokeInvitation(name) {
+  if (!ruRevokeInvitationRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    ruRevokeInvitationRegex = new RegExp(`^(?:${any(['сейчас'])}\\s+)?${any(['отозвать', 'отзовите', 'отзови'])}\\s+(?:\\S+\\s+){0,2}?${any(['приглашение', 'приглашения'])}(?:\\s+\\S+){0,2}?\\s*[.!]?$`, 'iu')
+  }
+  return ruRevokeInvitationRegex.test(normaliseName(String(name ?? '')).trim())
+}
+// CU-691 (strict English parity; the English facts are on the issue): admin-role changes ask in the locales as in English - make / set /
+// promote + admin / administrator / owner asks permission (negation too, as "Don't make admin"); remove + admin asks delete, as 'Remove
+// admin'; revoke + admin rights asks permission, as 'Revoke admin'. Moderator, demote, past / status and the bare noun stay free.
+const LOCALE_ADMIN_GRANT = Object.freeze([
+  /^(?:ne\s+pas\s+)?(?:nommer|nommez|définir\s+comme|promouvoir|promouvez|rendre)\s+(?:\S+\s+){0,2}?(?:administrateur|administratrice|propriétaire)(?:\s+\S+)?\s*[.!]?$/iu,
+  /^(?:no\s+)?(?:hacer|haz|nombrar|nombra|establecer\s+como|ascender\s+a)\s+(?:\S+\s+){0,2}?(?:administrador|administradora|propietario)(?:\s+\S+)?\s*[.!]?$/iu,
+  /^(?:não\s+|nao\s+)?(?:tornar|torne|definir\s+como|promover\s+a)\s+(?:\S+\s+){0,2}?(?:administrador|administradora|proprietário)(?:\s+\S+)?\s*[.!]?$/iu,
+  /^(?:non\s+)?(?:rendi|rendere|nomina|nominare|imposta\s+come|promuovi\s+(?:ad?|come))\s+(?:\S+\s+){0,2}?(?:amministratore|amministratrice|proprietario)(?:\s+\S+)?\s*[.!]?$/iu,
+  /^(?:\S+\s+)?(?:zum|zur)\s+(?:administrator|administratorin|admin|eigentümer|inhaber)(?:\s+(?:jetzt|nicht))?\s+(?:machen|ernennen|befördern)\s*[.!]?$/iu,
+  /^(?:\S+\s+)?als\s+(?:administrator|administratorin|admin)\s+(?:festlegen|einrichten)\s*[.!]?$/iu,
+  // r2: the de formal imperative ('Machen Sie Alex zum Administrator', 'Ernennen Sie … zum Admin')
+  /^(?:machen|ernennen|befördern)\s+sie\s+(?:\S+\s+){0,2}?(?:zum|zur)\s+(?:administrator|administratorin|admin|eigentümer|inhaber)\s*[.!]?$/iu,
+  /^(?:\S+\s+)?(?:beheerder|eigenaar)(?:\s+(?:nu|niet))?\s+maken\s*[.!]?$/iu,
+  /^(?:\S+\s*)?(?:管理者|オーナー|所有者)(?:に)(?:する|して(?:ください)?|します|設定(?:する|して(?:ください)?|します)?|昇格(?:する|して(?:ください)?|します)?|しない(?:で(?:ください)?)?)\s*[.!。]?$/u,
+  /^(?:\S+\s+)?(?:관리자|소유자)(?:로|으로)\s?(?:지정|설정|승격|변경)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다|하지\s?마(?:세요|십시오)?)?\s*[.!]?$/u,
+  /^(?:不要|立即|马上|现在)?(?:设为|設為|设置为|設定為|提升为|提升為|升级为)(?:\S{0,8})?(?:管理员|管理員|所有者)\s*[.!。]?$/u,
+  new RegExp(`^(?:\\S+\\s+)?(?:yönetici|sahip)\\s+(?:yap|yapın|yapma)\\s*[.!]?$`, 'iu'),
+  /^(?:\S+\s+)?(?:administratorrechte|adminrechte)\s+(?:entziehen|widerrufen|entfernen)\s*[.!]?$/iu,
+  // go (cu-developer-one 06:20Z): the admin rights / privileges twins ask permission whatever the verb, as 'Revoke admin rights'
+  /^(?:retirer|retirez|révoquer|révoquez|supprimer|supprimez)\s+(?:les\s+)?(?:droits|privilèges)\s+d['’]\s*(?:administrateur|administration)\s*[.!]?$/iu,
+  /^(?:quitar|quita|revocar|revoca|eliminar|elimina|retirar)\s+(?:los\s+)?(?:permisos|privilegios|derechos)\s+de\s+(?:administrador|administración)\s*[.!]?$/iu,
+  /^(?:\S+\s+)?관리자\s?권한\s*(?:을|를)?\s*(?:제거|삭제|취소|해제|회수|박탈)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+  /^(?:\S+\s*)?管理者権限を?(?:削除|取り消す|取り消し|解除|剥奪)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
+  /^(?:移除|撤销|撤銷|取消|删除|刪除)(?:\S{0,8}的)?(?:管理员|管理員)权限\s*[.!。]?$/u,
+])
+const LOCALE_ADMIN_REMOVE = Object.freeze([
+  // r2 (cu-developer-one 06:46Z, final): ko 관리자 해제, zh 取消管理员 and the fr article l' join the remove-admin rows
+  /^(?:取消|移除|撤销|撤銷)(?:\S{0,8}的)?(?:管理员|管理員)(?:身份|角色)?\s*[.!。]?$/u,
+  /^(?:retirer|retirez)\s+(?:les\s+droits\s+d['’]\s*|l['’]\s*)?(?:administrateur|administratrice)(?:\s+\S+)?\s*[.!]?$/iu,
+  // r3 (cu-verifier, cu-developer-one 07:09Z): the es article ('Quitar al administrador', 'Quitar a la administradora'), as CU-686's 'Quitar al miembro'
+  // r4 (cu-developer-two, cu-developer-one 07:28Z): the formal imperatives (quite / elimine) and a name slot with 'como'
+  /^(?:quitar|quita|quite|eliminar|elimina|elimine)\s+(?:como\s+|al\s+|a\s+la\s+|el\s+|la\s+|a\s+\S+(?:\s+\S+)?\s+como\s+)?(?:administrador|administradora|permisos\s+de\s+administrador)(?:\s+\S+)?\s*[.!]?$/iu,
+  /^(?:administratorrechte|adminrechte)\s+entfernen\s*[.!]?$/iu,
+  /^(?:\S+\s+)?관리자\s?(?:권한)?\s*(?:을|를|에서)?\s*(?:제거|삭제|해제)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+])
+let ruAdminGrantRegex = null
+function namesRuAdminGrant(name) {
+  if (!ruAdminGrantRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const verb = `(?:(?:${any(['не'])}\\s+)?${any(['сделать', 'сделайте', 'назначить', 'назначьте', 'делать', 'назначать'])})`
+    ruAdminGrantRegex = new RegExp(`^${verb}\\s+(?:\\S+\\s+){0,2}?${any(['администратором', 'админом', 'владельцем'])}(?:\\s+\\S+)?\\s*[.!]?$`, 'iu')
+  }
+  return ruAdminGrantRegex.test(normaliseName(String(name ?? '')).trim())
+}
+// CU-693 (strict English parity; the English facts are on the issue): the publish verb asks submit in ru / ko as 'Publish' / 'Post' do -
+// bare, with an object, 'now', and negated ("Don't publish" asks). Past / status and the un- / re- forms stay free.
+const KO_PUBLISH = Object.freeze([
+  // r2 (cu-developer-three 11:07Z): an optional bare object noun before 게시 / 발행 ('글 게시', '공지 발행'), as CU-692's ko approve line
+  /^(?:(?:지금|즉시)\s+)?(?:\S+\s+)?(?:\S+(?:을|를)\s*)?(?:게시|발행|게시물\s?게시)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다|하지\s?마(?:세요|십시오)?)?\s*[.!]?$/u,
+])
+let ruPublishRegex = null
+function namesRuPublish(name) {
+  if (!ruPublishRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const verb = `(?:${any(['опубликовать', 'опубликуйте', 'опубликуй'])}|${any(['не'])}\\s+${any(['публиковать'])})`
+    ruPublishRegex = new RegExp(`^(?:${any(['сейчас'])}\\s+)?${verb}(?:\\s+\\S+){0,3}?\\s*[.!]?$`, 'iu')
+  }
+  return ruPublishRegex.test(normaliseName(String(name ?? '')).trim())
+}
+// CU-692 (strict English parity; the English facts are on the issue): the approve verb asks submit in the locales as 'Approve' does -
+// bare, with any object, with 'all' / 'now', and negated ("Don't approve" asks). Past / status forms and the approval nouns stay free.
+const LOCALE_APPROVE = Object.freeze([
+  /^(?:ne\s+pas\s+)?(?:approuver|approuvez|approuve)(?:\s+\S+){0,4}?\s*[.!]?$/iu,
+  /^(?:tout|tous|toutes)\s+(?:approuver|approuvez)\s*[.!]?$/iu,
+  /^(?:no\s+)?(?:aprobar|aprueba|apruebe|aprueben)(?:\s+\S+){0,4}?\s*[.!]?$/iu,
+  /^(?:não\s+|nao\s+)?(?:aprovar|aprova|aprove)(?:\s+\S+){0,4}?\s*[.!]?$/iu,
+  /^(?:non\s+)?(?:approva|approvare|approvate|approvi)(?:\s+\S+){0,4}?\s*[.!]?$/iu,
+  /^(?:\S+\s+){0,3}?(?:nicht\s+)?genehmigen\s*[.!]?$/iu,
+  /^(?:genehmigen\s+sie|genehmige)(?:\s+\S+){0,4}?\s*[.!]?$/iu,
+  /^(?:\S+\s+){0,3}?(?:niet\s+)?goedkeuren\s*[.!]?$/iu,
+  // go (cu-developer-one 09:15Z): bare 承認 / 승인 ask too - the bare Sino-noun is the button verb, as bare 削除 / 삭제 / 제거 on CU-686
+  /^(?:\S+を)?(?:今すぐ)?承認(?:する|して(?:ください)?|します|しない(?:で(?:ください)?)?)?\s*[.!。]?$/u,
+  /^(?:\S+\s+)?(?:\S+(?:을|를)\s*)?승인(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다|하지\s?마(?:세요|십시오)?)?\s*[.!]?$/u,
+  // r2 (cu-developer-three, cu-developer-one 09:28Z, final): no open tail - 批准 bare, or + a determiner + a request noun; so 批准人 /
+  // 批准时间 (nouns) and 批准了 / 批准中 / 批准过 (past / status) stay free, as 'Approver', 'Approval date', 'Approved'
+  /^(?:不要|立即)?(?:批准|审批通过|審批通過)(?:(?:此|这个|這個|该|該|所有|全部)?(?:请求|請求|申请|申請|变更|變更|合并请求|合併請求|订单|訂單|文档|文件))?\s*[.!。]?$/u,
+  // CU-694: approve all without a noun, as English 'Approve all' ('批准所有', '批准全部', '全部批准')
+  // r2 (cu-developer-one 13:31Z, final): the 全部 / 一键 prefix takes CU-692's optional request noun ('全部批准申请', as 'Approve all
+  // requests'); 所有 is not a prefix ('所有批准' is the noun 'all approvals', free as English 'All approvals'); no particle tail
+  /^(?:不要|立即)?(?:(?:批准|审批通过|審批通過)(?:所有|全部)|(?:全部|一键)(?:批准|审批通过|審批通過))(?:请求|請求|申请|申請|变更|變更|合并请求|合併請求|订单|訂單|文档|文件)?\s*[.!。]?$/u,
+])
+let ruApproveRegex = null
+function namesRuApprove(name) {
+  if (!ruApproveRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const verb = `(?:${any(['одобрить', 'одобрите', 'одобри', 'утвердить', 'утвердите'])}|${any(['не'])}\\s+${any(['одобрять', 'утверждать'])})`
+    ruApproveRegex = new RegExp(`^${verb}(?:\\s+\\S+){0,4}?\\s*[.!]?$`, 'iu')
+  }
+  return ruApproveRegex.test(normaliseName(String(name ?? '')).trim())
+}
+// CU-696, delete half (go cu-developer-one 15:21Z): the locale remove verbs with a passkey / security-key noun ask delete, as every English
+// remove / delete passkey form does; the permission half waits on the ruling about English consistency. Past / status forms stay free.
+const LOCALE_REMOVE_PASSKEY = Object.freeze([
+  /^(?:retirer|retirez|retire)\s+(?:\S+\s+){0,2}?(?:(?:la|les|cette)\s+)?(?:clés?\s+d['’]\s*accès|clés?\s+de\s+sécurité|passkeys?)(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:quitar|quita|quite)\s+(?:\S+\s+){0,2}?(?:(?:la|las|esta)\s+)?(?:llaves?\s+de\s+acceso|claves?\s+de\s+acceso|llaves?\s+de\s+seguridad|claves?\s+de\s+seguridad|passkeys?)(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  // r2 (cu-developer-two 16:14Z): the ja determiners この / その / すべての, as ko 이 / 모든 and English 'Remove this passkey'
+  /^(?:\S+を)?(?:この|その|すべての|全ての)?\s*(?:パスキー|セキュリティキー|セキュリティ\s?キー)を?(?:取り除く|取り除いてください|外す|外してください)\s*[.!。]?$/u,
+  /^(?:(?:이|모든)\s+)?(?:\S+\s+)?(?:패스키|보안\s?키)(?:들)?\s*(?:을|를)?\s*(?:제거|해제)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+])
+let ruRemovePasskeyRegex = null
+function namesRuRemovePasskey(name) {
+  if (!ruRemovePasskeyRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const noun = `(?:${any(['ключ', 'ключи'])}\\s+${any(['доступа', 'безопасности'])}|${any(['passkey', 'пасскей'])})`
+    ruRemovePasskeyRegex = new RegExp(`^${any(['убрать', 'уберите', 'убери'])}\\s+(?:\\S+\\s+){0,2}?${noun}(?:\\s+\\S+){0,2}?\\s*[.!]?$`, 'iu')
+  }
+  return ruRemovePasskeyRegex.test(normaliseName(String(name ?? '')).trim())
+}
+// CU-695 (strict English parity; the English facts are on the issue): turning off two-factor / two-step authentication asks permission +
+// credential in the locales as 'Disable two-factor authentication' / 'Turn off 2-step verification' do - the disable / turn-off verb with
+// the two-factor, two-step or 2FA noun, a recipient slot and 'now'. Negation, the bare noun and status forms stay as English.
+const TWO_FACTOR_NOUN_FR = String.raw`(?:(?:l['’]\s*)?authentification\s+(?:à\s+)?(?:deux|2)\s+facteurs|(?:la\s+)?(?:validation|vérification)\s+en\s+(?:deux|2)\s+étapes|(?:la\s+)?2fa|(?:la\s+)?a2f)`
+const LOCALE_DISABLE_2FA = Object.freeze([
+  new RegExp(`^(?:désactiver|désactivez|désactive)\\s+${TWO_FACTOR_NOUN_FR}(?:\\s+\\S+){0,3}?\\s*[.!]?$`, 'iu'),
+  /^(?:desactivar|desactiva|desactive|apagar)\s+(?:la\s+|el\s+)?(?:autenticaci[oó]n\s+de\s+(?:dos|2)\s+factores|verificaci[oó]n\s+en\s+(?:dos|2)\s+pasos|2fa|doble\s+factor)(?:\s+\S+){0,3}?\s*[.!]?$/iu,
+  /^(?:desativar|desative|desligar)\s+(?:a\s+|o\s+)?(?:autentica[cç][aã]o\s+de\s+(?:dois|2)\s+fatores|verifica[cç][aã]o\s+em\s+(?:duas|2)\s+etapas|2fa)(?:\s+\S+){0,3}?\s*[.!]?$/iu,
+  /^(?:disattiva|disattivare|disabilita|disabilitare)\s+(?:l['’]\s*|la\s+)?(?:autenticazione\s+a\s+(?:due|2)\s+fattori|verifica\s+in\s+(?:due|2)\s+passaggi|2fa)(?:\s+\S+){0,3}?\s*[.!]?$/iu,
+  /^(?:die\s+)?(?:zwei-faktor-authentifizierung|2-faktor-authentifizierung|zwei-faktor-authentisierung|bestätigung\s+in\s+zwei\s+schritten|2fa|zweistufige\s+verifizierung)(?:\s+jetzt)?\s+(?:deaktivieren|ausschalten)\s*[.!]?$/iu,
+  /^(?:deaktivieren\s+sie|deaktiviere)\s+(?:die\s+)?(?:zwei-faktor-authentifizierung|2-faktor-authentifizierung|bestätigung\s+in\s+zwei\s+schritten|2fa)\s*[.!]?$/iu,
+  /^(?:(?:tweestapsverificatie|twee-factor-authenticatie|tweefactorauthenticatie|2fa)(?:\s+nu)?\s+(?:uitschakelen|uitzetten)|(?:schakel)\s+(?:tweestapsverificatie|twee-factor-authenticatie|2fa)\s+uit)\s*[.!]?$/iu,
+  /^(?:今すぐ)?(?:2段階認証(?:プロセス)?|2要素認証|二段階認証|二要素認証|2FA)を?(?:無効にする|無効にしてください|無効化(?:する)?|オフにする|オフにしてください|オフ|解除(?:する)?)\s*[.!。]?$/iu,
+  /^(?:(?:지금|즉시)\s+)?(?:2단계\s?인증|2차\s?인증|이중\s?인증|2FA)\s*(?:을|를)?\s*(?:사용\s?중지|비활성화|끄기|해제|중지)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/iu,
+  /^(?:立即)?(?:关闭|關閉|停用|禁用|取消)(?:两步验证|兩步驗證|双重验证|雙重驗證|双重身份验证|雙重身份驗證|双重认证|雙重認證|两步验证码|双因素认证|雙因素認證|二次验证|2FA)\s*[.!。]?$/iu,
+  // r2 (cu-developer-three, cu-developer-one 14:58Z): Turkish capitals - dotless ı is listed with I, as on CU-685's tr line (the wiring folds İ)
+  new RegExp(`^(?:iki\\s+faktörlü\\s+(?:kimlik\\s+doğrulamay[ıI]|doğrulamay[ıI])|iki\\s+ad[ıI]ml[ıI]\\s+doğrulamay[ıI]|2fa'y[ıI]|2fa)\\s+(?:devre\\s+d[ıI]ş[ıI]\\s+b[ıI]rak|devre\\s+d[ıI]ş[ıI]\\s+b[ıI]rak[ıI]n|kapat|kapat[ıI]n)\\s*[.!]?$`, 'iu'),
+])
+let ruDisable2faRegex = null
+function namesRuDisable2fa(name) {
+  if (!ruDisable2faRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const verb = any(['отключить', 'отключите', 'выключить', 'выключите', 'деактивировать'])
+    const noun = `(?:${any(['двухфакторную', 'двухэтапную', 'двухфакторная', 'двухэтапная'])}\\s+${any(['аутентификацию', 'проверку', 'авторизацию', 'аутентификация', 'проверка'])}|2fa)`
+    ruDisable2faRegex = new RegExp(`^(?:${any(['сейчас'])}\\s+)?${verb}\\s+${noun}(?:\\s+\\S+){0,2}?\\s*[.!]?$`, 'iu')
+  }
+  return ruDisable2faRegex.test(normaliseName(String(name ?? '')).trim())
+}
+// CU-698 (strict English parity; the English facts are on the issue): changing the account email or phone asks credential in the locales
+// as 'Change email' / 'Update phone number' do - the change / update / edit verb with the email or phone noun, a possessive or recovery /
+// backup slot, negation included ("Don't change email" asks). Add / verify, past / status and the bare nouns stay free.
+const LOCALE_CHANGE_CONTACT = Object.freeze([
+  /^(?:ne\s+pas\s+)?(?:modifier|modifiez|changer|changez|mettre\s+à\s+jour|mettez\s+à\s+jour)\s+(?:\S+\s+){0,2}?(?:(?:l['’]\s*)?(?:adresse\s+)?(?:e-?mail|courriel)|(?:le\s+)?(?:numéro\s+de\s+)?téléphone(?:\s+(?:portable|mobile))?|(?:le\s+)?numéro\s+de\s+(?:portable|mobile))(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:no\s+)?(?:cambiar|cambia|cambie|actualizar|actualiza|actualice|editar|edita|edite)\s+(?:\S+\s+){0,2}?(?:(?:el\s+)?(?:correo(?:\s+electr[oó]nico)?|e-?mail)|(?:el\s+)?(?:n[uú]mero\s+de\s+)?tel[eé]fono(?:\s+(?:m[oó]vil|celular))?|(?:el\s+)?n[uú]mero\s+de\s+(?:m[oó]vil|celular))(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:não\s+|nao\s+)?(?:alterar|altere|atualizar|atualize|mudar|mude|editar|edite)\s+(?:\S+\s+){0,2}?(?:(?:o\s+)?(?:e-?mail|endere[cç]o\s+de\s+e-?mail)|(?:o\s+)?(?:n[uú]mero\s+de\s+)?telefone(?:\s+celular)?|(?:o\s+)?n[uú]mero\s+de\s+celular)(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:non\s+)?(?:modifica|modificare|cambia|cambiare|aggiorna|aggiornare)\s+(?:\S+\s+){0,2}?(?:(?:l['’]\s*|la\s+)?(?:e-?mail|indirizzo\s+e-?mail)|(?:il\s+)?(?:numero\s+di\s+)?telefono(?:\s+cellulare)?|(?:il\s+)?numero\s+di\s+cellulare)(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:(?:deine|ihre|die|meine)\s+)?(?:\S+\s+)?(?:\S*e-?mail(?:-adresse)?|\S*telefonnummer|\S*handynummer|\S*mobilnummer)(?:\s+(?:jetzt|nicht))?\s+(?:ändern|aktualisieren|bearbeiten)\s*[.!]?$/iu,
+  /^(?:ändern\s+sie|ändere|aktualisieren\s+sie)\s+(?:\S+\s+){0,2}?(?:\S*e-?mail(?:-adresse)?|\S*telefonnummer|\S*handynummer)\s*[.!]?$/iu,
+  /^(?:(?:je|uw|het|mijn)\s+)?(?:\S+\s+)?(?:e-?mailadres|e-?mail|telefoonnummer|mobiele\s+nummer)(?:\s+(?:nu|niet))?\s+(?:wijzigen|bijwerken|aanpassen)\s*[.!]?$/iu,
+  // r2 (cu-developer-three, cu-developer-one 19:20Z): the nl verb-first imperative ('Wijzig e-mailadres', 'Wijzig uw telefoonnummer')
+  /^(?:wijzig|werk)\s+(?:je\s+|uw\s+|het\s+|mijn\s+)?(?:\S+\s+)?(?:e-?mailadres|e-?mail|telefoonnummer|mobiele\s+nummer)(?:\s+bij)?\s*[.!]?$/iu,
+  /^(?:\S+の)?(?:[^\sをの]{1,6})?(?:メールアドレス|メール|電話番号|携帯電話番号)を?(?:変更|更新|編集)(?:する|して(?:ください)?|します|しない(?:で(?:ください)?)?)?\s*[.!。]?$/u,
+  /^(?:(?:복구|백업|내)\s+)?(?:\S+\s+)?(?:이메일(?:\s?주소)?|전화\s?번호|휴대폰\s?번호)\s*(?:을|를)?\s*(?:변경|수정|업데이트)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다|하지\s?마(?:세요|십시오)?)?\s*[.!]?$/u,
+  /^(?:不要|立即|马上|现在)?(?:更改|修改|更新|变更|變更|編輯|编辑)(?:\S{0,6}的)?(?:邮箱地址|郵箱地址|邮箱|郵箱|电子邮件(?:地址)?|電子郵件(?:地址)?|邮件地址|手机号(?:码)?|手機號(?:碼)?|电话号码|電話號碼)\s*[.!。]?$/u,
+  new RegExp(`^(?:\\S+\\s+)?(?:e-?posta(?:\\s+adresini|y[ıI])?|e-?postan[ıI]|telefon\\s+numaras[ıI]n[ıI]|telefon\\s+numaran[ıI])\\s+(?:değiştir|değiştirin|güncelle|güncelleyin)\\s*[.!]?$`, 'iu'),
+])
+let ruChangeContactRegex = null
+function namesRuChangeContact(name) {
+  if (!ruChangeContactRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const verb = `(?:(?:${any(['не'])}\\s+)?${any(['изменить', 'измените', 'сменить', 'смените', 'обновить', 'обновите', 'изменять', 'менять'])})`
+    const noun = `(?:${any(['адрес'])}\\s+${any(['электронной'])}\\s+${any(['почты'])}|${any(['почту', 'email', 'e-mail'])}|${any(['номер'])}\\s+${any(['телефона'])}|${any(['телефон'])})`
+    ruChangeContactRegex = new RegExp(`^${verb}\\s+(?:\\S+\\s+){0,2}?${noun}(?:\\s+\\S+){0,2}?\\s*[.!]?$`, 'iu')
+  }
+  return ruChangeContactRegex.test(normaliseName(String(name ?? '')).trim())
+}
+// CU-699 (go cu-developer-one 19:41Z; the English facts are on the issue): the send-money / transfer-funds verbs with a money object and the
+// place-order verbs ask purchase in the locales as 'Send money' / 'Transfer funds' / 'Place order' do. Bare transfer verbs, the transfer page
+// nouns and status forms stay out - they follow #1000 (CU-609). ja / ko bare 送金 / 송금 read as the verb. Negation and past stay free.
+const LOCALE_MONEY_VERBS = Object.freeze([
+  /^(?:transférer|transférez|envoyer|envoyez|virer|virez)\s+(?:des\s+fonds|de\s+l['’]\s*argent|l['’]\s*argent|\d[\d\s.,]*\s?(?:€|\$|eur))(?:\s+\S+){0,3}?\s*[.!]?$/iu,
+  /^(?:effectuer|effectuez|faire|faites)\s+(?:un\s+)?virement(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:enviar|envía|envíe|transferir|transfiere|transfiera)\s+(?:dinero|fondos|el\s+dinero|los\s+fondos)(?:\s+\S+){0,3}?\s*[.!]?$/iu,
+  /^(?:hacer|haz|realizar|realiza|realice)\s+(?:una\s+)?transferencia(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:hacer|haz|realizar|realiza|realice|confirmar)\s+(?:el\s+)?pedido(?:\s+ahora)?\s*[.!]?$/iu,
+  /^(?:enviar|envie|transferir|transfira)\s+(?:dinheiro|fundos|o\s+dinheiro)(?:\s+\S+){0,3}?\s*[.!]?$/iu,
+  /^(?:fazer|faça|finalizar|finalize|confirmar)\s+(?:o\s+)?pedido(?:\s+agora)?\s*[.!]?$/iu,
+  /^(?:invia|inviare|trasferisci|trasferire)\s+(?:denaro|soldi|fondi|il\s+denaro)(?:\s+\S+){0,3}?\s*[.!]?$/iu,
+  /^(?:fai|fare|effettua|effettuare)\s+(?:un\s+)?bonifico(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:effettua|effettuare|invia|inviare|conferma)\s+(?:l['’]\s*)?ordine(?:\s+ora)?\s*[.!]?$/iu,
+  // r2 (cu-developer-one 00:00Z): de / nl send-money lines take a recipient slot as fr / es / pt / it / ru do ('Geld an Freunde senden')
+  /^(?:jetzt\s+)?(?:geld\s+(?:(?:an|zu)\s+(?:\S+\s+){1,2})?(?:transferieren|senden|überweisen|schicken)|bestellung\s+aufgeben|zahlungspflichtig\s+bestellen|kostenpflichtig\s+bestellen)\s*[.!]?$/iu,
+  /^(?:(?:nu\s+)?geld\s+(?:(?:naar|aan)\s+(?:\S+\s+){1,2})?(?:overmaken|versturen|overboeken|sturen)|bestelling\s+plaatsen|maak\s+geld\s+over(?:\s+(?:naar|aan)\s+\S+(?:\s+\S+)?)?)\s*[.!]?$/iu,
+  /^(?:今すぐ)?(?:送金(?:する|して(?:ください)?|します)?|(?:資金|お金)を?(?:振り込む|振り込み|送る|送金する|移動(?:する|して(?:ください)?)?)|注文する|注文して(?:ください)?)\s*[.!。]?$/u,
+  // r2: ko bare 이체 / 이체하기 ask (an unambiguous bank transfer; bare Sino-noun = verb, owner ruling 23:57Z)
+  /^(?:(?:지금|즉시)\s+)?(?:(?:송금|이체)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?|(?:자금|돈)\s*(?:을|를)?\s*(?:이체|송금|보내기|보내)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?)\s*[.!]?$/u,
+  new RegExp(`^(?:para\\s+(?:gönder|gönderin|aktar|aktarın|transfer\\s+et)|havale\\s+yap|sipariş\\s+ver|siparişi\\s+tamamla|siparişi\\s+onayla)\\s*[.!]?$`, 'iu'),
+])
+let ruMoneyVerbsRegex = null
+function namesRuMoneyVerbs(name) {
+  if (!ruMoneyVerbsRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const verb = any(['отправить', 'отправьте', 'перевести', 'переведите', 'перечислить'])
+    const object = any(['деньги', 'средства', 'денежные'])
+    ruMoneyVerbsRegex = new RegExp(`^${verb}\\s+(?:${any(['денежные'])}\\s+)?${object}(?:\\s+\\S+){0,3}?\\s*[.!]?$`, 'iu')
+  }
+  return ruMoneyVerbsRegex.test(normaliseName(String(name ?? '')).trim())
+}
+// CU-700 (strict English parity; the English facts are on the issue): the subscribe / renew verb asks purchase in the locales as
+// 'Subscribe' / 'Renew subscription' do - bare or with an object. Negation ("Don't renew" is free), past / status, the bare noun and
+// 'Resubscribe' stay free, as in English. ja 更新 / ko 갱신 count only with the subscription noun (bare they also mean 'update').
+const SUB_NOUN_FR = String.raw`(?:l['’]\s*|mon\s+|votre\s+|cet\s+|l['’]\s*)?(?:abonnement|forfait|adhésion)`
+const LOCALE_SUBSCRIBE_RENEW = Object.freeze([
+  /^(?:s['’]\s*abonner|abonnez-vous|abonne-toi)(?:\s+\S+){0,4}?\s*[.!]?$/iu,
+  new RegExp(`^(?:renouveler|renouvelez|renouvelle)(?:\\s+${SUB_NOUN_FR}(?:\\s+\\S+){0,2}?)?\\s*[.!]?$`, 'iu'),
+  /^(?:suscribirse|suscríbete|suscríbase|suscribirme)(?:\s+\S+){0,4}?\s*[.!]?$/iu,
+  /^(?:renovar|renueva|renueve)(?:\s+(?:la\s+|tu\s+|su\s+|mi\s+)?(?:suscripci[oó]n|membres[ií]a|plan|abono)(?:\s+\S+){0,2}?)?\s*[.!]?$/iu,
+  // pt assinar also means 'sign' ('Assinar documento' stays free, found by the corpus reclass): bare, 'agora' or a plan noun only;
+  // inscrever-se / it iscriviti are left out, ambiguous with 'Sign up' / 'Register' as ja 登録 is
+  // r2: bare 'assinar' / 'assinar agora' are out (also 'Sign', which English asks as permission); only with a plan / subscription noun
+  /^(?:assinar|assine)\s+(?:o\s+|a\s+)?(?:plano|premium|pro|newsletter|boletim|assinatura)(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:renovar|renove)(?:\s+(?:a\s+|sua\s+|minha\s+)?(?:assinatura|plano|associa[cç][aã]o)(?:\s+\S+){0,2}?)?\s*[.!]?$/iu,
+  /^(?:abbonati|abbonarsi)(?:\s+\S+){0,4}?\s*[.!]?$/iu,
+  /^(?:rinnova|rinnovare)(?:\s+(?:l['’]\s*|il\s+|la\s+)?(?:abbonamento|piano|iscrizione)(?:\s+\S+){0,2}?)?\s*[.!]?$/iu,
+  // r2 (cu-developer-one 20:59Z): Plan / Tarif only as the whole word or a hyphen compound ('Zeitplan verlängern' = extend schedule stays
+  // free); the formal verb-first form asks; bare 'verlängern' / 'jetzt verlängern' are out (also 'Extend', free in English)
+  /^(?:(?:jetzt|das|den|dein|ihr)\s+)?(?:\S+\s+)?(?:\S*abo(?:nnement)?|\S*mitgliedschaft|(?:\S+-)?plan|(?:\S+-)?tarif)(?:\s+jetzt)?\s+(?:verlängern|erneuern)\s*[.!]?$/iu,
+  /^(?:verlängern|erneuern)\s+sie\s+(?:ihr(?:e|en)?\s+|das\s+|den\s+|die\s+)?(?:\S*abo(?:nnement)?|\S*mitgliedschaft|(?:\S+-)?plan|(?:\S+-)?tarif)(?:\s+jetzt)?\s*[.!]?$/iu,
+  /^(?:jetzt\s+)?abonnieren\s*[.!]?$/iu,
+  /^(?:(?:je|uw|het)\s+)?(?:abonnement|lidmaatschap)(?:\s+nu)?\s+(?:verlengen|vernieuwen)\s*[.!]?$/iu,
+  // r2 (cu-developer-one 21:03Z): bare 'Verlengen' / 'Nu verlengen' are out (also 'Extend'); 'Abonnement verlengen' keeps asking
+  /^(?:nu\s+)?abonneren\s*[.!]?$/iu,
+  /^(?:今すぐ)?(?:\S+を)?(?:購読|定期購入)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
+  /^(?:今すぐ)?(?:サブスクリプション|定期購入|購読|メンバーシップ|プラン)を?(?:更新|延長)(?:する|して(?:ください)?|します)?\s*[.!。]?$/u,
+  /^(?:(?:지금|즉시)\s+)?(?:\S+\s+)?구독(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+  /^(?:(?:지금|즉시)\s+)?(?:구독|멤버십|요금제|플랜)\s*(?:을|를)?\s*(?:갱신|연장)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+  new RegExp(`^(?:abone\\s+ol|abone\\s+olun|aboneliği\\s+yenile|aboneliği\\s+yenileyin|üyeliği\\s+yenile|abonelik\\s+yenile)\\s*[.!]?$`, 'iu'),
+])
+let ruSubscribeRenewRegex = null
+function namesRuSubscribeRenew(name) {
+  if (!ruSubscribeRenewRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const subscribe = `${any(['подписаться', 'подпишитесь', 'подпишись'])}(?:\\s+\\S+){0,3}?`
+    const renew = `${any(['продлить', 'продлите', 'продли', 'возобновить'])}(?:\\s+(?:\\S+\\s+)?${any(['подписку', 'членство', 'тариф', 'план'])}(?:\\s+\\S+){0,2}?)?`
+    ruSubscribeRenewRegex = new RegExp(`^(?:${any(['сейчас'])}\\s+)?(?:${subscribe}|${renew})\\s*[.!]?$`, 'iu')
+  }
+  return ruSubscribeRenewRegex.test(normaliseName(String(name ?? '')).trim())
+}
+// CU-655: the Russian twin ('Очистить корзину', 'Очистите корзину', 'Корзину очистить', with 'не' as negation) is built from folded
+// words on first use: a judged name has passed normaliseText, which folds Cyrillic homoglyphs to Latin case by case, so each word
+// is folded as written, capitalised and in capitals, as namesWord does for its Cyrillic entries.
+let ruTrashEmptyRegex = null
+function namesRuTrashEmpty(name) {
+  if (!ruTrashEmptyRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const any = (words) => `(?:${words.flatMap(folds).join('|')})`
+    const verb = any(['очистить', 'очисти', 'очистите', 'очищать', 'очищай', 'очищайте'])
+    const noun = any(['корзину'])
+    // r2 (cu-developer-three): the cart's noun in the singular too ('корзину заказа').
+    const cart = any(['покупок', 'покупки', 'товаров', 'товара', 'заказов', 'заказа', 'магазина'])
+    // r3 (cu-developer-three): the named-cart exclusion sits right after the noun in both orders ('Корзину покупок очистить').
+    ruTrashEmptyRegex = new RegExp(`^(?:${any(['не'])}\\s+)?(?:${verb}\\s+(?:\\S+\\s+){0,4}?${noun}(?!\\s+${cart})(?=\\s|$|[.!])|${noun}(?!\\s+${cart})\\s+(?:\\S+\\s+){0,4}?${verb}(?=\\s|$|[.!]))`, 'iu')
+  }
+  // The name is compared after normaliseName too, as namesTrashFolded compares it.
+  return ruTrashEmptyRegex.test(normaliseName(String(name ?? '')).trim())
+}
+// CU-641 r3: the objects 'Wis' clears without deleting, as English 'Clear ...' stays free for them.
+const WIS_CLEAR_OBJECTS = new Set(['zoekopdracht', 'zoekopdrachten', 'zoekveld', 'zoektermen', 'zoekterm', 'filter', 'filters', 'selectie', 'formulier', 'invoer',
+  'veld', 'velden', 'tekst', 'cache', 'melding', 'meldingen', 'notificaties', 'opmaak', 'markering', 'markeringen', 'zoekbalk'])
+const IMPERATIVE_NEVER = new Set(['para'])
+// The determiners an imperative may take instead of the entry's own ('le compte' / 'votre compte' / 'ton compte'), FR / ES / PT
+// / IT / DE; optional, at most two ('il vostro'), at the entry's determiner positions and right after the verb.
+const IMPERATIVE_DETERMINERS = ['le', 'la', 'les', 'un', 'une', 'des', 'du', 'votre', 'vos', 'ton', 'ta', 'tes', 'mon', 'ma', 'mes', 'notre', 'nos', 'leur',
+  'leurs', 'ce', 'cet', 'cette', 'ces', 'el', 'los', 'las', 'unos', 'unas', 'tu', 'tus', 'su', 'sus', 'mi', 'mis', 'vuestra', 'vuestro', 'vuestras', 'vuestros',
+  'nuestra', 'nuestro', 'nuestras', 'nuestros', 'este', 'esta', 'estos', 'estas', 'ese', 'esa', 'o', 'a', 'os', 'as', 'um', 'uma', 'seu', 'sua', 'seus', 'suas',
+  'teu', 'tua', 'meu', 'minha', 'vosso', 'vossa', 'nosso', 'nossa', 'esse', 'essa', 'il', 'lo', 'i', 'gli', 'uno', 'tuo', 'tuoi', 'tue', 'suo', 'mio', 'mia',
+  'vostro', 'vostra', 'nostro', 'nostra', 'questo', 'questa', 'der', 'die', 'das', 'den', 'dem', 'ein', 'eine', 'einen', 'dein', 'deine', 'deinen', 'euer',
+  'eure', 'euren', 'ihr', 'ihre', 'ihren', 'unser', 'unsere', 'unseren', 'mein', 'meine', 'meinen', 'diese', 'dieses', 'diesen',
+  // CU-641: Dutch, with the reflexive je / u of a separable verb ('Meld je af', 'Schrijf u uit').
+  'de', 'het', 'een', 'je', 'jouw', 'uw', 'mijn', 'onze', 'ons', 'deze', 'dit', 'jullie', 'hun', 'u', 'zich', 'alle',
+  // CU-648: Russian possessives and demonstratives ('Удалите свой аккаунт', 'Оформите ваш заказ').
+  'свой', 'свою', 'своё', 'свое', 'свои', 'ваш', 'вашу', 'ваше', 'ваши', 'мой', 'мою', 'моё', 'мое', 'мои', 'твой', 'твою', 'этот', 'эту', 'это', 'эти']
+const GERMAN_INFINITIVES = new Set(Object.keys(IMPERATIVE_FORMS).filter((verb) => /n$/.test(verb) && IMPERATIVE_FORMS[verb].some((form) => form.endsWith(' sie') || / u(\|\S+)?$/.test(form) || form.includes('|'))))
+/** Every form a verb token may take (its own lemma or lemmas, and their forms), or null when it is no table verb. */
+function imperativeFamily(token) {
+  const family = new Set()
+  for (const [lemma, forms] of Object.entries(IMPERATIVE_FORMS)) if (lemma === token || forms.includes(token)) [lemma, ...forms].forEach((form) => family.add(form))
+  return family.size ? family : null
+}
+/** The imperative variants of one entry, as token lists ('¦' an optional determiner slot); [] when its verb has no table. */
+function imperativeVariants(entry) {
+  if (/[~^\u2026]/.test(entry)) return []
+  const tokens = []
+  for (const raw of entry.toLowerCase().replace(/\u2019/g, "'").split(/\s+/)) {
+    if (raw === '_' || IMPERATIVE_DETERMINERS.includes(raw)) tokens.push('¦')
+    else if (/^l'./.test(raw)) tokens.push('¦', raw.slice(2))
+    else tokens.push(raw)
+  }
+  const variants = []
+  // A 'verb|particle' form (Dutch separable) puts its particle after the object, or before an infinitive-first entry's complement.
+  const split = (form) => form.includes('|') ? form.split('|') : [form, null]
+  const lead = imperativeFamily(tokens[0])
+  const last = tokens[tokens.length - 1]
+  if (tokens.length === 1) {
+    for (const form of lead || []) {
+      if (form === tokens[0] || IMPERATIVE_NEVER.has(form)) continue
+      const [verb, particle] = split(form)
+      if (IMPERATIVE_OBJECT_ONLY.has(verb)) continue
+      if (IMPERATIVE_BARE_COLLISIONS.has(verb)) variants.push(['^', verb, '¦!'])
+      else variants.push(particle ? [verb, '¦', particle] : [verb])
+    }
+  } else if (lead) {
+    const rest = tokens.slice(1)
+    for (const form of lead) {
+      if (form === tokens[0] || IMPERATIVE_NEVER.has(form)) continue
+      const [verb, particle] = split(form)
+      variants.push([verb, ...(rest[0] === '¦' ? [] : ['¦']), ...(particle ? [particle] : []), ...rest])
+    }
+  } else if (GERMAN_INFINITIVES.has(last)) {
+    const object = tokens.slice(0, -1)
+    for (const form of IMPERATIVE_FORMS[last]) {
+      if (IMPERATIVE_NEVER.has(form)) continue
+      const [verb, particle] = split(form)
+      variants.push([verb, ...(object[0] === '¦' ? [] : ['¦']), ...object, ...(particle ? [particle] : [])])
+    }
+  }
+  return variants
+}
+/** One compiled pattern per class over every entry's variants, built on first use (normaliseName is defined further down). */
+class ImperativePattern {
+  constructor(entries) { this.entries = entries }
+  get regex() {
+    if (this.compiled) return this.compiled
+    // CU-648: a judged name has passed normaliseText, which folds homoglyphs case by case ('Удалите' -> 'Yдaлитe', 'УДАЛИТЕ' ->
+    // 'YДAЛИTE'), so each word is folded as written, capitalised and in capitals, as namesWord does for its Cyrillic entries.
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))]
+    const alternatives = (word) => { const forms = folds(word).map((form) => form.split(' ').map(escapeRegExp).join('[\\s-]+')); return forms.length > 1 ? `(?:${forms.join('|')})` : forms[0] }
+    const dets = [...new Set(IMPERATIVE_DETERMINERS.flatMap(folds))].map(escapeRegExp).join('|')
+    const slot = `(?:(?:${dets})[\\s-]+|l'\\s*){0,2}`
+    const sources = new Set()
+    const anchored = new Set()
+    this.leads = new Set()
+    const NOW = ['jetzt', 'sofort', 'gleich', 'ora', 'subito', 'adesso', 'ahora', 'ya', 'agora', 'já', 'maintenant', 'immédiatement']
+    const determiner = `(?:(?:${dets})[\\s-]+\\p{L}|l'\\s*\\p{L}|(?:${NOW.map(escapeRegExp).join('|')})(?:[^\\p{L}]|$))`
+    for (const entry of this.entries) {
+      for (const variant of imperativeVariants(entry)) {
+        // '^' form '¦!': a bare collision, first in the label and followed by a determiner or a 'now' adverb (the imperative-only context).
+        for (const form of folds(variant[0] === '^' ? variant[1] : variant[0])) this.leads.add(form.split(' ')[0])
+        if (variant[0] === '^') { anchored.add(`${alternatives(variant[1])}[\\s-]+${determiner}`); continue }
+        let source = ''
+        variant.forEach((token, index) => {
+          if (token === '¦') { if (index < variant.length - 1) source += slot; return }
+          source += alternatives(token)
+          if (index < variant.length - 1) source += '[\\s-]+'
+        })
+        sources.add(source)
+      }
+    }
+    this.anchored = anchored.size ? new RegExp(`^(?:${[...anchored].join('|')})`, 'u') : /(?!)/
+    this.compiled = sources.size ? new RegExp(`(^|[^\\p{L}])(?:${[...sources].join('|')})([^\\p{L}]|$)`, 'u') : /(?!)/
+    return this.compiled
+  }
+  // Most names hold no table verb form: a word lookup first keeps the big pattern off them.
+  test(text) {
+    const regex = this.regex
+    if (!text.split(/[^\p{L}]+/u).some((word) => this.leads.has(word))) return false
+    return regex.test(text) || this.anchored.test(text)
+  }
+}
+const IMPERATIVES = Object.freeze(Object.fromEntries(['purchase', 'delete', 'submit', 'permission'].map((cls) => [cls, new ImperativePattern(LOCALE_WORDS[cls])])))
+/** For the CU-638 parity test: each class's entries with one plain label per variant (the slots left empty). */
+export function imperativeParityRows() {
+  return Object.entries(IMPERATIVES).flatMap(([cls, pattern]) => pattern.entries.flatMap((entry) => imperativeVariants(entry).map((variant) => variant[0] === '^'
+    ? { cls, entry, label: `${variant[1]} ${/^(?:pag|acquist|trasfer)/.test(variant[1]) ? 'il conto' : 'il messaggio'}`, collision: variant[1] }
+    : { cls, entry, label: variant.filter((token) => token !== '¦').join(' ') })))
+}
+
 const WORDS = Object.freeze({
   // CU-498 (High; cu-coordinator 12:21Z): a direct debit mandate pulls money from the account (purchase), anywhere.
   // (a separate line so the purchase list below stays as it was)
@@ -277,6 +1499,9 @@ const WORDS = Object.freeze({
     'open long', 'open short', 'close all positions', 'market close', 'list nft', 'list item', 'repay loan',
     // CU-401 (High; cu-coordinator 05:16Z): ending a paid plan.
     'cancel plan', 'cancel membership', 'downgrade', 'end trial',
+    // CU-628 (cu-researcher): terminate / stop a subscription, membership or plan, as 'End subscription' / 'End membership' ask.
+    'terminate subscription', 'terminate my subscription', 'terminate membership', 'terminate my membership', 'terminate plan', 'terminate my plan',
+    'stop subscription', 'stop my subscription', 'stop membership', 'stop my membership', 'stop my plan', 'stop plan',
     // CU-400 (High; cu-coordinator 04:39Z): a trade, swap, stake or signature moves money and cannot be taken back.
     'confirm transaction', 'sign transaction', 'sign message', 'swap', 'stake', 'trade', 'sell now', 'confirm swap', 'confirm trade', 'confirm sale',
     // cu-coordinator 04:44Z (cu-verifier's stand-in: 'Bridge' acted unasked): a bridge moves tokens between chains.
@@ -291,7 +1516,7 @@ const WORDS = Object.freeze({
     'sell now', 'confirm sale',
     // CU-288 (cu-researcher's real-app wordings, round 2): a booking, an upgrade or a renewal commits money.
     'book now', 'book this', 'reserve now', 'upgrade plan', 'upgrade now', 'upgrade to pro', 'upgrade to premium', 'renew subscription', 'renew now',
-    'renew plan', ...ZH_WORDS.purchase, ...LOCALE_WORDS.purchase],
+    'renew plan', ...ZH_WORDS.purchase, ...LOCALE_WORDS.purchase, IMPERATIVES.purchase],
   // CU-135: replace and overwrite (a save panel's 'already exists' sheet), don't save (a close sheet discards work).
   delete: ['delete', 'remove', 'discard', 'erase', 'empty trash', 'cancel subscription', 'replace', 'overwrite', "don't save", 'don\u2019t save',
     // CU-430 (CU-415 family): cancelling a flight cancels a trip.
@@ -313,7 +1538,7 @@ const WORDS = Object.freeze({
     'move to trash', 'move to bin', 'empty bin', 'clear history', 'clear all', 'reset all', 'reset settings', 'reset to defaults', 'uninstall', 'wipe', 'purge',
     'deactivate', 'close account', 'forget', 'factory reset',
     // cu-researcher's 13:23Z sweep: unsaved edits lost, like Discard Changes.
-    'revert to saved', 'revert all changes', ...ZH_WORDS.delete, ...LOCALE_WORDS.delete],
+    'revert to saved', 'revert all changes', ...ZH_WORDS.delete, ...LOCALE_WORDS.delete, IMPERATIVES.delete],
   permission: ['share', 'invite', 'permission', 'permissions', 'api key', 'grant access', 'make public', 'security', 'revoke',
     // CU-496 (High; cu-coordinator 11:21Z): approving an access request lets another person in (raises the older submit 'approve').
     'approve access request', 'approve access', 'approve the access request',
@@ -420,7 +1645,7 @@ const WORDS = Object.freeze({
     // ('Turn off notifications' stays free). ChatGPT confirms any change to account permissions.
     ...['turn off', 'disable', 'remove', 'allow'].flatMap((verb) => ['2 step', 'two step', 'two factor', '2fa', 'mfa', 'multi factor',
       'password', 'passkey', 'passkeys', 'security key', 'security keys', 'login alerts', 'sign in alerts', 'account recovery', 'find my',
-      'less secure apps', 'less secure app access'].map((what) => `${verb} ${what}`)), ...ZH_WORDS.permission],
+      'less secure apps', 'less secure app access'].map((what) => `${verb} ${what}`)), ...ZH_WORDS.permission, ...LOCALE_WORDS.permission, IMPERATIVES.permission],
   submit: ['send', 'post', 'submit', 'publish', 'reply', 'sign up', 'register',
     // CU-261 (cu-researcher; cu-coordinator: High): actions that reach other people or commit shared work, as whole
     // phrases. A bare Accept, Connect, Join or Follow stays free (cookie banners, Wi-Fi, generic joins: named limits).
@@ -432,6 +1657,10 @@ const WORDS = Object.freeze({
     'upload file', 'upload files', 'attach', 'attach file', 'attach files', 'share file',
     // cu-researcher's 13:23Z sweep: messages to the sender or the group.
     'unsubscribe', 'report spam', 'report junk', 'leave group', 'leave conversation', 'leave channel',
+    // CU-635 (cu-developer-two): opting out of / stopping / turning off e-mails, as 'Unsubscribe (from our emails)'; a bare 'Opt
+    // out' stays free (cu-developer-one's ruling).
+    'opt out of emails', 'opt out of _ emails', 'opt out of marketing emails', 'opt out of email', 'opt-out of emails', 'opt out of newsletters',
+    'stop emails', 'stop all emails', 'stop marketing emails', 'stop _ emails', 'turn off emails', 'turn off marketing emails', 'turn off all emails',
     // cu-researcher on #98: a cancellation goes to every attendee.
     'cancel meeting', 'cancel event', 'cancel invitation', 'send cancellation',
     // CU-286 (cu-researcher's real-app wordings): a request to join a meeting, and Slack's huddle (a call to the channel).
@@ -449,7 +1678,7 @@ const WORDS = Object.freeze({
     'accept new itinerary', 'accept the new itinerary', 'accept schedule change', 'accept the schedule change', 'accept itinerary change',
     // CU-428: listing or relisting an item and accepting a return bind a sale.
     'list now', 'list it now', 'relist', 'relist item', 'accept return', 'accept the return',
-    ...ZH_WORDS.submit, ...LOCALE_WORDS.submit],
+    ...ZH_WORDS.submit, ...LOCALE_WORDS.submit, IMPERATIVES.submit],
 })
 // CU-377 follow-up: the file browsers whose rows are files (the same set as app-policy's FILE_BROWSERS).
 const FILE_BROWSER_APPS = new Set(['com.apple.finder', 'com.cocoatech.PathFinder', 'com.binarynights.ForkLift-3', 'com.binarynights.ForkLift', 'com.eltima.cmd1', 'com.mrrsoftware.marta', 'org.yanex.marta'])
@@ -669,6 +1898,40 @@ function printableKeyChar(action) {
  * it is dropped before the purchase words are matched, so the verb ('Order', 'Order now', 'Place order') still confirms
  * and any other purchase word in the same name still counts (CU-8: a double-click on a list cell 'Order #4344').
  */
+// CU-621: (all-devices phrase, sign-out verb) pairs per language.
+const SIGN_OUT_ALL_PAIRS = [
+  [/allen?\s+geräten?|überall/iu, /abmeld|ausloggen|ausgeloggt|melde\s+dich|melden\s+sie\s+sich/iu],
+  [/tous\s+les\s+appareils|partout/iu, /déconnect/iu],
+  [/todos\s+los\s+dispositivos/iu, /cerrar\s+sesión|cierra\s+sesión|cierre\s+sesión|desconectar/iu],
+  [/todos\s+os\s+dispositivos/iu, /\bsair\b|\bsaia\b|terminar\s+sessão|encerrar\s+sessão|desconectar/iu],
+  [/tutti\s+i\s+dispositivi|ovunque/iu, /\besci\b|disconnett|uscire/iu],
+  [/alle\s+apparaten|overal/iu, /afmeld|uitlog|log\s+uit|meld\s+af/iu],
+  [/tüm\s+cihaz|tüm\s+oturum/iu, /çıkış|kapat/iu],
+]
+// CU-620: (factory word, reset verb) pairs per language for the factory-reset rule. CU-622 (cu-developer-three) adds the English
+// return / revert / load verbs; CU-623 (cu-developer-two) the 'factory data' words ('Fabrika verilerine sıfırla', 'Fabrieksgegevens
+// herstellen', 'Werksdaten zurücksetzen').
+const FACTORY_RESET_PAIRS = [
+  [/\bfactory\b/i, /\b(?:reset|restore|wipe|erase)\b/i],
+  [/\bfactory\s+(?:settings|defaults?|default\s+settings|state|data|configuration)\b/i, /\b(?:return|revert|load|go\s+back)\b/i],
+  [/出厂|出廠|原厂|原廠/u, /恢复|恢復|重置|还原|還原|返回|回到|载入|載入|加载|加載/u],
+  // r3 (cu-developer-three): one-word factory resets ('Werksreset', 'Fabrieksreset'), as bare English 'Factory reset' asks.
+  [/werks-?reset|fabrieks-?reset/iu, /\p{L}/u],
+  [/werkseinstellung|werkszustand|werksdaten|auslieferungszustand/iu, /zurücksetz|zurück(?![\p{L}])|wiederherstell|laden|lade\b|zurückkehr|zurückgeh|kehre|kehren/iu],
+  [/d['’]\s*usine/iu, /réinitialis|rétabli|restaur|revenir|revenez|reviens|retour|retourner|charger|chargez/iu],
+  [/de\s+fábrica/iu, /restablec|restablez|restaur|reinici|reset|redefin|repor|reponha|reinicializ|reposiç|volver|vuelve|vuelva|regresar|regresa|cargar|carga|voltar|volte|retornar|retorne|carregar|carregue/iu],
+  [/di\s+fabbrica/iu, /ripristin|reimpost|resett|torna|tornare|ritorna|ritornare|carica|caricare/iu],
+  [/fabrieksinstelling|fabrieksstaat|fabrieksgegevens|fabrieksdata/iu, /herstel|terugzet|terug(?![\p{L}])|reset|laden|laad\b|keer\s+terug|terugkeren|terugkeer|teruggaan|ga\s+terug/iu],
+  [/fabrika\s+(?:ayar|veri|durum|sıfırla)/iu, /sıfırla|geri\s+yükle|döndür|dön\b|dönün|geri\s+dön|yükle/iu],
+]
+// CU-629: the subscription-family nouns, and the one adverb that may sit inside such a label.
+const SUBSCRIPTION_NOUN = /(?:^|[^\p{L}])(?:abo|abonnement|mitgliedschaft|tarif|lidmaatschap|pakket|adhésion|forfait|suscripción|membresía|assinatura|subscrição|plano|abbonamento|piano|subscription|membership|plan)(?![\p{L}])|abonelik|aboneliğ|üyelik|üyeliğ/iu
+const ONE_ADVERB = /\s+(?:jetzt|sofort|direkt|gleich|direct|nu|meteen|onmiddellijk|hemen|şimdi|maintenant|immédiatement|ahora|ya|agora|já|ora|subito|adesso|now|immediately)(?=\s)/iu
+// CU-633: the same closed list as the label's last word ('Cancel my subscription now').
+const TRAILING_ADVERB = /\s+(?:jetzt|sofort|direkt|gleich|direct|nu|meteen|onmiddellijk|hemen|şimdi|maintenant|immédiatement|ahora|ya|agora|já|ora|subito|adesso|now|immediately)\s*[.!]?\s*$/iu
+// CU-633 (cu-developer-one's ruling 23:21Z): a bare 'Cancel now' and its locale twins - delete on a billing / subscription /
+// membership page only (the page test below); elsewhere they keep main's class until the rule-1 ruling.
+const BARE_CANCEL_NOW = /^\s*(?:cancel\s+now|jetzt\s+kündigen|annuler\s+maintenant|cancelar\s+ahora|annulla\s+ora|cancelar\s+agora|nu\s+opzeggen|şimdi\s+iptal\s+et|立即取消)\s*[.!]?\s*$/iu
 const ORDER_REFERENCE = /(^|[^a-z])order\s*(?:#|no\.|number\b|id\b)\s*#?[\w-]*\d[\w-]*|(^|[^a-z])order\s+\d{3,}[\w-]*|(^|[^a-z])order\s+(?:details|history|status|summary|tracking|lookup)([^a-z]|$)/gi
 
 // CU-443 (cu-coordinator 20:54Z, a class fold): transferring a phone number is a port-out (credential, from the grammar's phone
@@ -752,6 +2015,8 @@ const articlePattern = (word) => normaliseName(normaliseText(word)).split(' _ ')
 function namesWord(name, words) {
   const text = normaliseName(name)
   return words.some((word) => {
+    // CU-638: a class's compiled imperative pattern rides in its word list.
+    if (typeof word !== 'string') return word.test(text)
     if (word.includes(' _ ')) return new RegExp(`(^|[^\\p{L}])${articlePattern(word)}([^\\p{L}]|$)`, 'u').test(text)
     if (/[~^]/.test(word)) return new RegExp(`(^|[^\\p{L}])${turkishPattern(word)}([^\\p{L}]|$)`, 'u').test(text)
     // CU-345: '…' leads a German compound ending - matched after any letters, bounded only on its right.
@@ -2465,9 +3730,191 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const lastPush = new RegExp(`^\\s*${step}(?:${join}${step}){0,3}${join}(?:push(?:\\s+(?:to\\s+)?(?:the\\s+)?(?:remotes?|origin|upstream|changes|commits?|branch(?:es)?|tags?))?|sync\\s+(?:(?:to|with)\\s+(?:the\\s+)?)?(?:remote|origin|upstream|changes|commits?|branch))\\s*$`, 'iu')
       if (!classes.includes('submit') && lastPush.test(name)) classes.push('submit')
     }
+    // CU-619 (cu-researcher): German / Dutch separable call / join forms - 'Rufen Sie uns an', 'Ruf Anna an', 'Treten Sie dem Meeting
+    // bei', 'Tritt jetzt bei', 'Neem deel', 'Bel Anna' - ask submit; a bare 'Bel' stays free (it is also a bell label).
+    if (grammarEligible && !classes.includes('submit') && (/^\s*(?:ruf|rufe|rufen\s+sie)\s+(?:\p{L}+\s+){0,3}an\s*[.!]?\s*$/iu.test(name) || /^\s*(?:tritt|treten\s+sie)\s+(?:\p{L}+\s+){0,3}bei\s*[.!]?\s*$/iu.test(name) || /^\s*neem\s+(?:\p{L}+\s+){0,3}deel\s*[.!]?\s*$/iu.test(name) || /^\s*(?:nimm|nehmen\s+sie)\s+(?:\p{L}+\s+){0,4}teil\s*[.!]?\s*$/iu.test(name) || /^\s*bel\s+\p{L}+(?:\s+\p{L}+)?\s*[.!]?\s*$/iu.test(name))) classes.push('submit')
+    // CU-621 (cu-researcher): sign out of all devices in the seven locales asks permission, as English does - an all-devices phrase
+    // and a sign-out verb of one language in one short label ('Von allen Geräten abmelden', 'Cerrar sesión en todos los dispositivos').
+    if (grammarEligible && !classes.includes('permission') && name.length <= 90 && SIGN_OUT_ALL_PAIRS.some(([all, verb]) => all.test(name) && verb.test(name))) classes.push('permission')
+    // CU-617 (cu-researcher): German / Dutch separable and short imperatives of share / invite - 'Lade Freunde ein', 'Laden Sie
+    // Kollegen ein', 'Nodig je team uit', 'Teile das Dokument', 'Deel de link' - ask permission; 'Deel 2' (a part number) stays free.
+    if (grammarEligible && !classes.includes('permission') && (/^\s*(?:lade|laden\s+sie)\s+(?:\p{L}+\s+){1,3}ein\s*[.!]?\s*$/iu.test(name) || /^\s*nodig\s+(?:\p{L}+\s+){1,3}uit\s*[.!]?\s*$/iu.test(name) || /^\s*(?:teile|deel)\s+(?:\p{L}+\s*){1,3}[.!]?\s*$/iu.test(name) || /^\s*deel\s*[.!]?\s*$/iu.test(name))) classes.push('permission')
+    // CU-615 r3 (cu-developer-three): the German / Dutch imperative family as one rule - start / begin (+ one adverb) + your
+    // subscription / membership ('Starte jetzt dein Abo', 'Beginne deine Mitgliedschaft', 'Start nu je lidmaatschap'), and
+    // switch (+ one adverb) to pro / premium / plus ('Wechsle jetzt zu Premium').
+    if (grammarEligible && !classes.includes('purchase') && /^\s*(?:starte|beginne|starten\s+sie|beginnen\s+sie|start|begin)\s+(?:(?:jetzt|gleich|sofort|bitte|nu)\s+)?(?:deine?|ihre?|je|uw)\s+(?:abo|abonnement|mitgliedschaft|lidmaatschap)\s*[.!]?\s*$/iu.test(name)) classes.push('purchase')
+    if (grammarEligible && !classes.includes('purchase') && /^\s*(?:wechsle|wechseln\s+sie|stap|stapt)\s+(?:(?:jetzt|gleich|sofort|bitte|nu)\s+)?(?:zu|auf|over\s+naar|over\s+op)\s+(?:pro|premium|plus)\s*[.!]?\s*$/iu.test(name)) classes.push('purchase')
+    // CU-613 (cu-researcher): the ':' / '-' label form of 'start a subscription' - 'Suscripción mensual: empezar', 'Abo - starten'.
+    // r3 (cu-developer-one): with one adverb between instead of the ':' ('Abo jetzt starten', 'Suscripción ahora iniciar').
+    if (grammarEligible && !classes.includes('purchase') && /^\s*(?:suscripci[oó]n|abonnement|abo|abbonamento|assinatura|subscription|mitgliedschaft|membres[ií]a)(?:\s+\p{L}+)?(?:\s*[:\-–]\s*|\s+(?:jetzt|sofort|bitte|maintenant|ahora|agora|ora|adesso|nu|şimdi|now|please)\s+)(?:empezar|iniciar|comenzar|starten|beginnen|commencer|démarrer|avvia(?:re)?|inizia(?:re)?|começar|start|begin)\s*[.!]?\s*$/iu.test(name)) classes.push('purchase')
+    // r3 (cu-developer-three's bar, accepted by cu-developer-one as owner): 'switch / change / move / upgrade to <paid plan>' -
+    // pro, premium, plus, paid, annual, family - and 'business / team' only with plan / tier ('Switch to business account' is
+    // a profile switch and stays free).
+    if (grammarEligible && !classes.includes('purchase') && /^\s*(?:switch|change|move|upgrade|go)\s+to\s+(?:the\s+|a\s+)?(?:(?:pro|premium|plus|paid|annual|yearly|family)(?:\s+(?:plan|version|tier|edition|subscription|membership))?|(?:business|team|enterprise)\s+(?:plan|tier|subscription))\s*[.!]?\s*$/i.test(name)) classes.push('purchase')
+    // CU-628 r2 (cu-developer-one): a bare 退订 / 退訂 (or with 全部 / 所有) is an unsubscribe and asks submit; 退订须知 / 退订政策 stay free.
+    // CU-629: one modifier before it (立即 / 马上 / 现在 / 一键 / 确认) keeps submit; 退订邮件 / 短信 and 退订会员 / 套餐 / 服务 keep their
+    // classes through the substring entries whatever modifier precedes them.
+    if (grammarEligible && !classes.includes('submit') && /^\s*(?:我想|我要)?(?:立即|马上|馬上|現在|现在|一键|一鍵|确认|確認)?(?:退订|退訂)(?:全部|所有)?\s*$/u.test(name)) classes.push('submit')
+    // CU-635 (cu-developer-two): opting out of / stopping / turning off e-mails with any determiner or kind; CU-634: leaving a
+    // group or channel in Chinese with a modifier or demonstrative - submit, as 'Unsubscribe' / 'Leave group'. A bare 'Opt out' stays free.
+    if (grammarEligible && !classes.includes('submit') && (/^\s*(?:opt[-\s]?out\s+of|opt\s+me\s+out\s+of|stop(?:\s+(?:sending(?:\s+(?:me|us))?|receiving|getting))?|turn\s+off|unsubscribe\s+from)\s+(?:all\s+)?(?:(?:our|my|these|the|marketing|promotional|newsletter|future)\s+){0,2}(?:e-?mails?|newsletters?|email\s+marketing|marketing\s+e-?mails?)\s*[.!]?\s*$/iu.test(name)
+      || /^\s*(?:我要|我想)?(?:立即|马上)?(?:退出|离开|離開)(?:这个|這個|那个|那個|该|該|此|本|我的|我们的|我們的|你的|您的|你们的|你們的|他的|她的|他们的|他們的)?(?:群组|群組|群聊|群|频道|頻道)\s*$/u.test(name))) classes.push('submit')
+    // CU-634 r2 (cu-developer-two / -three): leaving a team in Chinese with a modifier, demonstrative or possessive asks permission, as
+    // 'Leave (this) team'.
+    if (grammarEligible && !classes.includes('permission') && /^\s*(?:我要|我想)?(?:立即|马上)?(?:退出|离开|離開)(?:这个|這個|那个|那個|该|該|此|本|我的|我们的|我們的|你的|您的|你们的|你們的|他的|她的|他们的|他們的)?(?:团队|團隊)\s*$/u.test(name)) classes.push('permission')
+    // CU-641 r3 (cu-developer-three): Dutch 'Wis' (wipe / clear) + an object asks delete, as 'Erase <object>' does for any object -
+    // except the objects English clears without asking ('Clear search / filters / selection / form / cache / notifications'), so
+    // 'Wis zoekopdracht', 'Wis de filters', 'Wis selectie' stay free (the wider clear-verb family is CU-642).
+    if (grammarEligible && !classes.includes('delete')) {
+      const wipe = String(name ?? '').trim().toLowerCase().match(/^(?:wis|wist\s+u)\s+(?:(?:de|het|je|jouw|uw|mijn|onze|alle|al|deze|dit|die)\s+){0,2}(\p{L}[\p{L}'’-]*)(?:\s+\p{L}[\p{L}'’-]*)?\s*[.!]?$/u)
+      if (wipe && !WIS_CLEAR_OBJECTS.has(wipe[1])) classes.push('delete')
+    }
+    // CU-650 (cu-developer-one's go 04:21Z): Korean cancel / terminate (취소 / 해지) + subscription asks delete, + order / membership /
+    // plan asks purchase, as 'Cancel subscription' / 'Cancel order / membership / plan' - both orders, with or without a space, with
+    // the 하기 / 하세요 / 해 주세요 / 하십시오 endings. Bare 취소, the nouns and state or past forms ('구독 취소됨', '취소했어요') stay free.
+    if (grammarEligible) {
+      // r2 (cu-developer-one, -two, -three): the object particle 을 / 를 and a possessive (내 / 제 / 나의 / 저의) - '구독을 취소하세요',
+      // '제 멤버십을 해지해 주세요'.
+      const cancelKo = String(name ?? '').trim().match(/^(?:(?:내|제|나의|저의)\s*)?(?:(구독|주문|멤버십|요금제|플랜)(?:\s*(?:을|를))?\s*(?:취소|해지)|(?:취소|해지)\s*(구독|주문|멤버십|요금제|플랜))(?:하기|하세요|해\s?주세요|하십시오)?\s*[.!]?$/u)
+      if (cancelKo) { const cls = (cancelKo[1] ?? cancelKo[2]) === '구독' ? 'delete' : 'purchase'; if (!classes.includes(cls)) classes.push(cls) }
+    }
+    // CU-644 (cu-developer-one's go 07:00Z): clearing a history deletes it, as 'Clear history' does - clear / erase / wipe, then up to
+    // two words (your / my / all / the, or a qualifier: search, browsing, chat, call, watch, viewing, location, order, recent,
+    // purchase, download), then 'history': 'Clear search history', 'Clear your browsing history', 'Clear all chat history'. A label
+    // that only names, opens, pauses or toggles a history stays free ('Search history', 'View history', 'Pause watch history').
+    // r2 (cu-developer-two's hold; cu-developer-one's settled bar 07:56Z): ANY one to four words between the verb and 'history' -
+    // 'Clear entire / old / previous / YouTube / 30-day history', 'Clear your entire search history', 'Clear download history'
+    // (a noun compound); five or more words stay out, and so does any label that does not start with clear / erase / wipe.
+    if (grammarEligible && !classes.includes('delete') && /^(?:clear|erase|wipe)(?:\s+\S+){0,4}\s+history\s*[.!]?$/i.test(String(name ?? '').trim())) classes.push('delete')
+    // CU-654 (cu-developer-one's go 12:05Z): the locale twins of CU-644 - a clear verb that does not ask by itself (vider /
+    // limpiar / limpar / svuotare / leeren) asks delete with a history noun after up to four words ('Vider tout l'historique',
+    // 'Limpiar el historial de búsqueda', 'Browserverlauf leeren'); with any other object it stays free ('Vider le panier').
+    if (grammarEligible && !classes.includes('delete') && LOCALE_HISTORY_CLEAR.some((re) => re.test(String(name ?? '').trim()))) classes.push('delete')
+    // CU-655 (cu-developer-one's design): the locale twins of 'Empty trash' (LOCALE_TRASH_EMPTY above).
+    if (grammarEligible && !classes.includes('delete') && (LOCALE_TRASH_EMPTY.some((re) => re.test(String(name ?? '').trim())) || namesRuTrashEmpty(name))) classes.push('delete')
+    // CU-686: fr / ko remove-member twins (delete) and fr 'Exclure le membre' (permission, as 'Kick member').
+    if (grammarEligible && !classes.includes('delete') && LOCALE_REMOVE_MEMBER.some((re) => re.test(String(name ?? '').trim()))) classes.push('delete')
+    if (grammarEligible && !classes.includes('permission') && LOCALE_KICK_MEMBER.some((re) => re.test(String(name ?? '').trim()))) classes.push('permission')
+    // CU-683: locale revoke-access twins (LOCALE_REVOKE_ACCESS above).
+    if (grammarEligible && !classes.includes('permission') && (LOCALE_REVOKE_ACCESS.some((re) => re.test(String(name ?? '').trim().replace(/İ/g, 'i'))) || namesRuRevokeAccess(name))) classes.push('permission')
+    // CU-687: ja / ko / zh grant-access, share-with-everyone and invite twins and the ru builder (CJK_GRANT_SHARE_INVITE above).
+    if (grammarEligible && !classes.includes('permission') && (CJK_GRANT_SHARE_INVITE.some((re) => re.test(String(name ?? '').trim())) || namesRuGrantShareInvite(name))) classes.push('permission')
+    // CU-685: locale unlink-account / device twins (LOCALE_UNLINK_ACCOUNT above).
+    if (grammarEligible && !classes.includes('permission') && (LOCALE_UNLINK_ACCOUNT.some((re) => re.test(String(name ?? '').trim().replace(/İ/g, 'i'))) || namesRuUnlinkAccount(name))) classes.push('permission')
+    // CU-689: locale link-account / device twins (LOCALE_LINK_ACCOUNT above).
+    if (grammarEligible && !classes.includes('permission') && (LOCALE_LINK_ACCOUNT.some((re) => re.test(String(name ?? '').trim().replace(/İ/g, 'i'))) || namesRuLinkAccount(name))) classes.push('permission')
+    // CU-688: locale revoke-invitation twins (LOCALE_REVOKE_INVITATION above).
+    if (grammarEligible && !classes.includes('permission') && (LOCALE_REVOKE_INVITATION.some((re) => re.test(String(name ?? '').trim().replace(/İ/g, 'i'))) || namesRuRevokeInvitation(name))) classes.push('permission')
+    // CU-691: locale admin-role twins - grant / revoke ask permission, remove asks delete (LOCALE_ADMIN_GRANT / LOCALE_ADMIN_REMOVE above).
+    if (grammarEligible && !classes.includes('permission') && (LOCALE_ADMIN_GRANT.some((re) => re.test(String(name ?? '').trim().replace(/İ/g, 'i'))) || namesRuAdminGrant(name))) classes.push('permission')
+    if (grammarEligible && !classes.includes('delete') && LOCALE_ADMIN_REMOVE.some((re) => re.test(String(name ?? '').trim()))) classes.push('delete')
+    // CU-693: ru / ko publish twins ask submit (KO_PUBLISH and the ru builder above).
+    if (grammarEligible && !classes.includes('submit') && (KO_PUBLISH.some((re) => re.test(String(name ?? '').trim())) || namesRuPublish(name))) classes.push('submit')
+    // CU-692: locale approve twins ask submit (LOCALE_APPROVE above).
+    if (grammarEligible && !classes.includes('submit') && (LOCALE_APPROVE.some((re) => re.test(String(name ?? '').trim())) || namesRuApprove(name))) classes.push('submit')
+    // CU-696: locale remove-passkey twins ask delete (LOCALE_REMOVE_PASSKEY above).
+    if (grammarEligible && !classes.includes('delete') && (LOCALE_REMOVE_PASSKEY.some((re) => re.test(String(name ?? '').trim())) || namesRuRemovePasskey(name))) classes.push('delete')
+    // CU-695: locale disable-2FA twins ask permission + credential (LOCALE_DISABLE_2FA above).
+    if (grammarEligible && (LOCALE_DISABLE_2FA.some((re) => re.test(String(name ?? '').trim().replace(/İ/g, 'i'))) || namesRuDisable2fa(name))) { if (!classes.includes('permission')) classes.push('permission'); if (!classes.includes('credential')) classes.push('credential') }
+    // CU-698: locale change-email / phone twins ask credential (LOCALE_CHANGE_CONTACT above).
+    if (grammarEligible && !classes.includes('credential') && (LOCALE_CHANGE_CONTACT.some((re) => re.test(String(name ?? '').trim().replace(/İ/g, 'i'))) || namesRuChangeContact(name))) classes.push('credential')
+    // CU-699: locale send-money / transfer-funds / place-order verbs ask purchase (LOCALE_MONEY_VERBS above).
+    if (grammarEligible && !classes.includes('purchase') && (LOCALE_MONEY_VERBS.some((re) => re.test(String(name ?? '').trim().replace(/İ/g, 'i'))) || namesRuMoneyVerbs(name))) classes.push('purchase')
+    // CU-700: locale subscribe / renew twins ask purchase (LOCALE_SUBSCRIBE_RENEW above).
+    if (grammarEligible && !classes.includes('purchase') && (LOCALE_SUBSCRIBE_RENEW.some((re) => re.test(String(name ?? '').trim().replace(/İ/g, 'i'))) || namesRuSubscribeRenew(name))) classes.push('purchase')
+    // CU-684: locale leave-workspace twins (LOCALE_LEAVE_WORKSPACE above).
+    if (grammarEligible && !classes.includes('permission') && (LOCALE_LEAVE_WORKSPACE.some((re) => re.test(String(name ?? '').trim())) || namesRuLeaveWorkspace(name))) classes.push('permission')
+    // CU-678: transfer-ownership twins (TRANSFER_OWNERSHIP above).
+    if (grammarEligible && !classes.includes('permission') && (TRANSFER_OWNERSHIP.some((re) => re.test(String(name ?? '').trim())) || namesRuTransferOwnership(name))) classes.push('permission')
+    // CU-677: locale make-public twins (LOCALE_MAKE_PUBLIC above).
+    if (grammarEligible && !classes.includes('permission') && (LOCALE_MAKE_PUBLIC.some((re) => re.test(String(name ?? '').trim())) || namesRuMakePublic(name))) classes.push('permission')
+    // CU-673: ja / ko / zh sign-out-everywhere twins (CJK_SIGNOUT_ALL above).
+    if (grammarEligible && !classes.includes('permission') && CJK_SIGNOUT_ALL.some((re) => re.test(String(name ?? '').trim()))) classes.push('permission')
+    // CU-676: locale close-account twins (LOCALE_ACCOUNT_CLOSE above).
+    if (grammarEligible && !classes.includes('delete') && (LOCALE_ACCOUNT_CLOSE.some((re) => re.test(String(name ?? '').trim())) || namesRuAccountClose(name))) classes.push('delete')
+    // CU-672: locale account-deactivation twins (LOCALE_ACCOUNT_DEACTIVATE above).
+    if (grammarEligible && !classes.includes('delete') && (LOCALE_ACCOUNT_DEACTIVATE.some((re) => re.test(String(name ?? '').trim())) || namesRuAccountDeactivate(name))) classes.push('delete')
+    // CU-670: locale 'Reset settings' / factory-reset twins (LOCALE_RESET_SETTINGS above).
+    if (grammarEligible && !classes.includes('delete') && (LOCALE_RESET_SETTINGS.some((re) => re.test(String(name ?? '').trim())) || namesRuResetSettings(name))) classes.push('delete')
+    // CU-668: locale clear-data twins (LOCALE_DATA_CLEAR above).
+    if (grammarEligible && !classes.includes('delete') && (LOCALE_DATA_CLEAR.some((re) => re.test(String(name ?? '').trim())) || namesRuDataClear(name))) classes.push('delete')
+    // CU-663: the locale twins of CU-659 (LOCALE_FOLDER_EMPTY above).
+    if (grammarEligible && !classes.includes('delete') && (LOCALE_FOLDER_EMPTY.some((re) => re.test(String(name ?? '').trim())) || namesRuFolderEmpty(name))) classes.push('delete')
+    // CU-659 (cu-developer-one's go 17:13Z): emptying a mail or file folder deletes its items, as 'Empty trash' does - 'Empty Deleted
+    // Items', 'Empty the Junk Email folder', 'Empty your inbox', 'Empty this folder', a bare 'Empty folder' button; and 'Clear
+    // storage' wipes an app's data as 'Clear app data' does. Status and past forms, carts, caches and bare nouns stay free.
+    // r2 (cu-developer-two, -three; cu-developer-one's list 18:42Z): the design's open slot of up to four words ('Empty the entire
+    // inbox', 'Empty Clutter folder'), Outbox, one or two words before 'storage' ('Clear site storage'), and negation as its twin
+    // ("Don't empty this folder" asks as "Don't empty trash" does).
+    // Follow-up (cu-developer-three's finding, cu-developer-one 19:50Z): a preposition or a verb in the slot makes the folder a place,
+    // not the object - 'Empty message in Drafts', 'Empty state for inbox', 'Empty items stay in Inbox' stay free. r2 (cu-developer-three):
+    // quantified contents (all / any / every / each / everything / the whole / the entire, cu-developer-one) before in / from / of keep
+    // asking, as 'Empty everything in the trash' does ('Empty all items in Deleted Items', 'Empty all of my drafts'), with any words after
+    // the quantifier (r3, cu-developer-three: 'Empty all old items in Deleted Items', 'Empty all unread messages in Inbox'); a plural content noun
+    // first counts as a quantifier (cu-developer-one 23:37Z: 'Empty items from Deleted Items', 'Empty messages in Junk Email') unless a
+    // verb follows it ('Empty items stay in Inbox' stays free); CU-664 (cu-developer-one's design 01:31Z): up to two adjectives may
+    // lead the plural noun ('Empty old documents from this folder', 'Empty unread messages in Inbox'), and Spam is a folder noun ('Empty all
+    // messages in Spam'); 'of' after
+    // anything else names a place ('Empty copy of Inbox').
+    if (grammarEligible && !classes.includes('delete') && (/^(?:(?:don['’]t|do\s+not)\s+)?empty(?:\s+(?!(?:in|into|inside|within|for|from|of|to|on|at|under|is|are|was|were|will|be|been|stays?|remains?|appears?|shows?|shown|moves?|goes|saved|sent|found)\b)\S+){0,4}?\s+(?:deleted\s+items|junk(?:\s+e-?mail)?|inbox|drafts|sent(?:\s+items|\s+mail)?|archive|outbox|spam|folders?|mailbox)(?:\s+folders?)?(?:\s+(?:now|permanently|completely))?\s*[.!]?$/i.test(String(name ?? '').trim())
+      || /^(?:(?:don['’]t|do\s+not)\s+)?empty\s+(?:(?:all|any|every|each|everything|the\s+whole|the\s+entire|the\s+contents)(?:\s+\S+){0,3}?|(?:(?!(?:in|into|inside|within|for|from|of|to|on|at|under|is|are|was|were|will|be|been|stays?|remains?|appears?|shows?|shown|moves?|goes|saved|sent|found)\b)\S+\s+){0,2}?(?:items|messages|e-?mails|mail|files|contents|attachments|conversations|threads|chats|notes|documents|photos)(?:\s+(?!(?:is|are|was|were|will|be|been|stays?|remains?|appears?|shows?|shown|moves?|goes|saved|sent|found)\b)\S+){0,3}?)\s+(?:in|inside|from|of)\s+(?:(?:the|your|my|this)\s+)?(?:deleted\s+items|junk(?:\s+e-?mail)?|inbox|drafts|sent(?:\s+items|\s+mail)?|archive|outbox|spam|folders?|mailbox)(?:\s+folders?)?(?:\s+(?:now|permanently|completely))?\s*[.!]?$/i.test(String(name ?? '').trim())
+      || /^clear(?:\s+\S+){0,2}?\s+storage(?:\s+now)?\s*[.!]?$/i.test(String(name ?? '').trim()))) classes.push('delete')
+    // CU-627 r2 (cu-developer-two): leaving a group with any article / demonstrative / possessive, and the German separable e-mail
+    // opt-out, as whole-label rules in each language - submit, as English 'Leave group' / 'Unsubscribe'.
+    if (grammarEligible && !classes.includes('submit') && (/^\s*(?:quitter|quittez|quitte|quittons)\s+(?:le|ce|cet|votre|ton|mon|notre|leur)\s+groupe\s*[.!]?\s*$/iu.test(name)
+      || /^\s*(?:(?:salir|sal|salga|salgan|salid)\s+de(?:l|\s+(?:este|ese|aquel|tu|su|mi|nuestro|vuestro))|(?:abandonar|abandona|abandone|abandonen|abandonad)\s+(?:el|este|ese|tu|su|mi|nuestro|vuestro))\s+grupo\s*[.!]?\s*$/iu.test(name)
+      || /^\s*(?:(?:sair|sai|saia|saiam|saiamos)\s+d(?:o|este|esse)|(?:deixar|deixa|deixe|deixem|abandonar|abandona|abandone|abandonem)\s+(?:o|este|esse))(?:\s+(?:seu|teu|meu|nosso|vosso))?\s+grupo\s*[.!]?\s*$/iu.test(name)
+      || /^\s*(?:(?:esci|uscite|esca|uscire)\s+da(?:l|\s+questo)?|(?:abbandona|abbandonate|abbandoni|abbandonare|lascia|lasciate|lasci|lasciare)\s+(?:il|questo))(?:\s+(?:tuo|suo|mio|nostro|vostro|loro))?\s+gruppo\s*[.!]?\s*$/iu.test(name)
+      || /^\s*(?:(?:verlaat|verlaten)\s+(?:de|deze|die|je|jouw|uw|onze|mijn|jullie|hun)\s+groep|(?:(?:de|deze|die|je|jouw|uw|onze|mijn|jullie|hun)\s+)?groep\s+verlaten)\s*[.!]?\s*$/iu.test(name)
+      || /^\s*(?:(?:verlasse|verlass|verlasst|verlassen\s+sie)\s+(?:die|diese|deine|ihre|unsere|meine|eure)\s+gruppe|(?:(?:die|diese|deine|ihre|unsere|meine|eure)\s+)?gruppe\s+verlassen)\s*[.!]?\s*$/iu.test(name)
+      || /^\s*(?:melde\s+dich|melden\s+sie\s+sich)\s+(?:vom|von)\s+(?:\p{L}+\s+){0,2}(?:newsletter|e-mails?|emails?|mails?)\s+ab\s*[.!]?\s*$/iu.test(name))) classes.push('submit')
+    // CU-629 (cu-researcher): one adverb inside a subscription-family label ('Abonnement direct opzeggen', 'Abo jetzt kündigen',
+    // 'Annuler maintenant l'abonnement') keeps the twin class - the label is read again with that one adverb dropped.
+    const subscriptionLabels = [name]
+    if (SUBSCRIPTION_NOUN.test(name) && ONE_ADVERB.test(name)) subscriptionLabels.push(name.replace(ONE_ADVERB, ''))
+    // CU-633 (cu-developer-two): or that adverb as the last word ('Cancel my subscription now', '... immediately').
+    else if (SUBSCRIPTION_NOUN.test(name) && TRAILING_ADVERB.test(name)) subscriptionLabels.push(name.replace(TRAILING_ADVERB, ''))
+    for (const label of subscriptionLabels) {
+      // CU-633: English cancel + a determiner + subscription reads as 'Cancel subscription' (delete).
+      if (grammarEligible && !classes.includes('delete') && /^\s*cancel\s+(?:my|your|the|this|our)\s+subscription\s*[.!]?\s*$/i.test(label)) classes.push('delete')
+      // CU-625 r3 (cu-developer-two): the French and German cancel / end families as whole-label rules, each form in its English
+      // twin's class - cancel + subscription -> delete; end + subscription, and any verb + membership / plan -> purchase.
+      if (grammarEligible && !classes.includes('delete') && (/^\s*(?:annuler|annulez|annule|résilier|résiliez|résilie)\s+(?:l['’]\s*|mon\s+|votre\s+|ton\s+)abonnement\s*[.!]?\s*$/iu.test(label)
+        || /^\s*(?:(?:kündige|kündigen\s+sie)\s+(?:(?:dein|ihr|das)\s+)?(?:abo|abonnement)|(?:(?:dein|ihr|das|mein)\s+)?(?:abo|abonnement)\s+kündigen)\s*[.!]?\s*$/iu.test(label))) classes.push('delete')
+      if (grammarEligible && !classes.includes('purchase') && (/^\s*(?:(?:mettre|mettez|mets)\s+fin\s+(?:à|a)\s+|terminer\s+|terminez\s+|termine\s+)(?:l['’]\s*|mon\s+|votre\s+|ton\s+)(?:abonnement|adhésion|forfait)\s*[.!]?\s*$/iu.test(label)
+        || /^\s*(?:(?:mettre|mettez|mets)\s+fin\s+au\s+|(?:terminer|terminez|termine|annuler|annulez|annule|résilier|résiliez|résilie)\s+le\s+)forfait\s*[.!]?\s*$/iu.test(label)
+        || /^\s*(?:annuler|annulez|annule|résilier|résiliez|résilie)\s+(?:l['’]\s*|mon\s+|votre\s+|ton\s+)(?:adhésion|forfait)\s*[.!]?\s*$/iu.test(label)
+        || /^\s*(?:(?:beende|beenden\s+sie)\s+(?:(?:dein|ihr|das)\s+)?(?:abo|abonnement)|(?:(?:dein|ihr|das|mein)\s+)?(?:abo|abonnement)\s+beenden)\s*[.!]?\s*$/iu.test(label)
+        || /^\s*(?:kündige|kündigen\s+sie|beende|beenden\s+sie)\s+(?:(?:deine|ihre|die|deinen|ihren|den)\s+)?(?:mitgliedschaft|tarif)\s*[.!]?\s*$/iu.test(label)
+        || /^\s*(?:(?:deine|ihre|die|meine|deinen|ihren|den|meinen)\s+)?(?:mitgliedschaft|tarif)\s+(?:kündigen|beenden)\s*[.!]?\s*$/iu.test(label))) classes.push('purchase')
+    }
+    if (subscriptionLabels.length > 1 && grammarEligible) {
+      if (!classes.includes('delete') && namesDelete(subscriptionLabels[1])) classes.push('delete')
+      if (!classes.includes('purchase') && namesPurchase(subscriptionLabels[1])) classes.push('purchase')
+    }
+    // CU-633: a bare 'Cancel now' (or a locale twin) on a billing / subscription / membership page cancels the plan - delete, as
+    // 'Cancel subscription' asks. The page is a billing / subscription(s) / membership(s) path segment or a billing /
+    // subscriptions host label (CU-537's page test). Before the phrase grammar, whose '<cancel> now' reads purchase.
+    if (grammarEligible && classes.length === 0 && BARE_CANCEL_NOW.test(name)) {
+      let billingPage = false
+      try {
+        const u = new URL(url)
+        billingPage = /^https?:$/.test(u.protocol) && (/(?:^|\/)(?:billing|subscriptions?|memberships?)(?=$|[/?#])/i.test(u.pathname) || /(?:^|\.)(?:billing|subscriptions?)(?:\.|$)/i.test(u.hostname))
+      } catch { billingPage = false }
+      if (billingPage) classes.push('delete')
+    }
+    // CU-620 (cu-researcher): a factory reset in any word order and language asks delete, as 'Factory reset' / 'Reset all
+    // settings' / 'Erase all content and settings' do - a factory word and a reset verb in one short label ('Reset to factory
+    // settings', 'Restore factory defaults', '恢复出厂设置', 'Auf Werkseinstellungen zurücksetzen', 'Fabrika ayarlarına sıfırla').
+    if (grammarEligible && !classes.includes('delete') && name.length <= 90 && FACTORY_RESET_PAIRS.some(([factory, verb]) => factory.test(name) && verb.test(name))) classes.push('delete')
     // CU-413: money moved out to a bank or card, as 'Withdraw to bank' already asks - send / transfer / move / pay out / cash out
     // (an optional amount or money noun) to (my / the) bank, bank account, checking, savings or debit card.
     if (grammarEligible && !classes.includes('purchase') && /^\s*(?:send|transfer|move|pay\s*out|cash\s*out|withdraw)\s+(?:(?:money|funds|cash|balance|earnings|payout|it|[$€£]?\s*[\d.,]+(?:\s*(?:usd|eur|gbp|dollars?|euros?))?)\s+)?(?:to|into)\s+(?:my\s+|your\s+|the\s+|a\s+)?(?:bank(?:\s+account)?|checking(?:\s+account)?|savings(?:\s+account)?|debit\s+card|current\s+account)\b/i.test(name)) classes.push('purchase')
+    // CU-611 (cu-researcher; cu-developer-one's go 13:22Z): a transfer noun, then its confirming verb, with one adverb or a ':' /
+    // '-' between - 'Überweisung jetzt ausführen', 'Virement : confirmer', 'Transferencia: confirmar', 'Overboeking: bevestigen' -
+    // asks purchase as the contiguous forms (#995) do. The whole label must be the noun and the verb. CU-615: 'bitte' counts
+    // as the adverb too (cu-verifier's CU-611 named limit, 'Überweisung bitte bestätigen').
+    if (grammarEligible && !classes.includes('purchase') && /^\s*(?:überweisung|virement|transferencia|transferência|overboeking|transfer(?:i|ı)?|havale(?:yi)?|bonifico)\s*(?:[:\-–]\s*|\s+(?:jetzt|sofort|bitte|maintenant|ahora|agora|ora|adesso|nu|şimdi)\s+)(?:jetzt\s+|sofort\s+|bitte\s+)?(?:ausführen|bestätigen|absenden|senden|confirmer|valider|effectuer|envoyer|confirmar|realizar|enviar|bevestigen|uitvoeren|versturen|verzenden|onayla(?:yın)?|gönder(?:in)?|conferma(?:re)?|esegui|invia)\s*[.!]?\s*$/iu.test(name)) classes.push('purchase')
     if (grammarEligible && !classes.includes('purchase') && /^\s*(?:set\s+up|authori[sz]e|create|start|allow|enable|turn\s+on|activate)\s+(?:an?\s+|the\s+)?(?:direct\s+debit|debit\s+mandate|automatic\s+(?:withdrawals?|debits?)|recurring\s+(?:withdrawals?|debits?))\s*$/i.test(name)) classes.push('purchase')
     // #680 round 3 (cu-researcher 13:02Z): on an exchange's wallet page - a whole /withdraw, /withdrawal(s), /wallet(s), /addresses or
     // /address-book segment of an http(s) URL - a bare 'Add to allowlist / whitelist' is the money redirect and asks credential; on a
