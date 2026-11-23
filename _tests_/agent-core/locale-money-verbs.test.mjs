@@ -38,3 +38,10 @@ test('CU-702 r2: noun-led transfer + account object and the ko possessive / qual
   // bare 'Bonifico' asks purchase on main already, so it is not a control; the translate-to rows (CU-706) must not become purchase
   for (const name of ['Virement', 'Transferencia', 'Überweisung', 'Перевод', 'Перевести на английский', 'Перевод на английский']) assert.ok(!click(name).includes('purchase'), name)
 })
+
+test('CU-702 r3: every to-account line takes the contractions and a determiner slot of up to two words; ja takes a possessive; page nouns stay free', () => {
+  for (const name of ['Überweisung aufs Konto', 'Aufs Konto überweisen', 'Virer au compte', 'Virement au compte', 'Transferir à conta', 'Transferência à conta', 'Virer sur un autre compte', 'Transférer vers ton compte',
+    'Transferir para a minha conta', 'Bonifico sul proprio conto', 'Trasferisci sul tuo conto', 'Auf unser Konto überweisen', 'Überweisung auf ein anderes Konto', 'Transferir a otra cuenta', 'Transferencia a mi cuenta de ahorros',
+    '自分の口座に振り込む', '私の口座に振り込む']) assert.ok(click(name).includes('purchase'), name)
+  for (const name of ['Mon compte', 'Virement', 'Kontoauszug', 'Überweisung', 'Historique des virements', 'Transferencia', '口座', '自分の口座']) assert.ok(!click(name).includes('purchase'), name)
+})
