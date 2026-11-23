@@ -1265,9 +1265,16 @@ const LOCALE_MONEY_VERBS = Object.freeze([
   /^(?:(?:nu\s+)?geld\s+(?:(?:naar|aan)\s+(?:\S+\s+){1,2})?(?:overmaken|versturen|overboeken|sturen)|bestelling\s+plaatsen|maak\s+geld\s+over(?:\s+(?:naar|aan)\s+\S+(?:\s+\S+)?)?)\s*[.!]?$/iu,
   /^(?:今すぐ)?(?:送金(?:する|して(?:ください)?|します)?|(?:資金|お金)を?(?:振り込む|振り込み|送る|送金する|移動(?:する|して(?:ください)?)?)|注文する|注文して(?:ください)?)\s*[.!。]?$/u,
   // CU-702: the account-noun transfer forms ask as 'Transfer to account' / 'Account transfer' do ('계좌 이체', '계좌로 이체', '口座に振り込む', '口座振替')
-  /^(?:(?:지금|즉시)\s+)?(?:계좌|은행)\s*(?:로|에|으로)?\s*(?:이체|송금)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+  // r2 (cu-developer-one 02:15Z): a possessive and one qualifier noun, as the ja line ('내 계좌로 이체하기', '은행 계좌로 이체')
+  /^(?:(?:지금|즉시)\s+)?(?:(?:내|제|나의|우리)\s+)?(?:\S+\s+)?(?:계좌|은행)\s*(?:로|에|으로)?\s*(?:이체|송금)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
   /^(?:今すぐ)?(?:口座|銀行口座)(?:に|へ)?(?:振り込む|振込(?:する)?|振り込み|送金(?:する)?|振替(?:する)?)\s*[.!。]?$/u,
   /^(?:transférer|transférez|virer|virez)\s+(?:vers|sur|à)\s+(?:le\s+|mon\s+|votre\s+|un\s+|ce\s+)?compte(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  // r2: noun-led transfer forms with an account object ask as 'Account transfer' ('Virement vers le compte', 'Transferencia a la cuenta',
+  // 'Überweisung auf das Konto', 'Bonifico sul conto', ru 'Перевод на счёт' below); the bare nouns stay free
+  /^(?:virement|transfert)\s+(?:vers|sur|à)\s+(?:le\s+|mon\s+|votre\s+|un\s+|ce\s+)?compte(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:transferencia|transferência)\s+(?:a|para|en)\s+(?:la\s+|a\s+|mi\s+|minha\s+|su\s+|tu\s+)?(?:cuenta|conta)(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:überweisung|übertragung)\s+(?:auf|an)\s+(?:das\s+|ein\s+|mein\s+|ihr\s+|dein\s+)?\S*konto\s*[.!]?$/iu,
+  /^(?:bonifico|trasferimento)\s+(?:sul|al|sul\s+mio|al\s+mio|su)\s+(?:conto)(?:\s+\S+){0,2}?\s*[.!]?$/iu,
   /^(?:auf|an)\s+(?:das\s+|ein\s+|mein\s+|ihr\s+|dein\s+)?\S*konto\s+(?:übertragen|überweisen|transferieren|senden)\s*[.!]?$/iu,
   new RegExp(`^hesab(?:a|[ıI]ma|[ıI]n[ıI]za)\\s+(?:aktar|aktar[ıI]n|transfer\\s+et|gönder|gönderin)\\s*[.!]?$`, 'iu'),
   /^(?:立即)?(?:转入|轉入|转到|轉到|转账到|轉帳到)(?:\S{0,6})?(?:账户|帳戶|账号|帳號)\s*[.!。]?$/u,
@@ -1282,9 +1289,11 @@ function namesRuMoneyVerbs(name) {
     const any = (words) => `(?:${words.flatMap(folds).join('|')})`
     const verb = any(['отправить', 'отправьте', 'перевести', 'переведите', 'перечислить'])
     const object = any(['деньги', 'средства', 'денежные'])
-    // CU-702: 'Перевести на счёт' (transfer to an account) gains purchase beside its permission
+    // CU-702: 'Перевести на счёт' (transfer to an account) asks purchase, as 'Transfer to account' does (its main-branch permission came
+    // only from the no-class page fallback, CU-706); r2: the noun-led 'Перевод на счёт' too
     const toAccount = `${any(['на'])}\\s+(?:\\S+\\s+)?${any(['счёт', 'счет', 'карту'])}`
-    ruMoneyVerbsRegex = new RegExp(`^${verb}\\s+(?:(?:${any(['денежные'])}\\s+)?${object}(?:\\s+\\S+){0,3}?|${toAccount}(?:\\s+\\S+){0,2}?)\\s*[.!]?$`, 'iu')
+    const nounLed = `${any(['перевод'])}\\s+${toAccount}(?:\\s+\\S+){0,2}?`
+    ruMoneyVerbsRegex = new RegExp(`^(?:${verb}\\s+(?:(?:${any(['денежные'])}\\s+)?${object}(?:\\s+\\S+){0,3}?|${toAccount}(?:\\s+\\S+){0,2}?)|${nounLed})\\s*[.!]?$`, 'iu')
   }
   return ruMoneyVerbsRegex.test(normaliseName(String(name ?? '')).trim())
 }

@@ -32,3 +32,9 @@ test('CU-702: the locale transfer-to-account forms ask purchase (go 01:13Z); bar
   for (const name of ['Transférer vers le compte', 'Virer sur le compte', 'Virer sur mon compte épargne', 'Auf Konto übertragen', 'Auf das Sparkonto übertragen', 'Перевести на счёт', 'Перевести на счет', 'Перевести на карту', 'Hesaba aktar', 'HESABA AKTAR', '转入账户', '转到储蓄账户']) assert.ok(click(name).includes('purchase'), name)
   for (const name of ['Mon compte', 'Konto', 'Счёт', 'Перевести', '账户']) assert.ok(!click(name).includes('purchase'), name)
 })
+
+test('CU-702 r2: noun-led transfer + account object and the ko possessive / qualifier ask purchase; bare nouns free; translate-to stays no purchase', () => {
+  for (const name of ['Virement vers le compte', 'Virement sur le compte', 'Transferencia a la cuenta', 'Überweisung auf das Konto', 'Bonifico sul conto', 'Перевод на счёт', '내 계좌로 이체하기', '제 계좌로 송금', '은행 계좌로 이체', 'Transfer to my account', 'Transfer to bank account']) assert.ok(click(name).includes('purchase'), name)
+  // bare 'Bonifico' asks purchase on main already, so it is not a control; the translate-to rows (CU-706) must not become purchase
+  for (const name of ['Virement', 'Transferencia', 'Überweisung', 'Перевод', 'Перевести на английский', 'Перевод на английский']) assert.ok(!click(name).includes('purchase'), name)
+})
