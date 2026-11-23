@@ -71,6 +71,22 @@ async function cleanUp({ dir, hold }, seat = 'cu-verifier') {
 
 const sentinelOf = (path) => { const entry = read(path); return entry?.sentinel === true && entry.runId === SENTINEL_RUN_ID ? entry : null }
 
+/**
+ * CU-596: SIGKILL a keeper only while it is outside the `.lock` mutex. It takes the mutex every KEEPER_POLL_MS, and a kill
+ * between its mkdir and its owner write leaves an ownerless mutex that keeps the 60 s age rule - `run_lock_busy`, not the
+ * case under test (a flake in a gate at 02:31Z on 17 Nov). SIGSTOP freezes it first, so it cannot take the mutex between the
+ * check and the kill; a stop inside the mutex is undone and retried.
+ */
+async function killOutsideMutex(pid, dir) {
+  for (let tries = 0; tries < 500; tries += 1) {
+    process.kill(pid, 'SIGSTOP')
+    if (!existsSync(join(dir, '.lock'))) return process.kill(pid, 'SIGKILL')
+    process.kill(pid, 'SIGCONT')
+    await sleep(5)
+  }
+  throw new Error('the keeper never left the mutex')
+}
+
 test('the pre-hold run-lock module (010dd7b52^) is refused while a CLI hold is live, the holder\'s own runs too, and admitted after release', async () => {
   const s = scratch()
   const old = await preHoldRunLock()
@@ -185,7 +201,7 @@ test('a keeper killed by a signal: hold.json still refuses other seats in new co
   try {
     await main(['hold', '--seat', 'cu-verifier', '--minutes', '1', '--dir', s.dir], quiet)
     const sentinel = await until(() => sentinelOf(s.entry))
-    process.kill(sentinel.pid, 'SIGKILL')
+    await killOutsideMutex(sentinel.pid, s.dir)
     assert.ok(await until(() => !pidAlive(sentinel.pid), 2000))
     await assert.rejects(acquireDesktopRun({ seat: 'cu-researcher', runId: 'other', dir: s.dir }), (e) => e.details?.reason === 'desktop_held')
     const slot = await acquireDesktopRun({ seat: 'cu-verifier', runId: 'own', dir: s.dir })

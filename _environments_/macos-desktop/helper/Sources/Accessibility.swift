@@ -539,7 +539,8 @@ enum Accessibility {
       guard let parent = elementAttribute(node, "AXParent") else { return nil }
       let role = string(parent, "AXRole")
       if DialogText.isContainer(role: role, subrole: string(parent, "AXSubrole")) {
-        let texts = descendants(of: parent, limit: DialogText.maxTexts).filter { string($0, "AXRole") == "AXStaticText" }.map { string($0, "AXValue") }
+        let texts = DialogText.walk(parent, limit: DialogText.maxTexts, children: children, role: { string($0, "AXRole") })
+          .filter { string($0, "AXRole") == "AXStaticText" }.map { string($0, "AXValue") }
         let words = DialogText.pick(title: string(parent, "AXTitle"), texts: texts)
         return words.name == nil && words.description == nil ? nil : words
       }
