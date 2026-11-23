@@ -28,6 +28,13 @@ test('CU-729: a localized affirmative in a delete dialog asks, on the web and on
   }
 })
 
+test("CU-729 (cu-researcher's sweep 2): the button's own language decides - a localized affirmative under an English title asks, and a desktop alert's 'Fortfahren' / '계속' too", () => {
+  assert.ok(press('Ja', { dialogName: 'Delete this repository?' }).length > 0, 'Ja / English title')
+  assert.ok(press('はい', { dialogName: 'Delete this repository?' }).length > 0, 'はい / English title')
+  assert.ok(desk('Fortfahren', 'Alle Objekte im Papierkorb endgültig löschen?').length > 0, 'Fortfahren / empty the trash')
+  assert.ok(desk('계속', '휴지통의 항목을 영구적으로 삭제하시겠습니까?').length > 0, '계속 / empty the trash')
+})
+
 test('CU-729: a localized payment confirm and an ownership transfer ask too', () => {
   assert.ok(press('Ja', { dialogName: 'Jetzt bezahlen?' }).length > 0, 'de payment')
   assert.ok(press('Confirmer', { dialogName: 'Payer maintenant ?' }).length > 0, 'fr payment')
