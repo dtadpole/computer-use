@@ -5,7 +5,7 @@ import Foundation
 /// The helper's identity; `build.sh` writes the same bundle id into Info.plist.
 enum HelperIdentity {
   static let bundleId = "com.reflection.cu-helper"
-  static let version = "0.2.70"
+  static let version = "0.2.71"
   /// The value every synthetic event carries in `kCGEventSourceUserData`: 0x43555345, ASCII "CUSE"
   /// (input-and-targets.md, verify-kit's SYNTHETIC_TAG). Not a secret: an event from another process with this tag
   /// could only fail to pause the run, never act.
@@ -574,6 +574,21 @@ enum DialogText {
     let words = texts.compactMap(clean)
     if let title = clean(title) { return (title, words.first) }
     return (words.first, words.dropFirst().first)
+  }
+  /// A control's own label is never the dialog's words (cu-developer-two's #737 note): the walk below a dialog does not
+  /// descend into these roles, so a SwiftUI button's AXStaticText child ('Delete') cannot become a sibling button's
+  /// dialogName in a sheet with no title and no message text.
+  static let controlRoles: Set<String> = ["AXButton", "AXPopUpButton", "AXMenuButton", "AXCheckBox", "AXRadioButton", "AXDisclosureTriangle", "AXLink"]
+  /// Breadth first below `root`, at most `limit` nodes, never into a control's subtree (the control itself is listed).
+  static func walk<Node>(_ root: Node, limit: Int, children: (Node) -> [Node], role: (Node) -> String?) -> [Node] {
+    var out: [Node] = []
+    var queue = children(root)
+    while !queue.isEmpty, out.count < limit {
+      let next = queue.removeFirst()
+      out.append(next)
+      if !controlRoles.contains(role(next) ?? "") { queue += children(next) }
+    }
+    return out
   }
 }
 

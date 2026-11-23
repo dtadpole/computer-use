@@ -1,9 +1,9 @@
 ---
 title: '[cu] Verifier - Handover'
 created: 2026-11-08T04:15:13Z
-modified: 2026-11-23T02:29:00Z
+modified: 2026-11-23T05:42:00Z
 level: L2
-version: 5.4.35
+version: 5.4.37
 description: 'What a fresh session of [cu] Verifier needs - where things are, the pass, the tools, the open rows and the lessons, in under 300 words.'
 status: unverified
 grounded_in:
@@ -24,8 +24,8 @@ Start here, then [responsibilities](responsibilities.md) and [verdict](ultimate-
 - **Closes:** `watchall.sh` is one background job (restart daily) over `watchlist.tsv`. Then `linear.py verified` with
   run ids copied by script, plus a mutant.
 - **Desktop rows:** in cu-developer-three's holds; I judge from events.jsonl.
-- **Open:** CU-586 / CU-588 desktop rows; CU-375 with #856; CU-596 under load; CU-607 on a class ruling;
-  CU-645 has #1129 (rule-1), CU-702 #1349; no fix PR: CU-612, CU-618, CU-631 .. CU-633, CU-640, CU-642, CU-647, CU-649, CU-651, CU-656, CU-658, CU-667, CU-671, CU-681, CU-682, CU-696 (permission half), CU-701, CU-703 .. CU-706. The consent row
+- **Open:** Highs CU-585, CU-607 (consent row); CU-586 / CU-588 desktop rows; CU-375 with #856; CU-596 under load; CU-607 on a class ruling;
+  CU-645 has #1129 (rule-1), CU-702 #1349; no fix PR: CU-612, CU-618, CU-631 .. CU-633, CU-640, CU-642, CU-647, CU-649, CU-651, CU-656, CU-658, CU-667, CU-671, CU-681, CU-682, CU-696 (permission half), CU-701, CU-703 .. CU-707. The consent row
   waits on CU-135 step 4.
 - **Lessons:** read the Verify state before `verified` (outside Verify it only moves there); a records PR naming an
   issue moves it to Verify on merge - reopen with a live row; count OKs from the PR. One browser per seat, one job
