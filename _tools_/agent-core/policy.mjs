@@ -49,6 +49,15 @@ export function neverCoveredByGrant(cls, name) {
 // locks, dial rows, mass sends, compensation, returns, relists, ride cancels) asks under any submit grant.
 // CU-507 (High; cu-coordinator 16:06Z): the generic final buttons of a confirm modal - judged by the modal's own title and text.
 const GENERIC_CONFIRM = /^\s*(?:confirm|ok|okay|yes|yes,?\s+(?:continue|confirm|proceed|i'?m\s+sure|do\s+it)|continue|proceed|submit|done|apply|accept|agree|i\s+agree|i\s+understand|got\s+it|i'?m\s+sure|do\s+it|go\s+ahead|confirm\s+and\s+continue)\s*[.!]?\s*$/i
+// CU-729 (High; cu-researcher's sweep, cu-coordinator 19:59Z): the same generic final buttons in the covered languages (de fr es it
+// pt nl ru ja zh ko) - a localized confirm modal's 'Ja' / 'Oui' / 'Aceptar' / 'はい' / '确定' / '확인' / 'Да' is judged by the modal's title
+// like English 'OK' / 'Yes'. Matched on the raw name (before the Cyrillic homoglyph fold), the whole name, an affirmative optionally
+// followed by a comma and one more confirm word ('Ja, fortfahren'). Additions only.
+const LOCALE_CONFIRM_WORD = String.raw`(?:ja|jawohl|ok|okay|bestätigen|bestaetigen|weiter|fortfahren|übernehmen|zustimmen|akzeptieren|einverstanden|verstanden|fertig|anwenden|oui|confirmer|continuer|valider|accepter|d['’]accord|appliquer|terminé|sí|si|aceptar|confirmar|continuar|de\s+acuerdo|vale|aplicar|listo|sì|conferma|confermare|continua|accetta|procedi|va\s+bene|applica|fatto|sim|aceitar|prosseguir|concluir|bevestigen|doorgaan|akkoord|accepteren|toepassen|verder|да|ок|подтвердить|продолжить|принять|согласен|согласна|применить|готово|хорошо|はい|確認|続行|同意する|同意|適用|完了|了解|是|是的|确定|確定|确认|继续|繼續|好|好的|应用|應用|完成|예|네|확인|계속|동의|적용|완료)`
+const LOCALE_GENERIC_CONFIRM = new RegExp(String.raw`^\s*${LOCALE_CONFIRM_WORD}(?:\s*[,、，]\s*${LOCALE_CONFIRM_WORD})?\s*[.!。！]?\s*$`, 'iu')
+// CU-729: the question frames of a localized confirm title ('Möchten Sie diese Notiz wirklich löschen?', 'Voulez-vous vraiment ...',
+// '¿Desea eliminar ...?', '本当に削除しますか？', '确定要删除吗？', '정말 삭제하시겠습니까?') are removed into one more title text to judge.
+const LOCALE_QUESTION_FRAME = /(?:möchten\s+sie|wollen\s+sie|möchtest\s+du|willst\s+du|sind\s+sie\s+sicher,?\s+dass\s+sie|wirklich|voulez-vous|souhaitez-vous|êtes-vous\s+sûre?\s+de\s+vouloir|vraiment|¿|está\s+seguro\s+de\s+que\s+desea|desea|quiere|realmente|sei\s+sicuro\s+di\s+voler|vuoi|davvero|tem\s+certeza\s+de\s+que\s+deseja|deseja|wilt\s+u|weet\s+u\s+zeker\s+dat\s+u|вы\s+действительно\s+хотите|вы\s+уверены,?\s+что\s+хотите|действительно|本当に|しますか|ますか|确定要|確定要|是否|确认要|吗|嗎|정말|하시겠습니까|하시겠어요)/giu
 const GENERIC_SUBMIT = /^\s*(?:submit|send|send\s+(?:message|reply|email|comment)|reply|post|post\s+(?:comment|reply)|comment|save|save\s+changes|apply|search|go|ok|done|continue|next|report\s+spam|sign\s+up|register|create\s+account)\s*!?\s*$/i
 
 /** Word lists matched on a target's accessible name, case-insensitively, at word boundaries; they err toward confirm. */
@@ -1766,6 +1775,17 @@ const LOCALE_CONFIRM_BACKOUT = /^\s*(?:abbrechen|zurück|schlie(?:ß|ss)en|nein|
 const LOCALE_CONFIRM_UTILITY = /^\s*(?:kopieren|copier|copiar|copia|kopiëren|копировать|コピー|复制|複製|복사|hilfe|aide|ayuda|ajuda|aiuto|справка|помощь|ヘルプ|帮助|幫助|도움말)(?![\p{L}\p{N}])/iu
 // A judged name has passed normaliseText, which folds Cyrillic homoglyphs to Latin case by case ('Отмена' -> 'Oтмeнa'), so the
 // Russian back-outs are also matched folded - as written, capitalised and in capitals - as namesRuTrashEmpty does.
+// CU-729: the Russian affirmatives the same way - a judged name has passed the Cyrillic homoglyph fold ('Да' -> 'Дa'), so they
+// are matched folded too (as written, capitalised and in capitals), alone or with a comma and one more of them.
+let ruConfirmRegex = null
+function namesRuConfirm(text) {
+  if (!ruConfirmRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const words = ['да', 'ок', 'подтвердить', 'продолжить', 'принять', 'согласен', 'согласна', 'применить', 'готово', 'хорошо'].flatMap(folds).join('|')
+    ruConfirmRegex = new RegExp(`^\\s*(?:${words})(?:\\s*,\\s*(?:${words}))?\\s*[.!]?\\s*$`, 'u')
+  }
+  return ruConfirmRegex.test(normaliseName(text))
+}
 let ruBackoutRegex = null
 function namesRuBackout(text) {
   if (!ruBackoutRegex) {
@@ -4369,7 +4389,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         const restProbe = classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { role: 'button', name: continueTo[1].trim(), ...(target?.origin ? { origin: target.origin } : {}) } })
         if (restProbe.decision === 'confirm') for (const cls of restProbe.classes ?? [restProbe.class]) if (!classes.includes(cls)) classes.push(cls)
       }
-      if (context.confirmProbe !== true && presses && (dialogName !== '' || dialogDescription !== '') && (GENERIC_CONFIRM.test(String(name ?? '')) || continueTo)) {
+      const localeConfirm = LOCALE_GENERIC_CONFIRM.test(String(target?.name ?? name ?? '')) || LOCALE_GENERIC_CONFIRM.test(String(name ?? '')) || namesRuConfirm(String(name ?? ''))
+      if (context.confirmProbe !== true && presses && (dialogName !== '' || dialogDescription !== '') && (GENERIC_CONFIRM.test(String(name ?? '')) || localeConfirm || continueTo)) {
         // cu-researcher 16:09Z: a title is a question more often than a row - 'Are you sure you want to <row>?', 'Really <row>?',
         // '<row>?' - so a title canonical step strips the question frame before the title is judged as a name.
         // #702 round 2 (cu-researcher 16:24Z): descriptions lead with 'This will / This action will / You are about to / Doing this will'.
@@ -4381,6 +4402,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         const firstSentence = kept[0] ?? ''
         const keptDescription = kept.join(' ')
         const texts = [...new Set([dialogName, titleRow(dialogName), firstSentence, titleRow(firstSentence), `${titleRow(dialogName)} ${keptDescription}`.trim()].filter((t) => t !== ''))]
+        // CU-729: the localized title with its question frame removed is one more text (additions only).
+        const unframed = (text) => text.replace(LOCALE_QUESTION_FRAME, ' ').replace(/[?？!！.。:：\s]+$/u, '').replace(/\s+/g, ' ').trim()
+        for (const extra of [unframed(dialogName), unframed(firstSentence)]) if (extra !== '' && !texts.includes(extra)) texts.push(extra)
         for (const text of texts) {
           // #702 round 2: the title is judged with the FULL canonical form (synonym, quantifier, label and clause steps run only
           // outside a confirm probe), so no confirmProbe flag here; the probe target carries no dialog fields, so it cannot recurse.
