@@ -39,6 +39,7 @@ final class Fixture: NSObject {
     MenuCompose.uninstallMenus()
     OpenSelection.uninstallMenus()
     NamedControls.uninstallMenus()
+    NamedControls.closeSheet()
     for window in windows.values { window.orderOut(nil); window.close() }
     windows = [:]
     Evidence.input = []

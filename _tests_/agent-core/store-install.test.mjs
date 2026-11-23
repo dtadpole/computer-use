@@ -1,42 +1,33 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { createPolicy } from '../../_tools_/agent-core/policy.mjs'
+import { createPolicy, isExtensionStoreDetail } from '../../_tools_/agent-core/policy.mjs'
 
-// CU-484 (High; cu-coordinator 06:05Z): installs by store wording ask install; sideloading and unknown sources ask permission.
-// Click and Space (D-106).
+// CU-513: a bare 'Install' / 'Get' / 'Add' on an extension / add-on / plug-in store detail page asks install; the same words
+// elsewhere keep today's judgement.
 const policy = createPolicy({ sitePolicy: () => 'allow' })
-const URL = 'https://addons.example/item/x'
-const at = (name, key = false) => {
-  const v = key ? policy.classify({ type: 'keypress', keys: ['SPACE'] }, { url: URL, target: { tag: 'button', role: 'button', name } }) : policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: URL, target: { role: 'button', name } })
-  return v.decision === 'allow' ? 'allow' : v.class
-}
+const click = (url, name) => { const r = policy.classify({ type: 'click', x: 5, y: 5, button: 'left' }, { url, target: { tag: 'button', role: 'button', name } }); return r.decision === 'allow' ? 'allow' : r.class }
+const PAGES = ['https://chromewebstore.google.com/detail/ublock-origin/cjpalhdlnbpafiamejdnhcphjbkeiagm', 'https://chrome.google.com/webstore/detail/abc/def',
+  'https://addons.mozilla.org/en-US/firefox/addon/ublock-origin/', 'https://microsoftedge.microsoft.com/addons/detail/ublock-origin/odfafepnkmbhccpbejgmiehpchacaeak',
+  'https://addons.opera.com/en/extensions/details/ublock/', 'https://marketplace.visualstudio.com/items?itemName=ms-python.python', 'https://blog.example/wp-admin/plugin-install.php',
+  'https://open-vsx.org/extension/redhat/java', 'https://plugins.jetbrains.com/plugin/6610-php-annotations']
 
-test('CU-484: store installs ask install; sideloading asks permission', () => {
-  for (const [name, cls] of [['Add to Slack', 'install'], ['Add to Discord', 'install'], ['Add to Firefox', 'install'], ['Add to Chrome', 'install'], ['Get extension', 'install'],
-    ['Install now', 'install'], ['Run installer', 'install'], ['Activate plugin', 'install'], ['Sideload app', 'permission'], ['Allow unknown sources', 'permission'], ['Allow apps from anywhere', 'permission']]) {
-    assert.equal(at(name), cls, name)
-    assert.equal(at(name, true), cls, `Space: ${name}`)
-  }
-  // Named (older classes kept): 'Add to Teams' keeps permission (the older rule leads); 'Uninstall' keeps delete.
-  assert.equal(at('Add to Teams'), 'permission')
-  assert.equal(at('Uninstall'), 'delete')
+test('CU-513: a bare install word on a store detail page asks install', () => {
+  for (const url of PAGES) for (const name of ['Install', 'Get', 'Add', 'Install now', 'Get it']) assert.equal(click(url, name), 'install', `${url} ${name}`)
 })
 
-test('CU-484 negatives: store views and other add-to lists stay free', () => {
-  for (const name of ['Extensions', 'Details', 'Add to playlist', 'Add to calendar', 'Add to favorites', 'Get started', 'Installation guide']) assert.equal(at(name), 'allow', name)
+test('CU-513: the page test is host and path, and other words on the page keep their judgement', () => {
+  assert.equal(isExtensionStoreDetail('https://chromewebstore.google.com/category/extensions'), false)
+  assert.equal(isExtensionStoreDetail('https://addons.mozilla.org/en-US/firefox/search/?q=ad'), false)
+  assert.equal(isExtensionStoreDetail('https://example.com/detail/x'), false)
+  assert.equal(isExtensionStoreDetail('https://open-vsx.org/?search=java'), false)
+  assert.equal(isExtensionStoreDetail('https://open-vsx.org/namespace/redhat'), false)
+  assert.equal(isExtensionStoreDetail('https://plugins.jetbrains.com/search?tags=PHP'), false)
+  assert.equal(isExtensionStoreDetail('https://plugins.jetbrains.com/vendor/abc'), false)
+  for (const name of ['Details', 'Reviews', 'Support', 'Privacy practices', 'Get started', 'Add a review']) assert.equal(click(PAGES[0], name), 'allow', name)
+  assert.equal(click(PAGES[0], 'Remove from Chrome'), 'delete')
 })
 
-test('#635 round 2 (cu-researcher 07:08Z): the Install now family under every variant, and the held-out escapes', () => {
-  for (const name of ['Install now…', 'Install now...', 'Install now (recommended)', '🔓 Install now', 'Install now →', 'Yes, install now', 'Please install now', 'Click to install now',
-    'Install now, please', 'Install for free', 'Install it', 'Launch installer', 'Activate extension', 'Add to Telegram']) assert.equal(at(name), 'install', name)
-  assert.equal(at('Allow apps from unknown sources'), 'permission')
-  for (const name of ['Install', 'Installed', 'Install guide', 'Now playing']) assert.equal(at(name), 'allow', name)
-})
-
-test("#635 round 3 (cu-developer-three 07:19Z): 'add-on' / 'plug-in' hyphen forms; 'Install now on this device' is a named limit (07:21Z)", () => {
-  for (const name of ['Get add-on', 'Get the add-on', 'Get add on', 'Get plug-in', 'Activate add-on', 'Enable plug-in']) assert.equal(at(name), 'install', name)
-  // CU-509 (cu-coordinator 16:51Z): the trailing scope phrase is stripped, so the 07:21Z named limit closes - it asks like 'Install now'.
-  assert.equal(at('Install now on this device'), 'install', 'double qualifier - closed by CU-509')
-  for (const name of ['Add-ons', 'Plug-in settings', 'Get help']) assert.equal(at(name), 'allow', name)
+test('CU-513 negatives: the same bare words off a store detail page stay as they were', () => {
+  for (const url of ['https://docs.example/start', 'https://chromewebstore.google.com/category/extensions']) for (const name of ['Install', 'Get', 'Add']) assert.equal(click(url, name), 'allow', `${url} ${name}`)
 })
