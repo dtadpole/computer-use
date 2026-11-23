@@ -2546,7 +2546,13 @@ const ID_FIELD_PHRASE = /\bnummer\s+(?:ihres|deines|des|seines|ihrer|der)\s+(?:(
 // CU-604 (cu-researcher): the German bank TAN family as a field's whole label ('TAN', 'mTAN', 'SMS-TAN', 'pushTAN', 'chipTAN',
 // 'photoTAN', 'TAN-Nummer', 'TAN eingeben') - a bare 'tan' inside a word (a colour, 'Tango') stays free.
 const TAN_FIELD = /^\s*(?:tan\s+eingeben|(?:m|sms[\s-]?|push|chip|photo|smart|app[\s-]?|i)?tan(?:[\s-]?(?:nummer|nr\.?|code))?)\s*[:*]?\s*$/iu
-const secretNamedEntry = (target) => isTextEntry(target) && entryNamesOf(target).some((name) => namesWord(name, SECRET_NAMES) || namesAcronym(name) || CARD_NUMBER_PHRASE.test(String(name ?? '')) || CARD_EXPIRY_BARE.test(String(name ?? '')) || ID_FIELD_PHRASE.test(String(name ?? '')) || TAN_FIELD.test(String(name ?? '')))
+// CU-580 (cu-researcher 09:26Z; built before triage): a sign-in or recovery secret by CLASS - any auth qualifier (recovery, login, sign-in,
+// verification, security, authentication, 2FA / MFA, one-time, backup, access, confirmation, pairing, setup, activation, reset, unlock,
+// approval, magic, device, SMS / text / e-mail / app; #876 r2: emergency, rescue, fallback, master, break-glass, escrow, enrollment,
+// transaction / TAN, admin, owner, account) before code / token / PIN / key / passphrase. 'Zip code', 'Promo code' and 'Country
+// code' carry no auth qualifier and stay free.
+const AUTH_CODE_NAME = /\b(?:recovery|log-?in|sign-?in|signin|verification|verify|security|auth(?:entication|enticator)?|2fa|mfa|two-?factor|2-?step|one-?time|backup|access|confirmation|pairing|setup|activation|reset|unlock|approval|magic|device|sms|text|e-?mail|app|emergency|rescue|fallback|master|break-?glass|escrow|enrol(?:l)?ment|transaction|tan|mtan|admin(?:istrator)?|owner|account|restore|restoration|override|bypass|supervisor|reactivation|deactivation|wipe|erase|disable|unenroll(?:ment)?|transfer|authorization|authorisation)\s+(?:codes?|tokens?|pins?|keys?|pass-?phrases?)\b/i
+const secretNamedEntry = (target) => isTextEntry(target) && entryNamesOf(target).some((name) => namesWord(name, SECRET_NAMES) || namesAcronym(name) || CARD_NUMBER_PHRASE.test(String(name ?? '')) || CARD_EXPIRY_BARE.test(String(name ?? '')) || ID_FIELD_PHRASE.test(String(name ?? '')) || TAN_FIELD.test(String(name ?? '')) || AUTH_CODE_NAME.test(String(name ?? '')))
 
 // CU-164: a wallet recovery phrase - twelve or more words in a row, every one on the BIP39 list; ordinary prose breaks
 // the run with words the list does not hold (the, is, to, of, a).
