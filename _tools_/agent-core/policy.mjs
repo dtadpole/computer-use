@@ -2371,7 +2371,10 @@ const PASSWORD_NAMES = Object.freeze(['password', 'passcode', 'passphrase', 'pin
 // CU-607: a few phrases share a password word without naming a password - Italian 'parola chiave' (keyword) and Korean
 // 암호화 (encryption, which contains 암호). They are cut out of the name before the password words are matched, so
 // '암호화 설정' stays free while '암호화 비밀번호' still names a password.
-const PASSWORD_NAME_NOT = /parol[ae][\s-]+chiave|암호화/giu
+// CU-717 (a narrowing under D-110, the #1364 reviewers' over-asks): Italian 'parola' (word) led into an Italian phrase -
+// 'Parola da cercare', 'Parola del giorno', 'Parola che inizia con' - and Korean 암호문 (ciphertext) and 암호학 (cryptography).
+// Bare 'Parola', Turkish 'Parolanız' / 'Yeni parola' and Italian "parola d'ordine" / "parola d'accesso" still name a password.
+const PASSWORD_NAME_NOT = /parol[ae][\s-]+chiave|parol[ae][\s-]+(?:da|del|della|dello|delle|dei|degli|per|che)(?![\p{L}'\u2019])|암호(?:화|문|학)/giu
 // The desktop passes raw names; a judged name is homoglyph-folded first, so both forms are read ('Пароль').
 const namesPassword = (name) => [String(name ?? ''), normaliseText(String(name ?? ''))].some((n) => namesWord(n.replace(PASSWORD_NAME_NOT, ' '), PASSWORD_NAMES))
 // CU-265: the schemes a page navigates itself; any other hands the link to another app.
