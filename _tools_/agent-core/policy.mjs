@@ -1772,16 +1772,39 @@ const TYPED_DESTROY = /\b(?:delet\w*|eras(?:e|es|ed|ing|ure)\b|wip(?:e|es|ed|ing
 // A transfer counts only of ownership: 'Enter the transfer amount' is money, not a handover (cu-developer-three's near-miss).
 const TYPED_TRANSFER = /\b(?:(?:move|transfer|send|pass|give|assign|hand)\s+(?:(?:it|this|that|them|the\s+\w+|this\s+\w+)\s+)?(?:on\s+|over\s+)?to\s+(?:a\s+|an\s+)?(?:another|new|different|other)\s+(?:owner|admin(?:istrator)?|account|org(?:anization)?|team|workspace|user|member|person)|make\s+(?:\w+\s+){1,3}(?:the\s+)?(?:new\s+)?admin(?:istrator)?\b|(?:another|different)\s+owner|give\s+(?:(?:it|them|this|that|the|your|my)\s+)?(?:\w+\s+){0,2}away|hand(?:ing)?\s+(?:it\s+|this\s+\w+\s+|the\s+\w+\s+)?off|make\s+(?:\w+\s+){1,3}(?:the\s+)?(?:new\s+)?owner|reassign\s+(?:the\s+)?ownership|transfer\w*\s+(?:of\s+)?(?:the\s+)?ownership|ownership|hand(?:ing)?\s+(?:it\s+|this\s+\w+\s+|the\s+\w+\s+)?over|handover|new\s+owner|change\s+(?:the\s+)?owner|transfer\s+(?:the\s+|this\s+)?(?:workspace|repository|repo|organization|org|project|team|account|domain)\b)/i
 
+// The confirm shape of an entry (policy owner 08:07Z), for the zone words only: after a typing word, a token in capitals
+// ('DELETE', 'CLOSE' - not a field acronym like PIN or OTP) or in quotes, or 'the <up to 2 words> name / ID / slug /
+// handle / URL', or 'the name of'; or 'to confirm' anywhere. 'Enter your email', 'Enter the 6-digit code' and 'Type
+// your full name' are not confirm-shaped.
+const TYPED_VERB = /\b(?:type|typing|enter|entering|re-?enter(?:ing)?|re-?typ(?:e|ing)|write|writing|input(?:ting)?|key(?:ing)?\s+in|spell(?:ing)?\s+out|repeat(?:ing)?|fill(?:ing)?\s+in|copy(?:ing)?|past(?:e|ing))\s+/giu
+const FIELD_ACRONYM = /^(?:PIN|PUK|OTP|TAN|SMS|CVV|CVC|ID|URL|IBAN|BIC|SWIFT|SSN|ZIP|VAT|API|IP|MAC|IMEI)(?![\p{L}\p{N}])/u
+function confirmShaped(text) {
+  if (/\bto\s+confirm\b/i.test(text)) return true
+  for (const m of text.matchAll(TYPED_VERB)) {
+    const rest = text.slice(m.index + m[0].length)
+    if (/^["'\u201c\u2018]/u.test(rest)) return true
+    if (/^\p{Lu}{2,}(?![\p{L}\p{N}])/u.test(rest) && !FIELD_ACRONYM.test(rest)) return true
+    if (/^the\s+(?:[\p{L}\p{N}-]+\s+){0,2}(?:name|id|slug|handle|url)\b/iu.test(rest) || /^the\s+name\s+of\b/i.test(rest)) return true
+  }
+  return false
+}
+
 /**
  * CU-585: the classes a typed-word confirmation form's prompt asks for, read by sense from the driver's formEntries (at
  * most 3 texts of 80 characters). Some text must tell the person to type or enter something; then a destructive or
  * permanent act anywhere in the form's words asks delete, and a transfer of ownership asks permission (not purchase).
  * Ordinary boxes (a name, a search, a message, a coupon) carry no typing-to-confirm sense and add nothing.
+ * Owner spec 07:33Z: the zone's own static texts (zoneWords - its heading and description, at most 3 texts of 80
+ * characters) join the destroy / transfer test, so 'Close this account permanently.' beside 'Type CLOSE to confirm' asks
+ * delete; they never supply the typing instruction, and a bare typed CLOSE stays free (it also closes dialogs).
  */
-export function typedConfirmClasses(entries) {
-  const texts = (Array.isArray(entries) ? entries : []).slice(0, 3).map((text) => String(text ?? '')).filter((text) => text.length <= 80)
+export function typedConfirmClasses(entries, zoneWords = []) {
+  const bounded = (list) => (Array.isArray(list) ? list : []).slice(0, 3).map((text) => String(text ?? '')).filter((text) => text.length <= 80)
+  const texts = bounded(entries)
   if (!texts.some((text) => TYPED_INSTRUCTION.test(text))) return []
-  const words = texts.join(' \u2022 ')
+  // Policy owner's gate (08:07Z): the zone's words join only when an entry is confirm-shaped - an 'Enter your phone number'
+  // form's 'We will remove it if you ask.' never reaches the destroy test. Entries alone keep #894's behaviour.
+  const words = [...texts, ...(texts.some(confirmShaped) ? bounded(zoneWords) : [])].join(' \u2022 ')
   return [...(TYPED_DESTROY.test(words) ? ['delete'] : []), ...(TYPED_TRANSFER.test(words) ? ['permission'] : [])]
 }
 const TRADE_WORDS = /\b(?:trade|trading|swap|swaps|stake|staking|unstake|sell|selling|bridge|mint|minting)\b/gi
@@ -4375,9 +4398,11 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // ownership asks permission. A late union - it only adds an ask to a submit nothing else classes, never lowers one.
     // Only on the control's own label: the name sub-probes (confirm / question / split-particle forms of 'Not now' -> 'now')
     // carry the target's formEntries along and must not read the prompt; Return's default-button probe does.
+    // Owner spec 07:33Z (cu-verifier's close-account row): the zone's own static texts (the driver's zoneWords) join the
+    // destroy / transfer test - only beside a confirm-shaped entry (policy owner 08:07Z); the instruction comes from the entries.
     const subProbe = context.confirmProbe === true || context.questionProbe === true || context.splitParticleProbe === true
     if (grammarEligible && !subProbe && classes.length === 0 && typedConfirmButton(name) && Array.isArray(target?.formEntries)) {
-      for (const cls of typedConfirmClasses(target.formEntries)) classes.push(cls)
+      for (const cls of typedConfirmClasses(target.formEntries, target.zoneWords)) classes.push(cls)
     }
     if (grammarEligible && classes.length === 0) {
       const mdm = String(name ?? '').trim()

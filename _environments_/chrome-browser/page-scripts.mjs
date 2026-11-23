@@ -577,6 +577,23 @@ export function describeElement(el) {
   const ariaChecked = typeof el.getAttribute === 'function' ? tristate(el.getAttribute('aria-checked')) : null
   const checked = tag === 'input' && (type === 'checkbox' || type === 'radio') ? (el.indeterminate ? 'mixed' : Boolean(el.checked)) : ariaChecked
   const pressed = typeof el.getAttribute === 'function' ? tristate(el.getAttribute('aria-pressed')) : null
+  // CU-585 / CU-371 formless zones (owner specs 07:16Z / 07:35Z): a React danger zone or bulk-action bar is a div. The
+  // widest ancestor of the control, at most 3 levels up, that still holds exactly one entry - a text entry (input of type
+  // text/search/email/url/tel or none, a textarea) or a select / combobox; an ancestor holding two or more ends the walk.
+  // (The spec names the closest such ancestor; the widest one also takes in the card's heading - a named deviation.)
+  const ENTRY_TYPES = ['', 'text', 'search', 'email', 'url', 'tel']
+  const zoneEntry = (node) => String(node.tagName || '').toLowerCase() !== 'input' || ENTRY_TYPES.includes(String((node.getAttribute && node.getAttribute('type')) || '').toLowerCase())
+  const entryWalk = () => {
+    let node = el.parentElement
+    let widest = null
+    for (let level = 0; node && level < 3; level += 1, node = node.parentElement) {
+      if (typeof node.querySelectorAll !== 'function') break
+      const entries = new Set(Array.from(node.querySelectorAll('input, textarea, select, [role="combobox"]')).filter(zoneEntry))
+      if (entries.size > 1) break
+      if (entries.size === 1) widest = node
+    }
+    return widest
+  }
   // CU-400: a button that submits a form is judged with the choices beside it - an exchange's bare 'Sell' next to an
   // asset select and an amount field. Bounded: at most 3 selected option or combobox texts of 24 characters each, and
   // whether an amount-shaped entry is present (never its value). Only for button-like elements inside a form (below).
@@ -613,6 +630,12 @@ export function describeElement(el) {
       for (let node = el.parentElement, depth = 0; !form && node && depth < 3; node = node.parentElement, depth += 1) {
         if (node.querySelectorAll && lends(node) && node.querySelectorAll('select, [role="combobox"]').length > 0) form = node
       }
+      // CU-371's formless rows (owner 07:35Z): else the one-entry zone above when that entry is a select - a bulk-action
+      // bar's 'Bulk action' select beside Apply and Go (two submit-like controls, no container).
+      if (!form) {
+        const zone = entryWalk()
+        if (zone && zone.querySelectorAll('select, [role="combobox"]').length > 0) form = zone
+      }
     }
     if (!form) return null
     const short = (text) => String(text || '').replace(/\s+/g, ' ').trim()
@@ -635,23 +658,32 @@ export function describeElement(el) {
   // entry (input of type text/search/email/url/tel or none, or a textarea) in tree order: its label (<label>, else the
   // aria-labelledby text, else aria-label, else placeholder), then its aria-describedby text, else - with neither - the
   // text of the element just before it. Whitespace collapsed; a text over 80 characters is none (never cut); at most 3
-  // texts, no repeats. Never a value. Only the control's own <form> or [role=form]. Context, outside the fingerprint.
-  const formEntries = (() => {
+  // texts, no repeats. Never a value. The control's own <form> or [role=form]; else (CU-585 formless zones: owner spec
+  // 07:16Z, cu-coordinator 07:17Z - React danger zones are divs) the nearest <fieldset>, <dialog>, [role=dialog] or
+  // <section>; else the one-entry zone (entryWalk above: the widest ancestor within 3 levels still holding exactly one
+  // text entry or select - the button, its one box and the card around them). Context, outside the fingerprint. zoneWords (owner spec 07:33Z, cu-verifier's close-account row): the same container's own static texts -
+  // its headings, legend and paragraphs, each cut at sentence ends ('Close this account permanently.' 'This cannot be
+  // undone.'); the same 80-character / 3-text / no-repeat bounds, none already in formEntries, and only beside them.
+  const typedZone = (() => {
     const buttonLike = tag === 'button' || (tag === 'input' && ['submit', 'button', 'image'].includes(type)) || role === 'button'
     if (!buttonLike) return null
-    const form = (el.form && el.form.querySelectorAll ? el.form : null) || (el.closest ? el.closest('form') || el.closest('[role="form"]') : null)
+    const textEntry = zoneEntry
+    const zone = () => {
+      const box = el.closest ? el.closest('fieldset, dialog, [role="dialog"], section') : null
+      if (box && typeof box.querySelectorAll === 'function') return box
+      return entryWalk()
+    }
+    const form = (el.form && el.form.querySelectorAll ? el.form : null) || (el.closest ? el.closest('form') || el.closest('[role="form"]') : null) || zone()
     if (!form || typeof form.querySelectorAll !== 'function') return null
     const doc = el.ownerDocument
     const clean = (text) => String(text || '').replace(/\s+/g, ' ').trim()
     const byIds = (node, attr) => clean(String((node.getAttribute && node.getAttribute(attr)) || '').split(/\s+/).filter(Boolean)
       .map((id) => { const target = doc && doc.getElementById ? doc.getElementById(id) : null; return target ? target.textContent : '' }).join(' '))
-    const TEXT_TYPES = ['', 'text', 'search', 'email', 'url', 'tel']
     const out = []
     const keep = (text) => { if (text !== '' && text.length <= 80 && out.length < 3 && !out.includes(text)) out.push(text) }
     for (const entry of Array.from(form.querySelectorAll('input, textarea'))) {
       if (out.length >= 3) break
-      const entryTag = String(entry.tagName || '').toLowerCase()
-      if (entryTag === 'input' && !TEXT_TYPES.includes(String((entry.getAttribute && entry.getAttribute('type')) || '').toLowerCase())) continue
+      if (!textEntry(entry)) continue
       const labelled = entry.labels ? clean(Array.from(entry.labels).map((label) => label.textContent).join(' ')) : ''
       const name = labelled || byIds(entry, 'aria-labelledby') || clean(entry.getAttribute && entry.getAttribute('aria-label')) || clean(entry.placeholder)
       const described = byIds(entry, 'aria-describedby')
@@ -659,8 +691,19 @@ export function describeElement(el) {
       const before = name === '' && described === '' && prior && !/^(?:input|select|textarea|button)$/i.test(prior.tagName || '') ? clean(prior.textContent) : ''
       keep(name); keep(described); keep(before)
     }
-    return out.length > 0 ? out : null
+    if (out.length === 0) return null
+    const words = []
+    for (const node of Array.from(form.querySelectorAll('h1, h2, h3, h4, h5, h6, [role="heading"], legend, p'))) {
+      for (const sentence of clean(node.textContent).split(/(?<=[.!?])\s+/)) {
+        if (words.length >= 3) break
+        if (sentence !== '' && sentence.length <= 80 && !words.includes(sentence) && !out.includes(sentence)) words.push(sentence)
+      }
+      if (words.length >= 3) break
+    }
+    return { entries: out, words: words.length > 0 ? words : null }
   })()
+  const formEntries = typedZone ? typedZone.entries : null
+  const zoneWords = typedZone ? typedZone.words : null
   // CU-443 (cu-coordinator 21:01Z, 21:03Z): a pressed row with no verb of its own - a contact list item that dials on
   // click - is judged with what the page offers around it. Only for list items, rows, grid cells, options and tree
   // items. dialHref: whether the row, an ancestor within 4 levels or a link inside it carries a tel:, sip:, callto: or
@@ -772,7 +815,7 @@ export function describeElement(el) {
   return { tag, inputType: type, isPassword: type === 'password', autocomplete: autocomplete || null, href: link, origin, editable, caption: editable ? null : caption, entryCaption: editable ? caption : null,
     ...(frameUrl ? { frameUrl } : {}), ...(terminal ? { terminal } : {}), ...(notebookCell ? { notebookCell } : {}), ...(notebookSurface ? { notebookSurface } : {}), ...(codeSurface ? { codeSurface } : {}),
     ...(checked !== null ? { checked } : {}), ...(pressed !== null ? { pressed } : {}),
-    ...(formContext !== null ? { formContext } : {}), ...(formEntries !== null ? { formEntries } : {}), ...(firstLine !== null ? { firstLine } : {}), ...(inertLink ? { inertLink: true } : {}), ...(inRow ? { inRow: true } : {}), ...(dialHref === true ? { dialHref: true } : {}), ...(rowContext !== null ? { rowContext } : {}), ...(dialogText ?? {}) }
+    ...(formContext !== null ? { formContext } : {}), ...(formEntries !== null ? { formEntries } : {}), ...(zoneWords !== null ? { zoneWords } : {}), ...(firstLine !== null ? { firstLine } : {}), ...(inertLink ? { inertLink: true } : {}), ...(inRow ? { inRow: true } : {}), ...(dialHref === true ? { dialHref: true } : {}), ...(rowContext !== null ? { rowContext } : {}), ...(dialogText ?? {}) }
 }
 
 /**

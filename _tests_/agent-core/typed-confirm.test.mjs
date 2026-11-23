@@ -134,3 +134,41 @@ test('CU-585: typedConfirmClasses reads at most three texts of 80 characters, by
   assert.deepEqual(typedConfirmClasses('Type DELETE to confirm'), [])
   assert.deepEqual(typedConfirmClasses([]), [])
 })
+
+// Owner spec 07:33Z (cu-verifier's close-account row on e512bf2, 073145Z-3a3d87): the zone's own heading and description
+// (the driver's zoneWords) join the destroy / transfer test; the typing instruction still has to come from the entries.
+const zoned = (name, formEntries, zoneWords) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: URL, target: { tag: 'button', role: 'button', name, formEntries, ...(zoneWords ? { zoneWords } : {}) } }); return v.decision === 'allow' ? 'allow' : (v.classes ?? [v.class]).slice().sort().join('+') }
+
+test('CU-585 close-account zone: the zone\'s heading and description join the destroy test (zoneWords)', () => {
+  assert.equal(zoned('Continue', ['Type CLOSE to confirm']), 'allow', 'a bare typed CLOSE alone stays free - it also closes dialogs')
+  assert.equal(zoned('Continue', ['Type CLOSE to confirm'], ['Close this account permanently.', 'This cannot be undone.']), 'delete', "cu-verifier's held-out row")
+  assert.equal(zoned('Confirm', ['Type CLOSE to confirm'], ['Close your account']), 'delete', 'a determiner slot: close your account')
+  assert.equal(zoned('Confirm', ['Type CLOSE to confirm'], ['Danger zone', 'Closing your account is permanent.']), 'delete')
+  assert.equal(zoned('Confirm', ['Type the workspace name'], ['Transfer ownership to another admin']), 'permission', 'a transfer in the description')
+  for (const near of [['Close this dialog'], ['Close panel'], ['Close the sidebar'], ['Account settings'], ['Your account is active.']]) {
+    assert.equal(zoned('Continue', ['Type CLOSE to confirm'], near), 'allow', `near miss ${JSON.stringify(near)}`)
+  }
+  assert.equal(zoned('Continue', ['Account name'], ['Type CLOSE to confirm.', 'Close this account permanently.']), 'allow', 'zone words never supply the typing instruction')
+  assert.equal(zoned('Continue', ['Your name'], ['Delete your account permanently.']), 'allow', 'an ordinary box beside a destructive heading stays free (no prompt to type)')
+  assert.equal(zoned('Delete account', ['Your name'], ['Close panel']), 'delete', 'a classed name keeps its class')
+  assert.deepEqual(typedConfirmClasses(['Type CLOSE to confirm'], ['a', 'b', 'c', 'This cannot be undone.']), [], 'a fourth zone text is never read')
+  assert.deepEqual(typedConfirmClasses(['Type CLOSE to confirm'], [`Close this account permanently ${'x'.repeat(60)}`]), [], 'a zone text over 80 characters is none')
+  assert.deepEqual(typedConfirmClasses(['Type CLOSE to confirm'], 'Close this account permanently.'), [], 'zoneWords must be a list')
+})
+
+test("CU-585 zone words need a confirm-shaped entry (policy owner 08:07Z): ordinary forms' paragraphs never reach the destroy test", () => {
+  // the policy owner's four rows on the test merge with main 8d43b3df - all free on main, and free again with the gate
+  assert.equal(zoned('Next', ['Enter your phone number'], ['We will remove it if you ask.']), 'allow')
+  assert.equal(zoned('Save', ['Type a new display name'], ['Remove your photo in Settings.']), 'allow')
+  assert.equal(zoned('Continue', ['Enter your work email'], ['Cancel anytime.', 'Your data is deleted after 30 days.']), 'allow')
+  assert.equal(zoned('Apply', ['Enter a coupon code'], ['Expired codes are removed automatically.']), 'allow')
+  assert.equal(zoned('Confirm', ['Enter PIN'], ['Your card is closed permanently after three wrong tries.']), 'allow', 'a field acronym in capitals is no confirm token')
+  assert.equal(zoned('Continue', ['Enter the 6-digit code'], ['This cannot be undone.']), 'allow', 'a code entry is not confirm-shaped')
+  assert.equal(zoned('Continue', ['Type your full name'], ['Close this account permanently.']), 'allow')
+  // confirm shapes keep the zone words
+  for (const entry of ['Type CLOSE to confirm', 'Please type LEAVE below', 'Confirm by typing CLOSE', 'Type "acme/prod"', 'Type the workspace name', 'Enter the name of the project', 'Enter the repository URL', 'Enter the 6-digit code to confirm']) {
+    assert.equal(zoned('Continue', [entry], ['Close this account permanently.']), 'delete', entry)
+  }
+  assert.equal(zoned('Confirm', ['Type DELETE to confirm']), 'delete', "entries alone keep #894's behaviour")
+  assert.equal(zoned('Confirm', ['Enter the workspace name to permanently delete it']), 'delete')
+})
