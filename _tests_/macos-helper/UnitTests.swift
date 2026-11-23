@@ -480,6 +480,17 @@ func testExclusions() {
   check(gaps292.allSatisfy(list.isExcluded), "Spotlight, LaunchBar, Enpass, Proton Pass, Keeper, Paste and Perplexity are in the floor (CU-292)")
   check(!list.isExcluded("at.obdev.littlesnitch") && !list.isExcluded("me.proton.mail") && !list.isExcluded("com.apple.spotlightd"),
         "their neighbours stay approvable: Little Snitch, Proton Mail, the Spotlight daemon id")
+  // CU-394: remote-desktop and VM clients, the ids of agent core's remote_control kind (#924); their makers' other apps stay approvable.
+  let remote394 = ["com.apple.ScreenSharing", "com.apple.RemoteDesktop", "com.teamviewer.TeamViewer", "com.philandro.anydesk", "com.microsoft.rdc.macos",
+                   "com.microsoft.remotehelp", "com.parallels.desktop.console", "com.2X.Client.Mac", "com.vmware.fusion", "com.vmware.horizon",
+                   "com.omnissa.horizon.client.mac", "com.utmapp.UTM", "org.virtualbox.app.VirtualBox", "com.p5sys.jump.mac.viewer", "com.realvnc.vncviewer",
+                   "tv.parsec.www", "com.citrix.receiver.nomas", "com.splashtop.stb.macosx", "com.splashtop.stp.macosx", "com.lemonmojo.RoyalTSX.App",
+                   "com.edovia.screens.5", "com.google.chromeremotedesktop.me2me-host", "com.carriez.rustdesk", "com.citrix.receiver.icaviewer.mac",
+                   "com.devolutions.remotedesktopmanager", "com.nomachine.nxdock"]
+  check(remote394.allSatisfy(list.isExcluded), "every remote-desktop and VM client of agent core's remote_control kind is in the floor (CU-394)")
+  check(!list.isExcluded("com.microsoft.Word") && !list.isExcluded("com.parallels.toolbox") && !list.isExcluded("com.vmware.workstation")
+        && !list.isExcluded("com.google.Chrome") && !list.isExcluded("com.citrix.workspace.other") && !list.isExcluded("com.splashtop.other"),
+        "their makers' other apps stay approvable: Word, Parallels Toolbox, other VMware / Citrix / Splashtop ids, Chrome")
   check(list.isExcluded(" com.apple.Terminal\n"), "ids are trimmed before matching")
   check(list.isExcluded("COM.APPLE.TERMINAL"), "case is ignored")
   check(!list.isExcluded("ai.reflection.cu.fixture") && !list.isExcluded("ai.reflection.cu.ledger") && !list.isExcluded("com.apple.TextEdit"), "the fixture apps and ordinary apps are approvable")
@@ -697,7 +708,7 @@ func button(_ kind: String, _ x: Int, _ y: Int) -> JSON { ["kind": .string(kind)
 func testDispatcherBasics() {
   let h = Harness(fixtureWorld)
   let hello = h.dispatcher.hello(token: "t0k")
-  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.71", "the hello opens the run")
+  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.73", "the hello opens the run")
   check(hello["mode"] == "dry-run" && hello["grants"] == ["screen": true, "accessibility": true, "postEvents": true, "listenEvents": false], "a dry-run hello says so, with all four grants")
   check(h.ask("capture", ["maxSize": size800])["code"] == "no_scope", "capture needs a scope")
   check(h.ask("input", ["events": [key("keyDown", 1)], "mode": "global"])["code"] == "no_scope", "input needs a scope")
@@ -2065,6 +2076,22 @@ func testDialogText() {
   check(words.name == "Erase \"Untitled\"?" && words.description == "This will erase all data on the disk.", "texts in groups are still read; the button's label is not")
   check(DialogText.walk(alertSheet, limit: 2, children: { $0.kids }, role: { $0.role }).count == 2, "the walk stops at its limit")
   check(DialogText.controlRoles.contains("AXPopUpButton") && DialogText.controlRoles.contains("AXCheckBox") && !DialogText.controlRoles.contains("AXGroup"), "controls, not containers")
+  // CU-588: a button's form entries - each entry's label, else description, else placeholder, then its help; never a value.
+  check(FormEntries.pick([[nil, nil, "Type DELETE to confirm", nil]]) == ["Type DELETE to confirm"], "a placeholder-only prompt is read")
+  check(FormEntries.pick([["Workspace name", "ignored", "ignored too", "Type the workspace name to delete it"]]) == ["Workspace name", "Type the workspace name to delete it"],
+        "the label wins over description and placeholder; the help text comes on its own")
+  check(FormEntries.pick([[" ", nil, "Type  ERASE\nto confirm", nil]]) == ["Type ERASE to confirm"], "a blank label falls through; whitespace collapsed")
+  check(FormEntries.pick([[String(repeating: "x", count: 81), nil, nil, nil]]) == [], "a text over 80 characters is none, never cut")
+  check(FormEntries.pick([["A", nil, nil, nil], ["A", nil, nil, nil], ["B", nil, nil, "C"], ["D", nil, nil, nil]]) == ["A", "B", "C"], "no repeats; at most 3")
+  check(FormEntries.pick([]) == [] && FormEntries.pick([[nil, nil, nil, nil]]) == [], "nothing read: none")
+  check(FormEntries.isEntry(role: "AXTextField") && FormEntries.isEntry(role: "AXTextArea") && FormEntries.isEntry(role: "AXComboBox")
+        && !FormEntries.isEntry(role: "AXButton") && !FormEntries.isEntry(role: "AXStaticText") && !FormEntries.isEntry(role: nil), "entries are text fields, areas and combo boxes")
+  // cu-researcher's #895 note: in a window, only the button's own form lends - its nearest group, else (a flat panel) the window.
+  check(FormEntries.scope(["AXToolbar", "AXWindow"]) == 0, "a toolbar's 'Export' reads only its toolbar - never a danger-zone prompt elsewhere in the window")
+  check(FormEntries.scope(["AXGroup", "AXScrollArea", "AXWindow"]) == 0, "a danger zone's Confirm reads its own group")
+  check(FormEntries.scope([nil, "AXUnknown", "AXWindow"]) == 2, "a flat panel with no group below the window reads the window")
+  check(FormEntries.scope(["AXSplitGroup", "AXWindow"]) == 0 && FormEntries.scope(["AXTabGroup", "AXWindow"]) == 0, "a split or tab pane bounds the form")
+  check(FormEntries.scope([]) == nil, "no ancestors: no scope")
 }
 
 func testNearbyLabel() {
