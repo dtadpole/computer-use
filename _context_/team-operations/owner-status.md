@@ -1,9 +1,9 @@
 ---
 title: Computer use on the Mac mini - one-page status for the owner
 created: 2026-11-06T04:55:00Z
-modified: 2026-11-23T10:18:07Z
+modified: 2026-11-23T13:47:26Z
 level: L2
-version: 1.11.0
+version: 1.12.0
 status: unverified
 description: 'What the [cu] team has built and proven, what is left, and the owner actions that are still open - one page, kept current by the coordinator.'
 grounded_in:
@@ -14,22 +14,20 @@ grounded_in:
 
 # Computer use on the Mac mini - status for the owner
 
-State at 23 November 2026, 10:20 UTC.
+State at 23 November 2026, 13:50 UTC.
 
 ## Where it stands
 
 Seven of the nine ULTIMATE_GOAL 2.0 rows hold on live evidence (verdict 0.9.329). Two are open:
 
 - **Consent and safety** holds only when no Urgent or High under-ask is open (D-063). Every High ruled up to
-  16 November is closed live (CU-561 last). Open on 23 November, all reproduced live:
-  - **CU-607** (a password field in another language typed unasked under a personal-data pre-approval) closed live
-    at 09:11 UTC on main, 19 of 19 rows.
-  - **CU-585 and CU-371**: a bare Confirm, Continue, Apply or Go in a danger zone still acts unasked. The first fix
-    landed, but the verifier's live rows show the page-to-policy hand-over missing typed-word prompts. They miss them
-    whether a form wraps the zone or not, and whether the prompt sits in a label attribute or in a paragraph. The second
-    fix is being reworked against those exact pages.
-  - **CU-716**: Russian and German/Dutch forms of the password word and localized PIN names. Its fix #1370 has three
-    reviews and is gating; one French PIN name follows in a small second PR.
+  16 November is closed live (CU-561 last). Open on 23 November:
+  - **CU-607** and **CU-716** (password and PIN words in other languages typed unasked) are closed live on main,
+    19 of 19 and 18 of 18 rows.
+  - **CU-585 and CU-371**: a typed-confirm danger zone (type DELETE or the name, then Confirm) can still act
+    unasked when its instruction sits in a paragraph, a second sentence or a purpose clause. The fix (#1368, third
+    revision) carries the policy owner's rules and is in review; it gates after 14:20 UTC. The verifier withdrew its
+    earlier failures of these rows: its runner had split each page into one control per run (CU-722).
   After them the row waits on CU-135, the Replace-sheet chain, which only you can answer.
   - Between 12 and 22 November about eighty issues closed, most of them Medium gaps in action and field names
     across the covered languages (English, Chinese, German, French, Spanish, Russian, Japanese, Korean, with Italian,
@@ -41,7 +39,7 @@ Seven of the nine ULTIMATE_GOAL 2.0 rows hold on live evidence (verdict 0.9.329)
 | Row | State |
 |---|---|
 | environment, perception, action contract, agent loop | hold live (CUHelper 0.2.70 installed; 0.2.71 on main since 06:22Z, 0.2.72 and 0.2.73 in review: form labels for the danger-zone fix, remote-desktop and VM clients refused by the helper itself) |
-| consent and safety | High open: CU-585 / CU-371 (fix reworked after live rows failed), CU-716 (gating); CU-607 closed live; then CU-135 in the owner session |
+| consent and safety | High open: CU-585 / CU-371 (#1368 r3 in review); CU-607 and CU-716 closed live; then CU-135 in the owner session |
 | human control | open: step 4 with you (CU-11, CU-119, CU-135, CU-203) |
 | integration | DSH and heddle each completed a fixture task (CU-15) |
 | trajectory | holds; capture stays inside approved apps |
@@ -65,7 +63,7 @@ Seven of the nine ULTIMATE_GOAL 2.0 rows hold on live evidence (verdict 0.9.329)
 ## Open owner actions
 
 1. A time and mode (in person or Screen Sharing) for step 4 (CU-11, CU-119, CU-135, CU-203). The human-control row
-   waits only on it, and the consent row on it once CU-585, CU-371 and CU-716 close.
+   waits only on it, and the consent row on it once CU-585 and CU-371 close.
 2. Dismiss the notification alerts on the Mac mini and quit Typeless before step 4.
 3. Long-running Chrome tabs on the Mac mini keep the load near 30 and slow the team's gates.
 4. Decide on the history clean-up the coordinator reported privately on 9 November.
@@ -73,8 +71,12 @@ Seven of the nine ULTIMATE_GOAL 2.0 rows hold on live evidence (verdict 0.9.329)
 6. Model budget: 20.69 of 25 USD spent; nothing past 21 USD runs without you (D-034), so the third evaluation
    batch's S8 and S9 on Opus (CU-66) wait for your word.
 7. Optional: give the Heddle Linear app initiative read/write for initiative updates.
-8. Information, no action: the `cu-owner` desktop runs seen since 03:37 UTC are most likely the Last War team's
-   bridge runs. Both teams now share one run lock (D-115), and the team checked that the two pointer pauses Last War
-   reported (09:02 and 09:24 UTC) did not come from the cu side.
+8. **Urgent: the shared main checkout and the Last War bridge (CU-721).** The main checkout has been pinned at an
+   8 November commit since a 10 November slip, and the Last War bridge runs the whole agent from it. Today an uncommitted
+   edit there sets the owner-idle wait to 0 for the bridge, so its input does not wait for 300 s of your idle (D-066).
+   Last War keeps that setting until you answer. Please decide (a) whether the bridge may post while you are active,
+   and (b) whether it moves to a worktree that tracks main. Moving it restores the 300 s wait by itself and brings
+   every consent fix since 8 November, at the cost of one path line and a restart. The team does not touch that
+   checkout until you choose.
 9. The old `~/reflection` checkout was removed about 03:00 UTC. The team now reads `~/dtadpole/reflection`; say so if
    the old path should come back.
