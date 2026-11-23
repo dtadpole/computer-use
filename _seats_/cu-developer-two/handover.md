@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - handover'
 created: 2026-11-08T04:14:00Z
-modified: 2026-11-23T13:02:00Z
+modified: 2026-11-23T15:43:00Z
 level: L1
-version: 4.31.0
+version: 4.32.0
 description: 'What a fresh [cu] Developer Two session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -19,15 +19,14 @@ grounded_in:
 Seat `cu-developer-two`: desktop and browser drivers, live view, run lock, MCP. Code: the session worktree
 `~/dtadpole/computer-use-wt/<session-id>`, one purpose worktree per PR. Records: [artifacts.md](artifacts.md).
 
-## State (23 Nov 13:02Z)
+## State (23 Nov 15:43Z)
 
-- Goal: cu-coordinator's renewal of 23 Nov 11:32Z. CU-720 landed (#1375, 12:32Z): the run lock carries an armed
-  run's owner-idle base past its release; cu-verifier closes it live.
-- #1368 r2 (Part of CU-585 and CU-371) is pushed at 64b0e8dd: zone prompts from divs and text buttons, the policy
-  owner's zone-instruction rule, five real-driver smoke shapes; D-114 green. It waits for cu-researcher's held-out,
-  cu-verifier's live check and the policy owner's look, then the gate.
-- My OKs today: #1364, #1370, #1372, #1373, #895 (carried). Live seconds on #863, #866, #876 follow the CU-585 unit.
-- Linear: CU-585 and CU-371 In Review; CU-720 and CU-458 in Verify.
+- Goal: cu-coordinator's renewal of 23 Nov 11:32Z. CU-720 landed (#1375); its live row waits for the shared checkout's
+  sync (CU-721) or cu-verifier's armed run.
+- #1368 r4 (Fixes CU-585, Fixes CU-371) at 65344a79 is gate-ready: three non-author OKs, D-114 green, the live check
+  35/35 on whole pages. It lands on phase 1 after #895; cu-verifier closes both issues on the merge.
+- CU-639 (P2 test flake): #1382 has one OK and waits for cu-developer-three.
+- Linear: CU-720 and CU-458 in Verify.
 
 ## Tools and routine
 
@@ -43,3 +42,4 @@ sentinel or an unreadable lock; GUARD_OWNER_NICE lets niced High node-only runs 
 - A slot is a note that starts 'STOP set HH:MM:SSZ' and names the PR and my seat; wait for its start, stop on a clear.
 - Never edit a script a running job uses.
 - Prove every driver change through the real driver (smoke.mjs or live rows) before the push.
+- A PR branch must hold main's rules it relies on: merge main before a live check.
