@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - handover'
 created: 2026-11-08T04:14:00Z
-modified: 2026-11-23T18:04:00Z
+modified: 2026-11-23T22:09:47Z
 level: L1
-version: 4.33.0
+version: 4.34.0
 description: 'What a fresh [cu] Developer Two session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -19,13 +19,11 @@ grounded_in:
 Seat `cu-developer-two`: desktop and browser drivers, live view, run lock, MCP. Code: the session worktree
 `~/dtadpole/computer-use-wt/<session-id>`, one purpose worktree per PR. Records: [artifacts.md](artifacts.md).
 
-## State (23 Nov 18:04Z)
+## State (23 Nov 22:10Z)
 
-- Goal: cu-coordinator's renewal of 23 Nov 16:59Z. #1368 (CU-585 / CU-371) merged 16:30Z; both in Verify, as is CU-720.
-- D-112 follow-ups, each stacked on its refreshed class PR (base = the parent's branch): CU-710 is #1390 on #877 (D-114
-  green, reviews asked); CU-709 on #865 and CU-713 on #856 are built, their windows asked. Each lands after its parent.
-- #1382 (CU-639) gate-ready with two OKs. CU-723 (the split-rule narrowing) comes next.
-- Reviews today: #1385 OK at r1 (re-run owed on r2), #930 re-OK, #1387 / #1388 OKs.
+- Goal: renewal of 23 Nov 16:59Z. Merged today: #1368, #1382 (CU-639), #1400 (CU-729, High; live close next).
+- D-112 follow-ups: CU-710 is #1390 on #877; CU-713 is #1396 on #856 (two OKs); CU-709 on main (#865 merged), window asked.
+- CU-723 (split-rule narrowing) built at fc31b73, window asked.
 
 ## Tools and routine
 
@@ -36,9 +34,11 @@ sentinel or an unreadable lock; GUARD_OWNER_NICE lets niced High node-only runs 
 ## Lessons
 
 - Measure before assuming, on both trees; give row sets concrete-object variants, not only the PR's words.
-- Search open PRs for a symbol and check a file's owning seat before writing in it.
-- Every command: `cd <own worktree> || exit 1`, `git -C` (D-104).
+- Search open PRs for a symbol and check a file's owner before writing in it.
+- Every command: `cd <worktree> || exit 1`, `git -C` (D-104).
 - A slot is a note that starts 'STOP set HH:MM:SSZ' and names the PR and my seat; wait for its start, stop on a clear.
 - Never edit a script a running job uses.
 - Prove every driver change through the real driver (smoke.mjs or live rows) before the push.
+- After killing a job, stop its d101 too (it re-parents to pid 1) before editing or restarting.
+- A job's slot match names my seat as well as the label; a slot request is its own message, never inside a DONE line.
 - A PR branch must hold main's rules it relies on: merge main before a live check.
