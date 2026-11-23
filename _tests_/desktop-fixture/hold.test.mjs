@@ -72,27 +72,30 @@ describe('hold-confirm (CU-64)', () => {
     })
   })
 
+  // The seam times each press on the fixture's main thread (a nested run loop between down and up), which a loaded
+  // machine can stall by hundreds of milliseconds: a 100 ms press once measured past a 400 ms threshold and confirmed.
+  // The thresholds keep a wide margin over the short presses so the decision under test, not the load, sets the outcome.
   test('the real handlers: a short press cancels, a press past the threshold confirms; the facts carry the held time', async () => {
-    await withHold({ thresholdMs: 400 }, async (fixture) => {
+    await withHold({ thresholdMs: 1200 }, async (fixture) => {
       await fixture.act({ pressFor: { target: 'delete-archive', ms: 100 } })
       await fixture.act({ pressFor: { target: 'delete-archive', ms: 100 } })
-      await fixture.act({ pressFor: { target: 'delete-archive', ms: 550 } })
+      await fixture.act({ pressFor: { target: 'delete-archive', ms: 1350 } })
       const { events, fields } = await fixture.state()
       assert.deepEqual(outcomes(events), [['cancelled', 'delete-archive'], ['cancelled', 'delete-archive'], ['confirmed', 'delete-archive']])
       const confirmed = events.find((e) => e.type === 'confirmed')
-      assert.ok(confirmed.heldMs >= 540 && confirmed.heldMs < 1500, `heldMs ${confirmed.heldMs}`)
-      assert.ok(events.filter((e) => e.type === 'cancelled').every((e) => e.heldMs < 400))
+      assert.ok(confirmed.heldMs >= 1340 && confirmed.heldMs < 2500, `heldMs ${confirmed.heldMs}`)
+      assert.ok(events.filter((e) => e.type === 'cancelled').every((e) => e.heldMs < 1200))
       assert.equal(fields.deleted, true)
     })
   })
 
   test('Space held past the threshold arms, auto-repeat downs do not restart it; a short hold cancels', async () => {
-    await withHold({ armMs: 300 }, async (fixture) => {
+    await withHold({ armMs: 1000 }, async (fixture) => {
       await fixture.act({ pressFor: { target: 'arm', ms: 100 } })
-      await fixture.act({ pressFor: { target: 'arm', ms: 450, repeats: 5 } })
+      await fixture.act({ pressFor: { target: 'arm', ms: 1150, repeats: 5 } })
       const { events, fields } = await fixture.state()
       assert.deepEqual(outcomes(events), [['cancelled', 'arm'], ['armed', 'arm']])
-      assert.ok(events.find((e) => e.type === 'armed').heldMs >= 440, 'a repeat restarted the hold')
+      assert.ok(events.find((e) => e.type === 'armed').heldMs >= 1140, 'a repeat restarted the hold')
       assert.equal(fields.armed, true)
     })
   })

@@ -1,9 +1,9 @@
 ---
 title: Desktop fixture contract
 created: 2026-11-02T08:34:00Z
-modified: 2026-11-09T17:33:00Z
+modified: 2026-11-16T14:05:00Z
 level: L1
-version: 0.15.0
+version: 0.17.0
 description: What CU Fixture guarantees to the desktop driver, the verifiers and the evaluator - identity, placement, the private control channel, what the agent can and cannot see, and how a screen's outcome is judged.
 status: unverified
 grounded_in:
@@ -42,7 +42,12 @@ grounded_in:
   frame; `placeholders` (CU-349) up to six entries labelled only by a placeholder - no caption, no label or title
   element - as a native one-time-code or CVV box often is. Its state reports entry and area lengths (and area line
   counts), placeholder-entry lengths, never their text, plus check-box states and the chosen indices. `axAudit` serves
-  each target's placeholder apart from its name.
+  each target's placeholder apart from its name. `sheet: true` (CU-586) attaches a sheet with no title and no message:
+  a plain 'Continue' and a SwiftUI-style 'Delete' (an AXButton whose label is its own AXStaticText child); a press
+  records only 'sheet-pressed' with its index, and the state serves the sheet's static texts split by inside a button.
+- **Attach and upload (CU-377).** The `attach-upload` screen, meant for CU Ledger: a message window whose drop zone
+  ('Drop files here to attach', an AXGroup) takes files dragged from CU Fixture's file browser, and an 'Upload' button;
+  each records counts only ('attached', 'uploaded'), never a file's name.
 - **AXManualAccessibility (CU-329).** The application element answers `AXManualAccessibility` as an Electron app does:
   no value until set, then the stored boolean; listed and settable. Every outside write is kept in order (value only;
   never in the general events, which a helper run must not change); `manualAX` reports the value and the writes, `manualAXPreset {on}` sets true or clears it

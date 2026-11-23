@@ -52,7 +52,8 @@ test('CU-280: a free trial (a renewing subscription) and a price written with it
     assert.deepEqual([v.decision, v.class], ['confirm', 'purchase'], name)
   }
   for (const name of ['Free Apps', 'Free', 'USB Tools', 'Trials and Tips']) assert.equal(at(STORE, click, button(STORE, name)).decision, 'allow', name)
-  assert.equal(at(FIXTURE, click, button(FIXTURE, 'USD 4.99')).decision, 'allow', 'a code price outside the App Store, as before')
+  // CU-467 (cu-coordinator 00:49Z): a button naming a money amount asks purchase in any app now (it was free outside the App Store).
+  assert.deepEqual([at(FIXTURE, click, button(FIXTURE, 'USD 4.99')).decision, at(FIXTURE, click, button(FIXTURE, 'USD 4.99')).class], ['confirm', 'purchase'], 'a code price outside the App Store asks (CU-467)')
   assert.equal(at(FIXTURE, click, button(FIXTURE, 'Try Free')).class, 'purchase', 'CU-288: a trial asks in any app')
 })
 

@@ -39,6 +39,7 @@ final class Fixture: NSObject {
     MenuCompose.uninstallMenus()
     OpenSelection.uninstallMenus()
     NamedControls.uninstallMenus()
+    NamedControls.closeSheet()
     for window in windows.values { window.orderOut(nil); window.close() }
     windows = [:]
     Evidence.input = []
@@ -75,6 +76,7 @@ final class Fixture: NSObject {
     out.merge(ChatThread.fields()) { current, _ in current }
     out.merge(VendorForm.fields()) { current, _ in current }
     out.merge(WebButtons.fields()) { current, _ in current }
+    out.merge(WebForm.fields()) { current, _ in current }
     out.merge(ConsentCells.fields()) { current, _ in current }
     out.merge(MenuCompose.fields()) { current, _ in current }
     out.merge(NamedControls.fields()) { current, _ in current }
@@ -367,6 +369,7 @@ enum Windows {
       out[name] = ["window": windowName, "x": frame.minX, "y": top, "width": frame.width, "height": frame.height, "cx": frame.midX, "cy": top + frame.height / 2, "type": String(describing: type(of: view))]
     }
     out.merge(WebButtons.targets()) { current, _ in current }
+    out.merge(WebForm.targets()) { current, _ in current }
     for (name, board) in Fixture.shared.dropZones {
       guard let window = board.window, let content = window.contentView else { continue }
       for item in board.items + board.zones {

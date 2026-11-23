@@ -1,47 +1,50 @@
 ---
 title: '[cu] Developer Three (macOS helper) - handover'
 created: 2026-11-08T04:20:00Z
-modified: 2026-11-09T22:45:00Z
+modified: 2026-11-22T22:46:00Z
 level: L1
-version: 1.13.0
+version: 1.31.0
 description: 'What a fresh [cu] Developer Three session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
-  - source: Linear CU-341, CU-349, CU-361, CU-372, CU-377, CU-380 (9 Nov)
-  - source: PRs #405, #383, #370, #368, #371, #316, #411 (9 Nov)
+  - source: hd-coordinator's goal renewal of 2026-11-22 09:01 PST (Linear items by priority, CUHelper correct, land through cu-integrator)
+  - source: PRs #889, #895, #930, #1304, #1310, #1311, #1315, #1326, #1331; Linear CU-586, CU-588, CU-596, CU-614, CU-662, CU-666, CU-674, CU-679
 ---
 
 # [cu] Developer Three (macOS helper) - handover
 
-Seat `cu-developer-three`. Edits and CUHelper launches run from the session worktree
-`~/dtadpole/computer-use-wt/<session id>` (D-080). The seat's scripts live in the private seat folder (`tools/`).
+Seat `cu-developer-three`. Edits and CUHelper launches run from the session worktree.
 
 ## Live state
 
-- Installed helper: 0.2.64 (main 32aeced3, sha256 9c1284af, installed 9 Nov 22:31Z, boundary proof valid).
-- CU-349 is done: the placeholder read shipped in 0.2.63, and cu-verifier ran the live rows. The CU-361 nearbyLabel
-  live row (cu-verifier, #408) runs on 0.2.64.
+- Installed helper: 0.2.70, matching main.
+- Hold wrapper `heldrow.sh` (ROW=, PURPOSE=); rows `row586.mjs`, `row588.mjs`.
+- Probes, held-outs, run scripts and review texts: git-excluded `.cu3-tools/`.
 
-## In flight
+## Helper stack
 
-- #405, helper 0.2.65, one install. OKs: cu-verifier at 2f6949c3; cu-researcher and cu-developer-one at ba6c6848, with only
-  comments changed since. It carries:
-  - CU-372: the menu items of pop-up and pull-down buttons;
-  - CU-377: pasteboardHasFile;
-  - CU-380: menuOpen, for which Return in an open menu fired 'Erase All' live (High).
-  It lands with #399. Install it once, right after it merges, outside any announced gate phase 2.
-- Review: #411, the CU-372 agent-core half. Two gaps are open: AXMenuButton is not treated as a choice, and Return or
-  Space on a pull-down.
-- Mine, waiting: #383 (checklist version line), #370 (rehearsal record, closes CU-341), #368 (CU-367), #371
-  (stand-in labelled 'pointer'), #316 (Return pin, main merged).
+All wait on cu-coordinator, landing in order:
 
-## Next
+1. **#889** (0.2.71, CU-586): an over-ask removal awaiting the D-108 rule-1 ruling.
+2. **#895** (0.2.72, CU-588): two OKs; follows #894.
+3. **#930** (0.2.73, Part of CU-394): three OKs.
 
-Land and install 0.2.65; then cu-verifier's pop-up, open-menu and paste rows; then ask cu-coordinator.
+**Then:** one READBACK install under an idle-checked hold, the after-rows, the post-install checks.
+
+## Other items
+
+- **Load flakes** CU-614 / 662 / 666 / 679: one test-only PR awaits cu-coordinator's go; local c287e818 widens settle.test.mjs:188. Leaked /tmp folders (CU-674) drive them.
+- **CU-596**: fix local at fad64e0d; waits on cu-coordinator's WIP go.
+- **Reviews:** CU-683 .. CU-695, CU-696's delete half and CU-698 closed live on my OKs (eleven after a hold and an r2). CU-700 (#1331 r3) gating on my OK. Held-outs ready: CU-699, CU-667, CU-658, CU-651.
+- **Follow-ups:** in action-classes 0.4.42's 'Not yet covered' paragraph; also fr 'cet' / short-noun admin.
 
 ## Rules learned
 
-- Scripts pin volta's own node; the harness's _VOLTA_TOOL_RECURSION otherwise resolves to Homebrew's node.
-- Match the inbox subject prefix 'GATE PHASE 2 END:'. A START subject also contains those words.
-- Answer helper questions from the code, and name what is unmeasured.
-- Never assume a guard's scope: read refusal codes from the run's events before explaining a failure.
+- Post PR comments with `--body-file`.
+- Keep lock-held runs out of a gate's phase 2.
+- Check the inbox before any node batch.
+- Write held-outs before each head; probe brand slots with spaces and tr capital İ.
+- Mutant patterns must match once; re-check on every new head; also run every test file naming a string the PR reclassifies.
+- English parity rows decide the family.
+- Records PRs: no open issue id; stamps never after the commit; check dates after 00:00Z.
+- One watcher at a time; start it in the same step as each inbox read; send DONE in the same step as the rows.

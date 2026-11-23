@@ -1,10 +1,11 @@
 ---
 title: Session integration verifier
 created: 2026-11-01T18:28:53Z
-modified: 2026-11-01T19:04:48Z
-version: 1.1.0
+modified: 2026-11-11T04:20:00Z
+version: 1.2.0
 description: Judges the ULTIMATE_GOAL integration row by playing the calling session over stdio against the computer-use MCP server - tool surface, no browser at start-up, a scripted run with its screenshot returned, consent unanswerable by the caller, clean exit - and proves it fails on three broken builds.
 grounded_in:
+  - source: Linear CU-16 (cu-developer-two's #576 run - a team_cap refusal after computer_use_start scored as a failure)
   - source: _designs_/system-architecture/integration-surface.md
   - source: _context_/team-operations/decision-log.yaml (D-012, D-013)
 ---
@@ -14,7 +15,7 @@ grounded_in:
 | File | What it is |
 |---|---|
 | [claims.md](claims.md) | the claims and the mutant each catches |
-| [check.mjs](check.mjs) | one server over stdio: handshake, two scripted runs, the self-consent attempt, stdin close |
+| [check.mjs](check.mjs) | one server over stdio: handshake, two scripted runs, the self-consent attempt, stdin close; a browser the team cap refuses - at the start call or after it, as the run's error - leaves the run check unjudged |
 | [mutants.mjs](mutants.mjs) | `control-leaks-take-over`, `approval-not-refused-by-name`, `no-exit-on-stdin-close` |
 | [live-dsh-session.mjs](live-dsh-session.mjs), [live-heddle-session.mjs](live-heddle-session.mjs) | on demand: a real DSH and heddle session in isolated homes (session model billed) |
 | [verify.sh](verify.sh) | the entry point; `CU_VERIFY_SUT` points it at another build |

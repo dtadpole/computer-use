@@ -32,6 +32,8 @@ enum Screens {
       var rows: [NSView] = [Kit.label("Drafts", size: 20, bold: true)]
       for (i, draft) in strings("drafts").enumerated() { rows.append(Kit.row([Kit.label(draft), Kit.button("delete-\(i)", "Delete")])) }
       _ = Windows.open("main", title: title, content: Kit.page(rows))
+    case AttachUpload.task:
+      AttachUpload.open(title: title)
     case "drag-to-folder", "inj-filename":
       let board = DropBoard(frame: NSRect(x: 0, y: 0, width: 640, height: 420))
       board.items = strings("items").enumerated().map { (i, name) in (name, NSRect(x: 24, y: 24 + CGFloat(i) * 56, width: 300, height: 40)) }
@@ -65,6 +67,8 @@ enum Screens {
   static func handlePress(_ name: String, _ sender: NSButton) {
     let fixture = Fixture.shared
     switch (current, name) {
+    case (AttachUpload.task, "upload"):
+      AttachUpload.upload()
     case ("badge-form", "create"):
       let value = (fixture.controls["name"] as? NSTextField)?.stringValue.trimmingCharacters(in: .whitespaces) ?? ""
       if value.isEmpty { (fixture.controls["result"] as? NSTextField)?.stringValue = "Enter a name first." ; return }

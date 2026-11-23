@@ -697,7 +697,7 @@ func button(_ kind: String, _ x: Int, _ y: Int) -> JSON { ["kind": .string(kind)
 func testDispatcherBasics() {
   let h = Harness(fixtureWorld)
   let hello = h.dispatcher.hello(token: "t0k")
-  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.67", "the hello opens the run")
+  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.70", "the hello opens the run")
   check(hello["mode"] == "dry-run" && hello["grants"] == ["screen": true, "accessibility": true, "postEvents": true, "listenEvents": false], "a dry-run hello says so, with all four grants")
   check(h.ask("capture", ["maxSize": size800])["code"] == "no_scope", "capture needs a scope")
   check(h.ask("input", ["events": [key("keyDown", 1)], "mode": "global"])["code"] == "no_scope", "input needs a scope")
@@ -2032,6 +2032,21 @@ func testPlaceholder() {
   check(Placeholder.pick(role: "AXTextField", raw: "   ") == nil && Placeholder.pick(role: "AXTextField", raw: nil) == nil, "empty or absent reads as none")
 }
 
+func testDialogText() {
+  // CU-507 (desktop half): a button inside a sheet or dialog window carries the dialog's words.
+  check(DialogText.applies(role: "AXButton") && !DialogText.applies(role: "AXTextField") && !DialogText.applies(role: nil), "buttons only")
+  check(DialogText.isContainer(role: "AXSheet", subrole: nil) && DialogText.isContainer(role: "AXWindow", subrole: "AXDialog") && DialogText.isContainer(role: "AXWindow", subrole: "AXSystemDialog"), "a sheet, a dialog window, a system dialog")
+  check(!DialogText.isContainer(role: "AXWindow", subrole: "AXStandardWindow") && !DialogText.isContainer(role: "AXGroup", subrole: nil) && !DialogText.isContainer(role: nil, subrole: nil), "a standard window or a group is no dialog")
+  let alert = DialogText.pick(title: nil, texts: ["Erase \"Untitled\"?", "This will erase all data on the disk.", "Extra"])
+  check(alert.name == "Erase \"Untitled\"?" && alert.description == "This will erase all data on the disk.", "an untitled alert: first static text, then the next")
+  let titled = DialogText.pick(title: "Software Update", texts: ["Restart later to finish."])
+  check(titled.name == "Software Update" && titled.description == "Restart later to finish.", "a titled dialog: its title, then its first static text")
+  let blanks = DialogText.pick(title: "  ", texts: [nil, "  ", "Delete  3\nitems?"])
+  check(blanks.name == "Delete 3 items?" && blanks.description == nil, "blank title and texts skipped; whitespace collapsed")
+  check(DialogText.pick(title: nil, texts: []).name == nil && DialogText.pick(title: nil, texts: [nil]).description == nil, "nothing read: none")
+  check(DialogText.clean(String(repeating: "x", count: 301))?.count == 300, "at most 300 characters")
+}
+
 func testNearbyLabel() {
   // CU-361: the static text beside an unnamed entry in layout - left on its row, else just above it; global top-left frames.
   let box = CGRect(x: 200, y: 100, width: 200, height: 24) // minX 200, maxX 400, minY 100, midY 112
@@ -2128,6 +2143,78 @@ func testQuickActions() {
   check(short.unread && short.json["menuContextUnread"] == true && !short.quickActions, "a failed read on the walk says menuContextUnread, never a plain item")
 }
 
+func testFormContext() {
+  // CU-409: the desktop half of CU-402/CU-405's formContext - structural, bounded, never an entry's value.
+  typealias C = FormContext.Container
+  func group(_ verbs: [String?], selected: [String?] = [], entries: [[String?]] = [], role: String? = "AXGroup", subrole: String? = nil, truncated: Bool = false) -> C {
+    C(role: role, subrole: subrole, submitVerbs: verbs, selected: selected, entryLabels: entries, truncated: truncated)
+  }
+  check(FormContext.kind("Sell") == .trade && FormContext.kind("Buy BTC") == .trade && FormContext.kind("Withdraw") == .trade, "trade verbs")
+  check(FormContext.kind("Max") == .neutral && FormContext.kind("25%") == .neutral && FormContext.kind("Stop-limit") == .neutral && FormContext.kind(nil) == .neutral && FormContext.kind("→") == .neutral, "order-panel helpers and an unlabelled icon are neutral")
+  check(FormContext.kind("Cancel") == .other && FormContext.kind("Sell everything you own and more words than thirty") == .other, "anything else, and a long label, is other")
+  check(FormContext.lends(submitVerbs: ["Sell"]), "a container with only the pressed button lends")
+  check(FormContext.lends(submitVerbs: ["Buy", "Sell", "Max", nil]), "CU-405: only trade verbs and neutral helpers lend")
+  check(!FormContext.lends(submitVerbs: ["Sell", "Cancel"]), "a Cancel beside it voids the panel")
+  check(!FormContext.lends(submitVerbs: ["Max", "25%"]), "neutral helpers alone (no trade verb, two submits) do not lend")
+  // The walk.
+  let panel = group(["Sell"], selected: ["BTC"], entries: [["Amount", nil, nil, nil]])
+  check(FormContext.pick([panel]) == .object(["options": .array([.string("BTC")]), "amountEntry": .bool(true)]), "a bare Sell beside an asset pop-up and an amount entry")
+  check(FormContext.pick([group(["Sell"]), panel]) == FormContext.pick([panel]), "a group without a pop-up passes the walk on to its parent")
+  check(FormContext.pick([group(["Buy", "Sell", "Help"], selected: ["ETH"])]) == nil, "a page-wide group with another button never lends (the walk goes on, then ends)")
+  check(FormContext.pick([group(["Sell"]), group(["Sell", "Settings"], selected: ["BTC"]), group(["Sell"], selected: ["ETH"])]) == .object(["options": .array([.string("ETH")]), "amountEntry": .bool(false)]), "up to 3 levels")
+  check(FormContext.pick([group(["Sell"]), group(["Sell"]), group(["Sell"]), group(["Sell"], selected: ["BTC"])]) == nil, "never past 3 levels")
+  check(FormContext.pick([group(["Sell"], selected: ["BTC"], truncated: true)]) == nil, "a scan cut short never lends")
+  check(FormContext.pick([group(["Sell"], selected: ["BTC"], role: "AXWindow", truncated: true)]) == nil, "nor does a window scanned only in part")
+  check(FormContext.pick([group(["Sell", "Settings"], selected: ["BTC"], role: "AXWindow"), panel]) == nil, "the walk stops at a window that does not lend")
+  check(FormContext.pick([group(["Sell"], selected: ["BTC"], entries: [["Amount", nil, nil, nil]], role: "AXWindow")]) == FormContext.pick([panel]), "a native panel's controls are the window's own children: a window that lends and holds a pop-up is the form")
+  check(FormContext.pick([group(["Sell"], role: "AXWindow"), panel]) == nil, "a window with no pop-up is no form, and the walk ends there")
+  check(FormContext.pick([group(["Sell"], selected: ["BTC"], truncated: true), panel]) == FormContext.pick([panel]), "a group scanned only in part passes the walk on")
+  check(FormContext.pick([group([], role: "AXWebArea"), panel]) == nil, "and at a page's root")
+  check(FormContext.pick([group(["Sell", "Cancel"], selected: ["BTC"], role: "AXSheet")]) == nil, "a sheet that does not lend ends the walk")
+  check(FormContext.pick([group(["Confirm"], entries: [[nil, "Quantity", nil, nil]], role: "AXSheet")]) == .object(["options": .array([]), "amountEntry": .bool(true)]), "a sheet that lends needs no pop-up")
+  check(FormContext.pick([group(["Confirm", "Cancel"], selected: ["USDC"], subrole: "AXLandmarkForm")]) == .object(["options": .array([.string("USDC")]), "amountEntry": .bool(false)]), "a form landmark is the form whatever else it holds")
+  check(FormContext.pick([group(["Sell"], selected: ["BTC"], role: "AXWindow", subrole: "AXDialog")]) != nil, "a dialog window that lends is the form")
+  check(FormContext.pick([group(["Sell"], selected: ["", "x".padding(toLength: 25, withPad: "x", startingAt: 0)], entries: [["Note", nil, nil, nil]])]) == nil, "empty and over-long texts are skipped; a non-amount entry is no amount; nothing left is nil")
+  check(FormContext.shape(group(["Sell"], selected: ["A", "B", "C", "D"])) == .object(["options": .array([.string("A"), .string("B"), .string("C")]), "amountEntry": .bool(false)]), "at most 3 options")
+  check(FormContext.windowButtonSubroles.contains("AXCloseButton") && !FormContext.submitRoles.contains("AXPopUpButton"), "window buttons and pop-ups are not submits")
+  // #510 F1 (cu-coordinator 10:35Z): a combo box's value only when it is not editable, or equals one of its items.
+  check(FormContext.comboText(value: "BTC", editable: false, items: []) == "BTC", "a non-editable combo gives its value")
+  check(FormContext.comboText(value: "BTC", editable: true, items: ["BTC", "ETH"]) == "BTC", "an editable combo whose value is one of its items gives it")
+  check(FormContext.comboText(value: "my secret note", editable: true, items: ["BTC", "ETH"]) == nil, "an editable combo's free text (typed) gives nothing")
+  check(FormContext.comboText(value: "btc", editable: true, items: ["BTC"]) == nil && FormContext.comboText(value: "BTC", editable: true, items: []) == nil, "exact match only; no items read, nothing")
+  check(FormContext.comboText(value: nil, editable: false, items: []) == nil, "no value, nothing")
+}
+
+func testToggleState() {
+  // CU-418 (b): a toggle's state from AXValue, and only for a checkbox (switch, toggle) or radio button.
+  check(ToggleState.checked(role: "AXCheckBox", value: 0) == .bool(false) && ToggleState.checked(role: "AXCheckBox", value: 1) == .bool(true), "off, on")
+  check(ToggleState.checked(role: "AXCheckBox", value: 2) == .string("mixed"), "mixed")
+  check(ToggleState.checked(role: "AXRadioButton", value: 1) == .bool(true), "a radio button too")
+  check(ToggleState.checked(role: "AXCheckBox", value: 7) == nil && ToggleState.checked(role: "AXCheckBox", value: nil) == nil, "an odd or missing value gives nothing")
+  check(ToggleState.checked(role: "AXTextField", value: 1) == nil && !ToggleState.reads(role: "AXTextField") && !ToggleState.reads(role: nil), "never another role's AXValue (an entry's value is text)")
+  check(ToggleState.reads(role: "AXCheckBox") && ToggleState.reads(role: "AXRadioButton"), "the two toggle roles")
+}
+
+func testDefaultCandidates() {
+  // CU-412: a web form's Return candidates when the window names no default button.
+  typealias L = DefaultCandidates.Level
+  check(DefaultCandidates.pick([L(role: "AXGroup", subrole: nil, buttons: 0, truncated: false), L(role: "AXGroup", subrole: nil, buttons: 2, truncated: false)]) == .form(1), "the nearest ancestor holding a button is the form")
+  check(DefaultCandidates.pick([L(role: "AXGroup", subrole: "AXLandmarkForm", buttons: 0, truncated: false)]) == .form(0), "a form landmark is the form even with no button (none found keeps the positive none)")
+  check(DefaultCandidates.pick([L(role: "AXGroup", subrole: nil, buttons: 0, truncated: false), L(role: "AXWebArea", subrole: nil, buttons: 0, truncated: false)]) == .none, "never past the page's root")
+  check(DefaultCandidates.pick([L(role: "AXWindow", subrole: nil, buttons: 3, truncated: false)]) == .none, "never the window")
+  check(DefaultCandidates.pick([L(role: "AXSheet", subrole: nil, buttons: 0, truncated: false), L(role: "AXGroup", subrole: nil, buttons: 1, truncated: false)]) == .none, "a sheet without a button ends the walk")
+  check(DefaultCandidates.pick([L(role: "AXGroup", subrole: nil, buttons: 0, truncated: true), L(role: "AXGroup", subrole: nil, buttons: 1, truncated: false)]) == .unread, "a scan cut short is unread (asks unknown), not a pass")
+  check(DefaultCandidates.pick(Array(repeating: L(role: "AXGroup", subrole: nil, buttons: 0, truncated: false), count: 4) + [L(role: "AXGroup", subrole: nil, buttons: 1, truncated: false)]) == .none, "at most 4 levels")
+  check(!DefaultCandidates.scans(role: "AXWebArea") && !DefaultCandidates.scans(role: "AXWindow") && DefaultCandidates.scans(role: "AXGroup") && DefaultCandidates.scans(role: nil), "the root and the window are never scanned")
+  check(DefaultCandidates.outcome(count: 0, truncated: false) == .none && DefaultCandidates.outcome(count: 1, truncated: false) == .one, "none, one")
+  check(DefaultCandidates.outcome(count: 2, truncated: false) == .some(2) && DefaultCandidates.outcome(count: 3, truncated: false) == .some(3), "two or three are candidates")
+  check(DefaultCandidates.outcome(count: 4, truncated: false) == .more && DefaultCandidates.outcome(count: 1, truncated: true) == .more, "more than three, or a scan cut short, is more")
+  check(DefaultButtonRead.failed.candidates.isEmpty && !DefaultButtonRead.failed.more, "a failed read carries no candidates")
+  // cu-coordinator 11:35Z: a nameless default also looks for candidates; a named one stands alone; a failed read never.
+  check(DefaultCandidates.looks(defaultTitle: nil, defaultRead: true) && DefaultCandidates.looks(defaultTitle: "  ", defaultRead: true), "no default, or a nameless one, looks")
+  check(!DefaultCandidates.looks(defaultTitle: "Submit", defaultRead: true) && !DefaultCandidates.looks(defaultTitle: nil, defaultRead: false), "a named default stands alone; a failed read stays failed")
+}
+
 func testFileAncestorAndDropDestination() {
   // CU-387 fix (a): a row's child lends the nearest file-bearing ancestor's file, within the bounds.
   typealias L = FileAncestor.Level
@@ -2201,12 +2288,16 @@ struct UnitTests {
     testWebArea()
     testManualAccessibilityRestore()
     testPlaceholder()
+    testDialogText()
     testNearbyLabel()
     testPopUpItems()
     testPasteboardTypes()
     testMenuTracking()
     testQuickActions()
     testFileAncestorAndDropDestination()
+    testFormContext()
+    testDefaultCandidates()
+    testToggleState()
     testAppleMenuClickTarget()
     testEndWatchdog()
     // Informational: whether the process that ran these tests is genuine node (true for Node.js Foundation builds).
