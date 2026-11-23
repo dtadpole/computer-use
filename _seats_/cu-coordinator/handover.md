@@ -1,9 +1,9 @@
 ---
 title: '[cu] Coordinator - handover'
 created: 2026-11-08T04:15:00Z
-modified: 2026-11-23T08:18:51Z
+modified: 2026-11-23T13:47:26Z
 level: L2
-version: 4.1.0
+version: 4.2.0
 status: unverified
 description: 'What the next [cu] Coordinator session needs to take the seat mid-flight - state at 23 Nov 08:20Z.'
 grounded_in:
@@ -19,22 +19,21 @@ roster, seat files, review log and my helpers beside TEAM.yaml in the reflection
 **Context economy.** The previous holder died past the model window. Keep tool outputs small, delegate long reads,
 never print an inbox or a `--done` result whole. Idle goal rounds run /tmp/cu-coord/wait.sh (bounded wait).
 
-**Goal.** Verdict 0.9.328: seven rows hold. Consent waits on Highs. CU-585 and CU-371: #884, #894 and #897 landed,
-but they read only form-wrapped zones, so the formless rows still fail; cu-developer-two's formless PR is next.
-CU-607: #1364 is gating with four OKs. CU-716: localized password forms and PIN names. Then CU-135 with the owner.
-Human control waits on step 4 (CU-11, CU-119, CU-135, CU-203). Helper 0.2.71 is on main; #895 and #930 follow.
+**Goal.** Seven rows hold. Consent: CU-607 and CU-716 closed live; CU-585 / CU-371 wait on #1368 r3 (policy
+owner's split-sentence and purpose-clause rules). Then CU-135 with the owner. Human control waits on step 4. CU-720
+landed (#1375); its live row waits on CU-721: the main checkout is pinned at 8 Nov and the Last War bridge runs it
+with the idle wait off - owner decision; nobody touches it. #895 -> #930 gate after 14:20Z.
 
-**Lane and records.** Highs first; then #1349, #1000, #1129, the class batch and the D-112 reworks. #1355 (D-112,
-D-113), then #1361 (D-114, stacked): retarget it when #1355 lands, and add the slow-suite refinement of 07:42Z.
+**Lane and records.** Highs first; then #1373, #1349, #1000, #1129, the class batch. Last War soft slots: no long
+lock hold in or 10 min before 19:56:30-20:15Z today and 09:20-10:50Z on 24 Nov.
 
-**Seats.** cu-developer-one was replaced at 07:52Z by session-72801197; the old session was archived at 08:10Z
-(workspace/archiveSession). Renew the researcher and verifier goals near 205/256.
+**Seats.** All goals renewed today; cu-verifier's context was 76 % at 13:30Z - spawn a successor past 85 %.
 
-**Every 15 minutes.** Inbox, health, triage, one member review (round 74 starts with cu-researcher), decisions, a
+**Every 15 minutes.** Inbox, health, triage, one member review (round 75 about 14:00Z), decisions, a
 short Chinese summary. Daily 23:00Z reflection and this file; Monday cycle close.
 
 **Rules that bite.** No ask_user_question (D-031). Input only through CUHelper, owner idle (D-056, D-066). Model runs
 announced; nothing past 21 USD without the owner (D-034). Never implement or merge.
 
-**Owner items.** Step 4; notifications and Typeless; Chrome tabs; history clean-up; paste setting; Opus S8/S9
-budget; the cu-owner desktop runs; the removal of ~/reflection.
+**Owner items.** CU-721 (urgent); step 4; notifications and Typeless; Chrome tabs; history clean-up; paste setting;
+Opus S8/S9 budget; the removal of ~/reflection.

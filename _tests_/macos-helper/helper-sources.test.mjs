@@ -309,6 +309,28 @@ test('CU-507: describe() gives a button inside a sheet or dialog window its dial
   assert.match(policy, /role == "AXSheet" \|\| \(role == "AXWindow" && containerSubroles\.contains\(subrole \?\? ""\)\)/)
 })
 
+test('CU-588: describe() gives a button its form entries from a bounded walk that never reads an entry\'s value', () => {
+  const access = files['Accessibility.swift']
+  assert.match(access, /if DialogText\.applies\(role: role\), let entries = formEntries\(of: element\) \{ shape\["formEntries"\] = \.array\(entries\.map \{ \.string\(\$0\) \}\) \}/,
+    'only a button asks for its form entries')
+  const start = access.indexOf('private static func formEntries(of element: AXUIElement)')
+  assert.ok(start > 0, 'the formEntries helper exists')
+  const helper = access.slice(start, access.indexOf('\n  }\n', start))
+  assert.match(helper, /for _ in 0\.\.<DialogText\.maxDepth \{/, 'a bounded ancestor walk to the sheet or dialog')
+  assert.match(helper, /DialogText\.walk\(container, limit: FormEntries\.maxScan, children: children, role: \{ string\(\$0, "AXRole"\) \}\)/, 'a bounded walk that skips control subtrees')
+  assert.match(helper, /\.prefix\(FormEntries\.maxEntries\)/)
+  // cu-researcher's #895 note: a sheet or dialog lends as a whole; in a window only the button's own form - its nearest
+  // group, the window only for a flat panel - lends.
+  assert.match(helper, /if let dialog \{\n\s*entries = scan\(dialog\)/, 'a sheet or dialog keeps its whole scope')
+  assert.match(helper, /guard let index = FormEntries\.scope\(chain\.map \{ string\(\$0, "AXRole"\) \}\) else \{ return nil \}\n\s*entries = scan\(chain\[index\]\)/, 'a window lends only the button\'s own group')
+  const policySrc = readFileSync(join(SOURCES, 'Policy.swift'), 'utf8')
+  assert.match(policySrc, /static let groupRoles: Set<String> = \["AXGroup", "AXScrollArea", "AXSplitGroup", "AXTabGroup", "AXToolbar", "AXLayoutArea"\]/)
+  assert.match(helper, /\[titled, string\(entry, "AXDescription"\), string\(entry, "AXPlaceholderValue"\), string\(entry, "AXHelp"\)\]/, 'label, description, placeholder, help')
+  assert.doesNotMatch(helper, /string\(entry, "AXValue"\)|attribute\(entry, "AXValue"\)/, 'an entry\'s own value is never read')
+  const policy = readFileSync(join(SOURCES, 'Policy.swift'), 'utf8')
+  assert.match(policy, /enum FormEntries \{\n  static let maxTexts = 3\n  static let maxLength = 80\n  static let maxScan = 120\n  static let maxEntries = 12/)
+})
+
 test('CU-409: describe() reports a formContext only for a button, from a bounded scan that never reads an entry\'s value', () => {
   const access = files['Accessibility.swift']
   assert.match(access, /if role == "AXButton", !FormContext\.windowButtonSubroles\.contains\(subrole \?\? ""\), let form = formContext\(of: element\) \{ shape\["formContext"\] = form \}/,
