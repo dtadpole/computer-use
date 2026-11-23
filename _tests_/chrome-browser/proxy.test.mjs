@@ -47,16 +47,21 @@ async function target() {
   return { seen, port: server.address().port, close: () => new Promise((resolve) => server.close(resolve)) }
 }
 
-/** Send raw bytes to the proxy and collect what comes back until the socket closes or a pause. */
-function raw(port, text, { waitMs = 300 } = {}) {
+/**
+ * Send raw bytes to the proxy and collect what comes back until the socket closes. Every exchange in this suite
+ * ends with the far side closing (connection: close, a 101 then end, or a 403), so the bound is only a backstop
+ * for a broken proxy; at 300 ms it cut a slow tunnel reply short under a loaded gate (flake of 18 Nov).
+ */
+function raw(port, text, { waitMs = 5000 } = {}) {
   return new Promise((resolve) => {
     const socket = net.connect(port, '127.0.0.1')
     let data = ''
     socket.on('data', (chunk) => { data += chunk })
     socket.on('connect', () => socket.write(text))
-    const finish = () => { socket.destroy(); resolve(data) }
+    let timer
+    const finish = () => { clearTimeout(timer); socket.destroy(); resolve(data) }
     socket.on('close', finish)
-    setTimeout(finish, waitMs)
+    timer = setTimeout(finish, waitMs)
   })
 }
 

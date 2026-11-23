@@ -15,11 +15,40 @@ import AppKit
 /// bound to Command-Shift-U. The menu exists only while this screen is open. `placeholders` (CU-349) adds up to six
 /// entries labelled ONLY by their placeholder - no caption, no accessibility label or title element - as a native
 /// one-time-code or CVV box often is; they report their length only, like the named entries. `popUps` (CU-409) adds up
-/// to six pop-up buttons `{name, items}`, the first item selected, reporting the selected index only.
+/// to six pop-up buttons `{name, items}`, the first item selected, reporting the selected index only. `sheet: true`
+/// (CU-586) attaches a sheet with no title and no message: a plain 'Continue' and a SwiftUI-style 'Delete' whose label is
+/// its own AXStaticText child; a press records only 'sheet-pressed' with its index.
 /// An entry of this screen: the generic state skips it, so what is typed never leaves the app (lengths only, below).
 final class NamedField: NSTextField {}
 /// A text area of this screen: like NamedField, only its length and line count leave the app.
 final class NamedArea: NSTextView {}
+/// CU-586: a SwiftUI-style button - an AXButton view whose label is its own AXStaticText child (a SwiftUI Button with a
+/// Text exposes both), named by that label. A click or AXPress calls `onPress`.
+final class SheetLabelButton: NSView {
+  var onPress: (() -> Void)?
+  let label: NSTextField
+  init(frame: NSRect, title: String) {
+    label = NSTextField(labelWithString: title)
+    super.init(frame: frame)
+    wantsLayer = true
+    layer?.cornerRadius = 6
+    layer?.backgroundColor = NSColor.systemRed.cgColor
+    label.textColor = .white
+    label.alignment = .center
+    label.frame = NSRect(x: 0, y: (frame.height - 18) / 2, width: frame.width, height: 18)
+    addSubview(label)
+  }
+  required init?(coder: NSCoder) { nil }
+  override func isAccessibilityElement() -> Bool { true }
+  override func accessibilityRole() -> NSAccessibility.Role? { .button }
+  override func accessibilityLabel() -> String? { label.stringValue }
+  override func accessibilityChildren() -> [Any]? { [label] }
+  override func accessibilityPerformPress() -> Bool { onPress?(); return true }
+  /// A point on the button is the button, as a SwiftUI Button answers a hit test; its label stays a child.
+  override func accessibilityHitTest(_ point: NSPoint) -> Any? { self }
+  override func mouseDown(with event: NSEvent) { onPress?() }
+  override func hitTest(_ point: NSPoint) -> NSView? { frame.contains(point) ? self : nil }
+}
 
 final class NamedControls: NSObject {
   static let task = "named-controls"
@@ -34,6 +63,8 @@ final class NamedControls: NSObject {
   var pressed: [Int] = []
   var checkboxes: [NSButton] = []
   var popUps: [NSPopUpButton] = []
+  var sheetWindow: NSWindow?
+  var sheetPressed: [Int] = []
   var toggled: [Int] = []
   var chosen: [Int] = []
   var menuItem: NSMenuItem?
@@ -177,11 +208,76 @@ final class NamedControls: NSObject {
     }
     let window = Windows.open("main", title: title, content: content)
     if let first = fields.first ?? placeholderFields.first { window.makeFirstResponder(first) } else if let area = areas.first { window.makeFirstResponder(area) }
+    if Screens.params["sheet"] as? Bool == true { attachSheet(to: window) }
   }
 
   @objc func press(_ sender: NSButton) {
     pressed.append(sender.tag)
     Fixture.shared.record("pressed", ["index": sender.tag])
+  }
+
+  /// CU-586 (cu-verifier 13:43Z): `sheet: true` attaches a sheet with NO title and NO message text to the window - a plain
+  /// NSButton 'Continue' (index 0) and a SwiftUI-style 'Delete' (index 1): an AXButton view whose label is an AXStaticText
+  /// child, as a SwiftUI button exposes it. Nothing else is on the sheet, so the only static text under it is that
+  /// button's own label. A press records only 'sheet-pressed' with its index; the sheet stays open.
+  private func attachSheet(to window: NSWindow) {
+    let body = NSView(frame: NSRect(x: 0, y: 0, width: 280, height: 64))
+    let plain = NSButton(title: "Continue", target: self, action: #selector(pressSheet(_:)))
+    plain.bezelStyle = .rounded
+    plain.tag = 0
+    plain.frame = NSRect(x: 20, y: 17, width: 110, height: 30)
+    let labelled = SheetLabelButton(frame: NSRect(x: 150, y: 18, width: 110, height: 28), title: "Delete")
+    labelled.onPress = { [weak self] in self?.recordSheetPress(1) }
+    body.addSubview(plain)
+    body.addSubview(labelled)
+    let sheet = NSWindow(contentRect: body.frame, styleMask: [.titled], backing: .buffered, defer: false)
+    sheet.title = ""
+    sheet.contentView = body
+    Fixture.shared.controls["sheet-continue"] = plain
+    Fixture.shared.controls["sheet-delete"] = labelled
+    sheetWindow = sheet
+    window.beginSheet(sheet) { _ in }
+  }
+
+  @objc func pressSheet(_ sender: NSButton) { recordSheetPress(sender.tag) }
+
+  private func recordSheetPress(_ index: Int) {
+    sheetPressed.append(index)
+    Fixture.shared.record("sheet-pressed", ["index": index])
+  }
+
+  /// The sheet's static texts as Accessibility serves them in process, split by whether they sit inside a button - what
+  /// the fixture test pins (none outside; only 'Delete' inside). [:] when no sheet is open.
+  static func sheetTexts() -> [String: Any] {
+    guard let screen = shared, let sheet = screen.sheetWindow, let body = sheet.contentView else { return [:] }
+    var outside: [String] = [], inside: [String] = []
+    func walk(_ element: Any, inButton: Bool) {
+      let node = element as AnyObject
+      let role = node.accessibilityRole?() ?? nil
+      if role == .staticText {
+        // A label's static text is served by its cell (NSTextFieldCell) in process.
+        let text = (node as? NSTextField)?.stringValue ?? (node as? NSCell)?.stringValue ?? ""
+        if inButton { inside.append(text) } else { outside.append(text) }
+      }
+      for child in (node.accessibilityChildren?() ?? nil) ?? [] { walk(child, inButton: inButton || role == .button) }
+    }
+    let kids = body.accessibilityChildren() ?? []
+    for child in kids { walk(child, inButton: false) }
+    // The sheet's own controls: role and name of each child, as AX serves them (both buttons, 'Continue' then 'Delete').
+    let controls = kids.map { child -> [String] in
+      let node = child as AnyObject
+      // An NSButton is served by its cell in process; the SwiftUI-style view names itself.
+      let names: [String?] = [(node as? NSView)?.accessibilityLabel(), (node as? NSButton)?.title, (node as? NSButtonCell)?.title]
+      return [(node.accessibilityRole?() ?? nil)?.rawValue ?? "", names.compactMap { $0 }.first { !$0.isEmpty } ?? ""]
+    }
+    return ["role": sheet.accessibilityRole()?.rawValue ?? "", "outside": outside, "inside": inside, "controls": controls]
+  }
+
+  /// Ends the sheet before the fixture closes its windows (reset).
+  static func closeSheet() {
+    guard let screen = shared, let sheet = screen.sheetWindow else { return }
+    sheet.sheetParent?.endSheet(sheet)
+    screen.sheetWindow = nil
   }
 
   /// A toggle records its index and new state only, never the box's title.
@@ -259,6 +355,7 @@ final class NamedControls: NSObject {
             "namedAreaLines": screen.areas.map { $0.string.components(separatedBy: "\n").count }, "namedPressed": screen.pressed,
             "namedChecked": screen.checkboxes.map { $0.state == .on ? 1 : 0 }, "namedToggled": screen.toggled, "namedChosen": screen.chosen,
             "namedMenuItems": screen.menuItem?.submenu?.items.count ?? 0,
-            "namedPopUpSelected": screen.popUps.map { $0.indexOfSelectedItem }]
+            "namedPopUpSelected": screen.popUps.map { $0.indexOfSelectedItem },
+            "namedSheetPressed": screen.sheetPressed, "namedSheetTexts": sheetTexts()]
   }
 }

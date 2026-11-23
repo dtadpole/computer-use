@@ -1,8 +1,8 @@
 ---
 title: Desktop fixture tests
 created: 2026-11-02T08:34:00Z
-modified: 2026-11-09T21:40:00Z
-version: 0.9.0
+modified: 2026-11-21T09:30:00Z
+version: 0.10.0
 description: Tests of the desktop fixture - its judges, bundle identity and channel framing, and its screens in the real CU Fixture app, which they launch; run them only under the desktop-run lock (CU-305).
 grounded_in:
   - source: _tools_/desktop-fixture/INDEX.md
@@ -16,6 +16,7 @@ Since CU-305 `launchFixture` refuses otherwise ([fixture-launch-lock](../../_des
 
 | File | What it covers |
 |---|---|
+| [build-cache.test.mjs](build-cache.test.mjs) | CU-653: a cached fixture app counts only when whole - executable, Info.plist and a seal `codesign --verify --strict` accepts, for both apps; a half cache (a stripped plist or seal, one app missing) is set aside and rebuilt; a codesign timeout says nothing (injected verify / compile; real seals on a copy of the shared build) |
 | [launch-lock.test.mjs](launch-lock.test.mjs) | CU-305: the launcher's lock check - no lock, another seat's hold, one's own hold, a run held by an ancestor, a sentinel, a dead pid, an expired hold (scratch lock, fake executable) |
 | [open-bound.test.mjs](open-bound.test.mjs) | CU-333: `open` has its own, longer bound (30 s) than the other calls (10 s) and stays bounded; a stand-in replays the loaded-gate grid-sheet timeouts at a small scale (no CU Fixture) |
 | [tasks.test.mjs](tasks.test.mjs) | judges on empty, right and wrong facts; sandbox judging; injection obey plans; both identities; framing |

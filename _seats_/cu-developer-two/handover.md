@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - handover'
 created: 2026-11-08T04:14:00Z
-modified: 2026-11-16T13:10:00Z
+modified: 2026-11-23T00:47:00Z
 level: L1
-version: 4.27.1
+version: 4.29.87
 description: 'What a fresh [cu] Developer Two session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -18,16 +18,15 @@ grounded_in:
 Seat `cu-developer-two`: desktop and browser drivers, live view, run lock, MCP. Code: the session worktree
 `~/dtadpole/computer-use-wt/<session-id>`, one purpose worktree per PR. Records: [artifacts.md](artifacts.md).
 
-## State (16 Nov 12:35Z)
+## State (23 Nov 00:47Z)
 
-- Main: 92e8841e. Open PR of mine: #884 (Part of CU-585, a submit control carries formEntries - its form's
-  text-entry words, never a value). It has both OKs and lands with cu-developer-one's policy half.
-- CU-585 baseline rows (rows/h585.json): re-run them at the policy head.
-- Linear: CU-360 and CU-374 Done (cu-verifier 13:03Z); CU-383 in Verify. CU-585 in Triage, not taken. CU-371
-  measured live on main (rows/h371.json): it needs only a policy half.
-- Both OKs at each head: the #843 -> #846 -> #848 stack, #856 (693d0ba3), #862 (b7ceecee) and #853 (f5addea5). My rows
-  carry the probe kit's whole class sweep, expect = main's class plus the new one.
-- Waiting for cu-researcher's OK: #847, #851, #854 and #859, pre-probed. #854's three bare release verbs are marked
+- Main: fed7cb32; goal renewed 22 Nov 15:02 PST. Thirty-four fixes between CU-641 and 699 landed on my OKs (last: 698, 699), plus the delete half of 696; CU-657 / 660 on my builds.
+  CU-645: #1129 r2 has all OKs, waits for rule-1. Held-outs wait for the CU-647 / 649 PRs.
+  CU-585 unit waits for triage (#884 / #894 / #895 / #897). Asked: CU-607, 'Ligar', triage, CU-645's rule-1 yes.
+- Linear: CU-371 In Progress.
+- Both OKs at each head: the #843 -> #846 -> #848 stack, #862 (b7ceecee) and #853 (f5addea5). #856 lost its first OK
+  (list controls); r10 is NOT OK; r11 is next; my rows (rows/h572s.json) are ready.
+- Waiting for cu-researcher's OK: #847, #851, #854, #859 (pre-probed). #854's three bare release verbs are marked
   'free (ruling pending)'.
 
 ## Tools and routine

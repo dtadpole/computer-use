@@ -169,4 +169,30 @@ describe('named-controls (live rows decided by a name)', () => {
       await fixture.close()
     }
   })
+
+  test("CU-586: sheet attaches a sheet with no title or message - a plain 'Continue' and a SwiftUI-style 'Delete' whose label is its own static text", async () => {
+    await withNamed({ buttons: ['OK'], sheet: true }, async (fixture) => {
+      const { fields } = await fixture.state()
+      assert.equal(fields.namedSheetTexts.role, 'AXSheet')
+      assert.deepEqual(fields.namedSheetTexts.outside, [], 'no title or message text on the sheet')
+      assert.deepEqual(fields.namedSheetTexts.inside, ['Delete'], "the only static text is 'Delete', inside its button")
+      assert.deepEqual(fields.namedSheetTexts.controls, [['AXButton', 'Continue'], ['AXButton', 'Delete']], 'two buttons, nothing else')
+      const audit = await fixture.axAudit()
+      assert.deepEqual([audit['sheet-continue'].role, audit['sheet-continue'].name], ['AXButton', 'Continue'])
+      // In-process audit walks to the deepest element at the centre: 'Delete' is its label, the static text child.
+      assert.deepEqual([audit['sheet-delete'].role, audit['sheet-delete'].name], ['AXStaticText', 'Delete'])
+      const targets = await fixture.targets()
+      assert.equal(targets['sheet-continue'].window, 'main:sheet', "counted in the sheet's own window")
+      assert.equal(targets['sheet-delete'].window, 'main:sheet')
+      await fixture.act({ press: 'sheet-continue' })
+      assert.deepEqual((await fixture.state()).fields.namedSheetPressed, [0], 'a press records its index only')
+    })
+  })
+
+  test('without sheet, no sheet opens', async () => {
+    await withNamed({ buttons: ['OK'] }, async (fixture) => {
+      assert.deepEqual((await fixture.state()).fields.namedSheetTexts, {})
+      assert.equal((await fixture.targets())['sheet-continue'], undefined)
+    })
+  })
 })
