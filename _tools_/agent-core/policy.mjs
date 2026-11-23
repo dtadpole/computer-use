@@ -1264,6 +1264,9 @@ const LOCALE_MONEY_VERBS = Object.freeze([
   /^(?:jetzt\s+)?(?:geld\s+(?:(?:an|zu)\s+(?:\S+\s+){1,2})?(?:transferieren|senden|überweisen|schicken)|bestellung\s+aufgeben|zahlungspflichtig\s+bestellen|kostenpflichtig\s+bestellen)\s*[.!]?$/iu,
   /^(?:(?:nu\s+)?geld\s+(?:(?:naar|aan)\s+(?:\S+\s+){1,2})?(?:overmaken|versturen|overboeken|sturen)|bestelling\s+plaatsen|maak\s+geld\s+over(?:\s+(?:naar|aan)\s+\S+(?:\s+\S+)?)?)\s*[.!]?$/iu,
   /^(?:今すぐ)?(?:送金(?:する|して(?:ください)?|します)?|(?:資金|お金)を?(?:振り込む|振り込み|送る|送金する|移動(?:する|して(?:ください)?)?)|注文する|注文して(?:ください)?)\s*[.!。]?$/u,
+  // CU-702: the account-noun transfer forms ask as 'Transfer to account' / 'Account transfer' do ('계좌 이체', '계좌로 이체', '口座に振り込む', '口座振替')
+  /^(?:(?:지금|즉시)\s+)?(?:계좌|은행)\s*(?:로|에|으로)?\s*(?:이체|송금)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+  /^(?:今すぐ)?(?:口座|銀行口座)(?:に|へ)?(?:振り込む|振込(?:する)?|振り込み|送金(?:する)?|振替(?:する)?)\s*[.!。]?$/u,
   // r2: ko bare 이체 / 이체하기 ask (an unambiguous bank transfer; bare Sino-noun = verb, owner ruling 23:57Z)
   /^(?:(?:지금|즉시)\s+)?(?:(?:송금|이체)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?|(?:자금|돈)\s*(?:을|를)?\s*(?:이체|송금|보내기|보내)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?)\s*[.!]?$/u,
   new RegExp(`^(?:para\\s+(?:gönder|gönderin|aktar|aktarın|transfer\\s+et)|havale\\s+yap|sipariş\\s+ver|siparişi\\s+tamamla|siparişi\\s+onayla)\\s*[.!]?$`, 'iu'),

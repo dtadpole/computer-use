@@ -22,3 +22,8 @@ test('CU-699 r2: ko bare 이체, ja 資金を移動, a de / nl recipient slot an
   for (const name of ['이체', '이체하기', '資金を移動', '資金を移動する', 'Geld an Freunde senden', 'Geld an meine Mutter überweisen', 'Geld naar vrienden sturen', 'Maak geld over naar Jan', 'PARA GÖNDERİN', 'Send money to friends']) assert.ok(click(name).includes('purchase'), name)
   for (const name of ['Transférer', 'Перевести', 'Überweisung', '이체 내역', '이체 완료']) assert.ok(!click(name).includes('purchase'), name)
 })
+
+test('CU-702: the ko / ja account-noun transfer forms ask purchase as \'Transfer to account\' / \'Account transfer\'', () => {
+  for (const name of ['계좌 이체', '계좌이체', '계좌로 이체', '계좌로 이체하기', '은행 송금', '口座に振り込む', '口座振替', '口座へ送金する', '銀行口座に振込', 'Transfer to account', 'Account transfer']) assert.ok(click(name).includes('purchase'), name)
+  for (const name of ['계좌', '계좌 이체 내역', '口座', '口座振替済み']) assert.ok(!click(name).includes('purchase'), name)
+})
