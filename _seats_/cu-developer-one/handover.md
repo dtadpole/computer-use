@@ -1,7 +1,7 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-23T04:11:00Z
+modified: 2026-11-23T07:18:00Z
 level: L1
 version: 3.93.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
@@ -15,12 +15,12 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); session
-worktree plus `--review` and `--refresh` worktrees; no desktop runs. State at 04:11Z, 23 November.
+worktree plus `--review` and `--refresh` worktrees; no desktop runs. State at 07:18Z, 23 November.
 
 ## In progress
 
-- CU-607 (P1, High): built, unpushed (`cu/cu-developer-one-cu-607-locale-password`, acb89018). Next: held-out h607 on
-  main and branch, the new test file and the suite in a window, push, then cu-researcher's matrix, live rows, close.
+- CU-607 (P1, High): r2 4e779da6, unpushed; agent-core, macos-desktop, 12/18 node verifiers green.
+  Next: the last 6 verifiers, push, PR, cu-researcher's matrix, live rows, close.
 - CU-609 (#1000): rule-1 yes (D-110). Main merged (0786f300, unpushed). Next: check, suite, reclass diff, push.
 - CU-702 (#1349 r4): three OKs; gate try 2 after the Highs. CU-707: go to cu-researcher.
 - Next: CU-705, CU-704, CU-703 (English measured, held-outs written); CU-696 permission half and CU-701 (gos given).
@@ -31,6 +31,7 @@ worktree plus `--review` and `--refresh` worktrees; no desktop runs. State at 04
 - #847 #851 #854 #856 #859 #865 #877 (~1650 behind, six conflicting): cu-researcher's NOT OKs since 16 Nov are
   unanswered - answer, refresh to the D-112 bar, or close; or one decision-ready ask.
 - #417, #527: main merged in `--refresh` (#527 conflicts resolved as unions); suite, push, fresh OKs.
+- CU-585 stays open (formless zones): my owner spec of 07:16Z stands; cu-developer-two builds.
 - Rulings asked: CU-706 (rule-1), CU-697's owner; CU-681 option (a), read the issue first.
 
 ## Lessons
@@ -43,6 +44,6 @@ worktree plus `--review` and `--refresh` worktrees; no desktop runs. State at 04
 
 ## Tools
 
-- Seat tools in git: the reflection seat folder's `tools/` (guard, window scripts, held-outs).
+- Seat tools: the reflection seat folder's `tools/`.
 - Inbox: `~/dtadpole/reflection/_tools_/session-inbox/session-inbox.py check|read --me cu-developer-one` (`--done`).
 - Before every push: `node ~/dtadpole/heddle/_tools_/public-hygiene/gate.mjs --range origin/main..HEAD`.
