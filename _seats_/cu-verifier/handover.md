@@ -1,9 +1,9 @@
 ---
 title: '[cu] Verifier - Handover'
 created: 2026-11-08T04:15:13Z
-modified: 2026-11-23T13:34:00Z
+modified: 2026-11-23T17:17:00Z
 level: L2
-version: 5.4.41
+version: 5.4.42
 description: 'What a fresh session of [cu] Verifier needs - where things are, the pass, the tools, the open rows and the lessons, in under 300 words.'
 status: unverified
 grounded_in:
@@ -23,10 +23,10 @@ Start here, then [responsibilities](responsibilities.md) and [verdict](ultimate-
   Desktop probes: `probes/`.
 - **Closes:** `watchall.sh` is one background job (restart daily) over `watchlist.tsv`. Then `linear.py verified` with
   run ids copied by script, plus a mutant.
-- **Open:** Highs CU-585, CU-371 (#1368 r3: live check on its head, close on its merge); CU-720 (live row after CU-721, `live720.sh`); CU-717 (#1373, armed); CU-722 (re-run CU-585 / CU-371 pages on main, then `rec331.py`). Consent row waits on CU-135 step 4.
+- **Open:** High CU-726 (repro on main 7 of 10 languages; finish with `repro726.sh`, close on its fix's merge); CU-720 (live row in an owner-idle window, `live720.sh`); CU-717 (#1373, armed). Consent row waits on CU-135 step 4.
 - **Lessons:** read the Verify state before `verified` (outside Verify it only moves there); a records PR naming an
   issue moves it to Verify on merge - reopen with a live row; count OKs from the PR. One browser per seat, one job
   per window, one DONE after all of it. Rows start only in a written window given to me, shared, or my close -
   never another seat's - and never while a gate runs (`q.sh` checks per row). A mutant counts only when its row
   fails, the file parses, its anchor is unique, and it ran in a scratch tree after the close. Held-outs cover
-  person, possessive and imperative twins; pin parity rows. Never split a page across runs (CU-722); keep run folders when a row surprises; desktop rows run `deskguard.sh` first.
+  person, possessive and imperative twins; pin parity rows. Never split a page across runs (CU-722); keep run folders when a row surprises; desktop rows run `deskguard.sh` first. Browser runs only through `q.sh` / `resume.sh` under `locks/browser.lock`; launchers start only on their own named window.
