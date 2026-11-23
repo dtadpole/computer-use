@@ -1,14 +1,14 @@
 ---
 title: '[cu] Developer Three (macOS helper) - handover'
 created: 2026-11-08T04:20:00Z
-modified: 2026-11-22T22:46:00Z
+modified: 2026-11-23T06:30:00Z
 level: L1
-version: 1.31.0
+version: 1.32.0
 description: 'What a fresh [cu] Developer Three session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
-  - source: hd-coordinator's goal renewal of 2026-11-22 09:01 PST (Linear items by priority, CUHelper correct, land through cu-integrator)
-  - source: PRs #889, #895, #930, #1304, #1310, #1311, #1315, #1326, #1331; Linear CU-586, CU-588, CU-596, CU-614, CU-662, CU-666, CU-674, CU-679
+  - source: cu-coordinator's seat goal of 2026-11-23 03:40Z and lane rulings D-112 to D-114
+  - source: PRs #889, #895, #930, #1349, #1352, #1353; Linear CU-585, CU-586, CU-588, CU-596, CU-614, CU-662, CU-666, CU-674, CU-679
 ---
 
 # [cu] Developer Three (macOS helper) - handover
@@ -17,34 +17,28 @@ Seat `cu-developer-three`. Edits and CUHelper launches run from the session work
 
 ## Live state
 
-- Installed helper: 0.2.70, matching main.
-- Hold wrapper `heldrow.sh` (ROW=, PURPOSE=); rows `row586.mjs`, `row588.mjs`.
-- Probes, held-outs, run scripts and review texts: git-excluded `.cu3-tools/`.
+- Installed helper: 0.2.70 (READBACK 03:41Z); main has 0.2.71 since #889 landed.
+- Scripts: `heldrow.sh` (holds), `authorrun.sh` (the D-114 set per branch); copies in the private seat tools.
 
-## Helper stack
+## Helper stack (the CU-585 desktop half, High)
 
-All wait on cu-coordinator, landing in order:
+1. **#889** (0.2.71, CU-586): landed 23 Nov 06:22Z through the full helper gate.
+2. **#895** (0.2.72, CU-588): retargeted to main, main merged locally; its own suites (helper, agent-core, macos-desktop) run in a named window, then push and gate.
+3. **#930** (0.2.73): merged locally on #895; the full D-101 set plus the helper suite on this top head.
 
-1. **#889** (0.2.71, CU-586): an over-ask removal awaiting the D-108 rule-1 ruling.
-2. **#895** (0.2.72, CU-588): two OKs; follows #894.
-3. **#930** (0.2.73, Part of CU-394): three OKs.
-
-**Then:** one READBACK install under an idle-checked hold, the after-rows, the post-install checks.
+**Then:** one READBACK install in an announced slot under an idle-checked hold, then the post-install checks.
 
 ## Other items
 
-- **Load flakes** CU-614 / 662 / 666 / 679: one test-only PR awaits cu-coordinator's go; local c287e818 widens settle.test.mjs:188. Leaked /tmp folders (CU-674) drive them.
-- **CU-596**: fix local at fad64e0d; waits on cu-coordinator's WIP go.
-- **Reviews:** CU-683 .. CU-695, CU-696's delete half and CU-698 closed live on my OKs (eleven after a hold and an r2). CU-700 (#1331 r3) gating on my OK. Held-outs ready: CU-699, CU-667, CU-658, CU-651.
-- **Follow-ups:** in action-classes 0.4.42's 'Not yet covered' paragraph; also fr 'cet' / short-noun admin.
+- **#1352** (CU-596) and **#1353** (CU-679): named OKs and test-only author runs on the PRs (macos-desktop 443/443, the file 5x each); gates next. They unblock #894 and #1349.
+- **Local, PRs next:** the CU-674 sandbox cleanup (ec853bd2), and one timing PR for CU-614, CU-662, CU-666 plus settle:144 and sentinel:138 (299c725a).
+- **Reflection corrections and seat tools:** two private PRs await OKs.
 
 ## Rules learned
 
-- Post PR comments with `--body-file`.
-- Keep lock-held runs out of a gate's phase 2.
-- Check the inbox before any node batch.
-- Write held-outs before each head; probe brand slots with spaces and tr capital İ.
-- Mutant patterns must match once; re-check on every new head; also run every test file naming a string the PR reclassifies.
-- English parity rows decide the family.
-- Records PRs: no open issue id; stamps never after the commit; check dates after 00:00Z.
-- One watcher at a time; start it in the same step as each inbox read; send DONE in the same step as the rows.
+- Author runs (D-114): name head, time and counts; for a stack, the full set on the top head and each lower head's own suites. The gate is never review evidence.
+- Policy reviews run the whole agent-core suite and every test file naming a reclassified string.
+- Commit held-out sets only after measurement.
+- Post PR comments with `--body-file`; DONE in the same step; inbox checked before node.
+- Records PRs: no open issue id; stamps never after the commit or before the events they claim.
+- Reflection repo work goes through a separate clone, never its main checkout.

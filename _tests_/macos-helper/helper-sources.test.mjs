@@ -300,10 +300,12 @@ test('CU-507: describe() gives a button inside a sheet or dialog window its dial
   const helper = access.slice(start, access.indexOf('\n  }\n', start))
   assert.match(helper, /for _ in 0\.\.<DialogText\.maxDepth \{/, 'a bounded ancestor walk')
   assert.match(helper, /DialogText\.isContainer\(role: role, subrole: string\(parent, "AXSubrole"\)\)/)
-  assert.match(helper, /descendants\(of: parent, limit: DialogText\.maxTexts\)\.filter \{ string\(\$0, "AXRole"\) == "AXStaticText" \}/, 'only the dialog\'s static texts')
+  assert.match(helper, /DialogText\.walk\(parent, limit: DialogText\.maxTexts, children: children, role: \{ string\(\$0, "AXRole"\) \}\)\n\s*\.filter \{ string\(\$0, "AXRole"\) == "AXStaticText" \}/, 'only the dialog\'s static texts, from the control-skipping walk')
   assert.doesNotMatch(helper, /string\(element, "AXValue"\)|attribute\(element, "AXValue"\)/, 'the button\'s own value is never read')
   const policy = readFileSync(join(SOURCES, 'Policy.swift'), 'utf8')
   assert.match(policy, /static let maxLength = 300\n  static let maxDepth = 12\n  static let maxTexts = 60/)
+  // 0.2.71 (cu-developer-two's #737 note): the walk never descends into a control, so a button's own label is no dialog word.
+  assert.match(policy, /if !controlRoles\.contains\(role\(next\) \?\? ""\) \{ queue \+= children\(next\) \}/, 'the walk skips control subtrees')
   assert.match(policy, /role == "AXSheet" \|\| \(role == "AXWindow" && containerSubroles\.contains\(subrole \?\? ""\)\)/)
 })
 
