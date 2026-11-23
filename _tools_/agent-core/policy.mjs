@@ -1840,8 +1840,9 @@ function localeToken(text) {
   for (const m of text.matchAll(/(?<![\p{L}\p{N}])\p{Lu}{3,}(?![\p{L}\p{N}])/gu)) if (!LOCALE_ACRONYM.test(m[0])) return true
   return false
 }
-// 'The name' shape: 'den Namen', 'le nom', 'el nombre', 'o nome', 'il nome', 'de naam', 'название', '名前', '名称', '이름'.
-const LOCALE_NAME = new RegExp(`${L0}(?:den\\s+namen|namen\\s+(?:des|der)|le\\s+nom|el\\s+nombre|o\\s+nome|il\\s+nome|de\\s+naam|название|имя)${L1}|名前|名称|名稱|이름`, 'iu')
+// 'The name' shape: 'den Namen', 'le nom', 'el nombre', 'o nome', 'il nome', 'de naam', 'название', '名前', '名称', '이름'; #1385 r2
+// (cu-researcher's miss): a Japanese / Chinese compound name noun, '<noun>名' before its particle ('リポジトリ名を', 'プロジェクト名と').
+const LOCALE_NAME = new RegExp(`${L0}(?:den\\s+namen|namen\\s+(?:des|der)|le\\s+nom|el\\s+nombre|o\\s+nome|il\\s+nome|de\\s+naam|название|имя)${L1}|名前|名称|名稱|이름|[\\p{Script=Katakana}\\p{Script=Han}\\u30fc]名(?=\\s*(?:を|と|が|は|：|:|\\s|$))`, 'iu')
 function localeStrongConfirm(text) {
   return LOCALE_TYPED_VERB.test(text) && (LOCALE_TO_CONFIRM.test(text) || localeToken(text))
 }

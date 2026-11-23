@@ -37,6 +37,8 @@ test('CU-726: the name shape and the split zone work in other languages too', ()
   assert.equal(zoned('Continuar', ['Nombre'], ['Escribe el nombre del espacio de trabajo.', 'Se eliminará de forma permanente.']), 'delete')
   assert.equal(zoned('Продолжить', ['Название'], ['Введите название проекта.', 'Проект будет удалён без возможности восстановления.']), 'delete')
   assert.equal(zoned('Weiter', ['E-Mail'], ['Geben Sie Ihre E-Mail-Adresse ein, um Ihr Konto zu löschen.']), 'delete', 'a purpose clause in the same sentence')
+  assert.equal(zoned('続行', ['リポジトリ名'], ['続行するにはリポジトリ名を入力してください', 'リポジトリを削除します']), 'delete', 'a Japanese compound name noun (#1385 r2)')
+  assert.equal(zoned('次へ', ['プロジェクト名'], ['プロジェクト名を入力してください', '新しいプロジェクトを作成します']), 'allow', 'the name shape alone, no act: free')
 })
 
 test('CU-726: a localized handover of ownership asks permission', () => {
