@@ -23,10 +23,11 @@ export function launchesFixtureApp(source) {
   return FIXTURE_APP_IMPORT.test(String(source))
 }
 
-/** Seconds per attempt before the step's process group is killed. */
+/** Seconds per attempt before the step's process group is killed. The node and helper steps match the gate's
+ *  alarms (480 s / 420 s): at load 14-15 the full node suite needs 7-8 min (20 Nov nightly, CU-653). */
 export const TIMEOUTS = Object.freeze({
-  'node-tests': 300,
-  'node-tests-helper': 300,
+  'node-tests': 480,
+  'node-tests-helper': 420,
   'node-tests-fixture': 180,
   'node-tests-fixapps': 300,
   verifier: 120,

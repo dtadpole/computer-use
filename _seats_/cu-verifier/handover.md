@@ -1,9 +1,9 @@
 ---
 title: '[cu] Verifier - Handover'
 created: 2026-11-08T04:15:13Z
-modified: 2026-11-20T00:29:00Z
+modified: 2026-11-23T02:29:00Z
 level: L2
-version: 5.3.4
+version: 5.4.35
 description: 'What a fresh session of [cu] Verifier needs - where things are, the pass, the tools, the open rows and the lessons, in under 300 words.'
 status: unverified
 grounded_in:
@@ -18,18 +18,18 @@ Start here, then [responsibilities](responsibilities.md) and [verdict](ultimate-
 - **Push:** gate unpiped, push on exit 0; one action-log line per PR; a PR title names no filing id but 'Part of CU-16'.
 - **Every pass:** inbox; `verifyq.py`; `filings.py`; `unarmed.py`; the run lock;
   my PRs' mergeability (merge main if CONFLICTING; D-085).
-- **Rows:** `rowrun.mjs`, one headless Chrome run per row.
-  Review a PR by its FETCH_HEAD SHA: a later fetch prunes pull refs.
-  Desktop: `probes/apps.mjs` (clicks), `probes/keyprobe.mjs` (keys);
-  helper mutants: `probes/swiftunit.mjs`.
-- **Closes:** `watchall.sh` is one background job (restart every ~30 h) over `watchlist.tsv`. Then `linear.py verified` with
+- **Rows:** `rowrun.mjs`, one headless run per row; `resume.sh` resumes gate-interrupted batches.
+  Review PRs by FETCH_HEAD SHA.
+  Desktop probes: `probes/`.
+- **Closes:** `watchall.sh` is one background job (restart daily) over `watchlist.tsv`. Then `linear.py verified` with
   run ids copied by script, plus a mutant.
 - **Desktop rows:** in cu-developer-three's holds; I judge from events.jsonl.
 - **Open:** CU-586 / CU-588 desktop rows; CU-375 with #856; CU-596 under load; CU-607 on a class ruling;
-  without a fix PR CU-612, CU-618, CU-631 .. CU-633, CU-640, CU-642, CU-644, CU-645. The consent row
-  waits on CU-135 step 4 (owner).
-- **Lessons:** read the Verify state; state no OK count unread on the PR; one browser per seat;
-  no browser row while a gate runs, records gates too (`q.sh` checks per row; closes wait); a mutant
-  counts only when its row fails, the file still parses, and it ran in a scratch tree after the close - a list
-  entry a rule also covers needs both mutated. Read an issue's state before `verified`; outside Verify it only moves there. A records PR naming an issue id moves that issue to Verify on merge: reopen with a live row. A held-out page covers
-  person, possessive and imperative twins, not only the filed one. A parity test generated from its own table misses a dropped form; pin rows.
+  CU-645 has #1129 (rule-1), CU-702 #1349; no fix PR: CU-612, CU-618, CU-631 .. CU-633, CU-640, CU-642, CU-647, CU-649, CU-651, CU-656, CU-658, CU-667, CU-671, CU-681, CU-682, CU-696 (permission half), CU-701, CU-703 .. CU-706. The consent row
+  waits on CU-135 step 4.
+- **Lessons:** read the Verify state before `verified` (outside Verify it only moves there); a records PR naming an
+  issue moves it to Verify on merge - reopen with a live row; count OKs from the PR. One browser per seat, one job
+  per window, one DONE after all of it. Rows start only in a written window given to me, shared, or my close -
+  never another seat's - and never while a gate runs (`q.sh` checks per row). A mutant counts only when its row
+  fails, the file parses, its anchor is unique, and it ran in a scratch tree after the close. Held-outs cover
+  person, possessive and imperative twins; pin parity rows.
