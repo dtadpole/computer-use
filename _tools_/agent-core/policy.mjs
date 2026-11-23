@@ -2214,7 +2214,24 @@ const PASSWORD_NAMES = Object.freeze(['password', 'passcode', 'passphrase', 'pin
   // CU-606 (cu-researcher): an access code, in the class of its twin 'passcode'.
   'access code',
   // CU-293: the same names in Chinese.
-  '密码', '密碼', '口令', '支付密码', '支付密碼'])
+  '密码', '密碼', '口令', '支付密码', '支付密碼',
+  // CU-607 (cu-coordinator 03:21Z, go: credential): the password names in the other covered languages, so a shown password
+  // (a plain text input after a show-password toggle) asks credential as 'Password' does, never sensitive_data. German
+  // compounds ride on '…' ('Anmeldepasswort'); Turkish takes its noun suffix ('Şifreniz', 'Parolanızı').
+  'passwort', '…passwort', 'kennwort', '…kennwort', 'mot de passe', 'contraseña', 'contrasena', 'senha', 'wachtwoord', '…wachtwoord',
+  'şifre~', 'parola~', 'пароль', 'パスワード', '비밀번호',
+  // cu-researcher's CU-607 matrix (03:41Z): ko 암호 is the other common password word ('Wi-Fi 암호'); 암호화 (encryption) is one word and stays out.
+  '암호',
+  // r2 (my 05:24Z measure on main: English 'Access code' asks credential, 'Recovery code' sensitive_data): European Portuguese
+  // palavra-passe, and the locale access codes as CU-606's English 'access code' (the recovery codes stay sensitive_data).
+  'palavra-passe', 'palavra passe', 'zugangscode', "code d'accès", 'code d\u2019accès', 'código de acceso', 'clave de acceso', 'código de acesso',
+  'codice di accesso', 'toegangscode', 'erişim kod~'])
+// CU-607: a few phrases share a password word without naming a password - Italian 'parola chiave' (keyword) and Korean
+// 암호화 (encryption, which contains 암호). They are cut out of the name before the password words are matched, so
+// '암호화 설정' stays free while '암호화 비밀번호' still names a password.
+const PASSWORD_NAME_NOT = /parol[ae][\s-]+chiave|암호화/giu
+// The desktop passes raw names; a judged name is homoglyph-folded first, so both forms are read ('Пароль').
+const namesPassword = (name) => [String(name ?? ''), normaliseText(String(name ?? ''))].some((n) => namesWord(n.replace(PASSWORD_NAME_NOT, ' '), PASSWORD_NAMES))
 // CU-265: the schemes a page navigates itself; any other hands the link to another app.
 // cu-researcher on #112: data: and blob: stay in the browser (blob: is how sites serve a generated 'Download CSV'); a
 // download they start still meets the page's download handling.
@@ -2343,10 +2360,10 @@ const nearbyLabelOf = (target) => {
 }
 const entryNamesOf = (target) => [target?.name, typeof target?.placeholder === 'string' && target.placeholder.trim() !== '' ? target.placeholder : null, nearbyLabelOf(target)]
   .filter((name) => name !== null && name !== undefined)
-const passwordNamedEntry = (target) => isTextEntry(target) && entryNamesOf(target).some((name) => namesWord(name, PASSWORD_NAMES))
+const passwordNamedEntry = (target) => isTextEntry(target) && entryNamesOf(target).some((name) => namesPassword(name))
 // CU-184 (desktop-rules.md): a text entry named for a password - shown or not, it holds one - unless its name says it is
 // a hint; the desktop hands a key action into it to the person, as it does a secure field (R83).
-export const namesPasswordField = (target) => isTextEntry(target) && entryNamesOf(target).some((name) => namesWord(name, PASSWORD_NAMES) && !namesWord(name, ['hint']))
+export const namesPasswordField = (target) => isTextEntry(target) && entryNamesOf(target).some((name) => namesPassword(name) && !namesWord(name, ['hint']))
 // CU-599 (cu-researcher): the card number with a possessive or 'of', in either order - 'Your card's number', 'Number of / on your
 // card', 'Numéro de votre carte', 'Nummer Ihrer Karte', 'Número de su tarjeta', 'Número do seu cartão', 'Numero della tua carta' -
 // reads like the compound 'card number' each language already lists.
