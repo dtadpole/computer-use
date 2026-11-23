@@ -18,9 +18,9 @@ const FIXTURE = 'com.example.fixture'
 const locks = scratchLocks()
 const element = (fields) => ({ bundleId: FIXTURE, pid: 501, frame: { x: 300, y: 300, width: 200, height: 24 }, secure: false, ...fields })
 
-async function typeInto(text, focusedReads) {
+async function typeInto(text, focusedReads, world = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'cu-newline-seam-'))
-  const child = spawnFake({ focusedReads: focusedReads.map(element) })
+  const child = spawnFake({ focusedReads: focusedReads.map(element), ...world })
   let handle = null
   try {
     const appApprovals = createAppApprovals({ path: join(dir, 'app-approvals.json') })
@@ -52,6 +52,16 @@ test('after a tab the typed newline is judged on the settled focus (CU-135\'s sp
   const send = { role: 'AXTextField', title: 'Send a message' }
   // The x's read, the Tab's read, one stale read of the name field, then the focus the app settled on.
   const { parts, inputs } = await typeInto('x\thi\n', [name, name, name, send])
+  const last = parts[parts.length - 1]
+  assert.deepEqual([last.action.type, last.action.text, last.decision, last.class, last.target?.name], ['type', 'hi\n', 'confirm', 'submit', 'Send a message'])
+  assert.equal(inputs, 2, 'the x and the tab went, the reply did not')
+})
+
+test('with slow focus reads (a loaded helper) the settle still lands on the focus the app moved to (CU-135 follow-up)', async () => {
+  const name = { role: 'AXTextField', title: 'Name' }
+  const send = { role: 'AXTextField', title: 'Send a message' }
+  // Each focus read answers in 320 ms, longer than the whole 300 ms settle window: the window must still re-read.
+  const { parts, inputs } = await typeInto('x\thi\n', [name, name, name, send], { focusedReadDelayMs: 320 })
   const last = parts[parts.length - 1]
   assert.deepEqual([last.action.type, last.action.text, last.decision, last.class, last.target?.name], ['type', 'hi\n', 'confirm', 'submit', 'Send a message'])
   assert.equal(inputs, 2, 'the x and the tab went, the reply did not')
