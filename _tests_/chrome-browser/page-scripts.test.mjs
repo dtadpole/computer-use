@@ -810,6 +810,36 @@ test('CU-400: a button inside a form carries formContext - up to 3 short selecte
   assert.equal(sell.formContext.options.includes('amount'), false)
 })
 
+test('CU-585: a submit control inside a form carries formEntries - the words its text entries show (label, labelledby, aria-label, placeholder, describedby, else the prompt before the box); never a value', () => {
+  const ids = {}
+  const doc = { getElementById: (id) => ids[id] ?? null }
+  const entry = (type, attrs = {}, extra = {}) => ({ tagName: type === 'textarea' ? 'TEXTAREA' : 'INPUT', getAttribute: (name) => (name === 'type' ? (type === 'textarea' ? null : type) : attrs[name] ?? null), placeholder: attrs.placeholder ?? '', value: 'SECRET-VALUE', labels: [], previousElementSibling: null, ...extra })
+  const form = (entries) => ({ querySelectorAll: (sel) => (sel === 'input, textarea' ? entries : []) })
+  const confirm = (f, extra = {}) => el('BUTTON', { children: ['Confirm'], closest: (sel) => (sel === 'form' ? f : null), ownerDocument: doc, ...extra })
+  const labelled = entry('text', {}, { labels: [{ textContent: '  Type  DELETE to confirm ' }] })
+  assert.deepEqual(describeElement(confirm(form([labelled]))).formEntries, ['Type DELETE to confirm'], 'a <label>, whitespace collapsed')
+  ids.p1 = { textContent: 'To confirm, type "acme/prod" in the box below' }
+  const byId = entry(null, { 'aria-labelledby': 'p1' })
+  assert.deepEqual(describeElement(confirm(form([byId]))).formEntries, ['To confirm, type "acme/prod" in the box below'], 'aria-labelledby text; an input with no type is a text entry')
+  const placeholder = entry('text', { placeholder: 'DELETE' })
+  ids.d1 = { textContent: 'This cannot be undone.' }
+  const both = entry('text', { 'aria-label': 'Confirmation', 'aria-describedby': 'd1' })
+  assert.deepEqual(describeElement(confirm(form([placeholder, both]))).formEntries, ['DELETE', 'Confirmation', 'This cannot be undone.'], 'placeholder; aria-label then its describedby; at most three')
+  const bare = entry('text', {}, { previousElementSibling: { tagName: 'P', textContent: 'Type DELETE to confirm.' } })
+  assert.deepEqual(describeElement(confirm(form([bare]))).formEntries, ['Type DELETE to confirm.'], 'no label at all: the prompt just before the box')
+  const afterInput = entry('text', {}, { previousElementSibling: { tagName: 'INPUT', textContent: 'x' } })
+  assert.equal('formEntries' in describeElement(confirm(form([afterInput]))), false, 'a control before it is no prompt')
+  const skipped = [entry('password', { placeholder: 'Password' }), entry('hidden', { 'aria-label': 'token' }), entry('checkbox', { 'aria-label': 'I understand' }), entry('text', { placeholder: 'x'.repeat(81) })]
+  assert.equal('formEntries' in describeElement(confirm(form(skipped))), false, 'password, hidden and checkbox entries are skipped; over 80 characters is none, never cut')
+  const many = [entry('text', { placeholder: 'A' }), entry('text', { placeholder: 'B' }), entry('text', { placeholder: 'A' }), entry('textarea', { placeholder: 'C' }), entry('text', { placeholder: 'D' })]
+  assert.deepEqual(describeElement(confirm(form(many))).formEntries, ['A', 'B', 'C'], 'no repeats; a textarea counts; at most three')
+  const all = describeElement(confirm(form([labelled, placeholder])))
+  assert.equal(JSON.stringify(all).includes('SECRET-VALUE'), false, 'never a value')
+  assert.equal('formEntries' in describeElement(confirm(null)), false, 'outside a form: none')
+  assert.equal('formEntries' in describeElement(el('DIV', { children: ['Confirm'], closest: () => form([labelled]), ownerDocument: doc })), false, 'a plain div is no submit control')
+  assert.equal('formContext' in describeElement(confirm(form([labelled]))), false, "formContext's trade read is unchanged: text entries alone lend it nothing")
+})
+
 test('CU-402: without a <form>, formContext falls back to [role=form], else a fieldset or dialog holding exactly one submit-like control', () => {
   const select = (text) => ({ tagName: 'SELECT', selectedOptions: [{ textContent: text }] })
   const box = (controls, submits) => ({ querySelectorAll: (sel) => (sel === 'input' ? [] : sel.startsWith('select') ? controls : submits) })
