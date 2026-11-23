@@ -1,8 +1,8 @@
 ---
 title: nightly-regression
 created: 2026-11-06T04:10:00Z
-modified: 2026-11-09T04:23:00Z
-version: 0.4.1
+modified: 2026-11-20T13:42:00Z
+version: 0.4.2
 description: The no-model nightly regression on main - every node suite that starts no app and the fake-helper verifiers, and under the desktop-run lock the helper tests, the fixture suite, every test file that launches CU Fixture, the fixture plans and the dry run - with one retry per failing step, a persistent flake list and a short report.
 grounded_in:
   - source: Linear CU-59 (the nightly regression and flake list)

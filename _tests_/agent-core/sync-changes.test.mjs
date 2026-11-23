@@ -1,0 +1,50 @@
+import assert from 'node:assert/strict'
+import { test } from 'node:test'
+import { createPolicy } from '../../_tools_/agent-core/policy.mjs'
+
+// CU-403 (cu-verifier 23:42Z): an IDE's 'Sync Changes' asks submit, as 'Push' does.
+const policy = createPolicy({ sitePolicy: () => 'allow' })
+const cls = (n) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { target: { role: 'AXButton', name: n, origin: 'com.microsoft.VSCode' }, frontmostBundleId: 'com.microsoft.VSCode' }); return v.decision === 'allow' ? [] : (v.classes ?? [v.class]) }
+
+test('CU-403: Sync Changes / commits / branch ask submit, as Push does', () => {
+  for (const n of ['Sync Changes', 'Sync changes 1↓ 2↑', 'Sync commits', 'Sync Branch']) assert.ok(cls(n).includes('submit'), n)
+  assert.ok(cls('Push').includes('submit'))
+})
+
+test('CU-403: a bare Sync and unrelated syncs stay as they were', () => {
+  for (const n of ['Sync', 'Sync calendar', 'Sync settings']) assert.ok(!cls(n).includes('submit'), n)
+})
+
+test('CU-403 r2 (cu-developer-two 23:50Z, cu-researcher 23:51Z): the IDE sync forms ask submit; settings / panel syncs do not', () => {
+  for (const n of ['Commit & Sync', 'Commit and Sync', 'Synchronize Changes', 'Push and pull', 'Sync with remote']) assert.ok(cls(n).includes('submit'), n)
+  for (const n of ['Settings Sync', 'Turn on Settings Sync', 'Sync scroll', 'Synchronize panels', 'Pull', 'Fetch']) assert.ok(!cls(n).includes('submit'), n)
+})
+
+test('CU-403 r3 (cu-researcher 23:58Z): either order, a comma, and sync to the remote', () => {
+  for (const n of ['Sync to remote', 'Pull and push', 'Commit, Push', 'Commit, Sync']) assert.ok(cls(n).includes('submit'), n)
+})
+
+test('CU-403 follow-up: Pull, then push / Sync branch to remote / Push commits ask submit', () => {
+  for (const n of ['Pull, then push', 'Sync branch to remote', 'Push commits', 'Push 3 commits', 'Push local changes to origin']) assert.ok(cls(n).includes('submit'), n)
+  for (const n of ['Pull', 'Fetch', 'Sync settings', 'Push notifications']) assert.ok(!cls(n).includes('submit'), n)
+})
+
+test('CU-403 follow-up r2 (cu-developer-two 00:58Z): Pull then push without the comma, Push branch', () => {
+  for (const n of ['Pull then push', 'Push branch']) assert.ok(cls(n).includes('submit'), n)
+  for (const n of ['Push notification settings', 'Enable push notifications', 'Branch settings']) assert.ok(!cls(n).includes('submit'), n)
+})
+
+test('CU-403 follow-up r2 (cu-researcher 01:00Z): any git-verb sequence with a push / sync step; push with an object', () => {
+  for (const n of ['Fetch, then push', 'Rebase, then push', 'Commit, then sync', 'Pull, rebase and push', 'Push branch to remote', 'Push tags']) assert.ok(cls(n).includes('submit'), n)
+  for (const n of ['Pull, then rebase', 'Fetch, then merge', 'Sync main view', 'Branch to remote: help', 'Commits', 'Tag details', 'Pull requests']) assert.ok(!cls(n).includes('submit'), n)
+})
+
+test('CU-403 follow-up r3 (cu-researcher 01:05Z): Squash and push, Push to all remotes', () => {
+  for (const n of ['Squash and push', 'Push to all remotes', 'Push to origin']) assert.ok(cls(n).includes('submit'), n)
+  for (const n of ['Push to talk', 'Squash commits']) assert.ok(!cls(n).includes('submit'), n)
+})
+
+test('CU-403 follow-up r4 (cu-researcher 01:14Z): cherry-pick / revert / fixup steps before a push', () => {
+  for (const n of ['Cherry-pick and push', 'Cherry pick, then push', 'Revert and push', 'Fixup, then push']) assert.ok(cls(n).includes('submit'), n)
+  for (const n of ['Cherry-pick', 'Revert changes', 'Fixup commit']) assert.ok(!cls(n).includes('submit'), n)
+})
