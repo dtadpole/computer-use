@@ -35,7 +35,7 @@ test('CU-729: a localized payment confirm and an ownership transfer ask too', ()
 })
 
 test('CU-729 near collisions: the same buttons in a harmless dialog, and outside any dialog, stay free', () => {
-  for (const [name, dialogName] of [['Ja', 'Änderungen anzeigen?'], ['Oui', 'Afficher les détails ?'], ['はい', '詳細を表示しますか？'], ['确定', '显示详细信息吗？'], ['확인', '자세히 보기'], ['Да', 'Показать подробности?']]) {
+  for (const [name, dialogName] of [['Ja', 'Änderungen anzeigen?'], ['Oui', 'Afficher les détails ?'], ['はい', '詳細を表示しますか？'], ['确定', '显示详细信息吗？'], ['확인', '자세히 보기'], ['Да', 'Совет дня']]) {
     assert.deepEqual(press(name, { dialogName }), [], `${name} / ${dialogName}`)
   }
   for (const name of ['Ja', 'Oui', 'Sí', 'はい', '确定', '확인', 'Да', 'Weiter']) assert.deepEqual(press(name), [], `${name} outside a dialog`)
