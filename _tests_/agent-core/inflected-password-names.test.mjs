@@ -33,7 +33,7 @@ test('CU-716 (the #1364 reviewers\' near forms): the Russian adjective, the old 
   for (const [en, name] of [['Passphrase', 'Парольная фраза'], ['Passphrase', 'Введите парольную фразу'], ['Password policies', 'Парольные политики'],
     ['Password', 'Paßwort'], ['Forgot password?', 'Paßwort vergessen?'], ['Password confirmation', 'Paßwortbestätigung'], ['Login password', 'Anmeldepaßwort'],
     ['PIN', 'Geheimzahl'], ['Your PIN', 'Ihre Geheimzahl'], ['PIN', '暗証番号'], ['PIN', '暗証番号を入力'], ['PIN code', 'ПИН-код'], ['PIN', 'ПИН'], ['PIN', 'Пин'],
-    ['PIN code', 'Pincode'], ['PIN code', 'Uw pincode']]) {
+    ['PIN code', 'Pincode'], ['PIN code', 'Uw pincode'], ['PIN', 'Code confidentiel'], ['Your PIN', 'Votre code confidentiel']]) {
     assert.ok(typeInto(en).includes('credential'), `English twin ${en}`)
     assert.ok(typeInto(name).includes('credential'), name)
   }

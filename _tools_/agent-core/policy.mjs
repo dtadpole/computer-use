@@ -2237,7 +2237,9 @@ const PASSWORD_NAMES = Object.freeze(['password', 'passcode', 'passphrase', 'pin
   // ('Парольная фраза' as English 'Passphrase'), the old German spelling 'Paßwort', and the PIN in other words, as English
   // 'PIN' / 'PIN code' ask credential - German Geheimzahl, Japanese 暗証番号, Russian ПИН / ПИН-код, Dutch pincode.
   'парольная', 'парольный', 'парольное', 'парольную', 'парольной', 'парольного', 'парольном', 'парольным', 'парольные',
-  'парольных', 'парольными', 'paßwort', '…paßwort', 'geheimzahl', '…geheimzahl', '暗証番号', 'пин', 'pincode'])
+  'парольных', 'парольными', 'paßwort', '…paßwort', 'geheimzahl', '…geheimzahl', '暗証番号', 'пин', 'pincode',
+  // #1370 r2 (cu-researcher's held-out, 10:12Z): French 'Code confidentiel', the card PIN, as English 'PIN'.
+  'code confidentiel'])
 // CU-607: a few phrases share a password word without naming a password - Italian 'parola chiave' (keyword) and Korean
 // 암호화 (encryption, which contains 암호). They are cut out of the name before the password words are matched, so
 // '암호화 설정' stays free while '암호화 비밀번호' still names a password.
