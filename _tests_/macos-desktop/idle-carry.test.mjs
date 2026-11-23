@@ -94,3 +94,32 @@ test('CU-720: chained runs keep the base - the next admission reads the carried 
   await assert.rejects(acquireDesktopRun({ seat: SEAT, runId: '20261123T110000Z-carry9', dir: l.dir, commit: null, pid: 4244, isAlive: () => true, now: () => l.clock.at, idleSeconds: () => 2, minIdleSeconds: 300 }),
     (error) => error.code === 'resource_refused', 'an event after the last release (HIDIdleTime 2 s < 10 s since it) is the owner: D-066 refuses as before')
 })
+
+test("CU-720 r2 (cu-developer-three's case 19): an owner stamp still queued when release() runs is the carry's base - never the older one", async () => {
+  const l = await lock()
+  const slot = await l.run('20261123T110000Z-carry10', 400)
+  l.clock.at = T0 + 60_000
+  const queued = slot.mark({ lastOwnerInputAt: T0 + 58_000 }) // the owner's touch, not yet applied
+  slot.release()
+  assert.equal(await queued, false, 'the queued mark never lands after release')
+  l.clock.at = T0 + 90_000
+  const read = l.read(32)
+  assert.ok(read.seconds <= 32, `at most the time since the touch, not 490 s: ${JSON.stringify(read)}`)
+  assert.deepEqual(read, { seconds: 32, rule: 'carried' })
+})
+
+test("CU-720 r2 (cu-developer-three's case 20): the driver's close order - 'armed: false' queued, then release() - still carries; an awaited disarm does not", async () => {
+  const l = await lock()
+  const slot = await l.run('20261123T110000Z-carry11', 400)
+  l.clock.at = T0 + 30_000
+  const disarm = slot.mark({ armed: false }) // environment.mjs #close: queued, then the synchronous release on the next line
+  slot.release()
+  await disarm
+  l.clock.at = T0 + 40_000
+  assert.deepEqual(l.read(15), { seconds: 440, rule: 'carried' }, 'the run was armed through its last input')
+  const other = await lock()
+  const awaited = await other.run('20261123T110000Z-carry12', 400)
+  await awaited.mark({ armed: false })
+  awaited.release()
+  assert.equal(existsSync(join(other.dir, CARRY_NAME)), false, 'a run disarmed before its release carries nothing (its later input would be unstamped)')
+})

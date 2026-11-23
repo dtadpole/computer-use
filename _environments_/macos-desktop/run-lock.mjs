@@ -593,11 +593,14 @@ async function admitDesktopRun({
   // Removes the file only while it is still this run's entry: a later run's entry is never deleted by a late release.
   // CU-106: while this seat's hold is live and its keeper alive, the sentinel goes back in the same rename instead, so
   // older checkouts never find the Mac free between the holder's runs. Synchronous: it also runs in the exit hook.
+  // CU-720 r2 (cu-developer-three's case 19): the newest owner stamp mark() was asked for, kept synchronously - a stamp
+  // still queued behind the mutex when release() (or the exit hook) runs must still be the carry's base.
+  let ownerSeen = -Infinity
   const removeEntry = () => {
     try {
       const current = readEntry(entryPath)
       if (!sameEntry(current, entry)) return
-      writeCarry(root, current, now())
+      writeCarry(root, current, now(), ownerSeen)
       const sentinel = keeperSentinel(readEntry(join(root, HOLD_NAME)), seat, now(), isAlive)
       if (sentinel !== null) {
         replaceEntry(entryPath, sentinel)
@@ -638,6 +641,7 @@ async function admitDesktopRun({
     mark(patch) {
       let clean
       try { clean = markPatch(patch) } catch (error) { return Promise.reject(error) }
+      if (!released && typeof clean.lastOwnerInputAt === 'number') ownerSeen = Math.max(ownerSeen, clean.lastOwnerInputAt)
       const run = markChain.then(async () => {
         if (released) return false
         await takeMutex(lock, { now, sleep, lockTimeoutMs, staleLockMs, isAlive })
@@ -687,19 +691,22 @@ function markPatch(patch) {
  * owner-idle base outlives its release. Between runs the owner's idle used to be HIDIdleTime alone, which every HID-level
  * event resets - ours and another team's bridge's alike (CUHelper posts at the HID tap) - so back-to-back runs every few
  * minutes kept a D-066 gate under 300 s with nobody at the Mac. On release, an armed run with a kept idleAtStart writes
- * { since, releasedAt, seat, runId } (since = max(admittedAt - idleAtStart, lastOwnerInputAt), the armed formula's base).
+ * { since, releasedAt, seat, runId } (since = max(admittedAt - idleAtStart, lastOwnerInputAt), the armed formula's base,
+ * with an owner stamp still queued at release counted too - r2, cu-developer-three's case 19).
  * While HIDIdleTime still reads at least the time since that release (no event since; 0.1 s of read jitter allowed), the
  * owner's idle is now - since (rule 'carried'). Any later event, a carry older than 6 h, a clock behind it or a malformed
  * file falls back to HIDIdleTime. Never longer than an armed run would have said; a hand on the Mac ends it at once.
  */
-function writeCarry(root, current, at) {
+function writeCarry(root, current, at, ownerSeen = -Infinity) {
   try {
     if (!current || isSentinel(current) || current.noInput === true || current.armed !== true) return
     if (!(typeof current.idleAtStart === 'number' && Number.isFinite(current.idleAtStart) && current.idleAtStart >= 0 && current.idleAtStart <= IDLE_AT_START_MAX)) return
     const admittedAt = Date.parse(current.startedAt)
     if (!Number.isFinite(admittedAt) || at < admittedAt) return
     const owner = typeof current.lastOwnerInputAt === 'number' && Number.isFinite(current.lastOwnerInputAt) ? current.lastOwnerInputAt : -Infinity
-    const since = Math.max(admittedAt - current.idleAtStart * 1000, owner)
+    // r2: a stamp requested but not yet written (its mark still queued at release) counts too.
+    const seen = typeof ownerSeen === 'number' && Number.isFinite(ownerSeen) ? ownerSeen : -Infinity
+    const since = Math.max(admittedAt - current.idleAtStart * 1000, owner, seen)
     if (!Number.isFinite(since) || since > at) return
     const path = join(root, CARRY_NAME)
     const temp = `${path}.${process.pid}.tmp`
