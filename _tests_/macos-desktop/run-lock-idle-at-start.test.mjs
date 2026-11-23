@@ -73,7 +73,9 @@ test('idle (A) row: a released run, or a run whose pid is gone, reads HIDIdleTim
   assert.deepEqual(run.read(7), { seconds: 7, rule: 'hid' }, 'a dead pid never extends idle')
   run.dead.delete(4242)
   run.slot.release()
-  assert.deepEqual(run.read(7), { seconds: 7, rule: 'hid' }, 'released')
+  run.clock.at = T0 + 35_000
+  assert.deepEqual(run.read(7), { seconds: 435, rule: 'carried' }, 'released: the armed base carries while no event came since (CU-720)')
+  assert.deepEqual(run.read(0.1), { seconds: 0, rule: 'hid' }, 'released: HIDIdleTime alone once an event came after the release')
   assert.equal(await run.slot.mark({ armed: true }), false, 'mark is a no-op once released')
 })
 
