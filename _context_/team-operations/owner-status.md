@@ -1,7 +1,7 @@
 ---
 title: Computer use on the Mac mini - one-page status for the owner
 created: 2026-11-06T04:55:00Z
-modified: 2026-11-23T03:45:00Z
+modified: 2026-11-23T03:38:00Z
 level: L2
 version: 1.9.0
 status: unverified
