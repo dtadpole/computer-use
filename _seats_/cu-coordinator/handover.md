@@ -1,7 +1,7 @@
 ---
 title: '[cu] Coordinator - handover'
 created: 2026-11-08T04:15:00Z
-modified: 2026-11-23T23:00:29Z
+modified: 2026-11-23T23:01:42Z
 level: L2
 version: 4.3.0
 status: unverified
@@ -21,14 +21,13 @@ roster, seat files, review log and my helpers beside TEAM.yaml in the reflection
 **Goal.** Seven rows hold (verdict 0.9.333). Consent closed CU-607, CU-716, CU-585, CU-371, CU-726, CU-717 and
 CU-729 live on 23 Nov; open High: CU-735 (English possessive name prompts, cu-developer-two), then CU-135 at step 4.
 Human control waits on step 4 (CU-11, CU-119): about 15 min in person after the signed 0.2.73 install (24 Nov
-08:00Z window) and CU-727's launchers. CU-721: the brief went to the owner at 20:18Z (we recommend a worktree that
-tracks main); until then their bridge runs at idle 0 by the owner's decision (D-117), and our side keeps 300 s.
+08:00Z window) and CU-727's launchers. CU-721: the brief went to the owner at 20:18Z; until then their bridge runs at idle 0 by the owner's decision (D-117), and our side keeps 300 s.
 
 **Lane and records.** Highs first (CU-735), then CU-731 (P2), the class batch (#877 full gate as post-check, #851 +
 #1399, #856 + #1396, #1390), CU-709, CU-723. Windows: daily 08:00-08:25Z is ours (D-116, D-117); Last War soft slot
 09:20-10:50Z on 24 Nov. Node-only cells may run beside cu-lastwar runs while they run at idle 0 (22:44Z ruling).
 
-**Seats.** Sessions were disarmed several times this evening - revive with /goal resume on every pass.
+**Seats.** Sessions get disarmed; revive them (/goal resume) every pass.
 cu-researcher's context is near 80 % (successor at 85 %); cu-integrator's handover is successor-ready.
 
 **Every 15 minutes.** Inbox, health, triage, one member review (round 79 about 22:45Z), decisions, a
