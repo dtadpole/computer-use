@@ -5,7 +5,7 @@ import Foundation
 /// The helper's identity; `build.sh` writes the same bundle id into Info.plist.
 enum HelperIdentity {
   static let bundleId = "com.reflection.cu-helper"
-  static let version = "0.2.71"
+  static let version = "0.2.72"
   /// The value every synthetic event carries in `kCGEventSourceUserData`: 0x43555345, ASCII "CUSE"
   /// (input-and-targets.md, verify-kit's SYNTHETIC_TAG). Not a secret: an event from another process with this tag
   /// could only fail to pause the run, never act.
@@ -587,6 +587,46 @@ enum DialogText {
       let next = queue.removeFirst()
       out.append(next)
       if !controlRoles.contains(role(next) ?? "") { queue += children(next) }
+    }
+    return out
+  }
+}
+
+/// CU-588 (the desktop half of CU-585): a button carries the words its sheet's or window's text entries show - what a
+/// typed-word confirmation asks to be typed ('Type DELETE to confirm' as an entry's placeholder, beside a bare 'Confirm'),
+/// read where no static text says it (CU-507's dialogName already carries a sheet's static texts). For each entry (a text
+/// field, text area or combo box; a secure field's label too, never its value): its label - AXTitleUIElement's shown
+/// words, else AXDescription, else AXPlaceholderValue - then its help text (AXHelp) on its own. Whitespace collapsed; a
+/// text over 80 characters is none (never cut); at most 3 texts, no repeats. Never an entry's AXValue. Pure.
+enum FormEntries {
+  static let maxTexts = 3
+  static let maxLength = 80
+  static let maxScan = 120
+  static let maxEntries = 12
+  static let entryRoles: Set<String> = ["AXTextField", "AXTextArea", "AXComboBox"]
+  static func isEntry(role: String?) -> Bool { entryRoles.contains(role ?? "") }
+  /// The containers that bound a button's own form in a window: a group, a scroll area, a split or tab pane, a toolbar.
+  static let groupRoles: Set<String> = ["AXGroup", "AXScrollArea", "AXSplitGroup", "AXTabGroup", "AXToolbar", "AXLayoutArea"]
+  /// The button's own form in a window (cu-researcher's #895 note): `chainRoles` are its ancestors' roles, nearest first,
+  /// up to the window. The scope is its nearest group (groupRoles) - an entry in another pane never lends to it, so a
+  /// toolbar's 'Export' reads no danger-zone prompt - else, for a flat panel with no group below the window, the window.
+  /// nil when the chain is empty. Named limit: a Confirm in a nested button-row group reads only that row.
+  static func scope(_ chainRoles: [String?]) -> Int? {
+    if let group = chainRoles.firstIndex(where: { groupRoles.contains($0 ?? "") }) { return group }
+    return chainRoles.isEmpty ? nil : chainRoles.count - 1
+  }
+  /// `entries`: per entry, [label from AXTitleUIElement, AXDescription, AXPlaceholderValue, AXHelp].
+  static func pick(_ entries: [[String?]]) -> [String] {
+    var out: [String] = []
+    func keep(_ raw: String?) {
+      guard out.count < maxTexts, let raw else { return }
+      let text = raw.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
+      if !text.isEmpty, text.count <= maxLength, !out.contains(text) { out.append(text) }
+    }
+    for entry in entries {
+      guard out.count < maxTexts else { break }
+      keep(entry.prefix(3).compactMap { $0 }.first { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty })
+      if entry.count > 3 { keep(entry[3]) }
     }
     return out
   }
