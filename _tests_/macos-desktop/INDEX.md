@@ -1,8 +1,8 @@
 ---
 title: macos-desktop test suite
 created: 2026-11-02T09:00:00Z
-modified: 2026-11-11T20:09:26Z
-version: 0.11.0
+modified: 2026-11-23T10:54:35Z
+version: 0.12.0
 description: Unit tests of the macos-desktop environment - keys, coordinates, input planning and batch refusal, the helper link with the helper's peer boundary and the driver's peer check, launch and helper arguments, the desktop-run lock, the empty launch scope and addApp, the frame known at launch, effect mappings, the design's seams, the settle after a human resume, grants and targets, the environment end to end - against a fake helper, with no app, no grant and no screen.
 grounded_in:
   - source: _environments_/macos-desktop/INDEX.md@0.6.3
@@ -35,6 +35,7 @@ per local input, guards armed meanwhile, with seams `personActiveMs` (the person
 | [`run-lock-token.test.mjs`](run-lock-token.test.mjs) | CU-327: only a hold's token ends it - a nested script's tokenless release leaves the outer hold live; nested, unknown and extending tokens; minutes still run out; the CLI |
 | [`idle-a-mark.test.mjs`](idle-a-mark.test.mjs) | idle (A), the driver's half: the slot's optional `mark()` hears `{ armed: true }` once the pause is confirmed, `{ lastOwnerInputAt }` (epoch ms, time only) per local input, `{ armed: false }` before release; a slot without `mark` or one that throws changes nothing |
 | [`idle-a-integration.test.mjs`](idle-a-integration.test.mjs) | idle (A) end to end: the real lock entry carries idleAtStart / armed / lastOwnerInputAt; `ownerIdleSeconds` reads `armed_run` (>= the admitted idle at arm, ~0 after the person's input), `hid` after release |
+| [`idle-carry.test.mjs`](idle-carry.test.mjs) | CU-720: an armed run's owner-idle base outlives its release while HIDIdleTime still covers the time since it (rule `carried`); an event after the release, an unarmed / noInput run, a stale or malformed carry fall back to HIDIdleTime; chained runs are admitted on the carried idle |
 | [`seams.test.mjs`](seams.test.mjs) | captures by path; `simulateScale`; local input per guard, pause `via` |
 | [`grants-and-targets.test.mjs`](grants-and-targets.test.mjs) | both `secure_input` forms; `postEvents`; `opaque`, fingerprints; clipboard policy before or after C9's revert |
 | [`web-area.test.mjs`](web-area.test.mjs) | CU-322: the helper's `inWebArea` on targets at a point and where focus is; absent unless the helper sends a boolean (its null for a failed walk, or an older helper's silence); outside the fingerprint |
