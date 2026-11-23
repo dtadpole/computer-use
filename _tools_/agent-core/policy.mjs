@@ -2164,7 +2164,9 @@ const PASSWORD_NAMES = Object.freeze(['password', 'passcode', 'passphrase', 'pin
   // (a plain text input after a show-password toggle) asks credential as 'Password' does, never sensitive_data. German
   // compounds ride on '…' ('Anmeldepasswort'); Turkish takes its noun suffix ('Şifreniz', 'Parolanızı').
   'passwort', '…passwort', 'kennwort', '…kennwort', 'mot de passe', 'contraseña', 'contrasena', 'senha', 'wachtwoord', '…wachtwoord',
-  'şifre~', 'parola~', 'пароль', 'パスワード', '비밀번호'])
+  'şifre~', 'parola~', 'пароль', 'パスワード', '비밀번호',
+  // cu-researcher's CU-607 matrix (03:41Z): ko 암호 is the other common password word ('Wi-Fi 암호'); 암호화 (encryption) is one word and stays out.
+  '암호'])
 // CU-607: Italian 'parola chiave' (keyword) shares the Turkish password word; it is a search term, not a password.
 const PASSWORD_NAME_NOT = Object.freeze(['parola chiave', 'parole chiave'])
 const namesPassword = (name) => namesWord(name, PASSWORD_NAMES) && !namesWord(name, PASSWORD_NAME_NOT)

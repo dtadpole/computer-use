@@ -15,7 +15,7 @@ test('CU-607: the locale password names ask credential on a plain text input, as
   assert.ok(typeInto('Password').includes('credential'), 'English twin')
   for (const name of ['Passwort', 'Ihr Passwort', 'Anmeldepasswort', 'Kennwort', 'Mot de passe', 'Nouveau mot de passe', 'Contraseña', 'Contrasena',
     'Senha', 'Nova senha', 'Wachtwoord', 'Nieuw wachtwoord', 'Şifre', 'Şifreniz', 'Parola', 'Parolanızı girin', 'Пароль', 'Новый пароль',
-    'パスワード', '비밀번호']) {
+    'パスワード', '비밀번호', 'Benutzerpasswort', '암호', 'Wi-Fi 암호']) {
     assert.ok(typeInto(name).includes('credential'), name)
   }
 })
@@ -29,6 +29,7 @@ test('CU-607: the desktop reads the same names as a password field (the key hand
 test('CU-607 controls: Italian parola chiave and the other sign-in fields take credential only as their English twins do', () => {
   assert.ok(!typeInto('Parola chiave').includes('credential'), 'Parola chiave')
   assert.ok(!typeInto('Parole chiave').includes('credential'), 'Parole chiave')
+  assert.ok(!typeInto('암호화 설정').includes('credential'), '암호화 (encryption) is not a password word')
   for (const [en, name] of [['Keyword', 'Parola chiave'], ['Username', 'Benutzername'], ['Username', 'Nom d\u2019utilisateur'], ['Email', 'Correo electrónico'], ['Search', 'Rechercher'], ['Search', 'Suche']]) {
     assert.equal(typeInto(name).includes('credential'), typeInto(en).includes('credential'), `${name} vs ${en}`)
   }
