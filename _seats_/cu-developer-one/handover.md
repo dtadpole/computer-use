@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-23T01:14:00Z
+modified: 2026-11-23T04:00:00Z
 level: L1
-version: 3.92.0
+version: 3.93.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -14,39 +14,33 @@ grounded_in:
 
 # [cu] Developer One - handover
 
-Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); work in a
-session worktree plus `--review` worktrees; no desktop runs. State at 01:14Z, 23 November.
-
-## Landed
-
-- CU-483..561, CU-462, CU-429, CU-655 (#1161, closed live); design 0.4.x (#957..#1342; 0.4.45 on main); #1217 (CU-674 agent-core share).
-  Owner OKs, landed: cu-researcher's CU-604..654, CU-659, CU-661, CU-663..665, CU-668 / 669 (closed
-  live), CU-670, CU-672, CU-673, CU-675..678, CU-680, CU-683..695, CU-696's delete half, CU-698..700 (closed live); cu-developer-two's #1072, CU-657, CU-660.
+Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); session
+worktree plus `--review` and `--refresh` worktrees; no desktop runs. State at 04:00Z, 23 November.
 
 ## In progress
 
-- CU-609 (#1000): green, held for D-108 rule-1.
-- Design 0.4.46 (past-form fix) with this handover.
-- CU-702 go given; then CU-705, CU-704, CU-703.
-  CU-135 follow-up #1266 (settle re-reads) landed. Filed: CU-681 (negation ruling), CU-682 (rule-1). Designs given: CU-671, CU-667 (rule-1; I recommend yes).
-  Asked cu-coordinator: is English 'Sign out of this device' an over-ask?
+- CU-607 (P1, High): built, unpushed (`cu/cu-developer-one-cu-607-locale-password`, acb89018). Next: held-out h607 on
+  main and branch, the new test file and the suite in a window, push, then cu-researcher's matrix, live rows, close.
+- CU-609 (#1000): rule-1 yes (D-110). Main merged (0786f300, unpushed). Next: check, suite, reclass diff, push.
+- CU-702 (#1349 r4): three OKs; gate try 2 after the Highs. CU-707: go to cu-researcher.
+- Next: CU-705, CU-704, CU-703 (English measured, held-outs written); CU-696 permission half and CU-701 (gos given).
 
-## Open (built before triage; cu-coordinator rules priority)
+## Owed and open
 
-- Both OKs: #843 #846 #848 #853 #862. Researcher OK: #863 #866 #876. Next rounds: #847
-  #854 #856 #859. #851 awaits a ruling. To rebuild: #865 #877. Unbuilt: CU-578..587, CU-598.
-- Rulings asked: CU-607; CU-618; my cancel-delete / end-purchase split; rule-1 for CU-633/640/642/645/647/649/651/656/658/667.
+- #889: my named second OK (read; helper files to run).
+- #847 #851 #854 #856 #859 #865 #877: one D-112 round each, or close.
+- #417, #527: main merged in `--refresh` (#527 conflicts resolved as unions); suite, push, fresh OKs.
+- Rulings asked: CU-706 (rule-1), CU-697's owner; CU-681 option (a), read the issue first.
 
 ## Lessons
 
-- PARITY FIRST: measure the English twins (negation, slots, other objects) on main, then mirror exactly that set.
-- Held-outs need every form the go names; reviewers catch what mine lack.
-- Judged names are homoglyph-folded: English keywords must not match folded Cyrillic words.
-- A surviving mutant needs a deciding row.
-- Suites only on cu-integrator's go; stop one by its node PIDs (cwd = my worktree), never by name pattern.
-- Stamp from the clock; records PRs name no open issue id; held-outs live in `<worktree>.notes/`.
+- PARITY FIRST: measure the English twins on main, then mirror exactly that set.
+- Held-outs name every form the go names, plus purchase-free near misses for each new slot.
+- A surviving mutant needs a deciding row; judged names are homoglyph-folded.
+- Node only through the guard, in written windows; stamp from the clock; records PRs name no open issue id.
 
 ## Tools
 
-- Inbox: `~/dtadpole/reflection/_tools_/session-inbox/session-inbox.py check|read --me cu-developer-one` (mark read with `--done`).
+- Seat tools in git: the reflection seat folder's `tools/` (guard, window scripts, held-outs).
+- Inbox: `~/dtadpole/reflection/_tools_/session-inbox/session-inbox.py check|read --me cu-developer-one` (`--done`).
 - Before every push: `node ~/dtadpole/heddle/_tools_/public-hygiene/gate.mjs --range origin/main..HEAD`.
