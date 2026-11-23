@@ -1,37 +1,37 @@
 ---
 title: '[cu] Coordinator - handover'
 created: 2026-11-08T04:15:00Z
-modified: 2026-11-12T04:02:00Z
+modified: 2026-11-23T03:38:00Z
 level: L2
-version: 3.6.0
+version: 4.0.0
 status: unverified
-description: 'What the next [cu] Coordinator session needs to take the seat mid-flight - state at 12 Nov 04:00Z.'
+description: 'What the next [cu] Coordinator session needs to take the seat mid-flight - state at 23 Nov 03:45Z.'
 grounded_in:
-  - source: owner's orders of 2026-11-08 via hd-coordinator (8 Nov conventions; dedicated workspace and seats)
-  - source: decision log D-063, D-098 to D-109
+  - source: owner's re-creation order of 2026-11-22 19:05 PST (the previous holder was archived past the model window)
+  - source: decision log D-108, D-110 to D-113
 ---
 
 # [cu] Coordinator - handover
 
-**Where things are.** Main checkout `~/dtadpole/computer-use` is the sync's; every command starts in the session
-worktree `~/dtadpole/computer-use-wt/<session-id>` with `git -C` (D-104). Private: the roster, seat files, review
-log and my helpers beside TEAM.yaml in the reflection bank.
+**Where things are.** Work only from the session worktrees (computer-use and reflection) with `git -C` (D-104).
+Private: the roster, seat files, review log and my helpers beside TEAM.yaml in the reflection bank.
 
-**Goal.** ULTIMATE_GOAL 2.0 (verdict 0.9.205): every High the verdict lists is closed live - fifty-three on 10 Nov,
-fifty-five on 11 Nov, thirteen so far on 12 Nov; CU-429's lowering rounds 2 and 3 landed. Ruled since and open:
-CU-543 to CU-546. Consent then waits on CU-135; human control waits on the owner session (CU-11, CU-119, CU-135).
+**Context economy.** The previous holder died when its transcript passed the model window. Keep every tool output
+small, delegate long reads and member-review evidence to subagents, never print an inbox or a `--done` result whole.
 
-**Lane.** #786 (CU-543) and #789 (CU-544), both reviewed; #793 (CU-545); table PR 45 (CU-546); the CU-522 pair
-(#734, then #791); CU-547 (lowering round 4, ruled exactly); fillers #742 and probe-kit.
+**Goal.** ULTIMATE_GOAL 2.0, verdict 0.9.325: seven rows hold. Consent waits on two Highs ruled on 23 Nov - CU-585
+(the unit #884, #894, #897 and #889, #895, #930) and CU-607 - then CU-135 in the owner session; human control waits
+on step 4 (CU-11, CU-119, CU-135, CU-203).
 
-**Every 15 minutes.** Inbox (read, then confirm with its --done token), triage, one seat review (next:
-cu-verifier, 68th), decisions (last D-109; D-110 candidates in the pass prompt), a Chinese summary. Hourly:
-health (re-arm near 200 of 256; a goal flat for an hour gets revive or /goal resume), owner-status (1.8.42), the
-review batch.
+**Lane.** Highs first; then #1349, #1000, #1129 (rule-1 yes, D-110), the class batch #843 to #866 and #876; the
+reworked Medium PRs to the D-112 bar. Records PRs: #1354 (D-110, D-111), #1355 (D-112, D-113).
 
-**Rules that bite.** No ask_user_question (D-031). Input only through CUHelper under the lock with the owner idle
-(D-056, D-066). Model runs announced with cost (D-034). Two OKs per High, the live one from a named non-author
-seat, the head read from the PR right before posting. Highs first; the older class leads; lowering lists exact.
+**Every 15 minutes.** Inbox, health (renew goals at 80 percent; revive disarmed seats), triage, one member review
+(next after cu-integrator: cu-researcher), decisions, a short Chinese summary. Daily 23:00Z reflection and this
+file; Monday cycle close.
 
-**Owner items.** The goal cap and its stale text; the owner session; Chrome tab; notifications and Typeless; the
-GitHub purge decision; other app languages.
+**Rules that bite.** No ask_user_question (D-031). Input only through CUHelper with the owner idle (D-056, D-066).
+Model runs announced with cost; nothing past 21 USD without the owner (D-034). Never implement or merge.
+
+**Owner items.** Step 4 time and mode; notifications and Typeless; Chrome tabs; the history clean-up; the paste
+setting; the Opus S8 and S9 budget.
