@@ -1764,9 +1764,19 @@ const TYPED_CONFIRM_UTILITY = /^\s*(?:copy\b.*|show\b.*|hide\b.*|reveal\b.*|view
 // danger zone's 'Abbrechen' / 'Annuler' / 'Отмена' / 'キャンセル' never confirms it.
 const LOCALE_CONFIRM_BACKOUT = /^\s*(?:abbrechen|zurück|schlie(?:ß|ss)en|nein|behalten|später|nicht\s+jetzt|annuler|retour|fermer|non|conserver|garder|plus\s+tard|pas\s+maintenant|cancelar|volver|atrás|cerrar|conservar|mantener|más\s+tarde|ahora\s+no|voltar|fechar|não|manter|mais\s+tarde|agora\s+não|annulla|indietro|chiudi|mantieni|più\s+tardi|non\s+ora|annuleren|terug|sluiten|nee|behouden|niet\s+nu|отмена|отменить|назад|закрыть|нет|оставить|позже|не\s+сейчас|キャンセル|戻る|閉じる|いいえ|後で|取消|返回|关闭|關閉|否|稍后|稍後|취소|뒤로|닫기|아니요|아니오|나중에)\s*[.!\u3002]?\s*$/iu
 const LOCALE_CONFIRM_UTILITY = /^\s*(?:kopieren|copier|copiar|copia|kopiëren|копировать|コピー|复制|複製|복사|hilfe|aide|ayuda|ajuda|aiuto|справка|помощь|ヘルプ|帮助|幫助|도움말)(?![\p{L}\p{N}])/iu
+// A judged name has passed normaliseText, which folds Cyrillic homoglyphs to Latin case by case ('Отмена' -> 'Oтмeнa'), so the
+// Russian back-outs are also matched folded - as written, capitalised and in capitals - as namesRuTrashEmpty does.
+let ruBackoutRegex = null
+function namesRuBackout(text) {
+  if (!ruBackoutRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    ruBackoutRegex = new RegExp(`^\\s*(?:${['отмена', 'отменить', 'назад', 'закрыть', 'нет', 'оставить', 'позже', 'не сейчас'].flatMap(folds).join('|')})\\s*[.!]?\\s*$`, 'u')
+  }
+  return ruBackoutRegex.test(normaliseName(text))
+}
 function typedConfirmButton(name) {
   const text = String(name ?? '').trim()
-  return text !== '' && !TYPED_CONFIRM_BACKOUT.test(text) && !TYPED_CONFIRM_UTILITY.test(text) && !LOCALE_CONFIRM_BACKOUT.test(text) && !LOCALE_CONFIRM_UTILITY.test(text)
+  return text !== '' && !TYPED_CONFIRM_BACKOUT.test(text) && !TYPED_CONFIRM_UTILITY.test(text) && !LOCALE_CONFIRM_BACKOUT.test(text) && !LOCALE_CONFIRM_UTILITY.test(text) && !namesRuBackout(text)
 }
 // The confirm-prompt shape: a typing word followed by what to type ('Type DELETE ...', 'Enter the workspace name ...'), never
 // 'Type to search ...' / 'Type here ...' / 'Press Enter to ...' (cu-researcher's r1 over-ask 'Type to search deleted items').

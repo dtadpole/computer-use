@@ -49,7 +49,7 @@ test('CU-726: ordinary localized forms stay free', () => {
   assert.equal(zoned('Weiter', ['Geben Sie Ihre E-Mail-Adresse ein']), 'allow')
   assert.equal(zoned('Weiter', ['Geben Sie Ihre Telefonnummer ein'], ['Wir entfernen sie, wenn Sie es wünschen.']), 'allow')
   assert.equal(zoned('Continuer', ["Saisissez l'adresse e-mail d'utilisateur"], ['Les comptes inactifs sont supprimés après un an.']), 'allow', 'French elision is no quote')
-  assert.equal(zoned('Enviar', ['Escribe un mensaje']), 'allow')
+  assert.equal(zoned('Siguiente', ['Escribe un mensaje']), 'allow')
   assert.equal(zoned('Далее', ['Введите номер телефона']), 'allow')
   assert.equal(zoned('Далее', ['Введите адрес удалённого сервера']), 'allow', "'удалённый' is also 'remote'")
   assert.equal(zoned('Weiter', ['Adresse des entfernten Servers eingeben']), 'allow', "'entfernt' as 'distant'")
