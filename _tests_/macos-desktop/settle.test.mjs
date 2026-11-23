@@ -16,7 +16,7 @@ import { fakeLauncher, launchApproved, pause, scratchLocks, stdioLink, stopFake 
  * step, and gives up at its cap with `local_input` at step 0. Its guards stay armed meanwhile, so it reports
  * `localInput` during the wait; the driver takes those as the person the settle waits out - no stop, no pause, no
  * listener event - until the request is answered. Every wait here is real time with short values (`settleMs` 40 to
- * 300).
+ * 300, and 1000 where a touch must land inside the settle under load).
  */
 
 const code = (expected) => (error) => error instanceof EnvironmentError && error.code === expected
@@ -187,7 +187,11 @@ test('after local input the fake waits for hands-off - its person reported while
 
 test('local input during the settle restarts the wait: the helper reports it, and the driver neither stops, pauses nor tells listeners', async () => {
   const control = createRunControl({ runId: 'settle' })
-  const { env, child } = await launchOnFake({ personActiveMs: 150 }, { control, settleMs: 200 })
+  // settleMs is wide (1000) so the touches at 250 and 300 ms land inside the settle even under machine load: untouched,
+  // the settle would end at about 1150 ms, so a late request or a slow timer has ~850 ms of room. A 200 ms settle
+  // left ~100 ms, and a loaded records gate (#1311, 22 Nov) saw both touches arrive after it had ended.
+  const settleMs = 1000
+  const { env, child } = await launchOnFake({ personActiveMs: 150 }, { control, settleMs })
   const heard = []
   env.on('localInput', (event) => heard.push(event))
   const events = []
@@ -197,7 +201,7 @@ test('local input during the settle restarts the wait: the helper reports it, an
     const states = stateLog(control)
     const started = Date.now()
     const acting = env.perform(CLICK)
-    // The person stopped at 150 ms; at 250 the counter has read 100 of the 200 when they touch the Mac again, twice.
+    // The person stopped at 150 ms; at 250 the counter has read 100 of the 1000 when they touch the Mac again, twice.
     await pause(250)
     const byIdle = await env.simulateLocalInput({ via: 'idle', kind: 'pointer' })
     await pause(50)
@@ -207,12 +211,12 @@ test('local input during the settle restarts the wait: the helper reports it, an
     // No stop is set: the seam resolves with the driver's stop time, still none.
     assert.deepEqual([byIdle, byTap], [{ at: null, detectedBy: 'idle' }, { at: null, detectedBy: 'tap' }])
     assert.equal((await logLines(child, /^local input during the settle: localInput sent/, 2)).length, 2)
-    const [line] = await logLines(child, /^settle honoured settleMs=200 /)
+    const [line] = await logLines(child, /^settle honoured settleMs=1000 /)
     // On the fake's own clock - its settle may begin a little after this test's clock starts, so its wait alone is not
-    // compared with 500: the idle wait restarted at the last touch, which came during the settle. End to end, on this
+    // compared with 1300: the idle wait restarted at the last touch, which came during the settle. End to end, on this
     // test's clock, the run waited past both touches (sent at 300 ms or later) plus settleMs.
-    assert.ok(lastInputOf(line) > 0 && waitedOf(line) >= lastInputOf(line) + 200, `the wait restarted at the last touch: ${line}`)
-    assert.ok(took >= 500, `the run waited past the last touch (${took} ms)`)
+    assert.ok(lastInputOf(line) > 0 && waitedOf(line) >= lastInputOf(line) + settleMs, `the wait restarted at the last touch: ${line}`)
+    assert.ok(took >= 300 + settleMs, `the run waited past the last touch (${took} ms)`)
     // Both touches came as events (a slow start may add a report of the person); none paused anything.
     const person = child.log.filter((entry) => /^person during the settle/.test(entry)).length
     assert.equal(events.length, 1 + 2 + person)
@@ -221,7 +225,7 @@ test('local input during the settle restarts the wait: the helper reports it, an
     assert.equal(heard.length, 1, 'no listener event during the settle')
     assert.deepEqual(states, [], 'run control never left running')
     assert.deepEqual([control.state, env.state().localInput], ['running', null])
-    assert.equal((await inputNumber(child, 1)).settleMs, 200)
+    assert.equal((await inputNumber(child, 1)).settleMs, settleMs)
   } finally {
     await env.close()
     await stopFake(child)

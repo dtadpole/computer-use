@@ -1844,6 +1844,28 @@ export function typedConfirmClasses(entries, zoneWords = []) {
   const words = [...texts, ...(texts.some(confirmShaped) || zoneInstruction ? zone : [])].join(' \u2022 ')
   return [...(TYPED_DESTROY.test(words) ? ['delete'] : []), ...(TYPED_TRANSFER.test(words) ? ['permission'] : [])]
 }
+
+// CU-371: a generic submit that applies whatever its form's select holds ('Apply', 'Go', 'Update' beside 'Bulk actions').
+const SELECTED_ACTION_SUBMIT = /^\s*(?:apply|go|update|ok(?:ay)?|submit|save|confirm|continue|run|execute|do\s+it|perform|proceed|done)\s*[.!]?\s*$/i
+// A destructive selected option, by its verb: delete / move to trash or bin / empty the trash / remove / erase / destroy /
+// purge / wipe / discard, or anything done permanently. A state or a view ('Deleted items', 'Trash', 'Removed') and
+// 'Archive', 'Move to folder', 'Mark as read' stay free (cu-developer-one 14:51Z).
+const SELECTED_DESTROY = /\b(?:delet(?:e|es|ing|ion)\b|(?:move|send|put)\s+(?:\w+\s+)?to\s+(?:the\s+)?(?:trash|bin|recycle\s+bin)\b|trash\s+(?:selected|all|them|it|items?)\b|empty\s+(?:the\s+)?(?:trash|bin)\b|remov(?:e|es|ing|al)\b|eras(?:e|es|ing|ure)\b|destroy\b|purg(?:e|es|ing)\b|wip(?:e|es|ing)\b|discard\b|permanently\b)/i
+
+/**
+ * CU-371: the classes a form's SELECTED options ask for when a generic submit applies them - the driver's formContext.options
+ * (up to 3 selected option texts of 24 characters, CU-400). A destructive one asks delete; nothing else is read.
+ */
+// r2 (cu-researcher's over-ask 'Undo delete'): an option that takes an act back never asks.
+const SELECTED_UNDO = /\b(?:undo|restore|recover|undelete|un-?archive|un-?trash|un-?ban|reinstate|cancel\s+(?:the\s+)?(?:deletion|removal))\b/i
+/** CU-371 r2: the selected option texts a generic submit applies - at most 3 of 24 characters, never an undo / restore one. */
+export function selectedOptionTexts(formContext) {
+  const options = Array.isArray(formContext?.options) ? formContext.options.slice(0, 3).map((text) => String(text ?? '').trim()).filter((text) => text !== '' && text.length <= 24) : []
+  return options.filter((text) => !SELECTED_UNDO.test(text))
+}
+export function selectedOptionClasses(formContext) {
+  return selectedOptionTexts(formContext).some((text) => SELECTED_DESTROY.test(text)) ? ['delete'] : []
+}
 const TRADE_WORDS = /\b(?:trade|trading|swap|swaps|stake|staking|unstake|sell|selling|bridge|mint|minting)\b/gi
 const TRADE_NAV = /\b(?:trade|trading|swap|swaps|stake|staking|unstake|sell|selling|bridge|mint|minting)\b[\s\S]*\b(?:history|settings|faq|guide|policy|fees|rates|limits)\b/i
 // cu-coordinator 11:13Z adds 'Rotate secret', 'Regenerate token', 'New token' and a settings 'Reset password' (CU-401's family).
@@ -2252,7 +2274,38 @@ const PASSWORD_NAMES = Object.freeze(['password', 'passcode', 'passphrase', 'pin
   // CU-606 (cu-researcher): an access code, in the class of its twin 'passcode'.
   'access code',
   // CU-293: the same names in Chinese.
-  '密码', '密碼', '口令', '支付密码', '支付密碼'])
+  '密码', '密碼', '口令', '支付密码', '支付密碼',
+  // CU-607 (cu-coordinator 03:21Z, go: credential): the password names in the other covered languages, so a shown password
+  // (a plain text input after a show-password toggle) asks credential as 'Password' does, never sensitive_data. German
+  // compounds ride on '…' ('Anmeldepasswort'); Turkish takes its noun suffix ('Şifreniz', 'Parolanızı').
+  'passwort', '…passwort', 'kennwort', '…kennwort', 'mot de passe', 'contraseña', 'contrasena', 'senha', 'wachtwoord', '…wachtwoord',
+  'şifre~', 'parola~', 'пароль', 'パスワード', '비밀번호',
+  // cu-researcher's CU-607 matrix (03:41Z): ko 암호 is the other common password word ('Wi-Fi 암호'); 암호화 (encryption) is one word and stays out.
+  '암호',
+  // r2 (my 05:24Z measure on main: English 'Access code' asks credential, 'Recovery code' sensitive_data): European Portuguese
+  // palavra-passe, and the locale access codes as CU-606's English 'access code' (the recovery codes stay sensitive_data).
+  'palavra-passe', 'palavra passe', 'zugangscode', "code d'accès", 'code d\u2019accès', 'código de acceso', 'clave de acceso', 'código de acesso',
+  'codice di accesso', 'toegangscode', 'erişim kod~',
+  // CU-716 (CU-607's near forms; cu-developer-one's held-out of 07:58Z: parity 0/12 on main and on CU-607's head, every miss
+  // free while each English twin asks credential): the password word inflected or continued - the Russian singular cases
+  // ('Подтверждение пароля', 'Войти с паролем') and a German or Dutch compound that goes on after it ('Passwortbestätigung',
+  // 'Kennwortfeld', 'des Passworts', 'Wachtwoordbevestiging'). Plurals stay free as English 'Passwords' does: Russian
+  // 'Пароли' / 'Паролей', German 'Passworte(n)' and Dutch 'Wachtwoorden' do not match, and German 'Passwörter' never
+  // holds the word.
+  'пароля', 'паролю', 'паролем', 'пароле', /(?:passwort|paßwort|kennwort|wachtwoord)(?=\p{L})(?!en?(?:[^\p{L}]|$))/u,
+  // CU-716, the #1364 reviewers' near forms (my supplement of 08:14Z: parity 1/15 on the first head): the Russian adjective
+  // ('Парольная фраза' as English 'Passphrase'), the old German spelling 'Paßwort', and the PIN in other words, as English
+  // 'PIN' / 'PIN code' ask credential - German Geheimzahl, Japanese 暗証番号, Russian ПИН / ПИН-код, Dutch pincode.
+  'парольная', 'парольный', 'парольное', 'парольную', 'парольной', 'парольного', 'парольном', 'парольным', 'парольные',
+  'парольных', 'парольными', 'paßwort', '…paßwort', 'geheimzahl', '…geheimzahl', '暗証番号', 'пин', 'pincode',
+  // #1370 r2 (cu-researcher's held-out, 10:12Z): French 'Code confidentiel', the card PIN, as English 'PIN'.
+  'code confidentiel'])
+// CU-607: a few phrases share a password word without naming a password - Italian 'parola chiave' (keyword) and Korean
+// 암호화 (encryption, which contains 암호). They are cut out of the name before the password words are matched, so
+// '암호화 설정' stays free while '암호화 비밀번호' still names a password.
+const PASSWORD_NAME_NOT = /parol[ae][\s-]+chiave|암호화/giu
+// The desktop passes raw names; a judged name is homoglyph-folded first, so both forms are read ('Пароль').
+const namesPassword = (name) => [String(name ?? ''), normaliseText(String(name ?? ''))].some((n) => namesWord(n.replace(PASSWORD_NAME_NOT, ' '), PASSWORD_NAMES))
 // CU-265: the schemes a page navigates itself; any other hands the link to another app.
 // cu-researcher on #112: data: and blob: stay in the browser (blob: is how sites serve a generated 'Download CSV'); a
 // download they start still meets the page's download handling.
@@ -2381,10 +2434,10 @@ const nearbyLabelOf = (target) => {
 }
 const entryNamesOf = (target) => [target?.name, typeof target?.placeholder === 'string' && target.placeholder.trim() !== '' ? target.placeholder : null, nearbyLabelOf(target)]
   .filter((name) => name !== null && name !== undefined)
-const passwordNamedEntry = (target) => isTextEntry(target) && entryNamesOf(target).some((name) => namesWord(name, PASSWORD_NAMES))
+const passwordNamedEntry = (target) => isTextEntry(target) && entryNamesOf(target).some((name) => namesPassword(name))
 // CU-184 (desktop-rules.md): a text entry named for a password - shown or not, it holds one - unless its name says it is
 // a hint; the desktop hands a key action into it to the person, as it does a secure field (R83).
-export const namesPasswordField = (target) => isTextEntry(target) && entryNamesOf(target).some((name) => namesWord(name, PASSWORD_NAMES) && !namesWord(name, ['hint']))
+export const namesPasswordField = (target) => isTextEntry(target) && entryNamesOf(target).some((name) => namesPassword(name) && !namesWord(name, ['hint']))
 // CU-599 (cu-researcher): the card number with a possessive or 'of', in either order - 'Your card's number', 'Number of / on your
 // card', 'Numéro de votre carte', 'Nummer Ihrer Karte', 'Número de su tarjeta', 'Número do seu cartão', 'Numero della tua carta' -
 // reads like the compound 'card number' each language already lists.
@@ -4440,6 +4493,22 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     const subProbe = context.confirmProbe === true || context.questionProbe === true || context.splitParticleProbe === true
     if (grammarEligible && !subProbe && classes.length === 0 && typedConfirmButton(name) && Array.isArray(target?.formEntries)) {
       for (const cls of typedConfirmClasses(target.formEntries, target.zoneWords)) classes.push(cls)
+    }
+    // CU-371 (cu-coordinator's filing; GO from the policy.mjs owner cu-developer-one 14:51Z; built by cu-developer-two): a
+    // generic submit ('Apply', 'Go', 'Update', 'OK', 'Submit') applies what its form's select holds, so it is judged by the
+    // SELECTED option (the driver's formContext). r2 (cu-researcher's held-out): each selected option is judged the way it
+    // would be as a button ('Revoke access' -> permission, 'Deactivate accounts' -> delete, 'Transfer ownership' ->
+    // permission), and the destructive verbs ask delete. A late union on the control's own label only, like CU-585: it adds
+    // to a submit nothing else classes, or to one whose only class is its own generic 'submit' ('Submit' beside 'Erase chosen
+    // rows' asks submit and delete); it never lowers an ask. An undo / restore / recover option never asks.
+    const genericOnly = classes.length === 0 || (classes.length > 0 && classes.every((cls) => cls === 'submit'))
+    if (grammarEligible && !subProbe && context.selectedOptionProbe !== true && genericOnly && SELECTED_ACTION_SUBMIT.test(String(name ?? '')) && target?.formContext && typeof target.formContext === 'object') {
+      for (const cls of selectedOptionClasses(target.formContext)) classes.push(cls)
+      for (const option of selectedOptionTexts(target.formContext)) {
+        const asButton = classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { tag: 'button', role: 'button', name: option, origin: target.origin }, selectedOptionProbe: true })
+        if (asButton.decision === 'confirm' && Array.isArray(asButton.classes)) for (const cls of asButton.classes) classes.push(cls)
+        else if (asButton.decision === 'confirm' && typeof asButton.class === 'string') classes.push(asButton.class)
+      }
     }
     if (grammarEligible && classes.length === 0) {
       const mdm = String(name ?? '').trim()
