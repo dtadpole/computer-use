@@ -29,6 +29,19 @@ test('CU-716 controls: plurals and look-alike words take credential only as thei
   }
 })
 
+test('CU-716 (the #1364 reviewers\' near forms): the Russian adjective, the old German spelling and the PIN in other words ask credential as their English twins do', () => {
+  for (const [en, name] of [['Passphrase', 'Парольная фраза'], ['Passphrase', 'Введите парольную фразу'], ['Password policies', 'Парольные политики'],
+    ['Password', 'Paßwort'], ['Forgot password?', 'Paßwort vergessen?'], ['Password confirmation', 'Paßwortbestätigung'], ['Login password', 'Anmeldepaßwort'],
+    ['PIN', 'Geheimzahl'], ['Your PIN', 'Ihre Geheimzahl'], ['PIN', '暗証番号'], ['PIN', '暗証番号を入力'], ['PIN code', 'ПИН-код'], ['PIN', 'ПИН'], ['PIN', 'Пин'],
+    ['PIN code', 'Pincode'], ['PIN code', 'Uw pincode']]) {
+    assert.ok(typeInto(en).includes('credential'), `English twin ${en}`)
+    assert.ok(typeInto(name).includes('credential'), name)
+  }
+  for (const [en, name] of [['Number', 'Zahl'], ['Secret', 'Geheimnis'], ['Number', '番号'], ['Code', 'Код'], ['Ping', 'Пинг'], ['Pinboard', 'Pinnwand'], ['Pinned', 'Angepinnt']]) {
+    assert.equal(typeInto(name).includes('credential'), typeInto(en).includes('credential'), `${name} vs ${en}`)
+  }
+})
+
 test('CU-716: a homoglyph-mixed name reads as the plain one, and the desktop hand-off reads the new forms', () => {
   assert.ok(typeInto('Подтверждение пaроля').includes('credential'), 'a Latin a inside the Russian word')
   assert.ok(typeInto('Pаsswortbestätigung').includes('credential'), 'a Cyrillic a inside the German compound')

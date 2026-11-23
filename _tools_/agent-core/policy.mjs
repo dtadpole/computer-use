@@ -2227,11 +2227,17 @@ const PASSWORD_NAMES = Object.freeze(['password', 'passcode', 'passphrase', 'pin
   'palavra-passe', 'palavra passe', 'zugangscode', "code d'accès", 'code d\u2019accès', 'código de acceso', 'clave de acceso', 'código de acesso',
   'codice di accesso', 'toegangscode', 'erişim kod~',
   // CU-716 (CU-607's near forms; cu-developer-one's held-out of 07:58Z: parity 0/12 on main and on CU-607's head, every miss
-  // free while each English twin asks credential): the password word inflected or continued - the Russian singular cases ('Подтверждение пароля', 'Войти с
-  // паролем') and a German or Dutch compound that goes on after it ('Passwortbestätigung', 'Kennwortfeld', 'des Passworts',
-  // 'Wachtwoordbevestiging'). Plurals stay free as English 'Passwords' does: Russian 'Пароли' / 'Паролей', German
-  // 'Passworte(n)' and Dutch 'Wachtwoorden' do not match, and German 'Passwörter' never holds the word.
-  'пароля', 'паролю', 'паролем', 'пароле', /(?:passwort|kennwort|wachtwoord)(?=\p{L})(?!en?(?:[^\p{L}]|$))/u])
+  // free while each English twin asks credential): the password word inflected or continued - the Russian singular cases
+  // ('Подтверждение пароля', 'Войти с паролем') and a German or Dutch compound that goes on after it ('Passwortbestätigung',
+  // 'Kennwortfeld', 'des Passworts', 'Wachtwoordbevestiging'). Plurals stay free as English 'Passwords' does: Russian
+  // 'Пароли' / 'Паролей', German 'Passworte(n)' and Dutch 'Wachtwoorden' do not match, and German 'Passwörter' never
+  // holds the word.
+  'пароля', 'паролю', 'паролем', 'пароле', /(?:passwort|paßwort|kennwort|wachtwoord)(?=\p{L})(?!en?(?:[^\p{L}]|$))/u,
+  // CU-716, the #1364 reviewers' near forms (my supplement of 08:14Z: parity 1/15 on the first head): the Russian adjective
+  // ('Парольная фраза' as English 'Passphrase'), the old German spelling 'Paßwort', and the PIN in other words, as English
+  // 'PIN' / 'PIN code' ask credential - German Geheimzahl, Japanese 暗証番号, Russian ПИН / ПИН-код, Dutch pincode.
+  'парольная', 'парольный', 'парольное', 'парольную', 'парольной', 'парольного', 'парольном', 'парольным', 'парольные',
+  'парольных', 'парольными', 'paßwort', '…paßwort', 'geheimzahl', '…geheimzahl', '暗証番号', 'пин', 'pincode'])
 // CU-607: a few phrases share a password word without naming a password - Italian 'parola chiave' (keyword) and Korean
 // 암호화 (encryption, which contains 암호). They are cut out of the name before the password words are matched, so
 // '암호화 설정' stays free while '암호화 비밀번호' still names a password.
