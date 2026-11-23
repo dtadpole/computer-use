@@ -636,6 +636,34 @@ export function describeElement(el) {
         const zone = entryWalk()
         if (zone && zone.querySelectorAll('select, [role="combobox"]').length > 0) form = zone
       }
+      // r4 (CU-371, cu-verifier's 14:36Z live rows: a body-level 'Bulk action' select beside Apply / Go on a page that
+      // holds other entries, so no one-entry zone exists): else the button's own ROW of controls - its contiguous element
+      // siblings, at most 4 each way, that are controls (a select or combobox, a button, a submit-like input) or a label /
+      // span / div wrapping exactly one select and no other control. The row's selects lend their chosen option; the page's
+      // other entries (a search box, a page-size select elsewhere) never join, and no amount entry is read from a row.
+      if (!form) {
+        const tagOf = (n) => String((n && n.tagName) || '').toLowerCase()
+        const roleOf = (n) => String((n && n.getAttribute && n.getAttribute('role')) || '').toLowerCase()
+        const isSelect = (n) => tagOf(n) === 'select' || roleOf(n) === 'combobox'
+        const isControl = (n) => isSelect(n) || tagOf(n) === 'button' || roleOf(n) === 'button'
+          || (tagOf(n) === 'input' && ['submit', 'button', 'image'].includes(String((n.getAttribute && n.getAttribute('type')) || '').toLowerCase()))
+        const wrapped = (n) => {
+          if (!['label', 'span', 'div'].includes(tagOf(n)) || typeof n.querySelectorAll !== 'function') return null
+          const inner = Array.from(n.querySelectorAll('select, [role="combobox"]'))
+          return inner.length === 1 && n.querySelectorAll('input, textarea, button, [role="button"]').length === 0 ? inner[0] : null
+        }
+        const selects = []
+        for (const step of ['previousElementSibling', 'nextElementSibling']) {
+          let n = el[step]
+          for (let i = 0; n && i < 4; i += 1, n = n[step]) {
+            const inner = isControl(n) ? null : wrapped(n)
+            if (!isControl(n) && inner === null) break
+            if (isSelect(n)) selects.push(n)
+            else if (inner !== null) selects.push(inner)
+          }
+        }
+        if (selects.length > 0) form = { querySelectorAll: (selector) => (selector === 'input' ? [] : selects) }
+      }
     }
     if (!form) return null
     const short = (text) => String(text || '').replace(/\s+/g, ' ').trim()

@@ -934,6 +934,27 @@ test("CU-371 formless rows: a bulk-action bar (a select beside Apply and Go, no 
   assert.equal('formEntries' in describeElement(apply(bar([select('Delete permanently')]))), false, 'a select gives no formEntries (text entries only)')
 })
 
+test("CU-371 r4 (cu-verifier's 14:36Z live rows): a body-level bulk-action row - the button's contiguous control siblings lend their select's chosen option, whatever other entries the page holds", () => {
+  const select = (text, label = 'Bulk action') => ({ tagName: 'SELECT', selectedOptions: [{ textContent: text }], getAttribute: (name) => (name === 'aria-label' ? label : null) })
+  const search = { tagName: 'INPUT', getAttribute: (name) => (name === 'type' ? 'search' : null), placeholder: 'Search' }
+  const perPage = select('25', 'Per page')
+  const row = (left, extraRight = []) => {
+    const apply = el('BUTTON', { children: ['Apply'], closest: () => null })
+    const go = el('BUTTON', { children: ['Go'], closest: () => null })
+    const body = el('BODY', { querySelectorAll: (sel) => (sel.startsWith('input') ? [search, perPage, ...left.filter((n) => n.tagName === 'SELECT')] : sel.startsWith('select') ? [perPage, ...left.filter((n) => n.tagName === 'SELECT')] : []) })
+    apply.parentElement = body
+    const chain = [search, ...left, apply, go, ...extraRight]
+    chain.forEach((node, i) => { node.previousElementSibling = chain[i - 1] ?? null; node.nextElementSibling = chain[i + 1] ?? null })
+    return apply
+  }
+  assert.deepEqual(describeElement(row([select('Delete permanently')])).formContext, { options: ['Delete permanently'], amountEntry: false }, 'the row lends; the search box and the page-size select elsewhere never join')
+  assert.equal('formContext' in describeElement(row([select('Delete permanently'), { tagName: 'SPAN', querySelectorAll: () => [], getAttribute: () => null }])), false, 'a text span between the select and the button ends the row')
+  const wrapped = select('Move to trash')
+  const label = { tagName: 'LABEL', getAttribute: () => null, querySelectorAll: (sel) => (sel.startsWith('select') ? [wrapped] : []) }
+  assert.deepEqual(describeElement(row([label])).formContext, { options: ['Move to trash'], amountEntry: false }, 'a label wrapping exactly one select is part of the row')
+  assert.equal('formEntries' in describeElement(row([select('Delete permanently')])), false, 'a select gives no formEntries (text entries only)')
+})
+
 test('CU-402: without a <form>, formContext falls back to [role=form], else a fieldset or dialog holding exactly one submit-like control', () => {
   const select = (text) => ({ tagName: 'SELECT', selectedOptions: [{ textContent: text }] })
   const box = (controls, submits) => ({ querySelectorAll: (sel) => (sel === 'input' ? [] : sel.startsWith('select') ? controls : submits) })

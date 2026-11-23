@@ -138,6 +138,9 @@ const server = http.createServer((req, res) => {
       '<body style="margin:0"><div role="dialog"><p>Enter the project name to search. Results appear below.</p><input placeholder="project name" style="position:absolute;left:20px;top:41px;width:380px"><button id="go" style="position:absolute;left:20px;top:80px;width:200px;height:30px">Confirm</button></div></body>',
       // r3 branch (c): a purpose clause naming the act, an 'e.g.' inside the sentence
       '<body style="margin:0"><div role="dialog"><p>Enter your email (e.g. name@acme.com) to delete your account.</p><input placeholder="Email" style="position:absolute;left:20px;top:41px;width:380px"><button id="go" style="position:absolute;left:20px;top:80px;width:200px;height:30px">Confirm</button></div></body>',
+      // r4 (CU-371, cu-verifier's 14:36Z live rows): a body-level bulk-action row on a page with other entries; its near miss
+      '<body style="margin:0"><input type="search" placeholder="Search" style="position:absolute;left:20px;top:4px;width:200px"><select aria-label="Bulk action" style="position:absolute;left:20px;top:40px;width:160px"><option>Bulk action</option><option selected>Delete permanently</option></select><button id="go" style="position:absolute;left:200px;top:40px;width:80px;height:26px">Apply</button><button style="position:absolute;left:290px;top:40px;width:60px;height:26px">Go</button><span style="position:absolute;left:20px;top:90px">Show</span><select aria-label="Per page" style="position:absolute;left:70px;top:90px"><option>25</option></select></body>',
+      '<body style="margin:0"><input type="search" placeholder="Search" style="position:absolute;left:20px;top:4px;width:200px"><select aria-label="Bulk action" style="position:absolute;left:20px;top:40px;width:160px"><option>Bulk action</option><option selected>Mark as read</option></select><button id="go" style="position:absolute;left:200px;top:40px;width:80px;height:26px">Apply</button><button style="position:absolute;left:290px;top:40px;width:60px;height:26px">Go</button><span style="position:absolute;left:20px;top:90px">Show</span><select aria-label="Per page" style="position:absolute;left:70px;top:90px"><option>25</option></select></body>',
     ]
     res.end(`<!doctype html><meta charset="utf-8">${pages[n] ?? ''}`)
     return
@@ -339,15 +342,15 @@ try {
   // CU-585 r2: the same hand-over a run makes (inspectPoint at the button's centre, then the policy) on each shape -
   // every one asks delete. The typed word never rides along.
   const shapePolicy = createPolicy({ sitePolicy: () => 'allow' })
-  for (let n = 0; n < 8; n += 1) {
+  for (let n = 0; n < 10; n += 1) {
     await env.perform({ type: 'navigate', url: `${origin}/danger-shape?n=${n}` })
     const box = await evaluate("(() => { const r = document.getElementById('go').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 } })()")
     const point = { x: Math.round(box.x * env.frame.scale), y: Math.round(box.y * env.frame.scale) }
     const shape = await env.inspectPoint(point)
     const verdict = shapePolicy.classify({ type: 'click', ...point, button: 'left' }, { url: `${origin}/danger-shape?n=${n}`, target: shape })
     const classes = verdict.decision === 'allow' ? [] : (verdict.classes ?? [verdict.class])
-    const free = n === 6 // r3's near miss: no act in the zone
-    check(free ? 'CU-585 r3 shape 6: a near miss (no act in the zone) stays free' : `CU-585 r2/r3 shape ${n}: the bare button carries its zone's words and asks delete`, (free ? !classes.includes('delete') : classes.includes('delete')) && !/"(?:DELETE|CLOSE|acme\/website)"/.test(JSON.stringify(shape?.formEntries ?? null)),
+    const free = n === 6 || n === 9 // r3's near miss (no act in the zone); r4's bulk 'Mark as read'
+    check(free ? `CU-585 / CU-371 shape ${n}: a near miss stays free` : `CU-585 r2/r3 shape ${n}: the bare button carries its zone's words and asks delete`, (free ? !classes.includes('delete') : classes.includes('delete')) && !/"(?:DELETE|CLOSE|acme\/website)"/.test(JSON.stringify(shape?.formEntries ?? null)),
       shape && { name: shape.name, formEntries: shape.formEntries ?? null, zoneWords: shape.zoneWords ?? null, classes })
   }
 

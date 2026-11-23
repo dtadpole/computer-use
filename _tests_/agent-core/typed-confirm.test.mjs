@@ -177,7 +177,7 @@ test("CU-585 r2 (policy owner 09:52Z, cu-researcher's miss): a zone sentence sup
   assert.equal(zoned('Continue', ['project name'], ['Enter the project name to delete it.', 'This cannot be undone.']), 'delete', 'the paragraph prompt beside a noun placeholder')
   assert.equal(zoned('Confirm', ['Repository'], ['To delete, type DELETE.']), 'delete')
   assert.equal(zoned('Confirm', ['Workspace'], ['Type the workspace name to transfer ownership.']), 'permission')
-  assert.equal(zoned('Continue', ['Workspace name'], ['Enter the workspace name.', 'Workspaces are deleted after 90 days.']), 'allow', 'confirm-shaped in one sentence, destructive in another: nothing')
+  assert.equal(zoned('Continue', ['Workspace name'], ['Enter the workspace name.', 'Workspaces are deleted after 90 days.']), 'delete', 'r4 flip (policy owner 14:45Z): a confirm-shaped instruction takes the verb from another sentence - an accepted over-ask')
   assert.equal(zoned('Continue', ['Workspace name'], ['Type the workspace name below.']), 'allow', 'only confirm-shaped: nothing')
   assert.equal(zoned('Continue', ['Workspace name'], ['Workspaces are deleted after 90 days.']), 'allow', 'only destructive: nothing')
   assert.equal(zoned('Continue', ['Your email'], ['Enter your email to delete your newsletter subscription.']), 'delete', 'r3 branch (c) flip: a purpose clause naming the act asks, whatever is typed (safe side, policy owner 13:32Z)')
@@ -191,7 +191,7 @@ test("CU-585 r3 (cu-researcher's r2 review): a split dialog - a STRONG confirm s
   assert.deepEqual(typedConfirmClasses(['owner'], ['To confirm, enter the new owner name.', 'Ownership of this project is transferred.']), ['permission'])
   assert.deepEqual(typedConfirmClasses(['project'], ['Enter the project name to search.', 'Results appear below.']), [], 'no act in the zone')
   assert.deepEqual(typedConfirmClasses(['folder'], ['Type a name for the new folder.', 'Old folders are deleted after 30 days.']), [], 'not confirm-shaped')
-  assert.deepEqual(typedConfirmClasses(['Workspace name'], ['Enter the workspace name.', 'Workspaces are deleted after 90 days.']), [], "'the <noun> name' alone is not strong - the policy owner's 09:52Z row stays free")
+  assert.deepEqual(typedConfirmClasses(['Workspace name'], ['Enter the workspace name.', 'Workspaces are deleted after 90 days.']), ['delete'], 'r4 flip: the name shape counts in the split branch (an accepted over-ask)')
   assert.deepEqual(typedConfirmClasses(['code'], ['Enter PIN to confirm your card.', 'Lost cards are removed.']), ['delete'], 'a strong to-confirm sentence beside an act asks (the over-ask side, named)')
   assert.deepEqual(typedConfirmClasses(['city'], ['Shipping', 'Type your city.']), [], 'an ordinary form')
   // policy owner 13:25Z: in the strong branch the other sentence needs a destroy / transfer verb, not a bare intensifier
@@ -201,6 +201,12 @@ test("CU-585 r3 (cu-researcher's r2 review): a split dialog - a STRONG confirm s
   assert.deepEqual(typedConfirmClasses(['workspace-name'], ['To confirm, enter the workspace name below.', 'This deletes it permanently.']), ['delete'], "the split dialog still asks, through 'deletes'")
   assert.deepEqual(typedConfirmClasses(['Type CLOSE to confirm'], ['This cannot be undone.']), ['delete'], 'entries keep the full destroy test (branch (a) / entries unchanged)')
   assert.deepEqual(typedConfirmClasses(['Project'], ['Confirm by entering the project name.', 'This deletes the project.']), ['delete'], "'confirm by' is a strong marker (policy owner 13:22Z spec)")
+  // r4 (policy owner 14:45Z): any confirm-shaped instruction in the split branch
+  assert.deepEqual(typedConfirmClasses(['Account name'], ['To proceed, type the account name.', 'Your account will be permanently deleted.']), ['delete'], "cu-researcher's r3 miss (account name)")
+  assert.deepEqual(typedConfirmClasses(['project-slug'], ['Enter the project slug to continue.', 'Continuing removes the project permanently.']), ['delete'], "cu-researcher's r3 miss (slug)")
+  assert.deepEqual(typedConfirmClasses(['Project name'], ['Enter the project name to search.', 'Deleted projects are kept 30 days.']), ['delete'], 'r4 flip: an accepted over-ask (a search box beside a retention note)')
+  assert.deepEqual(typedConfirmClasses(['New name'], ['Type the new name for the project.', 'Renaming keeps every file.']), [], 'a rename: no destroy verb')
+  assert.deepEqual(typedConfirmClasses(['Project name'], ['Enter the project name.', 'Your changes are saved permanently.']), [], "'saved permanently': an intensifier, no verb")
   // branch (c) (policy owner 13:32Z / 13:33Z): instruction + 'to <act>' in the same sentence, whatever is typed
   assert.deepEqual(typedConfirmClasses(['Email'], ['Enter your email address to erase your account.']), ['delete'], "cu-researcher's row")
   assert.deepEqual(typedConfirmClasses(['Username'], ['Type your username to transfer ownership.']), ['permission'])

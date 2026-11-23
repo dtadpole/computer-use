@@ -1834,7 +1834,10 @@ export function typedConfirmClasses(entries, zoneWords = []) {
     const clause = at < 0 ? null : text.slice(at).match(/\bto\s+([\s\S]+)$/i)
     return clause !== null && (TYPED_DESTROY_ACT.test(clause[1]) || TYPED_TRANSFER.test(clause[1]))
   }
-  const zoneInstruction = zone.some((text) => TYPED_INSTRUCTION.test(text) && ((confirmShaped(text) && (acts(text) || (zoneActs && strongConfirm(text)))) || purposeAct(text)))
+  // r4 (policy owner 14:45Z, cu-researcher's r3 misses 'To proceed, type the account name.' + 'Your account will be
+  // permanently deleted.'): in the split branch ANY confirm-shaped instruction (the name / slug / ID / handle / URL shape,
+  // or strong) takes the verb from another zone sentence - an under-ask on a destroy act weighs more than a rare over-ask.
+  const zoneInstruction = zone.some((text) => TYPED_INSTRUCTION.test(text) && (((confirmShaped(text) || strongConfirm(text)) && (acts(text) || zoneActs)) || purposeAct(text)))
   if (!texts.some((text) => TYPED_INSTRUCTION.test(text)) && !zoneInstruction) return []
   // Policy owner's gate (08:07Z): the zone's words join only when an entry is confirm-shaped - an 'Enter your phone number'
   // form's 'We will remove it if you ask.' never reaches the destroy test. Entries alone keep #894's behaviour.
