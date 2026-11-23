@@ -1,7 +1,7 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-23T04:00:00Z
+modified: 2026-11-23T04:11:00Z
 level: L1
 version: 3.93.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
@@ -15,7 +15,7 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); session
-worktree plus `--review` and `--refresh` worktrees; no desktop runs. State at 04:00Z, 23 November.
+worktree plus `--review` and `--refresh` worktrees; no desktop runs. State at 04:11Z, 23 November.
 
 ## In progress
 
@@ -28,7 +28,8 @@ worktree plus `--review` and `--refresh` worktrees; no desktop runs. State at 04
 ## Owed and open
 
 - #889: my named second OK (read; helper files to run).
-- #847 #851 #854 #856 #859 #865 #877: one D-112 round each, or close.
+- #847 #851 #854 #856 #859 #865 #877 (~1650 behind, six conflicting): cu-researcher's NOT OKs since 16 Nov are
+  unanswered - answer, refresh to the D-112 bar, or close; or one decision-ready ask.
 - #417, #527: main merged in `--refresh` (#527 conflicts resolved as unions); suite, push, fresh OKs.
 - Rulings asked: CU-706 (rule-1), CU-697's owner; CU-681 option (a), read the issue first.
 
@@ -36,8 +37,9 @@ worktree plus `--review` and `--refresh` worktrees; no desktop runs. State at 04
 
 - PARITY FIRST: measure the English twins on main, then mirror exactly that set.
 - Held-outs name every form the go names, plus purchase-free near misses for each new slot.
-- A surviving mutant needs a deciding row; judged names are homoglyph-folded.
-- Node only through the guard, in written windows; stamp from the clock; records PRs name no open issue id.
+- D-114: before any review ask, run the agent-core suite, `_tests_/macos-desktop` and every node verifier on
+  the branch, and name the run; never OK on the gate's node phase.
+- Node only through the guard, in written windows; records PRs name no open issue id.
 
 ## Tools
 
