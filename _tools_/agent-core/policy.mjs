@@ -4379,6 +4379,21 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     }
     // CU-521 (cu-coordinator 20:06Z): 'Merge anyway' keeps its older submit and unions permission (a merge past the requirements).
     if (grammarEligible && classes.length > 0 && !classes.includes('permission') && /^(?:merge\s+anyway|force[-\s]?merge)$/i.test(String(name ?? '').trim())) classes.push('permission')
+    // CU-709 (cu-researcher's D-112 follow-up to CU-576): lending, borrowing, repaying, burning and opening / closing a payment
+    // channel move funds too - in a wallet app (the CU-576 kind, below) and on a web wallet or DeFi page (D-109: the URL's host
+    // or path, never a title: a named wallet / DeFi host, or a /wallet(s), /defi, /lend(ing), /borrow(ing) path segment). A
+    // navigation noun after the verb ('Borrow rates', 'Lending history', 'Channel settings') opens a page and stays free.
+    const walletFollowupVerb = /^\s*(?:lend|borrow|repay|burn|supply|(?:open|close|force[-\s]?close)\s+(?:a\s+|the\s+)?(?:lightning\s+|payment\s+)?channel)\b/i.test(String(name ?? ''))
+      && !/\b(?:history|settings|rates?|faq|guide|docs|limits|markets?|overview|details|info|apy|apr)\b/i.test(String(name ?? ''))
+    if (walletFollowupVerb && !nativeOn && !classes.includes('purchase')) {
+      let walletWeb = false
+      try {
+        const u = new URL(String(context.url ?? ''))
+        walletWeb = /^https?:$/.test(u.protocol) && (/(?:^|\.)(?:aave|compound|uniswap|curve|lido|makerdao|spark|morpho|metamask|phantom|rabby|zerion|zapper|debank|1inch|sushi|pancakeswap|balancer|yearn|eigenlayer|pendle|gmx|dydx|jup|raydium|orca|marinade|kamino|solend)\.[a-z.]+$/i.test(u.hostname)
+          || /(?:^|\/)(?:wallets?|defi|lend(?:ing)?|borrow(?:ing)?)(?=$|[/?#])/i.test(u.pathname))
+      } catch { walletWeb = false }
+      if ((desktopUrl && isWalletApp(String(context.frontmostBundleId ?? target?.origin ?? context.url ?? ''))) || (!desktopUrl && walletWeb)) classes.push('purchase')
+    }
     // CU-576 (built before triage): in a crypto wallet app a send / broadcast / sign / confirm / approve / swap moves money and is final - it
     // asks purchase (no grant covers it) beside whatever class it already has; reading, receiving and settings stay as they are.
     if (desktopUrl && !nativeOn && !classes.includes('purchase') && isWalletApp(String(context.frontmostBundleId ?? target?.origin ?? context.url ?? ''))
