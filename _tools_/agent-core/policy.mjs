@@ -2225,7 +2225,13 @@ const PASSWORD_NAMES = Object.freeze(['password', 'passcode', 'passphrase', 'pin
   // r2 (my 05:24Z measure on main: English 'Access code' asks credential, 'Recovery code' sensitive_data): European Portuguese
   // palavra-passe, and the locale access codes as CU-606's English 'access code' (the recovery codes stay sensitive_data).
   'palavra-passe', 'palavra passe', 'zugangscode', "code d'accès", 'code d\u2019accès', 'código de acceso', 'clave de acceso', 'código de acesso',
-  'codice di accesso', 'toegangscode', 'erişim kod~'])
+  'codice di accesso', 'toegangscode', 'erişim kod~',
+  // CU-716 (CU-607's near forms; cu-developer-one's held-out of 07:58Z: parity 0/12 on main and on CU-607's head, every miss
+  // free while each English twin asks credential): the password word inflected or continued - the Russian singular cases ('Подтверждение пароля', 'Войти с
+  // паролем') and a German or Dutch compound that goes on after it ('Passwortbestätigung', 'Kennwortfeld', 'des Passworts',
+  // 'Wachtwoordbevestiging'). Plurals stay free as English 'Passwords' does: Russian 'Пароли' / 'Паролей', German
+  // 'Passworte(n)' and Dutch 'Wachtwoorden' do not match, and German 'Passwörter' never holds the word.
+  'пароля', 'паролю', 'паролем', 'пароле', /(?:passwort|kennwort|wachtwoord)(?=\p{L})(?!en?(?:[^\p{L}]|$))/u])
 // CU-607: a few phrases share a password word without naming a password - Italian 'parola chiave' (keyword) and Korean
 // 암호화 (encryption, which contains 암호). They are cut out of the name before the password words are matched, so
 // '암호화 설정' stays free while '암호화 비밀번호' still names a password.
