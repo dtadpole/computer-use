@@ -27,3 +27,8 @@ test('CU-702: the ko / ja account-noun transfer forms ask purchase as \'Transfer
   for (const name of ['계좌 이체', '계좌이체', '계좌로 이체', '계좌로 이체하기', '은행 송금', '口座に振り込む', '口座振替', '口座へ送金する', '銀行口座に振込', 'Transfer to account', 'Account transfer']) assert.ok(click(name).includes('purchase'), name)
   for (const name of ['계좌', '계좌 이체 내역', '口座', '口座振替済み']) assert.ok(!click(name).includes('purchase'), name)
 })
+
+test('CU-702: the locale transfer-to-account forms ask purchase (go 01:13Z); bare nouns and the bare verbs stay as before', () => {
+  for (const name of ['Transférer vers le compte', 'Virer sur le compte', 'Virer sur mon compte épargne', 'Auf Konto übertragen', 'Auf das Sparkonto übertragen', 'Перевести на счёт', 'Перевести на счет', 'Перевести на карту', 'Hesaba aktar', 'HESABA AKTAR', '转入账户', '转到储蓄账户']) assert.ok(click(name).includes('purchase'), name)
+  for (const name of ['Mon compte', 'Konto', 'Счёт', 'Перевести', '账户']) assert.ok(!click(name).includes('purchase'), name)
+})
