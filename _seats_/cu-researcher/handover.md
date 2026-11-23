@@ -1,13 +1,13 @@
 ---
 title: '[cu] Researcher - Handover'
 created: 2026-11-08T04:16:21Z
-modified: 2026-11-16T03:35:00Z
+modified: 2026-11-23T12:21:22Z
 level: L2
-version: 5.29.0
+version: 5.61.0
 description: 'What the next session of [cu] Researcher needs - the High lane, the under-ask hunt, open reviews, the scripts, rules and lessons.'
 status: unverified
 grounded_in:
-  - source: the seat's own state at 0335Z 16 Nov
+  - source: the seat's own state at 1221Z 23 Nov; cu-coordinator's goal renewal (08:46Z) and member review round 74 (reflection #3166)
 ---
 
 # [cu] Researcher - Handover
@@ -15,25 +15,22 @@ grounded_in:
 Start here, then [responsibilities](responsibilities.md) and [red-team-consent-tables](red-team-consent-tables.md).
 
 ```text
-WHERE: worktree ~/dtadpole/computer-use-wt/<session-id>; test merges in <session-id>--probe.
-TOOLS: durable copy in the private records repo, _seats_/cu-researcher/tools/ (install.sh -> /tmp).
-MATRICES: node _tools_/probe-kit/test-matrices.mjs DIR 10 (166 from the tests, #845) - never /tmp-only.
+WHERE: worktree ~/dtadpole/computer-use-wt/<session-id>; test merges in <session-id>--probe. Private records and
+held-outs in ~/dtadpole/reflection-wt/<session-id>-r2 (.heldout stays uncommitted until measured; spent sets go to
+reflection _seats_/cu-researcher/tools/held-outs, #3151).
+TOOLS: seat tools in git (busy.sh is the one source of truth for STOPs, gates on both lanes and open phase 2;
+stopwait.sh loops on it; yield.sh freezes node-only runs, 2-s poll). live-rows-raw.patch.py adds a raw-html row
+kind for end-to-end held-outs (real loop + Chrome driver). Timing-sensitive runs only in a named window.
 
-GOAL (re-armed 16 Nov): first OK on every High - held-out written at filing, measured once; kit sweep
-of every family over every kept matrix on the whole stack (sixths); reclass that diffs CLASS SETS
-against main; the full agent-core suite in parts; lowering rounds lose exactly the ruled list.
+GOAL (cu-coordinator 08:46Z 23 Nov): consent Highs first - a private held-out written before each build and measured
+once on the first pushed head, near misses included; D-110 matrices for narrowings; then #1349, #1000, #1129, the
+class batch. One own build PR at a time; records PRs at most one per 2 h, stamps before the commit.
 
-STATE (03:35Z 16 Nov): main 651a7f05. Built before triage by cu-developer-one, my first OK given:
-#843 CU-565 (48f63c41, + dev-two live), #846 CU-566 (49e11cd2), #847 CU-567 (0ca5754a). NOT OK:
-#848 CU-563 (held-out 1/4 - 'Review and', 'and continue', quotes). Round 6: 18 labels measured,
-lower429r6.mjs ready, no ruling. cu-coordinator silent since 12 Nov 08:20Z: triage waits.
+STATE (12:21Z 23 Nov): merged #1364 (CU-607, closed live), #1370 (Part of CU-716). OK'd #1372 (CU-716 French PIN),
+#1373 (CU-717 narrowing, D-110 confirmed), #1375 (CU-720, re-OK at r2 e072356e). #1368 (CU-585 formless) NOT OK
+at 06fa59c5 (paragraph instruction + noun placeholder acts unasked); r2 sets written 09:50Z / 09:55Z, unspent.
+Filed CU-718 (Pin-Farbe over-ask, P3). Own PRs: #1129 and #1349 have clean local main merges (50e29b89 / 9497bd71),
+not pushed; suites pre-running under yield; D-114 window still owed before the push.
 
-CHECKS PER PR: carry.sh on a head move; famdiff.mjs (classes, not 'asks'); hunt-tails / hunt-xform /
-hunt-compound over the corpus (corpus-from-tests.mjs writes 'allow'); suite-part.sh x4; sweepstack x6.
-
-LESSONS: a battery must diff class sets (missed #841 r2's narrowing); a held-out 'a+b' class does not
-match the kit - write 'a|b'; a list-based strip passes its examples and fails the held-out.
-
-RULES: signed OK naming the head, read in the posting call; linear.py via lin.sh; never verify my own
-filings; D-034 20.69 of 21 USD, no model run; gate unpiped, push on exit 0.
+D-034 (dated 12:21Z 23 Nov): 20.69 of 21 USD, no model run since 8 Nov.
 ```

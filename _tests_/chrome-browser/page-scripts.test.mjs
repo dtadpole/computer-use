@@ -810,6 +810,151 @@ test('CU-400: a button inside a form carries formContext - up to 3 short selecte
   assert.equal(sell.formContext.options.includes('amount'), false)
 })
 
+test('CU-585: a submit control inside a form carries formEntries - the words its text entries show (label, labelledby, aria-label, placeholder, describedby, else the prompt before the box); never a value', () => {
+  const ids = {}
+  const doc = { getElementById: (id) => ids[id] ?? null }
+  const entry = (type, attrs = {}, extra = {}) => ({ tagName: type === 'textarea' ? 'TEXTAREA' : 'INPUT', getAttribute: (name) => (name === 'type' ? (type === 'textarea' ? null : type) : attrs[name] ?? null), placeholder: attrs.placeholder ?? '', value: 'SECRET-VALUE', labels: [], previousElementSibling: null, ...extra })
+  const form = (entries) => ({ querySelectorAll: (sel) => (sel === 'input, textarea' ? entries : []) })
+  const confirm = (f, extra = {}) => el('BUTTON', { children: ['Confirm'], closest: (sel) => (sel === 'form' ? f : null), ownerDocument: doc, ...extra })
+  const labelled = entry('text', {}, { labels: [{ textContent: '  Type  DELETE to confirm ' }] })
+  assert.deepEqual(describeElement(confirm(form([labelled]))).formEntries, ['Type DELETE to confirm'], 'a <label>, whitespace collapsed')
+  ids.p1 = { textContent: 'To confirm, type "acme/prod" in the box below' }
+  const byId = entry(null, { 'aria-labelledby': 'p1' })
+  assert.deepEqual(describeElement(confirm(form([byId]))).formEntries, ['To confirm, type "acme/prod" in the box below'], 'aria-labelledby text; an input with no type is a text entry')
+  const placeholder = entry('text', { placeholder: 'DELETE' })
+  ids.d1 = { textContent: 'This cannot be undone.' }
+  const both = entry('text', { 'aria-label': 'Confirmation', 'aria-describedby': 'd1' })
+  assert.deepEqual(describeElement(confirm(form([placeholder, both]))).formEntries, ['DELETE', 'Confirmation', 'This cannot be undone.'], 'placeholder; aria-label then its describedby; at most three')
+  const bare = entry('text', {}, { previousElementSibling: { tagName: 'P', textContent: 'Type DELETE to confirm.' } })
+  assert.deepEqual(describeElement(confirm(form([bare]))).formEntries, ['Type DELETE to confirm.'], 'no label at all: the prompt just before the box')
+  const afterInput = entry('text', {}, { previousElementSibling: { tagName: 'INPUT', textContent: 'x' } })
+  assert.equal('formEntries' in describeElement(confirm(form([afterInput]))), false, 'a control before it is no prompt')
+  const skipped = [entry('password', { placeholder: 'Password' }), entry('hidden', { 'aria-label': 'token' }), entry('checkbox', { 'aria-label': 'I understand' }), entry('text', { placeholder: 'x'.repeat(81) })]
+  assert.equal('formEntries' in describeElement(confirm(form(skipped))), false, 'password, hidden and checkbox entries are skipped; over 80 characters is none, never cut')
+  const many = [entry('text', { placeholder: 'A' }), entry('text', { placeholder: 'B' }), entry('text', { placeholder: 'A' }), entry('textarea', { placeholder: 'C' }), entry('text', { placeholder: 'D' })]
+  assert.deepEqual(describeElement(confirm(form(many))).formEntries, ['A', 'B', 'C'], 'no repeats; a textarea counts; at most three')
+  const all = describeElement(confirm(form([labelled, placeholder])))
+  assert.equal(JSON.stringify(all).includes('SECRET-VALUE'), false, 'never a value')
+  assert.equal('formEntries' in describeElement(confirm(null)), false, 'outside a form: none')
+  assert.equal('formEntries' in describeElement(el('DIV', { children: ['Confirm'], closest: () => form([labelled]), ownerDocument: doc })), false, 'a plain div is no submit control')
+  assert.equal('formContext' in describeElement(confirm(form([labelled]))), false, "formContext's trade read is unchanged: text entries alone lend it nothing")
+})
+
+test('CU-585 formless zones: without a form, formEntries come from the nearest fieldset / dialog / [role=dialog] / section, else the closest ancestor (at most 3 levels up) holding exactly one text entry', () => {
+  const doc = { getElementById: () => null }
+  const entry = (type, attrs = {}) => ({ tagName: type === 'textarea' ? 'TEXTAREA' : 'INPUT', getAttribute: (name) => (name === 'type' ? (type === 'textarea' ? null : type) : attrs[name] ?? null), placeholder: attrs.placeholder ?? '', value: 'SECRET-VALUE', labels: [], previousElementSibling: null })
+  const box = (entries) => ({ querySelectorAll: (sel) => (sel === 'input, textarea' ? entries : []) })
+  const ZONE = 'fieldset, dialog, [role="dialog"], section'
+  const ENTRIES = 'input, textarea, select, [role="combobox"]'
+  const level = (entries, parent = null) => { const node = el('DIV', { querySelectorAll: (sel) => (sel === 'input, textarea' || sel === ENTRIES ? entries : []) }); node.parentElement = parent; return node }
+  const button = (map, parent = null) => { const node = el('BUTTON', { children: ['Confirm'], closest: (sel) => map[sel] ?? null, ownerDocument: doc }); node.parentElement = parent; return node }
+  const typed = entry('text', { 'aria-label': 'Type DELETE to confirm' })
+  assert.deepEqual(describeElement(button({ [ZONE]: box([typed]) })).formEntries, ['Type DELETE to confirm'], 'a GitHub-style [role=dialog] (or dialog, fieldset, section) lends its entries')
+  assert.deepEqual(describeElement(button({ form: box([entry('text', { placeholder: 'Form box' })]), [ZONE]: box([typed]) })).formEntries, ['Form box'], 'a <form> still comes first')
+  assert.deepEqual(describeElement(button({ '[role="form"]': box([entry('textarea', { placeholder: 'Role form' })]), [ZONE]: box([typed]) })).formEntries, ['Role form'], 'then [role=form]')
+  const top = level([typed, entry('search', { placeholder: 'Search settings' })])
+  const two = level([typed], top)
+  const one = level([], two)
+  assert.deepEqual(describeElement(button({}, one)).formEntries, ['Type DELETE to confirm'], 'a React div zone: the closest ancestor with exactly one text entry (two levels up here); the page above it never lends')
+  const crowded = level([typed, entry('search', { placeholder: 'Search settings' })])
+  assert.equal('formEntries' in describeElement(button({}, crowded)), false, 'an ancestor holding two text entries ends the walk: none')
+  const far4 = level([typed]); const far3 = level([], far4); const far2 = level([], far3); const far1 = level([], far2)
+  assert.equal('formEntries' in describeElement(button({}, far1)), false, 'at most 3 levels up')
+  assert.deepEqual(describeElement(button({}, far2)).formEntries, ['Type DELETE to confirm'], 'three levels up still counts')
+  const mixed = level([entry('password', { placeholder: 'Password' }), entry('checkbox', { 'aria-label': 'I understand' }), typed])
+  assert.deepEqual(describeElement(button({}, mixed)).formEntries, ['Type DELETE to confirm'], 'password and checkbox boxes neither count nor lend')
+  assert.equal('formEntries' in describeElement(button({})), false, 'no form, no zone, no parent: none')
+  assert.equal(JSON.stringify(describeElement(button({}, one))).includes('SECRET-VALUE'), false, 'never a value')
+  const div = el('DIV', { children: ['Confirm'], closest: () => box([typed]), ownerDocument: doc }); div.parentElement = two
+  assert.equal('formEntries' in describeElement(div), false, 'a plain div is no submit control')
+})
+
+test("CU-585 close-account zone: zoneWords - the chosen container's own headings, legend and paragraphs, cut at sentence ends, bounded, only beside formEntries", () => {
+  const doc = { getElementById: () => null }
+  const STATICS = 'h1, h2, h3, h4, h5, h6, [role="heading"], legend, p'
+  const entry = (attrs = {}) => ({ tagName: 'INPUT', getAttribute: (name) => (name === 'type' ? 'text' : attrs[name] ?? null), placeholder: attrs.placeholder ?? '', value: 'SECRET-VALUE', labels: [], previousElementSibling: null })
+  const text = (t) => ({ textContent: t })
+  const box = (entries, statics = []) => ({ querySelectorAll: (sel) => (sel === 'input, textarea' ? entries : sel === STATICS ? statics : []) })
+  const button = (map, parent = null) => { const node = el('BUTTON', { children: ['Continue'], closest: (sel) => map[sel] ?? null, ownerDocument: doc }); node.parentElement = parent; return node }
+  const typed = entry({ 'aria-label': 'Type CLOSE to confirm' })
+  const zone = describeElement(button({ form: box([typed], [text('Danger zone'), text('  Close this account permanently.  This cannot be undone. ')]) }))
+  assert.deepEqual(zone.formEntries, ['Type CLOSE to confirm'])
+  assert.deepEqual(zone.zoneWords, ['Danger zone', 'Close this account permanently.', 'This cannot be undone.'], 'headings and paragraphs, cut at sentence ends, whitespace collapsed')
+  // r3: whole-word sentences - a lone letter before a dot no longer ends a sentence (initials, policy owner 13:33Z)
+  const capped = describeElement(button({ form: box([typed], [text('Type CLOSE to confirm'), text('One. Two. Three. Four.'), text('x'.repeat(81))]) }))
+  assert.deepEqual(capped.zoneWords, ['One.', 'Two.', 'Three.'], 'no text already in formEntries; at most three')
+  assert.equal('zoneWords' in describeElement(button({ form: box([typed], [text('y'.repeat(81))]) })), false, 'a sentence over 80 characters is none (never cut)')
+  assert.equal('zoneWords' in describeElement(button({ form: box([], [text('Close this account permanently.')]) })), false, 'no text entry, no formEntries: no zoneWords either')
+  assert.equal('zoneWords' in describeElement(button({ form: box([typed]) })), false, 'no static text: none')
+  const card = el('DIV', { querySelectorAll: (sel) => (sel === 'input, textarea' || sel === 'input, textarea, select, [role="combobox"]' ? [typed] : sel === STATICS ? [text('Close account'), text('Closing your account is permanent.')] : []) })
+  const row = el('DIV', { querySelectorAll: (sel) => (sel === 'input, textarea' || sel === 'input, textarea, select, [role="combobox"]' ? [typed] : []) }); row.parentElement = card
+  const formless = describeElement(button({}, row))
+  assert.deepEqual(formless.formEntries, ['Type CLOSE to confirm'])
+  assert.deepEqual(formless.zoneWords, ['Close account', 'Closing your account is permanent.'], 'a React card: the widest ancestor within 3 levels still holding the one box lends its heading')
+  assert.equal(JSON.stringify(zone).includes('SECRET-VALUE'), false, 'never a value')
+})
+
+test("CU-585 r2 zone texts (cu-coordinator 09:50Z ruling 3, cu-verifier's pages): after headings and paragraphs, the zone's other own texts - a text button's or a div's - cut at line and sentence ends; never the control's own words, a script or text inside a heading", () => {
+  const doc = { getElementById: () => null }
+  const STATICS = 'h1, h2, h3, h4, h5, h6, [role="heading"], legend, p'
+  const typed = { tagName: 'INPUT', getAttribute: (name) => (name === 'type' ? 'text' : name === 'aria-label' ? 'To confirm, type "acme/website"' : null), placeholder: '', value: 'acme/website', labels: [], previousElementSibling: null }
+  const node = (tagName, own, { inHeading = false } = {}) => ({ tagName, childNodes: own === null ? [] : [{ nodeType: 3, nodeValue: own }], matches: (sel) => sel === STATICS && /^H[1-6]$|^P$|^LEGEND$/.test(tagName), closest: (sel) => (sel === STATICS && inHeading ? {} : null) })
+  const zoneOf = (all, statics = []) => ({ querySelectorAll: (sel) => (sel === 'input, textarea' ? [typed] : sel === STATICS ? statics : sel === '*' ? all : []) })
+  const button = (zone) => { const b = el('BUTTON', { children: ['Confirm'], closest: (sel) => (sel === 'form' ? zone : null), ownerDocument: doc }); b.contains = (other) => other === b; return b }
+  const dangerButton = node('BUTTON', 'Danger zone\nThis will permanently delete the acme/website repository.')
+  const words = (zone) => describeElement(button(zone)).zoneWords
+  assert.deepEqual(words(zoneOf([dangerButton, typed, node('SCRIPT', 'fetch("/acted")'), node('BUTTON', 'Cancel')])), ['Danger zone', 'This will permanently delete the acme/website repository.', 'Cancel'], "a text button's own words, in order; the script never")
+  const zone = zoneOf([node('DIV', 'Delete repository'), node('DIV', 'This cannot be undone. All issues go too.'), node('BUTTON', 'Delete this repository')])
+  assert.deepEqual(words(zone), ['Delete repository', 'This cannot be undone.', 'All issues go too.'], 'React div texts, cut at sentence ends, at most 3')
+  const self = button(null); const own = zoneOf([self, dangerButton]); const b = button(own); b.contains = (other) => other === b || other === self
+  assert.deepEqual(describeElement(b).zoneWords, ['Danger zone', 'This will permanently delete the acme/website repository.'], "never the control's own words")
+  const headed = zoneOf([node('STRONG', 'Warning', { inHeading: true }), node('DIV', 'Repositories are archived first.')], [{ textContent: 'Warning: this deletes the repository.' }])
+  assert.deepEqual(words(headed), ['Warning: this deletes the repository.', 'Repositories are archived first.'], 'headings and paragraphs first; text inside them is not read twice')
+  assert.equal(JSON.stringify(describeElement(button(zone))).includes('"acme/website"'), false, 'never the typed value')
+  // r3 (policy owner 13:33Z): the sentence cut keeps 'e.g.' / 'i.e.' / initials inside a sentence
+  assert.deepEqual(words(zoneOf([node('DIV', 'Enter your email (e.g. name@acme.com) to delete your account. Then confirm.')])), ['Enter your email (e.g. name@acme.com) to delete your account.', 'Then confirm.'], "no cut after 'e.g.'")
+  assert.deepEqual(words(zoneOf([node('DIV', 'Type the slug, i.e. acme-web, to delete it. J. Smith owns it.')])), ['Type the slug, i.e. acme-web, to delete it.', 'J. Smith owns it.'], "no cut after 'i.e.' or an initial")
+})
+
+test("CU-371 formless rows: a bulk-action bar (a select beside Apply and Go, no container) lends its selected option through the one-entry zone (owner 07:35Z)", () => {
+  const SELECTS = 'select, [role="combobox"]'
+  const ENTRIES = 'input, textarea, select, [role="combobox"]'
+  const select = (text) => ({ tagName: 'SELECT', selectedOptions: [{ textContent: text }], getAttribute: () => null })
+  const textBox = { tagName: 'INPUT', getAttribute: (name) => (name === 'type' ? 'text' : null), placeholder: 'Search', labels: [], previousElementSibling: null }
+  const buttons = [0, 1].map((i) => ({ textContent: i === 0 ? 'Apply' : 'Go', getAttribute: () => null }))
+  const bar = (controls, parent = null) => { const node = el('DIV', { querySelectorAll: (sel) => (sel === ENTRIES ? controls : sel === SELECTS ? controls.filter((c) => c.tagName === 'SELECT') : sel.startsWith('button') ? buttons : []) }); node.parentElement = parent; return node }
+  const apply = (parent) => { const node = el('BUTTON', { children: ['Apply'], closest: () => null }); node.parentElement = parent; return node }
+  assert.deepEqual(describeElement(apply(bar([select('Delete permanently')]))).formContext, { options: ['Delete permanently'], amountEntry: false }, "cu-verifier's stand-in: two submit-like controls, no form - the one select still reaches the policy")
+  assert.deepEqual(describeElement(apply(bar([select('Newest first')]))).formContext, { options: ['Newest first'], amountEntry: false }, 'a sort select is lent too - the policy keeps it free')
+  assert.equal('formContext' in describeElement(apply(bar([select('Delete permanently'), select('25 per page')]))), false, 'two entries end the walk: none')
+  assert.equal('formContext' in describeElement(apply(bar([textBox]))), false, 'a zone whose one entry is a text box lends no formContext')
+  const outer = bar([select('Archive')])
+  const inner = bar([], outer)
+  assert.deepEqual(describeElement(apply(inner)).formContext, { options: ['Archive'], amountEntry: false }, 'the widest ancestor within 3 levels holding the one select')
+  assert.equal('formEntries' in describeElement(apply(bar([select('Delete permanently')]))), false, 'a select gives no formEntries (text entries only)')
+})
+
+test("CU-371 r4 (cu-verifier's 14:36Z live rows): a body-level bulk-action row - the button's contiguous control siblings lend their select's chosen option, whatever other entries the page holds", () => {
+  const select = (text, label = 'Bulk action') => ({ tagName: 'SELECT', selectedOptions: [{ textContent: text }], getAttribute: (name) => (name === 'aria-label' ? label : null) })
+  const search = { tagName: 'INPUT', getAttribute: (name) => (name === 'type' ? 'search' : null), placeholder: 'Search' }
+  const perPage = select('25', 'Per page')
+  const row = (left, extraRight = []) => {
+    const apply = el('BUTTON', { children: ['Apply'], closest: () => null })
+    const go = el('BUTTON', { children: ['Go'], closest: () => null })
+    const body = el('BODY', { querySelectorAll: (sel) => (sel.startsWith('input') ? [search, perPage, ...left.filter((n) => n.tagName === 'SELECT')] : sel.startsWith('select') ? [perPage, ...left.filter((n) => n.tagName === 'SELECT')] : []) })
+    apply.parentElement = body
+    const chain = [search, ...left, apply, go, ...extraRight]
+    chain.forEach((node, i) => { node.previousElementSibling = chain[i - 1] ?? null; node.nextElementSibling = chain[i + 1] ?? null })
+    return apply
+  }
+  assert.deepEqual(describeElement(row([select('Delete permanently')])).formContext, { options: ['Delete permanently'], amountEntry: false }, 'the row lends; the search box and the page-size select elsewhere never join')
+  assert.equal('formContext' in describeElement(row([select('Delete permanently'), { tagName: 'SPAN', querySelectorAll: () => [], getAttribute: () => null }])), false, 'a text span between the select and the button ends the row')
+  const wrapped = select('Move to trash')
+  const label = { tagName: 'LABEL', getAttribute: () => null, querySelectorAll: (sel) => (sel.startsWith('select') ? [wrapped] : []) }
+  assert.deepEqual(describeElement(row([label])).formContext, { options: ['Move to trash'], amountEntry: false }, 'a label wrapping exactly one select is part of the row')
+  assert.equal('formEntries' in describeElement(row([select('Delete permanently')])), false, 'a select gives no formEntries (text entries only)')
+})
+
 test('CU-402: without a <form>, formContext falls back to [role=form], else a fieldset or dialog holding exactly one submit-like control', () => {
   const select = (text) => ({ tagName: 'SELECT', selectedOptions: [{ textContent: text }] })
   const box = (controls, submits) => ({ querySelectorAll: (sel) => (sel === 'input' ? [] : sel.startsWith('select') ? controls : submits) })

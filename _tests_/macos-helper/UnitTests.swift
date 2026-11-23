@@ -697,7 +697,7 @@ func button(_ kind: String, _ x: Int, _ y: Int) -> JSON { ["kind": .string(kind)
 func testDispatcherBasics() {
   let h = Harness(fixtureWorld)
   let hello = h.dispatcher.hello(token: "t0k")
-  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.70", "the hello opens the run")
+  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.72", "the hello opens the run")
   check(hello["mode"] == "dry-run" && hello["grants"] == ["screen": true, "accessibility": true, "postEvents": true, "listenEvents": false], "a dry-run hello says so, with all four grants")
   check(h.ask("capture", ["maxSize": size800])["code"] == "no_scope", "capture needs a scope")
   check(h.ask("input", ["events": [key("keyDown", 1)], "mode": "global"])["code"] == "no_scope", "input needs a scope")
@@ -2045,6 +2045,42 @@ func testDialogText() {
   check(blanks.name == "Delete 3 items?" && blanks.description == nil, "blank title and texts skipped; whitespace collapsed")
   check(DialogText.pick(title: nil, texts: []).name == nil && DialogText.pick(title: nil, texts: [nil]).description == nil, "nothing read: none")
   check(DialogText.clean(String(repeating: "x", count: 301))?.count == 300, "at most 300 characters")
+  // #737 note: a control's own label is never read as the dialog's words - the walk does not descend into controls.
+  struct Node { let role: String; let value: String?; let kids: [Node] }
+  let swiftUISheet = Node(role: "AXSheet", value: nil, kids: [
+    Node(role: "AXButton", value: nil, kids: [Node(role: "AXStaticText", value: "Delete", kids: [])]),
+    Node(role: "AXButton", value: nil, kids: [Node(role: "AXStaticText", value: "Continue", kids: [])]),
+  ])
+  let read = { (root: Node) -> [String?] in
+    DialogText.walk(root, limit: DialogText.maxTexts, children: { $0.kids }, role: { $0.role }).filter { $0.role == "AXStaticText" }.map { $0.value }
+  }
+  check(read(swiftUISheet).isEmpty, "a sheet of buttons alone has no dialog words - a button's label is not one")
+  check(DialogText.pick(title: nil, texts: read(swiftUISheet)).name == nil, "so 'Continue' beside 'Delete' reads no dialogName")
+  let alertSheet = Node(role: "AXSheet", value: nil, kids: [
+    Node(role: "AXStaticText", value: "Erase \"Untitled\"?", kids: []),
+    Node(role: "AXGroup", value: nil, kids: [Node(role: "AXStaticText", value: "This will erase all data on the disk.", kids: [])]),
+    Node(role: "AXButton", value: nil, kids: [Node(role: "AXStaticText", value: "Erase", kids: [])]),
+  ])
+  let words = DialogText.pick(title: nil, texts: read(alertSheet))
+  check(words.name == "Erase \"Untitled\"?" && words.description == "This will erase all data on the disk.", "texts in groups are still read; the button's label is not")
+  check(DialogText.walk(alertSheet, limit: 2, children: { $0.kids }, role: { $0.role }).count == 2, "the walk stops at its limit")
+  check(DialogText.controlRoles.contains("AXPopUpButton") && DialogText.controlRoles.contains("AXCheckBox") && !DialogText.controlRoles.contains("AXGroup"), "controls, not containers")
+  // CU-588: a button's form entries - each entry's label, else description, else placeholder, then its help; never a value.
+  check(FormEntries.pick([[nil, nil, "Type DELETE to confirm", nil]]) == ["Type DELETE to confirm"], "a placeholder-only prompt is read")
+  check(FormEntries.pick([["Workspace name", "ignored", "ignored too", "Type the workspace name to delete it"]]) == ["Workspace name", "Type the workspace name to delete it"],
+        "the label wins over description and placeholder; the help text comes on its own")
+  check(FormEntries.pick([[" ", nil, "Type  ERASE\nto confirm", nil]]) == ["Type ERASE to confirm"], "a blank label falls through; whitespace collapsed")
+  check(FormEntries.pick([[String(repeating: "x", count: 81), nil, nil, nil]]) == [], "a text over 80 characters is none, never cut")
+  check(FormEntries.pick([["A", nil, nil, nil], ["A", nil, nil, nil], ["B", nil, nil, "C"], ["D", nil, nil, nil]]) == ["A", "B", "C"], "no repeats; at most 3")
+  check(FormEntries.pick([]) == [] && FormEntries.pick([[nil, nil, nil, nil]]) == [], "nothing read: none")
+  check(FormEntries.isEntry(role: "AXTextField") && FormEntries.isEntry(role: "AXTextArea") && FormEntries.isEntry(role: "AXComboBox")
+        && !FormEntries.isEntry(role: "AXButton") && !FormEntries.isEntry(role: "AXStaticText") && !FormEntries.isEntry(role: nil), "entries are text fields, areas and combo boxes")
+  // cu-researcher's #895 note: in a window, only the button's own form lends - its nearest group, else (a flat panel) the window.
+  check(FormEntries.scope(["AXToolbar", "AXWindow"]) == 0, "a toolbar's 'Export' reads only its toolbar - never a danger-zone prompt elsewhere in the window")
+  check(FormEntries.scope(["AXGroup", "AXScrollArea", "AXWindow"]) == 0, "a danger zone's Confirm reads its own group")
+  check(FormEntries.scope([nil, "AXUnknown", "AXWindow"]) == 2, "a flat panel with no group below the window reads the window")
+  check(FormEntries.scope(["AXSplitGroup", "AXWindow"]) == 0 && FormEntries.scope(["AXTabGroup", "AXWindow"]) == 0, "a split or tab pane bounds the form")
+  check(FormEntries.scope([]) == nil, "no ancestors: no scope")
 }
 
 func testNearbyLabel() {
