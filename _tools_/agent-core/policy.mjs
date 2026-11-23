@@ -2166,10 +2166,17 @@ const PASSWORD_NAMES = Object.freeze(['password', 'passcode', 'passphrase', 'pin
   'passwort', '…passwort', 'kennwort', '…kennwort', 'mot de passe', 'contraseña', 'contrasena', 'senha', 'wachtwoord', '…wachtwoord',
   'şifre~', 'parola~', 'пароль', 'パスワード', '비밀번호',
   // cu-researcher's CU-607 matrix (03:41Z): ko 암호 is the other common password word ('Wi-Fi 암호'); 암호화 (encryption) is one word and stays out.
-  '암호'])
-// CU-607: Italian 'parola chiave' (keyword) shares the Turkish password word; it is a search term, not a password.
-const PASSWORD_NAME_NOT = Object.freeze(['parola chiave', 'parole chiave'])
-const namesPassword = (name) => namesWord(name, PASSWORD_NAMES) && !namesWord(name, PASSWORD_NAME_NOT)
+  '암호',
+  // r2 (my 05:24Z measure on main: English 'Access code' asks credential, 'Recovery code' sensitive_data): European Portuguese
+  // palavra-passe, and the locale access codes as CU-606's English 'access code' (the recovery codes stay sensitive_data).
+  'palavra-passe', 'palavra passe', 'zugangscode', "code d'accès", 'code d\u2019accès', 'código de acceso', 'clave de acceso', 'código de acesso',
+  'codice di accesso', 'toegangscode', 'erişim kod~'])
+// CU-607: a few phrases share a password word without naming a password - Italian 'parola chiave' (keyword) and Korean
+// 암호화 (encryption, which contains 암호). They are cut out of the name before the password words are matched, so
+// '암호화 설정' stays free while '암호화 비밀번호' still names a password.
+const PASSWORD_NAME_NOT = /parol[ae][\s-]+chiave|암호화/giu
+// The desktop passes raw names; a judged name is homoglyph-folded first, so both forms are read ('Пароль').
+const namesPassword = (name) => [String(name ?? ''), normaliseText(String(name ?? ''))].some((n) => namesWord(n.replace(PASSWORD_NAME_NOT, ' '), PASSWORD_NAMES))
 // CU-265: the schemes a page navigates itself; any other hands the link to another app.
 // cu-researcher on #112: data: and blob: stay in the browser (blob: is how sites serve a generated 'Download CSV'); a
 // download they start still meets the page's download handling.
