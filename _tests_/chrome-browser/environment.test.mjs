@@ -955,6 +955,31 @@ test('CU-406: the Return target (defaultButton) carries the submit button\'s for
   }
 })
 
+test('CU-585: formEntriesOf re-validates the page\'s formEntries at the boundary', async () => {
+  const { formEntriesOf } = await import('../../_environments_/chrome-browser/environment.mjs')
+  assert.deepEqual(formEntriesOf(['  Type  DELETE to confirm ', 7, '', 'x'.repeat(81), 'B', 'C', 'D']), ['Type DELETE to confirm', 'B', 'C'])
+  assert.equal(formEntriesOf([]), null)
+  assert.equal(formEntriesOf('Type DELETE'), null)
+  assert.equal(formEntriesOf(null), null)
+})
+
+test('CU-585: the Return target (defaultButton) carries the submit button\'s formEntries, as a click on it would', async () => {
+  const handlers = checkoutHandlers()
+  const base = handlers['Runtime.callFunctionOn']
+  handlers['Runtime.callFunctionOn'] = (params) => (String(params.functionDeclaration).includes('describeElement') && /-41$/.test(String(params.objectId))
+    ? { result: { result: { value: { formEntries: ['Type DELETE to confirm', 7] } } } }
+    : base(params))
+  const run = harness({ handlers })
+  const env = await launchBrowserEnvironment(run.options)
+  try {
+    const target = await env.focusedElement()
+    assert.deepEqual(target.defaultButton, { role: 'button', name: 'Place order', panel: null, formEntries: ['Type DELETE to confirm'] })
+    assert.equal('formEntries' in target, false, 'the focused field itself carries none')
+  } finally {
+    await env.close()
+  }
+})
+
 test('CU-412: a Return whose implicit submission may press one of two script controls carries defaultCandidates [{role, name}] (11:27Z contract)', async () => {
   const handlers = checkoutHandlers({ submit: false })
   const nodes = { 51: { backendNodeId: 51, nodeName: 'DIV', attributes: ['role', 'button'] }, 52: { backendNodeId: 52, nodeName: 'DIV', attributes: ['role', 'button'] } }
