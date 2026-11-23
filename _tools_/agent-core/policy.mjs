@@ -1825,6 +1825,24 @@ function confirmShaped(text) {
   }
   return localeConfirmShaped(text)
 }
+// CU-735 (High; cu-researcher's miss, cu-coordinator 22:29Z): the possessive and bare name shapes - after a typing word, 'your [<x>]
+// name / ID / slug / handle / URL', 'its name', '<x>'s name' ('your team's name', 'the project's name') or a bare '<x> name'
+// ('Enter repository name'). Not a rename ('a new name') or a sign-in / profile field ('user ID', 'display name', 'first name';
+// 'username' is no name shape). It counts only inside a zone that holds a destroy / transfer act (typedConfirmClasses).
+const POSSESSIVE_NAME_FREE = /^(?:new|user|display|nick|first|last|middle|given|family|sur|a|an|any|some)$/i
+function possessiveNameShaped(text) {
+  for (const m of text.matchAll(TYPED_VERB)) {
+    const rest = text.slice(m.index + m[0].length)
+    const shape = /^(?:(your|its|their|our)\s+|((?:the\s+|your\s+)?[\p{L}\p{N}-]+(?:'s|\u2019s))\s+)?((?:[\p{L}\p{N}-]+\s+){0,2}?)(?:name|id|slug|handle|url)(?![\p{L}\p{N}])/iu.exec(rest)
+    if (!shape) continue
+    const words = shape[3].trim().split(/\s+/).filter(Boolean)
+    if (!shape[1] && !shape[2] && words.length === 0) continue
+    if (/^the$/i.test(words[0] ?? '')) continue
+    if (words.some((word) => POSSESSIVE_NAME_FREE.test(word))) continue
+    return true
+  }
+  return false
+}
 // r3: a STRONG confirm sentence - 'to confirm' / 'confirm by', or a typed token (quoted, or a capitalised word that is no field
 // acronym). 'the <noun> name' alone is confirm-shaped but not strong.
 function strongConfirm(text) {
@@ -1925,11 +1943,13 @@ export function typedConfirmClasses(entries, zoneWords = []) {
   // r4 (policy owner 14:45Z, cu-researcher's r3 misses 'To proceed, type the account name.' + 'Your account will be
   // permanently deleted.'): in the split branch ANY confirm-shaped instruction (the name / slug / ID / handle / URL shape,
   // or strong) takes the verb from another zone sentence - an under-ask on a destroy act weighs more than a rare over-ask.
-  const zoneInstruction = zone.some((text) => typedInstruction(text) && (((confirmShaped(text) || strongConfirm(text)) && (acts(text) || zoneActs)) || purposeAct(text)))
+  // CU-735: the possessive / bare name shape counts too, here and for an entry, only where the zone holds an act.
+  const zoneInstruction = zone.some((text) => typedInstruction(text) && (((confirmShaped(text) || strongConfirm(text) || possessiveNameShaped(text)) && (acts(text) || zoneActs)) || purposeAct(text)))
   if (!texts.some((text) => typedInstruction(text)) && !zoneInstruction) return []
   // Policy owner's gate (08:07Z): the zone's words join only when an entry is confirm-shaped - an 'Enter your phone number'
   // form's 'We will remove it if you ask.' never reaches the destroy test. Entries alone keep #894's behaviour.
-  const words = [...texts, ...(texts.some(confirmShaped) || zoneInstruction ? zone : [])].join(' \u2022 ')
+  const entryPossessive = texts.some(possessiveNameShaped) && (zoneActs || texts.some((text) => typedDestroyAct(text) || typedTransfer(text)))
+  const words = [...texts, ...(texts.some(confirmShaped) || entryPossessive || zoneInstruction ? zone : [])].join(' \u2022 ')
   return [...(typedDestroy(words) ? ['delete'] : []), ...(typedTransfer(words) ? ['permission'] : [])]
 }
 
