@@ -1026,6 +1026,24 @@ export function grammarClasses(name, role = '') {
  * (cu-researcher 05:17Z): the verb slot is a lexicon plus the un- / de- / dis- prefix verbs, and compound security heads count
  * ('intrusion detection', 'bot protection', 'anomaly alerts', 'geo-blocking', 'DLP rules'). */
 function weakensProtection(raw) {
+  // CU-713 (cu-researcher's D-112 follow-up to CU-572; read before the UI-word exclusion below, which would free 'banners'): silencing
+  // SECURITY notices by class - a security topic (unusual / suspicious activity, a new device or login, a password change or reset, a
+  // compromised / breached / leaked credential or account, account activity, a recovery-method change) before alerts / warnings /
+  // banners / notifications / notices / e-mails / messages / prompts. A lasting verb (block, mute, silence, suppress, ignore, turn off,
+  // disable, stop, opt out of, unsubscribe from, filter) counts as written; a passing one (hide, dismiss, snooze, close, clear) only with
+  // the notices in the plural and 'for good' / 'forever' / 'permanently' / 'always' / 'all' / 'future'. 'Hide banner', 'Snooze reminder'
+  // and promotional or marketing notices stay free.
+  {
+    const topic = String.raw`(?:unusual|suspicious|new[\s-]+(?:device|login|log-?in|sign-?in|location)|password[\s-]+(?:change|reset)|compromised|breach(?:ed)?|leaked|exposed|account[\s-]+(?:activity|change|security)|recovery[\s-]+(?:e-?mail|phone|method)[\s-]+change|security)`
+    const notice = String.raw`(?:alerts?|warnings?|banners?|notifications?|notices?|e-?mails?|messages?|prompts?)`
+    const lasting = String.raw`(?:block|mute|silence|suppress|ignore|(?:turn|switch)\s+off|disable|deactivate|stop(?:\s+(?:showing|sending))?|opt\s+out\s+of|unsubscribe\s+from|filter(?:\s+out)?)`
+    const passing = String.raw`(?:hide|dismiss|snooze|close|clear)`
+    const object = String.raw`(?:all\s+|the\s+|my\s+|future\s+|any\s+)?(?:[\p{L}-]+[\s-]+){0,2}?${topic}(?:[\s-]+[\p{L}-]+){0,2}?[\s-]+${notice}`
+    if (new RegExp(String.raw`^\s*${lasting}\s+${object}(?![\p{L}])`, 'iu').test(raw)) return true
+    if (new RegExp(String.raw`^\s*${passing}\s+${object}(?![\p{L}])`, 'iu').test(raw)
+      && /(?:alerts|warnings|banners|notifications|notices|e-?mails|messages|prompts)\b/i.test(raw)
+      && /\b(?:for\s+good|forever|permanently|always|all|future)\b/i.test(raw)) return true
+  }
   // An insurance-style plan named 'protection' is an upsell, not a security control ('Skip device protection', CU-410 family).
   if (/\b(?:device|phone|purchase|price|travel|trip|accidental|extended|screen|water|package|shipping|return|rental|cancellation|tire|identity\s+theft|payment)\s+protection\b/i.test(raw)) return false
   // #856 r5 (cu-researcher 05:40Z): a security word only counts next to a security or account object - a delivery signature, a resend
