@@ -182,6 +182,13 @@ export function formContextOf(value) {
   return options.length > 0 || amountEntry ? { options, amountEntry } : null
 }
 
+/** CU-585: describeElement's formEntries, re-validated at the boundary - up to 3 trimmed strings of 1-80 characters, else null. */
+export function formEntriesOf(value) {
+  if (!Array.isArray(value)) return null
+  const texts = value.filter((text) => typeof text === 'string').map((text) => text.replace(/\s+/g, ' ').trim()).filter((text) => text !== '' && text.length <= 80).slice(0, 3)
+  return texts.length > 0 ? texts : null
+}
+
 /** CU-507: describeElement's dialogName / dialogDescription, re-validated at the boundary - a trimmed string of at most 300 characters, else null. */
 export function dialogTextOf(value) {
   if (typeof value !== 'string') return null
@@ -841,7 +848,7 @@ class BrowserEnvironment {
       // Return in a trade form's amount field is judged with the form's asset beside a bare 'Sell' default.
       // CU-473 (Return route, cu-coordinator 04:20Z): the default button's first rendered line rides along as on a click, so a
       // Title-case two-line default ('Change Direct Deposit' over 'Takes Effect Immediately') is judged the same either way.
-      return { button: described === null ? null : { role: described.role, name: described.name, panel: null, ...(described.formContext ? { formContext: described.formContext } : {}), ...(typeof described.firstLine === 'string' ? { firstLine: described.firstLine } : {}), ...(described.dialogName ? { dialogName: described.dialogName } : {}), ...(described.dialogDescription ? { dialogDescription: described.dialogDescription } : {}) }, read: true }
+      return { button: described === null ? null : { role: described.role, name: described.name, panel: null, ...(described.formContext ? { formContext: described.formContext } : {}), ...(described.formEntries ? { formEntries: described.formEntries } : {}), ...(typeof described.firstLine === 'string' ? { firstLine: described.firstLine } : {}), ...(described.dialogName ? { dialogName: described.dialogName } : {}), ...(described.dialogDescription ? { dialogDescription: described.dialogDescription } : {}) }, read: true }
     } catch {
       return { button: null, read: false }
     }
@@ -870,7 +877,7 @@ class BrowserEnvironment {
         const described = await this.#describe(page, node.backendNodeId, undefined, { scanText: false })
         // CU-412 (11:56Z): a control with no accessible name (an icon-only div) cannot be judged - unreadable, never dropped.
         if (described === null || typeof described.name !== 'string' || described.name.trim() === '') unread = true
-        else controls.push({ role: described.role, name: described.name, ...(described.formContext ? { formContext: described.formContext } : {}), ...(typeof described.firstLine === 'string' ? { firstLine: described.firstLine } : {}), ...(described.dialogName ? { dialogName: described.dialogName } : {}), ...(described.dialogDescription ? { dialogDescription: described.dialogDescription } : {}) })
+        else controls.push({ role: described.role, name: described.name, ...(described.formContext ? { formContext: described.formContext } : {}), ...(described.formEntries ? { formEntries: described.formEntries } : {}), ...(typeof described.firstLine === 'string' ? { firstLine: described.firstLine } : {}), ...(described.dialogName ? { dialogName: described.dialogName } : {}), ...(described.dialogDescription ? { dialogDescription: described.dialogDescription } : {}) })
       }
       // Fail closed (D-107: candidates only add asks): a control that could not be read makes the list unjudgeable.
       return { ...(controls.length > 0 ? { candidates: controls } : {}), more: items.length > 3 || unread }
@@ -998,6 +1005,9 @@ class BrowserEnvironment {
       // CU-400: the choices beside a form's submit button (describeElement's formContext) - up to 3 short option texts
       // and whether an amount entry is present. Context, outside the fingerprint; run records keep origin, role, name.
       ...(formContextOf(extra.formContext) ? { formContext: formContextOf(extra.formContext) } : {}),
+      // CU-585: the words a submit control's form shows beside its text entries ('Type DELETE to confirm') - up to 3 texts of
+      // 80 characters, never a value. Context, outside the fingerprint; run records keep origin, role, name.
+      ...(formEntriesOf(extra.formEntries) ? { formEntries: formEntriesOf(extra.formEntries) } : {}),
       // CU-443: a row with no verb of its own carries what the page offers around it (describeElement): dialHref (a
       // tel:/sip:/callto:/facetime: href on it, above it or inside it - a boolean) and rowContext (its list's name, up to 3
       // action names). Context, outside the fingerprint; never recorded.
