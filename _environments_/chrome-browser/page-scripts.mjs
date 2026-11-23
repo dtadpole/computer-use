@@ -694,7 +694,9 @@ export function describeElement(el) {
     if (out.length === 0) return null
     const words = []
     for (const node of Array.from(form.querySelectorAll('h1, h2, h3, h4, h5, h6, [role="heading"], legend, p'))) {
-      for (const sentence of clean(node.textContent).split(/(?<=[.!?])\s+/)) {
+      // r3 (policy owner 13:33Z): no cut after 'e.g.', 'i.e.', 'etc.', 'vs.' or a single letter ('Enter your email (e.g.
+      // name@acme.com) to delete your account.' stays one sentence).
+      for (const sentence of clean(node.textContent).split(/(?<=[.!?])(?<!(?:^|[\s(])(?:e\.g|i\.e|etc|vs|\p{L})\.)\s+/iu)) {
         if (words.length >= 3) break
         if (sentence !== '' && sentence.length <= 80 && !words.includes(sentence) && !out.includes(sentence)) words.push(sentence)
       }
@@ -715,7 +717,7 @@ export function describeElement(el) {
         if (typeof node.matches === 'function' && node.matches(HEADED)) continue
         if (typeof node.closest === 'function' && node.closest(HEADED)) continue
         const own = Array.from(node.childNodes || []).filter((child) => child && child.nodeType === 3).map((child) => String(child.nodeValue ?? child.textContent ?? '')).join('\n')
-        for (const piece of own.split(/\n+|(?<=[.!?])\s+/)) {
+        for (const piece of own.split(/\n+|(?<=[.!?])(?<!(?:^|[\s(])(?:e\.g|i\.e|etc|vs|\p{L})\.)\s+/iu)) {
           const sentence = clean(piece)
           if (words.length >= 3) break
           if (sentence !== '' && sentence.length <= 80 && !words.includes(sentence) && !out.includes(sentence)) words.push(sentence)

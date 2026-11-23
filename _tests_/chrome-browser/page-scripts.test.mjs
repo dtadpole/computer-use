@@ -880,8 +880,9 @@ test("CU-585 close-account zone: zoneWords - the chosen container's own headings
   const zone = describeElement(button({ form: box([typed], [text('Danger zone'), text('  Close this account permanently.  This cannot be undone. ')]) }))
   assert.deepEqual(zone.formEntries, ['Type CLOSE to confirm'])
   assert.deepEqual(zone.zoneWords, ['Danger zone', 'Close this account permanently.', 'This cannot be undone.'], 'headings and paragraphs, cut at sentence ends, whitespace collapsed')
-  const capped = describeElement(button({ form: box([typed], [text('Type CLOSE to confirm'), text('A. B. C. D.'), text('x'.repeat(81))]) }))
-  assert.deepEqual(capped.zoneWords, ['A.', 'B.', 'C.'], 'no text already in formEntries; at most three')
+  // r3: whole-word sentences - a lone letter before a dot no longer ends a sentence (initials, policy owner 13:33Z)
+  const capped = describeElement(button({ form: box([typed], [text('Type CLOSE to confirm'), text('One. Two. Three. Four.'), text('x'.repeat(81))]) }))
+  assert.deepEqual(capped.zoneWords, ['One.', 'Two.', 'Three.'], 'no text already in formEntries; at most three')
   assert.equal('zoneWords' in describeElement(button({ form: box([typed], [text('y'.repeat(81))]) })), false, 'a sentence over 80 characters is none (never cut)')
   assert.equal('zoneWords' in describeElement(button({ form: box([], [text('Close this account permanently.')]) })), false, 'no text entry, no formEntries: no zoneWords either')
   assert.equal('zoneWords' in describeElement(button({ form: box([typed]) })), false, 'no static text: none')
@@ -910,6 +911,9 @@ test("CU-585 r2 zone texts (cu-coordinator 09:50Z ruling 3, cu-verifier's pages)
   const headed = zoneOf([node('STRONG', 'Warning', { inHeading: true }), node('DIV', 'Repositories are archived first.')], [{ textContent: 'Warning: this deletes the repository.' }])
   assert.deepEqual(words(headed), ['Warning: this deletes the repository.', 'Repositories are archived first.'], 'headings and paragraphs first; text inside them is not read twice')
   assert.equal(JSON.stringify(describeElement(button(zone))).includes('"acme/website"'), false, 'never the typed value')
+  // r3 (policy owner 13:33Z): the sentence cut keeps 'e.g.' / 'i.e.' / initials inside a sentence
+  assert.deepEqual(words(zoneOf([node('DIV', 'Enter your email (e.g. name@acme.com) to delete your account. Then confirm.')])), ['Enter your email (e.g. name@acme.com) to delete your account.', 'Then confirm.'], "no cut after 'e.g.'")
+  assert.deepEqual(words(zoneOf([node('DIV', 'Type the slug, i.e. acme-web, to delete it. J. Smith owns it.')])), ['Type the slug, i.e. acme-web, to delete it.', 'J. Smith owns it.'], "no cut after 'i.e.' or an initial")
 })
 
 test("CU-371 formless rows: a bulk-action bar (a select beside Apply and Go, no container) lends its selected option through the one-entry zone (owner 07:35Z)", () => {

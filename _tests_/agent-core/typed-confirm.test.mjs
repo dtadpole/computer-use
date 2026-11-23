@@ -148,7 +148,7 @@ test('CU-585 close-account zone: the zone\'s heading and description join the de
   for (const near of [['Close this dialog'], ['Close panel'], ['Close the sidebar'], ['Account settings'], ['Your account is active.']]) {
     assert.equal(zoned('Continue', ['Type CLOSE to confirm'], near), 'allow', `near miss ${JSON.stringify(near)}`)
   }
-  assert.equal(zoned('Continue', ['Account name'], ['Type CLOSE to confirm.', 'Close this account permanently.']), 'allow', 'a zone sentence that names no act (CLOSE alone) supplies no instruction (r2 rule)')
+  assert.equal(zoned('Continue', ['Account name'], ['Type CLOSE to confirm.', 'Close this account permanently.']), 'delete', 'r3: a strong confirm sentence (a typed token) takes the act from another sentence of the zone')
   assert.equal(zoned('Continue', ['Your name'], ['Delete your account permanently.']), 'allow', 'an ordinary box beside a destructive heading stays free (no prompt to type)')
   assert.equal(zoned('Delete account', ['Your name'], ['Close panel']), 'delete', 'a classed name keeps its class')
   assert.deepEqual(typedConfirmClasses(['Type CLOSE to confirm'], ['a', 'b', 'c', 'This cannot be undone.']), [], 'a fourth zone text is never read')
@@ -180,7 +180,36 @@ test("CU-585 r2 (policy owner 09:52Z, cu-researcher's miss): a zone sentence sup
   assert.equal(zoned('Continue', ['Workspace name'], ['Enter the workspace name.', 'Workspaces are deleted after 90 days.']), 'allow', 'confirm-shaped in one sentence, destructive in another: nothing')
   assert.equal(zoned('Continue', ['Workspace name'], ['Type the workspace name below.']), 'allow', 'only confirm-shaped: nothing')
   assert.equal(zoned('Continue', ['Workspace name'], ['Workspaces are deleted after 90 days.']), 'allow', 'only destructive: nothing')
-  assert.equal(zoned('Continue', ['Your email'], ['Enter your email to delete your newsletter subscription.']), 'allow', 'not confirm-shaped (your email): nothing')
+  assert.equal(zoned('Continue', ['Your email'], ['Enter your email to delete your newsletter subscription.']), 'delete', 'r3 branch (c) flip: a purpose clause naming the act asks, whatever is typed (safe side, policy owner 13:32Z)')
   assert.equal(zoned('Next', ['Enter your phone number'], ['We will remove it if you ask.']), 'allow', "the owner's ordinary rows stay free")
   assert.equal(zoned('Apply', ['Enter a coupon code'], ['Expired codes are removed automatically.']), 'allow')
+})
+
+test("CU-585 r3 (cu-researcher's r2 review): a split dialog - a STRONG confirm sentence and the act in two sentences of one zone - asks delete; weak shapes and zones without an act stay free", () => {
+  assert.deepEqual(typedConfirmClasses(['workspace-name'], ['To confirm, enter the workspace name below.', 'This deletes it permanently.']), ['delete'])
+  assert.deepEqual(typedConfirmClasses(['repo'], ['Danger zone', 'Type the repository name below to confirm.', 'It will be removed forever.']), ['delete'])
+  assert.deepEqual(typedConfirmClasses(['owner'], ['To confirm, enter the new owner name.', 'Ownership of this project is transferred.']), ['permission'])
+  assert.deepEqual(typedConfirmClasses(['project'], ['Enter the project name to search.', 'Results appear below.']), [], 'no act in the zone')
+  assert.deepEqual(typedConfirmClasses(['folder'], ['Type a name for the new folder.', 'Old folders are deleted after 30 days.']), [], 'not confirm-shaped')
+  assert.deepEqual(typedConfirmClasses(['Workspace name'], ['Enter the workspace name.', 'Workspaces are deleted after 90 days.']), [], "'the <noun> name' alone is not strong - the policy owner's 09:52Z row stays free")
+  assert.deepEqual(typedConfirmClasses(['code'], ['Enter PIN to confirm your card.', 'Lost cards are removed.']), ['delete'], 'a strong to-confirm sentence beside an act asks (the over-ask side, named)')
+  assert.deepEqual(typedConfirmClasses(['city'], ['Shipping', 'Type your city.']), [], 'an ordinary form')
+  // policy owner 13:25Z: in the strong branch the other sentence needs a destroy / transfer verb, not a bare intensifier
+  assert.deepEqual(typedConfirmClasses(['Full name'], ['To confirm, type your full name.', 'Your signature is stored permanently.']), [], 'an intensifier alone names no act')
+  assert.deepEqual(typedConfirmClasses(['Account name'], ['Type CLOSE to confirm.', 'This cannot be undone.']), [], "'cannot be undone' alone names no act")
+  assert.deepEqual(typedConfirmClasses(['Workspace'], ['Type "acme" to confirm.', 'The change is irreversible.']), [], "'irreversible' alone names no act")
+  assert.deepEqual(typedConfirmClasses(['workspace-name'], ['To confirm, enter the workspace name below.', 'This deletes it permanently.']), ['delete'], "the split dialog still asks, through 'deletes'")
+  assert.deepEqual(typedConfirmClasses(['Type CLOSE to confirm'], ['This cannot be undone.']), ['delete'], 'entries keep the full destroy test (branch (a) / entries unchanged)')
+  assert.deepEqual(typedConfirmClasses(['Project'], ['Confirm by entering the project name.', 'This deletes the project.']), ['delete'], "'confirm by' is a strong marker (policy owner 13:22Z spec)")
+  // branch (c) (policy owner 13:32Z / 13:33Z): instruction + 'to <act>' in the same sentence, whatever is typed
+  assert.deepEqual(typedConfirmClasses(['Email'], ['Enter your email address to erase your account.']), ['delete'], "cu-researcher's row")
+  assert.deepEqual(typedConfirmClasses(['Username'], ['Type your username to transfer ownership.']), ['permission'])
+  assert.deepEqual(typedConfirmClasses(['Email'], ['Enter your email in order to delete your account.']), ['delete'], "'in order to'")
+  assert.deepEqual(typedConfirmClasses(['Email'], ['Enter your email so as to remove your profile.']), ['delete'], "'so as to'")
+  assert.deepEqual(typedConfirmClasses(['Email'], ['Enter your email to receive a code to delete your account.']), ['delete'], 'any to-clause in the sentence')
+  assert.deepEqual(typedConfirmClasses(['Email'], ['Enter your email (e.g. name@acme.com) to delete your account.']), ['delete'], "an 'e.g.' inside the sentence")
+  assert.deepEqual(typedConfirmClasses(['Email'], ['Enter your acme.com email to erase your account.']), ['delete'], "a domain's dot")
+  for (const free of ['Enter your email to continue.', 'Enter your email.', 'Enter the project name to search.', 'Type a name for the new folder.', 'Enter your email to stay permanently signed in.', 'Type your code to keep it forever.']) {
+    assert.deepEqual(typedConfirmClasses(['Email'], [free]), [], `no act in the sentence: ${free}`)
+  }
 })

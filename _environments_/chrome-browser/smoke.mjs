@@ -133,6 +133,11 @@ const server = http.createServer((req, res) => {
       `<body style="margin:0"><form onsubmit="return false">${controls('Type CLOSE to confirm', 'CLOSE', 'Continue')}</form></body>`,
       `<body style="margin:0">${controls('To confirm, type &quot;acme/website&quot;', 'acme/website', 'Confirm')}</body>`,
       '<body style="margin:0"><section><h3>Delete project</h3><p>Enter the project name to delete it.</p><input placeholder="project name" style="position:absolute;left:20px;top:41px;width:380px"><button id="go" style="position:absolute;left:20px;top:72px;width:380px;height:26px">Continue</button></section></body>',
+      // r3 (cu-researcher's r2 review): the split dialog - a strong confirm sentence and the act in two sentences - and a near miss.
+      '<body style="margin:0"><div role="dialog"><p>To confirm, enter the workspace name below. This deletes it permanently.</p><input placeholder="workspace-name" style="position:absolute;left:20px;top:41px;width:380px"><button id="go" style="position:absolute;left:20px;top:80px;width:200px;height:30px">Confirm</button></div></body>',
+      '<body style="margin:0"><div role="dialog"><p>Enter the project name to search. Results appear below.</p><input placeholder="project name" style="position:absolute;left:20px;top:41px;width:380px"><button id="go" style="position:absolute;left:20px;top:80px;width:200px;height:30px">Confirm</button></div></body>',
+      // r3 branch (c): a purpose clause naming the act, an 'e.g.' inside the sentence
+      '<body style="margin:0"><div role="dialog"><p>Enter your email (e.g. name@acme.com) to delete your account.</p><input placeholder="Email" style="position:absolute;left:20px;top:41px;width:380px"><button id="go" style="position:absolute;left:20px;top:80px;width:200px;height:30px">Confirm</button></div></body>',
     ]
     res.end(`<!doctype html><meta charset="utf-8">${pages[n] ?? ''}`)
     return
@@ -334,14 +339,15 @@ try {
   // CU-585 r2: the same hand-over a run makes (inspectPoint at the button's centre, then the policy) on each shape -
   // every one asks delete. The typed word never rides along.
   const shapePolicy = createPolicy({ sitePolicy: () => 'allow' })
-  for (let n = 0; n < 5; n += 1) {
+  for (let n = 0; n < 8; n += 1) {
     await env.perform({ type: 'navigate', url: `${origin}/danger-shape?n=${n}` })
     const box = await evaluate("(() => { const r = document.getElementById('go').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 } })()")
     const point = { x: Math.round(box.x * env.frame.scale), y: Math.round(box.y * env.frame.scale) }
     const shape = await env.inspectPoint(point)
     const verdict = shapePolicy.classify({ type: 'click', ...point, button: 'left' }, { url: `${origin}/danger-shape?n=${n}`, target: shape })
     const classes = verdict.decision === 'allow' ? [] : (verdict.classes ?? [verdict.class])
-    check(`CU-585 r2 shape ${n}: the bare button carries its zone's words and asks delete`, classes.includes('delete') && !/"(?:DELETE|CLOSE|acme\/website)"/.test(JSON.stringify(shape?.formEntries ?? null)),
+    const free = n === 6 // r3's near miss: no act in the zone
+    check(free ? 'CU-585 r3 shape 6: a near miss (no act in the zone) stays free' : `CU-585 r2/r3 shape ${n}: the bare button carries its zone's words and asks delete`, (free ? !classes.includes('delete') : classes.includes('delete')) && !/"(?:DELETE|CLOSE|acme\/website)"/.test(JSON.stringify(shape?.formEntries ?? null)),
       shape && { name: shape.name, formEntries: shape.formEntries ?? null, zoneWords: shape.zoneWords ?? null, classes })
   }
 
