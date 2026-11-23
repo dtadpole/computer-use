@@ -3365,6 +3365,14 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
           if (!known || (security && turnsOff) || (heat && turnsOn)) classes.push('physical')
         }
       }
+      // CU-713 (cu-verifier's rows, cu-coordinator 04:33Z): an account-protection switch - passkeys, or a login / sign-in /
+      // new-device / suspicious- or unusual-activity / password-change / account-activity alert or notification - turned OFF weakens
+      // the account and asks permission (two-factor, MFA and 2-step stay with CU-373's credential rows, a bare 'Security alerts' with
+      // the older security rows). As with CU-418, the direction is trusted only from a
+      // native read; an ARIA, mixed or missing state asks in both directions (named over-ask: turning one ON there).
+      if (!focusesEntry && /switch|checkbox|toggle/i.test(String(target?.role ?? '') + String(target?.subrole ?? ''))
+        && /^\s*(?:passkeys?|(?:login|log-?in|sign-?in|new[\s-]+device|suspicious[\s-]+activity|unusual[\s-]+activity|password[\s-]+change|account[\s-]+activity)\s+(?:alerts?|notifications?|e-?mails?|warnings?))\s*$/i.test(name)
+        && !classes.includes('permission') && nativeToggleState(target) !== false) classes.push('permission')
       // CU-146: 'Trash' or 'Bin' alone deletes on a control (a toolbar button, a menu item); a sidebar row of that name
       // only opens the folder.
       if (TRASH_ROLE.test(String(target?.role ?? '')) && namesWord(name, CONTROL_DELETE)) classes.push('delete')
