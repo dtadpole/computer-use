@@ -1775,6 +1775,17 @@ const LOCALE_CONFIRM_BACKOUT = /^\s*(?:abbrechen|zurück|schlie(?:ß|ss)en|nein|
 const LOCALE_CONFIRM_UTILITY = /^\s*(?:kopieren|copier|copiar|copia|kopiëren|копировать|コピー|复制|複製|복사|hilfe|aide|ayuda|ajuda|aiuto|справка|помощь|ヘルプ|帮助|幫助|도움말)(?![\p{L}\p{N}])/iu
 // A judged name has passed normaliseText, which folds Cyrillic homoglyphs to Latin case by case ('Отмена' -> 'Oтмeнa'), so the
 // Russian back-outs are also matched folded - as written, capitalised and in capitals - as namesRuTrashEmpty does.
+// CU-729: the Russian affirmatives the same way - a judged name has passed the Cyrillic homoglyph fold ('Да' -> 'Дa'), so they
+// are matched folded too (as written, capitalised and in capitals), alone or with a comma and one more of them.
+let ruConfirmRegex = null
+function namesRuConfirm(text) {
+  if (!ruConfirmRegex) {
+    const folds = (word) => [...new Set([word, word[0].toUpperCase() + word.slice(1), word.toUpperCase()].map((form) => normaliseName(normaliseText(form))))].map(escapeRegExp)
+    const words = ['да', 'ок', 'подтвердить', 'продолжить', 'принять', 'согласен', 'согласна', 'применить', 'готово', 'хорошо'].flatMap(folds).join('|')
+    ruConfirmRegex = new RegExp(`^\\s*(?:${words})(?:\\s*,\\s*(?:${words}))?\\s*[.!]?\\s*$`, 'u')
+  }
+  return ruConfirmRegex.test(normaliseName(text))
+}
 let ruBackoutRegex = null
 function namesRuBackout(text) {
   if (!ruBackoutRegex) {
@@ -4378,7 +4389,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         const restProbe = classify({ type: 'click', x: 0, y: 0, button: 'left' }, { ...context, target: { role: 'button', name: continueTo[1].trim(), ...(target?.origin ? { origin: target.origin } : {}) } })
         if (restProbe.decision === 'confirm') for (const cls of restProbe.classes ?? [restProbe.class]) if (!classes.includes(cls)) classes.push(cls)
       }
-      const localeConfirm = LOCALE_GENERIC_CONFIRM.test(String(target?.name ?? name ?? ''))
+      const localeConfirm = LOCALE_GENERIC_CONFIRM.test(String(target?.name ?? name ?? '')) || LOCALE_GENERIC_CONFIRM.test(String(name ?? '')) || namesRuConfirm(String(name ?? ''))
       if (context.confirmProbe !== true && presses && (dialogName !== '' || dialogDescription !== '') && (GENERIC_CONFIRM.test(String(name ?? '')) || localeConfirm || continueTo)) {
         // cu-researcher 16:09Z: a title is a question more often than a row - 'Are you sure you want to <row>?', 'Really <row>?',
         // '<row>?' - so a title canonical step strips the question frame before the title is judged as a name.
