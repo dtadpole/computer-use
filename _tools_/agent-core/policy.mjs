@@ -1272,10 +1272,12 @@ const LOCALE_MONEY_VERBS = Object.freeze([
   // the ja line takes a possessive '…の' before 口座 ('自分の口座に振り込む')
   /^(?:今すぐ)?(?:[^\sの]+の)?(?:口座|銀行口座)(?:に|へ)?(?:振り込む|振込(?:する)?|振り込み|送金(?:する)?|振替(?:する)?)\s*[.!。]?$/u,
   /^(?:transférer|transférez|virer|virez|virement|transfert)\s+(?:vers|sur|à|au)\s+(?:\S+\s+){0,2}?compte(?:\s+\S+){0,2}?\s*[.!]?$/iu,
-  /^(?:transferir|transfiere|transfiera|enviar|envía|envíe|transferencia)\s+(?:dinero\s+|fondos\s+)?(?:a|al|para|en)\s+(?:\S+\s+){0,2}?cuenta(?:\s+\S+){0,2}?\s*[.!]?$/iu,
-  /^(?:transferir|transfira|enviar|envie|transferência)\s+(?:dinheiro\s+|fundos\s+)?(?:a|à|ao|para)\s+(?:\S+\s+){0,2}?conta(?:\s+\S+){0,2}?\s*[.!]?$/iu,
-  /^(?:trasferisci|trasferire|invia|inviare|bonifico|trasferimento)\s+(?:denaro\s+|soldi\s+|fondi\s+)?(?:sul|al|su|a|nel)\s+(?:\S+\s+){0,2}?conto(?:\s+\S+){0,2}?\s*[.!]?$/iu,
-  /^(?:auf|an|aufs|ans)\s+(?:\S+\s+){0,2}?\S*konto\s+(?:übertragen|überweisen|transferieren|senden)\s*[.!]?$/iu,
+  // r4 (cu-developer-three 03:00Z): the send verbs ask here only with a money object ('Enviar a mi cuenta de correo' is a generic send, submit
+  // as 'Send to my email'); the transfer verbs and the noun-led forms keep the slot
+  /^(?:(?:transferir|transfiere|transfiera|transferencia)\s+(?:dinero\s+|fondos\s+)?|(?:enviar|envía|envíe)\s+(?:dinero|fondos)\s+)(?:a|al|para|en)\s+(?:\S+\s+){0,2}?cuenta(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:(?:transferir|transfira|transferência)\s+(?:dinheiro\s+|fundos\s+)?|(?:enviar|envie)\s+(?:dinheiro|fundos)\s+)(?:a|à|ao|para)\s+(?:\S+\s+){0,2}?conta(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:(?:trasferisci|trasferire|bonifico|trasferimento)\s+(?:denaro\s+|soldi\s+|fondi\s+)?|(?:invia|inviare)\s+(?:denaro|soldi|fondi)\s+)(?:sul|al|su|a|nel)\s+(?:\S+\s+){0,2}?conto(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:auf|an|aufs|ans)\s+(?:\S+\s+){0,2}?\S*konto\s+(?:übertragen|überweisen|transferieren)\s*[.!]?$/iu,
   /^(?:überweisung|übertragung)\s+(?:auf|an|aufs|ans)\s+(?:\S+\s+){0,2}?\S*konto\s*[.!]?$/iu,
   new RegExp(`^hesab(?:a|[ıI]ma|[ıI]n[ıI]za)\\s+(?:aktar|aktar[ıI]n|transfer\\s+et|gönder|gönderin)\\s*[.!]?$`, 'iu'),
   /^(?:立即)?(?:转入|轉入|转到|轉到|转账到|轉帳到)(?:\S{0,6})?(?:账户|帳戶|账号|帳號)\s*[.!。]?$/u,

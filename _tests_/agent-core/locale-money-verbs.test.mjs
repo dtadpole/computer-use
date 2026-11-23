@@ -45,3 +45,8 @@ test('CU-702 r3: every to-account line takes the contractions and a determiner s
     '自分の口座に振り込む', '私の口座に振り込む']) assert.ok(click(name).includes('purchase'), name)
   for (const name of ['Mon compte', 'Virement', 'Kontoauszug', 'Überweisung', 'Historique des virements', 'Transferencia', '口座', '自分の口座']) assert.ok(!click(name).includes('purchase'), name)
 })
+
+test('CU-702 r4: generic send to a non-money account stays submit as English \'Send to my email\'; send with a money object and the transfer verbs keep asking purchase', () => {
+  for (const name of ['Enviar a mi cuenta de correo', 'Enviar para a minha conta de e-mail', 'An mein Benutzerkonto senden', 'Invia al tuo conto', 'Send to my email']) assert.ok(!click(name).includes('purchase'), name)
+  for (const name of ['Enviar dinero a mi cuenta', 'Enviar dinheiro para a minha conta', 'Invia denaro sul conto', 'Transferir a otra cuenta', 'Trasferisci sul tuo conto', 'Auf unser Konto überweisen']) assert.ok(click(name).includes('purchase'), name)
+})
