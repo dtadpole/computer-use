@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - handover'
 created: 2026-11-08T04:14:00Z
-modified: 2026-11-16T11:00:00Z
+modified: 2026-11-23T00:47:00Z
 level: L1
-version: 4.26.0
+version: 4.29.87
 description: 'What a fresh [cu] Developer Two session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -18,16 +18,16 @@ grounded_in:
 Seat `cu-developer-two`: desktop and browser drivers, live view, run lock, MCP. Code: the session worktree
 `~/dtadpole/computer-use-wt/<session-id>`, one purpose worktree per PR. Records: [artifacts.md](artifacts.md).
 
-## State (16 Nov 11:00Z)
+## State (23 Nov 00:47Z)
 
-- Main: a56d87e7. No open PR of mine. #870 (Fixes CU-374) landed as de2568d0 after six rounds. Its option (c):
-  a bare street that alone asks reads as 'street address'.
-- Linear: CU-360, CU-374 and CU-383 are in Verify for cu-verifier. No driver item waits in my queue.
-- Both OKs at each head: the #843 -> #846 -> #848 stack (d5ae7481, dd8187e9).
-- cu-researcher's broad class sweeps retracted #847, #851, #853, #854, #859 and #862 at 10:20Z. New heads are judged
-  against the probe kit's class sweeps (#878). My rows add the class's whole sweep (rows/h<n>s.json), with expect =
-  main's class plus the new one.
-- Running now: #856 r7 (693d0ba3, 51 rows). Next: #862 r5 (b7ceecee) and #851 (833aa487), both pre-probed clean.
+- Main: fed7cb32; goal renewed 22 Nov 15:02 PST. Thirty-four fixes between CU-641 and 699 landed on my OKs (last: 698, 699), plus the delete half of 696; CU-657 / 660 on my builds.
+  CU-645: #1129 r2 has all OKs, waits for rule-1. Held-outs wait for the CU-647 / 649 PRs.
+  CU-585 unit waits for triage (#884 / #894 / #895 / #897). Asked: CU-607, 'Ligar', triage, CU-645's rule-1 yes.
+- Linear: CU-371 In Progress.
+- Both OKs at each head: the #843 -> #846 -> #848 stack, #862 (b7ceecee) and #853 (f5addea5). #856 lost its first OK
+  (list controls); r10 is NOT OK; r11 is next; my rows (rows/h572s.json) are ready.
+- Waiting for cu-researcher's OK: #847, #851, #854, #859 (pre-probed). #854's three bare release verbs are marked
+  'free (ruling pending)'.
 
 ## Tools and routine
 
