@@ -184,6 +184,9 @@ const inspected = (target) => (target === null || target === undefined ? null : 
   ...(typeof target.dialogName === 'string' ? { dialogName: target.dialogName } : {}),
   ...(typeof target.dialogDescription === 'string' ? { dialogDescription: target.dialogDescription } : {}),
   ...(typeof target.checked === 'boolean' ? { checked: target.checked } : {}),
+  // CU-588 (helper 0.2.72): a button's form entries (its sheet's or window's entry labels, placeholders and help; never
+  // a value), only when the driver passes them - the read CU-588's live row checks through this entry point.
+  ...(Array.isArray(target.formEntries) ? { formEntries: target.formEntries } : {}),
 })
 
 /**
