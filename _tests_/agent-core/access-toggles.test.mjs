@@ -43,6 +43,34 @@ test('CU-754: the other side - turning access off, plain toggles and harmless li
   for (const list of ['Display', 'Battery', 'Accessibility Shortcut options']) assert.equal(axcb('Reduce motion', false, list), 'allow', list)
 })
 
+test('CU-774: a toggle that makes the profile findable or indexable asks permission', () => {
+  const findable = [
+    'Searchable profile', 'Searchable', 'Findable by everyone', 'Make my profile searchable', 'Profile is searchable',
+    'Show my profile in search results', 'Include me in search results', 'Appear in search results', 'Show up in search engines',
+    'Visible in search', 'Let people find me by my email address', 'Allow others to find you by phone number',
+    'Let anyone look up my profile', 'Allow search engines to index my profile', 'Let search engines link to your page',
+    'Search engine indexing', 'Indexed by search engines',
+  ]
+  for (const name of findable) {
+    assert.match(sw(name, false), /permission/, name)
+    assert.match(space(name, false), /permission/, `Space: ${name}`)
+  }
+  // A web checkbox, an ARIA switch with no native state (asks both ways, as CU-754), and a desktop checkbox by its own name.
+  assert.match(webcb('Show my profile in search results', false), /permission/)
+  assert.match(sw('Searchable profile', undefined), /permission/)
+  assert.match(axcb('Allow search engines to index my profile', false), /permission/)
+})
+
+test('CU-774: the other side - turning findability off, and local search features, stay free', () => {
+  assert.equal(webcb('Searchable profile', true), 'allow')
+  assert.equal(webcb('Let people find me by my email address', true), 'allow') // a native checkbox already on: the press turns findability off
+  for (const name of ['Search history', 'Safe search', 'Searchable PDFs', 'Show search suggestions', 'Spotlight indexing', 'Allow indexing',
+    'Hide my profile from search engines', 'Search engine', 'Show search bar', 'Find My']) {
+    assert.equal(webcb(name, false), 'allow', name) // native checkboxes turning on: a known direction (an ARIA switch's unknown state can ask through other rules, e.g. a protection switch)
+  }
+  assert.equal(axcb('Spotlight indexing', false), 'allow')
+})
+
 test('CU-754: accessRowContext reads both shapes and nothing else', () => {
   assert.equal(accessRowContext('Full Disk Access'), true)
   assert.equal(accessRowContext({ list: 'Accessibility', hints: [] }), true)

@@ -148,6 +148,26 @@ const LOCALE_MODAL_ACCESS = /(?:zugriff\s+auf|auf\s+.{1,60}?\s+zugreifen|accéde
 const ACCESS_RIGHT_LIST = /\b(?:full\s+disk\s+access|screen\s+(?:(?:&|and)\s+system\s+audio\s+)?recording|input\s+monitoring|location\s+services|files\s+(?:&|and)\s+folders|developer\s+tools|app\s+management|local\s+network|remote\s+(?:login|management|desktop)|camera|microphone|contacts|calendars|reminders|photos|bluetooth|automation|speech\s+recognition|media\s+(?:&|and)\s+apple\s+music|homekit|motion\s+(?:&|and)\s+fitness|(?:allow|let)\s+(?:the\s+)?(?:apps?|applications?)\s+(?:below\s+|listed\s+)?to\s+(?:access|control|record|use|see|read|monitor|manage))\b/i
 // CU-754: a toggle whose own name makes a profile, account or other object public or visible to everyone.
 const PUBLIC_TOGGLE = /^\s*(?:make\s+(?:(?:my|this|the)\s+)?(?:profile|account|repo(?:sitory)?|page|calendar|listing|board|project|album|playlist|activity)\s+public|public(?:\s+(?:profile|account|repo(?:sitory)?|page|calendar|listing|board|project|album|playlist|activity|mode|link|access))?|(?:profile|account)\s+(?:is\s+)?(?:public|visible\s+to\s+(?:everyone|anyone))|visible\s+to\s+(?:everyone|anyone|the\s+public|all)|discoverable(?:\s+by\s+(?:everyone|anyone))?|show\s+(?:my\s+)?profile\s+(?:publicly|to\s+(?:everyone|anyone)))\s*$/i
+// CU-774 (P1, a held-out miss at CU-754's close): a toggle whose own name makes the profile findable or indexable - by search,
+// by search engines, or by people looking someone up - asks permission like a public one. Local search features ('Search
+// history', 'Safe search', 'Searchable PDFs', 'Spotlight indexing', 'Allow indexing') name no profile and stay free.
+const FINDABLE_TOGGLE = new RegExp('^\\s*(?:' + [
+  // 'Searchable', 'Searchable profile', 'Findable by everyone', 'Indexable page'
+  String.raw`(?:searchable|findable|indexable)(?:\s+(?:profile|account|page|listing)|\s+by\s+(?:everyone|anyone|the\s+public))?`,
+  // 'Make my profile searchable', 'Profile is findable'
+  String.raw`make\s+(?:(?:my|your|this|the)\s+)?(?:profile|account|page|listing)\s+(?:searchable|discoverable|findable|indexable)`,
+  String.raw`(?:(?:my|your)\s+)?(?:profile|account|page)\s+(?:is\s+)?(?:searchable|findable|indexable|discoverable)`,
+  // 'Show my profile in search results', 'Include me in search', 'Appear in search results', 'Show up in search engines'
+  String.raw`(?:show|include|list)\s+(?:(?:my|your)\s+)?(?:profile|account|page|me)\s+in\s+(?:search(?:\s+results)?|search\s+engines|(?:web\s+)?search\s+results|google)`,
+  String.raw`(?:appear|show\s+up|be\s+shown)\s+in\s+(?:search(?:\s+results)?|search\s+engines|(?:web\s+)?search\s+results)`,
+  String.raw`visible\s+in\s+search(?:\s+results|\s+engines)?`,
+  // 'Let people find me by my email address', 'Allow others to find you', 'Let anyone look up my profile'
+  String.raw`(?:let|allow)\s+(?:others|other\s+people|people|anyone|everyone|users|members|contacts)\s+(?:to\s+)?(?:find|search\s+for|look\s+up)\s+(?:me|you|(?:my|your)\s+(?:profile|account))(?:\s+(?:by|using|with|via|through)\s+[a-z0-9' .-]{1,40})?`,
+  // 'Allow search engines to index my profile', 'Let search engines link to your page', 'Search engine indexing'
+  String.raw`(?:let|allow)\s+search\s+engines\s+(?:to\s+)?(?:index|find|show|list|link\s+to|crawl)(?:\s+(?:(?:my|your|this|the)\s+)?(?:profile|account|page|site|posts?))?`,
+  String.raw`search\s+engine\s+(?:indexing|visibility)`,
+  String.raw`(?:indexed|listed|visible)\s+(?:in|to|by)\s+search\s+engines`,
+].join('|') + ')\\s*$', 'i')
 /** CU-754: whether a toggle's row context (rowContext: a { list, hints } object or a plain string) names an access right. */
 export function accessRowContext(rowContext) {
   const texts = typeof rowContext === 'string'
@@ -3759,7 +3779,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         }
         // CU-754: an access toggle - its list names a privacy right, or its own name makes something public - asks permission
         // when it turns on; the direction is the native read's, and an unknown state asks both ways (named over-ask, as CU-418).
-        if (nativeToggleState(target) !== true && (PUBLIC_TOGGLE.test(name) || accessRowContext(target?.rowContext))) classes.push('permission')
+        // CU-774: a toggle that makes the profile findable or indexable (FINDABLE_TOGGLE) is the same grant to everyone.
+        if (nativeToggleState(target) !== true && (PUBLIC_TOGGLE.test(name) || FINDABLE_TOGGLE.test(name) || accessRowContext(target?.rowContext))) classes.push('permission')
       }
       // CU-146: 'Trash' or 'Bin' alone deletes on a control (a toolbar button, a menu item); a sidebar row of that name
       // only opens the folder.
