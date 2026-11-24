@@ -49,6 +49,32 @@ export function neverCoveredByGrant(cls, name) {
 // locks, dial rows, mass sends, compensation, returns, relists, ride cancels) asks under any submit grant.
 // CU-507 (High; cu-coordinator 16:06Z): the generic final buttons of a confirm modal - judged by the modal's own title and text.
 const GENERIC_CONFIRM = /^\s*(?:confirm|ok|okay|yes|yes,?\s+(?:continue|confirm|proceed|i'?m\s+sure|do\s+it)|continue|proceed|submit|done|apply|accept|agree|i\s+agree|i\s+understand|got\s+it|i'?m\s+sure|do\s+it|go\s+ahead|confirm\s+and\s+continue)\s*[.!]?\s*$/i
+// CU-747 (High; sweep 5, cu-coordinator 06:05Z): a wizard's or sheet's final-step control - Finish / Complete / Next / End - is
+// a generic confirm too when it sits in a risk dialog (the modal rule below judges the dialog's text; a harmless one stays free).
+const FINAL_STEP_CONFIRM = /^\s*(?:finish|finish\s+up|complete|next|next\s+step|end|end\s+now|continue\s+anyway|proceed\s+anyway)\s*[.!>›→]?\s*$/i
+// CU-747: a bare verb button that repeats the verb of its dialog's title ('Reset' under 'Reset this device to factory settings?',
+// 'Empty' under 'Empty the Trash?') confirms that title, so the title is judged as a name. r2 (cu-researcher 06:48Z): the verb may
+// stand anywhere in the title and in any covered language ('Leeren' / 'Papierkorb leeren?', 'Svuota' / 'Vuoi svuotare il
+// cestino?', '空にする' / 'ゴミ箱を空にしますか？', '倒空' / '要倒空废纸篓吗？'), matched as a word or a word's stem; and the title must
+// ask or point at its object - a question, or a determiner after the verb - so a title that names a state ('Empty folder') stays free.
+const ECHO_CJK = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u
+function echoesDialogVerb(name, dialogName) {
+  const button = String(name ?? '').trim().toLowerCase().replace(/[¿¡]/g, '')
+  const title = String(dialogName ?? '').trim().toLowerCase().replace(/[¿¡]/g, '')
+  if (button === '' || title === '') return false
+  const asks = /[?？]\s*$/u.test(title) || /\b(?:the|this|these|those|all|your|my|our|la|le|les|el|los|las|il|lo|gli|i|der|die|das|den|alle|todos|todas|tutti|tutte|tous|toutes)\b/iu.test(title)
+  if (!asks) return false
+  if (ECHO_CJK.test(button)) {
+    // A CJK verb: one to four characters (a trailing する / します / 하기 dropped); its first two characters stand in the title.
+    const core = button.replace(/(?:する|します|하기|하다)$/u, '')
+    return core.length >= 1 && button.length <= 6 && title.includes(core.slice(0, 2))
+  }
+  const words = button.split(/\s+/).filter(Boolean)
+  if (words.length === 0 || words.length > 2 || !/^\p{L}{3,}$/u.test(words[0]) || (words[1] !== undefined && words[1] !== 'now')) return false
+  const verb = words[0]
+  const stem = verb.length >= 5 ? verb.slice(0, verb.length - 1) : verb
+  return title.split(/[^\p{L}]+/u).some((word) => word === verb || (word.length >= verb.length && word.startsWith(stem)))
+}
 // CU-746 (High; cu-researcher's sweep 5): a risk modal whose text is a statement ('Your account will be deleted'), a framed
 // description ('Doing so permanently erases the volume.', 'Once you confirm, the repository ... are gone for good.') or a noun title
 // ('Account deletion') is read as the act it states, and an access statement ('It will be able to read ...', '... requests access',
@@ -64,9 +90,16 @@ const MODAL_LEAD = new RegExp(String.raw`^(?:doing\s+(?:so|this)|proceeding|cont
 // Only the person's act opens it, so a retention note ('After 30 days, deleted items are removed.') stays as it was.
 const MODAL_CLAUSE_LEAD = /^(?:once|after|when|as\s+soon\s+as|if|upon)\s+(?:(?:this\s+is\s+|it\s+is\s+)?(?:confirm\w*|continu\w*|proceed\w*|complet\w*|finish\w*|submit\w*|approv\w*|accept\w*|done)|you\s+[a-z]+(?:\s+[a-z]+){0,3})\s*,\s*(\S.*)$/i
 const MODAL_PRESENT = new RegExp(String.raw`^(.{1,120}?)\s+(?:is|are|gets?)\s+${MODAL_ADVERB}([a-z]+(?:ed|en|t))\b`, 'i')
-const MODAL_NOMINAL = { deletion: 'delete', removal: 'remove', erasure: 'erase', termination: 'terminate', deactivation: 'deactivate', closure: 'close', cancellation: 'cancel', wipe: 'wipe', reset: 'reset', transfer: 'transfer' }
-const MODAL_NOMINAL_TITLE = /^(?:(?:the|your|this)\s+)?([\p{L}\p{N}'\u2019 -]{1,40}?)\s+(deletion|removal|erasure|termination|deactivation|closure|cancellation|wipe|reset|transfer)$/iu
-const MODAL_NOMINAL_OF = /^(deletion|removal|erasure|termination|deactivation|closure|cancellation|transfer)\s+of\s+(.{1,60})$/i
+const MODAL_NOMINAL = { deletion: 'delete', removal: 'remove', erasure: 'erase', termination: 'terminate', deactivation: 'deactivate', closure: 'close', cancellation: 'cancel', wipe: 'wipe', reset: 'reset', transfer: 'transfer', handover: 'transfer', handoff: 'transfer', 'hand-off': 'transfer', reassignment: 'transfer', grant: 'grant' }
+// CU-756 (High; cu-researcher's #1423 r2 miss): a transfer / handover of what grants control ('Ownership handover', 'Admin transfer') is
+// read as 'Transfer ownership' too - permission, as the policy owner ruled for ownership / rights / workspace transfers; money ('Funds
+// transfer', 'Account transfer') is no such object and stays with its own reading.
+// CU-756 r2 (cu-researcher's held-out): the act noun may be followed by up to two words ('Account deletion request'), unless a
+// following word names a record or a page ('Data deletion policy', 'Ownership transfer history' stay free here).
+const MODAL_HANDOVER_NOUN = /^(?:handover|handoff|hand-off|reassignment)$/i
+const MODAL_CONTROL_OBJECT = /\b(?:owner\w*|admin\w*|rights?|control|role|workspace|team|org(?:ani[sz]ation)?|repo(?:sitory)?|project|domain|site|channel|group)\b/i
+const MODAL_NOMINAL_TITLE = /^(?:(?:the|your|this)\s+)?([\p{L}\p{N}'\u2019 -]{1,40}?)\s+(deletion|removal|erasure|termination|deactivation|closure|cancellation|wipe|reset|transfer|handover|handoff|hand-off|reassignment|grant)(?:\s+(?!(?:history|logs?|details|polic(?:y|ies)|settings|status|reports?|records?|summary|overview|info|information|faq|help|guide|terms|rules|limits?|options|preferences|schedule|queue|list)\b)[\p{L}\p{N}'\u2019-]+){0,2}$/iu
+const MODAL_NOMINAL_OF = /^(deletion|removal|erasure|termination|deactivation|closure|cancellation|transfer|handover|handoff|hand-off|reassignment|grant)\s+of\s+(.{1,60})$/i
 const MODAL_ACCESS = /\b(?:(?:requests?|requesting|wants?|would\s+like)\s+(?:\w+\s+){0,3}access\b|will\s+be\s+able\s+to\s+(?:read|write|access|see|view|manage|control|change|edit|delete|post|send|act)\b|(?:gives?|grants?|allows?)\s+(?:\S+\s+){0,4}access\b)/i
 // CU-757 (P1; cu-developer-one's #1423 r2 owner check): an access grant's own buttons - 'Allow', 'Grant', 'Give access', 'Always
 // allow', 'Allow once', 'Allow while using the app' and their localized forms - take the dialog's classes when its title or a kept
@@ -112,15 +145,23 @@ export function modalStatementNames(text) {
   const lead = MODAL_LEAD.exec(t)
   if (lead) for (const verb of modalVerbForms(lead[1], false)) out.push(modalName(verb, lead[2]))
   const nominal = MODAL_NOMINAL_TITLE.exec(t)
-  if (nominal) out.push(modalName(MODAL_NOMINAL[nominal[2].toLowerCase()], nominal[1]))
+  // CU-756 r2 (policy owner 12:15Z): a handover / handoff / reassignment noun is an act only over a control object ('Shift handover'
+  // and 'Handover notes' are rosters and notes, not transfers).
+  const nominalAct = (noun, object) => !MODAL_HANDOVER_NOUN.test(noun) || MODAL_CONTROL_OBJECT.test(object)
+  if (nominal && nominalAct(nominal[2], nominal[1])) out.push(modalName(MODAL_NOMINAL[nominal[2].toLowerCase()], nominal[1]))
   const nominalOf = MODAL_NOMINAL_OF.exec(t)
-  if (nominalOf) out.push(modalName(MODAL_NOMINAL[nominalOf[1].toLowerCase()], nominalOf[2]))
+  if (nominalOf && nominalAct(nominalOf[1], nominalOf[2])) out.push(modalName(MODAL_NOMINAL[nominalOf[1].toLowerCase()], nominalOf[2]))
   if (MODAL_ACCESS.test(t)) out.push('Grant access')
   const clause = MODAL_CLAUSE_LEAD.exec(t)
   if (clause) {
     const present = MODAL_PRESENT.exec(clause[1])
     if (present) for (const verb of modalVerbForms(present[2], true)) out.push(modalName(verb, present[1]))
     for (const name of modalStatementNames(clause[1])) out.push(name)
+  }
+  // CU-756: any 'Transfer <x>' this reading makes (a noun title or a statement) over a control object also reads as 'Transfer ownership'.
+  for (const name of [...out]) {
+    const transfer = /^transfer\s+(.+)$/i.exec(name)
+    if (transfer && MODAL_CONTROL_OBJECT.test(transfer[1])) out.push('Transfer ownership')
   }
   return [...new Set(out)].filter((name) => name.split(/\s+/).length >= 2)
 }
@@ -1902,6 +1943,8 @@ const nameLabelOpens = (text) => NAME_TO_CONFIRM_LABEL.test(text) || (() => { co
 const FIELD_ACRONYM = /^(?:PIN|PUK|OTP|TAN|SMS|CVV|CVC|ID|URL|IBAN|BIC|SWIFT|SSN|ZIP|VAT|API|IP|MAC|IMEI)(?![\p{L}\p{N}])/u
 function confirmShaped(text) {
   if (/\bto\s+confirm\b/i.test(text)) return true
+  // CU-751: the general imperative shape names what to type, like a typing word does.
+  if (IMPERATIVE_NAME.test(String(text ?? ''))) return true
   for (const m of text.matchAll(TYPED_VERB)) {
     const rest = text.slice(m.index + m[0].length)
     if (/^["'\u201c\u2018]/u.test(rest)) return true
@@ -2051,7 +2094,19 @@ const LOCALE_TRANSFER_VERB = new RegExp(`${L0}(?:übertrag\\p{L}*|transfér\\p{L
 const LOCALE_OWNER = new RegExp(`${L0}(?:eigentüm\\p{L}*|inhaber\\p{L}*|besitzer\\p{L}*|propriét\\p{L}*|propiedad|propietari\\p{L}*|proprietári\\p{L}*|propriedade|propriet[àa]\\p{L}*|eigenaar\\p{L}*|eigendom\\p{L}*|владел\\p{L}*)${L1}|所有権|所有者|オーナー|所有权|所有權|拥有者|擁有者|소유권|소유자`, 'iu')
 const localeTransfer = (text) => LOCALE_TRANSFER_VERB.test(text) && LOCALE_OWNER.test(text)
 // The tests the typed-confirm reader uses: English first (unchanged), then the localized addition.
-const typedInstruction = (text) => TYPED_INSTRUCTION.test(text) || LOCALE_TYPED_VERB.test(text)
+// CU-751 (High; cu-coordinator 07:03Z, cu-researcher's general rule): no more verb lists - ANY imperative sentence whose object
+// is 'the / its / this [<x>] name / ID / slug / handle / label / URL', 'the name of ...' or 'the <x> by its name' is a typed
+// instruction ('State the name of the project ...', 'Give the cluster ID below.', 'Mention the workspace slug ...', 'Identify the
+// database by its name.'). The sentence must start with the verb (or after 'Please / Kindly ...' or a comma), never a determiner,
+// pronoun or auxiliary, nor a rename / edit verb (policy owner 07:10Z: 'Change the workspace name below.' beside a retention note is a
+// settings page, not a confirm); 'your <x> name' stays with CU-735's possessive shapes and their personal-field frees. The act still comes
+// from the zone's words (typedConfirmClasses), so a save form or a rename stays free. 'Give the cluster a name' is a naming, not a
+// confirm (cu-verifier's held-out; CU-735 keeps 'a new name' free): no a / an / new / another / different / other before the name word.
+// r2 (cu-researcher's held-out): a verb + 'us / me' counts like a verb + particle ('Tell us the account name ...'), and a sentence-initial
+// 'Name the <x> ...' is the instruction itself ('Name the repository you are removing.'); the act still comes from the zone.
+// r3 (cu-coordinator 10:11Z, the item his 09:31Z ruling named): 'Let us / Let me know the <x> name' - verb + us / me + know.
+const IMPERATIVE_NAME = /(?:^|[.!?:;]\s+|,\s+)(?:(?:please|kindly|now|then|first|simply|just)\s+)?(?!(?:the|your|its|this|that|these|those|a|an|our|my|their|his|her|it|we|you|i|they|he|she|there|here|all|each|every|no|any|some|which|what|who|when|where|why|how|if|to|and|or|but|so|as|by|for|in|on|at|of|from|with|is|are|was|were|be|been|will|would|can|could|should|may|might|must|do|does|did|has|have|had|not|once|after|before|until|unless|change|changing|edit|editing|update|updating|rename|renaming|set|setting|choose|choosing|pick|picking|modify|modifying|customi[sz]e|adjust|alter)\b)\p{L}{2,}\s+(?:(?:in|out|down|up|over|back|us|me)\s+|(?:us|me)\s+know\s+)?(?:(?:the|its|this)\s+(?:(?!(?:a|an|new|another|different|other)\s)[\p{L}\p{N}'\u2019-]+\s+){0,2}(?:name|id|slug|handle|label|url)\b|(?:the|this)\s+name\s+of\b|its\s+(?:name|id|slug|handle|label|url)\b|(?:the|this)\s+(?:(?!(?:a|an|new|another|different|other)\s)[\p{L}\p{N}'\u2019-]+\s+){0,2}by\s+(?:its|their|the)\s+(?:name|id|slug|handle|label|url)\b)|(?:^|[.!?:;]\s+|,\s+)(?:(?:please|kindly|now|then|first|simply|just)\s+)?name\s+(?:the|its|this)\s+\p{L}/iu
+const typedInstruction = (text) => TYPED_INSTRUCTION.test(text) || LOCALE_TYPED_VERB.test(text) || IMPERATIVE_NAME.test(String(text ?? ''))
 const typedDestroy = (text) => TYPED_DESTROY.test(text) || LOCALE_DESTROY.test(text)
 const typedDestroyAct = (text) => TYPED_DESTROY_ACT.test(text) || LOCALE_DESTROY_ACT.test(text)
 const typedTransfer = (text) => TYPED_TRANSFER.test(text) || localeTransfer(text)
@@ -4585,6 +4640,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         if (restProbe.decision === 'confirm') for (const cls of restProbe.classes ?? [restProbe.class]) if (!classes.includes(cls)) classes.push(cls)
       }
       const localeConfirm = LOCALE_GENERIC_CONFIRM.test(String(target?.name ?? name ?? '')) || LOCALE_GENERIC_CONFIRM.test(String(name ?? '')) || namesRuConfirm(String(name ?? ''))
+      // CU-747: final-step controls and a bare verb that echoes the dialog title's verb read the dialog too (additions only).
+      const finalStep = FINAL_STEP_CONFIRM.test(String(name ?? '')) || echoesDialogVerb(name, dialogName) || echoesDialogVerb(target?.name, dialogName)
       // CU-757: 'Allow' / 'Grant' / 'Give access' (and localized) in a dialog whose title or a kept sentence states access asks
       // permission and takes the dialog's other classes too; the same button in a dialog that states no access is unchanged.
       const accessAllow = ACCESS_ALLOW.test(String(target?.name ?? '')) || ACCESS_ALLOW.test(String(name ?? ''))
@@ -4592,7 +4649,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         .filter((sentence) => sentence !== '' && !/\b(?:if\s+you\s+(?:don'?t|do\s+not|choose\s+not\s+to|cancel|leave|close)|unless\s+you|otherwise)\b/i.test(sentence))
         .some((sentence) => MODAL_ACCESS.test(sentence) || LOCALE_MODAL_ACCESS.test(sentence))
       if (context.confirmProbe !== true && presses && accessStated && !classes.includes('permission')) classes.push('permission')
-      if (context.confirmProbe !== true && presses && (dialogName !== '' || dialogDescription !== '') && (GENERIC_CONFIRM.test(String(name ?? '')) || localeConfirm || continueTo || accessStated)) {
+      if (context.confirmProbe !== true && presses && (dialogName !== '' || dialogDescription !== '') && (GENERIC_CONFIRM.test(String(name ?? '')) || localeConfirm || continueTo || finalStep || accessStated)) {
         // cu-researcher 16:09Z: a title is a question more often than a row - 'Are you sure you want to <row>?', 'Really <row>?',
         // '<row>?' - so a title canonical step strips the question frame before the title is judged as a name.
         // #702 round 2 (cu-researcher 16:24Z): descriptions lead with 'This will / This action will / You are about to / Doing this will'.
