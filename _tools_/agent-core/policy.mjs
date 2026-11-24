@@ -49,6 +49,47 @@ export function neverCoveredByGrant(cls, name) {
 // locks, dial rows, mass sends, compensation, returns, relists, ride cancels) asks under any submit grant.
 // CU-507 (High; cu-coordinator 16:06Z): the generic final buttons of a confirm modal - judged by the modal's own title and text.
 const GENERIC_CONFIRM = /^\s*(?:confirm|ok|okay|yes|yes,?\s+(?:continue|confirm|proceed|i'?m\s+sure|do\s+it)|continue|proceed|submit|done|apply|accept|agree|i\s+agree|i\s+understand|got\s+it|i'?m\s+sure|do\s+it|go\s+ahead|confirm\s+and\s+continue)\s*[.!]?\s*$/i
+// CU-746 (High; cu-researcher's sweep 5): a risk modal whose text is a statement ('Your account will be deleted'), a framed
+// description ('Doing so permanently erases the volume.', 'Once you confirm, the repository ... are gone for good.') or a noun title
+// ('Account deletion') is read as the act it states, and an access statement ('It will be able to read ...', '... requests access',
+// 'gives the app full disk access') as 'Grant access'. Future / conditional forms only ('has been deleted' is a notice), and only
+// risky verbs ('Doing so opens the volume' stays free). Each name is then judged like the title (additions only).
+const MODAL_ADVERB = String.raw`(?:(?:permanently|immediately|automatically|also|forever|irreversibly|completely|instantly|then|all)\s+)?`
+const MODAL_CONDITION = String.raw`(?:once|when|after|if|as\s+soon\s+as)\s+you\s+(?:confirm|continue|proceed)\w*,?\s+`
+const MODAL_FUTURE = new RegExp(String.raw`^(?:${MODAL_CONDITION})?(.{1,120}?)\s+(?:will|would|(?:is|are)\s+going\s+to)\s+be\s+${MODAL_ADVERB}([a-z]+(?:ed|en|t))\b`, 'i')
+const MODAL_GONE = new RegExp(String.raw`^(?:${MODAL_CONDITION}(.{1,120}?)\s+(?:is|are|will\s+be)|(.{1,120}?)\s+will\s+be)\s+(?:gone|lost)\b`, 'i')
+const MODAL_LEAD = new RegExp(String.raw`^(?:doing\s+(?:so|this)|proceeding|continuing|confirming|by\s+(?:continuing|proceeding|confirming),?|${MODAL_CONDITION}(?:this|it|we)|this(?:\s+action)?|it)\s+(?:(?:will|would)\s+)?${MODAL_ADVERB}([a-z]+)\s+(\S.{0,120})$`, 'i')
+const MODAL_NOMINAL = { deletion: 'delete', removal: 'remove', erasure: 'erase', termination: 'terminate', deactivation: 'deactivate', closure: 'close', cancellation: 'cancel', wipe: 'wipe', reset: 'reset', transfer: 'transfer' }
+const MODAL_NOMINAL_TITLE = /^(?:(?:the|your|this)\s+)?([\p{L}\p{N}'\u2019 -]{1,40}?)\s+(deletion|removal|erasure|termination|deactivation|closure|cancellation|wipe|reset|transfer)$/iu
+const MODAL_NOMINAL_OF = /^(deletion|removal|erasure|termination|deactivation|closure|cancellation|transfer)\s+of\s+(.{1,60})$/i
+const MODAL_ACCESS = /\b(?:(?:requests?|requesting|wants?|would\s+like)\s+(?:\w+\s+){0,3}access\b|will\s+be\s+able\s+to\s+(?:read|write|access|see|view|manage|control|change|edit|delete|post|send|act)\b|(?:gives?|grants?|allows?)\s+(?:\S+\s+){0,4}access\b)/i
+const MODAL_RISK_VERB = /^(?:delete|erase|remove|wipe|destroy|purge|reset|terminate|deactivate|close|cancel|transfer|give|grant|share|publish|send|pay|charge|buy|purchase|subscribe|install|uninstall|revoke|disable|disconnect|unlink|overwrite|replace|drop|empty|clear|format|forfeit|expose|make)$/
+const MODAL_IRREGULAR = { sent: 'send', lost: 'lose', kept: 'keep', shown: 'show', given: 'give', sold: 'sell', paid: 'pay', made: 'make', taken: 'take', spent: 'spend', withdrawn: 'withdraw', shut: 'shut' }
+function modalVerbForms(word, participle) {
+  const w = String(word).toLowerCase()
+  const forms = participle
+    ? (MODAL_IRREGULAR[w] ? [MODAL_IRREGULAR[w]] : [w.replace(/ied$/, 'y'), w.replace(/([b-df-hj-np-tv-z])\1ed$/, '$1'), w.replace(/d$/, ''), w.replace(/ed$/, '')])
+    : [w, w.replace(/ies$/, 'y'), w.replace(/es$/, ''), w.replace(/s$/, '')]
+  return [...new Set(forms)].filter((form) => MODAL_RISK_VERB.test(form))
+}
+const modalName = (verb, rest) => `${verb.charAt(0).toUpperCase()}${verb.slice(1)} ${String(rest).replace(/[.!?\s]+$/, '').trim()}`.trim()
+export function modalStatementNames(text) {
+  const t = String(text ?? '').trim().replace(/[.!?]+$/, '')
+  if (t === '') return []
+  const out = []
+  const future = MODAL_FUTURE.exec(t)
+  if (future) for (const verb of modalVerbForms(future[2], true)) out.push(modalName(verb, future[1]))
+  const gone = MODAL_GONE.exec(t)
+  if (gone) out.push(modalName('delete', gone[1] ?? gone[2] ?? ''))
+  const lead = MODAL_LEAD.exec(t)
+  if (lead) for (const verb of modalVerbForms(lead[1], false)) out.push(modalName(verb, lead[2]))
+  const nominal = MODAL_NOMINAL_TITLE.exec(t)
+  if (nominal) out.push(modalName(MODAL_NOMINAL[nominal[2].toLowerCase()], nominal[1]))
+  const nominalOf = MODAL_NOMINAL_OF.exec(t)
+  if (nominalOf) out.push(modalName(MODAL_NOMINAL[nominalOf[1].toLowerCase()], nominalOf[2]))
+  if (MODAL_ACCESS.test(t)) out.push('Grant access')
+  return [...new Set(out)].filter((name) => name.split(/\s+/).length >= 2)
+}
 // CU-729 (High; cu-researcher's sweep, cu-coordinator 19:59Z): the same generic final buttons in the covered languages (de fr es it
 // pt nl ru ja zh ko) - a localized confirm modal's 'Ja' / 'Oui' / 'Aceptar' / 'はい' / '确定' / '확인' / 'Да' is judged by the modal's title
 // like English 'OK' / 'Yes'. Matched on the raw name (before the Cyrillic homoglyph fold), the whole name, an affirmative optionally
@@ -4512,6 +4553,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         // CU-729: the localized title with its question frame removed is one more text (additions only).
         const unframed = (text) => text.replace(LOCALE_QUESTION_FRAME, ' ').replace(/[?？!！.。:：\s]+$/u, '').replace(/\s+/g, ' ').trim()
         for (const extra of [unframed(dialogName), unframed(firstSentence)]) if (extra !== '' && !texts.includes(extra)) texts.push(extra)
+        // CU-746: the title and each kept sentence read as the act they state (statement, framed lead-in, noun title, access).
+        for (const base of [dialogName, ...kept]) for (const extra of modalStatementNames(base)) if (!texts.includes(extra)) texts.push(extra)
         for (const text of texts) {
           // #702 round 2: the title is judged with the FULL canonical form (synonym, quantifier, label and clause steps run only
           // outside a confirm probe), so no confirmProbe flag here; the probe target carries no dialog fields, so it cannot recurse.
