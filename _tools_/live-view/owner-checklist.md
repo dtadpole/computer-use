@@ -1,7 +1,7 @@
 ---
 title: Owner checklist - the owner session (step 4, G2, the Replace chain)
 created: 2026-11-05T17:25:00Z
-modified: 2026-11-24T08:08:00Z
+modified: 2026-11-24T08:14:00Z
 level: L1
 version: 0.4.5
 description: 'One page for the owner - what you do in the owner session, in order, and how long each step takes, at the Mac mini (the Confirm prompt) or over Screen Sharing; the per-part tables are in owner-checklist-parts.md. Rehearsed on helper 0.2.62 with labelled stand-ins (CU-341).'
@@ -47,7 +47,7 @@ changes Pause, Take over, Stop or the Confirm prompt. What each press shows:
 |---|---|---|
 | 1 | **Part 1, step 4 (CU-11).** At the prompt (see below), Confirm. When cu-verifier says so, press one key on the Mac: the run pauses before its next action. Then on the control link: **Resume**, **Take over**, **Hand back**, **Stop**. | about 8 minutes |
 | 2 | **Part 2, G2 (CU-119), live only, no rehearsal.** At the prompt, Confirm. While the run holds a key, press any key once: the held key comes up and the run pauses. Then **Stop**. | about 1 minute |
-| 3 | **Part 3, the Replace chain (CU-135).** At the prompt, Confirm. Answer the file choice **Approve once**; answer the separate Replace question **Decline**. | about 2 minutes |
+| 3 | **Part 3, the Replace chain (CU-135).** Run the Part 3 line cu-verifier gives you **in your own Terminal** (its questions are asked there, `--consent tty`). At the prompt, Confirm. Answer the file choice **Approve once**; answer the separate Replace question **Decline**. | about 2 minutes |
 
 Part 2 was not rehearsed: no scripted stand-in can act during a hold (CU-343), so the dry run and your press here
 are its evidence; no rehearsal pass covers it. Each control press takes effect at once: the rehearsal measured 6 to 34 ms from a press to the new state. After
