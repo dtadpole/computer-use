@@ -628,6 +628,8 @@ final class Dispatcher {
     guard !empty else { return }
     lock.lock()
     let steps = held.releaseSteps(at: capabilities.pointerLocation(), returnToPress: returnToPress)
+    // releaseSteps starts an aborted drag with Escape down and up (Q-D12); CU-744 routes those two below.
+    let cancelSteps = held.dragged && !held.buttons.isEmpty ? 2 : 0
     // Whichever path releases (a stop, the guard on the person's input, bye), a cancelled drag is told in the reply.
     if held.dragged && !held.buttons.isEmpty { cancelledDrag = true }
     for step in steps { if case .up(_, let point, _, _) = step { releasedAt = point } }
@@ -638,14 +640,27 @@ final class Dispatcher {
     lock.lock()
     released = held
     lock.unlock()
-    for step in steps {
+    // CU-744: in 'global' mode a key goes to the key app. When the app in front is no longer the one we were driving
+    // (an out-of-scope app came forward, or none is known), the drag's cancel Escape goes to our target's pid only, and
+    // without a known target it is not sent at all - no key may reach an app outside the scope. The button keeps its
+    // path: while it is held, macOS routes the drag and the up to the window that took the down.
+    let frontPid = cancelSteps > 0 && mode != "pid" ? capabilities.frontmost()?.pid : target
+    let cancelToTarget = cancelSteps > 0 && mode != "pid" && (frontPid == nil || frontPid != target)
+    for (index, step) in steps.enumerated() {
+      var postMode = mode
+      var postPid = target ?? 0
+      if index < cancelSteps && cancelToTarget {
+        guard let only = target, only > 0 else { continue }
+        postMode = "pid"
+        postPid = only
+      }
       // Only what was posted counts as released; a failed post stays held for the next release. A release is our own
       // event too, so the guard notes it first (Q-D1) - it does not count as a posted step for a settle.
       guard let events = Events.make(step, source: source) else { continue }
       lock.lock()
       guardState.notePosted(now: Self.now())
       lock.unlock()
-      if capabilities.post(events, mode: mode, pid: target ?? 0) {
+      if capabilities.post(events, mode: postMode, pid: postPid) {
         released.note(step)
         heldMirror.didPost(step)
       }

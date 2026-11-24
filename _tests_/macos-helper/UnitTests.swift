@@ -1135,6 +1135,41 @@ func testAbortedDrag() {
   check(plain.ask("input", ["events": [move(100, 100), button("down", 100, 100), drag(150, 120), button("up", 150, 120)], "mode": "global"])["cancelledDrag"] == nil, "a finished drag reports no cancel")
 }
 
+/// CU-744: an out-of-scope app comes to the front mid-drag. The drag's cancel Escape must not reach it: in 'global' mode
+/// it goes to the app we were driving only (its pid), while the person's own takeover keeps the old global Escape.
+func testCancelEscapeStaysInScope() {
+  let path = NSTemporaryDirectory() + "cu-helper-unit-\(getpid())-cu744.jsonl"
+  try? FileManager.default.removeItem(atPath: path)
+  var world = fixtureWorld.object!
+  world["frontmostAfter"] = ["steps": 3, "bundleId": "com.example.other"]
+  let h = Harness(.object(world), eventsOut: path)
+  _ = h.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
+  _ = h.ask("pauseOnLocalInput", ["on": true])
+  let stopped = h.ask("input", ["events": [move(100, 100), button("down", 100, 100), drag(150, 120), drag(200, 140), button("up", 200, 140)], "mode": "global"])
+  check(stopped["done"] == false && stopped["code"] == "out_of_scope" && stopped["bundleId"] == "com.example.other" && stopped["cancelledDrag"] == true,
+        "an app outside the scope came to the front mid-drag: stopped, named, the drag cancelled")
+  let lines = readEvents(path)
+  let keyTypes = [Int(CGEventType.keyDown.rawValue), Int(CGEventType.keyUp.rawValue)]
+  let keys = lines.filter { keyTypes.contains($0["event"]?["type"]?.integer ?? -1) }
+  check(keys.count == 2 && keys.allSatisfy { $0["mode"] == "pid" && $0["pid"] == 501 } && keys.first?["event"]?["keyCode"] == 53,
+        "the cancel Escape goes to the fixture's pid only, never to the key app")
+  check(lines.last?["event"]?["type"]?.integer == Int(CGEventType.leftMouseUp.rawValue) && lines.last?["mode"] == "global",
+        "the button still comes up on its own path")
+  try? FileManager.default.removeItem(atPath: path)
+  // The person's takeover with the approved app still in front: the Escape keeps its global path (Q-D12 unchanged).
+  let path2 = NSTemporaryDirectory() + "cu-helper-unit-\(getpid())-cu744b.jsonl"
+  try? FileManager.default.removeItem(atPath: path2)
+  var person = fixtureWorld.object!
+  person["localInputAfter"] = 3
+  let p = Harness(.object(person), eventsOut: path2)
+  _ = p.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
+  _ = p.ask("pauseOnLocalInput", ["on": true])
+  _ = p.ask("input", ["events": [move(100, 100), button("down", 100, 100), drag(150, 120), drag(200, 140), button("up", 200, 140)], "mode": "global"])
+  let personKeys = readEvents(path2).filter { keyTypes.contains($0["event"]?["type"]?.integer ?? -1) }
+  check(personKeys.count == 2 && personKeys.allSatisfy { $0["mode"] == "global" }, "with the approved app in front the Escape is unchanged")
+  try? FileManager.default.removeItem(atPath: path2)
+}
+
 /// CU-39 (D-045): another process's content in an approved window is judged by that process; AppKit panels are marked.
 func testForeignContentAndPanels() {
   check(OwnerRule.mismatchOwner(windowApproved: true, elementApproved: false) == .element
@@ -2325,6 +2360,7 @@ struct UnitTests {
     testForeignContentAndPanels()
     testDragPath()
     testAbortedDrag()
+    testCancelEscapeStaysInScope()
     testAccessibilityShapes()
     testArguments()
     testPeerCheck()
