@@ -57,3 +57,16 @@ test('CU-747: harmless dialogs and non-echoing buttons stay free', () => {
   // A final-step word outside any dialog stays as it was.
   assert.deepEqual(classes(web.classify(click, { url: 'https://app.example/onboarding', target: { role: 'button', name: 'Next' } })), [])
 })
+
+test('CU-747 r2: the localized bare verbs echo their trash title and ask delete, desktop and web', () => {
+  for (const [name, title] of [['Vider', 'Vider la corbeille ?'], ['Leeren', 'Papierkorb leeren?'], ['空にする', 'ゴミ箱を空にしますか？'], ['倒空', '要倒空废纸篓吗？'], ['Vaciar', '¿Vaciar la papelera?'], ['Svuota', 'Vuoi svuotare il cestino?']]) {
+    assert.ok(classes(onDesktop(name, title)).includes('delete'), `desktop ${name} / ${title}`)
+    assert.ok(classes(onWeb(name, title)).includes('delete'), `web ${name} / ${title}`)
+  }
+})
+
+test('CU-747 r2: a title that names a state is no act to echo', () => {
+  assert.deepEqual(classes(onDesktop('Empty', 'Empty folder', 'This folder has no items.')), [])
+  assert.deepEqual(classes(onWeb('Empty', 'Empty state', 'Nothing here yet.')), [])
+})
+

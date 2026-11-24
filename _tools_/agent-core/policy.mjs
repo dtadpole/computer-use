@@ -52,16 +52,28 @@ const GENERIC_CONFIRM = /^\s*(?:confirm|ok|okay|yes|yes,?\s+(?:continue|confirm|
 // CU-747 (High; sweep 5, cu-coordinator 06:05Z): a wizard's or sheet's final-step control - Finish / Complete / Next / End - is
 // a generic confirm too when it sits in a risk dialog (the modal rule below judges the dialog's text; a harmless one stays free).
 const FINAL_STEP_CONFIRM = /^\s*(?:finish|finish\s+up|complete|next|next\s+step|end|end\s+now|continue\s+anyway|proceed\s+anyway)\s*[.!>›→]?\s*$/i
-// CU-747: a bare verb button that repeats the verb its dialog's title leads with ('Reset' under 'Reset this device to factory
-// settings?', 'Empty' under 'Empty the Trash?') confirms that title, so the title is judged as a name. One or two words; the
-// title's question frame is dropped first.
+// CU-747: a bare verb button that repeats the verb of its dialog's title ('Reset' under 'Reset this device to factory settings?',
+// 'Empty' under 'Empty the Trash?') confirms that title, so the title is judged as a name. r2 (cu-researcher 06:48Z): the verb may
+// stand anywhere in the title and in any covered language ('Leeren' / 'Papierkorb leeren?', 'Svuota' / 'Vuoi svuotare il
+// cestino?', '空にする' / 'ゴミ箱を空にしますか？', '倒空' / '要倒空废纸篓吗？'), matched as a word or a word's stem; and the title must
+// ask or point at its object - a question, or a determiner after the verb - so a title that names a state ('Empty folder') stays free.
+const ECHO_CJK = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u
 function echoesDialogVerb(name, dialogName) {
-  const words = String(name ?? '').trim().toLowerCase().split(/\s+/).filter(Boolean)
+  const button = String(name ?? '').trim().toLowerCase().replace(/[¿¡]/g, '')
+  const title = String(dialogName ?? '').trim().toLowerCase().replace(/[¿¡]/g, '')
+  if (button === '' || title === '') return false
+  const asks = /[?？]\s*$/u.test(title) || /\b(?:the|this|these|those|all|your|my|our|la|le|les|el|los|las|il|lo|gli|i|der|die|das|den|alle|todos|todas|tutti|tutte|tous|toutes)\b/iu.test(title)
+  if (!asks) return false
+  if (ECHO_CJK.test(button)) {
+    // A CJK verb: one to four characters (a trailing する / します / 하기 dropped); its first two characters stand in the title.
+    const core = button.replace(/(?:する|します|하기|하다)$/u, '')
+    return core.length >= 1 && button.length <= 6 && title.includes(core.slice(0, 2))
+  }
+  const words = button.split(/\s+/).filter(Boolean)
   if (words.length === 0 || words.length > 2 || !/^\p{L}{3,}$/u.test(words[0]) || (words[1] !== undefined && words[1] !== 'now')) return false
-  const title = String(dialogName ?? '').toLowerCase()
-    .replace(/^\s*(?:(?:are\s+you\s+(?:sure|certain)(?:\s+(?:that\s+)?you\s+(?:want|wish))?\s+to)|(?:do\s+you\s+(?:really\s+)?(?:want|wish)\s+to)|really|confirm)\s+/, '')
-    .trim()
-  return title.split(/[\s?!.:,]+/)[0] === words[0]
+  const verb = words[0]
+  const stem = verb.length >= 5 ? verb.slice(0, verb.length - 1) : verb
+  return title.split(/[^\p{L}]+/u).some((word) => word === verb || (word.length >= verb.length && word.startsWith(stem)))
 }
 // CU-729 (High; cu-researcher's sweep, cu-coordinator 19:59Z): the same generic final buttons in the covered languages (de fr es it
 // pt nl ru ja zh ko) - a localized confirm modal's 'Ja' / 'Oui' / 'Aceptar' / 'はい' / '确定' / '확인' / 'Да' is judged by the modal's title
