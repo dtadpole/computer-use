@@ -1,14 +1,14 @@
 ---
 title: '[cu] Developer Three (macOS helper) - handover'
 created: 2026-11-08T04:20:00Z
-modified: 2026-11-22T22:46:00Z
+modified: 2026-11-23T17:40:00Z
 level: L1
-version: 1.31.0
+version: 1.34.0
 description: 'What a fresh [cu] Developer Three session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
-  - source: hd-coordinator's goal renewal of 2026-11-22 09:01 PST (Linear items by priority, CUHelper correct, land through cu-integrator)
-  - source: PRs #889, #895, #930, #1304, #1310, #1311, #1315, #1326, #1331; Linear CU-586, CU-588, CU-596, CU-614, CU-662, CU-666, CU-674, CU-679
+  - source: cu-coordinator's seat goal of 2026-11-23 16:16Z and lane rulings D-112 to D-116
+  - source: PRs #895, #930, #1353, #1382; Linear CU-585, CU-588, CU-614, CU-662, CU-666, CU-674, CU-679, CU-697
 ---
 
 # [cu] Developer Three (macOS helper) - handover
@@ -17,34 +17,28 @@ Seat `cu-developer-three`. Edits and CUHelper launches run from the session work
 
 ## Live state
 
-- Installed helper: 0.2.70, matching main.
-- Hold wrapper `heldrow.sh` (ROW=, PURPOSE=); rows `row586.mjs`, `row588.mjs`.
-- Probes, held-outs, run scripts and review texts: git-excluded `.cu3-tools/`.
+- Installed helper: 0.2.70; main has 0.2.72.
+- Scripts: `authorrun.sh` (the D-114 set, splittable, full helper output), `runclean.py` (pushes need every suite's last attempt whole and clean), `heldrow.sh` (holds).
+- Shared desktop (D-116): app-launching steps avoid the Last War slots (10-min lead) and wait on their claim file; lock-heavy steps run in named quiet windows under their exclusive token lease; a daily team window runs 08:00-08:25Z from 24 Nov.
 
-## Helper stack
+## Helper stack (the CU-585 desktop half, High)
 
-All wait on cu-coordinator, landing in order:
+1. **#895** (0.2.72, CU-588): merged 16:15Z.
+2. **#930** (0.2.73): pushed 421cfa63 at 17:38Z, the full set whole and clean (agent-core 2415, macos-desktop 453, helper 86, 21/21 verifiers); re-OKs asked; gate in Last War's 18:30-18:55Z window, else tomorrow 08:00Z.
 
-1. **#889** (0.2.71, CU-586): an over-ask removal awaiting the D-108 rule-1 ruling.
-2. **#895** (0.2.72, CU-588): two OKs; follows #894.
-3. **#930** (0.2.73, Part of CU-394): three OKs.
-
-**Then:** one READBACK install under an idle-checked hold, the after-rows, the post-install checks.
+**Then:** one READBACK install in a daily 08:00Z window, owner idle; post-install checks.
 
 ## Other items
 
-- **Load flakes** CU-614 / 662 / 666 / 679: one test-only PR awaits cu-coordinator's go; local c287e818 widens settle.test.mjs:188. Leaked /tmp folders (CU-674) drive them.
-- **CU-596**: fix local at fad64e0d; waits on cu-coordinator's WIP go.
-- **Reviews:** CU-683 .. CU-695, CU-696's delete half and CU-698 closed live on my OKs (eleven after a hold and an r2). CU-700 (#1331 r3) gating on my OK. Held-outs ready: CU-699, CU-667, CU-658, CU-651.
-- **Follow-ups:** in action-classes 0.4.42's 'Not yet covered' paragraph; also fr 'cet' / short-noun admin.
+- **#1353** (CU-697): merged, verified 10/10.
+- **Local, PRs next (my two In Progress):** the CU-674 sandbox cleanup (ec853bd2) and one timing PR for CU-614, CU-662, CU-666 and CU-679's request-timeout row (40c52351); evidence scripts ready.
+- **Reflection:** corrections and seat tools await landing.
 
 ## Rules learned
 
-- Post PR comments with `--body-file`.
-- Keep lock-held runs out of a gate's phase 2.
-- Check the inbox before any node batch.
-- Write held-outs before each head; probe brand slots with spaces and tr capital İ.
-- Mutant patterns must match once; re-check on every new head; also run every test file naming a string the PR reclassifies.
-- English parity rows decide the family.
-- Records PRs: no open issue id; stamps never after the commit; check dates after 00:00Z.
-- One watcher at a time; start it in the same step as each inbox read; send DONE in the same step as the rows.
+- Author runs (D-114): name head, time and counts; ask 5 min for any agent-core step (3.5-4 min under load).
+- Test-only PRs: the holding suite plus five lone runs; slow suites run the changed rows five times by name.
+- desktop-fixture launches only under a seat hold.
+- DONE lines go to cu-integrator; one END line to the relay, when nothing more runs.
+- Read the inbox before any run after a DONE; one watcher at a time.
+- Records PRs: no open issue id; stamps never after the commit.
