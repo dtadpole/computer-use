@@ -1,9 +1,9 @@
 ---
 title: Owner checklist - the owner session (step 4, G2, the Replace chain)
 created: 2026-11-05T17:25:00Z
-modified: 2026-11-24T08:39:00Z
+modified: 2026-11-24T15:52:00Z
 level: L1
-version: 0.4.5
+version: 0.4.6
 description: 'One page for the owner - what you do in the owner session, in order, and how long each step takes, at the Mac mini (the Confirm prompt) or over Screen Sharing; the per-part tables are in owner-checklist-parts.md. Rehearsed on helper 0.2.62 with labelled stand-ins (CU-341).'
 status: unverified
 grounded_in:
@@ -34,12 +34,14 @@ changes Pause, Take over, Stop or the Confirm prompt. What each press shows:
 
 ## Before (2 minutes)
 
-1. Quit Typeless and any app that floats a window over the screen; dismiss the two notification alerts (top right).
-2. Open both links in a browser **on the Mac mini** (they bind 127.0.0.1). For the watch link, cu-verifier gives you
+1. If macOS shows a Screen Recording prompt for CUHelper (it re-asks every few hours), answer **Allow**. Only you can
+   answer it; without it every desktop run stops at its first screenshot.
+2. Quit Typeless and any app that floats a window over the screen; dismiss the two notification alerts (top right).
+3. Open both links in a browser **on the Mac mini** (they bind 127.0.0.1). For the watch link, cu-verifier gives you
    the run's `live view (watch):` line. For the control link, copy the **whole line** cu-verifier gives you (it
    starts `CU_HOME=...`) and run it **in your own Terminal**; the link prints only there. The page title starts
    `[cu live view]`.
-3. Then take your hands off the Mac. cu-verifier holds the Mac for the session, and that hold needs five minutes of
+4. Then take your hands off the Mac. cu-verifier holds the Mac for the session, and that hold needs five minutes of
    no input, so it is taken before you start.
 
 ## In order
