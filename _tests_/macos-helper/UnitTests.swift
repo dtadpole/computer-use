@@ -1165,6 +1165,7 @@ func testCancelEscapeStaysInScope() {
         "the cancel Escape goes to the fixture's pid only, never to the key app")
   check(lines.last?["event"]?["type"]?.integer == Int(CGEventType.leftMouseUp.rawValue) && lines.last?["mode"] == "global",
         "the button still comes up on its own path")
+  check(h.dispatcher.heldMirror.tryTarget(timeout: 0.05) == 501, "the end watchdog's copy holds the driven app's pid, so its Escape goes there too (path B)")
   try? FileManager.default.removeItem(atPath: path)
   // The person's takeover (they may be switching apps as it happens): the Escape still goes to the driven app's pid.
   let path2 = NSTemporaryDirectory() + "cu-helper-unit-\(getpid())-cu744b.jsonl"
