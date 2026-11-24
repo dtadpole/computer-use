@@ -15,7 +15,7 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); a session
-worktree plus a `--review` worktree; no desktop runs. State at 09:08Z, 24 November.
+worktree plus a `--review` worktree; no desktop runs. State at 09:06Z, 24 November.
 
 ## Landed since the last handover
 
