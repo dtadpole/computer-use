@@ -1,14 +1,14 @@
 ---
 title: '[cu] Developer Three (macOS helper) - handover'
 created: 2026-11-08T04:20:00Z
-modified: 2026-11-24T00:46:34Z
+modified: 2026-11-24T16:35:00Z
 level: L1
-version: 1.35.0
+version: 1.38.0
 description: 'What a fresh [cu] Developer Three session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
-  - source: cu-coordinator's seat goal of 2026-11-23 20:30Z and lane rulings D-112 to D-117
-  - source: PRs #895, #930, #1382, #1399; Linear CU-586, CU-588, CU-614, CU-639, CU-662, CU-666, CU-674, CU-679, CU-727
+  - source: cu-coordinator's seat goal of 2026-11-24 14:16Z and rulings D-114, D-118, 13:37Z (helper --dry-run is node-only), 15:34Z (CU-774) and 16:26Z (#1444's OK path)
+  - source: PRs #1426, #1440, #1444; Linear CU-727, CU-743, CU-744, CU-754, CU-757, CU-763, CU-772, CU-774
 ---
 
 # [cu] Developer Three (macOS helper) - handover
@@ -17,23 +17,31 @@ Edits and CUHelper launches run from the session worktree.
 
 ## Live state
 
-- Installed helper: 0.2.70; main has 0.2.73 (#895 and #930 merged 23 Nov).
-- Shared desktop (D-116, D-117): app-launching steps avoid Last War's slots (24 Nov 09:20-10:50Z) and wait on their claim file; the daily team window 08:00-08:25Z is long term.
+- Installed helper: 0.2.73 (READBACK 24 Nov 08:05Z).
+- Shared desktop (D-118): app launches need a seat hold, owner idle >= 300 s, no claim file, outside Last War's slots; `--dry-run` CUHelper runs are node-only.
+
+## Open work
+
+- **#1426** (CU-744, In Review): OK'd; merges 25 Nov 08:00Z with its install (`install074-go.sh`, READBACK, gives up 08:15Z). Live cells follow.
+- **#1444** (CU-763, helper 0.2.75): stacked on #1426 at 487488d3. Build window: unit 925/925, macos-helper 86/86, macos-desktop 455/455.
+  - Pre-merge OKs: cu-researcher's dry-run set, cu-developer-one's shape check, cu-verifier's code and mutants.
+  - After #1426 merges: retarget to main, reviewers re-check; gate and install about 26 Nov 08:00Z.
+  - It closes after the live read-only set and cu-verifier's pane row.
+  - Window-title fallback: a named over-ask the policy owner kept.
+- **CU-774** (findable-profile toggles): f774 at 2eb5778e, test1 8/8; `go774.sh` runs D-114, pushes, opens the PR.
+- **Done:** CU-754 and CU-757 were merged (#1440) and closed live. CU-727 is in Verify and closes on step 4.
 
 ## Next, in order
 
-1. **Signed install with READBACK** (0.2.70 -> 0.2.73), 24 Nov at 08:00:00Z: `install073.sh` in the seat scratch `/tmp/cu-developer-three-scratch/`. A successor runs it as `S=<its session worktree> bash install073.sh`. Preconditions: inside 08:00-08:22Z (else `FORCE_WINDOW=1` for an agreed window); `lw-token.sh` beside it (the lease, if Last War's claim exists); it waits for owner idle >= 300 s and a free lock. It holds the seat, installs, checks the READBACK and sends one END line. Then tell cu-verifier (CU-586 / CU-588 desktop rows).
-2. **Desktop halves** of CU-674 (f674, 144aa12a) and the CU-614 timing family (f614, 0e31163c): node halves passed 23 Nov in named windows; `evdesk.sh`, then push and open the PRs.
-3. **CU-727** (P1): launchers for step 4 Parts 2 and 3. `owner-g2.mjs` is drafted on its branch (not run); Part 3 needs its own plan (the scripted model cannot replay a save). Dry-run each after the install.
-
-## Other items
-
-- **CU-639:** filer's close check queued (hold-cursor alone x10 plus macos-desktop on main).
+1. CU-774: D-114, PR, reviews.
+2. #1444 reviews.
+3. The 0.2.74 install, then the live cells.
+4. CU-586 / CU-588 rows; the CU-772 review; CU-743; CU-674.
 
 ## Rules learned
 
-- Author runs (D-114): head, time, counts; ask 5 min per agent-core step.
-- Launchers key on the window marker naming the seat and the job.
-- desktop-fixture launches only under a seat hold.
-- DONE lines go to cu-integrator; one END line to the relay.
-- Records PRs: no open issue id; stamps never after the commit; handover at most 300 words.
+- Author runs (D-114) report head, time, counts; launchers key on the marker naming seat and job.
+- Never edit a running script; stop only your own process tree.
+- A held-out of your own PR is never yours to read.
+- A turning-off test row needs a native checkbox: an ARIA switch has no native state, so it asks both ways.
+- Records PRs: no open issue id; stamps never after the commit; handover <= 300 words.

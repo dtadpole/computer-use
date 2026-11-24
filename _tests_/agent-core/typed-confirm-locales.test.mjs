@@ -74,3 +74,13 @@ test('CU-726: a localized back-out or copy button beside the prompt never confir
   }
   assert.equal(zoned('Kopieren', ['Geben Sie LÖSCHEN ein, um zu bestätigen']), 'allow')
 })
+
+test('CU-726 close (cu-verifier L2 / L3): a localized "to confirm" phrase alone, with no name and no typed token, supplies the instruction', () => {
+  // The only confirm sense here is the localized strong phrase ('pour confirmer', 'um ... zu bestätigen'): the split rule reads the act
+  // from the other zone sentence. Without the strong-marker branch, or without the phrase, these rows would act unasked.
+  assert.equal(zoned('Confirmer', ['Texte'], ['Saisissez le texte ci-dessous pour confirmer.', 'Le projet sera supprimé définitivement.']), 'delete', 'fr: pour confirmer')
+  assert.equal(zoned('Bestätigen', ['Text'], ['Geben Sie den Text unten ein, um zu bestätigen.', 'Das Projekt wird endgültig gelöscht.']), 'delete', 'de: um zu bestätigen')
+  assert.equal(zoned('Confirmar', ['Texto'], ['Escribe el texto de abajo para confirmar.', 'El proyecto se eliminará para siempre.']), 'delete', 'es: para confirmar')
+  // The same phrase with no act anywhere in the zone stays free.
+  assert.equal(zoned('Confirmer', ['Texte'], ['Saisissez le texte ci-dessous pour confirmer.']), 'allow', 'fr: no act, free')
+})
