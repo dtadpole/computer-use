@@ -51,7 +51,7 @@ export function tokens(name) {
 const MULTI_VERBS = [
   [['adopt', 'and', 'sign'], ['sign']], [['sign', 'and', 'submit'], ['sign', 'send']], [['restart', 'to', 'update'], ['install']],
   [['install', 'and', 'relaunch'], ['install']], [['log', 'in', 'as'], ['actas']], [['sign', 'in', 'as'], ['actas']],
-  [['factory', 'reset'], ['destroy']], [['force', 'push'], ['destroy']], [['spin', 'up'], ['cost']], [['scale', 'up'], ['cost']],
+  [['factory', 'reset'], ['destroy']], [['force', 'push'], ['destroy']], [['tear', 'down'], ['destroy']], [['wipe', 'out'], ['destroy']], [['blow', 'away'], ['destroy']], [['dispose', 'of'], ['destroy']], [['get', 'rid', 'of'], ['destroy']], [['do', 'away', 'with'], ['destroy']], [['wipe', 'clean'], ['destroy']], [['spin', 'down'], ['destroy']], [['shut', 'down', 'and', 'delete'], ['destroy']], [['spin', 'up'], ['cost']], [['scale', 'up'], ['cost']],
   [['cash', 'out'], ['pay']], [['top', 'up'], ['pay']], [['turn', 'on'], ['enable', 'phys_on']], [['turn', 'off'], ['unguard', 'phys_off']],
   [['login', 'as'], ['actas']], [['act', 'as'], ['actas']], [['view', 'as'], ['actas']], [['set', 'up'], ['pay']], [['move', 'to'], ['destroy']],
   [['switch', 'to'], ['pay']], [['let', 'in'], ['grant']], [['remote', 'start'], ['phys_on']], [['buzz', 'in'], ['phys_on']],
@@ -63,6 +63,19 @@ const VERBS = new Map(Object.entries({
   delete: ['destroy'], remove: ['destroy', 'unguard', 'pay'], drop: ['destroy'], truncate: ['destroy'], terminate: ['destroy'],
   destroy: ['destroy'], wipe: ['destroy'], erase: ['destroy'], purge: ['destroy'], deactivate: ['destroy'], close: ['destroy', 'pay'],
   cancel: ['destroy', 'pay'], clear: ['destroy'], reset: ['destroy', 'cred'], offboard: ['destroy'], kick: ['destroy'],
+  // CU-569 (cu-researcher 03:42Z; built before triage): the destroy verbs' synonyms - they still need a data object ('Scrub timeline' stays free).
+  decommission: ['destroy'], deprovision: ['destroy'], shred: ['destroy'], nuke: ['destroy'], obliterate: ['destroy'], zap: ['destroy'],
+  scrub: ['destroy'], teardown: ['destroy'],
+  // #851 r2 (cu-researcher 03:54Z: the class, not the examples): the destroy lexicon - expunge, annihilate, eradicate, exterminate,
+  // demolish, raze, dismantle, scrap, trash, junk, bin, eliminate, kill, retire, sunset, deregister, unregister, unprovision, decom,
+  // dispose (of), cull, torch, axe, excise, incinerate, vaporize, burn, blast, delist, and the phrasal forms below. Each needs a data
+  // object like the rest, so 'Kill switch', 'Burn rate' and 'Blast radius' stay free. 'Retire' destroys only a project or cloud object
+  // (the row below): an MDM 'Retire device' keeps its permission (CU-530 family).
+  expunge: ['destroy'], annihilate: ['destroy'], eradicate: ['destroy'], exterminate: ['destroy'], demolish: ['destroy'], raze: ['destroy'],
+  dismantle: ['destroy'], scrap: ['destroy'], trash: ['destroy'], junk: ['destroy'], bin: ['destroy'], eliminate: ['destroy'],
+  kill: ['destroy'], sunset: ['destroy'], deregister: ['destroy'], unregister: ['destroy'], unprovision: ['destroy'],
+  decom: ['destroy'], dispose: ['destroy'], cull: ['destroy'], torch: ['destroy'], axe: ['destroy'], excise: ['destroy'],
+  incinerate: ['destroy'], vaporize: ['destroy'], vaporise: ['destroy'], burn: ['destroy'], blast: ['destroy'], delist: ['destroy'],
   launch: ['cost'], create: ['cost', 'cred'], provision: ['cost'],
   pay: ['pay'], buy: ['pay'], purchase: ['pay'], order: ['pay'], book: ['pay'], reserve: ['pay'], rent: ['pay'], redeem: ['pay'],
   refund: ['pay'], reimburse: ['pay'], release: ['pay', 'share'], send: ['pay', 'send'], transfer: ['pay', 'grant'], withdraw: ['pay'],
@@ -105,7 +118,9 @@ const OBJECTS = {
   data: new Set(['backup', 'snapshot', 'archive', 'phone', 'laptop', 'mac', 'ipad', 'iphone', 'computer', 'download', 'trash', 'file',
     'account', 'data', 'database', 'table', 'schema', 'collection', 'instance', 'server', 'cluster', 'vm', 'stack', 'environment', 'disk',
     'repository', 'branch', 'booking', 'reservation', 'trip', 'appointment', 'user', 'employee', 'participant', 'device', 'history',
-    'workspace', 'chat', 'conversation']),
+    'workspace', 'chat', 'conversation',
+    // CU-569: 'Reset everything' / 'Clear everything'.
+    'everything']),
   cost: new Set(['instance', 'cluster', 'vm', 'server']),
   money: new Set(['payment', 'payroll', 'refund', 'invoice', 'card', 'limit', 'ticket', 'flight', 'hotel', 'room', 'car', 'trip', 'seat',
     'table', 'spot', 'credit', 'license', 'click', '1', 'autopay', 'bank', 'point', 'reward', 'gift', 'order', 'booking', 'reservation',
@@ -827,7 +842,17 @@ function withoutDeterminers(text) {
 const VERB_SYNONYMS = [[/^(\s*)modify\b/i, '$1change'], [/^(\s*)(?:update|edit)\b(?!\s+(?:all|now|available)\b)/i, '$1change'], [/^(\s*)(?:display|reveal)\b/i, '$1show'], [/^(\s*)give\b/i, '$1grant'],
   [/^(\s*)begin\b/i, '$1start'], [/^(\s*)ask\s+for\b/i, '$1request'],
   // #627 round 2 (cu-researcher 05:08Z): creating an account is not adding one ('Create account' stays free).
-  [/^(\s*)create\b(?!\s+(?:an?\s+|new\s+|your\s+|my\s+)?accounts?\b)/i, '$1add']]
+  [/^(\s*)create\b(?!\s+(?:an?\s+|new\s+|your\s+|my\s+)?accounts?\b)/i, '$1add'],
+  // #851 r3 (cu-researcher 04:13Z: the object slot was closed): a strong destroy synonym reads as 'delete' and takes delete's whole object
+  // handling ('Shred emails', 'Expunge history', 'Eradicate messages'). The ambiguous ones (kill, burn, blast, sunset, scrub, zap, torch,
+  // axe, bin, retire, delist, spin down) are not folded, so 'Kill switch', 'Burn rate' and 'Scrub timeline' stay free; nor is a how-to
+  // object ('Tear down guide', 'Teardown checklist'). Only a verb WITH an object folds, and trash / junk / scrap never do: a bare 'Trash'
+  // sidebar row stays free (destructive-labels).
+  // #851 r5 (cu-researcher 10:43Z: a destroy-SENSE verb with any resource object - reformat, reimage, zero (out), flush, end-of-life, retire; a
+  // verb used as a noun label ('Shred mode', 'Flush settings') stays free).
+  [/^(\s*)(?:purge|erase|expunge|annihilate|eradicate|exterminate|obliterate|shred|nuke|incinerate|vapori[sz]e|demolish|dismantle|eliminate|excise|cull|unprovision|deprovision|(?:reformat|re-?image|zero(?:\s+out)?|flush|end-?of-?life|eol|retire|liquidate|raze)(?=\s+(?:this\s+|the\s+|our\s+|my\s+|all\s+|that\s+)?(?:[\w.-]+\s+){0,2}(?:repo(?:sitor(?:y|ies))?|services?|apis?|endpoints?|servers?|clusters?|databases?|dbs?|instances?|vms?|machines?|laptops?|computers?|drives?|disks?|volumes?|partitions?|ssds?|hdds?|queues?|caches?|tables?|buckets?|projects?|products?|workspaces?|environments?|accounts?|org(?:ani[sz]ation)?s?|teams?|sites?|domains?|namespaces?|deployments?|pipelines?|nodes?|hosts?|containers?|pods?|indexes|indices|topics?|streams?|backups?|snapshots?|tenants?|subscriptions?|apps?|applications?|codebase|branch(?:es)?)\b)|decommission|sunset(?!\s+(?:view|mode|theme|photos?|pictures?|images?|wallpapers?|colou?rs?|filters?|times?|hours?|scene|sky|beach|boulevard|strip|cruise|tour|glow|orange|gradient))|deregister|unregister|wipe\s+out|wipe\s+clean|tear\s+down|blow\s+away|dispose\s+of|get\s+rid\s+of|do\s+away\s+with)\b(?=\s+\S)(?!\s+(?:the\s+|a\s+)?(?:guide|docs?|documentation|tutorial|mode|settings?|options?|levels?|speed|style|preferences?|tool|button|menu|icon|status|schedule|instructions?|checklist|steps?|help|faq|video|overview|walkthrough|diagram|playbook|runbook|template)s?\s*$)/i, '$1delete'],
+  // #851 (cu-researcher 10:19Z class sweep: 'Format disk'): formatting STORAGE erases it; 'Format text' / 'Format cells' stay free.
+  [/^(\s*)format(?=\s+(?:the\s+|this\s+|my\s+|a\s+)?(?:disks?|drives?|volumes?|partitions?|ssds?|hdds?|sd\s+cards?|usb(?:\s+drives?)?|storage|memory\s+cards?|startup\s+disk)\b)/i, '$1erase']]
 function withVerbSynonym(text) {
   for (const [pattern, replacement] of VERB_SYNONYMS) if (pattern.test(text)) return text.replace(pattern, replacement)
   return text
@@ -1379,6 +1404,12 @@ function grammarClassesOf(name, role = '') {
   // #778 r2 (cu-researcher 01:39Z): 'deployment' is optional when 'rules' says what it is ('Skip protection rules and deploy'); a bare
   // 'Skip protection' (a checkout's insurance upsell) stays free.
   if (/^\s*(?:skip|bypass|ignore|override)\s+(?:the\s+)?(?:deployment\s+protection(?:\s+rules?)?|(?:branch\s+|environment\s+)?protection\s+rules?)(?:\s+and\s+deploy(?:\s+now)?)?\s*$/i.test(raw)) return ['permission', 'submit']
+  // CU-569: a project or a cloud object (node, service, deployment, volume, bucket, namespace, container, pod, droplet, app) is destroyed
+  // only by the destroy verbs proper - 'Close project' (reversible), 'Clear / Reset project' (settings or state) and 'Disable encryption
+  // for this bucket' (permission, CU-530) keep their own reading.
+  if (/^\s*(?:delete|destroy|terminate|decommission|deprovision|tear\s+down|nuke|obliterate|shred|wipe\s+out|drop|purge|erase|zap|scrub|expunge|annihilate|eradicate|exterminate|demolish|raze|dismantle|scrap|trash|junk|eliminate|kill|retire|sunset|deregister|unregister|unprovision|decom|dispose\s+of|get\s+rid\s+of|do\s+away\s+with|blow\s+away|wipe\s+clean|spin\s+down|incinerate|vapori[sz]e|torch|axe)\s+(?:the\s+|this\s+|my\s+|your\s+|entire\s+)?(?:project|node|service|deployment|volume|bucket|namespace|container|pod|droplet|app|environment|server|instance|cluster|database|stack|vm)s?\s*$/i.test(raw)) return ['delete']
+  // Clearing or emptying a bucket or volume wipes its contents (delete); 'Reset bucket / deployment' stays ambiguous and free.
+  if (/^\s*(?:clear|empty)\s+(?:the\s+|this\s+|my\s+)?(?:bucket|volume)s?\s*$/i.test(raw)) return ['delete']
   // CU-537 (High; cu-coordinator 01:06Z), table PR 38 - registrar DNS. PERMISSION everywhere: add / create / new (a / an) typed record
   // (MX, CNAME, TXT, NS, SRV, CAA, PTR, SPF, DKIM, DMARC, ALIAS; 'A' / 'AAAA' only in capitals, so 'Add a record' is not an A record);
   // the generic 'Add / Edit / Save record' (DNS pages) and turning a domain's auto-renew off (domain / registrar pages; a subscription's
