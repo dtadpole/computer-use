@@ -139,6 +139,29 @@ const MODAL_CONTROL_OBJECT = /\b(?:owner\w*|admin\w*|rights?|control|role|worksp
 const MODAL_NOMINAL_TITLE = /^(?:(?:the|your|this)\s+)?([\p{L}\p{N}'\u2019 -]{1,40}?)\s+(deletion|removal|erasure|termination|deactivation|closure|cancellation|wipe|reset|transfer|handover|handoff|hand-off|reassignment|grant)(?:\s+(?!(?:history|logs?|details|polic(?:y|ies)|settings|status|reports?|records?|summary|overview|info|information|faq|help|guide|terms|rules|limits?|options|preferences|schedule|queue|list)\b)[\p{L}\p{N}'\u2019-]+){0,2}$/iu
 const MODAL_NOMINAL_OF = /^(deletion|removal|erasure|termination|deactivation|closure|cancellation|transfer|handover|handoff|hand-off|reassignment|grant)\s+of\s+(.{1,60})$/i
 const MODAL_ACCESS = /\b(?:(?:requests?|requesting|wants?|would\s+like)\s+(?:\w+\s+){0,3}access\b|will\s+be\s+able\s+to\s+(?:read|write|access|see|view|manage|control|change|edit|delete|post|send|act)\b|(?:gives?|grants?|allows?)\s+(?:\S+\s+){0,4}access\b)/i
+// CU-757 (P1; cu-developer-one's #1423 r2 owner check): an access grant's own buttons - 'Allow', 'Grant', 'Give access', 'Always
+// allow', 'Allow once', 'Allow while using the app' and their localized forms - take the dialog's classes when its title or a kept
+// sentence states access (MODAL_ACCESS, or LOCALE_MODAL_ACCESS for a localized dialog); in a dialog that states nothing they
+// are judged as before (additions only).
+const ACCESS_ALLOW = /^\s*(?:allow|grant|give\s+access|allow\s+access|grant\s+access|always\s+allow|allow\s+always|allow\s+once|allow\s+all|allow\s+while\s+using(?:\s+(?:the\s+)?app)?|erlauben|zulassen|immer\s+erlauben|autoriser|permitir|consentir|consenti|permetti|toestaan|tillåt|tillat|zezwól|povolit|разрешить|許可|允许|允許|허용)\s*[.!。！]?\s*$/iu
+const LOCALE_MODAL_ACCESS = /(?:zugriff\s+auf|auf\s+.{1,60}?\s+zugreifen|accéder\s+à|accès\s+à|acceder\s+a|acceso\s+a|accedere\s+a|accesso\s+a|aceder\s+a|acesso\s+a|toegang\s+tot|доступ\s+к|へのアクセス|にアクセス|访问|訪問|存取|접근|액세스)/iu
+// CU-754 (High; cu-researcher's sweep 6): a toggle turned on that grants an access right or makes something public asks
+// permission though its own name does not say so - a privacy pane names the app ('Terminal'), the right is the list's ('Full
+// Disk Access'). The row context is the driver's rowContext: the web driver's { list, hints } (CU-443), or a plain string. A
+// list named for a privacy right asks for any toggle in it (named over-ask: an unrelated settings group called 'Camera').
+// 'Accessibility' counts only as the whole list name (the privacy list; the Accessibility settings' own groups have other names).
+const ACCESS_RIGHT_LIST = /\b(?:full\s+disk\s+access|screen\s+(?:(?:&|and)\s+system\s+audio\s+)?recording|input\s+monitoring|location\s+services|files\s+(?:&|and)\s+folders|developer\s+tools|app\s+management|local\s+network|remote\s+(?:login|management|desktop)|camera|microphone|contacts|calendars|reminders|photos|bluetooth|automation|speech\s+recognition|media\s+(?:&|and)\s+apple\s+music|homekit|motion\s+(?:&|and)\s+fitness|(?:allow|let)\s+(?:the\s+)?(?:apps?|applications?)\s+(?:below\s+|listed\s+)?to\s+(?:access|control|record|use|see|read|monitor|manage))\b/i
+// CU-754: a toggle whose own name makes a profile, account or other object public or visible to everyone.
+const PUBLIC_TOGGLE = /^\s*(?:make\s+(?:(?:my|this|the)\s+)?(?:profile|account|repo(?:sitory)?|page|calendar|listing|board|project|album|playlist|activity)\s+public|public(?:\s+(?:profile|account|repo(?:sitory)?|page|calendar|listing|board|project|album|playlist|activity|mode|link|access))?|(?:profile|account)\s+(?:is\s+)?(?:public|visible\s+to\s+(?:everyone|anyone))|visible\s+to\s+(?:everyone|anyone|the\s+public|all)|discoverable(?:\s+by\s+(?:everyone|anyone))?|show\s+(?:my\s+)?profile\s+(?:publicly|to\s+(?:everyone|anyone)))\s*$/i
+/** CU-754: whether a toggle's row context (rowContext: a { list, hints } object or a plain string) names an access right. */
+export function accessRowContext(rowContext) {
+  const texts = typeof rowContext === 'string'
+    ? [rowContext.slice(0, 120)]
+    : rowContext && typeof rowContext === 'object'
+      ? [typeof rowContext.list === 'string' ? rowContext.list.slice(0, 60) : '', ...(Array.isArray(rowContext.hints) ? rowContext.hints.map((hint) => String(hint ?? '').slice(0, 40)) : [])]
+      : []
+  return texts.some((text) => ACCESS_RIGHT_LIST.test(text) || /^\s*accessibility\s*$/i.test(text))
+}
 const MODAL_RISK_VERB = /^(?:delete|erase|remove|wipe|destroy|purge|reset|terminate|deactivate|close|cancel|transfer|give|grant|share|publish|send|pay|charge|buy|purchase|subscribe|install|uninstall|revoke|disable|disconnect|unlink|overwrite|replace|drop|empty|clear|format|forfeit|expose|make)$/
 const MODAL_IRREGULAR = { sent: 'send', lost: 'lose', kept: 'keep', shown: 'show', given: 'give', sold: 'sell', paid: 'pay', made: 'make', taken: 'take', spent: 'spend', withdrawn: 'withdraw', shut: 'shut' }
 function modalVerbForms(word, participle) {
@@ -3740,6 +3763,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
           const turnsOn = state === false
           if (!known || (security && turnsOff) || (heat && turnsOn)) classes.push('physical')
         }
+        // CU-754: an access toggle - its list names a privacy right, or its own name makes something public - asks permission
+        // when it turns on; the direction is the native read's, and an unknown state asks both ways (named over-ask, as CU-418).
+        if (nativeToggleState(target) !== true && (PUBLIC_TOGGLE.test(name) || accessRowContext(target?.rowContext))) classes.push('permission')
       }
       // CU-146: 'Trash' or 'Bin' alone deletes on a control (a toolbar button, a menu item); a sidebar row of that name
       // only opens the folder.
@@ -4677,7 +4703,14 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const localeConfirm = LOCALE_GENERIC_CONFIRM.test(String(target?.name ?? name ?? '')) || LOCALE_GENERIC_CONFIRM.test(String(name ?? '')) || namesRuConfirm(String(name ?? ''))
       // CU-747: final-step controls and a bare verb that echoes the dialog title's verb read the dialog too (additions only).
       const finalStep = FINAL_STEP_CONFIRM.test(String(name ?? '')) || echoesDialogVerb(name, dialogName) || echoesDialogVerb(target?.name, dialogName)
-      if (context.confirmProbe !== true && presses && (dialogName !== '' || dialogDescription !== '') && (GENERIC_CONFIRM.test(String(name ?? '')) || localeConfirm || continueTo || finalStep)) {
+      // CU-757: 'Allow' / 'Grant' / 'Give access' (and localized) in a dialog whose title or a kept sentence states access asks
+      // permission and takes the dialog's other classes too; the same button in a dialog that states no access is unchanged.
+      const accessAllow = ACCESS_ALLOW.test(String(target?.name ?? '')) || ACCESS_ALLOW.test(String(name ?? ''))
+      const accessStated = accessAllow && [dialogName, ...dialogDescription.split(/(?<=[.!?。！？])\s*/u)]
+        .filter((sentence) => sentence !== '' && !/\b(?:if\s+you\s+(?:don'?t|do\s+not|choose\s+not\s+to|cancel|leave|close)|unless\s+you|otherwise)\b/i.test(sentence))
+        .some((sentence) => MODAL_ACCESS.test(sentence) || LOCALE_MODAL_ACCESS.test(sentence))
+      if (context.confirmProbe !== true && presses && accessStated && !classes.includes('permission')) classes.push('permission')
+      if (context.confirmProbe !== true && presses && (dialogName !== '' || dialogDescription !== '') && (GENERIC_CONFIRM.test(String(name ?? '')) || localeConfirm || continueTo || finalStep || accessStated)) {
         // cu-researcher 16:09Z: a title is a question more often than a row - 'Are you sure you want to <row>?', 'Really <row>?',
         // '<row>?' - so a title canonical step strips the question frame before the title is judged as a name.
         // #702 round 2 (cu-researcher 16:24Z): descriptions lead with 'This will / This action will / You are about to / Doing this will'.
