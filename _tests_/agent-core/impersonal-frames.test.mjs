@@ -48,3 +48,10 @@ test('CU-777: a harmless act under the same frames, and a cache, stay free', () 
     assert.deepEqual(classes(onWeb(name, title)), [], `web ${title}`)
   }
 })
+
+test('CU-766 frames named by cu-verifier\'s close (mutants Q2 / Q3): a German and a Japanese frame reduce the title to its act', () => {
+  for (const [name, title] of [['Leeren', 'Sollen wir den Papierkorb leeren?'], ['削除', 'このファイルを削除してもよろしいですか？']]) {
+    assert.ok(classes(onWeb(name, title)).includes('delete'), `web ${title}`)
+    assert.ok(classes(onDesktop(name, title)).includes('delete'), `desktop ${title}`)
+  }
+})
