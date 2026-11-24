@@ -96,16 +96,17 @@ export function modalStatementNames(text) {
   if (nominal) out.push(modalName(MODAL_NOMINAL[nominal[2].toLowerCase()], nominal[1]))
   const nominalOf = MODAL_NOMINAL_OF.exec(t)
   if (nominalOf) out.push(modalName(MODAL_NOMINAL[nominalOf[1].toLowerCase()], nominalOf[2]))
-  // CU-756: a transfer noun over a control object also reads as 'Transfer ownership'.
-  for (const [noun, object] of [nominal ? [nominal[2], nominal[1]] : null, nominalOf ? [nominalOf[1], nominalOf[2]] : null].filter(Boolean)) {
-    if (MODAL_NOMINAL[noun.toLowerCase()] === 'transfer' && MODAL_CONTROL_OBJECT.test(object)) out.push('Transfer ownership')
-  }
   if (MODAL_ACCESS.test(t)) out.push('Grant access')
   const clause = MODAL_CLAUSE_LEAD.exec(t)
   if (clause) {
     const present = MODAL_PRESENT.exec(clause[1])
     if (present) for (const verb of modalVerbForms(present[2], true)) out.push(modalName(verb, present[1]))
     for (const name of modalStatementNames(clause[1])) out.push(name)
+  }
+  // CU-756: any 'Transfer <x>' this reading makes (a noun title or a statement) over a control object also reads as 'Transfer ownership'.
+  for (const name of [...out]) {
+    const transfer = /^transfer\s+(.+)$/i.exec(name)
+    if (transfer && MODAL_CONTROL_OBJECT.test(transfer[1])) out.push('Transfer ownership')
   }
   return [...new Set(out)].filter((name) => name.split(/\s+/).length >= 2)
 }

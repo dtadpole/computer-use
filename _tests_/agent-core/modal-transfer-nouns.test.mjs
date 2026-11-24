@@ -25,6 +25,8 @@ test('CU-756: what the reading produces', () => {
   assert.ok(modalStatementNames('Team handoff').includes('Transfer ownership'))
   assert.ok(modalStatementNames('Access grant').includes('Grant Access'))
   assert.ok(!modalStatementNames('Funds transfer').includes('Transfer ownership'), 'money is no control object')
+  assert.ok(modalStatementNames('When this is done, the workspace is transferred to Sam.').includes('Transfer ownership'), 'a statement over a control object (cu-developer-one, CU-759)')
+  assert.ok(!modalStatementNames('Once confirmed, your balance is transferred to savings.').includes('Transfer ownership'), 'money in a statement')
 })
 
 test('CU-756 near collisions stay free', () => {
