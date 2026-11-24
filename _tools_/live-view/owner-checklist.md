@@ -1,9 +1,9 @@
 ---
 title: Owner checklist - the owner session (step 4, G2, the Replace chain)
 created: 2026-11-05T17:25:00Z
-modified: 2026-11-24T15:52:00Z
+modified: 2026-11-24T17:05:00Z
 level: L1
-version: 0.4.6
+version: 0.4.7
 description: 'One page for the owner - what you do in the owner session, in order, and how long each step takes, at the Mac mini (the Confirm prompt) or over Screen Sharing; the per-part tables are in owner-checklist-parts.md. Rehearsed on helper 0.2.62 with labelled stand-ins (CU-341).'
 status: unverified
 grounded_in:
@@ -34,7 +34,7 @@ changes Pause, Take over, Stop or the Confirm prompt. What each press shows:
 
 ## Before (2 minutes)
 
-1. If macOS shows a Screen Recording prompt for CUHelper (it re-asks every few hours), answer **Allow**. Only you can
+1. If macOS shows a Screen Recording prompt for CUHelper (it may ask again), answer **Allow**. Only you can
    answer it; without it every desktop run stops at its first screenshot.
 2. Quit Typeless and any app that floats a window over the screen; dismiss the two notification alerts (top right).
 3. Open both links in a browser **on the Mac mini** (they bind 127.0.0.1). For the watch link, cu-verifier gives you
