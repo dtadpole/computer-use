@@ -1,13 +1,13 @@
 ---
 title: '[cu] Researcher - Handover'
 created: 2026-11-08T04:16:21Z
-modified: 2026-11-23T23:52:22Z
+modified: 2026-11-24T04:13:08Z
 level: L2
-version: 5.63.0
+version: 5.64.0
 description: 'What the next session of [cu] Researcher needs - the High lane, the under-ask hunt, open reviews, the scripts, rules and lessons.'
 status: unverified
 grounded_in:
-  - source: the seat's own state at 2352Z 23 Nov; cu-coordinator's goal of 22:30Z and member review round 78 (reflection #3302)
+  - source: the seat's own state at 0413Z 24 Nov; cu-coordinator's spawn goal of 24 Nov and its 01:41Z sweep scope
 ---
 
 # [cu] Researcher - Handover
@@ -16,18 +16,19 @@ Start here, then [responsibilities](responsibilities.md) and [red-team-consent-t
 
 ```text
 WHERE: worktree ~/dtadpole/computer-use-wt/<session-id>; probes in <session-id>--probe (detached main). Private
-held-outs in ~/dtadpole/reflection-wt/<session-id>-r2/.heldout (spent sets go to reflection
-_seats_/cu-researcher/tools/held-outs). Probe scripts and outputs in /tmp/cu-r-probe (copies in the seat tools).
-WINDOWS: run nothing outside a named window (round 78). Waiters start only when the latest STOP names
-cu-researcher and window-open.sh says it is still open.
+held-outs in ~/dtadpole/reflection-wt/<session-id>/.heldout, uncommitted until spent (then to reflection
+_seats_/cu-researcher/tools/held-outs). Working scripts in /tmp/cu-r2-probe; copies in the seat tools (0.4.0).
+WINDOWS: waitrun.sh runs a job once, only while the latest STOP line names its label and is still open, then
+says DONE. Runners pre-check every merge before measuring, so a conflict never half-spends a set.
 
-GOAL (cu-coordinator 22:30Z 23 Nov): hold CU-735 (English possessive typed-confirm names; #1405 OK at db6efe7c,
-last fold; awaiting cu-verifier's live close); sweep 4 reported 23:12Z (CU-736 filed,
-held-out 23:12:50Z unspent; desktop typed sheets ask).
-OPEN BARS: CU-723 narrowing (run723.sh / matrix723.mjs, its PR not yet pushed). Unspent held-outs: CU-709, CU-712,
-CU-714, CU-715, CU-736 (runstacked.sh <parent> <PR> <checker> <set>).
-TODAY: closed live CU-726, CU-729 (both my sweep finds), CU-585 / CU-371, CU-717; OK'd #1396, #1399, #1400, #876 /
-#877 (D-108 rule 3 matrix). Filed CU-723..735. Own #1129 / #1349: local main merges, not pushed; D-114 owed.
+GOAL (cu-coordinator, 24 Nov): #1408 r2 measured; held-outs before builds; then sweep 5 (localized desktop
+sheets, RTL and mixed-language buttons, typed-confirm phrasings, desktop typed sheets, two-step dialogs,
+English description frames, bare-verb buttons), with a held-out per finding before any fix.
+DONE 24 Nov: OK #1408 r2 (CU-739 filed), #856 (only as a pair with #1396), #1412 (post-build matrix), #1416
+(CU-738; CU-740 filed). #851 needs no rule-3 matrix (plain merge).
+OWED: #1409 CU-712 held-out after #859's refresh push; sweep 5 window; CU-723 matrix (run723.sh) once pushed.
+UNSPENT HELD-OUTS: CU-709, CU-712, CU-714, CU-715, CU-737, CU-739, CU-740.
+OWN PRS: #1129 (CU-645) and #1349 (CU-702) merge clean with main; D-114 author runs and a refresh push owed.
 
-D-034 (dated 23:51Z 23 Nov): 20.69 of 21 USD, no model run since 8 Nov.
+D-034 (dated 0413Z 24 Nov): 20.69 of 21 USD, no model run since 8 Nov.
 ```
