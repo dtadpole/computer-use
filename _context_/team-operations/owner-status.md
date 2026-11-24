@@ -1,7 +1,7 @@
 ---
 title: Computer use on the Mac mini - one-page status for the owner
 created: 2026-11-06T04:55:00Z
-modified: 2026-11-24T03:12:12Z
+modified: 2026-11-24T03:14:44Z
 level: L2
 version: 1.14.0
 status: unverified
@@ -14,7 +14,7 @@ grounded_in:
 
 # Computer use on the Mac mini - status for the owner
 
-State at 24 November 2026, 03:15 UTC.
+State at 24 November 2026, 03:12 UTC.
 
 ## Where it stands
 
