@@ -59,6 +59,11 @@ const MODAL_CONDITION = String.raw`(?:once|when|after|if|as\s+soon\s+as)\s+you\s
 const MODAL_FUTURE = new RegExp(String.raw`^(?:${MODAL_CONDITION})?(.{1,120}?)\s+(?:will|would|(?:is|are)\s+going\s+to)\s+be\s+${MODAL_ADVERB}([a-z]+(?:ed|en|t))\b`, 'i')
 const MODAL_GONE = new RegExp(String.raw`^(?:${MODAL_CONDITION}(.{1,120}?)\s+(?:is|are|will\s+be)|(.{1,120}?)\s+will\s+be)\s+(?:gone|lost)\b`, 'i')
 const MODAL_LEAD = new RegExp(String.raw`^(?:doing\s+(?:so|this)|proceeding|continuing|confirming|finishing|completing|ending|by\s+(?:continuing|proceeding|confirming|finishing|completing),?|${MODAL_CONDITION}(?:this|it|we)|this(?:\s+action)?|it)\s+(?:(?:will|would)\s+)?${MODAL_ADVERB}([a-z]+)\s+(\S.{0,120})$`, 'i')
+// CU-746 r2 (cu-researcher's held-out): a leading clause about the person's own act - 'Once confirmed,', 'After you continue,',
+// 'When this is done,' - is stripped, and the present passive after it is the act ('Once confirmed, your files are erased ...').
+// Only the person's act opens it, so a retention note ('After 30 days, deleted items are removed.') stays as it was.
+const MODAL_CLAUSE_LEAD = /^(?:once|after|when|as\s+soon\s+as|if|upon)\s+(?:(?:this\s+is\s+|it\s+is\s+)?(?:confirm\w*|continu\w*|proceed\w*|complet\w*|finish\w*|submit\w*|approv\w*|accept\w*|done)|you\s+[a-z]+(?:\s+[a-z]+){0,3})\s*,\s*(\S.*)$/i
+const MODAL_PRESENT = new RegExp(String.raw`^(.{1,120}?)\s+(?:is|are|gets?)\s+${MODAL_ADVERB}([a-z]+(?:ed|en|t))\b`, 'i')
 const MODAL_NOMINAL = { deletion: 'delete', removal: 'remove', erasure: 'erase', termination: 'terminate', deactivation: 'deactivate', closure: 'close', cancellation: 'cancel', wipe: 'wipe', reset: 'reset', transfer: 'transfer' }
 const MODAL_NOMINAL_TITLE = /^(?:(?:the|your|this)\s+)?([\p{L}\p{N}'\u2019 -]{1,40}?)\s+(deletion|removal|erasure|termination|deactivation|closure|cancellation|wipe|reset|transfer)$/iu
 const MODAL_NOMINAL_OF = /^(deletion|removal|erasure|termination|deactivation|closure|cancellation|transfer)\s+of\s+(.{1,60})$/i
@@ -88,6 +93,12 @@ export function modalStatementNames(text) {
   const nominalOf = MODAL_NOMINAL_OF.exec(t)
   if (nominalOf) out.push(modalName(MODAL_NOMINAL[nominalOf[1].toLowerCase()], nominalOf[2]))
   if (MODAL_ACCESS.test(t)) out.push('Grant access')
+  const clause = MODAL_CLAUSE_LEAD.exec(t)
+  if (clause) {
+    const present = MODAL_PRESENT.exec(clause[1])
+    if (present) for (const verb of modalVerbForms(present[2], true)) out.push(modalName(verb, present[1]))
+    for (const name of modalStatementNames(clause[1])) out.push(name)
+  }
   return [...new Set(out)].filter((name) => name.split(/\s+/).length >= 2)
 }
 // CU-729 (High; cu-researcher's sweep, cu-coordinator 19:59Z): the same generic final buttons in the covered languages (de fr es it

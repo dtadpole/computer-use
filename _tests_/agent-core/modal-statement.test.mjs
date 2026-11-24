@@ -30,6 +30,16 @@ test('CU-746: the filed rows ask', () => {
   assert.deepEqual(press('OK', 'Last step', 'Finishing transfers ownership to Sam.'), ['permission'], "a final step's lead-in")
 })
 
+test('CU-746 r2: cu-researcher\'s held-out miss - a leading clause about the person\'s act', () => {
+  assert.deepEqual(press('Yes', 'Last step', 'Once confirmed, your files are erased and cannot be recovered.'), ['delete'])
+  assert.ok(modalStatementNames('Once confirmed, your files are erased and cannot be recovered.').includes('Erase your files'))
+  assert.ok(modalStatementNames('After you continue, the project is deleted.').includes('Delete the project'))
+  assert.ok(modalStatementNames('When this is done, the workspace is transferred to Sam.').includes('Transfer the workspace'))
+  assert.deepEqual(modalStatementNames('After 30 days, deleted items are removed.'), [], 'a retention note: no act of the person')
+  assert.deepEqual(modalStatementNames('Once confirmed, your settings are saved.'), [], 'save is no risk verb')
+  assert.deepEqual(modalStatementNames('When ready, the report is shown below.'), [], 'no act of the person')
+})
+
 test('CU-746: what the reading produces', () => {
   assert.ok(modalStatementNames('Your account will be deleted').includes('Delete Your account'))
   assert.ok(modalStatementNames('Account deletion').includes('Delete Account'))
