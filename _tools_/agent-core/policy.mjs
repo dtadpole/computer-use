@@ -1827,6 +1827,8 @@ const nameLabelOpens = (text) => NAME_TO_CONFIRM_LABEL.test(text) || (() => { co
 const FIELD_ACRONYM = /^(?:PIN|PUK|OTP|TAN|SMS|CVV|CVC|ID|URL|IBAN|BIC|SWIFT|SSN|ZIP|VAT|API|IP|MAC|IMEI)(?![\p{L}\p{N}])/u
 function confirmShaped(text) {
   if (/\bto\s+confirm\b/i.test(text)) return true
+  // CU-751: the general imperative shape names what to type, like a typing word does.
+  if (IMPERATIVE_NAME.test(String(text ?? ''))) return true
   for (const m of text.matchAll(TYPED_VERB)) {
     const rest = text.slice(m.index + m[0].length)
     if (/^["'\u201c\u2018]/u.test(rest)) return true
@@ -1976,7 +1978,14 @@ const LOCALE_TRANSFER_VERB = new RegExp(`${L0}(?:übertrag\\p{L}*|transfér\\p{L
 const LOCALE_OWNER = new RegExp(`${L0}(?:eigentüm\\p{L}*|inhaber\\p{L}*|besitzer\\p{L}*|propriét\\p{L}*|propiedad|propietari\\p{L}*|proprietári\\p{L}*|propriedade|propriet[àa]\\p{L}*|eigenaar\\p{L}*|eigendom\\p{L}*|владел\\p{L}*)${L1}|所有権|所有者|オーナー|所有权|所有權|拥有者|擁有者|소유권|소유자`, 'iu')
 const localeTransfer = (text) => LOCALE_TRANSFER_VERB.test(text) && LOCALE_OWNER.test(text)
 // The tests the typed-confirm reader uses: English first (unchanged), then the localized addition.
-const typedInstruction = (text) => TYPED_INSTRUCTION.test(text) || LOCALE_TYPED_VERB.test(text)
+// CU-751 (High; cu-coordinator 07:03Z, cu-researcher's general rule): no more verb lists - ANY imperative sentence whose object
+// is 'the / its / this [<x>] name / ID / slug / handle / label / URL', 'the name of ...' or 'the <x> by its name' is a typed
+// instruction ('State the name of the project ...', 'Give the cluster ID below.', 'Mention the workspace slug ...', 'Identify the
+// database by its name.'). The sentence must start with the verb (or after 'Please / Kindly ...' or a comma), never a determiner,
+// pronoun or auxiliary; 'your <x> name' stays with CU-735's possessive shapes and their personal-field frees. The act still comes
+// from the zone's words (typedConfirmClasses), so a save form or a rename stays free.
+const IMPERATIVE_NAME = /(?:^|[.!?:;]\s+|,\s+)(?:(?:please|kindly|now|then|first|simply|just)\s+)?(?!(?:the|your|its|this|that|these|those|a|an|our|my|their|his|her|it|we|you|i|they|he|she|there|here|all|each|every|no|any|some|which|what|who|when|where|why|how|if|to|and|or|but|so|as|by|for|in|on|at|of|from|with|is|are|was|were|be|been|will|would|can|could|should|may|might|must|do|does|did|has|have|had|not|once|after|before|until|unless)\b)\p{L}{2,}\s+(?:(?:in|out|down|up|over|back)\s+)?(?:(?:the|its|this)\s+(?:[\p{L}\p{N}'\u2019-]+\s+){0,2}(?:name|id|slug|handle|label|url)\b|(?:the|this)\s+name\s+of\b|its\s+(?:name|id|slug|handle|label|url)\b|(?:the|this)\s+(?:[\p{L}\p{N}'\u2019-]+\s+){0,2}by\s+(?:its|their|the)\s+(?:name|id|slug|handle|label|url)\b)/iu
+const typedInstruction = (text) => TYPED_INSTRUCTION.test(text) || LOCALE_TYPED_VERB.test(text) || IMPERATIVE_NAME.test(String(text ?? ''))
 const typedDestroy = (text) => TYPED_DESTROY.test(text) || LOCALE_DESTROY.test(text)
 const typedDestroyAct = (text) => TYPED_DESTROY_ACT.test(text) || LOCALE_DESTROY_ACT.test(text)
 const typedTransfer = (text) => TYPED_TRANSFER.test(text) || localeTransfer(text)
