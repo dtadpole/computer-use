@@ -10,12 +10,16 @@ test('CU-738: a username or user ID prompt in a transfer zone asks permission', 
   assert.deepEqual(typedConfirmClasses(['User ID'], ['Enter their user ID.', 'Admin rights move to another user.']), ['permission'], 'their user ID')
   assert.deepEqual(typedConfirmClasses(['User ID:'], ['Transfer this workspace to a new owner.']), ['permission'], 'a user ID label as the entry')
   assert.deepEqual(typedConfirmClasses(['Login'], ['Type in your login name to continue.', 'The project moves to another owner.']), ['permission'], 'type in a login name')
+  // policy owner 00:36Z: 'a username / user ID / e-mail entry counts as the instruction' in a transfer zone
+  assert.deepEqual(typedConfirmClasses(['Email'], ['Enter your email address.', 'Transfer ownership']), ['permission'], 'an e-mail in a transfer zone')
+  assert.deepEqual(typedConfirmClasses(['E-mail address:'], ['Hand the workspace over to its new owner.']), ['permission'], 'an e-mail label as the entry')
 })
 
 test('CU-738 near collisions stay free', () => {
   assert.deepEqual(typedConfirmClasses(['Username'], ['Enter your username.', 'Forgot your password?']), [], 'a sign-in form')
   assert.deepEqual(typedConfirmClasses(['Username'], ['Enter your username.', 'Your account will be deleted.']), [], 'a destroy zone keeps the personal-field rule')
-  assert.deepEqual(typedConfirmClasses(['Email'], ['Enter your email address.', 'Transfer ownership']), [], 'an email is no username')
+  assert.deepEqual(typedConfirmClasses(['Email'], ['Enter your email address.', 'Forgot your password?']), [], 'an e-mail in a sign-in form')
+  assert.deepEqual(typedConfirmClasses(['Email'], ['Enter your email address.', 'Your account will be deleted.']), [], 'an e-mail in a destroy zone (personal field)')
   assert.deepEqual(typedConfirmClasses(['New username:'], ['Transfer ownership']), [], 'a new username (rename)')
   assert.deepEqual(typedConfirmClasses(['Username'], ['Choose a username.', 'Transfer ownership']), [], 'no typing word')
 })

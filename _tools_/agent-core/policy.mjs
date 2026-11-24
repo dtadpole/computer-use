@@ -1877,10 +1877,11 @@ const QUESTION_NAME = /^\s*what(?:'s|\u2019s|\s+is)\s+(?:(the|your|its)\s+)((?:[
 // CU-736 r2 (cu-researcher's held-out): 'Which repository are you deleting?' - a 'which <object>' question whose own words name the
 // destroy / transfer act; 'Which plan are you choosing?' stays free.
 const WHICH_ACT_QUESTION = /^\s*which\s+(?:[\p{L}\p{N}-]+\s+){1,2}(?:are\s+you|do\s+you\s+(?:want|wish|intend|mean)\s+to|would\s+you\s+like\s+to|will\s+you|should\s+we|are\s+we)\s+(?:[\p{L}-]+\s+)?[\p{L}-]+\s*\?\s*$/iu
-// CU-738 (policy owner 00:36Z, cu-verifier's CU-735 close): in a TRANSFER zone a typed prompt for a username or user ID ('Enter
-// your username.', "Type the new owner's username", 'User ID:') asks permission like the name shapes do in a destroy zone. Only
+// CU-738 (policy owner 00:36Z, cu-verifier's CU-735 close): in a TRANSFER zone a typed prompt for a username, user ID or e-mail
+// ('Enter your username.', "Type the new owner's username", 'User ID:', 'Enter your email address.') asks permission like the name
+// shapes do in a destroy zone. Only
 // beside a transfer act: a sign-in or profile form stays free, and so does a destroy zone (the 22:41Z personal-field rule).
-const TRANSFER_USER_TAIL = String.raw`(?:(?:your|their|his|her|its|the|this|that)\s+)?(?:(?:new\s+)?(?:owner|admin(?:istrator)?|recipient|member|user|person|teammate|collaborator)(?:'s|\u2019s)\s+)?(?:user\s?name|user[\s-]?id|login\s+(?:name|id))`
+const TRANSFER_USER_TAIL = String.raw`(?:(?:your|their|his|her|its|the|this|that)\s+)?(?:(?:new\s+)?(?:owner|admin(?:istrator)?|recipient|member|user|person|teammate|collaborator)(?:'s|\u2019s)\s+)?(?:user\s?name|user[\s-]?id|login\s+(?:name|id)|e-?mail(?:\s+address)?)`
 const TRANSFER_USER_AFTER_VERB = new RegExp(`^${TRANSFER_USER_TAIL}(?![\\p{L}\\p{N}])`, 'iu')
 const TRANSFER_USER_LABEL = new RegExp(`^\\s*${TRANSFER_USER_TAIL}\\s*[:\uFF1A]?\\s*$`, 'iu')
 function transferUserShaped(text) {
