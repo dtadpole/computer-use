@@ -63,7 +63,7 @@ const hash = () => createHash('sha256').update(readFileSync(oldPath)).digest('he
 const before = hash()
 const prompt = task.prompt(expected, ctx)
 // Printed before anything runs (cu-coordinator, D-034).
-if (DRY) note({ part: 3, mode: 'dry', expectedCostUsd: 0, why: 'scripted model and an in-process stand-in - no model call' })
+if (DRY) note({ part: 3, mode: 'dry', expectedCostUsd: 0, why: 'scripted model and the unattended controller - no model call' })
 else {
   const price = modelPricing(MODEL.slice('claude-gateway/'.length), localConfig())
   // An upper estimate: every step a full screenshot turn (~3,000 input tokens) and a short reply (~400 output tokens).
