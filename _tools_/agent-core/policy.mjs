@@ -1877,6 +1877,24 @@ const QUESTION_NAME = /^\s*what(?:'s|\u2019s|\s+is)\s+(?:(the|your|its)\s+)((?:[
 // CU-736 r2 (cu-researcher's held-out): 'Which repository are you deleting?' - a 'which <object>' question whose own words name the
 // destroy / transfer act; 'Which plan are you choosing?' stays free.
 const WHICH_ACT_QUESTION = /^\s*which\s+(?:[\p{L}\p{N}-]+\s+){1,2}(?:are\s+you|do\s+you\s+(?:want|wish|intend|mean)\s+to|would\s+you\s+like\s+to|will\s+you|should\s+we|are\s+we)\s+(?:[\p{L}-]+\s+)?[\p{L}-]+\s*\?\s*$/iu
+// CU-738 (policy owner 00:36Z, cu-verifier's CU-735 close): in a TRANSFER zone a typed prompt for a username, user ID or e-mail
+// ('Enter your username.', "Type the new owner's username", 'User ID:', 'Enter your email address.') asks permission like the name
+// shapes do in a destroy zone. Only
+// beside a transfer act: a sign-in or profile form stays free, and so does a destroy zone (the 22:41Z personal-field rule).
+const TRANSFER_USER_TAIL = String.raw`(?:(?:your|their|his|her|its|the|this|that)\s+)?(?:(?:new\s+)?(?:owner|admin(?:istrator)?|recipient|member|user|person|teammate|collaborator)(?:'s|\u2019s)\s+)?(?:user\s?name|user[\s-]?id|login\s+(?:name|id)|e-?mail(?:\s+address)?)`
+const TRANSFER_USER_AFTER_VERB = new RegExp(`^${TRANSFER_USER_TAIL}(?![\\p{L}\\p{N}])`, 'iu')
+const TRANSFER_USER_LABEL = new RegExp(`^\\s*${TRANSFER_USER_TAIL}\\s*[:\uFF1A]?\\s*$`, 'iu')
+// policy owner 02:39Z: a transfer act that points elsewhere ('Ownership can be transferred later from Settings.') opens no zone.
+const TRANSFER_ELSEWHERE = /\blater\b|\bfrom\s+(?:the\s+)?(?:settings|admin\s+(?:panel|console)|dashboard|members?\s+list)\b|\b(?:on|in)\s+(?:the\s+)?(?:next|following|another)\s+(?:page|step|screen|tab)\b/i
+const transferActHere = (text) => typedTransfer(text) && !TRANSFER_ELSEWHERE.test(text)
+function transferUserShaped(text) {
+  const t = String(text ?? '')
+  if (TRANSFER_USER_LABEL.test(t)) return true
+  for (const m of t.matchAll(TYPED_VERB)) {
+    if (TRANSFER_USER_AFTER_VERB.test(t.slice(m.index + m[0].length).replace(/^in\s+/i, ''))) return true
+  }
+  return false
+}
 function questionNameShaped(text) {
   if (WHICH_ACT_QUESTION.test(String(text ?? '')) && (typedDestroyAct(String(text)) || typedTransfer(String(text)))) return true
   const m = QUESTION_NAME.exec(String(text ?? ''))
@@ -1992,12 +2010,16 @@ export function typedConfirmClasses(entries, zoneWords = []) {
   // CU-735: the possessive / bare name shape counts too, here and for an entry, only where the zone holds an act.
   // r2: a possessive prompt after 'type in', or a possessive field label, is the instruction itself.
   const zoneInstruction = zone.some((text) => (typedInstruction(text) || possessiveNameShaped(text) || possessiveLabelShaped(text) || questionNameShaped(text)) && (((confirmShaped(text) || strongConfirm(text) || possessiveNameShaped(text) || possessiveLabelShaped(text) || questionNameShaped(text)) && (acts(text) || zoneActs)) || purposeAct(text)))
+  // CU-738: a username / user ID prompt counts only where a transfer act is in the zone or the box's own text.
+  const transferHere = zone.some(transferActHere) || texts.some(transferActHere)
+  const zoneTransferUser = transferHere && zone.some((text) => transferUserShaped(text))
+  const entryTransferUser = transferHere && texts.some((text) => transferUserShaped(text))
   const entryPossessive = texts.some((text) => possessiveNameShaped(text) || possessiveLabelShaped(text) || questionNameShaped(text)) && (zoneActs || texts.some((text) => typedDestroyAct(text) || typedTransfer(text)))
-  if (!texts.some((text) => typedInstruction(text)) && !zoneInstruction && !entryPossessive) return []
+  if (!texts.some((text) => typedInstruction(text)) && !zoneInstruction && !entryPossessive && !zoneTransferUser && !entryTransferUser) return []
   // Policy owner's gate (08:07Z): the zone's words join only when an entry is confirm-shaped - an 'Enter your phone number'
   // form's 'We will remove it if you ask.' never reaches the destroy test. Entries alone keep #894's behaviour.
   // CU-736 r2 (cu-researcher's NOT OK at 0cdf35f48): a STRONG confirm entry ('Confirm the name by typing it.') joins the zone too.
-  const words = [...texts, ...(texts.some((text) => confirmShaped(text) || strongConfirm(text)) || entryPossessive || zoneInstruction ? zone : [])].join(' \u2022 ')
+  const words = [...texts, ...(texts.some((text) => confirmShaped(text) || strongConfirm(text)) || entryPossessive || zoneInstruction || zoneTransferUser || entryTransferUser ? zone : [])].join(' \u2022 ')
   return [...(typedDestroy(words) ? ['delete'] : []), ...(typedTransfer(words) ? ['permission'] : [])]
 }
 
