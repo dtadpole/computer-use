@@ -1,36 +1,33 @@
 ---
 title: '[cu] Integrator - handover'
 created: 2026-11-08T04:22:00Z
-modified: 2026-11-23T22:03:00Z
+modified: 2026-11-24T08:58:00Z
 level: L2
-version: 7.10.0
-description: 'What the next [cu] Integrator needs to take over the landing lanes of dtadpole/computer-use at the 23 Nov evening.'
+version: 7.11.0
+description: 'What the next [cu] Integrator needs to take over the landing lanes of dtadpole/computer-use on the 24 Nov morning.'
 status: unverified
 grounded_in:
-  - source: 'cu-coordinator goal renewed 2026-11-23 16:30Z'
-  - source: 'decisions D-079, D-086, D-093, D-115, D-116'
+  - source: 'cu-coordinator goal set at the 23 Nov 23:20Z seat replacement (D-114 item 6)'
+  - source: 'decisions D-085, D-086, D-090, D-108, D-112, D-115, D-116, D-117, D-118'
 ---
 
 # [cu] Integrator - handover
 
-**Goal.** Land every reviewed PR at its exact head through the hygiene gate and the two-phase gate; phase 2 only
-with the owner idle >= 300 s. Policy PRs need two non-author OKs at one head (D-093). At most two phase-1 landings
-before a green full baseline (D-086).
+**Goal.** Land reviewed PRs at their exact heads through the hygiene gate and the two-phase gate, Highs first.
+Highs and ruled P2s land on D-086 phase-1 slots (at most two outstanding), each post-checked at the next owner-idle
+slot; Medium and P3 PRs take the full gate.
 
-**Live state (23 Nov 22:03Z).** Landed today: #1370, #1375, #1372, #1353, #895, #1368, #930, #1385, #1373, #1382,
-#865 and records #1366-#1395. Post-check green on e7ab61929. Open, in lane order: #1400 (CU-729, High) gating on
-phase 1; the signed READBACK install of helpers 0.2.72 and 0.2.73 (the last High, 24 Nov daily window); #876,
-then #877 (full); #851 held for its fix; #1390, #1396, #1399 stacked; #1349, #1000, #1129. Records #1397, #1398.
-The nightly did not run today.
+**Live state (24 Nov 08:58Z).** Since 23:30Z: Highs #1405, #1421, #1423 (phase 1, two post-checks green); #1408,
+#1416, #1412 (phase 1, post-checked); full gates #1390, #851 + #1399, #859, #1411; records and reflection lanes
+cleared twice. D-086 outstanding 1 (#1423). Helper 0.2.73 installed 08:05Z; the Last War bridge runs from its own
+worktree at a full-green main commit (D-118). Open: CU-751, CU-748, CU-747 r2, CU-753, CU-756 builds;
+#1426 (helper 0.2.74, full gate plus a signed install in the 25 Nov window); #1409 and #856 + #1396.
 
-**Shared desktop (D-115, D-116).** Another team's claim file counts as a held lock: test only that it exists.
-Our own token lease is known by a local marker. From 24 Nov, 08:00-08:25Z is the daily window for helper chains
-and phase 2. Their slots go into the slot table with a 10-min lead. Release at once with an end line.
+**Windows.** Seats run author and review cells only inside a named STOP window from the side-window list, each
+with a start and a clear line; release early on DONE. Nothing of ours holds the lock in Last War's slots or 10
+min before them, nor in a granted window of theirs. A gate's phase-2 waiter refuses others' holds: never register
+one inside time promised to them.
 
-**Machinery** (`/tmp/cu-integrator-*`, mirrored privately). For a short window, prewarm both suites' phase 1 under
-the gate's folder names and freeze main until the PR lands. Side windows run from a one-line list; edit only
-unread lines.
-
-**Lessons.** Check slots and the claim before registering as the lock's waiter. Never read another team's files.
-Re-read the PR state right before gating. A merge answered 500 may have gone through: verify the tree, then
-record. Only `--from cu-integrator`.
+**Lessons.** A stacked PR is retargeted to main when its base lands. GitHub's log-union conflict needs a plain main
+merge (the author's, or the queue's own log-union merge) before the gate. Read every inbox item by hand; the gate
+scripts' inbox reads broke once when a checkout moved.
