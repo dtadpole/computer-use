@@ -30,4 +30,15 @@ test('CU-751 near collisions stay free', () => {
   assert.deepEqual(typedConfirmClasses(['ID'], ['The cluster ID is shown below.', 'The cluster will be terminated.']), [], 'a statement, not an imperative')
   assert.deepEqual(typedConfirmClasses(['ID'], ['Your user ID is required.', 'Your account will be deleted.']), [], 'no imperative; a personal field')
   assert.deepEqual(typedConfirmClasses(['Notes'], ['Describe the reason below.', 'Your account will be deleted.']), [], 'no name word')
+  // policy owner 07:10Z: rename / edit verbs are a settings page, not a confirm - even beside an act
+  assert.deepEqual(typedConfirmClasses(['Name'], ['Change the workspace name below.', 'Old drafts are deleted after 30 days.']), [], 'a rename beside a retention note')
+  assert.deepEqual(typedConfirmClasses(['ID'], ['Edit the cluster ID.', 'The cluster will be terminated.']), [], 'an edit verb')
+  assert.deepEqual(typedConfirmClasses(['Name'], ['Choose the project name.', 'Old builds will be removed.']), [], 'a choose verb')
+  assert.deepEqual(typedConfirmClasses(['Name'], ['Change the name to confirm.', 'The project will be deleted.']), [], "a rename verb + 'to confirm' stays a rename (no typing word)")
+})
+
+test('CU-751: confirm verbs still ask (not rename verbs)', () => {
+  assert.deepEqual(typedConfirmClasses(['Name'], ['Retype the project name.', 'The project will be deleted.']), ['delete'])
+  assert.deepEqual(typedConfirmClasses(['Name'], ['Re-enter the project name.', 'The project will be deleted.']), ['delete'])
+  assert.deepEqual(typedConfirmClasses(['Name'], ['Repeat the project name.', 'The project will be deleted.']), ['delete'])
 })
