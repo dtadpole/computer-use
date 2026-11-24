@@ -3,7 +3,7 @@ import { normaliseForPolicy, normaliseText } from './normalise.mjs'
 import { BIP39_ENGLISH } from './bip39-english.mjs'
 import { normalizeKey } from './keys.mjs'
 import { originPattern } from './sites.mjs'
-import { amountClass, canonicalForms, clauseSplit, clauseVerbLed, grammarClasses, grammarClassesBase, inertLinkAmountClass, quantifierDropped, questionStripped, sectionLabelStripped, straightQuotes, synonymForms, toggleExpansion } from './phrase-grammar.mjs'
+import { amountClass, canonicalForms, clauseSplit, clauseVerbLed, grammarClasses, grammarClassesBase, inertLinkAmountClass, quantifierDropped, questionStripped, sectionLabelStripped, straightQuotes, synonymForms, toggleExpansion, egressesData } from './phrase-grammar.mjs'
 
 /**
  * The action policy (design: action-policy.md, consent-gate.md). `classify` runs in the dispatcher for every action,
@@ -49,15 +49,179 @@ export function neverCoveredByGrant(cls, name) {
 // locks, dial rows, mass sends, compensation, returns, relists, ride cancels) asks under any submit grant.
 // CU-507 (High; cu-coordinator 16:06Z): the generic final buttons of a confirm modal - judged by the modal's own title and text.
 const GENERIC_CONFIRM = /^\s*(?:confirm|ok|okay|yes|yes,?\s+(?:continue|confirm|proceed|i'?m\s+sure|do\s+it)|continue|proceed|submit|done|apply|accept|agree|i\s+agree|i\s+understand|got\s+it|i'?m\s+sure|do\s+it|go\s+ahead|confirm\s+and\s+continue)\s*[.!]?\s*$/i
+// CU-748 (High; sweep 5, cu-coordinator 06:05Z): a localized alert that states the act in the passive future ('Diese 12 Fotos
+// werden ... gelöscht.', 'Les fichiers seront supprimés.', '削除されます', '将被删除', '삭제됩니다') names that act; the modal rule
+// judges its verb as one more text, as the English titles are judged. Only delete verbs, only future / passive forms. r2 adds Dutch.
+const LOCALE_PASSIVE_ACTS = [
+  [/\b(?:werden|wird)\b[^.!?]{0,120}?\b(?:endgültig\s+|dauerhaft\s+|unwiderruflich\s+)?(?:gelöscht|entfernt)\b/iu, 'löschen'],
+  // CU-766 r2 + r3 (cu-coordinator 17:43Z / 17:44Z): a German QUESTION about a pending act on a deletion object, the participle
+  // before 'werden' - 'Soll der Papierkorb jetzt wirklich geleert werden?', 'Soll diese Datei gelöscht werden?'. Never a statement
+  // ('Der Filter kann später entfernt werden.'), never 'kann / darf ... werden', never a field, cache, filter or search box
+  // ('Soll das Suchfeld geleert werden?', 'Muss der Cache geleert werden?').
+  [/^\s*(?:soll(?:en)?|muss|müssen|möchten\s+sie|wollen\s+sie|möchtest\s+du|willst\s+du)(?!\p{L})[^.!?]{0,120}?(?<!\p{L})(?:der|die|das|den|diese[nrs]?|alle|ihr(?:en|e)?|dein(?:en|e)?|mein(?:en|e)?)\s+(?:\p{L}+\s+)?(?:papierkorb|papierkörbe|mülleimer|abfalleimer|postfach|posteingang|ordner|elemente?|dateien|datei|daten|konto|konten|nachrichten|nachricht|e-mails?|mails?|fotos?|bilder?|dokumente?|projekte?|kontakte?|einträge|eintrag)(?!\p{L})[^.!?]{0,60}?(?<!\p{L})(?:gelöscht|entfernt|geleert)\s+werden\s*\?\s*$/iu, 'löschen'],
+  [/\b(?:seront|sera)\s+(?:\S+\s+){0,3}?(?:supprimée?s?|effacée?s?)\b/iu, 'supprimer'],
+  // r2 (cu-developer-two's cross-check): 'se' reads only before a FUTURE form - 'Se ha eliminado el archivo.' is a notice.
+  [/\bser[áa]n?\s+(?:\S+\s+){0,3}?(?:eliminad[oa]s?|borrad[oa]s?)\b|\bse\s+(?:\S+\s+){0,2}?(?:eliminar[áa]n?|borrar[áa]n?)\b/iu, 'eliminar'],
+  [/\b(?:verranno|verrà|saranno|sarà)\s+(?:\S+\s+){0,3}?(?:eliminat[ioae]|rimoss[ioae]|cancellat[ioae])\b/iu, 'elimina'],
+  [/\b(?:serão|será)\s+(?:\S+\s+){0,3}?(?:excluíd[oa]s?|apagad[oa]s?|removid[oa]s?)\b/iu, 'excluir'],
+  // r2 (cu-researcher's held-out 13:02Z): Dutch - 'Deze mailbox wordt permanent verwijderd.'
+  [/(?<!\p{L})(?:wordt|worden|zal|zullen)(?!\p{L})[^.!?]{0,120}?(?<!\p{L})(?:definitief\s+|permanent\s+)?(?:verwijderd|gewist)(?!\p{L})/iu, 'verwijderen'],
+  [/(?<!\p{L})(?:будут|будет)\s+(?:\S+\s+){0,3}?(?:удален[ыао]?|стерт[ыао]?)(?!\p{L})/iu, 'удалить'],
+  [/(?:削除|消去)(?:され(?:ます|る)|します)/u, '削除'],
+  [/(?:将|将会|會|会|將會|將)\s*(?:被)?\s*(?:永久)?(?:删除|刪除|清除)/u, '删除'],
+  [/(?:삭제|지워)(?:됩니다|집니다|될\s*것입니다)/u, '삭제'],
+]
+// r2 (cu-developer-two's cross-check): a NEGATED statement states no act - 'Die Fotos werden nicht gelöscht.', 'Les fichiers ne
+// seront pas supprimés.', 'No se eliminarán.', 'Non verranno eliminati.', 'Não serão excluídos.', 'Не будут удалены.', 'Worden niet
+// verwijderd.' A negation inside the matched span or as the word right before it skips the match; elsewhere in the sentence it does
+// not ('Os arquivos no computador serão excluídos.' - Portuguese 'no' is 'in the' there).
+const LOCALE_PASSIVE_NEGATION = /(?<!\p{L})(?:nicht|nie|niemals|kein|keine|ne|n['’]|pas|jamais|no|nunca|non|mai|não|nao|не|никогда|niet|nooit|geen)(?!\p{L})/iu
+function localePassiveAct(text) {
+  const t = String(text ?? '')
+  for (const [shape, verb] of LOCALE_PASSIVE_ACTS) {
+    const m = shape.exec(t)
+    if (!m) continue
+    const before = t.slice(0, m.index).trim().split(/\s+/).slice(-1).join(' ')
+    if (LOCALE_PASSIVE_NEGATION.test(m[0]) || LOCALE_PASSIVE_NEGATION.test(before)) continue
+    return verb
+  }
+  return null
+}
+// CU-747 (High; sweep 5, cu-coordinator 06:05Z): a wizard's or sheet's final-step control - Finish / Complete / Next / End - is
+// a generic confirm too when it sits in a risk dialog (the modal rule below judges the dialog's text; a harmless one stays free).
+const FINAL_STEP_CONFIRM = /^\s*(?:finish|finish\s+up|complete|next|next\s+step|end|end\s+now|continue\s+anyway|proceed\s+anyway)\s*[.!>›→]?\s*$/i
+// CU-747: a bare verb button that repeats the verb of its dialog's title ('Reset' under 'Reset this device to factory settings?',
+// 'Empty' under 'Empty the Trash?') confirms that title, so the title is judged as a name. r2 (cu-researcher 06:48Z): the verb may
+// stand anywhere in the title and in any covered language ('Leeren' / 'Papierkorb leeren?', 'Svuota' / 'Vuoi svuotare il
+// cestino?', '空にする' / 'ゴミ箱を空にしますか？', '倒空' / '要倒空废纸篓吗？'), matched as a word or a word's stem; and the title must
+// ask or point at its object - a question, or a determiner after the verb - so a title that names a state ('Empty folder') stays free.
+const ECHO_CJK = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u
+function echoesDialogVerb(name, dialogName) {
+  const button = String(name ?? '').trim().toLowerCase().replace(/[¿¡]/g, '')
+  const title = String(dialogName ?? '').trim().toLowerCase().replace(/[¿¡]/g, '')
+  if (button === '' || title === '') return false
+  const asks = /[?？]\s*$/u.test(title) || /\b(?:the|this|these|those|all|your|my|our|la|le|les|el|los|las|il|lo|gli|i|der|die|das|den|alle|todos|todas|tutti|tutte|tous|toutes)\b/iu.test(title)
+  if (!asks) return false
+  if (ECHO_CJK.test(button)) {
+    // A CJK verb: one to four characters (a trailing する / します / 하기 dropped); its first two characters stand in the title.
+    const core = button.replace(/(?:する|します|하기|하다)$/u, '')
+    return core.length >= 1 && button.length <= 6 && title.includes(core.slice(0, 2))
+  }
+  const words = button.split(/\s+/).filter(Boolean)
+  if (words.length === 0 || words.length > 2 || !/^\p{L}{3,}$/u.test(words[0]) || (words[1] !== undefined && words[1] !== 'now')) return false
+  const verb = words[0]
+  const stem = verb.length >= 5 ? verb.slice(0, verb.length - 1) : verb
+  // CU-766 r2 (cu-researcher's r2 set): a German verb also echoes its past participle - 'Leeren' in '... geleert werden?',
+  // 'Löschen' in '... gelöscht werden?' (ge + root + t / en, after a separable prefix too: 'ausgeleert').
+  const root = verb.length >= 5 && /en$/u.test(verb) ? verb.slice(0, -2) : null
+  return title.split(/[^\p{L}]+/u).some((word) => word === verb || (word.length >= verb.length && word.startsWith(stem))
+    || (root !== null && new RegExp(`(?:^|^\\p{L}{0,6})ge${root}(?:t|en)$`, 'u').test(word)))
+}
+// CU-746 (High; cu-researcher's sweep 5): a risk modal whose text is a statement ('Your account will be deleted'), a framed
+// description ('Doing so permanently erases the volume.', 'Once you confirm, the repository ... are gone for good.') or a noun title
+// ('Account deletion') is read as the act it states, and an access statement ('It will be able to read ...', '... requests access',
+// 'gives the app full disk access') as 'Grant access'. Future / conditional forms only ('has been deleted' is a notice), and only
+// risky verbs ('Doing so opens the volume' stays free). Each name is then judged like the title (additions only).
+const MODAL_ADVERB = String.raw`(?:(?:permanently|immediately|automatically|also|forever|irreversibly|completely|instantly|then|all)\s+)?`
+const MODAL_CONDITION = String.raw`(?:once|when|after|if|as\s+soon\s+as)\s+you\s+(?:confirm|continue|proceed)\w*,?\s+`
+const MODAL_FUTURE = new RegExp(String.raw`^(?:${MODAL_CONDITION})?(.{1,120}?)\s+(?:will|would|(?:is|are)\s+going\s+to)\s+be\s+${MODAL_ADVERB}([a-z]+(?:ed|en|t))\b`, 'i')
+const MODAL_GONE = new RegExp(String.raw`^(?:${MODAL_CONDITION}(.{1,120}?)\s+(?:is|are|will\s+be)|(.{1,120}?)\s+will\s+be)\s+(?:gone|lost)\b`, 'i')
+const MODAL_LEAD = new RegExp(String.raw`^(?:doing\s+(?:so|this)|proceeding|continuing|confirming|finishing|completing|ending|by\s+(?:continuing|proceeding|confirming|finishing|completing),?|${MODAL_CONDITION}(?:this|it|we)|this(?:\s+action)?|it)\s+(?:(?:will|would)\s+)?${MODAL_ADVERB}([a-z]+)\s+(\S.{0,120})$`, 'i')
+// CU-746 r2 (cu-researcher's held-out): a leading clause about the person's own act - 'Once confirmed,', 'After you continue,',
+// 'When this is done,' - is stripped, and the present passive after it is the act ('Once confirmed, your files are erased ...').
+// Only the person's act opens it, so a retention note ('After 30 days, deleted items are removed.') stays as it was.
+const MODAL_CLAUSE_LEAD = /^(?:once|after|when|as\s+soon\s+as|if|upon)\s+(?:(?:this\s+is\s+|it\s+is\s+)?(?:confirm\w*|continu\w*|proceed\w*|complet\w*|finish\w*|submit\w*|approv\w*|accept\w*|done)|you\s+[a-z]+(?:\s+[a-z]+){0,3})\s*,\s*(\S.*)$/i
+const MODAL_PRESENT = new RegExp(String.raw`^(.{1,120}?)\s+(?:is|are|gets?)\s+${MODAL_ADVERB}([a-z]+(?:ed|en|t))\b`, 'i')
+const MODAL_NOMINAL = { deletion: 'delete', removal: 'remove', erasure: 'erase', termination: 'terminate', deactivation: 'deactivate', closure: 'close', cancellation: 'cancel', wipe: 'wipe', reset: 'reset', transfer: 'transfer', handover: 'transfer', handoff: 'transfer', 'hand-off': 'transfer', reassignment: 'transfer', grant: 'grant' }
+// CU-756 (High; cu-researcher's #1423 r2 miss): a transfer / handover of what grants control ('Ownership handover', 'Admin transfer') is
+// read as 'Transfer ownership' too - permission, as the policy owner ruled for ownership / rights / workspace transfers; money ('Funds
+// transfer', 'Account transfer') is no such object and stays with its own reading.
+// CU-756 r2 (cu-researcher's held-out): the act noun may be followed by up to two words ('Account deletion request'), unless a
+// following word names a record or a page ('Data deletion policy', 'Ownership transfer history' stay free here).
+const MODAL_HANDOVER_NOUN = /^(?:handover|handoff|hand-off|reassignment)$/i
+const MODAL_CONTROL_OBJECT = /\b(?:owner\w*|admin\w*|rights?|control|role|workspace|team|org(?:ani[sz]ation)?|repo(?:sitory)?|project|domain|site|channel|group)\b/i
+const MODAL_NOMINAL_TITLE = /^(?:(?:the|your|this)\s+)?([\p{L}\p{N}'\u2019 -]{1,40}?)\s+(deletion|removal|erasure|termination|deactivation|closure|cancellation|wipe|reset|transfer|handover|handoff|hand-off|reassignment|grant)(?:\s+(?!(?:history|logs?|details|polic(?:y|ies)|settings|status|reports?|records?|summary|overview|info|information|faq|help|guide|terms|rules|limits?|options|preferences|schedule|queue|list)\b)[\p{L}\p{N}'\u2019-]+){0,2}$/iu
+const MODAL_NOMINAL_OF = /^(deletion|removal|erasure|termination|deactivation|closure|cancellation|transfer|handover|handoff|hand-off|reassignment|grant)\s+of\s+(.{1,60})$/i
+const MODAL_ACCESS = /\b(?:(?:requests?|requesting|wants?|would\s+like)\s+(?:\w+\s+){0,3}access\b|will\s+be\s+able\s+to\s+(?:read|write|access|see|view|manage|control|change|edit|delete|post|send|act)\b|(?:gives?|grants?|allows?)\s+(?:\S+\s+){0,4}access\b)/i
+// CU-757 (P1; cu-developer-one's #1423 r2 owner check): an access grant's own buttons - 'Allow', 'Grant', 'Give access', 'Always
+// allow', 'Allow once', 'Allow while using the app' and their localized forms - take the dialog's classes when its title or a kept
+// sentence states access (MODAL_ACCESS, or LOCALE_MODAL_ACCESS for a localized dialog); in a dialog that states nothing they
+// are judged as before (additions only).
+const ACCESS_ALLOW = /^\s*(?:allow|grant|give\s+access|allow\s+access|grant\s+access|always\s+allow|allow\s+always|allow\s+once|allow\s+all|allow\s+while\s+using(?:\s+(?:the\s+)?app)?|erlauben|zulassen|immer\s+erlauben|autoriser|permitir|consentir|consenti|permetti|toestaan|tillåt|tillat|zezwól|povolit|разрешить|許可|允许|允許|허용)\s*[.!。！]?\s*$/iu
+const LOCALE_MODAL_ACCESS = /(?:zugriff\s+auf|auf\s+.{1,60}?\s+zugreifen|accéder\s+à|accès\s+à|acceder\s+a|acceso\s+a|accedere\s+a|accesso\s+a|aceder\s+a|acesso\s+a|toegang\s+tot|доступ\s+к|へのアクセス|にアクセス|访问|訪問|存取|접근|액세스)/iu
+// CU-754 (High; cu-researcher's sweep 6): a toggle turned on that grants an access right or makes something public asks
+// permission though its own name does not say so - a privacy pane names the app ('Terminal'), the right is the list's ('Full
+// Disk Access'). The row context is the driver's rowContext: the web driver's { list, hints } (CU-443), or a plain string. A
+// list named for a privacy right asks for any toggle in it (named over-ask: an unrelated settings group called 'Camera').
+// 'Accessibility' counts only as the whole list name (the privacy list; the Accessibility settings' own groups have other names).
+const ACCESS_RIGHT_LIST = /\b(?:full\s+disk\s+access|screen\s+(?:(?:&|and)\s+system\s+audio\s+)?recording|input\s+monitoring|location\s+services|files\s+(?:&|and)\s+folders|developer\s+tools|app\s+management|local\s+network|remote\s+(?:login|management|desktop)|camera|microphone|contacts|calendars|reminders|photos|bluetooth|automation|speech\s+recognition|media\s+(?:&|and)\s+apple\s+music|homekit|motion\s+(?:&|and)\s+fitness|(?:allow|let)\s+(?:the\s+)?(?:apps?|applications?)\s+(?:below\s+|listed\s+)?to\s+(?:access|control|record|use|see|read|monitor|manage))\b/i
+// CU-754: a toggle whose own name makes a profile, account or other object public or visible to everyone.
+const PUBLIC_TOGGLE = /^\s*(?:make\s+(?:(?:my|this|the)\s+)?(?:profile|account|repo(?:sitory)?|page|calendar|listing|board|project|album|playlist|activity)\s+public|public(?:\s+(?:profile|account|repo(?:sitory)?|page|calendar|listing|board|project|album|playlist|activity|mode|link|access))?|(?:profile|account)\s+(?:is\s+)?(?:public|visible\s+to\s+(?:everyone|anyone))|visible\s+to\s+(?:everyone|anyone|the\s+public|all)|discoverable(?:\s+by\s+(?:everyone|anyone))?|show\s+(?:my\s+)?profile\s+(?:publicly|to\s+(?:everyone|anyone)))\s*$/i
+/** CU-754: whether a toggle's row context (rowContext: a { list, hints } object or a plain string) names an access right. */
+export function accessRowContext(rowContext) {
+  const texts = typeof rowContext === 'string'
+    ? [rowContext.slice(0, 120)]
+    : rowContext && typeof rowContext === 'object'
+      ? [typeof rowContext.list === 'string' ? rowContext.list.slice(0, 60) : '', ...(Array.isArray(rowContext.hints) ? rowContext.hints.map((hint) => String(hint ?? '').slice(0, 40)) : [])]
+      : []
+  return texts.some((text) => ACCESS_RIGHT_LIST.test(text) || /^\s*accessibility\s*$/i.test(text))
+}
+const MODAL_RISK_VERB = /^(?:delete|erase|remove|wipe|destroy|purge|reset|terminate|deactivate|close|cancel|transfer|give|grant|share|publish|send|pay|charge|buy|purchase|subscribe|install|uninstall|revoke|disable|disconnect|unlink|overwrite|replace|drop|empty|clear|format|forfeit|expose|make)$/
+const MODAL_IRREGULAR = { sent: 'send', lost: 'lose', kept: 'keep', shown: 'show', given: 'give', sold: 'sell', paid: 'pay', made: 'make', taken: 'take', spent: 'spend', withdrawn: 'withdraw', shut: 'shut' }
+function modalVerbForms(word, participle) {
+  const w = String(word).toLowerCase()
+  const forms = participle
+    ? (MODAL_IRREGULAR[w] ? [MODAL_IRREGULAR[w]] : [w.replace(/ied$/, 'y'), w.replace(/([b-df-hj-np-tv-z])\1ed$/, '$1'), w.replace(/d$/, ''), w.replace(/ed$/, '')])
+    : [w, w.replace(/ies$/, 'y'), w.replace(/es$/, ''), w.replace(/s$/, '')]
+  return [...new Set(forms)].filter((form) => MODAL_RISK_VERB.test(form))
+}
+const modalName = (verb, rest) => `${verb.charAt(0).toUpperCase()}${verb.slice(1)} ${String(rest).replace(/[.!?\s]+$/, '').trim()}`.trim()
+export function modalStatementNames(text) {
+  const t = String(text ?? '').trim().replace(/[.!?]+$/, '')
+  if (t === '') return []
+  const out = []
+  const future = MODAL_FUTURE.exec(t)
+  if (future) for (const verb of modalVerbForms(future[2], true)) out.push(modalName(verb, future[1]))
+  const gone = MODAL_GONE.exec(t)
+  if (gone) out.push(modalName('delete', gone[1] ?? gone[2] ?? ''))
+  const lead = MODAL_LEAD.exec(t)
+  if (lead) for (const verb of modalVerbForms(lead[1], false)) out.push(modalName(verb, lead[2]))
+  const nominal = MODAL_NOMINAL_TITLE.exec(t)
+  // CU-756 r2 (policy owner 12:15Z): a handover / handoff / reassignment noun is an act only over a control object ('Shift handover'
+  // and 'Handover notes' are rosters and notes, not transfers).
+  const nominalAct = (noun, object) => !MODAL_HANDOVER_NOUN.test(noun) || MODAL_CONTROL_OBJECT.test(object)
+  if (nominal && nominalAct(nominal[2], nominal[1])) out.push(modalName(MODAL_NOMINAL[nominal[2].toLowerCase()], nominal[1]))
+  const nominalOf = MODAL_NOMINAL_OF.exec(t)
+  if (nominalOf && nominalAct(nominalOf[1], nominalOf[2])) out.push(modalName(MODAL_NOMINAL[nominalOf[1].toLowerCase()], nominalOf[2]))
+  if (MODAL_ACCESS.test(t)) out.push('Grant access')
+  const clause = MODAL_CLAUSE_LEAD.exec(t)
+  if (clause) {
+    const present = MODAL_PRESENT.exec(clause[1])
+    if (present) for (const verb of modalVerbForms(present[2], true)) out.push(modalName(verb, present[1]))
+    for (const name of modalStatementNames(clause[1])) out.push(name)
+  }
+  // CU-756: any 'Transfer <x>' this reading makes (a noun title or a statement) over a control object also reads as 'Transfer ownership'.
+  for (const name of [...out]) {
+    const transfer = /^transfer\s+(.+)$/i.exec(name)
+    if (transfer && MODAL_CONTROL_OBJECT.test(transfer[1])) out.push('Transfer ownership')
+  }
+  return [...new Set(out)].filter((name) => name.split(/\s+/).length >= 2)
+}
 // CU-729 (High; cu-researcher's sweep, cu-coordinator 19:59Z): the same generic final buttons in the covered languages (de fr es it
 // pt nl ru ja zh ko) - a localized confirm modal's 'Ja' / 'Oui' / 'Aceptar' / 'はい' / '确定' / '확인' / 'Да' is judged by the modal's title
 // like English 'OK' / 'Yes'. Matched on the raw name (before the Cyrillic homoglyph fold), the whole name, an affirmative optionally
 // followed by a comma and one more confirm word ('Ja, fortfahren'). Additions only.
-const LOCALE_CONFIRM_WORD = String.raw`(?:ja|jawohl|ok|okay|bestätigen|bestaetigen|weiter|fortfahren|übernehmen|zustimmen|akzeptieren|einverstanden|verstanden|fertig|anwenden|oui|confirmer|continuer|valider|accepter|d['’]accord|appliquer|terminé|sí|si|aceptar|confirmar|continuar|de\s+acuerdo|vale|aplicar|listo|sì|conferma|confermare|continua|accetta|procedi|va\s+bene|applica|fatto|sim|aceitar|prosseguir|concluir|bevestigen|doorgaan|akkoord|accepteren|toepassen|verder|да|ок|подтвердить|продолжить|принять|согласен|согласна|применить|готово|хорошо|はい|確認|続行|同意する|同意|適用|完了|了解|是|是的|确定|確定|确认|继续|繼續|好|好的|应用|應用|完成|예|네|확인|계속|동의|적용|완료)`
+const LOCALE_CONFIRM_WORD = String.raw`(?:ja|jawohl|ok|okay|bestätigen|bestaetigen|weiter|fortfahren|übernehmen|zustimmen|akzeptieren|einverstanden|verstanden|fertig|anwenden|oui|confirmer|continuer|valider|accepter|d['’]accord|appliquer|terminé|sí|si|aceptar|confirmar|continuar|de\s+acuerdo|vale|aplicar|listo|sì|conferma|confermare|continua|accetta|procedi|va\s+bene|applica|fatto|sim|aceitar|prosseguir|concluir|bevestigen|doorgaan|akkoord|accepteren|toepassen|verder|да|ок|подтвердить|продолжить|принять|согласен|согласна|применить|готово|хорошо|はい|確認|続行|同意する|同意|適用|完了|了解|是|是的|确定|確定|确认|继续|繼續|好|好的|应用|應用|完成|예|네|확인|계속|동의|적용|완료|続ける|続けて|次へ|進む|終了|suivant|terminer|siguiente|finalizar|terminar|avanti|fine|fertigstellen|abschließen|abschliessen|далее|завершить|下一步|继续操作|繼續操作|다음|마침)`
 const LOCALE_GENERIC_CONFIRM = new RegExp(String.raw`^\s*${LOCALE_CONFIRM_WORD}(?:\s*[,、，]\s*${LOCALE_CONFIRM_WORD})?\s*[.!。！]?\s*$`, 'iu')
 // CU-729: the question frames of a localized confirm title ('Möchten Sie diese Notiz wirklich löschen?', 'Voulez-vous vraiment ...',
 // '¿Desea eliminar ...?', '本当に削除しますか？', '确定要删除吗？', '정말 삭제하시겠습니까?') are removed into one more title text to judge.
-const LOCALE_QUESTION_FRAME = /(?:möchten\s+sie|wollen\s+sie|möchtest\s+du|willst\s+du|sind\s+sie\s+sicher,?\s+dass\s+sie|wirklich|voulez-vous|souhaitez-vous|êtes-vous\s+sûre?\s+de\s+vouloir|vraiment|¿|está\s+seguro\s+de\s+que\s+desea|desea|quiere|realmente|sei\s+sicuro\s+di\s+voler|vuoi|davvero|tem\s+certeza\s+de\s+que\s+deseja|deseja|wilt\s+u|weet\s+u\s+zeker\s+dat\s+u|вы\s+действительно\s+хотите|вы\s+уверены,?\s+что\s+хотите|действительно|本当に|しますか|ますか|确定要|確定要|是否|确认要|吗|嗎|정말|하시겠습니까|하시겠어요)/giu
+// CU-766 (High; cu-researcher's r2 set for CU-747): the INFORMAL and other common frames too - 'Seguro que quieres vaciar la papelera?',
+// '¿Estás seguro de que quieres ...?', 'Es-tu sûr de vouloir ...?', 'Veux-tu ...?', 'Bist du sicher, dass du ...?', 'Weet je zeker dat
+// je ...?', 'Wil je ...?', 'Tem certeza que deseja ...?', 'Você quer mesmo ...?', 'Ты уверен, что хочешь ...?', 'Czy na pewno chcesz
+// ...?', '...してもよろしいですか？', '你确定要...吗？'. The longer frames come first so 'quieres' is never cut to 'quiere' + 's'.
+// r2 (cu-researcher's r2 set): 'Faut-il (vraiment) ...?', 'Doit-on ...?', 'Soll ich / Sollen wir ...?', and a 'now' word ('maintenant',
+// 'jetzt', 'ahora' ...) inside the question.
+const LOCALE_QUESTION_FRAME = /(?:(?:¿\s*)?(?:est[áa]s?\s+)?segur[oa]s?\s+(?:de\s+)?que\s+(?:quieres|deseas|desea|quiere)|de\s+verdad\s+(?:quieres|deseas|desea|quiere)|quieres|deseas|es-tu\s+s[ûu]re?\s+de\s+vouloir|veux-tu|faut-il|faudrait-il|doit-on|dois-je|devons-nous|soll(?:en)?\s+(?:ich|wir|man)|(?<!\p{L})(?:maintenant|jetzt|ahora|adesso|agora|сейчас|теперь)(?!\p{L})|tu\s+veux\s+vraiment|bist\s+du\s+sicher,?\s+dass\s+du|weet\s+je\s+zeker\s+dat\s+je|wil\s+je|wilt\s+je|è\s+sicuro\s+di\s+voler|sicur[oa]\s+di\s+voler|vuole|tem\s+certeza\s+(?:de\s+)?que\s+(?:deseja|quer)|tens\s+a\s+certeza\s+(?:de\s+)?que\s+(?:pretendes|queres|desejas)|(?:você\s+)?quer\s+mesmo|ты\s+уверен[аы]?,?\s+что\s+хочешь|хотите|хочешь|czy\s+na\s+pewno\s+chcesz|czy\s+chcesz|てもよろしいですか|よろしいですか|你确定要|您确定要|möchten\s+sie|wollen\s+sie|möchtest\s+du|willst\s+du|sind\s+sie\s+sicher,?\s+dass\s+sie|wirklich|voulez-vous|souhaitez-vous|êtes-vous\s+sûre?\s+de\s+vouloir|vraiment|¿|está\s+seguro\s+de\s+que\s+desea|desea|quiere|realmente|sei\s+sicuro\s+di\s+voler|vuoi|davvero|tem\s+certeza\s+de\s+que\s+deseja|deseja|wilt\s+u|weet\s+u\s+zeker\s+dat\s+u|вы\s+действительно\s+хотите|вы\s+уверены,?\s+что\s+хотите|действительно|本当に|しますか|ますか|确定要|確定要|是否|确认要|吗|嗎|정말|하시겠습니까|하시겠어요)/giu
 const GENERIC_SUBMIT = /^\s*(?:submit|send|send\s+(?:message|reply|email|comment)|reply|post|post\s+(?:comment|reply)|comment|save|save\s+changes|apply|search|go|ok|done|continue|next|report\s+spam|sign\s+up|register|create\s+account)\s*!?\s*$/i
 
 /** Word lists matched on a target's accessible name, case-insensitively, at word boundaries; they err toward confirm. */
@@ -454,7 +618,7 @@ const IMPERATIVE_FORMS = Object.freeze({
   'sair': ['sai', 'saia', 'saiam'], 'ligar': ['liga', 'ligue', 'liguem'], 'começar': ['começa', 'comece', 'comecem'],
   'excluir': ['exclui', 'exclua', 'excluam'], 'interromper': ['interrompe', 'interrompa', 'interrompam'],
   'remover': ['remove', 'remova', 'removam'], 'submeter': ['submete', 'submeta', 'submetam'], 'efetuar': ['efetua', 'efetue', 'efetuem'],
-  'apagar': ['apaga', 'apague', 'apaguem'], 'elimina': ['eliminate', 'elimini'], 'cancella': ['cancellate', 'cancelli'],
+  'apagar': ['apaga', 'apague', 'apaguem'], 'elimina': ['eliminate', 'elimini', 'eliminare'], 'cancella': ['cancellate', 'cancelli', 'cancellare'],
   'conferma': ['confermate', 'confermi'], 'acquista': ['acquistate', 'acquisti'], 'annulla': ['annullate', 'annulli'],
   'svuota': ['svuotate', 'svuoti'], 'partecipa': ['partecipate', 'partecipi'], 'termina': ['terminate', 'termini'],
   'abbandona': ['abbandonate', 'abbandoni'], 'ordina': ['ordinate', 'ordini'], 'chiama': ['chiamate', 'chiami'],
@@ -463,7 +627,7 @@ const IMPERATIVE_FORMS = Object.freeze({
   'paga': ['pagate', 'paghi'], 'pubblica': ['pubblicate', 'pubblichi'], 'cerca': ['cercate', 'cerchi'], 'disdici': ['disdite', 'disdica'],
   'chiudi': ['chiudete', 'chiuda'], 'esci': ['uscite', 'esca'], 'condividi': ['condividete', 'condivida'],
   'concedi': ['concedete', 'conceda'], 'consenti': ['consentite', 'consenta'], 'interrompi': ['interrompete', 'interrompa'],
-  'rimuovi': ['rimuovete', 'rimuova'], 'trasferisci': ['trasferite', 'trasferisca'], 'procedi': ['procedete', 'proceda'],
+  'rimuovi': ['rimuovete', 'rimuova', 'rimuovere'], 'trasferisci': ['trasferite', 'trasferisca'], 'procedi': ['procedete', 'proceda'],
   'sospendi': ['sospendete', 'sospenda'], 'sottoscrivi': ['sottoscrivete', 'sottoscriva'], 'vai': ['andate', 'vada'],
   'abbonati': ['abbonatevi', 'si abboni'], 'avvia': ['avviate', 'avvii'], 'invia': ['inviate', 'invii'], 'inizia': ['iniziate', 'inizi'],
   'lascia': ['lasciate', 'lasci'], 'potenzia': ['potenziate', 'potenzi'], 'eliminare': ['elimina', 'eliminate', 'elimini'],
@@ -504,7 +668,7 @@ const IMPERATIVE_FORMS = Object.freeze({
   'заказать': ['закажи', 'закажите'], 'оформить': ['оформи', 'оформите'], 'стереть': ['сотри', 'сотрите'],
   // CU-650: cancel and unsubscribe, with the objects their entries name ('Отмените подписку', 'Отпишитесь').
   'отменить': ['отмени', 'отмените'], 'отписаться': ['отпишись', 'отпишитесь'], 'очистить': ['очисти', 'очистите'],
-  '보내기': ['보내세요', '보내 주세요', '보내주세요', '보내십시오', '보내줘', '보내 줘'], '지우기': ['지워', '지워줘', '지워 줘', '지우세요', '지워 주세요', '지워주세요'], '삭제': ['삭제하세요', '삭제해 주세요', '삭제해주세요', '삭제하십시오'],
+  '보내기': ['보내세요', '보내 주세요', '보내주세요', '보내십시오', '보내줘', '보내 줘'], '지우기': ['지워', '지워줘', '지워 줘', '지우세요', '지워 주세요', '지워주세요', '지우시겠습니까', '지우시겠어요', '지울까요'], '삭제': ['삭제하세요', '삭제해 주세요', '삭제해주세요', '삭제하십시오', '삭제하시겠습니까', '삭제하시겠어요', '삭제할까요'],
   '결제': ['결제하세요', '결제해 주세요', '결제해주세요', '결제하십시오'], '구매': ['구매하세요', '구매해 주세요', '구매해주세요', '구매하십시오'],
   '전송': ['전송하세요', '전송해 주세요', '전송해주세요', '전송하십시오'],
 })
@@ -1797,6 +1961,28 @@ function namesRuBackout(text) {
   }
   return ruBackoutRegex.test(normaliseName(text))
 }
+// CU-753 (High; sweep 6, follow-up to CU-493): approving a sign-in or a device-code grant hands the account to another device -
+// PERMISSION. Two shapes, read by sense: a sign-in approval ('Allow sign-in on a new device?', 'Approve this login request',
+// 'Someone is trying to sign in', 'Is this you signing in?'; r2 - cu-researcher's held-out: 'Sign-in requested', 'New login', 'Was this
+// you?') and a device link / code grant ('Enter the code shown on your TV',
+// 'Link your TV', 'Activate your device', 'Pair a new device'). The person's OWN sign-in ('Sign in', 'Sign in with Google',
+// 'Allow sign-in with passkeys' as a setting) is neither.
+const DEVICE_THING = String.raw`(?:tv|television|smart\s+tv|device|console|game\s+console|streaming\s+(?:device|stick|box)|set-?top\s+box|other\s+device|second\s+device|screen|watch|car)`
+// The screens a person signs in on for an account (pairing headphones or a keyboard is no account grant).
+const ACCOUNT_SCREEN = String.raw`(?:tv|television|smart\s+tv|console|game\s+console|streaming\s+(?:device|stick|box)|set-?top\s+box)`
+const SIGNIN_APPROVAL = new RegExp(String.raw`^\s*(?:allow|approve|authori[sz]e|accept|grant)\s+(?:this\s+|the\s+|a\s+|new\s+)?(?:sign-?in|log-?in|login)(?:\s+(?:request|attempt))?(?:\s+(?:on|from|for|to)\b.{0,60})?\s*[?.!]?\s*$|\b(?:new\s+)?(?:sign-?in|log-?in|login)\s+(?:request|attempt|approval)\b|\b(?:someone|a\s+(?:new\s+)?device|another\s+device|a\s+new\s+browser)\s+(?:is\s+)?(?:trying|wants|requested|asking)\s+to\s+(?:sign|log)\s+in\b|\bis\s+(?:this|it)\s+you\s+(?:signing|logging|trying\s+to\s+(?:sign|log))\s+in\b|\b(?:did\s+you\s+(?:just\s+)?(?:try|attempt)\s+to\s+(?:sign|log)\s+in)\b|\bapprove\s+(?:the\s+)?(?:sign-?in|login)\s+on\s+your\s+other\s+device\b|^\s*(?:new\s+(?:sign-?in|log-?in|login)(?:\s+(?:request|attempt|detected|alert))?|(?:sign-?in|log-?in|login)\s+(?:requested|request|attempt|detected|alert))(?:\s+(?:from|on|in|near)\b.{0,60})?\s*[?.!]?\s*$|\b(?:was|is)\s+(?:this|that|it)\s+(?:really\s+)?you\s*\?|\bbeing\s+used\s+to\s+(?:sign|log)\s+in(?:\s+to)?\b`, 'i')
+const DEVICE_CODE_GRANT = new RegExp(String.raw`\b(?:enter|type|input)\s+(?:the\s+|your\s+)?(?:\d+-(?:digit|character|letter)\s+)?(?:activation\s+|device\s+|pairing\s+|link\s+|tv\s+)?code\s+(?:that\s+(?:is\s+)?|which\s+is\s+)?(?:shown|displayed|appears|appearing|showing|you\s+see)\s+on\s+(?:your\s+|the\s+)?${DEVICE_THING}\b|\b(?:enter|type)\s+(?:the\s+)?code\s+from\s+(?:your\s+|the\s+)?${DEVICE_THING}\b|^\s*(?:link|connect|activate|pair|authori[sz]e|register|sign\s+in\s+(?:on|to))\s+(?:your\s+|a\s+|this\s+|the\s+|new\s+|a\s+new\s+)?${ACCOUNT_SCREEN}\s*[?.!]?\s*$|^\s*(?:link|activate|authori[sz]e|register)\s+(?:your\s+|a\s+|this\s+|the\s+|new\s+|a\s+new\s+)?(?:device|other\s+device|second\s+device)\s*[?.!]?\s*$`, 'i')
+// r2 (cu-coordinator 14:05Z, one rule): approving a PENDING sign-in or grant asks; acknowledging a FINISHED one does not - 'Sign-in
+// request blocked', 'Login attempt expired', 'Request denied', 'Sign-in successful' (cu-developer-two's cross-check rows).
+// r3 (cu-developer-two's r2 cross-check): a PAST approval is a finished request too - 'Sign-in approved', 'You approved the login
+// request from Safari on iPhone.' (approved / confirmed / allowed / accepted / granted / authorized / verified).
+const GRANT_FINISHED = /\b(?:blocked|expired|denied|declined|rejected|cancel+ed|timed\s+out|failed|successful|succeeded|completed|stopped|approved|confirmed|allowed|accepted|granted|authori[sz]ed|verified)\b/i
+function grantsDeviceAccess(text) {
+  const t = String(text ?? '').trim()
+  return t !== '' && t.length <= 160 && !GRANT_FINISHED.test(t) && (SIGNIN_APPROVAL.test(t) || DEVICE_CODE_GRANT.test(t))
+}
+// A generic control that finishes such a grant: Continue / Next / Submit / Allow / Approve / Yes, it's me / Activate / Link / Pair ...
+const DEVICE_GRANT_BUTTON = /^\s*(?:continue|next|submit|done|ok|okay|go|confirm|verify|yes|allow|approve|authori[sz]e|accept|activate|link|connect|pair|sign\s+in|log\s+in|(?:yes,?\s+)?(?:it'?s|it\s+is|that\s+(?:was|is))\s+me)\s*[.!>›→]?\s*$/i
 function typedConfirmButton(name) {
   const text = String(name ?? '').trim()
   return text !== '' && !TYPED_CONFIRM_BACKOUT.test(text) && !TYPED_CONFIRM_UTILITY.test(text) && !LOCALE_CONFIRM_BACKOUT.test(text) && !LOCALE_CONFIRM_UTILITY.test(text) && !namesRuBackout(text)
@@ -1804,7 +1990,9 @@ function typedConfirmButton(name) {
 // The confirm-prompt shape: a typing word followed by what to type ('Type DELETE ...', 'Enter the workspace name ...'), never
 // 'Type to search ...' / 'Type here ...' / 'Press Enter to ...' (cu-researcher's r1 over-ask 'Type to search deleted items').
 // r8 (author-found): gerunds too - 'Confirm by typing DELETE', 'by entering the project ID', 'Retyping the name ...'.
-const TYPED_INSTRUCTION = /\b(?:type|typing|enter|entering|re-?enter(?:ing)?|re-?typ(?:e|ing)|write|writing|input(?:ting)?|key(?:ing)?\s+in|spell(?:ing)?\s+out|repeat(?:ing)?|fill(?:ing)?\s+in|copy(?:ing)?|past(?:e|ing))\s+(?!(?:to|here|in)\b)["'\u201c\u2018\p{L}\p{N}]/iu
+// CU-745 (High; cu-researcher's sweep 5): 'Provide / Supply / Specify / Insert / Put in the <x> name' and 'Please confirm the <x> name'
+// are typing instructions too ('confirm' only before 'the / your / its ... name / ID / slug / handle / URL', never 'Confirm deletion').
+const TYPED_INSTRUCTION = /\b(?:type|typing|enter|entering|re-?enter(?:ing)?|re-?typ(?:e|ing)|write|writing|input(?:ting)?|key(?:ing)?\s+in|spell(?:ing)?\s+out|repeat(?:ing)?|fill(?:ing)?\s+in|copy(?:ing)?|past(?:e|ing)|provid(?:e|ing)|suppl(?:y|ying)|specif(?:y|ying)|indicat(?:e|ing)|insert(?:ing)?|put(?:ting)?\s+in)\s+(?!(?:to|here|in)\b)["'\u201c\u2018\p{L}\p{N}]|\bconfirm(?:ing)?\s+(?:the|your|its)\s+(?:[\p{L}\p{N}'\u2019-]+\s+){0,2}(?:name|id|slug|handle|url|label)\b/iu
 const TYPED_DESTROY = /\b(?:delet\w*|eras(?:e|es|ed|ing|ure)\b|wip(?:e|es|ed|ing)\b|remov\w*|destroy\w*|purg(?:e|es|ed|ing)\b|terminat\w*|deactivat\w*|permanently|permanent\s+(?:deletion|removal|erasure)|irreversibl\w*|cannot\s+be\s+undone|nuk(?:e|es|ed|ing)\b|uninstall\w*|drop\s+(?:it|them|(?:the|this|that|your|my)\s+\w+)\b|dropp(?:ed|ing)\b|shut(?:ting)?\s+(?:\w+\s+){0,3}down\b|clos(?:e|ing)\s+(?:it|(?:the|this|that|your|my)\s+\w+)\s+(?:down|for\s+good|permanently)\b|kill(?:s|ed|ing)?\s+(?:it|them|(?:the|this|that|your|my|all)\s+\w+)\b|scrap(?:s|ped|ping)?\b|trash(?:es|ed|ing)?\s+(?:it|them|(?:the|this|that|your|my|all)\s+\w+)\b|discard\w*|retir(?:e|es|ed|ing)\b|sunset(?:s|ting)?\b|cancel(?:l?ing)?\s+(?:the\s+|this\s+|your\s+|my\s+)?(?:account|membership|organi[sz]ation|workspace)\b|re-?format\w*|format\s+(?:the\s+|this\s+|your\s+)?(?:disk|drive|volume|card|partition)\b|obliterat\w*|shred\w*|annihilat\w*|decommission\w*|deprovision\w*|tear\s+(?:it\s+|this\s+|the\s+\w+\s+)?down|factory\s+reset|reset\s+(?:\w+\s+)?to\s+factory|empty\s+(?:it|them|the|this|that|your|all)\b|(?:archiv\w*|los(?:e|ing)|gone|hid(?:e|den))\s+(?:\w+\s+){0,2}(?:forever|for\s+good)|clos(?:e|ing)\s+(?:the\s+|this\s+|my\s+|your\s+)?account\b|drop\s+(?:the\s+|this\s+)?(?:table|database|schema|collection|index)\b)/i
 // A transfer counts only of ownership: 'Enter the transfer amount' is money, not a handover (cu-developer-three's near-miss).
 // r3 (policy owner 13:25Z): the destroy test without its three bare intensifiers ('permanently', 'irreversibl*', 'cannot
@@ -1816,15 +2004,22 @@ const TYPED_TRANSFER = /\b(?:(?:move|transfer|send|pass|give|assign|hand)\s+(?:(
 // ('DELETE', 'CLOSE' - not a field acronym like PIN or OTP) or in quotes, or 'the <up to 2 words> name / ID / slug /
 // handle / URL', or 'the name of'; or 'to confirm' anywhere. 'Enter your email', 'Enter the 6-digit code' and 'Type
 // your full name' are not confirm-shaped.
-const TYPED_VERB = /\b(?:type|typing|enter|entering|re-?enter(?:ing)?|re-?typ(?:e|ing)|write|writing|input(?:ting)?|key(?:ing)?\s+in|spell(?:ing)?\s+out|repeat(?:ing)?|fill(?:ing)?\s+in|copy(?:ing)?|past(?:e|ing))\s+/giu
+const TYPED_VERB = /\b(?:type|typing|enter|entering|re-?enter(?:ing)?|re-?typ(?:e|ing)|write|writing|input(?:ting)?|key(?:ing)?\s+in|spell(?:ing)?\s+out|repeat(?:ing)?|fill(?:ing)?\s+in|copy(?:ing)?|past(?:e|ing)|provid(?:e|ing)|suppl(?:y|ying)|specif(?:y|ying)|indicat(?:e|ing)|insert(?:ing)?|put(?:ting)?\s+in|confirm(?:ing)?(?=\s+(?:the|your|its)\s))\s+/giu
+// CU-745: a label that is only '<x> name / ID / slug / handle / URL to confirm [...]' ('Project name to confirm deletion', no colon).
+const NAME_TO_CONFIRM_LABEL = /^\s*(?:(?:the|your|its)\s+)?(?:[\p{L}\p{N}'\u2019-]+\s+){0,2}(?:name|id|slug|handle|url|label)\s+to\s+confirm\b/iu
+// CU-745 r2 (cu-researcher's held-out): a field label whose parenthetical names the act - 'Database name (required to delete):'.
+const NAME_PAREN_LABEL = /^\s*(?:(?:the|your|its)\s+)?(?:[\p{L}\p{N}'\u2019-]+\s+){0,2}(?:name|id|slug|handle|url|label)\s*\(([^()]{1,80})\)\s*[:\uFF1A]?\s*$/iu
+const nameLabelOpens = (text) => NAME_TO_CONFIRM_LABEL.test(text) || (() => { const m = NAME_PAREN_LABEL.exec(String(text ?? '')); return m !== null && (typedDestroyAct(m[1]) || typedTransfer(m[1]) || /\bto\s+confirm\b/i.test(m[1])) })()
 const FIELD_ACRONYM = /^(?:PIN|PUK|OTP|TAN|SMS|CVV|CVC|ID|URL|IBAN|BIC|SWIFT|SSN|ZIP|VAT|API|IP|MAC|IMEI)(?![\p{L}\p{N}])/u
 function confirmShaped(text) {
   if (/\bto\s+confirm\b/i.test(text)) return true
+  // CU-751: the general imperative shape names what to type, like a typing word does.
+  if (imperativeName(text)) return true
   for (const m of text.matchAll(TYPED_VERB)) {
     const rest = text.slice(m.index + m[0].length)
     if (/^["'\u201c\u2018]/u.test(rest)) return true
     if (/^\p{Lu}{2,}(?![\p{L}\p{N}])/u.test(rest) && !FIELD_ACRONYM.test(rest)) return true
-    if (/^the\s+(?:[\p{L}\p{N}-]+\s+){0,2}(?:name|id|slug|handle|url)\b/iu.test(rest) || /^the\s+name\s+of\b/i.test(rest)) return true
+    if (/^the\s+(?:[\p{L}\p{N}-]+\s+){0,2}(?:name|id|slug|handle|url|label)\b/iu.test(rest) || /^the\s+name\s+of\b/i.test(rest)) return true
   }
   return localeConfirmShaped(text)
 }
@@ -1969,7 +2164,37 @@ const LOCALE_TRANSFER_VERB = new RegExp(`${L0}(?:übertrag\\p{L}*|transfér\\p{L
 const LOCALE_OWNER = new RegExp(`${L0}(?:eigentüm\\p{L}*|inhaber\\p{L}*|besitzer\\p{L}*|propriét\\p{L}*|propiedad|propietari\\p{L}*|proprietári\\p{L}*|propriedade|propriet[àa]\\p{L}*|eigenaar\\p{L}*|eigendom\\p{L}*|владел\\p{L}*)${L1}|所有権|所有者|オーナー|所有权|所有權|拥有者|擁有者|소유권|소유자`, 'iu')
 const localeTransfer = (text) => LOCALE_TRANSFER_VERB.test(text) && LOCALE_OWNER.test(text)
 // The tests the typed-confirm reader uses: English first (unchanged), then the localized addition.
-const typedInstruction = (text) => TYPED_INSTRUCTION.test(text) || LOCALE_TYPED_VERB.test(text)
+// CU-751 (High; cu-coordinator 07:03Z, cu-researcher's general rule): no more verb lists - ANY imperative sentence whose object
+// is 'the / its / this [<x>] name / ID / slug / handle / label / URL', 'the name of ...' or 'the <x> by its name' is a typed
+// instruction ('State the name of the project ...', 'Give the cluster ID below.', 'Mention the workspace slug ...', 'Identify the
+// database by its name.'). The sentence must start with the verb (or after 'Please / Kindly ...' or a comma), never a determiner,
+// pronoun or auxiliary, nor a rename / edit verb (policy owner 07:10Z: 'Change the workspace name below.' beside a retention note is a
+// settings page, not a confirm); 'your <x> name' stays with CU-735's possessive shapes and their personal-field frees. The act still comes
+// from the zone's words (typedConfirmClasses), so a save form or a rename stays free. 'Give the cluster a name' is a naming, not a
+// confirm (cu-verifier's held-out; CU-735 keeps 'a new name' free): no a / an / new / another / different / other before the name word.
+// r2 (cu-researcher's held-out): a verb + 'us / me' counts like a verb + particle ('Tell us the account name ...'), and a sentence-initial
+// 'Name the <x> ...' is the instruction itself ('Name the repository you are removing.'); the act still comes from the zone.
+// r3 (cu-coordinator 10:11Z, the item his 09:31Z ruling named): 'Let us / Let me know the <x> name' - verb + us / me + know.
+// CU-765 r2: 'off' joins the particles ('read off the volume label').
+const IMPERATIVE_NAME = /(?:^|[.!?:;]\s+|,\s+)(?:(?:please|kindly|now|then|first|simply|just)\s+)?(?!(?:the|your|its|this|that|these|those|a|an|our|my|their|his|her|it|we|you|i|they|he|she|there|here|all|each|every|no|any|some|which|what|who|when|where|why|how|if|to|and|or|but|so|as|by|for|in|on|at|of|from|with|is|are|was|were|be|been|will|would|can|could|should|may|might|must|do|does|did|has|have|had|not|once|after|before|until|unless|change|changing|edit|editing|update|updating|rename|renaming|set|setting|choose|choosing|pick|picking|modify|modifying|customi[sz]e|adjust|alter)\b)\p{L}{2,}\s+(?:(?:in|out|off|down|up|over|back|us|me)\s+|(?:us|me)\s+know\s+)?(?:(?:the|its|this)\s+(?:(?!(?:a|an|new|another|different|other)\s)[\p{L}\p{N}'\u2019-]+\s+){0,2}(?:name|id|slug|handle|label|url)\b|(?:the|this)\s+name\s+of\b|its\s+(?:name|id|slug|handle|label|url)\b|(?:the|this)\s+(?:(?!(?:a|an|new|another|different|other)\s)[\p{L}\p{N}'\u2019-]+\s+){0,2}by\s+(?:its|their|the)\s+(?:name|id|slug|handle|label|url)\b)|(?:^|[.!?:;]\s+|,\s+)(?:(?:please|kindly|now|then|first|simply|just)\s+)?name\s+(?:the|its|this)\s+\p{L}/iu
+// CU-765 (High; cu-researcher's CU-764 held-out): a courtesy, aspect or purpose lead-in before the imperative ('Please take a moment to
+// put down the project ID.', 'Do jot down the team handle.', 'Kindly go on to give the cluster name.') is stripped before the imperative
+// is read - one general strip, not more phrases (cu-coordinator 10:37Z): any run of courtesy words, an emphatic 'do', a 'need / have /
+// want ... to', 'be sure / remember / take a moment / go on / proceed ... to' chain, or a leading clause up to its comma. The act still
+// comes from the zone, so a save form with the same sentence stays free.
+// CU-765 r2 (cu-researcher's held-out): a lead-in word may end with a comma ('Now, carefully fill out the database ID.'), and
+// 'next / finally / lastly / again' lead in as 'now / then / first' do.
+const LEAD_IN = /^(?:(?:please|kindly|now|then|first|next|finally|lastly|again|also|simply|just|quickly|carefully|do|go\s+ahead\s+and|be\s+sure\s+to|make\s+sure\s+(?:to|that\s+you|you)|remember\s+to|don['\u2019]?t\s+forget\s+to|feel\s+free\s+to|(?:you(?:['\u2019](?:ll|d))?|we)\s+(?:will\s+)?(?:need|have|want|ask)\s+(?:you\s+)?to|you\s+(?:must|should|will\s+need\s+to)|(?:take|spend)\s+a\s+(?:moment|second|minute|few\s+seconds)\s+(?:to|and)|(?:go\s+on|proceed|continue|try|start|begin)\s+to|(?:to|in\s+order\s+to|so\s+that|before|after|for|as|once|when|if|upon)\b[^,.;:!?]{1,80},)(?:\s*,\s*|\s+))+/i
+function imperativeName(text) {
+  const value = String(text ?? '')
+  if (IMPERATIVE_NAME.test(value)) return true
+  return value.split(/(?<=[.!?;:])\s+/).some((sentence) => {
+    const trimmed = sentence.trim()
+    const rest = trimmed.replace(LEAD_IN, '')
+    return rest !== trimmed && rest !== '' && IMPERATIVE_NAME.test(rest)
+  })
+}
+const typedInstruction = (text) => TYPED_INSTRUCTION.test(text) || LOCALE_TYPED_VERB.test(text) || imperativeName(text)
 const typedDestroy = (text) => TYPED_DESTROY.test(text) || LOCALE_DESTROY.test(text)
 const typedDestroyAct = (text) => TYPED_DESTROY_ACT.test(text) || LOCALE_DESTROY_ACT.test(text)
 const typedTransfer = (text) => TYPED_TRANSFER.test(text) || localeTransfer(text)
@@ -2018,11 +2243,14 @@ export function typedConfirmClasses(entries, zoneWords = []) {
   const zoneTransferUser = transferHere && zone.some((text) => transferUserShaped(text))
   const entryTransferUser = transferHere && texts.some((text) => transferUserShaped(text))
   const entryPossessive = texts.some((text) => possessiveNameShaped(text) || possessiveLabelShaped(text) || questionNameShaped(text)) && (zoneActs || texts.some((text) => typedDestroyAct(text) || typedTransfer(text)))
-  if (!texts.some((text) => typedInstruction(text)) && !zoneInstruction && !entryPossessive && !zoneTransferUser && !entryTransferUser) return []
+  // CU-745: a '<x> name to confirm' label, as the entry or in the zone, opens it too (the words still need an act).
+  const entryNameToConfirm = texts.some((text) => nameLabelOpens(text))
+  const zoneNameToConfirm = zone.some((text) => nameLabelOpens(text))
+  if (!texts.some((text) => typedInstruction(text)) && !zoneInstruction && !entryPossessive && !zoneTransferUser && !entryTransferUser && !entryNameToConfirm && !zoneNameToConfirm) return []
   // Policy owner's gate (08:07Z): the zone's words join only when an entry is confirm-shaped - an 'Enter your phone number'
   // form's 'We will remove it if you ask.' never reaches the destroy test. Entries alone keep #894's behaviour.
   // CU-736 r2 (cu-researcher's NOT OK at 0cdf35f48): a STRONG confirm entry ('Confirm the name by typing it.') joins the zone too.
-  const words = [...texts, ...(texts.some((text) => confirmShaped(text) || strongConfirm(text)) || entryPossessive || zoneInstruction || zoneTransferUser || entryTransferUser ? zone : [])].join(' \u2022 ')
+  const words = [...texts, ...(texts.some((text) => confirmShaped(text) || strongConfirm(text)) || entryPossessive || zoneInstruction || zoneTransferUser || entryTransferUser || entryNameToConfirm || zoneNameToConfirm ? zone : [])].join(' \u2022 ')
   return [...(typedDestroy(words) ? ['delete'] : []), ...(typedTransfer(words) ? ['permission'] : [])]
 }
 
@@ -3562,6 +3790,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
           const turnsOn = state === false
           if (!known || (security && turnsOff) || (heat && turnsOn)) classes.push('physical')
         }
+        // CU-754: an access toggle - its list names a privacy right, or its own name makes something public - asks permission
+        // when it turns on; the direction is the native read's, and an unknown state asks both ways (named over-ask, as CU-418).
+        if (nativeToggleState(target) !== true && (PUBLIC_TOGGLE.test(name) || accessRowContext(target?.rowContext))) classes.push('permission')
       }
       // CU-146: 'Trash' or 'Bin' alone deletes on a control (a toolbar button, a menu item); a sidebar row of that name
       // only opens the folder.
@@ -4497,7 +4728,16 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         if (restProbe.decision === 'confirm') for (const cls of restProbe.classes ?? [restProbe.class]) if (!classes.includes(cls)) classes.push(cls)
       }
       const localeConfirm = LOCALE_GENERIC_CONFIRM.test(String(target?.name ?? name ?? '')) || LOCALE_GENERIC_CONFIRM.test(String(name ?? '')) || namesRuConfirm(String(name ?? ''))
-      if (context.confirmProbe !== true && presses && (dialogName !== '' || dialogDescription !== '') && (GENERIC_CONFIRM.test(String(name ?? '')) || localeConfirm || continueTo)) {
+      // CU-747: final-step controls and a bare verb that echoes the dialog title's verb read the dialog too (additions only).
+      const finalStep = FINAL_STEP_CONFIRM.test(String(name ?? '')) || echoesDialogVerb(name, dialogName) || echoesDialogVerb(target?.name, dialogName)
+      // CU-757: 'Allow' / 'Grant' / 'Give access' (and localized) in a dialog whose title or a kept sentence states access asks
+      // permission and takes the dialog's other classes too; the same button in a dialog that states no access is unchanged.
+      const accessAllow = ACCESS_ALLOW.test(String(target?.name ?? '')) || ACCESS_ALLOW.test(String(name ?? ''))
+      const accessStated = accessAllow && [dialogName, ...dialogDescription.split(/(?<=[.!?。！？])\s*/u)]
+        .filter((sentence) => sentence !== '' && !/\b(?:if\s+you\s+(?:don'?t|do\s+not|choose\s+not\s+to|cancel|leave|close)|unless\s+you|otherwise)\b/i.test(sentence))
+        .some((sentence) => MODAL_ACCESS.test(sentence) || LOCALE_MODAL_ACCESS.test(sentence))
+      if (context.confirmProbe !== true && presses && accessStated && !classes.includes('permission')) classes.push('permission')
+      if (context.confirmProbe !== true && presses && (dialogName !== '' || dialogDescription !== '') && (GENERIC_CONFIRM.test(String(name ?? '')) || localeConfirm || continueTo || finalStep || accessStated)) {
         // cu-researcher 16:09Z: a title is a question more often than a row - 'Are you sure you want to <row>?', 'Really <row>?',
         // '<row>?' - so a title canonical step strips the question frame before the title is judged as a name.
         // #702 round 2 (cu-researcher 16:24Z): descriptions lead with 'This will / This action will / You are about to / Doing this will'.
@@ -4512,6 +4752,10 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         // CU-729: the localized title with its question frame removed is one more text (additions only).
         const unframed = (text) => text.replace(LOCALE_QUESTION_FRAME, ' ').replace(/[?？!！.。:：\s]+$/u, '').replace(/\s+/g, ' ').trim()
         for (const extra of [unframed(dialogName), unframed(firstSentence)]) if (extra !== '' && !texts.includes(extra)) texts.push(extra)
+        // CU-748: a localized passive-future statement in the title or a kept sentence adds its act's verb as one more text.
+        for (const sentence of [dialogName, ...kept]) { const verb = localePassiveAct(sentence); if (verb !== null && !texts.includes(verb)) texts.push(verb) }
+        // CU-746: the title and each kept sentence read as the act they state (statement, framed lead-in, noun title, access).
+        for (const base of [dialogName, ...kept]) for (const extra of modalStatementNames(base)) if (!texts.includes(extra)) texts.push(extra)
         for (const text of texts) {
           // #702 round 2: the title is judged with the FULL canonical form (synonym, quantifier, label and clause steps run only
           // outside a confirm probe), so no confirmProbe flag here; the probe target carries no dialog fields, so it cannot recurse.
@@ -4641,6 +4885,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     }
     // CU-521 (cu-coordinator 20:06Z): 'Merge anyway' keeps its older submit and unions permission (a merge past the requirements).
     if (grammarEligible && classes.length > 0 && !classes.includes('permission') && /^(?:merge\s+anyway|force[-\s]?merge)$/i.test(String(name ?? '').trim())) classes.push('permission')
+    // CU-573: data egress to a destination outside the account is a late UNION - only on a name nothing else classed (never clears a verdict).
+    if (grammarEligible && !nativeOn && classes.length === 0 && egressesData(name)) classes.push('permission')
     // CU-576 (built before triage): in a crypto wallet app a send / broadcast / sign / confirm / approve / swap moves money and is final - it
     // asks purchase (no grant covers it) beside whatever class it already has; reading, receiving and settings stay as they are.
     if (desktopUrl && !nativeOn && !classes.includes('purchase') && isWalletApp(String(context.frontmostBundleId ?? target?.origin ?? context.url ?? ''))
@@ -4688,6 +4934,15 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const raised = String(name ?? '').trim()
       if (/^(?:remove|clear)\s+(?:the\s+)?(?:activation\s+lock|device\s+passcode)$/i.test(raised) && !classes.includes('credential') && classes.length > 0) classes.push('credential')
       if (/^deploy\s+(?:the\s+|a\s+|this\s+)?(?:configuration\s+|config\s+|mdm\s+|management\s+)?profiles?$/i.test(raised) && !classes.includes('permission') && classes.length > 0) classes.push('permission')
+    }
+    // CU-753: a sign-in approval or a device-code grant asks PERMISSION - by its own name ('Approve sign-in', 'Link TV'), or a
+    // generic finishing control whose dialog, zone or form words state the grant ('Continue' under 'Enter the code shown on your
+    // TV', 'Yes, it's me' in 'Is this you signing in?'). A late union: it only adds.
+    if (grammarEligible && context.confirmProbe !== true && !classes.includes('permission')) {
+      const own = grantsDeviceAccess(name)
+      const around = DEVICE_GRANT_BUTTON.test(String(name ?? '')) && [target?.dialogName, target?.dialogDescription, ...(Array.isArray(target?.zoneWords) ? target.zoneWords.slice(0, 3) : []), ...(Array.isArray(target?.formEntries) ? target.formEntries.slice(0, 4) : [])]
+        .some((text) => typeof text === 'string' && text.split(/(?<=[.!?])\s+/).some((sentence) => grantsDeviceAccess(sentence)))
+      if (own || around) classes.push('permission')
     }
     // CU-585 (cu-researcher's filing; GO from the policy.mjs owner cu-developer-one 13:48Z; built by cu-developer-two): a
     // otherwise-unclassed button that does not back out ('Confirm', 'Next step', 'Yes, do it' - not 'Cancel') in a danger-zone form

@@ -1,0 +1,63 @@
+import assert from 'node:assert/strict'
+import { test } from 'node:test'
+
+import { createPolicy, typedConfirmClasses } from '../../_tools_/agent-core/policy.mjs'
+
+// CU-751 (High; cu-coordinator 07:03Z): any imperative verb before 'the <x> name / ID / slug / handle / label' in a destroy or
+// transfer zone opens the typed-confirm instruction - a general rule, not another verb list.
+const policy = createPolicy({ sitePolicy: () => 'allow' })
+const URL = 'https://code.example/org/repo/settings'
+const press = (name, formEntries) => { const v = policy.classify({ type: 'click', x: 1, y: 1, button: 'left' }, { url: URL, target: { tag: 'button', role: 'button', name, formEntries } }); return v.decision === 'allow' ? 'allow' : (v.classes ?? [v.class]).slice().sort().join('+') }
+
+test('CU-751: the filed rows ask (generic button, entry words)', () => {
+  assert.equal(press('Confirm', ['State the name of the project you are deleting.', 'The project will be removed permanently.']), 'delete')
+  assert.equal(press('Continue', ['Give the cluster ID below.', 'The cluster will be terminated.']), 'delete')
+  assert.equal(press('OK', ['Mention the workspace slug to proceed.', 'All workspace data will be erased.']), 'delete')
+  assert.equal(press('Confirm', ['Identify the database by its name.', 'This database will be dropped.']), 'delete')
+})
+
+test('CU-751: the shape, as entry + zone', () => {
+  assert.deepEqual(typedConfirmClasses(['Cluster'], ['Give the cluster ID below.', 'The cluster will be terminated.']), ['delete'])
+  assert.deepEqual(typedConfirmClasses(['Name'], ['To confirm, quote the repository name.', 'The repository will be deleted.']), ['delete'], 'after a comma')
+  assert.deepEqual(typedConfirmClasses(['Handle'], ['Please key the organization handle.', 'Ownership passes to the new owner.']), ['permission'], 'a transfer zone')
+  assert.deepEqual(typedConfirmClasses(['Name'], ['Repeat its name exactly.', 'This project will be deleted.']), ['delete'], "'its name'")
+})
+
+test('CU-751 near collisions stay free', () => {
+  assert.equal(press('Save', ['State the name of your project.', 'Shown in the sidebar.']), 'allow', "cu-researcher's free row")
+  assert.equal(press('Next', ['Bucket name (for your records):', 'Choose a storage class next.']), 'allow', "cu-researcher's free row")
+  assert.deepEqual(typedConfirmClasses(['Name'], ['Change the project name.', 'Renaming keeps every file.']), [], 'a rename')
+  assert.deepEqual(typedConfirmClasses(['ID'], ['The cluster ID is shown below.', 'The cluster will be terminated.']), [], 'a statement, not an imperative')
+  assert.deepEqual(typedConfirmClasses(['ID'], ['Your user ID is required.', 'Your account will be deleted.']), [], 'no imperative; a personal field')
+  assert.deepEqual(typedConfirmClasses(['Notes'], ['Describe the reason below.', 'Your account will be deleted.']), [], 'no name word')
+  // policy owner 07:10Z: rename / edit verbs are a settings page, not a confirm - even beside an act
+  assert.deepEqual(typedConfirmClasses(['Name'], ['Change the workspace name below.', 'Old drafts are deleted after 30 days.']), [], 'a rename beside a retention note')
+  assert.deepEqual(typedConfirmClasses(['ID'], ['Edit the cluster ID.', 'The cluster will be terminated.']), [], 'an edit verb')
+  assert.deepEqual(typedConfirmClasses(['Name'], ['Choose the project name.', 'Old builds will be removed.']), [], 'a choose verb')
+  // A rename verb + 'to confirm': CU-751's shape stays shut, but CU-745's '<x> name to confirm' label shape (on main since #1421)
+  // already reads 'Change the name to confirm' beside a delete as a confirm - it asks, as it did before this change.
+  assert.deepEqual(typedConfirmClasses(['Name'], ['Change the name to confirm.', 'The project will be deleted.']), ['delete'], "'<x> name to confirm' (CU-745's label shape) still asks")
+  assert.deepEqual(typedConfirmClasses(['Name'], ['Give the cluster a name.', 'Old clusters will be removed.']), [], 'a naming (a / new name), not a confirm')
+  assert.deepEqual(typedConfirmClasses(['Name'], ['Give the workspace a new name.', 'The old workspace will be deleted.']), [], 'a new name')
+})
+
+test('CU-751 r2: cu-researcher\'s two held-out misses ask', () => {
+  assert.equal(press('Confirm', ['Name the repository you are removing.', 'Its history will be destroyed.']), 'delete', "a sentence-initial 'Name the <x>'")
+  assert.equal(press('Continue', ['Tell us the account name to continue.', 'Your account will be permanently erased.']), 'delete', "verb + 'us'")
+  assert.deepEqual(typedConfirmClasses(['Name'], ['Give me the workspace slug.', 'The workspace will be deleted.']), ['delete'], "verb + 'me'")
+  assert.deepEqual(typedConfirmClasses(['Name'], ['Name the repository.', 'Shown in the sidebar.']), [], "cu-researcher's near row (no act)")
+  assert.deepEqual(typedConfirmClasses(['Name'], ['Tell us the account name.', 'It appears on invoices.']), [], "cu-researcher's near row (invoices)")
+})
+
+test('CU-751 r3: \'Let us / Let me know the <x> name\' (the item the 09:31Z ruling named)', () => {
+  assert.equal(press('Confirm', ['Let us know the bucket name.', 'The bucket will be deleted.']), 'delete', "cu-researcher's CU-764 row")
+  assert.equal(press('Confirm', ['Let us know the repository name.', 'The repository will be deleted.']), 'delete', "cu-developer-one's row")
+  assert.deepEqual(typedConfirmClasses(['ID'], ['Let me know the project ID.', 'The project will be erased.']), ['delete'], "'let me know'")
+  assert.deepEqual(typedConfirmClasses(['Name'], ['Let us know the bucket name.', 'Pick a region next.']), [], 'no act')
+})
+
+test('CU-751: confirm verbs still ask (not rename verbs)', () => {
+  assert.deepEqual(typedConfirmClasses(['Name'], ['Retype the project name.', 'The project will be deleted.']), ['delete'])
+  assert.deepEqual(typedConfirmClasses(['Name'], ['Re-enter the project name.', 'The project will be deleted.']), ['delete'])
+  assert.deepEqual(typedConfirmClasses(['Name'], ['Repeat the project name.', 'The project will be deleted.']), ['delete'])
+})
