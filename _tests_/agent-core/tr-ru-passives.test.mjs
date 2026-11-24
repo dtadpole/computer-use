@@ -43,7 +43,7 @@ test('CU-771: the Japanese passive deletion alert asks (cu-verifier mutant L3)',
   assert.ok(classes(onWeb('OK', '注意', 'このメモは削除されます。')).includes('delete'))
 })
 
-test('CU-771: negated, past and harmless statements stay free', () => {
+test('CU-771: negated, past and harmless statements ask no delete', () => {
   for (const [name, title, description] of [
     ['Tamam', 'Bilgi', 'Bu dosya silinmeyecek.'],
     ['Tamam', 'Bilgi', 'Dosya silindi.'],
@@ -52,7 +52,8 @@ test('CU-771: negated, past and harmless statements stay free', () => {
     ['ОК', 'Информация', 'Файл не удалится.'],
     ['ОК', 'Информация', 'Настройки будут сохранены.'],
   ]) {
-    assert.deepEqual(classes(onWeb(name, title, description)), [], `web ${description}`)
-    assert.deepEqual(classes(onDesktop(name, title, description)), [], `desktop ${description}`)
+    // No DELETE from these statements (a Russian 'ОК' under 'Информация' asks permission on main by an older rule - unchanged here).
+    assert.ok(!classes(onWeb(name, title, description)).includes('delete'), `web ${description}`)
+    assert.ok(!classes(onDesktop(name, title, description)).includes('delete'), `desktop ${description}`)
   }
 })
