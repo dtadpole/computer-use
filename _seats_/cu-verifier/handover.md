@@ -12,7 +12,7 @@ grounded_in:
 
 # [cu] Verifier - Handover
 
-Start here, then [responsibilities](responsibilities.md) and [verdict](ultimate-goal-2-verdict.md).
+Start with [responsibilities](responsibilities.md) and [verdict](ultimate-goal-2-verdict.md).
 
 - **Where:** `--records` for verdicts, `--tm*` test trees, `--vtools` for local tools.
 - **Push:** gate unpiped, push on exit 0; one action-log line per PR; a PR title names no filing id but 'Part of CU-16'.
