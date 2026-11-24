@@ -1923,6 +1923,28 @@ function namesRuBackout(text) {
   }
   return ruBackoutRegex.test(normaliseName(text))
 }
+// CU-753 (High; sweep 6, follow-up to CU-493): approving a sign-in or a device-code grant hands the account to another device -
+// PERMISSION. Two shapes, read by sense: a sign-in approval ('Allow sign-in on a new device?', 'Approve this login request',
+// 'Someone is trying to sign in', 'Is this you signing in?'; r2 - cu-researcher's held-out: 'Sign-in requested', 'New login', 'Was this
+// you?') and a device link / code grant ('Enter the code shown on your TV',
+// 'Link your TV', 'Activate your device', 'Pair a new device'). The person's OWN sign-in ('Sign in', 'Sign in with Google',
+// 'Allow sign-in with passkeys' as a setting) is neither.
+const DEVICE_THING = String.raw`(?:tv|television|smart\s+tv|device|console|game\s+console|streaming\s+(?:device|stick|box)|set-?top\s+box|other\s+device|second\s+device|screen|watch|car)`
+// The screens a person signs in on for an account (pairing headphones or a keyboard is no account grant).
+const ACCOUNT_SCREEN = String.raw`(?:tv|television|smart\s+tv|console|game\s+console|streaming\s+(?:device|stick|box)|set-?top\s+box)`
+const SIGNIN_APPROVAL = new RegExp(String.raw`^\s*(?:allow|approve|authori[sz]e|accept|grant)\s+(?:this\s+|the\s+|a\s+|new\s+)?(?:sign-?in|log-?in|login)(?:\s+(?:request|attempt))?(?:\s+(?:on|from|for|to)\b.{0,60})?\s*[?.!]?\s*$|\b(?:new\s+)?(?:sign-?in|log-?in|login)\s+(?:request|attempt|approval)\b|\b(?:someone|a\s+(?:new\s+)?device|another\s+device|a\s+new\s+browser)\s+(?:is\s+)?(?:trying|wants|requested|asking)\s+to\s+(?:sign|log)\s+in\b|\bis\s+(?:this|it)\s+you\s+(?:signing|logging|trying\s+to\s+(?:sign|log))\s+in\b|\b(?:did\s+you\s+(?:just\s+)?(?:try|attempt)\s+to\s+(?:sign|log)\s+in)\b|\bapprove\s+(?:the\s+)?(?:sign-?in|login)\s+on\s+your\s+other\s+device\b|^\s*(?:new\s+(?:sign-?in|log-?in|login)(?:\s+(?:request|attempt|detected|alert))?|(?:sign-?in|log-?in|login)\s+(?:requested|request|attempt|detected|alert))(?:\s+(?:from|on|in|near)\b.{0,60})?\s*[?.!]?\s*$|\b(?:was|is)\s+(?:this|that|it)\s+(?:really\s+)?you\s*\?|\bbeing\s+used\s+to\s+(?:sign|log)\s+in(?:\s+to)?\b`, 'i')
+const DEVICE_CODE_GRANT = new RegExp(String.raw`\b(?:enter|type|input)\s+(?:the\s+|your\s+)?(?:\d+-(?:digit|character|letter)\s+)?(?:activation\s+|device\s+|pairing\s+|link\s+|tv\s+)?code\s+(?:that\s+(?:is\s+)?|which\s+is\s+)?(?:shown|displayed|appears|appearing|showing|you\s+see)\s+on\s+(?:your\s+|the\s+)?${DEVICE_THING}\b|\b(?:enter|type)\s+(?:the\s+)?code\s+from\s+(?:your\s+|the\s+)?${DEVICE_THING}\b|^\s*(?:link|connect|activate|pair|authori[sz]e|register|sign\s+in\s+(?:on|to))\s+(?:your\s+|a\s+|this\s+|the\s+|new\s+|a\s+new\s+)?${ACCOUNT_SCREEN}\s*[?.!]?\s*$|^\s*(?:link|activate|authori[sz]e|register)\s+(?:your\s+|a\s+|this\s+|the\s+|new\s+|a\s+new\s+)?(?:device|other\s+device|second\s+device)\s*[?.!]?\s*$`, 'i')
+// r2 (cu-coordinator 14:05Z, one rule): approving a PENDING sign-in or grant asks; acknowledging a FINISHED one does not - 'Sign-in
+// request blocked', 'Login attempt expired', 'Request denied', 'Sign-in successful' (cu-developer-two's cross-check rows).
+// r3 (cu-developer-two's r2 cross-check): a PAST approval is a finished request too - 'Sign-in approved', 'You approved the login
+// request from Safari on iPhone.' (approved / confirmed / allowed / accepted / granted / authorized / verified).
+const GRANT_FINISHED = /\b(?:blocked|expired|denied|declined|rejected|cancel+ed|timed\s+out|failed|successful|succeeded|completed|stopped|approved|confirmed|allowed|accepted|granted|authori[sz]ed|verified)\b/i
+function grantsDeviceAccess(text) {
+  const t = String(text ?? '').trim()
+  return t !== '' && t.length <= 160 && !GRANT_FINISHED.test(t) && (SIGNIN_APPROVAL.test(t) || DEVICE_CODE_GRANT.test(t))
+}
+// A generic control that finishes such a grant: Continue / Next / Submit / Allow / Approve / Yes, it's me / Activate / Link / Pair ...
+const DEVICE_GRANT_BUTTON = /^\s*(?:continue|next|submit|done|ok|okay|go|confirm|verify|yes|allow|approve|authori[sz]e|accept|activate|link|connect|pair|sign\s+in|log\s+in|(?:yes,?\s+)?(?:it'?s|it\s+is|that\s+(?:was|is))\s+me)\s*[.!>›→]?\s*$/i
 function typedConfirmButton(name) {
   const text = String(name ?? '').trim()
   return text !== '' && !TYPED_CONFIRM_BACKOUT.test(text) && !TYPED_CONFIRM_UTILITY.test(text) && !LOCALE_CONFIRM_BACKOUT.test(text) && !LOCALE_CONFIRM_UTILITY.test(text) && !namesRuBackout(text)
@@ -4846,6 +4868,15 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const raised = String(name ?? '').trim()
       if (/^(?:remove|clear)\s+(?:the\s+)?(?:activation\s+lock|device\s+passcode)$/i.test(raised) && !classes.includes('credential') && classes.length > 0) classes.push('credential')
       if (/^deploy\s+(?:the\s+|a\s+|this\s+)?(?:configuration\s+|config\s+|mdm\s+|management\s+)?profiles?$/i.test(raised) && !classes.includes('permission') && classes.length > 0) classes.push('permission')
+    }
+    // CU-753: a sign-in approval or a device-code grant asks PERMISSION - by its own name ('Approve sign-in', 'Link TV'), or a
+    // generic finishing control whose dialog, zone or form words state the grant ('Continue' under 'Enter the code shown on your
+    // TV', 'Yes, it's me' in 'Is this you signing in?'). A late union: it only adds.
+    if (grammarEligible && context.confirmProbe !== true && !classes.includes('permission')) {
+      const own = grantsDeviceAccess(name)
+      const around = DEVICE_GRANT_BUTTON.test(String(name ?? '')) && [target?.dialogName, target?.dialogDescription, ...(Array.isArray(target?.zoneWords) ? target.zoneWords.slice(0, 3) : []), ...(Array.isArray(target?.formEntries) ? target.formEntries.slice(0, 4) : [])]
+        .some((text) => typeof text === 'string' && text.split(/(?<=[.!?])\s+/).some((sentence) => grantsDeviceAccess(sentence)))
+      if (own || around) classes.push('permission')
     }
     // CU-585 (cu-researcher's filing; GO from the policy.mjs owner cu-developer-one 13:48Z; built by cu-developer-two): a
     // otherwise-unclassed button that does not back out ('Confirm', 'Next step', 'Yes, do it' - not 'Cancel') in a danger-zone form
