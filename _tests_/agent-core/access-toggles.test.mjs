@@ -113,6 +113,44 @@ test('CU-774 r2: the other side - leaving the directory, signed-in audiences and
   assert.equal(axcb('Show hidden files in directory', false), 'allow')
 })
 
+test('CU-779: a toggle that exposes the owner or their work to a wider audience or a public place asks permission', () => {
+  const exposed = [
+    // cu-researcher's filed rows
+    'Include me in the staff list visible to guests', 'Let strangers view my portfolio', 'List my shop in the marketplace',
+    // the shape: the owner's profile or work, shown, shared or opened to guests, strangers, people outside, the public
+    'Share my portfolio with strangers', 'Make my portfolio visible to strangers', 'Show my availability to people outside your organization',
+    'Allow guests to see my profile', 'Let anyone view my projects', 'Let people you do not know see my photos',
+    'Show my email address to external users', 'Share my status with everyone on the internet',
+    'Add my profile to the team page shown to visitors', 'List me in the company roster visible to anyone',
+    'Feature my portfolio on the explore page', 'Publish my designs to the community gallery', 'Sell my artwork in the marketplace',
+    'My portfolio is visible to strangers', 'Profile visible to guests', 'My shop is open to everyone',
+  ]
+  for (const name of exposed) {
+    assert.match(webcb(name, false), /permission/, name)
+    assert.match(space(name, false), /permission/, `Space: ${name}`)
+  }
+  // The filed desktop row: a checkbox by its own name, no list.
+  assert.match(axcb('Show my contact card to people outside the team', false), /permission/)
+  assert.match(sw('List my shop in the marketplace', false), /permission/)
+})
+
+test('CU-779: the other side - already on, no audience named, the owner\'s own circle and own views stay free', () => {
+  assert.equal(webcb('Let strangers view my portfolio', true), 'allow') // already on: the press closes it
+  assert.equal(axcb('Show my contact card to people outside the team', true), 'allow')
+  for (const name of [
+    // cu-researcher's near rows
+    'Include weekends in the calendar', 'Show my contact card photo',
+    // no wider audience, or the owner's own circle
+    // (sharing with a person, listing items for sale and letting guests join are other rules' acts, so they are not near rows here)
+    'Show my status to my team', 'Let teammates view my calendar', 'Visible to team members only', 'Show my profile to my contacts',
+    // the owner's own views and local places
+    'Show my photos in the gallery', 'Add my photos to the gallery', 'Show my purchases in the store', 'Show the marketplace tab', 'Show guest list',
+  ]) {
+    assert.equal(webcb(name, false), 'allow', name)
+  }
+  assert.equal(axcb('Show my contact card photo', false), 'allow')
+})
+
 test('CU-754: accessRowContext reads both shapes and nothing else', () => {
   assert.equal(accessRowContext('Full Disk Access'), true)
   assert.equal(accessRowContext({ list: 'Accessibility', hints: [] }), true)

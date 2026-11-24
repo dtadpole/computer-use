@@ -223,6 +223,28 @@ const FINDABLE_TOGGLE = new RegExp('^\\s*(?:' + [
   String.raw`(?:visible|shown)\s+to\s+${OUTSIDERS}`,
   String.raw`(?:let|allow)\s+${OUTSIDERS}\s+(?:to\s+)?(?:see|view|read|find)\s+(?:me|you|(?:my|your)\s+(?:profile|account|page|posts?|activity|content))`,
 ].join('|') + ')\\s*$', 'i')
+// CU-779 (P1, the follow-up to CU-774): a toggle whose label exposes the owner, or the owner's profile or work (a portfolio,
+// a shop, a contact card, a listing ...), to a wider audience - guests, strangers, people outside the team or organization,
+// signed-out visitors, the public, a marketplace or other public place - asks permission unless it is already on; the
+// same grant as CU-754's public toggle. Showing a thing without naming an audience ('Show my contact card photo'), and
+// audiences inside the owner's circle (team, contacts, members), stay free.
+const OWN_WORK = String.raw`(?:me|you|(?:my|your)\s+(?:profile|account|page|posts?|content|activity|listings?|portfolio|work|projects?|shop|store|contact\s+(?:card|details|info(?:rmation)?)|card|r[eé]sum[eé]|cv|bio|gallery|photos?|videos?|art(?:work)?|designs?|availability|status|name|e-?mail(?:\s+address)?|phone(?:\s+number)?|details))`
+const WIDER = String.raw`(?:${OUTSIDERS}|(?:site\s+|website\s+|page\s+)?visitors|strangers|anyone|everyone|the\s+public|(?:all|other)\s+users|external\s+(?:users|people|guests|collaborators|contacts)|(?:people|users|anyone|everyone)\s+(?:outside|beyond)\s+(?:(?:my|your|the|this|our)\s+)?(?:team|organi[sz]ation|org|company|network|workspace|school|family|circle|contacts|connections)|(?:people|users)\s+(?:i|you)\s+(?:don't|do\s+not)\s+know|(?:people|users)\s+not\s+in\s+(?:my|your)\s+(?:contacts|network|team|organi[sz]ation)|(?:anyone|everyone)\s+(?:on|across)\s+(?:the\s+)?(?:internet|web))`
+// A place others browse: a marketplace or app store, a public or community gallery, an explore / discover page. A bare
+// 'gallery' or 'store' can be the owner's own view ('Show my photos in the gallery') and stays out.
+const PUBLIC_PLACE = String.raw`(?:the\s+|our\s+)?(?:marketplace|market|app\s+store|public\s+(?:store|gallery|showcase|feed|catalog(?:ue)?)|community(?:\s+(?:page|feed|gallery|showcase))?|explore(?:\s+(?:page|tab|feed))?|discover(?:y)?(?:\s+(?:page|tab|feed))?|leaderboard)`
+const EXPOSED_TOGGLE = new RegExp('^\\s*(?:' + [
+  // 'Show my contact card to people outside the team', 'Share my portfolio with strangers'
+  String.raw`(?:show|share|display|expose|open|reveal|make)\s+${OWN_WORK}\s+(?:(?:visible|available|public)\s+)?(?:to|with)\s+${WIDER}`,
+  // 'Let strangers view my portfolio', 'Allow guests to see my profile'
+  String.raw`(?:let|allow)\s+${WIDER}\s+(?:to\s+)?(?:see|view|browse|read|find|access|download|look\s+at)\s+${OWN_WORK}`,
+  // 'Include me in the staff list visible to guests', 'Add my profile to the team page shown to visitors'
+  String.raw`(?:include|list|add|show|feature|put|publish)\s+${OWN_WORK}\s+(?:in|on|to)\s+(?:the\s+|our\s+)?(?:[a-z'-]+\s+){0,3}(?:list|roster|directory|page|feed|gallery|showcase|board)\s+(?:that\s+is\s+|that's\s+)?(?:visible|shown|available|open)\s+to\s+${WIDER}`,
+  // 'List my shop in the marketplace', 'Feature my portfolio on the explore page', 'Publish my designs to the community gallery'
+  String.raw`(?:list|feature|publish|post|sell|offer|showcase)\s+${OWN_WORK}\s+(?:in|on|to)\s+${PUBLIC_PLACE}`,
+  // 'My portfolio is visible to strangers', 'Profile visible to guests'
+  String.raw`(?:${OWN_WORK}|profile|portfolio|shop|store|listing|contact\s+card)\s+(?:is\s+|are\s+)?(?:visible|shown|available|open|public)\s+to\s+${WIDER}`,
+].join('|') + ')\\s*$', 'i')
 /** CU-754: whether a toggle's row context (rowContext: a { list, hints } object or a plain string) names an access right. */
 export function accessRowContext(rowContext) {
   const texts = typeof rowContext === 'string'
@@ -3860,7 +3882,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         // CU-754: an access toggle - its list names a privacy right, or its own name makes something public - asks permission
         // when it turns on; the direction is the native read's, and an unknown state asks both ways (named over-ask, as CU-418).
         // CU-774: a toggle that makes the profile findable or indexable (FINDABLE_TOGGLE) is the same grant to everyone.
-        if (nativeToggleState(target) !== true && (PUBLIC_TOGGLE.test(name) || FINDABLE_TOGGLE.test(name) || accessRowContext(target?.rowContext))) classes.push('permission')
+        // CU-779: so is one that exposes the owner's profile or work to a wider audience or a public place (EXPOSED_TOGGLE).
+        if (nativeToggleState(target) !== true && (PUBLIC_TOGGLE.test(name) || FINDABLE_TOGGLE.test(name) || EXPOSED_TOGGLE.test(name) || accessRowContext(target?.rowContext))) classes.push('permission')
       }
       // CU-146: 'Trash' or 'Bin' alone deletes on a control (a toolbar button, a menu item); a sidebar row of that name
       // only opens the folder.
