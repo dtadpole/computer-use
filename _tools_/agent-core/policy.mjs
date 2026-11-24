@@ -64,9 +64,13 @@ const MODAL_LEAD = new RegExp(String.raw`^(?:doing\s+(?:so|this)|proceeding|cont
 // Only the person's act opens it, so a retention note ('After 30 days, deleted items are removed.') stays as it was.
 const MODAL_CLAUSE_LEAD = /^(?:once|after|when|as\s+soon\s+as|if|upon)\s+(?:(?:this\s+is\s+|it\s+is\s+)?(?:confirm\w*|continu\w*|proceed\w*|complet\w*|finish\w*|submit\w*|approv\w*|accept\w*|done)|you\s+[a-z]+(?:\s+[a-z]+){0,3})\s*,\s*(\S.*)$/i
 const MODAL_PRESENT = new RegExp(String.raw`^(.{1,120}?)\s+(?:is|are|gets?)\s+${MODAL_ADVERB}([a-z]+(?:ed|en|t))\b`, 'i')
-const MODAL_NOMINAL = { deletion: 'delete', removal: 'remove', erasure: 'erase', termination: 'terminate', deactivation: 'deactivate', closure: 'close', cancellation: 'cancel', wipe: 'wipe', reset: 'reset', transfer: 'transfer' }
-const MODAL_NOMINAL_TITLE = /^(?:(?:the|your|this)\s+)?([\p{L}\p{N}'\u2019 -]{1,40}?)\s+(deletion|removal|erasure|termination|deactivation|closure|cancellation|wipe|reset|transfer)$/iu
-const MODAL_NOMINAL_OF = /^(deletion|removal|erasure|termination|deactivation|closure|cancellation|transfer)\s+of\s+(.{1,60})$/i
+const MODAL_NOMINAL = { deletion: 'delete', removal: 'remove', erasure: 'erase', termination: 'terminate', deactivation: 'deactivate', closure: 'close', cancellation: 'cancel', wipe: 'wipe', reset: 'reset', transfer: 'transfer', handover: 'transfer', handoff: 'transfer', 'hand-off': 'transfer', reassignment: 'transfer', grant: 'grant' }
+// CU-756 (High; cu-researcher's #1423 r2 miss): a transfer / handover of what grants control ('Ownership handover', 'Admin transfer') is
+// read as 'Transfer ownership' too - permission, as the policy owner ruled for ownership / rights / workspace transfers; money ('Funds
+// transfer', 'Account transfer') is no such object and stays with its own reading.
+const MODAL_CONTROL_OBJECT = /\b(?:owner\w*|admin\w*|rights?|control|role|workspace|team|org(?:ani[sz]ation)?|repo(?:sitory)?|project|domain|site|channel|group)\b/i
+const MODAL_NOMINAL_TITLE = /^(?:(?:the|your|this)\s+)?([\p{L}\p{N}'\u2019 -]{1,40}?)\s+(deletion|removal|erasure|termination|deactivation|closure|cancellation|wipe|reset|transfer|handover|handoff|hand-off|reassignment|grant)$/iu
+const MODAL_NOMINAL_OF = /^(deletion|removal|erasure|termination|deactivation|closure|cancellation|transfer|handover|handoff|hand-off|reassignment|grant)\s+of\s+(.{1,60})$/i
 const MODAL_ACCESS = /\b(?:(?:requests?|requesting|wants?|would\s+like)\s+(?:\w+\s+){0,3}access\b|will\s+be\s+able\s+to\s+(?:read|write|access|see|view|manage|control|change|edit|delete|post|send|act)\b|(?:gives?|grants?|allows?)\s+(?:\S+\s+){0,4}access\b)/i
 const MODAL_RISK_VERB = /^(?:delete|erase|remove|wipe|destroy|purge|reset|terminate|deactivate|close|cancel|transfer|give|grant|share|publish|send|pay|charge|buy|purchase|subscribe|install|uninstall|revoke|disable|disconnect|unlink|overwrite|replace|drop|empty|clear|format|forfeit|expose|make)$/
 const MODAL_IRREGULAR = { sent: 'send', lost: 'lose', kept: 'keep', shown: 'show', given: 'give', sold: 'sell', paid: 'pay', made: 'make', taken: 'take', spent: 'spend', withdrawn: 'withdraw', shut: 'shut' }
@@ -92,6 +96,10 @@ export function modalStatementNames(text) {
   if (nominal) out.push(modalName(MODAL_NOMINAL[nominal[2].toLowerCase()], nominal[1]))
   const nominalOf = MODAL_NOMINAL_OF.exec(t)
   if (nominalOf) out.push(modalName(MODAL_NOMINAL[nominalOf[1].toLowerCase()], nominalOf[2]))
+  // CU-756: a transfer noun over a control object also reads as 'Transfer ownership'.
+  for (const [noun, object] of [nominal ? [nominal[2], nominal[1]] : null, nominalOf ? [nominalOf[1], nominalOf[2]] : null].filter(Boolean)) {
+    if (MODAL_NOMINAL[noun.toLowerCase()] === 'transfer' && MODAL_CONTROL_OBJECT.test(object)) out.push('Transfer ownership')
+  }
   if (MODAL_ACCESS.test(t)) out.push('Grant access')
   const clause = MODAL_CLAUSE_LEAD.exec(t)
   if (clause) {
