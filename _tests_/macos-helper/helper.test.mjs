@@ -161,6 +161,21 @@ describe('build', () => {
     execFileSync('codesign', ['--verify', '--strict', built.app])
   })
 
+  // CU-744 review (cu-developer-two, cu-coordinator 16:47Z): one version everywhere. build.sh's VERSION, the bundle's
+  // plist, HelperIdentity.version and what the built helper says with --version (prints and exits, nothing else) agree, so a
+  // bump cannot stop half-way again (0.2.74 once left HelperIdentity at 0.2.73, which the install's self-test would report).
+  it('keeps one version: build.sh, the plist, HelperIdentity.version and --version agree', () => {
+    const fromBuild = /^VERSION="([^"]+)"/m.exec(readFileSync(join(HELPER_DIR, 'build.sh'), 'utf8'))?.[1]
+    const fromIdentity = /static let version = "([^"]+)"/.exec(readFileSync(join(HELPER_DIR, 'Sources', 'Policy.swift'), 'utf8'))?.[1]
+    assert.match(fromBuild ?? '', /^\d+\.\d+\.\d+$/)
+    assert.equal(fromIdentity, fromBuild)
+    const plist = JSON.parse(execFileSync('plutil', ['-convert', 'json', '-o', '-', join(built.app, 'Contents', 'Info.plist')]).toString())
+    assert.equal(plist.CFBundleShortVersionString, fromBuild)
+    const said = execFileSync(built.executable, ['--version'], { timeout: 10000 * FACTOR }).toString().trim().split(/\s+/)
+    assert.equal(said[0], 'com.reflection.cu-helper')
+    assert.equal(said[1], fromBuild)
+  })
+
   it('links no other prompting call than the two of --request-grants, and nothing that touches the pasteboard', () => {
     const imported = execFileSync('nm', ['-u', built.executable]).toString().split('\n').map((line) => line.trim())
     for (const name of ['_CGRequestPostEventAccess', '_CGRequestListenEventAccess', '_IOHIDRequestAccess', '_CGWindowListCreateImage']) {
