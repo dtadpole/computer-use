@@ -22,6 +22,14 @@ test('CU-765: the strip is general (shapes beyond the filed rows)', () => {
   assert.deepEqual(typedConfirmClasses(['Slug'], ["Please don't forget to fill in the workspace slug.", 'All workspace data will be erased.']), ['delete'], 'a chain of lead-ins')
 })
 
+test('CU-765 r2: a lead-in with a comma, and a read-off particle', () => {
+  assert.deepEqual(typedConfirmClasses(['ID'], ['Now, carefully fill out the database ID.', 'The database will be deleted.']), ['delete'], "cu-researcher's held-out miss ('Now,' + 'carefully')")
+  assert.deepEqual(typedConfirmClasses(['Label'], ['To be safe, read off the volume label and enter it.', 'The volume will be erased.']), ['delete'], "cu-researcher's held-out miss ('read off')")
+  assert.deepEqual(typedConfirmClasses(['Name'], ['Next, jot down the bucket name.', 'The bucket will be deleted.']), ['delete'], "'Next,'")
+  assert.deepEqual(typedConfirmClasses(['ID'], ['Now, carefully fill out the database ID.', 'Used for connection strings.']), [], 'the same entry in a zone with no act stays free')
+  assert.deepEqual(typedConfirmClasses(['Label'], ['To be safe, read off the volume label and enter it.', 'Pick a template next.']), [], 'a zone with no act stays free')
+})
+
 test('CU-765 near rows stay free', () => {
   assert.equal(press('Save', ['Please take a moment to put down the project ID.', 'Used in API keys.']), 'allow', "cu-researcher's near row (no act)")
   assert.deepEqual(typedConfirmClasses(['Name'], ['Please take a moment to give your workspace a name.', 'You can change it later.']), [], 'a naming, no act')
