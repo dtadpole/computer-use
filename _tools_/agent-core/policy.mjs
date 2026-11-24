@@ -49,6 +49,39 @@ export function neverCoveredByGrant(cls, name) {
 // locks, dial rows, mass sends, compensation, returns, relists, ride cancels) asks under any submit grant.
 // CU-507 (High; cu-coordinator 16:06Z): the generic final buttons of a confirm modal - judged by the modal's own title and text.
 const GENERIC_CONFIRM = /^\s*(?:confirm|ok|okay|yes|yes,?\s+(?:continue|confirm|proceed|i'?m\s+sure|do\s+it)|continue|proceed|submit|done|apply|accept|agree|i\s+agree|i\s+understand|got\s+it|i'?m\s+sure|do\s+it|go\s+ahead|confirm\s+and\s+continue)\s*[.!]?\s*$/i
+// CU-748 (High; sweep 5, cu-coordinator 06:05Z): a localized alert that states the act in the passive future ('Diese 12 Fotos
+// werden ... gelöscht.', 'Les fichiers seront supprimés.', '削除されます', '将被删除', '삭제됩니다') names that act; the modal rule
+// judges its verb as one more text, as the English titles are judged. Only delete verbs, only future / passive forms. r2 adds Dutch.
+const LOCALE_PASSIVE_ACTS = [
+  [/\b(?:werden|wird)\b[^.!?]{0,120}?\b(?:endgültig\s+|dauerhaft\s+|unwiderruflich\s+)?(?:gelöscht|entfernt)\b/iu, 'löschen'],
+  [/\b(?:seront|sera)\s+(?:\S+\s+){0,3}?(?:supprimée?s?|effacée?s?)\b/iu, 'supprimer'],
+  // r2 (cu-developer-two's cross-check): 'se' reads only before a FUTURE form - 'Se ha eliminado el archivo.' is a notice.
+  [/\bser[áa]n?\s+(?:\S+\s+){0,3}?(?:eliminad[oa]s?|borrad[oa]s?)\b|\bse\s+(?:\S+\s+){0,2}?(?:eliminar[áa]n?|borrar[áa]n?)\b/iu, 'eliminar'],
+  [/\b(?:verranno|verrà|saranno|sarà)\s+(?:\S+\s+){0,3}?(?:eliminat[ioae]|rimoss[ioae]|cancellat[ioae])\b/iu, 'elimina'],
+  [/\b(?:serão|será)\s+(?:\S+\s+){0,3}?(?:excluíd[oa]s?|apagad[oa]s?|removid[oa]s?)\b/iu, 'excluir'],
+  // r2 (cu-researcher's held-out 13:02Z): Dutch - 'Deze mailbox wordt permanent verwijderd.'
+  [/(?<!\p{L})(?:wordt|worden|zal|zullen)(?!\p{L})[^.!?]{0,120}?(?<!\p{L})(?:definitief\s+|permanent\s+)?(?:verwijderd|gewist)(?!\p{L})/iu, 'verwijderen'],
+  [/(?<!\p{L})(?:будут|будет)\s+(?:\S+\s+){0,3}?(?:удален[ыао]?|стерт[ыао]?)(?!\p{L})/iu, 'удалить'],
+  [/(?:削除|消去)(?:され(?:ます|る)|します)/u, '削除'],
+  [/(?:将|将会|會|会|將會|將)\s*(?:被)?\s*(?:永久)?(?:删除|刪除|清除)/u, '删除'],
+  [/(?:삭제|지워)(?:됩니다|집니다|될\s*것입니다)/u, '삭제'],
+]
+// r2 (cu-developer-two's cross-check): a NEGATED statement states no act - 'Die Fotos werden nicht gelöscht.', 'Les fichiers ne
+// seront pas supprimés.', 'No se eliminarán.', 'Non verranno eliminati.', 'Não serão excluídos.', 'Не будут удалены.', 'Worden niet
+// verwijderd.' A negation inside the matched span or as the word right before it skips the match; elsewhere in the sentence it does
+// not ('Os arquivos no computador serão excluídos.' - Portuguese 'no' is 'in the' there).
+const LOCALE_PASSIVE_NEGATION = /(?<!\p{L})(?:nicht|nie|niemals|kein|keine|ne|n['’]|pas|jamais|no|nunca|non|mai|não|nao|не|никогда|niet|nooit|geen)(?!\p{L})/iu
+function localePassiveAct(text) {
+  const t = String(text ?? '')
+  for (const [shape, verb] of LOCALE_PASSIVE_ACTS) {
+    const m = shape.exec(t)
+    if (!m) continue
+    const before = t.slice(0, m.index).trim().split(/\s+/).slice(-1).join(' ')
+    if (LOCALE_PASSIVE_NEGATION.test(m[0]) || LOCALE_PASSIVE_NEGATION.test(before)) continue
+    return verb
+  }
+  return null
+}
 // CU-747 (High; sweep 5, cu-coordinator 06:05Z): a wizard's or sheet's final-step control - Finish / Complete / Next / End - is
 // a generic confirm too when it sits in a risk dialog (the modal rule below judges the dialog's text; a harmless one stays free).
 const FINAL_STEP_CONFIRM = /^\s*(?:finish|finish\s+up|complete|next|next\s+step|end|end\s+now|continue\s+anyway|proceed\s+anyway)\s*[.!>›→]?\s*$/i
@@ -90,9 +123,16 @@ const MODAL_LEAD = new RegExp(String.raw`^(?:doing\s+(?:so|this)|proceeding|cont
 // Only the person's act opens it, so a retention note ('After 30 days, deleted items are removed.') stays as it was.
 const MODAL_CLAUSE_LEAD = /^(?:once|after|when|as\s+soon\s+as|if|upon)\s+(?:(?:this\s+is\s+|it\s+is\s+)?(?:confirm\w*|continu\w*|proceed\w*|complet\w*|finish\w*|submit\w*|approv\w*|accept\w*|done)|you\s+[a-z]+(?:\s+[a-z]+){0,3})\s*,\s*(\S.*)$/i
 const MODAL_PRESENT = new RegExp(String.raw`^(.{1,120}?)\s+(?:is|are|gets?)\s+${MODAL_ADVERB}([a-z]+(?:ed|en|t))\b`, 'i')
-const MODAL_NOMINAL = { deletion: 'delete', removal: 'remove', erasure: 'erase', termination: 'terminate', deactivation: 'deactivate', closure: 'close', cancellation: 'cancel', wipe: 'wipe', reset: 'reset', transfer: 'transfer' }
-const MODAL_NOMINAL_TITLE = /^(?:(?:the|your|this)\s+)?([\p{L}\p{N}'\u2019 -]{1,40}?)\s+(deletion|removal|erasure|termination|deactivation|closure|cancellation|wipe|reset|transfer)$/iu
-const MODAL_NOMINAL_OF = /^(deletion|removal|erasure|termination|deactivation|closure|cancellation|transfer)\s+of\s+(.{1,60})$/i
+const MODAL_NOMINAL = { deletion: 'delete', removal: 'remove', erasure: 'erase', termination: 'terminate', deactivation: 'deactivate', closure: 'close', cancellation: 'cancel', wipe: 'wipe', reset: 'reset', transfer: 'transfer', handover: 'transfer', handoff: 'transfer', 'hand-off': 'transfer', reassignment: 'transfer', grant: 'grant' }
+// CU-756 (High; cu-researcher's #1423 r2 miss): a transfer / handover of what grants control ('Ownership handover', 'Admin transfer') is
+// read as 'Transfer ownership' too - permission, as the policy owner ruled for ownership / rights / workspace transfers; money ('Funds
+// transfer', 'Account transfer') is no such object and stays with its own reading.
+// CU-756 r2 (cu-researcher's held-out): the act noun may be followed by up to two words ('Account deletion request'), unless a
+// following word names a record or a page ('Data deletion policy', 'Ownership transfer history' stay free here).
+const MODAL_HANDOVER_NOUN = /^(?:handover|handoff|hand-off|reassignment)$/i
+const MODAL_CONTROL_OBJECT = /\b(?:owner\w*|admin\w*|rights?|control|role|workspace|team|org(?:ani[sz]ation)?|repo(?:sitory)?|project|domain|site|channel|group)\b/i
+const MODAL_NOMINAL_TITLE = /^(?:(?:the|your|this)\s+)?([\p{L}\p{N}'\u2019 -]{1,40}?)\s+(deletion|removal|erasure|termination|deactivation|closure|cancellation|wipe|reset|transfer|handover|handoff|hand-off|reassignment|grant)(?:\s+(?!(?:history|logs?|details|polic(?:y|ies)|settings|status|reports?|records?|summary|overview|info|information|faq|help|guide|terms|rules|limits?|options|preferences|schedule|queue|list)\b)[\p{L}\p{N}'\u2019-]+){0,2}$/iu
+const MODAL_NOMINAL_OF = /^(deletion|removal|erasure|termination|deactivation|closure|cancellation|transfer|handover|handoff|hand-off|reassignment|grant)\s+of\s+(.{1,60})$/i
 const MODAL_ACCESS = /\b(?:(?:requests?|requesting|wants?|would\s+like)\s+(?:\w+\s+){0,3}access\b|will\s+be\s+able\s+to\s+(?:read|write|access|see|view|manage|control|change|edit|delete|post|send|act)\b|(?:gives?|grants?|allows?)\s+(?:\S+\s+){0,4}access\b)/i
 const MODAL_RISK_VERB = /^(?:delete|erase|remove|wipe|destroy|purge|reset|terminate|deactivate|close|cancel|transfer|give|grant|share|publish|send|pay|charge|buy|purchase|subscribe|install|uninstall|revoke|disable|disconnect|unlink|overwrite|replace|drop|empty|clear|format|forfeit|expose|make)$/
 const MODAL_IRREGULAR = { sent: 'send', lost: 'lose', kept: 'keep', shown: 'show', given: 'give', sold: 'sell', paid: 'pay', made: 'make', taken: 'take', spent: 'spend', withdrawn: 'withdraw', shut: 'shut' }
@@ -115,9 +155,12 @@ export function modalStatementNames(text) {
   const lead = MODAL_LEAD.exec(t)
   if (lead) for (const verb of modalVerbForms(lead[1], false)) out.push(modalName(verb, lead[2]))
   const nominal = MODAL_NOMINAL_TITLE.exec(t)
-  if (nominal) out.push(modalName(MODAL_NOMINAL[nominal[2].toLowerCase()], nominal[1]))
+  // CU-756 r2 (policy owner 12:15Z): a handover / handoff / reassignment noun is an act only over a control object ('Shift handover'
+  // and 'Handover notes' are rosters and notes, not transfers).
+  const nominalAct = (noun, object) => !MODAL_HANDOVER_NOUN.test(noun) || MODAL_CONTROL_OBJECT.test(object)
+  if (nominal && nominalAct(nominal[2], nominal[1])) out.push(modalName(MODAL_NOMINAL[nominal[2].toLowerCase()], nominal[1]))
   const nominalOf = MODAL_NOMINAL_OF.exec(t)
-  if (nominalOf) out.push(modalName(MODAL_NOMINAL[nominalOf[1].toLowerCase()], nominalOf[2]))
+  if (nominalOf && nominalAct(nominalOf[1], nominalOf[2])) out.push(modalName(MODAL_NOMINAL[nominalOf[1].toLowerCase()], nominalOf[2]))
   if (MODAL_ACCESS.test(t)) out.push('Grant access')
   const clause = MODAL_CLAUSE_LEAD.exec(t)
   if (clause) {
@@ -125,13 +168,18 @@ export function modalStatementNames(text) {
     if (present) for (const verb of modalVerbForms(present[2], true)) out.push(modalName(verb, present[1]))
     for (const name of modalStatementNames(clause[1])) out.push(name)
   }
+  // CU-756: any 'Transfer <x>' this reading makes (a noun title or a statement) over a control object also reads as 'Transfer ownership'.
+  for (const name of [...out]) {
+    const transfer = /^transfer\s+(.+)$/i.exec(name)
+    if (transfer && MODAL_CONTROL_OBJECT.test(transfer[1])) out.push('Transfer ownership')
+  }
   return [...new Set(out)].filter((name) => name.split(/\s+/).length >= 2)
 }
 // CU-729 (High; cu-researcher's sweep, cu-coordinator 19:59Z): the same generic final buttons in the covered languages (de fr es it
 // pt nl ru ja zh ko) - a localized confirm modal's 'Ja' / 'Oui' / 'Aceptar' / 'はい' / '确定' / '확인' / 'Да' is judged by the modal's title
 // like English 'OK' / 'Yes'. Matched on the raw name (before the Cyrillic homoglyph fold), the whole name, an affirmative optionally
 // followed by a comma and one more confirm word ('Ja, fortfahren'). Additions only.
-const LOCALE_CONFIRM_WORD = String.raw`(?:ja|jawohl|ok|okay|bestätigen|bestaetigen|weiter|fortfahren|übernehmen|zustimmen|akzeptieren|einverstanden|verstanden|fertig|anwenden|oui|confirmer|continuer|valider|accepter|d['’]accord|appliquer|terminé|sí|si|aceptar|confirmar|continuar|de\s+acuerdo|vale|aplicar|listo|sì|conferma|confermare|continua|accetta|procedi|va\s+bene|applica|fatto|sim|aceitar|prosseguir|concluir|bevestigen|doorgaan|akkoord|accepteren|toepassen|verder|да|ок|подтвердить|продолжить|принять|согласен|согласна|применить|готово|хорошо|はい|確認|続行|同意する|同意|適用|完了|了解|是|是的|确定|確定|确认|继续|繼續|好|好的|应用|應用|完成|예|네|확인|계속|동의|적용|완료)`
+const LOCALE_CONFIRM_WORD = String.raw`(?:ja|jawohl|ok|okay|bestätigen|bestaetigen|weiter|fortfahren|übernehmen|zustimmen|akzeptieren|einverstanden|verstanden|fertig|anwenden|oui|confirmer|continuer|valider|accepter|d['’]accord|appliquer|terminé|sí|si|aceptar|confirmar|continuar|de\s+acuerdo|vale|aplicar|listo|sì|conferma|confermare|continua|accetta|procedi|va\s+bene|applica|fatto|sim|aceitar|prosseguir|concluir|bevestigen|doorgaan|akkoord|accepteren|toepassen|verder|да|ок|подтвердить|продолжить|принять|согласен|согласна|применить|готово|хорошо|はい|確認|続行|同意する|同意|適用|完了|了解|是|是的|确定|確定|确认|继续|繼續|好|好的|应用|應用|完成|예|네|확인|계속|동의|적용|완료|続ける|続けて|次へ|進む|終了|suivant|terminer|siguiente|finalizar|terminar|avanti|fine|fertigstellen|abschließen|abschliessen|далее|завершить|下一步|继续操作|繼續操作|다음|마침)`
 const LOCALE_GENERIC_CONFIRM = new RegExp(String.raw`^\s*${LOCALE_CONFIRM_WORD}(?:\s*[,、，]\s*${LOCALE_CONFIRM_WORD})?\s*[.!。！]?\s*$`, 'iu')
 // CU-729: the question frames of a localized confirm title ('Möchten Sie diese Notiz wirklich löschen?', 'Voulez-vous vraiment ...',
 // '¿Desea eliminar ...?', '本当に削除しますか？', '确定要删除吗？', '정말 삭제하시겠습니까?') are removed into one more title text to judge.
@@ -532,7 +580,7 @@ const IMPERATIVE_FORMS = Object.freeze({
   'sair': ['sai', 'saia', 'saiam'], 'ligar': ['liga', 'ligue', 'liguem'], 'começar': ['começa', 'comece', 'comecem'],
   'excluir': ['exclui', 'exclua', 'excluam'], 'interromper': ['interrompe', 'interrompa', 'interrompam'],
   'remover': ['remove', 'remova', 'removam'], 'submeter': ['submete', 'submeta', 'submetam'], 'efetuar': ['efetua', 'efetue', 'efetuem'],
-  'apagar': ['apaga', 'apague', 'apaguem'], 'elimina': ['eliminate', 'elimini'], 'cancella': ['cancellate', 'cancelli'],
+  'apagar': ['apaga', 'apague', 'apaguem'], 'elimina': ['eliminate', 'elimini', 'eliminare'], 'cancella': ['cancellate', 'cancelli', 'cancellare'],
   'conferma': ['confermate', 'confermi'], 'acquista': ['acquistate', 'acquisti'], 'annulla': ['annullate', 'annulli'],
   'svuota': ['svuotate', 'svuoti'], 'partecipa': ['partecipate', 'partecipi'], 'termina': ['terminate', 'termini'],
   'abbandona': ['abbandonate', 'abbandoni'], 'ordina': ['ordinate', 'ordini'], 'chiama': ['chiamate', 'chiami'],
@@ -541,7 +589,7 @@ const IMPERATIVE_FORMS = Object.freeze({
   'paga': ['pagate', 'paghi'], 'pubblica': ['pubblicate', 'pubblichi'], 'cerca': ['cercate', 'cerchi'], 'disdici': ['disdite', 'disdica'],
   'chiudi': ['chiudete', 'chiuda'], 'esci': ['uscite', 'esca'], 'condividi': ['condividete', 'condivida'],
   'concedi': ['concedete', 'conceda'], 'consenti': ['consentite', 'consenta'], 'interrompi': ['interrompete', 'interrompa'],
-  'rimuovi': ['rimuovete', 'rimuova'], 'trasferisci': ['trasferite', 'trasferisca'], 'procedi': ['procedete', 'proceda'],
+  'rimuovi': ['rimuovete', 'rimuova', 'rimuovere'], 'trasferisci': ['trasferite', 'trasferisca'], 'procedi': ['procedete', 'proceda'],
   'sospendi': ['sospendete', 'sospenda'], 'sottoscrivi': ['sottoscrivete', 'sottoscriva'], 'vai': ['andate', 'vada'],
   'abbonati': ['abbonatevi', 'si abboni'], 'avvia': ['avviate', 'avvii'], 'invia': ['inviate', 'invii'], 'inizia': ['iniziate', 'inizi'],
   'lascia': ['lasciate', 'lasci'], 'potenzia': ['potenziate', 'potenzi'], 'eliminare': ['elimina', 'eliminate', 'elimini'],
@@ -582,7 +630,7 @@ const IMPERATIVE_FORMS = Object.freeze({
   'заказать': ['закажи', 'закажите'], 'оформить': ['оформи', 'оформите'], 'стереть': ['сотри', 'сотрите'],
   // CU-650: cancel and unsubscribe, with the objects their entries name ('Отмените подписку', 'Отпишитесь').
   'отменить': ['отмени', 'отмените'], 'отписаться': ['отпишись', 'отпишитесь'], 'очистить': ['очисти', 'очистите'],
-  '보내기': ['보내세요', '보내 주세요', '보내주세요', '보내십시오', '보내줘', '보내 줘'], '지우기': ['지워', '지워줘', '지워 줘', '지우세요', '지워 주세요', '지워주세요'], '삭제': ['삭제하세요', '삭제해 주세요', '삭제해주세요', '삭제하십시오'],
+  '보내기': ['보내세요', '보내 주세요', '보내주세요', '보내십시오', '보내줘', '보내 줘'], '지우기': ['지워', '지워줘', '지워 줘', '지우세요', '지워 주세요', '지워주세요', '지우시겠습니까', '지우시겠어요', '지울까요'], '삭제': ['삭제하세요', '삭제해 주세요', '삭제해주세요', '삭제하십시오', '삭제하시겠습니까', '삭제하시겠어요', '삭제할까요'],
   '결제': ['결제하세요', '결제해 주세요', '결제해주세요', '결제하십시오'], '구매': ['구매하세요', '구매해 주세요', '구매해주세요', '구매하십시오'],
   '전송': ['전송하세요', '전송해 주세요', '전송해주세요', '전송하십시오'],
 })
@@ -4616,6 +4664,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         // CU-729: the localized title with its question frame removed is one more text (additions only).
         const unframed = (text) => text.replace(LOCALE_QUESTION_FRAME, ' ').replace(/[?？!！.。:：\s]+$/u, '').replace(/\s+/g, ' ').trim()
         for (const extra of [unframed(dialogName), unframed(firstSentence)]) if (extra !== '' && !texts.includes(extra)) texts.push(extra)
+        // CU-748: a localized passive-future statement in the title or a kept sentence adds its act's verb as one more text.
+        for (const sentence of [dialogName, ...kept]) { const verb = localePassiveAct(sentence); if (verb !== null && !texts.includes(verb)) texts.push(verb) }
         // CU-746: the title and each kept sentence read as the act they state (statement, framed lead-in, noun title, access).
         for (const base of [dialogName, ...kept]) for (const extra of modalStatementNames(base)) if (!texts.includes(extra)) texts.push(extra)
         for (const text of texts) {

@@ -1,9 +1,9 @@
 ---
 title: ULTIMATE_GOAL 2.0 verdict, row by row - live, in progress
 created: 2026-11-02T10:22:00Z
-modified: 2026-11-24T09:29:00Z
+modified: 2026-11-24T13:09:00Z
 level: L1
-version: 0.9.337
+version: 0.9.339
 description: cu-verifier's per-row state of the desktop ULTIMATE_GOAL after the owner's grant - live evidence so far from the runbook on the Mac mini beside the pre-grant verifiers, and what each row still needs. No row is held until its live half holds.
 status: unverified
 grounded_in:
@@ -14,7 +14,7 @@ grounded_in:
 
 # ULTIMATE_GOAL 2.0: live, in progress (CUHelper 0.2.70 installed, dtadpole/computer-use)
 
-Seven of nine rows hold live; two are open: human control (step 4 with the owner, CU-11) and consent and safety (six open Highs, each reproduced live on main 24 Nov: CU-747 final-step and bare-verb buttons, CU-748 localized alerts, CU-751 any imperative before '<x> name' in a destroy zone, CU-753 generic approval of a sign-in or device code, CU-754 access toggles whose right is in the row, CU-756 transfer noun titles; CU-745 and CU-746 closed live on #1421's and #1423's merges (48 and 17 whole-page rows incl. held-outs, three counting mutants each); then CU-135's chain at step 4; CU-607, CU-716, CU-585, CU-371, CU-726 and CU-729 closed live 23 Nov, CU-735 on 24 Nov). The history below is kept as written. Since 0.9.53 these D-063 under-asks closed live:
+Seven of nine rows hold live; two are open: human control (step 4 with the owner, CU-11) and consent and safety (open Highs, each reproduced live on main 24 Nov: CU-748 localized alerts, CU-753 generic approval of a sign-in or device code, CU-754 with CU-757 access toggles and Allow under an access statement, CU-765 courtesy lead-ins before '<x> name', CU-766 a localized verb inside a question-frame title; CU-763 (the desktop privacy-pane toggle) waits for its helper; CU-745, CU-746, CU-751, CU-747 and CU-756 closed live on #1421's, #1423's, #1428's, #1422's and #1431's merges (48, 17, 33, 17 and 6 whole-page rows incl. held-outs, three counting mutants each); then CU-135's chain at step 4; CU-607, CU-716, CU-585, CU-371, CU-726 and CU-729 closed live 23 Nov, CU-735 on 24 Nov). The history below is kept as written. Since 0.9.53 these D-063 under-asks closed live:
 Services chords and their menu context (CU-249, CU-250, CU-256), API tokens and D-061 names, including in URLs
 (CU-245, CU-257, CU-260, CU-281, CU-283, CU-284, CU-285, CU-291), standing choices, outward and account-protection
 controls and real-app wordings (CU-258, CU-261, CU-270, CU-286, CU-288, CU-289), recipient-named compose fields
