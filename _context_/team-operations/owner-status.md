@@ -1,9 +1,9 @@
 ---
 title: Computer use on the Mac mini - one-page status for the owner
 created: 2026-11-06T04:55:00Z
-modified: 2026-11-23T13:47:26Z
+modified: 2026-11-23T17:48:16Z
 level: L2
-version: 1.12.0
+version: 1.13.0
 status: unverified
 description: 'What the [cu] team has built and proven, what is left, and the owner actions that are still open - one page, kept current by the coordinator.'
 grounded_in:
@@ -14,20 +14,24 @@ grounded_in:
 
 # Computer use on the Mac mini - status for the owner
 
-State at 23 November 2026, 13:50 UTC.
+State at 23 November 2026, 17:50 UTC.
 
 ## Where it stands
 
-Seven of the nine ULTIMATE_GOAL 2.0 rows hold on live evidence (verdict 0.9.329). Two are open:
+Seven of the nine ULTIMATE_GOAL 2.0 rows hold on live evidence (verdict 0.9.332). Two are open:
 
 - **Consent and safety** holds only when no Urgent or High under-ask is open (D-063). Every High ruled up to
   16 November is closed live (CU-561 last). Open on 23 November:
   - **CU-607** and **CU-716** (password and PIN words in other languages typed unasked) are closed live on main,
     19 of 19 and 18 of 18 rows.
-  - **CU-585 and CU-371**: a typed-confirm danger zone (type DELETE or the name, then Confirm) can still act
-    unasked when its instruction sits in a paragraph, a second sentence or a purpose clause. The fix (#1368, third
-    revision) carries the policy owner's rules and is in review; it gates after 14:20 UTC. The verifier withdrew its
-    earlier failures of these rows: its runner had split each page into one control per run (CU-722).
+  - **CU-585 and CU-371** (a typed-confirm danger zone - type DELETE or the name, then Confirm - acting unasked
+    when its instruction sits in a paragraph, a second sentence or a purpose clause) are closed live on main:
+    #1368 landed at 16:30 UTC and the verifier's 47 whole-page rows pass. The helper half (#895, helper 0.2.72)
+    landed at 16:15 UTC in a quiet window the Last War team granted (D-116).
+  - **CU-726** (new, found by the researcher's sweep at 16:05 UTC): the same danger zone written in German, French,
+    Spanish, Portuguese, Italian, Dutch, Japanese, Chinese or Korean still acts unasked; English asks. Its fix
+    (#1385) asks 10 of 11 held-out rows (main 0 of 11). A second revision adds the one Japanese miss, and then it
+    gates.
   After them the row waits on CU-135, the Replace-sheet chain, which only you can answer.
   - Between 12 and 22 November about eighty issues closed, most of them Medium gaps in action and field names
     across the covered languages (English, Chinese, German, French, Spanish, Russian, Japanese, Korean, with Italian,
