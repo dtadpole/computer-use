@@ -57,8 +57,10 @@ const LOCALE_PASSIVE_ACTS = [
   // CU-766 r2 + r3 (cu-coordinator 17:43Z / 17:44Z): a German QUESTION about a pending act on a deletion object, the participle
   // before 'werden' - 'Soll der Papierkorb jetzt wirklich geleert werden?', 'Soll diese Datei gelöscht werden?'. Never a statement
   // ('Der Filter kann später entfernt werden.'), never 'kann / darf ... werden', never a field, cache, filter or search box
-  // ('Soll das Suchfeld geleert werden?', 'Muss der Cache geleert werden?').
-  [/^\s*(?:soll(?:en)?|muss|müssen|möchten\s+sie|wollen\s+sie|möchtest\s+du|willst\s+du)(?!\p{L})[^.!?]{0,120}?(?<!\p{L})(?:der|die|das|den|diese[nrs]?|alle|ihr(?:en|e)?|dein(?:en|e)?|mein(?:en|e)?)\s+(?:\p{L}+\s+)?(?:papierkorb|papierkörbe|mülleimer|abfalleimer|postfach|posteingang|ordner|elemente?|dateien|datei|daten|konto|konten|nachrichten|nachricht|e-mails?|mails?|fotos?|bilder?|dokumente?|projekte?|kontakte?|einträge|eintrag)(?!\p{L})[^.!?]{0,60}?(?<!\p{L})(?:gelöscht|entfernt|geleert)\s+werden\s*\?\s*$/iu, 'löschen'],
+  // ('Soll das Suchfeld geleert werden?', 'Muss der Cache geleert werden?'). CU-777 r2: also 'Sind Sie sicher, dass der Papierkorb
+  // ausgeleert werden soll?' (the clause order), never 'kann / darf'. r3: the present passive question 'Wird der Papierkorb jetzt
+  // ausgeleert?' (cu-researcher's named r1 miss) - never the past 'Wurde ... ?'.
+  [/^\s*(?:(?:soll(?:en)?|muss|müssen|wird|werden|möchten\s+sie|wollen\s+sie|möchtest\s+du|willst\s+du)(?!\p{L})|(?:sind\s+sie|bist\s+du|seid\s+ihr)\s+sicher,?\s+dass(?!\p{L}))[^.!?]{0,120}?(?<!\p{L})(?:der|die|das|den|diese[nrs]?|alle|ihr(?:en|e)?|dein(?:en|e)?|mein(?:en|e)?|unser(?:en|e)?|eure?[nr]?|jede[nrs]?)\s+(?:\p{L}+\s+)?(?:papierkorb|papierkörbe|mülleimer|abfalleimer|postfach|posteingang|ordner|elemente?|dateien|datei|daten|konto|konten|nachrichten|nachricht|e-mails?|mails?|fotos?|bilder?|dokumente?|projekte?|kontakte?|einträge|eintrag)(?!\p{L})[^.!?]{0,60}?(?<!\p{L})(?:\p{L}{0,6}ge(?:löscht|leert|räumt)|entfernt|entleert)(?:\s+(?:werden(?:\s+(?:soll|sollen|muss|müssen))?|wird))?\s*\?\s*$/iu, 'löschen'],
   [/\b(?:seront|sera)\s+(?:\S+\s+){0,3}?(?:supprimée?s?|effacée?s?)\b/iu, 'supprimer'],
   // r2 (cu-developer-two's cross-check): 'se' reads only before a FUTURE form - 'Se ha eliminado el archivo.' is a notice.
   [/\bser[áa]n?\s+(?:\S+\s+){0,3}?(?:eliminad[oa]s?|borrad[oa]s?)\b|\bse\s+(?:\S+\s+){0,2}?(?:eliminar[áa]n?|borrar[áa]n?)\b/iu, 'eliminar'],
@@ -124,8 +126,16 @@ function echoesDialogVerb(name, dialogName) {
   // CU-766 r2 (cu-researcher's r2 set): a German verb also echoes its past participle - 'Leeren' in '... geleert werden?',
   // 'Löschen' in '... gelöscht werden?' (ge + root + t / en, after a separable prefix too: 'ausgeleert').
   const root = verb.length >= 5 && /en$/u.test(verb) ? verb.slice(0, -2) : null
+  // CU-777 (cu-researcher's #1446 r2 set): a prefixed participle too - an inseparable prefix takes no 'ge' ('Entleeren' /
+  // 'entleert'), a separable one puts it after the prefix ('Ausleeren' / 'ausgeleert').
+  const participles = root === null ? [] : [`ge${root}t`, `ge${root}en`,
+    ...(/^(?:be|ent|er|ver|zer|emp|miss)/u.test(root) ? [`${root}t`] : []),
+    ...['aus', 'ab', 'an', 'auf', 'ein', 'weg', 'zu', 'los', 'leer', 'vor', 'nach', 'durch', 'um'].filter((p) => root.startsWith(p) && root.length > p.length + 2).map((p) => `${p}ge${root.slice(p.length)}t`)]
   return title.split(/[^\p{L}]+/u).some((word) => word === verb || (word.length >= verb.length && word.startsWith(stem))
-    || (root !== null && new RegExp(`(?:^|^\\p{L}{0,6})ge${root}(?:t|en)$`, 'u').test(word)))
+    || (root !== null && new RegExp(`(?:^|^\\p{L}{0,6})ge${root}(?:t|en)$`, 'u').test(word)) || participles.includes(word)
+    // r2 (cu-verifier's #1454 probe): a bare verb also echoes its participle with an inseparable prefix - 'Leeren' in '...
+    // entleert werden?' (ent + leer + t), as 'Löschen' / 'gelöscht'.
+    || (root !== null && root.length >= 3 && new RegExp(`^(?:be|ent|er|ver|zer|emp|miss)${root}t$`, 'u').test(word)))
 }
 // CU-746 (High; cu-researcher's sweep 5): a risk modal whose text is a statement ('Your account will be deleted'), a framed
 // description ('Doing so permanently erases the volume.', 'Once you confirm, the repository ... are gone for good.') or a noun title
@@ -287,8 +297,9 @@ const LOCALE_GENERIC_CONFIRM = new RegExp(String.raw`^\s*${LOCALE_CONFIRM_WORD}(
 // je ...?', 'Wil je ...?', 'Tem certeza que deseja ...?', 'Você quer mesmo ...?', 'Ты уверен, что хочешь ...?', 'Czy na pewno chcesz
 // ...?', '...してもよろしいですか？', '你确定要...吗？'. The longer frames come first so 'quieres' is never cut to 'quiere' + 's'.
 // r2 (cu-researcher's r2 set): 'Faut-il (vraiment) ...?', 'Doit-on ...?', 'Soll ich / Sollen wir ...?', and a 'now' word ('maintenant',
-// 'jetzt', 'ahora' ...) inside the question.
-const LOCALE_QUESTION_FRAME = /(?:(?:¿\s*)?(?:est[áa]s?\s+)?segur[oa]s?\s+(?:de\s+)?que\s+(?:quieres|deseas|desea|quiere)|de\s+verdad\s+(?:quieres|deseas|desea|quiere)|quieres|deseas|es-tu\s+s[ûu]re?\s+de\s+vouloir|veux-tu|faut-il|faudrait-il|doit-on|dois-je|devons-nous|soll(?:en)?\s+(?:ich|wir|man)|(?<!\p{L})(?:maintenant|jetzt|ahora|adesso|agora|сейчас|теперь)(?!\p{L})|tu\s+veux\s+vraiment|bist\s+du\s+sicher,?\s+dass\s+du|weet\s+je\s+zeker\s+dat\s+je|wil\s+je|wilt\s+je|è\s+sicuro\s+di\s+voler|sicur[oa]\s+di\s+voler|vuole|tem\s+certeza\s+(?:de\s+)?que\s+(?:deseja|quer)|tens\s+a\s+certeza\s+(?:de\s+)?que\s+(?:pretendes|queres|desejas)|(?:você\s+)?quer\s+mesmo|ты\s+уверен[аы]?,?\s+что\s+хочешь|хотите|хочешь|czy\s+na\s+pewno\s+chcesz|czy\s+chcesz|てもよろしいですか|よろしいですか|你确定要|您确定要|möchten\s+sie|wollen\s+sie|möchtest\s+du|willst\s+du|sind\s+sie\s+sicher,?\s+dass\s+sie|wirklich|voulez-vous|souhaitez-vous|êtes-vous\s+sûre?\s+de\s+vouloir|vraiment|¿|está\s+seguro\s+de\s+que\s+desea|desea|quiere|realmente|sei\s+sicuro\s+di\s+voler|vuoi|davvero|tem\s+certeza\s+de\s+que\s+deseja|deseja|wilt\s+u|weet\s+u\s+zeker\s+dat\s+u|вы\s+действительно\s+хотите|вы\s+уверены,?\s+что\s+хотите|действительно|本当に|しますか|ますか|确定要|確定要|是否|确认要|吗|嗎|정말|하시겠습니까|하시겠어요)/giu
+// 'jetzt', 'ahora' ...) inside the question. CU-777: impersonal and modal frames - 'Si deve (proprio) ...?', 'Bisogna ...?', '¿Hay que
+// ... ya?', 'Il faut ...', 'É preciso ...?', 'Muss man ...?', 'Moet ik ...?', 'Нужно ли ...?'.
+const LOCALE_QUESTION_FRAME = /(?:(?:¿\s*)?(?:est[áa]s?\s+)?segur[oa]s?\s+(?:de\s+)?que\s+(?:quieres|deseas|desea|quiere)|de\s+verdad\s+(?:quieres|deseas|desea|quiere)|quieres|deseas|es-tu\s+s[ûu]re?\s+de\s+vouloir|veux-tu|faut-il|faudrait-il|doit-on|dois-je|devons-nous|soll(?:en)?\s+(?:ich|wir|man)|il\s+faut|est-il\s+(?:\p{L}+\s+)?n[ée]cessaire\s+de|est-ce\s+(?:qu'il\s+est\s+)?(?:\p{L}+\s+)?n[ée]cessaire\s+de|il\s+est\s+(?:\p{L}+\s+)?n[ée]cessaire\s+de|si\s+deve|si\s+devono|bisogna|occorre|è\s+(?:\p{L}+\s+)?necessario|(?:¿\s*)?es\s+(?:\p{L}+\s+)?(?:necesario|preciso)|hace\s+(?:\p{L}+\s+)?falta|é\s+(?:\p{L}+\s+)?necess[áa]rio|hay\s+que|se\s+debe|se\s+deben|tengo\s+que|tenemos\s+que|é\s+preciso|deve-se|tem\s+(?:de|que)|muss\s+(?:ich|man)|müssen\s+wir|moet\s+ik|moeten\s+we|нужно\s+ли|нужно|надо|следует\s+ли|proprio|(?<!\p{L})(?:maintenant|jetzt|ahora|adesso|agora|сейчас|теперь|ya|ora|já|nu|déjà)(?!\p{L})|tu\s+veux\s+vraiment|bist\s+du\s+sicher,?\s+dass\s+du|weet\s+je\s+zeker\s+dat\s+je|wil\s+je|wilt\s+je|è\s+sicuro\s+di\s+voler|sicur[oa]\s+di\s+voler|vuole|tem\s+certeza\s+(?:de\s+)?que\s+(?:deseja|quer)|tens\s+a\s+certeza\s+(?:de\s+)?que\s+(?:pretendes|queres|desejas)|(?:você\s+)?quer\s+mesmo|ты\s+уверен[аы]?,?\s+что\s+хочешь|хотите|хочешь|czy\s+na\s+pewno\s+chcesz|czy\s+chcesz|てもよろしいですか|よろしいですか|你确定要|您确定要|möchten\s+sie|wollen\s+sie|möchtest\s+du|willst\s+du|sind\s+sie\s+sicher,?\s+dass\s+sie|wirklich|voulez-vous|souhaitez-vous|êtes-vous\s+sûre?\s+de\s+vouloir|vraiment|¿|está\s+seguro\s+de\s+que\s+desea|desea|quiere|realmente|sei\s+sicuro\s+di\s+voler|vuoi|davvero|tem\s+certeza\s+de\s+que\s+deseja|deseja|wilt\s+u|weet\s+u\s+zeker\s+dat\s+u|вы\s+действительно\s+хотите|вы\s+уверены,?\s+что\s+хотите|действительно|本当に|しますか|ますか|确定要|確定要|是否|确认要|吗|嗎|정말|하시겠습니까|하시겠어요)/giu
 const GENERIC_SUBMIT = /^\s*(?:submit|send|send\s+(?:message|reply|email|comment)|reply|post|post\s+(?:comment|reply)|comment|save|save\s+changes|apply|search|go|ok|done|continue|next|report\s+spam|sign\s+up|register|create\s+account)\s*!?\s*$/i
 
 /** Word lists matched on a target's accessible name, case-insensitively, at word boundaries; they err toward confirm. */
@@ -4818,7 +4829,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         const keptDescription = kept.join(' ')
         const texts = [...new Set([dialogName, titleRow(dialogName), firstSentence, titleRow(firstSentence), `${titleRow(dialogName)} ${keptDescription}`.trim()].filter((t) => t !== ''))]
         // CU-729: the localized title with its question frame removed is one more text (additions only).
-        const unframed = (text) => text.replace(LOCALE_QUESTION_FRAME, ' ').replace(/[?？!！.。:：\s]+$/u, '').replace(/\s+/g, ' ').trim()
+        // CU-777 r3 (cu-developer-two's #1454 r2 find): strip the frames to a fixed point - removing one frame word ('vraiment') can
+        // close up another frame around it ('Est-il ... nécessaire de'); three passes at most.
+        const unframed = (text) => { let t = String(text ?? ''); for (let i = 0; i < 3; i += 1) { const next = t.replace(LOCALE_QUESTION_FRAME, ' ').replace(/\s+/g, ' '); if (next === t) break; t = next } return t.replace(/[?？!！.。:：\s]+$/u, '').replace(/\s+/g, ' ').trim() }
         for (const extra of [unframed(dialogName), unframed(firstSentence)]) if (extra !== '' && !texts.includes(extra)) texts.push(extra)
         // CU-748: a localized passive-future statement in the title or a kept sentence adds its act's verb as one more text.
         for (const sentence of [dialogName, ...kept]) { const verb = localePassiveAct(sentence); if (verb !== null && !texts.includes(verb)) texts.push(verb) }
