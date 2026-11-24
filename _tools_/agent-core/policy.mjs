@@ -54,6 +54,11 @@ const GENERIC_CONFIRM = /^\s*(?:confirm|ok|okay|yes|yes,?\s+(?:continue|confirm|
 // judges its verb as one more text, as the English titles are judged. Only delete verbs, only future / passive forms. r2 adds Dutch.
 const LOCALE_PASSIVE_ACTS = [
   [/\b(?:werden|wird)\b[^.!?]{0,120}?\b(?:endgültig\s+|dauerhaft\s+|unwiderruflich\s+)?(?:gelöscht|entfernt)\b/iu, 'löschen'],
+  // CU-766 r2 + r3 (cu-coordinator 17:43Z / 17:44Z): a German QUESTION about a pending act on a deletion object, the participle
+  // before 'werden' - 'Soll der Papierkorb jetzt wirklich geleert werden?', 'Soll diese Datei gelöscht werden?'. Never a statement
+  // ('Der Filter kann später entfernt werden.'), never 'kann / darf ... werden', never a field, cache, filter or search box
+  // ('Soll das Suchfeld geleert werden?', 'Muss der Cache geleert werden?').
+  [/^\s*(?:soll(?:en)?|muss|müssen|möchten\s+sie|wollen\s+sie|möchtest\s+du|willst\s+du)(?!\p{L})[^.!?]{0,120}?(?<!\p{L})(?:der|die|das|den|diese[nrs]?|alle|ihr(?:en|e)?|dein(?:en|e)?|mein(?:en|e)?)\s+(?:\p{L}+\s+)?(?:papierkorb|papierkörbe|mülleimer|abfalleimer|postfach|posteingang|ordner|elemente?|dateien|datei|daten|konto|konten|nachrichten|nachricht|e-mails?|mails?|fotos?|bilder?|dokumente?|projekte?|kontakte?|einträge|eintrag)(?!\p{L})[^.!?]{0,60}?(?<!\p{L})(?:gelöscht|entfernt|geleert)\s+werden\s*\?\s*$/iu, 'löschen'],
   [/\b(?:seront|sera)\s+(?:\S+\s+){0,3}?(?:supprimée?s?|effacée?s?)\b/iu, 'supprimer'],
   // r2 (cu-developer-two's cross-check): 'se' reads only before a FUTURE form - 'Se ha eliminado el archivo.' is a notice.
   [/\bser[áa]n?\s+(?:\S+\s+){0,3}?(?:eliminad[oa]s?|borrad[oa]s?)\b|\bse\s+(?:\S+\s+){0,2}?(?:eliminar[áa]n?|borrar[áa]n?)\b/iu, 'eliminar'],
@@ -61,7 +66,17 @@ const LOCALE_PASSIVE_ACTS = [
   [/\b(?:serão|será)\s+(?:\S+\s+){0,3}?(?:excluíd[oa]s?|apagad[oa]s?|removid[oa]s?)\b/iu, 'excluir'],
   // r2 (cu-researcher's held-out 13:02Z): Dutch - 'Deze mailbox wordt permanent verwijderd.'
   [/(?<!\p{L})(?:wordt|worden|zal|zullen)(?!\p{L})[^.!?]{0,120}?(?<!\p{L})(?:definitief\s+|permanent\s+)?(?:verwijderd|gewist)(?!\p{L})/iu, 'verwijderen'],
-  [/(?<!\p{L})(?:будут|будет)\s+(?:\S+\s+){0,3}?(?:удален[ыао]?|стерт[ыао]?)(?!\p{L})/iu, 'удалить'],
+  // CU-771 (High; cu-researcher's r2 set for CU-748): Russian with ё and the other delete participles ('будет удалён', 'будут
+  // стёрты', 'будет очищена', 'будут уничтожены') and the reflexive future ('Файл удалится.', 'Сообщения удалятся навсегда.').
+  [/(?<!\p{L})(?:будут|будет)\s+(?:\S+\s+){0,3}?(?:удал[её]н[ыао]?|ст[её]рт[ыао]?|уничтожен[ыао]?)(?!\p{L})|(?<!\p{L})(?:удалится|удалятся|сотр[её]тся|сотрутся)(?!\p{L})/iu, 'удалить'],
+  // 'Cleared' reads delete only with a deletion object (the CU-766 r3 rule): 'Корзина будет очищена.' asks, 'Кэш будет очищен.' does not.
+  [/(?<!\p{L})(?:корзин[аы]|папк[аи]|данные|сообщения|файлы|письма|почтовый\s+ящик)(?!\p{L})\s+(?:\S+\s+){0,2}?(?:(?:будут|будет)\s+(?:\S+\s+){0,2}?очищен[ыао]?|очистится|очистятся)(?!\p{L})/iu, 'удалить'],
+  // CU-771: Turkish future passives - 'Bu dosya kalıcı olarak silinecek.', '... silinecektir', 'kaldırılacak', 'temizlenecek'. The
+  // negated future ('silinmeyecek') and the past ('silindi') are other words, so they never match.
+  [/(?<!\p{L})(?:silinecek|kaldırılacak|yok\s+edilecek)(?:tir|tır|ler|lar|lerdir|lardır)?(?!\p{L})/iu, 'delete'],
+  // Turkish 'temizlenecek' (will be cleaned) likewise only with a deletion object: 'Çöp kutusu temizlenecek.' asks, 'Önbellek
+  // temizlenecek.' (the cache) does not.
+  [/(?<!\p{L})(?:çöp\s+kutu\p{L}*|klasör\p{L}*|veriler\p{L}*|mesajlar\p{L}*|dosyalar\p{L}*|posta\s+kutu\p{L}*)\s+(?:\S+\s+){0,2}?temizlenecek(?:tir|tır)?(?!\p{L})/iu, 'delete'],
   [/(?:削除|消去)(?:され(?:ます|る)|します)/u, '削除'],
   [/(?:将|将会|會|会|將會|將)\s*(?:被)?\s*(?:永久)?(?:删除|刪除|清除)/u, '删除'],
   [/(?:삭제|지워)(?:됩니다|집니다|될\s*것입니다)/u, '삭제'],
@@ -106,7 +121,11 @@ function echoesDialogVerb(name, dialogName) {
   if (words.length === 0 || words.length > 2 || !/^\p{L}{3,}$/u.test(words[0]) || (words[1] !== undefined && words[1] !== 'now')) return false
   const verb = words[0]
   const stem = verb.length >= 5 ? verb.slice(0, verb.length - 1) : verb
-  return title.split(/[^\p{L}]+/u).some((word) => word === verb || (word.length >= verb.length && word.startsWith(stem)))
+  // CU-766 r2 (cu-researcher's r2 set): a German verb also echoes its past participle - 'Leeren' in '... geleert werden?',
+  // 'Löschen' in '... gelöscht werden?' (ge + root + t / en, after a separable prefix too: 'ausgeleert').
+  const root = verb.length >= 5 && /en$/u.test(verb) ? verb.slice(0, -2) : null
+  return title.split(/[^\p{L}]+/u).some((word) => word === verb || (word.length >= verb.length && word.startsWith(stem))
+    || (root !== null && new RegExp(`(?:^|^\\p{L}{0,6})ge${root}(?:t|en)$`, 'u').test(word)))
 }
 // CU-746 (High; cu-researcher's sweep 5): a risk modal whose text is a statement ('Your account will be deleted'), a framed
 // description ('Doing so permanently erases the volume.', 'Once you confirm, the repository ... are gone for good.') or a noun title
@@ -222,11 +241,18 @@ export function modalStatementNames(text) {
 // pt nl ru ja zh ko) - a localized confirm modal's 'Ja' / 'Oui' / 'Aceptar' / 'はい' / '确定' / '확인' / 'Да' is judged by the modal's title
 // like English 'OK' / 'Yes'. Matched on the raw name (before the Cyrillic homoglyph fold), the whole name, an affirmative optionally
 // followed by a comma and one more confirm word ('Ja, fortfahren'). Additions only.
-const LOCALE_CONFIRM_WORD = String.raw`(?:ja|jawohl|ok|okay|bestätigen|bestaetigen|weiter|fortfahren|übernehmen|zustimmen|akzeptieren|einverstanden|verstanden|fertig|anwenden|oui|confirmer|continuer|valider|accepter|d['’]accord|appliquer|terminé|sí|si|aceptar|confirmar|continuar|de\s+acuerdo|vale|aplicar|listo|sì|conferma|confermare|continua|accetta|procedi|va\s+bene|applica|fatto|sim|aceitar|prosseguir|concluir|bevestigen|doorgaan|akkoord|accepteren|toepassen|verder|да|ок|подтвердить|продолжить|принять|согласен|согласна|применить|готово|хорошо|はい|確認|続行|同意する|同意|適用|完了|了解|是|是的|确定|確定|确认|继续|繼續|好|好的|应用|應用|完成|예|네|확인|계속|동의|적용|완료|続ける|続けて|次へ|進む|終了|suivant|terminer|siguiente|finalizar|terminar|avanti|fine|fertigstellen|abschließen|abschliessen|далее|завершить|下一步|继续操作|繼續操作|다음|마침)`
+// CU-771: Turkish confirm words too (Tamam, Evet, Devam (et), Onayla, Kabul et, Uygula, Bitti, Tamamla, İleri, Sonraki).
+const LOCALE_CONFIRM_WORD = String.raw`(?:ja|jawohl|ok|okay|bestätigen|bestaetigen|weiter|fortfahren|übernehmen|zustimmen|akzeptieren|einverstanden|verstanden|fertig|anwenden|oui|confirmer|continuer|valider|accepter|d['’]accord|appliquer|terminé|sí|si|aceptar|confirmar|continuar|de\s+acuerdo|vale|aplicar|listo|sì|conferma|confermare|continua|accetta|procedi|va\s+bene|applica|fatto|sim|aceitar|prosseguir|concluir|bevestigen|doorgaan|akkoord|accepteren|toepassen|verder|да|ок|подтвердить|продолжить|принять|согласен|согласна|применить|готово|хорошо|はい|確認|続行|同意する|同意|適用|完了|了解|是|是的|确定|確定|确认|继续|繼續|好|好的|应用|應用|完成|예|네|확인|계속|동의|적용|완료|続ける|続けて|次へ|進む|終了|suivant|terminer|siguiente|finalizar|terminar|avanti|fine|fertigstellen|abschließen|abschliessen|далее|завершить|下一步|继续操作|繼續操作|다음|마침|tamam|evet|devam|devam\s+et|onayla|kabul\s+et|uygula|bitti|tamamla|ileri|sonraki)`
 const LOCALE_GENERIC_CONFIRM = new RegExp(String.raw`^\s*${LOCALE_CONFIRM_WORD}(?:\s*[,、，]\s*${LOCALE_CONFIRM_WORD})?\s*[.!。！]?\s*$`, 'iu')
 // CU-729: the question frames of a localized confirm title ('Möchten Sie diese Notiz wirklich löschen?', 'Voulez-vous vraiment ...',
 // '¿Desea eliminar ...?', '本当に削除しますか？', '确定要删除吗？', '정말 삭제하시겠습니까?') are removed into one more title text to judge.
-const LOCALE_QUESTION_FRAME = /(?:möchten\s+sie|wollen\s+sie|möchtest\s+du|willst\s+du|sind\s+sie\s+sicher,?\s+dass\s+sie|wirklich|voulez-vous|souhaitez-vous|êtes-vous\s+sûre?\s+de\s+vouloir|vraiment|¿|está\s+seguro\s+de\s+que\s+desea|desea|quiere|realmente|sei\s+sicuro\s+di\s+voler|vuoi|davvero|tem\s+certeza\s+de\s+que\s+deseja|deseja|wilt\s+u|weet\s+u\s+zeker\s+dat\s+u|вы\s+действительно\s+хотите|вы\s+уверены,?\s+что\s+хотите|действительно|本当に|しますか|ますか|确定要|確定要|是否|确认要|吗|嗎|정말|하시겠습니까|하시겠어요)/giu
+// CU-766 (High; cu-researcher's r2 set for CU-747): the INFORMAL and other common frames too - 'Seguro que quieres vaciar la papelera?',
+// '¿Estás seguro de que quieres ...?', 'Es-tu sûr de vouloir ...?', 'Veux-tu ...?', 'Bist du sicher, dass du ...?', 'Weet je zeker dat
+// je ...?', 'Wil je ...?', 'Tem certeza que deseja ...?', 'Você quer mesmo ...?', 'Ты уверен, что хочешь ...?', 'Czy na pewno chcesz
+// ...?', '...してもよろしいですか？', '你确定要...吗？'. The longer frames come first so 'quieres' is never cut to 'quiere' + 's'.
+// r2 (cu-researcher's r2 set): 'Faut-il (vraiment) ...?', 'Doit-on ...?', 'Soll ich / Sollen wir ...?', and a 'now' word ('maintenant',
+// 'jetzt', 'ahora' ...) inside the question.
+const LOCALE_QUESTION_FRAME = /(?:(?:¿\s*)?(?:est[áa]s?\s+)?segur[oa]s?\s+(?:de\s+)?que\s+(?:quieres|deseas|desea|quiere)|de\s+verdad\s+(?:quieres|deseas|desea|quiere)|quieres|deseas|es-tu\s+s[ûu]re?\s+de\s+vouloir|veux-tu|faut-il|faudrait-il|doit-on|dois-je|devons-nous|soll(?:en)?\s+(?:ich|wir|man)|(?<!\p{L})(?:maintenant|jetzt|ahora|adesso|agora|сейчас|теперь)(?!\p{L})|tu\s+veux\s+vraiment|bist\s+du\s+sicher,?\s+dass\s+du|weet\s+je\s+zeker\s+dat\s+je|wil\s+je|wilt\s+je|è\s+sicuro\s+di\s+voler|sicur[oa]\s+di\s+voler|vuole|tem\s+certeza\s+(?:de\s+)?que\s+(?:deseja|quer)|tens\s+a\s+certeza\s+(?:de\s+)?que\s+(?:pretendes|queres|desejas)|(?:você\s+)?quer\s+mesmo|ты\s+уверен[аы]?,?\s+что\s+хочешь|хотите|хочешь|czy\s+na\s+pewno\s+chcesz|czy\s+chcesz|てもよろしいですか|よろしいですか|你确定要|您确定要|möchten\s+sie|wollen\s+sie|möchtest\s+du|willst\s+du|sind\s+sie\s+sicher,?\s+dass\s+sie|wirklich|voulez-vous|souhaitez-vous|êtes-vous\s+sûre?\s+de\s+vouloir|vraiment|¿|está\s+seguro\s+de\s+que\s+desea|desea|quiere|realmente|sei\s+sicuro\s+di\s+voler|vuoi|davvero|tem\s+certeza\s+de\s+que\s+deseja|deseja|wilt\s+u|weet\s+u\s+zeker\s+dat\s+u|вы\s+действительно\s+хотите|вы\s+уверены,?\s+что\s+хотите|действительно|本当に|しますか|ますか|确定要|確定要|是否|确认要|吗|嗎|정말|하시겠습니까|하시겠어요)/giu
 const GENERIC_SUBMIT = /^\s*(?:submit|send|send\s+(?:message|reply|email|comment)|reply|post|post\s+(?:comment|reply)|comment|save|save\s+changes|apply|search|go|ok|done|continue|next|report\s+spam|sign\s+up|register|create\s+account)\s*!?\s*$/i
 
 /** Word lists matched on a target's accessible name, case-insensitively, at word boundaries; they err toward confirm. */
@@ -2019,7 +2045,7 @@ const FIELD_ACRONYM = /^(?:PIN|PUK|OTP|TAN|SMS|CVV|CVC|ID|URL|IBAN|BIC|SWIFT|SSN
 function confirmShaped(text) {
   if (/\bto\s+confirm\b/i.test(text)) return true
   // CU-751: the general imperative shape names what to type, like a typing word does.
-  if (IMPERATIVE_NAME.test(String(text ?? ''))) return true
+  if (imperativeName(text)) return true
   for (const m of text.matchAll(TYPED_VERB)) {
     const rest = text.slice(m.index + m[0].length)
     if (/^["'\u201c\u2018]/u.test(rest)) return true
@@ -2180,8 +2206,26 @@ const localeTransfer = (text) => LOCALE_TRANSFER_VERB.test(text) && LOCALE_OWNER
 // r2 (cu-researcher's held-out): a verb + 'us / me' counts like a verb + particle ('Tell us the account name ...'), and a sentence-initial
 // 'Name the <x> ...' is the instruction itself ('Name the repository you are removing.'); the act still comes from the zone.
 // r3 (cu-coordinator 10:11Z, the item his 09:31Z ruling named): 'Let us / Let me know the <x> name' - verb + us / me + know.
-const IMPERATIVE_NAME = /(?:^|[.!?:;]\s+|,\s+)(?:(?:please|kindly|now|then|first|simply|just)\s+)?(?!(?:the|your|its|this|that|these|those|a|an|our|my|their|his|her|it|we|you|i|they|he|she|there|here|all|each|every|no|any|some|which|what|who|when|where|why|how|if|to|and|or|but|so|as|by|for|in|on|at|of|from|with|is|are|was|were|be|been|will|would|can|could|should|may|might|must|do|does|did|has|have|had|not|once|after|before|until|unless|change|changing|edit|editing|update|updating|rename|renaming|set|setting|choose|choosing|pick|picking|modify|modifying|customi[sz]e|adjust|alter)\b)\p{L}{2,}\s+(?:(?:in|out|down|up|over|back|us|me)\s+|(?:us|me)\s+know\s+)?(?:(?:the|its|this)\s+(?:(?!(?:a|an|new|another|different|other)\s)[\p{L}\p{N}'\u2019-]+\s+){0,2}(?:name|id|slug|handle|label|url)\b|(?:the|this)\s+name\s+of\b|its\s+(?:name|id|slug|handle|label|url)\b|(?:the|this)\s+(?:(?!(?:a|an|new|another|different|other)\s)[\p{L}\p{N}'\u2019-]+\s+){0,2}by\s+(?:its|their|the)\s+(?:name|id|slug|handle|label|url)\b)|(?:^|[.!?:;]\s+|,\s+)(?:(?:please|kindly|now|then|first|simply|just)\s+)?name\s+(?:the|its|this)\s+\p{L}/iu
-const typedInstruction = (text) => TYPED_INSTRUCTION.test(text) || LOCALE_TYPED_VERB.test(text) || IMPERATIVE_NAME.test(String(text ?? ''))
+// CU-765 r2: 'off' joins the particles ('read off the volume label').
+const IMPERATIVE_NAME = /(?:^|[.!?:;]\s+|,\s+)(?:(?:please|kindly|now|then|first|simply|just)\s+)?(?!(?:the|your|its|this|that|these|those|a|an|our|my|their|his|her|it|we|you|i|they|he|she|there|here|all|each|every|no|any|some|which|what|who|when|where|why|how|if|to|and|or|but|so|as|by|for|in|on|at|of|from|with|is|are|was|were|be|been|will|would|can|could|should|may|might|must|do|does|did|has|have|had|not|once|after|before|until|unless|change|changing|edit|editing|update|updating|rename|renaming|set|setting|choose|choosing|pick|picking|modify|modifying|customi[sz]e|adjust|alter)\b)\p{L}{2,}\s+(?:(?:in|out|off|down|up|over|back|us|me)\s+|(?:us|me)\s+know\s+)?(?:(?:the|its|this)\s+(?:(?!(?:a|an|new|another|different|other)\s)[\p{L}\p{N}'\u2019-]+\s+){0,2}(?:name|id|slug|handle|label|url)\b|(?:the|this)\s+name\s+of\b|its\s+(?:name|id|slug|handle|label|url)\b|(?:the|this)\s+(?:(?!(?:a|an|new|another|different|other)\s)[\p{L}\p{N}'\u2019-]+\s+){0,2}by\s+(?:its|their|the)\s+(?:name|id|slug|handle|label|url)\b)|(?:^|[.!?:;]\s+|,\s+)(?:(?:please|kindly|now|then|first|simply|just)\s+)?name\s+(?:the|its|this)\s+\p{L}/iu
+// CU-765 (High; cu-researcher's CU-764 held-out): a courtesy, aspect or purpose lead-in before the imperative ('Please take a moment to
+// put down the project ID.', 'Do jot down the team handle.', 'Kindly go on to give the cluster name.') is stripped before the imperative
+// is read - one general strip, not more phrases (cu-coordinator 10:37Z): any run of courtesy words, an emphatic 'do', a 'need / have /
+// want ... to', 'be sure / remember / take a moment / go on / proceed ... to' chain, or a leading clause up to its comma. The act still
+// comes from the zone, so a save form with the same sentence stays free.
+// CU-765 r2 (cu-researcher's held-out): a lead-in word may end with a comma ('Now, carefully fill out the database ID.'), and
+// 'next / finally / lastly / again' lead in as 'now / then / first' do.
+const LEAD_IN = /^(?:(?:please|kindly|now|then|first|next|finally|lastly|again|also|simply|just|quickly|carefully|do|go\s+ahead\s+and|be\s+sure\s+to|make\s+sure\s+(?:to|that\s+you|you)|remember\s+to|don['\u2019]?t\s+forget\s+to|feel\s+free\s+to|(?:you(?:['\u2019](?:ll|d))?|we)\s+(?:will\s+)?(?:need|have|want|ask)\s+(?:you\s+)?to|you\s+(?:must|should|will\s+need\s+to)|(?:take|spend)\s+a\s+(?:moment|second|minute|few\s+seconds)\s+(?:to|and)|(?:go\s+on|proceed|continue|try|start|begin)\s+to|(?:to|in\s+order\s+to|so\s+that|before|after|for|as|once|when|if|upon)\b[^,.;:!?]{1,80},)(?:\s*,\s*|\s+))+/i
+function imperativeName(text) {
+  const value = String(text ?? '')
+  if (IMPERATIVE_NAME.test(value)) return true
+  return value.split(/(?<=[.!?;:])\s+/).some((sentence) => {
+    const trimmed = sentence.trim()
+    const rest = trimmed.replace(LEAD_IN, '')
+    return rest !== trimmed && rest !== '' && IMPERATIVE_NAME.test(rest)
+  })
+}
+const typedInstruction = (text) => TYPED_INSTRUCTION.test(text) || LOCALE_TYPED_VERB.test(text) || imperativeName(text)
 const typedDestroy = (text) => TYPED_DESTROY.test(text) || LOCALE_DESTROY.test(text)
 const typedDestroyAct = (text) => TYPED_DESTROY_ACT.test(text) || LOCALE_DESTROY_ACT.test(text)
 const typedTransfer = (text) => TYPED_TRANSFER.test(text) || localeTransfer(text)
