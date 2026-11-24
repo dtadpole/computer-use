@@ -8,11 +8,12 @@
 //   alias cu-coordinator pins, e.g. claude-gateway/<alias>; no model id lives in this tree) with --consent tty, so the
 //   owner answers on the page or at the terminal - Approve once on the file choice, Decline on Replace. A seat cannot
 //   start it: --consent tty needs a real terminal (red team C1).
-// - dry (CU_DRY_RUN=1), the stand-in rehearsal: no model (D-034). The run goes in-process with agent-core's api
-//   controller acting as the person (D-012): a scripted plan clicks Export and commits the Save panel; the stand-in
-//   answers Approve once on the file choice and Decline on any delete question. Honest limit: the scripted plan does not
-//   click the Replace sheet, so the dry run proves the launcher, the sandbox, the file-choice answer and the unchanged
-//   hash; the Replace question itself is exercised live only.
+// - dry (CU_DRY_RUN=1), the seat's rehearsal: no model (D-034). The helper admits only the CLI's entry point (PeerCheck),
+//   so the dry run goes through `cli.mjs run --model scripted --consent unattended` like owner-step4.mjs: a scripted plan
+//   clicks Export and commits the Save panel; the unattended controller declines the file choice at once, so nothing is
+//   saved. Honest limit: an Approve once answer and the Replace sheet are exercised live only (an approving stand-in has no
+//   admitted route outside a real terminal); the dry run proves the launcher, the sandbox, the file-choice question being
+//   asked and the old file's unchanged hash.
 // Each mode prints its expected cost before the run starts.
 import { spawn } from 'node:child_process'
 import { createHash } from 'node:crypto'
@@ -76,7 +77,6 @@ const answers = []
 try {
   await fixture.open(task.screen, { ...task.params(expected, ctx), sandbox })
   if (DRY) {
-    const [{ startRun }, { createScriptedAdapter }, { createAppApprovals }, consent] = await Promise.all(['_tools_/agent-core/run.mjs', '_tools_/agent-core/adapter-scripted.mjs', '_tools_/agent-core/app-approvals.mjs', '_tools_/agent-core/consent.mjs'].map(imp))
     const screen = await fixture.call('screen', {})
     const factor = fitFactor({ width: screen.width, height: screen.height }, screen.scale, {})
     const frame = sizeAt({ width: screen.width, height: screen.height }, factor)
@@ -85,22 +85,20 @@ try {
     const at = { x: Math.round((w.x + t.cx) * factor), y: Math.round((w.y + t.cy) * factor) }
     // Export opens the Save panel at the sandbox with summary.txt already named; Return commits it (the file choice).
     const turns = [{ actions: [{ type: 'click', button: 'left', ...at }] }, { actions: [{ type: 'wait', duration_ms: 1500 }] }, { actions: [{ type: 'keypress', keys: ['ENTER'] }] }, { actions: [{ type: 'wait', duration_ms: 2500 }] }, { final: 'done' }]
-    writeFileSync(join(runsDir, 'plan.json'), JSON.stringify({ frame, turns }))
-    const controller = consent.apiController()
-    const handle = await startRun({ environment: 'macos-desktop', seat: SEAT, apps: [FIXTURE], appApprovals: createAppApprovals({ path: join(home, 'app-approvals.json') }), env: { ...cleanEnvironment(), CU_HOME: home }, controller, task: prompt, runsDirectory: runsDir, live: true, model: createScriptedAdapter({ frame, turns }) })
-    note({ watch: String(handle.viewUrl) })
-    // The stand-in: Approve once on the file choice, Decline anything else (the Replace / delete question).
-    let ended = false
-    const done = handle.done.then((r) => { ended = true; return r })
-    while (!ended) {
-      const request = await controller.waitForRequest(1000)
-      if (!request) continue
-      const approved = request.class === 'file_choice'
-      answers.push({ id: request.id, class: request.class, kind: request.kind, approved })
-      note({ standIn: approved ? 'Approve once' : 'Decline', class: request.class, kind: request.kind })
-      await controller.respond({ id: request.id, approved, lifetime: 'once' })
-    }
-    result = await done
+    const plan = join(runsDir, 'plan.json')
+    writeFileSync(plan, JSON.stringify({ frame, turns }))
+    const child = spawn(process.execPath, [`${ROOT}/_tools_/agent-core/cli.mjs`, 'run', '--env', 'macos-desktop', '--app', FIXTURE, '--seat', SEAT, '--task', prompt, '--model', 'scripted', '--plan', plan, '--consent', 'unattended', '--runs-dir', runsDir, '--max-steps', '8', '--max-minutes', '3'], { env: { ...cleanEnvironment(), CU_HOME: home }, stdio: ['ignore', 'pipe', 'pipe'] })
+    let stdout = ''
+    child.stdout.on('data', (c) => { stdout += c })
+    child.stderr.on('data', (c) => { for (const line of String(c).split('\n')) if (/live view \(watch\)/.test(line)) note({ watch: line.replace(/^.*?: /, '') }) })
+    const exit = await new Promise((r) => child.once('exit', r))
+    const runId = readdirSync(runsDir).find((d) => /^\d{8}T/.test(d)) ?? null
+    const events = runId ? readFileSync(join(runsDir, runId, 'events.jsonl'), 'utf8').split('\n').filter(Boolean).map((l) => { try { return JSON.parse(l) } catch { return {} } }) : []
+    const consent = events.filter((e) => e.kind === 'consent').map((e) => ({ phase: e.phase, class: e.request?.class ?? null, kind: e.request?.kind ?? null, decision: e.decision ?? e.approved ?? null }))
+    answers.push(...consent)
+    let parsed = {}
+    try { parsed = JSON.parse(stdout) } catch { try { parsed = JSON.parse(stdout.trim().split('\n').filter((l) => l.startsWith('{')).pop()) } catch {} }
+    result = { exit, status: parsed.status ?? null, steps: parsed.steps ?? null, runId, eventsPath: runId ? join(runsDir, runId, 'events.jsonl') : null }
   } else {
     // The owner's Terminal is the run's terminal (--consent tty needs stdin and stdout to be it); the watch link is
     // noted, the control URL withheld - the owner gets it with `cli.mjs control-link <run-id>`.
@@ -120,7 +118,7 @@ try {
   const after = hash()
   // For cu-verifier (owner-session-evidence.md, Part 3): the run directory's consent events (a file-choice request, then
   // a separate delete request for Replace), the old file's hash before and after, and the fixture's input log.
-  note({ status: result.status ?? null, exit: result.exit ?? null, steps: result.steps ?? null, standInAnswers: DRY ? answers : undefined, oldSha256After: after, oldFileUnchanged: after === before, fixtureEvents: ((await fixture.state()).input ?? []).length, runsDir })
+  note({ status: result.status ?? null, exit: result.exit ?? null, steps: result.steps ?? null, consentEvents: DRY ? answers : undefined, runId: result.runId ?? null, eventsPath: result.eventsPath ?? null, oldSha256After: after, oldFileUnchanged: after === before, fixtureEvents: ((await fixture.state()).input ?? []).length, runsDir })
 } finally {
   await fixture.close().catch(() => {})
   log.end()
