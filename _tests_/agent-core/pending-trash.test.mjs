@@ -46,6 +46,12 @@ test('CU-780 / CU-781: the class - other advisability frames, the other word ord
     ['Vaciar', '¿Sería bueno vaciar la papelera ya?'],
     ['Vider', 'Vaudrait-il mieux vider la corbeille ?'],
     ['Svuota', 'Sarebbe meglio svuotare il Cestino adesso?'],
+    // r3 (cu-verifier's labelled r2 rows): the conditional of 'conviene / convient-il', and 'Sollte ...?'.
+    ['Vaciar', '¿Convendría vaciar la papelera ahora?'],
+    ['Vider', 'Conviendrait-il de vider la corbeille ?'],
+    ['Leeren', 'Sollte der Papierkorb geleert werden?'],
+    // r3 (cu-developer-two's named r2 row): an adverb after 'faut-il / faudrait-il'.
+    ['Vider', 'Faudrait-il mieux vider la corbeille ?'],
     ['OK', 'Hinweis', 'Jetzt werden alle Elemente im Papierkorb geleert.'],
     ['OK', 'Hinweis', 'Der Posteingang wird sofort geleert.'],
     // r2 (cu-developer-two's named row): the future passive.
@@ -66,6 +72,9 @@ test('CU-780 / CU-781: near rows stay free - a cache or a field, the past, a pos
     ['Guardar', '¿Conviene guardar los cambios de inmediato?'],
     ['Guardar', '¿Es aconsejable guardar los cambios ahora?'],
     ['Guardar', '¿Sería bueno guardar los cambios ya?'],
+    ['Guardar', '¿Convendría guardar los cambios?'],
+    ['Continuer', 'Faudrait-il mieux continuer ?'],
+    ['Leeren', 'Sollte der Cache geleert werden?'],
     ['Leeren', 'Ist der Cache danach vollständig geleert?'],
     ['Leeren', 'Soll der Cache restlos geleert sein?'],
     // tidied / moved / put away is no delete (also in the CU-777 question shape).
