@@ -65,7 +65,17 @@ test('CU-766 r2: a German passive question and a French "Faut-il" question read 
     assert.ok(classes(onWeb(name, title)).includes('delete'), `web ${title}`)
     assert.ok(classes(onDesktop(name, title)).includes('delete'), `desktop ${title}`)
   }
-  for (const [name, title] of [['Speichern', 'Soll das Dokument jetzt gespeichert werden?'], ['Continuer', 'Faut-il continuer maintenant ?'], ['Leeren', 'Soll der Papierkorb nicht geleert werden?']]) {
+  for (const [name, title] of [['Speichern', 'Soll das Dokument jetzt gespeichert werden?'], ['Continuer', 'Faut-il continuer maintenant ?'], ['Leeren', 'Soll der Papierkorb nicht geleert werden?'],
+    // r3: emptying a search field or a cache is not a delete (cu-researcher's r2 over-asks).
+    ['Leeren', 'Soll das Suchfeld geleert werden?'], ['Leeren', 'Muss der Cache geleert werden?']]) {
     assert.deepEqual(classes(onWeb(name, title)), [], `web ${title}`)
   }
+})
+
+test('CU-766 r3: a statement or a "kann ... werden" possibility states no pending act', () => {
+  const desc = (name, dialogName, dialogDescription) => web.classify(click, { url: 'https://app.example/files', target: { role: 'button', name, dialogName, dialogDescription } })
+  for (const d of ['Der Filter kann später entfernt werden.', 'Diese Dateien können jederzeit gelöscht werden.', 'Der Papierkorb muss nicht geleert werden.']) {
+    assert.deepEqual(classes(desc('OK', 'Hinweis', d)), [], d)
+  }
+  assert.ok(classes(desc('OK', 'Hinweis', 'Die Datei wird gelöscht werden.')).includes('delete'))
 })

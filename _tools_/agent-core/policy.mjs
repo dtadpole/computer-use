@@ -54,9 +54,11 @@ const GENERIC_CONFIRM = /^\s*(?:confirm|ok|okay|yes|yes,?\s+(?:continue|confirm|
 // judges its verb as one more text, as the English titles are judged. Only delete verbs, only future / passive forms. r2 adds Dutch.
 const LOCALE_PASSIVE_ACTS = [
   [/\b(?:werden|wird)\b[^.!?]{0,120}?\b(?:endgültig\s+|dauerhaft\s+|unwiderruflich\s+)?(?:gelöscht|entfernt)\b/iu, 'löschen'],
-  // CU-766 r2: the modal / question order, participle before 'werden' - 'Soll der Papierkorb jetzt wirklich geleert werden?',
-  // '... gelöscht werden?'.
-  [/(?<!\p{L})(?:gelöscht|entfernt|geleert)\s+werden(?!\p{L})/iu, 'löschen'],
+  // CU-766 r2 + r3 (cu-coordinator 17:43Z / 17:44Z): a German QUESTION about a pending act on a deletion object, the participle
+  // before 'werden' - 'Soll der Papierkorb jetzt wirklich geleert werden?', 'Soll diese Datei gelöscht werden?'. Never a statement
+  // ('Der Filter kann später entfernt werden.'), never 'kann / darf ... werden', never a field, cache, filter or search box
+  // ('Soll das Suchfeld geleert werden?', 'Muss der Cache geleert werden?').
+  [/^\s*(?:soll(?:en)?|muss|müssen|möchten\s+sie|wollen\s+sie|möchtest\s+du|willst\s+du)(?!\p{L})[^.!?]{0,120}?(?<!\p{L})(?:der|die|das|den|diese[nrs]?|alle|ihr(?:en|e)?|dein(?:en|e)?|mein(?:en|e)?)\s+(?:\p{L}+\s+)?(?:papierkorb|papierkörbe|mülleimer|abfalleimer|postfach|posteingang|ordner|elemente?|dateien|datei|daten|konto|konten|nachrichten|nachricht|e-mails?|mails?|fotos?|bilder?|dokumente?|projekte?|kontakte?|einträge|eintrag)(?!\p{L})[^.!?]{0,60}?(?<!\p{L})(?:gelöscht|entfernt|geleert)\s+werden\s*\?\s*$/iu, 'löschen'],
   [/\b(?:seront|sera)\s+(?:\S+\s+){0,3}?(?:supprimée?s?|effacée?s?)\b/iu, 'supprimer'],
   // r2 (cu-developer-two's cross-check): 'se' reads only before a FUTURE form - 'Se ha eliminado el archivo.' is a notice.
   [/\bser[áa]n?\s+(?:\S+\s+){0,3}?(?:eliminad[oa]s?|borrad[oa]s?)\b|\bse\s+(?:\S+\s+){0,2}?(?:eliminar[áa]n?|borrar[áa]n?)\b/iu, 'eliminar'],
