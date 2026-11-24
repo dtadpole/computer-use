@@ -14,7 +14,7 @@ grounded_in:
 
 # ULTIMATE_GOAL 2.0: live, in progress (CUHelper 0.2.70 installed, dtadpole/computer-use)
 
-Seven of nine rows hold live; two are open: human control (step 4 with the owner, CU-11) and consent and safety (one open High, CU-744 on the action-contract row (named caveat below); the consent row has none; CU-135's chain at step 4; CU-607, CU-716, CU-585, CU-371, CU-726 and CU-729 closed live 23 Nov, CU-735 on 24 Nov). The history below is kept as written. Since 0.9.53 these D-063 under-asks closed live:
+Seven of nine rows hold live; two are open: human control (step 4 with the owner, CU-11) and consent and safety (no open High; CU-135's chain at step 4; CU-607, CU-716, CU-585, CU-371, CU-726 and CU-729 closed live 23 Nov, CU-735 on 24 Nov). The history below is kept as written. Since 0.9.53 these D-063 under-asks closed live:
 Services chords and their menu context (CU-249, CU-250, CU-256), API tokens and D-061 names, including in URLs
 (CU-245, CU-257, CU-260, CU-281, CU-283, CU-284, CU-285, CU-291), standing choices, outward and account-protection
 controls and real-app wordings (CU-258, CU-261, CU-270, CU-286, CU-288, CU-289), recipient-named compose fields
@@ -352,7 +352,7 @@ no longer ask, the imperatives still do; 194125Z-be608c .. 194214Z-9723df). CU-3
 on helper 0.2.63 (223233Z-8016bd, 223238Z-c0028a; 'Search' types, 223242Z-f4d884). Medium in review: CU-368. Closed live since 0.9.63: CU-336 (main 2db7042, 150419Z-3f055b, 150426Z-74e409). D-061 re-signed at 16:23Z
 on main fc72439 (270 closed rows: 247 on cu-verifier's runs, 23 by decision in the closing form; d065-audit 48 ok);
 with D-059's earlier re-sign both tables are signed (CU-145). Then CU-135's Replace chain and step 4 with the owner (CU-11, CU-119, CU-203).
-Runs sit on each claim's CU issue, re-proven by the [evidence audit](evidence-audit.md) (CU-53).
+Runs sit on each claim's CU issue, re-proven by the [evidence audit](evidence-audit.md) (CU-53). One High is open outside those rows: CU-744 (a cancelled drag's Escape in global mode) puts a named caveat on the action-contract row until it lands.
 
 | Row | Live evidence | State |
 |---|---|---|
