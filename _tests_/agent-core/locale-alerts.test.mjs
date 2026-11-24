@@ -46,6 +46,7 @@ test('CU-748: passive-future delete statements in the covered languages ask dele
     ['OK', 'すべてのデータが削除されます。'],
     ['确定', '所有照片将被永久删除。'],
     ['확인', '모든 데이터가 삭제됩니다.'],
+    ['Doorgaan', 'Deze mailbox wordt permanent verwijderd.'],
   ]) {
     assert.ok(classes(onDesktop(name, 'Hinweis', description)).includes('delete'), `desktop ${description}`)
   }
@@ -63,6 +64,7 @@ test('CU-748: harmless alerts and the same words outside a dialog stay free', ()
     ['続ける', 'ようこそ', 'セットアップを続けます。'],
     ['Suivant', 'Bienvenue', 'Choisissez votre langue.'],
     ['확인', '알림', '설정이 저장됩니다.'],
+    ['Doorgaan', 'Melding', 'Uw instellingen worden opgeslagen.'],
   ]) {
     assert.deepEqual(classes(onDesktop(name, title, description)), [], `desktop ${name} / ${title}`)
   }
