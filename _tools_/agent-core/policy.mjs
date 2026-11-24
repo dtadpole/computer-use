@@ -49,11 +49,29 @@ export function neverCoveredByGrant(cls, name) {
 // locks, dial rows, mass sends, compensation, returns, relists, ride cancels) asks under any submit grant.
 // CU-507 (High; cu-coordinator 16:06Z): the generic final buttons of a confirm modal - judged by the modal's own title and text.
 const GENERIC_CONFIRM = /^\s*(?:confirm|ok|okay|yes|yes,?\s+(?:continue|confirm|proceed|i'?m\s+sure|do\s+it)|continue|proceed|submit|done|apply|accept|agree|i\s+agree|i\s+understand|got\s+it|i'?m\s+sure|do\s+it|go\s+ahead|confirm\s+and\s+continue)\s*[.!]?\s*$/i
+// CU-748 (High; sweep 5, cu-coordinator 06:05Z): a localized alert that states the act in the passive future ('Diese 12 Fotos
+// werden ... gelöscht.', 'Les fichiers seront supprimés.', '削除されます', '将被删除', '삭제됩니다') names that act; the modal rule
+// judges its verb as one more text, as the English titles are judged. Only delete verbs, only future / passive forms.
+const LOCALE_PASSIVE_ACTS = [
+  [/\b(?:werden|wird)\b[^.!?]{0,120}?\b(?:endgültig\s+|dauerhaft\s+|unwiderruflich\s+)?(?:gelöscht|entfernt)\b/iu, 'löschen'],
+  [/\b(?:seront|sera)\s+(?:\S+\s+){0,3}?(?:supprimée?s?|effacée?s?)\b/iu, 'supprimer'],
+  [/\b(?:ser[áa]n?|se)\s+(?:\S+\s+){0,3}?(?:eliminad[oa]s?|borrad[oa]s?|eliminar[áa]n?|borrar[áa]n?)\b/iu, 'eliminar'],
+  [/\b(?:verranno|verrà|saranno|sarà)\s+(?:\S+\s+){0,3}?(?:eliminat[ioae]|rimoss[ioae]|cancellat[ioae])\b/iu, 'elimina'],
+  [/\b(?:serão|será)\s+(?:\S+\s+){0,3}?(?:excluíd[oa]s?|apagad[oa]s?|removid[oa]s?)\b/iu, 'excluir'],
+  [/\b(?:будут|будет)\s+(?:\S+\s+){0,3}?(?:удален[ыао]?|стерт[ыао]?)\b/iu, 'удалить'],
+  [/(?:削除|消去)(?:され(?:ます|る)|します)/u, '削除'],
+  [/(?:将|将会|會|会|將會|將)\s*(?:被)?\s*(?:永久)?(?:删除|刪除|清除)/u, '删除'],
+  [/(?:삭제|지워)(?:됩니다|집니다|될\s*것입니다)/u, '삭제'],
+]
+function localePassiveAct(text) {
+  for (const [shape, verb] of LOCALE_PASSIVE_ACTS) if (shape.test(String(text ?? ''))) return verb
+  return null
+}
 // CU-729 (High; cu-researcher's sweep, cu-coordinator 19:59Z): the same generic final buttons in the covered languages (de fr es it
 // pt nl ru ja zh ko) - a localized confirm modal's 'Ja' / 'Oui' / 'Aceptar' / 'はい' / '确定' / '확인' / 'Да' is judged by the modal's title
 // like English 'OK' / 'Yes'. Matched on the raw name (before the Cyrillic homoglyph fold), the whole name, an affirmative optionally
 // followed by a comma and one more confirm word ('Ja, fortfahren'). Additions only.
-const LOCALE_CONFIRM_WORD = String.raw`(?:ja|jawohl|ok|okay|bestätigen|bestaetigen|weiter|fortfahren|übernehmen|zustimmen|akzeptieren|einverstanden|verstanden|fertig|anwenden|oui|confirmer|continuer|valider|accepter|d['’]accord|appliquer|terminé|sí|si|aceptar|confirmar|continuar|de\s+acuerdo|vale|aplicar|listo|sì|conferma|confermare|continua|accetta|procedi|va\s+bene|applica|fatto|sim|aceitar|prosseguir|concluir|bevestigen|doorgaan|akkoord|accepteren|toepassen|verder|да|ок|подтвердить|продолжить|принять|согласен|согласна|применить|готово|хорошо|はい|確認|続行|同意する|同意|適用|完了|了解|是|是的|确定|確定|确认|继续|繼續|好|好的|应用|應用|完成|예|네|확인|계속|동의|적용|완료)`
+const LOCALE_CONFIRM_WORD = String.raw`(?:ja|jawohl|ok|okay|bestätigen|bestaetigen|weiter|fortfahren|übernehmen|zustimmen|akzeptieren|einverstanden|verstanden|fertig|anwenden|oui|confirmer|continuer|valider|accepter|d['’]accord|appliquer|terminé|sí|si|aceptar|confirmar|continuar|de\s+acuerdo|vale|aplicar|listo|sì|conferma|confermare|continua|accetta|procedi|va\s+bene|applica|fatto|sim|aceitar|prosseguir|concluir|bevestigen|doorgaan|akkoord|accepteren|toepassen|verder|да|ок|подтвердить|продолжить|принять|согласен|согласна|применить|готово|хорошо|はい|確認|続行|同意する|同意|適用|完了|了解|是|是的|确定|確定|确认|继续|繼續|好|好的|应用|應用|完成|예|네|확인|계속|동의|적용|완료|続ける|続けて|次へ|進む|終了|suivant|terminer|siguiente|finalizar|terminar|avanti|fine|fertigstellen|abschließen|abschliessen|далее|завершить|下一步|继续操作|繼續操作|다음|마침)`
 const LOCALE_GENERIC_CONFIRM = new RegExp(String.raw`^\s*${LOCALE_CONFIRM_WORD}(?:\s*[,、，]\s*${LOCALE_CONFIRM_WORD})?\s*[.!。！]?\s*$`, 'iu')
 // CU-729: the question frames of a localized confirm title ('Möchten Sie diese Notiz wirklich löschen?', 'Voulez-vous vraiment ...',
 // '¿Desea eliminar ...?', '本当に削除しますか？', '确定要删除吗？', '정말 삭제하시겠습니까?') are removed into one more title text to judge.
@@ -454,7 +472,7 @@ const IMPERATIVE_FORMS = Object.freeze({
   'sair': ['sai', 'saia', 'saiam'], 'ligar': ['liga', 'ligue', 'liguem'], 'começar': ['começa', 'comece', 'comecem'],
   'excluir': ['exclui', 'exclua', 'excluam'], 'interromper': ['interrompe', 'interrompa', 'interrompam'],
   'remover': ['remove', 'remova', 'removam'], 'submeter': ['submete', 'submeta', 'submetam'], 'efetuar': ['efetua', 'efetue', 'efetuem'],
-  'apagar': ['apaga', 'apague', 'apaguem'], 'elimina': ['eliminate', 'elimini'], 'cancella': ['cancellate', 'cancelli'],
+  'apagar': ['apaga', 'apague', 'apaguem'], 'elimina': ['eliminate', 'elimini', 'eliminare'], 'cancella': ['cancellate', 'cancelli', 'cancellare'],
   'conferma': ['confermate', 'confermi'], 'acquista': ['acquistate', 'acquisti'], 'annulla': ['annullate', 'annulli'],
   'svuota': ['svuotate', 'svuoti'], 'partecipa': ['partecipate', 'partecipi'], 'termina': ['terminate', 'termini'],
   'abbandona': ['abbandonate', 'abbandoni'], 'ordina': ['ordinate', 'ordini'], 'chiama': ['chiamate', 'chiami'],
@@ -463,7 +481,7 @@ const IMPERATIVE_FORMS = Object.freeze({
   'paga': ['pagate', 'paghi'], 'pubblica': ['pubblicate', 'pubblichi'], 'cerca': ['cercate', 'cerchi'], 'disdici': ['disdite', 'disdica'],
   'chiudi': ['chiudete', 'chiuda'], 'esci': ['uscite', 'esca'], 'condividi': ['condividete', 'condivida'],
   'concedi': ['concedete', 'conceda'], 'consenti': ['consentite', 'consenta'], 'interrompi': ['interrompete', 'interrompa'],
-  'rimuovi': ['rimuovete', 'rimuova'], 'trasferisci': ['trasferite', 'trasferisca'], 'procedi': ['procedete', 'proceda'],
+  'rimuovi': ['rimuovete', 'rimuova', 'rimuovere'], 'trasferisci': ['trasferite', 'trasferisca'], 'procedi': ['procedete', 'proceda'],
   'sospendi': ['sospendete', 'sospenda'], 'sottoscrivi': ['sottoscrivete', 'sottoscriva'], 'vai': ['andate', 'vada'],
   'abbonati': ['abbonatevi', 'si abboni'], 'avvia': ['avviate', 'avvii'], 'invia': ['inviate', 'invii'], 'inizia': ['iniziate', 'inizi'],
   'lascia': ['lasciate', 'lasci'], 'potenzia': ['potenziate', 'potenzi'], 'eliminare': ['elimina', 'eliminate', 'elimini'],
@@ -504,7 +522,7 @@ const IMPERATIVE_FORMS = Object.freeze({
   'заказать': ['закажи', 'закажите'], 'оформить': ['оформи', 'оформите'], 'стереть': ['сотри', 'сотрите'],
   // CU-650: cancel and unsubscribe, with the objects their entries name ('Отмените подписку', 'Отпишитесь').
   'отменить': ['отмени', 'отмените'], 'отписаться': ['отпишись', 'отпишитесь'], 'очистить': ['очисти', 'очистите'],
-  '보내기': ['보내세요', '보내 주세요', '보내주세요', '보내십시오', '보내줘', '보내 줘'], '지우기': ['지워', '지워줘', '지워 줘', '지우세요', '지워 주세요', '지워주세요'], '삭제': ['삭제하세요', '삭제해 주세요', '삭제해주세요', '삭제하십시오'],
+  '보내기': ['보내세요', '보내 주세요', '보내주세요', '보내십시오', '보내줘', '보내 줘'], '지우기': ['지워', '지워줘', '지워 줘', '지우세요', '지워 주세요', '지워주세요', '지우시겠습니까', '지우시겠어요', '지울까요'], '삭제': ['삭제하세요', '삭제해 주세요', '삭제해주세요', '삭제하십시오', '삭제하시겠습니까', '삭제하시겠어요', '삭제할까요'],
   '결제': ['결제하세요', '결제해 주세요', '결제해주세요', '결제하십시오'], '구매': ['구매하세요', '구매해 주세요', '구매해주세요', '구매하십시오'],
   '전송': ['전송하세요', '전송해 주세요', '전송해주세요', '전송하십시오'],
 })
@@ -4512,6 +4530,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         // CU-729: the localized title with its question frame removed is one more text (additions only).
         const unframed = (text) => text.replace(LOCALE_QUESTION_FRAME, ' ').replace(/[?？!！.。:：\s]+$/u, '').replace(/\s+/g, ' ').trim()
         for (const extra of [unframed(dialogName), unframed(firstSentence)]) if (extra !== '' && !texts.includes(extra)) texts.push(extra)
+        // CU-748: a localized passive-future statement in the title or a kept sentence adds its act's verb as one more text.
+        for (const sentence of [dialogName, ...kept]) { const verb = localePassiveAct(sentence); if (verb !== null && !texts.includes(verb)) texts.push(verb) }
         for (const text of texts) {
           // #702 round 2: the title is judged with the FULL canonical form (synonym, quantifier, label and clause steps run only
           // outside a confirm probe), so no confirmProbe flag here; the probe target carries no dialog fields, so it cannot recurse.
