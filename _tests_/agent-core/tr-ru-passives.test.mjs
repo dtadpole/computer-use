@@ -32,6 +32,7 @@ test('CU-771: Turkish and Russian future passives ask delete on both routes', ()
     ['Продолжить', 'Внимание', 'Все данные будут стёрты.'],
     ['ОК', 'Внимание', 'Сообщения удалятся навсегда.'],
     ['ОК', 'Внимание', 'Корзина будет очищена.'],
+    ['Tamam', 'Uyarı', 'Çöp kutusu temizlenecek.'],
   ]) {
     assert.ok(classes(onWeb(name, title, description)).includes('delete'), `web ${description}`)
     assert.ok(classes(onDesktop(name, title, description)).includes('delete'), `desktop ${description}`)
@@ -51,6 +52,9 @@ test('CU-771: negated, past and harmless statements ask no delete', () => {
     ['ОК', 'Информация', 'Файл не будет удалён.'],
     ['ОК', 'Информация', 'Файл не удалится.'],
     ['ОК', 'Информация', 'Настройки будут сохранены.'],
+    ['ОК', 'Информация', 'Кэш будет очищен.'],
+    ['Tamam', 'Bilgi', 'Önbellek temizlenecek.'],
+    ['Tamam', 'Bilgi', 'Arama geçmişi temizlenecek.'],
   ]) {
     // No DELETE from these statements (a Russian 'ОК' under 'Информация' asks permission on main by an older rule - unchanged here).
     assert.ok(!classes(onWeb(name, title, description)).includes('delete'), `web ${description}`)

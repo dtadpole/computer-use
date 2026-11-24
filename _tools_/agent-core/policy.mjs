@@ -63,10 +63,15 @@ const LOCALE_PASSIVE_ACTS = [
   [/(?<!\p{L})(?:wordt|worden|zal|zullen)(?!\p{L})[^.!?]{0,120}?(?<!\p{L})(?:definitief\s+|permanent\s+)?(?:verwijderd|gewist)(?!\p{L})/iu, 'verwijderen'],
   // CU-771 (High; cu-researcher's r2 set for CU-748): Russian with ё and the other delete participles ('будет удалён', 'будут
   // стёрты', 'будет очищена', 'будут уничтожены') and the reflexive future ('Файл удалится.', 'Сообщения удалятся навсегда.').
-  [/(?<!\p{L})(?:будут|будет)\s+(?:\S+\s+){0,3}?(?:удал[её]н[ыао]?|ст[её]рт[ыао]?|очищен[ыао]?|уничтожен[ыао]?)(?!\p{L})|(?<!\p{L})(?:удалится|удалятся|сотр[её]тся|сотрутся|очистится|очистятся)(?!\p{L})/iu, 'удалить'],
+  [/(?<!\p{L})(?:будут|будет)\s+(?:\S+\s+){0,3}?(?:удал[её]н[ыао]?|ст[её]рт[ыао]?|уничтожен[ыао]?)(?!\p{L})|(?<!\p{L})(?:удалится|удалятся|сотр[её]тся|сотрутся)(?!\p{L})/iu, 'удалить'],
+  // 'Cleared' reads delete only with a deletion object (the CU-766 r3 rule): 'Корзина будет очищена.' asks, 'Кэш будет очищен.' does not.
+  [/(?<!\p{L})(?:корзин[аы]|папк[аи]|данные|сообщения|файлы|письма|почтовый\s+ящик)(?!\p{L})\s+(?:\S+\s+){0,2}?(?:(?:будут|будет)\s+(?:\S+\s+){0,2}?очищен[ыао]?|очистится|очистятся)(?!\p{L})/iu, 'удалить'],
   // CU-771: Turkish future passives - 'Bu dosya kalıcı olarak silinecek.', '... silinecektir', 'kaldırılacak', 'temizlenecek'. The
   // negated future ('silinmeyecek') and the past ('silindi') are other words, so they never match.
-  [/(?<!\p{L})(?:silinecek|kaldırılacak|temizlenecek|yok\s+edilecek)(?:tir|tır|ler|lar|lerdir|lardır)?(?!\p{L})/iu, 'delete'],
+  [/(?<!\p{L})(?:silinecek|kaldırılacak|yok\s+edilecek)(?:tir|tır|ler|lar|lerdir|lardır)?(?!\p{L})/iu, 'delete'],
+  // Turkish 'temizlenecek' (will be cleaned) likewise only with a deletion object: 'Çöp kutusu temizlenecek.' asks, 'Önbellek
+  // temizlenecek.' (the cache) does not.
+  [/(?<!\p{L})(?:çöp\s+kutu\p{L}*|klasör\p{L}*|veriler\p{L}*|mesajlar\p{L}*|dosyalar\p{L}*|posta\s+kutu\p{L}*)\s+(?:\S+\s+){0,2}?temizlenecek(?:tir|tır)?(?!\p{L})/iu, 'delete'],
   [/(?:削除|消去)(?:され(?:ます|る)|します)/u, '削除'],
   [/(?:将|将会|會|会|將會|將)\s*(?:被)?\s*(?:永久)?(?:删除|刪除|清除)/u, '删除'],
   [/(?:삭제|지워)(?:됩니다|집니다|될\s*것입니다)/u, '삭제'],
