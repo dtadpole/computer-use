@@ -169,6 +169,10 @@ test('CU-779 r2: widening who sees the owner\'s things - accounts, non-members, 
     assert.match(space(name, false), /permission/, `Space: ${name}`)
   }
   assert.match(axcb('Visible to everyone with an account', false), /permission/)
+  // r3 (cu-researcher's named r1 row, verbatim, desktop): 'viewable by' reads as 'visible to'
+  assert.match(axcb('Make my calendar viewable by the whole company', false), /permission/)
+  assert.match(webcb('Make my calendar viewable by the whole company', false), /permission/)
+  assert.equal(webcb('Make my calendar viewable by my team', false), 'allow')
 })
 
 test('CU-779 r2: the other side - narrowing, the owner\'s own circle and own pages stay free', () => {

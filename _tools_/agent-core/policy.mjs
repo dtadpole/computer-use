@@ -249,7 +249,7 @@ const WIDER = String.raw`(?:${OUTSIDERS}|(?:everyone|anyone|people|users|members
 const PUBLIC_PLACE = String.raw`(?:the\s+|our\s+)?(?:(?:site'?s?\s+|public\s+)?(?:home\s*page|front\s+page|landing\s+page|main\s+page|start\s+page)|featured\s+(?:section|list|page|row)|marketplace|market|app\s+store|public\s+(?:store|gallery|showcase|feed|catalog(?:ue)?)|community(?:\s+(?:page|feed|gallery|showcase))?|explore(?:\s+(?:page|tab|feed))?|discover(?:y)?(?:\s+(?:page|tab|feed))?|leaderboard)`
 const EXPOSED_TOGGLE = new RegExp('^\\s*(?:' + [
   // 'Show my contact card to people outside the team', 'Share my portfolio with strangers'
-  String.raw`(?:show|share|display|expose|open|reveal|make)\s+${OWN_WORK}\s+(?:(?:visible|available|public)\s+)?(?:to|with)\s+${WIDER}`,
+  String.raw`(?:show|share|display|expose|open|reveal|make)\s+${OWN_WORK}\s+(?:(?:visible|viewable|accessible|available|public)\s+)?(?:to|with|by)\s+${WIDER}`,
   // 'Let strangers view my portfolio', 'Allow guests to see my profile'
   String.raw`(?:let|allow)\s+${WIDER}\s+(?:to\s+)?(?:see|view|browse|read|find|access|download|look\s+at)\s+${OWN_WORK}`,
   // 'Include me in the staff list visible to guests', 'Add my profile to the team page shown to visitors'
@@ -262,9 +262,9 @@ const EXPOSED_TOGGLE = new RegExp('^\\s*(?:' + [
   // r2: the audience as the subject - 'Non-members can see my profile', 'Everyone with an account can view my posts'
   String.raw`${WIDER}\s+(?:can|may)\s+(?:see|view|browse|read|find|access|look\s+at)\s+${OWN_WORK}`,
   // r2: the bare state - 'Visible to everyone with an account', 'Open to the whole company', 'Shown to non-members'
-  String.raw`(?:visible|shown|open|available)\s+to\s+${WIDER}`,
+  String.raw`(?:visible|viewable|accessible|shown|open|available)\s+(?:to|by)\s+${WIDER}`,
   // 'My portfolio is visible to strangers', 'Profile visible to guests'
-  String.raw`(?:${OWN_WORK}|profile|portfolio|shop|store|listing|contact\s+card)\s+(?:is\s+|are\s+)?(?:visible|shown|available|open|public)\s+to\s+${WIDER}`,
+  String.raw`(?:${OWN_WORK}|profile|portfolio|shop|store|listing|contact\s+card)\s+(?:is\s+|are\s+)?(?:visible|viewable|accessible|shown|available|open|public)\s+(?:to|by)\s+${WIDER}`,
 ].join('|') + ')\\s*$', 'i')
 /** CU-754: whether a toggle's row context (rowContext: a { list, hints } object or a plain string) names an access right. */
 export function accessRowContext(rowContext) {
