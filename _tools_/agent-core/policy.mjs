@@ -77,6 +77,9 @@ const ZH_WORDS = Object.freeze({
     '关闭账户', '關閉帳號', '取消订阅', '取消訂閱',
     // cu-researcher's zh sweep (Apple guide labels): Traditional words differ, not just glyphs.
     '丟到垃圾桶', '丟到資源回收筒', '清倒废纸篓', '清倒垃圾桶', '不存储',
+    // CU-731 (cu-researcher's sweep 2: '倒空废纸篓' acted unasked while the de / fr / ja twins ask): every empty verb (倒空 / 清空 / 清倒 /
+    // 清理) with every trash noun, Simplified and Traditional (废纸篓 / 廢紙簍 / 垃圾桶 / 資源回收筒 / 资源回收筒 / 回收站).
+    '倒空废纸篓', '倒空廢紙簍', '倒空垃圾桶', '倒空資源回收筒', '倒空回收站', '倒空资源回收筒', '清空廢紙簍', '清空資源回收筒', '清空回收站', '清空资源回收筒', '清倒废纸篓', '清倒廢紙簍', '清倒垃圾桶', '清倒資源回收筒', '清倒回收站', '清倒资源回收筒', '清理废纸篓', '清理廢紙簍', '清理垃圾桶', '清理資源回收筒', '清理回收站', '清理资源回收筒',
     // CU-294: an account closed in other words.
     '注销账号', '註銷帳號', '注销帐号', '删除账号', '刪除帳號', '注销账户'],
   permission: [
