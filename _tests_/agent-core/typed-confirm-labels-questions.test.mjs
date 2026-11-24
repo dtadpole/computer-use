@@ -24,3 +24,15 @@ test('CU-736 near collisions stay free', () => {
   assert.deepEqual(typedConfirmClasses(['Search'], ['Confirm the name by typing it.', 'Results appear below.']), [], 'confirm-by-typing with no act')
   assert.deepEqual(typedConfirmClasses(['Project name'], ['Project name', 'Deleting this project cannot be undone.']), [], 'a heading without a colon')
 })
+
+test("CU-736 r2 (cu-researcher's NOT OK at 0cdf35f48): the filed row as an entry, verify-by-typing, which-questions, 'Name of the <x> to <act>:'", () => {
+  assert.deepEqual(typedConfirmClasses(['Confirm the name by typing it.'], ['The project will be deleted.']), ['delete'], 'the filed row as the entry')
+  assert.deepEqual(typedConfirmClasses(['Name'], ['Verify the name by typing it below.', 'The project will be deleted.']), ['delete'], 'verify by typing (zone)')
+  assert.deepEqual(typedConfirmClasses(['Verify the name by typing it below.'], ['The project will be deleted.']), ['delete'], 'verify by typing (entry)')
+  assert.deepEqual(typedConfirmClasses(['Repository'], ['Which repository are you deleting?', 'Its issues and wiki are removed too.']), ['delete'], 'a which-question naming the act')
+  assert.deepEqual(typedConfirmClasses(['Which repository are you deleting?'], []), ['delete'], 'a which-question as the entry')
+  assert.deepEqual(typedConfirmClasses(['Space'], ['Name of the space to delete:', 'All pages in the space are erased.']), ['delete'], "'Name of the <x> to <act>:'")
+  assert.deepEqual(typedConfirmClasses(['Verify your email by typing the code.'], ['Your account will be deleted.']), [], 'verify an email by a code: no name')
+  assert.deepEqual(typedConfirmClasses(['Plan'], ['Which plan are you choosing?', 'Your old plan is removed.']), [], 'a which-question with no act of its own')
+  assert.deepEqual(typedConfirmClasses(['Project'], ['Name of the new project:', 'Old drafts are deleted after 30 days.']), [], "'Name of the new project:' (create)")
+})

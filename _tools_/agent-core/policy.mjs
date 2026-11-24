@@ -1860,14 +1860,25 @@ function possessiveNameShaped(text) {
 }
 // CU-736 (cu-researcher's sweep 4): a bare field label counts when it ends in a colon ('Project name:', 'Account name:'), and a
 // leading 'the' is dropped; 'Name:', 'Display name:', 'New name:' and 'User ID:' stay free (no noun, or a personal / rename word).
+// CU-736 r2 (cu-researcher's held-out): 'Name of the space to delete:' - the name word first, then 'of the <object>' and an optional
+// 'to <verb>', ending in a colon; 'Name of the new project:' stays free (a create form).
+const NAME_OF_LABEL = /^\s*(?:the\s+)?(?:name|id|slug|handle|url)\s+of\s+(?:the|this|that|your|its)\s+((?:[\p{L}\p{N}-]+\s+){0,2}[\p{L}\p{N}-]+?)(?:\s+to\s+[\p{L}-]+(?:\s+[\p{L}-]+)?)?\s*[:\uFF1A]\s*$/iu
+const nameOfLabelShaped = (text) => {
+  const m = NAME_OF_LABEL.exec(String(text ?? ''))
+  return m !== null && !/(?:^|\s)new(?:\s|$)/i.test(m[1])
+}
 const possessiveLabelShaped = (text) => {
   const bare = String(text ?? '').replace(/^\s*the\s+/i, '')
-  return possessiveShapeFits(POSSESSIVE_NAME_LABEL.exec(bare), !/[:\uFF1A]\s*$/.test(bare))
+  return possessiveShapeFits(POSSESSIVE_NAME_LABEL.exec(bare), !/[:\uFF1A]\s*$/.test(bare)) || nameOfLabelShaped(bare)
 }
 // CU-736: a question that asks for the name ('What is the name of the workspace?', 'What is the project's ID?'); 'What is your
 // name?' stays free (a person's field).
 const QUESTION_NAME = /^\s*what(?:'s|\u2019s|\s+is)\s+(?:(the|your|its)\s+)((?:[\p{L}\p{N}-]+(?:'s|\u2019s)?\s+){0,2}?)(?:name|id|slug|handle|url|hostname)(\s+of\s+(?:the|this|that|your|its)\s+[\p{L}\p{N}-]+(?:\s+[\p{L}\p{N}-]+)?)?\s*\?\s*$/iu
+// CU-736 r2 (cu-researcher's held-out): 'Which repository are you deleting?' - a 'which <object>' question whose own words name the
+// destroy / transfer act; 'Which plan are you choosing?' stays free.
+const WHICH_ACT_QUESTION = /^\s*which\s+(?:[\p{L}\p{N}-]+\s+){1,2}(?:are\s+you|do\s+you\s+(?:want|wish|intend|mean)\s+to|would\s+you\s+like\s+to|will\s+you|should\s+we|are\s+we)\s+(?:[\p{L}-]+\s+)?[\p{L}-]+\s*\?\s*$/iu
 function questionNameShaped(text) {
+  if (WHICH_ACT_QUESTION.test(String(text ?? '')) && (typedDestroyAct(String(text)) || typedTransfer(String(text)))) return true
   const m = QUESTION_NAME.exec(String(text ?? ''))
   if (!m) return false
   const words = m[2].trim().split(/\s+/).filter(Boolean)
@@ -1880,8 +1891,8 @@ function questionNameShaped(text) {
 // acronym). 'the <noun> name' alone is confirm-shaped but not strong.
 function strongConfirm(text) {
   if (/\bto\s+confirm\b|\bconfirm\s+by\b/i.test(text)) return true
-  // CU-736: 'Confirm the name by typing it' / 'Confirm the project ID by entering it'.
-  if (/\bconfirm\s+(?:the\s+|its\s+|your\s+|this\s+)?(?:[\p{L}\p{N}-]+\s+){0,2}?(?:name|id|slug|handle|url)\s+by\s+(?:typing|entering|writing|re-?typing|re-?entering)\b/iu.test(text)) return true
+  // CU-736: 'Confirm the name by typing it' / 'Confirm the project ID by entering it'; r2: 'Verify the name by typing it below.'
+  if (/\b(?:confirm|verify|validate|check|prove)\s+(?:the\s+|its\s+|your\s+|this\s+)?(?:[\p{L}\p{N}-]+\s+){0,2}?(?:name|id|slug|handle|url)\s+by\s+(?:typing|entering|writing|re-?typing|re-?entering)\b/iu.test(text)) return true
   for (const m of text.matchAll(TYPED_VERB)) {
     const rest = text.slice(m.index + m[0].length)
     if (/^["'\u201c\u2018]/u.test(rest)) return true
@@ -1985,7 +1996,8 @@ export function typedConfirmClasses(entries, zoneWords = []) {
   if (!texts.some((text) => typedInstruction(text)) && !zoneInstruction && !entryPossessive) return []
   // Policy owner's gate (08:07Z): the zone's words join only when an entry is confirm-shaped - an 'Enter your phone number'
   // form's 'We will remove it if you ask.' never reaches the destroy test. Entries alone keep #894's behaviour.
-  const words = [...texts, ...(texts.some(confirmShaped) || entryPossessive || zoneInstruction ? zone : [])].join(' \u2022 ')
+  // CU-736 r2 (cu-researcher's NOT OK at 0cdf35f48): a STRONG confirm entry ('Confirm the name by typing it.') joins the zone too.
+  const words = [...texts, ...(texts.some((text) => confirmShaped(text) || strongConfirm(text)) || entryPossessive || zoneInstruction ? zone : [])].join(' \u2022 ')
   return [...(typedDestroy(words) ? ['delete'] : []), ...(typedTransfer(words) ? ['permission'] : [])]
 }
 
