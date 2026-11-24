@@ -24,7 +24,8 @@ const onWeb = (name, dialogName) => web.classify(click, { url: 'https://app.exam
 const onDesktop = (name, dialogName) => desktop.classify(click, { frontmostBundleId: FIXTURE, target: { origin: FIXTURE, role: 'AXButton', name, fingerprint: name, defaultButtonRead: true, dialogName } })
 
 test('CU-777: the filed rows ask delete on both routes', () => {
-  for (const [name, title] of [['Svuota', 'Si deve proprio svuotare il Cestino?'], ['Vaciar', '¿Hay que vaciar la papelera ya?']]) {
+  // r2: the first filed row verbatim - the bare 'Leeren' under the inseparable-prefix participle (cu-verifier's #1454 probe).
+  for (const [name, title] of [['Leeren', 'Muss der Papierkorb sofort entleert werden?'], ['Leeren', 'Soll der Papierkorb entleert werden?'], ['Svuota', 'Si deve proprio svuotare il Cestino?'], ['Vaciar', '¿Hay que vaciar la papelera ya?']]) {
     assert.ok(classes(onWeb(name, title)).includes('delete'), `web ${title}`)
     assert.ok(classes(onDesktop(name, title)).includes('delete'), `desktop ${title}`)
   }
@@ -37,6 +38,13 @@ test('CU-777: the class - impersonal / modal frames and prefixed participles', (
     ['Vider', 'Il faut vider la corbeille ?'],
     ['Entleeren', 'Soll der Papierkorb entleert werden?'],
     ['Ausleeren', 'Soll der Papierkorb jetzt ausgeleert werden?'],
+    // r2 (cu-researcher's set): necessity frames and the 'dass ... werden soll?' clause order.
+    ['Vaciar', '¿Es necesario vaciar la papelera?'],
+    ['Vider', 'Est-il nécessaire de vider la corbeille ?'],
+    ['Leeren', 'Sind Sie sicher, dass der Papierkorb ausgeleert werden soll?'],
+    ['Leeren', 'Soll unser Papierkorb ausgeleert werden?'],
+    ['Ausräumen', 'Soll der Ordner wirklich ausgeräumt werden?'],
+    ['Leeren', 'Muss der Papierkorb ausgeleert werden?'],
   ]) {
     assert.ok(classes(onWeb(name, title)).includes('delete'), `web ${title}`)
     assert.ok(classes(onDesktop(name, title)).includes('delete'), `desktop ${title}`)
@@ -44,7 +52,7 @@ test('CU-777: the class - impersonal / modal frames and prefixed participles', (
 })
 
 test('CU-777: a harmless act under the same frames, and a cache, stay free', () => {
-  for (const [name, title] of [['Guardar', '¿Hay que guardar los cambios ya?'], ['Salva', 'Si deve salvare il documento?'], ['Entleeren', 'Soll der Cache entleert werden?']]) {
+  for (const [name, title] of [['Guardar', '¿Hay que guardar los cambios ya?'], ['Salva', 'Si deve salvare il documento?'], ['Entleeren', 'Soll der Cache entleert werden?'], ['Leeren', 'Muss der Cache sofort entleert werden?'], ['Guardar', '¿Es necesario guardar los cambios?'], ['Leeren', 'Kann der Papierkorb später geleert werden?']]) {
     assert.deepEqual(classes(onWeb(name, title)), [], `web ${title}`)
   }
 })
