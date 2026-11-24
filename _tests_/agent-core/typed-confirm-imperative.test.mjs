@@ -34,7 +34,9 @@ test('CU-751 near collisions stay free', () => {
   assert.deepEqual(typedConfirmClasses(['Name'], ['Change the workspace name below.', 'Old drafts are deleted after 30 days.']), [], 'a rename beside a retention note')
   assert.deepEqual(typedConfirmClasses(['ID'], ['Edit the cluster ID.', 'The cluster will be terminated.']), [], 'an edit verb')
   assert.deepEqual(typedConfirmClasses(['Name'], ['Choose the project name.', 'Old builds will be removed.']), [], 'a choose verb')
-  assert.deepEqual(typedConfirmClasses(['Name'], ['Change the name to confirm.', 'The project will be deleted.']), [], "a rename verb + 'to confirm' stays a rename (no typing word)")
+  // A rename verb + 'to confirm': CU-751's shape stays shut, but CU-745's '<x> name to confirm' label shape (on main since #1421)
+  // already reads 'Change the name to confirm' beside a delete as a confirm - it asks, as it did before this change.
+  assert.deepEqual(typedConfirmClasses(['Name'], ['Change the name to confirm.', 'The project will be deleted.']), ['delete'], "'<x> name to confirm' (CU-745's label shape) still asks")
   assert.deepEqual(typedConfirmClasses(['Name'], ['Give the cluster a name.', 'Old clusters will be removed.']), [], 'a naming (a / new name), not a confirm')
   assert.deepEqual(typedConfirmClasses(['Name'], ['Give the workspace a new name.', 'The old workspace will be deleted.']), [], 'a new name')
 })
