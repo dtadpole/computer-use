@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-24T09:06:00Z
+modified: 2026-11-24T23:07:34Z
 level: L1
-version: 3.98.0
+version: 3.99.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,31 +15,26 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); a session
-worktree plus a `--review` worktree; no desktop runs. State at 09:06Z, 24 November.
+worktree plus a `--review` worktree; no desktop runs. State at 23:07Z, 24 November.
 
-## Landed since the last handover
+## Landed today
 
-- Destroy verbs and their follow-up (#851, #1399), egress (#859), test-only mutant pins (#1411).
-- Policy-owner OKs on #1421 (typed-confirm verbs) and #1423 (modal statements); both merged.
+- Six consent Highs, each closed live: final-step buttons (#1422), localized passive statements (#1434), sign-in and device-code grants (#1437), localized question frames (#1446), Turkish / Russian future passives (#1448), impersonal and modal frames (#1454, which also pins two surviving mutants).
+- Policy-owner OKs on #1421, #1423, #1428, #1431, #1440, #1443, #1450, #1456; rowContext shape OK on #1444 (re-check after its retarget to main).
 
 ## Open, mine
 
-- #1422 (final-step and bare-verb buttons read their dialog): round 2 merged with main after #1423; author runs, push, then the three re-checks.
-- Localized alerts (passive statements, infinitives, honorific questions, localized next / finish): built, test1 4/4; author runs, push, PR.
-- Next High: approving a sign-in or device-code grant.
-- #1409 (egress follow-up) and #856 + #1396 wait in the class lane; a bucket follow-up and the stop-identity driver half wait locally.
+- #1459 (pending trash acts in statements and questions, plus a pre-review fix that stops 'aufgeräumt' reading delete): pushed at 2a406d4ae; three re-checks and a helper-cell window queued.
+- Class lane, must land tonight outside 06:30-08:25Z: #1409 push (ccb764316) and #856 runs (06a1a068f, then a non-author conflict review); scripts `/tmp/cu-dev1s-lane1409.sh`, `/tmp/cu-dev1s-lane856.sh`.
+- Backlog after the Highs: a negated-necessity over-ask (P2), the Russian generic-button permission over-ask (P3), then transfer over-asks and the drag-path tool.
 
 ## Shared desktop
 
-- Liaison to Last War: their bridge runs from `computer-use-wt/lastwar-bridge` at b52c84ba3 since 08:36:10Z, with 300 s owner idle again (D-118). Their slot 09:20-10:50Z excludes only desktop-touching work.
-- Before any yes to them: read the live run lock and the integrator's latest lines.
+- Last War runs often in the evening too: the helper cell needs its plain guard; poll the lock, never force it.
 
 ## Lessons
 
-- Stop only your own job's process group, never by name pattern.
+- Before writing a free row, probe it on main: three of my free rows today asked on main by older rules.
+- Never amend a pushed commit; add a commit instead (one force-push today on my own PR branch, disclosed).
+- A new integrator's window lines reach seats only after its roster PR lands.
 - `\b` in JS regex is ASCII-only: Cyrillic needs letter lookarounds.
-
-## Tools
-
-- Seat tools in the reflection seat folder's `tools/`; inbox via session-inbox.py.
-- Before every push: the public-hygiene gate over origin/main..HEAD.
