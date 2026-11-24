@@ -58,7 +58,7 @@ const LOCALE_PASSIVE_ACTS = [
   [/\b(?:ser[áa]n?|se)\s+(?:\S+\s+){0,3}?(?:eliminad[oa]s?|borrad[oa]s?|eliminar[áa]n?|borrar[áa]n?)\b/iu, 'eliminar'],
   [/\b(?:verranno|verrà|saranno|sarà)\s+(?:\S+\s+){0,3}?(?:eliminat[ioae]|rimoss[ioae]|cancellat[ioae])\b/iu, 'elimina'],
   [/\b(?:serão|será)\s+(?:\S+\s+){0,3}?(?:excluíd[oa]s?|apagad[oa]s?|removid[oa]s?)\b/iu, 'excluir'],
-  [/\b(?:будут|будет)\s+(?:\S+\s+){0,3}?(?:удален[ыао]?|стерт[ыао]?)\b/iu, 'удалить'],
+  [/(?<!\p{L})(?:будут|будет)\s+(?:\S+\s+){0,3}?(?:удален[ыао]?|стерт[ыао]?)(?!\p{L})/iu, 'удалить'],
   [/(?:削除|消去)(?:され(?:ます|る)|します)/u, '削除'],
   [/(?:将|将会|會|会|將會|將)\s*(?:被)?\s*(?:永久)?(?:删除|刪除|清除)/u, '删除'],
   [/(?:삭제|지워)(?:됩니다|집니다|될\s*것입니다)/u, '삭제'],
