@@ -35,6 +35,8 @@ test('CU-751 near collisions stay free', () => {
   assert.deepEqual(typedConfirmClasses(['ID'], ['Edit the cluster ID.', 'The cluster will be terminated.']), [], 'an edit verb')
   assert.deepEqual(typedConfirmClasses(['Name'], ['Choose the project name.', 'Old builds will be removed.']), [], 'a choose verb')
   assert.deepEqual(typedConfirmClasses(['Name'], ['Change the name to confirm.', 'The project will be deleted.']), [], "a rename verb + 'to confirm' stays a rename (no typing word)")
+  assert.deepEqual(typedConfirmClasses(['Name'], ['Give the cluster a name.', 'Old clusters will be removed.']), [], 'a naming (a / new name), not a confirm')
+  assert.deepEqual(typedConfirmClasses(['Name'], ['Give the workspace a new name.', 'The old workspace will be deleted.']), [], 'a new name')
 })
 
 test('CU-751: confirm verbs still ask (not rename verbs)', () => {
