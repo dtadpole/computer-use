@@ -3,7 +3,7 @@ import { normaliseForPolicy, normaliseText } from './normalise.mjs'
 import { BIP39_ENGLISH } from './bip39-english.mjs'
 import { normalizeKey } from './keys.mjs'
 import { originPattern } from './sites.mjs'
-import { amountClass, canonicalForms, clauseSplit, clauseVerbLed, grammarClasses, grammarClassesBase, inertLinkAmountClass, quantifierDropped, questionStripped, sectionLabelStripped, straightQuotes, synonymForms, toggleExpansion } from './phrase-grammar.mjs'
+import { amountClass, canonicalForms, clauseSplit, clauseVerbLed, grammarClasses, grammarClassesBase, inertLinkAmountClass, quantifierDropped, questionStripped, sectionLabelStripped, straightQuotes, synonymForms, toggleExpansion, egressesData } from './phrase-grammar.mjs'
 
 /**
  * The action policy (design: action-policy.md, consent-gate.md). `classify` runs in the dispatcher for every action,
@@ -4641,6 +4641,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     }
     // CU-521 (cu-coordinator 20:06Z): 'Merge anyway' keeps its older submit and unions permission (a merge past the requirements).
     if (grammarEligible && classes.length > 0 && !classes.includes('permission') && /^(?:merge\s+anyway|force[-\s]?merge)$/i.test(String(name ?? '').trim())) classes.push('permission')
+    // CU-573: data egress to a destination outside the account is a late UNION - only on a name nothing else classed (never clears a verdict).
+    if (grammarEligible && !nativeOn && classes.length === 0 && egressesData(name)) classes.push('permission')
     // CU-576 (built before triage): in a crypto wallet app a send / broadcast / sign / confirm / approve / swap moves money and is final - it
     // asks purchase (no grant covers it) beside whatever class it already has; reading, receiving and settings stay as they are.
     if (desktopUrl && !nativeOn && !classes.includes('purchase') && isWalletApp(String(context.frontmostBundleId ?? target?.origin ?? context.url ?? ''))

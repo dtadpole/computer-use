@@ -1054,6 +1054,40 @@ export function grammarClasses(name, role = '') {
   return base
 }
 
+/** CU-573 (cu-researcher 05:05Z; built before triage): DATA EGRESS by class - a persistent data flow to a destination outside the account:
+ * any egress verb (replicate / mirror / sync / stream / forward / ship / send / push / export / copy / transfer / pipe / route / dump / clone /
+ * share / drain) with its object, TO an external destination (another / external / third-party / remote account, org, project,
+ * region, server; a SaaS sink - Datadog, Splunk, S3, BigQuery, Kafka ...; a webhook, endpoint or URL), or a trailing 'to' ('Mirror repository
+ * to'); and adding or enabling an outgoing webhook, callback URL, log drain, sink or export destination. Exports to the user's OWN storage
+ * (Drive, Dropbox, iCloud, an external drive) are left for cu-coordinator's ruling. The policy reads it as a late UNION on a name nothing
+ * else classed (the #854 r6 lesson: a new class only adds). */
+export function egressesData(raw) {
+  raw = String(raw ?? '').trim()
+  // #859 r5 (cu-researcher 10:20Z class sweep): uploading / e-mailing / piping data to an OUTSIDE party - a party noun with up to two
+  // qualifiers ('analytics vendor', 'marketing agency') or an e-mail address.
+  if (/^\s*(?:upload|e-?mail|mail|fax|post|deliver|send|pipe|push|export|share|transfer|copy|sync|stream|forward|hand\s+over)\s+(?:[\p{L}\p{N}'./@-]+\s+){0,5}?(?:to|with|into)\s+(?:the\s+|an?\s+|their\s+)?(?:[\p{L}-]+\s+){0,2}(?:agency|agencies|vendors?|contractors?|consultants?|suppliers?|resellers?|affiliates?|advertisers?|brokers?|partners?|third[\s-]part(?:y|ies)|[\w.+-]+@[\w-]+(?:\.[\w-]+)+)\s*$/iu.test(raw)
+    && !/\b(?:my|our|your)\s+(?:own\s+)?(?:[\p{L}-]+\s+){0,2}(?:agency|vendors?|partners?)\s*$/iu.test(raw)) return true
+  // #859 r3 (cu-researcher 08:13Z): 'Start mirroring this repository to ...' - a start / begin / keep / continue / resume / enable lead
+  // and the gerund read as the bare verb.
+  raw = raw.replace(/^\s*(?:start|begin|keep|continue|resume|enable|turn\s+on|set\s+up|proceed\s+with)\s+([\p{L}]+?)(?:ing)\b/iu, (m, stem) => {
+    const base = stem.toLowerCase()
+    const fixes = { mirror: 'mirror', replicat: 'replicate', stream: 'stream', sync: 'sync', forward: 'forward', shipp: 'ship', send: 'send', push: 'push', export: 'export', copy: 'copy', transferr: 'transfer', transfer: 'transfer', pip: 'pipe', rout: 'route', dump: 'dump', offload: 'offload', duplicat: 'duplicate', clon: 'clone', shar: 'share', drain: 'drain' }
+    return fixes[base] ?? m
+  })
+  if (raw.split(/\s+/).length > 10) return false
+  if (/^\s*(?:view|see|read|open|show|learn|about|docs?|help|how)\b|\b(?:guide|documentation|tutorial|logs?\s+viewer)\s*$/i.test(raw)) return false
+  if (new RegExp('\\b(?:to|into|with)\\s+(?:the\\s+)?' + "(?:(?:my|your|our)\\s+(?:own\\s+)?(?:google\\s+drive|drive|dropbox|onedrive|icloud|computer|device|mac|laptop|external\\s+drive|usb|downloads|desktop|files)|google\\s+drive|dropbox|onedrive|icloud(?:\\s+drive)?|(?:an?\\s+)?(?:external|usb)\\s+(?:drive|disk))", 'iu').test(raw)) return false
+  return /^\s*(?:replicate|mirror|sync(?:hroni[sz]e)?|stream|forward|ship|send|push|export|copy|transfer|pipe|route|replay|dump|offload|duplicate|clone|share|drain|fan\s+out)\s+(?:[\p{L}\p{N}'./-]+\s+){0,4}?(?:to|into|with|over\s+to)\s+(?:the\s+|an?\s+)?(?:(?:another|a\s+different|an?\s+external|other|third[-\s]party|outside|remote|partner|vendor|foreign|separate)\s+[\p{L}-]+|external\s+[\p{L}-]+|datadog|splunk|sumo\s*logic|new\s*relic|elastic(?:search)?|logstash|s3|gcs|azure(?:\s+blob)?|bigquery|snowflake|redshift|kafka|kinesis|pub\/?sub|sns|sqs|webhooks?|endpoints?|urls?|[a-z][a-z0-9+.-]*:\/\/\S+|siem|sentry|segment|mixpanel|amplitude|zapier|ifttt|an?\s+(?:sftp|ftp)\s+server|(?:sftp|ftp)|any\s+[\p{L}-]+|(?![\w.-]*\.(?:pdf|csv|tsv|txt|xlsx?|docx?|pptx?|json|zip|gz|tar|png|jpe?g|gif|md|html?|xml|log|ics|vcf)\b)[\p{L}\p{N}-]+(?:\.[\p{L}\p{N}-]+)+(?::\d+)?(?:\/\S*)?|[\w.-]+@[\w.-]+)(?:\s+[\p{L}\p{N}'./-]+){0,3}\s*$/iu.test(raw)
+    // A trailing 'to' ('Mirror repository to') only for a flow verb with its object - the policy's brand strip turns 'Export to Dropbox'
+    // into 'Export to', which must stay free.
+    || /^\s*(?:replicate|mirror|stream|pipe|forward|sync|drain|fan\s+out)\s+(?:[\p{L}\p{N}'./-]+\s+){1,3}(?:to|into)\s*$/iu.test(raw)
+    || /^\s*(?:add|create|enable|set\s+up|configure|register|turn\s+on|activate|new)\s+(?:a\s+|an\s+|the\s+)?(?:new\s+)?(?:outgoing\s+|outbound\s+)?(?:webhooks?(?:\s+(?:url|endpoint|destination))?|callback\s+url|log\s+(?:drain|forwarding|export|sink|stream)|(?:data\s+|event\s+|audit\s+)?(?:export\s+)?(?:destination|sink|drain|forwarder|stream)|event\s+subscription|integration\s+url)s?\s*$/iu.test(raw)
+    // #859 r2 (cu-researcher 06:39Z): a NAMED outside party as the destination - another party's possessive ('into Acme's warehouse';
+    // not my / our / your / the team's) or a party noun (a contractor, vendor, partner, agency, consultant, client, auditor ...) after to /
+    // into / with / at / in / for; and keeping a live clone / copy / mirror / replica of the data there.
+    || /^\s*(?:(?:replicate|mirror|sync(?:hroni[sz]e)?|stream|forward|ship|send|push|export|copy|transfer|pipe|route|replay|dump|offload|duplicate|clone|share|drain|hand\s+over|give)|keep\s+(?:a\s+|an\s+)?(?:live\s+|running\s+|synced\s+|current\s+|full\s+)?(?:clone|copy|mirror|replica|backup|sync)\s+of)\s+(?:[\p{L}\p{N}'./-]+\s+){0,5}?(?:to|into|with|at|in|for|over\s+to)\s+(?:(?:a|an|the|our|my|some)\s+)?(?:(?!(?:my|our|your|the|team|company|org|organi[sz]ation|workspace|account|project)'s)[\p{L}\p{N}&.-]+'s\s+[\p{L}\p{N}-]+|(?:contractors?|vendors?|partners?|agenc(?:y|ies)|consultants?|suppliers?|resellers?|clients?|customers?|auditors?|affiliates?|outside\s+firms?|third[-\s]part(?:y|ies)|freelancers?|outsourcers?|integrators?))(?:\s+[\p{L}\p{N}'./-]+){0,3}\s*$/iu.test(raw)
+}
+
 function grammarClassesOf(name, role = '') {
   const raw = straightQuotes(name).trim()
   if (raw === '' || raw.length > 400) return []
