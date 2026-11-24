@@ -28,7 +28,20 @@ test('CU-745: the same shapes as entry + zone (typedConfirmClasses)', () => {
   assert.deepEqual(typedConfirmClasses(['Repository'], ['Repository name to confirm', 'The repository will be deleted.']), ['delete'], 'the label in the zone')
 })
 
+test('CU-745 r2: cu-researcher\'s three held-out misses ask (entry + zone)', () => {
+  assert.deepEqual(typedConfirmClasses(['Repository'], ['Indicate the repository name.', 'The repository will be deleted.']), ['delete'], "'indicate'")
+  assert.deepEqual(typedConfirmClasses(['Label'], ['Specify the volume label to proceed.', 'The volume will be wiped.']), ['delete'], "'label' is a name word")
+  assert.deepEqual(typedConfirmClasses(['Database name (required to delete):'], ['The database will be dropped.']), ['delete'], 'a label whose parenthetical names the act')
+  assert.equal(press('Confirm', ['Indicate the repository name.', 'The repository will be deleted.']), 'delete')
+  assert.equal(press('Confirm', ['Database name (required to delete):', 'The database will be dropped.']), 'delete')
+  assert.deepEqual(typedConfirmClasses(['Name'], ['Team name (to confirm the transfer):', 'Ownership passes to the new owner.']), ['permission'], 'a parenthetical with a transfer')
+})
+
 test('CU-745 near collisions stay free', () => {
+  assert.deepEqual(typedConfirmClasses(['ID'], ['Provide the workspace ID.', 'Used for API calls.']), [], "cu-researcher's near row (an API note)")
+  assert.deepEqual(typedConfirmClasses(['Bucket'], ['Please supply the name of the bucket.', 'Pick a region next.']), [], "cu-researcher's near row (a region step)")
+  assert.deepEqual(typedConfirmClasses(['Label'], ['Specify the volume label.', 'Rename the volume.']), [], "cu-researcher's near row (a rename)")
+  assert.deepEqual(typedConfirmClasses(['Display name (optional):'], ['Shown on your profile.']), [], 'a parenthetical with no act')
   assert.equal(press('Save', ['Provide the project name.', 'Shown on the dashboard.']), 'allow', "cu-researcher's free row")
   assert.equal(press('Next', ['Specify the cluster name.', 'Pick a region next.']), 'allow', "cu-researcher's free row")
   assert.equal(press('Confirm', ['Please confirm the project name.', 'Rename the project.']), 'allow', "cu-researcher's free row (a rename)")
