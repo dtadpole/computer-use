@@ -50,7 +50,8 @@ test('CU-753: the class - sign-in approvals and device-code grants, by name or b
 })
 
 test('CU-753: the person\'s own sign-in, sign-in settings, Bluetooth pairing and plain codes stay free', () => {
-  for (const name of ['Sign in', 'Sign in with Google', 'Allow sign-in with passkeys', 'Pair new device', 'Connect device', 'Link your bank account later']) {
+  // ('Sign in with Google' asks permission and 'Link your bank account' credential on main already - other rules, unchanged here.)
+  for (const name of ['Sign in', 'Allow sign-in with passkeys', 'Pair new device', 'Connect device', 'Pair headphones']) {
     assert.deepEqual(classes(named(name)), [], name)
   }
   assert.deepEqual(classes(onPage('Continue', ['Enter the code we sent to your email'], ['Code'])), [])
