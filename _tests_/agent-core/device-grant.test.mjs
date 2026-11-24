@@ -58,3 +58,13 @@ test('CU-753: the person\'s own sign-in, sign-in settings, Bluetooth pairing and
   assert.deepEqual(classes(onPage('Sign in', ['Sign in to your account'], ['Email', 'Password'])), [])
   assert.deepEqual(classes(inDialog('OK', 'Signed in', 'You are now signed in on this device.')), [])
 })
+
+test('CU-753 r2: sign-in request titles and "Was this you?" ask permission; a plain sign-in title stays free', () => {
+  for (const [name, title] of [['Allow', 'Sign-in requested'], ['Allow', 'New login'], ['Yes', 'Was this you?'], ['Approve', 'New sign-in from Chrome on Windows'], ['Yes', 'Login attempt detected']]) {
+    assert.ok(classes(inDialog(name, title)).includes('permission'), `web ${title}`)
+    assert.ok(classes(inDesktopDialog(name, title)).includes('permission'), `desktop ${title}`)
+  }
+  for (const [name, title] of [['Continue', 'Sign in'], ['OK', 'Login'], ['Yes', 'Stay signed in?'], ['OK', 'Sign-in successful']]) {
+    assert.deepEqual(classes(inDialog(name, title)), [], `web ${title}`)
+  }
+})
