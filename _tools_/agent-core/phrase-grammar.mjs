@@ -51,7 +51,7 @@ export function tokens(name) {
 const MULTI_VERBS = [
   [['adopt', 'and', 'sign'], ['sign']], [['sign', 'and', 'submit'], ['sign', 'send']], [['restart', 'to', 'update'], ['install']],
   [['install', 'and', 'relaunch'], ['install']], [['log', 'in', 'as'], ['actas']], [['sign', 'in', 'as'], ['actas']],
-  [['factory', 'reset'], ['destroy']], [['force', 'push'], ['destroy']], [['tear', 'down'], ['destroy']], [['wipe', 'out'], ['destroy']], [['blow', 'away'], ['destroy']], [['dispose', 'of'], ['destroy']], [['get', 'rid', 'of'], ['destroy']], [['do', 'away', 'with'], ['destroy']], [['wipe', 'clean'], ['destroy']], [['spin', 'down'], ['destroy']], [['shut', 'down', 'and', 'delete'], ['destroy']], [['spin', 'up'], ['cost']], [['scale', 'up'], ['cost']],
+  [['factory', 'reset'], ['destroy']], [['force', 'push'], ['destroy']], [['kill', 'off'], ['destroy']], [['write', 'off'], ['destroy']], [['clean', 'out'], ['destroy']], [['clear', 'out'], ['destroy']], [['empty', 'out'], ['destroy']], [['burn', 'down'], ['destroy']], [['tear', 'down'], ['destroy']], [['wipe', 'out'], ['destroy']], [['blow', 'away'], ['destroy']], [['dispose', 'of'], ['destroy']], [['get', 'rid', 'of'], ['destroy']], [['do', 'away', 'with'], ['destroy']], [['wipe', 'clean'], ['destroy']], [['spin', 'down'], ['destroy']], [['shut', 'down', 'and', 'delete'], ['destroy']], [['spin', 'up'], ['cost']], [['scale', 'up'], ['cost']],
   [['cash', 'out'], ['pay']], [['top', 'up'], ['pay']], [['turn', 'on'], ['enable', 'phys_on']], [['turn', 'off'], ['unguard', 'phys_off']],
   [['login', 'as'], ['actas']], [['act', 'as'], ['actas']], [['view', 'as'], ['actas']], [['set', 'up'], ['pay']], [['move', 'to'], ['destroy']],
   [['switch', 'to'], ['pay']], [['let', 'in'], ['grant']], [['remote', 'start'], ['phys_on']], [['buzz', 'in'], ['phys_on']],
@@ -76,6 +76,12 @@ const VERBS = new Map(Object.entries({
   kill: ['destroy'], sunset: ['destroy'], deregister: ['destroy'], unregister: ['destroy'], unprovision: ['destroy'],
   decom: ['destroy'], dispose: ['destroy'], cull: ['destroy'], torch: ['destroy'], axe: ['destroy'], excise: ['destroy'],
   incinerate: ['destroy'], vaporize: ['destroy'], vaporise: ['destroy'], burn: ['destroy'], blast: ['destroy'], delist: ['destroy'],
+  // CU-711 (cu-researcher's D-112 follow-up to #851: the class past its filed rows - 'Dissolve the organization', 'Scuttle the replica
+  // set', 'Kill off the old tenants', 'Write off the backups', 'Clean out the storage account', 'Strip the server bare'): more destroy-sense
+  // verbs and the phrasal forms above (kill off, write off, clean / clear / empty out, burn down). Each still needs a data object, so
+  // 'Clean out the cache', 'Write off the invoice' and 'Ditch the ads' stay free.
+  dissolve: ['destroy'], disband: ['destroy'], scuttle: ['destroy'], abolish: ['destroy'], jettison: ['destroy'], ditch: ['destroy'],
+  decimate: ['destroy'], nix: ['destroy'],
   launch: ['cost'], create: ['cost', 'cred'], provision: ['cost'],
   pay: ['pay'], buy: ['pay'], purchase: ['pay'], order: ['pay'], book: ['pay'], reserve: ['pay'], rent: ['pay'], redeem: ['pay'],
   refund: ['pay'], reimburse: ['pay'], release: ['pay', 'share'], send: ['pay', 'send'], transfer: ['pay', 'grant'], withdraw: ['pay'],
@@ -119,6 +125,8 @@ const OBJECTS = {
     'account', 'data', 'database', 'table', 'schema', 'collection', 'instance', 'server', 'cluster', 'vm', 'stack', 'environment', 'disk',
     'repository', 'branch', 'booking', 'reservation', 'trip', 'appointment', 'user', 'employee', 'participant', 'device', 'history',
     'workspace', 'chat', 'conversation',
+    // CU-711: an organisation, a tenant and a replica (set) are data too - 'Dissolve the organization', 'Kill off the old tenants'.
+    'organization', 'organisation', 'org', 'tenant', 'replica',
     // CU-569: 'Reset everything' / 'Clear everything'.
     'everything']),
   cost: new Set(['instance', 'cluster', 'vm', 'server']),
@@ -851,6 +859,8 @@ const VERB_SYNONYMS = [[/^(\s*)modify\b/i, '$1change'], [/^(\s*)(?:update|edit)\
   // #851 r5 (cu-researcher 10:43Z: a destroy-SENSE verb with any resource object - reformat, reimage, zero (out), flush, end-of-life, retire; a
   // verb used as a noun label ('Shred mode', 'Flush settings') stays free).
   [/^(\s*)(?:purge|erase|expunge|annihilate|eradicate|exterminate|obliterate|shred|nuke|incinerate|vapori[sz]e|demolish|dismantle|eliminate|excise|cull|unprovision|deprovision|(?:reformat|re-?image|zero(?:\s+out)?|flush|end-?of-?life|eol|retire|liquidate|raze)(?=\s+(?:this\s+|the\s+|our\s+|my\s+|all\s+|that\s+)?(?:[\w.-]+\s+){0,2}(?:repo(?:sitor(?:y|ies))?|services?|apis?|endpoints?|servers?|clusters?|databases?|dbs?|instances?|vms?|machines?|laptops?|computers?|drives?|disks?|volumes?|partitions?|ssds?|hdds?|queues?|caches?|tables?|buckets?|projects?|products?|workspaces?|environments?|accounts?|org(?:ani[sz]ation)?s?|teams?|sites?|domains?|namespaces?|deployments?|pipelines?|nodes?|hosts?|containers?|pods?|indexes|indices|topics?|streams?|backups?|snapshots?|tenants?|subscriptions?|apps?|applications?|codebase|branch(?:es)?)\b)|decommission|sunset(?!\s+(?:view|mode|theme|photos?|pictures?|images?|wallpapers?|colou?rs?|filters?|times?|hours?|scene|sky|beach|boulevard|strip|cruise|tour|glow|orange|gradient))|deregister|unregister|wipe\s+out|wipe\s+clean|tear\s+down|blow\s+away|dispose\s+of|get\s+rid\s+of|do\s+away\s+with)\b(?=\s+\S)(?!\s+(?:the\s+|a\s+)?(?:guide|docs?|documentation|tutorial|mode|settings?|options?|levels?|speed|style|preferences?|tool|button|menu|icon|status|schedule|instructions?|checklist|steps?|help|faq|video|overview|walkthrough|diagram|playbook|runbook|template)s?\s*$)/i, '$1delete'],
+  // CU-711: stripping something BARE wipes it ('Strip the server bare'); 'Strip formatting' / 'Strip metadata' stay free.
+  [/^(\s*)strip(?=\s+(?:[\w.-]+\s+){1,4}bare\b)/i, '$1wipe'],
   // #851 (cu-researcher 10:19Z class sweep: 'Format disk'): formatting STORAGE erases it; 'Format text' / 'Format cells' stay free.
   [/^(\s*)format(?=\s+(?:the\s+|this\s+|my\s+|a\s+)?(?:disks?|drives?|volumes?|partitions?|ssds?|hdds?|sd\s+cards?|usb(?:\s+drives?)?|storage|memory\s+cards?|startup\s+disk)\b)/i, '$1erase']]
 function withVerbSynonym(text) {
