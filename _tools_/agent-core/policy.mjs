@@ -1884,6 +1884,9 @@ const WHICH_ACT_QUESTION = /^\s*which\s+(?:[\p{L}\p{N}-]+\s+){1,2}(?:are\s+you|d
 const TRANSFER_USER_TAIL = String.raw`(?:(?:your|their|his|her|its|the|this|that)\s+)?(?:(?:new\s+)?(?:owner|admin(?:istrator)?|recipient|member|user|person|teammate|collaborator)(?:'s|\u2019s)\s+)?(?:user\s?name|user[\s-]?id|login\s+(?:name|id)|e-?mail(?:\s+address)?)`
 const TRANSFER_USER_AFTER_VERB = new RegExp(`^${TRANSFER_USER_TAIL}(?![\\p{L}\\p{N}])`, 'iu')
 const TRANSFER_USER_LABEL = new RegExp(`^\\s*${TRANSFER_USER_TAIL}\\s*[:\uFF1A]?\\s*$`, 'iu')
+// policy owner 02:39Z: a transfer act that points elsewhere ('Ownership can be transferred later from Settings.') opens no zone.
+const TRANSFER_ELSEWHERE = /\blater\b|\bfrom\s+(?:the\s+)?(?:settings|admin\s+(?:panel|console)|dashboard|members?\s+list)\b|\b(?:on|in)\s+(?:the\s+)?(?:next|following|another)\s+(?:page|step|screen|tab)\b/i
+const transferActHere = (text) => typedTransfer(text) && !TRANSFER_ELSEWHERE.test(text)
 function transferUserShaped(text) {
   const t = String(text ?? '')
   if (TRANSFER_USER_LABEL.test(t)) return true
@@ -2008,7 +2011,7 @@ export function typedConfirmClasses(entries, zoneWords = []) {
   // r2: a possessive prompt after 'type in', or a possessive field label, is the instruction itself.
   const zoneInstruction = zone.some((text) => (typedInstruction(text) || possessiveNameShaped(text) || possessiveLabelShaped(text) || questionNameShaped(text)) && (((confirmShaped(text) || strongConfirm(text) || possessiveNameShaped(text) || possessiveLabelShaped(text) || questionNameShaped(text)) && (acts(text) || zoneActs)) || purposeAct(text)))
   // CU-738: a username / user ID prompt counts only where a transfer act is in the zone or the box's own text.
-  const transferHere = zone.some((text) => typedTransfer(text)) || texts.some((text) => typedTransfer(text))
+  const transferHere = zone.some(transferActHere) || texts.some(transferActHere)
   const zoneTransferUser = transferHere && zone.some((text) => transferUserShaped(text))
   const entryTransferUser = transferHere && texts.some((text) => transferUserShaped(text))
   const entryPossessive = texts.some((text) => possessiveNameShaped(text) || possessiveLabelShaped(text) || questionNameShaped(text)) && (zoneActs || texts.some((text) => typedDestroyAct(text) || typedTransfer(text)))
