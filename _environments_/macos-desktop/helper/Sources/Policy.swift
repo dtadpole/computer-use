@@ -466,6 +466,32 @@ enum ToggleState {
   }
 }
 
+/// CU-763 (the helper half of CU-754): a toggle's row context - the name of the list, table or pane it sits in - so agent
+/// core can tell a privacy grant ('Terminal' under 'Full Disk Access') from a plain switch. `list` is the nearest titled
+/// container above the toggle (a table, outline, list, group, scroll area or tab group, by its AXTitle, else its
+/// AXDescription), else its window's title (System Settings titles the window with the pane's name); `hints` stays empty
+/// (the shape is the web driver's { list, hints }, CU-443). Names only, never a value; each at most `maxText` characters.
+enum RowContext {
+  static let maxDepth = 8
+  static let maxText = 60
+  static let containerRoles: Set<String> = ["AXTable", "AXOutline", "AXList", "AXGroup", "AXScrollArea", "AXTabGroup"]
+  struct Container { var role: String?; var title: String?; var description: String? }
+  /// The row context from the toggle's ancestors (nearest first, at most maxDepth) and its window's title; nil when no
+  /// name reads.
+  static func pick(_ ancestors: [Container], windowTitle: String?) -> JSON? {
+    let clean = { (text: String?) -> String? in
+      guard let text else { return nil }
+      let short = text.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
+      return short.isEmpty || short.count > maxText ? nil : short
+    }
+    for container in ancestors.prefix(maxDepth) where container.role.map({ containerRoles.contains($0) }) ?? false {
+      if let name = clean(container.title) ?? clean(container.description) { return .object(["list": .string(name), "hints": .array([])]) }
+    }
+    if let name = clean(windowTitle) { return .object(["list": .string(name), "hints": .array([])]) }
+    return nil
+  }
+}
+
 /// CU-412 (cu-coordinator 11:27Z, the desktop half): HTML submits a form on Return in a field even when its only submit
 /// controls are role=button divs, which the window's AXDefaultButton never names. In a web area whose window reads no
 /// default button, the focus's form - the nearest ancestor within 4 levels that is a form landmark or holds a
