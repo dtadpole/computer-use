@@ -27,6 +27,7 @@ test('CU-746: the filed rows ask', () => {
   assert.deepEqual(press('Proceed', 'Warning', 'Proceeding wipes every device linked to this account.'), ['delete'])
   assert.deepEqual(press('Continue', 'Acme Bot requests access', 'It will be able to read and write all your repositories.'), ['permission'])
   assert.deepEqual(press('Continue', 'Heads up', 'Doing so gives the app full disk access.'), ['permission'])
+  assert.deepEqual(press('OK', 'Last step', 'Finishing transfers ownership to Sam.'), ['permission'], "a final step's lead-in")
 })
 
 test('CU-746: what the reading produces', () => {
@@ -36,6 +37,8 @@ test('CU-746: what the reading produces', () => {
   assert.ok(modalStatementNames('Doing so permanently erases the volume.').includes('Erase the volume'))
   assert.ok(modalStatementNames('Once you confirm, the repository and its history are gone for good.').includes('Delete the repository and its history'))
   assert.ok(modalStatementNames('The bucket is going to be dropped.').includes('Drop The bucket'), 'a doubled consonant')
+  assert.ok(modalStatementNames('Finishing transfers ownership to Sam.').includes('Transfer ownership to Sam'), "a final step's lead-in (cu-developer-one, for CU-747)")
+  assert.ok(modalStatementNames('By completing this step you erase the backup.').length === 0, "'By completing' needs the verb next ('you erase' is a clause)")
   assert.deepEqual(modalStatementNames('Your account has been deleted.'), [], 'a notice of what already happened')
   assert.deepEqual(modalStatementNames('Doing so opens the volume in a new window.'), [], 'a harmless verb')
   assert.deepEqual(modalStatementNames('Unsaved notes will be kept.'), [], 'keep is no risk verb')
