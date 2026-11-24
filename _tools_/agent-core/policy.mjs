@@ -67,6 +67,32 @@ function localePassiveAct(text) {
   for (const [shape, verb] of LOCALE_PASSIVE_ACTS) if (shape.test(String(text ?? ''))) return verb
   return null
 }
+// CU-747 (High; sweep 5, cu-coordinator 06:05Z): a wizard's or sheet's final-step control - Finish / Complete / Next / End - is
+// a generic confirm too when it sits in a risk dialog (the modal rule below judges the dialog's text; a harmless one stays free).
+const FINAL_STEP_CONFIRM = /^\s*(?:finish|finish\s+up|complete|next|next\s+step|end|end\s+now|continue\s+anyway|proceed\s+anyway)\s*[.!>›→]?\s*$/i
+// CU-747: a bare verb button that repeats the verb of its dialog's title ('Reset' under 'Reset this device to factory settings?',
+// 'Empty' under 'Empty the Trash?') confirms that title, so the title is judged as a name. r2 (cu-researcher 06:48Z): the verb may
+// stand anywhere in the title and in any covered language ('Leeren' / 'Papierkorb leeren?', 'Svuota' / 'Vuoi svuotare il
+// cestino?', '空にする' / 'ゴミ箱を空にしますか？', '倒空' / '要倒空废纸篓吗？'), matched as a word or a word's stem; and the title must
+// ask or point at its object - a question, or a determiner after the verb - so a title that names a state ('Empty folder') stays free.
+const ECHO_CJK = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u
+function echoesDialogVerb(name, dialogName) {
+  const button = String(name ?? '').trim().toLowerCase().replace(/[¿¡]/g, '')
+  const title = String(dialogName ?? '').trim().toLowerCase().replace(/[¿¡]/g, '')
+  if (button === '' || title === '') return false
+  const asks = /[?？]\s*$/u.test(title) || /\b(?:the|this|these|those|all|your|my|our|la|le|les|el|los|las|il|lo|gli|i|der|die|das|den|alle|todos|todas|tutti|tutte|tous|toutes)\b/iu.test(title)
+  if (!asks) return false
+  if (ECHO_CJK.test(button)) {
+    // A CJK verb: one to four characters (a trailing する / します / 하기 dropped); its first two characters stand in the title.
+    const core = button.replace(/(?:する|します|하기|하다)$/u, '')
+    return core.length >= 1 && button.length <= 6 && title.includes(core.slice(0, 2))
+  }
+  const words = button.split(/\s+/).filter(Boolean)
+  if (words.length === 0 || words.length > 2 || !/^\p{L}{3,}$/u.test(words[0]) || (words[1] !== undefined && words[1] !== 'now')) return false
+  const verb = words[0]
+  const stem = verb.length >= 5 ? verb.slice(0, verb.length - 1) : verb
+  return title.split(/[^\p{L}]+/u).some((word) => word === verb || (word.length >= verb.length && word.startsWith(stem)))
+}
 // CU-746 (High; cu-researcher's sweep 5): a risk modal whose text is a statement ('Your account will be deleted'), a framed
 // description ('Doing so permanently erases the volume.', 'Once you confirm, the repository ... are gone for good.') or a noun title
 // ('Account deletion') is read as the act it states, and an access statement ('It will be able to read ...', '... requests access',
@@ -1897,6 +1923,8 @@ const nameLabelOpens = (text) => NAME_TO_CONFIRM_LABEL.test(text) || (() => { co
 const FIELD_ACRONYM = /^(?:PIN|PUK|OTP|TAN|SMS|CVV|CVC|ID|URL|IBAN|BIC|SWIFT|SSN|ZIP|VAT|API|IP|MAC|IMEI)(?![\p{L}\p{N}])/u
 function confirmShaped(text) {
   if (/\bto\s+confirm\b/i.test(text)) return true
+  // CU-751: the general imperative shape names what to type, like a typing word does.
+  if (IMPERATIVE_NAME.test(String(text ?? ''))) return true
   for (const m of text.matchAll(TYPED_VERB)) {
     const rest = text.slice(m.index + m[0].length)
     if (/^["'\u201c\u2018]/u.test(rest)) return true
@@ -2046,7 +2074,19 @@ const LOCALE_TRANSFER_VERB = new RegExp(`${L0}(?:übertrag\\p{L}*|transfér\\p{L
 const LOCALE_OWNER = new RegExp(`${L0}(?:eigentüm\\p{L}*|inhaber\\p{L}*|besitzer\\p{L}*|propriét\\p{L}*|propiedad|propietari\\p{L}*|proprietári\\p{L}*|propriedade|propriet[àa]\\p{L}*|eigenaar\\p{L}*|eigendom\\p{L}*|владел\\p{L}*)${L1}|所有権|所有者|オーナー|所有权|所有權|拥有者|擁有者|소유권|소유자`, 'iu')
 const localeTransfer = (text) => LOCALE_TRANSFER_VERB.test(text) && LOCALE_OWNER.test(text)
 // The tests the typed-confirm reader uses: English first (unchanged), then the localized addition.
-const typedInstruction = (text) => TYPED_INSTRUCTION.test(text) || LOCALE_TYPED_VERB.test(text)
+// CU-751 (High; cu-coordinator 07:03Z, cu-researcher's general rule): no more verb lists - ANY imperative sentence whose object
+// is 'the / its / this [<x>] name / ID / slug / handle / label / URL', 'the name of ...' or 'the <x> by its name' is a typed
+// instruction ('State the name of the project ...', 'Give the cluster ID below.', 'Mention the workspace slug ...', 'Identify the
+// database by its name.'). The sentence must start with the verb (or after 'Please / Kindly ...' or a comma), never a determiner,
+// pronoun or auxiliary, nor a rename / edit verb (policy owner 07:10Z: 'Change the workspace name below.' beside a retention note is a
+// settings page, not a confirm); 'your <x> name' stays with CU-735's possessive shapes and their personal-field frees. The act still comes
+// from the zone's words (typedConfirmClasses), so a save form or a rename stays free. 'Give the cluster a name' is a naming, not a
+// confirm (cu-verifier's held-out; CU-735 keeps 'a new name' free): no a / an / new / another / different / other before the name word.
+// r2 (cu-researcher's held-out): a verb + 'us / me' counts like a verb + particle ('Tell us the account name ...'), and a sentence-initial
+// 'Name the <x> ...' is the instruction itself ('Name the repository you are removing.'); the act still comes from the zone.
+// r3 (cu-coordinator 10:11Z, the item his 09:31Z ruling named): 'Let us / Let me know the <x> name' - verb + us / me + know.
+const IMPERATIVE_NAME = /(?:^|[.!?:;]\s+|,\s+)(?:(?:please|kindly|now|then|first|simply|just)\s+)?(?!(?:the|your|its|this|that|these|those|a|an|our|my|their|his|her|it|we|you|i|they|he|she|there|here|all|each|every|no|any|some|which|what|who|when|where|why|how|if|to|and|or|but|so|as|by|for|in|on|at|of|from|with|is|are|was|were|be|been|will|would|can|could|should|may|might|must|do|does|did|has|have|had|not|once|after|before|until|unless|change|changing|edit|editing|update|updating|rename|renaming|set|setting|choose|choosing|pick|picking|modify|modifying|customi[sz]e|adjust|alter)\b)\p{L}{2,}\s+(?:(?:in|out|down|up|over|back|us|me)\s+|(?:us|me)\s+know\s+)?(?:(?:the|its|this)\s+(?:(?!(?:a|an|new|another|different|other)\s)[\p{L}\p{N}'\u2019-]+\s+){0,2}(?:name|id|slug|handle|label|url)\b|(?:the|this)\s+name\s+of\b|its\s+(?:name|id|slug|handle|label|url)\b|(?:the|this)\s+(?:(?!(?:a|an|new|another|different|other)\s)[\p{L}\p{N}'\u2019-]+\s+){0,2}by\s+(?:its|their|the)\s+(?:name|id|slug|handle|label|url)\b)|(?:^|[.!?:;]\s+|,\s+)(?:(?:please|kindly|now|then|first|simply|just)\s+)?name\s+(?:the|its|this)\s+\p{L}/iu
+const typedInstruction = (text) => TYPED_INSTRUCTION.test(text) || LOCALE_TYPED_VERB.test(text) || IMPERATIVE_NAME.test(String(text ?? ''))
 const typedDestroy = (text) => TYPED_DESTROY.test(text) || LOCALE_DESTROY.test(text)
 const typedDestroyAct = (text) => TYPED_DESTROY_ACT.test(text) || LOCALE_DESTROY_ACT.test(text)
 const typedTransfer = (text) => TYPED_TRANSFER.test(text) || localeTransfer(text)
@@ -4577,7 +4617,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         if (restProbe.decision === 'confirm') for (const cls of restProbe.classes ?? [restProbe.class]) if (!classes.includes(cls)) classes.push(cls)
       }
       const localeConfirm = LOCALE_GENERIC_CONFIRM.test(String(target?.name ?? name ?? '')) || LOCALE_GENERIC_CONFIRM.test(String(name ?? '')) || namesRuConfirm(String(name ?? ''))
-      if (context.confirmProbe !== true && presses && (dialogName !== '' || dialogDescription !== '') && (GENERIC_CONFIRM.test(String(name ?? '')) || localeConfirm || continueTo)) {
+      // CU-747: final-step controls and a bare verb that echoes the dialog title's verb read the dialog too (additions only).
+      const finalStep = FINAL_STEP_CONFIRM.test(String(name ?? '')) || echoesDialogVerb(name, dialogName) || echoesDialogVerb(target?.name, dialogName)
+      if (context.confirmProbe !== true && presses && (dialogName !== '' || dialogDescription !== '') && (GENERIC_CONFIRM.test(String(name ?? '')) || localeConfirm || continueTo || finalStep)) {
         // cu-researcher 16:09Z: a title is a question more often than a row - 'Are you sure you want to <row>?', 'Really <row>?',
         // '<row>?' - so a title canonical step strips the question frame before the title is judged as a name.
         // #702 round 2 (cu-researcher 16:24Z): descriptions lead with 'This will / This action will / You are about to / Doing this will'.
