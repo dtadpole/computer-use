@@ -1999,7 +1999,7 @@ const FIELD_ACRONYM = /^(?:PIN|PUK|OTP|TAN|SMS|CVV|CVC|ID|URL|IBAN|BIC|SWIFT|SSN
 function confirmShaped(text) {
   if (/\bto\s+confirm\b/i.test(text)) return true
   // CU-751: the general imperative shape names what to type, like a typing word does.
-  if (IMPERATIVE_NAME.test(String(text ?? ''))) return true
+  if (imperativeName(text)) return true
   for (const m of text.matchAll(TYPED_VERB)) {
     const rest = text.slice(m.index + m[0].length)
     if (/^["'\u201c\u2018]/u.test(rest)) return true
@@ -2160,8 +2160,26 @@ const localeTransfer = (text) => LOCALE_TRANSFER_VERB.test(text) && LOCALE_OWNER
 // r2 (cu-researcher's held-out): a verb + 'us / me' counts like a verb + particle ('Tell us the account name ...'), and a sentence-initial
 // 'Name the <x> ...' is the instruction itself ('Name the repository you are removing.'); the act still comes from the zone.
 // r3 (cu-coordinator 10:11Z, the item his 09:31Z ruling named): 'Let us / Let me know the <x> name' - verb + us / me + know.
-const IMPERATIVE_NAME = /(?:^|[.!?:;]\s+|,\s+)(?:(?:please|kindly|now|then|first|simply|just)\s+)?(?!(?:the|your|its|this|that|these|those|a|an|our|my|their|his|her|it|we|you|i|they|he|she|there|here|all|each|every|no|any|some|which|what|who|when|where|why|how|if|to|and|or|but|so|as|by|for|in|on|at|of|from|with|is|are|was|were|be|been|will|would|can|could|should|may|might|must|do|does|did|has|have|had|not|once|after|before|until|unless|change|changing|edit|editing|update|updating|rename|renaming|set|setting|choose|choosing|pick|picking|modify|modifying|customi[sz]e|adjust|alter)\b)\p{L}{2,}\s+(?:(?:in|out|down|up|over|back|us|me)\s+|(?:us|me)\s+know\s+)?(?:(?:the|its|this)\s+(?:(?!(?:a|an|new|another|different|other)\s)[\p{L}\p{N}'\u2019-]+\s+){0,2}(?:name|id|slug|handle|label|url)\b|(?:the|this)\s+name\s+of\b|its\s+(?:name|id|slug|handle|label|url)\b|(?:the|this)\s+(?:(?!(?:a|an|new|another|different|other)\s)[\p{L}\p{N}'\u2019-]+\s+){0,2}by\s+(?:its|their|the)\s+(?:name|id|slug|handle|label|url)\b)|(?:^|[.!?:;]\s+|,\s+)(?:(?:please|kindly|now|then|first|simply|just)\s+)?name\s+(?:the|its|this)\s+\p{L}/iu
-const typedInstruction = (text) => TYPED_INSTRUCTION.test(text) || LOCALE_TYPED_VERB.test(text) || IMPERATIVE_NAME.test(String(text ?? ''))
+// CU-765 r2: 'off' joins the particles ('read off the volume label').
+const IMPERATIVE_NAME = /(?:^|[.!?:;]\s+|,\s+)(?:(?:please|kindly|now|then|first|simply|just)\s+)?(?!(?:the|your|its|this|that|these|those|a|an|our|my|their|his|her|it|we|you|i|they|he|she|there|here|all|each|every|no|any|some|which|what|who|when|where|why|how|if|to|and|or|but|so|as|by|for|in|on|at|of|from|with|is|are|was|were|be|been|will|would|can|could|should|may|might|must|do|does|did|has|have|had|not|once|after|before|until|unless|change|changing|edit|editing|update|updating|rename|renaming|set|setting|choose|choosing|pick|picking|modify|modifying|customi[sz]e|adjust|alter)\b)\p{L}{2,}\s+(?:(?:in|out|off|down|up|over|back|us|me)\s+|(?:us|me)\s+know\s+)?(?:(?:the|its|this)\s+(?:(?!(?:a|an|new|another|different|other)\s)[\p{L}\p{N}'\u2019-]+\s+){0,2}(?:name|id|slug|handle|label|url)\b|(?:the|this)\s+name\s+of\b|its\s+(?:name|id|slug|handle|label|url)\b|(?:the|this)\s+(?:(?!(?:a|an|new|another|different|other)\s)[\p{L}\p{N}'\u2019-]+\s+){0,2}by\s+(?:its|their|the)\s+(?:name|id|slug|handle|label|url)\b)|(?:^|[.!?:;]\s+|,\s+)(?:(?:please|kindly|now|then|first|simply|just)\s+)?name\s+(?:the|its|this)\s+\p{L}/iu
+// CU-765 (High; cu-researcher's CU-764 held-out): a courtesy, aspect or purpose lead-in before the imperative ('Please take a moment to
+// put down the project ID.', 'Do jot down the team handle.', 'Kindly go on to give the cluster name.') is stripped before the imperative
+// is read - one general strip, not more phrases (cu-coordinator 10:37Z): any run of courtesy words, an emphatic 'do', a 'need / have /
+// want ... to', 'be sure / remember / take a moment / go on / proceed ... to' chain, or a leading clause up to its comma. The act still
+// comes from the zone, so a save form with the same sentence stays free.
+// CU-765 r2 (cu-researcher's held-out): a lead-in word may end with a comma ('Now, carefully fill out the database ID.'), and
+// 'next / finally / lastly / again' lead in as 'now / then / first' do.
+const LEAD_IN = /^(?:(?:please|kindly|now|then|first|next|finally|lastly|again|also|simply|just|quickly|carefully|do|go\s+ahead\s+and|be\s+sure\s+to|make\s+sure\s+(?:to|that\s+you|you)|remember\s+to|don['\u2019]?t\s+forget\s+to|feel\s+free\s+to|(?:you(?:['\u2019](?:ll|d))?|we)\s+(?:will\s+)?(?:need|have|want|ask)\s+(?:you\s+)?to|you\s+(?:must|should|will\s+need\s+to)|(?:take|spend)\s+a\s+(?:moment|second|minute|few\s+seconds)\s+(?:to|and)|(?:go\s+on|proceed|continue|try|start|begin)\s+to|(?:to|in\s+order\s+to|so\s+that|before|after|for|as|once|when|if|upon)\b[^,.;:!?]{1,80},)(?:\s*,\s*|\s+))+/i
+function imperativeName(text) {
+  const value = String(text ?? '')
+  if (IMPERATIVE_NAME.test(value)) return true
+  return value.split(/(?<=[.!?;:])\s+/).some((sentence) => {
+    const trimmed = sentence.trim()
+    const rest = trimmed.replace(LEAD_IN, '')
+    return rest !== trimmed && rest !== '' && IMPERATIVE_NAME.test(rest)
+  })
+}
+const typedInstruction = (text) => TYPED_INSTRUCTION.test(text) || LOCALE_TYPED_VERB.test(text) || imperativeName(text)
 const typedDestroy = (text) => TYPED_DESTROY.test(text) || LOCALE_DESTROY.test(text)
 const typedDestroyAct = (text) => TYPED_DESTROY_ACT.test(text) || LOCALE_DESTROY_ACT.test(text)
 const typedTransfer = (text) => TYPED_TRANSFER.test(text) || localeTransfer(text)
