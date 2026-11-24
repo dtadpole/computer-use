@@ -41,8 +41,15 @@ test('CU-780 / CU-781: the class - other advisability frames, the other word ord
     ['Svuota', 'È meglio svuotare il Cestino subito?'],
     ['Vaciar', '¿Es aconsejable vaciar la papelera ahora?'],
     ['Vider', 'Est-il conseillé de vider la corbeille maintenant ?'],
+    // r2 (cu-researcher's r1 set): the conditional advisability family and the 'Ist ... geleert?' state passive.
+    ['Leeren', 'Ist der Papierkorb danach vollständig geleert?'],
+    ['Vaciar', '¿Sería bueno vaciar la papelera ya?'],
+    ['Vider', 'Vaudrait-il mieux vider la corbeille ?'],
+    ['Svuota', 'Sarebbe meglio svuotare il Cestino adesso?'],
     ['OK', 'Hinweis', 'Jetzt werden alle Elemente im Papierkorb geleert.'],
     ['OK', 'Hinweis', 'Der Posteingang wird sofort geleert.'],
+    // r2 (cu-developer-two's named row): the future passive.
+    ['OK', 'Hinweis', 'Der Papierkorb wird geleert werden.'],
   ]) {
     assert.ok(classes(onWeb(name, title, description)).includes('delete'), `web ${title} ${description ?? ''}`)
   }
@@ -55,8 +62,11 @@ test('CU-780 / CU-781: near rows stay free - a cache or a field, the past, a pos
     ['OK', 'Hinweis', 'Der Papierkorb wurde geleert.'],
     ['OK', 'Hinweis', 'Der Papierkorb kann jederzeit geleert werden.'],
     ['OK', 'Hinweis', 'Der Papierkorb wird nicht geleert.'],
+    ['OK', 'Hinweis', 'Die Elemente werden später geleert werden können.'],
     ['Guardar', '¿Conviene guardar los cambios de inmediato?'],
     ['Guardar', '¿Es aconsejable guardar los cambios ahora?'],
+    ['Guardar', '¿Sería bueno guardar los cambios ya?'],
+    ['Leeren', 'Ist der Cache danach vollständig geleert?'],
     ['Leeren', 'Soll der Cache restlos geleert sein?'],
     // tidied / moved / put away is no delete (also in the CU-777 question shape).
     ['OK', 'Hinweis', 'Der Ordner wird jetzt aufgeräumt.'],
