@@ -22,8 +22,7 @@ Seven of the nine ULTIMATE_GOAL 2.0 rows hold on live evidence. The two open row
 
 - **Consent and safety** holds only when no Urgent or High under-ask is open (D-063). Twelve Highs closed live today
   on their merges, each with held-out rows its builder had not seen: CU-745, CU-746, CU-751, CU-747, CU-756, CU-748,
-  CU-753, CU-754, CU-757, CU-765, CU-766 and CU-771. Still open: CU-744 (cancel during a drag; helper 0.2.74, merged
-  and installed in the 25 November 08:00 UTC window), CU-763 (row context for privacy panes; helper 0.2.75, in
+  CU-753, CU-754, CU-757, CU-765, CU-766 and CU-771. Still open: CU-763 (row context for privacy panes; helper 0.2.75, in
   review), CU-774 (profile findability toggles, merged and closing live), CU-773 (approval prompts), CU-775 with CU-776 (lead-in
   words before a command), CU-777 (localized verbs in impersonal questions) and CU-779 (profile exposure to guests).
   Each is a follow-up its reviewers found; each gets one fold (D-119). The row also needs CU-135 in the owner session.
