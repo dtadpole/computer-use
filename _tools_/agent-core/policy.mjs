@@ -2169,7 +2169,12 @@ const IMPERATIVE_NAME = /(?:^|[.!?:;]\s+|,\s+)(?:(?:please|kindly|now|then|first
 // comes from the zone, so a save form with the same sentence stays free.
 // CU-765 r2 (cu-researcher's held-out): a lead-in word may end with a comma ('Now, carefully fill out the database ID.'), and
 // 'next / finally / lastly / again' lead in as 'now / then / first' do.
-const LEAD_IN = /^(?:(?:please|kindly|now|then|first|next|finally|lastly|again|also|simply|just|quickly|carefully|do|go\s+ahead\s+and|be\s+sure\s+to|make\s+sure\s+(?:to|that\s+you|you)|remember\s+to|don['\u2019]?t\s+forget\s+to|feel\s+free\s+to|(?:you(?:['\u2019](?:ll|d))?|we)\s+(?:will\s+)?(?:need|have|want|ask)\s+(?:you\s+)?to|you\s+(?:must|should|will\s+need\s+to)|(?:take|spend)\s+a\s+(?:moment|second|minute|few\s+seconds)\s+(?:to|and)|(?:go\s+on|proceed|continue|try|start|begin)\s+to|(?:to|in\s+order\s+to|so\s+that|before|after|for|as|once|when|if|upon)\b[^,.;:!?]{1,80},)(?:\s*,\s*|\s+))+/i
+// CU-775 + CU-776 (cu-coordinator 17:05Z: one class, built generally): the imperative is also found after an interjection or
+// discourse marker ('Right, quickly jot the workspace slug.', 'Okay so ...'), after any short opener of up to three words
+// ending in a comma, after '<lead verb(s)> and' ('Go on and type out the database ID.', 'Try and enter ...'), and after a
+// clause opener joined by 'and / but / so / then' ('..., and to be safe, ...'). Additions only: the sentence as written is
+// read first, and the act still comes from the zone.
+const LEAD_IN = /^(?:(?:please|kindly|ok(?:ay)?|alright|all\s+right|right|so|well|oh|hey|great|good|fine|sure|perfect|anyway|actually|basically|now|then|first|next|finally|lastly|again|also|simply|just|quickly|carefully|do|go\s+ahead\s+and|be\s+sure\s+to|make\s+sure\s+(?:to|that\s+you|you)|remember\s+to|don['\u2019]?t\s+forget\s+to|feel\s+free\s+to|(?:you(?:['\u2019](?:ll|d))?|we)\s+(?:will\s+)?(?:need|have|want|ask)\s+(?:you\s+)?to|you\s+(?:must|should|will\s+need\s+to)|(?:take|spend)\s+a\s+(?:moment|second|minute|few\s+seconds)\s+(?:to|and)|(?:go\s+on|proceed|continue|try|start|begin)\s+to|(?:(?:and|but|so|then)\s+)?(?:to|in\s+order\s+to|so\s+that|before|after|for|as|once|when|if|upon)\b[^,.;:!?]{1,80},|[\p{L}'\u2019-]+(?:\s+[\p{L}'\u2019-]+){0,2},|[\p{L}'\u2019-]+(?:\s+[\p{L}'\u2019-]+)?\s+and)(?:\s*,\s*|\s+))+/iu
 function imperativeName(text) {
   const value = String(text ?? '')
   if (IMPERATIVE_NAME.test(value)) return true
