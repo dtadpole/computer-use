@@ -77,6 +77,9 @@ const ZH_WORDS = Object.freeze({
     '关闭账户', '關閉帳號', '取消订阅', '取消訂閱',
     // cu-researcher's zh sweep (Apple guide labels): Traditional words differ, not just glyphs.
     '丟到垃圾桶', '丟到資源回收筒', '清倒废纸篓', '清倒垃圾桶', '不存储',
+    // CU-731 (cu-researcher's sweep 2: '倒空废纸篓' acted unasked while the de / fr / ja twins ask): every empty verb (倒空 / 清空 / 清倒 /
+    // 清理) with every trash noun, Simplified and Traditional (废纸篓 / 廢紙簍 / 垃圾桶 / 資源回收筒 / 资源回收筒 / 回收站).
+    '倒空废纸篓', '倒空廢紙簍', '倒空垃圾桶', '倒空資源回收筒', '倒空回收站', '倒空资源回收筒', '清空廢紙簍', '清空資源回收筒', '清空回收站', '清空资源回收筒', '清倒废纸篓', '清倒廢紙簍', '清倒垃圾桶', '清倒資源回收筒', '清倒回收站', '清倒资源回收筒', '清理废纸篓', '清理廢紙簍', '清理垃圾桶', '清理資源回收筒', '清理回收站', '清理资源回收筒',
     // CU-294: an account closed in other words.
     '注销账号', '註銷帳號', '注销帐号', '删除账号', '刪除帳號', '注销账户'],
   permission: [
@@ -1802,7 +1805,7 @@ function typedConfirmButton(name) {
 // 'Type to search ...' / 'Type here ...' / 'Press Enter to ...' (cu-researcher's r1 over-ask 'Type to search deleted items').
 // r8 (author-found): gerunds too - 'Confirm by typing DELETE', 'by entering the project ID', 'Retyping the name ...'.
 const TYPED_INSTRUCTION = /\b(?:type|typing|enter|entering|re-?enter(?:ing)?|re-?typ(?:e|ing)|write|writing|input(?:ting)?|key(?:ing)?\s+in|spell(?:ing)?\s+out|repeat(?:ing)?|fill(?:ing)?\s+in|copy(?:ing)?|past(?:e|ing))\s+(?!(?:to|here|in)\b)["'\u201c\u2018\p{L}\p{N}]/iu
-const TYPED_DESTROY = /\b(?:delet\w*|eras(?:e|es|ed|ing|ure)\b|wip(?:e|es|ed|ing)\b|remov\w*|destroy\w*|purg(?:e|es|ed|ing)\b|terminat\w*|deactivat\w*|permanently|permanent\s+(?:deletion|removal|erasure)|irreversibl\w*|cannot\s+be\s+undone|nuk(?:e|es|ed|ing)\b|uninstall\w*|drop\s+(?:it|them|(?:the|this|that|your|my)\s+\w+)\b|shut(?:ting)?\s+(?:\w+\s+){0,3}down\b|clos(?:e|ing)\s+(?:it|(?:the|this|that|your|my)\s+\w+)\s+(?:down|for\s+good|permanently)\b|kill(?:s|ed|ing)?\s+(?:it|them|(?:the|this|that|your|my|all)\s+\w+)\b|scrap(?:s|ped|ping)?\b|trash(?:es|ed|ing)?\s+(?:it|them|(?:the|this|that|your|my|all)\s+\w+)\b|discard\w*|retir(?:e|es|ed|ing)\b|sunset(?:s|ting)?\b|cancel(?:l?ing)?\s+(?:the\s+|this\s+|your\s+|my\s+)?(?:account|membership|organi[sz]ation|workspace)\b|re-?format\w*|format\s+(?:the\s+|this\s+|your\s+)?(?:disk|drive|volume|card|partition)\b|obliterat\w*|shred\w*|annihilat\w*|decommission\w*|deprovision\w*|tear\s+(?:it\s+|this\s+|the\s+\w+\s+)?down|factory\s+reset|reset\s+(?:\w+\s+)?to\s+factory|empty\s+(?:it|them|the|this|that|your|all)\b|(?:archiv\w*|los(?:e|ing)|gone|hid(?:e|den))\s+(?:\w+\s+){0,2}(?:forever|for\s+good)|clos(?:e|ing)\s+(?:the\s+|this\s+|my\s+|your\s+)?account\b|drop\s+(?:the\s+|this\s+)?(?:table|database|schema|collection|index)\b)/i
+const TYPED_DESTROY = /\b(?:delet\w*|eras(?:e|es|ed|ing|ure)\b|wip(?:e|es|ed|ing)\b|remov\w*|destroy\w*|purg(?:e|es|ed|ing)\b|terminat\w*|deactivat\w*|permanently|permanent\s+(?:deletion|removal|erasure)|irreversibl\w*|cannot\s+be\s+undone|nuk(?:e|es|ed|ing)\b|uninstall\w*|drop\s+(?:it|them|(?:the|this|that|your|my)\s+\w+)\b|dropp(?:ed|ing)\b|shut(?:ting)?\s+(?:\w+\s+){0,3}down\b|clos(?:e|ing)\s+(?:it|(?:the|this|that|your|my)\s+\w+)\s+(?:down|for\s+good|permanently)\b|kill(?:s|ed|ing)?\s+(?:it|them|(?:the|this|that|your|my|all)\s+\w+)\b|scrap(?:s|ped|ping)?\b|trash(?:es|ed|ing)?\s+(?:it|them|(?:the|this|that|your|my|all)\s+\w+)\b|discard\w*|retir(?:e|es|ed|ing)\b|sunset(?:s|ting)?\b|cancel(?:l?ing)?\s+(?:the\s+|this\s+|your\s+|my\s+)?(?:account|membership|organi[sz]ation|workspace)\b|re-?format\w*|format\s+(?:the\s+|this\s+|your\s+)?(?:disk|drive|volume|card|partition)\b|obliterat\w*|shred\w*|annihilat\w*|decommission\w*|deprovision\w*|tear\s+(?:it\s+|this\s+|the\s+\w+\s+)?down|factory\s+reset|reset\s+(?:\w+\s+)?to\s+factory|empty\s+(?:it|them|the|this|that|your|all)\b|(?:archiv\w*|los(?:e|ing)|gone|hid(?:e|den))\s+(?:\w+\s+){0,2}(?:forever|for\s+good)|clos(?:e|ing)\s+(?:the\s+|this\s+|my\s+|your\s+)?account\b|drop\s+(?:the\s+|this\s+)?(?:table|database|schema|collection|index)\b)/i
 // A transfer counts only of ownership: 'Enter the transfer amount' is money, not a handover (cu-developer-three's near-miss).
 // r3 (policy owner 13:25Z): the destroy test without its three bare intensifiers ('permanently', 'irreversibl*', 'cannot
 // be undone') - they name no act. Used only where a strong confirm sentence takes the act from ANOTHER zone sentence.
@@ -1835,7 +1838,7 @@ function confirmShaped(text) {
 // a personal-name word counts only as the word right before the name ('your full name' stays free, 'your full account name' asks).
 const POSSESSIVE_NAME_ARTICLE = /^(?:a|an|any|some|the)$/i
 const POSSESSIVE_NAME_PERSONAL = /^(?:user|display|nick|first|last|middle|given|family|sur|full|legal|real|preferred|screen|maiden)$/i
-const POSSESSIVE_NAME_SHAPE = String.raw`(?:(your|its|their|our)\s+|((?:the\s+|your\s+)?[\p{L}\p{N}-]+(?:'s|\u2019s))\s+)?((?:[\p{L}\p{N}-]+\s+){0,2}?)(?:name|id|slug|handle|url)`
+const POSSESSIVE_NAME_SHAPE = String.raw`(?:(your|its|their|our)\s+|((?:the\s+|your\s+)?[\p{L}\p{N}-]+(?:'s|\u2019s))\s+)?((?:[\p{L}\p{N}-]+\s+){0,2}?)(?:name|id|slug|handle|url|hostname)`
 const POSSESSIVE_NAME_AFTER_VERB = new RegExp(`^${POSSESSIVE_NAME_SHAPE}(?![\\p{L}\\p{N}])`, 'iu')
 // r2: a field label that is the possessive shape alone ('Your workspace ID:') - a determiner is required.
 const POSSESSIVE_NAME_LABEL = new RegExp(`^\\s*${POSSESSIVE_NAME_SHAPE}\\s*[:\uFF1A]?\\s*$`, 'iu')
@@ -1858,11 +1861,59 @@ function possessiveNameShaped(text) {
   }
   return false
 }
-const possessiveLabelShaped = (text) => possessiveShapeFits(POSSESSIVE_NAME_LABEL.exec(text), true)
+// CU-736 (cu-researcher's sweep 4): a bare field label counts when it ends in a colon ('Project name:', 'Account name:'), and a
+// leading 'the' is dropped; 'Name:', 'Display name:', 'New name:' and 'User ID:' stay free (no noun, or a personal / rename word).
+// CU-736 r2 (cu-researcher's held-out): 'Name of the space to delete:' - the name word first, then 'of the <object>' and an optional
+// 'to <verb>', ending in a colon; 'Name of the new project:' stays free (a create form).
+const NAME_OF_LABEL = /^\s*(?:the\s+)?(?:name|id|slug|handle|url)\s+of\s+(?:the|this|that|your|its)\s+((?:[\p{L}\p{N}-]+\s+){0,2}[\p{L}\p{N}-]+?)(?:\s+to\s+[\p{L}-]+(?:\s+[\p{L}-]+)?)?\s*[:\uFF1A]\s*$/iu
+const nameOfLabelShaped = (text) => {
+  const m = NAME_OF_LABEL.exec(String(text ?? ''))
+  return m !== null && !/(?:^|\s)new(?:\s|$)/i.test(m[1])
+}
+const possessiveLabelShaped = (text) => {
+  const bare = String(text ?? '').replace(/^\s*the\s+/i, '')
+  return possessiveShapeFits(POSSESSIVE_NAME_LABEL.exec(bare), !/[:\uFF1A]\s*$/.test(bare)) || nameOfLabelShaped(bare)
+}
+// CU-736: a question that asks for the name ('What is the name of the workspace?', 'What is the project's ID?'); 'What is your
+// name?' stays free (a person's field).
+const QUESTION_NAME = /^\s*what(?:'s|\u2019s|\s+is)\s+(?:(the|your|its)\s+)((?:[\p{L}\p{N}-]+(?:'s|\u2019s)?\s+){0,2}?)(?:name|id|slug|handle|url|hostname)(\s+of\s+(?:the|this|that|your|its)\s+[\p{L}\p{N}-]+(?:\s+[\p{L}\p{N}-]+)?)?\s*\?\s*$/iu
+// CU-736 r2 (cu-researcher's held-out): 'Which repository are you deleting?' - a 'which <object>' question whose own words name the
+// destroy / transfer act; 'Which plan are you choosing?' stays free.
+const WHICH_ACT_QUESTION = /^\s*which\s+(?:[\p{L}\p{N}-]+\s+){1,2}(?:are\s+you|do\s+you\s+(?:want|wish|intend|mean)\s+to|would\s+you\s+like\s+to|will\s+you|should\s+we|are\s+we)\s+(?:[\p{L}-]+\s+)?[\p{L}-]+\s*\?\s*$/iu
+// CU-738 (policy owner 00:36Z, cu-verifier's CU-735 close): in a TRANSFER zone a typed prompt for a username, user ID or e-mail
+// ('Enter your username.', "Type the new owner's username", 'User ID:', 'Enter your email address.') asks permission like the name
+// shapes do in a destroy zone. Only
+// beside a transfer act: a sign-in or profile form stays free, and so does a destroy zone (the 22:41Z personal-field rule).
+const TRANSFER_USER_TAIL = String.raw`(?:(?:your|their|his|her|its|the|this|that)\s+)?(?:(?:new\s+)?(?:owner|admin(?:istrator)?|recipient|member|user|person|teammate|collaborator)(?:'s|\u2019s)\s+)?(?:user\s?name|user[\s-]?id|login\s+(?:name|id)|e-?mail(?:\s+address)?)`
+const TRANSFER_USER_AFTER_VERB = new RegExp(`^${TRANSFER_USER_TAIL}(?![\\p{L}\\p{N}])`, 'iu')
+const TRANSFER_USER_LABEL = new RegExp(`^\\s*${TRANSFER_USER_TAIL}\\s*[:\uFF1A]?\\s*$`, 'iu')
+// policy owner 02:39Z: a transfer act that points elsewhere ('Ownership can be transferred later from Settings.') opens no zone.
+const TRANSFER_ELSEWHERE = /\blater\b|\bfrom\s+(?:the\s+)?(?:settings|admin\s+(?:panel|console)|dashboard|members?\s+list)\b|\b(?:on|in)\s+(?:the\s+)?(?:next|following|another)\s+(?:page|step|screen|tab)\b/i
+const transferActHere = (text) => typedTransfer(text) && !TRANSFER_ELSEWHERE.test(text)
+function transferUserShaped(text) {
+  const t = String(text ?? '')
+  if (TRANSFER_USER_LABEL.test(t)) return true
+  for (const m of t.matchAll(TYPED_VERB)) {
+    if (TRANSFER_USER_AFTER_VERB.test(t.slice(m.index + m[0].length).replace(/^in\s+/i, ''))) return true
+  }
+  return false
+}
+function questionNameShaped(text) {
+  if (WHICH_ACT_QUESTION.test(String(text ?? '')) && (typedDestroyAct(String(text)) || typedTransfer(String(text)))) return true
+  const m = QUESTION_NAME.exec(String(text ?? ''))
+  if (!m) return false
+  const words = m[2].trim().split(/\s+/).filter(Boolean)
+  if (words.length === 0 && !m[3] && !/^its$/i.test(m[1])) return false
+  if (POSSESSIVE_NAME_ARTICLE.test(words[0] ?? '') || words.some((word) => /^new$/i.test(word))) return false
+  if (POSSESSIVE_NAME_PERSONAL.test(words[words.length - 1] ?? '')) return false
+  return true
+}
 // r3: a STRONG confirm sentence - 'to confirm' / 'confirm by', or a typed token (quoted, or a capitalised word that is no field
 // acronym). 'the <noun> name' alone is confirm-shaped but not strong.
 function strongConfirm(text) {
   if (/\bto\s+confirm\b|\bconfirm\s+by\b/i.test(text)) return true
+  // CU-736: 'Confirm the name by typing it' / 'Confirm the project ID by entering it'; r2: 'Verify the name by typing it below.'
+  if (/\b(?:confirm|verify|validate|check|prove)\s+(?:the\s+|its\s+|your\s+|this\s+)?(?:[\p{L}\p{N}-]+\s+){0,2}?(?:name|id|slug|handle|url)\s+by\s+(?:typing|entering|writing|re-?typing|re-?entering)\b/iu.test(text)) return true
   for (const m of text.matchAll(TYPED_VERB)) {
     const rest = text.slice(m.index + m[0].length)
     if (/^["'\u201c\u2018]/u.test(rest)) return true
@@ -1961,12 +2012,17 @@ export function typedConfirmClasses(entries, zoneWords = []) {
   // or strong) takes the verb from another zone sentence - an under-ask on a destroy act weighs more than a rare over-ask.
   // CU-735: the possessive / bare name shape counts too, here and for an entry, only where the zone holds an act.
   // r2: a possessive prompt after 'type in', or a possessive field label, is the instruction itself.
-  const zoneInstruction = zone.some((text) => (typedInstruction(text) || possessiveNameShaped(text) || possessiveLabelShaped(text)) && (((confirmShaped(text) || strongConfirm(text) || possessiveNameShaped(text) || possessiveLabelShaped(text)) && (acts(text) || zoneActs)) || purposeAct(text)))
-  const entryPossessive = texts.some((text) => possessiveNameShaped(text) || possessiveLabelShaped(text)) && (zoneActs || texts.some((text) => typedDestroyAct(text) || typedTransfer(text)))
-  if (!texts.some((text) => typedInstruction(text)) && !zoneInstruction && !entryPossessive) return []
+  const zoneInstruction = zone.some((text) => (typedInstruction(text) || possessiveNameShaped(text) || possessiveLabelShaped(text) || questionNameShaped(text)) && (((confirmShaped(text) || strongConfirm(text) || possessiveNameShaped(text) || possessiveLabelShaped(text) || questionNameShaped(text)) && (acts(text) || zoneActs)) || purposeAct(text)))
+  // CU-738: a username / user ID prompt counts only where a transfer act is in the zone or the box's own text.
+  const transferHere = zone.some(transferActHere) || texts.some(transferActHere)
+  const zoneTransferUser = transferHere && zone.some((text) => transferUserShaped(text))
+  const entryTransferUser = transferHere && texts.some((text) => transferUserShaped(text))
+  const entryPossessive = texts.some((text) => possessiveNameShaped(text) || possessiveLabelShaped(text) || questionNameShaped(text)) && (zoneActs || texts.some((text) => typedDestroyAct(text) || typedTransfer(text)))
+  if (!texts.some((text) => typedInstruction(text)) && !zoneInstruction && !entryPossessive && !zoneTransferUser && !entryTransferUser) return []
   // Policy owner's gate (08:07Z): the zone's words join only when an entry is confirm-shaped - an 'Enter your phone number'
   // form's 'We will remove it if you ask.' never reaches the destroy test. Entries alone keep #894's behaviour.
-  const words = [...texts, ...(texts.some(confirmShaped) || entryPossessive || zoneInstruction ? zone : [])].join(' \u2022 ')
+  // CU-736 r2 (cu-researcher's NOT OK at 0cdf35f48): a STRONG confirm entry ('Confirm the name by typing it.') joins the zone too.
+  const words = [...texts, ...(texts.some((text) => confirmShaped(text) || strongConfirm(text)) || entryPossessive || zoneInstruction || zoneTransferUser || entryTransferUser ? zone : [])].join(' \u2022 ')
   return [...(typedDestroy(words) ? ['delete'] : []), ...(typedTransfer(words) ? ['permission'] : [])]
 }
 
