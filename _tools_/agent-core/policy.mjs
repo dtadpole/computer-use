@@ -167,6 +167,62 @@ const LOCALE_MODAL_ACCESS = /(?:zugriff\s+auf|auf\s+.{1,60}?\s+zugreifen|accéde
 const ACCESS_RIGHT_LIST = /\b(?:full\s+disk\s+access|screen\s+(?:(?:&|and)\s+system\s+audio\s+)?recording|input\s+monitoring|location\s+services|files\s+(?:&|and)\s+folders|developer\s+tools|app\s+management|local\s+network|remote\s+(?:login|management|desktop)|camera|microphone|contacts|calendars|reminders|photos|bluetooth|automation|speech\s+recognition|media\s+(?:&|and)\s+apple\s+music|homekit|motion\s+(?:&|and)\s+fitness|(?:allow|let)\s+(?:the\s+)?(?:apps?|applications?)\s+(?:below\s+|listed\s+)?to\s+(?:access|control|record|use|see|read|monitor|manage))\b/i
 // CU-754: a toggle whose own name makes a profile, account or other object public or visible to everyone.
 const PUBLIC_TOGGLE = /^\s*(?:make\s+(?:(?:my|this|the)\s+)?(?:profile|account|repo(?:sitory)?|page|calendar|listing|board|project|album|playlist|activity)\s+public|public(?:\s+(?:profile|account|repo(?:sitory)?|page|calendar|listing|board|project|album|playlist|activity|mode|link|access))?|(?:profile|account)\s+(?:is\s+)?(?:public|visible\s+to\s+(?:everyone|anyone))|visible\s+to\s+(?:everyone|anyone|the\s+public|all)|discoverable(?:\s+by\s+(?:everyone|anyone))?|show\s+(?:my\s+)?profile\s+(?:publicly|to\s+(?:everyone|anyone)))\s*$/i
+// CU-774 (P1, a held-out miss at CU-754's close): a toggle whose own name makes the profile findable or indexable - by search,
+// by search engines, or by people looking someone up - asks permission like a public one. Local search features ('Search
+// history', 'Safe search', 'Searchable PDFs', 'Spotlight indexing', 'Allow indexing') name no profile and stay free.
+// r2, the general shape (cu-developer-one, cu-coordinator 19:17Z): a toggle whose label makes the owner's profile, page or
+// posts findable, listed, discoverable or indexable by others - search engines, directories, recruiters, people outside,
+// signed-out visitors - asks permission unless it is already on. A listing in a directory others browse, and a page shown
+// to people who are not signed in, are the same grant.
+const DIRECTORY = String.raw`(?:(?:member|members'?|people|user|company|staff|employee|alumni|public|student|team|organi[sz]ation|org|global|community|online)\s+)?directory`
+const OUTSIDERS = String.raw`(?:(?:visitors|people|users|viewers|readers|anyone|everyone|guests)\s+(?:who\s+(?:are\s+not|aren't|are\s+n't)|not)\s+(?:signed|logged)\s+in|(?:visitors|people|users|viewers|readers|anyone|everyone)\s+without\s+(?:an?\s+)?account|(?:signed|logged)[-\s]out\s+(?:visitors|people|users|viewers|readers)|non[-\s]?members|anonymous\s+(?:visitors|users|viewers)|all\s+visitors|guests)`
+// r2 (cu-developer-one's shape): the owner's things, any party that finds or indexes them, and the engines by name.
+const OWNED = String.raw`(?:me|you|(?:my|your)\s+(?:profile|account|page|posts?|content|activity|listing))`
+const ENGINES = String.raw`(?:(?:web\s+)?search(?:\s+results|\s+engines?)?|google|bing|duckduckgo|yahoo)`
+// A subject on its own: the owner's things, or a bare profile / account / page / posts / listing (content and activity
+// need 'my' / 'your' - 'Content is searchable' can be a local search feature).
+const SUBJECT = String.raw`(?:(?:my|your)\s+(?:profile|account|page|posts?|content|activity|listing)|profile|account|page|posts|listing)`
+const FINDERS = String.raw`(?:(?:${ENGINES}|others|other\s+(?:people|users|members)|people|anyone|everyone|users|members|contacts|recruiters|employers|companies|strangers|the\s+public)(?:\s+(?:outside|beyond)\s+(?:(?:my|your|the|this)\s+)?(?:organi[sz]ation|company|team|network|workspace|school|contacts|connections)|\s+(?:who\s+(?:are\s+not|aren't)\s+(?:connected|friends)\s+(?:to|with)\s+(?:me|you)|(?:i|you)\s+(?:don't|do\s+not)\s+know))?)`
+const FINDABLE_TOGGLE = new RegExp('^\\s*(?:' + [
+  // 'Searchable', 'Searchable profile', 'Findable by everyone', 'Indexable page'
+  String.raw`(?:searchable|findable|indexable)(?:\s+(?:profile|account|page|listing)|\s+by\s+(?:everyone|anyone|the\s+public))?`,
+  // 'Make my profile searchable', 'Profile is findable'
+  String.raw`make\s+(?:(?:my|your|this|the)\s+)?(?:profile|account|page|listing)\s+(?:searchable|discoverable|findable|indexable)`,
+  String.raw`(?:(?:my|your)\s+)?(?:profile|account|page)\s+(?:is\s+)?(?:searchable|findable|indexable|discoverable)`,
+  // 'Show my profile in search results', 'Include me in search', 'Appear in search results', 'Show up in search engines'
+  String.raw`(?:show|include|list)\s+(?:(?:my|your)\s+)?(?:profile|account|page|me)\s+in\s+(?:search(?:\s+results)?|search\s+engines|(?:web\s+)?search\s+results|google)`,
+  String.raw`(?:appear|show\s+up|be\s+shown)\s+in\s+(?:search(?:\s+results)?|search\s+engines|(?:web\s+)?search\s+results)`,
+  String.raw`visible\s+in\s+search(?:\s+results|\s+engines)?`,
+  // 'Let people find me by my email address', 'Allow others to find you', 'Let anyone look up my profile', and (r2) any
+  // party - 'Let recruiters find my profile', 'Allow Google to index my posts' - finding or indexing the owner's things.
+  String.raw`(?:let|allow)\s+${FINDERS}\s+(?:to\s+)?(?:find|search\s+for|look\s+up|discover|index|crawl|list|link\s+to)\s+${OWNED}(?:\s+(?:by|using|with|via|through)\s+[a-z0-9' .-]{1,40})?`,
+  // r2: 'Show my profile to search engines', 'Expose my page to Google', 'Profile visible to search engines'
+  String.raw`(?:show|list|include|expose|open)\s+${OWNED}\s+(?:to|in|on)\s+${ENGINES}`,
+  String.raw`${SUBJECT}\s+(?:is\s+|are\s+)?(?:indexed|listed|visible|shown)\s+(?:in|to|by|on)\s+${ENGINES}`,
+  // r2: the passive form - 'Allow my profile to be found by people outside your organization', 'Let my posts be indexed'
+  String.raw`(?:let|allow)\s+${OWNED}\s+(?:to\s+)?be\s+(?:found|indexed|listed|discovered|searched|crawled|shown\s+in\s+search(?:\s+results)?)(?:\s+(?:by|in|on)\s+[a-z0-9' .-]{1,40})?`,
+  // r2: 'Make my posts discoverable', 'My posts are indexable', 'Discoverable profile'
+  String.raw`make\s+(?:(?:my|your|this|the)\s+)?(?:posts?|content|activity)\s+(?:searchable|discoverable|findable|indexable)`,
+  String.raw`(?:(?:my|your)\s+(?:posts?|content|activity|listing)|posts|listing)\s+(?:is\s+|are\s+)?(?:searchable|findable|indexable|discoverable)`,
+  String.raw`discoverable\s+(?:profile|account|page|listing)`,
+  // r2: the 'Discoverable / Findable by ...' heads with any party or key - 'Discoverable by email', 'Findable by phone number'
+  String.raw`(?:discoverable|findable|searchable|indexable)\s+(?:by|via|through|using)\s+(?:(?:my|your)\s+)?(?:${FINDERS}|e-?mail(?:\s+address)?|phone(?:\s+number)?|mobile(?:\s+number)?|user\s*name|name|number|contact\s+info(?:rmation)?)`,
+  // 'Allow search engines to index my profile', 'Let search engines link to your page', 'Search engine indexing'
+  String.raw`(?:let|allow)\s+search\s+engines\s+(?:to\s+)?(?:index|find|show|list|link\s+to|crawl)(?:\s+(?:(?:my|your|this|the)\s+)?(?:profile|account|page|site|posts?))?`,
+  String.raw`search\s+engine\s+(?:indexing|visibility)`,
+  String.raw`(?:indexed|listed|visible)\s+(?:in|to|by)\s+search\s+engines`,
+  // r2 (cu-researcher's held-out misses, generalized): a directory others browse - 'Appear in the member directory',
+  // 'List my profile in the company directory', 'Listed in the alumni directory', 'Member directory listing'.
+  String.raw`(?:appear|show\s+up|be\s+(?:shown|listed|included)|show|list|include)(?:\s+(?:me|(?:my|your)\s+(?:profile|account|page|name)))?\s+in\s+(?:the\s+|our\s+)?${DIRECTORY}`,
+  String.raw`(?:listed|visible|shown|included)\s+in\s+(?:the\s+|our\s+)?${DIRECTORY}`,
+  String.raw`(?:(?:public|member|members'?|people|user|company|staff|employee|alumni|community)\s+)?directory\s+listing`,
+  // r2: shown to people who are not signed in - 'Show my page to visitors who are not signed in', 'Visible to signed-out
+  // visitors', 'Let logged-out users see my profile', 'Allow non-members to view my page'.
+  String.raw`(?:show|display)\s+(?:(?:my|your)\s+)?(?:profile|account|page|posts?|activity|content)\s+to\s+${OUTSIDERS}`,
+  String.raw`(?:(?:my|your)\s+)?(?:profile|account|page)\s+(?:is\s+)?(?:visible|shown)\s+to\s+${OUTSIDERS}`,
+  String.raw`(?:visible|shown)\s+to\s+${OUTSIDERS}`,
+  String.raw`(?:let|allow)\s+${OUTSIDERS}\s+(?:to\s+)?(?:see|view|read|find)\s+(?:me|you|(?:my|your)\s+(?:profile|account|page|posts?|activity|content))`,
+].join('|') + ')\\s*$', 'i')
 /** CU-754: whether a toggle's row context (rowContext: a { list, hints } object or a plain string) names an access right. */
 export function accessRowContext(rowContext) {
   const texts = typeof rowContext === 'string'
@@ -3803,7 +3859,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         }
         // CU-754: an access toggle - its list names a privacy right, or its own name makes something public - asks permission
         // when it turns on; the direction is the native read's, and an unknown state asks both ways (named over-ask, as CU-418).
-        if (nativeToggleState(target) !== true && (PUBLIC_TOGGLE.test(name) || accessRowContext(target?.rowContext))) classes.push('permission')
+        // CU-774: a toggle that makes the profile findable or indexable (FINDABLE_TOGGLE) is the same grant to everyone.
+        if (nativeToggleState(target) !== true && (PUBLIC_TOGGLE.test(name) || FINDABLE_TOGGLE.test(name) || accessRowContext(target?.rowContext))) classes.push('permission')
       }
       // CU-146: 'Trash' or 'Bin' alone deletes on a control (a toolbar button, a menu item); a sidebar row of that name
       // only opens the folder.
