@@ -39,6 +39,8 @@ test('CU-775 + CU-776 r2: a manner adverb before the verb', () => {
   assert.deepEqual(typedConfirmClasses(['Name'], ['Look, right away put in the bucket name.', 'The bucket will be deleted.']), ['delete'], "'right away'")
   assert.deepEqual(typedConfirmClasses(['Name'], ['Alright, briefly scribble the database name.', 'Used for support tickets.']), [], 'the same entry, no act')
   assert.deepEqual(typedConfirmClasses(['Name'], ['Alright, carefully change the database name.', 'The database will be dropped.']), [], 'a rename verb after an adverb stays excluded')
+  assert.equal(press('Confirm', ['Okay, just pop in the account handle.', 'The account is closed for good.']), 'delete', "cu-verifier's live row, verbatim: a passive 'closed for good'")
+  assert.deepEqual(typedConfirmClasses(['Handle'], ['Okay, just pop in the account handle.', 'Support is closed for the holidays.']), [], "a bare 'closed' is no act")
 })
 
 test('CU-775 + CU-776: a long sentence is read quickly', () => {
