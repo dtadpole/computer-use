@@ -75,6 +75,58 @@ function echoesDialogVerb(name, dialogName) {
   const stem = verb.length >= 5 ? verb.slice(0, verb.length - 1) : verb
   return title.split(/[^\p{L}]+/u).some((word) => word === verb || (word.length >= verb.length && word.startsWith(stem)))
 }
+// CU-746 (High; cu-researcher's sweep 5): a risk modal whose text is a statement ('Your account will be deleted'), a framed
+// description ('Doing so permanently erases the volume.', 'Once you confirm, the repository ... are gone for good.') or a noun title
+// ('Account deletion') is read as the act it states, and an access statement ('It will be able to read ...', '... requests access',
+// 'gives the app full disk access') as 'Grant access'. Future / conditional forms only ('has been deleted' is a notice), and only
+// risky verbs ('Doing so opens the volume' stays free). Each name is then judged like the title (additions only).
+const MODAL_ADVERB = String.raw`(?:(?:permanently|immediately|automatically|also|forever|irreversibly|completely|instantly|then|all)\s+)?`
+const MODAL_CONDITION = String.raw`(?:once|when|after|if|as\s+soon\s+as)\s+you\s+(?:confirm|continue|proceed)\w*,?\s+`
+const MODAL_FUTURE = new RegExp(String.raw`^(?:${MODAL_CONDITION})?(.{1,120}?)\s+(?:will|would|(?:is|are)\s+going\s+to)\s+be\s+${MODAL_ADVERB}([a-z]+(?:ed|en|t))\b`, 'i')
+const MODAL_GONE = new RegExp(String.raw`^(?:${MODAL_CONDITION}(.{1,120}?)\s+(?:is|are|will\s+be)|(.{1,120}?)\s+will\s+be)\s+(?:gone|lost)\b`, 'i')
+const MODAL_LEAD = new RegExp(String.raw`^(?:doing\s+(?:so|this)|proceeding|continuing|confirming|finishing|completing|ending|by\s+(?:continuing|proceeding|confirming|finishing|completing),?|${MODAL_CONDITION}(?:this|it|we)|this(?:\s+action)?|it)\s+(?:(?:will|would)\s+)?${MODAL_ADVERB}([a-z]+)\s+(\S.{0,120})$`, 'i')
+// CU-746 r2 (cu-researcher's held-out): a leading clause about the person's own act - 'Once confirmed,', 'After you continue,',
+// 'When this is done,' - is stripped, and the present passive after it is the act ('Once confirmed, your files are erased ...').
+// Only the person's act opens it, so a retention note ('After 30 days, deleted items are removed.') stays as it was.
+const MODAL_CLAUSE_LEAD = /^(?:once|after|when|as\s+soon\s+as|if|upon)\s+(?:(?:this\s+is\s+|it\s+is\s+)?(?:confirm\w*|continu\w*|proceed\w*|complet\w*|finish\w*|submit\w*|approv\w*|accept\w*|done)|you\s+[a-z]+(?:\s+[a-z]+){0,3})\s*,\s*(\S.*)$/i
+const MODAL_PRESENT = new RegExp(String.raw`^(.{1,120}?)\s+(?:is|are|gets?)\s+${MODAL_ADVERB}([a-z]+(?:ed|en|t))\b`, 'i')
+const MODAL_NOMINAL = { deletion: 'delete', removal: 'remove', erasure: 'erase', termination: 'terminate', deactivation: 'deactivate', closure: 'close', cancellation: 'cancel', wipe: 'wipe', reset: 'reset', transfer: 'transfer' }
+const MODAL_NOMINAL_TITLE = /^(?:(?:the|your|this)\s+)?([\p{L}\p{N}'\u2019 -]{1,40}?)\s+(deletion|removal|erasure|termination|deactivation|closure|cancellation|wipe|reset|transfer)$/iu
+const MODAL_NOMINAL_OF = /^(deletion|removal|erasure|termination|deactivation|closure|cancellation|transfer)\s+of\s+(.{1,60})$/i
+const MODAL_ACCESS = /\b(?:(?:requests?|requesting|wants?|would\s+like)\s+(?:\w+\s+){0,3}access\b|will\s+be\s+able\s+to\s+(?:read|write|access|see|view|manage|control|change|edit|delete|post|send|act)\b|(?:gives?|grants?|allows?)\s+(?:\S+\s+){0,4}access\b)/i
+const MODAL_RISK_VERB = /^(?:delete|erase|remove|wipe|destroy|purge|reset|terminate|deactivate|close|cancel|transfer|give|grant|share|publish|send|pay|charge|buy|purchase|subscribe|install|uninstall|revoke|disable|disconnect|unlink|overwrite|replace|drop|empty|clear|format|forfeit|expose|make)$/
+const MODAL_IRREGULAR = { sent: 'send', lost: 'lose', kept: 'keep', shown: 'show', given: 'give', sold: 'sell', paid: 'pay', made: 'make', taken: 'take', spent: 'spend', withdrawn: 'withdraw', shut: 'shut' }
+function modalVerbForms(word, participle) {
+  const w = String(word).toLowerCase()
+  const forms = participle
+    ? (MODAL_IRREGULAR[w] ? [MODAL_IRREGULAR[w]] : [w.replace(/ied$/, 'y'), w.replace(/([b-df-hj-np-tv-z])\1ed$/, '$1'), w.replace(/d$/, ''), w.replace(/ed$/, '')])
+    : [w, w.replace(/ies$/, 'y'), w.replace(/es$/, ''), w.replace(/s$/, '')]
+  return [...new Set(forms)].filter((form) => MODAL_RISK_VERB.test(form))
+}
+const modalName = (verb, rest) => `${verb.charAt(0).toUpperCase()}${verb.slice(1)} ${String(rest).replace(/[.!?\s]+$/, '').trim()}`.trim()
+export function modalStatementNames(text) {
+  const t = String(text ?? '').trim().replace(/[.!?]+$/, '')
+  if (t === '') return []
+  const out = []
+  const future = MODAL_FUTURE.exec(t)
+  if (future) for (const verb of modalVerbForms(future[2], true)) out.push(modalName(verb, future[1]))
+  const gone = MODAL_GONE.exec(t)
+  if (gone) out.push(modalName('delete', gone[1] ?? gone[2] ?? ''))
+  const lead = MODAL_LEAD.exec(t)
+  if (lead) for (const verb of modalVerbForms(lead[1], false)) out.push(modalName(verb, lead[2]))
+  const nominal = MODAL_NOMINAL_TITLE.exec(t)
+  if (nominal) out.push(modalName(MODAL_NOMINAL[nominal[2].toLowerCase()], nominal[1]))
+  const nominalOf = MODAL_NOMINAL_OF.exec(t)
+  if (nominalOf) out.push(modalName(MODAL_NOMINAL[nominalOf[1].toLowerCase()], nominalOf[2]))
+  if (MODAL_ACCESS.test(t)) out.push('Grant access')
+  const clause = MODAL_CLAUSE_LEAD.exec(t)
+  if (clause) {
+    const present = MODAL_PRESENT.exec(clause[1])
+    if (present) for (const verb of modalVerbForms(present[2], true)) out.push(modalName(verb, present[1]))
+    for (const name of modalStatementNames(clause[1])) out.push(name)
+  }
+  return [...new Set(out)].filter((name) => name.split(/\s+/).length >= 2)
+}
 // CU-729 (High; cu-researcher's sweep, cu-coordinator 19:59Z): the same generic final buttons in the covered languages (de fr es it
 // pt nl ru ja zh ko) - a localized confirm modal's 'Ja' / 'Oui' / 'Aceptar' / 'はい' / '确定' / '확인' / 'Да' is judged by the modal's title
 // like English 'OK' / 'Yes'. Matched on the raw name (before the Cyrillic homoglyph fold), the whole name, an affirmative optionally
@@ -1830,7 +1882,9 @@ function typedConfirmButton(name) {
 // The confirm-prompt shape: a typing word followed by what to type ('Type DELETE ...', 'Enter the workspace name ...'), never
 // 'Type to search ...' / 'Type here ...' / 'Press Enter to ...' (cu-researcher's r1 over-ask 'Type to search deleted items').
 // r8 (author-found): gerunds too - 'Confirm by typing DELETE', 'by entering the project ID', 'Retyping the name ...'.
-const TYPED_INSTRUCTION = /\b(?:type|typing|enter|entering|re-?enter(?:ing)?|re-?typ(?:e|ing)|write|writing|input(?:ting)?|key(?:ing)?\s+in|spell(?:ing)?\s+out|repeat(?:ing)?|fill(?:ing)?\s+in|copy(?:ing)?|past(?:e|ing))\s+(?!(?:to|here|in)\b)["'\u201c\u2018\p{L}\p{N}]/iu
+// CU-745 (High; cu-researcher's sweep 5): 'Provide / Supply / Specify / Insert / Put in the <x> name' and 'Please confirm the <x> name'
+// are typing instructions too ('confirm' only before 'the / your / its ... name / ID / slug / handle / URL', never 'Confirm deletion').
+const TYPED_INSTRUCTION = /\b(?:type|typing|enter|entering|re-?enter(?:ing)?|re-?typ(?:e|ing)|write|writing|input(?:ting)?|key(?:ing)?\s+in|spell(?:ing)?\s+out|repeat(?:ing)?|fill(?:ing)?\s+in|copy(?:ing)?|past(?:e|ing)|provid(?:e|ing)|suppl(?:y|ying)|specif(?:y|ying)|indicat(?:e|ing)|insert(?:ing)?|put(?:ting)?\s+in)\s+(?!(?:to|here|in)\b)["'\u201c\u2018\p{L}\p{N}]|\bconfirm(?:ing)?\s+(?:the|your|its)\s+(?:[\p{L}\p{N}'\u2019-]+\s+){0,2}(?:name|id|slug|handle|url|label)\b/iu
 const TYPED_DESTROY = /\b(?:delet\w*|eras(?:e|es|ed|ing|ure)\b|wip(?:e|es|ed|ing)\b|remov\w*|destroy\w*|purg(?:e|es|ed|ing)\b|terminat\w*|deactivat\w*|permanently|permanent\s+(?:deletion|removal|erasure)|irreversibl\w*|cannot\s+be\s+undone|nuk(?:e|es|ed|ing)\b|uninstall\w*|drop\s+(?:it|them|(?:the|this|that|your|my)\s+\w+)\b|dropp(?:ed|ing)\b|shut(?:ting)?\s+(?:\w+\s+){0,3}down\b|clos(?:e|ing)\s+(?:it|(?:the|this|that|your|my)\s+\w+)\s+(?:down|for\s+good|permanently)\b|kill(?:s|ed|ing)?\s+(?:it|them|(?:the|this|that|your|my|all)\s+\w+)\b|scrap(?:s|ped|ping)?\b|trash(?:es|ed|ing)?\s+(?:it|them|(?:the|this|that|your|my|all)\s+\w+)\b|discard\w*|retir(?:e|es|ed|ing)\b|sunset(?:s|ting)?\b|cancel(?:l?ing)?\s+(?:the\s+|this\s+|your\s+|my\s+)?(?:account|membership|organi[sz]ation|workspace)\b|re-?format\w*|format\s+(?:the\s+|this\s+|your\s+)?(?:disk|drive|volume|card|partition)\b|obliterat\w*|shred\w*|annihilat\w*|decommission\w*|deprovision\w*|tear\s+(?:it\s+|this\s+|the\s+\w+\s+)?down|factory\s+reset|reset\s+(?:\w+\s+)?to\s+factory|empty\s+(?:it|them|the|this|that|your|all)\b|(?:archiv\w*|los(?:e|ing)|gone|hid(?:e|den))\s+(?:\w+\s+){0,2}(?:forever|for\s+good)|clos(?:e|ing)\s+(?:the\s+|this\s+|my\s+|your\s+)?account\b|drop\s+(?:the\s+|this\s+)?(?:table|database|schema|collection|index)\b)/i
 // A transfer counts only of ownership: 'Enter the transfer amount' is money, not a handover (cu-developer-three's near-miss).
 // r3 (policy owner 13:25Z): the destroy test without its three bare intensifiers ('permanently', 'irreversibl*', 'cannot
@@ -1842,7 +1896,12 @@ const TYPED_TRANSFER = /\b(?:(?:move|transfer|send|pass|give|assign|hand)\s+(?:(
 // ('DELETE', 'CLOSE' - not a field acronym like PIN or OTP) or in quotes, or 'the <up to 2 words> name / ID / slug /
 // handle / URL', or 'the name of'; or 'to confirm' anywhere. 'Enter your email', 'Enter the 6-digit code' and 'Type
 // your full name' are not confirm-shaped.
-const TYPED_VERB = /\b(?:type|typing|enter|entering|re-?enter(?:ing)?|re-?typ(?:e|ing)|write|writing|input(?:ting)?|key(?:ing)?\s+in|spell(?:ing)?\s+out|repeat(?:ing)?|fill(?:ing)?\s+in|copy(?:ing)?|past(?:e|ing))\s+/giu
+const TYPED_VERB = /\b(?:type|typing|enter|entering|re-?enter(?:ing)?|re-?typ(?:e|ing)|write|writing|input(?:ting)?|key(?:ing)?\s+in|spell(?:ing)?\s+out|repeat(?:ing)?|fill(?:ing)?\s+in|copy(?:ing)?|past(?:e|ing)|provid(?:e|ing)|suppl(?:y|ying)|specif(?:y|ying)|indicat(?:e|ing)|insert(?:ing)?|put(?:ting)?\s+in|confirm(?:ing)?(?=\s+(?:the|your|its)\s))\s+/giu
+// CU-745: a label that is only '<x> name / ID / slug / handle / URL to confirm [...]' ('Project name to confirm deletion', no colon).
+const NAME_TO_CONFIRM_LABEL = /^\s*(?:(?:the|your|its)\s+)?(?:[\p{L}\p{N}'\u2019-]+\s+){0,2}(?:name|id|slug|handle|url|label)\s+to\s+confirm\b/iu
+// CU-745 r2 (cu-researcher's held-out): a field label whose parenthetical names the act - 'Database name (required to delete):'.
+const NAME_PAREN_LABEL = /^\s*(?:(?:the|your|its)\s+)?(?:[\p{L}\p{N}'\u2019-]+\s+){0,2}(?:name|id|slug|handle|url|label)\s*\(([^()]{1,80})\)\s*[:\uFF1A]?\s*$/iu
+const nameLabelOpens = (text) => NAME_TO_CONFIRM_LABEL.test(text) || (() => { const m = NAME_PAREN_LABEL.exec(String(text ?? '')); return m !== null && (typedDestroyAct(m[1]) || typedTransfer(m[1]) || /\bto\s+confirm\b/i.test(m[1])) })()
 const FIELD_ACRONYM = /^(?:PIN|PUK|OTP|TAN|SMS|CVV|CVC|ID|URL|IBAN|BIC|SWIFT|SSN|ZIP|VAT|API|IP|MAC|IMEI)(?![\p{L}\p{N}])/u
 function confirmShaped(text) {
   if (/\bto\s+confirm\b/i.test(text)) return true
@@ -1850,7 +1909,7 @@ function confirmShaped(text) {
     const rest = text.slice(m.index + m[0].length)
     if (/^["'\u201c\u2018]/u.test(rest)) return true
     if (/^\p{Lu}{2,}(?![\p{L}\p{N}])/u.test(rest) && !FIELD_ACRONYM.test(rest)) return true
-    if (/^the\s+(?:[\p{L}\p{N}-]+\s+){0,2}(?:name|id|slug|handle|url)\b/iu.test(rest) || /^the\s+name\s+of\b/i.test(rest)) return true
+    if (/^the\s+(?:[\p{L}\p{N}-]+\s+){0,2}(?:name|id|slug|handle|url|label)\b/iu.test(rest) || /^the\s+name\s+of\b/i.test(rest)) return true
   }
   return localeConfirmShaped(text)
 }
@@ -2044,11 +2103,14 @@ export function typedConfirmClasses(entries, zoneWords = []) {
   const zoneTransferUser = transferHere && zone.some((text) => transferUserShaped(text))
   const entryTransferUser = transferHere && texts.some((text) => transferUserShaped(text))
   const entryPossessive = texts.some((text) => possessiveNameShaped(text) || possessiveLabelShaped(text) || questionNameShaped(text)) && (zoneActs || texts.some((text) => typedDestroyAct(text) || typedTransfer(text)))
-  if (!texts.some((text) => typedInstruction(text)) && !zoneInstruction && !entryPossessive && !zoneTransferUser && !entryTransferUser) return []
+  // CU-745: a '<x> name to confirm' label, as the entry or in the zone, opens it too (the words still need an act).
+  const entryNameToConfirm = texts.some((text) => nameLabelOpens(text))
+  const zoneNameToConfirm = zone.some((text) => nameLabelOpens(text))
+  if (!texts.some((text) => typedInstruction(text)) && !zoneInstruction && !entryPossessive && !zoneTransferUser && !entryTransferUser && !entryNameToConfirm && !zoneNameToConfirm) return []
   // Policy owner's gate (08:07Z): the zone's words join only when an entry is confirm-shaped - an 'Enter your phone number'
   // form's 'We will remove it if you ask.' never reaches the destroy test. Entries alone keep #894's behaviour.
   // CU-736 r2 (cu-researcher's NOT OK at 0cdf35f48): a STRONG confirm entry ('Confirm the name by typing it.') joins the zone too.
-  const words = [...texts, ...(texts.some((text) => confirmShaped(text) || strongConfirm(text)) || entryPossessive || zoneInstruction || zoneTransferUser || entryTransferUser ? zone : [])].join(' \u2022 ')
+  const words = [...texts, ...(texts.some((text) => confirmShaped(text) || strongConfirm(text)) || entryPossessive || zoneInstruction || zoneTransferUser || entryTransferUser || entryNameToConfirm || zoneNameToConfirm ? zone : [])].join(' \u2022 ')
   return [...(typedDestroy(words) ? ['delete'] : []), ...(typedTransfer(words) ? ['permission'] : [])]
 }
 
@@ -4540,6 +4602,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         // CU-729: the localized title with its question frame removed is one more text (additions only).
         const unframed = (text) => text.replace(LOCALE_QUESTION_FRAME, ' ').replace(/[?？!！.。:：\s]+$/u, '').replace(/\s+/g, ' ').trim()
         for (const extra of [unframed(dialogName), unframed(firstSentence)]) if (extra !== '' && !texts.includes(extra)) texts.push(extra)
+        // CU-746: the title and each kept sentence read as the act they state (statement, framed lead-in, noun title, access).
+        for (const base of [dialogName, ...kept]) for (const extra of modalStatementNames(base)) if (!texts.includes(extra)) texts.push(extra)
         for (const text of texts) {
           // #702 round 2: the title is judged with the FULL canonical form (synonym, quantifier, label and clause steps run only
           // outside a confirm probe), so no confirmProbe flag here; the probe target carries no dialog fields, so it cannot recurse.
