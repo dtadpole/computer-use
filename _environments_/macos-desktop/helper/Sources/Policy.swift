@@ -5,7 +5,7 @@ import Foundation
 /// The helper's identity; `build.sh` writes the same bundle id into Info.plist.
 enum HelperIdentity {
   static let bundleId = "com.reflection.cu-helper"
-  static let version = "0.2.72"
+  static let version = "0.2.73"
   /// The value every synthetic event carries in `kCGEventSourceUserData`: 0x43555345, ASCII "CUSE"
   /// (input-and-targets.md, verify-kit's SYNTHETIC_TAG). Not a secret: an event from another process with this tag
   /// could only fail to pause the run, never act.
@@ -82,6 +82,14 @@ struct Exclusions {
     // Monitor (Force Quit). Ids read from each app's Info.plist on macOS 27; Console stays approvable (read-only).
     "com.apple.DiskUtility", "com.apple.bootcampassistant", "com.apple.MigrateAssistant", "com.apple.backup.launcher",
     "com.apple.TimeMachine", "com.apple.ActivityMonitor",
+    // CU-394: remote-desktop and VM clients (agent core's 'remote_control' kind, #924, its ids and citations) - another
+    // computer drawn as one opaque canvas. Family patterns only where every app of the maker is remote access or a VM.
+    "com.apple.ScreenSharing", "com.apple.RemoteDesktop", "com.teamviewer.*", "com.philandro.anydesk", "com.microsoft.rdc.macos",
+    "com.microsoft.remotehelp", "com.parallels.desktop.console", "com.2X.Client.Mac", "com.vmware.fusion", "com.vmware.horizon",
+    "com.omnissa.horizon.client.mac", "com.utmapp.*", "org.virtualbox.*", "com.p5sys.jump.*", "com.realvnc.*", "tv.parsec.*",
+    "com.citrix.receiver.nomas", "com.splashtop.stb.macosx", "com.splashtop.stp.macosx", "com.lemonmojo.*", "com.edovia.screens.5",
+    "com.google.chromeremotedesktop.me2me-host", "com.carriez.rustdesk", "com.citrix.receiver.icaviewer.mac",
+    "com.devolutions.remotedesktopmanager", "com.nomachine.nxdock",
   ]
 
   let entries: [String]

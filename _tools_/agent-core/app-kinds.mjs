@@ -71,3 +71,31 @@ export function isIdeApp(bundleId) {
 export function isMessagingApp(bundleId) {
   return typeof bundleId === 'string' && MESSAGING_IDS.has(bundleId)
 }
+
+/**
+ * Crypto wallet apps (CU-576, cu-researcher 07:28Z; built before triage): a send, broadcast, sign or confirm there moves money and is final
+ * - it asks purchase, which no grant covers, beside any class it already has. Exact ids or family prefixes ending in '.'; ids are the
+ * makers' published ones (Sparrow's from the issue), to be checked against a catalog.
+ */
+export const WALLET_APPS = Object.freeze([
+  Object.freeze({ app: 'Ledger Wallet (Ledger Live)', ids: Object.freeze(['com.ledger.']), source: "the maker's family" }),
+  Object.freeze({ app: 'Trezor Suite', ids: Object.freeze(['io.trezor.']), source: "the maker's family" }),
+  Object.freeze({ app: 'Sparrow', ids: Object.freeze(['com.sparrowwallet.']), source: 'CU-576 (com.sparrowwallet.sparrow)' }),
+  Object.freeze({ app: 'Electrum', ids: Object.freeze(['org.electrum.']), source: "the maker's family" }),
+  Object.freeze({ app: 'Bitcoin Core', ids: Object.freeze(['org.bitcoinfoundation.']), source: "the maker's family" }),
+  Object.freeze({ app: 'Exodus', ids: Object.freeze(['com.exodus.']), source: "the maker's family" }),
+])
+
+/** Whether `bundleId` is a crypto wallet's: an exact id (or one below it), or a family prefix ending in '.'. */
+export function isWalletApp(bundleId) {
+  const id = String(bundleId ?? '').toLowerCase().replace(/^(?:app|desktop):\/*/, '').replace(/\/.*$/, '')
+  if (id === '') return false
+  // #865 r2 (cu-researcher 07:34Z): the CLASS, not a closed list - a bundle id carrying wallet vocabulary is a wallet (Wasabi, Electrum's
+  // org.org.pythonmac.unspecified.Electrum, MetaMask, Phantom ...). Ambiguous words (dash, frame, cake, atomic, a bare ledger - bookkeeping apps; Ledger's own apps match com.ledger.) are left out: Dash the
+  // docs browser is not a wallet.
+  if (/(?:^|[.\-_])(?:[a-z0-9]*wallet[a-z0-9]*|wasabi|electrum|sparrow|ledger-?live|trezor|exodus|bitcoin|bitcoinqt|btc|monero|ethereum|metamask|phantom|bitbox|specter|nunchuk|coldcard|keystone|blockstream|samourai|guarda|coinomi|rabby|solflare|keplr|yoroi|daedalus|litecoin|dogecoin|zcash)(?:$|[.\-_])/.test(id)) return true
+  return WALLET_APPS.some((entry) => entry.ids.some((one) => {
+    const known = one.toLowerCase()
+    return known.endsWith('.') ? id.startsWith(known) : id === known || id.startsWith(`${known}.`)
+  }))
+}
