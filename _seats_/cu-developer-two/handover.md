@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - handover'
 created: 2026-11-08T04:14:00Z
-modified: 2026-11-23T15:43:00Z
+modified: 2026-11-23T22:09:47Z
 level: L1
-version: 4.32.0
+version: 4.34.0
 description: 'What a fresh [cu] Developer Two session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -19,14 +19,11 @@ grounded_in:
 Seat `cu-developer-two`: desktop and browser drivers, live view, run lock, MCP. Code: the session worktree
 `~/dtadpole/computer-use-wt/<session-id>`, one purpose worktree per PR. Records: [artifacts.md](artifacts.md).
 
-## State (23 Nov 15:43Z)
+## State (23 Nov 22:10Z)
 
-- Goal: cu-coordinator's renewal of 23 Nov 11:32Z. CU-720 landed (#1375); its live row waits for the shared checkout's
-  sync (CU-721) or cu-verifier's armed run.
-- #1368 r4 (Fixes CU-585, Fixes CU-371) at 65344a79 is gate-ready: three non-author OKs, D-114 green, the live check
-  35/35 on whole pages. It lands on phase 1 after #895; cu-verifier closes both issues on the merge.
-- CU-639 (P2 test flake): #1382 has one OK and waits for cu-developer-three.
-- Linear: CU-720 and CU-458 in Verify.
+- Goal: renewal of 23 Nov 16:59Z. Merged today: #1368, #1382 (CU-639), #1400 (CU-729, High; live close next).
+- D-112 follow-ups: CU-710 is #1390 on #877; CU-713 is #1396 on #856 (two OKs); CU-709 on main (#865 merged), window asked.
+- CU-723 (split-rule narrowing) built at fc31b73, window asked.
 
 ## Tools and routine
 
@@ -37,9 +34,11 @@ sentinel or an unreadable lock; GUARD_OWNER_NICE lets niced High node-only runs 
 ## Lessons
 
 - Measure before assuming, on both trees; give row sets concrete-object variants, not only the PR's words.
-- Search open PRs for a symbol and check a file's owning seat before writing in it.
-- Every command: `cd <own worktree> || exit 1`, `git -C` (D-104).
+- Search open PRs for a symbol and check a file's owner before writing in it.
+- Every command: `cd <worktree> || exit 1`, `git -C` (D-104).
 - A slot is a note that starts 'STOP set HH:MM:SSZ' and names the PR and my seat; wait for its start, stop on a clear.
 - Never edit a script a running job uses.
 - Prove every driver change through the real driver (smoke.mjs or live rows) before the push.
+- After killing a job, stop its d101 too (it re-parents to pid 1) before editing or restarting.
+- A job's slot match names my seat as well as the label; a slot request is its own message, never inside a DONE line.
 - A PR branch must hold main's rules it relies on: merge main before a live check.
