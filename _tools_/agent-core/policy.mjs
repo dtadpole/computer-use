@@ -1802,7 +1802,7 @@ function typedConfirmButton(name) {
 // 'Type to search ...' / 'Type here ...' / 'Press Enter to ...' (cu-researcher's r1 over-ask 'Type to search deleted items').
 // r8 (author-found): gerunds too - 'Confirm by typing DELETE', 'by entering the project ID', 'Retyping the name ...'.
 const TYPED_INSTRUCTION = /\b(?:type|typing|enter|entering|re-?enter(?:ing)?|re-?typ(?:e|ing)|write|writing|input(?:ting)?|key(?:ing)?\s+in|spell(?:ing)?\s+out|repeat(?:ing)?|fill(?:ing)?\s+in|copy(?:ing)?|past(?:e|ing))\s+(?!(?:to|here|in)\b)["'\u201c\u2018\p{L}\p{N}]/iu
-const TYPED_DESTROY = /\b(?:delet\w*|eras(?:e|es|ed|ing|ure)\b|wip(?:e|es|ed|ing)\b|remov\w*|destroy\w*|purg(?:e|es|ed|ing)\b|terminat\w*|deactivat\w*|permanently|permanent\s+(?:deletion|removal|erasure)|irreversibl\w*|cannot\s+be\s+undone|nuk(?:e|es|ed|ing)\b|uninstall\w*|drop\s+(?:it|them|(?:the|this|that|your|my)\s+\w+)\b|shut(?:ting)?\s+(?:\w+\s+){0,3}down\b|clos(?:e|ing)\s+(?:it|(?:the|this|that|your|my)\s+\w+)\s+(?:down|for\s+good|permanently)\b|kill(?:s|ed|ing)?\s+(?:it|them|(?:the|this|that|your|my|all)\s+\w+)\b|scrap(?:s|ped|ping)?\b|trash(?:es|ed|ing)?\s+(?:it|them|(?:the|this|that|your|my|all)\s+\w+)\b|discard\w*|retir(?:e|es|ed|ing)\b|sunset(?:s|ting)?\b|cancel(?:l?ing)?\s+(?:the\s+|this\s+|your\s+|my\s+)?(?:account|membership|organi[sz]ation|workspace)\b|re-?format\w*|format\s+(?:the\s+|this\s+|your\s+)?(?:disk|drive|volume|card|partition)\b|obliterat\w*|shred\w*|annihilat\w*|decommission\w*|deprovision\w*|tear\s+(?:it\s+|this\s+|the\s+\w+\s+)?down|factory\s+reset|reset\s+(?:\w+\s+)?to\s+factory|empty\s+(?:it|them|the|this|that|your|all)\b|(?:archiv\w*|los(?:e|ing)|gone|hid(?:e|den))\s+(?:\w+\s+){0,2}(?:forever|for\s+good)|clos(?:e|ing)\s+(?:the\s+|this\s+|my\s+|your\s+)?account\b|drop\s+(?:the\s+|this\s+)?(?:table|database|schema|collection|index)\b)/i
+const TYPED_DESTROY = /\b(?:delet\w*|eras(?:e|es|ed|ing|ure)\b|wip(?:e|es|ed|ing)\b|remov\w*|destroy\w*|purg(?:e|es|ed|ing)\b|terminat\w*|deactivat\w*|permanently|permanent\s+(?:deletion|removal|erasure)|irreversibl\w*|cannot\s+be\s+undone|nuk(?:e|es|ed|ing)\b|uninstall\w*|drop\s+(?:it|them|(?:the|this|that|your|my)\s+\w+)\b|dropp(?:ed|ing)\b|shut(?:ting)?\s+(?:\w+\s+){0,3}down\b|clos(?:e|ing)\s+(?:it|(?:the|this|that|your|my)\s+\w+)\s+(?:down|for\s+good|permanently)\b|kill(?:s|ed|ing)?\s+(?:it|them|(?:the|this|that|your|my|all)\s+\w+)\b|scrap(?:s|ped|ping)?\b|trash(?:es|ed|ing)?\s+(?:it|them|(?:the|this|that|your|my|all)\s+\w+)\b|discard\w*|retir(?:e|es|ed|ing)\b|sunset(?:s|ting)?\b|cancel(?:l?ing)?\s+(?:the\s+|this\s+|your\s+|my\s+)?(?:account|membership|organi[sz]ation|workspace)\b|re-?format\w*|format\s+(?:the\s+|this\s+|your\s+)?(?:disk|drive|volume|card|partition)\b|obliterat\w*|shred\w*|annihilat\w*|decommission\w*|deprovision\w*|tear\s+(?:it\s+|this\s+|the\s+\w+\s+)?down|factory\s+reset|reset\s+(?:\w+\s+)?to\s+factory|empty\s+(?:it|them|the|this|that|your|all)\b|(?:archiv\w*|los(?:e|ing)|gone|hid(?:e|den))\s+(?:\w+\s+){0,2}(?:forever|for\s+good)|clos(?:e|ing)\s+(?:the\s+|this\s+|my\s+|your\s+)?account\b|drop\s+(?:the\s+|this\s+)?(?:table|database|schema|collection|index)\b)/i
 // A transfer counts only of ownership: 'Enter the transfer amount' is money, not a handover (cu-developer-three's near-miss).
 // r3 (policy owner 13:25Z): the destroy test without its three bare intensifiers ('permanently', 'irreversibl*', 'cannot
 // be undone') - they name no act. Used only where a strong confirm sentence takes the act from ANOTHER zone sentence.
@@ -1825,10 +1825,74 @@ function confirmShaped(text) {
   }
   return localeConfirmShaped(text)
 }
+// CU-735 (High; cu-researcher's miss, cu-coordinator 22:29Z): the possessive and bare name shapes - after a typing word, 'your [<x>]
+// name / ID / slug / handle / URL', 'its name', '<x>'s name' ('your team's name', 'the project's name') or a bare '<x> name'
+// ('Enter repository name'). Not a rename ('a new name') or a sign-in / profile field ('user ID', 'display name', 'first name';
+// 'username' is no name shape). It counts only inside a zone that holds a destroy / transfer act (typedConfirmClasses).
+// Policy owner 22:41Z: personal-name words stay free too ('your full name' is a sign-up field; a real typed confirm that asks for it
+// says 'to confirm', which strongConfirm takes).
+// r2 (cu-researcher's NOT OK at cc32afab3): an article first ('a / an / any / some / the'), or 'new' anywhere, is no possessive shape;
+// a personal-name word counts only as the word right before the name ('your full name' stays free, 'your full account name' asks).
+const POSSESSIVE_NAME_ARTICLE = /^(?:a|an|any|some|the)$/i
+const POSSESSIVE_NAME_PERSONAL = /^(?:user|display|nick|first|last|middle|given|family|sur|full|legal|real|preferred|screen|maiden)$/i
+const POSSESSIVE_NAME_SHAPE = String.raw`(?:(your|its|their|our)\s+|((?:the\s+|your\s+)?[\p{L}\p{N}-]+(?:'s|\u2019s))\s+)?((?:[\p{L}\p{N}-]+\s+){0,2}?)(?:name|id|slug|handle|url|hostname)`
+const POSSESSIVE_NAME_AFTER_VERB = new RegExp(`^${POSSESSIVE_NAME_SHAPE}(?![\\p{L}\\p{N}])`, 'iu')
+// r2: a field label that is the possessive shape alone ('Your workspace ID:') - a determiner is required.
+const POSSESSIVE_NAME_LABEL = new RegExp(`^\\s*${POSSESSIVE_NAME_SHAPE}\\s*[:\uFF1A]?\\s*$`, 'iu')
+function possessiveShapeFits(shape, needsDeterminer) {
+  if (!shape) return false
+  const words = shape[3].trim().split(/\s+/).filter(Boolean)
+  if (!shape[1] && !shape[2] && (needsDeterminer || words.length === 0)) return false
+  // policy owner 22:41Z: a bare personal possessive with no noun ('your name', 'your ID', 'their name') is a person's field; 'its
+  // name' names the thing itself and stays.
+  if (shape[1] && !/^its$/i.test(shape[1]) && words.length === 0) return false
+  if (POSSESSIVE_NAME_ARTICLE.test(words[0] ?? '') || words.some((word) => /^new$/i.test(word))) return false
+  if (POSSESSIVE_NAME_PERSONAL.test(words[words.length - 1] ?? '')) return false
+  return true
+}
+function possessiveNameShaped(text) {
+  for (const m of text.matchAll(TYPED_VERB)) {
+    // r2: 'Type in your store name' - an 'in' after the typing word.
+    const rest = text.slice(m.index + m[0].length).replace(/^in\s+/i, '')
+    if (possessiveShapeFits(POSSESSIVE_NAME_AFTER_VERB.exec(rest), false)) return true
+  }
+  return false
+}
+// CU-736 (cu-researcher's sweep 4): a bare field label counts when it ends in a colon ('Project name:', 'Account name:'), and a
+// leading 'the' is dropped; 'Name:', 'Display name:', 'New name:' and 'User ID:' stay free (no noun, or a personal / rename word).
+// CU-736 r2 (cu-researcher's held-out): 'Name of the space to delete:' - the name word first, then 'of the <object>' and an optional
+// 'to <verb>', ending in a colon; 'Name of the new project:' stays free (a create form).
+const NAME_OF_LABEL = /^\s*(?:the\s+)?(?:name|id|slug|handle|url)\s+of\s+(?:the|this|that|your|its)\s+((?:[\p{L}\p{N}-]+\s+){0,2}[\p{L}\p{N}-]+?)(?:\s+to\s+[\p{L}-]+(?:\s+[\p{L}-]+)?)?\s*[:\uFF1A]\s*$/iu
+const nameOfLabelShaped = (text) => {
+  const m = NAME_OF_LABEL.exec(String(text ?? ''))
+  return m !== null && !/(?:^|\s)new(?:\s|$)/i.test(m[1])
+}
+const possessiveLabelShaped = (text) => {
+  const bare = String(text ?? '').replace(/^\s*the\s+/i, '')
+  return possessiveShapeFits(POSSESSIVE_NAME_LABEL.exec(bare), !/[:\uFF1A]\s*$/.test(bare)) || nameOfLabelShaped(bare)
+}
+// CU-736: a question that asks for the name ('What is the name of the workspace?', 'What is the project's ID?'); 'What is your
+// name?' stays free (a person's field).
+const QUESTION_NAME = /^\s*what(?:'s|\u2019s|\s+is)\s+(?:(the|your|its)\s+)((?:[\p{L}\p{N}-]+(?:'s|\u2019s)?\s+){0,2}?)(?:name|id|slug|handle|url|hostname)(\s+of\s+(?:the|this|that|your|its)\s+[\p{L}\p{N}-]+(?:\s+[\p{L}\p{N}-]+)?)?\s*\?\s*$/iu
+// CU-736 r2 (cu-researcher's held-out): 'Which repository are you deleting?' - a 'which <object>' question whose own words name the
+// destroy / transfer act; 'Which plan are you choosing?' stays free.
+const WHICH_ACT_QUESTION = /^\s*which\s+(?:[\p{L}\p{N}-]+\s+){1,2}(?:are\s+you|do\s+you\s+(?:want|wish|intend|mean)\s+to|would\s+you\s+like\s+to|will\s+you|should\s+we|are\s+we)\s+(?:[\p{L}-]+\s+)?[\p{L}-]+\s*\?\s*$/iu
+function questionNameShaped(text) {
+  if (WHICH_ACT_QUESTION.test(String(text ?? '')) && (typedDestroyAct(String(text)) || typedTransfer(String(text)))) return true
+  const m = QUESTION_NAME.exec(String(text ?? ''))
+  if (!m) return false
+  const words = m[2].trim().split(/\s+/).filter(Boolean)
+  if (words.length === 0 && !m[3] && !/^its$/i.test(m[1])) return false
+  if (POSSESSIVE_NAME_ARTICLE.test(words[0] ?? '') || words.some((word) => /^new$/i.test(word))) return false
+  if (POSSESSIVE_NAME_PERSONAL.test(words[words.length - 1] ?? '')) return false
+  return true
+}
 // r3: a STRONG confirm sentence - 'to confirm' / 'confirm by', or a typed token (quoted, or a capitalised word that is no field
 // acronym). 'the <noun> name' alone is confirm-shaped but not strong.
 function strongConfirm(text) {
   if (/\bto\s+confirm\b|\bconfirm\s+by\b/i.test(text)) return true
+  // CU-736: 'Confirm the name by typing it' / 'Confirm the project ID by entering it'; r2: 'Verify the name by typing it below.'
+  if (/\b(?:confirm|verify|validate|check|prove)\s+(?:the\s+|its\s+|your\s+|this\s+)?(?:[\p{L}\p{N}-]+\s+){0,2}?(?:name|id|slug|handle|url)\s+by\s+(?:typing|entering|writing|re-?typing|re-?entering)\b/iu.test(text)) return true
   for (const m of text.matchAll(TYPED_VERB)) {
     const rest = text.slice(m.index + m[0].length)
     if (/^["'\u201c\u2018]/u.test(rest)) return true
@@ -1925,11 +1989,15 @@ export function typedConfirmClasses(entries, zoneWords = []) {
   // r4 (policy owner 14:45Z, cu-researcher's r3 misses 'To proceed, type the account name.' + 'Your account will be
   // permanently deleted.'): in the split branch ANY confirm-shaped instruction (the name / slug / ID / handle / URL shape,
   // or strong) takes the verb from another zone sentence - an under-ask on a destroy act weighs more than a rare over-ask.
-  const zoneInstruction = zone.some((text) => typedInstruction(text) && (((confirmShaped(text) || strongConfirm(text)) && (acts(text) || zoneActs)) || purposeAct(text)))
-  if (!texts.some((text) => typedInstruction(text)) && !zoneInstruction) return []
+  // CU-735: the possessive / bare name shape counts too, here and for an entry, only where the zone holds an act.
+  // r2: a possessive prompt after 'type in', or a possessive field label, is the instruction itself.
+  const zoneInstruction = zone.some((text) => (typedInstruction(text) || possessiveNameShaped(text) || possessiveLabelShaped(text) || questionNameShaped(text)) && (((confirmShaped(text) || strongConfirm(text) || possessiveNameShaped(text) || possessiveLabelShaped(text) || questionNameShaped(text)) && (acts(text) || zoneActs)) || purposeAct(text)))
+  const entryPossessive = texts.some((text) => possessiveNameShaped(text) || possessiveLabelShaped(text) || questionNameShaped(text)) && (zoneActs || texts.some((text) => typedDestroyAct(text) || typedTransfer(text)))
+  if (!texts.some((text) => typedInstruction(text)) && !zoneInstruction && !entryPossessive) return []
   // Policy owner's gate (08:07Z): the zone's words join only when an entry is confirm-shaped - an 'Enter your phone number'
   // form's 'We will remove it if you ask.' never reaches the destroy test. Entries alone keep #894's behaviour.
-  const words = [...texts, ...(texts.some(confirmShaped) || zoneInstruction ? zone : [])].join(' \u2022 ')
+  // CU-736 r2 (cu-researcher's NOT OK at 0cdf35f48): a STRONG confirm entry ('Confirm the name by typing it.') joins the zone too.
+  const words = [...texts, ...(texts.some((text) => confirmShaped(text) || strongConfirm(text)) || entryPossessive || zoneInstruction ? zone : [])].join(' \u2022 ')
   return [...(typedDestroy(words) ? ['delete'] : []), ...(typedTransfer(words) ? ['permission'] : [])]
 }
 
