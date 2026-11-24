@@ -45,6 +45,11 @@ test('CU-777: the class - impersonal / modal frames and prefixed participles', (
     ['Leeren', 'Soll unser Papierkorb ausgeleert werden?'],
     ['Ausräumen', 'Soll der Ordner wirklich ausgeräumt werden?'],
     ['Leeren', 'Muss der Papierkorb ausgeleert werden?'],
+    // r3: cu-researcher's named r1 miss, verbatim.
+    ['Leeren', 'Wird der Papierkorb jetzt ausgeleert?'],
+    // r3: cu-developer-two's named row, verbatim (an adverb inside the necessity frame).
+    ['Vider', 'Est-il vraiment nécessaire de vider la corbeille maintenant ?'],
+    ['Vaciar', '¿Es realmente necesario vaciar la papelera?'],
   ]) {
     assert.ok(classes(onWeb(name, title)).includes('delete'), `web ${title}`)
     assert.ok(classes(onDesktop(name, title)).includes('delete'), `desktop ${title}`)
@@ -52,7 +57,7 @@ test('CU-777: the class - impersonal / modal frames and prefixed participles', (
 })
 
 test('CU-777: a harmless act under the same frames, and a cache, stay free', () => {
-  for (const [name, title] of [['Guardar', '¿Hay que guardar los cambios ya?'], ['Salva', 'Si deve salvare il documento?'], ['Entleeren', 'Soll der Cache entleert werden?'], ['Leeren', 'Muss der Cache sofort entleert werden?'], ['Guardar', '¿Es necesario guardar los cambios?'], ['Leeren', 'Kann der Papierkorb später geleert werden?']]) {
+  for (const [name, title] of [['Guardar', '¿Hay que guardar los cambios ya?'], ['Salva', 'Si deve salvare il documento?'], ['Entleeren', 'Soll der Cache entleert werden?'], ['Leeren', 'Muss der Cache sofort entleert werden?'], ['Guardar', '¿Es necesario guardar los cambios?'], ['Leeren', 'Kann der Papierkorb später geleert werden?'], ['Leeren', 'Wurde der Papierkorb geleert?'], ['Leeren', 'Wird der Cache jetzt geleert?'], ['Continuer', 'Est-il vraiment nécessaire de continuer maintenant ?']]) {
     assert.deepEqual(classes(onWeb(name, title)), [], `web ${title}`)
   }
 })
