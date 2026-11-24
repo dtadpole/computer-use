@@ -1180,6 +1180,21 @@ func testCancelEscapeStaysInScope() {
   check(readEvents(path2).last?["event"]?["type"]?.integer == Int(CGEventType.leftMouseUp.rawValue) && readEvents(path2).last?["mode"] == "global",
         "and the button still comes up in the run's mode, which clears the held state")
   try? FileManager.default.removeItem(atPath: path2)
+  // The tap case (Last War's row): an out-of-scope app comes forward between a press and its release, with no drag.
+  // Nothing is cancelled, so no key at all is sent - only the held button comes up.
+  let path3 = NSTemporaryDirectory() + "cu-helper-unit-\(getpid())-cu744c.jsonl"
+  try? FileManager.default.removeItem(atPath: path3)
+  var tapWorld = fixtureWorld.object!
+  tapWorld["frontmostAfter"] = ["steps": 2, "bundleId": "com.example.other"]
+  let t = Harness(.object(tapWorld), eventsOut: path3)
+  _ = t.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
+  _ = t.ask("pauseOnLocalInput", ["on": true])
+  let tapStopped = t.ask("input", ["events": [move(100, 100), button("down", 100, 100), button("up", 100, 100)], "mode": "global"])
+  let tapLines = readEvents(path3)
+  check(tapStopped["code"] == "out_of_scope" && tapStopped["cancelledDrag"] != true, "a tap interrupted by an out-of-scope app: stopped, nothing to cancel")
+  check(!tapLines.contains { keyTypes.contains($0["event"]?["type"]?.integer ?? -1) }, "a tap's release sends no key at all - no Escape")
+  check(tapLines.last?["event"]?["type"]?.integer == Int(CGEventType.leftMouseUp.rawValue), "only the held button comes up")
+  try? FileManager.default.removeItem(atPath: path3)
 }
 
 /// CU-39 (D-045): another process's content in an approved window is judged by that process; AppKit panels are marked.
