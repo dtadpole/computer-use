@@ -1,7 +1,7 @@
 ---
 title: Owner checklist - the owner session (step 4, G2, the Replace chain)
 created: 2026-11-05T17:25:00Z
-modified: 2026-11-24T08:14:00Z
+modified: 2026-11-24T08:39:00Z
 level: L1
 version: 0.4.5
 description: 'One page for the owner - what you do in the owner session, in order, and how long each step takes, at the Mac mini (the Confirm prompt) or over Screen Sharing; the per-part tables are in owner-checklist-parts.md. Rehearsed on helper 0.2.62 with labelled stand-ins (CU-341).'
@@ -25,7 +25,8 @@ context, default buttons, dialog words, form entries) and add a floor that leave
 the Confirm prompt, local-input and event code is untouched (checked in git from 0.2.67's commit to main), so Pause, Take
 over, Stop and the Confirm prompt behave as rehearsed. Sit at the Mac itself: the physical confirmation prompt can only
 be accepted in person, and a Screen Sharing sitting leaves it open. The Last War bridge stays idle for the sitting - its
-input pauses runs and resets the idle clock. The
+input pauses runs and resets the idle clock. Since 24 Nov 08:36:10Z it runs from its own worktree at b52c84ba3 and
+waits for 300 s of owner idle, carrying our runs' idle (CU-720, CU-721). The
 rehearsal ran on 0.2.62; 0.2.63-0.2.67 add only reads (placeholders, nearby labels, pop-up items, a file on the
 clipboard, an open menu, Finder's Quick Actions, a row's file, Finder's drop destinations, the Apple-menu mark); none
 changes Pause, Take over, Stop or the Confirm prompt. What each press shows:
