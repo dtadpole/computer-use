@@ -68,3 +68,16 @@ test('CU-753 r2: sign-in request titles and "Was this you?" ask permission; a pl
     assert.deepEqual(classes(inDialog(name, title)), [], `web ${title}`)
   }
 })
+
+test('CU-753 r2: one rule - approving a pending sign-in asks, acknowledging a finished one stays free', () => {
+  assert.ok(classes(inDesktopDialog('Allow', 'Sign-in requested', 'Your account is being used to sign in to a device near Berlin.')).includes('permission'))
+  assert.ok(classes(inDialog('Allow', 'Security alert', 'Your Apple ID is being used to sign in to a new iPhone.')).includes('permission'))
+  for (const [title, description] of [
+    ['Sign-in request blocked', 'We blocked a sign-in request from an unknown device.'],
+    ['Login attempt expired', 'The sign-in request expired before it was approved.'],
+    ['Request denied', 'You denied the sign-in request from Chrome on Windows.'],
+  ]) {
+    assert.deepEqual(classes(inDialog('OK', title, description)), [], `web ${title}`)
+    assert.deepEqual(classes(inDesktopDialog('OK', title, description)), [], `desktop ${title}`)
+  }
+})
