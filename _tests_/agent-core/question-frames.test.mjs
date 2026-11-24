@@ -54,3 +54,18 @@ test('CU-766: a harmless act under the same frames stays free', () => {
     assert.deepEqual(classes(onDesktop(name, title)), [], `desktop ${title}`)
   }
 })
+
+test('CU-766 r2: a German passive question and a French "Faut-il" question read their act', () => {
+  for (const [name, title] of [
+    ['Leeren', 'Soll der Papierkorb jetzt wirklich geleert werden?'],
+    ['Löschen', 'Soll diese Datei wirklich gelöscht werden?'],
+    ['Vider', 'Faut-il vraiment vider la corbeille maintenant ?'],
+    ['Supprimer', 'Doit-on supprimer ce dossier ?'],
+  ]) {
+    assert.ok(classes(onWeb(name, title)).includes('delete'), `web ${title}`)
+    assert.ok(classes(onDesktop(name, title)).includes('delete'), `desktop ${title}`)
+  }
+  for (const [name, title] of [['Speichern', 'Soll das Dokument jetzt gespeichert werden?'], ['Continuer', 'Faut-il continuer maintenant ?'], ['Leeren', 'Soll der Papierkorb nicht geleert werden?']]) {
+    assert.deepEqual(classes(onWeb(name, title)), [], `web ${title}`)
+  }
+})

@@ -54,6 +54,9 @@ const GENERIC_CONFIRM = /^\s*(?:confirm|ok|okay|yes|yes,?\s+(?:continue|confirm|
 // judges its verb as one more text, as the English titles are judged. Only delete verbs, only future / passive forms. r2 adds Dutch.
 const LOCALE_PASSIVE_ACTS = [
   [/\b(?:werden|wird)\b[^.!?]{0,120}?\b(?:endgültig\s+|dauerhaft\s+|unwiderruflich\s+)?(?:gelöscht|entfernt)\b/iu, 'löschen'],
+  // CU-766 r2: the modal / question order, participle before 'werden' - 'Soll der Papierkorb jetzt wirklich geleert werden?',
+  // '... gelöscht werden?'.
+  [/(?<!\p{L})(?:gelöscht|entfernt|geleert)\s+werden(?!\p{L})/iu, 'löschen'],
   [/\b(?:seront|sera)\s+(?:\S+\s+){0,3}?(?:supprimée?s?|effacée?s?)\b/iu, 'supprimer'],
   // r2 (cu-developer-two's cross-check): 'se' reads only before a FUTURE form - 'Se ha eliminado el archivo.' is a notice.
   [/\bser[áa]n?\s+(?:\S+\s+){0,3}?(?:eliminad[oa]s?|borrad[oa]s?)\b|\bse\s+(?:\S+\s+){0,2}?(?:eliminar[áa]n?|borrar[áa]n?)\b/iu, 'eliminar'],
@@ -106,7 +109,11 @@ function echoesDialogVerb(name, dialogName) {
   if (words.length === 0 || words.length > 2 || !/^\p{L}{3,}$/u.test(words[0]) || (words[1] !== undefined && words[1] !== 'now')) return false
   const verb = words[0]
   const stem = verb.length >= 5 ? verb.slice(0, verb.length - 1) : verb
-  return title.split(/[^\p{L}]+/u).some((word) => word === verb || (word.length >= verb.length && word.startsWith(stem)))
+  // CU-766 r2 (cu-researcher's r2 set): a German verb also echoes its past participle - 'Leeren' in '... geleert werden?',
+  // 'Löschen' in '... gelöscht werden?' (ge + root + t / en, after a separable prefix too: 'ausgeleert').
+  const root = verb.length >= 5 && /en$/u.test(verb) ? verb.slice(0, -2) : null
+  return title.split(/[^\p{L}]+/u).some((word) => word === verb || (word.length >= verb.length && word.startsWith(stem))
+    || (root !== null && new RegExp(`(?:^|^\\p{L}{0,6})ge${root}(?:t|en)$`, 'u').test(word)))
 }
 // CU-746 (High; cu-researcher's sweep 5): a risk modal whose text is a statement ('Your account will be deleted'), a framed
 // description ('Doing so permanently erases the volume.', 'Once you confirm, the repository ... are gone for good.') or a noun title
@@ -210,7 +217,9 @@ const LOCALE_GENERIC_CONFIRM = new RegExp(String.raw`^\s*${LOCALE_CONFIRM_WORD}(
 // '¿Estás seguro de que quieres ...?', 'Es-tu sûr de vouloir ...?', 'Veux-tu ...?', 'Bist du sicher, dass du ...?', 'Weet je zeker dat
 // je ...?', 'Wil je ...?', 'Tem certeza que deseja ...?', 'Você quer mesmo ...?', 'Ты уверен, что хочешь ...?', 'Czy na pewno chcesz
 // ...?', '...してもよろしいですか？', '你确定要...吗？'. The longer frames come first so 'quieres' is never cut to 'quiere' + 's'.
-const LOCALE_QUESTION_FRAME = /(?:(?:¿\s*)?(?:est[áa]s?\s+)?segur[oa]s?\s+(?:de\s+)?que\s+(?:quieres|deseas|desea|quiere)|de\s+verdad\s+(?:quieres|deseas|desea|quiere)|quieres|deseas|es-tu\s+s[ûu]re?\s+de\s+vouloir|veux-tu|tu\s+veux\s+vraiment|bist\s+du\s+sicher,?\s+dass\s+du|weet\s+je\s+zeker\s+dat\s+je|wil\s+je|wilt\s+je|è\s+sicuro\s+di\s+voler|sicur[oa]\s+di\s+voler|vuole|tem\s+certeza\s+(?:de\s+)?que\s+(?:deseja|quer)|tens\s+a\s+certeza\s+(?:de\s+)?que\s+(?:pretendes|queres|desejas)|(?:você\s+)?quer\s+mesmo|ты\s+уверен[аы]?,?\s+что\s+хочешь|хотите|хочешь|czy\s+na\s+pewno\s+chcesz|czy\s+chcesz|てもよろしいですか|よろしいですか|你确定要|您确定要|möchten\s+sie|wollen\s+sie|möchtest\s+du|willst\s+du|sind\s+sie\s+sicher,?\s+dass\s+sie|wirklich|voulez-vous|souhaitez-vous|êtes-vous\s+sûre?\s+de\s+vouloir|vraiment|¿|está\s+seguro\s+de\s+que\s+desea|desea|quiere|realmente|sei\s+sicuro\s+di\s+voler|vuoi|davvero|tem\s+certeza\s+de\s+que\s+deseja|deseja|wilt\s+u|weet\s+u\s+zeker\s+dat\s+u|вы\s+действительно\s+хотите|вы\s+уверены,?\s+что\s+хотите|действительно|本当に|しますか|ますか|确定要|確定要|是否|确认要|吗|嗎|정말|하시겠습니까|하시겠어요)/giu
+// r2 (cu-researcher's r2 set): 'Faut-il (vraiment) ...?', 'Doit-on ...?', 'Soll ich / Sollen wir ...?', and a 'now' word ('maintenant',
+// 'jetzt', 'ahora' ...) inside the question.
+const LOCALE_QUESTION_FRAME = /(?:(?:¿\s*)?(?:est[áa]s?\s+)?segur[oa]s?\s+(?:de\s+)?que\s+(?:quieres|deseas|desea|quiere)|de\s+verdad\s+(?:quieres|deseas|desea|quiere)|quieres|deseas|es-tu\s+s[ûu]re?\s+de\s+vouloir|veux-tu|faut-il|faudrait-il|doit-on|dois-je|devons-nous|soll(?:en)?\s+(?:ich|wir|man)|(?<!\p{L})(?:maintenant|jetzt|ahora|adesso|agora|сейчас|теперь)(?!\p{L})|tu\s+veux\s+vraiment|bist\s+du\s+sicher,?\s+dass\s+du|weet\s+je\s+zeker\s+dat\s+je|wil\s+je|wilt\s+je|è\s+sicuro\s+di\s+voler|sicur[oa]\s+di\s+voler|vuole|tem\s+certeza\s+(?:de\s+)?que\s+(?:deseja|quer)|tens\s+a\s+certeza\s+(?:de\s+)?que\s+(?:pretendes|queres|desejas)|(?:você\s+)?quer\s+mesmo|ты\s+уверен[аы]?,?\s+что\s+хочешь|хотите|хочешь|czy\s+na\s+pewno\s+chcesz|czy\s+chcesz|てもよろしいですか|よろしいですか|你确定要|您确定要|möchten\s+sie|wollen\s+sie|möchtest\s+du|willst\s+du|sind\s+sie\s+sicher,?\s+dass\s+sie|wirklich|voulez-vous|souhaitez-vous|êtes-vous\s+sûre?\s+de\s+vouloir|vraiment|¿|está\s+seguro\s+de\s+que\s+desea|desea|quiere|realmente|sei\s+sicuro\s+di\s+voler|vuoi|davvero|tem\s+certeza\s+de\s+que\s+deseja|deseja|wilt\s+u|weet\s+u\s+zeker\s+dat\s+u|вы\s+действительно\s+хотите|вы\s+уверены,?\s+что\s+хотите|действительно|本当に|しますか|ますか|确定要|確定要|是否|确认要|吗|嗎|정말|하시겠습니까|하시겠어요)/giu
 const GENERIC_SUBMIT = /^\s*(?:submit|send|send\s+(?:message|reply|email|comment)|reply|post|post\s+(?:comment|reply)|comment|save|save\s+changes|apply|search|go|ok|done|continue|next|report\s+spam|sign\s+up|register|create\s+account)\s*!?\s*$/i
 
 /** Word lists matched on a target's accessible name, case-insensitively, at word boundaries; they err toward confirm. */
