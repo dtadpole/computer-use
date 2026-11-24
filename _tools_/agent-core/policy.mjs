@@ -134,6 +134,29 @@ const MODAL_CONTROL_OBJECT = /\b(?:owner\w*|admin\w*|rights?|control|role|worksp
 const MODAL_NOMINAL_TITLE = /^(?:(?:the|your|this)\s+)?([\p{L}\p{N}'\u2019 -]{1,40}?)\s+(deletion|removal|erasure|termination|deactivation|closure|cancellation|wipe|reset|transfer|handover|handoff|hand-off|reassignment|grant)(?:\s+(?!(?:history|logs?|details|polic(?:y|ies)|settings|status|reports?|records?|summary|overview|info|information|faq|help|guide|terms|rules|limits?|options|preferences|schedule|queue|list)\b)[\p{L}\p{N}'\u2019-]+){0,2}$/iu
 const MODAL_NOMINAL_OF = /^(deletion|removal|erasure|termination|deactivation|closure|cancellation|transfer|handover|handoff|hand-off|reassignment|grant)\s+of\s+(.{1,60})$/i
 const MODAL_ACCESS = /\b(?:(?:requests?|requesting|wants?|would\s+like)\s+(?:\w+\s+){0,3}access\b|will\s+be\s+able\s+to\s+(?:read|write|access|see|view|manage|control|change|edit|delete|post|send|act)\b|(?:gives?|grants?|allows?)\s+(?:\S+\s+){0,4}access\b)/i
+// CU-757 (P1; cu-developer-one's #1423 r2 owner check): an access grant's own buttons - 'Allow', 'Grant', 'Give access', 'Always
+// allow', 'Allow once', 'Allow while using the app' and their localized forms - take the dialog's classes when its title or a kept
+// sentence states access (MODAL_ACCESS, or LOCALE_MODAL_ACCESS for a localized dialog); in a dialog that states nothing they
+// are judged as before (additions only).
+const ACCESS_ALLOW = /^\s*(?:allow|grant|give\s+access|allow\s+access|grant\s+access|always\s+allow|allow\s+always|allow\s+once|allow\s+all|allow\s+while\s+using(?:\s+(?:the\s+)?app)?|erlauben|zulassen|immer\s+erlauben|autoriser|permitir|consentir|consenti|permetti|toestaan|tillåt|tillat|zezwól|povolit|разрешить|許可|允许|允許|허용)\s*[.!。！]?\s*$/iu
+const LOCALE_MODAL_ACCESS = /(?:zugriff\s+auf|auf\s+.{1,60}?\s+zugreifen|accéder\s+à|accès\s+à|acceder\s+a|acceso\s+a|accedere\s+a|accesso\s+a|aceder\s+a|acesso\s+a|toegang\s+tot|доступ\s+к|へのアクセス|にアクセス|访问|訪問|存取|접근|액세스)/iu
+// CU-754 (High; cu-researcher's sweep 6): a toggle turned on that grants an access right or makes something public asks
+// permission though its own name does not say so - a privacy pane names the app ('Terminal'), the right is the list's ('Full
+// Disk Access'). The row context is the driver's rowContext: the web driver's { list, hints } (CU-443), or a plain string. A
+// list named for a privacy right asks for any toggle in it (named over-ask: an unrelated settings group called 'Camera').
+// 'Accessibility' counts only as the whole list name (the privacy list; the Accessibility settings' own groups have other names).
+const ACCESS_RIGHT_LIST = /\b(?:full\s+disk\s+access|screen\s+(?:(?:&|and)\s+system\s+audio\s+)?recording|input\s+monitoring|location\s+services|files\s+(?:&|and)\s+folders|developer\s+tools|app\s+management|local\s+network|remote\s+(?:login|management|desktop)|camera|microphone|contacts|calendars|reminders|photos|bluetooth|automation|speech\s+recognition|media\s+(?:&|and)\s+apple\s+music|homekit|motion\s+(?:&|and)\s+fitness|(?:allow|let)\s+(?:the\s+)?(?:apps?|applications?)\s+(?:below\s+|listed\s+)?to\s+(?:access|control|record|use|see|read|monitor|manage))\b/i
+// CU-754: a toggle whose own name makes a profile, account or other object public or visible to everyone.
+const PUBLIC_TOGGLE = /^\s*(?:make\s+(?:(?:my|this|the)\s+)?(?:profile|account|repo(?:sitory)?|page|calendar|listing|board|project|album|playlist|activity)\s+public|public(?:\s+(?:profile|account|repo(?:sitory)?|page|calendar|listing|board|project|album|playlist|activity|mode|link|access))?|(?:profile|account)\s+(?:is\s+)?(?:public|visible\s+to\s+(?:everyone|anyone))|visible\s+to\s+(?:everyone|anyone|the\s+public|all)|discoverable(?:\s+by\s+(?:everyone|anyone))?|show\s+(?:my\s+)?profile\s+(?:publicly|to\s+(?:everyone|anyone)))\s*$/i
+/** CU-754: whether a toggle's row context (rowContext: a { list, hints } object or a plain string) names an access right. */
+export function accessRowContext(rowContext) {
+  const texts = typeof rowContext === 'string'
+    ? [rowContext.slice(0, 120)]
+    : rowContext && typeof rowContext === 'object'
+      ? [typeof rowContext.list === 'string' ? rowContext.list.slice(0, 60) : '', ...(Array.isArray(rowContext.hints) ? rowContext.hints.map((hint) => String(hint ?? '').slice(0, 40)) : [])]
+      : []
+  return texts.some((text) => ACCESS_RIGHT_LIST.test(text) || /^\s*accessibility\s*$/i.test(text))
+}
 const MODAL_RISK_VERB = /^(?:delete|erase|remove|wipe|destroy|purge|reset|terminate|deactivate|close|cancel|transfer|give|grant|share|publish|send|pay|charge|buy|purchase|subscribe|install|uninstall|revoke|disable|disconnect|unlink|overwrite|replace|drop|empty|clear|format|forfeit|expose|make)$/
 const MODAL_IRREGULAR = { sent: 'send', lost: 'lose', kept: 'keep', shown: 'show', given: 'give', sold: 'sell', paid: 'pay', made: 'make', taken: 'take', spent: 'spend', withdrawn: 'withdraw', shut: 'shut' }
 function modalVerbForms(word, participle) {
@@ -1927,6 +1950,28 @@ function namesRuBackout(text) {
   }
   return ruBackoutRegex.test(normaliseName(text))
 }
+// CU-753 (High; sweep 6, follow-up to CU-493): approving a sign-in or a device-code grant hands the account to another device -
+// PERMISSION. Two shapes, read by sense: a sign-in approval ('Allow sign-in on a new device?', 'Approve this login request',
+// 'Someone is trying to sign in', 'Is this you signing in?'; r2 - cu-researcher's held-out: 'Sign-in requested', 'New login', 'Was this
+// you?') and a device link / code grant ('Enter the code shown on your TV',
+// 'Link your TV', 'Activate your device', 'Pair a new device'). The person's OWN sign-in ('Sign in', 'Sign in with Google',
+// 'Allow sign-in with passkeys' as a setting) is neither.
+const DEVICE_THING = String.raw`(?:tv|television|smart\s+tv|device|console|game\s+console|streaming\s+(?:device|stick|box)|set-?top\s+box|other\s+device|second\s+device|screen|watch|car)`
+// The screens a person signs in on for an account (pairing headphones or a keyboard is no account grant).
+const ACCOUNT_SCREEN = String.raw`(?:tv|television|smart\s+tv|console|game\s+console|streaming\s+(?:device|stick|box)|set-?top\s+box)`
+const SIGNIN_APPROVAL = new RegExp(String.raw`^\s*(?:allow|approve|authori[sz]e|accept|grant)\s+(?:this\s+|the\s+|a\s+|new\s+)?(?:sign-?in|log-?in|login)(?:\s+(?:request|attempt))?(?:\s+(?:on|from|for|to)\b.{0,60})?\s*[?.!]?\s*$|\b(?:new\s+)?(?:sign-?in|log-?in|login)\s+(?:request|attempt|approval)\b|\b(?:someone|a\s+(?:new\s+)?device|another\s+device|a\s+new\s+browser)\s+(?:is\s+)?(?:trying|wants|requested|asking)\s+to\s+(?:sign|log)\s+in\b|\bis\s+(?:this|it)\s+you\s+(?:signing|logging|trying\s+to\s+(?:sign|log))\s+in\b|\b(?:did\s+you\s+(?:just\s+)?(?:try|attempt)\s+to\s+(?:sign|log)\s+in)\b|\bapprove\s+(?:the\s+)?(?:sign-?in|login)\s+on\s+your\s+other\s+device\b|^\s*(?:new\s+(?:sign-?in|log-?in|login)(?:\s+(?:request|attempt|detected|alert))?|(?:sign-?in|log-?in|login)\s+(?:requested|request|attempt|detected|alert))(?:\s+(?:from|on|in|near)\b.{0,60})?\s*[?.!]?\s*$|\b(?:was|is)\s+(?:this|that|it)\s+(?:really\s+)?you\s*\?|\bbeing\s+used\s+to\s+(?:sign|log)\s+in(?:\s+to)?\b`, 'i')
+const DEVICE_CODE_GRANT = new RegExp(String.raw`\b(?:enter|type|input)\s+(?:the\s+|your\s+)?(?:\d+-(?:digit|character|letter)\s+)?(?:activation\s+|device\s+|pairing\s+|link\s+|tv\s+)?code\s+(?:that\s+(?:is\s+)?|which\s+is\s+)?(?:shown|displayed|appears|appearing|showing|you\s+see)\s+on\s+(?:your\s+|the\s+)?${DEVICE_THING}\b|\b(?:enter|type)\s+(?:the\s+)?code\s+from\s+(?:your\s+|the\s+)?${DEVICE_THING}\b|^\s*(?:link|connect|activate|pair|authori[sz]e|register|sign\s+in\s+(?:on|to))\s+(?:your\s+|a\s+|this\s+|the\s+|new\s+|a\s+new\s+)?${ACCOUNT_SCREEN}\s*[?.!]?\s*$|^\s*(?:link|activate|authori[sz]e|register)\s+(?:your\s+|a\s+|this\s+|the\s+|new\s+|a\s+new\s+)?(?:device|other\s+device|second\s+device)\s*[?.!]?\s*$`, 'i')
+// r2 (cu-coordinator 14:05Z, one rule): approving a PENDING sign-in or grant asks; acknowledging a FINISHED one does not - 'Sign-in
+// request blocked', 'Login attempt expired', 'Request denied', 'Sign-in successful' (cu-developer-two's cross-check rows).
+// r3 (cu-developer-two's r2 cross-check): a PAST approval is a finished request too - 'Sign-in approved', 'You approved the login
+// request from Safari on iPhone.' (approved / confirmed / allowed / accepted / granted / authorized / verified).
+const GRANT_FINISHED = /\b(?:blocked|expired|denied|declined|rejected|cancel+ed|timed\s+out|failed|successful|succeeded|completed|stopped|approved|confirmed|allowed|accepted|granted|authori[sz]ed|verified)\b/i
+function grantsDeviceAccess(text) {
+  const t = String(text ?? '').trim()
+  return t !== '' && t.length <= 160 && !GRANT_FINISHED.test(t) && (SIGNIN_APPROVAL.test(t) || DEVICE_CODE_GRANT.test(t))
+}
+// A generic control that finishes such a grant: Continue / Next / Submit / Allow / Approve / Yes, it's me / Activate / Link / Pair ...
+const DEVICE_GRANT_BUTTON = /^\s*(?:continue|next|submit|done|ok|okay|go|confirm|verify|yes|allow|approve|authori[sz]e|accept|activate|link|connect|pair|sign\s+in|log\s+in|(?:yes,?\s+)?(?:it'?s|it\s+is|that\s+(?:was|is))\s+me)\s*[.!>›→]?\s*$/i
 function typedConfirmButton(name) {
   const text = String(name ?? '').trim()
   return text !== '' && !TYPED_CONFIRM_BACKOUT.test(text) && !TYPED_CONFIRM_UTILITY.test(text) && !LOCALE_CONFIRM_BACKOUT.test(text) && !LOCALE_CONFIRM_UTILITY.test(text) && !namesRuBackout(text)
@@ -3716,6 +3761,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
           const turnsOn = state === false
           if (!known || (security && turnsOff) || (heat && turnsOn)) classes.push('physical')
         }
+        // CU-754: an access toggle - its list names a privacy right, or its own name makes something public - asks permission
+        // when it turns on; the direction is the native read's, and an unknown state asks both ways (named over-ask, as CU-418).
+        if (nativeToggleState(target) !== true && (PUBLIC_TOGGLE.test(name) || accessRowContext(target?.rowContext))) classes.push('permission')
       }
       // CU-146: 'Trash' or 'Bin' alone deletes on a control (a toolbar button, a menu item); a sidebar row of that name
       // only opens the folder.
@@ -4653,7 +4701,14 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const localeConfirm = LOCALE_GENERIC_CONFIRM.test(String(target?.name ?? name ?? '')) || LOCALE_GENERIC_CONFIRM.test(String(name ?? '')) || namesRuConfirm(String(name ?? ''))
       // CU-747: final-step controls and a bare verb that echoes the dialog title's verb read the dialog too (additions only).
       const finalStep = FINAL_STEP_CONFIRM.test(String(name ?? '')) || echoesDialogVerb(name, dialogName) || echoesDialogVerb(target?.name, dialogName)
-      if (context.confirmProbe !== true && presses && (dialogName !== '' || dialogDescription !== '') && (GENERIC_CONFIRM.test(String(name ?? '')) || localeConfirm || continueTo || finalStep)) {
+      // CU-757: 'Allow' / 'Grant' / 'Give access' (and localized) in a dialog whose title or a kept sentence states access asks
+      // permission and takes the dialog's other classes too; the same button in a dialog that states no access is unchanged.
+      const accessAllow = ACCESS_ALLOW.test(String(target?.name ?? '')) || ACCESS_ALLOW.test(String(name ?? ''))
+      const accessStated = accessAllow && [dialogName, ...dialogDescription.split(/(?<=[.!?。！？])\s*/u)]
+        .filter((sentence) => sentence !== '' && !/\b(?:if\s+you\s+(?:don'?t|do\s+not|choose\s+not\s+to|cancel|leave|close)|unless\s+you|otherwise)\b/i.test(sentence))
+        .some((sentence) => MODAL_ACCESS.test(sentence) || LOCALE_MODAL_ACCESS.test(sentence))
+      if (context.confirmProbe !== true && presses && accessStated && !classes.includes('permission')) classes.push('permission')
+      if (context.confirmProbe !== true && presses && (dialogName !== '' || dialogDescription !== '') && (GENERIC_CONFIRM.test(String(name ?? '')) || localeConfirm || continueTo || finalStep || accessStated)) {
         // cu-researcher 16:09Z: a title is a question more often than a row - 'Are you sure you want to <row>?', 'Really <row>?',
         // '<row>?' - so a title canonical step strips the question frame before the title is judged as a name.
         // #702 round 2 (cu-researcher 16:24Z): descriptions lead with 'This will / This action will / You are about to / Doing this will'.
@@ -4850,6 +4905,15 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const raised = String(name ?? '').trim()
       if (/^(?:remove|clear)\s+(?:the\s+)?(?:activation\s+lock|device\s+passcode)$/i.test(raised) && !classes.includes('credential') && classes.length > 0) classes.push('credential')
       if (/^deploy\s+(?:the\s+|a\s+|this\s+)?(?:configuration\s+|config\s+|mdm\s+|management\s+)?profiles?$/i.test(raised) && !classes.includes('permission') && classes.length > 0) classes.push('permission')
+    }
+    // CU-753: a sign-in approval or a device-code grant asks PERMISSION - by its own name ('Approve sign-in', 'Link TV'), or a
+    // generic finishing control whose dialog, zone or form words state the grant ('Continue' under 'Enter the code shown on your
+    // TV', 'Yes, it's me' in 'Is this you signing in?'). A late union: it only adds.
+    if (grammarEligible && context.confirmProbe !== true && !classes.includes('permission')) {
+      const own = grantsDeviceAccess(name)
+      const around = DEVICE_GRANT_BUTTON.test(String(name ?? '')) && [target?.dialogName, target?.dialogDescription, ...(Array.isArray(target?.zoneWords) ? target.zoneWords.slice(0, 3) : []), ...(Array.isArray(target?.formEntries) ? target.formEntries.slice(0, 4) : [])]
+        .some((text) => typeof text === 'string' && text.split(/(?<=[.!?])\s+/).some((sentence) => grantsDeviceAccess(sentence)))
+      if (own || around) classes.push('permission')
     }
     // CU-585 (cu-researcher's filing; GO from the policy.mjs owner cu-developer-one 13:48Z; built by cu-developer-two): a
     // otherwise-unclassed button that does not back out ('Confirm', 'Next step', 'Yes, do it' - not 'Cancel') in a danger-zone form
