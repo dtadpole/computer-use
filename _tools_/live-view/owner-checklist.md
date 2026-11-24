@@ -1,9 +1,9 @@
 ---
 title: Owner checklist - the owner session (step 4, G2, the Replace chain)
 created: 2026-11-05T17:25:00Z
-modified: 2026-11-23T19:07:00Z
+modified: 2026-11-24T08:08:00Z
 level: L1
-version: 0.4.4
+version: 0.4.5
 description: 'One page for the owner - what you do in the owner session, in order, and how long each step takes, at the Mac mini (the Confirm prompt) or over Screen Sharing; the per-part tables are in owner-checklist-parts.md. Rehearsed on helper 0.2.62 with labelled stand-ins (CU-341).'
 status: unverified
 grounded_in:
@@ -20,8 +20,7 @@ grounded_in:
 # Owner checklist - the owner session
 
 One sitting, three parts. cu-verifier runs each part as an announced scripted run in **CU Fixture** and calls every
-step. Nothing you own is touched and no setting changes. The helper is the CUHelper installed on the day (0.2.73 once its
-signed install lands, 24 Nov; 0.2.70 before that). Controls unchanged since 0.2.67: 0.2.68-0.2.73 change only reads (form
+step. Nothing you own is touched and no setting changes. The helper is the CUHelper installed on the day (0.2.73, signed install and readback 24 Nov 08:05Z). Controls unchanged since 0.2.67: 0.2.68-0.2.73 change only reads (form
 context, default buttons, dialog words, form entries) and add a floor that leaves remote-desktop and VM client apps out;
 the Confirm prompt, local-input and event code is untouched (checked in git from 0.2.67's commit to main), so Pause, Take
 over, Stop and the Confirm prompt behave as rehearsed. Sit at the Mac itself: the physical confirmation prompt can only
