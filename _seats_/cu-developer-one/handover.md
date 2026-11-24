@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-23T17:38:00Z
+modified: 2026-11-23T22:49:00Z
 level: L1
-version: 3.95.0
+version: 3.96.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -15,33 +15,32 @@ grounded_in:
 # [cu] Developer One - handover
 
 Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)); a session
-worktree plus a `--review` worktree; no desktop runs. State at 17:38Z, 23 November.
+worktree plus a `--review` worktree; no desktop runs. State at 22:49Z, 23 November.
 
 ## Landed today
 
-- CU-607 (#1364), CU-716 (#1370, #1372), CU-585 / CU-371 (#1368 r4, owner OK at 65344a799).
+- CU-607, CU-716, CU-717, CU-585 / CU-371 (#1368), CU-726 (#1385, closed live); class PRs #865, #876, #877.
 
 ## In progress
 
-- CU-726 (#1385, localized typed-confirm): r2 local 94dc4fbc2 (ja compound name); 12 verifiers left, then push after cu-researcher's fresh set.
-- CU-711 (destroy synonyms): waits for cu-researcher's held-out; stacks on #851.
+- CU-711 (#1399, 3 OKs at 3312a8afb): lands after #851 (fix abc53d4fa, green).
+- CU-712 (local 37e2c6b1a on #859): agent-core and verifiers left, then push and PR.
 
 ## Owed and open
 
-- #1373 (CU-717): in the gate; phase 2 needs a quiet slot.
-- Class PRs refreshed and pushed: #851, #856, #859, #865, #876 / #877 (hand-merged hunk). D-114 sets (/tmp/cu-dev1s-class6.sh) and re-OKs owed; CU-709 / CU-710 / CU-713 stack on them.
-- Policy-owner reviews: cu-developer-two's CU-709 / CU-710 when pushed.
-- CU-721: Last War bridge on the pinned checkout with the owner-idle wait off; the owner decides.
+- Policy-owner checks: #1390 (CU-710), #1396 (CU-713), CU-735 and CU-723 when pushed.
+- CU-726 mutant-pin test PR (local 049d946a0), then CU-731 (zh 'empty the trash').
+- Follow-up asked: destroy-object list ('bucket', 'customer records', 'team').
 
-## Shared desktop (D-115, D-116)
+## Shared desktop
 
-- I am the Last War liaison: relay their window grants and send them an end line for every window, only when nothing more runs.
-- Daily quiet window 08:00-08:25Z from 24 Nov; exclusive token lease; their Coordinator via session-relay.
+- Liaison to Last War (D-115 to D-117): an end line for every window, once. Their bridge runs at idle 0 until the CU-721 tree move (write-up sent 20:18Z, owner's answer pending).
+- Node-only P3 cells may run beside a cu-lastwar run (cu-coordinator 22:44Z); app verifiers keep the plain guard.
 
 ## Lessons
 
-- Read the newest ruling before acting; crossed messages need one FINAL line.
-- A localized rule reads by presence, not word order; JS \b is ASCII-only; judged names arrive homoglyph-folded.
+- A plain refresh still needs its tests: main can overtake a PR's own rows.
+- Send DONE only when every cell ran; check the STOP file before each cell.
 
 ## Tools
 
