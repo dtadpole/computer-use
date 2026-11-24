@@ -49,6 +49,13 @@ test('CU-751 r2: cu-researcher\'s two held-out misses ask', () => {
   assert.deepEqual(typedConfirmClasses(['Name'], ['Tell us the account name.', 'It appears on invoices.']), [], "cu-researcher's near row (invoices)")
 })
 
+test('CU-751 r3: \'Let us / Let me know the <x> name\' (the item the 09:31Z ruling named)', () => {
+  assert.equal(press('Confirm', ['Let us know the bucket name.', 'The bucket will be deleted.']), 'delete', "cu-researcher's CU-764 row")
+  assert.equal(press('Confirm', ['Let us know the repository name.', 'The repository will be deleted.']), 'delete', "cu-developer-one's row")
+  assert.deepEqual(typedConfirmClasses(['ID'], ['Let me know the project ID.', 'The project will be erased.']), ['delete'], "'let me know'")
+  assert.deepEqual(typedConfirmClasses(['Name'], ['Let us know the bucket name.', 'Pick a region next.']), [], 'no act')
+})
+
 test('CU-751: confirm verbs still ask (not rename verbs)', () => {
   assert.deepEqual(typedConfirmClasses(['Name'], ['Retype the project name.', 'The project will be deleted.']), ['delete'])
   assert.deepEqual(typedConfirmClasses(['Name'], ['Re-enter the project name.', 'The project will be deleted.']), ['delete'])
