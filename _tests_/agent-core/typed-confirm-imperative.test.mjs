@@ -41,6 +41,14 @@ test('CU-751 near collisions stay free', () => {
   assert.deepEqual(typedConfirmClasses(['Name'], ['Give the workspace a new name.', 'The old workspace will be deleted.']), [], 'a new name')
 })
 
+test('CU-751 r2: cu-researcher\'s two held-out misses ask', () => {
+  assert.equal(press('Confirm', ['Name the repository you are removing.', 'Its history will be destroyed.']), 'delete', "a sentence-initial 'Name the <x>'")
+  assert.equal(press('Continue', ['Tell us the account name to continue.', 'Your account will be permanently erased.']), 'delete', "verb + 'us'")
+  assert.deepEqual(typedConfirmClasses(['Name'], ['Give me the workspace slug.', 'The workspace will be deleted.']), ['delete'], "verb + 'me'")
+  assert.deepEqual(typedConfirmClasses(['Name'], ['Name the repository.', 'Shown in the sidebar.']), [], "cu-researcher's near row (no act)")
+  assert.deepEqual(typedConfirmClasses(['Name'], ['Tell us the account name.', 'It appears on invoices.']), [], "cu-researcher's near row (invoices)")
+})
+
 test('CU-751: confirm verbs still ask (not rename verbs)', () => {
   assert.deepEqual(typedConfirmClasses(['Name'], ['Retype the project name.', 'The project will be deleted.']), ['delete'])
   assert.deepEqual(typedConfirmClasses(['Name'], ['Re-enter the project name.', 'The project will be deleted.']), ['delete'])
