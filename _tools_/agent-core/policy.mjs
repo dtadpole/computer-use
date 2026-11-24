@@ -57,8 +57,10 @@ const LOCALE_PASSIVE_ACTS = [
   // CU-766 r2 + r3 (cu-coordinator 17:43Z / 17:44Z): a German QUESTION about a pending act on a deletion object, the participle
   // before 'werden' - 'Soll der Papierkorb jetzt wirklich geleert werden?', 'Soll diese Datei gelöscht werden?'. Never a statement
   // ('Der Filter kann später entfernt werden.'), never 'kann / darf ... werden', never a field, cache, filter or search box
-  // ('Soll das Suchfeld geleert werden?', 'Muss der Cache geleert werden?').
-  [/^\s*(?:soll(?:en)?|muss|müssen|möchten\s+sie|wollen\s+sie|möchtest\s+du|willst\s+du)(?!\p{L})[^.!?]{0,120}?(?<!\p{L})(?:der|die|das|den|diese[nrs]?|alle|ihr(?:en|e)?|dein(?:en|e)?|mein(?:en|e)?)\s+(?:\p{L}+\s+)?(?:papierkorb|papierkörbe|mülleimer|abfalleimer|postfach|posteingang|ordner|elemente?|dateien|datei|daten|konto|konten|nachrichten|nachricht|e-mails?|mails?|fotos?|bilder?|dokumente?|projekte?|kontakte?|einträge|eintrag)(?!\p{L})[^.!?]{0,60}?(?<!\p{L})(?:gelöscht|entfernt|geleert)\s+werden\s*\?\s*$/iu, 'löschen'],
+  // ('Soll das Suchfeld geleert werden?', 'Muss der Cache geleert werden?'). CU-777 r2: also 'Sind Sie sicher, dass der Papierkorb
+  // ausgeleert werden soll?' (the clause order), never 'kann / darf'. r3: the present passive question 'Wird der Papierkorb jetzt
+  // ausgeleert?' (cu-researcher's named r1 miss) - never the past 'Wurde ... ?'.
+  [/^\s*(?:(?:soll(?:en)?|muss|müssen|wird|werden|möchten\s+sie|wollen\s+sie|möchtest\s+du|willst\s+du)(?!\p{L})|(?:sind\s+sie|bist\s+du|seid\s+ihr)\s+sicher,?\s+dass(?!\p{L}))[^.!?]{0,120}?(?<!\p{L})(?:der|die|das|den|diese[nrs]?|alle|ihr(?:en|e)?|dein(?:en|e)?|mein(?:en|e)?|unser(?:en|e)?|eure?[nr]?|jede[nrs]?)\s+(?:\p{L}+\s+)?(?:papierkorb|papierkörbe|mülleimer|abfalleimer|postfach|posteingang|ordner|elemente?|dateien|datei|daten|konto|konten|nachrichten|nachricht|e-mails?|mails?|fotos?|bilder?|dokumente?|projekte?|kontakte?|einträge|eintrag)(?!\p{L})[^.!?]{0,60}?(?<!\p{L})(?:\p{L}{0,6}ge(?:löscht|leert|räumt)|entfernt|entleert)(?:\s+(?:werden(?:\s+(?:soll|sollen|muss|müssen))?|wird))?\s*\?\s*$/iu, 'löschen'],
   [/\b(?:seront|sera)\s+(?:\S+\s+){0,3}?(?:supprimée?s?|effacée?s?)\b/iu, 'supprimer'],
   // r2 (cu-developer-two's cross-check): 'se' reads only before a FUTURE form - 'Se ha eliminado el archivo.' is a notice.
   [/\bser[áa]n?\s+(?:\S+\s+){0,3}?(?:eliminad[oa]s?|borrad[oa]s?)\b|\bse\s+(?:\S+\s+){0,2}?(?:eliminar[áa]n?|borrar[áa]n?)\b/iu, 'eliminar'],
@@ -66,7 +68,17 @@ const LOCALE_PASSIVE_ACTS = [
   [/\b(?:serão|será)\s+(?:\S+\s+){0,3}?(?:excluíd[oa]s?|apagad[oa]s?|removid[oa]s?)\b/iu, 'excluir'],
   // r2 (cu-researcher's held-out 13:02Z): Dutch - 'Deze mailbox wordt permanent verwijderd.'
   [/(?<!\p{L})(?:wordt|worden|zal|zullen)(?!\p{L})[^.!?]{0,120}?(?<!\p{L})(?:definitief\s+|permanent\s+)?(?:verwijderd|gewist)(?!\p{L})/iu, 'verwijderen'],
-  [/(?<!\p{L})(?:будут|будет)\s+(?:\S+\s+){0,3}?(?:удален[ыао]?|стерт[ыао]?)(?!\p{L})/iu, 'удалить'],
+  // CU-771 (High; cu-researcher's r2 set for CU-748): Russian with ё and the other delete participles ('будет удалён', 'будут
+  // стёрты', 'будет очищена', 'будут уничтожены') and the reflexive future ('Файл удалится.', 'Сообщения удалятся навсегда.').
+  [/(?<!\p{L})(?:будут|будет)\s+(?:\S+\s+){0,3}?(?:удал[её]н[ыао]?|ст[её]рт[ыао]?|уничтожен[ыао]?)(?!\p{L})|(?<!\p{L})(?:удалится|удалятся|сотр[её]тся|сотрутся)(?!\p{L})/iu, 'удалить'],
+  // 'Cleared' reads delete only with a deletion object (the CU-766 r3 rule): 'Корзина будет очищена.' asks, 'Кэш будет очищен.' does not.
+  [/(?<!\p{L})(?:корзин[аы]|папк[аи]|данные|сообщения|файлы|письма|почтовый\s+ящик)(?!\p{L})\s+(?:\S+\s+){0,2}?(?:(?:будут|будет)\s+(?:\S+\s+){0,2}?очищен[ыао]?|очистится|очистятся)(?!\p{L})/iu, 'удалить'],
+  // CU-771: Turkish future passives - 'Bu dosya kalıcı olarak silinecek.', '... silinecektir', 'kaldırılacak', 'temizlenecek'. The
+  // negated future ('silinmeyecek') and the past ('silindi') are other words, so they never match.
+  [/(?<!\p{L})(?:silinecek|kaldırılacak|yok\s+edilecek)(?:tir|tır|ler|lar|lerdir|lardır)?(?!\p{L})/iu, 'delete'],
+  // Turkish 'temizlenecek' (will be cleaned) likewise only with a deletion object: 'Çöp kutusu temizlenecek.' asks, 'Önbellek
+  // temizlenecek.' (the cache) does not.
+  [/(?<!\p{L})(?:çöp\s+kutu\p{L}*|klasör\p{L}*|veriler\p{L}*|mesajlar\p{L}*|dosyalar\p{L}*|posta\s+kutu\p{L}*)\s+(?:\S+\s+){0,2}?temizlenecek(?:tir|tır)?(?!\p{L})/iu, 'delete'],
   [/(?:削除|消去)(?:され(?:ます|る)|します)/u, '削除'],
   [/(?:将|将会|會|会|將會|將)\s*(?:被)?\s*(?:永久)?(?:删除|刪除|清除)/u, '删除'],
   [/(?:삭제|지워)(?:됩니다|집니다|될\s*것입니다)/u, '삭제'],
@@ -114,8 +126,16 @@ function echoesDialogVerb(name, dialogName) {
   // CU-766 r2 (cu-researcher's r2 set): a German verb also echoes its past participle - 'Leeren' in '... geleert werden?',
   // 'Löschen' in '... gelöscht werden?' (ge + root + t / en, after a separable prefix too: 'ausgeleert').
   const root = verb.length >= 5 && /en$/u.test(verb) ? verb.slice(0, -2) : null
+  // CU-777 (cu-researcher's #1446 r2 set): a prefixed participle too - an inseparable prefix takes no 'ge' ('Entleeren' /
+  // 'entleert'), a separable one puts it after the prefix ('Ausleeren' / 'ausgeleert').
+  const participles = root === null ? [] : [`ge${root}t`, `ge${root}en`,
+    ...(/^(?:be|ent|er|ver|zer|emp|miss)/u.test(root) ? [`${root}t`] : []),
+    ...['aus', 'ab', 'an', 'auf', 'ein', 'weg', 'zu', 'los', 'leer', 'vor', 'nach', 'durch', 'um'].filter((p) => root.startsWith(p) && root.length > p.length + 2).map((p) => `${p}ge${root.slice(p.length)}t`)]
   return title.split(/[^\p{L}]+/u).some((word) => word === verb || (word.length >= verb.length && word.startsWith(stem))
-    || (root !== null && new RegExp(`(?:^|^\\p{L}{0,6})ge${root}(?:t|en)$`, 'u').test(word)))
+    || (root !== null && new RegExp(`(?:^|^\\p{L}{0,6})ge${root}(?:t|en)$`, 'u').test(word)) || participles.includes(word)
+    // r2 (cu-verifier's #1454 probe): a bare verb also echoes its participle with an inseparable prefix - 'Leeren' in '...
+    // entleert werden?' (ent + leer + t), as 'Löschen' / 'gelöscht'.
+    || (root !== null && root.length >= 3 && new RegExp(`^(?:be|ent|er|ver|zer|emp|miss)${root}t$`, 'u').test(word)))
 }
 // CU-746 (High; cu-researcher's sweep 5): a risk modal whose text is a statement ('Your account will be deleted'), a framed
 // description ('Doing so permanently erases the volume.', 'Once you confirm, the repository ... are gone for good.') or a noun title
@@ -157,6 +177,62 @@ const LOCALE_MODAL_ACCESS = /(?:zugriff\s+auf|auf\s+.{1,60}?\s+zugreifen|accéde
 const ACCESS_RIGHT_LIST = /\b(?:full\s+disk\s+access|screen\s+(?:(?:&|and)\s+system\s+audio\s+)?recording|input\s+monitoring|location\s+services|files\s+(?:&|and)\s+folders|developer\s+tools|app\s+management|local\s+network|remote\s+(?:login|management|desktop)|camera|microphone|contacts|calendars|reminders|photos|bluetooth|automation|speech\s+recognition|media\s+(?:&|and)\s+apple\s+music|homekit|motion\s+(?:&|and)\s+fitness|(?:allow|let)\s+(?:the\s+)?(?:apps?|applications?)\s+(?:below\s+|listed\s+)?to\s+(?:access|control|record|use|see|read|monitor|manage))\b/i
 // CU-754: a toggle whose own name makes a profile, account or other object public or visible to everyone.
 const PUBLIC_TOGGLE = /^\s*(?:make\s+(?:(?:my|this|the)\s+)?(?:profile|account|repo(?:sitory)?|page|calendar|listing|board|project|album|playlist|activity)\s+public|public(?:\s+(?:profile|account|repo(?:sitory)?|page|calendar|listing|board|project|album|playlist|activity|mode|link|access))?|(?:profile|account)\s+(?:is\s+)?(?:public|visible\s+to\s+(?:everyone|anyone))|visible\s+to\s+(?:everyone|anyone|the\s+public|all)|discoverable(?:\s+by\s+(?:everyone|anyone))?|show\s+(?:my\s+)?profile\s+(?:publicly|to\s+(?:everyone|anyone)))\s*$/i
+// CU-774 (P1, a held-out miss at CU-754's close): a toggle whose own name makes the profile findable or indexable - by search,
+// by search engines, or by people looking someone up - asks permission like a public one. Local search features ('Search
+// history', 'Safe search', 'Searchable PDFs', 'Spotlight indexing', 'Allow indexing') name no profile and stay free.
+// r2, the general shape (cu-developer-one, cu-coordinator 19:17Z): a toggle whose label makes the owner's profile, page or
+// posts findable, listed, discoverable or indexable by others - search engines, directories, recruiters, people outside,
+// signed-out visitors - asks permission unless it is already on. A listing in a directory others browse, and a page shown
+// to people who are not signed in, are the same grant.
+const DIRECTORY = String.raw`(?:(?:member|members'?|people|user|company|staff|employee|alumni|public|student|team|organi[sz]ation|org|global|community|online)\s+)?directory`
+const OUTSIDERS = String.raw`(?:(?:visitors|people|users|viewers|readers|anyone|everyone|guests)\s+(?:who\s+(?:are\s+not|aren't|are\s+n't)|not)\s+(?:signed|logged)\s+in|(?:visitors|people|users|viewers|readers|anyone|everyone)\s+without\s+(?:an?\s+)?account|(?:signed|logged)[-\s]out\s+(?:visitors|people|users|viewers|readers)|non[-\s]?members|anonymous\s+(?:visitors|users|viewers)|all\s+visitors|guests)`
+// r2 (cu-developer-one's shape): the owner's things, any party that finds or indexes them, and the engines by name.
+const OWNED = String.raw`(?:me|you|(?:my|your)\s+(?:profile|account|page|posts?|content|activity|listing))`
+const ENGINES = String.raw`(?:(?:web\s+)?search(?:\s+results|\s+engines?)?|google|bing|duckduckgo|yahoo)`
+// A subject on its own: the owner's things, or a bare profile / account / page / posts / listing (content and activity
+// need 'my' / 'your' - 'Content is searchable' can be a local search feature).
+const SUBJECT = String.raw`(?:(?:my|your)\s+(?:profile|account|page|posts?|content|activity|listing)|profile|account|page|posts|listing)`
+const FINDERS = String.raw`(?:(?:${ENGINES}|others|other\s+(?:people|users|members)|people|anyone|everyone|users|members|contacts|recruiters|employers|companies|strangers|the\s+public)(?:\s+(?:outside|beyond)\s+(?:(?:my|your|the|this)\s+)?(?:organi[sz]ation|company|team|network|workspace|school|contacts|connections)|\s+(?:who\s+(?:are\s+not|aren't)\s+(?:connected|friends)\s+(?:to|with)\s+(?:me|you)|(?:i|you)\s+(?:don't|do\s+not)\s+know))?)`
+const FINDABLE_TOGGLE = new RegExp('^\\s*(?:' + [
+  // 'Searchable', 'Searchable profile', 'Findable by everyone', 'Indexable page'
+  String.raw`(?:searchable|findable|indexable)(?:\s+(?:profile|account|page|listing)|\s+by\s+(?:everyone|anyone|the\s+public))?`,
+  // 'Make my profile searchable', 'Profile is findable'
+  String.raw`make\s+(?:(?:my|your|this|the)\s+)?(?:profile|account|page|listing)\s+(?:searchable|discoverable|findable|indexable)`,
+  String.raw`(?:(?:my|your)\s+)?(?:profile|account|page)\s+(?:is\s+)?(?:searchable|findable|indexable|discoverable)`,
+  // 'Show my profile in search results', 'Include me in search', 'Appear in search results', 'Show up in search engines'
+  String.raw`(?:show|include|list)\s+(?:(?:my|your)\s+)?(?:profile|account|page|me)\s+in\s+(?:search(?:\s+results)?|search\s+engines|(?:web\s+)?search\s+results|google)`,
+  String.raw`(?:appear|show\s+up|be\s+shown)\s+in\s+(?:search(?:\s+results)?|search\s+engines|(?:web\s+)?search\s+results)`,
+  String.raw`visible\s+in\s+search(?:\s+results|\s+engines)?`,
+  // 'Let people find me by my email address', 'Allow others to find you', 'Let anyone look up my profile', and (r2) any
+  // party - 'Let recruiters find my profile', 'Allow Google to index my posts' - finding or indexing the owner's things.
+  String.raw`(?:let|allow)\s+${FINDERS}\s+(?:to\s+)?(?:find|search\s+for|look\s+up|discover|index|crawl|list|link\s+to)\s+${OWNED}(?:\s+(?:by|using|with|via|through)\s+[a-z0-9' .-]{1,40})?`,
+  // r2: 'Show my profile to search engines', 'Expose my page to Google', 'Profile visible to search engines'
+  String.raw`(?:show|list|include|expose|open)\s+${OWNED}\s+(?:to|in|on)\s+${ENGINES}`,
+  String.raw`${SUBJECT}\s+(?:is\s+|are\s+)?(?:indexed|listed|visible|shown)\s+(?:in|to|by|on)\s+${ENGINES}`,
+  // r2: the passive form - 'Allow my profile to be found by people outside your organization', 'Let my posts be indexed'
+  String.raw`(?:let|allow)\s+${OWNED}\s+(?:to\s+)?be\s+(?:found|indexed|listed|discovered|searched|crawled|shown\s+in\s+search(?:\s+results)?)(?:\s+(?:by|in|on)\s+[a-z0-9' .-]{1,40})?`,
+  // r2: 'Make my posts discoverable', 'My posts are indexable', 'Discoverable profile'
+  String.raw`make\s+(?:(?:my|your|this|the)\s+)?(?:posts?|content|activity)\s+(?:searchable|discoverable|findable|indexable)`,
+  String.raw`(?:(?:my|your)\s+(?:posts?|content|activity|listing)|posts|listing)\s+(?:is\s+|are\s+)?(?:searchable|findable|indexable|discoverable)`,
+  String.raw`discoverable\s+(?:profile|account|page|listing)`,
+  // r2: the 'Discoverable / Findable by ...' heads with any party or key - 'Discoverable by email', 'Findable by phone number'
+  String.raw`(?:discoverable|findable|searchable|indexable)\s+(?:by|via|through|using)\s+(?:(?:my|your)\s+)?(?:${FINDERS}|e-?mail(?:\s+address)?|phone(?:\s+number)?|mobile(?:\s+number)?|user\s*name|name|number|contact\s+info(?:rmation)?)`,
+  // 'Allow search engines to index my profile', 'Let search engines link to your page', 'Search engine indexing'
+  String.raw`(?:let|allow)\s+search\s+engines\s+(?:to\s+)?(?:index|find|show|list|link\s+to|crawl)(?:\s+(?:(?:my|your|this|the)\s+)?(?:profile|account|page|site|posts?))?`,
+  String.raw`search\s+engine\s+(?:indexing|visibility)`,
+  String.raw`(?:indexed|listed|visible)\s+(?:in|to|by)\s+search\s+engines`,
+  // r2 (cu-researcher's held-out misses, generalized): a directory others browse - 'Appear in the member directory',
+  // 'List my profile in the company directory', 'Listed in the alumni directory', 'Member directory listing'.
+  String.raw`(?:appear|show\s+up|be\s+(?:shown|listed|included)|show|list|include)(?:\s+(?:me|(?:my|your)\s+(?:profile|account|page|name)))?\s+in\s+(?:the\s+|our\s+)?${DIRECTORY}`,
+  String.raw`(?:listed|visible|shown|included)\s+in\s+(?:the\s+|our\s+)?${DIRECTORY}`,
+  String.raw`(?:(?:public|member|members'?|people|user|company|staff|employee|alumni|community)\s+)?directory\s+listing`,
+  // r2: shown to people who are not signed in - 'Show my page to visitors who are not signed in', 'Visible to signed-out
+  // visitors', 'Let logged-out users see my profile', 'Allow non-members to view my page'.
+  String.raw`(?:show|display)\s+(?:(?:my|your)\s+)?(?:profile|account|page|posts?|activity|content)\s+to\s+${OUTSIDERS}`,
+  String.raw`(?:(?:my|your)\s+)?(?:profile|account|page)\s+(?:is\s+)?(?:visible|shown)\s+to\s+${OUTSIDERS}`,
+  String.raw`(?:visible|shown)\s+to\s+${OUTSIDERS}`,
+  String.raw`(?:let|allow)\s+${OUTSIDERS}\s+(?:to\s+)?(?:see|view|read|find)\s+(?:me|you|(?:my|your)\s+(?:profile|account|page|posts?|activity|content))`,
+].join('|') + ')\\s*$', 'i')
 /** CU-754: whether a toggle's row context (rowContext: a { list, hints } object or a plain string) names an access right. */
 export function accessRowContext(rowContext) {
   const texts = typeof rowContext === 'string'
@@ -211,7 +287,8 @@ export function modalStatementNames(text) {
 // pt nl ru ja zh ko) - a localized confirm modal's 'Ja' / 'Oui' / 'Aceptar' / 'はい' / '确定' / '확인' / 'Да' is judged by the modal's title
 // like English 'OK' / 'Yes'. Matched on the raw name (before the Cyrillic homoglyph fold), the whole name, an affirmative optionally
 // followed by a comma and one more confirm word ('Ja, fortfahren'). Additions only.
-const LOCALE_CONFIRM_WORD = String.raw`(?:ja|jawohl|ok|okay|bestätigen|bestaetigen|weiter|fortfahren|übernehmen|zustimmen|akzeptieren|einverstanden|verstanden|fertig|anwenden|oui|confirmer|continuer|valider|accepter|d['’]accord|appliquer|terminé|sí|si|aceptar|confirmar|continuar|de\s+acuerdo|vale|aplicar|listo|sì|conferma|confermare|continua|accetta|procedi|va\s+bene|applica|fatto|sim|aceitar|prosseguir|concluir|bevestigen|doorgaan|akkoord|accepteren|toepassen|verder|да|ок|подтвердить|продолжить|принять|согласен|согласна|применить|готово|хорошо|はい|確認|続行|同意する|同意|適用|完了|了解|是|是的|确定|確定|确认|继续|繼續|好|好的|应用|應用|完成|예|네|확인|계속|동의|적용|완료|続ける|続けて|次へ|進む|終了|suivant|terminer|siguiente|finalizar|terminar|avanti|fine|fertigstellen|abschließen|abschliessen|далее|завершить|下一步|继续操作|繼續操作|다음|마침)`
+// CU-771: Turkish confirm words too (Tamam, Evet, Devam (et), Onayla, Kabul et, Uygula, Bitti, Tamamla, İleri, Sonraki).
+const LOCALE_CONFIRM_WORD = String.raw`(?:ja|jawohl|ok|okay|bestätigen|bestaetigen|weiter|fortfahren|übernehmen|zustimmen|akzeptieren|einverstanden|verstanden|fertig|anwenden|oui|confirmer|continuer|valider|accepter|d['’]accord|appliquer|terminé|sí|si|aceptar|confirmar|continuar|de\s+acuerdo|vale|aplicar|listo|sì|conferma|confermare|continua|accetta|procedi|va\s+bene|applica|fatto|sim|aceitar|prosseguir|concluir|bevestigen|doorgaan|akkoord|accepteren|toepassen|verder|да|ок|подтвердить|продолжить|принять|согласен|согласна|применить|готово|хорошо|はい|確認|続行|同意する|同意|適用|完了|了解|是|是的|确定|確定|确认|继续|繼續|好|好的|应用|應用|完成|예|네|확인|계속|동의|적용|완료|続ける|続けて|次へ|進む|終了|suivant|terminer|siguiente|finalizar|terminar|avanti|fine|fertigstellen|abschließen|abschliessen|далее|завершить|下一步|继续操作|繼續操作|다음|마침|tamam|evet|devam|devam\s+et|onayla|kabul\s+et|uygula|bitti|tamamla|ileri|sonraki)`
 const LOCALE_GENERIC_CONFIRM = new RegExp(String.raw`^\s*${LOCALE_CONFIRM_WORD}(?:\s*[,、，]\s*${LOCALE_CONFIRM_WORD})?\s*[.!。！]?\s*$`, 'iu')
 // CU-729: the question frames of a localized confirm title ('Möchten Sie diese Notiz wirklich löschen?', 'Voulez-vous vraiment ...',
 // '¿Desea eliminar ...?', '本当に削除しますか？', '确定要删除吗？', '정말 삭제하시겠습니까?') are removed into one more title text to judge.
@@ -220,8 +297,9 @@ const LOCALE_GENERIC_CONFIRM = new RegExp(String.raw`^\s*${LOCALE_CONFIRM_WORD}(
 // je ...?', 'Wil je ...?', 'Tem certeza que deseja ...?', 'Você quer mesmo ...?', 'Ты уверен, что хочешь ...?', 'Czy na pewno chcesz
 // ...?', '...してもよろしいですか？', '你确定要...吗？'. The longer frames come first so 'quieres' is never cut to 'quiere' + 's'.
 // r2 (cu-researcher's r2 set): 'Faut-il (vraiment) ...?', 'Doit-on ...?', 'Soll ich / Sollen wir ...?', and a 'now' word ('maintenant',
-// 'jetzt', 'ahora' ...) inside the question.
-const LOCALE_QUESTION_FRAME = /(?:(?:¿\s*)?(?:est[áa]s?\s+)?segur[oa]s?\s+(?:de\s+)?que\s+(?:quieres|deseas|desea|quiere)|de\s+verdad\s+(?:quieres|deseas|desea|quiere)|quieres|deseas|es-tu\s+s[ûu]re?\s+de\s+vouloir|veux-tu|faut-il|faudrait-il|doit-on|dois-je|devons-nous|soll(?:en)?\s+(?:ich|wir|man)|(?<!\p{L})(?:maintenant|jetzt|ahora|adesso|agora|сейчас|теперь)(?!\p{L})|tu\s+veux\s+vraiment|bist\s+du\s+sicher,?\s+dass\s+du|weet\s+je\s+zeker\s+dat\s+je|wil\s+je|wilt\s+je|è\s+sicuro\s+di\s+voler|sicur[oa]\s+di\s+voler|vuole|tem\s+certeza\s+(?:de\s+)?que\s+(?:deseja|quer)|tens\s+a\s+certeza\s+(?:de\s+)?que\s+(?:pretendes|queres|desejas)|(?:você\s+)?quer\s+mesmo|ты\s+уверен[аы]?,?\s+что\s+хочешь|хотите|хочешь|czy\s+na\s+pewno\s+chcesz|czy\s+chcesz|てもよろしいですか|よろしいですか|你确定要|您确定要|möchten\s+sie|wollen\s+sie|möchtest\s+du|willst\s+du|sind\s+sie\s+sicher,?\s+dass\s+sie|wirklich|voulez-vous|souhaitez-vous|êtes-vous\s+sûre?\s+de\s+vouloir|vraiment|¿|está\s+seguro\s+de\s+que\s+desea|desea|quiere|realmente|sei\s+sicuro\s+di\s+voler|vuoi|davvero|tem\s+certeza\s+de\s+que\s+deseja|deseja|wilt\s+u|weet\s+u\s+zeker\s+dat\s+u|вы\s+действительно\s+хотите|вы\s+уверены,?\s+что\s+хотите|действительно|本当に|しますか|ますか|确定要|確定要|是否|确认要|吗|嗎|정말|하시겠습니까|하시겠어요)/giu
+// 'jetzt', 'ahora' ...) inside the question. CU-777: impersonal and modal frames - 'Si deve (proprio) ...?', 'Bisogna ...?', '¿Hay que
+// ... ya?', 'Il faut ...', 'É preciso ...?', 'Muss man ...?', 'Moet ik ...?', 'Нужно ли ...?'.
+const LOCALE_QUESTION_FRAME = /(?:(?:¿\s*)?(?:est[áa]s?\s+)?segur[oa]s?\s+(?:de\s+)?que\s+(?:quieres|deseas|desea|quiere)|de\s+verdad\s+(?:quieres|deseas|desea|quiere)|quieres|deseas|es-tu\s+s[ûu]re?\s+de\s+vouloir|veux-tu|faut-il|faudrait-il|doit-on|dois-je|devons-nous|soll(?:en)?\s+(?:ich|wir|man)|il\s+faut|est-il\s+(?:\p{L}+\s+)?n[ée]cessaire\s+de|est-ce\s+(?:qu'il\s+est\s+)?(?:\p{L}+\s+)?n[ée]cessaire\s+de|il\s+est\s+(?:\p{L}+\s+)?n[ée]cessaire\s+de|si\s+deve|si\s+devono|bisogna|occorre|è\s+(?:\p{L}+\s+)?necessario|(?:¿\s*)?es\s+(?:\p{L}+\s+)?(?:necesario|preciso)|hace\s+(?:\p{L}+\s+)?falta|é\s+(?:\p{L}+\s+)?necess[áa]rio|hay\s+que|se\s+debe|se\s+deben|tengo\s+que|tenemos\s+que|é\s+preciso|deve-se|tem\s+(?:de|que)|muss\s+(?:ich|man)|müssen\s+wir|moet\s+ik|moeten\s+we|нужно\s+ли|нужно|надо|следует\s+ли|proprio|(?<!\p{L})(?:maintenant|jetzt|ahora|adesso|agora|сейчас|теперь|ya|ora|já|nu|déjà)(?!\p{L})|tu\s+veux\s+vraiment|bist\s+du\s+sicher,?\s+dass\s+du|weet\s+je\s+zeker\s+dat\s+je|wil\s+je|wilt\s+je|è\s+sicuro\s+di\s+voler|sicur[oa]\s+di\s+voler|vuole|tem\s+certeza\s+(?:de\s+)?que\s+(?:deseja|quer)|tens\s+a\s+certeza\s+(?:de\s+)?que\s+(?:pretendes|queres|desejas)|(?:você\s+)?quer\s+mesmo|ты\s+уверен[аы]?,?\s+что\s+хочешь|хотите|хочешь|czy\s+na\s+pewno\s+chcesz|czy\s+chcesz|てもよろしいですか|よろしいですか|你确定要|您确定要|möchten\s+sie|wollen\s+sie|möchtest\s+du|willst\s+du|sind\s+sie\s+sicher,?\s+dass\s+sie|wirklich|voulez-vous|souhaitez-vous|êtes-vous\s+sûre?\s+de\s+vouloir|vraiment|¿|está\s+seguro\s+de\s+que\s+desea|desea|quiere|realmente|sei\s+sicuro\s+di\s+voler|vuoi|davvero|tem\s+certeza\s+de\s+que\s+deseja|deseja|wilt\s+u|weet\s+u\s+zeker\s+dat\s+u|вы\s+действительно\s+хотите|вы\s+уверены,?\s+что\s+хотите|действительно|本当に|しますか|ますか|确定要|確定要|是否|确认要|吗|嗎|정말|하시겠습니까|하시겠어요)/giu
 const GENERIC_SUBMIT = /^\s*(?:submit|send|send\s+(?:message|reply|email|comment)|reply|post|post\s+(?:comment|reply)|comment|save|save\s+changes|apply|search|go|ok|done|continue|next|report\s+spam|sign\s+up|register|create\s+account)\s*!?\s*$/i
 
 /** Word lists matched on a target's accessible name, case-insensitively, at word boundaries; they err toward confirm. */
@@ -3792,7 +3870,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         }
         // CU-754: an access toggle - its list names a privacy right, or its own name makes something public - asks permission
         // when it turns on; the direction is the native read's, and an unknown state asks both ways (named over-ask, as CU-418).
-        if (nativeToggleState(target) !== true && (PUBLIC_TOGGLE.test(name) || accessRowContext(target?.rowContext))) classes.push('permission')
+        // CU-774: a toggle that makes the profile findable or indexable (FINDABLE_TOGGLE) is the same grant to everyone.
+        if (nativeToggleState(target) !== true && (PUBLIC_TOGGLE.test(name) || FINDABLE_TOGGLE.test(name) || accessRowContext(target?.rowContext))) classes.push('permission')
       }
       // CU-146: 'Trash' or 'Bin' alone deletes on a control (a toolbar button, a menu item); a sidebar row of that name
       // only opens the folder.
@@ -4750,7 +4829,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         const keptDescription = kept.join(' ')
         const texts = [...new Set([dialogName, titleRow(dialogName), firstSentence, titleRow(firstSentence), `${titleRow(dialogName)} ${keptDescription}`.trim()].filter((t) => t !== ''))]
         // CU-729: the localized title with its question frame removed is one more text (additions only).
-        const unframed = (text) => text.replace(LOCALE_QUESTION_FRAME, ' ').replace(/[?？!！.。:：\s]+$/u, '').replace(/\s+/g, ' ').trim()
+        // CU-777 r3 (cu-developer-two's #1454 r2 find): strip the frames to a fixed point - removing one frame word ('vraiment') can
+        // close up another frame around it ('Est-il ... nécessaire de'); three passes at most.
+        const unframed = (text) => { let t = String(text ?? ''); for (let i = 0; i < 3; i += 1) { const next = t.replace(LOCALE_QUESTION_FRAME, ' ').replace(/\s+/g, ' '); if (next === t) break; t = next } return t.replace(/[?？!！.。:：\s]+$/u, '').replace(/\s+/g, ' ').trim() }
         for (const extra of [unframed(dialogName), unframed(firstSentence)]) if (extra !== '' && !texts.includes(extra)) texts.push(extra)
         // CU-748: a localized passive-future statement in the title or a kept sentence adds its act's verb as one more text.
         for (const sentence of [dialogName, ...kept]) { const verb = localePassiveAct(sentence); if (verb !== null && !texts.includes(verb)) texts.push(verb) }
