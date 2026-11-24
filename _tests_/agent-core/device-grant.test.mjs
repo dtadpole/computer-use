@@ -76,6 +76,7 @@ test('CU-753 r2: one rule - approving a pending sign-in asks, acknowledging a fi
     ['Sign-in request blocked', 'We blocked a sign-in request from an unknown device.'],
     ['Login attempt expired', 'The sign-in request expired before it was approved.'],
     ['Request denied', 'You denied the sign-in request from Chrome on Windows.'],
+    ['Sign-in approved', 'You approved the login request from Safari on iPhone.'],
   ]) {
     assert.deepEqual(classes(inDialog('OK', title, description)), [], `web ${title}`)
     assert.deepEqual(classes(inDesktopDialog('OK', title, description)), [], `desktop ${title}`)

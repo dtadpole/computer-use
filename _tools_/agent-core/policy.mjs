@@ -1903,7 +1903,9 @@ const SIGNIN_APPROVAL = new RegExp(String.raw`^\s*(?:allow|approve|authori[sz]e|
 const DEVICE_CODE_GRANT = new RegExp(String.raw`\b(?:enter|type|input)\s+(?:the\s+|your\s+)?(?:\d+-(?:digit|character|letter)\s+)?(?:activation\s+|device\s+|pairing\s+|link\s+|tv\s+)?code\s+(?:that\s+(?:is\s+)?|which\s+is\s+)?(?:shown|displayed|appears|appearing|showing|you\s+see)\s+on\s+(?:your\s+|the\s+)?${DEVICE_THING}\b|\b(?:enter|type)\s+(?:the\s+)?code\s+from\s+(?:your\s+|the\s+)?${DEVICE_THING}\b|^\s*(?:link|connect|activate|pair|authori[sz]e|register|sign\s+in\s+(?:on|to))\s+(?:your\s+|a\s+|this\s+|the\s+|new\s+|a\s+new\s+)?${ACCOUNT_SCREEN}\s*[?.!]?\s*$|^\s*(?:link|activate|authori[sz]e|register)\s+(?:your\s+|a\s+|this\s+|the\s+|new\s+|a\s+new\s+)?(?:device|other\s+device|second\s+device)\s*[?.!]?\s*$`, 'i')
 // r2 (cu-coordinator 14:05Z, one rule): approving a PENDING sign-in or grant asks; acknowledging a FINISHED one does not - 'Sign-in
 // request blocked', 'Login attempt expired', 'Request denied', 'Sign-in successful' (cu-developer-two's cross-check rows).
-const GRANT_FINISHED = /\b(?:blocked|expired|denied|declined|rejected|cancel+ed|timed\s+out|failed|successful|succeeded|completed|stopped|was\s+(?:approved|allowed|accepted))\b/i
+// r3 (cu-developer-two's r2 cross-check): a PAST approval is a finished request too - 'Sign-in approved', 'You approved the login
+// request from Safari on iPhone.' (approved / confirmed / allowed / accepted / granted / authorized / verified).
+const GRANT_FINISHED = /\b(?:blocked|expired|denied|declined|rejected|cancel+ed|timed\s+out|failed|successful|succeeded|completed|stopped|approved|confirmed|allowed|accepted|granted|authori[sz]ed|verified)\b/i
 function grantsDeviceAccess(text) {
   const t = String(text ?? '').trim()
   return t !== '' && t.length <= 160 && !GRANT_FINISHED.test(t) && (SIGNIN_APPROVAL.test(t) || DEVICE_CODE_GRANT.test(t))
