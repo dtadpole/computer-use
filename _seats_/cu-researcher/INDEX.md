@@ -31,6 +31,7 @@ its direction changes when the coordinator assigns a new one, and the write scop
 | [red-team-qd12-qd13](red-team-qd12-qd13.md) | red team of Q-D12 drags and Q-D13 file panels: adopted points, live findings on 0.2.19 (CU-44, CU-45) |
 | [red-team-consent-tables](red-team-consent-tables.md) | red team of the D-059 route and D-061 class tables (M8-M9): gaps filed, fixes re-tested, methods |
 
+| [step4-readiness.md](step4-readiness.md) | the owner session (step 4) walked on main and helper 0.2.73 - rows, evidence, time, gaps (23 Nov) |
 ## Read next
 
 [`../INDEX.md`](../INDEX.md) for the other seats; [working model](../../_context_/team-operations/working-model.md).

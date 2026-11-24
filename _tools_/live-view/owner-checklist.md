@@ -1,9 +1,9 @@
 ---
 title: Owner checklist - the owner session (step 4, G2, the Replace chain)
 created: 2026-11-05T17:25:00Z
-modified: 2026-11-10T06:26:07Z
+modified: 2026-11-23T19:07:00Z
 level: L1
-version: 0.4.3
+version: 0.4.4
 description: 'One page for the owner - what you do in the owner session, in order, and how long each step takes, at the Mac mini (the Confirm prompt) or over Screen Sharing; the per-part tables are in owner-checklist-parts.md. Rehearsed on helper 0.2.62 with labelled stand-ins (CU-341).'
 status: unverified
 grounded_in:
@@ -14,12 +14,19 @@ grounded_in:
   - source: _tools_/live-view/ui-logic.mjs (the texts quoted in owner-checklist-parts.md)
   - source: _verifiers_/desktop-human-control/owner-step4.mjs (the step 4 run)
   - source: Linear CU-11, CU-119, CU-135, CU-203 and CU-341 (rehearsal R1, R1b and R1c on helper 0.2.62, 9 Nov; 0.2.67 installed 10 Nov 06:18Z)
+  - source: Linear CU-728 (step-4 readiness walk, 23 Nov; helper Sources diff 0.2.67..main touches only Accessibility, Policy, Dispatcher and SystemCapabilities)
 ---
 
 # Owner checklist - the owner session
 
 One sitting, three parts. cu-verifier runs each part as an announced scripted run in **CU Fixture** and calls every
-step. Nothing you own is touched, no setting changes, and the helper is CUHelper 0.2.67 (installed 10 Nov 06:18Z). The
+step. Nothing you own is touched and no setting changes. The helper is the CUHelper installed on the day (0.2.73 once its
+signed install lands, 24 Nov; 0.2.70 before that). Controls unchanged since 0.2.67: 0.2.68-0.2.73 change only reads (form
+context, default buttons, dialog words, form entries) and add a floor that leaves remote-desktop and VM client apps out;
+the Confirm prompt, local-input and event code is untouched (checked in git from 0.2.67's commit to main), so Pause, Take
+over, Stop and the Confirm prompt behave as rehearsed. Sit at the Mac itself: the physical confirmation prompt can only
+be accepted in person, and a Screen Sharing sitting leaves it open. The Last War bridge stays idle for the sitting - its
+input pauses runs and resets the idle clock. The
 rehearsal ran on 0.2.62; 0.2.63-0.2.67 add only reads (placeholders, nearby labels, pop-up items, a file on the
 clipboard, an open menu, Finder's Quick Actions, a row's file, Finder's drop destinations, the Apple-menu mark); none
 changes Pause, Take over, Stop or the Confirm prompt. What each press shows:

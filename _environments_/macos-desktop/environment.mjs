@@ -652,9 +652,13 @@ function defaultButtonOf(value) {
   // what the sheet asks, like a click on it (D-106).
   const dialogName = dialogTextOf(value.dialogName)
   const dialogDescription = dialogTextOf(value.dialogDescription)
+  // CU-588 (helper 0.2.72): the default button's form entries too, so Return on a typed-confirm form's 'Confirm' is
+  // judged like a click on it.
+  const formEntries = formEntriesOf(value.formEntries)
   return {
     role, name: text(value.title), panel: panelOf(value.panel), ...(form !== null ? { formContext: form } : {}),
     ...(dialogName !== null ? { dialogName } : {}), ...(dialogDescription !== null ? { dialogDescription } : {}),
+    ...(formEntries !== null ? { formEntries } : {}),
   }
 }
 
@@ -900,6 +904,20 @@ export function dialogTextOf(value) {
   if (typeof value !== 'string') return null
   const text = value.replace(/[\u0000-\u001F\u007F]/gu, ' ').replace(/\s+/gu, ' ').trim()
   return text === '' ? null : text.slice(0, 300)
+}
+
+/**
+ * CU-588 (helper 0.2.72): the words a button's sheet or window shows beside its text entries (FormEntries: labels,
+ * placeholders and help, never a value), re-validated at the boundary as the web route's formEntriesOf - up to 3 texts
+ * of 1-80 characters after whitespace is collapsed and control characters dropped; else null. Agent core reads them
+ * beside a generic submit (CU-585's late union).
+ */
+export function formEntriesOf(value) {
+  if (!Array.isArray(value)) return null
+  const texts = value.filter((text) => typeof text === 'string')
+    .map((text) => text.replace(/[\u0000-\u001F\u007F]/gu, ' ').replace(/\s+/gu, ' ').trim())
+    .filter((text) => text !== '' && text.length <= 80).slice(0, 3)
+  return texts.length > 0 ? texts : null
 }
 
 function keyEquivalentOf(value) {
@@ -2112,6 +2130,9 @@ class DesktopEnvironment {
       // read; outside the fingerprint, and never in run records.
       ...(dialogTextOf(element.dialogName) !== null ? { dialogName: dialogTextOf(element.dialogName) } : {}),
       ...(dialogTextOf(element.dialogDescription) !== null ? { dialogDescription: dialogTextOf(element.dialogDescription) } : {}),
+      // CU-588 (helper 0.2.72): a button's form entries (formEntriesOf) - its sheet's or window's entry labels,
+      // placeholders and help, never a value; CU-585's late union reads them. Outside the fingerprint, never in run records.
+      ...(formEntriesOf(element.formEntries) !== null ? { formEntries: formEntriesOf(element.formEntries) } : {}),
       menuPath: menuPathOf(element.menuPath),
       // CU-187: the label that captions a non-entry element (AXTitleUIElement's title, else its row's or cell's sibling
       // title, as the helper reads it) - never its value or its own title. A string of at most 80 characters, null when

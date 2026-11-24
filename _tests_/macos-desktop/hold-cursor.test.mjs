@@ -55,16 +55,18 @@ test('a drag point\'s holdMs is a dwell with the button down - one hold step at 
 test('a hold longer than the link\'s request timeout does not end the link: the request\'s deadline grows by its holds', async () => {
   let child = null
   const connect = async () => {
-    const started = await stdioLink(world(), { requestTimeoutMs: 300 })
+    // CU-639: 1000 ms, not 300 - under a loaded gate the run's other requests (hello, launch, capture) outran 300 ms and
+    // ended the link before the hold; the hold below stays longer than this timeout, which is what the test is about.
+    const started = await stdioLink(world(), { requestTimeoutMs: 1000 })
     child = started.child
     return started.link
   }
   const env = await launchApproved(connect, { apps: [FIXTURE], seat: 'cu-developer-two', runLock: locks.next() })
   try {
     const started = Date.now()
-    await env.perform({ type: 'drag', path: [{ x: 10, y: 10, holdMs: 600 }, { x: 40, y: 10 }] })
-    assert.ok(Date.now() - started >= 600, 'the fake held for the dwell')
-    assert.equal(env.link.lost, false, 'a 600 ms hold under a 300 ms request timeout ended nothing')
+    await env.perform({ type: 'drag', path: [{ x: 10, y: 10, holdMs: 1500 }, { x: 40, y: 10 }] })
+    assert.ok(Date.now() - started >= 1500, 'the fake held for the dwell')
+    assert.equal(env.link.lost, false, 'a 1500 ms hold under a 1000 ms request timeout ended nothing')
   } finally {
     await env.close()
     await stopFake(child)
