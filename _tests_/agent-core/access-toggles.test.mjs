@@ -151,6 +151,36 @@ test('CU-779: the other side - already on, no audience named, the owner\'s own c
   assert.equal(axcb('Show my contact card photo', false), 'allow')
 })
 
+test('CU-779 r2: widening who sees the owner\'s things - accounts, non-members, the whole company, featured placement - asks', () => {
+  const widened = [
+    // the audiences cu-researcher named, in the shapes the rule reads
+    'Visible to everyone with an account', 'Show my profile to everyone with an account', 'Let non-members view my posts',
+    'Non-members can see my profile', 'Show my profile to the whole company', 'Open my calendar to the entire organization',
+    'Everyone in the company can view my calendar', 'Visible to all registered users', 'Shown to non-members',
+    // featured or promoted placement on a public page, with or without the owner named
+    'Feature on the home page', 'Feature my portfolio on the home page', 'Promote my posts on the front page',
+    'Spotlight me in the featured section',
+    // cu-developer-one's rows: any owned thing in a public place, and the exposure rows he probed
+    'List my app in the marketplace', 'Publish my theme to the app store', 'Sell my template in the marketplace',
+    'Show my contact card to strangers', 'Open my projects to external users', 'Feature my photos on the Explore page',
+  ]
+  for (const name of widened) {
+    assert.match(webcb(name, false), /permission/, name)
+    assert.match(space(name, false), /permission/, `Space: ${name}`)
+  }
+  assert.match(axcb('Visible to everyone with an account', false), /permission/)
+})
+
+test('CU-779 r2: the other side - narrowing, the owner\'s own circle and own pages stay free', () => {
+  assert.equal(webcb('Visible to everyone with an account', true), 'allow') // already on: the press narrows it
+  assert.equal(webcb('List my app in the marketplace', true), 'allow')
+  for (const name of ['Visible to me only', 'Visible to my team only', 'Visible to signed-in members only', 'Marketplace notifications',
+    'Explore page recommendations', 'Show photos from friends', 'Show public holidays', 'Open links in a new tab', 'Show guests in calendar',
+    'Show my photos on my home page', 'Feature', 'Home page']) {
+    assert.equal(webcb(name, false), 'allow', name)
+  }
+})
+
 test('CU-754: accessRowContext reads both shapes and nothing else', () => {
   assert.equal(accessRowContext('Full Disk Access'), true)
   assert.equal(accessRowContext({ list: 'Accessibility', hints: [] }), true)

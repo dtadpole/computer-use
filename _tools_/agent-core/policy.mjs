@@ -225,14 +225,18 @@ const FINDABLE_TOGGLE = new RegExp('^\\s*(?:' + [
 ].join('|') + ')\\s*$', 'i')
 // CU-779 (P1, the follow-up to CU-774): a toggle whose label exposes the owner, or the owner's profile or work (a portfolio,
 // a shop, a contact card, a listing ...), to a wider audience - guests, strangers, people outside the team or organization,
-// signed-out visitors, the public, a marketplace or other public place - asks permission unless it is already on; the
+// signed-out visitors, everyone with an account, the whole company, the public, a marketplace, a featured place on a
+// public page - asks permission unless it is already on (r2: any widening of who sees the owner's things); the
 // same grant as CU-754's public toggle. Showing a thing without naming an audience ('Show my contact card photo'), and
 // audiences inside the owner's circle (team, contacts, members), stay free.
-const OWN_WORK = String.raw`(?:me|you|(?:my|your)\s+(?:profile|account|page|posts?|content|activity|listings?|portfolio|work|projects?|shop|store|contact\s+(?:card|details|info(?:rmation)?)|card|r[eé]sum[eé]|cv|bio|gallery|photos?|videos?|art(?:work)?|designs?|availability|status|name|e-?mail(?:\s+address)?|phone(?:\s+number)?|details))`
-const WIDER = String.raw`(?:${OUTSIDERS}|(?:site\s+|website\s+|page\s+)?visitors|strangers|anyone|everyone|the\s+public|(?:all|other)\s+users|external\s+(?:users|people|guests|collaborators|contacts)|(?:people|users|anyone|everyone)\s+(?:outside|beyond)\s+(?:(?:my|your|the|this|our)\s+)?(?:team|organi[sz]ation|org|company|network|workspace|school|family|circle|contacts|connections)|(?:people|users)\s+(?:i|you)\s+(?:don't|do\s+not)\s+know|(?:people|users)\s+not\s+in\s+(?:my|your)\s+(?:contacts|network|team|organi[sz]ation)|(?:anyone|everyone)\s+(?:on|across)\s+(?:the\s+)?(?:internet|web))`
+const OWN_WORK = String.raw`(?:me|you|(?:my|your)\s+(?:profile|account|page|posts?|content|activity|listings?|portfolio|work|projects?|shop|store|contact\s+(?:card|details|info(?:rmation)?)|card|r[eé]sum[eé]|cv|bio|gallery|photos?|videos?|art(?:work)?|designs?|availability|status|name|e-?mail(?:\s+address)?|phone(?:\s+number)?|details|calendar|schedule|reading\s+list|playlists?|boards?|collections?|reviews|likes|followers|friends(?:\s+list)?|connections))`
+// r2 (cu-developer-one): in a public place the destination carries the risk, so any owned thing counts - 'List my app in
+// the marketplace', 'Publish my theme to the app store'.
+const OWN_ANY = String.raw`(?:me|you|(?:my|your)\s+(?:[a-z][\w'-]*\s+){0,2}[a-z][\w'-]*)`
+const WIDER = String.raw`(?:${OUTSIDERS}|(?:everyone|anyone|people|users|members)\s+with\s+(?:an?\s+)?(?:[a-z]+\s+)?(?:account|login|profile)|(?:all\s+)?(?:registered|signed[-\s]in|logged[-\s]in)\s+(?:users|members|people)|all\s+(?:members|employees|staff|colleagues|students)|(?:the\s+)?(?:whole|entire)\s+(?:company|organi[sz]ation|org|school|workspace|network|community|internet|web|world)|(?:everyone|anyone|people)\s+(?:in|at|across)\s+(?:the|my|your|our|this)\s+(?:company|organi[sz]ation|org|school|workspace|network|community)|(?:site\s+|website\s+|page\s+)?visitors|strangers|anyone|everyone|the\s+public|(?:all|other)\s+users|external\s+(?:users|people|guests|collaborators|contacts)|(?:people|users|anyone|everyone)\s+(?:outside|beyond)\s+(?:(?:my|your|the|this|our)\s+)?(?:team|organi[sz]ation|org|company|network|workspace|school|family|circle|contacts|connections)|(?:people|users)\s+(?:i|you)\s+(?:don't|do\s+not)\s+know|(?:people|users)\s+not\s+in\s+(?:my|your)\s+(?:contacts|network|team|organi[sz]ation)|(?:anyone|everyone)\s+(?:on|across)\s+(?:the\s+)?(?:internet|web))`
 // A place others browse: a marketplace or app store, a public or community gallery, an explore / discover page. A bare
 // 'gallery' or 'store' can be the owner's own view ('Show my photos in the gallery') and stays out.
-const PUBLIC_PLACE = String.raw`(?:the\s+|our\s+)?(?:marketplace|market|app\s+store|public\s+(?:store|gallery|showcase|feed|catalog(?:ue)?)|community(?:\s+(?:page|feed|gallery|showcase))?|explore(?:\s+(?:page|tab|feed))?|discover(?:y)?(?:\s+(?:page|tab|feed))?|leaderboard)`
+const PUBLIC_PLACE = String.raw`(?:the\s+|our\s+)?(?:(?:site'?s?\s+|public\s+)?(?:home\s*page|front\s+page|landing\s+page|main\s+page|start\s+page)|featured\s+(?:section|list|page|row)|marketplace|market|app\s+store|public\s+(?:store|gallery|showcase|feed|catalog(?:ue)?)|community(?:\s+(?:page|feed|gallery|showcase))?|explore(?:\s+(?:page|tab|feed))?|discover(?:y)?(?:\s+(?:page|tab|feed))?|leaderboard)`
 const EXPOSED_TOGGLE = new RegExp('^\\s*(?:' + [
   // 'Show my contact card to people outside the team', 'Share my portfolio with strangers'
   String.raw`(?:show|share|display|expose|open|reveal|make)\s+${OWN_WORK}\s+(?:(?:visible|available|public)\s+)?(?:to|with)\s+${WIDER}`,
@@ -241,7 +245,14 @@ const EXPOSED_TOGGLE = new RegExp('^\\s*(?:' + [
   // 'Include me in the staff list visible to guests', 'Add my profile to the team page shown to visitors'
   String.raw`(?:include|list|add|show|feature|put|publish)\s+${OWN_WORK}\s+(?:in|on|to)\s+(?:the\s+|our\s+)?(?:[a-z'-]+\s+){0,3}(?:list|roster|directory|page|feed|gallery|showcase|board)\s+(?:that\s+is\s+|that's\s+)?(?:visible|shown|available|open)\s+to\s+${WIDER}`,
   // 'List my shop in the marketplace', 'Feature my portfolio on the explore page', 'Publish my designs to the community gallery'
-  String.raw`(?:list|feature|publish|post|sell|offer|showcase)\s+${OWN_WORK}\s+(?:in|on|to)\s+${PUBLIC_PLACE}`,
+  String.raw`(?:list|feature|publish|post|sell|offer|showcase)\s+${OWN_ANY}\s+(?:in|on|to)\s+${PUBLIC_PLACE}`,
+  // r2: featured or promoted placement, with or without the owner named - 'Feature on the home page', 'Promote my posts on
+  // the explore page', 'Spotlight me in the featured section'
+  String.raw`(?:feature|showcase|spotlight|highlight|promote)(?:\s+${OWN_ANY})?\s+(?:in|on|to)\s+${PUBLIC_PLACE}`,
+  // r2: the audience as the subject - 'Non-members can see my profile', 'Everyone with an account can view my posts'
+  String.raw`${WIDER}\s+(?:can|may)\s+(?:see|view|browse|read|find|access|look\s+at)\s+${OWN_WORK}`,
+  // r2: the bare state - 'Visible to everyone with an account', 'Open to the whole company', 'Shown to non-members'
+  String.raw`(?:visible|shown|open|available)\s+to\s+${WIDER}`,
   // 'My portfolio is visible to strangers', 'Profile visible to guests'
   String.raw`(?:${OWN_WORK}|profile|portfolio|shop|store|listing|contact\s+card)\s+(?:is\s+|are\s+)?(?:visible|shown|available|open|public)\s+to\s+${WIDER}`,
 ].join('|') + ')\\s*$', 'i')
