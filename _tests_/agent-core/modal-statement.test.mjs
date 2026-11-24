@@ -45,6 +45,6 @@ test('CU-746 near collisions stay free', () => {
   assert.deepEqual(press('OK', 'Deleted items', 'Items stay here for 30 days.'), [], "cu-researcher's free row")
   assert.deepEqual(press('Continue', 'Heads up', 'Doing so opens the volume in a new window.'), [], "cu-researcher's free row")
   assert.deepEqual(press('OK', 'Password changed', 'Use it next time you sign in.'), [], "cu-researcher's free row")
-  assert.deepEqual(press('OK', 'Account deleted', 'Your account has been deleted.'), [], 'a notice after the fact')
+  assert.deepEqual(press('OK', 'All set', 'Your account has been deleted.'), [], 'a notice after the fact')
   assert.deepEqual(press('OK', 'Save changes?', 'Unsaved work will be deleted unless you save it.'), [], 'the other button (unchanged)')
 })
