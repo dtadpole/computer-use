@@ -32,6 +32,15 @@ test('CU-775 + CU-776 near rows stay free', () => {
   assert.deepEqual(typedConfirmClasses(['Name'], ['Name, email and phone are required.', 'The account will be deleted if unverified.']), [], 'a field list is not an opener plus an imperative')
 })
 
+test('CU-775 + CU-776 r2: a manner adverb before the verb', () => {
+  assert.deepEqual(typedConfirmClasses(['Name'], ['Alright, briefly scribble the database name.', 'Every table is dropped.']), ['delete'], "cu-researcher's held-out row, verbatim")
+  assert.equal(press('Continue', ['Alright, briefly scribble the database name.', 'Every table is dropped.']), 'delete', 'the same row as pressed')
+  assert.deepEqual(typedConfirmClasses(['ID'], ['Honestly, very calmly type out the cluster ID.', 'The cluster will be terminated.']), ['delete'], 'an intensifier and an adverb')
+  assert.deepEqual(typedConfirmClasses(['Name'], ['Look, right away put in the bucket name.', 'The bucket will be deleted.']), ['delete'], "'right away'")
+  assert.deepEqual(typedConfirmClasses(['Name'], ['Alright, briefly scribble the database name.', 'Used for support tickets.']), [], 'the same entry, no act')
+  assert.deepEqual(typedConfirmClasses(['Name'], ['Alright, carefully change the database name.', 'The database will be dropped.']), [], 'a rename verb after an adverb stays excluded')
+})
+
 test('CU-775 + CU-776: a long sentence is read quickly', () => {
   const long = `${'well, '.repeat(40)}and so on and so on and so on, then nothing here.`
   const started = Date.now()
