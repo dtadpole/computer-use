@@ -341,6 +341,16 @@ func testEndWatchdog() {
   // cu-researcher: the watchdog only tries the copy's lock; busy past the timeout, it falls back to the held-keys marker.
   check(mirror.locked { mirror.trySnapshot(timeout: 0.05) } == nil, "a busy copy is not waited on past the try-lock's timeout")
   check(mirror.trySnapshot(timeout: 0.05) != nil, "a free copy is read at once")
+  // CU-744: the watchdog's cancel Escape goes to the driven app's pid only, and is dropped without one; the ups stay at
+  // the HID tap (nil), which is what clears the held state.
+  check(mirror.tryTarget(timeout: 0.05) == 0, "no input yet: no target")
+  mirror.setTarget(501)
+  check(mirror.tryTarget(timeout: 0.05) == 501 && mirror.locked { mirror.tryTarget(timeout: 0.05) } == 0, "the target is read try-locked; busy reads as none")
+  let drag = HeldMirror.releaseSteps(keys: [56], buttons: [.left], dragged: true, at: CGPoint(x: 9, y: 8))
+  let routed = SystemCapabilities.routedRelease(drag, cancelSteps: 2, cancelPid: 501)
+  check(routed.map { $0.0 } == drag && routed.map { $0.1 } == [501, 501, nil, nil], "with a target: Escape to its pid, the ups at the HID tap")
+  let blind = SystemCapabilities.routedRelease(drag, cancelSteps: 2, cancelPid: 0)
+  check(blind.map { $0.0 } == Array(drag.dropFirst(2)) && blind.allSatisfy { $0.1 == nil }, "without one (the marker's case): no Escape at all, the ups only")
   let markerFolder = NSTemporaryDirectory() + "cu-held-\(getpid())"
   try? FileManager.default.createDirectory(atPath: markerFolder, withIntermediateDirectories: true)
   HeldMarker.write(.object(["pid": .int(1), "keys": .array([.int(55)]), "buttons": .array([.string("left")])]), to: markerFolder + "/held-keys.json")
@@ -1136,7 +1146,7 @@ func testAbortedDrag() {
 }
 
 /// CU-744: an out-of-scope app comes to the front mid-drag. The drag's cancel Escape must not reach it: in 'global' mode
-/// it goes to the app we were driving only (its pid), while the person's own takeover keeps the old global Escape.
+/// it goes to the app we were driving only (its pid), on every release - the person's takeover too.
 func testCancelEscapeStaysInScope() {
   let path = NSTemporaryDirectory() + "cu-helper-unit-\(getpid())-cu744.jsonl"
   try? FileManager.default.removeItem(atPath: path)
@@ -1156,7 +1166,7 @@ func testCancelEscapeStaysInScope() {
   check(lines.last?["event"]?["type"]?.integer == Int(CGEventType.leftMouseUp.rawValue) && lines.last?["mode"] == "global",
         "the button still comes up on its own path")
   try? FileManager.default.removeItem(atPath: path)
-  // The person's takeover with the approved app still in front: the Escape keeps its global path (Q-D12 unchanged).
+  // The person's takeover (they may be switching apps as it happens): the Escape still goes to the driven app's pid.
   let path2 = NSTemporaryDirectory() + "cu-helper-unit-\(getpid())-cu744b.jsonl"
   try? FileManager.default.removeItem(atPath: path2)
   var person = fixtureWorld.object!
@@ -1166,7 +1176,9 @@ func testCancelEscapeStaysInScope() {
   _ = p.ask("pauseOnLocalInput", ["on": true])
   _ = p.ask("input", ["events": [move(100, 100), button("down", 100, 100), drag(150, 120), drag(200, 140), button("up", 200, 140)], "mode": "global"])
   let personKeys = readEvents(path2).filter { keyTypes.contains($0["event"]?["type"]?.integer ?? -1) }
-  check(personKeys.count == 2 && personKeys.allSatisfy { $0["mode"] == "global" }, "with the approved app in front the Escape is unchanged")
+  check(personKeys.count == 2 && personKeys.allSatisfy { $0["mode"] == "pid" && $0["pid"] == 501 }, "the person's takeover: the Escape goes to the fixture's pid too")
+  check(readEvents(path2).last?["event"]?["type"]?.integer == Int(CGEventType.leftMouseUp.rawValue) && readEvents(path2).last?["mode"] == "global",
+        "and the button still comes up in the run's mode, which clears the held state")
   try? FileManager.default.removeItem(atPath: path2)
 }
 

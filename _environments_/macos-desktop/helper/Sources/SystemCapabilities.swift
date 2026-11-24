@@ -572,13 +572,23 @@ final class SystemCapabilities: Capabilities {
 
   /// CU-227: the end watchdog's release - tagged steps posted at once on the calling thread, touching no instance state
   /// and none of the dispatcher's locks; preflight only (nothing can prompt). Each posted step is noted in `progress`.
-  static func postReleaseNow(_ steps: [InputEvent], progress: ReleaseProgress) {
+  /// CU-744: the first `cancelSteps` steps (a drag's cancel Escape) go to `cancelPid` only, and are skipped when it is 0.
+  static func postReleaseNow(_ steps: [InputEvent], progress: ReleaseProgress, cancelSteps: Int = 0, cancelPid: pid_t = 0) {
     guard Grants.preflight("postEvents") else { return }
     let source = Events.source()
-    for step in steps {
+    for (step, pid) in routedRelease(steps, cancelSteps: cancelSteps, cancelPid: cancelPid) {
       guard let events = Events.make(step, source: source) else { continue }
-      for event in events { event.post(tap: .cghidEventTap) }
+      for event in events { if let pid { event.postToPid(pid) } else { event.post(tap: .cghidEventTap) } }
       progress.note()
+    }
+  }
+
+  /// CU-744: where each release step goes - a pid for the cancel steps (dropped without one), nil (the HID tap) for the
+  /// ups, which clear the button and modifier state the window server keeps at the HID level.
+  static func routedRelease(_ steps: [InputEvent], cancelSteps: Int, cancelPid: pid_t) -> [(InputEvent, pid_t?)] {
+    steps.enumerated().compactMap { index, step in
+      guard index < cancelSteps else { return (step, nil) }
+      return cancelPid > 0 ? (step, cancelPid) : nil
     }
   }
 

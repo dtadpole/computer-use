@@ -640,16 +640,16 @@ final class Dispatcher {
     lock.lock()
     released = held
     lock.unlock()
-    // CU-744: in 'global' mode a key goes to the key app. When the app in front is no longer the one we were driving
-    // (an out-of-scope app came forward, or none is known), the drag's cancel Escape goes to our target's pid only, and
-    // without a known target it is not sent at all - no key may reach an app outside the scope. The button keeps its
-    // path: while it is held, macOS routes the drag and the up to the window that took the down.
-    let frontPid = cancelSteps > 0 && mode != "pid" ? capabilities.frontmost()?.pid : target
-    let cancelToTarget = cancelSteps > 0 && mode != "pid" && (frontPid == nil || frontPid != target)
+    // CU-744: a release runs after a stop, when the key app may already be another app (one came forward, or the
+    // person switched). A key posted in 'global' mode goes to the key app, so the drag's cancel Escape - the only
+    // key-down a release sends - always goes to the pid of the app we were driving, and is not sent at all without
+    // one. The ups keep the run's mode: the window server keeps the button and the modifier flags at the HID level,
+    // and only an up posted there clears them; while the button is held, macOS routes the drag and the up to the
+    // window that took the down, and a key up with no down is not a keystroke for the app that receives it.
     for (index, step) in steps.enumerated() {
       var postMode = mode
       var postPid = target ?? 0
-      if index < cancelSteps && cancelToTarget {
+      if index < cancelSteps {
         guard let only = target, only > 0 else { continue }
         postMode = "pid"
         postPid = only
@@ -917,6 +917,8 @@ final class Dispatcher {
     releasedAt = nil
     releasedAtPress = false
     lock.unlock()
+    // CU-744: the end watchdog cancels a held drag with Escape to this pid only.
+    heldMirror.setTarget(targetPid)
     capabilities.beginInput()
     let started = Self.now()
     for (index, event) in events.enumerated() {
@@ -1031,6 +1033,9 @@ final class Dispatcher {
       .object(["keys": .array(marker.keys.map { .int(Int($0)) }), "buttons": .array(marker.buttons.map { .string($0.rawValue) }), "posted": .int(posted)])
     }
     if marker.released { return report(0) }
+    // CU-744: ups only - no Escape and no key-down, even for a dead helper's drag, since no target is known here. They
+    // stay global: the stuck button and modifier state is the window server's, kept at the HID level, and only an up
+    // posted there clears it; a key up with no down is no keystroke for the app that receives it.
     var steps: [InputEvent] = marker.keys.reversed().map { .keyUp($0, flags: 0) }
     let location = capabilities.pointerLocation()
     steps += marker.buttons.map { .up($0, location, clickCount: 1, flags: 0) }
