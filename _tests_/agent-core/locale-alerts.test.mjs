@@ -72,3 +72,21 @@ test('CU-748: harmless alerts and the same words outside a dialog stay free', ()
     assert.deepEqual(classes(web.classify(click, { url: 'https://app.example/', target: { role: 'button', name } })), [], `web bare ${name}`)
   }
 })
+
+test('CU-748 r2: negated and past statements state no act and stay free', () => {
+  for (const [name, description] of [
+    ['OK', 'Die Fotos werden nicht gelöscht.'],
+    ['OK', 'Les fichiers ne seront pas supprimés.'],
+    ['Aceptar', 'Los archivos no serán eliminados.'],
+    ['Aceptar', 'Se ha eliminado el archivo.'],
+    ['OK', 'I file non verranno eliminati.'],
+    ['OK', 'Os arquivos não serão excluídos.'],
+    ['ОК', 'Данные не будут удалены.'],
+    ['Doorgaan', 'Uw bestanden worden niet verwijderd.'],
+  ]) {
+    assert.deepEqual(classes(onDesktop(name, 'Hinweis', description)), [], `desktop ${description}`)
+  }
+  // A negation elsewhere in the sentence does not hide the act.
+  assert.ok(classes(onDesktop('OK', 'Hinweis', 'Diese Fotos werden gelöscht und können nicht wiederhergestellt werden.')).includes('delete'))
+  assert.ok(classes(onDesktop('OK', 'Aviso', 'Os arquivos no computador serão excluídos.')).includes('delete'))
+})

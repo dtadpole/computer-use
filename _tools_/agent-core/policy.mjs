@@ -55,7 +55,8 @@ const GENERIC_CONFIRM = /^\s*(?:confirm|ok|okay|yes|yes,?\s+(?:continue|confirm|
 const LOCALE_PASSIVE_ACTS = [
   [/\b(?:werden|wird)\b[^.!?]{0,120}?\b(?:endgültig\s+|dauerhaft\s+|unwiderruflich\s+)?(?:gelöscht|entfernt)\b/iu, 'löschen'],
   [/\b(?:seront|sera)\s+(?:\S+\s+){0,3}?(?:supprimée?s?|effacée?s?)\b/iu, 'supprimer'],
-  [/\b(?:ser[áa]n?|se)\s+(?:\S+\s+){0,3}?(?:eliminad[oa]s?|borrad[oa]s?|eliminar[áa]n?|borrar[áa]n?)\b/iu, 'eliminar'],
+  // r2 (cu-developer-two's cross-check): 'se' reads only before a FUTURE form - 'Se ha eliminado el archivo.' is a notice.
+  [/\bser[áa]n?\s+(?:\S+\s+){0,3}?(?:eliminad[oa]s?|borrad[oa]s?)\b|\bse\s+(?:\S+\s+){0,2}?(?:eliminar[áa]n?|borrar[áa]n?)\b/iu, 'eliminar'],
   [/\b(?:verranno|verrà|saranno|sarà)\s+(?:\S+\s+){0,3}?(?:eliminat[ioae]|rimoss[ioae]|cancellat[ioae])\b/iu, 'elimina'],
   [/\b(?:serão|será)\s+(?:\S+\s+){0,3}?(?:excluíd[oa]s?|apagad[oa]s?|removid[oa]s?)\b/iu, 'excluir'],
   // r2 (cu-researcher's held-out 13:02Z): Dutch - 'Deze mailbox wordt permanent verwijderd.'
@@ -65,8 +66,20 @@ const LOCALE_PASSIVE_ACTS = [
   [/(?:将|将会|會|会|將會|將)\s*(?:被)?\s*(?:永久)?(?:删除|刪除|清除)/u, '删除'],
   [/(?:삭제|지워)(?:됩니다|집니다|될\s*것입니다)/u, '삭제'],
 ]
+// r2 (cu-developer-two's cross-check): a NEGATED statement states no act - 'Die Fotos werden nicht gelöscht.', 'Les fichiers ne
+// seront pas supprimés.', 'No se eliminarán.', 'Non verranno eliminati.', 'Não serão excluídos.', 'Не будут удалены.', 'Worden niet
+// verwijderd.' A negation inside the matched span or as the word right before it skips the match; elsewhere in the sentence it does
+// not ('Os arquivos no computador serão excluídos.' - Portuguese 'no' is 'in the' there).
+const LOCALE_PASSIVE_NEGATION = /(?<!\p{L})(?:nicht|nie|niemals|kein|keine|ne|n['’]|pas|jamais|no|nunca|non|mai|não|nao|не|никогда|niet|nooit|geen)(?!\p{L})/iu
 function localePassiveAct(text) {
-  for (const [shape, verb] of LOCALE_PASSIVE_ACTS) if (shape.test(String(text ?? ''))) return verb
+  const t = String(text ?? '')
+  for (const [shape, verb] of LOCALE_PASSIVE_ACTS) {
+    const m = shape.exec(t)
+    if (!m) continue
+    const before = t.slice(0, m.index).trim().split(/\s+/).slice(-1).join(' ')
+    if (LOCALE_PASSIVE_NEGATION.test(m[0]) || LOCALE_PASSIVE_NEGATION.test(before)) continue
+    return verb
+  }
   return null
 }
 // CU-747 (High; sweep 5, cu-coordinator 06:05Z): a wizard's or sheet's final-step control - Finish / Complete / Next / End - is
