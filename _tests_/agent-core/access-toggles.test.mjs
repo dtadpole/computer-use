@@ -43,6 +43,76 @@ test('CU-754: the other side - turning access off, plain toggles and harmless li
   for (const list of ['Display', 'Battery', 'Accessibility Shortcut options']) assert.equal(axcb('Reduce motion', false, list), 'allow', list)
 })
 
+test('CU-774: a toggle that makes the profile findable or indexable asks permission', () => {
+  const findable = [
+    'Searchable profile', 'Searchable', 'Findable by everyone', 'Make my profile searchable', 'Profile is searchable',
+    'Show my profile in search results', 'Include me in search results', 'Appear in search results', 'Show up in search engines',
+    'Visible in search', 'Let people find me by my email address', 'Allow others to find you by phone number',
+    'Let anyone look up my profile', 'Allow search engines to index my profile', 'Let search engines link to your page',
+    'Search engine indexing', 'Indexed by search engines',
+  ]
+  for (const name of findable) {
+    assert.match(sw(name, false), /permission/, name)
+    assert.match(space(name, false), /permission/, `Space: ${name}`)
+  }
+  // A web checkbox, an ARIA switch with no native state (asks both ways, as CU-754), and a desktop checkbox by its own name.
+  assert.match(webcb('Show my profile in search results', false), /permission/)
+  assert.match(sw('Searchable profile', undefined), /permission/)
+  assert.match(axcb('Allow search engines to index my profile', false), /permission/)
+})
+
+test('CU-774: the other side - turning findability off, and local search features, stay free', () => {
+  assert.equal(webcb('Searchable profile', true), 'allow')
+  assert.equal(webcb('Let people find me by my email address', true), 'allow') // a native checkbox already on: the press turns findability off
+  for (const name of ['Search history', 'Safe search', 'Searchable PDFs', 'Show search suggestions', 'Spotlight indexing', 'Allow indexing',
+    'Hide my profile from search engines', 'Search engine', 'Show search bar', 'Find My']) {
+    assert.equal(webcb(name, false), 'allow', name) // native checkboxes turning on: a known direction (an ARIA switch's unknown state can ask through other rules, e.g. a protection switch)
+  }
+  assert.equal(axcb('Spotlight indexing', false), 'allow')
+})
+
+test('CU-774 r2: a directory listing, and a page shown to people who are not signed in, ask permission', () => {
+  const listed = [
+    'Appear in the member directory', 'Show me in the directory', 'List my profile in the company directory',
+    'Include me in the people directory', 'Be listed in the alumni directory', 'Listed in the staff directory', 'Member directory listing',
+    'Show my page to visitors who are not signed in', "Show my profile to people who aren't logged in", 'Visible to signed-out visitors',
+    'Let logged-out users see my profile', 'Allow non-members to view my page', 'Profile is visible to anyone without an account',
+    'Show my posts to anonymous visitors',
+    // cu-developer-one's same-class rows and their shape: any party finding or indexing the owner's things, engines by name,
+    // and the 'Discoverable / Findable by ...' heads with a party or a key.
+    'Show my profile to search engines', 'Let recruiters find my profile', 'Discoverable by email', 'Allow Google to index my posts',
+    'List my profile in the public directory', 'Let employers find me', 'Allow Bing to index my profile', 'Show my page to Google',
+    'Discoverable by phone number', 'Findable by my email address', 'Let contacts find me by phone',
+    // the passive and plural forms, and people outside the owner's circle
+    'Allow my profile to be found by people outside your organization', 'Let my posts be indexed', 'Make my posts discoverable',
+    'My posts are indexable', 'Discoverable profile', 'Profile visible to search engines', "Let people you don't know find you",
+    'Posts are searchable', 'My content is indexed by search engines',
+  ]
+  for (const name of listed) {
+    assert.match(webcb(name, false), /permission/, name)
+    assert.match(space(name, false), /permission/, `Space: ${name}`)
+  }
+  // The desktop shape: a checkbox by its own name, no list.
+  assert.match(axcb('Show my page to visitors who are not signed in', false), /permission/)
+  assert.match(axcb('Appear in the member directory', false), /permission/)
+})
+
+test('CU-774 r2: the other side - leaving the directory, signed-in audiences and file directories stay free', () => {
+  assert.equal(webcb('Appear in the member directory', true), 'allow') // already on: the press takes the profile out
+  assert.equal(webcb('Show my page to visitors who are not signed in', true), 'allow')
+  for (const name of ['Show hidden files in directory', 'Sync directory', 'Use directory services', 'Show folders first in directory listings',
+    'Directory', 'Only show my page to visitors who are signed in', 'Visible to signed-in members only',
+    'Show my profile to my contacts', 'Hide me from the member directory',
+    // local and document search stay free (cu-developer-one's near rows)
+    'Search suggestions', 'Find nearby devices', 'Allow search in messages', 'Index my files for faster search',
+    'Let others find this document in search', 'Show my email to contacts', 'Searchable notes', 'Search engine: Google',
+    // content with no owner named can be a local search feature; sharing with contacts is not findability
+    'Content is searchable', 'Activity is searchable', 'Content visible in search', 'Allow my page to be shared', 'Let my contacts see my posts']) {
+    assert.equal(webcb(name, false), 'allow', name)
+  }
+  assert.equal(axcb('Show hidden files in directory', false), 'allow')
+})
+
 test('CU-754: accessRowContext reads both shapes and nothing else', () => {
   assert.equal(accessRowContext('Full Disk Access'), true)
   assert.equal(accessRowContext({ list: 'Accessibility', hints: [] }), true)
