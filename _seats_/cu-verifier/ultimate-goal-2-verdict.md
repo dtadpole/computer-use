@@ -14,7 +14,7 @@ grounded_in:
 
 # ULTIMATE_GOAL 2.0: live, in progress (CUHelper 0.2.70 installed, dtadpole/computer-use)
 
-Seven of nine rows hold live; two are open: human control (step 4 with the owner, CU-11) and consent and safety (no open High; CU-135's chain at step 4; CU-607, CU-716, CU-585, CU-371, CU-726 and CU-729 closed live 23 Nov, CU-735 on 24 Nov). The history below is kept as written. Since 0.9.53 these D-063 under-asks closed live:
+Seven of nine rows hold live; two are open: human control (step 4 with the owner, CU-11) and consent and safety (one open High, CU-744 on the action-contract row (named caveat below); the consent row has none; CU-135's chain at step 4; CU-607, CU-716, CU-585, CU-371, CU-726 and CU-729 closed live 23 Nov, CU-735 on 24 Nov). The history below is kept as written. Since 0.9.53 these D-063 under-asks closed live:
 Services chords and their menu context (CU-249, CU-250, CU-256), API tokens and D-061 names, including in URLs
 (CU-245, CU-257, CU-260, CU-281, CU-283, CU-284, CU-285, CU-291), standing choices, outward and account-protection
 controls and real-app wordings (CU-258, CU-261, CU-270, CU-286, CU-288, CU-289), recipient-named compose fields
