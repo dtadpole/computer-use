@@ -1,7 +1,7 @@
 ---
 title: '[cu] Verifier - Handover'
 created: 2026-11-08T04:15:13Z
-modified: 2026-11-24T04:09:00Z
+modified: 2026-11-24T07:29:00Z
 level: L2
 version: 5.4.46
 description: 'What a fresh session of [cu] Verifier needs - where things are, the pass, the tools, the open rows and the lessons, in under 300 words.'
@@ -23,7 +23,7 @@ Start here, then [responsibilities](responsibilities.md) and [verdict](ultimate-
   Desktop probes: `probes/`.
 - **Closes:** `watchall.sh` is one background job (restart daily) over `watchlist.tsv`. Then `linear.py verified` with
   run ids copied by script, plus a mutant.
-- **Open:** closes armed (watcher) for #1390, #1396, #1399, #1409; after the 08:00Z install: readback, CU-586 and CU-729 desktop rows; CU-631, CU-701, CU-705 still reproduce. Consent row: CU-135 step 4.
+- **Open:** Highs CU-746, CU-747 (#1422), CU-748, CU-751, closes armed; CU-744's held-out waits for its helper; #1396, #1409, CU-569 follow-up armed; CU-631/701/705 reproduce. Consent row: CU-135 step 4.
 - **Lessons:** read the Verify state before `verified` (outside Verify it only moves there); a records PR naming an
   issue moves it to Verify on merge - reopen with a live row; count OKs from the PR. One browser per seat, one job
   per window, one DONE after all of it. Rows start only in a written window given to me, shared, or my close -
