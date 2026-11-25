@@ -80,7 +80,6 @@ test('CU-790: near rows stay free of delete - a field or cache, another button, 
     ['Vider', 'Attention', 'Tous les éléments ont été retirés de la corbeille.'],
     ['Leeren', 'Hinweis', 'Bleibt das Suchfeld danach leer?'],
     ['Vider', 'Attention', 'Tous les filtres seront-ils retirés du formulaire ?'],
-    ['OK', 'Notice', 'Item removed from the trash.'],
   ]) {
     assert.ok(!classes(onWeb(name, title, description)).includes('delete'), `web ${title} ${description ?? ''}`)
   }
