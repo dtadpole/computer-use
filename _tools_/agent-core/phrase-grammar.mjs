@@ -196,6 +196,20 @@ const LIMIT_QUALIFIER = new Set(['credit', 'spending', 'card', 'trading', 'borro
 const TRADING_OBJECTS = new Set(['position', 'long', 'short', 'trade'])
 const CANCEL_PAY = new Set(['subscription', 'plan', 'membership', 'trial'])
 const POST_OBJECTS = new Set(['comment', 'reply', 'update', 'photo', 'story', 'message', 'review', 'it', 'now', 'publicly'])
+// CU-783 (the 'any visitor' over-ask): 'Let <people> <act>' and '<verb> <people> to <act>' grant the people that act, so the act
+// decides - not the people word alone. A guest or visitor is a physical object only when the act lets them in (or none follows:
+// 'Let guest in', 'Enable guest access'); a harmless act on their own view grants nothing ('Let any visitor choose a theme').
+const PHYS_PERSON = new Set(['guest', 'visitor'])
+const ENTRY_ACTS = new Set(['in', 'inside', 'through', 'enter', 'come', 'unlock', 'open'])
+const HARMLESS_ACTS = new Set(['choose', 'pick', 'select', 'switch', 'toggle', 'customize', 'customise', 'personalize', 'personalise',
+  'sort', 'filter', 'preview', 'zoom', 'resize', 'translate', 'scroll', 'expand', 'collapse'])
+/** CU-783: the act granted to the first people word of `rest` - the token after 'to', or the bare infinitive after 'let'; null when none. */
+function grantedAct(verb, rest) {
+  const i = rest.findIndex((t) => OBJECTS.access.has(t))
+  if (i < 0) return null
+  if (rest[i + 1] === 'to') return rest[i + 2] ?? null
+  return verb === 'let' ? (rest[i + 1] ?? null) : null
+}
 
 function verbOf(list) {
   for (const [words, classes] of MULTI_VERBS) {
@@ -1692,8 +1706,11 @@ function grammarClassesOf(name, role = '') {
   const core = rest.filter((t) => !FILLER.has(t))
   const out = []
   if (rest.includes('anyway') && ['open', 'run', 'keep', 'download', 'install', 'continue', 'proceed'].includes(verb)) return ['install']
-  // physical
-  if (classes.has('phys_on') && has('phys') && verb !== 'open') pushOnce(out, 'physical')
+  // physical (CU-783: a guest or visitor alone needs an act that lets them in, or no act at all)
+  const act = grantedAct(verb, rest)
+  const physPersonOnly = window.some((t) => OBJECTS.phys.has(t)) && window.every((t) => !OBJECTS.phys.has(t) || PHYS_PERSON.has(t))
+  const letIn = verb === 'let in' || verb === 'buzz in' || act === null || ENTRY_ACTS.has(act)
+  if (classes.has('phys_on') && has('phys') && verb !== 'open' && (!physPersonOnly || letIn)) pushOnce(out, 'physical')
   if (verb === 'open' && window.some((t) => t === 'door' || t === 'garage' || t === 'gate')) pushOnce(out, 'physical')
   if (classes.has('phys_off') && has('physGuard')) pushOnce(out, 'physical')
   // delete (F1: 'clear' / 'reset' a table is a view; a branch is deleted, not closed; 'move to' needs a trash or bin)
@@ -1734,7 +1751,7 @@ function grammarClassesOf(name, role = '') {
   // CU-423 (ruled class wins): an access code is shared access, not a secret.
   const accessCode = window.includes('access') && window.includes('code')
   if (accessCode && ['create', 'change', 'edit', 'share', 'add', 'new', 'generate', 'reset'].includes(verb)) pushOnce(out, 'permission')
-  if (classes.has('grant') && has('access') && !accessCode) pushOnce(out, 'permission')
+  if (classes.has('grant') && has('access') && !accessCode && !HARMLESS_ACTS.has(act)) pushOnce(out, 'permission')
   if (verb === 'make' && rest.includes('public')) pushOnce(out, 'permission')
   if (verb === 'go' && rest.includes('public')) pushOnce(out, 'permission')
   // F5 cluster 5: 'view as' needs a person or user.
