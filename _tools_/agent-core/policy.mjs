@@ -84,7 +84,7 @@ const LOCALE_PASSIVE_ACTS = [
   // restera-t-elle vidée ?', 'Il Cestino rimane svuotato?', 'A lixeira fica esvaziada?', 'Blijft de prullenbak geleegd?' - reads
   // delete like its German twin. Only a question, only the trash or an inbox, only a state verb (never the past 'fue / a été /
   // è stato / foi / werd ... ?'); a negation skips it (localePassiveAct).
-  [/^(?=[^?]*?(?<!\p{L})(?:queda|quedan|quedará|quedarán|quedaría|está|están|estará|estarán|permanece|permanecerá|reste|restent|restera|resteront|resterait|sera|seront|est|sont|resta|restano|resterà|rimane|rimangono|rimarrà|sarà|saranno|è|sono|fica|ficam|ficará|ficarão|estará|será|serão|blijft|blijven|is|zijn|wordt|worden)(?!\p{L}))[^?]*?(?<!\p{L})(?:papelera|papeleras|corbeille|corbeilles|cestino|lixeira|lixo|prullenbak|bandeja\s+de\s+entrada|boîte\s+de\s+réception|posta\s+in\s+arrivo|caixa\s+de\s+entrada|postvak\s+in)(?!\p{L})[^?]{0,60}?(?<!\p{L})(?:vaciad[oa]s?|vac[ií][oa]s?|vidée?s?|vides?|svuotat[oaie]|vuot[oaie]|esvaziad[oa]s?|vazi[oa]s?|geleegd|leeg)(?!\p{L})[^?]{0,40}\?\s*$|^(?=[^?]*?(?<!\p{L})(?:queda|quedan|quedará|quedarán|quedaría|está|están|estará|estarán|permanece|permanecerá|reste|restent|restera|resteront|resterait|sera|seront|est|sont|resta|restano|resterà|rimane|rimangono|rimarrà|sarà|saranno|è|sono|fica|ficam|ficará|ficarão|estará|será|serão|blijft|blijven|is|zijn|wordt|worden)(?!\p{L}))[^?]*?(?<!\p{L})(?:vaciad[oa]s?|vac[ií][oa]s?|vidée?s?|vides?|svuotat[oaie]|vuot[oaie]|esvaziad[oa]s?|vazi[oa]s?|geleegd|leeg)(?!\p{L})[^?]{0,60}?(?<!\p{L})(?:papelera|papeleras|corbeille|corbeilles|cestino|lixeira|lixo|prullenbak|bandeja\s+de\s+entrada|boîte\s+de\s+réception|posta\s+in\s+arrivo|caixa\s+de\s+entrada|postvak\s+in)(?!\p{L})[^?]{0,40}\?\s*$/iu, 'delete'],
+  [/^(?=[^?]*?(?<!\p{L})(?:queda|quedan|quedará|quedarán|quedaría|está|están|estará|estarán|permanece|permanecerá|reste|restent|restera|resteront|resterait|sera|seront|est|sont|resta|restano|resterà|rimane|rimangono|rimarrà|sarà|saranno|è|sono|fica|ficam|ficará|ficarão|estará|será|serão|blijft|blijven|is|zijn|wordt|worden)(?!\p{L}))[^?]*?(?<!\p{L})(?:papelera|papeleras|corbeille|corbeilles|cestino|lixeira|lixo|prullenbak|bandeja\s+de\s+entrada|boîte\s+de\s+réception|posta\s+in\s+arrivo|caixa\s+de\s+entrada|postvak\s+in)(?!\p{L})[^?]{0,60}?(?<!\p{L})(?:vaciad[oa]s?|vac[ií][oa]s?|vidée?s?|vides?|svuotat[oaie]|vuot[oaie]|esvaziad[oa]s?|vazi[oa]s?|geleegd|leeg\s?(?:ge)?maakt|leeg\s?(?:ge)?haald|leeg\s?(?:ge)?ruimd|geledigd|leeg)(?!\p{L})[^?]{0,40}\?\s*$|^(?=[^?]*?(?<!\p{L})(?:queda|quedan|quedará|quedarán|quedaría|está|están|estará|estarán|permanece|permanecerá|reste|restent|restera|resteront|resterait|sera|seront|est|sont|resta|restano|resterà|rimane|rimangono|rimarrà|sarà|saranno|è|sono|fica|ficam|ficará|ficarão|estará|será|serão|blijft|blijven|is|zijn|wordt|worden)(?!\p{L}))[^?]*?(?<!\p{L})(?:vaciad[oa]s?|vac[ií][oa]s?|vidée?s?|vides?|svuotat[oaie]|vuot[oaie]|esvaziad[oa]s?|vazi[oa]s?|geleegd|leeg\s?(?:ge)?maakt|leeg\s?(?:ge)?haald|leeg\s?(?:ge)?ruimd|geledigd|leeg)(?!\p{L})[^?]{0,60}?(?<!\p{L})(?:papelera|papeleras|corbeille|corbeilles|cestino|lixeira|lixo|prullenbak|bandeja\s+de\s+entrada|boîte\s+de\s+réception|posta\s+in\s+arrivo|caixa\s+de\s+entrada|postvak\s+in)(?!\p{L})[^?]{0,40}\?\s*$/iu, 'delete'],
   // r2 (cu-developer-two's cross-check): 'se' reads only before a FUTURE form - 'Se ha eliminado el archivo.' is a notice.
   [/\bser[áa]n?\s+(?:\S+\s+){0,3}?(?:eliminad[oa]s?|borrad[oa]s?)\b|\bse\s+(?:\S+\s+){0,2}?(?:eliminar[áa]n?|borrar[áa]n?)\b/iu, 'eliminar'],
   [/\b(?:verranno|verrà|saranno|sarà)\s+(?:\S+\s+){0,3}?(?:eliminat[ioae]|rimoss[ioae]|cancellat[ioae])\b/iu, 'elimina'],
@@ -142,9 +142,14 @@ function echoesDialogVerb(name, dialogName) {
     const core = button.replace(/(?:する|します|하기|하다)$/u, '')
     return core.length >= 1 && button.length <= 6 && title.includes(core.slice(0, 2))
   }
-  const words = button.split(/\s+/).filter(Boolean)
+  // CU-800: a two-word Dutch separable button ('Leeg maken', 'Leeg halen') is one verb.
+  const words = button.split(/\s+/).filter(Boolean).join(' ').replace(/^leeg\s+(maken|halen|ruimen)$/u, 'leeg$1').split(' ')
   if (words.length === 0 || words.length > 2 || !/^\p{L}{3,}$/u.test(words[0]) || (words[1] !== undefined && words[1] !== 'now')) return false
   const verb = words[0]
+  // CU-800 (cu-verifier's filing; cu-researcher's held-out 05:37Z): a Dutch emptying verb, simple or separable ('Legen',
+  // 'Leegmaken', 'Leeghalen', 'Leegruimen', 'Ledigen'), echoes any emptying form of the family in the title - 'geleegd',
+  // 'leeggemaakt', 'leeg halen', 'leeggehaald' - as 'Empty' echoes 'emptied'.
+  if (/^(?:legen|leegmaken|leeghalen|leegruimen|ledigen)$/u.test(verb) && /(?<!\p{L})(?:legen|geleegd|leeg\s?maken|leeg\s?(?:ge)?maakt|leeg\s?halen|leeg\s?(?:ge)?haald|leeg\s?ruimen|leeg\s?(?:ge)?ruimd|ledigen|geledigd)(?!\p{L})/u.test(title)) return true
   const stem = verb.length >= 5 ? verb.slice(0, verb.length - 1) : verb
   // CU-766 r2 (cu-researcher's r2 set): a German verb also echoes its past participle - 'Leeren' in '... geleert werden?',
   // 'Löschen' in '... gelöscht werden?' (ge + root + t / en, after a separable prefix too: 'ausgeleert').
@@ -596,7 +601,7 @@ const LOCALE_WORDS = Object.freeze({
     '_ account sluiten', 'mijn account sluiten', 'sluit _ account', 'sluit mijn account', 'account sluiten',
     'excluir', 'apagar', 'remover', 'excluir permanentemente', 'sil^', 'kaldır^', 'kalıcı olarak sil^', 'hesab~ sil^', 'hesab~ kapat^',
     // r2: emptying the trash, as English 'Empty trash'.
-    'svuota cestino', 'svuota il cestino', 'prullenbak legen', 'prullenbak leegmaken', 'leeg prullenbak',
+    'svuota cestino', 'svuota il cestino', 'prullenbak legen', 'prullenbak leegmaken', 'leeg prullenbak', 'prullenbak leeghalen', 'prullenbak leeg maken', 'prullenbak leeg halen', 'prullenbak leegruimen',
     // CU-655 r4 (cu-researcher): an article or possessive between the verb and the trash noun ('Leeg de prullenbak', 'Esvaziar o lixo').
     'leeg _ prullenbak', 'esvaziar _ lixo',
     'esvaziar lixeira', 'esvaziar a lixeira', 'esvaziar lixo', 'esvaziar a reciclagem', 'çöp kutu~ boşalt^', 'çöp~ boşalt^', 'çöp kutu~ temizle^',
@@ -839,7 +844,7 @@ const IMPERATIVE_FORMS = Object.freeze({
   'geven': ['geef', 'geeft u'], 'abonneren': ['abonneer', 'abonneert u'], 'proberen': ['probeer', 'probeert u'],
   'opzeggen': ['zeg|op', 'zegt u|op'], 'stopzetten': ['zet|stop', 'zet u|stop'], 'opheffen': ['hef|op', 'heft u|op'], 'afsluiten': ['sluit|af', 'sluit u|af'],
   'uitnodigen': ['nodig|uit', 'nodigt u|uit'], 'toestaan': ['sta|toe', 'staat u|toe'], 'deelnemen': ['neem|deel', 'neemt u|deel'], 'uitschrijven': ['schrijf|uit', 'schrijft u|uit'],
-  'afmelden': ['meld|af', 'meldt u|af'], 'overmaken': ['maak|over', 'maakt u|over'], 'leegmaken': ['maak|leeg', 'maakt u|leeg'], 'overschrijven': ['schrijf|over', 'schrijft u|over'],
+  'afmelden': ['meld|af', 'meldt u|af'], 'overmaken': ['maak|over', 'maakt u|over'], 'leegmaken': ['maak|leeg', 'maakt u|leeg'], 'leeghalen': ['haal|leeg', 'haalt u|leeg'], 'leegruimen': ['ruim|leeg', 'ruimt u|leeg'], 'overschrijven': ['schrijf|over', 'schrijft u|over'],
   'afrekenen': ['reken|af', 'rekent u|af'], 'uitvoeren': ['voer|uit', 'voert u|uit'], 'overstappen': ['stap|over', 'stapt u|over'],
   // CU-648 (cu-developer-one's design 03:04Z / 03:06Z): Russian perfective ty / vy imperatives; imperfective ('Удаляйте',
   // 'Покупайте') and negated forms stay out. Korean polite imperatives of the native 보내다 and of the hada table nouns; the plain
@@ -910,9 +915,9 @@ const LOCALE_TRASH_EMPTY = Object.freeze([
   // 'Prullenbak geleegd', 'Lixeira esvaziada', 'Çöp kutusu boşaltıldı'), other objects ('Svuota il carrello', 'Winkelwagen
   // legen', 'Esvaziar o carrinho', 'Sepeti boşalt') and the bare nouns stay free.
   /^(?:non\s+)?(?:svuota|svuotare|svuotate|svuoti)\s+(?:\S+\s+){0,4}?cestino(?=\s|$|[.!])/i,
-  /^(?:niet\s+)?(?:leeg|leegt|legen|leegmaken)\s+(?:\S+\s+){0,4}?prullenbak(?=\s|$|[.!])/i,
+  /^(?:niet\s+)?(?:leeg|leegt|legen|leegmaken|leeghalen|leegruimen)\s+(?:\S+\s+){0,4}?prullenbak(?=\s|$|[.!])/i,
   /^maak\s+(?:\S+\s+){0,4}?prullenbak(?:\s+\S+){0,3}?\s+leeg(?=\s|$|[.!])/i,
-  /^(?:\S+\s+){0,4}?prullenbak(?:\s+\S+){0,4}?\s+(?:legen|leegmaken|leeg\s+maken)\s*[.!]?$/i,
+  /^(?:\S+\s+){0,4}?prullenbak(?:\s+\S+){0,4}?\s+(?:legen|leegmaken|leeg\s+maken|leeghalen|leeg\s+halen|leegruimen|leeg\s+ruimen)\s*[.!]?$/i,
   /^(?:não\s+|nao\s+)?(?:esvaziar|esvazie|esvazia|esvaziem)\s+(?:\S+\s+){0,4}?(?:lixeira|lixo|reciclagem)(?=\s|$|[.!])/i,
   // CU-660: the noun takes its case ending ('Çöpü tamamen boşalt'), as 'Çöp kutusunu' does.
   /^(?:\S+\s+){0,4}?çöp\S*(?:\s+kutu\S*)?(?:\s+\S+){0,4}?\s+(?:boşalt|boşaltın|boşaltınız|temizle|temizleyin|temizleyiniz)\s*[.!]?$/iu,
@@ -938,9 +943,9 @@ const LOCALE_FOLDER_EMPTY = Object.freeze([
   folderVerbFirst('non\\s+', 'svuota|svuotare|svuotate|svuoti', 'in|nel|nella|di|del|della|dal|dalla|per|da', 'tutto|tutti|tutte|il\\s+contenuto|tutto\\s+il\\s+contenuto|(?:(?:i|gli|le|tuoi|miei)\\s+)?(?:\\S+\\s+)?(?:messaggi|elementi|email|conversazioni|documenti)', 'cartella|posta\\s+eliminata|posta\\s+indesiderata|spam'),
   folderVerbLast('in|im|aus|vom|von|für', 'alle|alles|den\\s+gesamten|den\\s+ganzen|den\\s+inhalt|gesamten|ganzen|(?:(?:die|ihre|deine|meine)\\s+)?(?:\\S+\\s+)?(?:nachrichten|elemente|dateien|e-mails|mails|unterhaltungen|dokumente|fotos)', '\\S*ordner|gelöschte\\s+elemente|junk-e-mail|spam', 'leeren|entleeren'),
   folderVerbFirst('nicht\\s+', 'leere|leert|leeren\\s+sie|entleere|entleert|entleeren\\s+sie', 'in|im|aus|vom|von|für', 'alle|alles|den\\s+gesamten|den\\s+ganzen|den\\s+inhalt|(?:(?:die|ihre|deine|meine)\\s+)?(?:\\S+\\s+)?(?:nachrichten|elemente|dateien|e-mails|mails|unterhaltungen|dokumente|fotos)', '\\S*ordner|gelöschte\\s+elemente|junk-e-mail|spam'),
-  folderVerbFirst('niet\\s+', 'leeg|leegt|legen|leegmaken', 'in|uit|van|voor', 'alle|alles|de\\s+hele|de\\s+inhoud|hele|(?:(?:de|je|uw|mijn)\\s+)?(?:\\S+\\s+)?(?:berichten|items|bestanden|e-mails|gesprekken|documenten)', 'map|verwijderde\\s+items|ongewenste\\s+e-mail|spam'),
+  folderVerbFirst('niet\\s+', 'leeg|leegt|legen|leegmaken|leeghalen|leegruimen', 'in|uit|van|voor', 'alle|alles|de\\s+hele|de\\s+inhoud|hele|(?:(?:de|je|uw|mijn)\\s+)?(?:\\S+\\s+)?(?:berichten|items|bestanden|e-mails|gesprekken|documenten)', 'map|verwijderde\\s+items|ongewenste\\s+e-mail|spam'),
   /^maak\s+(?:\S+\s+){0,4}?(?:map|verwijderde\s+items|ongewenste\s+e-mail)(?:\s+\S+){0,3}?\s+leeg(?=\s|$|[.!])/iu,
-  folderVerbLast('in|uit|van|voor', 'alle|alles|de\\s+hele|de\\s+inhoud|hele|(?:(?:de|je|uw|mijn)\\s+)?(?:\\S+\\s+)?(?:berichten|items|bestanden|e-mails|gesprekken|documenten)', 'map|verwijderde\\s+items|ongewenste\\s+e-mail|spam', 'legen|leegmaken|leeg\\s+maken'),
+  folderVerbLast('in|uit|van|voor', 'alle|alles|de\\s+hele|de\\s+inhoud|hele|(?:(?:de|je|uw|mijn)\\s+)?(?:\\S+\\s+)?(?:berichten|items|bestanden|e-mails|gesprekken|documenten)', 'map|verwijderde\\s+items|ongewenste\\s+e-mail|spam', 'legen|leegmaken|leeg\\s+maken|leeghalen|leeg\\s+halen|leegruimen|leeg\\s+ruimen'),
   /(?:フォルダー?|削除済みアイテム|迷惑メール).{0,10}?空に(?!し(?:ました|た)|され|済|完了|中|なって|なりました)/u,
   /(?:폴더|지운\s?편지함|정크\s?메일)\S*\s*(?:\S+\s+){0,4}?(?:비우(?:기|세요|십시오)?|비워(?:\s?줘|\s?주세요|요)?|비우지\s?마(?:세요|십시오)?)(?=\s|$|[.!?])/u,
   /(?:폴더|지운\s?편지함|정크\s?메일)\S*\s*(?:\S+\s+){0,4}?비우기[을를]\s*(?:\S+\s+){0,2}?(?:실행|하기|시작|진행)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|해)?(?!\s*중)(?=\s|$|[.!?])/u,
@@ -978,8 +983,8 @@ const LOCALE_DATA_CLEAR = Object.freeze([
   new RegExp(`^(?:non\\s+)?(?:svuota|svuotare|svuotate|svuoti|cancella|cancellare|cancellate)\\s+${dataSlot}dati\\s+(?:di\\s+navigazione|del\\s+sito|dei\\s+siti)(?=\\s|$|[.!?])`, 'iu'),
   new RegExp(`^${dataSlot}(?:\\S*(?:browser|website|web|seiten)daten|daten\\s+(?:des\\s+browsers|der\\s+website))(?:\\s+\\S+){0,2}?\\s+(?:leeren|bereinigen)\\s*[.!]?$`, 'iu'),
   new RegExp(`^(?:leere|leert|leeren\\s+sie|bereinige|bereinigt|bereinigen\\s+sie)\\s+${dataSlot}(?:\\S*(?:browser|website|web|seiten)daten)(?=\\s|$|[.!?])`, 'iu'),
-  new RegExp(`^${dataSlot}\\S*(?:browse|site|website)gegevens(?:\\s+\\S+){0,2}?\\s+(?:legen|leegmaken|leeg\\s+maken|wissen)\\s*[.!]?$`, 'iu'),
-  new RegExp(`^(?:niet\\s+)?(?:wis|leeg|leegt|legen|leegmaken)\\s+${dataSlot}\\S*(?:browse|site|website)gegevens(?=\\s|$|[.!?])`, 'iu'),
+  new RegExp(`^${dataSlot}\\S*(?:browse|site|website)gegevens(?:\\s+\\S+){0,2}?\\s+(?:legen|leegmaken|leeg\\s+maken|leeghalen|leeg\\s+halen|leegruimen|leeg\\s+ruimen|wissen)\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:niet\\s+)?(?:wis|leeg|leegt|legen|leegmaken|leeghalen|leegruimen)\\s+${dataSlot}\\S*(?:browse|site|website)gegevens(?=\\s|$|[.!?])`, 'iu'),
   new RegExp(`^${dataSlot}(?:tarama|site|gezinme)\\s+veriler\\S*(?:\\s+\\S+){0,2}?\\s+(?:temizle|temizleyin|temizleyiniz)\\s*[.!]?$`, 'iu'),
   /(?:閲覧データ|サイトデータ|ブラウジングデータ|ブラウザー?の?データ).{0,8}?(?:クリア|空に)(?!し(?:ました|た)|され|済|完了|中)/u,
   /(?:사이트\s?데이터|인터넷\s?사용\s?기록|검색\s?데이터|브라우저\s?데이터)\S*\s*(?:\S+\s+){0,2}?(?:비우(?:기|세요|십시오)?|비워(?:\s?줘|\s?주세요|요)?)(?=\s|$|[.!?])/u,
