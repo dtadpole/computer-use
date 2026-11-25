@@ -149,7 +149,9 @@ function emptiesTrashByDelete(name, sentence) {
   const button = String(name ?? '').trim().toLowerCase()
   const text = String(sentence ?? '').trim()
   const verb = TRASH_DELETE_VERB.exec(text)
-  if (!EMPTYING_BUTTON.test(button) || !TRASH_NOUN.test(text) || verb === null || !TRASH_PENDING.test(text)) return false
+  // A judged name has passed the Cyrillic homoglyph fold ('Очистить' -> 'Oчиcтить'), so the Russian button is matched folded too.
+  const ruButton = ['очистить', 'Очистить', 'ОЧИСТИТЬ'].map((form) => normaliseName(normaliseText(form))).includes(normaliseName(String(name ?? '')))
+  if (!(EMPTYING_BUTTON.test(button) || ruButton) || !TRASH_NOUN.test(text) || verb === null || !TRASH_PENDING.test(text)) return false
   // r2 (cu-developer-two's cross-check): a negation counts only within four words before the delete verb ('will not be
   // deleted'), never one in a following clause ('... will be permanently deleted and can't be restored').
   return !TRASH_NEGATION.test(text.slice(0, verb.index).trim().split(/\s+/).slice(-4).join(' '))
