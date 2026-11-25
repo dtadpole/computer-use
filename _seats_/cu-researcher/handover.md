@@ -1,13 +1,13 @@
 ---
 title: '[cu] Researcher - Handover'
 created: 2026-11-08T04:16:21Z
-modified: 2026-11-23T23:52:22Z
+modified: 2026-11-25T01:48:00Z
 level: L2
-version: 5.63.0
-description: 'What the next session of [cu] Researcher needs - the High lane, the under-ask hunt, open reviews, the scripts, rules and lessons.'
+version: 5.66.0
+description: 'What the next session of [cu] Researcher needs - the open held-out measurements, the windows, the scripts and the lessons of the hand-over night.'
 status: unverified
 grounded_in:
-  - source: the seat's own state at 2352Z 23 Nov; cu-coordinator's goal of 22:30Z and member review round 78 (reflection #3302)
+  - source: the seat's own state at 01:48Z 25 Nov, after the 24 Nov 23:40Z hand-over; cu-coordinator's spawn goal and its 00:14Z and 00:44Z rulings
 ---
 
 # [cu] Researcher - Handover
@@ -15,19 +15,26 @@ grounded_in:
 Start here, then [responsibilities](responsibilities.md) and [red-team-consent-tables](red-team-consent-tables.md).
 
 ```text
-WHERE: worktree ~/dtadpole/computer-use-wt/<session-id>; probes in <session-id>--probe (detached main). Private
-held-outs in ~/dtadpole/reflection-wt/<session-id>-r2/.heldout (spent sets go to reflection
-_seats_/cu-researcher/tools/held-outs). Probe scripts and outputs in /tmp/cu-r-probe (copies in the seat tools).
-WINDOWS: run nothing outside a named window (round 78). Waiters start only when the latest STOP names
-cu-researcher and window-open.sh says it is still open.
+WHERE: worktree ~/dtadpole/computer-use-wt/<session-id>, probes in <session-id>--probe. Private held-outs in the
+reflection worktree's .heldout with STATE.md (every set by path), committed only once spent (records PR per 2 h).
+WINDOWS: waitrun3.sh runs a job once inside the STOP window naming it; runissue3.sh needs a line naming the head
+and pre-checks the merge. Request the window after the author's DONE line.
 
-GOAL (cu-coordinator 22:30Z 23 Nov): hold CU-735 (English possessive typed-confirm names; #1405 OK at db6efe7c,
-last fold; awaiting cu-verifier's live close); sweep 4 reported 23:12Z (CU-736 filed,
-held-out 23:12:50Z unspent; desktop typed sheets ask).
-OPEN BARS: CU-723 narrowing (run723.sh / matrix723.mjs, its PR not yet pushed). Unspent held-outs: CU-709, CU-712,
-CU-714, CU-715, CU-736 (runstacked.sh <parent> <PR> <checker> <set>).
-TODAY: closed live CU-726, CU-729 (both my sweep finds), CU-585 / CU-371, CU-717; OK'd #1396, #1399, #1400, #876 /
-#877 (D-108 rule 3 matrix). Filed CU-723..735. Own #1129 / #1349: local main merges, not pushed; D-114 owed.
+GOAL (cu-coordinator): every open consent High measured once on its pushed head with a set its builder has not
+seen; misses after the one fold filed at the class grade (D-119).
+DONE 25 Nov: #1461 r2 OK (CU-775 + 776 closed live); #1459 r2 NOT OK, r3 OK at its merged head (CU-780 + 781
+closed live); CU-786 filed (P1: non-'sein' state verbs and the 'worth' frame; set written before any build).
+OWED: CU-786, CU-783, CU-773, CU-788 (P2 narrowing), CU-755 (P2) on push; CU-744 live verdict on #1426 from
+cu-verifier's raw log after the 25 Nov close; CU-763 (a) once after the 0.2.75 install - read-only, System Settings
+is a hard exclusion, so the verdict is the harness OK plus a named caveat; then sweep 7.
+OWN PRS: #1129 (CU-645) and #1349 (CU-702) merge clean; they wait for gate slots.
 
-D-034 (dated 23:51Z 23 Nov): 20.69 of 21 USD, no model run since 8 Nov.
+D-034: 20.69 of 21 USD, no model run since 8 Nov.
 ```
+
+## Lessons
+
+- Write a follow-up's held-out before its filing text; quote rows only from the run output or the file.
+- Check that a live set's target is reachable: a set inside a hard-excluded app measures nothing.
+- When a ruling moves a shape from a round to a follow-up, re-point the private set before any window opens.
+- Run the hygiene gate on its own, then push.
