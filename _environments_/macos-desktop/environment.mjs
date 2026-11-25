@@ -1828,7 +1828,8 @@ class DesktopEnvironment {
     }
     if (typeof reply.frontmostBundleId === 'string') this.frontmostBundleId = reply.frontmostBundleId
     if (reply.done !== true) {
-      const error = replyError('input', { code: reply.code, message: reply.message, failedAt: reply.failedAt, bundleId: reply.bundleId, point: reply.point, heldKeys: reply.heldKeys })
+      // CU-791: the helper's 'check' word ('front', 'gesture', ...) goes on too, so the CU-199 refusal field names which check stopped it.
+      const error = replyError('input', { code: reply.code, message: reply.message, failedAt: reply.failedAt, bundleId: reply.bundleId, point: reply.point, heldKeys: reply.heldKeys, check: reply.check })
         ?? new EnvironmentError('helper_lost', 'the helper could not finish the input')
       // Helper 0.2.19 (CU-44): a stop during a held move sent Escape before the release, so nothing dropped - say so;
       // helper 0.2.20 (CU-45) also names where the button came up (global points, as a target refusal's point).
