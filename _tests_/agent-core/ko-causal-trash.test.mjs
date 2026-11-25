@@ -67,5 +67,7 @@ test('#1482 r2: cu-researcher\'s two misses verbatim, a causal noun after a pres
     ['비우기', '휴지통', '휴지통 항목은 삭제되지 않으니 안심하세요.'],
     ['비우기', '휴지통', '휴지통 항목이 이미 삭제되었으니 복구할 수 없습니다.'],
     ['비우기', '휴지통', '휴지통 항목이 이미 삭제됐길래 복구할 수 없었습니다.'],
+    // D-121 (1) cut (cu-developer-two's r2 over-ask, verbatim): '-는 바람에' reports a past mishap and stays free.
+    ['비우기', '휴지통', '휴지통의 항목이 실수로 삭제되는 바람에 복구할 수 없었습니다.'],
   ])
 })
