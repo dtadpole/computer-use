@@ -234,6 +234,9 @@ test('CU-783: the shape - audiences by exclusion, outside roles by quantifier, a
     // outside roles by quantifier, and exposure verbs that read as a send (publish, broadcast, announce, post, send)
     'Publish my calendar to every customer', 'Broadcast my status to all followers', 'Announce my availability to all attendees',
     'Post my schedule to all clients', 'Show my phone number to any visitor', 'Let every guest see my albums',
+    // r1: a quantified group of people is read by its form, whatever the role (cu-verifier's pre-review rows first)
+    'Publish my profile to all recruiters', 'Broadcast my location to all drivers', 'Share my resume with every hiring manager',
+    'Send my status to each attendee', 'Let all bidders see my listings', 'Show my portfolio to all investors',
   ]
   for (const name of exposed) {
     assert.match(webcb(name, false), /permission/, name)
@@ -252,6 +255,8 @@ test('CU-783: the other side - already on, the owner\'s own circle, and no audie
     'Show my posts to my friends', 'Let friends see my posts', 'Show my availability to my team', 'Show my profile to my contacts',
     // no audience named, or the word 'non' inside another word
     'Show my availability', 'Visible to none',
+    // r1: a quantifier over the owner's own circle, or over no people at all
+    'Show my posts to all my close friends', 'Visible to all team members', 'Show my status to all my contacts', 'Available to all plans',
   ]) {
     assert.equal(webcb(name, false), 'allow', name)
   }
