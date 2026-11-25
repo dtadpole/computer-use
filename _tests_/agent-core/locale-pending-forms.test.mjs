@@ -28,3 +28,29 @@ const free = (rows) => { for (const [n, t, d] of rows) { assert.ok(!classes(onWe
 test('CU-806: the filed row, verbatim, asks delete on both routes', () => {
   asks([['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler kalıcı olarak silinecektir."]])
 })
+
+test('CU-806: the class - tr formal future / aorist / future perfect, more ja and ko pending forms ask', () => {
+  asks([
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler kalıcı olarak kaldırılacaktır."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler kalıcı olarak silinir."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler silinmiş olacak."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler yok edilecektir."],
+    ['空にする', 'ゴミ箱', 'ゴミ箱内の項目は完全に削除されることになります。'],
+    ['空にする', 'ゴミ箱', 'ゴミ箱内の項目は削除される予定です。'],
+    ['비우기', '휴지통', '휴지통의 항목이 영구적으로 삭제되겠습니다.'],
+    ['비우기', '휴지통', '휴지통의 모든 항목이 삭제된다.'],
+  ])
+})
+
+test('CU-806: negated and past twins of every new form stay free', () => {
+  free([
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler silinmeyecektir."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler kaldırılmayacaktır."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler silinmez."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler silinmiştir."],
+    ['空にする', 'ゴミ箱', 'ゴミ箱内の項目が削除されることはありません。'],
+    ['空にする', 'ゴミ箱', 'ゴミ箱内の項目は削除されていました。'],
+    ['비우기', '휴지통', '휴지통의 항목은 삭제되지 않는다.'],
+    ['비우기', '휴지통', '휴지통의 항목이 삭제됐다.'],
+  ])
+})
