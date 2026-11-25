@@ -43,6 +43,13 @@ test('CU-775 + CU-776 r2: a manner adverb before the verb', () => {
   assert.deepEqual(typedConfirmClasses(['Handle'], ['Okay, just pop in the account handle.', 'Support is closed for the holidays.']), [], "a bare 'closed' is no act")
 })
 
+test("CU-775 close (cu-verifier's mutant L1): an opener outside the word list is stripped by the generic arm", () => {
+  // 'Cool, type out ...' alone would not pin it: IMPERATIVE_NAME already reads a verb after a comma. An adverb after the opener does.
+  assert.deepEqual(typedConfirmClasses(['ID'], ['Cool, quickly type out the database ID.', 'The database will be dropped.']), ['delete'], "'Cool,' is in no word list")
+  assert.deepEqual(typedConfirmClasses(['ID'], ['No worries, just quickly type out the database ID.', 'The database will be dropped.']), ['delete'], 'a two-word opener outside the list')
+  assert.deepEqual(typedConfirmClasses(['ID'], ['Cool, quickly type out the database ID.', 'Used for support tickets.']), [], 'the same entry, no act')
+})
+
 test('CU-775 + CU-776: a long sentence is read quickly', () => {
   const long = `${'well, '.repeat(40)}and so on and so on and so on, then nothing here.`
   const started = Date.now()
