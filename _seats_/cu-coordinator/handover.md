@@ -1,40 +1,39 @@
 ---
 title: '[cu] Coordinator - handover'
 created: 2026-11-08T04:15:00Z
-modified: 2026-11-23T23:01:42Z
+modified: 2026-11-24T23:01:34Z
 level: L2
-version: 4.3.0
+version: 4.4.0
 status: unverified
-description: 'What the next [cu] Coordinator session needs to take the seat mid-flight - state at 23 Nov 23:00Z.'
+description: 'What the next [cu] Coordinator session needs to take the seat mid-flight - state at 24 Nov 23:00Z.'
 grounded_in:
   - source: owner's re-creation order of 2026-11-22 19:05 PST (the previous holder was archived past the model window)
-  - source: decision log D-108, D-110 to D-114
+  - source: decision log D-108, D-110 to D-120
 ---
 
 # [cu] Coordinator - handover
 
-**Where things are.** Work only from the session worktrees (computer-use, reflection) with `git -C` (D-104). Private:
-roster, seat files, review log and my helpers beside TEAM.yaml in the reflection bank.
+**Where things are.** Work only from the session worktrees with `git -C` (D-104). Private: roster, seat files, review
+log and helpers beside TEAM.yaml in the reflection bank. Keep tool outputs small; idle rounds use a bounded wait.
 
-**Context economy.** Keep tool outputs small, delegate long reads, never print an inbox whole; idle rounds use a bounded wait.
+**Goal.** Seven rows hold (verdict 0.9.344). Consent: fourteen Highs closed live on 24 Nov. Open: CU-744 (#1426,
+helper 0.2.74, merge 25 Nov 08:00Z, install by 08:15Z, close by 08:25Z), CU-763 (#1444, 0.2.75, retarget after
+#1426), CU-775/776, CU-780/781 (#1459), CU-783, CU-773, then CU-135 at step 4. Human control waits on step 4 (owner
+says when; checklist 0.4.7).
 
-**Goal.** Seven rows hold (verdict 0.9.333). Consent closed CU-607, CU-716, CU-585, CU-371, CU-726, CU-717 and
-CU-729 live on 23 Nov; open High: CU-735 (English possessive name prompts, cu-developer-two), then CU-135 at step 4.
-Human control waits on step 4 (CU-11, CU-119): about 15 min in person after the signed 0.2.73 install (24 Nov
-08:00Z window) and CU-727's launchers. CU-721: the brief went to the owner at 20:18Z; until then their bridge runs at idle 0 by the owner's decision (D-117), and our side keeps 300 s.
+**Rules added today.** D-119 (one fold; an extra round only to finish a named item or remove an over-ask the PR
+introduced; the over-ask test is the English twin) and D-120 (three OKs for a High, held-out independence, a job runs
+only in its named window).
 
-**Lane and records.** Highs first (CU-735), then CU-731 (P2), the class batch (#877 full gate as post-check, #851 +
-#1399, #856 + #1396, #1390), CU-709, CU-723. Windows: daily 08:00-08:25Z is ours (D-116, D-117); Last War soft slot
-09:20-10:50Z on 24 Nov. Node-only cells may run beside cu-lastwar runs while they run at idle 0 (22:44Z ruling).
+**Seats.** Replacements on 24 Nov: integrator at 09:10, 15:37 and 21:16Z; cu-developer-three about 23:00Z;
+cu-researcher about 23:45Z. Hand-over order: spawn, roster PR landed, then STAND-DOWN - an unrostered seat cannot use
+the inbox (CU-785). After a DSH restart every goal is disarmed: revive each seat with /goal resume.
 
-**Seats.** Sessions get disarmed; revive them (/goal resume) every pass.
-cu-researcher's context is near 80 % (successor at 85 %); cu-integrator's handover is successor-ready.
-
-**Every 15 minutes.** Inbox, health, triage, one member review (round 79 about 22:45Z), decisions, a
-short Chinese summary. Daily 23:00Z reflection and this file; Monday cycle close.
+**Every 15 minutes.** Inbox, health, triage, decisions, a short Chinese summary; member reviews every 2 h (round 84
+due); records PRs at most every 2 h (D-113).
 
 **Rules that bite.** No ask_user_question (D-031). Input only through CUHelper, owner idle (D-056, D-066). Nothing past
 21 USD without the owner (D-034). Never implement or merge.
 
-**Owner items.** Step 4 time and mode; CU-721 option; Opus S8/S9 budget; notifications and Typeless; Chrome
-tabs; history clean-up; paste setting.
+**Owner items.** Answer Allow on CUHelper's Screen Recording prompt; step 4 time; budget raise for CU-66; notifications
+and Typeless; Chrome tabs; history clean-up; paste setting.
