@@ -54,3 +54,32 @@ test('CU-806: negated and past twins of every new form stay free', () => {
     ['비우기', '휴지통', '휴지통의 항목이 삭제됐다.'],
   ])
 })
+
+test('#1479 r2: cu-researcher\'s four misses verbatim and the table\'s added forms ask', () => {
+  asks([
+    ['Boşalt', 'Dikkat', "Çöp Sepeti'ndeki tüm dosyalar kalıcı olarak silinecekler."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler kalıcı olarak silinmek üzere."],
+    ['비우기', '알림', '휴지통 파일은 곧 삭제될 겁니다.'],
+    ['空にする', 'ゴミ箱', 'ゴミ箱の項目は完全に削除されようとしています。'],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler silinirler."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler kaldırılacaklardır."],
+    ['비우기', '휴지통', '휴지통의 항목이 지워질 거예요.'],
+  ])
+})
+
+test('#1479 r2: cu-developer-two\'s ko conditional over-ask verbatim, and the negated / past twins of every added form, stay free', () => {
+  free([
+    ['비우기', '휴지통', '휴지통의 항목이 삭제된다면 복구할 수 없습니다.'],
+    ['비우기', '휴지통', '휴지통의 항목이 삭제된다고 알려 드립니다.'],
+    ['비우기', '휴지통', '휴지통의 항목이 삭제될 거라면 미리 백업하세요.'],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler silinmek üzere değil."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler silinmeyecekler."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler silinmezler."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler silindiler."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler silinmek üzereydi."],
+    ['비우기', '휴지통', '휴지통의 항목은 삭제되지 않을 겁니다.'],
+    ['비우기', '휴지통', '휴지통의 항목은 이미 삭제됐을 겁니다.'],
+    ['空にする', 'ゴミ箱', 'ゴミ箱の項目は削除されようとしていません。'],
+    ['空にする', 'ゴミ箱', 'ゴミ箱の項目は削除されようとしていました。'],
+  ])
+})
