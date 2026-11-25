@@ -35,6 +35,8 @@ test('CU-807: the class - every Korean connective after the delete verb asks, in
     ['비우기', '휴지통', '휴지통의 항목이 삭제되니 주의하세요.'],
     ['비우기', '휴지통', '휴지통의 항목이 모두 지워지며 복구할 수 없습니다.'],
     ['비우기', '휴지통', '휴지통의 항목이 제거되므로 되돌릴 수 없습니다.'],
+    // r2: cu-developer-two's fourth row verbatim (the future connective).
+    ['비우기', '휴지통', '휴지통의 항목이 삭제될 것이며 되돌릴 수 없습니다.'],
   ])
 })
 
@@ -45,5 +47,14 @@ test('CU-807: negated, past and resultative twins of the connectives stay free',
     ['비우기', '휴지통', '휴지통의 항목이 삭제되었으며 복구할 수 없습니다.'],
     ['비우기', '휴지통', '휴지통의 항목이 이미 삭제되어 있습니다.'],
     ['비우기', '휴지통', '휴지통의 항목이 지워졌고 비어 있습니다.'],
+    // r2: cu-developer-two's three over-asks verbatim - the progressive, the state and the concessive.
+    ['비우기', '휴지통', '휴지통의 항목이 지금 삭제되고 있습니다.'],
+    ['비우기', '휴지통', '휴지통의 항목이 이미 삭제되고 없습니다.'],
+    ['비우기', '휴지통', '휴지통의 항목은 삭제되어도 복구할 수 있습니다.'],
+    ['비우기', '휴지통', '휴지통의 항목은 지워져도 복구할 수 있습니다.'],
+    // r2 table: the conditional / temporal forms stay free like 되면.
+    ['비우기', '휴지통', '휴지통의 항목이 삭제되면 복구할 수 없습니다.'],
+    ['비우기', '휴지통', '휴지통의 항목이 삭제되고 나면 복구할 수 없습니다.'],
+    ['비우기', '휴지통', '휴지통의 항목이 삭제되어 버리면 복구할 수 없습니다.'],
   ])
 })
