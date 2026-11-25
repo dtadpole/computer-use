@@ -215,3 +215,44 @@ test('CU-757: the other side - the same buttons in a dialog that states no acces
   // A sentence about NOT confirming describes the other button.
   assert.equal(web('Allow', 'Keep this layout?', 'If you cancel, the app will be able to read your old settings.'), 'allow')
 })
+
+test('CU-783: the filed rows - an audience named by exclusion, and an exposure read as a send', () => {
+  // cu-researcher's filed under-asks, verbatim (toggle off, clicked).
+  assert.match(webcb('Allow non-friends to see my posts', false), /permission/)
+  assert.match(axcb('Publish my availability to all clients', false), /permission/)
+  // The filing's twin row is an exposure too and asks permission. (The pre-existing 'any visitor' over-ask the filing
+  // grades on its own - 'Let any visitor choose a theme' - is a lowering, so it goes to its own issue, D-108 (1).)
+  assert.match(sw('Let any visitor browse my albums', false), /permission/)
+})
+
+test('CU-783: the shape - audiences by exclusion, outside roles by quantifier, and exposure verbs that read as a send', () => {
+  const exposed = [
+    // an audience named by exclusion: non-X, people who are not my X, people who do not follow me, everyone except X
+    'Let non-followers view my photos', 'Show my posts to non-friends', 'Non-friends can see my posts', 'Visible to non-followers',
+    'Show my profile to people who are not my friends', "Let people who don't follow me see my stories",
+    'Share my posts with everyone except my family', 'Show my activity to friends of friends', 'Let people I have not added view my profile',
+    // outside roles by quantifier, and exposure verbs that read as a send (publish, broadcast, announce, post, send)
+    'Publish my calendar to every customer', 'Broadcast my status to all followers', 'Announce my availability to all attendees',
+    'Post my schedule to all clients', 'Show my phone number to any visitor', 'Let every guest see my albums',
+  ]
+  for (const name of exposed) {
+    assert.match(webcb(name, false), /permission/, name)
+    assert.match(space(name, false), /permission/, `Space: ${name}`)
+  }
+  assert.match(axcb('Let non-followers view my photos', false), /permission/)
+  assert.match(axcb('Broadcast my status to all followers', false), /permission/)
+})
+
+test('CU-783: the other side - already on, the owner\'s own circle, and no audience named', () => {
+  assert.equal(webcb('Allow non-friends to see my posts', true), 'allow') // already on: the press closes it
+  // Already on: no exposure grant (main's submit for a 'Publish ...' control in either state is older and unchanged here).
+  assert.doesNotMatch(axcb('Publish my availability to all clients', true), /permission/)
+  for (const name of [
+    // the owner's own circle
+    'Show my posts to my friends', 'Let friends see my posts', 'Show my availability to my team', 'Show my profile to my contacts',
+    // no audience named, or the word 'non' inside another word
+    'Show my availability', 'Visible to none',
+  ]) {
+    assert.equal(webcb(name, false), 'allow', name)
+  }
+})
