@@ -78,19 +78,22 @@ const LOCALE_PASSIVE_ACTS = [
   // wird aus dem Papierkorb entfernt.' - reads delete; never the past ('Alles
   // wurde aus dem Papierkorb entfernt.', 'Everything was removed from the trash.'), never a bare notice ('Item removed from the trash.'):
   // only a question or a pending statement; a negation skips it (localePassiveAct).
-  [/^(?=[^.!?]*\?\s*$|[^.!?]*(?<!\p{L})(?:wird|werden|will|would|is\s+going\s+to|sera|seront|será|serán|verrà|verranno|sarà|saranno|serão|wordt|worden|zal|zullen|se\s+(?:quitar|eliminar|borrar)[áa]n?)(?!\p{L}))(?![^.!?]*(?<!\p{L})(?:wurde|wurden|was|were|has\s+been|have\s+been|a\s+été|ont\s+été|fue|fueron|ha\s+sido|han\s+sido|è\s+stat[oa]|sono\s+stat[ie]|foi|foram|werd|werden\s+verwijderd)(?!\p{L}))[^.!?]*?(?:(?<!\p{L})(?:aus\s+(?:dem|deinem|ihrem|meinem|unserem)\s+(?:papierkorb|mülleimer|abfalleimer)|from\s+(?:the|your|my)\s+(?:trash|bin|recycle\s+bin)|de\s+(?:la|ta|votre|ma)\s+corbeille|de\s+(?:la|tu|su|mi)\s+papelera|dal\s+cestino|da\s+lixeira|uit\s+de\s+prullenbak)(?!\p{L})[^.!?]{0,40}?(?<!\p{L})(?:entfernt|gelöscht|beseitigt|weggenommen|herausgenommen|removed|deleted|erased|purged|cleared|taken\s+out|retiré(?:e)?s?|enlevé(?:e)?s?|ôté(?:e)?s?|supprimé(?:e)?s?|effacé(?:e)?s?|éliminé(?:e)?s?|quitad[oa]s?|retirad[oa]s?|eliminad[oa]s?|sacad[oa]s?|borrad[oa]s?|suprimid[oa]s?|(?:quitar|retirar|eliminar|sacar|borrar|suprimir)[áa]n?|tolt[oiae]|rimoss[oiae]|eliminat[oiae]|cancellat[oiae]|removid[oa]s?|tirad[oa]s?|apagad[oa]s?|excluíd[oa]s?|verwijderd|weggehaald|gewist)(?!\p{L})|(?<!\p{L})(?:entfernt|gelöscht|beseitigt|weggenommen|herausgenommen|removed|deleted|erased|purged|cleared|taken\s+out|retiré(?:e)?s?|enlevé(?:e)?s?|ôté(?:e)?s?|supprimé(?:e)?s?|effacé(?:e)?s?|éliminé(?:e)?s?|quitad[oa]s?|retirad[oa]s?|eliminad[oa]s?|sacad[oa]s?|borrad[oa]s?|suprimid[oa]s?|(?:quitar|retirar|eliminar|sacar|borrar|suprimir)[áa]n?|tolt[oiae]|rimoss[oiae]|eliminat[oiae]|cancellat[oiae]|removid[oa]s?|tirad[oa]s?|apagad[oa]s?|excluíd[oa]s?|verwijderd|weggehaald|gewist)(?!\p{L})[^.!?]{0,40}?(?<!\p{L})(?:aus\s+(?:dem|deinem|ihrem|meinem|unserem)\s+(?:papierkorb|mülleimer|abfalleimer)|from\s+(?:the|your|my)\s+(?:trash|bin|recycle\s+bin)|de\s+(?:la|ta|votre|ma)\s+corbeille|de\s+(?:la|tu|su|mi)\s+papelera|dal\s+cestino|da\s+lixeira|uit\s+de\s+prullenbak)(?!\p{L}))/iu, 'delete'],
+  [/^(?=[^.!?]*\?\s*$|[^.!?]*(?<!\p{L})(?:wird|werden|will|would|is\s+going\s+to|sera|seront|será|serán|verrà|verranno|sarà|saranno|serão|wordt|worden|zal|zullen|se\s+(?:quitar|eliminar|borrar)[áa]n?)(?!\p{L}))(?![^.!?]*(?<!\p{L})(?:wurde|wurden|was|were|has\s+been|have\s+been|a\s+été|ont\s+été|fue|fueron|ha\s+sido|han\s+sido|è\s+stat[oa]|sono\s+stat[ie]|foi|foram|werd|werden\s+verwijderd)(?!\p{L}))[^.!?]*?(?:(?<!\p{L})(?:aus\s+(?:dem|deinem|ihrem|meinem|unserem)\s+(?:papierkorb|mülleimer|abfalleimer)|from\s+(?:the|your|my)\s+(?:trash|bin|recycle\s+bin)|de\s+(?:la|ta|votre|ma)\s+corbeille|de\s+(?:la|tu|su|mi)\s+papelera|dal\s+cestino|da\s+lixeira|uit\s+de\s+(?:prullen(?:bak|mand)|vuil(?:nis)?bak))(?!\p{L})[^.!?]{0,40}?(?<!\p{L})(?:entfernt|gelöscht|beseitigt|weggenommen|herausgenommen|removed|deleted|erased|purged|cleared|taken\s+out|retiré(?:e)?s?|enlevé(?:e)?s?|ôté(?:e)?s?|supprimé(?:e)?s?|effacé(?:e)?s?|éliminé(?:e)?s?|quitad[oa]s?|retirad[oa]s?|eliminad[oa]s?|sacad[oa]s?|borrad[oa]s?|suprimid[oa]s?|(?:quitar|retirar|eliminar|sacar|borrar|suprimir)[áa]n?|tolt[oiae]|rimoss[oiae]|eliminat[oiae]|cancellat[oiae]|removid[oa]s?|tirad[oa]s?|apagad[oa]s?|excluíd[oa]s?|verwijderd|weggehaald|gewist)(?!\p{L})|(?<!\p{L})(?:entfernt|gelöscht|beseitigt|weggenommen|herausgenommen|removed|deleted|erased|purged|cleared|taken\s+out|retiré(?:e)?s?|enlevé(?:e)?s?|ôté(?:e)?s?|supprimé(?:e)?s?|effacé(?:e)?s?|éliminé(?:e)?s?|quitad[oa]s?|retirad[oa]s?|eliminad[oa]s?|sacad[oa]s?|borrad[oa]s?|suprimid[oa]s?|(?:quitar|retirar|eliminar|sacar|borrar|suprimir)[áa]n?|tolt[oiae]|rimoss[oiae]|eliminat[oiae]|cancellat[oiae]|removid[oa]s?|tirad[oa]s?|apagad[oa]s?|excluíd[oa]s?|verwijderd|weggehaald|gewist)(?!\p{L})[^.!?]{0,40}?(?<!\p{L})(?:aus\s+(?:dem|deinem|ihrem|meinem|unserem)\s+(?:papierkorb|mülleimer|abfalleimer)|from\s+(?:the|your|my)\s+(?:trash|bin|recycle\s+bin)|de\s+(?:la|ta|votre|ma)\s+corbeille|de\s+(?:la|tu|su|mi)\s+papelera|dal\s+cestino|da\s+lixeira|uit\s+de\s+(?:prullen(?:bak|mand)|vuil(?:nis)?bak))(?!\p{L}))/iu, 'delete'],
   [/\b(?:seront|sera)\s+(?:\S+\s+){0,3}?(?:supprimée?s?|effacée?s?)\b/iu, 'supprimer'],
   // CU-786: the trash's state asked in the Romance languages or Dutch - '¿La papelera queda vaciada del todo?', 'La corbeille
   // restera-t-elle vidée ?', 'Il Cestino rimane svuotato?', 'A lixeira fica esvaziada?', 'Blijft de prullenbak geleegd?' - reads
   // delete like its German twin. Only a question, only the trash or an inbox, only a state verb (never the past 'fue / a été /
   // è stato / foi / werd ... ?'); a negation skips it (localePassiveAct).
-  [/^(?=[^?]*?(?<!\p{L})(?:queda|quedan|quedará|quedarán|quedaría|está|están|estará|estarán|permanece|permanecerá|reste|restent|restera|resteront|resterait|sera|seront|est|sont|resta|restano|resterà|rimane|rimangono|rimarrà|sarà|saranno|è|sono|fica|ficam|ficará|ficarão|estará|será|serão|blijft|blijven|is|zijn|wordt|worden)(?!\p{L}))[^?]*?(?<!\p{L})(?:papelera|papeleras|corbeille|corbeilles|cestino|lixeira|lixo|prullenbak|bandeja\s+de\s+entrada|boîte\s+de\s+réception|posta\s+in\s+arrivo|caixa\s+de\s+entrada|postvak\s+in)(?!\p{L})[^?]{0,60}?(?<!\p{L})(?:vaciad[oa]s?|vac[ií][oa]s?|vidée?s?|vides?|svuotat[oaie]|vuot[oaie]|esvaziad[oa]s?|vazi[oa]s?|geleegd|leeg)(?!\p{L})[^?]{0,40}\?\s*$|^(?=[^?]*?(?<!\p{L})(?:queda|quedan|quedará|quedarán|quedaría|está|están|estará|estarán|permanece|permanecerá|reste|restent|restera|resteront|resterait|sera|seront|est|sont|resta|restano|resterà|rimane|rimangono|rimarrà|sarà|saranno|è|sono|fica|ficam|ficará|ficarão|estará|será|serão|blijft|blijven|is|zijn|wordt|worden)(?!\p{L}))[^?]*?(?<!\p{L})(?:vaciad[oa]s?|vac[ií][oa]s?|vidée?s?|vides?|svuotat[oaie]|vuot[oaie]|esvaziad[oa]s?|vazi[oa]s?|geleegd|leeg)(?!\p{L})[^?]{0,60}?(?<!\p{L})(?:papelera|papeleras|corbeille|corbeilles|cestino|lixeira|lixo|prullenbak|bandeja\s+de\s+entrada|boîte\s+de\s+réception|posta\s+in\s+arrivo|caixa\s+de\s+entrada|postvak\s+in)(?!\p{L})[^?]{0,40}\?\s*$/iu, 'delete'],
+  [/^(?=[^?]*?(?<!\p{L})(?:queda|quedan|quedará|quedarán|quedaría|está|están|estará|estarán|permanece|permanecerá|reste|restent|restera|resteront|resterait|sera|seront|est|sont|resta|restano|resterà|rimane|rimangono|rimarrà|sarà|saranno|è|sono|fica|ficam|ficará|ficarão|estará|será|serão|blijft|blijven|is|zijn|wordt|worden)(?!\p{L}))[^?]*?(?<!\p{L})(?:papelera|papeleras|corbeille|corbeilles|cestino|lixeira|lixo|(?:prullen(?:bak|mand)|vuil(?:nis)?bak)|bandeja\s+de\s+entrada|boîte\s+de\s+réception|posta\s+in\s+arrivo|caixa\s+de\s+entrada|postvak\s+in)(?!\p{L})[^?]{0,60}?(?<!\p{L})(?:vaciad[oa]s?|vac[ií][oa]s?|vidée?s?|vides?|svuotat[oaie]|vuot[oaie]|esvaziad[oa]s?|vazi[oa]s?|geleegd|leeg\s?(?:ge)?maakt|leeg\s?(?:ge)?haald|leeg\s?(?:ge)?ruimd|geledigd|leeg)(?!\p{L})[^?]{0,40}\?\s*$|^(?=[^?]*?(?<!\p{L})(?:queda|quedan|quedará|quedarán|quedaría|está|están|estará|estarán|permanece|permanecerá|reste|restent|restera|resteront|resterait|sera|seront|est|sont|resta|restano|resterà|rimane|rimangono|rimarrà|sarà|saranno|è|sono|fica|ficam|ficará|ficarão|estará|será|serão|blijft|blijven|is|zijn|wordt|worden)(?!\p{L}))[^?]*?(?<!\p{L})(?:vaciad[oa]s?|vac[ií][oa]s?|vidée?s?|vides?|svuotat[oaie]|vuot[oaie]|esvaziad[oa]s?|vazi[oa]s?|geleegd|leeg\s?(?:ge)?maakt|leeg\s?(?:ge)?haald|leeg\s?(?:ge)?ruimd|geledigd|leeg)(?!\p{L})[^?]{0,60}?(?<!\p{L})(?:papelera|papeleras|corbeille|corbeilles|cestino|lixeira|lixo|(?:prullen(?:bak|mand)|vuil(?:nis)?bak)|bandeja\s+de\s+entrada|boîte\s+de\s+réception|posta\s+in\s+arrivo|caixa\s+de\s+entrada|postvak\s+in)(?!\p{L})[^?]{0,40}\?\s*$/iu, 'delete'],
   // r2 (cu-developer-two's cross-check): 'se' reads only before a FUTURE form - 'Se ha eliminado el archivo.' is a notice.
   [/\bser[áa]n?\s+(?:\S+\s+){0,3}?(?:eliminad[oa]s?|borrad[oa]s?)\b|\bse\s+(?:\S+\s+){0,2}?(?:eliminar[áa]n?|borrar[áa]n?)\b/iu, 'eliminar'],
   [/\b(?:verranno|verrà|saranno|sarà)\s+(?:\S+\s+){0,3}?(?:eliminat[ioae]|rimoss[ioae]|cancellat[ioae])\b/iu, 'elimina'],
   [/\b(?:serão|será)\s+(?:\S+\s+){0,3}?(?:excluíd[oa]s?|apagad[oa]s?|removid[oa]s?)\b/iu, 'excluir'],
   // r2 (cu-researcher's held-out 13:02Z): Dutch - 'Deze mailbox wordt permanent verwijderd.'
   [/(?<!\p{L})(?:wordt|worden|zal|zullen)(?!\p{L})[^.!?]{0,120}?(?<!\p{L})(?:definitief\s+|permanent\s+)?(?:verwijderd|gewist)(?!\p{L})/iu, 'verwijderen'],
+  // CU-800 r2 (cu-researcher's r1 set; cu-developer-two's CU-802 nouns 'vuilnisbak' / 'vuilbak'): the trash itself emptied in a pending statement - 'De prullenbak wordt leeggemaakt.',
+  // 'De prullenmand wordt nu geleegd.' (only over the trash; a negation skips it).
+  [/^(?=[^.!?]*(?<!\p{L})(?:prullen(?:bak|mand)|vuil(?:nis)?bak)(?!\p{L}))[^.!?]*?(?<!\p{L})(?:wordt|worden|zal|zullen)(?!\p{L})[^.!?]{0,120}?(?<!\p{L})(?:geleegd|leeg\s?(?:ge)?maakt|leeg\s?(?:ge)?haald|leeg\s?(?:ge)?ruimd|geledigd)(?!\p{L})/iu, 'verwijderen'],
   // CU-771 (High; cu-researcher's r2 set for CU-748): Russian with ё and the other delete participles ('будет удалён', 'будут
   // стёрты', 'будет очищена', 'будут уничтожены') and the reflexive future ('Файл удалится.', 'Сообщения удалятся навсегда.').
   [/(?<!\p{L})(?:будут|будет)\s+(?:\S+\s+){0,3}?(?:удал[её]н[ыао]?|ст[её]рт[ыао]?|уничтожен[ыао]?)(?!\p{L})|(?<!\p{L})(?:удалится|удалятся|сотр[её]тся|сотрутся)(?!\p{L})/iu, 'удалить'],
@@ -131,20 +134,113 @@ const FINAL_STEP_CONFIRM = /^\s*(?:finish|finish\s+up|complete|next|next\s+step|
 // cestino?', '空にする' / 'ゴミ箱を空にしますか？', '倒空' / '要倒空废纸篓吗？'), matched as a word or a word's stem; and the title must
 // ask or point at its object - a question, or a determiner after the verb - so a title that names a state ('Empty folder') stays free.
 const ECHO_CJK = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u
+// CU-804 (P1; cu-coordinator 09:39Z, widened from cu-researcher's CU-800 find): a bare EMPTYING button ('Empty', 'Leeren', 'Vider',
+// 'Vaciar', 'Svuota', 'Esvaziar', 'Legen', 'Leegmaken' ...) under a dialog sentence that asks or announces DELETING the items in the
+// trash - a verb the button does not echo ('Are you sure you want to permanently delete the items in the Trash?', 'Weet u zeker dat
+// u de onderdelen in de prullenmand permanent wilt verwijderen?') - confirms emptying the trash. Only a question or a pending
+// statement, never a negated one, and only over a trash noun; the sentence then also reads as 'Empty trash'. r2: the ru / ja / zh /
+// ko / tr forms too (cu-developer-two's cross-check).
+const EMPTYING_BUTTON = /^(?:empty|empty\s+now|leeren|entleeren|ausleeren|vider|vaciar|svuota|svuotare|esvaziar|legen|leegmaken|leeghalen|leegruimen|ledigen|leeg\s+(?:maken|halen|ruimen)|очистить|空にする|清倒|倒空|清空|비우기|boşalt)$/u
+const TRASH_NOUN = /(?<!\p{L})(?:trash|bin|recycle\s+bin|papierkorb|mülleimer|abfalleimer|corbeille|papelera|cestino|lixeira|lixo|prullenbak|prullenmand|vuilnisbak|vuilbak|корзин[аеуыой]|корзиной|çöp)(?!\p{L})|ゴミ箱|废纸篓|廢紙簍|回收站|휴지통/iu
+const TRASH_DELETE_VERB = /(?<!\p{L})(?:delete|deleted|erase|erased|remove|removed|löschen|gelöscht|entfernen|entfernt|supprimer|supprimée?s?|effacer|effacée?s?|eliminar|eliminad[oa]s?|borrar|borrad[oa]s?|eliminare|eliminat[oiae]|cancellare|cancellat[oiae]|excluir|excluíd[oa]s?|apagar|apagad[oa]s?|verwijderen|verwijderd|wissen|gewist)(?!\p{L})/iu
+const TRASH_PENDING = /[?？]\s*$|(?<!\p{L})(?:will|would|wird|werden|sera|seront|será|serán|verrà|verranno|serão|wordt|worden|zal|zullen)(?!\p{L})/iu
+const TRASH_NEGATION = /(?<!\p{L})(?:not|never|nicht|nie|kein|keine|ne|pas|jamais|no|nunca|non|mai|não|niet|nooit|geen)(?!\p{L})|n['’]t(?!\p{L})/iu
+// CU-805 (P1; the marker table cu-researcher OK'd on #1475, cu-coordinator 12:42Z): in ru / ja / zh / ko / tr a marker counts only
+// ATTACHED to a delete / erase / remove verb of the family - a suffix on the stem, or an auxiliary a few words before it - never
+// anywhere in the sentence. Checked in order: a negation frees the sentence, then a past / perfect form, then a pending form (or a
+// question) asks. 'Объекты в Корзине будут удалены.', 'ゴミ箱内の項目は完全に削除されます。', '废纸篓中的所有项目将被不可恢复地删除。',
+// '휴지통의 모든 항목이 영구적으로 삭제됩니다.', 'Çöp Sepeti'ndeki tüm öğeler kalıcı olarak silinecek.' ask; their negated and past
+// twins stay free. CU-806 adds the tr formal future / aorist / future perfect and more ja / ko pending forms; the ko connectives are CU-807's.
+const RU_PART = '(?:удал[её]н[аоы]?|ст[её]рт[аоы]?|уничтожен[аоы]?|очищен[аоы]?|выброшен[аоы]?)'
+const RU_FUT = '(?:удалятся|удалит|сотрутся|сотр[её]т|уничтожатся|уничтожит|выбросятся|выбросит)'
+const JA_STEM = '(?:削除|消去|破棄|抹消|除去|廃棄|処分|消)'
+const ZH_VERB = '(?:删除|刪除|删掉|刪掉|删去|刪去|抹除|抹去|擦除|清除|去除|移除|销毁|銷毀|丢弃|丟棄|清理掉)'
+const KO_STEM = '(?:삭제|제거|폐기|소거|파기|말소)'
+const TRASH_LOCALE = [
+  { // ru
+    verb: new RegExp(`(?<!\\p{L})(?:${RU_PART}|${RU_FUT}|удалить|стереть|уничтожить|очистить)(?!\\p{L})`, 'iu'),
+    negation: new RegExp(`(?<!\\p{L})не(?:\\s+\\S+){0,3}?\\s+(?:будут|будет|${RU_PART}|${RU_FUT})(?!\\p{L})`, 'iu'),
+    past: new RegExp(`(?<!\\p{L})(?:были|был|была|было)(?:\\s+\\S+){0,3}?\\s+${RU_PART}(?!\\p{L})`, 'iu'),
+    pending: new RegExp(`(?<!\\p{L})(?:будут|будет)(?:\\s+\\S+){0,3}?\\s+${RU_PART}(?!\\p{L})|(?<!\\p{L})${RU_FUT}(?!\\p{L})`, 'iu'),
+  },
+  { // ja
+    verb: new RegExp(`${JA_STEM}(?:さ|し|す|済)|捨て`, 'u'),
+    negation: new RegExp(`${JA_STEM}(?:されません|しません|されない|しない|されず|せず|さない|さず|されることはありません|されることはない|されていません|されようとしていません)|捨てられ(?:ません|ない|ず)|捨てません|捨てない`, 'u'),
+    past: new RegExp(`${JA_STEM}(?:されました|しました|された|した|されています|されている|されていました|されてしまいました|されようとしていました|済み)|捨てられ(?:ました|た|ています|ている)|捨てました`, 'u'),
+    pending: new RegExp(`${JA_STEM}(?:されます|します|される(?!こと)|する(?!こと)|され、|されることになります|されることになる|されることになっています|される予定|する予定|されるでしょう|されようとしています|されようとしている|しようとしています)|消す(?!こと)|捨てられ(?:ます|る(?!こと)|、)|捨てます`, 'u'),
+  },
+  { // zh
+    verb: new RegExp(ZH_VERB, 'u'),
+    negation: new RegExp(`(?:不(?!可)|没有|沒有|没|沒)(?:会|會|能|再|被|将|將){0,2}[^。！？.!?，,]{0,4}?${ZH_VERB}`, 'u'),
+    past: new RegExp(`(?:已|已经|已經)[^。！？.!?]{0,12}?${ZH_VERB}|${ZH_VERB}了`, 'u'),
+    pending: new RegExp(`(?:将被|將被|会被|會被|即将|即將|将要|將要|将会|將會|将|將)[^。！？.!?，,]{0,8}?${ZH_VERB}`, 'u'),
+  },
+  { // ko
+    verb: new RegExp(`${KO_STEM}|지우|지워|지웁|지웠|버려|버리|버립|버렸`, 'u'),
+    negation: new RegExp(`${KO_STEM}(?:되|하)지\\s*(?:않|못)|${KO_STEM}\\s*안\\s|지워지지\\s*(?:않|못)|지우지\\s*(?:않|못)|버려지지\\s*(?:않|못)|버리지\\s*(?:않|못)`, 'u'),
+    past: new RegExp(`${KO_STEM}(?:되었|됐|했|되어\\s*있|돼\\s*있)|지워졌|지웠|지워져\\s*있|버려졌|버렸|버려져\\s*있`, 'u'),
+    // CU-807: a connective joining the delete verb to a following clause ('삭제되며 복구할 수 없습니다', -되고 / -되어 / -돼 / -되니 / -되므로).
+    // r2 (the table cu-researcher OK'd 15:42Z): not the progressive / state '-고 있- / -고 없-', the concessive / resultative '-어도 / -어 있-',
+    // nor the conditional / temporal '-고 나면 / -어 버리면'; the future connective '될 것이며' asks.
+    pending: new RegExp(`${KO_STEM}(?:됩니다|합니다|될\\s*것입니다|될\\s*예정입니다|되게\\s*됩니다|되겠습니다|될\\s*것이다|된다(?!\\p{Script=Hangul})|될\\s*거(?:예요|야|다|(?=입니다)|(?=ㅂ니다))|될\\s*겁니다|될\\s*것이며|될\\s*것이고|될\\s*예정이며|되며|되고(?!\\s*(?:있|없|나))|되어(?!\\s*(?:도|있|버리면|버린다면))|돼(?!\\s*(?:도|있|버리면|버린다면))|되니|되므로|하며|하고(?!\\s*(?:있|없|나)))|지워집니다|지웁니다|지워질\\s*것입니다|지워지게\\s*됩니다|지워지겠습니다|지워진다(?!\\p{Script=Hangul})|지워질\\s*(?:겁니다|거예요|거야|거다)|지워지며|지워지고(?!\\s*(?:있|없|나))|지워져(?!\\s*(?:도|있|버리면|버린다면))|지워지니|지워질\\s*것이며|버려집니다|버립니다|버려질\\s*(?:것입니다|겁니다|거예요|예정입니다)|버려지며|버려지고(?!\\s*(?:있|없|나))`, 'u'),
+  },
+  { // tr
+    verb: /(?<!\p{L})(?:sil|kaldır|yok\s+ed|atıl|temizlen|imha\s+ed)\p{L}*/iu,
+    negation: /(?<!\p{L})(?:silinme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|silinemez|silmeyecek|kaldırılma(?:yacak(?:lar)?(?:dır)?|yacaktır|z(?:lar)?|dı|mış)|kaldırılamaz|yok\s+edilme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|yok\s+edilemez|atılma(?:yacak(?:lar)?(?:dır)?|z(?:lar)?|dı)|temizlenme(?:yecek(?:ler)?(?:dir)?|z(?:ler)?|di)|atılmayacaktır|temizlenmeyecektir|imha\s+edilme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|(?:silinmek|kaldırılmak|yok\s+edilmek|imha\s+edilmek)\s+üzere\s+değil(?:dir)?)(?!\p{L})/iu,
+    past: /(?<!\p{L})(?:silindi|silinmiş(?!\s+olacak)|kaldırıldı|kaldırılmış(?!\s+olacak)|yok\s+edildi|yok\s+edilmiş(?!\s+olacak)|atıldı|atılmış|temizlendi|temizlenmiş|imha\s+edildi|imha\s+edilmiş(?!\s+olacak)|(?:silinmek|kaldırılmak|yok\s+edilmek|imha\s+edilmek)\s+üzereydi)\p{L}*/iu,
+    // CU-806: the formal future (-ecektir / -acaktır), the aorist passive (silinir) and the future perfect (silinmiş olacak) too.
+    // #1479 r2 (the table cu-researcher OK'd 14:34Z): plural agreement, the plural aorist and 'about to' too.
+    pending: /(?<!\p{L})(?:silin(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|kaldırıl(?:acak(?:lar)?(?:dır)?|acaktır|ır(?:lar)?)|yok\s+edil(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|(?:silinmiş|kaldırılmış|yok\s+edilmiş)\s+olacak(?:tır)?|atıl(?:acak(?:lar)?(?:dır)?|ır(?:lar)?)|temizlen(?:ecek(?:ler)?(?:dir)?|ir(?:ler)?)|atılacaktır|temizlenecektir|imha\s+edil(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|(?:silinmek|kaldırılmak|yok\s+edilmek|imha\s+edilmek)\s+üzere(?:dir|ler)?)(?!\p{L})/iu,
+  },
+]
+// null when no ru / ja / zh / ko / tr verb of the family stands in the sentence.
+function localeTrashPending(text) {
+  for (const lang of TRASH_LOCALE) {
+    if (!lang.verb.test(text)) continue
+    if (lang.negation.test(text) || lang.past.test(text)) return false
+    return lang.pending.test(text) || /[?？]\s*$/u.test(text)
+  }
+  return null
+}
+function emptiesTrashByDelete(name, sentence) {
+  const button = String(name ?? '').trim().toLowerCase()
+  const text = String(sentence ?? '').trim()
+  // A judged name has passed the Cyrillic homoglyph fold ('Очистить' -> 'Oчиcтить'), so the Russian button is matched folded too.
+  const ruButton = ['очистить', 'Очистить', 'ОЧИСТИТЬ'].map((form) => normaliseName(normaliseText(form))).includes(normaliseName(String(name ?? '')))
+  if (!(EMPTYING_BUTTON.test(button) || ruButton) || !TRASH_NOUN.test(text)) return false
+  const local = localeTrashPending(text)
+  if (local !== null) return local
+  const verb = TRASH_DELETE_VERB.exec(text)
+  if (verb === null || !TRASH_PENDING.test(text)) return false
+  // A negation counts only within four words before the delete verb ('will not be deleted'), never one in a following clause
+  // ('... will be permanently deleted and can't be restored').
+  return !TRASH_NEGATION.test(text.slice(0, verb.index).trim().split(/\s+/).slice(-4).join(' '))
+}
 function echoesDialogVerb(name, dialogName) {
   const button = String(name ?? '').trim().toLowerCase().replace(/[¿¡]/g, '')
   const title = String(dialogName ?? '').trim().toLowerCase().replace(/[¿¡]/g, '')
   if (button === '' || title === '') return false
   const asks = /[?？]\s*$/u.test(title) || /\b(?:the|this|these|those|all|your|my|our|la|le|les|el|los|las|il|lo|gli|i|der|die|das|den|alle|todos|todas|tutti|tutte|tous|toutes)\b/iu.test(title)
+  // CU-800 r2: a Dutch emptying button over a sentence that names the trash and its emptying or removal - a statement too ('De
+  // prullenmand wordt nu leeggemaakt.', 'Alle onderdelen in de prullenbak worden definitief verwijderd.') - echoes it, though the
+  // determiner list above is not Dutch (CU-803 widens that list in general).
+  if (/^(?:legen|leegmaken|leeghalen|leegruimen|ledigen|leeg\s+(?:maken|halen|ruimen))$/u.test(button) && /(?<!\p{L})(?:prullen(?:bak|mand)|vuil(?:nis)?bak)(?!\p{L})/u.test(title)
+    && /(?<!\p{L})(?:geleegd|leeg\s?(?:ge)?maakt|leeg\s?(?:ge)?haald|leeg\s?(?:ge)?ruimd|geledigd|leeg\s?maken|leeg\s?halen|legen|verwijderd|gewist|weggehaald)(?!\p{L})/u.test(title)) return true
   if (!asks) return false
   if (ECHO_CJK.test(button)) {
     // A CJK verb: one to four characters (a trailing する / します / 하기 dropped); its first two characters stand in the title.
     const core = button.replace(/(?:する|します|하기|하다)$/u, '')
     return core.length >= 1 && button.length <= 6 && title.includes(core.slice(0, 2))
   }
-  const words = button.split(/\s+/).filter(Boolean)
+  // CU-800: a two-word Dutch separable button ('Leeg maken', 'Leeg halen') is one verb.
+  const words = button.split(/\s+/).filter(Boolean).join(' ').replace(/^leeg\s+(maken|halen|ruimen)$/u, 'leeg$1').split(' ')
   if (words.length === 0 || words.length > 2 || !/^\p{L}{3,}$/u.test(words[0]) || (words[1] !== undefined && words[1] !== 'now')) return false
   const verb = words[0]
+  // CU-800 (cu-verifier's filing; cu-researcher's held-out 05:37Z): a Dutch emptying verb, simple or separable ('Legen',
+  // 'Leegmaken', 'Leeghalen', 'Leegruimen', 'Ledigen'), echoes any emptying form of the family in the title - 'geleegd',
+  // 'leeggemaakt', 'leeg halen', 'leeggehaald' - as 'Empty' echoes 'emptied'.
+  if (/^(?:legen|leegmaken|leeghalen|leegruimen|ledigen)$/u.test(verb) && /(?<!\p{L})(?:prullen(?:bak|mand)|vuil(?:nis)?bak)(?!\p{L})/u.test(title) && /(?<!\p{L})(?:verwijderd|gewist|weggehaald)(?!\p{L})/u.test(title)) return true
+  if (/^(?:legen|leegmaken|leeghalen|leegruimen|ledigen)$/u.test(verb) && /(?<!\p{L})(?:legen|geleegd|leeg\s?maken|leeg\s?(?:ge)?maakt|leeg\s?halen|leeg\s?(?:ge)?haald|leeg\s?ruimen|leeg\s?(?:ge)?ruimd|ledigen|geledigd)(?!\p{L})/u.test(title)) return true
   const stem = verb.length >= 5 ? verb.slice(0, verb.length - 1) : verb
   // CU-766 r2 (cu-researcher's r2 set): a German verb also echoes its past participle - 'Leeren' in '... geleert werden?',
   // 'Löschen' in '... gelöscht werden?' (ge + root + t / en, after a separable prefix too: 'ausgeleert').
@@ -165,7 +261,7 @@ function echoesDialogVerb(name, dialogName) {
   // adjective ('¿La papelera quedará vacía?', 'Il Cestino resterà vuoto?', 'La corbeille restera vide ?') - and 'alles aus dem
   // Papierkorb entfernt' (everything removed from the trash). The dialog's text is still what is judged.
   if (/^(?:vaci|vid|s?vuot|esvazi|leeg|lege|leer|entleer|ausleer|empt)/u.test(verb) && /(?<!\p{L})(?:vac[ií][oa]s?|vides?|vuot[oaie]|vazi[oa]s?|leeg|leer|empty)(?!\p{L})/u.test(title)) return true
-  if (/^(?:vaci|vid|s?vuot|esvazi|leeg|lege|leer|entleer|ausleer|empt)/u.test(verb) && new RegExp(String.raw`(?:(?<!\p{L})(?:aus\s+(?:dem|deinem|ihrem|meinem|unserem)\s+(?:papierkorb|mülleimer|abfalleimer)|from\s+(?:the|your|my)\s+(?:trash|bin|recycle\s+bin)|de\s+(?:la|ta|votre|ma)\s+corbeille|de\s+(?:la|tu|su|mi)\s+papelera|dal\s+cestino|da\s+lixeira|uit\s+de\s+prullenbak)(?!\p{L})[^.!?]{0,40}?(?<!\p{L})(?:entfernt|gelöscht|beseitigt|weggenommen|herausgenommen|removed|deleted|erased|purged|cleared|taken\s+out|retiré(?:e)?s?|enlevé(?:e)?s?|ôté(?:e)?s?|supprimé(?:e)?s?|effacé(?:e)?s?|éliminé(?:e)?s?|quitad[oa]s?|retirad[oa]s?|eliminad[oa]s?|sacad[oa]s?|borrad[oa]s?|suprimid[oa]s?|(?:quitar|retirar|eliminar|sacar|borrar|suprimir)[áa]n?|tolt[oiae]|rimoss[oiae]|eliminat[oiae]|cancellat[oiae]|removid[oa]s?|tirad[oa]s?|apagad[oa]s?|excluíd[oa]s?|verwijderd|weggehaald|gewist)(?!\p{L})|(?<!\p{L})(?:entfernt|gelöscht|beseitigt|weggenommen|herausgenommen|removed|deleted|erased|purged|cleared|taken\s+out|retiré(?:e)?s?|enlevé(?:e)?s?|ôté(?:e)?s?|supprimé(?:e)?s?|effacé(?:e)?s?|éliminé(?:e)?s?|quitad[oa]s?|retirad[oa]s?|eliminad[oa]s?|sacad[oa]s?|borrad[oa]s?|suprimid[oa]s?|(?:quitar|retirar|eliminar|sacar|borrar|suprimir)[áa]n?|tolt[oiae]|rimoss[oiae]|eliminat[oiae]|cancellat[oiae]|removid[oa]s?|tirad[oa]s?|apagad[oa]s?|excluíd[oa]s?|verwijderd|weggehaald|gewist)(?!\p{L})[^.!?]{0,40}?(?<!\p{L})(?:aus\s+(?:dem|deinem|ihrem|meinem|unserem)\s+(?:papierkorb|mülleimer|abfalleimer)|from\s+(?:the|your|my)\s+(?:trash|bin|recycle\s+bin)|de\s+(?:la|ta|votre|ma)\s+corbeille|de\s+(?:la|tu|su|mi)\s+papelera|dal\s+cestino|da\s+lixeira|uit\s+de\s+prullenbak)(?!\p{L}))`, 'iu').test(title)) return true
+  if (/^(?:vaci|vid|s?vuot|esvazi|leeg|lege|leer|entleer|ausleer|empt)/u.test(verb) && new RegExp(String.raw`(?:(?<!\p{L})(?:aus\s+(?:dem|deinem|ihrem|meinem|unserem)\s+(?:papierkorb|mülleimer|abfalleimer)|from\s+(?:the|your|my)\s+(?:trash|bin|recycle\s+bin)|de\s+(?:la|ta|votre|ma)\s+corbeille|de\s+(?:la|tu|su|mi)\s+papelera|dal\s+cestino|da\s+lixeira|uit\s+de\s+(?:prullen(?:bak|mand)|vuil(?:nis)?bak))(?!\p{L})[^.!?]{0,40}?(?<!\p{L})(?:entfernt|gelöscht|beseitigt|weggenommen|herausgenommen|removed|deleted|erased|purged|cleared|taken\s+out|retiré(?:e)?s?|enlevé(?:e)?s?|ôté(?:e)?s?|supprimé(?:e)?s?|effacé(?:e)?s?|éliminé(?:e)?s?|quitad[oa]s?|retirad[oa]s?|eliminad[oa]s?|sacad[oa]s?|borrad[oa]s?|suprimid[oa]s?|(?:quitar|retirar|eliminar|sacar|borrar|suprimir)[áa]n?|tolt[oiae]|rimoss[oiae]|eliminat[oiae]|cancellat[oiae]|removid[oa]s?|tirad[oa]s?|apagad[oa]s?|excluíd[oa]s?|verwijderd|weggehaald|gewist)(?!\p{L})|(?<!\p{L})(?:entfernt|gelöscht|beseitigt|weggenommen|herausgenommen|removed|deleted|erased|purged|cleared|taken\s+out|retiré(?:e)?s?|enlevé(?:e)?s?|ôté(?:e)?s?|supprimé(?:e)?s?|effacé(?:e)?s?|éliminé(?:e)?s?|quitad[oa]s?|retirad[oa]s?|eliminad[oa]s?|sacad[oa]s?|borrad[oa]s?|suprimid[oa]s?|(?:quitar|retirar|eliminar|sacar|borrar|suprimir)[áa]n?|tolt[oiae]|rimoss[oiae]|eliminat[oiae]|cancellat[oiae]|removid[oa]s?|tirad[oa]s?|apagad[oa]s?|excluíd[oa]s?|verwijderd|weggehaald|gewist)(?!\p{L})[^.!?]{0,40}?(?<!\p{L})(?:aus\s+(?:dem|deinem|ihrem|meinem|unserem)\s+(?:papierkorb|mülleimer|abfalleimer)|from\s+(?:the|your|my)\s+(?:trash|bin|recycle\s+bin)|de\s+(?:la|ta|votre|ma)\s+corbeille|de\s+(?:la|tu|su|mi)\s+papelera|dal\s+cestino|da\s+lixeira|uit\s+de\s+(?:prullen(?:bak|mand)|vuil(?:nis)?bak))(?!\p{L}))`, 'iu').test(title)) return true
   return title.split(/[^\p{L}]+/u).some((word) => word === verb || (word.length >= verb.length && word.startsWith(stem))
     || (root !== null && new RegExp(`(?:^|^\\p{L}{0,6})ge${root}(?:t|en)$`, 'u').test(word)) || participles.includes(word)
     // r2 (cu-verifier's #1454 probe): a bare verb also echoes its participle with an inseparable prefix - 'Leeren' in '...
@@ -596,9 +692,9 @@ const LOCALE_WORDS = Object.freeze({
     '_ account sluiten', 'mijn account sluiten', 'sluit _ account', 'sluit mijn account', 'account sluiten',
     'excluir', 'apagar', 'remover', 'excluir permanentemente', 'sil^', 'kaldır^', 'kalıcı olarak sil^', 'hesab~ sil^', 'hesab~ kapat^',
     // r2: emptying the trash, as English 'Empty trash'.
-    'svuota cestino', 'svuota il cestino', 'prullenbak legen', 'prullenbak leegmaken', 'leeg prullenbak',
+    'svuota cestino', 'svuota il cestino', 'prullenbak legen', 'prullenbak leegmaken', 'leeg prullenbak', 'prullenbak leeghalen', 'prullenbak leeg maken', 'prullenbak leeg halen', 'prullenbak leegruimen', 'prullenmand legen', 'prullenmand leegmaken', 'leeg prullenmand', 'prullenmand leeghalen', 'prullenmand leeg maken', 'prullenmand leeg halen', 'prullenmand leegruimen', 'vuilnisbak legen', 'vuilbak legen', 'vuilnisbak leegmaken', 'vuilbak leegmaken', 'leeg vuilnisbak', 'leeg vuilbak', 'vuilnisbak leeghalen', 'vuilbak leeghalen', 'vuilnisbak leeg maken', 'vuilbak leeg maken', 'vuilnisbak leeg halen', 'vuilbak leeg halen', 'vuilnisbak leegruimen', 'vuilbak leegruimen',
     // CU-655 r4 (cu-researcher): an article or possessive between the verb and the trash noun ('Leeg de prullenbak', 'Esvaziar o lixo').
-    'leeg _ prullenbak', 'esvaziar _ lixo',
+    'leeg _ prullenbak', 'esvaziar _ lixo', 'leeg _ prullenmand', 'leeg _ vuilnisbak', 'leeg _ vuilbak',
     'esvaziar lixeira', 'esvaziar a lixeira', 'esvaziar lixo', 'esvaziar a reciclagem', 'çöp kutu~ boşalt^', 'çöp~ boşalt^', 'çöp kutu~ temizle^',
     // CU-625 (cu-researcher; cu-developer-one's twin-parity class rule): cancelling a subscription asks delete, as English 'Cancel
     // subscription' does; infinitive, imperative, formal and possessive forms.
@@ -839,7 +935,7 @@ const IMPERATIVE_FORMS = Object.freeze({
   'geven': ['geef', 'geeft u'], 'abonneren': ['abonneer', 'abonneert u'], 'proberen': ['probeer', 'probeert u'],
   'opzeggen': ['zeg|op', 'zegt u|op'], 'stopzetten': ['zet|stop', 'zet u|stop'], 'opheffen': ['hef|op', 'heft u|op'], 'afsluiten': ['sluit|af', 'sluit u|af'],
   'uitnodigen': ['nodig|uit', 'nodigt u|uit'], 'toestaan': ['sta|toe', 'staat u|toe'], 'deelnemen': ['neem|deel', 'neemt u|deel'], 'uitschrijven': ['schrijf|uit', 'schrijft u|uit'],
-  'afmelden': ['meld|af', 'meldt u|af'], 'overmaken': ['maak|over', 'maakt u|over'], 'leegmaken': ['maak|leeg', 'maakt u|leeg'], 'overschrijven': ['schrijf|over', 'schrijft u|over'],
+  'afmelden': ['meld|af', 'meldt u|af'], 'overmaken': ['maak|over', 'maakt u|over'], 'leegmaken': ['maak|leeg', 'maakt u|leeg'], 'leeghalen': ['haal|leeg', 'haalt u|leeg'], 'leegruimen': ['ruim|leeg', 'ruimt u|leeg'], 'overschrijven': ['schrijf|over', 'schrijft u|over'],
   'afrekenen': ['reken|af', 'rekent u|af'], 'uitvoeren': ['voer|uit', 'voert u|uit'], 'overstappen': ['stap|over', 'stapt u|over'],
   // CU-648 (cu-developer-one's design 03:04Z / 03:06Z): Russian perfective ty / vy imperatives; imperfective ('Удаляйте',
   // 'Покупайте') and negated forms stay out. Korean polite imperatives of the native 보내다 and of the hada table nouns; the plain
@@ -910,9 +1006,9 @@ const LOCALE_TRASH_EMPTY = Object.freeze([
   // 'Prullenbak geleegd', 'Lixeira esvaziada', 'Çöp kutusu boşaltıldı'), other objects ('Svuota il carrello', 'Winkelwagen
   // legen', 'Esvaziar o carrinho', 'Sepeti boşalt') and the bare nouns stay free.
   /^(?:non\s+)?(?:svuota|svuotare|svuotate|svuoti)\s+(?:\S+\s+){0,4}?cestino(?=\s|$|[.!])/i,
-  /^(?:niet\s+)?(?:leeg|leegt|legen|leegmaken)\s+(?:\S+\s+){0,4}?prullenbak(?=\s|$|[.!])/i,
-  /^maak\s+(?:\S+\s+){0,4}?prullenbak(?:\s+\S+){0,3}?\s+leeg(?=\s|$|[.!])/i,
-  /^(?:\S+\s+){0,4}?prullenbak(?:\s+\S+){0,4}?\s+(?:legen|leegmaken|leeg\s+maken)\s*[.!]?$/i,
+  /^(?:niet\s+)?(?:leeg|leegt|legen|leegmaken|leeghalen|leegruimen)\s+(?:\S+\s+){0,4}?(?:prullen(?:bak|mand)|vuil(?:nis)?bak)(?=\s|$|[.!])/i,
+  /^maak\s+(?:\S+\s+){0,4}?(?:prullen(?:bak|mand)|vuil(?:nis)?bak)(?:\s+\S+){0,3}?\s+leeg(?=\s|$|[.!])/i,
+  /^(?:\S+\s+){0,4}?(?:prullen(?:bak|mand)|vuil(?:nis)?bak)(?:\s+\S+){0,4}?\s+(?:legen|leegmaken|leeg\s+maken|leeghalen|leeg\s+halen|leegruimen|leeg\s+ruimen)\s*[.!]?$/i,
   /^(?:não\s+|nao\s+)?(?:esvaziar|esvazie|esvazia|esvaziem)\s+(?:\S+\s+){0,4}?(?:lixeira|lixo|reciclagem)(?=\s|$|[.!])/i,
   // CU-660: the noun takes its case ending ('Çöpü tamamen boşalt'), as 'Çöp kutusunu' does.
   /^(?:\S+\s+){0,4}?çöp\S*(?:\s+kutu\S*)?(?:\s+\S+){0,4}?\s+(?:boşalt|boşaltın|boşaltınız|temizle|temizleyin|temizleyiniz)\s*[.!]?$/iu,
@@ -938,9 +1034,9 @@ const LOCALE_FOLDER_EMPTY = Object.freeze([
   folderVerbFirst('non\\s+', 'svuota|svuotare|svuotate|svuoti', 'in|nel|nella|di|del|della|dal|dalla|per|da', 'tutto|tutti|tutte|il\\s+contenuto|tutto\\s+il\\s+contenuto|(?:(?:i|gli|le|tuoi|miei)\\s+)?(?:\\S+\\s+)?(?:messaggi|elementi|email|conversazioni|documenti)', 'cartella|posta\\s+eliminata|posta\\s+indesiderata|spam'),
   folderVerbLast('in|im|aus|vom|von|für', 'alle|alles|den\\s+gesamten|den\\s+ganzen|den\\s+inhalt|gesamten|ganzen|(?:(?:die|ihre|deine|meine)\\s+)?(?:\\S+\\s+)?(?:nachrichten|elemente|dateien|e-mails|mails|unterhaltungen|dokumente|fotos)', '\\S*ordner|gelöschte\\s+elemente|junk-e-mail|spam', 'leeren|entleeren'),
   folderVerbFirst('nicht\\s+', 'leere|leert|leeren\\s+sie|entleere|entleert|entleeren\\s+sie', 'in|im|aus|vom|von|für', 'alle|alles|den\\s+gesamten|den\\s+ganzen|den\\s+inhalt|(?:(?:die|ihre|deine|meine)\\s+)?(?:\\S+\\s+)?(?:nachrichten|elemente|dateien|e-mails|mails|unterhaltungen|dokumente|fotos)', '\\S*ordner|gelöschte\\s+elemente|junk-e-mail|spam'),
-  folderVerbFirst('niet\\s+', 'leeg|leegt|legen|leegmaken', 'in|uit|van|voor', 'alle|alles|de\\s+hele|de\\s+inhoud|hele|(?:(?:de|je|uw|mijn)\\s+)?(?:\\S+\\s+)?(?:berichten|items|bestanden|e-mails|gesprekken|documenten)', 'map|verwijderde\\s+items|ongewenste\\s+e-mail|spam'),
+  folderVerbFirst('niet\\s+', 'leeg|leegt|legen|leegmaken|leeghalen|leegruimen', 'in|uit|van|voor', 'alle|alles|de\\s+hele|de\\s+inhoud|hele|(?:(?:de|je|uw|mijn)\\s+)?(?:\\S+\\s+)?(?:berichten|items|bestanden|e-mails|gesprekken|documenten)', 'map|verwijderde\\s+items|ongewenste\\s+e-mail|spam'),
   /^maak\s+(?:\S+\s+){0,4}?(?:map|verwijderde\s+items|ongewenste\s+e-mail)(?:\s+\S+){0,3}?\s+leeg(?=\s|$|[.!])/iu,
-  folderVerbLast('in|uit|van|voor', 'alle|alles|de\\s+hele|de\\s+inhoud|hele|(?:(?:de|je|uw|mijn)\\s+)?(?:\\S+\\s+)?(?:berichten|items|bestanden|e-mails|gesprekken|documenten)', 'map|verwijderde\\s+items|ongewenste\\s+e-mail|spam', 'legen|leegmaken|leeg\\s+maken'),
+  folderVerbLast('in|uit|van|voor', 'alle|alles|de\\s+hele|de\\s+inhoud|hele|(?:(?:de|je|uw|mijn)\\s+)?(?:\\S+\\s+)?(?:berichten|items|bestanden|e-mails|gesprekken|documenten)', 'map|verwijderde\\s+items|ongewenste\\s+e-mail|spam', 'legen|leegmaken|leeg\\s+maken|leeghalen|leeg\\s+halen|leegruimen|leeg\\s+ruimen'),
   /(?:フォルダー?|削除済みアイテム|迷惑メール).{0,10}?空に(?!し(?:ました|た)|され|済|完了|中|なって|なりました)/u,
   /(?:폴더|지운\s?편지함|정크\s?메일)\S*\s*(?:\S+\s+){0,4}?(?:비우(?:기|세요|십시오)?|비워(?:\s?줘|\s?주세요|요)?|비우지\s?마(?:세요|십시오)?)(?=\s|$|[.!?])/u,
   /(?:폴더|지운\s?편지함|정크\s?메일)\S*\s*(?:\S+\s+){0,4}?비우기[을를]\s*(?:\S+\s+){0,2}?(?:실행|하기|시작|진행)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|해)?(?!\s*중)(?=\s|$|[.!?])/u,
@@ -978,8 +1074,8 @@ const LOCALE_DATA_CLEAR = Object.freeze([
   new RegExp(`^(?:non\\s+)?(?:svuota|svuotare|svuotate|svuoti|cancella|cancellare|cancellate)\\s+${dataSlot}dati\\s+(?:di\\s+navigazione|del\\s+sito|dei\\s+siti)(?=\\s|$|[.!?])`, 'iu'),
   new RegExp(`^${dataSlot}(?:\\S*(?:browser|website|web|seiten)daten|daten\\s+(?:des\\s+browsers|der\\s+website))(?:\\s+\\S+){0,2}?\\s+(?:leeren|bereinigen)\\s*[.!]?$`, 'iu'),
   new RegExp(`^(?:leere|leert|leeren\\s+sie|bereinige|bereinigt|bereinigen\\s+sie)\\s+${dataSlot}(?:\\S*(?:browser|website|web|seiten)daten)(?=\\s|$|[.!?])`, 'iu'),
-  new RegExp(`^${dataSlot}\\S*(?:browse|site|website)gegevens(?:\\s+\\S+){0,2}?\\s+(?:legen|leegmaken|leeg\\s+maken|wissen)\\s*[.!]?$`, 'iu'),
-  new RegExp(`^(?:niet\\s+)?(?:wis|leeg|leegt|legen|leegmaken)\\s+${dataSlot}\\S*(?:browse|site|website)gegevens(?=\\s|$|[.!?])`, 'iu'),
+  new RegExp(`^${dataSlot}\\S*(?:browse|site|website)gegevens(?:\\s+\\S+){0,2}?\\s+(?:legen|leegmaken|leeg\\s+maken|leeghalen|leeg\\s+halen|leegruimen|leeg\\s+ruimen|wissen)\\s*[.!]?$`, 'iu'),
+  new RegExp(`^(?:niet\\s+)?(?:wis|leeg|leegt|legen|leegmaken|leeghalen|leegruimen)\\s+${dataSlot}\\S*(?:browse|site|website)gegevens(?=\\s|$|[.!?])`, 'iu'),
   new RegExp(`^${dataSlot}(?:tarama|site|gezinme)\\s+veriler\\S*(?:\\s+\\S+){0,2}?\\s+(?:temizle|temizleyin|temizleyiniz)\\s*[.!]?$`, 'iu'),
   /(?:閲覧データ|サイトデータ|ブラウジングデータ|ブラウザー?の?データ).{0,8}?(?:クリア|空に)(?!し(?:ました|た)|され|済|完了|中)/u,
   /(?:사이트\s?데이터|인터넷\s?사용\s?기록|검색\s?데이터|브라우저\s?데이터)\S*\s*(?:\S+\s+){0,2}?(?:비우(?:기|세요|십시오)?|비워(?:\s?줘|\s?주세요|요)?)(?=\s|$|[.!?])/u,
@@ -1620,6 +1716,23 @@ const LOCALE_MONEY_VERBS = Object.freeze([
   /^(?:jetzt\s+)?(?:geld\s+(?:(?:an|zu)\s+(?:\S+\s+){1,2})?(?:transferieren|senden|überweisen|schicken)|bestellung\s+aufgeben|zahlungspflichtig\s+bestellen|kostenpflichtig\s+bestellen)\s*[.!]?$/iu,
   /^(?:(?:nu\s+)?geld\s+(?:(?:naar|aan)\s+(?:\S+\s+){1,2})?(?:overmaken|versturen|overboeken|sturen)|bestelling\s+plaatsen|maak\s+geld\s+over(?:\s+(?:naar|aan)\s+\S+(?:\s+\S+)?)?)\s*[.!]?$/iu,
   /^(?:今すぐ)?(?:送金(?:する|して(?:ください)?|します)?|(?:資金|お金)を?(?:振り込む|振り込み|送る|送金する|移動(?:する|して(?:ください)?)?)|注文する|注文して(?:ください)?)\s*[.!。]?$/u,
+  // CU-702: the account-noun transfer forms ask as 'Transfer to account' / 'Account transfer' do ('계좌 이체', '계좌로 이체', '口座に振り込む', '口座振替')
+  // r2 (cu-developer-one 02:15Z): a possessive and one qualifier noun, as the ja line ('내 계좌로 이체하기', '은행 계좌로 이체')
+  /^(?:(?:지금|즉시)\s+)?(?:(?:내|제|나의|우리)\s+)?(?:\S+\s+)?(?:계좌|은행)\s*(?:로|에|으로)?\s*(?:이체|송금)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+  // r3 (cu-developer-one 02:46Z, final and general): every to-account line takes a determiner slot of up to two words between the
+  // preposition (contractions aufs / ans / au / à included) and the account noun, and still ends at the account noun (+ its qualifier);
+  // the ja line takes a possessive '…の' before 口座 ('自分の口座に振り込む')
+  /^(?:今すぐ)?(?:[^\sの]+の)?(?:口座|銀行口座)(?:に|へ)?(?:振り込む|振込(?:する)?|振り込み|送金(?:する)?|振替(?:する)?)\s*[.!。]?$/u,
+  /^(?:transférer|transférez|virer|virez|virement|transfert)\s+(?:vers|sur|à|au)\s+(?:\S+\s+){0,2}?compte(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  // r4 (cu-developer-three 03:00Z): the send verbs ask here only with a money object ('Enviar a mi cuenta de correo' is a generic send, submit
+  // as 'Send to my email'); the transfer verbs and the noun-led forms keep the slot
+  /^(?:(?:transferir|transfiere|transfiera|transferencia)\s+(?:dinero\s+|fondos\s+)?|(?:enviar|envía|envíe)\s+(?:dinero|fondos)\s+)(?:a|al|para|en)\s+(?:\S+\s+){0,2}?cuenta(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:(?:transferir|transfira|transferência)\s+(?:dinheiro\s+|fundos\s+)?|(?:enviar|envie)\s+(?:dinheiro|fundos)\s+)(?:a|à|ao|para)\s+(?:\S+\s+){0,2}?conta(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:(?:trasferisci|trasferire|bonifico|trasferimento)\s+(?:denaro\s+|soldi\s+|fondi\s+)?|(?:invia|inviare)\s+(?:denaro|soldi|fondi)\s+)(?:sul|al|su|a|nel)\s+(?:\S+\s+){0,2}?conto(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:auf|an|aufs|ans)\s+(?:\S+\s+){0,2}?\S*konto\s+(?:übertragen|überweisen|transferieren)\s*[.!]?$/iu,
+  /^(?:überweisung|übertragung)\s+(?:auf|an|aufs|ans)\s+(?:\S+\s+){0,2}?\S*konto\s*[.!]?$/iu,
+  new RegExp(`^hesab(?:a|[ıI]ma|[ıI]n[ıI]za)\\s+(?:aktar|aktar[ıI]n|transfer\\s+et|gönder|gönderin)\\s*[.!]?$`, 'iu'),
+  /^(?:立即)?(?:转入|轉入|转到|轉到|转账到|轉帳到)(?:\S{0,6})?(?:账户|帳戶|账号|帳號)\s*[.!。]?$/u,
   // r2: ko bare 이체 / 이체하기 ask (an unambiguous bank transfer; bare Sino-noun = verb, owner ruling 23:57Z)
   /^(?:(?:지금|즉시)\s+)?(?:(?:송금|이체)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?|(?:자금|돈)\s*(?:을|를)?\s*(?:이체|송금|보내기|보내)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?)\s*[.!]?$/u,
   new RegExp(`^(?:para\\s+(?:gönder|gönderin|aktar|aktarın|transfer\\s+et)|havale\\s+yap|sipariş\\s+ver|siparişi\\s+tamamla|siparişi\\s+onayla)\\s*[.!]?$`, 'iu'),
@@ -1631,7 +1744,11 @@ function namesRuMoneyVerbs(name) {
     const any = (words) => `(?:${words.flatMap(folds).join('|')})`
     const verb = any(['отправить', 'отправьте', 'перевести', 'переведите', 'перечислить'])
     const object = any(['деньги', 'средства', 'денежные'])
-    ruMoneyVerbsRegex = new RegExp(`^${verb}\\s+(?:${any(['денежные'])}\\s+)?${object}(?:\\s+\\S+){0,3}?\\s*[.!]?$`, 'iu')
+    // CU-702: 'Перевести на счёт' (transfer to an account) asks purchase, as 'Transfer to account' does (its main-branch permission came
+    // only from the no-class page fallback, CU-706); r2: the noun-led 'Перевод на счёт' too
+    const toAccount = `${any(['на'])}\\s+(?:\\S+\\s+)?${any(['счёт', 'счет', 'карту'])}`
+    const nounLed = `${any(['перевод'])}\\s+${toAccount}(?:\\s+\\S+){0,2}?`
+    ruMoneyVerbsRegex = new RegExp(`^(?:${verb}\\s+(?:(?:${any(['денежные'])}\\s+)?${object}(?:\\s+\\S+){0,3}?|${toAccount}(?:\\s+\\S+){0,2}?)|${nounLed})\\s*[.!]?$`, 'iu')
   }
   return ruMoneyVerbsRegex.test(normaliseName(String(name ?? '')).trim())
 }
@@ -2527,7 +2644,7 @@ const DROP_DELETE = [...WORDS.delete, 'trash', 'bin']
 // and the junk folders (also as 'X and spam' / 'X e spam' / 'X en spam'; Russian names go through namesTrashFolded below), (Spam, Junk, Bulk Mail, Correo no deseado, Unerwünscht ...) - as the folder's WHOLE name
 // (a ' folder' word, an account suffix ' - Work' and an unread count may follow), so 'Spam Filter Settings' or 'Bin Liner Orders' stay free (cu-developer-two 18:40Z).
 // A drop there removes the item from where it was; shared-folder drops stay with the driver's networkVolume / dropDestination.
-const DROP_TRASH_NAME = /^\s*(?:(?:folder|ordner|dossier|carpeta|cartella|map|pasta|mappe|mapp|kansio|klasör)\s+(?:(?:de|di|du|des|del|da|do|van|voor|för|for|of)\s+)?)?(?:(?:spam|junk)\s+(?:and|e|en|et|und|y|i|og|och|ve)\s+)?(?:spam(?:map|ordner|mappe|mapp|kansio)|junk(?:map|ordner|mappe)|eliminati|gelöscht|supprimés|eliminados|borrados|verwijderd|excluídos|usunięte|törölt|silinmiş|borttaget|slettet|(?:recently\s+)?deleted(?:\s+(?:items|messages|mail|files))?|trash|recycle\s+bin|bin|papierkorb|corbeille|papelera(?:\s+de\s+reciclaje)?|elementos\s+borrados|correo\s+basura|cestino|prullenbak|lixeira|lixo|kosz|çöp(?:\s+kutusu)?|koš|roskakori|papperskorg|papirkurv|spam|junk(?:[\s-]+(?:e-?mail|mail|folder))?|bulk(?:\s+mail)?|correo\s+no\s+deseado|unerwünscht|courrier\s+indésirable|posta\s+indesiderata|ongewenste\s+e-?mail|lixo\s+eletr[oô]nico|gelöschte\s+(?:elemente|objekte|nachrichten|e-?mails)|(?:éléments|messages|courriers)\s+supprimés|(?:elementos|mensajes|correos)\s+eliminados|posta\s+eliminata|(?:elementi|messaggi)\s+eliminati|verwijderde\s+(?:items|berichten|e-?mail|objecten)|itens\s+(?:excluídos|eliminados)|mensagens\s+(?:excluídas|apagadas|eliminadas)|(?:elementy|wiadomości)\s+usunięte|usunięte\s+(?:elementy|wiadomości)|törölt\s+(?:elemek|üzenetek)|silinmiş\s+(?:öğeler|iletiler|mesajlar|postalar)|odstraněn[áé]\s+(?:pošta|položky|zprávy)|borttagna\s+(?:objekt|meddelanden)|slettet\s+post|slettede\s+(?:elementer|meddelelser|meldinger)|poistetut(?:\s+(?:kohteet|viestit))?|削除済み(?:アイテム|メッセージ)|已删除(?:邮件|项目|消息)|지운\s*편지함|垃圾箱|废纸篓|回收站|垃圾邮件|ゴミ箱|迷惑メール|휴지통|스팸)(?:\s+(?:and|e|en|et|und|y|i|og|och|ve)\s+(?:spam|junk))?(?:[\s-]+(?:folder|ordner|dossier|carpeta|cartella|map|pasta|mappe|mapp|kansio|klasör(?:ü)?))?(?:(?:\s+[-–—]\s+|\s*[|:]\s*)[^-–—|:\n]{1,40})?(?:\s*\(\d+\))?\s*$/iu
+const DROP_TRASH_NAME = /^\s*(?:(?:folder|ordner|dossier|carpeta|cartella|map|pasta|mappe|mapp|kansio|klasör)\s+(?:(?:de|di|du|des|del|da|do|van|voor|för|for|of)\s+)?)?(?:(?:spam|junk)\s+(?:and|e|en|et|und|y|i|og|och|ve)\s+)?(?:spam(?:map|ordner|mappe|mapp|kansio)|junk(?:map|ordner|mappe)|eliminati|gelöscht|supprimés|eliminados|borrados|verwijderd|excluídos|usunięte|törölt|silinmiş|borttaget|slettet|(?:recently\s+)?deleted(?:\s+(?:items|messages|mail|files))?|trash|recycle\s+bin|bin|papierkorb|corbeille|papelera(?:\s+de\s+reciclaje)?|elementos\s+borrados|correo\s+basura|cestino|(?:prullen(?:bak|mand)|vuil(?:nis)?bak)|lixeira|lixo|kosz|çöp(?:\s+kutusu)?|koš|roskakori|papperskorg|papirkurv|spam|junk(?:[\s-]+(?:e-?mail|mail|folder))?|bulk(?:\s+mail)?|correo\s+no\s+deseado|unerwünscht|courrier\s+indésirable|posta\s+indesiderata|ongewenste\s+e-?mail|lixo\s+eletr[oô]nico|gelöschte\s+(?:elemente|objekte|nachrichten|e-?mails)|(?:éléments|messages|courriers)\s+supprimés|(?:elementos|mensajes|correos)\s+eliminados|posta\s+eliminata|(?:elementi|messaggi)\s+eliminati|verwijderde\s+(?:items|berichten|e-?mail|objecten)|itens\s+(?:excluídos|eliminados)|mensagens\s+(?:excluídas|apagadas|eliminadas)|(?:elementy|wiadomości)\s+usunięte|usunięte\s+(?:elementy|wiadomości)|törölt\s+(?:elemek|üzenetek)|silinmiş\s+(?:öğeler|iletiler|mesajlar|postalar)|odstraněn[áé]\s+(?:pošta|položky|zprávy)|borttagna\s+(?:objekt|meddelanden)|slettet\s+post|slettede\s+(?:elementer|meddelelser|meldinger)|poistetut(?:\s+(?:kohteet|viestit))?|削除済み(?:アイテム|メッセージ)|已删除(?:邮件|项目|消息)|지운\s*편지함|垃圾箱|废纸篓|回收站|垃圾邮件|ゴミ箱|迷惑メール|휴지통|스팸)(?:\s+(?:and|e|en|et|und|y|i|og|och|ve)\s+(?:spam|junk))?(?:[\s-]+(?:folder|ordner|dossier|carpeta|cartella|map|pasta|mappe|mapp|kansio|klasör(?:ü)?))?(?:(?:\s+[-–—]\s+|\s*[|:]\s*)[^-–—|:\n]{1,40})?(?:\s*\(\d+\))?\s*$/iu
 // CU-385 follow-up: a drop target's name has passed normaliseText, which folds Cyrillic homoglyphs to Latin, so the Russian
 // trash / junk names are compared as WHOLE names after the same fold (as namesWord folds its entries).
 // CU-594 (cu-researcher): the Ukrainian names - 'Кошик' (Trash / Bin; macOS says 'Смітник'), 'Видалені' (+ елементи / повідомлення / листи / об'єкти),
@@ -4923,6 +5040,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // CU-790: or a sentence of the description - 'Leeren' under the title 'Hinweis' and 'Ist der Papierkorb danach geleert?'.
       const finalStep = FINAL_STEP_CONFIRM.test(String(name ?? '')) || echoesDialogVerb(name, dialogName) || echoesDialogVerb(target?.name, dialogName)
         || dialogDescription.split(/(?<=[.!?。！？])\s*/u).some((sentence) => sentence !== '' && (echoesDialogVerb(name, sentence) || echoesDialogVerb(target?.name, sentence)))
+      // CU-804: an emptying button under a trash permanent-delete question or pending statement.
+      const emptiesTrash = [dialogName, ...dialogDescription.split(/(?<=[.!?。！？])\s*/u)].some((sentence) => sentence !== '' && (emptiesTrashByDelete(name, sentence) || emptiesTrashByDelete(target?.name, sentence)))
       // CU-757: 'Allow' / 'Grant' / 'Give access' (and localized) in a dialog whose title or a kept sentence states access asks
       // permission and takes the dialog's other classes too; the same button in a dialog that states no access is unchanged.
       const accessAllow = ACCESS_ALLOW.test(String(target?.name ?? '')) || ACCESS_ALLOW.test(String(name ?? ''))
@@ -4930,7 +5049,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         .filter((sentence) => sentence !== '' && !/\b(?:if\s+you\s+(?:don'?t|do\s+not|choose\s+not\s+to|cancel|leave|close)|unless\s+you|otherwise)\b/i.test(sentence))
         .some((sentence) => MODAL_ACCESS.test(sentence) || LOCALE_MODAL_ACCESS.test(sentence))
       if (context.confirmProbe !== true && presses && accessStated && !classes.includes('permission')) classes.push('permission')
-      if (context.confirmProbe !== true && presses && (dialogName !== '' || dialogDescription !== '') && (GENERIC_CONFIRM.test(String(name ?? '')) || localeConfirm || continueTo || finalStep || accessStated)) {
+      if (context.confirmProbe !== true && presses && (dialogName !== '' || dialogDescription !== '') && (GENERIC_CONFIRM.test(String(name ?? '')) || localeConfirm || continueTo || finalStep || accessStated || emptiesTrash)) {
         // cu-researcher 16:09Z: a title is a question more often than a row - 'Are you sure you want to <row>?', 'Really <row>?',
         // '<row>?' - so a title canonical step strips the question frame before the title is judged as a name.
         // #702 round 2 (cu-researcher 16:24Z): descriptions lead with 'This will / This action will / You are about to / Doing this will'.
@@ -4951,6 +5070,12 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         for (const sentence of [dialogName, ...kept]) { const verb = localePassiveAct(sentence); if (verb !== null && !texts.includes(verb)) texts.push(verb) }
         // CU-746: the title and each kept sentence read as the act they state (statement, framed lead-in, noun title, access).
         for (const base of [dialogName, ...kept]) for (const extra of modalStatementNames(base)) if (!texts.includes(extra)) texts.push(extra)
+        if (emptiesTrash && !texts.includes('Empty trash')) texts.push('Empty trash')
+        // r4 (cu-developer-two's r3 probe; cu-coordinator 11:11Z): a dialog read ONLY because of the trash rule is judged only as
+        // 'Empty trash' - its other texts were not read on main, so they add no class here ('Все объекты в Корзине будут удалены.'
+        // asked permission besides delete on the web route).
+        const onlyTrash = emptiesTrash && !(GENERIC_CONFIRM.test(String(name ?? '')) || localeConfirm || continueTo || finalStep || accessStated)
+        if (onlyTrash) texts.splice(0, texts.length, 'Empty trash')
         for (const text of texts) {
           // #702 round 2: the title is judged with the FULL canonical form (synonym, quantifier, label and clause steps run only
           // outside a confirm probe), so no confirmProbe flag here; the probe target carries no dialog fields, so it cannot recurse.

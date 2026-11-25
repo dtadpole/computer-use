@@ -223,6 +223,17 @@ try {
   const flags = await processCommandLine(env.running.child.pid)
   check('Chrome runs with its sandbox (no --no-sandbox on its real command line)', flags.length > 0 && !flags.includes('--no-sandbox'), { flags: flags.length })
   check('no host variable reached Chrome', !flags.some((flag) => flag.includes('KEY')))
+  // CU-808: no notification can reach macOS - the flags on Chrome's real command line, and a page that asks gets 'denied' with
+  // no prompt (or finds no Notification API at all).
+  const features = flags.filter((flag) => flag.startsWith('--disable-features=')).map((flag) => flag.slice('--disable-features='.length).split(','))
+  check('notifications are off at the API and at the OS bridge on the real command line',
+    flags.includes('--disable-notifications') && features.length === 1 && features[0].includes('SystemNotifications') && features[0].includes('NativeNotifications'), { features })
+  const notificationState = await evaluate("typeof Notification === 'undefined' ? 'none' : Notification.permission")
+  const asked = (await env.session.send(env.session.foreground(), 'Runtime.evaluate', {
+    expression: "typeof Notification === 'undefined' ? 'none' : Promise.race([Notification.requestPermission(), new Promise((resolve) => setTimeout(() => resolve('timeout'), 2000))])",
+    awaitPromise: true, returnByValue: true,
+  })).result.result.value
+  check('a page that asks for notifications is denied without a prompt', ['none', 'denied'].includes(notificationState) && ['none', 'denied'].includes(asked), { notificationState, asked })
 
   await env.perform({ type: 'click', x: 300, y: 150, button: 'left' })
   await env.perform({ type: 'click', x: 301, y: 151, button: 'left', keys: ['SHIFT'] })
