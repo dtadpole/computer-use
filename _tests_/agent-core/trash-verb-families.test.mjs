@@ -68,3 +68,20 @@ test('CU-809: negated and past twins of every added family stay free', () => {
     ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti temizlendi."],
   ])
 })
+
+test('#1481 r2: cu-researcher\'s and cu-developer-two\'s tr misses verbatim, and the tr destroy verb / formal future rows', () => {
+  asks([
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki tüm dosyalar kalıcı olarak imha edilecek."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki tüm öğeler kalıcı olarak atılacaktır."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler temizlenecektir."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler imha edilecektir."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler imha edilir."],
+  ])
+  free([
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki dosyalar imha edilmeyecek."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki dosyalar imha edildi."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler atılmayacaktır."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler temizlenmeyecektir."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler imha edilmek üzere değil."],
+  ])
+})
