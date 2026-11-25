@@ -165,9 +165,9 @@ const TRASH_LOCALE = [
   },
   { // ja
     verb: new RegExp(`${JA_STEM}(?:さ|し|す|済)`, 'u'),
-    negation: new RegExp(`${JA_STEM}(?:されません|しません|されない|しない|されず|せず|さない|さず|されることはありません|されることはない|されていません)`, 'u'),
-    past: new RegExp(`${JA_STEM}(?:されました|しました|された|した|されています|されている|されていました|されてしまいました|済み)`, 'u'),
-    pending: new RegExp(`${JA_STEM}(?:されます|します|される(?!こと)|する(?!こと)|され、|されることになります|されることになる|されることになっています|される予定|する予定|されるでしょう)|消す(?!こと)`, 'u'),
+    negation: new RegExp(`${JA_STEM}(?:されません|しません|されない|しない|されず|せず|さない|さず|されることはありません|されることはない|されていません|されようとしていません)`, 'u'),
+    past: new RegExp(`${JA_STEM}(?:されました|しました|された|した|されています|されている|されていました|されてしまいました|されようとしていました|済み)`, 'u'),
+    pending: new RegExp(`${JA_STEM}(?:されます|します|される(?!こと)|する(?!こと)|され、|されることになります|されることになる|されることになっています|される予定|する予定|されるでしょう|されようとしています|されようとしている|しようとしています)|消す(?!こと)`, 'u'),
   },
   { // zh
     verb: new RegExp(ZH_VERB, 'u'),
@@ -180,14 +180,15 @@ const TRASH_LOCALE = [
     negation: new RegExp(`${KO_STEM}(?:되|하)지\\s*(?:않|못)|${KO_STEM}\\s*안\\s|지워지지\\s*(?:않|못)|지우지\\s*(?:않|못)`, 'u'),
     past: new RegExp(`${KO_STEM}(?:되었|됐|했|되어\\s*있|돼\\s*있)|지워졌|지웠|지워져\\s*있`, 'u'),
     // CU-807: a connective joining the delete verb to a following clause ('삭제되며 복구할 수 없습니다', -되고 / -되어 / -돼 / -되니 / -되므로).
-    pending: new RegExp(`${KO_STEM}(?:됩니다|합니다|될\\s*것입니다|될\\s*예정입니다|되게\\s*됩니다|되겠습니다|될\\s*것이다|된다|되며|되고|되어|돼|되니|되므로|하며|하고)|지워집니다|지웁니다|지워질\\s*것입니다|지워지게\\s*됩니다|지워지겠습니다|지워진다|지워지며|지워지고|지워져|지워지니`, 'u'),
+    pending: new RegExp(`${KO_STEM}(?:됩니다|합니다|될\\s*것입니다|될\\s*예정입니다|되게\\s*됩니다|되겠습니다|될\\s*것이다|된다(?!\\p{Script=Hangul})|될\\s*거(?:예요|야|다|(?=입니다)|(?=ㅂ니다))|될\\s*겁니다|되며|되고|되어|돼|되니|되므로|하며|하고)|지워집니다|지웁니다|지워질\\s*것입니다|지워지게\\s*됩니다|지워지겠습니다|지워진다(?!\\p{Script=Hangul})|지워질\\s*(?:겁니다|거예요|거야|거다)|지워지며|지워지고|지워져|지워지니`, 'u'),
   },
   { // tr
     verb: /(?<!\p{L})(?:sil|kaldır|yok\s+ed)\p{L}*/iu,
-    negation: /(?<!\p{L})(?:silinme(?:yecek(?:tir)?|z|di|miş)|silinemez|silmeyecek|kaldırılma(?:yacak(?:tır)?|z|dı|mış)|kaldırılamaz|yok\s+edilme(?:yecek(?:tir)?|z|di|miş)|yok\s+edilemez)(?!\p{L})/iu,
-    past: /(?<!\p{L})(?:silindi|silinmiş(?!\s+olacak)|kaldırıldı|kaldırılmış(?!\s+olacak)|yok\s+edildi|yok\s+edilmiş(?!\s+olacak))\p{L}*/iu,
+    negation: /(?<!\p{L})(?:silinme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|silinemez|silmeyecek|kaldırılma(?:yacak(?:lar)?(?:dır)?|yacaktır|z(?:lar)?|dı|mış)|kaldırılamaz|yok\s+edilme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|yok\s+edilemez|(?:silinmek|kaldırılmak|yok\s+edilmek)\s+üzere\s+değil(?:dir)?)(?!\p{L})/iu,
+    past: /(?<!\p{L})(?:silindi|silinmiş(?!\s+olacak)|kaldırıldı|kaldırılmış(?!\s+olacak)|yok\s+edildi|yok\s+edilmiş(?!\s+olacak)|(?:silinmek|kaldırılmak|yok\s+edilmek)\s+üzereydi)\p{L}*/iu,
     // CU-806: the formal future (-ecektir / -acaktır), the aorist passive (silinir) and the future perfect (silinmiş olacak) too.
-    pending: /(?<!\p{L})(?:silin(?:ecek(?:tir)?|ir)|kaldırıl(?:acak(?:tır)?|ır)|yok\s+edil(?:ecek(?:tir)?|ir)|(?:silinmiş|kaldırılmış|yok\s+edilmiş)\s+olacak(?:tır)?)(?!\p{L})/iu,
+    // #1479 r2 (the table cu-researcher OK'd 14:34Z): plural agreement, the plural aorist and 'about to' too.
+    pending: /(?<!\p{L})(?:silin(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|kaldırıl(?:acak(?:lar)?(?:dır)?|acaktır|ır(?:lar)?)|yok\s+edil(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|(?:silinmiş|kaldırılmış|yok\s+edilmiş)\s+olacak(?:tır)?|(?:silinmek|kaldırılmak|yok\s+edilmek)\s+üzere(?:dir|ler)?)(?!\p{L})/iu,
   },
 ]
 // null when no ru / ja / zh / ko / tr verb of the family stands in the sentence.
