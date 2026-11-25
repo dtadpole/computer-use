@@ -1,13 +1,14 @@
 /**
  * The one way a [cu] check starts and stops its Chrome, in the order D-014 sets: Chrome present, a throwaway
  * profile, a registry slot (two browsers for the team, one per seat), the memory floor (D-005), then the
- * launch; downloads are denied. Any refusal returns `ready: false` with the reason, so the check reports
+ * launch - through openGuardedPage, so no notification reaches macOS (CU-808); downloads are denied. Any refusal returns `ready: false` with the reason, so the check reports
  * unjudged (exit 3) - never a pass - and whatever was taken is given back.
  */
 
-import { browserAvailable, openPage } from '../../_vendor_/browser-use/lib.mjs'
+import { browserAvailable } from '../../_vendor_/browser-use/lib.mjs'
 import { closeBrowser, memoryGate, removeThrowawayProfile, throwawayProfile } from './browser-gate.mjs'
 import { registerBrowser } from './browser-registry.mjs'
+import { openGuardedPage } from './guarded-page.mjs'
 import { denyDownloads } from './plan-runner.mjs'
 import { verifySeat } from './seat.mjs'
 
@@ -24,7 +25,7 @@ export async function startCheckBrowser({
   removeProfile = removeThrowawayProfile,
   register = registerBrowser,
   gate = memoryGate,
-  open = openPage,
+  open = openGuardedPage,
   deny = denyDownloads,
 } = {}) {
   if (!available()) return { ready: false, reason: 'no Chrome or Chromium on this machine' }
