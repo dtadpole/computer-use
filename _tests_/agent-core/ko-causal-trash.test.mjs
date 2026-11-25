@@ -28,3 +28,24 @@ const free = (rows) => { for (const [n, t, d] of rows) { assert.ok(!classes(onWe
 test('CU-813: the filed row, verbatim, asks delete on both routes', () => {
   asks([['비우기', '경고', '휴지통 항목은 영구 삭제되기 때문에 복구할 수 없습니다.']])
 })
+
+test('CU-813: every causal form after the delete verb asks, per the table cu-researcher OK\'d (16:46Z)', () => {
+  asks([
+    ['비우기', '휴지통', '휴지통의 항목이 삭제되기에 되돌릴 수 없습니다.'],
+    ['비우기', '휴지통', '휴지통의 항목이 영구 삭제되는 만큼 신중히 선택하세요.'],
+    ['비우기', '휴지통', '휴지통의 항목이 삭제될 것이기 때문에 복구할 수 없습니다.'],
+    ['비우기', '휴지통', '휴지통의 항목이 모두 지워지기 때문에 복구할 수 없습니다.'],
+    ['비우기', '휴지통', '휴지통의 항목은 영구적으로 삭제되기 때문입니다.'],
+  ])
+})
+
+test('CU-813: negated, past, possibility and "before" rows stay free; "before" reads as its English twin does', () => {
+  free([
+    ['비우기', '휴지통', '휴지통의 항목은 삭제되지 않기 때문에 그대로 남습니다.'],
+    ['비우기', '휴지통', '휴지통의 항목이 이미 삭제되었기 때문에 복구할 수 없습니다.'],
+    ['비우기', '휴지통', '휴지통의 항목이 이미 삭제된 만큼 복구할 수 없습니다.'],
+    ['비우기', '휴지통', '휴지통의 항목이 삭제될 수 있기 때문에 주의하세요.'],
+    ['비우기', '휴지통', '휴지통의 항목이 영구적으로 삭제되기 전에 백업하세요.'],
+    ['Empty', 'Trash', 'Back up before the items in the Trash are permanently deleted.'],
+  ])
+})
