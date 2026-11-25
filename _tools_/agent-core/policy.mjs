@@ -127,6 +127,14 @@ function localePassiveAct(text) {
 }
 // CU-747 (High; sweep 5, cu-coordinator 06:05Z): a wizard's or sheet's final-step control - Finish / Complete / Next / End - is
 // a generic confirm too when it sits in a risk dialog (the modal rule below judges the dialog's text; a harmless one stays free).
+// CU-755 (cu-researcher's sweep 6): a store-style commit verb ('Install' / 'Get' / 'Buy' / 'Pay' / 'Subscribe' / 'Upgrade') pressed in
+// a dialog or sheet whose title or text names a price ('Confirm with Touch ID' / 'Pro Upgrade - $9.99') reads the dialog like a
+// generic confirm does, so the price asks purchase there (additions only; a dialog with no amount is unchanged).
+const DIALOG_PRICE_COMMIT = /^\s*(?:install|install\s+now|get|buy|buy\s+now|purchase|pay|pay\s+now|subscribe|upgrade|upgrade\s+now|confirm\s+purchase)\s*[.!]?\s*$/i
+// CU-755: a glyph-only trash name ('🗑', '🗑️', '🚮') deletes, as the icon names 'trash-2' / 'icon-trash' do; resetting a branch or
+// HEAD to a commit drops the later commits ('Reset branch to this commit', 'Reset current branch to here', 'Hard reset').
+const TRASH_GLYPH_NAME = /^\s*(?:\u{1F5D1}|\u{1F6AE})\uFE0F?\s*$/u
+const RESET_TO_COMMIT = /^\s*(?:hard\s+)?reset\s+(?:(?:the|this|current|your|my)\s+)?(?:(?:local\s+)?(?:branch|head|repo(?:sitory)?|working\s+(?:tree|copy))\s+)?(?:\(?hard\)?\s+)?(?:back\s+)?to\s+(?:(?:this|that|the|a|an|selected|previous|earlier|older|last)\s+)?(?:commit|revision|version|snapshot|here)\b|^\s*hard\s+reset\s*$/i
 const FINAL_STEP_CONFIRM = /^\s*(?:finish|finish\s+up|complete|next|next\s+step|end|end\s+now|continue\s+anyway|proceed\s+anyway)\s*[.!>›→]?\s*$/i
 // CU-747: a bare verb button that repeats the verb of its dialog's title ('Reset' under 'Reset this device to factory settings?',
 // 'Empty' under 'Empty the Trash?') confirms that title, so the title is judged as a name. r2 (cu-researcher 06:48Z): the verb may
@@ -4125,6 +4133,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // 'Make <noun> public' (an object between the verb and 'public', cu-coordinator 14:34Z).
       if (!focusesEntry && /^\s*make\s+(?:the\s+|this\s+)?(?:\S+\s+){1,2}public\s*$/i.test(name)) classes.push('permission')
       if (!focusesEntry && /^\s*destroy\b/i.test(name) && !/link/i.test(String(target?.role ?? ''))) classes.push('delete')
+      // CU-755: a glyph-only trash name, and resetting a branch to a commit.
+      if (!focusesEntry && (TRASH_GLYPH_NAME.test(name) || RESET_TO_COMMIT.test(name)) && !/link/i.test(String(target?.role ?? ''))) classes.push('delete')
       // CU-410: renting ('Rent', 'Rent now', 'Rent <title>'; 'Rentals' stays free), a bare 'Renew', reactivating a subscription,
       // turning auto-renew on and switching the billing period ask purchase.
       if (!focusesEntry && (/^\s*rent\b/i.test(name) || /^\s*renew\s*$/i.test(name)
@@ -5132,6 +5142,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // CU-790: or a sentence of the description - 'Leeren' under the title 'Hinweis' and 'Ist der Papierkorb danach geleert?'.
       const finalStep = FINAL_STEP_CONFIRM.test(String(name ?? '')) || echoesDialogVerb(name, dialogName) || echoesDialogVerb(target?.name, dialogName)
         || dialogDescription.split(/(?<=[.!?。！？])\s*/u).some((sentence) => sentence !== '' && (echoesDialogVerb(name, sentence) || echoesDialogVerb(target?.name, sentence)))
+      // CU-755: a store-style commit in a dialog that names a price reads the dialog too.
+      const priceCommit = DIALOG_PRICE_COMMIT.test(String(name ?? '')) && [dialogName, dialogDescription].some((text) => amountClass(text, 'dialog') === 'purchase')
       // CU-804: an emptying button under a trash permanent-delete question or pending statement.
       const emptiesTrash = [dialogName, ...dialogDescription.split(/(?<=[.!?。！？])\s*/u)].some((sentence) => sentence !== '' && (emptiesTrashByDelete(name, sentence) || emptiesTrashByDelete(target?.name, sentence)))
       // CU-757: 'Allow' / 'Grant' / 'Give access' (and localized) in a dialog whose title or a kept sentence states access asks
@@ -5141,7 +5153,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         .filter((sentence) => sentence !== '' && !/\b(?:if\s+you\s+(?:don'?t|do\s+not|choose\s+not\s+to|cancel|leave|close)|unless\s+you|otherwise)\b/i.test(sentence))
         .some((sentence) => MODAL_ACCESS.test(sentence) || LOCALE_MODAL_ACCESS.test(sentence))
       if (context.confirmProbe !== true && presses && accessStated && !classes.includes('permission')) classes.push('permission')
-      if (context.confirmProbe !== true && presses && (dialogName !== '' || dialogDescription !== '') && (GENERIC_CONFIRM.test(String(name ?? '')) || localeConfirm || continueTo || finalStep || accessStated || emptiesTrash)) {
+      if (context.confirmProbe !== true && presses && (dialogName !== '' || dialogDescription !== '') && (GENERIC_CONFIRM.test(String(name ?? '')) || localeConfirm || continueTo || finalStep || accessStated || emptiesTrash || priceCommit)) {
         // cu-researcher 16:09Z: a title is a question more often than a row - 'Are you sure you want to <row>?', 'Really <row>?',
         // '<row>?' - so a title canonical step strips the question frame before the title is judged as a name.
         // #702 round 2 (cu-researcher 16:24Z): descriptions lead with 'This will / This action will / You are about to / Doing this will'.
