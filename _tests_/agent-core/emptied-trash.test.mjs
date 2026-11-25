@@ -58,6 +58,10 @@ test('CU-814: the emptying passive asks in every covered language', () => {
 test('CU-814: negated, past, past-event, state and non-trash rows stay free', () => {
   free([
     ['Empty', 'Notice', 'The cache will be emptied.'],
+    // The agent-core suite's two near rows (CU-777, state-worth): a possibility and a past question stay free.
+    ['Leeren', 'Papierkorb', 'Kann der Papierkorb später geleert werden?'],
+    ['Vaciar', 'Papelera', '¿La papelera fue vaciada ayer?'],
+    ['Boşalt', 'Çöp Sepeti', 'Çöp Sepeti boşaltılabilir mi?'],
     ['Leeren', 'Papierkorb', 'Der Papierkorb wird nicht geleert.'],
     ['Leeren', 'Papierkorb', 'Der Papierkorb wurde gestern versehentlich geleert.'],
     ['Leeren', 'Papierkorb', 'Der Papierkorb ist leer.'],

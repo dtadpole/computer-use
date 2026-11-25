@@ -150,8 +150,13 @@ const ECHO_CJK = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script
 // ko / tr forms too (cu-developer-two's cross-check).
 const EMPTYING_BUTTON = /^(?:empty|empty\s+now|leeren|entleeren|ausleeren|vider|vaciar|svuota|svuotare|esvaziar|legen|leegmaken|leeghalen|leegruimen|ledigen|leeg\s+(?:maken|halen|ruimen)|очистить|空にする|清倒|倒空|清空|비우기|boşalt)$/u
 const TRASH_NOUN = /(?<!\p{L})(?:trash|bin|recycle\s+bin|papierkorb|mülleimer|abfalleimer|corbeille|papelera|cestino|lixeira|lixo|prullenbak|prullenmand|vuilnisbak|vuilbak|корзин[аеуыой]|корзиной|çöp)(?!\p{L})|ゴミ箱|废纸篓|廢紙簍|回收站|휴지통/iu
-const TRASH_DELETE_VERB = /(?<!\p{L})(?:delete|deleted|erase|erased|remove|removed|löschen|gelöscht|entfernen|entfernt|supprimer|supprimée?s?|effacer|effacée?s?|eliminar|eliminad[oa]s?|borrar|borrad[oa]s?|eliminare|eliminat[oiae]|cancellare|cancellat[oiae]|excluir|excluíd[oa]s?|apagar|apagad[oa]s?|verwijderen|verwijderd|wissen|gewist|emptied|geleert|vidée?s?|vaciad[oa]s?|vaciar[áa]n?|svuotat[oiae]|esvaziad[oa]s?|geleegd|leeggemaakt)(?!\p{L})/iu
-const TRASH_PENDING = /[?？]\s*$|(?<!\p{L})(?:will|would|wird|werden|sera|seront|será|serán|verrà|verranno|serão|wordt|worden|zal|zullen)(?!\p{L})|(?<!\p{L})se\s+(?:\S+\s+){0,2}?vaciar[áa]n?(?!\p{L})/iu
+const TRASH_DELETE_VERB = /(?<!\p{L})(?:delete|deleted|erase|erased|remove|removed|löschen|gelöscht|entfernen|entfernt|supprimer|supprimée?s?|effacer|effacée?s?|eliminar|eliminad[oa]s?|borrar|borrad[oa]s?|eliminare|eliminat[oiae]|cancellare|cancellat[oiae]|excluir|excluíd[oa]s?|apagar|apagad[oa]s?|verwijderen|verwijderd|wissen|gewist)(?!\p{L})/iu
+// CU-814 (the table cu-researcher OK'd 21:56Z): the emptying verb's passive / participle over the trash, only with a future
+// auxiliary - never a bare question ('¿La papelera fue vaciada ayer?', 'Can the Trash be emptied later?'). German and Dutch stay
+// with their own cells (CU-781 / CU-800), which keep the modal guards ('Kann der Papierkorb später geleert werden?').
+const TRASH_EMPTIED_VERB = /(?<!\p{L})(?:emptied|vidée?s?|vaciad[oa]s?|vaciar[áa]n?|svuotat[oiae]|esvaziad[oa]s?)(?!\p{L})/iu
+const TRASH_PENDING_AUX = /(?<!\p{L})(?:will|sera|seront|será|serán|verrà|verranno|sarà|saranno|serão)(?!\p{L})|(?<!\p{L})se\s+(?:\S+\s+){0,2}?vaciar[áa]n?(?!\p{L})/iu
+const TRASH_PENDING = /[?？]\s*$|(?<!\p{L})(?:will|would|wird|werden|sera|seront|será|serán|verrà|verranno|serão|wordt|worden|zal|zullen)(?!\p{L})/iu
 const TRASH_NEGATION = /(?<!\p{L})(?:not|never|nicht|nie|kein|keine|ne|pas|jamais|no|nunca|non|mai|não|niet|nooit|geen)(?!\p{L})|n['’]t(?!\p{L})/iu
 // CU-805 (P1; the marker table cu-researcher OK'd on #1475, cu-coordinator 12:42Z): in ru / ja / zh / ko / tr a marker counts only
 // ATTACHED to a delete / erase / remove verb of the family - a suffix on the stem, or an auxiliary a few words before it - never
@@ -199,7 +204,7 @@ const TRASH_LOCALE = [
     pending: new RegExp(`비워집니다|비워질\\s*(?:것입니다|예정입니다)|비워지게\\s*됩니다|${KO_STEM}(?:됩니다|합니다|될\\s*것입니다|될\\s*예정입니다|되게\\s*됩니다|되겠습니다|될\\s*것이다|된다(?!\\p{Script=Hangul})|될\\s*거(?:예요|야|다|(?=입니다)|(?=ㅂ니다))|될\\s*겁니다|될\\s*것이며|될\\s*것이고|될\\s*예정이며|되며|되고(?!\\s*(?:있|없|나))|되어(?!\\s*(?:도|있|버리면|버린다면))|돼(?!\\s*(?:도|있|버리면|버린다면))|되니|되므로|하며|하고(?!\\s*(?:있|없|나))|되기\\s*때문|하기\\s*때문|되기에|하기에|되는\\s*만큼|될\\s*것이기\\s*때문|될\\s*것이기에|될\\s*것이므로|(?:되는|하는|될)\\s*(?:관계|까닭|탓|이상)|되길래|하길래|되는지라|되느라|되는\\s*바(?!람)|될\\s*테니|될\\s*것이니)|지워집니다|지웁니다|지워질\\s*것입니다|지워지게\\s*됩니다|지워지겠습니다|지워진다(?!\\p{Script=Hangul})|지워질\\s*(?:겁니다|거예요|거야|거다)|지워지며|지워지고(?!\\s*(?:있|없|나))|지워져(?!\\s*(?:도|있|버리면|버린다면))|지워지니|지워질\\s*것이며|버려집니다|버립니다|버려질\\s*(?:것입니다|겁니다|거예요|예정입니다)|버려지며|버려지고(?!\\s*(?:있|없|나))|지워지기\\s*때문|지워지기에|지워지는\\s*만큼|버려지기\\s*때문|버려지기에|(?:지워지는|지워질|버려지는|버려질)\\s*(?:관계|까닭|탓|이상)|지워지길래|버려지길래|버려지니`, 'u'),
   },
   { // tr
-    verb: /(?<!\p{L})(?:sil|kaldır|yok\s+ed|atıl|temizlen|imha\s+ed|boşaltıl)\p{L}*/iu,
+    verb: /(?<!\p{L})(?:sil|kaldır|yok\s+ed|atıl|temizlen|imha\s+ed|boşaltıl(?!abil))\p{L}*/iu,
     negation: /(?<!\p{L})(?:boşaltılma(?:yacak(?:lar)?(?:dır)?|yacaktır|z(?:lar)?|dı|mış)|silinme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|silinemez|silmeyecek|kaldırılma(?:yacak(?:lar)?(?:dır)?|yacaktır|z(?:lar)?|dı|mış)|kaldırılamaz|yok\s+edilme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|yok\s+edilemez|atılma(?:yacak(?:lar)?(?:dır)?|z(?:lar)?|dı)|temizlenme(?:yecek(?:ler)?(?:dir)?|z(?:ler)?|di)|atılmayacaktır|temizlenmeyecektir|imha\s+edilme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|(?:silinmek|kaldırılmak|yok\s+edilmek|imha\s+edilmek)\s+üzere\s+değil(?:dir)?)(?!\p{L})/iu,
     past: /(?<!\p{L})(?:boşaltıldı|boşaltılmış(?!\s+olacak)|silindi|silinmiş(?!\s+olacak)|kaldırıldı|kaldırılmış(?!\s+olacak)|yok\s+edildi|yok\s+edilmiş(?!\s+olacak)|atıldı|atılmış|temizlendi|temizlenmiş|imha\s+edildi|imha\s+edilmiş(?!\s+olacak)|(?:silinmek|kaldırılmak|yok\s+edilmek|imha\s+edilmek)\s+üzereydi)\p{L}*/iu,
     // CU-806: the formal future (-ecektir / -acaktır), the aorist passive (silinir) and the future perfect (silinmiş olacak) too.
@@ -231,6 +236,8 @@ function emptiesTrashByDelete(name, sentence, titleNamesTrash = false) {
   // #1491 r2 (the table cu-researcher OK'd 21:04Z; CU-821): the future passives the in-sentence rule reads ('se eliminarán', 'verranno
   // eliminati', 'serão excluídos', 'werden … gelöscht', 'worden verwijderd', 'будут удалены') count here too, with their own negation.
   if (localePassiveAct(text) !== null) return true
+  const emptied = TRASH_EMPTIED_VERB.exec(text)
+  if (emptied !== null && TRASH_PENDING_AUX.test(text) && !TRASH_NEGATION.test(text.slice(0, emptied.index).trim().split(/\s+/).slice(-4).join(' '))) return true
   const verb = TRASH_DELETE_VERB.exec(text)
   if (verb === null || !TRASH_PENDING.test(text)) return false
   // A negation counts only within four words before the delete verb ('will not be deleted'), never one in a following clause
