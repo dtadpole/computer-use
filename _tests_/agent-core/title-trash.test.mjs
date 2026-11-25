@@ -50,3 +50,19 @@ test('CU-818: negated, past, past-event, conditional, other-object, no-trash-tit
     ['Cancel', 'Trash', 'The items will be permanently deleted.'],
   ])
 })
+
+test('#1491 r2: the future passives the in-sentence rule reads count under the title too - cu-researcher\'s miss = CU-821\'s row', () => {
+  asks([
+    ['Vaciar', 'Papelera', 'Los elementos se eliminarán de forma permanente.'],
+    ['Vaciar', 'Papelera', 'Los elementos se borrarán.'],
+    ['Svuota', 'Cestino', 'Gli elementi verranno eliminati.'],
+    ['Esvaziar', 'Lixeira', 'Os itens serão excluídos.'],
+  ])
+  free([
+    ['Vaciar', 'Papelera', 'Los elementos no se eliminarán.'],
+    ['Vaciar', 'Papelera', 'Los elementos se eliminaron.'],
+    ['Vaciar', 'Papelera', 'Algunos elementos se eliminaron por error ayer.'],
+    ['Vaciar', 'Papelera', 'Si se eliminan los elementos, no se podrán recuperar.'],
+    ['Vaciar', 'Aviso', 'Los elementos se eliminarán.'],
+  ])
+})

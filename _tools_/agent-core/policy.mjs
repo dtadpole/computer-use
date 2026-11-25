@@ -217,6 +217,9 @@ function emptiesTrashByDelete(name, sentence, titleNamesTrash = false) {
   if (!(EMPTYING_BUTTON.test(button) || ruButton) || !(TRASH_NOUN.test(text) || (titleNamesTrash && TRASH_ITEM_NOUN.test(text)))) return false
   const local = localeTrashPending(text)
   if (local !== null) return local
+  // #1491 r2 (the table cu-researcher OK'd 21:04Z; CU-821): the future passives the in-sentence rule reads ('se eliminarán', 'verranno
+  // eliminati', 'serão excluídos', 'werden … gelöscht', 'worden verwijderd', 'будут удалены') count here too, with their own negation.
+  if (localePassiveAct(text) !== null) return true
   const verb = TRASH_DELETE_VERB.exec(text)
   if (verb === null || !TRASH_PENDING.test(text)) return false
   // A negation counts only within four words before the delete verb ('will not be deleted'), never one in a following clause
