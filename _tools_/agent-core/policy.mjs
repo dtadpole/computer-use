@@ -278,7 +278,9 @@ const OUTSIDE_ROLES = String.raw`(?:(?:all|every|any|each)\s+(?:of\s+)?(?:(?:my|
 const WIDER = String.raw`(?:${OUTSIDERS}|(?:everyone|anyone|people|users|members)\s+with\s+(?:an?\s+)?(?:[a-z]+\s+)?(?:account|login|profile)|(?:all\s+)?(?:registered|signed[-\s]in|logged[-\s]in)\s+(?:users|members|people)|all\s+(?:members|employees|staff|colleagues|students)|(?:the\s+)?(?:whole|entire)\s+(?:company|organi[sz]ation|org|school|workspace|network|community|internet|web|world)|(?:everyone|anyone|people)\s+(?:in|at|across)\s+(?:the|my|your|our|this)\s+(?:company|organi[sz]ation|org|school|workspace|network|community)|(?:site\s+|website\s+|page\s+)?visitors|strangers|anyone|everyone|the\s+public|(?:all|other)\s+users|external\s+(?:users|people|guests|collaborators|contacts)|(?:people|users|anyone|everyone)\s+(?:outside|beyond)\s+(?:(?:my|your|the|this|our)\s+)?(?:team|organi[sz]ation|org|company|network|workspace|school|family|circle|contacts|connections)|(?:people|users)\s+(?:i|you)\s+(?:don't|do\s+not)\s+know|(?:people|users)\s+not\s+in\s+(?:my|your)\s+(?:contacts|network|team|organi[sz]ation)|(?:anyone|everyone)\s+(?:on|across)\s+(?:the\s+)?(?:internet|web)|${EXCLUDED}|${OUTSIDE_ROLES})`
 // A place others browse: a marketplace or app store, a public or community gallery, an explore / discover page. A bare
 // 'gallery' or 'store' can be the owner's own view ('Show my photos in the gallery') and stays out.
-const PUBLIC_PLACE = String.raw`(?:the\s+|our\s+)?(?:(?:site'?s?\s+|public\s+)?(?:home\s*page|front\s+page|landing\s+page|main\s+page|start\s+page)|featured\s+(?:section|list|page|row)|marketplace|market|app\s+store|public\s+(?:store|gallery|showcase|feed|catalog(?:ue)?)|community(?:\s+(?:page|feed|gallery|showcase))?|explore(?:\s+(?:page|tab|feed))?|discover(?:y)?(?:\s+(?:page|tab|feed))?|leaderboard)`
+// CU-799 (P1, the follow-up to CU-783): any place named public ('the public directory', 'the public job board'), a directory
+// others browse (CU-774's DIRECTORY), search results and the open web are public places too.
+const PUBLIC_PLACE = String.raw`(?:the\s+|our\s+)?(?:(?:site'?s?\s+|public\s+)?(?:home\s*page|front\s+page|landing\s+page|main\s+page|start\s+page)|featured\s+(?:section|list|page|row)|marketplace|market|app\s+store|public\s+(?:[a-z][\w'-]*\s+)?[a-z][\w'-]*|${DIRECTORY}|(?:(?:google|bing|web|internet)\s+)?search\s+(?:results|engines?|listings|index)|(?:the\s+)?(?:open\s+)?(?:web|internet)|community(?:\s+(?:page|feed|gallery|showcase))?|explore(?:\s+(?:page|tab|feed))?|discover(?:y)?(?:\s+(?:page|tab|feed))?|leaderboard)`
 // CU-783 r2: an act granted to an audience - any verb, optionally with its particle ('comment on', 'reply to', 'look at'),
 // never a negation.
 const GRANTED_ACT = String.raw`(?!(?:not|never|no)\b)[a-z][\w'-]*(?:\s+(?:on|to|with|at|through|in|into|from|about|for))?`
@@ -298,8 +300,12 @@ const EXPOSED_TOGGLE = new RegExp('^\\s*(?:' + [
   String.raw`(?:give|grant|offer)\s+${WIDER}\s+(?:(?:full|read|view(?:ing)?|edit(?:ing)?|download)\s+)?(?:access|permission|rights?)\s+(?:to|on|for)\s+${OWN_ANY}`,
   // 'Include me in the staff list visible to guests', 'Add my profile to the team page shown to visitors'
   String.raw`(?:include|list|add|show|feature|put|publish)\s+${OWN_WORK}\s+(?:in|on|to)\s+(?:the\s+|our\s+)?(?:[a-z'-]+\s+){0,3}(?:list|roster|directory|page|feed|gallery|showcase|board)\s+(?:that\s+is\s+|that's\s+)?(?:visible|shown|available|open)\s+to\s+${WIDER}`,
-  // 'List my shop in the marketplace', 'Feature my portfolio on the explore page', 'Publish my designs to the community gallery'
-  String.raw`(?:list|feature|publish|post|sell|offer|showcase)\s+${OWN_ANY}\s+(?:in|on|to)\s+${PUBLIC_PLACE}`,
+  // 'List my shop in the marketplace', 'Feature my portfolio on the explore page', 'Publish my designs to the community gallery';
+  // CU-799: any verb that puts the owner's thing into a public place - 'Publish my profile to the public directory', 'Share my
+  // portfolio to the community gallery', 'Add my profile to the member directory', 'Show my posts in search results'
+  String.raw`(?:list|feature|publish|post|sell|offer|showcase|share|add|put|upload|submit|send|push|show|display|include|place|pin|syndicate|broadcast|announce|advertise|release)\s+${OWN_ANY}\s+(?:in|on|to|into|onto)\s+${PUBLIC_PLACE}`,
+  // CU-799: the state form - 'My profile is listed in the public directory', 'Portfolio published to the community gallery'
+  String.raw`(?:${OWN_ANY}|profile|portfolio|shop|store|listing|resume|r[eé]sum[eé]|cv)\s+(?:is\s+|are\s+)?(?:published|listed|posted|shared|shown|visible|available|featured|included)\s+(?:in|on|to|into)\s+${PUBLIC_PLACE}`,
   // r2: featured or promoted placement, with or without the owner named - 'Feature on the home page', 'Promote my posts on
   // the explore page', 'Spotlight me in the featured section'
   String.raw`(?:feature|showcase|spotlight|highlight|promote)(?:\s+${OWN_ANY})?\s+(?:in|on|to)\s+${PUBLIC_PLACE}`,
