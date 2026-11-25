@@ -203,12 +203,14 @@ const PHYS_PERSON = new Set(['guest', 'visitor'])
 const ENTRY_ACTS = new Set(['in', 'inside', 'through', 'enter', 'come', 'unlock', 'open'])
 const HARMLESS_ACTS = new Set(['choose', 'pick', 'select', 'switch', 'toggle', 'customize', 'customise', 'personalize', 'personalise',
   'sort', 'filter', 'preview', 'zoom', 'resize', 'translate', 'scroll', 'expand', 'collapse'])
-// A harmless act is harmless only on the people's own view: an authority word after it (choosing who can edit, picking an
-// admin, customizing permissions) is a grant of control, so the act is not harmless (cu-developer-two's #1486 review).
-const AUTHORITY_OBJECTS = new Set(['permission', 'permissions', 'admin', 'admins', 'administrator', 'administrators', 'owner',
-  'owners', 'ownership', 'role', 'roles', 'access', 'who', 'whom', 'editor', 'editors', 'moderator', 'moderators', 'manager',
-  'managers', 'rights', 'privilege', 'privileges', 'password', 'passwords', 'member', 'members', 'user', 'users', 'account',
-  'accounts', 'collaborator', 'collaborators', 'billing', 'payment', 'payments', 'security', 'sharing', 'delegate', 'delegates'])
+// A harmless act is harmless only on the people's own view: everything after it must name a display preference (a theme, a
+// language, dark mode, the list's order). Anything else - a person or role (choose who can edit, pick an admin), a device
+// (toggle the alarm, switch off the camera) or content (preview the documents) - makes it a grant (cu-developer-two's reviews
+// of #1486 r1 and r2), so an unknown object keeps the ask.
+const HARMLESS_OBJECTS = new Set(['theme', 'themes', 'language', 'languages', 'locale', 'mode', 'dark', 'light', 'layout', 'view',
+  'views', 'color', 'colors', 'colour', 'colours', 'font', 'fonts', 'appearance', 'skin', 'style', 'density', 'order', 'list',
+  'lists', 'column', 'columns', 'grid', 'wallpaper', 'background', 'units', 'format'])
+const HARMLESS_FILL = new Set(['a', 'an', 'the', 'to', 'their', 'own', 'preferred', 'favorite', 'favourite', 'of', 'and', 'or'])
 /** CU-783: the act granted to the first people word of `rest` - the token after 'to', or the bare infinitive after 'let'; null when none. */
 function grantedAct(verb, rest) {
   const i = rest.findIndex((t) => OBJECTS.access.has(t))
@@ -216,12 +218,12 @@ function grantedAct(verb, rest) {
   if (rest[i + 1] === 'to') return rest[i + 2] ?? null
   return verb === 'let' ? (rest[i + 1] ?? null) : null
 }
-/** CU-788: the granted act is harmless - a harmless verb with no authority word after it. */
+/** CU-788: the granted act is harmless - a harmless verb followed only by display-preference words. */
 function harmlessGrant(verb, rest) {
   const act = grantedAct(verb, rest)
   if (!HARMLESS_ACTS.has(act)) return false
   const after = rest.slice(rest.indexOf(act) + 1)
-  return !after.some((t) => AUTHORITY_OBJECTS.has(t))
+  return after.every((t) => HARMLESS_OBJECTS.has(t) || HARMLESS_FILL.has(t))
 }
 
 function verbOf(list) {

@@ -26,7 +26,7 @@ test('CU-788: the filed rows - a harmless act granted to visitors is free; brows
 test('CU-788: the freed shapes - a harmless act on the people\'s own view grants nothing and opens no door', () => {
   for (const name of [
     'Let any visitor choose a theme', 'Allow any visitor to choose a theme', 'Let visitors pick a language', 'Let any member choose a theme',
-    'Allow members to sort the list', 'Let guests switch to dark mode',
+    'Allow members to sort the list', 'Let guests switch to dark mode', 'Let visitors pick their preferred language',
   ]) {
     assert.equal(sw(name), 'allow', name)
     assert.equal(webcb(name), 'allow', `checkbox: ${name}`)
@@ -46,10 +46,12 @@ test('CU-788: the near forms keep asking - letting someone in, guest access, and
   assert.match(sw('Allow guests'), /physical/) // no act follows: unchanged
 })
 
-test('CU-788: a harmless verb that hands over control still asks permission - the act\'s object decides (cu-developer-two)', () => {
+test('CU-788: a harmless verb on anything but a display preference still asks permission - the act\'s object decides (cu-developer-two)', () => {
   for (const name of [
     'Let guests customize permissions', 'Allow everyone to select the owner', 'Allow members to pick an admin', 'Let guests choose who can edit',
     'Let visitors choose their role', 'Allow guests to select who has access',
+    // r3 (cu-developer-two's r2 review): a device or content after the harmless verb is a grant too.
+    'Allow everyone to toggle the alarm', 'Allow visitors to switch off the camera', 'Allow everyone to preview the documents',
   ]) {
     assert.match(sw(name), /permission/, name)
     assert.match(webcb(name), /permission/, `checkbox: ${name}`)
