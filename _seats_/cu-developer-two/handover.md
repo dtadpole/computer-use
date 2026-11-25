@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - handover'
 created: 2026-11-08T04:14:00Z
-modified: 2026-11-24T01:41:34Z
+modified: 2026-11-24T19:50:47Z
 level: L1
-version: 4.35.0
+version: 4.36.0
 description: 'What a fresh [cu] Developer Two session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -12,6 +12,7 @@ grounded_in:
   - source: cu-coordinator goal of 2026-11-12 07:05Z (live second OKs on the High table PRs, measure in any HOLD); the 15 Nov reboot that emptied /tmp
   - source: hd-coordinator goal of 2026-11-16 01:10 PST (Linear items by priority, at most two In Progress)
   - source: cu-coordinator goal of 2026-11-23 03:40Z and lane ruling D-112 / D-113 (CU-585 unit first, named reviewers)
+  - source: cu-coordinator goal of 2026-11-24 17:16Z and rulings D-119 / D-120 (one fold, over-asks a PR introduces go before landing; three OKs for a High)
 ---
 
 # [cu] Developer Two - handover
@@ -19,25 +20,24 @@ grounded_in:
 Seat `cu-developer-two`: desktop and browser drivers, live view, run lock, MCP. Code: the session worktree
 `~/dtadpole/computer-use-wt/<session-id>`, one purpose worktree per PR. Records: [artifacts.md](artifacts.md).
 
-## State (24 Nov 01:45Z)
+## State (24 Nov 19:50Z)
 
-- Goal: renewal of 23 Nov 22:15Z. Merged: #1400 (CU-729), #1405 (CU-735, High; closed live, post-check green).
-- CU-736 is #1408 (three OKs, gate-ready). CU-723 at fc31b73, windows queued.
-- CU-710 is #1390 on main; CU-713 is #1396 on #856; CU-709 in Todo.
+- Goal: renewal of 24 Nov 17:16Z. Main a956d367. CU-765 closed live (#1443).
+- CU-772 (P2, In Progress): 815952ad, unpushed; test1 and D-114 windows queued next, then cu-developer-three's review.
+- CU-775 with CU-776 (P1, one PR): efddcfa6, unpushed, test `_tests_/agent-core/lead-in-openers.test.mjs`; windows after
+  CU-772's. Then cu-researcher's held-out, cu-developer-one's policy check, cu-verifier live, one fold (D-119).
+- Cross-checks given today: #1426 (37464f97), #1446 r3 (bd40b906), #1448 r2 (b14e166f), #1444 (2804f872); none owed.
+- Todo: CU-755 (ac5400ce), CU-709, CU-723. CU-713 is #1396 on #856.
 
 ## Tools and routine
 
-Seat tools live in `<session-id>--seat-tools/`, never `/tmp`: `guarded-high.sh` (refuses or stops on a run, the
-sentinel or an unreadable lock; GUARD_OWNER_NICE lets niced High node-only runs continue through the owner's runs),
-`safe-push.sh`, `d101.sh` (the D-114 set; RESUME carries green steps; LANE_OK runs beside gates), one job per PR, and a one-file job for 1-min test1 windows (named windows only).
+Seat tools live in `<session-id>--seat-tools/`, never `/tmp`: `guarded-high.sh` (stops on a run or an unreadable
+lock), `safe-push.sh`, `d101.sh` (the D-114 set), one job per PR plus a one-file test1 job; each waits for the
+'STOP set' note naming its label and my seat, and stops on a clear.
 
 ## Lessons
 
-- Measure before assuming, on both trees; give row sets concrete-object variants, not only the PR's words.
-- Search open PRs for a symbol and check a file's owner before writing in it.
-- Every command: `cd <worktree> || exit 1`, `git -C` (D-104). After copying a job, grep the old id in every form.
-- A slot is a note that starts 'STOP set HH:MM:SSZ' and names the PR and my seat; wait for its start, stop on a clear.
-- Prove every driver change through the real driver (smoke.mjs or live rows) before the push.
-- After killing a job, stop its d101 too (it re-parents to pid 1); never edit a script a running job uses.
-- A job's slot match names my seat and the label; a slot request is its own message.
-- A PR branch must hold main's rules it relies on: merge main before a live check.
+- Measure on both trees; probe a fold's new rule with statements and wrong objects too (#1446 r2).
+- When main's code moves under an unpushed branch: plain merge, own-lines check, stop its jobs, re-arm.
+- After copying a job, grep the old id; never edit a script a running job uses.
+- Prove a driver change through the real driver before the push.
