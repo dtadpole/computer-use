@@ -151,11 +151,11 @@ const TRASH_NEGATION = /(?<!\p{L})(?:not|never|nicht|nie|kein|keine|ne|pas|jamai
 // question) asks. 'Объекты в Корзине будут удалены.', 'ゴミ箱内の項目は完全に削除されます。', '废纸篓中的所有项目将被不可恢复地删除。',
 // '휴지통의 모든 항목이 영구적으로 삭제됩니다.', 'Çöp Sepeti'ndeki tüm öğeler kalıcı olarak silinecek.' ask; their negated and past
 // twins stay free. CU-806 adds the tr formal future / aorist / future perfect and more ja / ko pending forms; the ko connectives are CU-807's.
-const RU_PART = '(?:удал[её]н[аоы]?|ст[её]рт[аоы]?|уничтожен[аоы]?|очищен[аоы]?)'
-const RU_FUT = '(?:удалятся|удалит|сотрутся|сотр[её]т|уничтожатся|уничтожит)'
-const JA_STEM = '(?:削除|消去|破棄|抹消|除去|消)'
-const ZH_VERB = '(?:删除|刪除|删掉|刪掉|抹除|清除|移除|销毁|銷毀)'
-const KO_STEM = '(?:삭제|제거)'
+const RU_PART = '(?:удал[её]н[аоы]?|ст[её]рт[аоы]?|уничтожен[аоы]?|очищен[аоы]?|выброшен[аоы]?)'
+const RU_FUT = '(?:удалятся|удалит|сотрутся|сотр[её]т|уничтожатся|уничтожит|выбросятся|выбросит)'
+const JA_STEM = '(?:削除|消去|破棄|抹消|除去|廃棄|処分|消)'
+const ZH_VERB = '(?:删除|刪除|删掉|刪掉|删去|刪去|抹除|抹去|擦除|清除|去除|移除|销毁|銷毀|丢弃|丟棄|清理掉)'
+const KO_STEM = '(?:삭제|제거|폐기|소거|파기|말소)'
 const TRASH_LOCALE = [
   { // ru
     verb: new RegExp(`(?<!\\p{L})(?:${RU_PART}|${RU_FUT}|удалить|стереть|уничтожить|очистить)(?!\\p{L})`, 'iu'),
@@ -164,10 +164,10 @@ const TRASH_LOCALE = [
     pending: new RegExp(`(?<!\\p{L})(?:будут|будет)(?:\\s+\\S+){0,3}?\\s+${RU_PART}(?!\\p{L})|(?<!\\p{L})${RU_FUT}(?!\\p{L})`, 'iu'),
   },
   { // ja
-    verb: new RegExp(`${JA_STEM}(?:さ|し|す|済)`, 'u'),
-    negation: new RegExp(`${JA_STEM}(?:されません|しません|されない|しない|されず|せず|さない|さず|されることはありません|されることはない|されていません|されようとしていません)`, 'u'),
-    past: new RegExp(`${JA_STEM}(?:されました|しました|された|した|されています|されている|されていました|されてしまいました|されようとしていました|済み)`, 'u'),
-    pending: new RegExp(`${JA_STEM}(?:されます|します|される(?!こと)|する(?!こと)|され、|されることになります|されることになる|されることになっています|される予定|する予定|されるでしょう|されようとしています|されようとしている|しようとしています)|消す(?!こと)`, 'u'),
+    verb: new RegExp(`${JA_STEM}(?:さ|し|す|済)|捨て`, 'u'),
+    negation: new RegExp(`${JA_STEM}(?:されません|しません|されない|しない|されず|せず|さない|さず|されることはありません|されることはない|されていません|されようとしていません)|捨てられ(?:ません|ない|ず)|捨てません|捨てない`, 'u'),
+    past: new RegExp(`${JA_STEM}(?:されました|しました|された|した|されています|されている|されていました|されてしまいました|されようとしていました|済み)|捨てられ(?:ました|た|ています|ている)|捨てました`, 'u'),
+    pending: new RegExp(`${JA_STEM}(?:されます|します|される(?!こと)|する(?!こと)|され、|されることになります|されることになる|されることになっています|される予定|する予定|されるでしょう|されようとしています|されようとしている|しようとしています)|消す(?!こと)|捨てられ(?:ます|る(?!こと)|、)|捨てます`, 'u'),
   },
   { // zh
     verb: new RegExp(ZH_VERB, 'u'),
@@ -176,18 +176,24 @@ const TRASH_LOCALE = [
     pending: new RegExp(`(?:将被|將被|会被|會被|即将|即將|将要|將要|将会|將會|将|將)[^。！？.!?，,]{0,8}?${ZH_VERB}`, 'u'),
   },
   { // ko
-    verb: new RegExp(`${KO_STEM}|지우|지워|지웁|지웠`, 'u'),
-    negation: new RegExp(`${KO_STEM}(?:되|하)지\\s*(?:않|못)|${KO_STEM}\\s*안\\s|지워지지\\s*(?:않|못)|지우지\\s*(?:않|못)`, 'u'),
-    past: new RegExp(`${KO_STEM}(?:되었|됐|했)|지워졌|지웠`, 'u'),
-    pending: new RegExp(`${KO_STEM}(?:됩니다|합니다|될\\s*것입니다|될\\s*예정입니다|되게\\s*됩니다|되겠습니다|될\\s*것이다|된다(?!\\p{Script=Hangul})|될\\s*거(?:예요|야|다|(?=입니다)|(?=ㅂ니다))|될\\s*겁니다)|지워집니다|지웁니다|지워질\\s*것입니다|지워지게\\s*됩니다|지워지겠습니다|지워진다(?!\\p{Script=Hangul})|지워질\\s*(?:겁니다|거예요|거야|거다)`, 'u'),
+    verb: new RegExp(`${KO_STEM}|지우|지워|지웁|지웠|버려|버리|버립|버렸`, 'u'),
+    negation: new RegExp(`${KO_STEM}(?:되|하)지\\s*(?:않|못)|${KO_STEM}\\s*안\\s|지워지지\\s*(?:않|못)|지우지\\s*(?:않|못)|버려지지\\s*(?:않|못)|버리지\\s*(?:않|못)`, 'u'),
+    past: new RegExp(`${KO_STEM}(?:되었|됐|했|되어\\s*있|돼\\s*있)|지워졌|지웠|지워져\\s*있|버려졌|버렸|버려져\\s*있`, 'u'),
+    // CU-807: a connective joining the delete verb to a following clause ('삭제되며 복구할 수 없습니다', -되고 / -되어 / -돼 / -되니 / -되므로).
+    // r2 (the table cu-researcher OK'd 15:42Z): not the progressive / state '-고 있- / -고 없-', the concessive / resultative '-어도 / -어 있-',
+    // nor the conditional / temporal '-고 나면 / -어 버리면'; the future connective '될 것이며' asks.
+    // CU-813 (the table cu-researcher OK'd 16:46Z): the causal -기 때문에 / -기에 / -는 만큼 and future + causal ask; 될 수 있기 때문에 and 되기 전에 stay free.
+    // r2 (the table OK'd 18:12Z): a present / future adnominal + a causal noun (관계 / 까닭 / 탓 / 이상) and the causal endings as a class; 바람 cut (D-121 (1),
+    // cu-developer-two's r2 over-ask: '-는 바람에' reports a past mishap).
+    pending: new RegExp(`${KO_STEM}(?:됩니다|합니다|될\\s*것입니다|될\\s*예정입니다|되게\\s*됩니다|되겠습니다|될\\s*것이다|된다(?!\\p{Script=Hangul})|될\\s*거(?:예요|야|다|(?=입니다)|(?=ㅂ니다))|될\\s*겁니다|될\\s*것이며|될\\s*것이고|될\\s*예정이며|되며|되고(?!\\s*(?:있|없|나))|되어(?!\\s*(?:도|있|버리면|버린다면))|돼(?!\\s*(?:도|있|버리면|버린다면))|되니|되므로|하며|하고(?!\\s*(?:있|없|나))|되기\\s*때문|하기\\s*때문|되기에|하기에|되는\\s*만큼|될\\s*것이기\\s*때문|될\\s*것이기에|될\\s*것이므로|(?:되는|하는|될)\\s*(?:관계|까닭|탓|이상)|되길래|하길래|되는지라|되느라|되는\\s*바(?!람)|될\\s*테니|될\\s*것이니)|지워집니다|지웁니다|지워질\\s*것입니다|지워지게\\s*됩니다|지워지겠습니다|지워진다(?!\\p{Script=Hangul})|지워질\\s*(?:겁니다|거예요|거야|거다)|지워지며|지워지고(?!\\s*(?:있|없|나))|지워져(?!\\s*(?:도|있|버리면|버린다면))|지워지니|지워질\\s*것이며|버려집니다|버립니다|버려질\\s*(?:것입니다|겁니다|거예요|예정입니다)|버려지며|버려지고(?!\\s*(?:있|없|나))|지워지기\\s*때문|지워지기에|지워지는\\s*만큼|버려지기\\s*때문|버려지기에|(?:지워지는|지워질|버려지는|버려질)\\s*(?:관계|까닭|탓|이상)|지워지길래|버려지길래|버려지니`, 'u'),
   },
   { // tr
-    verb: /(?<!\p{L})(?:sil|kaldır|yok\s+ed)\p{L}*/iu,
-    negation: /(?<!\p{L})(?:silinme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|silinemez|silmeyecek|kaldırılma(?:yacak(?:lar)?(?:dır)?|yacaktır|z(?:lar)?|dı|mış)|kaldırılamaz|yok\s+edilme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|yok\s+edilemez|(?:silinmek|kaldırılmak|yok\s+edilmek)\s+üzere\s+değil(?:dir)?)(?!\p{L})/iu,
-    past: /(?<!\p{L})(?:silindi|silinmiş(?!\s+olacak)|kaldırıldı|kaldırılmış(?!\s+olacak)|yok\s+edildi|yok\s+edilmiş(?!\s+olacak)|(?:silinmek|kaldırılmak|yok\s+edilmek)\s+üzereydi)\p{L}*/iu,
+    verb: /(?<!\p{L})(?:sil|kaldır|yok\s+ed|atıl|temizlen|imha\s+ed)\p{L}*/iu,
+    negation: /(?<!\p{L})(?:silinme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|silinemez|silmeyecek|kaldırılma(?:yacak(?:lar)?(?:dır)?|yacaktır|z(?:lar)?|dı|mış)|kaldırılamaz|yok\s+edilme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|yok\s+edilemez|atılma(?:yacak(?:lar)?(?:dır)?|z(?:lar)?|dı)|temizlenme(?:yecek(?:ler)?(?:dir)?|z(?:ler)?|di)|atılmayacaktır|temizlenmeyecektir|imha\s+edilme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|(?:silinmek|kaldırılmak|yok\s+edilmek|imha\s+edilmek)\s+üzere\s+değil(?:dir)?)(?!\p{L})/iu,
+    past: /(?<!\p{L})(?:silindi|silinmiş(?!\s+olacak)|kaldırıldı|kaldırılmış(?!\s+olacak)|yok\s+edildi|yok\s+edilmiş(?!\s+olacak)|atıldı|atılmış|temizlendi|temizlenmiş|imha\s+edildi|imha\s+edilmiş(?!\s+olacak)|(?:silinmek|kaldırılmak|yok\s+edilmek|imha\s+edilmek)\s+üzereydi)\p{L}*/iu,
     // CU-806: the formal future (-ecektir / -acaktır), the aorist passive (silinir) and the future perfect (silinmiş olacak) too.
     // #1479 r2 (the table cu-researcher OK'd 14:34Z): plural agreement, the plural aorist and 'about to' too.
-    pending: /(?<!\p{L})(?:silin(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|kaldırıl(?:acak(?:lar)?(?:dır)?|acaktır|ır(?:lar)?)|yok\s+edil(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|(?:silinmiş|kaldırılmış|yok\s+edilmiş)\s+olacak(?:tır)?|(?:silinmek|kaldırılmak|yok\s+edilmek)\s+üzere(?:dir|ler)?)(?!\p{L})/iu,
+    pending: /(?<!\p{L})(?:silin(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|kaldırıl(?:acak(?:lar)?(?:dır)?|acaktır|ır(?:lar)?)|yok\s+edil(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|(?:silinmiş|kaldırılmış|yok\s+edilmiş)\s+olacak(?:tır)?|atıl(?:acak(?:lar)?(?:dır)?|ır(?:lar)?)|temizlen(?:ecek(?:ler)?(?:dir)?|ir(?:ler)?)|atılacaktır|temizlenecektir|imha\s+edil(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|(?:silinmek|kaldırılmak|yok\s+edilmek|imha\s+edilmek)\s+üzere(?:dir|ler)?)(?!\p{L})/iu,
   },
 ]
 // null when no ru / ja / zh / ko / tr verb of the family stands in the sentence.
@@ -485,6 +491,92 @@ export function modalStatementNames(text) {
 // CU-771: Turkish confirm words too (Tamam, Evet, Devam (et), Onayla, Kabul et, Uygula, Bitti, Tamamla, İleri, Sonraki).
 const LOCALE_CONFIRM_WORD = String.raw`(?:ja|jawohl|ok|okay|bestätigen|bestaetigen|weiter|fortfahren|übernehmen|zustimmen|akzeptieren|einverstanden|verstanden|fertig|anwenden|oui|confirmer|continuer|valider|accepter|d['’]accord|appliquer|terminé|sí|si|aceptar|confirmar|continuar|de\s+acuerdo|vale|aplicar|listo|sì|conferma|confermare|continua|accetta|procedi|va\s+bene|applica|fatto|sim|aceitar|prosseguir|concluir|bevestigen|doorgaan|akkoord|accepteren|toepassen|verder|да|ок|подтвердить|продолжить|принять|согласен|согласна|применить|готово|хорошо|はい|確認|続行|同意する|同意|適用|完了|了解|是|是的|确定|確定|确认|继续|繼續|好|好的|应用|應用|完成|예|네|확인|계속|동의|적용|완료|続ける|続けて|次へ|進む|終了|suivant|terminer|siguiente|finalizar|terminar|avanti|fine|fertigstellen|abschließen|abschliessen|далее|завершить|下一步|继续操作|繼續操作|다음|마침|tamam|evet|devam|devam\s+et|onayla|kabul\s+et|uygula|bitti|tamamla|ileri|sonraki)`
 const LOCALE_GENERIC_CONFIRM = new RegExp(String.raw`^\s*${LOCALE_CONFIRM_WORD}(?:\s*[,、，]\s*${LOCALE_CONFIRM_WORD})?\s*[.!。！]?\s*$`, 'iu')
+// CU-749 (cu-researcher's sweep 5): the system localises an NSAlert's or a browser dialog's own buttons (OK / Yes / Confirm /
+// Continue) in its UI language while the app's text stays English - 'Delete this repository?' + 'نعم', 'Buy 1,000 coins for $9.99?' +
+// 'אישור', 'Delete this project?' + 'Tak'. So the affirmative, OK, confirm, continue, accept, agree, apply, done, next and finish
+// words of the system languages macOS ships beyond the covered ones, and of the larger web locales (ar fa ur he pl sv da nb is fi
+// et cs sk hu ro hr sr bs sl lt lv ca tr uk bg mk kk el hy ka vi th id ms tl sw hi bn), read the dialog as the covered ones do. Additions only: a dialog whose text
+// gets no class stays free ('Save changes?' + 'نعم'), and no back-out word is listed ('إلغاء', 'ביטול', 'Anuluj', 'Avbryt').
+// Compared by confirmKey(): Arabic-script words without harakat or tatweel, alef with hamza as bare alef, Arabic yeh / kaf as Persian
+// yeh / keheh; Hebrew without points; Latin and Greek also without accents ('ΕΝΤΑΞΕΙ', 'Potwierdz'); case folded.
+const MORE_CONFIRM_WORDS = [
+  // ar
+  'نعم', 'موافق', 'موافقة', 'اوافق', 'حسنا', 'تاکید', 'اکد', 'متابعة', 'تابع', 'استمرار', 'استمر', 'قبول', 'اقبل', 'تطبیق', 'تم', 'انهاء', 'التالی', 'اوکی',
+  // fa
+  'بله', 'باشه', 'تایید', 'ادامه', 'ادامه دهید', 'موافقم', 'اعمال', 'انجام شد', 'بعدی', 'پایان',
+  // ur
+  'ہاں', 'جی ہاں', 'ٹھیک ہے', 'تصدیق', 'تصدیق کریں', 'جاری رکھیں', 'قبول کریں', 'اگلا', 'منظور',
+  // he
+  'כן', 'אישור', 'אשר', 'אשרו', 'אוקיי', 'אוקי', 'המשך', 'המשיכו', 'להמשיך', 'מסכים', 'מסכימה', 'אני מסכים', 'אני מסכימה', 'קבל', 'קבלה', 'אני מקבל', 'החל', 'סיום', 'סיים', 'בוצע', 'הבא',
+  // pl
+  'tak', 'potwierdź', 'potwierdzam', 'zatwierdź', 'kontynuuj', 'dalej', 'zgadzam się', 'zgoda', 'akceptuję', 'akceptuj', 'zaakceptuj', 'zastosuj', 'gotowe', 'zakończ', 'dobrze',
+  // sv da nb is
+  'bekräfta', 'fortsätt', 'godkänn', 'acceptera', 'jag godkänner', 'jag accepterar', 'verkställ', 'tillämpa', 'klar', 'slutför', 'nästa', 'gå vidare', 'okej',
+  'bekræft', 'fortsæt', 'accepter', 'acceptér', 'godkend', 'jeg accepterer', 'anvend', 'færdig', 'udført', 'næste', 'fuldfør',
+  'bekreft', 'fortsett', 'godta', 'aksepter', 'godkjenn', 'jeg godtar', 'ferdig', 'neste', 'fullfør', 'utfør',
+  'já', 'staðfesta', 'áfram', 'samþykkja', 'í lagi',
+  // fi et
+  'kyllä', 'vahvista', 'jatka', 'hyväksy', 'hyväksyn', 'valmis', 'seuraava', 'selvä',
+  'jah', 'kinnita', 'jätka', 'nõustun', 'nõustu', 'rakenda', 'edasi', 'järgmine',
+  // cs sk
+  'ano', 'potvrdit', 'potvrďte', 'pokračovat', 'pokračujte', 'souhlasím', 'přijmout', 'přijímám', 'použít', 'hotovo', 'další', 'dokončit', 'rozumím',
+  'áno', 'potvrdiť', 'pokračovať', 'súhlasím', 'prijať', 'prijímam', 'použiť', 'ďalej', 'ďalšie', 'dokončiť', 'rozumiem',
+  // hu ro
+  'igen', 'rendben', 'megerősítés', 'megerősít', 'folytatás', 'tovább', 'elfogadom', 'elfogadás', 'alkalmaz', 'kész', 'befejezés', 'következő', 'értem',
+  'da', 'confirmă', 'confirmați', 'continuă', 'continuați', 'accept', 'acceptă', 'sunt de acord', 'aplică', 'gata', 'terminat', 'următorul', 'finalizează',
+  // hr sr bs sl (Latin)
+  'u redu', 'potvrdi', 'potvrdite', 'nastavi', 'nastavite', 'prihvati', 'prihvaćam', 'slažem se', 'primijeni', 'primeni', 'gotovo', 'dalje', 'sljedeće', 'sledeće', 'završi', 'razumijem',
+  'v redu', 'potrdi', 'nadaljuj', 'sprejmi', 'sprejmem', 'strinjam se', 'uporabi', 'končano', 'naprej', 'dokončaj',
+  // lt lv
+  'taip', 'gerai', 'patvirtinti', 'patvirtinkite', 'tęsti', 'sutinku', 'priimti', 'taikyti', 'atlikta', 'toliau', 'baigti',
+  'jā', 'labi', 'apstiprināt', 'turpināt', 'piekrītu', 'pieņemt', 'gatavs', 'tālāk', 'nākamais', 'pabeigt',
+  // ca tr (the forms CU-771 did not list)
+  'd’acord', "d'acord", 'accepta', 'aplica', 'fet', 'següent', 'finalitza', 'endavant', 'onaylıyorum', 'kabul ediyorum', 'anladım', 'tamamdır',
+  // uk bg sr mk kk (Cyrillic)
+  'так', 'гаразд', 'підтвердити', 'підтвердіть', 'підтверджую', 'продовжити', 'продовжуйте', 'прийняти', 'приймаю', 'погоджуюсь', 'погоджуюся', 'застосувати', 'далі', 'завершити', 'зрозуміло',
+  'добре', 'потвърди', 'потвърждавам', 'продължи', 'приеми', 'приемам', 'съгласен', 'съгласна', 'приложи', 'напред', 'следващ', 'завърши',
+  'у реду', 'потврди', 'настави', 'прихвати', 'прихватам', 'примени', 'даље', 'заврши', 'во ред', 'продолжи', 'прифати',
+  'иә', 'жарайды', 'растау', 'жалғастыру', 'қабылдау', 'келісемін', 'қолдану', 'дайын', 'келесі',
+  // el
+  'ναι', 'εντάξει', 'επιβεβαίωση', 'επιβεβαίωσε', 'επιβεβαιώνω', 'συνέχεια', 'συνέχισε', 'αποδοχή', 'αποδέχομαι', 'συμφωνώ', 'εφαρμογή', 'ολοκλήρωση', 'τέλος', 'επόμενο',
+  // hy ka
+  'այո', 'լավ', 'հաստատել', 'շարունակել', 'ընդունել', 'დიახ', 'კარგი', 'დადასტურება', 'გაგრძელება', 'მიღება',
+  // vi th
+  'có', 'đồng ý', 'xác nhận', 'tiếp tục', 'chấp nhận', 'áp dụng', 'xong', 'hoàn tất', 'tiếp theo', 'tiếp',
+  'ใช่', 'ตกลง', 'ยืนยัน', 'ดำเนินการต่อ', 'ดำเนินการ', 'ต่อไป', 'ยอมรับ', 'นำไปใช้', 'เสร็จสิ้น', 'เสร็จ', 'ถัดไป',
+  // id ms tl sw
+  'ya', 'oke', 'konfirmasi', 'sahkan', 'lanjutkan', 'lanjut', 'teruskan', 'setuju', 'saya setuju', 'terima', 'terapkan', 'selesai', 'berikutnya', 'seterusnya', 'baik',
+  'oo', 'sige', 'kumpirmahin', 'magpatuloy', 'tanggapin', 'tapos na', 'susunod',
+  'ndiyo', 'sawa', 'thibitisha', 'endelea', 'kubali', 'nakubali', 'imekamilika',
+  // hi bn
+  'हाँ', 'हां', 'ठीक है', 'ओके', 'पुष्टि', 'पुष्टि करें', 'जारी रखें', 'स्वीकार', 'स्वीकार करें', 'सहमत', 'मैं सहमत हूँ', 'मैं सहमत हूं', 'लागू करें', 'हो गया', 'आगे', 'अगला', 'समाप्त',
+  'হ্যাঁ', 'ঠিক আছে', 'নিশ্চিত করুন', 'চালিয়ে যান', 'গ্রহণ করুন', 'সম্মত', 'প্রয়োগ করুন', 'সম্পন্ন', 'পরবর্তী',
+]
+/** CU-749: Latin and Greek accents off (combining diacritical marks only - Indic and Thai vowel signs are letters here). */
+const stripAccents = (text) => text.normalize('NFD').replace(/[\u0300-\u036f]/gu, '').normalize('NFC')
+/** CU-749: the fold a button name and MORE_CONFIRM_WORDS are compared in - bidi and zero-width marks, Arabic harakat and tatweel,
+ * Hebrew points off; alef with hamza or madda as bare alef, Arabic yeh / alef maqsura / kaf as Persian yeh / keheh; Turkish 'İ' as 'i'. */
+const confirmFold = (text) => String(text ?? '').normalize('NFC')
+  .replace(/[\u200b-\u200f\u202a-\u202e\u2066-\u2069\u061c\ufeff\u0640\u064b-\u065f\u0670\u0591-\u05bd\u05bf-\u05c7]/gu, '')
+  .replace(/[\u0622\u0623\u0625]/gu, '\u0627').replace(/[\u064a\u0649]/gu, '\u06cc').replace(/\u0643/gu, '\u06a9').replace(/\u0130/gu, 'i')
+/** CU-749: the key one affirmative is compared by - folded, accents off, lower case (dotless 'ı' as 'i'), single spaces. */
+const confirmKey = (text) => stripAccents(confirmFold(text)).toLowerCase().replace(/\u0131/gu, 'i').replace(/\s+/gu, ' ').trim()
+// Each listed word as written, capitalised and in capitals, with and without accents, both raw and after normaliseText - a judged
+// name has passed its Cyrillic / Greek look-alike fold case by case ('Так' -> 'Taк', 'ΕΝΤΑΞΕΙ' -> 'ENTAΞEI'), so the keys are
+// built from the same fold. A set, so a click costs one lookup per part.
+const MORE_CONFIRM_KEYS = new Set(MORE_CONFIRM_WORDS.flatMap((word) => {
+  const [first, ...rest] = [...word]
+  const forms = [word, first.toUpperCase() + rest.join(''), word.toUpperCase()]
+  return [...forms, ...forms.map(stripAccents)].flatMap((form) => [confirmKey(form), confirmKey(normaliseText(form))])
+}))
+/** CU-749: a dialog button that is an affirmative in any language listed here or above - the whole name, or two joined by a comma
+ * ('نعم، متابعة', 'Tak, kontynuuj'), a closing '.' / '!' allowed. */
+function anyLocaleConfirm(text) {
+  const name = String(text ?? '')
+  if (name.trim() === '' || name.length > 60) return false
+  const parts = name.replace(/[.!。！]+\s*$/u, '').split(/\s*[,،、，]\s*/u)
+  return parts.length <= 2 && parts.every((part) => part.trim() !== '' && (MORE_CONFIRM_KEYS.has(confirmKey(part)) || LOCALE_GENERIC_CONFIRM.test(confirmFold(part))))
+}
 // CU-729: the question frames of a localized confirm title ('Möchten Sie diese Notiz wirklich löschen?', 'Voulez-vous vraiment ...',
 // '¿Desea eliminar ...?', '本当に削除しますか？', '确定要删除吗？', '정말 삭제하시겠습니까?') are removed into one more title text to judge.
 // CU-766 (High; cu-researcher's r2 set for CU-747): the INFORMAL and other common frames too - 'Seguro que quieres vaciar la papelera?',
@@ -5033,6 +5125,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         if (restProbe.decision === 'confirm') for (const cls of restProbe.classes ?? [restProbe.class]) if (!classes.includes(cls)) classes.push(cls)
       }
       const localeConfirm = LOCALE_GENERIC_CONFIRM.test(String(target?.name ?? name ?? '')) || LOCALE_GENERIC_CONFIRM.test(String(name ?? '')) || namesRuConfirm(String(name ?? ''))
+        // CU-749: or an affirmative in any other system language ('نعم', 'כן', 'אישור', 'Tak') - the dialog's text decides, as above.
+        // Looked up only when the target sits in a dialog (the probes below carry no dialog fields).
+        || ((dialogName !== '' || dialogDescription !== '') && (anyLocaleConfirm(target?.name) || anyLocaleConfirm(name)))
       // CU-747: final-step controls and a bare verb that echoes the dialog title's verb read the dialog too (additions only).
       // CU-790: or a sentence of the description - 'Leeren' under the title 'Hinweis' and 'Ist der Papierkorb danach geleert?'.
       const finalStep = FINAL_STEP_CONFIRM.test(String(name ?? '')) || echoesDialogVerb(name, dialogName) || echoesDialogVerb(target?.name, dialogName)
