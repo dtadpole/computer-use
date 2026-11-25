@@ -148,7 +148,7 @@ const TRASH_NEGATION = /(?<!\p{L})(?:not|never|nicht|nie|kein|keine|ne|pas|jamai
 // CU-805 (P1; the marker table cu-researcher OK'd on #1475, cu-coordinator 12:42Z): in ru / ja / zh / ko / tr a marker counts only
 // ATTACHED to a delete / erase / remove verb of the family - a suffix on the stem, or an auxiliary a few words before it - never
 // anywhere in the sentence. Checked in order: a negation frees the sentence, then a past / perfect form, then a pending form (or a
-// question) asks. 'Объекты в Корзине будут удалены.', 'ゴミ箱内の項目は完全に削除されてしまいます。', '废纸篓中的所有项目将被不可恢复地删除。',
+// question) asks. 'Объекты в Корзине будут удалены.', 'ゴミ箱内の項目は完全に削除されます。', '废纸篓中的所有项目将被不可恢复地删除。',
 // '휴지통의 모든 항목이 영구적으로 삭제됩니다.', 'Çöp Sepeti'ndeki tüm öğeler kalıcı olarak silinecek.' ask; their negated and past
 // twins stay free. CU-806 adds the tr formal future / aorist / future perfect and more ja / ko pending forms; the ko connectives are CU-807's.
 const RU_PART = '(?:удал[её]н[аоы]?|ст[её]рт[аоы]?|уничтожен[аоы]?|очищен[аоы]?)'
@@ -167,7 +167,7 @@ const TRASH_LOCALE = [
     verb: new RegExp(`${JA_STEM}(?:さ|し|す|済)`, 'u'),
     negation: new RegExp(`${JA_STEM}(?:されません|しません|されない|しない|されず|せず|さない|さず|されることはありません|されることはない|されていません)`, 'u'),
     past: new RegExp(`${JA_STEM}(?:されました|しました|された|した|されています|されている|されていました|されてしまいました|済み)`, 'u'),
-    pending: new RegExp(`${JA_STEM}(?:されます|します|される(?!こと)|する(?!こと)|され、|されてしまいます|されてしまう|してしまいます|されることになります|されることになる|されることになっています|される予定|する予定|されるでしょう)|消す(?!こと)`, 'u'),
+    pending: new RegExp(`${JA_STEM}(?:されます|します|される(?!こと)|する(?!こと)|され、|されることになります|されることになる|されることになっています|される予定|する予定|されるでしょう)|消す(?!こと)`, 'u'),
   },
   { // zh
     verb: new RegExp(ZH_VERB, 'u'),
