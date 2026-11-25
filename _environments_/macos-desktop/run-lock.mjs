@@ -538,11 +538,7 @@ async function admitDesktopRun({
   const root = resolve(dir)
   const rawIdle = idleSeconds === undefined ? ownerIdleReader(root) : idleSeconds
   // CU-720: an admission between two runs reads the carried owner idle when no event came since the last armed release.
-  const readIdle = typeof rawIdle === 'function' ? () => {
-    const hid = rawIdle()
-    const value = typeof hid === 'number' && Number.isFinite(hid) && hid >= 0 ? hid : null
-    return carriedIdle(root, now(), value) ?? hid
-  } : rawIdle
+  const readIdle = carryAwareIdle(root, now, rawIdle)
   prepareDir(root)
   const lock = join(root, '.lock')
   const entryPath = join(root, ENTRY_NAME)
@@ -715,6 +711,21 @@ function writeCarry(root, current, at, ownerSeen = -Infinity) {
   } catch { /* a carry that cannot be written leaves HIDIdleTime alone - the over-wait side */ }
 }
 
+/**
+ * CU-772 (follow-up to CU-720; cu-developer-one's trace of 24 Nov 13:34Z): the owner-idle reader both gates use - a run
+ * admission and a fresh hold - so they cannot drift again. CU-720 wrapped only the admission, and a fresh hold read raw
+ * HIDIdleTime, which another team's run's last synthetic click had reset. While no event came since the last armed release
+ * the carried idle stands in; anything else reads the reader as given. A reader that is not a function passes through.
+ */
+function carryAwareIdle(root, now, reader) {
+  if (typeof reader !== 'function') return reader
+  return () => {
+    const hid = reader()
+    const value = typeof hid === 'number' && Number.isFinite(hid) && hid >= 0 ? hid : null
+    return carriedIdle(root, now(), value) ?? hid
+  }
+}
+
 /** CU-720: the carried owner idle in whole seconds, or null (no carry, an event since its release, stale or malformed). */
 function carriedIdle(root, at, hidSeconds) {
   if (hidSeconds === null) return null
@@ -795,8 +806,9 @@ export async function holdDesktop({ seat, minutes, reason = '', token = null, di
     // (cu-coordinator), and an idle time that cannot be read is no proof he is not. Extending one's own live hold is
     // not checked: the helper's posted input resets the same counter, so mid-hold it no longer tells the owner apart.
     let idleAtHold = null
+    // CU-772: the same carry-aware reader as a run admission.
     if (current === null && typeof idleSeconds === 'function') {
-      idleAtHold = refuseUnlessIdle(root, { at, seat, idleSeconds, minIdleSeconds, subject: 'a fresh hold', advice: 'try again later', notDone: 'not held', tag: 'CU-191' })
+      idleAtHold = refuseUnlessIdle(root, { at, seat, idleSeconds: carryAwareIdle(root, now, idleSeconds), minIdleSeconds, subject: 'a fresh hold', advice: 'try again later', notDone: 'not held', tag: 'CU-191' })
     }
     const since = chainSince(parsed, seat, at)
     const until = at + minutes * 60_000
