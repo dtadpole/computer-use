@@ -44,6 +44,8 @@ test('CU-790: the class - a description in other languages and shapes, the run-t
     ['Leeren', 'Hinweis', 'Soll der Papierkorb jetzt geleert werden?'],
     ['Leeren', 'Wird der Mülleimer danach leergeräumt?'],
     ['OK', 'Hinweis', 'Der Mülleimer wird jetzt leer geräumt.'],
+    // cu-verifier's CU-790 close (mutant D2): the run-together 'leergeräumt' in a subject-first statement, under the bare verb.
+    ['Leeren', 'Der Mülleimer wird jetzt leergeräumt.'],
     // r2 (the one fold): cu-researcher's r1 misses - the EMPTY adjective with a state verb, everything removed from the trash -
     // and cu-developer-two's 'leer gemacht'.
     ['Vaciar', 'Aviso', '¿La papelera quedará vacía después?'],
