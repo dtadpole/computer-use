@@ -28,8 +28,9 @@ const free = (rows) => { for (const [n, t, d] of rows) { assert.ok(!classes(onWe
 test('CU-816: cu-developer-two\'s four rows verbatim - three ask, the negated one stays free', () => {
   asks([
     ['空にする', 'ゴミ箱', 'ゴミ箱内の項目は完全に削除されてしまいます。'],
-    ['空にする', 'ゴミ箱', '削除されてしまう。'],
-    ['空にする', 'ゴミ箱', '削除されてしまいます。元に戻せません。'],
+    // cu-developer-two's shorthand rows, each as the full sentence he probed (the trash named in the sentence itself).
+    ['空にする', 'ゴミ箱', 'ゴミ箱内の項目は完全に削除されてしまう。'],
+    ['空にする', 'ゴミ箱', 'ゴミ箱内の項目は完全に削除されてしまいます。元に戻せません。'],
   ])
   free([['空にする', 'ゴミ箱', 'ゴミ箱内の項目が削除されてしまうことはありません。']])
 })
