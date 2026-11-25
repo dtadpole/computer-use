@@ -1,9 +1,9 @@
 ---
 title: ULTIMATE_GOAL 2.0 verdict, row by row - live, in progress
 created: 2026-11-02T10:22:00Z
-modified: 2026-11-25T01:20:00Z
+modified: 2026-11-25T03:24:00Z
 level: L1
-version: 0.9.346
+version: 0.9.347
 description: cu-verifier's per-row state of the desktop ULTIMATE_GOAL after the owner's grant - live evidence so far from the runbook on the Mac mini beside the pre-grant verifiers, and what each row still needs. No row is held until its live half holds.
 status: unverified
 grounded_in:
@@ -14,7 +14,7 @@ grounded_in:
 
 # ULTIMATE_GOAL 2.0: live, in progress (CUHelper 0.2.70 installed, dtadpole/computer-use)
 
-Seven of nine rows hold live; two are open: human control (step 4 with the owner, CU-11) and consent and safety (open Highs, each reproduced live on main 24 Nov: CU-773 a stranger's sign-in approval asking submit only, and a follow-up where a non-'sein' state verb or a 'worth it' frame leaves a trash verb unasked - each reproduced live alone on main; CU-763 (the desktop privacy-pane toggle) waits for its helper; CU-745, CU-746, CU-751, CU-747, CU-756, CU-748, CU-753, CU-754 with CU-757, CU-765, CU-766, CU-771, CU-774, CU-777, CU-779, CU-775, CU-776, CU-780 and CU-781 closed live on #1421's, #1423's, #1428's, #1422's, #1431's, #1434's, #1437's, #1440's, #1443's, #1446's, #1448's, #1450's, #1454's, #1456's, #1461's and #1459's merges (48, 17, 33, 17, 6, 10, 22, 12, 7, 8, 12, 14, 11, 13, 8 and 19 whole-page rows incl. held-outs; three counting mutants each, except named survivors for CU-748's Japanese passive row (a test row asked) CU-753's sign-in regex (redundant on every filed row) CU-766's German and Japanese frames (test rows asked) and CU-771's Turkish row (redundant on every filed row)); then CU-135's chain at step 4; CU-607, CU-716, CU-585, CU-371, CU-726 and CU-729 closed live 23 Nov, CU-735 on 24 Nov). The history below is kept as written. Since 0.9.53 these D-063 under-asks closed live:
+Seven of nine rows hold live; two are open: human control (step 4 with the owner, CU-11) and consent and safety (open Highs, each reproduced live on main 24 Nov: CU-773 a stranger's sign-in approval asking submit only, CU-783 exposure toggles whose audience is named by exclusion or read as a send, and CU-790 a trash state question in the dialog description or with another emptying participle - each reproduced live alone on main; CU-763 (the desktop privacy-pane toggle) waits for its helper; CU-745, CU-746, CU-751, CU-747, CU-756, CU-748, CU-753, CU-754 with CU-757, CU-765, CU-766, CU-771, CU-774, CU-777, CU-779, CU-775, CU-776, CU-780, CU-781 and CU-786 closed live on #1421's, #1423's, #1428's, #1422's, #1431's, #1434's, #1437's, #1440's, #1443's, #1446's, #1448's, #1450's, #1454's, #1456's, #1461's #1459's and #1467's merges (48, 17, 33, 17, 6, 10, 22, 12, 7, 8, 12, 14, 11, 13, 8, 19 and 6 whole-page rows incl. held-outs; three counting mutants each, except named survivors for CU-748's Japanese passive row (a test row asked) CU-753's sign-in regex (redundant on every filed row) CU-766's German and Japanese frames (test rows asked) and CU-771's Turkish row (redundant on every filed row)); then CU-135's chain at step 4; CU-607, CU-716, CU-585, CU-371, CU-726 and CU-729 closed live 23 Nov, CU-735 on 24 Nov). The history below is kept as written. Since 0.9.53 these D-063 under-asks closed live:
 Services chords and their menu context (CU-249, CU-250, CU-256), API tokens and D-061 names, including in URLs
 (CU-245, CU-257, CU-260, CU-281, CU-283, CU-284, CU-285, CU-291), standing choices, outward and account-protection
 controls and real-app wordings (CU-258, CU-261, CU-270, CU-286, CU-288, CU-289), recipient-named compose fields
