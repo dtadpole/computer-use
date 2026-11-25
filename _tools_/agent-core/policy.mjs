@@ -93,7 +93,7 @@ const LOCALE_PASSIVE_ACTS = [
   [/(?<!\p{L})(?:wordt|worden|zal|zullen)(?!\p{L})[^.!?]{0,120}?(?<!\p{L})(?:definitief\s+|permanent\s+)?(?:verwijderd|gewist)(?!\p{L})/iu, 'verwijderen'],
   // CU-800 r2 (cu-researcher's r1 set; cu-developer-two's CU-802 nouns 'vuilnisbak' / 'vuilbak'): the trash itself emptied in a pending statement - 'De prullenbak wordt leeggemaakt.',
   // 'De prullenmand wordt nu geleegd.' (only over the trash; a negation skips it).
-  [/(?=[^.!?]*(?<!\p{L})(?:prullen(?:bak|mand)|vuil(?:nis)?bak)(?!\p{L}))(?<!\p{L})(?:wordt|worden|zal|zullen)(?!\p{L})[^.!?]{0,120}?(?<!\p{L})(?:geleegd|leeg\s?(?:ge)?maakt|leeg\s?(?:ge)?haald|leeg\s?(?:ge)?ruimd|geledigd)(?!\p{L})/iu, 'verwijderen'],
+  [/^(?=[^.!?]*(?<!\p{L})(?:prullen(?:bak|mand)|vuil(?:nis)?bak)(?!\p{L}))[^.!?]*?(?<!\p{L})(?:wordt|worden|zal|zullen)(?!\p{L})[^.!?]{0,120}?(?<!\p{L})(?:geleegd|leeg\s?(?:ge)?maakt|leeg\s?(?:ge)?haald|leeg\s?(?:ge)?ruimd|geledigd)(?!\p{L})/iu, 'verwijderen'],
   // CU-771 (High; cu-researcher's r2 set for CU-748): Russian with ё and the other delete participles ('будет удалён', 'будут
   // стёрты', 'будет очищена', 'будут уничтожены') and the reflexive future ('Файл удалится.', 'Сообщения удалятся навсегда.').
   [/(?<!\p{L})(?:будут|будет)\s+(?:\S+\s+){0,3}?(?:удал[её]н[ыао]?|ст[её]рт[ыао]?|уничтожен[ыао]?)(?!\p{L})|(?<!\p{L})(?:удалится|удалятся|сотр[её]тся|сотрутся)(?!\p{L})/iu, 'удалить'],
