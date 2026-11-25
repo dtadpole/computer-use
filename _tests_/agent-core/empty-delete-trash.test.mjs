@@ -48,6 +48,24 @@ test('CU-804: the class - other covered languages, title or description, a pendi
   }
 })
 
+test('CU-804 r2: cu-developer-two\'s rows verbatim - ru / ja / zh / ko / tr, and a pending statement with a following cannot-restore clause', () => {
+  for (const [name, title, description] of [
+    ['Очистить', 'Корзина', 'Вы действительно хотите безвозвратно удалить объекты из Корзины?'],
+    ['空にする', 'ゴミ箱', 'ゴミ箱内の項目を完全に削除してもよろしいですか？'],
+    ['清倒', '废纸篓', '确定要永久删除废纸篓中的项目吗？'],
+    ['비우기', '휴지통', '휴지통에 있는 항목을 영구적으로 삭제하시겠습니까?'],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeleri kalıcı olarak silmek istediğinizden emin misiniz?"],
+    ['Empty', 'Trash', "The items in the Trash will be permanently deleted and can't be restored."],
+    ['Empty', 'Trash', "All items in the Trash will be erased; you won't be able to undo this."],
+    ['Leeren', 'Papierkorb', 'Die Objekte im Papierkorb werden endgültig gelöscht und können nicht wiederhergestellt werden.'],
+    ['Svuota', 'Cestino', 'Gli elementi nel Cestino verranno eliminati definitivamente e non potranno essere recuperati.'],
+    ['Esvaziar', 'Lixeira', 'Os itens da Lixeira serão excluídos permanentemente e não poderão ser recuperados.'],
+  ]) {
+    assert.ok(classes(onWeb(name, title, description)).includes('delete'), `web ${name} | ${title} | ${description}`)
+    assert.ok(classes(onDesktop(name, title, description)).includes('delete'), `desktop ${name} | ${title} | ${description}`)
+  }
+})
+
 test('CU-804: near rows stay free of delete - another button, no trash, the past, a negation', () => {
   for (const [name, title, description] of [
     ['Open', 'Trash', 'Are you sure you want to permanently delete the items in the Trash?'],

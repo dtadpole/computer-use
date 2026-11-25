@@ -138,16 +138,21 @@ const ECHO_CJK = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script
 // 'Vaciar', 'Svuota', 'Esvaziar', 'Legen', 'Leegmaken' ...) under a dialog sentence that asks or announces DELETING the items in the
 // trash - a verb the button does not echo ('Are you sure you want to permanently delete the items in the Trash?', 'Weet u zeker dat
 // u de onderdelen in de prullenmand permanent wilt verwijderen?') - confirms emptying the trash. Only a question or a pending
-// statement, never a negated one, and only over a trash noun; the sentence then also reads as 'Empty trash'.
-const EMPTYING_BUTTON = /^(?:empty|empty\s+now|leeren|entleeren|ausleeren|vider|vaciar|svuota|svuotare|esvaziar|legen|leegmaken|leeghalen|leegruimen|ledigen|leeg\s+(?:maken|halen|ruimen))$/u
-const TRASH_NOUN = /(?<!\p{L})(?:trash|bin|recycle\s+bin|papierkorb|mülleimer|abfalleimer|corbeille|papelera|cestino|lixeira|lixo|prullenbak|prullenmand|vuilnisbak|vuilbak)(?!\p{L})/iu
-const TRASH_DELETE_VERB = /(?<!\p{L})(?:delete|deleted|erase|erased|remove|removed|löschen|gelöscht|entfernen|entfernt|supprimer|supprimée?s?|effacer|effacée?s?|eliminar|eliminad[oa]s?|borrar|borrad[oa]s?|eliminare|eliminat[oiae]|cancellare|cancellat[oiae]|excluir|excluíd[oa]s?|apagar|apagad[oa]s?|verwijderen|verwijderd|wissen|gewist)(?!\p{L})/iu
+// statement, never a negated one, and only over a trash noun; the sentence then also reads as 'Empty trash'. r2: the ru / ja / zh /
+// ko / tr forms too (cu-developer-two's cross-check).
+const EMPTYING_BUTTON = /^(?:empty|empty\s+now|leeren|entleeren|ausleeren|vider|vaciar|svuota|svuotare|esvaziar|legen|leegmaken|leeghalen|leegruimen|ledigen|leeg\s+(?:maken|halen|ruimen)|очистить|空にする|清倒|倒空|清空|비우기|boşalt)$/u
+const TRASH_NOUN = /(?<!\p{L})(?:trash|bin|recycle\s+bin|papierkorb|mülleimer|abfalleimer|corbeille|papelera|cestino|lixeira|lixo|prullenbak|prullenmand|vuilnisbak|vuilbak|корзин[аеуыой]|корзиной|çöp)(?!\p{L})|ゴミ箱|废纸篓|廢紙簍|回收站|휴지통/iu
+const TRASH_DELETE_VERB = /(?<!\p{L})(?:delete|deleted|erase|erased|remove|removed|löschen|gelöscht|entfernen|entfernt|supprimer|supprimée?s?|effacer|effacée?s?|eliminar|eliminad[oa]s?|borrar|borrad[oa]s?|eliminare|eliminat[oiae]|cancellare|cancellat[oiae]|excluir|excluíd[oa]s?|apagar|apagad[oa]s?|verwijderen|verwijderd|wissen|gewist|удалить|удалены|удалён|удалено|удалятся|удалит|стереть|стёрты|silmek|silinecek|silinsin|silinsin mi)(?!\p{L})|削除|删除|刪除|삭제/iu
 const TRASH_PENDING = /[?？]\s*$|(?<!\p{L})(?:will|would|wird|werden|sera|seront|será|serán|verrà|verranno|serão|wordt|worden|zal|zullen)(?!\p{L})/iu
 const TRASH_NEGATION = /(?<!\p{L})(?:not|never|nicht|nie|kein|keine|ne|pas|jamais|no|nunca|non|mai|não|niet|nooit|geen)(?!\p{L})|n['’]t(?!\p{L})/iu
 function emptiesTrashByDelete(name, sentence) {
   const button = String(name ?? '').trim().toLowerCase()
   const text = String(sentence ?? '').trim()
-  return EMPTYING_BUTTON.test(button) && TRASH_NOUN.test(text) && TRASH_DELETE_VERB.test(text) && TRASH_PENDING.test(text) && !TRASH_NEGATION.test(text)
+  const verb = TRASH_DELETE_VERB.exec(text)
+  if (!EMPTYING_BUTTON.test(button) || !TRASH_NOUN.test(text) || verb === null || !TRASH_PENDING.test(text)) return false
+  // r2 (cu-developer-two's cross-check): a negation counts only within four words before the delete verb ('will not be
+  // deleted'), never one in a following clause ('... will be permanently deleted and can't be restored').
+  return !TRASH_NEGATION.test(text.slice(0, verb.index).trim().split(/\s+/).slice(-4).join(' '))
 }
 function echoesDialogVerb(name, dialogName) {
   const button = String(name ?? '').trim().toLowerCase().replace(/[¿¡]/g, '')
