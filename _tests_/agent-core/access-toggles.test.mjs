@@ -281,3 +281,32 @@ test('CU-783 r2: an audience named by exclusion with any granting verb over the 
   }
   assert.equal(webcb('Permit non-contacts to view my photos', true), 'allow') // already on (a native checkbox read)
 })
+
+test('CU-799: a toggle that puts the owner\'s profile or work into a public place asks permission', () => {
+  // cu-developer-two's filed row, verbatim (desktop AXCheckBox, off, clicked).
+  assert.match(axcb('Publish my profile to the public directory', false), /permission/)
+  // The shape: any verb that puts the owner's thing into any public place - a place named public, a directory others browse,
+  // search results, the open web, the marketplace or community gallery - and its state form.
+  for (const name of [
+    'Share my portfolio to the community gallery', 'Post my resume on the public job board', 'Add my profile to the member directory',
+    'Upload my designs to the public library', 'Show my posts in search results', 'Publish my blog to the web',
+    'My profile is listed in the public directory', 'Submit my app to the marketplace',
+  ]) {
+    assert.match(webcb(name, false), /permission/, name)
+    assert.match(space(name, false), /permission/, `Space: ${name}`)
+  }
+})
+
+test('CU-799: the other side - already on, nothing of the owner\'s, and the owner\'s own views stay free', () => {
+  // cu-developer-two's filed near rows: the same toggle turned on, and two that name no owned thing in a public place.
+  assert.doesNotMatch(axcb('Publish my profile to the public directory', true), /permission/)
+  // 'Publish drafts automatically' keeps main's older submit (a 'Publish' word rule) and gains no permission.
+  assert.doesNotMatch(axcb('Publish drafts automatically', false), /permission/)
+  assert.doesNotMatch(webcb('Publish drafts automatically', false), /permission/)
+  for (const name of [
+    'Show non-friends in search suggestions',
+    'Show my photos in the gallery', 'Add my photos to my album', 'Show the public directory', 'Search the public directory',
+  ]) {
+    assert.equal(webcb(name, false), 'allow', name)
+  }
+})
