@@ -529,8 +529,10 @@ function postInput(id, fields, { settled = false } = {}) {
   if (quirks.stopAfter !== undefined && quirks.stopAfter.at < fields.events.length) {
     const at = quirks.stopAfter.at
     const press = fields.events.find((event) => event.kind === 'down')
-    return stopped(id, at, quirks.stopAfter.code ?? 'timeout', 'the input took longer than allowed',
-      cancelledDrag(fields.events, at) && press ? { cancelledDrag: true, releasedAt: { x: press.x, y: press.y } } : {})
+    // CU-791: the stop may name its check ('front') and the front app, as the helper's hold() and step loop do.
+    const named = { ...(quirks.stopAfter.check ? { check: quirks.stopAfter.check } : {}), ...(quirks.stopAfter.bundleId ? { bundleId: quirks.stopAfter.bundleId } : {}) }
+    return stopped(id, at, quirks.stopAfter.code ?? 'timeout', quirks.stopAfter.message ?? 'the input took longer than allowed',
+      { ...named, ...(cancelledDrag(fields.events, at) && press ? { cancelledDrag: true, releasedAt: { x: press.x, y: press.y } } : {}) })
   }
   if (quirks.localInputAfter !== undefined && quirks.localInputAfter < fields.events.length) {
     reportLocalInput('key', { force: true })
