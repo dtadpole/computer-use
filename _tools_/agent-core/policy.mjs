@@ -261,24 +261,58 @@ const OWN_WORK = String.raw`(?:me|you|(?:my|your)\s+(?:profile|account|page|post
 // r2 (cu-developer-one): in a public place the destination carries the risk, so any owned thing counts - 'List my app in
 // the marketplace', 'Publish my theme to the app store'.
 const OWN_ANY = String.raw`(?:me|you|(?:my|your)\s+(?:[a-z][\w'-]*\s+){0,2}[a-z][\w'-]*)`
-const WIDER = String.raw`(?:${OUTSIDERS}|(?:everyone|anyone|people|users|members)\s+with\s+(?:an?\s+)?(?:[a-z]+\s+)?(?:account|login|profile)|(?:all\s+)?(?:registered|signed[-\s]in|logged[-\s]in)\s+(?:users|members|people)|all\s+(?:members|employees|staff|colleagues|students)|(?:the\s+)?(?:whole|entire)\s+(?:company|organi[sz]ation|org|school|workspace|network|community|internet|web|world)|(?:everyone|anyone|people)\s+(?:in|at|across)\s+(?:the|my|your|our|this)\s+(?:company|organi[sz]ation|org|school|workspace|network|community)|(?:site\s+|website\s+|page\s+)?visitors|strangers|anyone|everyone|the\s+public|(?:all|other)\s+users|external\s+(?:users|people|guests|collaborators|contacts)|(?:people|users|anyone|everyone)\s+(?:outside|beyond)\s+(?:(?:my|your|the|this|our)\s+)?(?:team|organi[sz]ation|org|company|network|workspace|school|family|circle|contacts|connections)|(?:people|users)\s+(?:i|you)\s+(?:don't|do\s+not)\s+know|(?:people|users)\s+not\s+in\s+(?:my|your)\s+(?:contacts|network|team|organi[sz]ation)|(?:anyone|everyone)\s+(?:on|across)\s+(?:the\s+)?(?:internet|web))`
+// CU-783 (P1, the follow-up to CU-779 after #1456 r3): an audience named by EXCLUSION is everyone outside a circle, so it is
+// wider - 'non-friends', 'people who are not my friends', 'people who don't follow me', 'people I have not added', 'everyone
+// except my family', 'friends of friends'.
+const CIRCLE = String.raw`(?:friends?|followers?|contacts?|connections?|subscribers?|mutuals?|fans?|teammates?|colleagues?|co-?workers?|employees?|staff|students?|classmates?|family|relatives|members?|customers?|clients?|circle|team|group|network|organi[sz]ation|company)`
+const EXCLUDED = String.raw`(?:non(?:[-\s][a-z]+|${CIRCLE})|(?:people|users|anyone|everyone|those|accounts|viewers|readers|visitors)\s+(?:who\s+(?:are|is)\s+not|who\s+(?:aren[’']t|isn[’']t)|that\s+(?:are|is)\s+not|not)\s+(?:(?:my|your|our|the|a|an|in|among)\s+){0,2}${CIRCLE}|(?:people|users|anyone|everyone|those|accounts)\s+(?:who\s+|that\s+)?(?:(?:don[’']t|do\s+not|doesn[’']t|does\s+not)\s+(?:follow|know)(?:\s+back)?\s+(?:me|you)|(?:i|you|we)\s+(?:don[’']t|do\s+not)\s+(?:follow|know)|(?:i|you|we)\s+(?:haven[’']t|have\s+not|never)\s+(?:added|approved|accepted|followed|connected\s+with|met)|(?:i[’']m|i\s+am|you[’']re|you\s+are|we[’']re|we\s+are)\s+not\s+(?:friends|connected|following))|(?:everyone|anyone|all(?:\s+(?:users|people|members|accounts))?|people|users)\s+(?:except|but|besides|other\s+than|apart\s+from|outside\s+of)\s+(?:(?:my|your|our|the)\s+)?(?:[a-z'-]+\s+){0,2}[a-z'-]+|(?:friends|followers|contacts|connections)\s+of\s+(?:(?:my|your)\s+)?(?:friends|followers|contacts|connections)|(?:second|2nd|third|3rd)[-\s]degree\s+(?:connections|contacts)|(?:(?:my|your)\s+)?extended\s+(?:network|circle))`
+// CU-783: a group of people taken whole by a quantifier is wider than the owner's circle, whatever the role is named - 'all
+// clients', 'every customer', 'any visitor', 'all recruiters', 'all drivers', 'every hiring manager', 'each attendee'. A people
+// noun is read by its form (an agent noun: -er / -or / -ee / -ant / -ent / -ian / -ist / -ess) or is a plain one (people,
+// users, members, guests, fans, staff ...). The owner's own circle (friends, contacts, connections, team, family) and the
+// owner's own machines (computers, browsers, folders, printers ...) stay out.
+const OWN_CIRCLE = String.raw`(?:(?:close|best)\s+)?(?:friends?|contacts?|connections?|teammates?|team|family|relatives?|household)`
+const OWN_MACHINES = String.raw`(?:computers?|browsers?|folders?|printers?|monitors?|routers?|controllers?|containers?|sensors?|chargers?|adapters?|servers?)`
+const PEOPLE_NOUN = String.raw`(?:[a-z][\w'-]*(?:er|or|ee|ant|ent|ian|ist|ess)(?:e?s)?|people|persons?|users?|members?|guests?|fans?|kids?|children|child|parents?|folks|staff|strangers?|everyone|everybody|colleagues?|employees?|visitors?|clients?|customers?)`
+const OUTSIDE_ROLES = String.raw`(?:(?:all|every|any|each)\s+(?:of\s+)?(?:(?:my|your|our|the|other)\s+)?(?!${OWN_CIRCLE}\b)(?:[a-z][\w'-]*\s+)?(?!${OWN_MACHINES}\b)${PEOPLE_NOUN})`
+const WIDER = String.raw`(?:${OUTSIDERS}|(?:everyone|anyone|people|users|members)\s+with\s+(?:an?\s+)?(?:[a-z]+\s+)?(?:account|login|profile)|(?:all\s+)?(?:registered|signed[-\s]in|logged[-\s]in)\s+(?:users|members|people)|all\s+(?:members|employees|staff|colleagues|students)|(?:the\s+)?(?:whole|entire)\s+(?:company|organi[sz]ation|org|school|workspace|network|community|internet|web|world)|(?:everyone|anyone|people)\s+(?:in|at|across)\s+(?:the|my|your|our|this)\s+(?:company|organi[sz]ation|org|school|workspace|network|community)|(?:site\s+|website\s+|page\s+)?visitors|strangers|anyone|everyone|the\s+public|(?:all|other)\s+users|external\s+(?:users|people|guests|collaborators|contacts)|(?:people|users|anyone|everyone)\s+(?:outside|beyond)\s+(?:(?:my|your|the|this|our)\s+)?(?:team|organi[sz]ation|org|company|network|workspace|school|family|circle|contacts|connections)|(?:people|users)\s+(?:i|you)\s+(?:don't|do\s+not)\s+know|(?:people|users)\s+not\s+in\s+(?:my|your)\s+(?:contacts|network|team|organi[sz]ation)|(?:anyone|everyone)\s+(?:on|across)\s+(?:the\s+)?(?:internet|web)|${EXCLUDED}|${OUTSIDE_ROLES})`
 // A place others browse: a marketplace or app store, a public or community gallery, an explore / discover page. A bare
 // 'gallery' or 'store' can be the owner's own view ('Show my photos in the gallery') and stays out.
-const PUBLIC_PLACE = String.raw`(?:the\s+|our\s+)?(?:(?:site'?s?\s+|public\s+)?(?:home\s*page|front\s+page|landing\s+page|main\s+page|start\s+page)|featured\s+(?:section|list|page|row)|marketplace|market|app\s+store|public\s+(?:store|gallery|showcase|feed|catalog(?:ue)?)|community(?:\s+(?:page|feed|gallery|showcase))?|explore(?:\s+(?:page|tab|feed))?|discover(?:y)?(?:\s+(?:page|tab|feed))?|leaderboard)`
+// CU-799 (P1, the follow-up to CU-783): any place named public ('the public directory', 'the public job board'), a directory
+// others browse (CU-774's DIRECTORY), search results and the open web are public places too.
+const PUBLIC_PLACE = String.raw`(?:the\s+|our\s+)?(?:(?:site'?s?\s+|public\s+)?(?:home\s*page|front\s+page|landing\s+page|main\s+page|start\s+page)|featured\s+(?:section|list|page|row)|marketplace|market|app\s+store|public\s+(?:[a-z][\w'-]*\s+)?[a-z][\w'-]*|${DIRECTORY}|(?:(?:google|bing|web|internet)\s+)?search\s+(?:results|engines?|listings|index)|(?:the\s+)?(?:open\s+)?(?:web|internet)|community(?:\s+(?:page|feed|gallery|showcase))?|explore(?:\s+(?:page|tab|feed))?|discover(?:y)?(?:\s+(?:page|tab|feed))?|leaderboard)`
+// CU-783 r2: an act granted to an audience - any verb, optionally with its particle ('comment on', 'reply to', 'look at'),
+// never a negation.
+const GRANTED_ACT = String.raw`(?!(?:not|never|no)\b)[a-z][\w'-]*(?:\s+(?:on|to|with|at|through|in|into|from|about|for))?`
 const EXPOSED_TOGGLE = new RegExp('^\\s*(?:' + [
-  // 'Show my contact card to people outside the team', 'Share my portfolio with strangers'
-  String.raw`(?:show|share|display|expose|open|reveal|make)\s+${OWN_WORK}\s+(?:(?:visible|viewable|accessible|available|public)\s+)?(?:to|with|by)\s+${WIDER}`,
+  // 'Show my contact card to people outside the team', 'Share my portfolio with strangers'; CU-783: any owned thing, and the
+  // exposure verbs that read as a send - 'Publish my availability to all clients', 'Broadcast my status to all followers'
+  String.raw`(?:show|share|display|expose|open|reveal|make|publish|broadcast|announce|post|send|push|advertise|release|syndicate)\s+${OWN_ANY}\s+(?:(?:visible|viewable|accessible|available|public)\s+)?(?:to|with|by)\s+${WIDER}`,
   // 'Let strangers view my portfolio', 'Allow guests to see my profile'
-  String.raw`(?:let|allow)\s+${WIDER}\s+(?:to\s+)?(?:see|view|browse|read|find|access|download|look\s+at)\s+${OWN_WORK}`,
+  // CU-783: any owned thing - 'Let any visitor browse my albums', 'Allow non-friends to see my posts'
+  String.raw`(?:let|allow)\s+${WIDER}\s+(?:to\s+)?(?:see|view|browse|read|find|access|download|look\s+at)\s+${OWN_ANY}`,
+  // r2 (cu-researcher's held-out miss 'Permit non-contacts to view my photos'): any granting verb, and any act the wider
+  // audience is granted over the owner's things - 'Enable non-followers to comment on my posts', 'Authorize people outside my
+  // network to download my files'. A protective act (block / hide / prevent / stop ... from) leads with no granting verb and
+  // stays free.
+  String.raw`(?:let|allow|permit|enable|authori[sz]e|empower|invite)\s+${WIDER}\s+(?:to\s+)?${GRANTED_ACT}\s+${OWN_ANY}`,
+  // r2: access given outright - 'Give non-friends access to my albums', 'Grant everyone except my team access to my files'
+  String.raw`(?:give|grant|offer)\s+${WIDER}\s+(?:(?:full|read|view(?:ing)?|edit(?:ing)?|download)\s+)?(?:access|permission|rights?)\s+(?:to|on|for)\s+${OWN_ANY}`,
   // 'Include me in the staff list visible to guests', 'Add my profile to the team page shown to visitors'
   String.raw`(?:include|list|add|show|feature|put|publish)\s+${OWN_WORK}\s+(?:in|on|to)\s+(?:the\s+|our\s+)?(?:[a-z'-]+\s+){0,3}(?:list|roster|directory|page|feed|gallery|showcase|board)\s+(?:that\s+is\s+|that's\s+)?(?:visible|shown|available|open)\s+to\s+${WIDER}`,
-  // 'List my shop in the marketplace', 'Feature my portfolio on the explore page', 'Publish my designs to the community gallery'
-  String.raw`(?:list|feature|publish|post|sell|offer|showcase)\s+${OWN_ANY}\s+(?:in|on|to)\s+${PUBLIC_PLACE}`,
+  // 'List my shop in the marketplace', 'Feature my portfolio on the explore page', 'Publish my designs to the community gallery';
+  // CU-799: any verb that puts the owner's thing into a public place - 'Publish my profile to the public directory', 'Share my
+  // portfolio to the community gallery', 'Add my profile to the member directory', 'Show my posts in search results'
+  String.raw`(?:list|feature|publish|post|sell|offer|showcase|share|add|put|upload|submit|send|push|show|display|include|place|pin|syndicate|broadcast|announce|advertise|release)\s+${OWN_ANY}\s+(?:in|on|to|into|onto)\s+${PUBLIC_PLACE}`,
+  // CU-799: the state form - 'My profile is listed in the public directory', 'Portfolio published to the community gallery'
+  String.raw`(?:${OWN_ANY}|profile|portfolio|shop|store|listing|resume|r[eé]sum[eé]|cv)\s+(?:is\s+|are\s+)?(?:published|listed|posted|shared|shown|visible|available|featured|included)\s+(?:in|on|to|into)\s+${PUBLIC_PLACE}`,
   // r2: featured or promoted placement, with or without the owner named - 'Feature on the home page', 'Promote my posts on
   // the explore page', 'Spotlight me in the featured section'
   String.raw`(?:feature|showcase|spotlight|highlight|promote)(?:\s+${OWN_ANY})?\s+(?:in|on|to)\s+${PUBLIC_PLACE}`,
   // r2: the audience as the subject - 'Non-members can see my profile', 'Everyone with an account can view my posts'
-  String.raw`${WIDER}\s+(?:can|may)\s+(?:see|view|browse|read|find|access|look\s+at)\s+${OWN_WORK}`,
+  String.raw`${WIDER}\s+(?:can|may)\s+(?:see|view|browse|read|find|access|look\s+at)\s+${OWN_ANY}`,
+  // r2: the audience as the subject with any granted act - 'Non-subscribers may reply to my stories' ('cannot' / "can't" stay out)
+  String.raw`${WIDER}\s+(?:can|may|(?:are|is)\s+(?:allowed|able|free)\s+to)\s+${GRANTED_ACT}\s+${OWN_ANY}`,
   // r2: the bare state - 'Visible to everyone with an account', 'Open to the whole company', 'Shown to non-members'
   String.raw`(?:visible|viewable|accessible|shown|open|available)\s+(?:to|by)\s+${WIDER}`,
   // 'My portfolio is visible to strangers', 'Profile visible to guests'
