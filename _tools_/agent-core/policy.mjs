@@ -127,6 +127,14 @@ function localePassiveAct(text) {
 }
 // CU-747 (High; sweep 5, cu-coordinator 06:05Z): a wizard's or sheet's final-step control - Finish / Complete / Next / End - is
 // a generic confirm too when it sits in a risk dialog (the modal rule below judges the dialog's text; a harmless one stays free).
+// CU-755 (cu-researcher's sweep 6): a store-style commit verb ('Install' / 'Get' / 'Buy' / 'Pay' / 'Subscribe' / 'Upgrade') pressed in
+// a dialog or sheet whose title or text names a price ('Confirm with Touch ID' / 'Pro Upgrade - $9.99') reads the dialog like a
+// generic confirm does, so the price asks purchase there (additions only; a dialog with no amount is unchanged).
+const DIALOG_PRICE_COMMIT = /^\s*(?:install|install\s+now|get|buy|buy\s+now|purchase|pay|pay\s+now|subscribe|upgrade|upgrade\s+now|confirm\s+purchase)\s*[.!]?\s*$/i
+// CU-755: a glyph-only trash name ('🗑', '🗑️', '🚮') deletes, as the icon names 'trash-2' / 'icon-trash' do; resetting a branch or
+// HEAD to a commit drops the later commits ('Reset branch to this commit', 'Reset current branch to here', 'Hard reset').
+const TRASH_GLYPH_NAME = /^\s*(?:\u{1F5D1}|\u{1F6AE})\uFE0F?\s*$/u
+const RESET_TO_COMMIT = /^\s*(?:hard\s+)?reset\s+(?:(?:the|this|current|your|my)\s+)?(?:(?:local\s+)?(?:branch|head|repo(?:sitory)?|working\s+(?:tree|copy))\s+)?(?:\(?hard\)?\s+)?(?:back\s+)?to\s+(?:(?:this|that|the|a|an|selected|previous|earlier|older|last)\s+)?(?:commit|revision|version|snapshot|here)\b|^\s*hard\s+reset\s*$/i
 const FINAL_STEP_CONFIRM = /^\s*(?:finish|finish\s+up|complete|next|next\s+step|end|end\s+now|continue\s+anyway|proceed\s+anyway)\s*[.!>›→]?\s*$/i
 // CU-747: a bare verb button that repeats the verb of its dialog's title ('Reset' under 'Reset this device to factory settings?',
 // 'Empty' under 'Empty the Trash?') confirms that title, so the title is judged as a name. r2 (cu-researcher 06:48Z): the verb may
@@ -165,9 +173,12 @@ const TRASH_LOCALE = [
   },
   { // ja
     verb: new RegExp(`${JA_STEM}(?:さ|し|す|済)|捨て`, 'u'),
-    negation: new RegExp(`${JA_STEM}(?:されません|しません|されない|しない|されず|せず|さない|さず|されることはありません|されることはない|されていません|されようとしていません)|捨てられ(?:ません|ない|ず)|捨てません|捨てない`, 'u'),
-    past: new RegExp(`${JA_STEM}(?:されました|しました|された|した|されています|されている|されていました|されてしまいました|されようとしていました|済み)|捨てられ(?:ました|た|ています|ている)|捨てました`, 'u'),
-    pending: new RegExp(`${JA_STEM}(?:されます|します|される(?!こと)|する(?!こと)|され、|されることになります|されることになる|されることになっています|される予定|する予定|されるでしょう|されようとしています|されようとしている|しようとしています)|消す(?!こと)|捨てられ(?:ます|る(?!こと)|、)|捨てます`, 'u'),
+    // CU-816 (the table cu-researcher OK'd 18:02Z): the -te shimau pending form asks; its auxiliary negation, こと / a nominal head +
+    // は / が / も + a negation, the past and the conditional (-てしまうと / -てしまったら / -てしまえば) stay free.
+    // r2 (the table OK'd 20:44Z): the contracted -ちゃう takes every -てしまう cell, for the noun + される / する and the plain-verb families.
+    negation: new RegExp(`${JA_STEM}(?:されません|しません|されない|しない|されず|せず|さない|さず|されることはありません|されることはない|されていません|されようとしていません|されてしまいません|されてしまわない|されてしまわず|してしまいません|されちゃいません|されちゃわない|しちゃいません)|捨てられ(?:ません|ない|ず)|捨てません|捨てない|${JA_STEM}(?:され|し)てしまう[\\p{Script=Han}\\p{Script=Katakana}\\p{Script=Hiragana}]{0,6}?(?:は|が|も)(?:ありません|ございません|ない|なく|なかった)|捨てられてしまう[\\p{Script=Han}\\p{Script=Katakana}\\p{Script=Hiragana}]{0,6}?(?:は|が|も)(?:ありません|ございません|ない|なく|なかった)|${JA_STEM}(?:され|し)ちゃう[\\p{Script=Han}\\p{Script=Katakana}\\p{Script=Hiragana}]{0,6}?(?:は|が|も)(?:ありません|ございません|ない|なく|なかった)|捨て(?:られ)?ちゃう[\\p{Script=Han}\\p{Script=Katakana}\\p{Script=Hiragana}]{0,6}?(?:は|が|も)(?:ありません|ございません|ない|なく|なかった)|捨て(?:られ)?ちゃいません`, 'u'),
+    past: new RegExp(`${JA_STEM}(?:されました|しました|された|した|されています|されている|されていました|されてしまいました|されようとしていました|されてしまった|してしまいました|してしまった|されてしまっています|されてしまっている|されちゃいました|されちゃった|しちゃいました|しちゃった|済み)|捨てられ(?:ました|た|ています|ている)|捨てました|捨てられてしまいました|捨てられてしまった|消してしまいました|消してしまった|捨て(?:られ)?ちゃいました|捨て(?:られ)?ちゃった`, 'u'),
+    pending: new RegExp(`${JA_STEM}(?:されます|します|される(?!こと)|する(?!こと)|され、|されることになります|されることになる|されることになっています|される予定|する予定|されるでしょう|されようとしています|されようとしている|しようとしています|されてしまいます|されてしまう(?!こと|と)|してしまいます|してしまう(?!こと|と)|されてしまうでしょう|されちゃいます|されちゃう(?!こと|と)|しちゃいます|しちゃう(?!こと|と))|消す(?!こと)|捨てられ(?:ます|る(?!こと)|、)|捨てます|消してしまいます|捨てられてしまいます|捨てられてしまう(?!こと|と)|捨て(?:られ)?ちゃいます|捨て(?:られ)?ちゃう(?!こと|と)`, 'u'),
   },
   { // zh
     verb: new RegExp(ZH_VERB, 'u'),
@@ -205,14 +216,21 @@ function localeTrashPending(text) {
   }
   return null
 }
-function emptiesTrashByDelete(name, sentence) {
+// CU-818 (the table cu-researcher OK'd 19:58Z): a description sentence under a title that names the trash counts as naming it
+// too - but only when it speaks of the trash's items (an item noun or a pronoun), never a sentence that names another object
+// ('Your search history will also be deleted.').
+const TRASH_ITEM_NOUN = /(?<!\p{L})(?:items?|files?|documents?|contents?|objects?|everything|all|they|them|these|it|elemente?|objekte|dateien|alles|alle|éléments?|fichiers?|tout|tous|elementos?|archivos?|todo|todos|elementi|tutto|tutti|itens|arquivos|tudo|onderdelen|bestanden|items|объекты|файлы|элементы|всё|все|öğeler|dosyalar|tümü)(?!\p{L})|項目|ファイル|書類|すべて|全て|项目|文件|所有|全部|항목|파일|모든|전부/iu
+function emptiesTrashByDelete(name, sentence, titleNamesTrash = false) {
   const button = String(name ?? '').trim().toLowerCase()
   const text = String(sentence ?? '').trim()
   // A judged name has passed the Cyrillic homoglyph fold ('Очистить' -> 'Oчиcтить'), so the Russian button is matched folded too.
   const ruButton = ['очистить', 'Очистить', 'ОЧИСТИТЬ'].map((form) => normaliseName(normaliseText(form))).includes(normaliseName(String(name ?? '')))
-  if (!(EMPTYING_BUTTON.test(button) || ruButton) || !TRASH_NOUN.test(text)) return false
+  if (!(EMPTYING_BUTTON.test(button) || ruButton) || !(TRASH_NOUN.test(text) || (titleNamesTrash && TRASH_ITEM_NOUN.test(text)))) return false
   const local = localeTrashPending(text)
   if (local !== null) return local
+  // #1491 r2 (the table cu-researcher OK'd 21:04Z; CU-821): the future passives the in-sentence rule reads ('se eliminarán', 'verranno
+  // eliminati', 'serão excluídos', 'werden … gelöscht', 'worden verwijderd', 'будут удалены') count here too, with their own negation.
+  if (localePassiveAct(text) !== null) return true
   const verb = TRASH_DELETE_VERB.exec(text)
   if (verb === null || !TRASH_PENDING.test(text)) return false
   // A negation counts only within four words before the delete verb ('will not be deleted'), never one in a following clause
@@ -4125,6 +4143,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // 'Make <noun> public' (an object between the verb and 'public', cu-coordinator 14:34Z).
       if (!focusesEntry && /^\s*make\s+(?:the\s+|this\s+)?(?:\S+\s+){1,2}public\s*$/i.test(name)) classes.push('permission')
       if (!focusesEntry && /^\s*destroy\b/i.test(name) && !/link/i.test(String(target?.role ?? ''))) classes.push('delete')
+      // CU-755: a glyph-only trash name, and resetting a branch to a commit.
+      if (!focusesEntry && (TRASH_GLYPH_NAME.test(name) || RESET_TO_COMMIT.test(name)) && !/link/i.test(String(target?.role ?? ''))) classes.push('delete')
       // CU-410: renting ('Rent', 'Rent now', 'Rent <title>'; 'Rentals' stays free), a bare 'Renew', reactivating a subscription,
       // turning auto-renew on and switching the billing period ask purchase.
       if (!focusesEntry && (/^\s*rent\b/i.test(name) || /^\s*renew\s*$/i.test(name)
@@ -5132,8 +5152,12 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // CU-790: or a sentence of the description - 'Leeren' under the title 'Hinweis' and 'Ist der Papierkorb danach geleert?'.
       const finalStep = FINAL_STEP_CONFIRM.test(String(name ?? '')) || echoesDialogVerb(name, dialogName) || echoesDialogVerb(target?.name, dialogName)
         || dialogDescription.split(/(?<=[.!?。！？])\s*/u).some((sentence) => sentence !== '' && (echoesDialogVerb(name, sentence) || echoesDialogVerb(target?.name, sentence)))
+      // CU-755: a store-style commit in a dialog that names a price reads the dialog too.
+      const priceCommit = DIALOG_PRICE_COMMIT.test(String(name ?? '')) && [dialogName, dialogDescription].some((text) => amountClass(text, 'dialog') === 'purchase')
       // CU-804: an emptying button under a trash permanent-delete question or pending statement.
-      const emptiesTrash = [dialogName, ...dialogDescription.split(/(?<=[.!?。！？])\s*/u)].some((sentence) => sentence !== '' && (emptiesTrashByDelete(name, sentence) || emptiesTrashByDelete(target?.name, sentence)))
+      // CU-818: a title that names the trash lends it to the description's item sentences.
+      const titleNamesTrash = TRASH_NOUN.test(String(dialogName ?? ''))
+      const emptiesTrash = [dialogName, ...dialogDescription.split(/(?<=[.!?。！？])\s*/u)].some((sentence) => sentence !== '' && (emptiesTrashByDelete(name, sentence, titleNamesTrash) || emptiesTrashByDelete(target?.name, sentence, titleNamesTrash)))
       // CU-757: 'Allow' / 'Grant' / 'Give access' (and localized) in a dialog whose title or a kept sentence states access asks
       // permission and takes the dialog's other classes too; the same button in a dialog that states no access is unchanged.
       const accessAllow = ACCESS_ALLOW.test(String(target?.name ?? '')) || ACCESS_ALLOW.test(String(name ?? ''))
@@ -5141,7 +5165,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         .filter((sentence) => sentence !== '' && !/\b(?:if\s+you\s+(?:don'?t|do\s+not|choose\s+not\s+to|cancel|leave|close)|unless\s+you|otherwise)\b/i.test(sentence))
         .some((sentence) => MODAL_ACCESS.test(sentence) || LOCALE_MODAL_ACCESS.test(sentence))
       if (context.confirmProbe !== true && presses && accessStated && !classes.includes('permission')) classes.push('permission')
-      if (context.confirmProbe !== true && presses && (dialogName !== '' || dialogDescription !== '') && (GENERIC_CONFIRM.test(String(name ?? '')) || localeConfirm || continueTo || finalStep || accessStated || emptiesTrash)) {
+      if (context.confirmProbe !== true && presses && (dialogName !== '' || dialogDescription !== '') && (GENERIC_CONFIRM.test(String(name ?? '')) || localeConfirm || continueTo || finalStep || accessStated || emptiesTrash || priceCommit)) {
         // cu-researcher 16:09Z: a title is a question more often than a row - 'Are you sure you want to <row>?', 'Really <row>?',
         // '<row>?' - so a title canonical step strips the question frame before the title is judged as a name.
         // #702 round 2 (cu-researcher 16:24Z): descriptions lead with 'This will / This action will / You are about to / Doing this will'.
