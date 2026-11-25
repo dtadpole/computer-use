@@ -412,8 +412,8 @@ const LOCALE_GENERIC_CONFIRM = new RegExp(String.raw`^\s*${LOCALE_CONFIRM_WORD}(
 // words of the system languages macOS ships beyond the covered ones, and of the larger web locales (ar fa ur he pl sv da nb is fi
 // et cs sk hu ro hr sr bs sl lt lv ca tr uk bg mk kk el hy ka vi th id ms tl sw hi bn), read the dialog as the covered ones do. Additions only: a dialog whose text
 // gets no class stays free ('Save changes?' + 'نعم'), and no back-out word is listed ('إلغاء', 'ביטול', 'Anuluj', 'Avbryt').
-// Written in the folded form of confirmFold(): Arabic-script words without harakat or tatweel, alef with hamza as bare alef, Arabic
-// yeh / kaf as Persian yeh / keheh; Hebrew without points; Latin and Greek also matched without accents ('ΕΝΤΑΞΕΙ', 'Potwierdz').
+// Compared by confirmKey(): Arabic-script words without harakat or tatweel, alef with hamza as bare alef, Arabic yeh / kaf as Persian
+// yeh / keheh; Hebrew without points; Latin and Greek also without accents ('ΕΝΤΑΞΕΙ', 'Potwierdz'); case folded.
 const MORE_CONFIRM_WORDS = [
   // ar
   'نعم', 'موافق', 'موافقة', 'اوافق', 'حسنا', 'تاکید', 'اکد', 'متابعة', 'تابع', 'استمرار', 'استمر', 'قبول', 'اقبل', 'تطبیق', 'تم', 'انهاء', 'التالی', 'اوکی',
@@ -474,19 +474,23 @@ const stripAccents = (text) => text.normalize('NFD').replace(/[\u0300-\u036f]/gu
 const confirmFold = (text) => String(text ?? '').normalize('NFC')
   .replace(/[\u200b-\u200f\u202a-\u202e\u2066-\u2069\u061c\ufeff\u0640\u064b-\u065f\u0670\u0591-\u05bd\u05bf-\u05c7]/gu, '')
   .replace(/[\u0622\u0623\u0625]/gu, '\u0627').replace(/[\u064a\u0649]/gu, '\u06cc').replace(/\u0643/gu, '\u06a9').replace(/\u0130/gu, 'i')
-const confirmAlternation = (words) => words.map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, String.raw`\s+`)).join('|')
-// The listed words pass through the same fold, so an Arabic-script word written with either yeh or kaf matches.
-const anyConfirmPattern = (words) => {
-  const word = `(?:${LOCALE_CONFIRM_WORD}|${confirmAlternation(words)})`
-  return new RegExp(String.raw`^\s*${word}(?:\s*[,،、，]\s*${word})?\s*[.!。！]?\s*$`, 'iu')
-}
-const ANY_LOCALE_CONFIRM = anyConfirmPattern(MORE_CONFIRM_WORDS.map(confirmFold))
-const ANY_LOCALE_CONFIRM_BARE = anyConfirmPattern(MORE_CONFIRM_WORDS.map((word) => stripAccents(confirmFold(word))))
-/** CU-749: a dialog button that is an affirmative in any language listed here or above (folded; Latin and Greek also without accents). */
+/** CU-749: the key one affirmative is compared by - folded, accents off, lower case (dotless 'ı' as 'i'), single spaces. */
+const confirmKey = (text) => stripAccents(confirmFold(text)).toLowerCase().replace(/\u0131/gu, 'i').replace(/\s+/gu, ' ').trim()
+// Each listed word as written, capitalised and in capitals, with and without accents, both raw and after normaliseText - a judged
+// name has passed its Cyrillic / Greek look-alike fold case by case ('Так' -> 'Taк', 'ΕΝΤΑΞΕΙ' -> 'ENTAΞEI'), so the keys are
+// built from the same fold. A set, so a click costs one lookup per part.
+const MORE_CONFIRM_KEYS = new Set(MORE_CONFIRM_WORDS.flatMap((word) => {
+  const [first, ...rest] = [...word]
+  const forms = [word, first.toUpperCase() + rest.join(''), word.toUpperCase()]
+  return [...forms, ...forms.map(stripAccents)].flatMap((form) => [confirmKey(form), confirmKey(normaliseText(form))])
+}))
+/** CU-749: a dialog button that is an affirmative in any language listed here or above - the whole name, or two joined by a comma
+ * ('نعم، متابعة', 'Tak, kontynuuj'), a closing '.' / '!' allowed. */
 function anyLocaleConfirm(text) {
-  const folded = confirmFold(text)
-  if (folded.trim() === '' || folded.length > 60) return false
-  return ANY_LOCALE_CONFIRM.test(folded) || ANY_LOCALE_CONFIRM_BARE.test(stripAccents(folded))
+  const name = String(text ?? '')
+  if (name.trim() === '' || name.length > 60) return false
+  const parts = name.replace(/[.!。！]+\s*$/u, '').split(/\s*[,،、，]\s*/u)
+  return parts.length <= 2 && parts.every((part) => part.trim() !== '' && (MORE_CONFIRM_KEYS.has(confirmKey(part)) || LOCALE_GENERIC_CONFIRM.test(confirmFold(part))))
 }
 // CU-729: the question frames of a localized confirm title ('Möchten Sie diese Notiz wirklich löschen?', 'Voulez-vous vraiment ...',
 // '¿Desea eliminar ...?', '本当に削除しますか？', '确定要删除吗？', '정말 삭제하시겠습니까?') are removed into one more title text to judge.
@@ -5016,7 +5020,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       }
       const localeConfirm = LOCALE_GENERIC_CONFIRM.test(String(target?.name ?? name ?? '')) || LOCALE_GENERIC_CONFIRM.test(String(name ?? '')) || namesRuConfirm(String(name ?? ''))
         // CU-749: or an affirmative in any other system language ('نعم', 'כן', 'אישור', 'Tak') - the dialog's text decides, as above.
-        || anyLocaleConfirm(target?.name) || anyLocaleConfirm(name)
+        // Looked up only when the target sits in a dialog (the probes below carry no dialog fields).
+        || ((dialogName !== '' || dialogDescription !== '') && (anyLocaleConfirm(target?.name) || anyLocaleConfirm(name)))
       // CU-747: final-step controls and a bare verb that echoes the dialog title's verb read the dialog too (additions only).
       // CU-790: or a sentence of the description - 'Leeren' under the title 'Hinweis' and 'Ist der Papierkorb danach geleert?'.
       const finalStep = FINAL_STEP_CONFIRM.test(String(name ?? '')) || echoesDialogVerb(name, dialogName) || echoesDialogVerb(target?.name, dialogName)
