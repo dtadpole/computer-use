@@ -142,6 +142,28 @@ const FINAL_STEP_CONFIRM = /^\s*(?:finish|finish\s+up|complete|next|next\s+step|
 // cestino?', '空にする' / 'ゴミ箱を空にしますか？', '倒空' / '要倒空废纸篓吗？'), matched as a word or a word's stem; and the title must
 // ask or point at its object - a question, or a determiner after the verb - so a title that names a state ('Empty folder') stays free.
 const ECHO_CJK = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u
+// CU-804 (P1; cu-coordinator 09:39Z, widened from cu-researcher's CU-800 find): a bare EMPTYING button ('Empty', 'Leeren', 'Vider',
+// 'Vaciar', 'Svuota', 'Esvaziar', 'Legen', 'Leegmaken' ...) under a dialog sentence that asks or announces DELETING the items in the
+// trash - a verb the button does not echo ('Are you sure you want to permanently delete the items in the Trash?', 'Weet u zeker dat
+// u de onderdelen in de prullenmand permanent wilt verwijderen?') - confirms emptying the trash. Only a question or a pending
+// statement, never a negated one, and only over a trash noun; the sentence then also reads as 'Empty trash'. r2: the ru / ja / zh /
+// ko / tr forms too (cu-developer-two's cross-check).
+const EMPTYING_BUTTON = /^(?:empty|empty\s+now|leeren|entleeren|ausleeren|vider|vaciar|svuota|svuotare|esvaziar|legen|leegmaken|leeghalen|leegruimen|ledigen|leeg\s+(?:maken|halen|ruimen)|очистить|空にする|清倒|倒空|清空|비우기|boşalt)$/u
+const TRASH_NOUN = /(?<!\p{L})(?:trash|bin|recycle\s+bin|papierkorb|mülleimer|abfalleimer|corbeille|papelera|cestino|lixeira|lixo|prullenbak|prullenmand|vuilnisbak|vuilbak|корзин[аеуыой]|корзиной|çöp)(?!\p{L})|ゴミ箱|废纸篓|廢紙簍|回收站|휴지통/iu
+const TRASH_DELETE_VERB = /(?<!\p{L})(?:delete|deleted|erase|erased|remove|removed|löschen|gelöscht|entfernen|entfernt|supprimer|supprimée?s?|effacer|effacée?s?|eliminar|eliminad[oa]s?|borrar|borrad[oa]s?|eliminare|eliminat[oiae]|cancellare|cancellat[oiae]|excluir|excluíd[oa]s?|apagar|apagad[oa]s?|verwijderen|verwijderd|wissen|gewist|удалить|удалены|удалён|удалено|удалятся|удалит|стереть|стёрты|silmek|silinecek|silinsin|silinsin mi)(?!\p{L})|削除|删除|刪除|삭제/iu
+const TRASH_PENDING = /[?？]\s*$|(?<!\p{L})(?:will|would|wird|werden|sera|seront|será|serán|verrà|verranno|serão|wordt|worden|zal|zullen)(?!\p{L})/iu
+const TRASH_NEGATION = /(?<!\p{L})(?:not|never|nicht|nie|kein|keine|ne|pas|jamais|no|nunca|non|mai|não|niet|nooit|geen)(?!\p{L})|n['’]t(?!\p{L})/iu
+function emptiesTrashByDelete(name, sentence) {
+  const button = String(name ?? '').trim().toLowerCase()
+  const text = String(sentence ?? '').trim()
+  const verb = TRASH_DELETE_VERB.exec(text)
+  // A judged name has passed the Cyrillic homoglyph fold ('Очистить' -> 'Oчиcтить'), so the Russian button is matched folded too.
+  const ruButton = ['очистить', 'Очистить', 'ОЧИСТИТЬ'].map((form) => normaliseName(normaliseText(form))).includes(normaliseName(String(name ?? '')))
+  if (!(EMPTYING_BUTTON.test(button) || ruButton) || !TRASH_NOUN.test(text) || verb === null || !TRASH_PENDING.test(text)) return false
+  // r2 (cu-developer-two's cross-check): a negation counts only within four words before the delete verb ('will not be
+  // deleted'), never one in a following clause ('... will be permanently deleted and can't be restored').
+  return !TRASH_NEGATION.test(text.slice(0, verb.index).trim().split(/\s+/).slice(-4).join(' '))
+}
 function echoesDialogVerb(name, dialogName) {
   const button = String(name ?? '').trim().toLowerCase().replace(/[¿¡]/g, '')
   const title = String(dialogName ?? '').trim().toLowerCase().replace(/[¿¡]/g, '')
@@ -4949,6 +4971,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         || dialogDescription.split(/(?<=[.!?。！？])\s*/u).some((sentence) => sentence !== '' && (echoesDialogVerb(name, sentence) || echoesDialogVerb(target?.name, sentence)))
       // CU-755: a store-style commit in a dialog that names a price reads the dialog too.
       const priceCommit = DIALOG_PRICE_COMMIT.test(String(name ?? '')) && [dialogName, dialogDescription].some((text) => amountClass(text, 'dialog') === 'purchase')
+      // CU-804: an emptying button under a trash permanent-delete question or pending statement.
+      const emptiesTrash = [dialogName, ...dialogDescription.split(/(?<=[.!?。！？])\s*/u)].some((sentence) => sentence !== '' && (emptiesTrashByDelete(name, sentence) || emptiesTrashByDelete(target?.name, sentence)))
       // CU-757: 'Allow' / 'Grant' / 'Give access' (and localized) in a dialog whose title or a kept sentence states access asks
       // permission and takes the dialog's other classes too; the same button in a dialog that states no access is unchanged.
       const accessAllow = ACCESS_ALLOW.test(String(target?.name ?? '')) || ACCESS_ALLOW.test(String(name ?? ''))
@@ -4956,7 +4980,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         .filter((sentence) => sentence !== '' && !/\b(?:if\s+you\s+(?:don'?t|do\s+not|choose\s+not\s+to|cancel|leave|close)|unless\s+you|otherwise)\b/i.test(sentence))
         .some((sentence) => MODAL_ACCESS.test(sentence) || LOCALE_MODAL_ACCESS.test(sentence))
       if (context.confirmProbe !== true && presses && accessStated && !classes.includes('permission')) classes.push('permission')
-      if (context.confirmProbe !== true && presses && (dialogName !== '' || dialogDescription !== '') && (GENERIC_CONFIRM.test(String(name ?? '')) || localeConfirm || continueTo || finalStep || accessStated || priceCommit)) {
+      if (context.confirmProbe !== true && presses && (dialogName !== '' || dialogDescription !== '') && (GENERIC_CONFIRM.test(String(name ?? '')) || localeConfirm || continueTo || finalStep || accessStated || emptiesTrash || priceCommit)) {
         // cu-researcher 16:09Z: a title is a question more often than a row - 'Are you sure you want to <row>?', 'Really <row>?',
         // '<row>?' - so a title canonical step strips the question frame before the title is judged as a name.
         // #702 round 2 (cu-researcher 16:24Z): descriptions lead with 'This will / This action will / You are about to / Doing this will'.
@@ -4977,6 +5001,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         for (const sentence of [dialogName, ...kept]) { const verb = localePassiveAct(sentence); if (verb !== null && !texts.includes(verb)) texts.push(verb) }
         // CU-746: the title and each kept sentence read as the act they state (statement, framed lead-in, noun title, access).
         for (const base of [dialogName, ...kept]) for (const extra of modalStatementNames(base)) if (!texts.includes(extra)) texts.push(extra)
+        if (emptiesTrash && !texts.includes('Empty trash')) texts.push('Empty trash')
         for (const text of texts) {
           // #702 round 2: the title is judged with the FULL canonical form (synonym, quantifier, label and clause steps run only
           // outside a confirm probe), so no confirmProbe flag here; the probe target carries no dialog fields, so it cannot recurse.
