@@ -51,13 +51,12 @@ test('CU-814: the emptying passive asks in every covered language', () => {
   ])
 })
 
-test('CU-814: negated, past, past-event, state, active-question and non-trash rows stay free', () => {
+// Probed on main 299d4a2c before this list (22:45Z): every English 'Empty' row whose sentence carries a determiner, and every
+// zh '清空' row, already asks on main through older rules (the description-verb echo, CU-790, and the CJK button echo) - negated,
+// past and state too, and the active questions ('Empty the Trash?', '清空废纸篓？', '空にしますか？', '비우시겠습니까?'). CU-814
+// leaves them as they are (ASK on main and on this branch), so they sit in no list here; every row below is free on main.
+test('CU-814: negated, past, past-event, state and non-trash rows stay free', () => {
   free([
-    ['Empty', 'Empty Trash', 'The Trash will not be emptied.'],
-    ['Empty', 'Empty Trash', 'The Trash was emptied.'],
-    ['Empty', 'Empty Trash', 'The Trash was emptied by mistake yesterday.'],
-    ['Empty', 'Empty Trash', 'The Trash is empty.'],
-    ['Empty', 'Notice', 'Empty the Trash?'],
     ['Empty', 'Notice', 'The cache will be emptied.'],
     ['Leeren', 'Papierkorb', 'Der Papierkorb wird nicht geleert.'],
     ['Leeren', 'Papierkorb', 'Der Papierkorb wurde gestern versehentlich geleert.'],
@@ -75,18 +74,12 @@ test('CU-814: negated, past, past-event, state, active-question and non-trash ro
     ['Legen', 'Prullenbak', 'De prullenbak werd gisteren per ongeluk geleegd.'],
     ['Очистить', 'Корзина', 'Корзина не будет опустошена.'],
     ['Очистить', 'Корзина', 'Корзина была по ошибке опустошена вчера.'],
-    ['清空', '废纸篓', '废纸篓不会被清空。'],
-    ['清空', '废纸篓', '废纸篓已清空。'],
-    ['清空', '废纸篓', '废纸篓昨天被误清空了。'],
-    ['清空', '提示', '清空废纸篓？'],
     ['空にする', 'ゴミ箱', 'ゴミ箱は空になりません。'],
     ['空にする', 'ゴミ箱', 'ゴミ箱は昨日誤って空になりました。'],
     ['空にする', 'ゴミ箱', 'ゴミ箱は空になっています。'],
-    ['空にする', '確認', 'ゴミ箱を空にしますか？'],
     ['비우기', '휴지통', '휴지통이 비워지지 않습니다.'],
     ['비우기', '휴지통', '휴지통이 어제 실수로 비워졌습니다.'],
     ['비우기', '휴지통', '휴지통이 비어 있습니다.'],
-    ['비우기', '확인', '휴지통을 비우시겠습니까?'],
     ['Boşalt', 'Çöp Sepeti', 'Çöp Sepeti boşaltılmayacak.'],
     ['Boşalt', 'Çöp Sepeti', 'Çöp Sepeti dün yanlışlıkla boşaltıldı.'],
   ])
