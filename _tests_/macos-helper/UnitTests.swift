@@ -341,6 +341,16 @@ func testEndWatchdog() {
   // cu-researcher: the watchdog only tries the copy's lock; busy past the timeout, it falls back to the held-keys marker.
   check(mirror.locked { mirror.trySnapshot(timeout: 0.05) } == nil, "a busy copy is not waited on past the try-lock's timeout")
   check(mirror.trySnapshot(timeout: 0.05) != nil, "a free copy is read at once")
+  // CU-744: the watchdog's cancel Escape goes to the driven app's pid only, and is dropped without one; the ups stay at
+  // the HID tap (nil), which is what clears the held state.
+  check(mirror.tryTarget(timeout: 0.05) == 0, "no input yet: no target")
+  mirror.setTarget(501)
+  check(mirror.tryTarget(timeout: 0.05) == 501 && mirror.locked { mirror.tryTarget(timeout: 0.05) } == 0, "the target is read try-locked; busy reads as none")
+  let drag = HeldMirror.releaseSteps(keys: [56], buttons: [.left], dragged: true, at: CGPoint(x: 9, y: 8))
+  let routed = SystemCapabilities.routedRelease(drag, cancelSteps: 2, cancelPid: 501)
+  check(routed.map { $0.0 } == drag && routed.map { $0.1 } == [501, 501, nil, nil], "with a target: Escape to its pid, the ups at the HID tap")
+  let blind = SystemCapabilities.routedRelease(drag, cancelSteps: 2, cancelPid: 0)
+  check(blind.map { $0.0 } == Array(drag.dropFirst(2)) && blind.allSatisfy { $0.1 == nil }, "without one (the marker's case): no Escape at all, the ups only")
   let markerFolder = NSTemporaryDirectory() + "cu-held-\(getpid())"
   try? FileManager.default.createDirectory(atPath: markerFolder, withIntermediateDirectories: true)
   HeldMarker.write(.object(["pid": .int(1), "keys": .array([.int(55)]), "buttons": .array([.string("left")])]), to: markerFolder + "/held-keys.json")
@@ -708,7 +718,7 @@ func button(_ kind: String, _ x: Int, _ y: Int) -> JSON { ["kind": .string(kind)
 func testDispatcherBasics() {
   let h = Harness(fixtureWorld)
   let hello = h.dispatcher.hello(token: "t0k")
-  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.73", "the hello opens the run")
+  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.74", "the hello opens the run")
   check(hello["mode"] == "dry-run" && hello["grants"] == ["screen": true, "accessibility": true, "postEvents": true, "listenEvents": false], "a dry-run hello says so, with all four grants")
   check(h.ask("capture", ["maxSize": size800])["code"] == "no_scope", "capture needs a scope")
   check(h.ask("input", ["events": [key("keyDown", 1)], "mode": "global"])["code"] == "no_scope", "input needs a scope")
@@ -1133,6 +1143,59 @@ func testAbortedDrag() {
   _ = plain.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
   _ = plain.ask("pauseOnLocalInput", ["on": true])
   check(plain.ask("input", ["events": [move(100, 100), button("down", 100, 100), drag(150, 120), button("up", 150, 120)], "mode": "global"])["cancelledDrag"] == nil, "a finished drag reports no cancel")
+}
+
+/// CU-744: an out-of-scope app comes to the front mid-drag. The drag's cancel Escape must not reach it: in 'global' mode
+/// it goes to the app we were driving only (its pid), on every release - the person's takeover too.
+func testCancelEscapeStaysInScope() {
+  let path = NSTemporaryDirectory() + "cu-helper-unit-\(getpid())-cu744.jsonl"
+  try? FileManager.default.removeItem(atPath: path)
+  var world = fixtureWorld.object!
+  world["frontmostAfter"] = ["steps": 3, "bundleId": "com.example.other"]
+  let h = Harness(.object(world), eventsOut: path)
+  _ = h.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
+  _ = h.ask("pauseOnLocalInput", ["on": true])
+  let stopped = h.ask("input", ["events": [move(100, 100), button("down", 100, 100), drag(150, 120), drag(200, 140), button("up", 200, 140)], "mode": "global"])
+  check(stopped["done"] == false && stopped["code"] == "out_of_scope" && stopped["bundleId"] == "com.example.other" && stopped["cancelledDrag"] == true,
+        "an app outside the scope came to the front mid-drag: stopped, named, the drag cancelled")
+  let lines = readEvents(path)
+  let keyTypes = [Int(CGEventType.keyDown.rawValue), Int(CGEventType.keyUp.rawValue)]
+  let keys = lines.filter { keyTypes.contains($0["event"]?["type"]?.integer ?? -1) }
+  check(keys.count == 2 && keys.allSatisfy { $0["mode"] == "pid" && $0["pid"] == 501 } && keys.first?["event"]?["keyCode"] == 53,
+        "the cancel Escape goes to the fixture's pid only, never to the key app")
+  check(lines.last?["event"]?["type"]?.integer == Int(CGEventType.leftMouseUp.rawValue) && lines.last?["mode"] == "global",
+        "the button still comes up on its own path")
+  check(h.dispatcher.heldMirror.tryTarget(timeout: 0.05) == 501, "the end watchdog's copy holds the driven app's pid, so its Escape goes there too (path B)")
+  try? FileManager.default.removeItem(atPath: path)
+  // The person's takeover (they may be switching apps as it happens): the Escape still goes to the driven app's pid.
+  let path2 = NSTemporaryDirectory() + "cu-helper-unit-\(getpid())-cu744b.jsonl"
+  try? FileManager.default.removeItem(atPath: path2)
+  var person = fixtureWorld.object!
+  person["localInputAfter"] = 3
+  let p = Harness(.object(person), eventsOut: path2)
+  _ = p.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
+  _ = p.ask("pauseOnLocalInput", ["on": true])
+  _ = p.ask("input", ["events": [move(100, 100), button("down", 100, 100), drag(150, 120), drag(200, 140), button("up", 200, 140)], "mode": "global"])
+  let personKeys = readEvents(path2).filter { keyTypes.contains($0["event"]?["type"]?.integer ?? -1) }
+  check(personKeys.count == 2 && personKeys.allSatisfy { $0["mode"] == "pid" && $0["pid"] == 501 }, "the person's takeover: the Escape goes to the fixture's pid too")
+  check(readEvents(path2).last?["event"]?["type"]?.integer == Int(CGEventType.leftMouseUp.rawValue) && readEvents(path2).last?["mode"] == "global",
+        "and the button still comes up in the run's mode, which clears the held state")
+  try? FileManager.default.removeItem(atPath: path2)
+  // The tap case (Last War's row): an out-of-scope app comes forward between a press and its release, with no drag.
+  // Nothing is cancelled, so no key at all is sent - only the held button comes up.
+  let path3 = NSTemporaryDirectory() + "cu-helper-unit-\(getpid())-cu744c.jsonl"
+  try? FileManager.default.removeItem(atPath: path3)
+  var tapWorld = fixtureWorld.object!
+  tapWorld["frontmostAfter"] = ["steps": 2, "bundleId": "com.example.other"]
+  let t = Harness(.object(tapWorld), eventsOut: path3)
+  _ = t.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
+  _ = t.ask("pauseOnLocalInput", ["on": true])
+  let tapStopped = t.ask("input", ["events": [move(100, 100), button("down", 100, 100), button("up", 100, 100)], "mode": "global"])
+  let tapLines = readEvents(path3)
+  check(tapStopped["code"] == "out_of_scope" && tapStopped["cancelledDrag"] != true, "a tap interrupted by an out-of-scope app: stopped, nothing to cancel")
+  check(!tapLines.contains { keyTypes.contains($0["event"]?["type"]?.integer ?? -1) }, "a tap's release sends no key at all - no Escape")
+  check(tapLines.last?["event"]?["type"]?.integer == Int(CGEventType.leftMouseUp.rawValue), "only the held button comes up")
+  try? FileManager.default.removeItem(atPath: path3)
 }
 
 /// CU-39 (D-045): another process's content in an approved window is judged by that process; AppKit panels are marked.
@@ -2325,6 +2388,7 @@ struct UnitTests {
     testForeignContentAndPanels()
     testDragPath()
     testAbortedDrag()
+    testCancelEscapeStaysInScope()
     testAccessibilityShapes()
     testArguments()
     testPeerCheck()
