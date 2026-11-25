@@ -51,6 +51,13 @@ test('CU-790: the class - a description in other languages and shapes, the run-t
     ['Leeren', 'Papierkorb', 'Ist danach alles aus dem Papierkorb entfernt?'],
     ['Leeren', 'Mülleimer', 'Wird der Mülleimer danach komplett leer gemacht sein?'],
     ['Vider', 'Attention', 'La corbeille restera-t-elle vide ensuite ?'],
+    // r3 (cu-researcher's two named r1 items, finished): the German empty adjective, everything removed from the trash in any
+    // covered language.
+    ['Leeren', 'Hinweis', 'Bleibt der Papierkorb danach leer?'],
+    ['Vider', 'Attention', 'Tous les éléments seront-ils retirés de la corbeille ?'],
+    ['Vaciar', 'Aviso', '¿Se quitarán todos los elementos de la papelera?'],
+    ['Empty', 'Notice', 'Will everything be removed from the trash?'],
+    ['Svuota', 'Avviso', 'Gli elementi saranno rimossi dal cestino?'],
   ]) {
     assert.ok(classes(onWeb(name, title, description)).includes('delete'), `web ${title} ${description ?? ''}`)
   }
@@ -69,6 +76,11 @@ test('CU-790: near rows stay free of delete - a field or cache, another button, 
     ['Leeren', 'Hinweis', 'Wird das Suchfeld danach leer gemacht sein?'],
     ['Schließen', 'Hinweis', 'Der Papierkorb ist leer.'],
     ['Leeren', 'Hinweis', 'Der Papierkorb ist leer.'],
+    ['Leeren', 'Hinweis', 'Alles wurde aus dem Papierkorb entfernt.'],
+    ['Vider', 'Attention', 'Tous les éléments ont été retirés de la corbeille.'],
+    ['Leeren', 'Hinweis', 'Bleibt das Suchfeld danach leer?'],
+    ['Vider', 'Attention', 'Tous les filtres seront-ils retirés du formulaire ?'],
+    ['OK', 'Notice', 'Item removed from the trash.'],
   ]) {
     assert.ok(!classes(onWeb(name, title, description)).includes('delete'), `web ${title} ${description ?? ''}`)
   }
