@@ -30,7 +30,9 @@ test('CU-755: resetting a branch to a commit asks delete', () => {
 })
 
 test('CU-755: a store commit in a priced sheet asks purchase', () => {
-  assert.ok(press(STORE, 'Install', { dialogName: 'Confirm with Touch ID', dialogDescription: 'Pro Upgrade - $9.99' }).includes('purchase'), "cu-researcher's row")
+  // The filed row verbatim: "desktop App Store: Install in 'Confirm with Touch ID' / 'Pro Upgrade - $9.99'".
+  assert.ok(press('desktop://', 'Install', { role: 'AXButton', tag: undefined, dialogName: 'Confirm with Touch ID', dialogDescription: 'Pro Upgrade - $9.99' }).includes('purchase'), "cu-researcher's filed row, desktop route")
+  assert.ok(press(STORE, 'Install', { dialogName: 'Confirm with Touch ID', dialogDescription: 'Pro Upgrade - $9.99' }).includes('purchase'), "cu-researcher's row on a web page")
   assert.ok(press(STORE, 'Buy', { dialogName: 'Pro Upgrade', dialogDescription: '$4.99 per month.' }).includes('purchase'), 'the price in the description')
   assert.ok(!press(STORE, 'Install', { dialogName: 'Install update?', dialogDescription: 'Version 2.1 is ready.' }).includes('purchase'), 'no price, no purchase')
   assert.ok(!press(STORE, 'Get', { dialogName: 'Get the newsletter', dialogDescription: 'Weekly tips by email.' }).includes('purchase'), 'no price, no purchase')
