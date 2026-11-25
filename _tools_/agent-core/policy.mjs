@@ -58,8 +58,8 @@ const LOCALE_PASSIVE_ACTS = [
   // jetzt geleert.', 'Jetzt werden alle Elemente geleert.' - reads delete, as its English twin ('The trash will be emptied now.') does
   // under CU-746, the future passive too ('wird geleert werden'). Never the past ('wurde geleert'), never 'werden ... können', never 'kann / darf / muss nicht ... geleert werden', never a cache or a field;
   // 'räumt' only bare or with 'aus' (cleared out) - 'aufgeräumt / umgeräumt / eingeräumt / weggeräumt' (tidied, moved, put away) are no delete.
-  [/(?<!\p{L})(?:der|die|das|den|diese[nrs]?|alle|ihr(?:en|e)?|dein(?:en|e)?|mein(?:en|e)?|unser(?:en|e)?|eure?[nr]?|jede[nrs]?)\s+(?:\p{L}+\s+)?(?:papierkorb|papierkörbe|mülleimer|abfalleimer|postfach|posteingang|ordner|elemente?|dateien|datei|daten|konto|konten|nachrichten|nachricht|e-mails?|mails?|fotos?|bilder?|dokumente?|projekte?|kontakte?|einträge|eintrag)(?!\p{L})[^.!?]{0,40}?(?<!\p{L})(?:wird|werden)\s+(?:[^.!?]{0,40}?\s)?(?:\p{L}{0,6}geleert|(?:aus)?geräumt|entleert)(?!\p{L})(?!\s+werden\s+(?:können|dürfen|kann|darf))/iu, 'löschen'],
-  [/(?<!\p{L})(?:wird|werden)\s+(?:jetzt\s+|nun\s+|sofort\s+|gleich\s+)?(?:der|die|das|den|diese[nrs]?|alle|ihr(?:en|e)?|dein(?:en|e)?|mein(?:en|e)?|unser(?:en|e)?|eure?[nr]?|jede[nrs]?)\s+(?:\p{L}+\s+)?(?:papierkorb|papierkörbe|mülleimer|abfalleimer|postfach|posteingang|ordner|elemente?|dateien|datei|daten|konto|konten|nachrichten|nachricht|e-mails?|mails?|fotos?|bilder?|dokumente?|projekte?|kontakte?|einträge|eintrag)(?!\p{L})[^.!?]{0,40}?(?<!\p{L})(?:\p{L}{0,6}geleert|(?:aus)?geräumt|entleert)(?!\p{L})(?!\s+werden\s+(?:können|dürfen|kann|darf))/iu, 'löschen'],
+  [/(?<!\p{L})(?:der|die|das|den|diese[nrs]?|alle|ihr(?:en|e)?|dein(?:en|e)?|mein(?:en|e)?|unser(?:en|e)?|eure?[nr]?|jede[nrs]?)\s+(?:\p{L}+\s+)?(?:papierkorb|papierkörbe|mülleimer|abfalleimer|postfach|posteingang|ordner|elemente?|dateien|datei|daten|konto|konten|nachrichten|nachricht|e-mails?|mails?|fotos?|bilder?|dokumente?|projekte?|kontakte?|einträge|eintrag)(?!\p{L})[^.!?]{0,40}?(?<!\p{L})(?:wird|werden)\s+(?:[^.!?]{0,40}?\s)?(?:\p{L}{0,6}geleert|(?:aus|leer\s?)?geräumt|entleert)(?!\p{L})(?!\s+werden\s+(?:können|dürfen|kann|darf))/iu, 'löschen'],
+  [/(?<!\p{L})(?:wird|werden)\s+(?:jetzt\s+|nun\s+|sofort\s+|gleich\s+)?(?:der|die|das|den|diese[nrs]?|alle|ihr(?:en|e)?|dein(?:en|e)?|mein(?:en|e)?|unser(?:en|e)?|eure?[nr]?|jede[nrs]?)\s+(?:\p{L}+\s+)?(?:papierkorb|papierkörbe|mülleimer|abfalleimer|postfach|posteingang|ordner|elemente?|dateien|datei|daten|konto|konten|nachrichten|nachricht|e-mails?|mails?|fotos?|bilder?|dokumente?|projekte?|kontakte?|einträge|eintrag)(?!\p{L})[^.!?]{0,40}?(?<!\p{L})(?:\p{L}{0,6}geleert|(?:aus|leer\s?)?geräumt|entleert)(?!\p{L})(?!\s+werden\s+(?:können|dürfen|kann|darf))/iu, 'löschen'],
   // CU-766 r2 + r3 (cu-coordinator 17:43Z / 17:44Z): a German QUESTION about a pending act on a deletion object, the participle
   // before 'werden' - 'Soll der Papierkorb jetzt wirklich geleert werden?', 'Soll diese Datei gelöscht werden?'. Never a statement
   // ('Der Filter kann später entfernt werden.'), never 'kann / darf ... werden', never a field, cache, filter or search box
@@ -69,7 +69,7 @@ const LOCALE_PASSIVE_ACTS = [
   // ('Ist der Papierkorb danach vollständig geleert?'), still only for a deletion object under a button that echoes the verb.
   // CU-786: any state verb opens it too - 'Bleibt der Papierkorb danach ganz geleert?', 'Gilt ... als geleert?', 'Scheint ... geleert
   // zu sein?', 'Wäre ... geleert?'.
-  [/^\s*(?:(?:soll(?:en)?|sollte(?:n)?|muss|müssen|wird|werden|ist|sind|bleibt|bleiben|gilt|gelten|scheint|scheinen|wäre|wären|möchten\s+sie|wollen\s+sie|möchtest\s+du|willst\s+du)(?!\p{L})|(?:sind\s+sie|bist\s+du|seid\s+ihr)\s+sicher,?\s+dass(?!\p{L}))[^.!?]{0,120}?(?<!\p{L})(?:der|die|das|den|diese[nrs]?|alle|ihr(?:en|e)?|dein(?:en|e)?|mein(?:en|e)?|unser(?:en|e)?|eure?[nr]?|jede[nrs]?)\s+(?:\p{L}+\s+)?(?:papierkorb|papierkörbe|mülleimer|abfalleimer|postfach|posteingang|ordner|elemente?|dateien|datei|daten|konto|konten|nachrichten|nachricht|e-mails?|mails?|fotos?|bilder?|dokumente?|projekte?|kontakte?|einträge|eintrag)(?!\p{L})[^.!?]{0,60}?(?<!\p{L})(?:\p{L}{0,6}ge(?:löscht|leert)|(?:aus)?geräumt|entfernt|entleert)(?:\s+(?:werden(?:\s+(?:soll|sollen|muss|müssen))?|wird|sein|zu\s+sein|worden\s+sein|bleiben))?\s*\?\s*$/iu, 'löschen'],
+  [/^\s*(?:(?:soll(?:en)?|sollte(?:n)?|muss|müssen|wird|werden|ist|sind|bleibt|bleiben|gilt|gelten|scheint|scheinen|wäre|wären|möchten\s+sie|wollen\s+sie|möchtest\s+du|willst\s+du)(?!\p{L})|(?:sind\s+sie|bist\s+du|seid\s+ihr)\s+sicher,?\s+dass(?!\p{L}))[^.!?]{0,120}?(?<!\p{L})(?:der|die|das|den|diese[nrs]?|alle|ihr(?:en|e)?|dein(?:en|e)?|mein(?:en|e)?|unser(?:en|e)?|eure?[nr]?|jede[nrs]?)\s+(?:\p{L}+\s+)?(?:papierkorb|papierkörbe|mülleimer|abfalleimer|postfach|posteingang|ordner|elemente?|dateien|datei|daten|konto|konten|nachrichten|nachricht|e-mails?|mails?|fotos?|bilder?|dokumente?|projekte?|kontakte?|einträge|eintrag)(?!\p{L})[^.!?]{0,60}?(?<!\p{L})(?:\p{L}{0,6}ge(?:löscht|leert)|(?:aus|leer\s?)?geräumt|entfernt|entleert)(?:\s+(?:werden(?:\s+(?:soll|sollen|muss|müssen))?|wird|sein|zu\s+sein|worden\s+sein|bleiben))?\s*\?\s*$/iu, 'löschen'],
   [/\b(?:seront|sera)\s+(?:\S+\s+){0,3}?(?:supprimée?s?|effacée?s?)\b/iu, 'supprimer'],
   // CU-786: the trash's state asked in the Romance languages or Dutch - '¿La papelera queda vaciada del todo?', 'La corbeille
   // restera-t-elle vidée ?', 'Il Cestino rimane svuotato?', 'A lixeira fica esvaziada?', 'Blijft de prullenbak geleegd?' - reads
@@ -149,6 +149,9 @@ function echoesDialogVerb(name, dialogName) {
   // + d / t) and a French one ('Vider' / 'vidée': the -er root + é / ée / és / ées).
   if (root !== null) { const nl = root.replace(/([aeiou])([^aeiou])$/u, '$1$1$2'); participles.push(`ge${root}d`, `ge${nl}d`, `ge${nl}t`) }
   if (verb.length >= 4 && /er$/u.test(verb)) { const fr = verb.slice(0, -2); participles.push(`${fr}é`, `${fr}ée`, `${fr}és`, `${fr}ées`) }
+  // CU-790: 'Leeren' (and 'Entleeren' / 'Ausleeren') also echoes the emptying forms of 'räumen' - 'leer geräumt', 'leergeräumt',
+  // 'ausgeräumt' ('Ist der Mülleimer anschließend leer geräumt?').
+  if (root !== null && /leer$/u.test(root) && /(?<!\p{L})(?:leer\s?|aus)geräumt(?!\p{L})/u.test(title)) return true
   return title.split(/[^\p{L}]+/u).some((word) => word === verb || (word.length >= verb.length && word.startsWith(stem))
     || (root !== null && new RegExp(`(?:^|^\\p{L}{0,6})ge${root}(?:t|en)$`, 'u').test(word)) || participles.includes(word)
     // r2 (cu-verifier's #1454 probe): a bare verb also echoes its participle with an inseparable prefix - 'Leeren' in '...
@@ -4869,7 +4872,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       }
       const localeConfirm = LOCALE_GENERIC_CONFIRM.test(String(target?.name ?? name ?? '')) || LOCALE_GENERIC_CONFIRM.test(String(name ?? '')) || namesRuConfirm(String(name ?? ''))
       // CU-747: final-step controls and a bare verb that echoes the dialog title's verb read the dialog too (additions only).
+      // CU-790: or a sentence of the description - 'Leeren' under the title 'Hinweis' and 'Ist der Papierkorb danach geleert?'.
       const finalStep = FINAL_STEP_CONFIRM.test(String(name ?? '')) || echoesDialogVerb(name, dialogName) || echoesDialogVerb(target?.name, dialogName)
+        || dialogDescription.split(/(?<=[.!?。！？])\s*/u).some((sentence) => sentence !== '' && (echoesDialogVerb(name, sentence) || echoesDialogVerb(target?.name, sentence)))
       // CU-757: 'Allow' / 'Grant' / 'Give access' (and localized) in a dialog whose title or a kept sentence states access asks
       // permission and takes the dialog's other classes too; the same button in a dialog that states no access is unchanged.
       const accessAllow = ACCESS_ALLOW.test(String(target?.name ?? '')) || ACCESS_ALLOW.test(String(name ?? ''))
