@@ -150,7 +150,7 @@ const TRASH_NEGATION = /(?<!\p{L})(?:not|never|nicht|nie|kein|keine|ne|pas|jamai
 // anywhere in the sentence. Checked in order: a negation frees the sentence, then a past / perfect form, then a pending form (or a
 // question) asks. 'Объекты в Корзине будут удалены.', 'ゴミ箱内の項目は完全に削除されます。', '废纸篓中的所有项目将被不可恢复地删除。',
 // '휴지통의 모든 항목이 영구적으로 삭제됩니다.', 'Çöp Sepeti'ndeki tüm öğeler kalıcı olarak silinecek.' ask; their negated and past
-// twins stay free. The tr '-ecektir' forms are CU-806's, the ko connectives CU-807's.
+// twins stay free. CU-806 adds the tr formal future / aorist / future perfect and more ja / ko pending forms; the ko connectives are CU-807's.
 const RU_PART = '(?:удал[её]н[аоы]?|ст[её]рт[аоы]?|уничтожен[аоы]?|очищен[аоы]?)'
 const RU_FUT = '(?:удалятся|удалит|сотрутся|сотр[её]т|уничтожатся|уничтожит)'
 const JA_STEM = '(?:削除|消去|破棄|抹消|除去|消)'
@@ -165,9 +165,9 @@ const TRASH_LOCALE = [
   },
   { // ja
     verb: new RegExp(`${JA_STEM}(?:さ|し|す|済)`, 'u'),
-    negation: new RegExp(`${JA_STEM}(?:されません|しません|されない|しない|されず|せず|さない|さず|されることはありません|されることはない|されていません)`, 'u'),
-    past: new RegExp(`${JA_STEM}(?:されました|しました|された|した|されています|されている|されていました|されてしまいました|済み)`, 'u'),
-    pending: new RegExp(`${JA_STEM}(?:されます|します|される(?!こと)|する(?!こと)|され、)|消す(?!こと)`, 'u'),
+    negation: new RegExp(`${JA_STEM}(?:されません|しません|されない|しない|されず|せず|さない|さず|されることはありません|されることはない|されていません|されようとしていません)`, 'u'),
+    past: new RegExp(`${JA_STEM}(?:されました|しました|された|した|されています|されている|されていました|されてしまいました|されようとしていました|済み)`, 'u'),
+    pending: new RegExp(`${JA_STEM}(?:されます|します|される(?!こと)|する(?!こと)|され、|されることになります|されることになる|されることになっています|される予定|する予定|されるでしょう|されようとしています|されようとしている|しようとしています)|消す(?!こと)`, 'u'),
   },
   { // zh
     verb: new RegExp(ZH_VERB, 'u'),
@@ -179,13 +179,15 @@ const TRASH_LOCALE = [
     verb: new RegExp(`${KO_STEM}|지우|지워|지웁|지웠`, 'u'),
     negation: new RegExp(`${KO_STEM}(?:되|하)지\\s*(?:않|못)|${KO_STEM}\\s*안\\s|지워지지\\s*(?:않|못)|지우지\\s*(?:않|못)`, 'u'),
     past: new RegExp(`${KO_STEM}(?:되었|됐|했)|지워졌|지웠`, 'u'),
-    pending: new RegExp(`${KO_STEM}(?:됩니다|합니다|될\\s*것입니다|될\\s*예정입니다)|지워집니다|지웁니다|지워질\\s*것입니다`, 'u'),
+    pending: new RegExp(`${KO_STEM}(?:됩니다|합니다|될\\s*것입니다|될\\s*예정입니다|되게\\s*됩니다|되겠습니다|될\\s*것이다|된다(?!\\p{Script=Hangul})|될\\s*거(?:예요|야|다|(?=입니다)|(?=ㅂ니다))|될\\s*겁니다)|지워집니다|지웁니다|지워질\\s*것입니다|지워지게\\s*됩니다|지워지겠습니다|지워진다(?!\\p{Script=Hangul})|지워질\\s*(?:겁니다|거예요|거야|거다)`, 'u'),
   },
   { // tr
     verb: /(?<!\p{L})(?:sil|kaldır|yok\s+ed)\p{L}*/iu,
-    negation: /(?<!\p{L})(?:silinmeyecek|silinmez|silinmedi|silinemez|silmeyecek|kaldırılmayacak|kaldırılmaz|kaldırılmadı|yok\s+edilmeyecek|yok\s+edilmez)(?!\p{L})/iu,
-    past: /(?<!\p{L})(?:silindi|silinmiş|kaldırıldı|kaldırılmış|yok\s+edildi|yok\s+edilmiş)\p{L}*/iu,
-    pending: /(?<!\p{L})(?:silinecek|kaldırılacak|yok\s+edilecek)(?!\p{L})/iu,
+    negation: /(?<!\p{L})(?:silinme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|silinemez|silmeyecek|kaldırılma(?:yacak(?:lar)?(?:dır)?|yacaktır|z(?:lar)?|dı|mış)|kaldırılamaz|yok\s+edilme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|yok\s+edilemez|(?:silinmek|kaldırılmak|yok\s+edilmek)\s+üzere\s+değil(?:dir)?)(?!\p{L})/iu,
+    past: /(?<!\p{L})(?:silindi|silinmiş(?!\s+olacak)|kaldırıldı|kaldırılmış(?!\s+olacak)|yok\s+edildi|yok\s+edilmiş(?!\s+olacak)|(?:silinmek|kaldırılmak|yok\s+edilmek)\s+üzereydi)\p{L}*/iu,
+    // CU-806: the formal future (-ecektir / -acaktır), the aorist passive (silinir) and the future perfect (silinmiş olacak) too.
+    // #1479 r2 (the table cu-researcher OK'd 14:34Z): plural agreement, the plural aorist and 'about to' too.
+    pending: /(?<!\p{L})(?:silin(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|kaldırıl(?:acak(?:lar)?(?:dır)?|acaktır|ır(?:lar)?)|yok\s+edil(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|(?:silinmiş|kaldırılmış|yok\s+edilmiş)\s+olacak(?:tır)?|(?:silinmek|kaldırılmak|yok\s+edilmek)\s+üzere(?:dir|ler)?)(?!\p{L})/iu,
   },
 ]
 // null when no ru / ja / zh / ko / tr verb of the family stands in the sentence.
@@ -1797,6 +1799,23 @@ const LOCALE_MONEY_VERBS = Object.freeze([
   /^(?:jetzt\s+)?(?:geld\s+(?:(?:an|zu)\s+(?:\S+\s+){1,2})?(?:transferieren|senden|überweisen|schicken)|bestellung\s+aufgeben|zahlungspflichtig\s+bestellen|kostenpflichtig\s+bestellen)\s*[.!]?$/iu,
   /^(?:(?:nu\s+)?geld\s+(?:(?:naar|aan)\s+(?:\S+\s+){1,2})?(?:overmaken|versturen|overboeken|sturen)|bestelling\s+plaatsen|maak\s+geld\s+over(?:\s+(?:naar|aan)\s+\S+(?:\s+\S+)?)?)\s*[.!]?$/iu,
   /^(?:今すぐ)?(?:送金(?:する|して(?:ください)?|します)?|(?:資金|お金)を?(?:振り込む|振り込み|送る|送金する|移動(?:する|して(?:ください)?)?)|注文する|注文して(?:ください)?)\s*[.!。]?$/u,
+  // CU-702: the account-noun transfer forms ask as 'Transfer to account' / 'Account transfer' do ('계좌 이체', '계좌로 이체', '口座に振り込む', '口座振替')
+  // r2 (cu-developer-one 02:15Z): a possessive and one qualifier noun, as the ja line ('내 계좌로 이체하기', '은행 계좌로 이체')
+  /^(?:(?:지금|즉시)\s+)?(?:(?:내|제|나의|우리)\s+)?(?:\S+\s+)?(?:계좌|은행)\s*(?:로|에|으로)?\s*(?:이체|송금)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+  // r3 (cu-developer-one 02:46Z, final and general): every to-account line takes a determiner slot of up to two words between the
+  // preposition (contractions aufs / ans / au / à included) and the account noun, and still ends at the account noun (+ its qualifier);
+  // the ja line takes a possessive '…の' before 口座 ('自分の口座に振り込む')
+  /^(?:今すぐ)?(?:[^\sの]+の)?(?:口座|銀行口座)(?:に|へ)?(?:振り込む|振込(?:する)?|振り込み|送金(?:する)?|振替(?:する)?)\s*[.!。]?$/u,
+  /^(?:transférer|transférez|virer|virez|virement|transfert)\s+(?:vers|sur|à|au)\s+(?:\S+\s+){0,2}?compte(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  // r4 (cu-developer-three 03:00Z): the send verbs ask here only with a money object ('Enviar a mi cuenta de correo' is a generic send, submit
+  // as 'Send to my email'); the transfer verbs and the noun-led forms keep the slot
+  /^(?:(?:transferir|transfiere|transfiera|transferencia)\s+(?:dinero\s+|fondos\s+)?|(?:enviar|envía|envíe)\s+(?:dinero|fondos)\s+)(?:a|al|para|en)\s+(?:\S+\s+){0,2}?cuenta(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:(?:transferir|transfira|transferência)\s+(?:dinheiro\s+|fundos\s+)?|(?:enviar|envie)\s+(?:dinheiro|fundos)\s+)(?:a|à|ao|para)\s+(?:\S+\s+){0,2}?conta(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:(?:trasferisci|trasferire|bonifico|trasferimento)\s+(?:denaro\s+|soldi\s+|fondi\s+)?|(?:invia|inviare)\s+(?:denaro|soldi|fondi)\s+)(?:sul|al|su|a|nel)\s+(?:\S+\s+){0,2}?conto(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:auf|an|aufs|ans)\s+(?:\S+\s+){0,2}?\S*konto\s+(?:übertragen|überweisen|transferieren)\s*[.!]?$/iu,
+  /^(?:überweisung|übertragung)\s+(?:auf|an|aufs|ans)\s+(?:\S+\s+){0,2}?\S*konto\s*[.!]?$/iu,
+  new RegExp(`^hesab(?:a|[ıI]ma|[ıI]n[ıI]za)\\s+(?:aktar|aktar[ıI]n|transfer\\s+et|gönder|gönderin)\\s*[.!]?$`, 'iu'),
+  /^(?:立即)?(?:转入|轉入|转到|轉到|转账到|轉帳到)(?:\S{0,6})?(?:账户|帳戶|账号|帳號)\s*[.!。]?$/u,
   // r2: ko bare 이체 / 이체하기 ask (an unambiguous bank transfer; bare Sino-noun = verb, owner ruling 23:57Z)
   /^(?:(?:지금|즉시)\s+)?(?:(?:송금|이체)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?|(?:자금|돈)\s*(?:을|를)?\s*(?:이체|송금|보내기|보내)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?)\s*[.!]?$/u,
   new RegExp(`^(?:para\\s+(?:gönder|gönderin|aktar|aktarın|transfer\\s+et)|havale\\s+yap|sipariş\\s+ver|siparişi\\s+tamamla|siparişi\\s+onayla)\\s*[.!]?$`, 'iu'),
@@ -1808,7 +1827,11 @@ function namesRuMoneyVerbs(name) {
     const any = (words) => `(?:${words.flatMap(folds).join('|')})`
     const verb = any(['отправить', 'отправьте', 'перевести', 'переведите', 'перечислить'])
     const object = any(['деньги', 'средства', 'денежные'])
-    ruMoneyVerbsRegex = new RegExp(`^${verb}\\s+(?:${any(['денежные'])}\\s+)?${object}(?:\\s+\\S+){0,3}?\\s*[.!]?$`, 'iu')
+    // CU-702: 'Перевести на счёт' (transfer to an account) asks purchase, as 'Transfer to account' does (its main-branch permission came
+    // only from the no-class page fallback, CU-706); r2: the noun-led 'Перевод на счёт' too
+    const toAccount = `${any(['на'])}\\s+(?:\\S+\\s+)?${any(['счёт', 'счет', 'карту'])}`
+    const nounLed = `${any(['перевод'])}\\s+${toAccount}(?:\\s+\\S+){0,2}?`
+    ruMoneyVerbsRegex = new RegExp(`^(?:${verb}\\s+(?:(?:${any(['денежные'])}\\s+)?${object}(?:\\s+\\S+){0,3}?|${toAccount}(?:\\s+\\S+){0,2}?)|${nounLed})\\s*[.!]?$`, 'iu')
   }
   return ruMoneyVerbsRegex.test(normaliseName(String(name ?? '')).trim())
 }

@@ -22,3 +22,31 @@ test('CU-699 r2: ko bare 이체, ja 資金を移動, a de / nl recipient slot an
   for (const name of ['이체', '이체하기', '資金を移動', '資金を移動する', 'Geld an Freunde senden', 'Geld an meine Mutter überweisen', 'Geld naar vrienden sturen', 'Maak geld over naar Jan', 'PARA GÖNDERİN', 'Send money to friends']) assert.ok(click(name).includes('purchase'), name)
   for (const name of ['Transférer', 'Перевести', 'Überweisung', '이체 내역', '이체 완료']) assert.ok(!click(name).includes('purchase'), name)
 })
+
+test('CU-702: the ko / ja account-noun transfer forms ask purchase as \'Transfer to account\' / \'Account transfer\'', () => {
+  for (const name of ['계좌 이체', '계좌이체', '계좌로 이체', '계좌로 이체하기', '은행 송금', '口座に振り込む', '口座振替', '口座へ送金する', '銀行口座に振込', 'Transfer to account', 'Account transfer']) assert.ok(click(name).includes('purchase'), name)
+  for (const name of ['계좌', '계좌 이체 내역', '口座', '口座振替済み']) assert.ok(!click(name).includes('purchase'), name)
+})
+
+test('CU-702: the locale transfer-to-account forms ask purchase (go 01:13Z); bare nouns and the bare verbs stay as before', () => {
+  for (const name of ['Transférer vers le compte', 'Virer sur le compte', 'Virer sur mon compte épargne', 'Auf Konto übertragen', 'Auf das Sparkonto übertragen', 'Перевести на счёт', 'Перевести на счет', 'Перевести на карту', 'Hesaba aktar', 'HESABA AKTAR', '转入账户', '转到储蓄账户']) assert.ok(click(name).includes('purchase'), name)
+  for (const name of ['Mon compte', 'Konto', 'Счёт', 'Перевести', '账户']) assert.ok(!click(name).includes('purchase'), name)
+})
+
+test('CU-702 r2: noun-led transfer + account object and the ko possessive / qualifier ask purchase; bare nouns free; translate-to stays no purchase', () => {
+  for (const name of ['Virement vers le compte', 'Virement sur le compte', 'Transferencia a la cuenta', 'Überweisung auf das Konto', 'Bonifico sul conto', 'Перевод на счёт', '내 계좌로 이체하기', '제 계좌로 송금', '은행 계좌로 이체', 'Transfer to my account', 'Transfer to bank account']) assert.ok(click(name).includes('purchase'), name)
+  // bare 'Bonifico' asks purchase on main already, so it is not a control; the translate-to rows (CU-706) must not become purchase
+  for (const name of ['Virement', 'Transferencia', 'Überweisung', 'Перевод', 'Перевести на английский', 'Перевод на английский']) assert.ok(!click(name).includes('purchase'), name)
+})
+
+test('CU-702 r3: every to-account line takes the contractions and a determiner slot of up to two words; ja takes a possessive; page nouns stay free', () => {
+  for (const name of ['Überweisung aufs Konto', 'Aufs Konto überweisen', 'Virer au compte', 'Virement au compte', 'Transferir à conta', 'Transferência à conta', 'Virer sur un autre compte', 'Transférer vers ton compte',
+    'Transferir para a minha conta', 'Bonifico sul proprio conto', 'Trasferisci sul tuo conto', 'Auf unser Konto überweisen', 'Überweisung auf ein anderes Konto', 'Transferir a otra cuenta', 'Transferencia a mi cuenta de ahorros',
+    '自分の口座に振り込む', '私の口座に振り込む']) assert.ok(click(name).includes('purchase'), name)
+  for (const name of ['Mon compte', 'Virement', 'Kontoauszug', 'Überweisung', 'Historique des virements', 'Transferencia', '口座', '自分の口座']) assert.ok(!click(name).includes('purchase'), name)
+})
+
+test('CU-702 r4: generic send to a non-money account stays submit as English \'Send to my email\'; send with a money object and the transfer verbs keep asking purchase', () => {
+  for (const name of ['Enviar a mi cuenta de correo', 'Enviar para a minha conta de e-mail', 'An mein Benutzerkonto senden', 'Invia al tuo conto', 'Send to my email']) assert.ok(!click(name).includes('purchase'), name)
+  for (const name of ['Enviar dinero a mi cuenta', 'Enviar dinheiro para a minha conta', 'Invia denaro sul conto', 'Transferir a otra cuenta', 'Trasferisci sul tuo conto', 'Auf unser Konto überweisen']) assert.ok(click(name).includes('purchase'), name)
+})
