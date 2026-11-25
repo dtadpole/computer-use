@@ -45,3 +45,14 @@ test('CU-788: the near forms keep asking - letting someone in, guest access, and
   assert.match(button('Let anyone join'), /permission/)
   assert.match(sw('Allow guests'), /physical/) // no act follows: unchanged
 })
+
+test('CU-788: a harmless verb that hands over control still asks permission - the act\'s object decides (cu-developer-two)', () => {
+  for (const name of [
+    'Let guests customize permissions', 'Allow everyone to select the owner', 'Allow members to pick an admin', 'Let guests choose who can edit',
+    'Let visitors choose their role', 'Allow guests to select who has access',
+  ]) {
+    assert.match(sw(name), /permission/, name)
+    assert.match(webcb(name), /permission/, `checkbox: ${name}`)
+    assert.match(axcb(name), /permission/, `desktop: ${name}`)
+  }
+})
