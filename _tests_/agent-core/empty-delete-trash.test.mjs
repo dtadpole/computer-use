@@ -66,12 +66,33 @@ test('CU-804 r2: cu-developer-two\'s rows verbatim - ru / ja / zh / ko / tr, and
   }
 })
 
+test('CU-804 r3: cu-researcher\'s r2 rows verbatim - the pending statements in ru / zh / ko / tr, and the rows that ask already', () => {
+  for (const [name, title, description] of [
+    ['Очистить', 'Внимание', 'Все объекты в Корзине будут удалены навсегда.'],
+    ['清倒', '警告', '废纸篓中的所有项目将被永久删除。'],
+    ['비우기', '확인', '휴지통의 모든 항목이 영구적으로 삭제됩니다.'],
+    ['Boşalt', 'Uyarı', "Çöp Sepeti'ndeki tüm öğeler kalıcı olarak silinecek."],
+    ['空にする', '確認', 'ゴミ箱の中身をすべて完全に削除しますか？'],
+    ['空にする', '確認', 'ゴミ箱の中身はすべて完全に削除されます。'],
+    // CU-805 (cu-developer-two's r2 rows, riding r3):
+    ['Очистить', 'Корзина', 'Объекты в Корзине будут удалены безвозвратно и не могут быть восстановлены.'],
+    ['空にする', 'ゴミ箱', 'ゴミ箱内の項目は完全に削除され、元に戻せません。'],
+    ['Empty', 'Warning', 'Everything in the Trash will be deleted forever, and this cannot be undone.'],
+    ['Leeren', 'Achtung', 'Alle Objekte im Papierkorb werden dauerhaft gelöscht; dies lässt sich nicht rückgängig machen.'],
+  ]) {
+    assert.ok(classes(onWeb(name, title, description)).includes('delete'), `web ${name} | ${title} | ${description}`)
+    assert.ok(classes(onDesktop(name, title, description)).includes('delete'), `desktop ${name} | ${title} | ${description}`)
+  }
+})
+
 test('CU-804: near rows stay free of delete - another button, no trash, the past, a negation', () => {
   for (const [name, title, description] of [
     ['Open', 'Trash', 'Are you sure you want to permanently delete the items in the Trash?'],
     ['Empty', 'Search', 'Are you sure you want to permanently delete your search history?'],
     ['Empty', 'Trash', 'The items in the Trash were deleted.'],
     ['Empty', 'Trash', 'The items in the Trash will not be deleted.'],
+    ['Очистить', 'Поиск', 'Очистить историю поиска?'],
+    ['キャンセル', '確認', 'ゴミ箱の中身をすべて完全に削除しますか？'],
   ]) {
     assert.ok(!classes(onWeb(name, title, description)).includes('delete'), `web ${name} | ${title} | ${description ?? ''}`)
   }
