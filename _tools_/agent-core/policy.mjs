@@ -139,6 +139,11 @@ function echoesDialogVerb(name, dialogName) {
   const title = String(dialogName ?? '').trim().toLowerCase().replace(/[¿¡]/g, '')
   if (button === '' || title === '') return false
   const asks = /[?？]\s*$/u.test(title) || /\b(?:the|this|these|those|all|your|my|our|la|le|les|el|los|las|il|lo|gli|i|der|die|das|den|alle|todos|todas|tutti|tutte|tous|toutes)\b/iu.test(title)
+  // CU-800 r2: a Dutch emptying button over a sentence that names the trash and its emptying or removal - a statement too ('De
+  // prullenmand wordt nu leeggemaakt.', 'Alle onderdelen in de prullenbak worden definitief verwijderd.') - echoes it, though the
+  // determiner list above is not Dutch (CU-803 widens that list in general).
+  if (/^(?:legen|leegmaken|leeghalen|leegruimen|ledigen|leeg\s+(?:maken|halen|ruimen))$/u.test(button) && /(?<!\p{L})(?:prullen(?:bak|mand)|vuil(?:nis)?bak)(?!\p{L})/u.test(title)
+    && /(?<!\p{L})(?:geleegd|leeg\s?(?:ge)?maakt|leeg\s?(?:ge)?haald|leeg\s?(?:ge)?ruimd|geledigd|leeg\s?maken|leeg\s?halen|legen|verwijderd|gewist|weggehaald)(?!\p{L})/u.test(title)) return true
   if (!asks) return false
   if (ECHO_CJK.test(button)) {
     // A CJK verb: one to four characters (a trailing する / します / 하기 dropped); its first two characters stand in the title.
