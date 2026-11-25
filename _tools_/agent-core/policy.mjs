@@ -143,7 +143,9 @@ const ECHO_CJK = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script
 const EMPTYING_BUTTON = /^(?:empty|empty\s+now|leeren|entleeren|ausleeren|vider|vaciar|svuota|svuotare|esvaziar|legen|leegmaken|leeghalen|leegruimen|ledigen|leeg\s+(?:maken|halen|ruimen)|очистить|空にする|清倒|倒空|清空|비우기|boşalt)$/u
 const TRASH_NOUN = /(?<!\p{L})(?:trash|bin|recycle\s+bin|papierkorb|mülleimer|abfalleimer|corbeille|papelera|cestino|lixeira|lixo|prullenbak|prullenmand|vuilnisbak|vuilbak|корзин[аеуыой]|корзиной|çöp)(?!\p{L})|ゴミ箱|废纸篓|廢紙簍|回收站|휴지통/iu
 const TRASH_DELETE_VERB = /(?<!\p{L})(?:delete|deleted|erase|erased|remove|removed|löschen|gelöscht|entfernen|entfernt|supprimer|supprimée?s?|effacer|effacée?s?|eliminar|eliminad[oa]s?|borrar|borrad[oa]s?|eliminare|eliminat[oiae]|cancellare|cancellat[oiae]|excluir|excluíd[oa]s?|apagar|apagad[oa]s?|verwijderen|verwijderd|wissen|gewist|удалить|удалены|удалён|удалено|удалятся|удалит|стереть|стёрты|silmek|silinecek|silinsin|silinsin mi)(?!\p{L})|削除|删除|刪除|삭제/iu
-const TRASH_PENDING = /[?？]\s*$|(?<!\p{L})(?:will|would|wird|werden|sera|seront|será|serán|verrà|verranno|serão|wordt|worden|zal|zullen)(?!\p{L})/iu
+// r3 (cu-researcher's r2 set and cu-developer-two's CU-805 rows; cu-coordinator 10:41Z / 10:43Z, final): the pending statement in ru / ja / zh / ko / tr too - 'будут удалены',
+// '削除されます', '将被永久删除', '삭제됩니다', 'silinecek'.
+const TRASH_PENDING = /[?？]\s*$|(?<!\p{L})(?:will|would|wird|werden|sera|seront|será|serán|verrà|verranno|serão|wordt|worden|zal|zullen|будут|будет|silinecek(?:tir)?|silinir)(?!\p{L})|されます|します|削除され|将被|將被|将|將|会被|會被|됩니다|합니다/iu
 const TRASH_NEGATION = /(?<!\p{L})(?:not|never|nicht|nie|kein|keine|ne|pas|jamais|no|nunca|non|mai|não|niet|nooit|geen)(?!\p{L})|n['’]t(?!\p{L})/iu
 function emptiesTrashByDelete(name, sentence) {
   const button = String(name ?? '').trim().toLowerCase()
