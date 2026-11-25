@@ -34,3 +34,27 @@ test('CU-804: the filed rows, verbatim, ask delete on both routes', () => {
     assert.ok(classes(onDesktop(name, title, description)).includes('delete'), `desktop ${name} | ${title} | ${description ?? ''}`)
   }
 })
+
+test('CU-804: the class - other covered languages, title or description, a pending statement', () => {
+  for (const [name, title, description] of [
+    ['Leeren', 'Papierkorb', 'Möchten Sie die Objekte im Papierkorb wirklich endgültig löschen?'],
+    ['Vider', 'Corbeille', 'Voulez-vous vraiment supprimer définitivement les éléments de la corbeille ?'],
+    ['Vaciar', '¿Seguro que quieres eliminar definitivamente los elementos de la papelera?'],
+    ['Svuota', 'Cestino', 'Vuoi eliminare definitivamente gli elementi nel cestino?'],
+    ['Legen', 'Weet je zeker dat je de items in de prullenbak wilt verwijderen?'],
+    ['Empty', 'Trash', 'All items in the Trash will be permanently erased.'],
+  ]) {
+    assert.ok(classes(onWeb(name, title, description)).includes('delete'), `web ${name} | ${title} | ${description ?? ''}`)
+  }
+})
+
+test('CU-804: near rows stay free of delete - another button, no trash, the past, a negation', () => {
+  for (const [name, title, description] of [
+    ['Open', 'Trash', 'Are you sure you want to permanently delete the items in the Trash?'],
+    ['Empty', 'Search', 'Are you sure you want to permanently delete your search history?'],
+    ['Empty', 'Trash', 'The items in the Trash were deleted.'],
+    ['Empty', 'Trash', 'The items in the Trash will not be deleted.'],
+  ]) {
+    assert.ok(!classes(onWeb(name, title, description)).includes('delete'), `web ${name} | ${title} | ${description ?? ''}`)
+  }
+})
