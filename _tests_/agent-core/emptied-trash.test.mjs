@@ -26,10 +26,12 @@ const asks = (rows) => { for (const [n, t, d] of rows) { assert.ok(classes(onWeb
 const free = (rows) => { for (const [n, t, d] of rows) { assert.ok(!classes(onWeb(n, t, d)).includes('delete'), `web ${n} | ${t} | ${d ?? ''}`); assert.ok(!classes(onDesktop(n, t, d)).includes('delete'), `desktop ${n} | ${t} | ${d ?? ''}`) } }
 
 
-test('CU-814: the filed English rows, verbatim, ask delete on both routes', () => {
+// The filed rows (button 'Empty Trash', 16:59Z) now ask on main by the button name alone (cu-verifier's repro 22:47Z), so the
+// English rows take the generic-button shape cu-researcher named (22:50Z): 'Empty' with the trash in the title or the sentence.
+test('CU-814: the generic emptying button over the pending English statement asks delete on both routes', () => {
   asks([
-    ['Empty', 'Empty Trash', 'The items in the Trash will be emptied.'],
-    ['Empty', 'Empty Trash', 'The Trash will be emptied.'],
+    ['Empty', 'Trash', 'The Trash will be emptied.'],
+    ['Empty', 'Trash', 'The items in the Trash will be emptied.'],
   ])
 })
 
