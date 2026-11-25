@@ -127,3 +127,44 @@ test('CU-804 r4: a ru pending statement asks delete only - no permission on the 
     assert.deepEqual(classes(onDesktop(name, title, description)), ['delete'], `desktop ${name} | ${title} | ${description}`)
   }
 })
+
+test('CU-805 r2: the marker table - the delete / erase / remove families ask when pending (cu-verifier, cu-developer-two, cu-researcher r1 rows)', () => {
+  for (const [name, title, description] of [
+    ['清倒', '废纸篓', '废纸篓中的所有项目将被不可恢复地删除。'],
+    ['清倒', '废纸篓', '废纸篓中的项目将被不可撤销地永久删除。'],
+    ['空にする', 'ゴミ箱', 'ゴミ箱内の項目は完全に削除されてしまいます。'],
+    ['Очистить', 'Корзина', 'Всё содержимое Корзины будет стёрто.'],
+    ['Очистить', 'Корзина', 'Объекты в Корзине будут уничтожены навсегда.'],
+    ['清倒', '废纸篓', '废纸篓中的项目将被删掉。'],
+    ['空にする', 'ゴミ箱', 'ゴミ箱内の項目は完全に消去されます。'],
+    ['비우기', '휴지통', '휴지통의 항목이 모두 지워집니다.'],
+    ['비우기', '휴지통', '휴지통의 항목이 영구적으로 제거됩니다.'],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler kalıcı olarak kaldırılacak."],
+  ]) {
+    assert.ok(classes(onWeb(name, title, description)).includes('delete'), `web ${name} | ${title} | ${description}`)
+    assert.ok(classes(onDesktop(name, title, description)).includes('delete'), `desktop ${name} | ${title} | ${description}`)
+  }
+})
+
+test('CU-805 r2: the marker table - negated and past twins of every family stay free (cu-verifier\'s four over-asks verbatim)', () => {
+  for (const [name, title, description] of [
+    ['空にする', 'ゴミ箱', 'ゴミ箱内の項目は削除されず、元に戻せます。'],
+    ['空にする', 'ゴミ箱', 'ゴミ箱内の項目が削除されたことをお知らせします。'],
+    ['비우기', '휴지통', '휴지통의 항목이 삭제되었음을 확인합니다.'],
+    ['清倒', '废纸篓', '已将废纸篓中的项目永久删除。'],
+    ['Очистить', 'Корзина', 'Объекты в Корзине удалены.'],
+    ['Очистить', 'Корзина', 'Объекты в Корзине не будут стёрты.'],
+    ['Очистить', 'Корзина', 'Объекты в Корзине были уничтожены.'],
+    ['空にする', 'ゴミ箱', 'ゴミ箱内の項目は消去されました。'],
+    ['空にする', 'ゴミ箱', 'ゴミ箱内の項目は消去されません。'],
+    ['清倒', '废纸篓', '废纸篓中的项目不会被删掉。'],
+    ['清倒', '废纸篓', '废纸篓中的项目已被清除。'],
+    ['비우기', '휴지통', '휴지통의 항목은 지워지지 않습니다.'],
+    ['비우기', '휴지통', '휴지통의 항목이 제거되었습니다.'],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler kaldırılmayacak."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler kaldırıldı."],
+  ]) {
+    assert.ok(!classes(onWeb(name, title, description)).includes('delete'), `web ${name} | ${title} | ${description}`)
+    assert.ok(!classes(onDesktop(name, title, description)).includes('delete'), `desktop ${name} | ${title} | ${description}`)
+  }
+})
