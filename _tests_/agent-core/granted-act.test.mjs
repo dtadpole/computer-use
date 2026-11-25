@@ -59,4 +59,6 @@ test('CU-788: a harmless verb on anything but a display preference still asks pe
   }
   // Switching off a camera asks physical (the guarded device), as on main.
   for (const check of [sw, webcb, axcb]) assert.match(check('Allow visitors to switch off the camera'), /physical/)
+  // A bare harmless verb names no display preference: it keeps the ask (cu-developer-two's r3 note).
+  for (const name of ['Allow guests to choose', 'Let visitors select']) assert.notEqual(sw(name), 'allow', name)
 })

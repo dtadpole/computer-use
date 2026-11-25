@@ -218,12 +218,13 @@ function grantedAct(verb, rest) {
   if (rest[i + 1] === 'to') return rest[i + 2] ?? null
   return verb === 'let' ? (rest[i + 1] ?? null) : null
 }
-/** CU-788: the granted act is harmless - a harmless verb followed only by display-preference words. */
+/** CU-788: the granted act is harmless - a harmless verb followed by a display preference and nothing else. */
 function harmlessGrant(verb, rest) {
   const act = grantedAct(verb, rest)
   if (!HARMLESS_ACTS.has(act)) return false
   const after = rest.slice(rest.indexOf(act) + 1)
-  return after.every((t) => HARMLESS_OBJECTS.has(t) || HARMLESS_FILL.has(t))
+  // A bare harmless verb ('Allow guests to choose') names no display preference, so it keeps the ask (cu-developer-two, r3).
+  return after.some((t) => HARMLESS_OBJECTS.has(t)) && after.every((t) => HARMLESS_OBJECTS.has(t) || HARMLESS_FILL.has(t))
 }
 
 function verbOf(list) {
