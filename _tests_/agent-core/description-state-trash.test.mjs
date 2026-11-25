@@ -58,6 +58,12 @@ test('CU-790: the class - a description in other languages and shapes, the run-t
     ['Vaciar', 'Aviso', '¿Se quitarán todos los elementos de la papelera?'],
     ['Empty', 'Notice', 'Will everything be removed from the trash?'],
     ['Svuota', 'Avviso', 'Gli elementi saranno rimossi dal cestino?'],
+    // the removal participles of each language, not one per language (cu-researcher's r3 row).
+    ['Vider', 'Attention', 'Tous les fichiers seront-ils enlevés de la corbeille ?'],
+    ['Leeren', 'Hinweis', 'Werden danach alle Dateien aus dem Papierkorb beseitigt?'],
+    ['Vaciar', 'Aviso', '¿Serán sacados todos los archivos de la papelera?'],
+    ['Esvaziar', 'Aviso', 'Os arquivos serão tirados da lixeira?'],
+    ['Legen', 'Melding', 'Worden alle bestanden uit de prullenbak weggehaald?'],
   ]) {
     assert.ok(classes(onWeb(name, title, description)).includes('delete'), `web ${title} ${description ?? ''}`)
   }
