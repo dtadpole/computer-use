@@ -45,5 +45,10 @@ test('CU-807: negated, past and resultative twins of the connectives stay free',
     ['비우기', '휴지통', '휴지통의 항목이 삭제되었으며 복구할 수 없습니다.'],
     ['비우기', '휴지통', '휴지통의 항목이 이미 삭제되어 있습니다.'],
     ['비우기', '휴지통', '휴지통의 항목이 지워졌고 비어 있습니다.'],
+    // r2: cu-developer-two's three over-asks verbatim - the progressive, the state and the concessive.
+    ['비우기', '휴지통', '휴지통의 항목이 지금 삭제되고 있습니다.'],
+    ['비우기', '휴지통', '휴지통의 항목이 이미 삭제되고 없습니다.'],
+    ['비우기', '휴지통', '휴지통의 항목은 삭제되어도 복구할 수 있습니다.'],
+    ['비우기', '휴지통', '휴지통의 항목은 지워져도 복구할 수 있습니다.'],
   ])
 })
