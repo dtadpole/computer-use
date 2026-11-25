@@ -205,12 +205,16 @@ function localeTrashPending(text) {
   }
   return null
 }
-function emptiesTrashByDelete(name, sentence) {
+// CU-818 (the table cu-researcher OK'd 19:58Z): a description sentence under a title that names the trash counts as naming it
+// too - but only when it speaks of the trash's items (an item noun or a pronoun), never a sentence that names another object
+// ('Your search history will also be deleted.').
+const TRASH_ITEM_NOUN = /(?<!\p{L})(?:items?|files?|documents?|contents?|objects?|everything|all|they|them|these|it|elemente?|objekte|dateien|alles|alle|éléments?|fichiers?|tout|tous|elementos?|archivos?|todo|todos|elementi|tutto|tutti|itens|arquivos|tudo|onderdelen|bestanden|items|объекты|файлы|элементы|всё|все|öğeler|dosyalar|tümü)(?!\p{L})|項目|ファイル|書類|すべて|全て|项目|文件|所有|全部|항목|파일|모든|전부/iu
+function emptiesTrashByDelete(name, sentence, titleNamesTrash = false) {
   const button = String(name ?? '').trim().toLowerCase()
   const text = String(sentence ?? '').trim()
   // A judged name has passed the Cyrillic homoglyph fold ('Очистить' -> 'Oчиcтить'), so the Russian button is matched folded too.
   const ruButton = ['очистить', 'Очистить', 'ОЧИСТИТЬ'].map((form) => normaliseName(normaliseText(form))).includes(normaliseName(String(name ?? '')))
-  if (!(EMPTYING_BUTTON.test(button) || ruButton) || !TRASH_NOUN.test(text)) return false
+  if (!(EMPTYING_BUTTON.test(button) || ruButton) || !(TRASH_NOUN.test(text) || (titleNamesTrash && TRASH_ITEM_NOUN.test(text)))) return false
   const local = localeTrashPending(text)
   if (local !== null) return local
   const verb = TRASH_DELETE_VERB.exec(text)
@@ -5133,7 +5137,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       const finalStep = FINAL_STEP_CONFIRM.test(String(name ?? '')) || echoesDialogVerb(name, dialogName) || echoesDialogVerb(target?.name, dialogName)
         || dialogDescription.split(/(?<=[.!?。！？])\s*/u).some((sentence) => sentence !== '' && (echoesDialogVerb(name, sentence) || echoesDialogVerb(target?.name, sentence)))
       // CU-804: an emptying button under a trash permanent-delete question or pending statement.
-      const emptiesTrash = [dialogName, ...dialogDescription.split(/(?<=[.!?。！？])\s*/u)].some((sentence) => sentence !== '' && (emptiesTrashByDelete(name, sentence) || emptiesTrashByDelete(target?.name, sentence)))
+      // CU-818: a title that names the trash lends it to the description's item sentences.
+      const titleNamesTrash = TRASH_NOUN.test(String(dialogName ?? ''))
+      const emptiesTrash = [dialogName, ...dialogDescription.split(/(?<=[.!?。！？])\s*/u)].some((sentence) => sentence !== '' && (emptiesTrashByDelete(name, sentence, titleNamesTrash) || emptiesTrashByDelete(target?.name, sentence, titleNamesTrash)))
       // CU-757: 'Allow' / 'Grant' / 'Give access' (and localized) in a dialog whose title or a kept sentence states access asks
       // permission and takes the dialog's other classes too; the same button in a dialog that states no access is unchanged.
       const accessAllow = ACCESS_ALLOW.test(String(target?.name ?? '')) || ACCESS_ALLOW.test(String(name ?? ''))

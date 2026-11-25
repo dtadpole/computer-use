@@ -28,3 +28,25 @@ const free = (rows) => { for (const [n, t, d] of rows) { assert.ok(!classes(onWe
 test('CU-818: the filed row, verbatim, asks delete on both routes', () => {
   asks([['Empty', 'Trash', 'The items will be permanently deleted, so they cannot be recovered.']])
 })
+
+test('CU-818: a title naming the trash lends it to the description\'s item sentences, in every covered language', () => {
+  asks([
+    ['Leeren', 'Papierkorb', 'Die Objekte werden endgültig gelöscht.'],
+    ['空にする', 'ゴミ箱', '項目は完全に削除されます。'],
+    ['비우기', '휴지통', '항목이 영구적으로 삭제됩니다.'],
+    ['Empty', 'Trash', 'This cannot be undone. Everything will be permanently deleted.'],
+  ])
+})
+
+test('CU-818: negated, past, past-event, conditional, other-object, no-trash-title and mismatched-button rows stay free', () => {
+  free([
+    ['Empty', 'Trash', 'The items will not be deleted.'],
+    ['Empty', 'Trash', 'The items were permanently deleted.'],
+    ['Empty', 'Trash', 'The items were deleted by mistake, so they could not be recovered.'],
+    ['Empty', 'Trash', 'Some items were deleted by mistake yesterday.'],
+    ['Empty', 'Trash', 'If the items are deleted, they cannot be recovered.'],
+    ['Empty', 'Trash', 'Your search history will also be deleted.'],
+    ['Empty', 'Notice', 'The items will be permanently deleted.'],
+    ['Cancel', 'Trash', 'The items will be permanently deleted.'],
+  ])
+})
