@@ -178,8 +178,9 @@ const TRASH_LOCALE = [
   { // ko
     verb: new RegExp(`${KO_STEM}|지우|지워|지웁|지웠`, 'u'),
     negation: new RegExp(`${KO_STEM}(?:되|하)지\\s*(?:않|못)|${KO_STEM}\\s*안\\s|지워지지\\s*(?:않|못)|지우지\\s*(?:않|못)`, 'u'),
-    past: new RegExp(`${KO_STEM}(?:되었|됐|했)|지워졌|지웠`, 'u'),
-    pending: new RegExp(`${KO_STEM}(?:됩니다|합니다|될\\s*것입니다|될\\s*예정입니다|되게\\s*됩니다|되겠습니다|될\\s*것이다|된다)|지워집니다|지웁니다|지워질\\s*것입니다|지워지게\\s*됩니다|지워지겠습니다|지워진다`, 'u'),
+    past: new RegExp(`${KO_STEM}(?:되었|됐|했|되어\\s*있|돼\\s*있)|지워졌|지웠|지워져\\s*있`, 'u'),
+    // CU-807: a connective joining the delete verb to a following clause ('삭제되며 복구할 수 없습니다', -되고 / -되어 / -돼 / -되니 / -되므로).
+    pending: new RegExp(`${KO_STEM}(?:됩니다|합니다|될\\s*것입니다|될\\s*예정입니다|되게\\s*됩니다|되겠습니다|될\\s*것이다|된다|되며|되고|되어|돼|되니|되므로|하며|하고)|지워집니다|지웁니다|지워질\\s*것입니다|지워지게\\s*됩니다|지워지겠습니다|지워진다|지워지며|지워지고|지워져|지워지니`, 'u'),
   },
   { // tr
     verb: /(?<!\p{L})(?:sil|kaldır|yok\s+ed)\p{L}*/iu,

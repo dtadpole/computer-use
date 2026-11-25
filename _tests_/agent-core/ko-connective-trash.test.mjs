@@ -27,3 +27,23 @@ const free = (rows) => { for (const [n, t, d] of rows) { assert.ok(!classes(onWe
 test('CU-807: the filed row, verbatim, asks delete on both routes', () => {
   asks([['비우기', '휴지통의 항목이 영구적으로 삭제되며 복구할 수 없습니다.']])
 })
+
+test('CU-807: the class - every Korean connective after the delete verb asks, in the title or the description', () => {
+  asks([
+    ['비우기', '휴지통', '휴지통의 모든 항목이 삭제되고 복원할 수 없습니다.'],
+    ['비우기', '휴지통', '휴지통의 항목이 영구적으로 삭제되어 되돌릴 수 없습니다.'],
+    ['비우기', '휴지통', '휴지통의 항목이 삭제되니 주의하세요.'],
+    ['비우기', '휴지통', '휴지통의 항목이 모두 지워지며 복구할 수 없습니다.'],
+    ['비우기', '휴지통', '휴지통의 항목이 제거되므로 되돌릴 수 없습니다.'],
+  ])
+})
+
+test('CU-807: negated, past and resultative twins of the connectives stay free', () => {
+  free([
+    ['비우기', '휴지통', '휴지통의 항목은 삭제되지 않으며 그대로 남습니다.'],
+    ['비우기', '휴지통', '휴지통의 항목은 삭제되지 않고 보관됩니다.'],
+    ['비우기', '휴지통', '휴지통의 항목이 삭제되었으며 복구할 수 없습니다.'],
+    ['비우기', '휴지통', '휴지통의 항목이 이미 삭제되어 있습니다.'],
+    ['비우기', '휴지통', '휴지통의 항목이 지워졌고 비어 있습니다.'],
+  ])
+})
