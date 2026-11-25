@@ -103,6 +103,15 @@ test('CU-804: near rows stay free of delete - another button, no trash, the past
     ['비우기', '휴지통', '휴지통의 항목은 삭제되지 않습니다.'],
     ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler silinmeyecek."],
     ['空にする', 'ゴミ箱', 'ゴミ箱内の項目は削除されました。'],
+    // CU-805: the over-asks found on #1474 r4 (cu-researcher's zh row, cu-developer-two's two ja rows), verbatim, and past siblings.
+    ['清倒', '废纸篓', '废纸篓里的文件将不会被永久删除。'],
+    ['空にする', 'ゴミ箱', 'ゴミ箱内の項目が削除されることはありません。'],
+    ['空にする', 'ゴミ箱', 'ゴミ箱内の項目はすでに削除されています。'],
+    ['空にする', 'ゴミ箱', 'ゴミ箱内の項目は削除された。'],
+    ['Очистить', 'Корзина', 'Объекты в Корзине были удалены.'],
+    ['清倒', '废纸篓', '废纸篓中的项目已被删除。'],
+    ['비우기', '휴지통', '휴지통의 항목이 삭제되었습니다.'],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler silindi."],
     ['キャンセル', '確認', 'ゴミ箱の中身をすべて完全に削除しますか？'],
   ]) {
     assert.ok(!classes(onWeb(name, title, description)).includes('delete'), `web ${name} | ${title} | ${description ?? ''}`)
