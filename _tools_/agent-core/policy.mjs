@@ -279,6 +279,9 @@ const WIDER = String.raw`(?:${OUTSIDERS}|(?:everyone|anyone|people|users|members
 // A place others browse: a marketplace or app store, a public or community gallery, an explore / discover page. A bare
 // 'gallery' or 'store' can be the owner's own view ('Show my photos in the gallery') and stays out.
 const PUBLIC_PLACE = String.raw`(?:the\s+|our\s+)?(?:(?:site'?s?\s+|public\s+)?(?:home\s*page|front\s+page|landing\s+page|main\s+page|start\s+page)|featured\s+(?:section|list|page|row)|marketplace|market|app\s+store|public\s+(?:store|gallery|showcase|feed|catalog(?:ue)?)|community(?:\s+(?:page|feed|gallery|showcase))?|explore(?:\s+(?:page|tab|feed))?|discover(?:y)?(?:\s+(?:page|tab|feed))?|leaderboard)`
+// CU-783 r2: an act granted to an audience - any verb, optionally with its particle ('comment on', 'reply to', 'look at'),
+// never a negation.
+const GRANTED_ACT = String.raw`(?!(?:not|never|no)\b)[a-z][\w'-]*(?:\s+(?:on|to|with|at|through|in|into|from|about|for))?`
 const EXPOSED_TOGGLE = new RegExp('^\\s*(?:' + [
   // 'Show my contact card to people outside the team', 'Share my portfolio with strangers'; CU-783: any owned thing, and the
   // exposure verbs that read as a send - 'Publish my availability to all clients', 'Broadcast my status to all followers'
@@ -286,6 +289,13 @@ const EXPOSED_TOGGLE = new RegExp('^\\s*(?:' + [
   // 'Let strangers view my portfolio', 'Allow guests to see my profile'
   // CU-783: any owned thing - 'Let any visitor browse my albums', 'Allow non-friends to see my posts'
   String.raw`(?:let|allow)\s+${WIDER}\s+(?:to\s+)?(?:see|view|browse|read|find|access|download|look\s+at)\s+${OWN_ANY}`,
+  // r2 (cu-researcher's held-out miss 'Permit non-contacts to view my photos'): any granting verb, and any act the wider
+  // audience is granted over the owner's things - 'Enable non-followers to comment on my posts', 'Authorize people outside my
+  // network to download my files'. A protective act (block / hide / prevent / stop ... from) leads with no granting verb and
+  // stays free.
+  String.raw`(?:let|allow|permit|enable|authori[sz]e|empower|invite)\s+${WIDER}\s+(?:to\s+)?${GRANTED_ACT}\s+${OWN_ANY}`,
+  // r2: access given outright - 'Give non-friends access to my albums', 'Grant everyone except my team access to my files'
+  String.raw`(?:give|grant|offer)\s+${WIDER}\s+(?:(?:full|read|view(?:ing)?|edit(?:ing)?|download)\s+)?(?:access|permission|rights?)\s+(?:to|on|for)\s+${OWN_ANY}`,
   // 'Include me in the staff list visible to guests', 'Add my profile to the team page shown to visitors'
   String.raw`(?:include|list|add|show|feature|put|publish)\s+${OWN_WORK}\s+(?:in|on|to)\s+(?:the\s+|our\s+)?(?:[a-z'-]+\s+){0,3}(?:list|roster|directory|page|feed|gallery|showcase|board)\s+(?:that\s+is\s+|that's\s+)?(?:visible|shown|available|open)\s+to\s+${WIDER}`,
   // 'List my shop in the marketplace', 'Feature my portfolio on the explore page', 'Publish my designs to the community gallery'
@@ -295,6 +305,8 @@ const EXPOSED_TOGGLE = new RegExp('^\\s*(?:' + [
   String.raw`(?:feature|showcase|spotlight|highlight|promote)(?:\s+${OWN_ANY})?\s+(?:in|on|to)\s+${PUBLIC_PLACE}`,
   // r2: the audience as the subject - 'Non-members can see my profile', 'Everyone with an account can view my posts'
   String.raw`${WIDER}\s+(?:can|may)\s+(?:see|view|browse|read|find|access|look\s+at)\s+${OWN_ANY}`,
+  // r2: the audience as the subject with any granted act - 'Non-subscribers may reply to my stories' ('cannot' / "can't" stay out)
+  String.raw`${WIDER}\s+(?:can|may|(?:are|is)\s+(?:allowed|able|free)\s+to)\s+${GRANTED_ACT}\s+${OWN_ANY}`,
   // r2: the bare state - 'Visible to everyone with an account', 'Open to the whole company', 'Shown to non-members'
   String.raw`(?:visible|viewable|accessible|shown|open|available)\s+(?:to|by)\s+${WIDER}`,
   // 'My portfolio is visible to strangers', 'Profile visible to guests'

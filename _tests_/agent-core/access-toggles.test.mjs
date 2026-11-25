@@ -261,3 +261,23 @@ test('CU-783: the other side - already on, the owner\'s own circle, and no audie
     assert.equal(webcb(name, false), 'allow', name)
   }
 })
+
+test('CU-783 r2: an audience named by exclusion with any granting verb over the owner\'s things asks; protective acts stay free', () => {
+  // cu-researcher's held-out miss at r1, verbatim (web switch, off, clicked).
+  assert.match(sw('Permit non-contacts to view my photos', false), /permission/)
+  for (const name of [
+    'Enable non-followers to comment on my posts', 'Authorize people outside my network to download my files',
+    'Give non-friends access to my albums', 'Non-subscribers may reply to my stories', 'Invite non-members to edit my document',
+  ]) {
+    assert.match(webcb(name, false), /permission/, name)
+    assert.match(space(name, false), /permission/, `Space: ${name}`)
+  }
+  // Protective acts lead with no granting verb (or negate it) and stay free; the owner's circle stays free.
+  for (const name of [
+    'Block non-contacts from viewing my photos', 'Hide my photos from non-contacts', 'Prevent non-friends from commenting on my posts',
+    'Non-friends cannot see my posts', "Don't let non-followers see my stories", 'Allow friends to comment on my posts',
+  ]) {
+    assert.equal(webcb(name, false), 'allow', name)
+  }
+  assert.equal(webcb('Permit non-contacts to view my photos', true), 'allow') // already on (a native checkbox read)
+})
