@@ -160,7 +160,9 @@ enum EndWatchdog {
     // marker (a button held with no drag state known is treated as a drag, so Escape goes first).
     let snapshot = mirror.trySnapshot(timeout: 0.1) ?? HeldMirror.fromMarker(markerPath)
     let steps = HeldMirror.releaseSteps(keys: snapshot.keys, buttons: snapshot.buttons, dragged: snapshot.dragged, at: SystemCapabilities.pointerNow())
-    SystemCapabilities.postReleaseNow(steps, progress: progress)
+    // CU-744: the cancel Escape goes to the driven app's pid only - none from the marker, which names no target.
+    let cancelSteps = snapshot.dragged && !snapshot.buttons.isEmpty ? 2 : 0
+    SystemCapabilities.postReleaseNow(steps, progress: progress, cancelSteps: cancelSteps, cancelPid: mirror.tryTarget(timeout: 0.05))
   }
 
   /// How long the watchdog waits for its release before it exits anyway: a wedged WindowServer can block a post.
@@ -222,6 +224,28 @@ final class HeldMirror: @unchecked Sendable {
   private var buttons: [MouseButton] = []
   /// A held button has moved since its down: a drag in flight, which a bare up would drop.
   private var dragged = false
+  /// CU-744: the pid of the app the held input went to (0 = none known), so the watchdog's cancel Escape reaches it only.
+  private var target: pid_t = 0
+
+  /// At the start of an input, the app it is posted for.
+  func setTarget(_ pid: pid_t) {
+    os_unfair_lock_lock(&lock)
+    target = pid
+    os_unfair_lock_unlock(&lock)
+  }
+
+  /// The watchdog's read of the target: try-locked like `trySnapshot`; 0 when busy or unknown.
+  func tryTarget(timeout: TimeInterval) -> pid_t {
+    let deadline = Date().addingTimeInterval(timeout)
+    repeat {
+      if os_unfair_lock_trylock(&lock) {
+        defer { os_unfair_lock_unlock(&lock) }
+        return target
+      }
+      usleep(1_000)
+    } while Date() < deadline
+    return 0
+  }
 
   /// Before a step is posted: a down adds what it presses.
   func willPost(_ step: InputEvent) {
