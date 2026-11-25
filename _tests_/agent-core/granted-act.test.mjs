@@ -51,10 +51,12 @@ test('CU-788: a harmless verb on anything but a display preference still asks pe
     'Let guests customize permissions', 'Allow everyone to select the owner', 'Allow members to pick an admin', 'Let guests choose who can edit',
     'Let visitors choose their role', 'Allow guests to select who has access',
     // r3 (cu-developer-two's r2 review): a device or content after the harmless verb is a grant too.
-    'Allow everyone to toggle the alarm', 'Allow visitors to switch off the camera', 'Allow everyone to preview the documents',
+    'Allow everyone to toggle the alarm', 'Allow everyone to preview the documents',
   ]) {
     assert.match(sw(name), /permission/, name)
     assert.match(webcb(name), /permission/, `checkbox: ${name}`)
     assert.match(axcb(name), /permission/, `desktop: ${name}`)
   }
+  // Switching off a camera asks physical (the guarded device), as on main.
+  for (const check of [sw, webcb, axcb]) assert.match(check('Allow visitors to switch off the camera'), /physical/)
 })
