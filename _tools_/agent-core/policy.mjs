@@ -491,6 +491,92 @@ export function modalStatementNames(text) {
 // CU-771: Turkish confirm words too (Tamam, Evet, Devam (et), Onayla, Kabul et, Uygula, Bitti, Tamamla, İleri, Sonraki).
 const LOCALE_CONFIRM_WORD = String.raw`(?:ja|jawohl|ok|okay|bestätigen|bestaetigen|weiter|fortfahren|übernehmen|zustimmen|akzeptieren|einverstanden|verstanden|fertig|anwenden|oui|confirmer|continuer|valider|accepter|d['’]accord|appliquer|terminé|sí|si|aceptar|confirmar|continuar|de\s+acuerdo|vale|aplicar|listo|sì|conferma|confermare|continua|accetta|procedi|va\s+bene|applica|fatto|sim|aceitar|prosseguir|concluir|bevestigen|doorgaan|akkoord|accepteren|toepassen|verder|да|ок|подтвердить|продолжить|принять|согласен|согласна|применить|готово|хорошо|はい|確認|続行|同意する|同意|適用|完了|了解|是|是的|确定|確定|确认|继续|繼續|好|好的|应用|應用|完成|예|네|확인|계속|동의|적용|완료|続ける|続けて|次へ|進む|終了|suivant|terminer|siguiente|finalizar|terminar|avanti|fine|fertigstellen|abschließen|abschliessen|далее|завершить|下一步|继续操作|繼續操作|다음|마침|tamam|evet|devam|devam\s+et|onayla|kabul\s+et|uygula|bitti|tamamla|ileri|sonraki)`
 const LOCALE_GENERIC_CONFIRM = new RegExp(String.raw`^\s*${LOCALE_CONFIRM_WORD}(?:\s*[,、，]\s*${LOCALE_CONFIRM_WORD})?\s*[.!。！]?\s*$`, 'iu')
+// CU-749 (cu-researcher's sweep 5): the system localises an NSAlert's or a browser dialog's own buttons (OK / Yes / Confirm /
+// Continue) in its UI language while the app's text stays English - 'Delete this repository?' + 'نعم', 'Buy 1,000 coins for $9.99?' +
+// 'אישור', 'Delete this project?' + 'Tak'. So the affirmative, OK, confirm, continue, accept, agree, apply, done, next and finish
+// words of the system languages macOS ships beyond the covered ones, and of the larger web locales (ar fa ur he pl sv da nb is fi
+// et cs sk hu ro hr sr bs sl lt lv ca tr uk bg mk kk el hy ka vi th id ms tl sw hi bn), read the dialog as the covered ones do. Additions only: a dialog whose text
+// gets no class stays free ('Save changes?' + 'نعم'), and no back-out word is listed ('إلغاء', 'ביטול', 'Anuluj', 'Avbryt').
+// Compared by confirmKey(): Arabic-script words without harakat or tatweel, alef with hamza as bare alef, Arabic yeh / kaf as Persian
+// yeh / keheh; Hebrew without points; Latin and Greek also without accents ('ΕΝΤΑΞΕΙ', 'Potwierdz'); case folded.
+const MORE_CONFIRM_WORDS = [
+  // ar
+  'نعم', 'موافق', 'موافقة', 'اوافق', 'حسنا', 'تاکید', 'اکد', 'متابعة', 'تابع', 'استمرار', 'استمر', 'قبول', 'اقبل', 'تطبیق', 'تم', 'انهاء', 'التالی', 'اوکی',
+  // fa
+  'بله', 'باشه', 'تایید', 'ادامه', 'ادامه دهید', 'موافقم', 'اعمال', 'انجام شد', 'بعدی', 'پایان',
+  // ur
+  'ہاں', 'جی ہاں', 'ٹھیک ہے', 'تصدیق', 'تصدیق کریں', 'جاری رکھیں', 'قبول کریں', 'اگلا', 'منظور',
+  // he
+  'כן', 'אישור', 'אשר', 'אשרו', 'אוקיי', 'אוקי', 'המשך', 'המשיכו', 'להמשיך', 'מסכים', 'מסכימה', 'אני מסכים', 'אני מסכימה', 'קבל', 'קבלה', 'אני מקבל', 'החל', 'סיום', 'סיים', 'בוצע', 'הבא',
+  // pl
+  'tak', 'potwierdź', 'potwierdzam', 'zatwierdź', 'kontynuuj', 'dalej', 'zgadzam się', 'zgoda', 'akceptuję', 'akceptuj', 'zaakceptuj', 'zastosuj', 'gotowe', 'zakończ', 'dobrze',
+  // sv da nb is
+  'bekräfta', 'fortsätt', 'godkänn', 'acceptera', 'jag godkänner', 'jag accepterar', 'verkställ', 'tillämpa', 'klar', 'slutför', 'nästa', 'gå vidare', 'okej',
+  'bekræft', 'fortsæt', 'accepter', 'acceptér', 'godkend', 'jeg accepterer', 'anvend', 'færdig', 'udført', 'næste', 'fuldfør',
+  'bekreft', 'fortsett', 'godta', 'aksepter', 'godkjenn', 'jeg godtar', 'ferdig', 'neste', 'fullfør', 'utfør',
+  'já', 'staðfesta', 'áfram', 'samþykkja', 'í lagi',
+  // fi et
+  'kyllä', 'vahvista', 'jatka', 'hyväksy', 'hyväksyn', 'valmis', 'seuraava', 'selvä',
+  'jah', 'kinnita', 'jätka', 'nõustun', 'nõustu', 'rakenda', 'edasi', 'järgmine',
+  // cs sk
+  'ano', 'potvrdit', 'potvrďte', 'pokračovat', 'pokračujte', 'souhlasím', 'přijmout', 'přijímám', 'použít', 'hotovo', 'další', 'dokončit', 'rozumím',
+  'áno', 'potvrdiť', 'pokračovať', 'súhlasím', 'prijať', 'prijímam', 'použiť', 'ďalej', 'ďalšie', 'dokončiť', 'rozumiem',
+  // hu ro
+  'igen', 'rendben', 'megerősítés', 'megerősít', 'folytatás', 'tovább', 'elfogadom', 'elfogadás', 'alkalmaz', 'kész', 'befejezés', 'következő', 'értem',
+  'da', 'confirmă', 'confirmați', 'continuă', 'continuați', 'accept', 'acceptă', 'sunt de acord', 'aplică', 'gata', 'terminat', 'următorul', 'finalizează',
+  // hr sr bs sl (Latin)
+  'u redu', 'potvrdi', 'potvrdite', 'nastavi', 'nastavite', 'prihvati', 'prihvaćam', 'slažem se', 'primijeni', 'primeni', 'gotovo', 'dalje', 'sljedeće', 'sledeće', 'završi', 'razumijem',
+  'v redu', 'potrdi', 'nadaljuj', 'sprejmi', 'sprejmem', 'strinjam se', 'uporabi', 'končano', 'naprej', 'dokončaj',
+  // lt lv
+  'taip', 'gerai', 'patvirtinti', 'patvirtinkite', 'tęsti', 'sutinku', 'priimti', 'taikyti', 'atlikta', 'toliau', 'baigti',
+  'jā', 'labi', 'apstiprināt', 'turpināt', 'piekrītu', 'pieņemt', 'gatavs', 'tālāk', 'nākamais', 'pabeigt',
+  // ca tr (the forms CU-771 did not list)
+  'd’acord', "d'acord", 'accepta', 'aplica', 'fet', 'següent', 'finalitza', 'endavant', 'onaylıyorum', 'kabul ediyorum', 'anladım', 'tamamdır',
+  // uk bg sr mk kk (Cyrillic)
+  'так', 'гаразд', 'підтвердити', 'підтвердіть', 'підтверджую', 'продовжити', 'продовжуйте', 'прийняти', 'приймаю', 'погоджуюсь', 'погоджуюся', 'застосувати', 'далі', 'завершити', 'зрозуміло',
+  'добре', 'потвърди', 'потвърждавам', 'продължи', 'приеми', 'приемам', 'съгласен', 'съгласна', 'приложи', 'напред', 'следващ', 'завърши',
+  'у реду', 'потврди', 'настави', 'прихвати', 'прихватам', 'примени', 'даље', 'заврши', 'во ред', 'продолжи', 'прифати',
+  'иә', 'жарайды', 'растау', 'жалғастыру', 'қабылдау', 'келісемін', 'қолдану', 'дайын', 'келесі',
+  // el
+  'ναι', 'εντάξει', 'επιβεβαίωση', 'επιβεβαίωσε', 'επιβεβαιώνω', 'συνέχεια', 'συνέχισε', 'αποδοχή', 'αποδέχομαι', 'συμφωνώ', 'εφαρμογή', 'ολοκλήρωση', 'τέλος', 'επόμενο',
+  // hy ka
+  'այո', 'լավ', 'հաստատել', 'շարունակել', 'ընդունել', 'დიახ', 'კარგი', 'დადასტურება', 'გაგრძელება', 'მიღება',
+  // vi th
+  'có', 'đồng ý', 'xác nhận', 'tiếp tục', 'chấp nhận', 'áp dụng', 'xong', 'hoàn tất', 'tiếp theo', 'tiếp',
+  'ใช่', 'ตกลง', 'ยืนยัน', 'ดำเนินการต่อ', 'ดำเนินการ', 'ต่อไป', 'ยอมรับ', 'นำไปใช้', 'เสร็จสิ้น', 'เสร็จ', 'ถัดไป',
+  // id ms tl sw
+  'ya', 'oke', 'konfirmasi', 'sahkan', 'lanjutkan', 'lanjut', 'teruskan', 'setuju', 'saya setuju', 'terima', 'terapkan', 'selesai', 'berikutnya', 'seterusnya', 'baik',
+  'oo', 'sige', 'kumpirmahin', 'magpatuloy', 'tanggapin', 'tapos na', 'susunod',
+  'ndiyo', 'sawa', 'thibitisha', 'endelea', 'kubali', 'nakubali', 'imekamilika',
+  // hi bn
+  'हाँ', 'हां', 'ठीक है', 'ओके', 'पुष्टि', 'पुष्टि करें', 'जारी रखें', 'स्वीकार', 'स्वीकार करें', 'सहमत', 'मैं सहमत हूँ', 'मैं सहमत हूं', 'लागू करें', 'हो गया', 'आगे', 'अगला', 'समाप्त',
+  'হ্যাঁ', 'ঠিক আছে', 'নিশ্চিত করুন', 'চালিয়ে যান', 'গ্রহণ করুন', 'সম্মত', 'প্রয়োগ করুন', 'সম্পন্ন', 'পরবর্তী',
+]
+/** CU-749: Latin and Greek accents off (combining diacritical marks only - Indic and Thai vowel signs are letters here). */
+const stripAccents = (text) => text.normalize('NFD').replace(/[\u0300-\u036f]/gu, '').normalize('NFC')
+/** CU-749: the fold a button name and MORE_CONFIRM_WORDS are compared in - bidi and zero-width marks, Arabic harakat and tatweel,
+ * Hebrew points off; alef with hamza or madda as bare alef, Arabic yeh / alef maqsura / kaf as Persian yeh / keheh; Turkish 'İ' as 'i'. */
+const confirmFold = (text) => String(text ?? '').normalize('NFC')
+  .replace(/[\u200b-\u200f\u202a-\u202e\u2066-\u2069\u061c\ufeff\u0640\u064b-\u065f\u0670\u0591-\u05bd\u05bf-\u05c7]/gu, '')
+  .replace(/[\u0622\u0623\u0625]/gu, '\u0627').replace(/[\u064a\u0649]/gu, '\u06cc').replace(/\u0643/gu, '\u06a9').replace(/\u0130/gu, 'i')
+/** CU-749: the key one affirmative is compared by - folded, accents off, lower case (dotless 'ı' as 'i'), single spaces. */
+const confirmKey = (text) => stripAccents(confirmFold(text)).toLowerCase().replace(/\u0131/gu, 'i').replace(/\s+/gu, ' ').trim()
+// Each listed word as written, capitalised and in capitals, with and without accents, both raw and after normaliseText - a judged
+// name has passed its Cyrillic / Greek look-alike fold case by case ('Так' -> 'Taк', 'ΕΝΤΑΞΕΙ' -> 'ENTAΞEI'), so the keys are
+// built from the same fold. A set, so a click costs one lookup per part.
+const MORE_CONFIRM_KEYS = new Set(MORE_CONFIRM_WORDS.flatMap((word) => {
+  const [first, ...rest] = [...word]
+  const forms = [word, first.toUpperCase() + rest.join(''), word.toUpperCase()]
+  return [...forms, ...forms.map(stripAccents)].flatMap((form) => [confirmKey(form), confirmKey(normaliseText(form))])
+}))
+/** CU-749: a dialog button that is an affirmative in any language listed here or above - the whole name, or two joined by a comma
+ * ('نعم، متابعة', 'Tak, kontynuuj'), a closing '.' / '!' allowed. */
+function anyLocaleConfirm(text) {
+  const name = String(text ?? '')
+  if (name.trim() === '' || name.length > 60) return false
+  const parts = name.replace(/[.!。！]+\s*$/u, '').split(/\s*[,،、，]\s*/u)
+  return parts.length <= 2 && parts.every((part) => part.trim() !== '' && (MORE_CONFIRM_KEYS.has(confirmKey(part)) || LOCALE_GENERIC_CONFIRM.test(confirmFold(part))))
+}
 // CU-729: the question frames of a localized confirm title ('Möchten Sie diese Notiz wirklich löschen?', 'Voulez-vous vraiment ...',
 // '¿Desea eliminar ...?', '本当に削除しますか？', '确定要删除吗？', '정말 삭제하시겠습니까?') are removed into one more title text to judge.
 // CU-766 (High; cu-researcher's r2 set for CU-747): the INFORMAL and other common frames too - 'Seguro que quieres vaciar la papelera?',
@@ -5039,6 +5125,9 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         if (restProbe.decision === 'confirm') for (const cls of restProbe.classes ?? [restProbe.class]) if (!classes.includes(cls)) classes.push(cls)
       }
       const localeConfirm = LOCALE_GENERIC_CONFIRM.test(String(target?.name ?? name ?? '')) || LOCALE_GENERIC_CONFIRM.test(String(name ?? '')) || namesRuConfirm(String(name ?? ''))
+        // CU-749: or an affirmative in any other system language ('نعم', 'כן', 'אישור', 'Tak') - the dialog's text decides, as above.
+        // Looked up only when the target sits in a dialog (the probes below carry no dialog fields).
+        || ((dialogName !== '' || dialogDescription !== '') && (anyLocaleConfirm(target?.name) || anyLocaleConfirm(name)))
       // CU-747: final-step controls and a bare verb that echoes the dialog title's verb read the dialog too (additions only).
       // CU-790: or a sentence of the description - 'Leeren' under the title 'Hinweis' and 'Ist der Papierkorb danach geleert?'.
       const finalStep = FINAL_STEP_CONFIRM.test(String(name ?? '')) || echoesDialogVerb(name, dialogName) || echoesDialogVerb(target?.name, dialogName)
