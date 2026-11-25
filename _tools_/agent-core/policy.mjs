@@ -142,18 +142,73 @@ const ECHO_CJK = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script
 // ko / tr forms too (cu-developer-two's cross-check).
 const EMPTYING_BUTTON = /^(?:empty|empty\s+now|leeren|entleeren|ausleeren|vider|vaciar|svuota|svuotare|esvaziar|legen|leegmaken|leeghalen|leegruimen|ledigen|leeg\s+(?:maken|halen|ruimen)|очистить|空にする|清倒|倒空|清空|비우기|boşalt)$/u
 const TRASH_NOUN = /(?<!\p{L})(?:trash|bin|recycle\s+bin|papierkorb|mülleimer|abfalleimer|corbeille|papelera|cestino|lixeira|lixo|prullenbak|prullenmand|vuilnisbak|vuilbak|корзин[аеуыой]|корзиной|çöp)(?!\p{L})|ゴミ箱|废纸篓|廢紙簍|回收站|휴지통/iu
-const TRASH_DELETE_VERB = /(?<!\p{L})(?:delete|deleted|erase|erased|remove|removed|löschen|gelöscht|entfernen|entfernt|supprimer|supprimée?s?|effacer|effacée?s?|eliminar|eliminad[oa]s?|borrar|borrad[oa]s?|eliminare|eliminat[oiae]|cancellare|cancellat[oiae]|excluir|excluíd[oa]s?|apagar|apagad[oa]s?|verwijderen|verwijderd|wissen|gewist|удалить|удалены|удалён|удалено|удалятся|удалит|стереть|стёрты|silmek|silinecek|silinsin|silinsin mi)(?!\p{L})|削除|删除|刪除|삭제/iu
+const TRASH_DELETE_VERB = /(?<!\p{L})(?:delete|deleted|erase|erased|remove|removed|löschen|gelöscht|entfernen|entfernt|supprimer|supprimée?s?|effacer|effacée?s?|eliminar|eliminad[oa]s?|borrar|borrad[oa]s?|eliminare|eliminat[oiae]|cancellare|cancellat[oiae]|excluir|excluíd[oa]s?|apagar|apagad[oa]s?|verwijderen|verwijderd|wissen|gewist)(?!\p{L})/iu
 const TRASH_PENDING = /[?？]\s*$|(?<!\p{L})(?:will|would|wird|werden|sera|seront|será|serán|verrà|verranno|serão|wordt|worden|zal|zullen)(?!\p{L})/iu
 const TRASH_NEGATION = /(?<!\p{L})(?:not|never|nicht|nie|kein|keine|ne|pas|jamais|no|nunca|non|mai|não|niet|nooit|geen)(?!\p{L})|n['’]t(?!\p{L})/iu
+// CU-805 (P1; the marker table cu-researcher OK'd on #1475, cu-coordinator 12:42Z): in ru / ja / zh / ko / tr a marker counts only
+// ATTACHED to a delete / erase / remove verb of the family - a suffix on the stem, or an auxiliary a few words before it - never
+// anywhere in the sentence. Checked in order: a negation frees the sentence, then a past / perfect form, then a pending form (or a
+// question) asks. 'Объекты в Корзине будут удалены.', 'ゴミ箱内の項目は完全に削除されます。', '废纸篓中的所有项目将被不可恢复地删除。',
+// '휴지통의 모든 항목이 영구적으로 삭제됩니다.', 'Çöp Sepeti'ndeki tüm öğeler kalıcı olarak silinecek.' ask; their negated and past
+// twins stay free. The tr '-ecektir' forms are CU-806's, the ko connectives CU-807's.
+const RU_PART = '(?:удал[её]н[аоы]?|ст[её]рт[аоы]?|уничтожен[аоы]?|очищен[аоы]?)'
+const RU_FUT = '(?:удалятся|удалит|сотрутся|сотр[её]т|уничтожатся|уничтожит)'
+const JA_STEM = '(?:削除|消去|破棄|抹消|除去|消)'
+const ZH_VERB = '(?:删除|刪除|删掉|刪掉|抹除|清除|移除|销毁|銷毀)'
+const KO_STEM = '(?:삭제|제거)'
+const TRASH_LOCALE = [
+  { // ru
+    verb: new RegExp(`(?<!\\p{L})(?:${RU_PART}|${RU_FUT}|удалить|стереть|уничтожить|очистить)(?!\\p{L})`, 'iu'),
+    negation: new RegExp(`(?<!\\p{L})не(?:\\s+\\S+){0,3}?\\s+(?:будут|будет|${RU_PART}|${RU_FUT})(?!\\p{L})`, 'iu'),
+    past: new RegExp(`(?<!\\p{L})(?:были|был|была|было)(?:\\s+\\S+){0,3}?\\s+${RU_PART}(?!\\p{L})`, 'iu'),
+    pending: new RegExp(`(?<!\\p{L})(?:будут|будет)(?:\\s+\\S+){0,3}?\\s+${RU_PART}(?!\\p{L})|(?<!\\p{L})${RU_FUT}(?!\\p{L})`, 'iu'),
+  },
+  { // ja
+    verb: new RegExp(`${JA_STEM}(?:さ|し|す|済)`, 'u'),
+    negation: new RegExp(`${JA_STEM}(?:されません|しません|されない|しない|されず|せず|さない|さず|されることはありません|されることはない|されていません)`, 'u'),
+    past: new RegExp(`${JA_STEM}(?:されました|しました|された|した|されています|されている|されていました|されてしまいました|済み)`, 'u'),
+    pending: new RegExp(`${JA_STEM}(?:されます|します|される(?!こと)|する(?!こと)|され、)|消す(?!こと)`, 'u'),
+  },
+  { // zh
+    verb: new RegExp(ZH_VERB, 'u'),
+    negation: new RegExp(`(?:不(?!可)|没有|沒有|没|沒)(?:会|會|能|再|被|将|將){0,2}[^。！？.!?，,]{0,4}?${ZH_VERB}`, 'u'),
+    past: new RegExp(`(?:已|已经|已經)[^。！？.!?]{0,12}?${ZH_VERB}|${ZH_VERB}了`, 'u'),
+    pending: new RegExp(`(?:将被|將被|会被|會被|即将|即將|将要|將要|将会|將會|将|將)[^。！？.!?，,]{0,8}?${ZH_VERB}`, 'u'),
+  },
+  { // ko
+    verb: new RegExp(`${KO_STEM}|지우|지워|지웁|지웠`, 'u'),
+    negation: new RegExp(`${KO_STEM}(?:되|하)지\\s*(?:않|못)|${KO_STEM}\\s*안\\s|지워지지\\s*(?:않|못)|지우지\\s*(?:않|못)`, 'u'),
+    past: new RegExp(`${KO_STEM}(?:되었|됐|했)|지워졌|지웠`, 'u'),
+    pending: new RegExp(`${KO_STEM}(?:됩니다|합니다|될\\s*것입니다|될\\s*예정입니다)|지워집니다|지웁니다|지워질\\s*것입니다`, 'u'),
+  },
+  { // tr
+    verb: /(?<!\p{L})(?:sil|kaldır|yok\s+ed)\p{L}*/iu,
+    negation: /(?<!\p{L})(?:silinmeyecek|silinmez|silinmedi|silinemez|silmeyecek|kaldırılmayacak|kaldırılmaz|kaldırılmadı|yok\s+edilmeyecek|yok\s+edilmez)(?!\p{L})/iu,
+    past: /(?<!\p{L})(?:silindi|silinmiş|kaldırıldı|kaldırılmış|yok\s+edildi|yok\s+edilmiş)\p{L}*/iu,
+    pending: /(?<!\p{L})(?:silinecek|kaldırılacak|yok\s+edilecek)(?!\p{L})/iu,
+  },
+]
+// null when no ru / ja / zh / ko / tr verb of the family stands in the sentence.
+function localeTrashPending(text) {
+  for (const lang of TRASH_LOCALE) {
+    if (!lang.verb.test(text)) continue
+    if (lang.negation.test(text) || lang.past.test(text)) return false
+    return lang.pending.test(text) || /[?？]\s*$/u.test(text)
+  }
+  return null
+}
 function emptiesTrashByDelete(name, sentence) {
   const button = String(name ?? '').trim().toLowerCase()
   const text = String(sentence ?? '').trim()
-  const verb = TRASH_DELETE_VERB.exec(text)
   // A judged name has passed the Cyrillic homoglyph fold ('Очистить' -> 'Oчиcтить'), so the Russian button is matched folded too.
   const ruButton = ['очистить', 'Очистить', 'ОЧИСТИТЬ'].map((form) => normaliseName(normaliseText(form))).includes(normaliseName(String(name ?? '')))
-  if (!(EMPTYING_BUTTON.test(button) || ruButton) || !TRASH_NOUN.test(text) || verb === null || !TRASH_PENDING.test(text)) return false
-  // r2 (cu-developer-two's cross-check): a negation counts only within four words before the delete verb ('will not be
-  // deleted'), never one in a following clause ('... will be permanently deleted and can't be restored').
+  if (!(EMPTYING_BUTTON.test(button) || ruButton) || !TRASH_NOUN.test(text)) return false
+  const local = localeTrashPending(text)
+  if (local !== null) return local
+  const verb = TRASH_DELETE_VERB.exec(text)
+  if (verb === null || !TRASH_PENDING.test(text)) return false
+  // A negation counts only within four words before the delete verb ('will not be deleted'), never one in a following clause
+  // ('... will be permanently deleted and can't be restored').
   return !TRASH_NEGATION.test(text.slice(0, verb.index).trim().split(/\s+/).slice(-4).join(' '))
 }
 function echoesDialogVerb(name, dialogName) {
@@ -5079,6 +5134,11 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         // CU-746: the title and each kept sentence read as the act they state (statement, framed lead-in, noun title, access).
         for (const base of [dialogName, ...kept]) for (const extra of modalStatementNames(base)) if (!texts.includes(extra)) texts.push(extra)
         if (emptiesTrash && !texts.includes('Empty trash')) texts.push('Empty trash')
+        // r4 (cu-developer-two's r3 probe; cu-coordinator 11:11Z): a dialog read ONLY because of the trash rule is judged only as
+        // 'Empty trash' - its other texts were not read on main, so they add no class here ('Все объекты в Корзине будут удалены.'
+        // asked permission besides delete on the web route).
+        const onlyTrash = emptiesTrash && !(GENERIC_CONFIRM.test(String(name ?? '')) || localeConfirm || continueTo || finalStep || accessStated)
+        if (onlyTrash) texts.splice(0, texts.length, 'Empty trash')
         for (const text of texts) {
           // #702 round 2: the title is judged with the FULL canonical form (synonym, quantifier, label and clause steps run only
           // outside a confirm probe), so no confirmProbe flag here; the probe target carries no dialog fields, so it cannot recurse.
