@@ -41,6 +41,12 @@ test('CU-800: the class - the separable and two-word spellings, their participle
     ['Leegmaken', 'Blijft de prullenbak daarna leeggemaakt?'],
     ['Leegruimen', 'Moet de prullenbak worden leeggeruimd?'],
     ['OK', 'Haal de prullenbak nu leeg'],
+    // r2 (cu-researcher's r1 misses): 'prullenmand' (the Trash's own name in macOS Dutch) and a trash statement.
+    ['Leegmaken', 'Wilt u de prullenmand leegmaken?'],
+    ['Leegmaken', 'Alle onderdelen in de prullenbak worden definitief verwijderd.'],
+    ['Leegmaken', 'De prullenmand wordt nu leeggemaakt.'],
+    ['Legen', 'Prullenmand legen?'],
+    ['Leegmaken', 'Wil je de vuilnisbak leegmaken?'],
   ]) {
     assert.ok(classes(onWeb(name, title)).includes('delete'), `web ${name} | ${title}`)
   }
@@ -56,6 +62,9 @@ test('CU-800: near rows stay free of delete - a field or form, a mismatched butt
     ['Leeghalen', 'Wil je het formulier leeghalen?'],
     ['Openen', 'Moet de prullenbak nu worden geleegd?'],
     ['Leegmaken', 'De prullenbak is leeggemaakt.'],
+    ['Leegmaken', 'Zoekveld leegmaken?'],
+    ['Annuleren', 'Wilt u de prullenmand leegmaken?'],
+    ['OK', 'Het zoekveld wordt leeggemaakt.'],
   ]) {
     assert.ok(!classes(onWeb(name, title)).includes('delete'), `web ${name} | ${title}`)
   }
