@@ -2,6 +2,9 @@ import { execFile, spawn as nodeSpawn } from 'node:child_process'
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 
 import { EnvironmentError } from './errors.mjs'
+import { NO_NOTIFICATION_FEATURES, PROFILE_PREFERENCES, writeNoNotificationPreferences } from './no-notifications.mjs'
+
+export { PROFILE_PREFERENCES }
 
 /**
  * Starting and stopping the agent's Chrome.
@@ -15,7 +18,7 @@ import { EnvironmentError } from './errors.mjs'
  *   row window): the Web Notifications API is off (`--disable-notifications`), Chrome's system notification bridge is off
  *   (`SystemNotifications`, `NativeNotifications` in the one `--disable-features` list - Chrome reads only the last such
  *   switch), and the profile is seeded with notifications blocked before Chrome starts; `--deny-permission-prompts` alone
- *   denies web prompts but leaves the OS bridge;
+ *   denies web prompts but leaves the OS bridge (the layers live in no-notifications.mjs, shared with the verify kit);
  * - extensions, sync, background networking and component updates off; headless (`--headless=new`), which also
  *   keeps Chrome's clipboard in-process (D-011);
  * - Chrome's own sandbox kept: `--no-sandbox` is never passed, and a browser that reports it cannot sandbox is
@@ -106,7 +109,7 @@ export function chromeArgs({ profile, viewport, proxyServer } = {}) {
     '--disable-component-update',
     '--disable-default-apps',
     // CU-808: the system / native notification bridge off with the rest - one --disable-features switch (Chrome reads the last).
-    '--disable-features=Translate,MediaRouter,OptimizationHints,AutofillServerCommunication,SystemNotifications,NativeNotifications',
+    `--disable-features=${['Translate', 'MediaRouter', 'OptimizationHints', 'AutofillServerCommunication', ...NO_NOTIFICATION_FEATURES].join(',')}`,
     '--no-first-run',
     '--no-default-browser-check',
     '--deny-permission-prompts',
@@ -121,19 +124,10 @@ export function chromeArgs({ profile, viewport, proxyServer } = {}) {
   ]
 }
 
-/**
- * CU-808: the preferences a fresh profile starts with - notifications blocked for every site (content setting 2), so
- * nothing in the profile can ask for them even if a flag were dropped.
- */
-export const PROFILE_PREFERENCES = Object.freeze({
-  profile: { default_content_setting_values: { notifications: 2 }, content_settings: { exceptions: { notifications: {} } } },
-})
-
 /** Seed a throwaway profile (`<profile>/Default/Preferences`) before Chrome starts; refuses any other path. */
 export function seedProfile(profile, seat, { mkdir = mkdirSync, write = writeFileSync } = {}) {
   if (!isOwnProfile(profile, seat)) throw new EnvironmentError('invalid_argument', 'refusing to seed a path that is not this seat\'s throwaway profile')
-  mkdir(`${profile}/Default`, { recursive: true })
-  write(`${profile}/Default/Preferences`, JSON.stringify(PROFILE_PREFERENCES))
+  writeNoNotificationPreferences(profile, { mkdir, write })
 }
 
 /** The child environment: nothing inherited from the host but a minimal `PATH`. */

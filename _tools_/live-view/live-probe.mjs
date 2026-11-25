@@ -42,7 +42,7 @@ import { fileURLToPath } from 'node:url'
 import { runDesktopAttempt, scriptedPlan } from '../../_evaluators_/desktop-suite/lib.mjs'
 import { verifySeat } from '../verify-kit/seat.mjs'
 import { parseResult, redactTokens } from '../../_evaluators_/task-suite/run.mjs'
-import { openPage } from '../../_vendor_/browser-use/lib.mjs'
+import { openGuardedPage } from '../verify-kit/guarded-page.mjs'
 import { isEntryPoint } from '../agent-core/cli.mjs'
 import { resourceGate } from '../agent-core/resource-gate.mjs'
 import { cuHome } from '../agent-core/trajectory.mjs'
@@ -876,7 +876,8 @@ async function runLive({ options, home, write, warn }) {
   }
   let page
   try {
-    page = await openPage({ profile })
+    // CU-808: the guarded page - the profile seeded with notifications blocked, the notification switches on Chrome's line.
+    page = await openGuardedPage({ profile })
     slot.setChromePid(page.browser.running.child.pid)
   } catch (error) {
     slot.release()

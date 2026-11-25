@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import { EventEmitter } from 'node:events'
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs'
+import { join, relative } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { test } from 'node:test'
 
 import { EnvironmentError } from '../../_environments_/chrome-browser/errors.mjs'
@@ -87,4 +89,37 @@ test('CU-808: a profile that cannot be seeded is removed and Chrome is never spa
   }), code('resource_refused'))
   assert.equal(spawned, false)
   assert.ok(!existsSync(profile))
+})
+
+// cu-developer-one's #1477 review: every Chrome a [cu] job starts carries the protections. The agent's Chrome starts in
+// launch.mjs; the only other launcher is the vendored one, which only verify-kit/guarded-page.mjs may open.
+const ROOT = fileURLToPath(new URL('../../', import.meta.url))
+function sources(dir = ROOT, out = []) {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (['.git', 'node_modules', '_vendor_', '_tests_'].includes(entry.name)) continue
+    const path = join(dir, entry.name)
+    if (entry.isDirectory()) sources(path, out)
+    else if (/\.(?:mjs|js|cjs)$/.test(entry.name)) out.push(path)
+  }
+  return out
+}
+
+test('CU-808: no module but verify-kit/guarded-page.mjs opens a vendored Chrome; the check browser and the live probe go through it', () => {
+  const launchers = sources().filter((path) => {
+    const text = readFileSync(path, 'utf8')
+    return /import\s*\{[^}]*\b(?:openPage|openBrowser|launchChrome)\b[^}]*\}\s*from\s*'[^']*_vendor_\/browser-use\//.test(text)
+  }).map((path) => relative(ROOT, path))
+  assert.deepEqual(launchers, ['_tools_/verify-kit/guarded-page.mjs'])
+  assert.match(readFileSync(join(ROOT, '_tools_/verify-kit/check-browser.mjs'), 'utf8'), /open = openGuardedPage,/)
+  assert.match(readFileSync(join(ROOT, '_tools_/live-view/live-probe.mjs'), 'utf8'), /await openGuardedPage\(\{ profile \}\)/)
+  const guarded = readFileSync(join(ROOT, '_tools_/verify-kit/guarded-page.mjs'), 'utf8')
+  assert.match(guarded, /seed\(options\.profile\)/)
+  assert.match(guarded, /args: \[\.\.\.NO_NOTIFICATION_ARGS\]/)
+})
+
+test('CU-808: no other module spawns a Chrome binary', () => {
+  // A module that names a Chrome executable path and spawns: only the agent's own launcher may.
+  const spawners = sources().filter((path) => /Contents\/MacOS\/(?:Google Chrome|Chromium)|\/usr\/bin\/(?:google-chrome|chromium)/.test(readFileSync(path, 'utf8')) && /\bspawn\(|\bexecFile\(/.test(readFileSync(path, 'utf8')))
+    .map((path) => relative(ROOT, path))
+  assert.deepEqual(spawners, ['_environments_/chrome-browser/launch.mjs'])
 })
