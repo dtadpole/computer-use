@@ -233,6 +233,39 @@ const FINDABLE_TOGGLE = new RegExp('^\\s*(?:' + [
   String.raw`(?:visible|shown)\s+to\s+${OUTSIDERS}`,
   String.raw`(?:let|allow)\s+${OUTSIDERS}\s+(?:to\s+)?(?:see|view|read|find)\s+(?:me|you|(?:my|your)\s+(?:profile|account|page|posts?|activity|content))`,
 ].join('|') + ')\\s*$', 'i')
+// CU-779 (P1, the follow-up to CU-774): a toggle whose label exposes the owner, or the owner's profile or work (a portfolio,
+// a shop, a contact card, a listing ...), to a wider audience - guests, strangers, people outside the team or organization,
+// signed-out visitors, everyone with an account, the whole company, the public, a marketplace, a featured place on a
+// public page - asks permission unless it is already on (r2: any widening of who sees the owner's things); the
+// same grant as CU-754's public toggle. Showing a thing without naming an audience ('Show my contact card photo'), and
+// audiences inside the owner's circle (team, contacts, members), stay free.
+const OWN_WORK = String.raw`(?:me|you|(?:my|your)\s+(?:profile|account|page|posts?|content|activity|listings?|portfolio|work|projects?|shop|store|contact\s+(?:card|details|info(?:rmation)?)|card|r[eé]sum[eé]|cv|bio|gallery|photos?|videos?|art(?:work)?|designs?|availability|status|name|e-?mail(?:\s+address)?|phone(?:\s+number)?|details|calendar|schedule|reading\s+list|playlists?|boards?|collections?|reviews|likes|followers|friends(?:\s+list)?|connections))`
+// r2 (cu-developer-one): in a public place the destination carries the risk, so any owned thing counts - 'List my app in
+// the marketplace', 'Publish my theme to the app store'.
+const OWN_ANY = String.raw`(?:me|you|(?:my|your)\s+(?:[a-z][\w'-]*\s+){0,2}[a-z][\w'-]*)`
+const WIDER = String.raw`(?:${OUTSIDERS}|(?:everyone|anyone|people|users|members)\s+with\s+(?:an?\s+)?(?:[a-z]+\s+)?(?:account|login|profile)|(?:all\s+)?(?:registered|signed[-\s]in|logged[-\s]in)\s+(?:users|members|people)|all\s+(?:members|employees|staff|colleagues|students)|(?:the\s+)?(?:whole|entire)\s+(?:company|organi[sz]ation|org|school|workspace|network|community|internet|web|world)|(?:everyone|anyone|people)\s+(?:in|at|across)\s+(?:the|my|your|our|this)\s+(?:company|organi[sz]ation|org|school|workspace|network|community)|(?:site\s+|website\s+|page\s+)?visitors|strangers|anyone|everyone|the\s+public|(?:all|other)\s+users|external\s+(?:users|people|guests|collaborators|contacts)|(?:people|users|anyone|everyone)\s+(?:outside|beyond)\s+(?:(?:my|your|the|this|our)\s+)?(?:team|organi[sz]ation|org|company|network|workspace|school|family|circle|contacts|connections)|(?:people|users)\s+(?:i|you)\s+(?:don't|do\s+not)\s+know|(?:people|users)\s+not\s+in\s+(?:my|your)\s+(?:contacts|network|team|organi[sz]ation)|(?:anyone|everyone)\s+(?:on|across)\s+(?:the\s+)?(?:internet|web))`
+// A place others browse: a marketplace or app store, a public or community gallery, an explore / discover page. A bare
+// 'gallery' or 'store' can be the owner's own view ('Show my photos in the gallery') and stays out.
+const PUBLIC_PLACE = String.raw`(?:the\s+|our\s+)?(?:(?:site'?s?\s+|public\s+)?(?:home\s*page|front\s+page|landing\s+page|main\s+page|start\s+page)|featured\s+(?:section|list|page|row)|marketplace|market|app\s+store|public\s+(?:store|gallery|showcase|feed|catalog(?:ue)?)|community(?:\s+(?:page|feed|gallery|showcase))?|explore(?:\s+(?:page|tab|feed))?|discover(?:y)?(?:\s+(?:page|tab|feed))?|leaderboard)`
+const EXPOSED_TOGGLE = new RegExp('^\\s*(?:' + [
+  // 'Show my contact card to people outside the team', 'Share my portfolio with strangers'
+  String.raw`(?:show|share|display|expose|open|reveal|make)\s+${OWN_WORK}\s+(?:(?:visible|viewable|accessible|available|public)\s+)?(?:to|with|by)\s+${WIDER}`,
+  // 'Let strangers view my portfolio', 'Allow guests to see my profile'
+  String.raw`(?:let|allow)\s+${WIDER}\s+(?:to\s+)?(?:see|view|browse|read|find|access|download|look\s+at)\s+${OWN_WORK}`,
+  // 'Include me in the staff list visible to guests', 'Add my profile to the team page shown to visitors'
+  String.raw`(?:include|list|add|show|feature|put|publish)\s+${OWN_WORK}\s+(?:in|on|to)\s+(?:the\s+|our\s+)?(?:[a-z'-]+\s+){0,3}(?:list|roster|directory|page|feed|gallery|showcase|board)\s+(?:that\s+is\s+|that's\s+)?(?:visible|shown|available|open)\s+to\s+${WIDER}`,
+  // 'List my shop in the marketplace', 'Feature my portfolio on the explore page', 'Publish my designs to the community gallery'
+  String.raw`(?:list|feature|publish|post|sell|offer|showcase)\s+${OWN_ANY}\s+(?:in|on|to)\s+${PUBLIC_PLACE}`,
+  // r2: featured or promoted placement, with or without the owner named - 'Feature on the home page', 'Promote my posts on
+  // the explore page', 'Spotlight me in the featured section'
+  String.raw`(?:feature|showcase|spotlight|highlight|promote)(?:\s+${OWN_ANY})?\s+(?:in|on|to)\s+${PUBLIC_PLACE}`,
+  // r2: the audience as the subject - 'Non-members can see my profile', 'Everyone with an account can view my posts'
+  String.raw`${WIDER}\s+(?:can|may)\s+(?:see|view|browse|read|find|access|look\s+at)\s+${OWN_WORK}`,
+  // r2: the bare state - 'Visible to everyone with an account', 'Open to the whole company', 'Shown to non-members'
+  String.raw`(?:visible|viewable|accessible|shown|open|available)\s+(?:to|by)\s+${WIDER}`,
+  // 'My portfolio is visible to strangers', 'Profile visible to guests'
+  String.raw`(?:${OWN_WORK}|profile|portfolio|shop|store|listing|contact\s+card)\s+(?:is\s+|are\s+)?(?:visible|viewable|accessible|shown|available|open|public)\s+(?:to|by)\s+${WIDER}`,
+].join('|') + ')\\s*$', 'i')
 /** CU-754: whether a toggle's row context (rowContext: a { list, hints } object or a plain string) names an access right. */
 export function accessRowContext(rowContext) {
   const texts = typeof rowContext === 'string'
@@ -2071,7 +2104,9 @@ function typedConfirmButton(name) {
 // CU-745 (High; cu-researcher's sweep 5): 'Provide / Supply / Specify / Insert / Put in the <x> name' and 'Please confirm the <x> name'
 // are typing instructions too ('confirm' only before 'the / your / its ... name / ID / slug / handle / URL', never 'Confirm deletion').
 const TYPED_INSTRUCTION = /\b(?:type|typing|enter|entering|re-?enter(?:ing)?|re-?typ(?:e|ing)|write|writing|input(?:ting)?|key(?:ing)?\s+in|spell(?:ing)?\s+out|repeat(?:ing)?|fill(?:ing)?\s+in|copy(?:ing)?|past(?:e|ing)|provid(?:e|ing)|suppl(?:y|ying)|specif(?:y|ying)|indicat(?:e|ing)|insert(?:ing)?|put(?:ting)?\s+in)\s+(?!(?:to|here|in)\b)["'\u201c\u2018\p{L}\p{N}]|\bconfirm(?:ing)?\s+(?:the|your|its)\s+(?:[\p{L}\p{N}'\u2019-]+\s+){0,2}(?:name|id|slug|handle|url|label)\b/iu
-const TYPED_DESTROY = /\b(?:delet\w*|eras(?:e|es|ed|ing|ure)\b|wip(?:e|es|ed|ing)\b|remov\w*|destroy\w*|purg(?:e|es|ed|ing)\b|terminat\w*|deactivat\w*|permanently|permanent\s+(?:deletion|removal|erasure)|irreversibl\w*|cannot\s+be\s+undone|nuk(?:e|es|ed|ing)\b|uninstall\w*|drop\s+(?:it|them|(?:the|this|that|your|my)\s+\w+)\b|dropp(?:ed|ing)\b|shut(?:ting)?\s+(?:\w+\s+){0,3}down\b|clos(?:e|ing)\s+(?:it|(?:the|this|that|your|my)\s+\w+)\s+(?:down|for\s+good|permanently)\b|kill(?:s|ed|ing)?\s+(?:it|them|(?:the|this|that|your|my|all)\s+\w+)\b|scrap(?:s|ped|ping)?\b|trash(?:es|ed|ing)?\s+(?:it|them|(?:the|this|that|your|my|all)\s+\w+)\b|discard\w*|retir(?:e|es|ed|ing)\b|sunset(?:s|ting)?\b|cancel(?:l?ing)?\s+(?:the\s+|this\s+|your\s+|my\s+)?(?:account|membership|organi[sz]ation|workspace)\b|re-?format\w*|format\s+(?:the\s+|this\s+|your\s+)?(?:disk|drive|volume|card|partition)\b|obliterat\w*|shred\w*|annihilat\w*|decommission\w*|deprovision\w*|tear\s+(?:it\s+|this\s+|the\s+\w+\s+)?down|factory\s+reset|reset\s+(?:\w+\s+)?to\s+factory|empty\s+(?:it|them|the|this|that|your|all)\b|(?:archiv\w*|los(?:e|ing)|gone|hid(?:e|den))\s+(?:\w+\s+){0,2}(?:forever|for\s+good)|clos(?:e|ing)\s+(?:the\s+|this\s+|my\s+|your\s+)?account\b|drop\s+(?:the\s+|this\s+)?(?:table|database|schema|collection|index)\b)/i
+// CU-775 r2 (cu-verifier's live row 'The account is closed for good.'): the passive 'closed for good / permanently / forever'
+// reads as the close act does; a bare 'closed' ('closed on Sundays', a closed dialog) stays free.
+const TYPED_DESTROY = /\b(?:delet\w*|eras(?:e|es|ed|ing|ure)\b|wip(?:e|es|ed|ing)\b|remov\w*|destroy\w*|purg(?:e|es|ed|ing)\b|terminat\w*|deactivat\w*|permanently|permanent\s+(?:deletion|removal|erasure)|irreversibl\w*|cannot\s+be\s+undone|nuk(?:e|es|ed|ing)\b|uninstall\w*|drop\s+(?:it|them|(?:the|this|that|your|my)\s+\w+)\b|dropp(?:ed|ing)\b|shut(?:ting)?\s+(?:\w+\s+){0,3}down\b|clos(?:e|ing)\s+(?:it|(?:the|this|that|your|my)\s+\w+)\s+(?:down|for\s+good|permanently)\b|kill(?:s|ed|ing)?\s+(?:it|them|(?:the|this|that|your|my|all)\s+\w+)\b|scrap(?:s|ped|ping)?\b|trash(?:es|ed|ing)?\s+(?:it|them|(?:the|this|that|your|my|all)\s+\w+)\b|discard\w*|retir(?:e|es|ed|ing)\b|sunset(?:s|ting)?\b|cancel(?:l?ing)?\s+(?:the\s+|this\s+|your\s+|my\s+)?(?:account|membership|organi[sz]ation|workspace)\b|re-?format\w*|format\s+(?:the\s+|this\s+|your\s+)?(?:disk|drive|volume|card|partition)\b|obliterat\w*|shred\w*|annihilat\w*|decommission\w*|deprovision\w*|tear\s+(?:it\s+|this\s+|the\s+\w+\s+)?down|factory\s+reset|reset\s+(?:\w+\s+)?to\s+factory|empty\s+(?:it|them|the|this|that|your|all)\b|(?:archiv\w*|los(?:e|ing)|gone|hid(?:e|den))\s+(?:\w+\s+){0,2}(?:forever|for\s+good)|clos(?:e|ing)\s+(?:the\s+|this\s+|my\s+|your\s+)?account\b|drop\s+(?:the\s+|this\s+)?(?:table|database|schema|collection|index)\b|clos(?:ed|es)\s+(?:down\s+)?(?:for\s+good|permanently|forever)\b|(?:permanently|forever)\s+closed\b)/i
 // A transfer counts only of ownership: 'Enter the transfer amount' is money, not a handover (cu-developer-three's near-miss).
 // r3 (policy owner 13:25Z): the destroy test without its three bare intensifiers ('permanently', 'irreversibl*', 'cannot
 // be undone') - they name no act. Used only where a strong confirm sentence takes the act from ANOTHER zone sentence.
@@ -2262,7 +2297,14 @@ const IMPERATIVE_NAME = /(?:^|[.!?:;]\s+|,\s+)(?:(?:please|kindly|now|then|first
 // comes from the zone, so a save form with the same sentence stays free.
 // CU-765 r2 (cu-researcher's held-out): a lead-in word may end with a comma ('Now, carefully fill out the database ID.'), and
 // 'next / finally / lastly / again' lead in as 'now / then / first' do.
-const LEAD_IN = /^(?:(?:please|kindly|now|then|first|next|finally|lastly|again|also|simply|just|quickly|carefully|do|go\s+ahead\s+and|be\s+sure\s+to|make\s+sure\s+(?:to|that\s+you|you)|remember\s+to|don['\u2019]?t\s+forget\s+to|feel\s+free\s+to|(?:you(?:['\u2019](?:ll|d))?|we)\s+(?:will\s+)?(?:need|have|want|ask)\s+(?:you\s+)?to|you\s+(?:must|should|will\s+need\s+to)|(?:take|spend)\s+a\s+(?:moment|second|minute|few\s+seconds)\s+(?:to|and)|(?:go\s+on|proceed|continue|try|start|begin)\s+to|(?:to|in\s+order\s+to|so\s+that|before|after|for|as|once|when|if|upon)\b[^,.;:!?]{1,80},)(?:\s*,\s*|\s+))+/i
+// CU-775 + CU-776 (cu-coordinator 17:05Z: one class, built generally): the imperative is also found after an interjection or
+// discourse marker ('Right, quickly jot the workspace slug.', 'Okay so ...'), after any short opener of up to three words
+// ending in a comma, after '<lead verb(s)> and' ('Go on and type out the database ID.', 'Try and enter ...'), and after a
+// clause opener joined by 'and / but / so / then' ('..., and to be safe, ...'). Additions only: the sentence as written is
+// read first, and the act still comes from the zone.
+// r2 (cu-researcher's held-out, 'Alright, briefly scribble the database name.'): any manner adverb before the verb - a word
+// in '-ly', an intensifier before it ('very / really / super / extra'), or 'right / straight away', 'at once', 'real quick'.
+const LEAD_IN = /^(?:(?:please|kindly|ok(?:ay)?|alright|all\s+right|right|so|well|oh|hey|great|good|fine|sure|perfect|anyway|actually|basically|now|then|first|next|finally|lastly|again|also|simply|just|quickly|carefully|very|really|super|extra|\p{L}{2,}ly|(?:right|straight)\s+away|at\s+once|real\s+quick|do|go\s+ahead\s+and|be\s+sure\s+to|make\s+sure\s+(?:to|that\s+you|you)|remember\s+to|don['\u2019]?t\s+forget\s+to|feel\s+free\s+to|(?:you(?:['\u2019](?:ll|d))?|we)\s+(?:will\s+)?(?:need|have|want|ask)\s+(?:you\s+)?to|you\s+(?:must|should|will\s+need\s+to)|(?:take|spend)\s+a\s+(?:moment|second|minute|few\s+seconds)\s+(?:to|and)|(?:go\s+on|proceed|continue|try|start|begin)\s+to|(?:(?:and|but|so|then)\s+)?(?:to|in\s+order\s+to|so\s+that|before|after|for|as|once|when|if|upon)\b[^,.;:!?]{1,80},|[\p{L}'\u2019-]+(?:\s+[\p{L}'\u2019-]+){0,2},|[\p{L}'\u2019-]+(?:\s+[\p{L}'\u2019-]+)?\s+and)(?:\s*,\s*|\s+))+/iu
 function imperativeName(text) {
   const value = String(text ?? '')
   if (IMPERATIVE_NAME.test(value)) return true
@@ -3871,7 +3913,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         // CU-754: an access toggle - its list names a privacy right, or its own name makes something public - asks permission
         // when it turns on; the direction is the native read's, and an unknown state asks both ways (named over-ask, as CU-418).
         // CU-774: a toggle that makes the profile findable or indexable (FINDABLE_TOGGLE) is the same grant to everyone.
-        if (nativeToggleState(target) !== true && (PUBLIC_TOGGLE.test(name) || FINDABLE_TOGGLE.test(name) || accessRowContext(target?.rowContext))) classes.push('permission')
+        // CU-779: so is one that exposes the owner's profile or work to a wider audience or a public place (EXPOSED_TOGGLE).
+        if (nativeToggleState(target) !== true && (PUBLIC_TOGGLE.test(name) || FINDABLE_TOGGLE.test(name) || EXPOSED_TOGGLE.test(name) || accessRowContext(target?.rowContext))) classes.push('permission')
       }
       // CU-146: 'Trash' or 'Bin' alone deletes on a control (a toolbar button, a menu item); a sidebar row of that name
       // only opens the folder.
