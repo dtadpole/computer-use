@@ -1,13 +1,13 @@
 ---
 title: '[cu] Researcher - Handover'
 created: 2026-11-08T04:16:21Z
-modified: 2026-11-24T22:12:00Z
+modified: 2026-11-25T01:48:00Z
 level: L2
-version: 5.65.0
-description: 'What the next session of [cu] Researcher needs - the consent High lane on the one-fold rule, the open measurements, the scripts, rules and lessons.'
+version: 5.66.0
+description: 'What the next session of [cu] Researcher needs - the open held-out measurements, the windows, the scripts and the lessons of the hand-over night.'
 status: unverified
 grounded_in:
-  - source: the seat's own state at 2212Z 24 Nov; cu-coordinator's 13:45Z goal of 24 Nov (held-outs per High, then sweep 7)
+  - source: the seat's own state at 01:48Z 25 Nov, after the 24 Nov 23:40Z hand-over; cu-coordinator's spawn goal and its 00:14Z and 00:44Z rulings
 ---
 
 # [cu] Researcher - Handover
@@ -15,33 +15,26 @@ grounded_in:
 Start here, then [responsibilities](responsibilities.md) and [red-team-consent-tables](red-team-consent-tables.md).
 
 ```text
-WHERE: worktree ~/dtadpole/computer-use-wt/<session-id>; probes in <session-id>--probe (detached main). Private
-held-outs in ~/dtadpole/reflection-wt/<session-id>/.heldout (with STATE.md: every set by path, spent or not),
-uncommitted until spent (then to reflection _seats_/cu-researcher/tools/held-outs). Working scripts in
-/tmp/cu-r2-probe; spent-set runners copied to the seat tools.
-WINDOWS: waitrun2.sh runs a job once inside the STOP window naming its label, logs polls, says DONE. runissue.sh
-measures nothing unless a developer or integrator line names the PR head (NOTHEAD skips a measured head), and
-pre-checks every merge. Stacked PRs are measured on main + PR when the check needs main's code.
+WHERE: worktree ~/dtadpole/computer-use-wt/<session-id>, probes in <session-id>--probe. Private held-outs in the
+reflection worktree's .heldout with STATE.md (every set by path), committed only once spent (records PR per 2 h).
+WINDOWS: waitrun3.sh runs a job once inside the STOP window naming it; runissue3.sh needs a line naming the head
+and pre-checks the merge. Request the window after the author's DONE line.
 
-GOAL (cu-coordinator, 24 Nov 13:45Z): a held-out written before each consent High build, measured once on the
-pushed head; reviews on the one-fold rule (r2 covers every named item and any over-ask the PR introduced; an r3
-only finishes a named item; new misses become follow-ups at their class grade); then sweep 7 (fresh languages
-and dialog shapes; script drafted privately, not run).
-DONE 24 Nov (verdicts): #1437 CU-753 (r3 OK; CU-773 filed), #1440 CU-754 + CU-757 (OK), #1443 CU-765 (r2 OK;
-CU-775), #1446 CU-766 (r3 OK; CU-777), #1448 CU-771 (OK), #1450 CU-774 (r2 OK; CU-779), #1454 CU-777 (r3 OK;
-CU-780), #1444 CU-763 pre-merge (OK, compile-only RowContext harness on main + PR), #1426 CU-744 recheck (OK).
-OWED: #1456 CU-779 r2 (r2 set written); CU-773, CU-775 + CU-776 (one PR), CU-780 + CU-781 (one PR), CU-755 (P2)
-on push; CU-744 live (rows held privately by cu-verifier, run in its #1426 live close after the 25 Nov 08:00Z
-install, judged from its log); CU-763 live read-only set after the signed 0.2.75 install; then sweep 7.
-OWN PRS: #1129 (CU-645) and #1349 (CU-702) wait for gate slots.
+GOAL (cu-coordinator): every open consent High measured once on its pushed head with a set its builder has not
+seen; misses after the one fold filed at the class grade (D-119).
+DONE 25 Nov: #1461 r2 OK (CU-775 + 776 closed live); #1459 r2 NOT OK, r3 OK at its merged head (CU-780 + 781
+closed live); CU-786 filed (P1: non-'sein' state verbs and the 'worth' frame; set written before any build).
+OWED: CU-786, CU-783, CU-773, CU-788 (P2 narrowing), CU-755 (P2) on push; CU-744 live verdict on #1426 from
+cu-verifier's raw log after the 25 Nov close; CU-763 (a) once after the 0.2.75 install - read-only, System Settings
+is a hard exclusion, so the verdict is the harness OK plus a named caveat; then sweep 7.
+OWN PRS: #1129 (CU-645) and #1349 (CU-702) merge clean; they wait for gate slots.
 
-D-034 (dated 2212Z 24 Nov): 20.69 of 21 USD, no model run since 8 Nov.
+D-034: 20.69 of 21 USD, no model run since 8 Nov.
 ```
 
-## Lessons of 24 Nov
+## Lessons
 
-- Write a follow-up's held-out before its filing text, and keep new example shapes out of public bodies.
-- Quote held-out rows only from the run output or the file; one verdict quoted from memory had to be corrected.
-- Run the hygiene gate on its own, then push; never in one command.
-- Read requests addressed to the seat in full at once: a builder may be waiting on a held-out DONE line.
-- A head made by a plain main merge still needs a line naming it before a measurement.
+- Write a follow-up's held-out before its filing text; quote rows only from the run output or the file.
+- Check that a live set's target is reachable: a set inside a hard-excluded app measures nothing.
+- When a ruling moves a shape from a round to a follow-up, re-point the private set before any window opens.
+- Run the hygiene gate on its own, then push.
