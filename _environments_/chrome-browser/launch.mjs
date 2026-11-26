@@ -1,7 +1,10 @@
 import { execFile, spawn as nodeSpawn } from 'node:child_process'
-import { existsSync, mkdtempSync, rmSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 
 import { EnvironmentError } from './errors.mjs'
+import { NO_NOTIFICATION_FEATURES, PROFILE_PREFERENCES, writeNoNotificationPreferences } from './no-notifications.mjs'
+
+export { PROFILE_PREFERENCES }
 
 /**
  * Starting and stopping the agent's Chrome.
@@ -11,6 +14,11 @@ import { EnvironmentError } from './errors.mjs'
  * - a child environment of `PATH`, `HOME`, `TMPDIR` and `LANG` only, with `HOME` and `TMPDIR` inside the profile, so
  *   no host variable (an API key, a token) reaches the browser;
  * - `--use-mock-keychain`, so Chrome never asks the macOS Keychain for its storage key (no prompt on the owner's Mac);
+ * - no notification ever reaches macOS (CU-808: a UserNotificationCenter dialog appeared on the owner's screen during a headless
+ *   row window): the Web Notifications API is off (`--disable-notifications`), Chrome's system notification bridge is off
+ *   (`SystemNotifications`, `NativeNotifications` in the one `--disable-features` list - Chrome reads only the last such
+ *   switch), and the profile is seeded with notifications blocked before Chrome starts; `--deny-permission-prompts` alone
+ *   denies web prompts but leaves the OS bridge (the layers live in no-notifications.mjs, shared with the verify kit);
  * - extensions, sync, background networking and component updates off; headless (`--headless=new`), which also
  *   keeps Chrome's clipboard in-process (D-011);
  * - Chrome's own sandbox kept: `--no-sandbox` is never passed, and a browser that reports it cannot sandbox is
@@ -100,10 +108,12 @@ export function chromeArgs({ profile, viewport, proxyServer } = {}) {
     '--disable-background-networking',
     '--disable-component-update',
     '--disable-default-apps',
-    '--disable-features=Translate,MediaRouter,OptimizationHints,AutofillServerCommunication',
+    // CU-808: the system / native notification bridge off with the rest - one --disable-features switch (Chrome reads the last).
+    `--disable-features=${['Translate', 'MediaRouter', 'OptimizationHints', 'AutofillServerCommunication', ...NO_NOTIFICATION_FEATURES].join(',')}`,
     '--no-first-run',
     '--no-default-browser-check',
     '--deny-permission-prompts',
+    '--disable-notifications',
     '--force-device-scale-factor=1',
     '--mute-audio',
     '--remote-debugging-port=0',
@@ -112,6 +122,12 @@ export function chromeArgs({ profile, viewport, proxyServer } = {}) {
     ...(proxyServer !== undefined ? [`--proxy-server=${proxyServer}`, '--proxy-bypass-list=<-loopback>', '--force-webrtc-ip-handling-policy=disable_non_proxied_udp'] : []),
     'about:blank',
   ]
+}
+
+/** Seed a throwaway profile (`<profile>/Default/Preferences`) before Chrome starts; refuses any other path. */
+export function seedProfile(profile, seat, { mkdir = mkdirSync, write = writeFileSync } = {}) {
+  if (!isOwnProfile(profile, seat)) throw new EnvironmentError('invalid_argument', 'refusing to seed a path that is not this seat\'s throwaway profile')
+  writeNoNotificationPreferences(profile, { mkdir, write })
 }
 
 /** The child environment: nothing inherited from the host but a minimal `PATH`. */
@@ -153,9 +169,16 @@ export function processCommandLine(pid, { run = execFile } = {}) {
  * Returns `{ child, wsUrl, profile, binary, stderr(), stop() }`. `stop()` is idempotent: SIGTERM, then SIGKILL after
  * two seconds, then the profile is removed. An exit hook kills the child and removes the profile if Node exits first.
  */
-export async function startChrome({ seat, viewport, proxyServer, binary, timeoutMs = 15_000, spawn = nodeSpawn, mkdtemp = mkdtempSync } = {}) {
+export async function startChrome({ seat, viewport, proxyServer, binary, timeoutMs = 15_000, spawn = nodeSpawn, mkdtemp = mkdtempSync, seed = seedProfile } = {}) {
   const executable = binary ?? findChrome()
   const profile = mkdtemp(profilePrefix(seat))
+  // CU-808: notifications blocked in the profile before Chrome reads it; a profile that cannot be seeded is removed and refused.
+  try {
+    seed(profile, seat)
+  } catch (error) {
+    await removeProfile(profile, seat).catch(() => {})
+    throw error instanceof EnvironmentError ? error : new EnvironmentError('resource_refused', 'the throwaway Chrome profile could not be prepared')
+  }
   const child = spawn(executable, chromeArgs({ profile, viewport, proxyServer }), { stdio: ['ignore', 'ignore', 'pipe'], env: childEnv(profile) })
   let stderr = ''
   child.stderr.on('data', (chunk) => {

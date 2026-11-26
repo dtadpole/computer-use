@@ -1,9 +1,9 @@
 ---
 title: Owner checklist - the owner session (step 4, G2, the Replace chain)
 created: 2026-11-05T17:25:00Z
-modified: 2026-11-10T06:26:07Z
+modified: 2026-11-24T17:05:00Z
 level: L1
-version: 0.4.3
+version: 0.4.7
 description: 'One page for the owner - what you do in the owner session, in order, and how long each step takes, at the Mac mini (the Confirm prompt) or over Screen Sharing; the per-part tables are in owner-checklist-parts.md. Rehearsed on helper 0.2.62 with labelled stand-ins (CU-341).'
 status: unverified
 grounded_in:
@@ -14,12 +14,19 @@ grounded_in:
   - source: _tools_/live-view/ui-logic.mjs (the texts quoted in owner-checklist-parts.md)
   - source: _verifiers_/desktop-human-control/owner-step4.mjs (the step 4 run)
   - source: Linear CU-11, CU-119, CU-135, CU-203 and CU-341 (rehearsal R1, R1b and R1c on helper 0.2.62, 9 Nov; 0.2.67 installed 10 Nov 06:18Z)
+  - source: Linear CU-728 (step-4 readiness walk, 23 Nov; helper Sources diff 0.2.67..main touches only Accessibility, Policy, Dispatcher and SystemCapabilities)
 ---
 
 # Owner checklist - the owner session
 
 One sitting, three parts. cu-verifier runs each part as an announced scripted run in **CU Fixture** and calls every
-step. Nothing you own is touched, no setting changes, and the helper is CUHelper 0.2.67 (installed 10 Nov 06:18Z). The
+step. Nothing you own is touched and no setting changes. The helper is the CUHelper installed on the day (0.2.73, signed install and readback 24 Nov 08:05Z). Controls unchanged since 0.2.67: 0.2.68-0.2.73 change only reads (form
+context, default buttons, dialog words, form entries) and add a floor that leaves remote-desktop and VM client apps out;
+the Confirm prompt, local-input and event code is untouched (checked in git from 0.2.67's commit to main), so Pause, Take
+over, Stop and the Confirm prompt behave as rehearsed. Sit at the Mac itself: the physical confirmation prompt can only
+be accepted in person, and a Screen Sharing sitting leaves it open. The Last War bridge stays idle for the sitting - its
+input pauses runs and resets the idle clock. Since 24 Nov 08:36:10Z it runs from its own worktree at b52c84ba3 and
+waits for 300 s of owner idle, carrying our runs' idle (CU-720, CU-721). The
 rehearsal ran on 0.2.62; 0.2.63-0.2.67 add only reads (placeholders, nearby labels, pop-up items, a file on the
 clipboard, an open menu, Finder's Quick Actions, a row's file, Finder's drop destinations, the Apple-menu mark); none
 changes Pause, Take over, Stop or the Confirm prompt. What each press shows:
@@ -27,12 +34,14 @@ changes Pause, Take over, Stop or the Confirm prompt. What each press shows:
 
 ## Before (2 minutes)
 
-1. Quit Typeless and any app that floats a window over the screen; dismiss the two notification alerts (top right).
-2. Open both links in a browser **on the Mac mini** (they bind 127.0.0.1). For the watch link, cu-verifier gives you
+1. If macOS shows a Screen Recording prompt for CUHelper (it may ask again), answer **Allow**. Only you can
+   answer it; without it every desktop run stops at its first screenshot.
+2. Quit Typeless and any app that floats a window over the screen; dismiss the two notification alerts (top right).
+3. Open both links in a browser **on the Mac mini** (they bind 127.0.0.1). For the watch link, cu-verifier gives you
    the run's `live view (watch):` line. For the control link, copy the **whole line** cu-verifier gives you (it
    starts `CU_HOME=...`) and run it **in your own Terminal**; the link prints only there. The page title starts
    `[cu live view]`.
-3. Then take your hands off the Mac. cu-verifier holds the Mac for the session, and that hold needs five minutes of
+4. Then take your hands off the Mac. cu-verifier holds the Mac for the session, and that hold needs five minutes of
    no input, so it is taken before you start.
 
 ## In order
@@ -41,7 +50,7 @@ changes Pause, Take over, Stop or the Confirm prompt. What each press shows:
 |---|---|---|
 | 1 | **Part 1, step 4 (CU-11).** At the prompt (see below), Confirm. When cu-verifier says so, press one key on the Mac: the run pauses before its next action. Then on the control link: **Resume**, **Take over**, **Hand back**, **Stop**. | about 8 minutes |
 | 2 | **Part 2, G2 (CU-119), live only, no rehearsal.** At the prompt, Confirm. While the run holds a key, press any key once: the held key comes up and the run pauses. Then **Stop**. | about 1 minute |
-| 3 | **Part 3, the Replace chain (CU-135).** At the prompt, Confirm. Answer the file choice **Approve once**; answer the separate Replace question **Decline**. | about 2 minutes |
+| 3 | **Part 3, the Replace chain (CU-135).** Run the Part 3 line cu-verifier gives you **in your own Terminal** (its questions are asked there, `--consent tty`). At the prompt, Confirm. Answer the file choice **Approve once**; answer the separate Replace question **Decline**. | about 2 minutes |
 
 Part 2 was not rehearsed: no scripted stand-in can act during a hold (CU-343), so the dry run and your press here
 are its evidence; no rehearsal pass covers it. Each control press takes effect at once: the rehearsal measured 6 to 34 ms from a press to the new state. After

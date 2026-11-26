@@ -5,7 +5,7 @@ import Foundation
 /// The helper's identity; `build.sh` writes the same bundle id into Info.plist.
 enum HelperIdentity {
   static let bundleId = "com.reflection.cu-helper"
-  static let version = "0.2.70"
+  static let version = "0.2.75"
   /// The value every synthetic event carries in `kCGEventSourceUserData`: 0x43555345, ASCII "CUSE"
   /// (input-and-targets.md, verify-kit's SYNTHETIC_TAG). Not a secret: an event from another process with this tag
   /// could only fail to pause the run, never act.
@@ -82,6 +82,14 @@ struct Exclusions {
     // Monitor (Force Quit). Ids read from each app's Info.plist on macOS 27; Console stays approvable (read-only).
     "com.apple.DiskUtility", "com.apple.bootcampassistant", "com.apple.MigrateAssistant", "com.apple.backup.launcher",
     "com.apple.TimeMachine", "com.apple.ActivityMonitor",
+    // CU-394: remote-desktop and VM clients (agent core's 'remote_control' kind, #924, its ids and citations) - another
+    // computer drawn as one opaque canvas. Family patterns only where every app of the maker is remote access or a VM.
+    "com.apple.ScreenSharing", "com.apple.RemoteDesktop", "com.teamviewer.*", "com.philandro.anydesk", "com.microsoft.rdc.macos",
+    "com.microsoft.remotehelp", "com.parallels.desktop.console", "com.2X.Client.Mac", "com.vmware.fusion", "com.vmware.horizon",
+    "com.omnissa.horizon.client.mac", "com.utmapp.*", "org.virtualbox.*", "com.p5sys.jump.*", "com.realvnc.*", "tv.parsec.*",
+    "com.citrix.receiver.nomas", "com.splashtop.stb.macosx", "com.splashtop.stp.macosx", "com.lemonmojo.*", "com.edovia.screens.5",
+    "com.google.chromeremotedesktop.me2me-host", "com.carriez.rustdesk", "com.citrix.receiver.icaviewer.mac",
+    "com.devolutions.remotedesktopmanager", "com.nomachine.nxdock",
   ]
 
   let entries: [String]
@@ -458,6 +466,32 @@ enum ToggleState {
   }
 }
 
+/// CU-763 (the helper half of CU-754): a toggle's row context - the name of the list, table or pane it sits in - so agent
+/// core can tell a privacy grant ('Terminal' under 'Full Disk Access') from a plain switch. `list` is the nearest titled
+/// container above the toggle (a table, outline, list, group, scroll area or tab group, by its AXTitle, else its
+/// AXDescription), else its window's title (System Settings titles the window with the pane's name); `hints` stays empty
+/// (the shape is the web driver's { list, hints }, CU-443). Names only, never a value; each at most `maxText` characters.
+enum RowContext {
+  static let maxDepth = 8
+  static let maxText = 60
+  static let containerRoles: Set<String> = ["AXTable", "AXOutline", "AXList", "AXGroup", "AXScrollArea", "AXTabGroup"]
+  struct Container { var role: String?; var title: String?; var description: String? }
+  /// The row context from the toggle's ancestors (nearest first, at most maxDepth) and its window's title; nil when no
+  /// name reads.
+  static func pick(_ ancestors: [Container], windowTitle: String?) -> JSON? {
+    let clean = { (text: String?) -> String? in
+      guard let text else { return nil }
+      let short = text.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
+      return short.isEmpty || short.count > maxText ? nil : short
+    }
+    for container in ancestors.prefix(maxDepth) where container.role.map({ containerRoles.contains($0) }) ?? false {
+      if let name = clean(container.title) ?? clean(container.description) { return .object(["list": .string(name), "hints": .array([])]) }
+    }
+    if let name = clean(windowTitle) { return .object(["list": .string(name), "hints": .array([])]) }
+    return nil
+  }
+}
+
 /// CU-412 (cu-coordinator 11:27Z, the desktop half): HTML submits a form on Return in a field even when its only submit
 /// controls are role=button divs, which the window's AXDefaultButton never names. In a web area whose window reads no
 /// default button, the focus's form - the nearest ancestor within 4 levels that is a form landmark or holds a
@@ -574,6 +608,61 @@ enum DialogText {
     let words = texts.compactMap(clean)
     if let title = clean(title) { return (title, words.first) }
     return (words.first, words.dropFirst().first)
+  }
+  /// A control's own label is never the dialog's words (cu-developer-two's #737 note): the walk below a dialog does not
+  /// descend into these roles, so a SwiftUI button's AXStaticText child ('Delete') cannot become a sibling button's
+  /// dialogName in a sheet with no title and no message text.
+  static let controlRoles: Set<String> = ["AXButton", "AXPopUpButton", "AXMenuButton", "AXCheckBox", "AXRadioButton", "AXDisclosureTriangle", "AXLink"]
+  /// Breadth first below `root`, at most `limit` nodes, never into a control's subtree (the control itself is listed).
+  static func walk<Node>(_ root: Node, limit: Int, children: (Node) -> [Node], role: (Node) -> String?) -> [Node] {
+    var out: [Node] = []
+    var queue = children(root)
+    while !queue.isEmpty, out.count < limit {
+      let next = queue.removeFirst()
+      out.append(next)
+      if !controlRoles.contains(role(next) ?? "") { queue += children(next) }
+    }
+    return out
+  }
+}
+
+/// CU-588 (the desktop half of CU-585): a button carries the words its sheet's or window's text entries show - what a
+/// typed-word confirmation asks to be typed ('Type DELETE to confirm' as an entry's placeholder, beside a bare 'Confirm'),
+/// read where no static text says it (CU-507's dialogName already carries a sheet's static texts). For each entry (a text
+/// field, text area or combo box; a secure field's label too, never its value): its label - AXTitleUIElement's shown
+/// words, else AXDescription, else AXPlaceholderValue - then its help text (AXHelp) on its own. Whitespace collapsed; a
+/// text over 80 characters is none (never cut); at most 3 texts, no repeats. Never an entry's AXValue. Pure.
+enum FormEntries {
+  static let maxTexts = 3
+  static let maxLength = 80
+  static let maxScan = 120
+  static let maxEntries = 12
+  static let entryRoles: Set<String> = ["AXTextField", "AXTextArea", "AXComboBox"]
+  static func isEntry(role: String?) -> Bool { entryRoles.contains(role ?? "") }
+  /// The containers that bound a button's own form in a window: a group, a scroll area, a split or tab pane, a toolbar.
+  static let groupRoles: Set<String> = ["AXGroup", "AXScrollArea", "AXSplitGroup", "AXTabGroup", "AXToolbar", "AXLayoutArea"]
+  /// The button's own form in a window (cu-researcher's #895 note): `chainRoles` are its ancestors' roles, nearest first,
+  /// up to the window. The scope is its nearest group (groupRoles) - an entry in another pane never lends to it, so a
+  /// toolbar's 'Export' reads no danger-zone prompt - else, for a flat panel with no group below the window, the window.
+  /// nil when the chain is empty. Named limit: a Confirm in a nested button-row group reads only that row.
+  static func scope(_ chainRoles: [String?]) -> Int? {
+    if let group = chainRoles.firstIndex(where: { groupRoles.contains($0 ?? "") }) { return group }
+    return chainRoles.isEmpty ? nil : chainRoles.count - 1
+  }
+  /// `entries`: per entry, [label from AXTitleUIElement, AXDescription, AXPlaceholderValue, AXHelp].
+  static func pick(_ entries: [[String?]]) -> [String] {
+    var out: [String] = []
+    func keep(_ raw: String?) {
+      guard out.count < maxTexts, let raw else { return }
+      let text = raw.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
+      if !text.isEmpty, text.count <= maxLength, !out.contains(text) { out.append(text) }
+    }
+    for entry in entries {
+      guard out.count < maxTexts else { break }
+      keep(entry.prefix(3).compactMap { $0 }.first { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty })
+      if entry.count > 3 { keep(entry[3]) }
+    }
+    return out
   }
 }
 

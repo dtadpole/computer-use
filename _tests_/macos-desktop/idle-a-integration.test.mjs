@@ -52,5 +52,8 @@ test('idle (A) end to end: the entry carries idleAtStart / armed / lastOwnerInpu
     await stopFake(child)
   }
   assert.equal(existsSync(join(dir, 'run.json')), false, 'released')
-  assert.equal(ownerIdleSeconds({ dir, idleSeconds: () => 0 }).rule, 'hid', 'no run: HIDIdleTime alone')
+  // CU-720: the released armed run leaves a carry; HIDIdleTime 0 read 300 ms later is an event after the release, so the
+  // owner's idle is HIDIdleTime alone again.
+  await pause(300)
+  assert.equal(ownerIdleSeconds({ dir, idleSeconds: () => 0 }).rule, 'hid', 'no run, an event since the release: HIDIdleTime alone')
 })

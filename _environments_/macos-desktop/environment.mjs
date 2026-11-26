@@ -652,9 +652,13 @@ function defaultButtonOf(value) {
   // what the sheet asks, like a click on it (D-106).
   const dialogName = dialogTextOf(value.dialogName)
   const dialogDescription = dialogTextOf(value.dialogDescription)
+  // CU-588 (helper 0.2.72): the default button's form entries too, so Return on a typed-confirm form's 'Confirm' is
+  // judged like a click on it.
+  const formEntries = formEntriesOf(value.formEntries)
   return {
     role, name: text(value.title), panel: panelOf(value.panel), ...(form !== null ? { formContext: form } : {}),
     ...(dialogName !== null ? { dialogName } : {}), ...(dialogDescription !== null ? { dialogDescription } : {}),
+    ...(formEntries !== null ? { formEntries } : {}),
   }
 }
 
@@ -900,6 +904,34 @@ export function dialogTextOf(value) {
   if (typeof value !== 'string') return null
   const text = value.replace(/[\u0000-\u001F\u007F]/gu, ' ').replace(/\s+/gu, ' ').trim()
   return text === '' ? null : text.slice(0, 300)
+}
+
+/**
+ * CU-763: a toggle's row context as the helper read it (RowContext: the nearest titled list, table or group, else the
+ * window's title) - re-validated at the boundary as the web route's rowContextOf: `{ list, hints }` with a list of at most
+ * 60 characters and at most 3 hints of at most 40; else null. CU-754's access-toggle rule reads it.
+ */
+export function toggleRowContextOf(value) {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return null
+  const clean = (text) => (typeof text === 'string' ? text.replace(/[\u0000-\u001F\u007F]/gu, ' ').replace(/\s+/gu, ' ').trim() : '')
+  const list = clean(value.list)
+  const hints = Array.isArray(value.hints) ? value.hints.map((hint) => clean(hint)).filter((hint) => hint !== '' && hint.length <= 40).slice(0, 3) : []
+  const keep = list !== '' && list.length <= 60
+  return keep || hints.length > 0 ? { ...(keep ? { list } : {}), hints } : null
+}
+
+/**
+ * CU-588 (helper 0.2.72): the words a button's sheet or window shows beside its text entries (FormEntries: labels,
+ * placeholders and help, never a value), re-validated at the boundary as the web route's formEntriesOf - up to 3 texts
+ * of 1-80 characters after whitespace is collapsed and control characters dropped; else null. Agent core reads them
+ * beside a generic submit (CU-585's late union).
+ */
+export function formEntriesOf(value) {
+  if (!Array.isArray(value)) return null
+  const texts = value.filter((text) => typeof text === 'string')
+    .map((text) => text.replace(/[\u0000-\u001F\u007F]/gu, ' ').replace(/\s+/gu, ' ').trim())
+    .filter((text) => text !== '' && text.length <= 80).slice(0, 3)
+  return texts.length > 0 ? texts : null
 }
 
 function keyEquivalentOf(value) {
@@ -1810,7 +1842,8 @@ class DesktopEnvironment {
     }
     if (typeof reply.frontmostBundleId === 'string') this.frontmostBundleId = reply.frontmostBundleId
     if (reply.done !== true) {
-      const error = replyError('input', { code: reply.code, message: reply.message, failedAt: reply.failedAt, bundleId: reply.bundleId, point: reply.point, heldKeys: reply.heldKeys })
+      // CU-791: the helper's 'check' word ('front', 'gesture', ...) goes on too, so the CU-199 refusal field names which check stopped it.
+      const error = replyError('input', { code: reply.code, message: reply.message, failedAt: reply.failedAt, bundleId: reply.bundleId, point: reply.point, heldKeys: reply.heldKeys, check: reply.check })
         ?? new EnvironmentError('helper_lost', 'the helper could not finish the input')
       // Helper 0.2.19 (CU-44): a stop during a held move sent Escape before the release, so nothing dropped - say so;
       // helper 0.2.20 (CU-45) also names where the button came up (global points, as a target refusal's point).
@@ -2112,6 +2145,12 @@ class DesktopEnvironment {
       // read; outside the fingerprint, and never in run records.
       ...(dialogTextOf(element.dialogName) !== null ? { dialogName: dialogTextOf(element.dialogName) } : {}),
       ...(dialogTextOf(element.dialogDescription) !== null ? { dialogDescription: dialogTextOf(element.dialogDescription) } : {}),
+      // CU-588 (helper 0.2.72): a button's form entries (formEntriesOf) - its sheet's or window's entry labels,
+      // placeholders and help, never a value; CU-585's late union reads them. Outside the fingerprint, never in run records.
+      ...(formEntriesOf(element.formEntries) !== null ? { formEntries: formEntriesOf(element.formEntries) } : {}),
+      // CU-763: a toggle's row context (toggleRowContextOf) - the list, table or pane it sits in, which CU-754's access
+      // toggle rule reads. Present only when the helper read one; outside the fingerprint, never in run records.
+      ...(toggleRowContextOf(element.rowContext) !== null ? { rowContext: toggleRowContextOf(element.rowContext) } : {}),
       menuPath: menuPathOf(element.menuPath),
       // CU-187: the label that captions a non-entry element (AXTitleUIElement's title, else its row's or cell's sibling
       // title, as the helper reads it) - never its value or its own title. A string of at most 80 characters, null when

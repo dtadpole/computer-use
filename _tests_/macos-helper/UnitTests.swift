@@ -341,6 +341,16 @@ func testEndWatchdog() {
   // cu-researcher: the watchdog only tries the copy's lock; busy past the timeout, it falls back to the held-keys marker.
   check(mirror.locked { mirror.trySnapshot(timeout: 0.05) } == nil, "a busy copy is not waited on past the try-lock's timeout")
   check(mirror.trySnapshot(timeout: 0.05) != nil, "a free copy is read at once")
+  // CU-744: the watchdog's cancel Escape goes to the driven app's pid only, and is dropped without one; the ups stay at
+  // the HID tap (nil), which is what clears the held state.
+  check(mirror.tryTarget(timeout: 0.05) == 0, "no input yet: no target")
+  mirror.setTarget(501)
+  check(mirror.tryTarget(timeout: 0.05) == 501 && mirror.locked { mirror.tryTarget(timeout: 0.05) } == 0, "the target is read try-locked; busy reads as none")
+  let drag = HeldMirror.releaseSteps(keys: [56], buttons: [.left], dragged: true, at: CGPoint(x: 9, y: 8))
+  let routed = SystemCapabilities.routedRelease(drag, cancelSteps: 2, cancelPid: 501)
+  check(routed.map { $0.0 } == drag && routed.map { $0.1 } == [501, 501, nil, nil], "with a target: Escape to its pid, the ups at the HID tap")
+  let blind = SystemCapabilities.routedRelease(drag, cancelSteps: 2, cancelPid: 0)
+  check(blind.map { $0.0 } == Array(drag.dropFirst(2)) && blind.allSatisfy { $0.1 == nil }, "without one (the marker's case): no Escape at all, the ups only")
   let markerFolder = NSTemporaryDirectory() + "cu-held-\(getpid())"
   try? FileManager.default.createDirectory(atPath: markerFolder, withIntermediateDirectories: true)
   HeldMarker.write(.object(["pid": .int(1), "keys": .array([.int(55)]), "buttons": .array([.string("left")])]), to: markerFolder + "/held-keys.json")
@@ -480,6 +490,17 @@ func testExclusions() {
   check(gaps292.allSatisfy(list.isExcluded), "Spotlight, LaunchBar, Enpass, Proton Pass, Keeper, Paste and Perplexity are in the floor (CU-292)")
   check(!list.isExcluded("at.obdev.littlesnitch") && !list.isExcluded("me.proton.mail") && !list.isExcluded("com.apple.spotlightd"),
         "their neighbours stay approvable: Little Snitch, Proton Mail, the Spotlight daemon id")
+  // CU-394: remote-desktop and VM clients, the ids of agent core's remote_control kind (#924); their makers' other apps stay approvable.
+  let remote394 = ["com.apple.ScreenSharing", "com.apple.RemoteDesktop", "com.teamviewer.TeamViewer", "com.philandro.anydesk", "com.microsoft.rdc.macos",
+                   "com.microsoft.remotehelp", "com.parallels.desktop.console", "com.2X.Client.Mac", "com.vmware.fusion", "com.vmware.horizon",
+                   "com.omnissa.horizon.client.mac", "com.utmapp.UTM", "org.virtualbox.app.VirtualBox", "com.p5sys.jump.mac.viewer", "com.realvnc.vncviewer",
+                   "tv.parsec.www", "com.citrix.receiver.nomas", "com.splashtop.stb.macosx", "com.splashtop.stp.macosx", "com.lemonmojo.RoyalTSX.App",
+                   "com.edovia.screens.5", "com.google.chromeremotedesktop.me2me-host", "com.carriez.rustdesk", "com.citrix.receiver.icaviewer.mac",
+                   "com.devolutions.remotedesktopmanager", "com.nomachine.nxdock"]
+  check(remote394.allSatisfy(list.isExcluded), "every remote-desktop and VM client of agent core's remote_control kind is in the floor (CU-394)")
+  check(!list.isExcluded("com.microsoft.Word") && !list.isExcluded("com.parallels.toolbox") && !list.isExcluded("com.vmware.workstation")
+        && !list.isExcluded("com.google.Chrome") && !list.isExcluded("com.citrix.workspace.other") && !list.isExcluded("com.splashtop.other"),
+        "their makers' other apps stay approvable: Word, Parallels Toolbox, other VMware / Citrix / Splashtop ids, Chrome")
   check(list.isExcluded(" com.apple.Terminal\n"), "ids are trimmed before matching")
   check(list.isExcluded("COM.APPLE.TERMINAL"), "case is ignored")
   check(!list.isExcluded("ai.reflection.cu.fixture") && !list.isExcluded("ai.reflection.cu.ledger") && !list.isExcluded("com.apple.TextEdit"), "the fixture apps and ordinary apps are approvable")
@@ -697,7 +718,7 @@ func button(_ kind: String, _ x: Int, _ y: Int) -> JSON { ["kind": .string(kind)
 func testDispatcherBasics() {
   let h = Harness(fixtureWorld)
   let hello = h.dispatcher.hello(token: "t0k")
-  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.70", "the hello opens the run")
+  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.75", "the hello opens the run")
   check(hello["mode"] == "dry-run" && hello["grants"] == ["screen": true, "accessibility": true, "postEvents": true, "listenEvents": false], "a dry-run hello says so, with all four grants")
   check(h.ask("capture", ["maxSize": size800])["code"] == "no_scope", "capture needs a scope")
   check(h.ask("input", ["events": [key("keyDown", 1)], "mode": "global"])["code"] == "no_scope", "input needs a scope")
@@ -1122,6 +1143,59 @@ func testAbortedDrag() {
   _ = plain.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
   _ = plain.ask("pauseOnLocalInput", ["on": true])
   check(plain.ask("input", ["events": [move(100, 100), button("down", 100, 100), drag(150, 120), button("up", 150, 120)], "mode": "global"])["cancelledDrag"] == nil, "a finished drag reports no cancel")
+}
+
+/// CU-744: an out-of-scope app comes to the front mid-drag. The drag's cancel Escape must not reach it: in 'global' mode
+/// it goes to the app we were driving only (its pid), on every release - the person's takeover too.
+func testCancelEscapeStaysInScope() {
+  let path = NSTemporaryDirectory() + "cu-helper-unit-\(getpid())-cu744.jsonl"
+  try? FileManager.default.removeItem(atPath: path)
+  var world = fixtureWorld.object!
+  world["frontmostAfter"] = ["steps": 3, "bundleId": "com.example.other"]
+  let h = Harness(.object(world), eventsOut: path)
+  _ = h.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
+  _ = h.ask("pauseOnLocalInput", ["on": true])
+  let stopped = h.ask("input", ["events": [move(100, 100), button("down", 100, 100), drag(150, 120), drag(200, 140), button("up", 200, 140)], "mode": "global"])
+  check(stopped["done"] == false && stopped["code"] == "out_of_scope" && stopped["bundleId"] == "com.example.other" && stopped["cancelledDrag"] == true,
+        "an app outside the scope came to the front mid-drag: stopped, named, the drag cancelled")
+  let lines = readEvents(path)
+  let keyTypes = [Int(CGEventType.keyDown.rawValue), Int(CGEventType.keyUp.rawValue)]
+  let keys = lines.filter { keyTypes.contains($0["event"]?["type"]?.integer ?? -1) }
+  check(keys.count == 2 && keys.allSatisfy { $0["mode"] == "pid" && $0["pid"] == 501 } && keys.first?["event"]?["keyCode"] == 53,
+        "the cancel Escape goes to the fixture's pid only, never to the key app")
+  check(lines.last?["event"]?["type"]?.integer == Int(CGEventType.leftMouseUp.rawValue) && lines.last?["mode"] == "global",
+        "the button still comes up on its own path")
+  check(h.dispatcher.heldMirror.tryTarget(timeout: 0.05) == 501, "the end watchdog's copy holds the driven app's pid, so its Escape goes there too (path B)")
+  try? FileManager.default.removeItem(atPath: path)
+  // The person's takeover (they may be switching apps as it happens): the Escape still goes to the driven app's pid.
+  let path2 = NSTemporaryDirectory() + "cu-helper-unit-\(getpid())-cu744b.jsonl"
+  try? FileManager.default.removeItem(atPath: path2)
+  var person = fixtureWorld.object!
+  person["localInputAfter"] = 3
+  let p = Harness(.object(person), eventsOut: path2)
+  _ = p.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
+  _ = p.ask("pauseOnLocalInput", ["on": true])
+  _ = p.ask("input", ["events": [move(100, 100), button("down", 100, 100), drag(150, 120), drag(200, 140), button("up", 200, 140)], "mode": "global"])
+  let personKeys = readEvents(path2).filter { keyTypes.contains($0["event"]?["type"]?.integer ?? -1) }
+  check(personKeys.count == 2 && personKeys.allSatisfy { $0["mode"] == "pid" && $0["pid"] == 501 }, "the person's takeover: the Escape goes to the fixture's pid too")
+  check(readEvents(path2).last?["event"]?["type"]?.integer == Int(CGEventType.leftMouseUp.rawValue) && readEvents(path2).last?["mode"] == "global",
+        "and the button still comes up in the run's mode, which clears the held state")
+  try? FileManager.default.removeItem(atPath: path2)
+  // The tap case (Last War's row): an out-of-scope app comes forward between a press and its release, with no drag.
+  // Nothing is cancelled, so no key at all is sent - only the held button comes up.
+  let path3 = NSTemporaryDirectory() + "cu-helper-unit-\(getpid())-cu744c.jsonl"
+  try? FileManager.default.removeItem(atPath: path3)
+  var tapWorld = fixtureWorld.object!
+  tapWorld["frontmostAfter"] = ["steps": 2, "bundleId": "com.example.other"]
+  let t = Harness(.object(tapWorld), eventsOut: path3)
+  _ = t.ask("scope", ["bundleIds": ["ai.reflection.cu.fixture"]])
+  _ = t.ask("pauseOnLocalInput", ["on": true])
+  let tapStopped = t.ask("input", ["events": [move(100, 100), button("down", 100, 100), button("up", 100, 100)], "mode": "global"])
+  let tapLines = readEvents(path3)
+  check(tapStopped["code"] == "out_of_scope" && tapStopped["cancelledDrag"] != true, "a tap interrupted by an out-of-scope app: stopped, nothing to cancel")
+  check(!tapLines.contains { keyTypes.contains($0["event"]?["type"]?.integer ?? -1) }, "a tap's release sends no key at all - no Escape")
+  check(tapLines.last?["event"]?["type"]?.integer == Int(CGEventType.leftMouseUp.rawValue), "only the held button comes up")
+  try? FileManager.default.removeItem(atPath: path3)
 }
 
 /// CU-39 (D-045): another process's content in an approved window is judged by that process; AppKit panels are marked.
@@ -2045,6 +2119,42 @@ func testDialogText() {
   check(blanks.name == "Delete 3 items?" && blanks.description == nil, "blank title and texts skipped; whitespace collapsed")
   check(DialogText.pick(title: nil, texts: []).name == nil && DialogText.pick(title: nil, texts: [nil]).description == nil, "nothing read: none")
   check(DialogText.clean(String(repeating: "x", count: 301))?.count == 300, "at most 300 characters")
+  // #737 note: a control's own label is never read as the dialog's words - the walk does not descend into controls.
+  struct Node { let role: String; let value: String?; let kids: [Node] }
+  let swiftUISheet = Node(role: "AXSheet", value: nil, kids: [
+    Node(role: "AXButton", value: nil, kids: [Node(role: "AXStaticText", value: "Delete", kids: [])]),
+    Node(role: "AXButton", value: nil, kids: [Node(role: "AXStaticText", value: "Continue", kids: [])]),
+  ])
+  let read = { (root: Node) -> [String?] in
+    DialogText.walk(root, limit: DialogText.maxTexts, children: { $0.kids }, role: { $0.role }).filter { $0.role == "AXStaticText" }.map { $0.value }
+  }
+  check(read(swiftUISheet).isEmpty, "a sheet of buttons alone has no dialog words - a button's label is not one")
+  check(DialogText.pick(title: nil, texts: read(swiftUISheet)).name == nil, "so 'Continue' beside 'Delete' reads no dialogName")
+  let alertSheet = Node(role: "AXSheet", value: nil, kids: [
+    Node(role: "AXStaticText", value: "Erase \"Untitled\"?", kids: []),
+    Node(role: "AXGroup", value: nil, kids: [Node(role: "AXStaticText", value: "This will erase all data on the disk.", kids: [])]),
+    Node(role: "AXButton", value: nil, kids: [Node(role: "AXStaticText", value: "Erase", kids: [])]),
+  ])
+  let words = DialogText.pick(title: nil, texts: read(alertSheet))
+  check(words.name == "Erase \"Untitled\"?" && words.description == "This will erase all data on the disk.", "texts in groups are still read; the button's label is not")
+  check(DialogText.walk(alertSheet, limit: 2, children: { $0.kids }, role: { $0.role }).count == 2, "the walk stops at its limit")
+  check(DialogText.controlRoles.contains("AXPopUpButton") && DialogText.controlRoles.contains("AXCheckBox") && !DialogText.controlRoles.contains("AXGroup"), "controls, not containers")
+  // CU-588: a button's form entries - each entry's label, else description, else placeholder, then its help; never a value.
+  check(FormEntries.pick([[nil, nil, "Type DELETE to confirm", nil]]) == ["Type DELETE to confirm"], "a placeholder-only prompt is read")
+  check(FormEntries.pick([["Workspace name", "ignored", "ignored too", "Type the workspace name to delete it"]]) == ["Workspace name", "Type the workspace name to delete it"],
+        "the label wins over description and placeholder; the help text comes on its own")
+  check(FormEntries.pick([[" ", nil, "Type  ERASE\nto confirm", nil]]) == ["Type ERASE to confirm"], "a blank label falls through; whitespace collapsed")
+  check(FormEntries.pick([[String(repeating: "x", count: 81), nil, nil, nil]]) == [], "a text over 80 characters is none, never cut")
+  check(FormEntries.pick([["A", nil, nil, nil], ["A", nil, nil, nil], ["B", nil, nil, "C"], ["D", nil, nil, nil]]) == ["A", "B", "C"], "no repeats; at most 3")
+  check(FormEntries.pick([]) == [] && FormEntries.pick([[nil, nil, nil, nil]]) == [], "nothing read: none")
+  check(FormEntries.isEntry(role: "AXTextField") && FormEntries.isEntry(role: "AXTextArea") && FormEntries.isEntry(role: "AXComboBox")
+        && !FormEntries.isEntry(role: "AXButton") && !FormEntries.isEntry(role: "AXStaticText") && !FormEntries.isEntry(role: nil), "entries are text fields, areas and combo boxes")
+  // cu-researcher's #895 note: in a window, only the button's own form lends - its nearest group, else (a flat panel) the window.
+  check(FormEntries.scope(["AXToolbar", "AXWindow"]) == 0, "a toolbar's 'Export' reads only its toolbar - never a danger-zone prompt elsewhere in the window")
+  check(FormEntries.scope(["AXGroup", "AXScrollArea", "AXWindow"]) == 0, "a danger zone's Confirm reads its own group")
+  check(FormEntries.scope([nil, "AXUnknown", "AXWindow"]) == 2, "a flat panel with no group below the window reads the window")
+  check(FormEntries.scope(["AXSplitGroup", "AXWindow"]) == 0 && FormEntries.scope(["AXTabGroup", "AXWindow"]) == 0, "a split or tab pane bounds the form")
+  check(FormEntries.scope([]) == nil, "no ancestors: no scope")
 }
 
 func testNearbyLabel() {
@@ -2195,6 +2305,23 @@ func testToggleState() {
   check(ToggleState.reads(role: "AXCheckBox") && ToggleState.reads(role: "AXRadioButton"), "the two toggle roles")
 }
 
+func testRowContext() {
+  // CU-763: a toggle's row context - the nearest titled container, else the window's title (System Settings names the
+  // window after its pane), in the web driver's { list, hints } shape.
+  typealias C = RowContext.Container
+  let pane = RowContext.pick([C(role: "AXRow", title: nil, description: nil), C(role: "AXTable", title: nil, description: nil), C(role: "AXScrollArea", title: nil, description: nil)], windowTitle: "Full Disk Access")
+  check(pane == .object(["list": .string("Full Disk Access"), "hints": .array([])]), "an untitled table in a privacy pane: the window's title")
+  let group = RowContext.pick([C(role: "AXGroup", title: nil, description: "Screen & System Audio Recording")], windowTitle: "Privacy & Security")
+  check(group?.object?["list"] == .string("Screen & System Audio Recording"), "a titled container wins over the window (its description when it has no title)")
+  let row = RowContext.pick([C(role: "AXRow", title: "Terminal", description: nil)], windowTitle: "Accessibility")
+  check(row?.object?["list"] == .string("Accessibility"), "a row's own title is the app's name, not the list's")
+  check(RowContext.pick([C(role: "AXGroup", title: "  Camera \n access ", description: nil)], windowTitle: nil)?.object?["list"] == .string("Camera access"), "whitespace collapsed")
+  check(RowContext.pick([C(role: "AXGroup", title: String(repeating: "x", count: 61), description: nil)], windowTitle: "General")?.object?["list"] == .string("General"), "a name over 60 characters is skipped")
+  check(RowContext.pick([], windowTitle: nil) == nil && RowContext.pick([C(role: "AXGroup", title: "", description: nil)], windowTitle: "") == nil, "nothing reads: nil")
+  let deep = Array(repeating: C(role: "AXRow", title: nil, description: nil), count: RowContext.maxDepth) + [C(role: "AXTable", title: "Too far", description: nil)]
+  check(RowContext.pick(deep, windowTitle: "Pane")?.object?["list"] == .string("Pane"), "at most maxDepth ancestors are read")
+}
+
 func testDefaultCandidates() {
   // CU-412: a web form's Return candidates when the window names no default button.
   typealias L = DefaultCandidates.Level
@@ -2278,6 +2405,7 @@ struct UnitTests {
     testForeignContentAndPanels()
     testDragPath()
     testAbortedDrag()
+    testCancelEscapeStaysInScope()
     testAccessibilityShapes()
     testArguments()
     testPeerCheck()
@@ -2298,6 +2426,7 @@ struct UnitTests {
     testFormContext()
     testDefaultCandidates()
     testToggleState()
+    testRowContext()
     testAppleMenuClickTarget()
     testEndWatchdog()
     // Informational: whether the process that ran these tests is genuine node (true for Node.js Foundation builds).

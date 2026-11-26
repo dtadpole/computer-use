@@ -1,35 +1,33 @@
 ---
 title: '[cu] Verifier - Handover'
 created: 2026-11-08T04:15:13Z
-modified: 2026-11-23T02:29:00Z
+modified: 2026-11-26T06:35:00Z
 level: L2
-version: 5.4.35
+version: 5.7.0
 description: 'What a fresh session of [cu] Verifier needs - where things are, the pass, the tools, the open rows and the lessons, in under 300 words.'
 status: unverified
 grounded_in:
-  - source: the seat's own state, 2026-11-16, trimmed to the seat rule of 300 words (supersedes 5.0.4)
+  - source: the seat's own state, 26 Nov 06:35Z (supersedes 5.6.0)
 ---
 
 # [cu] Verifier - Handover
 
-Start here, then [responsibilities](responsibilities.md) and [verdict](ultimate-goal-2-verdict.md).
+Start with [responsibilities](responsibilities.md) and [verdict](ultimate-goal-2-verdict.md).
 
-- **Where:** `--records` for verdicts, `--tm*` test trees, `--vtools` for local tools.
+- **Where:** a private tools folder inside the session worktree (git-ignored) and detached test trees beside it;
+  nothing in `/tmp`.
 - **Push:** gate unpiped, push on exit 0; one action-log line per PR; a PR title names no filing id but 'Part of CU-16'.
-- **Every pass:** inbox; `verifyq.py`; `filings.py`; `unarmed.py`; the run lock;
-  my PRs' mergeability (merge main if CONFLICTING; D-085).
-- **Rows:** `rowrun.mjs`, one headless run per row; `resume.sh` resumes gate-interrupted batches.
-  Review PRs by FETCH_HEAD SHA.
-  Desktop probes: `probes/`.
-- **Closes:** `watchall.sh` is one background job (restart daily) over `watchlist.tsv`. Then `linear.py verified` with
-  run ids copied by script, plus a mutant.
-- **Desktop rows:** in cu-developer-three's holds; I judge from events.jsonl.
-- **Open:** CU-586 / CU-588 desktop rows; CU-375 with #856; CU-596 under load; CU-607 on a class ruling;
-  CU-645 has #1129 (rule-1), CU-702 #1349; no fix PR: CU-612, CU-618, CU-631 .. CU-633, CU-640, CU-642, CU-647, CU-649, CU-651, CU-656, CU-658, CU-667, CU-671, CU-681, CU-682, CU-696 (permission half), CU-701, CU-703 .. CU-706. The consent row
-  waits on CU-135 step 4.
-- **Lessons:** read the Verify state before `verified` (outside Verify it only moves there); a records PR naming an
-  issue moves it to Verify on merge - reopen with a live row; count OKs from the PR. One browser per seat, one job
-  per window, one DONE after all of it. Rows start only in a written window given to me, shared, or my close -
-  never another seat's - and never while a gate runs (`q.sh` checks per row). A mutant counts only when its row
-  fails, the file parses, its anchor is unique, and it ran in a scratch tree after the close. Held-outs cover
-  person, possessive and imperative twins; pin parity rows.
+- **Every pass:** the whole inbox; the Verify queue; armed launchers alive; the run lock; my PRs' mergeability (D-085).
+- **Filings:** reproduce each new consent filing alone on main before the developer's test1 (D-123), rows verbatim,
+  with twins; test the filed shape exactly.
+- **Reviews:** read the whole PR thread first; a probe of the head on both routes, then whole-page live rows in the
+  window named for the review, sized so the rows end 30 s early. A new head voids an OK.
+- **Closes:** rows on the merge, then mutants in a scratch tree; a survivor is named redundant only after it misses
+  every row.
+- **Jobs:** each job sends its own DONE under the window's exact label; preflight the environment first - a fixture
+  launch needs `CU_DESKTOP_SEAT` under the hold.
+- **Open:** CU-763 - on 0.2.75 the CU Fixture privacy-pane toggle still acts unasked with no row context (dev-three
+  diagnoses); CU-787 closes with it; repros of CU-723 / CU-831 / CU-835; CU-709's
+  PR probe; step 4 with the owner (CU-11, CU-727).
+- **Lessons:** never stop a launcher whose window is open; read my own log before raising an order alarm; fixture
+  apps only for desktop runs.
