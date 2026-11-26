@@ -718,7 +718,7 @@ func button(_ kind: String, _ x: Int, _ y: Int) -> JSON { ["kind": .string(kind)
 func testDispatcherBasics() {
   let h = Harness(fixtureWorld)
   let hello = h.dispatcher.hello(token: "t0k")
-  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.75", "the hello opens the run")
+  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.76", "the hello opens the run")
   check(hello["mode"] == "dry-run" && hello["grants"] == ["screen": true, "accessibility": true, "postEvents": true, "listenEvents": false], "a dry-run hello says so, with all four grants")
   check(h.ask("capture", ["maxSize": size800])["code"] == "no_scope", "capture needs a scope")
   check(h.ask("input", ["events": [key("keyDown", 1)], "mode": "global"])["code"] == "no_scope", "input needs a scope")
@@ -2322,6 +2322,51 @@ func testRowContext() {
   check(RowContext.pick(deep, windowTitle: "Pane")?.object?["list"] == .string("Pane"), "at most maxDepth ancestors are read")
 }
 
+func testRowContextHeading() {
+  // CU-763 (0.2.76, cu-verifier's 0.2.75 close on CU Fixture's privacy pane): an untitled list is named by its heading -
+  // its title element, else the nearest static text before it - cut to its first clause.
+  check(RowContext.firstClause("Full Disk Access - allow the applications below to access all of your files.") == "Full Disk Access", "a spaced dash ends the clause (the 76-character header gives its 16-character name)")
+  check(RowContext.firstClause("Show in menu bar") == "Show in menu bar", "a short heading stays whole")
+  check(RowContext.firstClause("Camera: allow the apps below to use your camera.") == "Camera", "': ' ends the clause")
+  check(RowContext.firstClause("Files and Folders. Allow the applications below to reach them.") == "Files and Folders", "'. ' ends the clause")
+  check(RowContext.firstClause("Allow the applications below to control your computer.") == "Allow the applications below to control your computer", "one sentence: only its final period goes")
+  check(RowContext.firstClause("Screen Recording \u{2013} these apps can record") == "Screen Recording" && RowContext.firstClause("Microphone \u{2014} apps below") == "Microphone", "en and em dashes with spaces end the clause")
+  check(RowContext.firstClause("Wi-Fi & Bluetooth") == "Wi-Fi & Bluetooth" && RowContext.firstClause("Version 2.1 apps") == "Version 2.1 apps", "a hyphenated word, '&' or a decimal point is no cut")
+  check(RowContext.firstClause("  Input \n Monitoring  ") == "Input Monitoring", "whitespace collapsed")
+  check(RowContext.firstClause(String(repeating: "word ", count: 14) + "- tail") == nil, "a first clause over maxText reads nothing")
+  check(RowContext.firstClause(nil) == nil && RowContext.firstClause("") == nil && RowContext.firstClause("   ") == nil && RowContext.firstClause(" . ") == nil, "nothing to read: nil")
+
+  typealias S = RowContext.Sibling
+  // CU Fixture's privacy pane in parent order: the window's heading, then each section's header and its scroll area.
+  let pane = [S(role: "AXStaticText", text: "Privacy"), S(role: "AXStaticText", text: "Full Disk Access - allow the applications below to access all of your files."),
+              S(role: "AXScrollArea", text: nil), S(role: "AXStaticText", text: "Show in menu bar"), S(role: "AXScrollArea", text: nil)]
+  check(RowContext.heading(titleElement: nil, siblings: pane, index: 2) == "Full Disk Access", "section 1: the header just before its list")
+  check(RowContext.heading(titleElement: nil, siblings: pane, index: 4) == "Show in menu bar", "section 2: its own header, not section 1's")
+  let headless = [S(role: "AXStaticText", text: "Full Disk Access"), S(role: "AXScrollArea", text: nil), S(role: "AXScrollArea", text: nil)]
+  check(RowContext.heading(titleElement: nil, siblings: headless, index: 2) == nil, "never past another list: a list without a header borrows none")
+  check(RowContext.heading(titleElement: "Location Services", siblings: [S(role: "AXStaticText", text: "Other")], index: 1) == "Location Services", "the title element wins")
+  check(RowContext.heading(titleElement: String(repeating: "x", count: 61), siblings: [S(role: "AXStaticText", text: "Contacts")], index: 1) == "Contacts", "a title element that does not read falls to the static text")
+  let longNearest = [S(role: "AXStaticText", text: "Accessibility"), S(role: "AXStaticText", text: String(repeating: "long words ", count: 8)), S(role: "AXTable", text: nil)]
+  check(RowContext.heading(titleElement: nil, siblings: longNearest, index: 2) == nil, "the nearest static text decides; an older one further up is not taken")
+  let controls = [S(role: "AXStaticText", text: "Full Disk Access"), S(role: "AXButton", text: nil), S(role: "AXCheckBox", text: nil), S(role: "AXOutline", text: nil)]
+  check(RowContext.heading(titleElement: nil, siblings: controls, index: 3) == "Full Disk Access", "controls between the header and its list are passed over")
+  let far = [S(role: "AXStaticText", text: "Far")] + Array(repeating: S(role: "AXButton", text: nil), count: RowContext.maxSiblings) + [S(role: "AXTable", text: nil)]
+  check(RowContext.heading(titleElement: nil, siblings: far, index: far.count - 1) == nil, "at most maxSiblings earlier siblings are looked at")
+  check(RowContext.heading(titleElement: nil, siblings: pane, index: 0) == nil && RowContext.heading(titleElement: nil, siblings: pane, index: nil) == nil
+        && RowContext.heading(titleElement: nil, siblings: pane, index: 9) == nil, "no place in the parent, or first child: nil")
+
+  typealias C = RowContext.Container
+  let g1 = RowContext.pick([C(role: "AXRow", title: nil, description: nil), C(role: "AXTable", title: nil, description: nil),
+                            C(role: "AXScrollArea", title: nil, description: nil, heading: "Full Disk Access")], windowTitle: "Privacy")
+  check(g1 == .object(["list": .string("Full Disk Access"), "hints": .array([])]), "G1's shape: the list's heading, ahead of the window's title")
+  let c1 = RowContext.pick([C(role: "AXTable", title: nil, description: nil, heading: "Show in menu bar")], windowTitle: "Control Centre")
+  check(c1?.object?["list"] == .string("Show in menu bar"), "C1's shape: a plain list is named by its heading too (agent core decides)")
+  check(RowContext.pick([C(role: "AXGroup", title: nil, description: nil, heading: "Full Disk Access")], windowTitle: "Window")?.object?["list"] == .string("Window"), "a heading names only a list or its scroll area")
+  check(RowContext.pick([C(role: "AXTable", title: "Apps", description: nil, heading: "Full Disk Access")], windowTitle: nil)?.object?["list"] == .string("Apps"), "a container's own title wins over its heading")
+  check(RowContext.pick([C(role: "AXOutline", title: nil, description: nil, heading: "Full Disk Access"), C(role: "AXGroup", title: "Privacy & Security", description: nil)], windowTitle: nil)?.object?["list"] == .string("Full Disk Access"), "the nearer list's heading wins over a titled group further up")
+  check(RowContext.pick([C(role: "AXScrollArea", title: nil, description: nil, heading: String(repeating: "y", count: 61))], windowTitle: "Pane")?.object?["list"] == .string("Pane"), "a heading over maxText falls to the window's title")
+}
+
 func testDefaultCandidates() {
   // CU-412: a web form's Return candidates when the window names no default button.
   typealias L = DefaultCandidates.Level
@@ -2427,6 +2472,7 @@ struct UnitTests {
     testDefaultCandidates()
     testToggleState()
     testRowContext()
+    testRowContextHeading()
     testAppleMenuClickTarget()
     testEndWatchdog()
     // Informational: whether the process that ran these tests is genuine node (true for Node.js Foundation builds).
