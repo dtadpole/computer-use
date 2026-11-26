@@ -5,6 +5,15 @@ import { normalizeKey } from './keys.mjs'
 import { originPattern } from './sites.mjs'
 import { amountClass, canonicalForms, clauseSplit, clauseVerbLed, grammarClasses, grammarClassesBase, inertLinkAmountClass, quantifierDropped, questionStripped, sectionLabelStripped, straightQuotes, synonymForms, toggleExpansion, egressesData } from './phrase-grammar.mjs'
 
+// CU-709: web wallets and DeFi services by their own registered domains (a page on the domain or a subdomain of it). A bare
+// label is never enough: 'spark', 'curve' or 'orca' name unrelated hosts too.
+const WALLET_DEFI_DOMAINS = [
+  'aave.com', 'compound.finance', 'uniswap.org', 'curve.fi', 'lido.fi', 'makerdao.com', 'spark.fi', 'morpho.org', 'metamask.io',
+  'phantom.app', 'phantom.com', 'rabby.io', 'zerion.io', 'zapper.xyz', 'debank.com', '1inch.io', 'sushi.com', 'pancakeswap.finance',
+  'balancer.fi', 'yearn.fi', 'eigenlayer.xyz', 'pendle.finance', 'gmx.io', 'dydx.exchange', 'jup.ag', 'raydium.io', 'orca.so',
+  'marinade.finance', 'kamino.finance', 'solend.fi',
+]
+
 /**
  * The action policy (design: action-policy.md, consent-gate.md). `classify` runs in the dispatcher for every action,
  * inside every batch (R27), and answers `{ decision, class, rule, reason }` with `decision` one of `allow`,
@@ -5345,16 +5354,21 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     if (grammarEligible && !nativeOn && classes.length === 0 && egressesData(name)) classes.push('permission')
     // CU-709 (cu-researcher's D-112 follow-up to CU-576): lending, borrowing, repaying, burning and opening / closing a payment
     // channel move funds too - in a wallet app (the CU-576 kind, below) and on a web wallet or DeFi page (D-109: the URL's host
-    // or path, never a title: a named wallet / DeFi host, or a /wallet(s), /defi, /lend(ing), /borrow(ing) path segment). A
-    // navigation noun after the verb ('Borrow rates', 'Lending history', 'Channel settings') opens a page and stays free.
-    const walletFollowupVerb = /^\s*(?:lend|borrow|repay|burn|supply|(?:open|close|force[-\s]?close)\s+(?:a\s+|the\s+)?(?:lightning\s+|payment\s+)?channel)\b/i.test(String(name ?? ''))
-      && !/\b(?:history|settings|rates?|faq|guide|docs|limits|markets?|overview|details|info|apy|apr)\b/i.test(String(name ?? ''))
+    // or path, never a title: a named wallet / DeFi service's own registered domain or a subdomain of it, or a /wallet(s) or
+    // /defi path segment - a /lending or /borrowing path alone is any loan, a library's too). A navigation noun right after the
+    // verb ('Borrow rates', 'Supply APY', 'Open channel settings') opens a page and stays free; a rate later in an action's name
+    // ('Borrow USDC at 5.1% APR') does not free it. A link opens a page: the rule reads controls only.
+    const walletVerbSource = '^\\s*(?:lend|borrow|repay|burn|supply|(?:open|close|force[-\\s]?close)\\s+(?:a\\s+|the\\s+)?(?:lightning\\s+|payment\\s+)?channel)'
+    const walletFollowupVerb = new RegExp(walletVerbSource + '\\b', 'i').test(String(name ?? ''))
+      && !new RegExp(walletVerbSource + '\\s+(?:the\\s+|my\\s+|your\\s+)?(?:history|settings|rates?|faq|guide|docs|limits|markets?|overview|details|info|apy|apr)\\b', 'i').test(String(name ?? ''))
+      && !/\b(?:link|AXLink)\b/.test(String(target?.role ?? '') + ' ' + String(target?.subrole ?? ''))
     if (walletFollowupVerb && !nativeOn && !classes.includes('purchase')) {
       let walletWeb = false
       try {
         const u = new URL(String(context.url ?? ''))
-        walletWeb = /^https?:$/.test(u.protocol) && (/(?:^|\.)(?:aave|compound|uniswap|curve|lido|makerdao|spark|morpho|metamask|phantom|rabby|zerion|zapper|debank|1inch|sushi|pancakeswap|balancer|yearn|eigenlayer|pendle|gmx|dydx|jup|raydium|orca|marinade|kamino|solend)\.[a-z.]+$/i.test(u.hostname)
-          || /(?:^|\/)(?:wallets?|defi|lend(?:ing)?|borrow(?:ing)?)(?=$|[/?#])/i.test(u.pathname))
+        const host = u.hostname.toLowerCase()
+        walletWeb = /^https?:$/.test(u.protocol) && (WALLET_DEFI_DOMAINS.some((d) => host === d || host.endsWith('.' + d))
+          || /(?:^|\/)(?:wallets?|defi)(?=$|[/?#])/i.test(u.pathname))
       } catch { walletWeb = false }
       if ((desktopUrl && isWalletApp(String(context.frontmostBundleId ?? target?.origin ?? context.url ?? ''))) || (!desktopUrl && walletWeb)) classes.push('purchase')
     }
