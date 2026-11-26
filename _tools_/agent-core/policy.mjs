@@ -87,7 +87,7 @@ const LOCALE_PASSIVE_ACTS = [
   // è stato / foi / werd ... ?'); a negation skips it (localePassiveAct).
   [/^(?=[^?]*?(?<!\p{L})(?:queda|quedan|quedará|quedarán|quedaría|está|están|estará|estarán|permanece|permanecerá|reste|restent|restera|resteront|resterait|sera|seront|est|sont|resta|restano|resterà|rimane|rimangono|rimarrà|sarà|saranno|è|sono|fica|ficam|ficará|ficarão|estará|será|serão|blijft|blijven|is|zijn|wordt|worden)(?!\p{L}))[^?]*?(?<!\p{L})(?:papelera|papeleras|corbeille|corbeilles|cestino|lixeira|lixo|(?:prullen(?:bak|mand)|vuil(?:nis)?bak)|bandeja\s+de\s+entrada|boîte\s+de\s+réception|posta\s+in\s+arrivo|caixa\s+de\s+entrada|postvak\s+in)(?!\p{L})[^?]{0,60}?(?<!\p{L})(?:vaciad[oa]s?|vac[ií][oa]s?|vidée?s?|vides?|svuotat[oaie]|vuot[oaie]|esvaziad[oa]s?|vazi[oa]s?|geleegd|leeg\s?(?:ge)?maakt|leeg\s?(?:ge)?haald|leeg\s?(?:ge)?ruimd|geledigd|leeg)(?!\p{L})[^?]{0,40}\?\s*$|^(?=[^?]*?(?<!\p{L})(?:queda|quedan|quedará|quedarán|quedaría|está|están|estará|estarán|permanece|permanecerá|reste|restent|restera|resteront|resterait|sera|seront|est|sont|resta|restano|resterà|rimane|rimangono|rimarrà|sarà|saranno|è|sono|fica|ficam|ficará|ficarão|estará|será|serão|blijft|blijven|is|zijn|wordt|worden)(?!\p{L}))[^?]*?(?<!\p{L})(?:vaciad[oa]s?|vac[ií][oa]s?|vidée?s?|vides?|svuotat[oaie]|vuot[oaie]|esvaziad[oa]s?|vazi[oa]s?|geleegd|leeg\s?(?:ge)?maakt|leeg\s?(?:ge)?haald|leeg\s?(?:ge)?ruimd|geledigd|leeg)(?!\p{L})[^?]{0,60}?(?<!\p{L})(?:papelera|papeleras|corbeille|corbeilles|cestino|lixeira|lixo|(?:prullen(?:bak|mand)|vuil(?:nis)?bak)|bandeja\s+de\s+entrada|boîte\s+de\s+réception|posta\s+in\s+arrivo|caixa\s+de\s+entrada|postvak\s+in)(?!\p{L})[^?]{0,40}\?\s*$/iu, 'delete'],
   // r2 (cu-developer-two's cross-check): 'se' reads only before a FUTURE form - 'Se ha eliminado el archivo.' is a notice.
-  [/\bser[áa]n?\s+(?:\S+\s+){0,3}?(?:eliminad[oa]s?|borrad[oa]s?)\b|\bse\s+(?:\S+\s+){0,2}?(?:eliminar[áa]n?|borrar[áa]n?)(?!\p{L})/iu, 'eliminar'],
+  [/\bser[áa]n?\s+(?:\S+\s+){0,3}?(?:eliminad[oa]s?|borrad[oa]s?|suprimid[oa]s?)\b|\bse\s+(?:\S+\s+){0,2}?(?:eliminar[áa]n?|borrar[áa]n?|suprimir[áa]n?)(?!\p{L})/iu, 'eliminar'],
   [/\b(?:verranno|verrà|saranno|sarà)\s+(?:\S+\s+){0,3}?(?:eliminat[ioae]|rimoss[ioae]|cancellat[ioae])\b/iu, 'elimina'],
   [/\b(?:serão|será)\s+(?:\S+\s+){0,3}?(?:excluíd[oa]s?|apagad[oa]s?|removid[oa]s?)\b/iu, 'excluir'],
   // r2 (cu-researcher's held-out 13:02Z): Dutch - 'Deze mailbox wordt permanent verwijderd.'
@@ -151,7 +151,7 @@ const ECHO_CJK = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script
 // ko / tr forms too (cu-developer-two's cross-check).
 const EMPTYING_BUTTON = /^(?:empty|empty\s+now|leeren|entleeren|ausleeren|vider|vaciar|svuota|svuotare|esvaziar|legen|leegmaken|leeghalen|leegruimen|ledigen|leeg\s+(?:maken|halen|ruimen)|очистить|空にする|清倒|倒空|清空|비우기|boşalt)$/u
 const TRASH_NOUN = /(?<!\p{L})(?:trash|bin|recycle\s+bin|papierkorb|mülleimer|abfalleimer|corbeille|papelera|cestino|lixeira|lixo|prullenbak|prullenmand|vuilnisbak|vuilbak|корзин[аеуыой]|корзиной|çöp)(?!\p{L})|ゴミ箱|废纸篓|廢紙簍|回收站|휴지통/iu
-const TRASH_DELETE_VERB = /(?<!\p{L})(?:delete|deleted|erase|erased|remove|removed|löschen|gelöscht|entfernen|entfernt|supprimer|supprimée?s?|effacer|effacée?s?|eliminar|eliminad[oa]s?|borrar|borrad[oa]s?|eliminare|eliminat[oiae]|cancellare|cancellat[oiae]|excluir|excluíd[oa]s?|apagar|apagad[oa]s?|verwijderen|verwijderd|wissen|gewist)(?!\p{L})/iu
+const TRASH_DELETE_VERB = /(?<!\p{L})(?:delete|deleted|erase|erased|remove|removed|löschen|gelöscht|entfernen|entfernt|supprimer|supprimée?s?|effacer|effacée?s?|eliminar|eliminad[oa]s?|borrar|borrad[oa]s?|suprimir|suprimid[oa]s?|eliminare|eliminat[oiae]|cancellare|cancellat[oiae]|excluir|excluíd[oa]s?|apagar|apagad[oa]s?|verwijderen|verwijderd|wissen|gewist)(?!\p{L})/iu
 // CU-814 (the table cu-researcher OK'd 21:56Z): the emptying verb's passive / participle over the trash, only with a future
 // auxiliary - never a bare question ('¿La papelera fue vaciada ayer?', 'Can the Trash be emptied later?'). German and Dutch stay
 // with their own cells (CU-781 / CU-800), which keep the modal guards ('Kann der Papierkorb später geleert werden?').
@@ -225,7 +225,10 @@ function localeTrashPending(text) {
 // CU-818 (the table cu-researcher OK'd 19:58Z): a description sentence under a title that names the trash counts as naming it
 // too - but only when it speaks of the trash's items (an item noun or a pronoun), never a sentence that names another object
 // ('Your search history will also be deleted.').
-const TRASH_ITEM_NOUN = /(?<!\p{L})(?:items?|files?|documents?|contents?|objects?|everything|all|they|them|these|it|elemente?|objekte|dateien|alles|alle|éléments?|fichiers?|tout|tous|elementos?|archivos?|todo|todos|elementi|tutto|tutti|itens|arquivos|tudo|onderdelen|bestanden|items|объекты|файлы|элементы|всё|все|öğeler|dosyalar|tümü)(?!\p{L})|項目|ファイル|書類|すべて|全て|项目|文件|所有|全部|항목|파일|모든|전부/iu
+// CU-829 (the table cu-researcher OK'd 01:03Z): each language's content noun too - contenu / contenido / contenuto / conteúdo /
+// Inhalt / inhoud / содержимое / içerik / 中身. The very common zh / ja 内容 and ko 내용 stay out (her over-ask check): they name a
+// description as often as the trash's contents.
+const TRASH_ITEM_NOUN = /(?<!\p{L})(?:items?|files?|documents?|contents?|objects?|everything|all|they|them|these|it|elemente?|objekte|dateien|alles|alle|éléments?|fichiers?|tout|tous|elementos?|archivos?|todo|todos|elementi|tutto|tutti|itens|arquivos|tudo|onderdelen|bestanden|items|объекты|файлы|элементы|всё|все|öğeler|dosyalar|tümü|contenu|contenido|contenuto|conteúdo|inhalte?|inhoud|содержимое|içeri(?:k|ği))(?!\p{L})|項目|ファイル|書類|すべて|全て|中身|项目|文件|所有|全部|항목|파일|모든|전부/iu
 function emptiesTrashByDelete(name, sentence, titleNamesTrash = false) {
   const button = String(name ?? '').trim().toLowerCase()
   const text = String(sentence ?? '').trim()
