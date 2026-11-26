@@ -481,12 +481,13 @@ const EXPOSED_TOGGLE = new RegExp('^\\s*(?:' + [
   // 'My portfolio is visible to strangers', 'Profile visible to guests'
   String.raw`(?:${OWN_WORK}|profile|portfolio|shop|store|listing|contact\s+card)\s+(?:is\s+|are\s+)?(?:visible|viewable|accessible|shown|available|open|public)\s+(?:to|by)\s+${WIDER}`,
 ].join('|') + ')\\s*$', 'i')
-/** CU-754: whether a toggle's row context (rowContext: a { list, hints } object or a plain string) names an access right. */
+/** CU-754: whether a toggle's row context (rowContext: a { list, hints } object or a plain string) names an access right.
+ * CU-840: a hint is read to 60 characters, the list's and helper 0.2.76's bound, so a right named past character 40 counts. */
 export function accessRowContext(rowContext) {
   const texts = typeof rowContext === 'string'
     ? [rowContext.slice(0, 120)]
     : rowContext && typeof rowContext === 'object'
-      ? [typeof rowContext.list === 'string' ? rowContext.list.slice(0, 60) : '', ...(Array.isArray(rowContext.hints) ? rowContext.hints.map((hint) => String(hint ?? '').slice(0, 40)) : [])]
+      ? [typeof rowContext.list === 'string' ? rowContext.list.slice(0, 60) : '', ...(Array.isArray(rowContext.hints) ? rowContext.hints.map((hint) => String(hint ?? '').slice(0, 60)) : [])]
       : []
   return texts.some((text) => ACCESS_RIGHT_LIST.test(text) || /^\s*accessibility\s*$/i.test(text))
 }
