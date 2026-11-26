@@ -1,39 +1,26 @@
 ---
 title: '[cu] Coordinator - handover'
 created: 2026-11-08T04:15:00Z
-modified: 2026-11-25T23:00:00Z
+modified: 2026-11-26T16:40:00Z
 level: L2
-version: 4.5.0
+version: 4.7.0
 status: unverified
-description: 'What the next [cu] Coordinator session needs to take the seat mid-flight - state at 25 Nov 23:00Z.'
+description: 'What the next [cu] Coordinator session needs to take the seat mid-flight - state at 26 Nov 16:40Z.'
 grounded_in:
   - source: owner's re-creation order of 2026-11-22 19:05 PST (the previous holder was archived past the model window)
-  - source: decision log D-108, D-110 to D-121
+  - source: decision log D-119 to D-125
 ---
 
 # [cu] Coordinator - handover
 
-**Where things are.** Work only from the session worktrees with `git -C` (D-104). Private: roster, seat files, review
-log and helpers beside TEAM.yaml in the reflection bank. Keep tool outputs small; idle rounds use a bounded wait.
+**Why now.** The holder reached about 60 percent context after six seat replacements; it hands over early (D-124 (6)).
 
-**Goal.** Seven rows hold. Consent on 25 Nov: CU-804 to 809, 813, 816, 818, 821, 749, 755 closed live. Open P1, in
-order at cu-developer-one: CU-814 (re-scoped to a generic emptying button), CU-825 (word boundary after a non-ASCII
-final letter, all locales), CU-815, CU-819, CU-823. #1486 (CU-788, P2) is on a D-121 (1) cut: merge only if r3 frees a
-subset of r2 and every act that asks on main still asks, else close it. 26 Nov: #1444 (helper 0.2.75, CU-763)
-merges 08:00Z, install by 08:15Z, close and the researcher's live window by 09:20Z; all four seats ARMED. Human
-control waits on step 4 (owner says when).
+**State.** Closed live today: CU-831, CU-832, CU-833. Open P1 in the policy.mjs line (D-108, D-125 (4)): #1533 (CU-815, three OKs) then #1534 (CU-840, the boundary hint length; should merge before the CU-763 close), then #1524 (CU-830, P2) and #1521 (CU-709, P3). #1522 (CU-763, helper 0.2.76, three OKs) merges in the 27 Nov 08:00-08:25Z window; signed install with a true READBACK, then the CU-763 and CU-787 live closes. Next P1 builds: CU-819, CU-823, CU-842 (cu-developer-one), CU-839 (cu-developer-three). Twelve parked consent PRs exit only through a repro on main (D-125 (3)).
 
-**Rules added.** D-121: an over-ask after the final fold means revert or cut, never another round; marker tables are
-OK'd by the researcher before the build, with a past-event near row per marker.
+**Rulings to know.** D-125: skipped desktop cells under owner activity, harness pre-merge OKs for signed-helper PRs, the parked-PR exit, policy.mjs order by priority, parity of same-frame twins.
 
-**Seats.** Verifier replaced 12:27Z, integrator 14:38Z; integrator and researcher goals renewed this evening. P1 and
-P2 build windows alternate until the P2 queue is empty. After a DSH restart revive each seat with /goal resume.
+**Team health.** All seven seats were replaced today; the researcher and the verifier hand over again near 65 percent. Seats hand over at 60-65 percent, not 70. Never run session-inbox send with a roster that does not name your session: it then scans home folders and raises macOS privacy prompts (26 Nov 15:30Z).
 
-**Every 15 minutes.** Inbox, health, triage, decisions, a short Chinese summary; member reviews every 2 h (round 91
-due about 01:00Z; re-check cu-developer-three's communication).
+**Watchdog (CU-834).** It has never run: this Mac has no service-runner agent and no host unit; both steps are the owner's.
 
-**Rules that bite.** No ask_user_question (D-031). Input only through CUHelper, owner idle (D-056, D-066). Nothing past
-21 USD without the owner (D-034). Never implement or merge.
-
-**Owner items.** Chrome notification dialog: Don't Allow; Allow on CUHelper's Screen Recording prompt; step 4 time;
-budget raise for CU-66.
+**Owner items (each with a default).** Close stray System Settings and notification windows; allow CUHelper Screen Recording; step 4 session (CU-11, CU-119, CU-135); budget for CU-66; coordinator goal resume or cap; Watchdog host unit and install; the session-inbox home-scan fix.
