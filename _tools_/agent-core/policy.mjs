@@ -173,11 +173,15 @@ const TRASH_NEGATION = /(?<!\p{L})(?:not|never|nicht|nie|kein|keine|ne|pas|jamai
 // question) asks. 'Объекты в Корзине будут удалены.', 'ゴミ箱内の項目は完全に削除されます。', '废纸篓中的所有项目将被不可恢复地删除。',
 // '휴지통의 모든 항목이 영구적으로 삭제됩니다.', 'Çöp Sepeti'ndeki tüm öğeler kalıcı olarak silinecek.' ask; their negated and past
 // twins stay free. CU-806 adds the tr formal future / aorist / future perfect and more ja / ko pending forms; the ko connectives are CU-807's.
-const RU_PART = '(?:удал[её]н[аоы]?|ст[её]рт[аоы]?|уничтожен[аоы]?|очищен[аоы]?|выброшен[аоы]?|опустош[её]н[аоы]?)'
+// CU-815 (follow-up to CU-809, table OK'd by cu-researcher 13:44Z): a compound or periphrastic form of a covered verb enters the
+// verb slot only - the ru light-verb participle + delete noun ('будет произведено удаление'), the ja / ko light noun 処理 / 처리
+// after a Sino delete noun, the zh resultatives on 删 (删光 / 删完 / 删干净 / 删尽 / 删空) and the tr converb chain -Ip + git-
+// (in the tr cells below). Each language's markers, negation, past and gap stay as they are.
+const RU_PART = '(?:удал[её]н[аоы]?|ст[её]рт[аоы]?|уничтожен[аоы]?|очищен[аоы]?|выброшен[аоы]?|опустош[её]н[аоы]?|(?:произвед[её]н|выполнен|осуществл[её]н)[аоы]?\\s+(?:\\S+\\s+)?(?:удаление|очистка|уничтожение|стирание))'
 const RU_FUT = '(?:удалятся|удалит|сотрутся|сотр[её]т|уничтожатся|уничтожит|выбросятся|выбросит)'
-const JA_STEM = '(?:削除|消去|破棄|抹消|除去|廃棄|処分|消)'
-const ZH_VERB = '(?:删除|刪除|删掉|刪掉|删去|刪去|抹除|抹去|擦除|清除|去除|移除|销毁|銷毀|丢弃|丟棄|清理掉)'
-const KO_STEM = '(?:삭제|제거|폐기|소거|파기|말소)'
+const JA_STEM = '(?:(?:削除|消去|破棄|抹消|除去|廃棄|処分)(?:処理)?|消)'
+const ZH_VERB = '(?:删除|刪除|删掉|刪掉|删去|刪去|抹除|抹去|擦除|清除|去除|移除|销毁|銷毀|丢弃|丟棄|清理掉|删光|刪光|删完|刪完|删干净|刪乾淨|删尽|刪盡|删空|刪空)'
+const KO_STEM = '(?:삭제|제거|폐기|소거|파기|말소)(?:\\s*처리)?'
 const TRASH_LOCALE = [
   { // ru
     verb: new RegExp(`(?<!\\p{L})(?:${RU_PART}|${RU_FUT}|удалить|стереть|уничтожить|очистить)(?!\\p{L})`, 'iu'),
@@ -214,11 +218,11 @@ const TRASH_LOCALE = [
   },
   { // tr
     verb: /(?<!\p{L})(?:sil|kaldır|yok\s+ed|atıl|temizlen|imha\s+ed|boşaltıl(?!abil))\p{L}*/iu,
-    negation: /(?<!\p{L})(?:boşaltılma(?:yacak(?:lar)?(?:dır)?|yacaktır|z(?:lar)?|dı|mış)|silinme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|silinemez|silmeyecek|kaldırılma(?:yacak(?:lar)?(?:dır)?|yacaktır|z(?:lar)?|dı|mış)|kaldırılamaz|yok\s+edilme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|yok\s+edilemez|atılma(?:yacak(?:lar)?(?:dır)?|z(?:lar)?|dı)|temizlenme(?:yecek(?:ler)?(?:dir)?|z(?:ler)?|di)|atılmayacaktır|temizlenmeyecektir|imha\s+edilme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|(?:silinmek|kaldırılmak|yok\s+edilmek|imha\s+edilmek)\s+üzere\s+değil(?:dir)?)(?!\p{L})/iu,
-    past: /(?<!\p{L})(?:boşaltıldı|boşaltılmış(?!\s+olacak)|silindi|silinmiş(?!\s+olacak)|kaldırıldı|kaldırılmış(?!\s+olacak)|yok\s+edildi|yok\s+edilmiş(?!\s+olacak)|atıldı|atılmış|temizlendi|temizlenmiş|imha\s+edildi|imha\s+edilmiş(?!\s+olacak)|(?:silinmek|kaldırılmak|yok\s+edilmek|imha\s+edilmek)\s+üzereydi)\p{L}*/iu,
+    negation: /(?<!\p{L})(?:boşaltılma(?:yacak(?:lar)?(?:dır)?|yacaktır|z(?:lar)?|dı|mış)|silinme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|silinemez|silmeyecek|kaldırılma(?:yacak(?:lar)?(?:dır)?|yacaktır|z(?:lar)?|dı|mış)|kaldırılamaz|yok\s+edilme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|yok\s+edilemez|atılma(?:yacak(?:lar)?(?:dır)?|z(?:lar)?|dı)|temizlenme(?:yecek(?:ler)?(?:dir)?|z(?:ler)?|di)|atılmayacaktır|temizlenmeyecektir|imha\s+edilme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|(?:silinmek|kaldırılmak|yok\s+edilmek|imha\s+edilmek)\s+üzere\s+değil(?:dir)?|(?:silin|kaldırıl|yok\s+edil|atıl|temizlen|imha\s+edil|boşaltıl)[iı]p\s+gitme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş))(?!\p{L})/iu,
+    past: /(?<!\p{L})(?:boşaltıldı|boşaltılmış(?!\s+olacak)|silindi|silinmiş(?!\s+olacak)|kaldırıldı|kaldırılmış(?!\s+olacak)|yok\s+edildi|yok\s+edilmiş(?!\s+olacak)|atıldı|atılmış|temizlendi|temizlenmiş|imha\s+edildi|imha\s+edilmiş(?!\s+olacak)|(?:silinmek|kaldırılmak|yok\s+edilmek|imha\s+edilmek)\s+üzereydi|(?:silin|kaldırıl|yok\s+edil|atıl|temizlen|imha\s+edil|boşaltıl)[iı]p\s+git(?:ti|miş(?!\s+olacak)))\p{L}*/iu,
     // CU-806: the formal future (-ecektir / -acaktır), the aorist passive (silinir) and the future perfect (silinmiş olacak) too.
     // #1479 r2 (the table cu-researcher OK'd 14:34Z): plural agreement, the plural aorist and 'about to' too.
-    pending: /(?<!\p{L})(?:boşaltıl(?:acak(?:lar)?(?:dır)?|acaktır|ır(?:lar)?)|silin(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|kaldırıl(?:acak(?:lar)?(?:dır)?|acaktır|ır(?:lar)?)|yok\s+edil(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|(?:silinmiş|kaldırılmış|yok\s+edilmiş)\s+olacak(?:tır)?|atıl(?:acak(?:lar)?(?:dır)?|ır(?:lar)?)|temizlen(?:ecek(?:ler)?(?:dir)?|ir(?:ler)?)|atılacaktır|temizlenecektir|imha\s+edil(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|(?:silinmek|kaldırılmak|yok\s+edilmek|imha\s+edilmek)\s+üzere(?:dir|ler)?)(?!\p{L})/iu,
+    pending: /(?<!\p{L})(?:boşaltıl(?:acak(?:lar)?(?:dır)?|acaktır|ır(?:lar)?)|silin(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|kaldırıl(?:acak(?:lar)?(?:dır)?|acaktır|ır(?:lar)?)|yok\s+edil(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|(?:silinmiş|kaldırılmış|yok\s+edilmiş)\s+olacak(?:tır)?|atıl(?:acak(?:lar)?(?:dır)?|ır(?:lar)?)|temizlen(?:ecek(?:ler)?(?:dir)?|ir(?:ler)?)|atılacaktır|temizlenecektir|imha\s+edil(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|(?:silinmek|kaldırılmak|yok\s+edilmek|imha\s+edilmek)\s+üzere(?:dir|ler)?|(?:silin|kaldırıl|yok\s+edil|atıl|temizlen|imha\s+edil|boşaltıl)[iı]p\s+gid(?:ecek(?:ler)?(?:dir)?|ecektir|er(?:ler)?))(?!\p{L})/iu,
   },
 ]
 // null when no ru / ja / zh / ko / tr verb of the family stands in the sentence.
