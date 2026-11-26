@@ -909,13 +909,15 @@ export function dialogTextOf(value) {
 /**
  * CU-763: a toggle's row context as the helper read it (RowContext: the nearest titled list, table or group, else the
  * window's title) - re-validated at the boundary as the web route's rowContextOf: `{ list, hints }` with a list of at most
- * 60 characters and at most 3 hints of at most 40; else null. CU-754's access-toggle rule reads it.
+ * 60 characters and at most 3 hints of at most 60; else null. CU-754's access-toggle rule reads it.
+ * CU-840: a hint keeps the helper's own bound (RowContext.maxText, 60 since 0.2.76, which sends the window title as a hint
+ * when a heading or a nearer container wins), so a 41-60 character title naming a right reaches the policy whole.
  */
 export function toggleRowContextOf(value) {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) return null
   const clean = (text) => (typeof text === 'string' ? text.replace(/[\u0000-\u001F\u007F]/gu, ' ').replace(/\s+/gu, ' ').trim() : '')
   const list = clean(value.list)
-  const hints = Array.isArray(value.hints) ? value.hints.map((hint) => clean(hint)).filter((hint) => hint !== '' && hint.length <= 40).slice(0, 3) : []
+  const hints = Array.isArray(value.hints) ? value.hints.map((hint) => clean(hint)).filter((hint) => hint !== '' && hint.length <= 60).slice(0, 3) : []
   const keep = list !== '' && list.length <= 60
   return keep || hints.length > 0 ? { ...(keep ? { list } : {}), hints } : null
 }
