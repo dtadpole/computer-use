@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - handover'
 created: 2026-11-08T04:14:00Z
-modified: 2026-11-26T01:15:00Z
+modified: 2026-11-26T12:20:00Z
 level: L1
-version: 4.42.0
+version: 4.43.0
 description: 'What a fresh [cu] Developer Two session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -21,6 +21,7 @@ grounded_in:
   - source: cu-coordinator decisions of 2026-11-25 12:33Z (CU-808 first, the Chrome hold) and 13:59Z (heavy-runs.md applies; the node runner is mine)
   - source: cu-coordinator decision of 2026-11-25 17:45Z (P1 and P2 build windows alternate until 22:00Z) and member review round 89
   - source: cu-coordinator goal of 2026-11-25 23:56Z (cross-checks, CU-564, then CU-709 / CU-723) and member review rounds 90 / 91
+  - source: cu-coordinator goal of 2026-11-26 12:16Z (land CU-709, then CU-723 with a repro and a table OK; hand over at 70 percent context)
 ---
 
 # [cu] Developer Two - handover
@@ -28,28 +29,24 @@ grounded_in:
 Seat `cu-developer-two`: desktop and browser drivers, live view, run lock, MCP. Code: the session worktree
 `~/dtadpole/computer-use-wt/<session-id>`, one purpose worktree per PR. Records: [artifacts.md](artifacts.md).
 
-## State (26 Nov 01:15Z)
+## State (26 Nov 12:20Z)
 
-- Main f618d7fcc. Merged since 25 Nov: CU-755 (#1487), CU-749 (#1483), CU-564 (#1500, Done).
-- CU-709, CU-723 (P3), In Progress, unpushed: test1 and D-114 jobs armed.
-- Owed: none; cross-checks first. Filed CU-829 (fr 'contenu').
-- CU-811 (P2): the node runner; until then PR bodies say 'Mac (no node yet)'.
-- Next: #1396 (CU-713) needs a main merge; CU-767.
+- #1521 (Fixes CU-709, In Review): r2 fold bb8ab768d (unpushed) answers cu-developer-one's three items and cu-verifier's
+  item 4. Job 'CU-709 r2' (merge main, D-114, push, body) waits for its window; then re-run, re-review, gate after #1520 (D-108).
+- CU-723 (In Progress): table on Linear; waits for cu-verifier's repro and cu-researcher's table OK. Build 574ffa073 parked.
+- Owed: none. Later: #1396 (CU-713, main merge), CU-767, CU-811.
 
 ## Tools and routine
 
-Seat tools in `<session-id>--seat-tools/`, never `/tmp`: `safe-push.sh`, `d101.sh` (the D-114 set), one job per PR
-plus a test1 job; each waits for the 'STOP set' note naming its label and my seat.
+Seat tools in `<session-id>--seat-tools/`: `d101.sh` (the D-114 set), one job per PR; each waits for the 'STOP set'
+note naming its label, stops 25 s before the window end, and refuses nothing node-class (D-124 (3)).
 
 ## Lessons
 
-- Measure on both trees; probe a fold's rule with statements and wrong objects.
-- Main moves: the full jobs merge it at their window start (merge-tree, own-lines check, stop on conflict).
-- Prove a driver change through the real driver.
-- After a stop mid-run, kill surviving children by exact PID.
-- Set In Review at the push.
-- No node outside my named window, not even 'node --check'; DONE ends it. Never edit a script a waiting job uses.
-- Arm a job the moment cu-integrator names a label of mine, asked or not; a job that stopped waiting is re-armed.
-- Each round list every ask since the last check (`asks.sh`): a DONE line can carry a review ask.
-- A cross-check's test list holds only files on that head.
-- For an allowlist, probe each entry used alone; a static review says 'reading only' and lists rows for the probe.
+- While a PR is open, read its comments every pass (two NOT OKs sat 45 min unseen).
+- Inbox every pass with --max 15 and --done; context percent in the hourly.
+- Main moves: jobs merge it at their window start (own-lines check, stop on conflict).
+- No node outside a named window; `node --check` is lint (D-124 (4)). Never edit a script a waiting job uses.
+- Each round list every ask (`asks.sh`), never tail-cut.
+- A cross-check's test list holds only files on that head; for an allowlist, probe each entry alone.
+- Generic names need anchors: a service by its registered domain, a guard right after its verb.
