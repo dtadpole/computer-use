@@ -48,3 +48,12 @@ test('CU-831: negated, past, past-event, conditional, wrong-button and a non-tra
     ['Empty', 'Trash', 'This will destroy your current session.'],
   ])
 })
+
+test('CU-831 r2: the it future passive with sarà / saranno reads the destroy participle (cu-verifier\'s #1516 row)', () => {
+  asks([['Svuota', 'Cestino', 'Gli elementi del cestino saranno distrutti definitivamente.']])
+  free([
+    ['Svuota', 'Cestino', 'Gli elementi del cestino non saranno distrutti.'],
+    ['Svuota', 'Cestino', 'Gli elementi del cestino sono stati distrutti.'],
+    ['Svuota', 'Cestino', 'Alcuni elementi del cestino sono stati distrutti per errore ieri.'],
+  ])
+})
