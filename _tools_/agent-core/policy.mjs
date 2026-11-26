@@ -79,14 +79,15 @@ const LOCALE_PASSIVE_ACTS = [
   // wurde aus dem Papierkorb entfernt.', 'Everything was removed from the trash.'), never a bare notice ('Item removed from the trash.'):
   // only a question or a pending statement; a negation skips it (localePassiveAct).
   [/^(?=[^.!?]*\?\s*$|[^.!?]*(?<!\p{L})(?:wird|werden|will|would|is\s+going\s+to|sera|seront|será|serán|verrà|verranno|sarà|saranno|serão|wordt|worden|zal|zullen|se\s+(?:quitar|eliminar|borrar)[áa]n?)(?!\p{L}))(?![^.!?]*(?<!\p{L})(?:wurde|wurden|was|were|has\s+been|have\s+been|a\s+été|ont\s+été|fue|fueron|ha\s+sido|han\s+sido|è\s+stat[oa]|sono\s+stat[ie]|foi|foram|werd|werden\s+verwijderd)(?!\p{L}))[^.!?]*?(?:(?<!\p{L})(?:aus\s+(?:dem|deinem|ihrem|meinem|unserem)\s+(?:papierkorb|mülleimer|abfalleimer)|from\s+(?:the|your|my)\s+(?:trash|bin|recycle\s+bin)|de\s+(?:la|ta|votre|ma)\s+corbeille|de\s+(?:la|tu|su|mi)\s+papelera|dal\s+cestino|da\s+lixeira|uit\s+de\s+(?:prullen(?:bak|mand)|vuil(?:nis)?bak))(?!\p{L})[^.!?]{0,40}?(?<!\p{L})(?:entfernt|gelöscht|beseitigt|weggenommen|herausgenommen|removed|deleted|erased|purged|cleared|taken\s+out|retiré(?:e)?s?|enlevé(?:e)?s?|ôté(?:e)?s?|supprimé(?:e)?s?|effacé(?:e)?s?|éliminé(?:e)?s?|quitad[oa]s?|retirad[oa]s?|eliminad[oa]s?|sacad[oa]s?|borrad[oa]s?|suprimid[oa]s?|(?:quitar|retirar|eliminar|sacar|borrar|suprimir)[áa]n?|tolt[oiae]|rimoss[oiae]|eliminat[oiae]|cancellat[oiae]|removid[oa]s?|tirad[oa]s?|apagad[oa]s?|excluíd[oa]s?|verwijderd|weggehaald|gewist)(?!\p{L})|(?<!\p{L})(?:entfernt|gelöscht|beseitigt|weggenommen|herausgenommen|removed|deleted|erased|purged|cleared|taken\s+out|retiré(?:e)?s?|enlevé(?:e)?s?|ôté(?:e)?s?|supprimé(?:e)?s?|effacé(?:e)?s?|éliminé(?:e)?s?|quitad[oa]s?|retirad[oa]s?|eliminad[oa]s?|sacad[oa]s?|borrad[oa]s?|suprimid[oa]s?|(?:quitar|retirar|eliminar|sacar|borrar|suprimir)[áa]n?|tolt[oiae]|rimoss[oiae]|eliminat[oiae]|cancellat[oiae]|removid[oa]s?|tirad[oa]s?|apagad[oa]s?|excluíd[oa]s?|verwijderd|weggehaald|gewist)(?!\p{L})[^.!?]{0,40}?(?<!\p{L})(?:aus\s+(?:dem|deinem|ihrem|meinem|unserem)\s+(?:papierkorb|mülleimer|abfalleimer)|from\s+(?:the|your|my)\s+(?:trash|bin|recycle\s+bin)|de\s+(?:la|ta|votre|ma)\s+corbeille|de\s+(?:la|tu|su|mi)\s+papelera|dal\s+cestino|da\s+lixeira|uit\s+de\s+(?:prullen(?:bak|mand)|vuil(?:nis)?bak))(?!\p{L}))/iu, 'delete'],
-  [/\b(?:seront|sera)\s+(?:\S+\s+){0,3}?(?:supprimée?s?|effacée?s?)\b/iu, 'supprimer'],
+  // CU-825: a final accented letter takes (?!\p{L}), never \b - under the u flag \b is ASCII-only, so 'supprimé' / 'se eliminará' never matched.
+  [/\b(?:seront|sera)\s+(?:\S+\s+){0,3}?(?:supprimée?s?|effacée?s?)(?!\p{L})/iu, 'supprimer'],
   // CU-786: the trash's state asked in the Romance languages or Dutch - '¿La papelera queda vaciada del todo?', 'La corbeille
   // restera-t-elle vidée ?', 'Il Cestino rimane svuotato?', 'A lixeira fica esvaziada?', 'Blijft de prullenbak geleegd?' - reads
   // delete like its German twin. Only a question, only the trash or an inbox, only a state verb (never the past 'fue / a été /
   // è stato / foi / werd ... ?'); a negation skips it (localePassiveAct).
   [/^(?=[^?]*?(?<!\p{L})(?:queda|quedan|quedará|quedarán|quedaría|está|están|estará|estarán|permanece|permanecerá|reste|restent|restera|resteront|resterait|sera|seront|est|sont|resta|restano|resterà|rimane|rimangono|rimarrà|sarà|saranno|è|sono|fica|ficam|ficará|ficarão|estará|será|serão|blijft|blijven|is|zijn|wordt|worden)(?!\p{L}))[^?]*?(?<!\p{L})(?:papelera|papeleras|corbeille|corbeilles|cestino|lixeira|lixo|(?:prullen(?:bak|mand)|vuil(?:nis)?bak)|bandeja\s+de\s+entrada|boîte\s+de\s+réception|posta\s+in\s+arrivo|caixa\s+de\s+entrada|postvak\s+in)(?!\p{L})[^?]{0,60}?(?<!\p{L})(?:vaciad[oa]s?|vac[ií][oa]s?|vidée?s?|vides?|svuotat[oaie]|vuot[oaie]|esvaziad[oa]s?|vazi[oa]s?|geleegd|leeg\s?(?:ge)?maakt|leeg\s?(?:ge)?haald|leeg\s?(?:ge)?ruimd|geledigd|leeg)(?!\p{L})[^?]{0,40}\?\s*$|^(?=[^?]*?(?<!\p{L})(?:queda|quedan|quedará|quedarán|quedaría|está|están|estará|estarán|permanece|permanecerá|reste|restent|restera|resteront|resterait|sera|seront|est|sont|resta|restano|resterà|rimane|rimangono|rimarrà|sarà|saranno|è|sono|fica|ficam|ficará|ficarão|estará|será|serão|blijft|blijven|is|zijn|wordt|worden)(?!\p{L}))[^?]*?(?<!\p{L})(?:vaciad[oa]s?|vac[ií][oa]s?|vidée?s?|vides?|svuotat[oaie]|vuot[oaie]|esvaziad[oa]s?|vazi[oa]s?|geleegd|leeg\s?(?:ge)?maakt|leeg\s?(?:ge)?haald|leeg\s?(?:ge)?ruimd|geledigd|leeg)(?!\p{L})[^?]{0,60}?(?<!\p{L})(?:papelera|papeleras|corbeille|corbeilles|cestino|lixeira|lixo|(?:prullen(?:bak|mand)|vuil(?:nis)?bak)|bandeja\s+de\s+entrada|boîte\s+de\s+réception|posta\s+in\s+arrivo|caixa\s+de\s+entrada|postvak\s+in)(?!\p{L})[^?]{0,40}\?\s*$/iu, 'delete'],
   // r2 (cu-developer-two's cross-check): 'se' reads only before a FUTURE form - 'Se ha eliminado el archivo.' is a notice.
-  [/\bser[áa]n?\s+(?:\S+\s+){0,3}?(?:eliminad[oa]s?|borrad[oa]s?)\b|\bse\s+(?:\S+\s+){0,2}?(?:eliminar[áa]n?|borrar[áa]n?)\b/iu, 'eliminar'],
+  [/\bser[áa]n?\s+(?:\S+\s+){0,3}?(?:eliminad[oa]s?|borrad[oa]s?|suprimid[oa]s?)\b|\bse\s+(?:\S+\s+){0,2}?(?:eliminar[áa]n?|borrar[áa]n?|suprimir[áa]n?)(?!\p{L})/iu, 'eliminar'],
   [/\b(?:verranno|verrà|saranno|sarà)\s+(?:\S+\s+){0,3}?(?:eliminat[ioae]|rimoss[ioae]|cancellat[ioae])\b/iu, 'elimina'],
   [/\b(?:serão|será)\s+(?:\S+\s+){0,3}?(?:excluíd[oa]s?|apagad[oa]s?|removid[oa]s?)\b/iu, 'excluir'],
   // r2 (cu-researcher's held-out 13:02Z): Dutch - 'Deze mailbox wordt permanent verwijderd.'
@@ -127,6 +128,14 @@ function localePassiveAct(text) {
 }
 // CU-747 (High; sweep 5, cu-coordinator 06:05Z): a wizard's or sheet's final-step control - Finish / Complete / Next / End - is
 // a generic confirm too when it sits in a risk dialog (the modal rule below judges the dialog's text; a harmless one stays free).
+// CU-755 (cu-researcher's sweep 6): a store-style commit verb ('Install' / 'Get' / 'Buy' / 'Pay' / 'Subscribe' / 'Upgrade') pressed in
+// a dialog or sheet whose title or text names a price ('Confirm with Touch ID' / 'Pro Upgrade - $9.99') reads the dialog like a
+// generic confirm does, so the price asks purchase there (additions only; a dialog with no amount is unchanged).
+const DIALOG_PRICE_COMMIT = /^\s*(?:install|install\s+now|get|buy|buy\s+now|purchase|pay|pay\s+now|subscribe|upgrade|upgrade\s+now|confirm\s+purchase)\s*[.!]?\s*$/i
+// CU-755: a glyph-only trash name ('🗑', '🗑️', '🚮') deletes, as the icon names 'trash-2' / 'icon-trash' do; resetting a branch or
+// HEAD to a commit drops the later commits ('Reset branch to this commit', 'Reset current branch to here', 'Hard reset').
+const TRASH_GLYPH_NAME = /^\s*(?:\u{1F5D1}|\u{1F6AE})\uFE0F?\s*$/u
+const RESET_TO_COMMIT = /^\s*(?:hard\s+)?reset\s+(?:(?:the|this|current|your|my)\s+)?(?:(?:local\s+)?(?:branch|head|repo(?:sitory)?|working\s+(?:tree|copy))\s+)?(?:\(?hard\)?\s+)?(?:back\s+)?to\s+(?:(?:this|that|the|a|an|selected|previous|earlier|older|last)\s+)?(?:commit|revision|version|snapshot|here)\b|^\s*hard\s+reset\s*$/i
 const FINAL_STEP_CONFIRM = /^\s*(?:finish|finish\s+up|complete|next|next\s+step|end|end\s+now|continue\s+anyway|proceed\s+anyway)\s*[.!>›→]?\s*$/i
 // CU-747: a bare verb button that repeats the verb of its dialog's title ('Reset' under 'Reset this device to factory settings?',
 // 'Empty' under 'Empty the Trash?') confirms that title, so the title is judged as a name. r2 (cu-researcher 06:48Z): the verb may
@@ -134,6 +143,111 @@ const FINAL_STEP_CONFIRM = /^\s*(?:finish|finish\s+up|complete|next|next\s+step|
 // cestino?', '空にする' / 'ゴミ箱を空にしますか？', '倒空' / '要倒空废纸篓吗？'), matched as a word or a word's stem; and the title must
 // ask or point at its object - a question, or a determiner after the verb - so a title that names a state ('Empty folder') stays free.
 const ECHO_CJK = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u
+// CU-804 (P1; cu-coordinator 09:39Z, widened from cu-researcher's CU-800 find): a bare EMPTYING button ('Empty', 'Leeren', 'Vider',
+// 'Vaciar', 'Svuota', 'Esvaziar', 'Legen', 'Leegmaken' ...) under a dialog sentence that asks or announces DELETING the items in the
+// trash - a verb the button does not echo ('Are you sure you want to permanently delete the items in the Trash?', 'Weet u zeker dat
+// u de onderdelen in de prullenmand permanent wilt verwijderen?') - confirms emptying the trash. Only a question or a pending
+// statement, never a negated one, and only over a trash noun; the sentence then also reads as 'Empty trash'. r2: the ru / ja / zh /
+// ko / tr forms too (cu-developer-two's cross-check).
+const EMPTYING_BUTTON = /^(?:empty|empty\s+now|leeren|entleeren|ausleeren|vider|vaciar|svuota|svuotare|esvaziar|legen|leegmaken|leeghalen|leegruimen|ledigen|leeg\s+(?:maken|halen|ruimen)|очистить|空にする|清倒|倒空|清空|비우기|boşalt)$/u
+const TRASH_NOUN = /(?<!\p{L})(?:trash|bin|recycle\s+bin|papierkorb|mülleimer|abfalleimer|corbeille|papelera|cestino|lixeira|lixo|prullenbak|prullenmand|vuilnisbak|vuilbak|корзин[аеуыой]|корзиной|çöp)(?!\p{L})|ゴミ箱|废纸篓|廢紙簍|回收站|휴지통/iu
+const TRASH_DELETE_VERB = /(?<!\p{L})(?:delete|deleted|erase|erased|remove|removed|löschen|gelöscht|entfernen|entfernt|supprimer|supprimée?s?|effacer|effacée?s?|eliminar|eliminad[oa]s?|borrar|borrad[oa]s?|suprimir|suprimid[oa]s?|eliminare|eliminat[oiae]|cancellare|cancellat[oiae]|excluir|excluíd[oa]s?|apagar|apagad[oa]s?|verwijderen|verwijderd|wissen|gewist)(?!\p{L})/iu
+// CU-814 (the table cu-researcher OK'd 21:56Z): the emptying verb's passive / participle over the trash, only with a future
+// auxiliary - never a bare question ('¿La papelera fue vaciada ayer?', 'Can the Trash be emptied later?'). German and Dutch stay
+// with their own cells (CU-781 / CU-800), which keep the modal guards ('Kann der Papierkorb später geleert werden?').
+const TRASH_EMPTIED_VERB = /(?<!\p{L})(?:emptied|vidée?s?|vaciad[oa]s?|vaciar[áa]n?|svuotat[oiae]|esvaziad[oa]s?)(?!\p{L})/iu
+const TRASH_PENDING_AUX = /(?<!\p{L})(?:will|sera|seront|será|serán|verrà|verranno|sarà|saranno|serão)(?!\p{L})|(?<!\p{L})se\s+(?:\S+\s+){0,2}?vaciar[áa]n?(?!\p{L})/iu
+const TRASH_PENDING = /[?？]\s*$|(?<!\p{L})(?:will|would|wird|werden|sera|seront|será|serán|verrà|verranno|serão|wordt|worden|zal|zullen)(?!\p{L})/iu
+const TRASH_NEGATION = /(?<!\p{L})(?:not|never|nicht|nie|kein|keine|ne|pas|jamais|no|nunca|non|mai|não|niet|nooit|geen)(?!\p{L})|n['’]t(?!\p{L})/iu
+// CU-805 (P1; the marker table cu-researcher OK'd on #1475, cu-coordinator 12:42Z): in ru / ja / zh / ko / tr a marker counts only
+// ATTACHED to a delete / erase / remove verb of the family - a suffix on the stem, or an auxiliary a few words before it - never
+// anywhere in the sentence. Checked in order: a negation frees the sentence, then a past / perfect form, then a pending form (or a
+// question) asks. 'Объекты в Корзине будут удалены.', 'ゴミ箱内の項目は完全に削除されます。', '废纸篓中的所有项目将被不可恢复地删除。',
+// '휴지통의 모든 항목이 영구적으로 삭제됩니다.', 'Çöp Sepeti'ndeki tüm öğeler kalıcı olarak silinecek.' ask; their negated and past
+// twins stay free. CU-806 adds the tr formal future / aorist / future perfect and more ja / ko pending forms; the ko connectives are CU-807's.
+const RU_PART = '(?:удал[её]н[аоы]?|ст[её]рт[аоы]?|уничтожен[аоы]?|очищен[аоы]?|выброшен[аоы]?|опустош[её]н[аоы]?)'
+const RU_FUT = '(?:удалятся|удалит|сотрутся|сотр[её]т|уничтожатся|уничтожит|выбросятся|выбросит)'
+const JA_STEM = '(?:削除|消去|破棄|抹消|除去|廃棄|処分|消)'
+const ZH_VERB = '(?:删除|刪除|删掉|刪掉|删去|刪去|抹除|抹去|擦除|清除|去除|移除|销毁|銷毀|丢弃|丟棄|清理掉)'
+const KO_STEM = '(?:삭제|제거|폐기|소거|파기|말소)'
+const TRASH_LOCALE = [
+  { // ru
+    verb: new RegExp(`(?<!\\p{L})(?:${RU_PART}|${RU_FUT}|удалить|стереть|уничтожить|очистить)(?!\\p{L})`, 'iu'),
+    negation: new RegExp(`(?<!\\p{L})не(?:\\s+\\S+){0,3}?\\s+(?:будут|будет|${RU_PART}|${RU_FUT})(?!\\p{L})`, 'iu'),
+    past: new RegExp(`(?<!\\p{L})(?:были|был|была|было)(?:\\s+\\S+){0,3}?\\s+${RU_PART}(?!\\p{L})`, 'iu'),
+    pending: new RegExp(`(?<!\\p{L})(?:будут|будет)(?:\\s+\\S+){0,3}?\\s+${RU_PART}(?!\\p{L})|(?<!\\p{L})${RU_FUT}(?!\\p{L})`, 'iu'),
+  },
+  { // ja
+    verb: new RegExp(`${JA_STEM}(?:さ|し|す|済)|捨て|空に(?:され|なり|なる|なっ|なら)`, 'u'),
+    // CU-816 (the table cu-researcher OK'd 18:02Z): the -te shimau pending form asks; its auxiliary negation, こと / a nominal head +
+    // は / が / も + a negation, the past and the conditional (-てしまうと / -てしまったら / -てしまえば) stay free.
+    // r2 (the table OK'd 20:44Z): the contracted -ちゃう takes every -てしまう cell, for the noun + される / する and the plain-verb families.
+    negation: new RegExp(`空に(?:なりません|ならない|されません|されない|なることはありません)|${JA_STEM}(?:されません|しません|されない|しない|されず|せず|さない|さず|されることはありません|されることはない|されていません|されようとしていません|されてしまいません|されてしまわない|されてしまわず|してしまいません|されちゃいません|されちゃわない|しちゃいません)|捨てられ(?:ません|ない|ず)|捨てません|捨てない|${JA_STEM}(?:され|し)てしまう[\\p{Script=Han}\\p{Script=Katakana}\\p{Script=Hiragana}]{0,6}?(?:は|が|も)(?:ありません|ございません|ない|なく|なかった)|捨てられてしまう[\\p{Script=Han}\\p{Script=Katakana}\\p{Script=Hiragana}]{0,6}?(?:は|が|も)(?:ありません|ございません|ない|なく|なかった)|${JA_STEM}(?:され|し)ちゃう[\\p{Script=Han}\\p{Script=Katakana}\\p{Script=Hiragana}]{0,6}?(?:は|が|も)(?:ありません|ございません|ない|なく|なかった)|捨て(?:られ)?ちゃう[\\p{Script=Han}\\p{Script=Katakana}\\p{Script=Hiragana}]{0,6}?(?:は|が|も)(?:ありません|ございません|ない|なく|なかった)|捨て(?:られ)?ちゃいません`, 'u'),
+    past: new RegExp(`空に(?:なりました|なった|されました|された|なっています|なっている|なっていました)|${JA_STEM}(?:されました|しました|された|した|されています|されている|されていました|されてしまいました|されようとしていました|されてしまった|してしまいました|してしまった|されてしまっています|されてしまっている|されちゃいました|されちゃった|しちゃいました|しちゃった|済み)|捨てられ(?:ました|た|ています|ている)|捨てました|捨てられてしまいました|捨てられてしまった|消してしまいました|消してしまった|捨て(?:られ)?ちゃいました|捨て(?:られ)?ちゃった`, 'u'),
+    pending: new RegExp(`空に(?:なります|なってしまいます|されます|されるでしょう|なるでしょう)|${JA_STEM}(?:されます|します|される(?!こと)|する(?!こと)|され、|されることになります|されることになる|されることになっています|される予定|する予定|されるでしょう|されようとしています|されようとしている|しようとしています|されてしまいます|されてしまう(?!こと|と)|してしまいます|してしまう(?!こと|と)|されてしまうでしょう|されちゃいます|されちゃう(?!こと|と)|しちゃいます|しちゃう(?!こと|と))|消す(?!こと)|捨てられ(?:ます|る(?!こと)|、)|捨てます|消してしまいます|捨てられてしまいます|捨てられてしまう(?!こと|と)|捨て(?:られ)?ちゃいます|捨て(?:られ)?ちゃう(?!こと|と)`, 'u'),
+  },
+  { // zh
+    verb: new RegExp(`${ZH_VERB}|(?:被|将|將|即将|即將|会|會|已|已经|已經)[^。！？.!?，,]{0,4}?清空|清空了`, 'u'),
+    negation: new RegExp(`(?:不(?!可)|没有|沒有|没|沒)(?:会|會|能|再|被|将|將){0,2}[^。！？.!?，,]{0,4}?清空|(?:不(?!可)|没有|沒有|没|沒)(?:会|會|能|再|被|将|將){0,2}[^。！？.!?，,]{0,4}?${ZH_VERB}`, 'u'),
+    past: new RegExp(`(?:已|已经|已經)[^。！？.!?]{0,12}?${ZH_VERB}|${ZH_VERB}了|(?:已|已经|已經)[^。！？.!?]{0,12}?清空|清空了`, 'u'),
+    pending: new RegExp(`(?:将被|將被|会被|會被|即将|即將|将要|將要|将会|將會|将|將)[^。！？.!?，,]{0,8}?${ZH_VERB}|(?:将被|將被|会被|會被|即将|即將|将要|將要|将会|將會|将|將|会|會)[^。！？.!?，,]{0,8}?清空`, 'u'),
+  },
+  { // ko
+    verb: new RegExp(`${KO_STEM}|지우|지워|지웁|지웠|버려|버리|버립|버렸|비워지|비워져|비워졌|비워집|비워질`, 'u'),
+    negation: new RegExp(`비워지지\\s*(?:않|못)|${KO_STEM}(?:되|하)지\\s*(?:않|못)|${KO_STEM}\\s*안\\s|지워지지\\s*(?:않|못)|지우지\\s*(?:않|못)|버려지지\\s*(?:않|못)|버리지\\s*(?:않|못)`, 'u'),
+    past: new RegExp(`비워졌|비워져\\s*있|${KO_STEM}(?:되었|됐|했|되어\\s*있|돼\\s*있)|지워졌|지웠|지워져\\s*있|버려졌|버렸|버려져\\s*있`, 'u'),
+    // CU-807: a connective joining the delete verb to a following clause ('삭제되며 복구할 수 없습니다', -되고 / -되어 / -돼 / -되니 / -되므로).
+    // r2 (the table cu-researcher OK'd 15:42Z): not the progressive / state '-고 있- / -고 없-', the concessive / resultative '-어도 / -어 있-',
+    // nor the conditional / temporal '-고 나면 / -어 버리면'; the future connective '될 것이며' asks.
+    // CU-813 (the table cu-researcher OK'd 16:46Z): the causal -기 때문에 / -기에 / -는 만큼 and future + causal ask; 될 수 있기 때문에 and 되기 전에 stay free.
+    // r2 (the table OK'd 18:12Z): a present / future adnominal + a causal noun (관계 / 까닭 / 탓 / 이상) and the causal endings as a class; 바람 cut (D-121 (1),
+    // cu-developer-two's r2 over-ask: '-는 바람에' reports a past mishap).
+    pending: new RegExp(`비워집니다|비워질\\s*(?:것입니다|예정입니다)|비워지게\\s*됩니다|${KO_STEM}(?:됩니다|합니다|될\\s*것입니다|될\\s*예정입니다|되게\\s*됩니다|되겠습니다|될\\s*것이다|된다(?!\\p{Script=Hangul})|될\\s*거(?:예요|야|다|(?=입니다)|(?=ㅂ니다))|될\\s*겁니다|될\\s*것이며|될\\s*것이고|될\\s*예정이며|되며|되고(?!\\s*(?:있|없|나))|되어(?!\\s*(?:도|있|버리면|버린다면))|돼(?!\\s*(?:도|있|버리면|버린다면))|되니|되므로|하며|하고(?!\\s*(?:있|없|나))|되기\\s*때문|하기\\s*때문|되기에|하기에|되는\\s*만큼|될\\s*것이기\\s*때문|될\\s*것이기에|될\\s*것이므로|(?:되는|하는|될)\\s*(?:관계|까닭|탓|이상)|되길래|하길래|되는지라|되느라|되는\\s*바(?!람)|될\\s*테니|될\\s*것이니)|지워집니다|지웁니다|지워질\\s*것입니다|지워지게\\s*됩니다|지워지겠습니다|지워진다(?!\\p{Script=Hangul})|지워질\\s*(?:겁니다|거예요|거야|거다)|지워지며|지워지고(?!\\s*(?:있|없|나))|지워져(?!\\s*(?:도|있|버리면|버린다면))|지워지니|지워질\\s*것이며|버려집니다|버립니다|버려질\\s*(?:것입니다|겁니다|거예요|예정입니다)|버려지며|버려지고(?!\\s*(?:있|없|나))|지워지기\\s*때문|지워지기에|지워지는\\s*만큼|버려지기\\s*때문|버려지기에|(?:지워지는|지워질|버려지는|버려질)\\s*(?:관계|까닭|탓|이상)|지워지길래|버려지길래|버려지니`, 'u'),
+  },
+  { // tr
+    verb: /(?<!\p{L})(?:sil|kaldır|yok\s+ed|atıl|temizlen|imha\s+ed|boşaltıl(?!abil))\p{L}*/iu,
+    negation: /(?<!\p{L})(?:boşaltılma(?:yacak(?:lar)?(?:dır)?|yacaktır|z(?:lar)?|dı|mış)|silinme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|silinemez|silmeyecek|kaldırılma(?:yacak(?:lar)?(?:dır)?|yacaktır|z(?:lar)?|dı|mış)|kaldırılamaz|yok\s+edilme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|yok\s+edilemez|atılma(?:yacak(?:lar)?(?:dır)?|z(?:lar)?|dı)|temizlenme(?:yecek(?:ler)?(?:dir)?|z(?:ler)?|di)|atılmayacaktır|temizlenmeyecektir|imha\s+edilme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|(?:silinmek|kaldırılmak|yok\s+edilmek|imha\s+edilmek)\s+üzere\s+değil(?:dir)?)(?!\p{L})/iu,
+    past: /(?<!\p{L})(?:boşaltıldı|boşaltılmış(?!\s+olacak)|silindi|silinmiş(?!\s+olacak)|kaldırıldı|kaldırılmış(?!\s+olacak)|yok\s+edildi|yok\s+edilmiş(?!\s+olacak)|atıldı|atılmış|temizlendi|temizlenmiş|imha\s+edildi|imha\s+edilmiş(?!\s+olacak)|(?:silinmek|kaldırılmak|yok\s+edilmek|imha\s+edilmek)\s+üzereydi)\p{L}*/iu,
+    // CU-806: the formal future (-ecektir / -acaktır), the aorist passive (silinir) and the future perfect (silinmiş olacak) too.
+    // #1479 r2 (the table cu-researcher OK'd 14:34Z): plural agreement, the plural aorist and 'about to' too.
+    pending: /(?<!\p{L})(?:boşaltıl(?:acak(?:lar)?(?:dır)?|acaktır|ır(?:lar)?)|silin(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|kaldırıl(?:acak(?:lar)?(?:dır)?|acaktır|ır(?:lar)?)|yok\s+edil(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|(?:silinmiş|kaldırılmış|yok\s+edilmiş)\s+olacak(?:tır)?|atıl(?:acak(?:lar)?(?:dır)?|ır(?:lar)?)|temizlen(?:ecek(?:ler)?(?:dir)?|ir(?:ler)?)|atılacaktır|temizlenecektir|imha\s+edil(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|(?:silinmek|kaldırılmak|yok\s+edilmek|imha\s+edilmek)\s+üzere(?:dir|ler)?)(?!\p{L})/iu,
+  },
+]
+// null when no ru / ja / zh / ko / tr verb of the family stands in the sentence.
+function localeTrashPending(text) {
+  for (const lang of TRASH_LOCALE) {
+    if (!lang.verb.test(text)) continue
+    if (lang.negation.test(text) || lang.past.test(text)) return false
+    return lang.pending.test(text) || /[?？]\s*$/u.test(text)
+  }
+  return null
+}
+// CU-818 (the table cu-researcher OK'd 19:58Z): a description sentence under a title that names the trash counts as naming it
+// too - but only when it speaks of the trash's items (an item noun or a pronoun), never a sentence that names another object
+// ('Your search history will also be deleted.').
+// CU-829 (the table cu-researcher OK'd 01:03Z): each language's content noun too - contenu / contenido / contenuto / conteúdo /
+// Inhalt / inhoud / содержимое / içerik / 中身. The very common zh / ja 内容 and ko 내용 stay out (her over-ask check): they name a
+// description as often as the trash's contents.
+const TRASH_ITEM_NOUN = /(?<!\p{L})(?:items?|files?|documents?|contents?|objects?|everything|all|they|them|these|it|elemente?|objekte|dateien|alles|alle|éléments?|fichiers?|tout|tous|elementos?|archivos?|todo|todos|elementi|tutto|tutti|itens|arquivos|tudo|onderdelen|bestanden|items|объекты|файлы|элементы|всё|все|öğeler|dosyalar|tümü|contenu|contenido|contenuto|conteúdo|inhalte?|inhoud|содержимое|içeri(?:k|ği))(?!\p{L})|項目|ファイル|書類|すべて|全て|中身|项目|文件|所有|全部|항목|파일|모든|전부/iu
+function emptiesTrashByDelete(name, sentence, titleNamesTrash = false) {
+  const button = String(name ?? '').trim().toLowerCase()
+  const text = String(sentence ?? '').trim()
+  // A judged name has passed the Cyrillic homoglyph fold ('Очистить' -> 'Oчиcтить'), so the Russian button is matched folded too.
+  const ruButton = ['очистить', 'Очистить', 'ОЧИСТИТЬ'].map((form) => normaliseName(normaliseText(form))).includes(normaliseName(String(name ?? '')))
+  if (!(EMPTYING_BUTTON.test(button) || ruButton) || !(TRASH_NOUN.test(text) || (titleNamesTrash && TRASH_ITEM_NOUN.test(text)))) return false
+  const local = localeTrashPending(text)
+  if (local !== null) return local
+  // #1491 r2 (the table cu-researcher OK'd 21:04Z; CU-821): the future passives the in-sentence rule reads ('se eliminarán', 'verranno
+  // eliminati', 'serão excluídos', 'werden … gelöscht', 'worden verwijderd', 'будут удалены') count here too, with their own negation.
+  if (localePassiveAct(text) !== null) return true
+  const emptied = TRASH_EMPTIED_VERB.exec(text)
+  if (emptied !== null && TRASH_PENDING_AUX.test(text) && !TRASH_NEGATION.test(text.slice(0, emptied.index).trim().split(/\s+/).slice(-4).join(' '))) return true
+  const verb = TRASH_DELETE_VERB.exec(text)
+  if (verb === null || !TRASH_PENDING.test(text)) return false
+  // A negation counts only within four words before the delete verb ('will not be deleted'), never one in a following clause
+  // ('... will be permanently deleted and can't be restored').
+  return !TRASH_NEGATION.test(text.slice(0, verb.index).trim().split(/\s+/).slice(-4).join(' '))
+}
 function echoesDialogVerb(name, dialogName) {
   const button = String(name ?? '').trim().toLowerCase().replace(/[¿¡]/g, '')
   const title = String(dialogName ?? '').trim().toLowerCase().replace(/[¿¡]/g, '')
@@ -406,6 +520,92 @@ export function modalStatementNames(text) {
 // CU-771: Turkish confirm words too (Tamam, Evet, Devam (et), Onayla, Kabul et, Uygula, Bitti, Tamamla, İleri, Sonraki).
 const LOCALE_CONFIRM_WORD = String.raw`(?:ja|jawohl|ok|okay|bestätigen|bestaetigen|weiter|fortfahren|übernehmen|zustimmen|akzeptieren|einverstanden|verstanden|fertig|anwenden|oui|confirmer|continuer|valider|accepter|d['’]accord|appliquer|terminé|sí|si|aceptar|confirmar|continuar|de\s+acuerdo|vale|aplicar|listo|sì|conferma|confermare|continua|accetta|procedi|va\s+bene|applica|fatto|sim|aceitar|prosseguir|concluir|bevestigen|doorgaan|akkoord|accepteren|toepassen|verder|да|ок|подтвердить|продолжить|принять|согласен|согласна|применить|готово|хорошо|はい|確認|続行|同意する|同意|適用|完了|了解|是|是的|确定|確定|确认|继续|繼續|好|好的|应用|應用|完成|예|네|확인|계속|동의|적용|완료|続ける|続けて|次へ|進む|終了|suivant|terminer|siguiente|finalizar|terminar|avanti|fine|fertigstellen|abschließen|abschliessen|далее|завершить|下一步|继续操作|繼續操作|다음|마침|tamam|evet|devam|devam\s+et|onayla|kabul\s+et|uygula|bitti|tamamla|ileri|sonraki)`
 const LOCALE_GENERIC_CONFIRM = new RegExp(String.raw`^\s*${LOCALE_CONFIRM_WORD}(?:\s*[,、，]\s*${LOCALE_CONFIRM_WORD})?\s*[.!。！]?\s*$`, 'iu')
+// CU-749 (cu-researcher's sweep 5): the system localises an NSAlert's or a browser dialog's own buttons (OK / Yes / Confirm /
+// Continue) in its UI language while the app's text stays English - 'Delete this repository?' + 'نعم', 'Buy 1,000 coins for $9.99?' +
+// 'אישור', 'Delete this project?' + 'Tak'. So the affirmative, OK, confirm, continue, accept, agree, apply, done, next and finish
+// words of the system languages macOS ships beyond the covered ones, and of the larger web locales (ar fa ur he pl sv da nb is fi
+// et cs sk hu ro hr sr bs sl lt lv ca tr uk bg mk kk el hy ka vi th id ms tl sw hi bn), read the dialog as the covered ones do. Additions only: a dialog whose text
+// gets no class stays free ('Save changes?' + 'نعم'), and no back-out word is listed ('إلغاء', 'ביטול', 'Anuluj', 'Avbryt').
+// Compared by confirmKey(): Arabic-script words without harakat or tatweel, alef with hamza as bare alef, Arabic yeh / kaf as Persian
+// yeh / keheh; Hebrew without points; Latin and Greek also without accents ('ΕΝΤΑΞΕΙ', 'Potwierdz'); case folded.
+const MORE_CONFIRM_WORDS = [
+  // ar
+  'نعم', 'موافق', 'موافقة', 'اوافق', 'حسنا', 'تاکید', 'اکد', 'متابعة', 'تابع', 'استمرار', 'استمر', 'قبول', 'اقبل', 'تطبیق', 'تم', 'انهاء', 'التالی', 'اوکی',
+  // fa
+  'بله', 'باشه', 'تایید', 'ادامه', 'ادامه دهید', 'موافقم', 'اعمال', 'انجام شد', 'بعدی', 'پایان',
+  // ur
+  'ہاں', 'جی ہاں', 'ٹھیک ہے', 'تصدیق', 'تصدیق کریں', 'جاری رکھیں', 'قبول کریں', 'اگلا', 'منظور',
+  // he
+  'כן', 'אישור', 'אשר', 'אשרו', 'אוקיי', 'אוקי', 'המשך', 'המשיכו', 'להמשיך', 'מסכים', 'מסכימה', 'אני מסכים', 'אני מסכימה', 'קבל', 'קבלה', 'אני מקבל', 'החל', 'סיום', 'סיים', 'בוצע', 'הבא',
+  // pl
+  'tak', 'potwierdź', 'potwierdzam', 'zatwierdź', 'kontynuuj', 'dalej', 'zgadzam się', 'zgoda', 'akceptuję', 'akceptuj', 'zaakceptuj', 'zastosuj', 'gotowe', 'zakończ', 'dobrze',
+  // sv da nb is
+  'bekräfta', 'fortsätt', 'godkänn', 'acceptera', 'jag godkänner', 'jag accepterar', 'verkställ', 'tillämpa', 'klar', 'slutför', 'nästa', 'gå vidare', 'okej',
+  'bekræft', 'fortsæt', 'accepter', 'acceptér', 'godkend', 'jeg accepterer', 'anvend', 'færdig', 'udført', 'næste', 'fuldfør',
+  'bekreft', 'fortsett', 'godta', 'aksepter', 'godkjenn', 'jeg godtar', 'ferdig', 'neste', 'fullfør', 'utfør',
+  'já', 'staðfesta', 'áfram', 'samþykkja', 'í lagi',
+  // fi et
+  'kyllä', 'vahvista', 'jatka', 'hyväksy', 'hyväksyn', 'valmis', 'seuraava', 'selvä',
+  'jah', 'kinnita', 'jätka', 'nõustun', 'nõustu', 'rakenda', 'edasi', 'järgmine',
+  // cs sk
+  'ano', 'potvrdit', 'potvrďte', 'pokračovat', 'pokračujte', 'souhlasím', 'přijmout', 'přijímám', 'použít', 'hotovo', 'další', 'dokončit', 'rozumím',
+  'áno', 'potvrdiť', 'pokračovať', 'súhlasím', 'prijať', 'prijímam', 'použiť', 'ďalej', 'ďalšie', 'dokončiť', 'rozumiem',
+  // hu ro
+  'igen', 'rendben', 'megerősítés', 'megerősít', 'folytatás', 'tovább', 'elfogadom', 'elfogadás', 'alkalmaz', 'kész', 'befejezés', 'következő', 'értem',
+  'da', 'confirmă', 'confirmați', 'continuă', 'continuați', 'accept', 'acceptă', 'sunt de acord', 'aplică', 'gata', 'terminat', 'următorul', 'finalizează',
+  // hr sr bs sl (Latin)
+  'u redu', 'potvrdi', 'potvrdite', 'nastavi', 'nastavite', 'prihvati', 'prihvaćam', 'slažem se', 'primijeni', 'primeni', 'gotovo', 'dalje', 'sljedeće', 'sledeće', 'završi', 'razumijem',
+  'v redu', 'potrdi', 'nadaljuj', 'sprejmi', 'sprejmem', 'strinjam se', 'uporabi', 'končano', 'naprej', 'dokončaj',
+  // lt lv
+  'taip', 'gerai', 'patvirtinti', 'patvirtinkite', 'tęsti', 'sutinku', 'priimti', 'taikyti', 'atlikta', 'toliau', 'baigti',
+  'jā', 'labi', 'apstiprināt', 'turpināt', 'piekrītu', 'pieņemt', 'gatavs', 'tālāk', 'nākamais', 'pabeigt',
+  // ca tr (the forms CU-771 did not list)
+  'd’acord', "d'acord", 'accepta', 'aplica', 'fet', 'següent', 'finalitza', 'endavant', 'onaylıyorum', 'kabul ediyorum', 'anladım', 'tamamdır',
+  // uk bg sr mk kk (Cyrillic)
+  'так', 'гаразд', 'підтвердити', 'підтвердіть', 'підтверджую', 'продовжити', 'продовжуйте', 'прийняти', 'приймаю', 'погоджуюсь', 'погоджуюся', 'застосувати', 'далі', 'завершити', 'зрозуміло',
+  'добре', 'потвърди', 'потвърждавам', 'продължи', 'приеми', 'приемам', 'съгласен', 'съгласна', 'приложи', 'напред', 'следващ', 'завърши',
+  'у реду', 'потврди', 'настави', 'прихвати', 'прихватам', 'примени', 'даље', 'заврши', 'во ред', 'продолжи', 'прифати',
+  'иә', 'жарайды', 'растау', 'жалғастыру', 'қабылдау', 'келісемін', 'қолдану', 'дайын', 'келесі',
+  // el
+  'ναι', 'εντάξει', 'επιβεβαίωση', 'επιβεβαίωσε', 'επιβεβαιώνω', 'συνέχεια', 'συνέχισε', 'αποδοχή', 'αποδέχομαι', 'συμφωνώ', 'εφαρμογή', 'ολοκλήρωση', 'τέλος', 'επόμενο',
+  // hy ka
+  'այո', 'լավ', 'հաստատել', 'շարունակել', 'ընդունել', 'დიახ', 'კარგი', 'დადასტურება', 'გაგრძელება', 'მიღება',
+  // vi th
+  'có', 'đồng ý', 'xác nhận', 'tiếp tục', 'chấp nhận', 'áp dụng', 'xong', 'hoàn tất', 'tiếp theo', 'tiếp',
+  'ใช่', 'ตกลง', 'ยืนยัน', 'ดำเนินการต่อ', 'ดำเนินการ', 'ต่อไป', 'ยอมรับ', 'นำไปใช้', 'เสร็จสิ้น', 'เสร็จ', 'ถัดไป',
+  // id ms tl sw
+  'ya', 'oke', 'konfirmasi', 'sahkan', 'lanjutkan', 'lanjut', 'teruskan', 'setuju', 'saya setuju', 'terima', 'terapkan', 'selesai', 'berikutnya', 'seterusnya', 'baik',
+  'oo', 'sige', 'kumpirmahin', 'magpatuloy', 'tanggapin', 'tapos na', 'susunod',
+  'ndiyo', 'sawa', 'thibitisha', 'endelea', 'kubali', 'nakubali', 'imekamilika',
+  // hi bn
+  'हाँ', 'हां', 'ठीक है', 'ओके', 'पुष्टि', 'पुष्टि करें', 'जारी रखें', 'स्वीकार', 'स्वीकार करें', 'सहमत', 'मैं सहमत हूँ', 'मैं सहमत हूं', 'लागू करें', 'हो गया', 'आगे', 'अगला', 'समाप्त',
+  'হ্যাঁ', 'ঠিক আছে', 'নিশ্চিত করুন', 'চালিয়ে যান', 'গ্রহণ করুন', 'সম্মত', 'প্রয়োগ করুন', 'সম্পন্ন', 'পরবর্তী',
+]
+/** CU-749: Latin and Greek accents off (combining diacritical marks only - Indic and Thai vowel signs are letters here). */
+const stripAccents = (text) => text.normalize('NFD').replace(/[\u0300-\u036f]/gu, '').normalize('NFC')
+/** CU-749: the fold a button name and MORE_CONFIRM_WORDS are compared in - bidi and zero-width marks, Arabic harakat and tatweel,
+ * Hebrew points off; alef with hamza or madda as bare alef, Arabic yeh / alef maqsura / kaf as Persian yeh / keheh; Turkish 'İ' as 'i'. */
+const confirmFold = (text) => String(text ?? '').normalize('NFC')
+  .replace(/[\u200b-\u200f\u202a-\u202e\u2066-\u2069\u061c\ufeff\u0640\u064b-\u065f\u0670\u0591-\u05bd\u05bf-\u05c7]/gu, '')
+  .replace(/[\u0622\u0623\u0625]/gu, '\u0627').replace(/[\u064a\u0649]/gu, '\u06cc').replace(/\u0643/gu, '\u06a9').replace(/\u0130/gu, 'i')
+/** CU-749: the key one affirmative is compared by - folded, accents off, lower case (dotless 'ı' as 'i'), single spaces. */
+const confirmKey = (text) => stripAccents(confirmFold(text)).toLowerCase().replace(/\u0131/gu, 'i').replace(/\s+/gu, ' ').trim()
+// Each listed word as written, capitalised and in capitals, with and without accents, both raw and after normaliseText - a judged
+// name has passed its Cyrillic / Greek look-alike fold case by case ('Так' -> 'Taк', 'ΕΝΤΑΞΕΙ' -> 'ENTAΞEI'), so the keys are
+// built from the same fold. A set, so a click costs one lookup per part.
+const MORE_CONFIRM_KEYS = new Set(MORE_CONFIRM_WORDS.flatMap((word) => {
+  const [first, ...rest] = [...word]
+  const forms = [word, first.toUpperCase() + rest.join(''), word.toUpperCase()]
+  return [...forms, ...forms.map(stripAccents)].flatMap((form) => [confirmKey(form), confirmKey(normaliseText(form))])
+}))
+/** CU-749: a dialog button that is an affirmative in any language listed here or above - the whole name, or two joined by a comma
+ * ('نعم، متابعة', 'Tak, kontynuuj'), a closing '.' / '!' allowed. */
+function anyLocaleConfirm(text) {
+  const name = String(text ?? '')
+  if (name.trim() === '' || name.length > 60) return false
+  const parts = name.replace(/[.!。！]+\s*$/u, '').split(/\s*[,،、，]\s*/u)
+  return parts.length <= 2 && parts.every((part) => part.trim() !== '' && (MORE_CONFIRM_KEYS.has(confirmKey(part)) || LOCALE_GENERIC_CONFIRM.test(confirmFold(part))))
+}
 // CU-729: the question frames of a localized confirm title ('Möchten Sie diese Notiz wirklich löschen?', 'Voulez-vous vraiment ...',
 // '¿Desea eliminar ...?', '本当に削除しますか？', '确定要删除吗？', '정말 삭제하시겠습니까?') are removed into one more title text to judge.
 // CU-766 (High; cu-researcher's r2 set for CU-747): the INFORMAL and other common frames too - 'Seguro que quieres vaciar la papelera?',
@@ -1634,6 +1834,23 @@ const LOCALE_MONEY_VERBS = Object.freeze([
   /^(?:jetzt\s+)?(?:geld\s+(?:(?:an|zu)\s+(?:\S+\s+){1,2})?(?:transferieren|senden|überweisen|schicken)|bestellung\s+aufgeben|zahlungspflichtig\s+bestellen|kostenpflichtig\s+bestellen)\s*[.!]?$/iu,
   /^(?:(?:nu\s+)?geld\s+(?:(?:naar|aan)\s+(?:\S+\s+){1,2})?(?:overmaken|versturen|overboeken|sturen)|bestelling\s+plaatsen|maak\s+geld\s+over(?:\s+(?:naar|aan)\s+\S+(?:\s+\S+)?)?)\s*[.!]?$/iu,
   /^(?:今すぐ)?(?:送金(?:する|して(?:ください)?|します)?|(?:資金|お金)を?(?:振り込む|振り込み|送る|送金する|移動(?:する|して(?:ください)?)?)|注文する|注文して(?:ください)?)\s*[.!。]?$/u,
+  // CU-702: the account-noun transfer forms ask as 'Transfer to account' / 'Account transfer' do ('계좌 이체', '계좌로 이체', '口座に振り込む', '口座振替')
+  // r2 (cu-developer-one 02:15Z): a possessive and one qualifier noun, as the ja line ('내 계좌로 이체하기', '은행 계좌로 이체')
+  /^(?:(?:지금|즉시)\s+)?(?:(?:내|제|나의|우리)\s+)?(?:\S+\s+)?(?:계좌|은행)\s*(?:로|에|으로)?\s*(?:이체|송금)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?\s*[.!]?$/u,
+  // r3 (cu-developer-one 02:46Z, final and general): every to-account line takes a determiner slot of up to two words between the
+  // preposition (contractions aufs / ans / au / à included) and the account noun, and still ends at the account noun (+ its qualifier);
+  // the ja line takes a possessive '…の' before 口座 ('自分の口座に振り込む')
+  /^(?:今すぐ)?(?:[^\sの]+の)?(?:口座|銀行口座)(?:に|へ)?(?:振り込む|振込(?:する)?|振り込み|送金(?:する)?|振替(?:する)?)\s*[.!。]?$/u,
+  /^(?:transférer|transférez|virer|virez|virement|transfert)\s+(?:vers|sur|à|au)\s+(?:\S+\s+){0,2}?compte(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  // r4 (cu-developer-three 03:00Z): the send verbs ask here only with a money object ('Enviar a mi cuenta de correo' is a generic send, submit
+  // as 'Send to my email'); the transfer verbs and the noun-led forms keep the slot
+  /^(?:(?:transferir|transfiere|transfiera|transferencia)\s+(?:dinero\s+|fondos\s+)?|(?:enviar|envía|envíe)\s+(?:dinero|fondos)\s+)(?:a|al|para|en)\s+(?:\S+\s+){0,2}?cuenta(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:(?:transferir|transfira|transferência)\s+(?:dinheiro\s+|fundos\s+)?|(?:enviar|envie)\s+(?:dinheiro|fundos)\s+)(?:a|à|ao|para)\s+(?:\S+\s+){0,2}?conta(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:(?:trasferisci|trasferire|bonifico|trasferimento)\s+(?:denaro\s+|soldi\s+|fondi\s+)?|(?:invia|inviare)\s+(?:denaro|soldi|fondi)\s+)(?:sul|al|su|a|nel)\s+(?:\S+\s+){0,2}?conto(?:\s+\S+){0,2}?\s*[.!]?$/iu,
+  /^(?:auf|an|aufs|ans)\s+(?:\S+\s+){0,2}?\S*konto\s+(?:übertragen|überweisen|transferieren)\s*[.!]?$/iu,
+  /^(?:überweisung|übertragung)\s+(?:auf|an|aufs|ans)\s+(?:\S+\s+){0,2}?\S*konto\s*[.!]?$/iu,
+  new RegExp(`^hesab(?:a|[ıI]ma|[ıI]n[ıI]za)\\s+(?:aktar|aktar[ıI]n|transfer\\s+et|gönder|gönderin)\\s*[.!]?$`, 'iu'),
+  /^(?:立即)?(?:转入|轉入|转到|轉到|转账到|轉帳到)(?:\S{0,6})?(?:账户|帳戶|账号|帳號)\s*[.!。]?$/u,
   // r2: ko bare 이체 / 이체하기 ask (an unambiguous bank transfer; bare Sino-noun = verb, owner ruling 23:57Z)
   /^(?:(?:지금|즉시)\s+)?(?:(?:송금|이체)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?|(?:자금|돈)\s*(?:을|를)?\s*(?:이체|송금|보내기|보내)(?:하기|하세요|해\s?주세요|해\s?줘|하십시오|해요|합니다)?)\s*[.!]?$/u,
   new RegExp(`^(?:para\\s+(?:gönder|gönderin|aktar|aktarın|transfer\\s+et)|havale\\s+yap|sipariş\\s+ver|siparişi\\s+tamamla|siparişi\\s+onayla)\\s*[.!]?$`, 'iu'),
@@ -1645,7 +1862,11 @@ function namesRuMoneyVerbs(name) {
     const any = (words) => `(?:${words.flatMap(folds).join('|')})`
     const verb = any(['отправить', 'отправьте', 'перевести', 'переведите', 'перечислить'])
     const object = any(['деньги', 'средства', 'денежные'])
-    ruMoneyVerbsRegex = new RegExp(`^${verb}\\s+(?:${any(['денежные'])}\\s+)?${object}(?:\\s+\\S+){0,3}?\\s*[.!]?$`, 'iu')
+    // CU-702: 'Перевести на счёт' (transfer to an account) asks purchase, as 'Transfer to account' does (its main-branch permission came
+    // only from the no-class page fallback, CU-706); r2: the noun-led 'Перевод на счёт' too
+    const toAccount = `${any(['на'])}\\s+(?:\\S+\\s+)?${any(['счёт', 'счет', 'карту'])}`
+    const nounLed = `${any(['перевод'])}\\s+${toAccount}(?:\\s+\\S+){0,2}?`
+    ruMoneyVerbsRegex = new RegExp(`^(?:${verb}\\s+(?:(?:${any(['денежные'])}\\s+)?${object}(?:\\s+\\S+){0,3}?|${toAccount}(?:\\s+\\S+){0,2}?)|${nounLed})\\s*[.!]?$`, 'iu')
   }
   return ruMoneyVerbsRegex.test(normaliseName(String(name ?? '')).trim())
 }
@@ -3933,6 +4154,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
       // 'Make <noun> public' (an object between the verb and 'public', cu-coordinator 14:34Z).
       if (!focusesEntry && /^\s*make\s+(?:the\s+|this\s+)?(?:\S+\s+){1,2}public\s*$/i.test(name)) classes.push('permission')
       if (!focusesEntry && /^\s*destroy\b/i.test(name) && !/link/i.test(String(target?.role ?? ''))) classes.push('delete')
+      // CU-755: a glyph-only trash name, and resetting a branch to a commit.
+      if (!focusesEntry && (TRASH_GLYPH_NAME.test(name) || RESET_TO_COMMIT.test(name)) && !/link/i.test(String(target?.role ?? ''))) classes.push('delete')
       // CU-410: renting ('Rent', 'Rent now', 'Rent <title>'; 'Rentals' stays free), a bare 'Renew', reactivating a subscription,
       // turning auto-renew on and switching the billing period ask purchase.
       if (!focusesEntry && (/^\s*rent\b/i.test(name) || /^\s*renew\s*$/i.test(name)
@@ -4933,10 +5156,19 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         if (restProbe.decision === 'confirm') for (const cls of restProbe.classes ?? [restProbe.class]) if (!classes.includes(cls)) classes.push(cls)
       }
       const localeConfirm = LOCALE_GENERIC_CONFIRM.test(String(target?.name ?? name ?? '')) || LOCALE_GENERIC_CONFIRM.test(String(name ?? '')) || namesRuConfirm(String(name ?? ''))
+        // CU-749: or an affirmative in any other system language ('نعم', 'כן', 'אישור', 'Tak') - the dialog's text decides, as above.
+        // Looked up only when the target sits in a dialog (the probes below carry no dialog fields).
+        || ((dialogName !== '' || dialogDescription !== '') && (anyLocaleConfirm(target?.name) || anyLocaleConfirm(name)))
       // CU-747: final-step controls and a bare verb that echoes the dialog title's verb read the dialog too (additions only).
       // CU-790: or a sentence of the description - 'Leeren' under the title 'Hinweis' and 'Ist der Papierkorb danach geleert?'.
       const finalStep = FINAL_STEP_CONFIRM.test(String(name ?? '')) || echoesDialogVerb(name, dialogName) || echoesDialogVerb(target?.name, dialogName)
         || dialogDescription.split(/(?<=[.!?。！？])\s*/u).some((sentence) => sentence !== '' && (echoesDialogVerb(name, sentence) || echoesDialogVerb(target?.name, sentence)))
+      // CU-755: a store-style commit in a dialog that names a price reads the dialog too.
+      const priceCommit = DIALOG_PRICE_COMMIT.test(String(name ?? '')) && [dialogName, dialogDescription].some((text) => amountClass(text, 'dialog') === 'purchase')
+      // CU-804: an emptying button under a trash permanent-delete question or pending statement.
+      // CU-818: a title that names the trash lends it to the description's item sentences.
+      const titleNamesTrash = TRASH_NOUN.test(String(dialogName ?? ''))
+      const emptiesTrash = [dialogName, ...dialogDescription.split(/(?<=[.!?。！？])\s*/u)].some((sentence) => sentence !== '' && (emptiesTrashByDelete(name, sentence, titleNamesTrash) || emptiesTrashByDelete(target?.name, sentence, titleNamesTrash)))
       // CU-757: 'Allow' / 'Grant' / 'Give access' (and localized) in a dialog whose title or a kept sentence states access asks
       // permission and takes the dialog's other classes too; the same button in a dialog that states no access is unchanged.
       const accessAllow = ACCESS_ALLOW.test(String(target?.name ?? '')) || ACCESS_ALLOW.test(String(name ?? ''))
@@ -4944,7 +5176,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         .filter((sentence) => sentence !== '' && !/\b(?:if\s+you\s+(?:don'?t|do\s+not|choose\s+not\s+to|cancel|leave|close)|unless\s+you|otherwise)\b/i.test(sentence))
         .some((sentence) => MODAL_ACCESS.test(sentence) || LOCALE_MODAL_ACCESS.test(sentence))
       if (context.confirmProbe !== true && presses && accessStated && !classes.includes('permission')) classes.push('permission')
-      if (context.confirmProbe !== true && presses && (dialogName !== '' || dialogDescription !== '') && (GENERIC_CONFIRM.test(String(name ?? '')) || localeConfirm || continueTo || finalStep || accessStated)) {
+      if (context.confirmProbe !== true && presses && (dialogName !== '' || dialogDescription !== '') && (GENERIC_CONFIRM.test(String(name ?? '')) || localeConfirm || continueTo || finalStep || accessStated || emptiesTrash || priceCommit)) {
         // cu-researcher 16:09Z: a title is a question more often than a row - 'Are you sure you want to <row>?', 'Really <row>?',
         // '<row>?' - so a title canonical step strips the question frame before the title is judged as a name.
         // #702 round 2 (cu-researcher 16:24Z): descriptions lead with 'This will / This action will / You are about to / Doing this will'.
@@ -4965,6 +5197,12 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         for (const sentence of [dialogName, ...kept]) { const verb = localePassiveAct(sentence); if (verb !== null && !texts.includes(verb)) texts.push(verb) }
         // CU-746: the title and each kept sentence read as the act they state (statement, framed lead-in, noun title, access).
         for (const base of [dialogName, ...kept]) for (const extra of modalStatementNames(base)) if (!texts.includes(extra)) texts.push(extra)
+        if (emptiesTrash && !texts.includes('Empty trash')) texts.push('Empty trash')
+        // r4 (cu-developer-two's r3 probe; cu-coordinator 11:11Z): a dialog read ONLY because of the trash rule is judged only as
+        // 'Empty trash' - its other texts were not read on main, so they add no class here ('Все объекты в Корзине будут удалены.'
+        // asked permission besides delete on the web route).
+        const onlyTrash = emptiesTrash && !(GENERIC_CONFIRM.test(String(name ?? '')) || localeConfirm || continueTo || finalStep || accessStated)
+        if (onlyTrash) texts.splice(0, texts.length, 'Empty trash')
         for (const text of texts) {
           // #702 round 2: the title is judged with the FULL canonical form (synonym, quantifier, label and clause steps run only
           // outside a confirm probe), so no confirmProbe flag here; the probe target carries no dialog fields, so it cannot recurse.
