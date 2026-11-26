@@ -43,6 +43,26 @@ test('CU-828: es / fr active futures ask, and a negation in a following clause d
   ])
 })
 
+test('CU-828 r2: the active future of every removal verb the future rules read asks (cu-researcher\'s fold)', () => {
+  asks([
+    ['Vaciar', 'Papelera', 'El sistema quitará los elementos de la papelera.'],
+    ['Svuota', 'Cestino', 'Il sistema toglierà tutti i file dal cestino.'],
+    ['Esvaziar', 'Lixeira', 'Os sistemas retirarão todos os arquivos da lixeira.'],
+    ['Vider', 'Corbeille', 'Le système retirera les éléments de la corbeille.'],
+    ['Leeren', 'Papierkorb', 'Der Papierkorb wird alle Dateien beseitigen.'],
+  ])
+  free([
+    ['Vaciar', 'Papelera', 'El sistema no quitará los elementos de la papelera.'],
+    ['Vaciar', 'Papelera', 'El sistema quitó los elementos de la papelera ayer.'],
+    ['Svuota', 'Cestino', 'Il sistema non toglierà i file dal cestino.'],
+    ['Esvaziar', 'Lixeira', 'O sistema não retirará os arquivos da lixeira.'],
+    ['Vider', 'Corbeille', 'Le système ne retirera pas les éléments de la corbeille.'],
+    ['Leeren', 'Papierkorb', 'Der Papierkorb hat alle Dateien beseitigt.'],
+    ['Legen', 'Prullenbak', 'De prullenbak heeft de bestanden gisteren weggehaald.'],
+    ['Empty', 'Trash', 'The system took out the files from the trash yesterday.'],
+  ])
+})
+
 test('CU-828: negated, past, past-event, conditional and wrong-button rows stay free', () => {
   free([
     ['Svuota', 'Cestino', 'Il sistema non cancellerà gli elementi del cestino.'],
@@ -53,5 +73,33 @@ test('CU-828: negated, past, past-event, conditional and wrong-button rows stay 
     ['Svuota', 'Cestino', 'Il sistema cancellerebbe gli elementi del cestino.'],
     ['Esvaziar', 'Lixeira', 'O sistema apagaria os itens da lixeira.'],
     ['Annulla', 'Cestino', 'Il sistema cancellerà gli elementi del cestino.'],
+  ])
+})
+
+test('CU-828 r2: the parity rows - each added verb is already read by the removal-from-the-trash future rule', () => {
+  asks([
+    ['Vaciar', 'Papelera', 'Los elementos se quitarán de la papelera.'],
+    ['Svuota', 'Cestino', 'I file verranno tolti dal cestino.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos serão retirados da lixeira.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos serão tirados da lixeira.'],
+    ['Vider', 'Corbeille', 'Les éléments seront retirés de la corbeille.'],
+    ['Vider', 'Corbeille', 'Les éléments seront enlevés de la corbeille.'],
+    ['Vider', 'Corbeille', 'Les éléments seront ôtés de la corbeille.'],
+    ['Vider', 'Corbeille', 'Les éléments seront éliminés de la corbeille.'],
+    ['Leeren', 'Papierkorb', 'Die Dateien werden aus dem Papierkorb beseitigt.'],
+    ['Leeren', 'Papierkorb', 'Die Dateien werden aus dem Papierkorb weggenommen.'],
+    ['Leeren', 'Papierkorb', 'Die Dateien werden aus dem Papierkorb herausgenommen.'],
+    ['Legen', 'Prullenbak', 'De bestanden worden uit de prullenbak weggehaald.'],
+    ['Empty', 'Trash', 'The files will be taken out from the trash.'],
+  ])
+})
+
+test('CU-828 r2: a restore meaning under a restore button stays free (cu-researcher\'s over-ask condition)', () => {
+  free([
+    ['Restaurar', 'Papelera', 'Los elementos se sacarán de la papelera y volverán a su carpeta.'],
+    ['Restaurar', 'Papelera', 'El sistema sacará los elementos de la papelera y los devolverá a su carpeta.'],
+    ['Remettre', 'Corbeille', 'Les éléments seront retirés de la corbeille et remis à leur place.'],
+    ['Remettre', 'Corbeille', 'Le système retirera les éléments de la corbeille et les remettra à leur place.'],
+    ['Restaurar', 'Papelera', 'Algunos elementos se sacaron de la papelera por error ayer.'],
   ])
 })

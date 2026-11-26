@@ -151,15 +151,18 @@ const ECHO_CJK = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script
 // ko / tr forms too (cu-developer-two's cross-check).
 const EMPTYING_BUTTON = /^(?:empty|empty\s+now|leeren|entleeren|ausleeren|vider|vaciar|svuota|svuotare|esvaziar|legen|leegmaken|leeghalen|leegruimen|ledigen|leeg\s+(?:maken|halen|ruimen)|очистить|空にする|清倒|倒空|清空|비우기|boşalt)$/u
 const TRASH_NOUN = /(?<!\p{L})(?:trash|bin|recycle\s+bin|papierkorb|mülleimer|abfalleimer|corbeille|papelera|cestino|lixeira|lixo|prullenbak|prullenmand|vuilnisbak|vuilbak|корзин[аеуыой]|корзиной|çöp)(?!\p{L})|ゴミ箱|废纸篓|廢紙簍|回收站|휴지통/iu
-const TRASH_DELETE_VERB = /(?<!\p{L})(?:delete|deleted|erase|erased|remove|removed|löschen|gelöscht|entfernen|entfernt|supprimer|supprimée?s?|effacer|effacée?s?|eliminar|eliminad[oa]s?|borrar|borrad[oa]s?|suprimir|suprimid[oa]s?|eliminare|eliminat[oiae]|cancellare|cancellat[oiae]|excluir|excluíd[oa]s?|apagar|apagad[oa]s?|verwijderen|verwijderd|wissen|gewist)(?!\p{L})/iu
+const TRASH_DELETE_VERB = /(?<!\p{L})(?:delete|deleted|erase|erased|remove|removed|löschen|gelöscht|entfernen|entfernt|supprimer|supprimée?s?|effacer|effacée?s?|eliminar|eliminad[oa]s?|borrar|borrad[oa]s?|suprimir|suprimid[oa]s?|eliminare|eliminat[oiae]|cancellare|cancellat[oiae]|excluir|excluíd[oa]s?|apagar|apagad[oa]s?|verwijderen|verwijderd|wissen|gewist|beseitigen|beseitigt|wegnehmen|weggenommen|herausnehmen|herausgenommen|weghalen|weggehaald|take\s+out|taken\s+out)(?!\p{L})/iu
 // CU-814 (the table cu-researcher OK'd 21:56Z): the emptying verb's passive / participle over the trash, only with a future
 // auxiliary - never a bare question ('¿La papelera fue vaciada ayer?', 'Can the Trash be emptied later?'). German and Dutch stay
 // with their own cells (CU-781 / CU-800), which keep the modal guards ('Kann der Papierkorb später geleert werden?').
 const TRASH_EMPTIED_VERB = /(?<!\p{L})(?:emptied|vidée?s?|vaciad[oa]s?|vaciar[áa]n?|svuotat[oiae]|esvaziad[oa]s?)(?!\p{L})/iu
 // CU-828 (the table cu-researcher OK'd 02:31Z): the active future of a delete verb with an agent subject is itself pending -
 // 'Il sistema cancellerà tutti i file del cestino.', 'O sistema apagará …', 'El sistema eliminará …', 'Le système supprimera …'.
+// r2 (cu-researcher's #1509 fold): every verb the reflexive / passive futures and the removal lexicon read has its active future
+// here - es quitar, it togliere, pt retirar / tirar (the plural only: the singular is spelled as es retirar / tirar), fr retirer / enlever / ôter / éliminer - and the de / nl / en removal
+// verbs join the Western cell ('… wird alle Dateien beseitigen').
 // Only a negation BEFORE the verb frees it; one in a following clause ('… e non sarà possibile recuperarli') does not.
-const TRASH_ACTIVE_FUTURE = /(?<!\p{L})(?:cancellerà|cancelleranno|eliminerà|elimineranno|rimuoverà|rimuoveranno|apagará|apagarão|excluirá|excluirão|removerá|removerão|eliminará|eliminarán|borrará|borrarán|suprimirá|suprimirán|supprimera|supprimeront|effacera|effaceront)(?!\p{L})/iu
+const TRASH_ACTIVE_FUTURE = /(?<!\p{L})(?:cancellerà|cancelleranno|eliminerà|elimineranno|rimuoverà|rimuoveranno|apagará|apagarão|excluirá|excluirão|removerá|removerão|eliminará|eliminarán|borrará|borrarán|suprimirá|suprimirán|supprimera|supprimeront|effacera|effaceront|quitará|quitarán|toglierà|toglieranno|retirarão|tirarão|retirera|retireront|enlèvera|enlèveront|ôtera|ôteront|éliminera|élimineront)(?!\p{L})/iu
 const TRASH_PENDING_AUX = /(?<!\p{L})(?:will|sera|seront|será|serán|verrà|verranno|sarà|saranno|serão)(?!\p{L})|(?<!\p{L})se\s+(?:\S+\s+){0,2}?vaciar[áa]n?(?!\p{L})/iu
 const TRASH_PENDING = /[?？]\s*$|(?<!\p{L})(?:will|would|wird|werden|sera|seront|será|serán|verrà|verranno|serão|wordt|worden|zal|zullen)(?!\p{L})/iu
 const TRASH_NEGATION = /(?<!\p{L})(?:not|never|nicht|nie|kein|keine|ne|pas|jamais|no|nunca|non|mai|não|niet|nooit|geen)(?!\p{L})|n['’]t(?!\p{L})/iu
