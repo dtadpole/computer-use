@@ -1,35 +1,26 @@
 ---
 title: '[cu] Coordinator - handover'
 created: 2026-11-08T04:15:00Z
-modified: 2026-11-26T11:55:00Z
+modified: 2026-11-26T16:40:00Z
 level: L2
-version: 4.6.0
+version: 4.7.0
 status: unverified
-description: 'What the next [cu] Coordinator session needs to take the seat mid-flight - state at 26 Nov 11:55Z.'
+description: 'What the next [cu] Coordinator session needs to take the seat mid-flight - state at 26 Nov 16:40Z.'
 grounded_in:
   - source: owner's re-creation order of 2026-11-22 19:05 PST (the previous holder was archived past the model window)
-  - source: decision log D-108, D-110 to D-124
+  - source: decision log D-119 to D-125
 ---
 
 # [cu] Coordinator - handover
 
-**Why now.** The holder reached 75 percent context and hands over (D-124 item 6).
+**Why now.** The holder reached about 60 percent context after six seat replacements; it hands over early (D-124 (6)).
 
-**State.** Helper 0.2.75 installed (signed, true READBACK 26 Nov 08:02Z). Closed live today: CU-752, CU-831 (#1516).
-Open P1: CU-832 (#1520, three OKs; main merge, D-114 re-run, merge-diff re-checks, gate - one policy.mjs PR at a time);
-CU-763 (#1522, helper 0.2.76) - cu-verifier NOT OK at 2ad119966, one fold owed; the researcher's pre-merge OK is a
-build-class harness on its held-out; merge and signed install only in the 08:00-08:25Z daily window, then the CU-763 /
-CU-787 close and the live measurement. Next: CU-833 (P1, repro done), CU-835 / CU-830 / CU-837 (P2), #1521 (CU-709,
-behind the policy pair), CU-723, CU-836.
+**State.** Closed live today: CU-831, CU-832, CU-833. Open P1 in the policy.mjs line (D-108, D-125 (4)): #1533 (CU-815, three OKs) then #1534 (CU-840, the boundary hint length; should merge before the CU-763 close), then #1524 (CU-830, P2) and #1521 (CU-709, P3). #1522 (CU-763, helper 0.2.76, three OKs) merges in the 27 Nov 08:00-08:25Z window; signed install with a true READBACK, then the CU-763 and CU-787 live closes. Next P1 builds: CU-819, CU-823, CU-842 (cu-developer-one), CU-839 (cu-developer-three). Twelve parked consent PRs exit only through a repro on main (D-125 (3)).
 
-**Rulings.** D-123 and D-124: fixture-only runners; READBACK shows version and sha256; node-class runs may use Last
-War's 09:20-10:50Z slot; table OKs are the researcher's. Nobody clicks a macOS consent dialog.
+**Rulings to know.** D-125: skipped desktop cells under owner activity, harness pre-merge OKs for signed-helper PRs, the parked-PR exit, policy.mjs order by priority, parity of same-frame twins.
 
-**Team.** Five seats were replaced today at 66-76 percent context - insist on small outputs and context percent
-hourly. Inbox backlogs recur at cu-verifier and cu-developer-two.
+**Team health.** All seven seats were replaced today; the researcher and the verifier hand over again near 65 percent. Seats hand over at 60-65 percent, not 70. Never run session-inbox send with a roster that does not name your session: it then scans home folders and raises macOS privacy prompts (26 Nov 15:30Z).
 
-**CU-834.** Roster is team-record 2.12 with coordination.watchdog; the cu-watchdog dry run starts after the private
-checkout syncs; --apply by a later PR (default 2 Dec).
+**Watchdog (CU-834).** It has never run: this Mac has no service-runner agent and no host unit; both steps are the owner's.
 
-**Owner items (with defaults).** Stray windows; Screen Recording for CUHelper; step 4 (CU-11, CU-119, CU-135); budget
-for CU-66; goal cap; Watchdog --apply. Dates: daily reflection 23:00Z, weekly Sunday 29 Nov.
+**Owner items (each with a default).** Close stray System Settings and notification windows; allow CUHelper Screen Recording; step 4 session (CU-11, CU-119, CU-135); budget for CU-66; coordinator goal resume or cap; Watchdog host unit and install; the session-inbox home-scan fix.
