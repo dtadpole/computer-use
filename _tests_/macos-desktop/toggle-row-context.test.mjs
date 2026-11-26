@@ -9,7 +9,8 @@ import { toggleRowContextOf } from '../../_environments_/macos-desktop/environme
 test('CU-763: a row context the helper read passes, cleaned', () => {
   assert.deepEqual(toggleRowContextOf({ list: 'Full Disk Access', hints: [] }), { list: 'Full Disk Access', hints: [] })
   assert.deepEqual(toggleRowContextOf({ list: '  Screen &\n System Audio Recording ', hints: [] }), { list: 'Screen & System Audio Recording', hints: [] })
-  assert.deepEqual(toggleRowContextOf({ list: 'Privacy', hints: ['Allow the applications below to control', '', 'x'.repeat(41), 'a', 'b', 'c'] }), { list: 'Privacy', hints: ['Allow the applications below to control', 'a', 'b'] })
+  // CU-840: a hint over 60 characters (the helper's RowContext.maxText) is dropped; at most 3 are kept.
+  assert.deepEqual(toggleRowContextOf({ list: 'Privacy', hints: ['Allow the applications below to control', '', 'x'.repeat(61), 'a', 'b', 'c'] }), { list: 'Privacy', hints: ['Allow the applications below to control', 'a', 'b'] })
 })
 
 test('CU-763: anything else is null, never guessed', () => {

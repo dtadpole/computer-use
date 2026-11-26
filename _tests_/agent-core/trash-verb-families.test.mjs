@@ -86,6 +86,63 @@ test('#1481 r2: cu-researcher\'s and cu-developer-two\'s tr misses verbatim, and
   ])
 })
 
+// CU-815 (P1; follow-up to CU-809 after #1481 r2): a compound or periphrastic form of a covered verb - a delete noun with a light
+// verb, a resultative complement, a converb chain - went free in a pending trash statement while its plain form asked. The table
+// cu-researcher OK'd (13:44Z) puts each compound in its language's verb slot only; markers, negation, past and gap are unchanged.
+test('CU-815: the filed rows, verbatim, ask delete on both routes', () => {
+  asks([
+    ['비우기', '휴지통', '휴지통 항목은 영구 삭제 처리됩니다.'],
+    ['清倒', '废纸篓', '废纸篓里的文件会被全部删光。'],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki dosyalar kalıcı olarak silinip gidecek."],
+  ])
+})
+
+test('CU-815: each language\'s compound asks when pending, as its plain twin already does (ko with and without the space)', () => {
+  asks([
+    // plain twins, read on main (the parity proof)
+    ['비우기', '휴지통', '휴지통 항목은 영구 삭제됩니다.'],
+    ['清倒', '废纸篓', '废纸篓里的文件会被全部删除。'],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki dosyalar kalıcı olarak silinecek."],
+    ['空にする', 'ゴミ箱', 'ゴミ箱内のファイルはすべて完全に消去されます。'],
+    ['Очистить', 'Корзина', 'Все файлы в Корзине будут удалены.'],
+    // ko: Sino delete noun + 처리, both spellings
+    ['비우기', '휴지통', '휴지통의 모든 파일은 영구 제거 처리될 예정입니다.'],
+    ['비우기', '휴지통', '휴지통 항목을 모두 폐기 처리합니다.'],
+    ['비우기', '휴지통', '휴지통 항목은 영구 삭제처리됩니다.'],
+    ['비우기', '휴지통', '휴지통의 모든 파일은 영구 제거처리될 예정입니다.'],
+    // zh: resultatives on 删
+    ['清倒', '废纸篓', '废纸篓中的所有项目将被彻底删干净。'],
+    ['清倒', '废纸篓', '廢紙簍裡的檔案即將被全部刪完。'],
+    // tr: -Ip + git-
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki tüm öğeler kalıcı olarak kaldırılıp gidecektir."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki dosyalar temizlenip gider."],
+    // ja: Sino delete noun + 処理
+    ['空にする', 'ゴミ箱', 'ゴミ箱内のファイルはすべて完全に消去処理されます。'],
+    ['空にする', 'ゴミ箱', 'ゴミ箱の項目は廃棄処理される予定です。'],
+    // ru: light-verb participle + delete noun
+    ['Очистить', 'Корзина', 'Будет произведена полная очистка Корзины.'],
+    ['Очистить', 'Корзина', 'В Корзине будет выполнено безвозвратное удаление файлов.'],
+  ])
+})
+
+test('CU-815: the negated and past twins of each compound stay free', () => {
+  free([
+    ['비우기', '휴지통', '휴지통 항목은 삭제 처리되지 않습니다.'],
+    ['비우기', '휴지통', '휴지통의 파일은 제거 처리되지 않습니다.'],
+    ['비우기', '휴지통', '휴지통 항목이 모두 폐기 처리되었습니다.'],
+    ['비우기', '휴지통', '휴지통 항목이 모두 폐기처리되었습니다.'],
+    ['清倒', '废纸篓', '废纸篓里的文件没有被删光。'],
+    ['清倒', '废纸篓', '废纸篓中的项目不会被删完。'],
+    ['清倒', '废纸篓', '废纸篓里的文件已经全部删干净了。'],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler silinip gitmeyecek."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki dosyalar kalıcı olarak silinip gitti."],
+    ['空にする', 'ゴミ箱', 'ゴミ箱の項目は消去処理されません。'],
+    ['空にする', 'ゴミ箱', 'ゴミ箱の項目はすべて削除処理されました。'],
+    ['Очистить', 'Корзина', 'Из Корзины не будет произведено удаление файлов.'],
+    ['Очистить', 'Корзина', 'Из Корзины было выполнено удаление файлов.'],
+  ])
+})
+
 // CU-819 (P1; follow-up to CU-813 after #1482 r2): a ko pending delete in the future adnominal + a dependent noun + a copula
 // causal ending went free - '…삭제될 터이므로 백업하세요.' - while the same ending after 것 asked. The table cu-researcher OK'd
 // (15:06Z) lets 터 / 거 take main's four endings after 것; negation and past still decide first.
