@@ -156,6 +156,10 @@ const TRASH_DELETE_VERB = /(?<!\p{L})(?:delete|deleted|erase|erased|remove|remov
 // auxiliary - never a bare question ('¿La papelera fue vaciada ayer?', 'Can the Trash be emptied later?'). German and Dutch stay
 // with their own cells (CU-781 / CU-800), which keep the modal guards ('Kann der Papierkorb später geleert werden?').
 const TRASH_EMPTIED_VERB = /(?<!\p{L})(?:emptied|vidée?s?|vaciad[oa]s?|vaciar[áa]n?|svuotat[oiae]|esvaziad[oa]s?)(?!\p{L})/iu
+// CU-828 (the table cu-researcher OK'd 02:31Z): the active future of a delete verb with an agent subject is itself pending -
+// 'Il sistema cancellerà tutti i file del cestino.', 'O sistema apagará …', 'El sistema eliminará …', 'Le système supprimera …'.
+// Only a negation BEFORE the verb frees it; one in a following clause ('… e non sarà possibile recuperarli') does not.
+const TRASH_ACTIVE_FUTURE = /(?<!\p{L})(?:cancellerà|cancelleranno|eliminerà|elimineranno|rimuoverà|rimuoveranno|apagará|apagarão|excluirá|excluirão|removerá|removerão|eliminará|eliminarán|borrará|borrarán|suprimirá|suprimirán|supprimera|supprimeront|effacera|effaceront)(?!\p{L})/iu
 const TRASH_PENDING_AUX = /(?<!\p{L})(?:will|sera|seront|será|serán|verrà|verranno|sarà|saranno|serão)(?!\p{L})|(?<!\p{L})se\s+(?:\S+\s+){0,2}?vaciar[áa]n?(?!\p{L})/iu
 const TRASH_PENDING = /[?？]\s*$|(?<!\p{L})(?:will|would|wird|werden|sera|seront|será|serán|verrà|verranno|serão|wordt|worden|zal|zullen)(?!\p{L})/iu
 const TRASH_NEGATION = /(?<!\p{L})(?:not|never|nicht|nie|kein|keine|ne|pas|jamais|no|nunca|non|mai|não|niet|nooit|geen)(?!\p{L})|n['’]t(?!\p{L})/iu
@@ -237,6 +241,8 @@ function emptiesTrashByDelete(name, sentence, titleNamesTrash = false) {
   // #1491 r2 (the table cu-researcher OK'd 21:04Z; CU-821): the future passives the in-sentence rule reads ('se eliminarán', 'verranno
   // eliminati', 'serão excluídos', 'werden … gelöscht', 'worden verwijderd', 'будут удалены') count here too, with their own negation.
   if (localePassiveAct(text) !== null) return true
+  const active = TRASH_ACTIVE_FUTURE.exec(text)
+  if (active !== null && !TRASH_NEGATION.test(text.slice(0, active.index).trim().split(/\s+/).slice(-4).join(' '))) return true
   const emptied = TRASH_EMPTIED_VERB.exec(text)
   if (emptied !== null && TRASH_PENDING_AUX.test(text) && !TRASH_NEGATION.test(text.slice(0, emptied.index).trim().split(/\s+/).slice(-4).join(' '))) return true
   const verb = TRASH_DELETE_VERB.exec(text)
