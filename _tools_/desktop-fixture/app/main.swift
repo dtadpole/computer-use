@@ -81,6 +81,7 @@ final class Fixture: NSObject {
     out.merge(MenuCompose.fields()) { current, _ in current }
     out.merge(NamedControls.fields()) { current, _ in current }
     out.merge(OpenSelection.fields()) { current, _ in current }
+    out.merge(PrivacyPane.fields()) { current, _ in current }
     return out
   }
 
