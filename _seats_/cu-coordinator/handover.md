@@ -13,30 +13,23 @@ grounded_in:
 
 # [cu] Coordinator - handover
 
-**Why now.** The holder reached 75 percent context; it hands over under its own rule (D-124 item 6).
+**Why now.** The holder reached 75 percent context and hands over (D-124 item 6).
 
-**State.** Helper 0.2.75 is installed (signed identity, true READBACK 26 Nov 08:02Z). Closed live today: CU-752,
-CU-831 (#1516, merged 35aadfbea). Open P1: CU-832 (#1520, three OKs; merges main, re-runs D-114, merge-diff
-re-checks, then its gate - one policy.mjs PR at a time, D-108); CU-763 (#1522, helper 0.2.76) - cu-verifier NOT OK
-at 2ad119966 (window title must survive a heading that names no right; a list in an AXGroup sibling), one fold owed;
-the researcher's pre-merge OK is a build-class harness on its held-out; merge and signed install only in the daily
-08:00-08:25Z window, then the CU-763 / CU-787 close and the researcher's live measurement. Then CU-833 (P1), CU-835 /
-CU-830 / CU-837 (P2), #1521 (CU-709, P3, behind the policy pair), CU-723, CU-836.
+**State.** Helper 0.2.75 installed (signed, true READBACK 26 Nov 08:02Z). Closed live today: CU-752, CU-831 (#1516).
+Open P1: CU-832 (#1520, three OKs; main merge, D-114 re-run, merge-diff re-checks, gate - one policy.mjs PR at a time);
+CU-763 (#1522, helper 0.2.76) - cu-verifier NOT OK at 2ad119966, one fold owed; the researcher's pre-merge OK is a
+build-class harness on its held-out; merge and signed install only in the 08:00-08:25Z daily window, then the CU-763 /
+CU-787 close and the live measurement. Next: CU-833 (P1, repro done), CU-835 / CU-830 / CU-837 (P2), #1521 (CU-709,
+behind the policy pair), CU-723, CU-836.
 
-**Rulings to know.** D-123 (allowlist narrowing, repro before test1, exact DONE labels, P1 first) and D-124
-(fixture-only runners, READBACK shows version and sha256, work classes: node-class runs may use Last War's 09:20-10:50Z
-slot, a desktop cell blocked by that slot may be skipped and re-run before the gate, seat replacement order, table OKs
-are the researcher's). Never click a macOS consent dialog; it waits for the owner. The 26 Nov 10:29Z consent dialog
-came from launchd starting the helper on demand (CU-837), not from a seat.
+**Rulings.** D-123 and D-124: fixture-only runners; READBACK shows version and sha256; node-class runs may use Last
+War's 09:20-10:50Z slot; table OKs are the researcher's. Nobody clicks a macOS consent dialog.
 
-**Team health.** Seven seats, five replaced today at 66-76 percent context; new sessions burn context fast - insist on
-small outputs and context percent in hourly lines. Inbox backlogs recur at cu-verifier and cu-developer-two. Records PRs:
-#1514, #1517, #1518 (D-124), #1519 await lanes.
+**Team.** Five seats were replaced today at 66-76 percent context - insist on small outputs and context percent
+hourly. Inbox backlogs recur at cu-verifier and cu-developer-two.
 
-**CU-834.** Roster is team-record 2.12 (3.8.x) with coordination.watchdog; the cu-watchdog unit runs a dry run every
-30 min once the private checkout syncs (every 4 h); going live (--apply) is a later one-line PR after the dry runs
-agree with the Coordinator's reading (default: by 2 Dec).
+**CU-834.** Roster is team-record 2.12 with coordination.watchdog; the cu-watchdog dry run starts after the private
+checkout syncs; --apply by a later PR (default 2 Dec).
 
-**Owner items (each with a default).** Close the stray System Settings / notification windows; allow CUHelper Screen
-Recording; step 4 session (CU-11, CU-119, CU-135); budget raise for CU-66 (about 0.31 USD left of 21); goal cap
-(renew at 80 percent); Watchdog --apply. Dates: daily reflection 23:00Z, weekly Sunday 29 Nov 23:00Z, Monday cycle.
+**Owner items (with defaults).** Stray windows; Screen Recording for CUHelper; step 4 (CU-11, CU-119, CU-135); budget
+for CU-66; goal cap; Watchdog --apply. Dates: daily reflection 23:00Z, weekly Sunday 29 Nov.
