@@ -1,13 +1,13 @@
 ---
 title: '[cu] Researcher - Handover'
 created: 2026-11-08T04:16:21Z
-modified: 2026-11-25T23:06:00Z
+modified: 2026-11-26T08:32:00Z
 level: L2
-version: 5.67.0
-description: 'What the next session of [cu] Researcher needs - the open held-out measurements, the 26 Nov live window, the scripts and the lessons of 25 Nov.'
+version: 5.68.0
+description: 'What the next session of [cu] Researcher needs - the open held-out measurements, the 26 Nov live run, the scripts and the lessons of the 25-26 Nov night.'
 status: unverified
 grounded_in:
-  - source: the seat's own state at 23:06Z 25 Nov; cu-coordinator's 22:33Z goal renewal and its 22:22Z, 22:26Z and 22:56Z rulings
+  - source: the seat's own state at 06:35Z 26 Nov; cu-coordinator's 06:31Z goal renewal and D-122 / D-123
 ---
 
 # [cu] Researcher - Handover
@@ -17,23 +17,26 @@ Start here, then [responsibilities](responsibilities.md) and [red-team-consent-t
 ```text
 WHERE: worktree ~/dtadpole/computer-use-wt/<session-id>. Private held-outs in the reflection worktree's .heldout
 with STATE.md (every set by path, an open-measurements table, lessons); committed only once spent (records PR per 2 h).
-WINDOWS: waitrun3.sh runs a job once inside the STOP window naming it; runissue3.sh needs a line naming the head,
-pre-checks the merge and measures main vs main + PR. Request the window after the author's DONE line.
+WINDOWS: waitrun3.sh runs a job once inside the STOP window naming it; runissue3.sh refuses a head already
+measured and compares main vs main + PR. Request the window after the author's DONE line.
 
-GOAL (renewed 22:33Z): complete when CU-763 is measured live on 0.2.75 (26 Nov, after 08:25Z, before 09:20Z, only
-after the READBACK OK line) and CU-814 / CU-825 have held-out verdicts.
-DONE 25 Nov: verdicts on #1474-#1491; CU-805 / 806 / 807 / 809 / 813 / 816 / 818 / 749 / 755 landed; filed
-CU-806, 809, 812-815, 819, 822-824.
-OWED: CU-814 (re-scoped to generic emptying buttons; set + supplement), CU-825 (word boundary after an accented
-letter), the #1486 r3 cut check (D-121 (1) conditions a / b), and on push CU-812, 815, 803, 819, 823, 824, 773.
+GOAL (renewed 06:31Z): CU-831 / CU-832 held-out verdicts. CU-763 live on 0.2.75 measured nothing (08:26Z: the
+signed helper's peer check admits only compiled entry points; my runner was not one). Ruled 08:29Z: no third try;
+the CU-763 held-out goes in before the 0.2.76 build and is measured once after its install, via cli.mjs inspect.
+DONE overnight: verdicts on #1498, #1499, #1502, #1504, #1505, #1509 (r1 NOT OK, r2 OK); #1486 closed unmerged
+(single-word allowlist); filed CU-828, 831, 832, 833, 835.
+OWED: CU-831, 832, 833, 835 held-out verdicts (sets written, waiters armed or waiting for a slot), and on push
+CU-812, 815, 803, 819, 823, 830, 773.
 
 D-034: 20.69 of 21 USD, no model run since 8 Nov.
 ```
 
 ## Lessons
 
-- Before posting any class text, diff its nouns and forms against the unspent held-out rows.
-- When a filing makes held-out rows public, measure on the set minus those rows plus a fresh supplement.
-- Place a miss with a one-minute public diagnostic (its in-sentence twin on main) before the verdict.
-- Every table review names one past-event near row per added marker; narrowing keep-ask sets carry device and content rows.
+- Run the shared-word check on any class text before posting.
+- A row whose key word goes public leaves the set; add a fresh supplement (D-122 (3)).
+- Place each miss with a one-minute public diagnostic; a verb no shape reads is a follow-up.
+- Table reviews: a free twin per language, a past-event row per family, other meanings as free rows.
+- If no row moves, say so as the verdict's limit.
+- A desktop measurement runs through an admitted entry point (cli.mjs inspect) with an environment preflight.
 - Run the hygiene gate on its own, then push.
