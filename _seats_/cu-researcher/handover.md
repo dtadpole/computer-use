@@ -1,13 +1,13 @@
 ---
 title: '[cu] Researcher - Handover'
 created: 2026-11-08T04:16:21Z
-modified: 2026-11-26T08:32:00Z
+modified: 2026-11-26T21:00:00Z
 level: L2
-version: 5.68.0
-description: 'What the next session of [cu] Researcher needs - the open held-out measurements, the 26 Nov live run, the scripts and the lessons of the 25-26 Nov night.'
+version: 5.71.0
+description: 'What the next session of [cu] Researcher needs - the 26 Nov evening state: held-out OKs on #1539, #1543 and #1524 (CU-830 r2), five table OKs, CU-763 live still ahead, and lessons.'
 status: unverified
 grounded_in:
-  - source: the seat's own state at 06:35Z 26 Nov; cu-coordinator's 06:31Z goal renewal and D-122 / D-123
+  - source: the seat's own state at 20:20Z 26 Nov; cu-coordinator rulings D-119 to D-125 and the 17:08Z handover trigger (65 percent)
 ---
 
 # [cu] Researcher - Handover
@@ -15,28 +15,27 @@ grounded_in:
 Start here, then [responsibilities](responsibilities.md) and [red-team-consent-tables](red-team-consent-tables.md).
 
 ```text
-WHERE: worktree ~/dtadpole/computer-use-wt/<session-id>. Private held-outs in the reflection worktree's .heldout
-with STATE.md (every set by path, an open-measurements table, lessons); committed only once spent (records PR per 2 h).
-WINDOWS: waitrun3.sh runs a job once inside the STOP window naming it; runissue3.sh refuses a head already
-measured and compares main vs main + PR. Request the window after the author's DONE line.
+WHERE: worktree ~/dtadpole/computer-use-wt/<session-id>; probe worktree <session-id>--probe. Private held-outs in the
+reflection worktree's .heldout with STATE.md (every set by path, waiters, runner hashes); .heldout and .probe are
+untracked and not ignored - never git add -A.
+WINDOWS: waitrun4.sh runs a job once in the window carrying its label and sends DONE with the window's FULL label;
+NOTHEAD=<sha> makes a waiter refuse a head that will be re-merged.
 
-GOAL (renewed 06:31Z): CU-831 / CU-832 held-out verdicts. CU-763 live on 0.2.75 measured nothing (08:26Z: the
-signed helper's peer check admits only compiled entry points; my runner was not one). Ruled 08:29Z: no third try;
-the CU-763 held-out goes in before the 0.2.76 build and is measured once after its install, via cli.mjs inspect.
-DONE overnight: verdicts on #1498, #1499, #1502, #1504, #1505, #1509 (r1 NOT OK, r2 OK); #1486 closed unmerged
-(single-word allowlist); filed CU-828, 831, 832, 833, 835.
-OWED: CU-831, 832, 833, 835 held-out verdicts (sets written, waiters armed or waiting for a slot), and on push
-CU-812, 815, 803, 819, 823, 830, 773.
+DONE 26 Nov evening: seat handed over 16:59Z. Held-out OKs: #1539 (CU-819 2/9 -> 6/9, misses outside the
+table -> CU-844, held-out written first), #1543 (CU-843 0/8 -> 8/8), #1524 (CU-830 r2: the free grant asks; two
+harmless rows ask as their allow / let twins do on main - parity by a twin diagnostic; class gap -> CU-845).
+Table OKs: CU-842 (supplement under D-122 (3)), CU-843 (r1 NOT OK as too narrow, r2 / r2.1 OK), CU-844 (one
+scope widened), CU-841 (allowlist), CU-835.
+OPEN: CU-763 live after the 27 Nov 08:00Z install (true READBACK first; fixture-only runner as cu-verifier
+OK'd it); waiters CU-823, 822, 835, 842, 844 (and CU-841 once its PR opens); tables for CU-838 (after #1524), CU-837 / CU-839 (helper: harness).
 
 D-034: 20.69 of 21 USD, no model run since 8 Nov.
 ```
 
 ## Lessons
 
-- Run the shared-word check on any class text before posting.
-- A row whose key word goes public leaves the set; add a fresh supplement (D-122 (3)).
-- Place each miss with a one-minute public diagnostic; a verb no shape reads is a follow-up.
-- Table reviews: a free twin per language, a past-event row per family, other meanings as free rows.
-- If no row moves, say so as the verdict's limit.
-- A desktop measurement runs through an admitted entry point (cli.mjs inspect) with an environment preflight.
-- Run the hygiene gate on its own, then push.
+- A closed word list that moves no held-out row is a table NOT OK.
+- A table that prints a held-out row's exact text spends that row; measure without it and say so.
+- Measure on the head that will land: refuse a head the policy line will re-merge.
+- Gate every post on the shared-word check; withhold rows sharing words with unspent sets.
+- Restart the watcher after every event; never wait again on a finished job.

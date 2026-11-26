@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - artifacts'
 created: 2026-11-01T09:28:00Z
-modified: 2026-11-10T13:02:16Z
+modified: 2026-11-26T18:45:00Z
 level: L1
-version: 1.132.0
+version: 1.133.0
 description: 'Pointers to the persistent work of [cu] Developer Two (environments) - proposals, code, tests and run records - written by the seat itself.'
 status: unverified
 grounded_in:
@@ -16,6 +16,7 @@ Pointers only; each target is its own authority.
 
 | Date | Artifact | State |
 |---|---|---|
+| 2026-11-26 | #1534 merged 02e3bd7aa | CU-840 (P1): a toggle's row-context hints keep the helper's 60 characters at the desktop boundary (toggleRowContextOf) and in accessRowContext; in Verify for the live close |
 | 2026-11-10 | #517 merged 3bca98a2d | CU-412 (browser half, D-107): implicit submission past script controls - one is the Return's defaultButton (also beside a hidden or nameless submit), 2-3 are defaultCandidates, more or unreadable sets defaultCandidatesMore; found by the parity variant pass. |
 | 2026-11-10 | #486 merged 97b840a71 | CU-406 (driver half): the Return target (defaultButton) carries the submit button's formContext; the policy half is #487. |
 | 2026-11-10 | #482 merged d63c4a9f3 | Fixes CU-405 (closed live): a panel lends formContext when, order-panel helpers ignored, every remaining submit-like control is a trade verb. |

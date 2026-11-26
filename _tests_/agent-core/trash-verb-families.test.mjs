@@ -143,6 +143,150 @@ test('CU-815: the negated and past twins of each compound stay free', () => {
   ])
 })
 
+// CU-819 (P1; follow-up to CU-813 after #1482 r2): a ko pending delete in the future adnominal + a dependent noun + a copula
+// causal ending went free - '…삭제될 터이므로 백업하세요.' - while the same ending after 것 asked. The table cu-researcher OK'd
+// (15:06Z) lets 터 / 거 take main's four endings after 것; negation and past still decide first.
+test('CU-819: the filed row, verbatim, and each new noun + ending ask, with and without the space, beside their 것 twins', () => {
+  asks([
+    ['비우기', '알림', '휴지통 항목은 곧 영구 삭제될 터이므로 백업하세요.'],
+    ['비우기', '알림', '휴지통 항목은 곧 영구 삭제될 것이므로 백업하세요.'],
+    ['비우기', '알림', '휴지통 항목은 곧 영구 삭제될터이므로 백업하세요.'],
+    ['비우기', '알림', '휴지통 항목은 완전히 제거될 터이니 필요한 파일은 먼저 옮기세요.'],
+    ['비우기', '알림', '휴지통 항목은 완전히 제거될 테니 필요한 파일은 먼저 옮기세요.'],
+    ['비우기', '알림', '휴지통 항목은 영구적으로 파기될 터이기에 되돌릴 수 없습니다.'],
+    ['비우기', '알림', '휴지통 항목은 영구적으로 파기될 것이기에 되돌릴 수 없습니다.'],
+    ['비우기', '알림', '휴지통 항목은 모두 폐기될 터이기 때문에 복구할 수 없습니다.'],
+    ['비우기', '알림', '휴지통 항목은 모두 폐기될 것이기 때문에 복구할 수 없습니다.'],
+    ['비우기', '알림', '휴지통 항목은 곧 삭제될 거니까 미리 백업해 두세요.'],
+    ['비우기', '알림', '휴지통 항목은 곧 삭제될거니까 미리 백업해 두세요.'],
+    ['비우기', '알림', '휴지통 항목은 곧 삭제될 것이니까 미리 백업해 두세요.'],
+  ])
+})
+
+test('CU-819: the negated and past twins of each new shape, and the near rows, stay free', () => {
+  free([
+    ['비우기', '알림', '휴지통 항목은 삭제되지 않을 터이므로 그대로 남습니다.'],
+    ['비우기', '알림', '휴지통 항목은 이미 삭제되었을 터이므로 복구할 수 없습니다.'],
+    ['비우기', '알림', '휴지통 항목은 제거되지 않을 터이니 그대로 두세요.'],
+    ['비우기', '알림', '휴지통 항목은 이미 제거됐을 터이니 다시 확인하세요.'],
+    ['비우기', '알림', '휴지통 항목은 파기되지 못할 터이기에 안전합니다.'],
+    ['비우기', '알림', '휴지통 항목은 이미 파기됐을 터이기에 늦었습니다.'],
+    ['비우기', '알림', '휴지통 항목은 폐기되지 않을 터이기 때문에 안전합니다.'],
+    ['비우기', '알림', '휴지통 항목은 이미 폐기됐을 터이기 때문에 늦었습니다.'],
+    ['비우기', '알림', '휴지통 항목은 삭제 안 될 거니까 걱정하지 마세요.'],
+    ['비우기', '알림', '휴지통 항목은 벌써 삭제됐을 거니까 찾지 마세요.'],
+    ['비우기', '알림', '휴지통 항목은 영구 삭제될 수 있을 터이므로 주의하세요.'],
+    ['비우기', '알림', '휴지통 항목은 이미 삭제된 터라 복구할 수 없었습니다.'],
+  ])
+})
+
+// CU-823 (P1; follow-up to CU-818 after #1491 r2): a periphrastic or resultative future passive of a covered delete verb - es
+// 'quedarán eliminados', pt 'vão ser excluídos', fr 'vont être supprimés' - went free in a pending trash statement, even with the
+// trash named in the sentence, while its synthetic future ('serán / serão / seront …') asked. The table cu-researcher OK'd
+// (15:45Z) widens only the auxiliary slot of the fr / es / pt future passives, and adds the es reflexive periphrastic, the
+// periphrastic auxiliaries of the trash-locative cell (never quedar / ficar / estar) and en 'is / are going to'; negation and past
+// still decide first.
+test('CU-823: the filed rows, verbatim, ask delete on both routes', () => {
+  asks([
+    ['Vaciar', 'Papelera', 'Los archivos quedarán eliminados para siempre.'],
+    ['Esvaziar', 'Lixo', 'Os arquivos vão ser excluídos de forma permanente.'],
+    ['Vider', 'Corbeille', 'Les fichiers vont être supprimés définitivement.'],
+    ['Vaciar', 'Papelera', 'Los archivos de la papelera quedarán eliminados para siempre.'],
+    ['Esvaziar', 'Lixo', 'Os arquivos do lixo vão ser excluídos de forma permanente.'],
+    ['Vider', 'Corbeille', 'Les fichiers de la corbeille vont être supprimés définitivement.'],
+  ])
+})
+
+test('CU-823: each periphrastic or resultative future passive asks, beside its synthetic twin that asks on main', () => {
+  asks([
+    // the table's rows, each followed by its synthetic twin
+    ['Vaciar', 'Papelera', 'Todos los elementos van a ser borrados de forma permanente.'],
+    ['Vaciar', 'Papelera', 'Todos los elementos serán borrados de forma permanente.'],
+    ['Vaciar', 'Papelera', 'Los documentos de la papelera van a quedar definitivamente suprimidos.'],
+    ['Vaciar', 'Papelera', 'Los documentos de la papelera serán definitivamente suprimidos.'],
+    ['Esvaziar', 'Lixeira', 'Os itens irão ser apagados permanentemente.'],
+    ['Esvaziar', 'Lixeira', 'Os itens serão apagados permanentemente.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira ficarão excluídos para sempre.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira serão excluídos para sempre.'],
+    ['Vider', 'Corbeille', 'Tous les éléments vont être définitivement effacés.'],
+    ['Vider', 'Corbeille', 'Tous les éléments seront définitivement effacés.'],
+    ['Vider', 'Corbeille', 'Le contenu de la corbeille va être supprimé de façon irréversible.'],
+    ['Vider', 'Corbeille', 'Le contenu de la corbeille sera supprimé de façon irréversible.'],
+    // estar in the es and pt cells
+    ['Vaciar', 'Papelera', 'Los archivos estarán eliminados para siempre.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos vão estar apagados para sempre.'],
+    // (1) the es reflexive periphrastic, both word orders
+    ['Vaciar', 'Papelera', 'Los elementos se van a borrar de forma permanente.'],
+    ['Vaciar', 'Papelera', 'Los archivos van a eliminarse para siempre.'],
+    ['Vaciar', 'Papelera', 'Los elementos se borrarán de forma permanente.'],
+    // (2) the trash-locative cell, with a removal participle only it reads
+    ['Vider', 'Corbeille', 'Tous les fichiers vont être retirés de la corbeille.'],
+    ['Vider', 'Corbeille', 'Tous les fichiers seront retirés de la corbeille.'],
+    ['Vaciar', 'Papelera', 'Todos los archivos van a ser retirados de la papelera.'],
+    ['Vaciar', 'Papelera', 'Todos los archivos serán retirados de la papelera.'],
+    ['Esvaziar', 'Lixeira', 'Todos os itens vão ser retirados da lixeira.'],
+    ['Esvaziar', 'Lixeira', 'Todos os itens serão retirados da lixeira.'],
+    // (3) en 'is / are going to', in the pending cell and in the trash-locative cell
+    ['Empty', 'Trash', 'All items are going to be erased.'],
+    ['Empty', 'Trash', 'All items will be erased.'],
+    ['Empty', 'Trash', 'The file is going to be permanently deleted.'],
+    ['Empty', 'Trash', 'The file will be permanently deleted.'],
+    ['Empty', 'Trash', 'All items are going to be purged from the trash.'],
+    ['Empty', 'Trash', 'All items will be purged from the trash.'],
+  ])
+})
+
+test('CU-823: the negated and past twins of every new form, and the near rows, stay free', () => {
+  free([
+    // the filed shapes
+    ['Vaciar', 'Papelera', 'Los archivos no quedarán eliminados para siempre.'],
+    ['Vaciar', 'Papelera', 'Los archivos quedaron eliminados para siempre.'],
+    ['Esvaziar', 'Lixo', 'Os arquivos não vão ser excluídos de forma permanente.'],
+    ['Esvaziar', 'Lixo', 'Os arquivos foram excluídos de forma permanente.'],
+    ['Vider', 'Corbeille', 'Les fichiers ne vont pas être supprimés définitivement.'],
+    ['Vider', 'Corbeille', 'Les fichiers ont été supprimés définitivement.'],
+    // the table's rows
+    ['Vaciar', 'Papelera', 'Los elementos no van a ser borrados.'],
+    ['Vaciar', 'Papelera', 'Todos los elementos fueron borrados de forma permanente.'],
+    ['Vaciar', 'Papelera', 'Los documentos de la papelera no van a quedar suprimidos.'],
+    ['Vaciar', 'Papelera', 'Los documentos de la papelera quedaron definitivamente suprimidos.'],
+    ['Esvaziar', 'Lixeira', 'Os itens não irão ser apagados.'],
+    ['Esvaziar', 'Lixeira', 'Os itens foram apagados permanentemente.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira não ficarão excluídos.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira ficaram excluídos para sempre.'],
+    ['Vider', 'Corbeille', 'Les éléments ne vont pas être effacés.'],
+    ['Vider', 'Corbeille', 'Tous les éléments ont été définitivement effacés.'],
+    ['Vider', 'Corbeille', 'Le contenu de la corbeille ne va jamais être supprimé.'],
+    ['Vider', 'Corbeille', 'Le contenu de la corbeille a été supprimé de façon irréversible.'],
+    // estar
+    ['Vaciar', 'Papelera', 'Los archivos no estarán eliminados.'],
+    ['Vaciar', 'Papelera', 'Los archivos estaban eliminados.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos não vão estar apagados.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos estavam apagados.'],
+    // the table's near rows
+    ['Vider', 'Corbeille', 'Les fichiers vont pouvoir être supprimés.'],
+    ['Vaciar', 'Papelera', 'Los archivos iban a ser eliminados.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos iam ser excluídos.'],
+    // (1)
+    ['Vaciar', 'Papelera', 'Los elementos no se van a borrar.'],
+    ['Vaciar', 'Papelera', 'Los elementos se borraron de forma permanente.'],
+    ['Vaciar', 'Papelera', 'Los archivos no van a eliminarse.'],
+    ['Vaciar', 'Papelera', 'Los archivos iban a eliminarse para siempre.'],
+    // (2)
+    ['Vider', 'Corbeille', 'Les fichiers ne vont pas être retirés de la corbeille.'],
+    ['Vider', 'Corbeille', 'Tous les fichiers ont été retirés de la corbeille.'],
+    ['Vaciar', 'Papelera', 'Los archivos no van a ser retirados de la papelera.'],
+    ['Vaciar', 'Papelera', 'Todos los archivos fueron retirados de la papelera.'],
+    ['Esvaziar', 'Lixeira', 'Os itens não vão ser retirados da lixeira.'],
+    ['Esvaziar', 'Lixeira', 'Todos os itens foram retirados da lixeira.'],
+    // (3) the not and were twins, and a near row whose participle is no delete verb
+    ['Empty', 'Trash', 'All items are not going to be erased.'],
+    ['Empty', 'Trash', 'All items were going to be erased.'],
+    ['Empty', 'Trash', 'The file is not going to be deleted.'],
+    ['Empty', 'Trash', 'All items are going to be moved.'],
+  ])
+})
+
 // CU-842 (P1; follow-up to CU-815 from #1533's held-out): further compound and auxiliary shapes of a covered verb - the ko light
 // nouns beside 처리, the tr -(y)Iver- auxiliary, the ja te-form + なくなる - went free in a pending trash statement while the plain
 // form asked. The table cu-researcher OK'd (17:23Z) gives each shape only its plain sibling's markers; negation and past decide first.
