@@ -470,7 +470,7 @@ enum ToggleState {
 /// core can tell a privacy grant ('Terminal' under 'Full Disk Access') from a plain switch. `list` is the nearest titled
 /// container above the toggle (a table, outline, list, group, scroll area or tab group, by its AXTitle, else its
 /// AXDescription), else its window's title (System Settings titles the window with the pane's name); `hints` holds the
-/// farther names (the shape is the web driver's { list, hints }, CU-443). Names only, never a value; each at most `maxText` characters.
+/// farther names (the shape is the web driver's { list, hints }, CU-443). Names only, never a value; each at most `maxText` UTF-16 units.
 /// 0.2.76 (CU-763, cu-verifier's 0.2.75 close: no row context on CU Fixture's privacy pane): an untitled list - a table,
 /// outline or list, or the scroll area holding it - is named by its heading (`heading`): its title element's shown words,
 /// else the nearest static text before it among its parent's children (a privacy pane states the grant in a header
@@ -480,6 +480,9 @@ enum ToggleState {
 /// 0.2.77 (CU-839, cu-researcher's held-out on #1522: a 77-character first clause read nothing): a name over maxText - a
 /// heading's first clause, a container's title or description, the window's title - is cut at its last word end within
 /// maxText (`clean`), not dropped; with no word end there it still reads nothing (never a mid-word fragment).
+/// 0.2.77 (CU-840 cross-check on #1534): maxText counts UTF-16 units, the unit the driver's reader counts
+/// (toggleRowContextOf keeps a name of at most 60 `.length`), not Characters - an emoji or a combining mark is more than
+/// one unit, so a 60-Character name could be over 60 units and dropped at the driver, the row reading no context.
 enum RowContext {
   static let maxDepth = 8
   static let maxText = 60
@@ -503,19 +506,27 @@ enum RowContext {
     var holdsList: Bool { ([role] + childRoles).contains { $0.map { RowContext.listRoles.contains($0) } ?? false } }
   }
 
-  /// Whitespace collapsed; nil when empty. Over maxText, its cut at a word end (`wordCut`), nil when there is none.
+  /// Whitespace collapsed; nil when empty. Over maxText UTF-16 units, its cut at a word end (`wordCut`), nil when there
+  /// is none.
   static func clean(_ text: String?) -> String? {
     guard let text else { return nil }
     let short = text.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
     if short.isEmpty { return nil }
-    return short.count > maxText ? wordCut(short) : short
+    return short.utf16.count > maxText ? wordCut(short) : short
   }
 
-  /// CU-839: a collapsed text cut before its last space within its first maxText + 1 characters (a word ending at
-  /// maxText stays whole), then trailing ',', ';', ':', a dash standing as a word and spaces dropped; nil when there is
-  /// no such space or nothing is left - never a mid-word fragment.
+  /// CU-839: a collapsed text cut before its last space within its first maxText + 1 UTF-16 units of whole Characters
+  /// (a word ending at maxText stays whole), then trailing ',', ';', ':', a dash standing as a word and spaces dropped;
+  /// nil when there is no such space or nothing is left - never a mid-word fragment, never half a Character.
   static func wordCut(_ text: String) -> String? {
-    guard let space = text.prefix(maxText + 1).lastIndex(of: " ") else { return nil }
+    var units = 0
+    var end = text.startIndex
+    for index in text.indices {
+      units += text[index].utf16.count
+      if units > maxText + 1 { break }
+      end = text.index(after: index)
+    }
+    guard let space = text[..<end].lastIndex(of: " ") else { return nil }
     var head = String(text[..<space])
     while let last = head.last {
       if ",;: ".contains(last) { head.removeLast() }

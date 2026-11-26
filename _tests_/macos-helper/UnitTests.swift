@@ -2330,6 +2330,17 @@ func testRowContext() {
   check(RowContext.pick([C(role: "AXGroup", title: token, description: nil)], windowTitle: "General")?.object?["list"] == .string("General")
         && RowContext.pick([C(role: "AXTable", title: nil, description: nil)], windowTitle: token) == nil, "a 70-character word has no word end: no name, it falls through as before")
   check(RowContext.clean(String(repeating: "x", count: 61) + " tail") == nil, "the first space is the 62nd character: no word end within 60, no name")
+  // CU-840 cross-check on #1534: maxText counts UTF-16 units, as the driver's reader does (toggleRowContextOf keeps at
+  // most 60 `.length`); an emoji or a combining mark is more than one unit, so a name within 60 Characters can be over.
+  let sixty = String(repeating: "a", count: 53) + " camera"
+  check(RowContext.clean(sixty) == sixty && sixty.utf16.count == 60, "60 units: kept whole")
+  let camera = String(repeating: "a", count: 51) + " camera \u{1F4F7}"   // 60 Characters, 61 units
+  check(camera.count == 60 && RowContext.clean(camera) == String(repeating: "a", count: 51) + " camera", "60 Characters but 61 units: cut before the emoji, as the driver would otherwise drop it")
+  let family = "\u{1F468}\u{200D}\u{1F469}\u{200D}\u{1F467} Family Sharing - allow these apps to access the camera"   // 56 Characters, 63 units
+  let familyCut = RowContext.clean(family)
+  check(familyCut == "\u{1F468}\u{200D}\u{1F469}\u{200D}\u{1F467} Family Sharing - allow these apps to access the" && (familyCut?.utf16.count ?? 99) <= 60, "a ZWJ emoji counts 8 units: 56 Characters / 63 units is cut at its last word end within 60 units")
+  check(RowContext.clean(String(repeating: "e\u{0301}", count: 30)) == String(repeating: "e\u{0301}", count: 30), "30 Characters of e + combining acute are 60 units: kept")
+  check(RowContext.clean(String(repeating: "e\u{0301}", count: 31)) == nil, "31 of them are 62 units with no word end: no name, never half a Character")
   check(RowContext.pick([], windowTitle: nil) == nil && RowContext.pick([C(role: "AXGroup", title: "", description: nil)], windowTitle: "") == nil, "nothing reads: nil")
   let deep = Array(repeating: C(role: "AXRow", title: nil, description: nil), count: RowContext.maxDepth) + [C(role: "AXTable", title: "Too far", description: nil)]
   check(RowContext.pick(deep, windowTitle: "Pane")?.object?["list"] == .string("Pane"), "at most maxDepth ancestors are read")
