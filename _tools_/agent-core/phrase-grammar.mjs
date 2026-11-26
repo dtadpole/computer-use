@@ -853,7 +853,9 @@ function withoutDeterminers(text) {
 // number'), 'enable <feature>' (no people word) and 'invite' (its people slot is social; her ruling) keep main's verdict.
 const GRANTEE_WORDS = [...new Set([...PEOPLE, ...PERSON, 'visitor', 'person', 'people', 'anyone', 'everyone', 'other', 'others',
   'family', 'kid', 'kids', 'child', 'children', 'stranger', 'staff', 'admin', 'collaborator', 'viewer', 'reader', 'public',
-  'participant', 'attendee', 'customer', 'client', 'tenant', 'roommate', 'neighbor', 'neighbour', 'partner', 'non-friend'])]
+  'participant', 'attendee', 'customer', 'client', 'tenant', 'roommate', 'neighbor', 'neighbour', 'partner', 'non-friend',
+  // policy.mjs's own finder slot ('let / allow search engines to index ...'), so the grammar fold matches the exposure family.
+  'search engine'])]
 const GRANTEES = String.raw`(?:(?:the|all|any|other|my|your|our)\s+)?(?:${GRANTEE_WORDS.map((w) => w.replace(/[-]/g, '\\-') + '(?:e?s)?').join('|')})`
 const VERB_SYNONYMS = [[/^(\s*)modify\b/i, '$1change'], [/^(\s*)(?:update|edit)\b(?!\s+(?:all|now|available)\b)/i, '$1change'], [/^(\s*)(?:display|reveal)\b/i, '$1show'], [/^(\s*)give\b/i, '$1grant'],
   [/^(\s*)begin\b/i, '$1start'], [/^(\s*)ask\s+for\b/i, '$1request'],
