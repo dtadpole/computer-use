@@ -370,6 +370,9 @@ enum Accessibility {
     if ToggleState.reads(role: role), let checked = ToggleState.checked(role: role, value: (attribute(element, "AXValue") as? NSNumber)?.intValue) {
       shape["checked"] = checked
     }
+    // CU-763: a toggle carries its row context (RowContext) - the list, table or pane it sits in - so a privacy grant
+    // named only by its list ('Full Disk Access') is told from a plain switch. Titles and descriptions only.
+    if ToggleState.reads(role: role), let context = rowContext(of: element) { shape["rowContext"] = context }
     // CU-507 (desktop half): a button inside a sheet or dialog carries the dialog's words (DialogText) - what agent core
     // judges a generic 'OK' or 'Continue' by. Static texts only; each key present only when read.
     if DialogText.applies(role: role), let words = dialogWords(of: element) {
@@ -531,6 +534,20 @@ enum Accessibility {
     let items = entries.filter { string($0, "AXRole") == "AXMenuItem" }
       .map { PopUpItems.Item(title: string($0, "AXTitle"), enabled: (attribute($0, "AXEnabled") as? NSNumber)?.boolValue) }
     return PopUpItems.shape(selected: selected, items: items, pullsDown: pullsDown)
+  }
+
+  /// CU-763: a toggle's row context (RowContext.pick) from its ancestors' roles, titles and descriptions (at most
+  /// RowContext.maxDepth, stopping at its window) and its window's title. Attributes only.
+  private static func rowContext(of element: AXUIElement) -> JSON? {
+    var ancestors: [RowContext.Container] = []
+    var node = elementAttribute(element, "AXParent")
+    while let current = node, ancestors.count < RowContext.maxDepth {
+      let role = string(current, "AXRole")
+      if role == "AXWindow" || role == "AXApplication" { break }
+      ancestors.append(RowContext.Container(role: role, title: string(current, "AXTitle"), description: string(current, "AXDescription")))
+      node = elementAttribute(current, "AXParent")
+    }
+    return RowContext.pick(ancestors, windowTitle: windowTitle(of: element))
   }
 
   /// CU-507: the nearest dialog container above an element (DialogText.isContainer: an AXSheet, or an AXWindow whose
