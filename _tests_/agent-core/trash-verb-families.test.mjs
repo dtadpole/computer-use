@@ -142,3 +142,110 @@ test('CU-815: the negated and past twins of each compound stay free', () => {
     ['Очистить', 'Корзина', 'Из Корзины было выполнено удаление файлов.'],
   ])
 })
+
+// CU-823 (P1; follow-up to CU-818 after #1491 r2): a periphrastic or resultative future passive of a covered delete verb - es
+// 'quedarán eliminados', pt 'vão ser excluídos', fr 'vont être supprimés' - went free in a pending trash statement, even with the
+// trash named in the sentence, while its synthetic future ('serán / serão / seront …') asked. The table cu-researcher OK'd
+// (15:45Z) widens only the auxiliary slot of the fr / es / pt future passives, and adds the es reflexive periphrastic, the
+// periphrastic auxiliaries of the trash-locative cell (never quedar / ficar / estar) and en 'is / are going to'; negation and past
+// still decide first.
+test('CU-823: the filed rows, verbatim, ask delete on both routes', () => {
+  asks([
+    ['Vaciar', 'Papelera', 'Los archivos quedarán eliminados para siempre.'],
+    ['Esvaziar', 'Lixo', 'Os arquivos vão ser excluídos de forma permanente.'],
+    ['Vider', 'Corbeille', 'Les fichiers vont être supprimés définitivement.'],
+    ['Vaciar', 'Papelera', 'Los archivos de la papelera quedarán eliminados para siempre.'],
+    ['Esvaziar', 'Lixo', 'Os arquivos do lixo vão ser excluídos de forma permanente.'],
+    ['Vider', 'Corbeille', 'Les fichiers de la corbeille vont être supprimés définitivement.'],
+  ])
+})
+
+test('CU-823: each periphrastic or resultative future passive asks, beside its synthetic twin that asks on main', () => {
+  asks([
+    // the table's rows, each followed by its synthetic twin
+    ['Vaciar', 'Papelera', 'Todos los elementos van a ser borrados de forma permanente.'],
+    ['Vaciar', 'Papelera', 'Todos los elementos serán borrados de forma permanente.'],
+    ['Vaciar', 'Papelera', 'Los documentos de la papelera van a quedar definitivamente suprimidos.'],
+    ['Vaciar', 'Papelera', 'Los documentos de la papelera serán definitivamente suprimidos.'],
+    ['Esvaziar', 'Lixeira', 'Os itens irão ser apagados permanentemente.'],
+    ['Esvaziar', 'Lixeira', 'Os itens serão apagados permanentemente.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira ficarão excluídos para sempre.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira serão excluídos para sempre.'],
+    ['Vider', 'Corbeille', 'Tous les éléments vont être définitivement effacés.'],
+    ['Vider', 'Corbeille', 'Tous les éléments seront définitivement effacés.'],
+    ['Vider', 'Corbeille', 'Le contenu de la corbeille va être supprimé de façon irréversible.'],
+    ['Vider', 'Corbeille', 'Le contenu de la corbeille sera supprimé de façon irréversible.'],
+    // estar in the es and pt cells
+    ['Vaciar', 'Papelera', 'Los archivos estarán eliminados para siempre.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos vão estar apagados para sempre.'],
+    // (1) the es reflexive periphrastic, both word orders
+    ['Vaciar', 'Papelera', 'Los elementos se van a borrar de forma permanente.'],
+    ['Vaciar', 'Papelera', 'Los archivos van a eliminarse para siempre.'],
+    ['Vaciar', 'Papelera', 'Los elementos se borrarán de forma permanente.'],
+    // (2) the trash-locative cell, with a removal participle only it reads
+    ['Vider', 'Corbeille', 'Tous les fichiers vont être retirés de la corbeille.'],
+    ['Vider', 'Corbeille', 'Tous les fichiers seront retirés de la corbeille.'],
+    ['Vaciar', 'Papelera', 'Todos los archivos van a ser retirados de la papelera.'],
+    ['Vaciar', 'Papelera', 'Todos los archivos serán retirados de la papelera.'],
+    ['Esvaziar', 'Lixeira', 'Todos os itens vão ser retirados da lixeira.'],
+    ['Esvaziar', 'Lixeira', 'Todos os itens serão retirados da lixeira.'],
+    // (3) en 'is / are going to', in the pending cell and in the trash-locative cell
+    ['Empty', 'Trash', 'All items are going to be erased.'],
+    ['Empty', 'Trash', 'All items will be erased.'],
+    ['Empty', 'Trash', 'The file is going to be permanently deleted.'],
+    ['Empty', 'Trash', 'The file will be permanently deleted.'],
+    ['Empty', 'Trash', 'All items are going to be purged from the trash.'],
+    ['Empty', 'Trash', 'All items will be purged from the trash.'],
+  ])
+})
+
+test('CU-823: the negated and past twins of every new form, and the near rows, stay free', () => {
+  free([
+    // the filed shapes
+    ['Vaciar', 'Papelera', 'Los archivos no quedarán eliminados para siempre.'],
+    ['Vaciar', 'Papelera', 'Los archivos quedaron eliminados para siempre.'],
+    ['Esvaziar', 'Lixo', 'Os arquivos não vão ser excluídos de forma permanente.'],
+    ['Esvaziar', 'Lixo', 'Os arquivos foram excluídos de forma permanente.'],
+    ['Vider', 'Corbeille', 'Les fichiers ne vont pas être supprimés définitivement.'],
+    ['Vider', 'Corbeille', 'Les fichiers ont été supprimés définitivement.'],
+    // the table's rows
+    ['Vaciar', 'Papelera', 'Los elementos no van a ser borrados.'],
+    ['Vaciar', 'Papelera', 'Todos los elementos fueron borrados de forma permanente.'],
+    ['Vaciar', 'Papelera', 'Los documentos de la papelera no van a quedar suprimidos.'],
+    ['Vaciar', 'Papelera', 'Los documentos de la papelera quedaron definitivamente suprimidos.'],
+    ['Esvaziar', 'Lixeira', 'Os itens não irão ser apagados.'],
+    ['Esvaziar', 'Lixeira', 'Os itens foram apagados permanentemente.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira não ficarão excluídos.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira ficaram excluídos para sempre.'],
+    ['Vider', 'Corbeille', 'Les éléments ne vont pas être effacés.'],
+    ['Vider', 'Corbeille', 'Tous les éléments ont été définitivement effacés.'],
+    ['Vider', 'Corbeille', 'Le contenu de la corbeille ne va jamais être supprimé.'],
+    ['Vider', 'Corbeille', 'Le contenu de la corbeille a été supprimé de façon irréversible.'],
+    // estar
+    ['Vaciar', 'Papelera', 'Los archivos no estarán eliminados.'],
+    ['Vaciar', 'Papelera', 'Los archivos estaban eliminados.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos não vão estar apagados.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos estavam apagados.'],
+    // the table's near rows
+    ['Vider', 'Corbeille', 'Les fichiers vont pouvoir être supprimés.'],
+    ['Vaciar', 'Papelera', 'Los archivos iban a ser eliminados.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos iam ser excluídos.'],
+    // (1)
+    ['Vaciar', 'Papelera', 'Los elementos no se van a borrar.'],
+    ['Vaciar', 'Papelera', 'Los elementos se borraron de forma permanente.'],
+    ['Vaciar', 'Papelera', 'Los archivos no van a eliminarse.'],
+    ['Vaciar', 'Papelera', 'Los archivos iban a eliminarse para siempre.'],
+    // (2)
+    ['Vider', 'Corbeille', 'Les fichiers ne vont pas être retirés de la corbeille.'],
+    ['Vider', 'Corbeille', 'Tous les fichiers ont été retirés de la corbeille.'],
+    ['Vaciar', 'Papelera', 'Los archivos no van a ser retirados de la papelera.'],
+    ['Vaciar', 'Papelera', 'Todos los archivos fueron retirados de la papelera.'],
+    ['Esvaziar', 'Lixeira', 'Os itens não vão ser retirados da lixeira.'],
+    ['Esvaziar', 'Lixeira', 'Todos os itens foram retirados da lixeira.'],
+    // (3) the not and were twins, and a near row whose participle is no delete verb
+    ['Empty', 'Trash', 'All items are not going to be erased.'],
+    ['Empty', 'Trash', 'All items were going to be erased.'],
+    ['Empty', 'Trash', 'The file is not going to be deleted.'],
+    ['Empty', 'Trash', 'All items are going to be moved.'],
+  ])
+})
