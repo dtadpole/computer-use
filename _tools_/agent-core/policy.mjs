@@ -357,7 +357,7 @@ const LOCALE_MODAL_ACCESS = /(?:zugriff\s+auf|auf\s+.{1,60}?\s+zugreifen|accéde
 // Disk Access'). The row context is the driver's rowContext: the web driver's { list, hints } (CU-443), or a plain string. A
 // list named for a privacy right asks for any toggle in it (named over-ask: an unrelated settings group called 'Camera').
 // 'Accessibility' counts only as the whole list name (the privacy list; the Accessibility settings' own groups have other names).
-const ACCESS_RIGHT_LIST = /\b(?:full\s+disk\s+access|screen\s+(?:(?:&|and)\s+system\s+audio\s+)?recording|input\s+monitoring|location\s+services|files\s+(?:&|and)\s+folders|developer\s+tools|app\s+management|local\s+network|remote\s+(?:login|management|desktop)|camera|microphone|contacts|calendars|reminders|photos|bluetooth|automation|speech\s+recognition|media\s+(?:&|and)\s+apple\s+music|homekit|motion\s+(?:&|and)\s+fitness|(?:allow|let)\s+(?:the\s+)?(?:apps?|applications?)\s+(?:below\s+|listed\s+)?to\s+(?:access|control|record|use|see|read|monitor|manage))\b/i
+const ACCESS_RIGHT_LIST = /\b(?:full\s+disk\s+access|screen\s+(?:(?:&|and)\s+system\s+audio\s+)?recording|input\s+monitoring|location\s+services|files\s+(?:&|and)\s+folders|developer\s+tools|app\s+management|local\s+network|remote\s+(?:login|management|desktop)|camera|microphone|contacts|calendars|reminders|photos|bluetooth|automation|speech\s+recognition|media\s+(?:&|and)\s+apple\s+music|homekit|motion\s+(?:&|and)\s+fitness)\b/i
 // CU-754: a toggle whose own name makes a profile, account or other object public or visible to everyone.
 const PUBLIC_TOGGLE = /^\s*(?:make\s+(?:(?:my|this|the)\s+)?(?:profile|account|repo(?:sitory)?|page|calendar|listing|board|project|album|playlist|activity)\s+public|public(?:\s+(?:profile|account|repo(?:sitory)?|page|calendar|listing|board|project|album|playlist|activity|mode|link|access))?|(?:profile|account)\s+(?:is\s+)?(?:public|visible\s+to\s+(?:everyone|anyone))|visible\s+to\s+(?:everyone|anyone|the\s+public|all)|discoverable(?:\s+by\s+(?:everyone|anyone))?|show\s+(?:my\s+)?profile\s+(?:publicly|to\s+(?:everyone|anyone)))\s*$/i
 // CU-774 (P1, a held-out miss at CU-754's close): a toggle whose own name makes the profile findable or indexable - by search,
@@ -483,6 +483,17 @@ const EXPOSED_TOGGLE = new RegExp('^\\s*(?:' + [
   // 'My portfolio is visible to strangers', 'Profile visible to guests'
   String.raw`(?:${OWN_WORK}|profile|portfolio|shop|store|listing|contact\s+card)\s+(?:is\s+|are\s+)?(?:visible|viewable|accessible|shown|available|open|public)\s+(?:to|by)\s+${WIDER}`,
 ].join('|') + ')\\s*$', 'i')
+// CU-843 (table r2.1, OK'd by cu-researcher): a pane header's grant phrase also reads with its subject modified or in the
+// passive. Anchors: allow / let, or an optional is / are + a permission participle; the app / application subject; 'to' + one
+// of the eight verbs CU-754 read. Between them only a bounded gap of ordinary words - at most 4 before the noun (no
+// preposition there, so another noun cannot be allow's object) and 6 after it - joined by whitespace, so no punctuation, and
+// never a second 'to', a negation (not / never / no / nor / cannot / any n't) or a past marker (was / were / been / had): the
+// negated and past twins and another verb after 'to' stay free.
+const GRANT_WORD = String.raw`(?!(?:to|not|never|no|nor|cannot|was|were|been|had)\b|[a-z0-9'’-]*n['’]t\b)[a-z0-9](?:[a-z0-9'’-]*[a-z0-9])?`
+const GRANT_PRE_WORD = String.raw`(?!(?:from|of|for|by|with|in|on|at|about|into|through|under|over|across|via|without)\b)${GRANT_WORD}`
+const GRANT_SUBJECT = String.raw`(?:apps?|applications?)\s+`
+const GRANT_PARTICIPLE = String.raw`(?:allowed|permitted|authori[sz]ed|approved|enabled|entitled|(?:granted|given)\s+(?:the\s+)?(?:permission|right|ability|access))\s+`
+const ACCESS_GRANT_PHRASE = new RegExp(String.raw`\b(?:(?:allow|let)\s+(?:${GRANT_PRE_WORD}\s+){0,4}${GRANT_SUBJECT}(?:${GRANT_WORD}\s+){0,6}|${GRANT_SUBJECT}(?:${GRANT_WORD}\s+){0,6}(?:(?:is|are)\s+)?${GRANT_PARTICIPLE})to\s+(?:access|control|record|use|see|read|monitor|manage)\b`, 'i')
 /** CU-754: whether a toggle's row context (rowContext: a { list, hints } object or a plain string) names an access right.
  * CU-840: a hint is read to 60 characters, the list's and helper 0.2.76's bound, so a right named past character 40 counts. */
 export function accessRowContext(rowContext) {
@@ -491,7 +502,7 @@ export function accessRowContext(rowContext) {
     : rowContext && typeof rowContext === 'object'
       ? [typeof rowContext.list === 'string' ? rowContext.list.slice(0, 60) : '', ...(Array.isArray(rowContext.hints) ? rowContext.hints.map((hint) => String(hint ?? '').slice(0, 60)) : [])]
       : []
-  return texts.some((text) => ACCESS_RIGHT_LIST.test(text) || /^\s*accessibility\s*$/i.test(text))
+  return texts.some((text) => ACCESS_RIGHT_LIST.test(text) || ACCESS_GRANT_PHRASE.test(text) || /^\s*accessibility\s*$/i.test(text))
 }
 const MODAL_RISK_VERB = /^(?:delete|erase|remove|wipe|destroy|purge|reset|terminate|deactivate|close|cancel|transfer|give|grant|share|publish|send|pay|charge|buy|purchase|subscribe|install|uninstall|revoke|disable|disconnect|unlink|overwrite|replace|drop|empty|clear|format|forfeit|expose|make)$/
 const MODAL_IRREGULAR = { sent: 'send', lost: 'lose', kept: 'keep', shown: 'show', given: 'give', sold: 'sell', paid: 'pay', made: 'make', taken: 'take', spent: 'spend', withdrawn: 'withdraw', shut: 'shut' }
