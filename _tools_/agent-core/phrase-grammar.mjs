@@ -853,10 +853,13 @@ function withoutDeterminers(text) {
 // number'), 'enable <feature>' (no people word) and 'invite' (its people slot is social; her ruling) keep main's verdict.
 const GRANTEE_WORDS = [...new Set([...PEOPLE, ...PERSON, 'visitor', 'person', 'people', 'anyone', 'everyone', 'other', 'others',
   'family', 'kid', 'kids', 'child', 'children', 'stranger', 'staff', 'admin', 'collaborator', 'viewer', 'reader', 'public',
-  'participant', 'attendee', 'customer', 'client', 'tenant', 'roommate', 'neighbor', 'neighbour', 'partner', 'non-friend',
-  // policy.mjs's own finder slot ('let / allow search engines to index ...'), so the grammar fold matches the exposure family.
-  'search engine'])]
-const GRANTEES = String.raw`(?:(?:the|all|any|other|my|your|our)\s+)?(?:${GRANTEE_WORDS.map((w) => w.replace(/[-]/g, '\\-') + '(?:e?s)?').join('|')})`
+  'participant', 'attendee', 'customer', 'client', 'tenant', 'roommate', 'neighbor', 'neighbour', 'partner', 'non-friend'])]
+// CU-830 table r3 (cu-researcher OK with a bound, 26 Nov 10:47Z): 'search engine(s)' is a grantee only before the findability acts
+// of policy.mjs:393 ('let / allow search engines (to) index / find / show / list / link to / crawl ...'), mirrored here as written
+// there, never before another act ('Permit search engine suggestions' is not a grant).
+const FINDABILITY_ACTS = String.raw`(?:index|find|show|list|link\s+to|crawl)`
+const ENGINE_GRANTEE = String.raw`search\s+engines?(?=\s+(?:to\s+)?${FINDABILITY_ACTS}\b)`
+const GRANTEES = String.raw`(?:(?:the|all|any|other|my|your|our)\s+)?(?:${GRANTEE_WORDS.map((w) => w.replace(/[-]/g, '\\-') + '(?:e?s)?').join('|')}|${ENGINE_GRANTEE})`
 const VERB_SYNONYMS = [[/^(\s*)modify\b/i, '$1change'], [/^(\s*)(?:update|edit)\b(?!\s+(?:all|now|available)\b)/i, '$1change'], [/^(\s*)(?:display|reveal)\b/i, '$1show'], [/^(\s*)give\b/i, '$1grant'],
   [/^(\s*)begin\b/i, '$1start'], [/^(\s*)ask\s+for\b/i, '$1request'],
   // #627 round 2 (cu-researcher 05:08Z): creating an account is not adding one ('Create account' stays free).

@@ -56,6 +56,27 @@ test("CU-830: enable folds only as 'enable <people> to <act>'", () => {
   for (const f of Object.values(ROUTES)) assert.equal(f('Enable dark mode'), 'allow')
 })
 
+// Table r3 (cu-researcher OK with a bound, 26 Nov 10:47Z): 'search engine(s)' is a grantee only before policy.mjs's findability acts
+// (index / find / show / list / link to / crawl). Row 1 is the class row above ('Permit search engines to index my profile'); these
+// are its public review rows - ask / free parity on every route.
+test('CU-830 r3: the search-engine grantee reads only before the findability acts', () => {
+  const same = (name, twin) => {
+    for (const [route, f] of Object.entries(ROUTES)) {
+      const got = f(name); const base = f(twin)
+      assert.equal(got === 'allow', base === 'allow', `${name} (${route}) - ${got} vs ${twin} ${base}`)
+    }
+  }
+  // Row 2, negation: decides as its 'Do not allow' twin.
+  same('Do not permit search engines to index my profile', 'Do not allow search engines to index my profile')
+  // Row 3, other meaning: not read by the grantee - the decision of an unknown-grantee twin. ('Allow search engine suggestions' asks
+  // physical: #595 re-reads 'Allow X' as 'turn on X' and 'engine' is in OBJECTS.phys - a main-side reading, outside CU-830.)
+  same('Permit search engine suggestions', 'Permit weather widget suggestions')
+  // Row 4, past event: decides as its 'allowed' twin.
+  same('Search engines were permitted to index my profile', 'Search engines were allowed to index my profile')
+  // The bound: before another act the grantee is not read either.
+  same('Permit search engines to delete my posts', 'Permit weather widgets to delete my posts')
+})
+
 test('CU-830: nouns and past states stay free - one past-event row per added verb', () => {
   for (const name of ['Parking permit', 'Permit number', 'Permitted visitors', 'Authorized visitors', 'Empowered teams', 'Entitled members', 'Enabled features']) {
     for (const [route, f] of Object.entries(ROUTES)) assert.equal(f(name), 'allow', `${name} (${route})`)
