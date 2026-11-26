@@ -718,7 +718,7 @@ func button(_ kind: String, _ x: Int, _ y: Int) -> JSON { ["kind": .string(kind)
 func testDispatcherBasics() {
   let h = Harness(fixtureWorld)
   let hello = h.dispatcher.hello(token: "t0k")
-  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.74", "the hello opens the run")
+  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.75", "the hello opens the run")
   check(hello["mode"] == "dry-run" && hello["grants"] == ["screen": true, "accessibility": true, "postEvents": true, "listenEvents": false], "a dry-run hello says so, with all four grants")
   check(h.ask("capture", ["maxSize": size800])["code"] == "no_scope", "capture needs a scope")
   check(h.ask("input", ["events": [key("keyDown", 1)], "mode": "global"])["code"] == "no_scope", "input needs a scope")
@@ -2305,6 +2305,23 @@ func testToggleState() {
   check(ToggleState.reads(role: "AXCheckBox") && ToggleState.reads(role: "AXRadioButton"), "the two toggle roles")
 }
 
+func testRowContext() {
+  // CU-763: a toggle's row context - the nearest titled container, else the window's title (System Settings names the
+  // window after its pane), in the web driver's { list, hints } shape.
+  typealias C = RowContext.Container
+  let pane = RowContext.pick([C(role: "AXRow", title: nil, description: nil), C(role: "AXTable", title: nil, description: nil), C(role: "AXScrollArea", title: nil, description: nil)], windowTitle: "Full Disk Access")
+  check(pane == .object(["list": .string("Full Disk Access"), "hints": .array([])]), "an untitled table in a privacy pane: the window's title")
+  let group = RowContext.pick([C(role: "AXGroup", title: nil, description: "Screen & System Audio Recording")], windowTitle: "Privacy & Security")
+  check(group?.object?["list"] == .string("Screen & System Audio Recording"), "a titled container wins over the window (its description when it has no title)")
+  let row = RowContext.pick([C(role: "AXRow", title: "Terminal", description: nil)], windowTitle: "Accessibility")
+  check(row?.object?["list"] == .string("Accessibility"), "a row's own title is the app's name, not the list's")
+  check(RowContext.pick([C(role: "AXGroup", title: "  Camera \n access ", description: nil)], windowTitle: nil)?.object?["list"] == .string("Camera access"), "whitespace collapsed")
+  check(RowContext.pick([C(role: "AXGroup", title: String(repeating: "x", count: 61), description: nil)], windowTitle: "General")?.object?["list"] == .string("General"), "a name over 60 characters is skipped")
+  check(RowContext.pick([], windowTitle: nil) == nil && RowContext.pick([C(role: "AXGroup", title: "", description: nil)], windowTitle: "") == nil, "nothing reads: nil")
+  let deep = Array(repeating: C(role: "AXRow", title: nil, description: nil), count: RowContext.maxDepth) + [C(role: "AXTable", title: "Too far", description: nil)]
+  check(RowContext.pick(deep, windowTitle: "Pane")?.object?["list"] == .string("Pane"), "at most maxDepth ancestors are read")
+}
+
 func testDefaultCandidates() {
   // CU-412: a web form's Return candidates when the window names no default button.
   typealias L = DefaultCandidates.Level
@@ -2409,6 +2426,7 @@ struct UnitTests {
     testFormContext()
     testDefaultCandidates()
     testToggleState()
+    testRowContext()
     testAppleMenuClickTarget()
     testEndWatchdog()
     // Informational: whether the process that ran these tests is genuine node (true for Node.js Foundation builds).

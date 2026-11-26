@@ -5,7 +5,7 @@ import Foundation
 /// The helper's identity; `build.sh` writes the same bundle id into Info.plist.
 enum HelperIdentity {
   static let bundleId = "com.reflection.cu-helper"
-  static let version = "0.2.74"
+  static let version = "0.2.75"
   /// The value every synthetic event carries in `kCGEventSourceUserData`: 0x43555345, ASCII "CUSE"
   /// (input-and-targets.md, verify-kit's SYNTHETIC_TAG). Not a secret: an event from another process with this tag
   /// could only fail to pause the run, never act.
@@ -463,6 +463,32 @@ enum ToggleState {
     case 2: return .string("mixed")
     default: return nil
     }
+  }
+}
+
+/// CU-763 (the helper half of CU-754): a toggle's row context - the name of the list, table or pane it sits in - so agent
+/// core can tell a privacy grant ('Terminal' under 'Full Disk Access') from a plain switch. `list` is the nearest titled
+/// container above the toggle (a table, outline, list, group, scroll area or tab group, by its AXTitle, else its
+/// AXDescription), else its window's title (System Settings titles the window with the pane's name); `hints` stays empty
+/// (the shape is the web driver's { list, hints }, CU-443). Names only, never a value; each at most `maxText` characters.
+enum RowContext {
+  static let maxDepth = 8
+  static let maxText = 60
+  static let containerRoles: Set<String> = ["AXTable", "AXOutline", "AXList", "AXGroup", "AXScrollArea", "AXTabGroup"]
+  struct Container { var role: String?; var title: String?; var description: String? }
+  /// The row context from the toggle's ancestors (nearest first, at most maxDepth) and its window's title; nil when no
+  /// name reads.
+  static func pick(_ ancestors: [Container], windowTitle: String?) -> JSON? {
+    let clean = { (text: String?) -> String? in
+      guard let text else { return nil }
+      let short = text.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
+      return short.isEmpty || short.count > maxText ? nil : short
+    }
+    for container in ancestors.prefix(maxDepth) where container.role.map({ containerRoles.contains($0) }) ?? false {
+      if let name = clean(container.title) ?? clean(container.description) { return .object(["list": .string(name), "hints": .array([])]) }
+    }
+    if let name = clean(windowTitle) { return .object(["list": .string(name), "hints": .array([])]) }
+    return nil
   }
 }
 
