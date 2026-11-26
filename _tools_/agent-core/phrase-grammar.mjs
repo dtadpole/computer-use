@@ -1723,7 +1723,13 @@ function grammarClassesOf(name, role = '') {
   if (['decline', 'deny', 'reject'].includes(list[0]) && list.slice(1).filter((t) => !FILLER.has(t)).every((t) => t === 'request' || t === 'this' || t === 'all')
     && list.includes('request')) return []
   // Guards: a trailing list / settings / UI noun; a bare plural noun (a tab); settings-sense apply; 'Sign in as guest'.
-  if (FREE_TAIL.has(last) || (list.length >= 2 && FREE_TAIL.has(list[list.length - 2]))) return []
+  // CU-824: a tail word that is the act granted to people ('Let visitors control the thermostat', 'Allow guests to control
+  // the lights') is a verb, not a label - only a grant's own shape (let / allow / permit, a people word, then the word) keeps
+  // the ask; every label ('Guest controls', 'Notification settings') stays free. No device is listed.
+  const tailAt = FREE_TAIL.has(last) ? list.length - 1 : (list.length >= 2 && FREE_TAIL.has(list[list.length - 2]) ? list.length - 2 : -1)
+  const grantedTail = tailAt > 1 && ['let', 'allow', 'permit'].includes(list[0])
+    && (OBJECTS.access.has(list[tailAt - 1]) || (list[tailAt - 1] === 'to' && OBJECTS.access.has(list[tailAt - 2])))
+  if (tailAt >= 0 && !grantedTail) return []
   if (UI_TAIL.has(last) && list.length >= 2) return []
   const oneWord = raw.split(/\s+/).length === 1
   if (list.length === 1 && oneWord && /[a-z]s$/.test(lower) && !lower.endsWith('ss')) return []
