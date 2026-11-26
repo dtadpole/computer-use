@@ -37,7 +37,9 @@ test('CU-830: permit / authorize / authorise / empower / entitle over a people s
       if (route === 'sw') assert.notEqual(base, 'allow', `the Allow form asks on main: ${shape} (sw)`)
       for (const verb of FOLDED) {
         const got = f(shape.replace('%s', verb))
-        assert.equal(got === 'allow', base === 'allow', `${verb}: ${shape} (${route}) - ${got} vs Allow ${base}`)
+        // CU-830 is the under-ask: wherever the Allow form asks, the verb asks. Where Allow is free (a button can be, under the site's
+        // policy), the verb's verdict is main's own (e.g. an 'Authorize ...' button) - the head-vs-main probe judges that, not this row.
+        if (base !== 'allow') assert.notEqual(got, 'allow', `${verb}: ${shape} (${route}) - free while Allow asks ${base}`)
       }
     }
   }
