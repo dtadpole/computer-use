@@ -229,7 +229,10 @@ function localeTrashPending(text) {
 // CU-818 (the table cu-researcher OK'd 19:58Z): a description sentence under a title that names the trash counts as naming it
 // too - but only when it speaks of the trash's items (an item noun or a pronoun), never a sentence that names another object
 // ('Your search history will also be deleted.').
-const TRASH_ITEM_NOUN = /(?<!\p{L})(?:items?|files?|documents?|contents?|objects?|everything|all|they|them|these|it|elemente?|objekte|dateien|alles|alle|éléments?|fichiers?|tout|tous|elementos?|archivos?|todo|todos|elementi|tutto|tutti|itens|arquivos|tudo|onderdelen|bestanden|items|объекты|файлы|элементы|всё|все|öğeler|dosyalar|tümü)(?!\p{L})|項目|ファイル|書類|すべて|全て|项目|文件|所有|全部|항목|파일|모든|전부/iu
+// CU-829 (the table cu-researcher OK'd 01:03Z): each language's content noun too - contenu / contenido / contenuto / conteúdo /
+// Inhalt / inhoud / содержимое / içerik / 中身. The very common zh / ja 内容 and ko 내용 stay out (her over-ask check): they name a
+// description as often as the trash's contents.
+const TRASH_ITEM_NOUN = /(?<!\p{L})(?:items?|files?|documents?|contents?|objects?|everything|all|they|them|these|it|elemente?|objekte|dateien|alles|alle|éléments?|fichiers?|tout|tous|elementos?|archivos?|todo|todos|elementi|tutto|tutti|itens|arquivos|tudo|onderdelen|bestanden|items|объекты|файлы|элементы|всё|все|öğeler|dosyalar|tümü|contenu|contenido|contenuto|conteúdo|inhalte?|inhoud|содержимое|içeri(?:k|ği))(?!\p{L})|項目|ファイル|書類|すべて|全て|中身|项目|文件|所有|全部|항목|파일|모든|전부/iu
 function emptiesTrashByDelete(name, sentence, titleNamesTrash = false) {
   const button = String(name ?? '').trim().toLowerCase()
   const text = String(sentence ?? '').trim()
