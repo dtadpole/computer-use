@@ -544,6 +544,8 @@ enum Accessibility {
   private static func rowContext(of element: AXUIElement) -> JSON? {
     var ancestors: [RowContext.Container] = []
     var walkedTitle: String?
+    // Counts heading attempts, not hits: in a nest deeper than ScrollArea > Table the inner two spend both, and the outer
+    // list then gets no heading - the name falls to a farther container or the window's title (cu-developer-two's note).
     var headings = 0
     var node = elementAttribute(element, "AXParent")
     while let current = node, ancestors.count < RowContext.maxDepth {
@@ -563,14 +565,15 @@ enum Accessibility {
   }
 
   /// CU-763 (0.2.76): a list's heading (RowContext.heading) - its AXTitleUIElement's words (a static text's AXValue, else
-  /// that element's AXTitle; never a control's value), else the static texts before it among its parent's children, read
-  /// backwards from the list and stopping at the first static text or another list (at most RowContext.maxSiblings, and
-  /// only under a parent of at most RowContext.maxChildren children). Shown words only.
+  /// that element's AXTitle; never a control's value), which decide alone when present, else the static texts before it
+  /// among its parent's children, read backwards from the list and stopping at the first static text, another list or a
+  /// sibling holding one among its direct children (one level, at most RowContext.maxNested of them; at most
+  /// RowContext.maxSiblings back, and only under a parent of at most RowContext.maxChildren children). Shown words only.
   private static func listHeading(of list: AXUIElement) -> String? {
     let titled = elementAttribute(list, "AXTitleUIElement").flatMap { label -> String? in
       string(label, "AXRole") == "AXStaticText" ? string(label, "AXValue") : string(label, "AXTitle")
     }
-    if let named = RowContext.firstClause(titled) { return named }
+    if titled != nil { return RowContext.heading(titleElement: titled, siblings: [], index: nil) }
     guard let parent = elementAttribute(list, "AXParent") else { return nil }
     let kids = children(parent)
     guard kids.count <= RowContext.maxChildren, let index = kids.firstIndex(where: { CFEqual($0, list) }) else { return nil }
@@ -578,8 +581,10 @@ enum Accessibility {
     for kid in kids[max(0, index - RowContext.maxSiblings)..<index].reversed() {
       let role = string(kid, "AXRole")
       let isText = role == "AXStaticText"
-      before.insert(RowContext.Sibling(role: role, text: isText ? string(kid, "AXValue") : nil), at: 0)
-      if isText || (role.map({ RowContext.listRoles.contains($0) }) ?? false) { break }
+      var sibling = RowContext.Sibling(role: role, text: isText ? string(kid, "AXValue") : nil)
+      if !isText && !sibling.holdsList { sibling.childRoles = children(kid).prefix(RowContext.maxNested).map { string($0, "AXRole") } }
+      before.insert(sibling, at: 0)
+      if isText || sibling.holdsList { break }
     }
     return RowContext.heading(titleElement: nil, siblings: before, index: before.count)
   }

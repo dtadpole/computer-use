@@ -193,6 +193,14 @@ test('CU-754: accessRowContext reads both shapes and nothing else', () => {
   assert.equal(accessRowContext(42), false)
 })
 
+test('CU-763 (helper 0.2.76): a heading that wins keeps the window title in hints - a desktop switch asks when the hint names the right', () => {
+  // cu-verifier on #1522: a switch in a list headed 'Apps', in a window titled 'Camera Access' - 0.2.75 sent
+  // { list: 'Camera Access' } and asked; the heading must not free it. Its near twin under 'Appearance' stays free.
+  const axsw = (name, checked, rowContext) => press(`desktop://${SETTINGS}`, { role: 'AXCheckBox', subrole: 'AXSwitch', name, checked, inWebArea: false, origin: SETTINGS, rowContext }, { frontmostBundleId: SETTINGS })
+  assert.equal(axsw('Terminal', false, { list: 'Apps', hints: ['Camera Access'] }), 'permission')
+  assert.equal(axsw('Terminal', false, { list: 'Apps', hints: ['Appearance'] }), 'allow')
+})
+
 test('CU-757: Allow / Grant / Give access in a dialog that states access asks permission', () => {
   assert.match(web('Allow', 'Connect Example app?', 'Example app will be able to read your files.'), /permission/)
   assert.match(web('Grant', 'Example app requests access', 'Review what it can do.'), /permission/)

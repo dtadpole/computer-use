@@ -2345,7 +2345,7 @@ func testRowContextHeading() {
   let headless = [S(role: "AXStaticText", text: "Full Disk Access"), S(role: "AXScrollArea", text: nil), S(role: "AXScrollArea", text: nil)]
   check(RowContext.heading(titleElement: nil, siblings: headless, index: 2) == nil, "never past another list: a list without a header borrows none")
   check(RowContext.heading(titleElement: "Location Services", siblings: [S(role: "AXStaticText", text: "Other")], index: 1) == "Location Services", "the title element wins")
-  check(RowContext.heading(titleElement: String(repeating: "x", count: 61), siblings: [S(role: "AXStaticText", text: "Contacts")], index: 1) == "Contacts", "a title element that does not read falls to the static text")
+  check(RowContext.heading(titleElement: String(repeating: "x", count: 61), siblings: [S(role: "AXStaticText", text: "Contacts")], index: 1) == nil, "the nearest decides: a title element whose first clause does not read gives no heading (the static text is not taken)")
   let longNearest = [S(role: "AXStaticText", text: "Accessibility"), S(role: "AXStaticText", text: String(repeating: "long words ", count: 8)), S(role: "AXTable", text: nil)]
   check(RowContext.heading(titleElement: nil, siblings: longNearest, index: 2) == nil, "the nearest static text decides; an older one further up is not taken")
   let controls = [S(role: "AXStaticText", text: "Full Disk Access"), S(role: "AXButton", text: nil), S(role: "AXCheckBox", text: nil), S(role: "AXOutline", text: nil)]
@@ -2354,17 +2354,35 @@ func testRowContextHeading() {
   check(RowContext.heading(titleElement: nil, siblings: far, index: far.count - 1) == nil, "at most maxSiblings earlier siblings are looked at")
   check(RowContext.heading(titleElement: nil, siblings: pane, index: 0) == nil && RowContext.heading(titleElement: nil, siblings: pane, index: nil) == nil
         && RowContext.heading(titleElement: nil, siblings: pane, index: 9) == nil, "no place in the parent, or first child: nil")
+  // cu-verifier on #1522: [header1, AXGroup{list1}, list2] - the group wraps section 1's list, so header1 is not list2's.
+  let wrapped = [S(role: "AXStaticText", text: "Full Disk Access"), S(role: "AXGroup", text: nil, childRoles: ["AXTable"]), S(role: "AXScrollArea", text: nil)]
+  check(RowContext.heading(titleElement: nil, siblings: wrapped, index: 2) == nil, "never past a sibling holding a list among its direct children")
+  check(RowContext.pick([RowContext.Container(role: "AXScrollArea", title: nil, description: nil, heading: RowContext.heading(titleElement: nil, siblings: wrapped, index: 2))], windowTitle: "Privacy")
+        == .object(["list": .string("Privacy"), "hints": .array([])]), "so list2 gets no heading and falls to the window's title")
+  let grouped = [S(role: "AXStaticText", text: "Full Disk Access"), S(role: "AXGroup", text: nil, childRoles: ["AXButton", "AXStaticText", nil]), S(role: "AXScrollArea", text: nil)]
+  check(RowContext.heading(titleElement: nil, siblings: grouped, index: 2) == "Full Disk Access", "a group holding no list is passed over like a control")
 
   typealias C = RowContext.Container
   let g1 = RowContext.pick([C(role: "AXRow", title: nil, description: nil), C(role: "AXTable", title: nil, description: nil),
                             C(role: "AXScrollArea", title: nil, description: nil, heading: "Full Disk Access")], windowTitle: "Privacy")
-  check(g1 == .object(["list": .string("Full Disk Access"), "hints": .array([])]), "G1's shape: the list's heading, ahead of the window's title")
+  check(g1 == .object(["list": .string("Full Disk Access"), "hints": .array([.string("Privacy")])]), "G1's shape: the list's heading, ahead of the window's title (kept in hints)")
   let c1 = RowContext.pick([C(role: "AXTable", title: nil, description: nil, heading: "Show in menu bar")], windowTitle: "Control Centre")
   check(c1?.object?["list"] == .string("Show in menu bar"), "C1's shape: a plain list is named by its heading too (agent core decides)")
   check(RowContext.pick([C(role: "AXGroup", title: nil, description: nil, heading: "Full Disk Access")], windowTitle: "Window")?.object?["list"] == .string("Window"), "a heading names only a list or its scroll area")
   check(RowContext.pick([C(role: "AXTable", title: "Apps", description: nil, heading: "Full Disk Access")], windowTitle: nil)?.object?["list"] == .string("Apps"), "a container's own title wins over its heading")
   check(RowContext.pick([C(role: "AXOutline", title: nil, description: nil, heading: "Full Disk Access"), C(role: "AXGroup", title: "Privacy & Security", description: nil)], windowTitle: nil)?.object?["list"] == .string("Full Disk Access"), "the nearer list's heading wins over a titled group further up")
   check(RowContext.pick([C(role: "AXScrollArea", title: nil, description: nil, heading: String(repeating: "y", count: 61))], windowTitle: "Pane")?.object?["list"] == .string("Pane"), "a heading over maxText falls to the window's title")
+
+  // cu-verifier on #1522: a winning name keeps every farther name the walk read in hints - 0.2.75 named this switch's list
+  // 'Camera Access' (the window) and asked; the heading 'Apps' must not hide it.
+  let camera = RowContext.pick([C(role: "AXRow", title: nil, description: nil), C(role: "AXTable", title: nil, description: nil, heading: "Apps")], windowTitle: "Camera Access")
+  check(camera == .object(["list": .string("Apps"), "hints": .array([.string("Camera Access")])]), "a heading wins; the window's title rides in hints")
+  let repeats = RowContext.pick([C(role: "AXTable", title: nil, description: nil, heading: "Apps"), C(role: "AXGroup", title: "Privacy & Security", description: nil),
+                                 C(role: "AXScrollArea", title: nil, description: "Apps"), C(role: "AXTabGroup", title: "Privacy & Security", description: nil)], windowTitle: "Camera Access")
+  check(repeats == .object(["list": .string("Apps"), "hints": .array([.string("Privacy & Security"), .string("Camera Access")])]), "farther names nearest first, no repeats, never the winner")
+  let many: [C] = [C(role: "AXList", title: nil, description: nil, heading: "Apps")] + ["One", "Two", "Three", "Four"].map { C(role: "AXGroup", title: $0, description: nil) }
+  check(RowContext.pick(many, windowTitle: "Camera Access") == .object(["list": .string("Apps"), "hints": .array([.string("One"), .string("Two"), .string("Camera Access")])]), "at most maxHints, the window's title kept")
+  check(RowContext.pick(many, windowTitle: nil) == .object(["list": .string("Apps"), "hints": .array([.string("One"), .string("Two"), .string("Three")])]), "no window title: the nearest maxHints")
 }
 
 func testDefaultCandidates() {
