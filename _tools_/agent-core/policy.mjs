@@ -175,11 +175,15 @@ const TRASH_NEGATION = /(?<!\p{L})(?:not|never|nicht|nie|kein|keine|ne|pas|jamai
 // question) asks. 'Объекты в Корзине будут удалены.', 'ゴミ箱内の項目は完全に削除されます。', '废纸篓中的所有项目将被不可恢复地删除。',
 // '휴지통의 모든 항목이 영구적으로 삭제됩니다.', 'Çöp Sepeti'ndeki tüm öğeler kalıcı olarak silinecek.' ask; their negated and past
 // twins stay free. CU-806 adds the tr formal future / aorist / future perfect and more ja / ko pending forms; the ko connectives are CU-807's.
-const RU_PART = '(?:удал[её]н[аоы]?|ст[её]рт[аоы]?|уничтожен[аоы]?|очищен[аоы]?|выброшен[аоы]?|опустош[её]н[аоы]?)'
+// CU-815 (follow-up to CU-809, table OK'd by cu-researcher 13:44Z): a compound or periphrastic form of a covered verb enters the
+// verb slot only - the ru light-verb participle + delete noun ('будет произведено удаление'), the ja / ko light noun 処理 / 처리
+// after a Sino delete noun, the zh resultatives on 删 (删光 / 删完 / 删干净 / 删尽 / 删空) and the tr converb chain -Ip + git-
+// (in the tr cells below). Each language's markers, negation, past and gap stay as they are.
+const RU_PART = '(?:удал[её]н[аоы]?|ст[её]рт[аоы]?|уничтожен[аоы]?|очищен[аоы]?|выброшен[аоы]?|опустош[её]н[аоы]?|(?:произвед[её]н|выполнен|осуществл[её]н)[аоы]?\\s+(?:\\S+\\s+)?(?:удаление|очистка|уничтожение|стирание))'
 const RU_FUT = '(?:удалятся|удалит|сотрутся|сотр[её]т|уничтожатся|уничтожит|выбросятся|выбросит)'
-const JA_STEM = '(?:削除|消去|破棄|抹消|除去|廃棄|処分|消)'
-const ZH_VERB = '(?:删除|刪除|删掉|刪掉|删去|刪去|抹除|抹去|擦除|清除|去除|移除|销毁|銷毀|丢弃|丟棄|清理掉)'
-const KO_STEM = '(?:삭제|제거|폐기|소거|파기|말소)'
+const JA_STEM = '(?:(?:削除|消去|破棄|抹消|除去|廃棄|処分)(?:処理)?|消)'
+const ZH_VERB = '(?:删除|刪除|删掉|刪掉|删去|刪去|抹除|抹去|擦除|清除|去除|移除|销毁|銷毀|丢弃|丟棄|清理掉|删光|刪光|删完|刪完|删干净|刪乾淨|删尽|刪盡|删空|刪空)'
+const KO_STEM = '(?:삭제|제거|폐기|소거|파기|말소)(?:\\s*처리)?'
 const TRASH_LOCALE = [
   { // ru
     verb: new RegExp(`(?<!\\p{L})(?:${RU_PART}|${RU_FUT}|удалить|стереть|уничтожить|очистить)(?!\\p{L})`, 'iu'),
@@ -212,15 +216,17 @@ const TRASH_LOCALE = [
     // CU-813 (the table cu-researcher OK'd 16:46Z): the causal -기 때문에 / -기에 / -는 만큼 and future + causal ask; 될 수 있기 때문에 and 되기 전에 stay free.
     // r2 (the table OK'd 18:12Z): a present / future adnominal + a causal noun (관계 / 까닭 / 탓 / 이상) and the causal endings as a class; 바람 cut (D-121 (1),
     // cu-developer-two's r2 over-ask: '-는 바람에' reports a past mishap).
-    pending: new RegExp(`비워집니다|비워질\\s*(?:것입니다|예정입니다)|비워지게\\s*됩니다|${KO_STEM}(?:됩니다|합니다|될\\s*것입니다|될\\s*예정입니다|되게\\s*됩니다|되겠습니다|될\\s*것이다|된다(?!\\p{Script=Hangul})|될\\s*거(?:예요|야|다|(?=입니다)|(?=ㅂ니다))|될\\s*겁니다|될\\s*것이며|될\\s*것이고|될\\s*예정이며|되며|되고(?!\\s*(?:있|없|나))|되어(?!\\s*(?:도|있|버리면|버린다면))|돼(?!\\s*(?:도|있|버리면|버린다면))|되니|되므로|하며|하고(?!\\s*(?:있|없|나))|되기\\s*때문|하기\\s*때문|되기에|하기에|되는\\s*만큼|될\\s*것이기\\s*때문|될\\s*것이기에|될\\s*것이므로|(?:되는|하는|될)\\s*(?:관계|까닭|탓|이상)|되길래|하길래|되는지라|되느라|되는\\s*바(?!람)|될\\s*테니|될\\s*것이니)|지워집니다|지웁니다|지워질\\s*것입니다|지워지게\\s*됩니다|지워지겠습니다|지워진다(?!\\p{Script=Hangul})|지워질\\s*(?:겁니다|거예요|거야|거다)|지워지며|지워지고(?!\\s*(?:있|없|나))|지워져(?!\\s*(?:도|있|버리면|버린다면))|지워지니|지워질\\s*것이며|버려집니다|버립니다|버려질\\s*(?:것입니다|겁니다|거예요|예정입니다)|버려지며|버려지고(?!\\s*(?:있|없|나))|지워지기\\s*때문|지워지기에|지워지는\\s*만큼|버려지기\\s*때문|버려지기에|(?:지워지는|지워질|버려지는|버려질)\\s*(?:관계|까닭|탓|이상)|지워지길래|버려지길래|버려지니`, 'u'),
+    // CU-819 (table OK'd by cu-researcher 15:06Z): after 될 the dependent nouns 터 / 거 take the four copula causal endings main
+    // already reads after 것 (-이므로 / -이니 / -이기에 / -이기 때문); negation and past still decide first.
+    pending: new RegExp(`비워집니다|비워질\\s*(?:것입니다|예정입니다)|비워지게\\s*됩니다|${KO_STEM}(?:됩니다|합니다|될\\s*것입니다|될\\s*예정입니다|되게\\s*됩니다|되겠습니다|될\\s*것이다|된다(?!\\p{Script=Hangul})|될\\s*거(?:예요|야|다|(?=입니다)|(?=ㅂ니다))|될\\s*겁니다|될\\s*것이며|될\\s*것이고|될\\s*예정이며|되며|되고(?!\\s*(?:있|없|나))|되어(?!\\s*(?:도|있|버리면|버린다면))|돼(?!\\s*(?:도|있|버리면|버린다면))|되니|되므로|하며|하고(?!\\s*(?:있|없|나))|되기\\s*때문|하기\\s*때문|되기에|하기에|되는\\s*만큼|될\\s*것이기\\s*때문|될\\s*것이기에|될\\s*것이므로|(?:되는|하는|될)\\s*(?:관계|까닭|탓|이상)|되길래|하길래|되는지라|되느라|되는\\s*바(?!람)|될\\s*테니|될\\s*것이니|될\\s*(?:터이|거이?)(?:므로|니|기에|기\\s*때문))|지워집니다|지웁니다|지워질\\s*것입니다|지워지게\\s*됩니다|지워지겠습니다|지워진다(?!\\p{Script=Hangul})|지워질\\s*(?:겁니다|거예요|거야|거다)|지워지며|지워지고(?!\\s*(?:있|없|나))|지워져(?!\\s*(?:도|있|버리면|버린다면))|지워지니|지워질\\s*것이며|버려집니다|버립니다|버려질\\s*(?:것입니다|겁니다|거예요|예정입니다)|버려지며|버려지고(?!\\s*(?:있|없|나))|지워지기\\s*때문|지워지기에|지워지는\\s*만큼|버려지기\\s*때문|버려지기에|(?:지워지는|지워질|버려지는|버려질)\\s*(?:관계|까닭|탓|이상)|지워지길래|버려지길래|버려지니`, 'u'),
   },
   { // tr
     verb: /(?<!\p{L})(?:sil|kaldır|yok\s+ed|atıl|temizlen|imha\s+ed|boşaltıl(?!abil))\p{L}*/iu,
-    negation: /(?<!\p{L})(?:boşaltılma(?:yacak(?:lar)?(?:dır)?|yacaktır|z(?:lar)?|dı|mış)|silinme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|silinemez|silmeyecek|kaldırılma(?:yacak(?:lar)?(?:dır)?|yacaktır|z(?:lar)?|dı|mış)|kaldırılamaz|yok\s+edilme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|yok\s+edilemez|atılma(?:yacak(?:lar)?(?:dır)?|z(?:lar)?|dı)|temizlenme(?:yecek(?:ler)?(?:dir)?|z(?:ler)?|di)|atılmayacaktır|temizlenmeyecektir|imha\s+edilme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|(?:silinmek|kaldırılmak|yok\s+edilmek|imha\s+edilmek)\s+üzere\s+değil(?:dir)?)(?!\p{L})/iu,
-    past: /(?<!\p{L})(?:boşaltıldı|boşaltılmış(?!\s+olacak)|silindi|silinmiş(?!\s+olacak)|kaldırıldı|kaldırılmış(?!\s+olacak)|yok\s+edildi|yok\s+edilmiş(?!\s+olacak)|atıldı|atılmış|temizlendi|temizlenmiş|imha\s+edildi|imha\s+edilmiş(?!\s+olacak)|(?:silinmek|kaldırılmak|yok\s+edilmek|imha\s+edilmek)\s+üzereydi)\p{L}*/iu,
+    negation: /(?<!\p{L})(?:boşaltılma(?:yacak(?:lar)?(?:dır)?|yacaktır|z(?:lar)?|dı|mış)|silinme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|silinemez|silmeyecek|kaldırılma(?:yacak(?:lar)?(?:dır)?|yacaktır|z(?:lar)?|dı|mış)|kaldırılamaz|yok\s+edilme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|yok\s+edilemez|atılma(?:yacak(?:lar)?(?:dır)?|z(?:lar)?|dı)|temizlenme(?:yecek(?:ler)?(?:dir)?|z(?:ler)?|di)|atılmayacaktır|temizlenmeyecektir|imha\s+edilme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|(?:silinmek|kaldırılmak|yok\s+edilmek|imha\s+edilmek)\s+üzere\s+değil(?:dir)?|(?:silin|kaldırıl|yok\s+edil|atıl|temizlen|imha\s+edil|boşaltıl)[iı]p\s+gitme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş))(?!\p{L})/iu,
+    past: /(?<!\p{L})(?:boşaltıldı|boşaltılmış(?!\s+olacak)|silindi|silinmiş(?!\s+olacak)|kaldırıldı|kaldırılmış(?!\s+olacak)|yok\s+edildi|yok\s+edilmiş(?!\s+olacak)|atıldı|atılmış|temizlendi|temizlenmiş|imha\s+edildi|imha\s+edilmiş(?!\s+olacak)|(?:silinmek|kaldırılmak|yok\s+edilmek|imha\s+edilmek)\s+üzereydi|(?:silin|kaldırıl|yok\s+edil|atıl|temizlen|imha\s+edil|boşaltıl)[iı]p\s+git(?:ti|miş(?!\s+olacak)))\p{L}*/iu,
     // CU-806: the formal future (-ecektir / -acaktır), the aorist passive (silinir) and the future perfect (silinmiş olacak) too.
     // #1479 r2 (the table cu-researcher OK'd 14:34Z): plural agreement, the plural aorist and 'about to' too.
-    pending: /(?<!\p{L})(?:boşaltıl(?:acak(?:lar)?(?:dır)?|acaktır|ır(?:lar)?)|silin(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|kaldırıl(?:acak(?:lar)?(?:dır)?|acaktır|ır(?:lar)?)|yok\s+edil(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|(?:silinmiş|kaldırılmış|yok\s+edilmiş)\s+olacak(?:tır)?|atıl(?:acak(?:lar)?(?:dır)?|ır(?:lar)?)|temizlen(?:ecek(?:ler)?(?:dir)?|ir(?:ler)?)|atılacaktır|temizlenecektir|imha\s+edil(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|(?:silinmek|kaldırılmak|yok\s+edilmek|imha\s+edilmek)\s+üzere(?:dir|ler)?)(?!\p{L})/iu,
+    pending: /(?<!\p{L})(?:boşaltıl(?:acak(?:lar)?(?:dır)?|acaktır|ır(?:lar)?)|silin(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|kaldırıl(?:acak(?:lar)?(?:dır)?|acaktır|ır(?:lar)?)|yok\s+edil(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|(?:silinmiş|kaldırılmış|yok\s+edilmiş)\s+olacak(?:tır)?|atıl(?:acak(?:lar)?(?:dır)?|ır(?:lar)?)|temizlen(?:ecek(?:ler)?(?:dir)?|ir(?:ler)?)|atılacaktır|temizlenecektir|imha\s+edil(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|(?:silinmek|kaldırılmak|yok\s+edilmek|imha\s+edilmek)\s+üzere(?:dir|ler)?|(?:silin|kaldırıl|yok\s+edil|atıl|temizlen|imha\s+edil|boşaltıl)[iı]p\s+gid(?:ecek(?:ler)?(?:dir)?|ecektir|er(?:ler)?))(?!\p{L})/iu,
   },
 ]
 // null when no ru / ja / zh / ko / tr verb of the family stands in the sentence.
@@ -477,12 +483,13 @@ const EXPOSED_TOGGLE = new RegExp('^\\s*(?:' + [
   // 'My portfolio is visible to strangers', 'Profile visible to guests'
   String.raw`(?:${OWN_WORK}|profile|portfolio|shop|store|listing|contact\s+card)\s+(?:is\s+|are\s+)?(?:visible|viewable|accessible|shown|available|open|public)\s+(?:to|by)\s+${WIDER}`,
 ].join('|') + ')\\s*$', 'i')
-/** CU-754: whether a toggle's row context (rowContext: a { list, hints } object or a plain string) names an access right. */
+/** CU-754: whether a toggle's row context (rowContext: a { list, hints } object or a plain string) names an access right.
+ * CU-840: a hint is read to 60 characters, the list's and helper 0.2.76's bound, so a right named past character 40 counts. */
 export function accessRowContext(rowContext) {
   const texts = typeof rowContext === 'string'
     ? [rowContext.slice(0, 120)]
     : rowContext && typeof rowContext === 'object'
-      ? [typeof rowContext.list === 'string' ? rowContext.list.slice(0, 60) : '', ...(Array.isArray(rowContext.hints) ? rowContext.hints.map((hint) => String(hint ?? '').slice(0, 40)) : [])]
+      ? [typeof rowContext.list === 'string' ? rowContext.list.slice(0, 60) : '', ...(Array.isArray(rowContext.hints) ? rowContext.hints.map((hint) => String(hint ?? '').slice(0, 60)) : [])]
       : []
   return texts.some((text) => ACCESS_RIGHT_LIST.test(text) || /^\s*accessibility\s*$/i.test(text))
 }
