@@ -78,18 +78,26 @@ const LOCALE_PASSIVE_ACTS = [
   // wird aus dem Papierkorb entfernt.' - reads delete; never the past ('Alles
   // wurde aus dem Papierkorb entfernt.', 'Everything was removed from the trash.'), never a bare notice ('Item removed from the trash.'):
   // only a question or a pending statement; a negation skips it (localePassiveAct).
-  [/^(?=[^.!?]*\?\s*$|[^.!?]*(?<!\p{L})(?:wird|werden|will|would|is\s+going\s+to|sera|seront|será|serán|verrà|verranno|sarà|saranno|serão|wordt|worden|zal|zullen|se\s+(?:quitar|eliminar|borrar)[áa]n?)(?!\p{L}))(?![^.!?]*(?<!\p{L})(?:wurde|wurden|was|were|has\s+been|have\s+been|a\s+été|ont\s+été|fue|fueron|ha\s+sido|han\s+sido|è\s+stat[oa]|sono\s+stat[ie]|foi|foram|werd|werden\s+verwijderd)(?!\p{L}))[^.!?]*?(?:(?<!\p{L})(?:aus\s+(?:dem|deinem|ihrem|meinem|unserem)\s+(?:papierkorb|mülleimer|abfalleimer)|from\s+(?:the|your|my)\s+(?:trash|bin|recycle\s+bin)|de\s+(?:la|ta|votre|ma)\s+corbeille|de\s+(?:la|tu|su|mi)\s+papelera|dal\s+cestino|da\s+lixeira|uit\s+de\s+(?:prullen(?:bak|mand)|vuil(?:nis)?bak))(?!\p{L})[^.!?]{0,40}?(?<!\p{L})(?:entfernt|gelöscht|beseitigt|weggenommen|herausgenommen|removed|deleted|erased|purged|cleared|taken\s+out|retiré(?:e)?s?|enlevé(?:e)?s?|ôté(?:e)?s?|supprimé(?:e)?s?|effacé(?:e)?s?|éliminé(?:e)?s?|quitad[oa]s?|retirad[oa]s?|eliminad[oa]s?|sacad[oa]s?|borrad[oa]s?|suprimid[oa]s?|(?:quitar|retirar|eliminar|sacar|borrar|suprimir)[áa]n?|tolt[oiae]|rimoss[oiae]|eliminat[oiae]|cancellat[oiae]|removid[oa]s?|tirad[oa]s?|apagad[oa]s?|excluíd[oa]s?|deletad[oa]s?|verwijderd|weggehaald|gewist)(?!\p{L})|(?<!\p{L})(?:entfernt|gelöscht|beseitigt|weggenommen|herausgenommen|removed|deleted|erased|purged|cleared|taken\s+out|retiré(?:e)?s?|enlevé(?:e)?s?|ôté(?:e)?s?|supprimé(?:e)?s?|effacé(?:e)?s?|éliminé(?:e)?s?|quitad[oa]s?|retirad[oa]s?|eliminad[oa]s?|sacad[oa]s?|borrad[oa]s?|suprimid[oa]s?|(?:quitar|retirar|eliminar|sacar|borrar|suprimir)[áa]n?|tolt[oiae]|rimoss[oiae]|eliminat[oiae]|cancellat[oiae]|removid[oa]s?|tirad[oa]s?|apagad[oa]s?|excluíd[oa]s?|deletad[oa]s?|verwijderd|weggehaald|gewist)(?!\p{L})[^.!?]{0,40}?(?<!\p{L})(?:aus\s+(?:dem|deinem|ihrem|meinem|unserem)\s+(?:papierkorb|mülleimer|abfalleimer)|from\s+(?:the|your|my)\s+(?:trash|bin|recycle\s+bin)|de\s+(?:la|ta|votre|ma)\s+corbeille|de\s+(?:la|tu|su|mi)\s+papelera|dal\s+cestino|da\s+lixeira|uit\s+de\s+(?:prullen(?:bak|mand)|vuil(?:nis)?bak))(?!\p{L}))/iu, 'delete'],
+  // CU-823 (table OK'd by cu-researcher 15:45Z): the periphrastic future auxiliaries fr vont / va être, es va(n) a ser, pt vão / vai /
+  // irão / irá ser and en 'is / are going to' make it pending too ('Tous les fichiers vont être retirés de la corbeille.'); never
+  // quedar / ficar / estar here, and the negation and past checks are unchanged.
+  [/^(?=[^.!?]*\?\s*$|[^.!?]*(?<!\p{L})(?:wird|werden|will|would|(?:is|are)\s+going\s+to|sera|seront|será|serán|verrà|verranno|sarà|saranno|serão|wordt|worden|zal|zullen|se\s+(?:quitar|eliminar|borrar)[áa]n?|(?:vont|va)\s+être|van?\s+a\s+ser|(?:vão|vai|irão|irá)\s+ser)(?!\p{L}))(?![^.!?]*(?<!\p{L})(?:wurde|wurden|was|were|has\s+been|have\s+been|a\s+été|ont\s+été|fue|fueron|ha\s+sido|han\s+sido|è\s+stat[oa]|sono\s+stat[ie]|foi|foram|werd|werden\s+verwijderd)(?!\p{L}))[^.!?]*?(?:(?<!\p{L})(?:aus\s+(?:dem|deinem|ihrem|meinem|unserem)\s+(?:papierkorb|mülleimer|abfalleimer)|from\s+(?:the|your|my)\s+(?:trash|bin|recycle\s+bin)|de\s+(?:la|ta|votre|ma)\s+corbeille|de\s+(?:la|tu|su|mi)\s+papelera|dal\s+cestino|da\s+lixeira|uit\s+de\s+(?:prullen(?:bak|mand)|vuil(?:nis)?bak))(?!\p{L})[^.!?]{0,40}?(?<!\p{L})(?:entfernt|gelöscht|beseitigt|weggenommen|herausgenommen|removed|deleted|erased|purged|cleared|taken\s+out|retiré(?:e)?s?|enlevé(?:e)?s?|ôté(?:e)?s?|supprimé(?:e)?s?|effacé(?:e)?s?|éliminé(?:e)?s?|quitad[oa]s?|retirad[oa]s?|eliminad[oa]s?|sacad[oa]s?|borrad[oa]s?|suprimid[oa]s?|(?:quitar|retirar|eliminar|sacar|borrar|suprimir)[áa]n?|tolt[oiae]|rimoss[oiae]|eliminat[oiae]|cancellat[oiae]|removid[oa]s?|tirad[oa]s?|apagad[oa]s?|excluíd[oa]s?|deletad[oa]s?|verwijderd|weggehaald|gewist)(?!\p{L})|(?<!\p{L})(?:entfernt|gelöscht|beseitigt|weggenommen|herausgenommen|removed|deleted|erased|purged|cleared|taken\s+out|retiré(?:e)?s?|enlevé(?:e)?s?|ôté(?:e)?s?|supprimé(?:e)?s?|effacé(?:e)?s?|éliminé(?:e)?s?|quitad[oa]s?|retirad[oa]s?|eliminad[oa]s?|sacad[oa]s?|borrad[oa]s?|suprimid[oa]s?|(?:quitar|retirar|eliminar|sacar|borrar|suprimir)[áa]n?|tolt[oiae]|rimoss[oiae]|eliminat[oiae]|cancellat[oiae]|removid[oa]s?|tirad[oa]s?|apagad[oa]s?|excluíd[oa]s?|deletad[oa]s?|verwijderd|weggehaald|gewist)(?!\p{L})[^.!?]{0,40}?(?<!\p{L})(?:aus\s+(?:dem|deinem|ihrem|meinem|unserem)\s+(?:papierkorb|mülleimer|abfalleimer)|from\s+(?:the|your|my)\s+(?:trash|bin|recycle\s+bin)|de\s+(?:la|ta|votre|ma)\s+corbeille|de\s+(?:la|tu|su|mi)\s+papelera|dal\s+cestino|da\s+lixeira|uit\s+de\s+(?:prullen(?:bak|mand)|vuil(?:nis)?bak))(?!\p{L}))/iu, 'delete'],
   // CU-825: a final accented letter takes (?!\p{L}), never \b - under the u flag \b is ASCII-only, so 'supprimé' / 'se eliminará' never matched.
-  [/\b(?:seront|sera)\s+(?:\S+\s+){0,3}?(?:supprimée?s?|effacée?s?)(?!\p{L})/iu, 'supprimer'],
+  // CU-823 (table OK'd by cu-researcher 15:45Z): the auxiliary slot of the fr / es / pt future passives also takes the periphrastic
+  // and resultative futures (fr 'vont être supprimés'); participles, gap and negation are unchanged.
+  [/\b(?:seront|sera|(?:vont|va)\s+être)\s+(?:\S+\s+){0,3}?(?:supprimée?s?|effacée?s?)(?!\p{L})/iu, 'supprimer'],
   // CU-786: the trash's state asked in the Romance languages or Dutch - '¿La papelera queda vaciada del todo?', 'La corbeille
   // restera-t-elle vidée ?', 'Il Cestino rimane svuotato?', 'A lixeira fica esvaziada?', 'Blijft de prullenbak geleegd?' - reads
   // delete like its German twin. Only a question, only the trash or an inbox, only a state verb (never the past 'fue / a été /
   // è stato / foi / werd ... ?'); a negation skips it (localePassiveAct).
   [/^(?=[^?]*?(?<!\p{L})(?:queda|quedan|quedará|quedarán|quedaría|está|están|estará|estarán|permanece|permanecerá|reste|restent|restera|resteront|resterait|sera|seront|est|sont|resta|restano|resterà|rimane|rimangono|rimarrà|sarà|saranno|è|sono|fica|ficam|ficará|ficarão|estará|será|serão|blijft|blijven|is|zijn|wordt|worden)(?!\p{L}))[^?]*?(?<!\p{L})(?:papelera|papeleras|corbeille|corbeilles|cestino|lixeira|lixo|(?:prullen(?:bak|mand)|vuil(?:nis)?bak)|bandeja\s+de\s+entrada|boîte\s+de\s+réception|posta\s+in\s+arrivo|caixa\s+de\s+entrada|postvak\s+in)(?!\p{L})[^?]{0,60}?(?<!\p{L})(?:vaciad[oa]s?|vac[ií][oa]s?|vidée?s?|vides?|svuotat[oaie]|vuot[oaie]|esvaziad[oa]s?|vazi[oa]s?|geleegd|leeg\s?(?:ge)?maakt|leeg\s?(?:ge)?haald|leeg\s?(?:ge)?ruimd|geledigd|leeg)(?!\p{L})[^?]{0,40}\?\s*$|^(?=[^?]*?(?<!\p{L})(?:queda|quedan|quedará|quedarán|quedaría|está|están|estará|estarán|permanece|permanecerá|reste|restent|restera|resteront|resterait|sera|seront|est|sont|resta|restano|resterà|rimane|rimangono|rimarrà|sarà|saranno|è|sono|fica|ficam|ficará|ficarão|estará|será|serão|blijft|blijven|is|zijn|wordt|worden)(?!\p{L}))[^?]*?(?<!\p{L})(?:vaciad[oa]s?|vac[ií][oa]s?|vidée?s?|vides?|svuotat[oaie]|vuot[oaie]|esvaziad[oa]s?|vazi[oa]s?|geleegd|leeg\s?(?:ge)?maakt|leeg\s?(?:ge)?haald|leeg\s?(?:ge)?ruimd|geledigd|leeg)(?!\p{L})[^?]{0,60}?(?<!\p{L})(?:papelera|papeleras|corbeille|corbeilles|cestino|lixeira|lixo|(?:prullen(?:bak|mand)|vuil(?:nis)?bak)|bandeja\s+de\s+entrada|boîte\s+de\s+réception|posta\s+in\s+arrivo|caixa\s+de\s+entrada|postvak\s+in)(?!\p{L})[^?]{0,40}\?\s*$/iu, 'delete'],
   // r2 (cu-developer-two's cross-check): 'se' reads only before a FUTURE form - 'Se ha eliminado el archivo.' is a notice.
-  [/\bser[áa]n?\s+(?:\S+\s+){0,3}?(?:eliminad[oa]s?|borrad[oa]s?|suprimid[oa]s?)\b|\bse\s+(?:\S+\s+){0,2}?(?:eliminar[áa]n?|borrar[áa]n?|suprimir[áa]n?)(?!\p{L})/iu, 'eliminar'],
+  // CU-823: es va(n) a ser / quedar / estar and quedará(n) / estará(n) ('Los archivos quedarán eliminados.'), and the reflexive
+  // periphrastic 'se van a eliminar' / 'van a eliminarse' of the three covered verbs.
+  [/\b(?:ser[áa]n?|van?\s+a\s+(?:ser|quedar|estar)|quedar(?:á|án)|estar(?:á|án))\s+(?:\S+\s+){0,3}?(?:eliminad[oa]s?|borrad[oa]s?|suprimid[oa]s?)\b|\bse\s+(?:\S+\s+){0,2}?(?:eliminar[áa]n?|borrar[áa]n?|suprimir[áa]n?)(?!\p{L})|\bse\s+van?\s+a\s+(?:eliminar|borrar|suprimir)(?!\p{L})|\bvan?\s+a\s+(?:eliminar|borrar|suprimir)se(?!\p{L})/iu, 'eliminar'],
   [/\b(?:verranno|verrà|saranno|sarà)\s+(?:\S+\s+){0,3}?(?:eliminat[ioae]|rimoss[ioae]|cancellat[ioae]|distrutt[ioae])\b/iu, 'elimina'],
-  [/\b(?:serão|será)\s+(?:\S+\s+){0,3}?(?:excluíd[oa]s?|deletad[oa]s?|apagad[oa]s?|removid[oa]s?)\b/iu, 'excluir'],
+  // CU-823: pt vão / vai / irão / irá + ser / ficar / estar and ficarão / ficará / estarão / estará ('Os arquivos vão ser excluídos.').
+  [/\b(?:serão|será|(?:vão|vai|irão|irá)\s+(?:ser|ficar|estar)|ficar(?:ão|á)|estar(?:ão|á))\s+(?:\S+\s+){0,3}?(?:excluíd[oa]s?|deletad[oa]s?|apagad[oa]s?|removid[oa]s?)\b/iu, 'excluir'],
   // r2 (cu-researcher's held-out 13:02Z): Dutch - 'Deze mailbox wordt permanent verwijderd.'
   [/(?<!\p{L})(?:wordt|worden|zal|zullen)(?!\p{L})[^.!?]{0,120}?(?<!\p{L})(?:definitief\s+|permanent\s+)?(?:verwijderd|gewist)(?!\p{L})/iu, 'verwijderen'],
   // CU-800 r2 (cu-researcher's r1 set; cu-developer-two's CU-802 nouns 'vuilnisbak' / 'vuilbak'): the trash itself emptied in a pending statement - 'De prullenbak wordt leeggemaakt.',
@@ -167,7 +175,9 @@ const TRASH_EMPTIED_VERB = /(?<!\p{L})(?:emptied|vidée?s?|vaciad[oa]s?|vaciar[�
 // Only a negation BEFORE the verb frees it; one in a following clause ('… e non sarà possibile recuperarli') does not.
 const TRASH_ACTIVE_FUTURE = /(?<!\p{L})(?:cancellerà|cancelleranno|eliminerà|elimineranno|rimuoverà|rimuoveranno|apagará|apagarão|excluirá|excluirão|deletará|deletarão|removerá|removerão|eliminará|eliminarán|borrará|borrarán|suprimirá|suprimirán|supprimera|supprimeront|effacera|effaceront|quitará|quitarán|toglierà|toglieranno|retirarão|tirarão|retirera|retireront|enlèvera|enlèveront|ôtera|ôteront|éliminera|élimineront|destruirá|destruirán|destruirão|détruira|détruiront|distruggerà|distruggeranno)(?!\p{L})/iu
 const TRASH_PENDING_AUX = /(?<!\p{L})(?:will|sera|seront|será|serán|verrà|verranno|sarà|saranno|serão)(?!\p{L})|(?<!\p{L})se\s+(?:\S+\s+){0,2}?vaciar[áa]n?(?!\p{L})/iu
-const TRASH_PENDING = /[?？]\s*$|(?<!\p{L})(?:will|would|wird|werden|sera|seront|será|serán|verrà|verranno|serão|wordt|worden|zal|zullen)(?!\p{L})/iu
+// CU-823 (table OK'd by cu-researcher 15:45Z): en 'is / are going to' is pending too ('All items are going to be erased.'); the
+// four-word negation window and the 'were going to' past stay free.
+const TRASH_PENDING = /[?？]\s*$|(?<!\p{L})(?:will|would|(?:is|are)\s+going\s+to|wird|werden|sera|seront|será|serán|verrà|verranno|serão|wordt|worden|zal|zullen)(?!\p{L})/iu
 const TRASH_NEGATION = /(?<!\p{L})(?:not|never|nicht|nie|kein|keine|ne|pas|jamais|no|nunca|non|mai|não|niet|nooit|geen)(?!\p{L})|n['’]t(?!\p{L})/iu
 // CU-805 (P1; the marker table cu-researcher OK'd on #1475, cu-coordinator 12:42Z): in ru / ja / zh / ko / tr a marker counts only
 // ATTACHED to a delete / erase / remove verb of the family - a suffix on the stem, or an auxiliary a few words before it - never
@@ -388,7 +398,7 @@ const FINDABLE_TOGGLE = new RegExp('^\\s*(?:' + [
   String.raw`visible\s+in\s+search(?:\s+results|\s+engines)?`,
   // 'Let people find me by my email address', 'Allow others to find you', 'Let anyone look up my profile', and (r2) any
   // party - 'Let recruiters find my profile', 'Allow Google to index my posts' - finding or indexing the owner's things.
-  String.raw`(?:let|allow)\s+${FINDERS}\s+(?:to\s+)?(?:find|search\s+for|look\s+up|discover|index|crawl|list|link\s+to)\s+${OWNED}(?:\s+(?:by|using|with|via|through)\s+[a-z0-9' .-]{1,40})?`,
+  String.raw`(?:let|allow|permit|authori[sz]e|empower|entitle|enable(?=\s+(?:\S+\s+){1,4}to\s))\s+${FINDERS}\s+(?:to\s+)?(?:find|search\s+for|look\s+up|discover|index|crawl|list|link\s+to)\s+${OWNED}(?:\s+(?:by|using|with|via|through)\s+[a-z0-9' .-]{1,40})?`,
   // r2: 'Show my profile to search engines', 'Expose my page to Google', 'Profile visible to search engines'
   String.raw`(?:show|list|include|expose|open)\s+${OWNED}\s+(?:to|in|on)\s+${ENGINES}`,
   String.raw`${SUBJECT}\s+(?:is\s+|are\s+)?(?:indexed|listed|visible|shown)\s+(?:in|to|by|on)\s+${ENGINES}`,
@@ -401,7 +411,7 @@ const FINDABLE_TOGGLE = new RegExp('^\\s*(?:' + [
   // r2: the 'Discoverable / Findable by ...' heads with any party or key - 'Discoverable by email', 'Findable by phone number'
   String.raw`(?:discoverable|findable|searchable|indexable)\s+(?:by|via|through|using)\s+(?:(?:my|your)\s+)?(?:${FINDERS}|e-?mail(?:\s+address)?|phone(?:\s+number)?|mobile(?:\s+number)?|user\s*name|name|number|contact\s+info(?:rmation)?)`,
   // 'Allow search engines to index my profile', 'Let search engines link to your page', 'Search engine indexing'
-  String.raw`(?:let|allow)\s+search\s+engines\s+(?:to\s+)?(?:index|find|show|list|link\s+to|crawl)(?:\s+(?:(?:my|your|this|the)\s+)?(?:profile|account|page|site|posts?))?`,
+  String.raw`(?:let|allow|permit|authori[sz]e|empower|entitle|enable(?=\s+(?:\S+\s+){1,4}to\s))\s+search\s+engines\s+(?:to\s+)?(?:index|find|show|list|link\s+to|crawl)(?:\s+(?:(?:my|your|this|the)\s+)?(?:profile|account|page|site|posts?))?`,
   String.raw`search\s+engine\s+(?:indexing|visibility)`,
   String.raw`(?:indexed|listed|visible)\s+(?:in|to|by)\s+search\s+engines`,
   // r2 (cu-researcher's held-out misses, generalized): a directory others browse - 'Appear in the member directory',
@@ -414,7 +424,7 @@ const FINDABLE_TOGGLE = new RegExp('^\\s*(?:' + [
   String.raw`(?:show|display)\s+(?:(?:my|your)\s+)?(?:profile|account|page|posts?|activity|content)\s+to\s+${OUTSIDERS}`,
   String.raw`(?:(?:my|your)\s+)?(?:profile|account|page)\s+(?:is\s+)?(?:visible|shown)\s+to\s+${OUTSIDERS}`,
   String.raw`(?:visible|shown)\s+to\s+${OUTSIDERS}`,
-  String.raw`(?:let|allow)\s+${OUTSIDERS}\s+(?:to\s+)?(?:see|view|read|find)\s+(?:me|you|(?:my|your)\s+(?:profile|account|page|posts?|activity|content))`,
+  String.raw`(?:let|allow|permit|authori[sz]e|empower|entitle|enable(?=\s+(?:\S+\s+){1,4}to\s))\s+${OUTSIDERS}\s+(?:to\s+)?(?:see|view|read|find)\s+(?:me|you|(?:my|your)\s+(?:profile|account|page|posts?|activity|content))`,
 ].join('|') + ')\\s*$', 'i')
 // CU-779 (P1, the follow-up to CU-774): a toggle whose label exposes the owner, or the owner's profile or work (a portfolio,
 // a shop, a contact card, a listing ...), to a wider audience - guests, strangers, people outside the team or organization,
@@ -455,12 +465,12 @@ const EXPOSED_TOGGLE = new RegExp('^\\s*(?:' + [
   String.raw`(?:show|share|display|expose|open|reveal|make|publish|broadcast|announce|post|send|push|advertise|release|syndicate)\s+${OWN_ANY}\s+(?:(?:visible|viewable|accessible|available|public)\s+)?(?:to|with|by)\s+${WIDER}`,
   // 'Let strangers view my portfolio', 'Allow guests to see my profile'
   // CU-783: any owned thing - 'Let any visitor browse my albums', 'Allow non-friends to see my posts'
-  String.raw`(?:let|allow)\s+${WIDER}\s+(?:to\s+)?(?:see|view|browse|read|find|access|download|look\s+at)\s+${OWN_ANY}`,
+  String.raw`(?:let|allow|permit|authori[sz]e|empower|entitle|enable(?=\s+(?:\S+\s+){1,4}to\s))\s+${WIDER}\s+(?:to\s+)?(?:see|view|browse|read|find|access|download|look\s+at)\s+${OWN_ANY}`,
   // r2 (cu-researcher's held-out miss 'Permit non-contacts to view my photos'): any granting verb, and any act the wider
   // audience is granted over the owner's things - 'Enable non-followers to comment on my posts', 'Authorize people outside my
   // network to download my files'. A protective act (block / hide / prevent / stop ... from) leads with no granting verb and
   // stays free.
-  String.raw`(?:let|allow|permit|enable|authori[sz]e|empower|invite)\s+${WIDER}\s+(?:to\s+)?${GRANTED_ACT}\s+${OWN_ANY}`,
+  String.raw`(?:let|allow|permit|enable|authori[sz]e|empower|entitle|invite)\s+${WIDER}\s+(?:to\s+)?${GRANTED_ACT}\s+${OWN_ANY}`,
   // r2: access given outright - 'Give non-friends access to my albums', 'Grant everyone except my team access to my files'
   String.raw`(?:give|grant|offer)\s+${WIDER}\s+(?:(?:full|read|view(?:ing)?|edit(?:ing)?|download)\s+)?(?:access|permission|rights?)\s+(?:to|on|for)\s+${OWN_ANY}`,
   // 'Include me in the staff list visible to guests', 'Add my profile to the team page shown to visitors'
