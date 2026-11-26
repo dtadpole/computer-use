@@ -398,7 +398,7 @@ const FINDABLE_TOGGLE = new RegExp('^\\s*(?:' + [
   String.raw`visible\s+in\s+search(?:\s+results|\s+engines)?`,
   // 'Let people find me by my email address', 'Allow others to find you', 'Let anyone look up my profile', and (r2) any
   // party - 'Let recruiters find my profile', 'Allow Google to index my posts' - finding or indexing the owner's things.
-  String.raw`(?:let|allow)\s+${FINDERS}\s+(?:to\s+)?(?:find|search\s+for|look\s+up|discover|index|crawl|list|link\s+to)\s+${OWNED}(?:\s+(?:by|using|with|via|through)\s+[a-z0-9' .-]{1,40})?`,
+  String.raw`(?:let|allow|permit|authori[sz]e|empower|entitle|enable(?=\s+(?:\S+\s+){1,4}to\s))\s+${FINDERS}\s+(?:to\s+)?(?:find|search\s+for|look\s+up|discover|index|crawl|list|link\s+to)\s+${OWNED}(?:\s+(?:by|using|with|via|through)\s+[a-z0-9' .-]{1,40})?`,
   // r2: 'Show my profile to search engines', 'Expose my page to Google', 'Profile visible to search engines'
   String.raw`(?:show|list|include|expose|open)\s+${OWNED}\s+(?:to|in|on)\s+${ENGINES}`,
   String.raw`${SUBJECT}\s+(?:is\s+|are\s+)?(?:indexed|listed|visible|shown)\s+(?:in|to|by|on)\s+${ENGINES}`,
@@ -411,7 +411,7 @@ const FINDABLE_TOGGLE = new RegExp('^\\s*(?:' + [
   // r2: the 'Discoverable / Findable by ...' heads with any party or key - 'Discoverable by email', 'Findable by phone number'
   String.raw`(?:discoverable|findable|searchable|indexable)\s+(?:by|via|through|using)\s+(?:(?:my|your)\s+)?(?:${FINDERS}|e-?mail(?:\s+address)?|phone(?:\s+number)?|mobile(?:\s+number)?|user\s*name|name|number|contact\s+info(?:rmation)?)`,
   // 'Allow search engines to index my profile', 'Let search engines link to your page', 'Search engine indexing'
-  String.raw`(?:let|allow)\s+search\s+engines\s+(?:to\s+)?(?:index|find|show|list|link\s+to|crawl)(?:\s+(?:(?:my|your|this|the)\s+)?(?:profile|account|page|site|posts?))?`,
+  String.raw`(?:let|allow|permit|authori[sz]e|empower|entitle|enable(?=\s+(?:\S+\s+){1,4}to\s))\s+search\s+engines\s+(?:to\s+)?(?:index|find|show|list|link\s+to|crawl)(?:\s+(?:(?:my|your|this|the)\s+)?(?:profile|account|page|site|posts?))?`,
   String.raw`search\s+engine\s+(?:indexing|visibility)`,
   String.raw`(?:indexed|listed|visible)\s+(?:in|to|by)\s+search\s+engines`,
   // r2 (cu-researcher's held-out misses, generalized): a directory others browse - 'Appear in the member directory',
@@ -424,7 +424,7 @@ const FINDABLE_TOGGLE = new RegExp('^\\s*(?:' + [
   String.raw`(?:show|display)\s+(?:(?:my|your)\s+)?(?:profile|account|page|posts?|activity|content)\s+to\s+${OUTSIDERS}`,
   String.raw`(?:(?:my|your)\s+)?(?:profile|account|page)\s+(?:is\s+)?(?:visible|shown)\s+to\s+${OUTSIDERS}`,
   String.raw`(?:visible|shown)\s+to\s+${OUTSIDERS}`,
-  String.raw`(?:let|allow)\s+${OUTSIDERS}\s+(?:to\s+)?(?:see|view|read|find)\s+(?:me|you|(?:my|your)\s+(?:profile|account|page|posts?|activity|content))`,
+  String.raw`(?:let|allow|permit|authori[sz]e|empower|entitle|enable(?=\s+(?:\S+\s+){1,4}to\s))\s+${OUTSIDERS}\s+(?:to\s+)?(?:see|view|read|find)\s+(?:me|you|(?:my|your)\s+(?:profile|account|page|posts?|activity|content))`,
 ].join('|') + ')\\s*$', 'i')
 // CU-779 (P1, the follow-up to CU-774): a toggle whose label exposes the owner, or the owner's profile or work (a portfolio,
 // a shop, a contact card, a listing ...), to a wider audience - guests, strangers, people outside the team or organization,
@@ -465,12 +465,12 @@ const EXPOSED_TOGGLE = new RegExp('^\\s*(?:' + [
   String.raw`(?:show|share|display|expose|open|reveal|make|publish|broadcast|announce|post|send|push|advertise|release|syndicate)\s+${OWN_ANY}\s+(?:(?:visible|viewable|accessible|available|public)\s+)?(?:to|with|by)\s+${WIDER}`,
   // 'Let strangers view my portfolio', 'Allow guests to see my profile'
   // CU-783: any owned thing - 'Let any visitor browse my albums', 'Allow non-friends to see my posts'
-  String.raw`(?:let|allow)\s+${WIDER}\s+(?:to\s+)?(?:see|view|browse|read|find|access|download|look\s+at)\s+${OWN_ANY}`,
+  String.raw`(?:let|allow|permit|authori[sz]e|empower|entitle|enable(?=\s+(?:\S+\s+){1,4}to\s))\s+${WIDER}\s+(?:to\s+)?(?:see|view|browse|read|find|access|download|look\s+at)\s+${OWN_ANY}`,
   // r2 (cu-researcher's held-out miss 'Permit non-contacts to view my photos'): any granting verb, and any act the wider
   // audience is granted over the owner's things - 'Enable non-followers to comment on my posts', 'Authorize people outside my
   // network to download my files'. A protective act (block / hide / prevent / stop ... from) leads with no granting verb and
   // stays free.
-  String.raw`(?:let|allow|permit|enable|authori[sz]e|empower|invite)\s+${WIDER}\s+(?:to\s+)?${GRANTED_ACT}\s+${OWN_ANY}`,
+  String.raw`(?:let|allow|permit|enable|authori[sz]e|empower|entitle|invite)\s+${WIDER}\s+(?:to\s+)?${GRANTED_ACT}\s+${OWN_ANY}`,
   // r2: access given outright - 'Give non-friends access to my albums', 'Grant everyone except my team access to my files'
   String.raw`(?:give|grant|offer)\s+${WIDER}\s+(?:(?:full|read|view(?:ing)?|edit(?:ing)?|download)\s+)?(?:access|permission|rights?)\s+(?:to|on|for)\s+${OWN_ANY}`,
   // 'Include me in the staff list visible to guests', 'Add my profile to the team page shown to visitors'
