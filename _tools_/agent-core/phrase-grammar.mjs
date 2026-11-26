@@ -1723,11 +1723,12 @@ function grammarClassesOf(name, role = '') {
   if (['decline', 'deny', 'reject'].includes(list[0]) && list.slice(1).filter((t) => !FILLER.has(t)).every((t) => t === 'request' || t === 'this' || t === 'all')
     && list.includes('request')) return []
   // Guards: a trailing list / settings / UI noun; a bare plural noun (a tab); settings-sense apply; 'Sign in as guest'.
-  // CU-824: a tail word that is the act granted to people ('Let visitors control the thermostat', 'Allow guests to control
-  // the lights') is a verb, not a label - only a grant's own shape (let / allow / permit, a people word, then the word) keeps
-  // the ask; every label ('Guest controls', 'Notification settings') stays free. No device is listed.
+  // CU-824: a second-to-last tail word that is the act granted to people over an object ('Let visitors control the
+  // thermostat', 'Allow guests to control the lights') is a verb, not a label - only that grant shape (let / allow, a people
+  // word, the word, then its object) keeps the grant's ask; every label ('Guest controls', 'Guest settings', 'Notification
+  // settings') stays free. No device is listed.
   const tailAt = FREE_TAIL.has(last) ? list.length - 1 : (list.length >= 2 && FREE_TAIL.has(list[list.length - 2]) ? list.length - 2 : -1)
-  const grantedTail = tailAt > 1 && ['let', 'allow', 'permit'].includes(list[0])
+  const grantedTail = tailAt === list.length - 2 && tailAt > 1 && ['let', 'allow'].includes(list[0])
     && (OBJECTS.access.has(list[tailAt - 1]) || (list[tailAt - 1] === 'to' && OBJECTS.access.has(list[tailAt - 2])))
   if (tailAt >= 0 && !grantedTail) return []
   if (UI_TAIL.has(last) && list.length >= 2) return []
