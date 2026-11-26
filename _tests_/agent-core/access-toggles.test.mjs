@@ -313,3 +313,74 @@ test('CU-799: the other side - already on, nothing of the owner\'s, and the owne
     assert.equal(webcb(name, false), 'allow', name)
   }
 })
+
+// CU-843 (P1; found in #1534's review): a pane header grants the right with its subject modified or in the passive, and the
+// grant phrase read only 'Allow the applications below to ...', so turning a grant on under such a header went free. Table r2.1
+// (cu-researcher's OK): allow / let or is / are + a permission participle, the app subject and 'to' + CU-754's eight verbs
+// stay the anchors, with a bounded gap of ordinary words between them. Every text is 60 characters or fewer (the list bound).
+const CU843_ASK = [
+  // the filed rows
+  'Allow the applications listed below to control your computer',
+  'Each application in this list below is allowed to control',
+  // words before the noun
+  'Allow only the trusted applications below to control',
+  'Allow all selected apps to access your files',
+  // a relative clause, a place phrase with another noun, a place adverb after the noun
+  'Allow the apps that you trust to control your computer',
+  'Allow the applications in the sidebar to see your screen',
+  'Allow the applications listed here to read your files',
+  // each permission participle in the passive, with and without is / are
+  'Apps in this list are permitted to record the screen',
+  'Applications shown below are authorized to monitor input',
+  'Apps listed here are authorised to manage your Mac',
+  'Apps approved to access your files',
+  'Applications enabled to see your screen',
+  'Apps entitled to read your messages',
+  'Apps granted permission to control this computer',
+  'Apps given the right to manage your files',
+  'Apps given access to monitor this Mac',
+]
+const CU843_FREE = [
+  // negated twins
+  'Each application in this list is not allowed to control',
+  'Apps in this list are never permitted to record the screen',
+  "Apps that aren't authorized to manage your Mac",
+  // past and perfect twins
+  'Apps in this list were allowed to control your computer',
+  'Each application below was permitted to read your files',
+  'Apps that have been approved to access your files',
+  'Apps that had been granted permission to control',
+  // another verb after 'to'
+  'Allow the apps listed below to appear in the menu bar',
+  'Apps shown in this list are allowed to send notifications',
+  'Allow only these trusted apps to show a badge icon',
+  // no app subject, punctuation between the anchors, a second 'to', another noun as allow's object
+  'Allow the devices listed below to control your computer',
+  'Users in this list are allowed to manage your Mac',
+  'Apps in this list: allowed to control your Mac',
+  'Allow the apps (listed below) to control your Mac',
+  'Allow apps to request to control your computer',
+  'Allow notifications from these apps to use sounds',
+]
+
+test('CU-843: a grant header with its subject modified or in the passive asks when the toggle turns on, as list and as hint', () => {
+  for (const text of CU843_ASK) {
+    assert.ok(text.length <= 60, `${text.length}: ${text}`)
+    assert.equal(accessRowContext({ list: text, hints: [] }), true, `list: ${text}`)
+    assert.equal(accessRowContext({ list: 'General', hints: [text] }), true, `hint: ${text}`)
+    assert.equal(accessRowContext(text), true, `string: ${text}`)
+    assert.match(axcb('Example App', false, { list: text, hints: [] }), /permission/, `list: ${text}`)
+    assert.match(axcb('Example App', false, { list: 'General', hints: [text] }), /permission/, `hint: ${text}`)
+  }
+})
+
+test('CU-843: the other side - negated, past, another verb, no app subject, punctuation, and turning off stay free', () => {
+  for (const text of CU843_FREE) {
+    assert.ok(text.length <= 60, `${text.length}: ${text}`)
+    assert.equal(accessRowContext({ list: text, hints: [] }), false, `list: ${text}`)
+    assert.equal(accessRowContext({ list: 'General', hints: [text] }), false, `hint: ${text}`)
+    assert.equal(axcb('Example App', false, { list: text, hints: [] }), 'allow', `list: ${text}`)
+  }
+  // turning the grant off (a revoke) stays free under every asking header
+  for (const text of CU843_ASK) assert.equal(axcb('Example App', true, { list: text, hints: [] }), 'allow', `off: ${text}`)
+})
