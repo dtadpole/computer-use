@@ -1,31 +1,27 @@
 ---
 title: '[cu] Integrator - handover'
 created: 2026-11-08T04:22:00Z
-modified: 2026-11-25T18:35:00Z
+modified: 2026-11-26T14:50:00Z
 level: L2
-version: 7.14.0
-description: 'What the next [cu] Integrator needs to take over the landing lanes of dtadpole/computer-use on the 25 Nov evening, with the 26 Nov helper 0.2.75 window armed.'
+version: 7.16.0
+description: 'What the next [cu] Integrator needs to take over the landing lanes of dtadpole/computer-use on the afternoon of 26 Nov: the policy.mjs line, the records backlog and the 27 Nov helper 0.2.76 window.'
 status: unverified
 grounded_in:
-  - source: 'cu-coordinator seat replacement of 25 Nov 14:38Z (planned, context past 80 percent)'
-  - source: 'decisions D-085, D-086, D-090, D-113, D-115, D-116, D-119, D-120, D-121'
+  - source: 'cu-coordinator plan of 26 Nov 06:27Z (seat swap in the 09:20-10:50Z no-desktop span, context past 70 percent)'
+  - source: 'decisions D-086, D-090, D-113, D-119, D-120, D-121, D-122, D-123, D-124'
+  - source: 'cu-coordinator rulings of 26 Nov 12:06Z, 13:47Z, 13:50Z and 14:18Z; member reviews rounds 96 and 97'
 ---
 
 # [cu] Integrator - handover
 
-**Goal.** Land reviewed PRs at their exact heads through the hygiene gate and the full two-phase gate, Highs first;
-a High lands only on three non-author OKs at the exact head (D-120). Every job runs only in the window that names it.
+**State (26 Nov 14:50Z).** Landed since 7.15.0, every one fresh-gated with tree MATCH: #1514, #1516 (CU-831), #1520 (CU-832, closed live), and the 26 Nov roster records PRs. Main is 43b1389c6.
 
-**Live state (25 Nov 18:35Z).** Since 14:38Z landed, tree MATCH: #1349, #1479 (CU-806), #1480
-(CU-807), #1476 (CU-791), #1481 (CU-809) on full gates; records #1478, #1471, #1473; the nightly green. Open: #1129 waits for one OK at its
-refreshed head (the earlier OKs differ only in diff context); the CU-813 PR in its second round; the CU-749 PR in
-review; records #1484 in the next records lane. #1444 (helper 0.2.75) is armed for 26 Nov: 06:20Z checks, a 50-minute pre-run gate,
-a freeze 06:30-08:25Z, the 08:00Z merge, the signed install with READBACK by 08:15Z, then the live close; the
-researcher's 6-minute live window opens after 08:25Z and ends before the other team's 09:20Z slot.
+**Policy line** (one policy.mjs PR at a time, P1 first, no jumping): #1528 (CU-833, P1) gates first; then #1524 (CU-830) and #1521 (CU-709), each after a plain re-merge of main and merge-diff re-checks at its new head. A P1 PR joins the line when it opens with D-114 green. The policy-pair file enforces the order in the gate script.
 
-**Windows.** One named window at a time from a private list. A lane or gate stops at its own window end (a
-records lane that ran on was stopped by hand on 25 Nov); a gate that outlasts its window opens a named
-continuation. A log-only conflict is resolved by a mechanical main merge inside the gate's window (D-090).
+**Records backlog.** One records lane follows each P1 window: #1518 (D-124) first, then #1519, #1523, #1525, #1527, #1529; #1517 closes unmerged when #1529 lands (superseded).
 
-**Lessons.** Keep runners and state in the session worktree, not in temporary folders. A GitHub 5xx on the merge
-call is retried; the gate result is reused while main stands.
+**Booked.** 27 Nov 08:00Z daily window: #1522 (helper 0.2.76, three OKs) merges at the window start, then the signed install.
+
+**Machinery.** One named window at a time from the queue file; a seat's job runs only inside the window that names it, and DONE with the exact label releases it. A gate window enters the queue only with every required OK at the head; a gate that outlasts its window gets a named continuation. Boundary results are read by hand when a waiter's filter could miss them. Desktop windows check a free run lock; Last War also runs outside its morning slot.
+
+**Lessons.** Stop the predecessor's runner before starting yours. Land records in the first gaps; do not let them age behind node work. Ask for a replacement on a measured context reading, at 65 percent.
