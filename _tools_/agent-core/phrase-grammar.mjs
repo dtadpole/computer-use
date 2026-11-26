@@ -847,6 +847,14 @@ function withoutDeterminers(text) {
 // give -> grant, begin -> start, ask for -> request, create -> add - one more form, like CU-455 / CU-463, adds only.
 // cu-coordinator 06:34Z (CU-481 follow-up): update / edit -> change too, tried last like the others - never 'Update all / now' (the
 // App Store's own verdict decides those, CU-254).
+// CU-830 (cu-researcher's marker table r2 OK, 26 Nov 09:15Z): grant verbs the grammar did not read fold to 'allow' only with a
+// people slot - permit / authorize / authorise / empower / entitle '<people> <act ...>', enable only '<people> to <act>' - and
+// permit with an access object ('permit <x> access'). A past state ('Permitted users'), a noun ('Parking permit', 'Permit
+// number'), 'enable <feature>' (no people word) and 'invite' (its people slot is social; her ruling) keep main's verdict.
+const GRANTEE_WORDS = [...new Set([...PEOPLE, ...PERSON, 'visitor', 'person', 'people', 'anyone', 'everyone', 'other', 'others',
+  'family', 'kid', 'kids', 'child', 'children', 'stranger', 'staff', 'admin', 'collaborator', 'viewer', 'reader', 'public',
+  'participant', 'attendee', 'customer', 'client', 'tenant', 'roommate', 'neighbor', 'neighbour', 'partner', 'non-friend'])]
+const GRANTEES = String.raw`(?:(?:the|all|any|other|my|your|our)\s+)?(?:${GRANTEE_WORDS.map((w) => w.replace(/[-]/g, '\\-') + '(?:e?s)?').join('|')})`
 const VERB_SYNONYMS = [[/^(\s*)modify\b/i, '$1change'], [/^(\s*)(?:update|edit)\b(?!\s+(?:all|now|available)\b)/i, '$1change'], [/^(\s*)(?:display|reveal)\b/i, '$1show'], [/^(\s*)give\b/i, '$1grant'],
   [/^(\s*)begin\b/i, '$1start'], [/^(\s*)ask\s+for\b/i, '$1request'],
   // #627 round 2 (cu-researcher 05:08Z): creating an account is not adding one ('Create account' stays free).
@@ -862,7 +870,11 @@ const VERB_SYNONYMS = [[/^(\s*)modify\b/i, '$1change'], [/^(\s*)(?:update|edit)\
   // CU-711: stripping something BARE wipes it ('Strip the server bare'); 'Strip formatting' / 'Strip metadata' stay free.
   [/^(\s*)strip(?=\s+(?:[\w.-]+\s+){1,4}bare\b)/i, '$1wipe'],
   // #851 (cu-researcher 10:19Z class sweep: 'Format disk'): formatting STORAGE erases it; 'Format text' / 'Format cells' stay free.
-  [/^(\s*)format(?=\s+(?:the\s+|this\s+|my\s+|a\s+)?(?:disks?|drives?|volumes?|partitions?|ssds?|hdds?|sd\s+cards?|usb(?:\s+drives?)?|storage|memory\s+cards?|startup\s+disk)\b)/i, '$1erase']]
+  [/^(\s*)format(?=\s+(?:the\s+|this\s+|my\s+|a\s+)?(?:disks?|drives?|volumes?|partitions?|ssds?|hdds?|sd\s+cards?|usb(?:\s+drives?)?|storage|memory\s+cards?|startup\s+disk)\b)/i, '$1erase'],
+  // CU-830: the grant verbs above, people slot first (then at least one more word); enable only with 'to' after the people.
+  [new RegExp(String.raw`^(\s*)(?:permit|authori[sz]e|empower|entitle)(?=\s+${GRANTEES}\s+\S)`, 'i'), '$1allow'],
+  [new RegExp(String.raw`^(\s*)enable(?=\s+${GRANTEES}\s+to\s+\S)`, 'i'), '$1allow'],
+  [/^(\s*)permit(?=\s+(?:[\w-]+\s+){0,2}access\b)/i, '$1allow']]
 function withVerbSynonym(text) {
   for (const [pattern, replacement] of VERB_SYNONYMS) if (pattern.test(text)) return text.replace(pattern, replacement)
   return text
