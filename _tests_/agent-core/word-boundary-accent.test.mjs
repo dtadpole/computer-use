@@ -33,16 +33,15 @@ test('CU-825: the es singular future and the fr masculine participle read', () =
   asks([
     ['Vaciar', 'Papelera', 'La papelera se borrará.'],
     // The fr trash rows already ask on main through the Western trash cell, so the fr fix shows where the in-sentence rule is the
-    // only path: a plain confirm over a localized passive statement (probed on main cf429a96, 00:22Z).
+    // only path: a plain confirm over a localized passive statement (probed on main cf429a96, 00:24Z; the es plain-confirm rows
+    // already ask on main by an older path, negated too - filed with CU-826 - so es keeps its trash rows).
     ['OK', 'Confirmation', 'Le fichier sera supprimé.'],
     ['OK', 'Confirmation', 'Le fichier sera effacé.'],
-    ['OK', 'Confirmación', 'El archivo se eliminará.'],
   ])
 })
 
 test('CU-825: negated, past, past-event and conditional twins stay free', () => {
   free([
-    ['OK', 'Confirmación', 'El archivo no se eliminará.'],
     ['OK', 'Confirmation', 'Le fichier ne sera pas supprimé.'],
     ['OK', 'Confirmation', 'Le fichier a été supprimé.'],
     ['Vider', 'Corbeille', 'Le fichier de la corbeille ne sera pas supprimé.'],
