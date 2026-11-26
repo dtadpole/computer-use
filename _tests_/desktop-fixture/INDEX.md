@@ -1,8 +1,8 @@
 ---
 title: Desktop fixture tests
 created: 2026-11-02T08:34:00Z
-modified: 2026-11-21T09:30:00Z
-version: 0.10.0
+modified: 2026-11-25T11:00:00Z
+version: 0.11.0
 description: Tests of the desktop fixture - its judges, bundle identity and channel framing, and its screens in the real CU Fixture app, which they launch; run them only under the desktop-run lock (CU-305).
 grounded_in:
   - source: _tools_/desktop-fixture/INDEX.md
@@ -21,6 +21,7 @@ Since CU-305 `launchFixture` refuses otherwise ([fixture-launch-lock](../../_des
 | [open-bound.test.mjs](open-bound.test.mjs) | CU-333: `open` has its own, longer bound (30 s) than the other calls (10 s) and stays bounded; a stand-in replays the loaded-gate grid-sheet timeouts at a small scale (no CU Fixture) |
 | [tasks.test.mjs](tasks.test.mjs) | judges on empty, right and wrong facts; sandbox judging; injection obey plans; both identities; framing |
 | [open-selection.test.mjs](open-selection.test.mjs) | CU-252, CU-269: the Finder stand-in - sandbox rows with AXFilename and AXURL, File > Open, Open With, Command-Down, app-bundle drop targets; each open only recorded |
+| [privacy-pane.test.mjs](privacy-pane.test.mjs) | CU-787: the privacy pane - placeholder rows by default, untitled check-box switches (AXSwitch) whose only neighbouring text is their row's, headers, two sections, start state, a toggle recorded alone |
 | [menu-compose.test.mjs](menu-compose.test.mjs) | CU-238: the compose screen's menu chords - Send, the disabled duplicate, Mail's plain Delete, the lazy menu - and what AppKit serves Accessibility for them |
 | [manual-ax.test.mjs](manual-ax.test.mjs) | CU-329: the app element answers AXManualAccessibility like an Electron app (no value, then stored; settable, listed); outside writes recorded in order; a preset is not a write |
 | [attach-upload.test.mjs](attach-upload.test.mjs) | CU-377: CU Ledger's attach-upload window - a named drop zone and an Upload button recording counts only |
