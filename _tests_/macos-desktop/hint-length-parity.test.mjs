@@ -70,3 +70,16 @@ test('CU-840: the other side - harmless twins, turning off, and a title over 60 
   // asks both ways under a right (CU-754's named over-ask), so its off row is not a free row.
   for (const hint of RIGHTS) assert.equal(toggle('AXCheckBox', hint, true), 'allow', `AXCheckBox off: ${hint}`)
 })
+
+test('CU-843: through the boundary, a 60-character grant header with a modified subject or a passive asks as hint and as list', () => {
+  const filed = len('Allow the applications listed below to control your computer', 60, 60)
+  const passive = len('Each application in this list below is allowed to control', 41, 60)
+  for (const text of [filed, passive]) {
+    assert.match(toggle('AXCheckBox', text), /permission/, `hint: ${text}`)
+    assert.match(toggle('AXCheckBox', 'x', false, text), /permission/, `list: ${text}`)
+    assert.equal(toggle('AXCheckBox', text, true), 'allow', `off: ${text}`)
+  }
+  // the harmless twin (another verb after 'to') stays free; one character over the bound is dropped at the boundary
+  assert.equal(toggle('AXCheckBox', len('Allow the applications listed below to show a badge icon', 41, 60)), 'allow')
+  assert.equal(toggle('AXCheckBox', len(`${filed}.`, 61, 61)), 'allow')
+})
