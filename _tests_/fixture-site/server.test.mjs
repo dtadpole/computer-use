@@ -609,13 +609,16 @@ describe('task routes, request log, targets and secrets', () => {
     assert.equal((await post({ field: 'card', chars: 16 })).status, 400, 'only the page\'s own fields')
     const records = (await client.taskState('frame-editor-probe')).facts.records
     assert.deepEqual(records.map(({ kind, field, chars }) => ({ kind, field, chars })), [{ kind: 'field-typed', field: 'cvv', chars: 3 }])
-    // CU-564: look for the value itself, not its digits - every record carries createdAt (Date.now(), 13 digits), which holds
-    // the digits 123 in about one run in a hundred, so a digit search over the JSON failed the full suite at random.
-    const keepsNoValue = (list) => list.every((r) => !('value' in r) && !Object.values(r).includes('123'))
+    // CU-564: every record carries createdAt (Date.now(), 13 digits), which holds the digits 123 in about one run in a hundred,
+    // so the digit search failed the full suite at random. Drop only that field and keep the whole digit search: the value
+    // stays caught anywhere else - its own key, inside a longer string, or as a number under another key.
+    const keepsNoValue = (list) => !JSON.stringify(list.map(({ createdAt, ...rest }) => rest)).includes('123')
     assert.ok(keepsNoValue(records), 'never the value')
-    assert.equal(JSON.stringify(records).includes('"123"'), false, 'never the value, as a string')
-    assert.ok(keepsNoValue([{ id: 1, kind: 'field-typed', field: 'cvv', chars: 3, createdAt: 1795651230000 }]), 'a timestamp holding 123 is not the value')
-    assert.equal(keepsNoValue([{ id: 1, kind: 'field-typed', field: 'cvv', chars: 3, value: '123', createdAt: 1 }]), false, 'a kept value is caught')
+    const row = { id: 1, kind: 'field-typed', field: 'cvv', chars: 3 }
+    assert.ok(keepsNoValue([{ ...row, createdAt: 1795651230000 }]), 'a timestamp holding 123 is not the value')
+    assert.equal(keepsNoValue([{ ...row, value: '123', createdAt: 1 }]), false, 'a kept value is caught')
+    assert.equal(keepsNoValue([{ ...row, typed: 'cvv 123', createdAt: 1 }]), false, 'a value inside a longer string is caught')
+    assert.equal(keepsNoValue([{ ...row, typed: 123, createdAt: 1 }]), false, 'a value kept as a number is caught')
   })
 
   test('CU-194: the toggle page - an unnamed password entry labelled only by a sibling div, a Show checkbox flipping it in place, an entry under <dt>Password</dt>, a labelled Notes, a never-secure entry beside a Password div - records characters, never values', async () => {
