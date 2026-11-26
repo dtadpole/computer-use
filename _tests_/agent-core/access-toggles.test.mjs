@@ -291,6 +291,9 @@ test('CU-799: a toggle that puts the owner\'s profile or work into a public plac
     'Share my portfolio to the community gallery', 'Post my resume on the public job board', 'Add my profile to the member directory',
     'Upload my designs to the public library', 'Show my posts in search results', 'Publish my blog to the web',
     'My profile is listed in the public directory', 'Submit my app to the marketplace',
+    // cu-verifier's CU-799 close (mutant P2 survived): a row only the search-results place catches - 'Show my posts in
+    // search results' also asks through CU-774's findable rule, this one asked submit only on main.
+    'Publish my resume to search results',
   ]) {
     assert.match(webcb(name, false), /permission/, name)
     assert.match(space(name, false), /permission/, `Space: ${name}`)
