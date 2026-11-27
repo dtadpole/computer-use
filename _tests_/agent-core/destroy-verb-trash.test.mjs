@@ -57,3 +57,52 @@ test('CU-831 r2: the it future passive with sarà / saranno reads the destroy pa
     ['Svuota', 'Cestino', 'Alcuni elementi del cestino sono stati distrutti per errore ieri.'],
   ])
 })
+
+// CU-854 (P1; found in the CU-851 table): the es passive cell read eliminad- / borrad- / suprimid- after its periphrastic and
+// resultative auxiliaries but not destruid-, so 'Los archivos van a ser destruidos para siempre.' went free under a trash title
+// while 'serán destruidos' asked by another route. Table r1 (cu-researcher 00:34Z): destruir joins each shape of the cell.
+test('CU-854: destruid- after the periphrastic and resultative auxiliaries, and the reflexive destroy forms, ask delete on both routes', () => {
+  asks([
+    ['Vaciar', 'Papelera', 'Los archivos van a ser destruidos para siempre.'],
+    ['Vaciar', 'Papelera', 'El archivo va a ser destruido para siempre.'],
+    ['Vaciar', 'Papelera', 'Los elementos quedarán destruidos de forma permanente.'],
+    ['Vaciar', 'Papelera', 'Los elementos estarán destruidos de forma permanente.'],
+    ['Vaciar', 'Papelera', 'Los elementos se van a destruir de forma permanente.'],
+    ['Vaciar', 'Papelera', 'Los elementos van a destruirse de forma permanente.'],
+    // the twins and the control, which already ask on main
+    ['Vaciar', 'Papelera', 'Los archivos van a ser eliminados para siempre.'],
+    ['Vaciar', 'Papelera', 'Los elementos quedarán eliminados de forma permanente.'],
+    ['Vaciar', 'Papelera', 'Los archivos serán destruidos para siempre.'],
+  ])
+})
+
+test('CU-854: the other side - negated, past, perfect, restore, no-trash-title and non-emptying rows stay free', () => {
+  free([
+    ['Vaciar', 'Papelera', 'Los archivos no van a ser destruidos.'],
+    ['Vaciar', 'Papelera', 'Los archivos nunca serán destruidos.'],
+    ['Vaciar', 'Papelera', 'Los elementos no se van a destruir.'],
+    ['Vaciar', 'Papelera', 'Los archivos fueron destruidos.'],
+    ['Vaciar', 'Papelera', 'Los archivos han sido destruidos.'],
+    ['Vaciar', 'Papelera', 'Los archivos van a ser restaurados.'],
+    ['Vaciar', 'Aviso', 'Los archivos van a ser destruidos para siempre.'],
+    ['Cancelar', 'Papelera', 'Los archivos van a ser destruidos para siempre.'],
+  ])
+})
+
+// CU-854 rebuild delta (cu-researcher 05:53Z): main's CU-846 shapes (#1562) - 'está(n) a punto de ser / quedar', 'está(n) por ser'
+// and the enclitic 'está(n) a punto de ...se' - read destruir like the other three covered es delete verbs.
+test('CU-854 delta: destruid- under the imminent auxiliaries and the enclitic a punto de destruirse ask; negated and past twins stay free', () => {
+  asks([
+    ['Vaciar', 'Papelera', 'Los archivos de la papelera están a punto de ser destruidos.'],
+    ['Vaciar', 'Papelera', 'El archivo está a punto de quedar destruido.'],
+    ['Vaciar', 'Papelera', 'Los documentos están por ser destruidos.'],
+    ['Vaciar', 'Papelera', 'Los archivos están a punto de destruirse.'],
+    // the twin, which already asks on main
+    ['Vaciar', 'Papelera', 'Los archivos de la papelera están a punto de ser eliminados.'],
+  ])
+  free([
+    ['Vaciar', 'Papelera', 'Los archivos no están a punto de ser destruidos.'],
+    ['Vaciar', 'Papelera', 'Los archivos estaban a punto de ser destruidos.'],
+    ['Vaciar', 'Papelera', 'Los archivos no están a punto de destruirse.'],
+  ])
+})
