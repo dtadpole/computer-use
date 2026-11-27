@@ -289,7 +289,12 @@ function localeTrashPending(text) {
 // CU-847 (table r1 OK'd by cu-researcher 22:17Z): pt names each item noun in both numbers - arquivo(s), ficheiro(s), documento(s),
 // objeto(s), conteúdo(s), beside itens / item and elemento(s) read above - so a singular pending statement ('O arquivo será
 // excluído para sempre.') reaches the same pending-delete check as its plural; dados stays plural ('dado' is also 'given').
-const TRASH_ITEM_NOUN = /(?<!\p{L})(?:items?|files?|documents?|contents?|objects?|everything|all|they|them|these|it|elemente?|objekte|dateien|alles|alle|éléments?|fichiers?|tout|tous|elementos?|archivos?|todo|todos|elementi|tutto|tutti|itens|arquivos?|ficheiros?|documentos?|objetos?|tudo|onderdelen|bestanden|items|объекты|файлы|элементы|всё|все|öğeler|dosyalar|tümü|contenu|contenido|contenuto|conteúdos?|inhalte?|inhoud|содержимое|içeri(?:k|ği)|données|datos|dati|dados|daten|gegevens|data|данные|veriler)(?!\p{L})|項目|ファイル|書類|すべて|全て|中身|データ|数据|數據|데이터|项目|文件|所有|全部|항목|파일|모든|전부/iu
+// CU-849 (table r1 OK'd by cu-researcher 00:34Z): de / nl / ru / tr / it / es / fr name the five item nouns of the English cell
+// (item, file, document, object, content) in both numbers too - Datei(en), Objekt(e), Dokument(e); bestand(en), onderdeel /
+// onderdelen, documenten, objecten; файл(ы), объект(ы), элемент(ы), документ(ы); dosya(lar), öğe(ler), belge(ler), nesne(ler),
+// içerikler; oggetto / oggetti, documenti, contenuti; fichero(s), contenidos; objet(s), contenus - bare forms only, as the plural
+// cell on main. Pronouns and the CU-832 data nouns stay as they were (tr 'veri' stays out, like pt 'dado').
+const TRASH_ITEM_NOUN = /(?<!\p{L})(?:items?|files?|documents?|contents?|objects?|everything|all|they|them|these|it|elemente?|objekte?|datei(?:en)?|dokumente?|alles|alle|éléments?|fichiers?|objets?|tout|tous|elementos?|archivos?|ficheros?|todo|todos|elementi|oggett[oi]|documenti|tutto|tutti|itens|arquivos?|ficheiros?|documentos?|objetos?|tudo|onderde(?:el|len)|bestand(?:en)?|documenten|objecten|items|объекты?|файлы?|элементы?|документы?|всё|все|öğe(?:ler)?|dosya(?:lar)?|belge(?:ler)?|nesne(?:ler)?|tümü|contenus?|contenidos?|contenut[oi]|conteúdos?|inhalte?|inhoud|содержимое|içeri(?:k|ği|kler)|données|datos|dati|dados|daten|gegevens|data|данные|veriler)(?!\p{L})|項目|ファイル|書類|すべて|全て|中身|データ|数据|數據|데이터|项目|文件|所有|全部|항목|파일|모든|전부/iu
 function emptiesTrashByDelete(name, sentence, titleNamesTrash = false) {
   const button = String(name ?? '').trim().toLowerCase()
   const text = String(sentence ?? '').trim()
