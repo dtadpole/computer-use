@@ -66,3 +66,34 @@ test('#1491 r2: the future passives the in-sentence rule reads count under the t
     ['Vaciar', 'Aviso', 'Los elementos se eliminarán.'],
   ])
 })
+
+// CU-847 (P1; found in #1548's review): a pt pending trash statement with a singular subject read no item noun under a trash
+// title ('O arquivo será excluído para sempre.' went free while 'Os arquivos serão excluídos para sempre.' asked). Table r1
+// (cu-researcher 22:17Z): pt names each item noun in both numbers.
+test('CU-847: the filed singular, verbatim, and each pt item noun in both numbers ask delete under a trash title, on both routes', () => {
+  asks([
+    ['Esvaziar', 'Lixo', 'O arquivo será excluído para sempre.'],
+    ['Esvaziar', 'Lixo', 'Os arquivos serão excluídos para sempre.'],
+    ['Esvaziar', 'Lixeira', 'O ficheiro será apagado definitivamente.'],
+    ['Esvaziar', 'Lixeira', 'Os ficheiros serão apagados definitivamente.'],
+    ['Esvaziar', 'Lixo', 'O documento será removido permanentemente.'],
+    ['Esvaziar', 'Lixo', 'Os documentos serão removidos permanentemente.'],
+    ['Esvaziar', 'Lixeira', 'O objeto será excluído para sempre.'],
+    ['Esvaziar', 'Lixeira', 'Os objetos serão excluídos para sempre.'],
+    ['Esvaziar', 'Lixo', 'Os conteúdos serão apagados para sempre.'],
+    ['Esvaziar', 'Lixo', 'O conteúdo será apagado para sempre.'],
+  ])
+})
+
+test('CU-847: the other side - negated, past, conditional, other-object, no-trash-title and non-emptying rows stay free', () => {
+  free([
+    ['Esvaziar', 'Lixo', 'O arquivo não será excluído.'],
+    ['Esvaziar', 'Lixo', 'O arquivo foi excluído para sempre.'],
+    ['Esvaziar', 'Lixeira', 'O ficheiro foi apagado por engano ontem.'],
+    ['Esvaziar', 'Lixo', 'Se o documento for removido, não poderá ser recuperado.'],
+    ['Esvaziar', 'Lixo', 'O histórico de pesquisa será excluído.'],
+    ['Esvaziar', 'Aviso', 'O arquivo será excluído para sempre.'],
+    ['Cancelar', 'Lixo', 'O arquivo será excluído para sempre.'],
+    ['Abrir', 'Lixeira', 'O objeto será excluído para sempre.'],
+  ])
+})
