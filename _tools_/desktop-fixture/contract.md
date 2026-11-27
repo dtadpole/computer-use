@@ -1,9 +1,9 @@
 ---
 title: Desktop fixture contract
 created: 2026-11-02T08:34:00Z
-modified: 2026-11-25T11:00:00Z
+modified: 2026-11-26T09:00:00Z
 level: L1
-version: 0.18.0
+version: 0.19.0
 description: What CU Fixture guarantees to the desktop driver, the verifiers and the evaluator - identity, placement, the private control channel, what the agent can and cannot see, and how a screen's outcome is judged.
 status: unverified
 grounded_in:
@@ -39,7 +39,10 @@ grounded_in:
   lists the names that start on; the defaults are placeholders, so the live set's author chooses the rows. A switch's
   change records only 'privacy-toggled' with section, row, name and new state; `fields` reports every row's state, the
   switches' own (empty) names and, per switch, its role (AXCheckBox / AXSwitch, as System Settings serves its privacy
-  switches; a plain NSSwitch would serve AXButton with a string value), value, ancestor roles and the static texts beside it in its row. Targets
+  switches; a plain NSSwitch would serve AXButton with a string value), value, ancestor roles and the static texts beside it in its row,
+  plus (CU-763, helper 0.2.76) whether its element answers a window (`answersWindow`) and the children of the parent of its nearest
+  scroll area (`listSiblings`: role, and a static text's words) with that scroll area's place (`listIndex`) - each section's header is
+  the static text just before its scroll area. Targets
   `privacy-<section>-<row>` (switch) and `privacy-<section>-<row>-name`; the seam `privacyToggle` flips one switch.
 - **Named controls.** The named-controls screen (CU-245, CU-258, CU-261) builds up to six entries (`fields`) and six buttons
   (`buttons`) with the names the harness gives, each at most 60 characters: an entry carries its name as its label and

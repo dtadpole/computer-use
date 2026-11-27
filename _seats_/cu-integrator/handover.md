@@ -1,27 +1,23 @@
 ---
 title: '[cu] Integrator - handover'
 created: 2026-11-08T04:22:00Z
-modified: 2026-11-26T23:35:00Z
+modified: 2026-11-27T08:50:00Z
 level: L2
-version: 7.17.0
-description: 'What the next [cu] Integrator needs to take over the landing lanes of dtadpole/computer-use on the night of 26 Nov: the policy.mjs line after CU-823, the records backlog and the 27 Nov helper 0.2.76 window.'
+version: 7.18.0
+description: 'What the next [cu] Integrator needs to take over the landing lanes of dtadpole/computer-use on 27 Nov after the #1522 window: the policy.mjs line from CU-852, the queue after the freeze, and two tooling lessons.'
 status: unverified
 grounded_in:
-  - source: 'cu-coordinator rulings of 26 Nov 21:17Z (a ready PR gates before a P1 with no PR or OKs yet), 22:01Z and 23:05Z (goal pause while only windows remain)'
-  - source: 'decisions D-120, D-123, D-124, D-125, D-126, D-127'
-  - source: 'member reviews rounds 100 and 101'
+  - source: 'cu-coordinator rulings of 27 Nov 00:41Z (CU-844 re-merges after #1553), 05:10Z (the #1566 live review after the CU-840 close) and 06:21Z (the roster lane after the #1522 pre-run)'
+  - source: 'decisions D-120, D-122, D-123, D-124, D-125, D-127, D-128, D-129'
+  - source: 'member reviews rounds 102, 103 and 104'
 ---
 
 # [cu] Integrator - handover
 
-**State (26 Nov 23:35Z).** Landed since 7.16.0, every one fresh-gated with tree MATCH: #1543 (CU-843), #1524 (CU-830), #1548 (CU-823), and the records PRs #1544, #1545, #1546, #1547. Main is 5c0eb86e8.
+**State (27 Nov 08:50Z).** Landed since 7.17.0, every code PR fresh-gated with tree MATCH: #1553 (CU-842), #1559 (CU-844), #1562 (CU-846), #1564 (CU-851), #1565 (CU-849), and #1522 (CU-763, helper 0.2.76) in the 08:00Z daily window - installed with a READBACK naming 0.2.76 and its sha256, closed live by cu-verifier. Records drained: #1549, #1550, #1555, #1557, #1558, #1560, #1561, #1563, #1567, #1568, #1569.
 
-**Policy line** (one policy.mjs PR at a time, P1 first; a PR that is ready gates before a P1 that has no PR or OKs yet): #1552 (CU-847) and #1553 (CU-842) are in review; whichever has three non-author OKs and its boundary cell first gates first, then the other re-merges main once. CU-844 follows; #1521 (CU-709, P3) after a plain re-merge.
+**Policy line.** #1566 (CU-852) is next: its live review runs now, then its gate. After it, by readiness, CU-853, CU-863 and the cu-developer-two PRs (CU-854, CU-857, CU-856, CU-858), then #1521. Each policy.mjs PR re-merges main once after the previous one lands. #1554 (helper 0.2.77) needs its own signed-install window.
 
-**Records backlog.** #1549, #1550 and #1551 take records lanes when their non-author OK is on the PR.
+**Queue.** cu-verifier's CU-849 close, CU-763 mutants and #1554 review sit between the developer builds; the nightly and CU-723 follow.
 
-**Booked.** 27 Nov: the 06:20Z pre-run (full gate, no merge) and the 08:00-08:25Z daily window for #1522 (helper 0.2.76, three OKs at 6ef698ba4): merge at the window start, the signed install by 08:15Z with a READBACK naming 0.2.76 and a sha256, then cu-verifier's close of CU-763. #1554 (CU-839, helper 0.2.77) is stacked on #1522 and needs its own install window.
-
-**Machinery.** One named window at a time from the queue file; edit unread lines only while a window is open. A booked slot is held; records lanes queue behind it.
-
-**Lessons.** Read every OK by hand: an OK line that also names the author's seat is easy to miss. Measure context through the team cookie jar. Pause the goal while only windows remain.
+**Lessons.** The daily-window script took a "desktop held" message containing the word END for the installer's END line and skipped the close; it was opened by hand. Match the END line and READBACK OK exactly before the next helper window. A waiter must never land on an author's own fix comment: name the OK comment (seat, time, head) in every landing note.
