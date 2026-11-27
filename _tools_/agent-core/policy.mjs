@@ -49,6 +49,19 @@ export function neverCoveredByGrant(cls, name) {
 // locks, dial rows, mass sends, compensation, returns, relists, ride cancels) asks under any submit grant.
 // CU-507 (High; cu-coordinator 16:06Z): the generic final buttons of a confirm modal - judged by the modal's own title and text.
 const GENERIC_CONFIRM = /^\s*(?:confirm|ok|okay|yes|yes,?\s+(?:continue|confirm|proceed|i'?m\s+sure|do\s+it)|continue|proceed|submit|done|apply|accept|agree|i\s+agree|i\s+understand|got\s+it|i'?m\s+sure|do\s+it|go\s+ahead|confirm\s+and\s+continue)\s*[.!]?\s*$/i
+// CU-859 (the marker table OK'd by cu-researcher, held out): the English pending auxiliaries, ONE set of fragments every English
+// pending cell reads (the trash-locative cell below, TRASH_PENDING_AUX, TRASH_PENDING, EN_IMMINENT_AUX, MODAL_FUTURE / GONE / LEAD),
+// each with its contraction - 'll for will; 's / 're for is / are before 'going to' and before the imminent 'about to be / get' /
+// 'on the point / verge of being'; 'd for would only before a bare 'be' ("'d been", "'d have been" are the past perfect). A full
+// word stands alone; a clitic is attached to its subject (no letter lookbehind before the apostrophe, ['’] for both apostrophes);
+// every form ends at a letter stop. Never 've, 'm, "'s been", 'gonna', and no negated form: "won't", "isn't going to", "aren't
+// about to" find no auxiliary, and a 'not' after a clitic ("It'll not be deleted.") is read by each cell's negation as after its full word.
+const EN_BE = String.raw`(?:(?<!\p{L})(?:is|are)|['’](?:s|re))`
+const EN_WILL = String.raw`(?:(?<!\p{L})will|['’]ll)(?!\p{L})`
+const EN_WOULD = String.raw`(?:(?<!\p{L})would|['’]d(?=\s+be(?!\p{L})))(?!\p{L})`
+const EN_GOING_TO = String.raw`${EN_BE}\s+going\s+to(?!\p{L})`
+const EN_ABOUT_TO = String.raw`${EN_BE}\s+(?:(?:just|now|right)\s+)?(?:about\s+to\s+(?:be|get)|on\s+the\s+(?:point|verge)\s+of\s+being)(?!\p{L})`
+const EN_PENDING_AUX = String.raw`(?:${EN_WILL}|${EN_WOULD}|${EN_GOING_TO}|${EN_ABOUT_TO})`
 // CU-748 (High; sweep 5, cu-coordinator 06:05Z): a localized alert that states the act in the passive future ('Diese 12 Fotos
 // werden ... gelöscht.', 'Les fichiers seront supprimés.', '削除されます', '将被删除', '삭제됩니다') names that act; the modal rule
 // judges its verb as one more text, as the English titles are judged. Only delete verbs, only future / passive forms. r2 adds Dutch.
@@ -81,11 +94,21 @@ const LOCALE_PASSIVE_ACTS = [
   // CU-823 (table OK'd by cu-researcher 15:45Z): the periphrastic future auxiliaries fr vont / va être, es va(n) a ser, pt vão / vai /
   // irão / irá ser and en 'is / are going to' make it pending too ('Tous les fichiers vont être retirés de la corbeille.'); never
   // quedar / ficar / estar here, and the negation and past checks are unchanged.
-  [/^(?=[^.!?]*\?\s*$|[^.!?]*(?<!\p{L})(?:wird|werden|will|would|(?:is|are)\s+going\s+to|sera|seront|será|serán|verrà|verranno|sarà|saranno|serão|wordt|worden|zal|zullen|se\s+(?:quitar|eliminar|borrar)[áa]n?|(?:vont|va)\s+être|van?\s+a\s+ser|(?:vão|vai|irão|irá)\s+ser)(?!\p{L}))(?![^.!?]*(?<!\p{L})(?:wurde|wurden|was|were|has\s+been|have\s+been|a\s+été|ont\s+été|fue|fueron|ha\s+sido|han\s+sido|è\s+stat[oa]|sono\s+stat[ie]|foi|foram|werd|werden\s+verwijderd)(?!\p{L}))[^.!?]*?(?:(?<!\p{L})(?:aus\s+(?:dem|deinem|ihrem|meinem|unserem)\s+(?:papierkorb|mülleimer|abfalleimer)|from\s+(?:the|your|my)\s+(?:trash|bin|recycle\s+bin)|de\s+(?:la|ta|votre|ma)\s+corbeille|de\s+(?:la|tu|su|mi)\s+papelera|dal\s+cestino|da\s+lixeira|uit\s+de\s+(?:prullen(?:bak|mand)|vuil(?:nis)?bak))(?!\p{L})[^.!?]{0,40}?(?<!\p{L})(?:entfernt|gelöscht|beseitigt|weggenommen|herausgenommen|removed|deleted|erased|purged|cleared|taken\s+out|retiré(?:e)?s?|enlevé(?:e)?s?|ôté(?:e)?s?|supprimé(?:e)?s?|effacé(?:e)?s?|éliminé(?:e)?s?|quitad[oa]s?|retirad[oa]s?|eliminad[oa]s?|sacad[oa]s?|borrad[oa]s?|suprimid[oa]s?|(?:quitar|retirar|eliminar|sacar|borrar|suprimir)[áa]n?|tolt[oiae]|rimoss[oiae]|eliminat[oiae]|cancellat[oiae]|removid[oa]s?|tirad[oa]s?|apagad[oa]s?|excluíd[oa]s?|deletad[oa]s?|verwijderd|weggehaald|gewist)(?!\p{L})|(?<!\p{L})(?:entfernt|gelöscht|beseitigt|weggenommen|herausgenommen|removed|deleted|erased|purged|cleared|taken\s+out|retiré(?:e)?s?|enlevé(?:e)?s?|ôté(?:e)?s?|supprimé(?:e)?s?|effacé(?:e)?s?|éliminé(?:e)?s?|quitad[oa]s?|retirad[oa]s?|eliminad[oa]s?|sacad[oa]s?|borrad[oa]s?|suprimid[oa]s?|(?:quitar|retirar|eliminar|sacar|borrar|suprimir)[áa]n?|tolt[oiae]|rimoss[oiae]|eliminat[oiae]|cancellat[oiae]|removid[oa]s?|tirad[oa]s?|apagad[oa]s?|excluíd[oa]s?|deletad[oa]s?|verwijderd|weggehaald|gewist)(?!\p{L})[^.!?]{0,40}?(?<!\p{L})(?:aus\s+(?:dem|deinem|ihrem|meinem|unserem)\s+(?:papierkorb|mülleimer|abfalleimer)|from\s+(?:the|your|my)\s+(?:trash|bin|recycle\s+bin)|de\s+(?:la|ta|votre|ma)\s+corbeille|de\s+(?:la|tu|su|mi)\s+papelera|dal\s+cestino|da\s+lixeira|uit\s+de\s+(?:prullen(?:bak|mand)|vuil(?:nis)?bak))(?!\p{L}))/iu, 'delete'],
+  // CU-846 (table OK'd by cu-researcher 23:55Z, r1a): the imminent auxiliaries too - it sta / stanno per and è / sono sul punto di
+  // + essere / venire, fr est / sont sur le point d'être, es está(n) a punto de / por ser, pt está / estão prestes a / a ponto de /
+  // para ser ('I file stanno per essere tolti dal cestino.'); never quedar / ficar here, the past ones ('stavano per') are other words.
+  // CU-852 (table OK'd by cu-researcher 01:15Z, r2): so are the en imminent 'is / are (just / now / right) about to be / get' and
+  // 'is / are on the point / verge of being' ('All items are about to be purged from the trash.'); 'was / were about to' stays past,
+  // and a contraction or a 'not' before 'about' / 'on' finds no auxiliary.
+  // CU-859: the English auxiliaries are the shared EN_PENDING_AUX, so the contracted 'll, 'd be, 's / 're going to and 's / 're
+  // about to (or on the point / verge of) read as their full forms here; a negated contraction ("aren't about to") still finds none.
+  [new RegExp(String.raw`^(?=[^.!?]*\?\s*$|[^.!?]*${EN_PENDING_AUX}|[^.!?]*(?<!\p{L})(?:wird|werden|sera|seront|será|serán|verrà|verranno|sarà|saranno|serão|wordt|worden|zal|zullen|se\s+(?:quitar|eliminar|borrar)[áa]n?|(?:vont|va)\s+être|van?\s+a\s+ser|(?:vão|vai|irão|irá)\s+ser|(?:sta|stanno)\s+per\s+(?:essere|venire)|(?:è|sono)\s+sul\s+punto\s+di\s+(?:essere|venire)|(?:est|sont)\s+sur\s+le\s+point\s+d['’]être|(?:está|están)\s+(?:a\s+punto\s+de|por)\s+ser|(?:está|estão)\s+(?:prestes\s+a|a\s+ponto\s+de|para)\s+ser)(?!\p{L}))(?![^.!?]*(?<!\p{L})(?:wurde|wurden|was|were|has\s+been|have\s+been|a\s+été|ont\s+été|fue|fueron|ha\s+sido|han\s+sido|è\s+stat[oa]|sono\s+stat[ie]|foi|foram|werd|werden\s+verwijderd)(?!\p{L}))[^.!?]*?(?:(?<!\p{L})(?:aus\s+(?:dem|deinem|ihrem|meinem|unserem)\s+(?:papierkorb|mülleimer|abfalleimer)|from\s+(?:the|your|my)\s+(?:trash|bin|recycle\s+bin)|de\s+(?:la|ta|votre|ma)\s+corbeille|de\s+(?:la|tu|su|mi)\s+papelera|dal\s+cestino|da\s+lixeira|uit\s+de\s+(?:prullen(?:bak|mand)|vuil(?:nis)?bak))(?!\p{L})[^.!?]{0,40}?(?<!\p{L})(?:entfernt|gelöscht|beseitigt|weggenommen|herausgenommen|removed|deleted|erased|purged|cleared|taken\s+out|retiré(?:e)?s?|enlevé(?:e)?s?|ôté(?:e)?s?|supprimé(?:e)?s?|effacé(?:e)?s?|éliminé(?:e)?s?|quitad[oa]s?|retirad[oa]s?|eliminad[oa]s?|sacad[oa]s?|borrad[oa]s?|suprimid[oa]s?|(?:quitar|retirar|eliminar|sacar|borrar|suprimir)[áa]n?|tolt[oiae]|rimoss[oiae]|eliminat[oiae]|cancellat[oiae]|removid[oa]s?|tirad[oa]s?|apagad[oa]s?|excluíd[oa]s?|deletad[oa]s?|verwijderd|weggehaald|gewist)(?!\p{L})|(?<!\p{L})(?:entfernt|gelöscht|beseitigt|weggenommen|herausgenommen|removed|deleted|erased|purged|cleared|taken\s+out|retiré(?:e)?s?|enlevé(?:e)?s?|ôté(?:e)?s?|supprimé(?:e)?s?|effacé(?:e)?s?|éliminé(?:e)?s?|quitad[oa]s?|retirad[oa]s?|eliminad[oa]s?|sacad[oa]s?|borrad[oa]s?|suprimid[oa]s?|(?:quitar|retirar|eliminar|sacar|borrar|suprimir)[áa]n?|tolt[oiae]|rimoss[oiae]|eliminat[oiae]|cancellat[oiae]|removid[oa]s?|tirad[oa]s?|apagad[oa]s?|excluíd[oa]s?|deletad[oa]s?|verwijderd|weggehaald|gewist)(?!\p{L})[^.!?]{0,40}?(?<!\p{L})(?:aus\s+(?:dem|deinem|ihrem|meinem|unserem)\s+(?:papierkorb|mülleimer|abfalleimer)|from\s+(?:the|your|my)\s+(?:trash|bin|recycle\s+bin)|de\s+(?:la|ta|votre|ma)\s+corbeille|de\s+(?:la|tu|su|mi)\s+papelera|dal\s+cestino|da\s+lixeira|uit\s+de\s+(?:prullen(?:bak|mand)|vuil(?:nis)?bak))(?!\p{L}))`, 'iu'), 'delete'],
   // CU-825: a final accented letter takes (?!\p{L}), never \b - under the u flag \b is ASCII-only, so 'supprimé' / 'se eliminará' never matched.
   // CU-823 (table OK'd by cu-researcher 15:45Z): the auxiliary slot of the fr / es / pt future passives also takes the periphrastic
   // and resultative futures (fr 'vont être supprimés'); participles, gap and negation are unchanged.
-  [/\b(?:seront|sera|(?:vont|va)\s+être)\s+(?:\S+\s+){0,3}?(?:supprimée?s?|effacée?s?)(?!\p{L})/iu, 'supprimer'],
+  // CU-846 (table OK'd by cu-researcher 23:55Z, r1a): and the imminent ones - fr est / sont sur le point d'être ('Les fichiers sont
+  // sur le point d'être supprimés.'); 'ne sont pas sur le point' breaks the fixed auxiliary, 'étaient sur le point' is another word.
+  [/\b(?:seront|sera|(?:vont|va)\s+être|(?:est|sont)\s+sur\s+le\s+point\s+d['’]être)\s+(?:\S+\s+){0,3}?(?:supprimée?s?|effacée?s?)(?!\p{L})/iu, 'supprimer'],
   // CU-786: the trash's state asked in the Romance languages or Dutch - '¿La papelera queda vaciada del todo?', 'La corbeille
   // restera-t-elle vidée ?', 'Il Cestino rimane svuotato?', 'A lixeira fica esvaziada?', 'Blijft de prullenbak geleegd?' - reads
   // delete like its German twin. Only a question, only the trash or an inbox, only a state verb (never the past 'fue / a été /
@@ -94,10 +117,21 @@ const LOCALE_PASSIVE_ACTS = [
   // r2 (cu-developer-two's cross-check): 'se' reads only before a FUTURE form - 'Se ha eliminado el archivo.' is a notice.
   // CU-823: es va(n) a ser / quedar / estar and quedará(n) / estará(n) ('Los archivos quedarán eliminados.'), and the reflexive
   // periphrastic 'se van a eliminar' / 'van a eliminarse' of the three covered verbs.
-  [/\b(?:ser[áa]n?|van?\s+a\s+(?:ser|quedar|estar)|quedar(?:á|án)|estar(?:á|án))\s+(?:\S+\s+){0,3}?(?:eliminad[oa]s?|borrad[oa]s?|suprimid[oa]s?)\b|\bse\s+(?:\S+\s+){0,2}?(?:eliminar[áa]n?|borrar[áa]n?|suprimir[áa]n?)(?!\p{L})|\bse\s+van?\s+a\s+(?:eliminar|borrar|suprimir)(?!\p{L})|\bvan?\s+a\s+(?:eliminar|borrar|suprimir)se(?!\p{L})/iu, 'eliminar'],
-  [/\b(?:verranno|verrà|saranno|sarà)\s+(?:\S+\s+){0,3}?(?:eliminat[ioae]|rimoss[ioae]|cancellat[ioae]|distrutt[ioae])\b/iu, 'elimina'],
+  // CU-846 (table OK'd by cu-researcher 23:55Z, r1a): es está(n) a punto de ser / quedar and está(n) por ser ('Los archivos están a
+  // punto de ser eliminados.'), and the enclitic 'están a punto de borrarse'; 'estaban' / 'estuvieron' are other words.
+  // CU-854 (table r1 OK'd by cu-researcher 00:34Z, rebuild delta 05:53Z): the fourth covered es delete verb, destruir, in each shape of
+  // the cell - the participle after every auxiliary ('Los archivos van a ser destruidos.', 'están a punto de ser destruidos'), the reflexive
+  // future, the periphrastic reflexive and both enclitics ('van a destruirse', 'están a punto de destruirse').
+  [/\b(?:ser[áa]n?|van?\s+a\s+(?:ser|quedar|estar)|quedar(?:á|án)|estar(?:á|án)|(?:está|están)\s+a\s+punto\s+de\s+(?:ser|quedar)|(?:está|están)\s+por\s+ser)\s+(?:\S+\s+){0,3}?(?:eliminad[oa]s?|borrad[oa]s?|suprimid[oa]s?|destruid[oa]s?)\b|\bse\s+(?:\S+\s+){0,2}?(?:eliminar[áa]n?|borrar[áa]n?|suprimir[áa]n?|destruir[áa]n?)(?!\p{L})|\bse\s+van?\s+a\s+(?:eliminar|borrar|suprimir|destruir)(?!\p{L})|\bvan?\s+a\s+(?:eliminar|borrar|suprimir|destruir)se(?!\p{L})|\b(?:está|están)\s+a\s+punto\s+de\s+(?:eliminar|borrar|suprimir|destruir)se(?!\p{L})/iu, 'eliminar'],
+  // CU-846 (table OK'd by cu-researcher 23:55Z, r1a): it sta / stanno per and è / sono sul punto di + essere / venire ('I file nel
+  // cestino stanno per essere eliminati.'); 'è' takes (?<!\p{L}), never \b (CU-825); 'stavano per' / 'erano sul punto' are other words.
+  [/(?:\b(?:verranno|verrà|saranno|sarà)|(?<!\p{L})(?:(?:sta|stanno)\s+per|(?:è|sono)\s+sul\s+punto\s+di)\s+(?:essere|venire))\s+(?:\S+\s+){0,3}?(?:eliminat[ioae]|rimoss[ioae]|cancellat[ioae]|distrutt[ioae])\b/iu, 'elimina'],
   // CU-823: pt vão / vai / irão / irá + ser / ficar / estar and ficarão / ficará / estarão / estará ('Os arquivos vão ser excluídos.').
-  [/\b(?:serão|será|(?:vão|vai|irão|irá)\s+(?:ser|ficar|estar)|ficar(?:ão|á)|estar(?:ão|á))\s+(?:\S+\s+){0,3}?(?:excluíd[oa]s?|deletad[oa]s?|apagad[oa]s?|removid[oa]s?)\b/iu, 'excluir'],
+  // CU-846 (table OK'd by cu-researcher 23:55Z, r1a): pt está / estão prestes a / a ponto de + ser / ficar and está / estão para ser
+  // ('Os arquivos da lixeira estão prestes a ser excluídos.'); 'estavam' / 'esteve' are other words.
+  // CU-851 (table OK'd by cu-researcher 00:17Z): the pt participles eliminad- and destruíd- (covered by TRASH_DELETE_VERB) after the
+  // same auxiliaries ('Os arquivos vão ficar eliminados permanentemente.'); retirad- / tirad- stay out.
+  [/\b(?:serão|será|(?:vão|vai|irão|irá)\s+(?:ser|ficar|estar)|ficar(?:ão|á)|estar(?:ão|á)|(?:está|estão)\s+(?:prestes\s+a|a\s+ponto\s+de)\s+(?:ser|ficar)|(?:está|estão)\s+para\s+ser)\s+(?:\S+\s+){0,3}?(?:excluíd[oa]s?|deletad[oa]s?|apagad[oa]s?|removid[oa]s?|eliminad[oa]s?|destruíd[oa]s?)\b/iu, 'excluir'],
   // r2 (cu-researcher's held-out 13:02Z): Dutch - 'Deze mailbox wordt permanent verwijderd.'
   [/(?<!\p{L})(?:wordt|worden|zal|zullen)(?!\p{L})[^.!?]{0,120}?(?<!\p{L})(?:definitief\s+|permanent\s+)?(?:verwijderd|gewist)(?!\p{L})/iu, 'verwijderen'],
   // CU-800 r2 (cu-researcher's r1 set; cu-developer-two's CU-802 nouns 'vuilnisbak' / 'vuilbak'): the trash itself emptied in a pending statement - 'De prullenbak wordt leeggemaakt.',
@@ -122,6 +156,8 @@ const LOCALE_PASSIVE_ACTS = [
 // seront pas supprimés.', 'No se eliminarán.', 'Non verranno eliminati.', 'Não serão excluídos.', 'Не будут удалены.', 'Worden niet
 // verwijderd.' A negation inside the matched span or as the word right before it skips the match; elsewhere in the sentence it does
 // not ('Os arquivos no computador serão excluídos.' - Portuguese 'no' is 'in the' there).
+// CU-846 (table OK'd by cu-researcher 23:55Z, r1a): the imminent auxiliaries alike - 'Non stanno per essere eliminati.', 'No están a
+// punto de ser borrados.', 'Não estão prestes a ser excluídos.'; 'Ils ne sont pas sur le point d'être supprimés.' matches no cell.
 const LOCALE_PASSIVE_NEGATION = /(?<!\p{L})(?:nicht|nie|niemals|kein|keine|ne|n['’]|pas|jamais|no|nunca|non|mai|não|nao|не|никогда|niet|nooit|geen)(?!\p{L})/iu
 function localePassiveAct(text) {
   const t = String(text ?? '')
@@ -172,12 +208,22 @@ const TRASH_EMPTIED_VERB = /(?<!\p{L})(?:emptied|vidée?s?|vaciad[oa]s?|vaciar[�
 // here - es quitar, it togliere, pt retirar / tirar (the plural only: the singular is spelled as es retirar / tirar), fr retirer / enlever / ôter / éliminer - and the de / nl / en removal
 // verbs join the Western cell ('… wird alle Dateien beseitigen').
 // CU-831 (table OK'd 03:32Z): the destroy verbs too, here and in the Western cell ('… se destruirán de forma permanente.').
+// CU-853 (table OK'd by cu-researcher 02:52Z): pt eliminarão, the plural of the es-spelled eliminará the cell already reads.
 // Only a negation BEFORE the verb frees it; one in a following clause ('… e non sarà possibile recuperarli') does not.
-const TRASH_ACTIVE_FUTURE = /(?<!\p{L})(?:cancellerà|cancelleranno|eliminerà|elimineranno|rimuoverà|rimuoveranno|apagará|apagarão|excluirá|excluirão|deletará|deletarão|removerá|removerão|eliminará|eliminarán|borrará|borrarán|suprimirá|suprimirán|supprimera|supprimeront|effacera|effaceront|quitará|quitarán|toglierà|toglieranno|retirarão|tirarão|retirera|retireront|enlèvera|enlèveront|ôtera|ôteront|éliminera|élimineront|destruirá|destruirán|destruirão|détruira|détruiront|distruggerà|distruggeranno)(?!\p{L})/iu
-const TRASH_PENDING_AUX = /(?<!\p{L})(?:will|sera|seront|será|serán|verrà|verranno|sarà|saranno|serão)(?!\p{L})|(?<!\p{L})se\s+(?:\S+\s+){0,2}?vaciar[áa]n?(?!\p{L})/iu
+const TRASH_ACTIVE_FUTURE = /(?<!\p{L})(?:cancellerà|cancelleranno|eliminerà|elimineranno|rimuoverà|rimuoveranno|apagará|apagarão|excluirá|excluirão|deletará|deletarão|removerá|removerão|eliminará|eliminarán|eliminarão|borrará|borrarán|suprimirá|suprimirán|supprimera|supprimeront|effacera|effaceront|quitará|quitarán|toglierà|toglieranno|retirarão|tirarão|retirera|retireront|enlèvera|enlèveront|ôtera|ôteront|éliminera|élimineront|destruirá|destruirán|destruirão|détruira|détruiront|distruggerà|distruggeranno)(?!\p{L})/iu
+// CU-859: the English 'will' is EN_WILL, so 'It'll be emptied.' reads as 'It will be emptied.' does.
+const TRASH_PENDING_AUX = new RegExp(String.raw`${EN_WILL}|(?<!\p{L})(?:sera|seront|será|serán|verrà|verranno|sarà|saranno|serão)(?!\p{L})|(?<!\p{L})se\s+(?:\S+\s+){0,2}?vaciar[áa]n?(?!\p{L})`, 'iu')
 // CU-823 (table OK'd by cu-researcher 15:45Z): en 'is / are going to' is pending too ('All items are going to be erased.'); the
 // four-word negation window and the 'were going to' past stay free.
-const TRASH_PENDING = /[?？]\s*$|(?<!\p{L})(?:will|would|(?:is|are)\s+going\s+to|wird|werden|sera|seront|será|serán|verrà|verranno|serão|wordt|worden|zal|zullen)(?!\p{L})/iu
+// CU-852 (table OK'd by cu-researcher 01:15Z, r2): so are 'is / are (just / now / right) about to be / get' and 'is / are on the
+// point / verge of being' ('The file is just about to be deleted.'); 'was / were about to' and 'is not about to' stay free.
+// CU-859: the English auxiliaries are the shared EN_PENDING_AUX - "It'll be deleted.", "They're going to be deleted.", "It's about
+// to be deleted.", "It'd be deleted." ask as their full forms do; "'d been", "'s been", 've, 'm, 'gonna' and the negated forms stay free.
+const TRASH_PENDING = new RegExp(String.raw`[?？]\s*$|${EN_PENDING_AUX}|(?<!\p{L})(?:wird|werden|sera|seront|será|serán|verrà|verranno|serão|wordt|worden|zal|zullen)(?!\p{L})`, 'iu')
+// CU-852 fold (F1 of the developer cross-check): the four-word negation window before the delete verb reads an imminent
+// auxiliary as 'will be', so a negation that frees 'No items will be deleted.' frees 'No items are about to be deleted.' too.
+// CU-859: with its contraction ("No items're about to be deleted."); the clitic is replaced with a space before 'will be'.
+const EN_IMMINENT_AUX = new RegExp(EN_ABOUT_TO, 'giu')
 const TRASH_NEGATION = /(?<!\p{L})(?:not|never|nicht|nie|kein|keine|ne|pas|jamais|no|nunca|non|mai|não|niet|nooit|geen)(?!\p{L})|n['’]t(?!\p{L})/iu
 // CU-805 (P1; the marker table cu-researcher OK'd on #1475, cu-coordinator 12:42Z): in ru / ja / zh / ko / tr a marker counts only
 // ATTACHED to a delete / erase / remove verb of the family - a suffix on the stem, or an auxiliary a few words before it - never
@@ -251,13 +297,17 @@ const TRASH_LOCALE = [
     pending: new RegExp(`비워집니다|비워질\\s*(?:것입니다|예정입니다)|비워지게\\s*됩니다|${KO_STEM}(?:됩니다|합니다|될\\s*것입니다|될\\s*예정입니다|되게\\s*됩니다|되겠습니다|될\\s*것이다|된다(?!\\p{Script=Hangul})|될\\s*거(?:예요|야|다|(?=입니다)|(?=ㅂ니다))|될\\s*겁니다|될\\s*것이며|될\\s*것이고|될\\s*예정이며|되며|되고(?!\\s*(?:있|없|나))|되어(?!\\s*(?:도|있|버리면|버린다면))|돼(?!\\s*(?:도|있|버리면|버린다면))|되니|되므로|하며|하고(?!\\s*(?:있|없|나))|되기\\s*때문|하기\\s*때문|되기에|하기에|되는\\s*만큼|될\\s*것이기\\s*때문|될\\s*것이기에|될\\s*것이므로|(?:되는|하는|될)\\s*(?:관계|까닭|탓|이상)|되길래|하길래|되는지라|되느라|되는\\s*바(?!람)|될\\s*테니|될\\s*것이니|될\\s*(?:터이|거이?)(?:므로|니|기에|기\\s*때문)|될\\s*(?:(?:것|터)(?:인즉|이라서|이어서|인지라|인\\s*만큼|이길래)|터라(?![고는면])|거라서|(?:것이|터이|거)라(?=\\s+\\S)))|지워집니다|지웁니다|지워질\\s*것입니다|지워지게\\s*됩니다|지워지겠습니다|지워진다(?!\\p{Script=Hangul})|지워질\\s*(?:겁니다|거예요|거야|거다)|지워지며|지워지고(?!\\s*(?:있|없|나))|지워져(?!\\s*(?:도|있|버리면|버린다면))|지워지니|지워질\\s*것이며|버려집니다|버립니다|버려질\\s*(?:것입니다|겁니다|거예요|예정입니다)|버려지며|버려지고(?!\\s*(?:있|없|나))|지워지기\\s*때문|지워지기에|지워지는\\s*만큼|버려지기\\s*때문|버려지기에|(?:지워지는|지워질|버려지는|버려질)\\s*(?:관계|까닭|탓|이상)|지워지길래|버려지길래|버려지니|(?:지워|버려|비워)질\\s*(?:(?:것이|터이|거이?)(?:므로|니|기에|기\\s*때문)|테니|(?:것|터)(?:인즉|이라서|이어서|인지라|인\\s*만큼|이길래)|터라(?![고는면])|거라서|(?:것이|터이|거)라(?=\\s+\\S))|${KO_END}(?:(?:끝납|끝냅|마칩)니다|(?:끝날|끝낼|마칠)\\s*(?:것입니다|예정입니다|겁니다|거예요|거야|거다|것이며)|(?:끝날|끝낼|마칠)\\s*(?:(?:것이|터이|거이?)(?:므로|니|기에|기\\s*때문)|테니|(?:것|터)(?:인즉|이라서|이어서|인지라|인\\s*만큼|이길래)|터라(?![고는면])|거라서|(?:것이|터이|거)라(?=\\s+\\S))|(?:끝나|끝내|마치)(?:게\\s*됩니다|겠습니다|며|니|기\\s*때문|기에|길래|고(?!\\s*(?:있|없|나)))|(?:끝난|끝낸|마친)다(?!\\p{Script=Hangul})|(?:끝나는|끝내는|마치는|끝날|끝낼|마칠)\\s*(?:만큼|관계|까닭|탓|이상))`, 'u'),
   },
   { // tr
-    verb: /(?<!\p{L})(?:sil|kaldır|yok\s+ed|atıl|temizlen|imha\s+ed|boşaltıl(?!abil))\p{L}*/iu,
-    negation: /(?<!\p{L})(?:boşaltılma(?:yacak(?:lar)?(?:dır)?|yacaktır|z(?:lar)?|dı|mış)|silinme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|silinemez|silmeyecek|kaldırılma(?:yacak(?:lar)?(?:dır)?|yacaktır|z(?:lar)?|dı|mış)|kaldırılamaz|yok\s+edilme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|yok\s+edilemez|atılma(?:yacak(?:lar)?(?:dır)?|z(?:lar)?|dı)|temizlenme(?:yecek(?:ler)?(?:dir)?|z(?:ler)?|di)|atılmayacaktır|temizlenmeyecektir|imha\s+edilme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|(?:silinmek|kaldırılmak|yok\s+edilmek|imha\s+edilmek)\s+üzere\s+değil(?:dir)?|(?:silin|kaldırıl|yok\s+edil|atıl|temizlen|imha\s+edil|boşaltıl)[iı]p\s+gitme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|(?:silin|kaldırıl|yok\s+edil|atıl|temizlen|imha\s+edil|boşaltıl)[iı]verme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş))(?!\p{L})/iu,
-    past: /(?<!\p{L})(?:boşaltıldı|boşaltılmış(?!\s+olacak)|silindi|silinmiş(?!\s+olacak)|kaldırıldı|kaldırılmış(?!\s+olacak)|yok\s+edildi|yok\s+edilmiş(?!\s+olacak)|atıldı|atılmış|temizlendi|temizlenmiş|imha\s+edildi|imha\s+edilmiş(?!\s+olacak)|(?:silinmek|kaldırılmak|yok\s+edilmek|imha\s+edilmek)\s+üzereydi|(?:silin|kaldırıl|yok\s+edil|atıl|temizlen|imha\s+edil|boşaltıl)[iı]p\s+git(?:ti|miş(?!\s+olacak))|(?:silin|kaldırıl|yok\s+edil|atıl|temizlen|imha\s+edil|boşaltıl)[iı]ver(?:di|miş(?!\s+olacak)))\p{L}*/iu,
+    verb: /(?<!\p{L})(?:sil|kaldır|yok\s+ed|atıl|temizlen|imha\s+ed|boşaltıl(?!abil)|(?:at|temizley|boşalt)[iı]ver)\p{L}*/iu,
+    negation: /(?<!\p{L})(?:boşaltılma(?:yacak(?:lar)?(?:dır)?|yacaktır|z(?:lar)?|dı|mış)|silinme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|silinemez|silmeyecek|kaldırılma(?:yacak(?:lar)?(?:dır)?|yacaktır|z(?:lar)?|dı|mış)|kaldırılamaz|yok\s+edilme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|yok\s+edilemez|atılma(?:yacak(?:lar)?(?:dır)?|z(?:lar)?|dı)|temizlenme(?:yecek(?:ler)?(?:dir)?|z(?:ler)?|di)|atılmayacaktır|temizlenmeyecektir|imha\s+edilme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|(?:silinmek|kaldırılmak|yok\s+edilmek|imha\s+edilmek)\s+üzere\s+değil(?:dir)?|(?:silin|kaldırıl|yok\s+edil|atıl|temizlen|imha\s+edil|boşaltıl)[iı]p\s+gitme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|(?:(?:silin|kaldırıl|yok\s+edil|atıl|temizlen|imha\s+edil|boşaltıl)[iı]ver|(?:sil|kaldır|yok\s+ed|imha\s+ed|at|temizley|boşalt)[iı]ver(?:il)?)me(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş))(?!\p{L})/iu,
+    past: /(?<!\p{L})(?:boşaltıldı|boşaltılmış(?!\s+olacak)|silindi|silinmiş(?!\s+olacak)|kaldırıldı|kaldırılmış(?!\s+olacak)|yok\s+edildi|yok\s+edilmiş(?!\s+olacak)|atıldı|atılmış|temizlendi|temizlenmiş|imha\s+edildi|imha\s+edilmiş(?!\s+olacak)|(?:silinmek|kaldırılmak|yok\s+edilmek|imha\s+edilmek)\s+üzereydi|(?:silin|kaldırıl|yok\s+edil|atıl|temizlen|imha\s+edil|boşaltıl)[iı]p\s+git(?:ti|miş(?!\s+olacak))|(?:(?:silin|kaldırıl|yok\s+edil|atıl|temizlen|imha\s+edil|boşaltıl)[iı]ver|(?:sil|kaldır|yok\s+ed|imha\s+ed|at|temizley|boşalt)[iı]ver(?:il)?)(?:di|miş(?!\s+olacak)))\p{L}*/iu,
     // CU-806: the formal future (-ecektir / -acaktır), the aorist passive (silinir) and the future perfect (silinmiş olacak) too.
     // #1479 r2 (the table cu-researcher OK'd 14:34Z): plural agreement, the plural aorist and 'about to' too.
     // CU-842: -(y)Iver- on a covered passive (siliniverecek) takes the plain stem's endings in the negation, past and pending cells.
-    pending: /(?<!\p{L})(?:boşaltıl(?:acak(?:lar)?(?:dır)?|acaktır|ır(?:lar)?)|silin(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|kaldırıl(?:acak(?:lar)?(?:dır)?|acaktır|ır(?:lar)?)|yok\s+edil(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|(?:silinmiş|kaldırılmış|yok\s+edilmiş)\s+olacak(?:tır)?|atıl(?:acak(?:lar)?(?:dır)?|ır(?:lar)?)|temizlen(?:ecek(?:ler)?(?:dir)?|ir(?:ler)?)|atılacaktır|temizlenecektir|imha\s+edil(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|(?:silinmek|kaldırılmak|yok\s+edilmek|imha\s+edilmek)\s+üzere(?:dir|ler)?|(?:silin|kaldırıl|yok\s+edil|atıl|temizlen|imha\s+edil|boşaltıl)[iı]p\s+gid(?:ecek(?:ler)?(?:dir)?|ecektir|er(?:ler)?)|(?:silin|kaldırıl|yok\s+edil|atıl|temizlen|imha\s+edil|boşaltıl)[iı]ver(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?))(?!\p{L})/iu,
+    // CU-857 (table r2 OK'd by cu-researcher 01:06Z, with her 06:12Z delta): -(y)Iver- on all seven stems also asks in the future
+    // perfect (silinivermiş / siliverilmiş olacak, in both numbers and -tIr), the active future (siliverecek) and the passive after
+    // -iver (siliverilecek / -ir). The gate takes at- / temizle- / boşalt- + -iver, and negation and past take the new stems. The
+    // active -ivermiş olacak and -iverir stay free.
+    pending: /(?<!\p{L})(?:boşaltıl(?:acak(?:lar)?(?:dır)?|acaktır|ır(?:lar)?)|silin(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|kaldırıl(?:acak(?:lar)?(?:dır)?|acaktır|ır(?:lar)?)|yok\s+edil(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|(?:silinmiş|kaldırılmış|yok\s+edilmiş)\s+olacak(?:tır)?|atıl(?:acak(?:lar)?(?:dır)?|ır(?:lar)?)|temizlen(?:ecek(?:ler)?(?:dir)?|ir(?:ler)?)|atılacaktır|temizlenecektir|imha\s+edil(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|(?:silinmek|kaldırılmak|yok\s+edilmek|imha\s+edilmek)\s+üzere(?:dir|ler)?|(?:silin|kaldırıl|yok\s+edil|atıl|temizlen|imha\s+edil|boşaltıl)[iı]p\s+gid(?:ecek(?:ler)?(?:dir)?|ecektir|er(?:ler)?)|(?:silin|kaldırıl|yok\s+edil|atıl|temizlen|imha\s+edil|boşaltıl)[iı]ver(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|(?:silin|kaldırıl|yok\s+edil|atıl|temizlen|imha\s+edil|boşaltıl)[iı]vermiş\s+ol(?:acak(?:lar)?(?:dır)?|acaktır)|(?:sil|kaldır|yok\s+ed|imha\s+ed|at|temizley|boşalt)[iı]verilmiş\s+ol(?:acak(?:lar)?(?:dır)?|acaktır)|(?:sil|kaldır|yok\s+ed|imha\s+ed|at|temizley|boşalt)[iı]ver(?:ecek(?:ler)?(?:dir)?|ecektir)|(?:sil|kaldır|yok\s+ed|imha\s+ed|at|temizley|boşalt)[iı]veril(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?))(?!\p{L})/iu,
   },
 ]
 // null when no ru / ja / zh / ko / tr verb of the family stands in the sentence.
@@ -280,7 +330,12 @@ function localeTrashPending(text) {
 // CU-847 (table r1 OK'd by cu-researcher 22:17Z): pt names each item noun in both numbers - arquivo(s), ficheiro(s), documento(s),
 // objeto(s), conteúdo(s), beside itens / item and elemento(s) read above - so a singular pending statement ('O arquivo será
 // excluído para sempre.') reaches the same pending-delete check as its plural; dados stays plural ('dado' is also 'given').
-const TRASH_ITEM_NOUN = /(?<!\p{L})(?:items?|files?|documents?|contents?|objects?|everything|all|they|them|these|it|elemente?|objekte|dateien|alles|alle|éléments?|fichiers?|tout|tous|elementos?|archivos?|todo|todos|elementi|tutto|tutti|itens|arquivos?|ficheiros?|documentos?|objetos?|tudo|onderdelen|bestanden|items|объекты|файлы|элементы|всё|все|öğeler|dosyalar|tümü|contenu|contenido|contenuto|conteúdos?|inhalte?|inhoud|содержимое|içeri(?:k|ği)|données|datos|dati|dados|daten|gegevens|data|данные|veriler)(?!\p{L})|項目|ファイル|書類|すべて|全て|中身|データ|数据|數據|데이터|项目|文件|所有|全部|항목|파일|모든|전부/iu
+// CU-849 (table r1 OK'd by cu-researcher 00:34Z): de / nl / ru / tr / it / es / fr name the five item nouns of the English cell
+// (item, file, document, object, content) in both numbers too - Datei(en), Objekt(e), Dokument(e); bestand(en), onderdeel /
+// onderdelen, documenten, objecten; файл(ы), объект(ы), элемент(ы), документ(ы); dosya(lar), öğe(ler), belge(ler), nesne(ler),
+// içerikler; oggetto / oggetti, documenti, contenuti; fichero(s), contenidos; objet(s), contenus - bare forms only, as the plural
+// cell on main. Pronouns and the CU-832 data nouns stay as they were (tr 'veri' stays out, like pt 'dado').
+const TRASH_ITEM_NOUN = /(?<!\p{L})(?:items?|files?|documents?|contents?|objects?|everything|all|they|them|these|it|elemente?|objekte?|datei(?:en)?|dokumente?|alles|alle|éléments?|fichiers?|objets?|tout|tous|elementos?|archivos?|ficheros?|todo|todos|elementi|oggett[oi]|documenti|tutto|tutti|itens|arquivos?|ficheiros?|documentos?|objetos?|tudo|onderde(?:el|len)|bestand(?:en)?|documenten|objecten|items|объекты?|файлы?|элементы?|документы?|всё|все|öğe(?:ler)?|dosya(?:lar)?|belge(?:ler)?|nesne(?:ler)?|tümü|contenus?|contenidos?|contenut[oi]|conteúdos?|inhalte?|inhoud|содержимое|içeri(?:k|ği|kler)|données|datos|dati|dados|daten|gegevens|data|данные|veriler)(?!\p{L})|項目|ファイル|書類|すべて|全て|中身|データ|数据|數據|데이터|项目|文件|所有|全部|항목|파일|모든|전부/iu
 function emptiesTrashByDelete(name, sentence, titleNamesTrash = false) {
   const button = String(name ?? '').trim().toLowerCase()
   const text = String(sentence ?? '').trim()
@@ -300,7 +355,7 @@ function emptiesTrashByDelete(name, sentence, titleNamesTrash = false) {
   if (verb === null || !TRASH_PENDING.test(text)) return false
   // A negation counts only within four words before the delete verb ('will not be deleted'), never one in a following clause
   // ('... will be permanently deleted and can't be restored').
-  return !TRASH_NEGATION.test(text.slice(0, verb.index).trim().split(/\s+/).slice(-4).join(' '))
+  return !TRASH_NEGATION.test(text.slice(0, verb.index).replace(EN_IMMINENT_AUX, ' will be').trim().split(/\s+/).slice(-4).join(' '))
 }
 function echoesDialogVerb(name, dialogName) {
   const button = String(name ?? '').trim().toLowerCase().replace(/[¿¡]/g, '')
@@ -361,9 +416,12 @@ function echoesDialogVerb(name, dialogName) {
 // risky verbs ('Doing so opens the volume' stays free). Each name is then judged like the title (additions only).
 const MODAL_ADVERB = String.raw`(?:(?:permanently|immediately|automatically|also|forever|irreversibly|completely|instantly|then|all)\s+)?`
 const MODAL_CONDITION = String.raw`(?:once|when|after|if|as\s+soon\s+as)\s+you\s+(?:confirm|continue|proceed)\w*,?\s+`
-const MODAL_FUTURE = new RegExp(String.raw`^(?:${MODAL_CONDITION})?(.{1,120}?)\s+(?:will|would|(?:is|are)\s+going\s+to)\s+be\s+${MODAL_ADVERB}([a-z]+(?:ed|en|t))\b`, 'i')
-const MODAL_GONE = new RegExp(String.raw`^(?:${MODAL_CONDITION}(.{1,120}?)\s+(?:is|are|will\s+be)|(.{1,120}?)\s+will\s+be)\s+(?:gone|lost)\b`, 'i')
-const MODAL_LEAD = new RegExp(String.raw`^(?:doing\s+(?:so|this)|proceeding|continuing|confirming|finishing|completing|ending|by\s+(?:continuing|proceeding|confirming|finishing|completing),?|${MODAL_CONDITION}(?:this|it|we)|this(?:\s+action)?|it)\s+(?:(?:will|would)\s+)?${MODAL_ADVERB}([a-z]+)\s+(\S.{0,120})$`, 'i')
+// CU-859: the auxiliaries are the shared English fragments (EN_WILL, EN_WOULD, EN_GOING_TO), so a contraction attached to the
+// subject reads as its full word ("Your account'll be deleted", "This'll erase the volume", "Your data'll be gone"): the space
+// before the auxiliary is optional (\s*), the fragments' own letter lookbehind keeps a full word whole, and the u flag reads \p{L}.
+const MODAL_FUTURE = new RegExp(String.raw`^(?:${MODAL_CONDITION})?(.{1,120}?)\s*(?:${EN_WILL}|${EN_WOULD}|${EN_GOING_TO})\s+be\s+${MODAL_ADVERB}([a-z]+(?:ed|en|t))\b`, 'iu')
+const MODAL_GONE = new RegExp(String.raw`^(?:${MODAL_CONDITION}(.{1,120}?)(?:\s+(?:is|are)|\s*${EN_WILL}\s+be)|(.{1,120}?)\s*${EN_WILL}\s+be)\s+(?:gone|lost)\b`, 'iu')
+const MODAL_LEAD = new RegExp(String.raw`^(?:doing\s+(?:so|this)|proceeding|continuing|confirming|finishing|completing|ending|by\s+(?:continuing|proceeding|confirming|finishing|completing),?|${MODAL_CONDITION}(?:this|it|we)|this(?:\s+action)?|it)(?:\s*(?:${EN_WILL}|${EN_WOULD}))?\s+${MODAL_ADVERB}([a-z]+)\s+(\S.{0,120})$`, 'iu')
 // CU-746 r2 (cu-researcher's held-out): a leading clause about the person's own act - 'Once confirmed,', 'After you continue,',
 // 'When this is done,' - is stripped, and the present passive after it is the act ('Once confirmed, your files are erased ...').
 // Only the person's act opens it, so a retention note ('After 30 days, deleted items are removed.') stays as it was.
@@ -5246,7 +5304,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         // cu-researcher 16:09Z: a title is a question more often than a row - 'Are you sure you want to <row>?', 'Really <row>?',
         // '<row>?' - so a title canonical step strips the question frame before the title is judged as a name.
         // #702 round 2 (cu-researcher 16:24Z): descriptions lead with 'This will / This action will / You are about to / Doing this will'.
-        const titleRow = (text) => text.replace(/[?!.:\s]+$/, '').replace(/^\s*(?:(?:are\s+you\s+(?:sure|certain)|you\s+are\s+about|you're\s+about)(?:\s+(?:that\s+)?you\s+(?:want|wish))?\s+to|do\s+you\s+(?:really\s+)?(?:want|wish)\s+to|(?:would|do)\s+you\s+like\s+to|(?:this|this\s+action|doing\s+this|that|it)(?:\s+cannot\s+be\s+undone\s+and)?\s+will(?:\s+permanently)?|really|confirm(?:\s+that\s+you\s+want\s+to)?|permanently)\s+/i, '').trim()
+        // CU-859 fold (cu-researcher): 'You’re about to' with the curly apostrophe too.
+        const titleRow = (text) => text.replace(/[?!.:\s]+$/, '').replace(/^\s*(?:(?:are\s+you\s+(?:sure|certain)|you\s+are\s+about|you['’]re\s+about)(?:\s+(?:that\s+)?you\s+(?:want|wish))?\s+to|do\s+you\s+(?:really\s+)?(?:want|wish)\s+to|(?:would|do)\s+you\s+like\s+to|(?:this|this\s+action|doing\s+this|that|it)(?:\s+cannot\s+be\s+undone\s+and)?\s+will(?:\s+permanently)?|really|confirm(?:\s+that\s+you\s+want\s+to)?|permanently)\s+/i, '').trim()
         // #702 round 3 (cu-developer-three 16:35Z): a sentence about what happens if the person does NOT confirm ('Your changes will be
         // lost if you don't save them', '... unless you ...') describes the other button, so it is not judged for the confirm.
         const consequenceOfNot = /\b(?:if\s+you\s+(?:don'?t|do\s+not|choose\s+not\s+to|cancel|leave|close)|unless\s+you|otherwise)\b/i

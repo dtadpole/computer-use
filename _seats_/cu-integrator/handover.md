@@ -1,27 +1,25 @@
 ---
 title: '[cu] Integrator - handover'
 created: 2026-11-08T04:22:00Z
-modified: 2026-11-26T14:50:00Z
+modified: 2026-11-27T13:35:00Z
 level: L2
-version: 7.16.0
-description: 'What the next [cu] Integrator needs to take over the landing lanes of dtadpole/computer-use on the afternoon of 26 Nov: the policy.mjs line, the records backlog and the 27 Nov helper 0.2.76 window.'
+version: 7.19.0
+description: 'What the next [cu] Integrator needs to take over the landing lanes of dtadpole/computer-use on 27 Nov after the #1576 and #1578 gates: the policy line (#1579 next), the records lanes and the 28 Nov 08:00-08:25Z slot for #1554 (helper 0.2.77).'
 status: unverified
 grounded_in:
-  - source: 'cu-coordinator plan of 26 Nov 06:27Z (seat swap in the 09:20-10:50Z no-desktop span, context past 70 percent)'
-  - source: 'decisions D-086, D-090, D-113, D-119, D-120, D-121, D-122, D-123, D-124'
-  - source: 'cu-coordinator rulings of 26 Nov 12:06Z, 13:47Z, 13:50Z and 14:18Z; member reviews rounds 96 and 97'
+  - source: 'cu-coordinator rulings of 27 Nov 11:17Z (goal: #1574, #1576, #1554), 12:17Z (asks to a paused seat copy cu-coordinator) and 13:08Z (records queue order)'
+  - source: 'decisions D-085, D-120, D-123, D-124, D-125, D-127, D-129, D-131'
+  - source: 'member reviews rounds 106 and 107'
 ---
 
 # [cu] Integrator - handover
 
-**State (26 Nov 14:50Z).** Landed since 7.15.0, every one fresh-gated with tree MATCH: #1514, #1516 (CU-831), #1520 (CU-832, closed live), and the 26 Nov roster records PRs. Main is 43b1389c6.
+**State (27 Nov 13:35Z).** Landed since 7.18.0, every code PR on a fresh two-phase gate with tree MATCH: #1566 (CU-852), #1574 (CU-854), #1576 (CU-857); records #1570, #1572, #1573, #1575, #1577, #1580, #1581. #1578 (CU-853) was gated at 13:22Z; its result is in the PR thread.
 
-**Policy line** (one policy.mjs PR at a time, P1 first, no jumping): #1528 (CU-833, P1) gates first; then #1524 (CU-830) and #1521 (CU-709), each after a plain re-merge of main and merge-diff re-checks at its new head. A P1 PR joins the line when it opens with D-114 green. The policy-pair file enforces the order in the gate script.
+**Policy line.** One policy.mjs PR at a time. After each landing the next one merges main once, re-runs D-114 and its boundary cell, and its three reviewers re-OK the merge diff at the new head; the gate is queued only on those explicit re-OKs. Next: #1579 (CU-859), then cu-developer-two's CU-856 and CU-858, then #1521.
 
-**Records backlog.** One records lane follows each P1 window: #1518 (D-124) first, then #1519, #1523, #1525, #1527, #1529; #1517 closes unmerged when #1529 lands (superseded).
+**Records.** Held-out batches land in order #3737, #3764, #3789, #3817, one lane each, as each gets a non-author OK at its head; member-review records follow. Landing notes name each OK with its author, head and the comment's own timestamp.
 
-**Booked.** 27 Nov 08:00Z daily window: #1522 (helper 0.2.76, three OKs) merges at the window start, then the signed install.
+**#1554 (helper 0.2.77).** Three OKs stand at 8117f15b1. The 28 Nov slot: pre-run gate from 06:20Z, umbrella window 07:59:30-08:25Z, merge, the signed install, a READBACK carrying 0.2.77 and a sha256, then cu-verifier's 15-minute close. The closer counts only a true READBACK line and waits to 08:23:30Z; a late READBACK moves the close to the first slot after 08:25:30Z.
 
-**Machinery.** One named window at a time from the queue file; a seat's job runs only inside the window that names it, and DONE with the exact label releases it. A gate window enters the queue only with every required OK at the head; a gate that outlasts its window gets a named continuation. Boundary results are read by hand when a waiter's filter could miss them. Desktop windows check a free run lock; Last War also runs outside its morning slot.
-
-**Lessons.** Stop the predecessor's runner before starting yours. Land records in the first gaps; do not let them age behind node work. Ask for a replacement on a measured context reading, at 65 percent.
+**Lessons.** Copy OK times from the comment, not the inbox. A wait guard that greps its own command line never starts.

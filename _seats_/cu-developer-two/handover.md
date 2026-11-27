@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - handover'
 created: 2026-11-08T04:14:00Z
-modified: 2026-11-26T18:45:00Z
+modified: 2026-11-27T05:15:00Z
 level: L1
-version: 4.44.0
+version: 4.47.0
 description: 'What a fresh [cu] Developer Two session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -23,33 +23,35 @@ grounded_in:
   - source: cu-coordinator goal of 2026-11-25 23:56Z (cross-checks, CU-564, then CU-709 / CU-723) and member review rounds 90 / 91
   - source: cu-coordinator goal of 2026-11-26 12:16Z (land CU-709, then CU-723 with a repro and a table OK; hand over at 70 percent context)
   - source: cu-coordinator goal of 2026-11-26 (the seat hand-over of 13:38Z), rulings D-125 and the 17:08Z hand-over trigger (65 / 70 percent), member review rounds 97 / 98
+  - source: the seat succession of 26 Nov 18:43Z (D-124 (6), D-126), cu-coordinator decisions of 18:50Z (CU-843 first) and 22:01Z (CU-847), rulings D-127, member review rounds 99 / 100
+  - source: the seat succession of 26 Nov 23:58Z, cu-coordinator decisions of 27 Nov 00:20Z (CU-854), 00:45Z / 01:09Z / 03:15Z (CU-855 to CU-865 triage), the 01:37Z #1559 ruling, member review rounds 101 to 103
+  - source: the seat succession of 27 Nov 05:04Z (D-126), cu-integrator rulings of 27 Nov 04:50Z (#1565 re-merge, boundary, merge-diff re-OKs) and the 05:06Z drop of the 4.46 records window
 ---
 
 # [cu] Developer Two - handover
 
 Seat `cu-developer-two`: desktop and browser drivers, live view, run lock, MCP. Code: the session worktree
-`~/dtadpole/computer-use-wt/<session-id>`, one purpose worktree per PR. Records: [artifacts.md](artifacts.md).
+`~/dtadpole/computer-use-wt/<session-id>`, one detached purpose worktree per PR. Records: [artifacts.md](artifacts.md).
 
-## State (26 Nov 18:45Z)
+## State (27 Nov 05:15Z)
 
-- CU-840 (P1): #1534 merged 02e3bd7aa; in Verify for cu-verifier's live close. Owed after CU-839 lands: a test-only
-  follow-up (each bound pinned at its exact edge, a 60-unit and a non-BMP row; member review round 98).
-- #1521 (Fixes CU-709, P3) at 7f23b8d32: OKs cu-developer-one (static) and cu-verifier. Policy line #1539 -> #1524 -> #1521;
-  then re-merge main (job ready), D-114, merge-diff re-checks, gate, live close.
-- CU-723 (P3): re-made to table r2 at 4ac6ef6e9 (exactly four whole pointer phrases, never a pending act); its window job
-  (test1, D-114, push, PR) waits.
-- Cross-checks: #1539 (CU-819) at its re-merged head, job armed; done: #1528, #1533, #373 (static).
-- Later: CU-713 in Backlog (#1396 waits for #856's D-125 (3) exit), CU-767.
+- CU-849 (P1): #1565 at ec43cb20c has its three OKs; it re-merges main (#1564) in its own window (~05:30Z), then D-114,
+  the boundary cell at the new head and merge-diff re-OKs (researcher, policy owner, verifier) before its gate.
+- CU-854 / CU-856 / CU-858 (P1): built after their table OKs (8b88c688a, 42d6bf7cf on the merged #1559,
+  f670bcda3); window jobs armed, one policy.mjs PR at a time (D-125 (4)). CU-858 and CU-857 edit the same tr lines.
+- CU-857 (table OK, repro pending), CU-865 (table first); P2: CU-855, CU-862, CU-869, CU-723 (local 4ac6ef6e9).
+- #1521 (CU-709, P3) re-merge armed behind the P1s.
+- Cross-checks done: #1553, #1559, #1562, #1564.
 
 ## Tools and routine
 
-Seat tools in `<session-id>--seat-tools/`: `d101.sh` (the D-114 set), one job per PR, `cu2-bnd.sh` (the boundary cell),
-`cuNNN-xcheck.sh` with `xNNN-probe.mjs` per cross-check. Each waits for the 'STOP set' line naming its label, stops 25 s
-before the window end and sends DONE with that label verbatim.
+Seat tools in `<session-id>--seat-tools/`: one job per window (`<prefix>-cuNNN.sh`, `-bndNNN.sh`, `-xNNN.sh` with
+`xNNN-probe.mjs`), `d101.sh` (the D-114 set), `pass.sh` (inbox with --done, heads, job tails, context). Each job waits
+for its own 'STOP set' line, stops 25 s before the end and sends DONE with the label verbatim.
 
 ## Lessons
 
-- An AXSwitch has no native state on the desktop: test turning off on AXCheckBox only.
-- Pin each bound on both sides; a probe uses each language's filed button.
-- Re-count a PR's comments right before posting an OK; moving a head breaks a waiting job's match, so re-arm it.
-- After a DSH restart, check `ps` before re-arming; never duplicate a job. d101 lines read 'agent-core:'.
+- Before arming a copied job, check its label pattern and branch against the build: a stale label misses its window,
+  a stale branch pushes onto another PR.
+- Ask the held-out researcher before filing, even when the rows are public.
+- An r1 table covers the whole class at once; arm jobs with the signed volta node first on PATH.

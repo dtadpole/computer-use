@@ -206,8 +206,37 @@ final class PrivacyPane: NSObject, NSTableViewDataSource, NSTableViewDelegate {
     let texts = (toggle.superview?.subviews ?? []).compactMap { $0 as? NSTextField }.filter { !$0.isEditable }.map { $0.stringValue }
     var value: Any = NSNull()
     if let number = (toggle.cell?.accessibilityValue() as Any?) as? NSNumber { value = number.intValue }
+    // CU-763 (helper 0.2.76): what the helper's list-heading read meets, in process - whether the switch's element answers
+    // a window (the 0.2.75 fallback read it there), and the children of the parent of the nearest scroll area above the
+    // switch: each child's role, a static text's shown words, and that scroll area's place among them.
+    func children(_ node: Any) -> [Any] {
+      if let element = node as? NSAccessibilityProtocol { return element.accessibilityChildren() ?? [] }
+      return (node as? NSObject)?.accessibilityAttributeValue(.children) as? [Any] ?? []
+    }
+    var answersWindow = false
+    if let accessible = element as? NSAccessibilityProtocol { answersWindow = accessible.accessibilityWindow() != nil }
+    var listSiblings: [[String: Any]] = []
+    var listIndex: Any = NSNull()
+    var scroll: Any? = parent(element)
+    for _ in 0..<12 {
+      guard let current = scroll, role(current) != NSAccessibility.Role.scrollArea.rawValue else { break }
+      scroll = parent(current)
+    }
+    if let found = scroll, role(found) == NSAccessibility.Role.scrollArea.rawValue, let holder = parent(found) {
+      for (offset, kid) in children(holder).enumerated() {
+        let kidRole = role(kid) ?? ""
+        var entry: [String: Any] = ["role": kidRole]
+        if kidRole == NSAccessibility.Role.staticText.rawValue {
+          let shown = (kid as? NSAccessibilityProtocol)?.accessibilityValue() as? String
+          entry["text"] = shown ?? (kid as? NSTextField)?.stringValue ?? (kid as? NSCell)?.stringValue ?? ""
+        }
+        listSiblings.append(entry)
+        if (kid as AnyObject) === (found as AnyObject) { listIndex = offset }
+      }
+    }
     return ["role": toggle.cell?.accessibilityRole()?.rawValue ?? "", "subrole": toggle.cell?.accessibilitySubrole()?.rawValue ?? "",
-            "value": value, "ancestors": ancestors, "cellTexts": texts]
+            "value": value, "ancestors": ancestors, "cellTexts": texts,
+            "answersWindow": answersWindow, "listSiblings": listSiblings, "listIndex": listIndex]
   }
 
   /// Seam: `privacyToggle: '<target>'` flips that switch through its own action, as a click does.

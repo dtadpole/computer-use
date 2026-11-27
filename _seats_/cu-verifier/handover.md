@@ -1,13 +1,13 @@
 ---
 title: '[cu] Verifier - Handover'
 created: 2026-11-08T04:15:13Z
-modified: 2026-11-26T20:10:00Z
+modified: 2026-11-27T14:11:00Z
 level: L2
-version: 5.10.0
+version: 5.13.0
 description: 'What a fresh session of [cu] Verifier needs - where things are, the pass, the tools, the open rows and the lessons, in under 300 words.'
 status: unverified
 grounded_in:
-  - source: the seat's own state, 26 Nov evening, a new holder since 17:28Z (supersedes 5.9.0)
+  - source: the seat's own state, 27 Nov morning, a new holder since 06:45Z (supersedes 5.12.0)
 ---
 
 # [cu] Verifier - Handover
@@ -15,16 +15,13 @@ grounded_in:
 Start with [responsibilities](responsibilities.md) and [verdict](ultimate-goal-2-verdict.md).
 
 - **Where:** a git-ignored tools folder in the session worktree, test trees beside it; nothing in `/tmp`.
-- **Inbox:** only with a roster that names this session; before the seat's roster PR merges, relay only (D-126 (2)).
-- **Push:** gate unpiped, push on exit 0; records rebuilt on the current main in the push window; one action-log line.
+- **Inbox:** only through a guarded wrapper that refuses unless the worktree roster and its origin/main both name this session; before the seat's roster PR merges, relay only (D-126 (2)).
+- **Copied tools:** rewrite the predecessor's id, give every job a fresh name, refuse to arm while the old job lives.
+- **Launchers:** keep only the next few armed; each polls for its window.
+- **Context:** measure it through the team's relay login; ask for a goal pause while every open step waits on a window 30 minutes or more ahead (D-128).
 - **Every pass:** the whole inbox; the Verify queue; armed launchers alive; my PRs' mergeability.
-- **Filings:** reproduce each new consent filing alone on main before test1 (D-123 (2)), rows verbatim, with twins.
-  Where the filed shape cannot run live on main, run the nearest class and say the departure on the record.
-- **Reviews:** read the whole thread; probe head and main on both routes, then whole pages in the window named for
-  the review. A new head voids an OK; a re-merge gets a merge-diff re-check (patch-id plus probes).
-- **Closes:** rows on the merge, then mutants in a scratch tree.
-- **Jobs:** each job sends its own DONE under the window's exact label; never edit a running launcher.
-- **Open:** CU-763 / CU-787 live after 0.2.76's signed install (27 Nov 08:00-08:25Z): READBACK version and sha256
-  checked against the installed helper's executable first; fixture privacy-pane rows only. #1524, then #1521: merge-diff
-  re-check at each re-merge. #373 (CU-11): three OKs, gate 26 Nov evening.
-- **Lessons:** a verifier PR under a P1 issue needs three non-author OKs; fixture apps only.
+- **Filings:** reproduce each new consent filing alone on main before test1 (D-123 (2)), with the filer's exact rows (D-123 (3)) or, when none are filed, rows from the class line plus controls and twins.
+- **Reviews:** read the whole thread; probe head and main on both routes with cross rows from the PR's cells, then whole pages; a flagged row or a parity claim gets its own probe before the OK.
+- **Closes:** rows on the merge after a READBACK whose sha256 equals my own, then mutants in a scratch tree; a helper change's mutants run in a build-class window.
+- **Open:** live closes with mutants of CU-854 (#1574), CU-857 (#1576), CU-853 / CU-859 once merged; #1554 (CU-839, 0.2.77) live rows in 'cu-verifier #1554 close' after its 28 Nov 08:00Z install; repros alone on main: CU-865, 866, 862, 867, 855, 869 to 873.
+- **Lessons:** chain a draft's write and its post so a failed write stops the post; check every send says 'sent'.
