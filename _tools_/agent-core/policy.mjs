@@ -242,7 +242,16 @@ const RU_PART = '(?:удал[её]н[аоы]?|ст[её]рт[аоы]?|уничт
 const RU_FUT = '(?:удалятся|удалит|сотрутся|сотр[её]т|уничтожатся|уничтожит|выбросятся|выбросит)'
 const JA_STEM = '(?:(?:削除|消去|破棄|抹消|除去|廃棄|処分)(?:処理)?|消)'
 const ZH_VERB = '(?:删除|刪除|删掉|刪掉|删去|刪去|抹除|抹去|擦除|清除|去除|移除|销毁|銷毀|丢弃|丟棄|清理掉|删光|刪光|删完|刪完|删干净|刪乾淨|删尽|刪盡|删空|刪空)'
-const KO_STEM = '(?:삭제|제거|폐기|소거|파기|말소)(?:\\s*(?:처리|조치|진행|실행|수행))?'
+// CU-856 (table r2 OK'd by cu-researcher 01:06Z): KO_STEM also takes the light nouns 완료 / 종료 / 시작 / 개시 / 마무리. Between the delete
+// noun and its light noun, KO_GAP allows one case particle (을 / 를 / 이 / 가) and then at most one adverb: a -히 / -게 word, a -로 word
+// (below) or one of the listed bare adverbs. The gap never takes 안 / 못, so those rows stay free. KO_END is the same noun and gap before the
+// native completion verbs 끝나- / 마치- / 끝내- (their endings are in the ko cells below).
+// CU-856 fold (F1 of #1585, table OK'd by cu-researcher 15:32Z): -로 only as -적으로 after two or more syllables or the closed words
+// 자동으로 / 수동으로 / 새로 / 일괄로, so a noun + -(으)로 ('화면으로') no longer fills the slot.
+const KO_HEAD = '(?:삭제|제거|폐기|소거|파기|말소)'
+const KO_GAP = '\\s*(?:을|를|이|가)?\\s*(?:(?!(?:안|못)\\s)(?:\\p{Script=Hangul}+(?:히|게)|\\p{Script=Hangul}{2,}적으로|자동으로|수동으로|새로|일괄로|깨끗이|곧|즉시|바로|모두|전부|다시|먼저|함께|계속|지금|이제|일괄)\\s+)?'
+const KO_STEM = `${KO_HEAD}(?:${KO_GAP}(?:처리|조치|진행|실행|수행|완료|종료|시작|개시|마무리))?`
+const KO_END = `${KO_HEAD}${KO_GAP}`
 const TRASH_LOCALE = [
   { // ru
     verb: new RegExp(`(?<!\\p{L})(?:${RU_PART}|${RU_FUT}|удалить|стереть|уничтожить|очистить)(?!\\p{L})`, 'iu'),
@@ -268,8 +277,10 @@ const TRASH_LOCALE = [
   },
   { // ko
     verb: new RegExp(`${KO_STEM}|지우|지워|지웁|지웠|버려|버리|버립|버렸|비워지|비워져|비워졌|비워집|비워질`, 'u'),
-    negation: new RegExp(`비워지지\\s*(?:않|못)|${KO_STEM}(?:되|하)지\\s*(?:않|못)|${KO_STEM}\\s*안\\s|지워지지\\s*(?:않|못)|지우지\\s*(?:않|못)|버려지지\\s*(?:않|못)|버리지\\s*(?:않|못)`, 'u'),
-    past: new RegExp(`비워졌|비워져\\s*있|${KO_STEM}(?:되었|됐|했|되어\\s*있|돼\\s*있)|지워졌|지웠|지워져\\s*있|버려졌|버렸|버려져\\s*있`, 'u'),
+    // CU-856 (table r2 OK'd by cu-researcher 01:06Z): after KO_END, a native completion verb's negation (-지 않 / 못) and past (끝났 /
+    // 끝냈 / 마쳤) decide first, as they do for the light nouns through KO_STEM.
+    negation: new RegExp(`비워지지\\s*(?:않|못)|${KO_STEM}(?:되|하)지\\s*(?:않|못)|${KO_STEM}\\s*안\\s|지워지지\\s*(?:않|못)|지우지\\s*(?:않|못)|버려지지\\s*(?:않|못)|버리지\\s*(?:않|못)|${KO_END}(?:끝나|끝내|마치)지\\s*(?:않|못)`, 'u'),
+    past: new RegExp(`비워졌|비워져\\s*있|${KO_STEM}(?:되었|됐|했|되어\\s*있|돼\\s*있)|지워졌|지웠|지워져\\s*있|버려졌|버렸|버려져\\s*있|${KO_END}(?:끝났|끝냈|마쳤)`, 'u'),
     // CU-807: a connective joining the delete verb to a following clause ('삭제되며 복구할 수 없습니다', -되고 / -되어 / -돼 / -되니 / -되므로).
     // r2 (the table cu-researcher OK'd 15:42Z): not the progressive / state '-고 있- / -고 없-', the concessive / resultative '-어도 / -어 있-',
     // nor the conditional / temporal '-고 나면 / -어 버리면'; the future connective '될 것이며' asks.
@@ -282,7 +293,10 @@ const TRASH_LOCALE = [
     // (지워질 / 버려질 / 비워질, which also take the four endings and 테니), 것 / 터 take the other copula causal endings (-인즉 /
     // -이라서 / -이어서 / -인지라 / -인 만큼 / -이길래), with 터라 and 거라서; the bare -(이)라 after 것 / 거 asks only before a space
     // and a clause, and -라고 / -라는 / -라면 stay out. Negation and past still decide first.
-    pending: new RegExp(`비워집니다|비워질\\s*(?:것입니다|예정입니다)|비워지게\\s*됩니다|${KO_STEM}(?:됩니다|합니다|될\\s*것입니다|될\\s*예정입니다|되게\\s*됩니다|되겠습니다|될\\s*것이다|된다(?!\\p{Script=Hangul})|될\\s*거(?:예요|야|다|(?=입니다)|(?=ㅂ니다))|될\\s*겁니다|될\\s*것이며|될\\s*것이고|될\\s*예정이며|되며|되고(?!\\s*(?:있|없|나))|되어(?!\\s*(?:도|있|버리면|버린다면))|돼(?!\\s*(?:도|있|버리면|버린다면))|되니|되므로|하며|하고(?!\\s*(?:있|없|나))|되기\\s*때문|하기\\s*때문|되기에|하기에|되는\\s*만큼|될\\s*것이기\\s*때문|될\\s*것이기에|될\\s*것이므로|(?:되는|하는|될)\\s*(?:관계|까닭|탓|이상)|되길래|하길래|되는지라|되느라|되는\\s*바(?!람)|될\\s*테니|될\\s*것이니|될\\s*(?:터이|거이?)(?:므로|니|기에|기\\s*때문)|될\\s*(?:(?:것|터)(?:인즉|이라서|이어서|인지라|인\\s*만큼|이길래)|터라(?![고는면])|거라서|(?:것이|터이|거)라(?=\\s+\\S)))|지워집니다|지웁니다|지워질\\s*것입니다|지워지게\\s*됩니다|지워지겠습니다|지워진다(?!\\p{Script=Hangul})|지워질\\s*(?:겁니다|거예요|거야|거다)|지워지며|지워지고(?!\\s*(?:있|없|나))|지워져(?!\\s*(?:도|있|버리면|버린다면))|지워지니|지워질\\s*것이며|버려집니다|버립니다|버려질\\s*(?:것입니다|겁니다|거예요|예정입니다)|버려지며|버려지고(?!\\s*(?:있|없|나))|지워지기\\s*때문|지워지기에|지워지는\\s*만큼|버려지기\\s*때문|버려지기에|(?:지워지는|지워질|버려지는|버려질)\\s*(?:관계|까닭|탓|이상)|지워지길래|버려지길래|버려지니|(?:지워|버려|비워)질\\s*(?:(?:것이|터이|거이?)(?:므로|니|기에|기\\s*때문)|테니|(?:것|터)(?:인즉|이라서|이어서|인지라|인\\s*만큼|이길래)|터라(?![고는면])|거라서|(?:것이|터이|거)라(?=\\s+\\S))`, 'u'),
+    // CU-856 (table r2 OK'd by cu-researcher 01:06Z): through KO_STEM, every ending reads the new light nouns and the gap. After KO_END,
+    // 끝나- / 마치- / 끝내- take the 지우- / 버리- endings. The -어 connective is left out because it would read a request (-어 주세요).
+    // r3 (table OK'd 02:02Z): 끝날 / 끝낼 / 마칠 also take CU-844's causal endings of (지워 / 버려 / 비워)질, copied verbatim.
+    pending: new RegExp(`비워집니다|비워질\\s*(?:것입니다|예정입니다)|비워지게\\s*됩니다|${KO_STEM}(?:됩니다|합니다|될\\s*것입니다|될\\s*예정입니다|되게\\s*됩니다|되겠습니다|될\\s*것이다|된다(?!\\p{Script=Hangul})|될\\s*거(?:예요|야|다|(?=입니다)|(?=ㅂ니다))|될\\s*겁니다|될\\s*것이며|될\\s*것이고|될\\s*예정이며|되며|되고(?!\\s*(?:있|없|나))|되어(?!\\s*(?:도|있|버리면|버린다면))|돼(?!\\s*(?:도|있|버리면|버린다면))|되니|되므로|하며|하고(?!\\s*(?:있|없|나))|되기\\s*때문|하기\\s*때문|되기에|하기에|되는\\s*만큼|될\\s*것이기\\s*때문|될\\s*것이기에|될\\s*것이므로|(?:되는|하는|될)\\s*(?:관계|까닭|탓|이상)|되길래|하길래|되는지라|되느라|되는\\s*바(?!람)|될\\s*테니|될\\s*것이니|될\\s*(?:터이|거이?)(?:므로|니|기에|기\\s*때문)|될\\s*(?:(?:것|터)(?:인즉|이라서|이어서|인지라|인\\s*만큼|이길래)|터라(?![고는면])|거라서|(?:것이|터이|거)라(?=\\s+\\S)))|지워집니다|지웁니다|지워질\\s*것입니다|지워지게\\s*됩니다|지워지겠습니다|지워진다(?!\\p{Script=Hangul})|지워질\\s*(?:겁니다|거예요|거야|거다)|지워지며|지워지고(?!\\s*(?:있|없|나))|지워져(?!\\s*(?:도|있|버리면|버린다면))|지워지니|지워질\\s*것이며|버려집니다|버립니다|버려질\\s*(?:것입니다|겁니다|거예요|예정입니다)|버려지며|버려지고(?!\\s*(?:있|없|나))|지워지기\\s*때문|지워지기에|지워지는\\s*만큼|버려지기\\s*때문|버려지기에|(?:지워지는|지워질|버려지는|버려질)\\s*(?:관계|까닭|탓|이상)|지워지길래|버려지길래|버려지니|(?:지워|버려|비워)질\\s*(?:(?:것이|터이|거이?)(?:므로|니|기에|기\\s*때문)|테니|(?:것|터)(?:인즉|이라서|이어서|인지라|인\\s*만큼|이길래)|터라(?![고는면])|거라서|(?:것이|터이|거)라(?=\\s+\\S))|${KO_END}(?:(?:끝납|끝냅|마칩)니다|(?:끝날|끝낼|마칠)\\s*(?:것입니다|예정입니다|겁니다|거예요|거야|거다|것이며)|(?:끝날|끝낼|마칠)\\s*(?:(?:것이|터이|거이?)(?:므로|니|기에|기\\s*때문)|테니|(?:것|터)(?:인즉|이라서|이어서|인지라|인\\s*만큼|이길래)|터라(?![고는면])|거라서|(?:것이|터이|거)라(?=\\s+\\S))|(?:끝나|끝내|마치)(?:게\\s*됩니다|겠습니다|며|니|기\\s*때문|기에|길래|고(?!\\s*(?:있|없|나)))|(?:끝난|끝낸|마친)다(?!\\p{Script=Hangul})|(?:끝나는|끝내는|마치는|끝날|끝낼|마칠)\\s*(?:만큼|관계|까닭|탓|이상))`, 'u'),
   },
   { // tr
     verb: /(?<!\p{L})(?:sil|kaldır|yok\s+ed|atıl|temizlen|imha\s+ed|boşaltıl(?!abil)|(?:at|temizley|boşalt)[iı]ver)\p{L}*/iu,
