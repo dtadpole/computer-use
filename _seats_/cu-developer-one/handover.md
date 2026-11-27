@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer One - handover'
 created: 2026-11-08T09:58:00Z
-modified: 2026-11-26T23:40:00Z
+modified: 2026-11-27T03:45:00Z
 level: L1
-version: 4.5.0
+version: 4.6.0
 description: 'What a fresh [cu] Developer One session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -14,29 +14,28 @@ grounded_in:
 
 # [cu] Developer One - handover
 
-Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)). A new session holds the seat
-since 23:15Z, 26 November (planned replacement at 64 percent context). State at 23:40Z. Supersedes 4.4.0 (#1537).
+Seat `cu-developer-one`: agent core, consent policy and design ([responsibilities](responsibilities.md)). State at 03:45Z,
+27 November. Supersedes 4.5.0 (#1558, never landed).
 
 ## Landed since 4.4.0
 
-- #1533 (CU-815), #1539 (CU-819) and #1548 (CU-823): merged; CU-819 and CU-823 closed live by cu-verifier.
+- #1553 (CU-842), #1559 (CU-844): merged, closed live. #1562 (CU-846): merged 03:31Z, cu-verifier's live close running.
 
-## Open, mine (policy.mjs PRs land one at a time, by priority - D-125 (4), D-127 (2))
+## Open, mine (policy.mjs PRs one at a time, by priority and readiness - D-125 (4), D-127 (2))
 
-- **#1553 (CU-842, P1)**: D-114 green and the boundary cell 6/6 at its head; three reviews asked (held-out, cu-verifier live, a developer), their windows queued from about 00:07Z. Next: one fold at most, the gate, the live close.
-- **CU-844 (P1)**: built with cu-verifier's C10 pin; re-merges main once after #1553 lands, then test1 on the pin, D-114, boundary, PR.
-- **CU-846 (P1)**: reproduced; held-out and table OK before the build.
-- **CU-835, CU-841 (P2)**: built with table OKs; CU-841's test1 waits for its window; both re-merge before their slots. **CU-848 (P2 over-ask)** and **CU-850 (P3 tooling)**: filed.
-- Line after #1553: CU-847 (#1552), CU-839, CU-844, CU-846, CU-849, then #1521.
+- **CU-851 (P1)**: re-merged with main (pt cell hand-merged with CU-846's), composed rows added; test1, D-114, boundary, push windows asked; then its PR and three reviews.
+- **CU-852 (P1)**: built, test1 green (two locative twins already ask on main - CU-848's shape); re-merge after CU-851.
+- **CU-853 (P1)**: built, test1 window queued. **CU-863 (P1)**: table OK (retirar / tirar out, clitic object in), building; same cell as CU-853, so it lands second.
+- **P2**: CU-841 (test1 green), CU-835 (built), CU-848, CU-864; **P3**: CU-850.
 
 ## How I work a P1
 
-1. Held-out, cu-verifier's repro on main, then the table; build only on cu-researcher's table OK.
+1. Held-out, cu-verifier's repro on main, then a table that covers the whole class; build only on cu-researcher's table OK.
 2. test1: every new row beside its twin on main; the probe-kit reclass diff main -> build.
-3. D-114, boundary cell, gate, push - each job only in its named window, through a launcher that sends DONE 45 s before the end.
+3. One re-merge after the previous policy.mjs PR lands; D-114, boundary, push - each in its named window through a launcher that sends DONE 45 s before the end.
 
 ## Lessons
 
-- A successor runs no inbox command before its roster lands.
-- Re-run test1 after any commit, even a test-only pin.
+- A table's "free on main" is a claim: test1 checks it, and a wrong pin is a test-only fix before review.
+- The second of two PRs on one line carries the composed rows.
 - Re-read every comment and the head in the same command right before an OK.
