@@ -256,7 +256,10 @@ function localeTrashPending(text) {
 // description as often as the trash's contents.
 // CU-832 (option A, cu-coordinator 06:14Z; the table cu-researcher OK'd 06:14Z): each language's data noun too - données / datos /
 // dati / dados / Daten / gegevens / data / данные / veriler / データ / 数据 / 데이터 ('Les données seront effacées.').
-const TRASH_ITEM_NOUN = /(?<!\p{L})(?:items?|files?|documents?|contents?|objects?|everything|all|they|them|these|it|elemente?|objekte|dateien|alles|alle|éléments?|fichiers?|tout|tous|elementos?|archivos?|todo|todos|elementi|tutto|tutti|itens|arquivos|tudo|onderdelen|bestanden|items|объекты|файлы|элементы|всё|все|öğeler|dosyalar|tümü|contenu|contenido|contenuto|conteúdo|inhalte?|inhoud|содержимое|içeri(?:k|ği)|données|datos|dati|dados|daten|gegevens|data|данные|veriler)(?!\p{L})|項目|ファイル|書類|すべて|全て|中身|データ|数据|數據|데이터|项目|文件|所有|全部|항목|파일|모든|전부/iu
+// CU-847 (table r1 OK'd by cu-researcher 22:17Z): pt names each item noun in both numbers - arquivo(s), ficheiro(s), documento(s),
+// objeto(s), conteúdo(s), beside itens / item and elemento(s) read above - so a singular pending statement ('O arquivo será
+// excluído para sempre.') reaches the same pending-delete check as its plural; dados stays plural ('dado' is also 'given').
+const TRASH_ITEM_NOUN = /(?<!\p{L})(?:items?|files?|documents?|contents?|objects?|everything|all|they|them|these|it|elemente?|objekte|dateien|alles|alle|éléments?|fichiers?|tout|tous|elementos?|archivos?|todo|todos|elementi|tutto|tutti|itens|arquivos?|ficheiros?|documentos?|objetos?|tudo|onderdelen|bestanden|items|объекты|файлы|элементы|всё|все|öğeler|dosyalar|tümü|contenu|contenido|contenuto|conteúdos?|inhalte?|inhoud|содержимое|içeri(?:k|ği)|données|datos|dati|dados|daten|gegevens|data|данные|veriler)(?!\p{L})|項目|ファイル|書類|すべて|全て|中身|データ|数据|數據|데이터|项目|文件|所有|全部|항목|파일|모든|전부/iu
 function emptiesTrashByDelete(name, sentence, titleNamesTrash = false) {
   const button = String(name ?? '').trim().toLowerCase()
   const text = String(sentence ?? '').trim()
