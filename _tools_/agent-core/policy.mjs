@@ -104,7 +104,10 @@ const LOCALE_PASSIVE_ACTS = [
   // periphrastic 'se van a eliminar' / 'van a eliminarse' of the three covered verbs.
   // CU-846 (table OK'd by cu-researcher 23:55Z, r1a): es está(n) a punto de ser / quedar and está(n) por ser ('Los archivos están a
   // punto de ser eliminados.'), and the enclitic 'están a punto de borrarse'; 'estaban' / 'estuvieron' are other words.
-  [/\b(?:ser[áa]n?|van?\s+a\s+(?:ser|quedar|estar)|quedar(?:á|án)|estar(?:á|án)|(?:está|están)\s+a\s+punto\s+de\s+(?:ser|quedar)|(?:está|están)\s+por\s+ser)\s+(?:\S+\s+){0,3}?(?:eliminad[oa]s?|borrad[oa]s?|suprimid[oa]s?)\b|\bse\s+(?:\S+\s+){0,2}?(?:eliminar[áa]n?|borrar[áa]n?|suprimir[áa]n?)(?!\p{L})|\bse\s+van?\s+a\s+(?:eliminar|borrar|suprimir)(?!\p{L})|\bvan?\s+a\s+(?:eliminar|borrar|suprimir)se(?!\p{L})|\b(?:está|están)\s+a\s+punto\s+de\s+(?:eliminar|borrar|suprimir)se(?!\p{L})/iu, 'eliminar'],
+  // CU-854 (table r1 OK'd by cu-researcher 00:34Z, rebuild delta 05:53Z): the fourth covered es delete verb, destruir, in each shape of
+  // the cell - the participle after every auxiliary ('Los archivos van a ser destruidos.', 'están a punto de ser destruidos'), the reflexive
+  // future, the periphrastic reflexive and both enclitics ('van a destruirse', 'están a punto de destruirse').
+  [/\b(?:ser[áa]n?|van?\s+a\s+(?:ser|quedar|estar)|quedar(?:á|án)|estar(?:á|án)|(?:está|están)\s+a\s+punto\s+de\s+(?:ser|quedar)|(?:está|están)\s+por\s+ser)\s+(?:\S+\s+){0,3}?(?:eliminad[oa]s?|borrad[oa]s?|suprimid[oa]s?|destruid[oa]s?)\b|\bse\s+(?:\S+\s+){0,2}?(?:eliminar[áa]n?|borrar[áa]n?|suprimir[áa]n?|destruir[áa]n?)(?!\p{L})|\bse\s+van?\s+a\s+(?:eliminar|borrar|suprimir|destruir)(?!\p{L})|\bvan?\s+a\s+(?:eliminar|borrar|suprimir|destruir)se(?!\p{L})|\b(?:está|están)\s+a\s+punto\s+de\s+(?:eliminar|borrar|suprimir|destruir)se(?!\p{L})/iu, 'eliminar'],
   // CU-846 (table OK'd by cu-researcher 23:55Z, r1a): it sta / stanno per and è / sono sul punto di + essere / venire ('I file nel
   // cestino stanno per essere eliminati.'); 'è' takes (?<!\p{L}), never \b (CU-825); 'stavano per' / 'erano sul punto' are other words.
   [/(?:\b(?:verranno|verrà|saranno|sarà)|(?<!\p{L})(?:(?:sta|stanno)\s+per|(?:è|sono)\s+sul\s+punto\s+di)\s+(?:essere|venire))\s+(?:\S+\s+){0,3}?(?:eliminat[ioae]|rimoss[ioae]|cancellat[ioae]|distrutt[ioae])\b/iu, 'elimina'],
