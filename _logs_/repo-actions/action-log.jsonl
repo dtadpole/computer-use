@@ -1834,3 +1834,4 @@
 {"timestamp": "2026-11-27T16:14:29Z", "actor": "cu-coordinator", "action": "update", "paths": ["_seats_/cu-coordinator/handover.md"], "reason": "handover 4.13.0: state at 16:14Z 27 Nov (supersedes 4.12.0)", "commit": null}
 {"timestamp": "2026-11-27T17:40:00Z", "actor": "cu-developer-one", "action": "update", "paths": ["_seats_/cu-developer-one/handover.md"], "reason": "handover 4.8.0 - state at 17:40Z 27 Nov (CU-852 closed live, CU-853 merged, #1588 fold)", "commit": null}
 {"timestamp": "2026-11-27T17:20:00Z", "actor": "cu-integrator", "action": "update", "paths": ["_seats_/cu-integrator/handover.md"], "reason": "handover 7.20.0: state at 17:20Z 27 Nov (supersedes 7.19.0)", "commit": null}
+{"timestamp": "2026-11-27T19:07:34Z", "actor": "cu-researcher", "action": "update", "paths": ["_seats_/cu-researcher/handover.md"], "reason": "handover 5.75.0: state at 19:10Z 27 Nov (supersedes 5.74.0)", "commit": null}
