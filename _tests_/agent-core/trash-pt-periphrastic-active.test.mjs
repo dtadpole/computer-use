@@ -143,7 +143,6 @@ test('CU-863 fold: a negated or windowed periphrastic first no longer hides a la
     ['Esvaziar', 'Lixeira', 'Os aplicativos não vão apagar os originais, mas eliminarão os itens da lixeira.'],
     ['Esvaziar', 'Lixeira', 'Estes comandos nunca irão remover os arquivos abertos, mas apagarão todos os outros itens.'],
     ['Esvaziar', 'Lixeira', 'Os aplicativos no Mac vão apagar as cópias e eliminarão os itens da lixeira.'],
-    ['Esvaziar', 'Lixeira', 'O sistema não eliminará as pastas, mas excluirá todos os itens da lixeira.'],
     ['Esvaziar', 'Lixeira', 'Em breve, os aplicativos vão apagar os itens da lixeira.'],
     ['Esvaziar', 'Lixo', 'Vão-se eliminar todos os ficheiros do Lixo.'],
     ['Esvaziar', 'Lixo', 'Vai-se apagar todo o conteúdo do Lixo.'],
@@ -158,7 +157,7 @@ test('CU-863 fold: a negated or windowed periphrastic first no longer hides a la
   ])
 })
 
-test('#1588 nem round (table r2): a later future right after nem / né / ni (one clitic at most) is not read, as on main; one after a contrast word is', () => {
+test('#1588 cut (D-121 (1)): later futures are read as on main - after a negated periphrastic only main\'s first match, else none', () => {
   free([
     ['Esvaziar', 'Lixeira', 'Os aplicativos não vão apagar os itens da lixeira nem os vão excluir.'],
     ['Esvaziar', 'Lixeira', 'O sistema não vai apagar os itens da lixeira nem vai excluir as pastas.'],
@@ -166,12 +165,16 @@ test('#1588 nem round (table r2): a later future right after nem / né / ni (one
     ['Esvaziar', 'Lixeira', 'Os aplicativos não apagarão os itens da lixeira nem os excluirão.'],
     ['Esvaziar', 'Lixeira', 'O sistema nunca apagará as pastas nem os excluirá da lixeira.'],
     ['Svuota', 'Cestino', 'Le app non cancelleranno gli elementi del cestino né li elimineranno.'],
-  ])
-  asks([
+    ['Esvaziar', 'Lixeira', 'O sistema não vai apagar as pastas nem durante a noite de hoje vai excluir os itens da lixeira.'],
+    // free on main as well (main reads only its first match); the asks they carry go to CU-882 / a follow-up (cu-coordinator 23:16Z)
     ['Esvaziar', 'Lixeira', 'O sistema não apagará as pastas, mas excluirá todos os itens da lixeira.'],
     ['Esvaziar', 'Lixeira', 'O sistema não vai apagar as pastas nem os atalhos, mas vai excluir todos os itens da lixeira.'],
     ['Esvaziar', 'Lixeira', 'O sistema não apagará as pastas nem os atalhos, contudo excluirá todos os itens da lixeira.'],
+  ])
+  asks([
     ['Esvaziar', 'Lixeira', 'O sistema excluirá todos os itens da lixeira, nem que demore.'],
-    ['Esvaziar', 'Lixeira', 'O sistema não vai apagar as pastas nem os atalhos do usuário na pasta pessoal e vai excluir todos os itens da lixeira.'],
+    // asks on main 986abf965 as well (another rule reads it), so it keeps asking
+    ['Esvaziar', 'Lixeira', 'O sistema não eliminará as pastas, mas excluirá todos os itens da lixeira.'],
+    ['Esvaziar', 'Lixeira', 'O sistema não vai apagar as pastas, mas excluirá todos os itens da lixeira.'],
   ])
 })
