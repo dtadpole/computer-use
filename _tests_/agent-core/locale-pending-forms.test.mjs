@@ -190,6 +190,9 @@ test('CU-858 fold: the active future as a predicate, a participle after its obje
     // Q3 verbatim, and a participle right after Çöp Sepeti'ni
     ['Boşalt', 'Çöp Sepeti', 'Çöp kutusundaki dosyaları silecek uygulamayı seçin.'],
     ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ni boşaltacak aracı seçin."],
+    // cu-developer-one's P1: a negated relative participle in -mAmIş no longer frees the pending clause (as on main)
+    ['Boşalt', 'Çöp Sepeti', 'Temizlenmemiş öğeler kalıcı olarak silinecek.'],
+    ['Boşalt', 'Çöp Sepeti', 'Atılmamış dosyalar kalıcı olarak silinecek.'],
   ])
 })
 
