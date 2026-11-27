@@ -49,6 +49,19 @@ export function neverCoveredByGrant(cls, name) {
 // locks, dial rows, mass sends, compensation, returns, relists, ride cancels) asks under any submit grant.
 // CU-507 (High; cu-coordinator 16:06Z): the generic final buttons of a confirm modal - judged by the modal's own title and text.
 const GENERIC_CONFIRM = /^\s*(?:confirm|ok|okay|yes|yes,?\s+(?:continue|confirm|proceed|i'?m\s+sure|do\s+it)|continue|proceed|submit|done|apply|accept|agree|i\s+agree|i\s+understand|got\s+it|i'?m\s+sure|do\s+it|go\s+ahead|confirm\s+and\s+continue)\s*[.!]?\s*$/i
+// CU-859 (the marker table OK'd by cu-researcher, held out): the English pending auxiliaries, ONE set of fragments every English
+// pending cell reads (the trash-locative cell below, TRASH_PENDING_AUX, TRASH_PENDING, EN_IMMINENT_AUX, MODAL_FUTURE / GONE / LEAD),
+// each with its contraction - 'll for will; 's / 're for is / are before 'going to' and before the imminent 'about to be / get' /
+// 'on the point / verge of being'; 'd for would only before a bare 'be' ("'d been", "'d have been" are the past perfect). A full
+// word stands alone; a clitic is attached to its subject (no letter lookbehind before the apostrophe, ['’] for both apostrophes);
+// every form ends at a letter stop. Never 've, 'm, "'s been", 'gonna', and no negated form: "won't", "isn't going to", "aren't
+// about to" find no auxiliary, and a 'not' after a clitic ("It'll not be deleted.") is read by each cell's negation as after its full word.
+const EN_BE = String.raw`(?:(?<!\p{L})(?:is|are)|['’](?:s|re))`
+const EN_WILL = String.raw`(?:(?<!\p{L})will|['’]ll)(?!\p{L})`
+const EN_WOULD = String.raw`(?:(?<!\p{L})would|['’]d(?=\s+be(?!\p{L})))(?!\p{L})`
+const EN_GOING_TO = String.raw`${EN_BE}\s+going\s+to(?!\p{L})`
+const EN_ABOUT_TO = String.raw`${EN_BE}\s+(?:(?:just|now|right)\s+)?(?:about\s+to\s+(?:be|get)|on\s+the\s+(?:point|verge)\s+of\s+being)(?!\p{L})`
+const EN_PENDING_AUX = String.raw`(?:${EN_WILL}|${EN_WOULD}|${EN_GOING_TO}|${EN_ABOUT_TO})`
 // CU-748 (High; sweep 5, cu-coordinator 06:05Z): a localized alert that states the act in the passive future ('Diese 12 Fotos
 // werden ... gelöscht.', 'Les fichiers seront supprimés.', '削除されます', '将被删除', '삭제됩니다') names that act; the modal rule
 // judges its verb as one more text, as the English titles are judged. Only delete verbs, only future / passive forms. r2 adds Dutch.
@@ -87,7 +100,9 @@ const LOCALE_PASSIVE_ACTS = [
   // CU-852 (table OK'd by cu-researcher 01:15Z, r2): so are the en imminent 'is / are (just / now / right) about to be / get' and
   // 'is / are on the point / verge of being' ('All items are about to be purged from the trash.'); 'was / were about to' stays past,
   // and a contraction or a 'not' before 'about' / 'on' finds no auxiliary.
-  [/^(?=[^.!?]*\?\s*$|[^.!?]*(?<!\p{L})(?:wird|werden|will|would|(?:is|are)\s+going\s+to|(?:is|are)\s+(?:(?:just|now|right)\s+)?(?:about\s+to\s+(?:be|get)|on\s+the\s+(?:point|verge)\s+of\s+being)|sera|seront|será|serán|verrà|verranno|sarà|saranno|serão|wordt|worden|zal|zullen|se\s+(?:quitar|eliminar|borrar)[áa]n?|(?:vont|va)\s+être|van?\s+a\s+ser|(?:vão|vai|irão|irá)\s+ser|(?:sta|stanno)\s+per\s+(?:essere|venire)|(?:è|sono)\s+sul\s+punto\s+di\s+(?:essere|venire)|(?:est|sont)\s+sur\s+le\s+point\s+d['’]être|(?:está|están)\s+(?:a\s+punto\s+de|por)\s+ser|(?:está|estão)\s+(?:prestes\s+a|a\s+ponto\s+de|para)\s+ser)(?!\p{L}))(?![^.!?]*(?<!\p{L})(?:wurde|wurden|was|were|has\s+been|have\s+been|a\s+été|ont\s+été|fue|fueron|ha\s+sido|han\s+sido|è\s+stat[oa]|sono\s+stat[ie]|foi|foram|werd|werden\s+verwijderd)(?!\p{L}))[^.!?]*?(?:(?<!\p{L})(?:aus\s+(?:dem|deinem|ihrem|meinem|unserem)\s+(?:papierkorb|mülleimer|abfalleimer)|from\s+(?:the|your|my)\s+(?:trash|bin|recycle\s+bin)|de\s+(?:la|ta|votre|ma)\s+corbeille|de\s+(?:la|tu|su|mi)\s+papelera|dal\s+cestino|da\s+lixeira|uit\s+de\s+(?:prullen(?:bak|mand)|vuil(?:nis)?bak))(?!\p{L})[^.!?]{0,40}?(?<!\p{L})(?:entfernt|gelöscht|beseitigt|weggenommen|herausgenommen|removed|deleted|erased|purged|cleared|taken\s+out|retiré(?:e)?s?|enlevé(?:e)?s?|ôté(?:e)?s?|supprimé(?:e)?s?|effacé(?:e)?s?|éliminé(?:e)?s?|quitad[oa]s?|retirad[oa]s?|eliminad[oa]s?|sacad[oa]s?|borrad[oa]s?|suprimid[oa]s?|(?:quitar|retirar|eliminar|sacar|borrar|suprimir)[áa]n?|tolt[oiae]|rimoss[oiae]|eliminat[oiae]|cancellat[oiae]|removid[oa]s?|tirad[oa]s?|apagad[oa]s?|excluíd[oa]s?|deletad[oa]s?|verwijderd|weggehaald|gewist)(?!\p{L})|(?<!\p{L})(?:entfernt|gelöscht|beseitigt|weggenommen|herausgenommen|removed|deleted|erased|purged|cleared|taken\s+out|retiré(?:e)?s?|enlevé(?:e)?s?|ôté(?:e)?s?|supprimé(?:e)?s?|effacé(?:e)?s?|éliminé(?:e)?s?|quitad[oa]s?|retirad[oa]s?|eliminad[oa]s?|sacad[oa]s?|borrad[oa]s?|suprimid[oa]s?|(?:quitar|retirar|eliminar|sacar|borrar|suprimir)[áa]n?|tolt[oiae]|rimoss[oiae]|eliminat[oiae]|cancellat[oiae]|removid[oa]s?|tirad[oa]s?|apagad[oa]s?|excluíd[oa]s?|deletad[oa]s?|verwijderd|weggehaald|gewist)(?!\p{L})[^.!?]{0,40}?(?<!\p{L})(?:aus\s+(?:dem|deinem|ihrem|meinem|unserem)\s+(?:papierkorb|mülleimer|abfalleimer)|from\s+(?:the|your|my)\s+(?:trash|bin|recycle\s+bin)|de\s+(?:la|ta|votre|ma)\s+corbeille|de\s+(?:la|tu|su|mi)\s+papelera|dal\s+cestino|da\s+lixeira|uit\s+de\s+(?:prullen(?:bak|mand)|vuil(?:nis)?bak))(?!\p{L}))/iu, 'delete'],
+  // CU-859: the English auxiliaries are the shared EN_PENDING_AUX, so the contracted 'll, 'd be, 's / 're going to and 's / 're
+  // about to (or on the point / verge of) read as their full forms here; a negated contraction ("aren't about to") still finds none.
+  [new RegExp(String.raw`^(?=[^.!?]*\?\s*$|[^.!?]*${EN_PENDING_AUX}|[^.!?]*(?<!\p{L})(?:wird|werden|sera|seront|será|serán|verrà|verranno|sarà|saranno|serão|wordt|worden|zal|zullen|se\s+(?:quitar|eliminar|borrar)[áa]n?|(?:vont|va)\s+être|van?\s+a\s+ser|(?:vão|vai|irão|irá)\s+ser|(?:sta|stanno)\s+per\s+(?:essere|venire)|(?:è|sono)\s+sul\s+punto\s+di\s+(?:essere|venire)|(?:est|sont)\s+sur\s+le\s+point\s+d['’]être|(?:está|están)\s+(?:a\s+punto\s+de|por)\s+ser|(?:está|estão)\s+(?:prestes\s+a|a\s+ponto\s+de|para)\s+ser)(?!\p{L}))(?![^.!?]*(?<!\p{L})(?:wurde|wurden|was|were|has\s+been|have\s+been|a\s+été|ont\s+été|fue|fueron|ha\s+sido|han\s+sido|è\s+stat[oa]|sono\s+stat[ie]|foi|foram|werd|werden\s+verwijderd)(?!\p{L}))[^.!?]*?(?:(?<!\p{L})(?:aus\s+(?:dem|deinem|ihrem|meinem|unserem)\s+(?:papierkorb|mülleimer|abfalleimer)|from\s+(?:the|your|my)\s+(?:trash|bin|recycle\s+bin)|de\s+(?:la|ta|votre|ma)\s+corbeille|de\s+(?:la|tu|su|mi)\s+papelera|dal\s+cestino|da\s+lixeira|uit\s+de\s+(?:prullen(?:bak|mand)|vuil(?:nis)?bak))(?!\p{L})[^.!?]{0,40}?(?<!\p{L})(?:entfernt|gelöscht|beseitigt|weggenommen|herausgenommen|removed|deleted|erased|purged|cleared|taken\s+out|retiré(?:e)?s?|enlevé(?:e)?s?|ôté(?:e)?s?|supprimé(?:e)?s?|effacé(?:e)?s?|éliminé(?:e)?s?|quitad[oa]s?|retirad[oa]s?|eliminad[oa]s?|sacad[oa]s?|borrad[oa]s?|suprimid[oa]s?|(?:quitar|retirar|eliminar|sacar|borrar|suprimir)[áa]n?|tolt[oiae]|rimoss[oiae]|eliminat[oiae]|cancellat[oiae]|removid[oa]s?|tirad[oa]s?|apagad[oa]s?|excluíd[oa]s?|deletad[oa]s?|verwijderd|weggehaald|gewist)(?!\p{L})|(?<!\p{L})(?:entfernt|gelöscht|beseitigt|weggenommen|herausgenommen|removed|deleted|erased|purged|cleared|taken\s+out|retiré(?:e)?s?|enlevé(?:e)?s?|ôté(?:e)?s?|supprimé(?:e)?s?|effacé(?:e)?s?|éliminé(?:e)?s?|quitad[oa]s?|retirad[oa]s?|eliminad[oa]s?|sacad[oa]s?|borrad[oa]s?|suprimid[oa]s?|(?:quitar|retirar|eliminar|sacar|borrar|suprimir)[áa]n?|tolt[oiae]|rimoss[oiae]|eliminat[oiae]|cancellat[oiae]|removid[oa]s?|tirad[oa]s?|apagad[oa]s?|excluíd[oa]s?|deletad[oa]s?|verwijderd|weggehaald|gewist)(?!\p{L})[^.!?]{0,40}?(?<!\p{L})(?:aus\s+(?:dem|deinem|ihrem|meinem|unserem)\s+(?:papierkorb|mülleimer|abfalleimer)|from\s+(?:the|your|my)\s+(?:trash|bin|recycle\s+bin)|de\s+(?:la|ta|votre|ma)\s+corbeille|de\s+(?:la|tu|su|mi)\s+papelera|dal\s+cestino|da\s+lixeira|uit\s+de\s+(?:prullen(?:bak|mand)|vuil(?:nis)?bak))(?!\p{L}))`, 'iu'), 'delete'],
   // CU-825: a final accented letter takes (?!\p{L}), never \b - under the u flag \b is ASCII-only, so 'supprimé' / 'se eliminará' never matched.
   // CU-823 (table OK'd by cu-researcher 15:45Z): the auxiliary slot of the fr / es / pt future passives also takes the periphrastic
   // and resultative futures (fr 'vont être supprimés'); participles, gap and negation are unchanged.
@@ -197,16 +212,19 @@ const TRASH_EMPTIED_VERB = /(?<!\p{L})(?:emptied|vidée?s?|vaciad[oa]s?|vaciar[�
 // Only a negation BEFORE the verb frees it; one in a following clause ('… e non sarà possibile recuperarli') does not.
 // CU-863 (table OK'd by cu-researcher 03:36Z): pt vai / vão / irá / irão + a covered infinitive ('vão se eliminar', 'vai excluí-los').
 const TRASH_ACTIVE_FUTURE = /(?<!\p{L})(?:cancellerà|cancelleranno|eliminerà|elimineranno|rimuoverà|rimuoveranno|apagará|apagarão|excluirá|excluirão|deletará|deletarão|removerá|removerão|eliminará|eliminarán|eliminarão|borrará|borrarán|suprimirá|suprimirán|supprimera|supprimeront|effacera|effaceront|quitará|quitarán|toglierà|toglieranno|retirarão|tirarão|retirera|retireront|enlèvera|enlèveront|ôtera|ôteront|éliminera|élimineront|destruirá|destruirán|destruirão|détruira|détruiront|distruggerà|distruggeranno|(?:vão|vai|irão|irá)\s+(?:se\s+)?(?:excluir|deletar|apagar|remover|eliminar|destruir|excluí-l[oa]s?|deletá-l[oa]s?|apagá-l[oa]s?|removê-l[oa]s?|eliminá-l[oa]s?|destruí-l[oa]s?))(?!\p{L})/iu
-const TRASH_PENDING_AUX = /(?<!\p{L})(?:will|sera|seront|será|serán|verrà|verranno|sarà|saranno|serão)(?!\p{L})|(?<!\p{L})se\s+(?:\S+\s+){0,2}?vaciar[áa]n?(?!\p{L})/iu
+// CU-859: the English 'will' is EN_WILL, so 'It'll be emptied.' reads as 'It will be emptied.' does.
+const TRASH_PENDING_AUX = new RegExp(String.raw`${EN_WILL}|(?<!\p{L})(?:sera|seront|será|serán|verrà|verranno|sarà|saranno|serão)(?!\p{L})|(?<!\p{L})se\s+(?:\S+\s+){0,2}?vaciar[áa]n?(?!\p{L})`, 'iu')
 // CU-823 (table OK'd by cu-researcher 15:45Z): en 'is / are going to' is pending too ('All items are going to be erased.'); the
 // four-word negation window and the 'were going to' past stay free.
 // CU-852 (table OK'd by cu-researcher 01:15Z, r2): so are 'is / are (just / now / right) about to be / get' and 'is / are on the
-// point / verge of being' ('The file is just about to be deleted.'); 'was / were about to', "'s / 're about to" and 'is not about
-// to' stay free.
-const TRASH_PENDING = /[?？]\s*$|(?<!\p{L})(?:will|would|(?:is|are)\s+going\s+to|(?:is|are)\s+(?:(?:just|now|right)\s+)?(?:about\s+to\s+(?:be|get)|on\s+the\s+(?:point|verge)\s+of\s+being)|wird|werden|sera|seront|será|serán|verrà|verranno|serão|wordt|worden|zal|zullen)(?!\p{L})/iu
+// point / verge of being' ('The file is just about to be deleted.'); 'was / were about to' and 'is not about to' stay free.
+// CU-859: the English auxiliaries are the shared EN_PENDING_AUX - "It'll be deleted.", "They're going to be deleted.", "It's about
+// to be deleted.", "It'd be deleted." ask as their full forms do; "'d been", "'s been", 've, 'm, 'gonna' and the negated forms stay free.
+const TRASH_PENDING = new RegExp(String.raw`[?？]\s*$|${EN_PENDING_AUX}|(?<!\p{L})(?:wird|werden|sera|seront|será|serán|verrà|verranno|serão|wordt|worden|zal|zullen)(?!\p{L})`, 'iu')
 // CU-852 fold (F1 of the developer cross-check): the four-word negation window before the delete verb reads an imminent
 // auxiliary as 'will be', so a negation that frees 'No items will be deleted.' frees 'No items are about to be deleted.' too.
-const EN_IMMINENT_AUX = /(?<!\p{L})(?:is|are)\s+(?:(?:just|now|right)\s+)?(?:about\s+to\s+(?:be|get)|on\s+the\s+(?:point|verge)\s+of\s+being)(?!\p{L})/giu
+// CU-859: with its contraction ("No items're about to be deleted."); the clitic is replaced with a space before 'will be'.
+const EN_IMMINENT_AUX = new RegExp(EN_ABOUT_TO, 'giu')
 const TRASH_NEGATION = /(?<!\p{L})(?:not|never|nicht|nie|kein|keine|ne|pas|jamais|no|nunca|non|mai|não|niet|nooit|geen)(?!\p{L})|n['’]t(?!\p{L})/iu
 // CU-805 (P1; the marker table cu-researcher OK'd on #1475, cu-coordinator 12:42Z): in ru / ja / zh / ko / tr a marker counts only
 // ATTACHED to a delete / erase / remove verb of the family - a suffix on the stem, or an auxiliary a few words before it - never
@@ -326,7 +344,7 @@ function emptiesTrashByDelete(name, sentence, titleNamesTrash = false) {
   if (verb === null || !TRASH_PENDING.test(text)) return false
   // A negation counts only within four words before the delete verb ('will not be deleted'), never one in a following clause
   // ('... will be permanently deleted and can't be restored').
-  return !TRASH_NEGATION.test(text.slice(0, verb.index).replace(EN_IMMINENT_AUX, 'will be').trim().split(/\s+/).slice(-4).join(' '))
+  return !TRASH_NEGATION.test(text.slice(0, verb.index).replace(EN_IMMINENT_AUX, ' will be').trim().split(/\s+/).slice(-4).join(' '))
 }
 function echoesDialogVerb(name, dialogName) {
   const button = String(name ?? '').trim().toLowerCase().replace(/[¿¡]/g, '')
@@ -387,9 +405,12 @@ function echoesDialogVerb(name, dialogName) {
 // risky verbs ('Doing so opens the volume' stays free). Each name is then judged like the title (additions only).
 const MODAL_ADVERB = String.raw`(?:(?:permanently|immediately|automatically|also|forever|irreversibly|completely|instantly|then|all)\s+)?`
 const MODAL_CONDITION = String.raw`(?:once|when|after|if|as\s+soon\s+as)\s+you\s+(?:confirm|continue|proceed)\w*,?\s+`
-const MODAL_FUTURE = new RegExp(String.raw`^(?:${MODAL_CONDITION})?(.{1,120}?)\s+(?:will|would|(?:is|are)\s+going\s+to)\s+be\s+${MODAL_ADVERB}([a-z]+(?:ed|en|t))\b`, 'i')
-const MODAL_GONE = new RegExp(String.raw`^(?:${MODAL_CONDITION}(.{1,120}?)\s+(?:is|are|will\s+be)|(.{1,120}?)\s+will\s+be)\s+(?:gone|lost)\b`, 'i')
-const MODAL_LEAD = new RegExp(String.raw`^(?:doing\s+(?:so|this)|proceeding|continuing|confirming|finishing|completing|ending|by\s+(?:continuing|proceeding|confirming|finishing|completing),?|${MODAL_CONDITION}(?:this|it|we)|this(?:\s+action)?|it)\s+(?:(?:will|would)\s+)?${MODAL_ADVERB}([a-z]+)\s+(\S.{0,120})$`, 'i')
+// CU-859: the auxiliaries are the shared English fragments (EN_WILL, EN_WOULD, EN_GOING_TO), so a contraction attached to the
+// subject reads as its full word ("Your account'll be deleted", "This'll erase the volume", "Your data'll be gone"): the space
+// before the auxiliary is optional (\s*), the fragments' own letter lookbehind keeps a full word whole, and the u flag reads \p{L}.
+const MODAL_FUTURE = new RegExp(String.raw`^(?:${MODAL_CONDITION})?(.{1,120}?)\s*(?:${EN_WILL}|${EN_WOULD}|${EN_GOING_TO})\s+be\s+${MODAL_ADVERB}([a-z]+(?:ed|en|t))\b`, 'iu')
+const MODAL_GONE = new RegExp(String.raw`^(?:${MODAL_CONDITION}(.{1,120}?)(?:\s+(?:is|are)|\s*${EN_WILL}\s+be)|(.{1,120}?)\s*${EN_WILL}\s+be)\s+(?:gone|lost)\b`, 'iu')
+const MODAL_LEAD = new RegExp(String.raw`^(?:doing\s+(?:so|this)|proceeding|continuing|confirming|finishing|completing|ending|by\s+(?:continuing|proceeding|confirming|finishing|completing),?|${MODAL_CONDITION}(?:this|it|we)|this(?:\s+action)?|it)(?:\s*(?:${EN_WILL}|${EN_WOULD}))?\s+${MODAL_ADVERB}([a-z]+)\s+(\S.{0,120})$`, 'iu')
 // CU-746 r2 (cu-researcher's held-out): a leading clause about the person's own act - 'Once confirmed,', 'After you continue,',
 // 'When this is done,' - is stripped, and the present passive after it is the act ('Once confirmed, your files are erased ...').
 // Only the person's act opens it, so a retention note ('After 30 days, deleted items are removed.') stays as it was.
@@ -5272,7 +5293,8 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         // cu-researcher 16:09Z: a title is a question more often than a row - 'Are you sure you want to <row>?', 'Really <row>?',
         // '<row>?' - so a title canonical step strips the question frame before the title is judged as a name.
         // #702 round 2 (cu-researcher 16:24Z): descriptions lead with 'This will / This action will / You are about to / Doing this will'.
-        const titleRow = (text) => text.replace(/[?!.:\s]+$/, '').replace(/^\s*(?:(?:are\s+you\s+(?:sure|certain)|you\s+are\s+about|you're\s+about)(?:\s+(?:that\s+)?you\s+(?:want|wish))?\s+to|do\s+you\s+(?:really\s+)?(?:want|wish)\s+to|(?:would|do)\s+you\s+like\s+to|(?:this|this\s+action|doing\s+this|that|it)(?:\s+cannot\s+be\s+undone\s+and)?\s+will(?:\s+permanently)?|really|confirm(?:\s+that\s+you\s+want\s+to)?|permanently)\s+/i, '').trim()
+        // CU-859 fold (cu-researcher): 'You’re about to' with the curly apostrophe too.
+        const titleRow = (text) => text.replace(/[?!.:\s]+$/, '').replace(/^\s*(?:(?:are\s+you\s+(?:sure|certain)|you\s+are\s+about|you['’]re\s+about)(?:\s+(?:that\s+)?you\s+(?:want|wish))?\s+to|do\s+you\s+(?:really\s+)?(?:want|wish)\s+to|(?:would|do)\s+you\s+like\s+to|(?:this|this\s+action|doing\s+this|that|it)(?:\s+cannot\s+be\s+undone\s+and)?\s+will(?:\s+permanently)?|really|confirm(?:\s+that\s+you\s+want\s+to)?|permanently)\s+/i, '').trim()
         // #702 round 3 (cu-developer-three 16:35Z): a sentence about what happens if the person does NOT confirm ('Your changes will be
         // lost if you don't save them', '... unless you ...') describes the other button, so it is not judged for the confirm.
         const consequenceOfNot = /\b(?:if\s+you\s+(?:don'?t|do\s+not|choose\s+not\s+to|cancel|leave|close)|unless\s+you|otherwise)\b/i
