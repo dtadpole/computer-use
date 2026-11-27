@@ -286,3 +286,156 @@ test('CU-823: the negated and past twins of every new form, and the near rows, s
     ['Empty', 'Trash', 'All items are going to be moved.'],
   ])
 })
+
+// CU-842 (P1; follow-up to CU-815 from #1533's held-out): further compound and auxiliary shapes of a covered verb - the ko light
+// nouns beside 처리, the tr -(y)Iver- auxiliary, the ja te-form + なくなる - went free in a pending trash statement while the plain
+// form asked. The table cu-researcher OK'd (17:23Z) gives each shape only its plain sibling's markers; negation and past decide first.
+test('CU-842: the filed rows, verbatim, ask delete on both routes', () => {
+  asks([
+    ['비우기', '휴지통', '휴지통 항목은 영구히 삭제 조치됩니다.'],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki dosyalar hemen siliniverecek."],
+    ['空にする', 'ゴミ箱', 'ゴミ箱の項目は削除されてなくなります。'],
+  ])
+})
+
+test('CU-842: each shape asks when pending, as its plain twin already does', () => {
+  asks([
+    // plain twins, read on main (the parity proof)
+    ['비우기', '휴지통', '휴지통의 모든 파일은 영구 제거될 예정입니다.'],
+    ['비우기', '휴지통', '휴지통의 모든 항목을 영구 삭제합니다.'],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki tüm öğeler bir anda kaldırılacak."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki dosyalar tek tıkla temizlenir."],
+    ['空にする', 'ゴミ箱', 'ゴミ箱の項目はすべて消されます。'],
+    ['空にする', 'ゴミ箱', 'ゴミ箱内の書類は破棄されてしまいます。'],
+    // ko: Sino delete noun + 조치 / 진행
+    ['비우기', '휴지통', '휴지통의 모든 파일은 영구 제거 조치될 예정입니다.'],
+    ['비우기', '휴지통', '휴지통의 모든 항목을 영구 삭제 진행합니다.'],
+    // tr: -(y)Iver- on a covered passive
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki tüm öğeler bir anda kaldırılıverecek."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki dosyalar tek tıkla temizleniverir."],
+    // ja: covered passive + te + なくなる
+    ['空にする', 'ゴミ箱', 'ゴミ箱の項目はすべて消されてなくなります。'],
+    ['空にする', 'ゴミ箱', 'ゴミ箱内の書類は破棄されてなくなってしまいます。'],
+  ])
+})
+
+test('CU-842: the negated and past twins of each shape stay free (the filed rows\' and the table\'s)', () => {
+  free([
+    ['비우기', '휴지통', '휴지통 항목은 삭제 조치되지 않습니다.'],
+    ['비우기', '휴지통', '휴지통 항목은 영구히 삭제 조치되었습니다.'],
+    ['비우기', '휴지통', '휴지통의 파일은 제거 조치되지 않습니다.'],
+    ['비우기', '휴지통', '휴지통의 모든 파일은 영구 제거 조치되었습니다.'],
+    ['비우기', '휴지통', '휴지통의 모든 항목을 영구 삭제 진행하지 않습니다.'],
+    ['비우기', '휴지통', '휴지통의 모든 항목이 영구 삭제 진행되었습니다.'],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki dosyalar hemen silinivermeyecek."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki dosyalar hemen siliniverdi."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki tüm öğeler öyle kolayca kaldırılıvermeyecek."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki tüm öğeler bir anda kaldırılıverdi."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki dosyalar tek tıkla temizlenivermez."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki dosyalar tek tıkla temizleniverdi."],
+    ['空にする', 'ゴミ箱', 'ゴミ箱の項目は削除されてなくなりません。'],
+    ['空にする', 'ゴミ箱', 'ゴミ箱の項目は削除されてなくなりました。'],
+    ['空にする', 'ゴミ箱', 'ゴミ箱の項目が消されてなくなることはありません。'],
+    ['空にする', 'ゴミ箱', 'ゴミ箱の項目はすべて消されてなくなりました。'],
+    ['空にする', 'ゴミ箱', 'ゴミ箱内の書類は破棄されてなくなりません。'],
+    ['空にする', 'ゴミ箱', 'ゴミ箱内の書類は破棄されてなくなってしまいました。'],
+  ])
+})
+
+// CU-844 (P1; follow-up to CU-819 after #1539, found by cu-researcher): a ko pending delete with a dependent noun + a causal
+// ending went free after a native passive - '…곧 모두 지워질 테니 미리 백업하세요.' - or after 될 with a copula causal ending
+// beyond the four - '…영구 삭제될 것인즉 신중히 결정하십시오.'. The table cu-researcher OK'd (19:07Z), with its answer 4 (the
+// bare -(이)라 before a space and a clause; -라고 / -라는 / -라면 out), adds both cells; negation and past still decide first.
+test('CU-844: the filed rows, verbatim, and each new ending after 될 and after each native passive ask, beside the twins main asks', () => {
+  asks([
+    ['비우기', '휴지통', '휴지통 파일은 곧 모두 지워질 테니 미리 백업하세요.'],
+    ['비우기', '휴지통', '휴지통 파일이 곧 지워질 터라 복구할 수 없습니다.'],
+    ['비우기', '알림', '휴지통 항목은 영구 삭제될 것인즉 신중히 결정하십시오.'],
+    ['비우기', '휴지통', '휴지통 파일은 곧 모두 삭제될 테니 미리 백업하세요.'],
+    ['비우기', '알림', '휴지통 항목은 영구 삭제될 것이므로 신중히 결정하십시오.'],
+    ['비우기', '휴지통', '휴지통 파일은 곧 모두 삭제될 것이므로 미리 백업하세요.'],
+    ['비우기', '휴지통', '휴지통 파일은 곧 모두 버려질 것입니다.'],
+    ['비우기', '휴지통', '휴지통은 곧 비워질 것입니다.'],
+    ['비우기', '휴지통', '휴지통 파일은 곧 모두 지워질 것이므로 미리 백업하세요.'],
+    ['비우기', '휴지통', '휴지통 파일은 곧 모두 지워질터이기에 미리 백업하세요.'],
+    ['비우기', '휴지통', '휴지통 파일은 곧 모두 지워질 거기 때문에 미리 백업하세요.'],
+    ['비우기', '휴지통', '휴지통 파일은 곧 모두 버려질 테니 미리 백업하세요.'],
+    ['비우기', '휴지통', '휴지통은 곧 비워질 거니까 미리 백업하세요.'],
+    ['비우기', '알림', '휴지통 항목은 영구 삭제될 터라 복구할 수 없습니다.'],
+    ['비우기', '알림', '휴지통 항목은 영구 삭제될터라 복구할 수 없습니다.'],
+    ['비우기', '알림', '휴지통 항목은 영구 삭제될 터인즉 신중히 결정하십시오.'],
+    ['비우기', '휴지통', '휴지통 파일은 곧 지워질 것인즉 미리 백업하세요.'],
+    ['비우기', '알림', '휴지통 항목은 영구 삭제될 것이라서 복구할 수 없습니다.'],
+    ['비우기', '휴지통', '휴지통 파일은 곧 모두 버려질 것이라서 복구할 수 없습니다.'],
+    ['비우기', '알림', '휴지통 항목은 영구 삭제될 것이어서 복구할 수 없습니다.'],
+    ['비우기', '휴지통', '휴지통 파일은 곧 지워질 것이어서 복구할 수 없습니다.'],
+    ['비우기', '알림', '휴지통 항목은 영구 삭제될 터인지라 신중히 결정하십시오.'],
+    ['비우기', '휴지통', '휴지통 파일은 곧 모두 버려질 터인지라 복구할 수 없습니다.'],
+    ['비우기', '알림', '휴지통 항목은 영구 삭제될 것인 만큼 신중히 결정하십시오.'],
+    ['비우기', '휴지통', '휴지통은 곧 비워질 것인 만큼 신중히 결정하십시오.'],
+    ['비우기', '알림', '휴지통 항목은 영구 삭제될 것이길래 복구할 수 없습니다.'],
+    ['비우기', '휴지통', '휴지통은 곧 비워질 것이길래 복구할 수 없습니다.'],
+    ['비우기', '알림', '휴지통 항목은 영구 삭제될 거라서 복구할 수 없습니다.'],
+    ['비우기', '휴지통', '휴지통 파일은 곧 모두 지워질 거라서 복구할 수 없습니다.'],
+    ['비우기', '알림', '휴지통 항목은 영구 삭제될 것이라 신중히 결정하십시오.'],
+    ['비우기', '알림', '휴지통 항목은 영구 삭제될 거라 복구할 수 없습니다.'],
+    ['비우기', '알림', '휴지통 항목은 영구 삭제될 터이라 복구할 수 없습니다.'],
+    ['비우기', '휴지통', '휴지통은 곧 비워질 것이라 복구할 수 없습니다.'],
+    ['비우기', '휴지통', '휴지통 파일은 곧 모두 지워질 거라 복구할 수 없습니다.'],
+  ])
+})
+
+test('CU-844: a negated and a past twin of every new ending and every native passive stay free', () => {
+  free([
+    ['비우기', '휴지통', '휴지통 파일은 지워지지 않을 테니 그대로 두세요.'],
+    ['비우기', '휴지통', '휴지통 파일은 이미 모두 지워졌을 테니 복구할 수 없습니다.'],
+    ['비우기', '휴지통', '휴지통 파일은 지워지지 않을 터라 그대로 남습니다.'],
+    ['비우기', '휴지통', '휴지통 파일은 이미 지워졌을 터라 복구할 수 없습니다.'],
+    ['비우기', '알림', '휴지통 항목은 삭제되지 않을 것인즉 그대로 두세요.'],
+    ['비우기', '알림', '휴지통 항목은 이미 영구 삭제되었을 것인즉 신중히 결정하십시오.'],
+    ['비우기', '휴지통', '휴지통 파일은 버려지지 않을 것이므로 그대로 남습니다.'],
+    ['비우기', '휴지통', '휴지통 파일은 이미 모두 버려졌을 것이므로 복구할 수 없습니다.'],
+    ['비우기', '휴지통', '휴지통은 비워지지 않을 터이기에 그대로 남습니다.'],
+    ['비우기', '휴지통', '휴지통은 이미 비워졌을 터이기에 복구할 수 없습니다.'],
+    ['비우기', '휴지통', '휴지통 파일은 지워지지 못할 거기 때문에 그대로 남습니다.'],
+    ['비우기', '휴지통', '휴지통 파일은 이미 지워졌을 거기 때문에 복구할 수 없습니다.'],
+    ['비우기', '휴지통', '휴지통은 비워지지 않을 거니까 그대로 두세요.'],
+    ['비우기', '휴지통', '휴지통은 이미 비워졌을 거니까 복구할 수 없습니다.'],
+    ['비우기', '알림', '휴지통 항목은 삭제되지 않을 것이라서 그대로 남습니다.'],
+    ['비우기', '알림', '휴지통 항목은 이미 삭제됐을 것이라서 복구할 수 없습니다.'],
+    ['비우기', '휴지통', '휴지통 파일은 지워지지 않을 것이어서 그대로 남습니다.'],
+    ['비우기', '휴지통', '휴지통 파일은 이미 지워졌을 것이어서 복구할 수 없습니다.'],
+    ['비우기', '알림', '휴지통 항목은 삭제 안 될 터인지라 그대로 남습니다.'],
+    ['비우기', '알림', '휴지통 항목은 이미 삭제되었을 터인지라 복구할 수 없습니다.'],
+    ['비우기', '휴지통', '휴지통은 비워지지 못할 것인 만큼 그대로 두세요.'],
+    ['비우기', '휴지통', '휴지통은 이미 비워졌을 것인 만큼 복구할 수 없습니다.'],
+    ['비우기', '알림', '휴지통 항목은 삭제되지 않을 것이길래 그대로 남습니다.'],
+    ['비우기', '알림', '휴지통 항목은 이미 삭제됐을 것이길래 복구할 수 없습니다.'],
+    ['비우기', '휴지통', '휴지통 파일은 버려지지 않을 거라서 그대로 남습니다.'],
+    ['비우기', '휴지통', '휴지통 파일은 이미 버려졌을 거라서 복구할 수 없습니다.'],
+    ['비우기', '휴지통', '휴지통 파일은 지워지지 않을 거라 그대로 남습니다.'],
+    ['비우기', '알림', '휴지통 항목은 이미 삭제되었을 것이라 복구할 수 없습니다.'],
+    ['비우기', '알림', '휴지통 항목은 삭제되지 않을 터이라 그대로 남습니다.'],
+    ['비우기', '알림', '휴지통 항목은 이미 삭제되었을 터이라 복구할 수 없습니다.'],
+  ])
+})
+
+test('CU-844: the table\'s three near rows and the -라고 twins of the bare -(이)라 stay free', () => {
+  free([
+    ['비우기', '휴지통', '휴지통 파일은 곧 모두 지워질 수 있을 테니 미리 백업하세요.'],
+    ['비우기', '휴지통', '휴지통 파일이 이미 지워진 터라 복구할 수 없습니다.'],
+    ['비우기', '알림', '휴지통 항목은 영구 삭제될 것인지 신중히 결정하십시오.'],
+    ['비우기', '휴지통', '휴지통 파일은 곧 모두 지워질 거라고 걱정하지 마세요.'],
+    ['비우기', '휴지통', '휴지통 파일은 곧 모두 지워질 터라고 걱정하지 마세요.'],
+    ['비우기', '알림', '휴지통 항목은 영구 삭제될 것이라고 걱정하지 마세요.'],
+    ['비우기', '알림', '휴지통 항목은 영구 삭제될 터라고 걱정하지 마세요.'],
+  ])
+})
+
+// CU-823's bound, pinned at cu-verifier's request (mutant C10 from the #1548 close): the locative cell never takes quedar /
+// ficar / estar as a pending auxiliary, so a resultative 'van a quedar retirados de la papelera' stays free.
+test('CU-823 bound (C10): quedar before a trash locative stays free in the locative cell', () => {
+  free([
+    ['Vaciar', 'Papelera', 'Los archivos van a quedar retirados de la papelera.'],
+  ])
+})

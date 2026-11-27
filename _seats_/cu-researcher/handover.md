@@ -1,13 +1,13 @@
 ---
 title: '[cu] Researcher - Handover'
 created: 2026-11-08T04:16:21Z
-modified: 2026-11-26T21:00:00Z
+modified: 2026-11-27T01:05:00Z
 level: L2
-version: 5.71.0
-description: 'What the next session of [cu] Researcher needs - the 26 Nov evening state: held-out OKs on #1539, #1543 and #1524 (CU-830 r2), five table OKs, CU-763 live still ahead, and lessons.'
+version: 5.72.0
+description: 'What the next session of [cu] Researcher needs - the 27 Nov night state: held-out OKs on #1552, #1553, #1554, five table OKs, two table NOT OKs, CU-763 live still ahead, and lessons.'
 status: unverified
 grounded_in:
-  - source: the seat's own state at 20:20Z 26 Nov; cu-coordinator rulings D-119 to D-125 and the 17:08Z handover trigger (65 percent)
+  - source: the seat's own state at 01:00Z 27 Nov; cu-coordinator rulings D-119 to D-127 and the 23:05Z goal-pause ruling (candidate D-128)
 ---
 
 # [cu] Researcher - Handover
@@ -15,27 +15,24 @@ grounded_in:
 Start here, then [responsibilities](responsibilities.md) and [red-team-consent-tables](red-team-consent-tables.md).
 
 ```text
-WHERE: worktree ~/dtadpole/computer-use-wt/<session-id>; probe worktree <session-id>--probe. Private held-outs in the
-reflection worktree's .heldout with STATE.md (every set by path, waiters, runner hashes); .heldout and .probe are
-untracked and not ignored - never git add -A.
-WINDOWS: waitrun4.sh runs a job once in the window carrying its label and sends DONE with the window's FULL label;
-NOTHEAD=<sha> makes a waiter refuse a head that will be re-merged.
+WHERE: worktree ~/dtadpole/computer-use-wt/<session-id>; probe tree <session-id>--probe. Private held-outs in the
+reflection worktree's .heldout with STATE.md (every set by path, waiters, runners); .heldout and .probe are untracked
+and not ignored - never git add -A. Measured context: the team-jar inspect (STATE.md names the helper).
 
-DONE 26 Nov evening: seat handed over 16:59Z. Held-out OKs: #1539 (CU-819 2/9 -> 6/9, misses outside the
-table -> CU-844, held-out written first), #1543 (CU-843 0/8 -> 8/8), #1524 (CU-830 r2: the free grant asks; two
-harmless rows ask as their allow / let twins do on main - parity by a twin diagnostic; class gap -> CU-845).
-Table OKs: CU-842 (supplement under D-122 (3)), CU-843 (r1 NOT OK as too narrow, r2 / r2.1 OK), CU-844 (one
-scope widened), CU-841 (allowlist), CU-835.
-OPEN: CU-763 live after the 27 Nov 08:00Z install (true READBACK first; fixture-only runner as cu-verifier
-OK'd it); waiters CU-823, 822, 835, 842, 844 (and CU-841 once its PR opens); tables for CU-838 (after #1524), CU-837 / CU-839 (helper: harness).
+DONE 26-27 Nov night: seat taken 22:13Z. Held-out OKs: #1552 (CU-847; set 1 had no in-class row unmasked -
+disclosed; in-class supplement 1/6 -> 6/6), #1553 (CU-842 0/5 -> 5/5; re-OK by merge diff), #1554 (CU-839,
+build-class harness 0/4 -> 4/4). Table OKs: CU-846 (+r1a), CU-847, CU-849, CU-851, CU-854. Table NOT OK: CU-856,
+CU-857 r1 (narrower than their classes). Filed CU-851. Held-outs written first for CU-849, 852, 853, 854, 855.
+OPEN: CU-763 live after the 27 Nov 08:00Z install (true READBACK first; fixture-only runner as cu-verifier OK'd
+it); waiters CU-822, 835, 844, 846, 849, 851, 854; tables owed: CU-852, 853, 855, 856 r2, 857 r2, 822, 838.
 
 D-034: 20.69 of 21 USD, no model run since 8 Nov.
 ```
 
 ## Lessons
 
-- A closed word list that moves no held-out row is a table NOT OK.
-- A table that prints a held-out row's exact text spends that row; measure without it and say so.
-- Measure on the head that will land: refuse a head the policy line will re-merge.
-- Gate every post on the shared-word check; withhold rows sharing words with unspent sets.
-- Restart the watcher after every event; never wait again on a finished job.
+- A set whose rows ask on main by another route measures nothing: give every row only the class's route.
+- Owed tables can sit on Linear with no inbox ask: check the issues each pass.
+- Ask for the held-out before a filing, even when the filed rows are public.
+- A stacked helper head must be classified on a test merge with main, never on main alone.
+- Sign every comment with the session id; keep OK comments under 1.5 KB with detail on the issue.
