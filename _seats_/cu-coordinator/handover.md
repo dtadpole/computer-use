@@ -1,9 +1,9 @@
 ---
 title: '[cu] Coordinator - handover'
 created: 2026-11-08T04:15:00Z
-modified: 2026-11-26T20:20:00Z
+modified: 2026-11-27T02:41:00Z
 level: L2
-version: 4.8.0
+version: 4.10.0
 status: unverified
 description: 'What the next [cu] Coordinator session needs to take the seat mid-flight - state at 26 Nov 20:20Z.'
 grounded_in:
@@ -13,12 +13,12 @@ grounded_in:
 
 # [cu] Coordinator - handover
 
-**State.** Closed live today: CU-831, CU-832, CU-833, CU-815, CU-819; CU-840 merged (#1534) and waits for its live close. The P1 policy.mjs line (#1533, #1534, #1539) and #373 (owner-step4 verifier, Part of CU-11) landed. Next in the line, one at a time by priority (D-125 (4)): the next ready P1 (CU-843 #1543, CU-823, CU-842, CU-844, CU-839), then #1524 (CU-830, P2), then #1521 (CU-709, P3). #1522 (CU-763, helper 0.2.76, three OKs) is armed for the 27 Nov window: merge and signed install 08:00-08:25Z with a READBACK showing version and sha256, then the CU-763 and CU-787 live closes. Twelve parked consent PRs and #1129 / #1396 exit only through a repro on main (D-125 (3), D-126 (3)).
+**State.** Landed overnight: #1552 (CU-847) and #1553 (CU-842), both closed live; #1559 (CU-844) merged and closed live; records #1549, #1550, #1560 and reflection #4179, #4186, #4189. D-128 (#1557) waits for a lane. The policy.mjs line runs one PR at a time by priority and readiness (D-125 (4), D-127 (2)): CU-846, CU-851, CU-852, CU-853 (cu-developer-one); CU-849, CU-854, CU-856, CU-857, CU-858 (cu-developer-two); CU-859 to CU-861 (cu-developer-three, after the #1522 window); then #1521. P2 in Backlog: CU-845, CU-848, CU-855, CU-862. #1554 (CU-839, helper 0.2.77) lands in a signed-helper slot after #1522 and holds no ready policy PR. #1522 (CU-763, helper 0.2.76): merge and signed install 08:00-08:25Z 27 Nov, a READBACK with version and sha256, then the CU-763, CU-787 and CU-840 live closes and the researcher's CU-763 measurement.
 
-**Rulings to know.** D-126: HANDOVER READY at 65 percent measured context and replaced by 70 (earlier only at a natural break above 62 with a reason); a successor runs no session-inbox command before its roster merges; superseded records PRs close unmerged. A P1 PR that only touches a verifier takes its three OKs from the helper owner, the policy owner and the environments owner (#373).
+**Rulings to know.** D-128: a seat whose open work all waits on windows asks 'PAUSE REQUEST until <window>'; the Coordinator pauses and resumes its goal, never across a window the seat must act in. A row that newly asks is parity, not an over-ask, when its same-frame twins already ask on main (D-125 (5), applied to #1559).
 
-**Team health.** Every seat except the coordinator was replaced today; the new holders archive their predecessors after the next main-checkout sync. Member reviews run every two hours (round 99: all six good).
+**Team health.** Nine seat successions since 26 Nov 20:00Z; researcher and verifier were replaced at 01:15Z so fresh sessions run the 08:00Z window. Archiving an old session needs a cookie-jar workaround, recorded in the private notes.
 
 **Watchdog (CU-834).** Never run: the owner's host unit and service-runner install are still needed.
 
-**Owner items (each with a default).** Stray System Settings and notification windows; CUHelper Screen Recording; step 4 session (CU-11, CU-119, CU-135); budget for CU-66; Watchdog host unit and install; the session-inbox home-scan fix; whether seats may run past 70 percent context.
+**Owner items (each with a default).** Stray System Settings and notification windows; CUHelper Screen Recording; step 4 session (CU-11, CU-119, CU-135); budget for CU-66; Watchdog host unit and install; the session-inbox home-scan fix; seats past 70 percent context (default keep 70, by 28 Nov); three feedback items that need a host with GHE access (default: held in the private notes).
