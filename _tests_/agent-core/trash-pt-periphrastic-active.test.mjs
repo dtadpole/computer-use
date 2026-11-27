@@ -135,3 +135,25 @@ test('CU-863 composed with CU-853: the plural vão eliminar asks beside its plur
   ])
   same(['Esvaziar', 'Histórico', 'Os aplicativos vão eliminar todos os arquivos de forma permanente.'], ['Esvaziar', 'Histórico', 'Os aplicativos eliminarão todos os arquivos de forma permanente.'])
 })
+
+// The fold for #1588 (F1, F2): every future in the sentence is read, and 'em vão' (in vain) is no auxiliary.
+test('CU-863 fold: a negated or windowed periphrastic first no longer hides a later synthetic future, the European \'vão-se\' asks, and \'em vão\' stays free', () => {
+  asks([
+    ['Esvaziar', 'Lixeira', 'O sistema não vai apagar as pastas, mas excluirá todos os itens da lixeira.'],
+    ['Esvaziar', 'Lixeira', 'Os aplicativos não vão apagar os originais, mas eliminarão os itens da lixeira.'],
+    ['Esvaziar', 'Lixeira', 'Estes comandos nunca irão remover os arquivos abertos, mas apagarão todos os outros itens.'],
+    ['Esvaziar', 'Lixeira', 'Os aplicativos no Mac vão apagar as cópias e eliminarão os itens da lixeira.'],
+    ['Esvaziar', 'Lixeira', 'O sistema não eliminará as pastas, mas excluirá todos os itens da lixeira.'],
+    ['Esvaziar', 'Lixeira', 'Em breve, os aplicativos vão apagar os itens da lixeira.'],
+    ['Esvaziar', 'Lixo', 'Vão-se eliminar todos os ficheiros do Lixo.'],
+    ['Esvaziar', 'Lixo', 'Vai-se apagar todo o conteúdo do Lixo.'],
+  ])
+  free([
+    ['Esvaziar', 'Lixeira', 'Ontem o aplicativo tentou em vão excluir os arquivos da lixeira.'],
+    ['Esvaziar', 'Lixeira', 'Os aplicativos tentaram em vão apagar os itens da lixeira.'],
+    ['Esvaziar', 'Lixeira', 'Os filtros tentarão em vão remover os itens da lixeira.'],
+    ['Esvaziar', 'Lixeira', 'O sistema não eliminará as pastas e não excluirá os itens da lixeira.'],
+    ['Esvaziar', 'Lixeira', 'Os aplicativos não vão apagar os itens da lixeira, mas restaurarão as pastas.'],
+    ['Esvaziar', 'Lixo', 'Os ficheiros do Lixo não se vão eliminar.'],
+  ])
+})
