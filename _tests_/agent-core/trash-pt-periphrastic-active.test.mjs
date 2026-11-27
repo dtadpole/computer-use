@@ -157,3 +157,21 @@ test('CU-863 fold: a negated or windowed periphrastic first no longer hides a la
     ['Esvaziar', 'Lixo', 'Os ficheiros do Lixo não se vão eliminar.'],
   ])
 })
+
+test('#1588 nem round (table r2): a later future right after nem / né / ni (one clitic at most) is not read, as on main; one after a contrast word is', () => {
+  free([
+    ['Esvaziar', 'Lixeira', 'Os aplicativos não vão apagar os itens da lixeira nem os vão excluir.'],
+    ['Esvaziar', 'Lixeira', 'O sistema não vai apagar os itens da lixeira nem vai excluir as pastas.'],
+    ['Esvaziar', 'Lixeira', 'O sistema não apagará os itens da lixeira nem excluirá as pastas.'],
+    ['Esvaziar', 'Lixeira', 'Os aplicativos não apagarão os itens da lixeira nem os excluirão.'],
+    ['Esvaziar', 'Lixeira', 'O sistema nunca apagará as pastas nem os excluirá da lixeira.'],
+    ['Svuota', 'Cestino', 'Le app non cancelleranno gli elementi del cestino né li elimineranno.'],
+  ])
+  asks([
+    ['Esvaziar', 'Lixeira', 'O sistema não apagará as pastas, mas excluirá todos os itens da lixeira.'],
+    ['Esvaziar', 'Lixeira', 'O sistema não vai apagar as pastas nem os atalhos, mas vai excluir todos os itens da lixeira.'],
+    ['Esvaziar', 'Lixeira', 'O sistema não apagará as pastas nem os atalhos, contudo excluirá todos os itens da lixeira.'],
+    ['Esvaziar', 'Lixeira', 'O sistema excluirá todos os itens da lixeira, nem que demore.'],
+    ['Esvaziar', 'Lixeira', 'O sistema não vai apagar as pastas nem os atalhos do usuário na pasta pessoal e vai excluir todos os itens da lixeira.'],
+  ])
+})

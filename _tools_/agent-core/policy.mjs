@@ -215,6 +215,10 @@ const TRASH_EMPTIED_VERB = /(?<!\p{L})(?:emptied|vidée?s?|vaciad[oa]s?|vaciar[�
 // and the European clitic on the auxiliary ('vão-se / vai-se' + a covered infinitive) is the same optional reflexive.
 const TRASH_ACTIVE_FUTURE = /(?<!\p{L})(?:cancellerà|cancelleranno|eliminerà|elimineranno|rimuoverà|rimuoveranno|apagará|apagarão|excluirá|excluirão|deletará|deletarão|removerá|removerão|eliminará|eliminarán|eliminarão|borrará|borrarán|suprimirá|suprimirán|supprimera|supprimeront|effacera|effaceront|quitará|quitarán|toglierà|toglieranno|retirarão|tirarão|retirera|retireront|enlèvera|enlèveront|ôtera|ôteront|éliminera|élimineront|destruirá|destruirán|destruirão|détruira|détruiront|distruggerà|distruggeranno|(?<!(?<!\p{L})em\s+)(?:vão|vai|irão|irá)(?:-se)?\s+(?:se\s+)?(?:excluir|deletar|apagar|remover|eliminar|destruir|excluí-l[oa]s?|deletá-l[oa]s?|apagá-l[oa]s?|removê-l[oa]s?|eliminá-l[oa]s?|destruí-l[oa]s?))(?!\p{L})/iu
 const TRASH_ACTIVE_FUTURE_ALL = new RegExp(TRASH_ACTIVE_FUTURE.source, TRASH_ACTIVE_FUTURE.flags + 'g')
+// #1588 'nem' round (fold table r2, OK'd by cu-researcher 18:53Z): the every-match read stops short of a coordinated negation - a later
+// match right after pt 'nem', it 'né' or es 'ni' (one clitic pronoun between at most: 'nem os vão excluir', 'né li elimineranno')
+// is not read, as on main. A later future after 'mas' still is. Reading those words as negations is CU-882's.
+const TRASH_COORDINATED_NEGATION = /(?<!\p{L})(?:nem|né|ni)(?:\s+(?:o|a|os|as|lo|la|los|las|li|le|les|lhe|lhes|se|si|ne|gli))?\s*$/iu
 // CU-859: the English 'will' is EN_WILL, so 'It'll be emptied.' reads as 'It will be emptied.' does.
 const TRASH_PENDING_AUX = new RegExp(String.raw`${EN_WILL}|(?<!\p{L})(?:sera|seront|será|serán|verrà|verranno|sarà|saranno|serão)(?!\p{L})|(?<!\p{L})se\s+(?:\S+\s+){0,2}?vaciar[áa]n?(?!\p{L})`, 'iu')
 // CU-823 (table OK'd by cu-researcher 15:45Z): en 'is / are going to' is pending too ('All items are going to be erased.'); the
@@ -354,8 +358,12 @@ function emptiesTrashByDelete(name, sentence, titleNamesTrash = false) {
   // eliminati', 'serão excluídos', 'werden … gelöscht', 'worden verwijderd', 'будут удалены') count here too, with their own negation.
   if (localePassiveAct(text) !== null) return true
   // CU-863 fold (#1588 F1): every match is read, so a negated future first no longer hides a later one that asks.
+  let later = false
   for (const active of text.matchAll(TRASH_ACTIVE_FUTURE_ALL)) {
-    if (!TRASH_NEGATION.test(text.slice(0, active.index).trim().split(/\s+/).slice(-4).join(' '))) return true
+    const window = text.slice(0, active.index).trim().split(/\s+/).slice(-4).join(' ')
+    if (later && TRASH_COORDINATED_NEGATION.test(text.slice(0, active.index))) continue
+    if (!TRASH_NEGATION.test(window)) return true
+    later = true
   }
   const emptied = TRASH_EMPTIED_VERB.exec(text)
   if (emptied !== null && TRASH_PENDING_AUX.test(text) && !TRASH_NEGATION.test(text.slice(0, emptied.index).trim().split(/\s+/).slice(-4).join(' '))) return true
