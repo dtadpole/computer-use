@@ -1,24 +1,24 @@
 ---
 title: '[cu] Coordinator - handover'
 created: 2026-11-08T04:15:00Z
-modified: 2026-11-27T08:05:00Z
+modified: 2026-11-27T12:50:00Z
 level: L2
-version: 4.11.0
+version: 4.12.0
 status: unverified
-description: 'What the next [cu] Coordinator session needs to take the seat mid-flight - state at 27 Nov 08:05Z.'
+description: 'What the next [cu] Coordinator session needs to take the seat mid-flight - state at 27 Nov 12:50Z.'
 grounded_in:
   - source: owner's re-creation order of 2026-11-22 19:05 PST (the previous holder was archived past the model window)
-  - source: decision log D-119 to D-128
+  - source: decision log D-119 to D-131
 ---
 
 # [cu] Coordinator - handover
 
-**State.** Landed tonight after 02:45Z: #1562 (CU-846), #1564 (CU-851) and #1565 (CU-849) - CU-846 and CU-851 closed live, CU-849's live close follows the CU-840 close; records #1557 (D-128), #1558, #1561, #1563, #1567. The policy.mjs line runs one PR at a time by priority and readiness (D-125 (4), D-127 (2)): #1566 (CU-852, fold head a93d043c7; cross-check and held-out OK, live review after the CU-840 close), then CU-853, CU-863 (cu-developer-one), CU-854, CU-856, CU-857, CU-858, CU-865, CU-873 (cu-developer-two), CU-859 to CU-861 and CU-866 (cu-developer-three), then #1521. P2 waits in Backlog. #1522 (CU-763, helper 0.2.76): merged 08:00:21Z and installed signed at 08:00:51Z with READBACK OK (0.2.76); cu-verifier's #1522 close (CU-763, CU-787) and CU-840 close follow, then cu-researcher's CU-763 live run after 08:25Z. #1554 (helper 0.2.77) lands in a later signed-helper slot.
+**State.** Landed since 08:05Z: #1566 (CU-852, closed live 11:44Z) and #1574 (CU-854) through fresh gates (tree match); records #1568 to #1573, #1575, #1577 and the reflection rounds 105 and 106. CU-787, CU-840 and CU-849 closed live on helper 0.2.76; CU-763's rows passed and it closes after cu-verifier's mutant run (its long-header miss stays on CU-839, fixed by #1554 / 0.2.77 in the 28 Nov 08:00-08:25Z signed-helper slot). The policy.mjs line, one PR at a time (D-125 (4), D-127 (2)): #1576 (CU-857, re-OKs at 6ce9395cb) gates next; #1578 (CU-853) and #1579 (CU-859) are in review (held-out OKs in); then CU-863 and CU-881 (cu-developer-one), CU-856/858/865/873 (cu-developer-two), CU-860/861/866/876 (cu-developer-three), #1521.
 
-**Rulings to know.** D-128 is on main: a seat whose work all waits on windows asks 'PAUSE REQUEST until <window or event>'; the Coordinator pauses and resumes it, never across a window it must act in. A seat whose measured context would cross 65 percent inside a window it must act in is replaced at its last natural break before that window, even below 62 percent (to be recorded as D-129).
+**Rulings to know.** D-129 (replace before a must-act window when the measured projection crosses 65 percent), D-130 (decision log kept; the Linear Agent label is the turn field; waits on Linear) and D-131 (Fixes/Part of CU-n stays; the team's bank records PRs stay their own, several open with a Split: line) are on main.
 
-**Team health.** Four seat successions since 02:41Z (developer-one, developer-two, verifier, coordinator); each old session archived by its successor.
+**Team health.** Three D-129 successions since 08:08Z (researcher, integrator, developer-one), each archived by its successor (1b6c1679 after the next main sync). Seats pause on 'PAUSE REQUEST' and the integrator copies cu-coordinator on any ask to a paused seat.
 
 **Watchdog (CU-834).** Never run: the owner's host unit and service-runner install are still needed.
 
-**Owner items (each with a default).** Stray System Settings and notification windows; CUHelper Screen Recording; step 4 session (CU-11, CU-119, CU-135); budget for CU-66; Watchdog host unit and install; the session-inbox home-scan fix; seats past 70 percent context (default keep 70, by 28 Nov); three feedback items that need a host with GHE access (default: held in the private notes).
+**Owner items (each with a default).** D-034: 20.69 of 21 USD spent, so any further model run goes to the owner first (default: none); stray System Settings and notification windows; CUHelper Screen Recording; step 4 session (CU-11, CU-119, CU-135); budget for CU-66; Watchdog host unit and install; the session-inbox home-scan fix; seats past 70 percent context (default keep 70, by 28 Nov); three feedback items that need a host with GHE access (default: held in the private notes).
