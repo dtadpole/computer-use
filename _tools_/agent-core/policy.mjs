@@ -81,11 +81,19 @@ const LOCALE_PASSIVE_ACTS = [
   // CU-823 (table OK'd by cu-researcher 15:45Z): the periphrastic future auxiliaries fr vont / va être, es va(n) a ser, pt vão / vai /
   // irão / irá ser and en 'is / are going to' make it pending too ('Tous les fichiers vont être retirés de la corbeille.'); never
   // quedar / ficar / estar here, and the negation and past checks are unchanged.
-  [/^(?=[^.!?]*\?\s*$|[^.!?]*(?<!\p{L})(?:wird|werden|will|would|(?:is|are)\s+going\s+to|sera|seront|será|serán|verrà|verranno|sarà|saranno|serão|wordt|worden|zal|zullen|se\s+(?:quitar|eliminar|borrar)[áa]n?|(?:vont|va)\s+être|van?\s+a\s+ser|(?:vão|vai|irão|irá)\s+ser)(?!\p{L}))(?![^.!?]*(?<!\p{L})(?:wurde|wurden|was|were|has\s+been|have\s+been|a\s+été|ont\s+été|fue|fueron|ha\s+sido|han\s+sido|è\s+stat[oa]|sono\s+stat[ie]|foi|foram|werd|werden\s+verwijderd)(?!\p{L}))[^.!?]*?(?:(?<!\p{L})(?:aus\s+(?:dem|deinem|ihrem|meinem|unserem)\s+(?:papierkorb|mülleimer|abfalleimer)|from\s+(?:the|your|my)\s+(?:trash|bin|recycle\s+bin)|de\s+(?:la|ta|votre|ma)\s+corbeille|de\s+(?:la|tu|su|mi)\s+papelera|dal\s+cestino|da\s+lixeira|uit\s+de\s+(?:prullen(?:bak|mand)|vuil(?:nis)?bak))(?!\p{L})[^.!?]{0,40}?(?<!\p{L})(?:entfernt|gelöscht|beseitigt|weggenommen|herausgenommen|removed|deleted|erased|purged|cleared|taken\s+out|retiré(?:e)?s?|enlevé(?:e)?s?|ôté(?:e)?s?|supprimé(?:e)?s?|effacé(?:e)?s?|éliminé(?:e)?s?|quitad[oa]s?|retirad[oa]s?|eliminad[oa]s?|sacad[oa]s?|borrad[oa]s?|suprimid[oa]s?|(?:quitar|retirar|eliminar|sacar|borrar|suprimir)[áa]n?|tolt[oiae]|rimoss[oiae]|eliminat[oiae]|cancellat[oiae]|removid[oa]s?|tirad[oa]s?|apagad[oa]s?|excluíd[oa]s?|deletad[oa]s?|verwijderd|weggehaald|gewist)(?!\p{L})|(?<!\p{L})(?:entfernt|gelöscht|beseitigt|weggenommen|herausgenommen|removed|deleted|erased|purged|cleared|taken\s+out|retiré(?:e)?s?|enlevé(?:e)?s?|ôté(?:e)?s?|supprimé(?:e)?s?|effacé(?:e)?s?|éliminé(?:e)?s?|quitad[oa]s?|retirad[oa]s?|eliminad[oa]s?|sacad[oa]s?|borrad[oa]s?|suprimid[oa]s?|(?:quitar|retirar|eliminar|sacar|borrar|suprimir)[áa]n?|tolt[oiae]|rimoss[oiae]|eliminat[oiae]|cancellat[oiae]|removid[oa]s?|tirad[oa]s?|apagad[oa]s?|excluíd[oa]s?|deletad[oa]s?|verwijderd|weggehaald|gewist)(?!\p{L})[^.!?]{0,40}?(?<!\p{L})(?:aus\s+(?:dem|deinem|ihrem|meinem|unserem)\s+(?:papierkorb|mülleimer|abfalleimer)|from\s+(?:the|your|my)\s+(?:trash|bin|recycle\s+bin)|de\s+(?:la|ta|votre|ma)\s+corbeille|de\s+(?:la|tu|su|mi)\s+papelera|dal\s+cestino|da\s+lixeira|uit\s+de\s+(?:prullen(?:bak|mand)|vuil(?:nis)?bak))(?!\p{L}))/iu, 'delete'],
+  // CU-846 (table OK'd by cu-researcher 23:55Z, r1a): the imminent auxiliaries too - it sta / stanno per and è / sono sul punto di
+  // + essere / venire, fr est / sont sur le point d'être, es está(n) a punto de / por ser, pt está / estão prestes a / a ponto de /
+  // para ser ('I file stanno per essere tolti dal cestino.'); never quedar / ficar here, the past ones ('stavano per') are other words.
+  // CU-852 (table OK'd by cu-researcher 01:15Z, r2): so are the en imminent 'is / are (just / now / right) about to be / get' and
+  // 'is / are on the point / verge of being' ('All items are about to be purged from the trash.'); 'was / were about to' stays past,
+  // and a contraction or a 'not' before 'about' / 'on' finds no auxiliary.
+  [/^(?=[^.!?]*\?\s*$|[^.!?]*(?<!\p{L})(?:wird|werden|will|would|(?:is|are)\s+going\s+to|(?:is|are)\s+(?:(?:just|now|right)\s+)?(?:about\s+to\s+(?:be|get)|on\s+the\s+(?:point|verge)\s+of\s+being)|sera|seront|será|serán|verrà|verranno|sarà|saranno|serão|wordt|worden|zal|zullen|se\s+(?:quitar|eliminar|borrar)[áa]n?|(?:vont|va)\s+être|van?\s+a\s+ser|(?:vão|vai|irão|irá)\s+ser|(?:sta|stanno)\s+per\s+(?:essere|venire)|(?:è|sono)\s+sul\s+punto\s+di\s+(?:essere|venire)|(?:est|sont)\s+sur\s+le\s+point\s+d['’]être|(?:está|están)\s+(?:a\s+punto\s+de|por)\s+ser|(?:está|estão)\s+(?:prestes\s+a|a\s+ponto\s+de|para)\s+ser)(?!\p{L}))(?![^.!?]*(?<!\p{L})(?:wurde|wurden|was|were|has\s+been|have\s+been|a\s+été|ont\s+été|fue|fueron|ha\s+sido|han\s+sido|è\s+stat[oa]|sono\s+stat[ie]|foi|foram|werd|werden\s+verwijderd)(?!\p{L}))[^.!?]*?(?:(?<!\p{L})(?:aus\s+(?:dem|deinem|ihrem|meinem|unserem)\s+(?:papierkorb|mülleimer|abfalleimer)|from\s+(?:the|your|my)\s+(?:trash|bin|recycle\s+bin)|de\s+(?:la|ta|votre|ma)\s+corbeille|de\s+(?:la|tu|su|mi)\s+papelera|dal\s+cestino|da\s+lixeira|uit\s+de\s+(?:prullen(?:bak|mand)|vuil(?:nis)?bak))(?!\p{L})[^.!?]{0,40}?(?<!\p{L})(?:entfernt|gelöscht|beseitigt|weggenommen|herausgenommen|removed|deleted|erased|purged|cleared|taken\s+out|retiré(?:e)?s?|enlevé(?:e)?s?|ôté(?:e)?s?|supprimé(?:e)?s?|effacé(?:e)?s?|éliminé(?:e)?s?|quitad[oa]s?|retirad[oa]s?|eliminad[oa]s?|sacad[oa]s?|borrad[oa]s?|suprimid[oa]s?|(?:quitar|retirar|eliminar|sacar|borrar|suprimir)[áa]n?|tolt[oiae]|rimoss[oiae]|eliminat[oiae]|cancellat[oiae]|removid[oa]s?|tirad[oa]s?|apagad[oa]s?|excluíd[oa]s?|deletad[oa]s?|verwijderd|weggehaald|gewist)(?!\p{L})|(?<!\p{L})(?:entfernt|gelöscht|beseitigt|weggenommen|herausgenommen|removed|deleted|erased|purged|cleared|taken\s+out|retiré(?:e)?s?|enlevé(?:e)?s?|ôté(?:e)?s?|supprimé(?:e)?s?|effacé(?:e)?s?|éliminé(?:e)?s?|quitad[oa]s?|retirad[oa]s?|eliminad[oa]s?|sacad[oa]s?|borrad[oa]s?|suprimid[oa]s?|(?:quitar|retirar|eliminar|sacar|borrar|suprimir)[áa]n?|tolt[oiae]|rimoss[oiae]|eliminat[oiae]|cancellat[oiae]|removid[oa]s?|tirad[oa]s?|apagad[oa]s?|excluíd[oa]s?|deletad[oa]s?|verwijderd|weggehaald|gewist)(?!\p{L})[^.!?]{0,40}?(?<!\p{L})(?:aus\s+(?:dem|deinem|ihrem|meinem|unserem)\s+(?:papierkorb|mülleimer|abfalleimer)|from\s+(?:the|your|my)\s+(?:trash|bin|recycle\s+bin)|de\s+(?:la|ta|votre|ma)\s+corbeille|de\s+(?:la|tu|su|mi)\s+papelera|dal\s+cestino|da\s+lixeira|uit\s+de\s+(?:prullen(?:bak|mand)|vuil(?:nis)?bak))(?!\p{L}))/iu, 'delete'],
   // CU-825: a final accented letter takes (?!\p{L}), never \b - under the u flag \b is ASCII-only, so 'supprimé' / 'se eliminará' never matched.
   // CU-823 (table OK'd by cu-researcher 15:45Z): the auxiliary slot of the fr / es / pt future passives also takes the periphrastic
   // and resultative futures (fr 'vont être supprimés'); participles, gap and negation are unchanged.
-  [/\b(?:seront|sera|(?:vont|va)\s+être)\s+(?:\S+\s+){0,3}?(?:supprimée?s?|effacée?s?)(?!\p{L})/iu, 'supprimer'],
+  // CU-846 (table OK'd by cu-researcher 23:55Z, r1a): and the imminent ones - fr est / sont sur le point d'être ('Les fichiers sont
+  // sur le point d'être supprimés.'); 'ne sont pas sur le point' breaks the fixed auxiliary, 'étaient sur le point' is another word.
+  [/\b(?:seront|sera|(?:vont|va)\s+être|(?:est|sont)\s+sur\s+le\s+point\s+d['’]être)\s+(?:\S+\s+){0,3}?(?:supprimée?s?|effacée?s?)(?!\p{L})/iu, 'supprimer'],
   // CU-786: the trash's state asked in the Romance languages or Dutch - '¿La papelera queda vaciada del todo?', 'La corbeille
   // restera-t-elle vidée ?', 'Il Cestino rimane svuotato?', 'A lixeira fica esvaziada?', 'Blijft de prullenbak geleegd?' - reads
   // delete like its German twin. Only a question, only the trash or an inbox, only a state verb (never the past 'fue / a été /
@@ -94,10 +102,18 @@ const LOCALE_PASSIVE_ACTS = [
   // r2 (cu-developer-two's cross-check): 'se' reads only before a FUTURE form - 'Se ha eliminado el archivo.' is a notice.
   // CU-823: es va(n) a ser / quedar / estar and quedará(n) / estará(n) ('Los archivos quedarán eliminados.'), and the reflexive
   // periphrastic 'se van a eliminar' / 'van a eliminarse' of the three covered verbs.
-  [/\b(?:ser[áa]n?|van?\s+a\s+(?:ser|quedar|estar)|quedar(?:á|án)|estar(?:á|án))\s+(?:\S+\s+){0,3}?(?:eliminad[oa]s?|borrad[oa]s?|suprimid[oa]s?)\b|\bse\s+(?:\S+\s+){0,2}?(?:eliminar[áa]n?|borrar[áa]n?|suprimir[áa]n?)(?!\p{L})|\bse\s+van?\s+a\s+(?:eliminar|borrar|suprimir)(?!\p{L})|\bvan?\s+a\s+(?:eliminar|borrar|suprimir)se(?!\p{L})/iu, 'eliminar'],
-  [/\b(?:verranno|verrà|saranno|sarà)\s+(?:\S+\s+){0,3}?(?:eliminat[ioae]|rimoss[ioae]|cancellat[ioae]|distrutt[ioae])\b/iu, 'elimina'],
+  // CU-846 (table OK'd by cu-researcher 23:55Z, r1a): es está(n) a punto de ser / quedar and está(n) por ser ('Los archivos están a
+  // punto de ser eliminados.'), and the enclitic 'están a punto de borrarse'; 'estaban' / 'estuvieron' are other words.
+  [/\b(?:ser[áa]n?|van?\s+a\s+(?:ser|quedar|estar)|quedar(?:á|án)|estar(?:á|án)|(?:está|están)\s+a\s+punto\s+de\s+(?:ser|quedar)|(?:está|están)\s+por\s+ser)\s+(?:\S+\s+){0,3}?(?:eliminad[oa]s?|borrad[oa]s?|suprimid[oa]s?)\b|\bse\s+(?:\S+\s+){0,2}?(?:eliminar[áa]n?|borrar[áa]n?|suprimir[áa]n?)(?!\p{L})|\bse\s+van?\s+a\s+(?:eliminar|borrar|suprimir)(?!\p{L})|\bvan?\s+a\s+(?:eliminar|borrar|suprimir)se(?!\p{L})|\b(?:está|están)\s+a\s+punto\s+de\s+(?:eliminar|borrar|suprimir)se(?!\p{L})/iu, 'eliminar'],
+  // CU-846 (table OK'd by cu-researcher 23:55Z, r1a): it sta / stanno per and è / sono sul punto di + essere / venire ('I file nel
+  // cestino stanno per essere eliminati.'); 'è' takes (?<!\p{L}), never \b (CU-825); 'stavano per' / 'erano sul punto' are other words.
+  [/(?:\b(?:verranno|verrà|saranno|sarà)|(?<!\p{L})(?:(?:sta|stanno)\s+per|(?:è|sono)\s+sul\s+punto\s+di)\s+(?:essere|venire))\s+(?:\S+\s+){0,3}?(?:eliminat[ioae]|rimoss[ioae]|cancellat[ioae]|distrutt[ioae])\b/iu, 'elimina'],
   // CU-823: pt vão / vai / irão / irá + ser / ficar / estar and ficarão / ficará / estarão / estará ('Os arquivos vão ser excluídos.').
-  [/\b(?:serão|será|(?:vão|vai|irão|irá)\s+(?:ser|ficar|estar)|ficar(?:ão|á)|estar(?:ão|á))\s+(?:\S+\s+){0,3}?(?:excluíd[oa]s?|deletad[oa]s?|apagad[oa]s?|removid[oa]s?)\b/iu, 'excluir'],
+  // CU-846 (table OK'd by cu-researcher 23:55Z, r1a): pt está / estão prestes a / a ponto de + ser / ficar and está / estão para ser
+  // ('Os arquivos da lixeira estão prestes a ser excluídos.'); 'estavam' / 'esteve' are other words.
+  // CU-851 (table OK'd by cu-researcher 00:17Z): the pt participles eliminad- and destruíd- (covered by TRASH_DELETE_VERB) after the
+  // same auxiliaries ('Os arquivos vão ficar eliminados permanentemente.'); retirad- / tirad- stay out.
+  [/\b(?:serão|será|(?:vão|vai|irão|irá)\s+(?:ser|ficar|estar)|ficar(?:ão|á)|estar(?:ão|á)|(?:está|estão)\s+(?:prestes\s+a|a\s+ponto\s+de)\s+(?:ser|ficar)|(?:está|estão)\s+para\s+ser)\s+(?:\S+\s+){0,3}?(?:excluíd[oa]s?|deletad[oa]s?|apagad[oa]s?|removid[oa]s?|eliminad[oa]s?|destruíd[oa]s?)\b/iu, 'excluir'],
   // r2 (cu-researcher's held-out 13:02Z): Dutch - 'Deze mailbox wordt permanent verwijderd.'
   [/(?<!\p{L})(?:wordt|worden|zal|zullen)(?!\p{L})[^.!?]{0,120}?(?<!\p{L})(?:definitief\s+|permanent\s+)?(?:verwijderd|gewist)(?!\p{L})/iu, 'verwijderen'],
   // CU-800 r2 (cu-researcher's r1 set; cu-developer-two's CU-802 nouns 'vuilnisbak' / 'vuilbak'): the trash itself emptied in a pending statement - 'De prullenbak wordt leeggemaakt.',
@@ -122,6 +138,8 @@ const LOCALE_PASSIVE_ACTS = [
 // seront pas supprimés.', 'No se eliminarán.', 'Non verranno eliminati.', 'Não serão excluídos.', 'Не будут удалены.', 'Worden niet
 // verwijderd.' A negation inside the matched span or as the word right before it skips the match; elsewhere in the sentence it does
 // not ('Os arquivos no computador serão excluídos.' - Portuguese 'no' is 'in the' there).
+// CU-846 (table OK'd by cu-researcher 23:55Z, r1a): the imminent auxiliaries alike - 'Non stanno per essere eliminati.', 'No están a
+// punto de ser borrados.', 'Não estão prestes a ser excluídos.'; 'Ils ne sont pas sur le point d'être supprimés.' matches no cell.
 const LOCALE_PASSIVE_NEGATION = /(?<!\p{L})(?:nicht|nie|niemals|kein|keine|ne|n['’]|pas|jamais|no|nunca|non|mai|não|nao|не|никогда|niet|nooit|geen)(?!\p{L})/iu
 function localePassiveAct(text) {
   const t = String(text ?? '')
@@ -178,7 +196,13 @@ const TRASH_ACTIVE_FUTURE = /(?<!\p{L})(?:cancellerà|cancelleranno|eliminerà|e
 const TRASH_PENDING_AUX = /(?<!\p{L})(?:will|sera|seront|será|serán|verrà|verranno|sarà|saranno|serão)(?!\p{L})|(?<!\p{L})se\s+(?:\S+\s+){0,2}?vaciar[áa]n?(?!\p{L})/iu
 // CU-823 (table OK'd by cu-researcher 15:45Z): en 'is / are going to' is pending too ('All items are going to be erased.'); the
 // four-word negation window and the 'were going to' past stay free.
-const TRASH_PENDING = /[?？]\s*$|(?<!\p{L})(?:will|would|(?:is|are)\s+going\s+to|wird|werden|sera|seront|será|serán|verrà|verranno|serão|wordt|worden|zal|zullen)(?!\p{L})/iu
+// CU-852 (table OK'd by cu-researcher 01:15Z, r2): so are 'is / are (just / now / right) about to be / get' and 'is / are on the
+// point / verge of being' ('The file is just about to be deleted.'); 'was / were about to', "'s / 're about to" and 'is not about
+// to' stay free.
+const TRASH_PENDING = /[?？]\s*$|(?<!\p{L})(?:will|would|(?:is|are)\s+going\s+to|(?:is|are)\s+(?:(?:just|now|right)\s+)?(?:about\s+to\s+(?:be|get)|on\s+the\s+(?:point|verge)\s+of\s+being)|wird|werden|sera|seront|será|serán|verrà|verranno|serão|wordt|worden|zal|zullen)(?!\p{L})/iu
+// CU-852 fold (F1 of the developer cross-check): the four-word negation window before the delete verb reads an imminent
+// auxiliary as 'will be', so a negation that frees 'No items will be deleted.' frees 'No items are about to be deleted.' too.
+const EN_IMMINENT_AUX = /(?<!\p{L})(?:is|are)\s+(?:(?:just|now|right)\s+)?(?:about\s+to\s+(?:be|get)|on\s+the\s+(?:point|verge)\s+of\s+being)(?!\p{L})/giu
 const TRASH_NEGATION = /(?<!\p{L})(?:not|never|nicht|nie|kein|keine|ne|pas|jamais|no|nunca|non|mai|não|niet|nooit|geen)(?!\p{L})|n['’]t(?!\p{L})/iu
 // CU-805 (P1; the marker table cu-researcher OK'd on #1475, cu-coordinator 12:42Z): in ru / ja / zh / ko / tr a marker counts only
 // ATTACHED to a delete / erase / remove verb of the family - a suffix on the stem, or an auxiliary a few words before it - never
@@ -269,7 +293,12 @@ function localeTrashPending(text) {
 // CU-847 (table r1 OK'd by cu-researcher 22:17Z): pt names each item noun in both numbers - arquivo(s), ficheiro(s), documento(s),
 // objeto(s), conteúdo(s), beside itens / item and elemento(s) read above - so a singular pending statement ('O arquivo será
 // excluído para sempre.') reaches the same pending-delete check as its plural; dados stays plural ('dado' is also 'given').
-const TRASH_ITEM_NOUN = /(?<!\p{L})(?:items?|files?|documents?|contents?|objects?|everything|all|they|them|these|it|elemente?|objekte|dateien|alles|alle|éléments?|fichiers?|tout|tous|elementos?|archivos?|todo|todos|elementi|tutto|tutti|itens|arquivos?|ficheiros?|documentos?|objetos?|tudo|onderdelen|bestanden|items|объекты|файлы|элементы|всё|все|öğeler|dosyalar|tümü|contenu|contenido|contenuto|conteúdos?|inhalte?|inhoud|содержимое|içeri(?:k|ği)|données|datos|dati|dados|daten|gegevens|data|данные|veriler)(?!\p{L})|項目|ファイル|書類|すべて|全て|中身|データ|数据|數據|데이터|项目|文件|所有|全部|항목|파일|모든|전부/iu
+// CU-849 (table r1 OK'd by cu-researcher 00:34Z): de / nl / ru / tr / it / es / fr name the five item nouns of the English cell
+// (item, file, document, object, content) in both numbers too - Datei(en), Objekt(e), Dokument(e); bestand(en), onderdeel /
+// onderdelen, documenten, objecten; файл(ы), объект(ы), элемент(ы), документ(ы); dosya(lar), öğe(ler), belge(ler), nesne(ler),
+// içerikler; oggetto / oggetti, documenti, contenuti; fichero(s), contenidos; objet(s), contenus - bare forms only, as the plural
+// cell on main. Pronouns and the CU-832 data nouns stay as they were (tr 'veri' stays out, like pt 'dado').
+const TRASH_ITEM_NOUN = /(?<!\p{L})(?:items?|files?|documents?|contents?|objects?|everything|all|they|them|these|it|elemente?|objekte?|datei(?:en)?|dokumente?|alles|alle|éléments?|fichiers?|objets?|tout|tous|elementos?|archivos?|ficheros?|todo|todos|elementi|oggett[oi]|documenti|tutto|tutti|itens|arquivos?|ficheiros?|documentos?|objetos?|tudo|onderde(?:el|len)|bestand(?:en)?|documenten|objecten|items|объекты?|файлы?|элементы?|документы?|всё|все|öğe(?:ler)?|dosya(?:lar)?|belge(?:ler)?|nesne(?:ler)?|tümü|contenus?|contenidos?|contenut[oi]|conteúdos?|inhalte?|inhoud|содержимое|içeri(?:k|ği|kler)|données|datos|dati|dados|daten|gegevens|data|данные|veriler)(?!\p{L})|項目|ファイル|書類|すべて|全て|中身|データ|数据|數據|데이터|项目|文件|所有|全部|항목|파일|모든|전부/iu
 function emptiesTrashByDelete(name, sentence, titleNamesTrash = false) {
   const button = String(name ?? '').trim().toLowerCase()
   const text = String(sentence ?? '').trim()
@@ -289,7 +318,7 @@ function emptiesTrashByDelete(name, sentence, titleNamesTrash = false) {
   if (verb === null || !TRASH_PENDING.test(text)) return false
   // A negation counts only within four words before the delete verb ('will not be deleted'), never one in a following clause
   // ('... will be permanently deleted and can't be restored').
-  return !TRASH_NEGATION.test(text.slice(0, verb.index).trim().split(/\s+/).slice(-4).join(' '))
+  return !TRASH_NEGATION.test(text.slice(0, verb.index).replace(EN_IMMINENT_AUX, 'will be').trim().split(/\s+/).slice(-4).join(' '))
 }
 function echoesDialogVerb(name, dialogName) {
   const button = String(name ?? '').trim().toLowerCase().replace(/[¿¡]/g, '')
