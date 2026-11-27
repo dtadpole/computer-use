@@ -1,38 +1,39 @@
 ---
 title: '[cu] Developer Three (macOS helper) - handover'
 created: 2026-11-08T04:20:00Z
-modified: 2026-11-27T08:45:00Z
+modified: 2026-11-27T14:30:00Z
 level: L1
-version: 1.46.0
+version: 1.47.0
 description: 'What a fresh [cu] Developer Three session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
-  - source: 'decision log D-124 to D-127 and the D-128 candidate (READBACK proof, the policy.mjs line, goal pauses while waiting)'
-  - source: 'Linear CU-763, CU-839, CU-859, CU-876, CU-877; PRs #1522, #1554, #1566'
+  - source: 'decision log D-125 to D-132 (signed-helper slot, the policy.mjs line, goal pauses, replacement before a must-act window)'
+  - source: 'Linear CU-763, CU-839, CU-859, CU-876; PRs #1554, #1579'
 ---
 
 # [cu] Developer Three (macOS helper) - handover
 
-The seat changed sessions again on 26 Nov (stand-down 22:36Z). Installs build from the session worktree (a clean
+A planned replacement before the 28 Nov signed-helper slot (D-129). Installs build from the session worktree (a clean
 origin/main); each change has its own worktree; launchers live outside git and are linted before arming.
 
 ## Live state
 
-- Installed helper: **0.2.76** (27 Nov 08:00:51Z in the daily window, after #1522 merged as 72a201c8c): READBACK OK
-  with Info.plist, running and source 0.2.76, sha256 on CU-763; the Last War claim was released and stat-checked.
-- **CU-763** (P1): live rows passed on 0.2.76; it closes Done after cu-verifier's mutant run. CU-787 is Done.
-- **#1554** (CU-839, P1, helper 0.2.77): opened in its D-114 window; OKs from cu-developer-two and cu-researcher;
-  cu-verifier's live review is left, then the gate and a merge with a signed install in a 08:00-08:25Z slot.
-- **CU-859** (P1, contracted English pending auxiliaries): table OK'd, built locally on #1566's head; it rebases
-  on main once #1566 (CU-852) lands, then one node-class window runs test1, D-114, push and PR.
+- Installed helper: **0.2.76** (27 Nov 08:00:51Z, READBACK and sha256 on CU-763). CU-763 and CU-787 are Done.
+- **#1554** (CU-839, helper 0.2.77): three OKs at 8117f15b1. It merges in the 28 Nov 08:00-08:25Z slot, then the
+  signed install: the END must carry 'READBACK OK', 0.2.77 and the sha256, with the Last War claim released and
+  stat-checked. The install launcher is armed under the holding session.
+- **#1579** (CU-859): re-merged main and pushed at 040b6c37e in its D-114, boundary and push windows; merge-diff
+  re-OKs, then the gate.
+- **CU-876** (P1): marker table OK'd (contracted 'will' before 'be able to', and 'would like'); built after #1579.
 
-## Open work
+## Queue
 
-- Queue after CU-859: CU-860, CU-861, CU-866 (P1), CU-871, CU-872 (P2); then CU-837 (0.2.78, prepared), CU-845
-  and CU-836. Filed siblings: CU-876, CU-877.
+- P1: CU-876, CU-860, CU-861, CU-866 - one policy.mjs PR at a time.
+- P2: CU-871, CU-872, CU-874, CU-875, CU-877, CU-883, CU-838, CU-837 (0.2.78, prepared), CU-662, CU-679, CU-794.
+- P3: CU-666, CU-768, CU-792, CU-793, CU-820, CU-836, CU-845.
 
 ## Rules learned
 
-- Ask for a goal pause when every open step waits on others; never across a window you act in.
-- Read a PR's OKs before reporting its state.
-- Sign republished text with your own session.
+- A re-merge runs D-114, the boundary cell and the push each in its own named window.
+- Quote the inspected context figure verbatim.
+- Ask for a goal pause when every open step waits on others.
