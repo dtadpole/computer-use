@@ -62,6 +62,25 @@ describe('privacy-pane (CU-787)', () => {
     })
   })
 
+  test("CU-763 (helper 0.2.76): each list's nearest earlier static text, among its scroll area's siblings, is its own header", async (t) => {
+    const header = 'Placeholder first header - with a second clause.'
+    const header2 = 'Placeholder second header'
+    await withPane({ header, rows: ['Row Alpha', 'Row Beta'], header2, rows2: ['Row Gamma'] }, async (fixture) => {
+      const { fields } = await fixture.state()
+      const expected = [header, header, header2]
+      assert.equal(fields.privacySwitchAX.length, 3)
+      fields.privacySwitchAX.forEach((c, i) => {
+        assert.equal(typeof c.listIndex, 'number', `switch ${i}: a scroll area above it whose parent lists it: ${JSON.stringify(c.ancestors)}`)
+        // The helper's read: back from the list, the first static text decides, and another list stops the look.
+        const nearest = c.listSiblings.slice(0, c.listIndex).reverse().find((s) => s.role === 'AXStaticText' || s.role === 'AXScrollArea')
+        assert.deepEqual(nearest, { role: 'AXStaticText', text: expected[i] }, `switch ${i}: ${JSON.stringify(c.listSiblings)}`)
+        assert.equal(typeof c.answersWindow, 'boolean')
+      })
+      // Informational (CU-763's diagnosis): whether a switch's element answers a window, in process.
+      t.diagnostic(`answersWindow: ${JSON.stringify(fields.privacySwitchAX.map((c) => c.answersWindow))}; ancestors: ${JSON.stringify(fields.privacySwitchAX[0].ancestors)}`)
+    })
+  })
+
   test('params: headers, two sections, start state; a toggle records only itself and fields follow', async () => {
     const header = 'Allow the applications below to do the placeholder thing.'
     await withPane({ header, rows: ['Row Alpha', 'Row Beta'], header2: 'Placeholder second header.', rows2: ['Row Gamma'], on: 'Row Beta' }, async (fixture) => {
