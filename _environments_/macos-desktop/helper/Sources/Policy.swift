@@ -5,7 +5,7 @@ import Foundation
 /// The helper's identity; `build.sh` writes the same bundle id into Info.plist.
 enum HelperIdentity {
   static let bundleId = "com.reflection.cu-helper"
-  static let version = "0.2.75"
+  static let version = "0.2.76"
   /// The value every synthetic event carries in `kCGEventSourceUserData`: 0x43555345, ASCII "CUSE"
   /// (input-and-targets.md, verify-kit's SYNTHETIC_TAG). Not a secret: an event from another process with this tag
   /// could only fail to pause the run, never act.
@@ -469,26 +469,98 @@ enum ToggleState {
 /// CU-763 (the helper half of CU-754): a toggle's row context - the name of the list, table or pane it sits in - so agent
 /// core can tell a privacy grant ('Terminal' under 'Full Disk Access') from a plain switch. `list` is the nearest titled
 /// container above the toggle (a table, outline, list, group, scroll area or tab group, by its AXTitle, else its
-/// AXDescription), else its window's title (System Settings titles the window with the pane's name); `hints` stays empty
-/// (the shape is the web driver's { list, hints }, CU-443). Names only, never a value; each at most `maxText` characters.
+/// AXDescription), else its window's title (System Settings titles the window with the pane's name); `hints` holds the
+/// farther names (the shape is the web driver's { list, hints }, CU-443). Names only, never a value; each at most `maxText` characters.
+/// 0.2.76 (CU-763, cu-verifier's 0.2.75 close: no row context on CU Fixture's privacy pane): an untitled list - a table,
+/// outline or list, or the scroll area holding it - is named by its heading (`heading`): its title element's shown words,
+/// else the nearest static text before it among its parent's children (a privacy pane states the grant in a header
+/// beside its list), cut to its first clause; and the window's title is the one the ancestor walk reaches.
+/// 0.2.76 review fold (cu-verifier on #1522): a nearer name no longer hides a farther one - every farther name the walk
+/// read rides in `hints` (`pick`); and the look for a heading stops at a sibling that is a list or holds one (`heading`).
 enum RowContext {
   static let maxDepth = 8
   static let maxText = 60
+  /// How many of a list's earlier siblings are looked at for its heading, and the most children a parent may have for
+  /// the look to happen at all (a huge flat parent is not a pane).
+  static let maxSiblings = 24
+  static let maxChildren = 200
+  /// How many of an earlier sibling's own children are looked at for a list (one level only).
+  static let maxNested = 12
+  /// The most hints `pick` gives: agent core's boundary (toggleRowContextOf) keeps three.
+  static let maxHints = 3
   static let containerRoles: Set<String> = ["AXTable", "AXOutline", "AXList", "AXGroup", "AXScrollArea", "AXTabGroup"]
-  struct Container { var role: String?; var title: String?; var description: String? }
-  /// The row context from the toggle's ancestors (nearest first, at most maxDepth) and its window's title; nil when no
-  /// name reads.
-  static func pick(_ ancestors: [Container], windowTitle: String?) -> JSON? {
-    let clean = { (text: String?) -> String? in
-      guard let text else { return nil }
-      let short = text.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
-      return short.isEmpty || short.count > maxText ? nil : short
+  /// The containers a heading may name: a list and the scroll area that holds it.
+  static let listRoles: Set<String> = ["AXTable", "AXOutline", "AXList", "AXScrollArea"]
+  struct Container { var role: String?; var title: String?; var description: String?; var heading: String? = nil }
+  /// One earlier sibling of a list: its role, its shown words only when it is a static text, and its own children's roles
+  /// (one level, at most maxNested; read only for a sibling that is neither a static text nor a list).
+  struct Sibling {
+    var role: String?; var text: String?; var childRoles: [String?] = []
+    /// A list, or a sibling holding one among its direct children (a group wrapping the previous section's list).
+    var holdsList: Bool { ([role] + childRoles).contains { $0.map { RowContext.listRoles.contains($0) } ?? false } }
+  }
+
+  /// Whitespace collapsed; nil when empty or over maxText.
+  static func clean(_ text: String?) -> String? {
+    guard let text else { return nil }
+    let short = text.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
+    return short.isEmpty || short.count > maxText ? nil : short
+  }
+
+  /// A heading's first clause: cut at the first spaced dash (' - ', ' – ', ' — '), ': ' or sentence end ('. ', '? ',
+  /// '! '), a trailing '.', ':' or ';' dropped, then `clean`. 'Full Disk Access - allow the applications below ...' gives
+  /// 'Full Disk Access'; a hyphenated word ('Wi-Fi') or a '&' is never a cut.
+  static func firstClause(_ text: String?) -> String? {
+    guard let text else { return nil }
+    let flat = text.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
+    var cut = flat.endIndex
+    for mark in [" - ", " \u{2013} ", " \u{2014} ", ": ", ". ", "? ", "! "] {
+      if let range = flat.range(of: mark), range.lowerBound < cut { cut = range.lowerBound }
     }
-    for container in ancestors.prefix(maxDepth) where container.role.map({ containerRoles.contains($0) }) ?? false {
-      if let name = clean(container.title) ?? clean(container.description) { return .object(["list": .string(name), "hints": .array([])]) }
+    var head = String(flat[..<cut])
+    while let last = head.last, ".:;".contains(last) { head.removeLast() }
+    return clean(head)
+  }
+
+  /// A list's heading. The nearest decides: a title element's words (`titleElement`, nil when the list has none) decide
+  /// alone - when their first clause does not read there is no heading, and no static text is looked for. Else the
+  /// NEAREST static text among the siblings before it (`siblings` in parent order, `index` the list's own position) -
+  /// looked for at most maxSiblings back and never past another list or a sibling holding one (`holdsList`: that text
+  /// heads the other list); when its first clause does not read, there is no heading (an older text is not this list's).
+  static func heading(titleElement: String?, siblings: [Sibling], index: Int?) -> String? {
+    if let titleElement { return firstClause(titleElement) }
+    guard let index, index > 0, index <= siblings.count else { return nil }
+    for sibling in siblings[max(0, index - maxSiblings)..<index].reversed() {
+      if sibling.role == "AXStaticText" { return firstClause(sibling.text) }
+      if sibling.holdsList { return nil }
     }
-    if let name = clean(windowTitle) { return .object(["list": .string(name), "hints": .array([])]) }
     return nil
+  }
+
+  /// A container's name as `pick` reads it: its title, else its description, else (a list or its scroll area) its
+  /// heading; nil for a role that is not a container or when nothing reads.
+  static func containerName(_ container: Container) -> String? {
+    guard let role = container.role, containerRoles.contains(role) else { return nil }
+    return clean(container.title) ?? clean(container.description) ?? (listRoles.contains(role) ? clean(container.heading) : nil)
+  }
+
+  /// The row context from the toggle's ancestors (nearest first, at most maxDepth) and its window's title; nil when no
+  /// name reads. The nearest container that reads wins (`containerName`), else the window's title. Every farther name the
+  /// walk read - a farther container's, then the window's title - goes in `hints`, nearest first, without repeats or the
+  /// winner (cu-verifier on #1522: a heading 'Apps' must not hide the window title 'Camera Access' that 0.2.75 named);
+  /// at most maxHints, the window's title kept among them.
+  static func pick(_ ancestors: [Container], windowTitle: String?) -> JSON? {
+    let window = clean(windowTitle)
+    var names: [String] = ancestors.prefix(maxDepth).compactMap { containerName($0) }
+    if let window { names.append(window) }
+    guard let list = names.first else { return nil }
+    var hints: [String] = []
+    for name in names.dropFirst() where name != list && !hints.contains(name) { hints.append(name) }
+    if hints.count > maxHints {
+      if let window, let at = hints.firstIndex(of: window), at >= maxHints { hints = Array(hints.prefix(maxHints - 1)) + [window] }
+      else { hints = Array(hints.prefix(maxHints)) }
+    }
+    return .object(["list": .string(list), "hints": .array(hints.map { JSON.string($0) })])
   }
 }
 
