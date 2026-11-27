@@ -95,9 +95,20 @@ test('CU-863: the negated, past and non-delete twins stay free, and a title that
     ['Esvaziar', 'Lixeira', 'Quanto aos itens da lixeira, o sistema não vai excluí-los.'],
     ['Esvaziar', 'Lixeira', 'Estes comandos eliminaram os itens da lixeira.'],
     ['Esvaziar', 'Lixeira', 'Estes comandos iam eliminar os itens da lixeira.'],
+    ['Esvaziar', 'Lixeira', 'Estes comandos foram eliminar os itens da lixeira.'],
     ['Esvaziar', 'Lixeira', 'Estes comandos vão restaurar os itens da lixeira.'],
+    ['Esvaziar', 'Histórico', 'Os aplicativos vão eliminar todos os arquivos de forma permanente.'],
   ])
   same(['Esvaziar', 'Histórico', 'Os aplicativos vão eliminar todos os arquivos de forma permanente.'], ['Esvaziar', 'Histórico', 'O aplicativo eliminará todos os arquivos de forma permanente.'])
+})
+
+// Table row 10: the eliminar row with a negation after the verb already asks on main (the trash-statement reader); its remover twin,
+// free on main, asks with the change.
+test('CU-863: a negation after the verb keeps the row asking, and its remover twin asks with it', () => {
+  asks([
+    ['Esvaziar', 'Lixeira', 'Estes comandos vão eliminar os itens da lixeira e não será possível recuperá-los.'],
+    ['Esvaziar', 'Lixeira', 'Estes comandos vão remover os itens da lixeira e não será possível recuperá-los.'],
+  ])
 })
 
 test('CU-863: the table\'s bounds stay free - retirar (Q1 out) and the first person (Q2 out)', () => {
