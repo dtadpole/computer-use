@@ -243,11 +243,13 @@ const RU_FUT = '(?:удалятся|удалит|сотрутся|сотр[её]
 const JA_STEM = '(?:(?:削除|消去|破棄|抹消|除去|廃棄|処分)(?:処理)?|消)'
 const ZH_VERB = '(?:删除|刪除|删掉|刪掉|删去|刪去|抹除|抹去|擦除|清除|去除|移除|销毁|銷毀|丢弃|丟棄|清理掉|删光|刪光|删完|刪完|删干净|刪乾淨|删尽|刪盡|删空|刪空)'
 // CU-856 (table r2 OK'd by cu-researcher 01:06Z): KO_STEM also takes the light nouns 완료 / 종료 / 시작 / 개시 / 마무리. Between the delete
-// noun and its light noun, KO_GAP allows one case particle (을 / 를 / 이 / 가) and then at most one adverb: a -히 / -게 / -(으)로 word or
-// one of the listed bare adverbs. The gap never takes 안 / 못, so those rows stay free. KO_END is the same noun and gap before the native
-// completion verbs 끝나- / 마치- / 끝내- (their endings are in the ko cells below).
+// noun and its light noun, KO_GAP allows one case particle (을 / 를 / 이 / 가) and then at most one adverb: a -히 / -게 word, a -로 word
+// (below) or one of the listed bare adverbs. The gap never takes 안 / 못, so those rows stay free. KO_END is the same noun and gap before the
+// native completion verbs 끝나- / 마치- / 끝내- (their endings are in the ko cells below).
+// CU-856 fold (F1 of #1585, table OK'd by cu-researcher 15:32Z): -로 only as -적으로 after two or more syllables or the closed words
+// 자동으로 / 수동으로 / 새로 / 일괄로, so a noun + -(으)로 ('화면으로') no longer fills the slot.
 const KO_HEAD = '(?:삭제|제거|폐기|소거|파기|말소)'
-const KO_GAP = '\\s*(?:을|를|이|가)?\\s*(?:(?!(?:안|못)\\s)(?:\\p{Script=Hangul}+(?:히|게|로)|깨끗이|곧|즉시|바로|모두|전부|다시|먼저|함께|계속|지금|이제|일괄)\\s+)?'
+const KO_GAP = '\\s*(?:을|를|이|가)?\\s*(?:(?!(?:안|못)\\s)(?:\\p{Script=Hangul}+(?:히|게)|\\p{Script=Hangul}{2,}적으로|자동으로|수동으로|새로|일괄로|깨끗이|곧|즉시|바로|모두|전부|다시|먼저|함께|계속|지금|이제|일괄)\\s+)?'
 const KO_STEM = `${KO_HEAD}(?:${KO_GAP}(?:처리|조치|진행|실행|수행|완료|종료|시작|개시|마무리))?`
 const KO_END = `${KO_HEAD}${KO_GAP}`
 const TRASH_LOCALE = [
