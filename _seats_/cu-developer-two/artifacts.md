@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - artifacts'
 created: 2026-11-01T09:28:00Z
-modified: 2026-11-26T22:45:00Z
+modified: 2026-11-27T04:25:00Z
 level: L1
-version: 1.134.0
+version: 1.135.0
 description: 'Pointers to the persistent work of [cu] Developer Two (environments) - proposals, code, tests and run records - written by the seat itself.'
 status: unverified
 grounded_in:
@@ -16,6 +16,7 @@ Pointers only; each target is its own authority.
 
 | Date | Artifact | State |
 |---|---|---|
+| 2026-11-27 | #1552 merged 562aef718 | CU-847 (P1): a pt pending trash statement with a singular subject names its item under a trash title (TRASH_ITEM_NOUN both numbers, table r1); closed live 00:00Z |
 | 2026-11-26 | #1543 merged be8c9203c | CU-843 (P1): an access toggle's grant header reads the right with its subject modified or in the passive (ACCESS_GRANT_PHRASE, table r2.1); closed live 21:01Z |
 | 2026-11-26 | #1542 merged df3ce324b | handover 4.44.0 (records) |
 | 2026-11-26 | #1534 merged 02e3bd7aa | CU-840 (P1): a toggle's row-context hints keep the helper's 60 characters at the desktop boundary (toggleRowContextOf) and in accessRowContext; in Verify for the live close |

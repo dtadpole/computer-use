@@ -538,16 +538,55 @@ enum Accessibility {
 
   /// CU-763: a toggle's row context (RowContext.pick) from its ancestors' roles, titles and descriptions (at most
   /// RowContext.maxDepth, stopping at its window) and its window's title. Attributes only.
+  /// 0.2.76: the window's title is read where the walk reaches the AXWindow (a table cell's element may answer no
+  /// AXWindow, so the element's own AXWindow is only the fallback), and an untitled list or its scroll area - at most two
+  /// per walk - carries its heading (listHeading).
   private static func rowContext(of element: AXUIElement) -> JSON? {
     var ancestors: [RowContext.Container] = []
+    var walkedTitle: String?
+    // Counts heading attempts, not hits: in a nest deeper than ScrollArea > Table the inner two spend both, and the outer
+    // list then gets no heading - the name falls to a farther container or the window's title (cu-developer-two's note).
+    var headings = 0
     var node = elementAttribute(element, "AXParent")
     while let current = node, ancestors.count < RowContext.maxDepth {
       let role = string(current, "AXRole")
-      if role == "AXWindow" || role == "AXApplication" { break }
-      ancestors.append(RowContext.Container(role: role, title: string(current, "AXTitle"), description: string(current, "AXDescription")))
+      if role == "AXWindow" { walkedTitle = string(current, "AXTitle"); break }
+      if role == "AXApplication" { break }
+      var container = RowContext.Container(role: role, title: string(current, "AXTitle"), description: string(current, "AXDescription"))
+      if let role, RowContext.listRoles.contains(role), headings < 2,
+         RowContext.clean(container.title) == nil, RowContext.clean(container.description) == nil {
+        headings += 1
+        container.heading = listHeading(of: current)
+      }
+      ancestors.append(container)
       node = elementAttribute(current, "AXParent")
     }
-    return RowContext.pick(ancestors, windowTitle: windowTitle(of: element))
+    return RowContext.pick(ancestors, windowTitle: RowContext.clean(walkedTitle) ?? windowTitle(of: element))
+  }
+
+  /// CU-763 (0.2.76): a list's heading (RowContext.heading) - its AXTitleUIElement's words (a static text's AXValue, else
+  /// that element's AXTitle; never a control's value), which decide alone when present, else the static texts before it
+  /// among its parent's children, read backwards from the list and stopping at the first static text, another list or a
+  /// sibling holding one among its direct children (one level, at most RowContext.maxNested of them; at most
+  /// RowContext.maxSiblings back, and only under a parent of at most RowContext.maxChildren children). Shown words only.
+  private static func listHeading(of list: AXUIElement) -> String? {
+    let titled = elementAttribute(list, "AXTitleUIElement").flatMap { label -> String? in
+      string(label, "AXRole") == "AXStaticText" ? string(label, "AXValue") : string(label, "AXTitle")
+    }
+    if titled != nil { return RowContext.heading(titleElement: titled, siblings: [], index: nil) }
+    guard let parent = elementAttribute(list, "AXParent") else { return nil }
+    let kids = children(parent)
+    guard kids.count <= RowContext.maxChildren, let index = kids.firstIndex(where: { CFEqual($0, list) }) else { return nil }
+    var before: [RowContext.Sibling] = []
+    for kid in kids[max(0, index - RowContext.maxSiblings)..<index].reversed() {
+      let role = string(kid, "AXRole")
+      let isText = role == "AXStaticText"
+      var sibling = RowContext.Sibling(role: role, text: isText ? string(kid, "AXValue") : nil)
+      if !isText && !sibling.holdsList { sibling.childRoles = children(kid).prefix(RowContext.maxNested).map { string($0, "AXRole") } }
+      before.insert(sibling, at: 0)
+      if isText || sibling.holdsList { break }
+    }
+    return RowContext.heading(titleElement: nil, siblings: before, index: before.count)
   }
 
   /// CU-507: the nearest dialog container above an element (DialogText.isContainer: an AXSheet, or an AXWindow whose
