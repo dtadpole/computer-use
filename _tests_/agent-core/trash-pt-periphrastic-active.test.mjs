@@ -106,3 +106,21 @@ test('CU-863: the table\'s bounds stay free - retirar (Q1 out) and the first per
     ['Esvaziar', 'Lixeira', 'Vamos eliminar os itens da lixeira.'],
   ])
 })
+
+// Composed with CU-853 (the second PR on the TRASH_ACTIVE_FUTURE line carries the composed rows): with eliminarão read, each plural
+// periphrastic eliminar row now stands beside its own plural synthetic twin.
+test('CU-863 composed with CU-853: the plural vão eliminar asks beside its plural synthetic twin eliminarão, on both routes', () => {
+  asks([
+    ['Esvaziar', 'Lixeira', 'Estes comandos vão eliminar os itens da lixeira para sempre.'],
+    ['Esvaziar', 'Lixeira', 'Estes comandos eliminarão os itens da lixeira para sempre.'],
+    ['Esvaziar', 'Lixeira', 'Todos os itens da lixeira vão se eliminar.'],
+    ['Esvaziar', 'Lixeira', 'Todos os itens da lixeira se eliminarão.'],
+    ['Esvaziar', 'Lixeira', 'Os aplicativos vão eliminar todos os arquivos de forma permanente.'],
+    ['Esvaziar', 'Lixeira', 'Os aplicativos eliminarão todos os arquivos de forma permanente.'],
+  ])
+  free([
+    ['Esvaziar', 'Lixeira', 'Estes comandos não vão eliminar os itens da lixeira.'],
+    ['Esvaziar', 'Lixeira', 'Estes comandos não eliminarão os itens da lixeira.'],
+  ])
+  same(['Esvaziar', 'Histórico', 'Os aplicativos vão eliminar todos os arquivos de forma permanente.'], ['Esvaziar', 'Histórico', 'Os aplicativos eliminarão todos os arquivos de forma permanente.'])
+})
