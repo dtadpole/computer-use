@@ -178,3 +178,33 @@ test('CU-858: a negated and a past twin of each added form, a restore verb, a no
     ['İptal', 'Çöp Sepeti', "Çöp Sepeti'ndeki dosyalar hemen imha edilmiş olacak."],
   ])
 })
+
+// CU-858 fold (cu-verifier's F1 / F2 / Q3 on #1591, table r1 OK'd by cu-researcher 19:11Z): the active future asks only as a finite
+// predicate, or as a participle right after an accusative item noun (its English twin asks); at- only after its accusative object.
+test('CU-858 fold: the active future as a predicate, a participle after its object and at- after its object still ask', () => {
+  asks([
+    ['Boşalt', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ndeki dosyaları silecek, geri alınamaz."],
+    ['Boşalt', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ndeki dosyaları silecek ve uygulamayı kapatacak."],
+    ['Boşalt', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ndeki dosyaları atacak."],
+    ['Boşalt', 'Çöp Sepeti', "Temizlik aracı Çöp Sepeti'ndeki tüm öğeleri hemen atacak."],
+    // Q3 verbatim, and a participle right after Çöp Sepeti'ni
+    ['Boşalt', 'Çöp Sepeti', 'Çöp kutusundaki dosyaları silecek uygulamayı seçin.'],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ni boşaltacak aracı seçin."],
+  ])
+})
+
+test('CU-858 fold: -AcAk as a noun or a participle with no object, the light verbs of at- and the negated twins stay free', () => {
+  free([
+    // F1 verbatim, and the noun / participle with no object before it
+    ['Boşalt', 'Çöp Sepeti', 'Çöp kutusundaki fotoğraf, bir cam sileceğini ve yedek silecek lastiğini gösteriyor.'],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki resimde yeni bir silecek var."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'nde silecek bir şey kalmadı."],
+    // F2 verbatim, and the other light verbs of at-
+    ['Boşalt', 'Çöp Sepeti', 'Finder, çöp kutusundaki öğelere yalnızca göz atacak.'],
+    ['Boşalt', 'Çöp Sepeti', "Yönetici Çöp Sepeti'ndeki listeye imza atacak."],
+    ['Boşalt', 'Çöp Sepeti', "Destek ekibi Çöp Sepeti'ndeki öğeler için mesaj atacak."],
+    // negated twins
+    ['Boşalt', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ndeki öğeleri atmayacak."],
+    ['Boşalt', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ndeki dosyaları silmeyecek."],
+  ])
+})
