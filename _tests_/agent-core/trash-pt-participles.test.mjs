@@ -73,3 +73,16 @@ test('CU-851: the near row under a title that names no trash reads the same as i
 test('CU-851: out of scope stays free - tirad- after the same auxiliaries (Q2)', () => {
   free([['Esvaziar', 'Lixo', 'Os arquivos vão ficar tirados.']])
 })
+
+// CU-851 table Q3: the second of CU-846 / CU-851 to land carries the composed rows - CU-846's pt imminent auxiliaries with the
+// participles CU-851 adds ask; their negated and past twins stay free.
+test('CU-851 + CU-846: the pt imminent auxiliaries with eliminado / destruído ask, their negated and past twins stay free', () => {
+  asks([
+    ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira estão prestes a ser eliminados.'],
+    ['Esvaziar', 'Lixeira', 'O documento da lixeira está para ser destruído.'],
+  ])
+  free([
+    ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira não estão prestes a ser eliminados.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira estavam prestes a ser eliminados.'],
+  ])
+})
