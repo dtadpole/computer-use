@@ -94,3 +94,35 @@ test('CU-852: out of scope stays free - a contraction, the active voice, another
     ['Empty', 'Trash', 'All items are set to be deleted.'],
   ])
 })
+
+// The fold for F1 of the developer cross-check (D-119 (2) and (5)): a negation the four-word window reads before 'will be' is read
+// before the imminent auxiliaries too, so the negated imminent row is free exactly when its 'will' twin is.
+const same = (pairs) => {
+  for (const [n, t, a, b] of pairs) {
+    assert.equal(classes(onWeb(n, t, a)).includes('delete'), classes(onWeb(n, t, b)).includes('delete'), `web ${a} / ${b}`)
+    assert.equal(classes(onDesktop(n, t, a)).includes('delete'), classes(onDesktop(n, t, b)).includes('delete'), `desktop ${a} / ${b}`)
+  }
+}
+
+test('CU-852 fold (F1): a negation before the imminent auxiliary frees it as it frees \'will be\', on both routes', () => {
+  free([
+    ['Empty', 'Trash', 'No items are about to be deleted.'],
+    ['Empty', 'Trash', 'No file is about to be erased.'],
+    ['Empty', 'Trash', 'No items are on the verge of being removed.'],
+    ['Empty', 'Trash', 'No items are just about to be deleted.'],
+    ['Empty', 'Trash', 'No file is on the point of being destroyed.'],
+    ['Empty', 'Trash', 'No items will be deleted.'],
+    ['Empty', 'Trash', 'No file will be erased.'],
+  ])
+  same([
+    ['Empty', 'Trash', 'No items are about to be deleted from the trash.', 'No items will be deleted from the trash.'],
+    ['Empty', 'Trash', 'Not all items are about to be deleted.', 'Not all items will be deleted.'],
+    ['Empty', 'Trash', 'No file is right about to get erased.', 'No file will be erased.'],
+    ['Empty', 'Trash', 'Do not worry: all items are about to be deleted.', 'Do not worry: all items will be deleted.'],
+  ])
+  // The window does not widen: a negation further back still leaves the class row asking, as its 'will' twin does.
+  asks([
+    ['Empty', 'Trash', 'Do not worry: all items are about to be deleted.'],
+    ['Empty', 'Trash', 'Do not worry: all items will be deleted.'],
+  ])
+})
