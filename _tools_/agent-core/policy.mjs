@@ -59,6 +59,8 @@ const GENERIC_CONFIRM = /^\s*(?:confirm|ok|okay|yes|yes,?\s+(?:continue|confirm|
 const EN_BE = String.raw`(?:(?<!\p{L})(?:is|are)|['’](?:s|re))`
 const EN_WILL = String.raw`(?:(?<!\p{L})will|['’]ll)(?!\p{L})`
 const EN_WOULD = String.raw`(?:(?<!\p{L})would|['’]d(?=\s+be(?!\p{L})))(?!\p{L})`
+// CU-876: the request 'would like' with its 'd - only directly before 'like' ("'d been", "'d have" are no request).
+const EN_WOULD_LIKE = String.raw`(?:(?<!\p{L})would|['’]d)\s+like(?!\p{L})`
 const EN_GOING_TO = String.raw`${EN_BE}\s+going\s+to(?!\p{L})`
 const EN_ABOUT_TO = String.raw`${EN_BE}\s+(?:(?:just|now|right)\s+)?(?:about\s+to\s+(?:be|get)|on\s+the\s+(?:point|verge)\s+of\s+being)(?!\p{L})`
 const EN_PENDING_AUX = String.raw`(?:${EN_WILL}|${EN_WOULD}|${EN_GOING_TO}|${EN_ABOUT_TO})`
@@ -425,7 +427,9 @@ const MODAL_HANDOVER_NOUN = /^(?:handover|handoff|hand-off|reassignment)$/i
 const MODAL_CONTROL_OBJECT = /\b(?:owner\w*|admin\w*|rights?|control|role|workspace|team|org(?:ani[sz]ation)?|repo(?:sitory)?|project|domain|site|channel|group)\b/i
 const MODAL_NOMINAL_TITLE = /^(?:(?:the|your|this)\s+)?([\p{L}\p{N}'\u2019 -]{1,40}?)\s+(deletion|removal|erasure|termination|deactivation|closure|cancellation|wipe|reset|transfer|handover|handoff|hand-off|reassignment|grant)(?:\s+(?!(?:history|logs?|details|polic(?:y|ies)|settings|status|reports?|records?|summary|overview|info|information|faq|help|guide|terms|rules|limits?|options|preferences|schedule|queue|list)\b)[\p{L}\p{N}'\u2019-]+){0,2}$/iu
 const MODAL_NOMINAL_OF = /^(deletion|removal|erasure|termination|deactivation|closure|cancellation|transfer|handover|handoff|hand-off|reassignment|grant)\s+of\s+(.{1,60})$/i
-const MODAL_ACCESS = /\b(?:(?:requests?|requesting|wants?|would\s+like)\s+(?:\w+\s+){0,3}access\b|will\s+be\s+able\s+to\s+(?:read|write|access|see|view|manage|control|change|edit|delete|post|send|act)\b|(?:gives?|grants?|allows?)\s+(?:\S+\s+){0,4}access\b)/i
+// CU-876: the 'will' before 'be able to' is EN_WILL and the request's 'would like' is EN_WOULD_LIKE, so a contraction attached to
+// the subject ("They'll be able to read ...", "The app'd like access to ...") asks as its full form does; the u flag reads \p{L}.
+const MODAL_ACCESS = new RegExp(String.raw`\b(?:(?:requests?|requesting|wants?|${EN_WOULD_LIKE})\s+(?:\w+\s+){0,3}access\b|${EN_WILL}\s+be\s+able\s+to\s+(?:read|write|access|see|view|manage|control|change|edit|delete|post|send|act)\b|(?:gives?|grants?|allows?)\s+(?:\S+\s+){0,4}access\b)`, 'iu')
 // CU-757 (P1; cu-developer-one's #1423 r2 owner check): an access grant's own buttons - 'Allow', 'Grant', 'Give access', 'Always
 // allow', 'Allow once', 'Allow while using the app' and their localized forms - take the dialog's classes when its title or a kept
 // sentence states access (MODAL_ACCESS, or LOCALE_MODAL_ACCESS for a localized dialog); in a dialog that states nothing they
