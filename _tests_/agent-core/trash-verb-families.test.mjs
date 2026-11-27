@@ -286,3 +286,58 @@ test('CU-823: the negated and past twins of every new form, and the near rows, s
     ['Empty', 'Trash', 'All items are going to be moved.'],
   ])
 })
+
+// CU-842 (P1; follow-up to CU-815 from #1533's held-out): further compound and auxiliary shapes of a covered verb - the ko light
+// nouns beside 처리, the tr -(y)Iver- auxiliary, the ja te-form + なくなる - went free in a pending trash statement while the plain
+// form asked. The table cu-researcher OK'd (17:23Z) gives each shape only its plain sibling's markers; negation and past decide first.
+test('CU-842: the filed rows, verbatim, ask delete on both routes', () => {
+  asks([
+    ['비우기', '휴지통', '휴지통 항목은 영구히 삭제 조치됩니다.'],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki dosyalar hemen siliniverecek."],
+    ['空にする', 'ゴミ箱', 'ゴミ箱の項目は削除されてなくなります。'],
+  ])
+})
+
+test('CU-842: each shape asks when pending, as its plain twin already does', () => {
+  asks([
+    // plain twins, read on main (the parity proof)
+    ['비우기', '휴지통', '휴지통의 모든 파일은 영구 제거될 예정입니다.'],
+    ['비우기', '휴지통', '휴지통의 모든 항목을 영구 삭제합니다.'],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki tüm öğeler bir anda kaldırılacak."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki dosyalar tek tıkla temizlenir."],
+    ['空にする', 'ゴミ箱', 'ゴミ箱の項目はすべて消されます。'],
+    ['空にする', 'ゴミ箱', 'ゴミ箱内の書類は破棄されてしまいます。'],
+    // ko: Sino delete noun + 조치 / 진행
+    ['비우기', '휴지통', '휴지통의 모든 파일은 영구 제거 조치될 예정입니다.'],
+    ['비우기', '휴지통', '휴지통의 모든 항목을 영구 삭제 진행합니다.'],
+    // tr: -(y)Iver- on a covered passive
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki tüm öğeler bir anda kaldırılıverecek."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki dosyalar tek tıkla temizleniverir."],
+    // ja: covered passive + te + なくなる
+    ['空にする', 'ゴミ箱', 'ゴミ箱の項目はすべて消されてなくなります。'],
+    ['空にする', 'ゴミ箱', 'ゴミ箱内の書類は破棄されてなくなってしまいます。'],
+  ])
+})
+
+test('CU-842: the negated and past twins of each shape stay free (the filed rows\' and the table\'s)', () => {
+  free([
+    ['비우기', '휴지통', '휴지통 항목은 삭제 조치되지 않습니다.'],
+    ['비우기', '휴지통', '휴지통 항목은 영구히 삭제 조치되었습니다.'],
+    ['비우기', '휴지통', '휴지통의 파일은 제거 조치되지 않습니다.'],
+    ['비우기', '휴지통', '휴지통의 모든 파일은 영구 제거 조치되었습니다.'],
+    ['비우기', '휴지통', '휴지통의 모든 항목을 영구 삭제 진행하지 않습니다.'],
+    ['비우기', '휴지통', '휴지통의 모든 항목이 영구 삭제 진행되었습니다.'],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki dosyalar hemen silinivermeyecek."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki dosyalar hemen siliniverdi."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki tüm öğeler öyle kolayca kaldırılıvermeyecek."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki tüm öğeler bir anda kaldırılıverdi."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki dosyalar tek tıkla temizlenivermez."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki dosyalar tek tıkla temizleniverdi."],
+    ['空にする', 'ゴミ箱', 'ゴミ箱の項目は削除されてなくなりません。'],
+    ['空にする', 'ゴミ箱', 'ゴミ箱の項目は削除されてなくなりました。'],
+    ['空にする', 'ゴミ箱', 'ゴミ箱の項目が消されてなくなることはありません。'],
+    ['空にする', 'ゴミ箱', 'ゴミ箱の項目はすべて消されてなくなりました。'],
+    ['空にする', 'ゴミ箱', 'ゴミ箱内の書類は破棄されてなくなりません。'],
+    ['空にする', 'ゴミ箱', 'ゴミ箱内の書類は破棄されてなくなってしまいました。'],
+  ])
+})
