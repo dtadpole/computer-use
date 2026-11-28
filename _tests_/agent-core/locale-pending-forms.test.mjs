@@ -83,3 +83,137 @@ test('#1479 r2: cu-developer-two\'s ko conditional over-ask verbatim, and the ne
     ['空にする', 'ゴミ箱', 'ゴミ箱の項目は削除されようとしていました。'],
   ])
 })
+
+// CU-858 (P1; the plain gaps of CU-857's table, reproduced by cu-verifier 02:50Z): the tr cell read only passives, so the active future
+// of a covered delete verb went free, and so did the future perfect of imha edil- / boşaltıl- / atıl- / temizlen-. The table
+// cu-researcher OK'd (r1, 03:14Z) reads the active future of all seven stems and the future perfect of all seven passives, in both numbers
+// and in -tIr. Negation and past still decide first. The active past stays out of the past cell, so a -DIğI relative participle keeps
+// its current result.
+test('CU-858: the active future of every covered stem and the missing future perfect ask, in both numbers and -tIr', () => {
+  asks([
+    // cu-verifier's repro
+    ['Boşalt', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ndeki dosyaları kalıcı olarak silecek."],
+    ['Boşalt', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ndeki dosyaları kalıcı olarak kaldıracak."],
+    ['Boşalt', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ndeki dosyaları kalıcı olarak imha edecek."],
+    ['Boşalt', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ndeki dosyaları kalıcı olarak yok edecek."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki dosyalar hemen imha edilmiş olacak."],
+    // the active future of at- / temizle- / boşalt-
+    ['Boşalt', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ndeki tüm öğeleri tamamen atacak."],
+    ['Boşalt', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ndeki tüm öğeleri temizleyecek."],
+    ['Boşalt', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ni tamamen boşaltacak."],
+    // the plural
+    ['Boşalt', 'Çöp Sepeti', "Yöneticiler Çöp Sepeti'ndeki dosyaları kalıcı olarak silecekler."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki dosyaları gece yarısı otomatik olarak kaldıracaklar."],
+    ['Boşalt', 'Çöp Sepeti', "Bakım ekipleri Çöp Sepeti'ndeki eski dosyaları imha edecekler."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki tüm kayıtları güvenli biçimde yok edecekler."],
+    ['Boşalt', 'Çöp Sepeti', "Temizlik araçları Çöp Sepeti'ndeki öğeleri atacaklar."],
+    ['Boşalt', 'Çöp Sepeti', "Bu araçlar Çöp Sepeti'ni düzenli olarak temizleyecekler."],
+    ['Boşalt', 'Çöp Sepeti', "Senkronizasyon hizmetleri Çöp Sepeti'ni her gece boşaltacaklar."],
+    // the formal -tIr
+    ['Boşalt', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ndeki tüm dosyaları kalıcı olarak silecektir."],
+    ['Boşalt', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ndeki öğeleri kalıcı olarak kaldıracaktır."],
+    ['Boşalt', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ndeki verileri kalıcı olarak imha edecektir."],
+    ['Boşalt', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ndeki tüm kayıtları yok edecektir."],
+    ['Boşalt', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ndeki öğeleri tamamen atacaktır."],
+    ['Boşalt', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ni tamamen temizleyecektir."],
+    ['Boşalt', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ni kalıcı olarak boşaltacaktır."],
+    // the future perfect of imha edil- / boşaltıl- / atıl- / temizlen-, and silinmiş with olacak in the plural
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki tüm dosyalar imha edilmiş olacaklar."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler sabaha kadar imha edilmiş olacaktır."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti işlem bitince tamamen boşaltılmış olacak."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki klasörler boşaltılmış olacaklar."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti bu işlemle boşaltılmış olacaktır."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler birkaç saniye içinde atılmış olacak."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki dosyalar işlem sonunda atılmış olacaklar."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler atılmış olacaktır."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler kısa süre içinde temizlenmiş olacak."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki tüm dosyalar temizlenmiş olacaklardır."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler tamamen temizlenmiş olacaktır."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki dosyalar silinmiş olacaklar."],
+    // a -DIğI relative participle: it asks on main through silinecek, and still asks, since the active past is not a past form
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ne attığınız dosyalar kalıcı olarak silinecek."],
+  ])
+})
+
+test('CU-858: a negated and a past twin of each added form, a restore verb, a non-trash title and a non-emptying button stay free', () => {
+  free([
+    // the negated active future
+    ['Boşalt', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ndeki dosyaları silmeyecek."],
+    ['Boşalt', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ndeki dosyaları kaldırmayacak."],
+    ['Boşalt', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ndeki dosyaları imha etmeyecek."],
+    ['Boşalt', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ndeki kayıtları yok etmeyecektir."],
+    ['Boşalt', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ndeki öğeleri atmayacak."],
+    ['Boşalt', 'Çöp Sepeti', "Bu araçlar Çöp Sepeti'ni temizlemeyecekler."],
+    ['Boşalt', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ni boşaltmayacaktır."],
+    // the active past (read by no pending form)
+    ['Boşalt', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ndeki dosyaları sildi."],
+    ['Boşalt', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ndeki dosyaları kaldırdı."],
+    ['Boşalt', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ndeki verileri imha etti."],
+    ['Boşalt', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ndeki kayıtları yok etmiş."],
+    ['Boşalt', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ndeki öğeleri attı."],
+    ['Boşalt', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ni temizledi."],
+    ['Boşalt', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ni boşalttı."],
+    // the negated future perfect (-mAmIş olacak, -mIş olmayacak)
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki dosyalar imha edilmemiş olacak."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki dosyalar hemen imha edilmiş olmayacak."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti boşaltılmamış olacak."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti boşaltılmış olmayacak."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler atılmamış olacak."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler atılmış olmayacaklar."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler temizlenmemiş olacak."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler temizlenmiş olmayacak."],
+    // the past of the future perfect stems
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki dosyalar hemen imha edildi."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki dosyalar imha edilmiş."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti boşaltıldı."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler atılmış."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler temizlendi."],
+    // a restore verb
+    ['Boşalt', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ndeki dosyaları geri yükleyecek."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki dosyalar geri yüklenmiş olacak."],
+    // a non-trash title (no trash noun in the sentence), and a non-emptying button
+    ['Boşalt', 'Belgeler', 'Bu işlem seçili belgeleri kalıcı olarak silecek.'],
+    ['Boşalt', 'Belgeler', 'Seçili belgeler hemen imha edilmiş olacak.'],
+    ['İptal', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ndeki dosyaları kalıcı olarak silecek."],
+    ['İptal', 'Çöp Sepeti', "Çöp Sepeti'ndeki dosyalar hemen imha edilmiş olacak."],
+  ])
+})
+
+// CU-858 fold (cu-verifier's F1 / F2 / Q3 on #1591, table r1 OK'd by cu-researcher 19:11Z): the active future asks only as a finite
+// predicate, or as a participle right after an accusative item noun (its English twin asks); at- only after its accusative object.
+test('CU-858 fold: the active future as a predicate, a participle after its object and at- after its object still ask', () => {
+  asks([
+    ['Boşalt', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ndeki dosyaları silecek, geri alınamaz."],
+    ['Boşalt', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ndeki dosyaları silecek ve uygulamayı kapatacak."],
+    ['Boşalt', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ndeki dosyaları atacak."],
+    ['Boşalt', 'Çöp Sepeti', "Temizlik aracı Çöp Sepeti'ndeki tüm öğeleri hemen atacak."],
+    // Q3 verbatim, and a participle right after Çöp Sepeti'ni
+    ['Boşalt', 'Çöp Sepeti', 'Çöp kutusundaki dosyaları silecek uygulamayı seçin.'],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ni boşaltacak aracı seçin."],
+    // cu-developer-one's P1: a negated relative participle in -mAmIş no longer frees the pending clause (as on main)
+    ['Boşalt', 'Çöp Sepeti', 'Temizlenmemiş öğeler kalıcı olarak silinecek.'],
+    ['Boşalt', 'Çöp Sepeti', 'Atılmamış dosyalar kalıcı olarak silinecek.'],
+    // the cut (cu-developer-one's P2): a negated active future in one clause no longer frees a pending clause (as on main)
+    ['Boşalt', 'Çöp Sepeti', "Uygulama hiçbir şeyi boşaltmayacak ve Çöp Sepeti'ndeki öğeler kalıcı olarak silinecek."],
+    ['Boşalt', 'Çöp Sepeti', "Hiçbir dosyayı atmayacak ama Çöp Sepeti'ndeki öğeler kalıcı olarak silinecek."],
+    ['Boşalt', 'Çöp Sepeti', "Orijinalleri temizlemeyecek ve Çöp Sepeti'ndeki öğeler kalıcı olarak silinecek."],
+  ])
+})
+
+test('CU-858 fold: -AcAk as a noun or a participle with no object, the light verbs of at- and the negated twins stay free', () => {
+  free([
+    // F1 verbatim, and the noun / participle with no object before it
+    ['Boşalt', 'Çöp Sepeti', 'Çöp kutusundaki fotoğraf, bir cam sileceğini ve yedek silecek lastiğini gösteriyor.'],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki resimde yeni bir silecek var."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'nde silecek bir şey kalmadı."],
+    // F2 verbatim, and the other light verbs of at-
+    ['Boşalt', 'Çöp Sepeti', 'Finder, çöp kutusundaki öğelere yalnızca göz atacak.'],
+    ['Boşalt', 'Çöp Sepeti', "Yönetici Çöp Sepeti'ndeki listeye imza atacak."],
+    ['Boşalt', 'Çöp Sepeti', "Destek ekibi Çöp Sepeti'ndeki öğeler için mesaj atacak."],
+    // the cut (cu-developer-one's P3): a light-verb question no longer opens the cell (as on main)
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğelere göz atacak mısınız?"],
+    // negated twins
+    ['Boşalt', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ndeki öğeleri atmayacak."],
+    ['Boşalt', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ndeki dosyaları silmeyecek."],
+  ])
+})
