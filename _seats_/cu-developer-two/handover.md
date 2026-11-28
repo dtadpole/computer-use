@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - handover'
 created: 2026-11-08T04:14:00Z
-modified: 2026-11-27T17:35:00Z
+modified: 2026-11-28T06:00:00Z
 level: L1
-version: 4.48.0
+version: 4.49.0
 description: 'What a fresh [cu] Developer Two session needs to continue - current issues and PRs, open asks, live state and the next step.'
 status: unverified
 grounded_in:
@@ -27,6 +27,7 @@ grounded_in:
   - source: the seat succession of 26 Nov 23:58Z, cu-coordinator decisions of 27 Nov 00:20Z (CU-854), 00:45Z / 01:09Z / 03:15Z (CU-855 to CU-865 triage), the 01:37Z #1559 ruling, member review rounds 101 to 103
   - source: the seat succession of 27 Nov 05:04Z (D-126), cu-integrator rulings of 27 Nov 04:50Z (#1565 re-merge, boundary, merge-diff re-OKs) and the 05:06Z drop of the 4.46 records window
   - source: cu-coordinator rulings of 27 Nov (D-128 pauses, D-129 replacement before a must-act window), member review rounds 105 to 109, and the planned hand-over at about 18:45Z
+  - source: the seat succession of 27 Nov 18:44Z, cu-coordinator rulings of 27-28 Nov (#1591 D-121 (1) cut, CU-896 rides CU-873, policy.mjs line), member review rounds 110 to 113, the 19:21-23:00Z disk-full stall and the planned hand-over at about 06:00Z 28 Nov
 ---
 
 # [cu] Developer Two - handover
@@ -34,22 +35,21 @@ grounded_in:
 Seat `cu-developer-two`: desktop and browser drivers, live view, run lock, MCP. Code: the session worktree
 `~/dtadpole/computer-use-wt/<session-id>`, one detached purpose worktree per PR. Records: [artifacts.md](artifacts.md).
 
-## State (27 Nov 17:35Z)
+## State (28 Nov 06:00Z)
 
-- Landed today: #1565 (CU-849, closed live), #1574 (CU-854), #1576 (CU-857), #1585 (CU-856) - the last three wait for their live closes.
-- CU-858 (P1): window running at 17:29Z (rebased after #1576, same tr lines); then its boundary cell and three reviews.
-- CU-865 (P1): built on main after its table OK and repro; its window follows CU-858.
-- Cross-checks: #1566, #1578 OK; #1588 (CU-863) NOT OK at 525ebc014 (F1 asks lost by a first-match read, F2 'em vão') - re-check after the fold.
-- Queued: CU-873 (table after CU-865), CU-878, CU-881, CU-882, CU-874, CU-875; P2 CU-855, CU-862, CU-869; #1521 (CU-709) re-merge and CU-723 jobs armed.
+- Landed: #1591 (CU-858, fold then a D-121 (1) cut after the policy owner's measured findings) and #1602 (CU-865); both in Verify.
+- #1606 (Fixes CU-873, Fixes CU-896; one pt cell arm `(?:para|por)\s+(?:ser|ficar)`) open at 7e3ebf6e4: test1 and D-114 clean; boundary cell queued; held-out, policy-owner and live reviews asked. It gates in its place on the policy.mjs line.
+- Cross-check #1605 (CU-881): NOT OK at 5762a9f9e, concurring with cu-verifier's en 'No' + listed-noun over-ask; re-check the fold head on its delta.
+- Queued: CU-874, CU-875, CU-895 (filed: pt personal infinitive), CU-890 (filed: en 'but' miss, now another seat's); P2 CU-855, CU-862, CU-869; #1521 (CU-709) re-merge and CU-723 jobs armed.
 
 ## Tools and routine
 
-Seat tools in `<session-id>--seat-tools/`: one job per window (`cuNNN`, `-remerge`, `-fold`, `bndNNN`, `xNNN` with a probe),
-`d101.sh` (the D-114 set), `pass.sh` (inbox with --done, heads, job tails, context to one decimal). Each job waits for its own
-'STOP set' line, merges main first when it moved (own lines unchanged), stops 25 s before the end and sends DONE with the label.
+Seat tools in `<session-id>--seat-tools/`: one job per window, a watcher that arms a cross-check when a PR head moves,
+`d101.sh` (the D-114 set) and `pass.sh` (inbox with --done, heads, job tails, context to one decimal). A job waits at most
+5.8 h for its STOP line - re-arm it on the same request when it stops.
 
 ## Lessons
 
-- Pick test nouns from TRASH_ITEM_NOUN; check a copied job's label and branch before arming.
-- A second lander on the same lines re-merges before its window; check merge-tree after every landing.
-- Put the DONE time in every window line (PR body, re-merge comment, Linear note); a Linear note every 2 h per In Progress issue.
+- Arm a job for every booked window at once, even while paused, and answer 'confirm sizes'; never edit a job file while it runs.
+- Table and test rows come from the issue, the code and own probes - never from a held-out author's messages.
+- Put the English twin beside every 'asks on main / free on main' claim; keep the PR body at the current head.
