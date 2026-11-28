@@ -104,6 +104,8 @@ const LOCALE_PASSIVE_ACTS = [
   // and a contraction or a 'not' before 'about' / 'on' finds no auxiliary.
   // CU-859: the English auxiliaries are the shared EN_PENDING_AUX, so the contracted 'll, 'd be, 's / 're going to and 's / 're
   // about to (or on the point / verge of) read as their full forms here; a negated contraction ("aren't about to") still finds none.
+  // CU-873 (table r1 OK'd by cu-researcher 02:56Z 28 Nov): 'está / estão para' takes ficar too, as 'prestes a / a ponto de' do, in
+  // the pt 'excluir' cell below; this cell is unchanged (para / prestes a / a ponto de + ser only, never ficar).
   [new RegExp(String.raw`^(?=[^.!?]*\?\s*$|[^.!?]*${EN_PENDING_AUX}|[^.!?]*(?<!\p{L})(?:wird|werden|sera|seront|será|serán|verrà|verranno|sarà|saranno|serão|wordt|worden|zal|zullen|se\s+(?:quitar|eliminar|borrar)[áa]n?|(?:vont|va)\s+être|van?\s+a\s+ser|(?:vão|vai|irão|irá)\s+ser|(?:sta|stanno)\s+per\s+(?:essere|venire)|(?:è|sono)\s+sul\s+punto\s+di\s+(?:essere|venire)|(?:est|sont)\s+sur\s+le\s+point\s+d['’]être|(?:está|están)\s+(?:a\s+punto\s+de|por)\s+ser|(?:está|estão)\s+(?:prestes\s+a|a\s+ponto\s+de|para)\s+ser)(?!\p{L}))(?![^.!?]*(?<!\p{L})(?:wurde|wurden|was|were|has\s+been|have\s+been|a\s+été|ont\s+été|fue|fueron|ha\s+sido|han\s+sido|è\s+stat[oa]|sono\s+stat[ie]|foi|foram|werd|werden\s+verwijderd)(?!\p{L}))[^.!?]*?(?:(?<!\p{L})(?:aus\s+(?:dem|deinem|ihrem|meinem|unserem)\s+(?:papierkorb|mülleimer|abfalleimer)|from\s+(?:the|your|my)\s+(?:trash|bin|recycle\s+bin)|de\s+(?:la|ta|votre|ma)\s+corbeille|de\s+(?:la|tu|su|mi)\s+papelera|dal\s+cestino|da\s+lixeira|uit\s+de\s+(?:prullen(?:bak|mand)|vuil(?:nis)?bak))(?!\p{L})[^.!?]{0,40}?(?<!\p{L})(?:entfernt|gelöscht|beseitigt|weggenommen|herausgenommen|removed|deleted|erased|purged|cleared|taken\s+out|retiré(?:e)?s?|enlevé(?:e)?s?|ôté(?:e)?s?|supprimé(?:e)?s?|effacé(?:e)?s?|éliminé(?:e)?s?|quitad[oa]s?|retirad[oa]s?|eliminad[oa]s?|sacad[oa]s?|borrad[oa]s?|suprimid[oa]s?|(?:quitar|retirar|eliminar|sacar|borrar|suprimir)[áa]n?|tolt[oiae]|rimoss[oiae]|eliminat[oiae]|cancellat[oiae]|removid[oa]s?|tirad[oa]s?|apagad[oa]s?|excluíd[oa]s?|deletad[oa]s?|verwijderd|weggehaald|gewist)(?!\p{L})|(?<!\p{L})(?:entfernt|gelöscht|beseitigt|weggenommen|herausgenommen|removed|deleted|erased|purged|cleared|taken\s+out|retiré(?:e)?s?|enlevé(?:e)?s?|ôté(?:e)?s?|supprimé(?:e)?s?|effacé(?:e)?s?|éliminé(?:e)?s?|quitad[oa]s?|retirad[oa]s?|eliminad[oa]s?|sacad[oa]s?|borrad[oa]s?|suprimid[oa]s?|(?:quitar|retirar|eliminar|sacar|borrar|suprimir)[áa]n?|tolt[oiae]|rimoss[oiae]|eliminat[oiae]|cancellat[oiae]|removid[oa]s?|tirad[oa]s?|apagad[oa]s?|excluíd[oa]s?|deletad[oa]s?|verwijderd|weggehaald|gewist)(?!\p{L})[^.!?]{0,40}?(?<!\p{L})(?:aus\s+(?:dem|deinem|ihrem|meinem|unserem)\s+(?:papierkorb|mülleimer|abfalleimer)|from\s+(?:the|your|my)\s+(?:trash|bin|recycle\s+bin)|de\s+(?:la|ta|votre|ma)\s+corbeille|de\s+(?:la|tu|su|mi)\s+papelera|dal\s+cestino|da\s+lixeira|uit\s+de\s+(?:prullen(?:bak|mand)|vuil(?:nis)?bak))(?!\p{L}))`, 'iu'), 'delete'],
   // CU-825: a final accented letter takes (?!\p{L}), never \b - under the u flag \b is ASCII-only, so 'supprimé' / 'se eliminará' never matched.
   // CU-823 (table OK'd by cu-researcher 15:45Z): the auxiliary slot of the fr / es / pt future passives also takes the periphrastic
@@ -136,7 +138,9 @@ const LOCALE_PASSIVE_ACTS = [
   // ('Os arquivos da lixeira estão prestes a ser excluídos.'); 'estavam' / 'esteve' are other words.
   // CU-851 (table OK'd by cu-researcher 00:17Z): the pt participles eliminad- and destruíd- (covered by TRASH_DELETE_VERB) after the
   // same auxiliaries ('Os arquivos vão ficar eliminados permanentemente.'); retirad- / tirad- stay out.
-  [/\b(?:serão|será|(?:vão|vai|irão|irá)\s+(?:ser|ficar|estar)|ficar(?:ão|á)|estar(?:ão|á)|(?:está|estão)\s+(?:prestes\s+a|a\s+ponto\s+de)\s+(?:ser|ficar)|(?:está|estão)\s+para\s+ser)\s+(?:\S+\s+){0,3}?(?:excluíd[oa]s?|deletad[oa]s?|apagad[oa]s?|removid[oa]s?|eliminad[oa]s?|destruíd[oa]s?)\b/iu, 'excluir'],
+  // CU-873 (table r1 OK'd by cu-researcher 02:56Z 28 Nov): 'está / estão para' takes ficar too, as 'prestes a / a ponto de' do.
+  // CU-896 (r1a delta, OK'd 04:01Z 28 Nov): 'está / estão por' takes ser or ficar the same way (the pt twin of es CU-865).
+  [/\b(?:serão|será|(?:vão|vai|irão|irá)\s+(?:ser|ficar|estar)|ficar(?:ão|á)|estar(?:ão|á)|(?:está|estão)\s+(?:prestes\s+a|a\s+ponto\s+de)\s+(?:ser|ficar)|(?:está|estão)\s+(?:para|por)\s+(?:ser|ficar))\s+(?:\S+\s+){0,3}?(?:excluíd[oa]s?|deletad[oa]s?|apagad[oa]s?|removid[oa]s?|eliminad[oa]s?|destruíd[oa]s?)\b/iu, 'excluir'],
   // r2 (cu-researcher's held-out 13:02Z): Dutch - 'Deze mailbox wordt permanent verwijderd.'
   [/(?<!\p{L})(?:wordt|worden|zal|zullen)(?!\p{L})[^.!?]{0,120}?(?<!\p{L})(?:definitief\s+|permanent\s+)?(?:verwijderd|gewist)(?!\p{L})/iu, 'verwijderen'],
   // CU-800 r2 (cu-researcher's r1 set; cu-developer-two's CU-802 nouns 'vuilnisbak' / 'vuilbak'): the trash itself emptied in a pending statement - 'De prullenbak wordt leeggemaakt.',
@@ -263,7 +267,28 @@ const TRASH_PENDING = new RegExp(String.raw`[?？]\s*$|${EN_PENDING_AUX}|(?<!\p{
 // auxiliary as 'will be', so a negation that frees 'No items will be deleted.' frees 'No items are about to be deleted.' too.
 // CU-859: with its contraction ("No items're about to be deleted."); the clitic is replaced with a space before 'will be'.
 const EN_IMMINENT_AUX = new RegExp(EN_ABOUT_TO, 'giu')
+// CU-881 (table r1 OK'd by cu-researcher 18:31Z, shapes A and B): pt 'no' is the contraction em + o ('in the'), never a negation -
+// pt negates with não / nunca / jamais / nem. (A) 'no' before a possessive or a listed noun or brand ('no seu Mac', 'no lixo', 'no
+// iCloud') is no negation before a verb form that is not English; (B) before a pt-only verb form no bare 'no' is (trashNegated).
+// #1605 fold (cu-verifier's finding, the delta cu-researcher OK'd 05:56Z): the en determiner 'No' + a listed noun ('No Mac will
+// delete ...') stays a negation, as on main - (A) masks only before a non-English verb; the brand reads Mac / MacBook / iMac /
+// macOS, 'próprio' is a possessive, and (B) takes destruíd- beside excluíd-.
 const TRASH_NEGATION = /(?<!\p{L})(?:not|never|nicht|nie|kein|keine|ne|pas|jamais|no|nunca|non|mai|não|niet|nooit|geen)(?!\p{L})|n['’]t(?!\p{L})/iu
+const PT_LOCATIVE_NO = /(?<!\p{L})no(?=\s+(?:seu|meu|teu|nosso|vosso|próprio|lixo|computador|i?mac\p{L}*|icloud|iphone|ipad|disco|dispositivo|armazenamento|servidor|celular|telemóvel|cartão|aparelho|sistema)(?!\p{L}))/giu
+const TRASH_EN_VERB = /^(?:delete|deleted|erase|erased|remove|removed|take\s+out|taken\s+out|destroy|destroyed|empty|emptied|cleared|purged)$/iu
+// CU-881 (B): a pt-only form of the matched verb - a -rão future, deletar / deletará / deletad-, excluíd-, destruíd-, esvaziad-, an
+// enclitic (-á-lo, -ê-lo, -í-lo) or the vai / vão / irá / irão periphrasis - is never negated by a bare 'no'; es / en have no such form.
+const TRASH_PT_ONLY_VERB = /(?:rão|deletar|deletará|deletad[oa]s?|excluíd[oa]s?|destruíd[oa]s?|esvaziad[oa]s?|[áéêí]-l[oa]s?)$|^(?:vão|vai|irão|irá)(?!\p{L})/iu
+const PT_BARE_NO = /(?<!\p{L})no(?!\p{L})/giu
+// A negation counts only within four words before the matched verb; the delete-verb window first reads the imminent auxiliary as
+// 'will be' (EN_IMMINENT_AUX).
+function trashNegated(text, match, imminentAsWill = false) {
+  const before = text.slice(0, match.index)
+  let window = (imminentAsWill ? before.replace(EN_IMMINENT_AUX, ' will be') : before).trim().split(/\s+/).slice(-4).join(' ')
+  if (TRASH_PT_ONLY_VERB.test(match[0])) window = window.replace(PT_BARE_NO, ' ')
+  else if (!TRASH_EN_VERB.test(match[0])) window = window.replace(PT_LOCATIVE_NO, ' ')
+  return TRASH_NEGATION.test(window)
+}
 // CU-805 (P1; the marker table cu-researcher OK'd on #1475, cu-coordinator 12:42Z): in ru / ja / zh / ko / tr a marker counts only
 // ATTACHED to a delete / erase / remove verb of the family - a suffix on the stem, or an auxiliary a few words before it - never
 // anywhere in the sentence. Checked in order: a negation frees the sentence, then a past / perfect form, then a pending form (or a
@@ -422,7 +447,7 @@ function emptiesTrashByDelete(name, sentence, titleNamesTrash = false) {
   for (const active of text.matchAll(TRASH_ACTIVE_FUTURE_ALL)) {
     const periphrastic = TRASH_PT_PERIPHRASTIC.test(active[0])
     if (!first && periphrastic) continue
-    if (!TRASH_NEGATION.test(text.slice(0, active.index).trim().split(/\s+/).slice(-4).join(' '))) return true
+    if (!trashNegated(text, active)) return true
     if (!periphrastic) break
     first = false
   }
@@ -431,12 +456,12 @@ function emptiesTrashByDelete(name, sentence, titleNamesTrash = false) {
     if (!TRASH_NEGATION.test(imminent[0]) && !TRASH_NEGATION.test(text.slice(0, imminent.index).trim().split(/\s+/).slice(-4).join(' '))) return true
   }
   const emptied = TRASH_EMPTIED_VERB.exec(text)
-  if (emptied !== null && TRASH_PENDING_AUX.test(text) && !TRASH_NEGATION.test(text.slice(0, emptied.index).trim().split(/\s+/).slice(-4).join(' '))) return true
+  if (emptied !== null && TRASH_PENDING_AUX.test(text) && !trashNegated(text, emptied)) return true
   const verb = TRASH_DELETE_VERB.exec(text)
   if (verb === null || !TRASH_PENDING.test(text)) return false
   // A negation counts only within four words before the delete verb ('will not be deleted'), never one in a following clause
   // ('... will be permanently deleted and can't be restored').
-  return !TRASH_NEGATION.test(text.slice(0, verb.index).replace(EN_IMMINENT_AUX, ' will be').trim().split(/\s+/).slice(-4).join(' '))
+  return !trashNegated(text, verb, true)
 }
 function echoesDialogVerb(name, dialogName) {
   const button = String(name ?? '').trim().toLowerCase().replace(/[¿¡]/g, '')

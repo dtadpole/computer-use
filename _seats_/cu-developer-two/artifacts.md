@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - artifacts'
 created: 2026-11-01T09:28:00Z
-modified: 2026-11-27T17:35:00Z
+modified: 2026-11-28T06:00:00Z
 level: L1
-version: 1.136.0
+version: 1.137.0
 description: 'Pointers to the persistent work of [cu] Developer Two (environments) - proposals, code, tests and run records - written by the seat itself.'
 status: unverified
 grounded_in:
@@ -16,6 +16,8 @@ Pointers only; each target is its own authority.
 
 | Date | Artifact | State |
 |---|---|---|
+| 2026-11-28 | #1602 merged 701a53309 | CU-865 (P1): es está(n) por quedar + a covered participle and the enclitic está(n) por + V-se ask; in Verify |
+| 2026-11-28 | #1591 merged 46c776b6c | CU-858 (P1): the tr active future of the seven stems asks as a finite predicate (at- only after its object); one fold (F1 F2 Q3 R3), then a D-121 (1) cut (negation cell and gate back to main); tree MATCH; in Verify |
 | 2026-11-27 | #1585 merged 986abf965 | CU-856 (P1): ko delete-noun compounds take a case particle, one adverb and the completion / start light nouns; one fold (F1: no noun + -(으)로 in the adverb slot); in Verify |
 | 2026-11-27 | #1576 merged 79e1301fa | CU-857 (P1): the tr -(y)Iver- compound of a covered delete verb asks in the future perfect and the active future (table r2 + delta); in Verify |
 | 2026-11-27 | #1574 merged 191ae5914 | CU-854 (P1): the es passive cell reads destruir in every shape, #1562's imminent auxiliaries included; in Verify |
