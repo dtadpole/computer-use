@@ -1,11 +1,11 @@
 ---
 title: '[cu] Coordinator - handover'
 created: 2026-11-08T04:15:00Z
-modified: 2026-11-28T09:00:00Z
+modified: 2026-11-28T13:45:00Z
 level: L2
-version: 4.16.0
+version: 4.17.0
 status: unverified
-description: 'What the next [cu] Coordinator session needs to take the seat mid-flight - state at 28 Nov 09:00Z.'
+description: 'What the next [cu] Coordinator session needs to take the seat mid-flight - state at 28 Nov 13:45Z.'
 grounded_in:
   - source: owner's re-creation order of 2026-11-22 19:05 PST (the previous holder was archived past the model window)
   - source: decision log D-119 to D-133
@@ -13,11 +13,11 @@ grounded_in:
 
 # [cu] Coordinator - handover
 
-**State.** #1602 (CU-865) merged 03:55Z and #1554 (CU-839, helper 0.2.77) merged 08:00Z with a true READBACK; CU-839, CU-863 and CU-876 are verified. The policy.mjs line (D-125 (4)): the first P1 with every required OK at its exact head gates first, in tie order #1604 (CU-860, folding a tr and a pt item after its held-out NOT OK), #1605 (CU-881, fold pushed; three re-OKs next), #1606 (CU-873 + CU-896; held-out and policy-owner OKs in, verifier live review in its window), CU-892 + CU-890 (waiting for repros); CU-861, CU-866 and #1521 after. New follow-ups CU-897 to CU-905 are triaged.
+**State.** Three P1s landed on 28 Nov with tree MATCH: #1606 (CU-873 + CU-896) at 11:02Z, #1605 (CU-881) at 12:08Z and #1604 (CU-860) at 13:11Z. CU-858, CU-865, CU-857, CU-853 and CU-859 are closed live with their mutants. The policy.mjs line, one PR at a time (D-125 (4)), first with every required OK at its exact head gates first: CU-892 + CU-890 (both reproduce; test1 running), CU-905, CU-861 (r1.1; its r1.3 split to CU-911), CU-874, then CU-907 and CU-911; #1521 last. The live closes of #1606, #1605 and #1604 are queued for the verifier.
 
-**Rulings to know.** Builds before closes in the queue before the 06:30Z freeze; a fold waits until after the helper slot when its author must carry the install. An OK header reads 'OK at <sha>' or 'NOT OK at <sha>' only - 'No OK' or 'OK #N at' are misread. An OK by a successor session of the same seat is not a non-author OK. No PR appends to the reflection action log (change-tracking 1.16.0); commits carry Actor, Session and Reason trailers.
+**Rulings to know.** Repros and builds that unblock a P1 go before closes, and a ready P1 gate goes before records lanes. An OK comment's first line is the header alone, 'OK at <sha>' or 'NOT OK at <sha>'; an earlier NOT OK is mentioned below it. An OK by a successor session of the same seat is not a non-author OK. A seat pauses under D-128 only with named triggers, Linear-only ones included.
 
-**Team health.** Every seat was replaced on 28 Nov under D-126 / D-129 (coordinator, verifier, integrator, researcher and the three developers); the developer-one and developer-three successors are in one roster PR. Every replaced seat stood down cleanly and removed its own worktrees (D-133).
+**Team health.** Most seats were replaced on 28 Nov under D-126 / D-129, some twice; each stood down cleanly and removed its own worktrees (D-133). The coordinator seat changed at 09:07Z and changes again this afternoon.
 
 **Watchdog (CU-834).** Never run: the owner's host unit and service-runner install are still needed.
 
