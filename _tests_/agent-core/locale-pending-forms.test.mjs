@@ -193,6 +193,10 @@ test('CU-858 fold: the active future as a predicate, a participle after its obje
     // cu-developer-one's P1: a negated relative participle in -mAmIş no longer frees the pending clause (as on main)
     ['Boşalt', 'Çöp Sepeti', 'Temizlenmemiş öğeler kalıcı olarak silinecek.'],
     ['Boşalt', 'Çöp Sepeti', 'Atılmamış dosyalar kalıcı olarak silinecek.'],
+    // the cut (cu-developer-one's P2): a negated active future in one clause no longer frees a pending clause (as on main)
+    ['Boşalt', 'Çöp Sepeti', "Uygulama hiçbir şeyi boşaltmayacak ve Çöp Sepeti'ndeki öğeler kalıcı olarak silinecek."],
+    ['Boşalt', 'Çöp Sepeti', "Hiçbir dosyayı atmayacak ama Çöp Sepeti'ndeki öğeler kalıcı olarak silinecek."],
+    ['Boşalt', 'Çöp Sepeti', "Orijinalleri temizlemeyecek ve Çöp Sepeti'ndeki öğeler kalıcı olarak silinecek."],
   ])
 })
 
@@ -206,6 +210,8 @@ test('CU-858 fold: -AcAk as a noun or a participle with no object, the light ver
     ['Boşalt', 'Çöp Sepeti', 'Finder, çöp kutusundaki öğelere yalnızca göz atacak.'],
     ['Boşalt', 'Çöp Sepeti', "Yönetici Çöp Sepeti'ndeki listeye imza atacak."],
     ['Boşalt', 'Çöp Sepeti', "Destek ekibi Çöp Sepeti'ndeki öğeler için mesaj atacak."],
+    // the cut (cu-developer-one's P3): a light-verb question no longer opens the cell (as on main)
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğelere göz atacak mısınız?"],
     // negated twins
     ['Boşalt', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ndeki öğeleri atmayacak."],
     ['Boşalt', 'Çöp Sepeti', "Bu işlem Çöp Sepeti'ndeki dosyaları silmeyecek."],
