@@ -10,9 +10,8 @@ import { createPolicy, modalStatementNames } from '../../_tools_/agent-core/poli
 // imminent passive, so 'OK' | 'Account' | 'Your account is about to be deleted.' went free while its 'going to' and 'will' twins
 // asked. The table cu-researcher OK'd (r1.1, 11:03Z 28 Nov; policy owner concur 10:50Z) adds EN_ABOUT_TO_BE ('is / are (just /
 // now / right) about to be', 'on the point / verge of being', with the 's / 're clitics) as one more auxiliary slot, and every
-// auxiliary match is read: every one whose participle is a risk verb names its act (round 2, the r3 delta), and a later match
-// main never read names nothing after 'or else' / a consequence-of-not lead or under a negative subject head. Each row is
-// pressed on both routes.
+// auxiliary match is read: the first names its act, and so does main's own first will / would / going-to match when it comes
+// later (round 2); later matches main never read are not read (round 3, a cut, D-121 (1)). Each row is pressed on both routes.
 const FIXTURE = 'ai.reflection.cu.fixture'
 const tmp = mkdtempSync(join(tmpdir(), 'cu-861-'))
 after(() => rmSync(tmp, { recursive: true, force: true }))
@@ -76,45 +75,35 @@ test('CU-861: A / B - the imminent passive asks as its going-to twin does', () =
   ])
 })
 
-test('CU-861: every auxiliary match is read - a first non-risk match no longer hides a later risk one', () => {
+test('CU-861: a non-risk imminent first match does not hide main\'s own later risk match', () => {
   // the policy owner's row: main reached 'will be deleted'; the new slot stops first at 'is about to be suspended'
   twin([
     ['OK', 'Notice', 'Your account is about to be suspended and will be deleted in 30 days.', 'OK', 'Notice', 'Your account will be deleted in 30 days.'],
-    // the widening the policy owner listed: a later risk match after a first non-risk one with the old auxiliaries
-    ['OK', 'Notice', 'Your files will be backed up and the old copies will be deleted.', 'OK', 'Notice', 'The old copies will be deleted.'],
   ], 'delete')
   // a later negated auxiliary stays free
   free([['OK', 'Notice', 'Your account will be suspended, but your files will not be deleted.']])
 })
 
-// #1616 r3 (cu-verifier's NOT OK at 8bad5c61c): every risk match names its act, so an object-less first one ('closed') no longer
-// hides a later delete; a match main never read names nothing after a consequence-of-not lead or a negative subject in its clause.
-test('CU-861 r3: an object-less first risk match no longer hides a later delete, and the widening adds no over-ask past main\'s guards', () => {
+// #1616 rounds 2-3 (cu-verifier's NOT OKs at 8bad5c61c and 740140fcf): main's own will-match is read after an object-less imminent
+// first match ('closed'); a later match main never read is not read (the widening is cut, D-121 (1)).
+test('CU-861 rounds 2-3: an object-less imminent first match no longer hides main\'s own later delete, and no later match main never read is read', () => {
   for (const d of [
     'Your session is about to be closed and your files will be deleted.',
     'The meeting is about to be closed and its recordings will be deleted.',
-    // cu-researcher's delta r1.2 change: a non-negative subject head and a bare 'else' do not guard a later match
-    'Your session will be closed and everything else will be deleted.',
+    // main's own will-match after an imminent first match, whatever heads its subject
     'Your session is about to be closed and everything else will be deleted.',
-    'Your account will be locked and files you no longer use will be deleted.',
     'Your account is about to be locked and files you no longer use will be deleted.',
-    // the policy owner's round-2 notes: this PR's F->A (a real pending delete), and each free row's positive twin
-    'Your session will be closed and your files will be deleted.',
-    'Your work will be uploaded first, and then it will be deleted.',
-    'Your files will be copied and all of them will be deleted.',
-    'Your account will be suspended, but your files will be deleted.',
-    'Your files will be kept and your folders are about to be deleted.',
-    'Your account will be suspended - your files will be deleted.',
-    'Your account will be suspended (your files will be deleted).',
-    'Your account will be suspended, and then your files will be deleted.',
-    'Your account will be suspended, but every file will be deleted.',
   ]) {
     const [w, k] = both('OK', 'Notice', d)
     assert.ok(w.includes('delete') && k.includes('delete'), `delete on both routes: ${label('OK', 'Notice', d)}`)
   }
   free([
-    // round 2c (a narrowing cut, D-121 (1)): a clause-initial 'else' guards as 'or else' does
+    // round 3, the cut (D-121 (1)): a later match main never read is not read - main's verdict, whatever its clause
     ['OK', 'Notice', 'Your work will be uploaded first, else it would be deleted.'],
+    ['OK', 'Notice', 'Your work will be uploaded first; else, it would be deleted.'],
+    ['OK', 'Notice', 'Your files will be backed up and the old copies will be deleted.'],
+    ['OK', 'Notice', 'Your session will be closed and your files will be deleted.'],
+    ['OK', 'Notice', 'Your account will be suspended, but your files will be deleted.'],
     ['OK', 'Notice', 'Your work will be uploaded first, or else it would be deleted.'],
     ['OK', 'Notice', 'Your files will be kept and none of them will be deleted.'],
     ['OK', 'Notice', 'Your account will be suspended, but nothing will be deleted.'],

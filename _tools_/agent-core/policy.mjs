@@ -537,27 +537,11 @@ const MODAL_CONDITION = String.raw`(?:once|when|after|if|as\s+soon\s+as)\s+you\s
 // subject reads as its full word ("Your account'll be deleted", "This'll erase the volume", "Your data'll be gone"): the space
 // before the auxiliary is optional (\s*), the fragments' own letter lookbehind keeps a full word whole, and the u flag reads \p{L}.
 // CU-861 (table r1.1): the imminent passive ('is / are (just / now / right) about to be', 'on the point / verge of being', with
-// the 's / 're clitics) is one more auxiliary slot, beside will / would / going to + be. Every auxiliary match is read (the policy
-// owner's change): the subject is the 1-120 characters before it (after a MODAL_CONDITION lead), and every match whose
-// participle is a risk verb names its act (#1616 r3, cu-verifier's NOT OK) - so an earlier non-risk or object-less match ('is about to be suspended and will be deleted') no longer
-// hides a later risk one. This also reads a later risk match after a first non-risk one with the old auxiliaries ('... will be
-// backed up and the old copies will be deleted.') - a real pending act main missed.
+// the 's / 're clitics) is one more auxiliary slot, beside will / would / going to + be; the subject is the 1-120 characters
+// before it (after a MODAL_CONDITION lead). The sentence's first match names its act, and so does main's own first will / would /
+// going-to match when it comes later, so an object-less imminent first match ('is about to be closed and your files will be
+// deleted') hides nothing main read (#1616 round 2); later matches main never read are not read (round 3, a cut, D-121 (1)).
 const MODAL_FUTURE_AUX = new RegExp(String.raw`\s*(?:(?<old>(?:${EN_WILL}|${EN_WOULD}|${EN_GOING_TO})\s+be)|${EN_ABOUT_TO_BE})\s+${MODAL_ADVERB}(?<part>[a-z]+(?:ed|en|t))\b`, 'giu')
-// #1616 r3 (cu-verifier's NOT OK): a match main never read - neither the sentence's first match nor main's own first will / would /
-// going-to match - names nothing when its clause (from the previous match) carries 'or else' or a consequence-of-not lead, or when a
-// negative word heads that auxiliary's subject once leading punctuation (a dash, a bracket) and a linking adverb ('then') are set aside
-// ('..., or else it would be deleted', '... - nothing will be deleted', '..., but not one file will be deleted'); 'everything else' or
-// 'files you no longer use' heading it still name the act (round-2 delta, cu-researcher and the policy owner). The widening adds no
-// over-ask past main's guards.
-const CONSEQUENCE_OF_NOT = String.raw`(?:if\s+you\s+(?:don'?t|do\s+not|choose\s+not\s+to|cancel|leave|close)|unless\s+you|otherwise)`
-const MODAL_LATER_CONSEQUENCE = new RegExp(String.raw`(?<!\p{L})(?:or\s+else|${CONSEQUENCE_OF_NOT})(?!\p{L})`, 'iu')
-const MODAL_LATER_CLAUSE_CUT = /[,;:()[\]–—]|\s-\s|(?<!\p{L})(?:and|but|or|so|while|yet)(?!\p{L})/iu
-const MODAL_LATER_HEAD_LEAD = /^[\s\-–—(["'“‘]*(?:(?:then|now|also|still|thus|therefore|hence)\s+)?/iu
-// #1616 round 2c (a narrowing cut, D-121 (1), cu-verifier's NOT OK at 740140fcf): a clause-initial 'else' (= otherwise) guards as
-// 'or else' does; 'everything else' / 'someone else' do not.
-const MODAL_LATER_NEGATIVE_HEAD = /^(?:else|none|nothing|neither|nobody|no\s+one|not\s+(?:a\s+single|one|any)|no)(?!\p{L})/iu
-const modalLaterGuarded = (clause) =>
-  MODAL_LATER_CONSEQUENCE.test(clause) || MODAL_LATER_NEGATIVE_HEAD.test(clause.split(MODAL_LATER_CLAUSE_CUT).pop().replace(MODAL_LATER_HEAD_LEAD, ''))
 const MODAL_CONDITION_LEAD = new RegExp(String.raw`^${MODAL_CONDITION}`, 'iu')
 const MODAL_GONE = new RegExp(String.raw`^(?:${MODAL_CONDITION}(.{1,120}?)(?:\s+(?:is|are)|\s*${EN_WILL}\s+be)|(.{1,120}?)\s*${EN_WILL}\s+be)\s+(?:gone|lost)\b`, 'iu')
 const MODAL_LEAD = new RegExp(String.raw`^(?:doing\s+(?:so|this)|proceeding|continuing|confirming|finishing|completing|ending|by\s+(?:continuing|proceeding|confirming|finishing|completing),?|${MODAL_CONDITION}(?:this|it|we)|this(?:\s+action)?|it)(?:\s*(?:${EN_WILL}|${EN_WOULD}))?\s+${MODAL_ADVERB}([a-z]+)\s+(\S.{0,120})$`, 'iu')
@@ -749,16 +733,14 @@ function modalVerbForms(word, participle) {
 function modalFutureNames(t) {
   const lead = MODAL_CONDITION_LEAD.exec(t)?.[0].length ?? 0
   const names = []
-  let first = true, oldSeen = false, prevEnd = 0
+  let first = true, oldSeen = false
   for (const match of t.slice(lead).matchAll(MODAL_FUTURE_AUX)) {
     const subject = t.slice(lead, lead + match.index)
     if (subject.length < 1 || subject.length > 120 || /[\n\r\u2028\u2029]/u.test(subject)) continue
-    const mainsOwn = match.groups.old !== undefined && !oldSeen
-    const guarded = !first && !mainsOwn && modalLaterGuarded(subject.slice(prevEnd))
+    const read = first || (match.groups.old !== undefined && !oldSeen)
     first = false
     if (match.groups.old !== undefined) oldSeen = true
-    prevEnd = match.index + match[0].length
-    if (guarded) continue
+    if (!read) continue
     for (const verb of modalVerbForms(match.groups.part, true)) names.push(modalName(verb, subject))
   }
   return names
@@ -5465,7 +5447,7 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
         const titleRow = (text) => text.replace(/[?!.:\s]+$/, '').replace(/^\s*(?:(?:are\s+you\s+(?:sure|certain)|you\s+are\s+about|you['’]re\s+about)(?:\s+(?:that\s+)?you\s+(?:want|wish))?\s+to|do\s+you\s+(?:really\s+)?(?:want|wish)\s+to|(?:would|do)\s+you\s+like\s+to|(?:this|this\s+action|doing\s+this|that|it)(?:\s+cannot\s+be\s+undone\s+and)?\s+will(?:\s+permanently)?|really|confirm(?:\s+that\s+you\s+want\s+to)?|permanently)\s+/i, '').trim()
         // #702 round 3 (cu-developer-three 16:35Z): a sentence about what happens if the person does NOT confirm ('Your changes will be
         // lost if you don't save them', '... unless you ...') describes the other button, so it is not judged for the confirm.
-        const consequenceOfNot = new RegExp(String.raw`\b${CONSEQUENCE_OF_NOT}\b`, 'i')
+        const consequenceOfNot = /\b(?:if\s+you\s+(?:don'?t|do\s+not|choose\s+not\s+to|cancel|leave|close)|unless\s+you|otherwise)\b/i
         const kept = dialogDescription.split(/(?<=[.!?])\s+/).filter((sentence) => !consequenceOfNot.test(sentence))
         const firstSentence = kept[0] ?? ''
         const keptDescription = kept.join(' ')
