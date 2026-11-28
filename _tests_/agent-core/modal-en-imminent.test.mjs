@@ -113,6 +113,8 @@ test('CU-861 r3: an object-less first risk match no longer hides a later delete,
     assert.ok(w.includes('delete') && k.includes('delete'), `delete on both routes: ${label('OK', 'Notice', d)}`)
   }
   free([
+    // round 2c (a narrowing cut, D-121 (1)): a clause-initial 'else' guards as 'or else' does
+    ['OK', 'Notice', 'Your work will be uploaded first, else it would be deleted.'],
     ['OK', 'Notice', 'Your work will be uploaded first, or else it would be deleted.'],
     ['OK', 'Notice', 'Your files will be kept and none of them will be deleted.'],
     ['OK', 'Notice', 'Your account will be suspended, but nothing will be deleted.'],

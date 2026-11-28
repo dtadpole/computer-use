@@ -553,7 +553,9 @@ const CONSEQUENCE_OF_NOT = String.raw`(?:if\s+you\s+(?:don'?t|do\s+not|choose\s+
 const MODAL_LATER_CONSEQUENCE = new RegExp(String.raw`(?<!\p{L})(?:or\s+else|${CONSEQUENCE_OF_NOT})(?!\p{L})`, 'iu')
 const MODAL_LATER_CLAUSE_CUT = /[,;:()[\]–—]|\s-\s|(?<!\p{L})(?:and|but|or|so|while|yet)(?!\p{L})/iu
 const MODAL_LATER_HEAD_LEAD = /^[\s\-–—(["'“‘]*(?:(?:then|now|also|still|thus|therefore|hence)\s+)?/iu
-const MODAL_LATER_NEGATIVE_HEAD = /^(?:none|nothing|neither|nobody|no\s+one|not\s+(?:a\s+single|one|any)|no)(?!\p{L})/iu
+// #1616 round 2c (a narrowing cut, D-121 (1), cu-verifier's NOT OK at 740140fcf): a clause-initial 'else' (= otherwise) guards as
+// 'or else' does; 'everything else' / 'someone else' do not.
+const MODAL_LATER_NEGATIVE_HEAD = /^(?:else|none|nothing|neither|nobody|no\s+one|not\s+(?:a\s+single|one|any)|no)(?!\p{L})/iu
 const modalLaterGuarded = (clause) =>
   MODAL_LATER_CONSEQUENCE.test(clause) || MODAL_LATER_NEGATIVE_HEAD.test(clause.split(MODAL_LATER_CLAUSE_CUT).pop().replace(MODAL_LATER_HEAD_LEAD, ''))
 const MODAL_CONDITION_LEAD = new RegExp(String.raw`^${MODAL_CONDITION}`, 'iu')
