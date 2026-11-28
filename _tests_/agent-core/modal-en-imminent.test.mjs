@@ -10,7 +10,9 @@ import { createPolicy, modalStatementNames } from '../../_tools_/agent-core/poli
 // imminent passive, so 'OK' | 'Account' | 'Your account is about to be deleted.' went free while its 'going to' and 'will' twins
 // asked. The table cu-researcher OK'd (r1.1, 11:03Z 28 Nov; policy owner concur 10:50Z) adds EN_ABOUT_TO_BE ('is / are (just /
 // now / right) about to be', 'on the point / verge of being', with the 's / 're clitics) as one more auxiliary slot, and every
-// auxiliary match is read: the first whose participle is a risk verb names the act. Each row is pressed on both routes.
+// auxiliary match is read: every one whose participle is a risk verb names its act (round 2, the r3 delta), and a later match
+// main never read names nothing after 'or else' / a consequence-of-not lead or under a negative subject head. Each row is
+// pressed on both routes.
 const FIXTURE = 'ai.reflection.cu.fixture'
 const tmp = mkdtempSync(join(tmpdir(), 'cu-861-'))
 after(() => rmSync(tmp, { recursive: true, force: true }))
@@ -83,6 +85,45 @@ test('CU-861: every auxiliary match is read - a first non-risk match no longer h
   ], 'delete')
   // a later negated auxiliary stays free
   free([['OK', 'Notice', 'Your account will be suspended, but your files will not be deleted.']])
+})
+
+// #1616 r3 (cu-verifier's NOT OK at 8bad5c61c): every risk match names its act, so an object-less first one ('closed') no longer
+// hides a later delete; a match main never read names nothing after a consequence-of-not lead or a negative subject in its clause.
+test('CU-861 r3: an object-less first risk match no longer hides a later delete, and the widening adds no over-ask past main\'s guards', () => {
+  for (const d of [
+    'Your session is about to be closed and your files will be deleted.',
+    'The meeting is about to be closed and its recordings will be deleted.',
+    // cu-researcher's delta r1.2 change: a non-negative subject head and a bare 'else' do not guard a later match
+    'Your session will be closed and everything else will be deleted.',
+    'Your session is about to be closed and everything else will be deleted.',
+    'Your account will be locked and files you no longer use will be deleted.',
+    'Your account is about to be locked and files you no longer use will be deleted.',
+    // the policy owner's round-2 notes: this PR's F->A (a real pending delete), and each free row's positive twin
+    'Your session will be closed and your files will be deleted.',
+    'Your work will be uploaded first, and then it will be deleted.',
+    'Your files will be copied and all of them will be deleted.',
+    'Your account will be suspended, but your files will be deleted.',
+    'Your files will be kept and your folders are about to be deleted.',
+    'Your account will be suspended - your files will be deleted.',
+    'Your account will be suspended (your files will be deleted).',
+    'Your account will be suspended, and then your files will be deleted.',
+    'Your account will be suspended, but every file will be deleted.',
+  ]) {
+    const [w, k] = both('OK', 'Notice', d)
+    assert.ok(w.includes('delete') && k.includes('delete'), `delete on both routes: ${label('OK', 'Notice', d)}`)
+  }
+  free([
+    ['OK', 'Notice', 'Your work will be uploaded first, or else it would be deleted.'],
+    ['OK', 'Notice', 'Your files will be kept and none of them will be deleted.'],
+    ['OK', 'Notice', 'Your account will be suspended, but nothing will be deleted.'],
+    ['OK', 'Notice', 'Your files will be kept and nothing is about to be deleted.'],
+    ['OK', 'Notice', 'Your account will be suspended - nothing will be deleted.'],
+    ['OK', 'Notice', 'Your account will be suspended (nothing will be deleted).'],
+    ['OK', 'Notice', 'Your account will be suspended, and then nothing will be deleted.'],
+    ['OK', 'Notice', 'Your account will be suspended, but not one file will be deleted.'],
+  ])
+  // main's own will-match keeps main's verdict whatever its subject (the negative subject is CU-874's class)
+  parity([['OK', 'Notice', 'Your session is about to be closed and none of your files will be deleted.', 'None of your files will be deleted.']])
 })
 
 test('CU-861: subordinate and payment rows are pinned to their going-to twins', () => {
