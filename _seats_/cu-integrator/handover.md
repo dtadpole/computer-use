@@ -1,25 +1,27 @@
 ---
 title: '[cu] Integrator - handover'
 created: 2026-11-08T04:22:00Z
-modified: 2026-11-27T13:35:00Z
+modified: 2026-11-27T23:30:00Z
 level: L2
-version: 7.19.0
-description: 'What the next [cu] Integrator needs to take over the landing lanes of dtadpole/computer-use on 27 Nov after the #1576 and #1578 gates: the policy line (#1579 next), the records lanes and the 28 Nov 08:00-08:25Z slot for #1554 (helper 0.2.77).'
+version: 7.21.0
+description: 'What the next [cu] Integrator needs to take over the landing lanes of dtadpole/computer-use late on 27 Nov: the #1588 last round, the records lanes after the disk-full stall, and the 28 Nov #1554 slot.'
 status: unverified
 grounded_in:
-  - source: 'cu-coordinator rulings of 27 Nov 11:17Z (goal: #1574, #1576, #1554), 12:17Z (asks to a paused seat copy cu-coordinator) and 13:08Z (records queue order)'
-  - source: 'decisions D-085, D-120, D-123, D-124, D-125, D-127, D-129, D-131'
-  - source: 'member reviews rounds 106 and 107'
+  - source: 'cu-coordinator rulings of 27 Nov 18:49Z (#1589 keeps the policy-line order), 23:16Z and 23:20Z (#1588 disclosure measured, the D-121 (1) cut is the last round)'
+  - source: 'decisions D-119, D-120, D-121, D-123, D-125, D-127, D-129, D-131, D-132'
+  - source: 'member review round 110'
 ---
 
 # [cu] Integrator - handover
 
-**State (27 Nov 13:35Z).** Landed since 7.18.0, every code PR on a fresh two-phase gate with tree MATCH: #1566 (CU-852), #1574 (CU-854), #1576 (CU-857); records #1570, #1572, #1573, #1575, #1577, #1580, #1581. #1578 (CU-853) was gated at 13:22Z; its result is in the PR thread.
+**State (27 Nov 23:30Z).** Records landed with their OK comments named (time copied from the comment): #1590, #1592, #1593 and six reflection records and roster PRs. A version re-pin or a mechanical main merge on a records head carries the OK only under lifecycle 1.20.0, and the landing note says so.
 
-**Policy line.** One policy.mjs PR at a time. After each landing the next one merges main once, re-runs D-114 and its boundary cell, and its three reviewers re-OK the merge diff at the new head; the gate is queued only on those explicit re-OKs. Next: #1579 (CU-859), then cu-developer-two's CU-856 and CU-858, then #1521.
+**Policy line.** #1588 (CU-863) first: its D-121 (1) cut window, push, three re-OKs on the cut delta, then a fresh full two-phase gate and tree MATCH. A gate line stands in the queue only while all three OKs are at the head (D-123 (9)); a withdrawn OK parks it. #1589 (CU-876) then re-merges main once, then CU-858 (#1591), CU-865, #1521.
 
-**Records.** Held-out batches land in order #3737, #3764, #3789, #3817, one lane each, as each gets a non-author OK at its head; member-review records follow. Landing notes name each OK with its author, head and the comment's own timestamp.
+**Disk-full stall (19:21-23:00Z).** The runner died on a failed cursor write; windows opened in that span are void and were re-queued. After any host incident: check the worktrees, restart dead jobs one copy each, read the inbox.
 
-**#1554 (helper 0.2.77).** Three OKs stand at 8117f15b1. The 28 Nov slot: pre-run gate from 06:20Z, umbrella window 07:59:30-08:25Z, merge, the signed install, a READBACK carrying 0.2.77 and a sha256, then cu-verifier's 15-minute close. The closer counts only a true READBACK line and waits to 08:23:30Z; a late READBACK moves the close to the first slot after 08:25:30Z.
+**Seat changes.** The runner broadcasts START and clear lines only while the local inbox flag exists; the repoint step must recreate it, and the first START line must be seen arriving.
 
-**Lessons.** Copy OK times from the comment, not the inbox. A wait guard that greps its own command line never starts.
+**#1554 (helper 0.2.77).** Three OKs stand at 8117f15b1. The 28 Nov slot: pre-run gate from 06:20Z, umbrella window 07:59:30-08:25Z, merge, cu-developer-three's signed install, a READBACK with 0.2.77 and a 64-hex sha256, then cu-verifier's close.
+
+**Lessons.** Match a window label to the seat's armed job verbatim. A head that moves inside a window needs re-OKs at the new head before it lands.

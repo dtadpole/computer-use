@@ -1,9 +1,9 @@
 ---
 title: '[cu] Developer Two - artifacts'
 created: 2026-11-01T09:28:00Z
-modified: 2026-11-27T04:25:00Z
+modified: 2026-11-27T17:35:00Z
 level: L1
-version: 1.135.0
+version: 1.136.0
 description: 'Pointers to the persistent work of [cu] Developer Two (environments) - proposals, code, tests and run records - written by the seat itself.'
 status: unverified
 grounded_in:
@@ -16,6 +16,11 @@ Pointers only; each target is its own authority.
 
 | Date | Artifact | State |
 |---|---|---|
+| 2026-11-27 | #1585 merged 986abf965 | CU-856 (P1): ko delete-noun compounds take a case particle, one adverb and the completion / start light nouns; one fold (F1: no noun + -(으)로 in the adverb slot); in Verify |
+| 2026-11-27 | #1576 merged 79e1301fa | CU-857 (P1): the tr -(y)Iver- compound of a covered delete verb asks in the future perfect and the active future (table r2 + delta); in Verify |
+| 2026-11-27 | #1574 merged 191ae5914 | CU-854 (P1): the es passive cell reads destruir in every shape, #1562's imminent auxiliaries included; in Verify |
+| 2026-11-27 | #1567 merged 48dfd08fb | handover 4.47.0 and the #1552 row (records) |
+| 2026-11-27 | #1565 merged 84e1d5421 | CU-849 (P1): de, nl, ru, tr, it, es and fr name each trash item noun in both numbers under a trash title; closed live 09:08Z |
 | 2026-11-27 | #1552 merged 562aef718 | CU-847 (P1): a pt pending trash statement with a singular subject names its item under a trash title (TRASH_ITEM_NOUN both numbers, table r1); closed live 00:00Z |
 | 2026-11-26 | #1543 merged be8c9203c | CU-843 (P1): an access toggle's grant header reads the right with its subject modified or in the passive (ACCESS_GRANT_PHRASE, table r2.1); closed live 21:01Z |
 | 2026-11-26 | #1542 merged df3ce324b | handover 4.44.0 (records) |
