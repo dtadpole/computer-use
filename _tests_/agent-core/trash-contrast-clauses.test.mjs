@@ -89,8 +89,9 @@ test('#1615 round 2: a negative additive before the cut clause\'s verb shares th
     ['Svuota', 'Cestino', 'Il servizio non cancellerà le bozze, ma nemmeno eliminerà gli elementi del cestino.'],
     ['Svuota', 'Cestino', 'Il servizio non cancellerà le bozze, ma neanche eliminerà gli elementi del cestino.'],
     ['Svuota', 'Cestino', 'Il servizio non cancellerà le bozze, ma neppure eliminerà gli elementi del cestino.'],
-    ['Vaciar', 'Papelera', 'La app no eliminará las carpetas, pero tampoco eliminará los elementos de la papelera.'],
-    ['Vaciar', 'Papelera', 'La app no eliminará las carpetas, pero ni siquiera eliminará los elementos de la papelera.'],
+    // es rows use quitar: a negated 'eliminará ... de la papelera' already asks on main by the es echo of 'Vaciar' (CU-826)
+    ['Vaciar', 'Papelera', 'La app no quitará las carpetas, pero tampoco quitará los elementos de la papelera.'],
+    ['Vaciar', 'Papelera', 'La app no quitará las carpetas, pero ni siquiera quitará los elementos de la papelera.'],
     ['Esvaziar', 'Lixeira', 'O app não apagará as pastas, mas tampouco excluirá os itens da lixeira.'],
     ['Esvaziar', 'Lixeira', 'O app não apagará as pastas, mas nem excluirá os itens da lixeira.'],
     ['Empty', 'Trash', 'The app will not delete the folders, but neither will it delete the items in the Trash.'],
@@ -99,9 +100,9 @@ test('#1615 round 2: a negative additive before the cut clause\'s verb shares th
   asks([
     ['Esvaziar', 'Lixeira', 'O app não apagará as pastas, mas também excluirá os itens da lixeira.'],
     ['Svuota', 'Cestino', 'Il servizio non cancellerà le bozze, ma eliminerà anche gli elementi del cestino.'],
-    ['Vaciar', 'Papelera', 'La app no eliminará las carpetas, pero también eliminará los elementos de la papelera.'],
+    ['Vaciar', 'Papelera', 'La app no quitará las carpetas, pero también quitará los elementos de la papelera.'],
     // the additive after the clause's delete verb does not negate it (cu-researcher's position change, r1c)
-    ['Vaciar', 'Papelera', 'La app no eliminará las carpetas, pero eliminará todos los elementos de la papelera sin dejar ni uno.'],
+    ['Vaciar', 'Papelera', 'La app no quitará las carpetas, pero quitará todos los elementos de la papelera sin dejar ni uno.'],
     ['Esvaziar', 'Lixeira', 'O app não apagará as pastas, mas excluirá os itens da lixeira sem deixar nem um.'],
   ])
 })
@@ -113,7 +114,8 @@ test('#1615 round 2 (cu-verifier\'s classes, r1d): no cut right after a negator;
     ['Esvaziar', 'Lixeira', 'O app nunca mais excluirá os itens da lixeira.'],
     // a negator before the cut clause's verb, outside the four-word window or outside TRASH_NEGATION
     ['Empty', 'Trash', 'The app will not delete the folders, but no item in the Trash will be deleted.'],
-    ['Leeren', 'Papierkorb', 'Die App löscht die Ordner nicht, aber sie wird die Objekte im Papierkorb niemals löschen.'],
+    // main reads the first delete verb's window ('nicht löschen') and stays free; the cut clause carries 'niemals'
+    ['Leeren', 'Papierkorb', 'Die App wird die Ordner nicht löschen, aber sie wird die Objekte im Papierkorb niemals löschen.'],
   ])
   asks([
     // a comma or semicolon between the negator and the contrast word keeps the cut (cu-researcher's r1d condition)
