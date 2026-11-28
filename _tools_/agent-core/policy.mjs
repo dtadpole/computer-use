@@ -291,6 +291,32 @@ function trashNegated(text, match, imminentAsWill = false) {
   else if (!TRASH_EN_VERB.test(match[0])) window = window.replace(PT_LOCATIVE_NO, ' ')
   return TRASH_NEGATION.test(window)
 }
+// CU-892 + CU-890 (table r1 + r1a OK'd by cu-researcher 04:09Z): the contrast markers that cut a trash sentence into clauses, one
+// table, now three languages (more: CU-916) - the conjunctions anywhere (es pero / sino, tr ama / fakat / ancak), the sentence
+// adverbs (fr cependant / toutefois among them) only right after ',' or ';', and the comma before a clause whose subject carries tr
+// contrastive 'ise'. Round 2d (the last cut): fr 'mais' is out too - it also cut Portuguese 'mais' ('more': '..., nem mais tarde
+// excluirá ...' asked); fr 'mais' clauses read as main again (CU-920).
+// #1615 round 2c (D-121 (1) cut after the final fold's over-asks): the en, de, it, pt and nl arms are removed, not extended - a cut
+// clause negated by a word no negation list holds (en 'nothing' / 'none' / 'nobody', de 'ebenso wenig' / 'keineswegs', it 'in nessun
+// modo', pt 'de modo algum', nl 'nimmer') asked; those languages read as main again (CU-890, CU-920).
+// Coordinators (and / und / et / y / e / en / ve), nor / nem / né / ni and yet stay out: they share their clause's negation.
+const TRASH_CONTRAST_CUT = new RegExp(String.raw`(?<!\p{L})(?<!(?<!\p{L})(?:not|never|nicht|nie|niemals|kein|keine|ne|pas|jamais|no|nunca|non|mai|não|nao|niet|nooit|geen)\s+)(?:pero|sino|ama|fakat|ancak)(?!\p{L})|[,;]\s*(?:sin\s+embargo|no\s+obstante|cependant|toutefois)(?!\p{L})|,(?=[^,;.!?]*(?<!\p{L})ise(?!\p{L}))`, 'iu')
+// #1615 round 2 (cu-researcher's NOT OK at e6fd72ea0; table r1b + its position change, r1c): a cut clause whose negation is carried
+// by a negative additive the plain negation list lacks ('..., ma nemmeno eliminerà ...', '..., pero tampoco eliminará ...', '..., but
+// neither will it delete ...') shares the sentence's negation and does not ask on its own - the additive counts only when it heads the
+// clause or stands before its first covered delete verb ('..., pero eliminará todos ... sin dejar ni uno.' still asks). de 'noch' is
+// out (also 'still'); tr negates on the verb. Folded in the same round (cu-verifier's NOT OK at e6fd72ea0, table r1d): any negator
+// before the cut clause's first covered delete verb counts - TRASH_NEGATION's words, nao and de 'niemals' too ('..., aber sie wird
+// die Objekte im Papierkorb niemals löschen.', '..., but no item in the Trash will be deleted.'), since the four-word window guards
+// one clause's negation from another and a cut clause is one clause; and a contrast word right after a negator is no cut (pt 'não
+// mais' / 'nunca mais', 'no longer' / 'never again').
+const TRASH_CUT_NEGATOR = /(?<!\p{L})(?:neither|nor|tampoco|ni|nemmeno|neanche|neppure|né|nem|tampouco|evenmin|weder|nao|niemals)(?!\p{L})/iu
+function cutClauseSharesNegation(clause) {
+  const negatorAt = [TRASH_CUT_NEGATOR, TRASH_NEGATION].map((negator) => clause.search(negator)).filter((at) => at >= 0)
+  if (negatorAt.length === 0) return false
+  const verbAt = [TRASH_ACTIVE_FUTURE, TRASH_DELETE_VERB, TRASH_EMPTIED_VERB, TRASH_ACTIVE_IMMINENT_ALL].map((verb) => clause.search(verb)).filter((at) => at >= 0)
+  return verbAt.length === 0 || Math.min(...negatorAt) < Math.min(...verbAt)
+}
 // CU-805 (P1; the marker table cu-researcher OK'd on #1475, cu-coordinator 12:42Z): in ru / ja / zh / ko / tr a marker counts only
 // ATTACHED to a delete / erase / remove verb of the family - a suffix on the stem, or an auxiliary a few words before it - never
 // anywhere in the sentence. Checked in order: a negation frees the sentence, then a past / perfect form, then a pending form (or a
@@ -439,6 +465,15 @@ function emptiesTrashByDelete(name, sentence, titleNamesTrash = false) {
   // A judged name has passed the Cyrillic homoglyph fold ('Очистить' -> 'Oчиcтить'), so the Russian button is matched folded too.
   const ruButton = ['очистить', 'Очистить', 'ОЧИСТИТЬ'].map((form) => normaliseName(normaliseText(form))).includes(normaliseName(String(name ?? '')))
   if (!(EMPTYING_BUTTON.test(button) || ruButton) || !(TRASH_NOUN.test(text) || (titleNamesTrash && TRASH_ITEM_NOUN.test(text)))) return false
+  if (trashClauseAsks(text)) return true
+  // CU-892 + CU-890: main's whole-sentence reading first, unchanged; then each clause cut at a contrast marker is read as a sentence
+  // of its own, so a negated first clause ('no quitará las carpetas, pero quitará los elementos de la papelera') no longer
+  // decides a positive future after the marker. Monotone: no row main asks goes free, and a clause asks only as its own words would.
+  const clauses = text.split(TRASH_CONTRAST_CUT).map((clause) => clause.replace(/^[\s,;:]+/u, '').trim()).filter((clause) => clause !== '')
+  return clauses.length > 1 && clauses.some((clause) => !cutClauseSharesNegation(clause) && trashClauseAsks(clause))
+}
+// One trash sentence or contrast clause, past the button and trash-noun gate: main's reading of a whole sentence.
+function trashClauseAsks(text) {
   const local = localeTrashPending(text)
   if (local !== null) return local
   // #1491 r2 (the table cu-researcher OK'd 21:04Z; CU-821): the future passives the in-sentence rule reads ('se eliminarán', 'verranno
