@@ -238,6 +238,12 @@ const TRASH_PENDING = new RegExp(String.raw`[?？]\s*$|${EN_PENDING_AUX}|(?<!\p{
 // CU-859: with its contraction ("No items're about to be deleted."); the clitic is replaced with a space before 'will be'.
 const EN_IMMINENT_AUX = new RegExp(EN_ABOUT_TO, 'giu')
 const TRASH_NEGATION = /(?<!\p{L})(?:not|never|nicht|nie|kein|keine|ne|pas|jamais|no|nunca|non|mai|não|niet|nooit|geen)(?!\p{L})|n['’]t(?!\p{L})/iu
+// CU-892 + CU-890 (table r1 + r1a OK'd by cu-researcher 04:09Z): the contrast markers that cut a trash sentence into clauses, one
+// table for every language the cell reads - the conjunctions anywhere (en but, de sondern, fr mais, es pero / sino, it ma / però /
+// bensì, pt mas / porém, nl maar, tr ama / fakat / ancak), the sentence adverbs and de aber / doch only right after ',' or ';'
+// (mid-clause 'werden jedoch gelöscht' does not cut), and the comma before a clause whose subject carries tr contrastive 'ise'.
+// Coordinators (and / und / et / y / e / en / ve), nor / nem / né / ni and yet stay out: they share their clause's negation.
+const TRASH_CONTRAST_CUT = new RegExp(String.raw`(?<!\p{L})(?:but|sondern|mais|pero|sino|ma|però|bensì|mas|porém|maar|ama|fakat|ancak)(?!\p{L})|[,;]\s*(?:however|contudo|todavia|no\s+entanto|entretanto|sin\s+embargo|no\s+obstante|tuttavia|cependant|toutefois|jedoch|echter|aber|doch)(?!\p{L})|,(?=[^,;.!?]*(?<!\p{L})ise(?!\p{L}))`, 'iu')
 // CU-805 (P1; the marker table cu-researcher OK'd on #1475, cu-coordinator 12:42Z): in ru / ja / zh / ko / tr a marker counts only
 // ATTACHED to a delete / erase / remove verb of the family - a suffix on the stem, or an auxiliary a few words before it - never
 // anywhere in the sentence. Checked in order: a negation frees the sentence, then a past / perfect form, then a pending form (or a
@@ -379,6 +385,15 @@ function emptiesTrashByDelete(name, sentence, titleNamesTrash = false) {
   // A judged name has passed the Cyrillic homoglyph fold ('Очистить' -> 'Oчиcтить'), so the Russian button is matched folded too.
   const ruButton = ['очистить', 'Очистить', 'ОЧИСТИТЬ'].map((form) => normaliseName(normaliseText(form))).includes(normaliseName(String(name ?? '')))
   if (!(EMPTYING_BUTTON.test(button) || ruButton) || !(TRASH_NOUN.test(text) || (titleNamesTrash && TRASH_ITEM_NOUN.test(text)))) return false
+  if (trashClauseAsks(text)) return true
+  // CU-892 + CU-890: main's whole-sentence reading first, unchanged; then each clause cut at a contrast marker is read as a sentence
+  // of its own, so a negated first clause ('will not delete the folders, but they will delete the items in the trash') no longer
+  // decides a positive future after the marker. Monotone: no row main asks goes free, and a clause asks only as its own words would.
+  const clauses = text.split(TRASH_CONTRAST_CUT).map((clause) => clause.replace(/^[\s,;:]+/u, '').trim()).filter((clause) => clause !== '')
+  return clauses.length > 1 && clauses.some((clause) => trashClauseAsks(clause))
+}
+// One trash sentence or contrast clause, past the button and trash-noun gate: main's reading of a whole sentence.
+function trashClauseAsks(text) {
   const local = localeTrashPending(text)
   if (local !== null) return local
   // #1491 r2 (the table cu-researcher OK'd 21:04Z; CU-821): the future passives the in-sentence rule reads ('se eliminarán', 'verranno
