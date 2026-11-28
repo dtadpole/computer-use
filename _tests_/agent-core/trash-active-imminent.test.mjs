@@ -17,8 +17,11 @@ import { createPolicy } from '../../_tools_/agent-core/policy.mjs'
 //   C. fr 'est / sont / êtes / es / sommes sur le point de / d'' + an infinitive the fr active future reads;
 //   D. es 'está / están / estás / estamos a punto de / por' + an es infinitive, with -lo(s) / -la(s);
 //   E. it 'sta / stai / stanno / stiamo / state per', 'è / sei / sono / siamo / siete sul punto di' + an it infinitive, with -lo / -la / -li / -le;
-//   F. pt 'está / estão / estás / estamos prestes a / a ponto de / para' + the pt periphrastic infinitives, with -lo(s) / -la(s) ('tirar' stays out);
+//   F. pt 'está / estão / estás / estamos prestes a / a ponto de / para / por' + the pt periphrastic infinitives, with -lo(s) / -la(s) ('tirar' stays out);
 //   G. tr 'silmek / kaldırmak / yok etmek / imha etmek üzere' + -siniz / -sin / -yiz / -dir / -ler, with 'üzere değil-' and 'üzereydi-'.
+// The fold (table delta cu-researcher OK'd 09:10Z 28 Nov): G also reads the bare third person 'V-mek üzere' when it closes its clause (end,
+// punctuation, a comma included, a coordinator or the question particle, as TR_FINITE) - a verb after it is the purpose reading and stays
+// free; F also reads 'por', which (as es D's 'por', the policy owner's change) takes no gap and asks only with an object after the verb.
 // A negation in the four words before the auxiliary frees it as it frees the 'will' twin. Each row is pressed on both routes.
 const FIXTURE = 'ai.reflection.cu.fixture'
 const tmp = mkdtempSync(join(tmpdir(), 'cu-860-'))
@@ -216,5 +219,71 @@ test('CU-860: a negation before the active imminent auxiliary frees it as it fre
     ['Vider', 'Corbeille', 'Le système n\'est sur le point de supprimer aucun élément de la corbeille.', 'Le système ne supprimera aucun élément de la corbeille.'],
     ['Svuota', 'Cestino', 'Il sistema non sta per eliminare tutti i file del cestino.', 'Il sistema non eliminerà tutti i file del cestino.'],
     ['Esvaziar', 'Lixeira', 'O sistema não está prestes a excluir os arquivos da lixeira.', 'O sistema não vai excluir os arquivos da lixeira.'],
+  ])
+})
+
+// The fold: the rows of the table delta cu-researcher OK'd (09:10Z 28 Nov), each ask row beside its twin that asks on main.
+test('CU-860 fold: tr G - the bare third person closing its clause asks, beside its bare passive twin that asks on main', () => {
+  asks([
+    ['Boşalt', 'Çöp Sepeti', "Sistem Çöp Sepeti'ndeki tüm öğeleri kalıcı olarak silmek üzere."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler kalıcı olarak silinmek üzere."],
+    ['Boşalt', 'Çöp Sepeti', "Uygulama Çöp Sepeti'ndeki dosyaları kaldırmak üzere; lütfen bekleyin."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki dosyalar kaldırılmak üzere; lütfen bekleyin."],
+    // a conjunction closes the clause
+    ['Boşalt', 'Çöp Sepeti', "Sistem Çöp Sepeti'ndeki öğeleri yok etmek üzere ve bu işlem geri alınamaz."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler yok edilmek üzere ve bu işlem geri alınamaz."],
+    ['Boşalt', 'Çöp Sepeti', "Finder Çöp Sepeti'ndeki her şeyi imha etmek üzere!"],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki her şey imha edilmek üzere!"],
+    // a comma closes it too (Q1 of the delta)
+    ['Boşalt', 'Çöp Sepeti', "Sistem Çöp Sepeti'ndeki öğeleri silmek üzere, lütfen bekleyin."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeler silinmek üzere, lütfen bekleyin."],
+  ])
+  // Known rows, recorded by the policy owner (09:20Z 28 Nov): they ask while their en twin is free - rare, accepted with the comma (Q1)
+  // and the coordinator that close the clause.
+  asks([
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeleri kalıcı olarak silmek üzere, sistem bir işlem başlattı."],
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeleri silmek üzere veya geri yüklemek üzere bir seçenek belirleyin."],
+  ])
+})
+
+test('CU-860 fold: pt F - \'por\' asks, beside its periphrastic future that asks on main', () => {
+  asks([
+    ['Esvaziar', 'Lixeira', 'O sistema está por apagar os arquivos da lixeira.'],
+    ['Esvaziar', 'Lixeira', 'O sistema vai apagar os arquivos da lixeira.'],
+    ['Esvaziar', 'Lixeira', 'Os aplicativos estão por excluí-los da lixeira.'],
+    ['Esvaziar', 'Lixeira', 'Os aplicativos vão excluí-los da lixeira.'],
+    ['Esvaziar', 'Lixeira', 'Você está por deletar permanentemente os itens da lixeira.'],
+    ['Esvaziar', 'Lixeira', 'Você vai deletar permanentemente os itens da lixeira.'],
+    ['Esvaziar', 'Lixeira', 'Estamos por remover todos os arquivos da lixeira.'],
+    ['Esvaziar', 'Lixeira', 'O sistema vai remover todos os arquivos da lixeira.'],
+  ])
+})
+
+test('CU-860 fold: the tr purpose, negated, past and -ken shapes, the pt negated, past, first-person, restore and non-trash shapes and es / pt \'por\' without an object stay free', () => {
+  free([
+    // a verb after 'üzere': the purpose reading
+    ['Boşalt', 'Çöp Sepeti', "Çöp Sepeti'ndeki öğeleri silmek üzere Boşalt'a tıklayın."],
+    ['Boşalt', 'Çöp Sepeti', "Öğeleri kalıcı olarak kaldırmak üzere Çöp Sepeti'ni açın."],
+    ['Boşalt', 'Çöp Sepeti', "Bu araç Çöp Sepeti'ndeki öğeleri silmek üzere tasarlandı."],
+    ['Boşalt', 'Çöp Sepeti', "Sistem Çöp Sepeti'ndeki öğeleri silmek üzere değil."],
+    ['Boşalt', 'Çöp Sepeti', "Sistem Çöp Sepeti'ndeki öğeleri silmek üzereydi."],
+    ['Boşalt', 'Çöp Sepeti', "Sistem Çöp Sepeti'ndeki öğeleri silmek üzereyken işlemi iptal ettiniz."],
+    ['Esvaziar', 'Lixeira', 'O sistema não está por apagar os arquivos da lixeira.'],
+    ['Esvaziar', 'Lixeira', 'O sistema estava por apagar os arquivos da lixeira.'],
+    ['Esvaziar', 'Lixeira', 'Estou por apagar os arquivos da lixeira.'],
+    // 'tirar' stays out: taking an item out of the trash restores it
+    ['Esvaziar', 'Lixeira', 'Você está por tirar os arquivos da lixeira.'],
+    ['Esvaziar', 'Notas', 'O sistema está por apagar todas as notas.'],
+    // 'estar por' + an infinitive with the item as subject is 'yet to be V-ed', and a GAP would let a prepositional 'por' through
+    // (the policy owner's change): 'por' asks only with an object after the verb, here none
+    ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira estão por apagar.'],
+    ['Esvaziar', 'Lixeira', 'Os ficheiros do Lixo estão por eliminar.'],
+    ['Esvaziar', 'Lixeira', 'Está por sua conta apagar os arquivos da lixeira.'],
+    ['Esvaziar', 'Lixeira', 'O assistente está por perto para apagar os arquivos da lixeira.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira ficam por apagar.'],
+    ['Vaciar', 'Papelera', 'Los archivos de la papelera están por eliminar.'],
+  ])
+  same([
+    ['Esvaziar', 'Lixeira', 'O sistema não está por apagar os arquivos da lixeira.', 'O sistema não vai apagar os arquivos da lixeira.'],
   ])
 })
