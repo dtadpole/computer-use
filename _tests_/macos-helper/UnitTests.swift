@@ -718,7 +718,7 @@ func button(_ kind: String, _ x: Int, _ y: Int) -> JSON { ["kind": .string(kind)
 func testDispatcherBasics() {
   let h = Harness(fixtureWorld)
   let hello = h.dispatcher.hello(token: "t0k")
-  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.76", "the hello opens the run")
+  check(hello["type"] == "hello" && hello["token"] == "t0k" && hello["protocol"] == 1 && hello["helperVersion"] == "0.2.77", "the hello opens the run")
   check(hello["mode"] == "dry-run" && hello["grants"] == ["screen": true, "accessibility": true, "postEvents": true, "listenEvents": false], "a dry-run hello says so, with all four grants")
   check(h.ask("capture", ["maxSize": size800])["code"] == "no_scope", "capture needs a scope")
   check(h.ask("input", ["events": [key("keyDown", 1)], "mode": "global"])["code"] == "no_scope", "input needs a scope")
@@ -2316,7 +2316,31 @@ func testRowContext() {
   let row = RowContext.pick([C(role: "AXRow", title: "Terminal", description: nil)], windowTitle: "Accessibility")
   check(row?.object?["list"] == .string("Accessibility"), "a row's own title is the app's name, not the list's")
   check(RowContext.pick([C(role: "AXGroup", title: "  Camera \n access ", description: nil)], windowTitle: nil)?.object?["list"] == .string("Camera access"), "whitespace collapsed")
-  check(RowContext.pick([C(role: "AXGroup", title: String(repeating: "x", count: 61), description: nil)], windowTitle: "General")?.object?["list"] == .string("General"), "a name over 60 characters is skipped")
+  check(RowContext.pick([C(role: "AXGroup", title: String(repeating: "x", count: 61), description: nil)], windowTitle: "General")?.object?["list"] == .string("General"), "a name over 60 characters with no word end is skipped")
+  // CU-839 (0.2.77, cu-researcher's held-out on #1522): a name over 60 characters is cut at its last word end within 60,
+  // a trailing connector dropped, not skipped; with no word end there it still reads nothing (never a mid-word fragment).
+  let long = "Screen & System Audio Recording, Camera, Microphone, Accessibility Apps"   // 71 characters
+  let longCut = "Screen & System Audio Recording, Camera, Microphone"                      // the last space within 60 follows the ','
+  check(RowContext.pick([C(role: "AXRow", title: nil, description: nil), C(role: "AXTable", title: nil, description: nil)], windowTitle: long)
+        == .object(["list": .string(longCut), "hints": .array([])]), "no container name: a 71-character window title reads its cut at a word end, the ',' dropped")
+  check(RowContext.pick([C(role: "AXGroup", title: nil, description: long)], windowTitle: "Privacy & Security")
+        == .object(["list": .string(longCut), "hints": .array([.string("Privacy & Security")])]), "a container's description over 60 characters: its cut, the window's title in hints")
+  check(RowContext.clean(String(repeating: "x", count: 55) + " - tail words here") == String(repeating: "x", count: 55), "a dash left standing at the cut goes with its space")
+  let token = String(repeating: "x", count: 70)
+  check(RowContext.pick([C(role: "AXGroup", title: token, description: nil)], windowTitle: "General")?.object?["list"] == .string("General")
+        && RowContext.pick([C(role: "AXTable", title: nil, description: nil)], windowTitle: token) == nil, "a 70-character word has no word end: no name, it falls through as before")
+  check(RowContext.clean(String(repeating: "x", count: 61) + " tail") == nil, "the first space is the 62nd character: no word end within 60, no name")
+  // CU-840 cross-check on #1534: maxText counts UTF-16 units, as the driver's reader does (toggleRowContextOf keeps at
+  // most 60 `.length`); an emoji or a combining mark is more than one unit, so a name within 60 Characters can be over.
+  let sixty = String(repeating: "a", count: 53) + " camera"
+  check(RowContext.clean(sixty) == sixty && sixty.utf16.count == 60, "60 units: kept whole")
+  let camera = String(repeating: "a", count: 51) + " camera \u{1F4F7}"   // 60 Characters, 61 units
+  check(camera.count == 60 && RowContext.clean(camera) == String(repeating: "a", count: 51) + " camera", "60 Characters but 61 units: cut before the emoji, as the driver would otherwise drop it")
+  let family = "\u{1F468}\u{200D}\u{1F469}\u{200D}\u{1F467} Family Sharing - allow these apps to access the camera"   // 56 Characters, 63 units
+  let familyCut = RowContext.clean(family)
+  check(familyCut == "\u{1F468}\u{200D}\u{1F469}\u{200D}\u{1F467} Family Sharing - allow these apps to access the" && (familyCut?.utf16.count ?? 99) <= 60, "a ZWJ emoji counts 8 units: 56 Characters / 63 units is cut at its last word end within 60 units")
+  check(RowContext.clean(String(repeating: "e\u{0301}", count: 30)) == String(repeating: "e\u{0301}", count: 30), "30 Characters of e + combining acute are 60 units: kept")
+  check(RowContext.clean(String(repeating: "e\u{0301}", count: 31)) == nil, "31 of them are 62 units with no word end: no name, never half a Character")
   check(RowContext.pick([], windowTitle: nil) == nil && RowContext.pick([C(role: "AXGroup", title: "", description: nil)], windowTitle: "") == nil, "nothing reads: nil")
   let deep = Array(repeating: C(role: "AXRow", title: nil, description: nil), count: RowContext.maxDepth) + [C(role: "AXTable", title: "Too far", description: nil)]
   check(RowContext.pick(deep, windowTitle: "Pane")?.object?["list"] == .string("Pane"), "at most maxDepth ancestors are read")
@@ -2333,7 +2357,9 @@ func testRowContextHeading() {
   check(RowContext.firstClause("Screen Recording \u{2013} these apps can record") == "Screen Recording" && RowContext.firstClause("Microphone \u{2014} apps below") == "Microphone", "en and em dashes with spaces end the clause")
   check(RowContext.firstClause("Wi-Fi & Bluetooth") == "Wi-Fi & Bluetooth" && RowContext.firstClause("Version 2.1 apps") == "Version 2.1 apps", "a hyphenated word, '&' or a decimal point is no cut")
   check(RowContext.firstClause("  Input \n Monitoring  ") == "Input Monitoring", "whitespace collapsed")
-  check(RowContext.firstClause(String(repeating: "word ", count: 14) + "- tail") == nil, "a first clause over maxText reads nothing")
+  check(RowContext.firstClause(String(repeating: "word ", count: 14) + "- tail") == Array(repeating: "word", count: 12).joined(separator: " "),
+        "a 69-character first clause is cut at its last word end within 60 (CU-839; 0.2.76 read nothing)")
+  check(RowContext.firstClause(String(repeating: "z", count: 70) + " - tail") == nil, "a 70-character first clause with no word end still reads nothing")
   check(RowContext.firstClause(nil) == nil && RowContext.firstClause("") == nil && RowContext.firstClause("   ") == nil && RowContext.firstClause(" . ") == nil, "nothing to read: nil")
 
   typealias S = RowContext.Sibling
@@ -2347,7 +2373,10 @@ func testRowContextHeading() {
   check(RowContext.heading(titleElement: "Location Services", siblings: [S(role: "AXStaticText", text: "Other")], index: 1) == "Location Services", "the title element wins")
   check(RowContext.heading(titleElement: String(repeating: "x", count: 61), siblings: [S(role: "AXStaticText", text: "Contacts")], index: 1) == nil, "the nearest decides: a title element whose first clause does not read gives no heading (the static text is not taken)")
   let longNearest = [S(role: "AXStaticText", text: "Accessibility"), S(role: "AXStaticText", text: String(repeating: "long words ", count: 8)), S(role: "AXTable", text: nil)]
-  check(RowContext.heading(titleElement: nil, siblings: longNearest, index: 2) == nil, "the nearest static text decides; an older one further up is not taken")
+  check(RowContext.heading(titleElement: nil, siblings: longNearest, index: 2) == Array(repeating: "long words", count: 5).joined(separator: " ") + " long",
+        "the nearest static text decides - a long one by its cut at a word end (CU-839); an older one further up is not taken")
+  let tokenNearest = [S(role: "AXStaticText", text: "Accessibility"), S(role: "AXStaticText", text: String(repeating: "z", count: 70)), S(role: "AXTable", text: nil)]
+  check(RowContext.heading(titleElement: nil, siblings: tokenNearest, index: 2) == nil, "a nearest static text with no word end within 60 gives no heading; the older one is still not taken")
   let controls = [S(role: "AXStaticText", text: "Full Disk Access"), S(role: "AXButton", text: nil), S(role: "AXCheckBox", text: nil), S(role: "AXOutline", text: nil)]
   check(RowContext.heading(titleElement: nil, siblings: controls, index: 3) == "Full Disk Access", "controls between the header and its list are passed over")
   let far = [S(role: "AXStaticText", text: "Far")] + Array(repeating: S(role: "AXButton", text: nil), count: RowContext.maxSiblings) + [S(role: "AXTable", text: nil)]
@@ -2371,7 +2400,16 @@ func testRowContextHeading() {
   check(RowContext.pick([C(role: "AXGroup", title: nil, description: nil, heading: "Full Disk Access")], windowTitle: "Window")?.object?["list"] == .string("Window"), "a heading names only a list or its scroll area")
   check(RowContext.pick([C(role: "AXTable", title: "Apps", description: nil, heading: "Full Disk Access")], windowTitle: nil)?.object?["list"] == .string("Apps"), "a container's own title wins over its heading")
   check(RowContext.pick([C(role: "AXOutline", title: nil, description: nil, heading: "Full Disk Access"), C(role: "AXGroup", title: "Privacy & Security", description: nil)], windowTitle: nil)?.object?["list"] == .string("Full Disk Access"), "the nearer list's heading wins over a titled group further up")
-  check(RowContext.pick([C(role: "AXScrollArea", title: nil, description: nil, heading: String(repeating: "y", count: 61))], windowTitle: "Pane")?.object?["list"] == .string("Pane"), "a heading over maxText falls to the window's title")
+  check(RowContext.pick([C(role: "AXScrollArea", title: nil, description: nil, heading: String(repeating: "y", count: 61))], windowTitle: "Pane")?.object?["list"] == .string("Pane"), "a heading over maxText with no word end falls to the window's title")
+  // CU-839 (0.2.77, cu-researcher's held-out on #1522): a header whose first clause is 77 characters names its list by the
+  // cut at its last word end within 60 (0.2.76 dropped it and read only the window's title); the window's title rides in hints.
+  let longHeader = "Full Disk Access for the applications listed below and their own helper tools - allow them to read all of your files."
+  let longCut = "Full Disk Access for the applications listed below and their"   // 60 characters: a word ends at the 60th
+  check(RowContext.firstClause(longHeader) == longCut, "a 77-character first clause is cut at a word end within 60, not dropped")
+  let longPane = [S(role: "AXStaticText", text: "Privacy"), S(role: "AXStaticText", text: longHeader), S(role: "AXScrollArea", text: nil)]
+  let g1Long = RowContext.pick([C(role: "AXRow", title: nil, description: nil), C(role: "AXTable", title: nil, description: nil),
+                                C(role: "AXScrollArea", title: nil, description: nil, heading: RowContext.heading(titleElement: nil, siblings: longPane, index: 2))], windowTitle: "Privacy")
+  check(g1Long == .object(["list": .string(longCut), "hints": .array([.string("Privacy")])]), "G1 with a long header: the list reads the cut, the window's title moves to hints")
 
   // cu-verifier on #1522: a winning name keeps every farther name the walk read in hints - 0.2.75 named this switch's list
   // 'Camera Access' (the window) and asked; the heading 'Apps' must not hide it.

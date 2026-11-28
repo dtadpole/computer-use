@@ -5,7 +5,7 @@ import Foundation
 /// The helper's identity; `build.sh` writes the same bundle id into Info.plist.
 enum HelperIdentity {
   static let bundleId = "com.reflection.cu-helper"
-  static let version = "0.2.76"
+  static let version = "0.2.77"
   /// The value every synthetic event carries in `kCGEventSourceUserData`: 0x43555345, ASCII "CUSE"
   /// (input-and-targets.md, verify-kit's SYNTHETIC_TAG). Not a secret: an event from another process with this tag
   /// could only fail to pause the run, never act.
@@ -470,13 +470,19 @@ enum ToggleState {
 /// core can tell a privacy grant ('Terminal' under 'Full Disk Access') from a plain switch. `list` is the nearest titled
 /// container above the toggle (a table, outline, list, group, scroll area or tab group, by its AXTitle, else its
 /// AXDescription), else its window's title (System Settings titles the window with the pane's name); `hints` holds the
-/// farther names (the shape is the web driver's { list, hints }, CU-443). Names only, never a value; each at most `maxText` characters.
+/// farther names (the shape is the web driver's { list, hints }, CU-443). Names only, never a value; each at most `maxText` UTF-16 units.
 /// 0.2.76 (CU-763, cu-verifier's 0.2.75 close: no row context on CU Fixture's privacy pane): an untitled list - a table,
 /// outline or list, or the scroll area holding it - is named by its heading (`heading`): its title element's shown words,
 /// else the nearest static text before it among its parent's children (a privacy pane states the grant in a header
 /// beside its list), cut to its first clause; and the window's title is the one the ancestor walk reaches.
 /// 0.2.76 review fold (cu-verifier on #1522): a nearer name no longer hides a farther one - every farther name the walk
 /// read rides in `hints` (`pick`); and the look for a heading stops at a sibling that is a list or holds one (`heading`).
+/// 0.2.77 (CU-839, cu-researcher's held-out on #1522: a 77-character first clause read nothing): a name over maxText - a
+/// heading's first clause, a container's title or description, the window's title - is cut at its last word end within
+/// maxText (`clean`), not dropped; with no word end there it still reads nothing (never a mid-word fragment).
+/// 0.2.77 (CU-840 cross-check on #1534): maxText counts UTF-16 units, the unit the driver's reader counts
+/// (toggleRowContextOf keeps a name of at most 60 `.length`), not Characters - an emoji or a combining mark is more than
+/// one unit, so a 60-Character name could be over 60 units and dropped at the driver, the row reading no context.
 enum RowContext {
   static let maxDepth = 8
   static let maxText = 60
@@ -500,11 +506,34 @@ enum RowContext {
     var holdsList: Bool { ([role] + childRoles).contains { $0.map { RowContext.listRoles.contains($0) } ?? false } }
   }
 
-  /// Whitespace collapsed; nil when empty or over maxText.
+  /// Whitespace collapsed; nil when empty. Over maxText UTF-16 units, its cut at a word end (`wordCut`), nil when there
+  /// is none.
   static func clean(_ text: String?) -> String? {
     guard let text else { return nil }
     let short = text.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
-    return short.isEmpty || short.count > maxText ? nil : short
+    if short.isEmpty { return nil }
+    return short.utf16.count > maxText ? wordCut(short) : short
+  }
+
+  /// CU-839: a collapsed text cut before its last space within its first maxText + 1 UTF-16 units of whole Characters
+  /// (a word ending at maxText stays whole), then trailing ',', ';', ':', a dash standing as a word and spaces dropped;
+  /// nil when there is no such space or nothing is left - never a mid-word fragment, never half a Character.
+  static func wordCut(_ text: String) -> String? {
+    var units = 0
+    var end = text.startIndex
+    for index in text.indices {
+      units += text[index].utf16.count
+      if units > maxText + 1 { break }
+      end = text.index(after: index)
+    }
+    guard let space = text[..<end].lastIndex(of: " ") else { return nil }
+    var head = String(text[..<space])
+    while let last = head.last {
+      if ",;: ".contains(last) { head.removeLast() }
+      else if "-\u{2013}\u{2014}".contains(last), head.count == 1 || head.dropLast().last == " " { head.removeLast() }
+      else { break }
+    }
+    return head.isEmpty ? nil : head
   }
 
   /// A heading's first clause: cut at the first spaced dash (' - ', ' – ', ' — '), ': ' or sentence end ('. ', '? ',
