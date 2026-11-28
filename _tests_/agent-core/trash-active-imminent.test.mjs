@@ -287,3 +287,17 @@ test('CU-860 fold: the tr purpose, negated, past and -ken shapes, the pt negated
     ['Esvaziar', 'Lixeira', 'O sistema não está por apagar os arquivos da lixeira.', 'O sistema não vai apagar os arquivos da lixeira.'],
   ])
 })
+
+// Re-merge after #1605 (CU-881; the policy owner's note): the window before the auxiliary is read by trashNegated().
+test('CU-860 re-merge: pt \'no\' + a possessive before the auxiliary is no negation; the en determiner \'No\' + a listed noun stays one', () => {
+  asks([
+    ['Esvaziar', 'Lixeira', 'O sistema no seu Mac está prestes a apagar os arquivos da lixeira.'],
+    ['Esvaziar', 'Lixeira', 'O sistema no seu Mac vai apagar os arquivos da lixeira.'],
+    ['Esvaziar', 'Lixeira', 'O aplicativo no seu computador está por excluí-los da lixeira.'],
+  ])
+  free([
+    ['Empty', 'Trash', 'No Mac is about to delete the items in the Trash.'],
+    ['Empty', 'Trash', 'No Mac will delete the items in the Trash.'],
+    ['Esvaziar', 'Lixeira', 'O sistema não está prestes a apagar os arquivos da lixeira.'],
+  ])
+})

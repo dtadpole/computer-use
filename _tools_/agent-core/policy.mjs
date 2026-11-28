@@ -254,6 +254,8 @@ const TRASH_ACTIVE_IMMINENT_ALL = new RegExp(String.raw`(?:${EN_BE}\s+(?:(?:just
   + String.raw`|(?<!\p{L})(?:(?:sta|stai|stanno|stiamo|state)\s+per|(?:è|sei|sono|siamo|siete)\s+sul\s+punto\s+di)${ACTIVE_IMMINENT_GAP}(?:cancellar|eliminar|rimuover|toglier|distrugger)(?:e|l[oaie])`
   + String.raw`|(?<!\p{L})(?:está|estão|estás|estamos)\s+por\s+(?:(?:excluir|deletar|apagar|remover|eliminar|destruir)${PT_POR_OBJECT}|(?:excluí|deletá|apagá|removê|eliminá|destruí)-l[oa]s?)`
   + String.raw`|(?<!\p{L})(?:está|estão|estás|estamos)\s+(?:prestes\s+a|a\s+ponto\s+de|para)${ACTIVE_IMMINENT_GAP}(?:excluir|deletar|apagar|remover|eliminar|destruir|excluí-l[oa]s?|deletá-l[oa]s?|apagá-l[oa]s?|removê-l[oa]s?|eliminá-l[oa]s?|destruí-l[oa]s?))(?!\p{L})`, 'giu')
+// The en arms of TRASH_ACTIVE_IMMINENT_ALL (A 'about to', B 'on the point / verge of'), for the negation window below.
+const EN_IMMINENT_ARM = /(?<!\p{L})(?:about\s+to|on\s+the\s+(?:point|verge)\s+of)(?!\p{L})/iu
 // CU-859: the English 'will' is EN_WILL, so 'It'll be emptied.' reads as 'It will be emptied.' does.
 const TRASH_PENDING_AUX = new RegExp(String.raw`${EN_WILL}|(?<!\p{L})(?:sera|seront|será|serán|verrà|verranno|sarà|saranno|serão)(?!\p{L})|(?<!\p{L})se\s+(?:\S+\s+){0,2}?vaciar[áa]n?(?!\p{L})`, 'iu')
 // CU-823 (table OK'd by cu-researcher 15:45Z): en 'is / are going to' is pending too ('All items are going to be erased.'); the
@@ -451,9 +453,14 @@ function emptiesTrashByDelete(name, sentence, titleNamesTrash = false) {
     if (!periphrastic) break
     first = false
   }
-  // CU-860: an active imminent auxiliary + a covered infinitive; every match is read.
+  // CU-860: an active imminent auxiliary + a covered infinitive; every match is read. Re-merge after #1605 (the policy owner's note):
+  // the four words before the auxiliary are read by trashNegated(), with the match's infinitive as its verb, so pt 'no' + a
+  // possessive or a listed noun ('no seu Mac') is no negation there either; an English arm passes an English verb, so the en
+  // determiner 'No' + a listed noun ('No Mac is about to delete ...') stays a negation, as for 'No Mac will delete ...'.
   for (const imminent of text.matchAll(TRASH_ACTIVE_IMMINENT_ALL)) {
-    if (!TRASH_NEGATION.test(imminent[0]) && !TRASH_NEGATION.test(text.slice(0, imminent.index).trim().split(/\s+/).slice(-4).join(' '))) return true
+    if (TRASH_NEGATION.test(imminent[0])) continue
+    const verb = EN_IMMINENT_ARM.test(imminent[0]) ? 'delete' : imminent[0].match(/\S+$/u)[0]
+    if (!trashNegated(text, { 0: verb, index: imminent.index })) return true
   }
   const emptied = TRASH_EMPTIED_VERB.exec(text)
   if (emptied !== null && TRASH_PENDING_AUX.test(text) && !trashNegated(text, emptied)) return true
