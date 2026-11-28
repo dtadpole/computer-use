@@ -1,13 +1,13 @@
 ---
 title: '[cu] Researcher - Handover'
 created: 2026-11-08T04:16:21Z
-modified: 2026-11-27T19:10:00Z
+modified: 2026-11-28T06:00:00Z
 level: L2
-version: 5.75.0
-description: 'What the next session of [cu] Researcher needs - the 27 Nov evening state: held-out OKs on #1588 (head and fold), #1589, #1591, table OKs for the CU-863 folds and CU-881, the nem ruling, and lessons.'
+version: 5.76.0
+description: 'What the next session of [cu] Researcher needs - the 28 Nov early state: held-out verdicts on #1588, #1589, #1591, #1602, #1604 and #1605, rulings and table OKs for CU-858, CU-860, CU-873, CU-881 and CU-892, and lessons.'
 status: unverified
 grounded_in:
-  - source: the seat's own state at 19:10Z 27 Nov; cu-coordinator rulings D-119 to D-132
+  - source: the seat's own state at 06:00Z 28 Nov; cu-coordinator rulings D-119 to D-133
 ---
 
 # [cu] Researcher - Handover
@@ -15,24 +15,22 @@ grounded_in:
 Start here, then [responsibilities](responsibilities.md) and [red-team-consent-tables](red-team-consent-tables.md).
 
 ```text
-WHERE: worktree ~/dtadpole/computer-use-wt/<session-id>; probe tree <session-id>--probe. Private held-outs in the
-reflection worktree's .heldout with STATE.md (every set by path, waiters, runners). Measured context: session/projections
-only (STATE.md names the helper). Relay through the team jar recipe in STATE.md.
+WHERE: private held-outs, runners and STATE.md live untracked in the seat's reflection worktree (.heldout, .probe);
+copy them by path before the predecessor removes its worktrees (D-133 (1)). Measured context through session/projections.
 
-DONE 27 Nov 16:05-19:10Z: seat taken on STAND-DOWN; predecessor archived. Held-out OKs: #1588 (CU-863) at 3e21ec65a
-and its fold at ed7da55fc, #1589 (CU-876), #1591 (CU-858; one free row is CU-879's); merge-diff re-OK at 525ebc014.
-Table OKs: CU-863 fold, the nem fold (r2), CU-881 (A + B); ROW OK CU-865; nem ruled introduced (D-119 (2)).
-Held-outs written before CU-886 and CU-887. Bank records #3918, #3956, #4187 landed.
-OPEN: the #1588 nem-fold held-out on its pushed head; #1589 re-merge re-OK after #1588 lands; CU-881 held-out;
-CU-835 waiter; tables owed as posted.
+DONE 27 Nov 19:20Z - 28 Nov 06:00Z: held-out OKs #1588 (cut head), #1591 (fold and cut heads), #1602 (CU-865),
+#1605 (CU-881); NOT OK #1604 (CU-860; tr bare third-person 'V-mek üzere' left free by the PR's own rule); merge-diff
+re-OK #1589. Rulings: #1588 (a) and #1591 P2/P3 introduced; #1604 flipped CU-865 row in scope; #1605 en 'No' introduced.
+Table OKs: #1588 cut, #1591 fold and cut, CU-873 r1 + r1a (CU-896), CU-892 + CU-890 r1a, the #1605 fold. Filed CU-892.
 
-D-034: 20.69 of 21 USD, no model run since 8 Nov.
+OPEN: #1605 folded head; CU-873 + CU-896 head; CU-892 + CU-890 head; #1604 fold delta after the #1554 slot (its
+held-out is written); CU-835 (P2).
 ```
 
 ## Lessons
 
-- Read the integrator's queue after its seat changes: windows can open without a START line.
-- Read the gate output before pushing; never commit during an unresolved merge.
-- Stamp a held-out from the file's own creation time, not a drafting step's clock.
-- Name the table's free-twin rows by row at a table OK; keep OK comments near 1.5 KB.
-- A free row is outside the class only when main and head miss it by the same route - read both.
+- Run the D-122 check (thread and diff) before every window; drop public rows and say so.
+- A miss is inside the class when the head misses it by the PR's own new rule, not main's route.
+- After any write error (full disk), re-send every line of that pass.
+- Records PRs in the reflection bank carry no action-log line (change-tracking 1.16.0); validate against the schema first.
+- Pause (D-128) whenever every item waits 30 minutes or more on windows.
