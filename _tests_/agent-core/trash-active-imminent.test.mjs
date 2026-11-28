@@ -192,12 +192,15 @@ test('CU-860: fr / es / it / pt / tr - the negated, past, first-person, other-au
 
 // The borders of the sibling cells are not moved: EN_ABOUT_TO (the passive) and the MODAL_* statements are unchanged, so the passive
 // 'is about to be' over no trash and the active 'This is about to erase ...' over no trash stay free under the emptying button, and
-// the passive under a generic 'OK' stays as on main (CU-861's MODAL_FUTURE border).
+// the passive under a generic 'OK' was CU-861's MODAL_FUTURE border - CU-861 moves it: it now asks as its going-to twin does.
 test('CU-860: the passive \'is about to be\' and the MODAL_LEAD sentence stay free', () => {
+  asks([
+    ['OK', 'Notes', 'The note is about to be deleted.'],
+    ['OK', 'Notes', 'The note is going to be deleted.'],
+  ])
   free([
     ['Empty', 'Notes', 'The note is about to be deleted.'],
     ['Empty', 'Trash', 'The items are about to be purged.'],
-    ['OK', 'Notes', 'The note is about to be deleted.'],
     ['Empty', 'Trash', 'This is about to erase the volume.'],
     ['Empty', 'Disk Utility', 'This is about to erase the volume.'],
   ])

@@ -50,7 +50,7 @@ export function neverCoveredByGrant(cls, name) {
 // CU-507 (High; cu-coordinator 16:06Z): the generic final buttons of a confirm modal - judged by the modal's own title and text.
 const GENERIC_CONFIRM = /^\s*(?:confirm|ok|okay|yes|yes,?\s+(?:continue|confirm|proceed|i'?m\s+sure|do\s+it)|continue|proceed|submit|done|apply|accept|agree|i\s+agree|i\s+understand|got\s+it|i'?m\s+sure|do\s+it|go\s+ahead|confirm\s+and\s+continue)\s*[.!]?\s*$/i
 // CU-859 (the marker table OK'd by cu-researcher, held out): the English pending auxiliaries, ONE set of fragments every English
-// pending cell reads (the trash-locative cell below, TRASH_PENDING_AUX, TRASH_PENDING, EN_IMMINENT_AUX, MODAL_FUTURE / GONE / LEAD),
+// pending cell reads (the trash-locative cell below, TRASH_PENDING_AUX, TRASH_PENDING, EN_IMMINENT_AUX, MODAL_FUTURE_AUX / GONE / LEAD),
 // each with its contraction - 'll for will; 's / 're for is / are before 'going to' and before the imminent 'about to be / get' /
 // 'on the point / verge of being'; 'd for would only before a bare 'be' ("'d been", "'d have been" are the past perfect). A full
 // word stands alone; a clitic is attached to its subject (no letter lookbehind before the apostrophe, ['’] for both apostrophes);
@@ -62,7 +62,11 @@ const EN_WOULD = String.raw`(?:(?<!\p{L})would|['’]d(?=\s+be(?!\p{L})))(?!\p{L
 // CU-876: the request 'would like' with its 'd - only directly before 'like' ("'d been", "'d have" are no request).
 const EN_WOULD_LIKE = String.raw`(?:(?<!\p{L})would|['’]d)\s+like(?!\p{L})`
 const EN_GOING_TO = String.raw`${EN_BE}\s+going\s+to(?!\p{L})`
-const EN_ABOUT_TO = String.raw`${EN_BE}\s+(?:(?:just|now|right)\s+)?(?:about\s+to\s+(?:be|get)|on\s+the\s+(?:point|verge)\s+of\s+being)(?!\p{L})`
+// CU-861 (table r1.1, cu-researcher 11:03Z, policy owner 10:50Z): one shared imminent head for EN_ABOUT_TO, EN_ABOUT_TO_BE and the
+// en arms of TRASH_ACTIVE_IMMINENT_ALL; EN_ABOUT_TO_BE is the imminent passive without 'get', MODAL_FUTURE's new slot.
+const EN_IMMINENT_HEAD = String.raw`${EN_BE}\s+(?:(?:just|now|right)\s+)?`
+const EN_ABOUT_TO = String.raw`${EN_IMMINENT_HEAD}(?:about\s+to\s+(?:be|get)|on\s+the\s+(?:point|verge)\s+of\s+being)(?!\p{L})`
+const EN_ABOUT_TO_BE = String.raw`${EN_IMMINENT_HEAD}(?:about\s+to\s+be|on\s+the\s+(?:point|verge)\s+of\s+being)(?!\p{L})`
 const EN_PENDING_AUX = String.raw`(?:${EN_WILL}|${EN_WOULD}|${EN_GOING_TO}|${EN_ABOUT_TO})`
 // CU-748 (High; sweep 5, cu-coordinator 06:05Z): a localized alert that states the act in the passive future ('Diese 12 Fotos
 // werden ... gelöscht.', 'Les fichiers seront supprimés.', '削除されます', '将被删除', '삭제됩니다') names that act; the modal rule
@@ -247,7 +251,7 @@ const ACTIVE_IMMINENT_GAP = String.raw`\s+(?:\S+\s+){0,2}?`
 // an enclitic, or a next word that is neither punctuation nor a preposition.
 const ES_POR_OBJECT = String.raw`(?=\s+(?!(?:de|del|en|a|al|para|por|con|sin|desde|hasta|sobre|entre|tras|hacia|según|ante|bajo|contra)(?!\p{L}))[\p{L}\p{N}])`
 const PT_POR_OBJECT = String.raw`(?=\s+(?!(?:de|da|do|das|dos|em|na|no|nas|nos|num|numa|para|pra|por|pelo|pela|pelos|pelas|com|a|à|às|ao|aos|até|sem|sobre|entre|após|desde|contra)(?!\p{L}))[\p{L}\p{N}])`
-const TRASH_ACTIVE_IMMINENT_ALL = new RegExp(String.raw`(?:${EN_BE}\s+(?:(?:just|now|right)\s+)?(?:about\s+to${ACTIVE_IMMINENT_GAP}(?:delete|erase|remove|destroy|take\s+out)|on\s+the\s+(?:point|verge)\s+of${ACTIVE_IMMINENT_GAP}(?:deleting|erasing|removing|destroying|taking\s+out))`
+const TRASH_ACTIVE_IMMINENT_ALL = new RegExp(String.raw`(?:${EN_IMMINENT_HEAD}(?:about\s+to${ACTIVE_IMMINENT_GAP}(?:delete|erase|remove|destroy|take\s+out)|on\s+the\s+(?:point|verge)\s+of${ACTIVE_IMMINENT_GAP}(?:deleting|erasing|removing|destroying|taking\s+out))`
   + String.raw`|(?<!\p{L})(?<!(?<!\p{L})n['’])(?:est|sont|êtes|es|sommes)\s+sur\s+le\s+point\s+d(?:e\s+|['’]\s*)(?:\S+\s+){0,2}?(?:supprimer|effacer|retirer|enlever|ôter|éliminer|détruire)`
   + String.raw`|(?<!\p{L})(?:está|están|estás|estamos)\s+a\s+punto\s+de${ACTIVE_IMMINENT_GAP}(?:eliminar|borrar|suprimir|quitar|destruir)(?:l[oa]s?)?`
   + String.raw`|(?<!\p{L})(?:está|están|estás|estamos)\s+por\s+(?:eliminar|borrar|suprimir|quitar|destruir)(?:l[oa]s?|${ES_POR_OBJECT})`
@@ -532,7 +536,13 @@ const MODAL_CONDITION = String.raw`(?:once|when|after|if|as\s+soon\s+as)\s+you\s
 // CU-859: the auxiliaries are the shared English fragments (EN_WILL, EN_WOULD, EN_GOING_TO), so a contraction attached to the
 // subject reads as its full word ("Your account'll be deleted", "This'll erase the volume", "Your data'll be gone"): the space
 // before the auxiliary is optional (\s*), the fragments' own letter lookbehind keeps a full word whole, and the u flag reads \p{L}.
-const MODAL_FUTURE = new RegExp(String.raw`^(?:${MODAL_CONDITION})?(.{1,120}?)\s*(?:${EN_WILL}|${EN_WOULD}|${EN_GOING_TO})\s+be\s+${MODAL_ADVERB}([a-z]+(?:ed|en|t))\b`, 'iu')
+// CU-861 (table r1.1): the imminent passive ('is / are (just / now / right) about to be', 'on the point / verge of being', with
+// the 's / 're clitics) is one more auxiliary slot, beside will / would / going to + be; the subject is the 1-120 characters
+// before it (after a MODAL_CONDITION lead). The sentence's first match names its act, and so does main's own first will / would /
+// going-to match when it comes later, so an object-less imminent first match ('is about to be closed and your files will be
+// deleted') hides nothing main read (#1616 round 2); later matches main never read are not read (round 3, a cut, D-121 (1)).
+const MODAL_FUTURE_AUX = new RegExp(String.raw`\s*(?:(?<old>(?:${EN_WILL}|${EN_WOULD}|${EN_GOING_TO})\s+be)|${EN_ABOUT_TO_BE})\s+${MODAL_ADVERB}(?<part>[a-z]+(?:ed|en|t))\b`, 'giu')
+const MODAL_CONDITION_LEAD = new RegExp(String.raw`^${MODAL_CONDITION}`, 'iu')
 const MODAL_GONE = new RegExp(String.raw`^(?:${MODAL_CONDITION}(.{1,120}?)(?:\s+(?:is|are)|\s*${EN_WILL}\s+be)|(.{1,120}?)\s*${EN_WILL}\s+be)\s+(?:gone|lost)\b`, 'iu')
 const MODAL_LEAD = new RegExp(String.raw`^(?:doing\s+(?:so|this)|proceeding|continuing|confirming|finishing|completing|ending|by\s+(?:continuing|proceeding|confirming|finishing|completing),?|${MODAL_CONDITION}(?:this|it|we)|this(?:\s+action)?|it)(?:\s*(?:${EN_WILL}|${EN_WOULD}))?\s+${MODAL_ADVERB}([a-z]+)\s+(\S.{0,120})$`, 'iu')
 // CU-746 r2 (cu-researcher's held-out): a leading clause about the person's own act - 'Once confirmed,', 'After you continue,',
@@ -720,13 +730,27 @@ function modalVerbForms(word, participle) {
     : [w, w.replace(/ies$/, 'y'), w.replace(/es$/, ''), w.replace(/s$/, '')]
   return [...new Set(forms)].filter((form) => MODAL_RISK_VERB.test(form))
 }
+function modalFutureNames(t) {
+  const lead = MODAL_CONDITION_LEAD.exec(t)?.[0].length ?? 0
+  const names = []
+  let first = true, oldSeen = false
+  for (const match of t.slice(lead).matchAll(MODAL_FUTURE_AUX)) {
+    const subject = t.slice(lead, lead + match.index)
+    if (subject.length < 1 || subject.length > 120 || /[\n\r\u2028\u2029]/u.test(subject)) continue
+    const read = first || (match.groups.old !== undefined && !oldSeen)
+    first = false
+    if (match.groups.old !== undefined) oldSeen = true
+    if (!read) continue
+    for (const verb of modalVerbForms(match.groups.part, true)) names.push(modalName(verb, subject))
+  }
+  return names
+}
 const modalName = (verb, rest) => `${verb.charAt(0).toUpperCase()}${verb.slice(1)} ${String(rest).replace(/[.!?\s]+$/, '').trim()}`.trim()
 export function modalStatementNames(text) {
   const t = String(text ?? '').trim().replace(/[.!?]+$/, '')
   if (t === '') return []
   const out = []
-  const future = MODAL_FUTURE.exec(t)
-  if (future) for (const verb of modalVerbForms(future[2], true)) out.push(modalName(verb, future[1]))
+  out.push(...modalFutureNames(t))
   const gone = MODAL_GONE.exec(t)
   if (gone) out.push(modalName('delete', gone[1] ?? gone[2] ?? ''))
   const lead = MODAL_LEAD.exec(t)
