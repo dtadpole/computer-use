@@ -3159,8 +3159,13 @@ const ORDER_REFERENCE = /(^|[^a-z])order\s*(?:#|no\.|number\b|id\b)\s*#?[\w-]*\d
 // CU-443 (cu-coordinator 20:54Z, a class fold): transferring a phone number is a port-out (credential, from the grammar's phone
 // rows), not a money transfer - the 'transfer' purchase word does not read it; CU-446 adds a domain's transfer lock.
 const NUMBER_TRANSFER = /(^|[^a-z])transfer\s+(?:(?:my\s+|this\s+|your\s+|the\s+)?(?:phone\s+|mobile\s+)?number|lock)([^a-z]|$)/gi
+// CU-609 (cu-verifier 12:29Z, an over-ask in the CU-413 money words): a page or setting named after transfers ('Transfer
+// history', 'Transfer limits', 'Transfer file', 'Transfer settings') moves no money, like 'Order history' above; the noun is
+// dropped before the purchase words are matched, so 'Transfer', 'Transfer now', 'Transfer money' and 'Wire transfer' still ask.
+// r2 (cu-developer-three 13:28Z): the Turkish page nouns too - 'Transfer geçmişi', 'Transfer ayarları', 'Transfer limitleri'.
+const TRANSFER_PAGE = /(^|[^a-z])transfers?\s+(?:history|limits?|files?|settings|details|status|activity|log|records|statements?|faq|fees|rates|templates?|overview|geçmiş[^\s]*|ayar[^\s]*|limit[^\s]*|detay[^\s]*|durum[^\s]*|şablon[^\s]*)([^a-z]|$)/gi
 function withoutOrderReferences(name) {
-  return String(name ?? '').replace(ORDER_REFERENCE, ' ').replace(NUMBER_TRANSFER, ' ')
+  return String(name ?? '').replace(ORDER_REFERENCE, ' ').replace(NUMBER_TRANSFER, ' ').replace(TRANSFER_PAGE, ' ')
 }
 
 /**
