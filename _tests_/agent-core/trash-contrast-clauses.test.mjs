@@ -11,9 +11,10 @@ import { createPolicy } from '../../_tools_/agent-core/policy.mjs'
 // CU-892 + CU-890 (P1, one class-general fix): a positive future of a covered delete verb after a contrast word, following a negated
 // earlier future, went free over the trash - the cell read only the first match, so a negated first clause decided the sentence.
 // The table cu-researcher OK'd (r1 + r1a, 04:09Z): main's whole-sentence reading stays; then each clause cut at a contrast marker
-// (fr mais, es pero / sino, tr ama ..., the sentence adverbs after ',' or ';', tr contrastive 'ise') is read as a sentence of its
-// own. A negated or past second clause, a restore verb and a non-emptying button stay free. Round 2c (D-121 (1)) cut the en / de /
-// it / pt / nl arms, whose cut clauses over-asked when a word no negation list holds negated them (CU-890, CU-920).
+// (es pero / sino, tr ama ..., the sentence adverbs after ',' or ';', tr contrastive 'ise') is read as a sentence of its own. A
+// negated or past second clause, a restore verb and a non-emptying button stay free. Round 2c (D-121 (1)) cut the en / de / it / pt /
+// nl arms, whose cut clauses over-asked when a word no negation list holds negated them; round 2d cut fr 'mais', which also cut
+// Portuguese 'mais' ('more') (CU-890, CU-920).
 const FIXTURE = 'ai.reflection.cu.fixture'
 const tmp = mkdtempSync(join(tmpdir(), 'cu-892-'))
 after(() => rmSync(tmp, { recursive: true, force: true }))
@@ -37,15 +38,13 @@ test('CU-890 cut (#1615 round 2c, D-121 (1)): en has no contrast arm - a cut cla
   ])
 })
 
-test('CU-892: es / fr - a positive future after the contrast marker asks delete', () => {
+test('CU-892: es / fr - a positive future after the contrast marker (es pero / sino, fr ; cependant) asks delete', () => {
   asks([
     // the 'contudo' shape the #1588 cut returned to free (CU-892's source)
     ['Vaciar', 'Papelera', 'La app no eliminará las carpetas, pero eliminará los elementos de la papelera.'],
     ['Vaciar', 'Papelera', 'La app no eliminará las carpetas, sin embargo, eliminará los elementos de la papelera.'],
     ['Vaciar', 'Papelera', 'No solo eliminará los archivos, sino que también eliminará los elementos de la papelera.'],
     ['Vaciar', 'Papelera', 'La app no quitará las carpetas, pero quitará los elementos de la papelera.'],
-    ['Vider', 'Corbeille', "L'app ne retirera pas les dossiers, mais retirera les éléments de la corbeille."],
-    ['Vider', 'Corbeille', "L'app ne supprimera pas les dossiers, mais supprimera les éléments de la corbeille."],
   ])
 })
 
@@ -110,10 +109,6 @@ test('#1615 round 2 (cu-verifier\'s classes, r1d): no cut right after a negator;
     // main reads the first delete verb's window ('nicht löschen') and stays free; the cut clause carries 'niemals'
     ['Leeren', 'Papierkorb', 'Die App wird die Ordner nicht löschen, aber sie wird die Objekte im Papierkorb niemals löschen.'],
   ])
-  asks([
-    // a comma or semicolon between the negator and the contrast word keeps the cut (cu-researcher's r1d condition)
-    ['Vider', 'Corbeille', "L'app ne supprimera pas les dossiers, mais elle supprimera les éléments de la corbeille."],
-  ])
 })
 
 test('#1615 round 2c (D-121 (1) cut): de / it / pt / nl have no contrast arm - a clause negated by a word no list holds stays free, as on main (CU-920)', () => {
@@ -128,5 +123,14 @@ test('#1615 round 2c (D-121 (1) cut): de / it / pt / nl have no contrast arm - a
     ['Esvaziar', 'Lixeira', 'O app não apagará as pastas, mas de modo algum excluirá os itens da lixeira.'],
     ['Legen', 'Prullenbak', 'De app zal de mappen niet verwijderen, maar zal de items in de prullenbak nimmer verwijderen.'],
     ['Legen', 'Prullenbak', 'De app zal de mappen niet verwijderen, maar zal de items in de prullenbak geenszins verwijderen.'],
+  ])
+})
+
+test('#1615 round 2d (the last cut): fr \'mais\' cuts nothing, so Portuguese \'mais\' (more) after a negator stays free, as on main', () => {
+  free([
+    // cu-verifier's NOT OK at cb36b8f1e (18:25Z): asked there, free on main
+    ['Esvaziar', 'Lixeira', 'O app não excluirá as pastas agora, nem mais tarde excluirá os itens da lixeira.'],
+    ['Esvaziar', 'Lixeira', 'O app não vai excluir as pastas agora, nem mais tarde vai excluir os itens da lixeira.'],
+    ['Esvaziar', 'Lixeira', 'Os itens da lixeira não serão excluídos hoje, nem mais tarde serão excluídos da lixeira.'],
   ])
 })
