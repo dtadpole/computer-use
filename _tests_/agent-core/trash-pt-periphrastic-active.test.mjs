@@ -166,14 +166,13 @@ test('#1588 cut (D-121 (1)): later futures are read as on main - after a negated
     ['Esvaziar', 'Lixeira', 'O sistema nunca apagará as pastas nem os excluirá da lixeira.'],
     ['Svuota', 'Cestino', 'Le app non cancelleranno gli elementi del cestino né li elimineranno.'],
     ['Esvaziar', 'Lixeira', 'O sistema não vai apagar as pastas nem durante a noite de hoje vai excluir os itens da lixeira.'],
-  ])
-  asks([
-    ['Esvaziar', 'Lixeira', 'O sistema excluirá todos os itens da lixeira, nem que demore.'],
-    // free on main (main reads only its first match); the follow-up this cut named is CU-892: the clause after the contrast
-    // marker ('mas', ', contudo') is read on its own, so its positive future asks
+    // free on main as well (main reads only its first match); the asks they carry go to CU-882 / a follow-up (cu-coordinator 23:16Z)
     ['Esvaziar', 'Lixeira', 'O sistema não apagará as pastas, mas excluirá todos os itens da lixeira.'],
     ['Esvaziar', 'Lixeira', 'O sistema não vai apagar as pastas nem os atalhos, mas vai excluir todos os itens da lixeira.'],
     ['Esvaziar', 'Lixeira', 'O sistema não apagará as pastas nem os atalhos, contudo excluirá todos os itens da lixeira.'],
+  ])
+  asks([
+    ['Esvaziar', 'Lixeira', 'O sistema excluirá todos os itens da lixeira, nem que demore.'],
     // asks on main 986abf965 as well (another rule reads it), so it keeps asking
     ['Esvaziar', 'Lixeira', 'O sistema não eliminará as pastas, mas excluirá todos os itens da lixeira.'],
     ['Esvaziar', 'Lixeira', 'O sistema não vai apagar as pastas, mas excluirá todos os itens da lixeira.'],

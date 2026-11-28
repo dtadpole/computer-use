@@ -11,8 +11,9 @@ import { createPolicy } from '../../_tools_/agent-core/policy.mjs'
 // CU-892 + CU-890 (P1, one class-general fix): a positive future of a covered delete verb after a contrast word, following a negated
 // earlier future, went free over the trash - the cell read only the first match, so a negated first clause decided the sentence.
 // The table cu-researcher OK'd (r1 + r1a, 04:09Z): main's whole-sentence reading stays; then each clause cut at a contrast marker
-// (but / mas / pero / ma / mais / aber / maar / ama ..., the sentence adverbs after ',' or ';', tr contrastive 'ise') is read as a
-// sentence of its own. A negated or past second clause, a restore verb and a non-emptying button stay free.
+// (fr mais, es pero / sino, tr ama ..., the sentence adverbs after ',' or ';', tr contrastive 'ise') is read as a sentence of its
+// own. A negated or past second clause, a restore verb and a non-emptying button stay free. Round 2c (D-121 (1)) cut the en / de /
+// it / pt / nl arms, whose cut clauses over-asked when a word no negation list holds negated them (CU-890, CU-920).
 const FIXTURE = 'ai.reflection.cu.fixture'
 const tmp = mkdtempSync(join(tmpdir(), 'cu-892-'))
 after(() => rmSync(tmp, { recursive: true, force: true }))
@@ -27,29 +28,24 @@ const onDesktop = (name, dialogName, description) => desktop.classify(click, { f
 const asks = (rows) => { for (const [n, t, d] of rows) { assert.ok(classes(onWeb(n, t, d)).includes('delete'), `web ${n} | ${t} | ${d ?? ''}`); assert.ok(classes(onDesktop(n, t, d)).includes('delete'), `desktop ${n} | ${t} | ${d ?? ''}`) } }
 const free = (rows) => { for (const [n, t, d] of rows) { assert.ok(!classes(onWeb(n, t, d)).includes('delete'), `web ${n} | ${t} | ${d ?? ''}`); assert.ok(!classes(onDesktop(n, t, d)).includes('delete'), `desktop ${n} | ${t} | ${d ?? ''}`) } }
 
-test('CU-890: en - a positive future after but / ; however, following a negated first clause, asks delete', () => {
-  asks([
-    // cu-developer-two's filed row (cross-check 23:02:20Z 27 Nov), free on main on both routes
-    ['Empty', 'Trash', 'The apps will not delete the folders nor the photos, but they will delete the items in the trash.'],
-    ['Empty', 'Trash', 'The app will not delete the folders; however, it will delete the items in the Trash.'],
-    ['Empty', 'Trash', 'It will not only delete the files but it will also delete the items in the Trash.'],
+test('CU-890 cut (#1615 round 2c, D-121 (1)): en has no contrast arm - a cut clause negated by a negative pronoun stays free, as on main', () => {
+  free([
+    // asked at 00c45d10a, free on main; the sentence states no pending delete (cu-coordinator's grade 16:43Z)
+    ['Empty', 'Trash', 'The app will not delete the folders, but nothing in the Trash will be deleted.'],
+    ['Empty', 'Trash', 'The app will not delete the folders, but none of the items in the Trash will be deleted.'],
+    ['Empty', 'Trash', 'The app will not delete the folders, but nobody will delete the items in the Trash.'],
   ])
 })
 
-test('CU-892: pt / es / it / fr / de / nl - a positive future after the contrast marker asks delete', () => {
+test('CU-892: es / fr - a positive future after the contrast marker asks delete', () => {
   asks([
-    ['Esvaziar', 'Lixeira', 'O app não apagará as pastas, mas excluirá os itens da lixeira.'],
     // the 'contudo' shape the #1588 cut returned to free (CU-892's source)
-    ['Esvaziar', 'Lixeira', 'O app não apagará as pastas; contudo, excluirá os itens da lixeira.'],
     ['Vaciar', 'Papelera', 'La app no eliminará las carpetas, pero eliminará los elementos de la papelera.'],
     ['Vaciar', 'Papelera', 'La app no eliminará las carpetas, sin embargo, eliminará los elementos de la papelera.'],
     ['Vaciar', 'Papelera', 'No solo eliminará los archivos, sino que también eliminará los elementos de la papelera.'],
     ['Vaciar', 'Papelera', 'La app no quitará las carpetas, pero quitará los elementos de la papelera.'],
     ['Vider', 'Corbeille', "L'app ne retirera pas les dossiers, mais retirera les éléments de la corbeille."],
-    ['Svuota', 'Cestino', "L'app non cancellerà le cartelle, ma cancellerà tutti i file del cestino."],
     ['Vider', 'Corbeille', "L'app ne supprimera pas les dossiers, mais supprimera les éléments de la corbeille."],
-    ['Leeren', 'Papierkorb', 'Die App wird die Ordner nicht löschen, aber sie wird die Objekte im Papierkorb löschen.'],
-    ['Legen', 'Prullenbak', 'De app zal de mappen niet verwijderen, maar zal de items in de prullenbak verwijderen.'],
   ])
 })
 
@@ -98,12 +94,9 @@ test('#1615 round 2: a negative additive before the cut clause\'s verb shares th
     ['Legen', 'Prullenbak', 'De app zal de mappen niet verwijderen, maar evenmin zal ze de items in de prullenbak verwijderen.'],
   ])
   asks([
-    ['Esvaziar', 'Lixeira', 'O app não apagará as pastas, mas também excluirá os itens da lixeira.'],
-    ['Svuota', 'Cestino', 'Il servizio non cancellerà le bozze, ma eliminerà anche gli elementi del cestino.'],
     ['Vaciar', 'Papelera', 'La app no quitará las carpetas, pero también quitará los elementos de la papelera.'],
     // the additive after the clause's delete verb does not negate it (cu-researcher's position change, r1c)
     ['Vaciar', 'Papelera', 'La app no quitará las carpetas, pero quitará todos los elementos de la papelera sin dejar ni uno.'],
-    ['Esvaziar', 'Lixeira', 'O app não apagará as pastas, mas excluirá os itens da lixeira sem deixar nem um.'],
   ])
 })
 
@@ -120,8 +113,20 @@ test('#1615 round 2 (cu-verifier\'s classes, r1d): no cut right after a negator;
   asks([
     // a comma or semicolon between the negator and the contrast word keeps the cut (cu-researcher's r1d condition)
     ['Vider', 'Corbeille', "L'app ne supprimera pas les dossiers, mais elle supprimera les éléments de la corbeille."],
-    ['Legen', 'Prullenbak', 'De app zal de mappen niet verwijderen, maar zal de items in de prullenbak verwijderen.'],
-    ['Leeren', 'Papierkorb', 'Die App löscht die Ordner nicht, aber sie wird die Objekte im Papierkorb löschen.'],
-    ['Empty', 'Trash', 'The app will not delete the folders, but every item in the Trash will be deleted.'],
+  ])
+})
+
+test('#1615 round 2c (D-121 (1) cut): de / it / pt / nl have no contrast arm - a clause negated by a word no list holds stays free, as on main (CU-920)', () => {
+  free([
+    // cu-developer-two's F1 and its twins (free on main, asked at 00c45d10a)
+    ['Leeren', 'Papierkorb', 'Die Ordner werden nicht gelöscht, aber ebenso wenig werden die Objekte gelöscht.'],
+    ['Leeren', 'Papierkorb', 'Die Ordner werden nicht gelöscht, aber genauso wenig werden die Objekte gelöscht.'],
+    ['Leeren', 'Papierkorb', 'Die App wird die Ordner nicht löschen, aber ebenso wenig wird sie die Objekte im Papierkorb löschen.'],
+    // cu-verifier's 'keineswegs' class and the probe's 'in no way' adverbs (16:42Z)
+    ['Leeren', 'Papierkorb', 'Die App wird die Ordner nicht löschen, aber sie wird die Objekte im Papierkorb keinesfalls löschen.'],
+    ['Svuota', 'Cestino', "L'app non cancellerà le cartelle, ma in nessun modo cancellerà i file del cestino."],
+    ['Esvaziar', 'Lixeira', 'O app não apagará as pastas, mas de modo algum excluirá os itens da lixeira.'],
+    ['Legen', 'Prullenbak', 'De app zal de mappen niet verwijderen, maar zal de items in de prullenbak nimmer verwijderen.'],
+    ['Legen', 'Prullenbak', 'De app zal de mappen niet verwijderen, maar zal de items in de prullenbak geenszins verwijderen.'],
   ])
 })
