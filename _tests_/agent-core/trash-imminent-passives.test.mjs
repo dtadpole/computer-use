@@ -234,3 +234,85 @@ test('CU-846: the out-of-scope shapes stay free - pt quase a / em vias de, fr en
     ['Svuota', 'Cestino', 'Il sistema sta per eliminare tutti i file del cestino.'],
   ])
 })
+
+// CU-865 (P1; table r1 OK'd by cu-researcher 05:37Z, Q2 folded): the es imminent 'está(n) por' took only ser, so 'Los archivos de la
+// papelera están por quedar eliminados.' went free under Vaciar | Papelera while its 'a punto de quedar' twin asked. 'está(n) por' now
+// takes quedar and the enclitic V-se of the four covered verbs; the subjects are the es item nouns (archivo, documento, elemento,
+// todo), all masculine, so the feminine participles ride the cell's [oa]s? as on main. Negated, past and near twins stay free.
+test('CU-865: está(n) por quedar + each covered delete participle asks delete on both routes, beside its twins that ask on main', () => {
+  asks([
+    // the gap row of the table
+    ['Vaciar', 'Papelera', 'Los archivos de la papelera están por quedar eliminados.'],
+    // each covered participle, singular and plural
+    ['Vaciar', 'Papelera', 'El archivo de la papelera está por quedar eliminado.'],
+    ['Vaciar', 'Papelera', 'Los elementos de la papelera están por quedar eliminados.'],
+    ['Vaciar', 'Papelera', 'El documento de la papelera está por quedar borrado.'],
+    ['Vaciar', 'Papelera', 'Los documentos de la papelera están por quedar borrados.'],
+    ['Vaciar', 'Papelera', 'El elemento de la papelera está por quedar suprimido.'],
+    ['Vaciar', 'Papelera', 'Los elementos de la papelera están por quedar suprimidos.'],
+    // Q1: destruid- (CU-854 is on main)
+    ['Vaciar', 'Papelera', 'El archivo de la papelera está por quedar destruido.'],
+    ['Vaciar', 'Papelera', 'Los archivos de la papelera están por quedar destruidos.'],
+    // the trash title lends itself to an item-noun sentence (CU-818)
+    ['Vaciar', 'Papelera', 'El archivo está por quedar borrado.'],
+    ['Vaciar', 'Papelera', 'Todos los documentos están por quedar eliminados.'],
+    ['Vaciar', 'Papelera', 'Todo está por quedar suprimido.'],
+    // one to three words between the auxiliary and the participle
+    ['Vaciar', 'Papelera', 'Los archivos de la papelera están por quedar definitivamente eliminados.'],
+    ['Vaciar', 'Papelera', 'Los archivos de la papelera están por quedar total y definitivamente borrados.'],
+    // the twins, which already ask on main
+    ['Vaciar', 'Papelera', 'Los archivos de la papelera están a punto de quedar eliminados.'],
+    ['Vaciar', 'Papelera', 'El archivo de la papelera está a punto de quedar borrado.'],
+    ['Vaciar', 'Papelera', 'Los archivos de la papelera están por ser eliminados.'],
+  ])
+})
+
+test('CU-865 Q2: the enclitic after está(n) por asks like its a punto de twin; its negated and past twins stay free', () => {
+  asks([
+    ['Vaciar', 'Papelera', 'Los archivos de la papelera están por borrarse.'],
+    ['Vaciar', 'Papelera', 'El archivo de la papelera está por eliminarse.'],
+    ['Vaciar', 'Papelera', 'Los documentos de la papelera están por suprimirse.'],
+    ['Vaciar', 'Papelera', 'Los elementos de la papelera están por destruirse.'],
+    // the twin, which already asks on main
+    ['Vaciar', 'Papelera', 'Los archivos de la papelera están a punto de borrarse.'],
+  ])
+  free([
+    ['Vaciar', 'Papelera', 'Los archivos de la papelera no están por borrarse.'],
+    ['Vaciar', 'Papelera', 'Los archivos de la papelera estaban por borrarse.'],
+    ['Vaciar', 'Papelera', 'El archivo de la papelera no está por eliminarse.'],
+    ['Vaciar', 'Papelera', 'El archivo de la papelera estaba por eliminarse.'],
+    ['Vaciar', 'Papelera', 'Los elementos de la papelera no están por destruirse.'],
+  ])
+})
+
+test('CU-865: the past, negated and four-word twins of está(n) por quedar stay free', () => {
+  free([
+    ['Vaciar', 'Papelera', 'El archivo de la papelera estaba por quedar eliminado.'],
+    ['Vaciar', 'Papelera', 'Los archivos de la papelera estaban por quedar eliminados.'],
+    ['Vaciar', 'Papelera', 'Los archivos de la papelera estuvieron por quedar eliminados.'],
+    ['Vaciar', 'Papelera', 'Los archivos de la papelera quedaron eliminados.'],
+    ['Vaciar', 'Papelera', 'Los archivos de la papelera han quedado eliminados.'],
+    ['Vaciar', 'Papelera', 'El archivo de la papelera no está por quedar eliminado.'],
+    ['Vaciar', 'Papelera', 'Los archivos de la papelera no están por quedar eliminados.'],
+    ['Vaciar', 'Papelera', 'Los archivos de la papelera nunca están por quedar eliminados.'],
+    ['Vaciar', 'Papelera', 'Los archivos de la papelera están por no quedar eliminados.'],
+    ['Vaciar', 'Papelera', 'Los archivos de la papelera están por quedar total, completa y definitivamente eliminados.'],
+  ])
+})
+
+test('CU-865: the near rows and the unrelated por stay free - no delete participle, no trash, no emptying button, no auxiliary', () => {
+  free([
+    ['Vaciar', 'Papelera', 'Los archivos de la papelera están por quedar restaurados.'],
+    ['Vaciar', 'Papelera', 'Los archivos de la papelera están por quedar guardados.'],
+    ['Vaciar', 'Papelera', 'Los archivos están por quedar quitados de la papelera.'],
+    ['Vaciar', 'Papelera', 'Los archivos están por quedar retirados de la papelera.'],
+    ['Vaciar', 'Papelera', 'La papelera está por quedar vaciada.'],
+    ['Vaciar', 'Notas', 'Las notas están por quedar eliminadas.'],
+    ['Cancelar', 'Papelera', 'Los archivos de la papelera están por quedar eliminados.'],
+    ['Vaciar', 'Papelera', 'Está por verse si los archivos quedan eliminados.'],
+    ['Vaciar', 'Papelera', 'Queda por hacer la limpieza de la papelera.'],
+    // Q3 row without the locative: '... de la papelera' asks on main through the CU-790 echo route, not this cell (unchanged by CU-865)
+    ['Vaciar', 'Papelera', 'Quedan por eliminar 3 archivos.'],
+    ['Vaciar', 'Papelera', 'El sistema está por eliminar los archivos.'],
+  ])
+})
