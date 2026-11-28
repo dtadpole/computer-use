@@ -292,22 +292,26 @@ function trashNegated(text, match, imminentAsWill = false) {
   return TRASH_NEGATION.test(window)
 }
 // CU-892 + CU-890 (table r1 + r1a OK'd by cu-researcher 04:09Z): the contrast markers that cut a trash sentence into clauses, one
-// table for every language the cell reads - the conjunctions anywhere (en but, de sondern, fr mais, es pero / sino, it ma / però /
+// table, these eight languages (more: CU-916) - the conjunctions anywhere (en but, de sondern, fr mais, es pero / sino, it ma / però /
 // bensì, pt mas / porém, nl maar, tr ama / fakat / ancak), the sentence adverbs and de aber / doch only right after ',' or ';'
 // (mid-clause 'werden jedoch gelöscht' does not cut), and the comma before a clause whose subject carries tr contrastive 'ise'.
 // Coordinators (and / und / et / y / e / en / ve), nor / nem / né / ni and yet stay out: they share their clause's negation.
-const TRASH_CONTRAST_CUT = new RegExp(String.raw`(?<!\p{L})(?:but|sondern|mais|pero|sino|ma|però|bensì|mas|porém|maar|ama|fakat|ancak)(?!\p{L})|[,;]\s*(?:however|contudo|todavia|no\s+entanto|entretanto|sin\s+embargo|no\s+obstante|tuttavia|cependant|toutefois|jedoch|echter|aber|doch)(?!\p{L})|,(?=[^,;.!?]*(?<!\p{L})ise(?!\p{L}))`, 'iu')
+const TRASH_CONTRAST_CUT = new RegExp(String.raw`(?<!\p{L})(?<!(?<!\p{L})(?:not|never|nicht|nie|niemals|kein|keine|ne|pas|jamais|no|nunca|non|mai|não|nao|niet|nooit|geen)\s+)(?:but|sondern|mais|pero|sino|ma|però|bensì|mas|porém|maar|ama|fakat|ancak)(?!\p{L})|[,;]\s*(?:however|contudo|todavia|no\s+entanto|entretanto|sin\s+embargo|no\s+obstante|tuttavia|cependant|toutefois|jedoch|echter|aber|doch)(?!\p{L})|,(?=[^,;.!?]*(?<!\p{L})ise(?!\p{L}))`, 'iu')
 // #1615 round 2 (cu-researcher's NOT OK at e6fd72ea0; table r1b + its position change, r1c): a cut clause whose negation is carried
 // by a negative additive the plain negation list lacks ('..., ma nemmeno eliminerà ...', '..., pero tampoco eliminará ...', '..., but
 // neither will it delete ...') shares the sentence's negation and does not ask on its own - the additive counts only when it heads the
 // clause or stands before its first covered delete verb ('..., pero eliminará todos ... sin dejar ni uno.' still asks). de 'noch' is
-// out (also 'still'); fr / de / nl shapes with ne / pas / nicht / niet already negate; tr negates on the verb.
-const TRASH_NEGATIVE_ADDITIVE = /(?<!\p{L})(?:neither|nor|tampoco|ni|nemmeno|neanche|neppure|né|nem|tampouco|evenmin|weder)(?!\p{L})/iu
+// out (also 'still'); tr negates on the verb. Folded in the same round (cu-verifier's NOT OK at e6fd72ea0, table r1d): any negator
+// before the cut clause's first covered delete verb counts - TRASH_NEGATION's words, nao and de 'niemals' too ('..., aber sie wird
+// die Objekte im Papierkorb niemals löschen.', '..., but no item in the Trash will be deleted.'), since the four-word window guards
+// one clause's negation from another and a cut clause is one clause; and a contrast word right after a negator is no cut (pt 'não
+// mais' / 'nunca mais', 'no longer' / 'never again').
+const TRASH_CUT_NEGATOR = /(?<!\p{L})(?:neither|nor|tampoco|ni|nemmeno|neanche|neppure|né|nem|tampouco|evenmin|weder|nao|niemals)(?!\p{L})/iu
 function cutClauseSharesNegation(clause) {
-  const additive = TRASH_NEGATIVE_ADDITIVE.exec(clause)
-  if (additive === null) return false
+  const negatorAt = [TRASH_CUT_NEGATOR, TRASH_NEGATION].map((negator) => clause.search(negator)).filter((at) => at >= 0)
+  if (negatorAt.length === 0) return false
   const verbAt = [TRASH_ACTIVE_FUTURE, TRASH_DELETE_VERB, TRASH_EMPTIED_VERB, TRASH_ACTIVE_IMMINENT_ALL].map((verb) => clause.search(verb)).filter((at) => at >= 0)
-  return verbAt.length === 0 || additive.index < Math.min(...verbAt)
+  return verbAt.length === 0 || Math.min(...negatorAt) < Math.min(...verbAt)
 }
 // CU-805 (P1; the marker table cu-researcher OK'd on #1475, cu-coordinator 12:42Z): in ru / ja / zh / ko / tr a marker counts only
 // ATTACHED to a delete / erase / remove verb of the family - a suffix on the stem, or an auxiliary a few words before it - never

@@ -105,3 +105,21 @@ test('#1615 round 2: a negative additive before the cut clause\'s verb shares th
     ['Esvaziar', 'Lixeira', 'O app não apagará as pastas, mas excluirá os itens da lixeira sem deixar nem um.'],
   ])
 })
+
+test('#1615 round 2 (cu-verifier\'s classes, r1d): no cut right after a negator; any negator before the cut clause\'s verb shares the negation', () => {
+  free([
+    // pt 'não mais' / 'nunca mais' ('no longer' / 'never again') are no contrast
+    ['Esvaziar', 'Lixeira', 'O app não mais excluirá os itens da lixeira.'],
+    ['Esvaziar', 'Lixeira', 'O app nunca mais excluirá os itens da lixeira.'],
+    // a negator before the cut clause's verb, outside the four-word window or outside TRASH_NEGATION
+    ['Empty', 'Trash', 'The app will not delete the folders, but no item in the Trash will be deleted.'],
+    ['Leeren', 'Papierkorb', 'Die App löscht die Ordner nicht, aber sie wird die Objekte im Papierkorb niemals löschen.'],
+  ])
+  asks([
+    // a comma or semicolon between the negator and the contrast word keeps the cut (cu-researcher's r1d condition)
+    ['Vider', 'Corbeille', "L'app ne supprimera pas les dossiers, mais elle supprimera les éléments de la corbeille."],
+    ['Legen', 'Prullenbak', 'De app zal de mappen niet verwijderen, maar zal de items in de prullenbak verwijderen.'],
+    ['Leeren', 'Papierkorb', 'Die App löscht die Ordner nicht, aber sie wird die Objekte im Papierkorb löschen.'],
+    ['Empty', 'Trash', 'The app will not delete the folders, but every item in the Trash will be deleted.'],
+  ])
+})
