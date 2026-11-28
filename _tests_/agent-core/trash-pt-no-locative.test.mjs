@@ -70,8 +70,30 @@ test('CU-881: real negations still free - pt não / nunca / jamais, es and en no
     // elementos de la papelera.' ask on main 701a53309 too (measured in the CU-881 test1 window, 28 Nov 04:4xZ - another route,
     // not this window), so they are no twins here; 'quitar' carries the same negation and is free on main.
     ['Vaciar', 'Papelera', 'Los elementos de la papelera no se quitarán.'],
-    ['Vaciar', 'Papelera', 'El sistema no los eliminará.'],
     ['Vaciar', 'Papelera', 'El sistema no quitará los elementos de la papelera.'],
     ['Empty', 'Trash', 'No items will be deleted.'],
+  ])
+})
+
+test('#1605 fold: the en determiner No + a listed noun or brand stays a negation (free, as on main)', () => {
+  // cu-verifier's finding at 5762a9f9e (issuecomment-7234844551): (A) had read these as the pt locative.
+  free([
+    ['Empty', 'Trash', 'No Mac will delete the items in the Trash.'],
+    ['Empty', 'Trash', 'No iPhone will erase the items in the Trash.'],
+    ['Empty', 'Trash', 'No app will delete the items in the Trash.'],
+  ])
+})
+
+test('#1605 fold: Mac / MacBook / iMac, the possessive próprio and the pt-only destruíd- complete (A) and (B)', () => {
+  asks([
+    ['Esvaziar', 'Lixo', 'O macOS no MacBook apagará todos os itens do Lixo.'],
+    ['Esvaziar', 'Lixo', 'O Finder no iMac apagará os itens do Lixo.'],
+    ['Esvaziar', 'Lixo', 'O Finder no próprio Mac apagará os itens do Lixo.'],
+    ['Esvaziar', 'Lixeira', 'Deseja que os arquivos no Finder sejam destruídos?'],
+  ])
+  free([
+    ['Esvaziar', 'Lixo', 'O Finder no próprio Mac não apagará os itens do Lixo.'],
+    ['Esvaziar', 'Lixo', 'O Finder no iMac apagou os itens do Lixo.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos no Finder não serão destruídos.'],
   ])
 })

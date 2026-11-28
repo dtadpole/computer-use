@@ -239,11 +239,16 @@ const TRASH_PENDING = new RegExp(String.raw`[?？]\s*$|${EN_PENDING_AUX}|(?<!\p{
 const EN_IMMINENT_AUX = new RegExp(EN_ABOUT_TO, 'giu')
 // CU-881 (table r1 OK'd by cu-researcher 18:31Z, shapes A and B): pt 'no' is the contraction em + o ('in the'), never a negation -
 // pt negates with não / nunca / jamais / nem. (A) 'no' before a possessive or a listed noun or brand ('no seu Mac', 'no lixo', 'no
-// iCloud') is no negation in any language; (B) before a pt-only verb form no bare 'no' is (trashNegated below).
-const TRASH_NEGATION = /(?<!\p{L})(?:not|never|nicht|nie|kein|keine|ne|pas|jamais|no(?!\s+(?:seu|meu|teu|nosso|vosso|lixo|computador|mac|icloud|iphone|ipad|disco|dispositivo|armazenamento|servidor|celular|telemóvel|cartão|aparelho|sistema)(?!\p{L}))|nunca|non|mai|não|niet|nooit|geen)(?!\p{L})|n['’]t(?!\p{L})/iu
-// CU-881 (B): a pt-only form of the matched verb - a -rão future, deletar / deletará / deletad-, excluíd-, esvaziad-, an enclitic
-// (-á-lo, -ê-lo, -í-lo) or the vai / vão / irá / irão periphrasis - is never negated by a bare 'no'; es / en have no such form.
-const TRASH_PT_ONLY_VERB = /(?:rão|deletar|deletará|deletad[oa]s?|excluíd[oa]s?|esvaziad[oa]s?|[áéêí]-l[oa]s?)$|^(?:vão|vai|irão|irá)(?!\p{L})/iu
+// iCloud') is no negation before a verb form that is not English; (B) before a pt-only verb form no bare 'no' is (trashNegated).
+// #1605 fold (cu-verifier's finding, the delta cu-researcher OK'd 05:56Z): the en determiner 'No' + a listed noun ('No Mac will
+// delete ...') stays a negation, as on main - (A) masks only before a non-English verb; the brand reads Mac / MacBook / iMac /
+// macOS, 'próprio' is a possessive, and (B) takes destruíd- beside excluíd-.
+const TRASH_NEGATION = /(?<!\p{L})(?:not|never|nicht|nie|kein|keine|ne|pas|jamais|no|nunca|non|mai|não|niet|nooit|geen)(?!\p{L})|n['’]t(?!\p{L})/iu
+const PT_LOCATIVE_NO = /(?<!\p{L})no(?=\s+(?:seu|meu|teu|nosso|vosso|próprio|lixo|computador|i?mac\p{L}*|icloud|iphone|ipad|disco|dispositivo|armazenamento|servidor|celular|telemóvel|cartão|aparelho|sistema)(?!\p{L}))/giu
+const TRASH_EN_VERB = /^(?:delete|deleted|erase|erased|remove|removed|take\s+out|taken\s+out|destroy|destroyed|empty|emptied|cleared|purged)$/iu
+// CU-881 (B): a pt-only form of the matched verb - a -rão future, deletar / deletará / deletad-, excluíd-, destruíd-, esvaziad-, an
+// enclitic (-á-lo, -ê-lo, -í-lo) or the vai / vão / irá / irão periphrasis - is never negated by a bare 'no'; es / en have no such form.
+const TRASH_PT_ONLY_VERB = /(?:rão|deletar|deletará|deletad[oa]s?|excluíd[oa]s?|destruíd[oa]s?|esvaziad[oa]s?|[áéêí]-l[oa]s?)$|^(?:vão|vai|irão|irá)(?!\p{L})/iu
 const PT_BARE_NO = /(?<!\p{L})no(?!\p{L})/giu
 // A negation counts only within four words before the matched verb; the delete-verb window first reads the imminent auxiliary as
 // 'will be' (EN_IMMINENT_AUX).
@@ -251,6 +256,7 @@ function trashNegated(text, match, imminentAsWill = false) {
   const before = text.slice(0, match.index)
   let window = (imminentAsWill ? before.replace(EN_IMMINENT_AUX, ' will be') : before).trim().split(/\s+/).slice(-4).join(' ')
   if (TRASH_PT_ONLY_VERB.test(match[0])) window = window.replace(PT_BARE_NO, ' ')
+  else if (!TRASH_EN_VERB.test(match[0])) window = window.replace(PT_LOCATIVE_NO, ' ')
   return TRASH_NEGATION.test(window)
 }
 // CU-805 (P1; the marker table cu-researcher OK'd on #1475, cu-coordinator 12:42Z): in ru / ja / zh / ko / tr a marker counts only
