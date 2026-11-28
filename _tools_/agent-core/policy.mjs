@@ -297,6 +297,18 @@ function trashNegated(text, match, imminentAsWill = false) {
 // (mid-clause 'werden jedoch gelöscht' does not cut), and the comma before a clause whose subject carries tr contrastive 'ise'.
 // Coordinators (and / und / et / y / e / en / ve), nor / nem / né / ni and yet stay out: they share their clause's negation.
 const TRASH_CONTRAST_CUT = new RegExp(String.raw`(?<!\p{L})(?:but|sondern|mais|pero|sino|ma|però|bensì|mas|porém|maar|ama|fakat|ancak)(?!\p{L})|[,;]\s*(?:however|contudo|todavia|no\s+entanto|entretanto|sin\s+embargo|no\s+obstante|tuttavia|cependant|toutefois|jedoch|echter|aber|doch)(?!\p{L})|,(?=[^,;.!?]*(?<!\p{L})ise(?!\p{L}))`, 'iu')
+// #1615 round 2 (cu-researcher's NOT OK at e6fd72ea0; table r1b + its position change, r1c): a cut clause whose negation is carried
+// by a negative additive the plain negation list lacks ('..., ma nemmeno eliminerà ...', '..., pero tampoco eliminará ...', '..., but
+// neither will it delete ...') shares the sentence's negation and does not ask on its own - the additive counts only when it heads the
+// clause or stands before its first covered delete verb ('..., pero eliminará todos ... sin dejar ni uno.' still asks). de 'noch' is
+// out (also 'still'); fr / de / nl shapes with ne / pas / nicht / niet already negate; tr negates on the verb.
+const TRASH_NEGATIVE_ADDITIVE = /(?<!\p{L})(?:neither|nor|tampoco|ni|nemmeno|neanche|neppure|né|nem|tampouco|evenmin|weder)(?!\p{L})/iu
+function cutClauseSharesNegation(clause) {
+  const additive = TRASH_NEGATIVE_ADDITIVE.exec(clause)
+  if (additive === null) return false
+  const verbAt = [TRASH_ACTIVE_FUTURE, TRASH_DELETE_VERB, TRASH_EMPTIED_VERB, TRASH_ACTIVE_IMMINENT_ALL].map((verb) => clause.search(verb)).filter((at) => at >= 0)
+  return verbAt.length === 0 || additive.index < Math.min(...verbAt)
+}
 // CU-805 (P1; the marker table cu-researcher OK'd on #1475, cu-coordinator 12:42Z): in ru / ja / zh / ko / tr a marker counts only
 // ATTACHED to a delete / erase / remove verb of the family - a suffix on the stem, or an auxiliary a few words before it - never
 // anywhere in the sentence. Checked in order: a negation frees the sentence, then a past / perfect form, then a pending form (or a
@@ -450,7 +462,7 @@ function emptiesTrashByDelete(name, sentence, titleNamesTrash = false) {
   // of its own, so a negated first clause ('will not delete the folders, but they will delete the items in the trash') no longer
   // decides a positive future after the marker. Monotone: no row main asks goes free, and a clause asks only as its own words would.
   const clauses = text.split(TRASH_CONTRAST_CUT).map((clause) => clause.replace(/^[\s,;:]+/u, '').trim()).filter((clause) => clause !== '')
-  return clauses.length > 1 && clauses.some((clause) => trashClauseAsks(clause))
+  return clauses.length > 1 && clauses.some((clause) => !cutClauseSharesNegation(clause) && trashClauseAsks(clause))
 }
 // One trash sentence or contrast clause, past the button and trash-noun gate: main's reading of a whole sentence.
 function trashClauseAsks(text) {

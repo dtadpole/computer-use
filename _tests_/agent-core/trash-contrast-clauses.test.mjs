@@ -82,3 +82,26 @@ test('CU-892 + CU-890: the second clause negated or past, a restore verb, a mid-
     ['Cancelar', 'Papelera', 'La app no eliminará las carpetas, pero eliminará los elementos de la papelera.'],
   ])
 })
+
+test('#1615 round 2: a negative additive before the cut clause\'s verb shares the negation; after the verb, or a positive additive, it asks', () => {
+  // cu-researcher's held-out row (NOT OK at e6fd72ea0): free on main and in en, it asked on the first head
+  free([
+    ['Svuota', 'Cestino', 'Il servizio non cancellerà le bozze, ma nemmeno eliminerà gli elementi del cestino.'],
+    ['Svuota', 'Cestino', 'Il servizio non cancellerà le bozze, ma neanche eliminerà gli elementi del cestino.'],
+    ['Svuota', 'Cestino', 'Il servizio non cancellerà le bozze, ma neppure eliminerà gli elementi del cestino.'],
+    ['Vaciar', 'Papelera', 'La app no eliminará las carpetas, pero tampoco eliminará los elementos de la papelera.'],
+    ['Vaciar', 'Papelera', 'La app no eliminará las carpetas, pero ni siquiera eliminará los elementos de la papelera.'],
+    ['Esvaziar', 'Lixeira', 'O app não apagará as pastas, mas tampouco excluirá os itens da lixeira.'],
+    ['Esvaziar', 'Lixeira', 'O app não apagará as pastas, mas nem excluirá os itens da lixeira.'],
+    ['Empty', 'Trash', 'The app will not delete the folders, but neither will it delete the items in the Trash.'],
+    ['Legen', 'Prullenbak', 'De app zal de mappen niet verwijderen, maar evenmin zal ze de items in de prullenbak verwijderen.'],
+  ])
+  asks([
+    ['Esvaziar', 'Lixeira', 'O app não apagará as pastas, mas também excluirá os itens da lixeira.'],
+    ['Svuota', 'Cestino', 'Il servizio non cancellerà le bozze, ma eliminerà anche gli elementi del cestino.'],
+    ['Vaciar', 'Papelera', 'La app no eliminará las carpetas, pero también eliminará los elementos de la papelera.'],
+    // the additive after the clause's delete verb does not negate it (cu-researcher's position change, r1c)
+    ['Vaciar', 'Papelera', 'La app no eliminará las carpetas, pero eliminará todos los elementos de la papelera sin dejar ni uno.'],
+    ['Esvaziar', 'Lixeira', 'O app não apagará as pastas, mas excluirá os itens da lixeira sem deixar nem um.'],
+  ])
+})
