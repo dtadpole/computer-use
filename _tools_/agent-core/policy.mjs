@@ -59,6 +59,8 @@ const GENERIC_CONFIRM = /^\s*(?:confirm|ok|okay|yes|yes,?\s+(?:continue|confirm|
 const EN_BE = String.raw`(?:(?<!\p{L})(?:is|are)|['’](?:s|re))`
 const EN_WILL = String.raw`(?:(?<!\p{L})will|['’]ll)(?!\p{L})`
 const EN_WOULD = String.raw`(?:(?<!\p{L})would|['’]d(?=\s+be(?!\p{L})))(?!\p{L})`
+// CU-876: the request 'would like' with its 'd - only directly before 'like' ("'d been", "'d have" are no request).
+const EN_WOULD_LIKE = String.raw`(?:(?<!\p{L})would|['’]d)\s+like(?!\p{L})`
 const EN_GOING_TO = String.raw`${EN_BE}\s+going\s+to(?!\p{L})`
 const EN_ABOUT_TO = String.raw`${EN_BE}\s+(?:(?:just|now|right)\s+)?(?:about\s+to\s+(?:be|get)|on\s+the\s+(?:point|verge)\s+of\s+being)(?!\p{L})`
 const EN_PENDING_AUX = String.raw`(?:${EN_WILL}|${EN_WOULD}|${EN_GOING_TO}|${EN_ABOUT_TO})`
@@ -210,7 +212,15 @@ const TRASH_EMPTIED_VERB = /(?<!\p{L})(?:emptied|vidée?s?|vaciad[oa]s?|vaciar[�
 // CU-831 (table OK'd 03:32Z): the destroy verbs too, here and in the Western cell ('… se destruirán de forma permanente.').
 // CU-853 (table OK'd by cu-researcher 02:52Z): pt eliminarão, the plural of the es-spelled eliminará the cell already reads.
 // Only a negation BEFORE the verb frees it; one in a following clause ('… e non sarà possibile recuperarli') does not.
-const TRASH_ACTIVE_FUTURE = /(?<!\p{L})(?:cancellerà|cancelleranno|eliminerà|elimineranno|rimuoverà|rimuoveranno|apagará|apagarão|excluirá|excluirão|deletará|deletarão|removerá|removerão|eliminará|eliminarán|eliminarão|borrará|borrarán|suprimirá|suprimirán|supprimera|supprimeront|effacera|effaceront|quitará|quitarán|toglierà|toglieranno|retirarão|tirarão|retirera|retireront|enlèvera|enlèveront|ôtera|ôteront|éliminera|élimineront|destruirá|destruirán|destruirão|détruira|détruiront|distruggerà|distruggeranno)(?!\p{L})/iu
+// CU-863 (table OK'd by cu-researcher 03:36Z): pt vai / vão / irá / irão + a covered infinitive ('vão se eliminar', 'vai excluí-los').
+// CU-863 fold (#1588 F2): not right after the word 'em', so the idiom 'em vão' (in vain) is no auxiliary;
+// and the European clitic on the auxiliary ('vão-se / vai-se' + a covered infinitive) is the same optional reflexive.
+const TRASH_ACTIVE_FUTURE = /(?<!\p{L})(?:cancellerà|cancelleranno|eliminerà|elimineranno|rimuoverà|rimuoveranno|apagará|apagarão|excluirá|excluirão|deletará|deletarão|removerá|removerão|eliminará|eliminarán|eliminarão|borrará|borrarán|suprimirá|suprimirán|supprimera|supprimeront|effacera|effaceront|quitará|quitarán|toglierà|toglieranno|retirarão|tirarão|retirera|retireront|enlèvera|enlèveront|ôtera|ôteront|éliminera|élimineront|destruirá|destruirán|destruirão|détruira|détruiront|distruggerà|distruggeranno|(?<!(?<!\p{L})em\s+)(?:vão|vai|irão|irá)(?:-se)?\s+(?:se\s+)?(?:excluir|deletar|apagar|remover|eliminar|destruir|excluí-l[oa]s?|deletá-l[oa]s?|apagá-l[oa]s?|removê-l[oa]s?|eliminá-l[oa]s?|destruí-l[oa]s?))(?!\p{L})/iu
+const TRASH_ACTIVE_FUTURE_ALL = new RegExp(TRASH_ACTIVE_FUTURE.source, TRASH_ACTIVE_FUTURE.flags + 'g')
+// #1588 cut (D-121 (1), cu-coordinator 23:16Z): later matches are read exactly as on main. Main has no periphrastic arm, so its
+// first match is the first non-periphrastic one: the loop reads the first match and, when that is a negated periphrastic
+// (vai / vão / irá / irão + infinitive), main's first match after it - nothing more.
+const TRASH_PT_PERIPHRASTIC = /^(?:vão|vai|irão|irá)(?!\p{L})/iu
 // CU-859: the English 'will' is EN_WILL, so 'It'll be emptied.' reads as 'It will be emptied.' does.
 const TRASH_PENDING_AUX = new RegExp(String.raw`${EN_WILL}|(?<!\p{L})(?:sera|seront|será|serán|verrà|verranno|sarà|saranno|serão)(?!\p{L})|(?<!\p{L})se\s+(?:\S+\s+){0,2}?vaciar[áa]n?(?!\p{L})`, 'iu')
 // CU-823 (table OK'd by cu-researcher 15:45Z): en 'is / are going to' is pending too ('All items are going to be erased.'); the
@@ -371,8 +381,15 @@ function emptiesTrashByDelete(name, sentence, titleNamesTrash = false) {
   // #1491 r2 (the table cu-researcher OK'd 21:04Z; CU-821): the future passives the in-sentence rule reads ('se eliminarán', 'verranno
   // eliminati', 'serão excluídos', 'werden … gelöscht', 'worden verwijderd', 'будут удалены') count here too, with their own negation.
   if (localePassiveAct(text) !== null) return true
-  const active = TRASH_ACTIVE_FUTURE.exec(text)
-  if (active !== null && !TRASH_NEGATION.test(text.slice(0, active.index).trim().split(/\s+/).slice(-4).join(' '))) return true
+  // CU-863 fold (#1588 F1): every match is read, so a negated future first no longer hides a later one that asks.
+  let first = true
+  for (const active of text.matchAll(TRASH_ACTIVE_FUTURE_ALL)) {
+    const periphrastic = TRASH_PT_PERIPHRASTIC.test(active[0])
+    if (!first && periphrastic) continue
+    if (!TRASH_NEGATION.test(text.slice(0, active.index).trim().split(/\s+/).slice(-4).join(' '))) return true
+    if (!periphrastic) break
+    first = false
+  }
   const emptied = TRASH_EMPTIED_VERB.exec(text)
   if (emptied !== null && TRASH_PENDING_AUX.test(text) && !TRASH_NEGATION.test(text.slice(0, emptied.index).trim().split(/\s+/).slice(-4).join(' '))) return true
   const verb = TRASH_DELETE_VERB.exec(text)
@@ -461,7 +478,9 @@ const MODAL_HANDOVER_NOUN = /^(?:handover|handoff|hand-off|reassignment)$/i
 const MODAL_CONTROL_OBJECT = /\b(?:owner\w*|admin\w*|rights?|control|role|workspace|team|org(?:ani[sz]ation)?|repo(?:sitory)?|project|domain|site|channel|group)\b/i
 const MODAL_NOMINAL_TITLE = /^(?:(?:the|your|this)\s+)?([\p{L}\p{N}'\u2019 -]{1,40}?)\s+(deletion|removal|erasure|termination|deactivation|closure|cancellation|wipe|reset|transfer|handover|handoff|hand-off|reassignment|grant)(?:\s+(?!(?:history|logs?|details|polic(?:y|ies)|settings|status|reports?|records?|summary|overview|info|information|faq|help|guide|terms|rules|limits?|options|preferences|schedule|queue|list)\b)[\p{L}\p{N}'\u2019-]+){0,2}$/iu
 const MODAL_NOMINAL_OF = /^(deletion|removal|erasure|termination|deactivation|closure|cancellation|transfer|handover|handoff|hand-off|reassignment|grant)\s+of\s+(.{1,60})$/i
-const MODAL_ACCESS = /\b(?:(?:requests?|requesting|wants?|would\s+like)\s+(?:\w+\s+){0,3}access\b|will\s+be\s+able\s+to\s+(?:read|write|access|see|view|manage|control|change|edit|delete|post|send|act)\b|(?:gives?|grants?|allows?)\s+(?:\S+\s+){0,4}access\b)/i
+// CU-876: the 'will' before 'be able to' is EN_WILL and the request's 'would like' is EN_WOULD_LIKE, so a contraction attached to
+// the subject ("They'll be able to read ...", "The app'd like access to ...") asks as its full form does; the u flag reads \p{L}.
+const MODAL_ACCESS = new RegExp(String.raw`\b(?:(?:requests?|requesting|wants?|${EN_WOULD_LIKE})\s+(?:\w+\s+){0,3}access\b|${EN_WILL}\s+be\s+able\s+to\s+(?:read|write|access|see|view|manage|control|change|edit|delete|post|send|act)\b|(?:gives?|grants?|allows?)\s+(?:\S+\s+){0,4}access\b)`, 'iu')
 // CU-757 (P1; cu-developer-one's #1423 r2 owner check): an access grant's own buttons - 'Allow', 'Grant', 'Give access', 'Always
 // allow', 'Allow once', 'Allow while using the app' and their localized forms - take the dialog's classes when its title or a kept
 // sentence states access (MODAL_ACCESS, or LOCALE_MODAL_ACCESS for a localized dialog); in a dialog that states nothing they
