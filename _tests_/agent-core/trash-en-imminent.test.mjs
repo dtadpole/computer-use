@@ -87,14 +87,16 @@ test('CU-852: the negated, past-imminent, past-event, restored and non-trash twi
 
 // 'The Trash is about to be emptied.' (Q4, the emptying verb) sits in no list: like every English 'Empty' row whose sentence
 // carries a determiner and the emptying verb, it reaches the description-verb echo already on main (emptied-trash.test.mjs).
-test('CU-852: out of scope stays free - the active voice, another auxiliary (CU-859: the contraction now asks)', () => {
+test('CU-852: out of scope stays free - another auxiliary (CU-859: the contraction now asks; CU-860: the active voice now asks)', () => {
   // CU-859 (the marker table cu-researcher OK'd, held out): the contracted imminent auxiliary "'s / 're about to be" reads as its
   // full form, so this row, pinned free by CU-852, now asks like 'It is about to be deleted.' (trash-en-contracted.test.mjs).
+  // CU-860 (table r1 OK'd by cu-researcher): the active imminent 'are about to' + a covered delete verb asks as 'are going to
+  // delete' does, so the active row CU-852 pinned free now asks (trash-active-imminent.test.mjs).
   asks([
     ['Empty', 'Trash', "It's about to be deleted."],
+    ['Empty', 'Trash', 'You are about to permanently delete the items in the Trash.'],
   ])
   free([
-    ['Empty', 'Trash', 'You are about to permanently delete the items in the Trash.'],
     ['Empty', 'Trash', 'All items are set to be deleted.'],
   ])
 })

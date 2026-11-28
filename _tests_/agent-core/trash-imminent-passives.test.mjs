@@ -226,11 +226,15 @@ test('CU-846: the near rows stay free - a restored verb, and a pending statement
   ])
 })
 
-test('CU-846: the out-of-scope shapes stay free - pt quase a / em vias de, fr en passe de, the it active imminent', () => {
+test('CU-846: the out-of-scope shapes stay free - pt quase a / em vias de, fr en passe de (CU-860: the it active imminent now asks)', () => {
   free([
     ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira estão quase a ser excluídos.'],
     ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira estão em vias de ser excluídos.'],
     ['Vider', 'Corbeille', 'Les fichiers de la corbeille sont en passe d\'être supprimés.'],
+  ])
+  // CU-860 (table r1 OK'd by cu-researcher): the active twin of the imminent auxiliary, with a covered delete verb, asks as its
+  // passive does, so the it active row CU-846 pinned free now asks (trash-active-imminent.test.mjs).
+  asks([
     ['Svuota', 'Cestino', 'Il sistema sta per eliminare tutti i file del cestino.'],
   ])
 })
@@ -300,7 +304,7 @@ test('CU-865: the past, negated and four-word twins of está(n) por quedar stay 
   ])
 })
 
-test('CU-865: the near rows and the unrelated por stay free - no delete participle, no trash, no emptying button, no auxiliary', () => {
+test('CU-865: the near rows and the unrelated por stay free - no delete participle, no trash, no emptying button, no auxiliary (CU-860: the es active imminent now asks)', () => {
   free([
     ['Vaciar', 'Papelera', 'Los archivos de la papelera están por quedar restaurados.'],
     ['Vaciar', 'Papelera', 'Los archivos de la papelera están por quedar guardados.'],
@@ -313,6 +317,10 @@ test('CU-865: the near rows and the unrelated por stay free - no delete particip
     ['Vaciar', 'Papelera', 'Queda por hacer la limpieza de la papelera.'],
     // Q3 row without the locative: '... de la papelera' asks on main through the CU-790 echo route, not this cell (unchanged by CU-865)
     ['Vaciar', 'Papelera', 'Quedan por eliminar 3 archivos.'],
+  ])
+  // CU-860 (table r1 OK'd by cu-researcher): the active twin of the imminent auxiliary, with a covered delete verb, asks as its
+  // active future 'El sistema eliminará los archivos.' does, so the es active row CU-865 pinned free now asks (trash-active-imminent.test.mjs).
+  asks([
     ['Vaciar', 'Papelera', 'El sistema está por eliminar los archivos.'],
   ])
 })
