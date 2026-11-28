@@ -139,7 +139,8 @@ const LOCALE_PASSIVE_ACTS = [
   // CU-851 (table OK'd by cu-researcher 00:17Z): the pt participles eliminad- and destruíd- (covered by TRASH_DELETE_VERB) after the
   // same auxiliaries ('Os arquivos vão ficar eliminados permanentemente.'); retirad- / tirad- stay out.
   // CU-873 (table r1 OK'd by cu-researcher 02:56Z 28 Nov): 'está / estão para' takes ficar too, as 'prestes a / a ponto de' do.
-  [/\b(?:serão|será|(?:vão|vai|irão|irá)\s+(?:ser|ficar|estar)|ficar(?:ão|á)|estar(?:ão|á)|(?:está|estão)\s+(?:prestes\s+a|a\s+ponto\s+de)\s+(?:ser|ficar)|(?:está|estão)\s+para\s+(?:ser|ficar))\s+(?:\S+\s+){0,3}?(?:excluíd[oa]s?|deletad[oa]s?|apagad[oa]s?|removid[oa]s?|eliminad[oa]s?|destruíd[oa]s?)\b/iu, 'excluir'],
+  // CU-896 (r1a delta, OK'd 04:01Z 28 Nov): 'está / estão por' takes ser or ficar the same way (the pt twin of es CU-865).
+  [/\b(?:serão|será|(?:vão|vai|irão|irá)\s+(?:ser|ficar|estar)|ficar(?:ão|á)|estar(?:ão|á)|(?:está|estão)\s+(?:prestes\s+a|a\s+ponto\s+de)\s+(?:ser|ficar)|(?:está|estão)\s+(?:para|por)\s+(?:ser|ficar))\s+(?:\S+\s+){0,3}?(?:excluíd[oa]s?|deletad[oa]s?|apagad[oa]s?|removid[oa]s?|eliminad[oa]s?|destruíd[oa]s?)\b/iu, 'excluir'],
   // r2 (cu-researcher's held-out 13:02Z): Dutch - 'Deze mailbox wordt permanent verwijderd.'
   [/(?<!\p{L})(?:wordt|worden|zal|zullen)(?!\p{L})[^.!?]{0,120}?(?<!\p{L})(?:definitief\s+|permanent\s+)?(?:verwijderd|gewist)(?!\p{L})/iu, 'verwijderen'],
   // CU-800 r2 (cu-researcher's r1 set; cu-developer-two's CU-802 nouns 'vuilnisbak' / 'vuilbak'): the trash itself emptied in a pending statement - 'De prullenbak wordt leeggemaakt.',

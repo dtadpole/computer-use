@@ -393,3 +393,34 @@ test('CU-873: the four-word, broken, past, negated and near twins of está / est
     ['Cancelar', 'Lixo', 'Os arquivos estão para ficar eliminados.'],
   ])
 })
+
+// CU-896 (P1; r1a delta of the CU-873 table, OK'd by cu-researcher 04:01Z 28 Nov): the pt imminent 'está / estão por' + ser / ficar +
+// a covered delete participle went free; it now asks as its 'para ser' twin does (one class-general change with CU-873, D-119 (5)).
+test('CU-896: está / estão por ser / ficar + a covered delete participle asks delete on both routes, beside its para ser twin', () => {
+  asks([
+    ['Esvaziar', 'Lixo', 'Os arquivos estão por ser eliminados.'],
+    ['Esvaziar', 'Lixeira', 'O arquivo da lixeira está por ser apagado.'],
+    ['Esvaziar', 'Lixeira', 'Os itens da lixeira estão por ser excluídos.'],
+    ['Esvaziar', 'Lixeira', 'Os itens da lixeira estão por ser deletados.'],
+    ['Esvaziar', 'Lixeira', 'Os itens da lixeira estão por ser removidos.'],
+    ['Esvaziar', 'Lixeira', 'Os itens da lixeira estão por ser destruídos.'],
+    ['Esvaziar', 'Lixeira', 'Os documentos da lixeira estão por ficar eliminados.'],
+    ['Esvaziar', 'Lixeira', 'As fotos da lixeira estão por ser excluídas.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira estão por ser definitivamente removidos.'],
+    // the twin that already asks on main
+    ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira estão para ser removidos.'],
+  ])
+})
+
+test('CU-896: the negated, past, four-word and near twins of está / estão por ser / ficar stay free', () => {
+  free([
+    ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira não estão por ser excluídos.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira estavam por ser excluídos.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira estiveram por ser excluídos.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira estão por ser restaurados.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos estão por toda a lixeira.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira estão por ser total, completa e definitivamente excluídos.'],
+    ['Esvaziar', 'Notas', 'Os arquivos estão por ser apagados.'],
+    ['Cancelar', 'Lixo', 'Os arquivos estão por ser eliminados.'],
+  ])
+})
