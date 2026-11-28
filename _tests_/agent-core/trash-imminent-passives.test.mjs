@@ -316,3 +316,80 @@ test('CU-865: the near rows and the unrelated por stay free - no delete particip
     ['Vaciar', 'Papelera', 'El sistema está por eliminar los archivos.'],
   ])
 })
+
+// CU-873 (P1; table r1 OK'd by cu-researcher 02:56Z 28 Nov): the pt imminent 'está / estão para' took only ser, so 'Os arquivos estão
+// para ficar eliminados.' went free under Esvaziar | Lixo while its 'prestes a / a ponto de ficar' twins asked. The one change: 'está /
+// estão para' takes ficar too, before the six covered participles. Past, negated, four-word, broken and near twins stay free.
+test('CU-873: está / estão para ficar + each covered delete participle asks delete on both routes, beside its twins that ask on main', () => {
+  asks([
+    // the filed row
+    ['Esvaziar', 'Lixo', 'Os arquivos estão para ficar eliminados.'],
+    // the gap row, both numbers
+    ['Esvaziar', 'Lixeira', 'O arquivo da lixeira está para ficar excluído.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira estão para ficar excluídos.'],
+    // each covered participle, singular and plural (destruíd-: CU-851)
+    ['Esvaziar', 'Lixeira', 'O documento da lixeira está para ficar deletado.'],
+    ['Esvaziar', 'Lixeira', 'Os documentos da lixeira estão para ficar deletados.'],
+    ['Esvaziar', 'Lixeira', 'O item da lixeira está para ficar apagado.'],
+    ['Esvaziar', 'Lixeira', 'Os itens da lixeira estão para ficar apagados.'],
+    ['Esvaziar', 'Lixeira', 'O objeto da lixeira está para ficar removido.'],
+    ['Esvaziar', 'Lixeira', 'Os objetos da lixeira estão para ficar removidos.'],
+    ['Esvaziar', 'Lixeira', 'O ficheiro da lixeira está para ficar eliminado.'],
+    ['Esvaziar', 'Lixeira', 'Os ficheiros da lixeira estão para ficar eliminados.'],
+    ['Esvaziar', 'Lixeira', 'O conteúdo da lixeira está para ficar destruído.'],
+    ['Esvaziar', 'Lixeira', 'Os elementos da lixeira estão para ficar destruídos.'],
+    // the trash title lends itself to an item-noun sentence (CU-818)
+    ['Esvaziar', 'Lixo', 'O arquivo está para ficar apagado.'],
+    ['Esvaziar', 'Lixo', 'Tudo está para ficar excluído.'],
+    ['Esvaziar', 'Lixo', 'Os dados estão para ficar deletados.'],
+    // removid- is in this cell
+    ['Esvaziar', 'Lixo', 'Os itens estão para ficar removidos da lixeira.'],
+    // Q1: the feminine participles, with a subject over 'da lixeira' that is not an item noun
+    ['Esvaziar', 'Lixeira', 'As fotos da lixeira estão para ficar excluídas.'],
+    ['Esvaziar', 'Lixeira', 'A foto da lixeira está para ficar apagada.'],
+    // one to three words between, a word after the participle, a word before the marker that is no negation
+    ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira estão para ficar definitivamente excluídos.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira estão para ficar total e definitivamente apagados.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira estão para ficar excluídos para sempre.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira já estão para ficar excluídos.'],
+    // the twins, which already ask on main
+    ['Esvaziar', 'Lixo', 'Os arquivos estão a ponto de ficar eliminados.'],
+    ['Esvaziar', 'Lixo', 'Os arquivos estão prestes a ficar eliminados.'],
+    ['Esvaziar', 'Lixo', 'Os arquivos estão para ser eliminados.'],
+  ])
+})
+
+test('CU-873: the four-word, broken, past, negated and near twins of está / estão para ficar stay free', () => {
+  free([
+    // four words between; a word that breaks the phrase
+    ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira estão para ficar total, completa e definitivamente excluídos.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira estão agora para ficar excluídos.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira estão lá para ficar excluídos.'],
+    // the past, and ficar with no auxiliary of the cell
+    ['Esvaziar', 'Lixeira', 'O arquivo estava para ficar excluído.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira estavam para ficar excluídos.'],
+    ['Esvaziar', 'Lixeira', 'O arquivo esteve para ficar excluído.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira estiveram para ficar excluídos.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira ficaram excluídos.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira têm ficado excluídos.'],
+    // a negation right before the marker, or inside the phrase
+    ['Esvaziar', 'Lixeira', 'O arquivo não está para ficar excluído.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira não estão para ficar excluídos.'],
+    ['Esvaziar', 'Lixo', 'Os arquivos não estão para ficar eliminados.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira nunca estão para ficar excluídos.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira jamais estão para ficar excluídos.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira estão para não ficar excluídos.'],
+    // the near rows: no está, out of scope, no delete participle, not in the cell, the emptying verb, no trash, no item noun, no
+    // emptying button
+    ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira são para ficar excluídos.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira estão em vias de ficar excluídos.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira estão para ficar restaurados.'],
+    ['Esvaziar', 'Lixeira', 'Os arquivos da lixeira estão para ficar guardados.'],
+    ['Esvaziar', 'Lixeira', 'Os itens estão para ficar retirados da lixeira.'],
+    ['Esvaziar', 'Lixeira', 'Os itens estão para ficar tirados da lixeira.'],
+    ['Esvaziar', 'Lixeira', 'A lixeira está para ficar esvaziada.'],
+    ['Esvaziar', 'Notas', 'Os arquivos estão para ficar apagados.'],
+    ['Esvaziar', 'Lixo', 'O histórico está para ficar apagado.'],
+    ['Cancelar', 'Lixo', 'Os arquivos estão para ficar eliminados.'],
+  ])
+})
