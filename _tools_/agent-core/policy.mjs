@@ -124,7 +124,10 @@ const LOCALE_PASSIVE_ACTS = [
   // CU-854 (table r1 OK'd by cu-researcher 00:34Z, rebuild delta 05:53Z): the fourth covered es delete verb, destruir, in each shape of
   // the cell - the participle after every auxiliary ('Los archivos van a ser destruidos.', 'están a punto de ser destruidos'), the reflexive
   // future, the periphrastic reflexive and both enclitics ('van a destruirse', 'están a punto de destruirse').
-  [/\b(?:ser[áa]n?|van?\s+a\s+(?:ser|quedar|estar)|quedar(?:á|án)|estar(?:á|án)|(?:está|están)\s+a\s+punto\s+de\s+(?:ser|quedar)|(?:está|están)\s+por\s+ser)\s+(?:\S+\s+){0,3}?(?:eliminad[oa]s?|borrad[oa]s?|suprimid[oa]s?|destruid[oa]s?)\b|\bse\s+(?:\S+\s+){0,2}?(?:eliminar[áa]n?|borrar[áa]n?|suprimir[áa]n?|destruir[áa]n?)(?!\p{L})|\bse\s+van?\s+a\s+(?:eliminar|borrar|suprimir|destruir)(?!\p{L})|\bvan?\s+a\s+(?:eliminar|borrar|suprimir|destruir)se(?!\p{L})|\b(?:está|están)\s+a\s+punto\s+de\s+(?:eliminar|borrar|suprimir|destruir)se(?!\p{L})/iu, 'eliminar'],
+  // CU-865 (table r1 OK'd by cu-researcher 05:37Z, Q2 folded): 'está(n) por' takes quedar as 'a punto de' does ('Los archivos de la
+  // papelera están por quedar eliminados.') and the enclitic of the four covered verbs ('están por borrarse'), whole phrases only;
+  // 'no están por' / 'están por no quedar' / 'estaban por' stay free, and 'queda(n) por' + infinitive is no auxiliary here.
+  [/\b(?:ser[áa]n?|van?\s+a\s+(?:ser|quedar|estar)|quedar(?:á|án)|estar(?:á|án)|(?:está|están)\s+a\s+punto\s+de\s+(?:ser|quedar)|(?:está|están)\s+por\s+(?:ser|quedar))\s+(?:\S+\s+){0,3}?(?:eliminad[oa]s?|borrad[oa]s?|suprimid[oa]s?|destruid[oa]s?)\b|\bse\s+(?:\S+\s+){0,2}?(?:eliminar[áa]n?|borrar[áa]n?|suprimir[áa]n?|destruir[áa]n?)(?!\p{L})|\bse\s+van?\s+a\s+(?:eliminar|borrar|suprimir|destruir)(?!\p{L})|\bvan?\s+a\s+(?:eliminar|borrar|suprimir|destruir)se(?!\p{L})|\b(?:está|están)\s+(?:a\s+punto\s+de|por)\s+(?:eliminar|borrar|suprimir|destruir)se(?!\p{L})/iu, 'eliminar'],
   // CU-846 (table OK'd by cu-researcher 23:55Z, r1a): it sta / stanno per and è / sono sul punto di + essere / venire ('I file nel
   // cestino stanno per essere eliminati.'); 'è' takes (?<!\p{L}), never \b (CU-825); 'stavano per' / 'erano sul punto' are other words.
   [/(?:\b(?:verranno|verrà|saranno|sarà)|(?<!\p{L})(?:(?:sta|stanno)\s+per|(?:è|sono)\s+sul\s+punto\s+di)\s+(?:essere|venire))\s+(?:\S+\s+){0,3}?(?:eliminat[ioae]|rimoss[ioae]|cancellat[ioae]|distrutt[ioae])\b/iu, 'elimina'],
@@ -278,6 +281,17 @@ const KO_HEAD = '(?:삭제|제거|폐기|소거|파기|말소)'
 const KO_GAP = '\\s*(?:을|를|이|가)?\\s*(?:(?!(?:안|못)\\s)(?:\\p{Script=Hangul}+(?:히|게)|\\p{Script=Hangul}{2,}적으로|자동으로|수동으로|새로|일괄로|깨끗이|곧|즉시|바로|모두|전부|다시|먼저|함께|계속|지금|이제|일괄)\\s+)?'
 const KO_STEM = `${KO_HEAD}(?:${KO_GAP}(?:처리|조치|진행|실행|수행|완료|종료|시작|개시|마무리))?`
 const KO_END = `${KO_HEAD}${KO_GAP}`
+// CU-858 fold (F1 / F2 / Q3 of #1591, table r1 OK'd by cu-researcher 19:11Z): the tr active future asks only as a finite predicate -
+// the end of the text, a clause mark or a closing quote, a coordinator or the question particle comes next (TR_FINITE) - so -AcAk as a
+// noun ('yedek silecek lastiği') or as a relative participle ('silecek bir şey') stays free. An accusative item noun or Çöp Sepeti'ni
+// right before it keeps a participle a predicate ('dosyaları silecek uygulama'), as its English twin asks. at- (göz at- / imza at- /
+// mesaj at- are light verbs with a caseless noun) asks only after its accusative object, at most one word between.
+const TR_FINITE = String.raw`(?=\s*(?:$|[.!?;:,…"”’»)])|\s+(?:ve|ama|fakat|ancak|çünkü|veya|yoksa|ya\s+da|m[ıiuü])(?!\p{L}))`
+const TR_ACC_OBJECT = String.raw`(?:öğe(?:yi|sini|leri(?:ni)?)|dosya(?:yı|sını|ları(?:nı)?)|belge(?:yi|sini|leri(?:ni)?)|nesne(?:yi|sini|leri(?:ni)?)|verileri(?:ni)?|içeri(?:ği(?:ni)?|kleri(?:ni)?)|tümünü|hepsini|çöp\s+sepeti['’]?ni|çöp\s+kutusu['’]?nu)`
+const TR_ACTIVE_FUT_E = String.raw`(?:sil|yok\s+ed|imha\s+ed|temizley)(?:ecek(?:ler)?(?:dir)?|ecektir)`
+const TR_ACTIVE_FUT_A = String.raw`(?:kaldır|boşalt)(?:acak(?:lar)?(?:dır)?|acaktır)`
+const TR_AT_FUT = String.raw`at(?:acak(?:lar)?(?:dır)?|acaktır)`
+const TR_ACTIVE_FUTURE = String.raw`${TR_ACTIVE_FUT_E}${TR_FINITE}|${TR_ACTIVE_FUT_A}${TR_FINITE}|${TR_ACC_OBJECT}(?:\s+[\p{L}'’]+)?\s+${TR_AT_FUT}${TR_FINITE}|${TR_ACC_OBJECT}\s+(?:${TR_ACTIVE_FUT_E}|${TR_ACTIVE_FUT_A}|${TR_AT_FUT})`
 const TRASH_LOCALE = [
   { // ru
     verb: new RegExp(`(?<!\\p{L})(?:${RU_PART}|${RU_FUT}|удалить|стереть|уничтожить|очистить)(?!\\p{L})`, 'iu'),
@@ -326,11 +340,19 @@ const TRASH_LOCALE = [
   },
   { // tr
     // CU-860: the active imminent 'silmek / kaldırmak / yok etmek / imha etmek üzere-' with a person ending (-siniz / -sin / -yiz /
-    // -dir / -ler) asks as its passive 'silinmek üzere' does; 'üzere değil-' is its negation and 'üzereydi-' its past. The gate
-    // takes 'yok / imha etmek' only before 'üzere'.
-    verb: /(?<!\p{L})(?:sil|kaldır|yok\s+ed|atıl|temizlen|imha\s+ed|boşaltıl(?!abil)|(?:at|temizley|boşalt)[iı]ver|(?:yok|imha)\s+etmek(?=\s+üzere))\p{L}*/iu,
+    // -dir / -ler) asks as its passive 'silinmek üzere' does; 'üzere değil-' is its negation and 'üzereydi-' its past. CU-858's
+    // gate arm 'yok / imha e[dt]' already takes 'yok / imha etmek' before 'üzere'.
+    // CU-858 (table r1 OK'd by cu-researcher 03:14Z): the gate also takes the active future and negative stems of at- / temizle- /
+    // boşalt-, and yok / imha e[dt], so the cell itself decides the active futures below. CU-858 cut (#1591 P3): the at- arm takes
+    // R2's accusative object, so a light verb ('göz atacak mısınız?') no longer opens the cell for its question rule.
+    verb: new RegExp(String.raw`(?<!\p{L})(?:sil|kaldır|yok\s+e[dt]|atıl|temizlen|imha\s+e[dt]|boşaltıl(?!abil)|(?:at|temizley|boşalt)[iı]ver|${TR_ACC_OBJECT}(?:\s+[\p{L}'’]+)?\s+at(?:acak|ma)|temizle(?:yecek|me)|boşalt(?:acak|ma))\p{L}*`, 'iu'),
+    // CU-858 cut (#1591 P2): the negated active futures are not added (only main's lone silmeyecek), as a negation match anywhere frees
+    // the sentence; no pending alternative reads -mAyAcAk, so their declaratives stay free. The fold drops -mAmIş from the atılma /
+    // temizlenme groups for the same reason (a negated relative participle freed a pending clause that asks on main).
     negation: /(?<!\p{L})(?:boşaltılma(?:yacak(?:lar)?(?:dır)?|yacaktır|z(?:lar)?|dı|mış)|silinme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|silinemez|silmeyecek|kaldırılma(?:yacak(?:lar)?(?:dır)?|yacaktır|z(?:lar)?|dı|mış)|kaldırılamaz|yok\s+edilme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|yok\s+edilemez|atılma(?:yacak(?:lar)?(?:dır)?|z(?:lar)?|dı)|temizlenme(?:yecek(?:ler)?(?:dir)?|z(?:ler)?|di)|atılmayacaktır|temizlenmeyecektir|imha\s+edilme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|(?:silinmek|kaldırılmak|yok\s+edilmek|imha\s+edilmek)\s+üzere\s+değil(?:dir)?|(?:silmek|kaldırmak|yok\s+etmek|imha\s+etmek)\s+üzere\s+değil(?:siniz|sin|iz|dir|ler)?|(?:silin|kaldırıl|yok\s+edil|atıl|temizlen|imha\s+edil|boşaltıl)[iı]p\s+gitme(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş)|(?:(?:silin|kaldırıl|yok\s+edil|atıl|temizlen|imha\s+edil|boşaltıl)[iı]ver|(?:sil|kaldır|yok\s+ed|imha\s+ed|at|temizley|boşalt)[iı]ver(?:il)?)me(?:yecek(?:ler)?(?:dir)?|yecektir|z(?:ler)?|di|miş))(?!\p{L})/iu,
-    past: /(?<!\p{L})(?:boşaltıldı|boşaltılmış(?!\s+olacak)|silindi|silinmiş(?!\s+olacak)|kaldırıldı|kaldırılmış(?!\s+olacak)|yok\s+edildi|yok\s+edilmiş(?!\s+olacak)|atıldı|atılmış|temizlendi|temizlenmiş|imha\s+edildi|imha\s+edilmiş(?!\s+olacak)|(?:silinmek|kaldırılmak|yok\s+edilmek|imha\s+edilmek)\s+üzereydi|(?:silmek|kaldırmak|yok\s+etmek|imha\s+etmek)\s+üzereydi|(?:silin|kaldırıl|yok\s+edil|atıl|temizlen|imha\s+edil|boşaltıl)[iı]p\s+git(?:ti|miş(?!\s+olacak))|(?:(?:silin|kaldırıl|yok\s+edil|atıl|temizlen|imha\s+edil|boşaltıl)[iı]ver|(?:sil|kaldır|yok\s+ed|imha\s+ed|at|temizley|boşalt)[iı]ver(?:il)?)(?:di|miş(?!\s+olacak)))\p{L}*/iu,
+    // CU-858: atılmış / temizlenmiş before olacak are the future perfect (pending below), as for the other stems. The active past stays
+    // out, because the trailing \p{L}* would also read the -DIğI / -mIş relative participles as past.
+    past: /(?<!\p{L})(?:boşaltıldı|boşaltılmış(?!\s+olacak)|silindi|silinmiş(?!\s+olacak)|kaldırıldı|kaldırılmış(?!\s+olacak)|yok\s+edildi|yok\s+edilmiş(?!\s+olacak)|atıldı|atılmış(?!\s+olacak)|temizlendi|temizlenmiş(?!\s+olacak)|imha\s+edildi|imha\s+edilmiş(?!\s+olacak)|(?:silinmek|kaldırılmak|yok\s+edilmek|imha\s+edilmek)\s+üzereydi|(?:silmek|kaldırmak|yok\s+etmek|imha\s+etmek)\s+üzereydi|(?:silin|kaldırıl|yok\s+edil|atıl|temizlen|imha\s+edil|boşaltıl)[iı]p\s+git(?:ti|miş(?!\s+olacak))|(?:(?:silin|kaldırıl|yok\s+edil|atıl|temizlen|imha\s+edil|boşaltıl)[iı]ver|(?:sil|kaldır|yok\s+ed|imha\s+ed|at|temizley|boşalt)[iı]ver(?:il)?)(?:di|miş(?!\s+olacak)))\p{L}*/iu,
     // CU-806: the formal future (-ecektir / -acaktır), the aorist passive (silinir) and the future perfect (silinmiş olacak) too.
     // #1479 r2 (the table cu-researcher OK'd 14:34Z): plural agreement, the plural aorist and 'about to' too.
     // CU-842: -(y)Iver- on a covered passive (siliniverecek) takes the plain stem's endings in the negation, past and pending cells.
@@ -338,7 +360,10 @@ const TRASH_LOCALE = [
     // perfect (silinivermiş / siliverilmiş olacak, in both numbers and -tIr), the active future (siliverecek) and the passive after
     // -iver (siliverilecek / -ir). The gate takes at- / temizle- / boşalt- + -iver, and negation and past take the new stems. The
     // active -ivermiş olacak and -iverir stay free.
-    pending: /(?<!\p{L})(?:boşaltıl(?:acak(?:lar)?(?:dır)?|acaktır|ır(?:lar)?)|silin(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|kaldırıl(?:acak(?:lar)?(?:dır)?|acaktır|ır(?:lar)?)|yok\s+edil(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|(?:silinmiş|kaldırılmış|yok\s+edilmiş)\s+olacak(?:tır)?|atıl(?:acak(?:lar)?(?:dır)?|ır(?:lar)?)|temizlen(?:ecek(?:ler)?(?:dir)?|ir(?:ler)?)|atılacaktır|temizlenecektir|imha\s+edil(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|(?:silinmek|kaldırılmak|yok\s+edilmek|imha\s+edilmek)\s+üzere(?:dir|ler)?|(?:silmek|kaldırmak|yok\s+etmek|imha\s+etmek)\s+üzere(?:siniz|sin|yiz|dir|ler)|(?:silin|kaldırıl|yok\s+edil|atıl|temizlen|imha\s+edil|boşaltıl)[iı]p\s+gid(?:ecek(?:ler)?(?:dir)?|ecektir|er(?:ler)?)|(?:silin|kaldırıl|yok\s+edil|atıl|temizlen|imha\s+edil|boşaltıl)[iı]ver(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|(?:silin|kaldırıl|yok\s+edil|atıl|temizlen|imha\s+edil|boşaltıl)[iı]vermiş\s+ol(?:acak(?:lar)?(?:dır)?|acaktır)|(?:sil|kaldır|yok\s+ed|imha\s+ed|at|temizley|boşalt)[iı]verilmiş\s+ol(?:acak(?:lar)?(?:dır)?|acaktır)|(?:sil|kaldır|yok\s+ed|imha\s+ed|at|temizley|boşalt)[iı]ver(?:ecek(?:ler)?(?:dir)?|ecektir)|(?:sil|kaldır|yok\s+ed|imha\s+ed|at|temizley|boşalt)[iı]veril(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?))(?!\p{L})/iu,
+    // CU-858 (table r1 OK'd by cu-researcher 03:14Z): the future perfect covers all seven passives, with olacak in both numbers and
+    // -tIr. The active future of the seven stems (sil / kaldır / yok et / imha et / at / temizle / boşalt) asks too.
+    // CU-858 fold: that active future is TR_ACTIVE_FUTURE above (a finite predicate; at- only after its accusative object).
+    pending: new RegExp(String.raw`(?<!\p{L})(?:boşaltıl(?:acak(?:lar)?(?:dır)?|acaktır|ır(?:lar)?)|silin(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|kaldırıl(?:acak(?:lar)?(?:dır)?|acaktır|ır(?:lar)?)|yok\s+edil(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|(?:silinmiş|kaldırılmış|yok\s+edilmiş|imha\s+edilmiş|boşaltılmış|atılmış|temizlenmiş)\s+ol(?:acak(?:lar)?(?:dır)?|acaktır)|atıl(?:acak(?:lar)?(?:dır)?|ır(?:lar)?)|temizlen(?:ecek(?:ler)?(?:dir)?|ir(?:ler)?)|atılacaktır|temizlenecektir|imha\s+edil(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|(?:silinmek|kaldırılmak|yok\s+edilmek|imha\s+edilmek)\s+üzere(?:dir|ler)?|(?:silmek|kaldırmak|yok\s+etmek|imha\s+etmek)\s+üzere(?:siniz|sin|yiz|dir|ler)|(?:silin|kaldırıl|yok\s+edil|atıl|temizlen|imha\s+edil|boşaltıl)[iı]p\s+gid(?:ecek(?:ler)?(?:dir)?|ecektir|er(?:ler)?)|(?:silin|kaldırıl|yok\s+edil|atıl|temizlen|imha\s+edil|boşaltıl)[iı]ver(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|(?:silin|kaldırıl|yok\s+edil|atıl|temizlen|imha\s+edil|boşaltıl)[iı]vermiş\s+ol(?:acak(?:lar)?(?:dır)?|acaktır)|(?:sil|kaldır|yok\s+ed|imha\s+ed|at|temizley|boşalt)[iı]verilmiş\s+ol(?:acak(?:lar)?(?:dır)?|acaktır)|(?:sil|kaldır|yok\s+ed|imha\s+ed|at|temizley|boşalt)[iı]ver(?:ecek(?:ler)?(?:dir)?|ecektir)|(?:sil|kaldır|yok\s+ed|imha\s+ed|at|temizley|boşalt)[iı]veril(?:ecek(?:ler)?(?:dir)?|ecektir|ir(?:ler)?)|${TR_ACTIVE_FUTURE})(?!\p{L})`, 'iu'),
   },
 ]
 // null when no ru / ja / zh / ko / tr verb of the family stands in the sentence.
