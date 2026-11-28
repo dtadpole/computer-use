@@ -1354,7 +1354,9 @@ const IMPERATIVE_BARE_COLLISIONS = new Set(['kauf', 'kauft', 'bezahlt', 'bestell
   'deel', 'bel', 'plaats'])
 // CU-641 (cu-developer-one, point 4): 'Stuur' (also the steering wheel) and 'Wis' ('Wis zoekopdracht', 'Wis filters' stay free) ask
 // only with an entry's object - never alone, never in the determiner context.
-const IMPERATIVE_OBJECT_ONLY = new Set(['stuur', 'wis'])
+// CU-645: and 'wist u' - the u form of wissen is also weten's past tense ('Wist u dat?', 'Wist u het al?' = did you know).
+// 'stuur' is a guard (cu-verifier, CU-641 close): inert while 'sturen' is no bare entry, it keeps 'Stuur' object-only if one is added.
+const IMPERATIVE_OBJECT_ONLY = new Set(['stuur', 'wis', 'wist u'])
 // CU-654: clear verbs that ask only before a history noun (FR / ES / PT / IT / DE; Russian, Japanese and Turkish are entries).
 const LOCALE_HISTORY_CLEAR = Object.freeze([
   /^(?:vider|videz|vide)\s+(?:\S+\s+){0,4}?(?:l['’]\s*)?historique\b/i,
@@ -5038,8 +5040,19 @@ export function createPolicy({ sitePolicy, preApprovals = [] } = {}) {
     // except the objects English clears without asking ('Clear search / filters / selection / form / cache / notifications'), so
     // 'Wis zoekopdracht', 'Wis de filters', 'Wis selectie' stay free (the wider clear-verb family is CU-642).
     if (grammarEligible && !classes.includes('delete')) {
-      const wipe = String(name ?? '').trim().toLowerCase().match(/^(?:wis|wist\s+u)\s+(?:(?:de|het|je|jouw|uw|mijn|onze|alle|al|deze|dit|die)\s+){0,2}(\p{L}[\p{L}'’-]*)(?:\s+\p{L}[\p{L}'’-]*)?\s*[.!]?$/u)
+      const wipe = String(name ?? '').trim().toLowerCase().match(/^wis\s+(?:(?:de|het|je|jouw|uw|mijn|onze|alle|al|deze|dit|die)\s+){0,2}(\p{L}[\p{L}'’-]*)(?:\s+\p{L}[\p{L}'’-]*)?\s*[.!]?$/u)
       if (wipe && !WIS_CLEAR_OBJECTS.has(wipe[1])) classes.push('delete')
+      // CU-645 r2 (cu-developer-one 00:52Z, cu-developer-three 00:54Z): 'Wist u' is also 'did you know', so it asks only with
+      // (al +) a determiner and a noun and not as a question - 'Wist u uw foto's', 'Wist u al uw berichten', 'Wist u alle
+      // afspraken' ask; 'Wist u dat?', 'Wist u het al?', 'Wist u wat ...', 'Wist u de weg?' and bare 'Wist u' stay free.
+      // r2 bar (cu-developer-one 01:00Z / 01:01Z): het / dit / dat open an object only before a noun - at the end, before 'al' or
+      // before a clause (a pronoun or 'er': 'Wist u dat u ...', 'Wist u dat er ...') they are the 'did you know' reading.
+      const wiped = String(name ?? '').trim().toLowerCase().match(/^wist\s+u\s+(?:(?:al|eigenlijk)\s+)?(?:de|het|je|jouw|uw|mijn|onze|alle|deze|die|dit|dat)\s+(\p{L}[\p{L}'’-]*)(?:\s+\p{L}[\p{L}'’-]*)?\s*[.!]?$/u)
+      // The question reading is the know reading, so here - and only here - a trailing '?' frees the row: the rule also skips
+      // CU-528's question-stripped re-read (context.questionProbe), a scoped exception cu-developer-one's design names.
+      const asked = context.questionProbe === true || /\?\s*$/.test(String(target?.name ?? ''))
+      const clause = wiped && /^(?:al|u|je|jij|er|we|wij|ze|zij|hij|ik|men|het|dat|dit|wat)$/.test(wiped[1])
+      if (!classes.includes('delete') && wiped && !asked && !clause && !WIS_CLEAR_OBJECTS.has(wiped[1])) classes.push('delete')
     }
     // CU-650 (cu-developer-one's go 04:21Z): Korean cancel / terminate (취소 / 해지) + subscription asks delete, + order / membership /
     // plan asks purchase, as 'Cancel subscription' / 'Cancel order / membership / plan' - both orders, with or without a space, with
